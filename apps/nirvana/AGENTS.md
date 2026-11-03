@@ -1436,3 +1436,22 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   a ve scoreboardu (mini varianta).
 - **Portrét musí být `object-position: center 22%`** — model je vycentrovaný
   na tělo, takže na kruzích 2,2rem uřízne hlavu kdekoli jinde.
+
+## PRVNÍ SVĚT — mobilní vrstva (F19, 2026-11-03, protokol 17)
+
+- **Battle spell = Flicker** (klávesa `V`, na dotyku ⚡): blink do 6 m, 60 s
+  cooldown. Efekt i cooldown drží **sim** (`useBattleSpell`), klient posílá
+  jen bod — stejný princip jako ward/sentry.
+- **Auto-aim je klientská věc, ale pravidlo drží sim.** `snapAim(heroes, team,
+  x, z, 8)` vrátí nejbližšího **živého nepřítele** k bodu; používá se jen když
+  je hráč na dotyku (`autoAim={coarse}`). Na myši se nemíchá do míření.
+  V online se bere ze **snapshotu** (jen viditelní nepřátelé — jinak by to byl
+  cheat přes mlhu).
+- **Rychlý nákup** je jedna karta „Doporučeno" v obchodě: první item, který
+  hrdina ještě nemá, podle archetypu (agresivní/podpůrný/kontrolní). Pořadí
+  je `RECOMMENDED` v `earth/page.tsx`, ne v obchodě — je to UX, ne pravidlo.
+- **Boti Flicker používají** na útěk (nízké HP + nepřítel do 6 m), aby hráč
+  neměl nefér výhodu.
+- **PROTO_VERSION 17** (`battlespell`, `battleSpellIn`) → deploy **net první**.
+- **Testy:** `test/moba-sim.mjs` (183 kontrol: skok 6 m, cooldown, snapAim
+  s mrtvým/nepřítelem/mimo dosah).

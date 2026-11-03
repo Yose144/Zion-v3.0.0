@@ -298,8 +298,14 @@ function SoloController({
 
     raycaster.setFromCamera(new THREE.Vector2(pointer.current.x, pointer.current.y), camera);
     const hit = raycaster.ray.intersectPlane(groundPlane, castPoint);
-    // auto-aim: na mobilu se kouzlo přichytí na blízkého nepřítele
-    const aim = autoAim && hit ? snapAim(state.current.heroes, you.team, castPoint.x, castPoint.z) : null;
+    // auto-aim: na mobilu se kouzlo přichytí na blízkého nepřítele — ale jen
+    // když zůstane v dosahu kouzla. Bez téhle pojistky se kouzlo „chytilo"
+    // na soupeře za dostřelem a neseslalo se (odhalil mobile audit).
+    let aim = autoAim && hit ? snapAim(state.current.heroes, you.team, castPoint.x, castPoint.z) : null;
+    if (aim && queuedCast.current) {
+      const spell = you.spells.find((candidate) => candidate.slot === queuedCast.current!.slot);
+      if (spell && spell.range > 0 && Math.hypot(aim.x - you.x, aim.z - you.z) > spell.range + spell.radius) aim = null;
+    }
     const cast = queuedCast.current && hit
       ? { slot: queuedCast.current.slot, x: aim?.x ?? castPoint.x, z: aim?.z ?? castPoint.z }
       : null;

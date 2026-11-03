@@ -277,9 +277,15 @@ function OnlineController({
     // kouzlo starší než 400 ms zahodit (hráč mezitím mohl kliknout jinam)
     if (queuedCast.current && Date.now() - queuedCast.current.at > 400) queuedCast.current = null;
     const youNow = snapshotRef.current?.heroes.find((hero) => hero.id === youPlayerId);
-    const aimNow = autoAim && hit && youNow
+    let aimNow = autoAim && hit && youNow
       ? snapAim(snapshotRef.current?.heroes ?? [], youNow.team, castPoint.x, castPoint.z)
       : null;
+    if (aimNow && queuedCast.current && youNow) {
+      const spell = spells.find((candidate) => candidate.slot === queuedCast.current!.slot);
+      if (spell && spell.range > 0 && Math.hypot(aimNow.x - youNow.x, aimNow.z - youNow.z) > spell.range + spell.radius) {
+        aimNow = null;
+      }
+    }
     const cast = queuedCast.current && hit
       ? { slot: queuedCast.current.slot, x: aimNow?.x ?? castPoint.x, z: aimNow?.z ?? castPoint.z }
       : null;
