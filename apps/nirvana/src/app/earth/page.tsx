@@ -26,6 +26,7 @@ import { ITEMS, ITEM_SLOTS, SELL_RATIO, WARD_STOCK_MAX, totalXpAt, type BotSkill
 /** Rychlé hledání itemu podle id — používá inventář i obchod. */
 const ITEM_BY_ID = new Map(ITEMS.map((item) => [item.id, item]));
 import { SCHOOL_LABEL, spellsForAvatar } from '@/core/moba/spells';
+import { talentsFor } from '@/core/moba/sim';
 import { SPELL_LABEL } from '@/core/moba/keys';
 import { MobaTouch } from '@/core/moba/MobaTouch';
 
@@ -107,6 +108,7 @@ export default function EarthPage() {
   const buyRequest = useRef<ItemId | null>(null);
   const sellRequest = useRef<ItemId | null>(null);
   const buybackRequest = useRef(false);
+  const talentRequest = useRef<{ tier: number; pick: number } | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
   const [winner, setWinner] = useState<'blue' | 'red' | null>(null);
 
@@ -305,6 +307,7 @@ export default function EarthPage() {
               buyRequest={buyRequest}
               sellRequest={sellRequest}
               buybackRequest={buybackRequest}
+              talentRequest={talentRequest}
               debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
             />
           ) : (
@@ -316,6 +319,7 @@ export default function EarthPage() {
               buyRequest={buyRequest}
               sellRequest={sellRequest}
               buybackRequest={buybackRequest}
+              talentRequest={talentRequest}
               debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
             />
           )}
@@ -580,6 +584,31 @@ export default function EarthPage() {
           />
 
           {stats?.snapshot.banner && <div className="moba-banner">{stats.snapshot.banner}</div>}
+
+          {stats?.talentPending != null && (
+            <div className="moba-talent" role="dialog" aria-label={cs ? 'talent' : 'talent'}>
+              <strong>
+                {cs ? 'Talent' : 'Talent'} · {stats.talentPending}
+              </strong>
+              {[0, 1].map((pick) => {
+                const talent = talentsFor(spells[0]?.school ?? 'cosmic')[stats.talentPending!]?.[pick];
+                if (!talent) return null;
+                return (
+                  <button
+                    key={pick}
+                    type="button"
+                    className="moba-talent-btn"
+                    onClick={() => {
+                      talentRequest.current = { tier: stats.talentPending!, pick };
+                    }}
+                  >
+                    <b>{talent.name[cs ? 'cs' : 'en']}</b>
+                    <small>{talent.note[cs ? 'cs' : 'en']}</small>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           <button
             type="button"

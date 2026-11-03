@@ -9,7 +9,7 @@
  * Spuštění: npx tsx apps/nirvana/test/moba-sim.mjs
  */
 
-import { BASE_SPEED, BOT_SKILLS, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isVisibleTo, ITEMS, ITEM_SLOTS, placeWard, sellItem, stepMoba, mobaSnapshot, totalXpAt, useItem, visionSources, NO_INPUT, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
+import { BASE_SPEED, BOT_SKILLS, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isVisibleTo, ITEMS, ITEM_SLOTS, pendingTalent, pickTalent, placeWard, sellItem, stepMoba, mobaSnapshot, talentRole, talentsFor, talentTotals, totalXpAt, useItem, visionSources, NO_INPUT, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
 import { SCHOOL_TRAITS, spellCooldown, spellMana, spellRank, spellsForAvatar } from '../src/core/moba/spells.ts';
 import { BUSHES, INHIBITOR_RESPAWN_MS, isStructureProtected, NEXUS_HP, VISION, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
 
@@ -775,6 +775,47 @@ check(
   // a pasivní item taky ne
   buyItem(hero, 'blade');
   check('item aktivní: pasivní item nejde použít', !useItem(s, hero, 'blade', 0, 0));
+}
+
+// ── talenty (F8) ───────────────────────────────────────────────────
+{
+  console.log('\n-- talenty --');
+  const s = createMoba(0, 82, 8_000_000);
+  const hero = s.heroes.find((candidate) => candidate.id === 'hero-you');
+  const school = hero.spells[0].school;
+  const options = talentsFor(school);
+
+  hero.level = 9;
+  check('talenty: do levelu 10 žádný', pendingTalent(hero) === null);
+  hero.level = 10;
+  check('talenty: na 10. čeká volba', pendingTalent(hero) === 10, String(pendingTalent(hero)));
+  check('talenty: dvě možnosti na stupni', options[10].length === 2);
+
+  check('talenty: neplatný index nejde', !pickTalent(hero, 10, 2));
+  check('talenty: volba projde', pickTalent(hero, 10, 0) && hero.talentPicks[10] === 0);
+  check('talenty: podruhé stejný stupeň nejde', !pickTalent(hero, 10, 1));
+  check('talenty: efekt se propíše do součtu', (() => {
+    const totals = talentTotals(hero);
+    const chosen = options[10][0].effect;
+    const expected = (chosen.damage ?? 0) + (chosen.hp ?? 0) + (chosen.mana ?? 0) + (chosen.speed ?? 0) + (chosen.vision ?? 0) + (chosen.spellPower ?? 0) + (chosen.regen ?? 0);
+    const actual = totals.damage + totals.hp + totals.mana + totals.speed + totals.vision + totals.spellPower + totals.regen;
+    return Math.abs(actual - expected) < 1e-9;
+  })());
+
+  hero.level = 15;
+  check('talenty: na 15. čeká druhá volba', pendingTalent(hero) === 15, String(pendingTalent(hero)));
+  check('talenty: druhá volba projde', pickTalent(hero, 15, 1));
+  check('talenty: pak už nic nečeká', pendingTalent(hero) === null);
+
+  // role z kouzel: agresivní / podpůrná / kontrolní
+  check('talenty: role se odvodí ze školy', ['aggressive', 'support', 'control'].includes(talentRole(school)), school);
+
+  // bot si talent vybere sám, aby nezůstal bez bonusů
+  const b = createMoba(0, 82, 8_000_000);
+  const bot = b.heroes.find((candidate) => candidate.id === 'hero-foe');
+  bot.level = 10;
+  advance(b, 200);
+  check('talenty: bot si vybere sám', bot.talentPicks[10] !== undefined, JSON.stringify(bot.talentPicks));
 }
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);

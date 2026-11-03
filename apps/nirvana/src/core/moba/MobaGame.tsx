@@ -14,7 +14,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { buyItem, buyback, createMoba, mobaSnapshot, placeWard, sellItem, stepMoba, useItem, NO_INPUT, type BotSkill, type ItemId, type MobaSnapshot, type MobaState } from './sim';
+import { buyItem, buyback, createMoba, mobaSnapshot, pickTalent, placeWard, sellItem, stepMoba, useItem, NO_INPUT, type BotSkill, type ItemId, type MobaSnapshot, type MobaState } from './sim';
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import { MobaStage } from './MobaStage';
@@ -33,6 +33,7 @@ export interface MobaStats {
   wards: number;
   buybackCost: number;
   itemCooldowns: Record<string, number>;
+  talentPending: number | null;
   spells: { slot: SpellSlot; name: string; cooldown: number; cooldownMs: number; mana: number; color: string; rank: number }[];
   playerHp: number;
   playerMaxHp: number;
@@ -73,6 +74,8 @@ export interface MobaProps {
   sellRequest?: React.MutableRefObject<ItemId | null>;
   /** Buyback: stránka sem zapíše `true`, ovladač zavolá sim. */
   buybackRequest?: React.MutableRefObject<boolean>;
+  /** Talent: stránka sem zapíše volbu, ovladač ji aplikuje. */
+  talentRequest?: React.MutableRefObject<{ tier: number; pick: number } | null>;
 }
 
 /** Sestaví HUD data ze snapshotu — společná pro sólo i online. */
@@ -109,6 +112,7 @@ export function statsFromSnapshot(
     wards: you?.wards ?? 0,
     buybackCost: you?.buybackCost ?? 0,
     itemCooldowns: you?.itemCooldowns ?? {},
+    talentPending: you?.talentPending ?? null,
     playerLevel: you?.level ?? 1,
     xp: you?.xp ?? 0,
     xpNeed: you?.xpNeed ?? 1,
@@ -131,6 +135,7 @@ export function MobaGame({
   buyRequest,
   sellRequest,
   buybackRequest,
+  talentRequest,
 }: MobaProps) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
   return (
@@ -151,6 +156,7 @@ export function MobaGame({
         buyRequest={buyRequest}
         sellRequest={sellRequest}
         buybackRequest={buybackRequest}
+        talentRequest={talentRequest}
         snapshotRef={snapshotRef}
       />
       <MobaStage snapshotRef={snapshotRef} youId="hero-you" />
@@ -175,6 +181,7 @@ function SoloController({
   buyRequest,
   sellRequest,
   buybackRequest,
+  talentRequest,
   snapshotRef,
 }: MobaProps & { snapshotRef: React.MutableRefObject<MobaSnapshot | null> }) {
   const { camera, gl } = useThree();
@@ -282,6 +289,13 @@ function SoloController({
       const item = queuedItem.current;
       if (hit) queuedItem.current = null;
       if (hit && useItem(state.current, you, item, castPoint.x, castPoint.z)) mobaAudio.buy();
+    }
+
+    // talent (panel v HUD, jen dokud je nevybraný)
+    if (talentRequest?.current) {
+      const { tier, pick } = talentRequest.current;
+      talentRequest.current = null;
+      if (pickTalent(you, tier, pick)) mobaAudio.buy();
     }
 
     // buyback (tlačítko v overlayeru smrti)

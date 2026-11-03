@@ -388,11 +388,122 @@ export const BOT_SKILLS: Record<
  * v sim hodinách, takže reálné hodiny je vždycky považovaly za propadlé
  * (rychlostní buffy z run a Přívalu proto nikdy nefungovaly).
  */
+// ── talenty (F8) ──────────────────────────────────────────────────
+//
+// Dvě volby za zápas (10. a 15. úroveň) podle archetypu kouzel. Efekty se
+// sčítají stejně jako itemy (`talentTotals`), takže nový talent není nová
+// větev v sim — jen další číslo do součtu.
+
+export type TalentRole = 'aggressive' | 'support' | 'control';
+
+export interface TalentEffect {
+  damage?: number;
+  hp?: number;
+  mana?: number;
+  speed?: number;
+  vision?: number;
+  spellPower?: number;
+  regen?: number;
+}
+
+export interface Talent {
+  id: string;
+  name: { cs: string; en: string };
+  note: { cs: string; en: string };
+  effect: TalentEffect;
+}
+
+/** Stupně, na kterých se talent volí. */
+export const TALENT_TIERS = [10, 15] as const;
+
+export const TALENTS: Record<TalentRole, Record<number, [Talent, Talent]>> = {
+  aggressive: {
+    10: [
+      { id: 'edge', name: { cs: 'Ostří čepele', en: 'Blade Edge' }, note: { cs: '+12 % poškození', en: '+12% damage' }, effect: { damage: 0.12 } },
+      { id: 'stride', name: { cs: 'Bojový krok', en: 'Battle Stride' }, note: { cs: '+8 % rychlosti', en: '+8% speed' }, effect: { speed: 0.08 } },
+    ],
+    15: [
+      { id: 'executioner', name: { cs: 'Kat', en: 'Executioner' }, note: { cs: '+20 % poškození', en: '+20% damage' }, effect: { damage: 0.2 } },
+      { id: 'warpath', name: { cs: 'Válečná stezka', en: 'Warpath' }, note: { cs: '+12 % dmg, +6 % rychlosti', en: '+12% dmg, +6% speed' }, effect: { damage: 0.12, speed: 0.06 } },
+    ],
+  },
+  support: {
+    10: [
+      { id: 'spring', name: { cs: 'Životní pramen', en: 'Life Spring' }, note: { cs: '+250 max HP', en: '+250 max HP' }, effect: { hp: 250 } },
+      { id: 'focus', name: { cs: 'Soustředění', en: 'Focus' }, note: { cs: '+15 % síly kouzel', en: '+15% spell power' }, effect: { spellPower: 0.15 } },
+    ],
+    15: [
+      { id: 'wellspring', name: { cs: 'Pramen života', en: 'Wellspring' }, note: { cs: '+400 HP, +3 HP/s', en: '+400 HP, +3 HP/s' }, effect: { hp: 400, regen: 3 } },
+      { id: 'radiance', name: { cs: 'Záře', en: 'Radiance' }, note: { cs: '+25 % síly kouzel', en: '+25% spell power' }, effect: { spellPower: 0.25 } },
+    ],
+  },
+  control: {
+    10: [
+      { id: 'farsight', name: { cs: 'Daleký zrak', en: 'Farsight' }, note: { cs: '+5 m vidění', en: '+5 m vision' }, effect: { vision: 5 } },
+      { id: 'reservoir', name: { cs: 'Hluboká studna', en: 'Deep Reservoir' }, note: { cs: '+200 many', en: '+200 mana' }, effect: { mana: 200 } },
+    ],
+    15: [
+      { id: 'oracle', name: { cs: 'Věštba', en: 'Oracle' }, note: { cs: '+8 m vidění, +5 % dmg', en: '+8 m vision, +5% damage' }, effect: { vision: 8, damage: 0.05 } },
+      { id: 'deepwell', name: { cs: 'Bezedná studna', en: 'Bottomless Well' }, note: { cs: '+350 many, +15 % síly kouzel', en: '+350 mana, +15% spell power' }, effect: { mana: 350, spellPower: 0.15 } },
+    ],
+  },
+};
+
+/** Archetyp z první školy kouzel — stejné rozdělení jako `SCHOOL_TRAITS`. */
+export function talentRole(school: SpellSchool): TalentRole {
+  if (school === 'ward' || school === 'nature' || school === 'song') return 'support';
+  if (school === 'cosmic' || school === 'mind') return 'control';
+  return 'aggressive';
+}
+
+export function talentsFor(school: SpellSchool): Record<number, [Talent, Talent]> {
+  return TALENTS[talentRole(school)];
+}
+
+/** Součet efektů vybraných talentů (analogie `itemTotals`). */
+export function talentTotals(hero: Hero): Required<TalentEffect> {
+  const total: Required<TalentEffect> = { damage: 0, hp: 0, mana: 0, speed: 0, vision: 0, spellPower: 0, regen: 0 };
+  const school = hero.spells?.[0]?.school ?? 'cosmic';
+  const options = talentsFor(school);
+  for (const [tierRaw, pick] of Object.entries(hero.talentPicks)) {
+    const tier = Number(tierRaw);
+    const talent = options[tier]?.[pick];
+    if (!talent) continue;
+    total.damage += talent.effect.damage ?? 0;
+    total.hp += talent.effect.hp ?? 0;
+    total.mana += talent.effect.mana ?? 0;
+    total.speed += talent.effect.speed ?? 0;
+    total.vision += talent.effect.vision ?? 0;
+    total.spellPower += talent.effect.spellPower ?? 0;
+    total.regen += talent.effect.regen ?? 0;
+  }
+  return total;
+}
+
+/** Nejbližší nevybraný talent (10, pak 15) — null = hráč má vše. */
+export function pendingTalent(hero: Hero): number | null {
+  for (const tier of TALENT_TIERS) {
+    if (hero.level >= tier && hero.talentPicks[tier] === undefined) return tier;
+  }
+  return null;
+}
+
+/** Volba talentu — vrací false, když na ni hrdina ještě nemá nárok. */
+export function pickTalent(hero: Hero, tier: number, pick: number): boolean {
+  if (!TALENT_TIERS.includes(tier as (typeof TALENT_TIERS)[number])) return false;
+  if (pick !== 0 && pick !== 1) return false;
+  if (pendingTalent(hero) !== tier) return false;
+  hero.talentPicks[tier] = pick;
+  recomputeHeroStats(hero);
+  return true;
+}
+
 export function heroSpeed(
   hero: { items: ItemId[]; slowFactor: number; buffs?: Buff[] },
   now = Date.now(),
 ): number {
-  let speed = BASE_SPEED * (1 + itemTotals(hero.items).speed) * (1 - hero.slowFactor);
+  const talents = 'talentPicks' in hero ? talentTotals(hero as Hero) : { speed: 0 } as Required<TalentEffect>;
+  let speed = BASE_SPEED * (1 + itemTotals(hero.items).speed + talents.speed) * (1 - hero.slowFactor);
   for (const buff of hero.buffs ?? []) {
     if (buff.until > now && buff.type === 'speed') speed *= 1 + buff.power;
   }
@@ -438,6 +549,8 @@ export interface Hero {
   wards: number;
   /** Kdy půjde aktivní item znovu použít (sim čas per item). */
   itemCooldowns: Partial<Record<ItemId, number>>;
+  /** Vybrané talenty: tier (10/15) → index volby. */
+  talentPicks: Record<number, number>;
   /** Kdy může hrdina znovu buybackovat (ms, sim čas). */
   buybackAt: number;
   items: ItemId[];
@@ -659,6 +772,7 @@ function makeHero(id: string, team: Team, heroId: number, spawn: { x: number; z:
     wards: 0,
     buybackAt: 0,
     itemCooldowns: {},
+    talentPicks: {},
     items: [],
     buffs: [],
     isPlayer,
@@ -819,7 +933,7 @@ export function nodeBonus(state: MobaState, team: Team): number {
 const levelScale = (hero: Hero) => 1 + (hero.level - 1) * 0.06;
 /** Odchozí poškození podle itemů a buffů. */
 const damageOut = (hero: Hero, now: number) => {
-  let mult = 1 + itemTotals(hero.items).damage;
+  let mult = 1 + itemTotals(hero.items).damage + talentTotals(hero).damage;
   for (const buff of hero.buffs) {
     if (buff.until > now && buff.type === 'strength') mult *= 1 + buff.power;
   }
@@ -1008,8 +1122,9 @@ function damageMonster(state: MobaState, monster: Monster, amount: number, sourc
 /** Přepočítá maxima z levelu a itemů — jediné místo, kde se mění maxHp/maxMana. */
 function recomputeHeroStats(hero: Hero) {
   const totals = itemTotals(hero.items);
-  hero.maxHp = hero.baseMaxHp + (hero.level - 1) * 55 + totals.hp;
-  hero.maxMana = hero.baseMaxMana + (hero.level - 1) * 18 + totals.mana;
+  const talents = talentTotals(hero);
+  hero.maxHp = hero.baseMaxHp + (hero.level - 1) * 55 + totals.hp + talents.hp;
+  hero.maxMana = hero.baseMaxMana + (hero.level - 1) * 18 + totals.mana + talents.mana;
   hero.hp = Math.min(hero.hp, hero.maxHp);
   hero.mana = Math.min(hero.mana, hero.maxMana);
 }
@@ -1123,7 +1238,7 @@ function castSpell(state: MobaState, hero: Hero, slot: SpellSlot, x: number, z: 
   hero.facing = Math.atan2(x - hero.x, z - hero.z);
   // Stupeň kouzla nahrazuje `levelScale` — jinak by se level počítal dvakrát.
   const rankBonus = 1 + (rank - 1) * SPELL_RANK_SCALE;
-  const bonus = nodeBonus(state, hero.team) * damageOut(hero, state.now) * rankBonus;
+  const bonus = nodeBonus(state, hero.team) * damageOut(hero, state.now) * rankBonus * (1 + talentTotals(hero).spellPower);
 
   if (spell.kind === 'projectile') {
     const dx = x - hero.x;
@@ -1317,6 +1432,10 @@ function stepBot(state: MobaState, hero: Hero, now: number) {
   }
   hero.botCast = null;
 
+  // Talenty: bot si vybírá sám (deterministicky), aby nezůstal bez bonusů.
+  const pending = pendingTalent(hero);
+  if (pending !== null) pickTalent(hero, pending, state.seq % 2);
+
   // Nákup: bot musí utrácet. Bez toho by pasivní zlato zvýhodnilo jen
   // člověka — bot by hromadil 900 zlaťáků a prohrával staty.
   for (const itemId of botBuild(hero)) {
@@ -1327,7 +1446,7 @@ function stepBot(state: MobaState, hero: Hero, now: number) {
 
 /** Build bota podle školy jeho kouzel — agresivní školy kupují čepel první. */
 function botBuild(hero: Hero): ItemId[] {
-  const school = hero.spells[0]?.school ?? 'cosmic';
+  const school = hero.spells?.[0]?.school ?? 'cosmic';
   if (school === 'fire' || school === 'arrow' || school === 'blade' || school === 'storm' || school === 'shadow' || school === 'beast') {
     return ['blade', 'boots', 'aegis'];
   }
@@ -1511,7 +1630,7 @@ export function stepMoba(
     // Pasivní příjem — i prohrávající linka musí mít cestu k itemu.
     hero.gold = Math.min(GOLD_CAP, hero.gold + PASSIVE_GOLD_PER_SEC * dt);
     // Regenerace z itemů (Lotosový štít).
-    const regen = itemTotals(hero.items).regen;
+    const regen = itemTotals(hero.items).regen + talentTotals(hero).regen;
     if (regen > 0) hero.hp = Math.min(hero.maxHp, hero.hp + regen * dt);
 
     // Hoření a regenerace — buffy, které působí každý snímek.
@@ -1955,6 +2074,10 @@ export interface MobaSnapshot {
     wards: number;
     /** Zbývající cooldowny aktivních itemů (ms). */
     itemCooldowns: Record<string, number>;
+    /** Vybrané talenty. */
+    talents: { tier: number; pick: number }[];
+    /** Nevybraný talent (10/15), null = vybráno. */
+    talentPending: number | null;
     /** Cena buybacku; 0 = nedostupný (živý nebo na cooldownu). */
     buybackCost: number;
     buffs: Buff[];
@@ -2004,7 +2127,7 @@ export function visionSources(state: MobaState, team: Team): { x: number; z: num
   for (const hero of state.heroes) {
     if (hero.team === team && hero.alive) {
       // Orlí oko a jiné itemy vidění rozšiřují okruh — mlha je jejich protihra.
-      sources.push({ x: hero.x, z: hero.z, radius: VISION.hero + itemTotals(hero.items).vision });
+      sources.push({ x: hero.x, z: hero.z, radius: VISION.hero + itemTotals(hero.items).vision + talentTotals(hero).vision });
     }
   }
   for (const minion of state.minions) {
@@ -2108,6 +2231,8 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
         itemCooldowns: Object.fromEntries(
           Object.entries(hero.itemCooldowns).map(([id, at]) => [id, Math.max(0, (at ?? 0) - state.now)]),
         ),
+        talents: Object.entries(hero.talentPicks).map(([tier, pick]) => ({ tier: Number(tier), pick })),
+        talentPending: pendingTalent(hero),
         buybackCost: !hero.alive && state.now >= hero.buybackAt ? buybackCost(hero) : 0,
         buffs: hero.buffs,
     })),

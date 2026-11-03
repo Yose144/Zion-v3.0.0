@@ -69,6 +69,8 @@ export interface NetApi {
   sendBuyback: () => void;
   /** MOBA: aktivní item (klávesy 1–6), bod má smysl u skoku. */
   sendUseItem: (item: ItemId, x: number, z: number) => void;
+  /** MOBA: volba talentu (10/15). */
+  sendTalent: (tier: number, pick: number) => void;
   leaveRoom: () => void;
   /**
    * Herní data tečou přes subscription, ne přes React state — snapshoty
@@ -389,6 +391,13 @@ export function NetProvider({ children }: { children: ReactNode }) {
     [send],
   );
 
+  const sendTalent = useCallback<NetApi['sendTalent']>(
+    (tier, pick) => {
+      send({ t: 'talent', tier, pick });
+    },
+    [send],
+  );
+
   const value = useMemo<NetApi>(
     () => ({
       status,
@@ -413,6 +422,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       sendWard,
       sendBuyback,
       sendUseItem,
+      sendTalent,
     }),
     [
       status,
@@ -436,6 +446,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       sendWard,
       sendBuyback,
       sendUseItem,
+      sendTalent,
     ],
   );
 

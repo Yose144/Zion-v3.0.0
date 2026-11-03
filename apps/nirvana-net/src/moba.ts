@@ -16,6 +16,7 @@ import {
   emptyMobaSnapshot,
   heroById,
   mobaSnapshot,
+  pickTalent,
   placeWard,
   sellItem,
   useItem,
@@ -123,6 +124,14 @@ export function placeMobaWard(room: MobaRoomSim, connId: string, x: number, z: n
   const hero = heroById(room.sim, connId);
   if (!hero) return false;
   return placeWard(room.sim, hero, x, z);
+}
+
+/** Talenty — server rozhodne, jestli na volbu má hráč nárok. */
+export function pickMobaTalent(room: MobaRoomSim, connId: string, tier: number, pick: number): boolean {
+  if (!room.sim) return false;
+  const hero = heroById(room.sim, connId);
+  if (!hero) return false;
+  return pickTalent(hero, tier, pick);
 }
 
 /** Aktivní item — server rozhodne o cooldownu i efektu. */

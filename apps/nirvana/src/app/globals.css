@@ -5395,3 +5395,56 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
 .moba-inv-sell:hover {
   color: #ff7a6b;
 }
+
+/* ── MOBA F8: talent panel ───────────────────────────────────────── */
+
+.moba-talent {
+  position: absolute;
+  left: 50%;
+  top: 1.4rem;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid rgba(255, 209, 102, 0.45);
+  border-radius: 0.8rem;
+  background: rgba(6, 10, 9, 0.92);
+  pointer-events: auto;
+  z-index: 6;
+}
+
+.moba-talent > strong {
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #ffd166;
+  white-space: nowrap;
+}
+
+.moba-talent-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e9f2ee;
+  text-align: left;
+  cursor: pointer;
+}
+
+.moba-talent-btn:hover {
+  border-color: rgba(255, 209, 102, 0.6);
+  background: rgba(255, 209, 102, 0.12);
+}
+
+.moba-talent-btn b {
+  font-size: 0.68rem;
+}
+
+.moba-talent-btn small {
+  font-size: 0.55rem;
+  color: rgba(233, 242, 238, 0.65);
+}

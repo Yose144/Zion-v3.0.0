@@ -70,6 +70,8 @@ export function MobaOnline({
   sellRequest?: React.MutableRefObject<ItemId | null>;
   /** Buyback: stránka sem zapíše `true`, ovladač pošle serveru. */
   buybackRequest?: React.MutableRefObject<boolean>;
+  /** Talent: stránka sem zapíše volbu, ovladač ji pošle serveru. */
+  talentRequest?: React.MutableRefObject<{ tier: number; pick: number } | null>;
 }) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
   const selfPose = useRef<{ x: number; z: number; active: boolean } | null>(null);
@@ -118,6 +120,7 @@ function OnlineController({
   buyRequest,
   sellRequest,
   buybackRequest,
+  talentRequest,
   snapshotRef,
   selfPose,
 }: {
@@ -129,11 +132,12 @@ function OnlineController({
   buyRequest?: React.MutableRefObject<ItemId | null>;
   sellRequest?: React.MutableRefObject<ItemId | null>;
   buybackRequest?: React.MutableRefObject<boolean>;
+  talentRequest?: React.MutableRefObject<{ tier: number; pick: number } | null>;
   snapshotRef: React.MutableRefObject<MobaSnapshot | null>;
   selfPose: React.MutableRefObject<{ x: number; z: number; active: boolean } | null>;
 }) {
   const { camera, gl } = useThree();
-  const { subscribe, joinGame, leaveRoom, sendMobaInput, sendBuy, sendSell, sendWard, sendBuyback, sendUseItem, connected, youPlayerId } = useNet();
+  const { subscribe, joinGame, leaveRoom, sendMobaInput, sendBuy, sendSell, sendWard, sendBuyback, sendUseItem, sendTalent, connected, youPlayerId } = useNet();
   const keys = useRef(new Set<string>());
   const pointer = useRef({ x: 0, y: 0 });
   const attack = useRef(false);
@@ -277,6 +281,11 @@ function OnlineController({
     if (buybackRequest?.current) {
       buybackRequest.current = false;
       sendBuyback();
+    }
+    if (talentRequest?.current) {
+      const { tier, pick } = talentRequest.current;
+      talentRequest.current = null;
+      sendTalent(tier, pick);
     }
 
     const snapshot = snapshotRef.current;

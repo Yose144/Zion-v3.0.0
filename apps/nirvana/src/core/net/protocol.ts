@@ -45,8 +45,10 @@ const asItemId = (value: unknown): ItemId | null =>
  * 14 — **aktivní itemy**: zpráva `use` a `itemCooldowns` u hrdiny.
  *      Starý klient by itemy neuměl spustit (klávesy 1–6) a neviděl by
  *      jejich cooldowny.
+ * 15 — **talenty**: zpráva `talent` a `talents`/`talentPending` u hrdiny.
+ *      Starý klient by neuměl talent vybrat a neviděl by, že na něj má nárok.
  */
-export const PROTO_VERSION = 14;
+export const PROTO_VERSION = 15;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -264,6 +266,8 @@ export type ClientMessage =
   | { t: 'buyback' }
   /** MOBA: použití aktivního itemu (bod má smysl u skoku). */
   | { t: 'use'; item: ItemId; x?: number; z?: number }
+  /** MOBA: volba talentu (tier 10/15, pick 0/1). */
+  | { t: 'talent'; tier: number; pick: number }
   | { t: 'leave' }
   | {
       t: 'input';
@@ -433,6 +437,13 @@ export function parseClientMessage(raw: string): ClientMessage | null {
 
     case 'buyback':
       return { t: 'buyback' };
+
+    case 'talent': {
+      const tier = Number(message.tier);
+      const pick = Number(message.pick);
+      if ((tier !== 10 && tier !== 15) || (pick !== 0 && pick !== 1)) return null;
+      return { t: 'talent', tier, pick };
+    }
 
     case 'use': {
       const item = asItemId(message.item);
