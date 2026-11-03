@@ -9,7 +9,7 @@
  * Spuštění: npx tsx apps/nirvana/test/moba-sim.mjs
  */
 
-import { BASE_SPEED, BOT_SKILLS, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isHidden, isVisibleTo, ITEMS, ITEM_SLOTS, pendingTalent, pickTalent, placeSentry, placeWard, sellItem, stepMoba, mobaSnapshot, talentRole, talentsFor, talentTotals, totalXpAt, useItem, visionSources, NO_INPUT, SENTRY_DURATION_MS, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
+import { BASE_SPEED, BOT_SKILLS, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isHidden, isVisibleTo, ITEMS, ITEM_SLOTS, pendingTalent, pickTalent, placeSentry, placeWard, sellItem, snapAim, stepMoba, mobaSnapshot, talentRole, talentsFor, talentTotals, totalXpAt, useBattleSpell, useItem, visionSources, NO_INPUT, SENTRY_DURATION_MS, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
 import { SCHOOL_TRAITS, spellCooldown, spellMana, spellRank, spellsForAvatar } from '../src/core/moba/spells.ts';
 import { BUSHES, INHIBITOR_RESPAWN_MS, isStructureProtected, NEXUS_HP, VISION, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
 
@@ -901,6 +901,32 @@ check(
   const hpBefore = victim.hp;
   advance(a, 400, { ...NO_INPUT, attack: true });
   check('neviditelnost: nejde ho zasáhnout', victim.hp === hpBefore, `${hpBefore} → ${victim.hp}`);
+}
+
+// ── mobilní vrstva: battle spell a auto-aim (F19) ──────────────────
+{
+  console.log('\n-- battle spell a auto-aim --');
+  const s = createMoba(0, 82, 11_000_000);
+  const hero = s.heroes.find((candidate) => candidate.id === 'hero-you');
+  hero.x = 0;
+  hero.z = 0;
+
+  // Flicker: skok max 6 m
+  check('flicker: skok na bod', useBattleSpell(s, hero, 20, 0) && Math.round(hero.x) === 6, String(hero.x));
+  check('flicker: má cooldown', hero.battleSpellAt > s.now);
+  check('flicker: podruhé ne', !useBattleSpell(s, hero, 0, 0));
+
+  // auto-aim: přichytí se na nejbližšího nepřítele v dosahu
+  const foe = s.heroes.find((candidate) => candidate.id === 'hero-foe');
+  foe.x = 10;
+  foe.z = 0;
+  const snapped = snapAim(s.heroes, 'blue', 9, 1);
+  check('auto-aim: přichytí nepřítele', snapped?.x === 10 && snapped?.z === 0, JSON.stringify(snapped));
+  check('auto-aim: mimo dosah nic', snapAim(s.heroes, 'blue', 40, 40) === null);
+  foe.alive = false;
+  check('auto-aim: mrtvý se nechytá', snapAim(s.heroes, 'blue', 9, 1) === null);
+  // z pohledu red je naopak nepřítel modrý hrdina (na x=6)
+  check('auto-aim: tým rozhoduje, kdo je cíl', snapAim(s.heroes, 'red', 9, 1)?.x === 6);
 }
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);

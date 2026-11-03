@@ -50,8 +50,10 @@ const asItemId = (value: unknown): ItemId | null =>
  * 16 — **neviditelnost**: `sentries`, `invisible` u hrdiny a zpráva `sentry`.
  *      Starý klient by neviděl vlastní neviditelnost ani sentry a neuměl by
  *      je položit — a nechápal, proč soupeř „zmizel".
+ * 17 — **battle spell**: zpráva `battlespell` a `battleSpellIn` u hrdiny.
+ *      Starý klient by neuměl Flicker spustit a neviděl by jeho cooldown.
  */
-export const PROTO_VERSION = 16;
+export const PROTO_VERSION = 17;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -273,6 +275,8 @@ export type ClientMessage =
   | { t: 'talent'; tier: number; pick: number }
   /** MOBA: polož sentry (odhaluje neviditelné). */
   | { t: 'sentry'; x: number; z: number }
+  /** MOBA: battle spell (Flicker) na bod. */
+  | { t: 'battlespell'; x: number; z: number }
   | { t: 'leave' }
   | {
       t: 'input';
@@ -445,6 +449,9 @@ export function parseClientMessage(raw: string): ClientMessage | null {
 
     case 'sentry':
       return { t: 'sentry', x: num(message.x, -60, 60), z: num(message.z, -60, 60) };
+
+    case 'battlespell':
+      return { t: 'battlespell', x: num(message.x, -60, 60), z: num(message.z, -60, 60) };
 
     case 'talent': {
       const tier = Number(message.tier);

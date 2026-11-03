@@ -5591,3 +5591,78 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   align-items: center;
   gap: 0.5rem;
 }
+
+/* ── MOBA F19: battle spell a rychlý nákup ────────────────────────── */
+
+.moba-battlespell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-width: 2.4rem;
+  padding: 0 0.5rem;
+  border: 1px solid rgba(165, 180, 252, 0.55);
+  border-radius: 0.6rem;
+  background: rgba(165, 180, 252, 0.14);
+  color: #c7d2fe;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.moba-battlespell.is-cooling {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.moba-battlespell small {
+  font-size: 0.6rem;
+  color: #a5b4fc;
+}
+
+.moba-quickbuy {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  border-radius: 0.6rem;
+  background: rgba(255, 209, 102, 0.08);
+}
+
+.moba-quickbuy > strong {
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 209, 102, 0.85);
+  white-space: nowrap;
+}
+
+.moba-quickbuy-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid rgba(255, 209, 102, 0.5);
+  border-radius: 0.5rem;
+  background: rgba(255, 209, 102, 0.16);
+  color: #ffe9b8;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.moba-quickbuy-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.moba-touch-btn.is-flicker {
+  width: 3.2rem;
+  height: 3.2rem;
+  font-size: 1.15rem;
+  border-color: rgba(165, 180, 252, 0.55);
+  color: #c7d2fe;
+}

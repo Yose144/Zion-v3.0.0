@@ -62,6 +62,7 @@ import {
   removeMobaSeat,
   sellMobaItem,
   setMobaInput,
+  useMobaBattleSpell,
   useMobaItem,
   stepMobaRoom,
   MOBA_ROOM_SIZE,
@@ -527,6 +528,16 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
         return;
       }
       placeMobaWard(room.moba, conn.id, message.x, message.z);
+      return;
+    }
+
+    case 'battlespell': {
+      const room = conn.room;
+      if (!room?.moba) {
+        sendError(conn, room ? 'not_available' : 'not_in_room');
+        return;
+      }
+      useMobaBattleSpell(room.moba, conn.id, message.x, message.z);
       return;
     }
 

@@ -21,7 +21,7 @@ import { MobaGame, type MobaStats } from '@/core/moba/MobaGame';
 import { MobaOnline } from '@/core/moba/MobaOnline';
 import { MobaMinimap } from '@/core/moba/MobaMinimap';
 import { NODE_SITES } from '@/core/moba/map';
-import { ITEMS, ITEM_SLOTS, SELL_RATIO, WARD_STOCK_MAX, totalXpAt, type BotSkill, type ItemId } from '@/core/moba/sim';
+import { ITEMS, ITEM_SLOTS, SELL_RATIO, WARD_STOCK_MAX, talentRole, totalXpAt, type BotSkill, type ItemId, type TalentRole } from '@/core/moba/sim';
 
 /** Rychlé hledání itemu podle id — používá inventář i obchod. */
 const ITEM_BY_ID = new Map(ITEMS.map((item) => [item.id, item]));
@@ -40,6 +40,13 @@ type Mode = 'solo' | 'online';
 type OnlinePhase = 'connecting' | 'waiting' | 'countdown' | 'running' | 'ended' | 'offline';
 
 const EMPTY_STATS: MobaStats | null = null;
+
+/** Doporučený build podle archetypu — pro rychlý nákup na mobilu. */
+const RECOMMENDED: Record<TalentRole, ItemId[]> = {
+  aggressive: ['blade', 'boots', 'blink', 'aegis', 'lotus', 'crown'],
+  support: ['aegis', 'barrier', 'boots', 'lotus', 'crown', 'blade'],
+  control: ['boots', 'barrier', 'blade', 'lotus', 'crown', 'aegis'],
+};
 
 /** Portrét hrdiny s fallbackem na iniciálu (katalog má mezery v id). */
 function Portrait({
@@ -343,6 +350,7 @@ export default function EarthPage() {
               sellRequest={sellRequest}
               buybackRequest={buybackRequest}
               talentRequest={talentRequest}
+              autoAim={coarse}
               debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
             />
           ) : (
@@ -355,6 +363,7 @@ export default function EarthPage() {
               sellRequest={sellRequest}
               buybackRequest={buybackRequest}
               talentRequest={talentRequest}
+              autoAim={coarse}
               debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
             />
           )}
@@ -489,6 +498,20 @@ export default function EarthPage() {
               <span className="moba-sentry-count" title={cs ? 'sentry (H položí) — odhalí neviditelné' : 'sentry (H places) — reveals invisible'}>
                 🕯 {stats?.sentries ?? 0}
               </span>
+              <button
+                type="button"
+                className={`moba-battlespell${(stats?.battleSpellIn ?? 0) > 0 ? ' is-cooling' : ''}`}
+                title={cs ? 'Flicker (V) — krátký skok, 60 s' : 'Flicker (V) — short blink, 60 s'}
+                disabled={(stats?.battleSpellIn ?? 0) > 0}
+                onClick={() => {
+                  window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyV', bubbles: true }));
+                }}
+              >
+                ⚡
+                {(stats?.battleSpellIn ?? 0) > 0 && (
+                  <small>{Math.ceil((stats?.battleSpellIn ?? 0) / 1000)}</small>
+                )}
+              </button>
               <div className="moba-inventory" title={cs ? 'inventář: 1–6 použije aktivní item, klik prodá' : 'inventory: 1–6 uses an active item, click sells'}>
                 {Array.from({ length: ITEM_SLOTS }).map((_, index) => {
                   const itemId = stats?.items[index];
@@ -554,6 +577,37 @@ export default function EarthPage() {
 
             {shopOpen && (
               <div className="moba-shop-panel">
+                {(() => {
+                  const items = stats?.items ?? [];
+                  const role = talentRole(spells[0]?.school ?? 'cosmic');
+                  const next = RECOMMENDED[role].find((id) => !items.includes(id));
+                  if (!next) return null;
+                  const item = ITEM_BY_ID.get(next);
+                  if (!item) return null;
+                  const owned = (item.components ?? []).filter((component) => items.includes(component));
+                  const price = Math.max(
+                    0,
+                    item.cost - owned.reduce((sum, component) => sum + (ITEM_BY_ID.get(component)?.cost ?? 0), 0),
+                  );
+                  const affordable = (stats?.gold ?? 0) >= price;
+                  return (
+                    <div className="moba-quickbuy">
+                      <strong>{cs ? 'Doporučeno' : 'Recommended'}</strong>
+                      <button
+                        type="button"
+                        className="moba-quickbuy-btn"
+                        disabled={!affordable}
+                        onClick={() => {
+                          buyRequest.current = next;
+                        }}
+                      >
+                        <span>{item.name[cs ? 'cs' : 'en']}</span>
+                        <small>{price} ◈</small>
+                      </button>
+                    </div>
+                  );
+                })()}
+
                 {(['base', 'built'] as const).map((group) => (
                   <div key={group} className="moba-shop-group">
                     <strong>{group === 'base' ? (cs ? 'Základ' : 'Base') : cs ? 'Složené' : 'Built'}</strong>

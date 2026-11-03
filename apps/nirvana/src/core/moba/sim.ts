@@ -160,6 +160,11 @@ export const BUYBACK_PER_LEVEL = 50;
 export const BUYBACK_COOLDOWN_MS = 180_000;
 export const BUYBACK_HP_RATIO = 0.6;
 export const RESPAWN_BASE_MS = 5000;
+// ── battle spell (F19) ────────────────────────────────────────────
+// Jeden „summoner spell" jako v Mobile Legends: Flicker = krátký blink.
+// Drží ho sim (cooldown i efekt), klient posílá jen bod.
+export const BATTLE_SPELL_COOLDOWN_MS = 60_000;
+export const BATTLE_SPELL_RANGE = 6;
 export const RESPAWN_PER_LEVEL_MS = 1500;
 /** Základna léčí — bez toho se hrdina po souboji nikdy nevrátí do hry. */
 export const FOUNTAIN_RADIUS = 9;
@@ -582,6 +587,8 @@ export interface Hero {
   talentPicks: Record<number, number>;
   /** Kdy může hrdina znovu buybackovat (ms, sim čas). */
   buybackAt: number;
+  /** Kdy půjde znovu použít battle spell (Flicker). */
+  battleSpellAt: number;
   items: ItemId[];
   buffs: Buff[];
   isPlayer: boolean;
@@ -811,6 +818,7 @@ function makeHero(id: string, team: Team, heroId: number, spawn: { x: number; z:
     wards: 0,
     sentries: 0,
     buybackAt: 0,
+    battleSpellAt: 0,
     itemCooldowns: {},
     talentPicks: {},
     items: [],
@@ -1545,6 +1553,12 @@ function stepBot(state: MobaState, hero: Hero, now: number) {
       if (useItem(state, hero, blink, target.x, target.z)) return;
     }
   }
+  // battle spell: bot uskočí, když je nízko a nepřítel blízko
+  if (retreating && now >= hero.battleSpellAt && target.distance < 6) {
+    const awayX = hero.x - (target.x - hero.x);
+    const awayZ = hero.z - (target.z - hero.z);
+    if (useBattleSpell(state, hero, awayX, awayZ)) return;
+  }
   const surge = activeItemOf(hero, 'haste');
   if (surge && target.distance > 5 && useItem(state, hero, surge, hero.x, hero.z)) return;
 
@@ -2173,6 +2187,49 @@ export function isHidden(state: MobaState, hero: Hero, viewerTeam: Team): boolea
 }
 
 /**
+ * Auto-aim (mobilní ergonomie): když hráč ťukne kouzlo blízko nepřítele,
+ * bod se přichytí na něj. Vrací `null`, když nikdo v dosahu není — pak se
+ * sesílá na původní bod.
+ */
+export function snapAim(
+  heroes: readonly { team: Team; alive: boolean; x: number; z: number }[],
+  team: Team,
+  x: number,
+  z: number,
+  maxDistance = 8,
+): { x: number; z: number } | null {
+  let best: { x: number; z: number } | null = null;
+  let bestDistance = maxDistance;
+  for (const hero of heroes) {
+    if (!hero.alive || hero.team === team) continue;
+    const distanceTo = Math.hypot(hero.x - x, hero.z - z);
+    if (distanceTo < bestDistance) {
+      bestDistance = distanceTo;
+      best = { x: hero.x, z: hero.z };
+    }
+  }
+  return best;
+}
+
+/**
+ * Battle spell „Flicker" — krátký blink na bod (max 6 m), 60 s cooldown.
+ * Server rozhoduje o dosahu i cooldownu; klient posílá jen bod.
+ */
+export function useBattleSpell(state: MobaState, hero: Hero, x: number, z: number): boolean {
+  if (!hero.alive) return false;
+  if (state.now < hero.battleSpellAt) return false;
+  const dx = x - hero.x;
+  const dz = z - hero.z;
+  const length = Math.hypot(dx, dz) || 1;
+  const step = Math.min(BATTLE_SPELL_RANGE, length);
+  hero.x = Math.max(-MAP_HALF_X, Math.min(MAP_HALF_X, hero.x + (dx / length) * step));
+  hero.z = Math.max(-MAP_HALF_Z, Math.min(MAP_HALF_Z, hero.z + (dz / length) * step));
+  hero.battleSpellAt = state.now + BATTLE_SPELL_COOLDOWN_MS;
+  addEffect(state, 'aoe', hero.x, hero.z, 1.5, '#a5b4fc', 340);
+  return true;
+}
+
+/**
  * Buyback — mrtvý hrdina zaplatí a vrátí se do hry na 60 % HP.
  * Cooldown drží, aby se z toho nestal permanentní respawn zdarma.
  */
@@ -2293,6 +2350,8 @@ export interface MobaSnapshot {
     talents: { tier: number; pick: number }[];
     /** Nevybraný talent (10/15), null = vybráno. */
     talentPending: number | null;
+    /** Zbývající cooldown battle spellu (ms). */
+    battleSpellIn: number;
     /** Cena buybacku; 0 = nedostupný (živý nebo na cooldownu). */
     buybackCost: number;
     buffs: Buff[];
@@ -2458,6 +2517,7 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
         ),
         talents: Object.entries(hero.talentPicks).map(([tier, pick]) => ({ tier: Number(tier), pick })),
         talentPending: pendingTalent(hero),
+        battleSpellIn: Math.max(0, hero.battleSpellAt - state.now),
         buybackCost: !hero.alive && state.now >= hero.buybackAt ? buybackCost(hero) : 0,
         buffs: hero.buffs,
     })),

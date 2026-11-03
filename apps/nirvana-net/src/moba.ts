@@ -20,6 +20,7 @@ import {
   placeSentry,
   placeWard,
   sellItem,
+  useBattleSpell,
   useItem,
   stepMoba,
   NO_INPUT,
@@ -125,6 +126,14 @@ export function placeMobaWard(room: MobaRoomSim, connId: string, x: number, z: n
   const hero = heroById(room.sim, connId);
   if (!hero) return false;
   return placeWard(room.sim, hero, x, z);
+}
+
+/** Battle spell (Flicker) — server rozhodne o dosahu i cooldownu. */
+export function useMobaBattleSpell(room: MobaRoomSim, connId: string, x: number, z: number): boolean {
+  if (!room.sim) return false;
+  const hero = heroById(room.sim, connId);
+  if (!hero) return false;
+  return useBattleSpell(room.sim, hero, x, z);
 }
 
 /** Sentry — server rozhodne o zásobě i dosahu. */

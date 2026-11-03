@@ -18,7 +18,7 @@ import { useNet } from '@/core/net/useNet';
 import { spellsForAvatar } from './spells';
 import { MobaStage } from './MobaStage';
 import { statsFromSnapshot, type MobaStats } from './MobaGame';
-import { itemTotals, type ItemId } from './sim';
+import { itemTotals, snapAim, type ItemId } from './sim';
 import { MobaFxOverlay, type DamageFloater } from './MobaFxOverlay';
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
@@ -61,6 +61,7 @@ export function MobaOnline({
   sellRequest,
   buybackRequest,
   talentRequest,
+  autoAim,
 }: {
   heroId: number;
   onStats: (stats: MobaStats) => void;
@@ -75,6 +76,8 @@ export function MobaOnline({
   buybackRequest?: React.MutableRefObject<boolean>;
   /** Talent: stránka sem zapíše volbu, ovladač ji pošle serveru. */
   talentRequest?: React.MutableRefObject<{ tier: number; pick: number } | null>;
+  /** Auto-aim (mobil): kouzlo se přichytí na blízkého nepřítele. */
+  autoAim?: boolean;
 }) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
   const selfPose = useRef<{ x: number; z: number; active: boolean } | null>(null);
@@ -101,6 +104,7 @@ export function MobaOnline({
           sellRequest={sellRequest}
           buybackRequest={buybackRequest}
           talentRequest={talentRequest}
+          autoAim={autoAim}
           snapshotRef={snapshotRef}
           selfPose={selfPose}
         />
@@ -138,6 +142,7 @@ function OnlineController({
   sellRequest,
   buybackRequest,
   talentRequest,
+  autoAim,
   snapshotRef,
   selfPose,
 }: {
@@ -150,17 +155,19 @@ function OnlineController({
   sellRequest?: React.MutableRefObject<ItemId | null>;
   buybackRequest?: React.MutableRefObject<boolean>;
   talentRequest?: React.MutableRefObject<{ tier: number; pick: number } | null>;
+  autoAim?: boolean;
   snapshotRef: React.MutableRefObject<MobaSnapshot | null>;
   selfPose: React.MutableRefObject<{ x: number; z: number; active: boolean } | null>;
 }) {
   const { camera, gl } = useThree();
-  const { subscribe, joinGame, leaveRoom, sendMobaInput, sendBuy, sendSell, sendWard, sendSentry, sendBuyback, sendUseItem, sendTalent, connected, youPlayerId } = useNet();
+  const { subscribe, joinGame, leaveRoom, sendMobaInput, sendBuy, sendSell, sendWard, sendSentry, sendBattleSpell, sendBuyback, sendUseItem, sendTalent, connected, youPlayerId } = useNet();
   const keys = useRef(new Set<string>());
   const pointer = useRef({ x: 0, y: 0 });
   const attack = useRef(false);
   const queuedCast = useRef<{ slot: 'Q' | 'W' | 'E' | 'R'; at: number } | null>(null);
   const queuedWard = useRef(false);
   const queuedSentry = useRef(false);
+  const queuedBattleSpell = useRef(false);
   const queuedItem = useRef<ItemId | null>(null);
   const lastStats = useRef(0);
   const endedSent = useRef(false);
@@ -217,6 +224,7 @@ function OnlineController({
       // G = ward na zem (stejná klávesa jako v sólu)
       if (event.code === 'KeyG') queuedWard.current = true;
       if (event.code === 'KeyH') queuedSentry.current = true;
+      if (event.code === 'KeyV') queuedBattleSpell.current = true;
       // 1–6 = aktivní item (id vezmi ze snapshotu, ne z lokálního stavu)
       const digit = /^Digit([1-6])$/.exec(event.code);
       if (digit) {
@@ -268,7 +276,13 @@ function OnlineController({
     const hit = raycaster.ray.intersectPlane(groundPlane, castPoint);
     // kouzlo starší než 400 ms zahodit (hráč mezitím mohl kliknout jinam)
     if (queuedCast.current && Date.now() - queuedCast.current.at > 400) queuedCast.current = null;
-    const cast = queuedCast.current && hit ? { slot: queuedCast.current.slot, x: castPoint.x, z: castPoint.z } : null;
+    const youNow = snapshotRef.current?.heroes.find((hero) => hero.id === youPlayerId);
+    const aimNow = autoAim && hit && youNow
+      ? snapAim(snapshotRef.current?.heroes ?? [], youNow.team, castPoint.x, castPoint.z)
+      : null;
+    const cast = queuedCast.current && hit
+      ? { slot: queuedCast.current.slot, x: aimNow?.x ?? castPoint.x, z: aimNow?.z ?? castPoint.z }
+      : null;
 
     // vstup na server (hook sám omezuje na 20 Hz). Kouzlo se maže jen když
     // se opravdu odeslalo — jinak by ho throttle tiše zahodil (reálná chyba).
@@ -291,6 +305,10 @@ function OnlineController({
     if (queuedWard.current) {
       if (hit) queuedWard.current = false;
       if (hit) sendWard(castPoint.x, castPoint.z);
+    }
+    if (queuedBattleSpell.current) {
+      if (hit) queuedBattleSpell.current = false;
+      if (hit) sendBattleSpell(castPoint.x, castPoint.z);
     }
     if (queuedSentry.current) {
       if (hit) queuedSentry.current = false;

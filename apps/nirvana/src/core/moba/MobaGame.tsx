@@ -14,7 +14,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { buyItem, buyback, createMoba, mobaSnapshot, pickTalent, placeSentry, placeWard, sellItem, stepMoba, useItem, NO_INPUT, type BotSkill, type ItemId, type MobaSnapshot, type MobaState } from './sim';
+import { buyItem, buyback, createMoba, mobaSnapshot, pickTalent, placeSentry, placeWard, sellItem, snapAim, stepMoba, useBattleSpell, useItem, NO_INPUT, type BotSkill, type ItemId, type MobaSnapshot, type MobaState } from './sim';
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import { MobaStage } from './MobaStage';
@@ -37,6 +37,7 @@ export interface MobaStats {
   buybackCost: number;
   itemCooldowns: Record<string, number>;
   talentPending: number | null;
+  battleSpellIn: number;
   spells: { slot: SpellSlot; name: string; school: SpellSchool; cooldown: number; cooldownMs: number; mana: number; color: string; rank: number }[];
   playerHp: number;
   playerMaxHp: number;
@@ -82,6 +83,8 @@ export interface MobaProps {
   buybackRequest?: React.MutableRefObject<boolean>;
   /** Talent: stránka sem zapíše volbu, ovladač ji aplikuje. */
   talentRequest?: React.MutableRefObject<{ tier: number; pick: number } | null>;
+  /** Auto-aim (mobil): kouzlo se přichytí na blízkého nepřítele. */
+  autoAim?: boolean;
 }
 
 /** Sestaví HUD data ze snapshotu — společná pro sólo i online. */
@@ -122,6 +125,7 @@ export function statsFromSnapshot(
     buybackCost: you?.buybackCost ?? 0,
     itemCooldowns: you?.itemCooldowns ?? {},
     talentPending: you?.talentPending ?? null,
+    battleSpellIn: you?.battleSpellIn ?? 0,
     playerLevel: you?.level ?? 1,
     playerHeroId: you?.heroId ?? 0,
     xp: you?.xp ?? 0,
@@ -146,6 +150,7 @@ export function MobaGame({
   sellRequest,
   buybackRequest,
   talentRequest,
+  autoAim,
 }: MobaProps) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
   const floaters = useRef<DamageFloater[]>([]);
@@ -171,6 +176,7 @@ export function MobaGame({
         sellRequest={sellRequest}
         buybackRequest={buybackRequest}
         talentRequest={talentRequest}
+        autoAim={autoAim}
         snapshotRef={snapshotRef}
       />
       <MobaStage snapshotRef={snapshotRef} youId="hero-you" floaters={floaters} cameraRef={cameraRef} />
@@ -197,6 +203,7 @@ function SoloController({
   sellRequest,
   buybackRequest,
   talentRequest,
+  autoAim,
   snapshotRef,
 }: MobaProps & { snapshotRef: React.MutableRefObject<MobaSnapshot | null> }) {
   const { camera, gl } = useThree();
@@ -207,6 +214,7 @@ function SoloController({
   const queuedCast = useRef<{ slot: SpellSlot } | null>(null);
   const queuedWard = useRef(false);
   const queuedSentry = useRef(false);
+  const queuedBattleSpell = useRef(false);
   const queuedItem = useRef<ItemId | null>(null);
   const lastStats = useRef(0);
   const lastTick = useRef(0);
@@ -227,6 +235,8 @@ function SoloController({
       if (event.code === 'KeyG') queuedWard.current = true;
       // H = sentry (odhalí neviditelné)
       if (event.code === 'KeyH') queuedSentry.current = true;
+      // V = battle spell (Flicker)
+      if (event.code === 'KeyV') queuedBattleSpell.current = true;
       // 1–6 = aktivní item ve slotu (standard MOBA)
       const digit = /^Digit([1-6])$/.exec(event.code);
       if (digit) {
@@ -288,7 +298,11 @@ function SoloController({
 
     raycaster.setFromCamera(new THREE.Vector2(pointer.current.x, pointer.current.y), camera);
     const hit = raycaster.ray.intersectPlane(groundPlane, castPoint);
-    const cast = queuedCast.current && hit ? { slot: queuedCast.current.slot, x: castPoint.x, z: castPoint.z } : null;
+    // auto-aim: na mobilu se kouzlo přichytí na blízkého nepřítele
+    const aim = autoAim && hit ? snapAim(state.current.heroes, you.team, castPoint.x, castPoint.z) : null;
+    const cast = queuedCast.current && hit
+      ? { slot: queuedCast.current.slot, x: aim?.x ?? castPoint.x, z: aim?.z ?? castPoint.z }
+      : null;
     queuedCast.current = null;
 
     if (cast) {
@@ -300,6 +314,12 @@ function SoloController({
     if (queuedWard.current) {
       if (hit) queuedWard.current = false;
       if (hit && placeWard(state.current, you, castPoint.x, castPoint.z)) mobaAudio.buy();
+    }
+
+    // battle spell (V) — Flicker
+    if (queuedBattleSpell.current) {
+      if (hit) queuedBattleSpell.current = false;
+      if (hit && useBattleSpell(state.current, you, castPoint.x, castPoint.z)) mobaAudio.buy();
     }
 
     // sentry (H) — stejný bod jako ward
