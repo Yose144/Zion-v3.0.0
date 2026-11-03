@@ -72,3 +72,11 @@ Pro dokumentační změny stačí `git diff --check`.
 
 - **`--gate-offset-y` a `top: calc(50% + var(...))`**: při extrakci cizího CSS **neprefixuj `:root`**. `.k-stargate :root` nematchuje nikdy → proměnná chybí → `calc()` je neplatné → `top: auto` → absolutně pozicovaný prvek se posune o polovinu své výšky nahoru. Projevilo se to jako „brána je uříznutá". Definuj proměnné radši přímo na scope elementu (`.k-stargate`), ne na `:root`.
 - **Po každém portu cizího CSS změř `getBoundingClientRect()`**, ne jen „vypadá to dobře na screenshotu". Rozdíl 369 px jsem na obrázku přehlédl, změřit ho bylo otázkou jedné věty.
+
+## Pasti ze scény Místnosti (2026-11-03)
+
+- **R3F `onClick` volá jen objekty z `initialHits`** — pointerdown musí trefit tentýž objekt. Drag skončící na markeru klik neodpálí „zadarmo" — `event.delta` hlídá jen drag, který *začal* na objektu. `page.mouse.click` v E2E delta=0.
+- **Hit-sféry jdou „skrz" neinteraktivní geometrii.** Planeta bez handlerů raycast neblokuje → marker za horizontem reaguje. Neprůhledné těleso dostane `onPointerOver` se `stopPropagation`, aby zastiňovalo markery za ním.
+- **Embed pás ≠ fullscreen svět.** Ve stránce, která scrolluje, `wheel` na plátně nesmí zoomovat — `OrbitRig` má `enableZoom: false`, jinak se scroll zasekne na scéně.
+- **E2E proti rotující scéně:** markery autoRotatem plynou → sweep pozici znovu najdi těsně před klikem, jinak míjíš. A `router.push` na datový portál trvá **sekundy** (upstream timeout) — URL pollluj ~5 s, ne fixní wait.
+- **Favicon:** `public/favicon.png` stačí na `<link>`, ale prohlížeč si bez deklarace žádá `/favicon.ico` → 404 v konzoli. `src/app/icon.png` (file convention) ji umlčí.

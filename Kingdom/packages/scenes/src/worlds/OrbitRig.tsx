@@ -22,6 +22,8 @@ export interface WorldControls {
   maxPolarAngle?: number;
   target?: [number, number, number];
   enablePan?: boolean;
+  /** `false` = kolečko nechává stránku scrollovat (embed pás ve stránce). */
+  enableZoom?: boolean;
 }
 
 const MIN_POLAR = 0.08;
@@ -117,17 +119,18 @@ export function OrbitRig(props: WorldControls) {
     element.addEventListener('pointermove', onPointerMove);
     element.addEventListener('pointerup', onPointerUp);
     element.addEventListener('pointercancel', onPointerUp);
-    element.addEventListener('wheel', onWheel, { passive: false });
+    const zoom = props.enableZoom ?? true;
+    if (zoom) element.addEventListener('wheel', onWheel, { passive: false });
 
     return () => {
       element.removeEventListener('pointerdown', onPointerDown);
       element.removeEventListener('pointermove', onPointerMove);
       element.removeEventListener('pointerup', onPointerUp);
       element.removeEventListener('pointercancel', onPointerUp);
-      element.removeEventListener('wheel', onWheel);
+      if (zoom) element.removeEventListener('wheel', onWheel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [domElement, camera, target]);
+  }, [domElement, camera, target, props.enableZoom]);
 
   useFrame((_, delta) => {
     if (!controls.enabled || !controls.autoRotate || dragging.current) return;

@@ -943,6 +943,22 @@ body::after {
   line-height: 1.4;
 }
 
+/* tooltip nad markerem / Branou — drží se kurzoru, klikačku ignoruje */
+.k-scene-tip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 16px));
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--k-line);
+  background: var(--k-panel);
+  color: var(--k-text-dim);
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 3;
+}
+
 /* ---------- svět na celou plochu ---------- */
 
 .k-world {

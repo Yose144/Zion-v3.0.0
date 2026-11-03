@@ -29,7 +29,7 @@ export default async function RoomPage() {
 
   return (
     <Frame locale={locale}>
-      <SceneHost markers={markers} label={t(locale, 'roomScene')} />
+      <SceneHost markers={markers} label={t(locale, 'roomScene')} gateLabel={t(locale, 'gate')} />
 
       <div className="k-stage-head">
         <h1 className="k-title">{t(locale, 'room')}</h1>

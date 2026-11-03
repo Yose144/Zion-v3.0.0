@@ -41,7 +41,13 @@ export function NewEarth({ idle = true }: { idle?: boolean }) {
 
   return (
     <group ref={group}>
-      <mesh>
+      {/* planeta musí blokovat raycast — jinak jdou klikat markery za jejím
+          horizontem, které hráč nevidí */}
+      <mesh
+        onPointerOver={(event) => {
+          event.stopPropagation();
+        }}
+      >
         <sphereGeometry args={[NEW_EARTH.radius, 64, 64]} />
         <meshStandardMaterial map={texture} roughness={0.86} metalness={0.03} />
       </mesh>

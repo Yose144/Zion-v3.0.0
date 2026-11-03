@@ -8,12 +8,26 @@ import { useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { GATE } from '@zion/world';
+import type { SceneHover } from './OrbitScene';
 
-export function Gate({ onSelect }: { onSelect?: () => void }) {
+const CLICK_TOLERANCE = 6;
+
+export function Gate({
+  onSelect,
+  onHover,
+  label,
+  idle = true,
+}: {
+  onSelect?: () => void;
+  onHover?: (target: SceneHover | null) => void;
+  label?: string;
+  idle?: boolean;
+}) {
   const ring = useRef<THREE.Mesh>(null);
+  const hit = { id: GATE.id, title: label ?? GATE.id };
 
   useFrame((state) => {
-    if (!ring.current) return;
+    if (!ring.current || !idle) return;
     const t = state.clock.elapsedTime;
     const pulse = 1 + Math.sin(t * 1.1) * 0.03;
     ring.current.scale.setScalar(pulse);
@@ -22,16 +36,27 @@ export function Gate({ onSelect }: { onSelect?: () => void }) {
 
   return (
     <group position={[GATE.position.x, GATE.position.y, GATE.position.z]}>
+      {/* neviditelný širší torus — tenký kruh se těžko trefuje */}
       <mesh
-        ref={ring}
-        onClick={onSelect}
-        onPointerOver={() => {
+        onClick={(event) => {
+          event.stopPropagation();
+          if (event.delta <= CLICK_TOLERANCE) onSelect?.();
+        }}
+        onPointerOver={(event) => {
+          event.stopPropagation();
+          onHover?.(hit);
           document.body.style.cursor = 'pointer';
         }}
         onPointerOut={() => {
+          onHover?.(null);
           document.body.style.cursor = '';
         }}
       >
+        <torusGeometry args={[GATE.radius, 0.09, 8, 64]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+
+      <mesh ref={ring}>
         <torusGeometry args={[GATE.radius, 0.018, 12, 96]} />
         <meshBasicMaterial color="#7aa7ff" transparent opacity={0.85} />
       </mesh>

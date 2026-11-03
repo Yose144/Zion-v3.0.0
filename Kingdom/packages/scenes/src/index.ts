@@ -8,7 +8,7 @@
  */
 
 export { OrbitScene } from './OrbitScene';
-export type { OrbitSceneProps } from './OrbitScene';
+export type { OrbitSceneProps, SceneHover } from './OrbitScene';
 export { NewEarth } from './NewEarth';
 export { IssobellaRing } from './IssobellaRing';
 export { Gate } from './Gate';
