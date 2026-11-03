@@ -85,6 +85,14 @@ export function MobaMinimap({
       context.fill();
     }
 
+    // wardy (vlastní tým) — malé čtverečky
+    for (const ward of snapshot.wards ?? []) {
+      context.fillStyle = '#7fe3d4';
+      context.globalAlpha = 0.9;
+      context.fillRect(sx(ward.x) - 1.5, sz(ward.z) - 1.5, 3, 3);
+    }
+    context.globalAlpha = 1;
+
     // boss (Prastarý strážce)
     if (snapshot.boss?.alive) {
       context.fillStyle = '#c084fc';

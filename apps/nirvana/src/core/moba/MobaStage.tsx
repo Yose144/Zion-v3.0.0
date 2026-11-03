@@ -23,6 +23,7 @@ const MAX_MINIONS = 180;
 const MAX_MONSTERS = 20;
 const MAX_PROJECTILES = 60;
 const MAX_EFFECTS = 60;
+const MAX_WARDS = 12;
 
 export function MobaStage({
   snapshotRef,
@@ -44,6 +45,7 @@ export function MobaStage({
   const nodeRefs = useRef<(THREE.Group | null)[]>([]);
   const runeRefs = useRef<(THREE.Group | null)[]>([]);
   const bossRef = useRef<THREE.Group | null>(null);
+  const wardMesh = useRef<THREE.InstancedMesh>(null);
   const minionMesh = useRef<THREE.InstancedMesh>(null);
   const monsterMesh = useRef<THREE.InstancedMesh>(null);
   const projectileMesh = useRef<THREE.InstancedMesh>(null);
@@ -102,6 +104,25 @@ export function MobaStage({
         );
       }
     });
+
+    // ── wardy ───────────────────────────────────────────────────────
+    if (wardMesh.current) {
+      const mesh = wardMesh.current;
+      const wards = snapshot.wards ?? [];
+      for (let index = 0; index < mesh.count; index += 1) {
+        const ward = wards[index];
+        if (!ward) {
+          tmp.position.set(0, -60, 0);
+          tmp.scale.setScalar(0.001);
+        } else {
+          tmp.position.set(ward.x, 1.1, ward.z);
+          tmp.scale.setScalar(1);
+        }
+        tmp.updateMatrix();
+        mesh.setMatrixAt(index, tmp.matrix);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+    }
 
     // ── boss ────────────────────────────────────────────────────────
     if (bossRef.current) {
@@ -459,6 +480,10 @@ export function MobaStage({
       <instancedMesh ref={monsterMesh} args={[undefined, undefined, MAX_MONSTERS]} frustumCulled={false}>
         <sphereGeometry args={[0.6, 12, 10]} />
         <meshStandardMaterial vertexColors roughness={0.35} emissive="#ffffff" emissiveIntensity={0.4} />
+      </instancedMesh>
+      <instancedMesh ref={wardMesh} args={[undefined, undefined, MAX_WARDS]} frustumCulled={false}>
+        <coneGeometry args={[0.28, 1.1, 6]} />
+        <meshBasicMaterial color="#7fe3d4" toneMapped={false} />
       </instancedMesh>
       <instancedMesh ref={projectileMesh} args={[undefined, undefined, MAX_PROJECTILES]} frustumCulled={false}>
         <sphereGeometry args={[0.3, 8, 6]} />

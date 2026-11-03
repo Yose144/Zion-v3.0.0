@@ -58,7 +58,7 @@ try {
   await page.click('.moba-shop-toggle');
   await page.waitForSelector('.moba-shop-panel', { timeout: 5000 }).catch(() => {});
   const shopItems = await page.$$('.moba-shop-item');
-  check('obchod: čtrnáct itemů v panelu', shopItems.length === 14, String(shopItems.length));
+  check('obchod: patnáct itemů v panelu (14 + ward)', shopItems.length === 15, String(shopItems.length));
   await page.click('.moba-shop-toggle');
 
   // Čekej na **podmínku**, ne na pevný čas: simulace běží po krocích a na

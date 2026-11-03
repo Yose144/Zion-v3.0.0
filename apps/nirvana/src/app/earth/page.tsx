@@ -21,7 +21,7 @@ import { MobaGame, type MobaStats } from '@/core/moba/MobaGame';
 import { MobaOnline } from '@/core/moba/MobaOnline';
 import { MobaMinimap } from '@/core/moba/MobaMinimap';
 import { NODE_SITES } from '@/core/moba/map';
-import { ITEMS, ITEM_SLOTS, SELL_RATIO, type ItemId } from '@/core/moba/sim';
+import { ITEMS, ITEM_SLOTS, SELL_RATIO, WARD_STOCK_MAX, type ItemId } from '@/core/moba/sim';
 
 /** Rychlé hledání itemu podle id — používá inventář i obchod. */
 const ITEM_BY_ID = new Map(ITEMS.map((item) => [item.id, item]));
@@ -49,6 +49,7 @@ export default function EarthPage() {
   const [stats, setStats] = useState<MobaStats | null>(EMPTY_STATS);
   const buyRequest = useRef<ItemId | null>(null);
   const sellRequest = useRef<ItemId | null>(null);
+  const buybackRequest = useRef(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [winner, setWinner] = useState<'blue' | 'red' | null>(null);
 
@@ -218,6 +219,7 @@ export default function EarthPage() {
               onEnd={onEnd}
               buyRequest={buyRequest}
               sellRequest={sellRequest}
+              buybackRequest={buybackRequest}
               debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
             />
           ) : (
@@ -228,6 +230,7 @@ export default function EarthPage() {
               onPhase={setOnlinePhase}
               buyRequest={buyRequest}
               sellRequest={sellRequest}
+              buybackRequest={buybackRequest}
               debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
             />
           )}
@@ -345,6 +348,9 @@ export default function EarthPage() {
               <span className="moba-shop-gold" title={cs ? 'zlato' : 'gold'}>
                 ◈ {stats?.gold ?? 0}
               </span>
+              <span className="moba-ward-count" title={cs ? 'wardy (G položí)' : 'wards (G places)'}>
+                🛡 {stats?.wards ?? 0}
+              </span>
               <div className="moba-inventory" title={cs ? 'inventář (klikni pro prodej)' : 'inventory (click to sell)'}>
                 {Array.from({ length: ITEM_SLOTS }).map((_, index) => {
                   const itemId = stats?.items[index];
@@ -394,16 +400,19 @@ export default function EarthPage() {
                           0,
                           item.cost - ownedComponents.reduce((sum, component) => sum + (ITEM_BY_ID.get(component)?.cost ?? 0), 0),
                         );
+                        const consumable = item.consumable === true;
+                        const stock = stats?.wards ?? 0;
+                        const maxed = consumable && stock >= WARD_STOCK_MAX;
                         const owned = items.includes(item.id);
                         const slotsAfter = items.length - ownedComponents.length + 1;
-                        const full = slotsAfter > ITEM_SLOTS;
+                        const full = !consumable && slotsAfter > ITEM_SLOTS;
                         const affordable = (stats?.gold ?? 0) >= price;
                         return (
                           <button
                             key={item.id}
                             type="button"
                             className={`moba-shop-item${owned ? ' is-owned' : ''}${item.components ? ' is-built' : ''}`}
-                            disabled={owned || full || !affordable}
+                            disabled={owned || full || maxed || !affordable}
                             title={item.note[cs ? 'cs' : 'en']}
                             onClick={() => {
                               buyRequest.current = item.id;
@@ -415,11 +424,15 @@ export default function EarthPage() {
                                 ? cs
                                   ? 'koupeno'
                                   : 'owned'
-                                : full
+                                : maxed
                                   ? cs
-                                    ? 'plný inventář'
-                                    : 'inventory full'
-                                  : `${price} ◈`}
+                                    ? 'plná zásoba'
+                                    : 'full stock'
+                                  : full
+                                    ? cs
+                                      ? 'plný inventář'
+                                      : 'inventory full'
+                                    : `${price} ◈${consumable ? ` · ${stock}/${WARD_STOCK_MAX}` : ''}`}
                             </small>
                             {item.components && (
                               <em>
@@ -443,7 +456,7 @@ export default function EarthPage() {
                   ? 'joystick pohyb · Q/F/E/R kouzlo · ÚTOK'
                   : 'stick move · Q/F/E/R cast · ATTACK'
                 : cs
-                  ? 'WASD pohyb · Q/F/E/R kouzlo · levé tlačítko útok'
+                  ? 'WASD pohyb · Q/F/E/R kouzlo · G ward · levé tlačítko útok'
                   : 'WASD move · Q/F/E/R cast · left click attack'}
             </div>
           </div>
@@ -458,7 +471,20 @@ export default function EarthPage() {
 
           {(stats?.respawnIn ?? 0) > 0 && (
             <div className="moba-respawn">
-              {cs ? 'obnova za' : 'respawn in'} {stats?.respawnIn}s
+              <span>
+                {cs ? 'obnova za' : 'respawn in'} {stats?.respawnIn}s
+              </span>
+              {(stats?.buybackCost ?? 0) > 0 && (
+                <button
+                  type="button"
+                  className="moba-buyback"
+                  onClick={() => {
+                    buybackRequest.current = true;
+                  }}
+                >
+                  {cs ? 'Buyback' : 'Buyback'} · {stats?.buybackCost} ◈
+                </button>
+              )}
             </div>
           )}
         </div>

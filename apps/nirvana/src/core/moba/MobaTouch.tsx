@@ -136,6 +136,22 @@ export function MobaTouch({ spells }: { spells: { slot: SpellSlot; name: string;
     window.setTimeout(() => sendKey(SPELL_KEY[slot], false), 60);
   }, []);
 
+  /** WARD: stejný trik jako kouzlo — nastav mířidlo a pošli `G`. */
+  const placeWard = useCallback(() => {
+    const element = canvas();
+    if (element && aim.current) {
+      element.dispatchEvent(
+        new PointerEvent('pointermove', {
+          clientX: aim.current.x,
+          clientY: aim.current.y,
+          bubbles: true,
+        }),
+      );
+    }
+    sendKey('KeyG', true);
+    window.setTimeout(() => sendKey('KeyG', false), 60);
+  }, []);
+
   /** PALBA: podrž `pointerdown` aspoň jeden snímek, jinak hra nestihne zaútočit. */
   const fire = useCallback(() => {
     const element = canvas();
@@ -197,6 +213,18 @@ export function MobaTouch({ spells }: { spells: { slot: SpellSlot; name: string;
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          className="moba-touch-btn is-ward"
+          title="ward"
+          onPointerDown={(event) => {
+            event.stopPropagation();
+            event.preventDefault();
+            placeWard();
+          }}
+        >
+          🛡
+        </button>
         <button
           type="button"
           className="moba-touch-btn is-fire"

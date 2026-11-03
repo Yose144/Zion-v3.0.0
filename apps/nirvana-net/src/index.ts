@@ -54,7 +54,9 @@ import {
   addMobaSeat,
   buyMobaItem,
   createMobaRoom,
+  mobaBuyback,
   mobaRoomSnapshot,
+  placeMobaWard,
   removeMobaSeat,
   sellMobaItem,
   setMobaInput,
@@ -512,6 +514,26 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
         return;
       }
       sellMobaItem(room.moba, conn.id, message.item);
+      return;
+    }
+
+    case 'ward': {
+      const room = conn.room;
+      if (!room?.moba) {
+        sendError(conn, room ? 'not_available' : 'not_in_room');
+        return;
+      }
+      placeMobaWard(room.moba, conn.id, message.x, message.z);
+      return;
+    }
+
+    case 'buyback': {
+      const room = conn.room;
+      if (!room?.moba) {
+        sendError(conn, room ? 'not_available' : 'not_in_room');
+        return;
+      }
+      mobaBuyback(room.moba, conn.id);
       return;
     }
 

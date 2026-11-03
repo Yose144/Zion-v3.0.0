@@ -57,6 +57,8 @@ export function MobaOnline({
   buyRequest?: React.MutableRefObject<ItemId | null>;
   /** Prodej: stránka sem zapíše item, ovladač ho pošle serveru. */
   sellRequest?: React.MutableRefObject<ItemId | null>;
+  /** Buyback: stránka sem zapíše `true`, ovladač pošle serveru. */
+  buybackRequest?: React.MutableRefObject<boolean>;
 }) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
   const selfPose = useRef<{ x: number; z: number; active: boolean } | null>(null);
@@ -104,6 +106,7 @@ function OnlineController({
   debug,
   buyRequest,
   sellRequest,
+  buybackRequest,
   snapshotRef,
   selfPose,
 }: {
@@ -114,15 +117,17 @@ function OnlineController({
   debug?: boolean;
   buyRequest?: React.MutableRefObject<ItemId | null>;
   sellRequest?: React.MutableRefObject<ItemId | null>;
+  buybackRequest?: React.MutableRefObject<boolean>;
   snapshotRef: React.MutableRefObject<MobaSnapshot | null>;
   selfPose: React.MutableRefObject<{ x: number; z: number; active: boolean } | null>;
 }) {
   const { camera, gl } = useThree();
-  const { subscribe, joinGame, leaveRoom, sendMobaInput, sendBuy, sendSell, connected, youPlayerId } = useNet();
+  const { subscribe, joinGame, leaveRoom, sendMobaInput, sendBuy, sendSell, sendWard, sendBuyback, connected, youPlayerId } = useNet();
   const keys = useRef(new Set<string>());
   const pointer = useRef({ x: 0, y: 0 });
   const attack = useRef(false);
   const queuedCast = useRef<{ slot: 'Q' | 'W' | 'E' | 'R'; at: number } | null>(null);
+  const queuedWard = useRef(false);
   const lastStats = useRef(0);
   const endedSent = useRef(false);
   const serverNow = useRef({ offset: 0, at: Date.now() });
@@ -175,7 +180,9 @@ function OnlineController({
       if (event.code === 'KeyW') queuedCast.current = { slot: 'W', at: Date.now() };
       if (event.code === 'KeyE') queuedCast.current = { slot: 'E', at: Date.now() };
       if (event.code === 'KeyR') queuedCast.current = { slot: 'R', at: Date.now() };
-      if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyR'].includes(event.code)) event.preventDefault();
+      // G = ward na zem (stejná klávesa jako v sólu)
+      if (event.code === 'KeyG') queuedWard.current = true;
+      if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyR', 'KeyG'].includes(event.code)) event.preventDefault();
     };
     const up = (event: KeyboardEvent) => keys.current.delete(event.code);
     const move = (event: PointerEvent) => {
@@ -237,6 +244,14 @@ function OnlineController({
     if (sellRequest?.current) {
       sendSell(sellRequest.current);
       sellRequest.current = null;
+    }
+    if (queuedWard.current) {
+      if (hit) queuedWard.current = false;
+      if (hit) sendWard(castPoint.x, castPoint.z);
+    }
+    if (buybackRequest?.current) {
+      buybackRequest.current = false;
+      sendBuyback();
     }
 
     const snapshot = snapshotRef.current;

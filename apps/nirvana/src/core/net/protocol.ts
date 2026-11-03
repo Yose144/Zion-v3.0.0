@@ -37,8 +37,10 @@ const asItemId = (value: unknown): ItemId | null =>
  * 11 — **objektivy**: runy a boss (`runes`, `boss`) + `aegis` u hrdiny.
  *      Starý klient by runy ani bosse nekreslil, takže by hráč neviděl,
  *      o co se hraje.
+ * 12 — **vidění a smrt**: wardy (`wards`, `help` zprávy `ward`/`buyback`)
+ *      a cena buybacku. Starý klient by wardy neviděl a nemohl je položit.
  */
-export const PROTO_VERSION = 11;
+export const PROTO_VERSION = 12;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -250,6 +252,10 @@ export type ClientMessage =
   | { t: 'buy'; item: ItemId }
   /** MOBA: prodej itemu (vrací 60 % ceny). */
   | { t: 'sell'; item: ItemId }
+  /** MOBA: polož ward na bod (jen v místnosti `moba`). */
+  | { t: 'ward'; x: number; z: number }
+  /** MOBA: buyback — mrtvý hráč zaplatí a vrátí se do hry. */
+  | { t: 'buyback' }
   | { t: 'leave' }
   | {
       t: 'input';
@@ -413,6 +419,12 @@ export function parseClientMessage(raw: string): ClientMessage | null {
       const item = asItemId(message.item);
       return item ? { t: 'sell', item } : null;
     }
+
+    case 'ward':
+      return { t: 'ward', x: num(message.x, -60, 60), z: num(message.z, -60, 60) };
+
+    case 'buyback':
+      return { t: 'buyback' };
 
     case 'chat':
       return { t: 'chat', text: str(message.text, CHAT_MAX_LEN) };

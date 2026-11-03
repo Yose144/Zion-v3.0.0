@@ -11,10 +11,12 @@
 
 import {
   buyItem,
+  buyback,
   createMobaMatch,
   emptyMobaSnapshot,
   heroById,
   mobaSnapshot,
+  placeWard,
   sellItem,
   stepMoba,
   NO_INPUT,
@@ -112,6 +114,22 @@ export function buyMobaItem(room: MobaRoomSim, connId: string, itemId: ItemId): 
   const hero = heroById(room.sim, connId);
   if (!hero) return false;
   return buyItem(hero, itemId);
+}
+
+/** Polož ward na bod (server rozhodne o zásobě i dosahu). */
+export function placeMobaWard(room: MobaRoomSim, connId: string, x: number, z: number): boolean {
+  if (!room.sim) return false;
+  const hero = heroById(room.sim, connId);
+  if (!hero) return false;
+  return placeWard(room.sim, hero, x, z);
+}
+
+/** Buyback — server rozhodne o ceně i cooldownu. */
+export function mobaBuyback(room: MobaRoomSim, connId: string): boolean {
+  if (!room.sim) return false;
+  const hero = heroById(room.sim, connId);
+  if (!hero) return false;
+  return buyback(hero, room.sim.now);
 }
 
 /** Prodej itemu — vrací vrácené zlato (0 = nic se neprodalo). */

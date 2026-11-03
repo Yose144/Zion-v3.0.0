@@ -90,7 +90,9 @@ export type ItemId =
   | 'eye'
   | 'ember'
   | 'scepter'
-  | 'crown';
+  | 'crown'
+  // spotřební
+  | 'ward';
 
 export interface ItemBonus {
   /** Multiplikativní bonus k poškození (0.25 = +25 %). */
@@ -112,15 +114,34 @@ export interface MobaItem {
   name: { cs: string; en: string };
   cost: number;
   note: { cs: string; en: string };
-  /** Komponenty se při nákupu spotřebují (aodečte se jejich cena). */
+  /** Komponenty se při nákupu spotřebují (odečte se jejich cena). */
   components?: ItemId[];
   bonus: ItemBonus;
+  /** Spotřební item — nezabírá slot, kupuje se do zásoby (ward). */
+  consumable?: boolean;
 }
 
 /** Kolik itemů se vejde hrdinovi do inventáře. */
 export const ITEM_SLOTS = 6;
 /** Kolik z ceny dostaneš zpět při prodeji. */
 export const SELL_RATIO = 0.6;
+
+// ── wardy a buyback (F5) ──────────────────────────────────────────
+export const WARD_DURATION_MS = 90_000;
+export const WARD_VISION = 10;
+export const WARD_RANGE = 12;
+export const WARD_STOCK_MAX = 3;
+export const BUYBACK_BASE = 200;
+export const BUYBACK_PER_LEVEL = 50;
+export const BUYBACK_COOLDOWN_MS = 180_000;
+export const BUYBACK_HP_RATIO = 0.6;
+export const RESPAWN_BASE_MS = 5000;
+export const RESPAWN_PER_LEVEL_MS = 1500;
+
+/** Cena buybacku — roste s levely, aby se nevyplatil pořád. */
+export function buybackCost(hero: Hero): number {
+  return BUYBACK_BASE + hero.level * BUYBACK_PER_LEVEL;
+}
 
 export const ITEMS: MobaItem[] = [
   // ── základ ──────────────────────────────────────────────────────
@@ -227,6 +248,15 @@ export const ITEMS: MobaItem[] = [
     note: { cs: '+30 % poškození, +300 max HP', en: '+30% damage, +300 max HP' },
     bonus: { damage: 0.3, hp: 300 },
   },
+  // ── spotřební ───────────────────────────────────────────────────
+  {
+    id: 'ward',
+    name: { cs: 'Strážný kámen', en: 'Ward' },
+    cost: 150,
+    note: { cs: '+1 strážce (max 3) — vidění 10 m na 90 s', en: '+1 ward (max 3) — 10 m vision for 90 s' },
+    bonus: {},
+    consumable: true,
+  },
 ];
 
 const ITEM_BY_ID = new Map(ITEMS.map((item) => [item.id, item]));
@@ -324,6 +354,10 @@ export interface Hero {
   gold: number;
   /** Aegis z bosse — jednorázové vzkříšení (spotřebuje se při smrti). */
   aegis: boolean;
+  /** Kolik wardů má v zásobě (spotřební item, nezabírá slot). */
+  wards: number;
+  /** Kdy může hrdina znovu buybackovat (ms, sim čas). */
+  buybackAt: number;
   items: ItemId[];
   buffs: Buff[];
   isPlayer: boolean;
@@ -442,6 +476,14 @@ export interface Rune {
   spawnAt: number;
 }
 
+export interface Ward {
+  id: string;
+  team: Team;
+  x: number;
+  z: number;
+  expiresAt: number;
+}
+
 export interface Boss {
   id: string;
   x: number;
@@ -466,6 +508,8 @@ export interface MobaState {
   minions: Minion[];
   monsters: Monster[];
   runes: Rune[];
+  /** Wardy na mapě (vidí je jen vlastní tým). */
+  wards: Ward[];
   boss: Boss;
   nextRuneAt: number;
   towers: Tower[];
@@ -523,6 +567,8 @@ function makeHero(id: string, team: Team, heroId: number, spawn: { x: number; z:
     damageDone: 0,
     gold: 320,
     aegis: false,
+    wards: 0,
+    buybackAt: 0,
     items: [],
     buffs: [],
     isPlayer,
@@ -639,6 +685,7 @@ export function createMobaMatch(seats: MobaSeat[], now: number): MobaState {
     projectiles: [],
     effects: [],
     runes: makeRunes(0, 0),
+    wards: [],
     boss: makeBoss(0),
     nextRuneAt: now + RUNE_INTERVAL_MS,
     nodes: NODE_SITES.map((site) => ({
@@ -719,7 +766,7 @@ function damageHero(state: MobaState, hero: Hero, amount: number, source: string
     hero.hp = 0;
     hero.alive = false;
     hero.deaths += 1;
-    hero.respawnAt = state.now + (6000 + hero.level * 1200);
+    hero.respawnAt = state.now + (RESPAWN_BASE_MS + hero.level * RESPAWN_PER_LEVEL_MS);
     // Smrt stojí zlato (unreliable) — jinak je umírání jen zrychlení hry.
     const lost = Math.min(GOLD_LOSS_CAP, Math.round(hero.gold * GOLD_LOSS_RATIO));
     hero.gold = Math.max(0, hero.gold - lost);
@@ -1601,6 +1648,9 @@ export function stepMoba(
     }
   }
 
+  // ── wardy ─────────────────────────────────────────────────────────
+  state.wards = state.wards.filter((ward) => ward.expiresAt > now);
+
   // ── efekty ────────────────────────────────────────────────────────
   state.effects = state.effects.filter((effect) => {
     effect.ttl -= dt * 1000;
@@ -1628,6 +1678,14 @@ export function stepMoba(
 export function buyItem(hero: Hero, itemId: ItemId): boolean {
   const item = ITEM_BY_ID.get(itemId);
   if (!item) return false;
+  if (item.consumable) {
+    // Spotřební item jde do zásoby, nezabírá slot — jinak by ward sežral build.
+    if (hero.wards >= WARD_STOCK_MAX) return false;
+    if (hero.gold < item.cost) return false;
+    hero.gold -= item.cost;
+    hero.wards += 1;
+    return true;
+  }
   if (hero.items.includes(itemId)) return false;
 
   const owned = (item.components ?? []).filter((component) => hero.items.includes(component));
@@ -1642,6 +1700,47 @@ export function buyItem(hero: Hero, itemId: ItemId): boolean {
   if (owned.length > 0) hero.items = hero.items.filter((id) => !owned.includes(id));
   hero.items.push(itemId);
   recomputeHeroStats(hero);
+  return true;
+}
+
+/**
+ * Polož ward na zem — jen v dosahu (`WARD_RANGE`) a jen když nějaký má.
+ * Vidění drží `visionSources`, takže ward funguje i proti mlze.
+ */
+export function placeWard(state: MobaState, hero: Hero, x: number, z: number): boolean {
+  if (!hero.alive || hero.wards <= 0) return false;
+  if (distance(hero.x, hero.z, x, z) > WARD_RANGE) return false;
+  hero.wards -= 1;
+  state.wards.push({
+    id: nextId('ward'),
+    team: hero.team,
+    x,
+    z,
+    expiresAt: state.now + WARD_DURATION_MS,
+  });
+  addEffect(state, 'shield', x, z, 1.4, '#7fe3d4', 420);
+  return true;
+}
+
+/**
+ * Buyback — mrtvý hrdina zaplatí a vrátí se do hry na 60 % HP.
+ * Cooldown drží, aby se z toho nestal permanentní respawn zdarma.
+ */
+export function buyback(hero: Hero, now: number): boolean {
+  if (hero.alive) return false;
+  if (now < hero.buybackAt) return false;
+  const cost = buybackCost(hero);
+  if (hero.gold < cost) return false;
+  hero.gold -= cost;
+  hero.alive = true;
+  hero.hp = Math.round(hero.maxHp * BUYBACK_HP_RATIO);
+  hero.mana = Math.round(hero.maxMana * 0.5);
+  hero.shield = 0;
+  hero.buffs = [];
+  hero.buybackAt = now + BUYBACK_COOLDOWN_MS;
+  const spawn = hero.team === 'blue' ? SPAWNS.blue : SPAWNS.red;
+  hero.x = spawn.x;
+  hero.z = spawn.z;
   return true;
 }
 
@@ -1692,6 +1791,9 @@ export interface MobaSnapshot {
     gold: number;
     items: ItemId[];
     aegis: boolean;
+    wards: number;
+    /** Cena buybacku; 0 = nedostupný (živý nebo na cooldownu). */
+    buybackCost: number;
     buffs: Buff[];
   }[];
   minions: { id: string; team: Team; x: number; z: number; hp: number; maxHp: number; super: boolean }[];
@@ -1699,6 +1801,8 @@ export interface MobaSnapshot {
   runes: { id: string; type: RuneType; x: number; z: number }[];
   /** Prastarý strážce (boss) — Aegis a týmové zlato. */
   boss: { id: string; x: number; z: number; hp: number; maxHp: number; alive: boolean; respawnIn: number };
+  /** Wardy vlastního týmu (nepřítel je nevidí). */
+  wards: { id: string; x: number; z: number }[];
   monsters: { id: string; x: number; z: number; hp: number; maxHp: number; type: JungleCamp['type']; alive: boolean }[];
   projectiles: { id: string; x: number; z: number; color: string }[];
   effects: { id: string; kind: Effect['kind']; x: number; z: number; radius: number; color: string; alpha: number }[];
@@ -1723,6 +1827,7 @@ export function emptyMobaSnapshot(banner: string): MobaSnapshot {
     heroes: [],
     minions: [],
     runes: [],
+    wards: [],
     boss: { id: 'boss', x: 0, z: 0, hp: 0, maxHp: 0, alive: false, respawnIn: 0 },
     monsters: [],
     projectiles: [],
@@ -1747,6 +1852,11 @@ export function visionSources(state: MobaState, team: Team): { x: number; z: num
   }
   for (const node of state.nodes) {
     if (node.owner === team) sources.push({ x: node.x, z: node.z, radius: VISION.node });
+  }
+  for (const ward of state.wards) {
+    if (ward.team === team && ward.expiresAt > state.now) {
+      sources.push({ x: ward.x, z: ward.z, radius: WARD_VISION });
+    }
   }
   return sources;
 }
@@ -1829,6 +1939,8 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
         gold: Math.round(hero.gold),
         items: hero.items,
         aegis: hero.aegis,
+        wards: hero.wards,
+        buybackCost: !hero.alive && state.now >= hero.buybackAt ? buybackCost(hero) : 0,
         buffs: hero.buffs,
     })),
     minions: state.minions
@@ -1843,6 +1955,9 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
         super: minion.super,
       })),
     runes: state.runes.map((rune) => ({ id: rune.id, type: rune.type, x: rune.x, z: rune.z })),
+    wards: state.wards
+      .filter((ward) => !viewerTeam || ward.team === viewerTeam)
+      .map((ward) => ({ id: ward.id, x: ward.x, z: ward.z })),
     boss: {
       id: state.boss.id,
       x: state.boss.x,

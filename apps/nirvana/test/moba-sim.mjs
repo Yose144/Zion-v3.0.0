@@ -9,7 +9,7 @@
  * Spuštění: npx tsx apps/nirvana/test/moba-sim.mjs
  */
 
-import { BASE_SPEED, buyItem, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isVisibleTo, ITEMS, ITEM_SLOTS, sellItem, stepMoba, mobaSnapshot, visionSources, NO_INPUT } from '../src/core/moba/sim.ts';
+import { BASE_SPEED, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isVisibleTo, ITEMS, ITEM_SLOTS, placeWard, sellItem, stepMoba, mobaSnapshot, visionSources, NO_INPUT, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
 import { SCHOOL_TRAITS, spellCooldown, spellMana, spellRank, spellsForAvatar } from '../src/core/moba/spells.ts';
 import { BUSHES, INHIBITOR_RESPAWN_MS, isStructureProtected, NEXUS_HP, VISION, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
 
@@ -460,7 +460,7 @@ check(
 // ── itemy: recepty, sloty, prodej (F2) ──────────────────────────────
 {
   console.log('\n-- itemy --');
-  check('itemy: 14 itemů', ITEMS.length === 14, String(ITEMS.length));
+  check('itemy: 15 itemů (14 + ward)', ITEMS.length === 15, String(ITEMS.length));
   check('itemy: 6 slotů', ITEM_SLOTS === 6, String(ITEM_SLOTS));
 
   const s = createMoba(0, 82, 2_000_000);
@@ -641,6 +641,67 @@ check(
   stepMoba(s2, STEP / 1000, { 'hero-you': { ...NO_INPUT, cast: { slot: 'Q', x: caster.x + 3, z: caster.z } } }, s2.now + STEP);
   const spent = manaBefore - caster.mana;
   check('kouzla: sim strhne manu podle stupně', spent === spellMana(spell.mana, 4), `${Math.round(spent)} vs ${spellMana(spell.mana, 4)}`);
+}
+
+// ── vidění a smrt: wardy, buyback, respawn (F5) ────────────────────
+{
+  console.log('\n-- wardy a smrt --');
+  const s = createMoba(0, 82, 5_000_000);
+  const hero = s.heroes.find((candidate) => candidate.id === 'hero-you');
+  hero.gold = 3000;
+
+  // nákup wardu: spotřební, nezabírá slot
+  const slotsBefore = hero.items.length;
+  check('ward: koupě zvýší zásobu', buyItem(hero, 'ward') && hero.wards === 1, String(hero.wards));
+  check('ward: nezabírá slot', hero.items.length === slotsBefore, String(hero.items.length));
+  hero.wards = WARD_STOCK_MAX;
+  check('ward: víc než tři nejde', !buyItem(hero, 'ward'));
+
+  // polož ward: jen v dosahu, jen když ho máš
+  hero.wards = 1;
+  hero.x = 0;
+  hero.z = 0;
+  check('ward: mimo dosah nejde', !placeWard(s, hero, 30, 30));
+  check('ward: v dosahu jde', placeWard(s, hero, 6, 0) && s.wards.length === 1, String(s.wards.length));
+  check('ward: zásoba se odečetla', hero.wards === 0, String(hero.wards));
+  check('ward: bez zásoby nejde', !placeWard(s, hero, 6, 0));
+
+  // vidění: ward drží okruh, takže nepřítel v bushi je vidět
+  const foe = s.heroes.find((candidate) => candidate.id === 'hero-foe');
+  foe.x = 6;
+  foe.z = 0;
+  hero.x = -30;
+  hero.z = -30;
+  check('ward: drží vidění (soupeř je vidět)', mobaSnapshot(s, 'blue').heroes.some((h) => h.id === foe.id));
+
+  // ward po 90 s zmizí
+  const wardId = s.wards[0].id;
+  advance(s, WARD_DURATION_MS + 2000);
+  check('ward: po 90 s zmizí', !s.wards.some((ward) => ward.id === wardId));
+
+  // buyback: mrtvý hrdina zaplatí a vrátí se
+  const b = createMoba(0, 82, 5_000_000);
+  const dead = b.heroes.find((candidate) => candidate.id === 'hero-you');
+  dead.gold = 4000;
+  dead.alive = false;
+  dead.hp = 0;
+  dead.buybackAt = 0;
+  const cost = buybackCost(dead);
+  const goldBefore = dead.gold;
+  check('buyback: vrátí hrdinu do hry', buyback(dead, b.now) && dead.alive === true);
+  check('buyback: strhne cenu', dead.gold === goldBefore - cost, `${goldBefore} → ${dead.gold} (cena ${cost})`);
+  check('buyback: HP na 60 %', dead.hp === Math.round(dead.maxHp * 0.6), `${dead.hp}/${dead.maxHp}`);
+  check('buyback: podruhé hned nejde', !buyback(dead, b.now));
+
+  // respawn scaling: čas roste s levelem
+  const r = createMoba(0, 82, 5_000_000);
+  const victim = r.heroes.find((candidate) => candidate.id === 'hero-you');
+  victim.level = 10;
+  victim.hp = 1;
+  victim.buffs.push({ type: 'burn', until: r.now + 2000, power: 900, source: 'test' });
+  advance(r, 300);
+  const respawnMs = victim.respawnAt - r.now;
+  check('respawn: škáluje s levelem', respawnMs > 15_000 && respawnMs < 25_000, String(Math.round(respawnMs)));
 }
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);
