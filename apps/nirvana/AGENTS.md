@@ -1255,3 +1255,27 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   **net první**.
 - **Testy:** `test/moba-sim.mjs` (177 kontrol: Závoj skryje, vlastní tým vidí,
   sentry odhalí, nepřítel nevidí, expirace 60 s, skrytý nejde zasáhnout).
+
+## PRVNÍ SVĚT — balance sehrávkou (2026-11-03)
+
+- **Sehrávka jde udělat programově.** `test/moba-balance.mjs N` odehraje N
+  zápasů bot vs bot (30 Hz, bez prohlížeče) a vypíše čas, věže, inhibitory,
+  zabití, zlato, itemy, levely, runy a talenty. Jeden zápas ~1,5 s, takže
+  24–32 zápasů je vzorek za půl minuty. Spouštěj po **každé** změně čísel.
+- **První běh odhalil, že hra bez hráče nefunguje** — a to je přesně to, co
+  by oko v prohlížeči nepoznalo (hráč boty „tahal" s sebou):
+  1. boti **neopouštěli základnu** (chyběla linková chůze),
+  2. `hero.botCast` zůstal po neúspěšném seslání → bot **zamrzl**,
+  3. **chyběla fontána** → zraněný hrdina se nikdy nevyléčil,
+  4. rozřazení do linek bylo asymetrické → modrá 6/6,
+  5. timeout rozhodoval `blue >= red` → **12/12 timeoutů pro modrou**.
+- **Nákup a talenty patří na začátek `stepBot`**, ne na konec: bez cíle
+  v dosahu se funkce vrací dřív a bot by nekoupil ani si nevybral.
+- **Botí rozhodování má záběr 12 m.** Dřív viděl nepřítele po celé mapě a jen
+  ho honil — 100 s a level 1, protože nikdy nebyl u umírajících minionů.
+- **Cíle (runy, boss) musí být explicitní větev v AI.** Dokud tam nebyly,
+  boti je nikdy nevzali (0 run / 0 boss), i když je mapa měla.
+- **Čísla po sehrávce (24 zápasů):** 342 s průměr, 58 % končí Nexou,
+  10/14 výher, 11 věží, 1,8 inhibitoru, 7,5 zabití, level 8,8, 3,7 itemu.
+  Ber to jako **hratelné, ne vyladěné** — další iterace chce 100+ zápasů
+  a lidské sehrávky.

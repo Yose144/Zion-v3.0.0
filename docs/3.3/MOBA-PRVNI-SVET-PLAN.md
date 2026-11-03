@@ -130,6 +130,15 @@ nemá druhou pravdu. Bez protokolové změny.
 filtr vidění — platí pro snapshot, cílení, věže, miniony i bosse; vlastní
 tým vidí vždy. **Protokol:** `sentries`, `invisible`, zpráva `sentry` → 15 → 16.
 
+## 2f. Balance sehrávkou *(hotovo 2026-11-03)*
+
+`test/moba-balance.mjs` odehraje N zápasů bot vs bot a měří čas, věže,
+inhibitory, zabití, zlato, itemy, levely, runy a bosse. První běh odhalil
+**pět reálných chyb** (boti neopouštěli základnu, zamrzali s `botCast`,
+chyběla fontána, asymetrické linky, timeout vždy pro modrou) a podle dat se
+doladila ekonomika, vlny, poškození a HP struktur. Výsledek: 342 s, 58 %
+zápasů končí Nexou, vyrovnané výhry, level ~9, ~4 itemy.
+
 ## 3. Co záměrně neděláme
 
 - **Courier** — u 5v5 s krátkým zápasem nemá co řešit; obchod v základně stačí.
