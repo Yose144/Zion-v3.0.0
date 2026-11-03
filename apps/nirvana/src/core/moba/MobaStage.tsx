@@ -14,6 +14,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { AvatarModel } from '@/core/avatars/AvatarModel';
 import { MobaTerrain } from './MobaTerrain';
+import { MobaWorld } from './MobaWorld';
 import { MobaFog } from './MobaFog';
 import { pushDamage, type DamageFloater } from './MobaFxOverlay';
 import { avatarLook } from '@/core/avatars/kit';
@@ -372,6 +373,9 @@ export function MobaStage({
 
       {/* terén: tráva, cesty, řeka, lesy, skály, zříceniny */}
       <MobaTerrain />
+
+      {/* dressing: zdi v džungli, doupata, jáma bosse, lucerny, obzor, jiskry */}
+      <MobaWorld />
 
       {/* mlha války — jen vizuál; server už neviděné jednotky neposílá */}
       <MobaFog snapshotRef={snapshotRef} youId={youId} />
