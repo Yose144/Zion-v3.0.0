@@ -155,6 +155,15 @@ Vše instanced (6 meshů + Points). **Naměřeno:** 60 fps, **73 draw calls**,
 44,4 tis. trojúhelníků, 0 chyb. První verze měla zdi z boxů — vypadaly jako
 přepravky; po opravě na dodecahedry s mechovým emissivem čtou jako hřeben.
 
+## 5g. F17 — výška, atmosféra zón, animace
+
+- **Kopce** za hranou hřiště (26 instancí) — jediná výška; uvnitř mapy
+  zůstává rovina, protože sim je 2D a jednotky stojí na `y = 0`.
+- **Mlha** ve čtyřech džunglích (4 velké průhledné pásy, pomalý posun a rotace).
+- **Světlušky** (70 bodů) a **padající listí** (46 instancí, pád + houpání).
+- **Lucerny** poletují (opacity 0,75 ± 0,2); materiál musel být `transparent`.
+- Všechno počítané z `clock.elapsedTime` — žádný React state, žádné re-rendery.
+
 ## 6. Co dál (grafika)
 
 1. **Kontaktní stíny** pod hrdiny a miniony (levné, hodně pomůže čitelnosti).

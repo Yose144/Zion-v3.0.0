@@ -1404,3 +1404,19 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Statické objekty = instanced** (6 meshů + 1 Points). Rozpočet: scéna
   zůstává ~73 draw calls; vesmír má 175+.
 - **Jiskry jsou `Points` s rotující skupinou**, ne 90 meshů.
+
+## PRVNÍ SVĚT — výška, atmosféra, animace (F17, 2026-11-03)
+
+- **Výška jen mimo hřiště.** Sim je 2D (`y = 0`), takže kopce a hory stojí
+  za hranou mapy; cokoli vyššího uvnitř by jednotky „utopilo" nebo vyneslo
+  nad terén. Kdyby někdy měl terén výšku i uvnitř, musí to řešit sim
+  (výška v pohybu), ne scéna.
+- **Atmosféra je pár velkých průhledných plánů, ne stovky částic.** Mlha
+  v džungli = 4 plány s `opacity 0.07`, pomalý posun a rotace; světlušky
+  a jiskry jsou dva `Points`, listí jeden `InstancedMesh`.
+- **Animace z `clock.elapsedTime`, matice jen u instancí, které se hýbou**
+  (listí 46 kusů). Statické instance se nastavují jednou v `useLayoutEffect`.
+- **Listí se „vrací nahoru" modulo** (`(y − t·speed) % span`), takže se
+  nikdy nehromadí dole a nepotřebuje respawn logiku.
+- **Lucerna musí být `transparent`**, jinak `opacity` nic nedělá (basic
+  materiál je jinak neprůhledný a flicker je neviditelný).
