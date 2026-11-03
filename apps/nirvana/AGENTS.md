@@ -992,3 +992,34 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Dva prohlížeče v E2E: klávesy jdou jen do stránky vpředu.** Hra správně
   pouští vstup při `blur`, takže `page.keyboard.down()` na pozadí nic
   neudělá. Před vstupem volej `page.bringToFront()`.
+
+## PRVNÍ SVĚT — ekonomika a postup (F1, 2026-11-03, protokol 8)
+
+- **Bez ekonomiky není MOBA.** Do 3. 11. dávalo zlato jen zabití a XP jen
+  zabiják; hráč, který prohrál linku, neměl cestu zpět. Konstanty jsou
+  v `core/moba/sim.ts` (`PASSIVE_GOLD_PER_SEC`, `XP_SHARE_RADIUS`,
+  `DENY_HP_RATIO`, `ASSIST_GOLD_RATIO`, `GOLD_LOSS_RATIO`, `GOLD_CAP`).
+  Kdo je mění, mění je **tam** — HUD i testy je čtou odtamtud.
+- **XP se sdílí, zlato ne.** XP dostávají hrdinové druhé strany v okruhu
+  14 m (zabiják plnou, spojenci polovinu), zlato jen poslední rána.
+  Deny (vlastní minion pod 50 % HP) dá nepříteli jen 50 % XP a žádné zlato.
+- **Deny nemá vlastní tlačítko.** Je to poslední volba v automatickém útoku
+  (nepřítel → monstrum → vlastní minion pod 50 %). Kdyby měl klávesu,
+  rozejde se to s dotykovým ovládáním.
+- **Stupeň kouzel se neposílá.** `spellRank(level, slot)` je čistá funkce
+  v `spells.ts` (Q/W/E 1/4/7/10, R 6/11/15) a klient si ji počítá ze
+  snapshotu. Kdyby se posílala, můžou se rozejít — a to je přesně chyba
+  „vidím jiné číslo, než počítá server".
+- **R je do 6. úrovně zamčená** (`castSpell` vrátí, než sáhne na manu).
+  HUD to musí ukázat (`is-locked`), jinak hráč mačká mrtvou klávesu.
+- **Struktury ničí jediná funkce** `damageTower()`. Používá ji hrdina
+  i minion; odměnu (120 tým + 60 dorazivšímu, 120 XP) řeší tam. Když se
+  přidá další útočník, volá tuhle funkci — ne `tower.hp -= …`.
+- **Minioni útočí na věže**, když v dosahu není jednotka. Bez toho linka
+  nikdy netlačí a hra se rozhoduje jen souboji hrdinů.
+- **Boti musí utrácet.** `botBuild(hero)` v `sim.ts` vybírá podle školy Q
+  (agresivní → čepel první, podpůrné → aegis). Bez nákupu by pasivní zlato
+  zvýhodnilo jen člověka.
+- **Snapshot nese `xp` a `xpNeed`** → `PROTO_VERSION 8`, deploy **net první**.
+- **Testy:** `npx tsx test/moba-sim.mjs` (77 kontrol, z toho 12 na ekonomiku,
+  deny, stupně kouzel a nákup bota).

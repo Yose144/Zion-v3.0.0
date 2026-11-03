@@ -38,8 +38,8 @@ s vlastní mechanikou, kánon avatarů. Nic z toho se „standardem" nenahrazuje
 
 ## 2. Fáze (pořadí je záměrné — každá je hratelná sama o sobě)
 
-### F1 — Ekonomika a postup *(tento krok)*
-Sim-only + HUD; **mění snapshot → protokol 8**.
+### F1 — Ekonomika a postup *(hotovo 2026-11-03, protokol 8)*
+Sim + HUD; **mění snapshot → protokol 8**.
 
 - **Pasivní zlato** 2/s (120/min) — bez něj hráč, který prohrává linku, nemá cestu zpět.
 - **XP radius 14 m:** zabiják dostane 100 %, spojenci v okruhu 50 %.
@@ -49,6 +49,9 @@ Sim-only + HUD; **mění snapshot → protokol 8**.
 - **Zlato za věž:** 120 tým + 60 dorazivšímu; **minioni útočí na věže**, takže linka tlačí i bez hrdiny.
 - **Úrovně kouzel:** automatické (Q/W/E na 1/4/7/10, R na 6/11/15), síla +22 % za stupeň. Žádné skill pointy — malá hra, HotS model; klient si stupeň spočítá z levelu, takže se neposílá.
 - **HUD:** XP bar, zlato, KDA, stupně kouzel.
+- **Boti nakupují** podle školy Q (agresivní → čepel, podpůrné → aegis) — jinak by pasivní zlato zvýhodnilo jen člověka.
+
+*Ověřeno: `moba-sim.mjs` 77/77 (12 nových), tsc čistý, live net `proto 8`.*
 
 ### F2 — Itemy a obchod
 6 slotů, ~14 itemů ve stromu (komponenty → recepty), prodej za 60 %, obchod jen
