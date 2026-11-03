@@ -1385,3 +1385,22 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   `statsFromSnapshot`, fallback v `earth/page.tsx` a `MobaTouch` — tři místa.
 - Ikona je i v dotykových tlačítkách (`.moba-touch-btn.is-spell` je teď
   sloupec ikona + klávesa).
+
+## PRVNÍ SVĚT — 3D svět podle Riftu (F16, 2026-11-03)
+
+- **Vizuální hierarchie (Riot dev blog „Defining the Rift's Visual Style"):**
+  země → zdi (rámují prostor) → landmarky (základny, jámy) → dekorace
+  (lucerny, kameny) → atmosféra (jiskry). Kdo přidává další vrstvu, musí
+  vědět, do které patří — jinak vznikne vizuální šum a hůř se čte, kudy se dá
+  jít („clarity first").
+- **Zdi nikdy nezasahují do linek.** Hřebeny sedí mezi linkami (`|z| ≈ 9,5`
+  a `26,5`) s průchody u řeky a u základny. Když se posunou, začnou blokovat
+  výhled na jednotky (kamera je šikmo shora, vysoké objekty vrhají „stín"
+  do záběru — přesně to už jednou zakrylo hrdinu).
+- **Zdi jsou dodecahedry, ne boxy.** Box vypadal jako přepravka; kamenný
+  hřeben potřebuje nepravidelnou rotaci, různou výšku a mechové emissivum.
+- **Doupata mají barevný kruh podle typu** (malý = cyan, střední = modrá,
+  prastarý = fialová) — hráč musí z mapy poznat, co tam čeká.
+- **Statické objekty = instanced** (6 meshů + 1 Points). Rozpočet: scéna
+  zůstává ~73 draw calls; vesmír má 175+.
+- **Jiskry jsou `Points` s rotující skupinou**, ne 90 meshů.

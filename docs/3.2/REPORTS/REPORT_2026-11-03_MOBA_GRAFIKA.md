@@ -138,6 +138,23 @@ Ikony jsou v HUD (`.moba-slot`), na pick screenu (`.moba-spell`) a na
 dotykových tlačítkách. `school` se proto musel dostat až do `MobaStats`
 (`SpellMeta` i fallback v `earth/page.tsx`).
 
+## 5f. F16 — 3D svět podle Riftu
+
+Podle Riot dev blogu *Defining the Rift's Visual Style* (clarity first,
+vizuální hierarchie, „inviting, magic-infused forest"):
+
+- **zdi v džungli** — kamenné hřebeny mezi linkami s průchody (nikdy do linek)
+- **doupata kempů** — barevný kruh podle typu + dva balvany
+- **jáma bosse** — půlkruh balvanů (dark purple emissive)
+- **lucerny podél linek** — teplé světlo, vede hráče po cestě
+- **základny** — vyvýšená plošina s fontánou a týmovým prstencem
+- **obzor** — prstenec 22 hor za lesem, **jiskry** nad mapou (Points)
+- **rákosí** podél břehů řeky
+
+Vše instanced (6 meshů + Points). **Naměřeno:** 60 fps, **73 draw calls**,
+44,4 tis. trojúhelníků, 0 chyb. První verze měla zdi z boxů — vypadaly jako
+přepravky; po opravě na dodecahedry s mechovým emissivem čtou jako hřeben.
+
 ## 6. Co dál (grafika)
 
 1. **Kontaktní stíny** pod hrdiny a miniony (levné, hodně pomůže čitelnosti).
