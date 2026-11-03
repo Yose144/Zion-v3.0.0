@@ -67,7 +67,18 @@ stránce**, ale obsah se překrýval uvnitř. To je přesně ta třída chyb, kt
   zvlášť — na šířku je málo výšky, ovládání se zmenšuje.
 - Screenshoty před/po v `.artifacts/render/responsive/`.
 
-## 5. Meze
+## 5. Bonus: hydration chyba, kterou audit našel
+
+`mobile-audit` na `/park` spadl na **React #418** (hydration mismatch).
+Příčina: `dailyChallenge()` počítá den z **lokálního** data, ale server
+renderuje v UTC — kolem půlnoci se den rozešel (SSR „3. 11.", klient „4. 11.")
+a React zahodil serverové HTML. Karta výzvy se teď počítá až po mountu
+(stejna strategie jako profil), takže se nikdy nerozejde.
+
+Bylo to ~1 hodinu denně a jen v pásmech před/za UTC; screenshot ani
+`scrollWidth` to neukážou, jen konzole.
+
+## 6. Meze
 
 - Měřeno jen v headless Chromiu s emulací dotyku (**skutečný telefon chybí**),
   takže chování adresního řádku (dynamická výška `dvh`) a bezpečných insetů

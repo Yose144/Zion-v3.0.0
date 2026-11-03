@@ -172,12 +172,23 @@ for (const spec of PAGES) {
         await page.mouse.click(VIEWPORT.width / 2, VIEWPORT.height / 2);
         await page.waitForTimeout(250);
         await page.locator(spec.cast.button).first().click({ force: true }).catch(() => {});
-        // Čti **hned**: hrdina stojí ve fontáně, která od F9 doplňuje manu
-        // 12 %/s — po 700 ms byl rozdíl pryč a audit hlásil falešnou chybu.
-        await page.waitForTimeout(160);
-        const after = await readMana();
-        if (!(after < before)) fail(spec.name, `kouzlo nesnížilo manu (${before} → ${after})`);
-        else console.log(`      kouzlo: mana ${before} → ${after} (dotyk prošel do simulace)`);
+        /**
+         * Mana ve fontáně **regeneruje 12 %/s**, takže se nesmí čekat na
+         * „jedno čtení po X ms": HUD posílá telemetrii 5×/s a při pomalém
+         * snímku (swiftshader) se snížení stihne dorovnat. Hledá se proto
+         * **propad** mezi vzorky: 40 ms interval, strop 1 s. Regenerace je
+         * ~2 many za vzorek, kouzlo stojí 26 — propad > 8 je jednoznačný.
+         */
+        let after = before;
+        let lowest = before;
+        for (let i = 0; i < 25; i += 1) {
+          after = await readMana();
+          if (after < lowest) lowest = after;
+          if (lowest < before - 8) break;
+          await page.waitForTimeout(40);
+        }
+        if (!(lowest < before - 8)) fail(spec.name, `kouzlo nesnížilo manu (${before} → ${after})`);
+        else console.log(`      kouzlo: mana ${before} → ${lowest} (dotyk prošel do simulace)`);
       }
 
       // během hry na mobilu nemá navigace překážet

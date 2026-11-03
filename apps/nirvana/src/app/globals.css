@@ -5991,6 +5991,12 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   .saturn-list button {
     min-height: 2.25rem;
   }
+
+  /* barevné vzorky avatara byly 26×21 px */
+  .avatars-swatch {
+    min-width: 2.1rem;
+    min-height: 2.1rem;
+  }
 }
 
 /* odkaz pod bránou je v odstavci s 15px řádkem — prstem se trefuje špatně */
