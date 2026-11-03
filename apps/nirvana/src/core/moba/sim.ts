@@ -52,43 +52,192 @@ export interface Buff {
   source?: string;
 }
 
-/** Tři itemy — každý mění jinou věc, aby šlo hrát „na build". */
-export type ItemId = 'blade' | 'aegis' | 'boots';
+/**
+ * Itemy (F2) — základní komponenty + složené z receptů.
+ *
+ * Bonusy se **sčítají** přes všechny itemy hrdiny (`itemTotals`), takže
+ * přidání itemu nikde neznamená novou větev v sim. Efekty držíme na pár
+ * číslech (poškození, obrana, HP, mana, rychlost, regenerace, vidění) —
+ * dost na to, aby šlo hrát „na build", a dost málo na to, aby se to dalo
+ * vybalancovat.
+ */
+export type ItemId =
+  // základ
+  | 'blade'
+  | 'fang'
+  | 'aegis'
+  | 'cloak'
+  | 'boots'
+  | 'rune'
+  // složené
+  | 'warblade'
+  | 'bulwark'
+  | 'windsoles'
+  | 'lotus'
+  | 'eye'
+  | 'ember'
+  | 'scepter'
+  | 'crown';
+
+export interface ItemBonus {
+  /** Multiplikativní bonus k poškození (0.25 = +25 %). */
+  damage?: number;
+  /** Snížení příchozího poškození (0.10 = −10 %). */
+  armor?: number;
+  hp?: number;
+  mana?: number;
+  /** Multiplikativní bonus k rychlosti. */
+  speed?: number;
+  /** Regenerace HP za sekundu. */
+  regen?: number;
+  /** Bonus k vidění v metrech. */
+  vision?: number;
+}
 
 export interface MobaItem {
   id: ItemId;
   name: { cs: string; en: string };
   cost: number;
   note: { cs: string; en: string };
+  /** Komponenty se při nákupu spotřebují (aodečte se jejich cena). */
+  components?: ItemId[];
+  bonus: ItemBonus;
 }
 
+/** Kolik itemů se vejde hrdinovi do inventáře. */
+export const ITEM_SLOTS = 6;
+/** Kolik z ceny dostaneš zpět při prodeji. */
+export const SELL_RATIO = 0.6;
+
 export const ITEMS: MobaItem[] = [
+  // ── základ ──────────────────────────────────────────────────────
   {
     id: 'blade',
     name: { cs: 'Čepel', en: 'Blade' },
     cost: 400,
     note: { cs: '+25 % poškození', en: '+25% damage' },
+    bonus: { damage: 0.25 },
+  },
+  {
+    id: 'fang',
+    name: { cs: 'Tesák', en: 'Fang' },
+    cost: 300,
+    note: { cs: '+12 % poškození', en: '+12% damage' },
+    bonus: { damage: 0.12 },
   },
   {
     id: 'aegis',
     name: { cs: 'Aegis', en: 'Aegis' },
     cost: 400,
     note: { cs: '+250 max HP, −10 % příchozího poškození', en: '+250 max HP, −10% incoming damage' },
+    bonus: { hp: 250, armor: 0.1 },
+  },
+  {
+    id: 'cloak',
+    name: { cs: 'Plášť', en: 'Cloak' },
+    cost: 500,
+    note: { cs: '−12 % příchozího poškození', en: '−12% incoming damage' },
+    bonus: { armor: 0.12 },
   },
   {
     id: 'boots',
     name: { cs: 'Sandály', en: 'Boots' },
     cost: 400,
     note: { cs: '+15 % rychlosti', en: '+15% movement speed' },
+    bonus: { speed: 0.15 },
+  },
+  {
+    id: 'rune',
+    name: { cs: 'Runový kámen', en: 'Rune Stone' },
+    cost: 350,
+    note: { cs: '+150 max manу', en: '+150 max mana' },
+    bonus: { mana: 150 },
+  },
+  // ── složené ─────────────────────────────────────────────────────
+  {
+    id: 'warblade',
+    name: { cs: 'Válečná čepel', en: 'Warblade' },
+    cost: 1100,
+    note: { cs: '+45 % poškození (Čepel + Tesák)', en: '+45% damage (Blade + Fang)' },
+    components: ['blade', 'fang'],
+    bonus: { damage: 0.45 },
+  },
+  {
+    id: 'bulwark',
+    name: { cs: 'Bašta', en: 'Bulwark' },
+    cost: 1350,
+    note: { cs: '+450 max HP, −24 % příchozího (Aegis + Plášť)', en: '+450 max HP, −24% incoming (Aegis + Cloak)' },
+    components: ['aegis', 'cloak'],
+    bonus: { hp: 450, armor: 0.24 },
+  },
+  {
+    id: 'windsoles',
+    name: { cs: 'Větrné sandály', en: 'Windsoles' },
+    cost: 1150,
+    note: { cs: '+25 % rychlosti, +150 many (Sandály + Runa)', en: '+25% speed, +150 mana (Boots + Rune)' },
+    components: ['boots', 'rune'],
+    bonus: { speed: 0.25, mana: 150 },
+  },
+  {
+    id: 'lotus',
+    name: { cs: 'Lotosový štít', en: 'Lotus Shield' },
+    cost: 700,
+    note: { cs: '+200 max HP, regenerace 4 HP/s', en: '+200 max HP, 4 HP/s regen' },
+    bonus: { hp: 200, regen: 4 },
+  },
+  {
+    id: 'eye',
+    name: { cs: 'Orlí oko', en: 'Eagle Eye' },
+    cost: 550,
+    note: { cs: '+6 m vidění (proti mlze)', en: '+6 m vision (against fog)' },
+    bonus: { vision: 6 },
+  },
+  {
+    id: 'ember',
+    name: { cs: 'Žhavý uhlík', en: 'Ember' },
+    cost: 600,
+    note: { cs: '+18 % poškození, +8 % rychlosti', en: '+18% damage, +8% speed' },
+    bonus: { damage: 0.18, speed: 0.08 },
+  },
+  {
+    id: 'scepter',
+    name: { cs: 'Žezlo', en: 'Scepter' },
+    cost: 1400,
+    note: { cs: '+25 % poškození, +300 many (Runa + Uhlík)', en: '+25% damage, +300 mana (Rune + Ember)' },
+    components: ['rune', 'ember'],
+    bonus: { damage: 0.25, mana: 300 },
+  },
+  {
+    id: 'crown',
+    name: { cs: 'Koruna', en: 'Crown' },
+    cost: 1400,
+    note: { cs: '+30 % poškození, +300 max HP', en: '+30% damage, +300 max HP' },
+    bonus: { damage: 0.3, hp: 300 },
   },
 ];
 
+const ITEM_BY_ID = new Map(ITEMS.map((item) => [item.id, item]));
+
+/** Součet bonusů všech itemů hrdiny — jedno místo, odkud čtou všichni. */
+export function itemTotals(items: ItemId[]): Required<ItemBonus> {
+  const total: Required<ItemBonus> = { damage: 0, armor: 0, hp: 0, mana: 0, speed: 0, regen: 0, vision: 0 };
+  for (const id of items) {
+    const bonus = ITEM_BY_ID.get(id)?.bonus;
+    if (!bonus) continue;
+    total.damage += bonus.damage ?? 0;
+    total.armor += bonus.armor ?? 0;
+    total.hp += bonus.hp ?? 0;
+    total.mana += bonus.mana ?? 0;
+    total.speed += bonus.speed ?? 0;
+    total.regen += bonus.regen ?? 0;
+    total.vision += bonus.vision ?? 0;
+  }
+  return total;
+}
+
 /** Základní rychlost hrdiny (m/s) — stejné číslo používá klientská predikce. */
 export const BASE_SPEED = 6.2;
-export const BLADE_MULT = 1.25;
-export const AEGIS_MULT = 0.9;
-export const AEGIS_HP = 250;
-export const BOOTS_MULT = 1.15;
+
 
 // ── Ekonomika (F1) — viz docs/3.3/MOBA-PRVNI-SVET-PLAN.md ─────────
 //
@@ -120,8 +269,7 @@ export const xpNeeded = (level: number) => 120 + level * 70;
 
 /** Rychlost podle itemů, buffů a zpomalení. */
 export function heroSpeed(hero: { items: ItemId[]; slowFactor: number; buffs?: Buff[] }): number {
-  const boots = hero.items.includes('boots') ? BOOTS_MULT : 1;
-  let speed = BASE_SPEED * boots * (1 - hero.slowFactor);
+  let speed = BASE_SPEED * (1 + itemTotals(hero.items).speed) * (1 - hero.slowFactor);
   const now = Date.now();
   for (const buff of hero.buffs ?? []) {
     if (buff.until > now && buff.type === 'speed') speed *= 1 + buff.power;
@@ -149,6 +297,9 @@ export interface Hero {
   shieldUntil: number;
   slowUntil: number;
   slowFactor: number;
+  /** Základní maxima před itemy — maxima se dopočítávají (`recomputeHeroStats`). */
+  baseMaxHp: number;
+  baseMaxMana: number;
   spells: Spell[];
   cooldowns: Record<SpellSlot, number>;
   attackCooldown: number;
@@ -309,6 +460,8 @@ function makeHero(id: string, team: Team, heroId: number, spawn: { x: number; z:
     shieldUntil: 0,
     slowUntil: 0,
     slowFactor: 0,
+    baseMaxHp: maxHp,
+    baseMaxMana: maxMana,
     spells: spellsFor(heroId, look.palette.glow),
     cooldowns: { Q: 0, W: 0, E: 0, R: 0 },
     attackCooldown: 0,
@@ -433,7 +586,7 @@ export function nodeBonus(state: MobaState, team: Team): number {
 const levelScale = (hero: Hero) => 1 + (hero.level - 1) * 0.06;
 /** Odchozí poškození podle itemů a buffů. */
 const damageOut = (hero: Hero, now: number) => {
-  let mult = hero.items.includes('blade') ? BLADE_MULT : 1;
+  let mult = 1 + itemTotals(hero.items).damage;
   for (const buff of hero.buffs) {
     if (buff.until > now && buff.type === 'strength') mult *= 1 + buff.power;
   }
@@ -441,7 +594,7 @@ const damageOut = (hero: Hero, now: number) => {
 };
 /** Příchozí poškození podle itemů a buffů (Aegis tlumí, ward posiluje). */
 const damageIn = (hero: Hero, now: number) => {
-  let mult = hero.items.includes('aegis') ? AEGIS_MULT : 1;
+  let mult = Math.max(0.5, 1 - itemTotals(hero.items).armor);
   for (const buff of hero.buffs) {
     if (buff.until > now && buff.type === 'ward') mult *= 1 - buff.power * 0.5;
   }
@@ -610,6 +763,15 @@ function damageMonster(state: MobaState, monster: Monster, amount: number, sourc
   }
 }
 
+/** Přepočítá maxima z levelu a itemů — jediné místo, kde se mění maxHp/maxMana. */
+function recomputeHeroStats(hero: Hero) {
+  const totals = itemTotals(hero.items);
+  hero.maxHp = hero.baseMaxHp + (hero.level - 1) * 55 + totals.hp;
+  hero.maxMana = hero.baseMaxMana + (hero.level - 1) * 18 + totals.mana;
+  hero.hp = Math.min(hero.hp, hero.maxHp);
+  hero.mana = Math.min(hero.mana, hero.maxMana);
+}
+
 /** Poškození struktury — jedno místo pro hrdiny i miniony (odměna týmu). */
 function damageTower(state: MobaState, tower: Tower, amount: number, attacker: Hero | null) {
   if (tower.hp <= 0) return;
@@ -639,8 +801,7 @@ function gainXp(state: MobaState, hero: Hero, amount: number) {
     if (hero.xp < need || hero.level >= 15) break;
     hero.xp -= need;
     hero.level += 1;
-    hero.maxHp += 55;
-    hero.maxMana += 18;
+    recomputeHeroStats(hero);
     hero.hp = Math.min(hero.maxHp, hero.hp + 90);
     hero.mana = Math.min(hero.maxMana, hero.mana + 40);
     addEffect(state, 'level', hero.x, hero.z, 1.8, '#ffd166', 700);
@@ -982,6 +1143,9 @@ export function stepMoba(
     hero.mana = Math.min(hero.maxMana, hero.mana + dt * 7);
     // Pasivní příjem — i prohrávající linka musí mít cestu k itemu.
     hero.gold = Math.min(GOLD_CAP, hero.gold + PASSIVE_GOLD_PER_SEC * dt);
+    // Regenerace z itemů (Lotosový štít).
+    const regen = itemTotals(hero.items).regen;
+    if (regen > 0) hero.hp = Math.min(hero.maxHp, hero.hp + regen * dt);
 
     // Hoření a regenerace — buffy, které působí každý snímek.
     for (const buff of hero.buffs) {
@@ -1236,19 +1400,42 @@ export function stepMoba(
   }
 }
 
-/** Nákup itemu — vrací `false`, když na něj není zlato nebo už ho má. */
+/**
+ * Nákup itemu — vrací `false`, když na něj není zlato, není slot nebo už ho má.
+ *
+ * Složené itemy se chovají jako recept: vlastněné komponenty se **spotřebují**
+ * a platí se jen rozdíl ceny. Slot se uvolní právě o komponenty, takže
+ * složení jde i s plným inventářem.
+ */
 export function buyItem(hero: Hero, itemId: ItemId): boolean {
-  const item = ITEMS.find((candidate) => candidate.id === itemId);
+  const item = ITEM_BY_ID.get(itemId);
   if (!item) return false;
   if (hero.items.includes(itemId)) return false;
-  if (hero.gold < item.cost) return false;
-  hero.gold -= item.cost;
+
+  const owned = (item.components ?? []).filter((component) => hero.items.includes(component));
+  const refundForComponents = owned.reduce((sum, component) => sum + (ITEM_BY_ID.get(component)?.cost ?? 0), 0);
+  const price = Math.max(0, item.cost - refundForComponents);
+  if (hero.gold < price) return false;
+
+  // Po spotřebování komponent se slot uvolní — kontrola až po nich.
+  if (hero.items.length - owned.length + 1 > ITEM_SLOTS) return false;
+
+  hero.gold -= price;
+  if (owned.length > 0) hero.items = hero.items.filter((id) => !owned.includes(id));
   hero.items.push(itemId);
-  if (itemId === 'aegis') {
-    hero.maxHp += AEGIS_HP;
-    hero.hp = Math.min(hero.maxHp, hero.hp + AEGIS_HP);
-  }
+  recomputeHeroStats(hero);
   return true;
+}
+
+/** Prodej itemu — vrací vrácené zlato (0 = item nemá). */
+export function sellItem(hero: Hero, itemId: ItemId): number {
+  const item = ITEM_BY_ID.get(itemId);
+  if (!item || !hero.items.includes(itemId)) return 0;
+  const refund = Math.round(item.cost * SELL_RATIO);
+  hero.items = hero.items.filter((id) => id !== itemId);
+  hero.gold = Math.min(GOLD_CAP, hero.gold + refund);
+  recomputeHeroStats(hero);
+  return refund;
 }
 
 /** Najde hrdinu podle id v jakémkoli stavu (pro server i debug). */
@@ -1298,7 +1485,10 @@ export interface MobaSnapshot {
 export function visionSources(state: MobaState, team: Team): { x: number; z: number; radius: number }[] {
   const sources: { x: number; z: number; radius: number }[] = [];
   for (const hero of state.heroes) {
-    if (hero.team === team && hero.alive) sources.push({ x: hero.x, z: hero.z, radius: VISION.hero });
+    if (hero.team === team && hero.alive) {
+      // Orlí oko a jiné itemy vidění rozšiřují okruh — mlha je jejich protihra.
+      sources.push({ x: hero.x, z: hero.z, radius: VISION.hero + itemTotals(hero.items).vision });
+    }
   }
   for (const minion of state.minions) {
     if (minion.team === team) sources.push({ x: minion.x, z: minion.z, radius: VISION.minion });

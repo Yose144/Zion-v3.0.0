@@ -14,7 +14,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { buyItem, createMoba, mobaSnapshot, stepMoba, NO_INPUT, type ItemId, type MobaSnapshot, type MobaState } from './sim';
+import { buyItem, createMoba, mobaSnapshot, sellItem, stepMoba, NO_INPUT, type ItemId, type MobaSnapshot, type MobaState } from './sim';
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import { MobaStage } from './MobaStage';
@@ -64,6 +64,8 @@ export interface MobaProps {
   debug?: boolean;
   /** Obchod: stránka sem zapíše item, ovladač ho hned koupí. */
   buyRequest?: React.MutableRefObject<ItemId | null>;
+  /** Prodej: stránka sem zapíše item, ovladač ho hned prodá. */
+  sellRequest?: React.MutableRefObject<ItemId | null>;
 }
 
 /** Sestaví HUD data ze snapshotu — společná pro sólo i online. */
@@ -141,6 +143,7 @@ function SoloController({
   onEnd,
   debug,
   buyRequest,
+  sellRequest,
   snapshotRef,
 }: MobaProps & { snapshotRef: React.MutableRefObject<MobaSnapshot | null> }) {
   const { camera, gl } = useThree();
@@ -236,6 +239,11 @@ function SoloController({
       const item = buyRequest.current;
       buyRequest.current = null;
       if (buyItem(you, item)) mobaAudio.buy();
+    }
+    if (sellRequest?.current) {
+      const item = sellRequest.current;
+      sellRequest.current = null;
+      if (sellItem(you, item) > 0) mobaAudio.buy();
     }
 
     // Mlha války: kreslíme jen to, co náš tým vidí (stejné pravidlo jako server).

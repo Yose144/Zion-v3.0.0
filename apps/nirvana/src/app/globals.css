@@ -5069,3 +5069,108 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     bottom: calc(37vh + 0.9rem);
   }
 }
+
+/* ── MOBA F2: inventář a obchod s recepty ─────────────────────────── */
+
+.moba-inventory {
+  display: flex;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.moba-inv-slot {
+  flex: 1;
+  min-width: 0;
+  padding: 0.3rem 0.35rem;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 0.5rem;
+  background: rgba(4, 10, 9, 0.72);
+  color: rgba(233, 242, 238, 0.35);
+  font-size: 0.55rem;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.moba-inv-slot.is-filled {
+  border-style: solid;
+  border-color: rgba(127, 227, 212, 0.45);
+  background: rgba(127, 227, 212, 0.1);
+  color: #d8f5ef;
+  cursor: pointer;
+}
+
+.moba-inv-slot.is-filled:hover {
+  border-color: rgba(255, 122, 107, 0.6);
+  color: #ffd5cf;
+}
+
+.moba-shop-toggle {
+  padding: 0 0.6rem;
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  border-radius: 0.6rem;
+  background: rgba(255, 209, 102, 0.12);
+  color: #ffd166;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.moba-shop-toggle.is-open {
+  background: rgba(255, 122, 107, 0.16);
+  border-color: rgba(255, 122, 107, 0.45);
+  color: #ffb4a8;
+}
+
+.moba-shop-panel {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 0.4rem);
+  width: min(38rem, 92vw);
+  max-height: 46vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.8rem;
+  background: rgba(4, 10, 9, 0.95);
+  pointer-events: auto;
+  z-index: 5;
+}
+
+.moba-shop-group > strong {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 209, 102, 0.8);
+}
+
+.moba-shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.3rem;
+}
+
+.moba-shop-item.is-built {
+  border-color: rgba(181, 139, 42, 0.45);
+  background: rgba(181, 139, 42, 0.08);
+}
+
+.moba-shop-item em {
+  font-style: normal;
+  font-size: 0.5rem;
+  color: rgba(233, 242, 238, 0.5);
+}
+
+.moba-shop-item small {
+  font-size: 0.55rem;
+  color: rgba(255, 209, 102, 0.85);
+}

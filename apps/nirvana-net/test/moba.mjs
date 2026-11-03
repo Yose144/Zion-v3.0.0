@@ -203,12 +203,27 @@ try {
     startedB.moba.heroes.map((hero) => hero.id).join(','),
   );
 
-  // obchod: server kupuje jen když je zlato (start 320 < 400)
+  // obchod: server kupuje jen když je zlato (start 320 < 400 na sandály)
   const goldStart = meA.gold;
   a.send({ t: 'buy', item: 'boots' });
   await sleep(400);
   const afterBuy = a.last((m) => m.t === 'snapshot' && m.game === 'moba').moba.heroes.find((hero) => hero.id === roomA.youPlayerId);
-  check('obchod: bez zlata nic nekoupí', afterBuy.items.length === 0 && afterBuy.gold === goldStart, `${afterBuy.gold} / ${afterBuy.items.length}`);
+  // zlato roste pasivně (F1), takže se neporovnává přesně — jen že se neutratilo
+  check('obchod: bez zlata nic nekoupí', afterBuy.items.length === 0 && afterBuy.gold <= goldStart + 3, `${afterBuy.gold} / ${afterBuy.items.length}`);
+
+  // server buy handler: Tesák stojí 300, na začátku je 320 → musí projít
+  a.send({ t: 'buy', item: 'fang' });
+  await sleep(600);
+  const withFang = a.last((m) => m.t === 'snapshot' && m.game === 'moba').moba.heroes.find((hero) => hero.id === roomA.youPlayerId);
+  check('obchod: server nákup opravdu provede', withFang.items.includes('fang'), withFang.items.join(','));
+
+  // prodej: 60 % z ceny (300 → 180)
+  const goldBeforeSell = withFang.gold;
+  a.send({ t: 'sell', item: 'fang' });
+  await sleep(600);
+  const afterSell = a.last((m) => m.t === 'snapshot' && m.game === 'moba').moba.heroes.find((hero) => hero.id === roomA.youPlayerId);
+  check('obchod: prodej item odebere', !afterSell.items.includes('fang'), afterSell.items.join(','));
+  check('obchod: prodej vrátí zlato', afterSell.gold > goldBeforeSell, `${goldBeforeSell} → ${afterSell.gold}`);
 
   // pohyb: posílat vstup a čekat, až se pozice změní
   const startX = meA.x;

@@ -56,6 +56,7 @@ import {
   createMobaRoom,
   mobaRoomSnapshot,
   removeMobaSeat,
+  sellMobaItem,
   setMobaInput,
   stepMobaRoom,
   MOBA_ROOM_SIZE,
@@ -485,6 +486,34 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
       }
       leaveRoom(conn, 'leave');
       return;
+
+    case 'buy': {
+      const room = conn.room;
+      if (!room) {
+        sendError(conn, 'not_in_room');
+        return;
+      }
+      if (!room.moba) {
+        sendError(conn, 'not_available');
+        return;
+      }
+      buyMobaItem(room.moba, conn.id, message.item);
+      return;
+    }
+
+    case 'sell': {
+      const room = conn.room;
+      if (!room) {
+        sendError(conn, 'not_in_room');
+        return;
+      }
+      if (!room.moba) {
+        sendError(conn, 'not_available');
+        return;
+      }
+      sellMobaItem(room.moba, conn.id, message.item);
+      return;
+    }
 
     case 'input': {
       const another = conn.room;

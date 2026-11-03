@@ -10,7 +10,15 @@
  * server z cookie (`zion_session` → ZIS), tak si je nikdo nemůže přepsat.
  */
 
-import type { ItemId, MobaSnapshot } from '../moba/sim';
+import {
+  ITEMS,
+  type ItemId,
+  type MobaSnapshot,
+} from '../moba/sim';
+
+const ITEM_IDS = new Set<string>(ITEMS.map((item) => item.id));
+const asItemId = (value: unknown): ItemId | null =>
+  typeof value === 'string' && ITEM_IDS.has(value) ? (value as ItemId) : null;
 
 /**
  * Historie:
@@ -21,8 +29,10 @@ import type { ItemId, MobaSnapshot } from '../moba/sim';
  *      nic filtrované. Verze se musí potkat.
  *  8 — **ekonomika**: hrdina nese `xp` a `xpNeed` (HUD ukazuje postup),
  *      zlato má nový strop a přibylo pasivní zlato/deny/asistence.
+ *  9 — **itemy**: 14 itemů s recepty a 6 sloty; nová zpráva `sell`.
+ *      Starý klient by neznal nová id itemů v inventáři.
  */
-export const PROTO_VERSION = 8;
+export const PROTO_VERSION = 9;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -232,6 +242,8 @@ export type ClientMessage =
   | { t: 'join'; game: GameId; room?: string; heroId?: number }
   /** MOBA: nákup itemu (jen v místnosti typu `moba`). */
   | { t: 'buy'; item: ItemId }
+  /** MOBA: prodej itemu (vrací 60 % ceny). */
+  | { t: 'sell'; item: ItemId }
   | { t: 'leave' }
   | {
       t: 'input';
@@ -386,14 +398,15 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         castZ: num(message.castZ, -60, 60),
       };
 
-    case 'buy':
-      return {
-        t: 'buy',
-        item:
-          message.item === 'blade' || message.item === 'aegis' || message.item === 'boots'
-            ? message.item
-            : 'blade',
-      };
+    case 'buy': {
+      const item = asItemId(message.item);
+      return item ? { t: 'buy', item } : null;
+    }
+
+    case 'sell': {
+      const item = asItemId(message.item);
+      return item ? { t: 'sell', item } : null;
+    }
 
     case 'chat':
       return { t: 'chat', text: str(message.text, CHAT_MAX_LEN) };

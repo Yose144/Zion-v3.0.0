@@ -14,6 +14,7 @@ import {
   createMobaMatch,
   heroById,
   mobaSnapshot,
+  sellItem,
   stepMoba,
   NO_INPUT,
   type ItemId,
@@ -110,6 +111,14 @@ export function buyMobaItem(room: MobaRoomSim, connId: string, itemId: ItemId): 
   const hero = heroById(room.sim, connId);
   if (!hero) return false;
   return buyItem(hero, itemId);
+}
+
+/** Prodej itemu — vrací vrácené zlato (0 = nic se neprodalo). */
+export function sellMobaItem(room: MobaRoomSim, connId: string, itemId: ItemId): number {
+  if (!room.sim) return 0;
+  const hero = heroById(room.sim, connId);
+  if (!hero) return 0;
+  return sellItem(hero, itemId);
 }
 
 export function setMobaInput(room: MobaRoomSim, connId: string, input: MobaInput): void {

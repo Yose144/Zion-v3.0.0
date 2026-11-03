@@ -17,6 +17,7 @@ import {
   type PlayerSummary,
   type ServerMessage,
 } from './protocol';
+import type { ItemId } from '../moba/sim';
 
 /**
  * Jedno WebSocket spojení na celou aplikaci.
@@ -59,7 +60,9 @@ export interface NetApi {
    */
   sendMobaInput: (input: { moveX: number; moveZ: number; attack: boolean; cast: { slot: 'Q' | 'W' | 'E' | 'R'; x: number; z: number } | null }) => boolean;
   /** MOBA: nákup itemu (server rozhodne, jestli na něj je zlato). */
-  sendBuy: (item: 'blade' | 'aegis' | 'boots') => void;
+  sendBuy: (item: ItemId) => void;
+  /** MOBA: prodej itemu (server vrátí 60 % ceny). */
+  sendSell: (item: ItemId) => void;
   leaveRoom: () => void;
   /**
    * Herní data tečou přes subscription, ne přes React state — snapshoty
@@ -352,6 +355,13 @@ export function NetProvider({ children }: { children: ReactNode }) {
     [send],
   );
 
+  const sendSell = useCallback<NetApi['sendSell']>(
+    (item) => {
+      send({ t: 'sell', item });
+    },
+    [send],
+  );
+
   const value = useMemo<NetApi>(
     () => ({
       status,
@@ -372,6 +382,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       sendInput,
       sendMobaInput,
       sendBuy,
+      sendSell,
     }),
     [
       status,
@@ -391,6 +402,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       sendInput,
       sendMobaInput,
       sendBuy,
+      sendSell,
     ],
   );
 

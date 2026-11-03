@@ -46,6 +46,7 @@ export function MobaOnline({
   onPhase,
   debug,
   buyRequest,
+  sellRequest,
 }: {
   heroId: number;
   onStats: (stats: MobaStats) => void;
@@ -54,6 +55,8 @@ export function MobaOnline({
   debug?: boolean;
   /** Obchod: stránka sem zapíše item, ovladač ho pošle serveru. */
   buyRequest?: React.MutableRefObject<ItemId | null>;
+  /** Prodej: stránka sem zapíše item, ovladač ho pošle serveru. */
+  sellRequest?: React.MutableRefObject<ItemId | null>;
 }) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
   const selfPose = useRef<{ x: number; z: number; active: boolean } | null>(null);
@@ -100,6 +103,7 @@ function OnlineController({
   onPhase,
   debug,
   buyRequest,
+  sellRequest,
   snapshotRef,
   selfPose,
 }: {
@@ -109,11 +113,12 @@ function OnlineController({
   onPhase?: (phase: 'connecting' | 'waiting' | 'countdown' | 'running' | 'ended' | 'offline') => void;
   debug?: boolean;
   buyRequest?: React.MutableRefObject<ItemId | null>;
+  sellRequest?: React.MutableRefObject<ItemId | null>;
   snapshotRef: React.MutableRefObject<MobaSnapshot | null>;
   selfPose: React.MutableRefObject<{ x: number; z: number; active: boolean } | null>;
 }) {
   const { camera, gl } = useThree();
-  const { subscribe, joinGame, leaveRoom, sendMobaInput, sendBuy, connected, youPlayerId } = useNet();
+  const { subscribe, joinGame, leaveRoom, sendMobaInput, sendBuy, sendSell, connected, youPlayerId } = useNet();
   const keys = useRef(new Set<string>());
   const pointer = useRef({ x: 0, y: 0 });
   const attack = useRef(false);
@@ -228,6 +233,10 @@ function OnlineController({
     if (buyRequest?.current) {
       sendBuy(buyRequest.current);
       buyRequest.current = null;
+    }
+    if (sellRequest?.current) {
+      sendSell(sellRequest.current);
+      sellRequest.current = null;
     }
 
     const snapshot = snapshotRef.current;

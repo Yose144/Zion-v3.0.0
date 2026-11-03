@@ -21,7 +21,10 @@ import { MobaGame, type MobaStats } from '@/core/moba/MobaGame';
 import { MobaOnline } from '@/core/moba/MobaOnline';
 import { MobaMinimap } from '@/core/moba/MobaMinimap';
 import { NODE_SITES } from '@/core/moba/map';
-import { ITEMS, type ItemId } from '@/core/moba/sim';
+import { ITEMS, ITEM_SLOTS, SELL_RATIO, type ItemId } from '@/core/moba/sim';
+
+/** Rychlé hledání itemu podle id — používá inventář i obchod. */
+const ITEM_BY_ID = new Map(ITEMS.map((item) => [item.id, item]));
 import { SCHOOL_LABEL, spellsForAvatar } from '@/core/moba/spells';
 import { SPELL_LABEL } from '@/core/moba/keys';
 import { MobaTouch } from '@/core/moba/MobaTouch';
@@ -45,6 +48,8 @@ export default function EarthPage() {
   const [onlinePhase, setOnlinePhase] = useState<OnlinePhase>('connecting');
   const [stats, setStats] = useState<MobaStats | null>(EMPTY_STATS);
   const buyRequest = useRef<ItemId | null>(null);
+  const sellRequest = useRef<ItemId | null>(null);
+  const [shopOpen, setShopOpen] = useState(false);
   const [winner, setWinner] = useState<'blue' | 'red' | null>(null);
 
   /** Dotykové ovládání — na mobilu joystick + kouzla místo WASD a QWER. */
@@ -212,6 +217,7 @@ export default function EarthPage() {
               onStats={onStats}
               onEnd={onEnd}
               buyRequest={buyRequest}
+              sellRequest={sellRequest}
               debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
             />
           ) : (
@@ -221,6 +227,7 @@ export default function EarthPage() {
               onEnd={onEnd}
               onPhase={setOnlinePhase}
               buyRequest={buyRequest}
+              sellRequest={sellRequest}
               debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
             />
           )}
@@ -338,26 +345,97 @@ export default function EarthPage() {
               <span className="moba-shop-gold" title={cs ? 'zlato' : 'gold'}>
                 ◈ {stats?.gold ?? 0}
               </span>
-              {ITEMS.map((item) => {
-                const owned = (stats?.items ?? []).includes(item.id);
-                const affordable = (stats?.gold ?? 0) >= item.cost;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={`moba-shop-item${owned ? ' is-owned' : ''}`}
-                    disabled={owned || !affordable}
-                    title={item.note[cs ? 'cs' : 'en']}
-                    onClick={() => {
-                      buyRequest.current = item.id;
-                    }}
-                  >
-                    <strong>{item.name[cs ? 'cs' : 'en']}</strong>
-                    <small>{owned ? (cs ? 'koupeno' : 'owned') : `${item.cost} ◈`}</small>
-                  </button>
-                );
-              })}
+              <div className="moba-inventory" title={cs ? 'inventář (klikni pro prodej)' : 'inventory (click to sell)'}>
+                {Array.from({ length: ITEM_SLOTS }).map((_, index) => {
+                  const itemId = stats?.items[index];
+                  const item = itemId ? ITEM_BY_ID.get(itemId) : undefined;
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      className={`moba-inv-slot${item ? ' is-filled' : ''}`}
+                      disabled={!item}
+                      title={
+                        item
+                          ? `${item.name[cs ? 'cs' : 'en']} — ${item.note[cs ? 'cs' : 'en']} · ${cs ? 'prodej' : 'sell'} +${Math.round(item.cost * SELL_RATIO)} ◈`
+                          : cs
+                            ? 'prázdný slot'
+                            : 'empty slot'
+                      }
+                      onClick={() => {
+                        if (itemId) sellRequest.current = itemId;
+                      }}
+                    >
+                      {item ? item.name[cs ? 'cs' : 'en'] : '·'}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                className={`moba-shop-toggle${shopOpen ? ' is-open' : ''}`}
+                onClick={() => setShopOpen((open) => !open)}
+                title={cs ? 'obchod' : 'shop'}
+              >
+                {shopOpen ? '×' : cs ? 'Obchod' : 'Shop'}
+              </button>
             </div>
+
+            {shopOpen && (
+              <div className="moba-shop-panel">
+                {(['base', 'built'] as const).map((group) => (
+                  <div key={group} className="moba-shop-group">
+                    <strong>{group === 'base' ? (cs ? 'Základ' : 'Base') : cs ? 'Složené' : 'Built'}</strong>
+                    <div className="moba-shop-grid">
+                      {ITEMS.filter((item) => (item.components ? 'built' : 'base') === group).map((item) => {
+                        const items = stats?.items ?? [];
+                        const ownedComponents = (item.components ?? []).filter((component) => items.includes(component));
+                        const price = Math.max(
+                          0,
+                          item.cost - ownedComponents.reduce((sum, component) => sum + (ITEM_BY_ID.get(component)?.cost ?? 0), 0),
+                        );
+                        const owned = items.includes(item.id);
+                        const slotsAfter = items.length - ownedComponents.length + 1;
+                        const full = slotsAfter > ITEM_SLOTS;
+                        const affordable = (stats?.gold ?? 0) >= price;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className={`moba-shop-item${owned ? ' is-owned' : ''}${item.components ? ' is-built' : ''}`}
+                            disabled={owned || full || !affordable}
+                            title={item.note[cs ? 'cs' : 'en']}
+                            onClick={() => {
+                              buyRequest.current = item.id;
+                            }}
+                          >
+                            <strong>{item.name[cs ? 'cs' : 'en']}</strong>
+                            <small>
+                              {owned
+                                ? cs
+                                  ? 'koupeno'
+                                  : 'owned'
+                                : full
+                                  ? cs
+                                    ? 'plný inventář'
+                                    : 'inventory full'
+                                  : `${price} ◈`}
+                            </small>
+                            {item.components && (
+                              <em>
+                                {item.components
+                                  .map((component) => ITEM_BY_ID.get(component)?.name[cs ? 'cs' : 'en'] ?? component)
+                                  .join(' + ')}
+                              </em>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="moba-tips">
               {coarse

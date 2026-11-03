@@ -9,7 +9,7 @@
  * Spuštění: npx tsx apps/nirvana/test/moba-sim.mjs
  */
 
-import { BASE_SPEED, buyItem, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isVisibleTo, stepMoba, mobaSnapshot, visionSources, NO_INPUT } from '../src/core/moba/sim.ts';
+import { BASE_SPEED, buyItem, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isVisibleTo, ITEMS, ITEM_SLOTS, sellItem, stepMoba, mobaSnapshot, visionSources, NO_INPUT } from '../src/core/moba/sim.ts';
 import { SCHOOL_TRAITS, spellRank, spellsForAvatar } from '../src/core/moba/spells.ts';
 import { NEXUS_HP, VISION, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
 
@@ -446,6 +446,67 @@ check(
   advance(s, 1200);
   check('bot: koupí item, když má zlato', bot.items.length >= 1, String(bot.items.length));
   check('bot: zlato se odečetlo', bot.gold < 500, String(Math.round(bot.gold)));
+}
+
+// ── itemy: recepty, sloty, prodej (F2) ──────────────────────────────
+{
+  console.log('\n-- itemy --');
+  check('itemy: 14 itemů', ITEMS.length === 14, String(ITEMS.length));
+  check('itemy: 6 slotů', ITEM_SLOTS === 6, String(ITEM_SLOTS));
+
+  const s = createMoba(0, 82, 2_000_000);
+  const hero = s.heroes.find((candidate) => candidate.id === 'hero-you');
+  hero.gold = 5000;
+
+  // recept: Čepel + Tesák → Válečná čepel, platí se jen rozdíl ceny
+  buyItem(hero, 'blade');
+  buyItem(hero, 'fang');
+  const goldBeforeRecipe = hero.gold;
+  const crafted = buyItem(hero, 'warblade');
+  check('recept: složí válečnou čepel', crafted && hero.items.includes('warblade'), hero.items.join(','));
+  check(
+    'recept: komponenty se spotřebovaly',
+    !hero.items.includes('blade') && !hero.items.includes('fang'),
+    hero.items.join(','),
+  );
+  check('recept: platí se jen rozdíl 400', hero.gold === goldBeforeRecipe - 400, String(goldBeforeRecipe - hero.gold));
+  check('recept: hotový item nedáš dvakrát', !buyItem(hero, 'warblade'));
+
+  // slot limit — šest itemů ano, sedmý ne
+  const s2 = createMoba(0, 82, 2_000_000);
+  const h2 = s2.heroes.find((candidate) => candidate.id === 'hero-you');
+  h2.gold = 9999;
+  for (const id of ['blade', 'fang', 'aegis', 'cloak', 'boots', 'rune']) buyItem(h2, id);
+  check('sloty: šest itemů se vejde', h2.items.length === 6, String(h2.items.length));
+  check('sloty: sedmý se nevejde', !buyItem(h2, 'lotus'), h2.items.join(','));
+
+  // prodej: 60 % ceny
+  const goldBeforeSell = h2.gold;
+  const refund = sellItem(h2, 'blade');
+  check('prodej: vrací 60 % ceny', refund === 240, String(refund));
+  check('prodej: zlato narostlo', h2.gold === Math.min(GOLD_CAP, goldBeforeSell + 240), String(h2.gold));
+  check('prodej: item zmizel z inventáře', !h2.items.includes('blade'));
+
+  // itemy opravdu mění staty: Aegis +HP, Sandály +rychlost, Oko +vidění, Lotos +regen
+  const s3 = createMoba(0, 82, 2_000_000);
+  const h3 = s3.heroes.find((candidate) => candidate.id === 'hero-you');
+  h3.gold = 9999;
+  const hpBefore = h3.maxHp;
+  buyItem(h3, 'aegis');
+  check('itemy: Aegis zvedne max HP', h3.maxHp === hpBefore + 250, `${hpBefore} → ${h3.maxHp}`);
+  const speedBefore = heroSpeed(h3);
+  buyItem(h3, 'boots');
+  check('itemy: Sandály zrychlí', heroSpeed(h3) > speedBefore, `${speedBefore.toFixed(2)} → ${heroSpeed(h3).toFixed(2)}`);
+
+  const visionBefore = Math.max(...visionSources(s3, 'blue').map((source) => source.radius));
+  buyItem(h3, 'eye');
+  const visionAfter = Math.max(...visionSources(s3, 'blue').map((source) => source.radius));
+  check('itemy: Orlí oko rozšíří vidění o 6 m', Math.round(visionAfter - visionBefore) === 6, `${visionBefore} → ${visionAfter}`);
+
+  h3.hp = 100;
+  buyItem(h3, 'lotus');
+  advance(s3, 1000);
+  check('itemy: Lotos regeneruje', h3.hp > 100, String(Math.round(h3.hp)));
 }
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);
