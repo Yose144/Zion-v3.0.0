@@ -1189,3 +1189,28 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **PROTO_VERSION 14** (`use`, `itemCooldowns`) → deploy **net první**.
 - **Testy:** `test/moba-sim.mjs` (150 kontrol: blink s limitem 7 m, cooldown
   blokuje druhé použití, štít/léčení/rychlost, cizí i pasivní item nejde použít).
+
+## PRVNÍ SVĚT — talent strom (F8, 2026-11-03, protokol 15)
+
+- **Talenty jsou data, ne kód.** `TALENTS` v `sim.ts` má tři archetypy
+  (aggressive/support/control) × dva stupně (10 a 15) × dvě volby. Archetyp
+  plyne ze **školy Q** (`talentRole`), takže každá postava má jinou nabídku
+  bez ruční tabulky pro 200 avatarů.
+- **Efekt se sčítá na jednom místě** (`talentTotals`) a aplikuje se v šesti
+  výpočtech: `damageOut`, `heroSpeed`, `recomputeHeroStats` (HP/mana),
+  `visionSources`, regenerace v kroku a síla kouzel v `castSpell`. Nový druh
+  bonusu = přidat do `TalentEffect` a na **všech** těch místech, jinak se
+  talent „neprojeví".
+- **`pendingTalent` je odvozený stav**, ne uložený: tier, na který hrdina má
+  level a ještě ho nevybral. Díky tomu se nedá „zapomenout" vybrat a snapshot
+  ho posílá jen jako `talentPending`.
+- **`pickTalent` validuje tier i index** a volá `recomputeHeroStats` — bez
+  toho by +HP talent nezměnil maxima.
+- **Boti si volí sami** (deterministicky podle `state.seq`), jinak by po
+  levelu 10 zůstali bez bonusů a hráč by měl nefér výhodu.
+- **HUD panel je jen dokud je co vybrat** (`talentPending != null`) a volba
+  jde přes ref (`talentRequest`) — sólo ji aplikuje v sim, online pošle
+  zprávu `talent`. Klient nikdy neposílá efekt, jen index.
+- **PROTO_VERSION 15** → deploy **net první**.
+- **Testy:** `test/moba-sim.mjs` (162 kontrol: čekání na 10/15, neplatný
+  index, dvojitá volba, součet efektů, role ze školy, bot si vybere sám).

@@ -108,6 +108,14 @@ Léčivý prach, Příval) na klávesách **1–6**. Server rozhoduje o cooldown
 i efektu, snapshot nese `itemCooldowns`, klik na slot posílá stejnou
 syntetickou klávesu (dotyk bez druhého vstupu).
 
+## 2c. F8 — talent strom *(hotovo 2026-11-03, protokol 15)*
+
+Dvě volby za zápas (**10.** a **15.** úroveň) podle archetypu kouzel
+(agresivní / podpůrný / kontrolní), každá ze dvou možností: poškození, HP,
+rychlost, vidění, mana, síla kouzel, regenerace. Efekty se sčítají stejně
+jako itemy; boti si volí sami. **Protokol:** `talent`, `talents`,
+`talentPending` → 14 → 15.
+
 ## 3. Co záměrně neděláme
 
 - **Courier** — u 5v5 s krátkým zápasem nemá co řešit; obchod v základně stačí.
