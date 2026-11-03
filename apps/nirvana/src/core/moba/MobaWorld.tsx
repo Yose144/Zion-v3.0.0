@@ -106,11 +106,70 @@ function makeMotes(): Float32Array {
 /** Kolik stébel rákosí se rozsype podél řeky. */
 const REEDS = 42;
 
+/** Kopce za hranou hřiště — jediná „výška", která neovlivní jednotky. */
+function makeHills(): { x: number; z: number; rx: number; h: number }[] {
+  const random = makeRandom(4242);
+  const out: { x: number; z: number; rx: number; h: number }[] = [];
+  for (let index = 0; index < 26; index += 1) {
+    const angle = (index / 26) * Math.PI * 2 + random() * 0.18;
+    const radius = 58 + random() * 34;
+    out.push({
+      x: Math.cos(angle) * radius,
+      z: Math.sin(angle) * radius * 0.8,
+      rx: 8 + random() * 14,
+      h: 2.5 + random() * 4.5,
+    });
+  }
+  return out;
+}
+
+/** Mlžné pásy v džungli — velké, průhledné, pomalu se otáčejí. */
+const MIST = [
+  { x: -26, z: -12, w: 30, d: 18 },
+  { x: 26, z: 12, w: 30, d: 18 },
+  { x: -26, z: 12, w: 24, d: 14 },
+  { x: 26, z: -12, w: 24, d: 14 },
+];
+
+/** Světlušky — body v džungli (mimo linky). */
+function makeFireflies(): Float32Array {
+  const random = makeRandom(9001);
+  const positions = new Float32Array(70 * 3);
+  for (let index = 0; index < 70; index += 1) {
+    const x = (random() * 2 - 1) * (MAP_HALF_X - 10);
+    const z = (random() * 2 - 1) * (MAP_HALF_Z - 8);
+    positions[index * 3] = x;
+    positions[index * 3 + 1] = 0.8 + random() * 2.4;
+    positions[index * 3 + 2] = z;
+  }
+  return positions;
+}
+
+/** Listí — instanced, padá a houpe se; stav se drží v refu. */
+const LEAVES = 46;
+function makeLeaves(): { x: number; z: number; y: number; speed: number; phase: number }[] {
+  const random = makeRandom(1618);
+  const out = [];
+  for (let index = 0; index < LEAVES; index += 1) {
+    out.push({
+      x: (random() * 2 - 1) * (MAP_HALF_X - 8),
+      z: (random() * 2 - 1) * (MAP_HALF_Z - 6),
+      y: random() * 6,
+      speed: 0.35 + random() * 0.5,
+      phase: random() * Math.PI * 2,
+    });
+  }
+  return out;
+}
+
 export function MobaWorld() {
   const walls = useMemo(() => jungleWalls(), []);
   const rocks = useMemo(() => jungleRocks(), []);
   const lanterns = useMemo(() => laneLanterns(), []);
   const motes = useMemo(() => makeMotes(), []);
+  const hills = useMemo(() => makeHills(), []);
+  const fireflies = useMemo(() => makeFireflies(), []);
+  const leaves = useMemo(() => makeLeaves(), []);
 
   const wallMesh = useRef<THREE.InstancedMesh>(null);
   const rockMesh = useRef<THREE.InstancedMesh>(null);
@@ -123,6 +182,9 @@ export function MobaWorld() {
   const reeds = REEDS;
   const mountains = useRef<THREE.InstancedMesh>(null);
   const motesRef = useRef<THREE.Points>(null);
+  const hillMesh = useRef<THREE.InstancedMesh>(null);
+  const leafMesh = useRef<THREE.InstancedMesh>(null);
+  const mistRefs = useRef<(THREE.Mesh | null)[]>([]);
 
   useLayoutEffect(() => {
     const helper = new THREE.Object3D();
@@ -213,6 +275,16 @@ export function MobaWorld() {
     }
     if (pitStone.current) pitStone.current.instanceMatrix.needsUpdate = true;
 
+    // kopce za hranou hřiště
+    hills.forEach((hill, index) => {
+      helper.position.set(hill.x, -hill.h * 0.35, hill.z);
+      helper.rotation.set(0, index * 0.7, 0);
+      helper.scale.set(hill.rx, hill.h, hill.rx * 0.8);
+      helper.updateMatrix();
+      hillMesh.current?.setMatrixAt(index, helper.matrix);
+    });
+    if (hillMesh.current) hillMesh.current.instanceMatrix.needsUpdate = true;
+
     // obzor: prstenec hor
     const random = makeRandom(2468);
     for (let index = 0; index < 22; index += 1) {
@@ -226,15 +298,44 @@ export function MobaWorld() {
       mountains.current?.setMatrixAt(index, helper.matrix);
     }
     if (mountains.current) mountains.current.instanceMatrix.needsUpdate = true;
-  }, [lanterns, walls, rocks, reeds]);
+  }, [hills, lanterns, rocks, walls, reeds]);
 
-  // jiskry se pomalu otáčejí a lucerny dýchají
+  // jiskry, listí, mlha, lucerny — všechno z času, žádný React state
+  const leafHelper = useMemo(() => new THREE.Object3D(), []);
   useFrame((frame) => {
     const time = frame.clock.elapsedTime;
     if (motesRef.current) {
       motesRef.current.rotation.y = time * 0.02;
       motesRef.current.position.y = Math.sin(time * 0.4) * 0.25;
     }
+
+    // listí padá a houpe se; po dopadu se vrátí nahoru
+    if (leafMesh.current) {
+      const span = 7;
+      leaves.forEach((leaf, index) => {
+        const fall = (leaf.y - time * leaf.speed) % span;
+        const y = fall < 0 ? fall + span : fall;
+        leafHelper.position.set(leaf.x + Math.sin(time * 0.8 + leaf.phase) * 0.7, y, leaf.z);
+        leafHelper.rotation.set(time * 1.6 + leaf.phase, leaf.phase, time * 1.1);
+        leafHelper.scale.setScalar(0.9);
+        leafHelper.updateMatrix();
+        leafMesh.current?.setMatrixAt(index, leafHelper.matrix);
+      });
+      leafMesh.current.instanceMatrix.needsUpdate = true;
+    }
+
+    // mlha se pomalu otáčí a posouvá
+    for (let index = 0; index < MIST.length; index += 1) {
+      const mesh = mistRefs.current[index];
+      if (!mesh) continue;
+      mesh.rotation.z = time * 0.02 * (index % 2 === 0 ? 1 : -1);
+      mesh.position.x = MIST[index]!.x + Math.sin(time * 0.05 + index) * 2.5;
+      mesh.position.z = MIST[index]!.z + Math.cos(time * 0.04 + index) * 2;
+    }
+
+    // lucerny jemně poletují (opacity celého meshe)
+    const glowMaterial = lanternGlow.current?.material as THREE.MeshBasicMaterial | undefined;
+    if (glowMaterial) glowMaterial.opacity = 0.75 + Math.sin(time * 6) * 0.2;
   });
 
   return (
@@ -264,7 +365,7 @@ export function MobaWorld() {
       </instancedMesh>
       <instancedMesh ref={lanternGlow} args={[undefined, undefined, lanterns.length]} frustumCulled={false}>
         <sphereGeometry args={[0.22, 8, 6]} />
-        <meshBasicMaterial color="#ffd9a0" toneMapped={false} />
+        <meshBasicMaterial color="#ffd9a0" toneMapped={false} transparent opacity={0.9} />
       </instancedMesh>
 
       {/* rákosí podél řeky */}
@@ -296,6 +397,48 @@ export function MobaWorld() {
         <coneGeometry args={[1, 1, 5]} />
         <meshStandardMaterial color="#16241f" roughness={1} flatShading />
       </instancedMesh>
+
+      {/* kopce za hranou hřiště (výška jen vizuálně — jednotky zůstávají na y=0) */}
+      <instancedMesh ref={hillMesh} args={[undefined, undefined, hills.length]} frustumCulled={false}>
+        <sphereGeometry args={[1, 10, 7]} />
+        <meshStandardMaterial color="#1c3f31" emissive="#08180f" emissiveIntensity={0.5} roughness={1} flatShading />
+      </instancedMesh>
+
+      {/* mlha v džungli */}
+      {MIST.map((patch, index) => (
+        <mesh
+          key={`mist-${index}`}
+          ref={(node) => {
+            mistRefs.current[index] = node;
+          }}
+          position={[patch.x, 1.1, patch.z]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          renderOrder={1}
+        >
+          <planeGeometry args={[patch.w, patch.d]} />
+          <meshBasicMaterial color="#a9d8cc" transparent opacity={0.07} depthWrite={false} toneMapped={false} />
+        </mesh>
+      ))}
+
+      {/* padající listí */}
+      <instancedMesh ref={leafMesh} args={[undefined, undefined, LEAVES]} frustumCulled={false}>
+        <planeGeometry args={[0.34, 0.22]} />
+        <meshStandardMaterial
+          color="#7fbf6a"
+          emissive="#1d3d1a"
+          emissiveIntensity={0.4}
+          side={THREE.DoubleSide}
+          roughness={0.9}
+        />
+      </instancedMesh>
+
+      {/* světlušky v džungli */}
+      <points rotation={[0, 0.6, 0]}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[fireflies, 3]} />
+        </bufferGeometry>
+        <pointsMaterial color="#e8ff9a" size={0.22} sizeAttenuation transparent opacity={0.8} depthWrite={false} />
+      </points>
 
       {/* základny: vyvýšená plošina + fontána */}
       {[SPAWNS.blue, SPAWNS.red].map((spawn, index) => (
