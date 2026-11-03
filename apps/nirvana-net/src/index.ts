@@ -57,6 +57,7 @@ import {
   mobaBuyback,
   mobaRoomSnapshot,
   pickMobaTalent,
+  placeMobaSentry,
   placeMobaWard,
   removeMobaSeat,
   sellMobaItem,
@@ -526,6 +527,16 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
         return;
       }
       placeMobaWard(room.moba, conn.id, message.x, message.z);
+      return;
+    }
+
+    case 'sentry': {
+      const room = conn.room;
+      if (!room?.moba) {
+        sendError(conn, room ? 'not_available' : 'not_in_room');
+        return;
+      }
+      placeMobaSentry(room.moba, conn.id, message.x, message.z);
       return;
     }
 

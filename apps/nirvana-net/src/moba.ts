@@ -17,6 +17,7 @@ import {
   heroById,
   mobaSnapshot,
   pickTalent,
+  placeSentry,
   placeWard,
   sellItem,
   useItem,
@@ -124,6 +125,14 @@ export function placeMobaWard(room: MobaRoomSim, connId: string, x: number, z: n
   const hero = heroById(room.sim, connId);
   if (!hero) return false;
   return placeWard(room.sim, hero, x, z);
+}
+
+/** Sentry — server rozhodne o zásobě i dosahu. */
+export function placeMobaSentry(room: MobaRoomSim, connId: string, x: number, z: number): boolean {
+  if (!room.sim) return false;
+  const hero = heroById(room.sim, connId);
+  if (!hero) return false;
+  return placeSentry(room.sim, hero, x, z);
 }
 
 /** Talenty — server rozhodne, jestli na volbu má hráč nárok. */

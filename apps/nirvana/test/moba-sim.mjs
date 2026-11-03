@@ -9,7 +9,7 @@
  * Spuštění: npx tsx apps/nirvana/test/moba-sim.mjs
  */
 
-import { BASE_SPEED, BOT_SKILLS, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isVisibleTo, ITEMS, ITEM_SLOTS, pendingTalent, pickTalent, placeWard, sellItem, stepMoba, mobaSnapshot, talentRole, talentsFor, talentTotals, totalXpAt, useItem, visionSources, NO_INPUT, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
+import { BASE_SPEED, BOT_SKILLS, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isHidden, isVisibleTo, ITEMS, ITEM_SLOTS, pendingTalent, pickTalent, placeSentry, placeWard, sellItem, stepMoba, mobaSnapshot, talentRole, talentsFor, talentTotals, totalXpAt, useItem, visionSources, NO_INPUT, SENTRY_DURATION_MS, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
 import { SCHOOL_TRAITS, spellCooldown, spellMana, spellRank, spellsForAvatar } from '../src/core/moba/spells.ts';
 import { BUSHES, INHIBITOR_RESPAWN_MS, isStructureProtected, NEXUS_HP, VISION, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
 
@@ -460,7 +460,7 @@ check(
 // ── itemy: recepty, sloty, prodej (F2) ──────────────────────────────
 {
   console.log('\n-- itemy --');
-  check('itemy: 19 itemů (14 + ward + 4 aktivní)', ITEMS.length === 19, String(ITEMS.length));
+  check('itemy: 21 itemů (14 + ward + sentry + 5 aktivních)', ITEMS.length === 21, String(ITEMS.length));
   check('itemy: 6 slotů', ITEM_SLOTS === 6, String(ITEM_SLOTS));
 
   const s = createMoba(0, 82, 2_000_000);
@@ -852,6 +852,55 @@ check(
   advance(chase, 200);
   const blinkAfter = Math.hypot(chaser.x - prey.x, chaser.z - prey.z);
   check('bot: skočí na cíl (nebo má cooldown)', blinkAfter < blinkBefore || (chaser.itemCooldowns.blink ?? 0) > 0, `${blinkBefore.toFixed(1)} → ${blinkAfter.toFixed(1)}`);
+}
+
+// ── neviditelnost a sentry (F10) ───────────────────────────────────
+{
+  console.log('\n-- neviditelnost --');
+  const s = createMoba(0, 82, 10_000_000);
+  const hero = s.heroes.find((candidate) => candidate.id === 'hero-you');
+  const foe = s.heroes.find((candidate) => candidate.id === 'hero-foe');
+  hero.gold = 9999;
+
+  // Závoj: neviditelnost
+  buyItem(hero, 'veil');
+  check('neviditelnost: Závoj schová hrdinu', useItem(s, hero, 'veil', 0, 0) && isHidden(s, hero, 'red'));
+  check('neviditelnost: vlastní tým ho vidí', !isHidden(s, hero, 'blue'));
+
+  // sentry ho odhalí
+  hero.sentries = 1;
+  hero.x = 0;
+  hero.z = 0;
+  check('sentry: mimo dosah nejde', !placeSentry(s, hero, 40, 40));
+  check('sentry: v dosahu jde', placeSentry(s, hero, 3, 0) && s.sentries.length === 1);
+  check('sentry: nepřítel zůstává skrytý', isHidden(s, hero, 'red'));
+
+  // snapshot: skrytý soupeř se neposílá, se sentry ano
+  const hiddenSnap = mobaSnapshot(s, 'blue');
+  check('snapshot: vlastní neviditelný tam je', hiddenSnap.heroes.some((h) => h.id === hero.id));
+  const enemyView = mobaSnapshot(s, 'red');
+  check('snapshot: nepřítel nevidí skrytého', !enemyView.heroes.some((h) => h.id === hero.id));
+
+  s.sentries.push({ id: 'sentry-test', team: 'red', x: hero.x, z: hero.z, expiresAt: s.now + SENTRY_DURATION_MS });
+  const revealed = mobaSnapshot(s, 'red');
+  check('snapshot: sentry skrytého odhalí', revealed.heroes.some((h) => h.id === hero.id));
+
+  // sentry po 60 s zmizí
+  advance(s, SENTRY_DURATION_MS + 2000);
+  check('sentry: po 60 s zmizí', !s.sentries.some((sentry) => sentry.id === 'sentry-test'));
+
+  // neviditelný nejde zamířit: útok ho nezasáhne
+  const a = createMoba(0, 82, 10_000_000);
+  const attacker = a.heroes.find((h) => h.id === 'hero-you');
+  const victim = a.heroes.find((h) => h.id === 'hero-foe');
+  victim.gold = 9999;
+  buyItem(victim, 'veil');
+  victim.x = attacker.x + 2;
+  victim.z = attacker.z;
+  useItem(a, victim, 'veil', 0, 0);
+  const hpBefore = victim.hp;
+  advance(a, 400, { ...NO_INPUT, attack: true });
+  check('neviditelnost: nejde ho zasáhnout', victim.hp === hpBefore, `${hpBefore} → ${victim.hp}`);
 }
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);

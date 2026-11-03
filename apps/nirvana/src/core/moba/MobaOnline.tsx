@@ -137,12 +137,13 @@ function OnlineController({
   selfPose: React.MutableRefObject<{ x: number; z: number; active: boolean } | null>;
 }) {
   const { camera, gl } = useThree();
-  const { subscribe, joinGame, leaveRoom, sendMobaInput, sendBuy, sendSell, sendWard, sendBuyback, sendUseItem, sendTalent, connected, youPlayerId } = useNet();
+  const { subscribe, joinGame, leaveRoom, sendMobaInput, sendBuy, sendSell, sendWard, sendSentry, sendBuyback, sendUseItem, sendTalent, connected, youPlayerId } = useNet();
   const keys = useRef(new Set<string>());
   const pointer = useRef({ x: 0, y: 0 });
   const attack = useRef(false);
   const queuedCast = useRef<{ slot: 'Q' | 'W' | 'E' | 'R'; at: number } | null>(null);
   const queuedWard = useRef(false);
+  const queuedSentry = useRef(false);
   const queuedItem = useRef<ItemId | null>(null);
   const lastStats = useRef(0);
   const endedSent = useRef(false);
@@ -198,6 +199,7 @@ function OnlineController({
       if (event.code === 'KeyR') queuedCast.current = { slot: 'R', at: Date.now() };
       // G = ward na zem (stejná klávesa jako v sólu)
       if (event.code === 'KeyG') queuedWard.current = true;
+      if (event.code === 'KeyH') queuedSentry.current = true;
       // 1–6 = aktivní item (id vezmi ze snapshotu, ne z lokálního stavu)
       const digit = /^Digit([1-6])$/.exec(event.code);
       if (digit) {
@@ -272,6 +274,10 @@ function OnlineController({
     if (queuedWard.current) {
       if (hit) queuedWard.current = false;
       if (hit) sendWard(castPoint.x, castPoint.z);
+    }
+    if (queuedSentry.current) {
+      if (hit) queuedSentry.current = false;
+      if (hit) sendSentry(castPoint.x, castPoint.z);
     }
     if (queuedItem.current) {
       const item = queuedItem.current;

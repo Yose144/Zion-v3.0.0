@@ -390,6 +390,11 @@ export default function EarthPage() {
           </div>
 
           <div className="moba-hud-bottom">
+            {stats?.invisible && (
+              <div className="moba-invisible" role="status">
+                {cs ? 'NEVIDITELNÝ' : 'INVISIBLE'}
+              </div>
+            )}
             <div className="moba-vitals">
               <div className="moba-bar is-hp">
                 <i style={{ width: `${((stats?.playerHp ?? 0) / (stats?.playerMaxHp ?? 1)) * 100}%` }} />
@@ -439,6 +444,9 @@ export default function EarthPage() {
               </span>
               <span className="moba-ward-count" title={cs ? 'wardy (G položí)' : 'wards (G places)'}>
                 🛡 {stats?.wards ?? 0}
+              </span>
+              <span className="moba-sentry-count" title={cs ? 'sentry (H položí) — odhalí neviditelné' : 'sentry (H places) — reveals invisible'}>
+                🕯 {stats?.sentries ?? 0}
               </span>
               <div className="moba-inventory" title={cs ? 'inventář: 1–6 použije aktivní item, klik prodá' : 'inventory: 1–6 uses an active item, click sells'}>
                 {Array.from({ length: ITEM_SLOTS }).map((_, index) => {
@@ -517,8 +525,10 @@ export default function EarthPage() {
                           item.cost - ownedComponents.reduce((sum, component) => sum + (ITEM_BY_ID.get(component)?.cost ?? 0), 0),
                         );
                         const consumable = item.consumable === true;
-                        const stock = stats?.wards ?? 0;
-                        const maxed = consumable && stock >= WARD_STOCK_MAX;
+                        const isSentry = item.id === 'sentry';
+                        const stock = isSentry ? stats?.sentries ?? 0 : stats?.wards ?? 0;
+                        const stockMax = isSentry ? 2 : WARD_STOCK_MAX;
+                        const maxed = consumable && stock >= stockMax;
                         const owned = items.includes(item.id);
                         const slotsAfter = items.length - ownedComponents.length + 1;
                         const full = !consumable && slotsAfter > ITEM_SLOTS;
@@ -572,7 +582,7 @@ export default function EarthPage() {
                   ? 'joystick pohyb · Q/F/E/R kouzlo · ÚTOK'
                   : 'stick move · Q/F/E/R cast · ATTACK'
                 : cs
-                  ? 'WASD pohyb · Q/F/E/R kouzlo · 1–6 aktivní item · G ward · Tab scoreboard · levé tlačítko útok'
+                  ? 'WASD pohyb · Q/F/E/R kouzlo · 1–6 aktivní item · G ward · H sentry · Tab scoreboard · levé tlačítko útok'
                   : 'WASD move · Q/F/E/R cast · left click attack'}
             </div>
           </div>

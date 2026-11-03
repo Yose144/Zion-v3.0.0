@@ -14,7 +14,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { buyItem, buyback, createMoba, mobaSnapshot, pickTalent, placeWard, sellItem, stepMoba, useItem, NO_INPUT, type BotSkill, type ItemId, type MobaSnapshot, type MobaState } from './sim';
+import { buyItem, buyback, createMoba, mobaSnapshot, pickTalent, placeSentry, placeWard, sellItem, stepMoba, useItem, NO_INPUT, type BotSkill, type ItemId, type MobaSnapshot, type MobaState } from './sim';
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import { MobaStage } from './MobaStage';
@@ -31,6 +31,8 @@ export interface MobaStats {
   gold: number;
   items: ItemId[];
   wards: number;
+  sentries: number;
+  invisible: boolean;
   buybackCost: number;
   itemCooldowns: Record<string, number>;
   talentPending: number | null;
@@ -110,6 +112,8 @@ export function statsFromSnapshot(
     gold: you?.gold ?? 0,
     items: you?.items ?? [],
     wards: you?.wards ?? 0,
+    sentries: you?.sentries ?? 0,
+    invisible: you?.invisible ?? false,
     buybackCost: you?.buybackCost ?? 0,
     itemCooldowns: you?.itemCooldowns ?? {},
     talentPending: you?.talentPending ?? null,
@@ -191,6 +195,7 @@ function SoloController({
   const attack = useRef(false);
   const queuedCast = useRef<{ slot: SpellSlot } | null>(null);
   const queuedWard = useRef(false);
+  const queuedSentry = useRef(false);
   const queuedItem = useRef<ItemId | null>(null);
   const lastStats = useRef(0);
   const lastTick = useRef(0);
@@ -209,6 +214,8 @@ function SoloController({
       if (slot) queuedCast.current = { slot };
       // G = ward na zem (samostatná akce, ne kouzlo — ward má vlastní zásobu).
       if (event.code === 'KeyG') queuedWard.current = true;
+      // H = sentry (odhalí neviditelné)
+      if (event.code === 'KeyH') queuedSentry.current = true;
       // 1–6 = aktivní item ve slotu (standard MOBA)
       const digit = /^Digit([1-6])$/.exec(event.code);
       if (digit) {
@@ -282,6 +289,12 @@ function SoloController({
     if (queuedWard.current) {
       if (hit) queuedWard.current = false;
       if (hit && placeWard(state.current, you, castPoint.x, castPoint.z)) mobaAudio.buy();
+    }
+
+    // sentry (H) — stejný bod jako ward
+    if (queuedSentry.current) {
+      if (hit) queuedSentry.current = false;
+      if (hit && placeSentry(state.current, you, castPoint.x, castPoint.z)) mobaAudio.buy();
     }
 
     // aktivní item (1–6) — bod bere z kurzoru, stejně jako kouzlo

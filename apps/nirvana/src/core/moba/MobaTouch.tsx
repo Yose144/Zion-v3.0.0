@@ -136,6 +136,22 @@ export function MobaTouch({ spells }: { spells: { slot: SpellSlot; name: string;
     window.setTimeout(() => sendKey(SPELL_KEY[slot], false), 60);
   }, []);
 
+  /** SENTRY: stejný trik jako ward, jen klávesa `H`. */
+  const placeSentry = useCallback(() => {
+    const element = canvas();
+    if (element && aim.current) {
+      element.dispatchEvent(
+        new PointerEvent('pointermove', {
+          clientX: aim.current.x,
+          clientY: aim.current.y,
+          bubbles: true,
+        }),
+      );
+    }
+    sendKey('KeyH', true);
+    window.setTimeout(() => sendKey('KeyH', false), 60);
+  }, []);
+
   /** WARD: stejný trik jako kouzlo — nastav mířidlo a pošli `G`. */
   const placeWard = useCallback(() => {
     const element = canvas();
@@ -224,6 +240,18 @@ export function MobaTouch({ spells }: { spells: { slot: SpellSlot; name: string;
           }}
         >
           🛡
+        </button>
+        <button
+          type="button"
+          className="moba-touch-btn is-sentry"
+          title="sentry"
+          onPointerDown={(event) => {
+            event.stopPropagation();
+            event.preventDefault();
+            placeSentry();
+          }}
+        >
+          🕯
         </button>
         <button
           type="button"

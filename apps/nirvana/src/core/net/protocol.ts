@@ -47,8 +47,11 @@ const asItemId = (value: unknown): ItemId | null =>
  *      jejich cooldowny.
  * 15 — **talenty**: zpráva `talent` a `talents`/`talentPending` u hrdiny.
  *      Starý klient by neuměl talent vybrat a neviděl by, že na něj má nárok.
+ * 16 — **neviditelnost**: `sentries`, `invisible` u hrdiny a zpráva `sentry`.
+ *      Starý klient by neviděl vlastní neviditelnost ani sentry a neuměl by
+ *      je položit — a nechápal, proč soupeř „zmizel".
  */
-export const PROTO_VERSION = 15;
+export const PROTO_VERSION = 16;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -268,6 +271,8 @@ export type ClientMessage =
   | { t: 'use'; item: ItemId; x?: number; z?: number }
   /** MOBA: volba talentu (tier 10/15, pick 0/1). */
   | { t: 'talent'; tier: number; pick: number }
+  /** MOBA: polož sentry (odhaluje neviditelné). */
+  | { t: 'sentry'; x: number; z: number }
   | { t: 'leave' }
   | {
       t: 'input';
@@ -437,6 +442,9 @@ export function parseClientMessage(raw: string): ClientMessage | null {
 
     case 'buyback':
       return { t: 'buyback' };
+
+    case 'sentry':
+      return { t: 'sentry', x: num(message.x, -60, 60), z: num(message.z, -60, 60) };
 
     case 'talent': {
       const tier = Number(message.tier);

@@ -65,6 +65,8 @@ export interface NetApi {
   sendSell: (item: ItemId) => void;
   /** MOBA: polož ward na bod. */
   sendWard: (x: number, z: number) => void;
+  /** MOBA: polož sentry (odhaluje neviditelné). */
+  sendSentry: (x: number, z: number) => void;
   /** MOBA: buyback (mrtvý hráč zaplatí a vrátí se). */
   sendBuyback: () => void;
   /** MOBA: aktivní item (klávesy 1–6), bod má smysl u skoku. */
@@ -377,6 +379,13 @@ export function NetProvider({ children }: { children: ReactNode }) {
     [send],
   );
 
+  const sendSentry = useCallback<NetApi['sendSentry']>(
+    (x, z) => {
+      send({ t: 'sentry', x, z });
+    },
+    [send],
+  );
+
   const sendBuyback = useCallback<NetApi['sendBuyback']>(
     () => {
       send({ t: 'buyback' });
@@ -420,6 +429,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       sendBuy,
       sendSell,
       sendWard,
+      sendSentry,
       sendBuyback,
       sendUseItem,
       sendTalent,
@@ -444,6 +454,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       sendBuy,
       sendSell,
       sendWard,
+      sendSentry,
       sendBuyback,
       sendUseItem,
       sendTalent,

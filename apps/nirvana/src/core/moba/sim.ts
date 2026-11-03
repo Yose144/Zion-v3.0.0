@@ -55,7 +55,7 @@ import {
 
 export type UnitKind = 'hero' | 'minion' | 'tower' | 'nexus' | 'monster';
 
-export type BuffType = 'strength' | 'ward' | 'speed' | 'ancient' | 'burn' | 'regen';
+export type BuffType = 'strength' | 'ward' | 'speed' | 'ancient' | 'burn' | 'regen' | 'invisible';
 
 export interface Buff {
   type: BuffType;
@@ -96,8 +96,10 @@ export type ItemId =
   | 'barrier'
   | 'dust'
   | 'surge'
+  | 'veil'
   // spotřební
-  | 'ward';
+  | 'ward'
+  | 'sentry';
 
 export interface ItemBonus {
   /** Multiplikativní bonus k poškození (0.25 = +25 %). */
@@ -128,13 +130,15 @@ export interface MobaItem {
   active?: ItemActive;
 }
 
-export type ItemActiveKind = 'blink' | 'shield' | 'heal' | 'haste';
+export type ItemActiveKind = 'blink' | 'shield' | 'heal' | 'haste' | 'invisible';
 
 export interface ItemActive {
   kind: ItemActiveKind;
   cooldownMs: number;
   /** Síla podle druhu: metry (blink), štít/HP (shield/heal), podíl (haste). */
   power: number;
+  /** Trvání efektu (u neviditelnosti); jinde se bere z power. */
+  durationMs?: number;
 }
 
 /** Kolik itemů se vejde hrdinovi do inventáře. */
@@ -147,6 +151,10 @@ export const WARD_DURATION_MS = 90_000;
 export const WARD_VISION = 10;
 export const WARD_RANGE = 12;
 export const WARD_STOCK_MAX = 3;
+export const SENTRY_STOCK_MAX = 2;
+export const SENTRY_RADIUS = 8;
+export const SENTRY_DURATION_MS = 60_000;
+export const SENTRY_RANGE = 14;
 export const BUYBACK_BASE = 200;
 export const BUYBACK_PER_LEVEL = 50;
 export const BUYBACK_COOLDOWN_MS = 180_000;
@@ -297,7 +305,23 @@ export const ITEMS: MobaItem[] = [
     bonus: {},
     active: { kind: 'haste', cooldownMs: 18_000, power: 0.4 },
   },
+  {
+    id: 'veil',
+    name: { cs: 'Závoj', en: 'Veil' },
+    cost: 800,
+    note: { cs: 'aktivní (1–6): neviditelnost na 6 s · 30 s', en: 'active (1–6): invisibility for 6 s · 30 s' },
+    bonus: {},
+    active: { kind: 'invisible', cooldownMs: 30_000, power: 0, durationMs: 6000 },
+  },
   // ── spotřební ───────────────────────────────────────────────────
+  {
+    id: 'sentry',
+    name: { cs: 'Strážné oko', en: 'Sentry' },
+    cost: 120,
+    note: { cs: '+1 sentry (max 2) — odhalí neviditelné do 8 m na 60 s', en: '+1 sentry (max 2) — reveals invisible within 8 m for 60 s' },
+    bonus: {},
+    consumable: true,
+  },
   {
     id: 'ward',
     name: { cs: 'Strážný kámen', en: 'Ward' },
@@ -547,6 +571,8 @@ export interface Hero {
   aegis: boolean;
   /** Kolik wardů má v zásobě (spotřební item, nezabírá slot). */
   wards: number;
+  /** Kolik sentry očí má v zásobě. */
+  sentries: number;
   /** Kdy půjde aktivní item znovu použít (sim čas per item). */
   itemCooldowns: Partial<Record<ItemId, number>>;
   /** Vybrané talenty: tier (10/15) → index volby. */
@@ -683,6 +709,14 @@ export interface Ward {
   expiresAt: number;
 }
 
+export interface Sentry {
+  id: string;
+  team: Team;
+  x: number;
+  z: number;
+  expiresAt: number;
+}
+
 export interface Boss {
   id: string;
   x: number;
@@ -709,6 +743,8 @@ export interface MobaState {
   runes: Rune[];
   /** Wardy na mapě (vidí je jen vlastní tým). */
   wards: Ward[];
+  /** Sentry — odhalují neviditelné jednotky. */
+  sentries: Sentry[];
   boss: Boss;
   nextRuneAt: number;
   /** Obtížnost botů — v online drží server `normal`. */
@@ -770,6 +806,7 @@ function makeHero(id: string, team: Team, heroId: number, spawn: { x: number; z:
     gold: 320,
     aegis: false,
     wards: 0,
+    sentries: 0,
     buybackAt: 0,
     itemCooldowns: {},
     talentPicks: {},
@@ -892,6 +929,7 @@ export function createMobaMatch(seats: MobaSeat[], now: number, botSkill: BotSki
     effects: [],
     runes: makeRunes(0, 0),
     wards: [],
+    sentries: [],
     boss: makeBoss(0),
     nextRuneAt: now + RUNE_INTERVAL_MS,
     botSkill,
@@ -1196,6 +1234,8 @@ function nearestEnemyHero(state: MobaState, hero: Hero, range: number): Hero | n
   let bestDistance = range;
   for (const other of state.heroes) {
     if (other.team === hero.team || !other.alive) continue;
+    // Neviditelného soupeře nejde zamířit, dokud ho neodhalí sentry.
+    if (isHidden(state, other, hero.team)) continue;
     const d = distance(hero.x, hero.z, other.x, other.z);
     if (d < bestDistance) {
       bestDistance = d;
@@ -1605,7 +1645,13 @@ export function stepMoba(
     }
   } else if (now >= boss.cooldown) {
     const target = state.heroes
-      .filter((hero) => hero.alive && distance(hero.x, hero.z, boss.x, boss.z) <= boss.range)
+      // Boss je neutrální: nevidí nikoho, koho neodhalil sentry ani jedné strany.
+      .filter(
+        (hero) =>
+          hero.alive &&
+          !(isHidden(state, hero, 'blue') && isHidden(state, hero, 'red')) &&
+          distance(hero.x, hero.z, boss.x, boss.z) <= boss.range,
+      )
       .sort((a, b) => distance(a.x, a.z, boss.x, boss.z) - distance(b.x, b.z, boss.x, boss.z))[0];
     if (target) {
       boss.cooldown = now + boss.attackMs;
@@ -1766,7 +1812,11 @@ export function stepMoba(
     const lane = LANES.find((candidate) => candidate.id === minion.lane) ?? LANES[1]!;
     const enemyBase = minion.team === 'blue' ? SPAWNS.red : SPAWNS.blue;
     const enemyHero = state.heroes.find(
-      (hero) => hero.team !== minion.team && hero.alive && distance(minion.x, minion.z, hero.x, hero.z) <= minion.range,
+      (hero) =>
+        hero.team !== minion.team &&
+        hero.alive &&
+        !isHidden(state, hero, minion.team) &&
+        distance(minion.x, minion.z, hero.x, hero.z) <= minion.range,
     );
     const enemyMinion = state.minions.find(
       (other) => other.team !== minion.team && distance(minion.x, minion.z, other.x, other.z) <= minion.range,
@@ -1826,7 +1876,11 @@ export function stepMoba(
       (candidate) => candidate.team !== tower.team && distance(tower.x, tower.z, candidate.x, candidate.z) <= tower.range,
     );
     const hero = state.heroes.find(
-      (candidate) => candidate.team !== tower.team && candidate.alive && distance(tower.x, tower.z, candidate.x, candidate.z) <= tower.range,
+      (candidate) =>
+        candidate.team !== tower.team &&
+        candidate.alive &&
+        !isHidden(state, candidate, tower.team) &&
+        distance(tower.x, tower.z, candidate.x, candidate.z) <= tower.range,
     );
     const target = minion ?? hero;
     if (!target) continue;
@@ -1930,6 +1984,7 @@ export function stepMoba(
 
   // ── wardy ─────────────────────────────────────────────────────────
   state.wards = state.wards.filter((ward) => ward.expiresAt > now);
+  state.sentries = state.sentries.filter((sentry) => sentry.expiresAt > now);
 
   // ── efekty ────────────────────────────────────────────────────────
   state.effects = state.effects.filter((effect) => {
@@ -1960,10 +2015,14 @@ export function buyItem(hero: Hero, itemId: ItemId): boolean {
   if (!item) return false;
   if (item.consumable) {
     // Spotřební item jde do zásoby, nezabírá slot — jinak by ward sežral build.
-    if (hero.wards >= WARD_STOCK_MAX) return false;
+    const isSentry = itemId === 'sentry';
+    const stock = isSentry ? hero.sentries : hero.wards;
+    const max = isSentry ? SENTRY_STOCK_MAX : WARD_STOCK_MAX;
+    if (stock >= max) return false;
     if (hero.gold < item.cost) return false;
     hero.gold -= item.cost;
-    hero.wards += 1;
+    if (isSentry) hero.sentries += 1;
+    else hero.wards += 1;
     return true;
   }
   if (hero.items.includes(itemId)) return false;
@@ -2000,6 +2059,42 @@ export function placeWard(state: MobaState, hero: Hero, x: number, z: number): b
   });
   addEffect(state, 'shield', x, z, 1.4, '#7fe3d4', 420);
   return true;
+}
+
+/**
+ * Polož sentry — odhaluje neviditelné jednotky v okruhu.
+ * Vidění ani útok neřeší; to dělá `isHidden()` při filtrování a cílení.
+ */
+export function placeSentry(state: MobaState, hero: Hero, x: number, z: number): boolean {
+  if (!hero.alive || hero.sentries <= 0) return false;
+  if (distance(hero.x, hero.z, x, z) > SENTRY_RANGE) return false;
+  hero.sentries -= 1;
+  state.sentries.push({
+    id: nextId('sentry'),
+    team: hero.team,
+    x,
+    z,
+    expiresAt: state.now + SENTRY_DURATION_MS,
+  });
+  addEffect(state, 'shield', x, z, 1.2, '#facc15', 420);
+  return true;
+}
+
+/**
+ * Je hrdina skrytý před daným týmem? Neviditelnost kryje **jen** sentry
+ * protistrany — bez něj ho nevidíš ani na mapě, ani s ním nemůžeš bojovat.
+ */
+export function isHidden(state: MobaState, hero: Hero, viewerTeam: Team): boolean {
+  // Vlastní tým vidí vždy — neviditelnost je jen proti soupeři.
+  if (hero.team === viewerTeam) return false;
+  const invisible = hero.buffs.some((buff) => buff.type === 'invisible' && buff.until > state.now);
+  if (!invisible) return false;
+  return !state.sentries.some(
+    (sentry) =>
+      sentry.team === viewerTeam &&
+      sentry.expiresAt > state.now &&
+      distance(sentry.x, sentry.z, hero.x, hero.z) <= SENTRY_RADIUS,
+  );
 }
 
 /**
@@ -2053,6 +2148,9 @@ export function useItem(state: MobaState, hero: Hero, itemId: ItemId, x: number,
     hero.hp = Math.min(hero.maxHp, hero.hp + active.power);
     hero.healingDone += hero.hp - before;
     addEffect(state, 'heal', hero.x, hero.z, 1.6, '#7bf0a8', 700);
+  } else if (active.kind === 'invisible') {
+    hero.buffs.push({ type: 'invisible', until: state.now + (active.durationMs ?? 6000), power: 0 });
+    addEffect(state, 'shield', hero.x, hero.z, 1.6, '#94a3b8', 500);
   } else {
     hero.buffs.push({ type: 'speed', until: state.now + 4000, power: active.power });
     addEffect(state, 'capture', hero.x, hero.z, 1.4, '#7fe3d4', 500);
@@ -2111,6 +2209,9 @@ export interface MobaSnapshot {
     items: ItemId[];
     aegis: boolean;
     wards: number;
+    sentries: number;
+    /** Je hrdina právě neviditelný? (vlastní HUD to musí ukázat) */
+    invisible: boolean;
     /** Zbývající cooldowny aktivních itemů (ms). */
     itemCooldowns: Record<string, number>;
     /** Vybrané talenty. */
@@ -2128,6 +2229,8 @@ export interface MobaSnapshot {
   boss: { id: string; x: number; z: number; hp: number; maxHp: number; alive: boolean; respawnIn: number };
   /** Wardy vlastního týmu (nepřítel je nevidí). */
   wards: { id: string; x: number; z: number }[];
+  /** Sentry vlastního týmu. */
+  sentries: { id: string; x: number; z: number }[];
   monsters: { id: string; x: number; z: number; hp: number; maxHp: number; type: JungleCamp['type']; alive: boolean }[];
   projectiles: { id: string; x: number; z: number; color: string }[];
   effects: { id: string; kind: Effect['kind']; x: number; z: number; radius: number; color: string; alpha: number }[];
@@ -2153,6 +2256,7 @@ export function emptyMobaSnapshot(banner: string): MobaSnapshot {
     minions: [],
     runes: [],
     wards: [],
+    sentries: [],
     boss: { id: 'boss', x: 0, z: 0, hp: 0, maxHp: 0, alive: false, respawnIn: 0 },
     monsters: [],
     projectiles: [],
@@ -2240,7 +2344,12 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
     heroes: state.heroes
       // Nepřítel se posílá jen živý a viděný — mrtvý hrdina v mlze nemá
       // prozrazovat, kde se za 20 s objeví.
-      .filter((hero) => !viewerTeam || hero.team === viewerTeam || (hero.alive && sees(hero.x, hero.z)))
+      .filter(
+        (hero) =>
+          !viewerTeam ||
+          hero.team === viewerTeam ||
+          (hero.alive && sees(hero.x, hero.z) && !isHidden(state, hero, viewerTeam)),
+      )
       .map((hero) => ({
         id: hero.id,
         team: hero.team,
@@ -2267,6 +2376,8 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
         items: hero.items,
         aegis: hero.aegis,
         wards: hero.wards,
+        sentries: hero.sentries,
+        invisible: hero.buffs.some((buff) => buff.type === 'invisible' && buff.until > state.now),
         itemCooldowns: Object.fromEntries(
           Object.entries(hero.itemCooldowns).map(([id, at]) => [id, Math.max(0, (at ?? 0) - state.now)]),
         ),
@@ -2290,6 +2401,9 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
     wards: state.wards
       .filter((ward) => !viewerTeam || ward.team === viewerTeam)
       .map((ward) => ({ id: ward.id, x: ward.x, z: ward.z })),
+    sentries: state.sentries
+      .filter((sentry) => !viewerTeam || sentry.team === viewerTeam)
+      .map((sentry) => ({ id: sentry.id, x: sentry.x, z: sentry.z })),
     boss: {
       id: state.boss.id,
       x: state.boss.x,

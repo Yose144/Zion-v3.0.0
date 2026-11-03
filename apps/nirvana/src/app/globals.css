@@ -5448,3 +5448,38 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   font-size: 0.55rem;
   color: rgba(233, 242, 238, 0.65);
 }
+
+/* ── MOBA F10: neviditelnost a sentry ─────────────────────────────── */
+
+.moba-sentry-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.5rem;
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  border-radius: 0.6rem;
+  background: rgba(4, 10, 9, 0.85);
+  color: #facc15;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.moba-invisible {
+  align-self: center;
+  padding: 0.2rem 0.7rem;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  border-radius: 999px;
+  background: rgba(30, 41, 59, 0.85);
+  color: #cbd5e1;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.moba-touch-btn.is-sentry {
+  width: 3.2rem;
+  height: 3.2rem;
+  font-size: 1.1rem;
+  border-color: rgba(250, 204, 21, 0.5);
+  color: #facc15;
+}
