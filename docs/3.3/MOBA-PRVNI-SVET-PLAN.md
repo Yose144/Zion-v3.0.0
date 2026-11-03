@@ -70,9 +70,15 @@ u minionů → 9 → 10.
 
 *Ověřeno: moba-sim 105/105 (13 nových), E2E proti produkci.*
 
-### F4 — Objektivy a runy
-Runy (bounty / haste / double damage) každé 2 min, **Roshan-like boss** s Aegis
-(jednorázové vzkříšení), zesilující se v čase. **Protokol:** runy a boss stav v snapshotu → bump.
+### F4 — Objektivy a runy *(hotovo 2026-11-03, protokol 11)*
+**Runy** (bounty +120 zlata / haste +35 % speed / power +30 % dmg) na dvou
+místech každé 2 minuty; **boss (Prastarý strážce)** v řece — 3200 HP, respawn
+8 min, +14 % HP a +8 % dmg za minutu zápasu, zabití dá 250 zlata, 220 XP
+a **Aegis** (jednorázové vzkříšení na 60 % HP, smrt se nepočítá).
+Navíc **stupňování kouzel**: mana +15 % a cooldown −7 % za stupeň (stejné
+funkce v sim i HUD). **Protokol:** `runes`, `boss`, `aegis` → 10 → 11.
+
+*Ověřeno: moba-sim 119/119 (14 nových), E2E proti produkci.*
 
 ### F5 — Vidění a smrt
 Wardy (item, 90 s, radius 10 m), sentry proti neviditelným, **buyback**

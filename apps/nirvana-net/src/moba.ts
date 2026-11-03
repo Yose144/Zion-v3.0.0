@@ -12,6 +12,7 @@
 import {
   buyItem,
   createMobaMatch,
+  emptyMobaSnapshot,
   heroById,
   mobaSnapshot,
   sellItem,
@@ -204,20 +205,7 @@ export function mobaRoomSnapshot(
   return {
     moba: room.sim
       ? mobaSnapshot(room.sim, viewerTeam)
-      : {
-          time: 0,
-          ended: null,
-          banner: 'Čeká se na hráče…',
-          wave: 0,
-          nextWaveIn: 0,
-          nodes: [],
-          towers: [],
-          heroes: [],
-          minions: [],
-          monsters: [],
-          projectiles: [],
-          effects: [],
-        },
+      : emptyMobaSnapshot('Čeká se na hráče…'),
     countdown: room.phase === 'countdown' ? Math.max(0, Math.ceil((room.startAt - now) / 1000)) : 0,
     phase: room.phase,
   };

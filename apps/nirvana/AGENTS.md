@@ -1088,3 +1088,28 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   Pozná se to podle `ls node_modules/.bin`; řeší `npm ci` v rootu. Před
   deployem zkontroluj, že typecheck opravdu proběhl — jinak se „čistý"
   build vydává za ověřený.
+
+## PRVNÍ SVĚT — objektivy: runy, boss, Aegis (F4, 2026-11-03, protokol 11)
+
+- **Runy jsou rozhodovací bod, ne dekorace.** Dvě místa (`RUNE_SPOTS`), každé
+  2 minuty (`RUNE_INTERVAL_MS`), druh se posouvá s cyklem (`makeRunes`) —
+  deterministicky, aby obě strany hrály stejnou hru. Sebere je první hrdina
+  do 2,4 m: bounty +120 zlata, haste +35 % speed, power +30 % dmg na 10 s.
+- **Runy existují už na startu** (`createMobaMatch` je naplní `makeRunes(0,0)`),
+  ne až prvním tickem — jinak by je hráč na začátku neviděl a testy by
+  procházely nad prázdnem.
+- **Boss sílí s časem** (`makeBoss(minutes)`): +14 % HP a +8 % dmg za minutu,
+  respawn 8 min. Škáluje se **při respawnu**, ne každý frame — jinak by
+  hodnoty skákaly i během souboje.
+- **Aegis je v `damageHero`, ne v drop logice.** Když hrdina umře a má
+  `aegis`, vzkřísí se na 60 % HP, `deaths` se nezvýší a zlato se nestrhne.
+  Kdo přidá druhou smrt (např. `damageMonster`), musí tudy taky projít.
+- **Kouzla mají stupně i v maně a cooldownu** (`spellMana`, `spellCooldown`).
+  HUD i sim volají **stejné funkce** — kdyby si klient počítal vlastní čísla,
+  ukazoval by jinou cenu, než jakou server strhne.
+- **Debug háček nese `runes` a `boss`** — E2E tak ověří objektivy bez klikání.
+- **Test útoku musí poslat `attack: true`.** `advance()` s `NO_INPUT` hrdinu
+  jen postaví; bez útoku boss nespadne (přesně to první test odhalil).
+- **PROTO_VERSION 11** (`runes`, `boss`, `aegis` u hrdiny) → deploy **net první**.
+- **Testy:** `test/moba-sim.mjs` (119 kontrol: runy na startu, sebrání, boss
+  scaling/zabití, Aegis vzkříšení bez smrti, stupňování many i cooldownu).

@@ -1704,6 +1704,32 @@ export interface MobaSnapshot {
   effects: { id: string; kind: Effect['kind']; x: number; z: number; radius: number; color: string; alpha: number }[];
 }
 
+/**
+ * Prázdný snapshot pro stav „čeká se na hráče".
+ *
+ * Drží ho **sim**, ne server — když se do snapshotu přidá pole, musí se
+ * doplnit tady, ne v druhém ručním literálu (ten už jednou rozbil build
+ * niru-net, protože mu chyběly runy a boss).
+ */
+export function emptyMobaSnapshot(banner: string): MobaSnapshot {
+  return {
+    time: 0,
+    ended: null,
+    banner,
+    wave: 0,
+    nextWaveIn: 0,
+    nodes: [],
+    towers: [],
+    heroes: [],
+    minions: [],
+    runes: [],
+    boss: { id: 'boss', x: 0, z: 0, hp: 0, maxHp: 0, alive: false, respawnIn: 0 },
+    monsters: [],
+    projectiles: [],
+    effects: [],
+  };
+}
+
 /** Zdroj vidění pro tým — hrdinové, minioni, věže a vlastněné uzly. */
 export function visionSources(state: MobaState, team: Team): { x: number; z: number; radius: number }[] {
   const sources: { x: number; z: number; radius: number }[] = [];
