@@ -21,7 +21,7 @@ const EMOTES = [
   { glyph: '🛡️', cs: 'Kryj mě', en: 'Cover me' },
 ];
 
-const RADIUS = 78;
+const RADIUS = 86;
 
 export function MobaEmoteWheel({
   origin,
@@ -83,6 +83,10 @@ export function MobaEmoteWheel({
       role="menu"
       aria-label={language === 'cs' ? 'emoty' : 'emotes'}
     >
+      {/* Podkladový kruh: bez něj to vypadá jako čtyři plovoucí tlačítka,
+          ne jako jedno ovládání. `pointer-events: none` nechává klik do
+          pozadí propadnout — tím se menu zavře. */}
+      <div className="moba-emote-ring" style={{ width: RADIUS * 2 + 42, height: RADIUS * 2 + 42 }} />
       {EMOTES.map((emote, index) => {
         const angle = (Math.PI / 4) * (index * 2 + 1);
         return (

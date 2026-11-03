@@ -79,11 +79,23 @@ Testy: moba-sim **197/197** (8 nových). Protokol 18 → 19.
 Testy: moba-sim **206/206** (9 nových), nirvana-net moba **24/24** (nově
 emote přeposlaný serverem). Protokol 19 → 20.
 
+## 4e. Radiální emote menu (F23)
+
+Tlačítko 😀 v HUD nebo klávesa `X` otevře čtyři emoty ve čtvercích kolem
+kurzoru. Výběr je **klik na sektor** (na dotyku spolehlivější než držení
+a tažení), klávesy 1–4 vybírají naslepo, Esc/klik mimo zavře. Kolečko samo
+nic neposílá — index jde do `sendEmote`, takže bublinu vidí celá místnost.
+
+Dvě chyby umístění odhalil až screenshot: sektory nejdřív skončily mimo
+viewport (tlačítko je u spodního okraje), a i po clampu ležely **na HUD** —
+lišta schopností a rychlý chat byly zakryté. Řešení: střed se clampuje
+s rezervou `min(300 px, 34 % výšky)` na spodku.
+
 ## 5. Co dál
 
 1. **Replay/spectate** (uložit průběh zápasu a přehrát).
-2. **Radiální emote menu** (držení tlačítka místo řady).
-3. **Rank/leaderboard** pro opakované hraní.
+2. **Rank/leaderboard** pro opakované hraní.
+3. **Emote zvuk** (krátký tón podle typu).
 
 ---
 

@@ -1511,3 +1511,25 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **POZOR na test minionů:** vlny jsou od F19 rychlejší (18 s, 4 minioni),
   takže u uzlu L5 nemusí být zrovna žádný nepřátelský minion. Test k
   nejbližšímu **dojde**, místo aby čekal na náhodu (jinak flakuje).
+
+## PRVNÍ SVĚT — radiální emote menu (F23, 2026-11-03)
+
+- **Výběr je klik na sektor, ne držení a tažení.** Na malém displeji by
+  drag-selection míchal s joystickem; klik je jednoznačný. Klávesy 1–4
+  vybírají naslepo (pro klávesnici), Esc nebo klik mimo zavře.
+- **Kolečko nic neposílá** — jen vrátí index; odeslání jde přes
+  `useNet().sendEmote`, takže bublinu vidí celá místnost (server event
+  přeposílá, F22).
+- **Otevření:** tlačítko 😀 v HUD (kotví se na pozici kurzoru) nebo klávesa
+  `X` (střed obrazovky). Jen v multiplayeru — sólo nemá komu posílat.
+- **Kolečko je `position: fixed` se `z-index: 30`**, aby ho nepřekryl HUD
+  (ten má 12–20).
+- **Dvě chyby, které našel až screenshot** (kód je neukáže):
+  (a) emote tlačítko je u spodního okraje, takže sektory 78 px od středu
+  skončily mimo viewport → clamp středu;
+  (b) i po clampu sedělo kolečko **na liště schopností a rychlém chatu** →
+  spodek má rezervu `min(300 px, 34 % výšky)`, takže se zvedne nad HUD
+  (v landscape se rezerva zmenší, aby nezůstalo nahoře).
+- **`window.innerWidth/innerHeight` v renderu** musí mít fallback
+  (`typeof window === 'undefined'`), i když je komponenta `'use client'` —
+  Next ji stejně SSR-uje.
