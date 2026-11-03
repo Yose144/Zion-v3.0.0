@@ -9469,7 +9469,19 @@ app.whenReady().then(async () => {
     // ignore
   }
   
-  createWindow();
+  // Kingdom SSR = primární povrch klienta; agent UI (miner/rig/wallet)
+  // se otevírá na vyžádání — zion:app:open-miner nebo tray „Show Window".
+  try {
+    kingdomUrl = await startKingdomServer();
+  } catch (err) {
+    console.warn('[kingdom] start failed:', err?.message);
+    kingdomUrl = null;
+  }
+  if (kingdomUrl) {
+    createKingdomWindow();
+  } else {
+    createWindow();
+  }
   createTray();
 
   // First-run hardware autodetect (public users): probe the OpenCL device
@@ -9540,9 +9552,17 @@ app.whenReady().then(async () => {
       // ignore
     }
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      if (kingdomUrl) createKingdomWindow();
+      else createWindow();
     }
   });
+});
+
+app.on('will-quit', () => {
+  if (kingdomProc) {
+    try { kingdomProc.kill(); } catch { /* ignore */ }
+    kingdomProc = null;
+  }
 });
 
 app.on('window-all-closed', () => {
