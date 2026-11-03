@@ -9,16 +9,16 @@ declare global {
     zion?: {
       app: {
         info: () => Promise<{ platform: string; version: string; dev: boolean }>;
-        setAutostart: (on: boolean) => Promise<unknown>;
+        openMiner: () => Promise<{ success: boolean }>;
       };
       wallet: {
         status: () => Promise<Bridge<WalletStatus>>;
         create: (password: string) => Promise<Bridge<{ address: string; mnemonic: string }>>;
         importMnemonic: (args: { mnemonic: string; password: string }) => Promise<Bridge<{ address: string }>>;
-        unlock: (password: string) => Promise<Bridge<{ address: string }>>;
+        unlock: (password: string) => Promise<Bridge<{ unlocked: boolean }>>;
         lock: () => Promise<Bridge<{ unlocked: boolean }>>;
-        balance: () => Promise<Bridge<WalletBalance>>;
-        send: (tx: { to: string; amountZion: number; memo?: string }) => Promise<Bridge<{ tx_id: string; status: string }>>;
+        balance: (address: string) => Promise<Bridge<WalletBalance>>;
+        send: (tx: { from: string; to: string; amountZion: number; memo?: string; password: string }) => Promise<Bridge<{ tx_id: string; status: string }>>;
       };
     };
   }
@@ -55,8 +55,8 @@ export function DesktopWalletPanel({ locale }: { locale: Locale }) {
     if (!b) return;
     const s = await b.wallet.status();
     if (s.ok) setStatus(s.data);
-    if (s.ok && s.data.exists && s.data.unlocked) {
-      const bal = await b.wallet.balance();
+    if (s.ok && s.data.exists && s.data.address) {
+      const bal = await b.wallet.balance(s.data.address);
       if (bal.ok) setBalance(bal.data);
       else setBalance(null);
     } else {
@@ -104,29 +104,23 @@ export function DesktopWalletPanel({ locale }: { locale: Locale }) {
     }
   });
 
-  const onUnlock = () => run(async () => {
-    const r = guard(await bridge.wallet.unlock(password));
-    if (r) {
-      setPassword('');
-      await refresh();
-    }
-  });
-
-  const onLock = () => run(async () => {
-    await bridge.wallet.lock();
-    setMnemonic(null);
-    await refresh();
-  });
-
   const onSend = () => run(async () => {
+    if (!status.address) return;
     const r = guard(
-      await bridge.wallet.send({ to: to.trim(), amountZion: Number(amount), memo: memo || undefined }),
+      await bridge.wallet.send({
+        from: status.address,
+        to: to.trim(),
+        amountZion: Number(amount),
+        memo: memo || undefined,
+        password,
+      }),
     );
     if (r) {
       setNote(`${t(locale, 'walletSent')} · ${r.tx_id}`);
       setTo('');
       setAmount('');
       setMemo('');
+      setPassword('');
       setShowSend(false);
       await refresh();
     }
@@ -136,7 +130,12 @@ export function DesktopWalletPanel({ locale }: { locale: Locale }) {
     <div className="k-card" style={{ maxWidth: 640 }}>
       <div className="k-row" style={{ justifyContent: 'space-between' }}>
         <div className="k-card-title">{t(locale, 'walletTitle')}</div>
-        <span className="k-badge">{t(locale, 'walletClientOnly')}</span>
+        <button
+          className="k-btn k-ghost"
+          onClick={() => void bridge.app.openMiner()}
+        >
+          Miner
+        </button>
       </div>
 
       <p className="k-sub" style={{ marginTop: 8 }}>{t(locale, 'walletLocal')}</p>
@@ -185,7 +184,7 @@ export function DesktopWalletPanel({ locale }: { locale: Locale }) {
                 {status.address}
               </div>
             </div>
-            {status.unlocked && balance ? (
+            {balance ? (
               <div className="k-stat">
                 <div className="k-stat-label">{t(locale, 'walletBalance')}</div>
                 <div className="k-stat-value">
@@ -195,23 +194,7 @@ export function DesktopWalletPanel({ locale }: { locale: Locale }) {
             ) : null}
           </div>
 
-          {!status.unlocked ? (
-            <>
-              <p className="k-sub" style={{ marginTop: 8 }}>{t(locale, 'walletLocked')}</p>
-              <input
-                className="k-input"
-                type="password"
-                placeholder={t(locale, 'walletPassword')}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <div className="k-row" style={{ marginTop: 8 }}>
-                <button className="k-btn" disabled={busy || !password} onClick={onUnlock}>
-                  {busy ? t(locale, 'walletWorking') : t(locale, 'walletUnlock')}
-                </button>
-              </div>
-            </>
-          ) : (
+          {(
             <>
               {mnemonic ? (
                 <div className="k-stat" style={{ marginTop: 8 }}>
@@ -226,13 +209,14 @@ export function DesktopWalletPanel({ locale }: { locale: Locale }) {
                   <input className="k-input" placeholder={t(locale, 'walletTo')} value={to} onChange={(e) => setTo(e.target.value)} />
                   <input className="k-input" placeholder={t(locale, 'walletAmount')} value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" />
                   <input className="k-input" placeholder={t(locale, 'walletMemo')} value={memo} onChange={(e) => setMemo(e.target.value)} />
+                  <input className="k-input" type="password" placeholder={t(locale, 'walletPassword')} value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
               ) : null}
 
               <div className="k-row" style={{ marginTop: 8 }}>
                 {showSend ? (
                   <>
-                    <button className="k-btn" disabled={busy || !to.trim() || !amount} onClick={onSend}>
+                    <button className="k-btn" disabled={busy || !to.trim() || !amount || !password} onClick={onSend}>
                       {busy ? t(locale, 'walletWorking') : t(locale, 'walletSend')}
                     </button>
                     <button className="k-btn k-ghost" onClick={() => setShowSend(false)}>{t(locale, 'back')}</button>
@@ -241,7 +225,6 @@ export function DesktopWalletPanel({ locale }: { locale: Locale }) {
                   <>
                     <button className="k-btn k-ghost" onClick={() => void refresh()}>{t(locale, 'walletRefresh')}</button>
                     <button className="k-btn" onClick={() => setShowSend(true)}>{t(locale, 'walletSend')}</button>
-                    <button className="k-btn k-ghost" onClick={onLock}>{t(locale, 'walletLock')}</button>
                   </>
                 )}
               </div>

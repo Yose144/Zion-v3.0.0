@@ -2849,7 +2849,16 @@ function createTray() {
     { type: 'separator' },
     {
       label: 'Show Window',
-      click: showWindow
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) showWindow();
+        else createWindow();
+      }
+    },
+    {
+      label: 'Kingdom',
+      click: () => {
+        if (kingdomUrl) createKingdomWindow();
+      }
     },
     {
       label: 'Quit',
