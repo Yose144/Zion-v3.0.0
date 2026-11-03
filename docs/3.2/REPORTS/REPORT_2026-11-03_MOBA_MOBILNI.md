@@ -45,12 +45,21 @@ Tři věci, které nám chyběly:
   samostatná práce.
 - **Flicker nemá cílení přes zeď** (sim je 2D bez kolizí, takže „projde" vždy).
 
+## 4b. Recall (dodatečně, F20)
+
+Channel **4 s**, klávesa **B** / tlačítko ↩ na dotyku. Dokončení teleportuje
+hrdinu do základny; **přerušuje ho pohyb, kouzlo, útok i jakýkoli zásah** —
+rozhoduje sim, takže se nedá recallovat při útěku. HUD má odpočet i průběh
+channelu. Boti recall nepoužívají (pohyb by ho hned zrušil).
+
+Testy: moba-sim **189/189** (6 nových). První běh testu „rušilo monstrum" —
+hrdina stál v táboře; správné chování, špatné místo v testu.
+
 ## 5. Co dál
 
-1. **Recall** (návrat do základny po 4 s channelu) — standard mobilních MOBA.
-2. **Volba battle spellu** před zápasem (Flicker / Heal / Purify).
-3. **Quick chat + emotes** (radiální menu).
-4. **MVP obrazovka** po zápase (nejvíc dmg/gold/heal).
+1. **Volba battle spellu** před zápasem (Flicker / Heal / Purify).
+2. **Quick chat + emotes** (radiální menu).
+3. **MVP obrazovka** po zápase (nejvíc dmg/gold/heal).
 
 ---
 

@@ -1465,3 +1465,18 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Obecné pravidlo: **funkční test nesmí měřit veličinu, kterou hra sama
   regeneruje.** Když to jinak nejde, měř **okamžitě** nebo použij stav, který
   se neobnovuje (cooldown, počet projektilů).
+
+## PRVNÍ SVĚT — recall (F20, 2026-11-03, protokol 18)
+
+- **Recall drží sim, ne klient.** `startRecall` nastaví `recallAt`, sim po
+  `RECALL_CHANNEL_MS` (4 s) teleportuje hrdinu do spawnu. Kdyby o dokončení
+  rozhodoval klient, šel by recallovat i při útěku.
+- **Ruší ho pohyb, kouzlo, útok i jakýkoli zásah** (`damageHero`). Zásah řeší
+  jedna řádka v `damageHero` — každá nová cesta poškození ho tím pádem ruší
+  automaticky.
+- **Během channelu se nedá nic dělat** (`continue` ve smyčce hrdinů), takže
+  hráč nemůže útočit a „recallovat" zároveň.
+- **Boti recall nepoužívají** — jejich pohyb by ho hned zrušil.
+- **Test pozor na tábory:** první běh testu „rušilo monstrum", protože hrdina
+  stál v džungli. Správné chování, špatné místo v testu.
+- **PROTO_VERSION 18** (`recall`, `recallIn`) → deploy **net první**.
