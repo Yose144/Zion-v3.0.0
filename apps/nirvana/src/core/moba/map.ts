@@ -42,12 +42,12 @@ export interface Structure {
   attackMs: number;
 }
 
-export const NEXUS_HP = 4000;
-export const TOWER_HP = 1700;
+export const NEXUS_HP = 2800;
+export const TOWER_HP = 1500;
 /** Třetí věž je blíž základně a je tvrdší. */
-export const BASE_TOWER_HP = 2200;
+export const BASE_TOWER_HP = 1900;
 /** Inhibitor nestřílí — jeho cena je v super minionech, které pustí. */
-export const INHIBITOR_HP = 1800;
+export const INHIBITOR_HP = 1500;
 /** Za jak dlouho inhibitor znovu vyroste (ms). */
 export const INHIBITOR_RESPAWN_MS = 300_000;
 

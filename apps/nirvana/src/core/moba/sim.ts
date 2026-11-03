@@ -1417,6 +1417,17 @@ function castSpell(state: MobaState, hero: Hero, slot: SpellSlot, x: number, z: 
 
 function stepBot(state: MobaState, hero: Hero, now: number) {
   if (!hero.alive) return;
+
+  // Talenty a nákup **nepotřebují cíl** — dřív byly na konci funkce, takže
+  // bot bez nepřítele v dosahu (nově 12 m) nikdy nekoupil ani si nevybral
+  // talent. Odhalily to testy po zavedení linkové chůze.
+  const pending = pendingTalent(hero);
+  if (pending !== null) pickTalent(hero, pending, state.seq % 2);
+  for (const itemId of botBuild(hero)) {
+    if (hero.items.includes(itemId)) continue;
+    if (buyItem(hero, itemId)) break;
+  }
+
   // Záběr 12 m: dřív bot viděl nepřítele po celé mapě a jen ho honil
   // (harness: 100 s a level 1, protože nikdy nebyl u dying minionů).
   const foe = state.heroes.find(
@@ -1438,9 +1449,34 @@ function stepBot(state: MobaState, hero: Hero, now: number) {
   // odhalil na první běh: 0 killů, level 1, 0 itemů).
   if (!target) {
     hero.botCast = null;
+    const step = 4.4 * (1 / 30);
+
+    // Runy a boss: bez toho boti nikdy nevezmou objektiv (harness: 0 run / 0 boss).
+    const rune = state.runes.find((candidate) => distance(hero.x, hero.z, candidate.x, candidate.z) <= 22);
+    if (rune) {
+      const dx = rune.x - hero.x;
+      const dz = rune.z - hero.z;
+      const length = Math.hypot(dx, dz) || 1;
+      hero.x += (dx / length) * step;
+      hero.z += (dz / length) * step;
+      hero.facing = Math.atan2(dx, dz);
+      return;
+    }
+    if (state.boss.alive && hero.level >= 8 && hero.hp > hero.maxHp * 0.7) {
+      const toBoss = distance(hero.x, hero.z, state.boss.x, state.boss.z);
+      if (toBoss <= 25 && toBoss > 3) {
+        const dx = state.boss.x - hero.x;
+        const dz = state.boss.z - hero.z;
+        const length = Math.hypot(dx, dz) || 1;
+        hero.x += (dx / length) * step;
+        hero.z += (dz / length) * step;
+        hero.facing = Math.atan2(dx, dz);
+        return;
+      }
+    }
+
     const lane = LANES.find((candidate) => candidate.id === hero.botLane) ?? LANES[1]!;
     const direction = hero.team === 'blue' ? 1 : -1;
-    const step = 4.4 * (1 / 30);
     // Zastav se u nepřátelské základny (dál už jen umíráš).
     const stopAt = direction * 34;
     const canAdvance = direction > 0 ? hero.x < stopAt : hero.x > stopAt;
@@ -1532,16 +1568,6 @@ function stepBot(state: MobaState, hero: Hero, now: number) {
   }
   hero.botCast = null;
 
-  // Talenty: bot si vybírá sám (deterministicky), aby nezůstal bez bonusů.
-  const pending = pendingTalent(hero);
-  if (pending !== null) pickTalent(hero, pending, state.seq % 2);
-
-  // Nákup: bot musí utrácet. Bez toho by pasivní zlato zvýhodnilo jen
-  // člověka — bot by hromadil 900 zlaťáků a prohrával staty.
-  for (const itemId of botBuild(hero)) {
-    if (hero.items.includes(itemId)) continue;
-    if (buyItem(hero, itemId)) break;
-  }
 }
 
 /** Build bota podle školy jeho kouzel — agresivní školy kupují čepel první. */
@@ -1613,9 +1639,14 @@ export function stepMoba(
   state.now = now;
   state.time += dt;
   if (state.time >= MATCH_SECONDS) {
-    const blue = state.towers.filter((tower) => tower.team === 'blue' && tower.kind === 'nexus').reduce((sum, tower) => sum + tower.hp, 0);
-    const red = state.towers.filter((tower) => tower.team === 'red' && tower.kind === 'nexus').reduce((sum, tower) => sum + tower.hp, 0);
-    state.ended = blue >= red ? 'blue' : 'red';
+    // Skóre = vlastní struktury (víc = lepší obrana) + zabití. Dřív rozhodovalo
+    // `blue >= red`, takže každý timeout vyhrála modrá (harness: 12/12).
+    const score = (team: Team) =>
+      state.towers.filter((tower) => tower.team === team).reduce((sum, tower) => sum + Math.max(0, tower.hp), 0) +
+      state.heroes.filter((hero) => hero.team === team).reduce((sum, hero) => sum + hero.kills, 0) * 500;
+    const blue = score('blue');
+    const red = score('red');
+    state.ended = blue > red ? 'blue' : 'red';
     state.banner = state.ended === 'blue' ? 'ZION drží Zemi' : 'Opozice prolomila linii';
     state.bannerUntil = now + 6000;
     return;
@@ -1985,7 +2016,7 @@ export function stepMoba(
       if (isStructureProtected(state.towers, tower.id)) continue;
       if (distance(hero.x, hero.z, tower.x, tower.z) > 5.6) continue;
       if (now < hero.attackCooldown - 400) continue;
-      const damage = 26 * levelScale(hero) * nodeBonus(state, hero.team) * damageOut(hero, state.now);
+      const damage = 30 * levelScale(hero) * nodeBonus(state, hero.team) * damageOut(hero, state.now);
       damageTower(state, tower, damage, hero);
       if (tower.hp === 0 && tower.kind === 'nexus') {
         state.ended = hero.team;

@@ -64,7 +64,7 @@ function playMatch(index) {
     index,
     winner: state.ended ?? 'timeout',
     seconds: Math.round(state.time),
-    timeout: state.ended === null,
+    timeout: state.time >= MAX_SECONDS - 1,
     towersDown,
     inhibitorsDown,
     bossKills,
