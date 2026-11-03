@@ -1367,3 +1367,21 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   (F2), buyback (F5) ani vybrat talent (F8). Stejná chyba jako u `MobaGame`
   ve F6. **Pravidlo: každý nový `*Request` ref musí projít VŠEMI vrstvami
   (page → wrapper → controller) — jinak tiše zmizí.**
+
+## PRVNÍ SVĚT — ikony kouzel (F15, 2026-11-03)
+
+- **Ikony jsou vektorové glyfy, ne emoji.** `spellIcons.tsx` drží
+  `Record<SpellSlot, string[]>` (SVG paths) a barvu bere z `currentColor`
+  přes `stroke` — emoji se na každém systému vykreslí jinak a nejde obarvit
+  barvou postavy.
+- **Ikona je podle SLOTU, ne školy.** Všechna čtyři kouzla jednoho hrdiny mají
+  stejnou školu, takže podle školy by HUD ukazoval čtyři stejné ikony (přesně
+  to se stalo v prvním pokusu). Slot nese roli: Q projektil, W obrana,
+  E plošný zásah, R ultimátka.
+- **Nový slot bez ikony neprojde `tsc`** — `Record<SpellSlot, …>`; jinak by
+  v HUD zůstala prázdná díra.
+- **`school` musí dojít až do HUD.** `SpellMeta` i `MobaStats.spells` ho nesou
+  (dřív stačil jen slot + barva). Když se přidá další pole pro HUD, projdi
+  `statsFromSnapshot`, fallback v `earth/page.tsx` a `MobaTouch` — tři místa.
+- Ikona je i v dotykových tlačítkách (`.moba-touch-btn.is-spell` je teď
+  sloupec ikona + klávesa).

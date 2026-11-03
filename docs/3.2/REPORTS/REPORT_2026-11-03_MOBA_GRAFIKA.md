@@ -123,6 +123,21 @@ Po opravě (`moba-f11b/start.png`) je vidět hrdina, cesty, kameny i les.
 **Naměřeno:** 60 fps, 65 draw calls, 38,7 tis. trojúhelníků (hrdinové
 v záběru), 0 chyb v konzoli.
 
+## 5e. F15 — ikony kouzel
+
+Vektorový glyf **podle slotu** (Q projektil, W štít, E plošný zásah,
+R ultimátka) — `Record<SpellSlot, string[]>`, takže nový slot bez ikony
+neprojde typovou kontrolou. Barvu bere z kouzla (`stroke`), takže sedí
+k postavě i k rámečku slotu.
+
+První pokus měl ikony podle **školy** — jenže všechna čtyři kouzla jednoho
+hrdiny mají stejnou školu, takže HUD ukazoval čtyři stejné ikony. Screenshot
+to odhalil hned; role slotu je pro hráče důležitější než škola.
+
+Ikony jsou v HUD (`.moba-slot`), na pick screenu (`.moba-spell`) a na
+dotykových tlačítkách. `school` se proto musel dostat až do `MobaStats`
+(`SpellMeta` i fallback v `earth/page.tsx`).
+
 ## 6. Co dál (grafika)
 
 1. **Kontaktní stíny** pod hrdiny a miniony (levné, hodně pomůže čitelnosti).
