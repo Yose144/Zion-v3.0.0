@@ -1165,3 +1165,27 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **PROTO_VERSION 13** (`damage`/`healing` ve snapshotu) → deploy **net první**.
 - **Testy:** `test/moba-sim.mjs` (140 kontrol: obtížnost, poškození/léčení
   ve snapshotu, totalXpAt) a E2E scoreboard (dvě tabulky).
+
+## PRVNÍ SVĚT — aktivní itemy (F7, 2026-11-03, protokol 14)
+
+- **Aktivní item je schopnost, ne pasivní bonus.** `MobaItem.active`
+  (`kind`, `cooldownMs`, `power`) + `useItem()` v sim. Efekt (blink, štít,
+  léčení, rychlost) drží **server**; klient posílá jen id a bod.
+- **Klávesy 1–6 = sloty inventáře.** Klik na slot v HUD posílá **stejnou
+  syntetickou klávesu**, takže dotyk nepotřebuje druhý vstup (stejný trik
+  jako ward a kouzla). Prodej aktivního itemu je malé × v rohu slotu —
+  kdyby celý slot prodával, hráč by item omylem vyhodil.
+- **Cooldowny itemů jsou ve snapshotu** (`itemCooldowns`, zbytek v ms).
+  Sim drží absolutní sim čas, snapshot posílá zbytek — klient nikdy nepočítá
+  vlastní časovač.
+- **🔴 `heroSpeed()` používal `Date.now()`, ale buffy jsou v sim hodinách.**
+  Rychlostní buffy z run, Přívalu i džungle proto **nikdy nefungovaly** —
+  `buff.until` (sim čas ~10⁶) byl vždy menší než reálné hodiny (~10¹²).
+  Teď má `heroSpeed(hero, now)` a sim předává `state.now`; kdo funkci volá
+  mimo sim (testy), musí předat sim čas, jinak měří něco jiného.
+- **Predikce v online bere rychlost z `itemTotals`** (boty, runy, Příval),
+  ne z konstanty 6,2 — jinak se postava se serverem rozejde a dorovnává.
+  Další tabulka čísel v klientovi by byla druhá pravda.
+- **PROTO_VERSION 14** (`use`, `itemCooldowns`) → deploy **net první**.
+- **Testy:** `test/moba-sim.mjs` (150 kontrol: blink s limitem 7 m, cooldown
+  blokuje druhé použití, štít/léčení/rychlost, cizí i pasivní item nejde použít).

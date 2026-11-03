@@ -101,6 +101,13 @@ Replay/spectate a den-noc zůstávají jako volitelné nad rámec F6.
 
 ---
 
+## 2b. F7 — aktivní itemy *(hotovo 2026-11-03, protokol 14)*
+
+Nad rámec původních šesti fází: **čtyři aktivní itemy** (Skok, Bariéra,
+Léčivý prach, Příval) na klávesách **1–6**. Server rozhoduje o cooldownu
+i efektu, snapshot nese `itemCooldowns`, klik na slot posílá stejnou
+syntetickou klávesu (dotyk bez druhého vstupu).
+
 ## 3. Co záměrně neděláme
 
 - **Courier** — u 5v5 s krátkým zápasem nemá co řešit; obchod v základně stačí.
