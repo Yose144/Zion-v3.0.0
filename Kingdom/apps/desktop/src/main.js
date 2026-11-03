@@ -5772,9 +5772,13 @@ function parseMinerOutput(output) {
 }
 
 function sendToRendererNow(channel, data) {
-  if (!mainWindow || !mainWindow.webContents) return;
-  if (mainWindow.isDestroyed && mainWindow.isDestroyed()) return;
-  mainWindow.webContents.send(channel, data);
+  // Kingdom mód: mainWindow je null a agent UI žije v iframu kingdom okna —
+  // webContents.send doručí event celému webContents, tedy i subframu.
+  for (const win of [mainWindow, kingdomWindow]) {
+    if (!win || !win.webContents) continue;
+    if (win.isDestroyed && win.isDestroyed()) continue;
+    win.webContents.send(channel, data);
+  }
 }
 
 function sendToRenderer(channel, data) {
