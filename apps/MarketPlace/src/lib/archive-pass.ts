@@ -193,6 +193,27 @@ export function revokeArchivePass(orderId: string): number {
   return n;
 }
 
+/**
+ * Put a revoked pass back in force (order restored from trash / reopened
+ * after cancel). The customer's original ZAP code keeps working — issuing a
+ * new code instead would leave them holding a dead code from their email.
+ */
+export function unrevokeArchivePass(orderId: string): number {
+  const store = loadStore();
+  let n = 0;
+  for (const r of store.records) {
+    if (r.orderId === orderId && r.revokedAt) {
+      r.revokedAt = null;
+      n++;
+    }
+  }
+  if (n > 0) {
+    persistStore(store);
+    console.log(`[archive-pass] unrevoked ${n} code(s) for ${orderId}`);
+  }
+  return n;
+}
+
 /** Diagnostics — current record for an order, if any. */
 export function getArchivePassForOrder(
   orderId: string,

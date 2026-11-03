@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAdminAuth } from '@/lib/admin-guard';
 import { markShopOrderPaid } from '@/lib/shop-zionpay';
-import { revokeArchivePass } from '@/lib/archive-pass';
+import {
+  revokeArchivePass,
+  unrevokeArchivePass,
+} from '@/lib/archive-pass';
 import type { Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -88,23 +91,32 @@ export async function POST(request: NextRequest) {
             });
             break;
           case 'trash': {
+            // Trash is a reversible soft-delete: the order is not cancelled
+            // and the customer keeps the pass they paid for. Revoking here
+            // killed the ZAP code permanently while `restore` did not bring
+            // it back (real bug 2026-11-03 — customers saw "pass expired"
+            // after an admin tidied the order list). Revocation belongs to
+            // `cancelled` and permanent `delete` only.
             await prisma.shopOrder.update({
               where: { id: order.id },
               data: { deletedAt: now },
             });
-            try {
-              revokeArchivePass(order.orderId);
-            } catch (err) {
-              console.error('Archive pass revoke failed:', err);
-            }
             break;
           }
-          case 'restore':
+          case 'restore': {
             await prisma.shopOrder.update({
               where: { id: order.id },
               data: { deletedAt: null },
             });
+            // Orders trashed before the fix above still carry a revoked
+            // pass — restoring the order restores the customer's code.
+            try {
+              unrevokeArchivePass(order.orderId);
+            } catch (err) {
+              console.error('Archive pass unrevoke failed:', err);
+            }
             break;
+          }
           case 'delete': {
             // Shopify parity: permanent delete only from trash.
             if (!order.deletedAt) {
@@ -158,6 +170,14 @@ export async function POST(request: NextRequest) {
                 revokeArchivePass(order.orderId);
               } catch (err) {
                 console.error('Archive pass revoke failed:', err);
+              }
+            } else if (order.status === 'cancelled') {
+              // Reopening a cancelled order (any non-cancel transition) puts
+              // the customer's pass back in force — symmetry with cancel.
+              try {
+                unrevokeArchivePass(order.orderId);
+              } catch (err) {
+                console.error('Archive pass unrevoke failed:', err);
               }
             }
             break;

@@ -20,10 +20,27 @@ export function PassGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let live = true;
-    fetch('/api/pass', { cache: 'no-store' })
-      .then((r) => r.json())
-      .then((j) => live && setState(j.access === true ? 'open' : 'locked'))
-      .catch(() => live && setState('locked'));
+    const check = (attempt: number): void => {
+      fetch('/api/pass', { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((j: { access?: boolean; reason?: string }) => {
+          if (!live) return;
+          if (j.access === true) {
+            setState('open');
+            return;
+          }
+          if (j.reason === 'unreachable' && attempt < 2) {
+            // Oracle hiccup (timeout / throttle / EDGE2 deploy) — the cookie
+            // is still there, so retry before telling the user anything.
+            setTimeout(() => live && check(attempt + 1), 1200);
+            return;
+          }
+          if (j.reason === 'unreachable') setError('gateVerifyFailed');
+          setState('locked');
+        })
+        .catch(() => live && setState('locked'));
+    };
+    check(0);
     return () => {
       live = false;
     };
@@ -44,7 +61,9 @@ export function PassGate({ children }: { children: React.ReactNode }) {
         setState('open');
       } else {
         const j = (await res.json().catch(() => ({}))) as { error?: string };
-        setError(j.error === 'too_many_attempts' ? 'gateTooMany' : 'gateInvalid');
+        if (j.error === 'too_many_attempts') setError('gateTooMany');
+        else if (j.error === 'verify_unavailable') setError('gateVerifyFailed');
+        else setError('gateInvalid');
       }
     } catch {
       setError('gateVerifyFailed');

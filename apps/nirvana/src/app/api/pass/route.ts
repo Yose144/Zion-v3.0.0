@@ -7,6 +7,11 @@ export const dynamic = 'force-dynamic';
 // ZAP-… code into an httpOnly cookie, GET reports current access state
 // (cookie value re-validated every call → revocation propagates),
 // DELETE clears it. Per-IP throttle matches the website gate.
+//
+// The cookie is ONLY deleted when the oracle says the code is invalid.
+// A transient failure (timeout / 429 / 5xx / EDGE2 restart) reports
+// `reason: 'unreachable'` and leaves the cookie in place — otherwise a
+// five-second hiccup would permanently erase a pass the user paid for.
 const attempts = new Map<string, { count: number; reset: number }>();
 const WINDOW_MS = 60_000;
 const MAX_ATTEMPTS = 10;
@@ -45,7 +50,15 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ access: false, error: 'bad_request' }, { status: 400 });
   }
-  if (!(await verifyPassCode(code))) {
+  const verdict = await verifyPassCode(code);
+  if (verdict === 'unreachable') {
+    // Cannot decide right now — do not claim the code is invalid.
+    return NextResponse.json(
+      { access: false, error: 'verify_unavailable' },
+      { status: 503 },
+    );
+  }
+  if (verdict === 'invalid') {
     return NextResponse.json({ access: false, error: 'invalid_code' }, { status: 401 });
   }
   const res = NextResponse.json({ access: true });
@@ -56,10 +69,17 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const code = req.cookies.get(PASS_COOKIE)?.value;
   if (!code) return NextResponse.json({ access: false });
-  if (!(await verifyPassCode(code))) {
+
+  const verdict = await verifyPassCode(code);
+  if (verdict === 'invalid') {
     const res = NextResponse.json({ access: false });
     res.cookies.delete(PASS_COOKIE);
     return res;
+  }
+  if (verdict === 'unreachable') {
+    // Keep the cookie: the pass was already proven valid when it was set and
+    // the failure is on our side. The portal shows a retry, not "expired".
+    return NextResponse.json({ access: false, reason: 'unreachable' });
   }
   return NextResponse.json({ access: true });
 }

@@ -7,6 +7,7 @@ import {
   ARCHIVE_REDEEM_URL,
   issueArchivePassForOrder,
   revokeArchivePass,
+  unrevokeArchivePass,
 } from '@/lib/archive-pass';
 
 export const dynamic = 'force-dynamic';
@@ -183,6 +184,16 @@ export async function POST(request: NextRequest, context: RouteContext) {
         revokeArchivePass(updated.orderId);
       } catch (err) {
         console.error('Archive pass revoke failed:', err);
+      }
+    }
+
+    // Reopening a cancelled order (e.g. accidental cancel) puts the pass back
+    // in force; otherwise the customer would hold a permanently dead code.
+    if (updated && updated.status !== 'cancelled' && before.status === 'cancelled') {
+      try {
+        unrevokeArchivePass(updated.orderId);
+      } catch (err) {
+        console.error('Archive pass unrevoke failed:', err);
       }
     }
 

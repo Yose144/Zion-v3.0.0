@@ -22,8 +22,13 @@ export default async function PresentLayout({
 
   const store = await cookies();
   const code = store.get(PASS_COOKIE)?.value;
-  if (!code || !(await verifyPassCode(code))) {
-    redirect('/');
-  }
+  if (!code) redirect('/');
+
+  const verdict = await verifyPassCode(code);
+  // Only a definitive "invalid" (revoked/expired) sends the user back to the
+  // gate. A transient oracle failure must not look like a lost pass — the
+  // cookie stays valid and the next request re-checks. (Content still does
+  // not render on an undecided verdict: fail-closed, same as before.)
+  if (verdict !== 'valid') redirect('/');
   return <>{children}</>;
 }
