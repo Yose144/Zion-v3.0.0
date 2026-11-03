@@ -1113,3 +1113,29 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **PROTO_VERSION 11** (`runes`, `boss`, `aegis` u hrdiny) → deploy **net první**.
 - **Testy:** `test/moba-sim.mjs` (119 kontrol: runy na startu, sebrání, boss
   scaling/zabití, Aegis vzkříšení bez smrti, stupňování many i cooldownu).
+
+## PRVNÍ SVĚT — vidění a smrt (F5, 2026-11-03, protokol 12)
+
+- **Ward je spotřební item, ne build.** `ward` v `ITEMS` má `consumable: true`,
+  kupuje se do `hero.wards` (max 3) a **nezabírá slot** — jinak by si hráč
+  vyhodil build kvůli vidění. Cena 150, životnost 90 s, vidění 10 m.
+- **Ward se pokládá klávesou `G`** (na dotyku tlačítko 🛡 v `MobaTouch`), bod
+  bere z kurzoru stejně jako kouzlo. Sim kontroluje dosah 12 m a zásobu;
+  klient nikdy nerozhoduje, jestli ward vznikl.
+- **Vidění wardu jde přes `visionSources`** — díky tomu platí i proti mlze
+  a bushům (bush filtr se ptá na vzdálenost zdroje). Kdo přidá další zdroj
+  vidění, patří tam, ne do snapshotu.
+- **Wardy vidí jen vlastní tým** (`snapshot.wards` se filtruje `viewerTeam`).
+  Nepřítel o nich nesmí vědět — jinak by je chodil ničit.
+- **Buyback** (`buyback(hero, now)`): cena `200 + 50×level`, návrat na 60 % HP
+  do spawnu, cooldown 180 s. Cena roste s levelem, aby se nevyplatil pořád;
+  cooldown brání dvojímu vzkříšení v jednom souboji.
+- **Respawn je konstanta, ne magické číslo:** `RESPAWN_BASE_MS + level ×
+  RESPAWN_PER_LEVEL_MS` (5 s + 1,5 s/level). Když se mění, mění se tam.
+- **Buyback tlačítko je jen v overlayeru smrti** a jen když je dostupné
+  (`buybackCost > 0` ze snapshotu) — jinak by hráč mačkal mrtvé tlačítko.
+- **PROTO_VERSION 12** (zprávy `ward`/`buyback`, `wards` ve snapshotu,
+  `buybackCost` u hrdiny) → deploy **net první**.
+- **Testy:** `test/moba-sim.mjs` (133 kontrol: nákup/limit wardu, položení
+  mimo dosah, vidění skrz bush, expirace po 90 s, buyback cena/HP/cooldown,
+  respawn scaling).

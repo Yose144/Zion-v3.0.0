@@ -80,9 +80,14 @@ funkce v sim i HUD). **Protokol:** `runes`, `boss`, `aegis` → 10 → 11.
 
 *Ověřeno: moba-sim 119/119 (14 nových), E2E proti produkci.*
 
-### F5 — Vidění a smrt
-Wardy (item, 90 s, radius 10 m), sentry proti neviditelným, **buyback**
-(`200 + networth/13`, cooldown 8 min), respawn scaling. **Protokol:** wardy v snapshotu → bump.
+### F5 — Vidění a smrt *(hotovo 2026-11-03, protokol 12)*
+**Ward** (spotřební item 150 zlata, max 3, klávesa G / tlačítko na dotyku,
+vidění 10 m na 90 s) — vidí jen vlastní tým a funguje i proti bushům.
+**Buyback** (200 + 50×level, návrat na 60 % HP do základny, cooldown 180 s).
+**Respawn scaling** 5 s + 1,5 s × level. **Protokol:** `ward`, `buyback`,
+`wards` ve snapshotu → 11 → 12.
+
+*Ověřeno: moba-sim 133/133 (14 nových).*
 
 ### F6 — Meta a kvalita
 Scoreboard (GPM/XPM, damage, healing), pozápasový souhrn, obtížnosti botů
