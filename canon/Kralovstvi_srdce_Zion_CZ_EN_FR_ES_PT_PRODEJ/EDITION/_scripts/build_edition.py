@@ -1096,7 +1096,7 @@ def scan() -> list[dict]:
         for lang in LANG_ORDER:
             ldir = edir / lang
             mds = sorted(p for p in ldir.glob("*.md")) if ldir.exists() else []
-            mds = [p for p in mds if not p.name.startswith("00-")]
+            mds = [p for p in mds if not p.name.startswith("00-") and not p.name.startswith("_")]
             for md in mds:
                 text = md.read_text(encoding="utf-8")
                 words = words_of(text)
@@ -1124,7 +1124,12 @@ def status_matrix(rows: list[dict]) -> str:
         for lang in LANG_ORDER:
             hit = [r for r in rows if r["slug"] == slug and r["lang"] == lang]
             if not hit:
-                cells.append("—")
+                wip = sorted((EDITION_ROOT / slug / lang).glob("_*.md"))
+                if wip:
+                    wip_words = sum(words_of(p.read_text(encoding="utf-8")) for p in wip)
+                    cells.append(f"⏳ {wip_words:,} slov".replace(",", " "))
+                else:
+                    cells.append("—")
             else:
                 r = hit[0]
                 marks = []
@@ -1134,7 +1139,7 @@ def status_matrix(rows: list[dict]) -> str:
                     marks.append("PDF")
                 if r["epub"].exists():
                     marks.append("EPUB")
-                cells.append(" · ".join(marks))
+                cells.append(" · ".join(marks) if marks else "—")
         lines.append(f"| {cfg.get('label', slug)} | " + " | ".join(cells) + " |")
     return "\n".join(lines)
 
