@@ -1,0 +1,91 @@
+'use client';
+
+/**
+ * RADIÁLNÍ EMOTE MENU (jako v Mobile Legends).
+ *
+ * Otevře se z tlačítka v HUD (nebo klávesou `X`) a čtyři emoty sedí ve
+ * čtvercích kolem kurzoru. Výběr je **klik** na sektor — na dotyku je to
+ * nejspolehlivější cesta; držení a tažení by na malém displeji míchalo
+ * s joystickem.
+ *
+ * Komponenta nic neposílá: jen vrátí index přes `onPick`. Odeslání jde přes
+ * `useNet().sendEmote`, takže bublinu vidí celá místnost (server ji přeposílá).
+ */
+
+import { useEffect, useRef } from 'react';
+
+const EMOTES = [
+  { glyph: '👍', cs: 'Dobrá práce', en: 'Well played' },
+  { glyph: '⚠️', cs: 'Pozor', en: 'Careful' },
+  { glyph: '🎯', cs: 'Útok', en: 'Attack' },
+  { glyph: '🛡️', cs: 'Kryj mě', en: 'Cover me' },
+];
+
+const RADIUS = 78;
+
+export function MobaEmoteWheel({
+  origin,
+  language,
+  onPick,
+  onClose,
+}: {
+  origin: { x: number; y: number };
+  language: 'cs' | 'en';
+  onPick: (index: number) => void;
+  onClose: () => void;
+}) {
+  const root = useRef<HTMLDivElement>(null);
+
+  // klik mimo nebo Esc zavře
+  useEffect(() => {
+    const down = (event: PointerEvent) => {
+      if (root.current && !root.current.contains(event.target as Node)) onClose();
+    };
+    const key = (event: KeyboardEvent) => {
+      if (event.code === 'Escape') onClose();
+      const digit = /^Digit([1-4])$/.exec(event.code);
+      if (digit) {
+        event.preventDefault();
+        onPick(Number(digit[1]) - 1);
+      }
+    };
+    window.addEventListener('pointerdown', down, true);
+    window.addEventListener('keydown', key);
+    return () => {
+      window.removeEventListener('pointerdown', down, true);
+      window.removeEventListener('keydown', key);
+    };
+  }, [onClose, onPick]);
+
+  return (
+    <div
+      ref={root}
+      className="moba-emote-wheel"
+      style={{ left: origin.x, top: origin.y }}
+      role="menu"
+      aria-label={language === 'cs' ? 'emoty' : 'emotes'}
+    >
+      {EMOTES.map((emote, index) => {
+        const angle = (Math.PI / 4) * (index * 2 + 1);
+        return (
+          <button
+            key={emote.glyph}
+            type="button"
+            role="menuitem"
+            className="moba-emote-sector"
+            style={{
+              left: Math.cos(angle) * RADIUS,
+              top: Math.sin(angle) * RADIUS,
+            }}
+            title={emote[language]}
+            onClick={() => onPick(index)}
+          >
+            <span>{emote.glyph}</span>
+            <small>{index + 1}</small>
+          </button>
+        );
+      })}
+      <div className="moba-emote-hint">{language === 'cs' ? 'emote' : 'emote'}</div>
+    </div>
+  );
+}

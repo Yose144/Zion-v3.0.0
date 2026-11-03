@@ -19,6 +19,7 @@ import { AVATARS } from '@/core/avatars/catalog';
 import { useI18n } from '@/core/i18n';
 import { MobaGame, type MobaStats } from '@/core/moba/MobaGame';
 import { MobaOnline } from '@/core/moba/MobaOnline';
+import { MobaEmoteWheel } from '@/core/moba/MobaEmoteWheel';
 import { useNet } from '@/core/net/useNet';
 import { MobaMinimap } from '@/core/moba/MobaMinimap';
 import { NODE_SITES } from '@/core/moba/map';
@@ -147,6 +148,7 @@ export default function EarthPage() {
   const [mode, setMode] = useState<Mode>('solo');
   const [botSkill, setBotSkill] = useState<BotSkill>('normal');
   const [battleSpell, setBattleSpell] = useState<BattleSpellId>('flicker');
+  const [emoteWheel, setEmoteWheel] = useState<{ x: number; y: number } | null>(null);
   const [scoreboard, setScoreboard] = useState(false);
   const [onlinePhase, setOnlinePhase] = useState<OnlinePhase>('connecting');
   const [stats, setStats] = useState<MobaStats | null>(EMPTY_STATS);
@@ -160,6 +162,17 @@ export default function EarthPage() {
 
   /** Dotykové ovládání — na mobilu joystick + kouzla místo WASD a QWER. */
   const [coarse, setCoarse] = useState(false);
+
+  // X = radiální emote menu (jen multiplayer; sólo nemá komu posílat)
+  useEffect(() => {
+    const down = (event: KeyboardEvent) => {
+      if (event.code !== 'KeyX' || mode !== 'online' || phase !== 'playing') return;
+      event.preventDefault();
+      setEmoteWheel((open) => open ?? { x: window.innerWidth / 2, y: window.innerHeight / 2 });
+    };
+    window.addEventListener('keydown', down);
+    return () => window.removeEventListener('keydown', down);
+  }, [mode, phase]);
 
   // Tab = scoreboard (drží se jen během hry, aby nekradl fokus jinde)
   useEffect(() => {
@@ -718,20 +731,29 @@ export default function EarthPage() {
 
             {mode === 'online' && (
               <div className="moba-emotes">
-                {['👍', '⚠️', '🎯', '🛡️'].map((emote, index) => (
-                  <button
-                    key={emote}
-                    type="button"
-                    className="moba-emote-btn"
-                    title={cs ? 'emote' : 'emote'}
-                    onClick={() => {
-                      sendEmote(index);
-                    }}
-                  >
-                    {emote}
-                  </button>
-                ))}
+                <button
+                  type="button"
+                  className={`moba-emote-btn${emoteWheel ? ' is-open' : ''}`}
+                  title={cs ? 'emoty (X) — drž a vyber' : 'emotes (X)'}
+                  onClick={(event) => {
+                    setEmoteWheel({ x: event.clientX, y: event.clientY });
+                  }}
+                >
+                  😀
+                </button>
               </div>
+            )}
+
+            {emoteWheel && (
+              <MobaEmoteWheel
+                origin={emoteWheel}
+                language={cs ? 'cs' : 'en'}
+                onPick={(index) => {
+                  sendEmote(index);
+                  setEmoteWheel(null);
+                }}
+                onClose={() => setEmoteWheel(null)}
+              />
             )}
 
             {mode === 'online' && (

@@ -5816,3 +5816,64 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   border-color: rgba(255, 209, 102, 0.6);
   background: rgba(255, 209, 102, 0.14);
 }
+
+/* ── MOBA F23: radiální emote menu ───────────────────────────────── */
+
+.moba-emote-wheel {
+  position: fixed;
+  width: 0;
+  height: 0;
+  z-index: 30;
+  pointer-events: auto;
+}
+
+.moba-emote-sector {
+  position: absolute;
+  width: 3.2rem;
+  height: 3.2rem;
+  margin-left: -1.6rem;
+  margin-top: -1.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.05rem;
+  border: 1px solid rgba(255, 209, 102, 0.55);
+  border-radius: 50%;
+  background: rgba(6, 14, 12, 0.92);
+  color: #ffe9b8;
+  font-size: 1.15rem;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.moba-emote-sector:hover {
+  border-color: rgba(255, 209, 102, 0.95);
+  background: rgba(255, 209, 102, 0.2);
+  transform: scale(1.06);
+}
+
+.moba-emote-sector small {
+  font-size: 0.5rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.moba-emote-hint {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(4, 10, 8, 0.85);
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.moba-emote-btn.is-open {
+  border-color: rgba(255, 209, 102, 0.9);
+  background: rgba(255, 209, 102, 0.22);
+}
