@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-08-01T09:51:44.531Z",
+  "durationSec": 60,
+  "platform": "linux x64",
+  "nodeVersion": "v26.1.0",
+  "pool": "62.171.141.136:8444",
+  "worker": "e2e-w11-1785577896862",
+  "results": {
+    "binaryPrepared": true,
+    "minerSpawned": true,
+    "poolConnected": true,
+    "tripleStreamNegotiated": true,
+    "tripleStreamDetected": true,
+    "sharesSubmitted": 1,
+    "hashrateHs": 0,
+    "streams": [],
+    "errors": []
+  },
+  "summary": {
+    "passed": true,
+    "totalChecks": 5,
+    "passedChecks": 5
+  }
+}

@@ -1,0 +1,519 @@
+// ZIS Client — ZION Identity Service integration for the desktop agent.
+//
+// Handles Ed25519 (ZION L1) and SIWE (EVM) login, session storage,
+// API key management, and authenticated public-API calls for multichain.
+// Runs in the Electron main process.
+
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const bip39 = require('bip39');
+const ed25519 = require('@noble/ed25519');
+const { sha256 } = require('@noble/hashes/sha2');
+const { ripemd160 } = require('@noble/hashes/legacy');
+const { sha512 } = require('@noble/hashes/sha512');
+const { ethers } = require('ethers');
+
+// Wire up sync SHA-512 for @noble/ed25519 v3
+ed25519.hashes.sha512 = sha512;
+
+const ZION_PREFIX = 'zion1';
+const ZION_BASE32 = '023456789acdefghjklmnpqrstuvwxyz';
+
+const DEFAULT_ZIS_URL = 'https://auth.zionterranova.com';
+const ZIS_SESSION_COOKIE = 'zion_session';
+
+let _storageDir = '';
+let _zisUrl = DEFAULT_ZIS_URL;
+let _publicApiBase = 'https://app.zionterranova.com';
+
+function zionAddressFromPublicKey(publicKey) {
+  if (publicKey.length !== 32) {
+    throw new Error(`Invalid public key length: expected 32, got ${publicKey.length}`);
+  }
+  const sha = sha256(publicKey);
+  const keyHash = ripemd160(sha);
+  let data = '';
+  for (const byte of keyHash) {
+    data += ZION_BASE32[byte % 32];
+    data += ZION_BASE32[Math.floor(byte / 32) % 32];
+  }
+  const body = data.slice(0, 35);
+  const ckHash = sha256(Buffer.from(ZION_PREFIX + body, 'utf8'));
+  let checksum = '';
+  for (let i = 0; i < 2; i++) {
+    const b = ckHash[i];
+    checksum += ZION_BASE32[b % 32];
+    checksum += ZION_BASE32[Math.floor(b / 32) % 32];
+  }
+  return ZION_PREFIX + body + checksum;
+}
+
+function sessionFile() {
+  if (!_storageDir) throw new Error('ZIS storage directory not set');
+  return path.join(_storageDir, 'zis-session.json');
+}
+
+function ensureDir(dir) {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
+
+function loadSession() {
+  try {
+    const f = sessionFile();
+    if (fs.existsSync(f)) {
+      return JSON.parse(fs.readFileSync(f, 'utf8'));
+    }
+  } catch (e) {
+    console.error('[ZIS] loadSession error:', e.message);
+  }
+  return { token: null, user: null, expiresAt: null, apiKey: null, mode: null };
+}
+
+function saveSession(session) {
+  try {
+    ensureDir(_storageDir);
+    fs.writeFileSync(sessionFile(), JSON.stringify(session, null, 2), { mode: 0o600 });
+    fs.chmodSync(sessionFile(), 0o600);
+  } catch (e) {
+    console.error('[ZIS] saveSession error:', e.message);
+  }
+}
+
+let _inMemorySession = loadSession();
+
+async function zisFetch(method, endpoint, body, headers = {}) {
+  const url = `${_zisUrl}${endpoint}`;
+  const opts = {
+    method,
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...headers },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const resp = await fetch(url, opts);
+  const text = await resp.text();
+  let json = null;
+  try { json = JSON.parse(text); } catch { /* raw text */ }
+  return { status: resp.status, ok: resp.ok, text, json };
+}
+
+function authHeaders() {
+  const headers = {};
+  const session = _inMemorySession;
+  if (session.token) {
+    headers.Cookie = `${ZIS_SESSION_COOKIE}=${session.token}`;
+  }
+  if (session.apiKey) {
+    headers.Authorization = `Bearer ${session.apiKey}`;
+  }
+  return headers;
+}
+
+function publicApiUrl(path) {
+  return `${_publicApiBase}${path.startsWith('/') ? path : '/' + path}`;
+}
+
+async function publicApi(method, apiPath, body, extraHeaders = {}) {
+  const url = publicApiUrl(apiPath);
+  const opts = {
+    method,
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...authHeaders(), ...extraHeaders },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const resp = await fetch(url, opts);
+  const text = await resp.text();
+  let json = null;
+  try { json = JSON.parse(text); } catch { /* raw text */ }
+  return { status: resp.status, ok: resp.ok, text, json };
+}
+
+// ── Node reward key persistence ───────────────────────────────────────────
+
+function nodeKeyFile() {
+  if (!_storageDir) throw new Error('ZIS storage directory not set');
+  return path.join(_storageDir, 'node-reward-key.json');
+}
+
+function saveNodeKey(key) {
+  ensureDir(_storageDir);
+  const data = {
+    seed: Buffer.from(key.seed).toString('hex'),
+    publicKey: Buffer.from(key.publicKey).toString('hex'),
+    address: key.address,
+  };
+  fs.writeFileSync(nodeKeyFile(), JSON.stringify(data, null, 2), { mode: 0o600 });
+}
+
+function loadNodeKey() {
+  const f = nodeKeyFile();
+  if (fs.existsSync(f)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(f, 'utf8'));
+      const seed = Buffer.from(data.seed, 'hex');
+      const publicKey = Buffer.from(data.publicKey, 'hex');
+      return { seed, publicKey, address: data.address };
+    } catch (e) {
+      console.error('[ZIS] failed to load node reward key:', e.message);
+    }
+  }
+  const seed = crypto.randomBytes(32);
+  const publicKeyRaw = ed25519.getPublicKey(seed);
+  const publicKey = Buffer.from(publicKeyRaw);
+  const address = zionAddressFromPublicKey(publicKey);
+  const key = { seed, publicKey, address };
+  saveNodeKey(key);
+  return key;
+}
+
+async function ed25519KeypairFromSeed(seed) {
+  const seedBytes = new Uint8Array(seed);
+  if (seedBytes.length !== 32) throw new Error('Ed25519 seed must be 32 bytes');
+  const publicKeyRaw = ed25519.getPublicKey(seedBytes);
+  const publicKeyHex = Buffer.from(publicKeyRaw).toString('hex');
+  const address = zionAddressFromPublicKey(publicKeyRaw);
+  return { seed: seedBytes, publicKey: publicKeyRaw, publicKeyHex, address };
+}
+
+async function ed25519KeypairFromMnemonic(mnemonic) {
+  if (!bip39.validateMnemonic(mnemonic)) throw new Error('Invalid BIP39 mnemonic');
+  const seed = bip39.mnemonicToSeedSync(mnemonic).slice(0, 32);
+  return ed25519KeypairFromSeed(seed);
+}
+
+async function ed25519SignChallenge(seed, challenge) {
+  const msg = new TextEncoder().encode(challenge);
+  const sig = await ed25519.sign(msg, seed);
+  return Buffer.from(sig).toString('hex');
+}
+
+function extractNonce(challenge) {
+  const m = challenge.match(/nonce: ([a-f0-9]+)/i);
+  if (m) return m[1];
+  throw new Error('Could not extract nonce from ZIS challenge');
+}
+
+function formatSiweMessage({ address, nonce, domain = 'auth.zionterranova.com', uri = 'https://auth.zionterranova.com', chainId = '8453', statement = 'Sign in to ZION Identity Service' }) {
+  const issuedAt = new Date().toISOString();
+  return `${domain} wants you to sign in with your Ethereum account:\n${address}\n\n${statement}\n\nURI: ${uri}\nVersion: 1\nChain ID: ${chainId}\nNonce: ${nonce}\nIssued At: ${issuedAt}`;
+}
+
+class ZisClient {
+  setStorageDir(dir) {
+    _storageDir = dir;
+    _inMemorySession = loadSession();
+  }
+
+  setZisUrl(url) {
+    _zisUrl = (url || DEFAULT_ZIS_URL).replace(/\/$/, '');
+  }
+
+  setPublicApiBase(url) {
+    _publicApiBase = (url || 'https://app.zionterranova.com').replace(/\/$/, '');
+  }
+
+  getSession() {
+    return { ..._inMemorySession };
+  }
+
+  isLoggedIn() {
+    const s = _inMemorySession;
+    if (!s.token && !s.apiKey) return false;
+    if (s.expiresAt && new Date(s.expiresAt) < new Date()) return false;
+    return true;
+  }
+
+  async loginWithMnemonic(mnemonic) {
+    const keypair = await ed25519KeypairFromMnemonic(mnemonic);
+    const { json } = await zisFetch('POST', '/api/auth/challenge', { address: keypair.address, chainType: 'zion-l1' });
+    if (!json || !json.challenge) throw new Error('No challenge from ZIS');
+    const signature = await ed25519SignChallenge(keypair.seed, json.challenge);
+    const result = await zisFetch('POST', '/api/auth/verify/ed25519', {
+      address: keypair.address,
+      publicKey: keypair.publicKeyHex,
+      signature,
+    });
+    if (!result.ok || !result.json || !result.json.token) {
+      throw new Error(result.json?.message || result.json?.error || `ZIS auth failed (${result.status})`);
+    }
+    _inMemorySession = {
+      token: result.json.token,
+      user: result.json.user,
+      expiresAt: result.json.expiresAt,
+      apiKey: null,
+      mode: 'ed25519',
+    };
+    saveSession(_inMemorySession);
+    return this.getSession();
+  }
+
+  async loginWithPrivateKey(privateKeyHex) {
+    // Accept 64-char raw seed or 128-char raw Ed25519 secret (seed + pub).
+    const hex = privateKeyHex.replace(/^0x/, '').trim();
+    let seed;
+    if (hex.length === 64) {
+      seed = Buffer.from(hex, 'hex');
+    } else if (hex.length === 128) {
+      seed = Buffer.from(hex.slice(0, 64), 'hex');
+    } else {
+      throw new Error('Private key must be 64 or 128 hex chars (raw Ed25519 seed)');
+    }
+    const keypair = await ed25519KeypairFromSeed(seed);
+    const { json } = await zisFetch('POST', '/api/auth/challenge', { address: keypair.address, chainType: 'zion-l1' });
+    if (!json || !json.challenge) throw new Error('No challenge from ZIS');
+    const signature = await ed25519SignChallenge(keypair.seed, json.challenge);
+    const result = await zisFetch('POST', '/api/auth/verify/ed25519', {
+      address: keypair.address,
+      publicKey: keypair.publicKeyHex,
+      signature,
+    });
+    if (!result.ok || !result.json || !result.json.token) {
+      throw new Error(result.json?.message || result.json?.error || `ZIS auth failed (${result.status})`);
+    }
+    _inMemorySession = {
+      token: result.json.token,
+      user: result.json.user,
+      expiresAt: result.json.expiresAt,
+      apiKey: null,
+      mode: 'ed25519',
+    };
+    saveSession(_inMemorySession);
+    return this.getSession();
+  }
+
+  async loginWithSiwe(privateKeyHex) {
+    const key = privateKeyHex.replace(/^0x/, '').trim();
+    const wallet = new ethers.Wallet(key);
+    const { json } = await zisFetch('POST', '/api/auth/challenge', { address: wallet.address, chainType: 'evm' });
+    if (!json || !json.challenge) throw new Error('No challenge from ZIS');
+    const nonce = extractNonce(json.challenge);
+    const message = formatSiweMessage({ address: wallet.address, nonce });
+    const signature = await wallet.signMessage(message);
+    const result = await zisFetch('POST', '/api/auth/verify/siwe', {
+      address: wallet.address,
+      message,
+      signature,
+    });
+    if (!result.ok || !result.json || !result.json.token) {
+      throw new Error(result.json?.message || result.json?.error || `ZIS SIWE auth failed (${result.status})`);
+    }
+    _inMemorySession = {
+      token: result.json.token,
+      user: result.json.user,
+      expiresAt: result.json.expiresAt,
+      apiKey: null,
+      mode: 'siwe',
+    };
+    saveSession(_inMemorySession);
+    return this.getSession();
+  }
+
+  async me() {
+    const { json } = await zisFetch('GET', '/api/auth/me', null, authHeaders());
+    return json;
+  }
+
+  /** PATCH /api/auth/me — update profile fields (displayName, avatar, bio). */
+  async updateMe(data) {
+    const { json, status } = await zisFetch('PATCH', '/api/auth/me', data, authHeaders());
+    if (!json || status >= 400) {
+      throw new Error(json?.message || json?.error || `update failed (${status})`);
+    }
+    // Keep the cached session user in sync (server returns the full user).
+    const updated = json.user || json;
+    if (_inMemorySession.user && updated && typeof updated === 'object') {
+      _inMemorySession.user = { ..._inMemorySession.user, ...updated };
+      saveSession(_inMemorySession);
+    }
+    return json;
+  }
+
+  /** POST /api/auth/avatar/nft — bind an owned ERC-1155 token image as the
+   *  account avatar. Server verifies on-chain ownership against the user's
+   *  linked EVM addresses. Throws with a readable message on error. */
+  async bindNftAvatar({ contract, tokenId }) {
+    const { json, status } = await zisFetch(
+      'POST',
+      '/api/auth/avatar/nft',
+      { contract, tokenId: String(tokenId) },
+      authHeaders(),
+    );
+    if (!json || status >= 400) {
+      throw new Error(json?.message || json?.error || `NFT bind failed (${status})`);
+    }
+    if (_inMemorySession.user && json.avatar) {
+      _inMemorySession.user = { ..._inMemorySession.user, avatar: json.avatar };
+      saveSession(_inMemorySession);
+    }
+    return json;
+  }
+
+  /** Deterministic ZIS avatar URL for any identity seed (user id, zion1…,
+   *  0x…). Empty avatar fields in the session fall back to this. */
+  avatarUrl(seed, { variant = 0, style = 'sigil', size = 128, animated = false } = {}) {
+    const q = new URLSearchParams();
+    if (variant) q.set('s', String(variant));
+    if (style && style !== 'sigil') q.set('t', style);
+    if (size && size !== 128) q.set('sz', String(size));
+    if (animated) q.set('a', '1');
+    const qs = q.toString();
+    return `${_zisUrl}/api/auth/avatar/${encodeURIComponent(seed)}.svg${qs ? `?${qs}` : ''}`;
+  }
+
+  /** Resolve the avatar URL shown for a session user: explicit user.avatar
+   *  wins, else the deterministic generated avatar for the user id. */
+  sessionAvatarUrl(user, opts) {
+    if (user?.avatar) return user.avatar;
+    const seed = user?.id || user?.primaryAddress;
+    return seed ? this.avatarUrl(seed, opts) : null;
+  }
+
+  /** Request an auth challenge for any supported chainType. Returns the
+   *  challenge string (5-minute TTL, single use). */
+  async challenge(address, chainType) {
+    const { json } = await zisFetch('POST', '/api/auth/challenge', {
+      address,
+      chainType: chainType || 'zion-l1',
+    });
+    if (!json?.challenge) throw new Error('No challenge from ZIS');
+    return json.challenge;
+  }
+
+  /** Link a cryptographically-proven address to the signed-in account.
+   *  POST /api/auth/link — requires an active session. */
+  async linkAddress(payload) {
+    const { json, status } = await zisFetch('POST', '/api/auth/link', payload, authHeaders());
+    if (status === 409) return { ok: false, conflict: true, error: 'address linked to another account' };
+    if (json?.user || json?.linked) return { ok: true, linked: json.linked || json };
+    return { ok: false, error: json?.message || json?.error || `link failed (${status})` };
+  }
+
+  async logout() {
+    await zisFetch('POST', '/api/auth/logout', null, authHeaders());
+    _inMemorySession = { token: null, user: null, expiresAt: null, apiKey: null, mode: null };
+    saveSession(_inMemorySession);
+    return { ok: true };
+  }
+
+  async listApiKeys() {
+    const { json } = await zisFetch('GET', '/api/keys', null, authHeaders());
+    return json;
+  }
+
+  async createApiKey(label) {
+    const { json } = await zisFetch('POST', '/api/keys', { label }, authHeaders());
+    if (json?.key) {
+      _inMemorySession.apiKey = json.key;
+      saveSession(_inMemorySession);
+    }
+    return json;
+  }
+
+  async revokeApiKey(id) {
+    const { json } = await zisFetch('DELETE', `/api/keys/${id}`, null, authHeaders());
+    return json;
+  }
+
+  async setApiKey(key) {
+    _inMemorySession.apiKey = key;
+    saveSession(_inMemorySession);
+    return this.getSession();
+  }
+
+  // ── Authenticated public multichain API helpers ───────────────────
+  async bridgeSubmit({ direction, from, to, amount, sourceAddress, targetAddress }) {
+    return publicApi('POST', '/api/bridge/submit', { direction, from, to, amount: String(amount), source_address: sourceAddress, target_address: targetAddress });
+  }
+
+  async swapQuote({ from, to, amount, decimals }) {
+    return publicApi('POST', '/api/swap/quote', { from, to, amount: String(amount), decimals });
+  }
+
+  async swapExecute({ from, to, amount, decimals }) {
+    return publicApi('POST', '/api/swap/execute', { from, to, amount: String(amount), decimals });
+  }
+
+  async htlcLock({ from, to, amount, hashHex, timelock, sourceAddress, targetAddress, sourcePubkeyHex, targetPubkeyHex }) {
+    return publicApi('POST', '/api/swap/htlc/lock', {
+      from, to, amount: String(amount), hash_hex: hashHex, timelock,
+      source_address: sourceAddress, target_address: targetAddress,
+      source_pubkey_hex: sourcePubkeyHex, target_pubkey_hex: targetPubkeyHex,
+    });
+  }
+
+  async htlcClaim({ hash, preimage, recipient, token }) {
+    return publicApi('POST', '/api/swap/htlc/claim', { hash, preimage, recipient, token });
+  }
+
+  async htlcRefund({ hash, token }) {
+    return publicApi('POST', '/api/swap/htlc/refund', { hash, token });
+  }
+
+  async htlcPending() {
+    return publicApi('GET', '/api/swap/htlc/pending');
+  }
+
+  async htlcEscrow() {
+    return publicApi('GET', '/api/swap/htlc/escrow');
+  }
+
+  async htlcGet(hash) {
+    return publicApi('GET', `/api/swap/htlc/${encodeURIComponent(hash)}`);
+  }
+
+  // ── Node reward registration and heartbeat ────────────────────────────────
+
+  async registerNode({ bind_host, bind_port, reward_address } = {}) {
+    if (!this.isLoggedIn()) throw new Error('ZIS login required to register a node');
+    const session = this.getSession();
+    const user = session.user;
+    if (!user?.id) throw new Error('No ZIS user id in session');
+
+    const key = loadNodeKey();
+    const node_id = key.publicKey.toString('hex');
+    const addr = reward_address || key.address;
+    const host = bind_host ?? '';
+    const port = bind_port ?? 0;
+    const payload = `${node_id}:${addr}:${user.id}:${host}:${port}`;
+    const sig = Buffer.from(
+      await ed25519.sign(new TextEncoder().encode(payload), key.seed)
+    ).toString('hex');
+
+    return publicApi('POST', '/api/multichain/nodes/register', {
+      node_id,
+      user_id: user.id,
+      reward_address: addr,
+      bind_host: host,
+      bind_port: port,
+      signature: sig,
+    });
+  }
+
+  async nodeHeartbeat({ height, peer_count, bandwidth, latency_ms }) {
+    const key = loadNodeKey();
+    const node_id = key.publicKey.toString('hex');
+    const observed_at = Date.now();
+    const payload = `${node_id}:${height}:${peer_count}:${bandwidth}:${latency_ms}:${observed_at}`;
+    const sig = Buffer.from(
+      await ed25519.sign(new TextEncoder().encode(payload), key.seed)
+    ).toString('hex');
+
+    return publicApi('POST', '/api/multichain/nodes/heartbeat', {
+      node_id,
+      height,
+      peer_count,
+      bandwidth,
+      latency_ms,
+      observed_at,
+      signature: sig,
+    });
+  }
+
+  async nodeRewardPayouts() {
+    return publicApi('GET', '/api/multichain/nodes/payouts');
+  }
+
+  async activeNodes() {
+    return publicApi('GET', '/api/multichain/nodes');
+  }
+}
+
+module.exports = new ZisClient();

@@ -1,18 +1,124 @@
 {
   "name": "@zion/desktop",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Kingdom desktop client — Electron shell + lokální ZION peněženka",
-  "main": "main.cjs",
+  "version": "3.2.0",
+  "description": "Kingdom desktop client — ZION V31 mining, wallet, Multichain, OASIS (lifted desktop-agent) + embedded Kingdom SSR",
+  "homepage": "https://zionterranova.com",
+  "main": "src/main.js",
   "scripts": {
-    "start": "electron .",
-    "dev": "KINGDOM_URL=http://127.0.0.1:3020 electron .",
-    "bundle": "node scripts/prepare-bundle.mjs"
+    "prestart": "node scripts/prepare-rust-miner.js --no-build --require || node scripts/prepare-rust-miner.js --auto",
+    "start": "node scripts/launch-electron.js",
+    "dev": "node scripts/launch-electron.js",
+    "bundle": "node scripts/prepare-bundle.mjs",
+    "dev:wallet": "node scripts/launch-electron.js",
+    "test": "node test/test_mining_modes.js && python3 test_deeksha_revenue.py",
+    "test:e2e": "node scripts/test_e2e_mining_flow.js",
+    "test:revenue": "node scripts/test_revenue_system_e2e.js",
+    "test:wallet": "node scripts/test-wallet-e2e.js",
+    "prepare:rust-miner": "node scripts/prepare-rust-miner.js --auto",
+    "build": "npm run prepare:rust-miner && electron-builder",
+    "build:win": "npm run prepare:rust-miner && electron-builder --win nsis --x64",
+    "build:win:nsis": "npm run prepare:rust-miner && electron-builder --win nsis --x64",
+    "build:win:portable": "npm run prepare:rust-miner && electron-builder --win portable --x64",
+    "build:mac": "npm run prepare:rust-miner && electron-builder --mac",
+    "build:linux": "npm run prepare:rust-miner && electron-builder --linux --x64",
+    "build:all": "npm run prepare:rust-miner && electron-builder --mac --win --linux --x64",
+    "tui": "node src/tui/index.js"
   },
+  "keywords": [
+    "zion",
+    "blockchain",
+    "mining",
+    "cryptocurrency",
+    "consciousness"
+  ],
+  "author": {
+    "name": "ZION TerraNova",
+    "email": "support@zionterranova.com",
+    "url": "https://zionterranova.com"
+  },
+  "license": "MIT",
   "dependencies": {
-    "@zion/wallet": "*"
+    "@noble/ed25519": "^3.0.0",
+    "@noble/hashes": "^1.7.0",
+    "bip39": "^3.1.0",
+    "electron-updater": "^6.8.3",
+    "ethers": "^5.8.0",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
-    "electron": "^39.2.7"
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.zionterranova.desktop-agent",
+    "productName": "ZION Miner",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "ai/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/",
+        "to": ".",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "src/assets/tray-icon.png",
+        "to": "tray-icon.png"
+      },
+      {
+        "from": "src/assets/icon.png",
+        "to": "icon.png"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "icon": "src/assets/icon.ico",
+      "signAndEditExecutable": false,
+      "artifactName": "zion-desktop-agent-v${version}-windows-${arch}.${ext}"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "src/assets/icon.icns",
+      "category": "public.app-category.utilities",
+      "artifactName": "zion-desktop-agent-v${version}-mac-arm64.${ext}"
+    },
+    "dmg": {
+      "icon": "src/assets/icon.icns"
+    },
+    "linux": {
+      "target": [
+        { "target": "AppImage", "arch": ["x64"] },
+        { "target": "deb", "arch": ["x64"] }
+      ],
+      "icon": "src/assets/icon.png",
+      "category": "Utility",
+      "maintainer": "ZION TerraNova <support@zionterranova.com>",
+      "synopsis": "ZION Miner desktop agent",
+      "description": "Native mining client with consciousness gamification",
+      "artifactName": "zion-desktop-agent-v${version}-linux-x86_64.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Zion-TerraNova",
+        "repo": "v3-Mainnet"
+      }
+    ]
   }
 }

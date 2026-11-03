@@ -1,0 +1,276 @@
+// ZION Ekam Deeksha v3.1.0 - Preload Script
+// IPC bridge between main process and renderer (security layer)
+
+const { contextBridge, ipcRenderer } = require('electron');
+
+// Expose protected methods to renderer
+contextBridge.exposeInMainWorld('electronAPI', {
+  // System info
+  getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
+  listMiningDevices: (opts) => ipcRenderer.invoke('list-mining-devices', opts),
+
+  // First-run / quick setup
+  isFirstRun: () => ipcRenderer.invoke('is-first-run'),
+  quickSetup: (data) => ipcRenderer.invoke('quick-setup', data),
+
+  // Config management
+  getConfig: () => ipcRenderer.invoke('get-config'),
+  saveConfig: (config) => ipcRenderer.invoke('save-config', config),
+
+  // Mining control
+  startMining: (config) => ipcRenderer.invoke('start-mining', config),
+  stopMining: () => ipcRenderer.invoke('stop-mining'),
+  // One-click algorithm/coin switching: persists the patch and, when the
+  // miner is running, hot-restarts it so the change applies end-to-end.
+  applyMiningConfig: (patch) => ipcRenderer.invoke('apply-mining-config', patch),
+  getPoolAuxpow: () => ipcRenderer.invoke('get-pool-auxpow'),
+
+
+  
+  // Stats
+  getStats: () => ipcRenderer.invoke('get-stats'),
+  testBlockFound: (data) => ipcRenderer.invoke('test-block-found', data),
+  
+  // Logs
+  openLogs: () => ipcRenderer.invoke('open-logs'),
+
+  // Wallet management
+  generateWallet: () => ipcRenderer.invoke('generate-wallet'),
+  saveWallet: (data) => ipcRenderer.invoke('save-wallet', data),
+  listWallets: () => ipcRenderer.invoke('list-wallets'),
+  importWallet: (data) => ipcRenderer.invoke('import-wallet', data),
+  exportWallet: (data) => ipcRenderer.invoke('export-wallet', data),
+  validateAddress: (address) => ipcRenderer.invoke('validate-address', address),
+
+  // Quantus (QTC / Planck) wallet
+  generateQuantusWallet: () => ipcRenderer.invoke('generate-quantus-wallet'),
+  deriveQuantusAddress: (mnemonic) => ipcRenderer.invoke('derive-quantus-address', mnemonic),
+  validateQuantusAddress: (address) => ipcRenderer.invoke('validate-quantus-address', address),
+  quantusGetBalance: (address) => ipcRenderer.invoke('quantus-get-balance', address),
+  quantusGetHistory: (address) => ipcRenderer.invoke('quantus-get-history', address),
+  qtcNetworkStatus: (addr) => ipcRenderer.invoke('qtc-network-status', addr),
+  walletSetQtc: (data) => ipcRenderer.invoke('wallet-set-qtc', data),
+
+  // Pearl (PRL) wallet
+  generatePearlWallet: () => ipcRenderer.invoke('generate-pearl-wallet'),
+  derivePearlAddress: (mnemonic) => ipcRenderer.invoke('derive-pearl-address', mnemonic),
+  validatePearlAddress: (address) => ipcRenderer.invoke('validate-pearl-address', address),
+  pearlGetBalance: (address) => ipcRenderer.invoke('pearl-get-balance', address),
+  pearlGetHistory: (address) => ipcRenderer.invoke('pearl-get-history', address),
+  prlNetworkStatus: (addr) => ipcRenderer.invoke('prl-network-status', addr),
+  walletSetPrl: (data) => ipcRenderer.invoke('wallet-set-prl', data),
+
+  // External-chain links (QTC/PRL ↔ ZION address) + seed derivation
+  walletGetLinks: (zionAddress) => ipcRenderer.invoke('wallet-get-links', zionAddress),
+  walletDeriveChain: (data) => ipcRenderer.invoke('wallet-derive-chain', data),
+
+  // Native multichain wallet (derived from the ZION mnemonic, non-custodial)
+  nativeDeriveAddresses: (data) => ipcRenderer.invoke('native-derive-addresses', data),
+  nativeGetBalances: (data) => ipcRenderer.invoke('native-balances', data),
+  nativeSend: (data) => ipcRenderer.invoke('native-send', data),
+  nativeLinkZis: (data) => ipcRenderer.invoke('native-link-zis', data),
+
+  // Wallet RPC
+  walletGetBalance: (data) => ipcRenderer.invoke('wallet-get-balance', data),
+  walletSendTransaction: (data) => ipcRenderer.invoke('wallet-send-transaction', data),
+  walletGetTransaction: (data) => ipcRenderer.invoke('wallet-get-transaction', data),
+  walletGenerateQr: (data) => ipcRenderer.invoke('wallet-generate-qr', data),
+
+  // CH3 Architecture / Network Monitoring
+  getGpuInfo: () => ipcRenderer.invoke('get-gpu-info'),
+  getServerStatus: () => ipcRenderer.invoke('get-server-status'),
+  getNetworkMetrics: () => ipcRenderer.invoke('get-network-metrics'),
+  autoSelectPool: () => ipcRenderer.invoke('auto-select-pool'),
+  getPeerList: () => ipcRenderer.invoke('get-peer-list'),
+
+
+
+  // Auto-update (license-gated)
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  downloadUpdate: () => ipcRenderer.invoke('download-update'),
+  installUpdate: () => ipcRenderer.invoke('install-update'),
+  getUpdateSettings: () => ipcRenderer.invoke('get-update-settings'),
+  setUpdateAutoCheck: (enabled) => ipcRenderer.invoke('set-update-auto-check', enabled),
+  // License key management
+  getLicenseKey: () => ipcRenderer.invoke('get-license-key'),
+  setLicenseKey: (key) => ipcRenderer.invoke('set-license-key', key),
+  validateLicense: (key) => ipcRenderer.invoke('validate-license', key),
+  onUpdateStatus: (callback) => {
+    ipcRenderer.on('update-status', (event, data) => callback(data));
+  },
+  onUpdateProgress: (callback) => {
+    ipcRenderer.on('update-progress', (event, data) => callback(data));
+  },
+
+  // Event listeners
+  onMinerStarted: (callback) => {
+    ipcRenderer.on('miner-started', (event, data) => callback(data));
+  },
+  onMinerStarting: (callback) => {
+    ipcRenderer.on('miner-starting', (event, data) => callback(data));
+  },
+  onMinerStopped: (callback) => {
+    ipcRenderer.on('miner-stopped', (event, data) => callback(data));
+  },
+  onMinerError: (callback) => {
+    ipcRenderer.on('miner-error', (event, data) => callback(data));
+  },
+  onMinerOutput: (callback) => {
+    ipcRenderer.on('miner-output', (event, data) => callback(data));
+  },
+  onBlockFound: (callback) => {
+    ipcRenderer.on('block-found', (event, data) => callback(data));
+  },
+  onShareEvent: (callback) => {
+    ipcRenderer.on('share-event', (event, data) => callback(data));
+  },
+  onStatsUpdate: (callback) => {
+    ipcRenderer.on('stats-update', (event, data) => callback(data));
+  },
+  onKeyscanStatus: (callback) => {
+    ipcRenderer.on('keyscan-status', (event, data) => callback(data));
+  },
+  onLotteryStatus: (callback) => {
+    ipcRenderer.on('lottery-status', (event, data) => callback(data));
+  },
+  lotteryGetUnits: () => ipcRenderer.invoke('lottery-get-units'),
+  onMinerBackend: (callback) => {
+    ipcRenderer.on('miner-backend', (event, data) => callback(data));
+  },
+  onConfigUpdated: (callback) => {
+    ipcRenderer.on('config-updated', (event) => callback());
+  },
+  onQuadVramWarning: (callback) => {
+    ipcRenderer.on('quad-vram-warning', (event, data) => callback(data));
+  },
+  // GPU health guard — a card auto-disabled at runtime (kernel errors,
+  // zero hashrate, crash attribution). Payload: {token,name,index,reason}.
+  onMiningDeviceHealth: (callback) => {
+    ipcRenderer.on('mining-device-health', (event, data) => callback(data));
+  },
+
+
+
+  // ── L1 Tree Node (local zion-core process) ──────────────────────────────
+  nodeGetStatus: () => ipcRenderer.invoke('node-get-status'),
+  nodeGetPeers: () => ipcRenderer.invoke('node-get-peers'),
+  nodeStart: (options) => ipcRenderer.invoke('node-start', options),
+  nodeStop: () => ipcRenderer.invoke('node-stop'),
+  nodeGetCheckpoints: () => ipcRenderer.invoke('node-get-checkpoints'),
+  nodeRewardsRegister: (opts) => ipcRenderer.invoke('node-rewards-register', opts),
+  nodeRewardsHeartbeat: (opts) => ipcRenderer.invoke('node-rewards-heartbeat', opts),
+  nodeRewardsPayouts: () => ipcRenderer.invoke('node-rewards-payouts'),
+  onNodeOutput: (callback) => ipcRenderer.on('node-output', (event, data) => callback(data)),
+  onNodeStopped: (callback) => ipcRenderer.on('node-stopped', (event, data) => callback(data)),
+
+  // ── Security / AV Troubleshooting ────────────────────────────────────────
+  getSecurityStatus: () => ipcRenderer.invoke('get-security-status'),
+  fixSecurityBlocks: () => ipcRenderer.invoke('fix-security-blocks'),
+  openDefenderSettings: () => ipcRenderer.invoke('open-defender-settings'),
+
+  // ── Hiran AI Chat ───────────────────────────────────────────────────────
+  aiChatAsk: (data) => ipcRenderer.invoke('ai-chat-ask', data),
+  aiChatStatus: () => ipcRenderer.invoke('ai-chat-status'),
+
+  // ── Hiranyagarbha + NCL (Neural Compute Layer) ─────────────────────────
+  aiNativeStatus: () => ipcRenderer.invoke('ai-native-status'),
+  nclGetStatus: () => ipcRenderer.invoke('ncl-get-status'),
+  nclGetWorkers: () => ipcRenderer.invoke('ncl-get-workers'),
+  nclGetLeaderboard: () => ipcRenderer.invoke('ncl-get-leaderboard'),
+  nclSubmitJob: (data) => ipcRenderer.invoke('ncl-submit-job', data),
+  nclGetPrice: () => ipcRenderer.invoke('ncl-get-price'),
+
+  // ── Ekam Deeksha v3.1.0 GPU + Dual Mining ──────────────────────────────
+  runGpuBenchmark: (options) => ipcRenderer.invoke('run-gpu-benchmark', options),
+  runKernelSelftest: (options) => ipcRenderer.invoke('run-kernel-selftest', options),
+  getGpuDevices: () => ipcRenderer.invoke('get-gpu-devices'),
+
+  // ── ZION CLI Integration (v3 unified CLI) ────────────────────────────
+  cliGetVersion: () => ipcRenderer.invoke('cli-get-version'),
+  cliWalletList: () => ipcRenderer.invoke('cli-wallet-list'),
+  cliWalletNew: (data) => ipcRenderer.invoke('cli-wallet-new', data),
+  cliWalletBalance: (data) => ipcRenderer.invoke('cli-wallet-balance', data),
+  cliWalletSend: (data) => ipcRenderer.invoke('cli-wallet-send', data),
+  cliMineStart: (data) => ipcRenderer.invoke('cli-mine-start', data),
+  cliMineStop: () => ipcRenderer.invoke('cli-mine-stop'),
+  cliMineStatus: () => ipcRenderer.invoke('cli-mine-status'),
+  cliNodeStart: (data) => ipcRenderer.invoke('cli-node-start', data),
+  cliNodeStop: () => ipcRenderer.invoke('cli-node-stop'),
+  cliConfigGet: (data) => ipcRenderer.invoke('cli-config-get', data),
+  cliConfigSet: (data) => ipcRenderer.invoke('cli-config-set', data),
+
+  // ── Bridge CLI (lock / burn) ───────────────────────────────────────
+  cliBridgeStatus: () => ipcRenderer.invoke('cli-bridge-status'),
+  cliBridgePending: () => ipcRenderer.invoke('cli-bridge-pending'),
+  cliBridgeHistory: (data) => ipcRenderer.invoke('cli-bridge-history', data),
+  cliBridgeChains: () => ipcRenderer.invoke('cli-bridge-chains'),
+  cliBridgeLock: (data) => ipcRenderer.invoke('cli-bridge-lock', data),
+  cliBridgeBurn: (data) => ipcRenderer.invoke('cli-bridge-burn', data),
+
+  // ── DAO CLI ────────────────────────────────────────────────────────
+  cliDaoStatus: () => ipcRenderer.invoke('cli-dao-status'),
+  cliDaoProposals: () => ipcRenderer.invoke('cli-dao-proposals'),
+  cliDaoTreasury: () => ipcRenderer.invoke('cli-dao-treasury'),
+  cliDaoParams: () => ipcRenderer.invoke('cli-dao-params'),
+  daoGetProposals: () => ipcRenderer.invoke('dao-get-proposals'),
+  daoGetTreasury: () => ipcRenderer.invoke('dao-get-treasury'),
+  daoGetStatus: () => ipcRenderer.invoke('dao-get-status'),
+  daoGetParams: () => ipcRenderer.invoke('dao-get-params'),
+  bridgeGetStatus: () => ipcRenderer.invoke('bridge-get-status'),
+  bridgeGetTransactions: (data) => ipcRenderer.invoke('bridge-get-transactions', data),
+  warpGetStatus: () => ipcRenderer.invoke('warp-get-status'),
+
+  // ── Pool CLI ─────────────────────────────────────────────────────
+  cliPoolStats: (data) => ipcRenderer.invoke('cli-pool-stats', data),
+  cliPoolMiners: (data) => ipcRenderer.invoke('cli-pool-miners', data),
+  cliPoolConfig: (data) => ipcRenderer.invoke('cli-pool-config', data),
+  cliPoolEarnings: (data) => ipcRenderer.invoke('cli-pool-earnings', data),
+
+  // ── Warp CLI ───────────────────────────────────────────────────────
+  cliWarpStatus: () => ipcRenderer.invoke('cli-warp-status'),
+  cliWarpChains: () => ipcRenderer.invoke('cli-warp-chains'),
+  cliWarpPending: () => ipcRenderer.invoke('cli-warp-pending'),
+  cliWarpStats: () => ipcRenderer.invoke('cli-warp-stats'),
+  cliWarpEstimate: (data) => ipcRenderer.invoke('cli-warp-estimate', data),
+
+  // ── Swap CLI (DEX) ─────────────────────────────────────────────────
+  cliSwapQuote: (data) => ipcRenderer.invoke('cli-swap-quote', data),
+  cliSwapExecute: (data) => ipcRenderer.invoke('cli-swap-execute', data),
+
+  // ── Atomic Swap CLI (HTLC) ─────────────────────────────────────────
+  cliAtomicSwapStatus: () => ipcRenderer.invoke('cli-atomic-swap-status'),
+  cliAtomicSwapEscrow: () => ipcRenderer.invoke('cli-atomic-swap-escrow'),
+  cliAtomicSwapGet: (data) => ipcRenderer.invoke('cli-atomic-swap-get', data),
+  cliAtomicSwapCreate: (data) => ipcRenderer.invoke('cli-atomic-swap-create', data),
+  cliAtomicSwapPending: () => ipcRenderer.invoke('cli-atomic-swap-pending'),
+  cliAtomicSwapClaim: (data) => ipcRenderer.invoke('cli-atomic-swap-claim', data),
+  cliAtomicSwapRefund: (data) => ipcRenderer.invoke('cli-atomic-swap-refund', data),
+
+  // ── ZIS (ZION Identity Service) ────────────────────────────────────
+  zisGetSession: () => ipcRenderer.invoke('zis-get-session'),
+  zisLoginMnemonic: (data) => ipcRenderer.invoke('zis-login-mnemonic', data),
+  zisLoginPrivateKey: (data) => ipcRenderer.invoke('zis-login-private-key', data),
+  zisLoginSiwe: (data) => ipcRenderer.invoke('zis-login-siwe', data),
+  zisLogout: () => ipcRenderer.invoke('zis-logout'),
+  zisMe: () => ipcRenderer.invoke('zis-me'),
+  zisListKeys: () => ipcRenderer.invoke('zis-list-keys'),
+  zisCreateKey: (data) => ipcRenderer.invoke('zis-create-key', data),
+  zisRevokeKey: (data) => ipcRenderer.invoke('zis-revoke-key', data),
+  zisSetApiKey: (data) => ipcRenderer.invoke('zis-set-api-key', data),
+  zisUpdateMe: (data) => ipcRenderer.invoke('zis-update-me', data),
+  zisBindNft: (data) => ipcRenderer.invoke('zis-bind-nft', data),
+  zisAvatarUrl: (data) => ipcRenderer.invoke('zis-avatar-url', data),
+
+  // Open URL in system browser
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
+
+  // Generic invoke (for dynamic handler calls)
+  invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
+
+  // Cleanup listeners
+  removeAllListeners: (channel) => {
+    ipcRenderer.removeAllListeners(channel);
+  }
+});
+
+console.log('Preload script loaded - electronAPI available');
