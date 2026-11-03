@@ -5666,3 +5666,68 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   border-color: rgba(165, 180, 252, 0.55);
   color: #c7d2fe;
 }
+
+/* ── MOBA F20: recall ─────────────────────────────────────────────── */
+
+.moba-recall {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  min-width: 2.4rem;
+  padding: 0 0.5rem;
+  border: 1px solid rgba(127, 227, 212, 0.45);
+  border-radius: 0.6rem;
+  background: rgba(127, 227, 212, 0.12);
+  color: #bff3e8;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.moba-recall.is-channeling {
+  border-color: rgba(255, 209, 102, 0.7);
+  color: #ffd166;
+  background: rgba(255, 209, 102, 0.16);
+}
+
+.moba-recall small {
+  font-size: 0.6rem;
+}
+
+.moba-recall-progress {
+  position: relative;
+  width: min(18rem, 60vw);
+  height: 0.9rem;
+  margin: 0 auto;
+  border: 1px solid rgba(255, 209, 102, 0.5);
+  border-radius: 999px;
+  background: rgba(6, 12, 10, 0.85);
+  overflow: hidden;
+}
+
+.moba-recall-progress i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #b58b2a, #ffd166);
+  transition: width 0.12s linear;
+}
+
+.moba-recall-progress span {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.moba-touch-btn.is-recall {
+  width: 3.2rem;
+  height: 3.2rem;
+  font-size: 1.1rem;
+  border-color: rgba(255, 209, 102, 0.55);
+  color: #ffd166;
+}

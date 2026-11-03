@@ -20,6 +20,7 @@ import {
   placeSentry,
   placeWard,
   sellItem,
+  startRecall,
   useBattleSpell,
   useItem,
   stepMoba,
@@ -126,6 +127,14 @@ export function placeMobaWard(room: MobaRoomSim, connId: string, x: number, z: n
   const hero = heroById(room.sim, connId);
   if (!hero) return false;
   return placeWard(room.sim, hero, x, z);
+}
+
+/** Recall — server rozhodne, jestli channel vůbec začne. */
+export function startMobaRecall(room: MobaRoomSim, connId: string): boolean {
+  if (!room.sim) return false;
+  const hero = heroById(room.sim, connId);
+  if (!hero) return false;
+  return startRecall(hero, room.sim.now);
 }
 
 /** Battle spell (Flicker) — server rozhodne o dosahu i cooldownu. */

@@ -153,6 +153,12 @@ export function MobaTouch({ spells }: { spells: { slot: SpellSlot; name: string;
     window.setTimeout(() => sendKey('KeyH', false), 60);
   }, []);
 
+  /** RECALL: syntetická klávesa B. */
+  const recall = useCallback(() => {
+    sendKey('KeyB', true);
+    window.setTimeout(() => sendKey('KeyB', false), 60);
+  }, []);
+
   /** BATTLE SPELL (Flicker): syntetická klávesa V. */
   const flicker = useCallback(() => {
     const element = canvas();
@@ -258,6 +264,18 @@ export function MobaTouch({ spells }: { spells: { slot: SpellSlot; name: string;
           }}
         >
           🛡
+        </button>
+        <button
+          type="button"
+          className="moba-touch-btn is-recall"
+          title="recall"
+          onPointerDown={(event) => {
+            event.stopPropagation();
+            event.preventDefault();
+            recall();
+          }}
+        >
+          ↩
         </button>
         <button
           type="button"

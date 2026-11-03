@@ -165,6 +165,10 @@ export const RESPAWN_BASE_MS = 5000;
 // Drží ho sim (cooldown i efekt), klient posílá jen bod.
 export const BATTLE_SPELL_COOLDOWN_MS = 60_000;
 export const BATTLE_SPELL_RANGE = 6;
+// ── recall (F20) ──────────────────────────────────────────────────
+// Návrat do základny po channelu. Přeruší ho pohyb, kouzlo, útok i zásah —
+// stejně jako v Mobile Legends, kde recall není „zadarmo únik".
+export const RECALL_CHANNEL_MS = 4000;
 export const RESPAWN_PER_LEVEL_MS = 1500;
 /** Základna léčí — bez toho se hrdina po souboji nikdy nevrátí do hry. */
 export const FOUNTAIN_RADIUS = 9;
@@ -589,6 +593,8 @@ export interface Hero {
   buybackAt: number;
   /** Kdy půjde znovu použít battle spell (Flicker). */
   battleSpellAt: number;
+  /** Začátek recall channelu (0 = neprobíhá). */
+  recallAt: number;
   items: ItemId[];
   buffs: Buff[];
   isPlayer: boolean;
@@ -819,6 +825,7 @@ function makeHero(id: string, team: Team, heroId: number, spawn: { x: number; z:
     sentries: 0,
     buybackAt: 0,
     battleSpellAt: 0,
+    recallAt: 0,
     itemCooldowns: {},
     talentPicks: {},
     items: [],
@@ -1013,6 +1020,8 @@ function addEffect(state: MobaState, kind: Effect['kind'], x: number, z: number,
 
 function damageHero(state: MobaState, hero: Hero, amount: number, source: string) {
   if (!hero.alive) return;
+  // jakýkoli zásah přerušuje recall
+  if (hero.recallAt > 0) hero.recallAt = 0;
   let remaining = amount * damageIn(hero, state.now);
   if (hero.shield > 0) {
     const absorbed = Math.min(hero.shield, remaining);
@@ -1816,6 +1825,25 @@ export function stepMoba(
 
     const speed = heroSpeed(hero, state.now);
 
+    // recall: dokončení po 4 s; pohyb nebo akce ho ruší
+    if (hero.recallAt > 0) {
+      const input = inputs[hero.id];
+      const wantsMove = Boolean(input && (Math.hypot(input.moveX, input.moveZ) > 0.05 || input.cast || input.attack));
+      if (wantsMove) {
+        hero.recallAt = 0;
+      } else if (now - hero.recallAt >= RECALL_CHANNEL_MS) {
+        const spawn = hero.team === 'blue' ? SPAWNS.blue : SPAWNS.red;
+        hero.x = spawn.x;
+        hero.z = spawn.z;
+        hero.recallAt = 0;
+        addEffect(state, 'level', hero.x, hero.z, 1.8, '#7fe3d3', 800);
+        state.banner = `${hero.name} se vrátil do základny`;
+        state.bannerUntil = now + 2400;
+      }
+      // během channelu se nedá útočit ani sesílat
+      if (hero.recallAt > 0) continue;
+    }
+
     const input = inputs[hero.id];
     if (input) {
       const length = Math.hypot(input.moveX, input.moveZ);
@@ -2212,6 +2240,21 @@ export function snapAim(
 }
 
 /**
+ * Recall — začne channel (4 s). Přeruší ho pohyb, akce i jakýkoli zásah;
+ * rozhoduje o tom sim, ne klient (jinak by šel recallovat při útěku).
+ */
+export function startRecall(hero: Hero, now: number): boolean {
+  if (!hero.alive || hero.recallAt > 0) return false;
+  hero.recallAt = now;
+  return true;
+}
+
+/** Zruší channel (pohyb, akce, zásah). */
+export function cancelRecall(hero: Hero): void {
+  hero.recallAt = 0;
+}
+
+/**
  * Battle spell „Flicker" — krátký blink na bod (max 6 m), 60 s cooldown.
  * Server rozhoduje o dosahu i cooldownu; klient posílá jen bod.
  */
@@ -2352,6 +2395,8 @@ export interface MobaSnapshot {
     talentPending: number | null;
     /** Zbývající cooldown battle spellu (ms). */
     battleSpellIn: number;
+    /** Zbývající channel recallu (ms), 0 = neprobíhá. */
+    recallIn: number;
     /** Cena buybacku; 0 = nedostupný (živý nebo na cooldownu). */
     buybackCost: number;
     buffs: Buff[];
@@ -2518,6 +2563,7 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
         talents: Object.entries(hero.talentPicks).map(([tier, pick]) => ({ tier: Number(tier), pick })),
         talentPending: pendingTalent(hero),
         battleSpellIn: Math.max(0, hero.battleSpellAt - state.now),
+        recallIn: hero.recallAt > 0 ? Math.max(0, RECALL_CHANNEL_MS - (state.now - hero.recallAt)) : 0,
         buybackCost: !hero.alive && state.now >= hero.buybackAt ? buybackCost(hero) : 0,
         buffs: hero.buffs,
     })),

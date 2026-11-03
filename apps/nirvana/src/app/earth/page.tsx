@@ -434,6 +434,12 @@ export default function EarthPage() {
           </div>
 
           <div className="moba-hud-bottom">
+            {(stats?.recallIn ?? 0) > 0 && (
+              <div className="moba-recall-progress" role="status" aria-live="polite">
+                <i style={{ width: `${100 - ((stats?.recallIn ?? 0) / 4000) * 100}%` }} />
+                <span>{cs ? 'návrat do základny' : 'recalling'}</span>
+              </div>
+            )}
             {stats?.invisible && (
               <div className="moba-invisible" role="status">
                 {cs ? 'NEVIDITELNÝ' : 'INVISIBLE'}
@@ -498,6 +504,17 @@ export default function EarthPage() {
               <span className="moba-sentry-count" title={cs ? 'sentry (H položí) — odhalí neviditelné' : 'sentry (H places) — reveals invisible'}>
                 🕯 {stats?.sentries ?? 0}
               </span>
+              <button
+                type="button"
+                className={`moba-recall${(stats?.recallIn ?? 0) > 0 ? ' is-channeling' : ''}`}
+                title={cs ? 'Recall (B) — návrat do základny, 4 s channel' : 'Recall (B) — teleport home, 4 s channel'}
+                onClick={() => {
+                  window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyB', bubbles: true }));
+                }}
+              >
+                ↩
+                {(stats?.recallIn ?? 0) > 0 && <small>{((stats?.recallIn ?? 0) / 1000).toFixed(1)}</small>}
+              </button>
               <button
                 type="button"
                 className={`moba-battlespell${(stats?.battleSpellIn ?? 0) > 0 ? ' is-cooling' : ''}`}
@@ -677,7 +694,7 @@ export default function EarthPage() {
                   ? 'joystick pohyb · Q/F/E/R kouzlo · ÚTOK'
                   : 'stick move · Q/F/E/R cast · ATTACK'
                 : cs
-                  ? 'WASD pohyb · Q/F/E/R kouzlo · 1–6 aktivní item · G ward · H sentry · Tab scoreboard · levé tlačítko útok'
+                  ? 'WASD pohyb · Q/F/E/R kouzlo · 1–6 item · G ward · H sentry · V flicker · B recall · Tab scoreboard'
                   : 'WASD move · Q/F/E/R cast · left click attack'}
             </div>
           </div>

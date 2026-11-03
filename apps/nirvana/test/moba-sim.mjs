@@ -9,7 +9,7 @@
  * Spuštění: npx tsx apps/nirvana/test/moba-sim.mjs
  */
 
-import { BASE_SPEED, BOT_SKILLS, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isHidden, isVisibleTo, ITEMS, ITEM_SLOTS, pendingTalent, pickTalent, placeSentry, placeWard, sellItem, snapAim, stepMoba, mobaSnapshot, talentRole, talentsFor, talentTotals, totalXpAt, useBattleSpell, useItem, visionSources, NO_INPUT, SENTRY_DURATION_MS, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
+import { BASE_SPEED, BOT_SKILLS, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isHidden, isVisibleTo, ITEMS, ITEM_SLOTS, pendingTalent, pickTalent, placeSentry, placeWard, sellItem, snapAim, startRecall, stepMoba, mobaSnapshot, talentRole, talentsFor, talentTotals, totalXpAt, useBattleSpell, useItem, visionSources, RECALL_CHANNEL_MS, NO_INPUT, SENTRY_DURATION_MS, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
 import { SCHOOL_TRAITS, spellCooldown, spellMana, spellRank, spellsForAvatar } from '../src/core/moba/spells.ts';
 import { BUSHES, INHIBITOR_RESPAWN_MS, isStructureProtected, NEXUS_HP, VISION, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
 
@@ -927,6 +927,44 @@ check(
   check('auto-aim: mrtvý se nechytá', snapAim(s.heroes, 'blue', 9, 1) === null);
   // z pohledu red je naopak nepřítel modrý hrdina (na x=6)
   check('auto-aim: tým rozhoduje, kdo je cíl', snapAim(s.heroes, 'red', 9, 1)?.x === 6);
+}
+
+// ── recall (F20) ───────────────────────────────────────────────────
+{
+  console.log('\n-- recall --');
+  const s = createMoba(0, 82, 12_000_000);
+  const hero = s.heroes.find((candidate) => candidate.id === 'hero-you');
+  // bezpečné místo: v džungli by channel hned zrušilo monstrum (test to
+  // odhalil — hrdina stál v táboře a dostal ránu)
+  hero.x = -30;
+  hero.z = 5;
+
+  check('recall: channel začne', startRecall(hero, s.now) && hero.recallAt > 0, String(hero.recallAt));
+  check('recall: nejde spustit dvakrát', !startRecall(hero, s.now));
+
+  // po 4 s se hrdina vrátí do základny (bez pohybu)
+  advance(s, RECALL_CHANNEL_MS + 300);
+  check('recall: vrátí do základny', Math.round(hero.x) === -38 && Math.round(hero.z) === 0, `${Math.round(hero.x)},${Math.round(hero.z)}`);
+  check('recall: channel skončil', hero.recallAt === 0);
+
+  // pohyb channel zruší
+  const m = createMoba(0, 82, 12_000_000);
+  const mover = m.heroes.find((candidate) => candidate.id === 'hero-you');
+  mover.x = 20;
+  mover.z = 10;
+  startRecall(mover, m.now);
+  advance(m, 500, { ...NO_INPUT, moveX: 1 });
+  check('recall: pohyb ho zruší', mover.recallAt === 0);
+
+  // zásah channel zruší
+  const d = createMoba(0, 82, 12_000_000);
+  const victim = d.heroes.find((candidate) => candidate.id === 'hero-you');
+  victim.x = 0;
+  victim.z = 0;
+  startRecall(victim, d.now);
+  victim.buffs.push({ type: 'burn', until: d.now + 2000, power: 900, source: 'test' });
+  advance(d, 300);
+  check('recall: zásah ho zruší', victim.recallAt === 0, String(victim.recallAt));
 }
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);

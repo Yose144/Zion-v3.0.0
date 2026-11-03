@@ -14,7 +14,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { buyItem, buyback, createMoba, mobaSnapshot, pickTalent, placeSentry, placeWard, sellItem, snapAim, stepMoba, useBattleSpell, useItem, NO_INPUT, type BotSkill, type ItemId, type MobaSnapshot, type MobaState } from './sim';
+import { buyItem, buyback, createMoba, mobaSnapshot, pickTalent, placeSentry, placeWard, sellItem, snapAim, startRecall, stepMoba, useBattleSpell, useItem, NO_INPUT, type BotSkill, type ItemId, type MobaSnapshot, type MobaState } from './sim';
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import { MobaStage } from './MobaStage';
@@ -38,6 +38,7 @@ export interface MobaStats {
   itemCooldowns: Record<string, number>;
   talentPending: number | null;
   battleSpellIn: number;
+  recallIn: number;
   spells: { slot: SpellSlot; name: string; school: SpellSchool; cooldown: number; cooldownMs: number; mana: number; color: string; rank: number }[];
   playerHp: number;
   playerMaxHp: number;
@@ -126,6 +127,7 @@ export function statsFromSnapshot(
     itemCooldowns: you?.itemCooldowns ?? {},
     talentPending: you?.talentPending ?? null,
     battleSpellIn: you?.battleSpellIn ?? 0,
+    recallIn: you?.recallIn ?? 0,
     playerLevel: you?.level ?? 1,
     playerHeroId: you?.heroId ?? 0,
     xp: you?.xp ?? 0,
@@ -215,6 +217,7 @@ function SoloController({
   const queuedWard = useRef(false);
   const queuedSentry = useRef(false);
   const queuedBattleSpell = useRef(false);
+  const queuedRecall = useRef(false);
   const queuedItem = useRef<ItemId | null>(null);
   const lastStats = useRef(0);
   const lastTick = useRef(0);
@@ -237,6 +240,8 @@ function SoloController({
       if (event.code === 'KeyH') queuedSentry.current = true;
       // V = battle spell (Flicker)
       if (event.code === 'KeyV') queuedBattleSpell.current = true;
+      // B = recall (návrat do základny)
+      if (event.code === 'KeyB') queuedRecall.current = true;
       // 1–6 = aktivní item ve slotu (standard MOBA)
       const digit = /^Digit([1-6])$/.exec(event.code);
       if (digit) {
@@ -320,6 +325,12 @@ function SoloController({
     if (queuedWard.current) {
       if (hit) queuedWard.current = false;
       if (hit && placeWard(state.current, you, castPoint.x, castPoint.z)) mobaAudio.buy();
+    }
+
+    // recall (B) — začne channel; pohyb/zásah ho zruší
+    if (queuedRecall.current) {
+      queuedRecall.current = false;
+      if (startRecall(you, state.current.now)) mobaAudio.buy();
     }
 
     // battle spell (V) — Flicker

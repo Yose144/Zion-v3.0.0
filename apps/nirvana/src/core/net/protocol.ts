@@ -52,8 +52,10 @@ const asItemId = (value: unknown): ItemId | null =>
  *      je položit — a nechápal, proč soupeř „zmizel".
  * 17 — **battle spell**: zpráva `battlespell` a `battleSpellIn` u hrdiny.
  *      Starý klient by neuměl Flicker spustit a neviděl by jeho cooldown.
+ * 18 — **recall**: zpráva `recall` a `recallIn` u hrdiny.
+ *      Starý klient by recall neuměl spustit a neviděl by channel.
  */
-export const PROTO_VERSION = 17;
+export const PROTO_VERSION = 18;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -277,6 +279,8 @@ export type ClientMessage =
   | { t: 'sentry'; x: number; z: number }
   /** MOBA: battle spell (Flicker) na bod. */
   | { t: 'battlespell'; x: number; z: number }
+  /** MOBA: recall — návrat do základny po channelu. */
+  | { t: 'recall' }
   | { t: 'leave' }
   | {
       t: 'input';
@@ -452,6 +456,9 @@ export function parseClientMessage(raw: string): ClientMessage | null {
 
     case 'battlespell':
       return { t: 'battlespell', x: num(message.x, -60, 60), z: num(message.z, -60, 60) };
+
+    case 'recall':
+      return { t: 'recall' };
 
     case 'talent': {
       const tier = Number(message.tier);

@@ -62,6 +62,7 @@ import {
   removeMobaSeat,
   sellMobaItem,
   setMobaInput,
+  startMobaRecall,
   useMobaBattleSpell,
   useMobaItem,
   stepMobaRoom,
@@ -528,6 +529,16 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
         return;
       }
       placeMobaWard(room.moba, conn.id, message.x, message.z);
+      return;
+    }
+
+    case 'recall': {
+      const room = conn.room;
+      if (!room?.moba) {
+        sendError(conn, room ? 'not_available' : 'not_in_room');
+        return;
+      }
+      startMobaRecall(room.moba, conn.id);
       return;
     }
 
