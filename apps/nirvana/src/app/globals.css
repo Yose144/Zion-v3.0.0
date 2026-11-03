@@ -6086,7 +6086,7 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   }
 
   .moba-pick-grid {
-    max-height: 40vh;
+    max-height: 32vh;
     overflow-y: auto;
     padding-right: 0.2rem;
     mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 1.2rem), transparent 100%);
@@ -6105,6 +6105,8 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   .moba-pick-block:last-child .moba-start {
     order: -1;
     margin: 0 0 0.8rem;
+    /* vpravo dole je bublina chatu — tlačítko ať končí před ní */
+    width: calc(100% - 4.4rem);
   }
 
   .moba-spells {
