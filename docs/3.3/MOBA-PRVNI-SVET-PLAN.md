@@ -123,6 +123,13 @@ reaktivně (léčení/štít při zranění, skok na dotahovačku nebo na útěk
 Příval při pronásledování). Cooldowny hlídá `useItem` v sim, takže bot
 nemá druhou pravdu. Bez protokolové změny.
 
+## 2e. F10 — neviditelnost a sentry *(hotovo 2026-11-03, protokol 16)*
+
+**Závoj** (aktivní item, 6 s neviditelnosti, 30 s cooldown) a **sentry**
+(spotřební, max 2, klávesa `H`, odhalí do 8 m na 60 s). Neviditelnost je
+filtr vidění — platí pro snapshot, cílení, věže, miniony i bosse; vlastní
+tým vidí vždy. **Protokol:** `sentries`, `invisible`, zpráva `sentry` → 15 → 16.
+
 ## 3. Co záměrně neděláme
 
 - **Courier** — u 5v5 s krátkým zápasem nemá co řešit; obchod v základně stačí.

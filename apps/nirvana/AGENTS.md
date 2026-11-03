@@ -1231,3 +1231,27 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   i testy jsou reprodukovatelné.
 - **Testy:** `test/moba-sim.mjs` (166 kontrol: bot koupí aktivum, vyléčí se
   v ohrožení, skočí na cíl).
+
+## PRVNÍ SVĚT — neviditelnost a sentry (F10, 2026-11-03, protokol 16)
+
+- **Neviditelnost je filtr vidění, ne nová vrstva stavu.** Jedna funkce
+  `isHidden(state, hero, viewerTeam)` rozhoduje za všechny: snapshot, cílení
+  (`nearestEnemyHero`), věže, minioni i boss. Kdo přidá další jednotku, která
+  může být skrytá, musí tudy taky projít — jinak půjde vidět v jednom místě
+  a mizet v druhém.
+- **Vlastní tým vidí vždy** (`hero.team === viewerTeam` → false). Neviditelnost
+  je jen proti soupeři; bez toho by si hráč neviděl vlastní postavu.
+- **Sentry je jediná protihra** — odhaluje v okruhu 8 m, nic víc. Není to
+  zdroj vidění (to je ward); kdyby se obojí slilo, ztratí ward smysl.
+- **Závoj je aktivní item** (kind `invisible`, 6 s, cooldown 30 s), takže jde
+  přes stejnou cestu jako ostatní aktiva (`useItem`, klávesy 1–6).
+- **Sentry je spotřební item** (max 2, klávesa `H`, na dotyku 🕯) — stejná
+  logika jako ward, jen jiná zásoba (`hero.sentries`).
+- **`isHidden` se ptá na sentry protistrany**, takže boss (neutrální) vidí
+  jen to, co odhalila sentry kterékoli strany.
+- **HUD musí ukázat vlastní neviditelnost** (`invisible` ve snapshotu) —
+  jinak hráč nepozná, že je skrytý, a bude se divit, proč ho nikdo nevidí.
+- **PROTO_VERSION 16** (`sentries`, `invisible`, zpráva `sentry`) → deploy
+  **net první**.
+- **Testy:** `test/moba-sim.mjs` (177 kontrol: Závoj skryje, vlastní tým vidí,
+  sentry odhalí, nepřítel nevidí, expirace 60 s, skrytý nejde zasáhnout).
