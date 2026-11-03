@@ -6092,3 +6092,32 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 1.2rem), transparent 100%);
   }
 }
+
+/* Start v MOBA na výšku: karty hrdinů končí u ~750 px, ale tlačítko bylo až
+   za pravidly, kouzly a battle spellem (dalších ~500 px). Na telefonu se
+   proto start posune nad ně a seznam kouzel se zhuští do dvou sloupců. */
+@media (max-width: 560px) and (orientation: portrait) {
+  .moba-pick-block:last-child {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .moba-pick-block:last-child .moba-start {
+    order: -1;
+    margin: 0 0 0.8rem;
+  }
+
+  .moba-spells {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  .moba-spell {
+    padding: 0.4rem 0.45rem;
+    font-size: 0.68rem;
+  }
+
+  .moba-spell strong {
+    font-size: 0.7rem;
+  }
+}

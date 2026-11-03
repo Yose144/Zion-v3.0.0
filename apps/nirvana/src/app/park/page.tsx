@@ -20,7 +20,12 @@ import {
   spendTokens,
   type ParkProfile,
 } from '@/core/park/profile';
-import { CHALLENGE_REWARD, claimChallenge, dailyChallenge } from '@/core/park/challenge';
+import {
+  CHALLENGE_REWARD,
+  claimChallenge,
+  dailyChallenge,
+  type DailyChallenge,
+} from '@/core/park/challenge';
 import { emptyScores, type ParkScores } from '@/core/park/scores';
 import { GALLERY_SECONDS } from '@/core/scene/park/ShootingGallery';
 import { TouchButton } from '@/core/games/TouchPad';
@@ -366,8 +371,16 @@ export default function ParkPage() {
 
   const game = active ? gameById(active) : null;
   const tokens = profile?.tokens ?? 0;
-  const challenge = dailyChallenge();
-  const challengeDone = profile?.challengeDay === challenge.day;
+  /**
+   * Výzva se počítá z **lokálního** data, ale server renderuje v UTC — kolem
+   * půlnoci se den rozešel a React hlásil hydration mismatch (#418).
+   * Počítá se proto až po mountu (stejná strategie jako u profilu).
+   */
+  const [challenge, setChallenge] = useState<DailyChallenge | null>(null);
+  useEffect(() => {
+    setChallenge(dailyChallenge());
+  }, []);
+  const challengeDone = Boolean(challenge) && profile?.challengeDay === challenge!.day;
 
   const canvasNode = useMemo(
     () => <canvas ref={attachCanvas} className="park-screen" aria-label="herní obrazovka" />,
@@ -564,28 +577,31 @@ export default function ParkPage() {
             ))}
           </div>
 
-          <div className={`park-challenge${challengeDone ? ' is-done' : ''}`}>
-            <strong>{cs ? 'DENNÍ VÝZVA' : 'DAILY CHALLENGE'}</strong>
-            <span>
-              {titleOf(challenge.game, cs)}
-              {' · '}
-              {cs ? 'cíl' : 'target'} {challenge.target}
-            </span>
-            {(profile?.best[challenge.game] ?? 0) > 0 && (
-              <em className="park-best">
-                {cs ? 'rekord' : 'best'} {profile!.best[challenge.game]} / {cs ? 'cíl' : 'target'} {challenge.target}
-              </em>
-            )}
-            <small>
-              {challengeDone
-                ? cs
-                  ? 'splněno · zlatá vstupenka je tvoje'
-                  : 'done · golden ticket is yours'
-                : cs
-                  ? `+${challenge.reward} žetonů · jednou denně`
-                  : `+${challenge.reward} tokens · once a day`}
-            </small>
-          </div>
+          {challenge && (
+            <div className={`park-challenge${challengeDone ? ' is-done' : ''}`}>
+              <strong>{cs ? 'DENNÍ VÝZVA' : 'DAILY CHALLENGE'}</strong>
+              <span>
+                {titleOf(challenge.game, cs)}
+                {' · '}
+                {cs ? 'cíl' : 'target'} {challenge.target}
+              </span>
+              {(profile?.best[challenge.game] ?? 0) > 0 && (
+                <em className="park-best">
+                  {cs ? 'rekord' : 'best'} {profile!.best[challenge.game]} / {cs ? 'cíl' : 'target'}{' '}
+                  {challenge.target}
+                </em>
+              )}
+              <small>
+                {challengeDone
+                  ? cs
+                    ? 'splněno · zlatá vstupenka je tvoje'
+                    : 'done · golden ticket is yours'
+                  : cs
+                    ? `+${challenge.reward} žetonů · jednou denně`
+                    : `+${challenge.reward} tokens · once a day`}
+              </small>
+            </div>
+          )}
 
           <header className="park-board-head">
             <strong>{cs ? 'TABULE' : 'BOARD'}</strong>

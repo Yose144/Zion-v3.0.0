@@ -1533,3 +1533,41 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **`window.innerWidth/innerHeight` v renderu** musí mít fallback
   (`typeof window === 'undefined'`), i když je komponenta `'use client'` —
   Next ji stejně SSR-uje.
+
+## Responsivita celého webu (2026-11-03)
+
+- **„Nulový přesah" neznamená „v pořádku".** Devět povrchů × čtyři viewporty
+  nemělo ani jeden horizontální přesah, a přesto se obsah překrýval: bublina
+  chatu ležela na liště, nápověda na CTA, panel na posledních kapitolách.
+  Kdo měří jen `scrollWidth − clientWidth`, uvidí zelenou na rozbité stránce.
+- **Bublina chatu (`.chat-dock-btn`, fixed, z 60) je čtvrtý účastník layoutu.**
+  Lišta her si na ≤760 px a na `max-height: 480px` nechává pravý inset
+  4,9rem. Na šířku navíc musí být chat **jen ikona** — s popiskem „CHAT" je
+  ~150 px široký a rezerva 4,9rem ho nepokryje.
+- **Na šířku (390 px výšky) je lišta dole u okraje**, na výšku je zvednutá
+  nad chat (`.game-hud.is-compact { bottom: 4.6rem }`). Kdo přidá novou
+  lištu, musí počítat s oběma režimy.
+- **Panely, které sahají k okraji, potřebují inset** (`/saturn` 4,4rem,
+  pás bran `/hiran` `padding-right`, `/avatars` `padding-bottom` 5,4rem).
+  Scrollovaný seznam bez fade vypadá jako oříznutý řádek — dej `mask-image`.
+- **Media query nepřidává specificitu.** Blok `@media (max-width: 560px)`
+  umístěný v souboru **před** základní `.moba-pick-grid` / `.moba-portrait.is-card`
+  je přebitý. Všechny responzivní override patří **na konec** `globals.css`.
+- **Při stěhování CSS bloku si zkontroluj závorky.** Ruční výřez nechal
+  osiřelou `}` a chybějící uzavření media query → `next build` spadl na
+  `Unexpected }` / `Unclosed block` a deploy se neprovedl (produkce zůstala
+  na starém buildu — to je správné chování skriptu, ale snadno se přehlédne).
+  Po každé ruční editaci CSS pusť `npx next build`, ne jen `tsc`.
+- **3D popisky v malém záběru se překrývají.** `HiranScene` má `gateLabels`;
+  na ≤760 px se jména bran nekreslí a nechávají se pásu dole (jinak se
+  „Kailash" překrývá s „Království srdce").
+- **Brána ZAP pasu** (`PassGate`) je vyšší než 390 px, takže na šířku musí
+  scrollovat (`overflow-y: auto` + `align-items: flex-start` na malé výšce);
+  jinak tlačítko „Vstoupit" zmizí za lištou.
+- **Dotykové cíle:** minimum 40 px (`min-height: 2.5rem`) v
+  `@media (hover: none) and (pointer: coarse)`. Lišta her, odkazy v chrome,
+  přepínač režimu, pás bran, filtry avatara. Žetony mají 24 px (WCAG 2.5.8).
+- **Nástroje:** `.artifacts/probe/responsive.mjs` (9 rout × 4 viewporty,
+  počítá přesah a prvky mimo viewport, ignoruje vodorovné scrollovací pásy)
+  a `.artifacts/probe/shots-responsive.mjs` (screenshoty výška/šířka).
+  Report: `docs/3.2/REPORTS/REPORT_2026-11-03_NIRVANA_RESPONSIVITA.md`.
