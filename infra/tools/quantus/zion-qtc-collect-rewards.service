@@ -1,0 +1,10 @@
+[Unit]
+Description=Quantus wormhole rewards sweep → QTC payout treasury
+After=network-online.target zion-quantus-node.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/quantus/collect-rewards.sh
+Nice=19
+TimeoutStartSec=900

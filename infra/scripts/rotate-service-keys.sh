@@ -3,6 +3,11 @@
 #
 # Co se ROTUJE (držíme obě strany, žádné fondy):
 #   ZION_POOL_API_KEY / ZION_POOL_API_ADMIN_KEY  pool (validuje) ↔ dashboard, standby-sync
+#   QTC_PAYOUT_ADMIN_KEY / PRL_PAYOUT_ADMIN_KEY   warpd multichain env (EDGE2) =
+#                                               kopie ZION_POOL_API_ADMIN_KEY —
+#                                               jinak každý /admin/external-payouts
+#                                               drain skončí 401 (incident 2026-11-04:
+#                                               sweepy mrtvé 2,6 dne, fronta 12 667)
 #   ZION_DAO_API_KEY                             dao (validuje) ↔ free-world, issobella
 #   FREE_WORLD_API_KEY                            free-world (validuje), žádný interní klient
 #   ZION_POOL_ZIS_SERVICE_KEY ↔ ZIS_SERVICE_KEY   pool (posílá) ↔ ZIS (validuje)
@@ -61,6 +66,11 @@ for h in "$EDGE" "$EDGE2"; do
     rotate_remote "$h" /etc/zion/pool-standby.env ZION_POOL_API_ADMIN_KEY "$new_pool_admin"
 done
 
+# warpd (EDGE2) podepisuje /admin/* klíčem pojmenovaným po legu — musí být
+# stejný jako nový ZION_POOL_API_ADMIN_KEY, jinak sweepy padají na 401.
+rotate_remote "$EDGE2" /etc/zion/env/zion-v31-multichain.env QTC_PAYOUT_ADMIN_KEY "$new_pool_admin"
+rotate_remote "$EDGE2" /etc/zion/env/zion-v31-multichain.env PRL_PAYOUT_ADMIN_KEY "$new_pool_admin"
+
 say "— rotace DAO klíče (dao + free-world + issobella) —"
 for h in "$EDGE" "$EDGE2"; do
     for f in zion-v31-dao zion-v31-free-world zion-v31-issobella; do
@@ -79,8 +89,8 @@ rotate_remote "$EDGE2" /etc/zion/env/zion-v31-pool.env ZION_POOL_ZIS_SERVICE_KEY
 rotate_remote "$EDGE2" /etc/zion/pool-standby.env     ZION_POOL_ZIS_SERVICE_KEY "$new_zis"
 rotate_remote "$EDGE2" /opt/zion/identity/.env        ZIS_SERVICE_KEY            "$new_zis"
 
-say "— restarty (EDGE2: ZIS → dao → free-world → issobella; EDGE: pool → dashboard) —"
-ssh $SSH_OPTS "$EDGE2" 'for u in zion-zis zion-v31-dao zion-v31-free-world zion-v31-issobella; do systemctl restart $u; sleep 2; printf "%-26s %s\n" "$u" "$(systemctl is-active $u)"; done'
+say "— restarty (EDGE2: ZIS → dao → free-world → issobella → multichain; EDGE: pool → dashboard) —"
+ssh $SSH_OPTS "$EDGE2" 'for u in zion-zis zion-v31-dao zion-v31-free-world zion-v31-issobella zion-v31-multichain; do systemctl restart $u; sleep 2; printf "%-26s %s\n" "$u" "$(systemctl is-active $u)"; done'
 ssh $SSH_OPTS "$EDGE"  'for u in zion-v31-pool zion-edge-python-dashboard; do systemctl restart $u; sleep 3; printf "%-26s %s\n" "$u" "$(systemctl is-active $u)"; done'
 
 say "— verifikace —"
