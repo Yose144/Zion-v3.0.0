@@ -1,0 +1,17 @@
+{
+  "edition": "quen",
+  "lang": "PT",
+  "source": "O_Reino_do_Coracao_quen_PT.md",
+  "words": 7113,
+  "headings": 56,
+  "paragraphs": 158,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 45,
+    "bytes": 198585
+  },
+  "epub": {
+    "documents": 19,
+    "bytes": 32000
+  }
+}
