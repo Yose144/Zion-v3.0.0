@@ -57,6 +57,10 @@ const Copy = {
     cs: 'OASIS hráče pustíme dovnitř zdarma — kód není potřeba.',
     en: 'OASIS players get in free — no code needed.',
   },
+  autoUnlock: {
+    cs: 'Koupil jsi knihu nebo ZION Pass? Přihlas se ZIS účtem s ověřeným e-mailem z objednávky a archiv se odemkne sám.',
+    en: 'Bought a book or a ZION Pass? Sign in with a ZIS account whose verified e-mail matches the order — the archive opens automatically.',
+  },
   loggedInAs: { cs: 'Přihlášen jako', en: 'Signed in as' },
   statsBooks: { cs: 'knih', en: 'books' },
   statsGroups: { cs: 'skupin', en: 'groups' },
@@ -299,6 +303,9 @@ export default function ArchiveLock() {
                   {Copy.loginCta[l]}
                 </Link>
                 <p className="text-[11px] text-gray-600">{Copy.loginHint[l]}</p>
+                <p className="w-full text-[11px] leading-relaxed text-gray-500">
+                  {Copy.autoUnlock[l]}
+                </p>
               </div>
             )}
           </div>

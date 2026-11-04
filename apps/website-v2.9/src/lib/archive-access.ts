@@ -1,7 +1,10 @@
 import { createHash, timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
 import { getEntitlement } from '@/lib/archive-entitlements';
-import { isValidMarketCode } from '@/lib/archive-market-codes';
+import {
+  findActiveMarketCodeByEmail,
+  isValidMarketCode,
+} from '@/lib/archive-market-codes';
 import {
   getCurrentUser,
   ZIS_SESSION_COOKIE,
@@ -90,6 +93,21 @@ export async function archiveAccess(): Promise<ArchiveAccess> {
 
   // OASIS bonus: a linked OASIS player unlocks the archive
   if (user.oasisPlayer) return { access: true, via: 'zis-oasis', user };
+
+  // Auto-unlock: a paid marketplace order matched by a *verified* e-mail.
+  // No manual code entry — the buyer signs in with ZIS and the archive opens.
+  // Verified-only is deliberate: unverified e-mails are not proof of purchase.
+  if (user.email && user.emailVerifiedAt) {
+    const marketCode = findActiveMarketCodeByEmail(user.email);
+    if (marketCode) {
+      return {
+        access: true,
+        via: 'zis-entitlement',
+        user,
+        expiresAt: marketCode.expiresAt ?? null,
+      };
+    }
+  }
   // claimed code / admin grant / purchase
   const entitlement = getEntitlement(`zis:${user.id}`);
   if (entitlement) {

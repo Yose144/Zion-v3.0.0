@@ -63,6 +63,20 @@ function isActive(r: ArchiveMarketCode, now = new Date()): boolean {
   return true;
 }
 
+/**
+ * Active marketplace code bought with this e-mail — used for automatic
+ * unlock of a signed-in, e-mail-verified ZIS user (no manual code entry).
+ */
+export function findActiveMarketCodeByEmail(email: string): ArchiveMarketCode | null {
+  const target = email.trim().toLowerCase();
+  if (!target) return null;
+  return (
+    loadStore().records.find(
+      (r) => isActive(r) && r.email?.trim().toLowerCase() === target,
+    ) ?? null
+  );
+}
+
 /** True when the code exists in the market store and is still usable. */
 export function isValidMarketCode(code: string): boolean {
   const trimmed = code.trim();

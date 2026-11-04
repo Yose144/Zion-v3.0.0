@@ -7,6 +7,7 @@ import {
 } from '@/lib/archive-access';
 import { grantEntitlement } from '@/lib/archive-entitlements';
 import { getCurrentUserFromRequest } from '@/lib/zis';
+import { recordAccess } from '@/lib/archive-metrics';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +34,7 @@ function throttled(ip: string): boolean {
 /** Current access status for the requesting client. */
 export async function GET() {
   const { access, via, user, expiresAt } = await archiveAccess();
+  recordAccess(access);
   return NextResponse.json({
     access,
     via,

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { hasArchiveAccess } from '@/lib/archive-access';
+import { recordAccess, recordDownload } from '@/lib/archive-metrics';
 
 // Gated downloads for Zion Archive.
 //
@@ -30,8 +31,11 @@ export async function GET(
   }
 
   if (!(await hasArchiveAccess())) {
+    recordAccess(false);
     return new NextResponse('Archive Pass required', { status: 403 });
   }
+  recordAccess(true);
+  recordDownload(slug);
 
   return NextResponse.redirect(`${MARKET_DOWNLOADS}/${file}`, {
     status: 307,

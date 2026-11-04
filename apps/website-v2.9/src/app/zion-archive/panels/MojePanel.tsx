@@ -38,6 +38,11 @@ const Copy = {
     cs: 'Žádné záložky. V readeru klikni na „Záložka" u kapitoly.',
     en: 'No bookmarks. In the reader, click “Bookmark” on a chapter.',
   },
+  ordersTitle: { cs: 'Moje objednávky', en: 'My orders' },
+  ordersBody: {
+    cs: 'Stav objednávky a doručený ZAP kód najdeš v marketplace.',
+    en: 'Order status and the delivered ZAP code live in the marketplace.',
+  },
   downloadsTitle: { cs: 'Ke stažení', en: 'Downloads' },
   downloadsBody: {
     cs: 'Kompletní edice ke čtení offline najdeš v sekci Ke stažení.',
@@ -220,7 +225,7 @@ export default function MojePanel({
         </div>
 
         {/* downloads + library */}
-        <div className="grid gap-2.5 sm:grid-cols-2">
+        <div className="grid gap-2.5 sm:grid-cols-3">
           <a
             href="#stazeni"
             className="group flex items-center gap-3 rounded-xl border border-emerald-400/25 bg-emerald-400/[0.05] p-4 transition-colors hover:border-emerald-400/50"
@@ -238,6 +243,19 @@ export default function MojePanel({
           >
             <BookOpen className="h-5 w-5 shrink-0 text-zion-gold" />
             <span className="min-w-0 flex-1 text-sm font-bold text-white">{Copy.openLibrary[l]}</span>
+            <ArrowRight className="h-4 w-4 shrink-0 text-gray-500" />
+          </a>
+          <a
+            href="https://market.zionterranova.com/order-tracking"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-4 transition-colors hover:border-white/25"
+          >
+            <ShieldCheck className="h-5 w-5 shrink-0 text-zion-purple" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-bold text-white">{Copy.ordersTitle[l]}</span>
+              <span className="block text-xs text-gray-400">{Copy.ordersBody[l]}</span>
+            </span>
             <ArrowRight className="h-4 w-4 shrink-0 text-gray-500" />
           </a>
         </div>

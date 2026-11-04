@@ -49,7 +49,7 @@ Principy, které platí pro každou práci:
 | Maitreya | **19/19** | hotovo |
 | Nirvana | **14/14** | hotovo (QA) |
 | Království srdce | **10/10** (oficiální EN klasická edice) | hotovo 2026-11-04 |
-| NirvanaCloud | 2/8 | **P1** |
+| NirvanaCloud | 3/8 (04, 06, 07) | **P1** |
 | Sůl této země | 0/12 | **P1** |
 | Ekam Deeksha | 0/10 (EN jsou 401B stuby) | P1/P2 |
 | Quantum Revolution | 0 (EN je 396B stub) | P2 |
@@ -140,8 +140,9 @@ nezačíná na indexu.
       PDF + EPUB, ~62 MB).
 - [x] Metadata: checksum SHA-256 + datum verze zobrazené v kartě (kopírování jedním klikem).
 - [ ] „Moje knihovna": po zakoupení v marketplace vidět stažení + datum platnosti passu.
-- [ ] Generovat PDF/EPUB/ZIP per kniha (`scripts/ops/build-book-bundle.py`), ukládat do
-      `apps/MarketPlace/public/shop/downloads/` a registrovat v katalogu.
+- [x] Kniha jako offline **Markdown ZIP** on-demand (`/api/archive/downloads/book/[bookId]`,
+      vlastní ZIP writer, `cs/` + `en/` + README).
+- [ ] PDF/EPUB per kniha (bez pandoc/calibre by to byl vlastní konvertor; nízká priorita).
 - [ ] Volitelně: signed URL s TTL (místo veřejné URL v marketplace), aby soubor nešel sdílet.
 
 **Hotovo, když:** každá kniha má alespoň jeden formát ke stažení, katalog je jeden a stažení
@@ -169,9 +170,9 @@ jde jen s passem.
 
 ### W6 — Přístup, obchod, entitlementy (P0/P1)
 
-- [~] Marketplace purchase → automatický entitlement: kód z nákupu se při uplatnění **váže na ZIS**
-      (`grantEntitlement`, `claimedVia:'code'`), takže přežije rotaci kódu; přímý webhook z marketplace
-      (bez ručního zadání kódu) zůstává.
+- [x] Marketplace purchase → automatický entitlement: **ověřený e-mail** přihlášeného ZIS uživatele
+      se páruje s aktivním market code (bez ručního kódu); kód se navíc při uplatnění váže na ZIS.
+- [ ] B2B seats (více čtenářů na organizaci).
 - [x] UI stavu passu v hubu: „ZION Pass · kód / OASIS bonus / aktivní / do <datum>"
       (`/api/archive/access` nese `expiresAt` z entitlementu).
 - [ ] B2B seats: org → N čtenářů, správa v admin API.
@@ -179,6 +180,8 @@ jde jen s passem.
 
 ### W7 — Kvalita, ops, důkazy (P0)
 
+- [x] Monitoring: `/api/archive/metrics` (Prometheus text, admin token) + instrumentace gate/downloadů.
+- [x] Link audit proběhl (`check:links`): 1540 resolved / 174 dead (pre-existing docs debt).
 - [x] E2E `e2e/zion-archive-hub.spec.ts` (skip bez `ARCHIVE_TEST_PASS`): hub + pass pill,
       knihovna (20 karet), front matter vs. progres, hledání, záložka, nastavení čtečky,
       downloads karta + SHA, gate 403/404. Ověřeno 5/5 lokálně.
@@ -270,7 +273,10 @@ Každý milník = vlastní report v `docs/3.2/REPORTS/` + záznam v `apps/websit
 - ✅ W4: hledání v knize, záložky, nastavení čtečky (font/šířka/téma), „další v pořadí".
 - ✅ W6: stav passu v hubu (kód/OASIS/entitlement + expirace), vazba kódu na ZIS.
 - ✅ W7: e2e hubu s testovacím passem (5 testů, lokálně 5/5).
-- ✅ W2: Království srdce má oficiální EN (10/10), audit potvrzuje 100 %.
+- ✅ W2: Království srdce má oficiální EN (10/10), audit potvrzuje 100 %; NirvanaCloud 04 EN.
+- ✅ W6: nákup odemkne archiv sám (ověřený e-mail × market code).
+- ✅ W7: `/api/archive/metrics` + link audit.
+- ✅ W3: kniha jako Markdown ZIP + odkaz na objednávky v #moje.
 - ✅ W5: „Začni tady" (3 vstupy) v knihovně.
 - ✅ W4: tisk/PDF kapitoly (print stylesheet).
 - ✅ Deep-link fix: fresh load na `#kapitola` už nepřepíše hash na index.
