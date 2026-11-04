@@ -1,0 +1,11 @@
+{
+  "202": {
+    "subtitle": { "cs": "Bolon Jokte' K'uh — bůh devíti kroků", "en": "Bolon Yokte' K'uh — god of nine steps" },
+    "role": { "cs": "Ten, kdo uzavírá a otevírá věk", "en": "He who closes and opens an age" },
+    "location": { "cs": "Práh počítání dnů", "en": "The threshold of counting days" },
+    "questLine": { "cs": "Devět kroků k přechodu", "en": "Nine Steps to the Crossing" },
+    "teaching": { "cs": "Konec věku není konec světa. Je to jen chvíle, kdy se musí přepočítat, co platí.", "en": "The end of an age is not the end of the world. It is simply the moment when what holds must be recounted." },
+    "ability": { "cs": "Přechod — uzavře starý věk a otevře nový bez ztráty paměti.", "en": "Crossing — closes an old age and opens a new one without losing memory." },
+    "quote": { "cs": "Nepřicházím soudit. Přicházím počítat.", "en": "I do not come to judge. I come to count." }
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "24": {
+    "subtitle": { "cs": "Nesmrtelný jogín", "en": "Immortal Yogi" },
+    "role": { "cs": "Mistr krija jógy", "en": "Master of Kriya Yoga" },
+    "location": { "cs": "Himálaj (skryté údolí)", "en": "The Himalayas (hidden valley)" },
+    "questLine": { "cs": "Cesta dechu", "en": "The Path of Breath" },
+    "teaching": { "cs": "Tělo poslouchá dech; dech poslouchá pozornost.", "en": "The body obeys the breath; the breath obeys attention." },
+    "ability": { "cs": "Krija šakti — zhmotnění a zmizení bez ztráty sebe.", "en": "Kriya Shakti — to appear and vanish without losing yourself." },
+    "quote": { "cs": "Žiju tak dlouho, dokud je co učit.", "en": "I live as long as there is something to teach." }
+  },
+  "25": {
+    "subtitle": { "cs": "Matka Země", "en": "Earth Mother" },
+    "role": { "cs": "Učitelka planetárního uzdravení", "en": "Teacher of planetary healing" },
+    "location": { "cs": "Živé jádro planety", "en": "The living core of the planet" },
+    "questLine": { "cs": "Náruč Gaii", "en": "Gaia's Embrace" },
+    "teaching": { "cs": "Země není kulisa. Je to příbuzná, kterou jsme přestali zdravit.", "en": "Earth is not scenery. She is kin we stopped greeting." },
+    "ability": { "cs": "Obnova půdy — vrátí život místu, které bylo vytěženo.", "en": "Soil Renewal — returns life to a place that was mined out." },
+    "quote": { "cs": "Neumírám. Jen se učíte, co jsem vám říkala.", "en": "I am not dying. You are learning what I told you all along." }
+  },
+  "26": {
+    "subtitle": { "cs": "Mistr fialového paprsku", "en": "Violet Ray Master" },
+    "role": { "cs": "Alchymista každodennosti", "en": "Alchemist of the everyday" },
+    "location": { "cs": "Chrám fialového plamene", "en": "The Temple of the Violet Flame" },
+    "questLine": { "cs": "Proměna olova", "en": "The Transmutation" },
+    "teaching": { "cs": "Co neproměníš, to budeš opakovat.", "en": "What you do not transform, you will repeat." },
+    "ability": { "cs": "Fialový plamen — promění těžkost v látku, se kterou se dá pracovat.", "en": "Violet Flame — turns difficulty into material you can work with." },
+    "quote": { "cs": "Alchymie není o zlatu. Je o tom, co v tobě zůstane, když zlato zmizí.", "en": "Alchemy is not about gold. It is about what remains in you when the gold is gone." }
+  },
+  "27": {
+    "subtitle": { "cs": "Mistr bílého paprsku", "en": "White Ray Master" },
+    "role": { "cs": "Učitel vzestupu", "en": "Teacher of ascension" },
+    "location": { "cs": "Chrám vzestupu v Luxoru", "en": "The Ascension Temple at Luxor" },
+    "questLine": { "cs": "Bílý oheň", "en": "White Fire" },
+    "teaching": { "cs": "Disciplína není trest; je to způsob, jak zůstat svobodný.", "en": "Discipline is not punishment; it is how you stay free." },
+    "ability": { "cs": "Bílý oheň — spálí to, co už není tvé.", "en": "White Fire — burns away what is no longer yours." },
+    "quote": { "cs": "Nežádej křídla. Nejdřív odlož, co tě drží na zemi.", "en": "Do not ask for wings. First put down what holds you to the ground." }
+  },
+  "28": {
+    "subtitle": { "cs": "Pán světa", "en": "Lord of the World" },
+    "role": { "cs": "Dozor nad planetou", "en": "Overseer of the planet" },
+    "location": { "cs": "Šambala", "en": "Shambhala" },
+    "questLine": { "cs": "Planetární vědomí", "en": "Planetary Consciousness" },
+    "teaching": { "cs": "Kdo vidí celek, nemusí vyhrát každou část.", "en": "Whoever sees the whole does not need to win every part." },
+    "ability": { "cs": "Pohled z výšky — uvidíš Zemi jako jeden živý systém.", "en": "View from Above — you see Earth as one living system." },
+    "quote": { "cs": "Nespravuji svět. Držím mu prostor.", "en": "I do not rule the world. I hold space for it." }
+  },
+  "29": {
+    "subtitle": { "cs": "Mistr modrého paprsku", "en": "Blue Ray Master" },
+    "role": { "cs": "Učitel božské vůle", "en": "Teacher of divine will" },
+    "location": { "cs": "Chrám vůle v Darjeelingu", "en": "The Temple of Will in Darjeeling" },
+    "questLine": { "cs": "Paprsek síly", "en": "The Ray of Power" },
+    "teaching": { "cs": "Vůle bez soucitu je jen tvrdohlavost.", "en": "Will without compassion is only stubbornness." },
+    "ability": { "cs": "Modrý paprsek — síla rozhodnout se a nést následky.", "en": "Blue Ray — the power to decide and carry the consequence." },
+    "quote": { "cs": "Nerozhodnost je také rozhodnutí. Jen dražší.", "en": "Indecision is also a decision. Only more expensive." }
+  },
+  "30": {
+    "subtitle": { "cs": "Mistr žlutého paprsku", "en": "Yellow Ray Master" },
+    "role": { "cs": "Učitel osvícení", "en": "Teacher of illumination" },
+    "location": { "cs": "Chrám světla", "en": "The Temple of Light" },
+    "questLine": { "cs": "Plamen osvícení", "en": "The Flame of Illumination" },
+    "teaching": { "cs": "Světlo neřeší hádanku za tebe. Ukáže ti, kde jsi ji přehlédl.", "en": "Light does not solve the riddle for you. It shows where you looked past it." },
+    "ability": { "cs": "Plamen osvícení — rozřeší rébus a ukáže skrytou souvislost.", "en": "Flame of Illumination — resolves a puzzle and reveals the hidden link." },
+    "quote": { "cs": "Nesvítím na cestu. Svítím na to, co ji zakrývá.", "en": "I do not shine on the road. I shine on what covers it." }
+  },
+  "31": {
+    "subtitle": { "cs": "Mistr růžového paprsku", "en": "Pink Ray Master" },
+    "role": { "cs": "Umělec božské krásy", "en": "Artist of divine beauty" },
+    "location": { "cs": "Benátky, dílna u kanálu", "en": "Venice, a workshop by the canal" },
+    "questLine": { "cs": "Ruka, která vidí", "en": "The Hand That Sees" },
+    "teaching": { "cs": "Krása není luxus; je to důkaz, že si toho místa vážíš.", "en": "Beauty is not luxury; it is proof that you value the place." },
+    "ability": { "cs": "Umělecké vnuknutí — vytvoří dílo, které mění náladu místa.", "en": "Artistic Inspiration — creates a work that changes the mood of a place." },
+    "quote": { "cs": "Nejdřív poslouchám kámen. Pak ho nechám mluvit.", "en": "First I listen to the stone. Then I let it speak." }
+  },
+  "32": {
+    "subtitle": { "cs": "Mistr zeleného paprsku", "en": "Green Ray Master" },
+    "role": { "cs": "Ten, kdo odhaluje pravdu", "en": "The one who reveals truth" },
+    "location": { "cs": "Chrám pravdy na Krétě", "en": "The Temple of Truth on Crete" },
+    "questLine": { "cs": "Paprsek pravdy", "en": "The Ray of Truth" },
+    "teaching": { "cs": "Pravda, kterou vyslovíš dřív, než ji uneseš, tě zraní.", "en": "A truth spoken before you can carry it will wound you." },
+    "ability": { "cs": "Zelený paprsek — prosvítí lež a ukáže, co bylo zamčené.", "en": "Green Ray — shines through a lie and reveals what was locked." },
+    "quote": { "cs": "Nehledám viníka. Hledám, kde se to zlomilo.", "en": "I am not looking for the guilty. I am looking for where it broke." }
+  },
+  "33": {
+    "subtitle": { "cs": "Mistr rubínovo-zlatého paprsku", "en": "Ruby-Gold Ray Master" },
+    "role": { "cs": "Učitelka služby", "en": "Teacher of service" },
+    "location": { "cs": "Chrám služby", "en": "The Temple of Service" },
+    "questLine": { "cs": "Ruce, které hojí", "en": "Hands That Heal" },
+    "teaching": { "cs": "Služba je jediná práce, po které nezůstane únava.", "en": "Service is the only work that leaves no exhaustion behind." },
+    "ability": { "cs": "Léčivé ruce — zahojí rány na těle i na důvěře.", "en": "Healing Hands — mends wounds of body and of trust." },
+    "quote": { "cs": "Nepotřebuji být viděna. Potřebuji, aby to přestalo bolet.", "en": "I do not need to be seen. I need it to stop hurting." }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "20": {
+    "subtitle": { "cs": "Osvoboditelka", "en": "The Liberator" },
+    "role": { "cs": "Bohyně ochrany", "en": "Goddess of protection" },
+    "location": { "cs": "Tibetský klášter", "en": "A Tibetan monastery" },
+    "questLine": { "cs": "Jedenadvacet forem Táry", "en": "The Twenty-One Forms of Tara" },
+    "teaching": { "cs": "Soucit, který otálí, není soucit.", "en": "Compassion that hesitates is not compassion." },
+    "ability": { "cs": "Mantra Zelené Táry — zrychlí cestu a odstraní překážku.", "en": "Green Tara Mantra — quickens the path and clears the obstacle." },
+    "quote": { "cs": "Nebudu čekat, až budu mít dost sil. Budu stát tam, kde je potřeba.", "en": "I will not wait until I am strong enough. I will stand where I am needed." }
+  },
+  "21": {
+    "subtitle": { "cs": "Bódhisattva soucitu", "en": "Compassion Bodhisattva" },
+    "role": { "cs": "Učitel univerzálního soucitu", "en": "Teacher of universal compassion" },
+    "location": { "cs": "Palác Potála (Tibet)", "en": "Potala Palace (Tibet)" },
+    "questLine": { "cs": "Tisíc rukou", "en": "The Thousand Arms" },
+    "teaching": { "cs": "Naslouchej tak, aby ten druhý nemusel křičet.", "en": "Listen so that the other does not have to shout." },
+    "ability": { "cs": "Óm mani padmé húm — léčivá mantra, která uklidní bolest.", "en": "Om Mani Padme Hum — a healing mantra that settles pain." },
+    "quote": { "cs": "Dokud je někde někdo nešťastný, nemám důvod odpočívat.", "en": "As long as someone, somewhere, is unhappy, I have no reason to rest." }
+  },
+  "22": {
+    "subtitle": { "cs": "Mistr očištění", "en": "Purification Master" },
+    "role": { "cs": "Ten, kdo čistí karmu", "en": "The one who clears karma" },
+    "location": { "cs": "Hora Kailáš", "en": "Mount Kailash" },
+    "questLine": { "cs": "Diamantová bytost", "en": "The Diamond Being" },
+    "teaching": { "cs": "Vina, kterou nosíš, není důkazem, že jsi vinen. Je jen nákladem.", "en": "The guilt you carry is not proof that you are guilty. It is only weight." },
+    "ability": { "cs": "Mantra Vadžrasattvy — smyje negativní karmu.", "en": "Vajrasattva Mantra — washes away negative karma." },
+    "quote": { "cs": "Neptám se, co jsi udělal. Ptám se, co chceš udělat dál.", "en": "I do not ask what you did. I ask what you want to do next." }
+  },
+  "51": {
+    "subtitle": { "cs": "Tändzin Gjamccho", "en": "Tenzin Gyatso" },
+    "role": { "cs": "Živý učitel a vyslanec míru", "en": "Living teacher and ambassador of peace" },
+    "location": { "cs": "Dharamsala", "en": "Dharamsala" },
+    "questLine": { "cs": "Kalacakra", "en": "The Kalachakra" },
+    "teaching": { "cs": "Mír nezačíná podpisem smlouvy, ale tím, že přestaneš mít pravdu za každou cenu.", "en": "Peace does not begin with a signed treaty, but with giving up being right at any cost." },
+    "ability": { "cs": "Iniciace času — zpomalí hodiny, aby ses mohl rozhodnout.", "en": "Empowerment of Time — slows the clock so you can decide." },
+    "quote": { "cs": "Můj náboženství je laskavost.", "en": "My religion is kindness." }
+  }
+}

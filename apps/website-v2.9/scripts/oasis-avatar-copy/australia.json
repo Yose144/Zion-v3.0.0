@@ -1,0 +1,92 @@
+{
+  "122": {
+    "subtitle": { "cs": "Sedm sester — cesta po linii", "en": "The Seven Sisters — the songline" },
+    "role": { "cs": "Průvodkyně noční oblohou", "en": "Guides through the night sky" },
+    "location": { "cs": "Pouštní obloha, noční táboření", "en": "The desert sky, a night camp" },
+    "questLine": { "cs": "Hvězdy, které se učí zpaměti", "en": "Stars Learned by Heart" },
+    "teaching": { "cs": "Obloha je mapa. Kdo ji zná, neztratí se ani bez kompasu.", "en": "The sky is a map. Whoever knows it need never be lost, compass or not." },
+    "ability": { "cs": "Nebe nad cestou — ukáže směr tam, kde lidské mapy končí.", "en": "Sky Over the Road — shows direction where human maps end." },
+    "quote": { "cs": "Nespoléhej na znamení. Nauč se cestu.", "en": "Do not rely on the sign. Learn the road." }
+  },
+  "123": {
+    "subtitle": { "cs": "Duhový had — zákon země", "en": "Rainbow Serpent — the law of country" },
+    "role": { "cs": "Strážce vody a krajiny", "en": "Keeper of water and country" },
+    "location": { "cs": "Řeka, která se vrací do země", "en": "The river that returns into the land" },
+    "questLine": { "cs": "Povodí patří krajině", "en": "The Catchment Belongs to the Country" },
+    "teaching": { "cs": "Voda si najde cestu, kterou jí krajina dovolí. Vy si cestu jen půjčujete.", "en": "Water takes the way the land allows. You only borrow the way." },
+    "ability": { "cs": "Suché řečiště — vrátí vodu tam, kde byla vysušená.", "en": "Dry Riverbed — returns water where it had been dried out." },
+    "quote": { "cs": "Nejsem tady proto, aby se lidé měli lépe. Jsem tady, aby to tady zůstalo.", "en": "I am not here so people do better. I am here so this place remains." }
+  },
+  "124": {
+    "subtitle": { "cs": "Bunjil — orel stvořitel", "en": "Bunjil — the creating eagle" },
+    "role": { "cs": "Ten, kdo hledí na rovnováhu shora", "en": "He who looks at balance from above" },
+    "location": { "cs": "Vysoké skály nad údolím", "en": "The high escarpment above the valley" },
+    "questLine": { "cs": "Pohled orla", "en": "The Eagle's View" },
+    "teaching": { "cs": "Země se nedá chránit strom po stromu. Musíš vidět, jak spolu drží.", "en": "Land cannot be protected tree by tree. You have to see how they hold together." },
+    "ability": { "cs": "Ptačí pohled — odhalí souvislost, kterou z trávy nevidíš.", "en": "Bird's Eye — reveals a connection you cannot see from the grass." },
+    "quote": { "cs": "Postavil jsem nebe vysoko proto, aby ses musel rozhodovat z dálky.", "en": "I set the sky high so you would have to decide from a distance." }
+  },
+  "125": {
+    "subtitle": { "cs": "Baiame — otec oblohy", "en": "Baiame — sky father" },
+    "role": { "cs": "Strážce trpělivého učení", "en": "Keeper of patient teaching" },
+    "location": { "cs": "Vodní dírka v suché zemi", "en": "The waterhole in dry country" },
+    "questLine": { "cs": "Učit se posloucháním", "en": "Learning by Listening" },
+    "teaching": { "cs": "Nejdřív poslouchej zemi. Pak se ptej lidí.", "en": "First listen to the land. Then ask the people." },
+    "ability": { "cs": "Trpělivé naslouchání — odhalí, co se místo snaží říct.", "en": "Patient Listening — reveals what a place is trying to say." },
+    "quote": { "cs": "Nemluvím. Nechávám to na tobě.", "en": "I do not speak. I leave it to you." }
+  },
+  "126": {
+    "subtitle": { "cs": "Tagai — navigátor Torresovy úžiny", "en": "Tagai — Torres Strait navigator" },
+    "role": { "cs": "Ten, kdo čte čas z hvězd a přílivu", "en": "He who reads time from stars and tide" },
+    "location": { "cs": "Kánoe na mělčině", "en": "A canoe on the shallows" },
+    "questLine": { "cs": "Cesta podle přílivu", "en": "The Passage by Tide" },
+    "teaching": { "cs": "Správné rozhodnutí ve špatném čase je špatné rozhodnutí.", "en": "A right decision at the wrong time is a wrong decision." },
+    "ability": { "cs": "Přílivová brána — otevře přechod na přílivu, který nastane.", "en": "Tidal Gate — opens the crossing at the tide that is coming." },
+    "quote": { "cs": "Nečekám na lepší vítr. Čekám na správný příliv.", "en": "I do not wait for better wind. I wait for the right tide." }
+  },
+  "127": {
+    "subtitle": { "cs": "Nebeský emu", "en": "The Celestial Emu" },
+    "role": { "cs": "Průvodce tmou bez strachu", "en": "A guide through darkness without fear" },
+    "location": { "cs": "Jižní kříž a temná obloha", "en": "The Southern Cross and the dark sky" },
+    "questLine": { "cs": "Tvar v prázdnu", "en": "The Shape in the Emptiness" },
+    "teaching": { "cs": "To, co chybí, taky tvoří obraz. Prázdno není nicota.", "en": "What is missing also makes the picture. Emptiness is not nothing." },
+    "ability": { "cs": "Čtení prázdna — najde smysl v tom, co tam není.", "en": "Reading the Emptiness — finds meaning in what is not there." },
+    "quote": { "cs": "Díváš se na hvězdy. Já se dívám na prostor mezi nimi.", "en": "You look at the stars. I look at the space between them." }
+  },
+  "128": {
+    "subtitle": { "cs": "Djang'kawu — putující stvořitelé", "en": "Djang'kawu — the creator voyagers" },
+    "role": { "cs": "Ti, kdo přinesou zákon a semeno", "en": "They who bring law and seed" },
+    "location": { "cs": "Pobřeží Yolŋu", "en": "The Yolŋu coast" },
+    "questLine": { "cs": "Příchod se zákonem", "en": "Arriving With the Law" },
+    "teaching": { "cs": "Nový začátek má smysl jen tehdy, když přinese pravidla, která chrání slabší.", "en": "A new beginning only makes sense if it brings rules that protect the weaker." },
+    "ability": { "cs": "Semeno zákona — položí pravidlo, které vydrží generace.", "en": "Seed of Law — plants a rule that outlives generations." },
+    "quote": { "cs": "Nepřicházíme vzít. Přicházíme zasadit.", "en": "We do not come to take. We come to plant." }
+  },
+  "129": {
+    "subtitle": { "cs": "Namarrkon — blesk v krajině", "en": "Namarrkon — lightning in country" },
+    "role": { "cs": "Ten, kdo připomíná cenu výpadku", "en": "He who reminds of the cost of outage" },
+    "location": { "cs": "Bouřkový hřeben Arnhem", "en": "The Arnhem storm ridge" },
+    "questLine": { "cs": "Rána, která učí", "en": "The Blow That Teaches" },
+    "teaching": { "cs": "Blesk nevybírá viníka. Proto se systémy stavějí tak, aby vydržely.", "en": "Lightning does not choose a culprit. That is why systems are built to withstand." },
+    "ability": { "cs": "Varovný výboj — odhalí slabé místo dřív, než udeří bouře.", "en": "Warning Bolt — exposes the weak point before the storm hits." },
+    "quote": { "cs": "Nejsem trest. Jsem zkouška, kterou jste odkládali.", "en": "I am not punishment. I am the test you kept postponing." }
+  },
+  "130": {
+    "subtitle": { "cs": "Chůze krajinou — učení poslechem", "en": "Country Walk — learning by listening" },
+    "role": { "cs": "Rámec, ve kterém se poznává země", "en": "A frame in which country is learned" },
+    "location": { "cs": "Pěšina mezi vodními dírkami", "en": "A path between waterholes" },
+    "questLine": { "cs": "Každý krok je otázka", "en": "Every Step Is a Question" },
+    "teaching": { "cs": "Krajinu nepoznáš z mapy. Poznáš ji chozením a mlčením.", "en": "You do not learn country from a map. You learn it by walking and keeping quiet." },
+    "ability": { "cs": "Čtení země — ukáže stopu, kterou jinde nevidíš.", "en": "Reading Country — shows the trace you cannot see elsewhere." },
+    "quote": { "cs": "Neptej se, jak daleko. Ptej se, co jsi cestou minul.", "en": "Do not ask how far. Ask what you walked past." }
+  },
+  "131": {
+    "subtitle": { "cs": "Makarrata — most k pravdě", "en": "Makarrata — the bridge to truth" },
+    "role": { "cs": "Ten, kdo srovnává, co bylo rozděleno", "en": "He who makes even what was divided" },
+    "location": { "cs": "Místo setkání dvou řečí", "en": "The meeting place of two languages" },
+    "questLine": { "cs": "Pravda dřív než smlouva", "en": "Truth Before Treaty" },
+    "teaching": { "cs": "Usmíření bez pojmenování škody je jen zdvořilost.", "en": "Reconciliation without naming the harm is only politeness." },
+    "ability": { "cs": "Náprava — otevře dohodu, která nebyla možná, dokud se mlčelo.", "en": "Repair — opens the agreement that was impossible while silence held." },
+    "quote": { "cs": "Nejdřív řekni, co se stalo. Pak se dá mluvit dál.", "en": "First say what happened. Then we can speak further." }
+  }
+}

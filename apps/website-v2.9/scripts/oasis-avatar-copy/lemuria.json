@@ -1,0 +1,92 @@
+{
+  "162": {
+    "subtitle": { "cs": "Strážce lemurů — rozmanitost před vším", "en": "Lemur Steward — diversity before everything" },
+    "role": { "cs": "Ten, kdo chrání, co je jedinečné", "en": "He who protects what is unique" },
+    "location": { "cs": "Deštný les, horní patro", "en": "The rainforest, upper canopy" },
+    "questLine": { "cs": "Kdo tu byl dřív", "en": "Who Was Here First" },
+    "teaching": { "cs": "Krajina, která ztratí rozmanitost, neztratí krásu. Ztratí budoucnost.", "en": "A land that loses diversity does not lose beauty. It loses its future." },
+    "ability": { "cs": "Ochrana druhu — zachrání to, co jinde nemá zastoupení.", "en": "Species Guard — saves what has no substitute elsewhere." },
+    "quote": { "cs": "Nehádej se o mapu. Podívej se, kdo tam ještě žije.", "en": "Do not argue about the map. Look at who still lives there." }
+  },
+  "163": {
+    "subtitle": { "cs": "Sclaterův most — pokora omylu", "en": "Sclater Bridge — the humility of error" },
+    "role": { "cs": "Ten, kdo učí odvolat, co neplatí", "en": "He who teaches retracting what no longer holds" },
+    "location": { "cs": "Muzeum zastaralých map", "en": "The museum of obsolete maps" },
+    "questLine": { "cs": "Odvolání hypotézy", "en": "The Retraction" },
+    "teaching": { "cs": "Věda nezačíná pravdou. Začíná ochotou přiznat, že se spletla.", "en": "Science does not begin with truth. It begins with the willingness to admit error." },
+    "ability": { "cs": "Odvolání — dovolí opravit tvrzení, aniž by to byla prohra.", "en": "Retraction — allows a claim to be corrected without it being a defeat." },
+    "quote": { "cs": "Mapa, která nelže, neexistuje. Mapa, která se opraví, ano.", "en": "A map that does not lie does not exist. A map that corrects itself does." }
+  },
+  "164": {
+    "subtitle": { "cs": "Korálový notář", "en": "The Coral Notary" },
+    "role": { "cs": "Ta, která dosvědčuje, co se ztratilo", "en": "She who witnesses what has been lost" },
+    "location": { "cs": "Korálový útes", "en": "The coral reef" },
+    "questLine": { "cs": "Zápis o úbytku", "en": "The Record of Loss" },
+    "teaching": { "cs": "Co se nezapíše, jako by nebylo. Proto se zapisuje i to nepříjemné.", "en": "What is not recorded may as well not exist. That is why the unpleasant is recorded too." },
+    "ability": { "cs": "Dosvědčení — doloží škodu, kterou by jinak nikdo neuznal.", "en": "Attestation — documents harm that would otherwise go unacknowledged." },
+    "quote": { "cs": "Nejsem smutná. Jen počítám.", "en": "I am not sad. I am counting." }
+  },
+  "165": {
+    "subtitle": { "cs": "Přílivový sloup — rytmus pro malé", "en": "Tide Column — rhythm for the small" },
+    "role": { "cs": "Ten, kdo drží férové tempo", "en": "He who keeps a fair tempo" },
+    "location": { "cs": "Mělčina mezi přílivy", "en": "The shallows between tides" },
+    "questLine": { "cs": "Místo pro pomalé", "en": "Room for the Slow" },
+    "teaching": { "cs": "Rychlost, která nechá slabšího utonout, není efektivita.", "en": "Speed that lets the weaker drown is not efficiency." },
+    "ability": { "cs": "Rytmus přílivu — zpomalí systém tak, aby stihl i menší.", "en": "Tidal Rhythm — slows the system so the smaller one can keep up." },
+    "quote": { "cs": "Moře nikdy nespěchá a přesto nikdy nechybí včas.", "en": "The sea never hurries and yet is never late." }
+  },
+  "166": {
+    "subtitle": { "cs": "Čedičová kronika", "en": "Basalt Chronicle" },
+    "role": { "cs": "Ta, která měří čas v geologii", "en": "She who measures time in geology" },
+    "location": { "cs": "Středooceánský hřbet", "en": "The mid-ocean ridge" },
+    "questLine": { "cs": "Rychlost, která se nedá uspěchat", "en": "Pace That Cannot Be Rushed" },
+    "teaching": { "cs": "Některé věci potřebují tisíc let. Žádné rozhodnutí to nezrychlí.", "en": "Some things need a thousand years. No decision will speed that up." },
+    "ability": { "cs": "Geologický klid — ochrání rozhodnutí před zbrklostí.", "en": "Geological Calm — protects a decision from haste." },
+    "quote": { "cs": "Nespěchám. Ani hora nespěchá a je nejvyšší.", "en": "I do not hurry. The mountain does not either, and it is the tallest." }
+  },
+  "167": {
+    "subtitle": { "cs": "Semínko v pěně", "en": "Foam Seed" },
+    "role": { "cs": "Ten, kdo šíří bez zabírání", "en": "He who spreads without taking over" },
+    "location": { "cs": "Pobřeží, kam dopadá příboj", "en": "The shore where the breakers land" },
+    "questLine": { "cs": "Rozšířit se a nechat být", "en": "To Spread and Let Be" },
+    "teaching": { "cs": "Šířit se neznamená obsadit. Znamená to nechat růst i jinde.", "en": "To spread is not to occupy. It is to let it grow elsewhere too." },
+    "ability": { "cs": "Přenos semene — předá myšlenku bez nároku na vlastnictví.", "en": "Seed Transfer — hands on an idea with no claim of ownership." },
+    "quote": { "cs": "Nezůstávám. Ale to, co nesu, zůstane.", "en": "I do not stay. But what I carry does." }
+  },
+  "168": {
+    "subtitle": { "cs": "Oceánský most", "en": "Oceanic Bridge" },
+    "role": { "cs": "Ten, kdo spojuje bez přepisování", "en": "He who connects without rewriting" },
+    "location": { "cs": "Souostroví, mnoho přístavů", "en": "An archipelago of many harbours" },
+    "questLine": { "cs": "Spojenectví bez nadvlády", "en": "Alliance Without Dominion" },
+    "teaching": { "cs": "Spojit dva ostrovy neznamená, že jeden z nich zmizí.", "en": "Joining two islands does not mean one of them disappears." },
+    "ability": { "cs": "Most — propojí dvě společenství bez ztráty jejich pravidel.", "en": "Bridge — connects two communities without losing either's rules." },
+    "quote": { "cs": "Most není cesta k nám. Je to cesta k sobě navzájem.", "en": "A bridge is not a road to us. It is a road to each other." }
+  },
+  "169": {
+    "subtitle": { "cs": "Šepot šelfu", "en": "Shelf Whisper" },
+    "role": { "cs": "Ten, kdo říká pravdu o hladině", "en": "He who tells the truth about the waterline" },
+    "location": { "cs": "Kontinentální šelf", "en": "The continental shelf" },
+    "questLine": { "cs": "Kam až voda dojde", "en": "How Far the Water Reaches" },
+    "teaching": { "cs": "Pobřeží, které si lže o hladině, přijde o domy. Ne o iluze.", "en": "A coast that lies about the waterline loses houses. Not illusions." },
+    "ability": { "cs": "Pravda hladiny — ukáže reálné riziko bez strašení.", "en": "Waterline Truth — shows the real risk without alarm." },
+    "quote": { "cs": "Nevaruju tě. Jen ti ukazuju, kam až to bylo minule.", "en": "I am not warning you. I am showing you how far it came last time." }
+  },
+  "170": {
+    "subtitle": { "cs": "Rovnodenní klid", "en": "Equinox Lull" },
+    "role": { "cs": "Ten, kdo drží klid na hranici", "en": "He who keeps calm at the threshold" },
+    "location": { "cs": "Místo, kde se potkává den a noc", "en": "Where day meets night" },
+    "questLine": { "cs": "Pauza, která zachrání", "en": "The Pause That Saves" },
+    "teaching": { "cs": "Největší škody vznikají v prvních minutách paniky, ne v krizi samotné.", "en": "The greatest damage happens in the first minutes of panic, not in the crisis itself." },
+    "ability": { "cs": "Zklidnění — pozastaví reakci, aby nebyla horší než problém.", "en": "Dampening — pauses the reaction so it is not worse than the problem." },
+    "quote": { "cs": "Nedělej nic. Právě teď je to nejlepší rozhodnutí.", "en": "Do nothing. Right now that is the best decision." }
+  },
+  "171": {
+    "subtitle": { "cs": "Uzavření kruhu", "en": "Circle Closure" },
+    "role": { "cs": "Ten, kdo předá pochodeň dál", "en": "He who passes the torch on" },
+    "location": { "cs": "Práh mezi dvěma příběhy", "en": "The threshold between two stories" },
+    "questLine": { "cs": "Tečka, která není konec", "en": "The Full Stop That Is Not an End" },
+    "teaching": { "cs": "Dobře ukončená věc se dá začít znovu. Nedokončená se jen táhne.", "en": "A thing properly ended can be started again. An unfinished one merely drags." },
+    "ability": { "cs": "Předání — uzavře kapitolu a otevře další bez ztráty nitě.", "en": "Handover — closes a chapter and opens the next without losing the thread." },
+    "quote": { "cs": "Nekončím. Jen se ukláním.", "en": "I am not ending. I am bowing." }
+  }
+}

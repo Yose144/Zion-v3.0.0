@@ -1,0 +1,92 @@
+{
+  "92": {
+    "subtitle": { "cs": "Amaterasu — sluneční bohyně", "en": "Amaterasu — solar kami" },
+    "role": { "cs": "Ta, která vrací světlo po tmě", "en": "She who returns light after the dark" },
+    "location": { "cs": "Jeskyně Ama-no-Iwato", "en": "The Ama-no-Iwato cave" },
+    "questLine": { "cs": "Světlo, které se vrátilo", "en": "The Light That Returned" },
+    "teaching": { "cs": "Světlo se nevrací silou. Vrací se, když je venku zase co milovat.", "en": "Light does not return by force. It returns when there is something outside worth loving again." },
+    "ability": { "cs": "Záře úsvitu — vrátí naději místu, které se vzdalo.", "en": "Dawn Radiance — restores hope to a place that gave up." },
+    "quote": { "cs": "Neodešla jsem proto, že jsem byla slabá. Odešla jsem, protože mě nikdo neviděl.", "en": "I did not leave because I was weak. I left because no one saw me." }
+  },
+  "93": {
+    "subtitle": { "cs": "Susanoo — bouře, která uklízí", "en": "Susanoo — the storm that clears" },
+    "role": { "cs": "Ten, kdo bourá zkažené pořádky", "en": "He who tears down rotten order" },
+    "location": { "cs": "Pobřeží Izumo", "en": "The coast of Izumo" },
+    "questLine": { "cs": "Meč z ocasu", "en": "The Sword from the Tail" },
+    "teaching": { "cs": "Někdy je neposlušnost jediná poctivá odpověď na nesmyslné pravidlo.", "en": "Sometimes disobedience is the only honest answer to a senseless rule." },
+    "ability": { "cs": "Očista bouří — smete to, co už jen překáží.", "en": "Storm Purge — sweeps away what now only obstructs." },
+    "quote": { "cs": "Nebourám, protože mi to baví. Bourám, protože to jinak nejde.", "en": "I do not break things for fun. I break them because there is no other way." }
+  },
+  "94": {
+    "subtitle": { "cs": "Cukujomi — měsíční rozvaha", "en": "Tsukuyomi — lunar reflection" },
+    "role": { "cs": "Ten, kdo se dívá v noci, co ve dne přehlédli", "en": "He who sees at night what was missed by day" },
+    "location": { "cs": "Měsíční svatyně", "en": "The moon shrine" },
+    "questLine": { "cs": "Noc, kdy se počítá", "en": "The Night of Reckoning" },
+    "teaching": { "cs": "Rozhodnutí přijaté ve spěchu se má přezkoumat, až se světlo ohne.", "en": "A decision made in haste should be reviewed when the light bends." },
+    "ability": { "cs": "Ubývající přezkum — odhalí chybu dřív, než napáchá škodu.", "en": "Waning Review — reveals the mistake before it does damage." },
+    "quote": { "cs": "Nesoudím tě. Jen ti ukazuju, co jsi v poledne neviděl.", "en": "I am not judging you. I am showing you what you could not see at noon." }
+  },
+  "95": {
+    "subtitle": { "cs": "Inari — strážce prahu", "en": "Inari — keeper of the threshold" },
+    "role": { "cs": "Ten, kdo otevírá dveře novým", "en": "He who opens doors for newcomers" },
+    "location": { "cs": "Cesta tunelem torii", "en": "The path through the torii" },
+    "questLine": { "cs": "Tisíc bran", "en": "A Thousand Gates" },
+    "teaching": { "cs": "Dveře se neotevírají tím, že do nich tlučeš. Otevírají se tím, že přineseš něco užitečného.", "en": "Doors do not open by pounding on them. They open when you bring something useful." },
+    "ability": { "cs": "Požehnání stezky — usnadní první krok každému novému.", "en": "Path Blessing — eases the first step for every newcomer." },
+    "quote": { "cs": "Rýže se nedá spočítat. Dá se rozdělit.", "en": "Rice cannot be counted. It can be shared." }
+  },
+  "96": {
+    "subtitle": { "cs": "Ókuninuši — hostitel země", "en": "Ōkuninushi — host of the land" },
+    "role": { "cs": "Ten, kdo učí pohostinnosti v obchodu", "en": "He who teaches hospitality in trade" },
+    "location": { "cs": "Pole Izumo", "en": "The fields of Izumo" },
+    "questLine": { "cs": "Dům, kde se nezavírá", "en": "The House That Does Not Close" },
+    "teaching": { "cs": "Dobrý obchod poznáš podle toho, že se zákazník vrátí i bez slevy.", "en": "You know a good trade by the customer returning without a discount." },
+    "ability": { "cs": "Požehnání předání — spojí dva obchodníky férovou dohodou.", "en": "Transfer Blessing — joins two traders in a fair agreement." },
+    "quote": { "cs": "Nemám největší dům. Mám dům, kde je místo.", "en": "I do not have the biggest house. I have a house with room." }
+  },
+  "97": {
+    "subtitle": { "cs": "Izanami — strážkyně odchodu", "en": "Izanami — keeper of departure" },
+    "role": { "cs": "Ta, která provází na konec", "en": "She who accompanies the ending" },
+    "location": { "cs": "Jomi, země stínů", "en": "Yomi, the land of shadows" },
+    "questLine": { "cs": "Návrat, který nejde", "en": "The Return That Cannot Be" },
+    "teaching": { "cs": "Některé věci se nemají vracet. Mají se nechat odejít.", "en": "Some things should not come back. They should be let go." },
+    "ability": { "cs": "Jomská hranice — bezpečně ukončí to, co se táhne příliš dlouho.", "en": "Yomi Checkpoint — safely ends what has dragged on too long." },
+    "quote": { "cs": "Nezdržuju tě. Jen se ptám, jestli jsi se rozloučil.", "en": "I am not holding you. I only ask whether you said goodbye." }
+  },
+  "98": {
+    "subtitle": { "cs": "Hachiman — ochránce lukostřelců", "en": "Hachiman — protector of archers" },
+    "role": { "cs": "Ten, kdo drží mír a umí ho bránit", "en": "He who keeps peace and can defend it" },
+    "location": { "cs": "Hradní věž", "en": "The castle tower" },
+    "questLine": { "cs": "Mír, který se hlídá", "en": "The Peace That Is Guarded" },
+    "teaching": { "cs": "Mír není stav. Je to práce, která se nesmí přerušit.", "en": "Peace is not a state. It is work that must not be interrupted." },
+    "ability": { "cs": "Hachimanská bašta — postaví obranu, která vydrží první náraz.", "en": "Hachiman Bastion — raises a defence that survives the first blow." },
+    "quote": { "cs": "Nejlepší šíp je ten, který zůstal v toulci.", "en": "The best arrow is the one that stayed in the quiver." }
+  },
+  "99": {
+    "subtitle": { "cs": "Benzaiten — proud umění", "en": "Benzaiten — the flowing arts" },
+    "role": { "cs": "Ta, která propojuje tvořivost a vodu", "en": "She who joins creativity and water" },
+    "location": { "cs": "Ostrov v jezeře", "en": "An island in the lake" },
+    "questLine": { "cs": "Hudba, která neteče sama", "en": "Music That Does Not Flow Alone" },
+    "teaching": { "cs": "Sám zahraješ melodii. Spolu zahrajete hudbu.", "en": "Alone you play a melody. Together you play music." },
+    "ability": { "cs": "Proud tvořivosti — zlepší společnou práci celé skupiny.", "en": "Flow State — improves the shared work of the whole group." },
+    "quote": { "cs": "Voda si najde cestu, ale hudba potřebuje druhého.", "en": "Water finds its way, but music needs another." }
+  },
+  "100": {
+    "subtitle": { "cs": "Kúkai — stavitel mandaly", "en": "Kūkai — the mandala builder" },
+    "role": { "cs": "Ten, kdo učí geometrii světa", "en": "He who teaches the geometry of the world" },
+    "location": { "cs": "Hora Kója", "en": "Mount Kōya" },
+    "questLine": { "cs": "Dvě mandaly", "en": "The Two Mandalas" },
+    "teaching": { "cs": "Co neumíš nakreslit, tomu nerozumíš. A co nerozumíš, to nemůžeš předat.", "en": "What you cannot draw, you do not understand. And what you do not understand, you cannot pass on." },
+    "ability": { "cs": "Šablona diamantového světa — zpřehlední složitý plán.", "en": "Diamond World Stencil — makes a complex plan legible." },
+    "quote": { "cs": "Svět je mandala. Jen se na něj musíš podívat z dost velké dálky.", "en": "The world is a mandala. You only have to look from far enough away." }
+  },
+  "101": {
+    "subtitle": { "cs": "Ničiren — hlas lotosu", "en": "Nichiren — voice of the lotus" },
+    "role": { "cs": "Ten, kdo čte nahlas, aby rozuměli všichni", "en": "He who reads aloud so all may understand" },
+    "location": { "cs": "Chrám na hoře Minobu", "en": "The temple on Mount Minobu" },
+    "questLine": { "cs": "Text, který patří všem", "en": "The Text That Belongs to All" },
+    "teaching": { "cs": "Učení, které zůstane v knize, je jen nábytek.", "en": "A teaching that stays in the book is only furniture." },
+    "ability": { "cs": "Sbor daimoku — posílí hlas skupiny proti strachu.", "en": "Daimoku Chorus — strengthens the group's voice against fear." },
+    "quote": { "cs": "Nehádej se o text. Přečti ho nahlas a uvidíš.", "en": "Do not argue about the text. Read it aloud and you will see." }
+  }
+}

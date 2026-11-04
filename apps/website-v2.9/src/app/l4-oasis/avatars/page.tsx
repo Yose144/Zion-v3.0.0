@@ -11,7 +11,7 @@ import { useLang } from '@/contexts/LanguageContext';
 import MarkdownDoc from '@/components/docs/MarkdownDoc';
 import {
   AVATAR_CIRCLES, OASIS_AVATARS,
-  type OasisAvatar, type OasisAvatarCircle, type OasisAvatarRay, type OasisAvatarRarity,
+  type LocalizedText, type OasisAvatar, type OasisAvatarCircle, type OasisAvatarRay, type OasisAvatarRarity,
 } from '@/lib/oasis/avatars';
 import GAME_PORTRAITS from '@/lib/oasis/game-portraits.json';
 import CHARACTER_SHEET_IMAGES from '@/lib/oasis/character-sheet-images.json';
@@ -29,14 +29,24 @@ const sheetOf = (a: OasisAvatar): string | null => SHEETS[String(a.id)] ?? null;
 
 const OASIS_URL = 'https://oasis.zionterranova.com';
 
+/**
+ * Dvojjazyčné pole → text pro aktuální jazyk. Když český překlad chybí,
+ * spadne na angličtinu (radši anglický text než prázdný blok).
+ */
+const tx = (t: LocalizedText | undefined, cs: boolean): string =>
+  t ? (cs ? t.cs || t.en : t.en || t.cs) : '';
+
 const Copy = {
   backToOasis: { cs: 'L4 Oasis', en: 'L4 Oasis' },
   badge: { cs: 'L4 · ZION Oasis · Avatar Roster', en: 'L4 · ZION Oasis · Avatar Roster' },
   title: { cs: 'Avatáři ZION Oasis', en: 'ZION Oasis Avatars' },
-  tagline: { cs: '200 posvátných postav — každá s vlastní quest linií, výukou a schopností.', en: '200 sacred characters — each with its own quest line, teaching, and ability.' },
+  tagline: {
+    cs: 'Dvě stě posvátných postav — každá s vlastním příběhem, výukou a schopností, česky i anglicky.',
+    en: 'Two hundred sacred characters — each with its own story, teaching and ability, in Czech and English.',
+  },
   desc: {
-    cs: 'Kompletní roster z OASIS canonu: hinduistické božské trojky a ascendovaní mistři, křesťanští svatí a buddhističtí učitelé, historické legendy, hrdinové Matrixu, ZION originals a patnáct kulturních kruhů — od prvních národů přes Tibet, Pacifiku a Afriku po Atlantidu, Lemurii, Seversko-keltský kruh, starověký Egypt a Mayu. Jména uvádíme v původním znění.',
-    en: 'The complete roster from the OASIS canon: Hindu deities and ascended masters, Christian saints and Buddhist teachers, historical legends, Matrix heroes, ZION originals, and fifteen cultural circles — from First Nations through Tibet, the Pacific and Africa to Atlantis, Lemuria, the Norse–Celtic circle, Ancient Egypt and Maya. All names are shown in their original form.',
+    cs: 'Kompletní roster z OASIS canonu: hinduistické božské trojky a ascendovaní mistři, křesťanští svatí a buddhističtí učitelé, historické legendy, hrdinové Matrixu, ZION originals a šestnáct dalších kruhů — od prvních národů přes Tibet, Pacifiku a Afriku po Atlantidu, Lemurii, seversko-keltský kruh, starověký Egypt a Mayu. Jména uvádíme v původním znění.',
+    en: 'The complete roster from the OASIS canon: Hindu deities and ascended masters, Christian saints and Buddhist teachers, historical legends, Matrix heroes, ZION originals, and sixteen further circles — from First Nations through Tibet, the Pacific and Africa to Atlantis, Lemuria, the Norse–Celtic circle, Ancient Egypt and Maya. All names are shown in their original form.',
   },
   avatarsCount: { cs: 'avatarů', en: 'avatars' },
   circlesCount: { cs: 'kruhů', en: 'circles' },
@@ -215,7 +225,7 @@ function AvatarCard({ a, cs, onOpen }: { a: OasisAvatar; cs: boolean; onOpen: ()
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent px-3 pb-2.5 pt-10">
           <h3 className="truncate text-sm font-semibold text-white">{a.name}</h3>
-          <p className="truncate text-[11px] text-zion-gold/85">{a.subtitle}</p>
+          <p className="truncate text-[11px] text-zion-gold/85">{tx(a.subtitle, cs)}</p>
         </div>
       </div>
 
@@ -242,7 +252,7 @@ function AvatarCard({ a, cs, onOpen }: { a: OasisAvatar; cs: boolean; onOpen: ()
           </p>
         )}
         <p className="mt-auto flex items-center justify-between gap-2 pt-1 text-[10px] uppercase tracking-wider text-gray-500">
-          <span className="truncate">{a.role || a.location}</span>
+          <span className="truncate">{tx(a.role, cs) || tx(a.location, cs)}</span>
           <span className="inline-flex shrink-0 items-center gap-0.5 text-zion-gold/70 transition-colors group-hover:text-zion-gold">
             {detail} <ChevronRight className="h-3 w-3" />
           </span>
@@ -283,10 +293,10 @@ function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose:
   const circle = AVATAR_CIRCLES.find((c) => c.key === a.circle);
   const circleLabel = circle ? `${circle.emoji} ${circle[cs ? 'cs' : 'en']}` : a.circle;
   const infoRows: { icon: typeof Star; label: string; value: string }[] = [
-    { icon: Shield, label: Copy.roleLabel[cs ? 'cs' : 'en'], value: a.role },
-    { icon: MapPin, label: Copy.locationLabel[cs ? 'cs' : 'en'], value: a.location },
+    { icon: Shield, label: Copy.roleLabel[cs ? 'cs' : 'en'], value: tx(a.role, cs) },
+    { icon: MapPin, label: Copy.locationLabel[cs ? 'cs' : 'en'], value: tx(a.location, cs) },
     { icon: KeyRound, label: Copy.keyLabel[cs ? 'cs' : 'en'], value: a.key },
-    { icon: Swords, label: Copy.questLineLabel[cs ? 'cs' : 'en'], value: a.questLine },
+    { icon: Swords, label: Copy.questLineLabel[cs ? 'cs' : 'en'], value: tx(a.questLine, cs) },
   ].filter((r) => r.value);
   return (
     <div
@@ -320,8 +330,10 @@ function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose:
               {Copy.idLabel[cs ? 'cs' : 'en']} {a.id} · {circleLabel}
             </p>
             <h3 className="mt-1 text-2xl font-semibold text-white">{a.name}</h3>
-            <p className="text-sm text-zion-gold/90">{a.subtitle}</p>
-            {a.quote && <p className="mt-2 text-xs italic leading-relaxed text-gray-400">„{a.quote}“</p>}
+            <p className="text-sm text-zion-gold/90">{tx(a.subtitle, cs)}</p>
+            {tx(a.quote, cs) && (
+              <p className="mt-2 text-xs italic leading-relaxed text-gray-400">„{tx(a.quote, cs)}“</p>
+            )}
             {a.art.card && (
               <span className="mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] uppercase tracking-wider text-gray-400">
                 {(portraitOf(a) ? Copy.artGame : a.art.final ? Copy.artFinal : Copy.artConcept)[
@@ -341,7 +353,7 @@ function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose:
             {ray[cs ? 'cs' : 'en']}
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-3 py-1 text-zion-gold">
-            {Copy.clLabel[cs ? 'cs' : 'en']} CL{a.cl}{a.clName ? ` · ${a.clName}` : ''}
+            {Copy.clLabel[cs ? 'cs' : 'en']} CL{a.cl}{tx(a.clName, cs) ? ` · ${tx(a.clName, cs)}` : ''}
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-gray-400">
             {Copy.nftLabel[cs ? 'cs' : 'en']}: {a.rarity}
@@ -428,22 +440,22 @@ function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose:
           </div>
         )}
 
-        {a.ability && (
+        {tx(a.ability, cs) && (
           <div className="mt-5">
             <p className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-zion-gold">
               <Zap className="h-3.5 w-3.5" /> {Copy.abilityLabel[cs ? 'cs' : 'en']}
             </p>
-            <p className="text-sm leading-relaxed text-gray-300">{a.ability}</p>
+            <p className="text-sm leading-relaxed text-gray-300">{tx(a.ability, cs)}</p>
           </div>
         )}
 
-        {a.teaching && (
+        {tx(a.teaching, cs) && (
           <div className="mt-5">
             <p className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-zion-purple">
               <BookOpen className="h-3.5 w-3.5" /> {Copy.teachingLabel[cs ? 'cs' : 'en']}
             </p>
             <p className="border-l-2 border-zion-purple/40 pl-3 text-sm italic leading-relaxed text-gray-300">
-              {a.teaching}
+              {tx(a.teaching, cs)}
             </p>
           </div>
         )}
@@ -526,8 +538,15 @@ export default function OasisAvatarsPage() {
       if (rayFilter !== 'all' && a.ray !== rayFilter) return false;
       if (rarityFilter !== 'all' && a.rarity !== rarityFilter) return false;
       if (!q) return true;
-      return [a.name, a.subtitle, a.role, a.location, a.teaching, a.ability, a.questLine]
-        .some((f) => f.toLowerCase().includes(q));
+      return [
+        a.name,
+        tx(a.subtitle, cs),
+        tx(a.role, cs),
+        tx(a.location, cs),
+        tx(a.teaching, cs),
+        tx(a.ability, cs),
+        tx(a.questLine, cs),
+      ].some((f) => f.toLowerCase().includes(q));
     });
   }, [query, rayFilter, rarityFilter]);
 

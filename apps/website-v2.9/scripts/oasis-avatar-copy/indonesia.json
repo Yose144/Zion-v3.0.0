@@ -1,0 +1,92 @@
+{
+  "112": {
+    "subtitle": { "cs": "Dewi Sri — matka rýže", "en": "Dewi Sri — the rice mother" },
+    "role": { "cs": "Ta, která učí sytit bez plýtvání", "en": "She who teaches feeding without waste" },
+    "location": { "cs": "Terasy rýžových polí", "en": "The rice terraces" },
+    "questLine": { "cs": "Zrno, které se nesmí ztratit", "en": "The Grain That Must Not Be Lost" },
+    "teaching": { "cs": "Úroda není majetek. Je to půjčka, kterou splácíš příští sezóně.", "en": "A harvest is not property. It is a loan repaid to the next season." },
+    "ability": { "cs": "Požehnání úrody — zajistí, že se jídlo dostane tam, kde chybí.", "en": "Harvest Blessing — ensures food reaches where it is missing." },
+    "quote": { "cs": "Kdo jí sám, ten se nají jednou. Kdo dělí, ten se nají pořád.", "en": "Whoever eats alone eats once. Whoever shares eats always." }
+  },
+  "113": {
+    "subtitle": { "cs": "Nyai Roro Kidul — královna jižního moře", "en": "Nyai Roro Kidul — Queen of the Southern Sea" },
+    "role": { "cs": "Strážkyně pobřeží a společného majetku", "en": "Guardian of the shore and of the commons" },
+    "location": { "cs": "Útes Uluwatu", "en": "The Uluwatu cliffs" },
+    "questLine": { "cs": "Co patří všem", "en": "What Belongs to Everyone" },
+    "teaching": { "cs": "Moře nikomu nepatří. Proto se o něj nikdo nehádá tak jako o pole.", "en": "The sea belongs to no one. That is why no one fights over it like over a field." },
+    "ability": { "cs": "Příliv — vrátí pobřeží to, co mu bylo vzato.", "en": "The Tide — returns to the shore what was taken from it." },
+    "quote": { "cs": "Neber víc, než uneseš. Moře si to pamatuje.", "en": "Take no more than you can carry. The sea remembers." }
+  },
+  "114": {
+    "subtitle": { "cs": "Semar — moudrý šašek", "en": "Semar — the wise clown" },
+    "role": { "cs": "Prostředník, který řekne nepříjemnou pravdu", "en": "Mediator who says the uncomfortable truth" },
+    "location": { "cs": "Stínové loutkové jeviště", "en": "The shadow-puppet stage" },
+    "questLine": { "cs": "Slovo, které se nedá obejít", "en": "The Word You Cannot Walk Around" },
+    "teaching": { "cs": "Nejlepší vyjednavač je ten, kterého ostatní podceňují.", "en": "The best negotiator is the one everyone underestimates." },
+    "ability": { "cs": "Prostřednictví — přivede dvě strany k jedné věty.", "en": "Mediation — brings two sides to one sentence." },
+    "quote": { "cs": "Nejsem nejchytřejší. Jen se bojím méně než vy.", "en": "I am not the cleverest. I am simply less afraid than you." }
+  },
+  "115": {
+    "subtitle": { "cs": "Batara Guru — učitel bohů", "en": "Batara Guru — teacher of gods" },
+    "role": { "cs": "Ten, kdo překládá nesrozumitelné", "en": "He who translates the incomprehensible" },
+    "location": { "cs": "Vrchol hory", "en": "The mountain summit" },
+    "questLine": { "cs": "Dokument, kterému se rozumí", "en": "The Document People Understand" },
+    "teaching": { "cs": "Co se nedá vysvětlit jednoduše, není ještě pochopené.", "en": "What cannot be explained simply is not yet understood." },
+    "ability": { "cs": "Srozumitelné slovo — přeloží složité rozhodnutí do lidské řeči.", "en": "Plain Words — translates a complex decision into human speech." },
+    "quote": { "cs": "Nepotřebuju víc slov. Potřebuju méně nejasností.", "en": "I do not need more words. I need less ambiguity." }
+  },
+  "116": {
+    "subtitle": { "cs": "Barong — strážce rovnováhy", "en": "Barong — keeper of balance" },
+    "role": { "cs": "Ten, kdo uklidňuje hystérii", "en": "He who calms hysteria" },
+    "location": { "cs": "Nádvoří chrámu", "en": "The temple courtyard" },
+    "questLine": { "cs": "Tanec proti strachu", "en": "The Dance Against Fear" },
+    "teaching": { "cs": "Panika je nakažlivější než jakákoli nemoc. Proto se s ní bojuje tancem.", "en": "Panic is more contagious than any disease. That is why it is fought with a dance." },
+    "ability": { "cs": "Rozptýlení hrůzy — uklidní skupinu v panice.", "en": "Hysteria Cleanse — calms a group in panic." },
+    "quote": { "cs": "Nejsem hodný. Jsem klidný. To je rozdíl.", "en": "I am not kind. I am calm. That is the difference." }
+  },
+  "117": {
+    "subtitle": { "cs": "Garuda — křídla, která nesou", "en": "Garuda — wings that carry" },
+    "role": { "cs": "Ten, kdo doručí pomoc včas", "en": "He who delivers help in time" },
+    "location": { "cs": "Vysoko nad souostrovím", "en": "High above the archipelago" },
+    "questLine": { "cs": "Rychlost, která neztratí směr", "en": "Speed That Does Not Lose Direction" },
+    "teaching": { "cs": "Nejrychlejší není ten, kdo letí nejdřív. Je ten, kdo doletí.", "en": "The fastest is not the one who takes off first. It is the one who arrives." },
+    "ability": { "cs": "Křídla pomoci — dopraví pomoc tam, kde se nedá dojet.", "en": "Wings of Aid — carries help where you cannot drive." },
+    "quote": { "cs": "Nesu to, co je potřeba. To, co je cenné, nese někdo jiný.", "en": "I carry what is needed. What is precious is carried by someone else." }
+  },
+  "118": {
+    "subtitle": { "cs": "Gatotkaca — ochránce v oblacích", "en": "Gatotkaca — guardian in the clouds" },
+    "role": { "cs": "Ten, kdo doprovází přes nebezpečí", "en": "He who escorts through danger" },
+    "location": { "cs": "Oblačný záliv", "en": "The cloud inlet" },
+    "questLine": { "cs": "Doprovod bez ztráty", "en": "The Escort Without Loss" },
+    "teaching": { "cs": "Hrdinství je většinou jen to, že dojdeš zpátky s tím, koho jsi vzal.", "en": "Heroism is mostly just coming back with the person you took with you." },
+    "ability": { "cs": "Oblačný let — ochrání svěřenou osobu na cestě.", "en": "Cloud Flight — shields the person entrusted to you on the way." },
+    "quote": { "cs": "Nebojuju nejlíp. Doprovázím nejjistěji.", "en": "I do not fight best. I escort most surely." }
+  },
+  "119": {
+    "subtitle": { "cs": "Princ Pandži", "en": "Prince Panji" },
+    "role": { "cs": "Ten, kdo hledá, kým doopravdy je", "en": "He who searches for who he really is" },
+    "location": { "cs": "Královský dvůr Kediri", "en": "The royal court of Kediri" },
+    "questLine": { "cs": "Cesta, na které se ztrácí jméno", "en": "The Road Where the Name Is Lost" },
+    "teaching": { "cs": "Identita není titul. Je to to, co zůstane, když titul ztratíš.", "en": "Identity is not a title. It is what remains when you lose the title." },
+    "ability": { "cs": "Pravá tvář — ukáže, kdo je kdo i přes převleky.", "en": "True Face — reveals who is who, through any disguise." },
+    "quote": { "cs": "Hledal jsem ji. Našel jsem sebe. Bylo to stejné hledání.", "en": "I searched for her. I found myself. It was the same search." }
+  },
+  "120": {
+    "subtitle": { "cs": "Roro Jonggrang — smlouva o chrámu", "en": "Roro Jonggrang — the temple bargain" },
+    "role": { "cs": "Ta, která hájí hranice, ne mstu", "en": "She who defends boundaries, not revenge" },
+    "location": { "cs": "Chrám Prambanan", "en": "Prambanan temple" },
+    "questLine": { "cs": "Tisíc soch a jeden podmín", "en": "A Thousand Statues and One Condition" },
+    "teaching": { "cs": "Svépráví není odmítnutí. Je to právo říct: takhle ne.", "en": "Self-determination is not refusal. It is the right to say: not like this." },
+    "ability": { "cs": "Vřeteno — zastaví příliš rychlý nápad v půlce věty.", "en": "Spindle — stops an overly fast idea mid-sentence." },
+    "quote": { "cs": "Nezlomila jsem slib. Někdo ho chtěl splnit dřív, než jsem dostala právo mluvit.", "en": "I did not break the promise. Someone wanted it kept before I had the right to speak." }
+  },
+  "121": {
+    "subtitle": { "cs": "Dewi Nawang Wulan — měsíční pohostinnost", "en": "Dewi Nawang Wulan — lunar hospitality" },
+    "role": { "cs": "Ta, která učí vzácnosti přijmout pomoc", "en": "She who teaches the rarity of receiving help" },
+    "location": { "cs": "Hráz rybníka", "en": "The pond dam" },
+    "questLine": { "cs": "Host, který zůstává", "en": "The Guest Who Stays" },
+    "teaching": { "cs": "Pohostinnost není jen dávání. Je to i umění nechat si pomoci.", "en": "Hospitality is not only giving. It is also the art of letting yourself be helped." },
+    "ability": { "cs": "Útočiště — obnoví sílu tomu, kdo se staral o druhé.", "en": "Shelter — restores strength to whoever cared for others." },
+    "quote": { "cs": "Neodešla jsem kvůli práci. Odešla jsem, protože jsem byla jediná, kdo mohl pokračovat.", "en": "I did not leave because of the work. I left because I was the only one who could go on." }
+  }
+}

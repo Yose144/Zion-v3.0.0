@@ -1,0 +1,92 @@
+{
+  "172": {
+    "subtitle": { "cs": "Strážce centrálního slunce", "en": "Steward of the Central Sun" },
+    "role": { "cs": "Ten, kdo drží společný rytmus", "en": "He who keeps the shared rhythm" },
+    "location": { "cs": "Střed galaxie", "en": "The galactic centre" },
+    "questLine": { "cs": "Jeden tep pro všechny", "en": "One Beat for All" },
+    "teaching": { "cs": "Společenství se nerozpadne kvůli názorům, ale kvůli různému času.", "en": "A community does not fall apart over opinions, but over different clocks." },
+    "ability": { "cs": "Společný tep — srovná tempo celé skupiny.", "en": "Shared Beat — aligns the tempo of the whole group." },
+    "quote": { "cs": "Nejsem nejjasnější. Jsem ten, podle kterého se počítá čas.", "en": "I am not the brightest. I am the one time is counted by." }
+  },
+  "173": {
+    "subtitle": { "cs": "Rytmus světla", "en": "Cadence of Light" },
+    "role": { "cs": "Ta, která brzdí nadšení dřív, než vyhoří", "en": "She who slows enthusiasm before it burns out" },
+    "location": { "cs": "Práh světelného pásu", "en": "The threshold of the light band" },
+    "questLine": { "cs": "Nehořet, ale svítit", "en": "To Shine Without Burning" },
+    "teaching": { "cs": "Nadšení, které nemá pauzu, se změní v únavu. Únava se změní ve vztek.", "en": "Enthusiasm without pause turns into fatigue. Fatigue turns into anger." },
+    "ability": { "cs": "Rytmus — rozloží úsilí tak, aby vydrželo.", "en": "Cadence — spaces out effort so it lasts." },
+    "quote": { "cs": "Zpomal. Nechceš dohořet v první třetině.", "en": "Slow down. You do not want to burn out in the first third." }
+  },
+  "174": {
+    "subtitle": { "cs": "Dvojí podpis slunce", "en": "The Sun's Dual Signature" },
+    "role": { "cs": "Ti, kdo potvrzují jen společně", "en": "They who confirm only together" },
+    "location": { "cs": "Dvě strany sluneční brány", "en": "The two sides of the solar gate" },
+    "questLine": { "cs": "Dva hlasy, jeden podpis", "en": "Two Voices, One Signature" },
+    "teaching": { "cs": "Jedna ruka nikdy nestačí. Proto jsou potřeba dvě.", "en": "One hand is never enough. That is why two are needed." },
+    "ability": { "cs": "Dvojí potvrzení — zabrání rozhodnutí, které udělal jeden člověk.", "en": "Dual Confirmation — blocks a decision made by one person alone." },
+    "quote": { "cs": "Nejsme dva proto, že bychom si nevěřili. Jsme dva proto, že si věříme dost.", "en": "We are two not because we distrust each other. We are two because we trust each other enough." }
+  },
+  "175": {
+    "subtitle": { "cs": "Most k duši planety", "en": "Bridge to the Planet's Soul" },
+    "role": { "cs": "Ten, kdo spojuje lidi se zemí", "en": "He who joins people to the land" },
+    "location": { "cs": "Práh mezi nebem a půdou", "en": "The threshold between sky and soil" },
+    "questLine": { "cs": "Nahoře i dole", "en": "Above and Below" },
+    "teaching": { "cs": "Duchovní řeč, která nevede k dílu, je jen ozdoba.", "en": "Spiritual talk that leads to no work is only decoration." },
+    "ability": { "cs": "Propojení — převede vizi do konkrétního činu.", "en": "Connection — turns a vision into a concrete act." },
+    "quote": { "cs": "Nestačí cítit jednotu. Musí se to poznat na tom, co uděláš v pondělí.", "en": "Feeling oneness is not enough. It must show in what you do on Monday." }
+  },
+  "176": {
+    "subtitle": { "cs": "Strážce světelného sloupu", "en": "Sentinel of the Light Column" },
+    "role": { "cs": "Ten, kdo chrání soukromí a klíče", "en": "He who protects privacy and keys" },
+    "location": { "cs": "Práh světla", "en": "The threshold of light" },
+    "questLine": { "cs": "Co nikomu neřekneš", "en": "What You Tell No One" },
+    "teaching": { "cs": "Nejdůležitější klíč je ten, o kterém nikdo neví, že existuje.", "en": "The most important key is the one no one knows exists." },
+    "ability": { "cs": "Ochrana klíčů — zabrání, aby se tvá tajemství stala veřejnými.", "en": "Key Guard — prevents your secrets from becoming public." },
+    "quote": { "cs": "Nemlčím proto, že nemám co říct. Mlčím proto, že to není pro nikoho.", "en": "I am silent not because I have nothing to say. I am silent because it is no one's business." }
+  },
+  "177": {
+    "subtitle": { "cs": "Zářící spirála", "en": "Radiant Spiral" },
+    "role": { "cs": "Ta, která oceňuje učení, ne soutěžení", "en": "She who values teaching over competing" },
+    "location": { "cs": "Spirála schodů", "en": "The spiral stair" },
+    "questLine": { "cs": "Výš, ale spolu", "en": "Higher, But Together" },
+    "teaching": { "cs": "Hodnost, kterou ti nikdo nezávidí, je ta, že někomu pomůžeš výš.", "en": "The rank no one envies is the one you earn by helping someone higher." },
+    "ability": { "cs": "Spirála — odmění toho, kdo učí druhé.", "en": "Spiral — rewards whoever teaches others." },
+    "quote": { "cs": "Nejsi výš proto, že jsi někoho přešel. Jsi výš, protože jsi někoho vytáhl.", "en": "You are not higher because you passed someone. You are higher because you pulled someone up." }
+  },
+  "178": {
+    "subtitle": { "cs": "Sedmý paprsek", "en": "The Seventh Ray" },
+    "role": { "cs": "Ten, kdo proměňuje staré ve funkční", "en": "He who transforms the old into something that works" },
+    "location": { "cs": "Fialová komnata", "en": "The violet chamber" },
+    "questLine": { "cs": "Proměna bez popření", "en": "Transformation Without Denial" },
+    "teaching": { "cs": "Nové nemá smysl, pokud jen popře staré. Musí ho unést dál.", "en": "The new makes no sense if it only denies the old. It must carry it forward." },
+    "ability": { "cs": "Proměna — přepíše staré řešení, aniž by ztratilo sílu.", "en": "Transmutation — rewrites an old solution without losing its power." },
+    "quote": { "cs": "Nebourám starý chrám. Uklízím v něm.", "en": "I do not demolish the old temple. I clean it." }
+  },
+  "179": {
+    "subtitle": { "cs": "Svolavatel galaxií", "en": "Convenor of Galaxies" },
+    "role": { "cs": "Ten, kdo svolává různorodé ke stolu", "en": "He who calls the diverse to one table" },
+    "location": { "cs": "Síň sněmovny", "en": "The assembly hall" },
+    "questLine": { "cs": "Mandát, který se nepředává dědictvím", "en": "A Mandate Not Inherited" },
+    "teaching": { "cs": "Kdo má místo u stolu proto, kdo je, ten ho nemá proto, co umí.", "en": "Whoever has a seat because of who they are does not have it because of what they can do." },
+    "ability": { "cs": "Svolání — vytvoří sněm, kde má každý stejný hlas.", "en": "Convening — forms an assembly where every voice is equal." },
+    "quote": { "cs": "Nesedím v čele. Sedím tam, odkud je vidět, kdo chybí.", "en": "I do not sit at the head. I sit where I can see who is missing." }
+  },
+  "180": {
+    "subtitle": { "cs": "Písař světelného těla", "en": "Scribe of the Light Body" },
+    "role": { "cs": "Ta, která zapisuje jen to, co jí patří", "en": "She who records only what belongs to her" },
+    "location": { "cs": "Tichý stůl", "en": "The quiet desk" },
+    "questLine": { "cs": "Deník, který si necháš", "en": "The Diary You Keep" },
+    "teaching": { "cs": "Ne každý zážitek má být produkt. Některé věci slouží jen tobě.", "en": "Not every experience should be a product. Some things serve only you." },
+    "ability": { "cs": "Soukromý zápis — ochrání tvůj vnitřní záznam před zveřejněním.", "en": "Private Entry — keeps your inner record from being published." },
+    "quote": { "cs": "Nepíšu pro publikum. Píšu, abych si pamatovala.", "en": "I do not write for an audience. I write so I remember." }
+  },
+  "181": {
+    "subtitle": { "cs": "Závěrečný kámen vzestupu", "en": "The Capstone of Ascension" },
+    "role": { "cs": "Ten, kdo uzavře celek a ukáže dál", "en": "He who closes the whole and points on" },
+    "location": { "cs": "Poslední schod", "en": "The last step" },
+    "questLine": { "cs": "Dvanáct plus jedna", "en": "Twelve Plus One" },
+    "teaching": { "cs": "Dokončený kruh není cíl. Je to místo, odkud je vidět další.", "en": "A completed circle is not a goal. It is a place from which the next is visible." },
+    "ability": { "cs": "Uzavření — dokončí celek a otevře cestu dál.", "en": "Closure — completes the whole and opens the way onward." },
+    "quote": { "cs": "Nezavírám dveře. Stavím práh.", "en": "I am not closing a door. I am building a threshold." }
+  }
+}

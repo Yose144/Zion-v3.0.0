@@ -1,0 +1,92 @@
+{
+  "152": {
+    "subtitle": { "cs": "Atlas — nejstarší král", "en": "Atlas — the eldest king" },
+    "role": { "cs": "Ten, kdo drží souhru mnoha krajů", "en": "He who holds many regions in agreement" },
+    "location": { "cs": "Kruhové město, vnější prstenec", "en": "The ring city, outer ring" },
+    "questLine": { "cs": "Deset krajů, jedna dohoda", "en": "Ten Regions, One Accord" },
+    "teaching": { "cs": "Kdo nese celé nebe, nesmí si plést svou únavu s právem rozhodovat.", "en": "Whoever carries the whole sky must not confuse his fatigue with the right to decide." },
+    "ability": { "cs": "Souhlas krajů — spojí deset různých zájmů do jednoho rozhodnutí.", "en": "Accord of Regions — joins ten different interests into one decision." },
+    "quote": { "cs": "Nenesu nebe proto, že jsem silný. Nesu ho, protože se nikdo jiný nepřihlásil.", "en": "I do not carry the sky because I am strong. I carry it because no one else volunteered." }
+  },
+  "153": {
+    "subtitle": { "cs": "Kleito — strážkyně chrámu", "en": "Cleito — keeper of the sanctuary" },
+    "role": { "cs": "Ta, která chrání místo před zneužitím", "en": "She who protects a place from misuse" },
+    "location": { "cs": "Svatyňka na vrcholku ostrova", "en": "The sanctuary on the island's hill" },
+    "questLine": { "cs": "Charta, která se nedá obejít", "en": "The Charter That Cannot Be Walked Around" },
+    "teaching": { "cs": "Co není napsané, se dá vyložit ve prospěch silnějšího.", "en": "What is not written can be read in favour of the stronger." },
+    "ability": { "cs": "Jasná charta — znemožní výklad, který by poškodil slabšího.", "en": "Clear Charter — blocks the reading that would harm the weaker." },
+    "quote": { "cs": "Nebráním ti vejít. Bráním ti to tu přestavět k obrazu svému.", "en": "I do not stop you entering. I stop you rebuilding it in your image." }
+  },
+  "154": {
+    "subtitle": { "cs": "Gadeiros — etika průlivu", "en": "Gadeirus — the ethics of the strait" },
+    "role": { "cs": "Ten, kdo určuje pravidla přechodu", "en": "He who sets the rules of passage" },
+    "location": { "cs": "Úzký průliv", "en": "The narrow strait" },
+    "questLine": { "cs": "Kdo projde první", "en": "Who Passes First" },
+    "teaching": { "cs": "Kdo jede první, musí nechat místo pro druhého.", "en": "Whoever goes first must leave room for the second." },
+    "ability": { "cs": "Pravidlo průchodu — zajistí, že se nezablokuje cesta.", "en": "Passage Rule — ensures the road does not jam." },
+    "quote": { "cs": "Průliv není tvůj. Je jen úzký.", "en": "The strait is not yours. It is only narrow." }
+  },
+  "155": {
+    "subtitle": { "cs": "Ampheres — spravedlivý příděl", "en": "Ampheres — fair share" },
+    "role": { "cs": "Ten, kdo dělí úrodu bez zvýhodnění", "en": "He who divides the yield without favour" },
+    "location": { "cs": "Sýpky na druhém prstenci", "en": "The granaries of the second ring" },
+    "questLine": { "cs": "Kdo dostane kolik", "en": "Who Gets How Much" },
+    "teaching": { "cs": "Rovný příděl není stejný. Je takový, aby každý mohl pokračovat.", "en": "A fair share is not an equal one. It is one that lets everyone continue." },
+    "ability": { "cs": "Vyvážený příděl — přidělí zdroje tak, aby nikdo nepropadl.", "en": "Balanced Share — allocates so that no one falls out." },
+    "quote": { "cs": "Nedělím peníze. Dělím možnost pokračovat.", "en": "I am not dividing money. I am dividing the ability to go on." }
+  },
+  "156": {
+    "subtitle": { "cs": "Evaemon — dobrý zvyk", "en": "Evaemon — good custom" },
+    "role": { "cs": "Ten, kdo hlídá, aby se dobrá praxe nezlomila", "en": "He who guards that good practice does not break" },
+    "location": { "cs": "Síň souhlasu", "en": "The hall of consent" },
+    "questLine": { "cs": "Zvyk, který drží i bez dozoru", "en": "A Custom That Holds Unwatched" },
+    "teaching": { "cs": "Pravidlo, které nikdo nedodržuje, není pravidlo. Je to přání.", "en": "A rule no one follows is not a rule. It is a wish." },
+    "ability": { "cs": "Dobrý zvyk — zavede praxi, která přežije bez dohledu.", "en": "Good Custom — establishes practice that survives without oversight." },
+    "quote": { "cs": "Nedohlížím. Radši se ptám, proč to nikdo nedělá.", "en": "I do not oversee. I ask why no one does it." }
+  },
+  "157": {
+    "subtitle": { "cs": "Mneseus — strážce paměti", "en": "Mneseus — keeper of memory" },
+    "role": { "cs": "Ten, kdo vede záznam bez přikrášlení", "en": "He who keeps the record without embellishment" },
+    "location": { "cs": "Archiv pod chrámem", "en": "The archive beneath the temple" },
+    "questLine": { "cs": "Changelog, který nelže", "en": "The Changelog That Cannot Lie" },
+    "teaching": { "cs": "Záznam, který vynechá chybu, není záznam. Je to reklama.", "en": "A record that omits the mistake is not a record. It is advertising." },
+    "ability": { "cs": "Čitelná historie — ukáže, co se změnilo a proč.", "en": "Legible History — shows what changed and why." },
+    "quote": { "cs": "Nejčastěji se lže mlčením o vlastní chybě.", "en": "The most common lie is silence about one's own mistake." }
+  },
+  "158": {
+    "subtitle": { "cs": "Autochthon — původ země", "en": "Autochthon — born of the land" },
+    "role": { "cs": "Ten, kdo hájí místní právo rozhodovat", "en": "He who defends the local right to decide" },
+    "location": { "cs": "Kamenný práh", "en": "The stone threshold" },
+    "questLine": { "cs": "Kdo tu žije, ten tu rozhoduje", "en": "Who Lives Here Decides Here" },
+    "teaching": { "cs": "Rozhodnutí o místě má dělat někdo, kdo v něm musí zůstat.", "en": "A decision about a place should be made by someone who has to stay there." },
+    "ability": { "cs": "Místní právo — dá poslední slovo těm, kteří tam žijí.", "en": "Local Right — gives the last word to those who live there." },
+    "quote": { "cs": "Nejsem starší proto, že jsem starý. Jsem starší, protože jsem zůstal.", "en": "I am an elder not because I am old. I am an elder because I stayed." }
+  },
+  "159": {
+    "subtitle": { "cs": "Elasippus — spravedlivý tok", "en": "Elasippus — fair flow" },
+    "role": { "cs": "Ten, kdo drží cestu volnou i pro malé", "en": "He who keeps the road open even for the small" },
+    "location": { "cs": "Silnice mezi prstenci", "en": "The road between the rings" },
+    "questLine": { "cs": "Místo ve frontě", "en": "A Place in the Queue" },
+    "teaching": { "cs": "Systém poznáš podle toho, jak se chová k člověku bez silného přímluvce.", "en": "You know a system by how it treats someone with no strong advocate." },
+    "ability": { "cs": "Volný pruh — zajistí, že malý hráč neuvízne navždy.", "en": "Open Lane — ensures the small player does not get stuck forever." },
+    "quote": { "cs": "Nejde o rychlost. Jde o to, jestli se dostaneš.", "en": "It is not about speed. It is about whether you get there." }
+  },
+  "160": {
+    "subtitle": { "cs": "Mestor — hlasatel dohody", "en": "Mestor — herald of accord" },
+    "role": { "cs": "Ten, kdo udrží jednání pohromadě", "en": "He who keeps a negotiation together" },
+    "location": { "cs": "Síň otevřených dveří", "en": "The hall of open doors" },
+    "questLine": { "cs": "Stůl, od kterého se nevstává", "en": "The Table You Do Not Leave" },
+    "teaching": { "cs": "Dokud spolu mluvíte, je to dohoda. Když odejdete, je to jen přestávka.", "en": "As long as you talk, it is an agreement. When you leave, it is only a pause." },
+    "ability": { "cs": "Hlasatel — přivede strany zpět ke stolu.", "en": "Herald — brings the parties back to the table." },
+    "quote": { "cs": "Nehledám vítěze. Hledám větu, se kterou odejdou oba.", "en": "I am not looking for a winner. I am looking for the sentence both can leave with." }
+  },
+  "161": {
+    "subtitle": { "cs": "Azaes — ten, kdo zkouší s rozmyslem", "en": "Azaes — the measured tester" },
+    "role": { "cs": "Ten, kdo hledá mez bez katastrofy", "en": "He who finds the limit without catastrophe" },
+    "location": { "cs": "Zkušební ostrov", "en": "The proving island" },
+    "questLine": { "cs": "Kde to praskne", "en": "Where It Breaks" },
+    "teaching": { "cs": "Mez se má najít dřív, než ji najde provoz.", "en": "A limit should be found before production finds it." },
+    "ability": { "cs": "Zkouška zátěží — ukáže mez bez toho, aby něco spadlo.", "en": "Load Trial — shows the limit without anything falling." },
+    "quote": { "cs": "Radši to zkusím já, dokud je to jen zkouška.", "en": "I would rather test it myself while it is still only a test." }
+  }
+}

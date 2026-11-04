@@ -1,0 +1,92 @@
+{
+  "72": {
+    "subtitle": { "cs": "Padmasambhava — Guru Rinpočhe", "en": "Padmasambhava — Guru Rinpoche" },
+    "role": { "cs": "Ten, kdo ukryl učení pro pozdější dobu", "en": "He who hid teachings for a later age" },
+    "location": { "cs": "Jeskyně v údolí Paro", "en": "A cave in the Paro valley" },
+    "questLine": { "cs": "Skrytý poklad", "en": "The Hidden Treasure" },
+    "teaching": { "cs": "Některé pravdy se nemají říct dřív, než je někdo unese.", "en": "Some truths should not be spoken before someone can carry them." },
+    "ability": { "cs": "Nalezení termy — odemkne učení ukryté v pravý čas.", "en": "Terma Discovery — unlocks a teaching hidden for the right time." },
+    "quote": { "cs": "Neschoval jsem to před tebou. Schoval jsem to pro tebe.", "en": "I did not hide it from you. I hid it for you." }
+  },
+  "73": {
+    "subtitle": { "cs": "Milarepa", "en": "Milarepa" },
+    "role": { "cs": "Ten, kdo se změnil vlastní písní", "en": "He who changed through his own song" },
+    "location": { "cs": "Jeskyně v Himálaji", "en": "A Himalayan cave" },
+    "questLine": { "cs": "Píseň, která obrací", "en": "The Song That Turns" },
+    "teaching": { "cs": "Nejde o to nebýt vinen. Jde o to neopakovat to.", "en": "It is not about being innocent. It is about not repeating it." },
+    "ability": { "cs": "Píseň prozření — smyje tíhu, kterou jsi nesl roky.", "en": "Song of Realization — washes off the weight you carried for years." },
+    "quote": { "cs": "Bál jsem se pekla. Pak jsem potkal svou mysl.", "en": "I feared hell. Then I met my own mind." }
+  },
+  "74": {
+    "subtitle": { "cs": "Congkhapa", "en": "Tsongkhapa" },
+    "role": { "cs": "Učitel pořádku a studia", "en": "Teacher of order and study" },
+    "location": { "cs": "Klášter Ganden", "en": "Ganden Monastery" },
+    "questLine": { "cs": "Stupně cesty", "en": "The Stages of the Path" },
+    "teaching": { "cs": "Bez pořádku se i správná věc udělá ve špatnou chvíli.", "en": "Without order, even the right thing gets done at the wrong time." },
+    "ability": { "cs": "Zaměření lamrim — urychlí učení a srovná myšlenky.", "en": "Lamrim Focus — speeds learning and settles the mind." },
+    "quote": { "cs": "Nestačí vědět. Musíš to umět udělat v pořadí.", "en": "Knowing is not enough. You must be able to do it in order." }
+  },
+  "75": {
+    "subtitle": { "cs": "Atíša", "en": "Atiśa" },
+    "role": { "cs": "Ten, kdo svítí na cestu druhým", "en": "He who lights the way for others" },
+    "location": { "cs": "Klášter Radeng", "en": "Reting Monastery" },
+    "questLine": { "cs": "Lampa na cestu", "en": "Lamp for the Path" },
+    "teaching": { "cs": "Etika není seznam zákazů. Je to způsob, jak nikoho nezranit.", "en": "Ethics is not a list of prohibitions. It is a way of not wounding anyone." },
+    "ability": { "cs": "Jiskra bódhičity — dá celé skupině odvahu pomáhat.", "en": "Bodhicitta Spark — gives the whole group the courage to help." },
+    "quote": { "cs": "Nejlepší odpověď na strach je být užitečný.", "en": "The best answer to fear is to be useful." }
+  },
+  "76": {
+    "subtitle": { "cs": "Marpa Překladatel", "en": "Marpa the Translator" },
+    "role": { "cs": "Most mezi dvěma světy", "en": "Bridge between two worlds" },
+    "location": { "cs": "Údolí Lhodrak", "en": "The Lhodrak valley" },
+    "questLine": { "cs": "Překlad, který nezradí", "en": "The Translation That Betrays Nothing" },
+    "teaching": { "cs": "Přeložit neznamená převést slova. Znamená to neztratit smysl.", "en": "To translate is not to move words. It is to lose no meaning." },
+    "ability": { "cs": "Překlad protokolu — spojí dva světy, které si nerozumí.", "en": "Protocol Translation — joins two worlds that do not understand each other." },
+    "quote": { "cs": "Nesoudím, co říkáš. Hledám, co tím myslíš.", "en": "I do not judge what you say. I look for what you mean." }
+  },
+  "77": {
+    "subtitle": { "cs": "Máčik Labdrön", "en": "Machik Labdrön" },
+    "role": { "cs": "Ta, která řeže strach", "en": "She who cuts fear" },
+    "location": { "cs": "Hřbitov na okraji údolí", "en": "The charnel ground at the valley's edge" },
+    "questLine": { "cs": "Čhö — darování beze strachu", "en": "Chöd — Giving Without Fear" },
+    "teaching": { "cs": "Strach se nedá porazit. Dá se přestat poslouchat.", "en": "Fear cannot be defeated. It can be stopped being obeyed." },
+    "ability": { "cs": "Setnutí strachu — odebere paniku v nejhorší chvíli.", "en": "Ego-Fear Cut — removes panic at the worst moment." },
+    "quote": { "cs": "To, čeho se bojíš, není venku. Je to tvoje představa o sobě.", "en": "What you fear is not outside. It is your idea of yourself." }
+  },
+  "78": {
+    "subtitle": { "cs": "Maňdžušrí", "en": "Mañjuśrī" },
+    "role": { "cs": "Bódhisattva rozlišování", "en": "Bodhisattva of discernment" },
+    "location": { "cs": "Pět vrcholů Wu-tchaj", "en": "The five peaks of Wutai" },
+    "questLine": { "cs": "Meč, který řeže chybný názor", "en": "The Sword That Cuts Wrong View" },
+    "teaching": { "cs": "Nejostřejší meč není proti lidem. Je proti tomu, co si o nich myslíš.", "en": "The sharpest sword is not against people. It is against what you think about them." },
+    "ability": { "cs": "Setnutí názoru — otevře rozhovor, který byl zamčený.", "en": "View-Cutter — opens a conversation that was locked." },
+    "quote": { "cs": "Nemysli si, že máš pravdu. Podívej se, co jsi přehlédl.", "en": "Do not assume you are right. Look at what you overlooked." }
+  },
+  "79": {
+    "subtitle": { "cs": "Samantabhadra", "en": "Samantabhadra" },
+    "role": { "cs": "Bódhisattva skutku a slibu", "en": "Bodhisattva of action and vow" },
+    "location": { "cs": "Poutní stezka E-mej", "en": "The Emei pilgrimage path" },
+    "questLine": { "cs": "Deset slibů", "en": "The Ten Vows" },
+    "teaching": { "cs": "Slib, který se nepromění v každodenní práci, je jen věta.", "en": "A vow that does not become daily work is only a sentence." },
+    "ability": { "cs": "Pole odhodlání — drobné buffy za každý splněný slib.", "en": "Aspiration Field — small boons for every vow kept." },
+    "quote": { "cs": "Nejdu na místo. Jdu tou cestou.", "en": "I am not going to a place. I am going by that path." }
+  },
+  "80": {
+    "subtitle": { "cs": "Buddha medicíny", "en": "Medicine Buddha" },
+    "role": { "cs": "Ten, kdo léčí pozdě, ale léčí", "en": "He who heals late, but heals" },
+    "location": { "cs": "Zahrada léčivých bylin", "en": "The garden of healing herbs" },
+    "questLine": { "cs": "Lapisová záře", "en": "The Lapis Glow" },
+    "teaching": { "cs": "Uzdravení není zázrak. Je to rozhodnutí nechat tělo pracovat.", "en": "Healing is not a miracle. It is a decision to let the body work." },
+    "ability": { "cs": "Lapisové vzedmutí — obnoví sílu celé skupině.", "en": "Lapis Healing Surge — restores strength to the whole group." },
+    "quote": { "cs": "Nepřináším zdraví. Přináším čas, ve kterém se dá uzdravit.", "en": "I do not bring health. I bring the time in which healing can happen." }
+  },
+  "81": {
+    "subtitle": { "cs": "Longčenpa", "en": "Longchenpa" },
+    "role": { "cs": "Mistr přirozeného stavu", "en": "Master of the natural state" },
+    "location": { "cs": "Jeskyně nad údolím", "en": "A cave above the valley" },
+    "questLine": { "cs": "Velká dokonalost", "en": "The Great Perfection" },
+    "teaching": { "cs": "Nic nemusíš přidat. Jen přestat zakrývat, co tam je.", "en": "You need add nothing. Only stop covering what is there." },
+    "ability": { "cs": "Návrat k přirozenému — vyčistí mysl od nánosů.", "en": "Natural State Reset — clears the mind of accumulated debris." },
+    "quote": { "cs": "Hledal jsem tolik let. Bylo to tam, kde jsem odpočíval.", "en": "I searched for so many years. It was where I rested." }
+  }
+}

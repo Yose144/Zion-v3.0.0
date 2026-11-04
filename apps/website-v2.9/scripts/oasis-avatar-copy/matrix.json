@@ -1,0 +1,38 @@
+{
+  "46": {
+    "subtitle": { "cs": "Vyvolený", "en": "The One" },
+    "role": { "cs": "Ten, kdo prohlédne kód reality", "en": "The one who sees through the code of reality" },
+    "location": { "cs": "Simulace, vrstva 3", "en": "The simulation, layer three" },
+    "questLine": { "cs": "Probuzení", "en": "The Awakening" },
+    "teaching": { "cs": "Svoboda nezačíná tím, že utečeš. Začíná tím, že přestaneš věřit pravidlům, která ti nedávají smysl.", "en": "Freedom does not begin with escape. It begins when you stop believing rules that make no sense to you." },
+    "ability": { "cs": "Bullet time — zpomalí svět, abys viděl, co se opravdu děje.", "en": "Bullet Time — slows the world so you can see what is really happening." },
+    "quote": { "cs": "Nejsem tu, abych zachránil svět. Jsem tu, abych ho přestal poslouchat.", "en": "I am not here to save the world. I am here to stop obeying it." }
+  },
+  "47": {
+    "subtitle": { "cs": "Ta, která věří", "en": "The Believer" },
+    "role": { "cs": "Učitelka důvěry a spojení", "en": "Teacher of trust and connection" },
+    "location": { "cs": "Nebukadnezar, můstek", "en": "The Nebuchadnezzar, the bridge" },
+    "questLine": { "cs": "Operátorský kanál", "en": "The Operator Link" },
+    "teaching": { "cs": "Víra není slepá. Je to rozhodnutí jít dál bez záruky.", "en": "Faith is not blind. It is deciding to go on without a guarantee." },
+    "ability": { "cs": "Spojení s operátorem — najde cestu tam, kde mapa končí.", "en": "Operator Link — finds the way where the map ends." },
+    "quote": { "cs": "Následovala jsem ho, protože mi nelhal o tom, jak to bude bolet.", "en": "I followed him because he never lied about how much it would hurt." }
+  },
+  "48": {
+    "subtitle": { "cs": "Průvodce", "en": "The Guide" },
+    "role": { "cs": "Mentor, který nevodí za ruku", "en": "A mentor who does not hold your hand" },
+    "location": { "cs": "Bílý králík, podzemí", "en": "The White Rabbit, underground" },
+    "questLine": { "cs": "Červená tableta", "en": "The Red Pill" },
+    "teaching": { "cs": "Nemůžu ti dát pravdu. Můžu ti dát jen možnost ji hledat.", "en": "I cannot give you the truth. I can only give you the chance to look for it." },
+    "ability": { "cs": "Vidění za iluzí — ukáže skutečný tvar věci.", "en": "Vision Behind the Illusion — shows the true shape of a thing." },
+    "quote": { "cs": "Nabízím ti jen to, co už máš. Rozhodnutí je tvoje.", "en": "I offer you only what you already have. The choice is yours." }
+  },
+  "50": {
+    "subtitle": { "cs": "Poslední město", "en": "The Last City" },
+    "role": { "cs": "Kolektivní avatar naděje", "en": "Collective avatar of hope" },
+    "location": { "cs": "ZION, hloubka 4 km", "en": "ZION, four kilometres down" },
+    "questLine": { "cs": "Město, které drží", "en": "The City That Holds" },
+    "teaching": { "cs": "Město není budovy. Je to dohoda, že se navzájem nezavřeme.", "en": "A city is not buildings. It is an agreement not to lock each other out." },
+    "ability": { "cs": "Kolektivní vědomí — spojí znalosti všech přítomných.", "en": "Collective Consciousness — joins the knowledge of everyone present." },
+    "quote": { "cs": "Jsme poslední město jen proto, že jsme se rozhodli jím být.", "en": "We are the last city only because we decided to be." }
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "192": {
+    "subtitle": { "cs": "Ré — sluneční bárka", "en": "Ré — the solar barque" },
+    "role": { "cs": "Ten, kdo drží denní rytmus", "en": "He who keeps the daily rhythm" },
+    "location": { "cs": "Obzor, ráno a večer", "en": "The horizon, morning and evening" },
+    "questLine": { "cs": "Cesta přes noc", "en": "The Passage Through Night" },
+    "teaching": { "cs": "Každý den se musí začít znovu, i když ten včerejší byl dobrý.", "en": "Every day must begin again, even if yesterday was good." },
+    "ability": { "cs": "Denní světlo — zpřehlední čas a tempo dne.", "en": "Daylight — clarifies time and the pace of the day." },
+    "quote": { "cs": "Nezastavuji se. Kdo se zastaví, ten zůstane v noci.", "en": "I do not stop. Whoever stops stays in the night." }
+  },
+  "193": {
+    "subtitle": { "cs": "Hor — dvojí koruna", "en": "Horus — the double crown" },
+    "role": { "cs": "Ten, kdo spojuje dvě země", "en": "He who joins two lands" },
+    "location": { "cs": "Hranice Horního a Dolního Egypta", "en": "The border of Upper and Lower Egypt" },
+    "questLine": { "cs": "Dvě koruny, jedna hlava", "en": "Two Crowns, One Head" },
+    "teaching": { "cs": "Sjednotit neznamená vymazat. Znamená to nechat obojí mluvit.", "en": "To unite is not to erase. It is to let both speak." },
+    "ability": { "cs": "Dvojí koruna — spojí dvě rozdílné správy v jednu.", "en": "Double Crown — joins two different administrations into one." },
+    "quote": { "cs": "Nejsem král jedné země. Jsem ten, kdo je drží u sebe.", "en": "I am not king of one land. I am the one who holds them together." }
+  },
+  "194": {
+    "subtitle": { "cs": "Thovt — písař", "en": "Thoth — the scribe" },
+    "role": { "cs": "Ten, kdo zapisuje bez přikrášlení", "en": "He who records without embellishment" },
+    "location": { "cs": "Dům života", "en": "The House of Life" },
+    "questLine": { "cs": "Zápis, který vydrží", "en": "The Record That Lasts" },
+    "teaching": { "cs": "Co není zapsáno, se ztratí. Co je zapsáno špatně, škodí.", "en": "What is not written is lost. What is written wrongly does harm." },
+    "ability": { "cs": "Přesný záznam — doloží, co se stalo a kdy.", "en": "Accurate Record — documents what happened and when." },
+    "quote": { "cs": "Nepíšu, co si přeješ. Píšu, co se stalo.", "en": "I do not write what you wish. I write what happened." }
+  },
+  "195": {
+    "subtitle": { "cs": "Hathor — radost", "en": "Hathor — joy" },
+    "role": { "cs": "Ta, která drží právo na radost", "en": "She who keeps the right to joy" },
+    "location": { "cs": "Hudební zahrada", "en": "The garden of music" },
+    "questLine": { "cs": "Svátek, který nikoho nevyloučí", "en": "A Feast That Excludes No One" },
+    "teaching": { "cs": "Radost, která se slaví na úkor druhých, není radost.", "en": "Joy celebrated at the expense of others is not joy." },
+    "ability": { "cs": "Slavnost — obnoví chuť celé skupině.", "en": "Jubilee — restores the appetite of the whole group." },
+    "quote": { "cs": "Nepřináším zábavu. Přináším dovolení být šťastný.", "en": "I do not bring entertainment. I bring permission to be happy." }
+  },
+  "196": {
+    "subtitle": { "cs": "Sachmet — oheň účtu", "en": "Sekhmet — the fire of account" },
+    "role": { "cs": "Ta, která trestá a pak vysvětlí", "en": "She who punishes and then explains" },
+    "location": { "cs": "Síň účtování", "en": "The hall of reckoning" },
+    "questLine": { "cs": "Rána a chlad", "en": "The Blow and the Cooling" },
+    "teaching": { "cs": "Trest bez vysvětlení vychová jen strach.", "en": "Punishment without explanation raises only fear." },
+    "ability": { "cs": "Účet — odečte, co bylo vzato, a nechá prostor to napravit.", "en": "Reckoning — deducts what was taken and leaves room to repair." },
+    "quote": { "cs": "Spálím a pak se zeptám, jestli chceš vědět proč.", "en": "I burn, and then I ask whether you want to know why." }
+  },
+  "197": {
+    "subtitle": { "cs": "Ptah — stavitel", "en": "Ptah — the builder" },
+    "role": { "cs": "Ten, kdo tvoří slovy a vzory", "en": "He who creates with words and templates" },
+    "location": { "cs": "Dílna u Memfidy", "en": "The workshop at Memphis" },
+    "questLine": { "cs": "První kámen", "en": "The First Stone" },
+    "teaching": { "cs": "Co se nemá podle čeho opravit, to se jednou postaví znovu a jinak, než bylo myšleno.", "en": "What has no pattern to be repaired by will one day be built again differently than intended." },
+    "ability": { "cs": "Vzor — vytvoří stavební pravidlo, které jde opakovat.", "en": "Template — creates a building rule that can be repeated." },
+    "quote": { "cs": "Nestavím to, co je vidět. Stavím to, podle čeho se to staví.", "en": "I do not build what is seen. I build what it is built by." }
+  },
+  "198": {
+    "subtitle": { "cs": "Anup — prahu strážce", "en": "Anubis — keeper of the threshold" },
+    "role": { "cs": "Ten, kdo váží, co s sebou nést", "en": "He who weighs what to carry along" },
+    "location": { "cs": "Práh mezi dvěma cestami", "en": "The threshold between two roads" },
+    "questLine": { "cs": "Zavazadlo na cestu", "en": "Luggage for the Road" },
+    "teaching": { "cs": "Na novou cestu se nebere všechno. Ne všechno, co máš, je tvoje.", "en": "You do not take everything on a new road. Not everything you have is yours." },
+    "ability": { "cs": "Záloha před odchodem — zajistí, že se nic neztratí.", "en": "Backup Before Departure — ensures nothing is lost." },
+    "quote": { "cs": "Neptám se, co jsi udělal. Ptám se, co poneseš dál.", "en": "I do not ask what you did. I ask what you will carry on." }
+  },
+  "199": {
+    "subtitle": { "cs": "Amon — skryté pole", "en": "Amun — the hidden field" },
+    "role": { "cs": "Ten, kdo chrání rozhodnutí v utajení", "en": "He who protects decisions made in confidence" },
+    "location": { "cs": "Skrytá svatyně", "en": "The hidden sanctuary" },
+    "questLine": { "cs": "Hlas, který se počítá potichu", "en": "The Vote Counted Quietly" },
+    "teaching": { "cs": "Kdo se bojí mluvit, musí mít možnost mluvit tak, aby ho neslyšeli ti, kterých se bojí.", "en": "Whoever is afraid to speak must be able to speak without being heard by those they fear." },
+    "ability": { "cs": "Skrytý hlas — umožní rozhodnout bez nátlaku.", "en": "Hidden Voice — allows a decision without pressure." },
+    "quote": { "cs": "Nejsem neviditelný. Jen nejsem na prodej.", "en": "I am not invisible. I am simply not for sale." }
+  },
+  "200": {
+    "subtitle": { "cs": "Geb — základ", "en": "Geb — the foundation" },
+    "role": { "cs": "Ten, kdo připomíná, že vše stojí na hmotě", "en": "He who reminds that everything rests on matter" },
+    "location": { "cs": "Základová deska", "en": "The foundation slab" },
+    "questLine": { "cs": "Co je pod tím", "en": "What Is Underneath" },
+    "teaching": { "cs": "Každý systém stojí na něčem, co se musí obnovovat ručně.", "en": "Every system rests on something that must be renewed by hand." },
+    "ability": { "cs": "Základ — odhalí, co fyzicky drží provoz.", "en": "Foundation — reveals what physically holds the service up." },
+    "quote": { "cs": "Nikdo se nedívá dolů. Proto se to tam rozpadá.", "en": "No one looks down. That is why it falls apart there." }
+  },
+  "201": {
+    "subtitle": { "cs": "Nut — hvězdná klenba", "en": "Nut — the stellar vault" },
+    "role": { "cs": "Ta, která drží prostor nad vším", "en": "She who holds the space above everything" },
+    "location": { "cs": "Noční obloha", "en": "The night sky" },
+    "questLine": { "cs": "Hvězdy jako záznam", "en": "Stars as a Record" },
+    "teaching": { "cs": "Co se rozšíří, musí se udržovat v noci, když to nikdo nevidí.", "en": "Whatever is expanded must be maintained at night, when no one is watching." },
+    "ability": { "cs": "Noční údržba — udrží systém, i když všichni spí.", "en": "Night Maintenance — keeps the system while everyone sleeps." },
+    "quote": { "cs": "Přes den na mě zapomínáš. V noci tě držím.", "en": "By day you forget me. At night I hold you." }
+  }
+}

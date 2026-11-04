@@ -34,6 +34,51 @@ const PROFILE_OUT_DIR = join(APP_ROOT, 'public/data/oasis/profiles');
 const ESSENCE_I18N = join(APP_ROOT, 'scripts/oasis-essence-i18n.json');
 const ART_MANIFEST = join(APP_ROOT, 'scripts/oasis-art-manifest.json');
 const ART_PUBLIC_DIR = join(APP_ROOT, 'public/oasis-assets');
+/** Veřejné cs/en texty avatarů (jeden JSON per kruh) — ručně psané, ne generované. */
+const COPY_DIR = join(APP_ROOT, 'scripts/oasis-avatar-copy');
+
+/**
+ * Žebřík úrovní vědomí 1–9 (CL). Čtyři jména jsou z kánonu (Heart Opening,
+ * Quantum, Intuitive Wisdom, Healing Compassion, Transcendent, ON THE STAR),
+ * první tři doplněny tak, aby řada byla souvislá a veřejně srozumitelná.
+ */
+const CL_LADDER = {
+  1: { cs: 'Tělo a dech', en: 'Body & Breath' },
+  2: { cs: 'Emoce', en: 'Emotion' },
+  3: { cs: 'Mysl', en: 'Mind' },
+  4: { cs: 'Otevřené srdce', en: 'Heart Opening' },
+  5: { cs: 'Kvantový skok', en: 'Quantum' },
+  6: { cs: 'Intuitivní moudrost', en: 'Intuitive Wisdom' },
+  7: { cs: 'Léčivý soucit', en: 'Healing Compassion' },
+  8: { cs: 'Transcendence', en: 'Transcendent' },
+  9: { cs: 'Na hvězdě', en: 'On the Star' },
+};
+
+/**
+ * Legacy pole z `avatars.json` bývají polepená zbytky generátoru
+ * (`· **Quest:** … · **CL:** 4–8 · **NFT:** …`) a uříznutá uprostřed slova.
+ * Overlay z `oasis-avatar-copy/` má vždy přednost; tenhle čistič je jen
+ * záchranná síť, aby se do veřejné stránky nedostal markdown.
+ */
+function cleanLegacy(value) {
+  if (typeof value !== 'string') return '';
+  let s = value
+    .replace(/\*\*/g, '')
+    .replace(/`/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  // odřízni meta ocásky typu „lore · Quest: … · CL: 4–8 · NFT: …"
+  s = s.split(/\s+·\s+/).filter((part) => !/\b(Quest|CL|NFT|Ray|Ability)\s*:/i.test(part))[0] ?? s;
+  s = s.replace(/[\s·–-]+$/, '').replace(/^[\s·–-]+/, '');
+  // uříznuté slovo na konci („story summ", „consult, never ") → pryč
+  if (/\b[a-z]{1,}$/.test(s) && /[a-z]{2,}\s+[a-z]{1,4}$/.test(s) && s.length > 0) {
+    // ponech, jen pokud jde o běžné krátké slovo
+    if (!/\b(the|and|for|with|from|into|over|not|all|own|new|one|two|use|can|may|our|its|his|her|are|was)\b$/i.test(s)) {
+      s = s.replace(/\s+\S+$/, '');
+    }
+  }
+  return s.trim().replace(/[;,]$/, '');
+}
 
 /** Avataři, kteří v md leží v cizí sekci, ale tvoří vlastní kruh. */
 const CIRCLE_OVERRIDES = { 202: 'maya' };
@@ -179,6 +224,26 @@ const essenceI18n = existsSync(ESSENCE_I18N)
   ? JSON.parse(readFileSync(ESSENCE_I18N, 'utf8'))
   : {};
 
+// ── 3a) veřejné cs/en texty avatarů (ručně psané) ─────────────────────
+// Jeden JSON per kruh v scripts/oasis-avatar-copy/; klíč = id avatara.
+// Co v overlayi chybí, spadne na očištěný legacy řetězec (jen EN) — do
+// veřejné stránky se tak nikdy nedostane markdown ani prázdný blok.
+const copyById = new Map();
+if (existsSync(COPY_DIR)) {
+  for (const file of readdirSync(COPY_DIR).filter((n) => n.endsWith('.json')).sort()) {
+    const part = JSON.parse(readFileSync(join(COPY_DIR, file), 'utf8'));
+    for (const [rawId, entry] of Object.entries(part)) {
+      const id = Number(rawId);
+      if (!Number.isInteger(id)) {
+        console.warn(`[gen-oasis-avatars] VAROVÁNÍ: ${file} má nečíselný klíč '${rawId}'`);
+        continue;
+      }
+      copyById.set(id, { ...(copyById.get(id) ?? {}), ...entry });
+    }
+  }
+  console.log(`[gen-oasis-avatars] copy overlay: ${copyById.size} avatarů`);
+}
+
 // ── 3b) art manifest (OASIS_Avatar_Collection) ────────────────────────
 // Poziční mapa manifest[i] ↔ avatars[i]; jméno se ověřuje normalizovaně.
 const normName = (s) =>
@@ -223,25 +288,41 @@ const rows = avatars.map((a, i) => {
     writeFileSync(join(PROFILE_OUT_DIR, `${a.id}.md`), sanitizeProfile(raw) + '\n');
     profilesWritten++;
   }
+  const c = copyById.get(a.id) ?? {};
+  /** cs/en hodnota: overlay → (fallback) očištěný legacy text. */
+  const loc = (field, fallback) => {
+    const o = c[field];
+    if (o && (o.cs || o.en)) return { cs: o.cs ?? '', en: o.en ?? '' };
+    return { cs: '', en: cleanLegacy(fallback) };
+  };
+  const cl = a.consciousness_level_required ?? 1;
+  const clName = c.clName
+    ? { cs: c.clName.cs ?? '', en: c.clName.en ?? '' }
+    : CL_LADDER[cl] ?? { cs: '', en: cleanLegacy(a.consciousness_level_name) };
+
   return {
     id: a.id,
     name: a.name,
-    subtitle: a.subtitle ?? '',
+    subtitle: loc('subtitle', a.subtitle),
     ray: a.ray ?? 'Blue',
     rarity: a.rarity ?? 'Rare',
-    cl: a.consciousness_level_required ?? 1,
-    clName: a.consciousness_level_name ?? '',
-    role: a.role ?? '',
-    location: a.location ?? '',
-    questLine: (a.quest_line ?? '').replace(/^"|"$/g, ''),
-    teaching: (a.teaching ?? '').replace(/^"|"$/g, ''),
-    ability: (a.ability ?? '').replace(/\*\*/g, ''),
-    key: a.key ?? '',
+    cl,
+    clName,
+    role: loc('role', a.role),
+    location: loc('location', a.location),
+    questLine: loc('questLine', (a.quest_line ?? '').replace(/^"|"$/g, '')),
+    teaching: loc('teaching', (a.teaching ?? '').replace(/^"|"$/g, '')),
+    ability: loc('ability', a.ability),
+    key: cleanLegacy(a.key),
     quests: Array.isArray(a.quests)
-      ? a.quests.map((q) => ({ title: q.title ?? '', description: q.description ?? '' }))
+      ? a.quests
+          .map((q) => ({ title: mdInline(q.title ?? ''), description: mdInline(q.description ?? '') }))
+          .filter((q) => q.title)
       : [],
-    essence: { cs: essenceI18n[a.id]?.cs ?? essence, en: essenceI18n[a.id]?.en ?? essence },
-    quote,
+    essence: c.essence
+      ? { cs: c.essence.cs ?? '', en: c.essence.en ?? '' }
+      : { cs: essenceI18n[a.id]?.cs ?? essence, en: essenceI18n[a.id]?.en ?? essence },
+    quote: c.quote ? { cs: c.quote.cs ?? '', en: c.quote.en ?? '' } : { cs: '', en: cleanLegacy(quote) },
     hasProfile: Boolean(pf),
     art: artFor(i, a.name),
     circle,
@@ -265,29 +346,36 @@ export type OasisAvatarCircle = ${circleKeys};
 export interface OasisAvatar {
   id: number;
   name: string;
-  subtitle: string;
+  /** Veřejný podtitul (např. „Dharma King"). */
+  subtitle: LocalizedText;
   ray: OasisAvatarRay;
   rarity: OasisAvatarRarity;
   /** Požadovaná úroveň vědomí 1–9. */
   cl: number;
-  clName: string;
-  role: string;
-  location: string;
-  questLine: string;
-  teaching: string;
-  ability: string;
+  clName: LocalizedText;
+  role: LocalizedText;
+  location: LocalizedText;
+  questLine: LocalizedText;
+  teaching: LocalizedText;
+  ability: LocalizedText;
   key: string;
   /** Quest linie — rozepsané questy (prázdné = linie zatím bez questů). */
   quests: { title: string; description: string }[];
   /** Krátký popis ze SACRED_TRINITY profilu (ESENCE / první odstavec), cs+en ze scripts/oasis-essence-i18n.json. */
   essence: { cs: string; en: string };
-  /** Epigraf z profilu (první blockquote). */
-  quote: string;
+  /** Epigraf — cs/en z scripts/oasis-avatar-copy/, fallback = blockquote z profilu. */
+  quote: LocalizedText;
   /** Existuje profil /data/oasis/profiles/<id>.md pro modal. */
   hasProfile: boolean;
   /** OASIS Avatar Collection: card = concept webp (karta), full = finální webp / vektor svg (modal). */
   art: { card: string; full: string; final: boolean };
   circle: OasisAvatarCircle;
+}
+
+/** Dvojjazyčný text; prázdné pole 'cs' znamená „použij 'en'". */
+export interface LocalizedText {
+  cs: string;
+  en: string;
 }
 
 export interface OasisAvatarCircleMeta {

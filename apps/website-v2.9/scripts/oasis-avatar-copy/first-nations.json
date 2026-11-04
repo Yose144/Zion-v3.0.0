@@ -1,0 +1,92 @@
+{
+  "52": {
+    "subtitle": { "cs": "Heȟáka Sápa — Černý los", "en": "Heȟáka Sápa — Black Elk" },
+    "role": { "cs": "Strážce posvátného kruhu a vizí", "en": "Keeper of the sacred circle and of visions" },
+    "location": { "cs": "Pahorky Černých hor", "en": "The Black Hills" },
+    "questLine": { "cs": "Vize, která patří všem", "en": "The Vision That Belongs to All" },
+    "teaching": { "cs": "Vize není tvoje. Dostal jsi ji proto, abys ji předal.", "en": "A vision is not yours. You were given it so you could pass it on." },
+    "ability": { "cs": "Vizní pouť — přinese odpověď, kterou jsi sám neuměl vyslovit.", "en": "Vision Quest — brings an answer you could not put into words." },
+    "quote": { "cs": "Kruh se nezavře tím, že stojíš uprostřed.", "en": "The circle does not close because you stand in the middle." }
+  },
+  "53": {
+    "subtitle": { "cs": "Ptesáŋ Wíŋ — Bílá bizonice", "en": "Ptesáŋ Wíŋ — White Buffalo Calf Woman" },
+    "role": { "cs": "Ta, která přinesla posvátný obřad", "en": "She who brought the sacred rite" },
+    "location": { "cs": "Prérie u Černých hor", "en": "The prairie by the Black Hills" },
+    "questLine": { "cs": "Dýmka a slib", "en": "The Pipe and the Promise" },
+    "teaching": { "cs": "Dar, který si necháš, se změní v dluh.", "en": "A gift you keep for yourself turns into a debt." },
+    "ability": { "cs": "Požehnání dýmky — uklidní spor dřív, než se rozhoří.", "en": "Blessing of the Pipe — calms a conflict before it catches." },
+    "quote": { "cs": "Přicházím jednou za sedm generací. Vy se musíte domluvit mezitím.", "en": "I come once in seven generations. You must agree in between." }
+  },
+  "54": {
+    "subtitle": { "cs": "Kókyangwúti — Babička pavouk", "en": "Kókyangwúti — Spider Grandmother" },
+    "role": { "cs": "Tkadlena sítí a spojenectví", "en": "Weaver of webs and alliances" },
+    "location": { "cs": "Prastará tkalcovská jeskyně", "en": "The ancient weaving cave" },
+    "questLine": { "cs": "Nit, která se nepřetrhne", "en": "The Thread That Does Not Break" },
+    "teaching": { "cs": "Síť drží proto, že se každé vlákno může pohnout.", "en": "A web holds because every strand is allowed to move." },
+    "ability": { "cs": "Tkání spojenectví — propojí dvě vzdálené cesty v jednu.", "en": "Weaving Alliances — joins two distant paths into one." },
+    "quote": { "cs": "Netkám proto, abych chytala. Tkám proto, aby se dalo projít.", "en": "I do not weave to catch. I weave so that one can pass." }
+  },
+  "55": {
+    "subtitle": { "cs": "Hunahpú a Xbalanqué", "en": "Hunahpú and Xbalanqué" },
+    "role": { "cs": "Dvojčata, která projdou podsvětím", "en": "Twins who walk the underworld" },
+    "location": { "cs": "Xibalba, hřiště bohů", "en": "Xibalba, the ballcourt of the gods" },
+    "questLine": { "cs": "Hra, kterou nelze vyhrát silou", "en": "The Game You Cannot Win by Force" },
+    "teaching": { "cs": "Podsvětí se neporáží mečem, ale tím, že přežiješ jeho pravidla.", "en": "The underworld is not beaten with a sword, but by outliving its rules." },
+    "ability": { "cs": "Dvojí trik — odhalí slabinu, kterou strážce skrývá.", "en": "Twin Trick — exposes the weakness the guardian hides." },
+    "quote": { "cs": "Oni hráli o naše hlavy. My jsme hráli o jejich pozornost.", "en": "They played for our heads. We played for their attention." }
+  },
+  "56": {
+    "subtitle": { "cs": "Don Mariano", "en": "Don Mariano" },
+    "role": { "cs": "Mluvčí hor a učitel vzájemnosti", "en": "Speaker for the mountains, teacher of reciprocity" },
+    "location": { "cs": "Andy, údolí Q'ero", "en": "The Andes, the Q'ero valley" },
+    "questLine": { "cs": "Ayni — dávat dřív, než si vezmeš", "en": "Ayni — Give Before You Take" },
+    "teaching": { "cs": "Hora ti dá vodu jen tehdy, když se k ní chováš jako k příbuzné.", "en": "The mountain gives water only when you treat it as kin." },
+    "ability": { "cs": "Volání Apu — přivolá pomoc země tam, kde chybí voda.", "en": "Call of the Apu — asks the land for help where water is missing." },
+    "quote": { "cs": "Neprosíme. Děkujeme předem.", "en": "We do not beg. We give thanks in advance." }
+  },
+  "57": {
+    "subtitle": { "cs": "Doña Rosalía Ixmukané", "en": "Doña Rosalía Ixmukané" },
+    "role": { "cs": "Strážkyně ústně předávané paměti", "en": "Keeper of oral memory" },
+    "location": { "cs": "Vysočina Guatemaly", "en": "The Guatemalan highlands" },
+    "questLine": { "cs": "Kniha, která se učí zpaměti", "en": "The Book Learned by Heart" },
+    "teaching": { "cs": "Co se naučíš zpaměti, to ti nikdo nesebere.", "en": "What you learn by heart, no one can take from you." },
+    "ability": { "cs": "Vyvolání předků — na chvíli promluví ten, kdo už mlčel.", "en": "Summoning the Ancestors — briefly, one who had fallen silent speaks." },
+    "quote": { "cs": "Papír hoří. Vyprávění jde dál.", "en": "Paper burns. The telling goes on." }
+  },
+  "58": {
+    "subtitle": { "cs": "Bílé Pero", "en": "White Feather" },
+    "role": { "cs": "Ten, kdo rozliší pravý a falešný příslib", "en": "The one who tells a true promise from a false one" },
+    "location": { "cs": "Kamenná tabule, Hopi", "en": "The stone tablet, Hopi" },
+    "questLine": { "cs": "Pravý a falešný Pahana", "en": "True and False Pahana" },
+    "teaching": { "cs": "Falešný příslib vždy spěchá. Pravý má čas.", "en": "A false promise is always in a hurry. A true one has time." },
+    "ability": { "cs": "Zrak Pahana — pozná, kdo přišel pomoct a kdo přišel vzít.", "en": "Pahana Sight — you see who came to help and who came to take." },
+    "quote": { "cs": "Neptej se, co slibuje. Podívej se, co už dal.", "en": "Do not ask what he promises. Look at what he has already given." }
+  },
+  "59": {
+    "subtitle": { "cs": "Ohnivá Oka", "en": "Fire Eyes" },
+    "role": { "cs": "Prorok duhového válečníka", "en": "Prophet of the rainbow warrior" },
+    "location": { "cs": "Poušť, kde se sbíhají cesty", "en": "The desert where the roads meet" },
+    "questLine": { "cs": "Duhový válečník", "en": "Rainbow Warrior" },
+    "teaching": { "cs": "Síla, která ničí, není statečnost. Statečnost je postavit se a neuhnout.", "en": "Power that destroys is not courage. Courage is to stand and not flinch." },
+    "ability": { "cs": "Žár duhy — dodá odvahu celé skupině na jednu rozhodující chvíli.", "en": "Rainbow Blaze — gives the whole group courage for one decisive moment." },
+    "quote": { "cs": "Přijdou děti, kterým nikdo nevěřil. Ty to spraví.", "en": "Children no one believed in will come. They will mend it." }
+  },
+  "60": {
+    "subtitle": { "cs": "Davi Kopenawa", "en": "Davi Kopenawa" },
+    "role": { "cs": "Mluvčí duchů lesa", "en": "Speaker for the spirits of the forest" },
+    "location": { "cs": "Yanomami, horní tok Amazonky", "en": "Yanomami, upper Amazon" },
+    "questLine": { "cs": "Sen, který varuje", "en": "The Dream That Warns" },
+    "teaching": { "cs": "Les neumírá potichu. Nejdřív se mu zdají špatné sny.", "en": "The forest does not die quietly. First it dreams badly." },
+    "ability": { "cs": "Obrácený sen — uvidíš důsledek dřív, než nastane.", "en": "Dream Reversal — you see the consequence before it happens." },
+    "quote": { "cs": "Nejsme ochránci přírody. Jsme její příbuzní.", "en": "We are not guardians of nature. We are its relatives." }
+  },
+  "61": {
+    "subtitle": { "cs": "Heyókȟa — Posvátný šašek", "en": "Heyókȟa — Sacred Clown" },
+    "role": { "cs": "Ten, kdo učí smíchem proti egu", "en": "The one who teaches through laughter against the ego" },
+    "location": { "cs": "Tábor uprostřed pláně", "en": "A camp in the middle of the plain" },
+    "questLine": { "cs": "Všechno obráceně", "en": "Everything Backwards" },
+    "teaching": { "cs": "Kdo se neumí smát sám sobě, bude se bát celý život.", "en": "Whoever cannot laugh at themselves will be afraid all their life." },
+    "ability": { "cs": "Obrácená logika — na chvíli vypne pravidla, která nikomu neslouží.", "en": "Reverse Logic — briefly switches off rules that serve no one." },
+    "quote": { "cs": "Moudrý mluví vážně. Šašek mluví pravdu.", "en": "The wise speak gravely. The clown speaks the truth." }
+  }
+}

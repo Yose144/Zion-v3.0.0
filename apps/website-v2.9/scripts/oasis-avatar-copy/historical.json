@@ -1,0 +1,56 @@
+{
+  "23": {
+    "subtitle": { "cs": "Král, který se vrátí", "en": "The Once and Future King" },
+    "role": { "cs": "Sjednotitel a vůdce", "en": "Unifier and leader" },
+    "location": { "cs": "Camelot", "en": "Camelot" },
+    "questLine": { "cs": "Meč v kameni", "en": "The Sword in the Stone" },
+    "teaching": { "cs": "Království se nedrží silou, ale tím, že se lidé chtějí vrátit.", "en": "A kingdom is not held by force but by people wanting to return." },
+    "ability": { "cs": "Excalibur — prořízne lež a ochrání toho, kdo mluví pravdu.", "en": "Excalibur — cuts through lies and shelters whoever speaks the truth." },
+    "quote": { "cs": "Nejsem král, protože mám korunu. Mám korunu, protože musím.", "en": "I am not king because I wear a crown. I wear it because I must." }
+  },
+  "35": {
+    "subtitle": { "cs": "Karel IV.", "en": "Charles IV" },
+    "role": { "cs": "Mistr státnictví", "en": "Master of statecraft" },
+    "location": { "cs": "Praha, Karlštejn", "en": "Prague, Karlštejn" },
+    "questLine": { "cs": "Koruna a zákon", "en": "Crown and Law" },
+    "teaching": { "cs": "Země se buduje proto, aby v ní bylo možné studovat, ne jen vládnout.", "en": "A country is built so that one can study in it, not only rule over it." },
+    "ability": { "cs": "Diplomatické mistrovství — vyřeší spor dřív, než vznikne válka.", "en": "Diplomatic Mastery — settles a dispute before it becomes a war." },
+    "quote": { "cs": "Nechal jsem postavit univerzitu. To je pevnost, kterou nikdo nedobude.", "en": "I had a university built. That is a fortress no one takes." }
+  },
+  "36": {
+    "subtitle": { "cs": "Einstein", "en": "Albert Einstein" },
+    "role": { "cs": "Most mezi vědou a duchen", "en": "Bridge between science and spirit" },
+    "location": { "cs": "Bern, patentový úřad", "en": "Bern, the patent office" },
+    "questLine": { "cs": "Myšlenkový experiment", "en": "The Thought Experiment" },
+    "teaching": { "cs": "Představivost není útěk od reality; je to způsob, jak ji lépe vidět.", "en": "Imagination is not an escape from reality; it is a way to see it better." },
+    "ability": { "cs": "E = mc² — přemění energii v hmotu a naopak.", "en": "E = mc² — converts energy into matter and back." },
+    "quote": { "cs": "Problém se nedá vyřešit na stejné úrovni myšlení, na které vznikl.", "en": "A problem cannot be solved at the same level of thinking that created it." }
+  },
+  "37": {
+    "subtitle": { "cs": "Gándhí", "en": "Mahatma Gandhi" },
+    "role": { "cs": "Učitel nenásilí", "en": "Teacher of non-violence" },
+    "location": { "cs": "Sůl na břehu moře, Dándí", "en": "The salt march shore at Dandi" },
+    "questLine": { "cs": "Satyágraha", "en": "Satyagraha" },
+    "teaching": { "cs": "Násilí je rychlé a nepřesné. Pravda je pomalá a nezastavitelná.", "en": "Violence is fast and imprecise. Truth is slow and unstoppable." },
+    "ability": { "cs": "Satyágraha — odpor, který protivníka odzbrojí bez rány.", "en": "Satyagraha — resistance that disarms without a blow." },
+    "quote": { "cs": "Nejdřív tě ignorují, pak se ti smějí, pak tě napadnou. Pak vyhraješ.", "en": "First they ignore you, then they laugh at you, then they attack you. Then you win." }
+  },
+  "39": {
+    "subtitle": { "cs": "Súbhadra", "en": "Subhadra" },
+    "role": { "cs": "Strážkyně rodinných pout", "en": "Keeper of family bonds" },
+    "location": { "cs": "Dváraka", "en": "Dvaraka" },
+    "questLine": { "cs": "Nit, která drží", "en": "The Thread That Holds" },
+    "teaching": { "cs": "Rodina není krev. Je to ten, kdo ti ve sporu drží místo.", "en": "Family is not blood. It is whoever keeps your seat in the argument." },
+    "ability": { "cs": "Rákhi — vytvoří spojenectví, které nelze jen tak vypovědět.", "en": "Rakhi — forms an alliance that cannot simply be called off." },
+    "quote": { "cs": "Nit se přetrhne jen tehdy, když ji pustí oba.", "en": "The thread breaks only when both let go." }
+  },
+  "41": {
+    "subtitle": { "cs": "Vasudéva", "en": "Vasudeva" },
+    "role": { "cs": "Ochránce, který nese", "en": "The protector who carries" },
+    "location": { "cs": "Přechod řeky Jamuny", "en": "The crossing of the Yamuna" },
+    "questLine": { "cs": "Otcova přísaha", "en": "The Father's Oath" },
+    "teaching": { "cs": "Někdy je hrdinství jen to, že dítě doneseš přes řeku v noci.", "en": "Sometimes heroism is only carrying a child across a river at night." },
+    "ability": { "cs": "Ochranný štít — vezme ránu, která patřila jinému.", "en": "Guardian Shield — takes the blow meant for another." },
+    "quote": { "cs": "Nebyl jsem u toho, když se to stalo. Byl jsem u toho, když to bylo potřeba.", "en": "I was not there when it happened. I was there when it was needed." }
+  }
+}

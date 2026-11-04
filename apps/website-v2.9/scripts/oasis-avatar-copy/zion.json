@@ -1,0 +1,47 @@
+{
+  "40": {
+    "subtitle": { "cs": "Královská léčitelka", "en": "Royal Healer" },
+    "role": { "cs": "Vůdkyně s otevřenou dlaní", "en": "A leader with an open palm" },
+    "location": { "cs": "Dvorní infirmarium, ZION", "en": "The court infirmary, ZION" },
+    "questLine": { "cs": "Dekret soucitu", "en": "The Decree of Compassion" },
+    "teaching": { "cs": "Vláda, která začíná u lůžka nemocného, vydrží déle než ta, která začíná u trůnu.", "en": "A rule that begins at a sickbed lasts longer than one that begins at a throne." },
+    "ability": { "cs": "Královský dekret — přesvědčí i toho, kdo nechce poslouchat.", "en": "Royal Decree — persuades even the one who does not want to listen." },
+    "quote": { "cs": "Koruna je jen nástroj. Rozhoduje to, komu ji podáš.", "en": "A crown is only a tool. What matters is whom you hand it to." }
+  },
+  "42": {
+    "subtitle": { "cs": "Dattátréja", "en": "Dattatreya" },
+    "role": { "cs": "Učitel trojí síly", "en": "Teacher of the threefold power" },
+    "location": { "cs": "Ústraní v pohoří Sahjádri", "en": "A retreat in the Sahyadri hills" },
+    "questLine": { "cs": "Trojí zrcadlo", "en": "The Threefold Mirror" },
+    "teaching": { "cs": "Tvořit, udržovat a nechat odejít nejsou tři dovednosti. Je to jeden pohyb.", "en": "To create, to sustain and to let go are not three skills. They are one motion." },
+    "ability": { "cs": "Trimúrti — tvoří, drží a rozpouští podle potřeby chvíle.", "en": "Trimurti — creates, sustains and dissolves as the moment asks." },
+    "quote": { "cs": "Učil jsem se od země, od ohně i od psa. Nikdo z nich mi nedal radu.", "en": "I learned from earth, from fire and from a dog. None of them gave me advice." }
+  },
+  "43": {
+    "subtitle": { "cs": "Malý princ", "en": "The Little Prince" },
+    "role": { "cs": "Průvodce vnitřním dítětem", "en": "Guide to the inner child" },
+    "location": { "cs": "Planetka B-612", "en": "Asteroid B-612" },
+    "questLine": { "cs": "Co je důležité, je neviditelné", "en": "What Is Essential Is Invisible" },
+    "teaching": { "cs": "Dospělí mají čísla. Děti mají otázky. Svět drží otázky.", "en": "Adults have numbers. Children have questions. The world is held by questions." },
+    "ability": { "cs": "Dětský úžas — uvidíš krásu, kterou dospělí přešli.", "en": "Childlike Wonder — you see beauty adults walked past." },
+    "quote": { "cs": "Správně vidíme jen srdcem.", "en": "One sees clearly only with the heart." }
+  },
+  "44": {
+    "subtitle": { "cs": "Zlaté vejce", "en": "The Golden Egg" },
+    "role": { "cs": "Sama skutečnost stvoření", "en": "Creation itself" },
+    "location": { "cs": "Před počátkem", "en": "Before the beginning" },
+    "questLine": { "cs": "Vejce a vesmír", "en": "The Egg and the Universe" },
+    "teaching": { "cs": "Všechno, co existuje, bylo nejdřív jen možností, kterou někdo nepustil.", "en": "Everything that exists was first only a possibility someone refused to drop." },
+    "ability": { "cs": "Kosmické znovuzrození — vrátí svět do stavu, kdy se dá začít znovu.", "en": "Cosmic Rebirth — returns the world to a state where it can begin again." },
+    "quote": { "cs": "Nebyl jsem stvořen. Byl jsem to, z čeho se stvořilo.", "en": "I was not created. I was that out of which creation came." }
+  },
+  "45": {
+    "subtitle": { "cs": "Kalkí", "en": "Kalki" },
+    "role": { "cs": "Budoucí válečník konce věku", "en": "The future warrior of the age's end" },
+    "location": { "cs": "Šambala, brána věku", "en": "Shambhala, the gate of the age" },
+    "questLine": { "cs": "Meč posledního věku", "en": "The Sword of the Last Age" },
+    "teaching": { "cs": "Konec není trest. Je to místo, kde se dá konečně začít.", "en": "The end is not a punishment. It is the place where one can finally begin." },
+    "ability": { "cs": "Meč apokalypsy — přesekne karmu, která už nikomu neslouží.", "en": "Apocalypse Sword — severs karma that serves no one any more." },
+    "quote": { "cs": "Nepřicházím soudit. Přicházím uklidit.", "en": "I do not come to judge. I come to clear." }
+  }
+}

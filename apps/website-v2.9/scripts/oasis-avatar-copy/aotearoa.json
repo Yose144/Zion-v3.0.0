@@ -1,0 +1,92 @@
+{
+  "132": {
+    "subtitle": { "cs": "Papatūānuku — matka země", "en": "Papatūānuku — earth mother" },
+    "role": { "cs": "Ta, která dává půdu pod nohama", "en": "She who gives the ground beneath your feet" },
+    "location": { "cs": "Země pod nohama", "en": "The earth beneath you" },
+    "questLine": { "cs": "Půda, která si pamatuje", "en": "The Soil That Remembers" },
+    "teaching": { "cs": "Neptej se, co ti země dá. Ptej se, co jí necháš.", "en": "Do not ask what the land gives you. Ask what you leave it." },
+    "ability": { "cs": "Náruč země — obnoví místo, které bylo vyčerpané.", "en": "Earth's Embrace — restores a place that was exhausted." },
+    "quote": { "cs": "Držím tě. Nemusíš to vidět, abys to cítil.", "en": "I hold you. You need not see it to feel it." }
+  },
+  "133": {
+    "subtitle": { "cs": "Ranginui — otec oblohy", "en": "Ranginui — sky father" },
+    "role": { "cs": "Ten, kdo drží prostor nad krajinou", "en": "He who holds the space above the land" },
+    "location": { "cs": "Obloha nad horami", "en": "The sky above the mountains" },
+    "questLine": { "cs": "Mezi nebem a zemí", "en": "Between Sky and Earth" },
+    "teaching": { "cs": "Někdy je láska to, že se necháš oddělit, aby ostatní mohli žít.", "en": "Sometimes love is letting yourself be separated so that others may live." },
+    "ability": { "cs": "Otevřené nebe — projasní místo, které se dusilo.", "en": "Open Sky — clears a place that was suffocating." },
+    "quote": { "cs": "Pláču rosou. To je všechno, co mi zbylo.", "en": "I weep as dew. That is all I have left." }
+  },
+  "134": {
+    "subtitle": { "cs": "Tāne Mahuta — pán lesa", "en": "Tāne Mahuta — lord of the forest" },
+    "role": { "cs": "Ten, kdo odděluje, aby bylo světlo", "en": "He who separates so there may be light" },
+    "location": { "cs": "Prastarý les Waipoua", "en": "The ancient Waipoua forest" },
+    "questLine": { "cs": "První strom", "en": "The First Tree" },
+    "teaching": { "cs": "Růst znamená rozhodnout se, co pustíš, aby mělo ostatní místo.", "en": "Growing means deciding what to release so others have room." },
+    "ability": { "cs": "Vzcházení — vrátí život do vykáceného místa.", "en": "Regrowth — returns life to a place that was cut down." },
+    "quote": { "cs": "Stojím tak dlouho, že si mě pletou s krajinou.", "en": "I have stood so long they mistake me for the landscape." }
+  },
+  "135": {
+    "subtitle": { "cs": "Tangaroa — pán oceánu", "en": "Tangaroa — lord of the ocean" },
+    "role": { "cs": "Strážce mořského bohatství", "en": "Guardian of the sea's wealth" },
+    "location": { "cs": "Otevřené moře za útesem", "en": "The open sea beyond the reef" },
+    "questLine": { "cs": "Rāhui — moře si musí odpočinout", "en": "Rāhui — the Sea Must Rest" },
+    "teaching": { "cs": "Moře nevydá víc, když na něj tlačíš. Vydá víc, když mu necháš čas.", "en": "The sea gives no more when you push it. It gives more when you give it time." },
+    "ability": { "cs": "Mořský příděl — omezí nadměrný výlov a obnoví zásobu.", "en": "Sea Quota — limits overfishing and restores the stock." },
+    "quote": { "cs": "Nebráním ti rybařit. Bráním ti vzít poslední.", "en": "I do not stop you fishing. I stop you taking the last one." }
+  },
+  "136": {
+    "subtitle": { "cs": "Rongo — mír a pěstování", "en": "Rongo — peace and cultivation" },
+    "role": { "cs": "Ten, kdo učí sklízet bez konfliktu", "en": "He who teaches harvest without conflict" },
+    "location": { "cs": "Zahrada kumara", "en": "The kumara garden" },
+    "questLine": { "cs": "Dohoda o úrodě", "en": "The Harvest Accord" },
+    "teaching": { "cs": "Kdo se hádá o úrodu, přijde o čas na setí.", "en": "Whoever argues over the harvest loses the time to sow." },
+    "ability": { "cs": "Polní smír — zastaví spor dřív, než přijde o úrodu.", "en": "Field Truce — ends a quarrel before the harvest is lost." },
+    "quote": { "cs": "Mír není slabost. Je to dobře spočítaná práce.", "en": "Peace is not weakness. It is well-calculated work." }
+  },
+  "137": {
+    "subtitle": { "cs": "Tūmatauenga — obránce rodu", "en": "Tūmatauenga — defender of kin" },
+    "role": { "cs": "Ten, kdo chrání, dokud je co chránit", "en": "He who protects while there is anything to protect" },
+    "location": { "cs": "Opevněná pā", "en": "The fortified pā" },
+    "questLine": { "cs": "Obrana, která se ptá", "en": "Defence That Asks" },
+    "teaching": { "cs": "Není statečné všechno bránit. Statečné je vědět, co bránit.", "en": "It is not brave to defend everything. It is brave to know what to defend." },
+    "ability": { "cs": "Hradba rodu — ochrání nejslabší členy skupiny.", "en": "Kin Wall — shields the weakest members of the group." },
+    "quote": { "cs": "Nebojuju za sebe. Za sebe už jsem vyhrál.", "en": "I do not fight for myself. For myself, I have already won." }
+  },
+  "138": {
+    "subtitle": { "cs": "Tāwhirimatea — pán větrů", "en": "Tāwhirimatea — lord of winds" },
+    "role": { "cs": "Ten, kdo zkouší, co drží pohromadě", "en": "He who tests what holds together" },
+    "location": { "cs": "Větrný hřeben", "en": "The wind ridge" },
+    "questLine": { "cs": "Bouře, která prověří", "en": "The Storm That Tests" },
+    "teaching": { "cs": "Co se rozpadne ve větru, se rozpadlo už dřív. Vítr to jen ukázal.", "en": "What falls apart in the wind fell apart earlier. The wind only showed it." },
+    "ability": { "cs": "Náraz větru — otestuje slabé místo bez varování.", "en": "Gust — tests the weak point without warning." },
+    "quote": { "cs": "Nebourám domy. Odhaluju, které už nedržely.", "en": "I do not knock down houses. I reveal which ones already did not hold." }
+  },
+  "139": {
+    "subtitle": { "cs": "Haumiatiketike — divoká potrava", "en": "Haumiatiketike — wild food" },
+    "role": { "cs": "Ten, kdo učí brát jen to, co je potřeba", "en": "He who teaches taking only what is needed" },
+    "location": { "cs": "Kapradinový les", "en": "The fern forest" },
+    "questLine": { "cs": "Sběr, který nevyprázdní", "en": "Foraging That Does Not Empty" },
+    "teaching": { "cs": "Kdo vybere všechno, bude příště hladový i když bude les plný.", "en": "Whoever picks everything will go hungry next time even if the forest is full." },
+    "ability": { "cs": "Sběr bez újmy — získá potravu a nechá místo růst.", "en": "Harmless Foraging — gains food while the place keeps growing." },
+    "quote": { "cs": "Ber dvě. Třetí si necháš na jindy.", "en": "Take two. The third you leave for later." }
+  },
+  "140": {
+    "subtitle": { "cs": "Hine-nui-te-pō — brána přerodu", "en": "Hine-nui-te-pō — the gate of transformation" },
+    "role": { "cs": "Ta, která drží hranici mezi životem a koncem", "en": "She who holds the border between life and ending" },
+    "location": { "cs": "Temná strana obzoru", "en": "The far side of the horizon" },
+    "questLine": { "cs": "Práh, přes který se jde jednou", "en": "The Threshold Crossed Once" },
+    "teaching": { "cs": "Konec není nepřítel života. Je to jeho tvar.", "en": "The end is not the enemy of life. It is its shape." },
+    "ability": { "cs": "Přerod — provede tě změnou, kterou nejde vrátit.", "en": "Transformation — carries you through a change you cannot undo." },
+    "quote": { "cs": "Našli mě všichni, kdo hledali cestu. Nikdo, kdo hledal cestu zpátky.", "en": "Those who sought a way forward found me. Those who sought a way back did not." }
+  },
+  "141": {
+    "subtitle": { "cs": "Kupe — navigátor prvního návratu", "en": "Kupe — navigator of the first return" },
+    "role": { "cs": "Ten, kdo najde cestu bez přístroje", "en": "He who finds the way without instruments" },
+    "location": { "cs": "Záď kánoe na širém moři", "en": "The stern of a canoe on the open sea" },
+    "questLine": { "cs": "Cesta, kterou nikdo nezapsal", "en": "The Road No One Wrote Down" },
+    "teaching": { "cs": "Přístroj ti řekne, kde jsi. Jen hlava ti řekne, kde je domov.", "en": "An instrument tells you where you are. Only your head tells you where home is." },
+    "ability": { "cs": "Odhad — dovede tě domů i bez signálu.", "en": "Dead Reckoning — brings you home even without a signal." },
+    "quote": { "cs": "Nezabloudil jsem. Jen jsem delší dobu nevěděl, kde jsem.", "en": "I did not get lost. I simply spent longer not knowing where I was." }
+  }
+}

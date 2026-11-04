@@ -1,0 +1,29 @@
+{
+  "18": {
+    "subtitle": { "cs": "Marie z Magdaly", "en": "Mary Magdalene" },
+    "role": { "cs": "Učitelka posvátného spojení", "en": "Teacher of sacred union" },
+    "location": { "cs": "Zahrada v Jeruzalémě", "en": "A garden in Jerusalem" },
+    "questLine": { "cs": "Apoštolka apoštolů", "en": "The Apostle of Apostles" },
+    "teaching": { "cs": "Oddanost vidí dál než doktrína.", "en": "Devotion sees farther than doctrine." },
+    "ability": { "cs": "Růže ze Šáronu — slzy, které hojí, a soucit, který přeteče.", "en": "Rose of Sharon — tears that heal and compassion that overflows." },
+    "quote": { "cs": "Nepoznala jsem ho podle tváře, ale podle toho, jak mě zavolal.", "en": "I did not know him by his face but by the way he called me." }
+  },
+  "19": {
+    "subtitle": { "cs": "Ježíš Kristus", "en": "Jesus Christ" },
+    "role": { "cs": "Učitel odpuštění", "en": "Teacher of forgiveness" },
+    "location": { "cs": "Olivová hora", "en": "The Mount of Olives" },
+    "questLine": { "cs": "Cesta kříže", "en": "The Way of the Cross" },
+    "teaching": { "cs": "Odpustit neznamená zapomenout; znamená to přestat vracet ránu.", "en": "To forgive is not to forget; it is to stop handing the wound back." },
+    "ability": { "cs": "Světlo vzkříšení — druhá šance pro toho, kdo už padl.", "en": "Resurrection Light — a second chance for the one who has fallen." },
+    "quote": { "cs": "Miluj ty, kdo ti ublížili. Je to jediná cesta, jak je přestat nosit v sobě.", "en": "Love those who hurt you. It is the only way to stop carrying them inside." }
+  },
+  "38": {
+    "subtitle": { "cs": "Panna Maria", "en": "Virgin Mary" },
+    "role": { "cs": "Matka a přímluvkyně", "en": "Mother and intercessor" },
+    "location": { "cs": "Jeskyně v Lourdes", "en": "The grotto at Lourdes" },
+    "questLine": { "cs": "Neposkvrněné srdce", "en": "The Immaculate Heart" },
+    "teaching": { "cs": "Někdy je nejstatečnější věc nechat se vést.", "en": "Sometimes the bravest thing is to let yourself be led." },
+    "ability": { "cs": "Zázračná medaile — ochranná aura a léčivý pramen.", "en": "Miraculous Medal — a protective aura and a healing spring." },
+    "quote": { "cs": "Řekli mi, že se to nedá. Řekla jsem: ať se to stane.", "en": "They told me it could not be. I said: let it be." }
+  }
+}

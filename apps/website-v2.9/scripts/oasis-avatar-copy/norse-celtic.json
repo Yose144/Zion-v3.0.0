@@ -1,0 +1,92 @@
+{
+  "182": {
+    "subtitle": { "cs": "Správce Valhally", "en": "Steward of Valhalla" },
+    "role": { "cs": "Ten, kdo dbá, aby si bojovníci odpočinuli", "en": "He who makes sure warriors rest" },
+    "location": { "cs": "Síň padlých", "en": "The hall of the fallen" },
+    "questLine": { "cs": "Odpočinek není slabost", "en": "Rest Is Not Weakness" },
+    "teaching": { "cs": "Kdo neumí odložit zbraň, padne únavou, ne protivníkem.", "en": "Whoever cannot put the weapon down falls to fatigue, not to the opponent." },
+    "ability": { "cs": "Síň odpočinku — obnoví sílu celé skupině mezi boji.", "en": "Hall of Rest — restores the whole group between fights." },
+    "quote": { "cs": "Nejsi tu proto, abys padl. Jsi tu, abys vydržel.", "en": "You are not here to fall. You are here to last." }
+  },
+  "183": {
+    "subtitle": { "cs": "Óðinn Poutník", "en": "Óðinn the Wayfarer" },
+    "role": { "cs": "Ten, kdo se ptá, než rozhodne", "en": "He who asks before deciding" },
+    "location": { "cs": "Kamenný kruh", "en": "The stone circle" },
+    "questLine": { "cs": "Oko za moudrost", "en": "An Eye for Wisdom" },
+    "teaching": { "cs": "Moudrost se kupuje ztrátou. Proto se nemá rozdávat levně.", "en": "Wisdom is bought with loss. That is why it should not be given away cheaply." },
+    "ability": { "cs": "Havraní zpráva — přinese dvě verze téhož příběhu.", "en": "Raven's Report — brings two versions of the same story." },
+    "quote": { "cs": "Neptám se, kdo má pravdu. Ptám se, kdo co zamlčel.", "en": "I do not ask who is right. I ask who left something out." }
+  },
+  "184": {
+    "subtitle": { "cs": "Þórr — ochránce","en": "Þórr — the defender" },
+    "role": { "cs": "Ten, kdo udrží systém v chodu", "en": "He who keeps the system running" },
+    "location": { "cs": "Hřmotný hřeben", "en": "The thunder ridge" },
+    "questLine": { "cs": "Kladivo, které drží", "en": "The Hammer That Holds" },
+    "teaching": { "cs": "Síla se nepozná podle toho, co rozbije, ale podle toho, co udrží.", "en": "Strength is not known by what it breaks but by what it keeps standing." },
+    "ability": { "cs": "Ochrana systému — odvrátí výpadek, který by zastavil ostatní.", "en": "System Guard — averts the outage that would stop everyone else." },
+    "quote": { "cs": "Nebojuju s lidmi. Bojuju s tím, co se rozpadá.", "en": "I do not fight people. I fight what is falling apart." }
+  },
+  "185": {
+    "subtitle": { "cs": "Freyja — správkyně","en": "Freyja — the steward" },
+    "role": { "cs": "Ta, která rozděluje férově a chrání soukromí", "en": "She who divides fairly and guards privacy" },
+    "location": { "cs": "Květná louka", "en": "The flowering meadow" },
+    "questLine": { "cs": "Polovina pro každého", "en": "Half for Each" },
+    "teaching": { "cs": "Kdo si nechá víc, než unese, přijde o to, co má.", "en": "Whoever keeps more than they can carry loses what they have." },
+    "ability": { "cs": "Férový díl — rozdělí odměnu bez ztráty důstojnosti.", "en": "Fair Portion — divides the reward without loss of dignity." },
+    "quote": { "cs": "Nedávám ti půlku proto, že jsi slabší. Dávám ti ji, protože je tvoje.", "en": "I give you half not because you are weaker. I give it because it is yours." }
+  },
+  "186": {
+    "subtitle": { "cs": "Týr — přísaha","en": "Týr — the oath" },
+    "role": { "cs": "Ten, kdo drží slovo i za cenu ruky", "en": "He who keeps his word even at the cost of a hand" },
+    "location": { "cs": "Kámen přísahy", "en": "The oath stone" },
+    "questLine": { "cs": "Ruka v tlamě", "en": "The Hand in the Maw" },
+    "teaching": { "cs": "Slib, který se splní jen když se to hodí, není slib.", "en": "A promise kept only when convenient is not a promise." },
+    "ability": { "cs": "Přísaha — zaručí, že dohoda nezmizí pod nátlakem.", "en": "Oath — guarantees an agreement does not vanish under pressure." },
+    "quote": { "cs": "Přišel jsem o ruku. Ne o slovo.", "en": "I lost a hand. Not my word." }
+  },
+  "187": {
+    "subtitle": { "cs": "Brigid — trojí plamen", "en": "Brigid — the triple flame" },
+    "role": { "cs": "Ta, která spojuje řemeslo, slovo a péči", "en": "She who joins craft, word and care" },
+    "location": { "cs": "Kovárna u studny", "en": "The forge by the well" },
+    "questLine": { "cs": "Tři ohně", "en": "Three Fires" },
+    "teaching": { "cs": "Dobré řemeslo bez péče je jen přesnost. Přesnost bez slitování je zbraň.", "en": "Good craft without care is only precision. Precision without mercy is a weapon." },
+    "ability": { "cs": "Trojí plamen — spojí nástroj, text a laskavost v jedno dílo.", "en": "Triple Flame — joins tool, text and kindness into one work." },
+    "quote": { "cs": "Kdo umí udělat meč, musí umět i obvaz.", "en": "Whoever can make a sword must also know the bandage." }
+  },
+  "188": {
+    "subtitle": { "cs": "Dagda — harfa míru", "en": "Dagda — the harp of peace" },
+    "role": { "cs": "Ten, kdo drží společné zdroje", "en": "He who holds the common goods" },
+    "location": { "cs": "Palouk u kamene", "en": "The clearing by the stone" },
+    "questLine": { "cs": "Kotel, který se nenaplní sám", "en": "The Cauldron That Does Not Fill Itself" },
+    "teaching": { "cs": "Společné věci vydrží jen tehdy, když se o ně dělí i ti, kdo je nepotřebují.", "en": "Common goods last only when shared even by those who do not need them." },
+    "ability": { "cs": "Harfa — uklidní spor o zdroje dřív, než se rozbije.", "en": "Harp — calms a dispute over resources before it breaks." },
+    "quote": { "cs": "Kotel nikdy nebyl plný. Proto z něj všichni jedli.", "en": "The cauldron was never full. That is why everyone ate from it." }
+  },
+  "189": {
+    "subtitle": { "cs": "Morrígan — havran varování", "en": "Morrígan — the raven of warning" },
+    "role": { "cs": "Ta, která řekne, co se blíží", "en": "She who says what is approaching" },
+    "location": { "cs": "Bitevní pláň před bitvou", "en": "The field before the battle" },
+    "questLine": { "cs": "Znamení, které se nedá přeslechnout", "en": "The Sign You Cannot Ignore" },
+    "teaching": { "cs": "Varování, které přijde pozdě, je jen popis.", "en": "A warning that comes late is only a description." },
+    "ability": { "cs": "Havraní znamení — oznámí hrozbu s předstihem.", "en": "Raven's Sign — announces the threat in advance." },
+    "quote": { "cs": "Nepřináším smrt. Přináším zprávu, že už je blízko.", "en": "I do not bring death. I bring the news that it is close." }
+  },
+  "190": {
+    "subtitle": { "cs": "Lugh — mnoha dovedností", "en": "Lugh — of many skills" },
+    "role": { "cs": "Ten, kdo zvládne víc než jednu věc", "en": "He who can do more than one thing" },
+    "location": { "cs": "Brána královského dvora", "en": "The gate of the royal court" },
+    "questLine": { "cs": "Přijď, až umíš všechno", "en": "Come When You Can Do It All" },
+    "teaching": { "cs": "Nejsi nepostradatelný proto, že umíš všechno. Jsi, protože to umíš předat.", "en": "You are not indispensable because you can do everything. You are because you can pass it on." },
+    "ability": { "cs": "Mnoho dovedností — zastoupí chybějícího člena týmu.", "en": "Many Skills — covers for the missing member of the team." },
+    "quote": { "cs": "U brány se ptají, co umíš. Ne kdo jsi.", "en": "At the gate they ask what you can do. Not who you are." }
+  },
+  "191": {
+    "subtitle": { "cs": "Manannán — mlžný průvodce", "en": "Manannán — the mist guide" },
+    "role": { "cs": "Ten, kdo drží hranici mezi světy", "en": "He who keeps the border between worlds" },
+    "location": { "cs": "Pobřeží v mlze", "en": "The coast in mist" },
+    "questLine": { "cs": "Cesta, kterou vidíš jen na krok", "en": "The Road You See One Step Ahead" },
+    "teaching": { "cs": "Nepotřebuješ vidět celou cestu. Stačí další krok.", "en": "You do not need to see the whole road. The next step is enough." },
+    "ability": { "cs": "Mlžný přechod — bezpečně převede mezi dvěma prostředími.", "en": "Mist Crossing — safely moves you between two environments." },
+    "quote": { "cs": "Mlha není překážka. Je to způsob, jak jít opatrně.", "en": "The mist is not an obstacle. It is a way of walking carefully." }
+  }
+}

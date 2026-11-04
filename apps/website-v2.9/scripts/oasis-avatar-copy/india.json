@@ -1,0 +1,92 @@
+{
+  "82": {
+    "subtitle": { "cs": "Šiva — tanec konce a počátku", "en": "Shiva — the dance of ending and beginning" },
+    "role": { "cs": "Ten, kdo rozpouští, aby bylo možné tvořit", "en": "He who dissolves so that creation is possible" },
+    "location": { "cs": "Mount Kailash, tančiště", "en": "Mount Kailash, the dancing ground" },
+    "questLine": { "cs": "Tanec, který ukončí věk", "en": "The Dance That Ends an Age" },
+    "teaching": { "cs": "Nezničíš, co miluješ. Propustíš to, co už netvoří.", "en": "You do not destroy what you love. You release what no longer creates." },
+    "ability": { "cs": "Obrat tándavy — krátké okno, kdy staré přestane platit.", "en": "Tandava Pivot — a short window when the old stops applying." },
+    "quote": { "cs": "Tančím proto, aby se svět nezastavil v jedné podobě.", "en": "I dance so the world does not freeze into one shape." }
+  },
+  "83": {
+    "subtitle": { "cs": "Párvatí — královna souladu", "en": "Parvati — Queen of Harmony" },
+    "role": { "cs": "Ta, která drží dům pohromadě", "en": "She who holds the house together" },
+    "location": { "cs": "Horský příbytek", "en": "The mountain dwelling" },
+    "questLine": { "cs": "Síla, která nehasí", "en": "Strength That Does Not Quench" },
+    "teaching": { "cs": "Soulad není ticho. Je to dohoda, že se budeme hádat slušně.", "en": "Harmony is not silence. It is an agreement to argue decently." },
+    "ability": { "cs": "Pouto šakti — spojí dvě síly tak, že se navzájem zesílí.", "en": "Shakti Bond — joins two strengths so they reinforce each other." },
+    "quote": { "cs": "Nejsem ta, která ustoupí. Jsem ta, která zůstane.", "en": "I am not the one who steps aside. I am the one who stays." }
+  },
+  "84": {
+    "subtitle": { "cs": "Ganéša — ten, kdo odstraňuje překážky", "en": "Ganesha — remover of obstacles" },
+    "role": { "cs": "Strážce začátků a písařů", "en": "Guardian of beginnings and of scribes" },
+    "location": { "cs": "Práh každé cesty", "en": "The threshold of every road" },
+    "questLine": { "cs": "První krok", "en": "The First Step" },
+    "teaching": { "cs": "Překážka často není zeď. Je to znamení, že máš jít jinudy.", "en": "An obstacle is often not a wall. It is a sign to go another way." },
+    "ability": { "cs": "Odvalení překážky — jednou otevře cestu, která byla zavřená.", "en": "Vighna Clear — once, opens a road that was closed." },
+    "quote": { "cs": "Nejdřív se podívej, co neseš. Půlka překážek je v batohu.", "en": "First look at what you carry. Half the obstacles are in your bag." }
+  },
+  "85": {
+    "subtitle": { "cs": "Lakšmí — blahobyt jako tok", "en": "Lakshmi — prosperity as flow" },
+    "role": { "cs": "Ta, která učí, že bohatství je v pohybu", "en": "She who teaches that wealth is in motion" },
+    "location": { "cs": "Lotosský rybník", "en": "The lotus pond" },
+    "questLine": { "cs": "Miska, která se nenaplní", "en": "The Bowl That Never Fills" },
+    "teaching": { "cs": "Hojnost není kolik máš. Je to kolik projde tvýma rukama dál.", "en": "Abundance is not how much you have. It is how much passes on through your hands." },
+    "ability": { "cs": "Tok štěstí — drobný podíl z každé výhry jde na dobrou věc.", "en": "Śrī Flow — a small share of every gain goes to a good cause." },
+    "quote": { "cs": "Nepřináším zlato. Přináším důvod ho nezamknout.", "en": "I do not bring gold. I bring a reason not to lock it away." }
+  },
+  "86": {
+    "subtitle": { "cs": "Durga — ta, která chrání", "en": "Durga — she who protects" },
+    "role": { "cs": "Obránkyně, která jde do ohně první", "en": "Defender who walks into the fire first" },
+    "location": { "cs": "Horská pevnost", "en": "The mountain fortress" },
+    "questLine": { "cs": "Devět nocí", "en": "The Nine Nights" },
+    "teaching": { "cs": "Chránit slabšího není slabost. Je to jediná síla, která má smysl.", "en": "Protecting the weaker is not weakness. It is the only strength that means anything." },
+    "ability": { "cs": "Lví předvoj — na chvíli ochrání celou skupinu.", "en": "Lion Vanguard — shields the whole group for a moment." },
+    "quote": { "cs": "Nevyhrávám kvůli vítězství. Vyhrávám, aby bylo komu pomoct.", "en": "I do not win for victory. I win so there is someone left to help." }
+  },
+  "87": {
+    "subtitle": { "cs": "Kálí — čas, který bere", "en": "Kali — time that takes" },
+    "role": { "cs": "Ta, která ukončí, co se přežilo", "en": "She who ends what has outlived itself" },
+    "location": { "cs": "Hřbitov u řeky", "en": "The cremation ground by the river" },
+    "questLine": { "cs": "Noc bez času", "en": "The Night Without Time" },
+    "teaching": { "cs": "Nic není nespravedlivé jen proto, že to skončilo.", "en": "Nothing is unfair merely because it ended." },
+    "ability": { "cs": "Setnutí ega — sníží pýchu, která tě oslepuje.", "en": "Ego Dissolution — lowers the pride that blinds you." },
+    "quote": { "cs": "Neberu ti život. Beru ti představu, že ho máš pod kontrolou.", "en": "I do not take your life. I take your idea that you control it." }
+  },
+  "88": {
+    "subtitle": { "cs": "Kártikéja — velitel", "en": "Kartikeya — the commander" },
+    "role": { "cs": "Ten, kdo vede sestavu, ne sebe", "en": "He who leads the formation, not himself" },
+    "location": { "cs": "Horský průsmyk", "en": "The mountain pass" },
+    "questLine": { "cs": "Šest tváří, jeden směr", "en": "Six Faces, One Direction" },
+    "teaching": { "cs": "Vedení je o tom, aby každý věděl, kam jde. Ne o tom, kdo mluví první.", "en": "Leadership is making sure everyone knows where they are going. Not who speaks first." },
+    "ability": { "cs": "Šestinásobný předvoj — zlepší souhru celé skupiny.", "en": "Sixfold Vanguard — improves the coordination of the whole group." },
+    "quote": { "cs": "Nepotřebuju nejlepší vojáky. Potřebuju, aby se navzájem slyšeli.", "en": "I do not need the best soldiers. I need them to hear each other." }
+  },
+  "89": {
+    "subtitle": { "cs": "Súrja — rytmus dne", "en": "Surya — the rhythm of the day" },
+    "role": { "cs": "Strážce světla, které se vrací", "en": "Keeper of the light that returns" },
+    "location": { "cs": "Východ slunce nad pouští", "en": "Sunrise over the desert" },
+    "questLine": { "cs": "Každé ráno znovu", "en": "Every Morning Again" },
+    "teaching": { "cs": "Nikdo nemusí být hrdina pořád. Stačí začít znovu, když vyjde slunce.", "en": "No one has to be a hero all the time. It is enough to begin again at sunrise." },
+    "ability": { "cs": "Úsvit — malý, ale jistý bonus za poctivou práci.", "en": "Dawn — a small but certain bonus for honest work." },
+    "quote": { "cs": "Nezajímá mě, co jsi zmeškal. Zajímá mě, co uděláš dnes.", "en": "I do not care what you missed. I care what you do today." }
+  },
+  "90": {
+    "subtitle": { "cs": "Indra — král bouře", "en": "Indra — king of the storm" },
+    "role": { "cs": "Ten, kdo zkouší moc, aby ji neztratil", "en": "He who tests power so as not to lose it" },
+    "location": { "cs": "Nebeská citadela", "en": "The celestial citadel" },
+    "questLine": { "cs": "Bouře, která zkouší krále", "en": "The Storm That Tests the King" },
+    "teaching": { "cs": "Moc, kterou nikdo nezpochybní, se dřív nebo později zvrhne.", "en": "Power no one questions will sooner or later go bad." },
+    "ability": { "cs": "Vadžra — přeruší jeden útok, ať je jakkoli silný.", "en": "Vajra — interrupts a single attack, however strong." },
+    "quote": { "cs": "Bouřím, abych zjistil, kdo ještě stojí.", "en": "I storm so I can see who is still standing." }
+  },
+  "91": {
+    "subtitle": { "cs": "Ganga — řeka, která nese", "en": "Ganga — the river that carries" },
+    "role": { "cs": "Ta, která čistí a nestěžuje si", "en": "She who cleanses and does not complain" },
+    "location": { "cs": "Pramen v horách", "en": "The spring in the mountains" },
+    "questLine": { "cs": "Cesta k moři", "en": "The Way to the Sea" },
+    "teaching": { "cs": "Voda si nepamatuje, kdo ji znečistil. Prostě teče dál.", "en": "Water does not remember who polluted it. It simply flows on." },
+    "ability": { "cs": "Očistný proud — pročistí místo, které bylo znečištěné.", "en": "Purifying Current — cleanses a place that was polluted." },
+    "quote": { "cs": "Nesu všechno. Nezastavuji se u ničeho.", "en": "I carry everything. I stop at nothing." }
+  }
+}

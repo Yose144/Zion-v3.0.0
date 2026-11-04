@@ -1,0 +1,92 @@
+{
+  "142": {
+    "subtitle": { "cs": "Ọṣun — řeka vzájemnosti", "en": "Ọṣun — river of reciprocity" },
+    "role": { "cs": "Ta, která učí, že peníze mají téct", "en": "She who teaches that money must flow" },
+    "location": { "cs": "Řeka Ọṣun, soutok", "en": "The Ọṣun river, the confluence" },
+    "questLine": { "cs": "Sladká voda pro všechny", "en": "Sweet Water for All" },
+    "teaching": { "cs": "Kdo drží vodu u sebe, bude mít jen bažinu.", "en": "Whoever keeps the water to themselves will have only a swamp." },
+    "ability": { "cs": "Sladký proud — uvolní prostředky tam, kde se zadrhly.", "en": "Sweet Current — releases means where they got stuck." },
+    "quote": { "cs": "Nejsem štědrá. Jen vím, že suchá řeka nikoho neuživí.", "en": "I am not generous. I only know a dry river feeds no one." }
+  },
+  "143": {
+    "subtitle": { "cs": "Ṣàngó — hrom a spravedlnost", "en": "Ṣàngó — thunder and justice" },
+    "role": { "cs": "Ten, kdo se ozve, když se mlčí o křivdě", "en": "He who speaks when a wrong is met with silence" },
+    "location": { "cs": "Bouřkový palác v Oyo", "en": "The storm palace of Oyo" },
+    "questLine": { "cs": "Úder, který se dá doložit", "en": "The Strike That Can Be Proven" },
+    "teaching": { "cs": "Hněv není důkaz. Důkaz je důkaz.", "en": "Anger is not proof. Proof is proof." },
+    "ability": { "cs": "Doložený zásah — zasáhne jen to, co je prokázané.", "en": "Documented Strike — hits only what has been proven." },
+    "quote": { "cs": "Hřmím jednou. Pak se ptám, co jste udělali mezitím.", "en": "I thunder once. Then I ask what you did in the meantime." }
+  },
+  "144": {
+    "subtitle": { "cs": "Ọbàtálá — klidný tvůrce", "en": "Ọbàtálá — the calm maker" },
+    "role": { "cs": "Ten, kdo dělá složité věci čitelnými", "en": "He who makes complicated things readable" },
+    "location": { "cs": "Bílý vrcholek kopce", "en": "The white hilltop" },
+    "questLine": { "cs": "Klid, ve kterém se dá rozhodnout", "en": "The Calm in Which One Can Decide" },
+    "teaching": { "cs": "Rozhodnutí v rozrušení je vždycky dražší, než se zdá.", "en": "A decision made in agitation is always more expensive than it looks." },
+    "ability": { "cs": "Ztišení — zpomalí rozhodnutí na čitelnou rychlost.", "en": "Stillness — slows a decision to a readable pace." },
+    "quote": { "cs": "Nejsem pomalý. Jen nechci, abys spěchal do chyby.", "en": "I am not slow. I only do not want you to hurry into a mistake." }
+  },
+  "145": {
+    "subtitle": { "cs": "Ọya — vítr změny", "en": "Ọya — the wind of change" },
+    "role": { "cs": "Ta, která odnese to, co už nepatří", "en": "She who carries away what no longer belongs" },
+    "location": { "cs": "Větrná pláň", "en": "The windy plain" },
+    "questLine": { "cs": "Stěhování bez ztráty", "en": "Moving Without Losing" },
+    "teaching": { "cs": "Změna bolí jen tehdy, když se jí držíš zpátky.", "en": "Change hurts only when you hold it back." },
+    "ability": { "cs": "Vítr přesunu — přenese celek jinam bez rozbití.", "en": "Crossing Wind — moves a whole elsewhere without breaking it." },
+    "quote": { "cs": "Neodnáším tvůj domov. Odnáším to, co už v něm nebydlí.", "en": "I am not taking your home. I am taking what no longer lives in it." }
+  },
+  "146": {
+    "subtitle": { "cs": "Mawu-Lisa — dvě strany jednoho", "en": "Mawu-Lisa — two sides of one" },
+    "role": { "cs": "Ti, kdo vládnou střídavě", "en": "They who rule in turn" },
+    "location": { "cs": "Místo, kde se střídá den a noc", "en": "The place where day and night alternate" },
+    "questLine": { "cs": "Kdo mluví první", "en": "Who Speaks First" },
+    "teaching": { "cs": "Dvě pravdy se nevylučují, jen se musí vystřídat.", "en": "Two truths do not exclude each other; they only have to take turns." },
+    "ability": { "cs": "Střídavé slovo — dá prostor oběma stranám sporu.", "en": "Alternating Word — gives both sides of a dispute room." },
+    "quote": { "cs": "Nehádáme se. Střídáme se.", "en": "We do not argue. We take turns." }
+  },
+  "147": {
+    "subtitle": { "cs": "Nyame — tichý rádce", "en": "Nyame — the quiet counsel" },
+    "role": { "cs": "Ten, kdo říká jen to, co unese", "en": "He who says only what can be carried" },
+    "location": { "cs": "Obloha nad zlatým trůnem", "en": "The sky above the golden stool" },
+    "questLine": { "cs": "Méně slov", "en": "Fewer Words" },
+    "teaching": { "cs": "Dlouhá řeč je často znamení, že si nejsi jistý.", "en": "A long speech is often a sign that you are not sure." },
+    "ability": { "cs": "Krátká pravda — zkrátí složité rozhodnutí na jednu větu.", "en": "Short Truth — reduces a complex decision to one sentence." },
+    "quote": { "cs": "Mlčím, dokud nemám co říct. Pak mluvím krátce.", "en": "I am silent until I have something to say. Then I speak briefly." }
+  },
+  "148": {
+    "subtitle": { "cs": "Kwaku Ananse — tkadlec příběhů", "en": "Kwaku Ananse — weaver of stories" },
+    "role": { "cs": "Ten, kdo učí skrz vyprávění", "en": "He who teaches through story" },
+    "location": { "cs": "Pavučina mezi dvěma stromy", "en": "A web between two trees" },
+    "questLine": { "cs": "Příběh, který otevře oči", "en": "The Story That Opens Eyes" },
+    "teaching": { "cs": "Lidé neslyší pravidlo. Slyší příběh, který ho obsahuje.", "en": "People do not hear a rule. They hear a story that contains it." },
+    "ability": { "cs": "Pavučina — propojí dvě zdánlivě nesouvisející věci.", "en": "Web — links two seemingly unrelated things." },
+    "quote": { "cs": "Nepoučuju. Vyprávím.", "en": "I do not lecture. I tell." }
+  },
+  "149": {
+    "subtitle": { "cs": "Usir — obnova v cyklu", "en": "Osiris — renewal in cycle" },
+    "role": { "cs": "Ten, kdo vstane jinak, ne stejně", "en": "He who rises differently, not the same" },
+    "location": { "cs": "Břeh zeleného pole", "en": "The bank of the green field" },
+    "questLine": { "cs": "Rozdělení a složení", "en": "Dismemberment and Reassembly" },
+    "teaching": { "cs": "Co se rozpadlo, se dá složit. Ale nikdy ne do stejného tvaru.", "en": "What fell apart can be put together. But never into the same shape." },
+    "ability": { "cs": "Obnova celku — znovu složí poškozené díly.", "en": "Whole Renewed — reassembles the damaged parts." },
+    "quote": { "cs": "Nevrátil jsem se proto, abych vládl. Vrátil jsem se, abych učil.", "en": "I did not return to rule. I returned to teach." }
+  },
+  "150": {
+    "subtitle": { "cs": "Maʿăt — pírko pravdy", "en": "Maʿăt — the feather of truth" },
+    "role": { "cs": "Ta, která váží slova proti činům", "en": "She who weighs words against deeds" },
+    "location": { "cs": "Síň vážení", "en": "The hall of weighing" },
+    "questLine": { "cs": "Srdce na misce", "en": "The Heart on the Scale" },
+    "teaching": { "cs": "Neptej se, co jsi říkal. Ptej se, co po tobě zůstalo.", "en": "Do not ask what you said. Ask what remained after you." },
+    "ability": { "cs": "Vážení — ukáže, která dohoda je opravdu vyvážená.", "en": "Weighing — shows which agreement is truly balanced." },
+    "quote": { "cs": "Pírko je lehké. Proto ho tolik lidí neunese.", "en": "The feather is light. That is why so many cannot bear it." }
+  },
+  "151": {
+    "subtitle": { "cs": "Anna Njinga — vyjednavačka", "en": "Anna Njinga — the negotiator" },
+    "role": { "cs": "Ta, která vyjednává bez převahy", "en": "She who negotiates without the upper hand" },
+    "location": { "cs": "Hrad v Matambě", "en": "The fortress of Matamba" },
+    "questLine": { "cs": "Jednání, které neponíží", "en": "A Negotiation That Does Not Humiliate" },
+    "teaching": { "cs": "Dohoda, která druhému vezme důstojnost, se vrátí jako válka.", "en": "An agreement that takes the other's dignity returns as war." },
+    "ability": { "cs": "Rovný stůl — donutí silnějšího jednat jako rovný.", "en": "Level Table — makes the stronger side negotiate as an equal." },
+    "quote": { "cs": "Nepřišla jsem prosit. Přišla jsem se domluvit.", "en": "I did not come to beg. I came to agree." }
+  }
+}

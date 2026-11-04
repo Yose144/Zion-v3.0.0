@@ -1,0 +1,92 @@
+{
+  "102": {
+    "subtitle": { "cs": "Žlutý císař", "en": "The Yellow Emperor" },
+    "role": { "cs": "Zakladatel řádu a medicíny", "en": "Founder of order and of medicine" },
+    "location": { "cs": "Údolí Žluté řeky", "en": "The Yellow River valley" },
+    "questLine": { "cs": "Tři otázky lékaře", "en": "The Physician's Three Questions" },
+    "teaching": { "cs": "Léčit se má dřív, než je nemoc vidět. To platí i o společnosti.", "en": "Healing should come before illness is visible. The same holds for a society." },
+    "ability": { "cs": "Starost o celek — posílí zdraví celé osady.", "en": "Care for the Whole — strengthens the health of the whole settlement." },
+    "quote": { "cs": "Nejlepší lékař je ten, o kterém pacienti nevědí.", "en": "The best physician is the one the patients never notice." }
+  },
+  "103": {
+    "subtitle": { "cs": "Si-wang-mu — královna Západu", "en": "Xiwangmu — Queen Mother of the West" },
+    "role": { "cs": "Strážkyně pokladu, který dozrává", "en": "Keeper of treasure that must ripen" },
+    "location": { "cs": "Hora Kchun-lun", "en": "Mount Kunlun" },
+    "questLine": { "cs": "Zahrada broskví", "en": "The Peach Garden" },
+    "teaching": { "cs": "Něco musí uzrát. Kdo to sní zelené, bude mít jen prázdno.", "en": "Some things must ripen. Whoever eats them green will have only emptiness." },
+    "ability": { "cs": "Zrání — zpomalí nedočkavost a ochrání hodnotu v čase.", "en": "Ripening — slows impatience and protects value over time." },
+    "quote": { "cs": "Broskve nejsou pro tebe. Jsou pro dobu, kdy je budeš umět sníst.", "en": "The peaches are not for you. They are for the hour when you can eat them." }
+  },
+  "104": {
+    "subtitle": { "cs": "Lao-c' — mlčení, které vede", "en": "Laozi — the silence that leads" },
+    "role": { "cs": "Učitel méně vlády", "en": "Teacher of governing less" },
+    "location": { "cs": "Průsmyk na hranici", "en": "The pass at the border" },
+    "questLine": { "cs": "Cesta bez cesty", "en": "The Way Without a Way" },
+    "teaching": { "cs": "Nejlepší vláda je ta, kterou lidé skoro nezaznamenají.", "en": "The best government is the one people barely notice." },
+    "ability": { "cs": "Svodné ticho — zastaví zbytečný zásah ve chvíli, kdy škodí.", "en": "Quiet Deflection — stops a pointless intervention at the moment it hurts." },
+    "quote": { "cs": "Kdo mnoho přikazuje, ten mnoho neví.", "en": "Whoever commands much knows little." }
+  },
+  "105": {
+    "subtitle": { "cs": "Konfucius", "en": "Confucius" },
+    "role": { "cs": "Učitel vztahů a zodpovědnosti", "en": "Teacher of relationships and responsibility" },
+    "location": { "cs": "Akátový dvůr", "en": "The apricot courtyard" },
+    "questLine": { "cs": "Deník dobrých skutků", "en": "The Record of Good Deeds" },
+    "teaching": { "cs": "Stát se nespraví zákony, ale tím, že si lidé začnou držet slovo.", "en": "A state is not fixed by laws, but by people keeping their word." },
+    "ability": { "cs": "Mentorský kruh — zlepší učení a spolupráci ve skupině.", "en": "Mentor's Circle — improves learning and cooperation in the group." },
+    "quote": { "cs": "Nestrojte mi pomník. Vychovejte někoho.", "en": "Do not build me a monument. Raise someone." }
+  },
+  "106": {
+    "subtitle": { "cs": "Kuan Jü — věrnost a poctivost", "en": "Guan Yu — loyalty and honour" },
+    "role": { "cs": "Strážce dohod", "en": "Guardian of agreements" },
+    "location": { "cs": "Tržiště se soudní síní", "en": "The market square with its court" },
+    "questLine": { "cs": "Slovo drží i po smrti", "en": "A Word Kept Even After Death" },
+    "teaching": { "cs": "Dohoda, která se hodí jen jedné straně, není dohoda. Je to past.", "en": "An agreement that suits only one side is not an agreement. It is a trap." },
+    "ability": { "cs": "Pevná smlouva — zaručí, že dohoda nepřijde o obsah.", "en": "Binding Compact — ensures an agreement keeps its substance." },
+    "quote": { "cs": "Bojoval jsem pro člověka, ne pro peníze. Proto to platí.", "en": "I fought for a person, not for money. That is why it holds." }
+  },
+  "107": {
+    "subtitle": { "cs": "Má-cu — mořská přímluvkyně", "en": "Mazu — patroness of the sea" },
+    "role": { "cs": "Ta, která provází přes nebezpečnou vodu", "en": "She who guides across dangerous water" },
+    "location": { "cs": "Přístav s majákem", "en": "The harbour with its lighthouse" },
+    "questLine": { "cs": "Světlo pro všechny lodě", "en": "Light for Every Ship" },
+    "teaching": { "cs": "Nebe není dlouhé proto, že by odpovídalo na modlitby. Je dlouhé, protože někdo drží světlo.", "en": "The sky is not long because it answers prayers. It is long because someone keeps the light." },
+    "ability": { "cs": "Bezpečný přechod — sníží riziko na cestě, kterou neznáš.", "en": "Safe Passage — reduces risk on a road you do not know." },
+    "quote": { "cs": "Neuklidňuji moře. Ukazuji, kde je břeh.", "en": "I do not calm the sea. I show where the shore is." }
+  },
+  "108": {
+    "subtitle": { "cs": "Nezha — nové tělo", "en": "Nezha — a new body" },
+    "role": { "cs": "Ten, kdo se znovu postaví jinak", "en": "He who rises again differently" },
+    "location": { "cs": "Lotosové jezero", "en": "The lotus lake" },
+    "questLine": { "cs": "Stvořit se znovu", "en": "To Make Oneself Again" },
+    "teaching": { "cs": "Druhá šance není stejná cesta. Je to jiné tělo a stejná odpovědnost.", "en": "A second chance is not the same road. It is a different body and the same responsibility." },
+    "ability": { "cs": "Lotosové tělo — obnoví toho, kdo byl považován za ztraceného.", "en": "Lotus Body — renews one who was considered lost." },
+    "quote": { "cs": "Nezvítězil jsem, protože jsem silnější. Zvítězil jsem, protože jsem se vrátil.", "en": "I did not win because I was stronger. I won because I came back." }
+  },
+  "109": {
+    "subtitle": { "cs": "Sun Wu-kchung — opice na cestě", "en": "Sun Wukong — the monkey on the road" },
+    "role": { "cs": "Ten, kdo zkouší trpělivost učitele", "en": "He who tests the teacher's patience" },
+    "location": { "cs": "Hora květů a ovoce", "en": "The Mountain of Flowers and Fruit" },
+    "questLine": { "cs": "Cesta na Západ", "en": "The Journey to the West" },
+    "teaching": { "cs": "Síla bez kázně dojde daleko, ale ne domů.", "en": "Strength without discipline gets far, but not home." },
+    "ability": { "cs": "Sedmdesát dva triků — obejde překážku, kterou nelze prorazit.", "en": "Seventy-Two Tricks — goes around an obstacle that cannot be broken." },
+    "quote": { "cs": "Můžu přeskočit svět. Neumím přeskočit sám sebe.", "en": "I can leap over the world. I cannot leap over myself." }
+  },
+  "110": {
+    "subtitle": { "cs": "Jü Veliký — ten, kdo zkrotil vodu", "en": "Yu the Great — who tamed the water" },
+    "role": { "cs": "Učitel trpělivé infrastruktury", "en": "Teacher of patient infrastructure" },
+    "location": { "cs": "Soutěska Žluté řeky", "en": "The Yellow River gorge" },
+    "questLine": { "cs": "Třináct let u řeky", "en": "Thirteen Years by the River" },
+    "teaching": { "cs": "Vodu nezastavíš hrází. Naučíš ji, kudy má téct.", "en": "You cannot stop water with a dam. You teach it where to flow." },
+    "ability": { "cs": "Koryto — usměrní tlak tak, aby neprotrhl systém.", "en": "Riverbed — channels pressure so it does not burst the system." },
+    "quote": { "cs": "Třikrát jsem šel kolem svého domu a nevešel. Až potom jsem vešel.", "en": "Three times I passed my house and did not enter. Only then did I enter." }
+  },
+  "111": {
+    "subtitle": { "cs": "Lej-kung — hromový soud", "en": "Lei Gong — the thunder court" },
+    "role": { "cs": "Ten, kdo hlásí porušení řádu", "en": "He who announces broken order" },
+    "location": { "cs": "Nebeská strážnice", "en": "The celestial watchtower" },
+    "questLine": { "cs": "Úder bez hněvu", "en": "The Strike Without Anger" },
+    "teaching": { "cs": "Trest, který někdo vymyslel ve vzteku, se vždycky mine cílem.", "en": "A punishment devised in anger always misses its target." },
+    "ability": { "cs": "Varovný hrom — oznámí chybu dřív, než přeroste v krizi.", "en": "Warning Thunder — announces a fault before it becomes a crisis." },
+    "quote": { "cs": "Hřmím proto, aby se to už nemuselo opakovat.", "en": "I thunder so that it need not happen again." }
+  }
+}

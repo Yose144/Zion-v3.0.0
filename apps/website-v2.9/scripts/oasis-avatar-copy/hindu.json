@@ -1,0 +1,155 @@
+{
+  "0": {
+    "subtitle": { "cs": "Kosmické sjednocení", "en": "Cosmic Integration" },
+    "role": { "cs": "Průvodce na konci všech cest", "en": "Guide at the end of all paths" },
+    "location": { "cs": "Chrám EKAM (skrytá dimenze)", "en": "EKAM Temple (hidden dimension)" },
+    "questLine": { "cs": "Sjednocení všech cest", "en": "The Integration of All Paths" },
+    "teaching": { "cs": "Krishna i Maitreya učí totéž: co je jednou rozdělené, se v čase znovu spojí.", "en": "Krishna and Maitreya teach one thing: what was divided is joined again in time." },
+    "ability": { "cs": "Kosmické vidění — spatříš všechny časové linie najednou.", "en": "Cosmic Vision — you see every timeline at once." },
+    "quote": { "cs": "Když dharma slábne, přicházím ji obnovit.", "en": "Whenever dharma declines, I come to restore it." }
+  },
+  "1": {
+    "subtitle": { "cs": "Král dharmy", "en": "Dharma King" },
+    "role": { "cs": "Mravní kompas a učitel správného jednání", "en": "Moral compass and teacher of right action" },
+    "location": { "cs": "Palác Ajódhja (oblast Modrého paprsku)", "en": "Ayodhya Palace (Blue Ray region)" },
+    "questLine": { "cs": "Cesta spravedlnosti", "en": "The Path of Righteousness" },
+    "teaching": { "cs": "Povinnost dřív než touha, pravda dřív než pohodlí.", "en": "Duty before desire, truth before comfort." },
+    "ability": { "cs": "Štít dharmy — odrazí útok vedený bezprávím.", "en": "Dharma Shield — turns aside attacks made without right." },
+    "quote": { "cs": "Trůn není odměna, je to závazek.", "en": "The throne is not a reward; it is an obligation." }
+  },
+  "2": {
+    "subtitle": { "cs": "Královna oddanosti", "en": "Devotion Queen" },
+    "role": { "cs": "Učitelka věrnosti a vnitřní síly", "en": "Teacher of loyalty and inner strength" },
+    "location": { "cs": "Haj Ashoka (oblast Růžového paprsku)", "en": "Ashoka Grove (Pink Ray region)" },
+    "questLine": { "cs": "Oheň čistoty", "en": "The Fire of Purity" },
+    "teaching": { "cs": "Skutečná láska projde zkouškou, protože se nebojí pravdy.", "en": "True love endures every test because it does not fear the truth." },
+    "ability": { "cs": "Zkouška ohněm — spálí pochybnosti i strach.", "en": "Trial by Fire — burns away doubt and fear." },
+    "quote": { "cs": "Kdo nezradí sám sebe, nemusí se bát soudu.", "en": "Whoever does not betray themselves need not fear judgement." }
+  },
+  "3": {
+    "subtitle": { "cs": "Božská služba", "en": "Divine Service" },
+    "role": { "cs": "Učitel síly, která slouží", "en": "Teacher of strength that serves" },
+    "location": { "cs": "Jeskyně v Himálaji (Rubínovo-zlatá oblast)", "en": "Himalayan cave (Ruby-Gold region)" },
+    "questLine": { "cs": "Skok víry", "en": "The Leap of Faith" },
+    "teaching": { "cs": "Síla dostane smysl až ve chvíli, kdy nese někoho jiného.", "en": "Strength finds its meaning the moment it carries someone else." },
+    "ability": { "cs": "Bajrang Bali — nadlidská síla v rozhodující chvíli.", "en": "Bajrang Bali — superhuman strength at the decisive moment." },
+    "quote": { "cs": "Jméno si nesu v hrudi, ne na jazyku.", "en": "I carry the name in my chest, not on my tongue." }
+  },
+  "4": {
+    "subtitle": { "cs": "Budoucí Buddha", "en": "Future Buddha" },
+    "role": { "cs": "Zakladatel ZIONu a průvodce komunitou", "en": "Founder of ZION and guide of the community" },
+    "location": { "cs": "Střed města ZION (uzlový svět)", "en": "ZION City Centre (hub world)" },
+    "questLine": { "cs": "Proroctví blockchainu", "en": "The Blockchain Prophecy" },
+    "teaching": { "cs": "Technologie bez soucitu jen zrychlí staré chyby.", "en": "Technology without compassion only speeds up old mistakes." },
+    "ability": { "cs": "Vidění sítě — přečteš tok transakcí i tok karmy.", "en": "Network Vision — you read the flow of transactions and of karma." },
+    "quote": { "cs": "Nestavíme stroj. Stavíme místo, kde se lidé nemusí bát.", "en": "We are not building a machine. We are building a place where people need not be afraid." }
+  },
+  "5": {
+    "subtitle": { "cs": "Bohyně poznání", "en": "Goddess of Knowledge" },
+    "role": { "cs": "Strážkyně posvátné knihovny", "en": "Guardian of the sacred library" },
+    "location": { "cs": "Ústraní Royal Teton (Žlutý paprsek)", "en": "Royal Teton Retreat (Yellow Ray)" },
+    "questLine": { "cs": "Věčný student", "en": "The Eternal Student" },
+    "teaching": { "cs": "Vědění bez moudrosti je slepé; moudrost bez vědění je němá.", "en": "Knowledge without wisdom is blind; wisdom without knowledge is mute." },
+    "ability": { "cs": "Vidjá šakti — odemkne skryté texty a rozluští nápovědy.", "en": "Vidya Shakti — unlocks hidden texts and deciphers clues." },
+    "quote": { "cs": "Kniha, kterou zavřeš, zůstane zavřená i tobě.", "en": "The book you close stays closed to you as well." }
+  },
+  "6": {
+    "subtitle": { "cs": "Božská ženskost", "en": "Divine Feminine" },
+    "role": { "cs": "Učitelka tvůrčí síly ženství", "en": "Teacher of the creative power of the feminine" },
+    "location": { "cs": "Chrám v Luxoru (Egypt)", "en": "Luxor Temple (Egypt)" },
+    "questLine": { "cs": "Isidin trůn", "en": "The Throne of Isis" },
+    "teaching": { "cs": "Co bylo stvořeno bez něhy, musí se k něze vrátit.", "en": "Whatever was created without tenderness must return to tenderness." },
+    "ability": { "cs": "Ankh života — křísí a hojí to, co bylo odepsané.", "en": "Ankh of Life — revives and heals what was written off." },
+    "quote": { "cs": "Hledala jsem kosti svého bratra, dokud jsem nenašla celý svět.", "en": "I searched for my brother's bones until I found the whole world." }
+  },
+  "8": {
+    "subtitle": { "cs": "Ochránkyně", "en": "Protector" },
+    "role": { "cs": "Strážkyně bran města ZION", "en": "Guardian of the gates of ZION" },
+    "location": { "cs": "Hradby města ZION", "en": "The walls of ZION City" },
+    "questLine": { "cs": "Strážcova přísaha", "en": "The Guardian's Oath" },
+    "teaching": { "cs": "Ochrana, která chce ovládat, přestává být ochranou.", "en": "Protection that wants to control stops being protection." },
+    "ability": { "cs": "Štít světla — bariéra, která drží, aniž by uvěznila.", "en": "Shield of Light — a barrier that holds without imprisoning." },
+    "quote": { "cs": "Stojím tu proto, abys mohl jít dál.", "en": "I stand here so that you may walk on." }
+  },
+  "9": {
+    "subtitle": { "cs": "Strážkyně míru", "en": "Peace Keeper" },
+    "role": { "cs": "Průvodkyně při řešení sporů", "en": "Guide through conflict" },
+    "location": { "cs": "Gándhího ášram", "en": "Gandhi's ashram" },
+    "questLine": { "cs": "Cesta ahinsá", "en": "The Way of Ahimsa" },
+    "teaching": { "cs": "Nejvyšší silou je ta, kterou nemusíš použít.", "en": "The highest strength is the one you never have to use." },
+    "ability": { "cs": "Mírové rozuzlení — z nepřítele se stane spojenec.", "en": "Peaceful Resolution — an enemy becomes an ally." },
+    "quote": { "cs": "Mír není konec hádky, je to způsob, jak ji vést.", "en": "Peace is not the end of an argument; it is the way you hold it." }
+  },
+  "10": {
+    "subtitle": { "cs": "Posvátný válečník", "en": "Sacred Warrior" },
+    "role": { "cs": "Kněz, který umí vzít meč", "en": "A priest who can take up the sword" },
+    "location": { "cs": "Zříceniny Camelotu", "en": "The ruins of Camelot" },
+    "questLine": { "cs": "Posvátný meč", "en": "The Sacred Sword" },
+    "teaching": { "cs": "Bojuj za pravdu, ne za svůj obraz v jejím světle.", "en": "Fight for the truth, not for your reflection in its light." },
+    "ability": { "cs": "Svatý úder — síla, která chrání, ne dominuje.", "en": "Holy Strike — power that protects rather than dominates." },
+    "quote": { "cs": "Meč mi byl dán, abych ho nemusel použít.", "en": "The sword was given to me so that I need not use it." }
+  },
+  "11": {
+    "subtitle": { "cs": "Hledající válečník", "en": "Warrior Seeker" },
+    "role": { "cs": "Učitel etiky na bitevním poli", "en": "Teacher of ethics on the battlefield" },
+    "location": { "cs": "Kurukšétra (kraj Mahábháraty)", "en": "Kurukshetra (Mahabharata region)" },
+    "questLine": { "cs": "Neochotný bojovník", "en": "The Reluctant Warrior" },
+    "teaching": { "cs": "Pochybnost není slabost; je to místo, kde se rodí rozhodnutí.", "en": "Doubt is not weakness; it is where decision is born." },
+    "ability": { "cs": "Gándívův luk — přesná střela i přes vlastní váhání.", "en": "Gandiva Bow — the true shot, even through your own hesitation." },
+    "quote": { "cs": "Položil jsem zbraň dřív, než jsem ji zvedl.", "en": "I laid down the weapon before I ever raised it." }
+  },
+  "12": {
+    "subtitle": { "cs": "Silný ochránce", "en": "Strong Protector" },
+    "role": { "cs": "Šampion síly a spravedlnosti", "en": "Champion of strength and justice" },
+    "location": { "cs": "Palác Hastinápura", "en": "Hastinapura Palace" },
+    "questLine": { "cs": "Ten mocný", "en": "The Mighty One" },
+    "teaching": { "cs": "Síla má cenu jen tehdy, když se ptá, komu pomůže.", "en": "Strength is worth something only when it asks whom it will help." },
+    "ability": { "cs": "Kyj hromu — rána, která zastaví dav.", "en": "Mace of Thunder — a blow that stops a crowd." },
+    "quote": { "cs": "Nejsem nejsilnější, jsem ten, kdo zůstane stát.", "en": "I am not the strongest; I am the one who stays standing." }
+  },
+  "13": {
+    "subtitle": { "cs": "Vůdce", "en": "Leader" },
+    "role": { "cs": "Mentor odpovědného vedení", "en": "Mentor of responsible leadership" },
+    "location": { "cs": "Rada města ZION", "en": "The ZION council chamber" },
+    "questLine": { "cs": "Břemeno náčelníka", "en": "The Chief's Burden" },
+    "teaching": { "cs": "Veď příkladem; příkaz, který sám neplníš, je jen hluk.", "en": "Lead by example; an order you do not keep is only noise." },
+    "ability": { "cs": "Shromáždi oddíl — posílí odvahu těch, kdo jdou s tebou.", "en": "Rally the Company — strengthens the courage of those who walk with you." },
+    "quote": { "cs": "Kdo chce jít první, musí umět jít poslední.", "en": "Whoever wants to walk first must be able to walk last." }
+  },
+  "14": {
+    "subtitle": { "cs": "Božská matka", "en": "Divine Mother" },
+    "role": { "cs": "Učitelka lásky bez podmínek", "en": "Teacher of unconditional love" },
+    "location": { "cs": "Vrindávan (Krišnova vesnice)", "en": "Vrindavan (Krishna's village)" },
+    "questLine": { "cs": "Matčina láska", "en": "The Mother's Love" },
+    "teaching": { "cs": "Miluj, aniž bys za to něco chtěla; pak se láska nemůže minout.", "en": "Love without asking anything back; then love cannot miss." },
+    "ability": { "cs": "Matčino požehnání — zahojí ránu, kterou nikdo nevidí.", "en": "A Mother's Blessing — heals the wound no one sees." },
+    "quote": { "cs": "Neptám se, cos provedl. Ptám se, jestli jsi jedl.", "en": "I don't ask what you did. I ask whether you have eaten." }
+  },
+  "15": {
+    "subtitle": { "cs": "Božský architekt", "en": "Divine Architect" },
+    "role": { "cs": "Strážce posvátné geometrie", "en": "Keeper of sacred geometry" },
+    "location": { "cs": "Staveniště chrámu EKAM", "en": "The EKAM temple site" },
+    "questLine": { "cs": "Kosmický plán", "en": "The Cosmic Blueprint" },
+    "teaching": { "cs": "Tvar, který drží, není náhoda; je to myšlenka, která se nechala spočítat.", "en": "A form that holds is no accident; it is a thought that let itself be measured." },
+    "ability": { "cs": "Posvátná geometrie — odemkne stavby a jejich skryté proporce.", "en": "Sacred Geometry — unlocks structures and their hidden proportions." },
+    "quote": { "cs": "Stavím tak, aby se v tom dalo žít i modlit.", "en": "I build so that one can both live and pray inside." }
+  },
+  "16": {
+    "subtitle": { "cs": "Božská milovaná", "en": "Divine Beloved" },
+    "role": { "cs": "Učitelka lásky, která netrvá na formě", "en": "Teacher of love that does not insist on form" },
+    "location": { "cs": "Rádhákund (posvátné jezero)", "en": "Radha Kund (sacred lake)" },
+    "questLine": { "cs": "Věčný tanec", "en": "The Eternal Dance" },
+    "teaching": { "cs": "Láska není vlastnictví; je to tanec, do kterého se vejde i odchod.", "en": "Love is not possession; it is a dance with room for leaving." },
+    "ability": { "cs": "Rása líla — tanec oddanosti, který vyladí rytmus světa.", "en": "Rasa Lila — a dance of devotion that tunes the rhythm of the world." },
+    "quote": { "cs": "Když mě hledal, našel mě tam, kde jsem nebyla.", "en": "When he searched for me, he found me where I was not." }
+  },
+  "17": {
+    "subtitle": { "cs": "Kosmický mudrc", "en": "Cosmic Sage" },
+    "role": { "cs": "Vypravěč a strážce paměti", "en": "Storyteller and keeper of memory" },
+    "location": { "cs": "Himálajská jeskyně (Vjásovo ústraní)", "en": "Himalayan cave (Vyasa's retreat)" },
+    "questLine": { "cs": "Letopisec věků", "en": "The Chronicler of Ages" },
+    "teaching": { "cs": "Dějiny se opakují, dokud je někdo nevypráví poctivě.", "en": "History repeats until someone tells it honestly." },
+    "ability": { "cs": "Epická paměť — vybaví dřívější události a odemkne souvislosti.", "en": "Epic Memory — recalls earlier events and unlocks their connections." },
+    "quote": { "cs": "Nepsal jsem knihu. Zapsal jsem, co se nedalo zapomenout.", "en": "I did not write a book. I recorded what could not be forgotten." }
+  }
+}

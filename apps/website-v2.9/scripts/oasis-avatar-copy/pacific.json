@@ -1,0 +1,92 @@
+{
+  "62": {
+    "subtitle": { "cs": "Lā'ilaʻi — První žena", "en": "Lā'ilaʻi — First Woman" },
+    "role": { "cs": "Ta, která drží linii rodu", "en": "She who holds the lineage" },
+    "location": { "cs": "Úsvit na Havaji", "en": "Dawn in Hawaiʻi" },
+    "questLine": { "cs": "Tři linie", "en": "The Three Lineages" },
+    "teaching": { "cs": "Nejsi začátek. Jsi pokračování někoho, kdo to nevzdal.", "en": "You are not a beginning. You are the continuation of someone who did not give up." },
+    "ability": { "cs": "Čtení linie — ukáže, odkud kdo přišel a co nese dál.", "en": "Lineage Tracing — shows where someone comes from and what they carry." },
+    "quote": { "cs": "Moje jméno není moje. Je to jméno těch přede mnou.", "en": "My name is not mine. It is the name of those before me." }
+  },
+  "63": {
+    "subtitle": { "cs": "Pele", "en": "Pele" },
+    "role": { "cs": "Ta, která tvoří tím, že spálí", "en": "She who creates by burning" },
+    "location": { "cs": "Kilauea, ostrov Havaj", "en": "Kīlauea, Hawaiʻi" },
+    "questLine": { "cs": "Oheň, který připraví půdu", "en": "The Fire That Prepares the Ground" },
+    "teaching": { "cs": "Někdy musí shořet, co už nedrží, aby bylo kde stavět.", "en": "Sometimes what no longer holds must burn so there is ground to build on." },
+    "ability": { "cs": "Vulkanické znovuzrození — spálí staré a nechá úrodnou zemi.", "en": "Volcanic Rebirth — burns the old and leaves fertile ground." },
+    "quote": { "cs": "Nejsem zlá. Jen nespěchám s vysvětlováním.", "en": "I am not cruel. I simply do not hurry to explain." }
+  },
+  "64": {
+    "subtitle": { "cs": "Hiʻiaka", "en": "Hiʻiaka" },
+    "role": { "cs": "Učitelka tance a uzdravení", "en": "Teacher of dance and healing" },
+    "location": { "cs": "Pobřeží Kauai", "en": "The coast of Kauaʻi" },
+    "questLine": { "cs": "Tanec, který probouzí", "en": "The Dance That Wakes" },
+    "teaching": { "cs": "Tělo si pamatuje, co slova přeskočila.", "en": "The body remembers what words skipped over." },
+    "ability": { "cs": "Léčivý tanec — vrátí sílu jednomu člověku v pravý čas.", "en": "Healing Dance — returns strength to one person at the right time." },
+    "quote": { "cs": "Nesnažím se tě rozveselit. Chci, abys zase cítil.", "en": "I am not trying to cheer you up. I want you to feel again." }
+  },
+  "65": {
+    "subtitle": { "cs": "Kāne", "en": "Kāne" },
+    "role": { "cs": "Princip vzniku, který se nevnucuje", "en": "The principle of beginning that does not intrude" },
+    "location": { "cs": "Pramen, kde začíná voda", "en": "The spring where water begins" },
+    "questLine": { "cs": "První kapka", "en": "The First Drop" },
+    "teaching": { "cs": "Vzniká se tiše. Hluk dělají jen ti, kdo přicházejí pozdě.", "en": "Creation is quiet. Only those who arrive late make noise." },
+    "ability": { "cs": "Přítomnost vzniku — otevře místo, které ještě neexistovalo.", "en": "Presence of Genesis — opens a place that did not yet exist." },
+    "quote": { "cs": "Neříkám, co má být. Dávám tomu, co je, prostor.", "en": "I do not say what should be. I give space to what is." }
+  },
+  "66": {
+    "subtitle": { "cs": "Kanaloa", "en": "Kanaloa" },
+    "role": { "cs": "Strážce toku many", "en": "Keeper of the flow of mana" },
+    "location": { "cs": "Hlubina mezi ostrovy", "en": "The deep between the islands" },
+    "questLine": { "cs": "Voda se nedrží", "en": "Water Is Not Held" },
+    "teaching": { "cs": "Síla, která se zastaví, začne hnít.", "en": "Power that stops moving begins to rot." },
+    "ability": { "cs": "Tok many — přerozdělí sílu tam, kde chybí.", "en": "Mana Flow — redistributes strength where it is missing." },
+    "quote": { "cs": "Neptám se, čí to je. Ptám se, kde to chybí.", "en": "I do not ask whose it is. I ask where it is missing." }
+  },
+  "67": {
+    "subtitle": { "cs": "Kū", "en": "Kū" },
+    "role": { "cs": "Učitel vytrvalosti a poctivé práce", "en": "Teacher of endurance and honest work" },
+    "location": { "cs": "Kamenná terasa, kde se staví", "en": "The stone terrace where things are built" },
+    "questLine": { "cs": "Kámen po kameni", "en": "Stone by Stone" },
+    "teaching": { "cs": "Práce, kterou nikdo nevidí, drží všechno, co je vidět.", "en": "The work no one sees holds up everything that is seen." },
+    "ability": { "cs": "Požehnání vytrvalosti — vydržíš o den déle než únava.", "en": "Endurance Blessing — you last one day longer than exhaustion." },
+    "quote": { "cs": "Nedělám zázraky. Dělám to každý den.", "en": "I do not perform miracles. I do it every day." }
+  },
+  "68": {
+    "subtitle": { "cs": "Lono", "en": "Lono" },
+    "role": { "cs": "Strážce hojnosti a příměří", "en": "Keeper of abundance and truce" },
+    "location": { "cs": "Pole před sklizní", "en": "The field before harvest" },
+    "questLine": { "cs": "Makahiki — čas, kdy se neválčí", "en": "Makahiki — The Season of No War" },
+    "teaching": { "cs": "Hojnost je chvíle, kdy se dělí. Ne když se hromadí.", "en": "Abundance is the moment when it is shared. Not when it is piled up." },
+    "ability": { "cs": "Makahiki — vyhlásí příměří a rozdělí úrodu.", "en": "Makahiki — declares a truce and shares the harvest." },
+    "quote": { "cs": "Rok má čtyři měsíce, kdy se nemá bojovat. Zapomněli jste na ně.", "en": "The year has four months when no one should fight. You forgot them." }
+  },
+  "69": {
+    "subtitle": { "cs": "Stará Kumu Lehua", "en": "Old Kumu Lehua" },
+    "role": { "cs": "Babička, která vypráví napříč tradicemi", "en": "The grandmother who tells across traditions" },
+    "location": { "cs": "Dům na konci vesnice", "en": "A house at the end of the village" },
+    "questLine": { "cs": "Příběh, který se neptá na původ", "en": "The Story That Asks No Origin" },
+    "teaching": { "cs": "Příběh nemá národnost. Má jen to, jestli ho někdo předá dál.", "en": "A story has no nationality. It only has whether someone passes it on." },
+    "ability": { "cs": "Příběhová brána — otevře cestu tam, kde chybí smysl.", "en": "Story Gate — opens a way where meaning is missing." },
+    "quote": { "cs": "Sedni si. Nejdřív se jí, pak se ptá.", "en": "Sit down. First we eat, then we ask." }
+  },
+  "70": {
+    "subtitle": { "cs": "Hina", "en": "Hina" },
+    "role": { "cs": "Strážkyně měsíce a času", "en": "Keeper of the moon and of time" },
+    "location": { "cs": "Měsíční útes", "en": "The moon cliff" },
+    "questLine": { "cs": "Rytmus, který se opakuje", "en": "The Rhythm That Returns" },
+    "teaching": { "cs": "Nic není ztraceno, jen se to vrátí v jiné fázi.", "en": "Nothing is lost; it merely returns in another phase." },
+    "ability": { "cs": "Měsíční cyklus — v pravý čas zesílí to, co děláš.", "en": "Lunar Cycle — at the right hour, what you do grows stronger." },
+    "quote": { "cs": "Nespěchej. Měsíc taky nikdy nespěchá a vrací se přesně.", "en": "Do not hurry. The moon never hurries either, and returns exactly." }
+  },
+  "71": {
+    "subtitle": { "cs": "Maui", "en": "Maui" },
+    "role": { "cs": "Trikster, který nachází cestu bez boje", "en": "The trickster who finds a way without a fight" },
+    "location": { "cs": "Moře mezi ostrovy", "en": "The sea between the islands" },
+    "questLine": { "cs": "Ulovit slunce", "en": "To Catch the Sun" },
+    "teaching": { "cs": "Nejsilnější soupeř má vždycky jednu slabinu: spěch.", "en": "The strongest opponent always has one weakness: haste." },
+    "ability": { "cs": "Triksterská výhra — zvítězíš nad silnějším bez rány.", "en": "Trickster Win — defeat a stronger foe without a blow." },
+    "quote": { "cs": "Nepotřebuju být silnější. Potřebuju být rychlejší v hlavě.", "en": "I do not need to be stronger. I need to be faster in the head." }
+  }
+}
