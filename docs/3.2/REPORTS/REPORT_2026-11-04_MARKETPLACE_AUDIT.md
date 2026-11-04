@@ -142,3 +142,22 @@ EDGE1 byl v pořádku (`drwxrwxrwt`), jiné unity na EDGE2 EACCES na `/tmp` nem�
 - Zdvojený nadpis „Ukázky z knihy" (citáty vs. nové vzorky) → citáty jsou „Hlasy z knihy".
 
 **Deploy past:** `npm ci` se dvakrát srazil s paralelní session (ENOTEMPTY, chybějící `valtio/esm/vanilla.mjs`, zkrácený `next-swc` → „Turbopack requires native bindings"). Řešení = plný `rm -rf node_modules && npm ci` a hned deploy. Skript má nově `ZION_SKIP_NPM_CI=1` pro případ, kdy je strom čerstvý a nechceme ho znovu přepisovat.
+
+---
+
+## 8. Dodatek 2 — vánoční novinka s novými obrázky, cesta nákupem a FAQ
+
+👤 dodal druhý balíček `ZION_MARKET_KOMPLET_WEBP` (39 WebP): 3 homepage obrázky 1672×941, 7 do galerií, 6 ilustrací z knihy a 23 katalogových fotek.
+
+**Použito:**
+- `public/vanoce/home/` — hero karty na homepage (pass / kniha / lampion v4 s tesařem a dětmi). Karty si obrázek berou z dat produktu (`hero`), ne z konstanty v komponentě.
+- `public/vanoce/galerie/` — 2–3 snímky na detailu produktu (pass 2, kniha 2, lampion 3).
+- `public/vanoce/pribeh/` — 6 ilustrací; tři z nich jsou **přiřazené konkrétním ukázkám**: Prolog → Světla u brány, 7. kapitola → Jméno lodi, Epilog → Místo navíc. Ukázka tak není jen text, ale dvoustránka.
+
+**Nový obsah:**
+- `ChristmasJourneySection` pod třemi kartami: **5 kroků „jak to funguje"** (od výběru po uplatnění kódu a import peněženky) + **6 otázek**, které se ptají u všech darů (doručení e-mailem, hodnota bonusu, co je ZAP, seed phrase, darování, vrácení).
+- Detaily produktů rozšířeny o dva odstavce každý — Pass „co je uvnitř / kód nemá expiraci", kniha „jak číst / kde začít", lampion „co přijde hned / světlo je součást příběhu". Nic o rozměrech či materiálech lampionu jsem nedopisoval: výrobní geometrii určuje SVG/DXF v4 a náhledy nejsou výrobní dokumentace.
+
+**Past (screenshot):** `loading="lazy"` + `fullPage` screenshot bez scrollu = prázdné boxy a falešný nález „obrázek chybí". `scripts/shot-xmas.mjs` teď před snímkem projede stránku.
+
+**Pozor:** commit s touto dávkou byl stržen do commitu paralelní session (`df8bb7a02`) — obsah je v HEAD, jen pod cizí zprávou. Ověřeno `git cat-file -e HEAD:<soubor>` u všech dotčených souborů.
