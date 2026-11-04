@@ -111,6 +111,14 @@ export default function Navbar() {
               </Link>
             ))}
             <a
+              href="https://zionterranova.com"
+              target="_blank"
+              rel="noreferrer"
+              className="rasta-nav-link"
+            >
+              ZION
+            </a>
+            <a
               href="https://pool.zionterranova.com"
               target="_blank"
               rel="noreferrer"
@@ -183,6 +191,15 @@ export default function Navbar() {
             {t(link.key as 'nav.home' | 'nav.explore' | 'nav.shop' | 'nav.create' | 'nav.ai')}
           </Link>
         ))}
+        <a
+          href="https://zionterranova.com"
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => setOpen(false)}
+          className="rasta-nav-link"
+        >
+          ZION
+        </a>
         <a
           href="https://pool.zionterranova.com"
           target="_blank"

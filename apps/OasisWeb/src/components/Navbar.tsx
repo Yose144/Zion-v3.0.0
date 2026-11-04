@@ -57,12 +57,23 @@ export default function Navbar() {
           >
             ZION OASIS
           </Link>
-          <a
-            href="https://app.zionterranova.com/roadmap"
-            className="text-[10px] leading-tight text-white/40 hover:text-white/70"
-          >
-            ZION v3.2 · Mainnet Beta
-          </a>
+          <span className="flex items-center gap-1.5 text-[10px] leading-tight">
+            <a
+              href="https://zionterranova.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/40 hover:text-white/70"
+            >
+              ZION TerraNova
+            </a>
+            <span className="text-white/20">·</span>
+            <a
+              href="https://app.zionterranova.com/roadmap"
+              className="text-white/40 hover:text-white/70"
+            >
+              v3.2 Mainnet Beta
+            </a>
+          </span>
         </div>
 
         {/* Desktop nav */}

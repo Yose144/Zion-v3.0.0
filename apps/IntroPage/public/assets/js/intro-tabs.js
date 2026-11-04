@@ -80,6 +80,7 @@
       'social.instagram': `Instagram`,
 
       'nav.market': `Market`,
+      'nav.nirvana': `Nirvana`,
       'nav.onboard': `Onboard`,
       'nav.about': `O nás`,
       'nav.docs': `Docs`,
@@ -206,6 +207,7 @@
       'social.instagram': `Instagram`,
 
       'nav.market': `Market`,
+      'nav.nirvana': `Nirvana`,
       'nav.onboard': `Onboard`,
       'nav.about': `About`,
       'nav.docs': `Docs`,
