@@ -118,6 +118,7 @@ rsync -avz --delete \
   --exclude='.l1-watcher-state.json' \
   --exclude='.next/cache' \
   --exclude='.next/trace' \
+  --exclude='.next/dev' \
   -e "ssh ${SSH_OPTS}" \
   "${ROOT_DIR}/" \
   "${EDGE_USER}@${EDGE_HOST}:${REMOTE_DIR}/"
@@ -138,7 +139,9 @@ echo "[deploy-marketplace] Regenerating Prisma client on ${EDGE_HOST}"
 # v rsyncu záměrně vynechaný.
 SSH "cd '${REMOTE_DIR}' && npx prisma generate >/dev/null 2>&1 && \
   mkdir -p .next/standalone/node_modules/.prisma/client && \
-  cp -a node_modules/.prisma/client/. .next/standalone/node_modules/.prisma/client/"
+  cp -a node_modules/.prisma/client/. .next/standalone/node_modules/.prisma/client/ && \
+  rm -f .next/standalone/node_modules/.prisma/client/libquery_engine-darwin-*.node && \
+  rm -rf .next/dev"
 
 echo "[deploy-marketplace] Relativizing absolute symlinks in the bundle"
 # Turbopack zapisuje alias externích modulů jako symlink. Když build běží v git
@@ -231,5 +234,24 @@ if [[ "$local_code" == "200" && "$live_code" == "200" && "$asset_code" == "200" 
 else
   echo "[deploy-marketplace] FAIL — local :3100=$local_code, live=$live_code, static=$asset_code ($asset_path) (want 200/200/200)" >&2
   SSH "systemctl status ${SERVICE} --no-pager -l | tail -15" || true
+  exit 1
+fi
+
+# ── API + DB smoke ───────────────────────────────────────────────────
+# HTML a statické assety servíruje Next i s rozbitým bundlem — 2026-11-04
+# prošel deploy, kde každá DB routa padala na
+# `Cannot find module '@prisma/client-<hash>/default.js'`, a smoke byl zelený.
+# /api/health dělá skutečný dotaz do databáze, takže tuhle třídu chyb odchytí.
+echo "[deploy-marketplace] Smoke check API + DB..."
+sleep 2
+health_json=$(curl -s --max-time 25 'https://market.zionterranova.com/api/health' || true)
+products_json=$(curl -s --max-time 25 'https://market.zionterranova.com/api/shop/products?pageSize=1' || true)
+if grep -q '"status":"healthy"' <<<"$health_json" && grep -q '"data"' <<<"$products_json"; then
+  echo "[deploy-marketplace] API OK — /api/health healthy, /api/shop/products odpovídá."
+else
+  echo "[deploy-marketplace] FAIL — API/DB neodpovídá (Prisma bundle?)." >&2
+  echo "  /api/health          → ${health_json:0:300}" >&2
+  echo "  /api/shop/products   → ${products_json:0:300}" >&2
+  SSH "journalctl -u ${SERVICE} -n 40 --no-pager | grep -iE 'prisma|Cannot find module' | tail -10" || true
   exit 1
 fi

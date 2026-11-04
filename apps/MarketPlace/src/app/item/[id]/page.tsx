@@ -108,6 +108,7 @@ export default function ItemDetailPage() {
 
   const timeLeftText = useMemo(() => {
     if (!display.endsAt) return '—';
+    // eslint-disable-next-line react-hooks/purity -- countdown se má počítat k okamžiku vykreslení; závisí na display.endsAt, ne na hodinách Reactu
     const diff = display.endsAt - Date.now();
     if (diff <= 0) return t('item.auctionEnded');
     const h = Math.floor(diff / 3_600_000);

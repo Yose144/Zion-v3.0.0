@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { isAuthenticated } from '@/lib/admin-auth';
 import {
@@ -751,15 +751,19 @@ export default function AdminOrdersPage() {
   const arrow = (active: boolean, asc: boolean) =>
     active ? (asc ? ' ↑' : ' ↓') : ' ↕';
 
-  const debouncedSearch = useMemo(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    return (value: string) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        setSearch(value);
-        setPage(1);
-      }, 400);
-    };
+  // Debounce drží timer v refu — closure v useMemo by ho přepisovala
+  // po dokončení renderu (react-hooks/immutability).
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debouncedSearch = useCallback((value: string) => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setSearch(value);
+      setPage(1);
+    }, 400);
+  }, []);
+
+  useEffect(() => () => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
   }, []);
 
   const stats = data?.stats;

@@ -1,11 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { buildV2OrderConfirmationEmail, buildV2OrderConfirmationHtml } from '@/lib/v2-email';
 import { getActiveTheme } from '@/lib/settings';
 import { sendMail, type OrderEmailData } from '@/lib/email';
+import { requireAdminAuth } from '@/lib/admin-guard';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: Request) {
+// Tohle je diagnostický endpoint, který posílá skutečný e-mail a vrací stav
+// SMTP/Resend prostředí. Bez auth by to byl otevřený relay (kdokoli by poslal
+// mail z naší domény na libovolnou adresu) — proto admin gate.
+export async function POST(request: NextRequest) {
+  const auth = requireAdminAuth(request);
+  if (auth) return auth;
+
   const body = await request.json().catch(() => ({}));
   const testEmail = body.email || 'yosef.hubalek@gmail.com';
 

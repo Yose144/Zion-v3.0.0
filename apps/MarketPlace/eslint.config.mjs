@@ -14,4 +14,14 @@ export default [
       'contracts/**/cache/**',
     ],
   },
+  {
+    // `react-hooks/set-state-in-effect` je nové pravidlo z React Compiler lintu.
+    // V tomhle projektu ho plní legitimní hydratační vzorec: stav se po mountu
+    // doladí z localStorage (jazyk, košík, admin session), aby SSR a první
+    // klientský render zůstaly shodné. Přepsat to na lazy initializer by
+    // rozbilo hydrataci, proto rule = warn, ne error.
+    rules: {
+      'react-hooks/set-state-in-effect': 'warn',
+    },
+  },
 ];

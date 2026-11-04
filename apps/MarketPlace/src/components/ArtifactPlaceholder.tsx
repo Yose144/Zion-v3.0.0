@@ -1,5 +1,6 @@
 'use client';
 
+import { createElement } from 'react';
 import { User, ScrollText, Map, Egg, Rocket, Box, type LucideIcon } from 'lucide-react';
 
 const RASTA_GOLD = '252, 209, 22';
@@ -59,5 +60,8 @@ export function ArtifactPlaceholder({
 }: ArtifactPlaceholderProps) {
   const Icon = getArtifactIcon(category);
   const color = rarity ? `rgb(${rarityColor[rarity]})` : `rgb(${RASTA_GOLD})`;
-  return <Icon size={size} color={color} className={className} />;
+  // createElement místo <Icon /> — ikona je stabilní reference z modulové mapy,
+  // ale JSX s velkým písmenem lint (react-hooks/static-components) bere jako
+  // komponentu vytvářenou během renderu.
+  return createElement(Icon, { size, color, className });
 }
