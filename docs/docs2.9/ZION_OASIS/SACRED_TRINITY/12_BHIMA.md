@@ -1,9 +1,11 @@
+# 🥊 BHIMA: The Mighty One
+
 > **Kamarád Maitreyi - Strength Dharma**  
 > **"Bhima's strength is not in muscles, but in loyalty that never breaks."**
 
 ---
 
-## 🌟 Kdo je Milan v ZION?
+## 🌟 Kdo je Bhima v ZION?
 
 **Jméno:** Milan  
 **Minulá inkarnace:** Bhima (भीम) - Strongest Pandava  
@@ -300,8 +302,8 @@ Jai Bhima. Jai Maitreya. Jai ZION.
 ---
 
 **Related:**
-- **Krishna/Maitreya** - Your leader, your friend
-- **Arjuna/Brother** - Precision partner (you're strength, he's skill)
-- **Artem/Vůdce (Next)** - Strategic leader
+- [Krishna/Maitreya](00_KRISHNA_MAITREYA.md) - Your leader, your friend
+- [Arjuna/Brother](11_ARJUNA_BROTHER.md) - Precision partner (you're strength, he's skill)
+- [Artem/Vůdce (Next)](13_ARTEM_VUDCE.md) - Strategic leader
 
 *"I am Bhima. I protect. I fight. I win. Simple."* 💪🔥

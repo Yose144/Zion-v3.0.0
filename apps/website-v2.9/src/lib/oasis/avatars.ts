@@ -1120,7 +1120,7 @@ export const OASIS_AVATARS: OasisAvatar[] = [
   },
   {
     "id": 10,
-    "name": "Bronu-Christ",
+    "name": "Christ",
     "subtitle": {
       "cs": "Posvátný válečník",
       "en": "Sacred Warrior"
@@ -1326,7 +1326,7 @@ export const OASIS_AVATARS: OasisAvatar[] = [
   },
   {
     "id": 12,
-    "name": "Milan-Bhima",
+    "name": "Bhima",
     "subtitle": {
       "cs": "Silný ochránce",
       "en": "Strong Protector"

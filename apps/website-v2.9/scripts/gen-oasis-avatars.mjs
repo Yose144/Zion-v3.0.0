@@ -20,7 +20,7 @@
  *
  * Usage: node scripts/gen-oasis-avatars.mjs
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -29,6 +29,8 @@ const REPO_ROOT = join(APP_ROOT, '..', '..');
 const AVATARS_JSON = join(REPO_ROOT, 'V31/L4/oasis/data/avatars.json');
 const ROSTER_MD = join(REPO_ROOT, 'docs/docs2.9/ZION_OASIS/AVATAR_ROSTER.md');
 const PROFILES_DIR = join(REPO_ROOT, 'docs/docs2.9/ZION_OASIS/SACRED_TRINITY');
+/** Překlady profilů vedle kánonu: i18n/<id>.cs.md a i18n/<id>.en.md (jen hotové překlady). */
+const PROFILES_I18N = join(PROFILES_DIR, 'i18n');
 const OUT = join(APP_ROOT, 'src/lib/oasis/avatars.ts');
 const PROFILE_OUT_DIR = join(APP_ROOT, 'public/data/oasis/profiles');
 const ESSENCE_I18N = join(APP_ROOT, 'scripts/oasis-essence-i18n.json');
@@ -269,11 +271,38 @@ function artFor(index, name) {
   return { card, full: full || card, final: Boolean(m.finalPortrait) };
 }
 
+/** Velmi hrubý odhad jazyka dokumentu: převaha diakritiky = čeština. */
+function detectLang(text) {
+  const cs = (text.match(/[áčďéěíňóřšťúůýž]/gi) ?? []).length;
+  const en = (text.match(/\b(the|and|is|of|to|with|that|this|from|for)\b/gi) ?? []).length;
+  if (cs > en * 3) return 'cs';
+  if (en > cs * 3) return 'en';
+  return 'cs';
+}
+
+/** Hotové překlady profilů: id → { cs?, en? } (surový markdown). */
+const profileI18n = new Map();
+if (existsSync(PROFILES_I18N)) {
+  for (const f of readdirSync(PROFILES_I18N)) {
+    const m = f.match(/^(\d+)\.(cs|en)\.md$/);
+    if (!m) continue;
+    const id = Number(m[1]);
+    const entry = profileI18n.get(id) ?? {};
+    entry[m[2]] = readFileSync(join(PROFILES_I18N, f), 'utf8');
+    profileI18n.set(id, entry);
+  }
+}
+
 // ── 4) roster JSON ────────────────────────────────────────────────────
 const avatars = JSON.parse(readFileSync(AVATARS_JSON, 'utf8')).avatars;
 
 mkdirSync(PROFILE_OUT_DIR, { recursive: true });
+// úklid starých jednojazyčných souborů <id>.md (nově <id>.<lang>.md)
+for (const f of readdirSync(PROFILE_OUT_DIR)) {
+  if (/^\d+\.md$/.test(f)) rmSync(join(PROFILE_OUT_DIR, f));
+}
 let profilesWritten = 0;
+let translatedProfiles = 0;
 
 const unmapped = [];
 const rows = avatars.map((a, i) => {
@@ -285,7 +314,17 @@ const rows = avatars.map((a, i) => {
     const raw = readFileSync(pf, 'utf8');
     essence = extractEssence(raw);
     quote = extractQuote(raw);
-    writeFileSync(join(PROFILE_OUT_DIR, `${a.id}.md`), sanitizeProfile(raw) + '\n');
+    const baseLang = detectLang(raw);
+    writeFileSync(
+      join(PROFILE_OUT_DIR, `${a.id}.${baseLang}.md`),
+      sanitizeProfile(raw) + '\n',
+    );
+    // hotové překlady (i18n/<id>.<lang>.md) — publikují se taky
+    for (const [lang, text] of Object.entries(profileI18n.get(a.id) ?? {})) {
+      if (lang === baseLang) continue;
+      writeFileSync(join(PROFILE_OUT_DIR, `${a.id}.${lang}.md`), sanitizeProfile(text) + '\n');
+      translatedProfiles++;
+    }
     profilesWritten++;
   }
   const c = copyById.get(a.id) ?? {};
@@ -400,7 +439,7 @@ export const OASIS_AVATARS: OasisAvatar[] = ${JSON.stringify(rows, null, 2)};
 
 writeFileSync(OUT, out);
 console.log(`[gen-oasis-avatars] ${rows.length} avatarů → ${OUT.replace(APP_ROOT + '/', '')}`);
-console.log(`[gen-oasis-avatars] ${profilesWritten} profilů → public/data/oasis/profiles/<id>.md`);
+console.log(`[gen-oasis-avatars] ${profilesWritten} profilů (kánon) + ${translatedProfiles} překladů → public/data/oasis/profiles/<id>.<lang>.md`);
 const counts = new Map();
 for (const r of rows) counts.set(r.circle, (counts.get(r.circle) ?? 0) + 1);
 console.log('[gen-oasis-avatars] kruhy:', [...counts.entries()].map(([k, n]) => `${k}:${n}`).join(' '));

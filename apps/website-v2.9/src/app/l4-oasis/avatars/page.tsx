@@ -283,12 +283,19 @@ function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose:
   useEffect(() => {
     if (!a.hasProfile) return;
     let dead = false;
-    fetch(`/data/oasis/profiles/${a.id}.md`)
-      .then((r) => (r.ok ? r.text() : Promise.reject(new Error(String(r.status)))))
+    // Profil je dvojjazyčný: <id>.<lang>.md; když překlad chybí, spadne na druhý jazyk.
+    const lang = cs ? 'cs' : 'en';
+    const other = cs ? 'en' : 'cs';
+    const load = (l: string) =>
+      fetch(`/data/oasis/profiles/${a.id}.${l}.md`).then((r) =>
+        r.ok ? r.text() : Promise.reject(new Error(String(r.status))),
+      );
+    load(lang)
+      .catch(() => load(other))
       .then((t) => { if (!dead) setProfile(t); })
       .catch(() => { if (!dead) setProfileFailed(true); });
     return () => { dead = true; };
-  }, [a.id, a.hasProfile]);
+  }, [a.id, a.hasProfile, cs]);
 
   const circle = AVATAR_CIRCLES.find((c) => c.key === a.circle);
   const circleLabel = circle ? `${circle.emoji} ${circle[cs ? 'cs' : 'en']}` : a.circle;

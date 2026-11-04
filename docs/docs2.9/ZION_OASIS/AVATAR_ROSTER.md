@@ -186,7 +186,7 @@
 
 ---
 
-### **10. Bronu-Christ** (Sacred Warrior)
+### **10. Christ** (Sacred Warrior)
 **Ray:** Blue (Will) + White (Purity)
 **Role:** Warrior Priest
 **Location:** Camelot Ruins
@@ -218,7 +218,7 @@
 
 ---
 
-### **12. Milan-Bhima** (Strong Protector)
+### **12. Bhima** (Strong Protector)
 **Ray:** Blue (Will/Power)
 **Role:** Strength + Justice Champion
 **Location:** Hastinapura Palace
