@@ -202,8 +202,55 @@ h3.major {
 }
 
 /* ── Hero text in the Stargate header ────────────────────────────────────── */
+/* .content shrink-wraps to its widest child — give .inner an explicit width
+   so the bordered strip (and the Nirvana window) is wide, not text-wide. */
 #header .content .inner {
   padding: 2.5rem 1.5rem;
+  width: min(94vw, 1150px);
+  box-sizing: border-box;
+}
+
+/* Nirvana preview: break out of .inner horizontal padding so the window
+   spans the full .content width (padding varies per breakpoint). */
+#nirvana-embed {
+  width: calc(100% + 3rem);
+  margin-left: -1.5rem;
+}
+
+@media screen and (max-width: 980px) {
+  #nirvana-embed {
+    width: calc(100% + 2rem);
+    margin-left: -1rem;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  #nirvana-embed {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+/* Squeeze more width for the Nirvana window on phones */
+@media screen and (max-width: 736px) {
+  #header .content {
+    max-width: 97%;
+  }
+
+  #header .content .inner {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+#nirvana-embed .nirvana-poster {
+  height: 480px;
+}
+
+@media screen and (max-width: 736px) {
+  #nirvana-embed .nirvana-poster {
+    height: 320px;
+  }
 }
 
 #header .content .inner h1 {

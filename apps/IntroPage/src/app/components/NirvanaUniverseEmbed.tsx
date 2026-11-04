@@ -415,7 +415,7 @@ function UniverseCanvas({ active = true, onReady, onUnavailable }: UniverseProps
   }, [webglOk]);
 
   return (
-    <div className="nirvana-embed-frame relative h-[260px] w-full overflow-hidden rounded-2xl border border-[#fcd116]/30 bg-[#02030a] shadow-[0_12px_48px_rgba(0,0,0,0.45)] sm:h-[330px]">
+    <div className="nirvana-embed-frame relative h-[320px] w-full overflow-hidden rounded-2xl border border-[#fcd116]/30 bg-[#02030a] shadow-[0_12px_48px_rgba(0,0,0,0.45)] sm:h-[480px]">
       {webglOk ? (
         <Canvas
           className="h-full w-full !block"
@@ -470,7 +470,7 @@ const UniverseLazy = dynamic(() => Promise.resolve(UniverseCanvas), { ssr: false
 
 function StaticPoster() {
   return (
-    <div className="relative h-[260px] w-full overflow-hidden rounded-2xl border border-[#fcd116]/30 bg-[#02030a] sm:h-[330px]">
+    <div className="relative h-[320px] w-full overflow-hidden rounded-2xl border border-[#fcd116]/30 bg-[#02030a] sm:h-[480px]">
       <img
         src="/images/nirvana-preview.webp"
         alt="Nirvana — vesmír prvního světa OASIS"
@@ -507,7 +507,6 @@ function NirvanaUniverseEmbed() {
     const el = document.getElementById('nirvana-embed');
     if (el) {
       el.innerHTML = ''; // clear the static poster — the portal takes over
-      el.style.width = '100%'; // #wrapper is flex/center — stretch back to full width
       setTarget(el);
     }
   }, []);
@@ -529,13 +528,13 @@ function NirvanaUniverseEmbed() {
   if (!target) return null;
 
   return createPortal(
-    <div ref={wrapRef} className="relative mx-auto w-full max-w-[920px] px-4" style={{ marginTop: '1.5rem', marginBottom: '2.5rem' }}>
+    <div ref={wrapRef} className="relative mx-auto w-full max-w-[1100px]" style={{ marginTop: '1rem', marginBottom: '2rem' }}>
       <div aria-hidden={ready || undefined} className={ready ? 'invisible' : ''}>
         <StaticPoster />
       </div>
       {mounted && !failed && (
         <div
-          className={`absolute inset-0 px-4 transition-opacity duration-500 ${ready ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+          className={`absolute inset-0 transition-opacity duration-500 ${ready ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
           aria-hidden={!ready}
         >
           <UniverseErrorBoundary onError={() => setFailed(true)}>
