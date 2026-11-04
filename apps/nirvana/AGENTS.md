@@ -1859,10 +1859,16 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   proti `^(arena|race|fight|moba|tanks)-\d+$`. Odkaz z lobby je „Dívat se".
 - **Stav se čte až v efektu.** Inicializace z `window.location` by na
   serveru a klientu dala jiný strom (hydration mismatch).
-- **Pilot je aréna**; ostatní hry mají stejnou serverovou cestu, jen
-  potřebují `spectateRoom()` ve svém `join` efektu.
+- **Hlediště umí všech pět her** (`/mars?watch=`, `/venus?watch=`,
+  `/mercury?watch=`, `/earth?watch=`, `/saturn?watch=`). Každá stránka
+  si `watch` přečte **v efektu** a sama se přepne do multiplayeru; hra
+  pak v `join` efektu volá `spectateRoom()`, ne `joinGame()`.
+- **Saturn musí tanky otevřít sám** — jsou celoobrazovková hra nad
+  archivem, takže bez toho by divák zůstal v kronikách.
+- **Pruh „DÍVÁŠ SE" je jedna komponenta** (`core/net/SpectatorBar`),
+  ne pět kopií. Nese id místnosti a cestu do lobby.
 - Testy: `apps/nirvana-net/test/spectate.mjs` (server) a
-  `.artifacts/probe/watch-audit.mjs` + `watch-live.mjs` (prohlížeč).
+  `.artifacts/probe/watch-all-live.mjs` (pět her, hráč + divák).
 
 ## Pasti, které se v této vlně potvrdily
 
@@ -1881,3 +1887,25 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Lišta s 11 hrami se nevejde na jeden řádek.** Pás se posouvá
   (`overflow-x: auto` + mask fade) a nápověda k ovládání ustupuje pod
   1560 px; zalomená lišta zakryje spodek hry.
+
+
+## Šestá skříň — Věž (2026-11-04)
+
+- **Nová hra = pět seznamů, ne jeden.** `CanvasGameId`, `PARK_GAMES`,
+  `CABINETS` ve `ParkScene` (skříně na oblouku), `emptyScores` + `GAMES`
+  v `/api/park/scores`, `GAMES`+`TARGETS` v `challenge.ts` a
+  `GAME_TITLES`/`GAME_ORDER` v `progress/boards.ts`. Když jeden chybí,
+  skóre se ztratí nebo se hra neobjeví v žebříčcích.
+- **Kontrakt her má nově volitelný `tap()`.** Kreslicí smyčka pouti
+  předávala jen `pointer` (poloha) a `key` — mechanika, která potřebuje
+  **okamžik** (položit kvádr), by se s tím nedala udělat. `park/page.tsx`
+  ho volá na `pointerdown`; hry, které ho nepotřebují, ho nemají.
+- **Věž je o trpělivosti, ne o míření.** V pouti už jsou dvě mířicí hry
+  (Asteroidy, střelnice) a dvě odrazové (Pong, Breakout). Přesný zásah
+  (+25) nechá kvádr široký, nepřesný ho zúží podle překryvu, mimo =
+  konec. Čas na kvádr brání čekání.
+- **Skříně jsou pravidelný oblouk** (−12,5 … 12,5, krok 5) — šestá hra
+  znamenala jen nový řádek, ne přeskládání scény.
+- Test: `npx tsx test/park-tower.mjs` (falešný 2D kontext, 11 kontrol:
+  přesné/nepřesné položení, konec mimo kvádr, auto-drop časem, mezerník,
+  `stop()`). V prohlížeči `.artifacts/probe/tower-audit.mjs`.

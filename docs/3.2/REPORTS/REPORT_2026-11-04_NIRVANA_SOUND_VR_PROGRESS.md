@@ -239,12 +239,44 @@ audity konzole je proto potřeba dělat proti `next start`.
 
 ---
 
+## 8b) Dodatek — hlediště ve všech hrách a šestá skříň
+
+Po prvním kole byly dvě věci nedotažené: hlediště umělo jen arénu a pouť
+měla pět skříní.
+
+**Hlediště pro všech pět her.** Server i protokol to uměly; chybělo napojení
+v klientu. Každá stránka si `?watch=<room>` přečte v efektu, sama se přepne
+do multiplayeru a hra v `join` efektu zavolá `spectateRoom()` místo
+`joinGame()`. Pruh „DÍVÁŠ SE" je jedna komponenta (`SpectatorBar`).
+Saturn navíc musí tanky otevřít sám — jsou celoobrazovková hra nad archivem.
+
+Ověřeno živě pro **všech pět her** (hráč nastoupí, divák se připojí do
+stejné místnosti, vidí herní HUD a pruh hlediště, není offline):
+`.artifacts/probe/watch-all-live.mjs`.
+
+**Nová hra: Věž (šestá skříň).** Kvádr se posouvá, hráč ho položí
+(klepnutí / mezerník). Přesný zásah = +25 a kvádr zůstane široký, nepřesný
+ho zúží podle překryvu, úplně mimo = konec. Na každý kvádr je čas, takže
+se nedá čekat. Ovládá se myší i klávesnicí — proto má kontrakt her nový
+**volitelný `tap()`** (dosud uměl jen plynulou polohu a klávesy).
+
+Zapojeno do všech seznamů (typ, registr, šest skříní na oblouku, tabule,
+API, denní výzva s cílem 250, žebříčky) — **12 her** v přehledu.
+
+Ověřeno: `test/park-tower.mjs` 11/11, `.artifacts/probe/tower-audit.mjs`
+7/7 (šest skříní, klepnutí položí kvádr, hra jde dohrát, profil zná
+`tower`), plus regresní sady: routy 16/16, zvuk 18/18, progrese 13/13,
+net 11/11.
+
+---
+
 ## 9) Meze, které se nemají hlásit jako hotové
 
 - **VR na skutečném headsetu** — ověřeno jen headless (scéna se rozjede,
   tlačítko je vidět). Ovladače, míření paprskem i komfort jsou nevyzkoušené.
-- **Hlediště pro ostatní hry** — server i protokol to umí, chybí napojení
-  `spectateRoom()` ve Venuši, Merkuru, MOBě a tancích.
+- **Hlediště** je hotové pro všech pět her, ale divák v MOBě vidí
+  nefiltrovaný pohled (záměr) — kdyby to mělo být jinak, je potřeba
+  týmový filtr i pro diváky.
 - **Zvuk** je syntéza, ne nahrávky: není hudba, není dabing, není
   prostorový zvuk (HRTF).
 - **Progrese** je v `localStorage` — bez účtu, bez synchronizace mezi
