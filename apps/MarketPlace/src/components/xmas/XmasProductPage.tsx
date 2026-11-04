@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import {
   ArrowLeft,
+  BookOpen,
   Check,
   ChevronDown,
   Coins,
   KeyRound,
+  Layers,
   ListOrdered,
   Mail,
   Milestone,
@@ -19,6 +21,7 @@ import {
 import type { XmasProduct } from '@/data/christmasProducts';
 import { useLangT } from '@/lib/useTranslation';
 import ExperimentalNotice from '@/components/xmas/ExperimentalNotice';
+import FactsStrip from '@/components/xmas/FactsStrip';
 
 /** Lehký renderer **tučného** inline markdownu v detailních odstavcích. */
 function renderInline(text: string) {
@@ -76,6 +79,11 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
         </div>
       </div>
 
+      {/* Numbers */}
+      {product.facts && product.facts.length > 0 && (
+        <FactsStrip facts={product.facts} />
+      )}
+
       {/* Body grid */}
       <div className="grid lg:grid-cols-[1fr_minmax(0,340px)] gap-8">
         {/* Content */}
@@ -99,6 +107,98 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
               </span>
             ))}
           </div>
+
+          {/* Samples — real text from the manuscript */}
+          {product.samples && product.samples.length > 0 && (
+            <div id="ukazky" className="pt-6 space-y-5 scroll-mt-24">
+              <div className="space-y-1">
+                <h2 className="text-xl font-bold font-display flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-rasta-gold" />
+                  {lang === 'cs' ? 'Ukázky z knihy' : 'Samples from the book'}
+                </h2>
+                <p className="text-sm text-gray-400">
+                  {lang === 'cs'
+                    ? 'Skutečné odstavce z rukopisu — ne shrnutí. Takhle zní kniha, kterou si kupujete.'
+                    : 'Real paragraphs from the manuscript — not a summary. This is how the book you are buying reads.'}
+                </p>
+              </div>
+
+              {product.samples.map((sample, i) => (
+                <article
+                  key={i}
+                  className="rounded-2xl bg-[#f6f1e4] text-[#221d16] shadow-[0_18px_40px_-24px_rgba(0,0,0,0.8)] ring-1 ring-black/10 overflow-hidden"
+                >
+                  <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-black/10 px-6 py-3">
+                    <span className="text-[11px] uppercase tracking-[0.22em] text-[#8a6b28]">
+                      {pick(sample.label)}
+                    </span>
+                    <span className="text-[11px] text-[#6b6152]">
+                      {pick(sample.source)}
+                    </span>
+                  </div>
+                  <div className="px-6 py-5 space-y-3">
+                    <h3 className="font-serif text-lg font-semibold text-[#2b2117]">
+                      {pick(sample.title)}
+                    </h3>
+                    {sample.paragraphs.map((p, j) => (
+                      <p
+                        key={j}
+                        className={`font-serif text-[15px] leading-[1.8] text-[#332a20] ${
+                          j === 0 ? 'first-letter:float-left first-letter:mr-2 first-letter:text-4xl first-letter:font-bold first-letter:leading-[0.9] first-letter:text-[#8a6b28]' : ''
+                        }`}
+                      >
+                        {pick(p)}
+                      </p>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+
+          {/* Editions — eight tellings of one story */}
+          {product.editions && product.editions.length > 0 && (
+            <div className="pt-6 space-y-4">
+              <div className="space-y-1">
+                <h2 className="text-xl font-bold font-display flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-rasta-gold" />
+                  {lang === 'cs' ? 'Osm edic jednoho příběhu' : 'Eight editions of one story'}
+                </h2>
+                <p className="text-sm text-gray-400">
+                  {lang === 'cs'
+                    ? 'Každá edice je samostatná kniha — jiná délka, jiný úhel, stejný kýl. Všechny jsou v sadě a všechny v pěti jazycích.'
+                    : 'Each edition is a book of its own — another length, another angle, the same keel. All are included, all in five languages.'}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4 mobile-keep-cols">
+                {product.editions.map((edition) => (
+                  <figure key={edition.slug} className="space-y-2">
+                    <div className="relative aspect-[2/3] overflow-hidden rounded-lg ring-1 ring-white/10">
+                      <img
+                        src={edition.cover}
+                        alt={pick(edition.name)}
+                        className="h-full w-full object-cover"
+                      />
+                      {edition.flagship && (
+                        <span className="absolute left-2 top-2 rounded-full bg-rasta-gold/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-black">
+                          {lang === 'cs' ? 'vlajková' : 'flagship'}
+                        </span>
+                      )}
+                    </div>
+                    <figcaption className="space-y-0.5">
+                      <div className="text-[13px] font-semibold text-white">{pick(edition.name)}</div>
+                      <p className="text-[11px] leading-snug text-gray-500">{pick(edition.line)}</p>
+                      <p className="text-[10px] text-gray-600">
+                        {lang === 'cs'
+                          ? `${edition.words.cz.toLocaleString('cs-CZ')} slov`
+                          : `${edition.words.en.toLocaleString('en-US')} words`}
+                      </p>
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* How it works — steps */}
           <div className="pt-4 space-y-4">

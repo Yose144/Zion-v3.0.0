@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import {
   BookOpen,
+  Check,
   Coins,
   Gift,
   PenTool,
@@ -12,6 +13,9 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useLangT } from '@/lib/useTranslation';
+import { getXmasProduct, type XmasFact, type XmasText } from '@/data/christmasProducts';
+import RichText from '@/components/xmas/RichText';
+import FactsStrip from '@/components/xmas/FactsStrip';
 
 type Chip = { icon: LucideIcon; label: string; gold?: boolean };
 
@@ -23,6 +27,12 @@ interface ChristmasCardProps {
   title: string;
   subtitle: string;
   description: string;
+  /** delší, konkrétnější odstavec z dat produktu (nahradí `description`) */
+  lead?: string;
+  /** 3–5 konkrétních bodů — co si pod dárkem představit */
+  bullets?: string[];
+  /** reálná čísla produktu (edic, stran, světů…) */
+  facts?: XmasFact[];
   chips: Chip[];
   ctaLabel: string;
   ctaDisabled?: boolean;
@@ -39,6 +49,9 @@ function ChristmasCard({
   title,
   subtitle,
   description,
+  lead,
+  bullets,
+  facts,
   chips,
   ctaLabel,
   ctaDisabled,
@@ -84,7 +97,26 @@ function ChristmasCard({
               <span className="text-gradient-gold">{title}</span>
             </h2>
             <p className="text-sm text-gray-400 italic mt-1">{subtitle}</p>
-            <p className="text-sm text-gray-300 mt-4 leading-relaxed max-w-xl">{description}</p>
+            <p className="text-sm text-gray-300 mt-4 leading-relaxed max-w-xl">
+              <RichText text={lead ?? description} />
+            </p>
+
+            {bullets && bullets.length > 0 && (
+              <ul className="mt-4 space-y-1.5">
+                {bullets.map((bullet) => (
+                  <li key={bullet} className="flex items-start gap-2 text-[13px] text-gray-400">
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rasta-gold" />
+                    <span>{bullet}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {facts && facts.length > 0 && (
+              <div className="mt-5">
+                <FactsStrip facts={facts} compact />
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-2 mt-5 text-[11px]">
               {chips.map(({ icon: Icon, label, gold }) => (
@@ -129,6 +161,8 @@ export function ZionPassSection() {
   const { t, lang } = useLangT();
   const bonus = (108000).toLocaleString(lang === 'cs' ? 'cs-CZ' : 'en-US');
   const price = t('common.price', { price: 108, symbol: t('common.kcSymbol') });
+  const product = getXmasProduct('zion-pass');
+  const pick = (x?: XmasText) => (x ? (lang === 'cs' ? x.cs : x.en) : undefined);
 
   return (
     <ChristmasCard
@@ -139,6 +173,9 @@ export function ZionPassSection() {
       title={t('xmas.passTitle')}
       subtitle={t('xmas.passSubtitle')}
       description={t('xmas.passDescription')}
+      lead={pick(product?.home?.lead)}
+      bullets={product?.home?.bullets.map((b) => pick(b) ?? '').filter(Boolean)}
+      facts={product?.facts}
       chips={[
         { icon: Coins, label: t('xmas.bonus', { amount: bonus }), gold: true },
         { icon: Ticket, label: t('xmas.passChipAccess') },
@@ -155,6 +192,8 @@ export function LampionSection() {
   const { t, lang } = useLangT();
   const bonus = (432000).toLocaleString(lang === 'cs' ? 'cs-CZ' : 'en-US');
   const price = t('common.price', { price: 432, symbol: t('common.kcSymbol') });
+  const product = getXmasProduct('lampion');
+  const pick = (x?: XmasText) => (x ? (lang === 'cs' ? x.cs : x.en) : undefined);
 
   return (
     <ChristmasCard
@@ -165,6 +204,9 @@ export function LampionSection() {
       title={t('xmas.lampionTitle')}
       subtitle={t('xmas.lampionSubtitle')}
       description={t('xmas.lampionDescription')}
+      lead={pick(product?.home?.lead)}
+      bullets={product?.home?.bullets.map((b) => pick(b) ?? '').filter(Boolean)}
+      facts={product?.facts}
       chips={[
         { icon: Coins, label: t('xmas.bonus', { amount: bonus }), gold: true },
         { icon: PenTool, label: t('xmas.lampionChipEngraved') },
