@@ -7,8 +7,8 @@ Deset zastavení, každé s oddíly Příběh / Z Písma a tradice / Kotva pravd
 | Jazyk | Rukopis | PDF | EPUB | Slov |
 |---|---|---|---|---|
 | CZ | ✅ | ✅ | ✅ | 5220 |
-| EN | — | — | — | — |
-| ES | — | — | — | — |
+| EN | ✅ | ✅ | ✅ | 6745 |
+| ES | ✅ | ✅ | ✅ | 6650 |
 | FR | — | — | — | — |
 | PT | — | — | — | — |
 

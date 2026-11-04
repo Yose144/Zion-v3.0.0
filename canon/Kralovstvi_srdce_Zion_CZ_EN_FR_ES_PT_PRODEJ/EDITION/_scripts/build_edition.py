@@ -858,6 +858,13 @@ def _inline_html(text: str) -> str:
 
         _MD_INLINE = MarkdownIt("commonmark", {"html": True})
     out = _MD_INLINE.renderInline(text)
+    # odkazy na soubory korpusu v prodejní knize neexistují — necháme jen text
+    out = re.sub(
+        r'<a href="(?!https?:|mailto:|#)[^"]*"[^>]*>(.*?)</a>',
+        r"\1",
+        out,
+        flags=re.S,
+    )
     return out.replace("<br />", "<br/>").replace("<br>", "<br/>")
 
 
