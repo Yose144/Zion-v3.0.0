@@ -1,0 +1,17 @@
+{
+  "edition": "gpt",
+  "lang": "ES",
+  "source": "El_Reino_del_Corazon_gpt_ES.md",
+  "words": 8104,
+  "headings": 87,
+  "paragraphs": 285,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 55,
+    "bytes": 205507
+  },
+  "epub": {
+    "documents": 6,
+    "bytes": 24787
+  }
+}
