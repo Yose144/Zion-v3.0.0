@@ -68,6 +68,13 @@ export interface NetApi {
   /** Připojení do konkrétní místnosti z lobby (když je otevřených víc). */
   joinRoom: (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', roomId: string) => void;
   /**
+   * Dívat se na rozehranou místnost. Divák nedostane sedlo, jen snapshoty —
+   * vstup se na serveru zahazuje, takže se nedá „připojit do hry" omylem.
+   */
+  spectateRoom: (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', roomId: string) => void;
+  /** Sedím v hledišti (nesedím v sedle)? */
+  spectator: boolean;
+  /**
    * MOBA: kouzlo na bod + držený útok.
    * Vrací `true`, když se zpráva opravdu poslala — kouzlo se nesmí ztratit
    * jen proto, že ho zrovna zahodil throttle (20 Hz).
@@ -162,6 +169,8 @@ export function NetProvider({ children }: { children: ReactNode }) {
   const [rtt, setRtt] = useState<number | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
   const [youPlayerId, setYouPlayerId] = useState<string | null>(null);
+  /** Sedím v hledišti (server mě neposadil do sedla). */
+  const [spectator, setSpectator] = useState(false);
   const [roomId, setRoomId] = useState<string | null>(null);
 
   const listeners = useRef(new Set<(message: ServerMessage) => void>());
@@ -231,6 +240,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
           case 'room': {
             setRoomId(message.room.id);
             setYouPlayerId(message.youPlayerId ?? null);
+            setSpectator(message.spectator === true);
             return;
           }
           case 'rooms': {
@@ -365,6 +375,13 @@ export function NetProvider({ children }: { children: ReactNode }) {
   const joinRoom = useCallback(
     (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', roomId: string) => {
       send({ t: 'join', game, room: roomId });
+    },
+    [send],
+  );
+
+  const spectateRoom = useCallback(
+    (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', roomId: string) => {
+      send({ t: 'join', game, room: roomId, spectate: true });
     },
     [send],
   );
@@ -525,6 +542,8 @@ export function NetProvider({ children }: { children: ReactNode }) {
       joinArena,
       joinGame,
       joinRoom,
+      spectateRoom,
+      spectator,
       leaveRoom,
       subscribe,
       sendInput,
@@ -557,6 +576,8 @@ export function NetProvider({ children }: { children: ReactNode }) {
       joinArena,
       joinGame,
       joinRoom,
+      spectateRoom,
+      spectator,
       leaveRoom,
       subscribe,
       sendInput,

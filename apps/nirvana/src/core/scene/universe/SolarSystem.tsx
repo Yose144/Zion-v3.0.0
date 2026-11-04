@@ -8,8 +8,9 @@ import { LINK_COLOR, LINK_OPACITY, LINK_WIDTH, orbitWidth } from './links';
 import { Html } from '@react-three/drei';
 import { StarGate } from './StarGate';
 import type { Portal } from '@/core/portals/manifest';
-import { PLANETS, orbitRadius, type PlanetDef } from './planetCatalog';
+import { PLANETS, orbitRadius, type PlanetDef, type PlanetId } from './planetCatalog';
 import { NavHalo } from './NavHalo';
+import { proceduralTexture } from './proceduralTexture';
 
 // Zpětně kompatibilní re-export — ostatní moduly (a testy) importují odsud.
 export { PLANETS, ORBIT_SCALE, ORBIT_EXP, orbitRadius, JUPITER } from './planetCatalog';
@@ -117,7 +118,7 @@ function Planet({
   index: number;
   lang: 'cs' | 'en';
   selected: boolean;
-  onSelect?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury' | 'saturn') => void;
+  onSelect?: (id: PlanetId) => void;
   /** Brána je dítě planety — obíhá s ní (Jupiter ji drží pořád nablízku). */
   gate?: { portal: Portal; onOpen: (id: string) => void };
 }) {
@@ -125,7 +126,8 @@ function Planet({
   const carrier = useRef<THREE.Group>(null);
   const body = useRef<THREE.Mesh>(null);
   const interactive = Boolean(def.game && onSelect);
-  const tex = useLazyTexture(`/textures/2k_${def.tex}.jpg`);
+  const lazyTex = useLazyTexture(def.procedural ? null : `/textures/2k_${def.tex}.jpg`);
+  const tex = def.procedural ? proceduralTexture(def.id, def.tint) : lazyTex;
   const ringTex = useLazyTexture(def.ring ? '/textures/2k_saturn_ring_alpha.png' : null);
   // Saturn ring: strip textura → u = radiální vzdálenost
   const ringGeo = useMemo(() => {
@@ -193,7 +195,7 @@ function Planet({
             event.stopPropagation();
             // Jediná cesta: klik označí planetu, `focus` prop spustí přelet
             // v `LinkEngine`. Žádné druhé flyTo s půjčenou kamerou.
-            onSelect?.(def.id as 'mars' | 'venus' | 'jupiter' | 'mercury' | 'saturn');
+            onSelect?.(def.id as PlanetId);
           }}
           onPointerOver={(event) => {
             event.stopPropagation();
@@ -256,7 +258,7 @@ export function SolarSystem({
   onOpenPortal,
 }: {
   onOpenPark?: () => void;
-  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury' | 'saturn') => void;
+  onSelectPlanet?: (id: PlanetId) => void;
   focused?: string;
   lang?: 'cs' | 'en';
   /** Brána do OASIS — vykreslí se jako dítě Jupiteru. */

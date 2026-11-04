@@ -11,6 +11,7 @@ import { ArenaTouchControls, createTouchState } from '@/core/arena/ArenaTouch';
 import { LOOK_MAX, LOOK_MIN, getLookSensitivity, setLookSensitivity } from '@/core/arena/settings';
 import { FRAG_LIMIT, MATCH_SECONDS } from '@/core/arena/map';
 import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
+import { watchRoom } from '@/core/net/watch';
 import { GameBoard } from '@/core/games/GameBoard';
 
 /**
@@ -72,6 +73,21 @@ export default function MarsPage() {
 
   useEffect(() => xrStore.subscribe((state) => setPresenting(Boolean(state.session))), [xrStore]);
 
+  /**
+   * `?watch=arena-2` = hlediště, ne hra.
+   *
+   * Čte se až v efektu: při SSR `window` není, takže inicializace stavu
+   * z URL by na serveru a klientu dala jiný strom (hydration mismatch).
+   */
+  const [watch, setWatch] = useState<string | null>(null);
+  useEffect(() => {
+    const room = watchRoom();
+    if (!room) return;
+    setWatch(room);
+    setMp(true);
+    setPhase('playing');
+  }, []);
+
   const endMatch = useCallback(
     (outcome: ArenaResult) => {
       setResult(outcome);
@@ -106,7 +122,7 @@ export default function MarsPage() {
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
         >
           {mp ? (
-            <MarsMultiplayer running={phase === 'playing'} onStats={setMpStats} touch={touch} />
+            <MarsMultiplayer running={phase === 'playing'} watch={watch} onStats={setMpStats} touch={touch} />
           ) : (
             <XR store={xrStore}>
               <MarsArena
@@ -126,6 +142,15 @@ export default function MarsPage() {
       {phase === 'playing' && mp && (
         <>
           <div className="arena-crosshair" aria-hidden />
+          {watch && (
+            <div className="arena-spectator" role="status">
+              <strong>👁 {cs ? 'DÍVÁŠ SE' : 'WATCHING'}</strong>
+              <span>{watch}</span>
+              <Link href="/multiplayer" className="arena-link">
+                {cs ? 'do lobby' : 'to lobby'}
+              </Link>
+            </div>
+          )}
           <div className="arena-hud">
             <span className="arena-health" style={{ color: (mpStats?.health ?? 100) > 60 ? '#7fe3d4' : (mpStats?.health ?? 100) > 25 ? '#ffd166' : '#ff7a6b' }}>
               ❤ {mpStats?.health ?? 100}

@@ -27,6 +27,7 @@ import { WorldPortal } from '@/portals/world/WorldPortal';
 import { parseWorlds, type WorldPoint } from '@/lib/worlds';
 import { FREE_WORLD_MISSIONS, MISSION_ORIGIN, MISSION_STATUS_COLOR } from '@/lib/freeworld-sites';
 import { normalizeHiranState, hiranReviewOverride, type HiranState } from '@/core/hiran/presence';
+import type { PlanetGameId, PlanetId } from '@/core/scene/universe/planetCatalog';
 import type { UniverseFocus } from '@/core/scene/universe/LinkEngine';
 import { LinkNavHud } from '@/core/scene/universe/LinkNavHud';
 
@@ -77,7 +78,7 @@ function readHash(): { portal: string | null; world: string | null } {
 }
 
 /** Panel po kliknutí na planetu — titulek, note, CTA. Klíč = hodnota `def.game`. */
-const PLANET_PANELS: Record<'mars' | 'venus' | 'mercury' | 'park' | 'saturn', {
+const PLANET_PANELS: Record<PlanetGameId, {
   title: string;
   note: string;
   href: string;
@@ -115,6 +116,24 @@ const PLANET_PANELS: Record<'mars' | 'venus' | 'mercury' | 'park' | 'saturn', {
     cta: 'Na pouť',
     portal: 'park',
   },
+  uranus: {
+    title: 'URAN',
+    note: 'Ledový archiv — planeta nakloněná na bok. Prstence jako zmrzlé záznamy kruhů.',
+    href: '/uranus',
+    cta: 'Otevřít archiv',
+  },
+  neptune: {
+    title: 'NEPTUN',
+    note: 'Hlubina — nejrychlejší větry soustavy a temná voda, ve které se zrcadlí hvězdy.',
+    href: '/neptune',
+    cta: 'Sestoupit',
+  },
+  pluto: {
+    title: 'PLUTO',
+    note: 'Srdce na okraji — světlá pláň ve tvaru srdce, poslední světlo před mezihvězdím.',
+    href: '/pluto',
+    cta: 'Ke srdci',
+  },
 };
 
 export function Shell() {
@@ -129,7 +148,7 @@ export function Shell() {
   const [reviewState] = useState<HiranState | null>(() => hiranReviewOverride());
   const [focus, setFocus] = useState<string>('earth');
   /** Vybraná planeta = přiletěli jsme a nabízíme vstup do hry. ('jupiter' def používá key 'park'.) */
-  const [planet, setPlanet] = useState<'mars' | 'venus' | 'mercury' | 'park' | 'saturn' | null>(null);
+  const [planet, setPlanet] = useState<PlanetGameId | null>(null);
   /** Vybraná L5 misie na glóbu — stejný panel jako planeta. */
   const [missionKey, setMissionKey] = useState<string | null>(null);
   const [fleetLeg, setFleetLeg] = useState<FleetLeg | null>(null);
@@ -264,7 +283,7 @@ export function Shell() {
   }
 
   /** Klik na planetu: přiletět a otevřít panel s CTA (ne rovnou skočit do hry). */
-  const selectPlanet = useCallback((id: 'mars' | 'venus' | 'jupiter' | 'mercury' | 'saturn') => {
+  const selectPlanet = useCallback((id: PlanetId) => {
     setMissionKey(null);
     setPlanet(id === 'jupiter' ? 'park' : id);
     setFocus(id);

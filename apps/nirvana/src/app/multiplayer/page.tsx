@@ -16,6 +16,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useI18n } from '@/core/i18n';
 import { useNet } from '@/core/net/useNet';
+import { watchHref } from '@/core/net/watch';
 import { ChatPanel } from '@/core/net/ChatPanel';
 import { InviteButton } from '@/core/net/InviteButton';
 import type { GameId, RoomMode, RoomState } from '@/core/net/protocol';
@@ -310,6 +311,10 @@ export default function MultiplayerPage() {
                       >
                         {cs ? 'Připojit' : 'Join'}
                       </button>
+                      {/* Dívat se dá i na plnou místnost — divák nezabírá sedlo. */}
+                      <a className="lobby-watch" href={watchHref(game.id, room.id)}>
+                        {cs ? 'Dívat se' : 'Watch'}
+                      </a>
                     </li>
                   ))}
                 </ul>

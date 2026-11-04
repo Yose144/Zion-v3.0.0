@@ -10,6 +10,7 @@ import {
   resolveGpuBackend,
   type GpuBackend,
 } from './backends';
+import type { PlanetId } from './universe/planetCatalog';
 import { Universe } from './universe/Universe';
 import type { FleetLeg } from './universe/SkyFleet';
 import { quality } from '../../../../shared/scenes/kit/quality';
@@ -113,7 +114,7 @@ export function SceneRoot({
   onOpen: (id: string) => void;
   onSelectWorld: (id: string) => void;
   /** Klik na planetu ve sluneční soustavě. */
-  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury' | 'saturn') => void;
+  onSelectPlanet?: (id: PlanetId) => void;
   /** Klik na L5 misii na glóbu. */
   onSelectMission?: (key: string) => void;
   xr: boolean;

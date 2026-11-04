@@ -78,7 +78,7 @@ const asItemId = (value: unknown): ItemId | null =>
  *      odmítne `join` (`pass_required`). Klient bez pasu by se jinak dostal
  *      do hry přes vlastní WebSocket klient.
  */
-export const PROTO_VERSION = 26;
+export const PROTO_VERSION = 27;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -106,6 +106,7 @@ export type GameId = 'arena' | 'race' | 'fight' | 'moba' | 'tanks';
 /** `guest` = bez ZIS (hraje, ale nepíše), `zis` = ověřený uživatel. */
 export type Role = 'guest' | 'zis';
 export type RoomState = 'waiting' | 'running' | 'ended';
+
 /**
  * `bots` = prázdná sedla hned doplní boti (výchozí, hra začne hned),
  * `humans` = čeká se na lidi (turnaj, hraní s pozvaným).
@@ -153,6 +154,8 @@ export interface RoomInfo {
   maxPlayers: number;
   state: RoomState;
   mode: RoomMode;
+  /** Kolik lidí se jen dívá (nesedí v sedle, nepočítají se do kapacity). */
+  spectators?: number;
 }
 
 export interface SpawnPoint {
@@ -350,6 +353,12 @@ export type ClientMessage =
       battleSpell?: BattleSpellId;
       /** Režim nové místnosti (u existující se ignoruje). */
       mode?: RoomMode;
+      /**
+       * Divák: usedne do místnosti, ale **nedostane sedlo**. Server mu
+       * posílá stejné snapshoty, jeho vstup zahazuje. `room` je povinné —
+       * dívat se dá jen na místnost, která existuje.
+       */
+      spectate?: boolean;
     }
   /** MOBA: nákup itemu (jen v místnosti typu `moba`). */
   | { t: 'buy'; item: ItemId }
@@ -421,6 +430,8 @@ export type ServerMessage =
   | {
       t: 'room';
       room: RoomInfo;
+      /** `true` = sedíš v hledišti, ne v sedle (vstup se zahazuje). */
+      spectator?: boolean;
       occupants: PlayerSummary[];
       /** Id hráče v serverové simulaci (klient podle něj pozná sebe ve snapshotech). */
       youPlayerId?: string;
@@ -529,6 +540,7 @@ export function parseClientMessage(raw: string): ClientMessage | null {
           message.battleSpell === 'heal' || message.battleSpell === 'purify' || message.battleSpell === 'flicker'
             ? message.battleSpell
             : undefined,
+        spectate: message.spectate === true ? true : undefined,
       };
 
     case 'leave':

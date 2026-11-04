@@ -7,6 +7,23 @@
  * kde planeta skutečně je.
  */
 
+/** Planety, na které jde kliknout a doletět — jediný seznam pro celou scénu. */
+export type PlanetId =
+  | 'mercury'
+  | 'venus'
+  | 'mars'
+  | 'jupiter'
+  | 'saturn'
+  | 'uranus'
+  | 'neptune'
+  | 'pluto';
+
+/**
+ * Cíle, na které vede odkaz z planety (= `def.game`). Liší se od `PlanetId`:
+ * Jupiter nemá vlastní hru, otevírá pouť (`park`).
+ */
+export type PlanetGameId = Exclude<PlanetId, 'jupiter'> | 'park';
+
 export interface PlanetDef {
   id: string;
   name: string;
@@ -24,7 +41,12 @@ export interface PlanetDef {
   /** Axiální náklon v radiánech (Uranus ~98°, Venuše retrográdní). */
   tiltZ?: number;
   /** Interaktivní planeta = vstup do hry (`/mars`, `/venus`, `/mercury`, `/park`). */
-  game?: 'mars' | 'venus' | 'park' | 'mercury' | 'saturn';
+  game?: PlanetGameId;
+  /**
+   * Textura se generuje v prohlížeči, protože v repu žádná není.
+   * Pluto je jediný případ — přidávat binárku kvůli jedné planetě nemá smysl.
+   */
+  procedural?: boolean;
   /** Co se stane po kliknutí — text na chipu. */
   cta?: { cs: string; en: string };
 }
@@ -101,8 +123,46 @@ export const PLANETS: PlanetDef[] = [
     game: 'saturn',
     cta: { cs: 'kroniky →', en: 'chronicles →' },
   },
-  { id: 'uranus', name: 'Uran', tex: 'uranus', au: 19.19, size: 1.5, speed: 0.00024, spin: -0.04, tint: '#9fd8dc', tiltZ: 1.71 },
-  { id: 'neptune', name: 'Neptun', tex: 'neptune', au: 30.07, size: 1.45, speed: 0.00012, spin: 0.04, tint: '#4d6fd1', tiltZ: 0.49 },
+  {
+    id: 'uranus',
+    name: 'Uran',
+    tex: 'uranus',
+    au: 19.19,
+    size: 1.5,
+    speed: 0.00024,
+    spin: -0.04,
+    tint: '#9fd8dc',
+    tiltZ: 1.71,
+    game: 'uranus',
+    cta: { cs: 'ledový archiv →', en: 'ice archive →' },
+  },
+  {
+    id: 'neptune',
+    name: 'Neptun',
+    tex: 'neptune',
+    au: 30.07,
+    size: 1.45,
+    speed: 0.00012,
+    spin: 0.04,
+    tint: '#4d6fd1',
+    tiltZ: 0.49,
+    game: 'neptune',
+    cta: { cs: 'hlubina →', en: 'the deep →' },
+  },
+  {
+    id: 'pluto',
+    name: 'Pluto',
+    tex: 'pluto',
+    au: 39.48,
+    size: 0.42,
+    speed: 0.00008,
+    spin: 0.015,
+    tint: '#c9b8a8',
+    tiltZ: 2.13,
+    game: 'pluto',
+    procedural: true,
+    cta: { cs: 'srdce →', en: 'the heart →' },
+  },
 ];
 
 export const JUPITER = PLANETS[3]!;

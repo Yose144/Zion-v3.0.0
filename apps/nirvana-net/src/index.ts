@@ -114,6 +114,12 @@ interface Room {
   state: RoomState;
   createdAt: number;
   players: Map<string, Conn>;
+  /**
+   * Diváci. Nesedí v sedle (nedostanou `match.join`), nepočítají se do
+   * kapacity místnosti a jejich vstup server zahazuje. Dostávají ale stejné
+   * snapshoty, takže se dají sledovat rozehrané zápasy.
+   */
+  spectators: Map<string, Conn>;
   match: Match;
 }
 
@@ -245,6 +251,7 @@ function roomInfo(room: Room): RoomInfo {
     maxPlayers: capOf(room.game),
     state: room.state,
     mode: room.mode,
+    spectators: room.spectators.size,
   };
 }
 
@@ -422,6 +429,7 @@ function createRoom(game: GameId, mode: RoomMode = 'bots'): Room {
     state: 'waiting',
     createdAt: Date.now(),
     players: new Map(),
+    spectators: new Map(),
     match: createMatch(game, Date.now(), mode),
   };
   rooms.set(room.id, room);
@@ -437,15 +445,22 @@ function leaveRoom(conn: Conn, reason: string): void {
 
   const channel = `arena:${room.id}`;
   conn.room = null;
-  room.match.leave(conn.id);
-  room.players.delete(conn.id);
-  broadcastChannel(channel, {
-    t: 'event',
-    event: { kind: 'system', text: `${conn.identity.name} odešel`, at: Date.now() },
-  });
-  log(`leave room=${room.id} id=${conn.identity.id} reason=${reason} players=${room.players.size}`);
 
-  if (room.players.size === 0) {
+  // Divák nemá sedlo — `match.leave` by mu ho zkoušel odebrat a rozbil hru.
+  const wasSpectator = room.spectators.delete(conn.id);
+  if (!wasSpectator) {
+    room.match.leave(conn.id);
+    room.players.delete(conn.id);
+    broadcastChannel(channel, {
+      t: 'event',
+      event: { kind: 'system', text: `${conn.identity.name} odešel`, at: Date.now() },
+    });
+  }
+  log(
+    `leave room=${room.id} id=${conn.identity.id} reason=${reason} players=${room.players.size} spectators=${room.spectators.size}`,
+  );
+
+  if (room.players.size === 0 && room.spectators.size === 0) {
     rooms.delete(room.id);
     channels.delete(channel);
     log(`room removed id=${room.id} total=${rooms.size}`);
@@ -469,6 +484,7 @@ async function joinRoom(
   heroId?: number,
   battleSpell?: BattleSpellId,
   requestedMode: RoomMode = 'bots',
+  spectate = false,
 ): Promise<void> {
   if (!conn.helloSent) {
     sendError(conn, 'bad_frame', 'nejdřív hello');
@@ -479,6 +495,32 @@ async function joinRoom(
     return;
   }
   if (conn.room) leaveRoom(conn, 'switch');
+
+  /**
+   * Divák: místnost musí existovat (dívat se na „něco, co vznikne", nemá
+   * smysl) a nesmí být plná, ale do kapacity se nezapočítává.
+   */
+  if (spectate) {
+    const target = wanted ? rooms.get(wanted) : undefined;
+    if (!target || target.game !== game) {
+      sendError(conn, 'room_missing', 'místnost už neexistuje');
+      return;
+    }
+    target.spectators.set(conn.id, conn);
+    conn.room = target;
+    send(conn, {
+      t: 'room',
+      room: roomInfo(target),
+      spectator: true,
+      occupants: [...target.players.values()].map((player) => summary(player.identity)),
+      youPlayerId: conn.id,
+      spawn: null,
+      history: [...historyOf(`arena:${target.id}`)],
+    });
+    pushRooms();
+    log(`spectate room=${target.id} id=${conn.identity.id} spectators=${target.spectators.size}`);
+    return;
+  }
 
   let room: Room | undefined;
   if (wanted) {
@@ -617,7 +659,15 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
     }
 
     case 'join':
-      await joinRoom(conn, message.game, message.room, message.heroId, message.battleSpell, message.mode);
+      await joinRoom(
+        conn,
+        message.game,
+        message.room,
+        message.heroId,
+        message.battleSpell,
+        message.mode,
+        message.spectate === true,
+      );
       return;
 
     case 'leave':
@@ -907,6 +957,12 @@ const gameLoop = setInterval(() => {
     // 2) snapshoty — každý hráč dostane **svůj** (mlha války, skryté ruce)
     if (!withSnapshot) continue;
     for (const conn of room.players.values()) {
+      const message = room.match.snapshot(conn.id, now);
+      if (message) send(conn, message);
+    }
+    // diváci dostávají stejný snapshot jako hráči — pro MOBU to znamená
+    // nefiltrovaný pohled (nejsou v týmu, takže mlha války nemá co skrývat)
+    for (const conn of room.spectators.values()) {
       const message = room.match.snapshot(conn.id, now);
       if (message) send(conn, message);
     }

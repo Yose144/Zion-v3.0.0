@@ -70,16 +70,19 @@ interface Snapshot {
 
 export function MarsMultiplayer({
   running,
+  watch = null,
   onStats,
   touch,
 }: {
   running: boolean;
+  /** Id místnosti, na kterou se jen díváme (`?watch=`); `null` = hrajeme. */
+  watch?: string | null;
   onStats: (stats: MpStats) => void;
   /** Dotykové ovládání (mobil) — stejné refy jako klávesnice. */
   touch?: MutableRefObject<ArenaTouchState>;
 }) {
   const { camera, gl } = useThree();
-  const { subscribe, sendInput, joinArena, leaveRoom, youPlayerId, connected, rtt } = useNet();
+  const { subscribe, sendInput, joinArena, spectateRoom, leaveRoom, youPlayerId, spectator, connected, rtt } = useNet();
 
   const solids = useMemo(() => makeSolids(ARENA_BOXES), []);
   const boxGeometry = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
@@ -128,9 +131,11 @@ export function MarsMultiplayer({
     // join až ve chvíli, kdy je socket opravdu otevřený — jinak se zpráva ztratí
     if (!running || !connected) return;
     unlockAudio(); // prohlížeč chce gesto — tlačítko „Multiplayer" jím je
-    joinArena();
+    // `watch` = dívat se na konkrétní rozehranou místnost (server nedá sedlo)
+    if (watch) spectateRoom('arena', watch);
+    else joinArena();
     return () => leaveRoom();
-  }, [running, connected, joinArena, leaveRoom]);
+  }, [running, connected, joinArena, spectateRoom, leaveRoom, watch]);
 
   // ── data ze serveru (mimo React state, 15×/s) ───────────────────────
   useEffect(() => {
