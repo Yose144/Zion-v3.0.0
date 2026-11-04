@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Hero from '@/components/Hero';
-import NirvanaUniverseSection from '@/components/NirvanaUniverseSection';
 import HomeNoticeBar from '@/components/HomeNoticeBar';
 import HomeInteractiveSection from '@/components/HomeInteractiveSection';
 import MaitreyaSection from '@/components/MaitreyaSection';
@@ -22,7 +21,6 @@ export default function Home() {
   return (
     <>
       <Hero />
-      <NirvanaUniverseSection />
       <MaitreyaSection />
       <HomeNoticeBar />
       <HomeInteractiveSection kind="terminal" />

@@ -67,8 +67,7 @@ function NirvanaUniverseSection() {
   }, []);
 
   return (
-    <section className="relative px-4 pb-10">
-      <div className="zion-container">
+    <div className="relative">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.4em] text-rasta-gold/60 sm:text-[11px]">
@@ -119,8 +118,7 @@ function NirvanaUniverseSection() {
             </div>
           )}
         </div>
-      </div>
-    </section>
+    </div>
   );
 }
 

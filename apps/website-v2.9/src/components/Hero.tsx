@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
-import HolographicEarthLazy from './HolographicEarthLazy';
+import NirvanaUniverseSection from './NirvanaUniverseSection';
 import HeroSlider from './HeroSlider';
 import MainnetCountdown from './MainnetCountdown';
 
@@ -153,7 +153,7 @@ export default function Hero() {
             </div>
           </motion.div>
 
-          {/* ─── RIGHT col — Holographic Earth + Launch Countdown ─── */}
+          {/* ─── RIGHT col — Launch Countdown ─── */}
           <motion.div
             initial={false}
             animate={{ opacity: 1, y: 0 }}
@@ -163,16 +163,22 @@ export default function Hero() {
             {/* outer halo glow */}
             <div className="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-zion-purple/25 via-zion-cyan/15 to-transparent blur-3xl pointer-events-none" />
 
-            <div className="mb-4 z-10 mx-auto flex w-full max-w-sm justify-center lg:mx-0 lg:max-w-md">
-              <HolographicEarthLazy className="w-full shrink-0" />
-            </div>
-
-            {/* Mainnet Countdown panel — sized to match HolographicEarth */}
             <div className="mx-auto w-full max-w-sm lg:mx-0 lg:max-w-md">
               <MainnetCountdown embedded />
             </div>
           </motion.div>
         </div>
+
+        {/* ─── Nirvana universe — first OASIS world, full width ─── */}
+        <motion.div
+          initial={false}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="mt-8"
+        >
+          <NirvanaUniverseSection />
+        </motion.div>
 
         {/* ─── hero slider — One Planet · One People · One Love ─── */}
         <motion.div
