@@ -47,6 +47,8 @@ export interface XmasProduct {
   home?: { lead: XmasText; bullets: XmasText[] };
   /** Široký obrázek pro kartu na homepage (1672×941) */
   hero?: string;
+  /** Ultraširoký banner pro hero na detailu (1983×793 ≈ 21:9) */
+  heroWide?: string;
   /** Doplňkové snímky do galerie na detailu */
   gallery?: { src: string; alt: XmasText }[];
 }
@@ -86,6 +88,7 @@ export const christmasProducts: XmasProduct[] = [
     externalId: 'zion-pass-001',
     image: '/vanoce-pass.webp',
     hero: '/vanoce/home/01_zion_pass.webp',
+    heroWide: '/vanoce/hero/zion-pass-wide.webp',
     gallery: [
       {
         src: '/vanoce/galerie/zion-pass/02_nirvana_a_archiv.webp',
@@ -261,6 +264,7 @@ export const christmasProducts: XmasProduct[] = [
     externalId: 'book-001',
     image: '/shop/img/books/kralovstvi-srdce-wide.webp',
     hero: '/vanoce/home/02_kralovstvi_srdce.webp',
+    heroWide: '/vanoce/hero/kralovstvi-srdce-wide.webp',
     gallery: [
       {
         src: '/vanoce/galerie/kralovstvi-srdce/02_edicni_sada.webp',

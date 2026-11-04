@@ -57,7 +57,7 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
       <div className="zion-section overflow-hidden !p-0">
         <div className="relative aspect-[21/9] max-h-[420px]">
           <img
-            src={product.image}
+            src={product.heroWide ?? product.image}
             alt={pick(product.imageAlt)}
             className="absolute inset-0 w-full h-full object-cover"
           />
