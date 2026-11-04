@@ -306,3 +306,30 @@ Marketplace homepage má hero jako **CSS background** (`.kralovstvi-hero-art`) s
 - art nese **vlastní text** („Merry Christmas & Happy New Year 2027"), takže se přes něj nic nepřekládá — upraven jen `aria-label` a komentář v `HeroSection.tsx`.
 
 **Ověřeno:** `market.zionterranova.com/` 200, `/hero-kolekce-2027.webp` 200 (421 kB), screenshot desktop 1440 i mobil 390 — art je celý, bez ořezu, CTA zůstala pod ním.
+
+---
+
+## 16. Dodatek 10 — bonusy vánoční trojice o jednu nulu dolů
+
+👤: „musíme nastavit jiné bonusy komplexně v celém ekosystému, je to asi přehnané … snížíme vše o jednu nulu" → po dotazu na úroveň zvolil **jen vánoční produkty, katalog nechat**.
+
+**Měření před změnou:** celý katalog (22 produktů) jede na `SHOP_ZION_PER_CZK=10`, tedy **10 ZION/Kč**. Jen tři vánoční položky měly **1 000 ZION/Kč** — o dva řády výš, což vypadalo spíš jako překlep v řádu než jako prémie.
+
+| Produkt | Před | Po | ZION/Kč |
+|---|---|---|---|
+| ZION Pass (108 Kč) | 108 000 | **10 800** | 1 000 → 100 |
+| Kniha (216 Kč) | 216 000 | **21 600** | 1 000 → 100 |
+| Lampion (432 Kč) | 432 000 | **43 200** | 1 000 → 100 |
+
+Po změně jsou vánoční produkty **10× nad katalogem** — prémie zůstává rozpoznatelná, ale už ne o dva řády.
+
+**Kde se to muselo změnit:**
+- **DB** `ShopProduct.tokens` (3 řádky) **a** `ShopSetting campaign:book-001` — kampaň přebíjí produkt, takže bez jejího přepsání by se kniha tvářila jako nezměněná,
+- seed `shopProducts.ts`, data `christmasProducts.ts` (bonus, fakta, bullets, detaily, FAQ),
+- `translations.ts` (popisky karet) a `ChristmasEdition.tsx` (hardcoded bonusy),
+- novinky `Christmas2026Client.tsx` + metadata, karty `ChristmasShopCards.tsx`,
+- textové vyjádření kurzu: „**tisíc** ZION za každou korunu" → „**sto** ZION za každou korunu" (cs+en).
+
+**Ověřeno živě:** `/api/shop/products` → `10800` a `21600`; homepage marketu obsahuje `10 800 / 21 600 / 43 200 ZION` a „sto ZION za každou korunu"; karty na webu `+10 800 / +21 600 / +43 200 ZION bonus`; v HTML se **nevyskytuje** ani jedno staré číslo.
+
+**Poznámka:** tři už vyplacené objednávky (1 000 000, 10 000 000 a 108 000 ZION) zůstávají v historii beze změny — mění se jen budoucí nákupy.
