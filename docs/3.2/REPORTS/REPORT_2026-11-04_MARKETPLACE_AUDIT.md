@@ -333,3 +333,23 @@ Po změně jsou vánoční produkty **10× nad katalogem** — prémie zůstáv�
 **Ověřeno živě:** `/api/shop/products` → `10800` a `21600`; homepage marketu obsahuje `10 800 / 21 600 / 43 200 ZION` a „sto ZION za každou korunu"; karty na webu `+10 800 / +21 600 / +43 200 ZION bonus`; v HTML se **nevyskytuje** ani jedno staré číslo.
 
 **Poznámka:** tři už vyplacené objednávky (1 000 000, 10 000 000 a 108 000 ZION) zůstávají v historii beze změny — mění se jen budoucí nákupy.
+
+### Doplnění — komplexní kontrola celého ekosystému
+
+👤: „oprav to komplexně v celém ekosystému". Prošel jsem `git grep` přes celý repo a roztřídil nálezy:
+
+| Kde | Stav |
+|---|---|
+| `apps/MarketPlace/src` (data, seed, překlady, karty) | ✅ opraveno v předchozím commitu |
+| `apps/website-v2.9/src` (novinky, karty, metadata) | ✅ opraveno |
+| **DB `ShopProduct.description`** (3 popisy s „BONUS: … ZION") | ✅ **doopraveno teď** — kód byl změněný, ale databáze si držela starý text |
+| DB `campaign:book-001` | ✅ 21 600 (přebíjí produkt) |
+| DB `tokens:TEST-ZPASS-…`, `tokens:GIFT-…` | ⏸ **neměněno** — jsou to záznamy o skutečně vyplacených částkách, ne ceník |
+| E-maily | ✅ číslo berou z objednávky (`zionTokens`), žádný hardcoded text |
+| Whitepapery (`108,000 ZION minimum for validator staking`) | ⏸ **jiný kontext** — minimum pro staking, s bonusem nesouvisí |
+| `apps/IntroPage`, `OasisWeb`, `nirvana`, `identity`, `mobile-app`, `desktop-agent` | ✅ žádná bonusová čísla |
+| `docs/**` reporty a plány | ⏸ historické záznamy, nedotčeno |
+
+**Pojistka proti regresi:** `scripts/ops/check-bonus-copy.sh` — projde `apps/`, najde staré částky v bonusovém kontextu i starou formulaci „tisíc ZION za každou korunu", a vrací exit 1. Whitepapery vynechává (mají vlastní čísla). Aktuálně **✓ ✓**.
+
+**Ověřeno živě:** `/api/shop/products` vrací `10800`/`21600` a popisy s `10 800 ZION` / `21 600 ZION`; na šesti živých površích (market `/`, `/shop`, oba detaily, web `/`, novinky) **0 výskytů** starých částek.
