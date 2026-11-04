@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useI18n } from '@/core/i18n';
 
 const BOOK_URL = 'https://market.zionterranova.com/shop?category=books';
@@ -15,6 +15,7 @@ type GateError = 'gateTooMany' | 'gateInvalid' | 'gateVerifyFailed';
 export function PassGate({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
   const router = useRouter();
+  const pathname = usePathname();
   const [state, setState] = useState<GateState>('loading');
   /** Kam se vrátit po odemčení (middleware sem poslal `?next=`). */
   const [next, setNext] = useState<string | null>(null);
@@ -61,13 +62,25 @@ export function PassGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (state !== 'open' || !next) return;
     router.replace(next);
-    /**
-     * `next` se musí vyčistit: layout s bránou zůstává mezi navigacemi
-     * (Next ho nepřemountuje), takže by na cílové stránce zůstal spinner
-     * „Nirvana se otevírá…" navěky.
-     */
-    setNext(null);
   }, [state, next, router]);
+
+  /**
+   * `next` se čistí až **po příchodu** na cílovou cestu. Kdyby se vyčistil
+   * hned, layout by na jeden render pustil děti (`Shell`) na staré route a
+   * jeho hash-sync efekt by navigaci přepsal zpátky na `/` (reálně se to
+   * stalo: po zadání kódu to skončilo na vesmíru místo na hře).
+   */
+  useEffect(() => {
+    if (!next) return;
+    const target = next.split('?')[0];
+    if (pathname === target) {
+      setNext(null);
+      return;
+    }
+    // Pojistka: když se navigace zasekne, nenechávej člověka na spinneru.
+    const timer = setTimeout(() => setNext(null), 4000);
+    return () => clearTimeout(timer);
+  }, [next, pathname]);
 
   const submit = async () => {
     const trimmed = code.trim();
