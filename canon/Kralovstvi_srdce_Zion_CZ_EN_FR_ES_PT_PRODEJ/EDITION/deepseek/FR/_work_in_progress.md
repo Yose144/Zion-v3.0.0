@@ -640,3 +640,497 @@ Et elle s'en alla. L'eau en moi ne bougea même pas.
 ## Copeau
 
 La plus belle phrase de ce chapitre — *« ce qui couvre les gens, c'est cela qui les porte sur l'eau »* — est de moi. Elle n'est pas de l'Écriture, pas de la tradition, pas d'un commentaire rabbinique que je puisse documenter. Elle est née de la racine k-p-r, parce que cette racine est réellement là et parce que l'hébreu emploie réellement le même mot pour le brai et pour la couverture. Mais **le lien, que le brai de dedans est image du soin de ce que les gens portent en eux, est l'image de ce livre.** Je le laisse debout — et je laisse voir à côté que je l'ai fait moi-même. Si je l'avais tu, ce serait une belle phrase et un mauvais livre.
+---
+
+*La coque était achevée, calfatée et étanche. Mais une barque sur tréteaux n'est pas encore une barque. Restait ce que tout charpentier redoutait : le chemin d'en bas.* → L'Aviron
+
+
+---
+
+# V · L'Aviron
+
+> **CERNE V** · la route de Nazareth au Kinneret et le premier été sur l'eau, ~28 apr. J.-C.
+> *La seule partie de la barque qui a besoin d'un homme.*
+
+---
+
+## Récit
+
+Une barque dans une cour n'est pas une barque. C'est un objet.
+
+C'est seulement quand on la déplace qu'on découvre ce qu'on a fait.
+
+On me descendit des tréteaux à l'aube, quand la terre était encore dure de gel et le chemin sans boue. On glissa trois rouleaux de bois d'olivier sous la quille, on m'attacha avec des cordes et on se mit à tirer. Nous étions vingt pour cela. Nous marchâmes tout le jour et une partie de la nuit.
+
+Nazareth est à environ trois cent cinquante mètres. Le Kinneret est **deux cent douze mètres au-dessous du niveau de l'océan.** Entre les deux il y a cinq cent soixante mètres de dénivelé et trente kilomètres de chemin qui descend doucement au début et tombe à la fin.
+
+Tout ce trajet je le passai la tête en bas contre moi-même. Les cordes s'enfonçaient, les rouleaux grinçaient, une fois le bord du chemin s'effondra sous un côté et je m'inclinai si fort que j'aurais chaviré si les hommes ne m'avaient retenu. J'entendis l'un d'eux crier à un autre, et j'entendis que l'autre ne discutait pas, mais simplement s'arc-boutait et tirait. Et j'entendis le charpentier, qui marchait tout le temps derrière, la main sur l'étambot, et qui ne dit pas un mot — une seule fois, quand cela fléchit, il dit : « Doucement. Nous n'avons pas besoin d'arriver à temps. Nous devons la livrer. »
+
+Nous atteignîmes l'eau à l'aube.
+
+Et là vint le moment que tout charpentier retient jusqu'à sa mort : **la mise à l'eau.**
+
+Ce ne fut pas une gloire. Il y avait des hommes fatigués, des cordes mouillées, deux barques de pêcheurs déjà à l'eau et un bout de sable. Le charpentier se tenait dans l'eau jusqu'aux genoux, me tenant par l'étrave. Quelqu'un demanda si cela flotterait. Un autre rit.
+
+Et alors il me lâcha.
+
+L'eau me prit comme rien ne m'avait pris. Ce ne fut pas un choc — ce fut **un changement d'habit.** Quelque chose s'ouvrit sous moi et je m'y allongeai sur toute ma longueur. À ce moment je cessai d'être du bois à terre et je devins une chose qui a de l'eau au-dessus et au-dessous, et dont la seule question est : *combien vais-je en laisser entrer ?*
+
+J'en laissai un peu. Le premier jour je m'imbibai — le bois gonfle, les jointures se resserrent, les clous s'asseyent. Si j'avais été de fer, rien ne se serait échappé et j'aurais éclaté. Ainsi je fuyais un peu trois jours, puis je m'arrêtai. On dit que la barque *boit*. C'est le seul moment de la vie d'une barque où elle est faible — et il est juste qu'elle le soit, car si elle commençait par être la plus forte, elle n'aurait nulle part où grandir.
+
+---
+
+Le premier été je naviguai avec les pêcheurs.
+
+J'appris ce que cela veut dire d'être une barque de travail. Ce n'est pas de la romance. C'est l'odeur de poisson qu'on ne lave pas. C'est le silence, parce que les poissons craignent le bruit. C'est l'ennui et puis soudain la peur, quand le filet s'accroche au fond et que la barque gîte. C'est un rythme : coup, coup, relâcher, coup.
+
+De l'aviron j'appris ce que je ne savais pas jusque-là : **une barque seule ne sait rien faire.**
+
+La quille tient. Le bordé couvre. Les membrures portent. Le brai scelle. Mais tout cela n'est que la **possibilité** de naviguer. Quand une barque est vide et sans avirons, c'est un bol qui se balance sur place jusqu'à ce que le vent le jette à la rive.
+
+L'aviron est autre chose. L'aviron ne fait pas partie de la barque — on peut le retirer, le mettre de côté, le prêter, le casser et en faire un autre. Et pourtant sans lui la barque ne fait pas un mètre contre le vent.
+
+C'est la seule partie que la barque **ne possède pas**. Quand un coup résonne, ce n'est pas parce que la barque est bonne. C'est parce que quelqu'un a décidé de tirer.
+
+---
+
+Au printemps de la deuxième année, cela arriva.
+
+Une foule vint à l'eau. Ils étaient si nombreux qu'ils se pressaient sur la rive, certains debout dans l'eau jusqu'aux genoux et d'autres sans place. Et lui — celui qui m'avait construit — vint, entra en moi et demanda à Simon de s'écarter un peu du bord. Non pour partir. Pour avoir de la distance au mur.
+
+Puis il s'assit à l'étambot et se mit à parler.
+
+Ce qui arriva ensuite, je l'explique par la physique, parce que la physique l'explique bien et que je n'ai pas de raison d'inventer un miracle là où la forme de la rive suffit. Le Kinneret est dans une cuvette. Quand tu parles au-dessus de la surface depuis une barque à peu de distance de la rive, le son voyage sur l'eau et revient de la pente d'en face. Ce n'est pas de la magie. C'est **un théâtre que le paysage a fait** — et les vieux pêcheurs le savaient bien avant, car quiconque a travaillé sur ce lac a découvert qu'on entend plus loin depuis l'eau que depuis la rive et qu'un homme n'a pas besoin de crier pour que ceux du fond l'entendent.
+
+Les gens se tenaient debout et écoutaient. Et pour la première fois de ma vie je ne fus pas une barque qui porte — je fus une barque depuis laquelle on **dit**.
+
+---
+
+Quand il eut fini, il se tourna vers Simon et lui dit de gagner le large et de jeter les filets.
+
+Simon était un homme qui n'avait rien pris de toute la nuit. C'était un homme aux mains calleuses de corde, qui savait que si l'on n'a rien pris de nuit, on ne prendra rien de jour. Il le dit tout haut — puis il dit la seconde phrase, qui est pour moi la plus importante de tout ce chapitre :
+
+**« Mais sur ta parole, je les jetterai. »**
+
+Non qu'il crût. Non qu'il sût. Qu'il le fit.
+
+Les filets se remplirent jusqu'à se déchirer, et il fallut appeler l'autre barque, et les deux s'enfonçaient. Simon lâcha, tomba à genoux dans la gloire argentée et ruisselante des poissons et dit : « Éloigne-toi de moi, Seigneur, car je suis un homme pécheur. »
+
+Et il lui dit ce qui m'est resté comme une question pour tout le reste de ma vie :
+
+**« N'aie pas peur. Désormais tu prendras des hommes. »**
+
+---
+
+Les hommes tirèrent les barques sur la rive, laissèrent les filets et s'en allèrent.
+
+Je restai sur l'eau.
+
+J'étais troublé, car une barque n'aime pas les choses en suspens : quand les pêcheurs partent et abandonnent la barque, cela veut-il dire qu'ils reviendront, ou qu'ils l'ont laissée ? Trois jours je me balançai près de la rive en attendant qui viendrait me chercher.
+
+Simon vint. Il me prit par la corde et me tira jusqu'au lieu où il m'amarra. Il ne me dit rien. Mais dès ce moment je remarquai qu'il me regardait autrement : non comme un outil, mais comme un **lieu**.
+
+Et ainsi je devins la barque depuis laquelle on parlait, et la barque vers laquelle on courait quand la tempête se levait du mauvais côté. Les deux ne sont pas la même chose. Mais les deux sont permises à une barque.
+
+---
+
+## De l'Écriture, de la tradition et de l'histoire
+
+- **Lc 5,1–11** — « Il monta dans l'une des barques, qui était à Simon, et le pria de s'éloigner un peu du rivage ; puis il s'assit et **enseignait la foule depuis la barque**. » Puis la pêche miraculeuse et l'appel. Luc est le seul à développer la scène avec détail.
+- **Mc 1,16–20** — l'appel de Simon et André, de Jacques et Jean près des filets ; « Venez après moi et je vous ferai **pêcheurs d'hommes**. »
+- **Mt 4,19** — la même parole. L'image qui revient dans les évangiles n'est pas sur une barque, mais sur un **changement de métier** : ceux qui savaient prendre dans l'eau apprennent à prendre des gens hors de l'eau.
+- **L'acoustique du Kinneret** — le lac est dans une cuvette tectonique entourée de pentes ; le son se propage au-dessus de l'eau et revient de la pente opposée. Sur la rive nord-ouest se trouve un amphithéâtre naturel (le site dit *heptapégon*, « sept sources »), où l'on entend même une voix basse. Prêcher depuis une barque n'est donc pas seulement une image littéraire — c'est le **lieu fonctionnellement le meilleur**.
+- **Le Kinneret — les chiffres** — le lac d'eau douce le plus bas de la Terre, surface à environ **−212 m** sous le niveau de l'océan ; longueur ~**21 km**, largeur ~**13 km**, profondeur jusqu'à ~**40 m**. Il est dans une fosse tectonique, et c'est pourquoi il s'y forme des tempêtes soudaines et brèves, quand l'air tombe des pentes dans la cuvette.
+- **Le « boire » d'une barque neuve en bois** — le bois gonfle au premier contact avec l'eau et les jointures se resserrent. Les coques neuves prennent donc un peu d'eau les premiers jours. C'est une propriété documentée du matériau, non un défaut.
+
+## Ancre de vérité
+
+| Ce qu'il y a dans le chapitre | Statut |
+|---|---|
+| L'enseignement depuis la barque, la pêche miraculeuse, l'appel des pêcheurs | **ÉCRITURE** — Lc 5,1–11 ; Mc 1,16–20 |
+| « Pêcheurs d'hommes » | **ÉCRITURE** — Mc 1,17 ; Mt 4,19 |
+| Le « sur ta parole, je les jetterai » de Simon | **ÉCRITURE** — Lc 5,5 |
+| Que la barque ait été construite par le charpentier de Nazareth lui-même | **MYTHE** — l'Écriture dit seulement « la barque, qui était à Simon » |
+| La descente de la barque de Nazareth au Kinneret par 560 m de dénivelé | **MYTHE** — la scène ; la géographie est documentée |
+| L'acoustique de la cuvette et la prédication depuis l'eau | **HISTOIRE / physique** — propriété du lieu |
+| Le « boire » de la coque | **HISTOIRE** — propriété du bois |
+| L'aviron comme la seule partie que la barque ne possède pas | **MYTHE** — image de ce livre |
+
+## Mesure
+
+- **Le dénivelé de la route** : Nazareth ~**+350 m**, le Kinneret ~**−212 m** → une différence de **~560 m** sur **~30 km**. Pente moyenne 1,9 %, bien plus à la fin.
+- **L'aviron** : longueur **4–5 m**, pale de **60–80 cm**, manche équilibré pour ramer d'une main contre l'autre.
+- **Vitesse** : vitesse à l'aviron d'une barque de travail **2–3 nœuds** (~4–6 km/h) ; davantage sous voile par bon vent, mais pas sur ce lac, où le vent est peu fiable et en rafales.
+- **Équipage** : **4 rameurs par paires** + un timonier. Cela correspond à cinq hommes — Simon et André, Jacques et Jean et les journaliers (Mc 1,20).
+- **La période de « boire »** : **2–4 jours** de suintement léger, puis les jointures se resserrent.
+- **Poissons** : plusieurs espèces sont documentées dans le Kinneret — surtout le tilapia (dans la tradition « le poisson de Pierre »), des cyprinidés et des silures. « Cent cinquante-trois grands poissons » en Jn 21,11 est un chiffre concret que le texte donne exprès.
+
+## Copeau
+
+Cette phrase sur la physique — que prêcher depuis la barque fonctionnait parce que la rive est un amphithéâtre — est vraie et pourtant dangereuse. Si je l'avais écrite sans le reste, j'aurais expliqué l'évangile par l'acoustique et je lui aurais pris ce que les gens y cherchent. **Je n'explique pas ce qui est arrivé. Je n'explique que pourquoi cela fonctionnait même sans miracle.** Ce sont deux phrases différentes, et la différence entre elles est toute la différence entre l'honnêteté et l'arrogance.
+
+---
+
+*La barque naviguait et les gens y montaient. Mais elle n'avait toujours pas de nom. Cela vint au moment où personne ne le demandait — et où il faisait le plus défaut.* → Le Mât
+
+
+---
+
+# VI · Le Mât
+
+> **CERNE VI** · Capharnaüm et la rive près de Magdala, deuxième année, après la moisson
+> *La seule partie de la barque qui montre vers le haut — et qui pourtant ne sait rien faire seule.*
+
+---
+
+## Récit
+
+Le mât vint le dernier.
+
+La coque était achevée, les membrures posées, le brai sec, les avirons essayés. Et alors le charpentier apporta de l'atelier une longue pièce de cèdre qu'il avait mise de côté quatre ans entiers — sans nœud, droite, à la fibre si dense que le couteau glissait dessus. Il la dressa au milieu de la barque sur la quille et l'encastra dans un billot de chêne préparé là depuis le commencement, sans que je susse à quoi il servait.
+
+Le mât est une chose étrange. Quand on le dresse dans une barque, la barque change aussitôt : elle cesse d'être plate et se met à être **haute**. Depuis l'eau, on dirait qu'il a poussé un dos à la barque. Mais en même temps — et voilà ce qui m'empêchait de dormir — le mât à lui seul ne sait absolument rien faire. Il ne meut pas la barque. Il ne la tient pas. Il n'aide pas quand ça souffle de côté ; au contraire, il ajoute une surface contre laquelle le vent s'appuie, et la barque chavire plus facilement qu'avec.
+
+Le mât est **une promesse qui ne vaut que quand le vent vient.**
+
+S'il n'y avait pas de vent, le mât ne serait qu'un bâton qui gêne. C'est pourquoi les pêcheurs l'abattaient quand ils portaient une charge. C'est pourquoi personne ne l'avait dressé à demeure.
+
+Mais ce n'est pas pour cela que je me souviens de lui.
+
+Je me souviens de lui parce que ce jour-là on me donna un nom.
+
+---
+
+Les pharisiens vinrent. Non avec des bâtons, non avec des pierres — ils vinrent avec une question qui est pire qu'une pierre, car on ne peut pas y répondre et on ne peut pourtant pas se taire.
+
+« Quand viendra le royaume de Dieu ? »
+
+C'était une question sur une date. Sur un signe. Sur ce qu'on peut compter et noter et dont on peut ensuite s'arranger. Les pharisiens n'étaient pas sots ; c'étaient des hommes qui savaient que ce qui ne se compte pas ne se revendique pas non plus. Et revendiquer le royaume leur importait plus que de l'avoir.
+
+Il se tenait près de l'eau et ne les regardait pas. Il regardait la barque.
+
+« Le royaume de Dieu ne vient pas de manière à ce qu'on puisse l'observer », dit-il. « On ne dira pas non plus : “Voici, il est ici”, ou “Il est là.” **Car le royaume de Dieu est au-dedans de vous.** »
+
+Ils se retirèrent. Ils ne partirent pas en colère — ils partirent **insatisfaits**, ce qui, chez qui cherche une date, revient au même.
+
+Mais les disciples restèrent. Et Simon, qui se tenait près de la corde, posa une question qui le touchait bien plus que le royaume :
+
+« Maître. Et cette barque — comment s'appelle-t-elle ? »
+
+Car une barque sans nom est pire pour un marin qu'une barque au fond percé. Le nom n'est pas un ornement. Le nom est ce par quoi l'on sait que ce qui flotte est **une chose précise** et non un morceau de bois qui se tient par hasard à la surface.
+
+Il regarda Simon. Puis il s'agenouilla, prit un levier et souleva trois planches du plancher qui étaient seulement posées, non clouées. Dessous était la quille — moi, entier, de l'étrave à l'étambot, avec cette bande de cuivre et avec le coin d'olivier qui tenait ma fente.
+
+Il prit un ciseau.
+
+Et il grava le nom **de dehors en dedans**. Non sur le flanc, où les gens du port le verraient. Non sur l'étrave, où l'eau le laverait. Dans la face intérieure de la quille, à l'endroit où n'arrive que celui qui soulève le plancher — et seulement celui qui démonte la barque pour la réparer.
+
+Les lettres faisaient quatre doigts de haut et trois de profondeur. Cela lui prit tout l'après-midi, parce que le cèdre est dur et parce qu'il regardait après chaque lettre si elle était droite.
+
+**LE ROYAUME DU CŒUR**
+
+Quand il eut fini la dernière, il s'assit sur les talons et le lut d'en bas vers le haut, car c'est ainsi qu'il lui venait depuis sa place.
+
+Et puis il dit la phrase que j'entendis à la distance la plus proche possible, parce qu'elle était gravée en moi :
+
+**« Il a un nom depuis le commencement. J'attendais seulement que vous puissiez l'entendre. »**
+
+---
+
+Simon demanda : « Et pourquoi dedans ? Pourquoi pas sur le flanc, pour que tout le monde le voie ? »
+
+Le charpentier montra le flanc de la coque.
+
+« Si je l'écris ici, le lira quiconque passera. Et chacun s'en fera un jugement : beau nom, sot nom, nom fort. Dans vingt ans il faudra le recouvrir, parce qu'il sera laid. Dans cent ans il faudra l'arracher, parce qu'il mentira. » Il posa la paume sur le plancher. « Si je l'écris ici, ne le verra que celui qui répare la barque. Et celui-là sait déjà pourquoi il la répare. **Le nom n'est pas là pour convaincre ceux qui regardent depuis la rive. Il est là pour rappeler à ceux qui travaillent dans la barque.** »
+
+Simon se tut un moment. Puis il posa une chose de plus, et je lui ai envié cette question toute ma vie, car il la posa vingt siècles avant que les savants ne la posent :
+
+« Et ce que tu as dit aux pharisiens — *au-dedans de vous* — est-ce que cela veut dire *au-dedans de chacun de nous*, ou *entre nous*, ici dans la barque ? »
+
+Le charpentier le regarda et dit :
+
+« Oui. »
+
+Et il en resta là. Simon le regarda un moment puis rit, parce qu'il comprit qu'il avait reçu deux réponses et aucune, et que c'était probablement juste.
+
+---
+
+## De l'Écriture, de la tradition et de l'histoire
+
+- **Lc 17,20–21** — « Le royaume de Dieu ne vient pas de manière à ce qu'on puisse l'observer… car le royaume de Dieu est **au-dedans de vous**. » Le grec **ἐντὸς ὑμῶν** (*entos hymōn*) est réellement ambigu : « au-dedans de vous » (distributif, en chacun) et « parmi vous » (on considère aussi *en mesō*). La plupart des traductions choisissent le premier, une partie des exégètes le second. La différence n'est pas mince : le premier lit le royaume comme état du cœur, le second comme présence de relation.
+- **Dt 30,14** — « Car cette parole est tout près de toi, **dans ta bouche et dans ton cœur**, pour que tu puisses l'accomplir. » La racine vétérotestamentaire de ce que Luc dit du royaume.
+- **Jr 31,33** — « Je mettrai ma loi au-dedans d'eux et je l'écrirai sur leur **cœur**. » La nouvelle alliance s'écrit vers l'intérieur, non sur la pierre — ce qui, en charpenterie, revient à graver un nom dans la face intérieure de la quille.
+- **Ez 36,26** — « Je vous donnerai un cœur nouveau… j'ôterai de votre chair le cœur de pierre et je vous donnerai un cœur de chair. »
+- **2 Co 3,3** — lettre du Christ « non sur des tables de pierre, mais sur les tables de cœurs de chair ».
+- **Mt 13,33** — « Le royaume de Dieu est comme le levain qu'une femme prit et mêla à trois mesures de farine, jusqu'à ce que tout fût levé. » Image d'une action qu'on ne voit pas au début et qu'on voit à la fin. La même logique que le nom sous le plancher.
+- **Mât et voile** — structurellement documenté : la barque galiléenne avait un mât et une voile, mais n'était pas un voilier. La voile était auxiliaire, utilisée par vent favorable ; la propulsion principale restait l'aviron. C'est le détail technique qui fait de l'image « une promesse qui ne vaut que quand le vent vient » une description exacte, non une métaphore.
+
+## Ancre de vérité
+
+| Ce qu'il y a dans le chapitre | Statut |
+|---|---|
+| Les pharisiens interrogent sur le royaume ; la réponse « au-dedans de vous » | **ÉCRITURE** — Lc 17,20–21 |
+| L'ambiguïté de *entos hymōn* | **ÉCRITURE + philologie** — les deux traductions sont défendables ; le texte le laisse ouvert |
+| L'alliance écrite sur le cœur | **ÉCRITURE** — Jr 31,33 ; Ez 36,26 ; Dt 30,14 ; 2 Co 3,3 |
+| Le nom de la barque « Le Royaume du Cœur » | **MYTHE** — image de ce livre, tirée de Lc 17,21 |
+| Qu'il est gravé dans la face intérieure de la quille, sous le plancher | **MYTHE** — image centrale de cette édition |
+| La barque avait un mât et une voile auxiliaire ; la propulsion principale était l'aviron | **HISTOIRE** — documenté sur la barque galiléenne du Ier siècle |
+| La question de Simon « au-dedans de chacun, ou entre nous ? » | **MYTHE** — mais la question est réelle et toujours vive dans l'exégèse |
+
+## Mesure
+
+- **Hauteur du mât** : **5–6 m** sur une barque de 8,2 m — environ les deux tiers de la longueur de la coque. Un mât plus haut ferait chavirer la barque ; plus bas, il ne porterait pas la voile.
+- **Surface de la voile** : **8–15 m²** en usage auxiliaire. Assez pour que la barque avance, peu pour qu'elle soit emportée.
+- **Profondeur de la gravure** : **3–4 mm**. Plus profond affaiblirait la quille aux points de plus forte contrainte.
+- **Hauteur des lettres** : **~4 cm**. Lisibles à la main, non à l'œil — car qui le cherche le cherche au toucher.
+- **Temps de la gravure** : un nom de dix-sept lettres, tout un après-midi, car chaque lettre se fait deux fois : une fois au ciseau et une fois du regard.
+- **Planches du plancher** : **3** pièces, posées, non clouées — car le plancher doit pouvoir se lever sans abîmer la coque.
+
+## Copeau
+
+J'ai écrit dans ce livre que le nom est sous le plancher pour que seul le vît celui qui répare la barque. C'est beau et c'est **de moi**, non documenté. Mais il y a un piège que je ne veux pas balayer : si le nom n'était vraiment que sous le plancher, **personne ne le trouverait** et toute l'image ne serait qu'un secret pour personne. La barque réelle de Galilée, trouvée en 1986, n'avait aucun nom — et pourtant les gens l'ont nommée. Non d'après ce qui était écrit dedans, mais d'après **ce qu'ils en pensaient**. Voilà la seconde image, plus sombre, et elle appartient à ce chapitre autant que la belle : **le nom que tu donnes à une barque n'est pas le même que celui que les autres s'en font.**
+---
+
+*Et puis le vent se leva — non du côté d'où il devait venir, et non à l'heure qu'on pouvait attendre. Et pour la première fois je découvris qu'un mât qui ne sait rien faire est soudain la chose la plus importante que j'aie.* → La Vague
+
+
+---
+
+# VII · La Vague
+
+> **CERNE VII** · le Kinneret, la nuit de la rive orientale à la rive nord-ouest, ~29 apr. J.-C.
+> *Une vague n'est pas de l'eau. Une vague est du travail.*
+
+---
+
+## Récit
+
+Le soir il dit : « Passons sur l'autre rive. »
+
+C'était l'ordre la plus ordinaire qui puisse résonner dans une barque. Six kilomètres. Une heure et demie de rame. Les pêcheurs l'avaient fait cent fois. Personne ne demanda si c'était sûr, car sur ce lac personne ne le demande — on commence à demander quand ça souffle.
+
+Nous larguâmes au coucher du soleil.
+
+La première heure, il y eut un silence tel que j'entendais chaque coup séparément : *vzzz — clac — vzzz — clac.* L'eau était noire et lisse et réfléchissait les étoiles si exactement qu'on ne distinguait pas où était le ciel et où le lac. Quelqu'un parlait à l'arrière du pain. Un autre s'endormit et sa tête glissa sur un sac.
+
+Puis le vent vint.
+
+Non de face, où on le verrait. **Par-derrière et de côté, des pentes orientales**, où l'air froid reste sur le plateau toute la journée et, la nuit, déborde par le bord et tombe dans la cuvette. C'est le même principe que le grain qu'on verse d'un sac : plus haut tu le tiens, plus fort il tombe. En dix minutes le silence devint pression, et la pression grondement.
+
+Et puis les vagues vinrent — et ici je dois dire une chose que les gens de la mer ne comprennent pas avant de l'avoir vécue.
+
+**Le Kinneret n'est pas profond.** Il fait une quarantaine de mètres. L'océan en a des milliers. Une vague en eau profonde est longue et molle ; tu peux passer dessous, tu peux la chevaucher, on peut travailler avec elle. Une vague en eau peu profonde **n'a nulle part où descendre**, elle croît donc en hauteur et en raideur. Elle est courte, pointue et rapide — trois secondes entre les crêtes, plus d'un mètre de haut, deux dans les rafales. Une barque de huit mètres n'entre pas dans une telle vague. **La moitié** y entre et l'autre moitié reste en l'air.
+
+La première vague qui me frappa de flanc me fit tourner de vingt degrés et jeta un seau par-dessus bord. La seconde passa par-dessus l'étrave et tomba dedans.
+
+Et ensuite il n'y eut plus rien d'autre que du travail.
+
+---
+
+Je ne peux pas décrire à quoi ressemble une tempête de l'extérieur. Je ne l'ai jamais vue. Je l'ai vue **depuis la matière**, et c'est autre chose : je sentais chaque planche du bordé fléchir de deux ou trois millimètres et revenir ; les membrures s'affaisser entre les clous ; les chevilles des jointures tourner d'une fraction de degré et revenir. Je sentais l'eau s'appuyer sur moi et en même temps me tenir — car une barque dans la vague n'est pas une chose qui résiste. C'est une chose qui **se plie selon ce que la vague demande et reste pourtant elle-même.**
+
+Quand tu te plies, tu n'es pas faible. Quand tu ne te plies pas, tu éclates.
+
+C'est toute la construction navale en une phrase, et il m'a fallu quatre ans pour l'apprendre de l'intérieur.
+
+L'eau dans la coque montait. Les hommes écopaient — deux avec un aviron, deux avec des seaux, un avec les mains. Quelqu'un criait quelque chose qu'on ne pouvait pas entendre, mais tous savaient ce que cela voulait dire, car dans une barque pendant la tempête on ne s'accorde pas avec des mots. On s'accorde en faisant ce qu'il faut avant que quelqu'un le dise.
+
+Et alors ils remarquèrent qu'il dormait.
+
+Il était couché à l'étambot, la tête sur un coussin de bois qu'il avait raboté lui-même. Les vagues le trempaient, l'eau lui coulait sur le visage, la barque tournait et le mât se balançait au-dessus de lui — et il dormait.
+
+Ce n'était pas le sommeil de l'épuisement ni celui de l'indifférence. C'était le sommeil de **celui qui l'a construite.** Et je le sais, car je le savais déjà alors : quand quelqu'un dort ainsi sur toi, ce n'est pas une insulte. C'est **le plus grand éloge qu'une barque puisse recevoir.** Cela veut dire : *je sais ce que tu es. Je sais ce que tu portes. Je n'ai pas besoin de regarder.*
+
+Et puis il se réveilla.
+
+Les hommes se penchèrent sur lui et lui crièrent au visage : « Maître ! Cela t'est égal que nous périssions ? »
+
+Il se leva. Il se tint debout à l'étambot — la partie de la barque où chaque vague se sent le plus — et il n'eut pas peur. Non parce qu'il était courageux, mais parce qu'il regardait l'eau comme un charpentier regarde un ouvrage encore inachevé.
+
+Et il dit deux mots au lac.
+
+En grec ils sonnent : **σιώπα, πεφίμωσο** — *siópa, pephimōso.* Le premier signifie « tais-toi ». Le second est plus fort : littéralement **« sois muselé, on t'a mis le mors »** — le mot par lequel le grec de l'époque ordonnait à une bête de fermer la gueule, et à un homme possédé de se taire. Ce n'est pas une prière. Ce n'est pas un ordre à la surface. C'est **mettre le mors.**
+
+Et le silence vint.
+
+Non un apaisement progressif, non le vent qui faiblit et les vagues qui diminuent. Un silence où soudain tu entends les gouttes glisser du bord de la coque et tomber dans l'eau. *Ploc. Ploc. Ploc.* Et dans ce silence on entendait que les onze hommes avaient cessé de respirer.
+
+Moi, alors, je ne savais pas ce qui était arrivé. Je le sais aujourd'hui seulement comme matière : **l'eau sous moi cessa de travailler.**
+
+Et puis arriva une chose qui me porta dans un état que je ne connaissais pas et qui m'accompagne toute ma vie depuis cette nuit. Les hommes ne regardaient pas la mer. Ils le regardaient **lui** — et ils eurent plus peur qu'avant.
+
+« Qui est-il, que même le vent et la mer lui obéissent ? »
+
+Je gisais sous eux, me repliant vers ma forme, et je pensais quelque chose que je n'aurais pas dû dire tout haut à ce moment, car une barque ne doit pas parler :
+
+**J'eus peur. Pas de lui. J'eus peur que ce fût vrai.**
+
+Car s'il est vrai que le vent et l'eau lui obéissent, alors ce que j'avais gardé quatre ans en moi — ce nom sous le plancher — n'est pas seulement une jolie parole inventée par un charpentier dans les collines.
+
+---
+
+Au matin nous abordâmes sur la rive opposée. Il y avait une demi-lumière et de la brume, et quelqu'un sur la rive gardait des porcs.
+
+Aucun de nous ne parla. Simon regardait l'eau et avait dans les yeux ce qu'ont les gens qui viennent de découvrir que le monde est plus grand qu'ils ne le croyaient — et ce n'est pas une sensation agréable. C'est la sensation après laquelle on fuit ou on reste.
+
+Simon resta.
+
+---
+
+## De l'Écriture, de la tradition et de l'histoire
+
+- **Mc 4,35–41** — « Ce jour-là, le soir venu, il leur dit : “Passons sur l'autre rive.”… Il s'éleva une grande tempête… il était à la poupe, dormant sur le coussin… “Maître, cela ne te fait rien que nous périssions ?”… “Tais-toi, sois muselé !” (*siōpa, pephimōso*)… Et il se fit un grand calme… “Qui est-il donc, que même le vent et la mer lui obéissent ?” »
+- **Mt 8,23–27 · Lc 8,22–25** — la même scène dans les deux autres évangiles ; Luc ajoute qu'« ils furent saisis de crainte et s'étonnaient ».
+- **Ps 107,23–30** — « Ceux qui descendent sur la mer en navires… ils crièrent vers le Seigneur dans leur détresse… **il changea la tempête en calme**, et les vagues se turent… il les conduisit au port qu'ils désiraient. » Le psaume que l'Église lit depuis le commencement comme arrière-plan de cette péricope.
+- **Jon 1** — Jonas **dort** dans la cale pendant la tempête ; l'équipage païen le réveille. Jésus lui-même reprend cette scène en Mt 12,40.
+- **Ps 29,3** — « La voix du Seigneur au-dessus des eaux… le Seigneur au-dessus des grandes eaux. » Image vétérotestamentaire de Dieu qui parle au-dessus de l'eau — et chez Marc un homme parle au-dessus de l'eau.
+- **La physique du Kinneret** — le lac est **peu profond et dans une cuvette**. Le vent tombe des pentes orientales (le plateau du Golan) dans la dépression ; les tempêtes soudaines sont documentées et sont courtes, violentes et dangereuses. L'eau peu profonde produit des **vagues courtes et raides** (un rapport hauteur/longueur bien plus grand que sur l'océan), pires pour une petite barque que les vagues longues.
+
+## Ancre de vérité
+
+| Ce qu'il y a dans le chapitre | Statut |
+|---|---|
+| La tempête, le Jésus endormi sur le coussin, l'apaisement, la question « qui est-il donc ? » | **ÉCRITURE** — Mc 4,35–41 et par. |
+| *siópa, pephimōso* comme « sois muselé / on t'a mis le mors » | **ÉCRITURE + philologie** — le verbe *phimoō* signifie « fermer la bouche, faire taire, mettre le mors » ; dans les évangiles il sert à commander aux démons |
+| Le psaume 107 comme arrière-plan de la scène | **ÉCRITURE + tradition liturgique** |
+| Jonas dormant dans la tempête comme préfiguration | **ÉCRITURE** — Jon 1 ; Jésus lui-même le mentionne (Mt 12,40) |
+| Que le coussin a été raboté par le charpentier lui-même | **MYTHE** — image de ce livre |
+| « J'ai cessé d'avoir peur parce que j'ai construit cette barque » | **MYTHE** — image de la conviction ecclésiale sur le Christ et son navire |
+| Vagues courtes et raides dans un lac peu profond et vent tombant des pentes orientales | **HISTOIRE / physique** — propriété documentée du Kinneret |
+| « Une vague n'est pas de l'eau, une vague est du travail » | **MYTHE** — mais structurellement exact : la coque fléchit de quelques millimètres dans la vague |
+
+## Mesure
+
+- **Hauteur des vagues** dans une tempête du Kinneret : **1–2 m**. C'est une catastrophe pour une barque de 1,3 m de creux, même si la vague est « basse ».
+- **Période des vagues** : **2,5–4 s**. Trois secondes entre les crêtes signifie que la barque n'a pas le temps de se rétablir.
+- **Longueur de coque 8,2 m** contre **longueur d'onde 10–15 m** → la barque **n'entre pas** dans la vague. C'est le danger principal : elle pend sur deux vagues et le milieu de la coque est en l'air.
+- **Flexion de la coque** : dans une vague de 1,5 m une coque de 8 m fléchit de **2–4 mm** dans le bordé et de **1–2 mm** dans les membrures. Cela semble n'être rien — et c'est tout le secret : la matière qui cède ne se rompt pas.
+- **Vitesse du vent** en rafale : **40–60 km/h** (vents en rafales documentés dans la dépression ; davantage dans les extrêmes).
+- **Écopage** : 4 hommes, seaux ~10 l, ~6 seaux par minute → ~60 l/min. En une heure, 3 600 litres. Une coque de cette taille embarque des centaines de litres en une heure de tempête — et l'écopage y arrive tout juste.
+
+## Copeau
+
+J'ai écrit que les hommes craignirent plus le silence que la tempête. C'est dans Marc — et c'est la meilleure phrase psychologique de tout l'évangile. Mais j'ai écrit aussi que j'eus peur que ce pût être vrai, et cela, **le bois dans Marc ne le dit pas**. C'est de moi. J'ai fait de la quille un témoin qui doute, parce qu'un livre où la barque ne doute pas est un livre où la barque ment. En même temps j'avoue que par là j'ai fait une chose qui peut égarer le lecteur : **une quille qui doute n'est pas de la théologie. C'est un personnage littéraire.** Quand vous demandez ce que la quille en a pensé, vous me demandez à moi, non à Marc.
+
+---
+
+*La barque survécut à la tempête parce qu'elle était bien construite. Mais vint une tempête auprès de laquelle la bonne construction est peu de chose — et où je passai sous l'eau pour la première fois sans couler.* → La Poutre
+
+
+---
+
+# VIII · La Poutre
+
+> **CERNE VIII** · Jérusalem et la rive du Kinneret, printemps ~30 apr. J.-C.
+> *Du bois qui n'est pas une quille.*
+
+---
+
+## Récit
+
+C'est le seul chapitre que je ne peux pas raconter de l'intérieur.
+
+J'étais sur le lac. Il était dans la ville, à trois jours de chemin. Entre nous il y avait des montagnes, de la poussière et des gens avec leur propre travail. Le bois n'a pas d'yeux qui voient dans un autre village.
+
+Je vous dirai donc ce que je peux, et dès le commencement je vous dirai ce que je ne peux pas : **je n'étais pas là.**
+
+Je n'étais pas là quand on l'arrêta dans le jardin. Je n'étais pas là quand on le mena par la ville. Je n'étais pas là quand on lui posa la poutre. Je n'ai pas vu ce qu'ils ont vu. Qui prétend l'avoir vu l'a inventé ou l'a copié.
+
+Mais le bois se raconte des choses entre lui, et voici comment je l'appris.
+
+---
+
+Vint un homme qui apportait de l'huile et du sel de Jérusalem, et cet homme parlait plus qu'il n'était sain. Il se tenait sur la rive et racontait aux pêcheurs, qui écoutaient les yeux baissés, car tous savaient de qui il avait été l'ami.
+
+Et dans son récit il y avait un mot qui me frappa depuis l'endroit où je gis : **poutre.**
+
+Pas quille. Pas planche. Pas aviron. Poutre.
+
+Une poutre est une pièce de bois qui n'a pas forme de barque. C'est la chose la plus simple qu'un charpentier sache faire : tu prends un tronc, tu l'équarris, tu dresses deux faces. Rien ne se courbe, rien ne se cintre à la vapeur, rien n'est attendu. Une poutre ne doit pas naviguer, ne doit pas porter, ne doit pas flotter. Une poutre doit **porter ce que tu lui mets dessus et ne pas céder.**
+
+Je savais quelles poutres on faisait en ce pays. Je le savais par les conversations de l'atelier que j'écoutai quatre ans, car je gisais sur le sol et je n'avais rien d'autre à faire. On faisait des poutres pour les plafonds, pour les pressoirs, pour les seuils. Et on faisait des poutres dont on ne parlait pas à voix haute.
+
+Celles-là ne se faisaient pas de bois frais. Le bois était trop cher pour cela. On les faisait de poutres qui avaient déjà servi une fois — et quand on voulait qu'elles servent encore, on les prenait d'un tas derrière la muraille, où elles étaient appuyées les unes contre les autres, trempées de pluie, piétinées de poussière. Le charpentier vérifiait seulement qu'elles tinssent, et ajoutait une membrure de plus. C'était tout.
+
+On peut appeler cela de l'économie. Moi je l'appelle **une indifférence qui laisse le travail à quelqu'un à qui ce travail plaît.**
+
+Et ainsi arriva que le bois qui avait porté un plafond ou un pressoir porta finalement un homme. C'était le même bois que moi. Le même métier, le même ciseau, la même main qui l'avait choisi un jour. La différence entre nous n'était pas dans ce dont nous étions faits.
+
+La différence était dans **ce que quelqu'un a laissé qu'on nous demande.**
+
+---
+
+Trois jours.
+
+Je ne sais pas ce qui se passait pour lui. Je sais ce qui se passait pour moi, et c'est la partie que je peux raconter, parce que je l'ai vécue.
+
+**On me sortit de l'eau.**
+
+On ne le fit pas par cruauté. On le fit par peur. Quand il arrive une chose pareille dans la ville, les gens qui appartenaient à cet homme se terrent. Les pêcheurs quittèrent Capharnaüm, se cachèrent chez des parents, cessèrent de parler aux étrangers. Et une barque sur l'eau que personne ne revendique est une barque que quelqu'un peut confisquer — ou couler, ou prendre pour lui. On me tira donc sur la rive, on me retourna sens dessus dessous et on me couvrit d'une voile et de branches.
+
+Et je gisais sur la terre ferme.
+
+Je ne peux pas vous décrire ce que c'est, car je n'ai pas de mots de votre monde pour cela. Je le dirai ainsi : **une barque sur terre n'est pas une barque.** C'est un objet qui se souvient d'avoir été autre chose.
+
+Le bois sans eau sèche. Les jointures s'ouvrent. Le brai, qui fut souple quatre ans, se met à durcir et à craquer. Les membrures qui tenaient la coque ronde se mettent à s'écarter, car plus rien ne les presse de l'autre côté. Et pendant que cela se produit, on entend un son qu'aucun marin ne veut entendre : **un craquement sec et long**, comme quelqu'un qui casse une branche au loin. Je le fis trois fois.
+
+Le troisième jour j'avais une fente dans le bordé de bâbord de quinze centimètres. J'étais brisé sans que personne m'ait frappé.
+
+Et c'est à peu près tout ce que je peux dire de ces trois jours. Ce furent trois jours de sécheresse, d'obscurité sous la voile et du son de mon propre séchage. Il n'y avait rien de noble là-dedans. C'était seulement **attendre de voir si quelqu'un m'utiliserait encore.**
+
+---
+
+Le quatrième matin ils vinrent.
+
+Je les entendis avant de les voir : des pas sur le sable, une voix qui se brisa, puis le silence, car ou bien ils se disputaient, ou bien quelqu'un pleurait, ou bien les deux. Ils ôtèrent la voile si vite qu'il me resta des aiguilles de pin et de la terre sur la coque.
+
+Et alors ils firent une chose que ne fait personne qui vient de tout perdre.
+
+**Ils me retournèrent et me mirent à l'eau.**
+
+Non pour partir. Non pour fuir. Simon se tenait dans l'eau jusqu'aux genoux, me tenant par l'étrave et me regardant comme on regarde la chose qui vous est restée. Près de lui se tenait Jean, et il riait — il riait comme rit quelqu'un que plus rien ne peut surprendre ni prendre.
+
+L'eau me prit une seconde fois. Elle était froide et il y en avait peu, car j'avais séché trois jours, et elle entrait de tous les côtés.
+
+Et à ce moment je compris une chose qui est peut-être le noyau de tout ce livre :
+
+**Je ne fus pas témoin de la résurrection. Je fus témoin de ce que ceux qui l'avaient vu mort vinrent le lendemain travailler.**
+
+Ils ne virent pas un tombeau vide — ou ils le virent, je ne le sais pas, cela appartient à d'autres livres. Moi je vis **une barque vide que des gens vivants remplirent.**
+
+---
+
+## De l'Écriture, de la tradition et de l'histoire
+
+- **Mt 12,40** — « Comme Jonas fut dans le ventre du grand poisson trois jours et trois nuits, ainsi le Fils de l'homme sera dans le cœur de la terre trois jours et trois nuits. » Le seul « signe » que Jésus donna à une génération qui en demandait un.
+- **Dt 21,23** — « Maudit soit celui qui est pendu au bois. » Verset de la Torah que Paul cite en **Ga 3,13** : « Christ nous a rachetés de la malédiction de la loi en devenant malédiction pour nous. » Pour un lecteur juif la croix portait une dimension **religieuse**, non seulement politique.
+- **Mc 15 · Mt 27 · Lc 23 · Jn 19** — les récits de la passion. Notez que les évangiles ne décrivent pas à quoi ressemblait la croix, de quel bois elle était ni comment elle était assemblée. C'est un silence que la piété populaire a comblé d'images.
+- **1 Co 15,3–8** — la confession la plus ancienne conservée (vers l'an 50, donc plus ancienne que les évangiles) : « il mourut… fut enseveli… ressuscita le troisième jour… apparut à Pierre, puis aux Douze… » Paul nomme aussi des témoins encore vivants quand il écrit.
+- **L'exécution romaine par crucifixion** est documentée historiquement et archéologiquement. Le corps portait le **patibulum** (la traverse, environ 2 m, 30–50 kg) ; le poteau vertical (*stipes*) restait souvent en place et la traverse s'y encastrait. Le bois servait plusieurs fois.
+- **La seule preuve archéologique d'une crucifixion** — en 1968 on découvrit à Jérusalem (Giv'at ha-Mivtar) l'ossuaire d'un homme nommé **Yehohanan ben Hagkol** ; dans son talon était resté **un clou de fer** (environ 17–18 cm). C'est la seule découverte physique de ce genre à ce jour — et elle prouve que le clou traversait l'os, non qu'il passait à côté.
+- **L'espèce du bois de la croix** n'est pas documentée. Les traditions ont proposé le cèdre, le cyprès, l'olivier, le pin ; aucune de ces versions n'a d'appui dans le texte ni dans aucune découverte.
+
+## Ancre de vérité
+
+| Ce qu'il y a dans le chapitre | Statut |
+|---|---|
+| Le signe de Jonas, trois jours et trois nuits | **ÉCRITURE** — Mt 12,40 ; Jon 1,17 |
+| La crucifixion, la mort, le tombeau, le troisième jour | **ÉCRITURE** — les évangiles ; 1 Co 15,3–8 |
+| « Maudit soit celui qui est pendu au bois » | **ÉCRITURE** — Dt 21,23 ; Ga 3,13 |
+| Le patibulum, le réemploi du bois, le clou dans le talon | **HISTOIRE / archéologie** — documenté (Yehohanan, 1968) |
+| L'espèce du bois de la croix | **NON DOCUMENTÉ** — le texte se tait, les traditions divergent |
+| Que la barque fut tirée sur la rive et sécha trois jours | **MYTHE** — image de ce livre ; techniquement fidèle (le bois sans eau sèche et ouvre ses jointures) |
+| Que la quille le raconte « par ouï-dire » et avoue qu'elle n'était pas là | **MYTHE** — décision littéraire de cette édition, non une découverte historique |
+| « Je fus témoin qu'ils vinrent travailler » | **MYTHE** — image ; théologiquement cela relève d'un autre chapitre, non de celui-ci |
+
+## Mesure
+
+- **Patibulum** : **~2 m** de long, section **10 × 10 cm**, poids **30–50 kg**. C'est la poutre qu'un homme porte sur les épaules à travers la ville — et qui s'encastre ensuite dans le poteau préparé.
+- **Le clou** : **17–18 cm**, carré, forgé. Trouvé dans le talon d'un homme du Ier siècle.
+- **Une fente après trois jours à terre** : **15 cm**. Trois jours de séchage abîment une coque plus qu'une tempête entière sur l'eau — car sur l'eau le bois gonfle et tient, tandis qu'à terre il se rétracte et s'ouvre.
+- **Trois jours** : **72 heures**. Pour le bois c'est assez pour changer. Pour les gens c'est assez pour cesser de croire qu'il arrivera quelque chose.
+- **Distance Jérusalem — Kinneret** : **~120 km**, trois jours de marche. La nouvelle arriva quelques jours après l'événement. C'est normal, et c'est pourquoi ce chapitre ne se peut pas raconter de première main.
+
+## Copeau
+
+Ce chapitre a la plus grande dette de tout le livre. **J'ai écrit que je ne fus pas témoin de la résurrection — et puis j'ai écrit une phrase qui sonne comme si je l'avais été.** « Ils vinrent le lendemain travailler » est beau et c'est vrai des gens, mais ce n'est pas une preuve de ce qui arriva dans le tombeau. La différence entre « les gens ont changé » et « Dieu est ressuscité » est toute la différence entre l'histoire et la foi, et aucune barque ne l'a comblée. Je la laisse là. **Qui la balaie fait de l'évangile un reportage et de la foi une publicité.**
