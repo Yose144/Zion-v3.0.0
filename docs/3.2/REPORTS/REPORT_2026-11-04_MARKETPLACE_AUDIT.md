@@ -440,3 +440,29 @@ Po výměně obrázků zbývaly dvě věci, které by v praxi znamenaly „nové
 2. **Fallback na EDGE1.** Ověřeno, že tam ty cesty vůbec nejsou (apex, market i app jedou z EDGE2; EDGE1 má jen starý `/var/www/zion-maintenance` bez těchto souborů) — není co synchronizovat.
 
 **Deploy:** market, web i IntroPage znovu sestaveny a nasazeny. Ověřeno živě, že HTML obsahuje `?v=6` a že všechny čtyři kontrolované URL vracejí 200 s novou velikostí (např. `lampion-wide.webp?v=6` = 320 932 B, `christmas-kingdom.webp?v=6` = 404 608 B).
+
+---
+
+## 20. Dodatek 14 — 3D scéna: svíčka, sníh, měsíc a stíny
+
+👤: „můžeme do toho 3D modelu dát doprostřed hořící svíčku? A pozadí vyměníme, aby se zobrazovaly stíny — dej ho do vánočního pozadí, sníh, měsíc, hvězdy, chumelení."
+
+### Co je ve scéně
+
+- **Svíčka** uprostřed lampionu: voskový hranol (2,3 cm ⌀ × 3,5 cm, teplá emissive), knot, **plamen** jako emissive kužel s netonemapovaným jádrem, plus bodové světlo. Plamen se chvěje ve třech sinusových frekvencích, posouvá se o zlomky milimetru a světlo s ním dýchá — prosvícené výřezy tak „žijí".
+- **Sníh:** plocha o poloměru 8R s **alphaMap do ztracena**, takže není vidět kruh, jen přechod do tmy. Materiál je tmavě modrošedý (0x64748b) — bílý sníh se pod měsícem vypaloval do přesvitu.
+- **Měsíc** jako světelný kotouč (canvas gradient, additive) nahoře vlevo, a hlavně jako **směrové světlo se stínem**.
+- **Hvězdy** ve dvou vrstvách (stejné jako dřív, jen ztlumené) a **420 vloček** padajících s bočním driftem. Vločky mají **kulatou texturu** — `PointsMaterial` jinak kreslí čtverce (první pokus vypadal jako bílá zrna).
+- **Stíny:** `renderer.shadowMap` s PCFSoft, měsíční světlo `castShadow` s mapou 1024 a ortografickou kamerou těsně kolem modelu; lampion `castShadow`, sníh `receiveShadow`. Na sněhu je proto vidět skutečný stín lampionu.
+
+### Ladění (tři kola)
+
+1. **Přesvit:** sníh 0xdfe9fb + měsíc 2,1 + klíč 0,95 + bloom 0,28 → bílá plocha, lampion nečitelný.
+2. **Ztlumení:** sníh 0x64748b, měsíc 1,15, okolí 0,22, expozice 0,72, bloom 0,16 s threshold 1,25 → sníh modrošedý, stín čitelný.
+3. **Kompozice:** kamera výš (0,42R) a mírně dolů; měsíc posunut do záběru (R·4,6 vlevo, R·1,9 vysoko, R·8 do hloubky).
+
+### Výkon
+
+Stíny jsou **vypnuté pod 720 px** — model má 236 k trojúhelníků a stínový průchod by na telefonu sežral snímky. Bloom zůstává jen na ≥900 px a bez `saveData`. Všechny nové textury (vločka, sníh, měsíc, alpha země) se uvolňují v cleanupu.
+
+**Ověřeno:** live `/vanoce/lampion` 200, 0 chyb v konzoli, screenshoty ze tří iterací v `.artifacts/render/xmas-20261104/candle-{1..4}.png` a `moon-final.png`.
