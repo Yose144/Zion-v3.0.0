@@ -1,0 +1,17 @@
+{
+  "edition": "gemini",
+  "lang": "PT",
+  "source": "O_Reino_do_Coracao_gemini_PT.md",
+  "words": 30460,
+  "headings": 142,
+  "paragraphs": 546,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 153,
+    "bytes": 440839
+  },
+  "epub": {
+    "documents": 8,
+    "bytes": 81377
+  }
+}
