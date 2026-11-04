@@ -36,6 +36,10 @@ function Terrain({ state }: { state: React.MutableRefObject<TanksState> }) {
   const geometry = useMemo(() => {
     const geo = new THREE.PlaneGeometry(PLATE_W, DEPTH, 190, 24);
     geo.rotateX(-Math.PI / 2);
+    // barva ve vrcholech: níž = tmavší písek, výš = světlejší hřeben.
+    // Bez toho je velká plocha jednolitá a hloubka se nedá číst.
+    const colors = new Float32Array(geo.getAttribute('position').count * 3);
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     // PlaneGeometry je centrovaná na počátek, ale svět tanků je 0..WORLD_W —
     // bez posunu stál terén půl mapy vlevo a tanky pluly ve prázdnu.
     geo.translate(WORLD_W / 2, 0, 0);
@@ -48,17 +52,26 @@ function Terrain({ state }: { state: React.MutableRefObject<TanksState> }) {
     if (terrain.version === version.current) return;
     version.current = terrain.version;
     const position = geometry.getAttribute('position') as THREE.BufferAttribute;
+    const color = geometry.getAttribute('color') as THREE.BufferAttribute;
+    const low = new THREE.Color('#3d2210');
+    const high = new THREE.Color('#b8752f');
+    const mix = new THREE.Color();
     for (let i = 0; i < position.count; i += 1) {
       // vrcholy už jsou posunuté do světa, takže výšku bereme přímo z `x`
-      position.setY(i, terrainAt(terrain, position.getX(i)));
+      const height = terrainAt(terrain, position.getX(i));
+      position.setY(i, height);
+      const t = Math.min(1, Math.max(0, (height - 60) / 320));
+      mix.copy(low).lerp(high, t);
+      color.setXYZ(i, mix.r, mix.g, mix.b);
     }
     position.needsUpdate = true;
+    color.needsUpdate = true;
     geometry.computeVertexNormals();
   });
 
   return (
     <mesh geometry={geometry} receiveShadow>
-      <meshStandardMaterial color="#8a5a2b" roughness={0.92} metalness={0.05} />
+      <meshStandardMaterial vertexColors roughness={0.92} metalness={0.05} />
     </mesh>
   );
 }

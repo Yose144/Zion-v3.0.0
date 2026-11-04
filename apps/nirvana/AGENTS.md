@@ -1577,3 +1577,41 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   počítá přesah a prvky mimo viewport, ignoruje vodorovné scrollovací pásy)
   a `.artifacts/probe/shots-responsive.mjs` (screenshoty výška/šířka).
   Report: `docs/3.2/REPORTS/REPORT_2026-11-03_NIRVANA_RESPONSIVITA.md`.
+
+## Saturn — Tanky (2026-11-04)
+
+- **Jedna pravidla, dva renderery.** `core/saturn/tanks.ts` drží střelu,
+  gravitaci, vítr, krátery, poškození, tahy i botovo mířidlo. `TanksCanvas`
+  (2D) a `TanksScene` (3D) jen čtou stav. Kdo přidá druhý integrátor, rozejde
+  2D a 3D dostřely.
+- **Jeden krok simulace.** Smyčka v `TanksGame` posouvá sim 60×/s pro oba
+  rendery; 3D scéna se ve `useFrame` jen dorovnává podle `state.current`.
+  Kdyby si 3D stepovala sama, běžely by dvě různé hry v jednom procesu.
+- **Terén je heightmapa, krátery jdou přes `terrain.version`.** Sim sníží
+  výšky, scéna podle verze přepíše vrcholy a přepočítá normály. Kdo by
+  krátery počítal ve scéně, rozejde se s poškozením.
+- **Deska terénu musí být větší než hřiště** (1,7× šířka, hloubka 1500) —
+  jinak je vidět okraj a hřiště vypadá jako prkno ve vesmíru.
+- **`PlaneGeometry` je centrovaná na počátek**, ale svět tanků je 0..1000 →
+  `geo.translate(WORLD_W/2, 0, 0)`; výšky se pak berou z `position.getX(i)`,
+  ne z indexu sloupce.
+- **Stínová kamera směrového světla musí pojmout hřiště** (±700). S výchozími
+  hodnotami se do scény propíše obdélník frusta a půlka mapy je tmavá.
+- **Botovo mířidlo: hrubá mřížka + jemné doladění.** Samotná mřížka 4°/4 síly
+  minula o desítky jednotek (a bot pak trefil jen náhodou). Doladění 0,5°/1
+  sníží odchylku pod ~15 jednotek; výsledek se pak rozladí (`error`) — bez
+  toho by bot trefoval 100 %.
+- **Na telefonu HUD v obraze nefunguje.** Plátno 960 px široké na 390 px
+  displeji znamená text 16 px → ~6 px. `TanksCanvas` má proto `compact`:
+  v obraze zůstane jen nápis tahu, zbytek kreslí DOM `.tanks-hud`.
+- **`.tanks-hud` patří nad dotykový pad** (`bottom: 10.2rem` na ≤760) a musí
+  se zalamovat; v jednom řádku se na 390 px nevejde.
+- **`pointer-events` v `.saturn-chrome`:** rodič má `none` (aby šla otáčet
+  scéna), takže každý klikatelný blok (`.saturn-chrome-actions`) si musí
+  vrátit `auto` — jinak klik sežere canvas nad ním.
+- **Blast meshe musí být `visible={false}` od začátku**, ne až z `useFrame`;
+  do prvního snímku by byly vidět jako prázdné prstence na zemi.
+- **Testy:** `npx tsx apps/nirvana/test/saturn-tanks.mjs` (48 kontrol).
+  Test hráčova mířidla musí použít `aimAt(state, 'player', 0)` — `botAim`
+  mříří na hráče, takže pro střelbu na bota je potřeba opačná strana
+  (a `180 − úhel` je špatně, protože úhel je 0–90 od vodorovné).
