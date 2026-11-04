@@ -149,15 +149,15 @@ const t = {
       en: 'Light of the heart for a new land',
     },
     lampionDescription: {
-      cs: 'Ručně gravírovaný lampion se vzorem Srdce Království — z tesařské dílny příběhu. Vánoční edice: ke každému lampionu digitální kniha Království srdce v ceně a 333 000 ZION bonusů.',
-      en: 'A hand-engraved lantern bearing the Heart of the Kingdom pattern — straight from the carpenter\'s workshop of the story. Christmas edition: every lantern includes the digital Kingdom of Hearts book and a 333,000 ZION bonus.',
+      cs: 'Ručně gravírovaný lampion se vzorem Srdce Království — z tesařské dílny příběhu. Vánoční edice: ke každému lampionu digitální kniha Království srdce a ZION Pass v ceně a 432 000 ZION bonusů. Připravujeme — prodej zahájíme, jakmile bude výrobek hotový.',
+      en: 'A hand-engraved lantern bearing the Heart of the Kingdom pattern — straight from the carpenter\'s workshop of the story. Christmas edition: every lantern includes the digital Kingdom of Hearts book and a ZION Pass, plus a 432,000 ZION bonus. Coming soon — sales open once the craft is ready.',
     },
     lampionChipEngraved: { cs: 'Ruční gravírování', en: 'Hand-engraved' },
     lampionChipBook: {
-      cs: '+ kniha Království srdce v ceně',
-      en: '+ Kingdom of Hearts book included',
+      cs: '+ kniha a ZION Pass v ceně',
+      en: '+ book and ZION Pass included',
     },
-    lampionCta: { cs: 'Koupit lampion', en: 'Get the lantern' },
+    lampionCta: { cs: 'Připravujeme', en: 'Coming soon' },
     lampionImageAlt: {
       cs: 'Lampion Království srdce — gravírovaný vánoční výrobek z dílny tesaře',
       en: 'Kingdom of Hearts lantern — engraved Christmas craft from the carpenter\'s workshop',

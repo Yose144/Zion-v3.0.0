@@ -20,6 +20,7 @@ import {
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import NirvanaUniverseSection from './NirvanaUniverseSection';
+import ChristmasShopCards from './ChristmasShopCards';
 import HeroSlider from './HeroSlider';
 import MainnetCountdown from './MainnetCountdown';
 
@@ -184,6 +185,16 @@ export default function Hero() {
             </div>
           </motion.div>
         </div>
+
+        {/* ─── christmas shop cards — Pass · Book · Lantern ─── */}
+        <motion.div
+          initial={false}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+        >
+          <ChristmasShopCards />
+        </motion.div>
 
         {/* ─── hero slider — One Planet · One People · One Love ─── */}
         <motion.div

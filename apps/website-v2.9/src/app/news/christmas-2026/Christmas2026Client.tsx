@@ -20,7 +20,7 @@ const Article = {
         title: 'Království srdce — vánoční prodej odstartoval',
         image: '/images/news/christmas-2026/kralovstvi-srdce-1200.webp',
         imageAlt: 'Tesařova dílna — tesař s dětmi a lucernou u hoblice, v pozadí archa ve stavební dok',
-        text: 'Duchovní legenda o tesaři z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě — a říkal jí Království srdce. Deset kapitol a epilog, každá kapitola s tabulkou „Kotva pravdy“, která odděluje Písmo, tradici a autorův obraz. Digitální vydání ke stažení je v obchodě za 144 Kč — nově jako ilustrovaná edice v pěti jazycích (CZ · EN · FR · ES · PT), PDF i EPUB. Ke knize patří ZION Archive Pass — vstup do ZION Archivu — a do 24. 12. 2026 vánoční bonus: 144 000 ZION a Genesis vstup pro Guardians ekosystému.',
+        text: 'Duchovní legenda o tesaři z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě — a říkal jí Království srdce. Deset kapitol a epilog, každá kapitola s tabulkou „Kotva pravdy“, která odděluje Písmo, tradici a autorův obraz. Digitální vydání ke stažení je v obchodě za 216 Kč — nově jako ilustrovaná edice v pěti jazycích (CZ · EN · FR · ES · PT), PDF i EPUB. Ke knize patří ZION Archive Pass — vstup do ZION Archivu — a do 24. 12. 2026 vánoční bonus: 216 000 ZION a Genesis vstup pro Guardians ekosystému.',
       },
       {
         icon: Gamepad2,
@@ -68,7 +68,7 @@ const Article = {
         title: 'Kingdom of the Heart — the Christmas sale has started',
         image: '/images/news/christmas-2026/kralovstvi-srdce-1200.webp',
         imageAlt: 'The carpenter’s workshop — a carpenter with children and a lantern at the bench, the ark in its drydock behind',
-        text: 'A spiritual legend about a carpenter of Nazareth who built a ship in his father’s workshop — for a sea that is on no map — and called it the Kingdom of the Heart. Ten chapters and an epilogue, each chapter carrying an “Anchor of Truth” table that separates Scripture, tradition and the author’s imagination. The digital download edition is in the shop for 144 CZK — now as an illustrated edition in five languages (CZ · EN · FR · ES · PT), PDF and EPUB. The book includes a ZION Archive Pass — entry to the ZION Archive — and until 24 December 2026 a Christmas bonus: 144,000 ZION and Genesis entry for the ecosystem’s Guardians.',
+        text: 'A spiritual legend about a carpenter of Nazareth who built a ship in his father’s workshop — for a sea that is on no map — and called it the Kingdom of the Heart. Ten chapters and an epilogue, each chapter carrying an “Anchor of Truth” table that separates Scripture, tradition and the author’s imagination. The digital download edition is in the shop for 216 CZK — now as an illustrated edition in five languages (CZ · EN · FR · ES · PT), PDF and EPUB. The book includes a ZION Archive Pass — entry to the ZION Archive — and until 24 December 2026 a Christmas bonus: 216,000 ZION and Genesis entry for the ecosystem’s Guardians.',
       },
       {
         icon: Gamepad2,

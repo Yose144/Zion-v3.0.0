@@ -25,6 +25,7 @@ interface ChristmasCardProps {
   description: string;
   chips: Chip[];
   ctaLabel: string;
+  ctaDisabled?: boolean;
   reverse?: boolean;
 }
 
@@ -38,6 +39,7 @@ function ChristmasCard({
   description,
   chips,
   ctaLabel,
+  ctaDisabled,
   reverse,
 }: ChristmasCardProps) {
   return (
@@ -96,9 +98,15 @@ function ChristmasCard({
             </div>
 
             <div className="flex flex-wrap items-center gap-4 mt-6">
-              <Link href="/shop" className="zion-button-primary inline-flex items-center gap-2">
-                <ShoppingCart className="w-4 h-4" /> {ctaLabel}
-              </Link>
+              {ctaDisabled ? (
+                <span className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-gray-400">
+                  <ShoppingCart className="w-4 h-4" /> {ctaLabel}
+                </span>
+              ) : (
+                <Link href="/shop" className="zion-button-primary inline-flex items-center gap-2">
+                  <ShoppingCart className="w-4 h-4" /> {ctaLabel}
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -133,8 +141,8 @@ export function ZionPassSection() {
 
 export function LampionSection() {
   const { t, lang } = useLangT();
-  const bonus = (333000).toLocaleString(lang === 'cs' ? 'cs-CZ' : 'en-US');
-  const price = t('common.price', { price: 333, symbol: t('common.kcSymbol') });
+  const bonus = (432000).toLocaleString(lang === 'cs' ? 'cs-CZ' : 'en-US');
+  const price = t('common.price', { price: 432, symbol: t('common.kcSymbol') });
 
   return (
     <ChristmasCard
@@ -151,6 +159,7 @@ export function LampionSection() {
         { icon: BookOpen, label: t('xmas.lampionChipBook') },
       ]}
       ctaLabel={`${t('xmas.lampionCta')} · ${price}`}
+      ctaDisabled
       reverse
     />
   );

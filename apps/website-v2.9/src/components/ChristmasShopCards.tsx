@@ -1,0 +1,155 @@
+'use client';
+
+import { BookOpen, Coins, Ticket, Flame, ShoppingCart, Lock } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
+
+const SHOP_URL = 'https://market.zionterranova.com/shop';
+
+interface CardDef {
+  image: string;
+  imagePosition?: string;
+  icon: typeof Ticket;
+  kicker: { cs: string; en: string };
+  title: { cs: string; en: string };
+  desc: { cs: string; en: string };
+  price: string;
+  bonus: { cs: string; en: string };
+  cta: { cs: string; en: string };
+  href?: string;
+  soon?: boolean;
+}
+
+const CARDS: CardDef[] = [
+  {
+    image: '/images/news/christmas-2026/kingdom-1200.webp',
+    icon: Ticket,
+    kicker: { cs: 'Vánoční edice · ZAP kód', en: 'Christmas edition · ZAP code' },
+    title: { cs: 'ZION Pass', en: 'ZION Pass' },
+    desc: {
+      cs: 'Vstupenka do Nirvany — prvního světa OASIS — i do ZION Archivu. Po zaplacení dorazí jedinečný kód ZAP-…',
+      en: 'Your ticket into Nirvana — the first OASIS world — and the ZION Archive. A unique ZAP-… code arrives after payment.',
+    },
+    price: '108 Kč',
+    bonus: { cs: '+108 000 ZION bonus', en: '+108,000 ZION bonus' },
+    cta: { cs: 'Koupit v eShopu', en: 'Buy in the shop' },
+    href: SHOP_URL,
+  },
+  {
+    image: '/images/news/christmas-2026/kralovstvi-srdce-1200.webp',
+    icon: BookOpen,
+    kicker: { cs: 'Vánoční edice · digitální kniha', en: 'Christmas edition · digital book' },
+    title: { cs: 'Království srdce', en: 'Kingdom of the Heart' },
+    desc: {
+      cs: 'Příběh lodi, kterou postavil tesař. Ilustrovaná edice v 5 jazycích (CZ·EN·FR·ES·PT), PDF + EPUB, se ZION Archive Pass v ceně.',
+      en: 'The story of the ship a carpenter built. Illustrated edition in 5 languages (CZ·EN·FR·ES·PT), PDF + EPUB, ZION Archive Pass included.',
+    },
+    price: '216 Kč',
+    bonus: { cs: '+216 000 ZION bonus', en: '+216,000 ZION bonus' },
+    cta: { cs: 'Koupit v eShopu', en: 'Buy in the shop' },
+    href: SHOP_URL,
+  },
+  {
+    image: '/images/home/christmas-kingdom.webp',
+    imagePosition: '72% 50%',
+    icon: Flame,
+    kicker: { cs: 'Vánoční edice · ruční výroba', en: 'Christmas edition · handcraft' },
+    title: { cs: 'Lampion Království srdce', en: 'Kingdom of the Heart lantern' },
+    desc: {
+      cs: 'Ručně gravírovaný lampion se vzorem Srdce Království. V ceně digitální kniha a ZION Pass.',
+      en: 'A hand-engraved lantern with the Heart of the Kingdom pattern. Digital book and ZION Pass included.',
+    },
+    price: '432 Kč',
+    bonus: { cs: '+432 000 ZION bonus', en: '+432,000 ZION bonus' },
+    cta: { cs: 'Připravujeme', en: 'Coming soon' },
+    soon: true,
+  },
+];
+
+export default function ChristmasShopCards() {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+
+  return (
+    <div className="mt-10">
+      <div className="mb-4 flex items-center gap-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-zion-gold/80">
+          {cs ? 'Vánoční edice v eShopu' : 'Christmas edition in the shop'}
+        </p>
+        <span className="h-px flex-1 bg-gradient-to-r from-zion-gold/40 to-transparent" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {CARDS.map((card) => {
+          const Icon = card.icon;
+          const inner = (
+            <>
+              <div className="relative aspect-[16/8] w-full overflow-hidden">
+                <img
+                  src={card.image}
+                  alt={card.title[cs ? 'cs' : 'en']}
+                  loading="lazy"
+                  decoding="async"
+                  className={`h-full w-full object-cover transition-transform duration-500 ${
+                    card.soon ? 'opacity-70' : 'group-hover:scale-[1.04]'
+                  }`}
+                  style={card.imagePosition ? { objectPosition: card.imagePosition } : undefined}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#070a12] via-transparent to-transparent" />
+                <span className="zion-kicker absolute left-3 top-3 border-zion-gold/25 bg-black/55 text-zion-gold backdrop-blur-sm">
+                  <Icon className="h-3.5 w-3.5" />
+                  {card.kicker[cs ? 'cs' : 'en']}
+                </span>
+                {card.soon && (
+                  <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/60 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/80 backdrop-blur-sm">
+                    <Lock className="h-3 w-3" />
+                    {cs ? 'Připravujeme' : 'Coming soon'}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-1 flex-col p-4 sm:p-5">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h3 className="text-lg font-bold text-white">{card.title[cs ? 'cs' : 'en']}</h3>
+                  <span className="shrink-0 text-lg font-extrabold text-zion-gold">{card.price}</span>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-gray-400">{card.desc[cs ? 'cs' : 'en']}</p>
+                <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-zion-gold/25 bg-zion-gold/10 px-2.5 py-1 text-[11px] font-semibold text-zion-gold">
+                    <Coins className="h-3.5 w-3.5" />
+                    {card.bonus[cs ? 'cs' : 'en']}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
+                      card.soon ? 'text-white/45' : 'text-zion-gold group-hover:translate-x-0.5'
+                    } transition-transform`}
+                  >
+                    {card.soon ? (
+                      card.cta[cs ? 'cs' : 'en']
+                    ) : (
+                      <>
+                        <ShoppingCart className="h-3.5 w-3.5" />
+                        {card.cta[cs ? 'cs' : 'en']}
+                      </>
+                    )}
+                  </span>
+                </div>
+              </div>
+            </>
+          );
+          const cls =
+            'group relative flex flex-col overflow-hidden rounded-2xl border bg-[#0a0d16]/80 backdrop-blur-sm transition-colors ' +
+            (card.soon
+              ? 'border-white/10'
+              : 'border-white/10 hover:border-zion-gold/40');
+          return card.soon ? (
+            <div key={card.title.en} className={cls} aria-disabled="true">
+              {inner}
+            </div>
+          ) : (
+            <a key={card.title.en} href={card.href} className={cls}>
+              {inner}
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
