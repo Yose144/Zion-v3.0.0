@@ -18,7 +18,7 @@ import { useI18n } from '@/core/i18n';
 import { useNet } from '@/core/net/useNet';
 import { ChatPanel } from '@/core/net/ChatPanel';
 import { InviteButton } from '@/core/net/InviteButton';
-import type { GameId, RoomState } from '@/core/net/protocol';
+import type { GameId, RoomMode, RoomState } from '@/core/net/protocol';
 
 interface LobbyGame {
   id: GameId;
@@ -117,6 +117,29 @@ export default function MultiplayerPage() {
   }, [invite, inviteHandled, status, you, joinRoom]);
 
   const [manual, setManual] = useState<string | null>(null);
+  /**
+   * Režim nových místností. `humans` je pro hraní s pozvaným: prázdná sedla
+   * nedoplní boti, takže se dá počkat. Ukládá se, aby volba nezmizela.
+   */
+  const [mode, setMode] = useState<RoomMode>('bots');
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem('nirvana.lobby.mode');
+      if (saved === 'humans' || saved === 'bots') setMode(saved);
+    } catch {
+      /* privátní režim */
+    }
+  }, []);
+
+  const pickMode = useCallback((next: RoomMode) => {
+    setMode(next);
+    try {
+      window.localStorage.setItem('nirvana.lobby.mode', next);
+    } catch {
+      /* nic */
+    }
+  }, []);
 
   const copy = useCallback(async (text: string, what: string) => {
     try {
@@ -204,6 +227,35 @@ export default function MultiplayerPage() {
         </div>
       )}
 
+      <div className="lobby-mode" role="group" aria-label={cs ? 'režim nových místností' : 'new room mode'}>
+        <span>{cs ? 'Nové místnosti' : 'New rooms'}</span>
+        <button
+          type="button"
+          className={mode === 'bots' ? 'is-active' : ''}
+          aria-pressed={mode === 'bots'}
+          onClick={() => pickMode('bots')}
+        >
+          🤖 {cs ? 's boty' : 'with bots'}
+        </button>
+        <button
+          type="button"
+          className={mode === 'humans' ? 'is-active' : ''}
+          aria-pressed={mode === 'humans'}
+          onClick={() => pickMode('humans')}
+        >
+          👤 {cs ? 'jen lidé' : 'humans only'}
+        </button>
+        <em>
+          {mode === 'humans'
+            ? cs
+              ? 'počká na pozvané — žádní boti'
+              : 'waits for invitees — no bots'
+            : cs
+              ? 'prázdná sedla doplní boti hned'
+              : 'empty seats filled by bots'}
+        </em>
+      </div>
+
       <div className="lobby-body">
       <section className="lobby-grid">
         {GAMES.map((game) => {
@@ -232,7 +284,9 @@ export default function MultiplayerPage() {
                 <ul className="lobby-rooms">
                   {open.slice(0, 4).map((room) => (
                     <li key={room.id}>
-                      <span className="lobby-room-id">{room.id}</span>
+                      <span className="lobby-room-id">
+                        {room.mode === 'humans' ? '👤' : '🤖'} {room.id}
+                      </span>
                       <span className={`lobby-room-state is-${room.state}`}>
                         {STATE_LABEL[room.state][lang]}
                       </span>
@@ -265,7 +319,7 @@ export default function MultiplayerPage() {
                 <button
                   type="button"
                   className="lobby-btn is-primary"
-                  onClick={() => joinGame(game.id)}
+                  onClick={() => joinGame(game.id, undefined, undefined, mode)}
                 >
                   {busiest && busiest.players < busiest.maxPlayers
                     ? cs

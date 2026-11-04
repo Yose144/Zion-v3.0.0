@@ -37,6 +37,8 @@ export interface FightRoomSim {
   bots: { a: BotMemory; b: BotMemory };
   /** Simulované hodiny (s) — bot i fáze se řídí jimi, ne wall-clock. */
   clock: number;
+  /** `false` v místnosti „jen lidé" — prázdné sedlo zůstane prázdné. */
+  botsEnabled: boolean;
   seq: number;
   /** Wall-clock čas, kdy se po `matchEnd` zrodí nový zápas (0 = nic naplánováno). */
   restartAt: number;
@@ -75,7 +77,7 @@ function freshDuel(seats: { a: FightSeat; b: FightSeat }): Duel {
   };
 }
 
-export function createFight(now: number): FightRoomSim {
+export function createFight(now: number, options: { bots?: boolean } = {}): FightRoomSim {
   const seats = {
     a: { id: null, name: 'Stín', avatarId: null },
     b: { id: null, name: 'Stín', avatarId: null },
@@ -88,6 +90,7 @@ export function createFight(now: number): FightRoomSim {
     clock: 0,
     seq: 0,
     restartAt: 0,
+    botsEnabled: options.bots ?? true,
   };
 }
 
@@ -167,6 +170,12 @@ function eventsToWire(sim: FightRoomSim, events: DuelEvent[]): EventPayload[] {
 }
 
 export function stepFight(sim: FightRoomSim, dt: number, now: number): EventPayload[] {
+  // Místnost „jen lidé": dokud sedí jen jeden, duel neběží (dřív by ho
+  // sehrál bot a hráč by čekal na soupeře, který mezitím vyhrál).
+  if (!sim.botsEnabled && (sim.seats.a.id === null || sim.seats.b.id === null)) {
+    return [];
+  }
+
   sim.clock += dt;
 
   // volná sedla hraje bot; lidský input platí jen pro obsazené

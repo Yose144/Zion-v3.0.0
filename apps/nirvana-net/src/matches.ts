@@ -51,12 +51,19 @@ import {
 } from './moba.js';
 import { createTanksMatch } from './tanks.js';
 import type { Match, MatchCtx, MatchSeat } from './match.js';
-import type { ClientMessage, GameId, RoomState, ServerMessage } from '../../nirvana/src/core/net/protocol.js';
+import type {
+  ClientMessage,
+  GameId,
+  RoomMode,
+  RoomState,
+  ServerMessage,
+} from '../../nirvana/src/core/net/protocol.js';
 
 // ── aréna ──────────────────────────────────────────────────────────────
 
-function arenaMatch(now: number): Match {
-  const sim = createArena(now);
+function arenaMatch(now: number, mode: RoomMode = 'bots'): Match {
+  const sim = createArena(now, { bots: mode === 'bots' });
+  const humans = () => [...sim.players.values()].filter((player) => !player.isBot).length;
   return {
     game: 'arena',
     join(id, seat) {
@@ -68,7 +75,10 @@ function arenaMatch(now: number): Match {
     step(dt, ctx) {
       for (const event of stepArena(sim, dt, ctx.now)) ctx.emit(event);
     },
-    state: () => (sim.state === 'running' ? 'running' : 'ended'),
+    state: () => {
+      if (mode === 'humans' && humans() < 2) return 'waiting';
+      return sim.state === 'running' ? 'running' : 'ended';
+    },
     snapshot(_id, timeMs) {
       return {
         t: 'snapshot',
@@ -132,8 +142,8 @@ function raceMatch(now: number): Match {
 
 // ── duel (Merkur) ──────────────────────────────────────────────────────
 
-function fightMatch(now: number): Match {
-  const sim = createFight(now);
+function fightMatch(now: number, mode: RoomMode = 'bots'): Match {
+  const sim = createFight(now, { bots: mode === 'bots' });
   return {
     game: 'fight',
     join(id, seat) {
@@ -174,6 +184,7 @@ function fightMatch(now: number): Match {
 // ── MOBA (První svět) ──────────────────────────────────────────────────
 
 function mobaMatch(now: number): Match {
+  // MOBA má pevnou sestavu 5v5 — bez botů by jedna strana neměla koho postavit.
   const sim = createMobaRoom(now);
   return {
     game: 'moba',
@@ -262,18 +273,18 @@ function mobaMatch(now: number): Match {
 
 // ── registr ────────────────────────────────────────────────────────────
 
-export function createMatch(game: GameId, now: number): Match {
+export function createMatch(game: GameId, now: number, mode: RoomMode = 'bots'): Match {
   switch (game) {
     case 'arena':
-      return arenaMatch(now);
+      return arenaMatch(now, mode);
     case 'race':
       return raceMatch(now);
     case 'fight':
-      return fightMatch(now);
+      return fightMatch(now, mode);
     case 'moba':
       return mobaMatch(now);
     case 'tanks':
-      return createTanksMatch(now);
+      return createTanksMatch(now, mode);
     default: {
       // nový `GameId` bez obalu = chyba při překladu, ne až v produkci
       const exhaustive: never = game;

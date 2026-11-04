@@ -72,8 +72,10 @@ const asItemId = (value: unknown): ItemId | null =>
  *      (`resume`/`resumed`), takže po výpadku se hráč vrátí do stejného
  *      sedla. Starý server by token ignoroval a poslal hráče do nové
  *      místnosti, proto se verze zvedá.
+ * 25 — **režim místnosti**: `join` nese `mode` (`bots`/`humans`) a `RoomInfo`
+ *      ho vrací. Starý server by `humans` ignoroval a hned doplnil boty.
  */
-export const PROTO_VERSION = 24;
+export const PROTO_VERSION = 25;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -101,6 +103,11 @@ export type GameId = 'arena' | 'race' | 'fight' | 'moba' | 'tanks';
 /** `guest` = bez ZIS (hraje, ale nepíše), `zis` = ověřený uživatel. */
 export type Role = 'guest' | 'zis';
 export type RoomState = 'waiting' | 'running' | 'ended';
+/**
+ * `bots` = prázdná sedla hned doplní boti (výchozí, hra začne hned),
+ * `humans` = čeká se na lidi (turnaj, hraní s pozvaným).
+ */
+export type RoomMode = 'bots' | 'humans';
 /** 0 = rail, 1 = rakety, 2 = strojní puška (Q3 sestava). */
 export type WeaponId = 0 | 1 | 2;
 /** Jméno zbraně do eventů (čitelnost > bajty). */
@@ -142,6 +149,7 @@ export interface RoomInfo {
   players: number;
   maxPlayers: number;
   state: RoomState;
+  mode: RoomMode;
 }
 
 export interface SpawnPoint {
@@ -329,7 +337,15 @@ export type ClientMessage =
       /** Token z předchozího `welcome` — obnovení rozehráté session. */
       resume?: string;
     }
-  | { t: 'join'; game: GameId; room?: string; heroId?: number; battleSpell?: BattleSpellId }
+  | {
+      t: 'join';
+      game: GameId;
+      room?: string;
+      heroId?: number;
+      battleSpell?: BattleSpellId;
+      /** Režim nové místnosti (u existující se ignoruje). */
+      mode?: RoomMode;
+    }
   /** MOBA: nákup itemu (jen v místnosti typu `moba`). */
   | { t: 'buy'; item: ItemId }
   /** MOBA: prodej itemu (vrací 60 % ceny). */
@@ -502,6 +518,7 @@ export function parseClientMessage(raw: string): ClientMessage | null {
             ? (message.game as GameId)
             : 'arena',
         room: typeof message.room === 'string' ? message.room.slice(0, 32) : undefined,
+        mode: message.mode === 'humans' ? 'humans' : message.mode === 'bots' ? 'bots' : undefined,
         heroId: typeof message.heroId === 'number' ? num(message.heroId, 0, 202) : undefined,
         battleSpell:
           message.battleSpell === 'heal' || message.battleSpell === 'purify' || message.battleSpell === 'flicker'

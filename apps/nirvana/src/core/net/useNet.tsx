@@ -16,6 +16,7 @@ import {
   type NetIdentity,
   type PlayerSummary,
   type RoomInfo,
+  type RoomMode,
   type ServerMessage,
 } from './protocol';
 import type { BattleSpellId, ItemId } from '../moba/sim';
@@ -58,7 +59,12 @@ export interface NetApi {
   roomId: string | null;
   joinArena: () => void;
   /** Připojení do hry (`arena` = Mars, `race` = Venuše, `fight` = Merkur). */
-  joinGame: (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', heroId?: number, battleSpell?: BattleSpellId) => void;
+  joinGame: (
+    game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks',
+    heroId?: number,
+    battleSpell?: BattleSpellId,
+    mode?: RoomMode,
+  ) => void;
   /** Připojení do konkrétní místnosti z lobby (když je otevřených víc). */
   joinRoom: (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', roomId: string) => void;
   /**
@@ -345,8 +351,13 @@ export function NetProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const joinGame = useCallback(
-    (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', heroId?: number, battleSpell?: BattleSpellId) => {
-      send({ t: 'join', game, heroId, battleSpell });
+    (
+      game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks',
+      heroId?: number,
+      battleSpell?: BattleSpellId,
+      mode?: RoomMode,
+    ) => {
+      send({ t: 'join', game, heroId, battleSpell, mode });
     },
     [send],
   );

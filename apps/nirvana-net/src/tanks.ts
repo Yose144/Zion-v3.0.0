@@ -21,7 +21,12 @@ import {
   type TanksState,
 } from '../../nirvana/src/core/saturn/tanks.js';
 import type { Match, MatchSeat } from './match.js';
-import type { ServerMessage, TankSideId, TanksView } from '../../nirvana/src/core/net/protocol.js';
+import type {
+  RoomMode,
+  ServerMessage,
+  TankSideId,
+  TanksView,
+} from '../../nirvana/src/core/net/protocol.js';
 
 /** Po konci zápasu se po téhle době rozjede nový (stejná mapa se nepoužije). */
 const RESTART_MS = 7000;
@@ -70,8 +75,10 @@ function view(sim: TanksState, side: TankSide, terrain: number[] | null): TanksV
   };
 }
 
-export function createTanksMatch(now: number): Match {
-  let sim = createTanks(now, { autoBot: true });
+export function createTanksMatch(now: number, mode: RoomMode = 'bots'): Match {
+  /** V „jen lidé" bot nesehrává druhou stranu — čeká se na člověka. */
+  const botsAllowed = mode === 'bots';
+  let sim = createTanks(now, { autoBot: botsAllowed });
   /** Kdo z lidí sedí na které straně. Prázdné sedlo hraje bot. */
   const sides = new Map<string, TankSide>();
   /** Poslední verze terénu, kterou hráč dostal (šetří 161 čísel na snapshot). */
@@ -84,7 +91,7 @@ export function createTanksMatch(now: number): Match {
     const ids = [...sides.keys()];
     sides.clear();
     ids.forEach((id, index) => sides.set(id, SIDE_FROM_ID[index] ?? 'bot'));
-    sim.autoBot = sides.size < 2;
+    sim.autoBot = botsAllowed && sides.size < 2;
     for (const id of sentTerrain.keys()) {
       if (!sides.has(id)) sentTerrain.delete(id);
     }
@@ -96,7 +103,7 @@ export function createTanksMatch(now: number): Match {
       if (sides.has(id)) return;
       if (sides.size >= 2) return;
       sides.set(id, sides.size === 0 ? 'player' : 'bot');
-      sim.autoBot = sides.size < 2;
+      sim.autoBot = botsAllowed && sides.size < 2;
       sentTerrain.delete(id);
       void seat;
     },
@@ -108,7 +115,7 @@ export function createTanksMatch(now: number): Match {
         const [only] = [...sides.keys()];
         if (only) sides.set(only, 'player');
       }
-      sim.autoBot = sides.size < 2;
+      sim.autoBot = botsAllowed && sides.size < 2;
     },
     step(dt, ctx) {
       stepTanks(sim, dt);
@@ -118,7 +125,7 @@ export function createTanksMatch(now: number): Match {
           sim = rematch(sim, ctx.now);
           sentTerrain.clear();
           restartedAt = 0;
-          sim.autoBot = sides.size < 2;
+          sim.autoBot = botsAllowed && sides.size < 2;
           ctx.system('nová mapa');
         }
       } else {

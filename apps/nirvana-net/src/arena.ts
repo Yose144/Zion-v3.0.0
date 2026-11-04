@@ -113,6 +113,8 @@ export interface ArenaSim {
   pickups: ArenaPickup[];
   /** Navigační mřížka pro boty (BFS po buňkách). */
   nav: NavGrid;
+  /** `false` v místnosti „jen lidé" — boti se nedoplňují. */
+  botsEnabled: boolean;
   /** Kdy předmět zase bude k dispozici (ms), 0 = leží. */
   pickupReadyAt: Map<string, number>;
   startedAt: number;
@@ -141,13 +143,14 @@ const BOT_NAMES = ['VALLIS', 'NOCTIS', 'ARES'];
 /** Každý bot jiná úroveň — jako v sólo aréně (stejná sestava). */
 const BOT_SKILLS: BotSkill[] = ['easy', 'normal', 'hard'];
 
-export function createArena(now: number): ArenaSim {
+export function createArena(now: number, options: { bots?: boolean } = {}): ArenaSim {
   return {
     players: new Map(),
     rockets: [],
     solids: makeSolids(ARENA_BOXES),
     pickups: ARENA_PICKUPS,
     nav: buildNavGrid(ARENA_BOXES),
+    botsEnabled: options.bots ?? true,
     pickupReadyAt: new Map(),
     startedAt: now,
     state: 'running',
@@ -238,6 +241,7 @@ export function addPlayer(
  * každý nový hráč vynuloval botům skóre a oni by začínali od nuly.
  */
 export function ensureBots(sim: ArenaSim): void {
+  if (!sim.botsEnabled) return;
   const existing = [...sim.players.values()].filter((player) => player.isBot);
   for (let index = existing.length; index < BOT_COUNT; index++) {
     const spawn = BOT_SPAWNS[index % BOT_SPAWNS.length]!;

@@ -6864,3 +6864,44 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
 .chat-line.is-park .chat-text {
   color: rgba(246, 231, 216, 0.72);
 }
+
+/* Přepínač režimu nových místností (s boty / jen lidé). */
+.lobby-mode {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  max-width: 76rem;
+  width: 100%;
+  margin: 0 auto;
+  font-size: 0.72rem;
+  color: rgba(246, 231, 216, 0.6);
+}
+
+.lobby-mode > span {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.64rem;
+}
+
+.lobby-mode button {
+  padding: 0.32rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(246, 231, 216, 0.75);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.lobby-mode button.is-active {
+  border-color: rgba(127, 227, 212, 0.7);
+  background: rgba(127, 227, 212, 0.16);
+  color: #d8fff7;
+}
+
+.lobby-mode em {
+  font-style: normal;
+  color: rgba(246, 231, 216, 0.42);
+  font-size: 0.66rem;
+}

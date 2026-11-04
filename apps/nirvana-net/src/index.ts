@@ -47,6 +47,7 @@ import {
   type NetIdentity,
   type PlayerSummary,
   type RoomInfo,
+  type RoomMode,
   type RoomState,
   type ServerMessage,
 } from '../../nirvana/src/core/net/protocol.js';
@@ -105,6 +106,8 @@ interface Conn {
 interface Room {
   id: string;
   game: GameId;
+  /** `bots` = prázdná sedla hned doplní boti, `humans` = čeká se na lidi. */
+  mode: RoomMode;
   state: RoomState;
   createdAt: number;
   players: Map<string, Conn>;
@@ -202,6 +205,7 @@ function roomInfo(room: Room): RoomInfo {
     players: room.players.size,
     maxPlayers: capOf(room.game),
     state: room.state,
+    mode: room.mode,
   };
 }
 
@@ -369,16 +373,17 @@ function postChat(conn: Conn, raw: string): void {
 
 // ── místnosti ─────────────────────────────────────────────────────────
 
-function createRoom(game: GameId): Room {
+function createRoom(game: GameId, mode: RoomMode = 'bots'): Room {
   const counter = (roomCounters.get(game) ?? 0) + 1;
   roomCounters.set(game, counter);
   const room: Room = {
     id: `${game}-${counter}`,
     game,
+    mode,
     state: 'waiting',
     createdAt: Date.now(),
     players: new Map(),
-    match: createMatch(game, Date.now()),
+    match: createMatch(game, Date.now(), mode),
   };
   rooms.set(room.id, room);
   log(`room created id=${room.id} total=${rooms.size}`);
@@ -418,7 +423,14 @@ function leaveRoom(conn: Conn, reason: string): void {
   }
 }
 
-function joinRoom(conn: Conn, game: GameId, wanted?: string, heroId?: number, battleSpell?: BattleSpellId): void {
+function joinRoom(
+  conn: Conn,
+  game: GameId,
+  wanted?: string,
+  heroId?: number,
+  battleSpell?: BattleSpellId,
+  requestedMode: RoomMode = 'bots',
+): void {
   if (!conn.helloSent) {
     sendError(conn, 'bad_frame', 'nejdřív hello');
     return;
@@ -453,7 +465,7 @@ function joinRoom(conn: Conn, game: GameId, wanted?: string, heroId?: number, ba
       sendError(conn, 'busy', 'všechny místnosti jsou plné');
       return;
     }
-    room = createRoom(game);
+    room = createRoom(game, requestedMode);
   }
 
   room.players.set(conn.id, conn);
@@ -562,7 +574,7 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
     }
 
     case 'join':
-      joinRoom(conn, message.game, message.room, message.heroId, message.battleSpell);
+      joinRoom(conn, message.game, message.room, message.heroId, message.battleSpell, message.mode);
       return;
 
     case 'leave':
