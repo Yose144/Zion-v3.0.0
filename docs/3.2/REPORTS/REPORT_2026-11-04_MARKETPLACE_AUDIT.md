@@ -182,3 +182,34 @@ EDGE1 byl v pořádku (`drwxrwxrwt`), jiné unity na EDGE2 EACCES na `/tmp` nem�
 - Ověřeno `scripts/shot-responsive.mjs` na **390 / 768 / 1024 / 1440** — ve všech čtyřech **žádné vodorovné přetečení**; screenshoty v `.artifacts/render/xmas-20261104/resp-*.png`.
 
 **Past:** `git commit -m "…"` se zpětnými apostrofy v textu spustí v zsh command substitution — zpráva se tiše rozpadla (`aspect-auto` → `command not found`). Commity s technickými názvy psát do `'…'`.
+
+---
+
+## 10. Dodatek 4 — ultraširoké bannery jako hero + novinky srovnané s realitou
+
+**Odpověď na otázku 👤:** ne — práce v **novinkách** (`app.zionterranova.com/news/christmas-2026`) nebyla moje. Dělal jsem jen marketplace; novinky jsou samostatná appka (`apps/website-v2.9`) a měl je na starosti někdo jiný. Teď jsou srovnané.
+
+### Bannery z `heros/shop/heros/`
+
+Dva PNG 1983×793 (přesně formát `aspect-[21/9]` hero boxu na detailu). Překonvertováno na webp a použito na dvou místech:
+
+| Soubor | Marketplace | Novinky |
+|---|---|---|
+| `Zion Pass_ Zlatá brána mezi světy-1.png` | `/vanoce/hero/zion-pass-wide.webp` | `pass-wide.webp` |
+| `b05095de-…png` (tesař + kniha na tabletu) | `/vanoce/hero/kralovstvi-srdce-wide.webp` | `book-wide.webp` |
+
+Marketplace: nové pole `heroWide` v datech produktu; `XmasProductPage` bere `heroWide ?? image`. Karta na homepage dál používá 16:9 `hero` — banner je na ni moc široký.
+
+### Novinky — co bylo špatně
+
+Článek tvrdil **„deset kapitol a epilog"** a mluvil jen o knize. Realita: **8 edic × 5 jazyků, 40 knih, 3 252 stran, 619 498 slov, 24 kapitol + epilog**; a vedle knihy jsou v prodeji ještě **ZION Pass** a **lampion**.
+
+Nově článek obsahuje: 5 sekcí (Pass / kniha / lampion / Kingdom / Nirvana) s obrázky, **„Jak to funguje"** (5 kroků) a **„Časté otázky"** (5 otázek) — stejná čísla i stejné formulace jako na marketplace, aby si web a e-shop neodporovaly. Odkazy vedou na tři produkty na marketplace.
+
+Dodržena pravidla `apps/website-v2.9/AGENTS.md` §2 (public copy): žádné interní názvy, cesty, služby ani verze; CS + EN kompletní.
+
+### Ověřeno živě
+
+`/news/christmas-2026` 200 (text obsahuje 3 252, 619 498, „Jak to funguje", „Časté otázky"), oba bannery 200, `app.zionterranova.com` 200, `market/vanoce/*` 200.
+
+**Deploy poznámka:** `deploy-web2.9.sh --artifact-dir` selhal na `incomplete standalone artifact` — artifact potřebuje `node_modules/next` **uvnitř** app dir (workspace hoisting), což skript doplňuje jen v cestě bez `--artifact-dir`. Řešení: složit `node_modules`, `.next/static`, `public/`, `archive-content/` do `.next/standalone/apps/website-v2.9/` a volat `scripts/ops/deploy-next-artifact.sh` přímo.
