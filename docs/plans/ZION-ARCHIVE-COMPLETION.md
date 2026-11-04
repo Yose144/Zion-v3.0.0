@@ -48,6 +48,7 @@ Principy, které platí pro každou práci:
 |---|---|---|
 | Maitreya | **19/19** | hotovo |
 | Nirvana | **14/14** | hotovo (QA) |
+| Království srdce | **10/10** (oficiální EN klasická edice) | hotovo 2026-11-04 |
 | NirvanaCloud | 2/8 | **P1** |
 | Sůl této země | 0/12 | **P1** |
 | Ekam Deeksha | 0/10 (EN jsou 401B stuby) | P1/P2 |
@@ -57,7 +58,8 @@ Principy, které platí pro každou práci:
 | Mise Amenti | 0/8 | P2 (rámec, ne román) |
 | Lumi, Miriam, Růže, MariaCaminho, Na Cestě, Surta Srdce, Království srdce, Kruh Bohyní, Nabukano | 0 | P2/P3 dle 👤 |
 
-> Měřeno auditem 2026-11-04: **204 kapitol, 189 překladatelných, 35 přeložených (18,5 %)**.
+> Měřeno auditem 2026-11-04: **204 kapitol, 189 překladatelných, 45 přeložených (23,8 %)**
+> po napojení oficiální EN edice Království srdce.
 > Detail: [`REPORT_2026-11-04_ARCHIVE_W1_AUDIT.md`](../3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_W1_AUDIT.md).
 
 **Další mezery:**
@@ -122,7 +124,8 @@ nezačíná na indexu.
       v readeru pozná a spadne na češtinu (`isTranslationStub`).
 - [ ] Tracking soubor `src/lib/books/en-coverage.json` (automaticky z auditu) — jeden zdroj
       pro štítky v knihovně i pro report (dnes: audit JSON + `korpusLangs`).
-- [ ] P1 překlady: **Sůl této země**, **NirvanaCloud** (poslední 3/25 a 3/12 → 100 %).
+- [x] Království srdce: oficiální EN klasická edice napojena (10/10) — split podle h1.
+- [ ] P1 překlady: **Sůl této země**, **NirvanaCloud** (poslední kapitoly → 100 %).
 - [ ] QA checklist pro každou přeloženou kapitolu: markdown parita, nadpisy, anchor slugy,
       odkazy, blokové citáty, tabulky, diakritika, žádné „strojové" vsuvky.
 - [ ] U knih bez EN držet `CZ` štítek a fallback hlášku (už funguje).
@@ -267,6 +270,7 @@ Každý milník = vlastní report v `docs/3.2/REPORTS/` + záznam v `apps/websit
 - ✅ W4: hledání v knize, záložky, nastavení čtečky (font/šířka/téma), „další v pořadí".
 - ✅ W6: stav passu v hubu (kód/OASIS/entitlement + expirace), vazba kódu na ZIS.
 - ✅ W7: e2e hubu s testovacím passem (5 testů, lokálně 5/5).
+- ✅ W2: Království srdce má oficiální EN (10/10), audit potvrzuje 100 %.
 - ✅ W5: „Začni tady" (3 vstupy) v knihovně.
 - ✅ W4: tisk/PDF kapitoly (print stylesheet).
 - ✅ Deep-link fix: fresh load na `#kapitola` už nepřepíše hash na index.

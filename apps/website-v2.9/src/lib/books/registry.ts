@@ -141,7 +141,7 @@ export const KRAL_BOOK: BookDef = {
   accent: '245, 158, 11',
   icon: Sailboat,
   partIcons: [Compass, Hammer, Sailboat, Anchor, PenLine],
-  kicker: { cs: 'Příběh lodi · Bible + nové zjevení · CZ', en: 'The boat story · Bible + new revelation · CZ' },
+  kicker: { cs: 'Příběh lodi · Bible + nové zjevení · CZ + EN', en: 'The boat story · Bible + new revelation · CZ + EN' },
   title: { cs: 'KRÁLOVSTVÍ SRDCE', en: 'KRÁLOVSTVÍ SRDCE' },
   subtitle: {
     cs: 'Příběh lodi, kterou postavil tesař z Nazareta — pro moře, které není na žádné mapě.',
@@ -154,7 +154,7 @@ export const KRAL_BOOK: BookDef = {
   facts: [
     { label: { cs: 'Kapitol', en: 'Chapters' }, value: '10' },
     { label: { cs: 'Zjevení', en: 'Revelations' }, value: '3' },
-    { label: { cs: 'Jazyky', en: 'Languages' }, value: 'CZ' },
+    { label: { cs: 'Jazyky', en: 'Languages' }, value: 'CZ + EN' },
   ],
   notAvailable: loadError,
   czOnly: czFallbackNote,
