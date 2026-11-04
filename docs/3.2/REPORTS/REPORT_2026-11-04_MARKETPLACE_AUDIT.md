@@ -428,3 +428,15 @@ Testovací kostka byla z repa i z nasazeného artefaktu odstraněna.
 **Deploy:** market a IntroPage nasazeny přímo; u webu zrovna běžel deploy paralelní session — nechal jsem ho doběhnout a pak ověřil, že artefakt obsahuje moje obrázky (jejich build čte `public/` až po mé výměně).
 
 **Ověřeno:** shoda lokál↔live **16/16** (velikost souboru přes HTTP = velikost v repu), `market /vanoce/lampion` i `app /` 200, screenshot detailu potvrzuje nový hero s reálným v6 lampionem (gravírování „ZION TERRA NOVA / Království srdce").
+
+### Doladění — „nasaď to všude" (2026-11-05)
+
+Po výměně obrázků zbývaly dvě věci, které by v praxi znamenaly „nové vizuály nevidím":
+
+1. **Cache.** Soubory se vyměnily pod **stejnými jmény**, ale nginx je od performance passu drží 7 dní v prohlížeči. Kdo je viděl před výměnou, měl by starý obrázek až do vypršení.
+   **Fix:** `?v=6` v kódu u všech vyměněných souborů — market (hero, karta, 3× galerie, 2 ilustrace příběhu, homepage hero v CSS), app (slider Kingdom, karta lampionu, hero novinky) a apex (`market-open.webp`). Verze je **shodná u `src` i `srcSet`**, jinak by si prohlížeč vybral polovinu z cache.
+   Nginx se tím nerozbije: `location ~* \.(webp|…)$` matchuje `$uri` bez query stringu.
+
+2. **Fallback na EDGE1.** Ověřeno, že tam ty cesty vůbec nejsou (apex, market i app jedou z EDGE2; EDGE1 má jen starý `/var/www/zion-maintenance` bez těchto souborů) — není co synchronizovat.
+
+**Deploy:** market, web i IntroPage znovu sestaveny a nasazeny. Ověřeno živě, že HTML obsahuje `?v=6` a že všechny čtyři kontrolované URL vracejí 200 s novou velikostí (např. `lampion-wide.webp?v=6` = 320 932 B, `christmas-kingdom.webp?v=6` = 404 608 B).
