@@ -2001,3 +2001,24 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Testy: `test/sky-flight.mjs` (26 kontrol) a
   `.artifacts/probe/sky-audit.mjs` (19 kontrol, včetně zápisu profilu
   a tabule).
+
+### Křídla — druhá cesta a darování (2026-11-05)
+
+- **Cesty jsou data, ne kód** (`SKY_PATHS` v `world.ts`): `calm` a `wind`
+  mají vlastní světla, proudy, plošiny i svatyni, ale **stejné texty**
+  světel — příběh se nemění podle obtížnosti.
+- **Simulace zná cestu** (`FlightState.path`) a `currentAt(x, y, path)`
+  bere proudy z `pathData(path)`. Kdyby si scéna držela vlastní pole
+  proudů, hráč by letěl podle jiných čísel, než počítá fyzika.
+- **Zápis do progrese až po volbě.** Scéna jen oznámí dolet; stránka
+  ukáže „nechat / darovat" a teprve volba zavolá `recordRun` (darování
+  přidá `SKY_GIFT_BONUS`). Kdyby se zapisovalo při doletu, volba by
+  neměla co ovlivnit.
+- **Sebrané světlo se hlásí jednou.** `FlightState.lastLight` se nesmí
+  mazat v kroku simulace — telemetrie jede 6×/s a světlo by minula
+  (reálně: text příběhu se ukázal ve 2 ze 3 běhů). Vyzvedne ho až ten,
+  kdo ho zobrazí (`SkyScene`).
+- **Ladicí háček vydává i data cesty** (`__skyLights`, `__skyShrine`) —
+  test tak nemusí znát souřadnice a přežije změnu rozptylu.
+- Test: `test/sky-flight.mjs` 39 kontrol, `.artifacts/probe/sky-audit.mjs`
+  24 kontrol.
