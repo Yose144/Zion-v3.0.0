@@ -88,7 +88,7 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
       renderer.setSize(width, height);
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.92;
+      renderer.toneMappingExposure = 0.82;
       renderer.domElement.style.touchAction = 'none';
       renderer.domElement.style.cursor = 'grab';
       host.appendChild(renderer.domElement);
@@ -100,17 +100,17 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
       scene.environmentIntensity = 0.42;
 
       // ── Světla: svíčka uvnitř, klíčové zlato shora, chladný rim ──────
-      scene.add(new THREE.HemisphereLight(0xfff0d2, 0x0a0a0c, 0.4));
+      scene.add(new THREE.HemisphereLight(0xfff0d2, 0x0a0a0c, 0.28));
 
-      const key = new THREE.DirectionalLight(0xffd089, 1.25);
+      const key = new THREE.DirectionalLight(0xffd089, 0.95);
       key.position.set(1.6, 2.4, 1.8);
       scene.add(key);
 
-      const rim = new THREE.DirectionalLight(0x7fa8ff, 0.7);
+      const rim = new THREE.DirectionalLight(0x7fa8ff, 0.5);
       rim.position.set(-1.8, 0.9, -1.6);
       scene.add(rim);
 
-      const candle = new THREE.PointLight(0xffa63c, 1.1, 0.9, 2);
+      const candle = new THREE.PointLight(0xffa63c, 0.3, 0.36, 2);
       candle.position.set(0, 0.02, 0);
       scene.add(candle);
 
@@ -146,8 +146,8 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
         return new THREE.Points(geo, mat);
       };
 
-      const starsFar = makeStars(2600, 14, 0.028, 0xd9e4ff);
-      const starsNear = makeStars(700, 7, 0.05, 0xffe3b0);
+      const starsFar = makeStars(3000, 14, 0.034, 0xdfe8ff);
+      const starsNear = makeStars(800, 7, 0.058, 0xffe3b0);
       galaxyGroup.add(starsFar, starsNear);
 
       // prachové částečky kolem lampionu
@@ -199,6 +199,24 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
       glow.rotation.x = -Math.PI / 2;
       glow.position.y = -0.4;
       scene.add(glow);
+
+      // kontaktní stín — tmavý měkký disk, ať lampion stojí a nevznáší se
+      const shCanvas = document.createElement('canvas');
+      shCanvas.width = shCanvas.height = 256;
+      const sctx = shCanvas.getContext('2d')!;
+      const sgrad = sctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+      sgrad.addColorStop(0, 'rgba(0,0,0,0.62)');
+      sgrad.addColorStop(0.55, 'rgba(0,0,0,0.22)');
+      sgrad.addColorStop(1, 'rgba(0,0,0,0)');
+      sctx.fillStyle = sgrad;
+      sctx.fillRect(0, 0, 256, 256);
+      const shTex = new THREE.CanvasTexture(shCanvas);
+      const shadow = new THREE.Mesh(
+        new THREE.PlaneGeometry(1, 1),
+        new THREE.MeshBasicMaterial({ map: shTex, transparent: true, depthWrite: false }),
+      );
+      shadow.rotation.x = -Math.PI / 2;
+      scene.add(shadow);
 
       // ── Model ───────────────────────────────────────────────────────
       const pivot = new THREE.Group();
@@ -312,15 +330,17 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
           // do záběru bez ohledu na exportní jednotky.
           const sphere = box.getBoundingSphere(new THREE.Sphere());
           const radius = Math.max(sphere.radius, 0.02);
-          const fitDist = (radius / Math.sin((camera.fov * Math.PI) / 180 / 2)) * 1.25;
+          const fitDist = (radius / Math.sin((camera.fov * Math.PI) / 180 / 2)) * 1.5;
           camera.position.set(0, radius * 0.28, fitDist);
           targetZ = fitDist;
           minZ = fitDist * 0.55;
           maxZ = fitDist * 1.9;
 
           // podstavec a prach držíme ve stejných proporcích jako model
-          glow.scale.setScalar(radius * 3.1);
+          glow.scale.setScalar(radius * 2.3);
           glow.position.y = -radius * 1.08;
+          shadow.scale.setScalar(radius * 1.5);
+          shadow.position.y = -radius * 1.06;
           if (dust) dust.scale.setScalar(Math.max(1, radius * 3.4));
 
           model.traverse((obj) => {
@@ -347,7 +367,7 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
 
             const comp = new EffectComposer(renderer);
             comp.addPass(new RenderPass(scene, camera));
-            const bloom = new UnrealBloomPass(new THREE.Vector2(width, height), 0.34, 0.55, 0.95);
+            const bloom = new UnrealBloomPass(new THREE.Vector2(width, height), 0.28, 0.45, 0.98);
             comp.addPass(bloom);
             comp.addPass(new OutputPass());
             comp.setSize(width, height);
@@ -372,11 +392,11 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
             }
 
             // svíčka „dýchá"
-            candle.intensity = 2.25 + Math.sin(t * 2.1) * 0.16 + Math.sin(t * 5.3) * 0.06;
+            candle.intensity = 0.28 + Math.sin(t * 2.1) * 0.04 + Math.sin(t * 5.3) * 0.018;
             candle.position.x = Math.sin(t * 1.7) * 0.004;
             candle.position.z = Math.cos(t * 1.3) * 0.004;
 
-            glow.material.opacity = 0.75 + Math.sin(t * 1.9) * 0.08;
+            glow.material.opacity = 0.42 + Math.sin(t * 1.9) * 0.05;
 
             // hvězdy rotují pomalu, prach stoupá
             galaxyGroup.rotation.y = t * 0.008;

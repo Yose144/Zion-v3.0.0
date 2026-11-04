@@ -4,13 +4,13 @@ Sem patří modely, které se zobrazují v interaktivním náhledu na detailu pr
 
 ## Lampion
 
-Očekávaný soubor:
+Soubor (už nahraný, 4,3 MB, 8 dílů, ~236 k trojúhelníků):
 
 ```
 public/models/lampion-kralovstvi-srdce.glb
 ```
 
-Jakmile tam leží, detail `/vanoce/lampion` ho **sám** nabídne k načtení —
+Detail `/vanoce/lampion` ho **sám** nabídne k načtení —
 v kódu se nic nemění (`model3d` v `src/data/christmasProducts.ts` už na tuhle
 cestu ukazuje). Komponenta `src/components/xmas/Lantern3D.tsx` dělá před
 načtením `HEAD` request; když soubor chybí, zobrazí se „3D náhled se připravuje"
