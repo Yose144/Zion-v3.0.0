@@ -774,3 +774,502 @@ That sentence about physics — that preaching from the boat worked because the 
 ---
 
 *The boat sailed and people stepped into it. But it still had no name. That came only at the moment when nobody asked for it — and when it was needed most.* → The Mast
+
+---
+
+# VI · The Mast
+
+> **GROWTH RING VI** · Capernaum and the shore by Magdala, the second year, after the harvest
+> *The one part of the boat that points upward — and yet can do nothing by itself.*
+
+---
+
+## Story
+
+The mast came last.
+
+The hull was finished, the ribs fitted, the pitch dry, the oars tried. And then the carpenter brought from the workshop a long piece of cedar he had kept aside for four whole years — without a knot, straight, with grain so dense that a knife slid off it. He set it in the middle of the boat on the keel and stepped it into a block of oak that had been prepared there from the beginning, without my knowing what it was for.
+
+A mast is a strange thing. When you step it into a boat, the boat changes at once: it stops being flat and begins to be **tall**. From the water it looks as though the boat has grown a back. But at the same time — and this is what kept me awake — a mast by itself can do nothing at all. It does not move the boat. It does not hold it. It does not help when the wind blows from the side; on the contrary, it adds surface for the wind to press against, and the boat capsizes more easily than without it.
+
+A mast is **a promise that holds only when the wind comes.**
+
+If there were no wind, a mast would be only a stick in the way. That is why fishermen lowered it when they carried cargo. That is why nobody stepped one permanently.
+
+But that is not why I remember it.
+
+I remember it because that day they gave me a name.
+
+---
+
+The Pharisees came. Not with sticks, not with stones — they came with a question that is worse than a stone, because it cannot be answered and yet one cannot be silent.
+
+"When will the kingdom of God come?"
+
+It was a question about a date. About a sign. About what can be counted and written down and then acted upon. The Pharisees were not stupid; they were men who knew that if something cannot be counted, it cannot be claimed either. And to claim the kingdom mattered more to them than to have it.
+
+He stood by the water and did not look at them. He looked at the boat.
+
+"The kingdom of God does not come in a way that can be observed," he said. "Nor will they say, 'Look, here it is,' or 'There it is.' **For the kingdom of God is within you.**"
+
+They withdrew. They did not leave angry — they left **dissatisfied**, which in people who want a date is the same thing.
+
+But the disciples stayed. And Simon, who stood by the rope, asked something that concerned him far more than the kingdom:
+
+"Master. And this boat — what is it called?"
+
+Because a boat without a name is worse for a sailor than a boat with a leaking bottom. A name is not an ornament. A name is what makes it known that the thing that floats is **one particular thing** and not just a piece of wood that happens to stay on the surface.
+
+He looked at Simon. Then he knelt, took a crowbar and lifted three floorboards that had only been laid there, not nailed. Beneath them was the keel — me, whole, from bow to stern, with that copper band and with the olive wedge that held my crack.
+
+He took a chisel.
+
+And he carved the name **from outside inward**. Not on the side, where people in the harbour would see it. Not on the bow, where the water would wash it. Into the inner face of the keel, into the place that only someone who lifts the floor can reach — and only someone who takes the boat apart to repair it.
+
+The letters were four fingers high and three deep. It took him the whole afternoon, because cedar is hard and because he looked after every letter to see whether it was straight.
+
+**KINGDOM OF THE HEART**
+
+When he finished the last one, he sat back on his heels and read it from below upward, because that is how it came out from where he sat.
+
+And then he said the sentence I heard at the closest possible range, because it was carved into me:
+
+**"It has had its name from the beginning. I was only waiting until you could hear it."**
+
+---
+
+Simon asked: "And why inside? Why not on the side, so that everyone sees it?"
+
+The carpenter pointed to the side of the hull.
+
+"If I write it here, everyone who walks past will read it. And everyone will form a judgement about it: a fine name, a stupid name, a strong name. In twenty years you will have to fill it over, because it will be ugly. In a hundred years you will have to cut it out, because it will be a lie lying there." He laid his palm on the floor. "If I write it here, only the one who repairs the boat will see it. And that one already knows why he is repairing it. **A name is not meant to persuade those who look from the shore. It is meant to remind those who work in the boat.**"
+
+Simon was silent for a while. Then he asked one more thing, and I have envied him that question all my life, because he asked it twenty centuries before the scholars did:
+
+"And that thing you said to the Pharisees — *within you* — does it mean *inside each of us*, or *among us*, here in the boat?"
+
+The carpenter looked at him and said:
+
+"Yes."
+
+And he left it at that. Simon looked at him for a moment and then laughed, because it occurred to him that he had received two answers and neither, and that this was probably about right.
+
+---
+
+## From Scripture, Tradition and History
+
+- **Luke 17:20–21** — "The kingdom of God does not come in a way that can be observed… for the kingdom of God is **within you**." The Greek **ἐντὸς ὑμῶν** (*entos hymōn*) is genuinely ambiguous: "within you" (distributively, in each) and "among you" (one also considers *en mesō*). Most translations choose the first, some exegetes the second. The difference is not small: the first reads the kingdom as a state of the heart, the second as the presence of relationship.
+- **Deuteronomy 30:14** — "For the word is very near to you, **in your mouth and in your heart**, so that you can do it." The Old Testament root of what Luke says about the kingdom.
+- **Jeremiah 31:33** — "I will put my law within them and write it on their **heart**." The new covenant is written inward, not on stone — which, in joinery, is the same as carving a name into the inner face of the keel.
+- **Ezekiel 36:26** — "I will give you a new heart… I will remove the heart of stone from your body and give you a heart of flesh."
+- **2 Corinthians 3:3** — the letter of Christ "not on tablets of stone, but on tablets of human hearts".
+- **Matthew 13:33** — "The kingdom of God is like leaven that a woman took and mixed into three measures of flour, until the whole was leavened." An image of an action that is not visible at the beginning and is visible at the end. The same logic as a name beneath the floor.
+- **Mast and sail** — structurally documented: the Galilean boat had a mast and a sail, but it was not a sailing vessel. The sail was auxiliary, used in a favourable wind; the main propulsion remained the oars. That is the technical detail that makes the image "a promise that holds only when the wind comes" an exact description rather than a metaphor.
+
+## Anchor of Truth
+
+| What is in the chapter | State |
+|---|---|
+| The Pharisees ask about the kingdom; the answer "within you" | **SCRIPTURE** — Luke 17:20–21 |
+| The ambiguity of *entos hymōn* | **SCRIPTURE + philology** — both translations are defensible; the text leaves it open |
+| The covenant written on the heart | **SCRIPTURE** — Jeremiah 31:33; Ezekiel 36:26; Deuteronomy 30:14; 2 Corinthians 3:3 |
+| The boat's name "Kingdom of the Heart" | **MYTH** — the image of this book, derived from Luke 17:21 |
+| That it is carved into the inner face of the keel beneath the floor | **MYTH** — the central image of this edition |
+| The boat had a mast and an auxiliary sail; the main propulsion was oars | **HISTORY** — documented on the 1st-century Galilean boat |
+| Simon's question "inside each, or among us" | **MYTH** — but the question is real and still alive in exegesis |
+
+## Measure
+
+- **Height of the mast**: **5–6 m** on an 8.2 m boat — roughly two thirds of the hull's length. A taller mast would capsize the boat; a shorter one would not carry the sail.
+- **Sail area**: **8–15 m²** in auxiliary use. Enough for the boat to move, and little enough not to overwhelm it.
+- **Depth of carving**: **3–4 mm**. Deeper would weaken the keel at the points of greatest stress.
+- **Height of the letters**: **~4 cm**. Legible by hand, not by eye — because whoever looks for it looks for it by touch.
+- **Time to carve**: a name of seventeen letters, a whole afternoon, because every letter is made twice: once with the chisel and once with a look.
+- **Floorboards**: **3** pieces, laid, not nailed — because the floor must be liftable without damaging the hull.
+
+## Shaving
+
+I wrote in this book that the name is beneath the floor so that only whoever repairs the boat would see it. That is beautiful and it is **mine**, not documented. But there is a catch I do not want to sweep away: if the name were really only beneath the floor, **nobody would ever find it** and the whole image would be a secret kept from everyone. The actual boat from Galilee, found in 1986, had no name at all — and yet people named it. Not by what was written in it, but by **what they thought about it**. That is the second, darker image, and it belongs in this chapter as much as the beautiful one: **the name you give a boat is not the same as the name others make up about it.**
+
+---
+
+*And then the wind rose — not from the side it should have come from, and not at the hour one could expect. And for the first time I found that a mast that can do nothing is suddenly the most important thing about me.* → The Wave
+
+---
+
+# VII · The Wave
+
+> **GROWTH RING VII** · the Kinneret, the night crossing from the eastern shore to the north-west, ~29 AD
+> *A wave is not water. A wave is work.*
+
+---
+
+## Story
+
+In the evening he said: "Let us cross over to the other shore."
+
+It was the most ordinary command that can sound in a boat. Six kilometres. An hour and a half of rowing. The fishermen had done it a hundred times. Nobody asked whether it was safe, because on this lake nobody asks that — you start asking only when it blows.
+
+We pushed off at sunset.
+
+For the first hour it was so quiet that I heard every stroke separately: *vzzz — clack — vzzz — clack.* The water was black and smooth and reflected the stars so exactly that you could not tell where the sky was and where the lake was. Someone at the back talked about bread. Someone else fell asleep and his head slid onto a bag.
+
+Then the wind came.
+
+Not from the front, where it could be seen. **From behind and from the side, from the eastern slopes**, where cold air sits on the plateau all day and at night pours over the edge and falls into the bowl. It is the same principle by which grain pours out of a sack: the higher you hold it, the harder it lands. Within ten minutes the silence had become pressure, and the pressure a roar.
+
+And then the waves came — and here I must say something that people of the sea do not understand until they have lived it.
+
+**The Kinneret is not deep.** It is about forty metres. The ocean has thousands. A wave on deep water is long and soft; you can ride under it, you can ride over it, you can work with it. A wave on shallow water **has nowhere to go down**, so it grows in height and in steepness. It is short, peaked and fast — three seconds between crests, over a metre high, two in the gusts. An eight-metre boat does not fit into such a wave. **Half** of it fits and the other half hangs in the air.
+
+The first wave that struck me from the side turned me twenty degrees and threw out a bucket. The second came over the bow and fell inside.
+
+And after that it was nothing but work.
+
+---
+
+I cannot describe what a storm looks like from outside. I never saw one. I saw it **from within the material**, and that is different: I felt how every plank of the planking bent by two or three millimetres and came back; how the ribs sagged between the nails; how the treenails in the seams turned by a fraction of a degree and back again. I felt the water leaning on me and at the same time holding me — because a boat in a wave is not a thing that resists. It is a thing that **bends according to what the wave asks, and yet remains itself.**
+
+When you bend, you are not weak. When you do not bend, you break.
+
+That is the whole of boatbuilding in one sentence, and it took me four years to learn it from the inside.
+
+The water in the hull rose. The men bailed — two with an oar, two with buckets, one with his hands. Someone shouted something that could not be heard, but everyone knew what it meant, because in a storm on a boat you do not come to agreement in words. You agree by doing what is needed before anyone says it.
+
+And then they noticed that he was asleep.
+
+He lay in the stern, his head on a wooden cushion he had planed himself. The waves soaked him, water ran down his face, the boat spun and the mast swung above him — and he slept.
+
+It was not the sleep of exhaustion nor the sleep of indifference. It was the sleep of **the one who built it.** And I know that, because I knew it even then: when someone sleeps like that on you, it is not an insult. It is **the highest praise a boat can receive.** It means: *I know what you are. I know what you bear. I do not have to watch.*
+
+And then he woke.
+
+The men leaned over him and shouted into his face: "Master! Do you not care that we are perishing?"
+
+He rose. He stood up in the stern — the part of the boat where every wave is felt most — and was not afraid. Not because he was brave, but because he looked at the water the way a joiner looks at work not yet finished.
+
+And he said two words to the lake.
+
+In Greek they sound: **σιώπα, πεφίμωσο** — *siōpa, pephimōso.* The first means "be quiet". The second is stronger: literally **"be muzzled, you have been bridled"** — the word with which Greek of that time ordered an animal to shut its mouth, and a possessed man to fall silent. It is not a request. It is not a command to the surface. It is **putting on a bridle.**
+
+And silence came.
+
+Not a gradual fading, not the wind weakening and the waves shrinking. A silence in which you suddenly hear the drops running off the edge of the hull and falling into the water. *Plop. Plop. Plop.* And in that silence you could hear how all eleven men stopped breathing.
+
+I did not know then what had happened. I know it to this day only as matter: **the water beneath me stopped working.**
+
+And then something happened that brought me into a state I had not known and that has accompanied me all my life since that night. The men did not look at the sea. They looked **at him** — and were more afraid than before.
+
+"Who is this, that even the wind and the sea obey him?"
+
+I lay beneath them, bending back into my shape, and thought something I should not have said aloud at that moment, because a boat must not speak:
+
+**I was afraid. Not of him. I was afraid that it might be true.**
+
+Because if it is true that wind and water obey him, then what I had held within me for four years — that name beneath the floor — is not just a pretty word invented by a carpenter in the hills.
+
+---
+
+In the morning we landed on the opposite shore. There was half-light and mist, and someone on the shore was herding pigs.
+
+None of us spoke. Simon looked at the water and had in his eyes what people have who have just found that the world is larger than they thought — and it is not a pleasant feeling. It is the feeling after which a person either runs away or stays.
+
+Simon stayed.
+
+---
+
+## From Scripture, Tradition and History
+
+- **Mark 4:35–41** — "On that day, when evening had come, he said to them: 'Let us cross over to the other side.'… A great storm arose… he was in the stern, asleep on the cushion… 'Master, do you not care that we are perishing?'… 'Be quiet, be muzzled!' (*siōpa, pephimōso*)… And a great silence came… 'Who is this, that even the wind and the sea obey him?'"
+- **Matthew 8:23–27 · Luke 8:22–25** — the same scene in the other two Gospels; Luke adds "they were filled with awe and marvelled".
+- **Psalm 107:23–30** — "Those who go down to the sea in ships… they cried to the Lord in their trouble… **he stilled the storm so that it was silent**, and the waves were hushed… he brought them to the harbour they longed for." The psalm the Church has read from the beginning as the background of this pericope.
+- **Jonah 1** — Jonah **sleeps** in the hold during the storm; the pagan crew wakes him. Jesus himself takes up this scene in Matthew 12:40.
+- **Psalm 29:3** — "The voice of the Lord is over the waters… the Lord over many waters." An Old Testament image of God speaking over the water — and in Mark a man speaks over the water.
+- **The physics of the Kinneret** — the lake is **shallow and in a bowl**. The wind falls from the eastern slopes (the Golan Heights) into the depression; sudden storms are documented and are short, violent and dangerous. Shallow water makes **short steep waves** (a much greater height-to-length ratio than on the ocean), which are worse for a small boat than long waves.
+
+## Anchor of Truth
+
+| What is in the chapter | State |
+|---|---|
+| The storm, the sleeping Jesus on the cushion, the calming, the question "who is this" | **SCRIPTURE** — Mark 4:35–41 and par. |
+| *siōpa, pephimōso* as "be muzzled / be bridled" | **SCRIPTURE + philology** — the verb *phimoō* means "to close the mouth, to silence, to bridle"; in the Gospels it is used to command demons |
+| Psalm 107 as the background of the scene | **SCRIPTURE + liturgical tradition** |
+| Jonah sleeping in the storm as a prefiguration | **SCRIPTURE** — Jonah 1; Jesus himself mentions it (Matthew 12:40) |
+| That the cushion was planed by the carpenter himself | **MYTH** — the image of this book |
+| "I stopped being afraid because I built that boat" | **MYTH** — the image of the Church's conviction about Christ and his ship |
+| Short steep waves on a shallow lake and falling wind from the eastern slopes | **HISTORY / physics** — a documented property of the Kinneret |
+| "A wave is not water, a wave is work" | **MYTH** — but structurally exact: a hull bends by millimetres in a wave |
+
+## Measure
+
+- **Wave height** in a Kinneret storm: **1–2 m**. That is a catastrophe for a boat 1.3 m high, even if the wave is "low".
+- **Wave period**: **2.5–4 s**. Three seconds between crests means the boat gets no time to recover.
+- **Hull length 8.2 m** vs. **wavelength 10–15 m** → the boat **does not fit** into the wave. That is the main danger: it hangs on two waves and the middle of the hull is in the air.
+- **Flexing of the hull**: in a 1.5 m wave an 8 m hull bends by **2–4 mm** in the planking and by **1–2 mm** in the ribs. That sounds like nothing — and it is the whole secret: a material that yields does not break.
+- **Wind speed** in a gust: **40–60 km/h** (documented gusty winds in the depression; more in extremes).
+- **Bailing**: 4 men, buckets ~10 l, ~6 buckets a minute → ~60 l/min. In an hour, 3,600 litres. A hull of this size takes on hundreds of litres in an hour of storm — and bailing manages it only just.
+
+## Shaving
+
+I wrote that the men feared the silence more than the storm. That is in Mark — and it is the best psychological sentence in the whole Gospel. But I also wrote that I was afraid it might be true, and **the wood in Mark says no such thing**. That is mine. I made the keel a witness who has doubt, because a book in which the boat has no doubt is a book in which the boat lies. At the same time I admit that by doing so I made something that may confuse the reader: **a keel that doubts is not theology. It is a literary character.** When you ask what the keel thought about it, you are asking me, not Mark.
+
+---
+
+*The boat survived the storm because it was well built. But a storm came beside which good building is little — and in which I went under water for the first time without sinking.* → The Beam
+
+---
+
+# VIII · The Beam
+
+> **GROWTH RING VIII** · Jerusalem and the shore of the Kinneret, spring ~30 AD
+> *Wood that is not a keel.*
+
+---
+
+## Story
+
+This is the only chapter I cannot tell from the inside.
+
+I was on the lake. He was in the city, three days' journey away. Between us lay mountains, dust and people with their own work. Wood has no eyes that see into another village.
+
+So I will tell you what I can, and at the very beginning I will tell you what I cannot: **I was not there.**
+
+I was not there when they arrested him in the garden. I was not there when they led him through the city. I was not there when they laid the beam on him. I did not see what they saw. Whoever claims to have seen it invented it or copied it.
+
+But wood tells things among itself, and this is how I learned it.
+
+---
+
+A man came who brought oil and salt from Jerusalem, and that man talked more than was healthy. He stood on the shore and told the fishermen, who listened with lowered eyes, because everyone knew whose friend that had been.
+
+And in his speech there was one word that struck me from the place where I lie: **beam.**
+
+Not keel. Not plank. Not oar. Beam.
+
+A beam is a piece of wood that has no shape of a boat. It is the simplest thing a joiner knows how to make: you take a trunk, hew it square, true up two sides. Nothing bends, nothing is shaped by steam, nothing is expected. A beam is not meant to sail, not meant to carry, not meant to float. A beam is meant **to carry what you lay on it, and not to give.**
+
+I knew what beams were made in that land. I knew it from conversations in the workshop that I listened to for four years, because I lay on the ground and had nothing else to do. Beams were made for ceilings, for wine presses, for doorsteps. And beams were also made that were not talked about aloud.
+
+Those were not made from fresh wood. Wood was too dear for that. Those were made from beams that had already served once — and when they were wanted to serve again, they were taken from a heap behind the town wall, where they lay leaning against one another, soaked by rain, trodden into the dust. The joiner only checked that they held, and added one rib more. That was all.
+
+You may call that thrift. I call it **indifference, which lets the work be done by someone who does that work gladly.**
+
+And so it happened that wood which once carried a ceiling or a wine press finally carried a man. It was the same wood as I. The same craft, the same chisel, the same hand that had once chosen it. The difference between us was not in what we were made of.
+
+The difference was in **what someone let himself ask of us.**
+
+---
+
+Three days.
+
+I do not know what was happening to him. I know what was happening to me, and that is the part I can tell, because I lived it.
+
+**They pulled me out of the water.**
+
+They did it not out of cruelty. They did it out of fear. When something like that happens in the city, the people who belonged to that man go to ground. The fishermen left Capernaum, hid with relatives, stopped speaking to strangers. And a boat on the water that nobody claims is a boat that someone may confiscate — or sink, or take for himself. So they hauled me onto the shore, turned me upside down and covered me with a sail and branches.
+
+And I lay on dry land.
+
+I cannot describe to you what that is, because I have no words for it from your world. I will put it like this: **a boat on dry land is not a boat.** It is an object that remembers having been something else.
+
+Wood without water dries. The seams open. The pitch that was elastic for four years begins to harden and crack. The ribs that held the hull round begin to spread apart, because nothing presses them from the other side any more. And while that happens, a sound is heard that no sailor wants to hear: **a dry, long creaking**, like someone far off breaking a branch. I made it three times.
+
+By the third day I had a crack in the planking on the port side, fifteen centimetres long. I was broken without anyone having struck me.
+
+And that is about all I can say about those three days. They were three days of drought, of darkness under the sail and of the sound of my own drying. There was nothing noble in it. It was only **waiting to see whether anyone would still use me.**
+
+---
+
+On the fourth morning they came.
+
+I heard them before I saw them: steps on sand, a voice that broke, and then silence, because either they were arguing, or someone was weeping, or both. They pulled the sail off so fast that pine needles and soil stayed on my hull.
+
+And then they did something nobody does who has just lost everything.
+
+**They turned me over and lowered me into the water.**
+
+Not to sail away. Not to flee. Simon stood knee-deep in the water holding me by the bow and looking at me the way a person looks at the thing that has remained to him. Beside him stood John, and he was laughing — laughing the way a person laughs whom nothing can surprise or take any more.
+
+The water took me a second time. It was cold and there was little of it, because I had dried out for three days, and it leaked into me from every side.
+
+And in that moment I understood something that is perhaps the core of this whole book:
+
+**I was not a witness of the resurrection. I was a witness that those who had seen him dead came the next day to work.**
+
+They did not see an empty tomb — or they did, I do not know, that belongs to other books. I saw **an empty boat that living people filled.**
+
+---
+
+## From Scripture, Tradition and History
+
+- **Matthew 12:40** — "As Jonah was in the belly of the great fish three days and three nights, so will the Son of Man be in the heart of the earth three days and three nights." The only "sign" Jesus gave to a generation that demanded a sign.
+- **Deuteronomy 21:23** — "Cursed is anyone who hangs on a tree." A verse of the Torah that Paul quotes in **Galatians 3:13**: "Christ redeemed us from the curse of the law by becoming a curse for us." For a Jewish reader the cross carried a **religious** dimension, not only a political one.
+- **Mark 15 · Matthew 27 · Luke 23 · John 19** — the passion narratives. Note that the Gospels do not describe what the cross looked like, what wood it was made of, or how it was assembled. That is a silence which popular piety filled with images.
+- **1 Corinthians 15:3–8** — the oldest surviving confession (around 50 AD, therefore older than the Gospels): "he died… was buried… was raised on the third day… appeared to Peter, then to the Twelve…" Paul also names witnesses who were still alive when he wrote.
+- **Roman execution by crucifixion** is documented historically and archaeologically. The body carried the **patibulum** (the crossbar, about 2 m, 30–50 kg); the vertical post (*stipes*) often stayed in place and the crossbar was fitted into it. The wood was used repeatedly.
+- **The only archaeological evidence of crucifixion** — in 1968 in Jerusalem (Giv'at ha-Mivtar) an ossuary was found of a man named **Jehohanan ben Hagkol**; an **iron nail** (about 17–18 cm) remained in his heel bone. It is the only physical find of its kind so far — and evidence that the nail went through the bone, not beside it.
+- **The species of the wood of the cross** is not documented. Traditions proposed cedar, cypress, olive, pine; none of these versions has support in the text or in any find.
+
+## Anchor of Truth
+
+| What is in the chapter | State |
+|---|---|
+| The sign of Jonah, three days and three nights | **SCRIPTURE** — Matthew 12:40; Jonah 1:17 |
+| The crucifixion, death, burial, the third day | **SCRIPTURE** — the Gospels; 1 Corinthians 15:3–8 |
+| "Cursed is anyone who hangs on a tree" | **SCRIPTURE** — Deuteronomy 21:23; Galatians 3:13 |
+| The patibulum, repeated use of the wood, the nail through the heel | **HISTORY / archaeology** — documented (Jehohanan, 1968) |
+| The species of the wood of the cross | **UNDOCUMENTED** — the text is silent, traditions diverge |
+| That the boat was hauled ashore and dried out for three days | **MYTH** — the image of this book; technically faithful (wood without water dries and opens its seams) |
+| That the keel tells it "by hearsay" and admits it was not there | **MYTH** — a literary decision of this edition, not a historical find |
+| "I was a witness that they came to work" | **MYTH** — an image; theologically it belongs to another chapter, not this one |
+
+## Measure
+
+- **Patibulum**: **~2 m** long, section **10 × 10 cm**, weight **30–50 kg**. That is the beam a man carries on his shoulders through the city — and that is then fitted into the prepared post.
+- **The nail**: **17–18 cm**, square, forged. Found in the heel bone of a 1st-century man.
+- **A crack after three days on dry land**: **15 cm**. Three days of drying do more damage to a hull than a whole storm on the water — because on the water the wood swells and holds, whereas on dry land it shrinks and opens.
+- **Three days**: **72 hours**. For wood that is long enough to change. For people it is long enough to stop thinking that anything will happen.
+- **Distance Jerusalem — Kinneret**: **~120 km**, three days' walk. The news arrived a few days after the event. That is normal, and it is why this chapter cannot be told first-hand.
+
+## Shaving
+
+This chapter has the largest debt in the whole book. **I wrote that I was not a witness of the resurrection — and then I wrote a sentence that sounds as though I were.** "They came the next day to work" is beautiful and it is true about people, but it is not evidence about what happened in the tomb. The difference between "people changed" and "God rose from the dead" is the whole difference between history and faith, and no boat bridged it. I leave it there. **Whoever sweeps it away turns the gospel into reportage and faith into advertising.**
+
+---
+
+*And then came a morning I did not expect — and it gave me the sentence that holds me to this day: the shallows.* → The Shallows
+
+---
+
+# IX · The Shallows
+
+> **GROWTH RING IX** · the Kinneret by Tiberias, the morning after a night without a catch
+> *The place where depth finally touches bottom.*
+
+---
+
+## Story
+
+After all that, they went back to work.
+
+Not because they did not believe. Because they did not know what else to do. It is the most ordinary thing in the world and I want it recorded in this book: **when someone people loved dies, in the second week they go to work.** It is not betrayal. It is how one stays alive until something changes.
+
+Simon said: "I am going fishing." And the others said: "We are coming with you."
+
+We put out at night. It was the worst night I ever experienced — and there was nothing dramatic in it. No wind, no wave. It was quiet and warm and the nets stayed empty. Six hours. Seven. Eight. The men stopped talking. Someone attempted a joke and nobody laughed, so he gave it up.
+
+Towards morning the light was grey and they stood on the shore where nobody was, hauling the nets to clean them.
+
+And then someone on the shore called:
+
+**"Children, have you anything to eat?"**
+
+It is a strange question, when you think about it. It is not "who are you", not "what are you doing here". It is the question of a man who wants to eat — and who knows that those in the boat have fish, because that is their work. It would seem almost insensitive, after everything.
+
+They answered: "We have nothing."
+
+And he said: "Throw the net on the right side of the boat and you will find."
+
+They did it. They had no reason to do it — throwing the net on the right side is what a man does when someone asks him to try something that does not work and he no longer has the strength to argue. They pulled it up full.
+
+At that moment John said to Peter: **"It is the Lord."**
+
+And Peter — who was always the one who acted before he thought — wrapped his outer cloak around himself, because he was naked, and **jumped into the water.**
+
+It was not a brave leap. It was about ninety metres from the shore and he could have gone by boat. The leap into the water was the fastest way to reach someone he wanted to see two minutes sooner, and he did not expect to survive those two minutes without moving.
+
+The water was cold. It did him no good.
+
+---
+
+I stayed by the shore, because they had pulled me up onto the sand.
+
+And there I saw what I remember most from that whole morning.
+
+On the shore burned **a fire of charcoal**. And on it lay a fish and bread. Beside the fire stood he, in a soiled cloak, with wet hands, and said nothing.
+
+The Greek word for this fire is *anthrakia* — a charcoal fire. It appears in the Gospels **only twice.** First on the night when a servant girl recognized Peter by the fire in the courtyard of the high priest's house, and he said three times that he did not know the man. Second here.
+
+**The same fire. The same place in the soul. Only a different morning.**
+
+When they had all landed and had breakfast — and it was the most ordinary thing you can imagine, bread and fish and silence — he turned to Peter and asked him the same thing three times:
+
+"Simon, son of John, do you love me?"
+
+Three times. Because three times it had been denied.
+
+Peter answered the third time the way a man answers when it hurts: "Lord, you know everything, you know that I love you."
+
+And he said to him: "Feed my sheep."
+
+Not "rule". Not "lead". **Feed.** That is the work of a shepherd who walks ahead of the flock and looks for grass and water and carries what is tired.
+
+---
+
+As I watched that scene from the sand, I noticed a small thing that only one Gospel mentions and of which I dare say it is the most beautiful detail in the whole book.
+
+**The net did not tear.**
+
+The day before, the nets had torn. They always tear — that is normal, nets tear and are mended. But that night a hundred and fifty-three large fish were loaded into them and the net stayed whole.
+
+I do not know what it means. I know what it meant **to me** when they pulled me up onto that sand: that it is possible for a thing that always tears not to tear once. Not because it is better. Because someone else was holding it.
+
+---
+
+And then something happened that I did not expect and that I carry with me for the rest of my life.
+
+He came to the boat. He knelt in the shallow water — there where the surface reaches the forest and where the sand touches the bottom — and **laid his palm on the gunwale.**
+
+For a while nothing. He did not look at me. He looked at the lake beyond me.
+
+And then he said, quietly, just like that:
+
+"You will sail again."
+
+It was not a blessing. It was not a prophecy. It was **a farewell to a thing that had done its work** — and an admission that the thing does not end there, because it will be needed again.
+
+For the last time in this book I was not an instrument. I was not a means of transport nor a symbol.
+
+I was **the place where bread and fish were eaten on the shore where it began again.**
+
+---
+
+## From Scripture, Tradition and History
+
+- **John 21:1–19** — the whole scene: the night without a catch, the question from the shore, the net on the right side, 153 fish, the unbroken net, Peter leaping into the water, the charcoal fire, bread and fish, the threefold question and "feed my sheep".
+- **John 21:8** — "For they were only about **two hundred cubits** from the shore." ~90 m.
+- **John 21:9,11** — **ἀνθρακιά** (*anthrakia*), a charcoal fire. In the whole New Testament the word occurs **twice**: John 18:18 (Peter's denial) and John 21:9 (this morning). The connection is not accidental and exegetes have pointed to it for centuries.
+- **John 21:11** — "a hundred and fifty-three". The number is deliberately concrete in the text. Interpretations: (a) according to ancient zoology there were 153 species of fish — the number would then mean "all kinds"; (b) 153 is the triangular number of 17 (1+2+…+17); (c) gematric readings. **None of them is documented as the author's intention.** The text gives the number but does not explain it.
+- **Luke 24:13–35** — the road to Emmaus: the disciples walk with him and **do not recognize him** until he breaks the bread. The same pattern as here: presence before recognition.
+- **1 Corinthians 15:3–8** — the list of witnesses. Peter is named first.
+- **"Feed my sheep"** — *poimaine ta arnia / ta probata*. A pastoral image Jesus uses elsewhere too (Luke 15, John 10). It is not a commission of power; it is a commission **to walk ahead of the flock**.
+
+## Anchor of Truth
+
+| What is in the chapter | State |
+|---|---|
+| The night without a catch, the question from the shore, the full net, 153 fish | **SCRIPTURE** — John 21:1–11 |
+| The unbroken net | **SCRIPTURE** — John 21:11 |
+| The charcoal fire (*anthrakia*) for the second time in the Gospel | **SCRIPTURE + philology** — a documented match with John 18:18 |
+| The threefold question, "feed my sheep" | **SCRIPTURE** — John 21:15–17 |
+| The meaning of the number 153 | **UNDOCUMENTED** — the text gives no interpretation; traditional readings are hypotheses |
+| That the carpenter came back to the boat and said "you will sail again" | **MYTH** — the image of this book |
+| That the keel was not a witness of the resurrection but of the morning on the shore | **MYTH** — a literary decision; theologically it is not the same thing |
+| Shallow water as an image: depth touching bottom | **MYTH** — the image of this book |
+
+## Measure
+
+- **Distance from the shore**: **200 cubits ≈ 90 m** (John 21:8). Enough that a person on the shore cannot make out a face, and little enough to hear a voice.
+- **153 fish**: the number from the text. For comparison — a working catch on the Kinneret was counted in tens of kilograms; 153 "large fish" is a quantity that would fill two boats.
+- **Depth near the shore**: **1–3 m**. In the shallows a fish can be caught by hand and a boat can be dragged onto the sand without horses.
+- **A charcoal fire**: charcoal is burned beforehand so that it does not smoke. In the morning on the shore it is a sign that someone got up **before them** and prepared food.
+- **Two hundred cubits** = **90 m** = about a minute of swimming for a tired man in cold water.
+- **Three questions**: against three denials (John 18:17,25,27; 13:38).
+
+## Shaving
+
+I would like to write that this chapter is about forgiveness. It is about that, but not only. There is one thing in it that I walked around and do not want to leave under the table: **Peter was restored, and yet by tradition he was later crucified.** Forgiveness in John 21 does not mean that nothing will happen to Peter. It means that it will happen **to someone who is reconciled.** That is darker and stronger than the consolation I could have written, and had I left it out I would have sold you a cheaper book.
+
+---
+
+*The boat sailed on. But I knew that one day I would stop being a boat — and that what remained of me would have to bear more than water.* → The Anchor
