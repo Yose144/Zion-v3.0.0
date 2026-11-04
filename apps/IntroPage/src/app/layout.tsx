@@ -66,6 +66,7 @@ export default function RootLayout({
       </head>
       <body
         className={`${inter.variable} ${jetbrains.variable} is-preload`}
+        suppressHydrationWarning
       >
         {children}
       </body>

@@ -74,6 +74,37 @@ export default function Hero() {
           </a>
         </motion.div>
 
+        {/* ─── headline — full width ─── */}
+        <motion.div
+          initial={false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.85 }}
+          className="mb-8"
+        >
+          <p className="text-base md:text-lg text-zion-cyan font-semibold mb-3 tracking-wide flex items-center gap-2">
+            <span className="w-8 h-[2px] bg-gradient-to-r from-zion-purple via-zion-gold to-zion-cyan rounded-full" />
+            {tr('hero', 'tagline', lang)}
+          </p>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold leading-[1.05] tracking-tight">
+            <span className="text-gradient">ZION</span>
+            <span className="block text-white mt-2">Terra Nova</span>
+            <span className="block text-lg sm:text-xl md:text-2xl xl:text-3xl font-semibold text-zion-gold/90 mt-3 tracking-normal">
+              {tr('hero', 'title_sub', lang)}
+            </span>
+          </h1>
+        </motion.div>
+
+        {/* ─── Nirvana universe — first OASIS world, full width under the headline ─── */}
+        <motion.div
+          initial={false}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="mb-10"
+        >
+          <NirvanaUniverseSection />
+        </motion.div>
+
         <div className="grid lg:grid-cols-[1fr_0.85fr] gap-8 xl:gap-12 items-start">
           {/* ─── LEFT col ─── */}
           <motion.div
@@ -82,21 +113,6 @@ export default function Hero() {
             transition={{ duration: 0.85 }}
             className="space-y-6 min-w-0"
           >
-            {/* headline */}
-            <div>
-              <p className="text-base md:text-lg text-zion-cyan font-semibold mb-3 tracking-wide flex items-center gap-2">
-                <span className="w-8 h-[2px] bg-gradient-to-r from-zion-purple via-zion-gold to-zion-cyan rounded-full" />
-                {tr('hero', 'tagline', lang)}
-              </p>
-              <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold leading-[1.05] tracking-tight">
-                <span className="text-gradient">ZION</span>
-                <span className="block text-white mt-2">Terra Nova</span>
-                <span className="block text-lg sm:text-xl md:text-2xl xl:text-3xl font-semibold text-zion-gold/90 mt-3 tracking-normal">
-                  {tr('hero', 'title_sub', lang)}
-                </span>
-              </h1>
-            </div>
-
             {/* paragraph */}
             <p className="text-base md:text-lg text-gray-300 max-w-xl leading-relaxed">
               {tr('hero', 'description', lang)}
@@ -168,17 +184,6 @@ export default function Hero() {
             </div>
           </motion.div>
         </div>
-
-        {/* ─── Nirvana universe — first OASIS world, full width ─── */}
-        <motion.div
-          initial={false}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="mt-8"
-        >
-          <NirvanaUniverseSection />
-        </motion.div>
 
         {/* ─── hero slider — One Planet · One People · One Love ─── */}
         <motion.div

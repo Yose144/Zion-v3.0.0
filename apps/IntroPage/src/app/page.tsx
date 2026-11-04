@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import NirvanaUniverseEmbed from "./components/NirvanaUniverseEmbed";
 
 export default function Home() {
   const html = fs.readFileSync(
@@ -11,10 +12,14 @@ export default function Home() {
   const body = bodyMatch ? bodyMatch[1].trim() : "";
 
   return (
-    <main
-      style={{ display: "contents" }}
-      dangerouslySetInnerHTML={{ __html: body }}
-      suppressHydrationWarning
-    />
+    <>
+      <main
+        style={{ display: "contents" }}
+        dangerouslySetInnerHTML={{ __html: body }}
+        suppressHydrationWarning
+      />
+      {/* portals into #nirvana-embed inside maintenance.html (under the header links) */}
+      <NirvanaUniverseEmbed />
+    </>
   );
 }

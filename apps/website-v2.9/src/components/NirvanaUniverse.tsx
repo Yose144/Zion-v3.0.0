@@ -1,7 +1,7 @@
 'use client';
 
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Html } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import clsx from 'clsx';
@@ -181,16 +181,33 @@ function OrbitLine({ r }: { r: number }) {
   );
 }
 
-function PlanetLabel({ text, color, y }: { text: string; color: string; y: number }) {
+/** 3D text label as a sprite — canvas → CanvasTexture → sprite (same as Nirvana's Label). */
+function TextLabel({ text, position, color = '#cfe3ff', height = 0.9 }: { text: string; position: [number, number, number]; color?: string; height?: number }) {
+  const { tex, aspect } = useMemo(() => {
+    const font = '600 44px "Segoe UI", system-ui, sans-serif';
+    const m = document.createElement('canvas').getContext('2d')!;
+    m.font = font;
+    const tw = Math.ceil(m.measureText(text).width) + 40;
+    const c = document.createElement('canvas');
+    c.width = tw;
+    c.height = 80;
+    const ctx = c.getContext('2d')!;
+    ctx.font = font;
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 14;
+    ctx.fillStyle = color;
+    ctx.fillText(text, 20, 42);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
+    return { tex: t, aspect: tw / 80 };
+  }, [text, color]);
+
   return (
-    <Html center position={[0, y, 0]} style={{ pointerEvents: 'none' }} zIndexRange={[10, 0]}>
-      <span
-        className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.3em]"
-        style={{ color, textShadow: '0 0 10px rgba(0,0,0,0.9)' }}
-      >
-        {text}
-      </span>
-    </Html>
+    <sprite position={position} scale={[height * aspect, height, 1]}>
+      <spriteMaterial map={tex} transparent depthWrite={false} />
+    </sprite>
   );
 }
 
@@ -258,7 +275,7 @@ function Planet({ def, index }: { def: PlanetDef; index: number }) {
         <sphereGeometry args={[Math.max(def.size * 2.6, 2.6), 16, 12]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
-      <PlanetLabel text={def.name} color={def.tint} y={def.size + 0.9} />
+      <TextLabel text={def.name} position={[0, def.size + 0.9, 0]} color={def.tint} height={0.75} />
     </group>
   );
 }
@@ -332,14 +349,7 @@ function NewEarth({ onReady }: { onReady?: () => void }) {
         <sphereGeometry args={[EARTH_SIZE * 2.6, 24, 18]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
-      <Html center position={[0, EARTH_SIZE + 1.6, 0]} style={{ pointerEvents: 'none' }} zIndexRange={[10, 0]}>
-        <span
-          className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.35em]"
-          style={{ color: '#f5c542', textShadow: '0 0 14px rgba(0,0,0,0.95)' }}
-        >
-          Nová Země
-        </span>
-      </Html>
+      <TextLabel text="Nová Země" position={[0, EARTH_SIZE + 1.6, 0]} color="#f5c542" height={1.1} />
     </group>
   );
 }
