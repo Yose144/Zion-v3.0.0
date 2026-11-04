@@ -6,8 +6,10 @@ import { useEffect, useState } from 'react';
 import { useI18n } from '@/core/i18n';
 import { useAuth } from '@/core/session/AuthProvider';
 import { useNet } from '@/core/net/useNet';
-import { loadProfile } from '@/core/park/profile';
+import { loadProfile, type ParkProfile } from '@/core/park/profile';
+import { levelProgress } from '@/core/progress/run';
 import { SoundToggle } from '@/core/shell/SoundToggle';
+import { LeaderboardsPanel } from './LeaderboardsPanel';
 import { GAME_LINKS } from './links';
 import { useWallet } from './useWallet';
 
@@ -42,16 +44,17 @@ export function GameHud() {
   const { user } = useAuth();
   const { online } = useNet();
   const wallet = useWallet();
-  const [tokens, setTokens] = useState<number | null>(null);
+  const [profile, setProfile] = useState<ParkProfile | null>(null);
+  const [boards, setBoards] = useState(false);
 
   useEffect(() => {
     // profil čte localStorage — až po mountu, ať SSR nesedí na jiném čísle
-    const timer = setTimeout(() => setTokens(loadProfile().tokens), 250);
+    const timer = setTimeout(() => setProfile(loadProfile()), 250);
     return () => clearTimeout(timer);
   }, [pathname]);
 
   useEffect(() => {
-    const refresh = () => setTokens(loadProfile().tokens);
+    const refresh = () => setProfile(loadProfile());
     window.addEventListener('focus', refresh);
     return () => window.removeEventListener('focus', refresh);
   }, []);
@@ -59,6 +62,10 @@ export function GameHud() {
   if (!SURFACES.includes(pathname)) return null;
 
   const dock = pathname === '/';
+  const tokens = profile?.tokens ?? null;
+  // `null` = profil se ještě nenačetl; ukazovat v tu chvíli „level 1"
+  // by každému na půl vteřiny lhalo o pokroku.
+  const level = profile ? levelProgress(profile.runs) : null;
   const controls = CONTROLS[pathname]?.[lang] ?? '';
   const name =
     user?.avatar3d?.callsign ??
@@ -107,6 +114,29 @@ export function GameHud() {
         <span className="game-hud-chip" title={lang === 'cs' ? 'žetony z pouti' : 'fair tokens'}>
           <em aria-hidden>◎</em> {tokens === null ? '—' : tokens}
         </span>
+        <span
+          className="game-hud-chip is-level"
+          title={
+            level
+              ? lang === 'cs'
+                ? `level ${level.level} · ${profile?.runs ?? 0} dohraných her · do dalšího ${level.remaining}`
+                : `level ${level.level} · ${profile?.runs ?? 0} games · ${level.remaining} to next`
+              : lang === 'cs'
+                ? 'profil se načítá'
+                : 'loading profile'
+          }
+        >
+          <em aria-hidden>★</em> {level ? level.level : '—'}
+        </span>
+        <button
+          type="button"
+          className="game-hud-chip is-boards"
+          title={lang === 'cs' ? 'žebříčky všech her' : 'leaderboards'}
+          aria-expanded={boards}
+          onClick={() => setBoards(true)}
+        >
+          <em aria-hidden>🏆</em>
+        </button>
         <span className="game-hud-chip" title={lang === 'cs' ? 'hráči online' : 'players online'}>
           <em aria-hidden>◉</em> {online}
         </span>
@@ -126,6 +156,7 @@ export function GameHud() {
           </a>
         )}
       </div>
+      {boards && <LeaderboardsPanel onClose={() => setBoards(false)} />}
     </nav>
   );
 }

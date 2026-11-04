@@ -15,6 +15,7 @@ import { useI18n } from '@/core/i18n';
 import { SATURN_CAMERA, SaturnArchive, SATURN_CHAPTERS } from '@/core/saturn/SaturnArchive';
 import { TanksGame } from '@/core/saturn/TanksGame';
 import { MISSION_ORIGIN, MISSION_STATUS_COLOR, type MissionStatus } from '@/lib/freeworld-sites';
+import { GameBoard } from '@/core/games/GameBoard';
 
 const STATUS_LABEL: Record<MissionStatus, { cs: string; en: string }> = {
   built: { cs: 'stojí', en: 'built' },
@@ -84,6 +85,7 @@ export default function SaturnPage() {
             </span>
           ))}
         </div>
+        <GameBoard game="tanks" className="saturn-board" />
       </aside>
 
       {tanks && <TanksGame onExit={() => setTanks(false)} />}

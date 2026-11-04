@@ -27,6 +27,8 @@ const GAMES: ParkGameId[] = [
   'arena',
   'race',
   'fight',
+  'moba',
+  'tanks',
 ];
 
 /** Cíle podle toho, kolik bodů hra reálně dává. */
@@ -40,6 +42,8 @@ const TARGETS: Record<ParkGameId, number> = {
   arena: 500, // 5 fragů
   race: 3000, // 3 kola pod ~100 s
   fight: 170, // vyhrát duel (i 2:1)
+  moba: 600, // vyhraný zápas na Prvním světě
+  tanks: 300, // vyhrát tankový duel 2:0
 };
 
 export const CHALLENGE_REWARD = 5;

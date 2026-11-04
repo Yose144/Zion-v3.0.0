@@ -23,6 +23,8 @@ import { useXr } from '@/core/xr';
 import { VrButton } from '@/core/xr/VrButton';
 import { MobaEmoteWheel } from '@/core/moba/MobaEmoteWheel';
 import { useNet } from '@/core/net/useNet';
+import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
+import { GameBoard } from '@/core/games/GameBoard';
 import { MobaMinimap } from '@/core/moba/MobaMinimap';
 import { NODE_SITES } from '@/core/moba/map';
 import { BATTLE_SPELLS, ITEMS, ITEM_SLOTS, SELL_RATIO, WARD_STOCK_MAX, talentRole, totalXpAt, type BattleSpellId, type BotSkill, type ItemId, type TalentRole } from '@/core/moba/sim';
@@ -162,6 +164,10 @@ export default function EarthPage() {
   const talentRequest = useRef<{ tier: number; pick: number } | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
   const [winner, setWinner] = useState<'blue' | 'red' | null>(null);
+  /** Hláška po zápase (žetony, rekord, výzva) — stejný text jako v ostatních hrách. */
+  const [notice, setNotice] = useState<string | null>(null);
+  /** Zápas se zapisuje jednou, i když se `winner` překreslí víckrát. */
+  const recorded = useRef(false);
 
   /** Dotykové ovládání — na mobilu joystick + kouzla místo WASD a QWER. */
   const [coarse, setCoarse] = useState(false);
@@ -213,6 +219,8 @@ export default function EarthPage() {
   const start = useCallback(() => {
     setStats(null);
     setWinner(null);
+    setNotice(null);
+    recorded.current = false;
     setOnlinePhase(mode === 'online' ? 'connecting' : 'running');
     setPhase('playing');
   }, [mode]);
@@ -222,6 +230,23 @@ export default function EarthPage() {
     setWinner(result);
     setPhase('ended');
   }, []);
+
+  /**
+   * Zápis dohraného zápasu. Skóre je jedno číslo pro tabuli: výhra nese
+   * nejvíc, pak zabití, level a zlato — aby se nedalo „vyhrát" jen útěkem.
+   */
+  useEffect(() => {
+    if (!winner || !stats || recorded.current) return;
+    recorded.current = true;
+    const won = winner === 'blue';
+    const score = (won ? 600 : 0) + stats.kills * 30 + stats.playerLevel * 20 + Math.round(stats.gold / 50);
+    const outcome = recordRun({
+      game: 'moba',
+      score,
+      nickname: pickNickname(),
+    });
+    setNotice(describeRun(outcome, cs, [won ? (cs ? 'výhra' : 'win') : cs ? 'prohra' : 'loss']));
+  }, [winner, stats, cs]);
 
   const nexusBlue = stats?.snapshot.towers.find((tower) => tower.id === 'blue-nexus');
   const nexusRed = stats?.snapshot.towers.find((tower) => tower.id === 'red-nexus');
@@ -368,6 +393,8 @@ export default function EarthPage() {
             <button type="button" className="moba-start" onClick={start}>
               {phase === 'ended' ? (cs ? 'Hrát znovu' : 'Play again') : cs ? 'Vstoupit na Zemi' : 'Enter Earth'}
             </button>
+            {notice && <p className="moba-pick-note">{notice}</p>}
+            <GameBoard game="moba" className="moba-board-panel" />
           </div>
         </section>
       )}
@@ -884,6 +911,7 @@ export default function EarthPage() {
           <span>
             {cs ? 'Kdo ovládne první svět, určí směr celého OASIS.' : 'Whoever holds the first world sets the course of OASIS.'}
           </span>
+          {notice && <p className="moba-result-note">{notice}</p>}
           {stats && (
             (() => {
               const score = (hero: MobaStats['snapshot']['heroes'][number]) =>

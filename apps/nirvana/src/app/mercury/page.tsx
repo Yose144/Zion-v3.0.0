@@ -7,8 +7,8 @@ import { useI18n } from '@/core/i18n';
 import { MercurySolo, type DuelStats } from '@/core/fight/MercurySolo';
 import { MercuryDuel, type DuelMpStats } from '@/core/fight/MercuryDuel';
 import { MAX_HP, type BotDifficulty } from '@/core/fight/duel';
-import { awardRun, grantTokens, loadProfile, saveProfile } from '@/core/park/profile';
-import { CHALLENGE_REWARD, claimChallenge } from '@/core/park/challenge';
+import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
+import { GameBoard } from '@/core/games/GameBoard';
 import { unlock } from '@/core/audio/engine';
 import { useNet } from '@/core/net/useNet';
 import { useXr } from '@/core/xr';
@@ -147,29 +147,13 @@ export default function MercuryPage() {
       return;
     }
 
-    const nickname = (() => {
-      try {
-        return window.localStorage.getItem('nirvana.park.name') ?? (you?.name || 'hrac');
-      } catch {
-        return you?.name || 'hrac';
-      }
-    })();
-    const profile = loadProfile();
-    const awarded = awardRun(profile, 'fight', score);
-    const withBonus = won ? grantTokens(awarded.profile, 2) : awarded.profile;
-    const challenge = claimChallenge(withBonus, 'fight', score);
-    saveProfile(challenge.profile);
-
-    const bits: string[] = [`+${awarded.tokensGained} ${cs ? 'žeton' : 'token'}`];
-    if (won) bits.push(cs ? '+2 výhra' : '+2 win');
-    if (challenge.claimed) bits.push(cs ? `výzva +${CHALLENGE_REWARD}` : `daily +${CHALLENGE_REWARD}`);
-    setNotice(bits.join(' · '));
-
-    void fetch('/api/park/scores', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ game: 'fight', score, name: nickname }),
-    }).catch(() => undefined);
+    const result = recordRun({
+      game: 'fight',
+      score,
+      nickname: pickNickname(you?.name || 'hrac'),
+      bonus: won ? 2 : 0,
+    });
+    setNotice(describeRun(result, cs, won ? [cs ? 'výhra' : 'win'] : []));
   }, [mode, phase, mpStats, cs, you?.name]);
 
   const top = mode === 'online' ? mpStats : soloStats;
@@ -385,6 +369,7 @@ export default function MercuryPage() {
             </button>
           </div>
           {notice && <div className="arena-result">{notice}</div>}
+          <GameBoard game="fight" className="duel-board-panel" />
           <Link href="/mars" className="arena-link arena-small">
             {cs ? '← Mars aréna' : '← Mars arena'}
           </Link>

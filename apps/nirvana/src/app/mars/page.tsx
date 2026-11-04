@@ -10,8 +10,8 @@ import { MarsMultiplayer, type MpStats } from '@/core/arena/MarsMultiplayer';
 import { ArenaTouchControls, createTouchState } from '@/core/arena/ArenaTouch';
 import { LOOK_MAX, LOOK_MIN, getLookSensitivity, setLookSensitivity } from '@/core/arena/settings';
 import { FRAG_LIMIT, MATCH_SECONDS } from '@/core/arena/map';
-import { awardRun, loadProfile, saveProfile } from '@/core/park/profile';
-import { CHALLENGE_REWARD, claimChallenge } from '@/core/park/challenge';
+import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
+import { GameBoard } from '@/core/games/GameBoard';
 
 /**
  * MARS ARENA — Quake-style deathmatch v prohlížeči.
@@ -78,36 +78,10 @@ export default function MarsPage() {
       setPhase('over');
       if (document.pointerLockElement) void document.exitPointerLock();
 
-      const awarded = awardRun(loadProfile(), 'arena', outcome.score);
-      const challenge = claimChallenge(awarded.profile, 'arena', outcome.score);
-      // odměna za výzvu se musí uložit, jinak se zobrazí a zmizí (stará chyba)
-      if (challenge.claimed) saveProfile(challenge.profile);
-      const nickname = (() => {
-        try {
-          return window.localStorage.getItem('nirvana.park.name') ?? 'hrac';
-        } catch {
-          return 'hrac';
-        }
-      })();
-
-      const bits = [
-        outcome.reason === 'frags'
-          ? cs
-            ? 'frag limit'
-            : 'frag limit'
-          : cs
-            ? 'čas'
-            : 'time',
-        `+${awarded.tokensGained} ${cs ? 'žetony' : 'tokens'}`,
-      ];
-      if (challenge.claimed) bits.push(cs ? `výzva +${CHALLENGE_REWARD}` : `daily +${CHALLENGE_REWARD}`);
-      setNotice(bits.join(' · '));
-
-      void fetch('/api/park/scores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game: 'arena', score: outcome.score, name: nickname }),
-      }).catch(() => undefined);
+      const result = recordRun({ game: 'arena', score: outcome.score, nickname: pickNickname() });
+      setNotice(
+        describeRun(result, cs, [outcome.reason === 'frags' ? 'frag limit' : cs ? 'čas' : 'time']),
+      );
     },
     [cs],
   );
@@ -309,6 +283,7 @@ export default function MarsPage() {
                   ? 'Myš se zamkne kliknutím do plátna. Ve VR (tlačítko VR) míříš pravým ovladačem a střílíš spouští — hráč ale stojí, pohyb ovladačem ještě není.'
                   : 'The mouse locks when you click the canvas. In VR (VR button) you aim with the right controller and fire with the trigger — the player stands still, controller movement is not implemented yet.'}
               </p>
+              <GameBoard game="arena" className="arena-board-panel" />
             </>
           )}
 

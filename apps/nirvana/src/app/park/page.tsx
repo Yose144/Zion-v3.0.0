@@ -14,19 +14,13 @@ import { PARK_GAMES, gameById, type CanvasGameId, type ParkGameHandle, type Park
 import { GAME_H, GAME_W, PARK_PALETTE } from '@/core/park/games/types';
 import {
   WHEEL_COST,
-  awardRun,
   claimRideBonus,
   loadProfile,
-  saveProfile,
   spendTokens,
   type ParkProfile,
 } from '@/core/park/profile';
-import {
-  CHALLENGE_REWARD,
-  claimChallenge,
-  dailyChallenge,
-  type DailyChallenge,
-} from '@/core/park/challenge';
+import { dailyChallenge, type DailyChallenge } from '@/core/park/challenge';
+import { describeRun, recordRun as recordGameRun } from '@/core/progress/run';
 import { emptyScores, type ParkScores } from '@/core/park/scores';
 import { GALLERY_SECONDS } from '@/core/scene/park/ShootingGallery';
 import { TouchButton } from '@/core/games/TouchPad';
@@ -50,6 +44,8 @@ const TITLES: { id: ParkGameId; title: { cs: string; en: string } }[] = [
   { id: 'arena', title: { cs: 'Mars aréna', en: 'Mars arena' } },
   { id: 'race', title: { cs: 'Venuše okruh', en: 'Venus circuit' } },
   { id: 'fight', title: { cs: 'Merkur souboj', en: 'Mercury duel' } },
+  { id: 'moba', title: { cs: 'První svět', en: 'First World' } },
+  { id: 'tanks', title: { cs: 'Saturn tanky', en: 'Saturn tanks' } },
 ];
 
 const BOARD = TITLES;
@@ -205,25 +201,13 @@ export default function ParkPage() {
     return () => cancelAnimationFrame(rafRef.current);
   }, [texture, cs]);
 
-  // ── záznam dohrané hry: žetony, výzva, tabule ─────────────────────
+  // ── záznam dohrané hry: žetony, rekord, výzva, level, tabule ──────
   const recordRun = useCallback(
     (game: ParkGameId, value: number) => {
-      const awarded = awardRun(loadProfile(), game, value);
-      const challenge = claimChallenge(awarded.profile, game, value);
-      saveProfile(challenge.profile);
-      setProfile(challenge.profile);
-      const bits: string[] = [];
-      if (awarded.personalBest) bits.push(cs ? 'rekord' : 'record');
-      bits.push(`+${awarded.tokensGained} ${cs ? 'žetony' : 'tokens'}`);
-      if (challenge.claimed) bits.push(cs ? `denní výzva +${CHALLENGE_REWARD}` : `daily +${CHALLENGE_REWARD}`);
-      setNotice(bits.join(' · '));
-      void fetch('/api/park/scores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game, score: value, name: nick }),
-      })
-        .then(() => readScores())
-        .catch(() => undefined);
+      const outcome = recordGameRun({ game, score: value, nickname: nick });
+      setProfile(outcome.profile);
+      setNotice(describeRun(outcome, cs));
+      void outcome.posted?.then(() => readScores());
     },
     [cs, nick, readScores],
   );

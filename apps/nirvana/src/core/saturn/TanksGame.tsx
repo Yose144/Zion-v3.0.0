@@ -27,6 +27,7 @@ import { useNet } from '@/core/net/useNet';
 import { InviteButton } from '@/core/net/InviteButton';
 import { play, unlock } from '@/core/audio/engine';
 import { useXr } from '@/core/xr';
+import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
 import { VrButton } from '@/core/xr/VrButton';
 
 type Mode = '2d' | '3d';
@@ -49,6 +50,9 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
   const [info, setInfo] = useState<TanksInfo>(() => tanksInfo(state.current));
   const keys = useRef(new Set<string>());
   const [coarse, setCoarse] = useState(false);
+  /** Hláška po zápase — stejná jako v ostatních hrách (žetony, rekord, level). */
+  const [notice, setNotice] = useState<string | null>(null);
+  const recordedOver = useRef<string | null>(null);
 
   // ── online ──────────────────────────────────────────────────────────
   const { joinGame, leaveRoom, subscribe, sendTanksAim, sendTanksShoot, roomId } = useNet();
@@ -276,6 +280,23 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
     };
   }, [onExit, restart]);
 
+  // ── zápis dohraného zápasu ─────────────────────────────────────────
+  // Pozor: `over` se při rematchi vrací na null, takže se guard musí resetovat
+  // podle hodnoty, ne podle „už jednou zapsáno".
+  useEffect(() => {
+    if (info.phase !== 'over') {
+      // rematch i odchod hru vracejí do hry — guard se musí uvolnit
+      recordedOver.current = null;
+      setNotice(null);
+      return;
+    }
+    if (recordedOver.current) return;
+    recordedOver.current = 'done';
+    const score = Math.max(0, info.wins.player * 300 - info.wins.bot * 100);
+    const outcome = recordRun({ game: 'tanks', score, nickname: pickNickname() });
+    setNotice(describeRun(outcome, true));
+  }, [info.phase, info.wins.player, info.wins.bot]);
+
   // hra běží na celou obrazovku → navigace i chat jdou pryč
   useEffect(() => {
     document.body.dataset.playing = '1';
@@ -399,6 +420,7 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
               : 'online · prázdné sedlo hraje bot (kdokoli se může připojit)'
             : HINTS[mode].cs}
         </span>
+        {notice && <span className="tanks-notice">{notice}</span>}
         <span className="tanks-foot-right">
           {info.phase === 'over' ? (
             <button type="button" className="tanks-again" onClick={restart}>

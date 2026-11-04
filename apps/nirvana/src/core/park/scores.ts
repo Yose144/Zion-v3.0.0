@@ -20,6 +20,8 @@ export function emptyScores(): ParkScores {
     arena: [],
     race: [],
     fight: [],
+    moba: [],
+    tanks: [],
   };
 }
 

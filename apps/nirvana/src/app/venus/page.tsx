@@ -8,8 +8,8 @@ import { VenusRace, type RaceResult, type RaceStats } from '@/core/race/VenusRac
 import { VenusMultiplayer, type MpRaceStats } from '@/core/race/VenusMultiplayer';
 import { LAPS, raceScore } from '@/core/race/track';
 import type { StandingRow } from '@/core/race/rivals';
-import { awardRun, grantTokens, loadProfile, saveProfile } from '@/core/park/profile';
-import { CHALLENGE_REWARD, claimChallenge } from '@/core/park/challenge';
+import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
+import { GameBoard } from '@/core/games/GameBoard';
 import { TouchButton, TouchPad } from '@/core/games/TouchPad';
 import { unlock } from '@/core/audio/engine';
 import { XR } from '@react-three/xr';
@@ -77,30 +77,9 @@ export default function VenusPage() {
       setResult(outcome);
       setPhase('over');
       const score = raceScore(outcome.totalSeconds, outcome.laps);
-      const awarded = awardRun(loadProfile(), 'race', score);
-
       const podium = PODIUM_TOKENS[outcome.position - 1] ?? 0;
-      const withPodium = grantTokens(awarded.profile, podium);
-      const challenge = claimChallenge(withPodium, 'race', score);
-      if (challenge.claimed) saveProfile(challenge.profile);
-
-      const nickname = (() => {
-        try {
-          return window.localStorage.getItem('nirvana.park.name') ?? 'hrac';
-        } catch {
-          return 'hrac';
-        }
-      })();
-
-      const bits = [`+${awarded.tokensGained + podium} ${cs ? 'žetony' : 'tokens'}`];
-      if (challenge.claimed) bits.push(cs ? `výzva +${CHALLENGE_REWARD}` : `daily +${CHALLENGE_REWARD}`);
-      setNotice(bits.join(' · '));
-
-      void fetch('/api/park/scores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game: 'race', score, name: nickname }),
-      }).catch(() => undefined);
+      const result = recordRun({ game: 'race', score, nickname: pickNickname(), bonus: podium });
+      setNotice(describeRun(result, cs));
     },
     [cs],
   );
@@ -273,6 +252,7 @@ export default function VenusPage() {
                   {cs ? '← zpět na pouť' : '← back to the fair'}
                 </Link>
               </div>
+              <GameBoard game="race" className="race-board-panel" />
             </>
           )}
 

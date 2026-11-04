@@ -4248,6 +4248,12 @@ button.game-hud-chip.is-sound.is-off em {
   color: #ffe9b0;
 }
 
+.moba-result-note {
+  color: #7fe3d4;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+}
+
 .moba-result span {
   max-width: 34rem;
   color: #9fb4ae;
@@ -6379,6 +6385,11 @@ button.game-hud-chip.is-sound.is-off em {
   color: rgba(255, 233, 184, 0.7);
 }
 
+.tanks-notice {
+  color: #7fe3d4;
+  letter-spacing: 0.05em;
+}
+
 .tanks-again {
   padding: 0.3rem 0.7rem;
   border-radius: 999px;
@@ -6943,4 +6954,250 @@ button.game-hud-chip.is-sound.is-off em {
   font-style: normal;
   color: rgba(246, 231, 216, 0.42);
   font-size: 0.66rem;
+}
+
+/* ── ŽEBŘÍČKY A PROGRESE ────────────────────────────────────────────── */
+
+.game-hud-chip.is-level {
+  color: #ffe9a8;
+  border-color: rgba(255, 209, 102, 0.32);
+}
+
+.game-hud-chip.is-level em {
+  color: #ffd166;
+}
+
+button.game-hud-chip.is-boards {
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+  padding: 0.24rem 0.42rem;
+  min-width: 2rem;
+  justify-content: center;
+}
+
+button.game-hud-chip.is-boards:hover,
+button.game-hud-chip.is-boards[aria-expanded='true'] {
+  border-color: rgba(255, 209, 102, 0.6);
+  color: #ffe9a8;
+}
+
+.boards-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(2, 3, 10, 0.78);
+  backdrop-filter: blur(6px);
+}
+
+.boards-panel {
+  width: min(64rem, 100%);
+  max-height: min(86vh, 46rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 209, 102, 0.26);
+  background: rgba(10, 9, 18, 0.94);
+  color: rgba(246, 231, 216, 0.9);
+  overflow: hidden;
+}
+
+.boards-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.boards-head strong {
+  display: block;
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffe9a8;
+}
+
+.boards-head span {
+  font-size: 0.72rem;
+  color: rgba(246, 231, 216, 0.5);
+}
+
+.boards-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.boards-close {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffe9a8;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.boards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.6rem;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+}
+
+.boards-card {
+  border: 1px solid rgba(200, 162, 255, 0.16);
+  border-radius: 0.7rem;
+  padding: 0.55rem 0.65rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.boards-card header {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.78rem;
+  color: #7fe3d4;
+}
+
+.boards-card ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.boards-card li {
+  display: grid;
+  grid-template-columns: 1.1rem 1fr auto;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.boards-rank {
+  color: rgba(255, 209, 102, 0.75);
+}
+
+.boards-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.boards-score {
+  color: #ffe9a8;
+}
+
+.boards-empty {
+  margin: 0;
+  font-size: 0.72rem;
+  color: rgba(246, 231, 216, 0.38);
+}
+
+.boards-foot {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: rgba(246, 231, 216, 0.45);
+}
+
+/* Kompaktní tabule v menu hry */
+.game-board {
+  border: 1px solid rgba(200, 162, 255, 0.16);
+  border-radius: 0.7rem;
+  padding: 0.5rem 0.65rem;
+  background: rgba(255, 255, 255, 0.03);
+  text-align: left;
+}
+
+.game-board header {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7fe3d4;
+  margin-bottom: 0.3rem;
+}
+
+.game-board ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.game-board li {
+  display: grid;
+  grid-template-columns: 1.1rem 1fr auto;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.game-board-rank {
+  color: rgba(255, 209, 102, 0.75);
+}
+
+.game-board-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-board-score {
+  color: #ffe9a8;
+}
+
+.game-board-empty {
+  margin: 0;
+  font-size: 0.7rem;
+  color: rgba(246, 231, 216, 0.4);
+}
+
+@media (max-width: 560px) {
+  .boards-panel {
+    max-height: 92vh;
+    padding: 0.8rem;
+  }
+
+  .boards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tabule v panelech her — drží se na konci menu, ne mezi CTA. */
+.arena-board-panel,
+.race-board-panel,
+.duel-board-panel,
+.moba-board-panel,
+.saturn-board {
+  margin-top: 0.8rem;
+}
+
+.saturn-board {
+  margin-top: 0.7rem;
+}
+
+.moba-pick-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: #7fe3d4;
+  text-align: center;
 }
