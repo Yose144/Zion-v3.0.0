@@ -161,3 +161,24 @@ EDGE1 byl v pořádku (`drwxrwxrwt`), jiné unity na EDGE2 EACCES na `/tmp` nem�
 **Past (screenshot):** `loading="lazy"` + `fullPage` screenshot bez scrollu = prázdné boxy a falešný nález „obrázek chybí". `scripts/shot-xmas.mjs` teď před snímkem projede stránku.
 
 **Pozor:** commit s touto dávkou byl stržen do commitu paralelní session (`df8bb7a02`) — obsah je v HEAD, jen pod cizí zprávou. Ověřeno `git cat-file -e HEAD:<soubor>` u všech dotčených souborů.
+
+---
+
+## 9. Dodatek 3 — karty podle formátu fotek (responsivita)
+
+👤: „na úvodní page jsou obrázky roztažlé zbytečně … uprav karty podle nich a ať je to hezky responsivní".
+
+**Co bylo špatně:** karta měla pevný levý sloupec **340 px** s `aspect-auto` + `min-h-[320px]`, do kterého se široký hero obrázek (1672×941) cpál přes `object-cover`. Výsledek: agresivní ořez a dojem roztaženého obrázku; na 768 px se navíc dvousloupec lámal do úzkého pruhu.
+
+**Nové chování:**
+
+| Šířka | Layout | Obrázek |
+|---|---|---|
+| < 1280 px | obrázek na plnou šířku, text pod ním | 16:9 |
+| ≥ 1280 px | dva sloupce (obrázek / text) | 4:3, mírný ořez stran |
+
+- Dvousloupec startuje až na `xl` (1280) — na 768 a 1024 je stack, kde má text plnou šířku.
+- Čísla v kartě: 2 sloupce na mobilu (`mobile-keep-cols`, jinak je globální pravidlo srovnalo do jednoho), 4 na `xl`.
+- Ověřeno `scripts/shot-responsive.mjs` na **390 / 768 / 1024 / 1440** — ve všech čtyřech **žádné vodorovné přetečení**; screenshoty v `.artifacts/render/xmas-20261104/resp-*.png`.
+
+**Past:** `git commit -m "…"` se zpětnými apostrofy v textu spustí v zsh command substitution — zpráva se tiše rozpadla (`aspect-auto` → `command not found`). Commity s technickými názvy psát do `'…'`.
