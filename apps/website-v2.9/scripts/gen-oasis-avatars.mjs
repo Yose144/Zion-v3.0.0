@@ -142,14 +142,25 @@ for (const rawLine of md.split('\n')) {
 }
 
 // ── 2) profily SACRED_TRINITY/<id>_*.md ───────────────────────────────
-/** index id → absolutní cesta profilu */
-const profileFiles = new Map();
+/**
+ * index id → kandidátní cesty profilu. Pro ID 42 a 43 existují v kánonu DVA
+ * soubory (Sri Chaitanya Mahaprabhu + Sri Dattatreya, Maly Princ + Sri Anagha
+ * Lakshmi). Dřív vyhrával poslední podle `readdir` → ID 43 zobrazovalo Anaghu
+ * Lakshmi místo Malého prince. Rozhoduje proto **roster** (`avatars.json`):
+ * vybere se soubor, jehož název se shoduje se jménem avatara. Ostatní zůstávají
+ * na místě (Jsou na ně odkazy z korpusu) a jen se nepublikují.
+ */
+const profileCandidates = new Map();
 if (existsSync(PROFILES_DIR)) {
   for (const f of readdirSync(PROFILES_DIR)) {
     const m = f.match(/^(\d+)_.+\.md$/);
-    if (m) profileFiles.set(Number(m[1]), join(PROFILES_DIR, f));
+    if (!m) continue;
+    const id = Number(m[1]);
+    profileCandidates.set(id, [...(profileCandidates.get(id) ?? []), join(PROFILES_DIR, f)]);
   }
 }
+/** id → absolutní cesta kanonického profilu (roster-authoritative). */
+const profileFiles = new Map();
 
 const mdInline = (s) =>
   s
@@ -253,6 +264,30 @@ const normName = (s) =>
 const artManifest = existsSync(ART_MANIFEST)
   ? JSON.parse(readFileSync(ART_MANIFEST, 'utf8'))
   : [];
+
+/**
+ * Kanonický profil pro id: když má id víc kandidátů, vyhrává soubor se shodou
+ * jména v názvu (`43_MALY_PRINC.md` ↔ „Maly Princ"). Bez shody poslední
+ * (historické chování) + varování, ať je kolize vidět.
+ */
+function resolveProfile(id, name) {
+  if (profileFiles.has(id)) return profileFiles.get(id);
+  const cands = profileCandidates.get(id);
+  if (!cands || cands.length === 0) return undefined;
+  const target = normName(name);
+  const named = cands.find((p) => {
+    const stem = p.split('/').pop().replace(/^\d+_/, '').replace(/\.md$/, '');
+    return normName(stem) === target;
+  });
+  if (!named && cands.length > 1) {
+    console.warn(
+      `[gen-oasis-avatars] VAROVÁNÍ: id ${id} má ${cands.length} profilů a žádný neodpovídá '${name}' → beru ${cands[cands.length - 1].split('/').pop()}`,
+    );
+  }
+  const picked = named ?? cands[cands.length - 1];
+  profileFiles.set(id, picked);
+  return picked;
+}
 /** webp concept cesta → svg vektorová cesta (existuje-li soubor). */
 function conceptSvgPath(webpPath) {
   const svg = webpPath
@@ -271,13 +306,17 @@ function artFor(index, name) {
   return { card, full: full || card, final: Boolean(m.finalPortrait) };
 }
 
-/** Velmi hrubý odhad jazyka dokumentu: převaha diakritiky = čeština. */
+/** Velmi hrubý odhad jazyka dokumentu: převaha diakritiky = čeština.
+ *  Dřív fallback defaultoval na `cs`, což u dvojjazyčných kánonů (EN tělo +
+ *  česká jména, např. `09_SHANTI.md` 32× diakritika vs 96× EN slovo) znamenalo,
+ *  že se anglický kánon publikoval jako `.cs.md` a Hotový český překlad
+ *  `i18n/09.cs.md` se zahodil. Rozhoduje proto prostá většina. */
 function detectLang(text) {
   const cs = (text.match(/[áčďéěíňóřšťúůýž]/gi) ?? []).length;
   const en = (text.match(/\b(the|and|is|of|to|with|that|this|from|for)\b/gi) ?? []).length;
   if (cs > en * 3) return 'cs';
   if (en > cs * 3) return 'en';
-  return 'cs';
+  return en > cs ? 'en' : 'cs';
 }
 
 /** Hotové překlady profilů: id → { cs?, en? } (surový markdown). */
@@ -308,16 +347,20 @@ const unmapped = [];
 const rows = avatars.map((a, i) => {
   let circle = CIRCLE_OVERRIDES[a.id] ?? idToCircle.get(a.id) ?? null;
   if (!circle) { unmapped.push(a.id); circle = 'other'; }
-  const pf = profileFiles.get(a.id);
+  const pf = resolveProfile(a.id, a.name);
   let essence = '', quote = '';
   if (pf) {
     const raw = readFileSync(pf, 'utf8');
     essence = extractEssence(raw);
     quote = extractQuote(raw);
     const baseLang = detectLang(raw);
+    // Explicitní překlad v jazyce kánonu má přednost: u dvojjazyčných kánonů
+    // (např. `08_ISSOBELA.md` = české tělo + EN hlavička) je `i18n/08.cs.md`
+    // čistší čeština než kánon sám. Dřív se takový soubor zahazoval.
+    const explicitBase = profileI18n.get(a.id)?.[baseLang];
     writeFileSync(
       join(PROFILE_OUT_DIR, `${a.id}.${baseLang}.md`),
-      sanitizeProfile(raw) + '\n',
+      sanitizeProfile(explicitBase ?? raw) + '\n',
     );
     // hotové překlady (i18n/<id>.<lang>.md) — publikují se taky
     for (const [lang, text] of Object.entries(profileI18n.get(a.id) ?? {})) {

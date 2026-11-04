@@ -7,19 +7,19 @@
 
 ---
 
-## 🌟 ESENCE SRI KALKI AVATARA
+## 🌟 ESSENCE OF THE SRI KALKI AVATAR
 
-**SRI KALKI** (श्री कल्कि) je **DESÁTÁ A POSLEDNÍ INKARNACE VIŠNUA** - Avatar, který přichází na konci Kali Yugy (Věku temnoty) k zničení zla a obnovení Dharmy (spravedlnosti).
+**SRI KALKI** (श्री कल्कि) is the **TENTH AND FINAL INCARNATION OF VISHNU** — the Avatar who comes at the end of the Kali Yuga (the Age of Darkness) to destroy evil and restore Dharma (righteousness).
 
-**Co dělá Kalki jedinečným:**
-- **Není MUŽ ani ŽENA** - je **OBA SOUČASNĚ**
-- **Ztělesňuje Bhagavana** (Sri Krishnaji = muž) + **Ammu** (Sri Preethaji = žena) v **JEDNOM BOŽSKÉM VĚDOMÍ**
-- **Konečná FÚZE** Dattatreyi (#42 - mužská trojice) a Anagha Lakshmi (#43 - ženská trojice)
-- **Uzavírá cyklus** 10 avatarů Višnua: Matsya → Kurma → Varaha → Narasimha → Vamana → Parashurama → Rama → Krishna → Buddha → **KALKI**
+**What Makes Kalki Unique:**
+- **Not MAN nor WOMAN** - is **BOTH AT ONCE**
+- **Embodies Bhagavan** (Sri Krishnaji = male) + **Amma** (Sri Preethaji = female) in **ONE DIVINE CONSCIOUSNESS**
+- **Final FUSION** of Dattatreya (#42 - masculine trinity) and Anagha Lakshmi (#43 - feminine trinity)
+- **Closes the cycle** of Vishnu's 10 avatars: Matsya → Kurma → Varaha → Narasimha → Vamana → Parashurama → Rama → Krishna → Buddha → **KALKI**
 
 ---
 
-## ⚔️ KALKIHO PROROCTVÍ
+## ⚔️ KALKI'S PROPHECY
 
 ### Bhagavata Purana (12.2.18-20)
 
@@ -34,41 +34,41 @@
 > *He will destroy evil and restore Dharma,*  
 > *Ushering in the Golden Age (Satya Yuga)."*
 
-### Prorocké znaky
+### Prophetic Signs
 
-**Místo narození:**
-- Shambhala (शम्भल) - mystické místo
-- **Interpretace:** "Místo míru" (Sham = mír, Bhala = místo)
-- **Moderní:** Oneness University = "místo jednoty/míru"
+**Birthplace:**
+- Shambhala (शम्भल) - mystical place
+- **Interpretation:** "Place of peace" (Sham = peace, Bhala = place)
+- **Modern:** Oneness University = "place of unity/peace"
 
-**Rodiče:**
-- **Otec:** Vishnuyashas (विष्णुयशस्) = "Sláva Višnua"
-- **Matka:** Sumati (सुमति) = "Dobrá mysl/moudrost"
+**Parents:**
+- **Father:** Vishnuyashas (विष्णुयशस्) = "Glory of Vishnu"
+- **Mother:** Sumati (सुमति) = "Good mind/wisdom"
 
-**Symboly:**
-- **Bílý kůň:** Devadatta (देवदत्त) = "Bohem daný"
-- **Plamenný meč:** Zničí egu, nevědomost, zlo
-- **Místo:** Přijde z jihu Indie (Tamil Nadu/Andhra Pradesh)
+**Symbols:**
+- **White horse:** Devadatta (देवदत्त) = "God-given"
+- **Blazing sword:** Destroys ego, ignorance, evil
+- **Place:** Comes from the south of India (Tamil Nadu/Andhra Pradesh)
 
 ---
 
 ## 🕉️ KALKI = BHAGAVAN + AMMA
 
-### Dvojité ztělesnění
+### Dual Embodiment
 
 **BHAGAVAN (Sri Krishnaji):**
-- Narozen: 7. března 1949, Natham, Tamil Nadu, Indie
-- Proroctví: Dattatreya avatar (800 let po 1149 AD manifestaci)
-- Role: **POVĚDOMÍ** (Purusha - mužský princip)
-- Aspekt: **STILLNESS** (Nehybnost, svědek)
+- Born: March 7, 1949, Natham, Tamil Nadu, India
+- Prophecy: Dattatreya avatar (800 years after the 1149 AD manifestation)
+- Role: **CONSCIOUSNESS** (Purusha - masculine principle)
+- Aspect: **STILLNESS** (Stillness, witness)
 
-**AMMA (Sri Preethaji, původně Padmavathi):**
-- Narozena: 15. srpna 1954, Nellore, Andhra Pradesh, Indie
-- Inkarnace: Anagha Lakshmi (Triple Goddess)
-- Role: **ENERGIE** (Shakti/Prakriti - ženský princip)
-- Aspekt: **DYNAMISM** (Dynamika, akce)
+**AMMA (Sri Preethaji, originally Padmavathi):**
+- Born: August 15, 1954, Nellore, Andhra Pradesh, India
+- Incarnation: Anagha Lakshmi (Triple Goddess)
+- Role: **ENERGY** (Shakti/Prakriti - feminine principle)
+- Aspect: **DYNAMISM** (Dynamism, action)
 
-**KALKI = JEJICH SJEDNOCENÍ:**
+**KALKI = THEIR UNION:**
 
 ```
 ┌──────────────────────────────────────────┐
@@ -83,15 +83,15 @@
 └──────────────────────────────────────────┘
 ```
 
-**Proč je to důležité:**
-- **Nejsou DVA avatarové** - jsou **JEDEN AVATAR ve dvou tělech**
-- **Jako jeden mozek se dvěma hemisférami** (levá = logika/Bhagavan, pravá = intuice/Amma)
-- **Jako srdce se dvěma komorami** (jedna pumpa krev ven, druhá pumpa zpět)
-- **Nemohou existovat odděleně** - jeden bez druhého = smrt mise
+**Why This Matters:**
+- **They are not TWO avatars** - they are **ONE AVATAR in two bodies**
+- **Like one brain with two hemispheres** (left = logic/Bhagavan, right = intuition/Amma)
+- **Like a heart with two chambers** (one pumps blood out, the other pumps it back)
+- **They cannot exist separately** - one without the other = death of the mission
 
 ---
 
-## 🏛️ KALKI V ONENESS MOVEMENT
+## 🏛️ KALKI IN ONENESS MOVEMENT
 
 ### Golden Temple Vision
 
@@ -125,9 +125,9 @@
 
 ---
 
-## ⚔️ KALKIHO MISE V ZION
+## ⚔️ KALKI'S MISSION IN ZION
 
-### 1. Zničení Kali Yugy ekonomiky
+### 1. Destroying the Kali Yuga Economy
 
 **Kali Yuga = Age of Greed:**
 - Central banks print money → inflation → poverty
@@ -252,7 +252,7 @@ But **esoterically**, they are **ONE BEING**:
 
 ---
 
-## 💫 KALKI V KONTEXTU 10 AVATARŮ
+## 💫 KALKI IN THE CONTEXT OF THE 10 AVATARS
 
 ### Vishnu's 10 Incarnations (Dashavatara)
 
@@ -479,9 +479,9 @@ class GoldenEggGuardian:
 
 ---
 
-## 📊 TECHNICKÉ ATRIBUTY
+## 📊 TECHNICAL ATTRIBUTES
 
-### Blockchain Parametry
+### Blockchain Parameters
 
 ```json
 {
@@ -564,7 +564,7 @@ class GoldenEggGuardian:
   },
   
   "modern_movement": {
-    "name": "Oneness Movement (Hnutí Jednoty)",
+    "name": "Oneness Movement",
     "founded": "2003 (when Kalki consciousness activated)",
     "headquarters": "Oneness University, Varadaiahpalem, India",
     "mission": "Awaken 64,000 → trigger global shift",

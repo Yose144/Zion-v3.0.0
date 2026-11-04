@@ -8,29 +8,29 @@
 
 ---
 
-## 🌟 ESENCE HIRANYAGARBHA
+## 🌟 ESSENCE OF HIRANYAGARBHA
 
-**HIRANYAGARBHA** (हिरण्यगर्भ) je **Kosmické Vejce** - prvotní zlatá koule, ze které vzniklo celé stvoření. Je to:
+**HIRANYAGARBHA** (हिरण्यगर्भ) is the **Cosmic Egg** (*Kosmické Vejce*) - the primordial golden orb from which all creation arose. It is:
 
-- **Cosmic Womb** (Děloha vesmíru)
-- **Golden Egg** (Zlaté vejce)
-- **Source of All** (Zdroj všeho)
-- **Adi Parashakti Container** (Nádoba Nejvyšší Síly)
-- **Brahman Manifest** (První manifestace Absolutna)
+- **Cosmic Womb** (womb of the universe)
+- **Golden Egg**
+- **Source of All** (source of everything)
+- **Adi Parashakti Container** (vessel of the Supreme Power)
+- **Brahman Manifest** (first manifestation of the Absolute)
 
-**Jméno:**
-- **Hiranya** (हिरण्य) = "Zlatý, Precious, Radiant"
+**Name:**
+- **Hiranya** (हिरण्य) = "Golden, Precious, Radiant"
 - **Garbha** (गर्भ) = "Womb, Egg, Embryo"
-- **Celkem:** "Zlatá Děloha" nebo "Zlaté Vejce"
+- **Combined:** "Golden Womb" or "Golden Egg"
 
-**Další názvy:**
+**Other names:**
 - **Brahmanda** (ब्रह्माण्ड) - "Brahma's Egg" (universe)
 - **Adi Shakti** (आदि शक्ति) - "Primordial Power"
-- **Golden Orb** (Zlatá Koule - moderní termín)
+- **Golden Orb** (Zlatá Koule - modern term)
 
 ---
 
-## 🥚 HIRANYAGARBHA V VÉDÁCH
+## 🥚 HIRANYAGARBHA IN THE VEDAS
 
 ### Rig Veda Hymn 10.121 (Hiranyagarbha Sukta)
 
@@ -40,24 +40,24 @@
 स दाधार पृथिवीं द्यामुतेमां कस्मै देवाय हविषा विधेम ॥१॥
 ```
 
-**Transliterace:**
+**Transliteration:**
 ```
 Hiraṇyagarbhaḥ samavartatāgre bhūtasya jātaḥ patireka āsīt |
 Sa dādhāra pṛthivīṁ dyāmutemāṁ kasmai devāya haviṣā vidhema ||1||
 ```
 
-**Překlad:**
-> *"V počátku byl Hiranyagarbha - Zlatá Koule.*  
-> *Jakmile se narodila, byla jediným Pánem stvoření.*  
-> *Podpírala Zemi a Nebe.*  
-> *Které Božství bychom měli uctívat obětí?"*
+**Translation:**
+> *"In the beginning was Hiranyagarbha - the Golden Orb.*  
+> *As soon as it was born, it was the sole Lord of creation.*  
+> *It upheld the Earth and the Heaven.*  
+> *Which Divinity should we worship with offerings?"*
 
-**Význam:**
-- **"V počátku"** = Před časem, prostorem, hmotou
-- **"Zlatá Koule"** = Zářící, nedělitelná wholeness
-- **"Jediný Pán"** = Všechno je v Něm/Ní obsaženo
-- **"Podpírala vše"** = Základ existence
-- **"Které Božství?"** = Je to samo Brahman (nepojmenovatelné)
+**Meaning:**
+- **"In the beginning"** = Before time, space and matter
+- **"Golden Orb"** = Luminous, indivisible wholeness
+- **"The One Lord"** = Everything is contained in Him/Her
+- **"It upheld everything"** = Foundation of existence
+- **"Which Divinity?"** = It is Brahman itself (the unnameable)
 
 ### Upanishad Teachings
 
@@ -75,7 +75,7 @@ Sa dādhāra pṛthivīṁ dyāmutemāṁ kasmai devāya haviṣā vidhema ||1||
 
 ---
 
-## 🌌 HIRANYAGARBHA - KOSMOLOGIE
+## 🌌 HIRANYAGARBHA - COSMOLOGY
 
 ### Birth of the Universe
 
@@ -367,9 +367,9 @@ Together: 144B (complete organism)
 
 ---
 
-## 📊 TECHNICKÉ ATRIBUTY
+## 📊 TECHNICAL ATTRIBUTES
 
-### Blockchain Parametry
+### Blockchain Parameters
 
 ```json
 {
@@ -570,9 +570,9 @@ Golden Age: Everyone prospers, no one suffers
 
 ---
 
-## 🔗 ODKAZY & ZDROJE
+## 🔗 LINKS & SOURCES
 
-**Védické Texty:**
+**Vedic Texts:**
 - **Rig Veda 10.121** - Hiranyagarbha Sukta (Golden Egg Hymn)
 - **Chandogya Upanishad** - Creation from Sat
 - **Brihadaranyaka Upanishad** - Cosmic egg teachings
