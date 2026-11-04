@@ -132,8 +132,8 @@ const t = {
       en: 'The card that opens the gate to the Kingdom',
     },
     passDescription: {
-      cs: 'Vánoční ZION Pass je vstupenka do světa OASIS a ZION Archivu — dárek, který otevírá novou zemi. Za 108 Kč navíc 108 000 ZION bonusů: tisíc ZION za každou korunu.',
-      en: 'The Christmas ZION Pass is your ticket into the OASIS world and the ZION Archive — a gift that opens a new land. For 108 CZK it also carries a 108,000 ZION bonus: a thousand ZION for every crown.',
+      cs: 'Vánoční ZION Pass je vstupenka do světa OASIS a ZION Archivu — dárek, který otevírá novou zemi. Za 108 Kč navíc 10 800 ZION bonusů: sto ZION za každou korunu.',
+      en: 'The Christmas ZION Pass is your ticket into the OASIS world and the ZION Archive — a gift that opens a new land. For 108 CZK it also carries a 10,800 ZION bonus: a hundred ZION for every crown.',
     },
     passChipAccess: { cs: 'Vstup do ZION Archivu', en: 'ZION Archive access' },
     passChipGift: { cs: 'Dárek, který otevírá světy', en: 'A gift that opens worlds' },
@@ -149,8 +149,8 @@ const t = {
       en: 'Light of the heart for a new land',
     },
     lampionDescription: {
-      cs: 'Ručně gravírovaný lampion se vzorem Srdce Království — z tesařské dílny příběhu. Vánoční edice: ke každému lampionu digitální kniha Království srdce a ZION Pass v ceně a 432 000 ZION bonusů. Připravujeme — prodej zahájíme, jakmile bude výrobek hotový.',
-      en: 'A hand-engraved lantern bearing the Heart of the Kingdom pattern — straight from the carpenter\'s workshop of the story. Christmas edition: every lantern includes the digital Kingdom of Hearts book and a ZION Pass, plus a 432,000 ZION bonus. Coming soon — sales open once the craft is ready.',
+      cs: 'Ručně gravírovaný lampion se vzorem Srdce Království — z tesařské dílny příběhu. Vánoční edice: ke každému lampionu digitální kniha Království srdce a ZION Pass v ceně a 43 200 ZION bonusů. Připravujeme — prodej zahájíme, jakmile bude výrobek hotový.',
+      en: 'A hand-engraved lantern bearing the Heart of the Kingdom pattern — straight from the carpenter\'s workshop of the story. Christmas edition: every lantern includes the digital Kingdom of Hearts book and a ZION Pass, plus a 43,200 ZION bonus. Coming soon — sales open once the craft is ready.',
     },
     lampionChipEngraved: { cs: 'Ruční gravírování', en: 'Hand-engraved' },
     lampionChipBook: {

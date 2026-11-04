@@ -156,7 +156,7 @@ function ChristmasCard({
 
 export function ZionPassSection() {
   const { t, lang } = useLangT();
-  const bonus = (108000).toLocaleString(lang === 'cs' ? 'cs-CZ' : 'en-US');
+  const bonus = (10800).toLocaleString(lang === 'cs' ? 'cs-CZ' : 'en-US');
   const price = t('common.price', { price: 108, symbol: t('common.kcSymbol') });
   const product = getXmasProduct('zion-pass');
   const pick = (x?: XmasText) => (x ? (lang === 'cs' ? x.cs : x.en) : undefined);
@@ -187,7 +187,7 @@ export function ZionPassSection() {
 
 export function LampionSection() {
   const { t, lang } = useLangT();
-  const bonus = (432000).toLocaleString(lang === 'cs' ? 'cs-CZ' : 'en-US');
+  const bonus = (43200).toLocaleString(lang === 'cs' ? 'cs-CZ' : 'en-US');
   const price = t('common.price', { price: 432, symbol: t('common.kcSymbol') });
   const product = getXmasProduct('lampion');
   const pick = (x?: XmasText) => (x ? (lang === 'cs' ? x.cs : x.en) : undefined);

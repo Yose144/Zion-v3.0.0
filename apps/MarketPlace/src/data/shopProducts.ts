@@ -46,7 +46,7 @@ export const shopProducts: ShopProductSeed[] = [
     name: 'Království srdce — digitální kniha',
     category: 'books',
     description:
-      'Příběh lodi, kterou postavil tesař. Duchovní legenda o tesaři z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě — a říkal jí Království srdce. 📚 KOMPLETNÍ SADA: osm samostatných edic téhož příběhu, každá v pěti jazycích (čeština, angličtina, španělština, francouzština, portugalština) — celkem 40 knih ve formátu PDF i EPUB, 3 252 stran a 619 498 slov. Každá edice má u kapitol tabulku „Kotva pravdy" (co je Písmo, tradice, historie, legenda a co je literární obraz). Ke knize ZION Archive Pass — vstup do ZION Archivu. 🛡️ BONUS: 216 000 ZION — Genesis vstup pro Guardians ekosystému ZION (akce do 24. 12. 2026).',
+      'Příběh lodi, kterou postavil tesař. Duchovní legenda o tesaři z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě — a říkal jí Království srdce. 📚 KOMPLETNÍ SADA: osm samostatných edic téhož příběhu, každá v pěti jazycích (čeština, angličtina, španělština, francouzština, portugalština) — celkem 40 knih ve formátu PDF i EPUB, 3 252 stran a 619 498 slov. Každá edice má u kapitol tabulku „Kotva pravdy" (co je Písmo, tradice, historie, legenda a co je literární obraz). Ke knize ZION Archive Pass — vstup do ZION Archivu. 🛡️ BONUS: 21 600 ZION — Genesis vstup pro Guardians ekosystému ZION (akce do 24. 12. 2026).',
     priceCzk: 216,
     oldPriceCzk: undefined,
     image: '/shop/img/products/book-001_kralovstvi-srdce.webp',
@@ -54,7 +54,7 @@ export const shopProducts: ShopProductSeed[] = [
     inStock: true,
     size: 'PDF + EPUB · 40 knih, 5 jazyků',
     stock: 999,
-    tokens: 216000,
+    tokens: 21600,
     digital: true,
     // Kompletní ediční sada: 8 edic × 5 jazyků, PDF i EPUB (65 MB).
     // ZIP se staví skriptem scripts/ops/build-kralovstvi-bundle.py a leží
@@ -68,7 +68,7 @@ export const shopProducts: ShopProductSeed[] = [
     name: 'ZION Pass — vstup do Nirvany a Archivu',
     category: 'books',
     description:
-      'Digitální průkaz do světa ZION. ZION Pass otevírá vstup do Nirvany (3D portál Království srdce — hry, světy, chat) i do ZION Archivu (kanonické texty, Kroniky, edice). Po zaplacení přijde jedinečný kód ZAP-…, který se uplatní na nirvana.zionterranova.com i v ZION Archivu. 🛡️ BONUS: 108 000 ZION na tvoji ZION peněženku.',
+      'Digitální průkaz do světa ZION. ZION Pass otevírá vstup do Nirvany (3D portál Království srdce — hry, světy, chat) i do ZION Archivu (kanonické texty, Kroniky, edice). Po zaplacení přijde jedinečný kód ZAP-…, který se uplatní na nirvana.zionterranova.com i v ZION Archivu. 🛡️ BONUS: 10 800 ZION na tvoji ZION peněženku.',
     priceCzk: 108,
     oldPriceCzk: undefined,
     image: '/shop/img/products/zion-pass-001_zion-pass.webp',
@@ -76,7 +76,7 @@ export const shopProducts: ShopProductSeed[] = [
     inStock: true,
     size: 'ZAP kód · okamžité doručení',
     stock: 999,
-    tokens: 108000,
+    tokens: 10800,
     digital: true,
     active: true,
   },
@@ -85,7 +85,7 @@ export const shopProducts: ShopProductSeed[] = [
     name: 'Lampion Království srdce — ručně gravírovaný',
     category: 'woodart',
     description:
-      'Ručně gravírovaný lampion se vzorem Srdce Království — z tesařské dílny příběhu. Vánoční edice: ke každému lampionu digitální kniha Království srdce a ZION Pass v ceně. 🛡️ BONUS: 432 000 ZION. Připravujeme — prodej zahájíme, jakmile bude výrobek hotový.',
+      'Ručně gravírovaný lampion se vzorem Srdce Království — z tesařské dílny příběhu. Vánoční edice: ke každému lampionu digitální kniha Království srdce a ZION Pass v ceně. 🛡️ BONUS: 43 200 ZION. Připravujeme — prodej zahájíme, jakmile bude výrobek hotový.',
     priceCzk: 432,
     oldPriceCzk: undefined,
     image: '/vanoce-lampion.webp',
@@ -93,7 +93,7 @@ export const shopProducts: ShopProductSeed[] = [
     inStock: false,
     size: 'Ruční výroba · gravírování',
     stock: 0,
-    tokens: 432000,
+    tokens: 43200,
     digital: false,
     active: false,
   },
