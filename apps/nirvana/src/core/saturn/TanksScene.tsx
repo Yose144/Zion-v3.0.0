@@ -53,8 +53,8 @@ function Terrain({ state }: { state: React.MutableRefObject<TanksState> }) {
     version.current = terrain.version;
     const position = geometry.getAttribute('position') as THREE.BufferAttribute;
     const color = geometry.getAttribute('color') as THREE.BufferAttribute;
-    const low = new THREE.Color('#3d2210');
-    const high = new THREE.Color('#b8752f');
+    const low = new THREE.Color('#6b3f1d');
+    const high = new THREE.Color('#e0a356');
     const mix = new THREE.Color();
     for (let i = 0; i < position.count; i += 1) {
       // vrcholy už jsou posunuté do světa, takže výšku bereme přímo z `x`
