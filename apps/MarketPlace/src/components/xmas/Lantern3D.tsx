@@ -88,21 +88,26 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
       renderer.setSize(width, height);
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.82;
+      renderer.toneMappingExposure = 0.72;
       renderer.domElement.style.touchAction = 'none';
       renderer.domElement.style.cursor = 'grab';
+      // Stíny: měsíc svítí zleva, lampion i svíčka vrhají stín na sníh.
+      // Na mobilu vypnuto — model má 236 k tris a stínový průchod by sežral snímky.
+      const shadowsOn = window.innerWidth >= 720;
+      renderer.shadowMap.enabled = shadowsOn;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       host.appendChild(renderer.domElement);
 
       // ── Prostředí pro PBR odlesky (dřevo + kov) ──────────────────────
       const pmrem = new THREE.PMREMGenerator(renderer);
       const envRT = pmrem.fromScene(new RoomEnvironment(), 0.04);
       scene.environment = envRT.texture;
-      scene.environmentIntensity = 0.42;
+      scene.environmentIntensity = 0.22;
 
       // ── Světla: svíčka uvnitř, klíčové zlato shora, chladný rim ──────
       scene.add(new THREE.HemisphereLight(0xfff0d2, 0x0a0a0c, 0.28));
 
-      const key = new THREE.DirectionalLight(0xffd089, 0.95);
+      const key = new THREE.DirectionalLight(0xffd089, 0.45);
       key.position.set(1.6, 2.4, 1.8);
       scene.add(key);
 
@@ -110,9 +115,14 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
       rim.position.set(-1.8, 0.9, -1.6);
       scene.add(rim);
 
-      const candle = new THREE.PointLight(0xffa63c, 0.3, 0.36, 2);
+      const candle = new THREE.PointLight(0xffa63c, 0.5, 0.36, 2);
       candle.position.set(0, 0.02, 0);
       scene.add(candle);
+
+      // vytvoří se až po načtení modelu (potřebují jeho měřítko)
+      let flame: import('three').Mesh;
+      let flameCore: import('three').Mesh;
+      let moonDir: import('three').DirectionalLight;
 
       // ── Galaxie: hvězdy + jemný prach ────────────────────────────────
       const galaxyGroup = new THREE.Group();
@@ -150,18 +160,30 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
       const starsNear = makeStars(800, 7, 0.058, 0xffe3b0);
       galaxyGroup.add(starsFar, starsNear);
 
+      // kulatá textura vločky (PointsMaterial kreslí jinak čtverce)
+      const snowCanvas = document.createElement('canvas');
+      snowCanvas.width = snowCanvas.height = 64;
+      const snowCtx = snowCanvas.getContext('2d')!;
+      const sgrad2 = snowCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      sgrad2.addColorStop(0, 'rgba(255,255,255,1)');
+      sgrad2.addColorStop(0.55, 'rgba(255,255,255,0.85)');
+      sgrad2.addColorStop(1, 'rgba(255,255,255,0)');
+      snowCtx.fillStyle = sgrad2;
+      snowCtx.fillRect(0, 0, 64, 64);
+      const snowTex = new THREE.CanvasTexture(snowCanvas);
+
       // prachové částečky kolem lampionu
-      const dustCount = reducedMotion ? 0 : 90;
+      const dustCount = reducedMotion ? 0 : 420;
       let dust: import('three').Points | null = null;
       let dustBase: Float32Array | null = null;
       if (dustCount > 0) {
         const dpos = new Float32Array(dustCount * 3);
         dustBase = new Float32Array(dustCount * 3);
         for (let i = 0; i < dustCount; i++) {
-          const r = 0.22 + Math.random() * 0.5;
+          const r = 0.12 + Math.random() * 0.62;
           const a = Math.random() * Math.PI * 2;
           dpos[i * 3] = Math.cos(a) * r;
-          dpos[i * 3 + 1] = (Math.random() - 0.5) * 0.7;
+          dpos[i * 3 + 1] = Math.random() * 0.9 - 0.15;
           dpos[i * 3 + 2] = Math.sin(a) * r;
           dustBase.set([dpos[i * 3], dpos[i * 3 + 1], dpos[i * 3 + 2]], i * 3);
         }
@@ -170,10 +192,12 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
         dust = new THREE.Points(
           dgeo,
           new THREE.PointsMaterial({
-            color: 0xffcf8a,
-            size: 0.012,
+            color: 0xeaf2ff,
+            size: 0.011,
+            map: snowTex,
+            alphaTest: 0.02,
             transparent: true,
-            opacity: 0.55,
+            opacity: 0.8,
             depthWrite: false,
             blending: THREE.AdditiveBlending,
           }),
@@ -330,8 +354,8 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
           // do záběru bez ohledu na exportní jednotky.
           const sphere = box.getBoundingSphere(new THREE.Sphere());
           const radius = Math.max(sphere.radius, 0.02);
-          const fitDist = (radius / Math.sin((camera.fov * Math.PI) / 180 / 2)) * 1.5;
-          camera.position.set(0, radius * 0.28, fitDist);
+          const fitDist = (radius / Math.sin((camera.fov * Math.PI) / 180 / 2)) * 1.34;
+          camera.position.set(0, radius * 0.42, fitDist);
           targetZ = fitDist;
           minZ = fitDist * 0.55;
           maxZ = fitDist * 1.9;
@@ -359,6 +383,129 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
 
           pivot.add(model);
 
+          // ── Stíny na modelu ────────────────────────────────────────
+          const floorY = box.min.y; // model je vycentrovaný, dno je v -h/2
+          model.traverse((obj) => {
+            const mesh = obj as import('three').Mesh;
+            if (!mesh.isMesh) return;
+            mesh.castShadow = shadowsOn;
+            mesh.receiveShadow = shadowsOn;
+          });
+
+          // ── Zimní zem: sníh, na kterém lampion stojí ────────────────
+          // okraj sněhu do ztracena, aby nebyl vidět kruh ve tmě
+          const groundAlphaCanvas = document.createElement('canvas');
+          groundAlphaCanvas.width = groundAlphaCanvas.height = 256;
+          const gactx = groundAlphaCanvas.getContext('2d')!;
+          const ggrad = gactx.createRadialGradient(128, 128, 0, 128, 128, 128);
+          ggrad.addColorStop(0, 'rgba(255,255,255,1)');
+          ggrad.addColorStop(0.55, 'rgba(255,255,255,0.92)');
+          ggrad.addColorStop(0.86, 'rgba(255,255,255,0.25)');
+          ggrad.addColorStop(1, 'rgba(255,255,255,0)');
+          gactx.fillStyle = ggrad;
+          gactx.fillRect(0, 0, 256, 256);
+          const groundAlpha = new THREE.CanvasTexture(groundAlphaCanvas);
+
+          const snowGround = new THREE.Mesh(
+            new THREE.CircleGeometry(radius * 8, 64),
+            new THREE.MeshStandardMaterial({
+              color: 0x64748b,
+              roughness: 1,
+              metalness: 0,
+              envMapIntensity: 0.15,
+              transparent: true,
+              alphaMap: groundAlpha,
+              depthWrite: true,
+            }),
+          );
+          snowGround.rotation.x = -Math.PI / 2;
+          snowGround.position.y = floorY - 0.0005;
+          snowGround.receiveShadow = shadowsOn;
+          scene.add(snowGround);
+
+          // ── Měsíc: studené světlo zleva, vrhá stín po sněhu ────────
+          const moonDir = new THREE.DirectionalLight(0xdce8ff, shadowsOn ? 1.15 : 0.6);
+          moonDir.position.set(-radius * 7, radius * 6, radius * 5);
+          moonDir.target.position.set(0, floorY, 0);
+          scene.add(moonDir.target);
+          if (shadowsOn) {
+            moonDir.castShadow = true;
+            moonDir.shadow.mapSize.set(1024, 1024);
+            moonDir.shadow.camera.near = radius * 1.5;
+            moonDir.shadow.camera.far = radius * 30;
+            moonDir.shadow.camera.left = -radius * 2.4;
+            moonDir.shadow.camera.right = radius * 2.4;
+            moonDir.shadow.camera.top = radius * 2.4;
+            moonDir.shadow.camera.bottom = -radius * 2.4;
+            moonDir.shadow.bias = -0.0007;
+            moonDir.shadow.radius = 3;
+          }
+          scene.add(moonDir);
+
+          // měsíc jako světelný kotouč na obloze
+          const moonCanvas = document.createElement('canvas');
+          moonCanvas.width = moonCanvas.height = 256;
+          const mctx = moonCanvas.getContext('2d')!;
+          const mgrad = mctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+          mgrad.addColorStop(0, 'rgba(255,255,255,1)');
+          mgrad.addColorStop(0.32, 'rgba(226,238,255,0.92)');
+          mgrad.addColorStop(0.42, 'rgba(200,220,255,0.35)');
+          mgrad.addColorStop(1, 'rgba(180,205,255,0)');
+          mctx.fillStyle = mgrad;
+          mctx.fillRect(0, 0, 256, 256);
+          const moonTex = new THREE.CanvasTexture(moonCanvas);
+          const moonSprite = new THREE.Sprite(
+            new THREE.SpriteMaterial({ map: moonTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+          );
+          moonSprite.scale.setScalar(radius * 5.2);
+          moonSprite.position.set(-radius * 4.6, radius * 1.9, -radius * 8);
+          scene.add(moonSprite);
+
+          // ── Hořící svíčka uvnitř lampionu ──────────────────────────
+          const candleGroup = new THREE.Group();
+          const waxH = radius * 0.36;
+          const waxR = radius * 0.17;
+          const wax = new THREE.Mesh(
+            new THREE.CylinderGeometry(waxR, waxR * 1.02, waxH, 24),
+            new THREE.MeshStandardMaterial({
+              color: 0xfff4dc,
+              roughness: 0.72,
+              emissive: 0xff9c3c,
+              emissiveIntensity: 0.22,
+            }),
+          );
+          wax.castShadow = shadowsOn;
+          candleGroup.add(wax);
+
+          // knot
+          const wick = new THREE.Mesh(
+            new THREE.CylinderGeometry(radius * 0.008, radius * 0.008, radius * 0.03, 6),
+            new THREE.MeshStandardMaterial({ color: 0x2a1a10, roughness: 1 }),
+          );
+          wick.position.y = waxH / 2 + radius * 0.012;
+          candleGroup.add(wick);
+
+          // plamen — emissive kužel, bloom z něj udělá skutečné světlo
+          const flameMat = new THREE.MeshBasicMaterial({ color: 0xffd08a, toneMapped: false });
+          const flame = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.055, radius * 0.19, 12), flameMat);
+          flame.position.y = waxH / 2 + radius * 0.075;
+          candleGroup.add(flame);
+
+          const flameCore = new THREE.Mesh(
+            new THREE.ConeGeometry(radius * 0.028, radius * 0.1, 10),
+            new THREE.MeshBasicMaterial({ color: 0xfff6df, toneMapped: false }),
+          );
+          flameCore.position.copy(flame.position);
+          candleGroup.add(flameCore);
+
+          candleGroup.position.set(0, floorY + waxH / 2 + 0.002, 0);
+          scene.add(candleGroup);
+
+          // světlo plamene (point light) — dýchá s plamenem
+          candle.position.set(0, floorY + waxH + radius * 0.09, 0);
+          candle.distance = radius * 3.2;
+          candle.intensity = 0.4;
+
           if (useBloom) {
             const { EffectComposer } = await import('three/examples/jsm/postprocessing/EffectComposer.js');
             const { RenderPass } = await import('three/examples/jsm/postprocessing/RenderPass.js');
@@ -367,7 +514,7 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
 
             const comp = new EffectComposer(renderer);
             comp.addPass(new RenderPass(scene, camera));
-            const bloom = new UnrealBloomPass(new THREE.Vector2(width, height), 0.28, 0.45, 0.98);
+            const bloom = new UnrealBloomPass(new THREE.Vector2(width, height), 0.16, 0.4, 1.25);
             comp.addPass(bloom);
             comp.addPass(new OutputPass());
             comp.setSize(width, height);
@@ -391,28 +538,36 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
               pivot.rotation.x = Math.max(-0.45, Math.min(0.45, pivot.rotation.x + velX));
             }
 
-            // svíčka „dýchá"
-            candle.intensity = 0.28 + Math.sin(t * 2.1) * 0.04 + Math.sin(t * 5.3) * 0.018;
-            candle.position.x = Math.sin(t * 1.7) * 0.004;
-            candle.position.z = Math.cos(t * 1.3) * 0.004;
+            // plamen: jemné chvění + světlo, které opravdu svítí do výřezů
+            const flick = 0.86 + Math.sin(t * 9.1) * 0.06 + Math.sin(t * 21.7) * 0.03 + Math.sin(t * 3.3) * 0.05;
+            flame.scale.set(1 + Math.sin(t * 7.7) * 0.05, flick, 1 + Math.cos(t * 6.1) * 0.05);
+            flame.position.x = Math.sin(t * 5.2) * radius * 0.006;
+            flameCore.scale.copy(flame.scale).multiplyScalar(0.92);
+            flameCore.position.copy(flame.position);
+            candle.intensity = 0.3 * flick + 0.04;
+            candle.position.x = Math.sin(t * 4.4) * radius * 0.008;
+            candle.position.z = Math.cos(t * 3.8) * radius * 0.008;
+
+            moonDir.intensity = (shadowsOn ? 1.15 : 0.6) + Math.sin(t * 0.4) * 0.05;
 
             glow.material.opacity = 0.42 + Math.sin(t * 1.9) * 0.05;
 
-            // hvězdy rotují pomalu, prach stoupá
+            // hvězdy se otáčejí, chumelenice padá
             galaxyGroup.rotation.y = t * 0.008;
             if (dust && dustBase) {
               const pos = dust.geometry.getAttribute('position') as import('three').BufferAttribute;
               for (let i = 0; i < pos.count; i++) {
-                const y = pos.getY(i) + 0.0006;
-                pos.setY(i, y > 0.42 ? -0.42 : y);
-                pos.setX(i, dustBase[i * 3] + Math.sin(t * 0.6 + i) * 0.012);
+                let y = pos.getY(i) - 0.0011 - (i % 5) * 0.00012;
+                if (y < -0.15) y = 0.95 + Math.random() * 0.2;
+                pos.setY(i, y);
+                pos.setX(i, dustBase[i * 3] + Math.sin(t * 0.5 + i * 0.7) * 0.03);
               }
               pos.needsUpdate = true;
             }
 
             camera.position.z += (targetZ - camera.position.z) * 0.08;
-            camera.position.y = fitDist * 0.22 + Math.sin(t * 0.5) * fitDist * 0.01;
-            camera.lookAt(0, 0, 0);
+            camera.position.y = fitDist * 0.3 + Math.sin(t * 0.5) * fitDist * 0.01;
+            camera.lookAt(0, -radius * 0.08, 0);
 
             if (composer) composer.render();
             else renderer.render(scene, camera);
@@ -435,6 +590,9 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
             envRT.dispose();
             pmrem.dispose();
             glowTex.dispose();
+            moonTex.dispose();
+            snowTex.dispose();
+            groundAlpha.dispose();
             renderer.dispose();
             renderer.domElement.remove();
             scene.traverse((o) => {
