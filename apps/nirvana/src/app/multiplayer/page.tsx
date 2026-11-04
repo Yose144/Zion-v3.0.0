@@ -87,7 +87,7 @@ const STATE_LABEL: Record<RoomState, { cs: string; en: string }> = {
 export default function MultiplayerPage() {
   const { lang } = useI18n();
   const cs = lang === 'cs';
-  const { status, online, rooms, roomId, joinGame, joinRoom, leaveRoom, lastError } = useNet();
+  const { status, you, online, rooms, roomId, joinGame, joinRoom, leaveRoom, lastError } = useNet();
   const [invite, setInvite] = useState<string | null>(null);
   const [inviteHandled, setInviteHandled] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -100,7 +100,12 @@ export default function MultiplayerPage() {
   }, []);
 
   useEffect(() => {
-    if (!invite || inviteHandled || status !== 'open') return;
+    /**
+     * `status === 'open'` znamená otevřený socket, ale server ještě nemusel
+     * zpracovat `hello` — join by pak skončil na `bad_frame`. Identita
+     * (`you`) je důkaz, že handshake proběhl.
+     */
+    if (!invite || inviteHandled || status !== 'open' || !you) return;
     const game = invite.split('-')[0] as GameId;
     if (!GAMES.some((entry) => entry.id === game)) {
       setInviteHandled(true);
@@ -108,18 +113,22 @@ export default function MultiplayerPage() {
     }
     joinRoom(game, invite);
     setInviteHandled(true);
-  }, [invite, inviteHandled, status, joinRoom]);
+  }, [invite, inviteHandled, status, you, joinRoom]);
+
+  const [manual, setManual] = useState<string | null>(null);
 
   const copy = useCallback(async (text: string, what: string) => {
     try {
       await navigator.clipboard.writeText(text);
+      setManual(null);
     } catch {
-      // starší prohlížeč / bez oprávnění: aspoň označit v promptu
-      window.prompt(cs ? 'Zkopíruj odkaz:' : 'Copy the link:', text);
+      // Bez oprávnění ke schránce se **nesmí** otevřít `window.prompt`
+      // (blokuje stránku). Ukážeme pole, ze kterého jde text označit.
+      setManual(text);
     }
     setCopied(what);
     window.setTimeout(() => setCopied(null), 1600);
-  }, [cs]);
+  }, []);
 
   const inviteLink = (id: string) =>
     typeof window === 'undefined' ? '' : `${window.location.origin}/multiplayer?room=${encodeURIComponent(id)}`;
@@ -181,6 +190,20 @@ export default function MultiplayerPage() {
       )}
 
       {lastError && <p className="lobby-error">{lastError}</p>}
+
+      {manual && (
+        <div className="lobby-manual">
+          <input
+            readOnly
+            value={manual}
+            aria-label={cs ? 'pozvánka' : 'invite'}
+            onFocus={(event) => event.currentTarget.select()}
+          />
+          <button type="button" className="lobby-btn" onClick={() => setManual(null)}>
+            ×
+          </button>
+        </div>
+      )}
 
       <div className="lobby-body">
       <section className="lobby-grid">

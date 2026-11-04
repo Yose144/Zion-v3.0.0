@@ -30,7 +30,7 @@ export function ChatPanel({
   onClose?: () => void;
 }) {
   const { lang, t } = useI18n();
-  const { status, you, online, members, lines, rtt, connected, sendChat } = useNet();
+  const { status, you, online, members, lines, rtt, connected, sendChat, roomId } = useNet();
   const [draft, setDraft] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -71,7 +71,12 @@ export function ChatPanel({
   return (
     <section className={variant === 'inline' ? 'chat-panel is-inline' : 'chat-panel'} aria-label={t('chat')}>
       <header className="chat-head">
-        <strong>{t('chat')}</strong>
+        <strong>
+          {t('chat')}
+          {variant === 'inline' && (
+            <em className="chat-channel">{roomId ? roomId : cs ? 'park' : 'park'}</em>
+          )}
+        </strong>
         <span className={`chat-state${status === 'open' ? ' is-live' : ''}`}>{statusLabel}</span>
         {onClose && (
           <button type="button" className="chat-close" onClick={onClose} aria-label={t('close')}>

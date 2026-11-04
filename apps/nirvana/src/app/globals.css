@@ -6780,3 +6780,35 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     position: static;
   }
 }
+
+/* V lobby je vidět, do kterého kanálu se píše (místnost vs. park). */
+.chat-channel {
+  margin-left: 0.45rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(246, 231, 216, 0.6);
+  font-size: 0.58rem;
+  font-style: normal;
+  letter-spacing: 0.06em;
+}
+
+/* Fallback na kopírování, když prohlížeč nedá schránku. */
+.lobby-manual {
+  display: flex;
+  gap: 0.4rem;
+  max-width: 76rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.lobby-manual input {
+  flex: 1;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  background: rgba(6, 8, 16, 0.8);
+  color: #ffe9b8;
+  font-size: 0.72rem;
+  font-family: ui-monospace, monospace;
+}
