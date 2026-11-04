@@ -1,0 +1,252 @@
+{
+  "152": { "quests": [
+    { "title": { "cs": "Deset krajů", "en": "Ten Regions" }, "description": { "cs": "Spoj deset různých zájmů do jedné dohody.", "en": "Join ten different interests into one accord." } },
+    { "title": { "cs": "Nebe", "en": "The Sky" }, "description": { "cs": "Podrž celek, dokud se nerozhodne.", "en": "Hold the whole until it decides." } },
+    { "title": { "cs": "Odpočinek", "en": "Rest" }, "description": { "cs": "Polož, co nemusíš nést.", "en": "Set down what you do not have to carry." } }
+  ]},
+  "153": { "quests": [
+    { "title": { "cs": "Charta", "en": "Charter" }, "description": { "cs": "Napiš pravidla jasně, aby se nedala obejít.", "en": "Write the rules clearly enough that they cannot be dodged." } },
+    { "title": { "cs": "Svatyňka", "en": "Sanctuary" }, "description": { "cs": "Ochraň místo před přestavbou k obrazu silnějšího.", "en": "Protect a place from being rebuilt in the stronger's image." } },
+    { "title": { "cs": "Výklad", "en": "Reading" }, "description": { "cs": "Zabraň výkladu, který poškodí slabšího.", "en": "Block the reading that would harm the weaker." } }
+  ]},
+  "154": { "quests": [
+    { "title": { "cs": "Průliv", "en": "Strait" }, "description": { "cs": "Urči pořadí, aby se cesta nezablokovala.", "en": "Set the order so the road does not jam." } },
+    { "title": { "cs": "Pravidlo", "en": "Rule" }, "description": { "cs": "Nech projít i toho, kdo jede pomalu.", "en": "Let through even the one who travels slowly." } },
+    { "title": { "cs": "Návrat", "en": "Return" }, "description": { "cs": "Zajisti cestu i zpátky.", "en": "Ensure the way back as well." } }
+  ]},
+  "155": { "quests": [
+    { "title": { "cs": "Sýpka", "en": "Granary" }, "description": { "cs": "Rozděl zásoby bez zvýhodnění.", "en": "Divide the stores without favour." } },
+    { "title": { "cs": "Váhy", "en": "Scales" }, "description": { "cs": "Zvaž, kdo potřebuje víc, ne kdo žádá hlasitěji.", "en": "Weigh who needs more, not who asks louder." } },
+    { "title": { "cs": "Hlad", "en": "Hunger" }, "description": { "cs": "Nakrm toho posledního ve frontě.", "en": "Feed the last one in the queue." } }
+  ]},
+  "156": { "quests": [
+    { "title": { "cs": "Zvyk", "en": "Custom" }, "description": { "cs": "Zaveď praxi, která funguje bez dohledu.", "en": "Establish a practice that works unwatched." } },
+    { "title": { "cs": "Kontrola", "en": "Review" }, "description": { "cs": "Ovz, že se to opravdu dodržuje.", "en": "Check that it is actually followed." } },
+    { "title": { "cs": "Předání", "en": "Handover" }, "description": { "cs": "Nech praxi žít i po svém odchodu.", "en": "Let the practice live after you leave." } }
+  ]},
+  "157": { "quests": [
+    { "title": { "cs": "Záznam", "en": "Record" }, "description": { "cs": "Zapiš událost bez přikrášlení.", "en": "Record an event without embellishment." } },
+    { "title": { "cs": "Chyba", "en": "Mistake" }, "description": { "cs": "Napiš do záznamu i svou chybu.", "en": "Put your own mistake in the record." } },
+    { "title": { "cs": "Archiv", "en": "Archive" }, "description": { "cs": "Otevři archiv tomu, kdo ho potřebuje.", "en": "Open the archive to whoever needs it." } }
+  ]},
+  "158": { "quests": [
+    { "title": { "cs": "Práh", "en": "Threshold" }, "description": { "cs": "Ptej se místních dřív, než rozhodnete.", "en": "Ask the locals before you decide." } },
+    { "title": { "cs": "Poslední slovo", "en": "Last Word" }, "description": { "cs": "Nech poslední slovo těm, kdo tam žijí.", "en": "Leave the last word to those who live there." } },
+    { "title": { "cs": "Zůstat", "en": "Stay" }, "description": { "cs": "Zůstaň, i když rozhodnou proti tobě.", "en": "Stay even when they decide against you." } }
+  ]},
+  "159": { "quests": [
+    { "title": { "cs": "Pruh", "en": "Lane" }, "description": { "cs": "Uvolni cestu i pro malého hráče.", "en": "Keep the road open for the small player." } },
+    { "title": { "cs": "Fronta", "en": "Queue" }, "description": { "cs": "Pust někoho menšího před sebe.", "en": "Let someone smaller go ahead of you." } },
+    { "title": { "cs": "Tok", "en": "Flow" }, "description": { "cs": "Nezastavuj provoz, i když spěcháš.", "en": "Do not stop the flow even when you are in a hurry." } }
+  ]},
+  "160": { "quests": [
+    { "title": { "cs": "Stůl", "en": "Table" }, "description": { "cs": "Svol obě strany k jednomu stolu.", "en": "Call both sides to one table." } },
+    { "title": { "cs": "Věta", "en": "Sentence" }, "description": { "cs": "Najdi větu, se kterou odejdou oba.", "en": "Find the sentence both can leave with." } },
+    { "title": { "cs": "Návrat", "en": "Return" }, "description": { "cs": "Přiveď je zpátky, když odejdou.", "en": "Bring them back when they walk out." } }
+  ]},
+  "161": { "quests": [
+    { "title": { "cs": "Zkouška", "en": "Test" }, "description": { "cs": "Najdi mez dřív, než ji najde provoz.", "en": "Find the limit before production does." } },
+    { "title": { "cs": "Zátěž", "en": "Load" }, "description": { "cs": "Zatíž opatrně a sleduj, co praská.", "en": "Load carefully and watch what cracks." } },
+    { "title": { "cs": "Odpočinek", "en": "Rest" }, "description": { "cs": "Nech systém vydýchat, než zkusíš znovu.", "en": "Let the system breathe before you try again." } }
+  ]},
+  "162": { "quests": [
+    { "title": { "cs": "Druh", "en": "Species" }, "description": { "cs": "Ochraň to, co jinde nemá zastoupení.", "en": "Protect what has no substitute elsewhere." } },
+    { "title": { "cs": "Les", "en": "Forest" }, "description": { "cs": "Nech být to, co neumíš obnovit.", "en": "Leave alone what you cannot restore." } },
+    { "title": { "cs": "Počítání", "en": "Counting" }, "description": { "cs": "Zaznamenej, co mizí.", "en": "Record what is disappearing." } }
+  ]},
+  "163": { "quests": [
+    { "title": { "cs": "Mapa", "en": "Map" }, "description": { "cs": "Oprav mapu, která už nelže.", "en": "Correct the map that no longer lies." } },
+    { "title": { "cs": "Odvolání", "en": "Retraction" }, "description": { "cs": "Odvolej omyl, i když jsi ho napsal ty.", "en": "Retract an error even if you wrote it." } },
+    { "title": { "cs": "Pokora", "en": "Humility" }, "description": { "cs": "Uč se dál, i když jsi učil.", "en": "Keep learning even after you taught." } }
+  ]},
+  "164": { "quests": [
+    { "title": { "cs": "Útes", "en": "Reef" }, "description": { "cs": "Zaznamenej stav, ne dojem.", "en": "Record the state, not the impression." } },
+    { "title": { "cs": "Ztráta", "en": "Loss" }, "description": { "cs": "Dosvědč škodu, kterou by nikdo neuznal.", "en": "Attest harm that would go unacknowledged." } },
+    { "title": { "cs": "Oprava", "en": "Repair" }, "description": { "cs": "Vrať aspoň část toho, co se ztratilo.", "en": "Return at least part of what was lost." } }
+  ]},
+  "165": { "quests": [
+    { "title": { "cs": "Příliv", "en": "Tide" }, "description": { "cs": "Zpomal systém, aby stihl i pomalejší.", "en": "Slow the system so the slower one keeps up." } },
+    { "title": { "cs": "Mělčina", "en": "Shallows" }, "description": { "cs": "Počkej na toho, kdo zaostal.", "en": "Wait for whoever fell behind." } },
+    { "title": { "cs": "Rytmus", "en": "Rhythm" }, "description": { "cs": "Drž tempo, které nikoho neutopí.", "en": "Hold a tempo that drowns no one." } }
+  ]},
+  "166": { "quests": [
+    { "title": { "cs": "Hřbet", "en": "Ridge" }, "description": { "cs": "Měř čas v tisících let, ne v dnech.", "en": "Measure time in millennia, not days." } },
+    { "title": { "cs": "Trpělivost", "en": "Patience" }, "description": { "cs": "Nezrychluj rozhodnutí tlakem.", "en": "Do not speed a decision with pressure." } },
+    { "title": { "cs": "Klid", "en": "Calm" }, "description": { "cs": "Ochraň rozhodnutí před zbrklostí.", "en": "Protect a decision from haste." } }
+  ]},
+  "167": { "quests": [
+    { "title": { "cs": "Semeno", "en": "Seed" }, "description": { "cs": "Předej myšlenku bez nároku na vlastnictví.", "en": "Pass on an idea with no claim of ownership." } },
+    { "title": { "cs": "Pěna", "en": "Foam" }, "description": { "cs": "Nezůstávej, ale neznič, co jsi přinesl.", "en": "Do not stay, but do not destroy what you brought." } },
+    { "title": { "cs": "Růst", "en": "Growth" }, "description": { "cs": "Nech to růst i bez tebe.", "en": "Let it grow without you." } }
+  ]},
+  "168": { "quests": [
+    { "title": { "cs": "Most", "en": "Bridge" }, "description": { "cs": "Spoj dva ostrovy bez nadvlády.", "en": "Join two islands without dominion." } },
+    { "title": { "cs": "Přístav", "en": "Harbour" }, "description": { "cs": "Otevři přístav i cizím lodím.", "en": "Open the harbour to foreign ships too." } },
+    { "title": { "cs": "Spojenectví", "en": "Alliance" }, "description": { "cs": "Uzavři spojenectví bez přepisování pravidel.", "en": "Form an alliance without rewriting either's rules." } }
+  ]},
+  "169": { "quests": [
+    { "title": { "cs": "Hladina", "en": "Waterline" }, "description": { "cs": "Řekni pravdu o tom, kam až voda dojde.", "en": "Tell the truth about how far the water reaches." } },
+    { "title": { "cs": "Pobřeží", "en": "Coast" }, "description": { "cs": "Ochraň to, co by voda vzala.", "en": "Protect what the water would take." } },
+    { "title": { "cs": "Odchod", "en": "Retreat" }, "description": { "cs": "Naplánuj ústup dřív, než bude pozdě.", "en": "Plan the retreat before it is too late." } }
+  ]},
+  "170": { "quests": [
+    { "title": { "cs": "Pauza", "en": "Pause" }, "description": { "cs": "Nic nedělej pět minut a vydrž to.", "en": "Do nothing for five minutes and endure it." } },
+    { "title": { "cs": "Dech", "en": "Breath" }, "description": { "cs": "Dýchej, dokud se panika nezmenší.", "en": "Breathe until the panic shrinks." } },
+    { "title": { "cs": "Rozhodnutí", "en": "Decision" }, "description": { "cs": "Rozhodni až potom, ne během.", "en": "Decide afterwards, not during." } }
+  ]},
+  "171": { "quests": [
+    { "title": { "cs": "Kapitola", "en": "Chapter" }, "description": { "cs": "Uzavři, co je hotové, a pojmenuj to.", "en": "Close what is finished and name it." } },
+    { "title": { "cs": "Předání", "en": "Handover" }, "description": { "cs": "Předej pochodeň dřív, než zhasne.", "en": "Pass the torch before it goes out." } },
+    { "title": { "cs": "Tečka", "en": "Full Stop" }, "description": { "cs": "Ukloň se a odejdi.", "en": "Bow and leave." } }
+  ]},
+  "172": { "quests": [
+    { "title": { "cs": "Tep", "en": "Beat" }, "description": { "cs": "Srovnej tempo celé skupiny.", "en": "Align the tempo of the whole group." } },
+    { "title": { "cs": "Střed", "en": "Centre" }, "description": { "cs": "Najdi, podle čeho se počítá čas.", "en": "Find what time is counted by." } },
+    { "title": { "cs": "Souzvuk", "en": "Accord" }, "description": { "cs": "Drž soulad, i když se názory rozejdou.", "en": "Keep accord even when views diverge." } }
+  ]},
+  "173": { "quests": [
+    { "title": { "cs": "Rytmus", "en": "Cadence" }, "description": { "cs": "Rozlož úsilí tak, aby vydrželo.", "en": "Space out effort so it lasts." } },
+    { "title": { "cs": "Pauza", "en": "Pause" }, "description": { "cs": "Odpočiň si dřív, než potřebuješ.", "en": "Rest before you need to." } },
+    { "title": { "cs": "Výdrž", "en": "Endurance" }, "description": { "cs": "Vydrž dlouho, ne rychle.", "en": "Last long, not fast." } }
+  ]},
+  "174": { "quests": [
+    { "title": { "cs": "Dvojí podpis", "en": "Dual Signature" }, "description": { "cs": "Potvrď rozhodnutí spolu s druhým.", "en": "Confirm a decision together with another." } },
+    { "title": { "cs": "Rozdělení", "en": "Separation" }, "description": { "cs": "Rozděl role tak, aby se nikdo neopakoval.", "en": "Split roles so no one duplicates another." } },
+    { "title": { "cs": "Shoda", "en": "Agreement" }, "description": { "cs": "Nikdy nerozhodni sám.", "en": "Never decide alone." } }
+  ]},
+  "175": { "quests": [
+    { "title": { "cs": "Vize", "en": "Vision" }, "description": { "cs": "Popiš, co chceš udělat, jednou větou.", "en": "Describe what you want to do in one sentence." } },
+    { "title": { "cs": "Čin", "en": "Act" }, "description": { "cs": "Udělej první konkrétní krok.", "en": "Take the first concrete step." } },
+    { "title": { "cs": "Pondělí", "en": "Monday" }, "description": { "cs": "Zopakuj to i v obyčejný den.", "en": "Repeat it on an ordinary day." } }
+  ]},
+  "176": { "quests": [
+    { "title": { "cs": "Klíč", "en": "Key" }, "description": { "cs": "Uchovej klíč tak, aby ho nikdo nenašel.", "en": "Keep a key where no one can find it." } },
+    { "title": { "cs": "Tajemství", "en": "Secret" }, "description": { "cs": "Neřekni věc, která není tvoje.", "en": "Do not tell a thing that is not yours." } },
+    { "title": { "cs": "Čistota", "en": "Hygiene" }, "description": { "cs": "Ukliď stopy po práci.", "en": "Clean up the traces of your work." } }
+  ]},
+  "177": { "quests": [
+    { "title": { "cs": "Spirála", "en": "Spiral" }, "description": { "cs": "Nauč někoho to, co umíš.", "en": "Teach someone what you know." } },
+    { "title": { "cs": "Výš", "en": "Higher" }, "description": { "cs": "Vytáhni druhého výš, ne sebe.", "en": "Pull the other up, not yourself." } },
+    { "title": { "cs": "Odměna", "en": "Reward" }, "description": { "cs": "Oceň učení, ne soutěžení.", "en": "Value teaching, not competing." } }
+  ]},
+  "178": { "quests": [
+    { "title": { "cs": "Fialový plamen", "en": "Violet Flame" }, "description": { "cs": "Proměň staré řešení v něco, co drží.", "en": "Transform an old solution into something that holds." } },
+    { "title": { "cs": "Staré", "en": "Old" }, "description": { "cs": "Uklidit, ne zbourat.", "en": "Clean it, do not demolish it." } },
+    { "title": { "cs": "Nové", "en": "New" }, "description": { "cs": "Postav nové na starém základu.", "en": "Build the new on the old foundation." } }
+  ]},
+  "179": { "quests": [
+    { "title": { "cs": "Sněm", "en": "Assembly" }, "description": { "cs": "Svol různé ke jednomu stolu.", "en": "Call the diverse to one table." } },
+    { "title": { "cs": "Mandát", "en": "Mandate" }, "description": { "cs": "Rozděl mandát podle práce, ne podle jména.", "en": "Assign mandate by work, not by name." } },
+    { "title": { "cs": "Hlas", "en": "Voice" }, "description": { "cs": "Dej každému stejný hlas.", "en": "Give everyone an equal voice." } }
+  ]},
+  "180": { "quests": [
+    { "title": { "cs": "Deník", "en": "Journal" }, "description": { "cs": "Zapiš si, co si nechceš pamatovat veřejně.", "en": "Write down what you do not want remembered publicly." } },
+    { "title": { "cs": "Soukromí", "en": "Privacy" }, "description": { "cs": "Nezveřejňuj, co patří jen tobě.", "en": "Do not publish what belongs only to you." } },
+    { "title": { "cs": "Smazání", "en": "Deletion" }, "description": { "cs": "Nech smazat, o co někdo požádá.", "en": "Let be deleted what someone asks to delete." } }
+  ]},
+  "181": { "quests": [
+    { "title": { "cs": "Dvanáct", "en": "Twelve" }, "description": { "cs": "Uzavři kruh dvanácti.", "en": "Close the circle of twelve." } },
+    { "title": { "cs": "Práh", "en": "Threshold" }, "description": { "cs": "Otevři třináctý krok.", "en": "Open the thirteenth step." } },
+    { "title": { "cs": "Předání", "en": "Handover" }, "description": { "cs": "Ukaž cestu dál a zůstaň vzadu.", "en": "Point the way on and stay behind." } }
+  ]},
+  "182": { "quests": [
+    { "title": { "cs": "Síň", "en": "Hall" }, "description": { "cs": "Odpočívej, dokud nejsi opravdu odpočatý.", "en": "Rest until you are truly rested." } },
+    { "title": { "cs": "Rána", "en": "Wound" }, "description": { "cs": "Ošetři se dřív, než půjdeš dál.", "en": "Treat the wound before you go on." } },
+    { "title": { "cs": "Návrat", "en": "Return" }, "description": { "cs": "Vrať se silný, ne jen rychlý.", "en": "Return strong, not merely quick." } }
+  ]},
+  "183": { "quests": [
+    { "title": { "cs": "Otázka", "en": "Question" }, "description": { "cs": "Ptej se dřív, než rozhodneš.", "en": "Ask before you decide." } },
+    { "title": { "cs": "Havran", "en": "Raven" }, "description": { "cs": "Zjisti obě verze téhož příběhu.", "en": "Find out both versions of the same story." } },
+    { "title": { "cs": "Rozhodnutí", "en": "Decision" }, "description": { "cs": "Rozhodni a napiš, proč.", "en": "Decide and write down why." } }
+  ]},
+  "184": { "quests": [
+    { "title": { "cs": "Kladivo", "en": "Hammer" }, "description": { "cs": "Podrž, co se rozpadá.", "en": "Hold together what is falling apart." } },
+    { "title": { "cs": "Hrom", "en": "Thunder" }, "description": { "cs": "Odraž výpadek dřív, než zastaví ostatní.", "en": "Avert the outage before it stops everyone." } },
+    { "title": { "cs": "Klid", "en": "Calm" }, "description": { "cs": "Nech systém běžet a nezasahuj.", "en": "Let the system run and do not interfere." } }
+  ]},
+  "185": { "quests": [
+    { "title": { "cs": "Díl", "en": "Portion" }, "description": { "cs": "Rozděl odměnu bez ztráty důstojnosti.", "en": "Divide the reward without loss of dignity." } },
+    { "title": { "cs": "Soukromí", "en": "Privacy" }, "description": { "cs": "Chraň to, co nemá být vidět.", "en": "Protect what should not be seen." } },
+    { "title": { "cs": "Statečnost", "en": "Courage" }, "description": { "cs": "Stůj za svým dílem.", "en": "Stand by your share." } }
+  ]},
+  "186": { "quests": [
+    { "title": { "cs": "Přísaha", "en": "Oath" }, "description": { "cs": "Slož slib, který bude něco stát.", "en": "Make a promise that will cost something." } },
+    { "title": { "cs": "Ruka", "en": "Hand" }, "description": { "cs": "Zaplať cenu a nestěžuj si.", "en": "Pay the price and do not complain." } },
+    { "title": { "cs": "Slovo", "en": "Word" }, "description": { "cs": "Dodrž i to, co se už nehodí.", "en": "Keep it even when it is no longer convenient." } }
+  ]},
+  "187": { "quests": [
+    { "title": { "cs": "Kovárna", "en": "Forge" }, "description": { "cs": "Vyrob nástroj, který pomůže.", "en": "Make a tool that helps." } },
+    { "title": { "cs": "Text", "en": "Text" }, "description": { "cs": "Napiš návod, kterému se rozumí.", "en": "Write instructions people understand." } },
+    { "title": { "cs": "Obvaz", "en": "Bandage" }, "description": { "cs": "Ošetři toho, kdo to potřebuje.", "en": "Tend to whoever needs it." } }
+  ]},
+  "188": { "quests": [
+    { "title": { "cs": "Kotel", "en": "Cauldron" }, "description": { "cs": "Naplň společné zdroje.", "en": "Fill the common stores." } },
+    { "title": { "cs": "Harfa", "en": "Harp" }, "description": { "cs": "Uklidni spor o zdroje.", "en": "Calm a dispute over resources." } },
+    { "title": { "cs": "Sdílení", "en": "Sharing" }, "description": { "cs": "Rozdej i těm, kdo nepotřebují.", "en": "Share even with those who do not need it." } }
+  ]},
+  "189": { "quests": [
+    { "title": { "cs": "Havran", "en": "Raven" }, "description": { "cs": "Varuj dřív, než je pozdě.", "en": "Warn before it is late." } },
+    { "title": { "cs": "Triage", "en": "Triage" }, "description": { "cs": "Roztřiď, co hoří a co počká.", "en": "Sort what is on fire from what can wait." } },
+    { "title": { "cs": "Odpovědnost", "en": "Accountability" }, "description": { "cs": "Přiznej, co jsi přehlédl.", "en": "Admit what you missed." } }
+  ]},
+  "190": { "quests": [
+    { "title": { "cs": "Brána", "en": "Gate" }, "description": { "cs": "Ukaž, co umíš, ne kdo jsi.", "en": "Show what you can do, not who you are." } },
+    { "title": { "cs": "Zástup", "en": "Stand-in" }, "description": { "cs": "Zastup chybějícího člena týmu.", "en": "Cover for the missing member of the team." } },
+    { "title": { "cs": "Předání", "en": "Handover" }, "description": { "cs": "Nauč druhé to, co umíš ty.", "en": "Teach others what you can do." } }
+  ]},
+  "191": { "quests": [
+    { "title": { "cs": "Mlha", "en": "Mist" }, "description": { "cs": "Jdi opatrně, když nevidíš dál.", "en": "Walk carefully when you cannot see far." } },
+    { "title": { "cs": "Krok", "en": "Step" }, "description": { "cs": "Udělej jen další krok.", "en": "Take only the next step." } },
+    { "title": { "cs": "Přechod", "en": "Crossing" }, "description": { "cs": "Přejdi mezi světy a neztratit se.", "en": "Cross between worlds without getting lost." } }
+  ]},
+  "192": { "quests": [
+    { "title": { "cs": "Ráno", "en": "Morning" }, "description": { "cs": "Začni den i po špatné noci.", "en": "Begin the day even after a bad night." } },
+    { "title": { "cs": "Poledne", "en": "Noon" }, "description": { "cs": "Udělej nejtěžší věc v plné síle.", "en": "Do the hardest thing at full strength." } },
+    { "title": { "cs": "Noc", "en": "Night" }, "description": { "cs": "Projdi tmou bez zastavení.", "en": "Pass through the dark without stopping." } }
+  ]},
+  "193": { "quests": [
+    { "title": { "cs": "Dvě koruny", "en": "Two Crowns" }, "description": { "cs": "Spoj dvě správy v jednu.", "en": "Join two administrations into one." } },
+    { "title": { "cs": "Hranice", "en": "Border" }, "description": { "cs": "Drž hranici, aby se nerozpadla.", "en": "Hold the border so it does not break." } },
+    { "title": { "cs": "Oko", "en": "Eye" }, "description": { "cs": "Hlídej to, co jsi spojil.", "en": "Watch what you joined." } }
+  ]},
+  "194": { "quests": [
+    { "title": { "cs": "Zápis", "en": "Record" }, "description": { "cs": "Zapiš, co se stalo, bez výkladu.", "en": "Record what happened, without interpretation." } },
+    { "title": { "cs": "Přesnost", "en": "Accuracy" }, "description": { "cs": "Ověř číslo, než ho pustíš dál.", "en": "Verify the number before you pass it on." } },
+    { "title": { "cs": "Archiv", "en": "Archive" }, "description": { "cs": "Uchovej záznam tak, aby ho šel najít.", "en": "Keep the record so it can be found." } }
+  ]},
+  "195": { "quests": [
+    { "title": { "cs": "Svátek", "en": "Feast" }, "description": { "cs": "Svol oslavu, na kterou může každý.", "en": "Hold a feast anyone may attend." } },
+    { "title": { "cs": "Hudba", "en": "Music" }, "description": { "cs": "Zahraj někomu, kdo si to neumí zařídit.", "en": "Play for someone who cannot arrange it themselves." } },
+    { "title": { "cs": "Nikdo stranou", "en": "No One Left" }, "description": { "cs": "Pozvi i toho, koho ostatní přehlédli.", "en": "Invite whoever the others overlooked." } }
+  ]},
+  "196": { "quests": [
+    { "title": { "cs": "Účet", "en": "Reckoning" }, "description": { "cs": "Odečti, co bylo vzato.", "en": "Deduct what was taken." } },
+    { "title": { "cs": "Vysvětlení", "en": "Explanation" }, "description": { "cs": "Vysvětli, proč to bylo nutné.", "en": "Explain why it was necessary." } },
+    { "title": { "cs": "Chladnutí", "en": "Cooling" }, "description": { "cs": "Nech vychladnout dřív, než se vrátíš.", "en": "Let it cool before you return." } }
+  ]},
+  "197": { "quests": [
+    { "title": { "cs": "Vzor", "en": "Template" }, "description": { "cs": "Vytvoř vzor, podle kterého jde opravovat.", "en": "Create a pattern that can be repaired by." } },
+    { "title": { "cs": "První kámen", "en": "First Stone" }, "description": { "cs": "Polož základ tak, aby držel.", "en": "Lay the foundation so it holds." } },
+    { "title": { "cs": "Oprava", "en": "Repair" }, "description": { "cs": "Oprav podle vzoru, ne od oka.", "en": "Repair by the pattern, not by eye." } }
+  ]},
+  "198": { "quests": [
+    { "title": { "cs": "Zavazadlo", "en": "Luggage" }, "description": { "cs": "Zvaž, co s sebou opravdu potřebuješ.", "en": "Weigh what you actually need to carry." } },
+    { "title": { "cs": "Záloha", "en": "Backup" }, "description": { "cs": "Zajisti, že se nic neztratí.", "en": "Make sure nothing is lost." } },
+    { "title": { "cs": "Odchod", "en": "Departure" }, "description": { "cs": "Odejdi připravený, ne překvapený.", "en": "Leave prepared, not surprised." } }
+  ]},
+  "199": { "quests": [
+    { "title": { "cs": "Skrytý hlas", "en": "Hidden Voice" }, "description": { "cs": "Hlasuj tak, aby tě nikdo nenutil.", "en": "Vote so that no one can pressure you." } },
+    { "title": { "cs": "Nátlak", "en": "Pressure" }, "description": { "cs": "Odolej nátlaku a neprozraď zdroj.", "en": "Resist pressure and reveal no source." } },
+    { "title": { "cs": "Výsledek", "en": "Result" }, "description": { "cs": "Zveřejni výsledek poctivě a celý.", "en": "Publish the result honestly and in full." } }
+  ]},
+  "200": { "quests": [
+    { "title": { "cs": "Základ", "en": "Foundation" }, "description": { "cs": "Zkontroluj, co drží provoz zespodu.", "en": "Check what holds the service up from below." } },
+    { "title": { "cs": "Hmota", "en": "Matter" }, "description": { "cs": "Obnov to, co se opotřebilo.", "en": "Renew what wore out." } },
+    { "title": { "cs": "Provoz", "en": "Operation" }, "description": { "cs": "Udrž to v chodu, i když to nikdo nevidí.", "en": "Keep it running even when no one looks." } }
+  ]},
+  "201": { "quests": [
+    { "title": { "cs": "Noc", "en": "Night" }, "description": { "cs": "Udržuj systém, když všichni spí.", "en": "Maintain the system while everyone sleeps." } },
+    { "title": { "cs": "Hvězdy", "en": "Stars" }, "description": { "cs": "Zaznamenej, co se v noci změnilo.", "en": "Record what changed overnight." } },
+    { "title": { "cs": "Úsvit", "en": "Dawn" }, "description": { "cs": "Předej stav ráno a beze ztrát.", "en": "Hand over the state in the morning without loss." } }
+  ]}
+}

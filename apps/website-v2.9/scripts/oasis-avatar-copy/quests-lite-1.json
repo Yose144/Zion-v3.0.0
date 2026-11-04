@@ -1,0 +1,252 @@
+{
+  "52": { "quests": [
+    { "title": { "cs": "Kruh", "en": "The Circle" }, "description": { "cs": "Postav kruh a pozvi do něj i toho, kdo stojí mimo.", "en": "Draw a circle and invite in whoever stands outside it." } },
+    { "title": { "cs": "Vidění", "en": "The Vision" }, "description": { "cs": "Projdi vizní pouť bez jídla a bez vody.", "en": "Complete a vision quest without food or water." } },
+    { "title": { "cs": "Předání", "en": "Passing It On" }, "description": { "cs": "Vyprávěj svou vizi někomu mladšímu.", "en": "Tell your vision to someone younger." } }
+  ]},
+  "53": { "quests": [
+    { "title": { "cs": "Dýmka", "en": "The Pipe" }, "description": { "cs": "Uzavři spor kouřem dýmky, ne podpisem.", "en": "End a quarrel with the pipe, not with a signature." } },
+    { "title": { "cs": "Sedm generací", "en": "Seven Generations" }, "description": { "cs": "Zasaď něco, co vydrží sedm generací.", "en": "Plant something that will outlast seven generations." } },
+    { "title": { "cs": "Dar", "en": "The Gift" }, "description": { "cs": "Přijmi dar a neudělej z něj dluh.", "en": "Receive a gift and do not turn it into a debt." } }
+  ]},
+  "54": { "quests": [
+    { "title": { "cs": "První nit", "en": "First Thread" }, "description": { "cs": "Spoj dva hráče, kteří se navzájem neznají.", "en": "Connect two players who do not know each other." } },
+    { "title": { "cs": "Síť", "en": "The Web" }, "description": { "cs": "Vytvoř spojenectví tří gild.", "en": "Form an alliance of three guilds." } },
+    { "title": { "cs": "Projít", "en": "Pass Through" }, "description": { "cs": "Projdi celou sítí, aniž bys přetrhl jediné vlákno.", "en": "Walk the whole web without breaking a single strand." } }
+  ]},
+  "55": { "quests": [
+    { "title": { "cs": "Xibalba", "en": "Xibalba" }, "description": { "cs": "Sestup do podsvětí a přijmi jeho hru.", "en": "Descend into the underworld and accept its game." } },
+    { "title": { "cs": "Dvojí trik", "en": "Twin Trick" }, "description": { "cs": "Odhal slabinu strážce bez jediného úderu.", "en": "Expose the guardian's weakness without a single blow." } },
+    { "title": { "cs": "Návrat", "en": "Return" }, "description": { "cs": "Vrať se nahoru i s tím, kdo zůstal dole.", "en": "Come back up with the one who was left below." } }
+  ]},
+  "56": { "quests": [
+    { "title": { "cs": "Ayni", "en": "Ayni" }, "description": { "cs": "Poděkuj zemi dřív, než si od ní vezmeš.", "en": "Thank the land before you take from it." } },
+    { "title": { "cs": "Volání Apu", "en": "Call of the Apu" }, "description": { "cs": "Přiveď vodu tam, kde už vyschla.", "en": "Bring water where it has run dry." } },
+    { "title": { "cs": "Vzájemnost", "en": "Reciprocity" }, "description": { "cs": "Vrať dvakrát tolik, co jsi dostal.", "en": "Give back twice what you received." } }
+  ]},
+  "57": { "quests": [
+    { "title": { "cs": "Zpaměti", "en": "By Heart" }, "description": { "cs": "Nauč se celý příběh zpaměti.", "en": "Learn a whole story by heart." } },
+    { "title": { "cs": "Předkové", "en": "Ancestors" }, "description": { "cs": "Vyprávěj příběh, který se už dávno nevyprávěl.", "en": "Tell a story that has not been told for a long time." } },
+    { "title": { "cs": "Předání", "en": "Handover" }, "description": { "cs": "Předej příběh dál bez papíru a bez zápisu.", "en": "Pass a story on without paper or notes." } }
+  ]},
+  "58": { "quests": [
+    { "title": { "cs": "Pravý Pahana", "en": "True Pahana" }, "description": { "cs": "Rozliš příslib od lákadla.", "en": "Tell a promise from a lure." } },
+    { "title": { "cs": "Kámen", "en": "The Stone" }, "description": { "cs": "Přečti, co je psáno v kameni, ne v řeči.", "en": "Read what is written in stone, not in speech." } },
+    { "title": { "cs": "Trpělivost", "en": "Patience" }, "description": { "cs": "Počkej, až se slib sám projeví.", "en": "Wait until the promise shows itself." } }
+  ]},
+  "59": { "quests": [
+    { "title": { "cs": "Duha", "en": "Rainbow" }, "description": { "cs": "Dej skupině odvahu v rozhodující chvíli.", "en": "Give the group courage at the decisive moment." } },
+    { "title": { "cs": "Oheň", "en": "Fire" }, "description": { "cs": "Projdi zkouškou a neustup ani o krok.", "en": "Pass the trial without stepping back." } },
+    { "title": { "cs": "Děti", "en": "The Children" }, "description": { "cs": "Uč ty, kterým nikdo nevěřil.", "en": "Teach those no one believed in." } }
+  ]},
+  "60": { "quests": [
+    { "title": { "cs": "Obrácený sen", "en": "Dream Reversal" }, "description": { "cs": "Uvidět důsledek dřív, než nastane.", "en": "See the consequence before it happens." } },
+    { "title": { "cs": "Les", "en": "The Forest" }, "description": { "cs": "Ochraň území před vytěžením.", "en": "Protect a territory from being stripped." } },
+    { "title": { "cs": "Slovo", "en": "The Word" }, "description": { "cs": "Promluv za ty, kdo mluvit nemohou.", "en": "Speak for those who cannot speak." } }
+  ]},
+  "61": { "quests": [
+    { "title": { "cs": "Obráceně", "en": "Backwards" }, "description": { "cs": "Udělej jeden den všechno obráceně.", "en": "Do everything backwards for one day." } },
+    { "title": { "cs": "Smích", "en": "Laughter" }, "description": { "cs": "Rozesměj toho, kdo se bojí.", "en": "Make the one who is afraid laugh." } },
+    { "title": { "cs": "Pravda", "en": "Truth" }, "description": { "cs": "Řekni pravdu tak, aby se dala slyšet.", "en": "Tell the truth in a way that can be heard." } }
+  ]},
+  "62": { "quests": [
+    { "title": { "cs": "Linie", "en": "Lineage" }, "description": { "cs": "Vypátrej, odkud kdo přišel.", "en": "Trace where someone came from." } },
+    { "title": { "cs": "Tři větve", "en": "Three Branches" }, "description": { "cs": "Spoj tři linie v jednu.", "en": "Join three lineages into one." } },
+    { "title": { "cs": "Pokračování", "en": "Continuation" }, "description": { "cs": "Předej jméno dál, aniž bys ho změnil.", "en": "Pass a name on without changing it." } }
+  ]},
+  "63": { "quests": [
+    { "title": { "cs": "První oheň", "en": "First Fire" }, "description": { "cs": "Spal to, co už nedrží.", "en": "Burn what no longer holds." } },
+    { "title": { "cs": "Nová půda", "en": "New Ground" }, "description": { "cs": "Zasaď na spáleništi.", "en": "Plant something on the burn." } },
+    { "title": { "cs": "Úcta", "en": "Respect" }, "description": { "cs": "Nepros o výjimku, požádej o cestu.", "en": "Do not ask for an exception, ask for a way." } }
+  ]},
+  "64": { "quests": [
+    { "title": { "cs": "Tanec", "en": "The Dance" }, "description": { "cs": "Uzdrav tancem, ne slovy.", "en": "Heal with dance, not with words." } },
+    { "title": { "cs": "Mele", "en": "Mele" }, "description": { "cs": "Slož píseň pro někoho nemocného.", "en": "Compose a song for someone who is ill." } },
+    { "title": { "cs": "Návrat sestry", "en": "Sister's Return" }, "description": { "cs": "Přiveď zpátky toho, kdo odešel.", "en": "Bring back the one who left." } }
+  ]},
+  "65": { "quests": [
+    { "title": { "cs": "Pramen", "en": "The Spring" }, "description": { "cs": "Najdi místo, kde něco začíná.", "en": "Find the place where something begins." } },
+    { "title": { "cs": "Ticho", "en": "Silence" }, "description": { "cs": "Vytvoř něco bez hluku a bez oznámení.", "en": "Create something without noise or announcement." } },
+    { "title": { "cs": "Prostor", "en": "Space" }, "description": { "cs": "Dej místu prostor, aby vzniklo samo.", "en": "Leave room for a place to come into being." } }
+  ]},
+  "66": { "quests": [
+    { "title": { "cs": "Tok", "en": "Flow" }, "description": { "cs": "Uvolni to, co se zastavilo.", "en": "Release what has stopped moving." } },
+    { "title": { "cs": "Hlubina", "en": "The Deep" }, "description": { "cs": "Sestup tam, kam není vidět.", "en": "Descend where you cannot see." } },
+    { "title": { "cs": "Rozdání", "en": "Sharing" }, "description": { "cs": "Rozdej sílu tam, kde chybí.", "en": "Give strength where it is missing." } }
+  ]},
+  "67": { "quests": [
+    { "title": { "cs": "Kámen", "en": "Stone" }, "description": { "cs": "Postav zeď, která vydrží rok.", "en": "Build a wall that lasts a year." } },
+    { "title": { "cs": "Denní práce", "en": "Daily Work" }, "description": { "cs": "Třicet dní bez jediné přestávky.", "en": "Thirty days without a single break." } },
+    { "title": { "cs": "Stůj", "en": "Stand" }, "description": { "cs": "Vydrž tam, odkud ostatní odešli.", "en": "Hold the place others walked away from." } }
+  ]},
+  "68": { "quests": [
+    { "title": { "cs": "Makahiki", "en": "Makahiki" }, "description": { "cs": "Vyhlas příměří a drž ho.", "en": "Declare a truce and keep it." } },
+    { "title": { "cs": "Sklizeň", "en": "Harvest" }, "description": { "cs": "Rozděl úrodu rovným dílem.", "en": "Divide the harvest evenly." } },
+    { "title": { "cs": "Hojnost", "en": "Abundance" }, "description": { "cs": "Najdi, co máš navíc, a dej to dál.", "en": "Find what you have spare and give it on." } }
+  ]},
+  "69": { "quests": [
+    { "title": { "cs": "Poslouchej", "en": "Listen" }, "description": { "cs": "Vyslechni příběh až do konce bez přerušení.", "en": "Hear a story to its end without interrupting." } },
+    { "title": { "cs": "Příběh", "en": "The Story" }, "description": { "cs": "Vyprávěj napříč dvěma tradicemi.", "en": "Tell across two traditions." } },
+    { "title": { "cs": "Usedni", "en": "Sit Down" }, "description": { "cs": "Nejdřív jídlo, potom otázky.", "en": "Food first, questions after." } }
+  ]},
+  "70": { "quests": [
+    { "title": { "cs": "Fáze", "en": "Phase" }, "description": { "cs": "Počkej na správnou fázi, i když spěcháš.", "en": "Wait for the right phase even when you are in a hurry." } },
+    { "title": { "cs": "Tkání", "en": "Weaving" }, "description": { "cs": "Utkej noc z toho, co je po ruce.", "en": "Weave the night from what is at hand." } },
+    { "title": { "cs": "Rytmus", "en": "Rhythm" }, "description": { "cs": "Nespěchej a přesto doraz včas.", "en": "Do not hurry, and still arrive on time." } }
+  ]},
+  "71": { "quests": [
+    { "title": { "cs": "Ulovit slunce", "en": "Catch the Sun" }, "description": { "cs": "Zpomal toho, kdo příliš spěchá.", "en": "Slow down whoever is rushing." } },
+    { "title": { "cs": "Trik", "en": "The Trick" }, "description": { "cs": "Vyhraj nad silnějším bez jediné rány.", "en": "Beat someone stronger without a single blow." } },
+    { "title": { "cs": "Rozdělit oheň", "en": "Share the Fire" }, "description": { "cs": "Dej oheň dál a neztratit ho.", "en": "Pass the fire on without losing it." } }
+  ]},
+  "72": { "quests": [
+    { "title": { "cs": "Ukryté učení", "en": "Hidden Teaching" }, "description": { "cs": "Najdi učení ukryté pro tuhle dobu.", "en": "Find the teaching hidden for this age." } },
+    { "title": { "cs": "Skrýš", "en": "The Hiding" }, "description": { "cs": "Ukryj něco pro toho, kdo přijde po tobě.", "en": "Hide something for whoever comes after you." } },
+    { "title": { "cs": "Pravý čas", "en": "Right Time" }, "description": { "cs": "Vydrž, dokud to nedozraje.", "en": "Wait until it is ripe." } }
+  ]},
+  "73": { "quests": [
+    { "title": { "cs": "Píseň", "en": "The Song" }, "description": { "cs": "Slož píseň o vlastní chybě.", "en": "Compose a song about your own mistake." } },
+    { "title": { "cs": "Jeskyně", "en": "The Cave" }, "description": { "cs": "Zůstaň devět dní v tichu.", "en": "Stay nine days in silence." } },
+    { "title": { "cs": "Proměna", "en": "Transformation" }, "description": { "cs": "Neopakuj to, co jsi litoval.", "en": "Do not repeat what you regretted." } }
+  ]},
+  "74": { "quests": [
+    { "title": { "cs": "Pořádek", "en": "Order" }, "description": { "cs": "Udělej tři věci ve správném sledu.", "en": "Do three things in the right order." } },
+    { "title": { "cs": "Studium", "en": "Study" }, "description": { "cs": "Přečti text celý, ne jen shrnutí.", "en": "Read a text in full, not just the summary." } },
+    { "title": { "cs": "Stupně", "en": "Stages" }, "description": { "cs": "Projdi cestu po krocích a nic nevynech.", "en": "Walk the path in stages without skipping." } }
+  ]},
+  "75": { "quests": [
+    { "title": { "cs": "Lampa", "en": "The Lamp" }, "description": { "cs": "Posviť někomu na cestu a zůstaň vzadu.", "en": "Light someone's way and stay behind." } },
+    { "title": { "cs": "Slib", "en": "The Vow" }, "description": { "cs": "Slib něco malé a dodrž to.", "en": "Promise something small and keep it." } },
+    { "title": { "cs": "Etika", "en": "Ethics" }, "description": { "cs": "Nezraň ani slovem, ani mlčením.", "en": "Wound no one by word or by silence." } }
+  ]},
+  "76": { "quests": [
+    { "title": { "cs": "Překlad", "en": "Translation" }, "description": { "cs": "Přelož sdělení, aniž bys ztratil smysl.", "en": "Translate a message without losing the meaning." } },
+    { "title": { "cs": "Most", "en": "Bridge" }, "description": { "cs": "Spoj dva světy, které si nerozumí.", "en": "Join two worlds that do not understand each other." } },
+    { "title": { "cs": "Nezrada", "en": "No Betrayal" }, "description": { "cs": "Předávej věrně, i když to není výhodné.", "en": "Pass it on faithfully even when it does not pay." } }
+  ]},
+  "77": { "quests": [
+    { "title": { "cs": "Strach", "en": "Fear" }, "description": { "cs": "Postav se tomu, čeho se bojíš nejvíc.", "en": "Face what you fear most." } },
+    { "title": { "cs": "Hřbitov", "en": "Charnel Ground" }, "description": { "cs": "Projdi nocí beze zbraně.", "en": "Walk the night without a weapon." } },
+    { "title": { "cs": "Dar", "en": "The Gift" }, "description": { "cs": "Dej to, oč se bojíš přijít.", "en": "Give away what you fear losing." } }
+  ]},
+  "78": { "quests": [
+    { "title": { "cs": "Meč", "en": "The Sword" }, "description": { "cs": "Rozřízni názor, který už neplatí.", "en": "Cut through a view that no longer holds." } },
+    { "title": { "cs": "Otázka", "en": "The Question" }, "description": { "cs": "Ptej se, dokud to nepochopíš.", "en": "Keep asking until you understand." } },
+    { "title": { "cs": "Řeč", "en": "Speech" }, "description": { "cs": "Vysvětli to jednou větou.", "en": "Explain it in one sentence." } }
+  ]},
+  "79": { "quests": [
+    { "title": { "cs": "Deset slibů", "en": "Ten Vows" }, "description": { "cs": "Slož sliby a plň je den po dni.", "en": "Take the vows and keep them day by day." } },
+    { "title": { "cs": "Pouť", "en": "Pilgrimage" }, "description": { "cs": "Dojdi pěšky tam, kam se dá dojet.", "en": "Walk to a place you could have driven to." } },
+    { "title": { "cs": "Služba", "en": "Service" }, "description": { "cs": "Udělej každý den jednu drobnost pro druhé.", "en": "Do one small thing for others every day." } }
+  ]},
+  "80": { "quests": [
+    { "title": { "cs": "Bylina", "en": "The Herb" }, "description": { "cs": "Najdi lék tam, kde roste.", "en": "Find the medicine where it grows." } },
+    { "title": { "cs": "Čas", "en": "Time" }, "description": { "cs": "Daruj čas někomu, kdo ho nemá.", "en": "Give time to someone who has none." } },
+    { "title": { "cs": "Lapis", "en": "Lapis" }, "description": { "cs": "Obnov sílu celé skupině.", "en": "Restore the strength of the whole group." } }
+  ]},
+  "81": { "quests": [
+    { "title": { "cs": "Nic nepřidávej", "en": "Add Nothing" }, "description": { "cs": "Vydrž deset minut jen být.", "en": "Spend ten minutes simply being." } },
+    { "title": { "cs": "Jeskyně", "en": "The Cave" }, "description": { "cs": "Odlož všechny role aspoň na den.", "en": "Set down every role for a day." } },
+    { "title": { "cs": "Návrat", "en": "Return" }, "description": { "cs": "Vrať se mezi lidi beze změny.", "en": "Return among people unchanged." } }
+  ]},
+  "82": { "quests": [
+    { "title": { "cs": "Tanec", "en": "The Dance" }, "description": { "cs": "Ukonči to, co se přežilo.", "en": "End what has outlived itself." } },
+    { "title": { "cs": "Třetí oko", "en": "Third Eye" }, "description": { "cs": "Podívej se na věc bez iluze.", "en": "Look at a thing without illusion." } },
+    { "title": { "cs": "Prostor", "en": "Space" }, "description": { "cs": "Uvolni místo pro to nové.", "en": "Clear space for what comes next." } }
+  ]},
+  "83": { "quests": [
+    { "title": { "cs": "Pouto", "en": "The Bond" }, "description": { "cs": "Spoj dvě síly tak, aby se zesílily.", "en": "Join two strengths so they reinforce each other." } },
+    { "title": { "cs": "Dům", "en": "The House" }, "description": { "cs": "Drž dům pohromadě tři dny sporů.", "en": "Hold a house together through three days of quarrels." } },
+    { "title": { "cs": "Hora", "en": "The Mountain" }, "description": { "cs": "Vydrž vedle někoho, kdo hoří.", "en": "Stay beside someone who is burning." } }
+  ]},
+  "84": { "quests": [
+    { "title": { "cs": "Práh", "en": "Threshold" }, "description": { "cs": "Otevři cestu, která byla zavřená.", "en": "Open a road that was closed." } },
+    { "title": { "cs": "Překážka", "en": "The Obstacle" }, "description": { "cs": "Zjisti, co neseš zbytečně.", "en": "Find what you are carrying for no reason." } },
+    { "title": { "cs": "Pero", "en": "The Pen" }, "description": { "cs": "Zapiš příběh, aby nezůstal jen v hlavě.", "en": "Write the story down before it is lost." } }
+  ]},
+  "85": { "quests": [
+    { "title": { "cs": "Mísa", "en": "The Bowl" }, "description": { "cs": "Dej z každé výhry kousek dál.", "en": "Give a little of every gain onward." } },
+    { "title": { "cs": "Tok", "en": "Flow" }, "description": { "cs": "Nech peníze projít, ne je zamknout.", "en": "Let money pass through rather than locking it up." } },
+    { "title": { "cs": "Rybník", "en": "The Pond" }, "description": { "cs": "Obnov hojnost místa, které vyschlo.", "en": "Restore abundance to a place that dried up." } }
+  ]},
+  "86": { "quests": [
+    { "title": { "cs": "Devět nocí", "en": "Nine Nights" }, "description": { "cs": "Vydrž devět nocí obrany.", "en": "Hold nine nights of defence." } },
+    { "title": { "cs": "Lev", "en": "The Lion" }, "description": { "cs": "Jdi do ohně první.", "en": "Walk into the fire first." } },
+    { "title": { "cs": "Šakti", "en": "Shakti" }, "description": { "cs": "Chraň slabšího, i když to není výhodné.", "en": "Protect the weaker even when it does not pay." } }
+  ]},
+  "87": { "quests": [
+    { "title": { "cs": "Noc bez času", "en": "Night Without Time" }, "description": { "cs": "Odlož hodinky na jeden celý den.", "en": "Put the clock away for a whole day." } },
+    { "title": { "cs": "Ego", "en": "Ego" }, "description": { "cs": "Sniž se před někým, kdo to nečeká.", "en": "Bow before someone who does not expect it." } },
+    { "title": { "cs": "Konec", "en": "The End" }, "description": { "cs": "Ukonči něco bez zloby.", "en": "End something without spite." } }
+  ]},
+  "88": { "quests": [
+    { "title": { "cs": "Sestava", "en": "Formation" }, "description": { "cs": "Seřaď skupinu tak, aby se slyšela.", "en": "Arrange a group so it can hear itself." } },
+    { "title": { "cs": "Šest tváří", "en": "Six Faces" }, "description": { "cs": "Dohlédni na všechny strany naráz.", "en": "Watch every direction at once." } },
+    { "title": { "cs": "Směr", "en": "Direction" }, "description": { "cs": "Urči, kam jdeme, dřív než vyrazíme.", "en": "Decide where we are going before we set out." } }
+  ]},
+  "89": { "quests": [
+    { "title": { "cs": "Úsvit", "en": "Dawn" }, "description": { "cs": "Začni den znovu, i když včera stál za nic.", "en": "Begin the day again even if yesterday was worthless." } },
+    { "title": { "cs": "Poledne", "en": "Noon" }, "description": { "cs": "Udělej nejtěžší věc v polovině dne.", "en": "Do the hardest thing at midday." } },
+    { "title": { "cs": "Soumrak", "en": "Dusk" }, "description": { "cs": "Ukonči den poctivě, ne odkladem.", "en": "Close the day honestly, not by postponing." } }
+  ]},
+  "90": { "quests": [
+    { "title": { "cs": "Vadžra", "en": "Vajra" }, "description": { "cs": "Přeruš jeden útok, ať je jakkoli silný.", "en": "Interrupt one attack, however strong." } },
+    { "title": { "cs": "Bouře", "en": "Storm" }, "description": { "cs": "Otestuj, kdo ještě stojí.", "en": "Find out who is still standing." } },
+    { "title": { "cs": "Pokora", "en": "Humility" }, "description": { "cs": "Nech se zpochybnit a neobraňuj se.", "en": "Let yourself be questioned without defending." } }
+  ]},
+  "91": { "quests": [
+    { "title": { "cs": "Pramen", "en": "Source" }, "description": { "cs": "Najdi, kde problém začíná.", "en": "Find where the problem begins." } },
+    { "title": { "cs": "Tok", "en": "Current" }, "description": { "cs": "Odnes, co je špinavé, a nezastavuj se.", "en": "Carry the dirt away and do not stop." } },
+    { "title": { "cs": "Moře", "en": "The Sea" }, "description": { "cs": "Dopluj až do konce, i když už nikdo nedívá.", "en": "Go all the way to the sea even when no one is watching." } }
+  ]},
+  "92": { "quests": [
+    { "title": { "cs": "Jeskyně", "en": "The Cave" }, "description": { "cs": "Zavři se na den a vrať se.", "en": "Close yourself away for a day and return." } },
+    { "title": { "cs": "Zrcadlo", "en": "The Mirror" }, "description": { "cs": "Ukaž světlo někomu, kdo ho nevidí.", "en": "Show light to someone who cannot see it." } },
+    { "title": { "cs": "Svítání", "en": "Sunrise" }, "description": { "cs": "Vrať naději místu, které se vzdalo.", "en": "Return hope to a place that gave up." } }
+  ]},
+  "93": { "quests": [
+    { "title": { "cs": "Meč", "en": "The Sword" }, "description": { "cs": "Najdi, co je ukryté v ocasu.", "en": "Find what is hidden in the tail." } },
+    { "title": { "cs": "Bouře", "en": "Storm" }, "description": { "cs": "Smet zkažený pořádek.", "en": "Sweep away rotten order." } },
+    { "title": { "cs": "Očista", "en": "Purge" }, "description": { "cs": "Ukliď po sobě, ne po druhých.", "en": "Clean up after yourself, not after others." } }
+  ]},
+  "94": { "quests": [
+    { "title": { "cs": "Noc", "en": "Night" }, "description": { "cs": "Podívej se, co se ve dne přehlédlo.", "en": "Look at what was missed by day." } },
+    { "title": { "cs": "Přezkum", "en": "Review" }, "description": { "cs": "Najdi chybu dřív, než napáchá škodu.", "en": "Find the fault before it does damage." } },
+    { "title": { "cs": "Úsvit", "en": "Dawn" }, "description": { "cs": "Přines výsledek ve dne a bez výmluv.", "en": "Bring the result by daylight, without excuses." } }
+  ]},
+  "95": { "quests": [
+    { "title": { "cs": "Torii", "en": "Torii" }, "description": { "cs": "Otevři bránu někomu novému.", "en": "Open the gate for someone new." } },
+    { "title": { "cs": "Rýže", "en": "Rice" }, "description": { "cs": "Rozděl úrodu tak, aby nikdo neodešel s prázdnou.", "en": "Divide the harvest so no one leaves empty-handed." } },
+    { "title": { "cs": "První krok", "en": "First Step" }, "description": { "cs": "Pomoz začátečníkovi udělat první krok.", "en": "Help a beginner take the first step." } }
+  ]},
+  "96": { "quests": [
+    { "title": { "cs": "Host", "en": "The Guest" }, "description": { "cs": "Ubytuj někoho cizího na jednu noc.", "en": "Host a stranger for one night." } },
+    { "title": { "cs": "Dům", "en": "The House" }, "description": { "cs": "Nech dveře otevřené, i když se to nehodí.", "en": "Leave the door open even when it is inconvenient." } },
+    { "title": { "cs": "Férový obchod", "en": "Fair Trade" }, "description": { "cs": "Uzavři dohodu, ze které má druhý stejně.", "en": "Close a deal where the other gains as much." } }
+  ]},
+  "97": { "quests": [
+    { "title": { "cs": "Práh", "en": "Threshold" }, "description": { "cs": "Rozluč se pořádně, ne cestou.", "en": "Say goodbye properly, not on your way out." } },
+    { "title": { "cs": "Yomi", "en": "Yomi" }, "description": { "cs": "Projdi tmou bez světla.", "en": "Walk through darkness without a light." } },
+    { "title": { "cs": "Nenávrat", "en": "No Return" }, "description": { "cs": "Přijmi, že se některé věci nevrací.", "en": "Accept that some things do not come back." } }
+  ]},
+  "98": { "quests": [
+    { "title": { "cs": "Bašta", "en": "Bastion" }, "description": { "cs": "Postav obranu, která vydrží první náraz.", "en": "Raise a defence that survives the first blow." } },
+    { "title": { "cs": "Šíp", "en": "Arrow" }, "description": { "cs": "Nech šíp v toulci, když to jde.", "en": "Leave the arrow in the quiver when you can." } },
+    { "title": { "cs": "Hlídka", "en": "Watch" }, "description": { "cs": "Drž mír celý jeden týden.", "en": "Keep the peace for one full week." } }
+  ]},
+  "99": { "quests": [
+    { "title": { "cs": "Melodie", "en": "Melody" }, "description": { "cs": "Zahraj sám, ať to má tvar.", "en": "Play alone until it has a shape." } },
+    { "title": { "cs": "Souhra", "en": "Together" }, "description": { "cs": "Zahrajte spolu, ať to má smysl.", "en": "Play together until it has meaning." } },
+    { "title": { "cs": "Proud", "en": "Flow" }, "description": { "cs": "Nech hudbu téct, i když se pokazí.", "en": "Let the music flow even when it goes wrong." } }
+  ]},
+  "100": { "quests": [
+    { "title": { "cs": "Mandala", "en": "Mandala" }, "description": { "cs": "Nakresli svět, jak ho vidíš.", "en": "Draw the world as you see it." } },
+    { "title": { "cs": "Dvě mandaly", "en": "Two Mandalas" }, "description": { "cs": "Spoj vnitřní a vnější obraz.", "en": "Join the inner and the outer picture." } },
+    { "title": { "cs": "Šablona", "en": "Stencil" }, "description": { "cs": "Zpřehledni složitý plán.", "en": "Make a complicated plan legible." } }
+  ]},
+  "101": { "quests": [
+    { "title": { "cs": "Nahlas", "en": "Aloud" }, "description": { "cs": "Přečti text veřejně, bez omluvy.", "en": "Read a text in public, without apology." } },
+    { "title": { "cs": "Sbor", "en": "Chorus" }, "description": { "cs": "Zpívej s ostatními, i když to není dokonalé.", "en": "Sing with others even when it is not perfect." } },
+    { "title": { "cs": "Text pro všechny", "en": "Text for All" }, "description": { "cs": "Vysvětli učení bez učenosti.", "en": "Explain a teaching without learnedness." } }
+  ]}
+}

@@ -75,7 +75,7 @@ Rozsah textů: `subtitle`, `role`, `location`, `questLine`, `teaching`,
 `ability`, `quote` — vše autorsky, s jednotným hlasem (věcný, klidný,
 bez marketingu a bez internalit typu „DAO timelock" / „M1 milestone").
 
-## 5. Questy (druhá dávka)
+## 5. Questy (druhá a třetí dávka)
 
 Questy byly jediná část, která zůstala anglicky — a zároveň největší kvalitativní
 defekt: **23 avatarů mělo identickou pětičlennou linii** („First Awakening /
@@ -84,16 +84,16 @@ takže překlad by jen zopakoval stejnou nudu 23×.
 
 | | |
 |---|---|
-| Avatarů s questy | 50 / 200 |
-| Questů celkem | **254** (z toho 115 nově napsaných) |
-| Unikátních linií přeloženo | 27 (139 questů) |
-| Generická linie nahrazena vlastní | **23 avatarů** (115 questů) |
-| Jazyky | cs + en u všech 254 |
+| Avatarů s questy | **200 / 200** |
+| Questů celkem | **704** — všechny cs + en |
+| Přeložené existující linie | 27 linií / 139 questů (`quests-unique.json`) |
+| Nahrazená generická kopie | 23 avatarů / 115 questů (`quests-filler.json`) |
+| Doplněné „lite" linie | **150 avatarů / 450 questů** (`quests-lite-1..3.json`, 3 questy na postavu) |
 
-Dva soubory v overlayi: `quests-unique.json` (překlady existujících linií)
-a `quests-filler.json` (nové linie tam, kde byla kopie). Stránka i generátor
-umí `quests[].title/.description` jako `LocalizedText`; prázdné questy se
-zahazují už v generátoru.
+„Lite" linie = tři krátké questy na postavu (titul + jedna věta), psané z její
+role, učení a schopnosti — ne generický filler. Stránka i generátor berou
+`quests[].title/.description` jako `LocalizedText`, prázdné questy se zahazují
+už při generování.
 
 ## 6. Meze (poctivě)
 

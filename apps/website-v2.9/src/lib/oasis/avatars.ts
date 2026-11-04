@@ -5273,7 +5273,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Vision Quest — brings an answer you could not put into words."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Kruh",
+          "en": "The Circle"
+        },
+        "description": {
+          "cs": "Postav kruh a pozvi do něj i toho, kdo stojí mimo.",
+          "en": "Draw a circle and invite in whoever stands outside it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Vidění",
+          "en": "The Vision"
+        },
+        "description": {
+          "cs": "Projdi vizní pouť bez jídla a bez vody.",
+          "en": "Complete a vision quest without food or water."
+        }
+      },
+      {
+        "title": {
+          "cs": "Předání",
+          "en": "Passing It On"
+        },
+        "description": {
+          "cs": "Vyprávěj svou vizi někomu mladšímu.",
+          "en": "Tell your vision to someone younger."
+        }
+      }
+    ],
     "essence": {
       "cs": "Heȟáka Sápa (Černý Loš, Oglala Lakota, 1863–1950) je archetyp vizionáře, který nesl Velkou Vizi šesti prarodičů. V ZION OASIS není kopie konkrétní osoby — je stylizovaný průvodce kruhem, směry a předky.",
       "en": "Heȟáka Sápa (Black Elk, Oglala Lakota, 1863–1950) is the archetype of the visionary who carried the Great Vision of the six grandfathers. In ZION OASIS he is not a copy of the historical person — he is a stylized guide through the circle, the directions, and the ancestors."
@@ -5325,7 +5356,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Blessing of the Pipe — calms a conflict before it catches."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Dýmka",
+          "en": "The Pipe"
+        },
+        "description": {
+          "cs": "Uzavři spor kouřem dýmky, ne podpisem.",
+          "en": "End a quarrel with the pipe, not with a signature."
+        }
+      },
+      {
+        "title": {
+          "cs": "Sedm generací",
+          "en": "Seven Generations"
+        },
+        "description": {
+          "cs": "Zasaď něco, co vydrží sedm generací.",
+          "en": "Plant something that will outlast seven generations."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dar",
+          "en": "The Gift"
+        },
+        "description": {
+          "cs": "Přijmi dar a neudělej z něj dluh.",
+          "en": "Receive a gift and do not turn it into a debt."
+        }
+      }
+    ],
     "essence": {
       "cs": "Ptesáŋ Wíŋ je mýtická bytost, ne historická osoba — posvátná poselkyně, jež dává Posvátnou dýmku a učí sedm svatých obřadů. V OASIS je mentorkou krize a transformace.",
       "en": "Ptesáŋ Wíŋ is a mythical being, not a historical person — the sacred messenger who gives the Sacred Pipe and teaches the seven holy rites. In OASIS she is the mentor of crisis and transformation."
@@ -5377,7 +5439,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Weaving Alliances — joins two distant paths into one."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "První nit",
+          "en": "First Thread"
+        },
+        "description": {
+          "cs": "Spoj dva hráče, kteří se navzájem neznají.",
+          "en": "Connect two players who do not know each other."
+        }
+      },
+      {
+        "title": {
+          "cs": "Síť",
+          "en": "The Web"
+        },
+        "description": {
+          "cs": "Vytvoř spojenectví tří gild.",
+          "en": "Form an alliance of three guilds."
+        }
+      },
+      {
+        "title": {
+          "cs": "Projít",
+          "en": "Pass Through"
+        },
+        "description": {
+          "cs": "Projdi celou sítí, aniž bys přetrhl jediné vlákno.",
+          "en": "Walk the whole web without breaking a single strand."
+        }
+      }
+    ],
     "essence": {
       "cs": "Kókyangwúti (Spider Grandmother) je archetypální strážkyně tkaní reality — v OASIS propojuje questy, aliance a léčí rozdělení mezi frakcemi.",
       "en": "Kókyangwúti (Spider Grandmother) is the archetypal guardian of the weaving of reality — in OASIS she links quests and alliances and heals divisions between factions."
@@ -5429,7 +5522,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Twin Trick — exposes the weakness the guardian hides."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Xibalba",
+          "en": "Xibalba"
+        },
+        "description": {
+          "cs": "Sestup do podsvětí a přijmi jeho hru.",
+          "en": "Descend into the underworld and accept its game."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dvojí trik",
+          "en": "Twin Trick"
+        },
+        "description": {
+          "cs": "Odhal slabinu strážce bez jediného úderu.",
+          "en": "Expose the guardian's weakness without a single blow."
+        }
+      },
+      {
+        "title": {
+          "cs": "Návrat",
+          "en": "Return"
+        },
+        "description": {
+          "cs": "Vrať se nahoru i s tím, kdo zůstal dole.",
+          "en": "Come back up with the one who was left below."
+        }
+      }
+    ],
     "essence": {
       "cs": "Hunahpú a Xbalanqué jsou dvojice — hrdinové Popol Vuh, kteří sestupují do Xibalby a vítězí lstí a rozpoznáním, ne holou silou.",
       "en": "Hunahpú and Xbalanqué are a pair — the Hero Twins of the Popol Vuh who descend into Xibalba and win through cunning and discernment, not brute strength."
@@ -5481,7 +5605,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Call of the Apu — asks the land for help where water is missing."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Ayni",
+          "en": "Ayni"
+        },
+        "description": {
+          "cs": "Poděkuj zemi dřív, než si od ní vezmeš.",
+          "en": "Thank the land before you take from it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Volání Apu",
+          "en": "Call of the Apu"
+        },
+        "description": {
+          "cs": "Přiveď vodu tam, kde už vyschla.",
+          "en": "Bring water where it has run dry."
+        }
+      },
+      {
+        "title": {
+          "cs": "Vzájemnost",
+          "en": "Reciprocity"
+        },
+        "description": {
+          "cs": "Vrať dvakrát tolik, co jsi dostal.",
+          "en": "Give back twice what you received."
+        }
+      }
+    ],
     "essence": {
       "cs": "Don Mariano je stylizovaný archetyp altomesayoq — mluvčí Apukun (duchů hor), učitel ayni (vzájemnosti) a vrstev Pachy.",
       "en": "Don Mariano is a stylized archetype of the altomesayoq — speaker for the Apukuna (mountain spirits), teacher of ayni (reciprocity) and the layers of Pacha."
@@ -5533,7 +5688,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Summoning the Ancestors — briefly, one who had fallen silent speaks."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Zpaměti",
+          "en": "By Heart"
+        },
+        "description": {
+          "cs": "Nauč se celý příběh zpaměti.",
+          "en": "Learn a whole story by heart."
+        }
+      },
+      {
+        "title": {
+          "cs": "Předkové",
+          "en": "Ancestors"
+        },
+        "description": {
+          "cs": "Vyprávěj příběh, který se už dávno nevyprávěl.",
+          "en": "Tell a story that has not been told for a long time."
+        }
+      },
+      {
+        "title": {
+          "cs": "Předání",
+          "en": "Handover"
+        },
+        "description": {
+          "cs": "Předej příběh dál bez papíru a bez zápisu.",
+          "en": "Pass a story on without paper or notes."
+        }
+      }
+    ],
     "essence": {
       "cs": "Doña Rosalía je kompozit moderních chilam balam žen — strážkyně ústní paměti Popol Vuh a most mezi chrámem Santo Tomás a tržnicí, kde se příběh setkává se životem.",
       "en": "Doña Rosalía is a composite of modern chilam balam women — keeper of the oral memory of the Popol Vuh and a bridge between the Santo Tomás temple and the marketplace where story meets life."
@@ -5585,7 +5771,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Pahana Sight — you see who came to help and who came to take."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Pravý Pahana",
+          "en": "True Pahana"
+        },
+        "description": {
+          "cs": "Rozliš příslib od lákadla.",
+          "en": "Tell a promise from a lure."
+        }
+      },
+      {
+        "title": {
+          "cs": "Kámen",
+          "en": "The Stone"
+        },
+        "description": {
+          "cs": "Přečti, co je psáno v kameni, ne v řeči.",
+          "en": "Read what is written in stone, not in speech."
+        }
+      },
+      {
+        "title": {
+          "cs": "Trpělivost",
+          "en": "Patience"
+        },
+        "description": {
+          "cs": "Počkej, až se slib sám projeví.",
+          "en": "Wait until the promise shows itself."
+        }
+      }
+    ],
     "essence": {
       "cs": "Bílé Pero odkazuje na Hopi proroctví a kamennou tabulku — archetyp strážce, který rozlišuje pravého Pahánu od falešného.",
       "en": "White Feather refers to the Hopi prophecy and the stone tablet — the archetype of a guardian who distinguishes the true Pahána from the false one."
@@ -5637,7 +5854,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Rainbow Blaze — gives the whole group courage for one decisive moment."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Duha",
+          "en": "Rainbow"
+        },
+        "description": {
+          "cs": "Dej skupině odvahu v rozhodující chvíli.",
+          "en": "Give the group courage at the decisive moment."
+        }
+      },
+      {
+        "title": {
+          "cs": "Oheň",
+          "en": "Fire"
+        },
+        "description": {
+          "cs": "Projdi zkouškou a neustup ani o krok.",
+          "en": "Pass the trial without stepping back."
+        }
+      },
+      {
+        "title": {
+          "cs": "Děti",
+          "en": "The Children"
+        },
+        "description": {
+          "cs": "Uč ty, kterým nikdo nevěřil.",
+          "en": "Teach those no one believed in."
+        }
+      }
+    ],
     "essence": {
       "cs": "Ohnivá Oka je archetyp šamanky spojený s vizí Lee Browna (1994) a proroctvím Rainbow Warriors — v OASIS gilda/titul pro hráče žijící sedm pravidel.",
       "en": "Ohnivá Oka is a shamaness archetype linked to Lee Brown's 1994 vision and the Rainbow Warriors prophecy — in OASIS a guild/title for players living the seven rules."
@@ -5689,7 +5937,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Dream Reversal — you see the consequence before it happens."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Obrácený sen",
+          "en": "Dream Reversal"
+        },
+        "description": {
+          "cs": "Uvidět důsledek dřív, než nastane.",
+          "en": "See the consequence before it happens."
+        }
+      },
+      {
+        "title": {
+          "cs": "Les",
+          "en": "The Forest"
+        },
+        "description": {
+          "cs": "Ochraň území před vytěžením.",
+          "en": "Protect a territory from being stripped."
+        }
+      },
+      {
+        "title": {
+          "cs": "Slovo",
+          "en": "The Word"
+        },
+        "description": {
+          "cs": "Promluv za ty, kdo mluvit nemohou.",
+          "en": "Speak for those who cannot speak."
+        }
+      }
+    ],
     "essence": {
       "cs": "Davi Kopenawa jako žijící referenční inspirace — v OASIS stylizovaný průvodce tradicí xapiri a knihy The Falling Sky; respekt k zemi a vodě Yanomamiů.",
       "en": "Davi Kopenawa as a living referential inspiration — in OASIS a stylized guide to the xapiri tradition and the book The Falling Sky; respect for Yanomami land and water."
@@ -5741,7 +6020,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Reverse Logic — briefly switches off rules that serve no one."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Obráceně",
+          "en": "Backwards"
+        },
+        "description": {
+          "cs": "Udělej jeden den všechno obráceně.",
+          "en": "Do everything backwards for one day."
+        }
+      },
+      {
+        "title": {
+          "cs": "Smích",
+          "en": "Laughter"
+        },
+        "description": {
+          "cs": "Rozesměj toho, kdo se bojí.",
+          "en": "Make the one who is afraid laugh."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pravda",
+          "en": "Truth"
+        },
+        "description": {
+          "cs": "Řekni pravdu tak, aby se dala slyšet.",
+          "en": "Tell the truth in a way that can be heard."
+        }
+      }
+    ],
     "essence": {
       "cs": "Heyókȟa dělá všechno obráceně proto, aby ostatní viděli, co dělají samozřejmě. V OASIS chrání komunitu před tím nejtišším nebezpečím: před tím, že si zvykne na něco, co už nedává smysl.",
       "en": "Heyókȟa does everything backwards so that others can see what they do automatically. In OASIS he protects the community from the quietest danger: getting used to something that no longer makes sense."
@@ -5793,7 +6103,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Lineage Tracing — shows where someone comes from and what they carry."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Linie",
+          "en": "Lineage"
+        },
+        "description": {
+          "cs": "Vypátrej, odkud kdo přišel.",
+          "en": "Trace where someone came from."
+        }
+      },
+      {
+        "title": {
+          "cs": "Tři větve",
+          "en": "Three Branches"
+        },
+        "description": {
+          "cs": "Spoj tři linie v jednu.",
+          "en": "Join three lineages into one."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pokračování",
+          "en": "Continuation"
+        },
+        "description": {
+          "cs": "Předej jméno dál, aniž bys ho změnil.",
+          "en": "Pass a name on without changing it."
+        }
+      }
+    ],
     "essence": {
       "cs": "Lāʻilaʻi stojí na začátku tří linií a její úkol není vládnout, ale neztratit nit. V OASIS připomíná, že tradice není kámen, který se hlídá, ale řeka, která se musí předávat dál.",
       "en": "Lāʻilaʻi stands at the beginning of three lineages, and her task is not to rule but not to lose the thread. In OASIS she reminds us that tradition is not a stone to guard but a river that must be passed on."
@@ -5845,7 +6186,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Volcanic Rebirth — burns the old and leaves fertile ground."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "První oheň",
+          "en": "First Fire"
+        },
+        "description": {
+          "cs": "Spal to, co už nedrží.",
+          "en": "Burn what no longer holds."
+        }
+      },
+      {
+        "title": {
+          "cs": "Nová půda",
+          "en": "New Ground"
+        },
+        "description": {
+          "cs": "Zasaď na spáleništi.",
+          "en": "Plant something on the burn."
+        }
+      },
+      {
+        "title": {
+          "cs": "Úcta",
+          "en": "Respect"
+        },
+        "description": {
+          "cs": "Nepros o výjimku, požádej o cestu.",
+          "en": "Do not ask for an exception, ask for a way."
+        }
+      }
+    ],
     "essence": {
       "cs": "Pele je v havajském kánonu bohyně, která tvoří tím, že spálí — ne z krutosti, ale protože ostrov jinak nevznikne. V OASIS učí, že některé staré věci musí shořet, aby na jejich místě bylo možné postavit něco obyvatelného.",
       "en": "Pele in Hawaiian canon is the goddess who creates by burning — not out of cruelty, but because the island would not exist otherwise. In OASIS she teaches that some old things must burn so something habitable can be built in their place."
@@ -5897,7 +6269,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Healing Dance — returns strength to one person at the right time."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Tanec",
+          "en": "The Dance"
+        },
+        "description": {
+          "cs": "Uzdrav tancem, ne slovy.",
+          "en": "Heal with dance, not with words."
+        }
+      },
+      {
+        "title": {
+          "cs": "Mele",
+          "en": "Mele"
+        },
+        "description": {
+          "cs": "Slož píseň pro někoho nemocného.",
+          "en": "Compose a song for someone who is ill."
+        }
+      },
+      {
+        "title": {
+          "cs": "Návrat sestry",
+          "en": "Sister's Return"
+        },
+        "description": {
+          "cs": "Přiveď zpátky toho, kdo odešel.",
+          "en": "Bring back the one who left."
+        }
+      }
+    ],
     "essence": {
       "cs": "Hiʻiaka putuje mezi ostrovy, aby přivedla zpátky to, co bylo odneseno. V OASIS je léčitelnou vzpomínkou na to, že tělo si pamatuje i to, co slovy přeskočíš — a tanec to umí vrátit.",
       "en": "Hiʻiaka travels between islands to bring back what was taken. In OASIS she is the healing memory that the body remembers even what words skip over — and that dance can bring it back."
@@ -5949,7 +6352,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Presence of Genesis — opens a place that did not yet exist."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Pramen",
+          "en": "The Spring"
+        },
+        "description": {
+          "cs": "Najdi místo, kde něco začíná.",
+          "en": "Find the place where something begins."
+        }
+      },
+      {
+        "title": {
+          "cs": "Ticho",
+          "en": "Silence"
+        },
+        "description": {
+          "cs": "Vytvoř něco bez hluku a bez oznámení.",
+          "en": "Create something without noise or announcement."
+        }
+      },
+      {
+        "title": {
+          "cs": "Prostor",
+          "en": "Space"
+        },
+        "description": {
+          "cs": "Dej místu prostor, aby vzniklo samo.",
+          "en": "Leave room for a place to come into being."
+        }
+      }
+    ],
     "essence": {
       "cs": "Typ: environmentální / eventová přítomnost (žádné hráčské vlastnictví). Dosah: server-wide. Cooldown: pouze sezónní / komunitní události.",
       "en": "Type: environmental / event presence (no player ownership). Reach: server-wide. Cooldown: seasonal / community events only."
@@ -6001,7 +6435,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Mana Flow — redistributes strength where it is missing."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Tok",
+          "en": "Flow"
+        },
+        "description": {
+          "cs": "Uvolni to, co se zastavilo.",
+          "en": "Release what has stopped moving."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hlubina",
+          "en": "The Deep"
+        },
+        "description": {
+          "cs": "Sestup tam, kam není vidět.",
+          "en": "Descend where you cannot see."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rozdání",
+          "en": "Sharing"
+        },
+        "description": {
+          "cs": "Rozdej sílu tam, kde chybí.",
+          "en": "Give strength where it is missing."
+        }
+      }
+    ],
     "essence": {
       "cs": "Kanaloa je pán hlubiny — ta část světa, kam se nedá dohlédnout a která přesto rozhoduje. V OASIS učí, že síla, která se přestane pohybovat, začne hnít, i když ji držíš v bezpečí.",
       "en": "Kanaloa is the lord of the deep — the part of the world you cannot see into and that decides nonetheless. In OASIS he teaches that power which stops moving begins to rot, even if you keep it safe."
@@ -6053,7 +6518,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Endurance Blessing — you last one day longer than exhaustion."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Kámen",
+          "en": "Stone"
+        },
+        "description": {
+          "cs": "Postav zeď, která vydrží rok.",
+          "en": "Build a wall that lasts a year."
+        }
+      },
+      {
+        "title": {
+          "cs": "Denní práce",
+          "en": "Daily Work"
+        },
+        "description": {
+          "cs": "Třicet dní bez jediné přestávky.",
+          "en": "Thirty days without a single break."
+        }
+      },
+      {
+        "title": {
+          "cs": "Stůj",
+          "en": "Stand"
+        },
+        "description": {
+          "cs": "Vydrž tam, odkud ostatní odešli.",
+          "en": "Hold the place others walked away from."
+        }
+      }
+    ],
     "essence": {
       "cs": "Kū znamená stát vzpřímeně a vytrvat, i když se nikdo nedívá. V OASIS je patronem té neviditelné práce, která drží všechno ostatní — a kterou lidé ocení, až když chybí.",
       "en": "Kū means to stand upright and endure even when no one is watching. In OASIS he is the patron of the invisible work that holds everything else up — and which people appreciate only when it stops."
@@ -6105,7 +6601,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Makahiki — declares a truce and shares the harvest."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Makahiki",
+          "en": "Makahiki"
+        },
+        "description": {
+          "cs": "Vyhlas příměří a drž ho.",
+          "en": "Declare a truce and keep it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Sklizeň",
+          "en": "Harvest"
+        },
+        "description": {
+          "cs": "Rozděl úrodu rovným dílem.",
+          "en": "Divide the harvest evenly."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hojnost",
+          "en": "Abundance"
+        },
+        "description": {
+          "cs": "Najdi, co máš navíc, a dej to dál.",
+          "en": "Find what you have spare and give it on."
+        }
+      }
+    ],
     "essence": {
       "cs": "Lono přináší období, ve kterém se neválčí, a úrodu, která se rozděluje. V OASIS je připomínkou, že hojnost není chvíle, kdy máš nejvíc, ale chvíle, kdy je co dát.",
       "en": "Lono brings the season in which no one fights, and a harvest that is shared. In OASIS he is the reminder that abundance is not the moment you have the most, but the moment there is something to give."
@@ -6157,7 +6684,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Story Gate — opens a way where meaning is missing."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Poslouchej",
+          "en": "Listen"
+        },
+        "description": {
+          "cs": "Vyslechni příběh až do konce bez přerušení.",
+          "en": "Hear a story to its end without interrupting."
+        }
+      },
+      {
+        "title": {
+          "cs": "Příběh",
+          "en": "The Story"
+        },
+        "description": {
+          "cs": "Vyprávěj napříč dvěma tradicemi.",
+          "en": "Tell across two traditions."
+        }
+      },
+      {
+        "title": {
+          "cs": "Usedni",
+          "en": "Sit Down"
+        },
+        "description": {
+          "cs": "Nejdřív jídlo, potom otázky.",
+          "en": "Food first, questions after."
+        }
+      }
+    ],
     "essence": {
       "cs": "Stará Kumu Lehua je složená babička více tradic — a právě proto jí nikdo nevnucuje jediný výklad. V OASIS je učitelkou, která nezačíná poučováním, ale tím, že se nejdřív nají a pak se ptá.",
       "en": "Old Kumu Lehua is a grandmother composed of several traditions — and precisely for that no one forces a single reading on her. In OASIS she is the teacher who begins not with a lesson but with eating first and asking afterwards."
@@ -6209,7 +6767,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Lunar Cycle — at the right hour, what you do grows stronger."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Fáze",
+          "en": "Phase"
+        },
+        "description": {
+          "cs": "Počkej na správnou fázi, i když spěcháš.",
+          "en": "Wait for the right phase even when you are in a hurry."
+        }
+      },
+      {
+        "title": {
+          "cs": "Tkání",
+          "en": "Weaving"
+        },
+        "description": {
+          "cs": "Utkej noc z toho, co je po ruce.",
+          "en": "Weave the night from what is at hand."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rytmus",
+          "en": "Rhythm"
+        },
+        "description": {
+          "cs": "Nespěchej a přesto doraz včas.",
+          "en": "Do not hurry, and still arrive on time."
+        }
+      }
+    ],
     "essence": {
       "cs": "Hina tká a odměřuje noc — drží rytmus, který se nikdy nezpozdí a nikdy nespěchá. V OASIS chrání před tím, co lidské systémy dělají nejčastěji: spletou si rychlost s pokrokem.",
       "en": "Hina weaves and measures the night — she keeps a rhythm that is never late and never hurries. In OASIS she guards against what human systems do most often: mistaking speed for progress."
@@ -6261,7 +6850,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Trickster Win — defeat a stronger foe without a blow."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Ulovit slunce",
+          "en": "Catch the Sun"
+        },
+        "description": {
+          "cs": "Zpomal toho, kdo příliš spěchá.",
+          "en": "Slow down whoever is rushing."
+        }
+      },
+      {
+        "title": {
+          "cs": "Trik",
+          "en": "The Trick"
+        },
+        "description": {
+          "cs": "Vyhraj nad silnějším bez jediné rány.",
+          "en": "Beat someone stronger without a single blow."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rozdělit oheň",
+          "en": "Share the Fire"
+        },
+        "description": {
+          "cs": "Dej oheň dál a neztratit ho.",
+          "en": "Pass the fire on without losing it."
+        }
+      }
+    ],
     "essence": {
       "cs": "Maui je polobůh havajské a širší polynéské mytologie, syn Hina a tvůrce nebeských i pozemských divů. Zrozen jako kupua — bytost s nadřazenými silami, ale stále spjatá s lidskými vášněmi. V ZION OASIS představuje pružnou odvahu, vynalézavost a hluboké spojení s oceánem i nebesy. Není dokonalý hrdina — je tricksterem, který svými chybami učí.",
       "en": "Maui is a demigod of Hawaiian and wider Polynesian mythology, son of Hina and maker of celestial and earthly wonders. Born a kupua — a being with supernormal powers still bound to human passions. In ZION OASIS he embodies resilient courage, resourcefulness and deep connection with ocean and sky. He is no perfect hero — he is a trickster who teaches through his mistakes."
@@ -6313,7 +6933,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Terma Discovery — unlocks a teaching hidden for the right time."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Ukryté učení",
+          "en": "Hidden Teaching"
+        },
+        "description": {
+          "cs": "Najdi učení ukryté pro tuhle dobu.",
+          "en": "Find the teaching hidden for this age."
+        }
+      },
+      {
+        "title": {
+          "cs": "Skrýš",
+          "en": "The Hiding"
+        },
+        "description": {
+          "cs": "Ukryj něco pro toho, kdo přijde po tobě.",
+          "en": "Hide something for whoever comes after you."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pravý čas",
+          "en": "Right Time"
+        },
+        "description": {
+          "cs": "Vydrž, dokud to nedozraje.",
+          "en": "Wait until it is ripe."
+        }
+      }
+    ],
     "essence": {
       "cs": "Padmasambhava, zvaný též Guru Rinpočhe („drahocenný mistr“), je buddhistický mistr, který v 8. století přivezl Vadžrajánu do Tibetu. Zrozen z lotosu bez lidských rodičů v zemi Oddijána, inkarnace Buddhovy moudrosti. V ZION OASIS je archetypem transformace — toho, co přetaví temnotu na osvícení. Nepopírá stín, ale tančí s ním.",
       "en": "Padmasambhava, also called Guru Rinpoche ('Precious Master'), is the Buddhist master who brought Vajrayana to Tibet in the 8th century. Born from a lotus without human parents in the land of Oddiyana, an incarnation of the Buddha's wisdom. In ZION OASIS he is the archetype of transformation — of what melts darkness into awakening. He does not deny the shadow; he dances with it."
@@ -6365,7 +7016,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Song of Realization — washes off the weight you carried for years."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Píseň",
+          "en": "The Song"
+        },
+        "description": {
+          "cs": "Slož píseň o vlastní chybě.",
+          "en": "Compose a song about your own mistake."
+        }
+      },
+      {
+        "title": {
+          "cs": "Jeskyně",
+          "en": "The Cave"
+        },
+        "description": {
+          "cs": "Zůstaň devět dní v tichu.",
+          "en": "Stay nine days in silence."
+        }
+      },
+      {
+        "title": {
+          "cs": "Proměna",
+          "en": "Transformation"
+        },
+        "description": {
+          "cs": "Neopakuj to, co jsi litoval.",
+          "en": "Do not repeat what you regretted."
+        }
+      }
+    ],
     "essence": {
       "cs": "Milarepa („Mila, zářící ve sluchu“) je tibetský yogi, básník a světec, který dosáhl osvícení v jednom životě navzdory strašlivé minulosti. Původně se vyučil černé magii, aby pomstil matku, později podstoupil extrémní asketismus pod mistrem Marpou. V ZION OASIS ztělesňuje možnost proměny — z vraha světcem. Patron těch, kteří nesou těžkou karmu.",
       "en": "Milarepa ('Mila, radiant in hearing') is a Tibetan yogi, poet and saint who attained enlightenment in a single lifetime despite a terrible past. He first trained in black magic to avenge his mother, then underwent extreme asceticism under Master Marpa. In ZION OASIS he embodies the possibility of transformation — from murderer to saint. Patron of those carrying heavy karma."
@@ -6417,7 +7099,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Lamrim Focus — speeds learning and settles the mind."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Pořádek",
+          "en": "Order"
+        },
+        "description": {
+          "cs": "Udělej tři věci ve správném sledu.",
+          "en": "Do three things in the right order."
+        }
+      },
+      {
+        "title": {
+          "cs": "Studium",
+          "en": "Study"
+        },
+        "description": {
+          "cs": "Přečti text celý, ne jen shrnutí.",
+          "en": "Read a text in full, not just the summary."
+        }
+      },
+      {
+        "title": {
+          "cs": "Stupně",
+          "en": "Stages"
+        },
+        "description": {
+          "cs": "Projdi cestu po krocích a nic nevynech.",
+          "en": "Walk the path in stages without skipping."
+        }
+      }
+    ],
     "essence": {
       "cs": "Tsongkhapa (Lobsang Drakpa), tibetský buddhistický reformátor a zakladatel školy Gelug („žluté čepice“), žil ve 14.–15. století. Narozen v Amdu, studoval u všech tehdejších škol, obdržel vize Mandžušrího a napsal monumentální díla o etice a meditaci. V ZION OASIS je archetypem intelektuální přesnosti a etického základu — mostem mezi mystikou a rozumem.",
       "en": "Tsongkhapa (Lobsang Drakpa), the Tibetan Buddhist reformer and founder of the Gelug school ('Yellow Hats'), lived in the 14th–15th century. Born in Amdo, he studied under all the schools of his time, received visions of Mañjuśrī and wrote monumental works on ethics and meditation. In ZION OASIS he is the archetype of intellectual precision and ethical foundation — a bridge between mysticism and reason."
@@ -6469,7 +7182,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Bodhicitta Spark — gives the whole group the courage to help."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Lampa",
+          "en": "The Lamp"
+        },
+        "description": {
+          "cs": "Posviť někomu na cestu a zůstaň vzadu.",
+          "en": "Light someone's way and stay behind."
+        }
+      },
+      {
+        "title": {
+          "cs": "Slib",
+          "en": "The Vow"
+        },
+        "description": {
+          "cs": "Slib něco malé a dodrž to.",
+          "en": "Promise something small and keep it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Etika",
+          "en": "Ethics"
+        },
+        "description": {
+          "cs": "Nezraň ani slovem, ani mlčením.",
+          "en": "Wound no one by word or by silence."
+        }
+      }
+    ],
     "essence": {
       "cs": "Atíša Dípamkara Šrídžňána (980–1054) je indický buddhistický mistr z Bengálska, který obnovil buddhismus v Tibetu a sepsal Bodhipathapradípu (Lampu na cestu k osvícení). Zakladatel tradice Kadampa, učitel lódžongu (tréninku mysli) a mistr postupné cesty. V ZION OASIS je průvodcem těch, kteří se ztratili ve spěchu — světec malých kroků a velké trpělivosti.",
       "en": "Atiśa Dīpaṃkara Śrījñāna (980–1054) is an Indian Buddhist master from Bengal who restored Buddhism in Tibet and wrote the Bodhipathapradīpa (Lamp for the Path to Enlightenment). Founder of the Kadampa tradition, teacher of lojong (mind training) and master of the gradual path. In ZION OASIS he guides those lost in haste — the saint of small steps and great patience."
@@ -6521,7 +7265,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Protocol Translation — joins two worlds that do not understand each other."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Překlad",
+          "en": "Translation"
+        },
+        "description": {
+          "cs": "Přelož sdělení, aniž bys ztratil smysl.",
+          "en": "Translate a message without losing the meaning."
+        }
+      },
+      {
+        "title": {
+          "cs": "Most",
+          "en": "Bridge"
+        },
+        "description": {
+          "cs": "Spoj dva světy, které si nerozumí.",
+          "en": "Join two worlds that do not understand each other."
+        }
+      },
+      {
+        "title": {
+          "cs": "Nezrada",
+          "en": "No Betrayal"
+        },
+        "description": {
+          "cs": "Předávej věrně, i když to není výhodné.",
+          "en": "Pass it on faithfully even when it does not pay."
+        }
+      }
+    ],
     "essence": {
       "cs": "Marpa Čhökji Lodrö (1012–1097) byl průkopníkem tibetské linie Kagjü — ne jako mnich, ale jako učitel laika, obchodník a překladatel. Třikrát podnikl nebezpečnou cestu do Indie, kde studoval u velkých siddhů Náropy a Maitrípy, a přivezl tantrické texty, které přeložil do tibetštiny. Známý jako Locáwa — „překladatel“ — spojka mezi indickými mahásiddhy a tibetskou praxí. Jeho metoda byla přímá: žádná okrasná teologie, jen praxe vedoucí k probuzení.",
       "en": "Marpa Chökyi Lodrö (1012–1097) was the pioneer of Tibet's Kagyü lineage — not a monk but a lay master, merchant and translator. Three times he undertook the perilous journey to India, studied under the great siddhas Naropa and Maitrīpa, and brought back tantric texts he translated into Tibetan. Known as Lotsawa — 'the Translator' — he links the Indian mahāsiddhas to Tibetan practice. His method was direct: no ornate theology, only practice leading to awakening."
@@ -6573,7 +7348,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Ego-Fear Cut — removes panic at the worst moment."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Strach",
+          "en": "Fear"
+        },
+        "description": {
+          "cs": "Postav se tomu, čeho se bojíš nejvíc.",
+          "en": "Face what you fear most."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hřbitov",
+          "en": "Charnel Ground"
+        },
+        "description": {
+          "cs": "Projdi nocí beze zbraně.",
+          "en": "Walk the night without a weapon."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dar",
+          "en": "The Gift"
+        },
+        "description": {
+          "cs": "Dej to, oč se bojíš přijít.",
+          "en": "Give away what you fear losing."
+        }
+      }
+    ],
     "essence": {
       "cs": "Machik Labdrön (1055–1149) je jednou z mála žen v historii Tibetu, která založila vlastní buddhistickou tradici — Čhöd, praxi „řezání“ ega. Byla učenkyní Dampy Sangjë a spojila tibetské praktiky s prastarými indickými tantrami. Její metoda je radikální: darovat své tělo předstíraným démonům, aby se odhalilo, že démoni i tělo jsou projekce mysli. Není to sebepoškozování, ale symbolický akt odpuštění lpění. Machik je matkou linie, která přetrvala osm století.",
       "en": "Machik Labdrön (1055–1149) is one of the few women in Tibetan history to found her own Buddhist tradition — Chöd, the practice of 'cutting' the ego. A disciple of Dampa Sangye, she fused Tibetan practices with ancient Indian tantras. Her method is radical: offer your body to imagined demons so it is revealed that demons and body alike are projections of mind. Not self-harm, but a symbolic act of releasing attachment. Machik is the mother of a lineage that has endured eight centuries."
@@ -6625,7 +7431,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "View-Cutter — opens a conversation that was locked."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Meč",
+          "en": "The Sword"
+        },
+        "description": {
+          "cs": "Rozřízni názor, který už neplatí.",
+          "en": "Cut through a view that no longer holds."
+        }
+      },
+      {
+        "title": {
+          "cs": "Otázka",
+          "en": "The Question"
+        },
+        "description": {
+          "cs": "Ptej se, dokud to nepochopíš.",
+          "en": "Keep asking until you understand."
+        }
+      },
+      {
+        "title": {
+          "cs": "Řeč",
+          "en": "Speech"
+        },
+        "description": {
+          "cs": "Vysvětli to jednou větou.",
+          "en": "Explain it in one sentence."
+        }
+      }
+    ],
     "essence": {
       "cs": "Maňdžušrí (tib. Džampal Jang) je bódhisattva moudrosti — ne knižní, ale přímého rozlišení (pradžňá). V pravé ruce drží meč, který řeže iluzi a nesprávné názory, v levé knihu Prajñāpāramitā. Ústřední postava Mahájány i Vadžrajány; v Číně spojen s horou Wu-tchaj-šan. Není bůh k uctívání — je energie moudrosti, kterou může probudit každý.",
       "en": "Mañjuśrī (Tibetan: Jampal Yang) is the bodhisattva of wisdom — not bookish learning but direct discernment (prajñā). In his right hand he holds the sword that cuts illusion and wrong views, in his left the book of the Prajñāpāramitā. Central to Mahāyāna and Vajrayāna alike; in China linked to Mount Wutai. He is not a god to be worshipped — he is the energy of wisdom anyone can awaken."
@@ -6677,7 +7514,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Aspiration Field — small boons for every vow kept."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Deset slibů",
+          "en": "Ten Vows"
+        },
+        "description": {
+          "cs": "Slož sliby a plň je den po dni.",
+          "en": "Take the vows and keep them day by day."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pouť",
+          "en": "Pilgrimage"
+        },
+        "description": {
+          "cs": "Dojdi pěšky tam, kam se dá dojet.",
+          "en": "Walk to a place you could have driven to."
+        }
+      },
+      {
+        "title": {
+          "cs": "Služba",
+          "en": "Service"
+        },
+        "description": {
+          "cs": "Udělej každý den jednu drobnost pro druhé.",
+          "en": "Do one small thing for others every day."
+        }
+      }
+    ],
     "essence": {
       "cs": "Samantabhadra („všeobjímající dobrota“) je bódhisattva nekonečné praxe — ne doktrín, ale činů. V Lotosové sútře se zavazuje deseti velkými sliby: klanět se Buddhům, chválit dharmu, darovat vše dobru, projevovat pokoru, sdílet zásluhy, vítat učitele, žádat, aby učili, sloužit všem bytostem, následovat jejich potřeby a vše věnovat probuzení. Je to poutník, který nikdy nekončí — protože praxe není cíl, ale způsob existence.",
       "en": "Samantabhadra ('All-Embracing Goodness') is the bodhisattva of infinite practice — not doctrines but deeds. In the Lotus Sūtra he vows ten great vows: to honour the Buddhas, praise the dharma, give all for good, show humility, share merit, welcome teachers, ask them to teach, serve all beings, follow their needs, and dedicate everything to awakening. He is a pilgrim who never finishes — because practice is not a goal but a way of existing."
@@ -6729,7 +7597,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Lapis Healing Surge — restores strength to the whole group."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Bylina",
+          "en": "The Herb"
+        },
+        "description": {
+          "cs": "Najdi lék tam, kde roste.",
+          "en": "Find the medicine where it grows."
+        }
+      },
+      {
+        "title": {
+          "cs": "Čas",
+          "en": "Time"
+        },
+        "description": {
+          "cs": "Daruj čas někomu, kdo ho nemá.",
+          "en": "Give time to someone who has none."
+        }
+      },
+      {
+        "title": {
+          "cs": "Lapis",
+          "en": "Lapis"
+        },
+        "description": {
+          "cs": "Obnov sílu celé skupině.",
+          "en": "Restore the strength of the whole group."
+        }
+      }
+    ],
     "essence": {
       "cs": "Bhaišadjaguru („lékařský mistr“) je Buddha východního lazuritového sálu — aspekt léčení v mahájáně. Jeho dvanáct velkých přání směřuje k osvobození od nemocí těla i mysli, nejen medicínou, ale skrze uvědomění příčiny. Není náhradou za lékaře — je to nejvyšší princip: když vidíš, že nemoc i zdraví jsou podmíněné, můžeš léčit kořen, ne jen symptom.",
       "en": "Bhaiṣajyaguru ('the Medicine Master') is the Buddha of the eastern lapis lazuli realm — the aspect of healing in Mahāyāna. His twelve great vows aim to free beings from diseases of body and mind, not by medicine alone but through awareness of the cause. He is no substitute for doctors — he is the highest principle: when you see that sickness and health are conditioned, you can treat the root, not just the symptom."
@@ -6781,7 +7680,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Natural State Reset — clears the mind of accumulated debris."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Nic nepřidávej",
+          "en": "Add Nothing"
+        },
+        "description": {
+          "cs": "Vydrž deset minut jen být.",
+          "en": "Spend ten minutes simply being."
+        }
+      },
+      {
+        "title": {
+          "cs": "Jeskyně",
+          "en": "The Cave"
+        },
+        "description": {
+          "cs": "Odlož všechny role aspoň na den.",
+          "en": "Set down every role for a day."
+        }
+      },
+      {
+        "title": {
+          "cs": "Návrat",
+          "en": "Return"
+        },
+        "description": {
+          "cs": "Vrať se mezi lidi beze změny.",
+          "en": "Return among people unchanged."
+        }
+      }
+    ],
     "essence": {
       "cs": "Longchen Rabdžam (1308–1364) — velký systémizátor dzogčenu; jeho Sedm pokladů patří k nejčtenějším filozoficko-meditativním textům tibetské tradice v překladu.",
       "en": "Longchen Rabjam (1308–1364) — the great systematizer of Dzogchen; his Seven Treasuries are among the most widely read philosophical-meditative texts of the Tibetan tradition in translation."
@@ -6833,7 +7763,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Tandava Pivot — a short window when the old stops applying."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Tanec",
+          "en": "The Dance"
+        },
+        "description": {
+          "cs": "Ukonči to, co se přežilo.",
+          "en": "End what has outlived itself."
+        }
+      },
+      {
+        "title": {
+          "cs": "Třetí oko",
+          "en": "Third Eye"
+        },
+        "description": {
+          "cs": "Podívej se na věc bez iluze.",
+          "en": "Look at a thing without illusion."
+        }
+      },
+      {
+        "title": {
+          "cs": "Prostor",
+          "en": "Space"
+        },
+        "description": {
+          "cs": "Uvolni místo pro to nové.",
+          "en": "Clear space for what comes next."
+        }
+      }
+    ],
     "essence": {
       "cs": "Šiva Mahádéva — os transformace v Trimúrti: zakončení klamu, péče o jogíny a oddané (Pašupati), kosmický tanečník (Tándava). V OASIS doplňuje již rozvinutou vaišnovskou osu (Kršna, Ráma, Kalki).",
       "en": "Śiva Mahādeva — the Trimurti's axis of transformation: ending delusion, caring for yogis and devotees (Paśupati), cosmic dancer (Tāṇḍava). In OASIS he complements the already developed Vaishnava axis (Kṛṣṇa, Rāma, Kalki)."
@@ -6885,7 +7846,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Shakti Bond — joins two strengths so they reinforce each other."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Pouto",
+          "en": "The Bond"
+        },
+        "description": {
+          "cs": "Spoj dvě síly tak, aby se zesílily.",
+          "en": "Join two strengths so they reinforce each other."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dům",
+          "en": "The House"
+        },
+        "description": {
+          "cs": "Drž dům pohromadě tři dny sporů.",
+          "en": "Hold a house together through three days of quarrels."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hora",
+          "en": "The Mountain"
+        },
+        "description": {
+          "cs": "Vydrž vedle někoho, kdo hoří.",
+          "en": "Stay beside someone who is burning."
+        }
+      }
+    ],
     "essence": {
       "cs": "Párvatí je Umá, matka-cestovatelka, šakti tapas — disciplínovaného srdce. Doplňuje 82. Šivu v příběhu Ardhanáríšvara synchronicity (bez redukce na pouhý „manželský quest“).",
       "en": "Pārvatī is Umā, the mother-journeyer, śakti of tapas — the disciplined heart. She complements #82 Śiva in the Ardhanārīśvara synchronicity story (not reduced to a mere 'marriage quest')."
@@ -6937,7 +7929,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Vighna Clear — once, opens a road that was closed."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Práh",
+          "en": "Threshold"
+        },
+        "description": {
+          "cs": "Otevři cestu, která byla zavřená.",
+          "en": "Open a road that was closed."
+        }
+      },
+      {
+        "title": {
+          "cs": "Překážka",
+          "en": "The Obstacle"
+        },
+        "description": {
+          "cs": "Zjisti, co neseš zbytečně.",
+          "en": "Find what you are carrying for no reason."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pero",
+          "en": "The Pen"
+        },
+        "description": {
+          "cs": "Zapiš příběh, aby nezůstal jen v hlavě.",
+          "en": "Write the story down before it is lost."
+        }
+      }
+    ],
     "essence": {
       "cs": "Gaňéša / Vinájaka — odstraňuje vighna (překážky), patron začátků; v tradici zápisu Mahábháraty sepisuje diktát Vjásy (viz 17. Vjása a quest „Ganesha's Pen“). V OASIS = strážce vstupního prahu.",
       "en": "Gaṇeśa / Vināyaka — remover of vighna (obstacles), patron of beginnings; in the Mahābhārata-writing tradition he takes Vyāsa's dictation (see #17 Vyāsa and the quest 'Ganesha's Pen'). In OASIS = guardian of the entry threshold."
@@ -6989,7 +8012,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Śrī Flow — a small share of every gain goes to a good cause."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Mísa",
+          "en": "The Bowl"
+        },
+        "description": {
+          "cs": "Dej z každé výhry kousek dál.",
+          "en": "Give a little of every gain onward."
+        }
+      },
+      {
+        "title": {
+          "cs": "Tok",
+          "en": "Flow"
+        },
+        "description": {
+          "cs": "Nech peníze projít, ne je zamknout.",
+          "en": "Let money pass through rather than locking it up."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rybník",
+          "en": "The Pond"
+        },
+        "description": {
+          "cs": "Obnov hojnost místa, které vyschlo.",
+          "en": "Restore abundance to a place that dried up."
+        }
+      }
+    ],
     "essence": {
       "cs": "Lakšmí / Šrí — štěstí vzniklé z dharmické činnosti a vděku. Tento slot (#85) klasického šrí archetypu doplňuje kompozit 43 Sri Anagha Lakshmi (Sarasvatí+Lakšmí+Kálí amalgam).",
       "en": "Lakṣmī / Śrī — fortune born of dharmic activity and gratitude. This slot (#85) for the classical śrī archetype complements the composite #43 Sri Anagha Lakshmi (a Sarasvatī+Lakṣmī+Kālī amalgam)."
@@ -7041,7 +8095,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Lion Vanguard — shields the whole group for a moment."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Devět nocí",
+          "en": "Nine Nights"
+        },
+        "description": {
+          "cs": "Vydrž devět nocí obrany.",
+          "en": "Hold nine nights of defence."
+        }
+      },
+      {
+        "title": {
+          "cs": "Lev",
+          "en": "The Lion"
+        },
+        "description": {
+          "cs": "Jdi do ohně první.",
+          "en": "Walk into the fire first."
+        }
+      },
+      {
+        "title": {
+          "cs": "Šakti",
+          "en": "Shakti"
+        },
+        "description": {
+          "cs": "Chraň slabšího, i když to není výhodné.",
+          "en": "Protect the weaker even when it does not pay."
+        }
+      }
+    ],
     "essence": {
       "cs": "Durgá (Ambá) — ochrana dharmy před adharmou; v puráňové tradici archetypálně znázorněná bojem s Mahišásurou. Ve hře sezónní story boss s etikou Navarátri (bez karnevalizace festivalu).",
       "en": "Durgā (Ambā) — protection of dharma against adharma; in Purāṇic tradition archetypally depicted in battle with Mahiṣāsura. In-game a seasonal story boss with Navarātri ethics (no carnivalization of the festival)."
@@ -7093,7 +8178,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Ego Dissolution — lowers the pride that blinds you."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Noc bez času",
+          "en": "Night Without Time"
+        },
+        "description": {
+          "cs": "Odlož hodinky na jeden celý den.",
+          "en": "Put the clock away for a whole day."
+        }
+      },
+      {
+        "title": {
+          "cs": "Ego",
+          "en": "Ego"
+        },
+        "description": {
+          "cs": "Sniž se před někým, kdo to nečeká.",
+          "en": "Bow before someone who does not expect it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Konec",
+          "en": "The End"
+        },
+        "description": {
+          "cs": "Ukonči něco bez zloby.",
+          "en": "End something without spite."
+        }
+      }
+    ],
     "essence": {
       "cs": "Mahákálí řeže ego-čas — iluzi odděleného „já“ lpícího na újmě — ne civilní populaci jako groteskní podívanou.",
       "en": "Mahākālī cuts ego-time — the illusion of a separate 'self' clinging to grievance — not civilian populations as a grotesque spectacle."
@@ -7145,7 +8261,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Sixfold Vanguard — improves the coordination of the whole group."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Sestava",
+          "en": "Formation"
+        },
+        "description": {
+          "cs": "Seřaď skupinu tak, aby se slyšela.",
+          "en": "Arrange a group so it can hear itself."
+        }
+      },
+      {
+        "title": {
+          "cs": "Šest tváří",
+          "en": "Six Faces"
+        },
+        "description": {
+          "cs": "Dohlédni na všechny strany naráz.",
+          "en": "Watch every direction at once."
+        }
+      },
+      {
+        "title": {
+          "cs": "Směr",
+          "en": "Direction"
+        },
+        "description": {
+          "cs": "Urči, kam jdeme, dřív než vyrazíme.",
+          "en": "Decide where we are going before we set out."
+        }
+      }
+    ],
     "essence": {
       "cs": "Kárttikéja / Skanda / Murukan — mladý velitel (senápati), symbol disciplíny kombinované s obranou dharmy.",
       "en": "Kārttikeya / Skanda / Murukan — the young commander (senāpati), symbol of discipline combined with the defense of dharma."
@@ -7197,7 +8344,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Dawn — a small but certain bonus for honest work."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Úsvit",
+          "en": "Dawn"
+        },
+        "description": {
+          "cs": "Začni den znovu, i když včera stál za nic.",
+          "en": "Begin the day again even if yesterday was worthless."
+        }
+      },
+      {
+        "title": {
+          "cs": "Poledne",
+          "en": "Noon"
+        },
+        "description": {
+          "cs": "Udělej nejtěžší věc v polovině dne.",
+          "en": "Do the hardest thing at midday."
+        }
+      },
+      {
+        "title": {
+          "cs": "Soumrak",
+          "en": "Dusk"
+        },
+        "description": {
+          "cs": "Ukonči den poctivě, ne odkladem.",
+          "en": "Close the day honestly, not by postponing."
+        }
+      }
+    ],
     "essence": {
       "cs": "Súrja — zákonitý puls kosmu (paralela k rytmu bloků v ZION lore, bez náboženského dogmatu ve hře).",
       "en": "Sūrya — the lawful pulse of the cosmos (a parallel to the rhythm of blocks in ZION lore, without religious dogma in-game)."
@@ -7249,7 +8427,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Vajra — interrupts a single attack, however strong."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Vadžra",
+          "en": "Vajra"
+        },
+        "description": {
+          "cs": "Přeruš jeden útok, ať je jakkoli silný.",
+          "en": "Interrupt one attack, however strong."
+        }
+      },
+      {
+        "title": {
+          "cs": "Bouře",
+          "en": "Storm"
+        },
+        "description": {
+          "cs": "Otestuj, kdo ještě stojí.",
+          "en": "Find out who is still standing."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pokora",
+          "en": "Humility"
+        },
+        "description": {
+          "cs": "Nech se zpochybnit a neobraňuj se.",
+          "en": "Let yourself be questioned without defending."
+        }
+      }
+    ],
     "essence": {
       "cs": "Indra — rájový archetyp síly (Šakra), která v klasických příbězích dostává lekci pokory od rši (texty hymnů neměnit na vtipný voice-over).",
       "en": "Indra — the heavenly archetype of power (Śakra), who in the classic stories receives lessons in humility from the ṛṣis (not to be turned into a comic voice-over of the hymns)."
@@ -7301,7 +8510,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Purifying Current — cleanses a place that was polluted."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Pramen",
+          "en": "Source"
+        },
+        "description": {
+          "cs": "Najdi, kde problém začíná.",
+          "en": "Find where the problem begins."
+        }
+      },
+      {
+        "title": {
+          "cs": "Tok",
+          "en": "Current"
+        },
+        "description": {
+          "cs": "Odnes, co je špinavé, a nezastavuj se.",
+          "en": "Carry the dirt away and do not stop."
+        }
+      },
+      {
+        "title": {
+          "cs": "Moře",
+          "en": "The Sea"
+        },
+        "description": {
+          "cs": "Dopluj až do konce, i když už nikdo nedívá.",
+          "en": "Go all the way to the sea even when no one is watching."
+        }
+      }
+    ],
     "essence": {
       "cs": "Gangá — vodní matrice očisty, dharmické i environmentální. Questy musejí vést ke stewardship, ne k parodii hinduistické praxe.",
       "en": "Gaṅgā — the watery matrix of purification, dharmic and environmental. Quests must lead to stewardship, not to a parody of Hindu practice."
@@ -7353,7 +8593,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Dawn Radiance — restores hope to a place that gave up."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Jeskyně",
+          "en": "The Cave"
+        },
+        "description": {
+          "cs": "Zavři se na den a vrať se.",
+          "en": "Close yourself away for a day and return."
+        }
+      },
+      {
+        "title": {
+          "cs": "Zrcadlo",
+          "en": "The Mirror"
+        },
+        "description": {
+          "cs": "Ukaž světlo někomu, kdo ho nevidí.",
+          "en": "Show light to someone who cannot see it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Svítání",
+          "en": "Sunrise"
+        },
+        "description": {
+          "cs": "Vrať naději místu, které se vzdalo.",
+          "en": "Return hope to a place that gave up."
+        }
+      }
+    ],
     "essence": {
       "cs": "Amaterasu — nebeský princip světla a živnosti (kami) v klasických pověstech. V OASIS = oblouk „obnovy veřejného prostoru“ poté, co toxický debuff („temný kout“) zavládne městem.",
       "en": "Amaterasu — the celestial principle of light and vitality (kami) in the classical chronicle tales. In OASIS = the 'restoring public space' arc after a toxic debuff ('dark corner') seizes the city."
@@ -7405,7 +8676,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Storm Purge — sweeps away what now only obstructs."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Meč",
+          "en": "The Sword"
+        },
+        "description": {
+          "cs": "Najdi, co je ukryté v ocasu.",
+          "en": "Find what is hidden in the tail."
+        }
+      },
+      {
+        "title": {
+          "cs": "Bouře",
+          "en": "Storm"
+        },
+        "description": {
+          "cs": "Smet zkažený pořádek.",
+          "en": "Sweep away rotten order."
+        }
+      },
+      {
+        "title": {
+          "cs": "Očista",
+          "en": "Purge"
+        },
+        "description": {
+          "cs": "Ukliď po sobě, ne po druhých.",
+          "en": "Clean up after yourself, not after others."
+        }
+      }
+    ],
     "essence": {
       "cs": "Susanoo — kami bouře a očisty, narativně spojený s řekami a morálním resetem po zkorumpovaných strukturách — v OASIS jako etická chaos damage jen proti institucionalizovaným parazitům, ne nevinným NPC.",
       "en": "Susanoo — kami of storm and purification, narratively tied to rivers and moral reset after corrupted structures — in OASIS as ethical 'chaos damage' against institutionalized parasites only, never innocent NPCs."
@@ -7457,7 +8759,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Waning Review — reveals the mistake before it does damage."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Noc",
+          "en": "Night"
+        },
+        "description": {
+          "cs": "Podívej se, co se ve dne přehlédlo.",
+          "en": "Look at what was missed by day."
+        }
+      },
+      {
+        "title": {
+          "cs": "Přezkum",
+          "en": "Review"
+        },
+        "description": {
+          "cs": "Najdi chybu dřív, než napáchá škodu.",
+          "en": "Find the fault before it does damage."
+        }
+      },
+      {
+        "title": {
+          "cs": "Úsvit",
+          "en": "Dawn"
+        },
+        "description": {
+          "cs": "Přines výsledek ve dne a bez výmluv.",
+          "en": "Bring the result by daylight, without excuses."
+        }
+      }
+    ],
     "essence": {
       "cs": "Tsukuyomi — noční princip rozlišování. V lore OASIS doplňuje Hinu (#70) jiným úhlem — lunární audit mempool etiky (bez mystifikace mempoolu jako „záhadného měsíce“).",
       "en": "Tsukuyomi — the nocturnal principle of discernment. In OASIS lore it complements Hina (#70) from another angle — a lunar audit of mempool ethics (without mystifying the mempool as a 'mysterious moon')."
@@ -7509,7 +8842,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Path Blessing — eases the first step for every newcomer."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Torii",
+          "en": "Torii"
+        },
+        "description": {
+          "cs": "Otevři bránu někomu novému.",
+          "en": "Open the gate for someone new."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rýže",
+          "en": "Rice"
+        },
+        "description": {
+          "cs": "Rozděl úrodu tak, aby nikdo neodešel s prázdnou.",
+          "en": "Divide the harvest so no one leaves empty-handed."
+        }
+      },
+      {
+        "title": {
+          "cs": "První krok",
+          "en": "First Step"
+        },
+        "description": {
+          "cs": "Pomoz začátečníkovi udělat první krok.",
+          "en": "Help a beginner take the first step."
+        }
+      }
+    ],
     "essence": {
       "cs": "Inari — úroda a liminalita mezi říší lidí a bohů (často s folklórem kitsune — bez karikaturního furry fetiše na marketplace).",
       "en": "Inari — harvest and liminality between the human and divine realms (often with kitsune folklore — without a caricatured furry fetish on the marketplace)."
@@ -7561,7 +8925,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Transfer Blessing — joins two traders in a fair agreement."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Host",
+          "en": "The Guest"
+        },
+        "description": {
+          "cs": "Ubytuj někoho cizího na jednu noc.",
+          "en": "Host a stranger for one night."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dům",
+          "en": "The House"
+        },
+        "description": {
+          "cs": "Nech dveře otevřené, i když se to nehodí.",
+          "en": "Leave the door open even when it is inconvenient."
+        }
+      },
+      {
+        "title": {
+          "cs": "Férový obchod",
+          "en": "Fair Trade"
+        },
+        "description": {
+          "cs": "Uzavři dohodu, ze které má druhý stejně.",
+          "en": "Close a deal where the other gains as much."
+        }
+      }
+    ],
     "essence": {
       "cs": "Ókuninuši — kulturní hrdina péče o zemi v rámci kuni-juzuri (zkouška → odevzdání → spravedlnost).",
       "en": "Ōkuninushi — the culture hero of land-care within the kuni-yuzuri frame (trial → surrender → justice)."
@@ -7613,7 +9008,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Yomi Checkpoint — safely ends what has dragged on too long."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Práh",
+          "en": "Threshold"
+        },
+        "description": {
+          "cs": "Rozluč se pořádně, ne cestou.",
+          "en": "Say goodbye properly, not on your way out."
+        }
+      },
+      {
+        "title": {
+          "cs": "Yomi",
+          "en": "Yomi"
+        },
+        "description": {
+          "cs": "Projdi tmou bez světla.",
+          "en": "Walk through darkness without a light."
+        }
+      },
+      {
+        "title": {
+          "cs": "Nenávrat",
+          "en": "No Return"
+        },
+        "description": {
+          "cs": "Přijmi, že se některé věci nevrací.",
+          "en": "Accept that some things do not come back."
+        }
+      }
+    ],
     "essence": {
       "cs": "Izanami — archetyp prahu mezi životem a smrtí, útěchy při procesu rozchodu systémů (staking unwind, humánní chain sunset).",
       "en": "Izanami — archetype of the threshold between life and death, a comfort in processes of system separation (staking unwind, humane chain sunset)."
@@ -7665,7 +9091,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Hachiman Bastion — raises a defence that survives the first blow."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Bašta",
+          "en": "Bastion"
+        },
+        "description": {
+          "cs": "Postav obranu, která vydrží první náraz.",
+          "en": "Raise a defence that survives the first blow."
+        }
+      },
+      {
+        "title": {
+          "cs": "Šíp",
+          "en": "Arrow"
+        },
+        "description": {
+          "cs": "Nech šíp v toulci, když to jde.",
+          "en": "Leave the arrow in the quiver when you can."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hlídka",
+          "en": "Watch"
+        },
+        "description": {
+          "cs": "Drž mír celý jeden týden.",
+          "en": "Keep the peace for one full week."
+        }
+      }
+    ],
     "essence": {
       "cs": "Hačiman — kami války jako ochrana komunity, ne triumfalismus. Spojován s guard rails DAO, které zakazují škodlivé válčení.",
       "en": "Hachiman — the kami of war as community protection, not triumphalism. Linked to DAO guard rails that forbid harmful warring."
@@ -7717,7 +9174,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Flow State — improves the shared work of the whole group."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Melodie",
+          "en": "Melody"
+        },
+        "description": {
+          "cs": "Zahraj sám, ať to má tvar.",
+          "en": "Play alone until it has a shape."
+        }
+      },
+      {
+        "title": {
+          "cs": "Souhra",
+          "en": "Together"
+        },
+        "description": {
+          "cs": "Zahrajte spolu, ať to má smysl.",
+          "en": "Play together until it has meaning."
+        }
+      },
+      {
+        "title": {
+          "cs": "Proud",
+          "en": "Flow"
+        },
+        "description": {
+          "cs": "Nech hudbu téct, i když se pokazí.",
+          "en": "Let the music flow even when it goes wrong."
+        }
+      }
+    ],
     "essence": {
       "cs": "Benzaiten — jedna z řady božstev štěstěny a výtvarné/hudební moudrosti v japonské adaptaci (linie Sarasvatí).",
       "en": "Benzaiten — one of the deities of fortune and artistic/musical wisdom in the Japanese adaptation (the Sarasvatī line)."
@@ -7769,7 +9257,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Diamond World Stencil — makes a complex plan legible."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Mandala",
+          "en": "Mandala"
+        },
+        "description": {
+          "cs": "Nakresli svět, jak ho vidíš.",
+          "en": "Draw the world as you see it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dvě mandaly",
+          "en": "Two Mandalas"
+        },
+        "description": {
+          "cs": "Spoj vnitřní a vnější obraz.",
+          "en": "Join the inner and the outer picture."
+        }
+      },
+      {
+        "title": {
+          "cs": "Šablona",
+          "en": "Stencil"
+        },
+        "description": {
+          "cs": "Zpřehledni složitý plán.",
+          "en": "Make a complicated plan legible."
+        }
+      }
+    ],
     "essence": {
       "cs": "Kúkai — zakladatel linie Šingon jako education-first mystická kartografie (žádné initi-only paywalled dovednosti ve veřejném lore bez governance).",
       "en": "Kūkai — founder of the Shingon line as education-first mystical cartography (no initiation-only paywalled skills in public lore without governance)."
@@ -7821,7 +9340,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Daimoku Chorus — strengthens the group's voice against fear."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Nahlas",
+          "en": "Aloud"
+        },
+        "description": {
+          "cs": "Přečti text veřejně, bez omluvy.",
+          "en": "Read a text in public, without apology."
+        }
+      },
+      {
+        "title": {
+          "cs": "Sbor",
+          "en": "Chorus"
+        },
+        "description": {
+          "cs": "Zpívej s ostatními, i když to není dokonalé.",
+          "en": "Sing with others even when it is not perfect."
+        }
+      },
+      {
+        "title": {
+          "cs": "Text pro všechny",
+          "en": "Text for All"
+        },
+        "description": {
+          "cs": "Vysvětli učení bez učenosti.",
+          "en": "Explain a teaching without learnedness."
+        }
+      }
+    ],
     "essence": {
       "cs": "Ničiren — text-first reformace zdůrazňující dostupnost Lotosové sútry (paralela veřejného čtení s blockchain open docs).",
       "en": "Nichiren — a text-first reform emphasizing the accessibility of the Lotus Sūtra (a public-reading parallel to blockchain open docs)."
@@ -7873,7 +9423,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Care for the Whole — strengthens the health of the whole settlement."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Lékař",
+          "en": "The Physician"
+        },
+        "description": {
+          "cs": "Zasáhni dřív, než je nemoc vidět.",
+          "en": "Act before the illness becomes visible."
+        }
+      },
+      {
+        "title": {
+          "cs": "Řád",
+          "en": "Order"
+        },
+        "description": {
+          "cs": "Sepiš pravidla osady a nech je schválit.",
+          "en": "Write the settlement's rules and have them agreed."
+        }
+      },
+      {
+        "title": {
+          "cs": "Celek",
+          "en": "The Whole"
+        },
+        "description": {
+          "cs": "Postarej se o ty, na které se zapomnělo.",
+          "en": "Look after those who were forgotten."
+        }
+      }
+    ],
     "essence": {
       "cs": "Chuang-ti — archetyp kosmického řádu a původu medicínské lore v čínské tradované historii (mýtus vs. historie akademicky vrstvené).",
       "en": "Huangdi — archetype of cosmic order and the origins of medical lore in Chinese received history (myth vs. history academically layered)."
@@ -7925,7 +9506,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Ripening — slows impatience and protects value over time."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Broskev",
+          "en": "The Peach"
+        },
+        "description": {
+          "cs": "Nech dozrát to, co chceš sníst hned.",
+          "en": "Let ripen what you want to eat now."
+        }
+      },
+      {
+        "title": {
+          "cs": "Zahrada",
+          "en": "The Garden"
+        },
+        "description": {
+          "cs": "Pečuj o něco třicet dní bez viditelného výsledku.",
+          "en": "Tend something for thirty days without visible result."
+        }
+      },
+      {
+        "title": {
+          "cs": "Stráž",
+          "en": "The Guard"
+        },
+        "description": {
+          "cs": "Ochraň hodnotu, která ještě není tvoje.",
+          "en": "Guard a value that is not yet yours."
+        }
+      }
+    ],
     "essence": {
       "cs": "Si-wang-mu — matriarchální božstvo broskví/longevity lore; v OASIS reprezentuje dlouhohorizontní governance treasury locky s etickými podmínkami odemknutí.",
       "en": "Xiwangmu — the matriarch deity of the peaches/longevity lore; in OASIS she represents long-horizon governance treasury locks with ethical unlock conditions."
@@ -7977,7 +9589,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Quiet Deflection — stops a pointless intervention at the moment it hurts."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Ticho",
+          "en": "Silence"
+        },
+        "description": {
+          "cs": "Nezasahuj, i když víš, jak to udělat.",
+          "en": "Do not intervene even when you know how."
+        }
+      },
+      {
+        "title": {
+          "cs": "Průsmyk",
+          "en": "The Pass"
+        },
+        "description": {
+          "cs": "Odejdi, když je dílo hotové.",
+          "en": "Leave when the work is done."
+        }
+      },
+      {
+        "title": {
+          "cs": "Cesta",
+          "en": "The Way"
+        },
+        "description": {
+          "cs": "Jdi bez mapy a bez plánu.",
+          "en": "Walk without a map or a plan."
+        }
+      }
+    ],
     "essence": {
       "cs": "Laozi — daoistický archetyp přirozenosti a nevynucování. V lore OASIS: minimální governance, maximální laskavost.",
       "en": "Laozi — the Daoist archetype of naturalness and non-forcing. In OASIS lore: minimal governance, maximal kindness."
@@ -8029,7 +9672,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Mentor's Circle — improves learning and cooperation in the group."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Slovo",
+          "en": "The Word"
+        },
+        "description": {
+          "cs": "Dodrž, co jsi řekl, i když se to změní.",
+          "en": "Keep what you said even when things change."
+        }
+      },
+      {
+        "title": {
+          "cs": "Učitel",
+          "en": "The Teacher"
+        },
+        "description": {
+          "cs": "Vysvětli jednu věc jednomu člověku.",
+          "en": "Explain one thing to one person."
+        }
+      },
+      {
+        "title": {
+          "cs": "Deník",
+          "en": "The Record"
+        },
+        "description": {
+          "cs": "Zapiš každý den jeden dobrý skutek.",
+          "en": "Record one good deed each day."
+        }
+      }
+    ],
     "essence": {
       "cs": "Kongzi — etika vztahů, vzdělání, veřejné služby. V OASIS: onboarding mentorské struktury DAO.",
       "en": "Kongzi (Confucius) — ethics of relationships, education, public service. In OASIS: onboarding mentorship structures of the DAO."
@@ -8081,7 +9755,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Binding Compact — ensures an agreement keeps its substance."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Smlouva",
+          "en": "The Compact"
+        },
+        "description": {
+          "cs": "Uzavři dohodu, která nezvýhodní jen tebe.",
+          "en": "Close an agreement that does not favour only you."
+        }
+      },
+      {
+        "title": {
+          "cs": "Věrnost",
+          "en": "Loyalty"
+        },
+        "description": {
+          "cs": "Neopouštěj nikoho v nouzi.",
+          "en": "Abandon no one in trouble."
+        }
+      },
+      {
+        "title": {
+          "cs": "Trh",
+          "en": "The Market"
+        },
+        "description": {
+          "cs": "Urovnej spor na trhu férově.",
+          "en": "Settle a market dispute fairly."
+        }
+      }
+    ],
     "essence": {
       "cs": "Guandi — kulturní božstvo loajality a obchodní etiky napříč diaspora chrámy.",
       "en": "Guandi — the cultural deity of loyalty and commerce ethics across diaspora temples."
@@ -8133,7 +9838,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Safe Passage — reduces risk on a road you do not know."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Světlo",
+          "en": "The Light"
+        },
+        "description": {
+          "cs": "Rozsviť cestu, kterou sám nepůjdeš.",
+          "en": "Light a road you will not walk yourself."
+        }
+      },
+      {
+        "title": {
+          "cs": "Přístav",
+          "en": "Harbour"
+        },
+        "description": {
+          "cs": "Doveď loď domů v mlze.",
+          "en": "Bring a ship home through fog."
+        }
+      },
+      {
+        "title": {
+          "cs": "Bouře",
+          "en": "Storm"
+        },
+        "description": {
+          "cs": "Pomoz v nejhorším počasí, ne po něm.",
+          "en": "Help in the worst weather, not after it."
+        }
+      }
+    ],
     "essence": {
       "cs": "Mazu — patronka námořníků a bezpečné plavby. V lore OASIS: vzdělávací oblouky rizik cross-chain bridging.",
       "en": "Mazu — patroness of sailors and safe passage. In OASIS lore: cross-chain bridging risk-education arcs."
@@ -8185,7 +9921,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Lotus Body — renews one who was considered lost."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Lotos",
+          "en": "Lotus"
+        },
+        "description": {
+          "cs": "Vstaň jinak, než jsi padl.",
+          "en": "Rise differently than you fell."
+        }
+      },
+      {
+        "title": {
+          "cs": "Druhá šance",
+          "en": "Second Chance"
+        },
+        "description": {
+          "cs": "Vrať se tam, odkud tě vyhodili.",
+          "en": "Return where you were thrown out."
+        }
+      },
+      {
+        "title": {
+          "cs": "Odpovědnost",
+          "en": "Responsibility"
+        },
+        "description": {
+          "cs": "Nes následky svého návratu.",
+          "en": "Carry the consequences of your return."
+        }
+      }
+    ],
     "essence": {
       "cs": "Neža — folklórní bodhisattvický příběh mládí o přepsání osudu (ne náhodný pyro-vandalism gag).",
       "en": "Nezha — a folkloric bodhisattvic youth arc about rewriting destiny (not a random pyro-vandalism gag)."
@@ -8237,7 +10004,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Seventy-Two Tricks — goes around an obstacle that cannot be broken."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Cesta",
+          "en": "The Journey"
+        },
+        "description": {
+          "cs": "Jdi pěšky místo skoku.",
+          "en": "Walk instead of leaping."
+        }
+      },
+      {
+        "title": {
+          "cs": "Trik",
+          "en": "The Trick"
+        },
+        "description": {
+          "cs": "Obejdi překážku, kterou nejde prorazit.",
+          "en": "Go around an obstacle that cannot be broken."
+        }
+      },
+      {
+        "title": {
+          "cs": "Domov",
+          "en": "Home"
+        },
+        "description": {
+          "cs": "Vrať se pokornější, než jsi odešel.",
+          "en": "Return humbler than you left."
+        }
+      }
+    ],
     "essence": {
       "cs": "Opičí král jako poutník-trickster, kterého disciplína lásky komunity (lore čelenky) naučila sloužit větší cestě než jen výhře ega.",
       "en": "The Monkey King as pilgrim-trickster, whom the discipline of community love (the headband lore) taught to serve a greater journey than just an ego win."
@@ -8289,7 +10087,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Riverbed — channels pressure so it does not burst the system."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Koryto",
+          "en": "Riverbed"
+        },
+        "description": {
+          "cs": "Usměrni tlak, aby neprotrhl systém.",
+          "en": "Channel pressure so it does not burst the system."
+        }
+      },
+      {
+        "title": {
+          "cs": "Třináct let",
+          "en": "Thirteen Years"
+        },
+        "description": {
+          "cs": "Vydrž u jedné práce, dokud není hotová.",
+          "en": "Stay with one job until it is finished."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dům",
+          "en": "The House"
+        },
+        "description": {
+          "cs": "Projdi kolem svého domu a nevejdi.",
+          "en": "Pass your own house and do not go in."
+        }
+      }
+    ],
     "essence": {
       "cs": "Yu — archetyp flood stewardship a inženýrské pokory (paralela public works a DAO infrastruktury).",
       "en": "Yu — archetype of flood stewardship and engineering humility (a public-works parallel to DAO infrastructure)."
@@ -8341,7 +10170,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Warning Thunder — announces a fault before it becomes a crisis."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Hrom",
+          "en": "Thunder"
+        },
+        "description": {
+          "cs": "Ozname chybu, kterou jsi našel.",
+          "en": "Announce the fault you found."
+        }
+      },
+      {
+        "title": {
+          "cs": "Soud",
+          "en": "The Court"
+        },
+        "description": {
+          "cs": "Prošetři bez hněvu a bez spěchu.",
+          "en": "Investigate without anger or haste."
+        }
+      },
+      {
+        "title": {
+          "cs": "Oprava",
+          "en": "Repair"
+        },
+        "description": {
+          "cs": "Oprav to, co jsi oznámil.",
+          "en": "Repair what you announced."
+        }
+      }
+    ],
     "essence": {
       "cs": "Lei Gong — archetyp thunder tribunal folklóru — v OASIS jako automatizovaný sentinel varující na porušený governance invariant (ne trest případným omráčením hráče).",
       "en": "Lei Gong — the thunder-tribunal folklore archetype — in OASIS as an automated sentinel alerting on a broken governance invariant (not a punitive random stun on players)."
@@ -8393,7 +10253,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Harvest Blessing — ensures food reaches where it is missing."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Zrno",
+          "en": "The Grain"
+        },
+        "description": {
+          "cs": "Nezahazuj ani jedno zrno.",
+          "en": "Waste not a single grain."
+        }
+      },
+      {
+        "title": {
+          "cs": "Úroda",
+          "en": "Harvest"
+        },
+        "description": {
+          "cs": "Rozděl úrodu dřív, než se zkazí.",
+          "en": "Share the harvest before it spoils."
+        }
+      },
+      {
+        "title": {
+          "cs": "Sezóna",
+          "en": "Season"
+        },
+        "description": {
+          "cs": "Vrať půdě, co sis vzal.",
+          "en": "Return to the soil what you took."
+        }
+      }
+    ],
     "essence": {
       "cs": "Dewi Sri — bohyně rýže a plodnosti; lore OASIS: stewardship farm pooly + městské eventy proti plýtvání jídlem.",
       "en": "Dewi Sri — goddess of rice and fertility; OASIS lore: stewardship farm pools + anti food-waste city events."
@@ -8445,7 +10336,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "The Tide — returns to the shore what was taken from it."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Příliv",
+          "en": "Tide"
+        },
+        "description": {
+          "cs": "Vrať pobřeží, co mu bylo vzato.",
+          "en": "Return to the shore what was taken from it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Útes",
+          "en": "The Cliff"
+        },
+        "description": {
+          "cs": "Chraň to, co patří všem.",
+          "en": "Guard what belongs to everyone."
+        }
+      },
+      {
+        "title": {
+          "cs": "Moře",
+          "en": "Sea"
+        },
+        "description": {
+          "cs": "Neber víc, než uneseš.",
+          "en": "Take no more than you can carry."
+        }
+      }
+    ],
     "essence": {
       "cs": "Nyai Roro Kidul — duchovní svrchovanost jižního moře v jávských narrativách; lore OASIS: klimatická migrace + pobřežní commons oblouky.",
       "en": "Nyai Roro Kidul — spiritual sovereignty of the southern sea in Javanese narratives; OASIS lore: climate migration + shoreline commons arcs."
@@ -8497,7 +10419,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Mediation — brings two sides to one sentence."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Stůl",
+          "en": "The Table"
+        },
+        "description": {
+          "cs": "Seď s oběma stranami naráz.",
+          "en": "Sit with both sides at once."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pravda",
+          "en": "Truth"
+        },
+        "description": {
+          "cs": "Řekni tu nepříjemnou věc nahlas.",
+          "en": "Say the uncomfortable thing out loud."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dohoda",
+          "en": "Accord"
+        },
+        "description": {
+          "cs": "Najdi jednu větu, se kterou odejdou oba.",
+          "en": "Find one sentence both can leave with."
+        }
+      }
+    ],
     "essence": {
       "cs": "Semar — wayang punakawan archetyp, který odhaluje pravdu, jež se vládci bojí — v OASIS jako neutrální NPC mentor bridging konfliktů frakcí (ne terč krutých vtipů).",
       "en": "Semar — the wayang punakawan archetype who reveals the truth rulers fear — in OASIS as a neutral NPC mentor bridging faction conflicts (not the butt of cruel jokes)."
@@ -8549,7 +10502,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Plain Words — translates a complex decision into human speech."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Překlad",
+          "en": "Translation"
+        },
+        "description": {
+          "cs": "Vysvětli složité rozhodnutí lidsky.",
+          "en": "Explain a complex decision in human words."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dokument",
+          "en": "The Document"
+        },
+        "description": {
+          "cs": "Napiš návod, kterému se rozumí bez tebe.",
+          "en": "Write instructions that work without you."
+        }
+      },
+      {
+        "title": {
+          "cs": "Otázka",
+          "en": "Question"
+        },
+        "description": {
+          "cs": "Ptej se, čemu jsi nerozuměl.",
+          "en": "Ask about what you did not understand."
+        }
+      }
+    ],
     "essence": {
       "cs": "Batara Guru — wayang lore učitel-božstvo suverénně přemosťující oblouky kosmického řádu.",
       "en": "Batara Guru — the wayang lore teacher-deity sovereignly bridging cosmic-order arcs."
@@ -8601,7 +10585,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Hysteria Cleanse — calms a group in panic."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Tanec",
+          "en": "Dance"
+        },
+        "description": {
+          "cs": "Uklidni paniku dřív, než se rozšíří.",
+          "en": "Calm panic before it spreads."
+        }
+      },
+      {
+        "title": {
+          "cs": "Maska",
+          "en": "Mask"
+        },
+        "description": {
+          "cs": "Vystup proti strachu, ne proti lidem.",
+          "en": "Stand against fear, not against people."
+        }
+      },
+      {
+        "title": {
+          "cs": "Nádvoří",
+          "en": "Courtyard"
+        },
+        "description": {
+          "cs": "Vrať klid místu, kde se hádalo.",
+          "en": "Return calm to a place that was arguing."
+        }
+      }
+    ],
     "essence": {
       "cs": "Barong Ket — archetyp ochrany komunity před maligním chaosem.",
       "en": "Barong Ket — the archetype of community protection against malign chaos."
@@ -8653,7 +10668,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Wings of Aid — carries help where you cannot drive."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Křídla",
+          "en": "Wings"
+        },
+        "description": {
+          "cs": "Dodej pomoc tam, kam se nedá dojet.",
+          "en": "Deliver help where you cannot drive."
+        }
+      },
+      {
+        "title": {
+          "cs": "Náklad",
+          "en": "Cargo"
+        },
+        "description": {
+          "cs": "Nes jen to, co je potřeba.",
+          "en": "Carry only what is needed."
+        }
+      },
+      {
+        "title": {
+          "cs": "Návrat",
+          "en": "Return"
+        },
+        "description": {
+          "cs": "Vrať se pro dalšího, ne pro odměnu.",
+          "en": "Come back for the next one, not for the reward."
+        }
+      }
+    ],
     "essence": {
       "cs": "Garuda — mýtický pták ochrany a jednoty, symbolika v Indonésii i širší jihovýchodní Asii.",
       "en": "Garuda — the mythic bird of protection and unity, a symbol in Indonesia and wider Southeast Asia."
@@ -8705,7 +10751,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Cloud Flight — shields the person entrusted to you on the way."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Doprovod",
+          "en": "Escort"
+        },
+        "description": {
+          "cs": "Doveď někoho bezpečně přes nebezpečí.",
+          "en": "Bring someone safely through danger."
+        }
+      },
+      {
+        "title": {
+          "cs": "Oblaka",
+          "en": "Clouds"
+        },
+        "description": {
+          "cs": "Proleť trasou, kterou pěšky nejde.",
+          "en": "Fly a route that cannot be walked."
+        }
+      },
+      {
+        "title": {
+          "cs": "Zpátky",
+          "en": "Back"
+        },
+        "description": {
+          "cs": "Vrať se s tím, koho jsi vzal.",
+          "en": "Come back with the one you took."
+        }
+      }
+    ],
     "essence": {
       "cs": "Gatotkaca — lokálně milovaný hrdina odvozený z Mahábháraty v indonéském performativním umění (ne mechanický duplikát #11/#12 — jiná questline zdůrazňující ochranu civilistů).",
       "en": "Gatotkaca — the locally beloved Mahābhārata-derived hero of Indonesian performing arts (not a mechanical duplicate of #11/#12 — a different questline emphasizing civilian shielding)."
@@ -8757,7 +10834,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "True Face — reveals who is who, through any disguise."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Jméno",
+          "en": "The Name"
+        },
+        "description": {
+          "cs": "Odlož titul a jdi mezi lidi.",
+          "en": "Set the title aside and walk among people."
+        }
+      },
+      {
+        "title": {
+          "cs": "Převlek",
+          "en": "Disguise"
+        },
+        "description": {
+          "cs": "Projdi místem nepoznán.",
+          "en": "Pass through a place unrecognised."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pravá tvář",
+          "en": "True Face"
+        },
+        "description": {
+          "cs": "Ukaž se takový, jaký jsi.",
+          "en": "Show yourself as you are."
+        }
+      }
+    ],
     "essence": {
       "cs": "Panji — archetyp výpravy pro milovanou + obnovy občanského řádu.",
       "en": "Panji — the archetype of the quest for the beloved + restoring civic order."
@@ -8809,7 +10917,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Spindle — stops an overly fast idea mid-sentence."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Podmín",
+          "en": "The Condition"
+        },
+        "description": {
+          "cs": "Řekni své podmínky dřív, než začne práce.",
+          "en": "State your conditions before the work starts."
+        }
+      },
+      {
+        "title": {
+          "cs": "Tisíc soch",
+          "en": "A Thousand Statues"
+        },
+        "description": {
+          "cs": "Zastav toho, kdo spěchá přes tvoje hranice.",
+          "en": "Stop whoever rushes past your boundaries."
+        }
+      },
+      {
+        "title": {
+          "cs": "Vřeteno",
+          "en": "Spindle"
+        },
+        "description": {
+          "cs": "Řekni „takhle ne“ bez vysvětlování.",
+          "en": "Say ‘not like this' without explaining."
+        }
+      }
+    ],
     "essence": {
       "cs": "Roro Jonggrang lore — archetyp vzniku chrámu + smlouvání + respektu hranic, rekonstruován jako agency-pozitivní vyprávění (konzultant povinný).",
       "en": "Roro Jonggrang lore — archetype of temple genesis + bargaining + boundary respect, reconstructed as an agency-positive narrative (consultant mandatory)."
@@ -8861,7 +11000,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Shelter — restores strength to whoever cared for others."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Host",
+          "en": "The Guest"
+        },
+        "description": {
+          "cs": "Nech se pozvat, i když to neumíš.",
+          "en": "Let yourself be invited even if you are not good at it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Útočiště",
+          "en": "Shelter"
+        },
+        "description": {
+          "cs": "Odpočiň si a nic nevysvětluj.",
+          "en": "Rest and explain nothing."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pomoc",
+          "en": "Help"
+        },
+        "description": {
+          "cs": "Nech si pomoct od někoho, komu jsi pomohl.",
+          "en": "Let someone you helped help you."
+        }
+      }
+    ],
     "essence": {
       "cs": "Nawang Wulan — archetyp lunární péče o etiku + reciproční hostitelství (folklór sestupu měsíce adaptovaný jako oblouky finanční inkluze a přístřeší).",
       "en": "Nawang Wulan — archetype of lunar care ethics + reciprocal hospitality (the moon-descent folklore adapted as financial-inclusion and shelter arcs)."
@@ -8913,7 +11083,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Sky Over the Road — shows direction where human maps end."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Hvězdy",
+          "en": "Stars"
+        },
+        "description": {
+          "cs": "Nauč se oblohu bez aplikace.",
+          "en": "Learn the sky without an app."
+        }
+      },
+      {
+        "title": {
+          "cs": "Cesta",
+          "en": "The Road"
+        },
+        "description": {
+          "cs": "Jdi podle hvězd, ne podle značek.",
+          "en": "Navigate by stars, not by signs."
+        }
+      },
+      {
+        "title": {
+          "cs": "Předání",
+          "en": "Hand Over"
+        },
+        "description": {
+          "cs": "Nauč oblohu někoho dalšího.",
+          "en": "Teach the sky to someone else."
+        }
+      }
+    ],
     "essence": {
       "cs": "Archetyp astronomie + kinship stewardship známého souhvězdí pod mnoha jmény — OASIS ho používá k výchově o multiplicitách.",
       "en": "An astronomy + kinship-stewardship archetype of the famous star cluster known by many names — OASIS uses it to teach about multiplicities."
@@ -8965,7 +11166,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Dry Riverbed — returns water where it had been dried out."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Řeka",
+          "en": "River"
+        },
+        "description": {
+          "cs": "Nech vodu téct tam, kam chce.",
+          "en": "Let the water go where it wants."
+        }
+      },
+      {
+        "title": {
+          "cs": "Sucho",
+          "en": "Drought"
+        },
+        "description": {
+          "cs": "Vrať vodu do vyschlého řečiště.",
+          "en": "Return water to a dry riverbed."
+        }
+      },
+      {
+        "title": {
+          "cs": "Zákon",
+          "en": "Law"
+        },
+        "description": {
+          "cs": "Respektuj krajinu i tam, kde nic nevydělá.",
+          "en": "Respect the land even where it earns nothing."
+        }
+      }
+    ],
     "essence": {
       "cs": "Hydrologické + právně-kosmologické rámy péče o krajinu („Country“).",
       "en": "Hydrological + legal-cosmological frames of landscape care ('Country')."
@@ -9017,7 +11249,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Bird's Eye — reveals a connection you cannot see from the grass."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Pohled",
+          "en": "The View"
+        },
+        "description": {
+          "cs": "Vystup výš, abys viděl celek.",
+          "en": "Climb higher so you can see the whole."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rovnováha",
+          "en": "Balance"
+        },
+        "description": {
+          "cs": "Najdi, co drží pohromadě a co ne.",
+          "en": "Find what holds together and what does not."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hnízdo",
+          "en": "Nest"
+        },
+        "description": {
+          "cs": "Ochraň, co jsi uviděl shora.",
+          "en": "Protect what you saw from above."
+        }
+      }
+    ],
     "essence": {
       "cs": "Bunjil — creator-bird archetyp dokumentovaný v některých narrativách Kulin.",
       "en": "Bunjil — the creator-bird archetype documented in some Kulin narratives."
@@ -9069,7 +11332,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Patient Listening — reveals what a place is trying to say."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Naslouchej",
+          "en": "Listen"
+        },
+        "description": {
+          "cs": "Nech krajinu mluvit dřív než lidi.",
+          "en": "Let the land speak before people do."
+        }
+      },
+      {
+        "title": {
+          "cs": "Vodní dírka",
+          "en": "Waterhole"
+        },
+        "description": {
+          "cs": "Najdi zdroj, který nikdo nehlídá.",
+          "en": "Find a source no one is watching."
+        }
+      },
+      {
+        "title": {
+          "cs": "Uč pomalu",
+          "en": "Teach Slowly"
+        },
+        "description": {
+          "cs": "Nauč jednu věc za měsíc, ne za den.",
+          "en": "Teach one thing in a month, not in a day."
+        }
+      }
+    ],
     "essence": {
       "cs": "Sky father archetypy spojené s výchovou o koloniálním mapovacím násilí.",
       "en": "Sky father archetypes connected to lore education about colonial mapping violence."
@@ -9121,7 +11415,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Tidal Gate — opens the crossing at the tide that is coming."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Příliv",
+          "en": "Tide"
+        },
+        "description": {
+          "cs": "Vyčkej správné chvíle, i když to bolí.",
+          "en": "Wait for the right moment even when it hurts."
+        }
+      },
+      {
+        "title": {
+          "cs": "Kánoe",
+          "en": "Canoe"
+        },
+        "description": {
+          "cs": "Připrav vše předem, ne cestou.",
+          "en": "Prepare everything beforehand, not on the way."
+        }
+      },
+      {
+        "title": {
+          "cs": "Přechod",
+          "en": "Passage"
+        },
+        "description": {
+          "cs": "Projdi, když je čas, a ne dřív.",
+          "en": "Cross when it is time, and not before."
+        }
+      }
+    ],
     "essence": {
       "cs": "Tagai — navigátor z lore Torres Strait Islanders (veřejný antropologický rámec + brány komunitního souhlasu).",
       "en": "Tagai — a navigator spirit of Torres Strait Islanders lore (public anthropology framing + community consent gates)."
@@ -9173,7 +11498,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Reading the Emptiness — finds meaning in what is not there."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Prázdno",
+          "en": "Emptiness"
+        },
+        "description": {
+          "cs": "Hledej to, co v obraze chybí.",
+          "en": "Look for what is missing from the picture."
+        }
+      },
+      {
+        "title": {
+          "cs": "Tma",
+          "en": "Dark"
+        },
+        "description": {
+          "cs": "Jdi bez lucerny a bez jistoty.",
+          "en": "Walk without a lantern or certainty."
+        }
+      },
+      {
+        "title": {
+          "cs": "Tvar",
+          "en": "Shape"
+        },
+        "description": {
+          "cs": "Pojmenuj obraz, který vznikl z ničeho.",
+          "en": "Name the shape that came from nothing."
+        }
+      }
+    ],
     "essence": {
       "cs": "Využívá veřejně vyučované odkazy na aboridžinskou astronomii (Emu in the Sky) jako sloučené oblouky STEM + etiky.",
       "en": "Uses publicly taught references to Aboriginal astronomy (Emu in the Sky) as fused STEM + ethics arcs."
@@ -9225,7 +11581,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Seed of Law — plants a rule that outlives generations."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Semeno",
+          "en": "Seed"
+        },
+        "description": {
+          "cs": "Zasaď pravidlo, ne jen slib.",
+          "en": "Plant a rule, not just a promise."
+        }
+      },
+      {
+        "title": {
+          "cs": "Zákon",
+          "en": "Law"
+        },
+        "description": {
+          "cs": "Napiš, kdo je chráněn a kdo ne.",
+          "en": "Write down who is protected and who is not."
+        }
+      },
+      {
+        "title": {
+          "cs": "Příchod",
+          "en": "Arrival"
+        },
+        "description": {
+          "cs": "Přines, nevezmi.",
+          "en": "Bring, do not take."
+        }
+      }
+    ],
     "essence": {
       "cs": "Djanggawu / Djang'kawu — oblouky stvořitelských poutníků o založení sladkovodního a ceremoniálně-právního lešení (abstrahováno).",
       "en": "Djanggawu / Djang'kawu — creator-voyager arcs about establishing freshwater and ceremonial-law scaffolding (abstracted)."
@@ -9277,7 +11664,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Warning Bolt — exposes the weak point before the storm hits."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Blesk",
+          "en": "Bolt"
+        },
+        "description": {
+          "cs": "Najdi slabé místo dřív než bouře.",
+          "en": "Find the weak point before the storm."
+        }
+      },
+      {
+        "title": {
+          "cs": "Bouře",
+          "en": "Storm"
+        },
+        "description": {
+          "cs": "Připrav se na výpadek, který přijde.",
+          "en": "Prepare for the outage that is coming."
+        }
+      },
+      {
+        "title": {
+          "cs": "Oprava",
+          "en": "Repair"
+        },
+        "description": {
+          "cs": "Obnov, co spadlo, a zapiš proč.",
+          "en": "Restore what fell and record why."
+        }
+      }
+    ],
     "essence": {
       "cs": "Namarrkon — bleskový předek zmiňovaný v zemích Arnhem ve veřejně dostupných průvodcích.",
       "en": "Namarrkon — a lightning ancestor mentioned in Arnhem lands in publicly available guides."
@@ -9329,7 +11747,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Reading Country — shows the trace you cannot see elsewhere."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Chůze",
+          "en": "The Walk"
+        },
+        "description": {
+          "cs": "Jdi bez cíle aspoň hodinu.",
+          "en": "Walk without a destination for at least an hour."
+        }
+      },
+      {
+        "title": {
+          "cs": "Stopa",
+          "en": "Trace"
+        },
+        "description": {
+          "cs": "Najdi stopu, kterou jinde nevidíš.",
+          "en": "Find a trace you cannot see elsewhere."
+        }
+      },
+      {
+        "title": {
+          "cs": "Ticho",
+          "en": "Silence"
+        },
+        "description": {
+          "cs": "Nemluv celý den a poslouchej.",
+          "en": "Do not speak for a day, only listen."
+        }
+      }
+    ],
     "essence": {
       "cs": "Walking Country jako etické získávání poznání.",
       "en": "Walking Country as ethical knowledge acquisition."
@@ -9381,7 +11830,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Repair — opens the agreement that was impossible while silence held."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Pravda",
+          "en": "Truth"
+        },
+        "description": {
+          "cs": "Pojmenuj škodu, ne jen záměr.",
+          "en": "Name the harm, not only the intention."
+        }
+      },
+      {
+        "title": {
+          "cs": "Most",
+          "en": "Bridge"
+        },
+        "description": {
+          "cs": "Spoj dvě řeči, které se neposlouchají.",
+          "en": "Join two languages that do not listen to each other."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dohoda",
+          "en": "Treaty"
+        },
+        "description": {
+          "cs": "Uzavři dohodu až po nápravě.",
+          "en": "Close the agreement only after repair."
+        }
+      }
+    ],
     "essence": {
       "cs": "Treaty/truth/restituce jako technický governance most — paralela k ZION DAO (nestranické lore).",
       "en": "Treaty/truth/restitution as a technical governance bridge — a parallel to ZION DAO (non-partisan lore)."
@@ -9433,7 +11913,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Earth's Embrace — restores a place that was exhausted."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Půda",
+          "en": "Soil"
+        },
+        "description": {
+          "cs": "Obnov místo, které bylo vyčerpané.",
+          "en": "Restore a place that was exhausted."
+        }
+      },
+      {
+        "title": {
+          "cs": "Náruč",
+          "en": "Embrace"
+        },
+        "description": {
+          "cs": "Ochraň to, co nemá zastoupení.",
+          "en": "Protect what has no substitute."
+        }
+      },
+      {
+        "title": {
+          "cs": "Vrácení",
+          "en": "Return"
+        },
+        "description": {
+          "cs": "Vrať zemi, co jsi jí vzal.",
+          "en": "Give back to the land what you took."
+        }
+      }
+    ],
     "essence": {
       "cs": "Papatūānuku — kosmologie Země-matky v rámu Māori (křížový odkaz pacifické pozemkové etiky).",
       "en": "Papatūānuku — Earth-mother cosmology of the Māori frame (cross-reference to Pacific land ethics)."
@@ -9485,7 +11996,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Open Sky — clears a place that was suffocating."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Prostor",
+          "en": "Space"
+        },
+        "description": {
+          "cs": "Otevři nebe místu, které se dusí.",
+          "en": "Open the sky over a place that is suffocating."
+        }
+      },
+      {
+        "title": {
+          "cs": "Déšť",
+          "en": "Rain"
+        },
+        "description": {
+          "cs": "Nech padat, i když to zpozdí cestu.",
+          "en": "Let it fall even if it delays the journey."
+        }
+      },
+      {
+        "title": {
+          "cs": "Odloučení",
+          "en": "Separation"
+        },
+        "description": {
+          "cs": "Nech odejít to, co musí.",
+          "en": "Let go of what must go."
+        }
+      }
+    ],
     "essence": {
       "cs": "Ranginui — potence nebes v kosmu Māori; paralela climate transparency overlayů.",
       "en": "Ranginui — sky potency of the Māori cosmos; a parallel to climate-transparency overlays."
@@ -9537,7 +12079,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Regrowth — returns life to a place that was cut down."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Světlo",
+          "en": "Light"
+        },
+        "description": {
+          "cs": "Odděl, aby bylo vidět.",
+          "en": "Separate so that there may be light."
+        }
+      },
+      {
+        "title": {
+          "cs": "Strom",
+          "en": "Tree"
+        },
+        "description": {
+          "cs": "Zasaď strom, který přežije tebe.",
+          "en": "Plant a tree that outlives you."
+        }
+      },
+      {
+        "title": {
+          "cs": "Růst",
+          "en": "Growth"
+        },
+        "description": {
+          "cs": "Nech růst bez zásahu.",
+          "en": "Let it grow without interference."
+        }
+      }
+    ],
     "essence": {
       "cs": "Táne — separator + nositel života, strážce lesa v rámu Māori (žádná glorifikace ilegální těžby).",
       "en": "Tāne — the separator + life-bringer, forest guardian of the Māori frame (no illegal-logging glorification arcs)."
@@ -9589,7 +12162,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Sea Quota — limits overfishing and restores the stock."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Příděl",
+          "en": "Quota"
+        },
+        "description": {
+          "cs": "Omez výlov dřív, než zmizí.",
+          "en": "Limit the catch before it disappears."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rāhui",
+          "en": "Rāhui"
+        },
+        "description": {
+          "cs": "Nech moře na sezónu odpočinout.",
+          "en": "Let the sea rest for a season."
+        }
+      },
+      {
+        "title": {
+          "cs": "Návrat",
+          "en": "Return"
+        },
+        "description": {
+          "cs": "Vrať se, až bude zase co lovit.",
+          "en": "Return when there is something to catch again."
+        }
+      }
+    ],
     "essence": {
       "cs": "Tangaroa — potence moře + etika rybolovu po způsobu Māori.",
       "en": "Tangaroa — sea potency + fisheries ethics in the Māori way."
@@ -9641,7 +12245,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Field Truce — ends a quarrel before the harvest is lost."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Pole",
+          "en": "Field"
+        },
+        "description": {
+          "cs": "Zasej dřív, než vyřešíš spory.",
+          "en": "Sow before you settle the disputes."
+        }
+      },
+      {
+        "title": {
+          "cs": "Sklizeň",
+          "en": "Harvest"
+        },
+        "description": {
+          "cs": "Sdílej úrodu i s tím, kdo nepomáhal.",
+          "en": "Share the harvest even with whoever did not help."
+        }
+      },
+      {
+        "title": {
+          "cs": "Smír",
+          "en": "Truce"
+        },
+        "description": {
+          "cs": "Ukonči spor dřív, než přijde o úrodu.",
+          "en": "End the quarrel before the harvest is lost."
+        }
+      }
+    ],
     "essence": {
       "cs": "Rongo — mír + kultivovaná jídla v rámu Māori, paralelně PvP ceasefire sezóny eticky.",
       "en": "Rongo — peace + cultivated foods of the Māori frame, paralleling ethical PvP ceasefire seasons."
@@ -9693,7 +12328,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Kin Wall — shields the weakest members of the group."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Hradba",
+          "en": "Wall"
+        },
+        "description": {
+          "cs": "Postav obranu, ne útok.",
+          "en": "Build a defence, not an attack."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rod",
+          "en": "Kin"
+        },
+        "description": {
+          "cs": "Chraň nejslabší členy skupiny.",
+          "en": "Shield the weakest members of the group."
+        }
+      },
+      {
+        "title": {
+          "cs": "Stažení",
+          "en": "Withdraw"
+        },
+        "description": {
+          "cs": "Odejdi včas a bez ztrát.",
+          "en": "Withdraw in time and without losses."
+        }
+      }
+    ],
     "essence": {
       "cs": "Tú — agentura konfliktu v rámu Māori, použitá jen jako oblouky ochrany.",
       "en": "Tū — the agency of conflict in the Māori frame, used only as protection arcs."
@@ -9745,7 +12411,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Gust — tests the weak point without warning."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Náraz",
+          "en": "Gust"
+        },
+        "description": {
+          "cs": "Otestuj, co se rozpadne.",
+          "en": "Test what falls apart."
+        }
+      },
+      {
+        "title": {
+          "cs": "Kořeny",
+          "en": "Roots"
+        },
+        "description": {
+          "cs": "Zkontroluj, co drží doopravdy.",
+          "en": "Check what actually holds."
+        }
+      },
+      {
+        "title": {
+          "cs": "Klid",
+          "en": "Calm"
+        },
+        "description": {
+          "cs": "Po bouři uklidni, co zbylo.",
+          "en": "After the storm, calm what remains."
+        }
+      }
+    ],
     "essence": {
       "cs": "Táwhirimátea — archetyp větrů a bouří; OASIS jako resilience stress testy pro topologii sítě.",
       "en": "Tāwhirimātea — archetype of winds and storms; OASIS uses it as resilience stress tests for network topology."
@@ -9797,7 +12494,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Harmless Foraging — gains food while the place keeps growing."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Sběr",
+          "en": "Foraging"
+        },
+        "description": {
+          "cs": "Ber dvě a třetí nech.",
+          "en": "Take two and leave the third."
+        }
+      },
+      {
+        "title": {
+          "cs": "Les",
+          "en": "Forest"
+        },
+        "description": {
+          "cs": "Nech les růst i po tvém odchodu.",
+          "en": "Leave the forest growing after you go."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hlad",
+          "en": "Hunger"
+        },
+        "description": {
+          "cs": "Nasytit někoho bez vybrání místa.",
+          "en": "Feed someone without emptying the place."
+        }
+      }
+    ],
     "essence": {
       "cs": "Haumietiketike — nekultivovaná výživa v rámu Māori.",
       "en": "Haumietiketike — uncultivated sustenance of the Māori frame."
@@ -9849,7 +12577,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Transformation — carries you through a change you cannot undo."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Přerod",
+          "en": "Transformation"
+        },
+        "description": {
+          "cs": "Projdi změnou, kterou nejde vrátit.",
+          "en": "Pass through a change that cannot be undone."
+        }
+      },
+      {
+        "title": {
+          "cs": "Noc",
+          "en": "Night"
+        },
+        "description": {
+          "cs": "Zůstaň v tmě, dokud nepřejde.",
+          "en": "Stay in the dark until it passes."
+        }
+      },
+      {
+        "title": {
+          "cs": "Nový den",
+          "en": "New Day"
+        },
+        "description": {
+          "cs": "Vrať se jiný, ne stejný.",
+          "en": "Return different, not the same."
+        }
+      }
+    ],
     "essence": {
       "cs": "Hine — práh podsvětí / transformace v kosmologii Māori.",
       "en": "Hine — underworld threshold / transformation in Māori cosmology."
@@ -9901,7 +12660,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Dead Reckoning — brings you home even without a signal."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Odhad",
+          "en": "Reckoning"
+        },
+        "description": {
+          "cs": "Dovede tě domů bez signálu.",
+          "en": "Find your way home without a signal."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hvězda",
+          "en": "Star"
+        },
+        "description": {
+          "cs": "Najdi sever bez kompasu.",
+          "en": "Find north without a compass."
+        }
+      },
+      {
+        "title": {
+          "cs": "Domov",
+          "en": "Home"
+        },
+        "description": {
+          "cs": "Dopluj tam, odkud jsi vyplul.",
+          "en": "Sail back to where you set out."
+        }
+      }
+    ],
     "essence": {
       "cs": "Kupe — plavební brillance otevírající tradice waka Aotearoa v uctivých vzdělávacích rámcích.",
       "en": "Kupe — voyaging brilliance opening the Aotearoa waka traditions in respectful educational frames."
@@ -9953,7 +12743,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Sweet Current — releases means where they got stuck."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Proud",
+          "en": "Current"
+        },
+        "description": {
+          "cs": "Uvolni prostředky, které se zadrhly.",
+          "en": "Release means that got stuck."
+        }
+      },
+      {
+        "title": {
+          "cs": "Soutok",
+          "en": "Confluence"
+        },
+        "description": {
+          "cs": "Spoj dvě řeky, které tekly odděleně.",
+          "en": "Join two rivers that ran apart."
+        }
+      },
+      {
+        "title": {
+          "cs": "Sladkost",
+          "en": "Sweetness"
+        },
+        "description": {
+          "cs": "Rozdej to, co máš navíc.",
+          "en": "Share what you have to spare."
+        }
+      }
+    ],
     "essence": {
       "cs": "Ọṣun — reciprocita mezi komunitou a tokem (eko + sociální péče). V OASIS: narativ governance humanitárního likvidního poolu.",
       "en": "Ọṣun — reciprocity between community and flow (eco + social care). In OASIS: the humanitarian liquid-pool governance narrative."
@@ -10005,7 +12826,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Documented Strike — hits only what has been proven."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Důkaz",
+          "en": "Proof"
+        },
+        "description": {
+          "cs": "Dolož obvinění dřív, než udeříš.",
+          "en": "Prove the accusation before you strike."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hrom",
+          "en": "Thunder"
+        },
+        "description": {
+          "cs": "Zasáhni jednou a přesně.",
+          "en": "Strike once and precisely."
+        }
+      },
+      {
+        "title": {
+          "cs": "Klid",
+          "en": "Calm"
+        },
+        "description": {
+          "cs": "Po zásahu mlč.",
+          "en": "After the strike, be silent."
+        }
+      }
+    ],
     "essence": {
       "cs": "Ṣàngó — archetyp spravedlnosti a řádu s kulturním kontextem (královská genealogie narace citující akademické sekundární zdroje).",
       "en": "Ṣàngó — archetype of justice and order with cultural context (royal-genealogy narration citing academic secondary sources)."
@@ -10057,7 +12909,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Stillness — slows a decision to a readable pace."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Ztišení",
+          "en": "Stillness"
+        },
+        "description": {
+          "cs": "Zpomal rozhodnutí na čitelnou rychlost.",
+          "en": "Slow a decision to a readable pace."
+        }
+      },
+      {
+        "title": {
+          "cs": "Bílý vrch",
+          "en": "White Hill"
+        },
+        "description": {
+          "cs": "Uklidni hlavu před jednáním.",
+          "en": "Calm your head before the meeting."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rozhodnutí",
+          "en": "Decision"
+        },
+        "description": {
+          "cs": "Rozhodni v klidu, ne v tlaku.",
+          "en": "Decide in calm, not under pressure."
+        }
+      }
+    ],
     "essence": {
       "cs": "Ọ̀bàtálá — rámcová stabilita a etická práce s materiály (keramika města = paralela infra building v DAO).",
       "en": "Ọ̀bàtálá — framework stability and ethical work with materials (the city's ceramics = a DAO infrastructure-building parallel)."
@@ -10109,7 +12992,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Crossing Wind — moves a whole elsewhere without breaking it."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Vítr",
+          "en": "Wind"
+        },
+        "description": {
+          "cs": "Odnes to, co už nepatří.",
+          "en": "Carry away what no longer belongs."
+        }
+      },
+      {
+        "title": {
+          "cs": "Stěhování",
+          "en": "Moving"
+        },
+        "description": {
+          "cs": "Přenes celek jinam bez rozbití.",
+          "en": "Move a whole elsewhere without breaking it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Návrat",
+          "en": "Return"
+        },
+        "description": {
+          "cs": "Usaď se jinde a nezůstávej stát.",
+          "en": "Settle elsewhere and do not stall."
+        }
+      }
+    ],
     "essence": {
       "cs": "Ọya — rámcová adaptace (migrace uživatelů mezi shardy, refaktoring legacy kontraktů morálně).",
       "en": "Ọya — a framework adaptation (migrating shard users, refactoring legacy contracts morally)."
@@ -10161,7 +13075,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Alternating Word — gives both sides of a dispute room."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Den",
+          "en": "Day"
+        },
+        "description": {
+          "cs": "Mluv první a nech druhého odpovědět.",
+          "en": "Speak first and let the other answer."
+        }
+      },
+      {
+        "title": {
+          "cs": "Noc",
+          "en": "Night"
+        },
+        "description": {
+          "cs": "Nech mluvit druhého a poslouchej.",
+          "en": "Let the other speak and listen."
+        }
+      },
+      {
+        "title": {
+          "cs": "Střídání",
+          "en": "Alternation"
+        },
+        "description": {
+          "cs": "Vystřídejte se bez přerušení.",
+          "en": "Take turns without interrupting."
+        }
+      }
+    ],
     "essence": {
       "cs": "Duální princip kreativního napětí — OASIS metaforicky dual-rail governance (ne efektní gender-war frakce).",
       "en": "The dual principle of creative tension — OASIS metaphorically uses dual-rail governance (not a gimmicky gender-war faction)."
@@ -10213,7 +13158,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Short Truth — reduces a complex decision to one sentence."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Krátce",
+          "en": "Briefly"
+        },
+        "description": {
+          "cs": "Řekni to jednou větou.",
+          "en": "Say it in one sentence."
+        }
+      },
+      {
+        "title": {
+          "cs": "Mlčení",
+          "en": "Silence"
+        },
+        "description": {
+          "cs": "Nemluv, dokud nemusíš.",
+          "en": "Do not speak until you must."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pravda",
+          "en": "Truth"
+        },
+        "description": {
+          "cs": "Řekni jen to, co uneseš.",
+          "en": "Say only what you can carry."
+        }
+      }
+    ],
     "essence": {
       "cs": "Koncept Nejvyššího v akan teologických popisech použit jako minimal-theology governance („méně dramatu, více naslouchání“).",
       "en": "The concept of the Supreme Being in Akan theological descriptions, used as minimal-theology governance ('less drama, more listening')."
@@ -10265,7 +13241,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Web — links two seemingly unrelated things."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Pavučina",
+          "en": "Web"
+        },
+        "description": {
+          "cs": "Propoj dvě věci, které spolu nesouvisí.",
+          "en": "Link two things that do not seem connected."
+        }
+      },
+      {
+        "title": {
+          "cs": "Příběh",
+          "en": "Story"
+        },
+        "description": {
+          "cs": "Vyprávěj pravidlo místo kázání.",
+          "en": "Tell a rule as a story instead of a sermon."
+        }
+      },
+      {
+        "title": {
+          "cs": "Konec",
+          "en": "Ending"
+        },
+        "description": {
+          "cs": "Nech posluchače domyslet pointu.",
+          "en": "Let the listener finish the point."
+        }
+      }
+    ],
     "essence": {
       "cs": "Ananse jako narativní mistr odhalující slepá místa moci (pedagogika „malé lži → velké pravdy“).",
       "en": "Ananse as the narrative master exposing power's blind spots ('small lies → big truths' pedagogy)."
@@ -10317,7 +13324,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Whole Renewed — reassembles the damaged parts."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Rozdělení",
+          "en": "Dismemberment"
+        },
+        "description": {
+          "cs": "Rozlož to, co nefunguje.",
+          "en": "Take apart what does not work."
+        }
+      },
+      {
+        "title": {
+          "cs": "Složení",
+          "en": "Reassembly"
+        },
+        "description": {
+          "cs": "Slož to jinak, ne stejně.",
+          "en": "Put it together differently, not the same."
+        }
+      },
+      {
+        "title": {
+          "cs": "Obnova",
+          "en": "Renewal"
+        },
+        "description": {
+          "cs": "Vrať celek do provozu.",
+          "en": "Return the whole to service."
+        }
+      }
+    ],
     "essence": {
       "cs": "Ausar-Osiris — cyklické obrozování institucí po selhání (paralela DAO phoenix lore).",
       "en": "Ausar-Osiris — cyclical renewal of institutions after failure (a DAO phoenix-lore parallel)."
@@ -10369,7 +13407,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Weighing — shows which agreement is truly balanced."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Pírko",
+          "en": "Feather"
+        },
+        "description": {
+          "cs": "Zvaž slova proti činům.",
+          "en": "Weigh words against deeds."
+        }
+      },
+      {
+        "title": {
+          "cs": "Srdce",
+          "en": "Heart"
+        },
+        "description": {
+          "cs": "Přiznej, co je těžké.",
+          "en": "Admit what is heavy."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pravda",
+          "en": "Truth"
+        },
+        "description": {
+          "cs": "Řekni to nahlas i s důsledky.",
+          "en": "Say it aloud with the consequences."
+        }
+      }
+    ],
     "essence": {
       "cs": "Maʿăt — archetyp pravdivého vyvážení rozhodnutí kolektivů (symbolika bez mystifikace RNG jako „orákla“).",
       "en": "Maʿăt — the archetype of truthful balancing of collective decisions (symbolism without mystifying RNG as an 'oracle')."
@@ -10421,7 +13490,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Level Table — makes the stronger side negotiate as an equal."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Rovný stůl",
+          "en": "Level Table"
+        },
+        "description": {
+          "cs": "Jednej bez převahy, i když ji máš.",
+          "en": "Negotiate without the upper hand even if you have it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Důstojnost",
+          "en": "Dignity"
+        },
+        "description": {
+          "cs": "Nenech druhého ponížit ani zvítězit nad ním.",
+          "en": "Do not let the other be humiliated or beaten down."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dohoda",
+          "en": "Accord"
+        },
+        "description": {
+          "cs": "Uzavři mír, který vydrží.",
+          "en": "Close a peace that lasts."
+        }
+      }
+    ],
     "essence": {
       "cs": "Njinga — archetyp asymetrického odporu + vyjednávací stamina (anti-koloniální extraktivní struktury jako narativní antagonisté).",
       "en": "Njinga — archetype of asymmetric resistance + negotiation stamina (anti-colonial extractive structures as narrative antagonists)."
@@ -10473,7 +13573,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Accord of Regions — joins ten different interests into one decision."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Deset krajů",
+          "en": "Ten Regions"
+        },
+        "description": {
+          "cs": "Spoj deset různých zájmů do jedné dohody.",
+          "en": "Join ten different interests into one accord."
+        }
+      },
+      {
+        "title": {
+          "cs": "Nebe",
+          "en": "The Sky"
+        },
+        "description": {
+          "cs": "Podrž celek, dokud se nerozhodne.",
+          "en": "Hold the whole until it decides."
+        }
+      },
+      {
+        "title": {
+          "cs": "Odpočinek",
+          "en": "Rest"
+        },
+        "description": {
+          "cs": "Polož, co nemusíš nést.",
+          "en": "Set down what you do not have to carry."
+        }
+      }
+    ],
     "essence": {
       "cs": "Atlas — koordinační střed deseti oblastních mandátů jako metafora konsenzu ostrovní sítě (pedagogika staking regionů / shard governance).",
       "en": "Atlas — the coordinating center of ten regional mandates as a metaphor for island-network consensus (staking regions / shard governance pedagogy)."
@@ -10525,7 +13656,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Clear Charter — blocks the reading that would harm the weaker."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Charta",
+          "en": "Charter"
+        },
+        "description": {
+          "cs": "Napiš pravidla jasně, aby se nedala obejít.",
+          "en": "Write the rules clearly enough that they cannot be dodged."
+        }
+      },
+      {
+        "title": {
+          "cs": "Svatyňka",
+          "en": "Sanctuary"
+        },
+        "description": {
+          "cs": "Ochraň místo před přestavbou k obrazu silnějšího.",
+          "en": "Protect a place from being rebuilt in the stronger's image."
+        }
+      },
+      {
+        "title": {
+          "cs": "Výklad",
+          "en": "Reading"
+        },
+        "description": {
+          "cs": "Zabraň výkladu, který poškodí slabšího.",
+          "en": "Block the reading that would harm the weaker."
+        }
+      }
+    ],
     "essence": {
       "cs": "Cleito — archeologie souhlasu: centrum říše jako místo, kde se zákon rodí ze souhlasu terénu, ne ze skryté manipulace.",
       "en": "Cleito — consent archaeology: the empire's center as the place where law is born from the consent of the terrain, not from hidden manipulation."
@@ -10577,7 +13739,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Passage Rule — ensures the road does not jam."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Průliv",
+          "en": "Strait"
+        },
+        "description": {
+          "cs": "Urči pořadí, aby se cesta nezablokovala.",
+          "en": "Set the order so the road does not jam."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pravidlo",
+          "en": "Rule"
+        },
+        "description": {
+          "cs": "Nech projít i toho, kdo jede pomalu.",
+          "en": "Let through even the one who travels slowly."
+        }
+      },
+      {
+        "title": {
+          "cs": "Návrat",
+          "en": "Return"
+        },
+        "description": {
+          "cs": "Zajisti cestu i zpátky.",
+          "en": "Ensure the way back as well."
+        }
+      }
+    ],
     "essence": {
       "cs": "Gadeirus — interoperabilita přístavu: most mezi ostrůvkem „vnitřního“ trhu a kontinentální kritikou (bridge ethics).",
       "en": "Gadeirus — harbor interoperability: a bridge between the islet of the 'inner' market and continental critique (bridge ethics)."
@@ -10629,7 +13822,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Balanced Share — allocates so that no one falls out."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Sýpka",
+          "en": "Granary"
+        },
+        "description": {
+          "cs": "Rozděl zásoby bez zvýhodnění.",
+          "en": "Divide the stores without favour."
+        }
+      },
+      {
+        "title": {
+          "cs": "Váhy",
+          "en": "Scales"
+        },
+        "description": {
+          "cs": "Zvaž, kdo potřebuje víc, ne kdo žádá hlasitěji.",
+          "en": "Weigh who needs more, not who asks louder."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hlad",
+          "en": "Hunger"
+        },
+        "description": {
+          "cs": "Nakrm toho posledního ve frontě.",
+          "en": "Feed the last one in the queue."
+        }
+      }
+    ],
     "essence": {
       "cs": "Ampheres — governance bez predátorského realloc (pedagogika fair emission / subsidy).",
       "en": "Ampheres — governance without predatory realloc (fair emission / subsidy pedagogy)."
@@ -10681,7 +13905,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Good Custom — establishes practice that survives without oversight."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Zvyk",
+          "en": "Custom"
+        },
+        "description": {
+          "cs": "Zaveď praxi, která funguje bez dohledu.",
+          "en": "Establish a practice that works unwatched."
+        }
+      },
+      {
+        "title": {
+          "cs": "Kontrola",
+          "en": "Review"
+        },
+        "description": {
+          "cs": "Ovz, že se to opravdu dodržuje.",
+          "en": "Check that it is actually followed."
+        }
+      },
+      {
+        "title": {
+          "cs": "Předání",
+          "en": "Handover"
+        },
+        "description": {
+          "cs": "Nech praxi žít i po svém odchodu.",
+          "en": "Let the practice live after you leave."
+        }
+      }
+    ],
     "essence": {
       "cs": "Evaemon — měkké právo komunity: reputace, etiketa commitů, férový code of conduct.",
       "en": "Evaemon — the soft law of community: reputation, commit etiquette, a fair code of conduct."
@@ -10733,7 +13988,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Legible History — shows what changed and why."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Záznam",
+          "en": "Record"
+        },
+        "description": {
+          "cs": "Zapiš událost bez přikrášlení.",
+          "en": "Record an event without embellishment."
+        }
+      },
+      {
+        "title": {
+          "cs": "Chyba",
+          "en": "Mistake"
+        },
+        "description": {
+          "cs": "Napiš do záznamu i svou chybu.",
+          "en": "Put your own mistake in the record."
+        }
+      },
+      {
+        "title": {
+          "cs": "Archiv",
+          "en": "Archive"
+        },
+        "description": {
+          "cs": "Otevři archiv tomu, kdo ho potřebuje.",
+          "en": "Open the archive to whoever needs it."
+        }
+      }
+    ],
     "essence": {
       "cs": "Mneseus — state root storytelling: integrita historie, changelog, audit trails.",
       "en": "Mneseus — state-root storytelling: integrity of history, changelog, audit trails."
@@ -10785,7 +14071,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Local Right — gives the last word to those who live there."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Práh",
+          "en": "Threshold"
+        },
+        "description": {
+          "cs": "Ptej se místních dřív, než rozhodnete.",
+          "en": "Ask the locals before you decide."
+        }
+      },
+      {
+        "title": {
+          "cs": "Poslední slovo",
+          "en": "Last Word"
+        },
+        "description": {
+          "cs": "Nech poslední slovo těm, kdo tam žijí.",
+          "en": "Leave the last word to those who live there."
+        }
+      },
+      {
+        "title": {
+          "cs": "Zůstat",
+          "en": "Stay"
+        },
+        "description": {
+          "cs": "Zůstaň, i když rozhodnou proti tobě.",
+          "en": "Stay even when they decide against you."
+        }
+      }
+    ],
     "essence": {
       "cs": "Autochthon — suverenita místa: biome governance, důvtip lokální infrastruktury.",
       "en": "Autochthon — sovereignty of place: biome governance, local infrastructure ingenuity."
@@ -10837,7 +14154,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Open Lane — ensures the small player does not get stuck forever."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Pruh",
+          "en": "Lane"
+        },
+        "description": {
+          "cs": "Uvolni cestu i pro malého hráče.",
+          "en": "Keep the road open for the small player."
+        }
+      },
+      {
+        "title": {
+          "cs": "Fronta",
+          "en": "Queue"
+        },
+        "description": {
+          "cs": "Pust někoho menšího před sebe.",
+          "en": "Let someone smaller go ahead of you."
+        }
+      },
+      {
+        "title": {
+          "cs": "Tok",
+          "en": "Flow"
+        },
+        "description": {
+          "cs": "Nezastavuj provoz, i když spěcháš.",
+          "en": "Do not stop the flow even when you are in a hurry."
+        }
+      }
+    ],
     "essence": {
       "cs": "Elasippus — fair mempool / traffic shaping narativ bez démonizace „outsiderů“.",
       "en": "Elasippus — a fair mempool / traffic-shaping narrative without demonizing 'outsiders'."
@@ -10889,7 +14237,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Herald — brings the parties back to the table."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Stůl",
+          "en": "Table"
+        },
+        "description": {
+          "cs": "Svol obě strany k jednomu stolu.",
+          "en": "Call both sides to one table."
+        }
+      },
+      {
+        "title": {
+          "cs": "Věta",
+          "en": "Sentence"
+        },
+        "description": {
+          "cs": "Najdi větu, se kterou odejdou oba.",
+          "en": "Find the sentence both can leave with."
+        }
+      },
+      {
+        "title": {
+          "cs": "Návrat",
+          "en": "Return"
+        },
+        "description": {
+          "cs": "Přiveď je zpátky, když odejdou.",
+          "en": "Bring them back when they walk out."
+        }
+      }
+    ],
     "essence": {
       "cs": "Mestor — facilitace mezisektorového kompromisu (lore stakerů vs. builderů).",
       "en": "Mestor — facilitation of cross-sector compromise (stakers vs. builders lore)."
@@ -10941,7 +14320,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Load Trial — shows the limit without anything falling."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Zkouška",
+          "en": "Test"
+        },
+        "description": {
+          "cs": "Najdi mez dřív, než ji najde provoz.",
+          "en": "Find the limit before production does."
+        }
+      },
+      {
+        "title": {
+          "cs": "Zátěž",
+          "en": "Load"
+        },
+        "description": {
+          "cs": "Zatíž opatrně a sleduj, co praská.",
+          "en": "Load carefully and watch what cracks."
+        }
+      },
+      {
+        "title": {
+          "cs": "Odpočinek",
+          "en": "Rest"
+        },
+        "description": {
+          "cs": "Nech systém vydýchat, než zkusíš znovu.",
+          "en": "Let the system breathe before you try again."
+        }
+      }
+    ],
     "essence": {
       "cs": "Azaes — explorativní governance: testování limitů sítě s fail-safe a etickým hlášením škody.",
       "en": "Azaes — exploratory governance: testing the network's limits with fail-safes and ethical damage reporting."
@@ -10993,7 +14403,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Species Guard — saves what has no substitute elsewhere."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Druh",
+          "en": "Species"
+        },
+        "description": {
+          "cs": "Ochraň to, co jinde nemá zastoupení.",
+          "en": "Protect what has no substitute elsewhere."
+        }
+      },
+      {
+        "title": {
+          "cs": "Les",
+          "en": "Forest"
+        },
+        "description": {
+          "cs": "Nech být to, co neumíš obnovit.",
+          "en": "Leave alone what you cannot restore."
+        }
+      },
+      {
+        "title": {
+          "cs": "Počítání",
+          "en": "Counting"
+        },
+        "description": {
+          "cs": "Zaznamenej, co mizí.",
+          "en": "Record what is disappearing."
+        }
+      }
+    ],
     "essence": {
       "cs": "Lemur Steward — prioritizační etika výzkumu: živý ekosystém před kartami „ztraceného zlata pravdy“.",
       "en": "Lemur Steward — research prioritization ethics: the living ecosystem before 'lost gold of truth' cards."
@@ -11045,7 +14486,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Retraction — allows a claim to be corrected without it being a defeat."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Mapa",
+          "en": "Map"
+        },
+        "description": {
+          "cs": "Oprav mapu, která už nelže.",
+          "en": "Correct the map that no longer lies."
+        }
+      },
+      {
+        "title": {
+          "cs": "Odvolání",
+          "en": "Retraction"
+        },
+        "description": {
+          "cs": "Odvolej omyl, i když jsi ho napsal ty.",
+          "en": "Retract an error even if you wrote it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pokora",
+          "en": "Humility"
+        },
+        "description": {
+          "cs": "Uč se dál, i když jsi učil.",
+          "en": "Keep learning even after you taught."
+        }
+      }
+    ],
     "essence": {
       "cs": "Sclater Bridge — etiketa retractace: jak veřejně opravit hypotézu bez hanby komunity.",
       "en": "Sclater Bridge — retraction etiquette: how to publicly correct a hypothesis without shaming the community."
@@ -11097,7 +14569,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Attestation — documents harm that would otherwise go unacknowledged."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Útes",
+          "en": "Reef"
+        },
+        "description": {
+          "cs": "Zaznamenej stav, ne dojem.",
+          "en": "Record the state, not the impression."
+        }
+      },
+      {
+        "title": {
+          "cs": "Ztráta",
+          "en": "Loss"
+        },
+        "description": {
+          "cs": "Dosvědč škodu, kterou by nikdo neuznal.",
+          "en": "Attest harm that would go unacknowledged."
+        }
+      },
+      {
+        "title": {
+          "cs": "Oprava",
+          "en": "Repair"
+        },
+        "description": {
+          "cs": "Vrať aspoň část toho, co se ztratilo.",
+          "en": "Return at least part of what was lost."
+        }
+      }
+    ],
     "essence": {
       "cs": "Coral Notary — climate-accountability overlay v měkké lore (ne gratuitní doom-scrolling).",
       "en": "Coral Notary — climate-accountability overlays in soft lore (not gratuitous doom-scrolling)."
@@ -11149,7 +14652,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Tidal Rhythm — slows the system so the smaller one can keep up."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Příliv",
+          "en": "Tide"
+        },
+        "description": {
+          "cs": "Zpomal systém, aby stihl i pomalejší.",
+          "en": "Slow the system so the slower one keeps up."
+        }
+      },
+      {
+        "title": {
+          "cs": "Mělčina",
+          "en": "Shallows"
+        },
+        "description": {
+          "cs": "Počkej na toho, kdo zaostal.",
+          "en": "Wait for whoever fell behind."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rytmus",
+          "en": "Rhythm"
+        },
+        "description": {
+          "cs": "Drž tempo, které nikoho neutopí.",
+          "en": "Hold a tempo that drowns no one."
+        }
+      }
+    ],
     "essence": {
       "cs": "Tide Column — rhythm fairness: sdílené sloty bez monopolu „high-water mark“ hráče.",
       "en": "Tide Column — rhythm fairness: shared slots without a 'high-water mark' player monopoly."
@@ -11201,7 +14735,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Geological Calm — protects a decision from haste."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Hřbet",
+          "en": "Ridge"
+        },
+        "description": {
+          "cs": "Měř čas v tisících let, ne v dnech.",
+          "en": "Measure time in millennia, not days."
+        }
+      },
+      {
+        "title": {
+          "cs": "Trpělivost",
+          "en": "Patience"
+        },
+        "description": {
+          "cs": "Nezrychluj rozhodnutí tlakem.",
+          "en": "Do not speed a decision with pressure."
+        }
+      },
+      {
+        "title": {
+          "cs": "Klid",
+          "en": "Calm"
+        },
+        "description": {
+          "cs": "Ochraň rozhodnutí před zbrklostí.",
+          "en": "Protect a decision from haste."
+        }
+      }
+    ],
     "essence": {
       "cs": "Basalt Chronicle — deep-time poctivost pro protokolové dokumenty (immutable ≠ dogma).",
       "en": "Basalt Chronicle — deep-time honesty for protocol documents (immutable ≠ dogma)."
@@ -11253,7 +14818,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Seed Transfer — hands on an idea with no claim of ownership."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Semeno",
+          "en": "Seed"
+        },
+        "description": {
+          "cs": "Předej myšlenku bez nároku na vlastnictví.",
+          "en": "Pass on an idea with no claim of ownership."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pěna",
+          "en": "Foam"
+        },
+        "description": {
+          "cs": "Nezůstávej, ale neznič, co jsi přinesl.",
+          "en": "Do not stay, but do not destroy what you brought."
+        }
+      },
+      {
+        "title": {
+          "cs": "Růst",
+          "en": "Growth"
+        },
+        "description": {
+          "cs": "Nech to růst i bez tebe.",
+          "en": "Let it grow without you."
+        }
+      }
+    ],
     "essence": {
       "cs": "Foam Seed — governance mezi hostem a domovem bez extractive settlers fantasy.",
       "en": "Foam Seed — governance between guest and home without an extractive-settlers fantasy."
@@ -11305,7 +14901,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Bridge — connects two communities without losing either's rules."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Most",
+          "en": "Bridge"
+        },
+        "description": {
+          "cs": "Spoj dva ostrovy bez nadvlády.",
+          "en": "Join two islands without dominion."
+        }
+      },
+      {
+        "title": {
+          "cs": "Přístav",
+          "en": "Harbour"
+        },
+        "description": {
+          "cs": "Otevři přístav i cizím lodím.",
+          "en": "Open the harbour to foreign ships too."
+        }
+      },
+      {
+        "title": {
+          "cs": "Spojenectví",
+          "en": "Alliance"
+        },
+        "description": {
+          "cs": "Uzavři spojenectví bez přepisování pravidel.",
+          "en": "Form an alliance without rewriting either's rules."
+        }
+      }
+    ],
     "essence": {
       "cs": "Oceanic Bridge — choreografie koalice bez „meta-mother culture“ nahrazující lokální pravdu.",
       "en": "Oceanic Bridge — coalition choreography without a 'meta-mother culture' replacing local truth."
@@ -11357,7 +14984,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Waterline Truth — shows the real risk without alarm."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Hladina",
+          "en": "Waterline"
+        },
+        "description": {
+          "cs": "Řekni pravdu o tom, kam až voda dojde.",
+          "en": "Tell the truth about how far the water reaches."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pobřeží",
+          "en": "Coast"
+        },
+        "description": {
+          "cs": "Ochraň to, co by voda vzala.",
+          "en": "Protect what the water would take."
+        }
+      },
+      {
+        "title": {
+          "cs": "Odchod",
+          "en": "Retreat"
+        },
+        "description": {
+          "cs": "Naplánuj ústup dřív, než bude pozdě.",
+          "en": "Plan the retreat before it is too late."
+        }
+      }
+    ],
     "essence": {
       "cs": "Shelf Whisper — realismus subsidence: riziko pobřeží, měst, infrastruktury — žádná white-utopia.",
       "en": "Shelf Whisper — subsidence realism: the risk to coasts, cities, infrastructure — no white utopia."
@@ -11409,7 +15067,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Dampening — pauses the reaction so it is not worse than the problem."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Pauza",
+          "en": "Pause"
+        },
+        "description": {
+          "cs": "Nic nedělej pět minut a vydrž to.",
+          "en": "Do nothing for five minutes and endure it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dech",
+          "en": "Breath"
+        },
+        "description": {
+          "cs": "Dýchej, dokud se panika nezmenší.",
+          "en": "Breathe until the panic shrinks."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rozhodnutí",
+          "en": "Decision"
+        },
+        "description": {
+          "cs": "Rozhodni až potom, ne během.",
+          "en": "Decide afterwards, not during."
+        }
+      }
+    ],
     "essence": {
       "cs": "Equinox Lull — anti-extremistický rytmus: zpomalení rozhodnutí při volatilitě.",
       "en": "Equinox Lull — an anti-extremism rhythm: slowing decisions down amid volatility."
@@ -11461,7 +15150,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Handover — closes a chapter and opens the next without losing the thread."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Kapitola",
+          "en": "Chapter"
+        },
+        "description": {
+          "cs": "Uzavři, co je hotové, a pojmenuj to.",
+          "en": "Close what is finished and name it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Předání",
+          "en": "Handover"
+        },
+        "description": {
+          "cs": "Předej pochodeň dřív, než zhasne.",
+          "en": "Pass the torch before it goes out."
+        }
+      },
+      {
+        "title": {
+          "cs": "Tečka",
+          "en": "Full Stop"
+        },
+        "description": {
+          "cs": "Ukloň se a odejdi.",
+          "en": "Bow and leave."
+        }
+      }
+    ],
     "essence": {
       "cs": "Circle Closure — diegetický readme: hráče nasměruje ke kosmické vlně archetypů bez deprecating předchozích consult-gated kultur.",
       "en": "Circle Closure — a diegetic readme: points players to the cosmic wave of archetypes without deprecating earlier consult-gated cultures."
@@ -11513,7 +15233,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Shared Beat — aligns the tempo of the whole group."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Tep",
+          "en": "Beat"
+        },
+        "description": {
+          "cs": "Srovnej tempo celé skupiny.",
+          "en": "Align the tempo of the whole group."
+        }
+      },
+      {
+        "title": {
+          "cs": "Střed",
+          "en": "Centre"
+        },
+        "description": {
+          "cs": "Najdi, podle čeho se počítá čas.",
+          "en": "Find what time is counted by."
+        }
+      },
+      {
+        "title": {
+          "cs": "Souzvuk",
+          "en": "Accord"
+        },
+        "description": {
+          "cs": "Drž soulad, i když se názory rozejdou.",
+          "en": "Keep accord even when views diverge."
+        }
+      }
+    ],
     "essence": {
       "cs": "GC Sun Steward — single logical clock lore: tempo DAO v souladu s planetární tíhou v pozadí.",
       "en": "GC Sun Steward — single logical clock lore: DAO tempo in tune with planetary weight in the background."
@@ -11565,7 +15316,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Cadence — spaces out effort so it lasts."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Rytmus",
+          "en": "Cadence"
+        },
+        "description": {
+          "cs": "Rozlož úsilí tak, aby vydrželo.",
+          "en": "Space out effort so it lasts."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pauza",
+          "en": "Pause"
+        },
+        "description": {
+          "cs": "Odpočiň si dřív, než potřebuješ.",
+          "en": "Rest before you need to."
+        }
+      },
+      {
+        "title": {
+          "cs": "Výdrž",
+          "en": "Endurance"
+        },
+        "description": {
+          "cs": "Vydrž dlouho, ne rychle.",
+          "en": "Last long, not fast."
+        }
+      }
+    ],
     "essence": {
       "cs": "Photon Cadence — metafora sezónních release kapitol: etika nevyčerpávat komunitu „branami“ hype.",
       "en": "Photon Cadence — a seasonal chapter-release metaphor: the ethics of not exhausting the community with hype 'gates'."
@@ -11617,7 +15399,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Dual Confirmation — blocks a decision made by one person alone."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Dvojí podpis",
+          "en": "Dual Signature"
+        },
+        "description": {
+          "cs": "Potvrď rozhodnutí spolu s druhým.",
+          "en": "Confirm a decision together with another."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rozdělení",
+          "en": "Separation"
+        },
+        "description": {
+          "cs": "Rozděl role tak, aby se nikdo neopakoval.",
+          "en": "Split roles so no one duplicates another."
+        }
+      },
+      {
+        "title": {
+          "cs": "Shoda",
+          "en": "Agreement"
+        },
+        "description": {
+          "cs": "Nikdy nerozhodni sám.",
+          "en": "Never decide alone."
+        }
+      }
+    ],
     "essence": {
       "cs": "Solar Logos Dual — dual signing lore: multisig, kde cold + hot osobnosti komunikují.",
       "en": "Solar Logos Dual — dual-signing lore: a multisig where cold + hot personas communicate."
@@ -11669,7 +15482,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Connection — turns a vision into a concrete act."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Vize",
+          "en": "Vision"
+        },
+        "description": {
+          "cs": "Popiš, co chceš udělat, jednou větou.",
+          "en": "Describe what you want to do in one sentence."
+        }
+      },
+      {
+        "title": {
+          "cs": "Čin",
+          "en": "Act"
+        },
+        "description": {
+          "cs": "Udělej první konkrétní krok.",
+          "en": "Take the first concrete step."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pondělí",
+          "en": "Monday"
+        },
+        "description": {
+          "cs": "Zopakuj to i v obyčejný den.",
+          "en": "Repeat it on an ordinary day."
+        }
+      }
+    ],
     "essence": {
       "cs": "Telluric Soul Bridge — staking Earth narativ: regen econ side-questy paralelní Gaia obloukům.",
       "en": "Telluric Soul Bridge — the staking-Earth narrative: regen-econ side quests parallel to Gaia arcs."
@@ -11721,7 +15565,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Key Guard — prevents your secrets from becoming public."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Klíč",
+          "en": "Key"
+        },
+        "description": {
+          "cs": "Uchovej klíč tak, aby ho nikdo nenašel.",
+          "en": "Keep a key where no one can find it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Tajemství",
+          "en": "Secret"
+        },
+        "description": {
+          "cs": "Neřekni věc, která není tvoje.",
+          "en": "Do not tell a thing that is not yours."
+        }
+      },
+      {
+        "title": {
+          "cs": "Čistota",
+          "en": "Hygiene"
+        },
+        "description": {
+          "cs": "Ukliď stopy po práci.",
+          "en": "Clean up the traces of your work."
+        }
+      }
+    ],
     "essence": {
       "cs": "Tube-of-Light Sentinel — vizualizace OPSEC: hráči mapují attack surface v lore UI.",
       "en": "Tube-of-Light Sentinel — OPSEC visualization: players map the attack surface in the lore UI."
@@ -11773,7 +15648,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Spiral — rewards whoever teaches others."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Spirála",
+          "en": "Spiral"
+        },
+        "description": {
+          "cs": "Nauč někoho to, co umíš.",
+          "en": "Teach someone what you know."
+        }
+      },
+      {
+        "title": {
+          "cs": "Výš",
+          "en": "Higher"
+        },
+        "description": {
+          "cs": "Vytáhni druhého výš, ne sebe.",
+          "en": "Pull the other up, not yourself."
+        }
+      },
+      {
+        "title": {
+          "cs": "Odměna",
+          "en": "Reward"
+        },
+        "description": {
+          "cs": "Oceň učení, ne soutěžení.",
+          "en": "Value teaching, not competing."
+        }
+      }
+    ],
     "essence": {
       "cs": "Radiant Spiral — reputační spirála: XP za užitečnou práci, ne za grind bez přínosu.",
       "en": "Radiant Spiral — the reputation spiral: XP for useful work, not for grind without benefit."
@@ -11825,7 +15731,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Transmutation — rewrites an old solution without losing its power."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Fialový plamen",
+          "en": "Violet Flame"
+        },
+        "description": {
+          "cs": "Proměň staré řešení v něco, co drží.",
+          "en": "Transform an old solution into something that holds."
+        }
+      },
+      {
+        "title": {
+          "cs": "Staré",
+          "en": "Old"
+        },
+        "description": {
+          "cs": "Uklidit, ne zbourat.",
+          "en": "Clean it, do not demolish it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Nové",
+          "en": "New"
+        },
+        "description": {
+          "cs": "Postav nové na starém základu.",
+          "en": "Build the new on the old foundation."
+        }
+      }
+    ],
     "essence": {
       "cs": "Seventh Ray Adjunct — transmutation stack lore: měň spam grief na burn fee výchovu.",
       "en": "Seventh Ray Adjunct — transmutation-stack lore: turn spam grief into burn-fee education."
@@ -11877,7 +15814,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Convening — forms an assembly where every voice is equal."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Sněm",
+          "en": "Assembly"
+        },
+        "description": {
+          "cs": "Svol různé ke jednomu stolu.",
+          "en": "Call the diverse to one table."
+        }
+      },
+      {
+        "title": {
+          "cs": "Mandát",
+          "en": "Mandate"
+        },
+        "description": {
+          "cs": "Rozděl mandát podle práce, ne podle jména.",
+          "en": "Assign mandate by work, not by name."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hlas",
+          "en": "Voice"
+        },
+        "description": {
+          "cs": "Dej každému stejný hlas.",
+          "en": "Give everyone an equal voice."
+        }
+      }
+    ],
     "essence": {
       "cs": "Galactic Convenor — mezihvězdný parlament: facilituje stupně federace (charta → rada → plénum → vyslanectví → občanský prstenec) jako paralelu k DAO delegaci + veto.",
       "en": "Galactic Convenor — the interstellar parliament: facilitates the degrees of federation (charter → council → plenum → envoi → civic ring) as a parallel to DAO delegation + veto."
@@ -11929,7 +15897,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Private Entry — keeps your inner record from being published."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Deník",
+          "en": "Journal"
+        },
+        "description": {
+          "cs": "Zapiš si, co si nechceš pamatovat veřejně.",
+          "en": "Write down what you do not want remembered publicly."
+        }
+      },
+      {
+        "title": {
+          "cs": "Soukromí",
+          "en": "Privacy"
+        },
+        "description": {
+          "cs": "Nezveřejňuj, co patří jen tobě.",
+          "en": "Do not publish what belongs only to you."
+        }
+      },
+      {
+        "title": {
+          "cs": "Smazání",
+          "en": "Deletion"
+        },
+        "description": {
+          "cs": "Nech smazat, o co někdo požádá.",
+          "en": "Let be deleted what someone asks to delete."
+        }
+      }
+    ],
     "essence": {
       "cs": "Lightbody Scribe — revokovatelné journaling: hráči se učí GDPR / delete-my-data přes lore.",
       "en": "Lightbody Scribe — revocable journaling: players learn GDPR / delete-my-data through lore."
@@ -11981,7 +15980,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Closure — completes the whole and opens the way onward."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Dvanáct",
+          "en": "Twelve"
+        },
+        "description": {
+          "cs": "Uzavři kruh dvanácti.",
+          "en": "Close the circle of twelve."
+        }
+      },
+      {
+        "title": {
+          "cs": "Práh",
+          "en": "Threshold"
+        },
+        "description": {
+          "cs": "Otevři třináctý krok.",
+          "en": "Open the thirteenth step."
+        }
+      },
+      {
+        "title": {
+          "cs": "Předání",
+          "en": "Handover"
+        },
+        "description": {
+          "cs": "Ukaž cestu dál a zůstaň vzadu.",
+          "en": "Point the way on and stay behind."
+        }
+      }
+    ],
     "essence": {
       "cs": "Vzestup Capstone — meta waypoint zpět na docs COSMIC MAP a Golden Egg design odkazy.",
       "en": "Vzestup Capstone — a meta waypoint back to the COSMIC MAP docs and Golden Egg design references."
@@ -12033,7 +16063,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Hall of Rest — restores the whole group between fights."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Síň",
+          "en": "Hall"
+        },
+        "description": {
+          "cs": "Odpočívej, dokud nejsi opravdu odpočatý.",
+          "en": "Rest until you are truly rested."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rána",
+          "en": "Wound"
+        },
+        "description": {
+          "cs": "Ošetři se dřív, než půjdeš dál.",
+          "en": "Treat the wound before you go on."
+        }
+      },
+      {
+        "title": {
+          "cs": "Návrat",
+          "en": "Return"
+        },
+        "description": {
+          "cs": "Vrať se silný, ne jen rychlý.",
+          "en": "Return strong, not merely quick."
+        }
+      }
+    ],
     "essence": {
       "cs": "Valhalla v eddickém poli je síň Óðinových einherjar — den boje, noc hostiny. V OASIS tento archetyp neslibuje posmrtnou odměnu; učí obnovu týmu, pravidla ringu a anti-burnout rytmus mezi „raidem“ a regenerací.",
       "en": "Valhalla in the Eddic field is the hall of Óðinn's einherjar — days of battle, nights of feasting. In OASIS this archetype promises no afterlife reward; it teaches team recovery, rules of the ring, and an anti-burnout rhythm between 'raid' and regeneration."
@@ -12085,7 +16146,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Raven's Report — brings two versions of the same story."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Otázka",
+          "en": "Question"
+        },
+        "description": {
+          "cs": "Ptej se dřív, než rozhodneš.",
+          "en": "Ask before you decide."
+        }
+      },
+      {
+        "title": {
+          "cs": "Havran",
+          "en": "Raven"
+        },
+        "description": {
+          "cs": "Zjisti obě verze téhož příběhu.",
+          "en": "Find out both versions of the same story."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rozhodnutí",
+          "en": "Decision"
+        },
+        "description": {
+          "cs": "Rozhodni a napiš, proč.",
+          "en": "Decide and write down why."
+        }
+      }
+    ],
     "essence": {
       "cs": "Óðinn v pramenech spojuje válečnou aristokracii, věštbu a básnickou moc. V OASIS = mentor governance a audit řeči (havraní zpráva = log trace), bez rasových dogwhistlů kolem run.",
       "en": "Óðinn in the sources combines warrior aristocracy, prophecy and poetic power. In OASIS = mentor of governance and audit of speech (the raven report = log trace), without racial dog-whistles around the runes."
@@ -12137,7 +16229,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "System Guard — averts the outage that would stop everyone else."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Kladivo",
+          "en": "Hammer"
+        },
+        "description": {
+          "cs": "Podrž, co se rozpadá.",
+          "en": "Hold together what is falling apart."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hrom",
+          "en": "Thunder"
+        },
+        "description": {
+          "cs": "Odraž výpadek dřív, než zastaví ostatní.",
+          "en": "Avert the outage before it stops everyone."
+        }
+      },
+      {
+        "title": {
+          "cs": "Klid",
+          "en": "Calm"
+        },
+        "description": {
+          "cs": "Nech systém běžet a nezasahuj.",
+          "en": "Let the system run and do not interfere."
+        }
+      }
+    ],
     "essence": {
       "cs": "Þórr je v pramenech ochránce bohů a lidí proti chaotickým silám, patron počasí a svateb/hostin. V OASIS = DDoS/spam odolnost, zdraví uzlů, community safety toggles.",
       "en": "Þórr is in the sources the protector of gods and humans against chaotic forces, patron of weather and weddings/feasts. In OASIS = DDoS/spam resilience, node health, community safety toggles."
@@ -12189,7 +16312,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Fair Portion — divides the reward without loss of dignity."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Díl",
+          "en": "Portion"
+        },
+        "description": {
+          "cs": "Rozděl odměnu bez ztráty důstojnosti.",
+          "en": "Divide the reward without loss of dignity."
+        }
+      },
+      {
+        "title": {
+          "cs": "Soukromí",
+          "en": "Privacy"
+        },
+        "description": {
+          "cs": "Chraň to, co nemá být vidět.",
+          "en": "Protect what should not be seen."
+        }
+      },
+      {
+        "title": {
+          "cs": "Statečnost",
+          "en": "Courage"
+        },
+        "description": {
+          "cs": "Stůj za svým dílem.",
+          "en": "Stand by your share."
+        }
+      }
+    ],
     "essence": {
       "cs": "Freyja v pramenech spojuje válečné poloviny padlých, seiðr a plodnost/zlato. V OASIS = spravedlivé odměny validátorů, privacy-preserving magie dat (seiðr jako encryption lore), respekt k genderové pluralitě pramenů.",
       "en": "Freyja in the sources combines the warrior's share of the slain, seiðr and fertility/gold. In OASIS = fair validator rewards, privacy-preserving data magic (seiðr as encryption lore), respect for the gender plurality of the sources."
@@ -12241,7 +16395,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Oath — guarantees an agreement does not vanish under pressure."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Přísaha",
+          "en": "Oath"
+        },
+        "description": {
+          "cs": "Slož slib, který bude něco stát.",
+          "en": "Make a promise that will cost something."
+        }
+      },
+      {
+        "title": {
+          "cs": "Ruka",
+          "en": "Hand"
+        },
+        "description": {
+          "cs": "Zaplať cenu a nestěžuj si.",
+          "en": "Pay the price and do not complain."
+        }
+      },
+      {
+        "title": {
+          "cs": "Slovo",
+          "en": "Word"
+        },
+        "description": {
+          "cs": "Dodrž i to, co se už nehodí.",
+          "en": "Keep it even when it is no longer convenient."
+        }
+      }
+    ],
     "essence": {
       "cs": "Týr v Gylfaginning položí ruku do tlamy Fenrira, aby smlouva držela. V OASIS = immutable commitment + timelock oběti (symbolicky „prst“ = část stake pro audit).",
       "en": "Týr in Gylfaginning places his hand in Fenrir's jaws so the pact holds. In OASIS = immutable commitment + timelock sacrifice (symbolically the 'hand' = a portion of stake held for audit)."
@@ -12293,7 +16478,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Triple Flame — joins tool, text and kindness into one work."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Kovárna",
+          "en": "Forge"
+        },
+        "description": {
+          "cs": "Vyrob nástroj, který pomůže.",
+          "en": "Make a tool that helps."
+        }
+      },
+      {
+        "title": {
+          "cs": "Text",
+          "en": "Text"
+        },
+        "description": {
+          "cs": "Napiš návod, kterému se rozumí.",
+          "en": "Write instructions people understand."
+        }
+      },
+      {
+        "title": {
+          "cs": "Obvaz",
+          "en": "Bandage"
+        },
+        "description": {
+          "cs": "Ošetři toho, kdo to potřebuje.",
+          "en": "Tend to whoever needs it."
+        }
+      }
+    ],
     "essence": {
       "cs": "Brigid v irských pramenech spojuje řemeslo, léčení a poezii. V OASIS = open tooling, dokumentace a community care — ne léčebná NFT tvrzení (viz globální wellness ban).",
       "en": "Brigid in the Irish sources joins craft, healing and poetry. In OASIS = open tooling, documentation and community care — not healing NFT claims (see the global wellness ban)."
@@ -12345,7 +16561,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Harp — calms a dispute over resources before it breaks."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Kotel",
+          "en": "Cauldron"
+        },
+        "description": {
+          "cs": "Naplň společné zdroje.",
+          "en": "Fill the common stores."
+        }
+      },
+      {
+        "title": {
+          "cs": "Harfa",
+          "en": "Harp"
+        },
+        "description": {
+          "cs": "Uklidni spor o zdroje.",
+          "en": "Calm a dispute over resources."
+        }
+      },
+      {
+        "title": {
+          "cs": "Sdílení",
+          "en": "Sharing"
+        },
+        "description": {
+          "cs": "Rozdej i těm, kdo nepotřebují.",
+          "en": "Share even with those who do not need it."
+        }
+      }
+    ],
     "essence": {
       "cs": "Dagda v irských cyklech nese kotel, palici a harfu — spojuje válečnou připravenost s obnovou míru. V OASIS = sustainable emissions, epoch spacing, public goods fond.",
       "en": "The Dagda in the Irish cycles carries cauldron, club and harp — combining war-readiness with peace restoration. In OASIS = sustainable emissions, epoch spacing, public goods fund."
@@ -12397,7 +16644,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Raven's Sign — announces the threat in advance."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Havran",
+          "en": "Raven"
+        },
+        "description": {
+          "cs": "Varuj dřív, než je pozdě.",
+          "en": "Warn before it is late."
+        }
+      },
+      {
+        "title": {
+          "cs": "Triage",
+          "en": "Triage"
+        },
+        "description": {
+          "cs": "Roztřiď, co hoří a co počká.",
+          "en": "Sort what is on fire from what can wait."
+        }
+      },
+      {
+        "title": {
+          "cs": "Odpovědnost",
+          "en": "Accountability"
+        },
+        "description": {
+          "cs": "Přiznej, co jsi přehlédl.",
+          "en": "Admit what you missed."
+        }
+      }
+    ],
     "essence": {
       "cs": "Morrígan v irských textech spojuje válku, věštbu a svrchovanost — figuruje v Táin Bó Cúailnge a souvisejících vrstvách. V OASIS = threat modeling, responsible disclosure, governance veto proti útokům na síť.",
       "en": "Morrígan in the Irish texts joins war, prophecy and sovereignty — figuring in the Táin Bó Cúailnge and related layers. In OASIS = threat modeling, responsible disclosure, governance veto against attacks on the network."
@@ -12449,7 +16727,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Many Skills — covers for the missing member of the team."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Brána",
+          "en": "Gate"
+        },
+        "description": {
+          "cs": "Ukaž, co umíš, ne kdo jsi.",
+          "en": "Show what you can do, not who you are."
+        }
+      },
+      {
+        "title": {
+          "cs": "Zástup",
+          "en": "Stand-in"
+        },
+        "description": {
+          "cs": "Zastup chybějícího člena týmu.",
+          "en": "Cover for the missing member of the team."
+        }
+      },
+      {
+        "title": {
+          "cs": "Předání",
+          "en": "Handover"
+        },
+        "description": {
+          "cs": "Nauč druhé to, co umíš ty.",
+          "en": "Teach others what you can do."
+        }
+      }
+    ],
     "essence": {
       "cs": "Lugh v irských pramenech vítězí v Táin jako polymat — patron Lughnasadh (sklizeň/shromáždění). V OASIS = rotace multi-sig rolí, mentor program napříč moduly (L1/pool/docs).",
       "en": "Lugh in the Irish sources wins in the Táin as a polymath — patron of Lughnasadh (harvest/assembly). In OASIS = multi-sig role rotation, a mentor program across modules (L1/pool/docs)."
@@ -12501,7 +16810,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Mist Crossing — safely moves you between two environments."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Mlha",
+          "en": "Mist"
+        },
+        "description": {
+          "cs": "Jdi opatrně, když nevidíš dál.",
+          "en": "Walk carefully when you cannot see far."
+        }
+      },
+      {
+        "title": {
+          "cs": "Krok",
+          "en": "Step"
+        },
+        "description": {
+          "cs": "Udělej jen další krok.",
+          "en": "Take only the next step."
+        }
+      },
+      {
+        "title": {
+          "cs": "Přechod",
+          "en": "Crossing"
+        },
+        "description": {
+          "cs": "Přejdi mezi světy a neztratit se.",
+          "en": "Cross between worlds without getting lost."
+        }
+      }
+    ],
     "essence": {
       "cs": "Manannán v irských cyklech vládne moři a mlžným prahům mezi světy. V OASIS = segmentace sítě, feature flags, disciplína staging → mainnet.",
       "en": "Manannán in the Irish cycles rules the seas and the misty thresholds between worlds. In OASIS = network segmentation, feature flags, staging → mainnet discipline."
@@ -12553,7 +16893,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Daylight — clarifies time and the pace of the day."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Ráno",
+          "en": "Morning"
+        },
+        "description": {
+          "cs": "Začni den i po špatné noci.",
+          "en": "Begin the day even after a bad night."
+        }
+      },
+      {
+        "title": {
+          "cs": "Poledne",
+          "en": "Noon"
+        },
+        "description": {
+          "cs": "Udělej nejtěžší věc v plné síle.",
+          "en": "Do the hardest thing at full strength."
+        }
+      },
+      {
+        "title": {
+          "cs": "Noc",
+          "en": "Night"
+        },
+        "description": {
+          "cs": "Projdi tmou bez zastavení.",
+          "en": "Pass through the dark without stopping."
+        }
+      }
+    ],
     "essence": {
       "cs": "Ré jako sluneční bůh ve faraonské kosmologii pojí den, cyklus a řád. V OASIS = disciplína block time, transparentní epochy, anti-FOMO release rytmus.",
       "en": "Ré as the sun god in pharaonic cosmology binds day, cycle and order. In OASIS = block-time discipline, transparent epochs, anti-FOMO release rhythm."
@@ -12605,7 +16976,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Double Crown — joins two different administrations into one."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Dvě koruny",
+          "en": "Two Crowns"
+        },
+        "description": {
+          "cs": "Spoj dvě správy v jednu.",
+          "en": "Join two administrations into one."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hranice",
+          "en": "Border"
+        },
+        "description": {
+          "cs": "Drž hranici, aby se nerozpadla.",
+          "en": "Hold the border so it does not break."
+        }
+      },
+      {
+        "title": {
+          "cs": "Oko",
+          "en": "Eye"
+        },
+        "description": {
+          "cs": "Hlídej to, co jsi spojil.",
+          "en": "Watch what you joined."
+        }
+      }
+    ],
     "essence": {
       "cs": "Hor v klasické mytologii ztělesňuje královskou legitimitu, ochranu otce Usira a jednotu země. V OASIS = governance charter, multi-region konsensus, escrow ochrana treasury.",
       "en": "Hor in classical mythology embodies royal legitimacy, protection of his father Osiris and the unity of the land. In OASIS = governance charter, multi-region consensus, escrow protection of the treasury."
@@ -12657,7 +17059,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Accurate Record — documents what happened and when."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Zápis",
+          "en": "Record"
+        },
+        "description": {
+          "cs": "Zapiš, co se stalo, bez výkladu.",
+          "en": "Record what happened, without interpretation."
+        }
+      },
+      {
+        "title": {
+          "cs": "Přesnost",
+          "en": "Accuracy"
+        },
+        "description": {
+          "cs": "Ověř číslo, než ho pustíš dál.",
+          "en": "Verify the number before you pass it on."
+        }
+      },
+      {
+        "title": {
+          "cs": "Archiv",
+          "en": "Archive"
+        },
+        "description": {
+          "cs": "Uchovej záznam tak, aby ho šel najít.",
+          "en": "Keep the record so it can be found."
+        }
+      }
+    ],
     "essence": {
       "cs": "Thovt (Djehuty) spojuje písmo, moudrost a soudní záznam. V OASIS = Merkle důkazy, changelog, audit trail bez manipulace timestampů.",
       "en": "Thoth (Djehuty) joins writing, wisdom and the judicial record. In OASIS = Merkle proofs, changelog, audit trail without timestamp manipulation."
@@ -12709,7 +17142,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Jubilee — restores the appetite of the whole group."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Svátek",
+          "en": "Feast"
+        },
+        "description": {
+          "cs": "Svol oslavu, na kterou může každý.",
+          "en": "Hold a feast anyone may attend."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hudba",
+          "en": "Music"
+        },
+        "description": {
+          "cs": "Zahraj někomu, kdo si to neumí zařídit.",
+          "en": "Play for someone who cannot arrange it themselves."
+        }
+      },
+      {
+        "title": {
+          "cs": "Nikdo stranou",
+          "en": "No One Left"
+        },
+        "description": {
+          "cs": "Pozvi i toho, koho ostatní přehlédli.",
+          "en": "Invite whoever the others overlooked."
+        }
+      }
+    ],
     "essence": {
       "cs": "Hathor spojuje nebeskou krávu, hudbu, tanec a milost. V OASIS = oslavy komunity, bezpečné sociální eventy, anti-burnout party vrstva (bez monetizovaných „rituálů“).",
       "en": "Hathor joins the celestial cow, music, dance and grace. In OASIS = community celebration, safe social events, an anti-burnout party layer (no monetized 'rituals')."
@@ -12761,7 +17225,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Reckoning — deducts what was taken and leaves room to repair."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Účet",
+          "en": "Reckoning"
+        },
+        "description": {
+          "cs": "Odečti, co bylo vzato.",
+          "en": "Deduct what was taken."
+        }
+      },
+      {
+        "title": {
+          "cs": "Vysvětlení",
+          "en": "Explanation"
+        },
+        "description": {
+          "cs": "Vysvětli, proč to bylo nutné.",
+          "en": "Explain why it was necessary."
+        }
+      },
+      {
+        "title": {
+          "cs": "Chladnutí",
+          "en": "Cooling"
+        },
+        "description": {
+          "cs": "Nech vychladnout dřív, než se vrátíš.",
+          "en": "Let it cool before you return."
+        }
+      }
+    ],
     "essence": {
       "cs": "Sachmet spojuje válečnou zuřivost a ochranu řádu; mýtus opojení pivem jako ukojení. V OASIS = slashing podmínky, penalty vault, cooling po incidentu — ne glorifikace genocidy.",
       "en": "Sekhmet joins warlike fury and the protection of order; the myth of her beer-drunkenness as appeasement. In OASIS = slashing conditions, penalty vault, post-incident cooling — no glorification of genocide."
@@ -12813,7 +17308,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Template — creates a building rule that can be repeated."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Vzor",
+          "en": "Template"
+        },
+        "description": {
+          "cs": "Vytvoř vzor, podle kterého jde opravovat.",
+          "en": "Create a pattern that can be repaired by."
+        }
+      },
+      {
+        "title": {
+          "cs": "První kámen",
+          "en": "First Stone"
+        },
+        "description": {
+          "cs": "Polož základ tak, aby držel.",
+          "en": "Lay the foundation so it holds."
+        }
+      },
+      {
+        "title": {
+          "cs": "Oprava",
+          "en": "Repair"
+        },
+        "description": {
+          "cs": "Oprav podle vzoru, ne od oka.",
+          "en": "Repair by the pattern, not by eye."
+        }
+      }
+    ],
     "essence": {
       "cs": "Ptah je patron řemesla, architekt a tvůrce v memfidské teologii. V OASIS = genesis konfigurace, smart contract šablony, bezpečné factory patterny.",
       "en": "Ptah is the patron of craft, the architect and creator in Memphite theology. In OASIS = genesis configuration, smart-contract templates, safe factory patterns."
@@ -12865,7 +17391,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Backup Before Departure — ensures nothing is lost."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Zavazadlo",
+          "en": "Luggage"
+        },
+        "description": {
+          "cs": "Zvaž, co s sebou opravdu potřebuješ.",
+          "en": "Weigh what you actually need to carry."
+        }
+      },
+      {
+        "title": {
+          "cs": "Záloha",
+          "en": "Backup"
+        },
+        "description": {
+          "cs": "Zajisti, že se nic neztratí.",
+          "en": "Make sure nothing is lost."
+        }
+      },
+      {
+        "title": {
+          "cs": "Odchod",
+          "en": "Departure"
+        },
+        "description": {
+          "cs": "Odejdi připravený, ne překvapený.",
+          "en": "Leave prepared, not surprised."
+        }
+      }
+    ],
     "essence": {
       "cs": "Anup (Anubis) v pramenech spojuje balzamování, ochranu mrtvých a vážení v soudních scénách. V OASIS = migrační thresholdy, snapshot před forkem, data retention politika — nikoli posmrtné sliby hráčům.",
       "en": "Anup (Anubis) in the sources joins embalming, protection of the dead and the weighing in judgment scenes. In OASIS = migration thresholds, snapshot before fork, data-retention policy — not afterlife promises to players."
@@ -12917,7 +17474,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Hidden Voice — allows a decision without pressure."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Skrytý hlas",
+          "en": "Hidden Voice"
+        },
+        "description": {
+          "cs": "Hlasuj tak, aby tě nikdo nenutil.",
+          "en": "Vote so that no one can pressure you."
+        }
+      },
+      {
+        "title": {
+          "cs": "Nátlak",
+          "en": "Pressure"
+        },
+        "description": {
+          "cs": "Odolej nátlaku a neprozraď zdroj.",
+          "en": "Resist pressure and reveal no source."
+        }
+      },
+      {
+        "title": {
+          "cs": "Výsledek",
+          "en": "Result"
+        },
+        "description": {
+          "cs": "Zveřejni výsledek poctivě a celý.",
+          "en": "Publish the result honestly and in full."
+        }
+      }
+    ],
     "essence": {
       "cs": "Amon (Amun) v novoříšské syntéze spojuje neviditelnou moc a vzduch. V OASIS = commit–reveal hlasování, hidden state v testech, zero-knowledge lore (bez matematických lží).",
       "en": "Amun in New Kingdom synthesis joins hidden power and air. In OASIS = commit–reveal voting, hidden state in tests, zero-knowledge lore (no mathematical falsehoods)."
@@ -12969,7 +17557,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Foundation — reveals what physically holds the service up."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Základ",
+          "en": "Foundation"
+        },
+        "description": {
+          "cs": "Zkontroluj, co drží provoz zespodu.",
+          "en": "Check what holds the service up from below."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hmota",
+          "en": "Matter"
+        },
+        "description": {
+          "cs": "Obnov to, co se opotřebilo.",
+          "en": "Renew what wore out."
+        }
+      },
+      {
+        "title": {
+          "cs": "Provoz",
+          "en": "Operation"
+        },
+        "description": {
+          "cs": "Udrž to v chodu, i když to nikdo nevidí.",
+          "en": "Keep it running even when no one looks."
+        }
+      }
+    ],
     "essence": {
       "cs": "Geb je bůh země, otec Usira, Seta, Eset a Neftý v klasické genealogii. V OASIS = hardware/OS baseline, node disk, carbon-aware lokace validátorů (jen lore).",
       "en": "Geb is the earth god, father of Osiris, Set, Isis and Nephthys in classical genealogy. In OASIS = hardware/OS baseline, node disk, carbon-aware validator placement (lore only)."
@@ -13021,7 +17640,38 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "en": "Night Maintenance — keeps the system while everyone sleeps."
     },
     "key": "",
-    "quests": [],
+    "quests": [
+      {
+        "title": {
+          "cs": "Noc",
+          "en": "Night"
+        },
+        "description": {
+          "cs": "Udržuj systém, když všichni spí.",
+          "en": "Maintain the system while everyone sleeps."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hvězdy",
+          "en": "Stars"
+        },
+        "description": {
+          "cs": "Zaznamenej, co se v noci změnilo.",
+          "en": "Record what changed overnight."
+        }
+      },
+      {
+        "title": {
+          "cs": "Úsvit",
+          "en": "Dawn"
+        },
+        "description": {
+          "cs": "Předej stav ráno a beze ztrát.",
+          "en": "Hand over the state in the morning without loss."
+        }
+      }
+    ],
     "essence": {
       "cs": "Nut je nebeská bohyně oblouku hvězd; mytologicky „spolkne“ slunce na noc. V OASIS = sharded state, noční joby, navigace hvězdnou mapou v meta-doku.",
       "en": "Nut is the celestial goddess arched with stars; mythologically she 'swallows' the sun at night. In OASIS = sharded state, nightly jobs, star-map navigation in the meta-doc."
