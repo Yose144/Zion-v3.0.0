@@ -84,6 +84,25 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
         <FactsStrip facts={product.facts} />
       )}
 
+      {/* Galerie — doplňkové snímky od 👤 (1672×941) */}
+      {product.gallery && product.gallery.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {product.gallery.map((shot) => (
+            <figure
+              key={shot.src}
+              className="relative aspect-[16/9] overflow-hidden rounded-xl ring-1 ring-white/10"
+            >
+              <img
+                src={shot.src}
+                alt={pick(shot.alt)}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            </figure>
+          ))}
+        </div>
+      )}
+
       {/* Body grid */}
       <div className="grid lg:grid-cols-[1fr_minmax(0,340px)] gap-8">
         {/* Content */}
@@ -128,6 +147,17 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
                   key={i}
                   className="rounded-2xl bg-[#f6f1e4] text-[#221d16] shadow-[0_18px_40px_-24px_rgba(0,0,0,0.8)] ring-1 ring-black/10 overflow-hidden"
                 >
+                  {sample.image && (
+                    <div className="relative aspect-[16/9] overflow-hidden">
+                      <img
+                        src={sample.image}
+                        alt={pick(sample.title)}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
+                    </div>
+                  )}
                   <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-black/10 px-6 py-3">
                     <span className="text-[11px] uppercase tracking-[0.22em] text-[#8a6b28]">
                       {pick(sample.label)}

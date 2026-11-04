@@ -52,7 +52,7 @@ export default function BookSection() {
           {/* Cover */}
           <div className="relative aspect-square md:aspect-auto md:min-h-[380px]">
             <img
-              src="/shop/img/books/kralovstvi-srdce-cover.webp"
+              src={xmas?.hero ?? '/shop/img/books/kralovstvi-srdce-cover.webp'}
               alt="Království srdce — obálka knihy"
               className="absolute inset-0 w-full h-full object-cover"
             />

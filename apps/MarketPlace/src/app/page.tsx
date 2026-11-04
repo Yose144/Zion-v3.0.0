@@ -3,6 +3,7 @@ import {
   ZionPassSection,
   LampionSection,
   BookSection,
+  ChristmasJourneySection,
   StatsSection,
   CategoriesSection,
   AiSection,
@@ -19,6 +20,7 @@ export default function HomePage() {
       <ZionPassSection />
       <BookSection />
       <LampionSection />
+      <ChristmasJourneySection />
       <AiSection />
       <MarketLockedNotice />
       <FeaturedSection />

@@ -59,3 +59,26 @@ počítá i voidnuté řádky → nadhodnocuje ~783k ZION (jen reportovací nit)
 - `GET /admin/external-payouts?chain=quantus` (admin klíč): `pending: 3`
 - `quantus balance qzpQmoF…` = 0 (očekávané, čeká na funding)
 - `zion-quantus-node`: synced #348306+, 40 peerů, validátor autoring bloky
+
+## 7. DODATEK — leg kompletně vypnutý (rozhodnutí 👤, 2026-11-04 odpoledne)
+
+> „v tech qtc, tam je chyba to uplne zrus! protoze to jeste nemame otevrene,
+> kompletni workflow quantusu jeste na nasem nativnim poolu neprobehl"
+
+Leg se vrací do pre-launch stavu — opravy z §1–6 zůstávají nasazené (rotační
+skript + collect-rewards + destination fix jsou předpoklady budoucího launchu).
+
+| Akce | Stav |
+|---|---|
+| `QTC_PAYOUT_ENABLED=0` v `/etc/zion/edge-environment.sh` (záloha `.bak-qtc-off-*`) | ✅ |
+| Restart `zion-v31-multichain` → žádný `qtc payout sweeper started` v logu | ✅ ověřeno |
+| `ext_payout_records` chain=quantus: **36 278** řádků (`queued`/`deferred`/`stalled`) → `dismissed` + marker `qtc-leg-disabled-2026-11-04` | ✅ (záloha `warp_multichain.db.bak-qtc-off-*`) |
+| `coin_revenue_outbox` pending pro quantus | **0** (nic k rušení — outbox plní jen `on_coin_revenue`, `qtu` není v `NATIVE_PAYOUT_COINS`) |
+| `payouts` tabulka | pouze `coin='zion'` — quantus položky existovaly jen in-memory v `pending_payouts` (inertní, mizí restartem poolu) |
+| `ZION_POOL_AUXPOW_COIN=QTU` | **ponecháno** — auxpow mining ≠ payout leg; mineři dál vydělávají QTU |
+| `zion-qtc-collect-rewards.timer` | **ponechán** — sype wormhole rewards do treasury `qzpQmoF…` (akumulace pro budoucí launch) |
+
+**Re-enable postup:** fundnout treasury `qzpQmoFkNxJK2YVwnssLVmpGvYgyJGU2ztcMPHR8GkMj8EnsF`
+→ `QTC_PAYOUT_ENABLED=1` → `systemctl restart zion-v31-multichain`. Fronta
+startuje čistá (vše dismissed); první reálný submit = validace celého workflow
+end-to-end před ohlášením launchu.

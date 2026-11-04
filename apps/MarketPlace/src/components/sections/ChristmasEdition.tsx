@@ -166,7 +166,7 @@ export function ZionPassSection() {
 
   return (
     <ChristmasCard
-      image="/vanoce-pass.webp"
+      image={product?.hero ?? '/vanoce-pass.webp'}
       imageAlt={t('xmas.passImageAlt')}
       badge={t('xmas.badge')}
       kicker={t('xmas.passKicker')}
@@ -197,7 +197,7 @@ export function LampionSection() {
 
   return (
     <ChristmasCard
-      image="/vanoce-lampion.webp"
+      image={product?.hero ?? '/vanoce-lampion.webp'}
       imageAlt={t('xmas.lampionImageAlt')}
       badge={t('xmas.badge')}
       kicker={t('xmas.lampionKicker')}

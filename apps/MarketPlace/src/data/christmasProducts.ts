@@ -45,6 +45,10 @@ export interface XmasProduct {
   editions?: XmasEdition[];
   /** Kratší, konkrétnější text pro kartu na homepage */
   home?: { lead: XmasText; bullets: XmasText[] };
+  /** Široký obrázek pro kartu na homepage (1672×941) */
+  hero?: string;
+  /** Doplňkové snímky do galerie na detailu */
+  gallery?: { src: string; alt: XmasText }[];
 }
 
 export interface XmasFact {
@@ -62,6 +66,8 @@ export interface XmasSample {
   paragraphs: XmasText[];
   /** odkud text je */
   source: XmasText;
+  /** ilustrace z knihy, která patří k této pasáži */
+  image?: string;
 }
 
 export interface XmasEdition {
@@ -79,6 +85,17 @@ export const christmasProducts: XmasProduct[] = [
     slug: 'zion-pass',
     externalId: 'zion-pass-001',
     image: '/vanoce-pass.webp',
+    hero: '/vanoce/home/01_zion_pass.webp',
+    gallery: [
+      {
+        src: '/vanoce/galerie/zion-pass/02_nirvana_a_archiv.webp',
+        alt: { cs: 'Nirvana a ZION Archiv za jednou branou', en: 'Nirvana and the ZION Archive behind one gate' },
+      },
+      {
+        src: '/vanoce/galerie/zion-pass/03_digitalni_darek.webp',
+        alt: { cs: 'ZION Pass jako digitální dárek do e-mailu', en: 'The ZION Pass as a digital gift in your inbox' },
+      },
+    ],
     imageAlt: {
       cs: 'ZION Pass — zlatá brána do Království srdce',
       en: 'ZION Pass — golden gate into the Kingdom of Hearts',
@@ -108,6 +125,14 @@ export const christmasProducts: XmasProduct[] = [
       {
         cs: 'Vánoční edice navíc nese bonus: **108 000 ZION** na vaši ZION peněženku — tisíc ZION za každou korunu.',
         en: 'The Christmas edition carries a bonus: **108,000 ZION** sent to your ZION wallet — a thousand ZION for every crown.',
+      },
+      {
+        cs: '**Co je uvnitř:** v Nirvaně pět herních světů — aréna na Marsu, závod na Venuši, souboj na Merkuru, pouť u Jupitera a MOBA o Zemi — k tomu 200 avatarů a společný chat. V Archivu na vás čekají kanonické texty, Kroniky a edice, ze kterých ty světy vycházejí.',
+        en: '**What is inside:** Nirvana holds five game worlds — the Mars arena, the Venus race, the Mercury duel, the Jupiter fairground and the Earth MOBA — plus 200 avatars and a shared chat. The Archive holds the canonical texts, Chronicles and editions the worlds grow from.',
+      },
+      {
+        cs: '**Kód nemá expiraci.** Jakmile ho jednou uplatníte, zůstává váš — a protože se váže na průkaz, ne na osobu, dá se i přeposlat jako dárek.',
+        en: '**The code does not expire.** Once redeemed it stays yours — and because it binds to the credential rather than a person, it can be forwarded as a gift.',
       },
     ],
     inBox: {
@@ -235,6 +260,17 @@ export const christmasProducts: XmasProduct[] = [
     slug: 'kniha-kralovstvi-srdce',
     externalId: 'book-001',
     image: '/shop/img/books/kralovstvi-srdce-wide.webp',
+    hero: '/vanoce/home/02_kralovstvi_srdce.webp',
+    gallery: [
+      {
+        src: '/vanoce/galerie/kralovstvi-srdce/02_edicni_sada.webp',
+        alt: { cs: 'Osmička edic Království srdce v jedné sadě', en: 'The eight editions of Kingdom of Hearts in one set' },
+      },
+      {
+        src: '/vanoce/galerie/kralovstvi-srdce/03_cteni.webp',
+        alt: { cs: 'Čtení Království srdce v PDF i EPUB', en: 'Reading Kingdom of Hearts in PDF and EPUB' },
+      },
+    ],
     imageAlt: {
       cs: 'Kniha Království srdce — obálka ilustrované edice',
       en: 'Kingdom of Hearts book — illustrated edition cover',
@@ -264,6 +300,14 @@ export const christmasProducts: XmasProduct[] = [
       {
         cs: 'Ke knize dostanete **ZION Archive Pass** — vstup do ZION Archivu. A ve vánoční edici bonus **216 000 ZION** na vaši peněženku (Genesis vstup pro Guardians ekosystému ZION).',
         en: 'The book includes a **ZION Archive Pass** — entry into the ZION Archive. And in the Christmas edition, a **216,000 ZION** bonus to your wallet (Genesis entry for the ZION Guardians).',
+      },
+      {
+        cs: '**Jak číst:** EPUB je pro čtečky a telefony — velikost písma si řídíte sami. PDF je pro tablet a počítač, kde drží sazbu i ilustrace. V sadě máte obě verze u každé z osmi edic, takže si vyberete podle zařízení, ne podle obsahu.',
+        en: '**How to read:** EPUB is for e-readers and phones — you control the type size. PDF is for tablets and computers, where it keeps the typesetting and illustrations. Every one of the eight editions comes in both, so you choose by device, not by content.',
+      },
+      {
+        cs: '**Kde začít:** ilustrovanou Novou plavbou. Je to vlajková verze s 24 kapitolami. Pak se vraťte ke Klasické edici — je nejkratší a ukazuje, z čeho ostatní edice vycházejí. Kdo chce experiment, otevře Knihu Kýlu vyprávěnou dřevem.',
+        en: '**Where to start:** with the illustrated New Voyage — the flagship, 24 chapters. Then come back to the Classical Edition: it is the shortest and shows what the other editions grow from. If you want the experiment, open the Book of the Keel, told by the wood itself.',
       },
     ],
     inBox: {
@@ -501,6 +545,7 @@ export const christmasProducts: XmasProduct[] = [
       {
         label: { cs: 'Ukázka · Prolog', en: 'Sample · Prologue' },
         title: { cs: 'Světlo před svítáním', en: 'Light Before Dawn' },
+        image: '/vanoce/pribeh/05_svetla_u_brany.webp',
         paragraphs: [
           {
             cs: "U brány hořela dvě světla. Jedno v kamenném ohništi, kde Rádha pekla chléb. Druhé za střepem skla v malé cedrové lucerně. Plamen se nehýbal s větrem. Když však z mlhy zazněly kroky, sklonil se ke stezce. Elizabeth jej sledovala. Na rukávu měla záplatu, kterou už nikdo z přicházejících neuměl ušít. Její země ležela tak daleko v budoucnosti, že z měst tohoto pobřeží nezůstala ani jména. Zůstalo v ní cosi jiného: při večeři se pokaždé prostíralo jedno místo navíc. Kdysi se zeptala proč. Odpověděli jí, že to pochází od jisté lodi. A tak se vydala hledat její začátek.",
@@ -512,6 +557,7 @@ export const christmasProducts: XmasProduct[] = [
       {
         label: { cs: 'Ukázka · 7. kapitola', en: 'Sample · Chapter 7' },
         title: { cs: 'Království je uvnitř vás', en: 'The Kingdom Is Within You' },
+        image: '/vanoce/pribeh/04_jmeno_lodi.webp',
         paragraphs: [
           {
             cs: "Když v Kafarnaum uvázali loď u břehu, přišli k nim farizeové — muži, kteří měřili příchod Mesiáše podle znamení na obloze a svitků s letopočty. Postavili se nad loď a zeptali se tesaře zpříma: „Kdy přijde království Boží?“",
@@ -527,6 +573,7 @@ export const christmasProducts: XmasProduct[] = [
       {
         label: { cs: 'Ukázka · Epilog', en: 'Sample · Epilogue' },
         title: { cs: 'První prkno', en: 'The First Plank' },
+        image: '/vanoce/pribeh/06_misto_navic.webp',
         paragraphs: [
           {
             cs: "Z mlhy před branou vystoupil člověk, kterého žádný z nich neznal. Měl kabát převázaný provazem, na rameni nesl spící dítě a druhou rukou svíral boty. Zastavil se tak daleko od ohně, aby nemusel být vyzván k odchodu. Poutník se zvedl. Nohy měl ztuhlé a v dlaních jej zabolely staré rány.",
@@ -545,6 +592,21 @@ export const christmasProducts: XmasProduct[] = [
     slug: 'lampion',
     externalId: 'lamp-001',
     image: '/vanoce-lampion.webp',
+    hero: '/vanoce/home/03_lampion_tesar_deti_v4.webp',
+    gallery: [
+      {
+        src: '/vanoce/galerie/lampion/01_balicek_v4.webp',
+        alt: { cs: 'Lampion Království srdce jako vánoční balíček', en: 'The Kingdom of Hearts lantern as a Christmas parcel' },
+      },
+      {
+        src: '/vanoce/galerie/lampion/02_konstrukce_v4.webp',
+        alt: { cs: 'Šestihranné tělo lampionu a mandalové výřezy', en: 'Hexagonal lantern body and mandala cut-outs' },
+      },
+      {
+        src: '/vanoce/galerie/lampion/03_vecerni_svetlo_v4.webp',
+        alt: { cs: 'Lampion ve večerním světle', en: 'The lantern in evening light' },
+      },
+    ],
     imageAlt: {
       cs: 'Lampion Království srdce — gravírovaný výrobek z dílny tesaře',
       en: 'Kingdom of Hearts lantern — engraved craft from the carpenter\u2019s workshop',
@@ -574,6 +636,14 @@ export const christmasProducts: XmasProduct[] = [
       {
         cs: 'Lampion vyrábíme ručně — prodej zahájíme, jakmile bude výrobek hotový. Číslo vánoční edice bude omezené.',
         en: 'The lantern is made by hand — sales open once the craft is ready. The Christmas edition run will be limited.',
+      },
+      {
+        cs: '**Co dostanete hned:** digitální knihu v plné sadě (40 knih, 5 jazyků) a ZION Pass. Na ty se nečeká — přijdou e-mailem. Fyzický lampion jde ze dílny samostatně, proto má vlastní termín.',
+        en: '**What arrives immediately:** the full digital book set (40 books, 5 languages) and the ZION Pass. No waiting on those — they come by e-mail. The crafted lantern ships separately from the workshop, which is why it has its own timing.',
+      },
+      {
+        cs: '**Světlo je součást příběhu.** Lampion vychází ze scény, kde Lumi nese lampu k bráně a kde se obě světla na prahu setkají. Vzory na těle nejsou dekorace — jsou to mandaly z knihy.',
+        en: '**The light belongs to the story.** The lantern comes from the scene where Lumi carries her lamp to the gate and two lights meet on the threshold. The patterns on its body are not decoration — they are the mandalas from the book.',
       },
     ],
     inBox: {
@@ -700,6 +770,74 @@ export const christmasProducts: XmasProduct[] = [
         hint: { cs: 'tisíc ZION za každou korunu', en: 'a thousand ZION for every crown' },
       },
     ],
+  },
+];
+
+/**
+ * Společná cesta nákupem — platí pro všechny tři dary.
+ * Vykresluje se pod kartami na homepage, aby člověk nemusel na detail,
+ * aby zjistil, co se po zaplacení vlastně stane.
+ */
+export const christmasJourney: { cs: string[]; en: string[] } = {
+  cs: [
+    '**Vybereš dar.** Pass otevírá světy, kniha nese příběh, lampion k tomu přidává světlo na stůl. Každý z nich má vlastní ZION bonus.',
+    '**Zaplatíš** převodem, kartou nebo v ZIONu. Cena je konečná — doprava u digitálních darů není, u lampionu ji spočítá pokladna.',
+    '**Do minuty po zaplacení** přijde e-mail: kód **ZAP-…**, odkaz na knihy a **ZION peněženka** s bonusem (adresa + seed phrase).',
+    '**Uplatníš kód** na nirvana.zionterranova.com i v ZION Archivu. Peněženku naimportuješ do ZIS a bonus máš na adrese.',
+    '**U lampionu** navíc: digitální část přijde hned, samotný výrobek odejde ze dílny, až bude hotový — Zásilkovnou.',
+  ],
+  en: [
+    '**You pick a gift.** The Pass opens worlds, the book carries the story, the lantern adds light for your table. Each carries its own ZION bonus.',
+    '**You pay** by transfer, card or in ZION. The price is final — no shipping on digital gifts, the lantern’s shipping is calculated at checkout.',
+    '**Within a minute of payment** an e-mail arrives: a **ZAP-…** code, a link to the books, and a **ZION wallet** with the bonus (address + seed phrase).',
+    '**You redeem the code** on nirvana.zionterranova.com and in the ZION Archive. Import the wallet into ZIS and the bonus is yours.',
+    '**With the lantern**, the digital part arrives immediately; the crafted piece ships from the workshop once it is finished — via Zásilkovna.',
+  ],
+};
+
+/** Společné otázky, které se ptají všichni bez ohledu na to, který dar si vybrali. */
+export const christmasFaq: { q: XmasText; a: XmasText }[] = [
+  {
+    q: { cs: 'Kdy mi přijde e-mail s kódem a peněženkou?', en: 'When does the e-mail with the code and wallet arrive?' },
+    a: {
+      cs: 'U karty a ZIONu prakticky okamžitě — obvykle do minuty po zaplacení. U bankovního převodu ve chvíli, kdy platba dorazí na účet (to je jediné místo, kde rozhoduje vaše banka, ne my).',
+      en: 'Card and ZION payments are effectively instant — usually within a minute. With a bank transfer it is the moment the payment lands in the account (that is the only place where your bank decides, not us).',
+    },
+  },
+  {
+    q: { cs: 'Má ZION bonus peněžní hodnotu?', en: 'Does the ZION bonus have monetary value?' },
+    a: {
+      cs: 'Ne. ZION je experimentální ekosystém, bonus nemá garantovanou peněžní hodnotu a nezakládá nárok na výnos. Kupujete dar a podporu světa — token je vstupenka do něj, ne investiční produkt.',
+      en: 'No. ZION is an experimental ecosystem; the bonus has no guaranteed monetary value and creates no claim on returns. You are buying a gift and support for the world — the token is a way in, not an investment product.',
+    },
+  },
+  {
+    q: { cs: 'Co přesně je kód ZAP-…?', en: 'What exactly is the ZAP-… code?' },
+    a: {
+      cs: 'Váš průkaz (Zion Archive Pass). Jeden kód platí na obou místech — v Nirvaně i v Archivu — a váže se na průkaz, ne na osobu, takže ho můžete darovat.',
+      en: 'Your credential (Zion Archive Pass). One code works in both places — Nirvana and the Archive — and it binds to the credential, not a person, so it can be gifted.',
+    },
+  },
+  {
+    q: { cs: 'Co udělám se seed phrase od peněženky?', en: 'What do I do with the wallet seed phrase?' },
+    a: {
+      cs: 'Uložte ji offline — papír nebo trezor, nikdy ne do cloudu, screenshotu ani poznámek v telefonu. Kdo má seed, má peněženku. Import do ZIS je pak otázka jednoho kroku.',
+      en: 'Store it offline — paper or a safe, never in the cloud, a screenshot, or phone notes. Whoever has the seed has the wallet. Importing into ZIS is then a single step.',
+    },
+  },
+  {
+    q: { cs: 'Můžu dar koupit jako dárek pro někoho jiného?', en: 'Can I buy a gift for someone else?' },
+    a: {
+      cs: 'Ano — u digitálních darů stačí přeposlat e-mail s kódem a peněženkou. U lampionu zadejte v objednávce doručovací adresu obdarovaného a přidejte poznámku; balíme to rovnou jako dárek.',
+      en: 'Yes — for digital gifts just forward the e-mail with the code and wallet. For the lantern, put the recipient’s address in the order and add a note; we wrap it as a gift.',
+    },
+  },
+  {
+    q: { cs: 'Jak je to s vrácením a reklamací?', en: 'What about returns and complaints?' },
+    a: {
+      cs: 'Digitální obsah (kód, knihy, peněženka) je doručen okamžitě, takže na něj se podle obchodních podmínek vztahuje výluka z práva na odstoupení. Lampion je zboží na zakázku — reklamaci řeší reklamační řád, vady opravíme nebo vyměníme.',
+      en: 'Digital content (code, books, wallet) is delivered instantly, so under the terms it is excluded from the right of withdrawal. The lantern is made to order — complaints follow the complaints policy; we repair or replace defects.',
+    },
   },
 ];
 

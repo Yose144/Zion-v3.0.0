@@ -44,6 +44,20 @@ for (const [route, name, desktop] of pages) {
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   await page.goto(BASE + route, { waitUntil: 'networkidle2', timeout: 60000 });
+  // Projeď stránku — lazy obrázky se bez scrollu nenačtou a fullPage
+  // screenshot by ukázal prázdné boxy (falešný nález „obrázek chybí").
+  await page.evaluate(async () => {
+    await new Promise((resolve) => {
+      let y = 0;
+      const step = () => {
+        y += window.innerHeight * 0.8;
+        window.scrollTo(0, y);
+        if (y < document.body.scrollHeight) setTimeout(step, 120);
+        else { window.scrollTo(0, 0); setTimeout(resolve, 400); }
+      };
+      step();
+    });
+  });
   await new Promise((r) => setTimeout(r, 900));
   await page.screenshot({ path: path.join(OUT, `${name}.png`), fullPage: true });
   console.log(`${name}: ok, chyby=${errors.length}${errors.length ? ' → ' + errors.slice(0, 2).join(' | ') : ''}`);
