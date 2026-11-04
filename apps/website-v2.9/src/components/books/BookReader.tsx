@@ -29,6 +29,7 @@ import { useLang } from '@/contexts/LanguageContext';
 import type { BookDef, BookChapter, Lang } from '@/lib/books/types';
 import BookNav from '@/components/books/BookNav';
 import { downloadForBook } from '@/lib/books/downloads';
+import { READER_BOOKS } from '@/app/zion-archive/library-index';
 import { saveReadingProgress } from '@/lib/books/progress';
 import { bookmarkId, toggleBookmark, removeBookmark, useBookmarks } from '@/lib/books/bookmarks';
 import {
@@ -134,6 +135,9 @@ export default function BookReader({ book }: { book: BookDef }) {
 
   const currentBookmarkId = currentChapter ? bookmarkId(book.id, currentChapter.slug) : '';
   const currentBookmarked = bookmarks.some((b) => b.id === currentBookmarkId);
+
+  const bookIndex = READER_BOOKS.findIndex((entry) => entry.id === book.id);
+  const nextBook = bookIndex >= 0 ? READER_BOOKS[bookIndex + 1] : undefined;
 
   // Reading time estimate — honest and cheap: words / 200 wpm, minimum a minute.
   useEffect(() => {
@@ -946,6 +950,51 @@ export default function BookReader({ book }: { book: BookDef }) {
                   ? 'Klávesy ← → přepínají kapitoly.'
                   : 'Use ← → to move between chapters.'}
               </p>
+            )}
+
+            {chapterIndex === chapters.length - 1 && (
+              <div
+                className="zion-rainbow-card mt-8 p-5 sm:p-6"
+                style={{ '--rc': nextBook?.accent ?? ACCENT } as React.CSSProperties}
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-gray-500">
+                  {l === 'cs' ? 'Konec knihy' : 'End of the book'}
+                </p>
+                {nextBook ? (
+                  <>
+                    <h3 className="mt-1.5 text-lg font-bold text-white">
+                      {l === 'cs' ? 'Další v pořadí' : 'Next in the path'}: {nextBook.title[l]}
+                    </h3>
+                    <p className="mt-1 text-xs leading-relaxed text-gray-400">
+                      {nextBook.subtitle[l]}
+                    </p>
+                    <Link
+                      href={nextBook.href}
+                      prefetch={false}
+                      className="mt-4 inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-semibold transition-colors"
+                      style={{
+                        borderColor: `rgba(${nextBook.accent}, 0.4)`,
+                        color: `rgb(${nextBook.accent})`,
+                        backgroundColor: `rgba(${nextBook.accent}, 0.08)`,
+                      }}
+                    >
+                      <BookOpen className="h-3.5 w-3.5" />
+                      {l === 'cs' ? 'Otevřít knihu' : 'Open the book'}
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </>
+                ) : (
+                  <p className="mt-1.5 text-sm text-gray-300">
+                    {l === 'cs' ? 'Jste na konci knihovny.' : 'You are at the end of the library.'}{' '}
+                    <Link
+                      href="/zion-archive#knihovna"
+                      className="font-semibold text-zion-gold hover:text-amber-200"
+                    >
+                      {l === 'cs' ? 'Zpět do knihovny' : 'Back to the library'}
+                    </Link>
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </div>

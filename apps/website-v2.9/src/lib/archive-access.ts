@@ -31,6 +31,8 @@ export interface ArchiveAccess {
   access: boolean;
   via: ArchiveAccessVia;
   user?: ZisUser;
+  /** ISO expiry of an entitlement-backed pass (code/OASIS passes have none). */
+  expiresAt?: string | null;
 }
 
 function passCodes(): Set<string> {
@@ -89,8 +91,14 @@ export async function archiveAccess(): Promise<ArchiveAccess> {
   // OASIS bonus: a linked OASIS player unlocks the archive
   if (user.oasisPlayer) return { access: true, via: 'zis-oasis', user };
   // claimed code / admin grant / purchase
-  if (getEntitlement(`zis:${user.id}`)) {
-    return { access: true, via: 'zis-entitlement', user };
+  const entitlement = getEntitlement(`zis:${user.id}`);
+  if (entitlement) {
+    return {
+      access: true,
+      via: 'zis-entitlement',
+      user,
+      expiresAt: entitlement.expiresAt ?? null,
+    };
   }
   return { access: false, via: null, user };
 }

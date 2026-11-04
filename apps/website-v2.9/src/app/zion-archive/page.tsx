@@ -13,6 +13,7 @@ import {
   ListChecks,
   Route,
   ScrollText,
+  ShieldCheck,
   Sun,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
@@ -91,6 +92,10 @@ const Copy = {
     en: 'The archive remembers your last chapter — in your browser only.',
   },
   clearHistory: { cs: 'Vymazat historii', en: 'Clear history' },
+  passCode: { cs: 'ZION Pass · kód', en: 'ZION Pass · code' },
+  passOasis: { cs: 'ZION Pass · OASIS bonus', en: 'ZION Pass · OASIS bonus' },
+  passActive: { cs: 'ZION Pass · aktivní', en: 'ZION Pass · active' },
+  passUntil: { cs: 'ZION Pass · do', en: 'ZION Pass · until' },
   chapterOf: { cs: 'kapitola', en: 'chapter' },
   resume: { cs: 'Otevřít', en: 'Open' },
 };
@@ -104,6 +109,35 @@ export default function ZionArchivePage() {
   const mobileNavRef = useRef<HTMLElement>(null);
   const progress = useReadingProgress();
   const recent = recentProgress(progress, 3);
+  const [passInfo, setPassInfo] = useState<{ via: string; expiresAt: string | null } | null>(null);
+
+  // Show the active pass in the hero (code / OASIS / entitlement with expiry).
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/archive/access')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { access?: boolean; via?: string; expiresAt?: string | null } | null) => {
+        if (!cancelled && data?.access) {
+          setPassInfo({ via: data.via ?? 'code', expiresAt: data.expiresAt ?? null });
+        }
+      })
+      .catch(() => {
+        /* status pill is cosmetic */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const passLabel = passInfo
+    ? passInfo.via === 'zis-oasis'
+      ? Copy.passOasis[l]
+      : passInfo.via === 'zis-entitlement'
+        ? passInfo.expiresAt
+          ? `${Copy.passUntil[l]} ${new Intl.DateTimeFormat(l === 'cs' ? 'cs-CZ' : 'en-GB', { dateStyle: 'medium' }).format(new Date(passInfo.expiresAt))}`
+          : Copy.passActive[l]
+        : Copy.passCode[l]
+    : '';
 
   const syncFromHash = useCallback((scroll: boolean) => {
     const raw = window.location.hash.replace('#', '');
@@ -190,6 +224,12 @@ export default function ZionArchivePage() {
                     <Egg className="h-3.5 w-3.5" />
                     {Copy.kicker[l]}
                   </span>
+                  {passInfo && (
+                    <span className="zion-kicker border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      {passLabel}
+                    </span>
+                  )}
                 </div>
                 <h1 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
                   <span className="text-gradient">{Copy.title[l]}</span>

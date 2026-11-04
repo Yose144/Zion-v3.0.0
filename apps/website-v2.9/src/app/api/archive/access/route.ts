@@ -32,10 +32,11 @@ function throttled(ip: string): boolean {
 
 /** Current access status for the requesting client. */
 export async function GET() {
-  const { access, via, user } = await archiveAccess();
+  const { access, via, user, expiresAt } = await archiveAccess();
   return NextResponse.json({
     access,
     via,
+    expiresAt: expiresAt ?? null,
     user: user
       ? { id: user.id, displayName: user.displayName ?? null }
       : undefined,

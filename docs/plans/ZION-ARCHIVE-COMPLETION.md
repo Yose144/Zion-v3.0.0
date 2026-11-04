@@ -152,7 +152,7 @@ jde jen s passem.
 - [x] Nastavení čtečky: velikost písma (S/M/L/XL), šířka sloupce, téma (tmavý/sépia/světlý) —
       lokálně, aplikované přes CSS třídy.
 - [x] „Pokračovat" respektuje front matter a skutečný konec knihy.
-- [ ] Na konci knihy: „Další kniha v pořadí" + „Souvisí" (z `library.ts`).
+- [x] Na konci knihy: „Další v pořadí" (z `READER_BOOKS`), nebo „konec knihovny".
 - [ ] Tisk/PDF aktuální kapitoly.
 
 **Hotovo, když:** čtenář najde text, označí si místo, vrátí se po týdnu a pokračuje tam, kde skončil.
@@ -166,16 +166,20 @@ jde jen s passem.
 
 ### W6 — Přístup, obchod, entitlementy (P0/P1)
 
-- [ ] Marketplace purchase → automatický entitlement (webhook/`archive-pass.ts` už kód vydává;
-      doplnit server-side grant `zis:` nebo e-mailový claim).
-- [ ] UI stavu passu: „platí do", „navázáno na ZIS", „revokováno" + jak obnovit.
+- [~] Marketplace purchase → automatický entitlement: kód z nákupu se při uplatnění **váže na ZIS**
+      (`grantEntitlement`, `claimedVia:'code'`), takže přežije rotaci kódu; přímý webhook z marketplace
+      (bez ručního zadání kódu) zůstává.
+- [x] UI stavu passu v hubu: „ZION Pass · kód / OASIS bonus / aktivní / do <datum>"
+      (`/api/archive/access` nese `expiresAt` z entitlementu).
 - [ ] B2B seats: org → N čtenářů, správa v admin API.
 - [ ] Audit přístupů (kdo kdy odemkl) bez sledování čtení — jen auth eventy.
 
 ### W7 — Kvalita, ops, důkazy (P0)
 
-- [ ] E2E: lock (běží), hub (přepnout ze `skip` na gated fixture s testovacím kódem),
-      downloads (403 bez passu / 200 s passem), reader (progress, klávesy, EN fallback).
+- [x] E2E `e2e/zion-archive-hub.spec.ts` (skip bez `ARCHIVE_TEST_PASS`): hub + pass pill,
+      knihovna (20 karet), front matter vs. progres, hledání, záložka, nastavení čtečky,
+      downloads karta + SHA, gate 403/404. Ověřeno 5/5 lokálně.
+- [ ] E2E: `maitreya-hub.spec.ts` (starý `skip`) sloučit/odstranit po kontrole pokrytí.
 - [ ] Link audit v CI (`npm run check:links`) + content audit (W1).
 - [ ] Performance: lazy loading knihoven, cache manifestů, bundle budget.
 - [ ] A11y: focus management, klávesy, kontrast, `aria-current`, skip links.
@@ -214,9 +218,13 @@ Každý milník = vlastní report v `docs/3.2/REPORTS/` + záznam v `apps/websit
 7. **W2** — `en-coverage.json` generovaný z auditu (jeden zdroj pro UI i report).
 8. ~~W4 — hledání v knize~~ ✅ 2026-11-04
 9. ~~W4 — záložky + nastavení čtečky~~ ✅ 2026-11-04
-10. **W6** — stav passu („platí do", vazba na ZIS) v lock page i hubu.
-11. **W7** — e2e pro hub s testovacím passem + downloads.
-12. **W4** — „další kniha v pořadí" na konci knihy + tisk/PDF kapitoly.
+10. ~~W6 — stav passu („platí do", vazba na ZIS)~~ ✅ 2026-11-04
+11. ~~W7 — e2e pro hub s testovacím passem + downloads~~ ✅ 2026-11-04
+12. ~~W4 — „další kniha v pořadí" na konci knihy~~ ✅ 2026-11-04
+13. **W2** — první překladová dávka (Sůl této země), režim draft vs. publish dle 👤.
+14. **W6** — marketplace webhook (entitlement bez ručního kódu), B2B seats.
+15. **W3** — „Moje knihovna" (zakoupené edice, platnost, opětovné stažení).
+16. **W4** — tisk/PDF kapitoly.
 
 ---
 
@@ -256,4 +264,6 @@ Každý milník = vlastní report v `docs/3.2/REPORTS/` + záznam v `apps/websit
   stub detekce EN, opravené jazykové claimy.
 - ✅ W2 start: knihovna/readery už nelžou o jazyce; další dávka = P1 překlady.
 - ✅ W3: checksum SHA-256 u stažení (kopírování).
-- ✅ W4: hledání v knize, záložky, nastavení čtečky (font/šířka/téma).
+- ✅ W4: hledání v knize, záložky, nastavení čtečky (font/šířka/téma), „další v pořadí".
+- ✅ W6: stav passu v hubu (kód/OASIS/entitlement + expirace), vazba kódu na ZIS.
+- ✅ W7: e2e hubu s testovacím passem (5 testů, lokálně 5/5).
