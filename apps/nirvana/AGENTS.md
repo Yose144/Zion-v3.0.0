@@ -1759,3 +1759,125 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   brány), ne `/api/oasis/worlds` 200 (ta je teď za branou).
 - **Ověřeno live:** všech 10 herních/prezentačních rout → 307, brána bez
   HUD a chatu, fake cookie zamčená, WS `join` → `pass_required`.
+
+## Zvuk — jeden engine pro všechny hry (2026-11-04)
+
+- **`core/audio/engine.ts` je jediný `AudioContext`.** Aréna i MOBA měly
+  vlastní; ostatní hry neměly nic. Kdo přidá zvuk, přidá **jméno** do
+  `SoundName` a jednořádkovou kompozici do `SOUNDS` — ne nový kontext.
+  Dvě kontexty = dvě hlasitosti, dva stropy a ticho po jednom ztlumení.
+- **Strop hlasů je časový, ne `onended`.** `voiceEnds` se čistí podle
+  `ctx.currentTime`; některé prohlížeče `onended` u zastaveného nodu
+  nespustí a čítač by se zasekl na maximu a zvuk by navždy ztichl.
+- **Throttling podle jména** (`MIN_GAP`) — zásah přichází 15×/s, tři boti
+  střílí naráz. Bez rozestupu se nody hromadí a zvuk chrastí.
+- **Zvuk se odvozuje z událostí, které už nastaly.** V souboji z poklesu
+  HP (`createDuelSound`), v tancích ze změny `shotsFired`/`lastHit.at`,
+  v pouti z `onScore`. Nikdy z klávesy: v multiplayeru střílí server.
+- **`unlock()` patří do gesta** (klik na start / první stisk). Volání
+  v efektu po navigaci funguje jen díky „sticky activation" a v Safari ne.
+- **Ztlumení je jedna volba pro celou appku** (`nirvana.sound.v1`),
+  tlačítko je `SoundToggle` v HUD. Nové zvuky se nesmí ptát zvlášť.
+- **Spojitý zvuk** (motor Venuše) drží nody mimo `tone()` a **musí** mít
+  `stop()` v cleanupu — jinak hučí i po odchodu ze závodu.
+- Test bez prohlížeče: `npx tsx test/audio.mjs` (falešný `AudioContext`
+  počítá nody; ověřuje ticho při ztlumení, throttling i strop hlasů).
+
+## VR — jedna vrstva pro všechny hry (2026-11-04)
+
+- **`core/xr/` drží store, tlačítko a čtení ovladačů.** Dřív měly VR jen
+  pouť a Mars, každá s vlastním `createXRStore` a vlastním `useXRInputSourceState`.
+  Nová hra použije `useXr()` + `<VrButton>` + `<VrInputs>`.
+- **Ovladače posílají syntetické klávesy** (`createVrKeys`), ne vlastní
+  herní cestu. Hry už čtou klávesnici (a dotyk dělá totéž), takže VR
+  nemůže mít jiná pravidla než server.
+- **`<XR store>` musí být uvnitř `<Canvas>`**, ale store patří stránce
+  (tlačítko VR je v DOM). Proto scény berou `xrStore` propem a mají dvě
+  větve (s `<XR>` a bez) — `store={undefined}` nefunguje.
+- **Cinematic kamery se ve VR vypínají.** Když scéna každý frame volá
+  `camera.position.set(...)`, v headsetu to „letí hlavou". Vzory:
+  `DuelCamera xr`, `VenusRace/Multiplayer if (!xr)`, `MobaStage xr`,
+  `TanksScene` bez `CameraRig`.
+- **Pohyb ve VR = `XROrigin`, který nese tělo** (Venuše: jede s vozítkem,
+  MOBA: nadhled nad hrdinou). Nesahá se na kameru, ta patří headsetu.
+- **MOBA míření v VR jde přes projekci**: paprsek ovladače protne zem →
+  `Vector3.project(camera)` → pixel → syntetický `pointermove`. Hra pak
+  počítá `raycaster.setFromCamera(pointer)` beze změny. Předávat světový
+  bod by znamenalo druhý vstup do simulace.
+- **VR není otestované na headsetu.** Headless ověřuje jen to, že se scéna
+  s namontovaným `<XR>` rozjede a tlačítko je vidět (`.artifacts/probe/
+  moba-vr-smoke.mjs`). Nehlásit víc.
+
+## Progrese a žebříčky — jedno místo (2026-11-04)
+
+- **`core/progress/run.ts` → `recordRun()`** je jediná cesta, jak zapsat
+  dohranou hru: žetony, osobní rekord, denní výzva, level, odeslání skóre.
+  Čtyři kopie v appkách (`/park`, `/mars`, `/venus`, `/mercury`) se rozešly
+  hned napoprvé — nové pravidlo se doplňovalo čtyřikrát.
+- **Level roste z počtu dohraných her, ne z žetonů.** Žetony se utrácejí
+  za kolo; hráč by po jízdě „zdegradoval".
+- **HUD ukazuje `—`, dokud se profil nenačte.** `level 1` na půl vteřiny
+  je lež, které si každý všimne (a v testu vypadá jako chyba).
+- **Seznam her musí sedět na čtyřech místech:** `ParkGameId`
+  (`park/games/types.ts`), `emptyScores` (`park/scores.ts`), `GAMES`
+  a `emptyBoard` v `/api/park/scores`, `GAMES`+`TARGETS` v `challenge.ts`
+  a názvy v `progress/boards.ts`. Nová hra = pět řádků, ne jeden.
+- **Tabule je jedna cache** (`useScores`), jinak každá stránka stahuje
+  seznam znovu a čísla se rozcházejí podle toho, kdy se načetla.
+- Test: `npx tsx test/progress.mjs` (level křivka, rekord, výzva jednou
+  denně, nehodnocený běh, level up).
+
+## Vnější planety — Uran, Neptun, Pluto (2026-11-04)
+
+- **`core/outer/worlds.ts` je jeden zdroj** (čísla, text, řetěz „dál").
+  Scéna i panel čtou odsud; kdyby si stránka psala vlastní čísla, rozejdou
+  se s planetou v katalogu.
+- **`PlanetId` vs `PlanetGameId`**: Jupiter nemá vlastní hru, otevírá pouť.
+  Unie byla dřív opsaná ve čtyřech souborech (`SolarSystem`, `Universe`,
+  `SceneRoot`, `Shell`) — teď je v `planetCatalog.ts`.
+- **Pluto nemá texturu.** `proceduralTexture()` (sdílené s vesmírem) kreslí
+  deterministický canvas: krátery + světlá pláň ve tvaru srdce. Přidávat
+  binárku kvůli jedné planetě nemá smysl.
+- **Prstenec Uranu potřebuje vlastní náklon** (`rotateX(-π/2 + 0.22)`).
+  Přesně z hrany z něj zůstanou dvě čáry sbíhající se v „V" a vypadá to
+  jako chyba renderu.
+- **Panel musí sedět nad herním HUD** (`bottom: 3.8rem`), jinak ho lišta
+  překryje a nejde na poslední řádek.
+
+## Hlediště — diváci (2026-11-04, proto 27)
+
+- **Divák nedostane sedlo.** Server ho vede v `room.spectators`, ne v
+  `room.players`: nepočítá se do kapacity a `match.join` se pro něj
+  nevolá. Kdyby šel do `players`, v aréně by se objevil jako mrtvola
+  v rohu a v tancích by ukradl tah.
+- **`leaveRoom` musí rozlišit diváka** — `match.leave(id)` u něj nemá co
+  odebrat a rozbilo by stav hry.
+- **Snapshoty chodí i divákům** (stejná smyčka). Pro MOBU to znamená
+  nefiltrovaný pohled — divák není v týmu, takže mlha války nemá co skrýt.
+  Je to záměr (divácký pohled), ne díra; hráči v místnosti tím nic nezískají.
+- **Hlediště je URL**: `?watch=arena-2` (`core/net/watch.ts`), validuje se
+  proti `^(arena|race|fight|moba|tanks)-\d+$`. Odkaz z lobby je „Dívat se".
+- **Stav se čte až v efektu.** Inicializace z `window.location` by na
+  serveru a klientu dala jiný strom (hydration mismatch).
+- **Pilot je aréna**; ostatní hry mají stejnou serverovou cestu, jen
+  potřebují `spectateRoom()` ve svém `join` efektu.
+- Testy: `apps/nirvana-net/test/spectate.mjs` (server) a
+  `.artifacts/probe/watch-audit.mjs` + `watch-live.mjs` (prohlížeč).
+
+## Pasti, které se v této vlně potvrdily
+
+- **Paralelní session dělá `git add` přes celý strom** a strhne staged
+  soubory do svého commitu (stalo se 2×: zvuk+VR a vnější planety).
+  Po každém commitu zkontroluj, že tvůj soubor je v `HEAD`:
+  `git log --oneline -3 -- <cesta>`. Když není, obsah je na disku, ale
+  commit chybí — stačí znovu `git add` + commit.
+- **`<nextjs-portal>` v levém dolním rohu je dev overlay**, ne naše UI.
+  Překrývá první tab HUD a v konzoli hlásí „synchronously unmount a root".
+  V produkčním buildu tam není — screenshoty a audity konzole dělej proti
+  `next start`, ne proti `next dev`.
+- **Emoji v HUD může přelézt první písmeno** („První svět" → „rvní svět"),
+  když glyf kreslí širší, než je jeho box. Řeší `width: 1.15em` +
+  `overflow: hidden` na `span[aria-hidden]`.
+- **Lišta s 11 hrami se nevejde na jeden řádek.** Pás se posouvá
+  (`overflow-x: auto` + mask fade) a nápověda k ovládání ustupuje pod
+  1560 px; zalomená lišta zakryje spodek hry.
