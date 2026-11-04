@@ -2,16 +2,16 @@
   "edition": "cloude",
   "lang": "CZ",
   "source": "Kralovstvi_srdce_cloude_CZ.md",
-  "words": 15051,
-  "headings": 0,
-  "paragraphs": 1,
+  "words": 15333,
+  "headings": 123,
+  "paragraphs": 64,
   "generated": "2026-11-04",
   "pdf": {
-    "pages": 69,
-    "bytes": 228292
+    "pages": 82,
+    "bytes": 260846
   },
   "epub": {
-    "documents": 3,
-    "bytes": 41077
+    "documents": 6,
+    "bytes": 44462
   }
 }

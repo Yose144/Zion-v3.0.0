@@ -1,13 +1,18 @@
-Království srdce
-Příběh lodi, kterou postavil tesař
-Slovo před plavbou
+# KRÁLOVSTVÍ SRDCE
+
+## Příběh lodi, kterou postavil tesař
+
+## Slovo před plavbou
+
 Naděje je kotva duše, jistá a pevná.
 — List Židům 6,19 (vlastní překlad)
 Tahle kniha je příběh. Vypráví o tesaři z Nazareta, který stavěl stoly, dveře a jha pro voly a ještě loď, o kterou nikdo nežádal, a o tom, kam ta loď dopluje.
 Není to text z Písma. Písmo o lodi, kterou by Ježíš postavil vlastníma rukama, nevypráví. Kniha si ji domýšlí tak, jak se domýšlejí legendy: aby se příběh, který už známe, dal slyšet hlouběji. Každá kapitola proto stojí na skutečných verších a každá končí tabulkou Kotva pravdy. Je v ní napsáno, co je Písmo, co církevní tradice, co historie, co legenda a co je jen obraz této knihy. Čtenář tak může vždycky rozhodnout sám, čemu věří a co si jen užije jako vyprávění.
 Poslední dvě části jsou jiné. Vyrůstají z příběhu ZION, světa, do kterého kniha patří, a jsou označeny jako samostatná vrstva. Kdo je číst nechce, o nic nepřijde: příběh tesaře končí v přístavu v sedmnácté kapitole a pokračuje epilogem.
 Kniha nic neslibuje a nic nedoporučuje kromě pomalého čtení. Hodí se čtenářům zhruba od dvanácti let; o ukřižování vypráví střídmě.
-Prolog · U brány
+
+## Prolog · U brány
+
 Na okraji nové země stála brána. Nebyla z kamene ani ze železa. Byla ze dvou světel: jedno bylo teplé a nízké jako oheň v krbu, druhé vysoké a čisté jako lucerna zdvižená nad vodou.
 U brány čekaly dvě ženy. Rádha držela v dlaních misku se solí a medem. Elizabeth držela lucernu.
 Rádha vítala každého, kdo přišel, a nikoho se neptala, odkud jde. Elizabeth se ptala jedné věci. Svítila pro ty, kdo přijdou za sto let, a od každého, kdo vstupoval, chtěla vědět: „Co po tobě zůstane?“
@@ -19,9 +24,13 @@ Elizabeth nezvedla lucernu výš. Jen ji nechala svítit. Na dítě se podívala
 „Tak ho vyprávěj,“ řekla Rádha. „Ale nejdřív sůl a med. Kdo vstupuje, nemá vyprávět o hladu.“
 Poutník se posadil na kámen u brány, vzal do dlaně špetku soli, ochutnal med a začal.
 (Rámec patří do vyprávění ZION: brána, Rádha, Elizabeth a Lumi jsou postavy příběhu, poutník je čtenář. Nic z toho není Písmo ani historie.)
-Část I · Tesař
-1 · Tesař z Nazareta
-Příběh
+
+# ČÁST I · TESAŘ
+
+## 1 · Tesař z Nazareta
+
+### Příběh
+
 V Nazaretě, v kopcích nad Galilejí, stála dílna, kterou znali všichni. Voněla čerstvě řezaným cedrem a olivovým dřevem a na stěnách visela dláta s topůrky vyhlazenými dlaněmi tří pokolení. Tesař ji zdědil po otci a otec po svém.
 Dělal jha pro voly, aby tíha netlačila na šíji. Dělal stoly, u nichž se rodiny scházely nad chlebem, a dveře, které držely vítr venku a teplo uvnitř. Lidé říkali: co tesař udělá, to drží.
 Večer, když odešel poslední zákazník, postavila matka na stůl misku hrubé soli a bochník chleba. Takový byl zvyk té dílny: kdo vešel, dostal chléb a sůl a nikdo se ho neptal, odkud přichází ani kam míří. A tesař si z té soli vždycky nasypal hrst do malého hliněného kalíšku a nosil ho v torbě, kamkoli šel.
@@ -36,27 +45,29 @@ Jednou ho matka zastihla pozdě večer u práce. Dlouho stála ve dveřích. Pot
 Kýl je položen.
 Kdo staví ve dnech klidu,
 ten stojí, když přijde bouře.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Mk 6,3 — „Není to ten tesař, syn Marie?“ (vlastní překlad). Řecké slovo tektón znamená řemeslníka, stavitele; je to jediné místo evangelií, kde je Ježíš pojmenován svým řemeslem.
 • Mt 13,55 — „Není to syn toho tesaře?“ Řemeslo se předávalo z otce na syna.
 • Mt 11,29–30 — obraz jha, které netlačí. Podle raně křesťanské tradice (Justin Martyr, 2. století) Ježíš sám vyráběl pluhy a jha.
 • O takzvaných skrytých letech (dětství až kolem třiceti) Písmo mlčí. Příběh do toho ticha vkládá loď.
-• V roce 1986 byla v bahně u Genezaretského jezera nalezena loď z 1. století, dlouhá asi osm metrů, z cedru a dalších dřev. Uvádí se, že unesla kolem patnácti lidí. S Ježíšem ji nic prokazatelně nespojuje. (Před tiskem ověřit v odborné literatuře.)
-Kotva pravdy
-Co v kapitole je
-Stav
-Ježíš byl tesař (tektón), dílna v Nazaretě
-Písmo — Mk 6,3; Mt 13,55
-Jha jako řemeslo, jho, které netlačí
-Písmo a tradice — Mt 11,30; Justin Martyr
-Stavba lodi v dílně, rozhovory se sousedy
-PŘÍBĚH — obraz této knihy
-Matka s miskou soli, dlaň na kýlu
-PŘÍBĚH — obraz této knihy
-„Loď se staví ve dnech klidu“
-Obraz této knihy, v souladu s tradicí církve jako lodi
-2 · Dřevo a smola
-Příběh
+• V roce 1986 byla v bahně u Genezaretského jezera nalezena loď z 1. století, dlouhá asi osm metrů, z cedru a dalších dřev. Uvádí se, že unesla kolem patnácti lidí. S Ježíšem ji nic prokazatelně nespojuje.
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Ježíš byl tesař (tektón), dílna v Nazaretě | Písmo — Mk 6,3; Mt 13,55 |
+| Jha jako řemeslo, jho, které netlačí | Písmo a tradice — Mt 11,30; Justin Martyr |
+| Stavba lodi v dílně, rozhovory se sousedy | PŘÍBĚH — obraz této knihy |
+| Matka s miskou soli, dlaň na kýlu | PŘÍBĚH — obraz této knihy |
+| „Loď se staví ve dnech klidu“ | Obraz této knihy, v souladu s tradicí církve jako lodi |
+
+## 2 · Dřevo a smola
+
+### Příběh
+
 Na dřevo byl tesař přísný. Chodil po skladech a hromadách a vybíral pomalu: jedno prkno mu zvedlo ruku, druhé nesmělo. Chlapec z vedlejší dílny, který se u něj učil, to jednou nevydržel.
 „Mistře, na co se tak díváš? Vždyť je to jen dřevo.“
 „Jen dřevo,“ opakoval tesař a položil na prkno dlaň jako na rameno. „Podívej se líp. Každé vyrostlo jinak. Jedno ve větru, jedno ve stínu, jedno ohnuté u skály. Loď je nemá napravovat, má je pojmout takové, jaké jsou. Trhlinu nezakrýváš. Obejdeš ji a necháš ji vyprávět, jak strom rostl.“
@@ -69,23 +80,26 @@ Ve starých knihách, které v dílně nikdo nečetl a přece je všichni znali,
 Prkno k prknu, spára ke spáře.
 Co nepřikryješ, to protéká.
 Co přikryješ, to nese.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Gn 6,14 — Noé má udělat archu „z dřeva gófer“ a vymazat ji smolou zevnitř i zvenku (vlastní překlad). Slovo gófer se jinde v Bibli nevyskytuje a druh dřeva neznáme.
 • kofer (כֹּפֶר) — hebrejské slovo pro smolu patří ke kořeni kfr, „přikrýt“, od něhož je i kipur, smíření (Jom kipur, Den smíření). Jazykové spojení je doložené; čtení smoly jako „přikrytí hříchu“ je výklad rabínský a křesťanský.
 • 1 Petr 3,20–21 — Noemova archa jako předobraz křtu. Církevní tradice čte archu jako obraz záchrany skrze vodu.
-Kotva pravdy
-Co v kapitole je
-Stav
-Dřevo gófer, smola zevnitř i zvenku
-Písmo — Gn 6,14 (o archě, ne o této lodi)
-Kofer a kořen pro „přikrýt“
-Jazyk a výkladová tradice
-Výběr prken jako podobenství o lidech
-PŘÍBĚH — obraz této knihy
-Rozhovor tesaře s chlapcem
-PŘÍBĚH — literární scéna
-3 · Loď na Kinneret
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Dřevo gófer, smola zevnitř i zvenku | Písmo — Gn 6,14 (o archě, ne o této lodi) |
+| Kofer a kořen pro „přikrýt“ | Jazyk a výkladová tradice |
+| Výběr prken jako podobenství o lidech | PŘÍBĚH — obraz této knihy |
+| Rozhovor tesaře s chlapcem | PŘÍBĚH — literární scéna |
+
+## 3 · Loď na Kinneret
+
+### Příběh
+
 Jednoho rána, ještě než se rybáři vrátili z nočního tahu, odvezli loď z Nazareta dolů k jezeru. Jeli celý den na vozech tažených voly a tesař šel vedle s rukou na trupu, jako se drží ruka na kohoutku koně.
 U jezera Kinneret, u města Kafarnaum, čekala voda, která byla jezerem a zároveň mořem pro všechny, kdo z ní žili. Rybáři právě rozplétali prázdné sítě. Celou noc nechytili nic.
 Tesař nechal svou loď na břehu, hladkou, ještě nespuštěnou. Nebyla její hodina. Lidé se kolem něj začali scházet a u břehu stály dvě lodě. Jedna patřila rybáři Šimonovi. Tesař ho požádal, aby kousek odrazil od břehu, usedl do ní a začal mluvit. Ne ze synagógy, ne ze stupínku, ale z lodi. Voda mu nesla hlas dál než stěny a slyšeli ho i ti nejzazší, kteří by u dveří nestáli.
@@ -102,23 +116,26 @@ Loď zůstala na vodě a od té chvíle už nikdy nebyla jen dřevěná.
 Spusť sítě tam, kde už nevěříš.
 Loď, která čekala na břehu,
 se dočkala vody.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Lk 5,1–11 — kázání z lodi, zázračný lov, Šimon Petr, Jakub a Jan. Lukáš zmiňuje dvě lodě u břehu (5,2) a „společníky v druhé lodi“ (5,7); loď, z níž Ježíš učí, patří Šimonovi.
 • Mk 1,16–20; Mt 4,18–22 — povolání rybářů, „rybáři lidí“.
 • Kinneret — hebrejský název jezera, spojovaný se slovem kinnor, harfa, podle tvaru jezera. Jezero se jmenuje také Genezaretské, Galilejské nebo Tiberiadské moře.
-Kotva pravdy
-Co v kapitole je
-Stav
-Kázání z lodi, zázračný lov, povolání rybářů
-Písmo — Lk 5,1–11; Mk 1,16–20
-Dvě lodě u břehu, loď patří Šimonovi
-Písmo — Lk 5,2–3
-Loď z Nazareta čeká na břehu a večer je spuštěna na vodu
-PŘÍBĚH — obraz této knihy
-Rozhovor „proč ji neprodáš?“
-PŘÍBĚH
-4 · Sůl a ryba
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Kázání z lodi, zázračný lov, povolání rybářů | Písmo — Lk 5,1–11; Mk 1,16–20 |
+| Dvě lodě u břehu, loď patří Šimonovi | Písmo — Lk 5,2–3 |
+| Loď z Nazareta čeká na břehu a večer je spuštěna na vodu | PŘÍBĚH — obraz této knihy |
+| Rozhovor „proč ji neprodáš?“ | PŘÍBĚH |
+
+## 4 · Sůl a ryba
+
+### Příběh
+
 Ryby, které se toho dne vytáhly z jezera, se nedaly sníst všechny najednou. Bylo jich víc, než kolik unesl břeh, a kdo žije u vody, ví, co to znamená: do tří dnů je po nich.
 A tak je nesli do Magdaly. Bylo to městečko dál po břehu, kde se z ryb dělaly zásoby pro celou zemi. Sůl tam bylo cítit dřív, než bylo město vidět. Vozili ji na velbloudech od Slaného moře, jak se říkalo vodě na jihu, ve které nežije nic, a ženy ji hrstmi sypaly na ryby, vrstvu za vrstvou, do dřevěných kádí.
 Tesař šel s nimi. Stál u kádě a díval se, jak žena s rukama rozpraskanýma od soli skládá ryby do řad.
@@ -135,27 +152,29 @@ Večer pluli zpátky. Kádě v dálce voněly. Šimon, mlčenlivý po celé cest
 Sůl není vidět.
 Vidět je chléb, který chutná,
 a ryba, která vydrží.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Mt 5,13 — „Vy jste sůl země“; sůl, která ztratí chuť, není k ničemu. Evangelium to klade do Horského kázání. Kniha ta slova přenáší k jezeru, k lidem, kteří sůl znali na vlastních rukou.
 • Mk 9,50 — „Mějte v sobě sůl a žijte spolu v pokoji.“ Sůl uvnitř, jako království uvnitř (kap. 9).
 • Lv 2,13; Nu 18,19; 2 Pa 13,5 — „sůl smlouvy“ (hebrejsky berit melach): oběti se solily a smlouva soli byla trvalá.
-• Magdala — rybářské město na západním břehu jezera, řecky Tarichea; název se odvozuje od slova pro nakládané, solené ryby. (Před tiskem ověřit v odborné literatuře.)
+• Magdala — rybářské město na západním břehu jezera, řecky Tarichea; název se odvozuje od slova pro nakládané, solené ryby.
 • Slané moře — starozákonní jméno pro Mrtvé moře (Gn 14,3). Sůl se v Palestině získávala i odtud.
-Kotva pravdy
-Co v kapitole je
-Stav
-„Vy jste sůl země“; sůl, která ztratí chuť
-Písmo — Mt 5,13 (přeneseno k jezeru)
-„Mějte v sobě sůl“
-Písmo — Mk 9,50
-Sůl smlouvy
-Písmo — Lv 2,13
-Magdala jako město solených ryb
-Historie — před tiskem ověřit
-Žena u kádě, chléb a sůl, odpověď „Sůl nic nedělá. Je.“
-PŘÍBĚH — obraz této knihy
-5 · Dvanáct na palubě
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| „Vy jste sůl země“; sůl, která ztratí chuť | Písmo — Mt 5,13 (přeneseno k jezeru) |
+| „Mějte v sobě sůl“ | Písmo — Mk 9,50 |
+| Sůl smlouvy | Písmo — Lv 2,13 |
+| Magdala jako město solených ryb | Historie — před tiskem ověřit |
+| Žena u kádě, chléb a sůl, odpověď „Sůl nic nedělá. Je.“ | PŘÍBĚH — obraz této knihy |
+
+## 5 · Dvanáct na palubě
+
+### Příběh
+
 Loď byla postavená pro dvanáct. Tak to tesař řekl v Nazaretě, když se ho sousedé ptali, a mysleli, že žertuje. Teď plula po jezeře s dvanácti lavicemi, které čekaly na dvanáct lidí, a ten, kdo je vyhoblil, věděl, kdo si na ně sedne.
 Vystoupil na horu a zavolal ty, které chtěl. Nebyli to nejučenější, nejsilnější ani nejpobožnější. Zavolal je tak, jak volá člověk, který ví, že lavice jsou vyhoblované právě pro ně.
 Šimona, rybáře, kterému dal jméno Petr, Skála. Jakuba a Jana, syny Zebedeovy, kterým se říkalo Synové hromu, protože hřměli dřív, než přemýšleli. Ondřeje, který přivedl bratra. Filipa a Bartoloměje. Matouše, který byl celník a uměl počítat. Tomáše, který chtěl vidět. Jakuba Alfeova a Tadeáše. Šimona, zvaného Horlivec. A Judu z Kerijótu, který dostal měšec, protože uměl zacházet s penězi; tesař na něj hleděl o chvíli déle než na ostatní.
@@ -167,25 +186,28 @@ Loď už nesla víc než dřevo. Teď nesla i jména.
 Dvanáct lavic, dvanáct jmen.
 Na zádi polštář pro toho,
 kdo se nebojí spát.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Mk 3,13–19; Mt 10,1–4; Lk 6,12–16 — povolání dvanácti. Seznamy se mírně liší (třeba Tadeáš a Juda Jakubův).
 • Mk 3,17 — Jakub a Jan dostali přízvisko Boanerges, „synové hromu“.
 • Jn 12,6; 13,29 — Juda spravoval společný měšec.
 • Mk 4,38 — Ježíš spí na zádi „na polštáři“; kniha polštář uvádí předem.
 • Číslo dvanáct — dvanáct kmenů Izraele (srov. Mt 19,28; Zj 21,12–14).
-Kotva pravdy
-Co v kapitole je
-Stav
-Dvanáct učedníků a jejich jména
-Písmo — Mk 3,13–19
-Juda a měšec
-Písmo — Jn 12,6
-Dvanáct lavic a polštář na zádi
-PŘÍBĚH — vychází z Mk 4,38
-Že loď byla postavena pro dvanáct
-PŘÍBĚH — obraz této knihy
-6 · Bouře na jezeře
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Dvanáct učedníků a jejich jména | Písmo — Mk 3,13–19 |
+| Juda a měšec | Písmo — Jn 12,6 |
+| Dvanáct lavic a polštář na zádi | PŘÍBĚH — vychází z Mk 4,38 |
+| Že loď byla postavena pro dvanáct | PŘÍBĚH — obraz této knihy |
+
+## 6 · Bouře na jezeře
+
+### Příběh
+
 Kinneret umí vyrobit bouři za hodinu. Větry se řítí z hor do kotliny jezera jako voda do násypky a hladina, která ráno nesla nebe, umí k večeru nést strach.
 Toho večera pluli na druhý břeh. Tesař si lehl na zádi, hlavu na polštáři, který si sám vyhoblil, a usnul. Zvedla se bouře, vlny přepadávaly přes boky a loď se plnila vodou. Učedníci, lidé od vody, vylévali ji a křičeli proti větru.
 A on spal. Spal tak, jak spí ten, kdo svou loď stavěl sám a zná každé její žebro.
@@ -198,24 +220,27 @@ Později, když o tom vyprávěli, si někdo vzpomněl na starý žalm o těch, 
 Kdo svou loď zná, může spát.
 Kdo ji nezná, volá.
 A bouře poslouchá toho, kdo ji postavil.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Mk 4,35–41 (také Mt 8,23–27; Lk 8,22–25) — bouře, Ježíš spí na zádi na polštáři, ztišení, otázka „kdo to je?“.
 • Ž 107,23–30 — žalm o mořeplavcích, který církev od počátku četla jako pozadí tohoto příběhu.
 • Jon 1 — Jonáš spí na dně lodi v bouři; bouře ustane, když je vhozen do moře. Kontrast: tady spí ten, kdo bouři nezpůsobil.
 • Hořčičné zrno nepatří k tomuto příběhu; je z jiných míst (Mt 17,20; Lk 17,6). V Mk 4,40 Ježíš učedníkům vyčítá malou víru.
-Kotva pravdy
-Co v kapitole je
-Stav
-Bouře, spící Ježíš, ztišení, otázka „kdo to je?“
-Písmo — Mk 4,35–41
-Žalm 107 jako pozadí
-Písmo a liturgická tradice
-Loď je ta z kapitoly 1, polštář na zádi
-PŘÍBĚH — obraz této knihy
-„Zná každé její žebro“
-PŘÍBĚH — obraz této knihy
-7 · Chléb na druhém břehu
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Bouře, spící Ježíš, ztišení, otázka „kdo to je?“ | Písmo — Mk 4,35–41 |
+| Žalm 107 jako pozadí | Písmo a liturgická tradice |
+| Loď je ta z kapitoly 1, polštář na zádi | PŘÍBĚH — obraz této knihy |
+| „Zná každé její žebro“ | PŘÍBĚH — obraz této knihy |
+
+## 7 · Chléb na druhém břehu
+
+### Příběh
+
 Dvanáct se vrátilo z cest a chtěli vyprávět, ale kolem nich bylo tolik lidí, že neměli čas ani jíst. „Pojďte pryč,“ řekl tesař, „na pusté místo, a trochu si odpočiňte.“ A nastoupili do lodi.
 Lidé je ale viděli odplouvat a vyběhli po břehu. Šli rychleji, než loď plula proti větru, a když přirazila, čekalo tam už pět tisíc mužů, nepočítaje ženy a děti.
 Tesař vystoupil a díval se na ně. Byli jako ovce bez pastýře. Učil je celý den, a když se začalo stmívat, přišli k němu učedníci. „Místo je pusté a je pozdě. Pošli je pryč, ať si ve vsích koupí něco k jídlu.“
@@ -227,26 +252,28 @@ Chlapec šel domů s prázdnou brašnou a ten večer dlouho neusnul. Nemohl poch
 Co držíš v dlani, je málo.
 Co dáš, stačí všem.
 A zbude dvanáct košů.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Mk 6,30–44; Mt 14,13–21; Lk 9,10–17; Jn 6,1–14 — nasycení pěti tisíc. Chlapce s chleby a rybami uvádí jen Jan (6,9). Dvanáct košů zbytků zmiňují všechna čtyři evangelia.
 • Mk 6,34; Nu 27,17 — „ovce bez pastýře“.
 • Ječný chléb byl chléb chudých.
 • Dvanáct košů se v tradici čte ve vztahu ke dvanácti učedníkům a dvanácti kmenům Izraele.
-Kotva pravdy
-Co v kapitole je
-Stav
-Nasycení pěti tisíc, dvanáct košů
-Písmo — Mk 6,30–44; Jn 6,1–14
-Chlapec s chleby a rybami
-Písmo — Jn 6,9
-Loď jako místo odpočinku, které lidé předběhnou
-Písmo — Mk 6,32–33
-Ryby solené a sušené
-PŘÍBĚH — doplnění (Jan říká jen „ryby“)
-Každý z dvanácti nese jeden koš
-PŘÍBĚH — obraz této knihy
-8 · Kroky po vodě
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Nasycení pěti tisíc, dvanáct košů | Písmo — Mk 6,30–44; Jn 6,1–14 |
+| Chlapec s chleby a rybami | Písmo — Jn 6,9 |
+| Loď jako místo odpočinku, které lidé předběhnou | Písmo — Mk 6,32–33 |
+| Ryby solené a sušené | PŘÍBĚH — doplnění (Jan říká jen „ryby“) |
+| Každý z dvanácti nese jeden koš | PŘÍBĚH — obraz této knihy |
+
+## 8 · Kroky po vodě
+
+### Příběh
+
 Hned potom poslal tesař učedníky do lodi, aby plula napřed na druhý břeh, než propustí zástupy. Sám vystoupil na horu, aby se modlil. Přišel večer a on tam byl sám.
 Loď byla uprostřed jezera, daleko od břehu. Vítr jí foukal do tváře a veslaři se namáhali proti němu. Byla tma. Tesař je viděl z hory, jak se trápí, a před úsvitem, ve čtvrté noční hlídce, šel k nim. Po vodě.
 Loď, kterou postavil, nesla dvanáct lidí a nebyl v ní on. Poprvé. Vlny bily do žeber, která se neohnula. Držela. Držela, i když byl stavitel daleko.
@@ -261,24 +288,27 @@ Vešli spolu do lodi a vítr utichl. Nikdo se nezeptal, kdo to je. Seděli jako 
 Loď unese i bez stavitele.
 Člověk unese krok po vodě,
 dokud se nedívá na vlny.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Mt 14,22–33; Mk 6,45–52; Jn 6,15–21 — chůze po jezeře. Šimonův krok po vodě je jen u Matouše (14,28–31).
 • Čtvrtá noční hlídka — přibližně mezi třetí a šestou hodinou ranní (římské dělení noci).
 • „Já jsem“ (řecky egó eimi, Mt 14,27) — slova, která zní jako Boží jméno z Ex 3,14.
 • Ž 77,20 — žalm o Boží cestě přes moře a veliké vody.
-Kotva pravdy
-Co v kapitole je
-Stav
-Ježíš jde po jezeře, Šimon klesá
-Písmo — Mt 14,22–33
-Čtvrtá noční hlídka
-Historie — římské dělení noci
-Loď drží bez stavitele
-PŘÍBĚH — obraz této knihy
-Loď z kapitoly 1 jako ta, v níž sedí dvanáct
-PŘÍBĚH — obraz této knihy
-9 · Království je uvnitř vás
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Ježíš jde po jezeře, Šimon klesá | Písmo — Mt 14,22–33 |
+| Čtvrtá noční hlídka | Historie — římské dělení noci |
+| Loď drží bez stavitele | PŘÍBĚH — obraz této knihy |
+| Loď z kapitoly 1 jako ta, v níž sedí dvanáct | PŘÍBĚH — obraz této knihy |
+
+## 9 · Království je uvnitř vás
+
+### Příběh
+
 Farizeové se přišli ptát tak, jak se ptají ti, kdo chtějí někoho chytit za slovo: „Kdy přijde království Boží?“
 Stáli na břehu, kde byla loď přivázaná. Tesař se díval na ně a na vodu za nimi a odpověděl ne na otázku, ale na to, co za ní stálo.
 „Království Boží nepřichází tak, aby se dalo pozorovat. Nikdo neřekne: Hle, tady je, nebo: Hle, tamhle. Království Boží je uvnitř vás. A je i mezi vámi, kdykoli sedíte v jedné lodi.“
@@ -292,23 +322,26 @@ Království nepřijde s kalendářem.
 Je uvnitř
 a je mezi vámi,
 kdykoli sedíte v jedné lodi.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Lk 17,20–21 — řecké entos hymón znamená „uvnitř vás“ i „mezi vámi, ve vašem středu“. Překlady se dělí; kniha drží obojí.
 • Jr 31,33; Ez 36,26; 2 Kor 3,3 — nová smlouva psaná na srdce, ne na kamenné desky.
 • Lk 6,45 — z hojnosti srdce mluví ústa.
-Kotva pravdy
-Co v kapitole je
-Stav
-Odpověď farizeům o království
-Písmo — Lk 17,20–21 (čtení „uvnitř“ i „mezi“ jsou možná)
-Srdce jako místo nové smlouvy
-Písmo — Jr 31,33; Ez 36,26; 2 Kor 3,3
-Jméno lodi „Království srdce“
-PŘÍBĚH — odvozeno z Lk 17,21
-Loď pluje dovnitř
-PŘÍBĚH — obraz této knihy
-10 · Dítě uprostřed
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Odpověď farizeům o království | Písmo — Lk 17,20–21 (čtení „uvnitř“ i „mezi“ jsou možná) |
+| Srdce jako místo nové smlouvy | Písmo — Jr 31,33; Ez 36,26; 2 Kor 3,3 |
+| Jméno lodi „Království srdce“ | PŘÍBĚH — odvozeno z Lk 17,21 |
+| Loď pluje dovnitř | PŘÍBĚH — obraz této knihy |
+
+## 10 · Dítě uprostřed
+
+### Příběh
+
 Cestou se učedníci pohádali. Neříkali to nahlas, ale tesař to slyšel: šlo o lavice. Kdo sedí blíž k zádi? Kdo má víc práce? Kdo je víc? Dvanáct lavic bylo rozdělených spravedlivě, a přece se člověk dokázal přít o to, která je nejblíž polštáři.
 V Kafarnau, v domě, kde přenocovali, se zeptal: „O čem jste se cestou dohadovali?“ Mlčeli.
 Posadil se, zavolal dvanáct a řekl: „Kdo chce být první, ať je ze všech poslední a všem sluhou.“
@@ -322,24 +355,27 @@ A loď se otočila.
 Kdo chce být první, ať sedne doprostřed.
 Dítě ukáže prstem.
 Loď se otočí.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Mk 9,33–37; Mt 18,1–5; Lk 9,46–48 — spor o to, kdo je největší, a dítě postavené doprostřed.
 • Mk 10,13–16 — „Nechte děti přicházet ke mně“ (vlastní překlad).
 • Mt 18,3 — kdo se nestane jako děti, do království nevstoupí.
 • Pozdější legenda ztotožňuje dítě s Ignatiem Antiochijským; kniha je nepojmenovává.
-Kotva pravdy
-Co v kapitole je
-Stav
-Spor o největšího, dítě uprostřed
-Písmo — Mk 9,33–37
-„Nechte děti přicházet“
-Písmo — Mk 10,14
-Spor o lavice v lodi, dítě sedí uprostřed
-PŘÍBĚH — obraz této knihy
-Dítě ukazuje směr a loď se obrací
-PŘÍBĚH — obraz této knihy
-11 · Největší bouře
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Spor o největšího, dítě uprostřed | Písmo — Mk 9,33–37 |
+| „Nechte děti přicházet“ | Písmo — Mk 10,14 |
+| Spor o lavice v lodi, dítě sedí uprostřed | PŘÍBĚH — obraz této knihy |
+| Dítě ukazuje směr a loď se obrací | PŘÍBĚH — obraz této knihy |
+
+## 11 · Největší bouře
+
+### Příběh
+
 V Jeruzalémě houstl vzduch jako před bouří. Tesař to věděl. Říkal to učedníkům třikrát a nechtěli mu věřit, protože lidé nevěří, že loď, kterou znají, může jít do hlubiny.
 Dávno předtím řekl těm, kdo žádali znamení, že jim bude dáno jediné: znamení Jonášovo. Jako byl Jonáš tři dny a tři noci v břiše velké ryby, tak bude on tři dny a tři noci v srdci země.
 Přišla poslední večeře: stůl, chléb, víno a loď připravená na noc, uprostřed města, daleko od vody. Potom zahrada, kde se potil jako ten, kdo cítí každou vlnu dřív, než přijde. Potom bouře, jaká tu nikdy nebyla: polibek zrady, mlčení před soudci, ruce, které ještě včera držely chléb. Šimon, který kdysi šel po vodě, zapřel třikrát, že ho zná. Zakokrhal kohout a tesař se na něj otočil. Šimon vyšel ven a plakal hořce.
@@ -350,25 +386,28 @@ Loď stála v Kafarnau vytažená na břehu a nikdo se k ní neodvážil. Dvaná
 Žádná loď nikdy nedoplula tak hluboko jako ten, kdo ji postavil.
 Stavěl ji pro bouři.
 A tohle byla ta bouře.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Mt 12,38–40; Jon 1,17 — Jonášovo znamení: tři dny a tři noci „v srdci země“ (Mt 12,40).
 • Mk 14–15; Lk 22–23; Jn 18–19 — poslední večeře, zahrada, soud a ukřižování; Šimonovo zapření (Lk 22,54–62).
 • Jn 19,30 — „Je dokonáno.“
 • Mk 15,42–47; Jn 19,38–42 — Josef z Arimatie, pohřeb, kámen.
-• Gal 3,13; Dt 21,23 — dřevo kříže. Raná církevní tradice čte kříž také jako stěžeň lodi církve (např. Hippolytos). (Před tiskem ověřit.)
-Kotva pravdy
-Co v kapitole je
-Stav
-Jonášovo znamení, „v srdci země“
-Písmo — Mt 12,40
-Poslední večeře, zahrada, zapření, ukřižování, pohřeb
-Písmo — evangelia o umučení
-Dřevo kříže vedle dřeva lodi
-Tradice — kříž jako stěžeň (ověřit)
-Prázdná loď vytažená na břeh, polštář na zádi
-PŘÍBĚH — obraz této knihy
-12 · Tři Marie
-Příběh
+• Gal 3,13; Dt 21,23 — dřevo kříže. Raná církevní tradice čte kříž také jako stěžeň lodi církve (např. Hippolytos).
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Jonášovo znamení, „v srdci země“ | Písmo — Mt 12,40 |
+| Poslední večeře, zahrada, zapření, ukřižování, pohřeb | Písmo — evangelia o umučení |
+| Dřevo kříže vedle dřeva lodi | Tradice — kříž jako stěžeň (ověřit) |
+| Prázdná loď vytažená na břeh, polštář na zádi | PŘÍBĚH — obraz této knihy |
+
+## 12 · Tři Marie
+
+### Příběh
+
 Marie, hebrejsky Mirjam, bylo tehdy jedno z nejběžnějších ženských jmen v zemi. V každé vesnici jich bylo několik a nikdo se nad tím nepozastavoval. Ale ten den na Golgotě zůstaly tři. Muži z lodi utekli. Tři Marie zůstaly stát.
 První byla matka. Ta, která kdysi položila dlaň na kýl a neřekla nic. Teď neměla co říct ani co položit. Stála. Nikdo ji nevolal pryč a nikdo ji nedokázal pohnout.
 Druhá byla z Magdaly, z města u vody, které vonělo solí, protože se tam z jezerních ryb dělaly zásoby pro celou zemi. Šla za tesařem od chvíle, kdy jí vrátil ji samu, a od té doby ho nenechala samotného ani tam, kde se samota nedala unést.
@@ -383,32 +422,32 @@ Stály, když ostatní utekli.
 Přišly první, když svítalo.
 Kdo takto pluje, plachtu nepotřebuje:
 vítr si ho najde sám.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Jn 19,25 — u kříže stála Ježíšova matka, její sestra Marie Kleofášova a Marie Magdalská. Čtení „tři Marie“ je obvyklé, ale ne jediné možné: někteří vykladači tam vidí čtyři ženy (sestra matky by pak byla Salome, srov. Mk 15,40).
 • Mk 15,40–41; 16,1–4 — ženy sledují ukřižování, ráno nesou vonné oleje a ptají se, kdo jim odvalí kámen.
-• Mt 28,1–10 — k hrobu přicházejí Marie Magdalská a druhá Marie; zazní „Nebojte se“. Východní tradice nazývá Marii Magdalskou „rovnou apoštolům“ a Hippolytos ji kolem r. 235 označil za „apoštolku apoštolů“. (před tiskem ověřit)
+• Mt 28,1–10 — k hrobu přicházejí Marie Magdalská a druhá Marie; zazní „Nebojte se“. Východní tradice nazývá Marii Magdalskou „rovnou apoštolům“ a Hippolytos ji kolem r. 235 označil za „apoštolku apoštolů“.
 • Lk 8,2 — Marie zvaná Magdalská, z níž vyšlo sedm zlých duchů.
-• Magdala — rybářské městečko na západním břehu jezera (hebrejsky migdal, „věž“), řecky Tarichea (od slova pro nakládané, solené ryby). (Před tiskem ověřit v odborné literatuře.)
+• Magdala — rybářské městečko na západním břehu jezera (hebrejsky migdal, „věž“), řecky Tarichea (od slova pro nakládané, solené ryby).
 • Legenda o Saintes-Maries-de-la-Mer — provensálská tradice rozvíjená od středověku. Podání se liší počtem a jmény žen. Každý květen k moři putují Romové a vynášejí sochu Sáry.
-Kotva pravdy
-Co v kapitole je
-Stav
-Tři ženy stojí u kříže
-Písmo — Jn 19,25 (čtení „tři Marie“ je obvyklé, ne jediné)
-Dvě Marie jdou za svítání k hrobu, „Nebojte se“
-Písmo — Mt 28,1–10
-Magdala jako město solených ryb
-Historie — před tiskem ověřit
-Loď bez plachet, břeh Provence
-Legenda — podání se liší
-Matčina dlaň na kýlu, mlčení pod křížem
-PŘÍBĚH — obraz této knihy
-Tesař neušil plachtu, aby pluli ti, kdo věří
-PŘÍBĚH — obraz této knihy
-Že legendární loď měla totéž jméno jako loď tesaře
-PŘÍBĚH — kniha to netvrdí jako fakt
-13 · Cesta do Emauz
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Tři ženy stojí u kříže | Písmo — Jn 19,25 (čtení „tři Marie“ je obvyklé, ne jediné) |
+| Dvě Marie jdou za svítání k hrobu, „Nebojte se“ | Písmo — Mt 28,1–10 |
+| Magdala jako město solených ryb | Historie — před tiskem ověřit |
+| Loď bez plachet, břeh Provence | Legenda — podání se liší |
+| Matčina dlaň na kýlu, mlčení pod křížem | PŘÍBĚH — obraz této knihy |
+| Tesař neušil plachtu, aby pluli ti, kdo věří | PŘÍBĚH — obraz této knihy |
+| Že legendární loď měla totéž jméno jako loď tesaře | PŘÍBĚH — kniha to netvrdí jako fakt |
+
+## 13 · Cesta do Emauz
+
+### Příběh
+
 Ten samý den, kdy dvě Marie našly prázdný hrob, šli dva muži z Jeruzaléma do vsi, která se jmenovala Emauzy. Byly to dvě tři hodiny cesty. Šli pomalu, jako chodí lidé, kteří nemají kam spěchat, protože to, k čemu spěchali, skončilo.
 Jeden se jmenoval Kleofáš. Jméno toho druhého evangelium nezapsalo. Mluvili o všem, co se stalo, a čím víc o tom mluvili, tím víc to bolelo.
 Dohonil je třetí. Šel stejným směrem, stejně pomalu, a zeptal se: „O čem se to cestou bavíte, že jste tak smutní?“
@@ -424,24 +463,27 @@ Nechali večeři stát, vstali a šli zpátky do Jeruzaléma, i když byla tma. 
 Srdce hořelo dřív, než oči poznaly.
 Oči poznaly při chlebu.
 Cesta byla stejná. Šli jinak.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Lk 24,13–35 — cesta do Emauz. Kleofáš je jmenován (24,18), druhý učedník ne. Lukáš udává vzdálenost šedesát honů, asi 11 km; rukopisy se liší a poloha Emauz se neurčuje jednoznačně.
 • Lk 24,32 — „Nehořelo nám srdce…?“ (vlastní překlad); srdce, které hoří, poznává dřív než oči.
 • Lk 24,30–31 — vzal, požehnal, lámal, podal: stejný sled gest jako při nasycení (Lk 9,16) a při poslední večeři (Lk 22,19).
 • Cesta do Emauz je v tradici obrazem poutníka; zrovna tak se čte pouť po Caminu.
-Kotva pravdy
-Co v kapitole je
-Stav
-Cesta do Emauz, neznámý společník, vykládání Písma, lámání chleba
-Písmo — Lk 24,13–35
-„Nehořelo nám srdce?“
-Písmo — Lk 24,32
-Chléb a sůl jako zvyk pohostinnosti, který je přiměje zastavit se
-PŘÍBĚH — vazba na kapitolu 1
-Poprvé nešli pomalu
-PŘÍBĚH — doplnění
-14 · Zavřené dveře
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Cesta do Emauz, neznámý společník, vykládání Písma, lámání chleba | Písmo — Lk 24,13–35 |
+| „Nehořelo nám srdce?“ | Písmo — Lk 24,32 |
+| Chléb a sůl jako zvyk pohostinnosti, který je přiměje zastavit se | PŘÍBĚH — vazba na kapitolu 1 |
+| Poprvé nešli pomalu | PŘÍBĚH — doplnění |
+
+## 14 · Zavřené dveře
+
+### Příběh
+
 Večer toho dne byli učedníci pohromadě za zavřenými dveřmi, protože se báli. Dveře měly závoru. V dílně v Nazaretě byly dveře takové, že držely vítr venku a teplo uvnitř. Tyhle držely venku svět a uvnitř nechávaly narůstat strach.
 Uprostřed místnosti se najednou objevil někdo, komu nebylo třeba otvírat. „Pokoj vám,“ řekl.
 Ukázal jim ruce a bok. Radovali se, i když se ještě třásli. Zopakoval: „Pokoj vám. Jako mne poslal Otec, tak já posílám vás.“ A dýchl na ně: „Přijměte Ducha.“
@@ -454,23 +496,26 @@ Večer vyšel Tomáš na dvůr. Dveře za ním zůstaly otevřené.
 Dveře se zavírají strachem.
 Pokoj projde i zavřenými.
 Kdo chtěl vidět, smí vidět.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Jn 20,19–29 — zjevení za zavřenými dveřmi a Tomáš. „Pokoj vám“ je hebrejský pozdrav šalom. Jan připomíná Tomášovo přízvisko Didymos, „dvojče“ (20,24).
 • Jn 11,16; 14,5 — dřívější scény s Tomášem: ochota jít s Ježíšem i na smrt a otázka „jak můžeme znát cestu?“.
 • Mk 9,50 — „žijte spolu v pokoji“ (kapitola 4): sůl a pokoj patří k sobě.
-Kotva pravdy
-Co v kapitole je
-Stav
-Zavřené dveře, „Pokoj vám“, Tomáš, „Pán můj a Bůh můj“
-Písmo — Jn 20,19–29
-Tomáš, „který chtěl vidět“
-Písmo — Jn 20,25; kapitola 5 z této role vychází
-Dveře dílny proti zavřeným dveřím
-PŘÍBĚH — vazba na kapitolu 1
-Tomáš vychází na dvůr a nechává dveře otevřené
-PŘÍBĚH — doplnění
-15 · Oheň na břehu
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Zavřené dveře, „Pokoj vám“, Tomáš, „Pán můj a Bůh můj“ | Písmo — Jn 20,19–29 |
+| Tomáš, „který chtěl vidět“ | Písmo — Jn 20,25; kapitola 5 z této role vychází |
+| Dveře dílny proti zavřeným dveřím | PŘÍBĚH — vazba na kapitolu 1 |
+| Tomáš vychází na dvůr a nechává dveře otevřené | PŘÍBĚH — doplnění |
+
+## 15 · Oheň na břehu
+
+### Příběh
+
 Po všem, co se stalo, se Šimon vrátil k tomu, co uměl. „Jdu lovit,“ řekl ostatním. „Půjdeme s tebou,“ řekli.
 Nastoupili do lodi. Bylo jich sedm a loď měla dvanáct lavic, takže pět zůstalo prázdných. Prázdný zůstal i polštář na zádi.
 Celou noc nechytili nic. Znovu.
@@ -491,24 +536,27 @@ Třikrát zapřel,
 třikrát se ho zeptal:
 miluješ mě?
 A síť se tentokrát neroztrhla.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Jn 21,1–19 — zjevení u jezera, plná síť, oheň na břehu, snídaně, trojí otázka. Jan jako jediný uvádí 153 ryb a to, že se síť neroztrhla (21,11).
 • Lk 5,6 — při prvním lovu se sítě trhaly; kontrast s Jn 21,11.
 • Jn 18,17–27 — Šimonovo trojí zapření, proti němu trojí otázka.
 • Číslo 153 se v tradici vykládá různě; kniha je ponechává bez výkladu.
-Kotva pravdy
-Co v kapitole je
-Stav
-Zjevení u jezera, plná síť, oheň, chléb a ryba, trojí otázka
-Písmo — Jn 21,1–19
-153 ryb a síť se neroztrhla
-Písmo — Jn 21,11
-Prázdné lavice a prázdný polštář
-PŘÍBĚH — z kapitol 5 a 6
-Osolená ryba na ohni
-PŘÍBĚH — doplnění
-16 · Navicella
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Zjevení u jezera, plná síť, oheň, chléb a ryba, trojí otázka | Písmo — Jn 21,1–19 |
+| 153 ryb a síť se neroztrhla | Písmo — Jn 21,11 |
+| Prázdné lavice a prázdný polštář | PŘÍBĚH — z kapitol 5 a 6 |
+| Osolená ryba na ohni | PŘÍBĚH — doplnění |
+
+## 16 · Navicella
+
+### Příběh
+
 Když tesař zmizel z dohledu, loď zůstala. A lidé, kteří v ní pluli, jí začali říkat svá. Neměli přístav; plavili se od města k městu a od domu k domu a všude nesli zprávu, že ten, kdo loď postavil, žije.
 Prvním kapitánem byl rybář Šimon, kterému se říkalo Skála. V den, kdy zněl oheň a každý rozuměl každému, mu na palubu nastoupily tisíce lidí najednou. A od té doby loď plula: někdy pod plachtami větru, někdy na vesla slz.
 Plula za císařů, kteří ji chtěli potopit, a přežila. Plula katakombami a vynořila se. Plula, když ji císařové přestali pronásledovat a začali ji obdivovat, a to byla zkouška těžší: loď, která je příliš velká, má kormidelníka, který zapomene, že ji stavěl tesař, a myslí si, že ji postavila říše.
@@ -518,26 +566,28 @@ A kdykoli jí hrozilo nejvíc, kdykoli posádka zapomněla, proč pluje, přiše
 Loď, v níž se hádají.
 Loď, která zatéká.
 Loď, která pluje.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Heb 6,19–20 — naděje jako kotva duše, která sahá „za oponu“, kam vstoupil Ježíš. Obraz kotvy spuštěné nahoru je výklad tohoto verše.
 • Mt 16,18 — „na této skále“ (Petr znamená skála). Výklad slov se v církvích liší.
 • Sk 2 — letnice, „jazyky jako z ohně“.
-• Navicella — latinsky „loďka“. Církev jako loď je obraz už od raného křesťanství (Tertullian kolem r. 200, O křtu 12); latinské navis, loď, žije dál v chrámové lodi kostela. Florentský malíř Giotto vytvořil kolem r. 1300 v Římě mozaiku Navicella s lodí apoštolů v bouři (Mt 14). (Před tiskem ověřit.)
-Kotva pravdy
-Co v kapitole je
-Stav
-Letnice, Šimon jako první kapitán
-Písmo — Sk 2; Mt 16,18 (výklad se mezi církvemi liší)
-Kotva duše
-Písmo — Heb 6,19–20
-Církev jako loď, navicella
-Tradice — od 2.–3. století
-Dějiny církve zkrácené do obrazu
-Historie — zkráceně
-Babičky, které potají učily modlitbě
-PŘÍBĚH — zobecňující obraz
-17 · Nové nebe a nová země
-Příběh
+• Navicella — latinsky „loďka“. Církev jako loď je obraz už od raného křesťanství (Tertullian kolem r. 200, O křtu 12); latinské navis, loď, žije dál v chrámové lodi kostela. Florentský malíř Giotto vytvořil kolem r. 1300 v Římě mozaiku Navicella s lodí apoštolů v bouři (Mt 14).
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Letnice, Šimon jako první kapitán | Písmo — Sk 2; Mt 16,18 (výklad se mezi církvemi liší) |
+| Kotva duše | Písmo — Heb 6,19–20 |
+| Církev jako loď, navicella | Tradice — od 2.–3. století |
+| Dějiny církve zkrácené do obrazu | Historie — zkráceně |
+| Babičky, které potají učily modlitbě | PŘÍBĚH — zobecňující obraz |
+
+## 17 · Nové nebe a nová země
+
+### Příběh
+
 Na konci Bible stojí kniha, která se jmenuje Zjevení, a na jejím konci stojí přístav.
 Jan, starý vězeň na ostrově Patmos, ho uviděl ve vidění: nové nebe a novou zemi. A moře už nebylo. Ne proto, že by se rozzuřilo a vyschlo. Moře, které v jeho době znamenalo chaos a strach z hlubiny, se uklidnilo tak, že nebylo třeba ho jmenovat. Před trůnem leželo moře skleněné, podobné křišťálu.
 A přístav sestoupil k nim. Nový Jeruzalém, jak napsal Jan, sestupující z nebe od Boha, připravený jako nevěsta ozdobená pro svého muže. A hlas od trůnu řekl: „Hle, příbytek Boží uprostřed lidí! Bude přebývat s nimi a setře jim každou slzu z očí. Smrti už nebude, ani nářku, ani bolesti. Co bylo dřív, pominulo.“
@@ -549,30 +599,34 @@ A uprostřed stál tesař a jeho loď už nebyla jedna. Bylo jich tolik, kolik b
 Moře už nebylo.
 Loď, hladká od dlaní,
 stála na náměstí jako nářadí po dobré práci.
-Z Písma a tradice
+
+### Z Písma a tradice
+
 • Zj 21,1–5 — nové nebe a nová země, moře už není, Bůh přebývá s lidmi, setře každou slzu, „všechno tvořím nové“.
 • Zj 4,6; 15,2 — moře skleněné, podobné křišťálu, před trůnem.
 • Zj 22,1–5 — řeka vody života a strom života; listy k uzdravení národů.
 • Zj 7,4–9; 14,1 — sto čtyřicet čtyři tisíce pečetěných (symbolické číslo, 12 × 12 × 1000) a nesčetný zástup.
 • Moře znamená ve starozákonním a apokalyptickém jazyce chaos a nepřátelskou moc (např. Dan 7,2–3; Zj 13,1). Jeho zmizení znamená konec chaosu, ne ztrátu krásy.
 • Tradice klade Jana jako vyhnance na ostrov Patmos (Zj 1,9).
-Kotva pravdy
-Co v kapitole je
-Stav
-Nové nebe a nová země, moře už není, nový Jeruzalém
-Písmo — Zj 21,1–5
-Moře skleněné; 144 000 a nesčetný zástup
-Písmo — Zj 4,6; 7,4–9
-Řeka a strom života
-Písmo — Zj 22,1–5
-Loď na náměstí, hladká od dlaní
-PŘÍBĚH — obraz této knihy
-„Lodí tolik, kolik srdcí“
-PŘÍBĚH — obraz této knihy
-Část II · Cedr
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Nové nebe a nová země, moře už není, nový Jeruzalém | Písmo — Zj 21,1–5 |
+| Moře skleněné; 144 000 a nesčetný zástup | Písmo — Zj 4,6; 7,4–9 |
+| Řeka a strom života | Písmo — Zj 22,1–5 |
+| Loď na náměstí, hladká od dlaní | PŘÍBĚH — obraz této knihy |
+| „Lodí tolik, kolik srdcí“ | PŘÍBĚH — obraz této knihy |
+
+# ČÁST II · CEDR
+
 Také tato část patří do vyprávění ZION. Navazuje na řadu Sůl této země, na Knihu Lumi a na knihu Nirvana a sleduje jediný kmen cedru z dílny v Nazaretě až k prahu nového domu. Je označena jako příběh; fakta o síti v ní nejsou.
-18 · Město bez chuti
-Příběh
+
+## 18 · Město bez chuti
+
+### Příběh
+
 Město se jmenovalo Bezechuti, i když tak nikdy nechtělo být pojmenováno. Kdysi to bylo město jako každé jiné: trhy voněly kmínem a čerstvým chlebem, na dvorech se smály děti a u fontány si staré ženy vyprávěly, komu se kdy podařilo přežít hlad. Pak obchodníci zbohatli, král postavil vyšší hradby a jídlo, které se na trzích prodávalo, začalo chutnat jinak. Ne hůř. Jinak. Chléb byl bílý a měkký a neměl chuť. Víno bylo staré a drahé a nemělo chuť. Sliby byly dlouhé a promyšlené a neměly chuť.
 Jednoho večera, když slunce zapadalo za hradby jako uhlík zalitý vodou, přišel do města muž z Galileje. Nebyl to král ani učenec ani generál. Byl to tesař. Za sebou táhl dvoukolý vozík přikrytý plachtou z hrubého plátna a v torbě nesl hliněný kalíšek s hrubou solí.
 Sedl si pod starý fíkovník na kraji trhu, kde se scházeli ti, které si žádný hostinec nechtěl vzít dovnitř: nosiči vody, žoldáci bez žoldu, ženy, které pochovaly víc dětí, než kolik jich vychovaly. Vozík nechal stát opodál, plachtu pevně přivázanou. Kalíšek položil na zem mezi ně.
@@ -591,22 +645,25 @@ Plachta na vozíku se nepohnula. Až když se kolem opravdu setmělo a na námě
 Sůl nepotřebuje velké město.
 Stačí hrst a někdo, kdo ji rozdá.
 A pod plátnem čeká kýl.
-Z vyprávění ZION
+
+### Z vyprávění ZION
+
 • Sůl této země, epizody 1 a 2 — město Bezechuti, tesař s hliněným kalíškem soli a rozhovor pod fíkovníkem. Kniha je převypráví krátce a přidává jediné: kýl pod plátnem. Řada sama říká, že její postavy jsou archetypy a ne dějiny.
 • Mt 5,13 — slova o soli, viz kapitola 4.
-Kotva pravdy
-Co v kapitole je
-Stav
-Město Bezechuti, hliněný kalíšek, rozhovor pod fíkovníkem
-Vyprávění ZION — Sůl této země, ep. 1 (MÝTUS)
-„Vy jste sůl země“
-Písmo — Mt 5,13
-Kýl pod plátnem na vozíku, hladké místo od dlaně
-PŘÍBĚH — obraz této knihy
-Že tesař z Bezechuti je tesař z kapitol 1–17
-PŘÍBĚH — kniha to tvrdí jako obraz, ne jako dějiny
-19 · Kýl v plátně
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Město Bezechuti, hliněný kalíšek, rozhovor pod fíkovníkem | Vyprávění ZION — Sůl této země, ep. 1 (MÝTUS) |
+| „Vy jste sůl země“ | Písmo — Mt 5,13 |
+| Kýl pod plátnem na vozíku, hladké místo od dlaně | PŘÍBĚH — obraz této knihy |
+| Že tesař z Bezechuti je tesař z kapitol 1–17 | PŘÍBĚH — kniha to tvrdí jako obraz, ne jako dějiny |
+
+## 19 · Kýl v plátně
+
+### Příběh
+
 Muž, který přišel do Bezechuti poslední, nebyl mladý. Nesl na sobě prach z dlouhé cesty a v očích měl tu zvláštní směs únavy a jistoty, jakou mívají lidé, kterým bylo řečeno něco, čemu nikdo jiný nevěří, a přesto to nepřestali dělat. Jmenoval se Noe.
 U ohně pod fíkovníkem, kde se teď scházelo víc lidí než první noc, řekl: „Přicházím s jinou zprávou než ostatní. Voda, o které se zpívá, přijde víc, než čekáte. A bude potřeba loď.“
 „Jaká voda?“ zeptal se žoldák a ruka mu sklouzla k místu, kde dřív nosil meč.
@@ -628,23 +685,26 @@ Na spodní straně kýlu, tam, kam nikdo nevidí, bylo vyryté jméno. Nikdo ho 
 Loď se staví kolem toho, co čekalo.
 Na zádi je místo pro toho, kdo se nebojí.
 Jméno je vyryté dole.
-Z vyprávění ZION
+
+### Z vyprávění ZION
+
 • Sůl této země, epizoda 5 (Archa) — Noe, jedny dveře, Sítá s hlínou, Hanuman s kameny.
 • Sůl této země, epizoda 9 — Rádha s flétnou a otázka „kdo na té lodi bude zpívat?“.
 • Gn 6,14 — stavba archy, viz kapitola 2.
-Kotva pravdy
-Co v kapitole je
-Stav
-Archa v Bezechuti, Noe, jedny dveře, Sítá, Hanuman
-Vyprávění ZION — Sůl této země, ep. 5 (MÝTUS)
-Rádha, flétna, otázka „kdo bude zpívat?“
-Vyprávění ZION — ep. 9 (MÝTUS)
-Archa postavená kolem kýlu z Nazareta, stopa matčiny dlaně
-PŘÍBĚH — obraz této knihy
-Polštář na zádi jako místo pro toho, kdo se nebojí
-PŘÍBĚH — obraz této knihy
-20 · První paprsek
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Archa v Bezechuti, Noe, jedny dveře, Sítá, Hanuman | Vyprávění ZION — Sůl této země, ep. 5 (MÝTUS) |
+| Rádha, flétna, otázka „kdo bude zpívat?“ | Vyprávění ZION — ep. 9 (MÝTUS) |
+| Archa postavená kolem kýlu z Nazareta, stopa matčiny dlaně | PŘÍBĚH — obraz této knihy |
+| Polštář na zádi jako místo pro toho, kdo se nebojí | PŘÍBĚH — obraz této knihy |
+
+## 20 · První paprsek
+
+### Příběh
+
 Pak přišla voda. Nepřišla jako trest, jak řekl Noe, ale jako fyzika: pomalu, ze všech stran, až nebylo jasné, kde země končí a kde začíná to, co ji nese. Archa vyplula. Měla jeden krb, misku soli na stole, pár desítek trámů a kýl z jediného kmene cedru.
 Voda klesala tak pomalu, že nikdo už nepočítal dny. V podpalubí vrzaly trámy a lidé mluvili potichu, jako by hlasitější slovo mohlo něco rozbít. Někteří šeptali, že žádný břeh není.
 Mezi třetí a čtvrtou hlídkou, když je tma nejhustší, stálo u úzkého otvoru v přídi dítě. Bosé, malé, s vlasy světlými jako pěna na hraně vlny. Netahalo nikoho za rukáv. Jen zvedlo ruku a ukázalo prstem do mlhy.
@@ -659,22 +719,25 @@ Lumi lucernu zvedla. Sklo bylo teplé. Pod jejíma nohama tiše zněl kýl. Stav
 Nejdřív nevidíš břeh.
 Vidíš jen tenký paprsek.
 A to stačí.
-Z vyprávění ZION
+
+### Z vyprávění ZION
+
 • Nirvana, epizody 1 a 2 — archa po potopě, dítě Lumi na přídi, první paprsek, hora Ararat.
 • Kniha Lumi, kapitola 1 — lucerna z cedrového odřezku a střepu lodní lampy, plamen, který rozlišuje, co je, od toho, co by mohlo být.
-Kotva pravdy
-Co v kapitole je
-Stav
-Potopa, archa, dítě na přídi, první paprsek
-Vyprávění ZION — Nirvana ep. 1; Lumi 1 (MÝTUS)
-Lucerna z cedru a střepu lodní lampy
-Vyprávění ZION — Lumi 1 (MÝTUS)
-Odřezek je ze stejného kmene jako kýl z Nazareta
-PŘÍBĚH — obraz této knihy
-Dítě je Elizabeth, po babičce
-Vyprávění ZION — Lumi 1 (MÝTUS)
-21 · Dům s dveřmi bez zámku
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Potopa, archa, dítě na přídi, první paprsek | Vyprávění ZION — Nirvana ep. 1; Lumi 1 (MÝTUS) |
+| Lucerna z cedru a střepu lodní lampy | Vyprávění ZION — Lumi 1 (MÝTUS) |
+| Odřezek je ze stejného kmene jako kýl z Nazareta | PŘÍBĚH — obraz této knihy |
+| Dítě je Elizabeth, po babičce | Vyprávění ZION — Lumi 1 (MÝTUS) |
+
+## 21 · Dům s dveřmi bez zámku
+
+### Příběh
+
 Po mnoha týdnech plavby za paprskem zadrhl trup archy o skalisko. Nebylo to ztroskotání. Byl to pomalý a pevný dosed těžkého kýlu na kamenné lože. Loď se zakymácela, zahučela ve všech dřevech a poprvé po měsících se zastavila. Nastalo ticho.
 Mlha se rozestoupila a před nimi se tyčila holá skála, která vystupovala z ustupující vody jako maják vytesaný samotnou zemí. Pojmenovali ji Ararat. Žít se na ní nedalo, byla příliš strmá a kamenitá, ale dalo se na ní zapálit první oheň, který nesfoukne vítr. A z jejího vrcholu uviděli na západě zemi: zelené pláně, staré lesy nedotčené sekerou chamtivosti, bystřiny a zátoky s bílým pískem. Nebyly na ní žádné závory ani celnice. Pojmenovali ji Terra Nova.
 Na prvním svahu postavili dům. Základy vytesali z čediče, který přinesli z Araratu, a trámy z cedrů zachráněných z archy. Nejdelší trám, ten, na kterém měla spočinout celá střecha, vzal tesař z kýlu.
@@ -693,23 +756,26 @@ Prázdný kalíšek postavil na římsu nad krbem.
 Kýl se stal prahem.
 Jméno ze dna lodi je nad dveřmi.
 A dveře nemají zámek.
-Z vyprávění ZION
+
+### Z vyprávění ZION
+
 • Nirvana, epizody 2–4 — Ararat, Terra Nova, Dům Lumi z čediče a cedru, dveře bez závory, miska se solí na stole.
 • Kniha Země, kapitola 1 — Sítá se solí a semenem, semeno vyřezané nad dveřmi.
 • Kniha Lumi, kapitola 2 — dveře bez zámku.
-Kotva pravdy
-Co v kapitole je
-Stav
-Ararat, Terra Nova, Dům Lumi, dveře bez závory, sůl na stole
-Vyprávění ZION — Nirvana ep. 2–4; Lumi 2 (MÝTUS)
-Zlatý paprsek protínající vlnu a semeno nad dveřmi
-Vyprávění ZION — Nirvana ep. 4; Bodhi Gaia 1 (MÝTUS)
-Střešní trám vyřezaný z kýlu, jméno nad dveřmi, hladké místo od dlaně
-PŘÍBĚH — obraz této knihy
-Sůl z kalíšku v misce, prázdný kalíšek na římse
-PŘÍBĚH — obraz této knihy
-22 · Lucerna ukáže dnešek
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Ararat, Terra Nova, Dům Lumi, dveře bez závory, sůl na stole | Vyprávění ZION — Nirvana ep. 2–4; Lumi 2 (MÝTUS) |
+| Zlatý paprsek protínající vlnu a semeno nad dveřmi | Vyprávění ZION — Nirvana ep. 4; Bodhi Gaia 1 (MÝTUS) |
+| Střešní trám vyřezaný z kýlu, jméno nad dveřmi, hladké místo od dlaně | PŘÍBĚH — obraz této knihy |
+| Sůl z kalíšku v misce, prázdný kalíšek na římse | PŘÍBĚH — obraz této knihy |
+
+## 22 · Lucerna ukáže dnešek
+
+### Příběh
+
 Poutník vyprávěl až do chvíle, kdy se z kýlu stal práh. Tam se zarazil.
 Slunce bylo vysoko nad bránou a Rádha dávno rozdala sůl všem, kdo přišli v noci. Lumi spala opřená o kámen. Elizabeth stála u sloupu s lucernou a nevypadala unaveně.
 „A co dál?“ zeptala se. „Kýl je práh, odřezek je lucerna, jméno je nad dveřmi. Co z toho zůstalo?“
@@ -722,24 +788,31 @@ Potom se světlo rozšířilo a poutník uviděl, co by mohlo být. Rozevřel dl
 Lucerna ukáže dvě věci:
 co je a co by mohlo být.
 A tvá práce je nespletit je.
-Z vyprávění ZION
+
+### Z vyprávění ZION
+
 • Kniha Lumi, kapitoly 1 a 5 — lucerna, která rozlišuje, co je, od toho, co by mohlo být; brána a dvě kněžky.
 • Kniha Cesty (María del Camino) — pracovní koncept flotily Tres Marías: trupy I a II jako návrh, trup III jako horizont.
-Kotva pravdy
-Co v kapitole je
-Stav
-Lucerna rozlišuje, co je, od toho, co by mohlo být
-Vyprávění ZION — Lumi 1, 5 (MÝTUS)
-Flotila: dva trupy jako návrh, třetí jako horizont, kýl není položen
-STAVBA a HORIZONT — podle Knihy Cesty
-„Návrh je poctivé slovo pro loď, která ještě není“
-PŘÍBĚH — obraz této knihy
-Část III · Flotila
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Lucerna rozlišuje, co je, od toho, co by mohlo být | Vyprávění ZION — Lumi 1, 5 (MÝTUS) |
+| Flotila: dva trupy jako návrh, třetí jako horizont, kýl není položen | STAVBA a HORIZONT — podle Knihy Cesty |
+| „Návrh je poctivé slovo pro loď, která ještě není“ | PŘÍBĚH — obraz této knihy |
+
+# ČÁST III · FLOTILA
+
 Tato část patří do vyprávění ZION. Je označena, protože je jiná: není to Písmo ani dějiny, ale příběh a vize, které se k příběhu tesaře přidávají. Kdo ji číst nechce, přeskočí rovnou k Epilogu.
-23 · Flotila se schází
+
+## 23 · Flotila se schází
+
 „Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce.“
 — mantra z knihy Maitreya
-Příběh
+
+### Příběh
+
 Lucerna teď ukázala, co by mohlo být, a nic z toho zatím neplave. Přišla doba, o které staré knihy říkaly konec a nové knihy jí říkají zrození.
 Na vodě se objevily další lodě. Nebyly zázrakem. Stavěli je lidé, kteří znali příběh tesaře a rozhodli se mu dát nástupce: tři trupy pro tři oceány, pojmenované po třech podobách Marie, které poutník na své cestě přijal jako vidění.
 První, Santa María la Mayor, patří Atlantiku. Její domovský přístav je Pontevedra v Galicii, kde mořeplavci kdysi postavili baziliku své Marie. Nese roucho červené královny.
@@ -754,7 +827,9 @@ Tři lodě pro tři oceány.
 Na zádi polštář, v plachtách světlo.
 Kýl zatím není položen.
 Jméno už je vyryto.
-Z tradice a z vyprávění ZION
+
+### Z tradice a z vyprávění ZION
+
 • Tato kapitola není Písmo ani dějiny. Je to vize projektu ZION a literární vrstva, která se k příběhu tesaře přidává.
 • Santa María la Mayor — bazilika v Pontevedře, postavená v 16. století mořeplaveckým cechem.
 • Nossa Senhora de Fátima — Fátima v Portugalsku, rok 1917.
@@ -762,27 +837,24 @@ Z tradice a z vyprávění ZION
 • Wa'a kaulua — polynéská dvojitá plachetní kánoe.
 • Legenda o třech Mariích — viz kapitola 12.
 • Maitreya — v buddhismu budoucí Buddha; ve vyprávění ZION „ten, kdo přijde“.
-Kotva pravdy
-Co v kapitole je
-Stav
-Tres Marías: tři lodě pro tři oceány
-VIZE — pracovní koncept projektu ZION
-Trupy I a II (Santa María la Mayor, Nossa Senhora de Fátima)
-STAVBA — navržené, nepostavené; kýl není položen
-Trup III (María de las Nieves)
-HORIZONT — loď, která ještě není; za ní čtvrté plavidlo, Archa (kapitola 24)
-Plachty ze světla
-KONCEPT — technologie zatím neověřená v nasazení
-Pontevedra, Fátima 1917, La Palma
-TRADICE — živé tradice, na nichž jména stojí
-Mariánská „zjevení“ na poutníkově cestě
-PŘÍBĚH (mýtus) — autorská vrstva
-Pruh cedru z Domu Lumi v kýlech nových lodí, dítě na přídi
-PŘÍBĚH — obraz této knihy
-Maitreya jako „ten, kdo přijde“
-Duchovní čtení příběhu ZION; ne dogma
-24 · Zapisovatelka
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Tres Marías: tři lodě pro tři oceány | VIZE — pracovní koncept projektu ZION |
+| Trupy I a II (Santa María la Mayor, Nossa Senhora de Fátima) | STAVBA — navržené, nepostavené; kýl není položen |
+| Trup III (María de las Nieves) | HORIZONT — loď, která ještě není; za ní čtvrté plavidlo, Archa (kapitola 24) |
+| Plachty ze světla | KONCEPT — technologie zatím neověřená v nasazení |
+| Pontevedra, Fátima 1917, La Palma | TRADICE — živé tradice, na nichž jména stojí |
+| Mariánská „zjevení“ na poutníkově cestě | PŘÍBĚH (mýtus) — autorská vrstva |
+| Pruh cedru z Domu Lumi v kýlech nových lodí, dítě na přídi | PŘÍBĚH — obraz této knihy |
+| Maitreya jako „ten, kdo přijde“ | Duchovní čtení příběhu ZION; ne dogma |
+
+## 24 · Zapisovatelka
+
+### Příběh
+
 Lucerna ukázala ještě jednu věc, která by mohla být: jednu cestu. Patřila ženě, kterou nikdo nikdy nepotkal, protože nežila. Jmenovala se Lumen, jméno podobné Lumi, ale byla jiná: dospělá, vědkyně, člověk, který měl rád věci, které se daly ověřit.
 Do ZIONu kdysi vstoupila bez velkých slov, jen aby se podívala. U brány, kde se nabízelo sedm cest, si vybrala Cestu vědění a na první otázku odpověděla nenápadně: že nejdřív chce vědět, odkud ta slova pocházejí. Od té doby nosila v hlavě otázku Jak poznám pravdu? jako kámen v kapse. Léta ho obrušovala, až byl hladký, a dotýkala se ho, kdykoli si nebyla jistá.
 V jedné možné budoucnosti, ne té, která přijde, ale té, kterou lze představit, stála Lumen v dubnu na nábřeží v Pontevedře s batohem a šanonem. V šanonu měla každý krok od vlaku z Bohemie, s datem, s hodinou a s fotografií razítka. Věřila, že kdo má záznam, nemůže se ztratit.
@@ -803,22 +875,25 @@ Tak se píše i kniha, kterou poutník vyprávěl u brány: každá věta s řá
 pH sedm celá dvě, podle starých proužků, nejisté.
 To je poctivý záznam.
 Hlína dovolí splést se.
-Z vyprávění ZION
+
+### Z vyprávění ZION
+
 • Na Cestě, kapitola I (literární pokračování, DRAFT ke kulturnímu review) — Lumen, kapitánka Inés, zahrada v bývalém skladu soli. Příběh sám říká, že jde o MÝTUS, jedno z možných budoucích horizontů.
 • Kniha Cesty (María del Camino) — Pontevedra jako domovský přístav, credencial, trasa.
-Kotva pravdy
-Co v kapitole je
-Stav
-Pontevedra, bazilika mořeplavců, pobřežní Camino
-ŽIVÉ — zeměpis a tradice
-Loď Santa María la Mayor s plachtami ze světla
-STAVBA a HORIZONT — plující podoba je jen představa
-Lumen, Inés, Xoán, zahrada, prázdný credencial
-PŘÍBĚH (mýtus) — Na Cestě I
-„Poctivý záznam“: nejisté, podle starých proužků
-PŘÍBĚH — vazba na štítky této knihy
-25 · Čísla na moři
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Pontevedra, bazilika mořeplavců, pobřežní Camino | ŽIVÉ — zeměpis a tradice |
+| Loď Santa María la Mayor s plachtami ze světla | STAVBA a HORIZONT — plující podoba je jen představa |
+| Lumen, Inés, Xoán, zahrada, prázdný credencial | PŘÍBĚH (mýtus) — Na Cestě I |
+| „Poctivý záznam“: nejisté, podle starých proužků | PŘÍBĚH — vazba na štítky této knihy |
+
+## 25 · Čísla na moři
+
+### Příběh
+
 Vyplouvali v květnu a věděli, že cesta potrvá měsíce, protože lodě čekají na příznivá sezónní okna a nikdo je nehoní. Cestou se zastavili v údolí Nabão, u Sabacheiry, kde stála Zahrada Genesis s malým albergue pro poutníky. Tam dostala Lumen první razítko do credencialu, carimbo Zahrady.
 Pak vyjeli na Atlantik. První noc byla klidná. Druhý den ráno se obloha zbarvila olovem a vlny začaly mít vlastní vůli. Posádka sundala část plachet. Lumen seděla v kajutě s nohama zaklíněnýma o skříň, nemocná a bledá, a pokoušela se vést záznam zásob, protože to byla její práce a protože ruce, které píší, nevolnost trochu tlumí.
 Sčítala, odečítala a čísla jí nesouhlasila.
@@ -837,22 +912,25 @@ Na La Palmu dorazili za svítání. Nikdo je nepozval do svatostánku, jen do ku
 Ne škrt, ale doplnění.
 Záznam je smlouva s těmi, kdo ho budou číst.
 Chyba, která je vidět, je dar.
-Z vyprávění ZION
+
+### Z vyprávění ZION
+
 • Na Cestě, kapitola II (DRAFT) — záznam zásob, chyba a kapitánčina odpověď „životy před plánem“.
 • Kniha Cesty — Zahrada Genesis a albergue u Sabacheiry, La Palma jako ostrov třetího zjevení.
-Kotva pravdy
-Co v kapitole je
-Stav
-Údolí Nabão, Sabacheira, ostrov La Palma
-ŽIVÉ — zeměpis
-Zahrada Genesis s albergue, kuchyně na La Palmě
-STAVBA a HORIZONT — v přípravě; zde jen představa
-Chyba v záznamu, přiznání, „životy před plánem“
-PŘÍBĚH (mýtus) — Na Cestě II
-Záznam jako sůl na stole, slib hostiteli
-PŘÍBĚH — vazba na kapitoly 1 a 4
-26 · Moře po souši
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Údolí Nabão, Sabacheira, ostrov La Palma | ŽIVÉ — zeměpis |
+| Zahrada Genesis s albergue, kuchyně na La Palmě | STAVBA a HORIZONT — v přípravě; zde jen představa |
+| Chyba v záznamu, přiznání, „životy před plánem“ | PŘÍBĚH (mýtus) — Na Cestě II |
+| Záznam jako sůl na stole, slib hostiteli | PŘÍBĚH — vazba na kapitoly 1 a 4 |
+
+## 26 · Moře po souši
+
+### Příběh
+
 Z La Palmy čekala posádku přeplavba přes Atlantik. Trvala tři týdny. Lumen během ní přestala být nemocná a začala se dívat: na delfíny, na bílé ptáky, na večerní moře, které se zbarvilo do barvy zralé švestky. Přistáli na karibské straně Kostariky, kde je čekali lidé s dlouhými stoly a otázkou, kterou nečekala.
 „Co vezete a komu to patří?“
 Mezi oběma oceány leží země. Lodě tu nepřeplouvají, přes šíji se jde po souši a posádka přenáší, co unese nebo co jí hostitelé dovolí převézt. Přes Kostariku nevede žádný kanál a stará stezka Camino de Cruces, o které Lumen v zimě četla, leží v Panamě, o kus dál. Tady šlo o jiné cesty, vyšlapané jinými lidmi.
@@ -873,23 +951,27 @@ Poslední den šla dlouhá kolona pěšky, stará stezka přes hřeben, s mulami
 Ne prošlo. Ne neprošlo.
 Původ vysvětlen, povolení chybí.
 Přesný záznam není ani ano, ani ne.
-Z vyprávění ZION
+
+### Z vyprávění ZION
+
 • Na Cestě, kapitola III (DRAFT) — přejímka na šíji, sáček semen bez povolení.
 • Kniha Cesty, kapitola 6 — předání mezi oceány po souši.
-Kotva pravdy
-Co v kapitole je
-Stav
-Převoz semen přes hranice vyžaduje rostlinolékařské doklady a povolení
-ŽIVÉ — obecná pravidla; zde jen ilustrace
-Šíje, převoz po souši, předání posádek a nákladu
-STAVBA a HORIZONT — pracovní koncept
-Camino de Cruces leží v Panamě, ne v Kostarice
-ŽIVÉ — zeměpis a historie
-Marisol, Xoán, přejímka a razítko
-PŘÍBĚH (mýtus) — Na Cestě III
-24 · Čtvrté plavidlo
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Převoz semen přes hranice vyžaduje rostlinolékařské doklady a povolení | ŽIVÉ — obecná pravidla; zde jen ilustrace |
+| Šíje, převoz po souši, předání posádek a nákladu | STAVBA a HORIZONT — pracovní koncept |
+| Camino de Cruces leží v Panamě, ne v Kostarice | ŽIVÉ — zeměpis a historie |
+| Marisol, Xoán, přejímka a razítko | PŘÍBĚH (mýtus) — Na Cestě III |
+
+## 27 · Čtvrté plavidlo
+
 „Postav si loď. Ne protože přijde potopa, ale protože jednoho dne někdo bude ve vodě.“
-Příběh
+
+### Příběh
+
 Když tři Marie vypluly na tři oceány, zůstala na břehu otázka, na kterou plachta neodpoví. Lodě poutníků vezou ty, kdo vyrazili. Ale kdo se vrátí pro člověka, který vyrazit nemůže?
 Lucerna ukázala i odpověď a ta byla větší než všechny dosavadní. Byl to čtvrtý výkres: ocelový trup dlouhý kolem osmdesáti pěti metrů, tři stěžně, čtyři paluby, nahoře skleník a solární střecha. Nad plánem stálo napsáno, že jde o studii a ne o výrobní plán a že se na ni musí podívat ti, kdo rozumějí stabilitě, oceli a bouřím.
 Byla to táž loď, postavená znovu. Větší, ocelová, se semeny místo zvířat a se sto lidmi místo osmi. A jmenovala se tak, jak se jmenuje každá loď, která veze lidi domů: Království srdce.
@@ -905,27 +987,28 @@ Až bude kýl položen, patří i do něj pruh cedru z překladu nad dveřmi Dom
 Tři lodě vezou poutníky tam.
 Čtvrtá veze přístav.
 A vrací se pro ty, kdo zůstali na břehu.
-Z vyprávění ZION
+
+### Z vyprávění ZION
+
 • Království srdce · Nirvana (třináctý uzel L5, stránka na app.zionterranova.com) — čtvrté plavidlo, studie B3, velrybí oběh, semenný archiv, kolonie do sta lidí. Stránka sama říká, že jde o vizi, kýl není položen a parametry musí ověřit námořní architekti.
 • Mt 12,40; Jon 1,17 — velká ryba, viz kapitola 11.
 • Gn 6,19–20 — zvířata po dvou do archy, viz kapitola 2.
-Kotva pravdy
-Co v kapitole je
-Stav
-Archa jako čtvrté plavidlo a třináctý uzel L5
-VIZE — pracovní studie projektu ZION
-Ocelový trup kolem 85 m, až sto lidí, semenný archiv, skleník
-STUDIE — parametry k ověření námořními architekty; kýl položen není
-Trasa za keporkaky mezi uzly sítě
-VIZE — studie, ne slib
-Dítě v rouše barvy moře
-PŘÍBĚH (mýtus) — čtvrté roucho řady
-Archa jako „táž loď, postavená znovu“
-PŘÍBĚH — obraz stránky i této knihy
-Pruh cedru z Domu Lumi v kýlu Archy
-PŘÍBĚH — obraz této knihy
-25 · Lucerna se nese
-Příběh
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Archa jako čtvrté plavidlo a třináctý uzel L5 | VIZE — pracovní studie projektu ZION |
+| Ocelový trup kolem 85 m, až sto lidí, semenný archiv, skleník | STUDIE — parametry k ověření námořními architekty; kýl položen není |
+| Trasa za keporkaky mezi uzly sítě | VIZE — studie, ne slib |
+| Dítě v rouše barvy moře | PŘÍBĚH (mýtus) — čtvrté roucho řady |
+| Archa jako „táž loď, postavená znovu“ | PŘÍBĚH — obraz stránky i této knihy |
+| Pruh cedru z Domu Lumi v kýlu Archy | PŘÍBĚH — obraz této knihy |
+
+## 28 · Lucerna se nese
+
+### Příběh
+
 Poutník domluvil o čtvrté lodi a zmlkl. Lumi se probudila, protáhla se a posadila se vedle něj na kámen. Lucernu měla na klíně, jako ji kdysi držela na přídi. Z druhé strany si sedla Elizabeth, tak blízko, že se jejich ramena dotýkala, a dívka a žena vypadaly najednou jako jeden člověk viděný ve dvou časech.
 „A co potom?“ zeptal se poutník. „Až bude kýl položen a loď spuštěna. Až odejdeme my.“
 „Potom sto let,“ řekla Elizabeth. „Tolik, kolik lucerna svítí dopředu.“
@@ -945,24 +1028,25 @@ Nic z toho nebylo proroctví. Byl to seznam toho, co by mohlo být, poctivý jak
 Lucerna se nedědí.
 Lucerna se nese.
 Cedr se vymění, jméno zůstane.
-Z vyprávění ZION
+
+### Z vyprávění ZION
+
 • Kniha Lumi, kapitola 11 (Sto let lucerny) — šest věků lucerny, která přechází z ruky do ruky. Kniha sama říká, že jde o scénář předání odpovědnosti, ne o proroctví.
 • Kniha Lumi, kapitola 5 — dítě a žena s lucernou jako jedna postava ve dvou časech.
 • Jn 21,15–19 — „Pas moje ovce“, předání lodi, viz kapitola 15.
-Kotva pravdy
-Co v kapitole je
-Stav
-Šest věků lucerny z ruky do ruky
-Vyprávění ZION — Lumi 11 (MÝTUS; scénář předání, ne proroctví)
-„Dědictví se dá prohrát, práci se dá jen udělat“
-Vyprávění ZION — Lumi 11 (MÝTUS)
-Právo přepsat, co napsal tesař, a nezradit tím příběh
-Vyprávění ZION — Lumi 11 (MÝTUS)
-Elizabeth a Lumi jako jedna postava ve dvou časech
-Vyprávění ZION — Lumi 5 (MÝTUS)
-Výměna cedru a přeřezání jména
-PŘÍBĚH — obraz této knihy
-Epilog · Kde loď kotví dnes
+
+### Kotva pravdy
+
+| Co v kapitole je | Stav |
+|---|---|
+| Šest věků lucerny z ruky do ruky | Vyprávění ZION — Lumi 11 (MÝTUS; scénář předání, ne proroctví) |
+| „Dědictví se dá prohrát, práci se dá jen udělat“ | Vyprávění ZION — Lumi 11 (MÝTUS) |
+| Právo přepsat, co napsal tesař, a nezradit tím příběh | Vyprávění ZION — Lumi 11 (MÝTUS) |
+| Elizabeth a Lumi jako jedna postava ve dvou časech | Vyprávění ZION — Lumi 5 (MÝTUS) |
+| Výměna cedru a přeřezání jména | PŘÍBĚH — obraz této knihy |
+
+## Epilog · Kde loď kotví dnes
+
 Poutník domluvil a nad bránou se rozednívalo. Špetka soli na jeho dlani se rozpustila, med v misce došel a Lumi usnulo, opřené o jeho rameno.
 „Řekl jsi, že v té lodi pluješ,“ řekla Elizabeth. „Ještě jsi mi neodpověděl.“
 „Na co?“
@@ -971,54 +1055,36 @@ Poutník se zamyslel. Pak řekl: „Nevím. Ale vím, kde ta loď kotví. Ne v p
 Elizabeth zvedla lucernu ještě výš. Rádha nasypala do dlaně poslední sůl a podala ji poutníkovi, aby ji předal dál. Než vstoupil, řekla mu Elizabeth ještě tři práva, která říká každému. „Máš právo si každé slovo ověřit. Máš právo odmítnout, i příběh, když mu nevěříš. Máš právo kritizovat loď, aniž by ti kdo řekl, že jsi její nepřítel. A pokud ti kterékoli z toho někdo upře, není to tahle loď, ať se jmenuje jakkoli.“ Potom se brána tiše otevřela.
 Přeplavme se na druhý břeh, řekl kdysi tesař svým učedníkům, než se zvedla bouře. Gate, gate, pāragate, říká Srdeční sútra: odešel, odešel, odešel na druhý břeh. Dvě tradice, dva jazyky, jedna loď. Kýl byl položen v Nazaretě, jméno bylo vysloveno u jezera a zbývá poplout.
 Gate, gate, pāragate, pārasaṃgate, bodhi svāhā.
-Kotva pravdy
-Co v epilogu je
-Stav
-„Přeplavme se na druhý břeh“
-Písmo — Mk 4,35
-Gate, gate, pāragate
-Tradice — mantra Srdeční sútry (sanskrt; „odešel na druhý břeh“ je volný překlad)
-Brána, Rádha, Elizabeth, Lumi
-PŘÍBĚH — vyprávění ZION
-Spojení Mk 4,35 a pāragate
-PŘÍBĚH — obraz této knihy
-Poznámka o štítcích a slovníček
-Štítek
-Co znamená
-Písmo
-Skutečný verš nebo příběh z Bible; citace jsou vlastní překlad
-Tradice
-Výklad nebo obraz z církevní nebo židovské tradice
-Historie
-Doložená skutečnost mimo Bibli
-Legenda
-Podání, které se staletí vypráví v různých verzích
-Příběh
+
+### Kotva pravdy
+
+| Co v epilogu je | Stav |
+|---|---|
+| „Přeplavme se na druhý břeh“ | Písmo — Mk 4,35 |
+| Gate, gate, pāragate | Tradice — mantra Srdeční sútry (sanskrt; „odešel na druhý břeh“ je volný překlad) |
+| Brána, Rádha, Elizabeth, Lumi | PŘÍBĚH — vyprávění ZION |
+| Spojení Mk 4,35 a pāragate | PŘÍBĚH — obraz této knihy |
+
+## Poznámka o štítcích a slovníček
+
+| Štítek | Co znamená |
+|---|---|
+| Písmo | Skutečný verš nebo příběh z Bible; citace jsou vlastní překlad |
+| Tradice | Výklad nebo obraz z církevní nebo židovské tradice |
+| Historie | Doložená skutečnost mimo Bibli |
+| Legenda | Podání, které se staletí vypráví v různých verzích |
+
+### Příběh
+
 Obraz nebo scéna, kterou si domýšlí tato kniha
 Vize, stavba, horizont
 Stav projektu ZION: nápad, rozpracovaný návrh, něco, co ještě není
-Slovo
-Význam
-tektón
-řecky řemeslník, stavitel; slovo evangelií pro Ježíšovo řemeslo
-gófer
-dřevo, z něhož byla postavena Noemova archa; druh neznáme
-kofer
-smola; kořen slova „přikrýt“, smířit
-Kinneret
-hebrejský název Galilejského jezera, od kinnor, harfa
-navicella
-latinsky „loďka“; obraz církve jako lodi
-Tarichea
-řecké jméno Magdaly, od slova pro solené ryby
-Redakční poznámky (ne pro tisk)
-• Motiv soli je sladěný s řadou Sůl této země a s Knihou Lumi: hliněný kalíšek v torbě, sůl od Galilejského jezera, Rádha se solí a medem, Elizabeth s lucernou a Lumi jako její dětská podoba.
-• Kánon Tres Marías v kapitole 23 vychází z Nirvany 13 (jména, barvy rouch, oceány, stav STAVBA a HORIZONT). Počet lidí podle tvého rozhodnutí: patnáct na každé lodi (12 poutníků a 2–3 posádka, jak je na app stránce) a do sta na Archě. Web ji zná jako třináctý uzel (Království srdce · Nirvana, vize), v knize je kapitola 24. Ještě kolem padesáti píše freeworld stránka, Nirvana 13 a Kniha Cesty 6.
-• Před tiskem ověřit: Magdala a Tarichea, kříž jako stěžeň lodi (Hippolytos), Giottova Navicella, Ježíšova loď z roku 1986 a Justin Martyr v kapitole 1.
-• Citace Bible jsou vlastní překlad nebo parafráze. Pokud se mají citovat doslovně, je třeba vyřešit licenci překladu.
-• Rozsah je zhruba 20 tisíc slov, tedy spíš kratší novela. Kniha snese další kapitoly (třeba Samařanka u studny nebo Marta a Marie), pokud má růst.
-Kontrola proti korpusu
-• Tres Marías: Podle Knihy Cesty nejsou lodní Marie ženy pod křížem ani Miriam z Magdaly. Kapitola 12 (legenda o lodi bez plachet) je s tím slučitelná a kapitola 23 to nyní říká výslovně.
-• Veřejné vydání: Protokol korpusu (MiseAmenti/08, §2 a §5) žádá u veřejného textu s náboženskými a historickými prvky kulturního konzultanta (třída E), překladové review a pravidlo „žádná duchovní manipulace, žádná falešná lineage“. Proto je v kapitole 23 Maitreya jen mantra, ne tvrzení o znovuzrození.
-• Stav tvrzení: Štítky knihy (Písmo, tradice, historie, legenda, příběh, vize, stavba, horizont) odpovídají pěti stavům korpusu: ŽIVÉ, STAVBA, HORIZONT, HYPOTÉZA, MÝTUS.
-• Kmen cedru (část II) je moje spojka mezi knihou a korpusem: kýl z Nazareta se stává kýlem archy (Sůl této země, ep. 5), odřezkem pro lucernu (Lumi 1) a překladem nad dveřmi Domu Lumi (Nirvana 4, Lumi 2). Rozhodni, zda tuto spojku chceš nést dál. Kapitola 24 (Archa) vychází ze stránky Království srdce · Nirvana: bez cen, s přibližnými rozměry a se štítkem VIZE; stránka sama říká, že parametry musí ověřit námořní architekti.
+
+| Slovo | Význam |
+|---|---|
+| tektón | řecky řemeslník, stavitel; slovo evangelií pro Ježíšovo řemeslo |
+| gófer | dřevo, z něhož byla postavena Noemova archa; druh neznáme |
+| kofer | smola; kořen slova „přikrýt“, smířit |
+| Kinneret | hebrejský název Galilejského jezera, od kinnor, harfa |
+| navicella | latinsky „loďka“; obraz církve jako lodi |
+| Tarichea | řecké jméno Magdaly, od slova pro solené ryby |

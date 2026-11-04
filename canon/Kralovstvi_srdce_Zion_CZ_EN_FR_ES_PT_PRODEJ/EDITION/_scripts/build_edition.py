@@ -121,10 +121,10 @@ EDITIONS: dict[str, dict] = {
             "FR": "Quille de Cèdre · Expansion Littéraire",
             "PT": "Quilha de Cedro · Expansão Literária",
         },
-        "note": "Zdroj je zatím prostý text bez nadpisů — před prodejem potřebuje redakci do Markdownu.",
+        "note": "Dvacet osm kapitol ve třech částech, epilog a slovníček; každá kapitola s Kotvou pravdy.",
         "build": True,
-        "break_levels": [],
-        "toc_levels": [],
+        "break_levels": [1, 2],
+        "toc_levels": [1, 2],
     },
     "gemini": {
         "label": {

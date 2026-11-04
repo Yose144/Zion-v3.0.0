@@ -90,7 +90,7 @@ uv run _scripts/build_edition.py
 | **quen** (Účetnice) | Uzavřená samostatná edice; chybí 4 překlady |
 | **groq** (Loď, která se ptá) | Uzavřená samostatná edice; chybí 4 překlady |
 | **gpt** | ⚠️ Obsahuje jen kapitoly 10–24; první půli je nutné převzít z Gemini edice a spojit do jednoho rukopisu |
-| **cloude** (Cedrový kýl) | ⚠️ Zdroj je prostý text bez nadpisů a členění — nejdřív redakce do Markdownu, pak sazba |
+| **cloude** (Cedrový kýl) | ✅ Redakce do Markdownu hotová (28 kapitol, 3 části, epilog, slovníček; obsah a tabulky Kotva pravdy vysázené); chybí 4 překlady |
 
 **Pozor na povahu textů:** české rukopisy jsou pracovní verze, ne finální nakladatelská
 adata. Nemají ISBN, tiráž ani jazykovou redakci. Prodejní edice musí projít redakcí

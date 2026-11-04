@@ -1,12 +1,12 @@
 # Cedrový kýl · Literární rozšíření
 
-Zdroj je zatím prostý text bez nadpisů — před prodejem potřebuje redakci do Markdownu.
+Dvacet osm kapitol ve třech částech, epilog a slovníček; každá kapitola s Kotvou pravdy.
 
 ## Jazyky
 
 | Jazyk | Rukopis | PDF | EPUB | Slov |
 |---|---|---|---|---|
-| CZ | ✅ | ✅ | ✅ | 15051 |
+| CZ | ✅ | ✅ | ✅ | 15333 |
 | EN | — | — | — | — |
 | ES | — | — | — | — |
 | FR | — | — | — | — |
