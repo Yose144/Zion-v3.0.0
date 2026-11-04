@@ -10,13 +10,7 @@
  * hráč vidí.
  */
 
-import {
-  SKY_CURRENTS,
-  SKY_HEIGHT,
-  SKY_LIGHTS,
-  SKY_SHRINE,
-  SKY_WIDTH,
-} from './world';
+import { SKY_HEIGHT, SKY_WIDTH, pathData, type SkyPathId } from './world';
 
 export interface FlightInput {
   up: boolean;
@@ -28,6 +22,8 @@ export interface FlightInput {
 export const NO_FLIGHT: FlightInput = { up: false, down: false, left: false, right: false };
 
 export interface FlightState {
+  /** Kterou cestou letíš — světla, proudy i svatyně se berou odsud. */
+  path: SkyPathId;
   x: number;
   y: number;
   vx: number;
@@ -42,7 +38,12 @@ export interface FlightState {
   time: number;
   /** Hra skončila (doneseš světla do svatyně). */
   finished: boolean;
-  /** Naposledy sebrané světlo (pro text příběhu), null = nic nového. */
+  /**
+   * Naposledy sebrané světlo, které ještě nikdo nevyzvedl (pro text
+   * příběhu). **Nuluje ho až ten, kdo ho zobrazí** — kdyby se nulovalo
+   * každý krok, telemetrie (6×/s) by ho minula a text by se neukázal
+   * (měřeno: 2 ze 3 běhů testu bez textu).
+   */
   lastLight: number | null;
 }
 
@@ -64,15 +65,17 @@ export const LIGHT_REFILL = 18;
 export const LIGHT_RADIUS = 3.4;
 export const SHRINE_RADIUS = 6;
 
-export function createFlight(): FlightState {
+export function createFlight(path: SkyPathId = 'calm'): FlightState {
+  const data = pathData(path);
   return {
+    path: data.id,
     x: 10,
     y: 12,
     vx: 0,
     vy: 0,
     energy: ENERGY_MAX,
     lights: [],
-    total: SKY_LIGHTS.length,
+    total: data.lights.length,
     time: 0,
     finished: false,
     lastLight: null,
@@ -80,9 +83,9 @@ export function createFlight(): FlightState {
 }
 
 /** Je bod v proudu vzduchu? Vrací nejsilnější proud (nebo 0). */
-export function currentAt(x: number, y: number): number {
+export function currentAt(x: number, y: number, path: SkyPathId = 'calm'): number {
   let lift = 0;
-  for (const current of SKY_CURRENTS) {
+  for (const current of pathData(path).currents) {
     const dx = x - current.x;
     const dy = y - current.y;
     if (dx * dx + dy * dy <= current.r * current.r) lift = Math.max(lift, current.lift);
@@ -100,9 +103,9 @@ export function stepFlight(state: FlightState, input: FlightInput, dt: number): 
   if (step === 0) return state;
 
   state.time += step;
-  state.lastLight = null;
 
-  const lift = currentAt(state.x, state.y);
+  const data = pathData(state.path);
+  const lift = currentAt(state.x, state.y, state.path);
   const canLift = state.energy > 0;
 
   // 1) svisle: pláštěnka (dokud je síla) nebo gravitace
@@ -149,7 +152,7 @@ export function stepFlight(state: FlightState, input: FlightInput, dt: number): 
   }
 
   // 5) světla
-  for (const light of SKY_LIGHTS) {
+  for (const light of data.lights) {
     if (state.lights.includes(light.id)) continue;
     const dx = state.x - light.x;
     const dy = state.y - light.y;
@@ -161,8 +164,8 @@ export function stepFlight(state: FlightState, input: FlightInput, dt: number): 
 
   // 6) svatyně: jen se všemi světly
   if (state.lights.length === state.total) {
-    const dx = state.x - SKY_SHRINE.x;
-    const dy = state.y - SKY_SHRINE.y;
+    const dx = state.x - data.shrine.x;
+    const dy = state.y - data.shrine.y;
     if (dx * dx + dy * dy <= SHRINE_RADIUS * SHRINE_RADIUS) state.finished = true;
   }
 

@@ -7871,3 +7871,79 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
     top: 34%;
   }
 }
+
+/* Volba cesty a darování světla — dvě karty, žádná hierarchie */
+.sky-paths {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0 0 0.9rem;
+}
+
+.sky-path {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(159, 228, 234, 0.22);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(232, 244, 255, 0.75);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.sky-path strong {
+  font-size: 0.8rem;
+  color: #eaf7ff;
+}
+
+.sky-path span {
+  font-size: 0.68rem;
+  color: rgba(232, 244, 255, 0.5);
+}
+
+.sky-path.is-active {
+  border-color: #9fe4ea;
+  background: rgba(159, 228, 234, 0.12);
+  box-shadow: 0 0 0 1px rgba(159, 228, 234, 0.28);
+}
+
+.sky-gift {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0 0 0.7rem;
+}
+
+.sky-gift .park-btn {
+  flex: 1 1 12rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.sky-gift em {
+  font-style: normal;
+  font-size: 0.68rem;
+  color: rgba(255, 233, 176, 0.75);
+}
+
+.sky-gift-give {
+  border-color: rgba(255, 209, 102, 0.5);
+  background: rgba(255, 209, 102, 0.12);
+}
+
+.sky-gift-done {
+  margin: 0 0 0.6rem;
+  font-size: 0.78rem;
+  color: #7fe3d4;
+}
+
+@media (max-width: 560px) {
+  .sky-paths {
+    grid-template-columns: 1fr;
+  }
+}

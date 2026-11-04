@@ -20,7 +20,9 @@ const {
   skyScore,
   stepFlight,
 } = await import('../src/core/sky/flight.ts');
-const { SKY_LIGHTS, SKY_SHRINE } = await import('../src/core/sky/world.ts');
+const { SKY_LIGHTS, SKY_PATHS, SKY_SHRINE, SKY_GIFT, SKY_GIFT_BONUS, pathData } = await import(
+  '../src/core/sky/world.ts'
+);
 
 let failures = 0;
 const check = (name, ok, detail = '') => {
@@ -140,6 +142,40 @@ const b = createFlight();
 fly(a, 2, { ...NO, up: true, right: true });
 fly(b, 2, { ...NO, up: true, right: true });
 check('stejný vstup = stejný stav', a.x === b.x && a.y === b.y && a.energy === b.energy);
+
+// ── 9) dvě cesty ─────────────────────────────────────────────────────
+const calm = pathData('calm');
+const wind = pathData('wind');
+check('obě cesty mají sedm světel', calm.lights.length === 7 && wind.lights.length === 7);
+check('cesty mají jiný rozptyl', JSON.stringify(calm.lights.map((l) => [l.x, l.y])) !== JSON.stringify(wind.lights.map((l) => [l.x, l.y])));
+check('větrná cesta je výš', wind.lights.reduce((sum, l) => sum + l.y, 0) > calm.lights.reduce((sum, l) => sum + l.y, 0));
+check('cesty mají vlastní svatyni', calm.shrine.x !== wind.shrine.x || calm.shrine.y !== wind.shrine.y);
+check(
+  'všechna světla jsou v mapě',
+  [...calm.lights, ...wind.lights].every((light) => light.x > 2 && light.x < 98 && light.y > 2 && light.y < 98),
+);
+check(
+  'proudy jsou v mapě',
+  [...calm.currents, ...wind.currents].every((current) => current.x > 0 && current.x < 100 && current.y > 0 && current.y < 100),
+);
+
+const windFlight = createFlight('wind');
+check('větrná cesta má sedm světel i v simulaci', windFlight.total === 7 && windFlight.path === 'wind');
+for (const light of wind.lights) {
+  windFlight.x = light.x;
+  windFlight.y = light.y;
+  fly(windFlight, 0.1);
+}
+check('větrná cesta jde dohrát', windFlight.lights.length === 7, String(windFlight.lights.length));
+windFlight.x = wind.shrine.x;
+windFlight.y = wind.shrine.y;
+fly(windFlight, 0.3);
+check('svatyně větrné cesty se otevře', windFlight.finished === true);
+
+// ── 10) darování světla ──────────────────────────────────────────────
+check('darování má bonus', SKY_GIFT_BONUS > 0, String(SKY_GIFT_BONUS));
+check('obě volby mají text v cs+en', Boolean(SKY_GIFT.keep.text.cs && SKY_GIFT.give.text.en));
+check('volby se jmenují jinak', SKY_GIFT.keep.label.cs !== SKY_GIFT.give.label.cs);
 
 console.log('');
 if (failures > 0) {

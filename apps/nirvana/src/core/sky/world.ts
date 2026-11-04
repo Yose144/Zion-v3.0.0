@@ -124,6 +124,8 @@ export const SKY_LIGHTS: SkyLight[] = [
 /** Svatyně na konci — otevře se, až když máš všech sedm. */
 export const SKY_SHRINE = { x: 82, y: 86, r: 7 } as const;
 
+
+
 /** Proudy vzduchu — jediné „palivo" kromě pláštěnky. */
 export const SKY_CURRENTS: SkyCurrent[] = [
   { id: 'c1', x: 26, y: 30, r: 7, lift: 34 },
@@ -154,3 +156,103 @@ export const SKY_FINISH = {
   cs: 'Světlo se vrátilo do oblohy. Nezůstalo ti nic než to, co sis odnesl — a to je víc než dost.',
   en: 'The light returned to the sky. Nothing stayed with you but what you carried inside — and that is more than enough.',
 };
+
+/**
+ * Cesty. Stejná obloha, jiný rozptyl: `calm` je ta první (světla blízko
+ * sebe, proudy štědré), `wind` je pro ty, kdo už vědí, jak pláštěnka drží —
+ * světla jsou výš a dál, proudy užší a mezi nimi delší prázdno.
+ *
+ * Data jsou tady, ne ve scéně: testy díky tomu ověří, že každá cesta má
+ * sedm světel a že se dají doletět (žádné světlo mimo mapu).
+ */
+export type SkyPathId = 'calm' | 'wind';
+
+export interface SkyPath {
+  id: SkyPathId;
+  name: { cs: string; en: string };
+  note: { cs: string; en: string };
+  lights: SkyLight[];
+  currents: SkyCurrent[];
+  islands: SkyIsland[];
+  shrine: { x: number; y: number; r: number };
+  intro: { cs: string; en: string };
+}
+
+/** Texty světel jsou společné oběma cestám — příběh se nemění podle obtížnosti. */
+const CALM_CURRENTS: SkyCurrent[] = SKY_CURRENTS;
+const CALM_ISLANDS: SkyIsland[] = SKY_ISLANDS;
+
+const WIND_LIGHTS: SkyLight[] = SKY_LIGHTS.map((light, index) => ({
+  ...light,
+  // druhá cesta rozhází světla víc do šířky i výšky
+  x: Math.min(SKY_WIDTH - 8, Math.max(8, light.x + (index % 2 === 0 ? 14 : -10))),
+  y: Math.min(SKY_HEIGHT - 10, light.y + 14 + (index % 3) * 4),
+}));
+
+const WIND_CURRENTS: SkyCurrent[] = [
+  { id: 'w1', x: 16, y: 40, r: 5, lift: 46 },
+  { id: 'w2', x: 36, y: 62, r: 5, lift: 50 },
+  { id: 'w3', x: 58, y: 36, r: 5, lift: 48 },
+  { id: 'w4', x: 74, y: 72, r: 6, lift: 54 },
+  { id: 'w5', x: 46, y: 88, r: 6, lift: 56 },
+];
+
+const WIND_ISLANDS: SkyIsland[] = [
+  { id: 'start', x: 8, y: 8, r: 7, z: 0, tone: '#9fd8dc' },
+  { id: 'w1', x: 24, y: 44, r: 4.5, z: -8, tone: '#b9e6e8' },
+  { id: 'w2', x: 44, y: 66, r: 4, z: -15, tone: '#cfe9ea' },
+  { id: 'w3', x: 66, y: 40, r: 4.5, z: -10, tone: '#a9d6dc' },
+  { id: 'w4', x: 78, y: 74, r: 4, z: -6, tone: '#c3e3e6' },
+  { id: 'shrine', x: 88, y: 90, r: 6, z: 0, tone: '#e8f6f4' },
+];
+
+export const SKY_PATHS: Record<SkyPathId, SkyPath> = {
+  calm: {
+    id: 'calm',
+    name: { cs: 'Klidná cesta', en: 'The calm way' },
+    note: { cs: 'světla blízko sebe, proudy štědré', en: 'lights close together, generous currents' },
+    lights: SKY_LIGHTS,
+    currents: CALM_CURRENTS,
+    islands: CALM_ISLANDS,
+    shrine: SKY_SHRINE,
+    intro: SKY_INTRO,
+  },
+  wind: {
+    id: 'wind',
+    name: { cs: 'Větrná cesta', en: 'The windy way' },
+    note: { cs: 'výš a dál, užší proudy, delší prázdno', en: 'higher and farther, narrower currents, longer gaps' },
+    lights: WIND_LIGHTS,
+    currents: WIND_CURRENTS,
+    islands: WIND_ISLANDS,
+    shrine: { x: 88, y: 90, r: 6 },
+    intro: {
+      cs: 'Větrná cesta vede výš, než kam dohlédneš ze startu. Proudy jsou užší a mezi nimi je delší prázdno — pláštěnka tu není na ozdobu.',
+      en: 'The windy way climbs higher than you can see from the start. The currents are narrower and the gaps between them longer — the cape is not decoration here.',
+    },
+  },
+};
+
+export function pathData(id: SkyPathId): SkyPath {
+  return SKY_PATHS[id] ?? SKY_PATHS.calm;
+}
+
+/** Dárek na konci: nechat si, nebo darovat. Texty i odměna. */
+export const SKY_GIFT = {
+  keep: {
+    label: { cs: 'Nechat si světlo', en: 'Keep the light' },
+    text: {
+      cs: 'Světlo zůstalo u tebe. Je teplé a tiché — a nikomu jinému nesvítí.',
+      en: 'The light stayed with you. It is warm and quiet — and it shines for no one else.',
+    },
+  },
+  give: {
+    label: { cs: 'Darovat světlo', en: 'Give the light away' },
+    text: {
+      cs: 'Položil jsi světlo do svatyně a odešel bez něj. V oblaze zůstalo o jedno světlo víc, než když jsi přišel.',
+      en: 'You set the light down in the shrine and left without it. The sky holds one more light than when you came.',
+    },
+  },
+} as const;
+
+/** Bonus za darování — odměna je jen číslo, ne síla. */
+export const SKY_GIFT_BONUS = 150;

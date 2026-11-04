@@ -24,7 +24,7 @@ import {
   type FlightInput,
   type FlightState,
 } from './flight';
-import { SKY_CURRENTS, SKY_HEIGHT, SKY_ISLANDS, SKY_LIGHTS, SKY_SHRINE, SKY_WIDTH } from './world';
+import { SKY_HEIGHT, SKY_WIDTH, type SkyLight, type SkyPath } from './world';
 
 export interface SkyStats {
   lights: number;
@@ -217,7 +217,7 @@ function Current({ x, y, r, lift }: { x: number; y: number; r: number; lift: num
 }
 
 /** Světlo — koule s pulsem a malým bodovým světlem. */
-function Light({ light, taken }: { light: (typeof SKY_LIGHTS)[number]; taken: boolean }) {
+function Light({ light, taken }: { light: SkyLight; taken: boolean }) {
   const group = useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     if (!group.current) return;
@@ -249,19 +249,19 @@ function Light({ light, taken }: { light: (typeof SKY_LIGHTS)[number]; taken: bo
 }
 
 /** Svatyně — oblouk, který se rozsvítí, až máš všechna světla. */
-function Shrine({ open }: { open: boolean }) {
+function Shrine({ open, shrine }: { open: boolean; shrine: SkyPath['shrine'] }) {
   const ring = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     if (ring.current) ring.current.rotation.z = clock.elapsedTime * 0.2;
   });
   return (
-    <group position={[SKY_SHRINE.x, SKY_SHRINE.y, 0]}>
+    <group position={[shrine.x, shrine.y, 0]}>
       <mesh ref={ring}>
-        <torusGeometry args={[SKY_SHRINE.r * 0.8, 0.45, 12, 48]} />
+        <torusGeometry args={[shrine.r * 0.8, 0.45, 12, 48]} />
         <meshBasicMaterial color={open ? '#ffe9a8' : '#7f9aa8'} toneMapped={false} transparent opacity={open ? 0.95 : 0.35} />
       </mesh>
       <mesh>
-        <circleGeometry args={[SKY_SHRINE.r * 0.8, 36]} />
+        <circleGeometry args={[shrine.r * 0.8, 36]} />
         <meshBasicMaterial
           color={open ? '#ffd166' : '#4d6fd1'}
           transparent
@@ -346,15 +346,18 @@ function Flyer({ state }: { state: React.MutableRefObject<FlightState> }) {
 }
 
 export function SkyScene({
+  path,
   onStats,
   onFinish,
   paused = false,
 }: {
+  /** Kterou cestou se letí — data i simulace se berou odsud. */
+  path: SkyPath;
   onStats: (stats: SkyStats) => void;
   onFinish: (score: number) => void;
   paused?: boolean;
 }) {
-  const state = useRef<FlightState>(createFlight());
+  const state = useRef<FlightState>(createFlight(path.id));
   const keys = useRef<Record<keyof FlightInput, boolean>>({ up: false, down: false, left: false, right: false });
   const lastReport = useRef(0);
   const finishedSent = useRef(false);
@@ -393,6 +396,9 @@ export function SkyScene({
     if (new URLSearchParams(window.location.search).get('skyDebug') !== '1') return;
     const bag = window as unknown as Record<string, unknown>;
     bag.__skyDebug = () => ({ ...state.current, lights: [...state.current.lights] });
+    // polohy světel a svatyně pro test — jinak by E2E muselo znát data cesty
+    bag.__skyLights = path.lights.map((light) => ({ id: light.id, x: light.x, y: light.y }));
+    bag.__skyShrine = { x: path.shrine.x, y: path.shrine.y };
     bag.__skyTeleport = (x: number, y: number) => {
       state.current.x = x;
       state.current.y = y;
@@ -402,8 +408,10 @@ export function SkyScene({
     return () => {
       delete bag.__skyDebug;
       delete bag.__skyTeleport;
+      delete bag.__skyLights;
+      delete bag.__skyShrine;
     };
-  }, []);
+  }, [path]);
 
   useFrame((_, delta) => {
     if (paused) return;
@@ -418,13 +426,17 @@ export function SkyScene({
     // telemetrie 6×/s — častěji by překreslovala celý React strom
     if (flight.time - lastReport.current > 0.16) {
       lastReport.current = flight.time;
+      // sebrané světlo se hlásí **jednou** a teprve tady se vyzvedne;
+      // kdyby ho simulace mazala každý krok, telemetrie by ho minula
+      const lastLight = flight.lastLight;
+      flight.lastLight = null;
       onStats({
         lights: flight.lights.length,
         total: flight.total,
         energy: flight.energy,
         time: flight.time,
         finished: flight.finished,
-        lastLight: flight.lastLight,
+        lastLight,
       });
     }
   });
@@ -439,16 +451,16 @@ export function SkyScene({
 
       <Stars />
       <Clouds />
-      {SKY_ISLANDS.map((island) => (
+      {path.islands.map((island) => (
         <Island key={island.id} {...island} />
       ))}
-      {SKY_CURRENTS.map((current) => (
+      {path.currents.map((current) => (
         <Current key={current.id} x={current.x} y={current.y} r={current.r} lift={current.lift} />
       ))}
-      {SKY_LIGHTS.map((light) => (
+      {path.lights.map((light) => (
         <Light key={light.id} light={light} taken={state.current.lights.includes(light.id)} />
       ))}
-      <Shrine open={state.current.lights.length === SKY_LIGHTS.length} />
+      <Shrine open={state.current.lights.length === path.lights.length} shrine={path.shrine} />
       <Flyer state={state} />
       <CameraRig state={state} />
     </>
@@ -477,6 +489,7 @@ function CameraRig({ state }: { state: React.MutableRefObject<FlightState> }) {
 
 /** Obal, aby stránka nemusela řešit Canvas ani kameru. */
 export function SkyCanvas(props: {
+  path: SkyPath;
   onStats: (stats: SkyStats) => void;
   onFinish: (score: number) => void;
   paused?: boolean;
