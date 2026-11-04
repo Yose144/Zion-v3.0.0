@@ -16,6 +16,7 @@ import {
   type ItemId,
   type MobaSnapshot,
 } from '../moba/sim';
+import type { AspectId } from '../moba/spells';
 
 const ITEM_IDS = new Set<string>(ITEMS.map((item) => item.id));
 const asItemId = (value: unknown): ItemId | null =>
@@ -78,7 +79,7 @@ const asItemId = (value: unknown): ItemId | null =>
  *      odmítne `join` (`pass_required`). Klient bez pasu by se jinak dostal
  *      do hry přes vlastní WebSocket klient.
  */
-export const PROTO_VERSION = 28;
+export const PROTO_VERSION = 29;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -351,6 +352,8 @@ export type ClientMessage =
       room?: string;
       heroId?: number;
       battleSpell?: BattleSpellId;
+      /** Aspekt kouzel (`a` ostrý, `b` ochranný) — volba před zápasem. */
+      aspect?: AspectId;
       /** Režim nové místnosti (u existující se ignoruje). */
       mode?: RoomMode;
       /**
@@ -540,6 +543,7 @@ export function parseClientMessage(raw: string): ClientMessage | null {
           message.battleSpell === 'heal' || message.battleSpell === 'purify' || message.battleSpell === 'flicker'
             ? message.battleSpell
             : undefined,
+        aspect: message.aspect === 'b' ? 'b' : message.aspect === 'a' ? 'a' : undefined,
         spectate: message.spectate === true ? true : undefined,
       };
 

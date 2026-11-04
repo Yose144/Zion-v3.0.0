@@ -41,7 +41,7 @@ import { BATTLE_SPELLS, ITEMS, ITEM_SLOTS, SELL_RATIO, WARD_STOCK_MAX, talentRol
 
 /** Rychlé hledání itemu podle id — používá inventář i obchod. */
 const ITEM_BY_ID = new Map(ITEMS.map((item) => [item.id, item]));
-import { SCHOOL_LABEL, spellsForAvatar } from '@/core/moba/spells';
+import { SCHOOL_LABEL, aspectsFor, schoolOfAvatar, spellsForAvatar, type AspectId } from '@/core/moba/spells';
 import { SpellIcon } from '@/core/moba/spellIcons';
 import { portraitUrl } from '@/core/moba/portraits';
 import { recommendNextItem, standingFrom } from '@/core/moba/build';
@@ -172,6 +172,8 @@ export default function EarthPage() {
   const [mode, setMode] = useState<Mode>('solo');
   const [botSkill, setBotSkill] = useState<BotSkill>('normal');
   const [battleSpell, setBattleSpell] = useState<BattleSpellId>('flicker');
+  /** Aspekt kouzel — volba před zápasem (dvě varianty stejné školy). */
+  const [aspect, setAspect] = useState<AspectId>('a');
   const [emoteWheel, setEmoteWheel] = useState<{ x: number; y: number } | null>(null);
   const [scoreboard, setScoreboard] = useState(false);
   const [onlinePhase, setOnlinePhase] = useState<OnlinePhase>('connecting');
@@ -241,7 +243,8 @@ export default function EarthPage() {
 
   const hero = useMemo(() => AVATARS.find((entry) => entry.id === heroId) ?? AVATARS[0]!, [heroId]);
   const foe = useMemo(() => AVATARS.find((entry) => entry.id === foeId) ?? AVATARS[0]!, [foeId]);
-  const spells = useMemo(() => spellsForAvatar(heroId), [heroId]);
+  const spells = useMemo(() => spellsForAvatar(heroId, aspect), [heroId, aspect]);
+  const aspectOptions = useMemo(() => aspectsFor(schoolOfAvatar(heroId)), [heroId]);
 
   const start = useCallback(() => {
     setStats(null);
@@ -469,6 +472,23 @@ export default function EarthPage() {
               ))}
             </div>
             <div className="moba-difficulty moba-difficulty-start">
+              <span>{cs ? 'Aspekt kouzel' : 'Spell aspect'}</span>
+              {aspectOptions.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={`moba-mode-btn${aspect === option.id ? ' is-active' : ''}`}
+                  title={option.note[cs ? 'cs' : 'en']}
+                  onClick={() => setAspect(option.id)}
+                >
+                  {option.name[cs ? 'cs' : 'en']}
+                </button>
+              ))}
+            </div>
+            <p className="moba-aspect-note">
+              {aspectOptions.find((option) => option.id === aspect)?.note[cs ? 'cs' : 'en']}
+            </p>
+            <div className="moba-difficulty moba-difficulty-start">
               <span>{cs ? 'Battle spell' : 'Battle spell'}</span>
               {(['flicker', 'heal', 'purify'] as BattleSpellId[]).map((id) => (
                 <button
@@ -511,6 +531,7 @@ export default function EarthPage() {
               autoAim={coarse || presenting}
               xr={presenting}
               xrStore={xrStore}
+              aspect={aspect}
               debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
             />
           ) : (
@@ -528,6 +549,7 @@ export default function EarthPage() {
               xr={presenting}
               xrStore={xrStore}
               watch={watch}
+              aspect={aspect}
               debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
             />
           )}
@@ -633,7 +655,8 @@ export default function EarthPage() {
                 <Portrait heroId={stats?.playerHeroId ?? heroId} name={hero.name} />
                 <strong>{hero.name}</strong>
                 <span>
-                  Lv {stats?.playerLevel ?? 1} · {stats?.kills ?? 0}/{stats?.deaths ?? 0}
+                  Lv {stats?.playerLevel ?? 1} · {stats?.kills ?? 0}/{stats?.deaths ?? 0} ·{' '}
+                  {aspectOptions.find((option) => option.id === aspect)?.name[cs ? 'cs' : 'en']}
                   {(stats?.streak ?? 0) >= 2 && (
                     <b className={`moba-streak${(stats?.streak ?? 0) >= 5 ? ' is-hot' : ''}`}>
                       🔥{stats?.streak}

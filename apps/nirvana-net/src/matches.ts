@@ -189,7 +189,7 @@ function mobaMatch(now: number): Match {
   return {
     game: 'moba',
     join(id, seat) {
-      addMobaSeat(sim, id, seat.heroId ?? seat.avatarId ?? 0, Date.now(), seat.battleSpell);
+      addMobaSeat(sim, id, seat.heroId ?? seat.avatarId ?? 0, Date.now(), seat.battleSpell, seat.aspect);
     },
     leave(id) {
       removeMobaSeat(sim, id);

@@ -7519,3 +7519,9 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
 .moba-best-hero span {
   color: rgba(246, 231, 216, 0.45);
 }
+
+.moba-aspect-note {
+  margin: -0.25rem 0 0.35rem;
+  font-size: 0.68rem;
+  color: rgba(127, 227, 212, 0.7);
+}

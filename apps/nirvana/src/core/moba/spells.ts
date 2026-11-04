@@ -32,6 +32,21 @@ export type SpellSchool =
   | 'shadow' // smrt, přechod, temnota
   | 'beast'; // zvířecí síla, skok, běh
 
+/** Všechny školy na jednom místě — UI i testy je procházejí. */
+export const SPELL_SCHOOLS: SpellSchool[] = [
+  'ward',
+  'fire',
+  'arrow',
+  'blade',
+  'cosmic',
+  'mind',
+  'nature',
+  'storm',
+  'song',
+  'shadow',
+  'beast',
+];
+
 export interface Spell {
   slot: SpellSlot;
   name: string;
@@ -122,6 +137,64 @@ const SCHOOL_BASE: Record<SpellSchool, { q: number; w: number; e: number; r: num
   beast: { q: 52, w: 20, e: 40, r: 84 },
 };
 
+// ── aspekty (dva způsoby, jak hrát stejnou školu) ────────────────────
+//
+// Každá postava má od 2026-11-04 **volbu před zápasem**: ostrou, nebo
+// ochrannou variantu svých kouzel. Nejde o buff — obě varianty jsou
+// obchod: `a` bere obranu za poškození, `b` obranu za poškození.
+// Kdyby jedna byla lepší, výběr by nebyl volba, ale kontrola znalosti.
+
+export type AspectId = 'a' | 'b';
+
+export interface AspectDef {
+  id: AspectId;
+  name: { cs: string; en: string };
+  note: { cs: string; en: string };
+  damage: number;
+  shield: number;
+  heal: number;
+  radius: number;
+  cooldown: number;
+}
+
+/** Názvy jsou per škola — „Žár" u ohně, „Příliv" u bouře. Čísla jsou dvě. */
+const ASPECT_NAMES: Record<SpellSchool, { a: { cs: string; en: string }; b: { cs: string; en: string } }> = {
+  ward: { a: { cs: 'Světlo štítu', en: 'Shield Light' }, b: { cs: 'Tichá pevnost', en: 'Silent Keep' } },
+  fire: { a: { cs: 'Žár', en: 'Blaze' }, b: { cs: 'Popel', en: 'Embers' } },
+  arrow: { a: { cs: 'Ostrostřelec', en: 'Deadeye' }, b: { cs: 'Lovec v záloze', en: 'Lurking Hunter' } },
+  blade: { a: { cs: 'Ostří', en: 'Edge' }, b: { cs: 'Stěna', en: 'Wall' } },
+  cosmic: { a: { cs: 'Hvězdný jas', en: 'Starlight' }, b: { cs: 'Tichý obzor', en: 'Silent Horizon' } },
+  mind: { a: { cs: 'Jasný výklad', en: 'Clear Reading' }, b: { cs: 'Trpělivý text', en: 'Patient Text' } },
+  nature: { a: { cs: 'Trn', en: 'Thorn' }, b: { cs: 'Kořen', en: 'Root' } },
+  storm: { a: { cs: 'Blesk', en: 'Bolt' }, b: { cs: 'Příliv', en: 'Tide' } },
+  song: { a: { cs: 'Prudké tóny', en: 'Sharp Tones' }, b: { cs: 'Držený akord', en: 'Held Chord' } },
+  shadow: { a: { cs: 'Ostrý stín', en: 'Sharp Shade' }, b: { cs: 'Hluboký stín', en: 'Deep Shade' } },
+  beast: { a: { cs: 'Spár', en: 'Claw' }, b: { cs: 'Kůže a kost', en: 'Hide and Bone' } },
+};
+
+const ASPECT_NOTES = {
+  a: { cs: '+14 % poškození, −20 % štítu a léčení', en: '+14% damage, −20% shield and healing' },
+  b: { cs: '−12 % poškození, +35 % štítu a léčení', en: '−12% damage, +35% shield and healing' },
+} as const;
+
+export function aspectById(school: SpellSchool, id: AspectId): AspectDef {
+  const names = ASPECT_NAMES[school];
+  return id === 'b'
+    ? { id: 'b', name: names.b, note: ASPECT_NOTES.b, damage: 0.88, shield: 1.35, heal: 1.35, radius: 1.1, cooldown: 1.04 }
+    : { id: 'a', name: names.a, note: ASPECT_NOTES.a, damage: 1.14, shield: 0.8, heal: 0.8, radius: 0.94, cooldown: 0.96 };
+}
+
+/** Obě volby pro školu — pick screen je vypíše vedle sebe. */
+export function aspectsFor(school: SpellSchool): [AspectDef, AspectDef] {
+  return [aspectById(school, 'a'), aspectById(school, 'b')];
+}
+
+/** Škola postavy (bez stavby kouzel) — pick screen ji potřebuje dřív. */
+export function schoolOfAvatar(id: number): SpellSchool {
+  const entry: AvatarEntry | undefined = AVATARS_BY_ID.get(id);
+  return schoolOf(`${entry?.subtitle ?? ''} ${entry?.name ?? ''}`);
+}
+
 function pick<T>(random: () => number, list: T[], fallback: T): T {
   return list[Math.floor(random() * list.length) % list.length] ?? fallback;
 }
@@ -130,7 +203,7 @@ function pick<T>(random: () => number, list: T[], fallback: T): T {
  * Sada kouzel pro postavu. `ability` je kanonický název schopnosti —
  * z něj plyne školy i jméno ultimátky.
  */
-export function spellsFor(id: number, color: string): Spell[] {
+export function spellsFor(id: number, color: string, aspect: AspectId = 'a'): Spell[] {
   const entry: AvatarEntry | undefined = AVATARS_BY_ID.get(id);
   const random = seededRandom(id);
   const text = `${entry?.subtitle ?? ''} ${entry?.name ?? ''}`;
@@ -167,7 +240,7 @@ export function spellsFor(id: number, color: string): Spell[] {
     ...overrides,
   });
 
-  return [
+  const kit = [
     spell('Q', pick(random, names.q, names.q[0]!), 'projectile', base.q, 3200, 30, {
       range: 12,
       radius: 1.1,
@@ -202,11 +275,23 @@ export function spellsFor(id: number, color: string): Spell[] {
       speed: 0,
     }),
   ];
+
+  // Aspekt je **jeden násobek na celou sadu** — kdyby se aplikoval po
+  // kouzlech, rozešly by se hodnoty v HUD (klient počítá stejnou funkcí).
+  const def = aspectById(school, aspect);
+  return kit.map((entry) => ({
+    ...entry,
+    damage: Math.round(entry.damage * def.damage),
+    shield: Math.round(entry.shield * def.shield),
+    heal: Math.round(entry.heal * def.heal),
+    radius: Math.round(entry.radius * def.radius * 100) / 100,
+    cooldownMs: Math.round(entry.cooldownMs * def.cooldown),
+  }));
 }
 
-/** Kouzla pro konkrétní postavu včetně palety (barva VFX). */
-export function spellsForAvatar(id: number): Spell[] {
-  return spellsFor(id, avatarLook(id).palette.glow);
+/** Kouzla pro konkrétní postavu včetně palety (barva VFX) a aspektu. */
+export function spellsForAvatar(id: number, aspect: AspectId = 'a'): Spell[] {
+  return spellsFor(id, avatarLook(id).palette.glow, aspect);
 }
 
 export const SPELL_SLOTS: SpellSlot[] = ['Q', 'W', 'E', 'R'];

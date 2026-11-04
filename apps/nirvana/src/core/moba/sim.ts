@@ -13,7 +13,18 @@
 
 import { AVATARS_BY_ID } from '../avatars/catalog';
 import { avatarLook } from '../avatars/kit';
-import { SCHOOL_TRAITS, SPELL_RANK_SCALE, spellCooldown, spellMana, spellRank, spellsFor, type Spell, type SpellSchool, type SpellSlot } from './spells';
+import {
+  SCHOOL_TRAITS,
+  SPELL_RANK_SCALE,
+  spellCooldown,
+  spellMana,
+  spellRank,
+  spellsFor,
+  type AspectId,
+  type Spell,
+  type SpellSchool,
+  type SpellSlot,
+} from './spells';
 import {
   BOSS_BASE_DAMAGE,
   BOSS_BASE_HP,
@@ -641,6 +652,8 @@ export interface Hero {
   battleSpell: BattleSpellId;
   items: ItemId[];
   buffs: Buff[];
+  /** Zvolený aspekt kouzel (`a` ostrý, `b` ochranný). */
+  aspect: AspectId;
   isPlayer: boolean;
   /** Kam se bot zrovna dívá / kam jde (jen pro AI). */
   botLane: LaneId;
@@ -834,6 +847,7 @@ function makeHero(
   spawn: { x: number; z: number },
   isPlayer: boolean,
   battleSpell: BattleSpellId = 'flicker',
+  aspect: AspectId = 'a',
 ): Hero {
   const entry = AVATARS_BY_ID.get(heroId);
   const cl = entry?.cl ?? 3;
@@ -862,7 +876,8 @@ function makeHero(
     slowFactor: 0,
     baseMaxHp: maxHp,
     baseMaxMana: maxMana,
-    spells: spellsFor(heroId, look.palette.glow),
+    spells: spellsFor(heroId, look.palette.glow, aspect),
+    aspect,
     cooldowns: { Q: 0, W: 0, E: 0, R: 0 },
     attackCooldown: 0,
     facing: team === 'blue' ? 0 : Math.PI,
@@ -900,6 +915,8 @@ export interface MobaSeat {
   human?: boolean;
   /** Battle spell — v multiplayeru od klienta (server ho jen předá do sim). */
   battleSpell?: BattleSpellId;
+  /** Aspekt kouzel (`a` ostrý, `b` ochranný); boti dostanou deterministicky. */
+  aspect?: AspectId;
 }
 
 /** Boss sílí s časem zápasu — na konci je mnohem tvrdší než na startu. */
@@ -950,6 +967,9 @@ export function createMobaMatch(seats: MobaSeat[], now: number, botSkill: BotSki
       seat.team === 'blue' ? SPAWNS.blue : SPAWNS.red,
       seat.human === true,
       seat.battleSpell ?? 'flicker',
+      // Boti dostanou aspekt podle id — jinak by všichni hráli stejně
+      // a hráč by se nikdy nesetkal s ochrannou variantou.
+      seat.aspect ?? (seat.heroId % 2 === 0 ? 'a' : 'b'),
     ),
   );
   // Boti se rozřadí do linek **symetricky podle týmu** — dřív brali index
@@ -1041,10 +1061,11 @@ export function createMoba(
   now: number,
   botSkill: BotSkill = 'normal',
   battleSpell: BattleSpellId = 'flicker',
+  aspect: AspectId = 'a',
 ): MobaState {
   return createMobaMatch(
     [
-      { id: 'hero-you', heroId: playerHeroId, team: 'blue', human: true, battleSpell },
+      { id: 'hero-you', heroId: playerHeroId, team: 'blue', human: true, battleSpell, aspect },
       { id: 'hero-foe', heroId: enemyHeroId, team: 'red', human: false },
     ],
     now,

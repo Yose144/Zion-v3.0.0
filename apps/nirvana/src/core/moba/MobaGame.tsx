@@ -21,7 +21,7 @@ import { MobaStage } from './MobaStage';
 import { MobaXr } from './MobaXr';
 import { XR } from '@react-three/xr';
 import type { XRStore } from '@react-three/xr';
-import type { SpellSchool, SpellSlot } from './spells';
+import type { AspectId, SpellSchool, SpellSlot } from './spells';
 import { spellCooldown, spellMana, spellRank } from './spells';
 import { MobaFxOverlay, type DamageFloater } from './MobaFxOverlay';
 import { SPELL_BY_KEY } from './keys';
@@ -94,6 +94,8 @@ export interface MobaProps {
   autoAim?: boolean;
   /** Battle spell vybraný před zápasem (sólo). */
   battleSpell?: BattleSpellId;
+  /** Aspekt kouzel (`a` ostrý, `b` ochranný) — volba před zápasem. */
+  aspect?: AspectId;
 }
 
 /** Sestaví HUD data ze snapshotu — společná pro sólo i online. */
@@ -250,6 +252,7 @@ function MobaWorld(props: MobaProps & {
         talentRequest={props.talentRequest}
         autoAim={props.autoAim}
         battleSpell={props.battleSpell}
+        aspect={props.aspect}
         snapshotRef={props.snapshotRef}
       />
       <MobaStage
@@ -284,6 +287,7 @@ function SoloController({
   talentRequest,
   autoAim,
   battleSpell,
+  aspect,
   snapshotRef,
 }: MobaProps & { snapshotRef: React.MutableRefObject<MobaSnapshot | null> }) {
   const { camera, gl } = useThree();
@@ -370,7 +374,16 @@ function SoloController({
   useFrame(() => {
     if (!running) return;
     const now = performance.now();
-    if (!state.current) state.current = createMoba(playerHeroId, enemyHeroId, now, botSkill ?? 'normal', battleSpell ?? 'flicker');
+    if (!state.current) {
+      state.current = createMoba(
+        playerHeroId,
+        enemyHeroId,
+        now,
+        botSkill ?? 'normal',
+        battleSpell ?? 'flicker',
+        aspect ?? 'a',
+      );
+    }
     const you = state.current.heroes[0]!;
 
     const dt = Math.min(0.1, (now - lastTick.current) / 1000 || STEP);

@@ -64,6 +64,7 @@ export interface NetApi {
     heroId?: number,
     battleSpell?: BattleSpellId,
     mode?: RoomMode,
+    aspect?: 'a' | 'b',
   ) => void;
   /** Připojení do konkrétní místnosti z lobby (když je otevřených víc). */
   joinRoom: (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', roomId: string) => void;
@@ -366,8 +367,9 @@ export function NetProvider({ children }: { children: ReactNode }) {
       heroId?: number,
       battleSpell?: BattleSpellId,
       mode?: RoomMode,
+      aspect?: 'a' | 'b',
     ) => {
-      send({ t: 'join', game, heroId, battleSpell, mode });
+      send({ t: 'join', game, heroId, battleSpell, mode, aspect });
     },
     [send],
   );

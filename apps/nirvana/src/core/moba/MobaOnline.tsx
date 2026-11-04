@@ -15,7 +15,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useNet } from '@/core/net/useNet';
-import { spellsForAvatar } from './spells';
+import { spellsForAvatar, type AspectId } from './spells';
 import { MobaStage } from './MobaStage';
 import { MobaXr } from './MobaXr';
 import { XR } from '@react-three/xr';
@@ -71,6 +71,7 @@ export function MobaOnline({
   xr = false,
   xrStore,
   watch = null,
+  aspect = 'a',
 }: {
   heroId: number;
   /** Battle spell vybraný před zápasem (jde do `join`). */
@@ -94,6 +95,8 @@ export function MobaOnline({
   xrStore?: XRStore;
   /** Id místnosti, na kterou se jen díváme (`?watch=`); `null` = hrajeme. */
   watch?: string | null;
+  /** Aspekt kouzel vybraný před zápasem. */
+  aspect?: AspectId;
 }) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
   const selfPose = useRef<{ x: number; z: number; active: boolean } | null>(null);
@@ -118,6 +121,7 @@ export function MobaOnline({
         snapshotRef={snapshotRef}
         selfPose={selfPose}
         watch={watch}
+        aspect={aspect}
       />
       <MobaStage
         snapshotRef={snapshotRef}
@@ -174,6 +178,7 @@ function OnlineController({
   snapshotRef,
   selfPose,
   watch = null,
+  aspect = 'a',
 }: {
   heroId: number;
   /** Battle spell vybraný před zápasem (jde do `join`). */
@@ -192,6 +197,8 @@ function OnlineController({
   selfPose: React.MutableRefObject<{ x: number; z: number; active: boolean } | null>;
   /** Id místnosti, na kterou se jen díváme (`?watch=`). */
   watch?: string | null;
+  /** Aspekt kouzel vybraný před zápasem. */
+  aspect?: AspectId;
 }) {
   const { camera, gl } = useThree();
   const { subscribe, joinGame, spectateRoom, leaveRoom, sendMobaInput, sendBuy, sendSell, sendWard, sendSentry, sendBattleSpell, sendRecall, sendBuyback, sendUseItem, sendTalent, connected, youPlayerId } = useNet();
@@ -210,7 +217,7 @@ function OnlineController({
   const groundPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const castPoint = useMemo(() => new THREE.Vector3(), []);
-  const spells = useMemo(() => spellsForAvatar(heroId), [heroId]);
+  const spells = useMemo(() => spellsForAvatar(heroId, aspect), [heroId, aspect]);
   const phaseRef = useRef<string>('connecting');
   const lastFrame = useRef(0);
 
@@ -222,9 +229,9 @@ function OnlineController({
     }
     onPhase?.('connecting');
     if (watch) spectateRoom('moba', watch);
-    else joinGame('moba', heroId, battleSpell);
+    else joinGame('moba', heroId, battleSpell, undefined, aspect);
     return () => leaveRoom();
-  }, [connected, heroId, joinGame, spectateRoom, leaveRoom, onPhase, battleSpell, watch]);
+  }, [connected, heroId, joinGame, spectateRoom, leaveRoom, onPhase, battleSpell, watch, aspect]);
 
   useEffect(() => {
     return subscribe((message) => {

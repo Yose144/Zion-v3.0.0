@@ -31,6 +31,7 @@ import {
   type MobaSeat,
   type MobaState,
 } from '../../nirvana/src/core/moba/sim.js';
+import type { AspectId } from '../../nirvana/src/core/moba/spells.js';
 import { AVATARS_BY_ID } from '../../nirvana/src/core/avatars/catalog.js';
 import type { Team } from '../../nirvana/src/core/moba/map.js';
 
@@ -55,6 +56,8 @@ export interface MobaSeatInfo {
   human: boolean;
   /** Battle spell — v multiplayeru volba hráče, boti mají Flicker. */
   battleSpell?: BattleSpellId;
+  /** Aspekt kouzel (`a` ostrý, `b` ochranný); boti dostanou podle id. */
+  aspect?: AspectId;
 }
 
 export interface MobaRoomSim {
@@ -99,6 +102,7 @@ export function addMobaSeat(
   heroId: number | undefined,
   now: number,
   battleSpell?: BattleSpellId,
+  aspect?: AspectId,
 ): boolean {
   if (room.seats.size >= MOBA_ROOM_SIZE) return false;
   const wanted = heroId !== undefined && AVATARS_BY_ID.has(heroId) ? heroId : 0;
@@ -111,7 +115,14 @@ export function addMobaSeat(
     room.lastError = `hrdina ${wanted} je obsazený, dostal jsi ${safeHero}`;
   }
   const team: 'blue' | 'red' = teamCount(room, 'blue') <= teamCount(room, 'red') ? 'blue' : 'red';
-  room.seats.set(connId, { id: connId, heroId: safeHero, team, human: true, battleSpell: battleSpell ?? 'flicker' });
+  room.seats.set(connId, {
+    id: connId,
+    heroId: safeHero,
+    team,
+    human: true,
+    battleSpell: battleSpell ?? 'flicker',
+    aspect: aspect === 'b' ? 'b' : 'a',
+  });
   room.inputs.set(connId, NO_INPUT);
   if (room.phase === 'waiting') room.startAt = Math.min(room.startAt || now + BOT_FILL_DELAY_MS, now + BOT_FILL_DELAY_MS + 4000);
   return true;

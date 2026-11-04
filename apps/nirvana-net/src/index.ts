@@ -485,6 +485,7 @@ async function joinRoom(
   battleSpell?: BattleSpellId,
   requestedMode: RoomMode = 'bots',
   spectate = false,
+  aspect?: 'a' | 'b',
 ): Promise<void> {
   if (!conn.helloSent) {
     sendError(conn, 'bad_frame', 'nejdřív hello');
@@ -564,6 +565,7 @@ async function joinRoom(
     avatarId: conn.identity.avatarId ?? undefined,
     heroId,
     battleSpell,
+    aspect,
   });
 
   send(conn, {
@@ -667,6 +669,7 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
         message.battleSpell,
         message.mode,
         message.spectate === true,
+        message.aspect,
       );
       return;
 

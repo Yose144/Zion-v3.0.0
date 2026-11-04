@@ -25,6 +25,8 @@ export interface MatchSeat {
   /** Výběr hrdiny (MOBA) — ostatní hry ignorují. */
   heroId?: number;
   battleSpell?: BattleSpellId;
+  /** Aspekt kouzel (MOBA): `a` ostrý, `b` ochranný. */
+  aspect?: 'a' | 'b';
 }
 
 export interface MatchCtx {
