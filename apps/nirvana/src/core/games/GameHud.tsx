@@ -84,6 +84,15 @@ export function GameHud() {
             <span className="game-hud-tab-text">{game.title[lang]}</span>
           </Link>
         ))}
+        {/* Lobby je rozcestník, ne hra — vlastní odkaz na konci řady. */}
+        <Link
+          href="/multiplayer"
+          className={`game-hud-tab is-lobby${pathname === '/multiplayer' ? ' is-active' : ''}`}
+          style={{ ['--game-tone' as string]: '#9df0e2' }}
+        >
+          <span aria-hidden>🌐</span>
+          <span className="game-hud-tab-text">{lang === 'cs' ? 'Online' : 'Online'}</span>
+        </Link>
       </div>
 
       {controls && <span className="game-hud-controls">{controls}</span>}
