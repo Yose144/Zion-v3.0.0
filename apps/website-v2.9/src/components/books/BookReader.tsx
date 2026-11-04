@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import MarkdownDoc from '@/components/docs/MarkdownDoc';
 import {
@@ -18,12 +18,25 @@ import {
   Languages,
   Clock,
   Download,
+  Bookmark,
+  BookmarkCheck,
+  Search,
+  Type,
+  Check,
+  Loader2,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import type { BookDef, BookChapter, Lang } from '@/lib/books/types';
 import BookNav from '@/components/books/BookNav';
 import { downloadForBook } from '@/lib/books/downloads';
 import { saveReadingProgress } from '@/lib/books/progress';
+import { bookmarkId, toggleBookmark, removeBookmark, useBookmarks } from '@/lib/books/bookmarks';
+import {
+  readerFontClass,
+  readerThemeClass,
+  readerWidthClass,
+  useReaderSettings,
+} from '@/lib/books/reader-settings';
 import { splitSingleDoc, type SingleDocBook } from '@/lib/books/singleDoc';
 
 interface Category {
@@ -51,6 +64,18 @@ function buildCategories(chapters: BookChapter[]): Category[] {
   return categories;
 }
 
+// Plain-text snippet around a match — markdown punctuation is stripped so the
+// result list stays readable.
+function snippetAround(raw: string, index: number, needleLength: number): string {
+  const start = Math.max(0, index - 90);
+  const end = Math.min(raw.length, index + needleLength + 90);
+  return raw
+    .slice(start, end)
+    .replace(/[#*_>`~\[\]()]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export default function BookReader({ book }: { book: BookDef }) {
   const { lang } = useLang();
   const l: Lang = lang === 'cs' ? 'cs' : 'en';
@@ -71,6 +96,16 @@ export default function BookReader({ book }: { book: BookDef }) {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({ 0: true, 1: true });
   const [czFallback, setCzFallback] = useState(false);
   const [readingMinutes, setReadingMinutes] = useState<number | null>(null);
+  const [settings, updateSettings] = useReaderSettings();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<
+    { slug: string; part: number; label: string; snippet: string }[] | null
+  >(null);
+  const [searching, setSearching] = useState(false);
+  const searchCache = useRef<Record<string, string>>({});
+  const settingsRef = useRef<HTMLDivElement>(null);
+  const bookmarks = useBookmarks(book.id);
   const download = downloadForBook(book.id);
 
   const currentChapter = chapters.find((c) => c.slug === selectedChapter);
@@ -96,6 +131,9 @@ export default function BookReader({ book }: { book: BookDef }) {
     progressChapters.length > 0 && progressIndex >= 0
       ? Math.round(((progressIndex + 1) / progressChapters.length) * 100)
       : 0;
+
+  const currentBookmarkId = currentChapter ? bookmarkId(book.id, currentChapter.slug) : '';
+  const currentBookmarked = bookmarks.some((b) => b.id === currentBookmarkId);
 
   // Reading time estimate — honest and cheap: words / 200 wpm, minimum a minute.
   useEffect(() => {
@@ -147,6 +185,89 @@ export default function BookReader({ book }: { book: BookDef }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [chapters, selectedChapter]);
+
+  // Close the reader settings popover on outside click / Escape.
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const onDown = (event: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setSettingsOpen(false);
+      }
+    };
+    const onEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSettingsOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onEsc);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onEsc);
+    };
+  }, [settingsOpen]);
+
+  // Full-text search across this book's chapters (fetched on demand, cached per session).
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (query.length < 3) {
+      setSearchResults(null);
+      setSearching(false);
+      return;
+    }
+    let cancelled = false;
+    setSearching(true);
+    const timer = setTimeout(async () => {
+      const needle = query.toLowerCase();
+      const list = chapters.filter((c) => !isFrontMatter(c));
+      const found: { slug: string; part: number; label: string; snippet: string }[] = [];
+      const queue = [...list];
+      const worker = async () => {
+        while (!cancelled && queue.length) {
+          const chapter = queue.shift()!;
+          let text = book.singleDoc
+            ? (singleDoc?.content[chapter.slug] ?? '')
+            : (searchCache.current[chapter.slug] ?? '');
+          if (!text && book.docPath) {
+            try {
+              const res = await fetch(book.docPath(chapter.slug, l));
+              if (res.ok) {
+                text = await res.text();
+                if (l === 'en' && book.enFallback && isTranslationStub(text)) {
+                  const cs = await fetch(book.docPath(chapter.slug, 'cs'));
+                  if (cs.ok) text = await cs.text();
+                }
+                searchCache.current[chapter.slug] = text;
+              }
+            } catch {
+              /* skip unreadable chapter */
+            }
+          }
+          const index = text.toLowerCase().indexOf(needle);
+          if (index >= 0) {
+            found.push({
+              slug: chapter.slug,
+              part: chapter.part,
+              label: `${chapter.num[l]} — ${chapter.title[l]}`,
+              snippet: snippetAround(text, index, needle.length),
+            });
+          }
+        }
+      };
+      await Promise.all(
+        Array.from({ length: Math.min(6, Math.max(1, list.length)) }, () => worker()),
+      );
+      if (cancelled) return;
+      found.sort(
+        (a, b) =>
+          list.findIndex((c) => c.slug === a.slug) - list.findIndex((c) => c.slug === b.slug),
+      );
+      setSearchResults(found);
+      setSearching(false);
+    }, 450);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, chapters, book, l, singleDoc]);
 
   // single-doc books: fetch once, split by headings → chapters + content map
   useEffect(() => {
@@ -277,6 +398,119 @@ export default function BookReader({ book }: { book: BookDef }) {
   const togglePart = (part: number) => {
     setExpanded((prev) => ({ ...prev, [part]: !prev[part] }));
   };
+
+  const toggleCurrentBookmark = () => {
+    if (!currentChapter) return;
+    toggleBookmark({
+      bookId: book.id,
+      bookTitle: book.title[l],
+      chapterSlug: currentChapter.slug,
+      chapterLabel: `${currentChapter.num[l]} — ${currentChapter.title[l]}`,
+      path: window.location.pathname,
+    });
+  };
+
+  const renderSearch = () => {
+    const active = searchQuery.trim().length >= 3;
+    return (
+      <div className="mb-3 space-y-2">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500" />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={l === 'cs' ? 'Hledat v knize…' : 'Search this book…'}
+            aria-label={l === 'cs' ? 'Hledat v knize' : 'Search this book'}
+            className="w-full rounded-lg border border-white/10 bg-black/30 py-2 pl-8 pr-8 text-xs text-white placeholder:text-gray-600 focus:border-white/30 focus:outline-none focus:ring-1 focus:ring-white/20"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              aria-label={l === 'cs' ? 'Vymazat hledání' : 'Clear search'}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-gray-500 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+
+        {active && (
+          <div className="max-h-72 overflow-y-auto rounded-lg border border-white/10 bg-black/40">
+            {searching ? (
+              <p className="flex items-center gap-2 px-3 py-2 text-[11px] text-gray-500">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                {l === 'cs' ? 'Hledám…' : 'Searching…'}
+              </p>
+            ) : searchResults && searchResults.length > 0 ? (
+              <ul className="divide-y divide-white/5">
+                {searchResults.map((result) => (
+                  <li key={result.slug}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleChapterSelect(result.slug, result.part);
+                        setSearchQuery('');
+                        setMobileMenuOpen(false);
+                      }}
+                      className="block w-full px-3 py-2 text-left transition-colors hover:bg-white/5"
+                    >
+                      <span className="block truncate text-[11px] font-semibold text-gray-200">
+                        {result.label}
+                      </span>
+                      <span className="mt-0.5 line-clamp-2 block text-[10px] leading-snug text-gray-500">
+                        {result.snippet}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="px-3 py-2 text-[11px] text-gray-500">
+                {l === 'cs' ? 'Nic nenalezeno.' : 'Nothing found.'}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderBookmarks = () =>
+    bookmarks.length > 0 ? (
+      <div className="mb-3 rounded-lg border border-white/10 bg-black/20 p-2">
+        <p className="px-1 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+          {l === 'cs' ? 'Záložky' : 'Bookmarks'} · {bookmarks.length}
+        </p>
+        <ul className="space-y-0.5">
+          {bookmarks.map((bookmark) => (
+            <li key={bookmark.id} className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  const chapter = chapters.find((c) => c.slug === bookmark.chapterSlug);
+                  handleChapterSelect(bookmark.chapterSlug, chapter?.part ?? 0);
+                  setMobileMenuOpen(false);
+                }}
+                className="flex min-w-0 flex-1 items-center gap-1.5 rounded px-1.5 py-1 text-left text-[11px] text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
+              >
+                <BookmarkCheck className="h-3 w-3 shrink-0" style={{ color: accentRgb }} />
+                <span className="truncate">{bookmark.chapterLabel}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => removeBookmark(bookmark.id)}
+                aria-label={l === 'cs' ? 'Odebrat záložku' : 'Remove bookmark'}
+                className="rounded p-1 text-gray-600 transition-colors hover:bg-white/10 hover:text-red-400"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : null;
 
   /** Active-book slot inside the shared library nav: accent row + inline chapter TOC. */
   const renderActiveBook = () => (
@@ -410,6 +644,8 @@ export default function BookReader({ book }: { book: BookDef }) {
 
           {mobileMenuOpen && (
             <div className="mt-4 zion-rainbow-card p-3 max-h-[70vh] overflow-y-auto" style={accentStyle}>
+              {renderSearch()}
+              {renderBookmarks()}
               {renderNav(true)}
             </div>
           )}
@@ -420,13 +656,15 @@ export default function BookReader({ book }: { book: BookDef }) {
           <aside className="hidden lg:block w-80 shrink-0">
             <div className="sticky top-24 zion-rainbow-card overflow-hidden" style={accentStyle}>
               <div className="px-3 py-3 max-h-[calc(100vh-140px)] overflow-y-auto">
+                {renderSearch()}
+                {renderBookmarks()}
                 {renderNav()}
               </div>
             </div>
           </aside>
 
           {/* Content */}
-          <div className="flex-1 min-w-0 max-w-3xl xl:max-w-4xl mx-auto">
+          <div className={`flex-1 min-w-0 mx-auto ${readerWidthClass[settings.width]}`}>
             {/* Breadcrumbs — same chrome as /docs/view */}
             <nav className="flex flex-wrap items-center gap-1.5 text-sm text-gray-500 mb-8">
               <Link
@@ -480,6 +718,145 @@ export default function BookReader({ book }: { book: BookDef }) {
                   )}
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleCurrentBookmark}
+                    aria-pressed={currentBookmarked}
+                    title={
+                      l === 'cs'
+                        ? currentBookmarked
+                          ? 'Odebrat záložku'
+                          : 'Přidat záložku'
+                        : currentBookmarked
+                          ? 'Remove bookmark'
+                          : 'Add bookmark'
+                    }
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zion-gold/60 ${
+                      currentBookmarked
+                        ? 'border-amber-400/50 bg-amber-400/10 text-amber-300'
+                        : 'border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/25 hover:text-white'
+                    }`}
+                  >
+                    {currentBookmarked ? (
+                      <BookmarkCheck className="h-3.5 w-3.5" />
+                    ) : (
+                      <Bookmark className="h-3.5 w-3.5" />
+                    )}
+                    <span className="hidden sm:inline">{l === 'cs' ? 'Záložka' : 'Bookmark'}</span>
+                  </button>
+
+                  <div className="relative" ref={settingsRef}>
+                    <button
+                      type="button"
+                      onClick={() => setSettingsOpen((open) => !open)}
+                      aria-expanded={settingsOpen}
+                      aria-haspopup="dialog"
+                      title={l === 'cs' ? 'Nastavení čtečky' : 'Reader settings'}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold text-gray-400 transition-colors hover:border-white/25 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zion-gold/60"
+                    >
+                      <Type className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">{l === 'cs' ? 'Čtečka' : 'Reader'}</span>
+                    </button>
+
+                    {settingsOpen && (
+                      <div
+                        role="dialog"
+                        aria-label={l === 'cs' ? 'Nastavení čtečky' : 'Reader settings'}
+                        className="absolute right-0 top-full z-40 mt-2 w-64 space-y-3 rounded-xl border border-white/15 bg-black/95 p-3 shadow-xl backdrop-blur"
+                      >
+                        <div>
+                          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+                            {l === 'cs' ? 'Velikost písma' : 'Font size'}
+                          </p>
+                          <div className="flex gap-1.5">
+                            {(['sm', 'md', 'lg', 'xl'] as const).map((font) => (
+                              <button
+                                key={font}
+                                type="button"
+                                onClick={() => updateSettings({ font })}
+                                aria-pressed={settings.font === font}
+                                className={`flex-1 rounded-md border px-2 py-1 text-xs font-semibold transition-colors ${
+                                  settings.font === font
+                                    ? 'border-zion-gold/50 bg-zion-gold/10 text-zion-gold'
+                                    : 'border-white/10 text-gray-400 hover:border-white/25 hover:text-white'
+                                }`}
+                              >
+                                {font === 'sm' ? 'S' : font === 'md' ? 'M' : font === 'lg' ? 'L' : 'XL'}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+                            {l === 'cs' ? 'Šířka sloupce' : 'Column width'}
+                          </p>
+                          <div className="flex gap-1.5">
+                            {(['narrow', 'normal', 'wide'] as const).map((width) => (
+                              <button
+                                key={width}
+                                type="button"
+                                onClick={() => updateSettings({ width })}
+                                aria-pressed={settings.width === width}
+                                className={`flex-1 rounded-md border px-2 py-1 text-[10px] font-semibold transition-colors ${
+                                  settings.width === width
+                                    ? 'border-zion-cyan/50 bg-zion-cyan/10 text-zion-cyan'
+                                    : 'border-white/10 text-gray-400 hover:border-white/25 hover:text-white'
+                                }`}
+                              >
+                                {l === 'cs'
+                                  ? width === 'narrow'
+                                    ? 'Úzká'
+                                    : width === 'normal'
+                                      ? 'Normál'
+                                      : 'Široká'
+                                  : width === 'narrow'
+                                    ? 'Narrow'
+                                    : width === 'normal'
+                                      ? 'Normal'
+                                      : 'Wide'}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+                            {l === 'cs' ? 'Vzhled' : 'Theme'}
+                          </p>
+                          <div className="flex gap-1.5">
+                            {(['dark', 'sepia', 'light'] as const).map((theme) => (
+                              <button
+                                key={theme}
+                                type="button"
+                                onClick={() => updateSettings({ theme })}
+                                aria-pressed={settings.theme === theme}
+                                className={`flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold transition-colors ${
+                                  settings.theme === theme
+                                    ? 'border-white/40 bg-white/10 text-white'
+                                    : 'border-white/10 text-gray-400 hover:border-white/25 hover:text-white'
+                                }`}
+                              >
+                                {settings.theme === theme && <Check className="h-3 w-3" />}
+                                {l === 'cs'
+                                  ? theme === 'dark'
+                                    ? 'Tmavý'
+                                    : theme === 'sepia'
+                                      ? 'Sépia'
+                                      : 'Světlý'
+                                  : theme === 'dark'
+                                    ? 'Dark'
+                                    : theme === 'sepia'
+                                      ? 'Sepia'
+                                      : 'Light'}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {readingMinutes && (
                     <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold text-gray-400">
                       <Clock className="h-3.5 w-3.5" />~{readingMinutes} min
@@ -499,7 +876,8 @@ export default function BookReader({ book }: { book: BookDef }) {
               </div>
             )}
 
-            <div className="zion-docs-prose">
+            <div className={readerThemeClass[settings.theme]}>
+              <div className={`zion-docs-prose ${readerFontClass[settings.font]}`}>
               {loading ? (
                 <div className="space-y-6 py-12">
                   <div className="h-10 w-2/3 rounded-lg bg-white/10 animate-pulse mx-auto" />
@@ -519,6 +897,7 @@ export default function BookReader({ book }: { book: BookDef }) {
                   />
                 </article>
               )}
+              </div>
             </div>
 
             {/* Prev / next chapter */}

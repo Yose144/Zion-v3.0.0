@@ -16,6 +16,8 @@ export interface ArchiveDownload {
   formatLabel: string;
   languages: { cs: string; en: string };
   sizeLabel: string;
+  /** SHA-256 of the packaged file — users can verify the download. */
+  sha256?: string;
   /** ISO date of the packaged edition. */
   updated: string;
   highlights: { cs: string; en: string }[];
@@ -40,6 +42,7 @@ export const ARCHIVE_DOWNLOADS: ArchiveDownload[] = [
       en: '5 languages — CZ, EN, ES, FR, PT',
     },
     sizeLabel: '62 MB',
+    sha256: '6bce6c1435251f17bb3bdc350096c205448900a01a34a5c8859128c1e07c3f49',
     updated: '2026-11-04',
     highlights: [
       { cs: '40 knih · 8 edic · 5 jazyků', en: '40 books · 8 editions · 5 languages' },

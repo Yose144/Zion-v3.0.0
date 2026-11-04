@@ -1,10 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import {
   BookOpen,
+  Check,
   CheckCircle2,
+  Copy as CopyIcon,
   Download,
   FileArchive,
   ShieldCheck,
@@ -33,10 +36,24 @@ const Copy = {
     en: 'Standalone editions of the other books (PDF + EPUB), audio for selected chapters, and print editions on request.',
   },
   empty: { cs: 'Zatím tu není žádná edice.', en: 'No editions yet.' },
+  checksum: { cs: 'Kontrolní součet', en: 'Checksum' },
+  copyChecksum: { cs: 'Kopírovat SHA-256', en: 'Copy SHA-256' },
+  copied: { cs: 'Zkopírováno', en: 'Copied' },
 };
 
 export default function StazeniPanel({ lang }: { lang: Lang }) {
   const l = lang;
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const copyChecksum = async (id: string, value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(id);
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      /* clipboard blocked — the full hash stays visible in the title */
+    }
+  };
   const dateFmt = new Intl.DateTimeFormat(l === 'cs' ? 'cs-CZ' : 'en-GB', {
     dateStyle: 'medium',
   });
@@ -104,6 +121,33 @@ export default function StazeniPanel({ lang }: { lang: Lang }) {
                         {Copy.updated[l]}: {dateFmt.format(new Date(item.updated))}
                       </span>
                     </p>
+
+                    {item.sha256 && (
+                      <div className="flex items-center gap-1.5 rounded-md border border-white/10 bg-black/30 px-2 py-1">
+                        <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+                          SHA-256
+                        </span>
+                        <code
+                          title={item.sha256}
+                          className="min-w-0 flex-1 truncate font-mono text-[9px] text-gray-400"
+                        >
+                          {item.sha256}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => copyChecksum(item.id, item.sha256!)}
+                          aria-label={Copy.copyChecksum[l]}
+                          title={copied === item.id ? Copy.copied[l] : Copy.copyChecksum[l]}
+                          className="shrink-0 rounded p-1 text-gray-500 transition-colors hover:bg-white/10 hover:text-white"
+                        >
+                          {copied === item.id ? (
+                            <Check className="h-3 w-3 text-emerald-400" />
+                          ) : (
+                            <CopyIcon className="h-3 w-3" />
+                          )}
+                        </button>
+                      </div>
+                    )}
 
                     <div className="mt-auto flex flex-wrap items-center gap-2 pt-1.5">
                       <a

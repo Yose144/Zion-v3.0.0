@@ -1199,3 +1199,60 @@ main > div > section:not(.home-hero) {
 html {
   background-color: #050505;
 }
+
+/* ── Zion Archive reader — font sizes and reading themes (W4) ── */
+.zion-docs-prose.reader-size-sm :is(p, li, blockquote p, td, th) {
+  font-size: 0.95rem;
+  line-height: 1.8;
+}
+.zion-docs-prose.reader-size-md :is(p, li, blockquote p, td, th) {
+  font-size: 1.075rem;
+  line-height: 1.9;
+}
+.zion-docs-prose.reader-size-lg :is(p, li, blockquote p, td, th) {
+  font-size: 1.18rem;
+  line-height: 1.95;
+}
+.zion-docs-prose.reader-size-xl :is(p, li, blockquote p, td, th) {
+  font-size: 1.3rem;
+  line-height: 2;
+}
+
+.reader-theme-sepia {
+  background: #f6ecd7;
+  border: 1px solid rgba(120, 90, 40, 0.25);
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+.reader-theme-light {
+  background: #fbfaf7;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+.reader-theme-sepia .zion-docs-prose :is(p, li, blockquote p, td, th) {
+  color: #3c3325;
+}
+.reader-theme-light .zion-docs-prose :is(p, li, blockquote p, td, th) {
+  color: #26303a;
+}
+.reader-theme-sepia .zion-docs-prose :is(strong, em, h1, h2, h3, h4),
+.reader-theme-light .zion-docs-prose :is(strong, em, h1, h2, h3, h4) {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+.reader-theme-sepia .zion-docs-prose :is(strong, h1, h2, h3, h4) {
+  color: #2a2318;
+}
+.reader-theme-light .zion-docs-prose :is(strong, h1, h2, h3, h4) {
+  color: #121a22;
+}
+.reader-theme-sepia .zion-docs-prose :is(blockquote, pre, code) {
+  background: rgba(120, 90, 40, 0.08);
+}
+.reader-theme-light .zion-docs-prose :is(blockquote, pre, code) {
+  background: rgba(0, 0, 0, 0.04);
+}
+.reader-theme-sepia .zion-docs-prose :is(h2, h3) {
+  border-color: rgba(120, 90, 40, 0.25);
+}

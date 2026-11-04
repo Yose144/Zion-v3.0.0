@@ -135,7 +135,7 @@ nezačíná na indexu.
 - [x] Gate route `/api/archive/downloads/[slug]` (pass → redirect na soubor; bez passu 403).
 - [x] První položka: **Království srdce — kompletní edice** (8 edic × 5 jazyků = 40 knih,
       PDF + EPUB, ~62 MB).
-- [ ] Metadata: checksum SHA-256, datum verze, počet souborů; zobrazit v kartě.
+- [x] Metadata: checksum SHA-256 + datum verze zobrazené v kartě (kopírování jedním klikem).
 - [ ] „Moje knihovna": po zakoupení v marketplace vidět stažení + datum platnosti passu.
 - [ ] Generovat PDF/EPUB/ZIP per kniha (`scripts/ops/build-book-bundle.py`), ukládat do
       `apps/MarketPlace/public/shop/downloads/` a registrovat v katalogu.
@@ -146,10 +146,12 @@ jde jen s passem.
 
 ### W4 — Čtenářský zážitek (P1)
 
-- [ ] Fulltext v knize (lazy index kapitol, zvýraznění, skok na výskyt).
-- [ ] Záložky a poznámky (localStorage; později opt-in sync).
-- [ ] Nastavení čtečky: velikost písma, šířka, téma (dark/sepia/light), uložené lokálně.
-- [ ] „Pokračovat" respektuje front matter a skutečný konec knihy.
+- [x] Fulltext v knize — hledání napříč kapitolami (fetch on demand, cache, kontextové snippety,
+      klik = skok do kapitoly).
+- [x] Záložky kapitol (localStorage, seznam v sidebaru, toggle v hlavičce).
+- [x] Nastavení čtečky: velikost písma (S/M/L/XL), šířka sloupce, téma (tmavý/sépia/světlý) —
+      lokálně, aplikované přes CSS třídy.
+- [x] „Pokračovat" respektuje front matter a skutečný konec knihy.
 - [ ] Na konci knihy: „Další kniha v pořadí" + „Souvisí" (z `library.ts`).
 - [ ] Tisk/PDF aktuální kapitoly.
 
@@ -210,10 +212,11 @@ Každý milník = vlastní report v `docs/3.2/REPORTS/` + záznam v `apps/websit
 5. **W2** — dokončit EN u Sůl této země (12 kapitol) — první překladová dávka.
 6. **W2** — dokončit EN u NirvanaCloud (6 kapitol).
 7. **W2** — `en-coverage.json` generovaný z auditu (jeden zdroj pro UI i report).
-8. **W4** — hledání v knize.
-9. **W4** — záložky + nastavení čtečky.
+8. ~~W4 — hledání v knize~~ ✅ 2026-11-04
+9. ~~W4 — záložky + nastavení čtečky~~ ✅ 2026-11-04
 10. **W6** — stav passu („platí do", vazba na ZIS) v lock page i hubu.
 11. **W7** — e2e pro hub s testovacím passem + downloads.
+12. **W4** — „další kniha v pořadí" na konci knihy + tisk/PDF kapitoly.
 
 ---
 
@@ -252,3 +255,5 @@ Každý milník = vlastní report v `docs/3.2/REPORTS/` + záznam v `apps/websit
 - ✅ W1: audit registru (0 chybějících CS, 15 front matter), front matter mimo progres,
   stub detekce EN, opravené jazykové claimy.
 - ✅ W2 start: knihovna/readery už nelžou o jazyce; další dávka = P1 překlady.
+- ✅ W3: checksum SHA-256 u stažení (kopírování).
+- ✅ W4: hledání v knize, záložky, nastavení čtečky (font/šířka/téma).
