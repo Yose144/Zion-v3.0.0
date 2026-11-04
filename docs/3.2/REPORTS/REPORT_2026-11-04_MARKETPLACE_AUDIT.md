@@ -377,3 +377,34 @@ Nový `apps/MarketPlace/src/components/xmas/Lantern3D.tsx`, vykreslený na `/van
 - s testovací kostkou: canvas se vytvořil (`1280×900`), model se vycentroval a rotoval, 0 chyb v konzoli (kromě pre-existing 401 z `/api/auth/me`),
 - po smazání kostky: HEAD → 404, zobrazí se „3D náhled se připravuje", **žádný** 3D canvas se nevytvoří.
 Testovací kostka byla z repa i z nasazeného artefaktu odstraněna.
+
+---
+
+## 18. Dodatek 12 — lampion ve 3D: reálný model a vizuál
+
+👤 dodal `heros/shop/Lumi/Lampion_Kralovstvi_srdce_3D_v6` — glb z technické dokumentace A3 v6: **8 samostatných dílů** (6 bočnic s motivy, vršek, dno), ~236 k trojúhelníků, reálné míry 140 × 126 × 121 mm, jednotky metry, Y-up, jedna PBR hmota „Světlá překližka". Model je nahraný v `public/models/lampion-kralovstvi-srdce.glb` (4,3 MB).
+
+### Dvě chyby při prvním pokusu
+
+1. **Přeškálování + pevná kamera.** Model jsem normalizoval na `0.82 / maxDim` a kameru dal na `z = 1.35`. Model po škálování měřil 0,82 m na výšku i šířku, takže kamera skončila uvnitř a bylo vidět jen dvě bočnice.
+   **Oprava:** model se **neškáluje** (nechává se v reálných metrech) a vzdálenost kamery se počítá z bounding sphere: `fitDist = radius / sin(fov/2) · 1.18`. Zoom limity jsou relativní (`0,55×`–`1,9× fitDist`).
+2. **Vypálený obraz.** Svíčka uvnitř (intensity 2,4, distance 3,2) + bloom 0,52 + exposure 1,05 → celý lampion byl bílý flek bez kresby.
+   **Oprava:** svíčka 0,3 s distance 0,36, klíč 0,95, rim 0,5, hemi 0,28, exposure 0,82, bloom 0,28 s threshold 0,98. Dřevo je teď čitelné a prosvítají jen výřezy.
+
+### Co vizuál dělá („aby to zapadlo do marketu")
+
+- **Galaxie:** 3 800 hvězd ve dvou vrstvách (jemná modrobílá dálka + teplá blízká) s pomalou rotací, plus **90 prachových částeček** stoupajících kolem lampionu. Pod plátnem je CSS mlhovina (tři radiální gradienty + zrnitost), takže pozadí žije i před načtením modelu.
+- **Světlo:** teplá „svíčka" uvnitř, která dýchá (`sin` na dvou frekvencích) a mikroskopicky se posouvá; teplý klíč shora, chladný rim zleva; `RoomEnvironment` pro PBR odlesky na hranách.
+- **Podstavec:** světelný disk + **kontaktní stín**, aby lampion nevisel ve vzduchu.
+- **Bloom** (`UnrealBloomPass` + `OutputPass`) jen na obrazovkách ≥ 900 px a když prohlížeč nehlásí `saveData` — na mobilu by sežral snímky.
+- **Ovládání:** tažení s **setrvačností**, kolečko zoom, dvojklik vrací pohled, tlačítko fullscreen, hint mizí po prvním tažení.
+- **Stav načítání:** procenta (4,3 MB) v gradientovém pruhu v barvách rasta.
+
+### Výkon a přístupnost
+
+- `three` + postprocessing se stahují **až po kliknutí** (~700 kB) — detail se otevírá stejně rychle jako dřív.
+- DPR strop 1,75; render se **pauzuje**, když prvek není ve viewportu (`IntersectionObserver`).
+- `prefers-reduced-motion` vypne auto-rotaci i prach; `saveData` vypne bloom.
+- Důkladný cleanup (composer, PMREM, textury, geometrie, listenery, canvas) při odmountování.
+
+**Ověřeno:** live `/vanoce/lampion` 200, model 200 (4,3 MB), 0 chyb v konzoli, screenshot s modelem i po otočení tažením; mdlý stav před kliknutím i „připravujeme" při chybějícím souboru fungují (vyzkoušeno dřív s testovací kostkou).
