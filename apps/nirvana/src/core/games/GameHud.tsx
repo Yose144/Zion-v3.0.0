@@ -24,7 +24,7 @@ import { useWallet } from './useWallet';
  * ZION zůstatek (z uzlu přes `/api/wallet/balance` — viz `useWallet`).
  */
 
-const SURFACES = ['/', '/park', '/mars', '/venus', '/avatars', '/mercury', '/saturn', '/earth', '/multiplayer', '/hiran', '/uranus', '/neptune', '/pluto'];
+const SURFACES = ['/', '/park', '/mars', '/venus', '/avatars', '/mercury', '/saturn', '/earth', '/multiplayer', '/hiran', '/uranus', '/neptune', '/pluto', '/kridla'];
 
 const CONTROLS: Record<string, { cs: string; en: string }> = {
   '/': { cs: 'tažení myší = orbita · kolečko = přiblížení · klik na planetu = hra', en: 'drag = orbit · wheel = zoom · click a planet = game' },

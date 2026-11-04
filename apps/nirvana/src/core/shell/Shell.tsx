@@ -84,6 +84,9 @@ const PLANET_PANELS: Record<PlanetGameId, {
   href: string;
   cta: string;
   portal?: string;
+  /** Druhá cesta z panelu (Uran: archiv i hratelná Křídla). */
+  href2?: string;
+  cta2?: string;
 }> = {
   mars: {
     title: 'MARS',
@@ -118,9 +121,11 @@ const PLANET_PANELS: Record<PlanetGameId, {
   },
   uranus: {
     title: 'URAN',
-    note: 'Ledový archiv — planeta nakloněná na bok. Prstence jako zmrzlé záznamy kruhů.',
+    note: 'Ledový archiv — planeta nakloněná na bok. Prstence jako zmrzlé záznamy kruhů. A nad ním Křídla: sedm světel a cesta.',
     href: '/uranus',
     cta: 'Otevřít archiv',
+    href2: '/kridla',
+    cta2: 'Vzlétnout',
   },
   neptune: {
     title: 'NEPTUN',
@@ -459,6 +464,11 @@ export function Shell() {
             >
               {PLANET_PANELS[planet].cta}
             </Link>
+            {PLANET_PANELS[planet].href2 && (
+              <Link href={PLANET_PANELS[planet].href2!} className="arena-link" onClick={() => setPlanet(null)}>
+                {PLANET_PANELS[planet].cta2}
+              </Link>
+            )}
             {PLANET_PANELS[planet].portal && (
               <button
                 type="button"

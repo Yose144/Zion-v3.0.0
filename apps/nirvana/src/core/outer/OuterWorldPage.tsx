@@ -49,6 +49,11 @@ export function OuterWorldPage({ id }: { id: OuterWorldId }) {
         <p className="outer-lore">{world.lore[lang]}</p>
 
         <div className="outer-actions">
+          {id === 'uranus' && (
+            <Link href="/kridla" className="park-btn">
+              {cs ? 'Vzlétnout do Křídel →' : 'Fly into Wings →'}
+            </Link>
+          )}
           <Link href="/" className="arena-link">
             ← {cs ? 'zpět do vesmíru' : 'back to the universe'}
           </Link>

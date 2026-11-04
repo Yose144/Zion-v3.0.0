@@ -1,0 +1,186 @@
+/**
+ * KŘÍDLA — fyzika letu.
+ *
+ * Záměrně **jednoduchá a čitelná**: pláštěnka tě zvedá, dokud má sílu,
+ * proudy vzduchu ji dobíjejí a světla ti dají kousek dechu. Žádné
+ * nepřátelé, žádné poškození, žádný časový limit — hra je o cestě.
+ *
+ * Drží se to mimo React i mimo three.js, protože takhle se dá simulace
+ * otestovat v Node (`test/sky-flight.mjs`) a nemůže se rozejít s tím, co
+ * hráč vidí.
+ */
+
+import {
+  SKY_CURRENTS,
+  SKY_HEIGHT,
+  SKY_LIGHTS,
+  SKY_SHRINE,
+  SKY_WIDTH,
+} from './world';
+
+export interface FlightInput {
+  up: boolean;
+  down: boolean;
+  left: boolean;
+  right: boolean;
+}
+
+export const NO_FLIGHT: FlightInput = { up: false, down: false, left: false, right: false };
+
+export interface FlightState {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  /** Síla pláštěnky 0..100. */
+  energy: number;
+  /** Sebraná světla (id). */
+  lights: number[];
+  /** Kolik jich je celkem — pro HUD i pro svatyni. */
+  total: number;
+  /** Simulovaný čas v sekundách. */
+  time: number;
+  /** Hra skončila (doneseš světla do svatyně). */
+  finished: boolean;
+  /** Naposledy sebrané světlo (pro text příběhu), null = nic nového. */
+  lastLight: number | null;
+}
+
+// ── čísla ────────────────────────────────────────────────────────────
+// Měřeno tak, aby cesta trvala 1,5–3 minuty a dala se doletět i bez
+// dokonalého řízení: gravitace je mírná, proud vzduchu silnější než pád.
+export const GRAVITY = 16;
+export const LIFT = 34;
+export const MAX_RISE = 26;
+export const MAX_FALL = 22;
+export const ACCEL = 26;
+export const MAX_SPEED = 24;
+export const DRAG = 1.6;
+export const ENERGY_MAX = 100;
+export const LIFT_DRAIN = 22;
+export const GLIDE_REGEN = 4;
+export const CURRENT_REFILL = 26;
+export const LIGHT_REFILL = 18;
+export const LIGHT_RADIUS = 3.4;
+export const SHRINE_RADIUS = 6;
+
+export function createFlight(): FlightState {
+  return {
+    x: 10,
+    y: 12,
+    vx: 0,
+    vy: 0,
+    energy: ENERGY_MAX,
+    lights: [],
+    total: SKY_LIGHTS.length,
+    time: 0,
+    finished: false,
+    lastLight: null,
+  };
+}
+
+/** Je bod v proudu vzduchu? Vrací nejsilnější proud (nebo 0). */
+export function currentAt(x: number, y: number): number {
+  let lift = 0;
+  for (const current of SKY_CURRENTS) {
+    const dx = x - current.x;
+    const dy = y - current.y;
+    if (dx * dx + dy * dy <= current.r * current.r) lift = Math.max(lift, current.lift);
+  }
+  return lift;
+}
+
+/**
+ * Jeden krok simulace. `dt` v sekundách (strop 0,05 — stejné pravidlo jako
+ * u ostatních her, aby pomalý stroj neproletěl zdí).
+ */
+export function stepFlight(state: FlightState, input: FlightInput, dt: number): FlightState {
+  if (state.finished) return state;
+  const step = Math.min(0.05, Math.max(0, dt));
+  if (step === 0) return state;
+
+  state.time += step;
+  state.lastLight = null;
+
+  const lift = currentAt(state.x, state.y);
+  const canLift = state.energy > 0;
+
+  // 1) svisle: pláštěnka (dokud je síla) nebo gravitace
+  if (input.up && canLift) {
+    state.vy += LIFT * step;
+    state.energy = Math.max(0, state.energy - LIFT_DRAIN * step);
+  } else {
+    state.vy -= GRAVITY * step;
+  }
+  // 2) proudy vzduchu nesou i bez pláštěnky
+  if (lift > 0) {
+    state.vy += lift * step;
+    state.energy = Math.min(ENERGY_MAX, state.energy + CURRENT_REFILL * step);
+  } else if (!input.up) {
+    // klouzání samo do nabíjí — jinak by hráč uvízl bez síly
+    state.energy = Math.min(ENERGY_MAX, state.energy + GLIDE_REGEN * step);
+  }
+  if (input.down) state.vy -= GRAVITY * 0.8 * step;
+
+  state.vy = Math.max(-MAX_FALL, Math.min(MAX_RISE, state.vy));
+
+  // 3) vodorovně
+  const steer = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+  state.vx += steer * ACCEL * step;
+  state.vx -= state.vx * DRAG * step;
+  state.vx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, state.vx));
+
+  // 4) integrace + hranice (odráží se, aby hráč nikdy „nezmizel")
+  state.x += state.vx * step;
+  state.y += state.vy * step;
+  if (state.x < 2) {
+    state.x = 2;
+    state.vx = Math.abs(state.vx) * 0.3;
+  } else if (state.x > SKY_WIDTH - 2) {
+    state.x = SKY_WIDTH - 2;
+    state.vx = -Math.abs(state.vx) * 0.3;
+  }
+  if (state.y < 2) {
+    state.y = 2;
+    state.vy = Math.abs(state.vy) * 0.35;
+  } else if (state.y > SKY_HEIGHT - 2) {
+    state.y = SKY_HEIGHT - 2;
+    state.vy = -Math.abs(state.vy) * 0.2;
+  }
+
+  // 5) světla
+  for (const light of SKY_LIGHTS) {
+    if (state.lights.includes(light.id)) continue;
+    const dx = state.x - light.x;
+    const dy = state.y - light.y;
+    if (dx * dx + dy * dy > LIGHT_RADIUS * LIGHT_RADIUS) continue;
+    state.lights.push(light.id);
+    state.lastLight = light.id;
+    state.energy = Math.min(ENERGY_MAX, state.energy + LIGHT_REFILL);
+  }
+
+  // 6) svatyně: jen se všemi světly
+  if (state.lights.length === state.total) {
+    const dx = state.x - SKY_SHRINE.x;
+    const dy = state.y - SKY_SHRINE.y;
+    if (dx * dx + dy * dy <= SHRINE_RADIUS * SHRINE_RADIUS) state.finished = true;
+  }
+
+  return state;
+}
+
+/**
+ * Skóre: světla jsou základ, čas je bonus, ne trest — kdo se kochá, nemá
+ * být potrestaný na úroveň toho, kdo jen proletí. Proto se čas odečítá
+ * mírně (1 bod za 2 s) a jen do nuly.
+ */
+export function skyScore(state: FlightState): number {
+  if (!state.finished) return state.lights.length * 100;
+  const bonus = Math.max(0, 600 - Math.floor(state.time) * 2);
+  return state.lights.length * 100 + bonus;
+}
+
+/** Kolik světel ještě chybí. */
+export function missingLights(state: FlightState): number {
+  return state.total - state.lights.length;
+}

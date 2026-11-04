@@ -46,6 +46,7 @@ const TITLES: { id: ParkGameId; title: { cs: string; en: string } }[] = [
   { id: 'fight', title: { cs: 'Merkur souboj', en: 'Mercury duel' } },
   { id: 'moba', title: { cs: 'První svět', en: 'First World' } },
   { id: 'tanks', title: { cs: 'Saturn tanky', en: 'Saturn tanks' } },
+  { id: 'wings', title: { cs: 'Křídla', en: 'Wings' } },
 ];
 
 const BOARD = TITLES;

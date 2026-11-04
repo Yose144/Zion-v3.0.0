@@ -75,6 +75,14 @@ export const GAME_LINKS: GameLink[] = [
     tone: '#9fd8dc',
   },
   {
+    id: 'wings',
+    href: '/kridla',
+    title: { cs: 'Křídla', en: 'Wings' },
+    note: { cs: 'cesta světlem · Uran', en: 'a way of light · Uranus' },
+    glyph: '🕊',
+    tone: '#bfe6ea',
+  },
+  {
     id: 'neptune',
     href: '/neptune',
     title: { cs: 'Neptun', en: 'Neptune' },

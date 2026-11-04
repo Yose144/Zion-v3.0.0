@@ -24,6 +24,7 @@ const GAMES = new Set([
   'fight',
   'moba',
   'tanks',
+  'wings',
 ]);
 const TOP = 10;
 const MAX_SCORE = 100_000;
@@ -59,6 +60,7 @@ function emptyBoard(): Board {
     fight: [],
     moba: [],
     tanks: [],
+    wings: [],
   };
 }
 
