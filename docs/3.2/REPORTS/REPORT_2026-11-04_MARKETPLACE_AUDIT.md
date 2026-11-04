@@ -271,3 +271,5 @@ Co se změnilo:
 - stará `images/christmas-market.webp` už v HTML není.
 
 **Ověřeno:** lokálně 1440 i 390 px bez vodorovného přetečení (`overflow` false), karta je v DOM **za** `<nav>` (index 12 037 > 10 898), live `zionterranova.com` 200, `images/market-open.webp` 200 (242 kB), screenshot potvrzuje banner pod menu.
+
+**Doladění (👤 „to je moc velké, zmenšit na 50 %"):** `.hero-christmas` má `min(94vw, 575px)` — přesně polovinu z 1150 px; na telefonu `88vw`, protože 47vw by byl banner nečitelný. Naměřeno: desktop **575×324 px**, mobil **343×194 px**.
