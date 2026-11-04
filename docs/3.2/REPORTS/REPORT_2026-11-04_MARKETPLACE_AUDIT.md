@@ -244,3 +244,14 @@ Všechny tři jsou původní snímky 1672×941 z dodané sady. Zároveň:
 ### Ověřeno živě
 
 `market/vanoce/zion-pass` a `/kniha-kralovstvi-srdce` — bannery bez ořezu · `app.zionterranova.com` 200, tři `card-*.webp` 200 a v HTML · `news/christmas-2026` 200.
+
+---
+
+## 12. Dodatek 6 — hero banner pro lampion
+
+👤 dodal `heros/shop/heros/Lampion_HERO_rasta.webp` (1983×793, stejný 2,5:1 formát jako Pass a kniha).
+
+- `apps/MarketPlace/public/vanoce/hero/lampion-wide.webp` + `heroWide` v datech produktu → detail lampionu má teď hero ve stejném formátu jako ostatní dva (dřív 16:9 `vanoce-lampion.webp`).
+- `apps/website-v2.9/public/images/news/christmas-2026/lampion-wide.webp` → sekce Lampion v novinkách používá tentýž banner místo obecného snímku dílny.
+
+Ověřeno: `/vanoce/lampion` 200, oba soubory 200, `news/christmas-2026` 200, screenshot hero bez ořezu (vidět celý lampion, kniha na tabletu i děti).
