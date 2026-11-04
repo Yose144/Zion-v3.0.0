@@ -818,15 +818,17 @@ html body textarea:focus {
   }
 }
 
-/* Christmas promo under the glyph — smaller than the Nirvana preview */
+/* Pozvánka do Marketu — pod navigací, přes šířku hero bloku.
+   Banner nese vlastní typografii („Market is open"), takže musí být
+   dost velký, aby byl text čitelný; dřív visel jako malá karta pod glifem. */
 .hero-christmas {
   display: block;
-  width: min(72vw, 26rem);
-  margin: 1.5rem auto 0;
-  border-radius: 0.9rem;
+  width: min(94vw, 1150px);
+  margin: 1.5rem auto 2.5rem;
+  border-radius: 1rem;
   overflow: hidden;
   border: 1px solid rgba(252, 209, 22, 0.35);
-  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 16px 52px rgba(0, 0, 0, 0.55);
   transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -844,8 +846,8 @@ html body textarea:focus {
 
 @media screen and (max-width: 736px) {
   .hero-christmas {
-    width: min(84vw, 22rem);
-    margin-top: 1.25rem;
+    width: 94vw;
+    margin: 1.25rem auto 2rem;
   }
 }
 
