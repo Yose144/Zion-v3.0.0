@@ -3,7 +3,11 @@
 import { BookOpen, Coins, Ticket, Flame, ShoppingCart, Lock } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
-const SHOP_URL = 'https://market.zionterranova.com/shop';
+// Karty míří na detail produktu (vysvětlí, co v ceně je, jak to funguje,
+// má FAQ), ne na obecný výpis obchodu — tam se člověk musí proklikat znovu.
+const PASS_URL = 'https://market.zionterranova.com/vanoce/zion-pass';
+const BOOK_URL = 'https://market.zionterranova.com/vanoce/kniha-kralovstvi-srdce';
+const LAMP_URL = 'https://market.zionterranova.com/vanoce/lampion';
 
 interface CardDef {
   image: string;
@@ -33,7 +37,7 @@ const CARDS: CardDef[] = [
     price: '108 Kč',
     bonus: { cs: '+108 000 ZION bonus', en: '+108,000 ZION bonus' },
     cta: { cs: 'Koupit v eShopu', en: 'Buy in the shop' },
-    href: SHOP_URL,
+    href: PASS_URL,
   },
   {
     image: '/images/news/christmas-2026/card-book.webp',
@@ -47,7 +51,7 @@ const CARDS: CardDef[] = [
     price: '216 Kč',
     bonus: { cs: '+216 000 ZION bonus', en: '+216,000 ZION bonus' },
     cta: { cs: 'Koupit v eShopu', en: 'Buy in the shop' },
-    href: SHOP_URL,
+    href: BOOK_URL,
   },
   {
     // Původní scéna s lampionem (tesař s dětmi), ne vánoční trh.
@@ -62,6 +66,7 @@ const CARDS: CardDef[] = [
     price: '432 Kč',
     bonus: { cs: '+432 000 ZION bonus', en: '+432,000 ZION bonus' },
     cta: { cs: 'Připravujeme', en: 'Coming soon' },
+    href: LAMP_URL,
     soon: true,
   },
 ];
@@ -142,11 +147,16 @@ export default function ChristmasShopCards() {
             (card.soon
               ? 'border-white/10'
               : 'border-white/10 hover:border-zion-gold/40');
-          return card.soon ? (
-            <div key={card.title.en} className={cls} aria-disabled="true">
-              {inner}
-            </div>
-          ) : (
+          if (!card.href) {
+            return (
+              <div key={card.title.en} className={cls} aria-disabled="true">
+                {inner}
+              </div>
+            );
+          }
+          // Připravované zboží odkaz vede taky — detail produktu vysvětlí,
+          // co je v ceně a kdy se prodej otevře.
+          return (
             <a key={card.title.en} href={card.href} className={cls}>
               {inner}
             </a>
