@@ -104,6 +104,31 @@ Dvě věci, které to odhalilo:
   `waiting`, dokud je volné sedlo (i když mezitím hraje bot), a `running`
   až když sedí dva lidi.
 
+## 4c. Pozvánky a chat (proto 23)
+
+**Pozvánky**
+- Odkaz `/multiplayer?room=<id>` se po připojení sám přihlásí do místnosti
+  (game z prefixu id). V banneru je **Pozvat odkazem** (schránka) i **Kód**,
+  u každé otevřené místnosti 🔗 pro zkopírování pozvánky.
+- `join` s neexistující místností vrací `room_missing` — dřív se tiše
+  založila nová a pozvaný skončil v jiné hře. Plná místnost → `room_full`.
+- **Join z odkazu čeká na `hello`.** `status === 'open'` znamená otevřený
+  socket, ne dokončený handshake; join poslaný dřív skončil na `bad_frame`
+  a pozvaný zůstal v parku (přesně to odhalil první běh testu).
+- **Kopírování nesmí otevřít `window.prompt`** — blokuje stránku. Když
+  prohlížeč schránku nedá, ukáže se pole s odkazem.
+
+**Chat**
+- `ChatPanel` je jedno tělo chatu pro plovoucí dok i lobby (dřív byl jen
+  v doku, takže se v lobby nedalo domluvit).
+- **Host smí psát** (1 zpráva / 4 s, 120 znaků); ZIS má dál 2 / 2 s a 240.
+  Bez toho byl chat pro nepřihlášené jen čtecí tabule.
+- Systémová zpráva „X se přidal / odešel" jde do kanálu místnosti.
+- Hlavička chatu v lobby ukazuje **kanál** (id místnosti vs `park`) — jinak
+  není poznat, proč zprávu nevidí ten, kdo zůstal v parku.
+- Plovoucí dok je na `/multiplayer` schovaný — lobby má vlastní chat a dvě
+  počítadla nepřečtených by mátla.
+
 ## 5. Ověření
 
 | Test | Výsledek |
@@ -122,6 +147,8 @@ Dvě věci, které to odhalilo:
 | `test/rooms.mjs` (nový) | **ROOMS OK** — seznam se rozšíří při vytvoření, příchodu, změně stavu i odchodu; úklid prázdné místnosti |
 | live lobby (2 prohlížeče) | 5 karet, „Rychlá hra" → `tanks-1`, druhý vidí 1/2 „čeká na hráče" a připojí se, po odchodu banner zmizí, 0 chyb |
 | `/multiplayer` responzivita | 390×844 / 844×390 / 768×1024 / 1440×900 → **0 px** přesahu |
+| live pozvánka | A založí `tanks-2`, B otevře `?room=tanks-2` → **stejná místnost**, 0 chyb |
+| live chat | B vidí systémové „X se přidal" i Aho zprávu; druhá zpráva hned → „příliš rychle" |
 
 ## 6. Opravený flaky test
 

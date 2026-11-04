@@ -1668,3 +1668,27 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   u ZION zůstatku v HUD).
 - **Odkaz je v `GamesDock`** (🌐 Online) — lobby je rozcestník, ne hra,
   takže nepatří do `GAME_LINKS`.
+
+## Pozvánky a chat v multiplayeru (2026-11-04, proto 23)
+
+- **Pozvánka je URL, ne stav.** `/multiplayer?room=<id>`; game se pozná
+  z prefixu (`tanks-2` → `tanks`). Odkaz projde chatem i po reloadu.
+- **Join z odkazu musí počkat na `hello`.** `status === 'open'` je jen
+  otevřený socket; join poslaný dřív skončí `bad_frame` a pozvaný zůstane
+  v parku. Podmínka je `status === 'open' && you` (identita = handshake hotový).
+- **Neznámá místnost = `room_missing`, ne nová místnost.** Dřív `join`
+  s `wanted` ID, které mezitím zmizelo, tiše založil novou a dva lidi
+  skončili každý jinde. Plná místnost vrací `room_full`.
+- **Kopírování do schránky nesmí mít `window.prompt` jako fallback** —
+  blokuje stránku (a v headless testu zamrzne). Fallback je viditelné pole
+  s odkazem.
+- **Chat je jedna komponenta (`ChatPanel`)** pro plovoucí dok i lobby.
+  Kdyby měl dok vlastní kopii, rozejde se v tom, kdo smí psát.
+- **Host smí psát** (1 zpráva / 4 s, 120 znaků), ZIS 2 / 2 s, 240 znaků.
+  Rozhoduje server v `postChat`; UI jen vysvětlí limit. Bez toho byl chat
+  v multiplayeru pro nepřihlášené mrtvý.
+- **Kanál se mění podle místnosti** (`park` vs `arena:<room>`), takže
+  zpráva z lobby, když jsi v místnosti, jde do místnosti. Hlavička chatu
+  proto kanál ukazuje — jinak je to matoucí.
+- **Na `/multiplayer` je plovoucí dok skrytý** (`usePathname`), lobby má
+  vlastní chat; dvě počítadla nepřečtených mátla.
