@@ -49,7 +49,7 @@ Principy, které platí pro každou práci:
 | Maitreya | **19/19** | hotovo |
 | Nirvana | **14/14** | hotovo (QA) |
 | Království srdce | **10/10** (oficiální EN klasická edice) | hotovo 2026-11-04 |
-| NirvanaCloud | 5/8 (01, 03, 04, 06, 07) | **P1** |
+| NirvanaCloud | **8/8** | hotovo 2026-11-05 |
 | Sůl této země | 0/12 | **P1** |
 | Ekam Deeksha | 0/10 (EN jsou 401B stuby) | P1/P2 |
 | Quantum Revolution | 0 (EN je 396B stub) | P2 |
@@ -58,8 +58,8 @@ Principy, které platí pro každou práci:
 | Mise Amenti | 0/8 | P2 (rámec, ne román) |
 | Lumi, Miriam, Růže, MariaCaminho, Na Cestě, Surta Srdce, Království srdce, Kruh Bohyní, Nabukano | 0 | P2/P3 dle 👤 |
 
-> Měřeno auditem 2026-11-05: **204 kapitol, 189 překladatelných, 47 přeložených (24,9 %)**
-> (Království srdce 10/10 oficiální EN + NirvanaCloud 5/8).
+> Měřeno auditem 2026-11-05: **204 kapitol, 189 překladatelných, 50 přeložených (26,5 %)**
+> (Království srdce 10/10 oficiální EN + NirvanaCloud 8/8).
 > Detail: [`REPORT_2026-11-04_ARCHIVE_W1_AUDIT.md`](../3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_W1_AUDIT.md).
 
 **Další mezery:**
@@ -125,7 +125,8 @@ nezačíná na indexu.
 - [ ] Tracking soubor `src/lib/books/en-coverage.json` (automaticky z auditu) — jeden zdroj
       pro štítky v knihovně i pro report (dnes: audit JSON + `korpusLangs`).
 - [x] Království srdce: oficiální EN klasická edice napojena (10/10) — split podle h1.
-- [ ] P1 překlady: **Sůl této země**, **NirvanaCloud** (poslední kapitoly → 100 %).
+- [x] NirvanaCloud 8/8 EN (2026-11-05).
+- [ ] P1 překlad: **Sůl této země** (12 kapitol).
 - [ ] QA checklist pro každou přeloženou kapitolu: markdown parita, nadpisy, anchor slugy,
       odkazy, blokové citáty, tabulky, diakritika, žádné „strojové" vsuvky.
 - [ ] U knih bez EN držet `CZ` štítek a fallback hlášku (už funguje).
@@ -273,7 +274,7 @@ Každý milník = vlastní report v `docs/3.2/REPORTS/` + záznam v `apps/websit
 - ✅ W4: hledání v knize, záložky, nastavení čtečky (font/šířka/téma), „další v pořadí".
 - ✅ W6: stav passu v hubu (kód/OASIS/entitlement + expirace), vazba kódu na ZIS.
 - ✅ W7: e2e hubu s testovacím passem (5 testů, lokálně 5/5).
-- ✅ W2: Království srdce má oficiální EN (10/10), audit potvrzuje 100 %; NirvanaCloud 04 EN.
+- ✅ W2: Království srdce oficiální EN (10/10); NirvanaCloud **8/8** EN (2026-11-05).
 - ✅ W6: nákup odemkne archiv sám (ověřený e-mail × market code).
 - ✅ W7: `/api/archive/metrics` + link audit.
 - ✅ W3: kniha jako Markdown ZIP + odkaz na objednávky v #moje.

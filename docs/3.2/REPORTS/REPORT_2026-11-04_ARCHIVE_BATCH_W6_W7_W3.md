@@ -60,3 +60,12 @@
 - Přeloženy **kapitola 1 (Kolo života, šest světů)** a **kapitola 3 (Bardo velkého přechodu)**.
 - NirvanaCloud je nyní **5/8 EN** (01, 03, 04, 06, 07); zbývají 02, 05, 08.
 - Celkem **47/189** překladatelných kapitol (24,9 %).
+
+
+---
+
+## Doplnění 2026-11-05 (2) — NirvanaCloud dokončen
+
+- Přeloženy zbývající kapitoly **2** (Pět Buddhů a šest vrstev), **5** (Síně Amenti) a **8** (Kotva pravdy a etické hranice).
+- **NirvanaCloud je 8/8 EN** — knihovna přepne štítek na `CZ + EN` (korpusLangs počítá reálné překlady).
+- Celkem **50/189** překladatelných kapitol (26,5 %).
