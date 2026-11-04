@@ -61,6 +61,13 @@ o „šestnácti dalších" (kruhů je 23 včetně sedmi základních).
 | Autorských polí (cs+en páry) | **1 400** (7 polí × 200) |
 | Přepsaných essencí z datového výpisu | **31** |
 | `tsc --noEmit` | **0 chyb** |
+| Nasazeno | `20261104T093736Z` (app., build `zb1O43jNAA0lT3S2brH1A`) |
+
+Ověřeno živě: `/l4-oasis/avatars` 200, český tagline i autorské texty
+(„Ta, která tvoří tím, že spálí") v SSR, anglická větev v client chunku
+(`page-975ae798a908ff67.js` — „She who creates by burning"). Ostatní
+povrchy (`/`, `/pool`, `/dao`, `/explorer`, `/api/health`) 200.
+
 
 Rozsah textů: `subtitle`, `role`, `location`, `questLine`, `teaching`,
 `ability`, `quote` — vše autorsky, s jednotným hlasem (věcný, klidný,
@@ -91,3 +98,20 @@ npx tsc --noEmit
 
 Generátor je idempotentní; `src/lib/oasis/avatars.ts` se **needitue ručně**
 (hlavička to říká).
+
+## 7. Incident při buildu (mimo zadání)
+
+Během práce jsem kvůli `@types/react` spustil `npm install`, který
+v kombinaci s **paralelní session** (ta mezitím pouštěla vlastní `npm ci`)
+nechal `node_modules` v rozbitém stavu — chyběl `next/package.json`,
+`typescript/package.json` a nakonec i `react`. Projevy: build padal na
+`MODULE_NOT_FOUND: next/package.json`, pak `tsc` na chybějící `@types/node`.
+
+Řešení, které fungovalo: doinstalovat chybějící balíčky **přímo z registry
+podle `package-lock.json`** (skript v `/tmp/fix_nm.py`, 227 tarballů),
+protože `npm ci` se v tom souběhu nedokončil. Po cizím `npm ci` už byl
+strom celý a build prošel.
+
+Pravidlo: když v tomhle repu běží víc session, **nespouštět `npm install`
+současně**; build z hotového `.next/standalone` přes
+`deploy-web2.9.sh --artifact-dir` obejde build úplně.
