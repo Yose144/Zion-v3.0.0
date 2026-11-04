@@ -469,3 +469,470 @@ Cuando subieron juntos a la barca por el costado, el viento se echó de inmediat
 | La imagen de una barca que soporta la tormenta incluso cuando el constructor no está a bordo | **MITO / HISTORIA** | Imagen literaria de este libro; en el corpus ZION corresponde a la autonomía del protocolo sin su fundador (*MiseAmenti* 05, *Maitreya* 06) |
 
 ---
+## Capítulo 7 · El reino está dentro de vosotros — el nombre en la quilla
+
+### Relato
+
+De camino de vuelta a Cafarnaún, los Doce discutían en la barca.
+
+Hablaban a media voz para que no se oyera hasta la popa, pero el agua y el casco de cedro llevan cualquier susurro. Se peleaban por los bancos: quién se sienta más cerca del timón, quién llevó el remo más pesado en la tormenta y quién se sentará a la derecha y a la izquierda cuando el carpintero proclame por fin su reino. Incluso doce bancos repartidos con justicia puede la soberbia humana convertir en una escalera.
+
+Cuando en Cafarnaún amarraron la barca a la orilla, vinieron a ellos los fariseos — hombres que medían la llegada del Mesías por los signos del cielo y por rollos con cómputos de años. Se pusieron de pie sobre la barca y preguntaron al carpintero sin rodeos:
+
+*«¿Cuándo llega el reino de Dios?»*
+
+El carpintero miró sus rollos, luego a los doce remeros que un momento antes se disputaban los primeros puestos, y por último la superficie quieta del lago.
+
+*«El reino de Dios no viene de manera que se pueda otear desde las torres»*, les respondió. *«Nadie dirá: "¡Mirad, está aquí!" o "¡Mirad, está allí!" Porque he aquí — **el reino de Dios está dentro de vosotros.** Y está entre vosotros cada vez que os sentáis juntos en una misma barca y nadie quiere estar por encima de otro.»*
+
+Los fariseos se encogieron de hombros y se fueron; quien busca el reino en calendarios y mojones se va con las manos vacías cuando lo mandan a su propio corazón.
+
+Pero en la orilla se quedó una niña pequeña — una niña descalza de una choza de pescadores, que jugaba con un recorte de madera y escuchaba. El carpintero se sentó en el borde de la barca, llamó a los Doce a su alrededor, tomó a la niña de la mano y la puso justo en el centro del casco, sobre la cuerda enrollada entre los bancos, donde no había ni primer ni último puesto.
+
+*«Si alguno quiere ser el primero»*, dijo a los Doce, *«que sea el último de todos y el servidor de todos. Quien recibe a uno de estos niños en mi nombre, a mí me recibe.»*
+
+Mateo bajó la cabeza y dejó de contar méritos. Santiago y Juan se corrieron por el banco para hacer sitio a la niña.
+
+Entonces Simón Pedro pasó a la proa, se arrodilló junto a la madera y preguntó lo que desde la salida de Nazaret nadie se había atrevido a preguntar en voz alta:
+
+*«Maestro… cada barca del Kineret lleva en el costado un nombre marcado a fuego o tallado, según su dueño o su ciudad. Esta sigue lisa. ¿Cómo se llama en realidad?»*
+
+El carpintero se levantó, alzó la tablazón del centro de la barca — exactamente donde estaba la niña — y señaló el borde superior de la quilla de cedro.
+
+En la penumbra bajo las tablas, protegidas por una capa de resina transparente, había dos palabras grabadas a cincel profundo:
+
+> **EL REINO DEL CORAZÓN**
+
+Y justo debajo, en el borde inferior de la quilla vuelto al agua, quedaba una superficie alisada y vacía, sin una sola letra.
+
+*«El nombre lo tiene desde el primer día en Nazaret»*, dijo el carpintero. *«Lo grabé por dentro, bajo vuestros pies, no en el costado para lucirlo en el puerto. Porque esta barca no fue construida solo para el Kineret. El Kineret es la primera agua de ensayo. Esta barca navega hacia dentro — allí donde en la persona nacen el miedo y la compasión — y navega a través de los siglos. Se llama Reino porque en ella nunca nadie navega solo. Y se llama Corazón porque allí está el único timón que no falla cuando se apagan las estrellas.»*
+
+*«¿Y ese sitio vacío abajo, bajo la quilla?»*, preguntó Juan.
+
+*«Es el sitio para la firma»*, respondió el carpintero. *«Allí firmará quien venga cuando el mundo olvide el camino — y después de él, cada uno que comprenda que la barca no se posee, sino que se entrega.»*
+
+> *El nombre no está en el costado para los funcionarios del puerto.*
+> *Está grabado por dentro, bajo los pies de la niña:*
+> *el Reino del Corazón — dentro de vosotros y entre vosotros.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Lc 17,20–21** — *«El reino de Dios no viene con observación externa… porque he aquí, el reino de Dios es entos hymōn.»* La expresión griega *entos hymōn* (ἐντὸς ὑμῶν) significa a la vez **«dentro de vosotros»** (en vuestro interior/corazón) y **«entre vosotros / en medio de vosotros»** (en la relación de comunidad). Ambas lecturas son filológicamente exactas y toda la arquitectura de ZION se sostiene sobre su unión: transformación interior (*Ekam Deeksha*, L3/L4) y espacio justo entre las personas (*consenso, DAO, L5*).
+- **Jr 31,33; Ez 36,26; 2 Cor 3,3** — La alianza escrita no en tablas de piedra, sino en un corazón de carne.
+- **Mc 9,33–37; Mt 18,1–5** — La disputa de los discípulos por la primacía y la niña puesta en medio como medida del reino.
+- **Vínculo canónico en ZION:**
+  1. **El nombre en la quilla:** En `KralovstviSrdce/09` y `nirvana/14-Archa.md` las tripulaciones de todas las naves de la flota ZION se reconocen como pertenecientes unas a otras por llevar grabado en la quilla de cada una *el Reino del Corazón*.
+  2. **El sitio vacío en la parte inferior de la quilla:** En `Maitreya/PROLOG.md` el herrero encuentra en Bezechuti, en la cara inferior de la quilla del arca acabada, el grabado *«Maitreya Buddha, 2025»* — la firma que el padre escribió con el nombre del hijo como título para quien supere la prueba de la entrega.
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| La respuesta a los fariseos: *«El reino de Dios está dentro de vosotros / entre vosotros»* (*entos hymōn*) | **ESCRITURA** | Lc 17,20–21 |
+| La disputa de los discípulos sobre quién es el mayor, y la niña puesta en medio | **ESCRITURA** | Mc 9,33–37; Mt 18,1–5 |
+| La nueva alianza escrita en el corazón | **ESCRITURA** | Jr 31,33; Ez 36,26; 2 Cor 3,3 |
+| El nombre de la barca *el Reino del Corazón* grabado en la quilla de cedro | **MITO / CORPUS** | Imagen central de este libro (`KralovstviSrdce/05`) y las mantras de `Maitreya/00-README.md` |
+| El sitio vacío en la parte inferior de la quilla para la futura firma *Maitreya Buddha, 2025* | **MITO / CORPUS** | Enlace con `Maitreya/PROLOG.md` y el Libro del Nacimiento cap. IV |
+
+---
+
+## Capítulo 8 · El vaso de alabastro y la madera de la cruz
+
+### Relato
+
+Llegó la última primavera y el carpintero volvió el paso del lago hacia arriba, hacia Jerusalén. La barca quedó amarrada en la ensenada de Cafarnaún, cubierta con un lienzo, pero el aire en torno a la comitiva se hizo pesado como antes de una tormenta que el Kineret aún no había conocido. Tres veces les dijo por el camino lo que le esperaba en la ciudad, y tres veces no le entendieron; cuando les hablaba del profeta Jonás, que estuvo tres días y tres noches en el vientre del gran pez y que así también el Hijo del hombre estará tres días y tres noches en el corazón de la tierra, pensaron que hablaba en acertijos.
+
+Dos días antes de la fiesta de los panes sin levadura, estaban sentados a la mesa en Betania, en casa de Simón el leproso.
+
+Entró en la sala una mujer y traía en las palmas un **vaso de alabastro** lleno de nardo auténtico — piedra translúcida con vetas como cicatrices, sellada con cera, por valor de trescientos denarios, el jornal de un año de un trabajador. No trajo libro de cuentas ni pidió recibo. Se acercó al carpintero, **rompió el cuello del vaso**, de modo que ya no pudiera volver a taparse ni venderse, y derramó todo el aceite sobre su cabeza y sus pies. Toda la casa se llenó del aroma del nardo, más fuerte que el miedo a la muerte.
+
+A la mesa se oyó un gruñido de irritación. Judas de Keriot, que llevaba la bolsa, y con él otros, calcularon en voz alta:
+
+*«¿A qué este derroche? ¡Bien podía haberse vendido este aceite por más de trescientos denarios y dado el dinero a los pobres!»*
+
+El carpintero alzó la mano y los detuvo:
+
+*«Dejadla. ¿Por qué la molestáis? Ha hecho conmigo una buena obra. A los pobres los tenéis siempre con vosotros y cuando queráis podéis hacerles bien; a mí, en cambio, no me tenéis siempre. Ha hecho lo que podía: ha ungido de antemano mi cuerpo para el entierro. Amén, os digo, dondequiera que en todo el mundo se anuncie este evangelio, se contará también lo que ella hizo — en su memoria.»*
+
+El vaso de alabastro vacío, agrietado junto al fondo, lo guardó aquella noche bajo el manto Miriam de Magdala. Todavía no sabía que dentro, en la fina grieta de la piedra donde había resbalado la última gota de nardo, se había quedado una única semilla diminuta de rosal silvestre del jardín de Betania. Sabía solo lo que años después diría a la muchacha Sara en la cueva sobre el mar: *«Un vaso lleno te lo puede robar un rey o un ladrón. Un vaso vaciado ya no te lo quita nadie — porque lo que ha sido entregado no se puede embargar.»*
+
+Después vino la noche en el huerto de Getsemaní, donde el carpintero sudó sangre como el timonel que siente en su propio pecho el golpe de la ola antes de que llegue al casco. Vino el beso junto al lagar, las cuerdas y los tribunales. Simón Pedro, que en el lago había caminado sobre el agua, junto al fuego del patio juró tres veces que no conocía a aquel hombre — y cuando cantó el gallo y el carpintero lo miró en silencio a través del patio, Simón salió fuera y lloró amargamente.
+
+Y por la mañana llegó la madera que ningún carpintero prepara para la vida.
+
+Era una viga de cruz tosca, sin labrar. El carpintero que toda la vida cepilló yugos para que no apretaran la cerviz llevaba sobre los hombros destrozados el madero hacia la colina de la calavera, el Gólgota. Allí las manos que sabían palpar cada fibra del cedro le fueron clavadas con clavos de hierro a la madera.
+
+Los hombres de los doce bancos se dispersaron como peces cuando rompe la red; bajo la cruz solo quedó de los discípulos el joven Juan. Pero **las mujeres no huyeron**. Estaban allí en el viento gris tres Marías — Miriam, la madre del carpintero, que un día había puesto la palma sobre la quilla en Nazaret; su tía María de Cleofás; y Miriam de Magdala con el vaso de alabastro vacío bajo el manto. No decían nada. Sabían que huir significa dejar la semilla sin testigo — y estaban decididas a quedar como testigos hasta el final.
+
+Entre la hora sexta y la novena cayó sobre toda la tierra la oscuridad. El carpintero clamó con voz potente: *«Consumado es»* — e inclinó la cabeza.
+
+Antes de la puesta del sol, antes de que llegara el sábado, José de Arimatea con Nicodemo bajaron el cuerpo de la madera, lo envolvieron con mirra y áloe en lienzo limpio de lino, lo pusieron en un sepulcro nuevo cavado en la roca en medio del huerto y arrimaron a la entrada una gran piedra. Miriam de Magdala y la otra María se sentaron frente al sepulcro y miraban dónde lo habían puesto.
+
+Abajo, en Cafarnaún, yacía la barca del carpintero varada en la orilla seca. Los doce bancos estaban vacíos, el viento volvía el cabezal de lino en la popa, y parecía que la travesía había terminado en el fondo.
+
+> *Un vaso roto por amor ya no se puede robar.*
+> *El carpintero clavado en madera tosca bajó tres días a la profundidad,*
+> *y las mujeres recordaron el lugar donde la semilla había sido puesta.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Mc 14,3–9 (par. Mt 26,6–13; cf. Jn 12,1–8)** — La unción en Betania con el vaso de alabastro (*alabastron myrou nardou pistikés polyteleús*), la objeción de los trescientos denarios y la promesa *«en su memoria»*. (La tradición occidental posterior, desde Gregorio Magno en 591, fundió a la mujer de Betania, la pecadora anónima de Lc 7 y Miriam de Magdala en una sola figura; el corpus ZION desenreda esa fusión honestamente en piedra y arcilla en `Miriam/02-Alabastrova-Nadobka.md` y `Miriam/05-Tri-Zeny-v-Jedne.md`.)
+- **Mt 12,40** — La señal de Jonás: tres días y tres noches en el corazón de la tierra.
+- **Mc 15,40–47; Jn 19,25–42** — La crucifixión, la palabra *«Tetelestai»* («Consumado es»), las mujeres junto a la cruz y observando el lugar del entierro en el sepulcro del huerto.
+- **Tradición cristiana primitiva (Hipólito de Roma, *Sobre Cristo y el Anticristo* 59, hacia el año 200)** — Lee la Iglesia como un navío que navega por el mar agitado del mundo, cuyo mástil en medio de la cubierta es precisamente la madera de la cruz.
+- **Vínculo canónico en ZION:** El vaso de alabastro vacío con una grieta junto al fondo pasa de `Miriam/02` y `Miriam/13` directamente a `Ruze/01-Prazdna-Nadoba.md`: *«Un vaso lleno se puede robar, pero uno vaciado ya no — el vaso vacío es el único lugar honesto donde se puede poner algo nuevo.»* Y la definición del testigo (*«testigo es quien recuerda dónde fue plantada la semilla»*) de `Miriam/03-Zahradnik.md` es la base de la función de los guardianes y de los rastreadores de solo lectura en L5 y L6.
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| La unción con el vaso de alabastro en Betania, 300 denarios, *«en su memoria»* | **ESCRITURA** | Mc 14,3–9; Mt 26,6–13; Jn 12,1–8 |
+| La distinción de las figuras femeninas (Miriam de Magdala vs. María de Betania vs. la mujer de Lc 7) | **HISTORIA DEL TEXTO (piedra vs. arcilla)** | `Miriam/02`, `Miriam/05`; Gregorio Magno, *Homilía 33* (591) |
+| La señal de Jonás, Getsemaní, la negación de Pedro, la crucifixión, las mujeres junto a la cruz y al sepulcro | **ESCRITURA** | Mt 12,40; Mc 14–15; Jn 19,25–42 |
+| La cruz como mástil del navío | **TRADICIÓN** | Hipólito de Roma (~200 d. C.) |
+| La semilla de rosa en la grieta del vaso de alabastro vaciado | **MITO / CORPUS** | `Ruze/01-Prazdna-Nadoba.md`; `Miriam/13` |
+
+---
+
+## Capítulo 9 · El hortelano en la oscuridad y el fuego en la orilla
+
+### Relato
+
+El primer día después del sábado, cuando todavía era muy oscuro, se levantó Miriam de Magdala y fue con la otra María al huerto bajo las murallas.
+
+Encontraron la piedra apartada del sepulcro. Cuando Simón Pedro y Juan acudieron a su llamada, vieron las tiras de lino dobladas y el sudario, pero el cuerpo en ninguna parte; volvieron por eso a la ciudad. Miriam, en cambio, no se fue. Se quedó de pie fuera, junto al sepulcro, llorando, porque el testigo no se aparta del lugar vacío hasta no saber qué ha sido de la semilla.
+
+Cuando se volvió, vio entre los olivos a un hombre de pie. En la penumbra gris del alba pensó que era **el hortelano**.
+
+*«Mujer, ¿por qué lloras?»*, le preguntó. *«¿A quién buscas?»*
+
+*«Señor»*, le dijo entre lágrimas, *«si tú lo has llevado, dime dónde lo has puesto y yo lo llevaré.»*
+
+El hombre no dijo ninguna contraseña aprendida ni una larga explicación. Pronunció una sola palabra — su propio nombre en la lengua aramea de su infancia:
+
+*«Miriam.»*
+
+En aquella sola palabra se abrieron las dos orillas a la vez. Reconoció la voz del que junto al Kineret había hablado desde la barca, y respiró:
+
+*«¡Rabbuni!»* — *¡Maestro!*
+
+*«No me retengas»*, le dijo con suavidad, *«porque todavía no he subido al Padre. Pero ve a mis hermanos y diles lo que has visto.»*
+
+Y en aquel momento Miriam comprendió por qué sus ojos no se habían equivocado un instante antes: el carpintero que durante treinta años dio forma a la madera derribada no era, después de tres días en el corazón de la tierra, solo carpintero — se había convertido en **Hortelano**, el que planta la vida en la arcilla rota del mundo. Corrió a la ciudad y anunció a los Doce: *«¡He visto al Señor!»* — y él la hizo así apóstol de los apóstoles, la primera de todos los testigos, aunque los hombres al principio no la creyeron.
+
+Aquel mismo mediodía caminaban dos discípulos — Cleofás y su compañero — despacio hacia la aldea de Emaús. Les alcanzó un desconocido, les explicó la Escritura desde Moisés hasta los profetas, y cuando al anochecer llegaron a la casa, lo invitaron a entrar según la antigua ley de la hospitalidad: *«Quédate con nosotros, porque se hace tarde.»* A la mesa tomó el pan, tocó una pizca de sal, bendijo, lo partió y se lo daba. Al partir el pan se les abrieron los ojos — y cuando desapareció, se decían: *«¿No ardía en nosotros el corazón mientras nos hablaba por el camino?»*
+
+Por la noche pasó a través de las puertas cerradas donde los Doce temblaban de miedo, sopló sobre ellos la paz y ocho días después mostró las manos y el costado a Tomás, que se negaba a creer palabras ajenas y quería comprobar las heridas con su propio dedo. *«Dichosos los que no vieron y creyeron»*, le dijo — pero no avergonzó la necesidad de comprobación de Tomás; le dio la prueba.
+
+Y luego volvieron a casa, a Galilea, al lago Kineret.
+
+*«Voy a pescar»*, dijo Simón Pedro y desamarró la barca de cedro del carpintero. Entraron en ella siete. Toda la noche echaron las redes y no cogieron nada — como al principio.
+
+Cuando clareó sobre los montes, había en los guijarros de la orilla un hombre y a sus pies ardía un pequeño fuego de carbón de leña, sobre el que chisporroteaba un pescado espolvoreado de sal y al lado el pan.
+
+*«Muchachos, ¿tenéis algo de comer?»*, llamó a través del agua.
+
+*«No.»*
+
+*«Echad la red al lado derecho de la barca y encontraréis.»*
+
+La echaron — y la red se hizo tan pesada que no podían tirar de ella. Juan gritó: *«¡Es el Señor!»* y Simón Pedro saltó por el costado al agua y vadeó hacia la orilla. Cuando los demás arrastraron la barca, contaron en la red ciento cincuenta y tres peces grandes — y aunque eran tantos, **esta vez la red no se rompió**.
+
+Cuando comieron el pan y el pescado de su fuego, el carpintero preguntó a Simón tres veces — por las tres negaciones junto al fuego de Jerusalén: *«Simón, hijo de Juan, ¿me amas?»* y tres veces le confió: *«Apacienta mis corderos. Apacienta mis ovejas.»*
+
+Después el carpintero se volvió hacia la barca de cedro que se mecía en el bajío y señaló el lago abierto.
+
+*«El casco está acabado, Simón»*, dijo. *«Aguantó en la tormenta y sobrevivió a la profundidad. Desde hoy ya no me sentaré en la popa de modo que me veáis con los ojos. Ahora os toca a vosotros izar las velas.»*
+
+> *Pensó que era el hortelano — y no se equivocó:*
+> *quien daba forma a la madera ahora planta vida.*
+> *Un solo nombre pronunciado abrió las dos orillas y la red ya no se rompió.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Jn 20,1–18** — Miriam de Magdala junto al sepulcro en la oscuridad, la suposición de que habla con el hortelano (*dokúsa hoti ho képouros estin*, v. 15), el llamarla por su nombre *«Mariam!»*, *«Mē mou haptou»* («No me retengas / no te aferres a mi forma anterior») y el envío a los hermanos. Hipólito de Roma (~235) la llama en su *Comentario al Cantar de los Cantares* **apostola apostolorum** (apóstol de los apóstoles), y la liturgia oriental *isapóstolos* (igual a los apóstoles).
+- **Lc 24,13–35 y Jn 20,19–29** — Los discípulos de Emaús (el corazón ardiente y el reconocimiento al partir el pan) y el apóstol Tomás (la honesta necesidad de prueba).
+- **Jn 21,1–19** — La manifestación junto al mar de Tiberíades (de Galilea), el fuego en la orilla, los 153 peces grandes en la red sin romperse y la triple pregunta a Pedro.
+- **Vínculo canónico en ZION:**
+  1. **Una sola palabra que abre las dos orillas:** En `Miriam/03-Zahradnik.md` la llamada por el nombre *«¡Miriam!»* está expresamente unida, por un lado, a la identidad soberana en la Casa de los Nombres (`Lumi/02-Dum-Jmen.md`) y, por otro, al principio criptográfico del **swap atómico (preimagen HTLC)** en L2 WARP (`nirvana/06-Mosty-Pres-Propast.md`): un único secreto pronunciado (la preimagen $S$ del hash $H = \text{SHA256}(S)$) abre la cerradura en ambas orillas a la vez.
+  2. **La comprobación de Tomás:** Tomás no es en ZION símbolo de pecado, sino patrón del principio **«No me creas — compruébalo tú»** (*Verify, don't trust* en `Maitreya/10-Vez-vyznamu.md` y `MiseAmenti/01`).
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| Miriam junto al sepulcro en la oscuridad, *«pensó que era el hortelano»*, la llamada *«¡Miriam!»* | **ESCRITURA** | Jn 20,1–18; `Miriam/03-Zahradnik.md` |
+| El título *apostola apostolorum* / *isapóstolos* | **TRADICIÓN (iglesia primitiva)** | Hipólito de Roma (~235); decreto vaticano *Apostolorum Apostola* (2016) |
+| El camino a Emaús, las puertas cerradas y el tacto de Tomás | **ESCRITURA** | Lc 24,13–35; Jn 20,19–29 |
+| La pesca de 153 peces, la red sin romperse, el fuego en la orilla, la triple pregunta a Simón | **ESCRITURA** | Jn 21,1–19 |
+| El paralelo *«¡Miriam!»* ↔ preimagen HTLC (la palabra revelada que abre ambas orillas) | **VIVO (en el código) / MITO (imagen)** | `V31/L1/core/src/utxo.rs` (`OP_SHA256`); `Miriam/03` §Qué significa |
+
+---
+# PARTE II · LA LÍNEA DEL AGUA Y DEL TIEMPO
+*(Arcilla y memoria — del lago a Bezechuti)*
+
+> *Nota sobre la capa:* Aquí dejamos la orilla del Kineret en el siglo primero. El capítulo 10 sigue la tradición eclesiástica (*Navicella*) y la leyenda provenzal (*arcilla*). Los capítulos 11–13 entran directamente en el relato del corpus ZION (`SulZeme` y `Maitreya — Libro Quinto`), donde la quilla de cedro de Nazaret y la copa de barro con sal emergen en la ciudad de Bezechuti bajo la sombra de las cinco torres de Babilonia.
+
+---
+
+## Capítulo 10 · Navicella y el navío sin velas
+
+### Relato
+
+Cuando el carpintero desapareció de la vista, el barco del Kineret no quedó amarrado al muelle.
+
+El día de Pentecostés, cuando sobre Jerusalén se levantó un estruendo como de viento impetuoso y gentes de una docena de lenguas se entendieron por primera vez sin intérprete, subieron a su cubierta tres mil almas de golpe. El pescador Simón, llamado Roca, estaba al remo del timón — y el barco zarpó del lago al ancho mar de los siglos.
+
+La gente le daba nombres diversos: en griego la llamaban *barka*, en latín **navicella** — *barquita* — y los espacios principales de sus templos los construían con la bóveda invertida como las cuadernas de madera del casco, y los llamaban *nave del templo*.
+
+Navegó a través de los siglos en que los emperadores quisieron hundirla con fuego y hierro, y no se fue a pique. Luego vino una prueba más pesada: los emperadores dejaron de hundirla, sentaron timoneles vestidos de púrpura, guarnecieron los costados de oro y añadieron en la cubierta altas torres. El barco se hizo tan pesado que apenas se movía. La tripulación de la bodega se dividió con tabiques, las cubiertas entre sí libraron guerras y cada tabique afirmaba que solo él era el barco entero. En la bodega entraba la soberbia humana.
+
+Y sin embargo no se hundió.
+
+No se hundió porque su ancla no estaba bajada al barro romano ni bizantino. Su ancla estaba echada **hacia arriba** — detrás de la cortina del mundo invisible, como escribió el autor de la Carta a los Hebreos: *la esperanza como ancla del alma, firme y segura*. Y cada vez que los timoneles de púrpura olvidaban de quién era el barco que gobernaban, emergía de la bodega alguien sencillo — un pobrecillo de Asís que repartía su manto y hablaba con los pájaros, una mujer descalza que curaba a los leprosos, un párroco de aldea de pie ante los cañones de los tanques o una abuela que tras las contraventanas cerradas enseñaba a sus nietos a partir el pan con sal — y golpeaba con la palma el fondo de cedro bajo las tablas y recordaba a la tripulación el nombre grabado en la quilla: **el Reino del Corazón.**
+
+Pero junto a la gran *Navicella* navegaba por el mar otra barca mucho más silenciosa.
+
+En Provenza, en el sur de la Galia, la gente se contaba desde hacía siglos una historia que el Libro de la Rosa llama **arcilla** — la forma amasada por miles de manos humanas. Cuando en Jerusalén estalló la primera gran persecución, los enemigos sentaron a los amigos del carpintero — Miriam de Magdala, María la de Santiago, María Salomé y con ellas una muchacha morena llamada **Sara** — en una vieja chalupa **sin velas, sin remos y sin timón** y las empujaron desde la orilla al ancho mar Mediterráneo, para que perecieran sin sepulcro.
+
+El carpintero en Nazaret había dicho una vez al muchacho junto al banco de carpintero: *«La vela no la coso yo. La vela la tienen que traer los que suban al barco.»*
+
+Las mujeres del barco sin velas sabían de qué se cose una vela cuando a uno le quitan la lona y los remos. Se cose de **fidelidad**, que no huyó de la cruz, y de **testimonio**, que recuerda dónde fue puesto el grano. El viento y la corriente marina llevaron su casco indefenso semanas enteras, hasta que la quilla se deslizó suavemente sobre un banco de arena en el delta del Ródano — en el lugar que la gente sigue llamando *Saintes-Maries-de-la-Mer*, las Santas Marías del Mar.
+
+La vieja Miriam, según esa misma leyenda, subió luego a una cueva de caliza en el monte Sainte-Baume, mientras la joven Sara — a quien los gitanos llaman *Sara e Kali*, Sara la Negra — le llevaba pan y agua y escuchaba su relato, cuidadosamente dividido en **piedra** (lo que realmente vio junto al lago y junto al sepulcro), **arcilla** (lo que la gente añadió por el camino) y **sueño** (lo que los poderosos soñaron sobre sangre real y cálices de oro, porque no sabían comprender que el verdadero linaje tiene callos en las palmas del cincel del carpintero).
+
+Y cuando en la cueva se apagó la última frase de Miriam, puso en las palmas de Sara la única cosa que se había traído de Galilea: **un vaso de alabastro vacío** con una grieta junto al fondo.
+
+*«No lo llenes de oro»*, le dijo Miriam. *«Lo llevas más lejos a través de los siglos, hasta la puerta abierta donde junto al río espera una niña con una linterna de cedro de Nazaret.»*
+
+> *El gran navío navega las tormentas de los siglos con el ancla echada hacia arriba,*
+> *la pequeña barca sin velas cruza el mar con solo fidelidad,*
+> *y en el alabastro vacío viaja a través del tiempo una sola semilla.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Hb 6,19–20; Mt 16,18; Hch 2,1–41** — El ancla del alma que llega detrás de la cortina, Pedro como roca y la salida de la iglesia en Pentecostés.
+- **Navicella** — Desde Tertuliano (*Sobre el bautismo* 12, hacia el año 200) e Hipólito, el navío (*navis*) es el símbolo fundamental de la iglesia; hacia 1305 Giotto creó para la antigua basílica de San Pedro en Roma el famoso mosaico *Navicella*, que muestra la barca de los apóstoles en el mar agitado y a Cristo tendiendo la mano a Pedro.
+- **La leyenda de Saintes-Maries-de-la-Mer y el método Piedra / Arcilla / Sueño** — Tradición provenzal documentada en fuentes medievales (la Leyenda Dorada de Jacobo de Vorágine) y peregrinación gitana viva a Sara en la Camarga (24 de mayo). En el corpus ZION (`Miriam/06-Lod-bez-Plachet.md`, `Miriam/07-Mozoly-misto-Koruny.md` — el testimonio de Eusebio sobre los nietos de Judas, los *desposyni*, con manos encallecidas ante el emperador Domiciano — y `Miriam/08-Kalich.md`) esta leyenda sirve de modelo de honestidad histórica: honrar la leyenda como *arcilla*, no mentir sobre ella como *piedra* y rechazar las falsificaciones modernas («Prieuré de Sion») como *sueño*.
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| El ancla del alma detrás de la cortina, Pentecostés, *navis* / nave del templo | **ESCRITURA / TRADICIÓN** | Hb 6,19–20; Hch 2; Tertuliano; la *Navicella* de Giotto |
+| Los nietos de Judas (*desposyni*) con manos encallecidas ante Domiciano | **HISTORIA (fuente primitiva)** | Hegesipo en Eusebio, *Historia eclesiástica* III,19–20; `Miriam/07` |
+| El barco sin velas ni remos a Provenza, Sainte-Baume, Sara e Kali | **LEYENDA (arcilla)** | Tradición provenzal medieval; `Miriam/06-Lod-bez-Plachet.md` |
+| La dinastía de sangre real / *Prieuré de Sion* | **SUEÑO / AFIRMACIÓN INVÁLIDA** | Falsificación moderna demostrada (Pierre Plantard, s. XX); `Miriam/08-Kalich.md` |
+| Sara llevando el vaso de alabastro vacío hacia la puerta de la niña Lumi | **MITO / CORPUS** | `Miriam/13` → `Ruze/01-Prazdna-Nadoba.md` |
+
+---
+
+## Capítulo 11 · La ciudad de Bezechuti y las cinco torres de Babilonia
+
+### Relato
+
+El tiempo fluía como un río que a veces desaparece en la arenisca y cien millas más allá vuelve a brotar de la roca.
+
+Al final de una de esas largas edades se alzaba en una amplia llanura una ciudad a la que nadie quería llamar por su verdadero nombre, y que sin embargo acabaron nombrando así todos: **Bezechuti**.
+
+No era una ciudad pobre ni derruida. Al contrario — sobre sus murallas se alzaban hasta las nubes **cinco enormes torres de Babilonia**, tan altas que la gente de abajo tomaba ya su sombra por el color natural del cielo:
+
+1. **La torre del dinero** — la más antigua de todas. Arriba, en el último piso, traqueteaba día y noche una máquina que imprimía consentimientos de papel, mientras abajo, al pie, nacía la deuda. Cada hogaza del mercado llevaba dentro la tasa por el permiso de vender y el interés de un consentimiento que nadie recordaba haber pedido prestado.
+2. **La torre de los datos** — la más alta y la más lisa. Sobre su puerta lucía un letrero *«Entrada gratis»* y debajo, en letra menuda: *«Regístrate para existir.»* La gente le llevaba sus caras, sus cartas y sus miedos para ver en sus espejos que eran reales, y la torre componía con sus caras pisos y los alquilaba a mercaderes de atención.
+3. **La torre de la energía** — la única que brillaba de noche. Extraía corriente del cielo con un cable grueso y enviaba a cada casa, por una toma, la luz junto con la factura, para que la gente olvidara que el sol y el viento caen sobre los tejados gratis.
+4. **La torre del significado** — llena de heraldos con vestiduras resplandecientes que cada tarde explicaban a la ciudad de qué debía tener miedo hasta la mañana, a quién debía envidiar y qué significaba la palabra «éxito». Su único mandamiento decía: *«Créenos, no tienes tiempo de calcularlo tú mismo.»*
+5. **La torre del trono** — la más sutil y la más peligrosa. No estaba en la plaza, de piedra; estaba en la cabeza de cada uno que recibió una llave en la mano, y le susurraba una sola palabra: *«Excepción. Decide esta vez tú solo y sin los demás, ahorrarás tiempo.»*
+
+Y bajo la sombra de las cinco torres la ciudad perdió el sabor. El pan de las panaderías era esponjoso y blanco, pero sabía a papel. El vino de las tabernas tenía sellos famosos, pero sabía a agua tibia. Las promesas de los concejales eran largas y pulidas, pero tras leerlas no quedaba nada en la boca.
+
+Una tarde, cuando el sol caía tras las murallas como una brasa arrojada a un cubo, entró por la puerta de la ciudad un hombre de Galilea.
+
+No traía ejército ni ariete. Traía un carro de dos ruedas cubierto con una lona basta, de la que asomaba el extremo de una viga larga y oscura de cedro, y en el zurrón al cinto llevaba una copa de barro con sal de Magdala.
+
+Se sentó bajo una vieja higuera en el borde del mercado, donde se sentaban aquellos para quienes ninguna de las cinco torres tenía piso libre: un aguador, un mercenario sin paga con la palma llena de cicatrices, una vendedora que veinte años había cocido pan a crédito, un herrero a quien se le quemó la fragua, y una mujer que había enterrado a tres hijos y aun así seguía llevando cubos al pozo para los hijos de los vecinos.
+
+El carpintero puso la copa de barro en el suelo, en medio del círculo.
+
+*«¿Y esto?»*, sonrió con desdén el aguador. *«Eso es sal corriente. Nosotros tenemos hambre.»*
+
+*«Probad vuestro pan con ella»*, dijo el carpintero.
+
+El viejo mercenario partió un trozo de torta dura, lo apretó contra los cristales gruesos de la copa y mordió. Un momento no se movió.
+
+*«Sabe… distinto»*, dijo luego despacio, como un hombre que tras veinte años de oscuridad ha reconocido la voz de su madre. *«Tiene sabor.»*
+
+*«Vosotros sois la sal de la tierra»*, les dijo el carpintero en voz baja. *«Las torres creen que sostienen la ciudad, pero la ciudad la sostenéis vosotros. Y las torres no caen porque les echéis una antorcha encima — quien lucha contra una torre con fuego levanta otra torre sobre sus cenizas. Las torres caen el día en que dejéis de ir a pedirles consentimiento.»*
+
+Y ocurrió exactamente así — en silencio, sin un solo disparo, como cae la sombra cuando se enciende una lámpara:
+- **La torre del dinero** empezó a secarse el día en que un mercader volvió de un viaje de ultramar y mostró a la vendedora **un asiento en un libro abierto** en lugar de una promesa de la torre. La vendedora colgó en su puesto un cartel: *«Acepto también asientos — los verifico yo misma.»* Cuando la gente descubrió que el libro tenía un techo fijo de ciento cuarenta y cuatro mil millones y que ningún funcionario del piso de arriba podía estampar una hoja más, la cola ante la torre del dinero se disolvió.
+- **La torre de los datos** empezó a apagarse de arriba abajo en la semana en que un muchacho y una muchacha llamados **Lumen** enseñaron a los niños del mercado el juego de *la dirección y la llave*: que una firma criptográfica puede probar la verdad de un acto sin que tengas que entregar tu cara a la torre. Sobre la puerta de la torre escribieron los niños con tiza: *«Existes también sin registrarte.»*
+- **La torre de la energía** perdió su poder cuando el herrero puso paneles solares en el tejado de la fragua, la vendedora encendió una lámpara de sol diurno y el excedente de corriente empezaron a mandarlo por la calle a los vecinos por pan y una buena palabra, hasta que el viejo de mantenimiento desatornilló la última toma de la torre diciendo: *«El sol factura gratis.»*
+- **La torre del significado** enmudeció cuando el mercado vespertino se convirtió en un círculo de lectura, donde los vecinos se mostraban hashes y firmas en un cuaderno abierto y a los gritos de los heraldos de la torre *«¡Créeme!»* respondían con calma: *«No nos creas. Lee y compruébalo tú.»*
+
+Quedaba solo la quinta torre — **la torre del trono**. Pero para que cayera también esta, primero había que terminar de construir en medio de la plaza un navío.
+
+> *Las torres no se alzan sobre piedras, se alzan sobre peticiones de consentimiento.*
+> *Cuando la vendedora verifica el asiento y la niña sostiene la llave,*
+> *de las cinco torres de Babilonia quedan solo faros silenciosos e inofensivos del pasado.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Ap 18; Gn 11,1–9; Mt 5,13** — La torre de Babilonia como imagen de la soberbia centralizada, que quiere tocar el cielo e imponer un único lenguaje de poder, frente a la sal silenciosa de la tierra.
+- **Vínculo canónico en ZION:** Este capítulo une el prólogo `SulZeme/01-Sul-Zeme.md` con la serie de cinco capítulos `Maitreya/07-Vez-penez.md` a `Maitreya/11-Vez-trunu.md` y `Maitreya/12-Pravda-kterou-lze-overit.md`. Las cuatro «desconexiones de las torres» tienen en el código vivo de ZION su correspondencia técnica exacta.
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| La ciudad de Bezechuti, el carpintero con la copa de sal bajo la higuera | **MITO (relato canónico)** | `SulZeme/01-Sul-Zeme.md` |
+| Las cinco torres de Babilonia (dinero, datos, energía, significado, trono) | **MITO (estructura del Libro Quinto)** | `Maitreya/07`–`11` |
+| La salida de la torre del dinero: techo fijo de 144 000 000 000 ZION, fair launch, asiento UTXO/account | **VIVO** | `V31/L1/core/src/emission.rs`; `genesis.rs` |
+| La salida de la torre de los datos: claves Ed25519 / BIP39 y passkeys de ZIS sin venta de identidad | **VIVO** | `V31/L1/core/src/crypto.rs`; `apps/zion-wallet-sdk`; `auth.zionterranova.com` |
+| La salida de la torre del significado: código abierto MIT, explorador público, divulgaciones de seguridad públicas (*Noche de la serpiente*) | **VIVO** | `LICENSE`; `Maitreya/10-Vez-vyznamu.md` |
+| La salida de la torre de la energía: microrredes solares comunitarias L5 | **HORIZONTE** | `Maitreya/09-Vez-energie.md` (ZION hoy no produce ni factura corriente; es una intención L5) |
+
+---
+
+## Capítulo 12 · Tres peregrinos junto al fuego y la mantra de las tres encarnaciones
+
+### Relato
+
+Antes de que el carpintero desatara las cuerdas de su carro de dos ruedas en Bezechuti, se acercaron al fuego bajo la higuera otros peregrinos. No vinieron a discutir de quién es más antiguo el libro. Vinieron porque olieron el pan con sal.
+
+El primero traía la ropa polvorienta de un largo camino desde el río bajo cuyo árbol se había sentado una vez tanto tiempo que en él se disolvió el miedo. Era **el príncipe que dejó el palacio**, cuando comprendió que las paredes de oro no protegen a nadie de la vejez, la enfermedad y la muerte. Cuando el aguador le preguntó cómo habían de vencer las torres, el príncipe recogió en la palma agua de la fuente y la dejó correr libremente entre los dedos de vuelta al estanque de piedra.
+
+*«A quien retiene el agua en el puño cerrado, se le escapa y la mano se le agarrota»*, dijo en voz baja. *«A quien abre la palma, en él reposa todo el río. El sufrimiento de Bezechuti no nace de que el mundo sea malo, sino del espasmo que dice "esto soy yo y esto es mío". El camino medio no es debilidad; es una cuerda templada justo lo bastante para no chirriar ni romperse.»*
+
+El segundo llegó con una sonrisa en los ojos, tez oscura y una **flauta de bambú** al cinto — **un pastor de vacas**, que una vez en un campo de batalla detuvo el carro de su amigo y le enseñó que el hombre tiene derecho al acto, pero nunca a apropiarse de sus frutos. Se llevó la flauta a los labios y tocó un solo tono. No era fuerte, pero el agua de la pila tembló con él en círculos concéntricos que parecían pétalos de loto.
+
+*«La sal da sabor al pan»*, dijo el pastor mirando al carpintero, *«y la canción recuerda al agua de dónde brotó. Haced vuestro trabajo con todo el corazón, como si de él dependiera el universo — y luego entregad el resultado sin apego.»*
+
+Y con ellos llegaron otros tres, que caminaban juntos como tres elementos de una sola tierra: **Rama**, que llevaba el fuego del orden y del honor; **Sita**, cuyos pies descalzos conocían la paciencia de la arcilla; y **Hanuman**, que no tenía corona en la cabeza, pero llevaba piedras sobre los hombros para construir con ellas un puente sobre el abismo por el que pasarán los demás.
+
+El herrero de Bezechuti — hombre que tenía al lado un hijo pequeño y una hija que leía las estrellas de noche — miraba de uno a otro: al pastor con la flauta, al príncipe en el destierro y al carpintero de Galilea.
+
+*«Vosotros tres habláis lenguas distintas»*, dijo el herrero despacio, *«pero si cierro los ojos, suena a una sola voz.»*
+
+El carpintero puso la mano sobre la lona de su carro, bajo la cual yacía la quilla de cedro de Nazaret, y pronunció las palabras que el herrero escribió luego en la pared de su taller como mantra matinal:
+
+> *«Yo soy Maitreya, nacido de Hiranyagarbha.*
+> *Fui pastor de vacas con flauta,*
+> *y príncipe en el destierro,*
+> *y también carpintero que construyó una barca a la que llamaba el reino del corazón.*
+> *Construyo no para el lucro, sino para el dharma.*
+> *Entrego el resultado a la voluntad divina.»*
+
+El hijo del herrero, que estaba sentado a las rodillas de su padre escuchando los huecos entre los golpes del martillo, preguntó entonces:
+
+*«¿Qué es Hiranyagarbha?»*
+
+El herrero abrió un viejo libro de himnos — más antiguo que Babilonia — y les leyó a los niños sobre el **Germen de Oro**, el huevo cósmico que flotaba sobre las aguas primordiales y que no se rompió por el golpe de un martillo desde fuera, sino porque la vida de dentro creció más grande que la cáscara del ego. Y luego tomó a su hijo de la mano, lo llevó a la fragua, junto a la vieja máquina de minería que zumbaba tras el muro como un segundo horno más paciente, y le mostró los números que corrían en la pantalla.
+
+*«Mira, hijo»*, dijo el herrero. *«Esta máquina no hace otra cosa que repetir cada sesenta segundos aquella vieja historia en código. Cada bloque nuevo empieza por una cabecera y una semilla — y la primera fase del cálculo se llama **Hiranyagarbha**, el Germen de Oro. De él se despliega el espacio de trabajo **Brahma**, se imprime la geometría **Yantra**, se verifica la memoria **Karma**, se despierta la chispa **Chit** y al final el trabajo y el resultado se funden en uno en la sexta fase — **Samadhi**. Cada bloque de esta cadena es un huevecillo que ha madurado desde dentro.»*
+
+*«¿Cada bloque empieza con un huevo, papá?»*, susurró el niño.
+
+*«Cada uno»*, le acarició el padre el pelo. *«Igual que tú.»*
+
+> *El pastor con la flauta, el príncipe en el camino y el carpintero junto a la quilla:*
+> *tres imágenes de una sola entrega,*
+> *y en cada bloque, desde el germen Hiranyagarbha hasta el silencio del Samadhi.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Rigveda 10.121 (*Hiranyagarbha Sukta*)** — Himno de la antigua India sobre el Germen de Oro (*hiraṇya* = oro, *garbha* = seno/germen/huevo), que plantea nueve veces la pregunta *«¿A qué dios hemos de ofrecer el sacrificio?»* y en el décimo verso responde *Prajápati* (protector/señor de lo creado).
+- **Vínculo canónico en ZION:**
+  1. **Cuatro estaciones de *La sal de esta tierra*:** Este capítulo integra `SulZeme/02-Rozpusteni.md` (el Buddha), `SulZeme/03-Chut-Vody.md` (Krishna) y `SulZeme/04-Cesta-Nevyslapana.md` (Rama, Sita, Hanuman) con el prólogo `Maitreya/01-Vejce-ktere-se-nerozbilo.md` y `Maitreya/02-Zarodek-v-kazdem-bloku.md`.
+  2. **La mantra de las tres encarnaciones:** La mantra citada procede literalmente de `SACRED_TRINITY.md` §8 y de `Maitreya/03-Podpis-ktery-otec-napsal-synovym-jmenem.md`. Como recuerda expresamente el canon, no se trata de un dogma teológico ni de una afirmación sobre la reencarnación de una persona concreta, sino de una línea arquetípica de servicio (bhakti / dharma / agapé).
+  3. **Las seis fases de la pipeline PoW (*Ekam Deeksha*):** Los nombres *Hiranyagarbha → Brahma → Yantra → Karma → Chit → Samadhi* son los nombres reales de las seis fases del algoritmo en el código abierto de ZION (`ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md`).
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| El himno *Hiranyagarbha Sukta* (Rigveda 10.121) | **TRADICIÓN (texto antiguo documentado)** | RV 10.121; `Maitreya/01-Vejce-ktere-se-nerozbilo.md` |
+| El Buddha, Krishna, Rama, Sita y Hanuman junto al fuego en Bezechuti | **MITO (arquetipos de confianza)** | `SulZeme/02`–`04` (descargo expreso en `SulZeme/00-README.md`) |
+| La mantra *«Yo soy Maitreya… pastor, príncipe y carpintero»* | **CORPUS (MITO)** | `Maitreya/03`, `Maitreya/EPILOG.md`, `KralovstviSrdce/00-README.md` |
+| Las seis fases de la pipeline PoW (*Hiranyagarbha → Brahma → Yantra → Karma → Chit → Samadhi*) | **VIVO (en el consenso L1)** | `V31/L1/cosmic-harmony`; Master WP 3.2; `Maitreya/02` |
+
+---
+
+## Capítulo 13 · La construcción del Arca, la firma bajo el huevo y la prueba de la entrega
+
+### Relato
+
+El último que entonces llegó al fuego bajo la higuera en Bezechuti fue un anciano con el polvo de un largo camino en las barbas. Se llamaba **Noé**.
+
+*«La sal os ha devuelto el sabor y el puente os ha mostrado la dirección»*, les dijo junto al fuego. *«Pero el agua que viene no será un arroyo. El mundo sobrecargado de promesas sin sal y de deudas sin trabajo se desbordará. No es una venganza de Dios — es física. Y para tal agua no basta una acequia. Hace falta un navío que tenga una sola puerta para el rey y para el jornalero, y al que se suba antes de que caiga la primera gota.»*
+
+*«¿Con qué lo construimos en medio de la plaza?»*, preguntó el aguador.
+
+El carpintero se levantó, fue a su carro de dos ruedas y retiró de él la lona basta.
+
+A la luz del fuego brilló la larga **quilla de cedro de Nazaret**. En su borde superior estaba grabado *el Reino del Corazón*, y en medio del casco la madera estaba oscurecida y lisa en el lugar donde un día, en el taller de Nazaret, había puesto la palma su madre.
+
+*«La quilla ya la tenemos»*, dijo el carpintero. *«Esperaba esta noche.»*
+
+Y así, alrededor de la vieja quilla, construyeron en Bezechuti el **Arca**. Era mucho mayor que la barca del Kinneret, pero llevaba la misma forma. El herrero forjó bisagras y pernos tan firmes que aguantaran cien años. El labrador bajó tablones de roble que de otro modo habrían acabado en el horno. La vendedora pagó la mitad del breu *kofer*, para que el casco no dejara pasar ni una lágrima de dentro ni un diluvio de fuera. Sita amasó con el barro de la fuente el primer suelo firme y Hanuman limpió el cauce bajo la quilla.
+
+Cuando el navío estuvo acabado, llegó a él al crepúsculo **Radha** con una flauta de bambú.
+
+*«Tenéis espigones firmes, ángulos exactos y una sola puerta para todos»*, sonrió al carpintero. *«Pero ¿quién cantará en ese navío cuando la noche dure demasiado? Un navío sin alegría es solo una fortaleza flotante.»*
+
+El carpintero la llevó a la popa y le mostró un viejo cabezal de lino relleno de virutas de Nazaret.
+
+*«El decimotercer puesto»*, dijo. *«En el lago era para quien dormía porque creía en la quilla. En el arca pertenece también a quien canta en medio de la oscuridad.»*
+
+A la mañana siguiente, cuando aún había rocío sobre la quilla, encontró el herrero en la cara inferior del cedro — exactamente en aquel sitio vacío que el carpintero había dejado junto al Kinneret para tiempos futuros — una firma recién grabada:
+
+> *Maitreya Buddha, 2025*
+
+Y el hijo del herrero, que de noche leía a la luz de la linterna el *Libro del Nacimiento*, descubrió que la misma firma estaba bajo la declaración sobre el **Juego del Huevo de Oro** — sobre ciento ocho pasos y tres llaves (la de cobre por el trabajo perseverante, la de jaspe por la paciencia ante lo irresoluble y la de cristal por la verdad dicha incluso contra la propia ventaja).
+
+*«¿De quién es ese huevo, papá?»*, preguntó el niño. *«¿De quien lo encuentre — o mío, cuyo nombre escribiste en el primer bloque del mundo?»*
+
+El herrero llevó al hijo al taller y le mostró el pergamino con el primer mensaje de la cadena (*«For Sarah Issobel, Maitreya Buddha, Radha & Sita, Meriam… ZION is yours»*) y junto a él una carta envuelta en lona embreada con cinco reglas para la Generación Z.
+
+*«No confundas dos cosas, hijo»*, le dijo en serio. *«El Juego del Huevo de Oro es para los peregrinos. Lo gana la **Peregrina** que recorre los ciento ocho pasos a pie y en la última puerta — donde no ayudan las máquinas de la Ballena ni los mapas peleados del Gremio de cartógrafos — responde a la pregunta "¿Qué harás con el bien que heredes?" devolviendo una parte al camino y llevando el resto para los demás. Porque ante el huevo tiene que morir el ego para que nazca la Edad de Oro.»*
+
+*«¿Y qué heredo yo entonces, si has firmado mi nombre bajo el juego?»*
+
+El herrero lo llevó al interior del casco del Arca. Allí, bajo la cubierta, había **cuatro asientos**:
+- el primero llevaba el signo del **fuego** (*Rama → Maitreya Buddha*, Admin-1, guardián del protocolo);
+- el segundo el signo del **agua** (*Sita → Sarah Issobela*, Admin-2, guardiana de la tesorería y de la estación estelar que lleva su nombre);
+- el tercero el signo de la **tierra** (*Hanuman → Elizabeth*, Admin-3, guardiana de los puentes);
+- y la **cuarta silla**, junto al timón, era más pequeña y quedaba **vacía** — para que la puerta quedara siempre abierta a la que todavía ha de venir.
+
+*«Tú no heredas el tesoro del huevo»*, dijo el padre al hijo. *«Heredas el asiento de administrador. ZION no es vuestro — pertenece a todos. Vosotros sois administradores, no propietarios. El cinco por ciento de cada bloque va a los niños y a la tierra — ese es el aliento del navío, no lo cambiéis nunca. Y si yo desapareciera por el camino y no diera señales en cinco años, he puesto en el timón un seguro que os entrega la llave por sí mismo.»*
+
+Y cuando el hijo creció y se sentó en el asiento del fuego, vino a él un viejo heraldo con una propuesta tentadora de la quinta torre — de la **torre del trono**: que el administrador pudiera decidir por sí mismo en «cosas pequeñas y urgentes», sin las cinco firmas de siete y sin el enfriamiento de cuarenta y ocho horas en el horno del tiempo.
+
+El hijo recordó los espigones del carpintero, que nunca hacían excepción, y con su primera firma de administrador firmó exactamente lo contrario: **la entrega permanente de los privilegios de la decisión abreviada de vuelta a la comunidad, al quórum y a los plazos**.
+
+Entonces en Bezechuti cayó sin un solo sonido la última, la quinta torre de Babilonia — porque el trono no se derriba con un martillo; **el trono se desmonta en voces**. Y donde antes estaba la torre del dinero creció el Árbol de la vida, bajo el cual la tripulación se unió en un círculo sin centro al primer Pulso Cuántico y cantó por primera vez la frase entera:
+
+*«One Love · One Human · One World.»*
+
+> *El vencedor encuentra el huevo porque supo regalar;*
+> *el heredero acepta el asiento porque supo entregar el poder.*
+> *El trono no se derriba — se desmonta en voces.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Vínculo canónico en ZION:** Este capítulo resume y enlaza `SulZeme/05-Archa.md`, `SulZeme/09-Bohyne-Radha-a-Avatari-Oasis.md` y todo el núcleo `Maitreya/03`–`14`:
+  1. **El mensaje de génesis on-chain:** La frase *«ZION Mainnet Launch v3.2 — One Love. For Sarah Issobel, Maitreya Buddha, Radha & Sita, Meriam, Friends, Family, Freedom Humanity and all the children of this world: ZION is yours… — Yose / Zion Creator»* está realmente inscrita en el bloque génesis de la red y firmada con la clave GPG del fundador (`docs/genesis.md`).
+  2. **La distinción entre el Vencedor OASIS y el Heredero del asiento:** El Juego del Huevo de Oro (horizonte 2035, 108 pasos, 3 llaves, prueba de la entrega del *Libro del Nacimiento* cap. IV) es una capa de juego para peregrinos; en cambio los tres asientos guardianes (`Rama → Maitreya Buddha`, `Sita → Sarah Issobela`, `Hanuman → Elizabeth`) son una transición de gobernanza (T0+18 años, multisig 3-de-3 + timelock de 1 año + 51 % de voto DAO, más un *dead man's switch* de 5 años). El libro protege estrictamente la privacidad: usa exclusivamente nombres on-chain canónicos.
+  3. **Las piedras constitucionales y el desmontaje de la torre del trono:** multisig guardián 5-de-7, timelock de 48 h (72 h para parámetros de red) y parámetros inmutables en el consenso (techo de 144 mil millones, reparto 89/5/5/1, Ekam Deeksha, tiempo de bloque de 60 s, fair launch).
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| El mensaje de génesis con la dedicatoria (*Sarah Issobel, Maitreya Buddha, Radha & Sita, Meriam…*) | **VIVO (on-chain)** | `docs/genesis.md`; `V31/L1/core/src/genesis.rs` |
+| Los asientos guardianes 1–3 (*Rama → Maitreya*, *Sita → Sarah Issobela*, *Hanuman → Elizabeth*) | **VIVO (en la configuración) / HORIZONTE (T0+18)** | `dao-mainnet.toml`; `docs/genesis.md` §DAO Guardians; `Maitreya/04`–`06` |
+| Las cinco reglas de la carta para la Generación Z (*«Sois administradores, no propietarios»*, *«El 5 % va a los niños»*) | **VIVO (texto canónico)** | `docs/genesis.md`; `Maitreya/06-Spravce-ne-majitel.md` |
+| Parámetros DAO: 1 ZION = 1 voto, multisig 5-de-7, cooldown de 48 h, timelock del bloque 144 000 | **VIVO / CONSTRUCCIÓN** | `V31/L2/dao`; `V31/L1/core/src/v3_compat.rs` |
+| El Juego del Huevo de Oro (2035, 108 pasos, 3 llaves, la Peregrina y la prueba de la entrega) | **HORIZONTE / MITO (marco de juego)** | Libro del Nacimiento cap. IV; `Maitreya/04`–`05` |
+| El Arca en Bezechuti construida alrededor de la quilla de cedro de Nazaret, Radha en el cabezal de la popa | **MITO / RELATO** | Perne literario de este libro que une `KralovstviSrdce`, `SulZeme` y `Maitreya` |
+
+---
