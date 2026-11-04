@@ -55,6 +55,8 @@ export interface MobaStats {
   xpNeed: number;
   kills: number;
   deaths: number;
+  /** Zabití v řadě — HUD z toho dělá „🔥". */
+  streak: number;
   respawnIn: number;
   ended: 'blue' | 'red' | null;
   nodeOwner: { key: string; owner: 'blue' | 'red' | null }[];
@@ -141,6 +143,7 @@ export function statsFromSnapshot(
     xpNeed: you?.xpNeed ?? 1,
     kills: you?.kills ?? 0,
     deaths: you?.deaths ?? 0,
+    streak: you?.streak ?? 0,
     respawnIn: you?.respawnIn ?? 0,
     ended: snapshot.ended,
     nodeOwner: snapshot.nodes.map((node) => ({ key: node.key, owner: node.owner })),

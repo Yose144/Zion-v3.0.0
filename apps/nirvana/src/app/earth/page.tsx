@@ -27,6 +27,14 @@ import { describeRun, nickname as pickNickname, recordRun } from '@/core/progres
 import { GameBoard } from '@/core/games/GameBoard';
 import { watchRoom } from '@/core/net/watch';
 import { SpectatorBar } from '@/core/net/SpectatorBar';
+import {
+  HERO_OF_DAY_BONUS,
+  heroOfDay,
+  loadMastery,
+  masteryLevel,
+  recordMastery,
+  type MasteryBook,
+} from '@/core/moba/mastery';
 import { MobaMinimap } from '@/core/moba/MobaMinimap';
 import { NODE_SITES } from '@/core/moba/map';
 import { BATTLE_SPELLS, ITEMS, ITEM_SLOTS, SELL_RATIO, WARD_STOCK_MAX, talentRole, totalXpAt, type BattleSpellId, type BotSkill, type ItemId, type TalentRole } from '@/core/moba/sim';
@@ -179,6 +187,14 @@ export default function EarthPage() {
   const [notice, setNotice] = useState<string | null>(null);
   /** Zápas se zapisuje jednou, i když se `winner` překreslí víckrát. */
   const recorded = useRef(false);
+  /** Mistrovství se čte až po mountu (localStorage není na serveru). */
+  const [mastery, setMastery] = useState<MasteryBook>({});
+  const [masteryGain, setMasteryGain] = useState<{ hero: number; xp: number; level: number; title: string } | null>(null);
+  const star = useMemo(() => heroOfDay(STARTERS), []);
+
+  useEffect(() => {
+    setMastery(loadMastery());
+  }, [phase]);
 
   /** Dotykové ovládání — na mobilu joystick + kouzla místo WASD a QWER. */
   const [coarse, setCoarse] = useState(false);
@@ -231,6 +247,7 @@ export default function EarthPage() {
     setStats(null);
     setWinner(null);
     setNotice(null);
+    setMasteryGain(null);
     recorded.current = false;
     setOnlinePhase(mode === 'online' ? 'connecting' : 'running');
     setPhase('playing');
@@ -256,8 +273,37 @@ export default function EarthPage() {
       score,
       nickname: pickNickname(),
     });
-    setNotice(describeRun(outcome, cs, [won ? (cs ? 'výhra' : 'win') : cs ? 'prohra' : 'loss']));
-  }, [winner, stats, cs]);
+
+    // ── mistrovství hrdiny (kosmetické, bez vlivu na hru) ──────────
+    const mvpScore = (hero: MobaStats['snapshot']['heroes'][number]) =>
+      hero.damage + hero.kills * 250 + hero.healing * 0.6 + hero.gold * 0.5;
+    const table = [...stats.snapshot.heroes].sort((a, b) => mvpScore(b) - mvpScore(a));
+    const mvpId = table[0]?.id ?? null;
+    const me = stats.snapshot.heroes.find((entry) => entry.id === stats.youId);
+    const gain = recordMastery(heroId, {
+      won,
+      kills: stats.kills,
+      deaths: stats.deaths,
+      damage: me?.damage ?? 0,
+      mvp: mvpId === stats.youId,
+      versusBots: mode === 'solo',
+      bonus: heroId === star ? HERO_OF_DAY_BONUS : 1,
+    });
+    setMastery(loadMastery());
+    setMasteryGain({
+      hero: heroId,
+      xp: gain.xp,
+      level: gain.after.level,
+      title: gain.after.title[cs ? 'cs' : 'en'],
+    });
+
+    setNotice(
+      describeRun(outcome, cs, [
+        won ? (cs ? 'výhra' : 'win') : cs ? 'prohra' : 'loss',
+        `+${gain.xp} ${cs ? 'mistrovství' : 'mastery'}`,
+      ]),
+    );
+  }, [winner, stats, cs, heroId, mode, star]);
 
   const nexusBlue = stats?.snapshot.towers.find((tower) => tower.id === 'blue-nexus');
   const nexusRed = stats?.snapshot.towers.find((tower) => tower.id === 'red-nexus');
@@ -323,10 +369,25 @@ export default function EarthPage() {
                       setFoeId(id === 82 ? 85 : 82);
                     }}
                   >
+                    {star === id && (
+                      <i className="moba-pick-star" title={cs ? 'hrdina dne · +50 % mistrovství' : 'hero of the day · +50% mastery'}>
+                        ★
+                      </i>
+                    )}
                     <Portrait heroId={id} name={entry.name} size="card" />
                     <strong>{entry.name}</strong>
                     <span>{entry.subtitle}</span>
-                    <em>CL {entry.cl}</em>
+                    <em>
+                      CL {entry.cl}
+                      {mastery[id] ? (
+                        <b className="moba-mastery">
+                          {(() => {
+                            const level = masteryLevel(mastery[id]!.xp);
+                            return `${level.level} · ${level.title[cs ? 'cs' : 'en']}`;
+                          })()}
+                        </b>
+                      ) : null}
+                    </em>
                   </button>
                 );
               })}
@@ -553,6 +614,11 @@ export default function EarthPage() {
                 <strong>{hero.name}</strong>
                 <span>
                   Lv {stats?.playerLevel ?? 1} · {stats?.kills ?? 0}/{stats?.deaths ?? 0}
+                  {(stats?.streak ?? 0) >= 2 && (
+                    <b className={`moba-streak${(stats?.streak ?? 0) >= 5 ? ' is-hot' : ''}`}>
+                      🔥{stats?.streak}
+                    </b>
+                  )}
                 </span>
               </div>
             </div>
@@ -926,6 +992,12 @@ export default function EarthPage() {
             {cs ? 'Kdo ovládne první svět, určí směr celého OASIS.' : 'Whoever holds the first world sets the course of OASIS.'}
           </span>
           {notice && <p className="moba-result-note">{notice}</p>}
+          {masteryGain && (
+            <p className="moba-mastery-gain">
+              ★ <strong>{masteryGain.title}</strong> <span>· level {masteryGain.level}</span>{' '}
+              <em>+{masteryGain.xp} XP</em>
+            </p>
+          )}
           {stats && (
             (() => {
               const score = (hero: MobaStats['snapshot']['heroes'][number]) =>

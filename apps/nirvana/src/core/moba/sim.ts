@@ -415,6 +415,20 @@ export const TOWER_GOLD_TEAM = 120;
 export const TOWER_GOLD_LASTHIT = 60;
 export const TOWER_XP = 120;
 export const HERO_BOUNTY = 180;
+/**
+ * Příplatek za sérii oběti: kdo má 3 zabití v řadě, je pro soupeře cennější
+ * cíl. Bez toho vede farma jednoho hráče k nudné převaze — s tímhle se z
+ * „nakrmeného" hrdiny stává riziko a soupeř má cestu zpět.
+ */
+export const BOUNTY_PER_STREAK = 60;
+export const BOUNTY_MAX_STREAK = 4;
+/** Od kolika zabití v řadě se zabití hlásí jako „shutdown". */
+export const SHUTDOWN_AT = 3;
+
+/** Odměna za zabití hrdiny se sérií `streak` — jedno místo pro sim i testy. */
+export function bountyFor(streak: number): number {
+  return HERO_BOUNTY + Math.min(BOUNTY_MAX_STREAK, Math.max(0, Math.floor(streak))) * BOUNTY_PER_STREAK;
+}
 export const HERO_KILL_XP = 140;
 export const ASSIST_KILL_XP = 70;
 
@@ -601,6 +615,8 @@ export interface Hero {
   facing: number;
   kills: number;
   deaths: number;
+  /** Zabití v řadě — zvyšuje odměnu tomu, kdo hrdinu zastaví. */
+  streak: number;
   damageDone: number;
   healingDone: number;
   /** Zlato ze zabití a uzlu; za něj se kupují itemy. */
@@ -852,6 +868,7 @@ function makeHero(
     facing: team === 'blue' ? 0 : Math.PI,
     kills: 0,
     deaths: 0,
+    streak: 0,
     damageDone: 0,
     healingDone: 0,
     gold: 320,
@@ -1094,18 +1111,25 @@ function damageHero(state: MobaState, hero: Hero, amount: number, source: string
     addEffect(state, 'hit', hero.x, hero.z, 2.2, '#ff6b6b', 600);
     const killer = state.heroes.find((candidate) => candidate.id === source);
     if (killer && killer.team !== hero.team) {
+      // Odměna roste sérií oběti — „nakrmený" hrdina je cenný cíl.
+      const bounty = bountyFor(hero.streak);
       killer.kills += 1;
-      killer.gold = Math.min(GOLD_CAP, killer.gold + HERO_BOUNTY);
+      killer.streak += 1;
+      killer.gold = Math.min(GOLD_CAP, killer.gold + bounty);
       gainXp(state, killer, HERO_KILL_XP);
       // Asistence: spojenci v okruhu dostanou část odměny i XP.
       for (const ally of state.heroes) {
         if (ally === killer || ally.team !== killer.team || !ally.alive) continue;
         if (distance(ally.x, ally.z, hero.x, hero.z) > XP_SHARE_RADIUS) continue;
-        ally.gold = Math.min(GOLD_CAP, ally.gold + Math.round(HERO_BOUNTY * ASSIST_GOLD_RATIO));
+        ally.gold = Math.min(GOLD_CAP, ally.gold + Math.round(bounty * ASSIST_GOLD_RATIO));
         gainXp(state, ally, ASSIST_KILL_XP);
       }
-      state.banner = `${killer.name} srazil ${hero.name}`;
+      const shutdown = hero.streak >= SHUTDOWN_AT;
+      state.banner = shutdown
+        ? `SHUTDOWN · ${killer.name} zastavil ${hero.name} (${hero.streak}×)`
+        : `${killer.name} srazil ${hero.name}`;
       state.bannerUntil = state.now + 3500;
+      hero.streak = 0;
     }
   }
 }
@@ -2440,6 +2464,8 @@ export interface MobaSnapshot {
     cooldowns: Record<SpellSlot, number>;
     kills: number;
     deaths: number;
+    /** Zabití v řadě (HUD z toho dělá „🔥"). */
+    streak: number;
     gold: number;
     damage: number;
     healing: number;
@@ -2613,6 +2639,7 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
         cooldowns: hero.cooldowns,
         kills: hero.kills,
         deaths: hero.deaths,
+        streak: hero.streak,
         gold: Math.round(hero.gold),
         damage: Math.round(hero.damageDone),
         healing: Math.round(hero.healingDone),

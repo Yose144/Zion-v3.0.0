@@ -3932,7 +3932,12 @@ button.game-hud-chip.is-sound.is-off em {
   font-style: normal;
   letter-spacing: 0.12em;
   color: #ffd166;
+  /* Odznak mistrovství je druhý řádek pod CL — bez tohohle ho karta
+     uřízne („1 ·" místo „1 · Učeň"). */
+  display: block;
+  min-height: 1.9em;
 }
+
 
 .moba-pick-note {
   margin: 0.9rem 0 0;
@@ -7434,4 +7439,68 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
 .arena-spectator span {
   color: rgba(200, 255, 245, 0.6);
   font-variant-numeric: tabular-nums;
+}
+
+/* ── MISTROVSTVÍ HRDINY (MOBA) ─────────────────────────────────────── */
+
+.moba-pick-card {
+  position: relative;
+}
+
+.moba-pick-star {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.45rem;
+  z-index: 2;
+  font-style: normal;
+  font-size: 1rem;
+  color: #ffd166;
+  text-shadow: 0 0 10px rgba(255, 209, 102, 0.75);
+  pointer-events: none;
+}
+
+.moba-mastery {
+  display: block;
+  margin-top: 0.15rem;
+  font-weight: 400;
+  font-size: 0.66rem;
+  color: #7fe3d4;
+  letter-spacing: 0.04em;
+}
+
+.moba-mastery-gain {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.35rem;
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  color: #ffd166;
+}
+
+.moba-mastery-gain span {
+  color: rgba(246, 231, 216, 0.6);
+  font-size: 0.72rem;
+}
+
+.moba-mastery-gain em {
+  font-style: normal;
+  color: #7fe3d4;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Série zabití — malý, ale viditelný signál, že jsi nebezpečný. */
+.moba-streak {
+  margin-left: 0.35rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: rgba(255, 122, 107, 0.18);
+  color: #ffb46a;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.moba-streak.is-hot {
+  background: rgba(255, 122, 107, 0.34);
+  color: #ff8f7a;
 }

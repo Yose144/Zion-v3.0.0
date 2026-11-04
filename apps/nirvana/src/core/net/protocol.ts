@@ -78,7 +78,7 @@ const asItemId = (value: unknown): ItemId | null =>
  *      odmítne `join` (`pass_required`). Klient bez pasu by se jinak dostal
  *      do hry přes vlastní WebSocket klient.
  */
-export const PROTO_VERSION = 27;
+export const PROTO_VERSION = 28;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;

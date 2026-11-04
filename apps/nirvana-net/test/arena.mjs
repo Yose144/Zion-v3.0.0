@@ -226,8 +226,18 @@ try {
   const scoreB = after.players.find((p) => p.id === roomB.youPlayerId);
   check('skóre: A má frag', scoreA.frags === 1, String(scoreA.frags));
   check('skóre: B má death', scoreB.deaths === 1, String(scoreB.deaths));
-  check('B je mrtvý / čeká na respawn', scoreB.alive === false || scoreB.hp === 0,
-    JSON.stringify({ alive: scoreB.alive, hp: scoreB.hp }));
+
+  /**
+   * „B je mrtvý" se nesmí číst z **posledního** snapshotu: zabití mohlo
+   * přijít o pár snímků dřív a respawn (2,4 s) ho mezitím stihl vzkřísit.
+   * Hledá se proto ve všech snapshotec, které přišly — jinak test padá
+   * náhodně podle toho, jak dlouho běžela střelba (měřeno 2× ze 3 běhů).
+   */
+  const deadShot = a.inbox
+    .filter((m) => m.t === 'snapshot' && Array.isArray(m.players))
+    .map((m) => m.players.find((p) => p.id === roomB.youPlayerId))
+    .find((player) => player && (player.alive === false || player.hp === 0));
+  check('B je mrtvý / čeká na respawn', Boolean(deadShot), JSON.stringify({ alive: scoreB.alive, hp: scoreB.hp }));
 
   // ── respawn ─────────────────────────────────────────────────────────
   await sleep(2800);
