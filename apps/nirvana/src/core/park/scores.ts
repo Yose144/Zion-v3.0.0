@@ -16,6 +16,7 @@ export function emptyScores(): ParkScores {
     snake: [],
     tetris: [],
     asteroids: [],
+    tower: [],
     gallery: [],
     arena: [],
     race: [],

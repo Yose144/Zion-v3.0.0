@@ -31,12 +31,14 @@ interface Cabinet {
 }
 
 /** Pět skříní v pravidelném oblouku — nová hra se přidává do tohoto pole. */
+// Šest skříní na pravidelném oblouku — nová hra znamená jen nový řádek.
 const CABINETS: Cabinet[] = [
-  { id: 'pong', angle: -11.2 },
-  { id: 'breakout', angle: -5.6 },
-  { id: 'snake', angle: 0 },
-  { id: 'tetris', angle: 5.6 },
-  { id: 'asteroids', angle: 11.2 },
+  { id: 'pong', angle: -12.5 },
+  { id: 'breakout', angle: -7.5 },
+  { id: 'snake', angle: -2.5 },
+  { id: 'tower', angle: 2.5 },
+  { id: 'tetris', angle: 7.5 },
+  { id: 'asteroids', angle: 12.5 },
 ];
 
 function useJupiterTexture(): THREE.Texture | null {

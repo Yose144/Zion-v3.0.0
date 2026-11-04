@@ -25,6 +25,8 @@ import { MobaEmoteWheel } from '@/core/moba/MobaEmoteWheel';
 import { useNet } from '@/core/net/useNet';
 import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
 import { GameBoard } from '@/core/games/GameBoard';
+import { watchRoom } from '@/core/net/watch';
+import { SpectatorBar } from '@/core/net/SpectatorBar';
 import { MobaMinimap } from '@/core/moba/MobaMinimap';
 import { NODE_SITES } from '@/core/moba/map';
 import { BATTLE_SPELLS, ITEMS, ITEM_SLOTS, SELL_RATIO, WARD_STOCK_MAX, talentRole, totalXpAt, type BattleSpellId, type BotSkill, type ItemId, type TalentRole } from '@/core/moba/sim';
@@ -146,6 +148,15 @@ function TeamBoard({
 export default function EarthPage() {
   const { lang } = useI18n();
   const { store: xrStore, presenting } = useXr();
+  /** `?watch=<room>` = hlediště. Čte se v efektu (SSR `window` nemá). */
+  const [watch, setWatch] = useState<string | null>(null);
+  useEffect(() => {
+    const room = watchRoom();
+    if (!room) return;
+    setWatch(room);
+    setMode('online');
+    setPhase('playing');
+  }, []);
   const cs = lang === 'cs';
   const [heroId, setHeroId] = useState(0);
   const [foeId, setFoeId] = useState(82);
@@ -399,6 +410,8 @@ export default function EarthPage() {
         </section>
       )}
 
+      {watch && <SpectatorBar room={watch} />}
+
       {phase === 'playing' && (
         <div className="moba-stage">
           {mode === 'solo' ? (
@@ -433,6 +446,7 @@ export default function EarthPage() {
               autoAim={coarse || presenting}
               xr={presenting}
               xrStore={xrStore}
+              watch={watch}
               debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
             />
           )}

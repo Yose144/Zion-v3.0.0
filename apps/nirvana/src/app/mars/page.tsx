@@ -12,6 +12,7 @@ import { LOOK_MAX, LOOK_MIN, getLookSensitivity, setLookSensitivity } from '@/co
 import { FRAG_LIMIT, MATCH_SECONDS } from '@/core/arena/map';
 import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
 import { watchRoom } from '@/core/net/watch';
+import { SpectatorBar } from '@/core/net/SpectatorBar';
 import { GameBoard } from '@/core/games/GameBoard';
 
 /**
@@ -142,15 +143,7 @@ export default function MarsPage() {
       {phase === 'playing' && mp && (
         <>
           <div className="arena-crosshair" aria-hidden />
-          {watch && (
-            <div className="arena-spectator" role="status">
-              <strong>👁 {cs ? 'DÍVÁŠ SE' : 'WATCHING'}</strong>
-              <span>{watch}</span>
-              <Link href="/multiplayer" className="arena-link">
-                {cs ? 'do lobby' : 'to lobby'}
-              </Link>
-            </div>
-          )}
+          {watch && <SpectatorBar room={watch} />}
           <div className="arena-hud">
             <span className="arena-health" style={{ color: (mpStats?.health ?? 100) > 60 ? '#7fe3d4' : (mpStats?.health ?? 100) > 25 ? '#ffd166' : '#ff7a6b' }}>
               ❤ {mpStats?.health ?? 100}

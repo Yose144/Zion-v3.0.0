@@ -51,13 +51,16 @@ const emptyFighter = (): Fighter => makeFighter({ id: 'pending', name: '…', av
 export function MercuryDuel({
   running,
   xr = false,
+  watch = null,
   onStats,
 }: {
   running: boolean;
   xr?: boolean;
+  /** Id místnosti, na kterou se jen díváme (`?watch=`); `null` = hrajeme. */
+  watch?: string | null;
   onStats: (stats: DuelMpStats) => void;
 }) {
-  const { subscribe, sendInput, joinGame, leaveRoom, youPlayerId, connected, rtt } = useNet();
+  const { subscribe, sendInput, joinGame, spectateRoom, leaveRoom, youPlayerId, connected, rtt } = useNet();
   const keys = useFightKeys(running);
 
   const self = useRef<Fighter>(emptyFighter());
@@ -98,9 +101,10 @@ export function MercuryDuel({
   // ── připojení ───────────────────────────────────────────────────────
   useEffect(() => {
     if (!running || !connected) return;
-    joinGame('fight');
+    if (watch) spectateRoom('fight', watch);
+    else joinGame('fight');
     return () => leaveRoom();
-  }, [running, connected, joinGame, leaveRoom]);
+  }, [running, connected, joinGame, spectateRoom, leaveRoom, watch]);
 
   // ── data ze serveru ─────────────────────────────────────────────────
   const applyWire = (wire: FightPlayerState, mine: boolean) => {

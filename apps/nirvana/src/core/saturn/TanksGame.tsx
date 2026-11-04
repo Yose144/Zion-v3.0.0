@@ -26,6 +26,8 @@ import { TanksScene } from './TanksScene';
 import { useNet } from '@/core/net/useNet';
 import { InviteButton } from '@/core/net/InviteButton';
 import { play, unlock } from '@/core/audio/engine';
+import { watchRoom } from '@/core/net/watch';
+import { SpectatorBar } from '@/core/net/SpectatorBar';
 import { useXr } from '@/core/xr';
 import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
 import { VrButton } from '@/core/xr/VrButton';
@@ -55,7 +57,9 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
   const recordedOver = useRef<string | null>(null);
 
   // ── online ──────────────────────────────────────────────────────────
-  const { joinGame, leaveRoom, subscribe, sendTanksAim, sendTanksShoot, roomId } = useNet();
+  const { joinGame, spectateRoom, leaveRoom, subscribe, sendTanksAim, sendTanksShoot, roomId } = useNet();
+  /** `?watch=` = hlediště: místnost se otevře sama a my jen sledujeme. */
+  const [watch, setWatch] = useState<string | null>(null);
   const [online, setOnline] = useState(false);
   const [peers, setPeers] = useState(0);
   /** Strana, kterou server přidělil (0 = vlevo, 1 = vpravo). */
@@ -96,6 +100,17 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
       return !was;
     });
   }, [joinGame, leaveRoom]);
+
+  // ── hlediště ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const room = watchRoom();
+    if (!room) return;
+    setWatch(room);
+    setOnline(true);
+    setMode('3d');
+    spectateRoom('tanks', room);
+    return () => leaveRoom();
+  }, [spectateRoom, leaveRoom]);
 
   // Server posílá stav; klient ho jen přepíše do stejného `TanksState`,
   // takže oba renderery kreslí dál bez vědomí, že jde o síť.
@@ -365,6 +380,8 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
         </button>
       </header>
 
+      {watch && <SpectatorBar room={watch} className="tanks-spectator" />}
+
       <div className="tanks-stage">
         {/* Ve VR se vždy kreslí 3D — 2D plátno v headsetu nemá hloubku ani kurzor. */}
         {mode === '2d' && !presenting ? (
@@ -377,13 +394,15 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
       {(mode === '3d' || coarse) && (
         <div className="tanks-hud" aria-hidden>
           <span className={`tanks-turn${shooter ? ' is-you' : ''}`}>
-            {info.phase === 'over'
-              ? info.wins.player > info.wins.bot
-                ? 'VÍTĚZSTVÍ'
-                : 'PORÁŽKA'
-              : shooter
-                ? 'TVŮJ TAH'
-                : rivalLabel}
+            {watch
+              ? 'DÍVÁŠ SE'
+              : info.phase === 'over'
+                ? info.wins.player > info.wins.bot
+                  ? 'VÍTĚZSTVÍ'
+                  : 'PORÁŽKA'
+                : shooter
+                  ? 'TVŮJ TAH'
+                  : rivalLabel}
           </span>
           <span className="tanks-stat">
             ÚHEL <b>{info.angle}°</b>

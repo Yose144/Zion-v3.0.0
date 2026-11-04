@@ -70,6 +70,7 @@ export function MobaOnline({
   autoAim,
   xr = false,
   xrStore,
+  watch = null,
 }: {
   heroId: number;
   /** Battle spell vybraný před zápasem (jde do `join`). */
@@ -91,6 +92,8 @@ export function MobaOnline({
   /** Ve VR kameru drží headset; vstup jde přes `MobaXr`. */
   xr?: boolean;
   xrStore?: XRStore;
+  /** Id místnosti, na kterou se jen díváme (`?watch=`); `null` = hrajeme. */
+  watch?: string | null;
 }) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
   const selfPose = useRef<{ x: number; z: number; active: boolean } | null>(null);
@@ -114,6 +117,7 @@ export function MobaOnline({
         floaters={floaters}
         snapshotRef={snapshotRef}
         selfPose={selfPose}
+        watch={watch}
       />
       <MobaStage
         snapshotRef={snapshotRef}
@@ -169,6 +173,7 @@ function OnlineController({
   floaters,
   snapshotRef,
   selfPose,
+  watch = null,
 }: {
   heroId: number;
   /** Battle spell vybraný před zápasem (jde do `join`). */
@@ -185,9 +190,11 @@ function OnlineController({
   floaters: React.MutableRefObject<DamageFloater[]>;
   snapshotRef: React.MutableRefObject<MobaSnapshot | null>;
   selfPose: React.MutableRefObject<{ x: number; z: number; active: boolean } | null>;
+  /** Id místnosti, na kterou se jen díváme (`?watch=`). */
+  watch?: string | null;
 }) {
   const { camera, gl } = useThree();
-  const { subscribe, joinGame, leaveRoom, sendMobaInput, sendBuy, sendSell, sendWard, sendSentry, sendBattleSpell, sendRecall, sendBuyback, sendUseItem, sendTalent, connected, youPlayerId } = useNet();
+  const { subscribe, joinGame, spectateRoom, leaveRoom, sendMobaInput, sendBuy, sendSell, sendWard, sendSentry, sendBattleSpell, sendRecall, sendBuyback, sendUseItem, sendTalent, connected, youPlayerId } = useNet();
   const keys = useRef(new Set<string>());
   const pointer = useRef({ x: 0, y: 0 });
   const attack = useRef(false);
@@ -214,9 +221,10 @@ function OnlineController({
       return;
     }
     onPhase?.('connecting');
-    joinGame('moba', heroId, battleSpell);
+    if (watch) spectateRoom('moba', watch);
+    else joinGame('moba', heroId, battleSpell);
     return () => leaveRoom();
-  }, [connected, heroId, joinGame, leaveRoom, onPhase]);
+  }, [connected, heroId, joinGame, spectateRoom, leaveRoom, onPhase, battleSpell, watch]);
 
   useEffect(() => {
     return subscribe((message) => {

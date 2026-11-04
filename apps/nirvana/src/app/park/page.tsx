@@ -67,6 +67,7 @@ const SCORE_SOUND: Record<CanvasGameId, SoundName> = {
   snake: 'eat',
   tetris: 'lock',
   asteroids: 'shoot',
+  tower: 'lock',
 };
 
 
@@ -139,6 +140,8 @@ export default function ParkPage() {
     const rect = canvas.getBoundingClientRect();
     const x = (event.clientX - rect.left) / Math.max(1, rect.width);
     pointerRef.current = Math.max(0, Math.min(1, x));
+    // klepnutí = okamžik, ne poloha (Věž podle něj pokládá kvádr)
+    if (event.type === 'pointerdown') handleRef.current?.tap?.();
   }, []);
 
   const attachCanvas = useCallback((element: HTMLCanvasElement | null) => {

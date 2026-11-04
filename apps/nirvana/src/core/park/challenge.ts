@@ -23,6 +23,7 @@ const GAMES: ParkGameId[] = [
   'snake',
   'tetris',
   'asteroids',
+  'tower',
   'gallery',
   'arena',
   'race',
@@ -38,6 +39,7 @@ const TARGETS: Record<ParkGameId, number> = {
   snake: 200, // 8 jablek
   tetris: 400, // 4 řádky
   asteroids: 300, // 6 velkých skal nebo vlna 2
+  tower: 250, // 16 pater (i s pár perfecty)
   gallery: 150, // 15 zásahů
   arena: 500, // 5 fragů
   race: 3000, // 3 kola pod ~100 s

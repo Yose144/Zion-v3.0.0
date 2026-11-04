@@ -9,6 +9,8 @@ import { MercuryDuel, type DuelMpStats } from '@/core/fight/MercuryDuel';
 import { MAX_HP, type BotDifficulty } from '@/core/fight/duel';
 import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
 import { GameBoard } from '@/core/games/GameBoard';
+import { watchRoom } from '@/core/net/watch';
+import { SpectatorBar } from '@/core/net/SpectatorBar';
 import { unlock } from '@/core/audio/engine';
 import { useNet } from '@/core/net/useNet';
 import { useXr } from '@/core/xr';
@@ -165,6 +167,15 @@ export default function MercuryPage() {
   const countdown = mode === 'online' ? mpStats.countdown : soloStats.countdown;
   const secondsLeft = mode === 'online' ? mpStats.secondsLeft : soloStats.timer;
   const { store: xrStore, presenting } = useXr();
+  /** `?watch=<room>` = hlediště. Čte se v efektu (SSR `window` nemá). */
+  const [watch, setWatch] = useState<string | null>(null);
+  useEffect(() => {
+    const room = watchRoom();
+    if (!room) return;
+    setWatch(room);
+    setMode('online');
+    setPhase('playing');
+  }, []);
   const state = mode === 'online' ? mpStats.state : soloStats.phase;
   const selfWins = mode === 'online' ? mpStats.selfWins : soloStats.selfWins;
   const foeWins = mode === 'online' ? mpStats.foeWins : soloStats.foeWins;
@@ -179,7 +190,7 @@ export default function MercuryPage() {
         >
           <XR store={xrStore}>
             {phase === 'playing' && mode === 'online' ? (
-              <MercuryDuel running xr={presenting} onStats={setMpStats} />
+              <MercuryDuel running xr={presenting} watch={watch} onStats={setMpStats} />
             ) : (
               <MercurySolo
                 key={phase}
@@ -194,6 +205,8 @@ export default function MercuryPage() {
           </XR>
         </Canvas>
       </div>
+
+      {watch && <SpectatorBar room={watch} />}
 
       {phase === 'playing' && (
         <>

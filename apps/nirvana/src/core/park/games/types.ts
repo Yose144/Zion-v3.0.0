@@ -10,7 +10,7 @@
  *     jen zdroje stejných dvou signálů.
  */
 
-export type CanvasGameId = 'pong' | 'breakout' | 'snake' | 'tetris' | 'asteroids';
+export type CanvasGameId = 'pong' | 'breakout' | 'snake' | 'tetris' | 'asteroids' | 'tower';
 /** Cokoli, co jde hrát a zapsat do tabule. Střelnice je 3D, ne canvas. */
 export type ParkGameId = CanvasGameId | 'gallery' | 'arena' | 'race' | 'fight' | 'moba' | 'tanks';
 
@@ -28,6 +28,12 @@ export interface ParkGameHandle {
   pointer: (x: number | null) => void;
   /** Klávesa ve stylu `KeyboardEvent.code`, `down` = stisk. */
   key: (code: string, down: boolean) => void;
+  /**
+   * Klepnutí na plátno (myš i dotyk). Volitelné — hry, které vystačí
+   * s plynulým ukazatelem, ho nemají. Existuje proto, že některé mechaniky
+   * (položení kvádru) potřebují **okamžik**, ne polohu.
+   */
+  tap?: () => void;
   stop: () => void;
 }
 

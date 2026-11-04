@@ -10,6 +10,8 @@ import { LAPS, raceScore } from '@/core/race/track';
 import type { StandingRow } from '@/core/race/rivals';
 import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
 import { GameBoard } from '@/core/games/GameBoard';
+import { watchRoom } from '@/core/net/watch';
+import { SpectatorBar } from '@/core/net/SpectatorBar';
 import { TouchButton, TouchPad } from '@/core/games/TouchPad';
 import { unlock } from '@/core/audio/engine';
 import { XR } from '@react-three/xr';
@@ -85,6 +87,15 @@ export default function VenusPage() {
   );
 
   const { store: xrStore, presenting } = useXr();
+  /** `?watch=<room>` = hlediště. Čte se v efektu (SSR `window` nemá). */
+  const [watch, setWatch] = useState<string | null>(null);
+  useEffect(() => {
+    const room = watchRoom();
+    if (!room) return;
+    setWatch(room);
+    setMp(true);
+    setPhase('playing');
+  }, []);
   const racers = stats.standings.length || 4;
   const liveRows = stats.standings;
 
@@ -98,13 +109,15 @@ export default function VenusPage() {
         >
           <XR store={xrStore}>
             {mp ? (
-              <VenusMultiplayer running={phase === 'playing'} xr={presenting} onStats={setMpStats} />
+              <VenusMultiplayer running={phase === 'playing'} xr={presenting} watch={watch} onStats={setMpStats} />
             ) : (
               <VenusRace running={phase === 'playing'} xr={presenting} onStats={setStats} onFinish={finish} />
             )}
           </XR>
         </Canvas>
       </div>
+
+      {watch && <SpectatorBar room={watch} />}
 
       {phase === 'playing' && coarse && (
         <TouchPad>

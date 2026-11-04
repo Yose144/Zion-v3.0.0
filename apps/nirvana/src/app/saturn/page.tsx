@@ -8,7 +8,7 @@
  * nebo na položku v seznamu otevře kapitolu; CTA vede do prezentace.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Canvas } from '@react-three/fiber';
 import { useI18n } from '@/core/i18n';
@@ -16,6 +16,7 @@ import { SATURN_CAMERA, SaturnArchive, SATURN_CHAPTERS } from '@/core/saturn/Sat
 import { TanksGame } from '@/core/saturn/TanksGame';
 import { MISSION_ORIGIN, MISSION_STATUS_COLOR, type MissionStatus } from '@/lib/freeworld-sites';
 import { GameBoard } from '@/core/games/GameBoard';
+import { watchRoom } from '@/core/net/watch';
 
 const STATUS_LABEL: Record<MissionStatus, { cs: string; en: string }> = {
   built: { cs: 'stojí', en: 'built' },
@@ -28,6 +29,14 @@ export default function SaturnPage() {
   const [selected, setSelected] = useState<number | null>(null);
   /** Tanky jsou celoobrazovková hra nad archivem — archiv zůstává pod ní. */
   const [tanks, setTanks] = useState(false);
+
+  /**
+   * `?watch=tanks-2` = hlediště. Tanky jsou celoobrazovková hra nad archivem,
+   * takže se musí otevřít samy — jinak by divák zůstal v kronikách.
+   */
+  useEffect(() => {
+    if (watchRoom()) setTanks(true);
+  }, []);
   const chapter = selected == null ? null : SATURN_CHAPTERS[selected];
 
   return (

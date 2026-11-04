@@ -55,14 +55,17 @@ interface Snapshot {
 export function VenusMultiplayer({
   running,
   xr = false,
+  watch = null,
   onStats,
 }: {
   running: boolean;
   xr?: boolean;
+  /** Id místnosti, na kterou se jen díváme (`?watch=`); `null` = hrajeme. */
+  watch?: string | null;
   onStats: (stats: MpRaceStats) => void;
 }) {
   const { camera } = useThree();
-  const { subscribe, sendInput, joinGame, leaveRoom, youPlayerId, connected, rtt } = useNet();
+  const { subscribe, sendInput, joinGame, spectateRoom, leaveRoom, youPlayerId, connected, rtt } = useNet();
 
   const track = useMemo(() => buildTrack(), []);
   const checkpoints = useMemo(() => checkpointIndices(), []);
@@ -83,9 +86,10 @@ export function VenusMultiplayer({
   // ── připojení ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!running || !connected) return;
-    joinGame('race');
+    if (watch) spectateRoom('race', watch);
+    else joinGame('race');
     return () => leaveRoom();
-  }, [running, connected, joinGame, leaveRoom]);
+  }, [running, connected, joinGame, spectateRoom, leaveRoom, watch]);
 
   // ── motor ────────────────────────────────────────────────────────────
   useEffect(() => {

@@ -91,6 +91,7 @@ export const GAME_TITLES: Record<ParkGameId, { cs: string; en: string; glyph: st
   snake: { cs: 'Had', en: 'Snake', glyph: '🐍' },
   tetris: { cs: 'Tetris', en: 'Tetris', glyph: '🧩' },
   asteroids: { cs: 'Asteroidy', en: 'Asteroids', glyph: '☄️' },
+  tower: { cs: 'Věž', en: 'Tower', glyph: '🧱' },
   gallery: { cs: 'Střelnice', en: 'Gallery', glyph: '🎯' },
   arena: { cs: 'Mars aréna', en: 'Mars arena', glyph: '🔫' },
   race: { cs: 'Venuše okruh', en: 'Venus circuit', glyph: '🏁' },
@@ -111,5 +112,6 @@ export const GAME_ORDER: ParkGameId[] = [
   'breakout',
   'snake',
   'tetris',
+  'tower',
   'asteroids',
 ];

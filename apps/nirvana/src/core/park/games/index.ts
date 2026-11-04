@@ -3,6 +3,7 @@ import { createBreakout } from './breakout';
 import { createPong } from './pong';
 import { createSnake } from './snake';
 import { createTetris } from './tetris';
+import { createTower } from './tower';
 import type { CanvasGameId, ParkGameDefinition } from './types';
 
 export const PARK_GAMES: ParkGameDefinition[] = [
@@ -41,6 +42,15 @@ export const PARK_GAMES: ParkGameDefinition[] = [
       en: 'Arrows or WASD · apple is 25 · do not hit the wall or yourself',
     },
     create: createSnake,
+  },
+  {
+    id: 'tower',
+    title: { cs: 'Věž', en: 'Tower' },
+    hint: {
+      cs: 'Polož kvádr co nejpřesněji · ukazatel nebo ← →, klepnutí / mezerník položí',
+      en: 'Stack the block as precisely as you can · pointer or ← →, tap / space drops',
+    },
+    create: createTower,
   },
   {
     id: 'asteroids',
