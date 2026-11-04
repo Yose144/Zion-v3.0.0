@@ -19,6 +19,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
+import { cacheControl } from '@/lib/server-cache';
 
 interface SearchResult {
   type: 'block' | 'transaction' | 'address';
@@ -154,6 +155,6 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json(payload, {
-    headers: { 'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=15' },
+    headers: { 'Cache-Control': cacheControl({ maxAge: 5, sMaxAge: 5, swr: 15 }) },
   });
 }

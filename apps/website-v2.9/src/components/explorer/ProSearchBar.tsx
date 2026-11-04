@@ -168,17 +168,14 @@ async function resolveTarget(query: string, fallbackHref?: string): Promise<stri
   if (parsed.forcedType === "tx_hash") return `/explorer/tx?hash=${s}`;
   if (parsed.forcedType === "block_hash") return `/explorer/block?id=${s}`;
 
-  // For 64-char hex: try to resolve via API; if ambiguous, go to search results
+  // For 64-char hex: resolve block vs tx in parallel, then go to search results
   if (/^[a-fA-F0-9]{64}$/.test(s)) {
-    try {
-      const tx = await apiClient<{ tx_hash?: string }>(`/blockchain/transactions?hash=${s}`);
-      if (tx?.tx_hash) return `/explorer/tx?hash=${s}`;
-    } catch {}
-
-    try {
-      const block = await apiClient<{ hash?: string }>(`/blockchain/block?hash=${s}`);
-      if (block?.hash) return `/explorer/block?id=${s}`;
-    } catch {}
+    const [tx, block] = await Promise.all([
+      apiClient<{ tx_hash?: string }>(`/blockchain/transactions?hash=${s}`).catch(() => null),
+      apiClient<{ hash?: string }>(`/blockchain/block?hash=${s}`).catch(() => null),
+    ]);
+    if (tx?.tx_hash) return `/explorer/tx?hash=${s}`;
+    if (block?.hash) return `/explorer/block?id=${s}`;
 
     // Neither block nor tx found exactly — show search results
     return `/explorer/search?q=${encodeURIComponent(s)}`;

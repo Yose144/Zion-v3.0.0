@@ -9,51 +9,67 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
+import { createSwrCache, cacheControl } from '@/lib/server-cache';
+
+// Polled by the mempool page (5 s) and the fee estimator (10 s); a 3 s fresh
+// window collapses duplicate polls into one RPC round-trip.
+const mempoolCache = createSwrCache<any>({
+  freshMs: 3_000,
+  staleMs: 20_000,
+  maxEntries: 2,
+});
+
+async function computeMempool() {
+  const rpc = getZionRpc();
+  const [pool, info] = await Promise.all([
+    rpc.getTransactionPool().catch(() => ({ count: 0, size: 0, total_fees: 0, transactions: [] })),
+    rpc.getInfo().catch(() => null),
+  ]);
+
+  const transactions = pool.transactions.map((tx) => ({
+    tx_hash: tx.id_hash,
+    size: tx.blob_size || 0,
+    fee: tx.fee / ATOMIC_UNITS_PER_ZION,
+    receive_time: tx.receive_time,
+    kept_by_block: tx.kept_by_block,
+    double_spend_seen: tx.double_spend_seen,
+    relayed: tx.relayed,
+    age_seconds: Math.floor(Date.now() / 1000) - (tx.receive_time || 0),
+  }));
+
+  // Sort by receive time (newest first)
+  transactions.sort((a, b) => b.receive_time - a.receive_time);
+
+  // Stats
+  const totalSize = transactions.reduce((sum, tx) => sum + tx.size, 0);
+  const totalFees = transactions.reduce((sum, tx) => sum + tx.fee, 0);
+  const fees = transactions.map(tx => tx.fee).filter(f => f > 0);
+  const minFee = fees.length ? Math.min(...fees) : 0;
+  const maxFee = fees.length ? Math.max(...fees) : 0;
+  const avgFee = fees.length ? totalFees / fees.length : 0;
+
+  return {
+    count: pool.count,
+    pool_size_bytes: totalSize,
+    total_fees: totalFees,
+    fee_stats: {
+      min: minFee,
+      max: maxFee,
+      avg: avgFee,
+      median: fees.length ? fees.sort((a, b) => a - b)[Math.floor(fees.length / 2)] : 0,
+    },
+    transactions,
+  };
+}
 
 export async function GET() {
-  const rpc = getZionRpc();
-
   try {
-    const [pool, info] = await Promise.all([
-      rpc.getTransactionPool().catch(() => ({ count: 0, size: 0, total_fees: 0, transactions: [] })),
-      rpc.getInfo().catch(() => null),
-    ]);
-
-    const transactions = pool.transactions.map((tx) => ({
-      tx_hash: tx.id_hash,
-      size: tx.blob_size || 0,
-      fee: tx.fee / ATOMIC_UNITS_PER_ZION,
-      receive_time: tx.receive_time,
-      kept_by_block: tx.kept_by_block,
-      double_spend_seen: tx.double_spend_seen,
-      relayed: tx.relayed,
-      age_seconds: Math.floor(Date.now() / 1000) - (tx.receive_time || 0),
-    }));
-
-    // Sort by receive time (newest first)
-    transactions.sort((a, b) => b.receive_time - a.receive_time);
-
-    // Stats
-    const totalSize = transactions.reduce((sum, tx) => sum + tx.size, 0);
-    const totalFees = transactions.reduce((sum, tx) => sum + tx.fee, 0);
-    const fees = transactions.map(tx => tx.fee).filter(f => f > 0);
-    const minFee = fees.length ? Math.min(...fees) : 0;
-    const maxFee = fees.length ? Math.max(...fees) : 0;
-    const avgFee = fees.length ? totalFees / fees.length : 0;
-
-    return NextResponse.json({
-      count: pool.count,
-      pool_size_bytes: totalSize,
-      total_fees: totalFees,
-      fee_stats: {
-        min: minFee,
-        max: maxFee,
-        avg: avgFee,
-        median: fees.length ? fees.sort((a, b) => a - b)[Math.floor(fees.length / 2)] : 0,
+    const { value, stale, ageMs } = await mempoolCache.get('mempool', computeMempool);
+    return NextResponse.json(value, {
+      headers: {
+        'Cache-Control': cacheControl({ maxAge: 3, sMaxAge: 3, swr: 10 }),
+        'X-Explorer-Cache': stale ? `stale-${Math.round(ageMs / 1000)}s` : 'fresh',
       },
-      transactions,
-    }, {
-      headers: { 'Cache-Control': 'public, s-maxage=3, stale-while-revalidate=10' },
     });
   } catch (error) {
     console.error('Failed to fetch mempool:', error);

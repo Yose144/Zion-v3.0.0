@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 import { ATOMIC_UNITS_PER_ZION, BLOCK_REWARD_ZION, POOL_FEE_PCT } from '@/lib/constants';
 import { KNOWN_ADDRESS_MAP } from '@/lib/explorer/known-addresses';
+import { cacheControl } from '@/lib/server-cache';
 
 export async function GET(request: NextRequest) {
   const rpc = getZionRpc();
@@ -248,7 +249,7 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(blockInfo, {
-      headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30' },
+      headers: { 'Cache-Control': cacheControl({ maxAge: 30, sMaxAge: 30, swr: 300 }) },
     });
   } catch (error) {
     console.error('Failed to fetch block:', error);

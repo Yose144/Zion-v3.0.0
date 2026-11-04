@@ -22,6 +22,16 @@ import {
   senderAddressSet,
   totalOutputAtomic,
 } from '@/lib/explorer/amount';
+import { cacheControl, createSwrCache } from '@/lib/server-cache';
+
+// Recent-transactions list walks back over blocks (one RPC per block until
+// `limit` txs are collected), so the same page is cached and served stale
+// while revalidating. Keyed by page.
+const recentTxCache = createSwrCache<any[]>({
+  freshMs: 5_000,
+  staleMs: 60_000,
+  maxEntries: 32,
+});
 
 function normalizeTxHash(rawHash: string): string {
   const trimmed = rawHash.trim();
@@ -270,11 +280,11 @@ export async function GET(request: NextRequest) {
 
     // ── Recent transactions from latest blocks ──
     const info = await rpc.getInfo();
-    const chainHeight = info.height;
 
-    const recentTxs = await rpc.getRecentV3Transactions(limit, offset).catch(() => []);
-
-    const allTxs = recentTxs.map((tx) => {
+    const { value: allTxs } = await recentTxCache.get(`${limit}:${offset}`, async () => {
+      const chainHeight = info.height;
+      const recentTxs = await rpc.getRecentV3Transactions(limit, offset).catch(() => []);
+      return recentTxs.map((tx) => {
       const { net, gross, change } = netForListTx(tx);
       const senders = senderAddressSet(tx);
       return {
@@ -298,6 +308,7 @@ export async function GET(request: NextRequest) {
         inputs: tx.inputs,
         outputs: markChangeOutputs(tx.outputs ?? [], senders),
       };
+      });
     });
 
     return NextResponse.json({
@@ -307,7 +318,7 @@ export async function GET(request: NextRequest) {
       transactions: allTxs,
       items: allTxs,
     }, {
-      headers: { 'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=15' },
+      headers: { 'Cache-Control': cacheControl({ maxAge: 30, sMaxAge: 30, swr: 300 }) },
     });
   } catch (error) {
     console.error('Failed to fetch transactions:', error);

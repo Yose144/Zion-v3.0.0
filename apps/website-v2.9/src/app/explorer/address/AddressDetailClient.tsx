@@ -257,7 +257,7 @@ export default function AddressDetailClient() {
       try {
         setError(null); setLoading(true); setData(null);
         if (!addr) { setError(ExplorerAddressAddressDetailClientCopy.missingAddressUseAddrZion1OrAd[cs ? 'cs' : 'en']); return; }
-        const result = await apiClient<AddressData>(`/blockchain/address?addr=${encodeURIComponent(addr)}`, { cache: "no-store", timeoutMs: 20_000 });
+        const result = await apiClient<AddressData>(`/blockchain/address?addr=${encodeURIComponent(addr)}`, { timeoutMs: 20_000 });
         if (cancelled) return;
         setData(result);
       } catch (err) {

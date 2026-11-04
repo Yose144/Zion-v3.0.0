@@ -11,6 +11,7 @@ import { NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 import { ATOMIC_UNITS_PER_ZION, BLOCK_REWARD_ZION, GENESIS_PREMINE_ZION, TOTAL_SUPPLY_ZION } from '@/lib/constants';
 import { resolveSupplySnapshot } from '@/lib/supply';
+import { createSwrCache, cacheControl } from '@/lib/server-cache';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
@@ -21,9 +22,14 @@ import { join } from 'path';
  * simultaneously on page load and every 15s. Without this, each call triggers
  * 6 parallel RPC requests (getInfo, getLastBlockHeader, getPoolStats, etc).
  */
-const CACHE_TTL = 5_000; // 5 seconds
-let cachedResponse: { json: any; ts: number } | null = null;
-let inFlight: Promise<{ json: any; ts: number }> | null = null;
+// 3+ explorer components call /stats at once and every 15 s. Cache is fresh
+// for 5 s and then served stale while revalidating, so callers never wait for
+// the six underlying RPC calls (plus supply resolution).
+const statsCache = createSwrCache<any>({
+  freshMs: 5_000,
+  staleMs: 120_000,
+  maxEntries: 2,
+});
 
 async function computeStats(): Promise<{ json: any; ts: number }> {
   const rpc = getZionRpc();
@@ -165,45 +171,15 @@ async function getPoolStatsFromPrometheus(): Promise<any> {
 
 export async function GET() {
   try {
-    const now = Date.now();
-
-    // Serve from cache if fresh
-    if (cachedResponse && now - cachedResponse.ts < CACHE_TTL) {
-      return NextResponse.json(cachedResponse.json, {
-        headers: { 'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=15' },
-      });
-    }
-
-    // Deduplicate concurrent requests — if a fetch is in-flight, wait for it
-    if (!inFlight) {
-      inFlight = computeStats().catch((err) => {
-        throw err;
-      }).finally(() => {
-        // Store successful result in cache
-        // (done in the .then below, not here, so errors don't cache)
-      });
-    }
-
-    try {
-      const result = await inFlight;
-      cachedResponse = result;
-      return NextResponse.json(result.json, {
-        headers: { 'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=15' },
-      });
-    } finally {
-      inFlight = null;
-    }
+    const { value, stale, ageMs } = await statsCache.get('stats', async () => (await computeStats()).json);
+    return NextResponse.json(value, {
+      headers: {
+        'Cache-Control': cacheControl({ maxAge: 5, sMaxAge: 5, swr: 30 }),
+        'X-Explorer-Cache': stale ? `stale-${Math.round(ageMs / 1000)}s` : 'fresh',
+      },
+    });
   } catch (error) {
-    inFlight = null;
     console.error('Failed to fetch blockchain stats:', error);
-
-    // Serve stale cache if available (better than nothing)
-    if (cachedResponse) {
-      return NextResponse.json(cachedResponse.json, {
-        headers: { 'Cache-Control': 'public, s-maxage=1, stale-while-revalidate=5' },
-      });
-    }
-
     return NextResponse.json(
       {
         block_height: 0, difficulty: 0, premine_supply: GENESIS_PREMINE_ZION, mined_supply: 0,
@@ -214,7 +190,7 @@ export async function GET() {
         error: 'Failed to connect to ZION daemon',
         total_blocks: 0, total_transactions: 0,
       },
-      { status: 503 }
+      { status: 503 },
     );
   }
 }

@@ -255,15 +255,19 @@ const POOL_TIMEOUT_MS = 5000;
 /** Default UTXO page size for address reads. The native RPC returns the full
  *  UTXO set when `limit` is omitted — a pool payout wallet can hold >100k
  *  outputs (27 MB, >10 s per call). Address paths must always page. */
-const ADDRESS_UTXO_LIMIT = 200;
+const ADDRESS_UTXO_LIMIT = 100;
 /** Address-read cache: absorbs page + widget bursts and crawler retries. */
-const ADDRESS_CACHE_TTL_MS = 10_000;
+const ADDRESS_CACHE_TTL_MS = 15_000;
 const ADDRESS_CACHE_MAX = 256;
+/** Balance totals are read by search previews and richlist loops; the node's
+ *  UTXO-index aggregation for a 130k-output wallet costs ~100 ms, so a longer
+ *  TTL keeps those paths off the hot path. Balances move per block (~60 s). */
+const ADDRESS_BALANCE_TTL_MS = 30_000;
 
 /** Miner lookup is a *secondary* panel on address pages: the pool API is
  *  local and answers in ms, so a slow one must not hold the whole page. */
-const MINER_POOL_TIMEOUT_MS = 4_000;
-const MINER_CHAIN_PAYOUT_BUDGET_MS = 5_000;
+const MINER_POOL_TIMEOUT_MS = 2_500;
+const MINER_CHAIN_PAYOUT_BUDGET_MS = 3_000;
 const MINER_CACHE_TTL_MS = 30_000;
 
 /** RPC amounts arrive as number (atomic) or string (JSON u64). */
@@ -1051,9 +1055,27 @@ class ZionRpcClient {
     const all: any[] = [];
     const want = offset + limit;
     const startHeight = Math.max(0, chainHeight - maxBlocks + 1);
-    for (let h = chainHeight; h >= startHeight && all.length < want; h--) {
-      try {
-        const block = await this.rpcCall<any>('getBlockByHeight', { height: h });
+
+    // Walk the chain in parallel windows instead of one block per round-trip.
+    // On a quiet chain the caller needs ~20 blocks for 20 txs, and sequential
+    // fetching made the tx list cost one round-trip per block (≈1.7 s at
+    // limit=100). Batches keep newest-first ordering because each batch is
+    // requested in descending height order and processed in that order.
+    const BLOCK_BATCH = 8;
+    for (let h = chainHeight; h >= startHeight && all.length < want;) {
+      const batchHeights: number[] = [];
+      for (let i = 0; i < BLOCK_BATCH && h >= startHeight; i++, h--) {
+        batchHeights.push(h);
+      }
+
+      const blocks = await Promise.all(
+        batchHeights.map((height) =>
+          this.rpcCall<any>('getBlockByHeight', { height }).catch(() => null),
+        ),
+      );
+
+      for (const block of blocks) {
+        if (!block || all.length >= want) continue;
         const parsed = parseV31TransactionsFromBlock(block);
 
         // Enrich input addresses (UTXO previous_output -> actual sender address)
@@ -1091,7 +1113,7 @@ class ZionRpcClient {
             outputs: tx.outputs,
           });
         }
-      } catch { /* skip unavailable block */ }
+      }
     }
     return all.slice(offset, offset + limit);
   }
@@ -1583,9 +1605,9 @@ class ZionRpcClient {
     }
 
     // Bounded: getBlockByHeight is ~1.2 s per height — cap the scan window
-    // and race it so miner lookups stay responsive.
+    // (60 blocks ≈ 1 h) and race it so miner lookups stay responsive.
     const chainPayouts = await Promise.race([
-      this.getChainPayoutsForAddress(address, 120),
+      this.getChainPayoutsForAddress(address, 60),
       new Promise<{ totalPaidAtomic: number; payouts: any[] }>((resolve) =>
         setTimeout(() => resolve({ totalPaidAtomic: 0, payouts: [] }), MINER_CHAIN_PAYOUT_BUDGET_MS),
       ),
@@ -1672,7 +1694,7 @@ class ZionRpcClient {
    *  asks for totals only (total_count / total_amount) — 200 bytes, ~2 ms. */
   async getAddressBalance(address: string): Promise<{ balance_atomic: number; balance_zion: number; utxo_count: number }> {
     const cacheKey = address.toLowerCase();
-    const cached = this.cacheGet(this.addressBalanceCache, cacheKey);
+    const cached = this.cacheGet(this.addressBalanceCache, cacheKey, ADDRESS_BALANCE_TTL_MS);
     if (cached) return cached;
 
     try {

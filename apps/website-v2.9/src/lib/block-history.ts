@@ -9,7 +9,7 @@ const RANGE_BLOCKS: Record<string, number> = {
   'all': 100000,
 };
 
-const CACHE_TTL_MS = 15_000;
+const CACHE_TTL_MS = 45_000;
 const STALE_TTL_MS = 300_000;
 
 type BlockHistory = {

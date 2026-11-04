@@ -114,6 +114,27 @@ export function getApiUrl(path: string): string {
   return `${baseUrl}/${apiPath}`;
 }
 
+/* ── Explorer GET cache ────────────────────────────────────────────────
+ * Read-only `/blockchain/*` responses are cached for a few seconds and
+ * concurrent identical requests share one network round-trip. Effect:
+ * navigating back to a page (or several components mounting at once) shows
+ * data immediately instead of refetching everything.
+ *
+ * Deliberately scoped to `/blockchain/*`: auth, wallet, shop and admin routes
+ * must never be served from a client cache.
+ */
+const GET_CACHE_TTL_MS = 10_000;
+const GET_CACHE_MAX_ENTRIES = 200;
+const getCache = new Map<string, { data: unknown; at: number }>();
+const getInflight = new Map<string, Promise<unknown>>();
+
+function isCacheableGet(path: string, options?: { cache?: RequestCache; method?: string }): boolean {
+  const method = (options?.method ?? 'GET').toUpperCase();
+  if (method !== 'GET') return false;
+  if (options?.cache === 'no-store') return false;
+  return path.startsWith('/blockchain/');
+}
+
 /**
  * Fetch wrapper with retry logic and error handling.
  * Retries up to 2 times with exponential backoff on network errors or 5xx.
@@ -126,6 +147,40 @@ export async function apiClient<T = any>(
   options?: RequestInit & { retries?: number; retryDelay?: number; timeoutMs?: number },
 ): Promise<T> {
   const url = getApiUrl(path);
+  const cacheable = isCacheableGet(path, options);
+
+  if (cacheable) {
+    const hit = getCache.get(url);
+    if (hit && Date.now() - hit.at < GET_CACHE_TTL_MS) {
+      return hit.data as T;
+    }
+    const active = getInflight.get(url);
+    if (active) {
+      return active as Promise<T>;
+    }
+  }
+
+  const request = performApiRequest<T>(url, options).then((data) => {
+    if (cacheable) {
+      if (getCache.size >= GET_CACHE_MAX_ENTRIES) {
+        const oldest = getCache.keys().next().value;
+        if (oldest !== undefined) getCache.delete(oldest);
+      }
+      getCache.set(url, { data, at: Date.now() });
+    }
+    return data;
+  }).finally(() => {
+    if (getInflight.get(url) === request) getInflight.delete(url);
+  });
+
+  if (cacheable) getInflight.set(url, request);
+  return request;
+}
+
+async function performApiRequest<T = any>(
+  url: string,
+  options?: RequestInit & { retries?: number; retryDelay?: number; timeoutMs?: number },
+): Promise<T> {
   const {
     retries: maxRetries = 1,
     retryDelay: baseDelay = 400,

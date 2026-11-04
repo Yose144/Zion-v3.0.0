@@ -24,6 +24,7 @@ import {
   senderAddressSet,
   totalOutputAtomic,
 } from '@/lib/explorer/amount';
+import { cacheControl } from '@/lib/server-cache';
 
 function normalizeTxHash(raw: string): string {
   const trimmed = raw.trim();
@@ -182,7 +183,7 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(result, {
-      headers: { 'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=15' },
+      headers: { 'Cache-Control': cacheControl({ maxAge: 60, sMaxAge: 60, swr: 600 }) },
     });
   } catch (error) {
     console.error('Failed to fetch transaction:', error);

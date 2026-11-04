@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
+import { cacheControl } from '@/lib/server-cache';
 
 export async function GET(request: NextRequest) {
   const rpc = getZionRpc();
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
         chain_height: walletSnapshot.chain_height ?? 0,
       },
       {
-        headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30' },
+        headers: { 'Cache-Control': cacheControl({ maxAge: 10, sMaxAge: 10, swr: 30 }) },
       },
     );
   } catch (error) {

@@ -22,6 +22,7 @@ import { getZionRpc } from '@/lib/zion-rpc';
 import { KNOWN_ADDRESS_MAP } from '@/lib/explorer/known-addresses';
 import { SITE_PRIMARY_POOL_API_URL } from '@/lib/site';
 import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
+import { cacheControl } from '@/lib/server-cache';
 
 const ADDRESS_PAGE_BUDGET_MS = 9_000;
 const MINER_BUDGET_MS = 4_500;
@@ -358,7 +359,7 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(addressInfo, {
-      headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30' },
+      headers: { 'Cache-Control': cacheControl({ maxAge: 10, sMaxAge: 10, swr: 30 }) },
     });
   } catch (error) {
     console.error('Failed to fetch address:', error);

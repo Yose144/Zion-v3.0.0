@@ -9,31 +9,34 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { buildMinersLeaderboard } from '@/lib/miners/helpers';
+import { createSwrCache, cacheControl } from '@/lib/server-cache';
 
-const CACHE_TTL = 60_000;
-let cache: { json: any; ts: number } | null = null;
+// Leaderboard enriches each miner with an on-chain balance (one RPC each), so
+// it is cached for a minute and served stale while revalidating after that.
+const leaderboardCache = createSwrCache<any>({
+  freshMs: 60_000,
+  staleMs: 10 * 60_000,
+  maxEntries: 2,
+});
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const limit = Math.min(Number(searchParams.get('limit') || 100), 500);
+    const rawLimit = Number(searchParams.get('limit') || 100);
+    const limit = Math.min(Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 100, 500);
 
-    if (cache && Date.now() - cache.ts < CACHE_TTL) {
-      return NextResponse.json(cache.json, {
-        headers: { 'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=60' },
-      });
-    }
-
-    const leaderboard = await buildMinersLeaderboard();
+    const { value, stale, ageMs } = await leaderboardCache.get('leaderboard', buildMinersLeaderboard);
+    const leaderboard = value;
     const response = {
       ...leaderboard,
       miners: leaderboard.miners.slice(0, limit),
     };
 
-    cache = { json: response, ts: Date.now() };
-
     return NextResponse.json(response, {
-      headers: { 'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=60' },
+      headers: {
+        'Cache-Control': cacheControl({ maxAge: 15, sMaxAge: 15, swr: 60 }),
+        'X-Explorer-Cache': stale ? `stale-${Math.round(ageMs / 1000)}s` : 'fresh',
+      },
     });
   } catch (error) {
     console.error('Failed to fetch miners leaderboard:', error);
