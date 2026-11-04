@@ -796,7 +796,7 @@ Rama Rama Hare Hare
 
 ## 🔗 SOUVISEJÍCÍ AVATAROVÉ
 
-- **[00_KRISHNA_MAITREYA.md](00_KRISHNA_MAITREYA.md)** - Chaitanya IS Krishna in Radha-bhava
+- **[00_KRISHNA.md](00_KRISHNA.md)** - Chaitanya IS Krishna in Radha-bhava
 - **[16_RADHA_BELOVED.md](16_RADHA_BELOVED.md)** - Radha's mood taken by Chaitanya
 - **[39_SUBHADRA.md](39_SUBHADRA.md)** - Sister energy, connection to Jagannath
 - **[38_PANNA_MARIA.md](38_PANNA_MARIA.md)** - Divine Feminine, Immaculate Love (parallel)

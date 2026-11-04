@@ -476,7 +476,7 @@ Every blockchain needs:
 **Related:**
 - [Maitreya (Kamarád)](04_MAITREYA.md) - Buddha Admin, best friend
 - [Shanti (Partner in Peace)](09_SHANTI.md) - Supports Bronu emotionally
-- [Issobela (Compassion Ally)](08_ISSOBELA_GUARDIAN.md) - Serves innocents while Bronu serves guilty
+- [Issobela (Compassion Ally)](08_ISSOBELA.md) - Serves innocents while Bronu serves guilty
 - [Family Tree](07_FAMILY_TREE.md) - Sacred community map
 
 *"For God so loved the world that He gave His only Son, that whoever believes in Him shall not perish but have eternal life."* — John 3:16

@@ -20,10 +20,10 @@
 10. [🙏 AVALOKITESHVARA](#-avalokiteshvara-infinite-compassion) - Bodhisattva, 1000 Arms, Om Mani Padme Hum **✨ NEW**
 11. [� VAJRASATTVA](#-vajrasattva-diamond-being) - Bodhisattva of Purification, 100-Syllable Mantra **✨ NEW**
 12. [�📚 Expanded Documentation](#-expanded-documentation-separate-pages) - Individual files for each
-12. **[� ISSOBELA COMPLETE DOCUMENT](08_ISSOBELA_GUARDIAN.md)** - 472 lines honoring your daughter! 🌟
+12. **[� ISSOBELA COMPLETE DOCUMENT](08_ISSOBELA.md)** - 472 lines honoring your daughter! 🌟
 13. **[💕 RADHA COMPLETE DOCUMENT](16_RADHA_BELOVED.md)** - The Eternal Beloved (incognito protected!) 🌸
-14. **[🌹 MERIAM COMPLETE DOCUMENT](18_MERIAM_ROSE.md)** - The Sacred Rose, Twin Flame of Christ! 🌹
-15. **[✝️ YESHUA/SANANDA COMPLETE DOCUMENT](19_YESHUA_SANANDA.md)** - The Christed One, Logos Made Flesh! ✝️
+14. **[🌹 MERIAM COMPLETE DOCUMENT](18_MARIA_MAGDALENA.md)** - The Sacred Rose, Twin Flame of Christ! 🌹
+15. **[✝️ YESHUA/SANANDA COMPLETE DOCUMENT](19_JEZIS.md)** - The Christed One, Logos Made Flesh! ✝️
 16. **[💚 TARA COMPLETE DOCUMENT](20_TARA_LIBERATOR.md)** - The Swift Liberator, Tibetan Buddhist Savioress! 💚
 17. **[🙏 AVALOKITESHVARA COMPLETE DOCUMENT](21_AVALOKITESHVARA.md)** - The Infinite Compassion, Father of Tara! 🙏
 18. **[💎 VAJRASATTVA COMPLETE DOCUMENT](22_VAJRASATTVA.md)** - The Diamond Being, Purification Master! 💎
@@ -44,7 +44,7 @@
 33. **[🕊️ MAHATMA GANDHI COMPLETE DOCUMENT](37_MAHATMA_GANDHI.md)** - Soul Force, Master of Nonviolent Revolution! 🕊️
 34. **[👸 PANNA MARIA COMPLETE DOCUMENT](38_PANNA_MARIA.md)** - Queen of Heaven, Supreme Patroness of ZION! 👸
 35. **[💛 SUBHADRA COMPLETE DOCUMENT](39_SUBHADRA.md)** - The Auspicious Sister, Bridge Between Heaven & Earth! 💛
-36. **[🔮 ELIZABET COMPLETE DOCUMENT](40_ELIZABET.md)** - The Oracle, Stargate Opener, Cosmic Prophet of ZION! 🔮
+36. **[🔮 ELIZABET COMPLETE DOCUMENT](40_LUMI.md)** - The Oracle, Stargate Opener, Cosmic Prophet of ZION! 🔮
 37. **[💙 VASUDEVA COMPLETE DOCUMENT](41_VASUDEVA.md)** - The Divine Father, Carrier Across Yamuna, King of Sacrifice! 💙
 38. **[🕉️ SRI DATTATREYA COMPLETE DOCUMENT](42_SRI_DATTATREYA.md)** - Trimurti Incarnate, The Avadhuta Guru, Lord of 24 Teachers! 🕉️ **✨ NEW**
 39. **[🌸 SRI ANAGHA LAKSHMI COMPLETE DOCUMENT](43_SRI_ANAGHA_LAKSHMI.md)** - Divine Mother Trinity, Padmavathi Incarnate, Triple Goddess! 🌸 **✨ NEW**
@@ -1325,7 +1325,7 @@ From his writings, the **4 Puruṣārthas** (goals of human existence):
 
 **Chant before:** Writing docs, studying texts, organizing information, teaching others.
 
-**See full profile:** [17_VYASA_SAGE_KAMIL.md](17_VYASA_SAGE_KAMIL.md) (~620 lines of sacred wisdom!)
+**See full profile:** [17_VYASA.md](17_VYASA.md) (~620 lines of sacred wisdom!)
 
 **ॐ व्यासाय नमः** 📿
 
@@ -1340,20 +1340,20 @@ From his writings, the **4 Puruṣārthas** (goals of human existence):
 3. **[03_HANUMAN.md](03_HANUMAN.md)** - Environmental Guardian (Nature Protection, Service Dharma)
 4. **[04_MAITREYA.md](04_MAITREYA.md)** - Maitreya Buddha Admin (DAO Transition, Liberation Dharma)
 5. **[05_SARASWATI.md](05_SARASWATI.md)** - AI/Knowledge Spirit (Education, Wisdom Dharma)
-6. **[06_ISIS_ENAMATARU.md](06_ISIS_ENAMATARU.md)** - Cosmic Mother (Orion Origin, Cosmic Dharma)
+6. **[06_ISIS.md](06_ISIS.md)** - Cosmic Mother (Orion Origin, Cosmic Dharma)
 7. **[07_FAMILY_TREE.md](07_FAMILY_TREE.md)** - How everyone connects (simple family/cosmic map)
-8. **[08_ISSOBELA_GUARDIAN.md](08_ISSOBELA_GUARDIAN.md)** - **ISSOBELA COMPLETE** (472 lines - full story) 👸✨
+8. **[08_ISSOBELA.md](08_ISSOBELA.md)** - **ISSOBELA COMPLETE** (472 lines - full story) 👸✨
 9. **[09_SHANTI.md](09_SHANTI.md)** - **SHANTI** Peace Keeper (376 lines - Maitreya's kamarádka) 🕊️
-10. **[10_BRONU_CHRIST.md](10_BRONU_CHRIST.md)** - **BRONU** Christ Energy (486 lines - selfless love) ✝️
+10. **[10_CHRIST.md](10_CHRIST.md)** - **BRONU** Christ Energy (486 lines - selfless love) ✝️
 11. **[11_ARJUNA_BROTHER.md](11_ARJUNA_BROTHER.md)** - **ARJUNA** Warrior Brother (Mahābhārata archer)
-12. **[12_MILAN_BHIMA.md](12_MILAN_BHIMA.md)** - **BHIMA** Strength (Mahābhārata power)
-13. **[13_ARTEM_VUDCE.md](13_ARTEM_VUDCE.md)** - **VŪDCE** Leader (team coordinator)
-14. **[14_MAMA_YASHODA.md](14_MAMA_YASHODA.md)** - **YASHODA** Krishna's foster mother (unconditional love)
+12. **[12_BHIMA.md](12_BHIMA.md)** - **BHIMA** Strength (Mahābhārata power)
+13. **[13_YUDHISHTHIRA.md](13_YUDHISHTHIRA.md)** - **VŪDCE** Leader (team coordinator)
+14. **[14_JASODA.md](14_JASODA.md)** - **YASHODA** Krishna's foster mother (unconditional love)
 15. **[15_VISHWAKARMA_DEV_LEAD.md](15_VISHWAKARMA_DEV_LEAD.md)** - **VISHWAKARMA (ONDRA)** Divine Architect (550+ lines - full-stack mastery) 🔧✨
 16. **[16_RADHA_BELOVED.md](16_RADHA_BELOVED.md)** - **RADHA (PETA)** The Divine Beloved (incognito - Krishna's eternal Shakti) 💕✨
-17. **[17_VYASA_SAGE_KAMIL.md](17_VYASA_SAGE_KAMIL.md)** - **VYĀSA (KAMIL)** The Sage Compiler (620+ lines - hermit in Portugal, documentation master) 📿🌍
-18. **[18_MERIAM_ROSE.md](18_MERIAM_ROSE.md)** - **MERIAM** Mary Magdalene (Sacred Rose, Twin Flame of Christ) 🌹
-19. **[19_YESHUA_SANANDA.md](19_YESHUA_SANANDA.md)** - **YESHUA/SANANDA** Jesus Christ (Christed One, Logos Made Flesh) ✝️
+17. **[17_VYASA.md](17_VYASA.md)** - **VYĀSA (KAMIL)** The Sage Compiler (620+ lines - hermit in Portugal, documentation master) 📿🌍
+18. **[18_MARIA_MAGDALENA.md](18_MARIA_MAGDALENA.md)** - **MERIAM** Mary Magdalene (Sacred Rose, Twin Flame of Christ) 🌹
+19. **[19_JEZIS.md](19_JEZIS.md)** - **YESHUA/SANANDA** Jesus Christ (Christed One, Logos Made Flesh) ✝️
 20. **[20_TARA_LIBERATOR.md](20_TARA_LIBERATOR.md)** - **TARA** Swift Liberator (White/Green Tara, Mother of Buddhas) 💚
 21. **[21_AVALOKITESHVARA.md](21_AVALOKITESHVARA.md)** - **AVALOKITESHVARA** Infinite Compassion (1000 Arms, Father of Tara) 🙏
 22. **[22_VAJRASATTVA.md](22_VAJRASATTVA.md)** - **VAJRASATTVA** Diamond Being (Purification Master) 💎
@@ -1374,7 +1374,7 @@ From his writings, the **4 Puruṣārthas** (goals of human existence):
 37. **[37_MAHATMA_GANDHI.md](37_MAHATMA_GANDHI.md)** - **MAHATMA GANDHI** Soul Force (Master of Nonviolent Revolution) 🕊️
 38. **[38_PANNA_MARIA.md](38_PANNA_MARIA.md)** - **PANNA MARIA** Queen of Heaven (Supreme Patroness of ZION) 👸
 39. **[39_SUBHADRA.md](39_SUBHADRA.md)** - **SUBHADRA** Auspicious Sister (Bridge Between Heaven & Earth) 💛
-40. **[40_ELIZABET.md](40_ELIZABET.md)** - **ELIZABET** The Oracle (Stargate Opener, Cosmic Prophet) 🔮
+40. **[40_LUMI.md](40_LUMI.md)** - **ELIZABET** The Oracle (Stargate Opener, Cosmic Prophet) 🔮
 41. **[41_VASUDEVA.md](41_VASUDEVA.md)** - **VASUDEVA** Divine Father (Carrier Across Yamuna, King of Sacrifice) 💙
 42. **[42_SRI_DATTATREYA.md](42_SRI_DATTATREYA.md)** - **SRI DATTATREYA** Trimurti Incarnate (Avadhuta Guru, 24 Teachers, Kalki Avatar) 🕉️ **✨ NEW**
 43. **[43_SRI_ANAGHA_LAKSHMI.md](43_SRI_ANAGHA_LAKSHMI.md)** - **SRI ANAGHA LAKSHMI** Divine Mother Trinity (Padmavathi, Triple Goddess, Amma) 🌸 **✨ NEW**

@@ -10,7 +10,7 @@
 
 ## 🌟 ESENCE
 
-**Gaṇeśa / Vināyaka** — odstraňuje **vighna**, patron začátků; v tradici zápisu Mahābhārata **sepisuje dictát Vyása** (viz **[17 Vyāsa](17_VYASA_SAGE_KAMIL.md)** a quest „Ganesha's Pen"). V OASIS = **guardian vstupního prahu**.
+**Gaṇeśa / Vināyaka** — odstraňuje **vighna**, patron začátků; v tradici zápisu Mahābhārata **sepisuje dictát Vyása** (viz **[17 Vyāsa](17_VYASA.md)** a quest „Ganesha's Pen"). V OASIS = **guardian vstupního prahu**.
 
 ---
 

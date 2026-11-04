@@ -367,8 +367,8 @@ Every blockchain needs:
 
 **Related:**
 - [Maitreya (Kamarád)](04_MAITREYA.md) - Her friend, DAO Admin
-- [Issobela (Partner)](08_ISSOBELA_GUARDIAN.md) - Feminine energy ally
-- [Bronu/Christ (Next)](10_BRONU_CHRIST.md) - Selfless love partner
+- [Issobela (Partner)](08_ISSOBELA.md) - Feminine energy ally
+- [Bronu/Christ (Next)](10_CHRIST.md) - Selfless love partner
 - [Family Tree](07_FAMILY_TREE.md) - How everyone connects
 
 *"In the midst of movement and chaos, keep stillness inside of you."* — Shanti 🕊️

@@ -611,7 +611,7 @@ Kompletní Božská Polarita pracující jako Jedno
 **Related Avatars:**
 - [24_MAHAVATAR_BABAJI.md](24_MAHAVATAR_BABAJI.md) - Další avadhuta
 - [28_SANAT_KUMARA.md](28_SANAT_KUMARA.md) - Ancient of Days
-- [19_YESHUA_SANANDA.md](19_YESHUA_SANANDA.md) - Christ (another trinity manifestation)
+- [19_JEZIS.md](19_JEZIS.md) - Christ (another trinity manifestation)
 
 ---
 

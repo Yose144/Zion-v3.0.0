@@ -40,7 +40,7 @@
 
 ## 🕉️ HINDU DEITIES (17 Avatars)
 
-### **00. Krishna-Maitreya** (Cosmic Integration)
+### **00. Krishna** (Cosmic Integration)
 **Ray:** All Rays (Cosmic Unity)
 **Role:** Final Boss / Ultimate Guide
 **Location:** EKAM Temple (Hidden Dimension)
@@ -162,7 +162,7 @@
 
 ---
 
-### **08. Issobela Guardian** (Protector)
+### **08. Issobela** (Protector)
 **Ray:** Blue (Will/Power)
 **Role:** ZION City Defender
 **Location:** ZION City Walls
@@ -243,7 +243,7 @@
 
 ---
 
-### **14. Mama Yashoda** (Divine Mother)
+### **14. Jašóda** (Divine Mother)
 **Ray:** Pink (Love/Beauty)
 **Role:** Unconditional Love Teacher
 **Location:** Vrindavan (Krishna's Village)
@@ -296,7 +296,7 @@
 
 ---
 
-### **17. Vyasa-Kamil** (Cosmic Sage)
+### **17. Vyasa** (Cosmic Sage)
 **Ray:** Yellow (Wisdom)
 **Role:** Storyteller / Loremaster
 **Location:** Himalayan Cave (Vyasa's Retreat)
@@ -318,7 +318,7 @@
 
 ## ✝️ CHRISTIAN SAINTS (4 Avatars)
 
-### **18. Meriam Rose** (Mary Magdalene)
+### **18. Maria Magdalena** (Mary Magdalene)
 **Ray:** Pink (Love/Beauty)
 **Role:** Feminine Divine / Sacred Union
 **Location:** Jerusalem Garden
@@ -330,7 +330,7 @@
 
 ---
 
-### **19. Yeshua Sananda** (Jesus Christ)
+### **19. Ježíš** (Jesus Christ)
 **Ray:** Pink (Love) + White (Purity)
 **Role:** Forgiveness Master
 **Location:** Mount of Olives
@@ -723,7 +723,7 @@
 
 ---
 
-### **40. Elizabet** (Royal Healer)
+### **40. Lumi** (Royal Healer)
 **Ray:** Pink (Love) + Green (Healing)
 **Role:** Compassionate Leader
 **Location:** Royal Court (ZION City)

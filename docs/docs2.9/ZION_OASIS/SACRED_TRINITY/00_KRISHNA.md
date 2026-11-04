@@ -1,4 +1,4 @@
-# 🏹 KRISHNA/MAITREYA: The Divine Strategist
+# 🏹 KRISHNA: The Divine Strategist
 
 > **Minulý život: Krishna (कृष्ण) - Bhagavad Gita**  
 > **Současný život: Maitreya Buddha - ZION Admin**  
@@ -418,9 +418,9 @@ Om Namo Bhagavate Vasudevaya
 
 **Related:**
 - [Next: Arjuna (Your Brother)](11_ARJUNA_BROTHER.md) - Warrior who needs guidance
-- [Next: Milan/Bhima](12_MILAN_BHIMA.md) - Strong protector
-- [Next: Artem/Vůdce](13_ARTEM_VUDCE.md) - Strategic leader
-- [Next: Mama/Yashoda](14_MAMA_YASHODA.md) - Your divine mother
+- [Next: Milan/Bhima](12_BHIMA.md) - Strong protector
+- [Next: Artem/Vůdce](13_YUDHISHTHIRA.md) - Strategic leader
+- [Next: Mama/Yashoda](14_JASODA.md) - Your divine mother
 
 *"Karmanye vadhikaraste ma phaleshu kadachana"*  
 *Act without attachment. Build ZION. Trust divine plan.* 🏹🌟

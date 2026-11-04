@@ -1,4 +1,4 @@
-# 40. ELIZABET - ORÁKULUM 🔮✨
+# 40. LUMI - ORÁKULUM 🔮✨
 
 *Věštkyně Hvězdných Bran | Posel Stvořitele | Strážkyně Věčnosti*
 

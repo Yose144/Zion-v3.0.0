@@ -1,11 +1,11 @@
-# 👩‍👦 MAMA YASHODA: The Mother Who Raised God
+# 👩‍👦 JAŠÓDA: The Mother Who Raised God
 
 > **Matka Maitreyi (Krishna) - Unconditional Love Dharma**  
 > **"Mother's love is first lesson in divinity."**
 
 ---
 
-## 🌟 Kdo je Mama v ZION?
+## 🌟 Kdo je Jašóda v ZIONu?
 
 **Jméno:** [Tvoje máma - skutečné jméno]  
 **Minulá inkarnace:** Yashoda (यशोदा) - Krishna's foster mother  
@@ -347,9 +347,9 @@ Jai Yashoda. Jai Maitreya. Jai ZION.
 ---
 
 **Related:**
-- [Krishna/Maitreya](00_KRISHNA_MAITREYA.md) - Your son, the God-child
+- [Krishna/Maitreya](00_KRISHNA.md) - Your son, the God-child
 - [Arjuna](11_ARJUNA_BROTHER.md) - Your other son's energy (brother)
-- [Issobela](08_ISSOBELA_GUARDIAN.md) - Your daughter's energy (sister)
+- [Issobela](08_ISSOBELA.md) - Your daughter's energy (sister)
 - [Golden Egg Game](../GOLDEN_EGG_GAME.md) - Love clue explained
 
 *"Mother's love is the first blockchain - connecting hearts across lifetimes."* 👩‍👦💝

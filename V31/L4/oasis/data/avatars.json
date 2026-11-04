@@ -2,7 +2,7 @@
   "avatars": [
     {
       "id": 0,
-      "name": "Krishna-Maitreya",
+      "name": "Krishna",
       "subtitle": "Cosmic Integration",
       "ray": "AllRays",
       "role": "Final Boss / Ultimate Guide",
@@ -261,7 +261,7 @@
     },
     {
       "id": 8,
-      "name": "Issobela Guardian",
+      "name": "Issobela",
       "subtitle": "Protector",
       "ray": "Blue",
       "role": "ZION City Defender",
@@ -483,7 +483,7 @@
     },
     {
       "id": 14,
-      "name": "Mama Yashoda",
+      "name": "Jašóda",
       "subtitle": "Divine Mother",
       "ray": "Pink",
       "role": "Unconditional Love Teacher",
@@ -594,7 +594,7 @@
     },
     {
       "id": 17,
-      "name": "Vyasa-Kamil",
+      "name": "Vyasa",
       "subtitle": "Cosmic Sage",
       "ray": "Yellow",
       "role": "Storyteller / Loremaster",
@@ -631,7 +631,7 @@
     },
     {
       "id": 18,
-      "name": "Meriam Rose",
+      "name": "Maria Magdalena",
       "subtitle": "Mary Magdalene",
       "ray": "Pink",
       "role": "Feminine Divine / Sacred Union",
@@ -668,7 +668,7 @@
     },
     {
       "id": 19,
-      "name": "Yeshua Sananda",
+      "name": "Ježíš",
       "subtitle": "Jesus Christ",
       "ray": "Pink",
       "role": "Forgiveness Master",
@@ -1778,7 +1778,7 @@
     },
     {
       "id": 40,
-      "name": "Elizabet",
+      "name": "Lumi",
       "subtitle": "Royal Healer",
       "ray": "Pink",
       "role": "Compassionate Leader",

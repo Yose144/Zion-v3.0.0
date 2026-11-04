@@ -550,9 +550,9 @@ lesson_12: "Global community (no tribalism, all are family)"
 - [42_SRI_DATTATREYA.md](42_SRI_DATTATREYA.md) - Mužský protějšek
 - [44_HIRANYAGARBHA.md](44_HIRANYAGARBHA.md) - Zlatá Koule (zdroj obou)
 - [02_SITA.md](02_SITA.md) - Archetyp Divine Feminine
-- [08_ISSOBELA_GUARDIAN.md](08_ISSOBELA_GUARDIAN.md) - Lakshmi aspect
+- [08_ISSOBELA.md](08_ISSOBELA.md) - Lakshmi aspect
 - [38_PANNA_MARIA.md](38_PANNA_MARIA.md) - Kali aspect (protection)
-- [40_ELIZABET.md](40_ELIZABET.md) - Sarasvati aspect (knowledge)
+- [40_LUMI.md](40_LUMI.md) - Sarasvati aspect (knowledge)
 
 ---
 

@@ -193,7 +193,7 @@ export const AVATAR_CIRCLES: OasisAvatarCircleMeta[] = [
 export const OASIS_AVATARS: OasisAvatar[] = [
   {
     "id": 0,
-    "name": "Krishna-Maitreya",
+    "name": "Krishna",
     "subtitle": {
       "cs": "Kosmické sjednocení",
       "en": "Cosmic Integration"
@@ -914,7 +914,7 @@ export const OASIS_AVATARS: OasisAvatar[] = [
   },
   {
     "id": 8,
-    "name": "Issobela Guardian",
+    "name": "Issobela",
     "subtitle": {
       "cs": "Ochránkyně",
       "en": "Protector"
@@ -1206,8 +1206,8 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       }
     ],
     "essence": {
-      "cs": "Bronu nese kristovskou energii v podobě, která se nevyhlašuje, ale slouží. Je to ten, kdo zůstane u cizího neúspěchu, i když by mohl odejít — a právě tím drží pohromadě důvěru celé komunity.",
-      "en": "Bronu carries the Christ energy in a form that does not announce itself but serves. He is the one who stays with someone else's failure when he could leave — and precisely that keeps the community's trust together."
+      "cs": "Christ nese kristovskou energii v podobě, která se nevyhlašuje, ale slouží. Je to ten, kdo zůstane u cizího neúspěchu, i když by mohl odejít — a právě tím drží pohromadě důvěru celé komunity.",
+      "en": "Christ carries the Christ energy in a form that does not announce itself but serves. He is the one who stays with someone else's failure when he could leave — and precisely that keeps the community's trust together."
     },
     "quote": {
       "cs": "Meč mi byl dán, abych ho nemusel použít.",
@@ -1412,8 +1412,8 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       }
     ],
     "essence": {
-      "cs": "Bhíma měl sílu, která mohla rozdrtit cokoli — a používal ji na to, aby ostatní nemuseli. Milan v OASIS chrání komunitu stejně: ne tím, že vyhrává hádky, ale tím, že z podvodníků dělá krátký příběh.",
-      "en": "Bhima had strength that could crush anything — and he used it so that others would not have to. Milan protects the community the same way in OASIS: not by winning arguments, but by making short work of scammers."
+      "cs": "Bhíma měl sílu, která mohla rozdrtit cokoli — a používal ji na to, aby ostatní nemuseli. Bhima v OASIS chrání komunitu stejně: ne tím, že vyhrává hádky, ale tím, že z podvodníků dělá krátký příběh.",
+      "en": "Bhima had strength that could crush anything — and he used it so that others would not have to. Bhima protects the community the same way in OASIS: not by winning arguments, but by making short work of scammers."
     },
     "quote": {
       "cs": "Nejsem nejsilnější, jsem ten, kdo zůstane stát.",
@@ -1515,8 +1515,8 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       }
     ],
     "essence": {
-      "cs": "Judhišthira byl král, který prohrál všechno a přesto nepřestal mluvit pravdu. Artem vede v OASIS tak, že rozhodnutí vysvětluje dřív, než ho vydá — protože bez vysvětlení je i správná věc jen rozkaz.",
-      "en": "Yudhishthira was a king who lost everything and still did not stop speaking the truth. Artem leads in OASIS by explaining a decision before issuing it — because without explanation even the right thing is only an order."
+      "cs": "Judhišthira byl král, který prohrál všechno a přesto nepřestal mluvit pravdu. Yudhishthira vede v OASIS tak, že rozhodnutí vysvětluje dřív, než ho vydá — protože bez vysvětlení je i správná věc jen rozkaz.",
+      "en": "Yudhishthira was a king who lost everything and still did not stop speaking the truth. Yudhishthira leads in OASIS by explaining a decision before issuing it — because without explanation even the right thing is only an order."
     },
     "quote": {
       "cs": "Kdo chce jít první, musí umět jít poslední.",
@@ -1532,7 +1532,7 @@ export const OASIS_AVATARS: OasisAvatar[] = [
   },
   {
     "id": 14,
-    "name": "Mama Yashoda",
+    "name": "Jašóda",
     "subtitle": {
       "cs": "Božská matka",
       "en": "Divine Mother"
@@ -1808,8 +1808,8 @@ export const OASIS_AVATARS: OasisAvatar[] = [
           "en": "Divine Union"
         },
         "description": {
-          "cs": "Splň společný quest s Krishna-Maitreyou.",
-          "en": "Complete a co-op quest with Krishna-Maitreya."
+          "cs": "Splň společný quest s Krishnou.",
+          "en": "Complete a co-op quest with Krishna."
         }
       },
       {
@@ -1841,7 +1841,7 @@ export const OASIS_AVATARS: OasisAvatar[] = [
   },
   {
     "id": 17,
-    "name": "Vyasa-Kamil",
+    "name": "Vyasa",
     "subtitle": {
       "cs": "Kosmický mudrc",
       "en": "Cosmic Sage"
@@ -1944,7 +1944,7 @@ export const OASIS_AVATARS: OasisAvatar[] = [
   },
   {
     "id": 18,
-    "name": "Meriam Rose",
+    "name": "Maria Magdalena",
     "subtitle": {
       "cs": "Marie z Magdaly",
       "en": "Mary Magdalene"
@@ -2047,7 +2047,7 @@ export const OASIS_AVATARS: OasisAvatar[] = [
   },
   {
     "id": 19,
-    "name": "Yeshua Sananda",
+    "name": "Ježíš",
     "subtitle": {
       "cs": "Ježíš Kristus",
       "en": "Jesus Christ"
@@ -5137,7 +5137,7 @@ export const OASIS_AVATARS: OasisAvatar[] = [
   },
   {
     "id": 40,
-    "name": "Elizabet",
+    "name": "Lumi",
     "subtitle": {
       "cs": "Královská léčitelka",
       "en": "Royal Healer"

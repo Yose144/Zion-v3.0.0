@@ -291,9 +291,9 @@ Jai Yudhishthira. Jai Maitreya. Jai ZION.
 ---
 
 **Related:**
-- [Krishna/Maitreya](00_KRISHNA_MAITREYA.md) - The visionary you serve
+- [Krishna/Maitreya](00_KRISHNA.md) - The visionary you serve
 - [Arjuna](11_ARJUNA_BROTHER.md) - Precision executor
-- [Bhima/Milan](12_MILAN_BHIMA.md) - Strength protector
-- [Mama/Yashoda (Next)](14_MAMA_YASHODA.md) - The mother who raised Krishna
+- [Bhima/Milan](12_BHIMA.md) - Strength protector
+- [Mama/Yashoda (Next)](14_JASODA.md) - The mother who raised Krishna
 
 *"Strategy wins wars. Dharma wins eternity."* 🎖️

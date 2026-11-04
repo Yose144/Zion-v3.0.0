@@ -507,7 +507,7 @@ The **Unity Key** tests your understanding that **Ramayana + Mahabharata = ONE T
 In `01_RAMA.md`:
 > *"Rama built a bridge across the ocean to rescue Síta."*
 
-In `00_KRISHNA_MAITREYA.md`:
+In `00_KRISHNA.md`:
 > *"Krishna is Rama reborn. Same soul, different age, different challenge."*
 
 In `15_VISHWAKARMA_DEV_LEAD.md`:

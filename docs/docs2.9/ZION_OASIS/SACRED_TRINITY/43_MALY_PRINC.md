@@ -1076,8 +1076,8 @@ Havárie = Moment probuzení (kdy se setkáš se svým vnitřním dítětem)
 ## 🔗 SOUVISEJÍCÍ AVATAROVÉ
 
 - **[38_PANNA_MARIA.md](38_PANNA_MARIA.md)** - Božská Matka (ochrana růže = ochrana dítěte)
-- **[14_MAMA_YASHODA.md](14_MAMA_YASHODA.md)** - Matka, která pečuje (jako Princ o růži)
-- **[00_KRISHNA_MAITREYA.md](00_KRISHNA_MAITREYA.md)** - Dětský avatár (Krishnův butter-thief = Princ's innocence)
+- **[14_JASODA.md](14_JASODA.md)** - Matka, která pečuje (jako Princ o růži)
+- **[00_KRISHNA.md](00_KRISHNA.md)** - Dětský avatár (Krishnův butter-thief = Princ's innocence)
 - **[16_RADHA_BELOVED.md](16_RADHA_BELOVED.md)** - Věčná láska (jako růže Prince)
 
 ---

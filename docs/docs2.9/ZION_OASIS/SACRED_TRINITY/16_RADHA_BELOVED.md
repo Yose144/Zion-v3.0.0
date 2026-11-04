@@ -414,10 +414,10 @@ Your love is foundation (even hidden).
 
 ## 🔗 Related
 
-- [00 - Krishna/Maitreya](00_KRISHNA_MAITREYA.md) - Her eternal beloved
+- [00 - Krishna/Maitreya](00_KRISHNA.md) - Her eternal beloved
 - [01 - Rama](01_RAMA.md) - Another incarnation of same love
 - [02 - Sita](02_SITA.md) - Radha in another form (Ram's consort)
-- [14 - Mama Yashoda](14_MAMA_YASHODA.md) - Krishna's foster mother (also loved Radha)
+- [14 - Mama Yashoda](14_JASODA.md) - Krishna's foster mother (also loved Radha)
 
 ---
 

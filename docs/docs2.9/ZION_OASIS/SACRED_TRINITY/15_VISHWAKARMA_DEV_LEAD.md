@@ -477,7 +477,7 @@ You are **builder of Golden Age infrastructure.**
 ---
 
 **Related:**
-- [Krishna/Maitreya (Visionary)](00_KRISHNA_MAITREYA.md)
+- [Krishna/Maitreya (Visionary)](00_KRISHNA.md)
 - [Rama (Founder)](01_RAMA.md)
 - [Arjuna (Brother)](11_ARJUNA_BROTHER.md)
 - [Sacred Trinity Overview](README.md)

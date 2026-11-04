@@ -467,6 +467,6 @@ Když budete těžit ZION, vzpomeňte si:
 - [Project Humanita Details](../HUMANITARIAN_TITHE/03_PROJECT_HUMANITA.md) - Programy detailně
 - [Maitreya (Bratr)](04_MAITREYA.md) - DAO Admin, Issabelina sestra
 - [Family Tree](07_FAMILY_TREE.md) - Kosmická rodina
-- [Isis/Enamataru (Matka)](06_ISIS_ENAMATARU.md) - Orion's Belt
+- [Isis/Enamataru (Matka)](06_ISIS.md) - Orion's Belt
 
 *"Matka Isis mi dala život. Bratr Maitreya mi dal misi. Děti světa mi dávají smysl."* — Issobela 👸🌟

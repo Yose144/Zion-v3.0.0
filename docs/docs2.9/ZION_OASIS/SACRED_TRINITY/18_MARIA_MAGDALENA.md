@@ -1,4 +1,4 @@
-# 🌹 MERIAM: The Sacred Rose - Twin Flame of Christ
+# 🌹 MARIA MAGDALENA: The Sacred Rose
 
 > **מרים (Miriam) - "Beloved" - "Star of the Sea"**  
 > **"She who was called sinner, became the Apostle of Apostles"**
@@ -393,7 +393,7 @@ The Grail ≠ Cup Jesus drank from
 
 ---
 
-**Next:** [19_YESHUA_SANANDA.md](19_YESHUA_SANANDA.md) - Her Twin Flame
+**Next:** [19_JEZIS.md](19_JEZIS.md) - Her Twin Flame
 
 **Sacred Trinity Hub:** [README.md](README.md)
 

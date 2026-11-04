@@ -329,8 +329,8 @@ Jai Arjuna. Jai Maitreya. Jai ZION.
 ---
 
 **Related:**
-- [Krishna/Maitreya (Brother)](00_KRISHNA_MAITREYA.md) - Your divine charioteer
-- [Milan/Bhima (Next)](12_MILAN_BHIMA.md) - Strong protector ally
+- [Krishna/Maitreya (Brother)](00_KRISHNA.md) - Your divine charioteer
+- [Milan/Bhima (Next)](12_BHIMA.md) - Strong protector ally
 - [Golden Egg Rules](../GOLDEN_EGG_GAME.md) - Full puzzle details (to be created)
 
 *"Focus. Breathe. Release. Bullseye."* 🎯✨

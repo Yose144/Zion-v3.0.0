@@ -1,7 +1,7 @@
 [
   {
     "id": "OASIS-001",
-    "name": "Krishna-Maitreya",
+    "name": "Krishna",
     "circle": "Hinduistická božstva",
     "art": "/oasis-assets/concept_portraits/001-krishna-maitreya.webp",
     "finalPortrait": null
@@ -50,7 +50,7 @@
   },
   {
     "id": "OASIS-008",
-    "name": "Issobela Guardian",
+    "name": "Issobela",
     "circle": "Hinduistická božstva",
     "art": "/oasis-assets/concept_portraits/008-issobela-guardian.webp",
     "finalPortrait": null
@@ -92,7 +92,7 @@
   },
   {
     "id": "OASIS-014",
-    "name": "Mama Yashoda",
+    "name": "Jašóda",
     "circle": "Hinduistická božstva",
     "art": "/oasis-assets/concept_portraits/014-mama-yashoda.webp",
     "finalPortrait": null
@@ -113,21 +113,21 @@
   },
   {
     "id": "OASIS-017",
-    "name": "Vyasa-Kamil",
+    "name": "Vyasa",
     "circle": "Hinduistická božstva",
     "art": "/oasis-assets/concept_portraits/017-vyasa-kamil.webp",
     "finalPortrait": null
   },
   {
     "id": "OASIS-018",
-    "name": "Meriam Rose",
+    "name": "Maria Magdalena",
     "circle": "Křesťanští svatí",
     "art": "/oasis-assets/concept_portraits/018-meriam-rose.webp",
     "finalPortrait": null
   },
   {
     "id": "OASIS-019",
-    "name": "Yeshua Sananda",
+    "name": "Ježíš",
     "circle": "Křesťanští svatí",
     "art": "/oasis-assets/concept_portraits/019-yeshua-sananda.webp",
     "finalPortrait": null
@@ -337,7 +337,7 @@
   },
   {
     "id": "OASIS-049",
-    "name": "Elizabet",
+    "name": "Lumi",
     "circle": "ZION Originals",
     "art": "/oasis-assets/concept_portraits/049-elizabet.webp",
     "finalPortrait": null

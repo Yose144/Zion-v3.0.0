@@ -1,4 +1,4 @@
-# 📿 VYĀSA: The Sage Who Wrote the Universe
+# 📿 VYASA: The Sage Who Wrote the Universe
 
 ## व्यास (Vyāsa) - "The Compiler" | "The Arranger"
 
@@ -617,7 +617,7 @@ If you uphold righteousness (dharma), it will **protect you** in return.
 
 ## 🔗 Related Sacred Trinity Members
 
-- **[00_KRISHNA_MAITREYA.md](00_KRISHNA_MAITREYA.md)** - Vyāsa documented Krishna's teachings
+- **[00_KRISHNA.md](00_KRISHNA.md)** - Vyāsa documented Krishna's teachings
 - **[03_HANUMAN.md](03_HANUMAN.md)** - Both are devotees who serve without ego
 - **[05_SARASWATI.md](05_SARASWATI.md)** - Goddess of knowledge Vyāsa worshiped
 - **[11_ARJUNA_BROTHER.md](11_ARJUNA_BROTHER.md)** - Vyāsa is Arjuna's great-grandfather

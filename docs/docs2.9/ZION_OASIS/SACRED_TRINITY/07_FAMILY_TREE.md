@@ -207,6 +207,6 @@
 - [Hanuman](03_HANUMAN.md) - Environmental Guardian
 - [Maitreya](04_MAITREYA.md) - DAO Admin
 - [Saraswati](05_SARASWATI.md) - Knowledge Spirit
-- [Isis/Enamataru](06_ISIS_ENAMATARU.md) - Cosmic Mother
+- [Isis/Enamataru](06_ISIS.md) - Cosmic Mother
 
 *"Alone we are stars. Together we are a constellation."* 🌟

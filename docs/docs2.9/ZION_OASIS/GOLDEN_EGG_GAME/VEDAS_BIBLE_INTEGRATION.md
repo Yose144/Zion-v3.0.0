@@ -255,11 +255,11 @@
 
 **Example Clue (Hidden in Sacred Trinity Docs):**
 
-In `10_BRONU_CHRIST.md` (Bronu = Christ Energy):
+In `10_CHRIST.md` (Bronu = Christ Energy):
 
 > *"Jesus said: 'I am the way, the truth, and the life. No one comes to the Father except through me.' (John 14:6)"*
 
-In `00_KRISHNA_MAITREYA.md` (Krishna = Maitreya):
+In `00_KRISHNA.md` (Krishna = Maitreya):
 
 > *"Krishna said: 'I am the goal, the sustainer, the master, the witness, the abode, the refuge, and the dearest friend.' (Bhagavad Gītā 9.18)"*
 

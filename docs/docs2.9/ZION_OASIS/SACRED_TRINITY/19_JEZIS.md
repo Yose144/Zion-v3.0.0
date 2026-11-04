@@ -1,4 +1,4 @@
-# ✝️ YESHUA/SANANDA: The Christed One
+# ✝️ JEŽÍŠ: The Christed One
 
 > **ישוע (Yeshua) - "YHWH Saves"**  
 > **Sananda - "One with God" (Ascended Master Name)**  
@@ -457,7 +457,7 @@ Early Christianity **ERASED** evidence of their union:
 
 ---
 
-**Previous:** [18_MERIAM_ROSE.md](18_MERIAM_ROSE.md) - His Twin Flame
+**Previous:** [18_MARIA_MAGDALENA.md](18_MARIA_MAGDALENA.md) - His Twin Flame
 
 **Sacred Trinity Hub:** [README.md](README.md)
 

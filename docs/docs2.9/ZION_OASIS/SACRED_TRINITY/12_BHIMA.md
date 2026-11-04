@@ -302,8 +302,8 @@ Jai Bhima. Jai Maitreya. Jai ZION.
 ---
 
 **Related:**
-- [Krishna/Maitreya](00_KRISHNA_MAITREYA.md) - Your leader, your friend
+- [Krishna/Maitreya](00_KRISHNA.md) - Your leader, your friend
 - [Arjuna/Brother](11_ARJUNA_BROTHER.md) - Precision partner (you're strength, he's skill)
-- [Artem/Vůdce (Next)](13_ARTEM_VUDCE.md) - Strategic leader
+- [Artem/Vůdce (Next)](13_YUDHISHTHIRA.md) - Strategic leader
 
 *"I am Bhima. I protect. I fight. I win. Simple."* 💪🔥
