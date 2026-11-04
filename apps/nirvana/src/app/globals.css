@@ -3205,12 +3205,34 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   color: rgba(200, 162, 255, 0.8);
 }
 
+/* Tlačítko zvuku: stejný tvar jako ostatní žetony, ale klikací. */
+button.game-hud-chip.is-sound {
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+  padding: 0.24rem 0.42rem;
+  min-width: 2rem;
+  justify-content: center;
+}
+
+button.game-hud-chip.is-sound:hover {
+  border-color: rgba(255, 209, 102, 0.55);
+  color: #ffe6a8;
+}
+
+button.game-hud-chip.is-sound.is-off {
+  color: rgba(246, 231, 216, 0.4);
+  border-color: rgba(246, 231, 216, 0.16);
+}
+
+button.game-hud-chip.is-sound.is-off em {
+  color: rgba(246, 231, 216, 0.45);
+}
+
 .game-hud-chip.is-zion {
   color: #ffd166;
   border-color: rgba(255, 209, 102, 0.35);
-}
-
-.game-hud-chip.is-zion em {
+}.game-hud-chip.is-zion em {
   color: #ffd166;
 }
 

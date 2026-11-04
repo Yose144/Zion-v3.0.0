@@ -7,6 +7,7 @@ import { DuelCamera, DuelStage } from './DuelStage';
 import { Fighter3D } from './Fighter3D';
 import { makeFighter, stepFighter, type Fighter, type FightInput } from './duel';
 import { useFightKeys } from './useFightKeys';
+import { createDuelSound } from './audio';
 import { useNet } from '@/core/net/useNet';
 import type { FightPlayerState, ServerMessage } from '@/core/net/protocol';
 import { avatarLook, type AvatarLook } from '../avatars/kit';
@@ -82,6 +83,7 @@ export function MercuryDuel({
   const selfGroup = useRef<Group>(null);
   const foeGroup = useRef<Group>(null);
   const lastStats = useRef('');
+  const sound = useRef(createDuelSound());
 
   // avatary přijdou až se snapshotty — look se počítá při změně `avatarId`
   const [looks, setLooks] = useState<{ self: AvatarLook; foe: AvatarLook }>(() => ({
@@ -138,6 +140,7 @@ export function MercuryDuel({
         const state = message.state ?? 'countdown';
         if (state === 'countdown' && hud.current.matchWinner !== null) {
           hud.current.matchWinner = null; // nový zápas od serveru běží
+          sound.current.reset();
         }
         hud.current.state = state as DuelMpStats['state'];
         hud.current.round = message.round ?? 1;
@@ -150,10 +153,13 @@ export function MercuryDuel({
         const event = message.event;
         if (event.kind === 'duel_end') {
           hud.current.matchWinner = event.winner;
+          sound.current.event('match_end', event.winner === youPlayerId);
         } else if (event.kind === 'round_start') {
           hud.current.lastRoundReason = null;
+          sound.current.event('fight_start');
         } else if (event.kind === 'round_end') {
           hud.current.lastRoundReason = event.reason;
+          sound.current.event('round_end');
         }
       }
     });
@@ -200,6 +206,13 @@ export function MercuryDuel({
     if (foe.current.attack) {
       foe.current.attack.elapsed += dt;
     }
+
+    sound.current.step({
+      self: self.current.hp,
+      foe: foe.current.hp,
+      selfBlocking: self.current.blocking,
+      foeBlocking: foe.current.blocking,
+    });
 
     // 4) pozice meshů — soupeř klouže za cílem (exponenciální vyhlazení)
     if (selfGroup.current) {

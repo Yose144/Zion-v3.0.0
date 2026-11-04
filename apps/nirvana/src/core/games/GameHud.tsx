@@ -7,6 +7,7 @@ import { useI18n } from '@/core/i18n';
 import { useAuth } from '@/core/session/AuthProvider';
 import { useNet } from '@/core/net/useNet';
 import { loadProfile } from '@/core/park/profile';
+import { SoundToggle } from '@/core/shell/SoundToggle';
 import { GAME_LINKS } from './links';
 import { useWallet } from './useWallet';
 
@@ -21,13 +22,17 @@ import { useWallet } from './useWallet';
  * ZION zůstatek (z uzlu přes `/api/wallet/balance` — viz `useWallet`).
  */
 
-const SURFACES = ['/', '/park', '/mars', '/venus', '/avatars'];
+const SURFACES = ['/', '/park', '/mars', '/venus', '/avatars', '/mercury', '/saturn', '/earth', '/multiplayer', '/hiran'];
 
 const CONTROLS: Record<string, { cs: string; en: string }> = {
   '/': { cs: 'tažení myší = orbita · kolečko = přiblížení · klik na planetu = hra', en: 'drag = orbit · wheel = zoom · click a planet = game' },
   '/park': { cs: 'vyber skříň · ve hrách šipky/WASD a klik', en: 'pick a cabinet · arrows/WASD and click in games' },
   '/mars': { cs: 'WASD · mezerník skok · 1/2/3 zbraň · klik střelba', en: 'WASD · space jump · 1/2 weapon · click fire' },
   '/venus': { cs: 'W/S plyn a brzda · A/D zatáčení', en: 'W/S throttle and brake · A/D steer' },
+  '/mercury': { cs: 'A/D pohyb · W skok · J pěst · K kop · L blok', en: 'A/D move · W jump · J punch · K kick · L block' },
+  '/saturn': { cs: '← → úhel · ↑ ↓ síla · mezerník palba', en: '← → angle · ↑ ↓ power · space fires' },
+  '/earth': { cs: 'WASD pohyb · Q/W/E/R kouzla · G ward · 1–6 itemy', en: 'WASD move · Q/W/E/R spells · G ward · 1–6 items' },
+  '/multiplayer': { cs: 'vyber místnost nebo pozvi odkazem', en: 'pick a room or invite by link' },
   '/avatars': { cs: 'klikni postavu · pak Uložit', en: 'click a figure · then Save' },
 };
 
@@ -98,6 +103,7 @@ export function GameHud() {
       {controls && <span className="game-hud-controls">{controls}</span>}
 
       <div className="game-hud-stats">
+        <SoundToggle label={{ on: lang === 'cs' ? 'zvuk zap' : 'sound on', off: lang === 'cs' ? 'zvuk vyp' : 'sound off' }} />
         <span className="game-hud-chip" title={lang === 'cs' ? 'žetony z pouti' : 'fair tokens'}>
           <em aria-hidden>◎</em> {tokens === null ? '—' : tokens}
         </span>

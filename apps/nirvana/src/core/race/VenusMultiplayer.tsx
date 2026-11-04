@@ -8,6 +8,7 @@ import { LAPS, buildTrack, checkpointIndices } from './track';
 import { MAX_SPEED, type Craft, spawnCraft, stepCraft } from './physics';
 import { TrackStage } from './TrackStage';
 import { useNet } from '@/core/net/useNet';
+import { play, startEngineLoop, unlock, type LoopHandle } from '@/core/audio/engine';
 import type { RacePlayerState, ServerMessage } from '@/core/net/protocol';
 
 /**
@@ -71,6 +72,10 @@ export function VenusMultiplayer({
   const lastStats = useRef('');
   const camPos = useMemo(() => new THREE.Vector3(), []);
   const camTarget = useMemo(() => new THREE.Vector3(), []);
+  const engine = useRef<LoopHandle | null>(null);
+  const lastLap = useRef(1);
+  const lastTick = useRef(-1);
+  const finished = useRef(false);
 
   // ── připojení ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -78,6 +83,20 @@ export function VenusMultiplayer({
     joinGame('race');
     return () => leaveRoom();
   }, [running, connected, joinGame, leaveRoom]);
+
+  // ── motor ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!running) return;
+    unlock();
+    lastLap.current = 1;
+    lastTick.current = -1;
+    finished.current = false;
+    engine.current = startEngineLoop();
+    return () => {
+      engine.current?.stop();
+      engine.current = null;
+    };
+  }, [running]);
 
   // ── data ze serveru ──────────────────────────────────────────────────
   useEffect(() => {
@@ -151,8 +170,34 @@ export function VenusMultiplayer({
     const racing = snapshot?.state === 'running';
 
     // 1) predikce stejnou fyzikou (jen když se jede)
+    let hitWall = false;
     if (racing) {
-      stepCraft(craft.current, { throttle, steer }, track, dt, now);
+      const step = stepCraft(craft.current, { throttle, steer }, track, dt, now);
+      hitWall = step.hitWall;
+    }
+    if (hitWall) play('wall');
+    engine.current?.setIntensity(Math.abs(craft.current.speed) / MAX_SPEED);
+
+    // odpočet: každé celé číslo jednou pípne, start gongem
+    if (snapshot?.state === 'countdown') {
+      const tick = Math.ceil(snapshot.countdown);
+      if (tick !== lastTick.current) {
+        lastTick.current = tick;
+        if (tick > 0) play('countdown');
+        else play('bell');
+      }
+    }
+    if (me) {
+      if (me.lap !== lastLap.current) {
+        lastLap.current = me.lap;
+        play('lap');
+      }
+      if (me.finishedAtMs !== null && !finished.current) {
+        finished.current = true;
+        play('finish');
+        engine.current?.stop();
+        engine.current = null;
+      }
     }
 
     // 2) srovnání se serverem

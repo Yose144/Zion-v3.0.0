@@ -14,6 +14,7 @@ import {
 } from '@/core/race/track';
 import { MAX_SPEED, type Craft, spawnCraft, stepCraft } from '@/core/race/physics';
 import { TrackStage } from '@/core/race/TrackStage';
+import { play, startEngineLoop, unlock, type LoopHandle } from '@/core/audio/engine';
 import {
   PLAYER_ID,
   PLAYER_LATERAL,
@@ -102,6 +103,8 @@ export function VenusRace({
   const rivalGroups = useRef<(THREE.Group | null)[]>([]);
   const camTarget = useMemo(() => new THREE.Vector3(), []);
   const camPos = useMemo(() => new THREE.Vector3(), []);
+  /** Motor hučí po celý závod; `null` = WebAudio není (hra jede dál). */
+  const engine = useRef<LoopHandle | null>(null);
 
   const standings = () =>
     buildStandings({
@@ -173,6 +176,13 @@ export function VenusRace({
     rivals.current = createRivals(track);
     race.current = { started: false, startTime: 0, finished: false, offTrack: false };
     lastStats.current = '';
+    // motor startuje se závodem a zmlkne při odchodu (i při předčasném Menu)
+    unlock();
+    engine.current = startEngineLoop();
+    return () => {
+      engine.current?.stop();
+      engine.current = null;
+    };
   }, [running, track]);
 
   useFrame((_, delta) => {
@@ -200,11 +210,19 @@ export function VenusRace({
 
     const step = stepCraft(car, { throttle, steer }, track, dt, now);
     state.offTrack = step.offTrack;
+    if (step.hitWall) play('wall');
+
+    // motor: výška a jas podle rychlosti — hráč slyší zrychlení bez pohledu na HUD
+    engine.current?.setIntensity(Math.abs(car.speed) / MAX_SPEED);
 
     if (state.started && !state.finished) {
       const lapStep = advanceLap(lap, step.index, checkpoints, now);
+      if (lapStep.lapDone && !lapStep.finished) play('lap');
       if (lapStep.finished) {
         state.finished = true;
+        play('finish');
+        engine.current?.stop();
+        engine.current = null;
         const rows = standings();
         const position = Math.max(1, rows.findIndex((row) => row.id === PLAYER_ID) + 1);
         onFinish({

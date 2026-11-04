@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { play } from '@/core/audio/engine';
 
 /**
  * STŘELNICE — jediná hra v parku, která není na obrazovce.
@@ -89,6 +90,7 @@ export function ShootingGallery({
       }
       if (left.current <= 0) {
         running.current = false;
+        play(score.current > 0 ? 'ticket' : 'over');
         onEnd(score.current);
       }
     }
@@ -159,6 +161,7 @@ export function ShootingGallery({
             current.respawn = RESPAWN;
             current.flash = 1;
             score.current += GALLERY_HIT;
+            play('target');
             onScore(score.current);
           }}
           onPointerOver={(event) => {

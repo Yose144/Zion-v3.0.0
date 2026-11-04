@@ -11,6 +11,7 @@ import type { StandingRow } from '@/core/race/rivals';
 import { awardRun, grantTokens, loadProfile, saveProfile } from '@/core/park/profile';
 import { CHALLENGE_REWARD, claimChallenge } from '@/core/park/challenge';
 import { TouchButton, TouchPad } from '@/core/games/TouchPad';
+import { unlock } from '@/core/audio/engine';
 
 /** VENUŠE — tři kola proti třem soupeřům. Čas, pořadí, osobní rekord a tabule. */
 
@@ -243,13 +244,17 @@ export default function VenusPage() {
                 </li>
               </ul>
               <div className="arena-actions">
-                <button type="button" className="park-btn" onClick={() => setPhase('playing')}>
+                <button type="button" className="park-btn" onClick={() => {
+                  unlock();
+                  setPhase('playing');
+                }}>
                   {cs ? 'Na start' : 'To the grid'}
                 </button>
                 <button
                   type="button"
                   className="park-btn park-btn-mp"
                   onClick={() => {
+                    unlock();
                     setMp(true);
                     setPhase('playing');
                   }}
@@ -306,7 +311,10 @@ export default function VenusPage() {
               </ol>
               {notice && <p className="arena-notice">{notice}</p>}
               <div className="arena-actions">
-                <button type="button" className="park-btn" onClick={() => setPhase('playing')}>
+                <button type="button" className="park-btn" onClick={() => {
+                  unlock();
+                  setPhase('playing');
+                }}>
                   {cs ? 'Znovu' : 'Again'}
                 </button>
                 <Link href="/park" className="arena-link">

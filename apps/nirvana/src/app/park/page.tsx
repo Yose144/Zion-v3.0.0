@@ -8,6 +8,7 @@ import { XR, createXRStore } from '@react-three/xr';
 import * as THREE from 'three';
 import { useI18n } from '@/core/i18n';
 import { GAME_LINKS } from '@/core/games/links';
+import { play, unlock, type SoundName } from '@/core/audio/engine';
 import { PARK_CAMERA, ParkScene } from '@/core/scene/park/ParkScene';
 import { PARK_GAMES, gameById, type CanvasGameId, type ParkGameHandle, type ParkGameId } from '@/core/park/games';
 import { GAME_H, GAME_W, PARK_PALETTE } from '@/core/park/games/types';
@@ -58,6 +59,20 @@ function titleOf(id: ParkGameId, cs: boolean): string {
 }
 
 const RIDE_SECONDS = 25; // jedna otočka kola při jízdě
+
+/**
+ * Zvuk skórování podle skříně. Nemá smysl, aby všechny hry pípaly stejně —
+ * Pong je tupý úder pálky, Breakout křupnutí cihly, Had polknutí, Tetris
+ * zaplnění linky a Asteroidy výstřel.
+ */
+const SCORE_SOUND: Record<CanvasGameId, SoundName> = {
+  pong: 'paddle',
+  breakout: 'brick',
+  snake: 'eat',
+  tetris: 'lock',
+  asteroids: 'shoot',
+};
+
 
 export default function ParkPage() {
   const { lang } = useI18n();
@@ -218,6 +233,7 @@ export default function ParkPage() {
     (id: CanvasGameId) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
+      unlock();
       handleRef.current?.stop();
       finishedRef.current = false;
       setActive(id);
@@ -225,13 +241,22 @@ export default function ParkPage() {
       setScore(0);
       setFinished(false);
       startedAt.current = Date.now();
+      play('open');
+      /** Poslední skóre — zvuk patří jen skutečnému přírůstku, ne každému callbacku. */
+      let lastScore = 0;
       handleRef.current = gameById(id).create(canvas, {
-        onScore: (value) => setScore(value),
+        onScore: (value) => {
+          // Tetris skóruje po řádcích: velký skok = vyčištěná linka, malý = dopad
+          if (value > lastScore) play(value - lastScore >= 100 ? 'clear' : SCORE_SOUND[id]);
+          lastScore = value;
+          setScore(value);
+        },
         onEnd: (value) => {
           if (finishedRef.current) return;
           finishedRef.current = true;
           setScore(value);
           setFinished(true);
+          play(value > 0 ? 'ticket' : 'over');
           recordRun(id, value);
         },
       });
@@ -295,11 +320,13 @@ export default function ParkPage() {
   }, [active]);
 
   const startGallery = useCallback(() => {
+    unlock();
     stopGame();
     setRiding(false);
     setGalleryScore(0);
     setGalleryTime(GALLERY_SECONDS);
     setGallery(true);
+    play('open');
     setNotice(cs ? 'Střelnice · 25 sekund' : 'Gallery · 25 seconds');
   }, [cs, stopGame]);
 

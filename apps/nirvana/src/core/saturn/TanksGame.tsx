@@ -25,6 +25,7 @@ import { TanksCanvas } from './TanksCanvas';
 import { TanksScene } from './TanksScene';
 import { useNet } from '@/core/net/useNet';
 import { InviteButton } from '@/core/net/InviteButton';
+import { play, unlock } from '@/core/audio/engine';
 
 type Mode = '2d' | '3d';
 
@@ -54,6 +55,8 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
   const side = useRef<0 | 1>(0);
   const sentAim = useRef({ angle: 0, power: 0 });
   const lastHitKey = useRef('');
+  /** Zvukové značky: co se oproti minulému snímku změnilo. */
+  const sound = useRef({ shots: 0, hitAt: 0, turn: '' as string, over: '' as string });
 
   useEffect(() => {
     const query = window.matchMedia('(hover: none) and (pointer: coarse)');
@@ -201,6 +204,30 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
         stepTanks(current, dt);
       }
 
+      // ── zvuk ─────────────────────────────────────────────────────
+      // Sólo i online se pozná podle změn ve stavu, ne podle vstupu: server
+      // střílí za nás, takže „zahraj při klávese" by v multiplayeru mlčelo.
+      const cues = sound.current;
+      if (current.shotsFired !== cues.shots) {
+        cues.shots = current.shotsFired;
+        play('cannon');
+      }
+      const hitAt = current.lastHit?.at ?? 0;
+      if (hitAt !== cues.hitAt) {
+        cues.hitAt = hitAt;
+        play('impact');
+      }
+      if (current.turn !== cues.turn) {
+        // první snímek jen synchronizuje značku, aby hra nezačínala pípnutím
+        if (cues.turn !== '') play('turn');
+        cues.turn = current.turn;
+      }
+      const over = current.over ?? '';
+      if (over !== cues.over) {
+        cues.over = over;
+        if (over) play(over === my ? 'victory' : 'defeat');
+      }
+
       if (now - hudAt > 130) {
         hudAt = now;
         setInfo(tanksInfo(current));
@@ -214,6 +241,7 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
   // ── vstup ───────────────────────────────────────────────────────────
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
+      unlock();
       if (event.code === 'Escape') {
         onExit();
         return;
@@ -261,6 +289,7 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
   const hpPlayer = Math.round((info.playerHp / TANK_HP) * 100);
   const hpBot = Math.round((info.botHp / TANK_HP) * 100);
   const press = (code: string, action: 'hold' | 'tap') => {
+    unlock();
     if (action === 'tap') {
       if (code === 'Space') {
         if (state.current.over) restart();

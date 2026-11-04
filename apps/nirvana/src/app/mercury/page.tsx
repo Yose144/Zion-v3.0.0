@@ -9,6 +9,7 @@ import { MercuryDuel, type DuelMpStats } from '@/core/fight/MercuryDuel';
 import { MAX_HP, type BotDifficulty } from '@/core/fight/duel';
 import { awardRun, grantTokens, loadProfile, saveProfile } from '@/core/park/profile';
 import { CHALLENGE_REWARD, claimChallenge } from '@/core/park/challenge';
+import { unlock } from '@/core/audio/engine';
 import { useNet } from '@/core/net/useNet';
 
 /**
@@ -351,6 +352,7 @@ export default function MercuryPage() {
               type="button"
               className="park-btn"
               onClick={() => {
+                unlock();
                 setMode('solo');
                 setNotice(null);
                 setPhase('playing');
@@ -362,6 +364,7 @@ export default function MercuryPage() {
               type="button"
               className="park-btn park-btn-mp"
               onClick={() => {
+                unlock();
                 setMode('online');
                 setMpStats(EMPTY_MP);
                 setNotice(null);

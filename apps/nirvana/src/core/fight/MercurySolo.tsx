@@ -14,6 +14,7 @@ import {
   type Duel,
   type Fighter,
 } from './duel';
+import { createDuelSound } from './audio';
 import { useFightKeys } from './useFightKeys';
 import { avatarLook } from '../avatars/kit';
 import type { Group } from 'three';
@@ -70,6 +71,7 @@ export function MercurySolo({
   const lastStats = useRef('');
   const selfGroup = useRef<Group>(null);
   const foeGroup = useRef<Group>(null);
+  const sound = useRef(createDuelSound());
 
   const selfLook = useMemo(() => avatarLook(selfAvatarId), [selfAvatarId]);
   const foeLook = useMemo(() => avatarLook(foeAvatarId), [foeAvatarId]);
@@ -82,12 +84,24 @@ export function MercurySolo({
     active.a.avatarId = selfAvatarId;
     active.b.avatarId = foeAvatarId;
 
-    stepDuel(active, keys.current, botInput(active, bot.current, active.b, active.a, clock.current, botDifficulty), dt, Date.now());
+    const events = stepDuel(active, keys.current, botInput(active, bot.current, active.b, active.a, clock.current, botDifficulty), dt, Date.now());
+    sound.current.step({
+      self: active.a.hp,
+      foe: active.b.hp,
+      selfBlocking: active.a.blocking,
+      foeBlocking: active.b.blocking,
+    });
+    for (const event of events) {
+      if (event.kind === 'fight_start') sound.current.event('fight_start');
+      else if (event.kind === 'round_end') sound.current.event('round_end');
+      else if (event.kind === 'match_end') sound.current.event('match_end', event.winner === active.a.id);
+    }
 
     if (active.phase === 'matchEnd') {
       if (restartAt.current === null) restartAt.current = clock.current + RESTART_AFTER;
       if (clock.current >= restartAt.current) {
         resetDuel(active);
+        sound.current.reset();
         restartAt.current = null;
       }
     }
