@@ -1712,3 +1712,20 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Hala (park) je slyšet všude.** Zprávy z `park` kanálu se posílají i do
   místností (`park: true`, v chatu „hala ·"); zprávy z místnosti zůstávají
   v místnosti. Kdyby šlo všechno všude, taktika 5v5 by tekla do celé Nirvany.
+
+## Režim místnosti: s boty / jen lidé (2026-11-05, proto 25)
+
+- **`mode` je vlastnost místnosti, ne hráče.** `join` ho pošle jen při
+  zakládání; u existující místnosti se ignoruje (jinak by si dva lidé
+  měnili režim pod rukama).
+- **`humans` = žádní boti.** Aréna (`botsEnabled`), duel (`stepFight`
+  se s prázdným sedlem vůbec neposune) a tanky (`autoBot=false`). Kdo
+  přidá hru, musí tohle respektovat — jinak „jen lidé" znamená „bot
+  dorazí za 6 s".
+- **MOBA režim ignoruje** a vždy doplní boty: má pevnou sestavu 5v5 a bez
+  nich by jedna strana neměla hrdiny. Není to opomenutí, je to omezení.
+- **Stav `waiting` je pro lobby.** Aréna v `humans` hlásí `waiting`, dokud
+  nejsou dva lidé — i když simulace technicky běží.
+- **Testy časování:** první snapshot nemusí být v inboxu hned po `room`
+  (chodí 15×/s) a střela v tancích letí i 3 s. Čekej na **stav** (fáze
+  `aim`), ne na `sleep`.

@@ -150,6 +150,21 @@ Dvě věci, které to odhalilo:
   v chatu „hala ·"). Zprávy z místnosti zůstávají v místnosti — taktika 5v5
   nemá téct do celé Nirvany.
 
+## 4e. Místnosti „jen lidé" (proto 25)
+
+Pozvánka byla bez toho poloviční: pozvaný se připojil do zápasu, který už
+dávno sehrál bot — a v tancích by za něj bot i střílel.
+
+- `join` nese **`mode`** (`bots` | `humans`), `RoomInfo` ho vrací a lobby má
+  přepínač „Nové místnosti: 🤖 s boty / 👤 jen lidé" (volba se ukládá).
+- `humans` vypne doplňování botů v **aréně** (stav `waiting`, dokud nejsou
+  dva lidé), v **duelu** (prázdné sedlo duel nerozjede) a v **tancích**
+  (`autoBot=false` → soupeřova strana čeká na člověka).
+- **MOBA zůstává s boty**: má pevnou sestavu 5v5 a bez nich by jedna strana
+  neměla koho postavit.
+- Řádek místnosti v lobby ukazuje režim (👤/🤖) a v úzké kartě se zalamuje —
+  dřív se id zkracovalo na „are…".
+
 ## 5. Ověření
 
 | Test | Výsledek |
@@ -166,8 +181,10 @@ Dvě věci, které to odhalilo:
 | live 2 prohlížeče | A „TVŮJ TAH", B „SOUPEŘ MÍŘÍ"; po Aho výstřelu **tah předán B**; 0 chyb |
 | mobile audit | **PASSED** (Saturn tanky 5 dotykových prvků) |
 | live reconnect | token → close → resume: `resumed=true`, **stejná místnost i id**, snapshoty tečou dál |
+| live „jen lidé" | arena: `humans`, stav **waiting**, 1 hráč, **0 botů**; tanky: po výstřelu zůstaly **1 rány** (bot nepřidal) |
 | live pozvánka | tlačítko v tankách zkopírovalo `…/multiplayer?room=tanks-1`; v chatu na `/mars` je taky |
 | mobil (390) | lobby chat s kanálem i pozvánkou, 0 chyb, 0 px přesahu |
+| `test/humans.mjs` (nový) | **HUMANS OK** (4× po sobě) — aréna bez botů a `waiting` do druhého člověka; tanky: bot po výstřelu nevypálí, druhý člověk dostane stranu 1 a hraje |
 | `test/resume.mjs` (nový) | **RESUME OK** — token, stejné id i místnost po reconnectu, snapshoty dál, hala do místnosti, úklid po grace |
 | `test/rooms.mjs` (nový) | **ROOMS OK** — seznam se rozšíří při vytvoření, příchodu, změně stavu i odchodu; úklid prázdné místnosti |
 | live lobby (2 prohlížeče) | 5 karet, „Rychlá hra" → `tanks-1`, druhý vidí 1/2 „čeká na hráče" a připojí se, po odchodu banner zmizí, 0 chyb |
