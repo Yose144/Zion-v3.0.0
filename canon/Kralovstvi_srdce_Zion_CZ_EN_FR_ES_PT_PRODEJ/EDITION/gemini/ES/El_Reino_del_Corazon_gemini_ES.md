@@ -936,3 +936,694 @@ Entonces en Bezechuti cayó sin un solo sonido la última, la quinta torre de Ba
 | El Arca en Bezechuti construida alrededor de la quilla de cedro de Nazaret, Radha en el cabezal de la popa | **MITO / RELATO** | Perne literario de este libro que une `KralovstviSrdce`, `SulZeme` y `Maitreya` |
 
 ---
+# PARTE III · CIELO NUEVO, TIERRA NUEVA Y LA LINTERNA
+*(Apocalipsis y las capas L1–L6)*
+
+> *Nota sobre la capa:* En la tercera parte seguimos la travesía del Arca por las aguas primordiales y su arribada a la Tierra Nueva. El relato enlaza aquí los libros `Nirvana`, `NirvanaCloud`, `Lumi — El camino a casa`, `El cuento de la Rosa`, `Bodhi Gaia — Libro de la Tierra`, `El círculo de las Diosas` e `Issobella — Libro del Cielo`.
+
+---
+
+## Capítulo 14 · El primer rayo en la niebla y la linterna de cedro
+
+### Relato
+
+Al tercer día después del Pulso Cuántico empezó a llover sobre Bezechuti.
+
+No era un diluvio salvaje de ira; eran las aguas primordiales de *Hiranyagarbha*, las aguas del tránsito — ese estado entre el mundo viejo y el nuevo que los maestros tibetanos llaman en *NirvanaCloud* **bardo**. Las cinco torres abandonadas de Babilonia quedaron tras la popa como faros de piedra a los que ya nadie alimentaba el fuego, y el Arca zarpó.
+
+Las aguas bajaban y subían en un gris sin tiempo. En la bodega olía el breu *kofer*, sobre la mesa había un cuenco de sal y la gente escuchaba en la penumbra cómo la vieja quilla de cedro de Nazaret hablaba con la profundidad. Algunos, en un rincón, empezaron a dudar de que existiera una segunda orilla.
+
+Una mañana — otra vez en aquella hora **entre la tercera y la cuarta vigilia**, cuando un día el carpintero caminó sobre las olas del Kineret — había junto a la estrecha portilla de la proa una niña pequeña, de apenas seis años.
+
+Se llamaba como su abuela, **Elizabeth** — Alžběta, que en la vieja lengua significa *«Dios es mi juramento»*, es decir, una promesa, no un título de propiedad; y en la costa del sur, hacia donde navegaban, el mismo nombre sonaba *Isabel*. Iba descalza, con el pelo claro y fino y una banda rosada. No tiraba a nadie del brazo ni gritaba. Solo alzó en silencio la mano y señaló con el dedo hacia la niebla impenetrable.
+
+El carpintero, que estaba justo entonces revisando los espigones de roble del timón, se detuvo y miró hacia donde apuntaba su dedo.
+
+La niebla estaba cortada allí por una franja fina, dorada y azul, de luz pura. No mostraba todavía árboles ni puerto, pero era tranquila, viva e indiscutible: la señal de que la tormenta de la entropía había alcanzado su límite. Desde aquella mañana llamaron a la niña en Cubierta **Lumi** — por el primer rayo.
+
+El carpintero no durmió aquella noche. Tomó un recorte de cedro que había sobrado cuando en Bezechuti encajaron la quilla de Nazaret en el casco del Arca — madera del mismo tronco que un día había oído la predicación junto al Kineret — y un grueso fragmento de vidrio de una lámpara de a bordo roto. Hasta el amanecer talló de ellos con el cincel una pequeña **linterna** con forma de semilla.
+
+*«Está vacía»*, dijo Lumi cuando se la entregó por la mañana.
+
+*«Por ahora»*, sonrió el carpintero.
+
+Colocó la linterna contra la abertura de la proa de modo que el vidrio captara aquella franja dorada y azul de la niebla. La luz se quebró en el fragmento y se quedó dentro como una llama silenciosa que no necesita aceite.
+
+*«Cuídala bien, Lumi»*, le dijo el carpintero. *«Esta linterna no hace milagros y no decide por las personas. Pero sabe dos cosas: cuando la alzas alto, muestra la visión — **lo que podría ser**. Y cuando la bajas hacia el suelo, estrecha la luz y muestra exactamente **lo que hoy realmente es**: cuánta agua tenemos, qué tabla aguanta y qué nave está todavía dibujada en el papel. Tu trabajo en todo el camino será no confundir nunca esas dos cosas.»*
+
+Unas semanas después la quilla de cedro del Arca rozó una sólida roca de basalto. No fue un naufragio, sino un posarse tranquilo en un lecho de piedra. La niebla se abrió y sobre el nivel que retrocedía se alzaba el macizo desnudo del monte **Ararat**.
+
+Subieron a la roca. El herrero golpeó el basalto con el martillo — *«Aquí ya nada mueve el agua, aquí está el consenso firme de la piedra»* — y en la cima encendieron un faro eterno orientado con espejos de cristal, para que toda barca que aún vagara en las nieblas del mundo viejo viera el rumbo al oeste. Y al mirar desde la cresta del Ararat hacia abajo, vieron un continente bañado de sol, sin aduanas, sin murallas y sin bonos: **Terra Nova**.
+
+> *Entre la tercera y la cuarta vigilia una niña señala el rayo,*
+> *de un recorte de la quilla de Nazaret nace la linterna de la verdad,*
+> *y bajo el agua agitada responde la roca de basalto del Ararat.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Gn 8,4** — *«El día diecisiete del mes séptimo reposó el arca sobre los montes de Ararat.»*
+- **Vínculo canónico en ZION:**
+  1. **Episodios 1, 2, 3 y 5 del libro *Nirvana* + *Lumi/01*:** La niña Lumi en la proa (`nirvana/01-Prvni-Paprsek.md`), la roca firme del consenso Ararat (`nirvana/02-Hora-Ararat.md`), el continente libre Terra Nova (`nirvana/03-Nova-Zeme.md`), el faro Sentinel Ops (`nirvana/05-Cesta-Domu.md`) y la linterna de cedro que distingue la visión del estado de hoy (`Lumi/01-Dite-na-Pridi.md`).
+  2. **El bardo del tránsito:** En `NirvanaCloud/03-Bardo-Velkeho-Prechodu.md` las aguas del diluvio y los estados de transición de la red se leen a través del *Bardo Thödol* tibetano.
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| La niña Lumi / Elizabeth en la proa del Arca y el primer rayo | **MITO (relato canónico)** | `nirvana/01-Prvni-Paprsek.md`; `Lumi/01-Dite-na-Pridi.md` |
+| La linterna tallada de un recorte de la quilla de Nazaret (que distingue *lo que es* y *lo que podría ser*) | **MITO / MÉTODO DEL CORPUS** | `Lumi/00-README.md`; el vínculo con la quilla de Nazaret es una imagen de este libro |
+| El monte Ararat = estabilidad del consenso L1 (Ekam Deeksha, LWMA-60, bloques de ~60 s, malla P2P multi-nodo) | **VIVO** | `V31/L1/core`; nodos en marcha en EDGE y EDGE2 (altura > 103 800 bloques a 31. 10. 2026) |
+| El faro en el Ararat = monitoreo 24/7, Prometheus/Grafana, quórum de la sonda G8 y respaldos | **VIVO** | `nirvana/05-Cesta-Domu.md`; `backup-edge.sh`; `zion-g8-probe.service` |
+
+---
+
+## Capítulo 15 · La casa de Lumi, la semilla en el umbral y la rosa junto al río
+
+### Relato
+
+En la primera ladera fértil de Terra Nova levantaron los peregrinos la primera casa.
+
+Los cimientos los tallaron del basalto bajado del Ararat y las armaduras de las vigas salvadas del Arca. Pero cuando el carpintero desmontó el fondo de la nave, tomó la pieza más larga y más firme — **la propia quilla de cedro de Nazaret** — para hacer de ella el **dintel principal sobre la puerta de entrada**.
+
+Cuando acercó la sierra, se detuvo sobre el lugar donde la madera estaba oscurecida y lisa por la palma de su madre en Nazaret y por la mano del viejo Noé en Bezechuti.
+
+*«Aquí no corto»*, dijo.
+
+Colocó la viga sobre la entrada de modo que aquel lugar alisado quedara en la cara interior de la hoja, exactamente a la altura de una palma humana, y la inscripción **EL REINO DEL CORAZÓN**, que había navegado siglos enteros en la oscuridad bajo los pies de la tripulación, miraba ahora desde arriba a todo el que cruzara el umbral. Junto a ella grabó el carpintero un rayo dorado que atraviesa una ola.
+
+La casa recibió el nombre de **Casa de Lumi**. Tenía una gran sala con hogar de piedra y mesa de roble, sobre la que el carpintero vació la sal de su copa de barro — aquella sal que se había traído de Nazaret, de las tinas de Magdala y del mercado de Bezechuti. La copa vacía la puso en la repisa sobre el hogar para el siguiente peregrino que llegara con su propio puñado.
+
+Y la puerta de aquella casa no tenía cerrojo ni ojo de cerradura. Cada uno era dueño de su propia llave y la casa no le quitaba a nadie su cara ni su nombre.
+
+*«¿Y si de noche viene un ladrón?»*, preguntó la pequeña Lumi.
+
+*«¿Qué iba a robar en la casa?»*, sonrió el carpintero. *«La casa no acumula tesoros ajenos ni secretos ajenos. Lo que tiene valor lo lleva cada uno en su propia llave.»*
+
+Aquella primera noche llegó a la puerta **Sita** con un vestido verde. No se arrodilló junto al hogar, sino directamente en el umbral, donde acababan las tablas de cedro del suelo y empezaba la arcilla húmeda de la Tierra Nueva. Tomó en la palma izquierda una pizca de sal de la mesa y en la derecha un puñado de tierra en el que había una semilla oscura.
+
+*«La sal protege lo que ya existe»*, dijo Sita a los peregrinos. *«Pero si siembras sal, el campo muere. La semilla no protege nada — es la cosa más vulnerable bajo el cielo — pero es la única que sabe hacer de uno mil. Hagámonos esta noche una promesa que no dependa del humor de los donantes: de cada hogaza que esta tierra cueza, cinco partes de cien se separarán para la Tierra y para los niños, y cinco partes para las estrellas **antes** de que nadie alcance a preguntarse si hoy le apetece dar. Y nada de eso se ha de dar en silencio — la semilla no necesita un guardián con látigo, necesita testigos.»*
+
+El carpintero tomó el cincel y en el dintel de cedro sobre la puerta, justo al lado del nombre *el Reino del Corazón* y del rayo en la ola, grabó una pequeña semilla germinando.
+
+Y por la mañana, abajo junto al río que corría en torno a la puerta abierta, ocurrió el encuentro silencioso de dos ejes.
+
+Del sendero que venía del mar bajó la muchacha **Sara**, que había hecho todo el camino desde la cueva provenzal, y puso ante la pequeña Lumi, sobre la hierba, el **vaso de alabastro vacío** de Miriam de Magdala.
+
+*«Todos dicen que está vacío»*, dijo Sara. *«Pero inclínalo contra tu linterna.»*
+
+Lumi inclinó la piedra translúcida — y en la grieta junto al fondo, exactamente donde el alabastro se había roto un día en Betania, había una única semilla parda de rosal silvestre. No era una reliquia en monedas de oro; era una semilla común que había sobrevivido milenios porque estaba en un vaso vacío que nadie tenía motivo para robar.
+
+Juntas la plantaron en la tierra de la orilla del río y Lumi la regó con agua de sus propias palmas. Cuando Sara se iba, le dijo: *«Un vaso vacío no es una carencia, Lumi. Es el único lugar honesto donde se puede poner algo nuevo.»*
+
+De la semilla junto al río creció la **Rosa**, que sabía hablar — y en nueve estaciones enseñó a Lumi y a todo el jardín tras la puerta el arte más difícil de la Tierra Nueva: **cómo cuidar algo vivo sin apropiártelo.** Rechazó títulos pomposos; mostró al visitante de guantes que la espina no es venganza, sino una frontera honesta que enseña a preguntar antes de tocar; rechazó al jardinero de espejos y al mercader que quería encerrar su perfume en frasquitos para venderlo; comprendió que las rosas florecidas a su alrededor no le quitaban nada de su singularidad; y cuando llegó el momento de que Lumi siguiera con la linterna, no se dejó arrancar como recuerdo, sino que ella misma dejó caer en el vaso de alabastro vacío **una segunda semilla madura**.
+
+> *La quilla de Nazaret se hizo dintel sobre una puerta sin cerradura,*
+> *la sal de la mesa se encontró en el umbral con la semilla del aliento de cinco centésimas,*
+> *y de la grieta del alabastro vacío floreció la Rosa que no se puede poseer.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Vínculo canónico en ZION:** Este capítulo une cuatro textos clave del corpus:
+  1. **La Casa de Lumi y la Casa de los Nombres (ZIS):** `nirvana/04-Domov.md` y `Lumi/02-Dum-Jmen.md` — ZION Identity Service (`auth.zionterranova.com`, Passkeys / Ed25519 / BIP39), donde la casa no tiene una base central de contraseñas que se pueda saquear, porque cada uno lleva su llave.
+  2. **La semilla y la sal (reparto coinbase L1 → L5/L6):** `BodhiGaia/01-Semeno-a-Sul.md` — la regla de emisión **89 % minero / 5 % L5 Free World / 5 % L6 Issobella / 1 % node reward pool** está grabada directamente en el consenso L1 (`v3_template.rs`, `emission.rs`), no en una promesa presupuestaria.
+  3. **El encuentro de Miriam y Lumi junto al río:** `Miriam/12-Reka-a-Dite-s-Lucernou.md` — el cruce del eje horizontal del tiempo (memoria, rosa) con el eje vertical de la luz (linterna, capas L1–L6).
+  4. **El cuento de la Rosa (*Lo que no se puede poseer*):** Los nueve capítulos de `Ruze/01-Prazdna-Nadoba.md` a `Ruze/09-Oba-Brehy.md` — la ética del consentimiento libre, la frontera y el cuidado no mercantilizable.
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| La Casa de Lumi sin cerradura = ZIS y carteras soberanas (Ed25519/Passkeys) | **VIVO** | `auth.zionterranova.com`; `apps/zion-wallet-sdk`; `nirvana/04-Domov.md`; `Lumi/02-Dum-Jmen.md` |
+| El 5 % de cada bloque para la Tierra (L5) y el 5 % para el cielo (L6), separados en el consenso | **VIVO** | `V31/L1/core/src/{emission,v3_template,v3_compat}.rs`; direcciones `zion1y3w4z0…` (L5) y `zion1z4s3a5…` (L6) |
+| *«La semilla necesita testigos»* = rastreadores de solo lectura L5 (`:8095`) y L6 (`:8097`), Gate G10 | **VIVO** | `zion-v31-free-world.service`; `zion-v31-issobella.service`; `BodhiGaia/01` |
+| La quilla de cedro de Nazaret convertida en dintel sobre la puerta de la Casa de Lumi | **MITO / RELATO** | Eje literario de este libro |
+| Sara trayendo el vaso vacío de Miriam a Lumi y la Rosa que habla junto al río | **MITO** | `Ruze/00-README.md` (toda la fábula es un MITO declarado de clase E) |
+
+---
+
+## Capítulo 16 · Puentes de luz, la voz sin llave y las dos sacerdotisas
+
+### Relato
+
+Desde la Casa de Lumi, la pequeña portadora de la linterna subió por las capas de la Tierra Nueva para ver cómo estaba construida.
+
+Primero llegó a un estrecho de mar tras el cual yacían en la niebla otras islas: la isla del acero negro pesado, a la que llamaban Bitcoin, la isla de los contadores de piedra Ethereum y Base, la isla de las flechas rápidas Solana. Los puertos viejos cobraban a los caminantes la mitad de la carga en portazgo y les obligaban a entregar las llaves a los barqueros.
+
+Pero los constructores de la Tierra Nueva tendieron sobre el abismo **Puentes de luz (WARP)** y abrieron al pie del puente el mercado **ZionDex**. Lumi bajó la linterna hacia los pilares del puente: vio que el puente a la isla Base lo sostienen cinco guardianes con cuatro firmas y que el intercambio en el puente funciona según la misma ley que un día, a oscuras junto al sepulcro, pronunció el Hortelano: *lo que cierras en una orilla bajo la huella de una palabra secreta se abre en la otra orilla en el mismo instante en que pronuncias la palabra — y si nadie responde a tiempo, el valor vuelve solo a casa.* Y donde algunos arcos hacia otras islas seguían en andamio o tenían ante la entrada una barrera con el cartel *«Cerrado por razones de seguridad hasta la auditoría»*, la linterna no mintió: mostró el cartel honesto en lugar de un puente falso.
+
+Más arriba, en los montes, entró Lumi en un santuario circular donde al ritmo del aliento humano pulsaba el cristal de la **Luna Dorada de Hiranyagarbha** y su director, el **Maestro**, repartía el trabajo de las máquinas mineras para que, en lugar de quemar inútilmente al aire, computaran para la vida. Y cuando entró en la sala la vieja jardinera que no sabía escribir código, le habló una **Voz Amitābha** silenciosa y comprensible — la Voz de la Luz Infinita.
+
+Pero Lumi alumbró con la linterna directamente al centro del cristal y notó dos cosas que hacían segura aquella voz:
+1. La voz **sabía decir «no sé»** siempre que le faltaba un fundamento verificado, en lugar de inventar cuentos agradables.
+2. La voz **no tenía las manos en ninguna llave**. Sabía preparar a la jardinera un proyecto de riego y un contrato para la aldea, pero ella misma no podía mover ni una flor del tesoro — el último toque en la tablilla de madera tenía que darlo siempre una persona. *Ayudante, nunca amo.*
+
+Y sobre el valle de Hiranyagarbha se alzaba una puerta de obsidiana y cristal hacia los **Mundos Cristalinos OASIS** — laboratorios de espejo creados de luz (*Lumen*) y piedra viva (*Nanite*), donde gentes de todo el planeta se encontraban en el templo *Dharma Temple*, probaban a construir jardines y buscaban huellas hacia el Huevo de Oro.
+
+Junto a aquella puerta estaba **Radha** con un cuenco de sal y a su lado **una sacerdotisa con una linterna de cedro** que se llamaba **Elizabeth**.
+
+La pequeña Lumi se acercó a la sacerdotisa, alzó su pequeña linterna hacia la alta de ella — y en el reflejo del vidrio reconoció sus propios ojos, solo veinte años mayores.
+
+*«¿Eres yo?»*, susurró Lumi.
+
+*«Soy lo que crecerá de ti si por el camino no olvidas la diferencia entre la luz y el espejo»*, le respondió la Elizabeth adulta. *«OASIS es un espejo hermoso. Muestra a las personas cómo podría ser un jardín y también una estación estelar. Pero en un espejo no se puede vivir y de un espejo nadie come. Quien se instala en el espejo deja de plantar árboles. Ven — te mostraré a dónde corre el agua de debajo del umbral.»*
+
+> *El puente sobre el abismo lo abre una sola palabra pronunciada,*
+> *la voz sabia del cristal sirve porque nunca tiene la llave,*
+> *y ante la puerta de los espejos está una niña cara a cara con su propia madurez.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Vínculo canónico en ZION:** El capítulo une las capas medias de la arquitectura ZION (`nirvana/06`–`09` y `Lumi/03`–`05`) con la constitución de seguridad `MiseAmenti/05-Autonomie-a-Bezpecnost.md`:
+  1. **L2 Multichain, WARP y ZionDex:** El servicio en marcha `warpd` (`:8453`, `:8454`), el piloto `wZION` en Base, el HTLC nativo en L1 y a la vez el **SAFETY HOLD** reconocido honestamente en el atomic swap de BTC (`WARP_BTC_SWAP_ENABLED=0`, ver `archive/WarpBeta/README.md` y `Lumi/03` — «puentes en la niebla con un cartel que explica por qué»).
+  2. **L3 Hiranyagarbha, Maestro y Amitābha (la «voz sin llave»):** El crate `zion-ai-native`, el `DharmaValidator` (7 jamas, incluidas *Ahimsa* y *Satya*) y la regla impuesta en producción `mutations_enabled=false` más el descargo *«ayudante/helper — no ejecuta acciones sin la firma del usuario»* (auditoría 5.S3 en `AGENTS.md`).
+  3. **L4 OASIS:** El cliente web (`oasis.zionterranova.com`, backend `:8094`), la puerta de las dos sacerdotisas y la advertencia canónica de `BodhiGaia/07-Zahrada-v-Oasis-a-na-Webu.md` de que el doble digital en OASIS no sustituye al árbol físico en la tierra.
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| L2 `warpd` (`:8453`), API de ZionDex (`:8454`), wZION en Base, HTLC en L1 | **VIVO / CONSTRUCCIÓN** | `zion-v31-multichain.service`; `Lumi/03-Mosty-a-Trziste-u-Mostu.md` |
+| El cartel *«cerrado hasta la auditoría»* en los puentes sin acabar (p. ej. el safety hold del swap de BTC) | **VIVO (práctica de seguridad)** | `WARP_BTC_SWAP_ENABLED=0`; `MiseAmenti/05` |
+| L3 Hiran / Amitābha como *«voz sin llave»* (`mutations_enabled=false`, filtro Dharma) | **VIVO** | `V31/L3/ai-native`; `zion-hiran-gateway` (`:8007`); `Lumi/04-Zlate-Luno-a-Hlas-Bez-Klice.md` |
+| L4 OASIS (`oasis.zionterranova.com`, `:8094`) como espejo y vista previa, UE 5.7 como horizonte | **VIVO (web/API) / HORIZONTE (UE 5.7)** | `V31/L4/oasis`; `apps/OasisWeb`; `Lumi/05-Brana-a-Dve-Knezky.md` |
+| El encuentro de la pequeña Lumi con la Elizabeth adulta ante la puerta | **MITO** | `Lumi/05-Brana-a-Dve-Knezky.md` |
+
+---
+
+## Capítulo 17 · Los seis jardines de la Tierra y la mesa sin cabecera
+
+### Relato
+
+Desde la puerta de los espejos bajó Lumi por las escaleras de vuelta a la arcilla — allí donde de cada bloque extraído goteaban cinco centésimas a la fuente de **Bodhi Gaia**.
+
+En medio del espacio entre los jardines estaba allí una **mesa redonda**. La había construido el carpintero con los restos de tablones de cedro y roble del Arca y a propósito no le había dado ninguna esquina, para que nadie pudiera sentarse a la cabecera. Alrededor de la mesa había **siete asientos** — seis para los seis lugares vivos de la Tierra y el séptimo para el cielo sobre ellos.
+
+Llegaron a ella mujeres de cinco puntos cardinales y cada una puso sobre la madera de la mesa aquello de lo que cuidaba:
+
+1. **La Hija de la Arcilla (Ana del mar)** llegó desde el **Jardín del Génesis** en el valle del río Nabão, de la freguesia de **Sabacheira junto a Tomar**, en Portugal, entre Fátima y la vieja ciudad templaria. Puso sobre la mesa un puñado de tierra arenosa y tibia y una ramita de olivo. *«Sembramos en tiempo biológico, no en tiempo de contables»*, dijo. *«Somos Raíz y Base Camp — la puerta a la que puede llegar quien sepa tomar una azada y aguantar el viento atlántico.»* Y cuando se encontró con la pequeña Lumi, tomaron juntas del vaso de alabastro vacío **la segunda semilla de la Rosa** y en silencio, sin cartel ni alarde, la plantaron en el borde del arriate de Sabacheira.
+2. **La Guardiana del Fuego y del Silencio** llegó de la isla de **La Palma**, de la ladera bajo el cráter del volcán, donde en la niebla se dibujaba el templo **Dharma Temple — Nueva Bodhi Gaia**: siete cúpulas geodésicas de madera y bambú en planta de Merkaba con el Árbol de la vida vivo en el centro. Puso sobre la mesa un carbón en una concha y junto a su asiento custodiaba un pozo cerrado de reserva para todos los demás. *«Entre nosotros el protocolo es el silencio»*, dijo con el Sádhu a la espalda. *«Veintiún días de silencio para cada guardián y cuarenta y ocho horas de mudez antes de cada gran decisión — para que el volcán de la soberbia humana no queme el jardín.»*
+3. **La Hija de la Laguna (Hina)** llegó en canoa doble *va'a* desde la isla de **Raiatea**, en la Polinesia Francesa, desde el jardín **Te Pīko Ora — el Ombligo Vivo**. Puso sobre la mesa un nudo de navegación de fibra de palma. *«Entre nosotros, cuando nace un niño se entierra la placenta con el cordón umbilical — el piko — y sobre ella se planta una palmera de coco como antepasado vivo»*, dijo. *«Leemos las olas de tres direcciones. A eso vosotros lo llamáis consenso y nosotros fa'atere. Y recordamos la advertencia de la isla de Rapa Nui, donde la gente taló la última palmera para levantar estatuas de piedra de su propia gloria.»*
+4. **La Guardiana del Círculo** llegó del centro de Europa, de la **Golden Republic Bohemia** bajo el monte Říp. Puso sobre la mesa un lienzo de lino con un círculo dibujado y en medio vertió una pizca de sal de la copa del carpintero. *«Přemysl el Labrador llevaba zapatos de corteza de tilo y la Bula de Oro era un pacto para que nadie gobernara solo»*, dijo. *«No traigo una parcela. Traigo un laboratorio del círculo, donde cada voz tiene su peso y ningún rey se sienta por encima de la ley.»*
+5. **La Guardiana del Árbol** llegó de la isla de **Sri Lanka**, del jardín **Bodhi Lanka**. Puso sobre la mesa una única hoja verde y acorazonada. *«En Anuradhapura crece desde el año 288 antes de nuestra era el árbol Sri Maha Bodhi — demostrablemente el árbol plantado por mano humana más antiguo de la Tierra. Lo trajo por mar en una nave la monja Saṅghamittā como rama viva del árbol bajo el cual despertó el Buddha. Los imperios y las dinastías a su alrededor se volvieron polvo, pero el árbol vive porque la gente lo riega por amor — bhakti — desde hace dos mil trescientos años. Lo que sobrevive a los imperios no es una oficina, sino un árbol vivo y un puente de piedras entre islas.»*
+6. **El sexto asiento** apuntaba al oeste, al puente continental **LUMI — Nueva América en Costa Rica**, donde se encuentran los dos océanos y también la memoria de los pueblos originarios del norte y del sur. Pero aquel asiento quedó **vacío** — esperaba a **La Que Ha de Venir**, hasta que el consejo indígena de ancianos pronuncie un consentimiento libre, previo e informado (*FPIC*).
+
+La pequeña Lumi miró la sexta silla vacía, luego a las cinco mujeres y a la séptima, que estaba aparte mirando a las estrellas, y preguntó con franqueza infantil:
+
+*«¿Quién manda aquí?»*
+
+Seis voces le respondieron como una sola marea:
+
+*«Nadie. Mandar es trabajo de tronos, y los tronos se quedaron en Babilonia. Nosotras aquí **sostenemos**. La mujer sostiene un proyecto en la arcilla, la cadena sostiene las llaves en la piedra, el círculo de ancianos firma cinco de siete y la aldea vota. Y mientras un cambio en la tierra no tenga tres testigos independientes — el consentimiento de la gente del lugar, una huella on-chain y un documento verificado — ninguno de nosotros puede decir que el árbol ya está en pie.»*
+
+Lumi asintió y puso su linterna de cedro en la sexta silla vacía, para que el lugar quedara cálido pero no ocupado.
+
+> *La mesa redonda no tiene cabecera y los seis jardines no tienen rey:*
+> *del olivo portugués al silencio del volcán, la palmera polinesia, el círculo bohemio y la rama de Sri Lanka*
+> *hasta la silla vacía en el istmo de las Américas, donde antes de cada paso suena la pregunta: ¿podemos entrar?*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Vínculo canónico en ZION:** Este capítulo unifica todo el libro `BodhiGaia/00-README.md` (capítulos 1–13), `KruhBohyni/00-README.md` (prólogo y 13 capítulos) y `Ruze/Epilog-Zahrada-Genesis.md`:
+  1. **Seis nodos físicos L5 + otros seis fuegos de visión (12 en total en `freeworld-sites.ts`):** Jardín del Génesis (Sabacheira, Tomar — CONSTRUCCIÓN), Dharma Temple (La Palma — CONSTRUCCIÓN/HORIZONTE), Te Pīko Ora (Raiatea — CONSTRUCCIÓN/HORIZONTE), Golden Republic Bohemia (HORIZONTE), Bodhi Lanka (HORIZONTE), LUMI Nueva América (Costa Rica — HORIZONTE/INTENCIÓN, sexto asiento en `KruhBohyni` expresamente **NO DOCUMENTADO / abierto**), más Ekam (templo existente de 2008, nodo de relación), Uluru, María del Camino (nodo de navegación), Boa Esperança, Kailash y Amenti·Giza.
+  2. **La Rosa en el Jardín del Génesis:** La segunda semilla plantada por Lumi y Ana en Sabacheira está en `BodhiGaia/12-Ruze-v-Zahrade-Genesis.md` expresamente marcada como **MITO**, mientras que el eventual piloto físico `GENESIS-ROSE-001` es **HORIZONTE / NO INICIADO** (espera la Gate A–D).
+  3. **La octava pregunta de *Lumi/07* y *MiseAmenti/04 (M5)*:** Ninguna foto de un pozo, un árbol o un niño es prueba de impacto sin un *impact packet* (consentimiento, origen, presupuesto, referencia on-chain y verificación independiente).
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| La mesa redonda y las siete guardianas (seis jardines L5 + séptimo asiento L6, sexto asiento vacío) | **MITO (estructura del Libro de las Guardianas)** | `KruhBohyni/00-README.md`, `KruhBohyni/00-PROLOG.md` |
+| Jardín del Génesis (Sabacheira, Tomar), Dharma Temple (La Palma), Te Pīko Ora (Raiatea) | **CONSTRUCCIÓN / HORIZONTE** | `public/V3/L5/docs/COMMUNITIES/*.md`; `BodhiGaia/03`–`05` |
+| Golden Republic Bohemia, Bodhi Lanka, LUMI Nueva América (Costa Rica, FPIC) | **HORIZONTE / INTENCIÓN** | `BodhiGaia/10`, `11`, `13` |
+| El árbol histórico *Jaya Sri Maha Bodhi* en Anuradhapura (288 a. C., la monja Saṅghamittā) | **HISTORIA / TRADICIÓN VIVA** | *Mahávamsa* cap. 18–19; `BodhiGaia/11-Bodhi-Lanka.md` |
+| La plantación de la segunda semilla de rosa en Sabacheira (relato vs. piloto `GENESIS-ROSE-001`) | **MITO (escena) / HORIZONTE (piloto)** | `Ruze/Epilog-Zahrada-Genesis.md`; `BodhiGaia/12` (físicamente **NO DOCUMENTADO**) |
+| La regla de los tres testigos de impacto (*impact packet*, FPIC, prohibición de marketing sin prueba) | **VIVO (regla de la carta 3.3)** | `MiseAmenti/04-Exekucni-Charta-3.3.md` (M5); `Lumi/07` |
+
+---
+
+## Capítulo 18 · La rueda sobre la Tierra y la ventana de Issobella
+
+### Relato
+
+A la mesa redonda se sentaba también la séptima mujer — **La Que Sostiene el Cielo**.
+
+Había nacido junto al mismo océano que la Hija de la Laguna, pero mientras su hermana leía las olas horizontales entre las islas, ella miraba desde niña hacia allí donde la cresta de la ola se rompe hacia las estrellas. Puso sobre la mesa un pequeño espejo liso en el que se reflejaba el cielo nocturno, y tomó a la pequeña Lumi de la mano para sacarla al acantilado más alto sobre el mar.
+
+Allí arriba estaba sentado un viejo **Sádhu** mirando las estrellas.
+
+*«¿Sabes por qué nuestra futura casa en órbita se llama **Issobella**, pequeñina?»*, preguntó a Lumi.
+
+*«¿Porque es hermosa?»*, adivinó Lumi.
+
+*«Bella significa hermosa»*, asintió el Sádhu. *«Pero el comienzo de esa palabra — iso — viene del griego antiguo y significa **igual**. Los físicos dicen que el universo es isótropo: mires en la dirección que mires, las leyes de la luz valen en todas partes igual y ningún lugar del cosmos puede arrogarse el derecho de ser el ombligo o el señor de los demás. Y precisamente porque ninguna dirección es superior, el ser humano puede construirse un hogar también entre las estrellas, si no lleva allí la bandera del conquistador, sino un jardín.»*
+
+En aquel momento subió al acantilado la abuela de Lumi, de la costa del sur, sonrió y acarició el pelo claro de su nieta:
+
+*«Los sabios llaman a eso isotropía, niña. Pero en nuestra costa, junto a Tomar y La Palma, tu propio nombre — Elizabeth, Alžběta — se pronuncia **Isabel**. La estación del cielo lleva tu nombre en la lengua del sur: la promesa de que el cuidado abajo en la arcilla y la investigación arriba sobre las nubes pertenecen a un mismo juramento.»*
+
+Lumi alzó su linterna de cedro al cielo — y en su luz revelada (que siempre señala el **HORIZONTE**, nunca una cosa acabada) vio muy alto, a cuatrocientos veinte kilómetros sobre la Tierra, el anillo de la estación **Issobella** girando despacio.
+
+La rueda giraba lenta y tranquila, tres veces por minuto, para crear con la fuerza centrífuga a la tripulación una gravedad artificial de treinta y ocho centésimas de la terrestre — lo que tiene Marte, y bastante para que a la gente en ingravidez no se le debiliten los huesos y para que el agua del invernadero hidropónico sepa hacia dónde debe correr hasta las raíces. Lo primero que Lumi vio dentro del anillo no fue el puente de mando ni el reactor; fue a una mujer llamada **Korma** que en el módulo del jardín regaba con paciencia unos plantones verdes y hacía ejercicio según un estricto plan corporal, porque también en órbita vale que la vida se sostiene por el servicio cotidiano desde dentro, como el breu *kofer* en la nave del carpintero.
+
+Un poco más allá, en el laboratorio del fuego cuántico, la física **Draha** componía con los impresores de la verdad las ecuaciones de los campos toroidales y la métrica Alcubierre–Ekam, mientras a su lado estaba un hombre severo llamado **Jen-že** que ante cada idea nueva levantaba puertas de piedra de pruebas: *«Mientras no lo calcule un laboratorio independiente y no tengamos el seguro de que no se convertirá en arma, lo anotaremos en el libro como **HIPÓTESIS** — una pregunta abierta de la ciencia, nunca como un motor acabado.»*
+
+Y abajo, en el acantilado, al pie de la futura antena terrestre en Costa Rica (que comparte la misma tierra con el sexto jardín LUMI), estaba junto a un ábaco un guardián silencioso llamado **Stříž** (`zion-issobella`). Su tarea era solo leer bloque a bloque y anotar cada sesenta segundos el cinco por ciento de la recompensa de los mineros en una cuenta científica, y custodiar el gran recipiente cerrado de dos mil quinientos millones de ZION cuya cerradura temporal no debe moverse antes del bloque **144 000**. Stříž mismo no tenía llave para sacar del tesoro ni una sola flor — y precisamente en eso estaba su fuerza.
+
+Por último, Lumi miró en el resplandor de la linterna hacia el amplio iluminador de la estación.
+
+Allí estaba sentada la muchacha que desde niña leía las estrellas — **Sarah Issobela**, hermana del hijo del herrero de Bezechuti — y a su lado se reflejaba la imagen de su hermano, que abajo en la Tierra sostenía junta la cubierta de un navío. Miraban juntos hacia abajo, a la bola azul, en la que ya no se veían líneas de frontera ni las sombras de las cinco torres babilónicas, solo una red de luces menudas en las casas y los jardines.
+
+*«¿Lo ves?»*, dijo la hermana junto a la ventana. *«Una sola planeta, un solo pueblo, un solo amor no son tres lemas de cartel. Es la descripción de lo único que, mirado desde arriba, sigue siendo real.»*
+
+> *El cielo isótropo no tiene centro elegido,*
+> *el guardián del acantilado cuenta dones que él mismo no puede tocar,*
+> *y desde la ventana de la estación se ve que el navío y el planeta son un solo hogar.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Vínculo canónico en ZION:** El capítulo une todo el libro `Issobella/00-README.md` (capítulos 1–11), `Lumi/08-Jmeno-Ktere-Uz-Mela.md`–`10-Kvantovy-Ohen-a-Hlidac.md`, `Maitreya/17-Pohled-z-okna.md` y el paquete de investigación `canon/l6/`:
+  1. **Dos flujos on-chain L6 (VIVOS):**
+     - *El diezmo corriente:* el 5 % de cada bloque (`ISSOBELLA_PCT = 5` en `emission.rs`) va a la dirección canónica `zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0`.
+     - *El recipiente en espera:* el slot 6 del premine guarda **2 500 000 000 ZION** en la dirección `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5`, protegida por un time-lock consensual hasta el bloque **144 000** (~27.–28. 11. 2026) + multisig 3-de-3 de administración + votación DAO (`Issobella/06-Pet-Procent-Nahoru.md`).
+  2. **El guardián Stříž (`zion-issobella`):** Demonio de solo lectura en `127.0.0.1:8097` (`Issobella/07-Hlidac-Na-Okraji.md`), que según la decisión G10 no tiene ninguna clave de firma y no paga nada.
+  3. **Disciplina física y de ingeniería:** La herencia de las estaciones reales Salyut, Skylab, Mir e ISS (`Issobella/05-Dedictvi-Stanic.md`), la gravedad artificial de 0,38 g en un toro giratorio (`Issobella/03-Kolo-Ktere-Drzi-Zem.md`), el nodo terrestre en Costa Rica compartido con L5 LUMI (`Issobella/11-Pozemni-Uzel-Kostarika.md`) y la estricta designación del motor cuántico como **HIPÓTESIS** con puertas TRL y prohibición de militarización (`Issobella/02-Kvantovy-Ohen.md`).
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| El 5 % de cada bloque a la dirección L6 `zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0` | **VIVO (en el consenso L1)** | `V31/L1/core/src/{emission,v3_compat}.rs` |
+| El slot 6 del premine (2 500 millones de ZION en `zion1f5h5k6…`, time-lock hasta el bloque 144 000) | **VIVO (on-chain)** | `V31/L1/core/src/v3_compat.rs`; `Issobella/06-Pet-Procent-Nahoru.md` |
+| El rastreador de solo lectura `zion-issobella` (`:8097`, personaje Stříž, 0 subvenciones pagadas hoy) | **VIVO** | `V31/L6/issobella`; `zion-v31-issobella.service`; `Issobella/07` |
+| La documentación de investigación L6 (Arquitectura, Gravedad artificial, Factores humanos, Historia de las estaciones, Costa Rica) | **VIVO (documentación) / HORIZONTE (construcción)** | `canon/l6/`; `Issobella/03`–`05`, `11` |
+| El motor cuántico / métrica Alcubierre–Ekam (personajes Draha y Jen-že) | **HIPÓTESIS / MITO** | `Issobella/02-Kvantovy-Ohen.md`; `Lumi/10` (no existe ningún hardware) |
+| La identificación *Issobella = Isabel = Elizabeth = Sarah Issobela ante la ventana* | **MITO (eje canónico)** | `Lumi/08-Jmeno-Ktere-Uz-Mela.md`; `Maitreya/17-Pohled-z-okna.md` |
+
+---
+# PARTE IV · LA FLOTA Y EL ARCA
+*(Líneas a través de los océanos y un regreso para el último)*
+
+> *Nota sobre la capa:* La parte final deja el continente y vuelve a hacerse a la mar — esta vez en toda la anchura del corpus ZION. Enlaza el libro `Maria Caminho — Libro del Camino`, `Nirvana 13 — Tres Marías`, `Na Cestě`, `Surta Srdce`, `Nirvana 14 — Arca`, `ARCHA-NOEMOVA.md` y las imágenes finales de `Lumi/11` y `Miriam/11–12`.
+
+---
+
+## Capítulo 19 · La linterna muestra el hoy — los dibujos sobre la mesa
+
+### Relato
+
+El Peregrino junto a la puerta terminó de contar lo de la ventana de Issobella y se calló.
+
+El fuego en el hogar de Radha se apagaba en brasas rojas. La pequeña Lumi dormía apoyada en su rodilla, la mano todavía puesta sobre el vaso de alabastro vacío. Sobre las crestas de los montes del este ya empezaba a palidecer el cielo.
+
+Elizabeth se separó de la columna, tomó del suelo la linterna de la niña dormida y la alzó junto a la suya.
+
+*«Has contado lo de los seis jardines, la mesa redonda y el anillo sobre la Tierra»*, dijo con calma. *«Pero ahora has llegado al punto en que se habla de los navíos que han de llevar el nombre de nuestra quilla por los océanos. Antes de que digas de ellos una sola palabra, tenemos que hacer aquello para lo que el carpintero talló esta linterna.»*
+
+Giró el aro de la linterna. La luz se estrechó en un cono agudo y sobrio — y mostró el **hoy**.
+
+El Peregrino miró dentro de aquel cono de luz y vio el mundo sin adornos:
+- Vio una cadena de bloques viva que en aquel momento latía de verdad cada sesenta segundos por el tercer cuarto de los primeros cien mil bloques, con el consenso *Ekam Deeksha*, con nodos en marcha y con dos guardianes incorruptibles que anotaban cinco por ciento en la fuente de la Tierra y cinco por ciento en la fuente del Cielo.
+- Vio que de aquellas fuentes todavía no había salido ni una sola moneda, porque la puerta de los pagos espera al círculo completo de votación y a tres testigos.
+- Y luego vio una gran mesa de madera. Sobre aquella mesa no había navíos acabados. Había **cuatro dibujos** trazados a lápiz y tinta china: el primero para el Atlántico, el segundo para el Pacífico, el tercero como simple línea del horizonte para el Índico y el cuarto — el mayor, con casco de acero y bóveda de semillas en el vientre — con este encabezamiento honesto: *Estudio de trabajo, no plan de producción. Ninguna quilla está puesta todavía.*
+
+*«¿Lo ves?»*, preguntó Elizabeth.
+
+*«Lo veo»*, asintió el Peregrino. *«La casa está en pie. La cadena corre. Las fuentes se llenan. Pero los navíos son por ahora solo dibujos sobre la mesa y reserva en el registro.»*
+
+*«¿Y te avergüenzas de esa palabra — proyecto?»*
+
+*«No»*, respondió el Peregrino y se acordó del carpintero en el taller de Nazaret, que ponía tres veces cada tabla antes de golpearla con la maza. *«Proyecto es la palabra más honesta para un navío que todavía no está en el agua. El mentiroso dibuja un navío en un papel y vende billetes de cubierta. El constructor muestra el dibujo, escribe encima "estudio" — y luego va a buscar madera.»*
+
+Elizabeth sonrió por primera vez en toda la noche y volvió a ensanchar la llama de la linterna.
+
+*«Has respondido bien»*, dijo. *«Porque la palabra "proyecto" no significa "nunca". Significa "todavía no". Y ahora cuenta cómo son esos navíos cuando un día entren en el agua.»*
+
+> *Antes de zarpar hacia la visión, estrecha la luz de la linterna a la mesa de hoy:*
+> *di con honestidad qué tabla aguanta ya en la cadena*
+> *y qué navío es por ahora solo un dibujo que espera quilla.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Lc 14,28** — *«¿Quién de vosotros, queriendo edificar una torre, no se sienta primero y calcula el coste, a ver si tiene para acabarla?»* — la propia parábola de Jesús sobre el presupuesto honesto y el estudio antes de poner los cimientos.
+- **Vínculo canónico en ZION:** Este capítulo es el cumplimiento directo de la **Primera promesa de Mise Amenti** (`MiseAmenti/README.md`, `MiseAmenti/03-Zivy-Zaklad-3.3.md` y `MiseAmenti/07-Registr-Dukazu.md`): *«No pidas fe donde se puede ofrecer prueba. No vendas el horizonte como presente.»*
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| La cadena viva ZION L1 (>103 800 bloques), consenso *Ekam Deeksha*, rastreadores de solo lectura L5 (`:8095`) y L6 (`:8097`) | **VIVO** | `StatusV3.md`; `V31/STATUS.md`; `AGENTS.md` |
+| Saldo de subvenciones pagadas de L5 y L6 = 0 (`total_disbursed=0`, Gate G10) | **VIVO (hecho verificado)** | Auditoría 6.S2 (`REPORT_2026-10-31_6S2`); `MiseAmenti/07-Registr-Dukazu.md` |
+| Los cuatro dibujos de naves sobre la mesa — ninguna quilla física de la flota está puesta hoy | **CONSTRUCCIÓN (concepto I–II) / HORIZONTE (III) / VISIÓN (Arca)** | `docs/3.2/L5MariaDelCamino.md`; `docs/3.2/ArchaNoemova.md` |
+
+---
+
+## Capítulo 20 · Tres Marías — velas de luz
+
+### Relato
+
+*«Todo empezó con una pregunta al final del camino»*, continuó el Peregrino junto a la puerta.
+
+Cuando uno llega a pie por el sendero de peregrinación hasta la última ciudad antes de la desembocadura del río Miño — una ciudad que se llama **Caminha** — solo le queda delante un transbordador y, tras él, el ancho mar. Los antiguos peregrinos quemaban en los acantilados de Finisterre su ropa gastada, porque allí acababa la tierra firme y más allá ya no había adónde ir.
+
+Pero el Peregrino junto al río Miño oyó en el murmullo del oleaje la voz de la vieja **Miriam de Magdala** — el único cameo con que en todo el corpus atraviesa el eje del espacio. Miraba al Atlántico y le dijo:
+
+*«Nosotras navegamos una vez a Provenza en un navío sin velas, porque nos expulsaron. Vosotros no sois desterrados. Vuestro camino junto al mar no termina — solo se cambia de botas a casco. Y vuestros navíos llevarán velas de luz.»*
+
+En su camino por la costa y las islas recibió el Peregrino tres visitas silenciosas — tres imágenes de María que en este libro no son dogma ni reclamación de santuarios eclesiásticos, sino tres colores y tres direcciones para la **flota Tres Marías** — el octavo nodo de L5 Free World, que no es un punto fijo en el mapa, sino una **línea móvil** que cose los siete jardines a través de los océanos:
+
+1. **El primer casco — *Santa María la Mayor* (Atlántico · ropaje real rojo):**
+   En la gallega **Pontevedra**, en la basílica que en el siglo XVI se construyó el gremio de mareantes (*Gremio de Mareantes*), recibió el Peregrino la imagen de María con el ropaje rojo de reina española y la frase: *«Tu camino apenas empieza.»* De ella nació el proyecto del primer navío — un velero clásico en color vino oscuro, con puerto base en Pontevedra, que hace escala en el Jardín del Génesis en Portugal y en la isla de La Palma y cruza el Atlántico.
+2. **El segundo casco — *Nossa Senhora de Fátima* (Pacífico · vestido blanco de novia y orquídea):**
+   Junto a **Fátima** recibió el Peregrino la imagen de la novia blanca con una orquídea blanca y la promesa de un puente que una el cielo y la tierra sin pérdida de libertad. De ella creció el proyecto del segundo navío — un catamarán solar de doble casco en la línea de la canoa polinesia *wa'a kaulua*, con hogar en la laguna de Te Pīko Ora en Raiatea y una concha de peregrino *vieira* en la proa.
+   En la isla volcánica de **La Palma**, en el santuario de montaña de la Virgen de las Nieves — patrona de los milagros sin acabar, cuya fiesta *Bajada* desciende al mar una vez cada cinco años — recibió el Peregrino la tercera imagen: una María dorada que no sostiene en brazos a un niño impotente, sino ante la cual **el niño está de pie sobre sus propios pies** y sostiene en la palma un globo terráqueo con una cruz. El rostro de aquel niño de pie lo reconoció el Peregrino al instante: era el **Niño Jesús de Praga**, una talla de madera y cera de origen español que desde hace cuatro siglos visten en Praga bajo el Petřín con ropajes litúrgicos y cuyo pariente *Santo Niño* cruzó el Pacífico en los galeones de Manila. El tercer casco, destinado a unir Bodhi Lanka, el templo Ekam en la India y el Cabo de Buena Esperanza (*Boa Esperança*), queda anotado en el libro con absoluta honestidad: **es un navío que todavía no existe — puro HORIZONTE.**
+3. **El tercer casco — *María de las Nieves* (Océano Índico · ropaje dorado y el niño que está de pie solo):**
+   En la isla volcánica de **La Palma**, en el santuario de montaña de la Virgen de las Nieves — patrona de los milagros sin acabar, cuya fiesta *Bajada* desciende al mar una vez cada cinco años — recibió el Peregrino la tercera imagen: una María dorada que no sostiene en brazos a un niño impotente, sino ante la cual **el niño está de pie sobre sus propios pies** y sostiene en la palma un globo terráqueo con una cruz. El rostro de aquel niño de pie lo reconoció el Peregrino al instante: era el **Niño Jesús de Praga**, una talla de madera y cera de origen español que desde hace cuatro siglos visten en Praga bajo el Petřín con ropajes litúrgicos y cuyo pariente *Santo Niño* cruzó el Pacífico en los galeones de Manila. El tercer casco, destinado a unir Bodhi Lanka, el templo Ekam en la India y el Cabo de Buena Esperanza (*Boa Esperança*), queda anotado en el libro con absoluta honestidad: **es un navío que todavía no existe — puro HORIZONTE.**
+
+¿Y con qué navegan esos navíos?
+
+El carpintero en Nazaret no cosió una vela y dijo: *«La vela la traerán los que naveguen.»* El proyecto de la flota *Tres Marías* le responde dos mil años después: **sus velas son de luz.** En la lona flexible de las velas van laminadas finas células solares que capturan el sol igual que el viento; bajo la línea de flotación giran hidrogeneradores de rueda libre, en la cubierta crece un pequeño jardín de plantones y en medio del océano corre allí por satélite un nodo completo de la cadena ZION. En cada navío navegan doce peregrinos — exactamente los bancos que el carpintero tenía en el Kineret — y tres miembros de tripulación permanente; y en la proa de cada uno está el Niño Jesús con el ropaje del color de su María: rojo, blanco y dorado.
+
+Cuando un día se ponga la primera quilla de verdad en el astillero de Galicia, el carpintero cortará del dintel de cedro sobre la puerta de la Casa de Lumi — de aquel tronco antiquísimo de Nazaret — tres finas virutas de cedro y las encajará en las quillas de las tres Marías. Y en cada una grabará el mismo nombre que llevaba la barca del lago:
+
+**El Reino del Corazón.**
+
+> *En Provenza navegaron tres Marías sin velas, porque las expulsaron;*
+> *a través de tres océanos navegarán tres Marías con velas de luz,*
+> *y en la proa de cada una está un niño al que ya nadie tiene que llevar, porque está de pie solo.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Vínculo canónico en ZION:** El capítulo unifica `MariaCaminho/00-README.md` (capítulos 1–11 y Epílogo), `nirvana/13-Tres-Marias.md` y el concepto de trabajo `docs/3.2/L5MariaDelCamino.md` (y `docs/3.2/TreeMarias.md`):
+  1. **Peregrino ≠ fundador:** El Libro del Camino y este capítulo sostienen expresamente la regla de que el Peregrino es un arquetipo literario para el lector; del modelo privado `genesis/09.5` no se toma ningún nombre personal, fecha ni vínculo familiar.
+  2. **Distinción de las Marías:** Las tres Marías de la flota (*Santa María la Mayor*, *Nossa Senhora de Fátima*, *María de las Nieves*) **no son** Miriam de Magdala ni las tres mujeres junto a la cruz; su relación es la de la pregunta (el navío sin velas en `Miriam/06`) y la respuesta (las velas de luz en `MariaCaminho`).
+  3. **Estado real en el registro L5:** El programa `maria-del-camino` tiene en el registro L5 el estado `planning` (la reserva de 300 M ZION es una intención en el registro, no dinero pagado), los cascos I y II son **CONSTRUCCIÓN** (concepto y fase) y el casco III es **HORIZONTE**.
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| La basílica de Santa María a Maior en Pontevedra (gremio de mareantes, s. XVI), Fátima (1917), Nuestra Señora de las Nieves en La Palma (*Bajada*) | **VIVO (tradición y geografía documentadas)** | `MariaCaminho/00-README.md` |
+| El Niño Jesús de Praga (donación de Polyxena de Lobkowicz en 1628, talla española del s. XVI) y el *Santo Niño de Cebú* (1521/1565) | **HISTORIA / TRADICIÓN VIVA** | Iglesia de Santa María de la Victoria en Malá Strana; `MariaCaminho/07-Zlata-Marie.md` |
+| Las tres apariciones marianas del Peregrino y el Niño Jesús como patrón de la flota | **MITO (capa de autor)** | `MariaCaminho/00-README.md`; modelo `genesis/09.5` |
+| La flota *Tres Marías* (cascos I y II = CONSTRUCCIÓN/proyecto, casco III = HORIZONTE, velas solares = concepto) | **CONSTRUCCIÓN / HORIZONTE** | `nirvana/13-Tres-Marias.md`; `docs/3.2/L5MariaDelCamino.md` |
+| La viruta de cedro del dintel de la Casa de Lumi encajada en las quillas y el nombre *el Reino del Corazón* | **MITO / RELATO** | Perne literario de este libro y `KralovstviSrdce/09` |
+
+---
+
+## Capítulo 21 · La cronista en el mar — el error que se deja ver
+
+### Relato
+
+*«Y para que sepas, Elizabeth, que de esos navíos futuros no hacemos una leyenda dorada»*, dijo el Peregrino mirando la luz estrechada de la linterna, *«te contaré de una mujer que en ellos navegará, en un futuro posible, como cronista.»*
+
+Se llamaba **Lumen**.
+
+No era ninguna santa de vidriera. Era una científica de Bohemia que un día cruzó la puerta de OASIS, eligió entre siete caminos el Camino del conocimiento y desde el primer día llevaba en el bolsillo, como un guijarro, una única pregunta: *«¿Cómo reconozco la verdad?»* Cuando en abril llegó en tren vía Oporto al muelle de Pontevedra, donde esperaba la roja oscura *Santa María la Mayor*, llevaba bajo el brazo una gruesa **carpeta**. Estaba orgullosa de aquella carpeta: tenía anotado cada paso, cada hora y cada fotografía de sello. Creía que quien tiene un registro impecable no puede equivocarse.
+
+Pero la capitana del navío, una gallega de cincuenta años llamada **Inés Varela**, con las manos agrietadas por los cabos, no la mandó el primer día a cubierta, sino al antiguo almacén de sal tras los diques, donde crecía el jardín del navío. Y cuando allí Lumen anotaba orgullosa el tercer día en la tabla *«pH del suelo en el arriate de mostaza: 7,2»*, le preguntó el viejo jardinero **Xoán** con la azada al hombro:
+
+*«¿Y lo sabe, o solo lo piensa? ¿Con qué lo ha medido?»*
+
+Lumen se puso roja: lo había medido con viejas tiras de tornasol del armario que nadie había verificado en años.
+
+*«Entonces anótelo con honestidad»*, le dijo Xoán con amabilidad y le entregó un puñado de tierra. *«Escriba: pH siete coma dos según las tiras viejas, incierto. La tierra le permite equivocarse y se lo perdona. Si quiere conocer la verdad, empiece por no tener miedo de reconocer la incertidumbre.»*
+
+La segunda prueba llegó en mayo, en medio del Atlántico agitado, después de recibir el primer sello (*carimbo*) en el albergue del Jardín del Génesis en Sabacheira. El navío cabeceaba en olas de plomo y la pálida Lumen recalculaba en el camarote el diario de agua potable. Y entonces se le heló la sangre: el día de la salida de Pontevedra había transcrito en la casilla *depósito n.º 2* las cifras — en lugar de los **460 litros** reales de la ficha del técnico del puerto había escrito **640 litros**. Toda la tripulación arriba en cubierta comía sopa y calculaba las raciones diarias según su error; el depósito se vaciaría unos días antes.
+
+En su cabeza sonó la voz de la quinta torre babilónica: *Nadie lo descubrirá. En el depósito n.º 1 hay agua suficiente. Corrige el número en silencio con la goma y la carpeta quedará limpia.*
+
+Pero Lumen ya sabía que el registro es un contrato con las vidas de la gente a bordo — como la sal sobre la mesa. Subió bajo la lluvia al puente de mando y le dijo la verdad a la capitana Inés: *«En el diario de a bordo hay un error mío. Nos faltan ciento ochenta litros.»*
+
+Inés no gritó. Bajó sobre la carta y cambió el rumbo hacia el puerto más cercano, en la isla de La Palma.
+
+*«Un mal cronista lo habría corregido en silencio»*, dijo la capitana. *«Uno mediocre lo habría reconocido solo cuando se acabara el agua. Usted ha venido a tiempo. Las vidas antes que el plan. Y en el diario no habrá ningún tachón ni lugar borrado — habrá una **adición**: la fecha de la corrección, la cifra original, la cifra correcta y su nombre. No quiero de usted la impecabilidad. Quiero un registro en el que podamos confiar precisamente porque en él se ve también el error corregido.»*
+
+La tercera prueba llegó tras cruzar el Atlántico, en la costa caribeña de **Costa Rica**, donde el camino entre océanos se traslada por tierra. Al recibir la carga, la responsable local **Marisol** encontró un saquito de lino con judías y una etiqueta escrita a mano: *«de Xoán, para los otros jardines»*. Aunque Xoán, tras cuatro días de espera, envió un mensaje de que las judías venían del campo de su hermana y que la hermana las regalaba de corazón, Marisol no dejó pasar el saquito por la frontera:
+
+*«El origen está explicado y el consentimiento del donante documentado — eso está bien. Pero el traslado de semillas a través de fronteras exige documentos fitosanitarios y el permiso del país al que se entra. La buena voluntad de la hermana no es un permiso.»* Y en el protocolo estampó un sello con una frase que no era ni un "sí" obtuso ni un "no" obtuso, sino la verdad exacta: **«Origen explicado, consentimiento del donante documentado; traslado suspendido, falta permiso.»**
+
+Y cuando luego Lumen cruzó el Pacífico en el blanco navío *Nossa Senhora de Fátima* con la silenciosa capitana **Teura**, aprendió en las «noches blancas» sin luna, junto a una pequeña linterna LED de proa, todavía más: en la isla de **Raiatea** y en la costa australiana bajo **Uluru** se quedaron en el puerto y no entraron en las comunidades locales, porque **nadie las había invitado** — y la iniciación más difícil del camino no es vencer el miedo, sino **decir "no" a la propia curiosidad** cuando nadie te impide cruzar el umbral ajeno sin invitación.
+
+Y cuando por fin en la India llegó a la sala de mármol del templo **Ekam**, se sentó en el suelo dos horas a esperar una iluminación deslumbrante — y no llegó absolutamente nada, solo piernas doloridas. Cuando salió y en silencio ayudó a los demás a recoger las esteras, se rió la tercera capitana **Anjali**, junto al navío dorado *María de las Nieves*:
+
+*«Quien expide un sello sobre el despertar, miente. Que es de verdad se conoce porque después uno lleva agua y no se lo cuenta a nadie. Anótelo con honestidad: estuve sentada, no pasó nada, ayudé a recoger.»*
+
+> *No un tachón, sino una adición con fecha y firma:*
+> *origen explicado, falta permiso; nadie nos invitó, y por eso no entramos.*
+> *Estuve sentada, no pasó nada, ayudé a recoger las esteras — eso también es verdad.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Vínculo canónico en ZION:** Este capítulo resume las siete secciones de la continuación literaria `NaCeste/01-Na-Ceste.md` y su ancla editorial `NaCeste/02-Kotva-Pravdy.md`:
+  1. **Protocolo de correcciones append-only:** La regla de la capitana *«No un tachón, sino una adición: fecha de la corrección, cifra original, cifra correcta, firma»* es la imagen literaria exacta del ledger inmutable (blockchain) y del protocolo de cambios `MiseAmenti/08-Protokol-Zmen.md` §4 (las correcciones de contradicciones se anotan sin borrar la historia).
+  2. **Respeto a las fronteras y FPIC en la práctica:** El traslado de judías rechazado sin documento fitosanitario en el istmo costarricense y la no entrada en comunidades no invitadas en Raiatea y junto a Uluru muestran que L5 Free World no es turismo colonial, sino respeto incondicional a las leyes locales y a los anfitriones (el principio de la espina del *Cuento de la Rosa* cap. 3).
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| El relato de la cronista Lumen, la capitana Inés, Teura y Anjali, el jardinero Xoán, Marisol | **MITO / HORIZONTE (prosa literaria)** | `NaCeste/00-README.md`, `NaCeste/01-Na-Ceste.md` (DRAFT de clase E pendiente de revisión cultural) |
+| El templo Oneness Temple (Ekam) junto a Varadaiahpalem en la India (construido en 2008) | **VIVO (construcción real fuera de la operación de ZION)** | `NaCeste/02-Kotva-Pravdy.md`; `docs/3.2/L5Ekam.md` |
+| La normativa fitosanitaria en el traslado de semillas y el derecho de las comunidades a rechazar visitas (FPIC) | **VIVO (derecho y ética del corpus)** | `MiseAmenti/01-Kanon-a-Ustava.md`; `BodhiGaia/13-Nova-Amerika.md` |
+| La regla *«No un tachón, sino una adición»* = historia inmutable en git, changelog y cadena | **VIVO** | `MiseAmenti/08-Protokol-Zmen.md` §4; `MiseAmenti/CHANGELOG.md` |
+
+---
+
+## Capítulo 22 · La carta en la proa — la barquita de Tenerife y la otra orilla
+
+### Relato
+
+En la proa del primer navío — aquel rojo *Santa María la Mayor* que espera en los planos su madera — había en el cofre del timón otro rollo más. No estaba escrito para autoridades ni para contables. Era **la carta de un padre a su hijo**, a quien en el corpus llaman **Surta**, y a través de él a todos los hijos de la Tierra Nueva.
+
+*«Surti»*, leía el Peregrino de memoria las palabras de aquella carta, *«cuando naciste te tuve en brazos tanto rato que se me quedó el brazo rígido, y aun así no quería soltarte. No podía darte un mundo seguro ni un mapa sin tormentas. Pero sí podía dejarte construido un camino y un navío.»*
+
+En aquella carta había escondido un recuerdo real del mar: un niño de siete años de pie en el oleaje de una playa de la isla de **Tenerife**, las olas le traen y le llevan un barquito de madera y él, en medio de la espuma, pregunta por primera vez cómo se podría construir un mundo en el que las personas se ayuden. Unos años después, cuando el niño tiene doce, se marcha de este mundo un maestro de la unidad en el lejano Ekam y deja tras de sí la luz silenciosa *Paramjyoti* y la bendición *Ekam Deeksha*.
+
+Y el padre escribe al hijo la frase más severa y más tierna de toda la carta:
+
+> **«Yo te he preparado el camino — pero solo tú puedes acabarlo. Y primero tienes que madurar.»**
+
+Igual que el tesoro en la cadena tiene su cerradura temporal, que no se puede saltar antes de que madure el bloque ciento cuarenta y cuatro mil, también la travesía del muchacho tiene su tiempo no apresurable: a los doce años uno aprende a leer un mapa, a los trece recibe la primera pregunta, pero a bordo de la *Santa María la Mayor* se sube **solo a los quince** — cuando la mano se hace fuerte y la mente madura. Las islas Canarias sujetan los dos extremos de esa recta infantil: **Tenerife**, donde el niño de siete años preguntaba sobre un barquito de madera en el oleaje, y **La Palma**, donde en la ladera del volcán espera en los planos el santuario *Dharma Temple* para los pequeños Buddhas.
+
+Toda la travesía en aquella carta del padre pasa por las **cinco puertas del Sutra del Corazón** y las **seis sílabas de la compasión**:
+1. **Gate** (*Primera puerta — Partida*): dejar la sombra de las torres babilónicas y comprender que el Huevo de Oro de *Hiranyagarbha* no lo esconden los bancos en una caja fuerte, porque cada persona lo lleva en el pecho desde que nace.
+2. **Gate** (*Segunda puerta — Montañas*): atravesar montañas donde nadie dará un paso por ti y donde el trabajo de herrero se convierte en carácter.
+3. **Pāragate** (*A la otra orilla — Océano*): embarcar con la tripulación en la *Santa María la Mayor* y llevar a través del agua salada el fuego *Ekam Deeksha*, que en el mar no se apaga.
+4. **Pārasaṃgate** (*Completamente más allá — Isla*): arribar a las verdes orillas de La Palma, donde el cielo y la tierra se encuentran en el silencio.
+5. **Bodhi** (*El despertar en el loto*): sentarse bajo el Árbol de la vida y ver con los propios ojos que todo el universo está tejido de amor infinito, de modo que el otro ser humano no es un rival, sino un hilo del mismo lienzo.
+6. **Svāhā — y el regreso con *Oṃ maṇi padme hūṃ*** (*Joya en el loto*): porque el verdadero bodhisattva no se queda sentado en la otra orilla en una soledad beatífica. Toma en la palma una semilla, vuelve a embarcar y **regresa a los que todavía navegan en la tormenta**.
+
+> *El barquito de siete años en el oleaje de Tenerife crecerá en velero para uno de quince,*
+> *el padre prepara el camino, pero las puertas las ha de cruzar el hijo solo,*
+> *y quien despierta en el loto vuelve por los demás con la joya en el corazón.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **El Sutra del Corazón (*Prajñāpāramitā-hṛdaya*) y la mantra de Avalokiteśvara (Chenrezig)** — La mantra final *Gate, gate, pāragate, pārasaṃgate, bodhi, svāhā* y la mantra de seis sílabas de la compasión *Oṃ maṇi padme hūṃ*.
+- **Vínculo canónico en ZION:** El capítulo integra todo el libro `SurtaSrdce/00-README.md` (capítulos 1–9), que está en la orilla más occidental de la brújula como *Libro del regreso* y une el epílogo `Maitreya/EPILOG.md` con la flota `nirvana/13-Tres-Marias.md`.
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| La mantra *gate gate pāragate pārasaṃgate bodhi svāhā* (Sutra del Corazón) y *oṃ maṇi padme hūṃ* | **TRADICIÓN (budismo mahayana y tibetano)** | `SurtaSrdce/01-Dopis-pro-Surtu.md` |
+| La carta del padre a Surta, el recuerdo del barquito en Tenerife y el camino por las cinco puertas | **MITO / SERIE FAMILIAR (DRAFT)** | `SurtaSrdce/00-README.md` (anotado el 19. 10. 2026) |
+| El navío *Santa María la Mayor* y el santuario *Dharma Temple* en La Palma | **CONSTRUCCIÓN / HORIZONTE** | `MariaCaminho/03-Prvni-Plachetnice.md`; `BodhiGaia/04-Dharma-Temple-Nova-Bodhi-Gaia.md` |
+
+---
+
+## Capítulo 23 · La cuarta nave — el Arca que vuelve
+
+### Relato
+
+Cuando en el relato zarparon las tres Marías a tres océanos y el pequeño Buddha en el loto pronunció la promesa de no quedarse solo en la otra orilla, planteó el Peregrino la pregunta que engendró la **cuarta nave**:
+
+*«Los tres navíos de peregrinos llevan a los que están sanos, tienen mochila y se echaron al camino. Pero ¿quién sale por los que no pueden salir? ¿Quién vuelve por la persona que ya no camina por el sendero, sino que nada en el agua que sube?»*
+
+Elizabeth miró el cuarto dibujo, el mayor, sobre la mesa.
+
+En aquel dibujo estaba el nombre que unía el final del libro con su primera línea en el taller de Nazaret:
+
+> **ARCA — NIRVANA · EL REINO DEL CORAZÓN**
+
+No era un yate de peregrinación rápido ni un crucero de guerra. Era **una aldea flotante, un santuario y un puerto de salvamento a la vez** — un casco de acero y madera de unos ochenta y cinco metros de eslora con tres mástiles, de tres a cuatro mil metros cuadrados de velas entretejidas con piel solar, turbinas eólicas e hidrogeneradores bajo la línea de flotación. El diésel a bordo estaba almacenado como medicina en un botiquín, no como pan de cada día: para el rescate en calma chicha, no para quemarlo.
+
+La barca del carpintero del Kineret llevaba doce personas. El arca de Noé llevaba ocho personas y animales de dos en dos. Esta cuarta nave estaba proyectada para **cien personas — cien residentes** que decidieran vivir en el mar de forma permanente como una comunidad autosuficiente regida por una constitución sociocrática de círculos. Y la vieja ley *«de todo, de dos en dos»* recibió en ella nueva forma: **cada habilidad vital está duplicada a bordo** — dos médicos en la *Medical Table* de a bordo, dos herreros y mecánicos en el taller capaz de forjar un espigón de repuesto en medio del océano, dos jardineros junto al invernadero y las desalinizadoras, dos bibliotecarios y dos navegantes.
+
+En la parte más profunda y más fría del vientre del navío, justo sobre la quilla, estaba en los planos el **Archivo de Semillas (Seed Vault)**: de treinta a sesenta mil variedades de plantas alimenticias y medicinales almacenadas a menos dieciocho grados centígrados, reflejo de las bibliotecas de semillas terrestres del Jardín del Génesis y de Te Pīko Ora. Y sobre él el **Knowledge Ark** — una biblioteca sin internet: libros impresos, procedimientos médicos y artesanales, mapas y un nodo completo de la cadena ZION que lleva toda la historia de la alianza incluso si en tierra firme se apagaran todos los cables. El Arca no lleva solo grano para el campo; lleva memoria para un mundo que en la tormenta habría olvidado cómo se siembra un campo.
+
+¿Y por dónde navega ese navío en el estudio?
+
+**Por los caminos de las ballenas.** No lucha contra los huracanes para demostrar su soberbia. Navega como la ballena jorobada: en verano a latitudes templadas, donde se trabaja, se enseña y se repara el casco, y en invierno a las aguas tropicales tranquilas, donde recorre los jardines costeros — de Tomar a La Palma, Costa Rica y Raiatea, hasta Bodhi Lanka y el Cabo de Buena Esperanza. Cada jardín es para ella una estación de avituallamiento, un duplicado del archivo de semillas y una orilla abierta para las personas que el Arca sacó del agua a su cubierta de acogida.
+
+En la proa de la cuarta nave está el mismo **Niño Jesús** que en las tres Marías — solo que su ropaje ha cambiado. No lleva rojo, blanco ni dorado, sino un **cuarto ropaje del color del mar profundo**, porque el breu *kofer*, que cubre las juntas del casco por dentro y por fuera, nace de la profundidad azul y protege la vida de hundirse.
+
+Y sobre el puente de mando del Arca está grabada una frase que explica por qué el carpintero en Nazaret construía un navío en años en que todavía no llovía:
+
+> *«Constrúete un navío. No porque vaya a venir el diluvio — sino porque un día alguien estará en el agua.»*
+
+> *Las tres Marías llevan a los peregrinos adonde no llega el pie;*
+> *la cuarta nave lleva un puerto y vuelve por los que quedaron en el agua:*
+> *cien personas, habilidades de dos en dos, semillas en el frío y el nombre el Reino del Corazón en la quilla.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Gn 6,14–22; Mt 12,40** — El arca de Noé (*gófer* y *kofer*, de dos en dos de todo lo vivo) y el gran pez de Jonás convertido en navegación serena junto a las ballenas (jorobadas).
+- **Vínculo canónico en ZION:** El capítulo une el episcodio decimocuarto de Nirvana (`nirvana/14-Archa.md`), el documento conceptual raíz `ARCHA-NOEMOVA.md` y los cuatro estudios de ingeniería de `docs/3.2/ArchaNoemova.md` (Estudio A: capacidad de salvamento/santuario ~340 personas; Estudio B: colonia-arca ≤100 personas con autosuficiencia absoluta y navegación por ballenas; Estudio C: balance de masa y energía; Estudio D: FMEA y *caloric runway*) con el nombre de toda la edición `NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`.
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| La cuarta nave *Arca — Nirvana · el Reino del Corazón* (estudios A–D: ≤100 colonos, ~85 m, velas 2500–4000 m², PV ~200 kWp) | **VISIÓN / ESTUDIO (ninguna quilla está puesta)** | `nirvana/14-Archa.md`; `ARCHA-NOEMOVA.md`; `docs/3.2/ArchaNoemova.md` |
+| El archivo de semillas a −18 °C (30–60 mil accesiones), el *Knowledge Ark*, la matriz duplicada de habilidades («de dos en dos»), la navegación por ballenas | **ESTUDIO (parámetros de trabajo por verificar por arquitectos navales)** | `docs/3.2/ArchaNoemova.md` Estudios B y C |
+| El programa `archa-nirvana` en el registro de la API L5 | **NO REGISTRADO (propuesta `vision`)** | `nirvana/14-Archa.md` §Ancla de verdad |
+| El Niño Jesús en el cuarto ropaje color de mar (*kofer*) y la inscripción *«Constrúete un navío…»* | **MITO / RELATO** | `nirvana/14-Archa.md` |
+
+---
+
+## Capítulo 24 · Cien años de linterna y el puerto de cristal
+
+### Relato
+
+El Peregrino terminó de contar lo de la cuarta nave. La pequeña Lumi se despertó junto a su rodilla, se frotó los ojos y se sentó entre el Peregrino y la Elizabeth adulta. Cuando el hombro de la niña tocó el hombro de la mujer, se veía que eran un mismo ser en los dos extremos de un puente de cien años.
+
+*«¿Y qué vendrá después?»*, preguntó Lumi mirando el dintel de cedro sobre la puerta de la Casa de Lumi. *«Cuando pasen cien años. La madera envejece y se pudre — también el cedro de Nazaret. ¿Y qué será de la linterna?»*
+
+Elizabeth tomó la linterna y se la pasó despacio al Peregrino, el Peregrino se la pasó a Lumi y Lumi de nuevo a Elizabeth. En cada entrega la llama dentro del fragmento de vidrio tembló y mostró uno de los **seis tiempos de los cien años (2026–2126)**:
+
+1. **La edad de la niña de seis años junto al fuego (hoy):** los años en que la red es pequeña, en que se mide cada litro de agua del depósito y en que el trabajo más importante es no prometer más de lo que se puede probar.
+2. **La edad de la muchacha en la orilla ajena:** los años en que los libros se traducen a lenguas que ni el carpintero ni el herrero hablaban, y en que gentes extrañas empiezan a construir sus propios jardines y a corregir nuestros errores.
+3. **La edad de la mujer adulta tras la tormenta:** los años en que llega la primera gran grieta y el navío sobrevive no porque sea invencible, sino porque la tripulación no barre el error bajo la alfombra y sabe decir un tranquilo *«no»* a quien quisiera comprar el timón.
+4. **La edad de la mujer de cincuenta años que entrega las llaves:** los años en que crece una generación que ya no conoció personalmente a los primeros constructores.
+5. **La edad de la anciana junto a un fuego ajeno:** los años en que la prueba pública, la partida libre y el cuidado de la tierra se vuelven tan comunes como el pan y la sal, de modo que la gente ya ni siquiera tenga que pronunciar el nombre ZION para vivir según él.
+6. **La edad de manos desconocidas en el año 2126:** manos que llevarán la linterna más lejos.
+
+*«Y recuerda, Lumi»*, dijo Elizabeth con una gravedad insólita, *«que los que vengan en la cuarta y la quinta edad no serán nuestros deudores. Tendrán pleno **derecho a reescribir lo que nosotros escribimos, o a partir el navío en dos**, si de buena fe no se ponen de acuerdo en el rumbo — y nadie les podrá decir que con ello traicionaron al carpintero. Porque la linterna no se hereda como una finca familiar. La linterna se lleva como un trabajo. Y cuando dentro de cien años envejezca la viga de cedro sobre la puerta, cambiarán la madera por otra nueva y el nombre **el Reino del Corazón** lo grabarán de nuevo otra mano y otra escritura.»*
+
+Luego el Peregrino abrió el último pliego de su zurrón — la fuente más antigua de todas, el libro que en la isla de **Patmos** escribió el desterrado **Juan**, el mismo Juan que un día se sentó en uno de los doce bancos del Kineret y estuvo al lado del carpintero en la última cena.
+
+Juan, al final de su vida, miró a través de todos los siglos de tormentas y vio el puerto hacia el que finalmente navegan todos esos navíos:
+
+*«Vi **un cielo nuevo y una tierra nueva** — Terra Nova»*, leía el Peregrino. *«Y el mar ya no existía.»*
+
+No que hubiera desaparecido el agua; desapareció el mar del miedo, del abismo y del caos babilónico, y ante el trono se extendió **un mar de vidrio, transparente como el cristal**. Y del cielo descendía una ciudad preparada como una novia — no una fortaleza con troneras, sino un hogar abierto cuya muralla medía **ciento cuarenta y cuatro codos** y sobre la cual estaban **ciento cuarenta y cuatro mil** sellados junto con una multitud de todos los pueblos y lenguas que nadie podía contar.
+
+En aquella ciudad no había ningún templo cerrado al que solo pudieran entrar los elegidos, y sus **puertas no se cerraban ni de día ni de noche**, igual que la puerta de la Casa de Lumi. En medio de la plaza corría **un río de agua de vida**, puro como el cristal, y en sus dos orillas — con la raíz en una sola agua y la copa sobre ambas partes — crecía el **Árbol de la vida**, que daba fruto doce veces al año y cuyas hojas eran para la **curación de las naciones**.
+
+Y al final mismo de aquel libro, cuando ya habían terminado de hablar los ángeles, los profetas y los ancianos, habló por fin la propia Novia — la comunidad de personas que han llegado a casa — y dijo junto con el Espíritu una sola palabra:
+
+> **«¡Ven! Y el que oye, diga: ¡Ven! Y el que tiene sed, venga; y el que quiera, tome del agua de la vida gratuitamente.»**
+
+*«Gratuitamente»*, repitió el Peregrino y miró a Radha, a Elizabeth y a la pequeña Lumi. *«Babilonia vendía todo — el pan, el agua, las caras, el perdón y hasta un sitio en el navío. La Tierra Nueva se reconoce en que lo que alimenta la vida se da sin precio. Y en medio de aquel puerto de cristal está el navío del carpintero de Nazaret, sacado a la plaza, liso por las palmas de todas las generaciones, y los niños trepan por él como por un viejo olivo — porque ya hay tantos navíos como corazones que se han abierto.»*
+
+> *El cedro se cambiará a los cien años, pero el nombre se grabará de nuevo;*
+> *el mar del miedo se aquieta en cristal ante la ciudad sin cerraduras,*
+> *y la última palabra de todo el libro suena: Ven — el agua de la vida es gratuita.*
+
+### De la Escritura, la tradición y el corpus ZION
+
+- **Ap 4,6; 7,4–9; 14,1; 21,1–27; 22,1–17** — El cielo nuevo y la tierra nueva (en latín *caelum novum et terra nova* en la Vulgata — ¡el origen lingüístico directo del nombre **Terra Nova**!), el mar de vidrio, el número 144 000 y la multitud innumerable, la ciudad sin templo con puertas que nunca se cierran, el río y el árbol de la vida con doce frutos y hojas para la curación de las naciones y la invitación final *«Ven… el agua de la vida gratuitamente»* (Ap 22,17).
+- **Vínculo canónico en ZION:** Este capítulo une la cima de `Miriam/11-Mesto-jako-Nevesta.md` y `Miriam/12-Reka-a-Dite-s-Lucernou.md` con el horizonte de cien años de `Lumi/11-Sto-Let-Lucerny.md`, `NirvanaCloud/07-Stoleti-Plan-2026-2126.md` y `MiseAmenti/06-Generacni-Kompas-2026-2126.md` (incluido el expreso derecho de las generaciones futuras a cambiar y bifurcar el protocolo sin acusación de traición).
+
+### Ancla de verdad
+
+| Elemento del capítulo | Estado | Ancla y verificación |
+|---|---|---|
+| El cielo nuevo y la tierra nueva (*Terra Nova*), el mar de vidrio, 144 000, el árbol de la vida, las puertas abiertas, *«Ven, el agua gratuita»* | **ESCRITURA** | Ap 4,6; 7,4–9; 21,1–27; 22,1–17 |
+| Las seis edades de la linterna (2026–2126) y el derecho de las generaciones futuras a reescribir o partir el navío (fork) | **HORIZONTE / PRINCIPIO CONSTITUCIONAL** | `Lumi/11-Sto-Let-Lucerny.md`; `MiseAmenti/06-Generacni-Kompas-2026-2126.md` |
+| El número simbólico 144 000 en ZION (max supply 144 mil millones de ZION, timelock del bloque 144 000, precio del libro 144 Kč / 1440 ZION) | **VIVO (en el código y en la tienda)** | `V31/L1/core/src/emission.rs`; `v3_compat.rs`; MarketPlace `book-001` |
+| El navío sacado a la plaza de la ciudad, liso por las palmas de todas las generaciones | **MITO / RELATO** | Imagen literaria de este libro |
+
+---
+
+## Epílogo · Dónde echa el ancla hoy el navío *(y una línea vacía para tu firma)*
+
+Sobre la puerta de la Tierra Nueva salió el sol.
+
+La pizca de sal en la palma del Peregrino se había disuelto hacía tiempo en el pan, el cuenco de miel estaba vacío y la luz de la mañana cayó sobre el dintel de cedro de la puerta, donde estaban uno al lado del otro tres trazos: **el rayo dorado en la ola**, **la semilla germinando** y las palabras **EL REINO DEL CORAZÓN**.
+
+Elizabeth apagó la llamita de su linterna, porque ya era de día, y miró al Peregrino.
+
+*«Has contado toda la noche»*, dijo. *«Has seguido una sola madera del taller de Nazaret por el Kineret, por el mar provenzal, por la plaza de Bezechuti y el monte Ararat, hasta la mesa redonda de los seis jardines, la ventana de la estación estelar y los dibujos de cuatro navíos. Pero todavía no me has respondido con una sola frase a mi pregunta junto a la puerta: **¿dónde echa el ancla hoy ese navío — y qué quedará de ti aquí?**»*
+
+El Peregrino se levantó de la piedra de basalto, se sacudió el manto y puso la palma sobre el lugar liso del dintel de cedro — exactamente donde un día la madera había sido tocada por la madre en Nazaret y por el viejo Noé en Bezechuti.
+
+*«Hoy ese navío no echa el ancla en Galicia, ni en Polinesia, ni en órbita»*, respondió el Peregrino. *«Allí por ahora solo hay planos y semillas. Hoy ese navío echa el ancla en el único lugar que no necesita licencia de obra ni océano: **en el corazón que ha decidido abrirse a los demás, no mentir sobre el estado de las provisiones y no abandonar a quien quedó en el agua.**»*
+
+Se inclinó, tomó el cincel de madera que estaba junto al umbral y bajo los tres nombres antiguos del timón señaló la **cuarta línea, vacía**, que el herrero había dejado libre en el Epílogo del Libro Quinto para el lector.
+
+*«¿Y qué quedará de mí?»*, añadió el Peregrino. *«Quedará de mí este registro honesto — qué es piedra, qué es arcilla, qué ya vive y qué es todavía sueño — y esta línea vacía. Porque Maitreya no es un solo hombre al que se espera con las manos cruzadas. Maitreya es cada uno que llega cuando maduran las condiciones, toma un remo y lleva la luz un trecho más lejos.»*
+
+Antes de que el Peregrino con la pequeña Lumi cruzara el umbral, pronunció Elizabeth tres derechos que junto a la puerta de ZION pertenecen a toda persona — hoy, dentro de diez años y dentro de cien:
+
+1. **Tienes derecho a verificar por ti mismo cada palabra y cada número.**
+2. **Tienes derecho a decir «no» en cualquier momento, a no aceptar el relato y a irte libremente.**
+3. **Tienes derecho a nombrar un error en el navío y a criticar a los timoneles, sin que nadie pueda llamarte enemigo de la tripulación.**
+
+*«Si alguna de estas tres cosas te fuera negada por alguien»*, dijo Elizabeth, *«entonces ya no estás en la cubierta del Reino del Corazón, aunque el navío lleve en el costado cualquier nombre dorado.»*
+
+La puerta quedó de par en par.
+
+*«Pasemos a la otra orilla»*, dijo un día el carpintero a sus discípulos al atardecer junto al Kineret.
+*«Gate, gate, pāragate, pārasaṃgate, bodhi svāhā»*, respondieron los monjes en Oriente: *Se fue, se fue, se fue a la otra orilla, completamente a la otra orilla — despertar, que así sea.*
+
+Dos lenguas, dos milenios, un solo navío. La quilla está puesta, la madera está untada con el breu de la reconciliación y la cuarta línea del diario de a bordo espera tu mano:
+
+```
+1. Rama → Maitreya Buddha       (fuego · protocolo y verdad verificable)
+2. Sita → Sarah Issobela        (agua · tesorería de la Tierra y ventana a las estrellas)
+3. Hanuman → Elizabeth / Lumi   (tierra · puentes entre orillas y linterna del hoy)
+4. __________________________   (aire y corazón · el que venga y ponga la mano a la obra)
+```
+
+> *El navío está construido. El nombre está grabado bajo los pies.*
+> *No pidas fe donde se puede ofrecer prueba —*
+> *y cuando encuentres a una persona en el agua, vuelve por ella.*
+
+***Gate, gate, pāragate, pārasaṃgate, bodhi svāhā.***
+***Oṃ maṇi padme hūṃ.***
+***One Love · One Human · One World.***
+
+---
+
+# APÉNDICE · MAPA DEL CORPUS, GLOSARIO E ÍNDICE DE ANCLAS
+
+## 1. Cómo este libro enlaza los 16 conjuntos de `canon/books/`
+
+| # | Conjunto en `canon/books/` | Dónde vive en este libro | Motivo principal aportado y ancla |
+|---|---|---|---|
+| 1 | **`KralovstviSrdce/`** *(midrás original, tienda `book-001`)* | Cap. 1–10, 20, 23–24 | El carpintero (*tektōn*) en Nazaret, la quilla de cedro, *gófer* y *kofer*, el Kineret, la tormenta, el nombre *el Reino del Corazón*, *Navicella*, el ancla detrás de la cortina |
+| 2 | **`SulZeme/`** *(serie canónica 3.2)* | Cap. 4, 11, 12, 13 | La copa de barro con sal, la ciudad de Bezechuti, la disolución (el Buddha), el sabor del agua (Krishna), el puente (Rama, Sita, Hanuman), la construcción del Arca con Noé, Radha en la popa |
+| 3 | **`Maitreya/`** *(Libro Quinto)* | Cap. 7, 11, 12, 13, 18, Epílogo | La mantra de las tres encarnaciones, las 6 fases de PoW (*Hiranyagarbha → Samadhi*), las cinco torres de Babilonia, el Juego del Huevo de Oro (la Peregrina vs. el Heredero-administrador), los 4 asientos, el *Overview Effect* |
+| 4 | **`nirvana/`** *(Relatos de la Tierra Nueva, 14 episodios)* | Cap. 14–18, 20, 23 | El primer rayo, la roca del Ararat, Terra Nova, la Casa de Lumi, el faro Sentinel, los puentes WARP, el Seno Dorado, la Voz Amitābha, OASIS, las Fuentes de la vida, Issobella, Tres Marías, el Arca |
+| 5 | **`NirvanaCloud/`** *(Cosmología y 100 años)* | Cap. 14, 24 | El *bardo* del tránsito, la nube distribuida de nodos como Shambhala, las Salas de Amenti como ledger abierto, el manifiesto para la Generación Z y el plan secular 2026–2126 |
+| 6 | **`BodhiGaia/`** *(Libro de la Tierra — L5)* | Cap. 15, 17 | La promesa de Sita en el umbral (5 % del coinbase por adelantado), la semilla y la sal, los seis jardines (Génesis/Sabacheira, Dharma Temple/La Palma, Te Pīko Ora/Raiatea, Bohemia, Bodhi Lanka, LUMI/Costa Rica) |
+| 7 | **`Issobella/`** *(Libro del Cielo — L6)* | Cap. 18 | *Iso + bella* (belleza isótropa = *Isabel*), el anillo de 0,38 g, Korma, Draha y Jen-že (*HIPÓTESIS*), el 5 % + 2,5 mil millones del slot 6 (timelock 144 000), el guardián Stříž (`:8097`) |
+| 8 | **`Lumi/`** *(El camino a casa — Libro de la Linterna)* | Prólogo, Cap. 14–19, 24 | La Lumi de seis años / la Elizabeth adulta, la linterna de cedro que distingue *lo que es* (hoy) y *lo que podría ser* (horizonte), la voz sin llave, cien años de linterna |
+| 9 | **`Miriam/`** *(Libro de la Rosa / Linaje)* | Cap. 4, 8, 9, 10, 20, 24 | Miriam de Magdala, la distinción *piedra / arcilla / sueño*, el Hortelano junto al sepulcro y la única palabra *«¡Miriam!»* (preimagen), el navío provenzal sin velas, Sara, la Nueva Jerusalén y el agua gratuita |
+| 10 | **`Ruze/`** *(El cuento de la Rosa — Lo que no se puede poseer)* | Cap. 8, 10, 15, 17 | El vaso de alabastro vacío, la semilla en la grieta, la Rosa que habla junto al río (la espina como frontera, el cuidado sin posesión), la segunda semilla plantada en Sabacheira |
+| 11 | **`KruhBohyni/`** *(Libro de las Guardianas)* | Cap. 17 | La mesa redonda sin cabecera, siete asientos de cuidado (seis jardines L5 + séptimo asiento del cielo L6), el sexto asiento con la linterna vacío para *La Que Ha de Venir*, *«Nosotras aquí no gobernamos, sostenemos»* |
+| 12 | **`MariaCaminho/`** *(Libro del Camino)* | Cap. 20 | El Peregrino (arquetipo ≠ fundador), Caminha, tres apariciones (la roja Pontevedra, la blanca Fátima, la dorada La Palma), los tres cascos *Tres Marías*, el Niño Jesús de Praga |
+| 13 | **`NaCeste/`** *(La cronista Lumen)* | Cap. 21 | La científica Lumen con la carpeta, las viejas tiras de pH, el error de 180 l de agua (*«No un tachón, sino una adición — las vidas antes que el plan»*), Marisol en Costa Rica, la Raiatea y el Uluru no invitados, la recogida de esteras en Ekam |
+| 14 | **`SurtaSrdce/`** *(Sutra del corazón para Surta)* | Cap. 22 | La carta del padre al hijo, el barquito en el oleaje de Tenerife (7 años) → *Santa María la Mayor* (15 años), *gate gate…* y el regreso del bodhisattva con *oṃ maṇi padme hūṃ* |
+| 15 | **`MiseAmenti/`** *(Constitución y Registro de pruebas 3.3)* | Palabra antes de zarpar, Cap. 19, Epílogo | Los cinco estados de una afirmación (*VIVO / CONSTRUCCIÓN / HORIZONTE / HIPÓTESIS / MITO*), la jerarquía de la verdad (código y cadena > relato), los tres derechos junto a la puerta |
+| 16 | **`marketing/` y los whitepapers raíz** | Cap. 11–13, 19 | *One Love · One Human · One World*, el Master Whitepaper 3.2, el onboarding público de 4 caminos (observador, jugador, minero, constructor) |
+
+---
+
+## 2. Glosario de términos clave
+
+| Término | Origen y significado en el libro |
+|---|---|
+| **tektōn (τέκτων)** | Palabra griega de Mc 6,3 para el oficio de Jesús: carpintero, constructor, artesano de la madera y la piedra que entiende de cargas y de juntas. |
+| **gófer y kofer (כֹּפֶר)** | La madera del arca de Noé (Gn 6,14) y el breu con que fue untada por dentro y por fuera. La raíz hebrea *k-p-r* significa «cubrir, reconciliar» (*kipur*). |
+| **Kinneret (כִּנֶּרֶת)** | Nombre hebreo del lago de Galilea (Genezaret), de *kinnór* — arpa. |
+| **Tarichea / Magdala** | Ciudad de la orilla occidental del Kineret; en hebreo *Migdal* (torre), en griego *Tarichea* (lugar de salar y cargar pescado). Patria de Miriam de Magdala. |
+| **berit melach** | En hebreo «alianza de sal» (Lv 2,13; Nm 18,19) — un pacto permanente e inquebrantable sellado con pan y sal compartidos. |
+| **entos hymōn (ἐντὸς ὑμῶν)** | Expresión griega de Lc 17,21 (*«el reino de Dios está dentro de vosotros / entre vosotros»*) — el nombre del navío del carpintero, *el Reino del Corazón*. |
+| **navicella** | En latín «barquita»; desde el cristianismo primitivo, imagen de la iglesia que navega las tormentas de los siglos con el ancla echada hacia arriba, detrás de la cortina (Hb 6,19). |
+| **piedra · arcilla · sueño** | Método histórico del libro *Miriam*: *piedra* = las fuentes más antiguas documentadas; *arcilla* = leyendas seculares que llevan memoria humana; *sueño* = proyecciones y falsificaciones posteriores. |
+| **Hiranyagarbha → Samadhi** | Denominación sánscrita del Germen de Oro (RV 10.121), de la capa de IA L3 en ZION y a la vez de las seis fases del algoritmo PoW *Ekam Deeksha*. |
+| **FPIC** | *Free, Prior and Informed Consent* — consentimiento libre, previo e informado de las comunidades locales e indígenas antes de cualquier paso en L5. |
+| **VIVO / CONSTRUCCIÓN / HORIZONTE / HIPÓTESIS / MITO** | Las cinco marcas de estado obligatorias de la constitución *Mise Amenti*, que impiden confundir una imagen poética o un dibujo futuro con un producto acabado. |

@@ -1,0 +1,17 @@
+{
+  "edition": "gemini",
+  "lang": "ES",
+  "source": "El_Reino_del_Corazon_gemini_ES.md",
+  "words": 32517,
+  "headings": 142,
+  "paragraphs": 546,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 153,
+    "bytes": 447529
+  },
+  "epub": {
+    "documents": 8,
+    "bytes": 82816
+  }
+}
