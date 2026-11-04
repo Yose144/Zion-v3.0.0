@@ -59,7 +59,14 @@ export function PassGate({ children }: { children: React.ReactNode }) {
 
   // odemčeno a někdo sem přišel z konkrétní stránky → vrať ho tam
   useEffect(() => {
-    if (state === 'open' && next) router.replace(next);
+    if (state !== 'open' || !next) return;
+    router.replace(next);
+    /**
+     * `next` se musí vyčistit: layout s bránou zůstává mezi navigacemi
+     * (Next ho nepřemountuje), takže by na cílové stránce zůstal spinner
+     * „Nirvana se otevírá…" navěky.
+     */
+    setNext(null);
   }, [state, next, router]);
 
   const submit = async () => {
