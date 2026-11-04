@@ -103,8 +103,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     r('/team', 0.5, 'monthly'),
     r('/benchmarks', 0.5, 'monthly'),
 
-    // ── Zion Archive — Nirvana Hub (locked coming-soon; readers re-enter
-    //    the sitemap when ARCHIVE_LOCKED flips off) ──
+    // ── Zion Archive — Nirvana Hub (gated by the ZION Pass; readers stay
+    //    out of the sitemap until the archive opens publicly) ──
     r('/zion-archive', 0.8, 'monthly'),
 
     // ── Misc real pages ──────────────────────────────────────────────

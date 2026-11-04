@@ -16,15 +16,22 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import BookNav from '@/components/books/BookNav';
+import {
+  clearReadingProgress,
+  progressPercent,
+  recentProgress,
+  useReadingProgress,
+} from '@/lib/books/progress';
 import CestaPanel from './panels/CestaPanel';
 import KnihaPanel from './panels/KnihaPanel';
+import KnihovnaPanel from './panels/KnihovnaPanel';
 import NirvanaPanel from './panels/NirvanaPanel';
 import PlanPanel from './panels/PlanPanel';
-import SpolecniciPanel from './panels/SpolecniciPanel';
 import SouvislostiPanel from './panels/SouvislostiPanel';
 import type { Lang } from './panels/shared';
+import { LIBRARY_STATS, READER_BOOKS } from './library-index';
 
-type SectionId = 'cesta' | 'kniha' | 'nirvana' | 'plan-v33' | 'spolecnici' | 'souvislosti';
+type SectionId = 'cesta' | 'knihovna' | 'kniha' | 'nirvana' | 'plan-v33' | 'souvislosti';
 
 const SECTIONS: {
   id: SectionId;
@@ -33,14 +40,17 @@ const SECTIONS: {
   rc: string;
 }[] = [
   { id: 'cesta', label: { cs: 'Knihy a pořadí', en: 'Books & reading order' }, icon: Compass, rc: '6, 182, 212' },
+  { id: 'knihovna', label: { cs: 'Knihovna', en: 'Library' }, icon: Library, rc: '236, 72, 153' },
   { id: 'kniha', label: { cs: 'Maitreya', en: 'Maitreya' }, icon: BookOpen, rc: '252, 209, 22' },
   { id: 'nirvana', label: { cs: 'Nirvana', en: 'Nirvana' }, icon: Sun, rc: '251, 146, 60' },
   { id: 'plan-v33', label: { cs: 'Plán v3.3', en: 'v3.3 plan' }, icon: ListChecks, rc: '168, 85, 247' },
-  { id: 'spolecnici', label: { cs: 'Knihovna', en: 'Library' }, icon: Library, rc: '236, 72, 153' },
   { id: 'souvislosti', label: { cs: 'Příběh a tradice', en: 'Story & tradition' }, icon: ScrollText, rc: '148, 163, 184' },
 ];
 
 const SECTION_IDS = new Set<string>(SECTIONS.map((s) => s.id));
+
+// Legacy hashes keep working — #spolecnici was the old library panel.
+const HASH_ALIASES: Record<string, SectionId> = { spolecnici: 'knihovna' };
 
 const Copy = {
   kicker: { cs: 'Nirvana Hub · ZION Terra Nova', en: 'Nirvana Hub · ZION Terra Nova' },
@@ -55,6 +65,8 @@ const Copy = {
     en: 'All the books of the path, their connections, and the way to 3.3 Nirvana — one library, one reader, one plan.',
   },
   read: { cs: 'Číst knihu', en: 'Read the book' },
+  continueReading: { cs: 'Pokračovat ve čtení', en: 'Continue reading' },
+  browse: { cs: 'Procházet knihovnu', en: 'Browse the library' },
   plan: { cs: 'Plán 3.3', en: 'The 3.3 plan' },
   navLabel: { cs: 'Sekce knihovny', en: 'Library sections' },
   libraryLabel: { cs: 'Knihovna', en: 'Library' },
@@ -62,20 +74,39 @@ const Copy = {
     cs: 'Oasis — jedna rodina pod Stromem života: Maitreya, Krišna s flétnou, tesař a děti nové země · One World, One Family',
     en: 'Oasis — one family under the Tree of Life: Maitreya, Krishna with his flute, the carpenter and the children of the new earth · One World, One Family',
   },
+  heroBadge: { cs: 'One World · One Family', en: 'One World · One Family' },
+  stats: {
+    books: { cs: 'knih', en: 'books' },
+    groups: { cs: 'skupin', en: 'groups' },
+    languages: { cs: 'jazyky', en: 'languages' },
+    reader: { cs: 'čtečka', en: 'reader' },
+    chapters: { cs: 'kapitol', en: 'chapters' },
+  },
+  continueTitle: { cs: 'Pokračovat ve čtení', en: 'Continue reading' },
+  continueSub: {
+    cs: 'Archiv si pamatuje poslední kapitolu — jen ve tvém prohlížeči.',
+    en: 'The archive remembers your last chapter — in your browser only.',
+  },
+  clearHistory: { cs: 'Vymazat historii', en: 'Clear history' },
+  chapterOf: { cs: 'kapitola', en: 'chapter' },
+  resume: { cs: 'Otevřít', en: 'Open' },
 };
 
-export default function MaitreyaPage() {
+export default function ZionArchivePage() {
   const { lang } = useLang();
   const l: Lang = lang === 'cs' ? 'cs' : 'en';
   const [active, setActive] = useState<SectionId>('cesta');
   const pendingFocus = useRef(false);
   const reducedMotion = useReducedMotion();
   const mobileNavRef = useRef<HTMLElement>(null);
+  const progress = useReadingProgress();
+  const recent = recentProgress(progress, 3);
 
   const syncFromHash = useCallback((scroll: boolean) => {
     const raw = window.location.hash.replace('#', '');
-    const id = SECTION_IDS.has(raw) ? (raw as SectionId) : 'cesta';
-    pendingFocus.current = scroll && SECTION_IDS.has(raw);
+    const mapped = HASH_ALIASES[raw] ?? raw;
+    const id = SECTION_IDS.has(mapped) ? (mapped as SectionId) : 'cesta';
+    pendingFocus.current = scroll && SECTION_IDS.has(mapped);
     setActive(id);
   }, []);
 
@@ -116,6 +147,17 @@ export default function MaitreyaPage() {
       isActive ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white'
     }`;
 
+  const heroStats = [
+    { value: String(LIBRARY_STATS.books), label: Copy.stats.books[l] },
+    { value: String(LIBRARY_STATS.groups), label: Copy.stats.groups[l] },
+    { value: 'CZ + EN', label: Copy.stats.languages[l] },
+    { value: '1', label: Copy.stats.reader[l] },
+  ];
+
+  const latest = recent[0];
+  const latestBook = latest ? READER_BOOKS.find((b) => b.id === latest.bookId) : undefined;
+  const startHref = latest ? `${latest.path}#${latest.chapterSlug}` : '/zion-archive/cist#prolog';
+
   return (
     <main className="relative min-h-screen">
       {/* ambient orbs — clipped by their own wrapper so sticky nav keeps working */}
@@ -138,8 +180,8 @@ export default function MaitreyaPage() {
             <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-zion-purple/15 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-16 -left-10 h-44 w-44 rounded-full bg-zion-gold/10 blur-3xl" />
 
-            <div className="relative grid items-center gap-6 lg:grid-cols-1">
-              <div className="space-y-3 lg:mx-auto lg:w-4/5">
+            <div className="relative grid items-center gap-7 lg:grid-cols-[1.05fr_1fr]">
+              <div className="space-y-3.5">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="zion-kicker border-zion-gold/30 bg-zion-gold/10 text-zion-gold">
                     <Egg className="h-3.5 w-3.5" />
@@ -158,12 +200,34 @@ export default function MaitreyaPage() {
                 <p className="max-w-xl text-xs italic text-gray-400 sm:text-sm">
                   {Copy.tagline[l]}
                 </p>
-                <div className="flex flex-wrap items-center gap-3 pt-2">
-                  <Link href="/zion-archive/cist#prolog" className="zion-button-primary group">
+
+                <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {heroStats.map((stat) => (
+                    <div
+                      key={stat.label}
+                      className="rounded-xl border border-white/10 bg-black/25 px-3 py-2"
+                    >
+                      <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+                        {stat.label}
+                      </dt>
+                      <dd className="mt-0.5 font-mono text-sm font-bold text-white">{stat.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <Link href={startHref} className="zion-button-primary group">
                     <BookOpen className="h-5 w-5" />
-                    {Copy.read[l]}
+                    {latest ? Copy.continueReading[l] : Copy.read[l]}
                     <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Link>
+                  <a
+                    href="#knihovna"
+                    className="zion-button-secondary border-zion-cyan/30 hover:border-zion-cyan/60 hover:text-zion-cyan"
+                  >
+                    <Library className="h-4 w-4" />
+                    {Copy.browse[l]}
+                  </a>
                   <a
                     href="#plan-v33"
                     className="zion-button-secondary border-zion-purple/30 hover:border-zion-purple/60 hover:text-zion-purple"
@@ -174,22 +238,116 @@ export default function MaitreyaPage() {
                 </div>
               </div>
 
-              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30 lg:mx-auto lg:w-4/5">
+              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
                 <img
                   src="/images/zion-archive/hero.webp"
                   srcSet="/images/zion-archive/hero-m.webp 960w, /images/zion-archive/hero.webp 1536w"
-                  sizes="(max-width: 1024px) calc(100vw - 4rem), 1024px"
+                  sizes="(max-width: 1024px) calc(100vw - 4rem), 560px"
                   alt={Copy.heroAlt[l]}
                   width={1536}
                   height={1024}
                   fetchPriority="high"
                   className="w-full object-cover"
                 />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+                <p className="absolute bottom-2.5 left-3 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-100 backdrop-blur-sm">
+                  {Copy.heroBadge[l]}
+                </p>
               </div>
             </div>
           </motion.header>
         </div>
       </section>
+
+      {/* ─── CONTINUE READING (local progress only) ─── */}
+      {recent.length > 0 && (
+        <section className="relative z-10 px-4 pt-5" aria-labelledby="continue-reading-title">
+          <div className="zion-container max-w-7xl">
+            <div
+              className="zion-rainbow-card p-5 sm:p-6"
+              style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2
+                    id="continue-reading-title"
+                    className="text-sm font-bold uppercase tracking-[0.2em] text-gray-200"
+                  >
+                    {Copy.continueTitle[l]}
+                  </h2>
+                  <p className="mt-1 text-xs text-gray-500">{Copy.continueSub[l]}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={clearReadingProgress}
+                  className="rounded-md border border-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500 transition-colors hover:border-white/25 hover:text-gray-300"
+                >
+                  {Copy.clearHistory[l]}
+                </button>
+              </div>
+
+              <ul className="mt-4 flex flex-col gap-2.5 sm:flex-row">
+                {recent.map((entry) => {
+                  const book = READER_BOOKS.find((b) => b.id === entry.bookId);
+                  const accent = book?.accent ?? '6, 182, 212';
+                  const Icon = book?.icon ?? BookOpen;
+                  const pct = progressPercent(entry);
+                  return (
+                    <li key={entry.bookId} className="min-w-0 flex-1">
+                      <Link
+                        href={`${entry.path}#${entry.chapterSlug}`}
+                        prefetch={false}
+                        className="group flex h-full items-center gap-3 rounded-xl border p-3.5 transition-colors"
+                        style={{
+                          borderColor: `rgba(${accent}, 0.25)`,
+                          background: `rgba(${accent}, 0.06)`,
+                        }}
+                      >
+                        <span
+                          aria-hidden
+                          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border"
+                          style={{
+                            borderColor: `rgba(${accent}, 0.35)`,
+                            backgroundColor: `rgba(${accent}, 0.12)`,
+                          }}
+                        >
+                          <Icon className="h-5 w-5" style={{ color: `rgb(${accent})` }} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+                            {book?.groupLabel[l] ?? Copy.continueTitle[l]}
+                          </span>
+                          <span className="block truncate text-sm font-bold text-white transition-colors group-hover:text-zion-gold">
+                            {entry.bookTitle}
+                          </span>
+                          <span className="block truncate text-xs text-gray-400">
+                            {entry.chapterLabel}
+                          </span>
+                          <span className="mt-2 flex items-center gap-2">
+                            <span className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
+                              <span
+                                className="block h-full rounded-full"
+                                style={{ width: `${pct}%`, backgroundColor: `rgb(${accent})` }}
+                              />
+                            </span>
+                            <span className="shrink-0 text-[10px] font-semibold text-gray-500">
+                              {entry.chapterIndex + 1} / {entry.totalChapters} · {pct} %
+                            </span>
+                          </span>
+                        </span>
+                        <span className="hidden shrink-0 items-center gap-1 text-xs font-semibold text-gray-400 transition-colors group-hover:text-white sm:flex">
+                          {Copy.resume[l]}
+                          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ─── HUB: section nav + one panel ─── */}
       <section className="relative z-10 px-4 pb-16 pt-8 sm:pb-20">
@@ -286,10 +444,10 @@ export default function MaitreyaPage() {
                 transition={{ duration: 0.35 }}
               >
                 {active === 'cesta' && <CestaPanel lang={l} />}
+                {active === 'knihovna' && <KnihovnaPanel lang={l} />}
                 {active === 'kniha' && <KnihaPanel lang={l} />}
                 {active === 'nirvana' && <NirvanaPanel lang={l} />}
                 {active === 'plan-v33' && <PlanPanel lang={l} />}
-                {active === 'spolecnici' && <SpolecniciPanel lang={l} />}
                 {active === 'souvislosti' && <SouvislostiPanel lang={l} />}
               </motion.div>
             </div>

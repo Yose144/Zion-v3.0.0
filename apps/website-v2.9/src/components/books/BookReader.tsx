@@ -16,10 +16,12 @@ import {
   X,
   Sparkles,
   Languages,
+  Clock,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import type { BookDef, BookChapter, Lang } from '@/lib/books/types';
 import BookNav from '@/components/books/BookNav';
+import { saveReadingProgress } from '@/lib/books/progress';
 import { splitSingleDoc, type SingleDocBook } from '@/lib/books/singleDoc';
 
 interface Category {
@@ -59,8 +61,67 @@ export default function BookReader({ book }: { book: BookDef }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expanded, setExpanded] = useState<Record<number, boolean>>({ 0: true, 1: true });
   const [czFallback, setCzFallback] = useState(false);
+  const [readingMinutes, setReadingMinutes] = useState<number | null>(null);
 
   const currentChapter = chapters.find((c) => c.slug === selectedChapter);
+  const chapterIndex = currentChapter
+    ? chapters.findIndex((c) => c.slug === currentChapter.slug)
+    : -1;
+  const readingPct =
+    chapters.length > 0 && chapterIndex >= 0
+      ? Math.round(((chapterIndex + 1) / chapters.length) * 100)
+      : 0;
+
+  // Reading time estimate — honest and cheap: words / 200 wpm, minimum a minute.
+  useEffect(() => {
+    const words = content.trim() ? content.trim().split(/\s+/).length : 0;
+    setReadingMinutes(words > 60 ? Math.max(1, Math.round(words / 200)) : null);
+  }, [content]);
+
+  // Remember where this reader stopped (localStorage only — see lib/books/progress).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!currentChapter || chapters.length === 0) return;
+    const index = chapters.findIndex((c) => c.slug === currentChapter.slug);
+    if (index < 0) return;
+    saveReadingProgress({
+      bookId: book.id,
+      path: window.location.pathname,
+      chapterSlug: currentChapter.slug,
+      chapterIndex: index,
+      totalChapters: chapters.length,
+      chapterLabel: `${currentChapter.num[l]} — ${currentChapter.title[l]}`,
+      bookTitle: book.title[l],
+      updatedAt: Date.now(),
+    });
+  }, [book.id, book.title, chapters, currentChapter, l]);
+
+  // Keyboard chapter navigation (← / →), ignored while typing in a field.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      const index = chapters.findIndex((c) => c.slug === selectedChapter);
+      const next = event.key === 'ArrowRight' ? chapters[index + 1] : chapters[index - 1];
+      if (!next) return;
+      event.preventDefault();
+      setSelectedChapter(next.slug);
+      setActivePart(next.part);
+      setExpanded((prev) => ({ ...prev, [next.part]: true }));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [chapters, selectedChapter]);
 
   // single-doc books: fetch once, split by headings → chapters + content map
   useEffect(() => {
@@ -176,6 +237,11 @@ export default function BookReader({ book }: { book: BookDef }) {
       <div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white">
         <HeroIcon className="w-3.5 h-3.5 shrink-0" style={{ color: accentRgb }} />
         <span className="truncate">{book.title[l]}</span>
+        {chapters.length > 0 && chapterIndex >= 0 && (
+          <span className="ml-auto shrink-0 font-mono text-[10px] font-medium text-gray-500">
+            {chapterIndex + 1}/{chapters.length}
+          </span>
+        )}
       </div>
       <div className="pb-1">
         {categories.map((category) => {
@@ -328,6 +394,19 @@ export default function BookReader({ book }: { book: BookDef }) {
                     <ChevronRight className="w-3 h-3" />
                     <span className="text-zion-purple">{currentChapter.num[l]}</span>
                   </div>
+                  {chapters.length > 1 && (
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="h-1 w-full max-w-xs overflow-hidden rounded-full bg-white/10">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${readingPct}%`, backgroundColor: accentRgb }}
+                        />
+                      </div>
+                      <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+                        {chapterIndex + 1} / {chapters.length}
+                      </span>
+                    </div>
+                  )}
                   <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight text-gradient">
                     {currentChapter.title[l]}
                   </h2>
@@ -341,16 +420,23 @@ export default function BookReader({ book }: { book: BookDef }) {
                     </p>
                   )}
                 </div>
-                {sourceFile && (
-                  <a
-                    href={`/docs/${sourceFile}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="zion-button-secondary inline-flex items-center gap-2 text-sm shrink-0"
-                  >
-                    <ExternalLink className="w-4 h-4" /> {l === 'cs' ? 'Zdroj' : 'Source'}
-                  </a>
-                )}
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  {readingMinutes && (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold text-gray-400">
+                      <Clock className="h-3.5 w-3.5" />~{readingMinutes} min
+                    </span>
+                  )}
+                  {sourceFile && (
+                    <a
+                      href={`/docs/${sourceFile}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="zion-button-secondary inline-flex items-center gap-2 text-sm shrink-0"
+                    >
+                      <ExternalLink className="w-4 h-4" /> {l === 'cs' ? 'Zdroj' : 'Source'}
+                    </a>
+                  )}
+                </div>
               </div>
             )}
 
@@ -416,6 +502,13 @@ export default function BookReader({ book }: { book: BookDef }) {
                   </nav>
                 );
               })()}
+            {chapters.length > 1 && (
+              <p className="mt-4 text-center text-[11px] text-gray-600">
+                {l === 'cs'
+                  ? 'Klávesy ← → přepínají kapitoly.'
+                  : 'Use ← → to move between chapters.'}
+              </p>
+            )}
           </div>
         </div>
       </div>

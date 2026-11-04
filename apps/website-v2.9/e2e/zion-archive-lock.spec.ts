@@ -31,7 +31,7 @@ test.describe('Zion Archive — lock gate', () => {
     test(`${path} renders the coming-soon lock`, async ({ page }) => {
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       await expect(page.getByRole('heading', { name: /Zion Archive/i }).first()).toBeVisible();
-      await expect(page.getByText(/Otevírá se brzy|Opening soon/i).first()).toBeVisible();
+      await expect(page.getByText(/Vstup přes ZION Pass|Access with a ZION Pass/i).first()).toBeVisible();
       await expect(page.getByRole('link', { name: /Marketplace/i }).first()).toBeVisible();
     });
   }

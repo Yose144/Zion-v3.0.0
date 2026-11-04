@@ -9,7 +9,7 @@ import { useLang } from '@/contexts/LanguageContext';
 const MaitreyaSectionCopy = {
   kicker: { cs: 'Zion Archive · Nirvana Hub · CZ + EN', en: 'Zion Archive · Nirvana Hub · CZ + EN' },
   title: { cs: 'Zion Archive', en: 'Zion Archive' },
-  subtitle: { cs: 'Nirvana Hub · všechny knihy cesty · jeden reader · přístup brzy', en: 'Nirvana Hub · all the books of the path · one reader · access soon' },
+  subtitle: { cs: 'Nirvana Hub · všechny knihy cesty · jeden reader · vstup přes ZION Pass', en: 'Nirvana Hub · all the books of the path · one reader · access with a ZION Pass' },
   body: {
     cs: 'Genesis, Kvantová revoluce, Ekam, Terra Nova, Maitreya i Nirvana — celá knihovna v jednom sjednoceném readeru. Začni číst, projdi související příběhy nebo otevři plán v3.3 — ten je vývojovým cílem, ne hotovým vydáním.',
     en: 'Genesis, Quantum Revolution, Ekam, Terra Nova, Maitreya and Nirvana — the whole library in one unified reader. Start reading, explore the related stories or open the v3.3 plan — a development goal, not a completed release.',
@@ -62,7 +62,7 @@ export default function MaitreyaSection() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-100 backdrop-blur-sm">
                 <Sparkles className="h-3 w-3 text-zion-gold" />
-                {cs ? 'Otevírá se brzy' : 'Opening soon'}
+                {cs ? 'Vstup přes ZION Pass' : 'Access with a ZION Pass'}
               </div>
             </Link>
 

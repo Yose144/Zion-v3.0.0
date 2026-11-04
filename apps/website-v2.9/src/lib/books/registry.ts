@@ -545,6 +545,7 @@ export const BOOK_NAV: BookNavGroup[] = [
     books: [
       { id: 'nirvanacloud', href: '/zion-archive/nirvanacloud/cist' },
       { id: 'issobella', href: '/zion-archive/issobella/cist' },
+      { id: 'nabukano', href: '/zion-archive/nabukano/cist' },
       { id: 'kruhbohyni', href: '/zion-archive/kruhbohyni/cist' },
       { id: 'miseamenti', href: '/zion-archive/miseamenti/cist' },
     ],

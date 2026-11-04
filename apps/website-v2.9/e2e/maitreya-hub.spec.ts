@@ -12,7 +12,7 @@ import { MAIN_BOOKS, COMPANION_GROUPS } from '../src/app/zion-archive/library';
 // and tests more headroom instead of flaking.
 test.use({ channel: 'chrome', navigationTimeout: 60_000 });
 
-const SECTION_IDS = ['cesta', 'kniha', 'nirvana', 'plan-v33', 'spolecnici', 'souvislosti'] as const;
+const SECTION_IDS = ['cesta', 'knihovna', 'kniha', 'nirvana', 'plan-v33', 'souvislosti'] as const;
 
 test.beforeEach(async ({ context }) => {
   // Stub unrelated background API calls (auth probe, Hiran chat, pool feeds, …)
@@ -214,10 +214,10 @@ test.describe.skip('maitreya hub', () => {
     expect(errors).toEqual([]);
   });
 
-  test('spolecnici panel: every companion is a real link with honest labels', async ({ page }) => {
+  test('knihovna panel: every book is a real link with honest labels', async ({ page }) => {
     const errors = watchPageErrors(page);
-    await page.goto('/zion-archive#spolecnici');
-    const panel = page.locator('section[data-panel="spolecnici"]');
+    await page.goto('/zion-archive#knihovna');
+    const panel = page.locator('section[data-panel="knihovna"]');
     await expect(panel).toBeVisible({ timeout: 20000 });
     const hrefs = await panel
       .locator('a[href]')
@@ -231,7 +231,7 @@ test.describe.skip('maitreya hub', () => {
     }
     // honest language labels present (locale-dependent strings)
     await expect(panel).toContainText(/anglický index|english index/i);
-    await expect(panel).toContainText(/česky|czech only/i);
+    await expect(panel).toContainText(/\bCZ\b/i);
     expect(errors).toEqual([]);
   });
 
@@ -399,7 +399,7 @@ test.describe.skip('maitreya hub', () => {
       kniha: /Maitreya — the full book/i,
       nirvana: /Nirvana — twelve stations/i,
       'plan-v33': /v3\.3/i,
-      spolecnici: /Companion books/i,
+      knihovna: /All books/i,
       souvislosti: /Story & tradition/i,
     };
     for (const id of SECTION_IDS) {
@@ -423,9 +423,9 @@ test.describe.skip('maitreya hub', () => {
     expect(nirvanaHrefs).toContain('/docs/view/korpus/BodhiGaia/00-README_EN.md');
     expect(nirvanaHrefs).toContain('/docs/view/korpus/MariaCaminho/00-README.md');
 
-    // spolecnici: EN primary = English index + Czech-original secondary; CZ-only flagged
-    await page.goto('/zion-archive#spolecnici', { waitUntil: 'domcontentloaded' });
-    const panel = page.locator('section[data-panel="spolecnici"]');
+    // knihovna: EN readers get the English index as a secondary link; CZ-only is flagged
+    await page.goto('/zion-archive#knihovna', { waitUntil: 'domcontentloaded' });
+    const panel = page.locator('section[data-panel="knihovna"]');
     await expect(panel).toBeVisible({ timeout: 20000 });
     const hrefs = await panel
       .locator('a[href]')
@@ -531,7 +531,7 @@ test.describe.skip('maitreya hub', () => {
         if (lang === 'en')
           await page.addInitScript(() => window.localStorage.setItem('zion-lang', 'en'));
         const errors = watchPageErrors(page);
-        for (const id of ['plan-v33', 'spolecnici'] as const) {
+        for (const id of ['plan-v33', 'knihovna'] as const) {
           await page.goto(`/zion-archive#${id}`, { waitUntil: 'domcontentloaded' });
           await expect(page.locator(`section[data-panel="${id}"]`)).toBeVisible({ timeout: 30000 });
           await page.waitForTimeout(1200); // chooser smooth-scroll settle
