@@ -254,6 +254,33 @@ ${t('Platbu prosím uhraďte do 7 dnů.', 'Please pay within 7 days.')}`;
   return '';
 }
 
+function formatDigitalDownloadsText(order: OrderEmailData, lang: EmailLang = 'cs'): string {
+  const t = (cs: string, en: string) => tl(lang, cs, en);
+  const items = Array.isArray(order.items) ? (order.items as Record<string, unknown>[]) : [];
+  const digi = items.filter((it) => {
+    if (it.digital === true) return true;
+    return Boolean(it.filesUrl || it.instructionsUrl || it.modelUrl);
+  });
+  if (digi.length === 0) return '';
+
+  const rows = digi.map((it) => {
+    const name = String(it.name ?? t('Digitální produkt', 'Digital product'));
+    const links: string[] = [];
+    if (typeof it.filesUrl === 'string' && it.filesUrl) links.push(it.filesUrl);
+    if (typeof it.instructionsUrl === 'string' && it.instructionsUrl) links.push(it.instructionsUrl);
+    if (typeof it.modelUrl === 'string' && it.modelUrl) links.push(it.modelUrl);
+    if (links.length === 0) {
+      return `- ${name}: ${t('odkazy pošleme po potvrzení platby', 'we will send the links once payment is confirmed')}`;
+    }
+    return `- ${name}:\n  ${links.join('\n  ')}`;
+  });
+
+  return `${t('Digitální stažení', 'Digital downloads')}:
+${rows.join('\n')}
+
+${t('Uložte si odkazy pro pozdější použití.', 'Save the links for later.')}`;
+}
+
 function formatDigitalDownloadsHtml(order: OrderEmailData, lang: EmailLang = 'cs'): string {
   const t = (cs: string, en: string) => tl(lang, cs, en);
   const items = Array.isArray(order.items) ? (order.items as Record<string, unknown>[]) : [];
@@ -665,6 +692,7 @@ export async function buildV2OrderConfirmationEmail(
   const paymentInstructionsText = formatPaymentInstructionsText(order, lang);
   const shippingText = formatShippingText(order, lang);
   const zionText = formatZionTokenSectionText(order, lang);
+  const digitalText = formatDigitalDownloadsText(order, lang);
 
   const text = `ZION TERRA NOVA - ${t('Potvrzení objednávky', 'Order confirmation')} #${order.orderId}
 =======================================
@@ -683,7 +711,7 @@ ${t('Detaily objednávky', 'Order details')}:
 ${t('Položky', 'Items')}:
 ${formatItemsText(order, lang)}
 
-${zionText}
+${digitalText ? digitalText + '\n' : ''}${zionText}
 
 ${shippingText}
 

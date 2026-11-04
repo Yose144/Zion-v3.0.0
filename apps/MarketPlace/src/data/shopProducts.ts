@@ -46,16 +46,21 @@ export const shopProducts: ShopProductSeed[] = [
     name: 'Království srdce — digitální kniha',
     category: 'books',
     description:
-      'Příběh lodi, kterou postavil tesař. Duchovní legenda o tesaři z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě — a říkal jí Království srdce. 10 kapitol + epilog, každá s tabulkou „Kotva pravdy" (co je Písmo, tradice, autorův obraz). Digitální vydání PDF — dodáváme ke stažení. 📚 Ke knize ZION Archive Pass — vstup do ZION Archivu. 🛡️ BONUS: 216 000 ZION — Genesis vstup pro Guardians ekosystému ZION (akce do 24. 12. 2026).',
+      'Příběh lodi, kterou postavil tesař. Duchovní legenda o tesaři z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě — a říkal jí Království srdce. 📚 KOMPLETNÍ SADA: osm samostatných edic téhož příběhu, každá v pěti jazycích (čeština, angličtina, španělština, francouzština, portugalština) — celkem 40 knih ve formátu PDF i EPUB, přes 3 200 stran. Každá edice má u kapitol tabulku „Kotva pravdy" (co je Písmo, tradice, historie, legenda a co je literární obraz). Ke knize ZION Archive Pass — vstup do ZION Archivu. 🛡️ BONUS: 216 000 ZION — Genesis vstup pro Guardians ekosystému ZION (akce do 24. 12. 2026).',
     priceCzk: 216,
     oldPriceCzk: undefined,
     image: '/shop/img/books/kralovstvi-srdce-cover.webp',
     badge: '🛡️ Genesis Guardian',
     inStock: true,
-    size: 'PDF · 10 kapitol + epilog',
+    size: 'PDF + EPUB · 40 knih, 5 jazyků',
     stock: 999,
     tokens: 216000,
     digital: true,
+    // Kompletní ediční sada: 8 edic × 5 jazyků, PDF i EPUB (65 MB).
+    // ZIP se staví skriptem scripts/ops/build-kralovstvi-bundle.py a leží
+    // v public/shop/downloads/ (mimo git, rsync ho při deployi přenese).
+    filesUrl:
+      'https://market.zionterranova.com/shop/downloads/Kralovstvi_srdce_kompletni_edice_5_jazyku.zip',
     active: true,
   },
   {

@@ -80,6 +80,18 @@ if ! SSH "test -f '${REMOTE_DIR}/package.json'"; then
   exit 1
 fi
 
+# Digital downloads guard: public/shop/downloads/ je v .gitignore (65 MB ZIP
+# s celou ediční sadou Království srdce). Kdyby se deploy spustil z klonu bez
+# tohoto adresáře, rsync --delete ho na serveru smaže a zákazník, který už
+# produkt koupil, dostane v e-mailu mrtvý odkaz. Proto radši zastavit.
+DOWNLOADS_DIR="${ROOT_DIR}/public/shop/downloads"
+if [[ ! -d "${DOWNLOADS_DIR}" ]]; then
+  echo "[deploy-marketplace] ERROR: ${DOWNLOADS_DIR} chybí." >&2
+  echo "[deploy-marketplace] Sestav ho: python3 scripts/ops/build-kralovstvi-bundle.py" >&2
+  echo "[deploy-marketplace] (nebo nasazuj s ZION_SKIP_DOWNLOADS_CHECK=1, pokud je oblika záměrně mimo)" >&2
+  [[ "${ZION_SKIP_DOWNLOADS_CHECK:-0}" == "1" ]] || exit 1
+fi
+
 # Safety net: snapshot remote .env before sync (excludes keep it untouched and
 # undeleted — this is only insurance against operator-side edits).
 SSH "cp -a '${REMOTE_DIR}/.env' '${REMOTE_DIR}/.env.pre-deploy-\$(date +%Y%m%d-%H%M%S)' 2>/dev/null || true"

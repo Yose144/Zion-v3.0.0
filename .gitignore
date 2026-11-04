@@ -486,3 +486,6 @@ apps/*/src-only*.zip
 
 # OASIS avatar renderer — esbuild bundle
 scripts/ops/oasis-avatar-render/.build/
+
+# Prodejní ZIP sady (65 MB binárka — na serveru, ne v gitu)
+apps/MarketPlace/public/shop/downloads/
