@@ -1,0 +1,17 @@
+{
+  "edition": "cloude",
+  "lang": "ES",
+  "source": "El_Reino_del_Corazon_cloude_ES.md",
+  "words": 19199,
+  "headings": 123,
+  "paragraphs": 483,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 98,
+    "bytes": 281809
+  },
+  "epub": {
+    "documents": 6,
+    "bytes": 44301
+  }
+}
