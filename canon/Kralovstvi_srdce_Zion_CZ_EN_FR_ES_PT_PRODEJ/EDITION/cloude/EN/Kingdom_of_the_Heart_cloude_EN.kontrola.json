@@ -1,0 +1,17 @@
+{
+  "edition": "cloude",
+  "lang": "EN",
+  "source": "Kingdom_of_the_Heart_cloude_EN.md",
+  "words": 19804,
+  "headings": 123,
+  "paragraphs": 483,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 100,
+    "bytes": 281171
+  },
+  "epub": {
+    "documents": 6,
+    "bytes": 43302
+  }
+}

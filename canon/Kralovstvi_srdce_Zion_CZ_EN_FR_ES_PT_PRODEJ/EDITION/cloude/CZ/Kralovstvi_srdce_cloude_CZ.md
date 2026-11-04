@@ -1074,11 +1074,8 @@ Gate, gate, pāragate, pārasaṃgate, bodhi svāhā.
 | Historie | Doložená skutečnost mimo Bibli |
 | Legenda | Podání, které se staletí vypráví v různých verzích |
 
-### Příběh
-
-Obraz nebo scéna, kterou si domýšlí tato kniha
-Vize, stavba, horizont
-Stav projektu ZION: nápad, rozpracovaný návrh, něco, co ještě není
+| Příběh | Obraz nebo scéna, kterou si domýšlí tato kniha |
+| Vize, stavba, horizont | Stav projektu ZION: nápad, rozpracovaný návrh, něco, co ještě není |
 
 | Slovo | Význam |
 |---|---|

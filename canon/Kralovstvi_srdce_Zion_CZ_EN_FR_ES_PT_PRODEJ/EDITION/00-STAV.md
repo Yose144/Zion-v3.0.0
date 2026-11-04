@@ -7,7 +7,7 @@
 |---|---|---|---|---|---|
 | Nová plavba · Ilustrovaná | 13 880 slov · PDF · EPUB | 17 995 slov · PDF · EPUB | 17 315 slov · PDF · EPUB | 18 741 slov · PDF · EPUB | 16 865 slov · PDF · EPUB |
 | Klasická edice · Původní midraš | 5 220 slov · PDF · EPUB | 6 745 slov · PDF · EPUB | 6 650 slov · PDF · EPUB | 6 993 slov · PDF · EPUB | 6 348 slov · PDF · EPUB |
-| Cedrový kýl · Literární rozšíření | 15 333 slov · PDF · EPUB | — | — | — | — |
+| Cedrový kýl · Literární rozšíření | 15 338 slov · PDF · EPUB | 19 804 slov · PDF · EPUB | — | — | — |
 | Gemini edice · Svorník korpusu | 24 863 slov · PDF · EPUB | 32 932 slov · PDF · EPUB | 32 517 slov · PDF · EPUB | 33 270 slov · PDF · EPUB | 30 460 slov · PDF · EPUB |
 | GPT edice · Tesař, který zůstává u práce | 6 435 slov · PDF · EPUB | 8 450 slov · PDF · EPUB | 8 104 slov · PDF · EPUB | 8 888 slov · PDF · EPUB | 7 826 slov · PDF · EPUB |
 | Groq edice · Loď, která se ptá | 7 441 slov · PDF · EPUB | 9 977 slov · PDF · EPUB | 9 633 slov · PDF · EPUB | 10 170 slov · PDF · EPUB | 9 158 slov · PDF · EPUB |

@@ -6,8 +6,8 @@ Dvacet osm kapitol ve třech částech, epilog a slovníček; každá kapitola s
 
 | Jazyk | Rukopis | PDF | EPUB | Slov |
 |---|---|---|---|---|
-| CZ | ✅ | ✅ | ✅ | 15333 |
-| EN | — | — | — | — |
+| CZ | ✅ | ✅ | ✅ | 15338 |
+| EN | ✅ | ✅ | ✅ | 19804 |
 | ES | — | — | — | — |
 | FR | — | — | — | — |
 | PT | — | — | — | — |
