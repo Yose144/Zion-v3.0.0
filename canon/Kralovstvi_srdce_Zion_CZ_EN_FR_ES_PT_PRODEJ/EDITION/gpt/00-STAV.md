@@ -10,7 +10,7 @@ Pokračování kapitol 10–24; první půle se přebírá z Gemini edice.
 | EN | ✅ | ✅ | ✅ | 8450 |
 | ES | ✅ | ✅ | ✅ | 8104 |
 | FR | ✅ | ✅ | ✅ | 8888 |
-| PT | — | — | — | — |
+| PT | ✅ | ✅ | ✅ | 7826 |
 
 ## Zdroj
 

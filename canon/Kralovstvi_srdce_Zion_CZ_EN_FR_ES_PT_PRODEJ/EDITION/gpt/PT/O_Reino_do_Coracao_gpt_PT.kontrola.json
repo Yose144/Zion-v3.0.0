@@ -1,0 +1,17 @@
+{
+  "edition": "gpt",
+  "lang": "PT",
+  "source": "O_Reino_do_Coracao_gpt_PT.md",
+  "words": 7826,
+  "headings": 87,
+  "paragraphs": 285,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 55,
+    "bytes": 205502
+  },
+  "epub": {
+    "documents": 6,
+    "bytes": 24504
+  }
+}
