@@ -91,6 +91,31 @@ Screenshoty: `/tmp/archive-lock.png`, `/tmp/archive-hub.png`, `/tmp/archive-libr
 
 ---
 
+## 3b. CZ/EN kontrola
+
+- **UI je dvojjazyčné** — všechny nové texty (hub hero, staty, pokračovací strip, knihovna, filtry,
+  reader hinty, lock page) mají `{ cs, en }` pár. Headless test v EN režimu
+  (`localStorage zion-lang=en`) prošel na lock page i v knihovně **bez jediného českého UI labelu**
+  (`czechLeft: []`), včetně sekčního nav (`Books & reading order | Library | …`) a readeru
+  (`~N min`, `Source`, `Use ← →`).
+- **Obsah knih** zůstává tam, kde překlad existuje; knihovna to nezastírá (fakt „Jazyky" z registru):
+
+  | Kniha | EN |
+  |---|---|
+  | Maitreya | 19/19 kapitol |
+  | Nirvana | 16 EN souborů |
+  | Ekam Deeksha | 35 EN souborů |
+  | Quantum Revolution | celý EN dokument |
+  | Sůl této země | 3/25 |
+  | NirvanaCloud | 3/12 |
+  | BodhiGaia | 1/16 |
+  | Issobella | 1/13 |
+  | Mise Amenti | 1/11 |
+  | Lumi, Miriam, Růže, MariaCaminho, Na Cestě, Surta Srdce, Království srdce, Kruh Bohyní, Nabukano | CZ |
+
+- Karty nesou `CZ`, `CZ (+EN části)` nebo `CZ + EN`; EN čtečka fallbackuje na češtinu s viditelným
+  upozorněním a u knih s EN indexem je druhé tlačítko „EN index".
+
 ## 4. Meze
 
 - **Odemknutý hub nebyl testován na produkci** — nemám produkční ZAP kód; test proběhl lokálně
