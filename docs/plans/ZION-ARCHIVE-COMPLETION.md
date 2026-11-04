@@ -49,7 +49,7 @@ Principy, které platí pro každou práci:
 | Maitreya | **19/19** | hotovo |
 | Nirvana | **14/14** | hotovo (QA) |
 | Království srdce | **10/10** (oficiální EN klasická edice) | hotovo 2026-11-04 |
-| NirvanaCloud | 3/8 (04, 06, 07) | **P1** |
+| NirvanaCloud | 5/8 (01, 03, 04, 06, 07) | **P1** |
 | Sůl této země | 0/12 | **P1** |
 | Ekam Deeksha | 0/10 (EN jsou 401B stuby) | P1/P2 |
 | Quantum Revolution | 0 (EN je 396B stub) | P2 |
@@ -58,8 +58,8 @@ Principy, které platí pro každou práci:
 | Mise Amenti | 0/8 | P2 (rámec, ne román) |
 | Lumi, Miriam, Růže, MariaCaminho, Na Cestě, Surta Srdce, Království srdce, Kruh Bohyní, Nabukano | 0 | P2/P3 dle 👤 |
 
-> Měřeno auditem 2026-11-04: **204 kapitol, 189 překladatelných, 45 přeložených (23,8 %)**
-> po napojení oficiální EN edice Království srdce.
+> Měřeno auditem 2026-11-05: **204 kapitol, 189 překladatelných, 47 přeložených (24,9 %)**
+> (Království srdce 10/10 oficiální EN + NirvanaCloud 5/8).
 > Detail: [`REPORT_2026-11-04_ARCHIVE_W1_AUDIT.md`](../3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_W1_AUDIT.md).
 
 **Další mezery:**

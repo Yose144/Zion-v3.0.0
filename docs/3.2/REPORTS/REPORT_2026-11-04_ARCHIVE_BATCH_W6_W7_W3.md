@@ -51,3 +51,12 @@
   dál ruční kód.
 - ZIP je Markdown (ne PDF/EPUB).
 - Link audit 174 dead odkazů je dluh dokumentace, ne archivu.
+
+
+---
+
+## Doplnění 2026-11-05 — NirvanaCloud 01 a 03
+
+- Přeloženy **kapitola 1 (Kolo života, šest světů)** a **kapitola 3 (Bardo velkého přechodu)**.
+- NirvanaCloud je nyní **5/8 EN** (01, 03, 04, 06, 07); zbývají 02, 05, 08.
+- Celkem **47/189** překladatelných kapitol (24,9 %).
