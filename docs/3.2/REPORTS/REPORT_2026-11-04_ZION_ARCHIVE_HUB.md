@@ -121,18 +121,22 @@ Screenshoty: `/tmp/archive-lock.png`, `/tmp/archive-hub.png`, `/tmp/archive-libr
   | Kniha | EN |
   |---|---|
   | Maitreya | 19/19 kapitol |
-  | Nirvana | 16 EN souborů |
-  | Ekam Deeksha | 35 EN souborů |
-  | Quantum Revolution | celý EN dokument |
-  | Sůl této země | 3/25 |
-  | NirvanaCloud | 3/12 |
-  | BodhiGaia | 1/16 |
-  | Issobella | 1/13 |
-  | Mise Amenti | 1/11 |
+  | Nirvana | 14/14 kapitol |
+  | NirvanaCloud | 2/8 kapitol |
+  | Sůl této země | 0/12 (EN jen index) |
+  | Ekam Deeksha | 0/10 — EN soubory jsou 401B stuby |
+  | Quantum Revolution | 0 — EN dokument je 396B stub |
+  | BodhiGaia | 0/13 (EN index) |
+  | Issobella | 0/11 (EN index) |
+  | Mise Amenti | 0/8 (EN index) |
   | Lumi, Miriam, Růže, MariaCaminho, Na Cestě, Surta Srdce, Království srdce, Kruh Bohyní, Nabukano | CZ |
+
+  > Přesná čísla a metodika: [`REPORT_2026-11-04_ARCHIVE_W1_AUDIT.md`](./REPORT_2026-11-04_ARCHIVE_W1_AUDIT.md).
 
 - Karty nesou `CZ`, `CZ (+EN části)` nebo `CZ + EN`; EN čtečka fallbackuje na češtinu s viditelným
   upozorněním a u knih s EN indexem je druhé tlačítko „EN index".
+- **Stub překladu** (< 1 500 B s „language note") se v EN režimu pozná a reader načte český text
+  (Ekam, Quantum Revolution) — místo dřívějšího zobrazení poznámky místo knihy.
 
 ## 4. Meze
 

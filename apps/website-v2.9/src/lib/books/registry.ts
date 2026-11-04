@@ -82,7 +82,7 @@ export const NIRVANA_BOOK: BookDef = {
   accent: '251, 146, 60',
   icon: Compass,
   partIcons: [Compass, Route, Sailboat, Sparkles],
-  kicker: { cs: 'Kniha Západu · kanon pro 3.3 · CZ (+EN index)', en: 'Book of the West · 3.3 canon · CZ (+EN index)' },
+  kicker: { cs: 'Kniha Západu · kanon pro 3.3 · CZ + EN', en: 'Book of the West · 3.3 canon · CZ + EN' },
   title: { cs: 'NIRVANA', en: 'NIRVANA' },
   subtitle: {
     cs: 'Příběhy Nové Země — dlouhodobý horizont, globální asimilace pozornosti a Mise Amenti.',
@@ -95,7 +95,7 @@ export const NIRVANA_BOOK: BookDef = {
   facts: [
     { label: { cs: 'Zastavení', en: 'Stations' }, value: '12 + 1' },
     { label: { cs: 'Vrstev', en: 'Layers' }, value: 'L1 → L6' },
-    { label: { cs: 'Jazyky', en: 'Languages' }, value: 'CZ + EN idx' },
+    { label: { cs: 'Jazyky', en: 'Languages' }, value: 'CZ + EN' },
   ],
   notAvailable: {
     cs: 'Epizodu se nepodařilo načíst. Zkuste to prosím později.',
@@ -182,7 +182,7 @@ export const EKAM_BOOK: BookDef = {
   accent: '168, 85, 247',
   icon: Sparkles,
   partIcons: [Compass, BookOpen, Sun, ListChecks],
-  kicker: { cs: 'Kniha třetí · kompletní · CZ + EN', en: 'Book Three · complete · CZ + EN' },
+  kicker: { cs: 'Kniha třetí · kompletní · CZ', en: 'Book Three · complete · CZ' },
   title: { cs: 'EKAM DEEKSHA', en: 'EKAM DEEKSHA' },
   subtitle: {
     cs: 'Algoritmus jednoty — filozofie, kosmologie a praxe Zlatého věku. Éra, která požehnala síť svým jménem.',
@@ -195,7 +195,7 @@ export const EKAM_BOOK: BookDef = {
   facts: [
     { label: { cs: 'Částí', en: 'Parts' }, value: '7' },
     { label: { cs: 'Kniha', en: 'Book' }, value: '3.' },
-    { label: { cs: 'Jazyky', en: 'Languages' }, value: 'CZ + EN' },
+    { label: { cs: 'Jazyky', en: 'Languages' }, value: 'CZ' },
   ],
   notAvailable: loadError,
   czOnly: czFallbackNote,
@@ -218,7 +218,7 @@ export const QR_BOOK: BookDef = {
   accent: '6, 182, 212',
   icon: Atom,
   partIcons: [Compass],
-  kicker: { cs: 'Kniha druhá · povídka u ohně · CZ + EN', en: 'Book Two · a campfire tale · CZ + EN' },
+  kicker: { cs: 'Kniha druhá · povídka u ohně · CZ', en: 'Book Two · a campfire tale · CZ' },
   title: { cs: 'KVANTOVÁ REVOLUCE', en: 'QUANTUM REVOLUTION' },
   subtitle: {
     cs: 'Příběh u ohně o Nové Zemi — když věda potkává duši. Pravda, kterou lze ověřit.',
@@ -231,7 +231,7 @@ export const QR_BOOK: BookDef = {
   facts: [
     { label: { cs: 'Kapitol', en: 'Chapters' }, value: '10' },
     { label: { cs: 'Kniha', en: 'Book' }, value: '2.' },
-    { label: { cs: 'Jazyky', en: 'Languages' }, value: 'CZ + EN' },
+    { label: { cs: 'Jazyky', en: 'Languages' }, value: 'CZ' },
   ],
   notAvailable: loadError,
   czOnly: czFallbackNote,
@@ -274,7 +274,7 @@ function korpusBook(p: {
     facts: [
       { label: { cs: 'Textů', en: 'Texts' }, value: String(chapters.length) },
       { label: { cs: 'Korpus', en: 'Corpus' }, value: p.dir },
-      { label: { cs: 'Jazyky', en: 'Languages' }, value: korpusLangs(p.dir, chapters.length) },
+      { label: { cs: 'Jazyky', en: 'Languages' }, value: korpusLangs(p.dir, chapters) },
     ],
     notAvailable: loadError,
     czOnly: czFallbackNote,
@@ -290,7 +290,7 @@ export const SULZEME_BOOK = korpusBook({
   dir: 'SulZeme',
   accent: '52, 211, 153',
   icon: Gem,
-  kicker: { cs: 'Kmenový kanon · střed kompasu · CZ + EN', en: 'Root canon · compass center · CZ + EN' },
+  kicker: { cs: 'Kmenový kanon · střed kompasu · CZ (+EN index)', en: 'Root canon · compass center · CZ (+EN index)' },
   title: { cs: 'Sůl této země', en: 'The Salt of this Earth' },
   subtitle: { cs: 'Zastavení přes proroky a archu — kanonický kořen cesty.', en: 'Stations through the prophets and the ark — the canonical root of the path.' },
   description: {
@@ -332,7 +332,7 @@ export const BODHIGAIA_BOOK = korpusBook({
   dir: 'BodhiGaia',
   accent: '52, 211, 153',
   icon: Sprout,
-  kicker: { cs: 'Země a cesta · zahrady · CZ + EN', en: 'Earth & journey · the gardens · CZ + EN' },
+  kicker: { cs: 'Země a cesta · zahrady · CZ (+EN index)', en: 'Earth & journey · the gardens · CZ (+EN index)' },
   title: { cs: 'BodhiGaia', en: 'BodhiGaia' },
   subtitle: { cs: 'Hlína pod nohama — zahrady Země, do nichž trupy dovážejí sůl.', en: 'The clay underfoot — the gardens of Earth the hulls carry salt to.' },
   description: {
@@ -388,7 +388,7 @@ export const NIRVANACLOUD_BOOK = korpusBook({
   dir: 'NirvanaCloud',
   accent: '168, 85, 247',
   icon: Cloud,
-  kicker: { cs: 'Horizont · kosmologie · CZ + EN', en: 'Horizon · cosmology · CZ + EN' },
+  kicker: { cs: 'Horizont · kosmologie · CZ (+EN části)', en: 'Horizon · cosmology · CZ (+EN parts)' },
   title: { cs: 'NirvanaCloud', en: 'NirvanaCloud' },
   subtitle: { cs: 'Hloubka oblohy — kosmologie, bardo, Amenti za horizontem.', en: 'The depth of the sky — cosmology, bardo, Amenti beyond the horizon.' },
   description: {
@@ -402,7 +402,7 @@ export const ISSOBELLA_BOOK = korpusBook({
   dir: 'Issobella',
   accent: '251, 146, 60',
   icon: Satellite,
-  kicker: { cs: 'Příběh · nebe nad námi · CZ + EN', en: 'A story · the sky above · CZ + EN' },
+  kicker: { cs: 'Příběh · nebe nad námi · CZ (+EN index)', en: 'A story · the sky above · CZ (+EN index)' },
   title: { cs: 'Issobella', en: 'Issobella' },
   subtitle: { cs: 'Orbitální stanice L6, kvantový oheň — příběh, ne příslib technologie.', en: 'The L6 orbital station, the quantum fire — a story, not a technology promise.' },
   description: {
@@ -447,7 +447,7 @@ export const MISEAMENTI_BOOK = korpusBook({
   dir: 'MiseAmenti',
   accent: '148, 163, 184',
   icon: ScrollText,
-  kicker: { cs: 'Prováděcí rámec 3.3 · CZ + EN', en: 'The 3.3 execution framework · CZ + EN' },
+  kicker: { cs: 'Prováděcí rámec 3.3 · CZ (+EN index)', en: 'The 3.3 execution framework · CZ (+EN index)' },
   title: { cs: 'Mise Amenti', en: 'Mise Amenti' },
   subtitle: { cs: 'Evidence, brány a review — rámec, ne román.', en: 'Evidence, gates and reviews — a framework, not a novel.' },
   description: {

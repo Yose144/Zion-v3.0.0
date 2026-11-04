@@ -31,6 +31,13 @@ interface Category {
   chapters: BookChapter[];
 }
 
+// Some EN slots exist as a short "language note" stub instead of a real
+// translation (e.g. Ekam, Quantum Revolution). Treat those as missing so the
+// reader falls back to the canonical Czech text instead of showing a note.
+function isTranslationStub(text: string): boolean {
+  return text.length < 1500 && /language note/i.test(text);
+}
+
 function buildCategories(chapters: BookChapter[]): Category[] {
   const categories: Category[] = [];
   for (const ch of chapters) {
@@ -70,9 +77,24 @@ export default function BookReader({ book }: { book: BookDef }) {
   const chapterIndex = currentChapter
     ? chapters.findIndex((c) => c.slug === currentChapter.slug)
     : -1;
+
+  // Front matter (index / README) is part of the book's TOC but not part of the
+  // reading progress — otherwise every book starts at "1 / N" on its index.
+  const isFrontMatter = (chapter: BookChapter | undefined) =>
+    Boolean(
+      chapter &&
+        (/^(00-)?readme$/i.test(chapter.slug) ||
+          chapter.num.cs === 'Index' ||
+          chapter.num.en === 'Index'),
+    );
+  const progressChapters = chapters.filter((c) => !isFrontMatter(c));
+  const progressIndex =
+    currentChapter && !isFrontMatter(currentChapter)
+      ? progressChapters.findIndex((c) => c.slug === currentChapter.slug)
+      : -1;
   const readingPct =
-    chapters.length > 0 && chapterIndex >= 0
-      ? Math.round(((chapterIndex + 1) / chapters.length) * 100)
+    progressChapters.length > 0 && progressIndex >= 0
+      ? Math.round(((progressIndex + 1) / progressChapters.length) * 100)
       : 0;
 
   // Reading time estimate — honest and cheap: words / 200 wpm, minimum a minute.
@@ -84,20 +106,20 @@ export default function BookReader({ book }: { book: BookDef }) {
   // Remember where this reader stopped (localStorage only — see lib/books/progress).
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (!currentChapter || chapters.length === 0) return;
-    const index = chapters.findIndex((c) => c.slug === currentChapter.slug);
-    if (index < 0) return;
+    if (!currentChapter || progressChapters.length === 0) return;
+    const index = progressChapters.findIndex((c) => c.slug === currentChapter.slug);
+    if (index < 0) return; // opening the index must not reset real progress
     saveReadingProgress({
       bookId: book.id,
       path: window.location.pathname,
       chapterSlug: currentChapter.slug,
       chapterIndex: index,
-      totalChapters: chapters.length,
+      totalChapters: progressChapters.length,
       chapterLabel: `${currentChapter.num[l]} — ${currentChapter.title[l]}`,
       bookTitle: book.title[l],
       updatedAt: Date.now(),
     });
-  }, [book.id, book.title, chapters, currentChapter, l]);
+  }, [book.id, book.title, progressChapters, currentChapter, l]);
 
   // Keyboard chapter navigation (← / →), ignored while typing in a field.
   useEffect(() => {
@@ -141,7 +163,18 @@ export default function BookReader({ book }: { book: BookDef }) {
           if (res.ok && !cancelled) setCzFallback(true);
         }
         if (!res.ok) throw new Error(String(res.status));
-        const md = await res.text();
+        let md = await res.text();
+        if (l === 'en' && book.enFallback && isTranslationStub(md)) {
+          const csRes = await fetch(book.singleDoc!.docPath('cs'));
+          if (csRes.ok) {
+            const csMd = await csRes.text();
+            if (!isTranslationStub(csMd)) {
+              md = csMd;
+              path = book.singleDoc!.docPath('cs');
+              if (!cancelled) setCzFallback(true);
+            }
+          }
+        }
         if (cancelled) return;
         const doc = splitSingleDoc(md, book.singleDoc!);
         setSingleDoc(doc);
@@ -207,7 +240,18 @@ export default function BookReader({ book }: { book: BookDef }) {
           if (response.ok && !isCancelled) setCzFallback(true);
         }
         if (!response.ok) throw new Error(String(response.status));
-        const text = await response.text();
+        let text = await response.text();
+        if (l === 'en' && book.enFallback && isTranslationStub(text)) {
+          const csRes = await fetch(book.docPath!(currentChapter.slug, 'cs'));
+          if (csRes.ok) {
+            const csText = await csRes.text();
+            if (!isTranslationStub(csText)) {
+              text = csText;
+              resolvedPath = book.docPath!(currentChapter.slug, 'cs').replace(/^\/docs\//, '');
+              if (!isCancelled) setCzFallback(true);
+            }
+          }
+        }
         if (!isCancelled) {
           setContent(text);
           setSourceFile(resolvedPath);
@@ -240,9 +284,9 @@ export default function BookReader({ book }: { book: BookDef }) {
       <div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white">
         <HeroIcon className="w-3.5 h-3.5 shrink-0" style={{ color: accentRgb }} />
         <span className="truncate">{book.title[l]}</span>
-        {chapters.length > 0 && chapterIndex >= 0 && (
+        {progressChapters.length > 0 && progressIndex >= 0 && (
           <span className="ml-auto shrink-0 font-mono text-[10px] font-medium text-gray-500">
-            {chapterIndex + 1}/{chapters.length}
+            {progressIndex + 1}/{progressChapters.length}
           </span>
         )}
       </div>
@@ -409,7 +453,7 @@ export default function BookReader({ book }: { book: BookDef }) {
                     <ChevronRight className="w-3 h-3" />
                     <span className="text-zion-purple">{currentChapter.num[l]}</span>
                   </div>
-                  {chapters.length > 1 && (
+                  {progressChapters.length > 1 && progressIndex >= 0 && (
                     <div className="mb-4 flex items-center gap-3">
                       <div className="h-1 w-full max-w-xs overflow-hidden rounded-full bg-white/10">
                         <div
@@ -418,7 +462,7 @@ export default function BookReader({ book }: { book: BookDef }) {
                         />
                       </div>
                       <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">
-                        {chapterIndex + 1} / {chapters.length}
+                        {progressIndex + 1} / {progressChapters.length}
                       </span>
                     </div>
                   )}

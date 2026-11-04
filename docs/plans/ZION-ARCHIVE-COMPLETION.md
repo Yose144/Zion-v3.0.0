@@ -44,18 +44,21 @@ Principy, které platí pro každou práci:
 
 ### 2.1 Obsah a jazyky
 
-| Kniha | EN | Priorita dopřekladu |
+| Kniha | EN (kapitoly) | Priorita dopřekladu |
 |---|---|---|
-| Maitreya | 19/19 | hotovo |
-| Nirvana | 16 souborů | hotovo (QA) |
-| Ekam Deeksha | 35 souborů | hotovo (QA) |
-| Quantum Revolution | celý dokument | hotovo (QA) |
-| Sůl této země | 3/25 | **P1** |
-| NirvanaCloud | 3/12 | **P1** |
-| BodhiGaia | 1/16 | P2 |
-| Issobella | 1/13 | P2 |
-| Mise Amenti | 1/11 | P2 (rámec, ne román) |
+| Maitreya | **19/19** | hotovo |
+| Nirvana | **14/14** | hotovo (QA) |
+| NirvanaCloud | 2/8 | **P1** |
+| Sůl této země | 0/12 | **P1** |
+| Ekam Deeksha | 0/10 (EN jsou 401B stuby) | P1/P2 |
+| Quantum Revolution | 0 (EN je 396B stub) | P2 |
+| BodhiGaia | 0/13 | P2 |
+| Issobella | 0/11 | P2 |
+| Mise Amenti | 0/8 | P2 (rámec, ne román) |
 | Lumi, Miriam, Růže, MariaCaminho, Na Cestě, Surta Srdce, Království srdce, Kruh Bohyní, Nabukano | 0 | P2/P3 dle 👤 |
+
+> Měřeno auditem 2026-11-04: **204 kapitol, 189 překladatelných, 35 přeložených (18,5 %)**.
+> Detail: [`REPORT_2026-11-04_ARCHIVE_W1_AUDIT.md`](../3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_W1_AUDIT.md).
 
 **Další mezery:**
 
@@ -98,9 +101,12 @@ Principy, které platí pro každou práci:
 
 ### W1 — Obsahová kompletnost (P0)
 
-- [ ] Audit: každá kapitola v `BOOKS` má reálný soubor (`archive-content/**`, `public/docs/**`);
-      skript `scripts/ops/check-archive-content.mjs` + report do `docs/3.2/REPORTS/`.
-- [ ] `00-README`/front matter vyloučit z kapitol a z progressu (`korpusChapters` + `BookReader`).
+- [x] Audit: každá kapitola v `BOOKS` má reálný soubor — `GET /api/archive/audit`
+      (admin, registr vs. FS) + offline `scripts/ops/check-archive-content.mjs`;
+      report [`REPORT_2026-11-04_ARCHIVE_W1_AUDIT.md`](../3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_W1_AUDIT.md).
+- [x] `00-README`/front matter vyloučeno z progresu (`BookReader`) — index zůstává v TOC,
+      ale nepočítá se do „1 / N" ani do EN coverage.
+- [x] Duplicity slugů a chybějící `parts` — audit hlásí 0/0 (204 kapitol, 15 front matter).
 - [ ] Sjednotit číslování částí/kapitol a názvy v TOC napříč knihami.
 - [ ] Doplnit chybějící dodatky/glosáře a odkazy „O knize".
 - [ ] Link audit: interní reference renderovat jako odkaz, pokud cíl existuje.
@@ -112,8 +118,10 @@ nezačíná na indexu.
 
 - [ ] Slovník pojmů (`docs/3.2/ARCHIVE-TRANSLATION-GLOSSARY.md`): mantra, jména, termíny;
       jednotné přepisy (sanskrt, místní názvy), zásada „neměnit citáty".
-- [ ] Tracking soubor `src/lib/books/en-coverage.json` (automaticky generovaný) — jeden zdroj
-      pro štítky v knihovně i pro report.
+- [x] Poctivé štítky: falešná „CZ + EN" u Ekam/QR/korpusu odstraněna; stub překladu se
+      v readeru pozná a spadne na češtinu (`isTranslationStub`).
+- [ ] Tracking soubor `src/lib/books/en-coverage.json` (automaticky z auditu) — jeden zdroj
+      pro štítky v knihovně i pro report (dnes: audit JSON + `korpusLangs`).
 - [ ] P1 překlady: **Sůl této země**, **NirvanaCloud** (poslední 3/25 a 3/12 → 100 %).
 - [ ] QA checklist pro každou přeloženou kapitolu: markdown parita, nadpisy, anchor slugy,
       odkazy, blokové citáty, tabulky, diakritika, žádné „strojové" vsuvky.
@@ -195,16 +203,17 @@ Každý milník = vlastní report v `docs/3.2/REPORTS/` + záznam v `apps/websit
 
 ## 5. Prioritní backlog (prvních 10 věcí)
 
-1. **W3** — katalog stažení + gate route + Království srdce ZIP *(tato dávka)*.
-2. **W1** — skript na audit kapitol vs soubory; report.
-3. **W1** — front matter (`00-README`) mimo kapitoly a progress.
-4. **W2** — `en-coverage.json` + pravdivé štítky z jednoho zdroje.
-5. **W2** — dokončit EN u Sůl této země (22 kapitol).
-6. **W2** — dokončit EN u NirvanaCloud (9 kapitol).
-7. **W4** — hledání v knize.
-8. **W4** — záložky + nastavení čtečky.
-9. **W6** — stav passu („platí do", vazba na ZIS) v lock page i hubu.
-10. **W7** — e2e pro hub s testovacím passem + downloads.
+1. ~~W3 — katalog stažení + gate route + Království srdce ZIP~~ ✅ 2026-11-04
+2. ~~W1 — audit kapitol vs. soubory + report~~ ✅ 2026-11-04
+3. ~~W1 — front matter (`00-README`) mimo progres~~ ✅ 2026-11-04
+4. ~~W2 — pravdivé jazykové štítky + stub detekce~~ ✅ 2026-11-04
+5. **W2** — dokončit EN u Sůl této země (12 kapitol) — první překladová dávka.
+6. **W2** — dokončit EN u NirvanaCloud (6 kapitol).
+7. **W2** — `en-coverage.json` generovaný z auditu (jeden zdroj pro UI i report).
+8. **W4** — hledání v knize.
+9. **W4** — záložky + nastavení čtečky.
+10. **W6** — stav passu („platí do", vazba na ZIS) v lock page i hubu.
+11. **W7** — e2e pro hub s testovacím passem + downloads.
 
 ---
 
@@ -240,3 +249,6 @@ Každý milník = vlastní report v `docs/3.2/REPORTS/` + záznam v `apps/websit
 - ✅ **Království srdce — kompletní edice** (ZIP, 40 knih, 5 jazyků, PDF + EPUB).
 - ✅ Karta knihy v knihovně dostala tlačítko stažení.
 - ✅ Lock page zmiňuje stažení v „co pass odemyká".
+- ✅ W1: audit registru (0 chybějících CS, 15 front matter), front matter mimo progres,
+  stub detekce EN, opravené jazykové claimy.
+- ✅ W2 start: knihovna/readery už nelžou o jazyce; další dávka = P1 překlady.

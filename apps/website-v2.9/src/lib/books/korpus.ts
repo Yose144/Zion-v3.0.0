@@ -90,16 +90,25 @@ export const korpusDocPath =
   (slug: string, lang: Lang): string =>
     lang === 'en' ? `/api/archive/docs/korpus/${dir}/${slug}_EN.md` : `/api/archive/docs/korpus/${dir}/${slug}.md`;
 
-/** Count of *_EN.md translations present for a korpus book. */
-export function korpusEnCount(dir: string): number {
+// Front matter (README / 00-*) is not translated as a chapter; counting its
+// `_EN` sibling would inflate the language claim. Aux docs (Onboarding*,
+// CHANGELOG…) are not chapters either, so they never count.
+const isFrontMatterSlug = (slug: string) => /^(00-)?readme$/i.test(slug) || /^00-/.test(slug);
+
+/** Chapters that actually have an English translation (`<slug>_EN.md`). */
+export function korpusEnChapters(dir: string, chapters: BookChapter[]): number {
   const prefix = `korpus/${dir}/`;
-  return [...FILES].filter((f) => f.startsWith(prefix) && f.endsWith('_EN.md')).length;
+  return chapters
+    .filter((c) => !isFrontMatterSlug(c.slug))
+    .filter((c) => FILES.has(`${prefix}${c.slug}_EN.md`)).length;
 }
 
 /** Honest language fact for a korpus book ('CZ' / 'CZ (+EN části)' / 'CZ + EN'). */
-export function korpusLangs(dir: string, chapterCount: number): string {
-  const en = korpusEnCount(dir);
+export function korpusLangs(dir: string, chapters: BookChapter[]): string {
+  const translatable = chapters.filter((c) => !isFrontMatterSlug(c.slug));
+  if (translatable.length === 0) return 'CZ';
+  const en = korpusEnChapters(dir, chapters);
   if (en === 0) return 'CZ';
-  if (en >= chapterCount) return 'CZ + EN';
+  if (en >= translatable.length) return 'CZ + EN';
   return 'CZ (+EN části)';
 }
