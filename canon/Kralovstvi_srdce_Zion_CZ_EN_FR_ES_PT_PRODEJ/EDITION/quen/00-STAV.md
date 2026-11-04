@@ -7,7 +7,7 @@ Loď, která nemá uzavřený účet; kapitoly jsou nejvyšší úroveň.
 | Jazyk | Rukopis | PDF | EPUB | Slov |
 |---|---|---|---|---|
 | CZ | ✅ | ✅ | ✅ | 5903 |
-| EN | — | — | — | — |
+| EN | ✅ | ✅ | ✅ | 7500 |
 | ES | — | — | — | — |
 | FR | — | — | — | — |
 | PT | — | — | — | — |

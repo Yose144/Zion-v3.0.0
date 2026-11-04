@@ -1,0 +1,17 @@
+{
+  "edition": "quen",
+  "lang": "EN",
+  "source": "Qwen_Edition_The_Accountant_EN.md",
+  "words": 7500,
+  "headings": 56,
+  "paragraphs": 160,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 46,
+    "bytes": 197651
+  },
+  "epub": {
+    "documents": 19,
+    "bytes": 31436
+  }
+}
