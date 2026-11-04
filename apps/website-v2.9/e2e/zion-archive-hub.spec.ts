@@ -47,14 +47,22 @@ test.describe('Zion Archive hub (needs ARCHIVE_TEST_PASS)', () => {
 
   test('fresh deep link opens the chapter, not the index', async ({ page }) => {
     await page.goto('/zion-archive/nirvana/cist#01-Prvni-Paprsek', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.zion-docs-prose', { timeout: 20_000 });
-    await page.waitForTimeout(1200);
-    expect(await page.evaluate(() => location.hash)).toBe('#01-Prvni-Paprsek');
-    await expect(page.locator('h2').first()).toContainText(/První paprsek/);
-    const progress = await page.evaluate(() =>
-      JSON.parse(localStorage.getItem('zion.archive.progress.v1') ?? '{}'),
-    );
-    expect(progress.nirvana.chapterSlug).toBe('01-Prvni-Paprsek');
+    await page.waitForSelector('.zion-docs-prose', { timeout: 30_000 });
+    await expect(page).toHaveURL(/#01-Prvni-Paprsek$/, { timeout: 20_000 });
+    await expect(page.locator('h2').first()).toContainText(/První paprsek/, { timeout: 20_000 });
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            () =>
+              JSON.parse(localStorage.getItem('zion.archive.progress.v1') ?? '{}').nirvana
+                ?.chapterSlug ?? null,
+          ),
+        { timeout: 20_000 },
+      )
+      .toBe('01-Prvni-Paprsek');
+    // progress must not rewrite the incoming deep link
+    await expect(page).toHaveURL(/#01-Prvni-Paprsek$/);
   });
 
   test('front matter is not progress, first chapter is', async ({ page }) => {
