@@ -26,6 +26,8 @@ import { TanksScene } from './TanksScene';
 import { useNet } from '@/core/net/useNet';
 import { InviteButton } from '@/core/net/InviteButton';
 import { play, unlock } from '@/core/audio/engine';
+import { useXr } from '@/core/xr';
+import { VrButton } from '@/core/xr/VrButton';
 
 type Mode = '2d' | '3d';
 
@@ -43,6 +45,7 @@ const HINTS: Record<Mode, { cs: string; en: string }> = {
 export function TanksGame({ onExit }: { onExit: () => void }) {
   const state = useRef<TanksState>(createTanks());
   const [mode, setMode] = useState<Mode>('2d');
+  const { store: xrStore, presenting } = useXr();
   const [info, setInfo] = useState<TanksInfo>(() => tanksInfo(state.current));
   const keys = useRef(new Set<string>());
   const [coarse, setCoarse] = useState(false);
@@ -327,6 +330,7 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
           </button>
         </div>
         <InviteButton roomId={online ? roomId : null} className="tanks-invite" />
+        {mode === '3d' && <VrButton xr={{ store: xrStore, presenting }} className="arena-vr" />}
         <button
           type="button"
           className={`tanks-online${online ? ' is-on' : ''}`}
@@ -341,7 +345,12 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
       </header>
 
       <div className="tanks-stage">
-        {mode === '2d' ? <TanksCanvas state={state} compact={coarse} /> : <TanksScene state={state} />}
+        {/* Ve VR se vždy kreslí 3D — 2D plátno v headsetu nemá hloubku ani kurzor. */}
+        {mode === '2d' && !presenting ? (
+          <TanksCanvas state={state} compact={coarse} />
+        ) : (
+          <TanksScene state={state} xrStore={xrStore} xr={presenting} />
+        )}
       </div>
 
       {(mode === '3d' || coarse) && (

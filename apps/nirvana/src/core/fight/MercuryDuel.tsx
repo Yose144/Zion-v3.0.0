@@ -8,6 +8,7 @@ import { Fighter3D } from './Fighter3D';
 import { makeFighter, stepFighter, type Fighter, type FightInput } from './duel';
 import { useFightKeys } from './useFightKeys';
 import { createDuelSound } from './audio';
+import { DuelXr } from './FightXr';
 import { useNet } from '@/core/net/useNet';
 import type { FightPlayerState, ServerMessage } from '@/core/net/protocol';
 import { avatarLook, type AvatarLook } from '../avatars/kit';
@@ -49,9 +50,11 @@ const emptyFighter = (): Fighter => makeFighter({ id: 'pending', name: '…', av
 
 export function MercuryDuel({
   running,
+  xr = false,
   onStats,
 }: {
   running: boolean;
+  xr?: boolean;
   onStats: (stats: DuelMpStats) => void;
 }) {
   const { subscribe, sendInput, joinGame, leaveRoom, youPlayerId, connected, rtt } = useNet();
@@ -262,7 +265,8 @@ export function MercuryDuel({
   return (
     <>
       <DuelStage />
-      <DuelCamera a={self as MutableRefObject<Fighter>} b={foe as MutableRefObject<Fighter>} />
+      <DuelCamera a={self as MutableRefObject<Fighter>} b={foe as MutableRefObject<Fighter>} xr={xr} />
+      {xr && <DuelXr active={running} />}
       <group ref={selfGroup}>
         <Fighter3D state={self} look={looks.self} />
       </group>

@@ -15,6 +15,7 @@ import {
 import { MAX_SPEED, type Craft, spawnCraft, stepCraft } from '@/core/race/physics';
 import { TrackStage } from '@/core/race/TrackStage';
 import { play, startEngineLoop, unlock, type LoopHandle } from '@/core/audio/engine';
+import { RaceXr } from './RaceXr';
 import {
   PLAYER_ID,
   PLAYER_LATERAL,
@@ -69,10 +70,12 @@ function trackLength(track: { x: number; z: number }[]): number {
 
 export function VenusRace({
   running,
+  xr = false,
   onStats,
   onFinish,
 }: {
   running: boolean;
+  xr?: boolean;
   onStats: (stats: RaceStats) => void;
   onFinish: (result: RaceResult) => void;
 }) {
@@ -240,18 +243,20 @@ export function VenusRace({
       for (const rival of rivals.current) stepRival(rival, track, checkpoints, dt, now);
     }
 
-    // kamera za vozítkem
+    // kamera za vozítkem — ve VR kameru drží headset, origin jede s vozítkem (RaceXr)
     const forwardX = Math.sin(car.heading);
     const forwardZ = Math.cos(car.heading);
     const speedRatio = Math.abs(car.speed) / MAX_SPEED;
-    camPos.set(
-      car.x - forwardX * (9 + speedRatio * 3),
-      4.2 + speedRatio * 0.8,
-      car.z - forwardZ * (9 + speedRatio * 3),
-    );
-    camera.position.lerp(camPos, dampFactor(dt));
-    camTarget.set(car.x + forwardX * 6, 1.2, car.z + forwardZ * 6);
-    camera.lookAt(camTarget);
+    if (!xr) {
+      camPos.set(
+        car.x - forwardX * (9 + speedRatio * 3),
+        4.2 + speedRatio * 0.8,
+        car.z - forwardZ * (9 + speedRatio * 3),
+      );
+      camera.position.lerp(camPos, dampFactor(dt));
+      camTarget.set(car.x + forwardX * 6, 1.2, car.z + forwardZ * 6);
+      camera.lookAt(camTarget);
+    }
 
     const bob = Math.sin(now * 0.003) * 0.04;
     if (craftGroup.current) {
@@ -303,6 +308,7 @@ export function VenusRace({
       </mesh>
 
       <TrackStage track={track} checkpoints={checkpoints} />
+      {xr && <RaceXr craft={player} active={running} />}
 
       {/* soupeři */}
       {rivals.current.map((rival, index) => (

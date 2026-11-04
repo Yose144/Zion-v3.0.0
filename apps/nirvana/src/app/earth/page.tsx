@@ -19,6 +19,8 @@ import { AVATARS } from '@/core/avatars/catalog';
 import { useI18n } from '@/core/i18n';
 import { MobaGame, type MobaStats } from '@/core/moba/MobaGame';
 import { MobaOnline } from '@/core/moba/MobaOnline';
+import { useXr } from '@/core/xr';
+import { VrButton } from '@/core/xr/VrButton';
 import { MobaEmoteWheel } from '@/core/moba/MobaEmoteWheel';
 import { useNet } from '@/core/net/useNet';
 import { MobaMinimap } from '@/core/moba/MobaMinimap';
@@ -141,6 +143,7 @@ function TeamBoard({
 
 export default function EarthPage() {
   const { lang } = useI18n();
+  const { store: xrStore, presenting } = useXr();
   const cs = lang === 'cs';
   const [heroId, setHeroId] = useState(0);
   const [foeId, setFoeId] = useState(82);
@@ -384,7 +387,9 @@ export default function EarthPage() {
               sellRequest={sellRequest}
               buybackRequest={buybackRequest}
               talentRequest={talentRequest}
-              autoAim={coarse}
+              autoAim={coarse || presenting}
+              xr={presenting}
+              xrStore={xrStore}
               debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
             />
           ) : (
@@ -398,7 +403,9 @@ export default function EarthPage() {
               sellRequest={sellRequest}
               buybackRequest={buybackRequest}
               talentRequest={talentRequest}
-              autoAim={coarse}
+              autoAim={coarse || presenting}
+              xr={presenting}
+              xrStore={xrStore}
               debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
             />
           )}
@@ -443,6 +450,7 @@ export default function EarthPage() {
                 <i style={{ width: `${((nexusBlue?.hp ?? 0) / (nexusBlue?.maxHp ?? 1)) * 100}%` }} />
               </div>
             </div>
+            <VrButton xr={{ store: xrStore, presenting }} className="arena-vr moba-vr" />
             <div className="moba-clock">
               <strong>{clock}</strong>
               <small>

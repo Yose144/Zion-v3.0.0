@@ -75,9 +75,12 @@ export function DuelStage() {
 export function DuelCamera({
   a,
   b,
+  xr = false,
 }: {
   a: MutableRefObject<Fighter>;
   b: MutableRefObject<Fighter>;
+  /** Ve VR kameru řídí headset — nesaháme na ni (jinak se hlava „trhá"). */
+  xr?: boolean;
 }) {
   const { camera } = useThree();
   const target = useMemo(() => new THREE.Vector3(0, 1.2, 0), []);
@@ -86,6 +89,7 @@ export function DuelCamera({
   const hitShake = useRef(0);
 
   useFrame((_, delta) => {
+    if (xr) return;
     const mid = THREE.MathUtils.clamp((a.current.x + b.current.x) / 2, -2.5, 2.5);
     const spread = Math.abs(a.current.x - b.current.x);
     const k = dampFactor(delta);

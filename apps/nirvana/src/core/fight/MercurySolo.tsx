@@ -16,6 +16,7 @@ import {
 } from './duel';
 import { createDuelSound } from './audio';
 import { useFightKeys } from './useFightKeys';
+import { DuelXr } from './FightXr';
 import { avatarLook } from '../avatars/kit';
 import type { Group } from 'three';
 
@@ -40,12 +41,14 @@ const RESTART_AFTER = 5;
 
 export function MercurySolo({
   running,
+  xr = false,
   selfAvatarId,
   foeAvatarId,
   botDifficulty,
   onStats,
 }: {
   running: boolean;
+  xr?: boolean;
   selfAvatarId: number | null;
   foeAvatarId: number | null;
   botDifficulty: BotDifficulty;
@@ -137,7 +140,8 @@ export function MercurySolo({
   return (
     <>
       <DuelStage />
-      <DuelCamera a={aRef} b={bRef} />
+      <DuelCamera a={aRef} b={bRef} xr={xr} />
+      {xr && <DuelXr active={running} />}
       <group ref={selfGroup}>
         <Fighter3D state={aRef} look={selfLook} />
       </group>

@@ -18,6 +18,9 @@ import { buyItem, buyback, createMoba, mobaSnapshot, pickTalent, placeSentry, pl
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import { MobaStage } from './MobaStage';
+import { MobaXr } from './MobaXr';
+import { XR } from '@react-three/xr';
+import type { XRStore } from '@react-three/xr';
 import type { SpellSchool, SpellSlot } from './spells';
 import { spellCooldown, spellMana, spellRank } from './spells';
 import { MobaFxOverlay, type DamageFloater } from './MobaFxOverlay';
@@ -158,7 +161,9 @@ export function MobaGame({
   talentRequest,
   autoAim,
   battleSpell,
-}: MobaProps) {
+  xr = false,
+  xrStore,
+}: MobaProps & { xr?: boolean; xrStore?: XRStore }) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
   const floaters = useRef<DamageFloater[]>([]);
   const cameraRef = useRef<THREE.Camera | null>(null);
@@ -171,25 +176,88 @@ export function MobaGame({
       camera={{ position: [0, 20, 17], fov: 42, near: 0.5, far: 220 }}
       gl={{ antialias: true }}
     >
-      <SoloController
-        playerHeroId={playerHeroId}
-        enemyHeroId={enemyHeroId}
-        botSkill={botSkill}
-        running={running}
-        onStats={onStats}
-        onEnd={onEnd}
-        debug={debug}
-        buyRequest={buyRequest}
-        sellRequest={sellRequest}
-        buybackRequest={buybackRequest}
-        talentRequest={talentRequest}
-        autoAim={autoAim}
-        battleSpell={battleSpell}
-        snapshotRef={snapshotRef}
-      />
-      <MobaStage snapshotRef={snapshotRef} youId="hero-you" floaters={floaters} cameraRef={cameraRef} />
-      <MobaAudioBridge snapshotRef={snapshotRef} youId="hero-you" />
+      {/* `<XR>` musí být uvnitř plátna, ale store patří stránce (tlačítko VR).
+          Bez store by vnoření nemělo smysl, proto dvě větve místo `undefined`. */}
+      {xrStore ? (
+        <XR store={xrStore}>
+          <MobaWorld
+            running={running}
+            onStats={onStats}
+            onEnd={onEnd}
+            debug={debug}
+            buyRequest={buyRequest}
+            sellRequest={sellRequest}
+            buybackRequest={buybackRequest}
+            talentRequest={talentRequest}
+            autoAim={autoAim}
+            battleSpell={battleSpell}
+            playerHeroId={playerHeroId}
+            enemyHeroId={enemyHeroId}
+            botSkill={botSkill}
+            snapshotRef={snapshotRef}
+            floaters={floaters}
+            cameraRef={cameraRef}
+            xr={xr}
+          />
+        </XR>
+      ) : (
+        <MobaWorld
+          running={running}
+          onStats={onStats}
+          onEnd={onEnd}
+          debug={debug}
+          buyRequest={buyRequest}
+          sellRequest={sellRequest}
+          buybackRequest={buybackRequest}
+          talentRequest={talentRequest}
+          autoAim={autoAim}
+          battleSpell={battleSpell}
+          playerHeroId={playerHeroId}
+          enemyHeroId={enemyHeroId}
+          botSkill={botSkill}
+          snapshotRef={snapshotRef}
+          floaters={floaters}
+          cameraRef={cameraRef}
+        />
+      )}
     </Canvas>
+    </>
+  );
+}
+
+function MobaWorld(props: MobaProps & {
+  snapshotRef: React.MutableRefObject<MobaSnapshot | null>;
+  floaters: React.MutableRefObject<DamageFloater[]>;
+  cameraRef: React.MutableRefObject<THREE.Camera | null>;
+  xr?: boolean;
+}) {
+  return (
+    <>
+      <SoloController
+        playerHeroId={props.playerHeroId}
+        enemyHeroId={props.enemyHeroId}
+        botSkill={props.botSkill}
+        running={props.running}
+        onStats={props.onStats}
+        onEnd={props.onEnd}
+        debug={props.debug}
+        buyRequest={props.buyRequest}
+        sellRequest={props.sellRequest}
+        buybackRequest={props.buybackRequest}
+        talentRequest={props.talentRequest}
+        autoAim={props.autoAim}
+        battleSpell={props.battleSpell}
+        snapshotRef={props.snapshotRef}
+      />
+      <MobaStage
+        snapshotRef={props.snapshotRef}
+        youId="hero-you"
+        floaters={props.floaters}
+        cameraRef={props.cameraRef}
+        xr={props.xr}
+      />
+      <MobaAudioBridge snapshotRef={props.snapshotRef} youId="hero-you" />
+      {props.xr && <MobaXr snapshotRef={props.snapshotRef} youId="hero-you" active={props.running} />}
     </>
   );
 }

@@ -9,6 +9,7 @@ import { MAX_SPEED, type Craft, spawnCraft, stepCraft } from './physics';
 import { TrackStage } from './TrackStage';
 import { useNet } from '@/core/net/useNet';
 import { play, startEngineLoop, unlock, type LoopHandle } from '@/core/audio/engine';
+import { RaceXr } from './RaceXr';
 import type { RacePlayerState, ServerMessage } from '@/core/net/protocol';
 
 /**
@@ -53,9 +54,11 @@ interface Snapshot {
 
 export function VenusMultiplayer({
   running,
+  xr = false,
   onStats,
 }: {
   running: boolean;
+  xr?: boolean;
   onStats: (stats: MpRaceStats) => void;
 }) {
   const { camera } = useThree();
@@ -220,18 +223,20 @@ export function VenusMultiplayer({
       craftGroup.current.rotation.z = -steer * 0.12 * Math.min(1, Math.abs(craft.current.speed) / MAX_SPEED);
     }
 
-    // 3) kamera za vozítkem
+    // 3) kamera za vozítkem (ve VR ji drží headset a origin jede s lodí)
     const forwardX = Math.sin(craft.current.heading);
     const forwardZ = Math.cos(craft.current.heading);
     const speedRatio = Math.abs(craft.current.speed) / MAX_SPEED;
-    camPos.set(
-      craft.current.x - forwardX * (9 + speedRatio * 3),
-      4.2 + speedRatio * 0.8,
-      craft.current.z - forwardZ * (9 + speedRatio * 3),
-    );
-    camera.position.lerp(camPos, dampFactor(dt));
-    camTarget.set(craft.current.x + forwardX * 6, 1.2, craft.current.z + forwardZ * 6);
-    camera.lookAt(camTarget);
+    if (!xr) {
+      camPos.set(
+        craft.current.x - forwardX * (9 + speedRatio * 3),
+        4.2 + speedRatio * 0.8,
+        craft.current.z - forwardZ * (9 + speedRatio * 3),
+      );
+      camera.position.lerp(camPos, dampFactor(dt));
+      camTarget.set(craft.current.x + forwardX * 6, 1.2, craft.current.z + forwardZ * 6);
+      camera.lookAt(camTarget);
+    }
 
     // 4) ostatní jezdci
     const blend =
@@ -321,6 +326,7 @@ export function VenusMultiplayer({
       </mesh>
 
       <TrackStage track={track} checkpoints={checkpoints} />
+      {xr && <RaceXr craft={craft} active={running} />}
 
       {/* ostatní jezdci */}
       {Array.from({ length: MAX_REMOTE }, (_, index) => (

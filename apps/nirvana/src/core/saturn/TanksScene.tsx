@@ -13,7 +13,10 @@
 
 import { useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import type { XRStore } from '@react-three/xr';
+import { XR } from '@react-three/xr';
 import * as THREE from 'three';
+import { TanksXr } from './TanksXr';
 import {
   BLAST_R,
   TANK_H,
@@ -259,7 +262,16 @@ function SaturnSky() {
   );
 }
 
-export function TanksScene({ state }: { state: React.MutableRefObject<TanksState> }) {
+export function TanksScene({
+  state,
+  xrStore,
+  xr = false,
+}: {
+  state: React.MutableRefObject<TanksState>;
+  /** XR store z `TanksGame` — `<XR>` musí být uvnitř plátna, ale store patří ven. */
+  xrStore?: XRStore;
+  xr?: boolean;
+}) {
   return (
     <Canvas
       className="tanks-3d"
@@ -267,6 +279,21 @@ export function TanksScene({ state }: { state: React.MutableRefObject<TanksState
       dpr={[1, 1.75]}
       shadows
     >
+      {xrStore ? (
+        <XR store={xrStore}>
+          <TanksWorld state={state} xr={xr} />
+        </XR>
+      ) : (
+        <TanksWorld state={state} />
+      )}
+    </Canvas>
+  );
+}
+
+/** Všechno, co je ve scéně — oddělené, aby se dalo obalit `<XR>` bez kopie. */
+function TanksWorld({ state, xr = false }: { state: React.MutableRefObject<TanksState>; xr?: boolean }) {
+  return (
+    <>
       <SaturnSky />
       <ambientLight intensity={0.55} />
       {/* stínová kamera musí pojmout celé hřiště, jinak se do scény propíše
@@ -290,7 +317,8 @@ export function TanksScene({ state }: { state: React.MutableRefObject<TanksState
       <TankModel state={state} side="bot" />
       <Shot state={state} />
       <Blasts state={state} />
-      <CameraRig state={state} />
-    </Canvas>
+      {/* ve VR kameru drží headset — cinematic let za střelou by „letěl hlavou" */}
+      {xr ? <TanksXr state={state} active /> : <CameraRig state={state} />}
+    </>
   );
 }

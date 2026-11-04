@@ -11,6 +11,9 @@ import { awardRun, grantTokens, loadProfile, saveProfile } from '@/core/park/pro
 import { CHALLENGE_REWARD, claimChallenge } from '@/core/park/challenge';
 import { unlock } from '@/core/audio/engine';
 import { useNet } from '@/core/net/useNet';
+import { useXr } from '@/core/xr';
+import { VrButton } from '@/core/xr/VrButton';
+import { XR } from '@react-three/xr';
 
 /**
  * MERKUR — souboj bok po boku. Sólo cvičení proti botovi i online duel
@@ -177,6 +180,7 @@ export default function MercuryPage() {
   const round = mode === 'online' ? mpStats.round : soloStats.round;
   const countdown = mode === 'online' ? mpStats.countdown : soloStats.countdown;
   const secondsLeft = mode === 'online' ? mpStats.secondsLeft : soloStats.timer;
+  const { store: xrStore, presenting } = useXr();
   const state = mode === 'online' ? mpStats.state : soloStats.phase;
   const selfWins = mode === 'online' ? mpStats.selfWins : soloStats.selfWins;
   const foeWins = mode === 'online' ? mpStats.foeWins : soloStats.foeWins;
@@ -189,18 +193,21 @@ export default function MercuryPage() {
           camera={{ position: [0, 2, 12], fov: 50, near: 0.05, far: 200 }}
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
         >
-          {phase === 'playing' && mode === 'online' ? (
-            <MercuryDuel running onStats={setMpStats} />
-          ) : (
-            <MercurySolo
-              key={phase}
-              running={phase === 'playing'}
-              selfAvatarId={you?.avatarId ?? null}
-              foeAvatarId={mode === 'solo' ? 42 : null}
-              botDifficulty={difficulty}
-              onStats={setSoloStats}
-            />
-          )}
+          <XR store={xrStore}>
+            {phase === 'playing' && mode === 'online' ? (
+              <MercuryDuel running xr={presenting} onStats={setMpStats} />
+            ) : (
+              <MercurySolo
+                key={phase}
+                running={phase === 'playing'}
+                xr={presenting}
+                selfAvatarId={you?.avatarId ?? null}
+                foeAvatarId={mode === 'solo' ? 42 : null}
+                botDifficulty={difficulty}
+                onStats={setSoloStats}
+              />
+            )}
+          </XR>
         </Canvas>
       </div>
 
@@ -218,6 +225,9 @@ export default function MercuryPage() {
           >
             {cs ? 'Menu' : 'Menu'}
           </button>
+          <div className="duel-vr">
+            <VrButton xr={{ store: xrStore, presenting }} className="arena-vr" />
+          </div>
 
           {!(mode === 'online' && (!mpStats.connected || mpStats.state === null)) && <div className="duel-top" aria-hidden>
             <div className="duel-fighter is-self">

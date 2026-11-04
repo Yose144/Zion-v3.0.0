@@ -42,6 +42,7 @@ export function MobaStage({
   selfPose,
   floaters,
   cameraRef,
+  xr = false,
 }: {
   snapshotRef: React.MutableRefObject<MobaSnapshot | null>;
   youId: string;
@@ -49,6 +50,8 @@ export function MobaStage({
   floaters?: React.MutableRefObject<DamageFloater[]>;
   /** Kamera pro projekci světových souřadnic do overlay canvasu. */
   cameraRef?: React.MutableRefObject<THREE.Camera | null>;
+  /** Ve VR kameru drží headset — scéna ji nesmí přepisovat. */
+  xr?: boolean;
   /**
    * Predikovaná poloha vlastního hrdiny (online). Server posílá 15 Hz, takže
    * bez predikce by se vlastní postava cukala; zásahy dál rozhoduje server,
@@ -185,7 +188,7 @@ export function MobaStage({
 
     // ── kamera drží tvého hrdinu na středu ──────────────────────────
     const you = snapshot.heroes.find((hero) => hero.id === youId) ?? snapshot.heroes[0];
-    if (you) {
+    if (you && !xr) {
       const predictedNow = selfPose?.current?.active ? selfPose.current : null;
       const targetX = THREE.MathUtils.clamp(predictedNow?.x ?? you.x, -38, 38);
       const targetZ = THREE.MathUtils.clamp(predictedNow?.z ?? you.z, -26, 26);

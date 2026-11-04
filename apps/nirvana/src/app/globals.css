@@ -3513,6 +3513,20 @@ button.game-hud-chip.is-sound.is-off em {
   color: #ffe9a8;
 }
 
+/* VR v souboji sedí pod tlačítkem Menu, aby nekrylo HP lišty. */
+.duel-vr {
+  position: absolute;
+  z-index: 17;
+  top: calc(3.4rem + env(safe-area-inset-top, 0px));
+  right: 1rem;
+}
+
+/* VR v MOBě je součást horní lišty (mezi Nexy a časem). */
+.moba-vr {
+  align-self: center;
+  font-size: 0.68rem;
+}
+
 .duel-status,
 .duel-result {
   position: absolute;

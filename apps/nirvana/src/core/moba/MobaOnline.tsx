@@ -17,6 +17,9 @@ import * as THREE from 'three';
 import { useNet } from '@/core/net/useNet';
 import { spellsForAvatar } from './spells';
 import { MobaStage } from './MobaStage';
+import { MobaXr } from './MobaXr';
+import { XR } from '@react-three/xr';
+import type { XRStore } from '@react-three/xr';
 import { statsFromSnapshot, type MobaStats } from './MobaGame';
 import { itemTotals, snapAim, type BattleSpellId, type ItemId } from './sim';
 import { MobaFxOverlay, pushEmote, type DamageFloater } from './MobaFxOverlay';
@@ -65,6 +68,8 @@ export function MobaOnline({
   buybackRequest,
   talentRequest,
   autoAim,
+  xr = false,
+  xrStore,
 }: {
   heroId: number;
   /** Battle spell vybraný před zápasem (jde do `join`). */
@@ -83,12 +88,45 @@ export function MobaOnline({
   talentRequest?: React.MutableRefObject<{ tier: number; pick: number } | null>;
   /** Auto-aim (mobil): kouzlo se přichytí na blízkého nepřítele. */
   autoAim?: boolean;
+  /** Ve VR kameru drží headset; vstup jde přes `MobaXr`. */
+  xr?: boolean;
+  xrStore?: XRStore;
 }) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
   const selfPose = useRef<{ x: number; z: number; active: boolean } | null>(null);
   const floaters = useRef<DamageFloater[]>([]);
   const cameraRef = useRef<THREE.Camera | null>(null);
   const { youPlayerId } = useNet();
+
+  const world = (
+    <>
+      <OnlineController
+        heroId={heroId}
+        onStats={onStats}
+        onEnd={onEnd}
+        onPhase={onPhase}
+        debug={debug}
+        buyRequest={buyRequest}
+        sellRequest={sellRequest}
+        buybackRequest={buybackRequest}
+        talentRequest={talentRequest}
+        autoAim={autoAim}
+        floaters={floaters}
+        snapshotRef={snapshotRef}
+        selfPose={selfPose}
+      />
+      <MobaStage
+        snapshotRef={snapshotRef}
+        youId={youPlayerId ?? 'hero-you'}
+        selfPose={selfPose}
+        floaters={floaters}
+        cameraRef={cameraRef}
+        xr={xr}
+      />
+      <OnlineAudioBridge snapshotRef={snapshotRef} youId={youPlayerId ?? null} />
+      {xr && <MobaXr snapshotRef={snapshotRef} youId={youPlayerId ?? 'hero-you'} active />}
+    </>
+  );
 
   return (
     <>
@@ -99,29 +137,7 @@ export function MobaOnline({
         camera={{ position: [0, 20, 17], fov: 42, near: 0.5, far: 220 }}
         gl={{ antialias: true }}
       >
-        <OnlineController
-          heroId={heroId}
-          onStats={onStats}
-          onEnd={onEnd}
-          onPhase={onPhase}
-          debug={debug}
-          buyRequest={buyRequest}
-          sellRequest={sellRequest}
-          buybackRequest={buybackRequest}
-          talentRequest={talentRequest}
-          autoAim={autoAim}
-          floaters={floaters}
-          snapshotRef={snapshotRef}
-          selfPose={selfPose}
-        />
-        <MobaStage
-          snapshotRef={snapshotRef}
-          youId={youPlayerId ?? 'hero-you'}
-          selfPose={selfPose}
-          floaters={floaters}
-          cameraRef={cameraRef}
-        />
-        <OnlineAudioBridge snapshotRef={snapshotRef} youId={youPlayerId ?? null} />
+        {xrStore ? <XR store={xrStore}>{world}</XR> : world}
       </Canvas>
     </>
   );
