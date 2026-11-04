@@ -6630,10 +6630,12 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
 }
 
 .lobby-rooms li {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+  /* flex + wrap: v úzké kartě se řádek zalomí, ale id místnosti se nikdy
+     nezkrátí na „are…" (grid s pevnými sloupci to dělal) */
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.35rem 0.45rem;
   padding: 0.3rem 0.45rem;
   border-radius: 0.55rem;
   background: rgba(255, 255, 255, 0.04);
@@ -6641,6 +6643,8 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
 }
 
 .lobby-room-id {
+  flex: 1 1 6rem;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -6714,8 +6718,7 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   }
 
   .lobby-rooms li {
-    grid-template-columns: minmax(0, 1fr) auto;
-    row-gap: 0.2rem;
+    gap: 0.25rem 0.4rem;
   }
 }
 
