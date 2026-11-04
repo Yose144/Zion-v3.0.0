@@ -83,6 +83,27 @@ default: {
 - Klient přepisuje snapshoty do stejného `TanksState`, takže **2D i 3D
   renderer kreslí dál** a o síti nevědí.
 
+## 4b. Lobby (`/multiplayer`, proto 22)
+
+Server posílá **živý seznam místností** (`t: 'rooms'`) každému, kdo prošel
+`hello`, a to při změně: nová místnost, hráč navíc, změna stavu, odchod.
+Throttluje na **4×/s** a slévá změny — při otevírání místností by jinak
+šel seznam 30×/s.
+
+Klient drží `useNet().rooms` a stránka `/multiplayer` z něj kreslí karty
+všech pěti her: otevřené místnosti (počet hráčů, stav), „Rychlá hra",
+„Připojit" do konkrétní místnosti a banner „jsi v místnosti X" s odkazem
+do hry a tlačítkem Odejít. Odkaz je i v herním docku (🌐 Online).
+
+Dvě věci, které to odhalilo:
+
+- **Prázdná místnost nemá v seznamu bliknout.** `pushRooms()` se proto
+  nevolá v `createRoom` — místnost vzniká uvnitř `join`, takže by lobby
+  na 250 ms ukázala místnost s 0 hráči.
+- **„hraje se" u místnosti s jedním člověkem je lež.** Tanky teď hlásí
+  `waiting`, dokud je volné sedlo (i když mezitím hraje bot), a `running`
+  až když sedí dva lidi.
+
 ## 5. Ověření
 
 | Test | Výsledek |
@@ -98,6 +119,9 @@ default: {
 | live `/net/health` | `proto 21` |
 | live 2 prohlížeče | A „TVŮJ TAH", B „SOUPEŘ MÍŘÍ"; po Aho výstřelu **tah předán B**; 0 chyb |
 | mobile audit | **PASSED** (Saturn tanky 5 dotykových prvků) |
+| `test/rooms.mjs` (nový) | **ROOMS OK** — seznam se rozšíří při vytvoření, příchodu, změně stavu i odchodu; úklid prázdné místnosti |
+| live lobby (2 prohlížeče) | 5 karet, „Rychlá hra" → `tanks-1`, druhý vidí 1/2 „čeká na hráče" a připojí se, po odchodu banner zmizí, 0 chyb |
+| `/multiplayer` responzivita | 390×844 / 844×390 / 768×1024 / 1440×900 → **0 px** přesahu |
 
 ## 6. Opravený flaky test
 

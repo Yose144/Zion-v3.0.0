@@ -1651,3 +1651,20 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   klient na novém serveru dostane `proto_mismatch`; obráceně by join do
   `tanks` propadl.
 - Report: `docs/3.2/REPORTS/REPORT_2026-11-04_MULTIPLAYER_VRSTVA.md`.
+
+## Lobby a živý seznam místností (2026-11-04, proto 22)
+
+- **`rooms` je push, ne poll.** Server posílá `{t:'rooms'}` každému po
+  `hello` při změně (nová místnost, hráč, stav, odchod), throttlovaně na
+  4×/s se sléváním. Kdo přidá novou změnu stavu místnosti, musí zavolat
+  `pushRooms()` — jinak lobby zamrzne na starém seznamu.
+- **`pushRooms()` NEPATŘÍ do `createRoom`.** Místnost vzniká uvnitř `join`,
+  takže by lobby na čtvrt sekundy ukázala místnost s 0 hráči.
+- **`state()` v `Match` je pro lobby, ne pro hru.** Tanky hlásí `waiting`,
+  dokud je volné sedlo (i když hraje bot), a `running` až se dvěma lidmi;
+  „hraje se" u místnosti s jedním člověkem je lež, které si hráč všimne.
+- **Lobby nekreslí nic z lokálního stavu** — jen `useNet().rooms`. Když
+  server mlčí, stránka to řekne a hry jdou hrát sólo (stejné pravidlo jako
+  u ZION zůstatku v HUD).
+- **Odkaz je v `GamesDock`** (🌐 Online) — lobby je rozcestník, ne hra,
+  takže nepatří do `GAME_LINKS`.
