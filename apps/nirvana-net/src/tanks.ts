@@ -125,7 +125,12 @@ export function createTanksMatch(now: number): Match {
         restartedAt = 0;
       }
     },
-    state: () => (sim.phase === 'aim' || sim.phase === 'flight' ? 'running' : sim.phase === 'over' ? 'ended' : 'waiting'),
+    state: () => {
+      if (sim.phase === 'over') return 'ended';
+      // Lobby má ukázat „čeká na hráče", dokud je volné sedlo — i když mezitím
+      // hraje bot. Jinak by místnost s jedním člověkem hlásila „hraje se".
+      return sides.size < 2 ? 'waiting' : 'running';
+    },
     snapshot(id, timeMs) {
       const side = sides.get(id) ?? 'player';
       let terrain: number[] | null = null;
