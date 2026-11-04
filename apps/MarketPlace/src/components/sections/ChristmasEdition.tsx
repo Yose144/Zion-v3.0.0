@@ -26,6 +26,8 @@ interface ChristmasCardProps {
   chips: Chip[];
   ctaLabel: string;
   ctaDisabled?: boolean;
+  detailHref: string;
+  detailLabel: string;
   reverse?: boolean;
 }
 
@@ -40,6 +42,8 @@ function ChristmasCard({
   chips,
   ctaLabel,
   ctaDisabled,
+  detailHref,
+  detailLabel,
   reverse,
 }: ChristmasCardProps) {
   return (
@@ -107,6 +111,12 @@ function ChristmasCard({
                   <ShoppingCart className="w-4 h-4" /> {ctaLabel}
                 </Link>
               )}
+              <Link
+                href={detailHref}
+                className="text-sm text-rasta-gold hover:underline font-semibold"
+              >
+                {detailLabel} →
+              </Link>
             </div>
           </div>
         </div>
@@ -135,6 +145,8 @@ export function ZionPassSection() {
         { icon: Gift, label: t('xmas.passChipGift') },
       ]}
       ctaLabel={`${t('xmas.passCta')} · ${price}`}
+      detailHref="/vanoce/zion-pass"
+      detailLabel={t('xmasPage.moreInfo')}
     />
   );
 }
@@ -160,6 +172,8 @@ export function LampionSection() {
       ]}
       ctaLabel={`${t('xmas.lampionCta')} · ${price}`}
       ctaDisabled
+      detailHref="/vanoce/lampion"
+      detailLabel={t('xmasPage.moreInfo')}
       reverse
     />
   );

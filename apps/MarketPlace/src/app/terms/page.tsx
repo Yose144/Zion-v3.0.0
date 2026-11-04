@@ -34,7 +34,8 @@ export default function TermsPage() {
           <li><a href="#section6"><T cs="Reklamace a záruka" en="Complaints and warranty" /></a></li>
           <li><a href="#section7">ZION Token Reward Program</a></li>
           <li><a href="#section8"><T cs="Ochrana osobních údajů" en="Personal data protection" /></a></li>
-          <li><a href="#section9"><T cs="Závěrečná ustanovení" en="Final provisions" /></a></li>
+          <li><a href="#section9"><T cs="Experimentální produkty a digitální edice" en="Experimental products and digital editions" /></a></li>
+          <li><a href="#section10"><T cs="Závěrečná ustanovení" en="Final provisions" /></a></li>
         </ol>
       </div>
 
@@ -357,11 +358,65 @@ export default function TermsPage() {
       </p>
 
       <h2 id="section9">
-        <T cs="9. Závěrečná ustanovení" en="9. Final provisions" />
+        <T cs="9. Experimentální produkty a digitální edice" en="9. Experimental products and digital editions" />
       </h2>
 
       <h3>
-        <T cs="9.1 Platnost" en="9.1 Validity" />
+        <T cs="9.1 Charakter experimentální nabídky" en="9.1 Nature of the experimental offer" />
+      </h3>
+      <p>
+        <T
+          cs="Produkty označené jako vánoční edice, ZION Pass, digitální edice knih, OASIS artefakty a produkty s bonusy ZION jsou součástí experimentálního ekosystému ve vývoji. Kupující bere na vědomí, že jde o podporu rozvíjeného projektu — prodávající neslibuje konkrétní funkčnost, výnos, rozvoj ani výsledek. Objednávkou tato skutečnost akceptuje."
+          en="Products marked as Christmas edition, ZION Pass, digital book editions, OASIS artifacts and products carrying ZION bonuses are part of an experimental ecosystem under development. The buyer acknowledges this is support for an evolving project — the seller promises no specific functionality, yield, development or outcome. By ordering, the buyer accepts this."
+        />
+      </p>
+
+      <h3>
+        <T cs="9.2 ZION bonusy" en="9.2 ZION bonuses" />
+      </h3>
+      <p>
+        <T
+          cs="ZION bonusy mají charakter dobrovolného věrnostního benefitu. Nemají peněžní hodnotu, nejsou investičním nástrojem, cenným papírem ani platebním prostředkem a nelze je vyplatit v penězích ani uplatnit nárok na jejich směnu. S koupeným produktem jsou neoddělitelně spjaty a nevzniká z nich samostatný majetkový nárok vůči prodávajícímu."
+          en="ZION bonuses are a voluntary loyalty benefit. They have no monetary value, are not an investment instrument, security or means of payment, cannot be paid out in cash, and no claim to their exchange arises. They are inseparable from the purchased product and create no standalone proprietary claim against the seller."
+        />
+      </p>
+
+      <h3>
+        <T cs="9.3 Digitální obsah — zánik práva na odstoupení" en="9.3 Digital content — expiry of withdrawal right" />
+      </h3>
+      <p>
+        <T
+          cs="U digitálního obsahu (ZION Pass, e-knihy, digitální licence, soubory ke stažení) dodaného ihned po zaplacení souhlasí kupující s okamžitým plněním a bere na vědomí, že jeho dodáním zaniká právo na odstoupení od smlouvy ve smyslu § 1837 písm. l) občanského zákoníku."
+          en="For digital content (ZION Pass, e-books, digital licences, downloadable files) delivered immediately after payment, the buyer consents to immediate performance and acknowledges that delivery extinguishes the right of withdrawal pursuant to Section 1837(l) of the Czech Civil Code."
+        />
+      </p>
+
+      <h3>
+        <T cs="9.4 Zboží na zakázku a ruční výroba" en="9.4 Made-to-order and handmade goods" />
+      </h3>
+      <p>
+        <T
+          cs="U zboží upraveného či vyrobeného podle přání kupujícího (gravírované výrobky, lampiony, zakázkové výrobky) právo na odstoupení od smlouvy nevzniká (§ 1837 písm. d) občanského zákoníku). U ručně vyráběného zboží se drobné odchylky vzhledu, odstínu dřeva nebo provedení nepovažují za vadu — fotografie v obchodě jsou ilustrační."
+          en="For goods customised or made to the buyer’s specifications (engraved products, lanterns, made-to-order items), no right of withdrawal arises (Section 1837(d) of the Czech Civil Code). For handmade goods, minor deviations in appearance, wood tone or finish are not defects — product photos are illustrative."
+        />
+      </p>
+
+      <h3>
+        <T cs="9.5 Rozsah záruk a reklamací" en="9.5 Scope of warranties and complaints" />
+      </h3>
+      <p>
+        <T
+          cs="Produkty této edice dodáváme „tak, jak jsou“. V maximálním rozsahu, který připouštějí závazná ustanovení práva na ochranu spotřebitele, se na ně nevztahují žádné dobrovolné záruky nad rámec povinného rozsahu a reklamace se řídí pouze závaznými zákonnými ustanoveními. Závazná práva spotřebitele, která zákon vyloučit nepřípouští, zůstávají nedotčena."
+          en="Products in this edition are supplied “as is”. To the maximum extent permitted by mandatory consumer-protection provisions, no voluntary warranties apply beyond the statutory scope and complaints are governed solely by mandatory statutory provisions. Mandatory consumer rights that the law does not permit to be waived remain unaffected."
+        />
+      </p>
+
+      <h2 id="section10">
+        <T cs="10. Závěrečná ustanovení" en="10. Final provisions" />
+      </h2>
+
+      <h3>
+        <T cs="10.1 Platnost" en="10.1 Validity" />
       </h3>
       <p>
         <T
@@ -371,7 +426,7 @@ export default function TermsPage() {
       </p>
 
       <h3>
-        <T cs="9.2 Změny podmínek" en="9.2 Changes to the terms" />
+        <T cs="10.2 Změny podmínek" en="10.2 Changes to the terms" />
       </h3>
       <p>
         <T
@@ -381,7 +436,7 @@ export default function TermsPage() {
       </p>
 
       <h3>
-        <T cs="9.3 Rozhodné právo" en="9.3 Governing law" />
+        <T cs="10.3 Rozhodné právo" en="10.3 Governing law" />
       </h3>
       <p>
         <T
@@ -391,7 +446,7 @@ export default function TermsPage() {
       </p>
 
       <h3>
-        <T cs="9.4 Řešení sporů" en="9.4 Dispute resolution" />
+        <T cs="10.4 Řešení sporů" en="10.4 Dispute resolution" />
       </h3>
       <p>
         <T cs="Případné spory lze řešit mimosoudně prostřednictvím " en="Disputes may be resolved out of court through the " />

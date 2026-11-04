@@ -164,6 +164,42 @@ const t = {
     },
   },
 
+  xmasPage: {
+    back: { cs: '← Zpět na vánoční nabídku', en: '← Back to the Christmas offer' },
+    priceLabel: { cs: 'Cena', en: 'Price' },
+    inBoxTitle: { cs: 'V ceně dostanete', en: 'Included' },
+    quotesTitle: { cs: 'Ukázky z knihy', en: 'From the book' },
+    buyInShop: { cs: 'Koupit v obchodě', en: 'Buy in the shop' },
+    comingSoon: { cs: 'Připravujeme — brzy', en: 'Coming soon' },
+    moreInfo: { cs: 'Více informací', en: 'More info' },
+  },
+
+  xlegal: {
+    title: {
+      cs: 'Experimentální projekt — čtěte před koupí',
+      en: 'Experimental project — read before buying',
+    },
+    experimental: {
+      cs: 'ZION Market, OASIS, Nirvana a ZION tokeny jsou součástí experimentálního ekosystému ve vývoji. Nákup chápejte jako podporu projektu — neslibujeme zázraky, výnosy ani konkrétní výsledky.',
+      en: 'ZION Market, OASIS, Nirvana and ZION tokens are part of an experimental ecosystem under development. Treat your purchase as supporting the project — we promise no miracles, returns, or specific outcomes.',
+    },
+    noValue: {
+      cs: 'ZION bonus nemá peněžní hodnotu, není investičním nástrojem a nelze jej vyplatit v penězích.',
+      en: 'The ZION bonus has no monetary value, is not an investment instrument, and cannot be paid out in cash.',
+    },
+    asIs: {
+      cs: 'Produkty vánoční edice dodáváme „tak, jak jsou". V maximálním rozsahu, který připouštějí závazná práva spotřebitele, neposkytujeme dobrovolné záruky ani reklamace nad rámec povinného rozsahu.',
+      en: 'Christmas edition products are supplied “as is”. To the maximum extent permitted by mandatory consumer rights, we provide no voluntary warranties or complaints handling beyond the statutory scope.',
+    },
+    digitalWithdrawal: {
+      cs: 'U digitálního obsahu dodaného ihned po zaplacení zaniká právo na odstoupení od smlouvy jeho dodáním (§ 1837 občanského zákoníku). U zboží vyrobeného na zakázku právo na odstoupení nevzniká.',
+      en: 'For digital content delivered immediately after payment, the right of withdrawal expires upon delivery (Section 1837 of the Czech Civil Code). For goods made to order, no right of withdrawal arises.',
+    },
+    more: { cs: 'Podrobnosti:', en: 'Details:' },
+    terms: { cs: 'Obchodní podmínky', en: 'Commercial Terms' },
+    complaints: { cs: 'Reklamační řád', en: 'Complaints Policy' },
+  },
+
   featured: {
     kicker: { cs: 'Vybrané', en: 'Curated' },
     title: { cs: 'Doporučené', en: 'Featured' },

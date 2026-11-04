@@ -92,7 +92,7 @@ export default function BookSection() {
                 </Link>
               )}
               <Link
-                href="/shop?category=books"
+                href="/vanoce/kniha-kralovstvi-srdce"
                 className="text-sm text-rasta-gold hover:underline font-semibold"
               >
                 {t('book.details')} →
