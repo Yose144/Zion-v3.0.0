@@ -1971,3 +1971,33 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   nepozná, že tým něco získal, a objektiv nic nemění.
 - Testy: `test/moba-aspects.mjs` (24), `test/moba-team-aura.mjs` (10),
   balance 20 zápasů po každé změně čísel.
+
+## Křídla — hratelný svět na Uranu (2026-11-04)
+
+- **Není to arkáda, je to cesta.** Inspirace *Sky: Children of the Light*:
+  žádní nepřátelé, žádný časový limit, sedm světel a svatyně na konci.
+  Kdo přidá skóre za rychlost jako trest, změní žánr.
+- **Fyzika je čistá a testovatelná** (`core/sky/flight.ts`): pláštěnka
+  zvedá a dochází, klouzání dobíjí, proudy nesou i bez pláštěnky, hranice
+  tě vrátí (nikdy nezmizíš). Simulace nezná three.js — test ji pouští
+  v Node.
+- **Data světa jsou v `world.ts`**, ne ve scéně: světla, proudy, plošiny,
+  svatyně i texty. Kdyby si scéna psala vlastní pozice, rozejde se
+  s kolizemi a s testy.
+- **Svatyně se otevře jen se všemi sedmi** — jinak by šlo „vyhrát" hned
+  na startu (test to hlídá).
+- **Skóre netrestá kochání**: světla jsou základ, čas je malý bonus
+  a nikdy nejde do záporných čísel.
+- **Hra je nová položka žebříčků** (`wings`), takže se zapisuje stejnou
+  cestou jako ostatní (`recordRun`), včetně denní výzvy.
+- **Vizuál se ladil podle screenshotů, ne podle kódu.** První verze měla
+  mraky jako šedé bubliny (koule s tvrdým okrajem) a proudy jako šedé
+  sloupce; správně je **měkká billboardová textura** (`softSpriteTexture`,
+  jediná textura ve scéně) a stoupající jiskry.
+- **Světlo nikdy není „koule s glow"**: obal z průhledné koule má tmavý
+  obrys. Řešení je sprite s aditivním blendingem + malé jasné jádro.
+- **Ladicí háček** `?skyDebug=1` vystaví `window.__skyDebug()` a
+  `__skyTeleport(x, y)` — bez něj by E2E muselo doletět celou cestu.
+- Testy: `test/sky-flight.mjs` (26 kontrol) a
+  `.artifacts/probe/sky-audit.mjs` (19 kontrol, včetně zápisu profilu
+  a tabule).

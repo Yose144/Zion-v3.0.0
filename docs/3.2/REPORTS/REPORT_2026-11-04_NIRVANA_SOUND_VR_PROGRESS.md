@@ -347,6 +347,50 @@ končit Nexou.
 
 ---
 
+## 8e) Nový svět — Křídla na Uranu
+
+👤: „vzpomněl jsem si na krásnou hru s příběhem … SKY!"
+
+**Co to je.** Nový hratelný svět, ne další arkáda: v ledové obloze Uranu
+zůstalo sedm světel a na konci je svatyně. Žádní nepřátelé, žádný časový
+limit — pláštěnka, proudy vzduchu a kus příběhu po každém světle.
+Inspirace *Sky: Children of the Light* je přiznaná, obsah je vlastní.
+
+**Jak se to hraje.** Šipky/WASD = směr, mezerník nebo ↑ = pláštěnka
+(zvedá, ale dochází; klouzání ji dobíjí), proudy vzduchu nesou a dobíjejí.
+Svatyně se otevře, až když máš všech sedm světel. Na mobilu čtyři směrová
+tlačítka (hra není o přesnosti).
+
+**Co je hotové:** `/kridla` (úvod s pravidly, HUD se světly/energií/časem,
+text příběhu po každém světle, závěrečný panel), scéna s plovoucími
+ostrovy, jiskrami proudů a svatyní, zápis do společné progrese jako nová
+hra `wings` (13. položka žebříčků, denní výzva s cílem 900).
+Vstup: panel Uranu má druhé CTA „Vzlétnout", stránka Uranu odkaz a HUD
+má Křídla jako samostatnou položku.
+
+**Fyzika je čistá** (`core/sky/flight.ts`) — 26 kontrol v Node bez WebGL:
+pláštěnka zvedá a spotřebovává energii, bez energie tlačítko nepomůže,
+proud nese i dobíjí, hráč nezmizí za hranicí, světlo nejde sebrat dvakrát,
+svatyně bez světel neotevře a se všemi ano, skóre nikdy není záporné,
+stejný vstup = stejný stav.
+
+**Co odhalily až screenshoty** (kód to neukáže): mraky byly šedé bubliny
+(koule s tvrdým okrajem) a proudy vzduchu šedé sloupce. Správně je měkká
+billboardová textura (jediná ve scéně) a stoupající jiskry. Světla měla
+tmavý obrys, protože obal z průhledné koule se v aditivním režimu kreslí
+jako disk — teď je to sprite se září a malým jasným jádrem.
+
+**Naměřeno:** `test/sky-flight.mjs` 26/26, headless audit 19/19 (scéna,
+HUD, energie ubývá, 7/7 světel otevře svatyni, dolet zapíše profil
+i tabuli), routy 16/16 (+ `/kridla`), progrese 13/13 (13 her), `tsc`
+0 chyb, build OK, tři screenshoty v `.artifacts/render/sky-2026-11-04/`.
+
+**Meze:** cesta je jedna (žádné další ostrovy ani větve), úspory jsou
+jen v prohlížeči, na mobilu jen čtyři směry (bez joysticku), ve VR
+netestováno.
+
+---
+
 ## 9) Meze, které se nemají hlásit jako hotové
 
 - **VR na skutečném headsetu** — ověřeno jen headless (scéna se rozjede,
