@@ -293,3 +293,16 @@ Připravovaný lampion byl dřív mrtev `<div>`; teď je to odkaz, protože deta
 **Navíc `ArchiveLock`** (brána ZION Archivu): CTA **„Získat ZION Pass"** vedlo na `shop?category=books` → nyní `/vanoce/zion-pass`. Dlaždice s popiskem „Otevřít marketplace" zůstala na výpisu — tam je to správně.
 
 **Ověřeno živě:** v HTML homepage jsou všechny tři `href` na `/vanoce/*`, každá z těch URL vrací 200, `app.zionterranova.com` 200.
+
+---
+
+## 15. Dodatek 9 — nový hero na homepage Marketu
+
+👤 dodal `heros/shop/heros/ZION_MARKET_HERO_kolekce_2027.webp` (1672×941).
+
+Marketplace homepage má hero jako **CSS background** (`.kralovstvi-hero-art`) s `aspect-ratio: 1672 / 941` — tedy přesně formát nového artu, žádný zásah do layoutu nebyl potřeba:
+- obrázek → `/hero-kolekce-2027.webp`,
+- `background-image` v `globals.css` přepnut z `/vanoce-hero.webp`,
+- art nese **vlastní text** („Merry Christmas & Happy New Year 2027"), takže se přes něj nic nepřekládá — upraven jen `aria-label` a komentář v `HeroSection.tsx`.
+
+**Ověřeno:** `market.zionterranova.com/` 200, `/hero-kolekce-2027.webp` 200 (421 kB), screenshot desktop 1440 i mobil 390 — art je celý, bez ořezu, CTA zůstala pod ním.
