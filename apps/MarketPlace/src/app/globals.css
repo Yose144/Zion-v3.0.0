@@ -930,8 +930,9 @@ body.zion-shell {
   pointer-events: none;
 }
 
-/* Království Srdce banner hero — the art is a full illustrated scene
-   ("Zionský ráj s orbitálním habitatem") with its own decorative frame;
+/* Vánoční banner hero — the art is a full illustrated scene
+   ("Merry Christmas & Happy New Year" — tesař u archy, děti s lucernou,
+   světelný strom a lucerna se srdcem) with its own decorative frame;
    actions live in a strip below instead of an overlay. */
 .kralovstvi-hero {
   position: relative;
@@ -943,7 +944,7 @@ body.zion-shell {
   margin: clamp(0.5rem, 2vw, 1.5rem) auto 0;
   aspect-ratio: 1672 / 941;
   border-radius: 1rem;
-  background-image: url('/kralovstvi-srdce-hero.webp');
+  background-image: url('/vanoce-hero.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

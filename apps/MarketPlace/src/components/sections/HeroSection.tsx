@@ -9,11 +9,12 @@ export default function HeroSection() {
   return (
     <section className="kralovstvi-hero" aria-label="Hero">
       {/* The art is a scene, no text overlay: the carpenter builds the ark,
-          the Little Prince holds the world, the girl carries the lantern. */}
+          children with the lantern, the glowing tree and the heart lantern —
+          Merry Christmas & Happy New Year 2027. */}
       <div
         className="kralovstvi-hero-art"
         role="img"
-        aria-label="Království Srdce — tesař staví archu, Malý princ a dívka s lucernou / the carpenter builds the ark"
+        aria-label="Veselé vánoce a šťastný nový rok — tesař u archy, děti s lucernou a zářící strom / Merry Christmas & Happy New Year 2027"
       />
       <div className="kralovstvi-hero-actions">
         <div className="rasta-hero-kicker">
