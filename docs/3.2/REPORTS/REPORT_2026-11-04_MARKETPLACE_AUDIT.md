@@ -408,3 +408,23 @@ Testovací kostka byla z repa i z nasazeného artefaktu odstraněna.
 - Důkladný cleanup (composer, PMREM, textury, geometrie, listenery, canvas) při odmountování.
 
 **Ověřeno:** live `/vanoce/lampion` 200, model 200 (4,3 MB), 0 chyb v konzoli, screenshot s modelem i po otočení tažením; mdlý stav před kliknutím i „připravujeme" při chybějícím souboru fungují (vyzkoušeno dřív s testovací kostkou).
+
+---
+
+## 19. Dodatek 13 — lampion v6: nové vizuály na třech doménách
+
+👤: „musíme aktualizovat všude nové img viz, pak hned deploy." Balíček `heros/vanoce/ZION_APP_CHRISTMAS_2026/ZION_Lampion_v6_Ekosystem` obsahuje `replacement_manifest.json` s **přesnými cílovými cestami, rozměry a SHA-256** (staré i nové) a `apply_replacements.py`, který před zápisem ověří, že cíl odpovídá auditované verzi.
+
+**Postup:** dry-run → 16/16 souborů ověřeno (`old_sha256` sedí, žádný „CHANGED SINCE AUDIT") → `--apply` se zálohou do `backups/<ts>` v balíčku. Nic jsem nekopíroval ručně, takže se nemohlo stát, že by se obrázek trefil do špatné cesty.
+
+| Doména | Co se vyměnilo |
+|---|---|
+| **market** (9) | hero detailu lampionu (1983×793), produktová karta, 3× galerie, 2× ilustrace příběhu, starý `vanoce-lampion.webp`, homepage hero (`hero-kolekce-2027`) |
+| **app** (6) | karta produktu, široký banner lampionu, hero novinky ve dvou velikostech, vánoční Kingdom ve dvou velikostech |
+| **apex** (1) | `images/market-open.webp` |
+
+**Pozor na váhu:** nové vizuály měly **7,25 MB** (např. `christmas-kingdom` 400 → 694 kB, `hero-kolekce` 421 → 632 kB), což by smazalo dnešní performance pass. Překomprimováno na **3,96 MB** (q82, method 6, stejné rozměry); kvalita na ilustracích vizuálně shodná, ověřeno na 1983×793 banneru.
+
+**Deploy:** market a IntroPage nasazeny přímo; u webu zrovna běžel deploy paralelní session — nechal jsem ho doběhnout a pak ověřil, že artefakt obsahuje moje obrázky (jejich build čte `public/` až po mé výměně).
+
+**Ověřeno:** shoda lokál↔live **16/16** (velikost souboru přes HTTP = velikost v repu), `market /vanoce/lampion` i `app /` 200, screenshot detailu potvrzuje nový hero s reálným v6 lampionem (gravírování „ZION TERRA NOVA / Království srdce").
