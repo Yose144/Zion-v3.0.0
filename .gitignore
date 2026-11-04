@@ -489,3 +489,7 @@ scripts/ops/oasis-avatar-render/.build/
 
 # Prodejní ZIP sady (65 MB binárka — na serveru, ne v gitu)
 apps/MarketPlace/public/shop/downloads/
+
+# Duplikát prodejní sady bez zdrojů (204 MB, nekomprimováno) — v gitu ho drží
+# jen PRODEJ varianta se zdroji a toolchainem. Necommitovat.
+canon/Kralovstvi_srdce_Zion_CZ_EN_FR_ES_PT/
