@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import {
+  ArrowRight,
   BookOpen,
   CheckCircle2,
   Download,
@@ -49,6 +50,25 @@ const Copy = {
       { title: 'Continue where you stopped', body: 'The archive remembers your last chapter — in your browser only, no account.' },
     ],
   },
+  startTitle: { cs: 'Začni tady', en: 'Start here' },
+  startSub: {
+    cs: 'Tři vstupy pro první návštěvu — každý jiný, každý vede do knihovny.',
+    en: 'Three ways in for a first visit — each different, each leads into the library.',
+  },
+  startOpen: { cs: 'Otevřít', en: 'Open' },
+  startPath: { cs: 'Celá cesta', en: 'The whole path' },
+  startItems: {
+    cs: [
+      { title: 'Genesis — proč existujeme', body: 'Vejce, které se nerozbito, a podpis v prvním bloku.', href: '/genesis', rc: '252, 209, 22' },
+      { title: 'Nirvana — příběh', body: 'První paprsek po potopě; dvanáct zastavení Nové Země.', href: '/zion-archive/nirvana/cist#01-Prvni-Paprsek', rc: '251, 146, 60' },
+      { title: 'Sůl této země', body: 'Kmenový kanon a kompas: zastavení přes proroky a archu.', href: '/zion-archive/sulzeme/cist#01-Sul-Zeme', rc: '52, 211, 153' },
+    ],
+    en: [
+      { title: 'Genesis — why we exist', body: 'The egg that did not break, and the signature in the first block.', href: '/genesis', rc: '252, 209, 22' },
+      { title: 'Nirvana — the story', body: 'The first ray after the flood; twelve stations of the New Earth.', href: '/zion-archive/nirvana/cist#01-Prvni-Paprsek', rc: '251, 146, 60' },
+      { title: 'The Salt of this Earth', body: 'The root canon and the compass: stations through the prophets and the ark.', href: '/zion-archive/sulzeme/cist#01-Sul-Zeme', rc: '52, 211, 153' },
+    ],
+  } as Record<Lang, { title: string; body: string; href: string; rc: string }[]>,
   searchPlaceholder: { cs: 'Hledat knihu, kapitolu, téma…', en: 'Search books, chapters, themes…' },
   searchLabel: { cs: 'Hledat v knihovně', en: 'Search the library' },
   clearSearch: { cs: 'Vymazat hledání', en: 'Clear search' },
@@ -315,6 +335,60 @@ export default function KnihovnaPanel({ lang }: { lang: Lang }) {
           title={Copy.title[l]}
           sub={Copy.sub[l]}
         />
+
+        {/* start here — three curated entry points */}
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-gray-200">
+              {Copy.startTitle[l]}
+            </h3>
+            <p className="w-full text-xs text-gray-500">{Copy.startSub[l]}</p>
+          </div>
+          <ul className="grid gap-2.5 sm:grid-cols-3">
+            {Copy.startItems[l].map((item, index) => (
+              <li key={item.title}>
+                <Link
+                  href={item.href}
+                  prefetch={false}
+                  className="group flex h-full flex-col gap-1.5 rounded-2xl border p-4 transition-all motion-safe:hover:-translate-y-0.5"
+                  style={{
+                    borderColor: `rgba(${item.rc}, 0.28)`,
+                    background: `linear-gradient(160deg, rgba(${item.rc}, 0.10), rgba(${item.rc}, 0.02))`,
+                  }}
+                >
+                  <span
+                    className="flex h-7 w-7 items-center justify-center rounded-lg border text-xs font-bold"
+                    style={{
+                      borderColor: `rgba(${item.rc}, 0.4)`,
+                      backgroundColor: `rgba(${item.rc}, 0.12)`,
+                      color: `rgb(${item.rc})`,
+                    }}
+                  >
+                    {index + 1}
+                  </span>
+                  <span className="text-sm font-bold leading-snug text-white group-hover:text-zion-gold">
+                    {item.title}
+                  </span>
+                  <span className="text-xs leading-relaxed text-gray-400">{item.body}</span>
+                  <span
+                    className="mt-auto inline-flex items-center gap-1 pt-1.5 text-[11px] font-semibold"
+                    style={{ color: `rgb(${item.rc})` }}
+                  >
+                    {Copy.startOpen[l]}
+                    <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <a
+            href="#cesta"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-zion-cyan transition-colors hover:text-white"
+          >
+            {Copy.startPath[l]}
+            <ArrowRight className="h-3.5 w-3.5" />
+          </a>
+        </div>
 
         {/* how to read — three honest steps, no marketing */}
         <ol className="grid gap-2.5 sm:grid-cols-3">

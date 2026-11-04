@@ -153,14 +153,14 @@ jde jen s passem.
       lokálně, aplikované přes CSS třídy.
 - [x] „Pokračovat" respektuje front matter a skutečný konec knihy.
 - [x] Na konci knihy: „Další v pořadí" (z `READER_BOOKS`), nebo „konec knihovny".
-- [ ] Tisk/PDF aktuální kapitoly.
+- [x] Tisk/PDF aktuální kapitoly (window.print + print stylesheet bez chrome).
 
 **Hotovo, když:** čtenář najde text, označí si místo, vrátí se po týdnu a pokračuje tam, kde skončil.
 
 ### W5 — Objevování a IA (P1)
 
 - [ ] Kolekce: Hlavní osa / Srdce kompasu / Kořeny / Země / Horizont jako vizuální čtecí cesty.
-- [ ] „Začni tady" (3 knihy pro nováčka) + „Co číst po…".
+- [x] „Začni tady" (3 kurátorské vstupy) + „Co číst po…" (další kniha na konci knihy).
 - [ ] Novinky archivu (nové kapitoly, překlady) — malý feed v hubu.
 - [ ] Per-kniha cover art (statický webp) místo generované karty.
 
@@ -267,3 +267,5 @@ Každý milník = vlastní report v `docs/3.2/REPORTS/` + záznam v `apps/websit
 - ✅ W4: hledání v knize, záložky, nastavení čtečky (font/šířka/téma), „další v pořadí".
 - ✅ W6: stav passu v hubu (kód/OASIS/entitlement + expirace), vazba kódu na ZIS.
 - ✅ W7: e2e hubu s testovacím passem (5 testů, lokálně 5/5).
+- ✅ W5: „Začni tady" (3 vstupy) v knihovně.
+- ✅ W4: tisk/PDF kapitoly (print stylesheet).

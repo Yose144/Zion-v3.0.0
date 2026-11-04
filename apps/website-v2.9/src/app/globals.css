@@ -1256,3 +1256,53 @@ html {
 .reader-theme-sepia .zion-docs-prose :is(h2, h3) {
   border-color: rgba(120, 90, 40, 0.25);
 }
+
+
+/* ── Zion Archive — print / PDF (W4) ── */
+@media print {
+  header,
+  footer,
+  nav,
+  aside {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .zion-rainbow-card,
+  .zion-rainbow-sub {
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+  .reader-theme-sepia,
+  .reader-theme-light {
+    background: #fff !important;
+    border: 0 !important;
+    padding: 0 !important;
+  }
+  .zion-docs-prose :is(p, li, blockquote p, td, th, a, strong, em, span) {
+    color: #111 !important;
+    -webkit-text-fill-color: #111 !important;
+  }
+  .zion-docs-prose :is(h1, h2, h3, h4) {
+    background: none !important;
+    color: #111 !important;
+    -webkit-text-fill-color: #111 !important;
+  }
+  .zion-docs-prose a {
+    text-decoration: underline;
+  }
+  .zion-docs-prose blockquote {
+    background: #f4f4f4 !important;
+    border-left-color: #888 !important;
+  }
+  button {
+    display: none !important;
+  }
+}
