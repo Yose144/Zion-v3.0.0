@@ -818,12 +818,12 @@ html body textarea:focus {
   }
 }
 
-/* Pozvánka do Marketu — pod navigací, přes šířku hero bloku.
-   Banner nese vlastní typografii („Market is open"), takže musí být
-   dost velký, aby byl text čitelný; dřív visel jako malá karta pod glifem. */
+/* Pozvánka do Marketu — pod navigací. Na desktopu poloviční šířka
+   (575px = 50 % z původních 1150px), na telefonu zůstává skoro celá
+   obrazovka, jinak by text v banneru nebyl čitelný. */
 .hero-christmas {
   display: block;
-  width: min(94vw, 1150px);
+  width: min(94vw, 575px);
   margin: 1.5rem auto 2.5rem;
   border-radius: 1rem;
   overflow: hidden;
@@ -846,7 +846,7 @@ html body textarea:focus {
 
 @media screen and (max-width: 736px) {
   .hero-christmas {
-    width: 94vw;
+    width: 88vw;
     margin: 1.25rem auto 2rem;
   }
 }
