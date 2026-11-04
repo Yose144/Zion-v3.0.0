@@ -1729,3 +1729,29 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Testy časování:** první snapshot nemusí být v inboxu hned po `room`
   (chodí 15×/s) a střela v tancích letí i 3 s. Čekej na **stav** (fáze
   `aim`), ne na `sleep`.
+
+## ZAP pas odemyká celou Nirvanu (2026-11-05, proto 26)
+
+- **Brána je v middleware, ne v jedné stránce.** `src/middleware.ts` posílá
+  bez cookie `zion_nirvana_pass` všechno na `/?next=<cesta>`. Kdo bránu
+  „opraví" jen v `app/page.tsx`, vrátí obejití hry z menu.
+- **`/` musí být z matcheru vyjmutá** — jinak redirect skončí sám na sobě
+  (nekonečná smyčka; odhaleno prvním `curl`).
+- **`PassGate` je v `app/layout.tsx`** a **`GameHud` i `ChatDock` jsou až
+  za ní.** HUD v layoutu mimo bránu = lišta s přepínáním her na zamčené
+  stránce (přesně to uživatel nahlásil).
+- **`?next=` se přijímá jen jako interní cesta** (`/`, ne `//evil.com`)
+  a po odemčení se `router.replace` vrací tam, kam člověk šel.
+- **Middleware kontroluje jen přítomnost cookie.** Platnost ověřuje
+  `/api/pass` (klientská brána), `/present/*` layout a net služba.
+  Zfalšovaná cookie nedostane obsah ani hru, ale HTML dokument se vyrenderuje.
+- **Net služba taky:** `join` bez cookie → `pass_required`
+  (`NIRVANA_NET_REQUIRE_PASS=0` pro testy). Jinak by se dalo hrát vlastním
+  WS klientem.
+- **Audity a E2E potřebují pas:** `NIRVANA_AUDIT_HEADER=1` proti lokální
+  instanci s `ZION_RENDER_AUDIT=1`, nebo `NIRVANA_PASS_COOKIE=ZAP-…`.
+  `ZION_RENDER_AUDIT` v produkci **nesmí** být — jinak stačí hlavička.
+- **Deploy smoke check** ověřuje `/api/pass` 200 a `/mars` 307 (nasazení
+  brány), ne `/api/oasis/worlds` 200 (ta je teď za branou).
+- **Ověřeno live:** všech 10 herních/prezentačních rout → 307, brána bez
+  HUD a chatu, fake cookie zamčená, WS `join` → `pass_required`.
