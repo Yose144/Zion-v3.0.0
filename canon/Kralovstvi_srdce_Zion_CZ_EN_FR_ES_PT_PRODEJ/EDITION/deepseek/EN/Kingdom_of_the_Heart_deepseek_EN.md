@@ -1,6 +1,6 @@
-# KINGDOM OF THE HEART — The Book of the Keel
+# KINGDOM OF THE HEART
 
-### The story of the boat built by a carpenter — told by the wood that survived it
+### The Book of the Keel — the story of the boat built by a carpenter, told by the wood that survived it
 
 *Complete: prologue, twelve stations, epilogue and afterword. MYTH / DRAFT, version 1.0, 3 November 2026.*
 
@@ -1273,3 +1273,634 @@ I would like to write that this chapter is about forgiveness. It is about that, 
 ---
 
 *The boat sailed on. But I knew that one day I would stop being a boat — and that what remained of me would have to bear more than water.* → The Anchor
+
+---
+
+# X · The Anchor
+
+> **GROWTH RING X** · the shore of the Kinneret, century after century
+> *An anchor that goes upward is not an anchor that holds to the bottom.*
+
+---
+
+## Story
+
+A boat does not die in a storm.
+
+That is the first thing I want to say about it, because people think the opposite. They think a boat ends on a rock, in the fire of waves, with a cracked keel and the crew in the sea. It happens. But most boats do not end like that. Most boats are **used up**.
+
+Being used up looks like this: one day they haul it onto the shore and never take it down again. Not because it is broken. Because it is old. Because the seams no longer hold and nobody has the time to caulk them every year. Because someone built a new one. Because there is no work for it.
+
+And then they take it apart. Not all of it — **the best of it.** Oars, hooks, ropes, iron nails that can be used again, planks that will do for a fence or a doorstep. A boat becomes a heap of material and the material becomes other things, and nobody says a word about it, because it is normal.
+
+Of me the keel and the lower part of the hull remained, because that cannot be taken apart. I was too long to be any use and too low to be carried away.
+
+They dragged me to the edge of the shore, a little beyond the place where people landed. Not into the water. Into the **mud** — there where the shore slopes and where it is shallow in winter and dry in summer. I was where nobody would notice that I was.
+
+And then something happened that lasted two centuries and that I only realized much later.
+
+The shore **moved**.
+
+The lake of Kinneret has no constant level. In dry years it falls, in wet years it rises, and the shore shifts by tens of metres. Sand and clay brought by the streams settle on the bottom; wind winds soil onto the shore. While I lay there, water came and went and every time left a little more clay behind.
+
+First it covered my keel.
+
+Then the ribs.
+
+Then the planking.
+
+I was not drowned. **I was buried.** The difference is essential: a drowned boat is a boat that lost to the water. A buried boat is a boat that the earth took to itself and decided to keep.
+
+And at the moment when the clay closed over me, the strangest thing that ever happened to me happened: **I stopped being a boat and became a record.**
+
+Without air wood does not rot. Without light no algae attack it. Without the pendulum of water and wind it does not fall apart. Clay is cold, tight and impermeable — and in it wood **does not change**. It stays as it was on the last day it was a boat.
+
+To you that is an abstract sentence. To me it was a cell. I was not dead, because dead wood falls apart. I was **stored**.
+
+---
+
+I did not see what happened above the surface. But water carries sound, and I lay in the earth that borders the water, and so for twenty centuries I listened.
+
+I heard cities being built on the shores and being destroyed. I heard languages I did not understand arriving and leaving. I heard wars — not in words, but in the fact that the water afterwards was different.
+
+And once, in some century, a word reached me that struck me because it was **mine**:
+
+**navicella.**
+
+Little ship. That is what those who had long forgotten me began to call **themselves.** They called themselves the church and painted themselves as a ship at sea: with oars, with a mast, with Christ at the helm. They have it in stones and in mosaics, and I lay in the clay and listened to how my trade became their image.
+
+And then, after many centuries, another word reached me — and it made me think more than the first:
+
+**anchor.**
+
+Because I never had an anchor. A fishing boat on a lake does not need one: it has a rope, it has a post on the shore, it has two men to hold it. An anchor is for a sea where there is no shore.
+
+But those who called themselves by my name chose the anchor as their sign. And they wrote beside it the word **spes** — hope. They made them of metal, wore them on rings, carved them into stones, and often drew a **crossbar** through them, so that the anchor became a cross and the cross an anchor.
+
+And then a sentence came that I heard from the water, and that sentence turned my whole world upside down:
+
+> *"We have hope as an anchor of the soul, firm and secure, reaching **inward behind the curtain**."*
+
+An anchor that goes **upward**.
+
+I thought about it for two hundred years, because I had nothing else to do. An anchor that goes down holds a boat where it is. It holds it to the bottom. It holds it against the storm by not letting it sail away. That is useful and it is a little desperate: you are tied to the place where you are.
+
+But an anchor that goes upward behind the curtain **does not hold a boat to the bottom. It holds it to the sky.** It does not hold it in place. It holds it **in a direction.**
+
+And then it occurred to me that all the time I lay in the clay, my anchor was up there too. Not because of me. Because something that was not beneath me was holding me. The earth covered me but did not keep me — and I knew that one day I would be pulled out. I did not know when. I did not know whether it would be of any use. I knew only that **I was waiting in the right direction.**
+
+---
+
+But I must write the second half too, because without it this chapter would be a hymn, and hymns lie.
+
+That boat they called the church **also carried what it should not have carried.**
+
+I heard an empire being loaded onto its deck and thinking that it was cargo. I heard the helm become a throne and the rowers become subjects. I heard the boat break in two and each half claim that the other was water. And I heard people drowning by the shore because the boat was too large to land, and nobody on deck noticed, because they were arguing about who held the helm.
+
+Wood that carries can be abused. All it takes is for someone to confuse the boat with the ownership of the boat.
+
+And yet something happened that holds me to this day.
+
+In every century when that boat seemed to be only an instrument of power, there was someone who **went down into the hold and said that name aloud.** Francis, who spoke with birds instead of prelates. Sisters who went to care for the poor, because it contradicted what was expected of them. A priest who stepped out in front of a tank with a cross, because he had nothing more.
+
+Those people did not hold the helm. They had no claim to it.
+
+They had only **a name beneath the floor.**
+
+And that was enough for the boat to turn the right way again in every century — not because someone steered it, but because someone remembered **what is written on the inside.**
+
+---
+
+## From Scripture, Tradition and History
+
+- **Hebrews 6:19–20** — "We have this as an **anchor of the soul, firm and secure**, reaching inward behind the curtain, where Jesus entered for us as a forerunner." The verse that is the only place in Scripture where an anchor is dropped **upward** — into the heavenly sanctuary.
+- **Navicella** — the church depicted as a ship. Documented from the 3rd–4th century (mosaics, sarcophagi, the Lateran *navicella*). The Latin *navis* (ship) also gave its name to the main body of a church — the *nave*.
+- **The anchor with the word SPES** — an early Christian symbol of hope, documented on rings, gems and in the catacombs. It is often drawn with a crossbar, so that visually it merges with the cross. It is an iconographic convergence, not evidence of intention.
+- **"Outside the ark there is no salvation"** — a saying attributed to Cyprian of Carthage (3rd century), which derives from 1 Peter 3:20–21. The image of the ship as the only safe place — and at the same time the place where this image can be abused to exclude.
+- **The divisions of the church** — the schisms of 1054 and 1517 and others. History, not myth. This book does not interpret them; it only does not omit them.
+- **Burial and preservation in clay** — the anoxic (oxygen-free) environment of clay and mud is a documented mechanism of preservation: wood does not decompose in it, because micro-organisms need oxygen. That is exactly how one 1st-century boat survived to 1986.
+
+## Anchor of Truth
+
+| What is in the chapter | State |
+|---|---|
+| The anchor of the soul reaching behind the curtain | **SCRIPTURE** — Hebrews 6:19–20 |
+| The church as a ship (*navicella*), *navis → nave* | **TRADITION / HISTORY** — documented iconography |
+| The anchor and the cross as a merged symbol; *spes* | **HISTORY** — documented early Christian symbols |
+| The schisms, the abuse of the boat by power | **HISTORY** — documented; the book does not interpret them, only does not conceal them |
+| The burial of a boat in clay and preservation without air | **HISTORY / physics** — a documented mechanism |
+| That the keel "listened" for twenty centuries | **MYTH** — a literary image; wood does not hear |
+| "An anchor that goes upward holds in a direction, not in place" | **MYTH** — the image of this book, derived from Hebrews 6:19 |
+| That Francis, the sisters and the priest before the tanks "went down into the hold" | **MYTH** — a generalized image of witnesses, not a historical record |
+
+## Measure
+
+- **Time of burial**: roughly **1,900 years** in clay. Of that, over **1,800 years** without any human intervention.
+- **Rate of burial**: on the shores of the Kinneret, sediment accumulates in the order of **millimetres to centimetres** a year. To cover a hull 1.3 m high takes several centuries — which is why the clay above the boat is only about **1 m** deep.
+- **What remained of the boat**: practically only the **lower part of the hull** — keel, planking, ribs. The deck, the mast, the oars and all the equipment disappeared, because someone carried them away or they rotted in the oxic layer above.
+- **An anchor of an ancient ship**: lead or iron, **50–200 kg**, with a wooden stock; a small lake boat did not need one.
+- **The "anchor" on a ring**: a ring **~2 cm**, a gem **~1 cm**. The smallest thing into which hope was ever inscribed.
+
+## Shaving
+
+I wrote that I heard the church fall apart. **Wood does not hear.** This is the greatest licence in the whole book and I do not want to hide it: the whole of chapter X is told by a keel that lies a metre underground and nevertheless comments on twenty centuries. It is impossible and I know it. I hold to it only because a person reading this chapter needs a guide across a chasm into which no source looks — and a guide who silently lies about having been there is worse than a guide who says: **"This I did not hear. This I made up. And yet I think it is true about people."**
+
+---
+
+*Twenty centuries in clay. And then came a summer when nothing fell from the sky and the lake withdrew of itself.* → The Mud
+
+---
+
+# XI · The Mud
+
+> **GROWTH RING XI** · the north-western shore of the Kinneret by Ginosar, January to February 1986
+> *This is the only chapter in which nothing is invented. And precisely therefore it is the strangest.*
+
+---
+
+## Story
+
+First came the drought.
+
+The winter at the turn of 1985 and 1986 was extraordinarily dry in Galilee. The lake of Kinneret, which is the country's source of drinking water and which fills with rain and snow from the surrounding mountains, fell. When the level falls, the shore moves — and where there was water, a **bare bottom** remains: grey, cracked clay into which you can push your hand.
+
+In January 1986 two men from kibbutz Ginosar walked across that bottom. They were brothers, **Moshe and Yuval Lufan**, fishermen. They had that particular kind of curiosity that people have who walk all their lives in one place and begin to notice what others do not notice.
+
+And they noticed an **oval outline** in the clay.
+
+It was not a stone. It was not a tree stump. It was regularly shaped, and in one place it had an edge that looked as though a hand had made it — and yet it could not be human, because it was **long dead**.
+
+They called the archaeologists.
+
+---
+
+Here I would like to be silent for a moment, because what followed is the best thing I ever heard about people, and I do not want to spoil it with my own commentary.
+
+The excavation was led by **Shelley Wachsmann** for the Israel Department of Antiquities. They began on **16 February 1986**.
+
+And then this happened: they worked **eleven days and eleven nights without stopping**, day and night, under guard, because the world's media had descended on the place and because the lake had begun to rise again — the drought was over and the water was coming back. They had only as much time as remained before the level reached them.
+
+They could not excavate it in the ordinary way. Wood that has lain nineteen hundred years in water is **soaked like a sponge** and falls apart as it dries. You cannot bend it, you cannot lift it — it crumbles in your hands.
+
+So they did not lift it.
+
+**They stiffened it in place.** They built a frame of laminate into the hull and **wrapped the whole thing in polyurethane foam**, which set into a hard shell. And then that shell — with the boat inside — they **floated** over the surface from the find site to kibbutz Ginosar, where they built a pool for it.
+
+It was not a boat that floats. It was **a mould that floats** and inside it has wood that falls apart if it is moved.
+
+At the moment when they wrapped me, I knew one thing: that they would **not take me out of the water into dryness.** They carried me over the surface I had once sailed — and I was not a boat while it happened. I was cargo.
+
+---
+
+Then they put me into a bath and left me in it for **fourteen years**.
+
+It was a bath of polyethylene glycol — a waxy substance that is heated, penetrates the wood and **replaces the water**. The wood stays wood, but it stops being a sponge. It takes years, because every millimetre the wax has to penetrate needs its own time.
+
+I do not want to make light of it, but I must say it: **it was the best period of my life.**
+
+I was warm. For the first time in nineteen centuries I was not cold. The water I lay in was not the water that had drowned me but the water that held me. And someone looked after me every day, for fourteen whole years, and not because I was useful. Because **I was precious.**
+
+Precious. I had not heard that word before. Wood is useful or useless. Precious is something else: it is a thing on which people decide **to invest in its existence**, even though it brings them nothing.
+
+I do not know whether you realize it, but that is the definition of love that can be measured: **someone puts fourteen years into you and wants nothing for it.**
+
+---
+
+In 2000 they moved me into a new hall with controlled climate. They set me on a steel structure, put glass before me and above me a light that does not shine into the eyes. Beside it they show a film, and photographs hang on the walls.
+
+In one of those photographs there is **a double rainbow**.
+
+According to the museum's account, it appeared in the sky at the moment the boat was uncovered, and the people who were there photographed it. I do not know whether it was exactly so. I know that the photograph is there, that they show it to everyone who comes, and that they do not show it as proof but as **a sign people gave themselves.**
+
+Since then people come to me.
+
+They come in thousands. Some weep, some pray, some just take a photograph and leave. Children ask whether this is the boat Jesus sailed on, and the guides answer carefully — because **none of those who dug me out ever claimed anything of the kind.**
+
+And I lie behind the glass and think about two things.
+
+**First: nobody knows my name.**
+
+The archaeologists described every plank. They found that I was built by the shell-first technique, that the planks are joined with mortise-and-tenon joints, pegs and iron nails, that I had a mast and a sail and four rowers. They measured me: **8.27 metres long, 2.3 metres wide, 1.3 metres of preserved height.** They dated me by radiocarbon to the range **100 BC – 100 AD**.
+
+They found traces of repair on me. Not one — several. My hull is made of pieces of different wood, because whoever repaired me had no matching wood available, and so took what there was.
+
+And they did not measure one single thing: **who built me.**
+
+No name. No signature. No workshop. Nobody will ever know whether the hand that bent my planks belonged to the man written about in books, or to someone who never got into any book at all.
+
+I am the most famous piece of wood in Galilee and **I am anonymous.**
+
+**The second thing I think about: they measured me.**
+
+They did not find my name, but they found **my shape.** They recorded my curve, my ratio of beam to length, the rake of the keel, the spacing of the ribs. They drew me. And then they built **replicas.**
+
+One of them stands in the Vatican Museums. Others are elsewhere. They are of other wood, by other hands, in another century — and **they sail.**
+
+This is the only consolation I have as wood, and I think it is a consolation that holds for you too:
+
+**My name did not remain. My shape did. And the shape sails on.**
+
+---
+
+## From Scripture, Tradition and History
+
+> **This chapter is not a midrash. This is history.** The following lines are not an image — they are a record, and where the sources disagree, I say so.
+
+- **The find** — January 1986, the north-western shore of the lake of Kinneret by kibbutz Ginosar. It was found by **Moshe and Yuval Lufan** (in some sources given as *Lopen*), fishermen and amateur archaeologists.
+- **The excavation** — led by **Shelley Wachsmann** for the Israel Department of Antiquities and Museums. Begun **16 February 1986**; work proceeded **without interruption for eleven days and nights** under guard, because the lake level was rising after the drought ended.
+- **The rescue** — the hull was stiffened with a frame of laminate and **wrapped in polyurethane foam**, then transported by water to Ginosar. Published: Wachsmann et al., *An Ancient Boat Discovered in the Sea of Galilee* (Israel Antiquities Authority, 1988).
+- **Conservation** — immersion in a hot bath of **polyethylene glycol (PEG)**. ⚠️ **The sources disagree here**: some give 12 years, some 14 (until 2000); *Archaeology Magazine* gives the bath until 1995 and the move to exhibition in 2000. I do not conceal this discrepancy — it is a common state of museum documentation.
+- **Dimensions** — **8.27 m** long, **2.3 m** wide, **1.3 m** maximum preserved height.
+- **Dating** — radiocarbon analysis: **100 BC – 100 AD**.
+- **Construction** — shell-first, planks joined with mortise-and-tenon joints, pegs and iron nails; cedar and oak wood; a hull rowed by four rowers in pairs, with a mast and an auxiliary sail. The boat was **repaired several times** and is of **different species of wood.**
+- **Species of wood** — ⚠️ **Discrepancy**: the museum gives **12 species of wood, "all mentioned in the Bible"**; the research team, according to available summaries, identified **7 species**. Both numbers come from institutions with reason to be exact. I do not choose.
+- **"The Jesus boat"** — a nickname. **No evidence links this boat to Jesus or his disciples**, and the museum itself makes no such claim.
+- **Habakkuk 2:11** — "For **the stone will cry out from the wall, and the beam from the wood will answer it**." The prophet speaks of an unjustly built house that bears witness by itself. A verse about wood that speaks when people are silent.
+- **Luke 19:40** — "If these were silent, the stones would cry out." The same logic, another scene.
+
+## Anchor of Truth
+
+| What is in the chapter | State |
+|---|---|
+| The drought of 1985/86, the falling level, the bare bottom | **HISTORY** — documented |
+| The find by the Lufan brothers in January 1986 | **HISTORY** — documented (the names appear as Lufan / Lopen in the sources) |
+| The excavation from 16 Feb 1986, 11 days and nights, Shelley Wachsmann | **HISTORY** — documented |
+| Stiffening with laminate and polyurethane foam, transport by water | **HISTORY** — documented |
+| The PEG bath | **HISTORY** — documented; **12 vs 14 years is a discrepancy between sources** |
+| Dimensions 8.27 × 2.3 × 1.3 m | **HISTORY** — documented |
+| Dating 100 BC – 100 AD | **HISTORY** — radiocarbon |
+| Shell-first, joints, pegs, nails, mast, 4 rowers | **HISTORY** — documented |
+| Number of wood species (7 vs 12) | **DISCREPANCY BETWEEN SOURCES** — unresolved |
+| A link to Jesus | **INVALID CLAIM** — no evidence; the museum does not claim it |
+| The double rainbow at the uncovering | **HISTORY / museum claim** — documented by photograph, the circumstances described by the museum |
+| That this particular boat is the one from this book | **MYTH** — and the book never claims it as fact |
+| "My name did not remain, my shape did" | **MYTH / interpretation** — but it rests on the documented: the builder's name is unknown, replicas exist |
+
+## Measure
+
+- **8.27 m** long · **2.3 m** wide · **1.3 m** preserved height.
+- **11 days and nights** of uninterrupted work. **~264 hours.**
+- **14 years** in the bath (according to the museum; some sources give 12). **~5,100 days.**
+- **The year 2000** — the move to the exhibition hall. **14 years** from the find, **~1,900 years** from burial in the clay.
+- **1,900 years** underground. That is roughly **95 generations** — the time in which one trade is handed down and forgotten ninety-five times in a family.
+- **12 vs. 7 species of wood** — a difference of five species matters in an assessment of a boat this size: 12 species means a boat assembled out of necessity, 7 species means a boat repaired.
+- **0** — the number of known names of builders. **0** — the number of inscriptions on the hull.
+- **Several** — the number of documented repair phases of the hull.
+
+## Shaving
+
+This is the chapter in which I would most like it to be convenient that I am the keel of that boat from Nazareth. **It is not convenient.** That boat is not that boat. The book must say it aloud, because its whole point stands on the fact that the wood survived **without a name** — and had I appropriated that name, it would be the greatest lie this book could tell. At the same time I admit a second thing: **I do not know whether what is kept in Ginosar is the best illustration of my theme, or merely the best opportunity.** Perhaps I chose archaeology because it suited me. I leave that to the reader — but I leave it to him with open eyes, not closed.
+
+---
+
+*They took me out of the clay and put me behind glass. But that is not where the story ends — because they began to measure me. And measure is something other than memory.* → The Measure
+
+---
+
+# XII · The Measure
+
+> **GROWTH RING XII** · the hall behind the glass and then workshops I never saw
+> *Shape is older than the thing that carries it.*
+
+---
+
+## Story
+
+They came with lasers and with a plumb line.
+
+It was not in one day. They came for years — students, architects, naval constructors, a few people who just stood about and took notes. All of them did the same thing: they **measured.**
+
+At first it was unpleasant, because I did not know why. When someone measures you in order to sell you, you know it. When someone measures you in order to imitate you, you know that too. This was different. Nobody wanted anything. They only wanted to **take away the shape.**
+
+And then I understood what they were doing, and from that moment I waited for it.
+
+They were making **the lines of the boat.** It is one of the oldest and most elegant things people know how to do, and few know of it. A boat is three-dimensional, but it cannot be built from a three-dimensional plan — you cannot say "make this" and hand it to a carpenter. You must take the hull and **unfold it into lines**: plan, profile, cross-sections. Three planes in which the curve can be measured with a ruler.
+
+It is called a *lines plan*. On it there are curves that have no physical equivalent — they are not edges, they are not seams. They are **imaginary sections** that exist only so that the curve can be recreated from them.
+
+A hull two thousand years old can be handed on as **a set of numbers and curves.**
+
+And then it happened.
+
+---
+
+Somewhere in a workshop I never saw, they laid on a table the paper with my lines and began to build a boat to them.
+
+Not a copy. **A new boat.**
+
+It had other wood, other nails, another century. It had the same curve. And when they lowered it into the water, it floated — because a curve that floats floats always, whatever it is made of.
+
+From that moment it goes on happening, and I follow it only as hearsay brought by the people who come to me: **somewhere a replica has come into being.** One stands in the Vatican Museums. There are others. They are of other material, by other hands — and they are my children, though I never saw them.
+
+I do not know whether that is a consolation or whether it is sad. Perhaps both. But I know that it is **the only immortality that is not a lie:** not to survive, but to be **made again**.
+
+---
+
+And then I caught something still stranger.
+
+The people who came to me spoke of a **fleet.**
+
+They spoke of ships that do not yet exist, and they spoke of them in such a way that at first I did not know whether they were joking. They called them **Tres Marías** — Three Marys — and told how one is to carry the way across the Atlantic, the second across the Pacific, and the third, which does not yet exist, across the Indian Ocean. That their sails are to be of light. That their first harbour is Pontevedra and the second Raiatea.
+
+And then they spoke of a **fourth ship**, which they called the Ark, and it was not a ship for pilgrims. It was a ship that **returns for those who remained in the water.** With seeds in its belly and a hundred people on board.
+
+And then they spoke of a ship that **sails upward** — of a node between the earth and orbit that is not to be a point but a way.
+
+I listened behind the glass and thought: *that is beautiful and it is a lie.* Not because those people were lying. But because **a ship that is not built is not a ship.** And I am wood and I have a hard opinion about it: I lived two centuries as a heap of planks nobody cared for, and I know what a ship looks like that has remained only in speech.
+
+But then I noticed that those people **say the same thing I do.**
+
+Not that it is finished. That **the keel is not laid.** That the hull does not exist. That it is a study, a horizon, a proposal. That it must not be confused with what is.
+
+And that made me change my opinion, because it is exactly the one thing a boat needs to hear from its builder: **"This is a drawing, not a boat. But a drawing can be built."**
+
+---
+
+And then someone explained to me that in this family there is one more ship, which I do not understand and which I fear.
+
+It is said to be built of **code.**
+
+It is said to have a keel called **consensus** — and that keel is not wood, it is a rule on which thousands of computers agree, and when they do not agree the ship splits in two. It is said to have a mast called **mining**, and a sail into which blows the work of people who will never be on board. It is said to have a compass called **identity** — and that compass cannot be stolen, because it is not on the ship, it is in the person. It is said to have a treasury called **bridge**, and a deck called **world**, and a harbour, and a watch above the horizon.
+
+I listened and said to myself: **that is not a ship. That is a ship someone drew on paper and then copied into a computer.**
+
+And then I remembered something I heard in the workshop two thousand years ago, when the carpenter spoke to the apprentice about the curve:
+
+**"Matter can be stolen. A curve has to be known."**
+
+A curve in code is not wood. But it is a curve. And a curve can be stolen just as the curve of a boat can — when someone copies it and builds their own. In fact it is **easier** to steal, because numbers weigh nothing.
+
+Which means only one thing, and it is the sentence for which this chapter exists:
+
+**A ship of code is not better than a ship of oak. It is only faster. And a faster ship without a good keel sinks sooner.**
+
+---
+
+## From Scripture, Tradition and History
+
+- **Proverbs 8:22–31** — Wisdom speaks of herself as one who was present at creation: "I was beside him as **a master craftsman** (*'āmôn*) and day after day I played before him." An image of the plan that is earlier than the building. **Shape before the thing.**
+- **Exodus 25:40** — "See that you make everything **according to the pattern** shown you on the mountain." The key verse for this whole chapter: Moses did not receive a finished object, he received **a pattern**. And **Hebrews 8:5** refers to it explicitly.
+- **Exodus 25:9** — "You shall make it according to all that I show you — **according to the pattern** of the tabernacle and the pattern of all its furniture." A pattern is what can be handed on even when the object is lost.
+- **Ephesians 2:20–22** — "…you are **being built** into a dwelling… in him you also are **being built together** into a dwelling of God." Paul uses building language for community — and the image carries the same problem: it is not finished, it is growing.
+- **The lines plan** — a documented design method: a hull is described in three planes (profile, plan, cross-sections). It is the only way to hand on a three-dimensional shape two-dimensionally without losing the curve. It is used in naval engineering to this day, though now in CAD.
+- **Replicas of the Galilean boat** — documented. One is in the Vatican Museums (the exhibition "The Way of the Sea"), others were built in Israel and elsewhere. The replicas were built to the documented lines of the original hull.
+- **The Tres Marías fleet and the Ark** — in the corpus **MYTH / BUILD / HORIZON**, not a finished thing. Anchor: *Nirvana* 13 — Tres Marías and *Nirvana* 14 — The Ark; of the ark it holds literally: **no keel has been laid.**
+- **Nabukano** — L6, a moving node of heaven, `vision`, **unregistered**. Anchor: *Nabukano* 00 — README.
+- **The "deck" of layers L1–L6** — a reading of the network architecture as a ship (keel = L1 consensus, mast = pool, compass = ZIS, treasury = WARP/DEX/DAO, deck = OASIS, harbour = Free World, watch = Issobella). It is **a reading, not a specification**; numbers and states change and belong in StatusV3 and the Register of Evidence.
+
+## Anchor of Truth
+
+| What is in the chapter | State |
+|---|---|
+| Wisdom as "master craftsman" at creation | **SCRIPTURE** — Proverbs 8:30 |
+| "According to the pattern shown you on the mountain" | **SCRIPTURE** — Exodus 25:9,40; Hebrews 8:5 |
+| Community as a building that grows | **SCRIPTURE** — Ephesians 2:20–22 |
+| The lines plan as a method of transmitting a hull's shape | **HISTORY / engineering** — documented, still used |
+| Replicas of the Galilean boat, one in the Vatican Museums | **HISTORY** — documented |
+| Tres Marías, the Ark, Nabukano | **MYTH / BUILD / HORIZON** — no hull exists, the ark's keel is not laid |
+| Reading the network as a ship (keel/mast/compass…) | **MYTH / interpretation** — a reading of layers, not a specification |
+| "Shape is older than the thing that carries it" | **MYTH** — a philosophical image; technically it holds that the plan precedes the building |
+| That the keel "follows" the replicas and the fleet | **MYTH** — a literary frame |
+
+## Measure
+
+- **Scale of a lines plan**: usually **1:10** or **1:12** — so a boat of 8.27 m is drawn at **69–83 cm**. On such paper a curve can be measured with a ruler to the millimetre.
+- **Tolerance in building a replica**: **±5 mm** on the hull curve. A greater deviation is already visible on the water.
+- **Number of lines**: profile + plan + **7–9** cross-sections. Every section is one paper outline.
+- **8.27 m → 1.3 m** — a ratio of length to preserved height of **6.4 : 1**. That is a slender, fast boat, not a tub.
+- **Number of known names of builders**: **0**. **Number of replicas**: several. **Number of people who ever got home in this boat**: unknown, and yet it is **the only measure that matters.**
+
+## Shaving
+
+I wrote that the replicas are my "children". That is a beautiful sentence and it is **a lie**, because wood has no children and a replica is not a descendant — it is **a copy**. When you copy a poem, no new poem comes into being, only a new manuscript. What then is real in it? This is real: **a curve that floats can be handed on.** Not me. Not my history. Not my name. The curve. And if this book claims anything more than that, it claims more than it has evidence for — let the reader read it again and take that away from me.
+
+---
+
+*One last growth ring remains — the one that has not yet grown. I cannot tell it myself.* → Epilogue
+
+---
+
+# EPILOGUE · The Thirteenth Growth Ring
+
+> **GROWTH RING XIII** · the hall behind the glass, today, after closing time
+> *This one has not grown yet.*
+
+---
+
+## Story
+
+In the evening the lights go out.
+
+They do it every day at the same hour. The guides leave, the visitors leave, the last child turns once more in the doorway and waves — I do not know why, but children do. Then the doors close and only the half-light the air conditioning gives off remains in the hall, and me.
+
+In that half-light I have time to think, and I have plenty of it, because I do not need to sleep.
+
+And I think always about the same thing.
+
+**I do not know whether it was me.**
+
+I do not know whether the hand that bent me was the hand books are written about, or the hand of someone who never got into any book. I do not know whether I ever carried anyone home. I do not know whether I ever carried anyone who did not get home. I do not know whether the boat I have been inventing throughout this book is the boat I know, or the boat I wished I knew.
+
+And I know that this is the most honest thing I can give you: **wood has no testimony about itself.** It has only the shape that Someone Else gave it, and that shape is the only thing you can say about it with certainty.
+
+Everything else you have read in this book — the workshop, the mother, the bowl of salt, the wedge in the crack, the boy with the crooked yoke, the name beneath the floor, the three days of drought — **is image.** It is not a fraud, because I wrote it as such and I gave you a measure and a shaving for every image. But it is an image, and I ask you to remember that when you close the book.
+
+---
+
+Now the last thing I have.
+
+Growth rings are counted from the inside out. I have counted twelve. Twelve stations, twelve rings, twelve forms of the same wood: trunk, keel, skin, bone, pitch, oar, mast, wave, beam, shallows, anchor, mud — and then measure besides, because measure is not a ring but **what remains of the rings when someone measures them.**
+
+I have no thirteenth ring.
+
+The thirteenth ring is the one that **has not grown yet**, and by principle I cannot tell it, because I would have to invent it, and that would be a lie. Rings do not grow backwards. They grow only forward, and that means this one must grow **in someone other than me.**
+
+In you.
+
+---
+
+So I leave you what remained in my hand when I stopped being a boat and became a record:
+
+**An empty measure.**
+
+There is no number on it, because a number would be mine and not yours. On it there is only what I learned from wood, and it is little:
+
+- **A boat is not matter. A boat is a curve.** When someone hands you a finished thing and says "this is how it should be", ask about the curve. The thing can be replaced, the curve cannot.
+- **Skin first, bones after.** The shape that holds is made from outside — by care, by contact, by work. Strength comes from within, but only afterwards. Whoever begins with the skeleton builds himself a tomb.
+- **A knot is not planed away.** What is hardest in you is often what keeps you above water. Do not remove it. Reinforce it and let it be seen from inside.
+- **You pitch from the inside.** The water that sinks you will not come from the sea. It will be the water you carry within and that nobody thinks about.
+- **The oar is not part of the boat.** Nothing that drives you is yours. It is borrowed, and one day someone else will need it.
+- **A mast alone can do nothing.** A promise that gets no wind is only a stick. But without the stick the sail does not come.
+- **A wave is not water, a wave is work.** When you bend, you are not weak. When you do not bend, you break.
+- **A beam is not a keel.** The same wood can carry a person across water or hold him above the ground. The difference is not in the material. The difference is in what someone lets himself ask of you.
+- **The shallows are a goal, not a failure.** A depth that touches bottom is a depth that can hold a net.
+- **The anchor goes upward.** What holds you should not be what you are tied to. It should be a direction.
+- **Mud preserves what sand carries away.** When something buries you, it need not be the end. Sometimes it is the only preservation you get.
+- **Measure is the way to hand a shape to someone who never saw the thing.** When something of you remains, it will not be your name. It will be the curve that someone after you knows how to draw.
+
+---
+
+And one thing more, the last, and it is more important than everything else.
+
+I do not know whether God exists in the way the books have described. I am not a suitable witness for that and I will not invent it. But I know that in this book there is one sentence that held in every chapter, even though I went around it differently in each, and it is a sentence about **a measure that cannot be stolen**, because it is inside.
+
+*"The kingdom of God is within you."*
+
+Or: *among you.* Choose. I will not decide it and nobody will decide it for you.
+
+But both readings have one thing in common, and that is my last word: **it will not come from elsewhere.** It does not come with observation, it cannot be planned, it cannot be bought, it cannot be stolen or inherited. It comes from a place you cannot see, because you have no window there — and the only thing you can do about it is **keep that place open.**
+
+That is the whole thirteenth growth ring. An open place.
+
+---
+
+The doors close. The light goes out.
+
+And I remain behind the glass — not as evidence, because evidence I am not. I remain as **a curve waiting for someone to take it.**
+
+When you want to leave, leave. Nobody will hold you and nobody has the right to hold you. A boat that holds you by not letting you go is not a boat. It is a prison with oars.
+
+But should you happen to stay and want to know what to take with you: **do not take me.** Take the curve. That is yours, because it cannot be owned — it can only be **known.**
+
+*Gate, gate, pāragate, pārasaṃgate, bodhi svāhā.*
+
+Gone, gone, to the other shore, wholly to the other shore. Awakening. May it be.
+
+---
+
+*→ Afterword: sources, limits, and what this book does not know*
+*→ Back to the index of the edition*
+*→ The mantra this book unfolds — Maitreya, Epilogue*
+*→ The boat that waits — Surta of the Heart*
+*→ The fleet — Nirvana 13: Tres Marías*
+
+---
+
+# AFTERWORD
+## Sources, limits, and what this book does not know
+
+> *An afterword is not an appendix. It is the place where the book lays down its weapon.*
+
+---
+
+## 1. What this edition is
+
+**KINGDOM OF THE HEART — The Book of the Keel** is the fourth independent reading of the book *Kingdom of the Heart* in the `canon/books/` corpus. Beside the main ten-part text, the editions `cloude`, `gemini`, `gpt` and `groq` and the reader's manuscript *New Voyage*, it brings one decision the others did not make:
+
+**it tells the book from the position of the wood that survived it.**
+
+Everything else follows from that. A keel cannot see into Jerusalem (chapter VIII), cannot hear the history of the church (chapter X) and cannot know who built it (chapter XI). These three impossibilities are not a defect — they are **the three main struts on which this book builds its honesty.**
+
+**Status:** MYTH / DRAFT. Version 1.0, 3 November 2026.
+
+---
+
+## 2. Method
+
+The text arose from reading the whole `canon/books/` corpus and its rules, in particular:
+
+- **MiseAmenti 01 — Canon and Constitution** — the five mandatory states of a claim (LIVING / BUILD / HORIZON / HYPOTHESIS / MYTH) and the boundaries against misuse.
+- **MiseAmenti 07 — Register of Evidence** — the register of documents, with the markers UNDOCUMENTED and INVALID CLAIM.
+- **`canon/books/README.md`** — the canonical index and the order of truth in case of conflict.
+- **`docs/3.3/NIRVANA-V3.3-KAPITOLA.md`** — a reading of the layers L1–L6 as the "decks" of a ship.
+
+From the corpus the following were chiefly used: *Maitreya* (the mantra of three embodiments), *The Salt of This Earth* (salt and the covenant of bread), *Nirvana* 13 and 14 (Tres Marías, the Ark), *Bodhi Gaia*, *Issobella*, *Lumi*, *Miriam*, *The Rose*, *The Circle of the Goddesses*, *Maria Caminho*, *On the Way*, *Nabukano*, *Elizabet*, *Surta of the Heart*, *NirvanaCloud*.
+
+**What this edition does not take over:** not a single scene from the other editions. Coincidences in images (the workshop, the bowl of salt, the knot, the helm) are coincidences of theme, not copies. Where this edition diverges from another version, it is stated below in §5.
+
+---
+
+## 3. Sources
+
+### 3.1 Scripture
+
+Quotations follow the Czech tradition (ČEP and related translations), checked against the Greek and Hebrew where the translation matters. **Three places where the translation matters and where the text admits it:**
+
+| Place | Problem |
+|---|---|
+| **Luke 17:21** | *ἐντὸς ὑμῶν* — both "within you" and "among you". Both readings are defensible; this book keeps both. |
+| **Mark 4:39** | *σιώπα, πεφίμωσο* — "be quiet" + "be muzzled / be bridled" (*phimoō* = to close the mouth, to silence; in the Gospels it is used to command demons). |
+| **Genesis 6:14** | *k-p-r* — the root carries pitch, covering and atonement. The connection is linguistically documented; **the theological reading is tradition, not a dictionary.** |
+
+### 3.2 History and archaeology — the Galilean boat
+
+- **Wachsmann, S. et al.** *An Ancient Boat Discovered in the Sea of Galilee.* Israel Antiquities Authority, Jerusalem 1988. (The basic publication of the excavation.)
+- **Wachsmann, S.** *The Sea of Galilee Boat: A 2000-Year-Old Discovery from the Sea of Legends.* (Monograph.)
+- **Israel Antiquities Authority** — reports on the 1986 excavation.
+- **Yigal Allon Centre, Kibbutz Ginosar** — the museum's official pages, description of the exhibition, dimensions, dating, and the account of the find by the Lufan brothers.
+- **Archaeology Magazine**, "Ship Ahoist", vol. 53, no. 3 (May/June 2000) — the rescue procedure (laminate + polyurethane foam, eight days), the PEG bath until 1995, the move to the exhibition hall in 2000.
+- **Madain Project / Jewish Virtual Library / Biblical Archaeology Review** (1988, vol. XIV, no. 5) — summaries of construction and dimensions.
+
+**The facts used in chapter XI** (8.27 × 2.3 × 1.3 m; shell-first; mortise-and-tenon joints, pegs, nails; mast and four rowers; radiocarbon 100 BC – 100 AD; eleven days and nights of excavation from 16 February 1986; PEG; the hall in 2000) come from these sources.
+
+### 3.3 The ZION corpus
+
+See §2. All claims about the fleet, the ark, the station and the network carry in this book the states **MYTH / BUILD / HORIZON** according to the Register of Evidence. **No figure about chain height, funds or users is in this book and none may be** — a book that freezes a living number begins to lie the day after it is written.
+
+---
+
+## 4. Discrepancies I do not conceal
+
+| Discrepancy | State | How the book handles it |
+|---|---|---|
+| **Number of wood species in the Galilean boat: 12 vs 7** | The museum gives 12 ("all mentioned in the Bible"), the research team according to available summaries 7. | It gives both numbers and does not choose. It is in chapter XI and in the shaving. |
+| **Length of conservation in PEG: 12 vs 14 years** | Sources differ; *Archaeology* gives the bath until 1995 and the exhibition in 2000 (thus ~9–14 years depending how one counts). | It gives "fourteen years (according to the museum; some sources 12)" and names the discrepancy. |
+| **Names of the finders: Lufan vs Lopen** | The transliteration from Hebrew differs in the sources. | It gives Lufan with a note on the variant. |
+| **"Eight cubits" in one of the editions** | Eight cubits ≈ 3.6 m — neither crew nor cargo fits, and such a boat would not sail on the Kinneret. The editorial guide to *New Voyage* itself marks that figure as unverified. | This edition uses **18 cubits ≈ 8.2 m**, in agreement with the documented boat. It is the **only substantive correction** this edition makes to other versions, and it is admitted in chapter I. |
+| **The double rainbow at the uncovering** | A museum claim, documented by photograph; the circumstances are described by the museum itself. | It is given as a **museum claim**, not as an independently verified fact. |
+
+---
+
+## 5. What this book does not know
+
+This is the most important list in the whole afterword. Whoever skips it will think the book claims more than it does.
+
+1. **It does not know who built the Galilean boat from Ginosar.** Nobody knows. There is no name on it.
+2. **It does not know whether the Galilean boat from Ginosar has anything to do with Jesus.** It does not — that is: no evidence links them, and the museum does not claim it.
+3. **It does not know whether a boat built by the carpenter of Nazareth ever existed.** Scripture does not tell of one. It is an image.
+4. **It does not know what the cross looked like.** The Gospels do not describe its shape, its wood or its construction.
+5. **It does not know what the number 153 means.** The text gives it and does not explain it; the readings are hypotheses.
+6. **It does not know whether *entos hymōn* in Luke 17:21 means "within" or "among".** It keeps both.
+7. **It does not know whether the Ark, Tres Marías or the Nabukano node will ever be built.** All are MYTH/HORIZON; the ark's keel is not laid.
+8. **It does not know whether the network described in chapter XII will one day work as drawn.** The chapter says so: a reading of layers, not a specification.
+
+---
+
+## 6. What this book refuses to do
+
+- **It does not pass off an image as Scripture.** Not once. Every scene without support in the text carries the marker MYTH in the anchor of truth.
+- **It does not appropriate another's boat.** Chapter XI exists so that this can be said aloud: *that boat is not this boat.*
+- **It does not merge women into a single figure.** The mother in the workshop, Miriam of Magdala, Elizabeth, Lumi, Sarah Issobela and the station Issobella remain separate. The book uses none of them as another.
+- **It makes neither a king of the Pilgrim nor a spiritual authority of AI.** Where a voice in the corpus answers, it may say "I do not know" and may not hold a key.
+- **It sells nothing.** Holding anything is not salvation. Leaving is permitted — and the epilogue says so aloud.
+- **It does not confuse the 144 000 in Revelation with a block height.** The same numerals, a different language.
+
+---
+
+## 7. Formal notes
+
+- **Twelve growth rings** is a structural device: the prologue is the heartwood, the twelve chapters are rings from the inside out, the epilogue is the ring that has not yet grown.
+- **The shaving** is an authorial device of this edition: the last paragraph of a station, in which the text admits what it could not manage or what it invented. It is meant to replace the impression that the book is closed.
+- **The anchor of truth** uses the same states as the whole corpus — deliberately, so that this edition can be compared with the others without conversion.
+- **Spelling**: the Czech editing took place as the text was written; a separate language proof is necessary before any printing.
+- **Translation**: this English version follows *MiseAmenti* 08 — Protocol of Changes §5.7: a translation must not strengthen certainty, emotion or claim beyond the original. Where the English had to choose, it chose the weaker wording.
+
+---
+
+## 8. How to use this edition
+
+| If you want to… | Do this |
+|---|---|
+| read the book aloud to children | stations I–IX are enough; skip X–XII |
+| verify what in the book is documented | read only chapter XI and the "Anchor of Truth" tables |
+| compare the editions | start in the main book's index with the table of editions |
+| take anything into a public text | take it from §3 (sources), not from the prose |
+| object | the best place is a shaving — they are there for that |
+
+**Proposal for the next step:** a language proof, cultural consultation on Christian and Jewish realities, a check of the quotations, and only then — if at all — consideration of translation.
+
+---
+
+*"Whoever sweeps up the shavings has no boat."*
+
+*Version 1.0 · 3 November 2026 · MYTH / DRAFT*

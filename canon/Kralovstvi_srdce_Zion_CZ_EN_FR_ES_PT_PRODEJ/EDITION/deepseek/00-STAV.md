@@ -7,7 +7,7 @@ Prolog, dvanáct zastavení, epilog a doslov; vyprávěno dřevem.
 | Jazyk | Rukopis | PDF | EPUB | Slov |
 |---|---|---|---|---|
 | CZ | ✅ | ✅ | ✅ | 22986 |
-| EN | — | — | — | — |
+| EN | ✅ | ✅ | ✅ | 28075 |
 | ES | — | — | — | — |
 | FR | — | — | — | — |
 | PT | — | — | — | — |

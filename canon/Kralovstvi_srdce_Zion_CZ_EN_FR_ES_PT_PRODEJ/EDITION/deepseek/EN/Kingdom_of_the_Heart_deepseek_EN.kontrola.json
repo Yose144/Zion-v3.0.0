@@ -1,0 +1,17 @@
+{
+  "edition": "deepseek",
+  "lang": "EN",
+  "source": "Kingdom_of_the_Heart_deepseek_EN.md",
+  "words": 28075,
+  "headings": 195,
+  "paragraphs": 735,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 125,
+    "bytes": 363111
+  },
+  "epub": {
+    "documents": 18,
+    "bytes": 76149
+  }
+}
