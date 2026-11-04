@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+
 import { useI18n } from '@/core/i18n';
 
 const BOOK_URL = 'https://market.zionterranova.com/shop?category=books';
@@ -14,8 +14,7 @@ type GateError = 'gateTooMany' | 'gateInvalid' | 'gateVerifyFailed';
  *  re-validated by /api/pass on every mount. */
 export function PassGate({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
-  const router = useRouter();
-  const pathname = usePathname();
+
   const [state, setState] = useState<GateState>('loading');
   /** Kam se vrátit po odemčení (middleware sem poslal `?next=`). */
   const [next, setNext] = useState<string | null>(null);
@@ -58,29 +57,22 @@ export function PassGate({ children }: { children: React.ReactNode }) {
     if (target && target.startsWith('/') && !target.startsWith('//')) setNext(target);
   }, []);
 
-  // odemčeno a někdo sem přišel z konkrétní stránky → vrať ho tam
-  useEffect(() => {
-    if (state !== 'open' || !next) return;
-    router.replace(next);
-  }, [state, next, router]);
-
   /**
-   * `next` se čistí až **po příchodu** na cílovou cestu. Kdyby se vyčistil
-   * hned, layout by na jeden render pustil děti (`Shell`) na staré route a
-   * jeho hash-sync efekt by navigaci přepsal zpátky na `/` (reálně se to
-   * stalo: po zadání kódu to skončilo na vesmíru místo na hře).
+   * Odemčeno a někdo sem přišel z konkrétní stránky → vrať ho tam.
+   *
+   * `router.replace()` tady **nefungoval**: klientská navigace z layoutu se
+   * ztratila (Shell na `/` měl vlastní hash-sync a URL zůstala na bráně),
+   * takže člověk zadal kód správně a stejně skončil ve vesmíru. Plná
+   * navigace je po odemčení bezpečná — cookie už je nastavená, takže
+   * middleware pustí dál, a stav se načte znovu (žádný napůl odemčený strom).
    */
   useEffect(() => {
-    if (!next) return;
-    const target = next.split('?')[0];
-    if (pathname === target) {
-      setNext(null);
-      return;
-    }
-    // Pojistka: když se navigace zasekne, nenechávej člověka na spinneru.
-    const timer = setTimeout(() => setNext(null), 4000);
+    if (state !== 'open' || !next) return;
+    window.location.assign(next);
+    // Pojistka: kdyby navigace selhala, nenechávej člověka na spinneru.
+    const timer = setTimeout(() => setNext(null), 5000);
     return () => clearTimeout(timer);
-  }, [next, pathname]);
+  }, [state, next]);
 
   const submit = async () => {
     const trimmed = code.trim();
