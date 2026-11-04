@@ -74,8 +74,11 @@ const asItemId = (value: unknown): ItemId | null =>
  *      místnosti, proto se verze zvedá.
  * 25 — **režim místnosti**: `join` nese `mode` (`bots`/`humans`) a `RoomInfo`
  *      ho vrací. Starý server by `humans` ignoroval a hned doplnil boty.
+ * 26 — **pas i na multiplayeru**: bez cookie `zion_nirvana_pass` server
+ *      odmítne `join` (`pass_required`). Klient bez pasu by se jinak dostal
+ *      do hry přes vlastní WebSocket klient.
  */
-export const PROTO_VERSION = 25;
+export const PROTO_VERSION = 26;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -324,6 +327,8 @@ export type ErrorCode =
   | 'room_full'
   /** Pozvánka do místnosti, která mezitím zmizela (nebo je jiné hry). */
   | 'room_missing'
+  /** Vstup do hry vyžaduje ZION Archive Pass (cookie). */
+  | 'pass_required'
   | 'busy'
   | 'not_in_room'
   | 'not_available'

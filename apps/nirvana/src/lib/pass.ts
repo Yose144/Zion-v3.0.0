@@ -25,9 +25,14 @@ export async function verifyPassCode(code: string): Promise<PassVerdict> {
   try {
     const res = await fetch(VERIFY_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      // `cache: 'no-store'` je Next rozšíření; `Cache-Control` je platný
+      // i v Node (net služba tenhle modul importuje taky).
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'Cache-Control': 'no-store',
+      },
       body: JSON.stringify({ code: trimmed }),
-      cache: 'no-store',
       signal: AbortSignal.timeout(5_000),
     });
     // Throttled / server-side failure / unknown status: we could not decide.

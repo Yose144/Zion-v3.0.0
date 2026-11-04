@@ -67,6 +67,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  // Lokální render audit: jen když to server dovolí envem (produkce ne).
+  if (process.env.ZION_RENDER_AUDIT === '1' && req.headers.get('x-render-audit') === '1') {
+    return NextResponse.json({ access: true });
+  }
+
   const code = req.cookies.get(PASS_COOKIE)?.value;
   if (!code) return NextResponse.json({ access: false });
 

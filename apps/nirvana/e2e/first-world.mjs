@@ -23,6 +23,19 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // Dřív tu byla hardcoded cesta z macOS, takže test jinde nesel.
 const browser = await launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+
+/**
+ * ZAP brána je od 2026-11-05 na celé aplikaci. Bez jednoho z těchhle dvou
+ * envů test skončí na bráně místo ve hře:
+ *  - `NIRVANA_AUDIT_HEADER=1` (lokální instance s `ZION_RENDER_AUDIT=1`),
+ *  - `NIRVANA_PASS_COOKIE=ZAP-…` (opravdový kód, i proti produkci).
+ */
+{
+  const headers = {};
+  if (process.env.NIRVANA_AUDIT_HEADER === '1') headers['x-render-audit'] = '1';
+  if (process.env.NIRVANA_PASS_COOKIE) headers.cookie = `zion_nirvana_pass=${process.env.NIRVANA_PASS_COOKIE}`;
+  if (Object.keys(headers).length) await page.setExtraHTTPHeaders(headers);
+}
 const errors = [];
 page.on('pageerror', (error) => errors.push(error.message));
 page.on('console', (message) => {

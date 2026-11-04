@@ -86,11 +86,26 @@ const browser = await chromium.launch({
   args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader'],
 });
 
+/**
+ * Brána ZAP pasu je od 2026-11-05 na **celé** aplikaci (middleware), takže
+ * audit bez pasu skončí na bráně. Dvě legální cesty:
+ *  - `NIRVANA_AUDIT_HEADER=1` + lokální instance s `ZION_RENDER_AUDIT=1`
+ *    (stejný hook jako `scripts/ops/audit-project-scenes.py`, v produkci
+ *    se nenastavuje),
+ *  - `NIRVANA_PASS_COOKIE=ZAP-…` s opravdovým kódem proti produkci.
+ */
+const auditHeaders = {};
+if (process.env.NIRVANA_AUDIT_HEADER === '1') auditHeaders['x-render-audit'] = '1';
+if (process.env.NIRVANA_PASS_COOKIE) {
+  auditHeaders.cookie = `zion_nirvana_pass=${process.env.NIRVANA_PASS_COOKIE}`;
+}
+
 const context = await browser.newContext({
   viewport: VIEWPORT,
   deviceScaleFactor: 3,
   isMobile: true,
   hasTouch: true,
+  extraHTTPHeaders: auditHeaders,
 });
 
 let problems = 0;

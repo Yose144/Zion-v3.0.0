@@ -52,6 +52,7 @@ import {
   type ServerMessage,
 } from '../../nirvana/src/core/net/protocol.js';
 import type { BattleSpellId } from '../../nirvana/src/core/moba/sim.js';
+import { verifyPassCode } from '../../nirvana/src/lib/pass.js';
 import { createMatch } from './matches.js';
 import type { Match } from './match.js';
 import { MOBA_ROOM_SIZE } from './moba.js';
@@ -96,6 +97,8 @@ interface Conn {
   resumeToken: string;
   /** Kdy socket spadl (drží se `RESUME_GRACE_MS`); 0 = připojen. */
   detachedAt?: number;
+  /** Raw `Cookie` hlavička — ZAP pas se ověřuje z ní, ne z identity. */
+  cookie: string;
 }
 
 /**
@@ -123,6 +126,42 @@ const connections = new Map<string, Conn>();
  * ani to, že sedlo převezme bot). Po vypršení se hráč normálně odhlásí.
  */
 const resumes = new Map<string, Conn>();
+
+/**
+ * ZAP pas pro multiplayer. Web má bránu v middleware + `PassGate`; kdyby
+ * ale někdo mluvil na WS přímo (vlastní klient), dostal by se do hry bez
+ * pasu. Proto se `join` ověřuje tady taky.
+ *
+ * `NIRVANA_NET_REQUIRE_PASS=0` to vypne (testy, lokální vývoj).
+ */
+const REQUIRE_PASS = process.env.NIRVANA_NET_REQUIRE_PASS !== '0';
+const passCache = new Map<string, { verdict: 'valid' | 'invalid' | 'unreachable'; at: number }>();
+const PASS_CACHE_MS = 60_000;
+
+function passCookie(raw: string): string | null {
+  for (const part of raw.split(';')) {
+    const [name, ...rest] = part.trim().split('=');
+    if (name === 'zion_nirvana_pass' && rest.length) return decodeURIComponent(rest.join('='));
+  }
+  return null;
+}
+
+async function passAllowed(raw: string): Promise<boolean> {
+  if (!REQUIRE_PASS) return true;
+  const code = passCookie(raw);
+  // Bez cookie není co ověřovat — brána je zavřená.
+  if (!code) return false;
+  const cached = passCache.get(code);
+  if (cached && Date.now() - cached.at < PASS_CACHE_MS) {
+    return cached.verdict !== 'invalid';
+  }
+  const verdict = await verifyPassCode(code);
+  if (passCache.size > 512) passCache.clear();
+  passCache.set(code, { verdict, at: Date.now() });
+  // `unreachable` = orákulum mlčí; cookie existuje, takže se chováme jako
+  // middleware (přítomnost) a hráče nepustíme z hry kvůli výpadku.
+  return verdict !== 'invalid';
+}
 const RESUME_GRACE_MS = Number(process.env.NIRVANA_NET_RESUME_MS ?? 45_000);
 const roomCounters = new Map<GameId, number>();
 /** Historie kanálů — jen v paměti, po restartu prázdná (záměr, žádná DB). */
@@ -423,16 +462,20 @@ function leaveRoom(conn: Conn, reason: string): void {
   }
 }
 
-function joinRoom(
+async function joinRoom(
   conn: Conn,
   game: GameId,
   wanted?: string,
   heroId?: number,
   battleSpell?: BattleSpellId,
   requestedMode: RoomMode = 'bots',
-): void {
+): Promise<void> {
   if (!conn.helloSent) {
     sendError(conn, 'bad_frame', 'nejdřív hello');
+    return;
+  }
+  if (!(await passAllowed(conn.cookie))) {
+    sendError(conn, 'pass_required', 'vstup do her vyžaduje ZION Archive Pass');
     return;
   }
   if (conn.room) leaveRoom(conn, 'switch');
@@ -574,7 +617,7 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
     }
 
     case 'join':
-      joinRoom(conn, message.game, message.room, message.heroId, message.battleSpell, message.mode);
+      await joinRoom(conn, message.game, message.room, message.heroId, message.battleSpell, message.mode);
       return;
 
     case 'leave':
@@ -636,6 +679,7 @@ function onConnection(socket: WebSocket, request: IncomingMessage): void {
     chatTimes: [],
     lastSeen: Date.now(),
     resumeToken: '',
+    cookie: request.headers.cookie ?? '',
   };
   connections.set(conn.id, conn);
   log(`connect id=${conn.id} ip=${request.socket.remoteAddress ?? '?'} conns=${connections.size}`);

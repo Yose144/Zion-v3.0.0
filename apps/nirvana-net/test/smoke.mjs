@@ -103,6 +103,8 @@ const server = spawn(process.execPath, [entry], {
     NIRVANA_NET_PORT: String(PORT),
     NIRVANA_NET_ALLOWED_ORIGINS: 'https://nirvana.zionterranova.com',
     ZIS_URL: `http://127.0.0.1:${ZIS_PORT}`,
+    // smoke nemá ZAP cookie — jinak by každý join skončil pass_required
+    NIRVANA_NET_REQUIRE_PASS: '0',
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 });

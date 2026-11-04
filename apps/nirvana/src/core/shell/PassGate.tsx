@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useI18n } from '@/core/i18n';
 
 const BOOK_URL = 'https://market.zionterranova.com/shop?category=books';
@@ -13,7 +14,10 @@ type GateError = 'gateTooMany' | 'gateInvalid' | 'gateVerifyFailed';
  *  re-validated by /api/pass on every mount. */
 export function PassGate({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
+  const router = useRouter();
   const [state, setState] = useState<GateState>('loading');
+  /** Kam se vrátit po odemčení (middleware sem poslal `?next=`). */
+  const [next, setNext] = useState<string | null>(null);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<GateError | null>(null);
@@ -45,6 +49,18 @@ export function PassGate({ children }: { children: React.ReactNode }) {
       live = false;
     };
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const target = params.get('next');
+    // jen interní cesta — `//evil.com` je protokol-relative URL
+    if (target && target.startsWith('/') && !target.startsWith('//')) setNext(target);
+  }, []);
+
+  // odemčeno a někdo sem přišel z konkrétní stránky → vrať ho tam
+  useEffect(() => {
+    if (state === 'open' && next) router.replace(next);
+  }, [state, next, router]);
 
   const submit = async () => {
     const trimmed = code.trim();
