@@ -167,7 +167,7 @@ export default function Christmas2026Client() {
                         src={section.image}
                         alt={section.imageAlt ?? ''}
                         loading="lazy"
-                        className="float-right ml-3 mb-1 w-24 shrink-0 rounded-lg border border-white/10 object-cover sm:w-36"
+                        className="float-right ml-4 mb-2 w-40 shrink-0 rounded-xl border border-white/10 object-cover sm:w-56 md:w-64"
                       />
                     )}
                     <h2 className="text-base font-semibold text-white mb-1.5">
