@@ -122,6 +122,9 @@ check "${SITE}/textures/earth-blue-marble.webp"
 # dostupné (jinak se nedá zadat kód) a herní routa musí redirectovat na ni.
 check "${SITE}/api/pass"
 check "${SITE}/mars" 307
+# Health pro monitoring musí zůstat mimo bránu — jinak se stav appky nedá
+# změřit zvenčí (regrese 2026-11-04: `/api/health` redirectoval na bránu).
+check "${SITE}/api/health" 200
 ssh "${EDGE_HOST}" "curl -s -o /dev/null -w '  local :3010 -> %{http_code}\n' --max-time 10 http://127.0.0.1:3010/"
 
 if [[ "$fail" -ne 0 ]]; then

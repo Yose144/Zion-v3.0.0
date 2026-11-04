@@ -493,3 +493,7 @@ apps/MarketPlace/public/shop/downloads/
 # Duplikát prodejní sady bez zdrojů (204 MB, nekomprimováno) — v gitu ho drží
 # jen PRODEJ varianta se zdroji a toolchainem. Necommitovat.
 canon/Kralovstvi_srdce_Zion_CZ_EN_FR_ES_PT/
+
+# Next.js si při `next dev` generuje vlastní AGENTS.md do appky
+# (node_modules/next/dist/server/lib/generate-agent-files.js) — necommitovat.
+apps/MarketPlace/AGENTS.md

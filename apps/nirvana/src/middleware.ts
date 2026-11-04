@@ -22,6 +22,9 @@ import { PASS_COOKIE } from '@/lib/pass';
 /** Co musí zůstat dostupné i bez pasu (jinak se nedá ani zadat kód). */
 const PUBLIC_PREFIXES = [
   '/api/pass',
+  // Health pro monitoring: bez pasu, jinak se stav aplikace nedá změřit zvenčí.
+  // (Vrací jen stav klienta + realtime služby, žádná herní data ani identity.)
+  '/api/health',
   '/_next',
   '/favicon',
   '/icons',
