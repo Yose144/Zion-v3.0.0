@@ -86,6 +86,15 @@ Výsledek: 40 nových velkých UTXO (34,0 M ZION), stav 96 709 → 89 692 UTXO, 
 | lint | 24 errors | `Link` místo `<a href="/">`, debounce timer v `useRef`, ikona přes `createElement`, `set-state-in-effect` → warn s odůvodněním (hydratace z localStorage) → **0 errors / 36 warnings** |
 | `.next/dev` + darwin engine na serveru | 197 MB balastu z macOS buildu | `--exclude='.next/dev'` + úklid `libquery_engine-darwin-*` po regeneraci klienta |
 
+### P1-3 — `/tmp` na EDGE2 měl práva z macOS rsyncu → PDF faktura nešla vygenerovat ❌→✅
+
+Při závěrečné kontrole journalu: `Invoice PDF attachment skipped … EACCES: permission denied, mkdtemp '/tmp/puppeteer_dev_chrome_profile-…'`.
+
+Příčina nebyla v Puppeteeru ani v Chrome (oba nainstalované správně), ale v **`/tmp` samotném**: `drwxr-xr-x 501:root` — do adresáře mohl zapisovat jen UID 501 a root. Vznikl zjevně rsyncováním z macOS (`-a` přenesl ownera 501 i mode 755; v `/tmp` po něm zůstaly i `._*` AppleDouble soubory). Následek: **žádná služba běžící jako `zion` nemohla do `/tmp` zapsat** — kromě PDF faktur by to postupně rozbilo cokoli, co potřebuje dočasný soubor.
+
+**Fix:** `chown root:root /tmp && chmod 1777 /tmp`. Ověřeno: `sudo -u zion mktemp -d /tmp/...` projde, `/api/invoice/<id>/download?format=pdf` → **200, 361 kB, platný PDF** (`/tmp` je teď `drwxrwxrwt root:root`).
+EDGE1 byl v pořádku (`drwxrwxrwt`), jiné unity na EDGE2 EACCES na `/tmp` neměly.
+
 ---
 
 ## 4. Ověření po nasazení (`deploy-marketplace.sh`, restart 08:06)
@@ -96,6 +105,7 @@ Výsledek: 40 nových velkých UTXO (34,0 M ZION), stav 96 709 → 89 692 UTXO, 
 - 7/7 dříve chybějících obrázků → 200.
 - Koupitelných produktů 10/23.
 - **Objednávka end-to-end:** vytvořena `ORD-AUDIT-…` (`totalCzk 108`, `tokens 108 000`, peněženka vygenerována, faktura `FV2026-000002`), poté zrušena přes admin API → sklad vrácen `997 → 998`.
+- **PDF faktury:** `/api/invoice/<id>/download?format=pdf` → 200, 361 kB, validní PDF (před opravou `/tmp` padalo na EACCES).
 - 18/18 stránek 200, v journalu po restartu 0 chyb.
 
 ---
@@ -114,3 +124,4 @@ Výsledek: 40 nových velkých UTXO (34,0 M ZION), stav 96 709 → 89 692 UTXO, 
 - **Neposílat peníze z peněženky s desítkami tisíc UTXO.** Limit 100 KB na serializovanou tx (JSON pole čísel ≈ 540 B na vstup) znamená strop ~177 vstupů bez ohledu na `MAX_TX_INPUTS`. CLI to už pozná (`build 4b6914c9f`) a řekne „consolidate first" — dobrá zpráva, ale musí se to udělat dřív, než přijde platba.
 - **Smoke test musí sáhnout na databázi.** HTML + statický asset nejsou důkaz, že aplikace žije.
 - **`inStock` není totéž co `stock`.** Dvě nezávislá pole; nesoulad se neprojeví nikde než u pokladny (409).
+- **`rsync -a` z macOS umí přepsat metadata cílového adresáře.** `/tmp` s ownerem 501 a právy 755 vypadá jako funkční adresář, ale rozbije každou non-root službu, která potřebuje dočasný soubor — a chyba se objeví až v konkrétní funkci (tady PDF faktura), ne při deployi.
