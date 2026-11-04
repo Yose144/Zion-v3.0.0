@@ -12,7 +12,7 @@
 | GPT edice · Tesař, který zůstává u práce | 6 435 slov · PDF · EPUB | — | — | — | — |
 | Groq edice · Loď, která se ptá | 7 441 slov · PDF · EPUB | — | — | — | — |
 | Quen edice · Účetnice | 5 903 slov · PDF · EPUB | 7 500 slov · PDF · EPUB | — | — | — |
-| DeepSeek edice · Kniha Kýlu | 22 986 slov · PDF · EPUB | — | — | — | — |
+| DeepSeek edice · Kniha Kýlu | 22 986 slov · PDF · EPUB | ⏳ 4 112 slov | — | — | — |
 
 **Legenda:** číslo = počet slov českého/ přeloženého rukopisu, `PDF`/`EPUB` = hotový produkt.
 `—` = jazyk zatím neexistuje.
