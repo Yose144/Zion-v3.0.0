@@ -640,3 +640,497 @@ E foi-se embora. A água dentro de mim nem se moveu.
 ## Apara
 
 A frase mais bela deste capítulo — *«o que cobre as pessoas é o que as leva sobre a água»* — é minha. Não é da Escritura, não é da tradição, não é de nenhum comentário rabínico que eu possa documentar. Nasceu da raiz k-p-r, porque essa raiz está realmente lá e porque o hebraico realmente usa a mesma palavra para o breu e para a cobertura. Mas **a ligação, que o breu de dentro é imagem do cuidado daquilo que as pessoas levam consigo, é a imagem deste livro.** Deixo-a de pé — e deixo ver ao lado que a fiz eu. Se a tivesse calado, seria uma frase bonita e um livro mau.
+---
+
+*O casco estava acabado, calafetado e estanque. Mas uma barca sobre cavaletes ainda não é uma barca. Faltava aquilo de que todo o carpinteiro tinha medo: o caminho para baixo.* → O Remo
+
+
+---
+
+# V · O Remo
+
+> **ANEL V** · o caminho de Nazaré ao Kinneret e o primeiro verão na água, ~28 d. C.
+> *A única parte da barca que precisa de uma pessoa.*
+
+---
+
+## Relato
+
+Uma barca num pátio não é uma barca. É um objeto.
+
+Só quando a moves descobres o que fizeste.
+
+Tiraram-me dos cavaletes ao romper do dia, quando a terra ainda estava dura de geada e o caminho sem lama. Meteram três rolos de madeira de oliveira sob a quilha, ataram-me com cordas e começaram a puxar. Éramos vinte para isso. Andámos todo o dia e parte da noite.
+
+Nazaré está a cerca de trezentos e cinquenta metros. O Kinneret está **duzentos e doze metros abaixo do nível do oceano.** Entre os dois há quinhentos e sessenta metros de desnível e trinta quilómetros de caminho que no princípio desce suave e no fim cai.
+
+Todo esse trajeto o passei de cabeça para baixo contra mim mesmo. As cordas entravam, os rolos rangiam, uma vez o bordo do caminho cedeu sob um lado e eu inclinei-me tanto que teria virado se os homens não me segurassem. Ouvi um deles gritar a outro, e ouvi que o outro não discutia, mas simplesmente se firmava e puxava. E ouvi o carpinteiro, que caminhou o tempo todo atrás, com a mão na popa, e que não disse uma palavra — uma só vez, quando aquilo vergou, disse: «Devagar. Não precisamos de chegar a tempo. Precisamos de a entregar.»
+
+Chegámos à água ao amanhecer.
+
+E aí veio o momento que todo o carpinteiro recorda até morrer: **o lançamento.**
+
+Não foi uma glória. Havia homens cansados, cordas molhadas, duas barcas de pescadores já na água e um bocado de areia. O carpinteiro estava com água até aos joelhos, segurando-me pela proa. Alguém perguntou se flutuaria. Outro riu-se.
+
+E então largou-me.
+
+A água tomou-me como nada me tinha tomado. Não foi um choque — foi **uma mudança de roupa.** Algo se abriu sob mim e eu deitei-me nisso em todo o meu comprimento. Nesse momento deixei de ser madeira em terra e tornei-me uma coisa que tem água por cima e por baixo, e cuja única pergunta é: *quanta deixo entrar?*
+
+Deixei entrar um pouco. No primeiro dia embeber-me — a madeira incha, as juntas apertam, os pregos assentam. Se fosse de ferro, nada se teria escapado e eu teria rebentado. Assim verteram-me um pouco durante três dias e depois parei. Diz-se que a barca *bebe*. É o único momento da vida de uma barca em que ela é fraca — e está bem que o seja, porque se começasse por ser a mais forte não teria para onde crescer.
+
+---
+
+No primeiro verão naveguei com os pescadores.
+
+Aprendi o que significa ser uma barca de trabalho. Não é romance. É o cheiro a peixe que não se lava. É silêncio, porque os peixes temem o ruído. É tédio e depois, de repente, medo, quando a rede se prende no fundo e a barca adorna. É ritmo: remada, remada, largar, remada.
+
+Do remar aprendi o que até então não sabia: **uma barca sozinha não sabe fazer nada.**
+
+A quilha aguenta. O forro cobre. As cavernas sustentam. O breu veda. Mas tudo isso é apenas a **possibilidade** de navegar. Quando uma barca está vazia e sem remos, é uma tigela que se embala no sítio até o vento a atirar para a margem.
+
+O remo é outra coisa. O remo não faz parte da barca — pode tirar-se, pôr de lado, emprestar-se, quebrar-se e fazer-se outro. E no entanto sem ele a barca não faz um metro contra o vento.
+
+É a única parte que a barca **não tem por sua**. Quando soa uma remada, não é porque a barca é boa. É porque alguém decidiu puxar.
+
+---
+
+Na primavera do segundo ano aconteceu.
+
+Veio gente à água. Eram tantos que se apertavam na margem, alguns de pé dentro da água até aos joelhos e outros sem sítio. E ele — o que me tinha construído — veio, entrou em mim e pediu a Simão que se afastasse um pouco da margem. Não para partir. Para ter distância do muro.
+
+Depois sentou-se na popa e começou a falar.
+
+O que aconteceu a seguir explico-o pela física, porque a física explica-o bem e não tenho razão para inventar um milagre onde basta a forma da margem. O Kinneret está numa bacia. Quando falas sobre a superfície a partir de uma barca a pouca distância da margem, o som viaja sobre a água e volta da encosta em frente. Não é magia. É **um teatro que a paisagem fez** — e os pescadores velhos sabiam-no muito antes, porque qualquer um que tenha trabalhado neste lago descobriu que da água se ouve mais longe do que da margem e que um homem não precisa de gritar para que o ouçam os do fundo.
+
+As pessoas estavam de pé e escutavam. E pela primeira vez na minha vida não fui uma barca que leva — fui uma barca de onde se **diz**.
+
+---
+
+Quando acabou, voltou-se para Simão e disse-lhe que fosse ao fundo e lançasse as redes.
+
+Simão era um homem que não tinha apanhado nada em toda a noite. Era um homem com calos de corda nas mãos, que sabia que se não se apanhou nada de noite, de dia não se apanha nada. Disse-o em voz alta — e depois disse a segunda frase, que para mim é a mais importante de todo este capítulo:
+
+**«Mas sobre a tua palavra, lançá-las-ei.»**
+
+Não que cresse. Não que soubesse. Que o fez.
+
+As redes encheram-se até se romperem, e tiveram de chamar a outra barca, e as duas afundavam-se. Simão largou, caiu de joelhos na glória prateada e a escorrer dos peixes e disse: «Afasta-te de mim, Senhor, que sou um homem pecador.»
+
+E ele disse-lhe o que me ficou como pergunta para todo o resto da minha vida:
+
+**«Não tenhas medo. A partir de agora apanharás pessoas.»**
+
+---
+
+Os homens puxaram as barcas para a margem, deixaram as redes e foram-se.
+
+Eu fiquei na água.
+
+Estava confuso, porque a uma barca não agradam as coisas por resolver: quando os pescadores se vão e deixam a barca, significa que voltarão ou que a largaram? Três dias me embalei junto à margem à espera de quem viesse buscar-me.
+
+Veio Simão. Pegou-me na corda e puxou-me até ao sítio onde me amarrou. Não me disse nada. Mas desde esse momento reparei que me olhava de outro modo: não como uma ferramenta, mas como um **lugar**.
+
+E assim me tornei a barca de onde se falava, e a barca para onde se corria quando a tempestade se levantava do lado errado. As duas coisas não são a mesma. Mas ambas são permitidas a uma barca.
+
+---
+
+## Da Escritura, da tradição e da história
+
+- **Lc 5,1–11** — «Subiu para um dos barcos, que era de Simão, e pediu-lhe que se afastasse um pouco da margem; depois sentou-se e **ensinava a multidão do barco**.» Depois, a pesca miraculosa e o chamamento. Lucas é o único que desenvolve a cena com detalhe.
+- **Mc 1,16–20** — o chamamento de Simão e André, Tiago e João junto às redes; «Vinde após mim e farei de vós **pescadores de homens**.»
+- **Mt 4,19** — a mesma palavra. A imagem que se repete nos evangelhos não é sobre uma barca, mas sobre uma **mudança de ofício**: os que sabiam tirar da água aprendem a tirar pessoas da água.
+- **A acústica do Kinneret** — o lago está numa bacia tectónica rodeada de encostas; o som propaga-se sobre a água e volta da encosta oposta. Na margem noroeste há um anfiteatro natural (o sítio conhecido como *heptapégon*, «sete fontes»), onde se ouve até uma voz baixa. Pregar de uma barca não é só uma imagem literária — é o **lugar funcionalmente melhor**.
+- **O Kinneret — os números** — o lago de água doce mais baixo da Terra, superfície a cerca de **−212 m** abaixo do nível do oceano; comprimento ~**21 km**, largura ~**13 km**, profundidade até ~**40 m**. Está numa fossa tectónica, e por isso se formam ali tempestades súbitas e curtas, quando o ar cai das encostas para a bacia.
+- **O «beber» de uma barca nova de madeira** — a madeira incha ao primeiro contacto com a água e as juntas apertam. Por isso os cascos novos fazem um pouco de água nos primeiros dias. É uma propriedade documentada do material, não um defeito.
+
+## Âncora da verdade
+
+| O que há no capítulo | Estado |
+|---|---|
+| O ensinamento a partir da barca, a pesca miraculosa, o chamamento dos pescadores | **ESCRITURA** — Lc 5,1–11; Mc 1,16–20 |
+| «Pescadores de homens» | **ESCRITURA** — Mc 1,17; Mt 4,19 |
+| O «sobre a tua palavra, lançá-las-ei» de Simão | **ESCRITURA** — Lc 5,5 |
+| Que a barca a construísse o próprio carpinteiro de Nazaré | **MITO** — a Escritura diz apenas «o barco, que era de Simão» |
+| A descida da barca de Nazaré ao Kinneret vencendo 560 m | **MITO** — a cena; a geografia está documentada |
+| A acústica da bacia e a pregação desde a água | **HISTÓRIA / física** — propriedade do lugar |
+| O «beber» do casco | **HISTÓRIA** — propriedade da madeira |
+| O remo como a única parte que a barca não tem por sua | **MITO** — imagem deste livro |
+
+## Medida
+
+- **O desnível do caminho**: Nazaré ~**+350 m**, o Kinneret ~**−212 m** → uma diferença de **~560 m** em **~30 km**. Declive médio 1,9 %, muito mais no fim.
+- **O remo**: comprimento **4–5 m**, pá de **60–80 cm**, cabo equilibrado para remar com uma mão contra a outra.
+- **Velocidade**: velocidade a remo de uma barca de trabalho **2–3 nós** (~4–6 km/h); mais à vela com bom vento, mas não neste lago, onde o vento é pouco fiável e rajado.
+- **Tripulação**: **4 remadores aos pares** + timoneiro. Corresponde a cinco homens — Simão e André, Tiago e João e os jornaleiros (Mc 1,20).
+- **O período de «beber»**: **2–4 dias** de infiltração ligeira, depois as juntas apertam.
+- **Peixes**: há várias espécies documentadas no Kinneret — sobretudo tilápia (na tradição «o peixe de Pedro»), ciprinídeos e siluros. «Cento e cinquenta e três peixes grandes» em Jo 21,11 é um número concreto que o texto dá de propósito.
+
+## Apara
+
+Essa frase sobre a física — que pregar da barca funcionava porque a margem é um anfiteatro — é verdadeira e no entanto perigosa. Se a tivesse escrito sem o resto, teria explicado o evangelho pela acústica e ter-lhe-ia tirado o que as pessoas nele procuram. **Não estou a explicar o que aconteceu. Estou a explicar apenas porque funcionou mesmo sem milagre.** São duas frases diferentes, e a diferença entre elas é toda a diferença entre honestidade e arrogância.
+
+---
+
+*A barca navegava e as pessoas entravam nela. Mas continuava sem nome. Isso chegou no momento em que ninguém o pediu — e em que mais falta fazia.* → O Mastro
+
+
+---
+
+# VI · O Mastro
+
+> **ANEL VI** · Cafarnaum e a margem junto a Magdala, segundo ano, depois da ceifa
+> *A única parte da barca que aponta para cima — e que no entanto nada sabe fazer sozinha.*
+
+---
+
+## Relato
+
+O mastro veio por último.
+
+O casco estava acabado, as cavernas assentes, o breu seco, os remos experimentados. E então o carpinteiro trouxe da oficina uma longa peça de cedro que tinha guardado de lado quatro anos inteiros — sem nó, direita, com uma fibra tão densa que a faca escorregava sobre ela. Ergueu-a ao meio da barca sobre a quilha e encaixou-a num cepo de carvalho preparado ali desde o princípio, sem que eu soubesse para que servia.
+
+O mastro é uma coisa estranha. Quando o ergues numa barca, a barca muda logo: deixa de ser plana e começa a ser **alta**. Da água parece que à barca nasceu um lombo. Mas ao mesmo tempo — e é isto que não me deixava dormir — o mastro por si só não sabe absolutamente nada fazer. Não move a barca. Não a segura. Não ajuda quando sopra de lado; pelo contrário, acrescenta uma superfície contra a qual o vento se apoia, e a barca vira mais facilmente do que sem ele.
+
+O mastro é **uma promessa que só vale quando o vento chega.**
+
+Se não houvesse vento, o mastro seria apenas um pau que estorva. Por isso os pescadores o abatiam quando levavam carga. Por isso ninguém o ergueu de vez.
+
+Mas não é por isso que me lembro dele.
+
+Lembro-me dele porque naquele dia me deram um nome.
+
+---
+
+Vieram os fariseus. Não com paus, não com pedras — vieram com uma pergunta que é pior do que uma pedra, porque não se pode responder e no entanto não se pode calar.
+
+«Quando virá o reino de Deus?»
+
+Era uma pergunta sobre uma data. Sobre um sinal. Sobre o que se pode contar e anotar e depois usar para se organizar. Os fariseus não eram tolos; eram homens que sabiam que o que não se pode contar também não se pode reclamar. E reclamar o reino importava-lhes mais do que tê-lo.
+
+Ele estava junto à água e não olhava para eles. Olhava para a barca.
+
+«O reino de Deus não vem de modo que se possa observar», disse. «Nem dirão: “Ei-lo aqui”, ou “Ali está.” **Porque o reino de Deus está dentro de vós.**»
+
+Retiraram-se. Não se foram zangados — foram-se **insatisfeitos**, o que em quem procura uma data é o mesmo.
+
+Mas os discípulos ficaram. E Simão, que estava junto à corda, fez uma pergunta que lhe dizia muito mais respeito do que o reino:
+
+«Mestre. E esta barca — como se chama?»
+
+Porque uma barca sem nome é pior para um marinheiro do que uma barca com o fundo furado. O nome não é ornamento. O nome é aquilo por que se sabe que o que flutua é **uma coisa concreta** e não apenas um pedaço de madeira que se aguenta por acaso à superfície.
+
+Ele olhou para Simão. Depois ajoelhou-se, pegou numa alavanca e levantou três tábuas do soalho que estavam apenas postas, não cravadas. Debaixo estava a quilha — eu, inteiro, da proa à popa, com aquela fita de cobre e com a cunha de oliveira que segurava a minha fenda.
+
+Pegou num formão.
+
+E gravou o nome **de fora para dentro**. Não no costado, onde o veriam as pessoas do porto. Não na proa, onde a água o lavaria. Na face interior da quilha, no sítio a que só chega quem levanta o soalho — e só quem desmonta a barca para a reparar.
+
+As letras tinham quatro dedos de altura e três de profundidade. Levou-lhe toda a tarde, porque o cedro é duro e porque olhava depois de cada letra para ver se estava direita.
+
+**O REINO DO CORAÇÃO**
+
+Quando acabou a última, sentou-se sobre os calcanhares e leu-o de baixo para cima, porque assim lhe saía desde o seu lugar.
+
+E depois disse a frase que ouvi à distância mais próxima possível, porque estava gravada em mim:
+
+**«Tem nome desde o princípio. Só esperava que o ouvísseis.»**
+
+---
+
+Simão perguntou: «E porque é que é por dentro? Porque não no costado, para que todos o vejam?»
+
+O carpinteiro apontou o costado do casco.
+
+«Se o escrever aqui, lê-lo-á qualquer um que passe. E cada um fará um juízo: nome bonito, nome tolo, nome forte. Daqui a vinte anos terás de o cobrir, porque estará feio. Daqui a cem anos terás de o arrancar, porque estará a mentir.» Pôs a palma no soalho. «Se o escrever aqui, só o verá quem repara a barca. E esse já sabe porque a repara. **O nome não está para convencer os que olham da margem. Está para lembrar aos que trabalham na barca.**»
+
+Simão calou-se um momento. Depois fez mais uma pergunta, e invejei-lhe essa pergunta toda a minha vida, porque a fez vinte séculos antes de a fazerem os sábios:
+
+«E aquilo que disseste aos fariseus — *dentro de vós* — quer dizer *dentro de cada um de nós*, ou *entre nós*, aqui na barca?»
+
+O carpinteiro olhou para ele e disse:
+
+«Sim.»
+
+E deixou ficar assim. Simão olhou para ele um momento e depois riu-se, porque percebeu que tinha recebido duas respostas e nenhuma, e que era provavelmente o correto.
+
+---
+
+## Da Escritura, da tradição e da história
+
+- **Lc 17,20–21** — «O reino de Deus não vem de modo que se possa observar… porque o reino de Deus está **dentro de vós**.» O grego **ἐντὸς ὑμῶν** (*entos hymōn*) é realmente ambíguo: «dentro de vós» (distributivo, em cada um) e «entre vós» (considera-se também *en mesō*). A maioria das traduções escolhe o primeiro, parte dos exegetas o segundo. A diferença não é pequena: o primeiro lê o reino como estado do coração, o segundo como presença de relação.
+- **Dt 30,14** — «Porque esta palavra está muito perto de ti, **na tua boca e no teu coração**, para que a possas cumprir.» A raiz veterotestamentária do que Lucas diz do reino.
+- **Jr 31,33** — «Porei a minha lei no seu interior e escrevê-la-ei no seu **coração**.» A nova aliança escreve-se para dentro, não na pedra — o que, em carpintaria, é o mesmo que gravar um nome na face interior da quilha.
+- **Ez 36,26** — «Dar-vos-ei um coração novo… tirarei da vossa carne o coração de pedra e dar-vos-ei um coração de carne.»
+- **2 Cor 3,3** — carta de Cristo «não em tábuas de pedra, mas em tábuas de corações humanos».
+- **Mt 13,33** — «O reino de Deus é como o fermento que uma mulher tomou e misturou em três medidas de farinha, até tudo levedar.» Imagem de uma ação que não se vê no princípio e se vê no fim. A mesma lógica do nome sob o soalho.
+- **Mastro e vela** — estruturalmente documentado: a barca galilaica tinha mastro e vela, mas não era um veleiro. A vela era auxiliar, usada com vento favorável; a propulsão principal continuava a ser o remo. É o detalhe técnico que faz da imagem «uma promessa que só vale quando o vento chega» uma descrição exata, não uma metáfora.
+
+## Âncora da verdade
+
+| O que há no capítulo | Estado |
+|---|---|
+| Os fariseus perguntam pelo reino; a resposta «dentro de vós» | **ESCRITURA** — Lc 17,20–21 |
+| A ambiguidade de *entos hymōn* | **ESCRITURA + filologia** — as duas traduções são defensáveis; o texto deixa-o aberto |
+| A aliança escrita no coração | **ESCRITURA** — Jr 31,33; Ez 36,26; Dt 30,14; 2 Cor 3,3 |
+| O nome da barca «O Reino do Coração» | **MITO** — imagem deste livro, tirada de Lc 17,21 |
+| Que está gravado na face interior da quilha, sob o soalho | **MITO** — imagem central desta edição |
+| A barca tinha mastro e vela auxiliar; a propulsão principal era o remo | **HISTÓRIA** — documentado na barca galilaica do século I |
+| A pergunta de Simão «dentro de cada um, ou entre nós?» | **MITO** — mas a pergunta é real e ainda viva na exegese |
+
+## Medida
+
+- **Altura do mastro**: **5–6 m** numa barca de 8,2 m — cerca de dois terços do comprimento do casco. Um mastro mais alto viraria a barca; mais baixo, não sustentaria a vela.
+- **Superfície da vela**: **8–15 m²** em uso auxiliar. Basta para a barca andar e é pouco para a levar.
+- **Profundidade da gravação**: **3–4 mm**. Mais fundo enfraqueceria a quilha nos pontos de maior esforço.
+- **Altura das letras**: **~4 cm**. Legíveis ao tato, não à vista — porque quem o procura procura-o com a mão.
+- **Tempo da gravação**: um nome de dezassete letras, uma tarde inteira, porque cada letra se faz duas vezes: uma com o formão e outra com o olhar.
+- **Tábuas do soalho**: **3** peças, postas, não cravadas — porque o soalho tem de se poder levantar sem danificar o casco.
+
+## Apara
+
+Escrevi neste livro que o nome está sob o soalho para que só o visse quem repara a barca. É belo e é **meu**, não documentado. Mas há uma armadilha que não quero varrer: se o nome estivesse realmente só sob o soalho, **ninguém o encontraria** e toda a imagem seria um segredo para ninguém. A barca real da Galileia, encontrada em 1986, não tinha nome nenhum — e no entanto as pessoas nomearam-na. Não pelo que estava escrito nela, mas pelo **que pensavam dela**. Essa é a segunda imagem, mais escura, e pertence a este capítulo tanto como a bela: **o nome que tu dás a uma barca não é o mesmo nome que os outros fazem dela.**
+---
+
+*E depois levantou-se o vento — não do lado de onde devia vir, e não à hora que se podia esperar. E pela primeira vez descobri que um mastro que nada sabe fazer é de repente a coisa mais importante que tenho.* → A Vaga
+
+
+---
+
+# VII · A Vaga
+
+> **ANEL VII** · o Kinneret, a noite da margem oriental para a noroeste, ~29 d. C.
+> *Uma vaga não é água. Uma vaga é trabalho.*
+
+---
+
+## Relato
+
+À tarde disse: «Passemos à outra margem.»
+
+Era a ordem mais corrente que pode soar numa barca. Seis quilómetros. Hora e meia de remo. Os pescadores tinham-no feito cem vezes. Ninguém perguntou se era seguro, porque neste lago ninguém pergunta — começa-se a perguntar quando sopra.
+
+Largámos ao pôr do sol.
+
+Na primeira hora houve um silêncio tal que ouvia cada remada em separado: *vzzz — clac — vzzz — clac.* A água era negra e lisa e refletia as estrelas com tanta exatidão que não se distinguia onde estava o céu e onde o lago. Alguém falava atrás sobre o pão. Outro adormeceu e a cabeça escorregou-lhe para um saco.
+
+Depois veio o vento.
+
+Não de frente, onde se veria. **Por trás e de lado, das encostas orientais**, onde o ar frio fica no planalto todo o dia e, de noite, transborda pelo bordo e cai na bacia. É o mesmo princípio do grão que se verte de um saco: quanto mais alto o seguras, mais forte cai. Em dez minutos o silêncio tornou-se pressão, e a pressão estrondo.
+
+E depois vieram as vagas — e aqui tenho de dizer uma coisa que as gentes do mar não compreendem antes de a viver.
+
+**O Kinneret não é fundo.** Tem uns quarenta metros. O oceano tem milhares. Uma vaga em água funda é comprida e mole; podes passar-lhe por baixo, podes montá-la, pode-se trabalhar com ela. Uma vaga em água pouco funda **não tem para onde descer**, e por isso cresce em altura e em aprumo. É curta, pontiaguda e rápida — três segundos entre cristas, mais de um metro de altura, dois nas rajadas. Uma barca de oito metros não cabe numa vaga assim. Cabe **metade** e a outra metade fica no ar.
+
+A primeira vaga que me bateu de lado girou-me vinte graus e atirou um balde fora. A segunda passou por cima da proa e caiu dentro.
+
+E a partir daí não foi mais nada senão trabalho.
+
+---
+
+Não posso descrever como é uma tempestade por fora. Nunca a vi. Vi-a **a partir da matéria**, e isso é diferente: sentia cada tábua do forro vergar dois ou três milímetros e voltar; as cavernas ceder entre os pregos; as cavilhas das juntas girar uma fração de grau e voltar. Sentia a água apoiar-se em mim e ao mesmo tempo segurar-me — porque uma barca na vaga não é uma coisa que resiste. É uma coisa que **se dobra segundo o que a vaga pede e no entanto continua a ser ela mesma.**
+
+Quando te dobras, não és fraco. Quando não te dobras, rebentas.
+
+É toda a construção naval numa frase, e levei quatro anos a aprendê-la por dentro.
+
+A água no casco subia. Os homens esgotavam — dois com um remo, dois com baldes, um com as mãos. Alguém gritava algo que não se podia ouvir, mas todos sabiam o que significava, porque numa barca durante a tempestade não se chega a acordo com palavras. Chega-se fazendo o que é preciso antes de alguém o dizer.
+
+E então repararam que ele dormia.
+
+Estava deitado na popa, a cabeça sobre um travesseiro de madeira que ele mesmo tinha aplainado. As vagas molhavam-no, a água corria-lhe pela cara, a barca girava e o mastro balançava sobre ele — e ele dormia.
+
+Não era o sono do cansaço nem o da indiferença. Era o sono de **quem a construiu.** E eu sei-o, porque já o sabia então: quando alguém dorme assim sobre ti, não é um insulto. É **o maior elogio que uma barca pode receber.** Significa: *sei o que és. Sei o que aguentas. Não tenho de olhar.*
+
+E depois acordou.
+
+Os homens inclinaram-se sobre ele e gritaram-lhe para a cara: «Mestre! Não te importas que pereçamos?»
+
+Levantou-se. Pôs-se de pé na popa — a parte da barca onde se sente mais cada vaga — e não teve medo. Não porque fosse corajoso, mas porque olhava a água como um carpinteiro olha uma obra ainda inacabada.
+
+E disse duas palavras ao lago.
+
+Em grego soam: **σιώπα, πεφίμωσο** — *siópa, pephimōso.* A primeira significa «cala-te». A segunda é mais forte: literalmente **«sê amordaçado, foi-te posto o freio»** — a palavra com que o grego da época mandava a um animal que fechasse a boca, e a um homem possesso que se calasse. Não é uma súplica. Não é uma ordem à superfície. É **pôr o freio.**
+
+E veio o silêncio.
+
+Não um apaziguar gradual, não o vento a amainar e as vagas a diminuir. Um silêncio em que de repente ouves as gotas escorrer do bordo do casco e cair na água. *Ploc. Ploc. Ploc.* E nesse silêncio ouvia-se que os onze homens tinham deixado de respirar.
+
+Eu então não sabia o que tinha acontecido. Sei-o hoje apenas como matéria: **a água sob mim deixou de trabalhar.**
+
+E depois aconteceu uma coisa que me levou a um estado que não conhecia e que me acompanha toda a vida desde aquela noite. Os homens não olhavam para o mar. Olhavam **para ele** — e tiveram mais medo do que antes.
+
+«Quem é este, que até o vento e o mar lhe obedecem?»
+
+Eu jazia sob eles, vergando-me de volta à minha forma, e pensava algo que naquele momento não devia dizer em voz alta, porque uma barca não deve falar:
+
+**Tive medo. Não dele. Tive medo de que fosse verdade.**
+
+Porque se é verdade que lhe obedecem o vento e a água, então o que eu tinha guardado quatro anos dentro de mim — aquele nome sob o soalho — não é apenas uma palavra bonita inventada por um carpinteiro nas colinas.
+
+---
+
+De manhã atracámos na margem oposta. Havia meia-luz e neblina, e alguém na margem guardava porcos.
+
+Nenhum de nós falou. Simão olhava a água e tinha nos olhos o que têm as pessoas que acabam de descobrir que o mundo é maior do que pensavam — e não é uma sensação agradável. É a sensação depois da qual se foge ou se fica.
+
+Simão ficou.
+
+---
+
+## Da Escritura, da tradição e da história
+
+- **Mc 4,35–41** — «Naquele dia, ao cair da tarde, disse-lhes: “Passemos à outra margem.”… Levantou-se uma grande tempestade… ele estava na popa, a dormir sobre o travesseiro… “Mestre, não te importas que pereçamos?”… “Cala-te, sê amordaçado!” (*siōpa, pephimōso*)… E fez-se grande calma… “Quem é este, que até o vento e o mar lhe obedecem?”»
+- **Mt 8,23–27 · Lc 8,22–25** — a mesma cena nos outros dois evangelhos; Lucas acrescenta que «se encheram de temor e se maravilhavam».
+- **Sl 107,23–30** — «Os que descem ao mar em navios… clamaram ao Senhor na sua angústia… **mudou a tempestade em calma**, e as ondas calaram-se… levou-os ao porto que desejavam.» O salmo que a Igreja lê desde o princípio como fundo desta perícope.
+- **Jon 1** — Jonas **dorme** no porão durante a tempestade; a tripulação pagã acorda-o. Jesus mesmo retoma esta cena em Mt 12,40.
+- **Sl 29,3** — «A voz do Senhor sobre as águas… o Senhor sobre as muitas águas.» Imagem veterotestamentária de Deus que fala sobre a água — e em Marcos um homem fala sobre a água.
+- **A física do Kinneret** — o lago é **pouco fundo e está numa bacia**. O vento cai das encostas orientais (os altos do Golã) para a depressão; as tempestades súbitas estão documentadas e são curtas, violentas e perigosas. A água pouco funda produz **vagas curtas e aprumadas** (uma relação altura/comprimento muito maior do que no oceano), piores para uma barca pequena do que as vagas compridas.
+
+## Âncora da verdade
+
+| O que há no capítulo | Estado |
+|---|---|
+| A tempestade, o Jesus adormecido sobre o travesseiro, a calma, a pergunta «quem é este?» | **ESCRITURA** — Mc 4,35–41 e par. |
+| *siópa, pephimōso* como «sê amordaçado / foi-te posto o freio» | **ESCRITURA + filologia** — o verbo *phimoō* significa «fechar a boca, silenciar, embridar»; nos evangelhos usa-se para mandar aos demónios |
+| O salmo 107 como fundo da cena | **ESCRITURA + tradição litúrgica** |
+| Jonas a dormir na tempestade como prefiguração | **ESCRITURA** — Jon 1; Jesus mesmo o menciona (Mt 12,40) |
+| Que o travesseiro o aplainou o próprio carpinteiro | **MITO** — imagem deste livro |
+| «Deixei de ter medo porque construí aquela barca» | **MITO** — imagem da convicção eclesial sobre Cristo e a sua nave |
+| Vagas curtas e aprumadas num lago pouco fundo e vento que cai das encostas orientais | **HISTÓRIA / física** — propriedade documentada do Kinneret |
+| «Uma vaga não é água, uma vaga é trabalho» | **MITO** — mas estruturalmente exato: o casco verga milímetros na vaga |
+
+## Medida
+
+- **Altura das vagas** numa tempestade do Kinneret: **1–2 m**. É uma catástrofe para uma barca de 1,3 m de pontal, mesmo que a vaga seja «baixa».
+- **Período das vagas**: **2,5–4 s**. Três segundos entre cristas significa que a barca não tem tempo de se recompor.
+- **Comprimento do casco 8,2 m** contra **comprimento de onda 10–15 m** → a barca **não cabe** na vaga. É o perigo principal: fica pendurada em duas vagas e o meio do casco fica no ar.
+- **Flexão do casco**: numa vaga de 1,5 m um casco de 8 m verga **2–4 mm** no forro e **1–2 mm** nas cavernas. Parece nada — e é todo o segredo: o material que cede não se quebra.
+- **Velocidade do vento** em rajada: **40–60 km/h** (ventos rajados documentados na depressão; mais nos extremos).
+- **Esgotamento**: 4 homens, baldes ~10 l, ~6 baldes por minuto → ~60 l/min. Numa hora, 3 600 litros. Um casco deste tamanho embarca centenas de litros numa hora de tempestade — e o esgotamento consegue-o por pouco.
+
+## Apara
+
+Escrevi que os homens temeram mais o silêncio do que a tempestade. Isso está em Marcos — e é a melhor frase psicológica de todo o evangelho. Mas também escrevi que tive medo de que pudesse ser verdade, e isso **a madeira em Marcos não o diz**. É meu. Fiz da quilha uma testemunha com dúvida, porque um livro em que a barca não duvida é um livro em que a barca mente. Ao mesmo tempo admito que com isso fiz uma coisa que pode confundir o leitor: **uma quilha que duvida não é teologia. É uma personagem literária.** Quando perguntares o que pensou a quilha daquilo, estás a perguntar-me a mim, não a Marcos.
+
+---
+
+*A barca sobreviveu à tempestade porque estava bem construída. Mas veio uma tempestade junto da qual a boa construção é pouca coisa — e na qual passei por baixo da água pela primeira vez sem me afundar.* → A Trave
+
+
+---
+
+# VIII · A Trave
+
+> **ANEL VIII** · Jerusalém e a margem do Kinneret, primavera ~30 d. C.
+> *Madeira que não é quilha.*
+
+---
+
+## Relato
+
+É o único capítulo que não posso contar por dentro.
+
+Eu estava no lago. Ele estava na cidade, a três dias de caminho. Entre nós havia montanhas, pó e gente com o seu próprio trabalho. A madeira não tem olhos que vejam noutra aldeia.
+
+Direi-vos, pois, o que posso, e logo no princípio vos direi o que não posso: **não estive lá.**
+
+Não estive lá quando o prenderam no jardim. Não estive lá quando o levaram pela cidade. Não estive lá quando lhe puseram a trave. Não vi o que eles viram. Quem afirma tê-lo visto inventou-o ou copiou-o.
+
+Mas a madeira conta coisas entre si, e foi assim que o soube.
+
+---
+
+Veio um homem que trazia azeite e sal de Jerusalém, e esse homem falava mais do que era saudável. Estava na margem e contava aos pescadores, que escutavam de olhos baixos, porque todos sabiam de quem tinha sido amigo.
+
+E no seu relato havia uma palavra que me atingiu desde o sítio onde jazo: **trave.**
+
+Não quilha. Não tábua. Não remo. Trave.
+
+Uma trave é uma peça de madeira que não tem forma de barca. É a coisa mais simples que um carpinteiro sabe fazer: pegas num tronco, desbastas para esquadria, apainas duas faces. Nada se dobra, nada se curva ao vapor, nada se espera. Uma trave não deve navegar, não deve levar, não deve flutuar. Uma trave deve **sustentar o que lhe pões em cima e não ceder.**
+
+Eu sabia que traves se faziam naquela terra. Sabia-o pelas conversas da oficina que escutei durante quatro anos, porque jazia no chão e não tinha outra coisa que fazer. Faziam-se traves para tetos, para lagares, para umbrais. E faziam-se traves de que não se falava em voz alta.
+
+Essas não se faziam de madeira fresca. A madeira era demasiado cara para isso. Faziam-se de traves que já tinham servido uma vez — e quando se queria que servissem outra, tiravam-se de um monte atrás da muralha, onde estavam encostadas umas às outras, encharcadas de chuva, pisadas de pó. O carpinteiro só verificava se aguentavam e acrescentava uma caverna a mais. Era tudo.
+
+A isso pode chamar-se poupança. Eu chamo-lhe **indiferença que deixa o trabalho a quem gosta dele.**
+
+E assim aconteceu que a madeira que um dia sustentou um teto ou um lagar sustentou por fim um homem. Era a mesma madeira que eu. O mesmo ofício, o mesmo formão, a mesma mão que a escolheu um dia. A diferença entre nós não estava naquilo de que éramos feitos.
+
+A diferença estava em **o que alguém deixou que nos pedissem.**
+
+---
+
+Três dias.
+
+Não sei o que se passava com ele. Sei o que se passava comigo, e essa é a parte que posso contar, porque a vivi.
+
+**Tiraram-me da água.**
+
+Não o fizeram por crueldade. Fizeram-no por medo. Quando na cidade acontece uma coisa assim, as pessoas que pertenciam àquele homem escondem-se. Os pescadores foram-se de Cafarnaum, refugiaram-se com parentes, deixaram de falar com estranhos. E uma barca na água que ninguém reclama é uma barca que alguém pode confiscar — ou afundar, ou guardar. Levaram-me, pois, para a margem, viraram-me de barriga para cima e cobriram-me com uma vela e ramos.
+
+E eu jazi em terra firme.
+
+Não posso descrever-vos o que é, porque não tenho palavras do vosso mundo para isso. Direi assim: **uma barca em terra não é uma barca.** É um objeto que se lembra de ter sido outra coisa.
+
+A madeira sem água seca. As juntas abrem-se. O breu, que foi elástico quatro anos, começa a endurecer e a rachar. As cavernas que mantinham o casco redondo começam a afastar-se, porque já nada as aperta do outro lado. E enquanto isso acontece ouve-se um som que nenhum marinheiro quer ouvir: **um estalido seco e longo**, como quando alguém parte um ramo ao longe. Fi-lo três vezes.
+
+Ao terceiro dia tinha uma fenda no forro de bombordo de quinze centímetros. Estava quebrado sem que ninguém me tivesse batido.
+
+E é mais ou menos tudo o que posso dizer daqueles três dias. Foram três dias de secura, de escuridão sob a vela e do som do meu próprio secar. Não havia nada de nobre nisso. Era apenas **esperar para ver se alguém me usava ainda.**
+
+---
+
+Na quarta manhã vieram.
+
+Ouvi-os antes de os ver: passos na areia, uma voz que se quebrou e depois silêncio, porque ou discutiam, ou alguém chorava, ou as duas coisas. Tiraram a vela tão depressa que me ficaram agulhas de pinheiro e terra no casco.
+
+E então fizeram uma coisa que não faz quem acabou de perder tudo.
+
+**Voltaram-me e puseram-me na água.**
+
+Não para irem embora. Não para fugirem. Simão estava com água até aos joelhos, segurando-me pela proa e olhando para mim como se olha para a coisa que nos ficou. Ao lado dele estava João, e ria-se — ria-se como se ri uma pessoa a quem já nada pode surpreender nem tirar.
+
+A água tomou-me uma segunda vez. Estava fria e havia pouca, porque tinha secado três dias, e entrava por todos os lados.
+
+E naquele momento compreendi uma coisa que é talvez o núcleo de todo este livro:
+
+**Não fui testemunha da ressurreição. Fui testemunha de que os que o tinham visto morto vieram no dia seguinte trabalhar.**
+
+Não viram um sepulcro vazio — ou viram-no, isso não sei, pertence a outros livros. Eu vi **uma barca vazia que pessoas vivas encheram.**
+
+---
+
+## Da Escritura, da tradição e da história
+
+- **Mt 12,40** — «Como Jonas esteve no ventre do grande peixe três dias e três noites, assim o Filho do Homem estará no coração da terra três dias e três noites.» O único «sinal» que Jesus deu a uma geração que pedia um sinal.
+- **Dt 21,23** — «Maldito aquele que for pendurado no madeiro.» Versículo da Torá que Paulo cita em **Gl 3,13**: «Cristo resgatou-nos da maldição da lei tornando-se maldição por nós.» Para um leitor judeu a cruz trazia uma dimensão **religiosa**, não apenas política.
+- **Mc 15 · Mt 27 · Lc 23 · Jo 19** — os relatos da paixão. Notai que os evangelhos não descrevem como era a cruz, de que madeira era nem como estava montada. É um silêncio que a piedade popular encheu de imagens.
+- **1 Cor 15,3–8** — a confissão mais antiga conservada (por volta do ano 50, portanto mais antiga do que os evangelhos): «morreu… foi sepultado… ressuscitou ao terceiro dia… apareceu a Pedro, depois aos Doze…» Paulo nomeia também testemunhas ainda vivas quando escrevia.
+- **A execução romana por crucificação** está documentada histórica e arqueologicamente. O corpo levava o **patibulum** (a travessa, cerca de 2 m, 30–50 kg); o poste vertical (*stipes*) ficava muitas vezes no sítio e a travessa encaixava-se nele. A madeira usava-se repetidamente.
+- **A única prova arqueológica de uma crucificação** — em 1968 encontrou-se em Jerusalém (Giv'at ha-Mivtar) o ossário de um homem chamado **Yehohanan ben Hagkol**; no seu osso do calcanhar ficou **um prego de ferro** (cerca de 17–18 cm). É o único achado físico do género até hoje — e prova que o prego atravessava o osso, não passava ao lado.
+- **A espécie da madeira da cruz** não está documentada. As tradições propuseram cedro, cipreste, oliveira, pinheiro; nenhuma dessas versões tem apoio no texto nem em qualquer achado.
+
+## Âncora da verdade
+
+| O que há no capítulo | Estado |
+|---|---|
+| O sinal de Jonas, três dias e três noites | **ESCRITURA** — Mt 12,40; Jon 1,17 |
+| A crucificação, a morte, o sepulcro, o terceiro dia | **ESCRITURA** — os evangelhos; 1 Cor 15,3–8 |
+| «Maldito aquele que for pendurado no madeiro» | **ESCRITURA** — Dt 21,23; Gl 3,13 |
+| O patibulum, o reemprego da madeira, o prego no calcanhar | **HISTÓRIA / arqueologia** — documentado (Yehohanan, 1968) |
+| A espécie da madeira da cruz | **NÃO DOCUMENTADO** — o texto cala, as tradições divergem |
+| Que a barca foi puxada para a margem e secou três dias | **MITO** — imagem deste livro; tecnicamente fiel (a madeira sem água seca e abre as juntas) |
+| Que a quilha o conta «de ouvido» e admite que não estava lá | **MITO** — decisão literária desta edição, não um achado histórico |
+| «Fui testemunha de que vieram trabalhar» | **MITO** — imagem; teologicamente pertence a outro capítulo, não a este |
+
+## Medida
+
+- **Patibulum**: **~2 m** de comprimento, secção **10 × 10 cm**, peso **30–50 kg**. É a trave que um homem leva aos ombros pela cidade — e que depois se encaixa no poste preparado.
+- **O prego**: **17–18 cm**, quadrado, forjado. Encontrado no osso do calcanhar de um homem do século I.
+- **Uma fenda após três dias em terra**: **15 cm**. Três dias de secagem fazem mais dano a um casco do que uma tempestade inteira na água — porque na água a madeira incha e aguenta, enquanto em terra retrai-se e abre.
+- **Três dias**: **72 horas**. Para a madeira é tempo bastante para mudar. Para as pessoas é tempo bastante para deixarem de pensar que acontecerá algo.
+- **Distância Jerusalém — Kinneret**: **~120 km**, três dias de marcha. A notícia chegou alguns dias depois do sucesso. É normal, e é a razão por que este capítulo não se pode contar em primeira mão.
+
+## Apara
+
+Este capítulo tem a maior dívida de todo o livro. **Escrevi que não fui testemunha da ressurreição — e depois escrevi uma frase que soa como se o tivesse sido.** «Vieram no dia seguinte trabalhar» é belo e é verdade sobre as pessoas, mas não é prova sobre o que aconteceu no sepulcro. A diferença entre «as pessoas mudaram» e «Deus ressuscitou» é toda a diferença entre a história e a fé, e nenhuma barca a colmatou. Deixo-a ali. **Quem a varrer faz do evangelho uma reportagem e da fé publicidade.**
