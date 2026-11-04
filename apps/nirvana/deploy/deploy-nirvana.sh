@@ -118,7 +118,10 @@ check() {
 check "${SITE}/"
 check "${SITE}/textures/milkyway-eso-4k.jpg"
 check "${SITE}/textures/earth-blue-marble.webp"
-check "${SITE}/api/oasis/worlds"
+# Brána ZAP pasu je od 2026-11-05 na celé aplikaci: `/api/pass` musí být
+# dostupné (jinak se nedá zadat kód) a herní routa musí redirectovat na ni.
+check "${SITE}/api/pass"
+check "${SITE}/mars" 307
 ssh "${EDGE_HOST}" "curl -s -o /dev/null -w '  local :3010 -> %{http_code}\n' --max-time 10 http://127.0.0.1:3010/"
 
 if [[ "$fail" -ne 0 ]]; then
