@@ -270,6 +270,47 @@ net 11/11.
 
 ---
 
+## 8c) Dodatek — MOBA: mistrovství hrdiny a bounty (protokol 28)
+
+MOBA měla do téhle chvíle jen jeden „druhý život": denní výzvu. Po pár
+zápasech všechno splynulo — kdo hrál za Krišnu a kdo za Šivu, nikde
+nezůstalo. A ekonomika znala jen plochou odměnu 180 za zabití, takže
+nakrmený hrdina byl sice silný, ale nikdo neměl důvod ho zastavovat.
+
+**Mistrovství hrdiny** (`core/moba/mastery.ts`)
+
+- každá z 200 postav má vlastní XP, počet zápasů a titul (devět úrovní:
+  Učeň → Poutník → Znalec → Mistr → Vědmysl → Strážce kruhu → Světlonoš →
+  První jméno → Kruh sám),
+- XP jen z odehraného zápasu (výhra, zabití, poškození, MVP); sólo proti
+  botům za polovinu, aby se nedalo farmit,
+- **nikdy neposiluje hru** — je to titul, ne +dmg. Jinak by z výběru
+  postavy bylo pay-to-grind,
+- „hrdina dne" je deterministický z data a dává +50 % XP (tempo, ne sílu),
+- pick screen ukazuje odznak („5 · Vědmysl") u každé postavy a hvězdu
+  u hrdiny dne; výsledková karta přidá „+X XP" a nový titul.
+
+**Bounty za sérii**
+
+- odměna za zabití roste se sérií oběti: `180 + 60 × série`, strop 4
+  (`bountyFor`), takže nakrmený hrdina je cenný cíl a soupeř má cestu zpět,
+- zabití hrdiny se sérií ≥3 se hlásí jako **SHUTDOWN**,
+- série se resetuje smrtí a je ve snapshotu → HUD ukáže „🔥N".
+
+**Bonus: opravený flaky test.** `arena.mjs` padal 2× ze 3 běhů na
+„B je mrtvý / čeká na respawn" — četl poslední snapshot, ale respawn
+(2,4 s) ho mezitím stihl vzkřísit. Teď hledá kterýkoli snapshot, kde je
+hráč mrtvý. 4/4 běhy zelené. Obecné pravidlo: test přechodového stavu
+nesmí číst „aktuální" hodnotu, ale historii zpráv.
+
+**Ověřeno:** `test/moba-mastery.mjs` 33/33, `moba-sim.mjs` PASS, balance
+12 zápasů (299 s, 5,9 zabití, 1 timeout — stejné jako před změnou),
+`tsc` 0 chyb, build OK, headless audit 10/10 + screenshot pick screenu,
+net 11/11 sad. Balanc se nezměnil, protože bounty mění jen odměnu,
+ne poškození.
+
+---
+
 ## 9) Meze, které se nemají hlásit jako hotové
 
 - **VR na skutečném headsetu** — ověřeno jen headless (scéna se rozjede,
@@ -283,6 +324,10 @@ net 11/11.
   zařízeními a bez odměn s hodnotou (záměr: hra nehraje o peníze).
 - **Vnější planety** jsou prezentace, ne hry — žádná mechanika.
 - **Nové planety v soustavě** mají stylizované měřítko (jako celá soustava).
+- **Mistrovství** je v `localStorage` — bez účtu se mezi zařízeními
+  nesesynchronizuje a nedá se s ním chlubit jinde než v prohlížeči.
+- **Bounty** je v simulaci, ale HUD ukazuje jen vlastní sérii; tabule
+  sérií soupeřů není.
 
 ---
 

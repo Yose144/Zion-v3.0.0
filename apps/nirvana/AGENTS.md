@@ -1909,3 +1909,36 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Test: `npx tsx test/park-tower.mjs` (falešný 2D kontext, 11 kontrol:
   přesné/nepřesné položení, konec mimo kvádr, auto-drop časem, mezerník,
   `stop()`). V prohlížeči `.artifacts/probe/tower-audit.mjs`.
+
+## MOBA — mistrovství hrdiny a bounty (2026-11-04, protokol 28)
+
+- **Mistrovství nikdy neposiluje hru.** `core/moba/mastery.ts` drží XP,
+  počet zápasů a titul pro každé `heroId`; je to číslo a jméno, ne +dmg.
+  Kdyby dávalo bonusy, z výběru postavy by bylo pay-to-grind a nový hráč
+  by proti veteránovi neměl šanci.
+- **XP jen z odehraného zápasu** (výhra, zabití, poškození, MVP) a sólo
+  proti botům za polovinu — jinak se dá farmit do nekonečna.
+- **Tituly jsou indexované od 0 = level 1** (`MASTERY_TITLES[level - 1]`).
+  Kdo přidá desátý titul, musí zvednout i `MAX_LEVEL`, jinak zůstane
+  nepoužitý (a test `moba-mastery.mjs` to odhalí).
+- **„Hrdina dne" je deterministický z data** (`heroOfDay(pool, date)`) —
+  stejný den = stejná postava pro všechny. Dává +50 % XP (tempo, ne sílu).
+- **Bounty roste se sérií oběti** (`bountyFor(streak)` = 180 + 60×série,
+  strop 4). Sim, banner i testy berou číslo z téhle funkce — nikdy
+  nepočítej odměnu znovu na jiném místě.
+- **`streak` je ve snapshotu** a resetuje se smrtí; HUD z něj dělá „🔥N"
+  až od 2. Zabití hrdiny se sérií ≥3 se hlásí jako `SHUTDOWN`.
+- **Testy:** `test/moba-mastery.mjs` (křivka, XP, persistence, poškozený
+  profil, hrdina dne, bounty, streak ve snapshotu) a
+  `.artifacts/probe/moba-mastery-audit.mjs` (odznak na pick screenu,
+  zápis po zápase, hvězda hrdiny dne).
+
+### Past: flaky test arény
+
+- `arena.mjs` četl „B je mrtvý" z **posledního** snapshotu, ale zabití
+  mohlo přijít o pár snímků dřív a respawn (2,4 s) ho stihl vzkřísit →
+  padalo 2× ze 3 běhů. Správně se hledá **kterýkoli** snapshot, kde je
+  hráč mrtvý (`a.inbox.filter(...).map(...).find(...)`).
+- Obecné pravidlo: test, který ověřuje **přechodový stav** (mrtvý,
+  zraněný, na cooldownu), nesmí číst „aktuální" hodnotu — musí hledat
+  v historii zpráv.
