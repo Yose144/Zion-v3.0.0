@@ -39,7 +39,13 @@ cd "$ROOT_DIR"
 # --ignore-scripts: postinstall `db:generate -w zion-marketplace` běží dřív,
 # než je .bin/prisma na místě → ENOENT/127 (2026-11-02). Client se generuje
 # explicitně na dalším řádku.
-(cd ../.. && npm ci --ignore-scripts)
+# `ZION_SKIP_NPM_CI=1` použij, když je root node_modules čerstvě nainstalovaný
+# (npm ci vždy smaže celý strom a při pomalé síti to zdrží deploy o desítky minut).
+if [[ "${ZION_SKIP_NPM_CI:-0}" != "1" ]]; then
+  (cd ../.. && npm ci --ignore-scripts)
+else
+  echo "[deploy-marketplace] ZION_SKIP_NPM_CI=1 — přeskakuji npm ci"
+fi
 npm run db:generate
 
 echo "[deploy-marketplace] Building (standalone)..."

@@ -125,3 +125,20 @@ EDGE1 byl v pořádku (`drwxrwxrwt`), jiné unity na EDGE2 EACCES na `/tmp` nem�
 - **Smoke test musí sáhnout na databázi.** HTML + statický asset nejsou důkaz, že aplikace žije.
 - **`inStock` není totéž co `stock`.** Dvě nezávislá pole; nesoulad se neprojeví nikde než u pokladny (409).
 - **`rsync -a` z macOS umí přepsat metadata cílového adresáře.** `/tmp` s ownerem 501 a právy 755 vypadá jako funkční adresář, ale rozbije každou non-root službu, která potřebuje dočasný soubor — a chyba se objeví až v konkrétní funkci (tady PDF faktura), ne při deployi.
+- **Soubory přidané do `public/` za běhu služby se neobjeví.** Next si seznam statických souborů načte při startu; 23 nových produktových fotek leželo na disku a vracelo 404, dokud se služba nerestartovala. Deploy to řeší restartem — ruční nahraní souborů ne.
+
+---
+
+## 7. Dodatek (stejný den, druhá dávka)
+
+**Produktové fotky:** 👤 dodal `heros/shop/ZION_RASTA_23_obrazku_WEBP` (23× WEBP 1024×1024) + `prirazeni.csv`. Nacopírováno do `public/shop/img/products/`, přemapováno v `shopProducts.ts` **i v DB** (`image` u všech 23 produktů). Provizorní dlaždice z §3 P2 smazány — nahradily je skutečné fotky.
+
+**Vánoční produkty rozšířeny o kontext a ukázky:**
+
+- Každý ze tří produktů má `home.lead` + `bullets` + `facts` (čísla), takže karta na homepage není tři věty, ale konkrétní nabídka.
+- Kniha dostala **tři reálné ukázky z rukopisu** (Prolog, 7. kapitola, Epilog) v češtině i angličtině — vytažené z `canon/…/CZ` a `EN`, ne přepsané. Vykreslují se jako papírové karty s iniciálou.
+- **Mřížka 8 edic** s vygenerovanými obálkami a počty slov (z `EDITION/00-STAV.md`).
+- Čísla jsou změřená: **3 252 stran** = součet všech 40 PDF, **619 498 slov** = součet edic × jazyků. Nahradila dosavadní „přes 3 200 stran" i chybné „10 kapitol" (vlajková edice má 24 kapitol + epilog).
+- Zdvojený nadpis „Ukázky z knihy" (citáty vs. nové vzorky) → citáty jsou „Hlasy z knihy".
+
+**Deploy past:** `npm ci` se dvakrát srazil s paralelní session (ENOTEMPTY, chybějící `valtio/esm/vanilla.mjs`, zkrácený `next-swc` → „Turbopack requires native bindings"). Řešení = plný `rm -rf node_modules && npm ci` a hned deploy. Skript má nově `ZION_SKIP_NPM_CI=1` pro případ, kdy je strom čerstvý a nechceme ho znovu přepisovat.
