@@ -202,13 +202,13 @@ function Blasts({ state }: { state: React.MutableRefObject<TanksState> }) {
   return (
     <group ref={group}>
       {Array.from({ length: 4 }, (_, index) => (
-        <mesh key={index} visible={false} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[BLAST_R * 0.62, BLAST_R, 32]} />
+        // ohnivá koule, ne prstenec na zemi — ten vypadal jako talíř
+        <mesh key={index} visible={false}>
+          <sphereGeometry args={[BLAST_R * 0.55, 16, 12]} />
           <meshBasicMaterial
             color="#ffb861"
             transparent
             opacity={0.75}
-            side={THREE.DoubleSide}
             depthWrite={false}
             blending={THREE.AdditiveBlending}
           />
