@@ -1,0 +1,17 @@
+{
+  "edition": "deepseek",
+  "lang": "FR",
+  "source": "Le_Royaume_du_Coeur_deepseek_FR.md",
+  "words": 29130,
+  "headings": 195,
+  "paragraphs": 726,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 128,
+    "bytes": 379789
+  },
+  "epub": {
+    "documents": 18,
+    "bytes": 81629
+  }
+}

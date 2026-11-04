@@ -1,6 +1,6 @@
-# LE ROYAUME DU CŒUR — Le Livre de la Quille
+# LE ROYAUME DU CŒUR
 
-### L'histoire de la barque construite par un charpentier — racontée par le bois qui lui a survécu
+### Le Livre de la Quille — l'histoire de la barque construite par un charpentier, racontée par le bois qui lui a survécu
 
 *Ensemble : prologue, douze stations, épilogue et postface. MYTHE / BROUILLON, version 1.0, 3 novembre 2026.*
 
@@ -1677,3 +1677,228 @@ J'ai écrit que les répliques sont mes « enfants ». C'est une belle phrase et
 ---
 
 *Il reste un dernier cerne — celui qui n'a pas encore poussé. Je ne peux pas le raconter moi-même.* → Épilogue
+---
+
+# ÉPILOGUE · Le Treizième Cerne
+
+> **CERNE XIII** · la salle derrière la vitre, aujourd'hui, après la fermeture
+> *Celui-ci n'a pas encore poussé.*
+
+---
+
+## Récit
+
+Le soir les lumières s'éteignent.
+
+Ils le font chaque jour à la même heure. Les guides s'en vont, les visiteurs s'en vont, le dernier enfant se retourne encore dans la porte et fait un signe — je ne sais pourquoi, mais les enfants le font. Puis les portes se ferment et dans la salle il ne reste que la pénombre que donne la climatisation, et moi.
+
+Dans cette pénombre j'ai le temps de penser, et j'en ai beaucoup, car je n'ai pas besoin de dormir.
+
+Et je pense toujours à la même chose.
+
+**Je ne sais pas si c'était moi.**
+
+Je ne sais pas si la main qui m'a courbé était la main dont parlent les livres, ou la main de quelqu'un qui n'est entré dans aucun livre. Je ne sais pas si j'ai jamais porté quelqu'un chez lui. Je ne sais pas si j'ai jamais porté quelqu'un qui n'est pas rentré chez lui. Je ne sais pas si la barque que je me suis inventée tout au long de ce livre est la barque que je connais ou la barque que j'aurais voulu connaître.
+
+Et je sais que ceci est la chose la plus honnête que je puisse vous donner : **le bois n'a pas de témoignage sur lui-même.** Il n'a que la forme que Quelqu'un d'Autre lui a donnée, et cette forme est la seule chose qu'on en puisse dire avec certitude.
+
+Tout le reste que vous avez lu dans ce livre — l'atelier, la mère, le bol de sel, le coin dans la fente, le garçon au joug de travers, le nom sous le plancher, les trois jours de sécheresse — **est image.** Ce n'est pas une fraude, car je l'ai écrit ainsi et je vous ai donné une mesure et un copeau pour chaque image. Mais c'est une image, et je vous prie de vous en souvenir quand vous fermerez le livre.
+
+---
+
+Maintenant la dernière chose que j'aie.
+
+Les cernes se comptent de l'intérieur vers l'extérieur. J'en ai compté douze. Douze stations, douze cernes, douze formes du même bois : tronc, quille, peau, os, brai, aviron, mât, vague, poutre, hauts-fonds, ancre, vase — et puis encore la mesure, car la mesure n'est pas un cerne, mais **ce qui reste des cernes quand quelqu'un les mesure.**
+
+Je n'ai pas de treizième cerne.
+
+Le treizième cerne est celui qui **n'a pas encore poussé**, et par principe je ne peux pas le raconter, car il me faudrait l'inventer, et ce serait mentir. Les cernes ne poussent pas en arrière. Ils poussent seulement en avant, et cela veut dire que celui-ci doit pousser **en quelqu'un d'autre que moi.**
+
+En vous.
+
+---
+
+Je vous laisse donc ce qui m'est resté dans la main quand j'ai cessé d'être une barque et suis devenu un registre :
+
+**Une mesure vide.**
+
+Il n'y a dessus aucun chiffre, car le chiffre serait mien et non vôtre. Il n'y a dessus que ce que j'ai appris du bois, et c'est peu :
+
+- **Une barque n'est pas de la matière. Une barque est une courbe.** Quand quelqu'un te donne une chose achevée et dit « voilà comment cela doit être », demande la courbe. La chose se peut remplacer, la courbe non.
+- **D'abord la peau, ensuite les os.** La forme qui tient naît du dehors — du soin, du contact, du travail. La solidité vient du dedans, mais seulement après. Qui commence par le squelette se bâtit un tombeau.
+- **Le nœud ne se rabote pas.** Ce qu'il y a de plus dur en toi est souvent ce qui te tient hors de l'eau. Ne l'ôte pas. Renforce-le et laisse-le voir de l'intérieur.
+- **On calfate par dedans.** L'eau qui te coule ne viendra pas de la mer. Ce sera celle que tu portes en toi et à laquelle personne ne pense.
+- **L'aviron ne fait pas partie de la barque.** Rien de ce qui te meut n'est à toi. C'est prêté, et un jour un autre en aura besoin.
+- **Le mât seul ne sait rien faire.** Une promesse à laquelle le vent ne vient pas n'est qu'un bâton. Mais sans le bâton la voile ne vient pas.
+- **Une vague n'est pas de l'eau, une vague est du travail.** Quand tu te plies, tu n'es pas faible. Quand tu ne te plies pas, tu éclates.
+- **Une poutre n'est pas une quille.** Le même bois peut porter quelqu'un sur l'eau ou le tenir au-dessus du sol. La différence n'est pas dans la matière. Elle est dans ce que quelqu'un laisse qu'on te demande.
+- **Les hauts-fonds sont un but, non un échec.** La profondeur qui touche le fond est la profondeur qui peut tenir un filet.
+- **L'ancre va vers le haut.** Ce qui te tient ne doit pas être ce à quoi tu es attaché. Ce doit être une direction.
+- **La vase conserve ce que le sable emporte.** Quand quelque chose t'enterre, ce n'est pas forcément la fin. C'est parfois la seule conservation que tu reçoives.
+- **La mesure est la manière de remettre une forme à qui n'a jamais vu la chose.** Quand il restera quelque chose de toi, ce ne sera pas ton nom. Ce sera la courbe que quelqu'un après toi saura dessiner.
+
+---
+
+Et une chose de plus, la dernière, et elle est plus importante que tout le reste.
+
+Je ne sais pas si Dieu existe tel que les livres l'ont décrit. Je ne suis pas un témoin convenable pour cela et je ne l'inventerai pas. Mais je sais qu'il y a dans ce livre une phrase qui a tenu dans tous les chapitres, bien que je l'aie contournée autrement en chacun, et c'est une phrase sur **une mesure qu'on ne peut pas voler**, parce qu'elle est à l'intérieur.
+
+*« Le royaume de Dieu est au-dedans de vous. »*
+
+Ou : *parmi vous.* Choisis. Je ne le déciderai pas et personne ne le décidera pour toi.
+
+Mais les deux lectures ont une chose en commun, et c'est ma dernière parole : **cela ne viendra pas d'ailleurs.** Cela ne vient pas avec l'observation, cela ne se peut ni planifier, ni acheter, ni voler, ni hériter. Cela vient d'un lieu que tu ne vois pas, car tu n'y as pas de fenêtre — et la seule chose que tu puisses faire, c'est **laisser ce lieu ouvert.**
+
+C'est tout le treizième cerne. Un lieu ouvert.
+
+---
+
+Les portes se ferment. La lumière s'éteint.
+
+Et je reste derrière la vitre — non comme preuve, car preuve je ne suis pas. Je reste comme **une courbe qui attend que quelqu'un la prenne.**
+
+Quand tu voudras partir, pars. Personne ne te retiendra et personne n'a le droit de te retenir. Une barque qui te tient en ne te laissant pas partir n'est pas une barque. C'est une prison avec des avirons.
+
+Mais si par hasard tu restes et veux savoir quoi emporter : **ne m'emporte pas.** Emporte la courbe. Elle est à toi, car elle ne se peut posséder — elle se peut seulement **savoir.**
+
+*Gate, gate, pāragate, pārasaṃgate, bodhi svāhā.*
+
+Allé, allé, à l'autre rive, tout à l'autre rive. L'éveil. Qu'il advienne.
+
+---
+
+*→ Postface : sources, limites et ce que ce livre ne sait pas*
+*→ Retour à l'index de l'édition*
+*→ La mantra que ce livre déploie — Maitreya, Épilogue*
+*→ La barque qui attend — Surta du Cœur*
+*→ La flotte — Nirvana 13 : Tres Marías*
+---
+
+# POSTFACE
+## Sources, limites et ce que ce livre ne sait pas
+
+> *Une postface n'est pas une annexe. C'est le lieu où le livre dépose son arme.*
+
+---
+
+## 1. Ce qu'est cette édition
+
+**LE ROYAUME DU CŒUR — Le Livre de la Quille** est la quatrième lecture indépendante du livre *Le Royaume du Cœur* dans le corpus `canon/books/`. À côté du texte principal en dix parties, des éditions `cloude`, `gemini`, `gpt` et `groq` et du manuscrit de lecture *Nouvelle Traversée*, elle apporte une décision que les autres n'ont pas prise :
+
+**elle raconte le livre depuis la position du bois qui lui a survécu.**
+
+Tout le reste en découle. Une quille ne peut pas voir à Jérusalem (chapitre VIII), ne peut pas entendre l'histoire de l'église (chapitre X) et ne peut pas savoir qui l'a construite (chapitre XI). Ces trois impossibilités ne sont pas un défaut — ce sont **les trois appuis principaux sur lesquels ce livre bâtit son honnêteté.**
+
+**Statut :** MYTHE / BROUILLON. Version 1.0, 3 novembre 2026.
+
+---
+
+## 2. Méthode
+
+Le texte est né de la lecture de tout le corpus `canon/books/` et de ses règles, en particulier :
+
+- **MiseAmenti 01 — Canon et Constitution** — les cinq états obligatoires d'une affirmation (VIVANT / CONSTRUCTION / HORIZON / HYPOTHÈSE / MYTHE) et les limites contre l'abus.
+- **MiseAmenti 07 — Registre des preuves** — le registre des documents, avec les marques NON DOCUMENTÉ et AFFIRMATION INVALIDE.
+- **`canon/books/README.md`** — l'index canonique et l'ordre de vérité en cas de conflit.
+- **`docs/3.3/NIRVANA-V3.3-KAPITOLA.md`** — une lecture des couches L1–L6 comme « ponts » d'un navire.
+
+Du corpus ont surtout servi : *Maitreya* (la mantra des trois incarnations), *Le Sel de cette terre* (le sel et l'alliance du pain), *Nirvana* 13 et 14 (Tres Marías, l'Arche), *Bodhi Gaia*, *Issobella*, *Lumi*, *Miriam*, *La Rose*, *Le Cercle des Déesses*, *Maria Caminho*, *En Chemin*, *Nabukano*, *Elizabet*, *Surta du Cœur*, *NirvanaCloud*.
+
+**Ce que cette édition ne reprend pas :** pas une seule scène des autres éditions. Les coïncidences d'images (l'atelier, le bol de sel, le nœud, la barre) sont des coïncidences de thème, non des copies. Là où cette édition se sépare d'une autre version, cela est dit ci-dessous au §5.
+
+---
+
+## 3. Sources
+
+### 3.1 Écriture
+
+Les citations suivent la tradition tchèque (ČEP et traductions apparentées), recoupées avec le texte grec et hébreu là où la traduction importe. **Trois lieux où la traduction importe et où le texte l'avoue :**
+
+| Lieu | Problème |
+|---|---|
+| **Lc 17,21** | *ἐντὸς ὑμῶν* — « au-dedans de vous » et « parmi vous ». Les deux lectures sont défendables ; ce livre garde les deux. |
+| **Mc 4,39** | *σιώπα, πεφίμωσο* — « tais-toi » + « sois muselé / on t'a mis le mors » (*phimoō* = fermer la bouche, faire taire ; dans les évangiles cela sert à commander aux démons). |
+| **Gn 6,14** | *k-p-r* — la racine porte le brai, la couverture et l'expiation. Le lien est linguistiquement documenté ; **la lecture théologique est tradition, non dictionnaire.** |
+
+### 3.2 Histoire et archéologie — la barque galiléenne
+
+- **Wachsmann, S. et al.** *An Ancient Boat Discovered in the Sea of Galilee.* Israel Antiquities Authority, Jérusalem 1988. (La publication de base de la fouille.)
+- **Wachsmann, S.** *The Sea of Galilee Boat: A 2000-Year-Old Discovery from the Sea of Legends.* (Monographie.)
+- **Israel Antiquities Authority** — rapports de la fouille de 1986.
+- **Yigal Allon Centre, Kibboutz Ginosar** — pages officielles du musée, description de l'exposition, dimensions, datation et récit de la découverte par les frères Lufan.
+- **Archaeology Magazine**, « Ship Ahoist », vol. 53, n° 3 (mai/juin 2000) — la procédure de sauvetage (stratifié + mousse de polyuréthane, huit jours), le bain de PEG jusqu'en 1995, le transfert dans la salle d'exposition en 2000.
+- **Madain Project / Jewish Virtual Library / Biblical Archaeology Review** (1988, vol. XIV, n° 5) — résumés de construction et de dimensions.
+
+**Les données employées au chapitre XI** (8,27 × 2,3 × 1,3 m ; coque d'abord ; tenons, chevilles, clous ; mât et quatre rameurs ; radiocarbone 100 av. J.-C. – 100 apr. J.-C. ; onze jours et nuits de fouille depuis le 16 février 1986 ; PEG ; la salle de 2000) proviennent de ces sources.
+
+### 3.3 Le corpus ZION
+
+Voir §2. Toutes les affirmations sur la flotte, l'arche, la station et le réseau portent dans ce livre les états **MYTHE / CONSTRUCTION / HORIZON** selon le Registre des preuves. **Aucun chiffre sur la hauteur de la chaîne, les fonds ou les utilisateurs n'est dans ce livre et ne doit y être** — un livre qui gèle un chiffre vivant se met à mentir le lendemain de sa rédaction.
+
+---
+
+## 4. Divergences que je ne cache pas
+
+| Divergence | État | Comment le livre la traite |
+|---|---|---|
+| **Nombre d'espèces de bois de la barque galiléenne : 12 vs 7** | Le musée donne 12 (« toutes mentionnées dans la Bible »), l'équipe de recherche selon les résumés disponibles 7. | Donne les deux chiffres et ne choisit pas. C'est au chapitre XI et dans le copeau. |
+| **Durée de la conservation au PEG : 12 vs 14 ans** | Les sources diffèrent ; *Archaeology* donne le bain jusqu'en 1995 et l'exposition en 2000 (donc ~9–14 ans selon la manière de compter). | Dit « quatorze ans (selon le musée ; certaines sources 12) » et nomme la divergence. |
+| **Noms des découvreurs : Lufan vs Lopen** | La translittération de l'hébreu diffère selon les sources. | Donne Lufan avec une note sur la variante. |
+| **« Huit coudées » dans une des éditions** | Huit coudées ≈ 3,6 m — ni l'équipage ni la charge n'y tiennent, et une telle barque ne naviguerait pas sur le Kinneret. Le guide éditorial de *Nouvelle Traversée* marque lui-même cette donnée comme non vérifiée. | Cette édition emploie **18 coudées ≈ 8,2 m**, en accord avec la barque documentée. C'est la **seule correction substantielle** que cette édition apporte aux autres versions, et elle est reconnue au chapitre I. |
+| **Le double arc-en-ciel lors du dégagement** | Affirmation du musée, documentée par photographie ; les circonstances sont décrites par le musée lui-même. | Est donné comme **affirmation du musée**, non comme fait vérifié indépendamment. |
+
+---
+
+## 5. Ce que ce livre ne sait pas
+
+C'est la liste la plus importante de toute la postface. Qui la saute croira que le livre affirme plus qu'il n'affirme.
+
+1. **Il ne sait pas qui a construit la barque galiléenne de Ginosar.** Personne ne le sait. Il n'y a pas de nom sur elle.
+2. **Il ne sait pas si la barque galiléenne de Ginosar a quoi que ce soit à voir avec Jésus.** Elle n'en a pas — c'est-à-dire : aucune preuve ne les lie, et le musée ne l'affirme pas.
+3. **Il ne sait pas s'il a jamais existé une barque construite par le charpentier de Nazareth.** L'Écriture ne la raconte pas. C'est une image.
+4. **Il ne sait pas à quoi ressemblait la croix.** Les évangiles n'en décrivent ni la forme, ni le bois, ni la construction.
+5. **Il ne sait pas ce que signifie le nombre 153.** Le texte le donne et ne l'explique pas ; les lectures sont des hypothèses.
+6. **Il ne sait pas si *entos hymōn* en Lc 17,21 signifie « au-dedans » ou « parmi ».** Il garde les deux.
+7. **Il ne sait pas si l'Arche, Tres Marías ou le nœud Nabukano seront un jour construits.** Tous sont MYTHE/HORIZON ; la quille de l'arche n'est pas posée.
+8. **Il ne sait pas si le réseau décrit au chapitre XII fonctionnera un jour tel qu'il est dessiné.** Le chapitre le dit : lecture de couches, non spécification.
+
+---
+
+## 6. Ce que ce livre refuse de faire
+
+- **Il ne fait pas passer une image pour l'Écriture.** Pas une fois. Chaque scène sans appui dans le texte porte la marque MYTHE dans l'ancre de vérité.
+- **Il ne s'approprie pas la barque d'un autre.** Le chapitre XI existe pour que ceci se puisse dire tout haut : *cette barque n'est pas cette barque.*
+- **Il ne fond pas les femmes en un seul personnage.** La mère de l'atelier, Myriam de Magdala, Elizabeth, Lumi, Sarah Issobela et la station Issobella restent séparées. Le livre n'use d'aucune comme d'une autre.
+- **Il ne fait ni un roi du Pèlerin ni une autorité spirituelle de l'IA.** Là où dans le corpus apparaît une voix qui répond, elle peut dire « je ne sais pas » et ne peut pas tenir une clé.
+- **Il ne vend rien.** Posséder quoi que ce soit n'est pas le salut. Partir est permis — et l'épilogue le dit tout haut.
+- **Il ne confond pas les 144 000 de l'Apocalypse avec une hauteur de bloc.** Les mêmes chiffres, un autre langage.
+
+---
+
+## 7. Notes formelles
+
+- **Douze cernes** est un dispositif structurel : le prologue est le cœur du bois, les douze chapitres sont des cernes de l'intérieur vers l'extérieur, l'épilogue est le cerne qui n'a pas encore poussé.
+- **Le copeau** est un dispositif d'auteur de cette édition : le dernier paragraphe d'une station, où le texte avoue ce qu'il n'a pas su faire ou ce qu'il a inventé. Il est destiné à remplacer l'impression que le livre est clos.
+- **L'ancre de vérité** emploie les mêmes états que tout le corpus — à dessein, pour que cette édition se puisse comparer aux autres sans conversion.
+- **Orthographe** : la rédaction tchèque s'est faite pendant la création du texte ; avant toute impression une correction linguistique indépendante est nécessaire.
+- **Traduction** : cette version française suit *MiseAmenti* 08 — Protocole des changements §5.7 : une traduction ne doit pas renforcer la certitude, l'émotion ni l'affirmation au-delà de l'original. Là où le français a dû choisir, il a choisi la formulation la plus faible.
+
+---
+
+## 8. Comment user de cette édition
+
+| Si tu veux… | Fais ceci |
+|---|---|
+| lire le livre à voix haute à des enfants | les stations I–IX suffisent ; saute X–XII |
+| vérifier ce qui est documenté | lis seulement le chapitre XI et les tableaux « Ancre de vérité » |
+| comparer les éditions | commence à l'index du livre principal, au tableau des éditions |
+| prendre quelque chose pour un texte public | prends-le au §3 (sources), non à la prose |
+| objecter | le meilleur endroit sont les copeaux — ils sont là pour cela |
+
+**Proposition d'étape suivante :** correction linguistique, consultation culturelle sur les réalités chrétiennes et juives, vérification des citations, et seulement ensuite — si tant est — l'examen d'une traduction.
+
+---
+
+*« Qui balaie les copeaux n'a pas de barque. »*
+
+*Version 1.0 · 3 novembre 2026 · MYTHE / BROUILLON*
