@@ -17,9 +17,13 @@ export async function POST(req: NextRequest) {
 
     let count = 0;
     for (const product of shopProducts) {
+      // `filesUrl` (odkaz na digitální dodávku) je v produkci nastavený
+      // operátorem a v katalogu být nemusí — kdyby upsert posílal `null`,
+      // zákazník po zaplacení nedostane odkaz. `undefined` = pole nechat být.
+      const update = { ...product, filesUrl: product.filesUrl ?? undefined };
       await prisma.shopProduct.upsert({
         where: { externalId: product.externalId },
-        update: product,
+        update,
         create: product,
       });
       count++;

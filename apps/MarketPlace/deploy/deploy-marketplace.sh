@@ -80,16 +80,17 @@ if ! SSH "test -f '${REMOTE_DIR}/package.json'"; then
   exit 1
 fi
 
-# Digital downloads guard: public/shop/downloads/ je v .gitignore (65 MB ZIP
-# s celou ediční sadou Království srdce). Kdyby se deploy spustil z klonu bez
-# tohoto adresáře, rsync --delete ho na serveru smaže a zákazník, který už
-# produkt koupil, dostane v e-mailu mrtvý odkaz. Proto radši zastavit.
+# Digital downloads: kanonické místo je MIMO strom aplikace —
+# /opt/zion/data/downloads/ — a servíruje ho nginx (location /shop/downloads/).
+# Kopie v public/shop/downloads/ je jen záloha pro případ, že by někdo nginx
+# location odebral; rsync --delete ji smí smazat, aniž by zákazník přišel
+# o odkaz. Proto se tu jen varuje, neblokuje (deploy z jiného klonu nesmí
+# spadnout kvůli 65 MB binárce, kterou v gitu záměrně nemáme).
 DOWNLOADS_DIR="${ROOT_DIR}/public/shop/downloads"
 if [[ ! -d "${DOWNLOADS_DIR}" ]]; then
-  echo "[deploy-marketplace] ERROR: ${DOWNLOADS_DIR} chybí." >&2
-  echo "[deploy-marketplace] Sestav ho: python3 scripts/ops/build-kralovstvi-bundle.py" >&2
-  echo "[deploy-marketplace] (nebo nasazuj s ZION_SKIP_DOWNLOADS_CHECK=1, pokud je oblika záměrně mimo)" >&2
-  [[ "${ZION_SKIP_DOWNLOADS_CHECK:-0}" == "1" ]] || exit 1
+  echo "[deploy-marketplace] WARN: ${DOWNLOADS_DIR} chybí — záloha v app stromu se nenasadí."
+  echo "[deploy-marketplace]       Kanonický ZIP je /opt/zion/data/downloads/ (servíruje nginx)."
+  echo "[deploy-marketplace]       Přestavba: python3 scripts/ops/build-kralovstvi-bundle.py --upload"
 fi
 
 # Safety net: snapshot remote .env before sync (excludes keep it untouched and
@@ -201,6 +202,17 @@ SSH "chown -R zion:zion '${REMOTE_DIR}' && \
   find '${REMOTE_DIR}/public/shop/downloads' '${REMOTE_DIR}/.next/standalone/public/shop/downloads' \
     -name '*.zip' -exec chmod 644 {} + 2>/dev/null || true; \
   systemctl daemon-reload && systemctl restart ${SERVICE} zion-l1-watcher.service"
+
+echo "[deploy-marketplace] Smoke check download endpoint..."
+DL_PATH="$(SSH "grep -o 'https://market.zionterranova.com/shop/downloads/[^']*' '${REMOTE_DIR}/.env' 2>/dev/null | head -1" || true)"
+DL_URL="${MARKET_DOWNLOAD_URL:-https://market.zionterranova.com/shop/downloads/Kralovstvi_srdce_kompletni_edice_5_jazyku.zip}"
+dl_code=$(curl -s -o /dev/null -w '%{http_code}' -r 0-1023 --max-time 20 "$DL_URL" || echo 000)
+if [[ "$dl_code" != "206" && "$dl_code" != "200" ]]; then
+  echo "[deploy-marketplace] ERROR: stažení produktu nefunguje ($DL_URL → $dl_code)." >&2
+  echo "[deploy-marketplace] ZIP musí ležet v /opt/zion/data/downloads/ (servíruje nginx location /shop/downloads/)." >&2
+  exit 1
+fi
+echo "[deploy-marketplace] Download endpoint OK ($dl_code)"
 
 echo "[deploy-marketplace] Smoke check..."
 sleep 3

@@ -5,9 +5,12 @@ const prisma = new PrismaClient();
 
 async function main() {
   for (const product of shopProducts) {
+    // filesUrl drží operátor v produkci; katalog ho nemusí mít. `undefined`
+    // znamená "pole nechat být", `null` by odkaz smazalo.
+    const update = { ...product, filesUrl: product.filesUrl ?? undefined };
     await prisma.shopProduct.upsert({
       where: { externalId: product.externalId },
-      update: product,
+      update,
       create: product,
     });
   }

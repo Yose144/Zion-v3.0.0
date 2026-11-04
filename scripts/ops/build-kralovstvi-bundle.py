@@ -6,15 +6,20 @@ Zdroj: canon/Kralovstvi_srdce_Zion_CZ_EN_FR_ES_PT_PRODEJ
   · EDITION/<edice>/<jazyk>/   ostatní edice (7 × 5)
 
 Výstup: apps/MarketPlace/public/shop/downloads/<název>.zip
-  (adresář je v .gitignore — 50 MB binárka nepatří do gitu, ale rsync
-   ji při deployi přenese na server; stejný vzor jako
-   apps/website-v2.9/public/downloads/)
+  (adresář je v .gitignore; v gitu 65 MB binárka nemá co dělat)
+
+Kanonické místo na serveru je ale MIMO strom aplikace:
+  /opt/zion/data/downloads/<název>.zip
+servíruje ho nginx (location /shop/downloads/ v
+market.zionterranova.com.conf). Důvod: deploy MarketPlace dělá
+`rsync --delete` přes app root, takže ZIP uvnitř public/ by při deployi
+z jiného klonu zmizel a odkazy v už odeslaných e-mailech by přestaly
+fungovat. Kopie v public/ zůstává jen jako záloha.
 
 Použití:
-    python3 scripts/ops/build-kralovstvi-bundle.py [--check]
-
-Po přestavbě je potřeba znovu nasadit MarketPlace
-(apps/MarketPlace/deploy/deploy-marketplace.sh), aby se ZIP dostal na server.
+    python3 scripts/ops/build-kralovstvi-bundle.py --check
+    python3 scripts/ops/build-kralovstvi-bundle.py            # jen sestaví
+    python3 scripts/ops/build-kralovstvi-bundle.py --upload   # + nahraje na EDGE2
 """
 from __future__ import annotations
 
@@ -118,6 +123,7 @@ def collect() -> list[tuple[Path, str]]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true", help="jen zkontrolovat vstupy, nic nebalit")
+    ap.add_argument("--upload", action="store_true", help="po sestavení nahrát na EDGE2 do /opt/zion/data/downloads")
     args = ap.parse_args()
 
     if not SRC.is_dir():
@@ -170,6 +176,34 @@ def main() -> int:
     digest = hashlib.sha256(out.read_bytes()).hexdigest()
     print(f"ZIP   {out.relative_to(REPO)}")
     print(f"      {len(names)} položek · {size / 1e6:.1f} MB · sha256 {digest[:16]}…")
+
+    if args.upload:
+        import subprocess
+
+        host = "zion-edge2"
+        key = str(Path.home() / ".ssh" / "zion-edge-post-wipe-2026-07-29")
+        remote_dir = "/opt/zion/data/downloads"
+        ssh = ["ssh", "-i", key, "-o", "StrictHostKeyChecking=accept-new", host]
+        print(f"      nahrávám na {host}:{remote_dir} …")
+        subprocess.run(ssh + [f"mkdir -p {remote_dir}"], check=True)
+        subprocess.run(
+            ["scp", "-q", "-i", key, "-o", "StrictHostKeyChecking=accept-new",
+             str(out), f"{host}:{remote_dir}/"],
+            check=True,
+        )
+        subprocess.run(
+            ssh + [f"chown zion:zion {remote_dir}/{OUT_NAME} && chmod 644 {remote_dir}/{OUT_NAME}"],
+            check=True,
+        )
+        url = f"https://market.zionterranova.com/shop/downloads/{OUT_NAME}"
+        probe = subprocess.run(
+            ["curl", "-s", "-o", "/dev/null", "-w", "%{http_code} %{size_download}", "-r", "0-1023", url],
+            capture_output=True, text=True,
+        )
+        print(f"      HTTP: {probe.stdout.strip()}  ({url})")
+        if not probe.stdout.startswith(("200", "206")):
+            print("CHYBA: odkaz na stažení nevrací 200/206", file=sys.stderr)
+            return 1
     return 0
 
 
