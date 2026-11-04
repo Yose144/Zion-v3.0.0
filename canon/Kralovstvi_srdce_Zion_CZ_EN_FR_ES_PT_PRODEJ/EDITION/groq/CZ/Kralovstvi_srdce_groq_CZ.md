@@ -683,11 +683,7 @@ Jméno na kýlu, v této legendě, se čte vzhůru nohama, při opravě. Jestli 
 
 Pod čarou je místo. Není to smlouva. Není to podpis pod vejcem a není to souhlas s čímkoli, co síť dělá zítra. Je to jen prkno, které ještě nedoléhá.
 
-&nbsp;
-
-`_______________________________________________`
-
-&nbsp;
+—————————— ✦ ——————————
 
 Kdo nechce psát, ať nechá čáru prázdnou. Prázdná čára je taky odpověď. Je příbuzná prázdnému sedadlu a klínu, který počkal.
 

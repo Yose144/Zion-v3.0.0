@@ -7,7 +7,7 @@ Edice spáry: co není doložené, zůstává jako otázka.
 | Jazyk | Rukopis | PDF | EPUB | Slov |
 |---|---|---|---|---|
 | CZ | ✅ | ✅ | ✅ | 7441 |
-| EN | — | — | — | — |
+| EN | ✅ | ✅ | ✅ | 9977 |
 | ES | — | — | — | — |
 | FR | — | — | — | — |
 | PT | — | — | — | — |

@@ -1,0 +1,17 @@
+{
+  "edition": "groq",
+  "lang": "EN",
+  "source": "Kingdom_of_the_Heart_groq_EN.md",
+  "words": 9977,
+  "headings": 73,
+  "paragraphs": 216,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 50,
+    "bytes": 201122
+  },
+  "epub": {
+    "documents": 5,
+    "bytes": 25121
+  }
+}
