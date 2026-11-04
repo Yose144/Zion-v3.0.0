@@ -194,7 +194,13 @@ REMOTE_SCRIPT="${REMOTE_SCRIPT//@BUILDER@/${REPO_ROOT}}"
 SSH bash -s <<<"${REMOTE_SCRIPT}"
 
 echo "[deploy-marketplace] Fixing ownership and restarting ${SERVICE} + zion-l1-watcher"
-SSH "chown -R zion:zion '${REMOTE_DIR}' && systemctl daemon-reload && systemctl restart ${SERVICE} zion-l1-watcher.service"
+# chmod na stahování: rsync přenáší 600 (build artefakt) a Next musí ZIP
+# přečíst jako user zion — owner to sice je, ale 644 je pro statická data
+# správné a neztratí se při dalších deployích.
+SSH "chown -R zion:zion '${REMOTE_DIR}' && \
+  find '${REMOTE_DIR}/public/shop/downloads' '${REMOTE_DIR}/.next/standalone/public/shop/downloads' \
+    -name '*.zip' -exec chmod 644 {} + 2>/dev/null || true; \
+  systemctl daemon-reload && systemctl restart ${SERVICE} zion-l1-watcher.service"
 
 echo "[deploy-marketplace] Smoke check..."
 sleep 3
