@@ -1615,3 +1615,39 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   Test hráčova mířidla musí použít `aimAt(state, 'player', 0)` — `botAim`
   mříří na hráče, takže pro střelbu na bota je potřeba opačná strana
   (a `180 − úhel` je špatně, protože úhel je 0–90 od vodorovné).
+
+## Multiplayer napříč Nirvanou — jeden kontrakt (2026-11-04, proto 21)
+
+- **`Match` je jediná cesta.** `apps/nirvana-net/src/match.ts` definuje
+  `join/leave/step/state/snapshot/message/size`; `matches.ts` do něj obalí
+  arénu, závod, duel a MOBU, tanky ho plní rovnou. **Nová hra = jeden `case`
+  v registru.** Kdo přidá pátý `if (room.x)` do `index.ts`, vrací dluh zpět.
+- **Snapshot se staví pro jednoho hráče.** `snapshot(id, now)` — mlha války
+  znamená jiný obsah pro každý tým; `index.ts` posílá každému jeho vlastní.
+- **Herní zprávy jdou do `match.message()`.** Když hra vrátí `false`,
+  odpoví se `not_available`. Emote je **obecný** (funguje v každé místnosti).
+- **Tanky online** (`GameId 'tanks'`): `aim`/`shoot` platí jen na tvém tahu;
+  parser protokolu ořezává rozsahy (`0–90°`, `0–100`), server je validuje
+  ještě jednou. Terén se posílá **jen při změně** (`terrainVersion`) — 161
+  výšek 15×/s je zbytečný provoz. `autoBot` drží bot v prázdném sedle, ale
+  jakmile sedí člověk, bot **nesmí** střílet za něj.
+- **Klient přepisuje snapshoty do stejného `TanksState`**, takže 2D i 3D
+  renderer kreslí beze změny. Stranu přiděluje server (`you: 0 | 1`) —
+  HUD i mířidlo se musí porovnávat s **vlastní** stranou, jinak oba hráči
+  vidí „TVŮJ TAH" (přesně to byla první chyba).
+- **Neznámá hra v `join` nesmí tiše skončit v aréně.** Parser měl whitelist
+  `race|fight|moba`, takže `tanks` propadlo do `arena` a test hledal místnost,
+  která neexistovala. Nová hra = nový záznam v tom whitelistu.
+- **`test/moba.mjs` měřil náhodu.** „Projektil je ve snapshotu" padá, když
+  střela na blízký cíl zmizí mezi dvěma snapshoty (a projektil mohl být
+  i botův). Ověřeno na starém kódu: 1× OK, 1× FAIL. Nahrazeno deterministickou
+  kontrolou „mimo dostřel server manu nestrhne".
+- **`@types/ws` musí být v rootu.** Deploy skript kontroluje
+  `apps/nirvana-net/node_modules/ws`; když `npm ci` v rootu srovná balíčky,
+  `@types/ws` zmizí a `tsc` spadne na implicitní `any`. Řešení:
+  `npm i -D @types/ws` v rootu + `npm install` v `apps/nirvana-net`
+  (potřebuje vlastní `node_modules/ws`).
+- **Deploy pořadí:** `deploy-nirvana-net.sh` **první**, pak appka. Starý
+  klient na novém serveru dostane `proto_mismatch`; obráceně by join do
+  `tanks` propadl.
+- Report: `docs/3.2/REPORTS/REPORT_2026-11-04_MULTIPLAYER_VRSTVA.md`.
