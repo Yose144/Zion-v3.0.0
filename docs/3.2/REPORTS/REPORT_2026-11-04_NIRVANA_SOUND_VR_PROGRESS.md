@@ -380,14 +380,28 @@ billboardová textura (jediná ve scéně) a stoupající jiskry. Světla měla
 tmavý obrys, protože obal z průhledné koule se v aditivním režimu kreslí
 jako disk — teď je to sprite se září a malým jasným jádrem.
 
-**Naměřeno:** `test/sky-flight.mjs` 26/26, headless audit 19/19 (scéna,
-HUD, energie ubývá, 7/7 světel otevře svatyni, dolet zapíše profil
-i tabuli), routy 16/16 (+ `/kridla`), progrese 13/13 (13 her), `tsc`
-0 chyb, build OK, tři screenshoty v `.artifacts/render/sky-2026-11-04/`.
+**Naměřeno:** `test/sky-flight.mjs` 39/39 (obě cesty, rozptyl, meze mapy,
+dohratelnost větrné cesty, texty darování), headless audit 24/24
+(přepnutí cesty, energie ubývá, 7/7 světel otevře svatyni, volba se
+světlem, bonus +150, zápis až po volbě), routy 16/16 (+ `/kridla`),
+progrese 13/13 (13 her), `tsc` 0 chyb, build OK, screenshoty obou cest
+i panelu s volbou v `.artifacts/render/sky-2026-11-04/`.
 
-**Meze:** cesta je jedna (žádné další ostrovy ani větve), úspory jsou
-jen v prohlížeči, na mobilu jen čtyři směry (bez joysticku), ve VR
-netestováno.
+**Dodatek (2026-11-05): druhá cesta a darování světla.** Křídla mají dvě
+cesty (`calm` / `wind`) — stejný příběh, jiný rozptyl: větrná vede výš
+a dál, proudy jsou užší a mezi nimi delší prázdno. Data jsou v `SKY_PATHS`,
+simulace zná cestu (`FlightState.path`), takže se nemůže rozejít pozice
+světla se svatyní. Na konci je **volba**: „Nechat si světlo", nebo
+„Darovat světlo +150" — darování dá bonus a jiný text. Zápis do progrese
+přijde až po volbě, takže se nezapíše cesta bez rozhodnutí.
+
+**Opravená chyba (odhalil test):** sebrané světlo se hlásilo jen tehdy,
+když ho telemetrie (6×/s) stihla — simulace ho mazala každý krok, takže
+text příběhu se ukázal ve 2 ze 3 běhů. Teď ho vyzvedne až ten, kdo ho
+zobrazí.
+
+**Meze:** dvě cesty (žádné další větve), úspory jsou jen v prohlížeči,
+na mobilu jen čtyři směry (bez joysticku), ve VR netestováno.
 
 ---
 
