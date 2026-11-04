@@ -164,7 +164,9 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
       last = now;
 
       const current = state.current;
-      if (current.phase === 'aim' && current.turn === 'player') {
+      // v online režimu hraješ stranu, kterou přidělil server (0 = vlevo)
+      const my: 'player' | 'bot' = online && side.current === 1 ? 'bot' : 'player';
+      if (current.phase === 'aim' && current.turn === my) {
         const held = keys.current;
         let dAngle = 0;
         let dPower = 0;
@@ -173,9 +175,9 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
         if (held.has('ArrowUp')) dPower += 46 * dt;
         if (held.has('ArrowDown')) dPower -= 46 * dt;
         if (dAngle || dPower) {
-          adjustAim(current, 'player', dAngle, dPower);
+          adjustAim(current, my, dAngle, dPower);
           if (online) {
-            const tank = current.player;
+            const tank = my === 'player' ? current.player : current.bot;
             const moved =
               Math.abs(tank.angle - sentAim.current.angle) > 0.3 ||
               Math.abs(tank.power - sentAim.current.power) > 0.4;
@@ -250,7 +252,11 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
     };
   }, []);
 
-  const shooter = info.turn === 'player';
+  // `info.turn` je globální strana (0/1), ne „já" — v online režimu můžeš
+  // sedět vpravo, takže se to musí porovnat s přidělenou stranou.
+  const mySideId = online ? side.current : 0;
+  const shooter = (info.turn === 'player') === (mySideId === 0);
+  const rivalLabel = online && peers > 1 ? 'SOUPEŘ MÍŘÍ' : 'BOT MÍŘÍ';
   const hpPlayer = Math.round((info.playerHp / TANK_HP) * 100);
   const hpBot = Math.round((info.botHp / TANK_HP) * 100);
   const press = (code: string, action: 'hold' | 'tap') => {
@@ -316,7 +322,7 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
                 : 'PORÁŽKA'
               : shooter
                 ? 'TVŮJ TAH'
-                : 'BOT MÍŘÍ'}
+                : rivalLabel}
           </span>
           <span className="tanks-stat">
             ÚHEL <b>{info.angle}°</b>
