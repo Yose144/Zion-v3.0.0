@@ -6129,3 +6129,306 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     font-size: 0.7rem;
   }
 }
+
+
+/* ── SATURN — TANKY (oldschool 2D + 3D) ───────────────────────────────
+   Celoobrazovková hra nad archivem. Dvě verze, jedna pravidla: 2D kreslí
+   vlastní retro HUD do plátna, 3D má HUD v DOM (nad scénou). */
+
+/* chrome má `pointer-events: none` (aby šla otáčet scéna) — klikatelné
+   části si ho musí vrátit, jinak je canvas nad nimi a klik sežere. */
+.saturn-chrome-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  pointer-events: auto;
+}
+
+.saturn-tanks-open {
+  padding: 0.42rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  background: rgba(255, 209, 102, 0.12);
+  color: #ffe9b8;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.saturn-tanks-open:hover {
+  background: rgba(255, 209, 102, 0.24);
+}
+
+.tanks {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  background: #07040d;
+  color: #ffe9b8;
+}
+
+.tanks-chrome {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: calc(0.5rem + env(safe-area-inset-top, 0px)) 0.8rem 0.5rem;
+  border-bottom: 1px solid rgba(255, 209, 102, 0.22);
+  background: rgba(8, 6, 14, 0.94);
+}
+
+.tanks-chrome strong {
+  font-size: 0.82rem;
+  letter-spacing: 0.26em;
+  color: #ffd166;
+}
+
+.tanks-modes {
+  display: flex;
+  gap: 0.3rem;
+  margin-left: auto;
+}
+
+.tanks-modes button,
+.tanks-exit {
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.3);
+  background: transparent;
+  color: rgba(255, 233, 184, 0.68);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tanks-modes button.is-active {
+  background: rgba(255, 209, 102, 0.18);
+  border-color: rgba(255, 209, 102, 0.75);
+  color: #ffe9b8;
+}
+
+.tanks-exit:hover,
+.tanks-modes button:hover {
+  border-color: rgba(255, 209, 102, 0.6);
+  color: #ffe9b8;
+}
+
+.tanks-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.tanks-screen {
+  /* poměr 16:9 drží obraz bez deformace; šířka se doplní podle výšky okna */
+  aspect-ratio: 16 / 9;
+  width: min(100%, calc((100dvh - 9rem) * 16 / 9));
+  max-height: 100%;
+  image-rendering: pixelated;
+  box-shadow: 0 0 0 1px rgba(255, 209, 102, 0.25), 0 40px 120px -60px rgba(255, 209, 102, 0.6);
+}
+
+.tanks-3d {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.tanks-hud {
+  position: absolute;
+  left: 50%;
+  bottom: 3.6rem;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.25);
+  background: rgba(6, 4, 12, 0.78);
+  backdrop-filter: blur(8px);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.tanks-turn {
+  color: #e0603d;
+  font-weight: 800;
+}
+
+.tanks-turn.is-you {
+  color: #4fd6c4;
+}
+
+.tanks-stat b {
+  color: #ffd166;
+  font-variant-numeric: tabular-nums;
+}
+
+.tanks-hp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #4fd6c4;
+}
+
+.tanks-hp i {
+  display: inline-block;
+  width: 4rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.tanks-hp b {
+  display: block;
+  height: 100%;
+  background: #4fd6c4;
+  transition: width 180ms ease;
+}
+
+.tanks-hp.is-bot {
+  color: #e0603d;
+}
+
+.tanks-hp.is-bot b {
+  background: #e0603d;
+}
+
+.tanks-score {
+  color: #ffe9b8;
+  font-variant-numeric: tabular-nums;
+}
+
+.tanks-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.45rem 0.9rem calc(0.45rem + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(255, 209, 102, 0.16);
+  font-size: 0.68rem;
+  color: rgba(255, 233, 184, 0.55);
+}
+
+.tanks-damage,
+.tanks-foot-right {
+  color: rgba(255, 233, 184, 0.7);
+}
+
+.tanks-again {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.45);
+  background: rgba(255, 209, 102, 0.16);
+  color: #ffe9b8;
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+/* dotykové ovládání tanků */
+.tanks-touch {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 0.8rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+
+.tanks-touch-pad,
+.tanks-touch-fire {
+  pointer-events: auto;
+}
+
+.tanks-touch-pad {
+  display: grid;
+  grid-template-columns: repeat(2, 3.1rem);
+  gap: 0.35rem;
+}
+
+.tanks-touch-pad button,
+.tanks-touch-fire {
+  min-height: 3.1rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(255, 209, 102, 0.45);
+  background: rgba(8, 6, 14, 0.72);
+  color: #ffe9b8;
+  font-size: 1rem;
+  touch-action: none;
+  user-select: none;
+  backdrop-filter: blur(4px);
+}
+
+.tanks-touch-again {
+  position: absolute;
+  left: 50%;
+  bottom: calc(9.4rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.6);
+  background: rgba(255, 209, 102, 0.18);
+  color: #ffe9b8;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  pointer-events: auto;
+}
+
+.tanks-touch-fire {
+  min-width: 6.4rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  background: rgba(224, 96, 61, 0.35);
+  border-color: rgba(224, 96, 61, 0.8);
+}
+
+@media (max-width: 760px) {
+  .tanks-chrome {
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
+  }
+
+  /* na výšku je hřiště široké 16:9 — patří nahoru, ovládání dolů */
+  .tanks-stage {
+    align-items: flex-start;
+    padding-top: 0.5rem;
+  }
+
+  /* patička by ležela na dotykovém ovládání — na dotyku ji nahrazuje HUD
+     a tlačítko NOVÁ HRA nad padu */
+  .tanks-foot {
+    display: none;
+  }
+
+  .tanks-modes {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    justify-content: center;
+  }
+
+  /* HUD patří nad dotykové ovládání a musí se zalomit — na šířku 390 px
+     se do jednoho řádku nevejde a poslední položky se ořezávaly. */
+  .tanks-hud {
+    bottom: 10.2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 0.18rem;
+    gap: 0.45rem;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.6rem;
+    max-width: calc(100vw - 1rem);
+    border-radius: 0.9rem;
+  }
+}

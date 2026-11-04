@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { Canvas } from '@react-three/fiber';
 import { useI18n } from '@/core/i18n';
 import { SATURN_CAMERA, SaturnArchive, SATURN_CHAPTERS } from '@/core/saturn/SaturnArchive';
+import { TanksGame } from '@/core/saturn/TanksGame';
 import { MISSION_ORIGIN, MISSION_STATUS_COLOR, type MissionStatus } from '@/lib/freeworld-sites';
 
 const STATUS_LABEL: Record<MissionStatus, { cs: string; en: string }> = {
@@ -24,6 +25,8 @@ const STATUS_LABEL: Record<MissionStatus, { cs: string; en: string }> = {
 export default function SaturnPage() {
   const { lang } = useI18n();
   const [selected, setSelected] = useState<number | null>(null);
+  /** Tanky jsou celoobrazovková hra nad archivem — archiv zůstává pod ní. */
+  const [tanks, setTanks] = useState(false);
   const chapter = selected == null ? null : SATURN_CHAPTERS[selected];
 
   return (
@@ -42,9 +45,14 @@ export default function SaturnPage() {
           <strong>KRONIKY</strong>
           <span>{lang === 'cs' ? 'Archiv kruhů · Saturn' : 'Ring archive · Saturn'}</span>
         </div>
-        <Link href="/" className="saturn-back">
-          ← {lang === 'cs' ? 'Nirvana' : 'Nirvana'}
-        </Link>
+        <div className="saturn-chrome-actions">
+          <button type="button" className="saturn-tanks-open" onClick={() => setTanks(true)}>
+            {lang === 'cs' ? 'Tanky' : 'Tanks'}
+          </button>
+          <Link href="/" className="saturn-back">
+            ← {lang === 'cs' ? 'Nirvana' : 'Nirvana'}
+          </Link>
+        </div>
       </header>
 
       <aside className="saturn-panel" aria-label={lang === 'cs' ? 'Kapitoly' : 'Chapters'}>
@@ -77,6 +85,8 @@ export default function SaturnPage() {
           ))}
         </div>
       </aside>
+
+      {tanks && <TanksGame onExit={() => setTanks(false)} />}
 
       {chapter && (
         <section className="planet-panel saturn-detail" aria-label={chapter.name}>

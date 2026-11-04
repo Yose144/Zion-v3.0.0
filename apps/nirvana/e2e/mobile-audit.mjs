@@ -70,6 +70,13 @@ const PAGES = [
     /* klepnutí do země + kouzlo musí opravdu seslat (spadne mana) */
     cast: { bar: '.moba-bar.is-mana span', button: '.moba-touch-btn.is-spell' },
   },
+  {
+    path: '/saturn',
+    name: 'Saturn tanky',
+    start: /Tanky/i,
+    control: '.tanks-touch',
+    minControls: 5,
+  },
   { path: '/avatars', name: 'Avatar', start: null, control: null, minControls: 0 },
 ];
 
