@@ -135,7 +135,7 @@ Po dokončení: build → **jeden** deploy → live kontrola CS i EN v modalu.
 
 | Metrika | Před | Po |
 |---|---:|---:|
-| `i18n/*.en.md` | 141 | **158** |
+| `i18n/*.en.md` | 141 | **157** |
 | Avatarů s oběma jazyky | 182 / 200 | **200 / 200** |
 | Publikovaných profilů | 382 | **400** (200 kánonů + 200 překladů) |
 | `node apps/website-v2.9/scripts/check-oasis-i18n.mjs` | — | **0 problémů** |
@@ -178,3 +178,35 @@ strojový výstup, exit code 1 při problému.
 - `node apps/website-v2.9/scripts/check-oasis-i18n.mjs` → **0 problémů**, 400 souborů
 - `npx tsc --noEmit` (website-v2.9) → **0 chyb**
 - `git status` — `src/lib/oasis/avatars.ts` beze změny (generátor je idempotentní)
+
+### 7.5 Deploy (LIVE) a live kontrola
+
+Změna je **datová** (`public/data/oasis/profiles/*.md`) — `src/lib/oasis/avatars.ts` i stránka
+jsou beze změny, takže **nebyl potřeba rebuild**: profil se do modalu tahá lazy fetchí
+`/data/oasis/profiles/<id>.<lang>.md`. Nasazeno proto **hot-file** cestou (menší riziko než
+build, který by do produkce vzal i rozdělanou práci paralelních sessions):
+
+```bash
+rsync -az --delete public/data/oasis/profiles/ \
+  zion-edge2:'/opt/zion/APP&WEB/website-v2.9/.next/standalone/public/data/oasis/profiles/'
+ssh zion-edge2 'chown -R zion:zion …/profiles && systemctl restart zion-website'
+```
+
+⚠️ Restart je **povinný** — nové cesty v `public/` vrací 404, dokud standalone server
+neaktualizuje manifest. Na serveru: 382 → **400** souborů.
+
+Live (HTTP 200 na všech): `/l4-oasis/avatars`, `43.cs.md`, `43.en.md`, `70.en.md`, `9.cs.md`,
+`9.en.md`, `8.en.md`.
+
+**Obsah live:** `43.cs.md` = *Maly Princ* (dřív Anagha Lakshmi), `9.cs.md` česky + `9.en.md`
+anglicky (dřív obojí anglicky), `44.en.md` a `45.en.md` plně anglicky.
+
+**Funkční test (headless Chrome proti produkci)** — klik na kartu → modal → text profilu:
+
+| avatar | CS | EN |
+|---|---|---|
+| 43 Maly Princ | „Strážce Růže" ✅ | „Guardian of the Rose" ✅ |
+| 09 Shanti | „mír, mír, mír" ✅ | „Peace Peace Peace" ✅ |
+| 70 Hina | „Tkám kapa na Měsíci" ✅ | „I weave kapa on the Moon" ✅ |
+
+`pageerror: 0`.

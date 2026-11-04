@@ -1,6 +1,6 @@
 # PLAN — OASIS avataři: dvojjazyčný kánon (CS + EN)
 
-> **Stav: 2026-11-04 (session 2) — PŘEKLADY KOMPLETNÍ ✅** · vlastník: 👤 · vykonává: agent
+> **Stav: 2026-11-04 (session 2) — HOTOVO A NASAZENO ✅** · vlastník: 👤 · vykonává: agent
 > **Cíl:** všech **200 avatarů** má **oba jazyky** (kánon + překlad), stránka `/l4-oasis/avatars` i modální profil fungují v `cs` i `en`, jednou nasazené.
 > Tento dokument je **jediný vstupní bod** pro pokračování. Nová session začíná zde.
 
@@ -16,7 +16,7 @@
 | **Zbývá** | ✅ nic z překladů — jen build + deploy + live kontrola (§5) |
 | **Duplicitní ID 42/43** | ✅ vyřešeno v generátoru (rozhoduje roster, ne `readdir`) |
 | **Jazyk kánonu (09, 44)** | ✅ opraveno — oba byly publikované jako `.cs`, přitom jsou anglické; jejich český překlad se zahazoval |
-| **Deploy webu** | ⏳ jeden build + deploy až teď (§5) |
+| **Deploy webu** | ✅ LIVE `2026-11-04` — hot-file deploy profilů (`public/data/oasis/profiles/`), bez rebuildu (§5) |
 
 ---
 
@@ -135,18 +135,28 @@ node scripts/gen-oasis-avatars.mjs
 npx tsc --noEmit
 ls public/data/oasis/profiles/*.md | wc -l     # očekáváno 400 (200 kánonů + 200 překladů)
 
-# c) build
+# c) build — jen když se mění kód (`src/**`, stránka, generátor výstupu avatars.ts).
+#    Změna pouhých profilů v public/data/oasis/profiles/ build nepotřebuje.
 npm run build
 
-# d) deploy (jeden, až po dokončení VŠECH překladů — build je drahý)
-bash apps/website-v2.9/deploy/deploy-web2.9.sh
+# d) deploy
+#    - datová změna (profily): hot-file, bez rebuildu
+rsync -az --delete apps/website-v2.9/public/data/oasis/profiles/ \
+  zion-edge2:'/opt/zion/APP&WEB/website-v2.9/.next/standalone/public/data/oasis/profiles/'
+ssh zion-edge2 'chown -R zion:zion "/opt/zion/APP&WEB/website-v2.9/.next/standalone/public/data/oasis/profiles" && systemctl restart zion-website'
+#    - změna kódu: plný deploy
+# bash apps/website-v2.9/deploy/deploy-web2.9.sh
 
 # e) live kontrola
-curl -sI https://app.zionterranova.com/l4-oasis/avatars | head -1
+curl -s -o /dev/null -w '%{http_code}\n' https://app.zionterranova.com/l4-oasis/avatars
 curl -s -o /dev/null -w '%{http_code}\n' https://app.zionterranova.com/data/oasis/profiles/43.cs.md
 curl -s -o /dev/null -w '%{http_code}\n' https://app.zionterranova.com/data/oasis/profiles/43.en.md
 #   → v modalu přepnout CS/EN a ověřit, že se mění text profilu
 ```
+
+⚠️ **Restart `zion-website` je u hot-file deploye povinný** — nové cesty v `public/` vrací 404,
+dokud standalone server neaktualizuje manifest (přepsané soubory se projeví hned).
+Server servíruje `public/` jen z `.next/standalone/public/` (top-level `public/` tam není).
 
 ---
 
@@ -184,21 +194,27 @@ curl -s -o /dev/null -w '%{http_code}\n' https://app.zionterranova.com/data/oasi
 
 ---
 
-## 7. Start nové session (zkopírovat)
+## 7. Start nové session (zkopívat)
 
 ```bash
 cd /Users/yeshuae/Projects/2.9.6
 git log --oneline -5
 git status --porcelain | head
 
-# ověřit, co ještě chybí
-cd docs/docs2.9/ZION_OASIS/SACRED_TRINITY
-ls i18n/*.cs.md | wc -l; ls i18n/*.en.md | wc -l
+# stav dvojjazyčnosti jedním příkazem (0 problémů = hotovo)
+node apps/website-v2.9/scripts/check-oasis-i18n.mjs
 ```
 
-Pak: vzít první soubor z §4, přeložit, `node scripts/gen-oasis-avatars.mjs`, `npx tsc --noEmit`, commit (jen explicitní cesty).
+**Stav:** hotovo a nasazeno (200/200, live ověřeno v CS i EN). Nová práce v této oblasti tedy
+začíná u **nového obsahu** (nový avatar, revize textu), ne u překladů:
 
-**Hotovo =** všech 205 kánonů má protějšek v `i18n/` → build → **jeden** deploy → live kontrola CS i EN v modalu.
+1. nový/upravený kánon do `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/<id>_<NÁZEV>.md`
+   (a překlad do `i18n/<id>.<lang>.md`, pokud v kánonu chybí),
+2. `node apps/website-v2.9/scripts/gen-oasis-avatars.mjs`,
+3. `node apps/website-v2.9/scripts/check-oasis-i18n.mjs` (musí dát 0),
+4. `npx tsc --noEmit` (jen když se mění kód),
+5. commit **jen explicitních cest** (`i18n/`, `public/data/oasis/profiles/`, generátor, docs),
+6. datová změna = hot-file deploy profilů (§5 d) **s restartem** `zion-website`.
 
 ---
 
@@ -209,6 +225,7 @@ Pak: vzít první soubor z §4, přeložit, `node scripts/gen-oasis-avatars.mjs`
 | Kánon profilů | `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/` |
 | Překlady | `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/i18n/` |
 | Generátor | `apps/website-v2.9/scripts/gen-oasis-avatars.mjs` |
+| Kontrola dvojjazyčnosti | `apps/website-v2.9/scripts/check-oasis-i18n.mjs` |
 | Overlay karet (cs+en) | `apps/website-v2.9/scripts/oasis-avatar-copy/` + `README.md` |
 | Generovaný roster | `apps/website-v2.9/src/lib/oasis/avatars.ts` |
 | Stránka | `apps/website-v2.9/src/app/l4-oasis/avatars/page.tsx` |
