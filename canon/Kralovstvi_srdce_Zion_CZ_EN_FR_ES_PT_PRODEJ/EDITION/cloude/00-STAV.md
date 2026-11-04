@@ -9,7 +9,7 @@ Dvacet osm kapitol ve třech částech, epilog a slovníček; každá kapitola s
 | CZ | ✅ | ✅ | ✅ | 15338 |
 | EN | ✅ | ✅ | ✅ | 19804 |
 | ES | ✅ | ✅ | ✅ | 19199 |
-| FR | — | — | — | — |
+| FR | ✅ | ✅ | ✅ | 20487 |
 | PT | — | — | — | — |
 
 ## Zdroj

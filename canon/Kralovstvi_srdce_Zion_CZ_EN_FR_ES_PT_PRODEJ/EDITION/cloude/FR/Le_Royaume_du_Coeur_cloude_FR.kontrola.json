@@ -1,0 +1,17 @@
+{
+  "edition": "cloude",
+  "lang": "FR",
+  "source": "Le_Royaume_du_Coeur_cloude_FR.md",
+  "words": 20487,
+  "headings": 123,
+  "paragraphs": 483,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 104,
+    "bytes": 293975
+  },
+  "epub": {
+    "documents": 6,
+    "bytes": 46126
+  }
+}
