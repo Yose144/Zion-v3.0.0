@@ -132,6 +132,12 @@ function errorText(code: string): string {
       return 'psát může jen přihlášený (ZIS)';
     case 'proto_mismatch':
       return 'klient a server mluví jinou verzí protokolu';
+    case 'room_missing':
+      return 'místnost už neexistuje — založ novou';
+    case 'room_full':
+      return 'místnost je plná';
+    case 'not_in_room':
+      return 'nejsi v místnosti';
     default:
       return `chyba: ${code}`;
   }

@@ -67,8 +67,8 @@ const COPY = {
   chatPlaceholder: { cs: 'Napiš zprávu…', en: 'Write a message…' },
   chatSend: { cs: 'Odeslat', en: 'Send' },
   chatGuest: {
-    cs: 'Psát může jen přihlášený — host vidí, ale nemluví.',
-    en: 'Only signed-in users can write — guests can read, not speak.',
+    cs: 'Host může psát 1 zprávu za 4 s. Přihlas se pro jméno a avatar.',
+    en: 'Guests can send 1 message per 4s. Sign in to get a name and avatar.',
   },
   chatGuestLink: { cs: 'Přihlásit se', en: 'Sign in' },
 } as const;

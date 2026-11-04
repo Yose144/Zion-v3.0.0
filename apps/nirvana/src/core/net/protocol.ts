@@ -65,8 +65,11 @@ const asItemId = (value: unknown): ItemId | null =>
  * 22 — **lobby**: server posílá `rooms` při každé změně (nová místnost,
  *      hráč navíc, konec hry). Starý klient tuhle zprávu ignoroval, takže
  *      by jen neměl živý seznam — proto se verze zvedá kvůli shodě.
+ * 23 — **pozvánky a chat hostů**: `join` s neexistující místností vrací
+ *      `room_missing` (dřív se tiše založila nová) a psát smí i host
+ *      (1 zpráva / 4 s, 120 znaků) — jinak byl chat v multiplayeru mrtvý.
  */
-export const PROTO_VERSION = 22;
+export const PROTO_VERSION = 23;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -298,6 +301,8 @@ export type ErrorCode =
   | 'unknown_type'
   | 'rate_limited'
   | 'room_full'
+  /** Pozvánka do místnosti, která mezitím zmizela (nebo je jiné hry). */
+  | 'room_missing'
   | 'busy'
   | 'not_in_room'
   | 'not_available'

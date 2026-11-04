@@ -112,6 +112,28 @@ try {
   );
   check('stav místnosti se propíše', running.rooms[0].state === 'running', running.rooms[0]?.state);
 
+  // pozvánka do neexistující místnosti nesmí tiše založit novou
+  a.send({ t: 'leave' });
+  await sleep(250);
+  const ghost = client();
+  await ghost.opened;
+  ghost.send({ t: 'hello', proto: PROTO });
+  await ghost.waitFor((m) => m.t === 'welcome');
+  ghost.send({ t: 'join', game: 'tanks', room: 'tanks-999' });
+  const missing = await ghost.waitFor((m) => m.t === 'error', 4000).catch(() => null);
+  check('pozvánka do neexistující místnosti', missing?.code === 'room_missing', String(missing?.code));
+  ghost.close();
+
+  // systémová zpráva o příchodu — chat v místnosti ji má vidět
+  await sleep(200);
+  a.send({ t: 'join', game: 'tanks' });
+  await a.waitFor((m) => m.t === 'room');
+  const systemJoin = await a.waitFor(
+    (m) => m.t === 'event' && m.event?.kind === 'system' && /přidal/.test(m.event.text),
+    4000,
+  ).catch(() => null);
+  check('systémová zpráva o příchodu', Boolean(systemJoin), JSON.stringify(systemJoin?.event));
+
   // pozorovatel, který nikdy nevstoupí do místnosti — podle něj se pozná
   // i úklid (odpojený hráč už další zprávu nedostane)
   const c = client();

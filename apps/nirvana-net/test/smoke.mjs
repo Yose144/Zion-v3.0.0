@@ -146,9 +146,17 @@ try {
   check('host: prázdná historie', guestWelcome.history.length === 0);
   check('host: online 1', guestWelcome.online === 1, String(guestWelcome.online));
 
+  // Host smí psát taky (jinak je chat v multiplayeru mrtvý), ale s tvrdším
+  // limitem: 1 zpráva / 4 s. První projde, druhá hned po ní ne.
   guest.send({ t: 'chat', text: 'ahoj' });
-  const readOnly = await guest.waitFor((m) => m.t === 'error' && m.code === 'read_only');
-  check('host: chat odmítnut (read_only)', Boolean(readOnly));
+  const guestLine = await guest.waitFor(
+    (m) => m.t === 'event' && m.event?.kind === 'chat' && m.event.text === 'ahoj',
+    4000,
+  ).catch(() => null);
+  check('host: chat projde', Boolean(guestLine), JSON.stringify(guestLine?.event ?? null));
+  guest.send({ t: 'chat', text: 'a druhá hned' });
+  const tooFast = await guest.waitFor((m) => m.t === 'error' && m.code === 'rate_limited', 4000).catch(() => null);
+  check('host: druhá zpráva hned je rate_limited', Boolean(tooFast));
 
   // ── přihlášený (ZIS) ────────────────────────────────────────────────
   const zisClient = client({ headers: { Cookie: 'zion_session=good' } });
@@ -175,7 +183,11 @@ try {
 
   // ── chat: oba ho vidí, text se čistí ────────────────────────────────
   zisClient.send({ t: 'chat', text: 'Ahoj <script>alert(1)</script>  světe' });
-  const chatForGuest = await guest.waitFor((m) => m.t === 'event' && m.event.kind === 'chat');
+  // FILTR na text: host teď taky psal („ahoj"), takže „poslední chat event"
+  // by vrátil jeho vlastní zprávu. Hledá se konkrétní zpráva od ZIS.
+  const chatForGuest = await guest.waitFor(
+    (m) => m.t === 'event' && m.event.kind === 'chat' && m.event.text.includes('Ahoj'),
+  );
   check('host dostane zprávu', chatForGuest.event.text.includes('Ahoj'));
   check('sanitizace < >', !chatForGuest.event.text.includes('<') && !chatForGuest.event.text.includes('>'), chatForGuest.event.text);
   check('autor zprávy', chatForGuest.event.name === 'Poutník' && chatForGuest.event.role === 'zis');
@@ -186,9 +198,12 @@ try {
     chatForGuest.event.text,
   );
 
-  // jedna zpráva = jedna událost (žádné dvojí odeslání)
+  // jedna zpráva = jedna událost (žádné dvojí odeslání); host poslal
+  // jednu vlastní, ZIS jednu — dohromady tedy dvě, každá právě jednou
   const chatEvents = guest.inbox.filter((m) => m.t === 'event' && m.event.kind === 'chat');
-  check('jedna zpráva = jeden event', chatEvents.length === 1, String(chatEvents.length));
+  const zisEvents = chatEvents.filter((m) => m.event.role === 'zis');
+  check('každá zpráva = jeden event', zisEvents.length === 1 && chatEvents.length === 2,
+    `${chatEvents.length} (zis ${zisEvents.length})`);
 
   // ── příkazy a rate limit ────────────────────────────────────────────
   zisClient.send({ t: 'chat', text: '/who' });

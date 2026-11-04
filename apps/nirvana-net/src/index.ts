@@ -301,19 +301,23 @@ function handleCommand(conn: Conn, channel: string, text: string): void {
  * Rate limit je per spojení (2 zprávy / 2 s) — server, ne UI.
  */
 function postChat(conn: Conn, raw: string): void {
-  if (conn.identity.role !== 'zis') {
-    sendError(conn, 'read_only', 'piš jako přihlášený (ZIS)');
-    return;
-  }
+  /**
+   * Host může psát taky — jinak by chat v multiplayeru byl pro většinu
+   * návštěvníků mrtvý (přihlášení je jen na ZIS). Má ale tvrdší limity:
+   * 1 zpráva / 4 s a 120 znaků místo 2 / 2 s a 240.
+   */
+  const guest = conn.identity.role !== 'zis';
+  const windowMs = guest ? 4000 : CHAT_RATE_WINDOW_MS;
+  const perWindow = guest ? 1 : CHAT_RATE_MESSAGES;
 
   const now = Date.now();
-  conn.chatTimes = conn.chatTimes.filter((time) => now - time < CHAT_RATE_WINDOW_MS);
-  if (conn.chatTimes.length >= CHAT_RATE_MESSAGES) {
+  conn.chatTimes = conn.chatTimes.filter((time) => now - time < windowMs);
+  if (conn.chatTimes.length >= perWindow) {
     sendError(conn, 'rate_limited', 'příliš rychle');
     return;
   }
 
-  const text = cleanText(raw);
+  const text = cleanText(raw).slice(0, guest ? 120 : CHAT_MAX_LEN);
   if (!text) return;
   conn.chatTimes.push(now);
 
@@ -321,6 +325,7 @@ function postChat(conn: Conn, raw: string): void {
     handleCommand(conn, channelOf(conn), text);
     return;
   }
+
 
   const line: ChatLine = {
     id: conn.identity.id,
@@ -362,6 +367,10 @@ function leaveRoom(conn: Conn, reason: string): void {
   conn.room = null;
   room.match.leave(conn.id);
   room.players.delete(conn.id);
+  broadcastChannel(channel, {
+    t: 'event',
+    event: { kind: 'system', text: `${conn.identity.name} odešel`, at: Date.now() },
+  });
   log(`leave room=${room.id} id=${conn.identity.id} reason=${reason} players=${room.players.size}`);
 
   if (room.players.size === 0) {
@@ -391,9 +400,17 @@ function joinRoom(conn: Conn, game: GameId, wanted?: string, heroId?: number, ba
   let room: Room | undefined;
   if (wanted) {
     const candidate = rooms.get(wanted);
-    if (candidate && candidate.game === game && candidate.players.size < capOf(game)) {
-      room = candidate;
+    if (!candidate || candidate.game !== game) {
+      // Pozvánka odkazem: když místnost mezitím zmizela, hráč to musí
+      // vědět. Dřív se tiše založila nová a dva lidi skončili každý jinde.
+      sendError(conn, 'room_missing', 'místnost už neexistuje');
+      return;
     }
+    if (candidate.players.size >= capOf(game)) {
+      sendError(conn, 'room_full', 'místnost je plná');
+      return;
+    }
+    room = candidate;
   } else {
     for (const candidate of rooms.values()) {
       if (candidate.game === game && candidate.players.size < capOf(game)) {
@@ -413,6 +430,10 @@ function joinRoom(conn: Conn, game: GameId, wanted?: string, heroId?: number, ba
 
   room.players.set(conn.id, conn);
   conn.room = room;
+  broadcastChannel(`arena:${room.id}`, {
+    t: 'event',
+    event: { kind: 'system', text: `${conn.identity.name} se přidal`, at: Date.now() },
+  });
   room.match.join(conn.id, {
     name: conn.identity.name,
     avatarId: conn.identity.avatarId ?? undefined,

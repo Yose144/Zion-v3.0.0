@@ -12,9 +12,11 @@
  * server mlčí (offline), stránka to řekne a hry jdou hrát dál sólo.
  */
 
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useI18n } from '@/core/i18n';
 import { useNet } from '@/core/net/useNet';
+import { ChatPanel } from '@/core/net/ChatPanel';
 import type { GameId, RoomState } from '@/core/net/protocol';
 
 interface LobbyGame {
@@ -85,7 +87,42 @@ const STATE_LABEL: Record<RoomState, { cs: string; en: string }> = {
 export default function MultiplayerPage() {
   const { lang } = useI18n();
   const cs = lang === 'cs';
-  const { status, online, rooms, roomId, joinGame, joinRoom, leaveRoom } = useNet();
+  const { status, online, rooms, roomId, joinGame, joinRoom, leaveRoom, lastError } = useNet();
+  const [invite, setInvite] = useState<string | null>(null);
+  const [inviteHandled, setInviteHandled] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  // Pozvánka je v URL (`/multiplayer?room=tanks-1`), ne v nějakém stavu —
+  // odkaz tak jde poslat chatem a funguje i po reloadu.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setInvite(params.get('room'));
+  }, []);
+
+  useEffect(() => {
+    if (!invite || inviteHandled || status !== 'open') return;
+    const game = invite.split('-')[0] as GameId;
+    if (!GAMES.some((entry) => entry.id === game)) {
+      setInviteHandled(true);
+      return;
+    }
+    joinRoom(game, invite);
+    setInviteHandled(true);
+  }, [invite, inviteHandled, status, joinRoom]);
+
+  const copy = useCallback(async (text: string, what: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // starší prohlížeč / bez oprávnění: aspoň označit v promptu
+      window.prompt(cs ? 'Zkopíruj odkaz:' : 'Copy the link:', text);
+    }
+    setCopied(what);
+    window.setTimeout(() => setCopied(null), 1600);
+  }, [cs]);
+
+  const inviteLink = (id: string) =>
+    typeof window === 'undefined' ? '' : `${window.location.origin}/multiplayer?room=${encodeURIComponent(id)}`;
 
   const roomsFor = (game: LobbyGame) =>
     rooms.filter((room) => room.game === game.id).sort((a, b) => b.players - a.players);
@@ -127,12 +164,25 @@ export default function MultiplayerPage() {
               {cs ? 'Otevřít hru' : 'Open the game'} →
             </Link>
           ) : null}
+          <button
+            type="button"
+            className="lobby-btn is-invite"
+            onClick={() => copy(inviteLink(roomId), 'link')}
+          >
+            {copied === 'link' ? (cs ? 'zkopírováno ✓' : 'copied ✓') : cs ? 'Pozvat odkazem' : 'Copy invite link'}
+          </button>
+          <button type="button" className="lobby-btn" onClick={() => copy(roomId, 'code')}>
+            {copied === 'code' ? (cs ? 'kód ✓' : 'code ✓') : cs ? 'Kód' : 'Code'}
+          </button>
           <button type="button" className="lobby-btn" onClick={leaveRoom}>
             {cs ? 'Odejít' : 'Leave'}
           </button>
         </section>
       )}
 
+      {lastError && <p className="lobby-error">{lastError}</p>}
+
+      <div className="lobby-body">
       <section className="lobby-grid">
         {GAMES.map((game) => {
           const open = roomsFor(game);
@@ -169,6 +219,15 @@ export default function MultiplayerPage() {
                       </span>
                       <button
                         type="button"
+                        className="lobby-link"
+                        title={cs ? 'zkopírovat pozvánku' : 'copy invite'}
+                        aria-label={cs ? 'zkopírovat pozvánku' : 'copy invite'}
+                        onClick={() => copy(inviteLink(room.id), room.id)}
+                      >
+                        {copied === room.id ? '✓' : '🔗'}
+                      </button>
+                      <button
+                        type="button"
                         className="lobby-join"
                         disabled={room.players >= room.maxPlayers}
                         onClick={() => joinRoom(game.id, room.id)}
@@ -202,6 +261,13 @@ export default function MultiplayerPage() {
           );
         })}
       </section>
+
+      {/* Chat je tady, ne jen v plovoucím doku: v lobby se domlouváš,
+          než do hry vůbec vstoupíš. Stejná komponenta jako dok. */}
+      <section className="lobby-chat" aria-label={cs ? 'chat' : 'chat'}>
+        <ChatPanel variant="inline" />
+      </section>
+      </div>
 
       <p className="lobby-note">
         {cs
