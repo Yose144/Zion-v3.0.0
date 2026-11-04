@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useI18n } from '@/core/i18n';
 import { useNet } from './useNet';
 import { ChatPanel } from './ChatPanel';
@@ -19,6 +20,7 @@ import { ChatPanel } from './ChatPanel';
 
 export function ChatDock() {
   const { t } = useI18n();
+  const pathname = usePathname();
   const { status, lines } = useNet();
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(0);
@@ -58,6 +60,10 @@ export function ChatDock() {
     }
     setUnread(Math.max(0, lines.length - seenRef.current));
   }, [lines, open]);
+
+  // Lobby má chat přímo ve stránce — plovoucí dok by byl druhý, navíc
+  // s vlastním počítadlem nepřečtených.
+  if (pathname === '/multiplayer') return null;
 
   return (
     <>
