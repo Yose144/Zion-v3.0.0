@@ -1,6 +1,6 @@
 # PLAN — OASIS avataři: dvojjazyčný kánon (CS + EN)
 
-> **Stav: 2026-11-04** · vlastník: 👤 · vykonává: agent
+> **Stav: 2026-11-04 (session 2) — PŘEKLADY KOMPLETNÍ ✅** · vlastník: 👤 · vykonává: agent
 > **Cíl:** všech **200 avatarů** má **oba jazyky** (kánon + překlad), stránka `/l4-oasis/avatars` i modální profil fungují v `cs` i `en`, jednou nasazené.
 > Tento dokument je **jediný vstupní bod** pro pokračování. Nová session začíná zde.
 
@@ -12,9 +12,11 @@
 |---|---|
 | **Karty avatarů (overlay cs+en)** | ✅ 200/200 — `apps/website-v2.9/scripts/oasis-avatar-copy/*.json` (7 polí × 200 = 1 400 párů) |
 | **Questy (cs+en)** | ✅ 704 questů pro 200 postav (`quests-unique.json` 139, `quests-filler.json` 115, `quests-lite-1..3.json` 450) |
-| **Překlady profilů** | 🟡 **188 z 205** souborů má druhý jazyk (47 `.cs.md` + 141 `.en.md`) |
-| **Zbývá** | ❌ **16 souborů** → viz §4 |
-| **Deploy webu** | ❌ nenasazeno — běží build před i18n vrstvou |
+| **Překlady profilů** | ✅ **200/200** avatarů má oba jazyky → `public/data/oasis/profiles/` = **400 souborů** (200 kánonů + 200 překladů) |
+| **Zbývá** | ✅ nic z překladů — jen build + deploy + live kontrola (§5) |
+| **Duplicitní ID 42/43** | ✅ vyřešeno v generátoru (rozhoduje roster, ne `readdir`) |
+| **Jazyk kánonu (09, 44)** | ✅ opraveno — oba byly publikované jako `.cs`, přitom jsou anglické; jejich český překlad se zahazoval |
+| **Deploy webu** | ⏳ jeden build + deploy až teď (§5) |
 
 ---
 
@@ -39,6 +41,10 @@ apps/website-v2.9/
 ```
 
 **Klíčové pravidlo:** kánon zůstává na místě (needituje se kvůli překladu). Překlad jde **vedle** do `i18n/`. Generátor sám pozná jazyk kánonu (`detectLang`) a publikuje kánon v jeho jazyce + všechny překlady v ostatních.
+
+Dvě pravidla, která rozhodují o tom, co se publikuje:
+- **Kanonický soubor pro id** = ten, jehož název odpovídá jménu avatara v rosteru (`resolveProfile`). Tím je vyřešená kolize ID 42/43 bez přejmenování souborů.
+- **Jazyk kánonu** = `detectLang`; pokud existuje explicitní `i18n/<id>.<baseLang>.md`, publikuje se **ten** (bývá čistší než dvojjazyčný kánon).
 
 ---
 
@@ -80,80 +86,101 @@ git commit -m "feat(oasis): překlady <id>… (CS→EN)"
 
 ---
 
-## 4. Zbývající práce — 16 souborů (všechny `cs` kánon → `.en.md`)
+## 4. Zbývající práce — ✅ hotovo (session 2)
 
-| # | soubor (kánon) | znaků | cíl |
-|---|---|---:|---|
-| 08 | `08_ISSOBELA.md` | 12 880 | `i18n/08.en.md` ⚠️ pozor, viz §6 |
-| 40 | `40_LUMI.md` | 10 618 | `i18n/40.en.md` |
-| 41 | `41_VASUDEVA.md` | 24 684 | `i18n/41.en.md` |
-| 42 | `42_SRI_CHAITANYA_MAHAPRABHU.md` | 27 165 | `i18n/42.en.md` ⚠️ duplicitní ID |
-| 42 | `42_SRI_DATTATREYA.md` | 21 188 | ⚠️ duplicitní ID — rozhodnout, viz §6 |
-| 43 | `43_MALY_PRINC.md` | 28 820 | `i18n/43.en.md` ⚠️ duplicitní ID |
-| 43 | `43_SRI_ANAGHA_LAKSHMI.md` | 16 737 | ⚠️ duplicitní ID — rozhodnout, viz §6 |
-| 51 | `51_DALAI_LAMA_XIV.md` | 13 947 | `i18n/51.en.md` |
-| 52 | `52_HEHAKA_SAPA.md` | 2 082 | `i18n/52.en.md` |
-| 62 | `62_LA_ILIAI.md` | 21 842 | `i18n/62.en.md` |
-| 63 | `63_PELE.md` | 17 461 | `i18n/63.en.md` |
-| 64 | `64_HIIAKA.md` | 19 119 | `i18n/64.en.md` |
-| 65 | `65_KANE.md` | 18 285 | `i18n/65.en.md` |
-| 66 | `66_KANALOA.md` | 20 787 | `i18n/66.en.md` |
-| 67 | `67_KU.md` | 18 645 | `i18n/67.en.md` |
-| 68 | `68_LONO.md` | 21 912 | `i18n/68.en.md` |
-| 69 | `69_STARA_KUMU_LEHUA.md` | 23 723 | `i18n/69.en.md` |
-| 70 | `70_HINA.md` | 24 379 | `i18n/70.en.md` |
+Původní seznam 16 souborů (`08`, `40`, `41`, `42`, `43`, `51`, `52`, `62`–`70`) je **přeložený**.
+Session navíc našla **dva avatary, které v seznamu chyběly** (vedené jako hotové, protože měly
+`.cs.md`): `09_SHANTI` a `44_HIRANYAGARBHA`. Oba mají **anglický kánon**, ale `detectLang()` je
+klasifikoval jako `cs` → publikoval se anglický text jako `09.cs.md` / `44.cs.md` a hotový český
+překlad `i18n/09.cs.md` / `i18n/44.cs.md` se **zahodil**. Opraveno (§6.7).
 
-**Objem:** ~350 tis. znaků ≈ **55 tis. slov**. Odhad: **8–12 dávek** po 2–3 profilech (havajské profily jsou nejdelší v celém kánonu).
+| # | kánon | výstup | hotovo |
+|---|---|---|---:|
+| 08 | `08_ISSOBELA.md` | `i18n/08.en.md` | ✅ |
+| 40 | `40_LUMI.md` | `i18n/40.en.md` | ✅ |
+| 41 | `41_VASUDEVA.md` | `i18n/41.en.md` | ✅ |
+| 42 | `42_SRI_DATTATREYA.md` | `i18n/42.en.md` | ✅ |
+| 43 | `43_MALY_PRINC.md` | `i18n/43.en.md` | ✅ |
+| 51 | `51_DALAI_LAMA_XIV.md` | `i18n/51.en.md` | ✅ |
+| 52 | `52_HEHAKA_SAPA.md` | `i18n/52.en.md` | ✅ |
+| 62–70 | havajský kruh (9 profilů) | `i18n/<id>.en.md` | ✅ |
 
-**Doporučené pořadí:** 52 → 08 → 40 → 51 → 63 → 64 → 62 → 65 → 67 → 66 → 68 → 69 → 70 → 41 → 42 → 43 (od nejkratšího, aby byl vidět postup).
+**Ověřeno u každého:** stejný počet nadpisů (`^#`), stejný počet code fence, stejné cíle odkazů
+jako kánon; ```json``` bloky zůstaly shodné (až na lidsky čitelné popisné hodnoty, které se
+překládají i v předchozích dávkách); v EN souborech nezůstala česká věta — kontroluje
+`scripts/check-oasis-i18n.mjs`.
+
+**Kontrola jedním příkazem:**
+
+```bash
+node apps/website-v2.9/scripts/check-oasis-i18n.mjs        # 0 problémů = hotovo
+node apps/website-v2.9/scripts/check-oasis-i18n.mjs --verbose
+```
+
+Kontroluje: oba jazyky pro každého z 200 avatarů, EN bez českých vět, CS s češtinou, kánon pro
+duplicitní ID vybraný podle rosteru, a strukturu publikovaných souborů.
 
 ---
 
 ## 5. Ověření před nasazením
 
 ```bash
-# a) každý profil má oba jazyky
-cd docs/docs2.9/ZION_OASIS/SACRED_TRINITY
-for f in [0-9]*.md; do
-  i=$(echo "$f" | sed 's/_.*//')
-  ls i18n/$i.*.md 2>/dev/null | wc -l | grep -q 2 || echo "CHYBÍ: $i"
-done
+# a) každý profil má oba jazyky + EN bez českých vět (jeden příkaz, zero-padded safe)
+cd /Users/yeshuae/Projects/2.9.6
+node apps/website-v2.9/scripts/check-oasis-i18n.mjs        # 0 problémů = hotovo
 
 # b) generátor + typy
-cd /Users/yeshuae/Projects/2.9.6/apps/website-v2.9
+cd apps/website-v2.9
 node scripts/gen-oasis-avatars.mjs
 npx tsc --noEmit
-ls public/data/oasis/profiles/*.md | wc -l     # očekáváno ~405 (205 kánonů + 200 překladů)
+ls public/data/oasis/profiles/*.md | wc -l     # očekáváno 400 (200 kánonů + 200 překladů)
 
 # c) build
-npx next build --webpack
+npm run build
 
-# d) deploy (až po dokončení VŠECH překladů — build je drahý)
+# d) deploy (jeden, až po dokončení VŠECH překladů — build je drahý)
 bash apps/website-v2.9/deploy/deploy-web2.9.sh
 
 # e) live kontrola
 curl -sI https://app.zionterranova.com/l4-oasis/avatars | head -1
+curl -s -o /dev/null -w '%{http_code}\n' https://app.zionterranova.com/data/oasis/profiles/43.cs.md
+curl -s -o /dev/null -w '%{http_code}\n' https://app.zionterranova.com/data/oasis/profiles/43.en.md
 #   → v modalu přepnout CS/EN a ověřit, že se mění text profilu
 ```
 
 ---
 
-## 6. Otevřené otázky / pasti
+## 6. Otevřené otázky / pasti — ✅ vyřešeno (session 2)
 
-1. **Duplicitní ID 42 a 43** — existují dva kánony pro totéž ID:
-   - `42_SRI_CHAITANYA_MAHAPRABHU.md` **a** `42_SRI_DATTATREYA.md`
-   - `43_MALY_PRINC.md` **a** `43_SRI_ANAGHA_LAKSHMI.md`
-   Generátor drží mapu `id → soubor` a **poslední vyhrává** (readdir order) → do stránky se dostane jen jeden z nich, obsahově nejistý.
-   **Rozhodnout 👤:** který soubor je kanonický pro ID 42 a 43; druhý přesunout mimo regex (např. `archive/`) nebo přejmenovat na `142_…`/`143_…`. Do té doby **nepřekládat** oba — jen ten, který zůstane.
-2. **`i18n/08.cs.md` je redundantní** — kánon `08_ISSOBELA.md` je již česky. Soubor nic nerozbíjí (generátor jej přeskočí), ale je matoucí. Řešení: nahradit `08.en.md` a `08.cs.md` smazat.
-3. **Nulové paddingy** — soubory jsou `00.cs.md`…`09.cs.md`. Kontrolní skripty porovnávající `int(id)` selžou; vždy porovnávat **zero-padded** názvy.
-4. **Paralelní session** pracuje ve stejném repu (`apps/MarketPlace/**`, buildy webu). Proto:
+1. **Duplicitní ID 42 a 43 → rozhodnuto podle rosteru.** Kanonický zdroj identity je
+   `V31/L4/oasis/data/avatars.json` + `AVATAR_ROSTER.md`: **42 = Sri Dattatreya**,
+   **43 = Maly Princ**. Generátor dřív bral „poslední podle `readdir`" → u 43 vyhrála
+   **Sri Anagha Lakshmi**, takže karta „Maly Princ" otevírala profil jiné postavy (reálná
+   chyba, doloženo). Nově `resolveProfile(id, name)` vybere soubor, jehož název odpovídá
+   jménu avatara; soubory se **nepřejmenovávají** (odkazuje na ně korpus: `85_LAKSHMI.md`,
+   `45_SRI_KALKI_AVATAR.md`, `i18n/44.cs.md`, `README.md`, `GOLDEN_EGG_GAME/*`), jen se
+   nepublikují. Překládal se proto `42_SRI_DATTATREYA.md` a `43_MALY_PRINC.md`.
+2. **`i18n/08.cs.md` už není mrtvý.** Kánon `08_ISSOBELA.md` je česky, ale s anglickou
+   hlavičkou; `i18n/08.cs.md` je **čistší česká verze**. Generátor teď explicitní překlad
+   v jazyce kánonu **preferuje** před kánonem (§6.7), takže se publikuje on.
+3. **Nulové paddingy** — soubory jsou `00.cs.md`…`09.cs.md`. Porovnávej vždy **zero-padded**
+   názvy; `scripts/check-oasis-i18n.mjs` to dodržuje.
+4. **Paralelní session** pracuje ve stejném repu (`apps/MarketPlace/**`, `apps/nirvana/**`). Proto:
    - **nikdy `git add -A`** ani `git add .`;
-   - commituj jen `i18n/` + `public/data/oasis/profiles/`;
-   - nespouštěj `npm install`/`npm ci` (už dvakrát rozbilo `node_modules`);
+   - commituj jen `i18n/`, `public/data/oasis/profiles/`, generátor a docs;
+   - nespouštěj `npm install`/`npm ci`;
    - před deployem zkontroluj `git status`.
-5. **Deploy webu je drahý a koliduje** s paralelní session → dělat **jeden** deploy až na konci, ne průběžně.
-6. **Produkční JS** escapuje non-ASCII (`\xNN`) — grep na česká slova v buildech selže; ověřovat přes HTTP odpověď, ne grep.
+5. **Deploy webu je drahý a koliduje** s paralelní session → jeden deploy na konci.
+6. **Produkční JS** escapuje non-ASCII (`\xNN`) — grep na česká slova v buildech selže;
+   ověřovat přes HTTP odpověď, ne grep.
+7. **Dvě opravené chyby v generátoru** (`apps/website-v2.9/scripts/gen-oasis-avatars.mjs`):
+   - `detectLang()` měl fallback `cs`, takže **dvojjazyčné kánony** s převahou angličtiny
+     (09 Shanti, 44 Hiranyagarbha) se publikovaly jako `.cs.md` a jejich hotový český překlad
+     se zahodil → fallback rozhoduje **většina** (změní jazyk jen u těchto dvou ID).
+   - kánon se psal vždy z `raw`; teď má přednost `i18n/<id>.<baseLang>.md`, pokud existuje.
+8. **Kánony 44 a 45 byly „anglicky s českými odstavci"** — v EN modalu se zobrazovaly české
+   věty. Doplněno do angličtiny přímo v kánonu (struktura 1:1, řádky se neměnily); česká verze
+   zůstává v `i18n/44.cs.md` a `i18n/45.cs.md`.
 
 ---
 
