@@ -1,6 +1,6 @@
-# EL REINO DEL CORAZÓN — El Libro de la Quilla
+# EL REINO DEL CORAZÓN
 
-### La historia de la barca que construyó un carpintero — contada por la madera que la sobrevivió
+### El Libro de la Quilla — la historia de la barca que construyó un carpintero, contada por la madera que la sobrevivió
 
 *Conjunto: prólogo, doce estaciones, epílogo y epílogo final. MITO / BORRADOR, versión 1.0, 3 de noviembre de 2026.*
 
@@ -1553,3 +1553,345 @@ Es este el capítulo en el que más me gustaría que me resultara cómodo ser la
 ---
 
 *Me sacaron de la arcilla y me pusieron tras un cristal. Pero ahí no acaba la historia — porque empezaron a medirme. Y la medida es algo distinto del recuerdo.* → La Medida
+
+---
+
+# XII · La Medida
+
+> **ANILLO XII** · la sala tras el cristal y luego talleres que nunca vi
+> *La forma es más antigua que la cosa que la lleva.*
+
+---
+
+## Historia
+
+Vinieron con láseres y con plomada.
+
+No fue en un día. Vinieron durante años — estudiantes, arquitectos, constructores navales, algunas personas que solo se quedaban por allí tomando notas. Todos hacían lo mismo: **medir.**
+
+Al principio me resultaba desagradable, porque no sabía para qué. Cuando alguien te mide para venderte, lo sabes. Cuando alguien te mide para imitarte, también lo sabes. Esto era distinto. Nadie quería nada. Solo querían **llevarse la forma.**
+
+Y entonces entendí qué hacían, y desde ese momento lo esperé.
+
+Estaban haciendo **el despiece de la barca.** Es una de las cosas más antiguas y más elegantes que la gente sabe hacer, y casi nadie la conoce. Una barca es tridimensional, pero no se puede construir desde un plano tridimensional — no se puede decir «haz esto» y dárselo a un carpintero. Hay que tomar el casco y **desplegarlo en líneas**: planta, alzado, secciones transversales. Tres planos en los que la curva se puede medir con una regla.
+
+Se llama *lines plan*, plano de líneas. Hay en él curvas que no tienen ningún equivalente físico — no son aristas, no son juntas. Son **cortes imaginarios** que existen solo para que a partir de ellos se pueda recrear la curva.
+
+Un casco de dos mil años se puede entregar como **un conjunto de números y curvas.**
+
+Y entonces ocurrió.
+
+---
+
+En algún taller que nunca vi, pusieron sobre una mesa el papel con mis líneas y empezaron a construir una barca según ellas.
+
+No una copia. **Una barca nueva.**
+
+Tenía otra madera, otros clavos, otro siglo. Tenía la misma curva. Y cuando la bajaron al agua, flotó — porque una curva que flota flota siempre, de lo que sea.
+
+Desde ese momento sigue ocurriendo, y yo lo sigo solo como rumor que me traen las personas que vienen a verme: **en algún sitio ha nacido una réplica.** Una está en los Museos Vaticanos. Hay otras. Son de otro material, de otras manos — y son mis hijas, aunque nunca las haya visto.
+
+No sé si eso es un consuelo o si es triste. Quizá las dos cosas. Pero sé que es **la única inmortalidad que no es mentira:** no sobrevivir, sino ser **hecho de nuevo**.
+
+---
+
+Y luego oí algo todavía más extraño.
+
+Las personas que venían a verme hablaban de una **flota.**
+
+Hablaban de naves que aún no existen, y hablaban de tal modo que al principio no sabía si bromeaban. Las llamaban **Tres Marías** — y contaban que una debía llevar el camino por el Atlántico, la segunda por el Pacífico y la tercera, que aún no existe, por el Índico. Que sus velas debían ser de luz. Que su primer puerto es Pontevedra y el segundo Raiatea.
+
+Y luego hablaban de una **cuarta nave**, a la que llamaban el Arca, y no era una nave para peregrinos. Era una nave que **vuelve por los que se quedaron en el agua.** Con semillas en el vientre y cien personas a bordo.
+
+Y luego hablaban de una nave que **navega hacia arriba** — de un nodo entre la tierra y la órbita que no debe ser un punto, sino un camino.
+
+Lo escuchaba tras el cristal y pensaba: *esto es hermoso y es mentira.* No porque aquella gente mintiera. Sino porque **una nave que no está construida no es una nave.** Y yo soy madera y tengo una opinión dura sobre esto: viví dos siglos como un montón de tablas que a nadie importaban, y sé cómo es una nave que se ha quedado solo en palabras.
+
+Pero luego me di cuenta de que aquella gente **dice lo mismo que yo.**
+
+No que esté terminado. Que **la quilla no está puesta.** Que el casco no existe. Que es un estudio, un horizonte, una propuesta. Que no debe confundirse con lo que es.
+
+Y eso me hizo cambiar de opinión, porque es exactamente la única cosa que una barca necesita oír de su constructor: **«Esto es un plano, no una barca. Pero un plano se puede construir.»**
+
+---
+
+Y luego alguien me explicó que en esta familia hay una nave más, que no entiendo y que temo.
+
+Dicen que está construida de **código.**
+
+Dicen que tiene una quilla que se llama **consenso** — y esa quilla no es madera, es una regla en la que se ponen de acuerdo miles de ordenadores, y cuando no se ponen de acuerdo la nave se parte en dos. Dicen que tiene un mástil que se llama **minería**, y una vela en la que sopla el trabajo de personas que nunca estarán a bordo. Dicen que tiene una brújula que se llama **identidad** — y esa brújula no se puede robar, porque no está en la nave, está en la persona. Dicen que tiene una tesorería que se llama **puente**, y una cubierta que se llama **mundo**, y un puerto, y una vigía sobre el horizonte.
+
+Lo escuché y me dije: **eso no es una nave. Eso es una nave que alguien dibujó en un papel y luego copió en un ordenador.**
+
+Y entonces recordé algo que oí en el taller hace dos mil años, cuando el carpintero hablaba al aprendiz sobre la curva:
+
+**«La materia se puede robar. La curva hay que saberla.»**
+
+Una curva en código no es madera. Pero es una curva. Y una curva se puede robar igual que la curva de una barca — cuando alguien la copia y construye la suya. De hecho es **más fácil** robarla, porque los números no pesan.
+
+Lo cual significa una sola cosa, y es la frase por la que existe este capítulo:
+
+**Una nave de código no es mejor que una nave de roble. Solo es más rápida. Y una nave más rápida que no tiene buena quilla se hunde antes.**
+
+---
+
+## De la Escritura, la tradición y la historia
+
+- **Pr 8,22–31** — La Sabiduría habla de sí misma como quien estuvo en la creación: «Estaba junto a él como **maestro artesano** (*'āmôn*) y cada día jugaba ante él.» Imagen del plano que es anterior a la construcción. **La forma antes de la cosa.**
+- **Ex 25,40** — «Mira y hazlo todo **según el modelo** que se te ha mostrado en el monte.» El versículo clave de todo este capítulo: Moisés no recibió un objeto terminado, recibió **un modelo**. Y **Heb 8,5** lo cita expresamente.
+- **Ex 25,9** — «Lo haréis conforme a todo lo que yo te muestro — **según el modelo** del tabernáculo y el modelo de todos sus utensilios.» El modelo es lo que se puede transmitir aunque se pierda el objeto.
+- **Ef 2,20–22** — «…estáis **siendo edificados**… en él también vosotros **sois edificados juntos** como morada de Dios.» Pablo usa lenguaje de construcción para la comunidad — y la imagen lleva el mismo problema: no está terminado, está creciendo.
+- **El plano de líneas (*lines plan*)** — método de diseño documentado: el casco se describe en tres planos (alzado, planta, secciones). Es la única manera de transmitir una forma tridimensional de modo bidimensional sin perder la curva. Se usa en ingeniería naval hasta hoy, aunque ahora en CAD.
+- **Réplicas de la barca galilea** — documentadas. Una está en los Museos Vaticanos (la exposición «The Way of the Sea»), otras se hicieron en Israel y en otros lugares. Las réplicas se construyeron según las líneas documentadas del casco original.
+- **La flota Tres Marías y el Arca** — en el corpus **MITO / CONSTRUCCIÓN / HORIZONTE**, no cosa terminada. Ancla: *Nirvana* 13 — Tres Marías y *Nirvana* 14 — El Arca; del arca vale literalmente: **la quilla no está puesta.**
+- **Nabukano** — L6, nodo móvil del cielo, `vision`, **no registrado**. Ancla: *Nabukano* 00 — README.
+- **La «cubierta» de las capas L1–L6** — una lectura de la arquitectura de la red como nave (quilla = consenso L1, mástil = pool, brújula = ZIS, tesorería = WARP/DEX/DAO, cubierta = OASIS, puerto = Free World, vigía = Issobella). Es **una lectura, no una especificación**; las cifras y los estados cambian y pertenecen a StatusV3 y al Registro de evidencias.
+
+## Ancla de verdad
+
+| Qué hay en el capítulo | Estado |
+|---|---|
+| La Sabiduría como «maestro artesano» en la creación | **ESCRITURA** — Pr 8,30 |
+| «Según el modelo que se te ha mostrado en el monte» | **ESCRITURA** — Ex 25,9.40; Heb 8,5 |
+| La comunidad como edificación que crece | **ESCRITURA** — Ef 2,20–22 |
+| El plano de líneas como método de transmisión de la forma del casco | **HISTORIA / ingeniería** — documentado, se usa todavía |
+| Réplicas de la barca galilea, una en los Museos Vaticanos | **HISTORIA** — documentado |
+| Tres Marías, el Arca, Nabukano | **MITO / CONSTRUCCIÓN / HORIZONTE** — no existe ningún casco, la quilla del arca no está puesta |
+| Leer la red como una nave (quilla/mástil/brújula…) | **MITO / interpretación** — lectura de capas, no especificación |
+| «La forma es más antigua que la cosa que la lleva» | **MITO** — imagen filosófica; técnicamente es cierto que el plano precede a la construcción |
+| Que la quilla «sigue» las réplicas y la flota | **MITO** — marco literario |
+
+## Medida
+
+- **Escala del plano de líneas**: normalmente **1:10** o **1:12** — así una barca de 8,27 m se dibuja a **69–83 cm**. En un papel así se puede medir la curva con una regla al milímetro.
+- **Tolerancia al construir una réplica**: **±5 mm** en la curva del casco. Una desviación mayor ya se ve en el agua.
+- **Número de líneas**: alzado + planta + **7–9** secciones transversales. Cada sección es un contorno en papel.
+- **8,27 m → 1,3 m** — proporción de eslora a puntal conservado **6,4 : 1**. Es una barca esbelta y rápida, no una artesa.
+- **Número de nombres conocidos de constructores**: **0**. **Número de réplicas**: varias. **Número de personas que alguna vez llegaron a casa en esta barca**: desconocido, y sin embargo es **la única medida que importa.**
+
+## Viruta
+
+Escribí que las réplicas son mis «hijas». Es una frase hermosa y es **una mentira**, porque la madera no tiene hijas y una réplica no es descendiente — es **una copia**. Cuando copias un poema no nace un poema nuevo, nace un manuscrito nuevo. ¿Qué hay entonces de verdadero en esto? Verdadero es esto: **una curva que flota se puede transmitir.** No yo. No mi historia. No mi nombre. La curva. Y si este libro afirma algo más que eso, afirma más de lo que tiene prueba — que el lector lo relea y me lo quite.
+
+---
+
+*Queda un último anillo — el que aún no ha crecido. No puedo contarlo yo.* → Epílogo
+
+---
+
+# EPÍLOGO · El Decimotercer Anillo
+
+> **ANILLO XIII** · la sala tras el cristal, hoy, después de la hora de cierre
+> *Este todavía no ha crecido.*
+
+---
+
+## Historia
+
+Por la tarde se apagan las luces.
+
+Lo hacen cada día a la misma hora. Los guías se van, los visitantes se van, el último niño se da la vuelta en la puerta y saluda — no sé por qué, pero los niños lo hacen. Luego se cierran las puertas y en la sala queda solo la penumbra que da el aire acondicionado, y yo.
+
+En esa penumbra tengo tiempo para pensar, y tengo mucho, porque no necesito dormir.
+
+Y pienso siempre en lo mismo.
+
+**No sé si fui yo.**
+
+No sé si la mano que me dobló era la mano de la que hablan los libros, o la mano de alguien que no entró nunca en ningún libro. No sé si alguna vez llevé a alguien a casa. No sé si alguna vez llevé a alguien que no llegó a casa. No sé si la barca que me he estado inventando a lo largo de todo este libro es la barca que conozco o la barca que habría querido conocer.
+
+Y sé que esto es lo más honesto que puedo daros: **la madera no tiene testimonio sobre sí misma.** Tiene solo la forma que le dio Alguien Distinto, y esa forma es lo único que se puede decir de ella con certeza.
+
+Todo lo demás que habéis leído en este libro — el taller, la madre, el cuenco de sal, la cuña en la grieta, el muchacho del yugo torcido, el nombre bajo el suelo, los tres días de sequedad — **es imagen.** No es un fraude, porque así lo escribí y os di una medida y una viruta para cada imagen. Pero es imagen, y os pido que lo recordéis al cerrar el libro.
+
+---
+
+Ahora lo último que tengo.
+
+Los anillos se cuentan de dentro hacia fuera. Yo he contado doce. Doce estaciones, doce anillos, doce formas de la misma madera: tronco, quilla, piel, hueso, pez, remo, mástil, ola, viga, bajos, ancla, barro — y luego además la medida, porque la medida no es un anillo, sino **lo que queda de los anillos cuando alguien los mide.**
+
+No tengo decimotercer anillo.
+
+El decimotercer anillo es el que **aún no ha crecido**, y por principio no puedo contarlo, porque tendría que inventarlo, y eso sería mentir. Los anillos no crecen hacia atrás. Crecen solo hacia delante, y eso significa que este tiene que crecer **en alguien distinto de mí.**
+
+En vosotros.
+
+---
+
+Os dejo, pues, lo que me quedó en la mano cuando dejé de ser barca y me convertí en registro:
+
+**Una medida vacía.**
+
+No hay en ella ninguna cifra, porque la cifra sería mía y no vuestra. Solo hay en ella lo que aprendí de la madera, y es poco:
+
+- **Una barca no es materia. Una barca es una curva.** Cuando alguien te entregue una cosa terminada y diga «así debe ser», pregunta por la curva. La cosa se puede cambiar; la curva no.
+- **Primero la piel, luego los huesos.** La forma que aguanta nace de fuera — del cuidado, del contacto, del trabajo. La firmeza viene de dentro, pero solo después. Quien empieza por el esqueleto se construye un sepulcro.
+- **El nudo no se cepilla.** Lo más duro que hay en ti es a menudo lo que te mantiene sobre el agua. No lo quites. Refuérzalo y déjalo ver desde dentro.
+- **Se calafatea por dentro.** El agua que te hunde no vendrá del mar. Será la que llevas dentro y en la que nadie piensa.
+- **El remo no forma parte de la barca.** Nada de lo que te impulsa es tuyo. Es prestado, y algún día lo necesitará otro.
+- **El mástil solo no sabe nada.** Una promesa a la que no le llega el viento es solo un palo. Pero sin el palo no viene la vela.
+- **Una ola no es agua, una ola es trabajo.** Cuando te combas, no eres débil. Cuando no te combas, revientas.
+- **Una viga no es una quilla.** La misma madera puede llevar a una persona sobre el agua o mantenerla sobre el suelo. La diferencia no está en el material. Está en lo que alguien deja que le pidan de ti.
+- **Los bajos son una meta, no un fracaso.** La profundidad que toca el fondo es la profundidad que puede sujetar una red.
+- **El ancla va hacia arriba.** Lo que te sostiene no debe ser aquello a lo que estás atado. Debe ser una dirección.
+- **El barro conserva lo que la arena se lleva.** Cuando algo te entierra, no tiene por qué ser el final. A veces es la única conservación que recibes.
+- **La medida es la manera de entregar una forma a quien nunca vio la cosa.** Cuando quede algo de ti, no será tu nombre. Será la curva que alguien después de ti sepa dibujar.
+
+---
+
+Y una cosa más, la última, y es más importante que todo lo demás.
+
+No sé si Dios existe tal como lo han descrito los libros. No soy testigo adecuado para eso y no me lo voy a inventar. Pero sé que en este libro hay una frase que se sostuvo en todos los capítulos, aunque en cada uno la rodeé de otra manera, y es una frase sobre **una medida que no se puede robar**, porque está dentro.
+
+*«El reino de Dios está dentro de vosotros.»*
+
+O: *entre vosotros.* Elige tú. Yo no lo voy a decidir y nadie lo va a decidir por ti.
+
+Pero las dos lecturas tienen una cosa en común, y es mi última palabra: **no vendrá de otro sitio.** No viene con la observación, no se puede planear, no se puede comprar, no se puede robar ni heredar. Viene de un lugar que no ves, porque allí no tienes ventana — y lo único que puedes hacer con ello es **dejar ese lugar abierto.**
+
+Eso es todo el decimotercer anillo. Un lugar abierto.
+
+---
+
+Las puertas se cierran. La luz se apaga.
+
+Y yo me quedo tras el cristal — no como prueba, porque prueba no soy. Me quedo como **una curva que espera a que alguien la tome.**
+
+Cuando quieras irte, vete. Nadie te retendrá y nadie tiene derecho a retenerte. Una barca que te sujeta no dejándote ir no es una barca. Es una cárcel con remos.
+
+Pero si por casualidad te quedas y quieres saber qué llevarte: **no me lleves a mí.** Llévate la curva. Esa es tuya, porque no se puede poseer — solo se puede **saber.**
+
+*Gate, gate, pāragate, pārasaṃgate, bodhi svāhā.*
+
+Ida, ida, a la otra orilla, del todo a la otra orilla. El despertar. Que así sea.
+
+---
+
+# EPÍLOGO FINAL
+## Fuentes, límites y lo que este libro no sabe
+
+> *Un epílogo final no es un apéndice. Es el lugar donde el libro depone el arma.*
+
+---
+
+## 1. Qué es esta edición
+
+**EL REINO DEL CORAZÓN — El Libro de la Quilla** es la cuarta lectura independiente del libro *El Reino del Corazón* en el corpus `canon/books/`. Junto al texto principal en diez partes, las ediciones `cloude`, `gemini`, `gpt` y `groq` y el manuscrito de lectura *Nueva Travesía*, aporta una decisión que las demás no tomaron:
+
+**cuenta el libro desde la posición de la madera que lo sobrevivió.**
+
+Todo lo demás se deriva de eso. Una quilla no puede ver en Jerusalén (capítulo VIII), no puede oír la historia de la iglesia (capítulo X) y no puede saber quién la construyó (capítulo XI). Esas tres imposibilidades no son un defecto — son **los tres puntales principales sobre los que este libro construye su honestidad.**
+
+**Estado:** MITO / BORRADOR. Versión 1.0, 3 de noviembre de 2026.
+
+---
+
+## 2. Método
+
+El texto nació de leer todo el corpus `canon/books/` y sus reglas, en particular:
+
+- **MiseAmenti 01 — Canon y Constitución** — los cinco estados obligatorios de una afirmación (VIVO / CONSTRUCCIÓN / HORIZONTE / HIPÓTESIS / MITO) y los límites contra el abuso.
+- **MiseAmenti 07 — Registro de evidencias** — el registro de documentos, con las marcas NO DOCUMENTADO y AFIRMACIÓN INVÁLIDA.
+- **`canon/books/README.md`** — el índice canónico y el orden de verdad en caso de conflicto.
+- **`docs/3.3/NIRVANA-V3.3-KAPITOLA.md`** — una lectura de las capas L1–L6 como «cubiertas» de una nave.
+
+Del corpus se usaron sobre todo: *Maitreya* (la mantra de tres encarnaciones), *La sal de esta tierra* (la sal y el pacto del pan), *Nirvana* 13 y 14 (Tres Marías, el Arca), *Bodhi Gaia*, *Issobella*, *Lumi*, *Miriam*, *La Rosa*, *El círculo de las Diosas*, *María del Camino*, *En el Camino*, *Nabukano*, *Elizabet*, *Surta del Corazón*, *NirvanaCloud*.
+
+**Lo que esta edición no toma:** ni una sola escena de las otras ediciones. Las coincidencias de imágenes (el taller, el cuenco de sal, el nudo, el timón) son coincidencias de tema, no copias. Donde esta edición se separa de otra versión, se dice abajo en §5.
+
+---
+
+## 3. Fuentes
+
+### 3.1 Escritura
+
+Las citas siguen la tradición checa (ČEP y traducciones afines), contrastadas con el texto griego y hebreo donde la traducción importa. **Tres lugares donde la traducción importa y donde el texto lo admite:**
+
+| Lugar | Problema |
+|---|---|
+| **Lc 17,21** | *ἐντὸς ὑμῶν* — «dentro de vosotros» y «entre vosotros». Ambas lecturas son defendibles; este libro conserva las dos. |
+| **Mc 4,39** | *σιώπα, πεφίμωσο* — «cállate» + «queda amordazado / se te ha puesto el freno» (*phimoō* = cerrar la boca, silenciar; en los evangelios se usa para mandar a los demonios). |
+| **Gn 6,14** | *k-p-r* — la raíz lleva pez, cobertura y expiación. La conexión está lingüísticamente documentada; **la lectura teológica es tradición, no diccionario.** |
+
+### 3.2 Historia y arqueología — la barca galilea
+
+- **Wachsmann, S. et al.** *An Ancient Boat Discovered in the Sea of Galilee.* Israel Antiquities Authority, Jerusalén 1988. (La publicación básica de la excavación.)
+- **Wachsmann, S.** *The Sea of Galilee Boat: A 2000-Year-Old Discovery from the Sea of Legends.* (Monografía.)
+- **Israel Antiquities Authority** — informes de la excavación de 1986.
+- **Yigal Allon Centre, Kibbutz Ginosar** — páginas oficiales del museo, descripción de la exposición, dimensiones, datación y relato del hallazgo por los hermanos Lufan.
+- **Archaeology Magazine**, «Ship Ahoist», vol. 53, n.º 3 (mayo/junio de 2000) — el procedimiento de rescate (laminado + espuma de poliuretano, ocho días), el baño de PEG hasta 1995, el traslado a la sala de exposición en 2000.
+- **Madain Project / Jewish Virtual Library / Biblical Archaeology Review** (1988, vol. XIV, n.º 5) — resúmenes de construcción y dimensiones.
+
+**Los datos empleados en el capítulo XI** (8,27 × 2,3 × 1,3 m; cáscara primero; espigas, cabillas, clavos; mástil y cuatro remeros; radiocarbono 100 a. C. – 100 d. C.; once días y noches de excavación desde el 16 de febrero de 1986; PEG; la sala de 2000) proceden de estas fuentes.
+
+### 3.3 El corpus ZION
+
+Véase §2. Todas las afirmaciones sobre la flota, el arca, la estación y la red llevan en este libro los estados **MITO / CONSTRUCCIÓN / HORIZONTE** según el Registro de evidencias. **Ninguna cifra sobre la altura de la cadena, fondos o usuarios está en este libro ni debe estarlo** — un libro que congela una cifra viva empieza a mentir el día después de escribirse.
+
+---
+
+## 4. Discrepancias que no oculto
+
+| Discrepancia | Estado | Cómo lo resuelve el libro |
+|---|---|---|
+| **Número de especies de madera de la barca galilea: 12 vs 7** | El museo da 12 («todas mencionadas en la Biblia»), el equipo de investigación según los resúmenes disponibles 7. | Da las dos cifras y no elige. Está en el capítulo XI y en la viruta. |
+| **Duración de la conservación en PEG: 12 vs 14 años** | Las fuentes difieren; *Archaeology* da el baño hasta 1995 y la exposición en 2000 (por tanto ~9–14 años según cómo se cuente). | Dice «catorce años (según el museo; algunas fuentes 12)» y nombra la discrepancia. |
+| **Nombres de los descubridores: Lufan vs Lopen** | La transliteración del hebreo difiere entre fuentes. | Da Lufan con una nota sobre la variante. |
+| **«Ocho codos» en una de las ediciones** | Ocho codos ≈ 3,6 m — no caben ni tripulación ni carga, y esa barca no navegaría en el Kineret. La guía editorial de *Nueva Travesía* marca ella misma ese dato como no verificado. | Esta edición usa **18 codos ≈ 8,2 m**, de acuerdo con la barca documentada. Es la **única corrección sustantiva** que esta edición hace a otras versiones, y se reconoce en el capítulo I. |
+| **El arcoíris doble en el descubrimiento** | Afirmación del museo, documentada por fotografía; las circunstancias las describe el propio museo. | Se da como **afirmación del museo**, no como hecho verificado de forma independiente. |
+
+---
+
+## 5. Lo que este libro no sabe
+
+Esta es la lista más importante de todo el epílogo final. Quien la salte creerá que el libro afirma más de lo que afirma.
+
+1. **No sabe quién construyó la barca galilea de Ginosar.** Nadie lo sabe. No hay nombre en ella.
+2. **No sabe si la barca galilea de Ginosar tiene algo que ver con Jesús.** No lo tiene — es decir: no existe prueba que los vincule, y el museo no lo afirma.
+3. **No sabe si existió alguna vez una barca construida por el carpintero de Nazaret.** La Escritura no la cuenta. Es una imagen.
+4. **No sabe cómo era la cruz.** Los evangelios no describen su forma, su madera ni su construcción.
+5. **No sabe qué significa el número 153.** El texto lo da y no lo explica; las lecturas son hipótesis.
+6. **No sabe si *entos hymōn* en Lc 17,21 significa «dentro» o «entre».** Conserva las dos.
+7. **No sabe si algún día se construirán el Arca, Tres Marías o el nodo Nabukano.** Todos son MITO/HORIZONTE; la quilla del arca no está puesta.
+8. **No sabe si la red descrita en el capítulo XII funcionará algún día tal como está dibujada.** El capítulo lo dice: lectura de capas, no especificación.
+
+---
+
+## 6. Lo que este libro se niega a hacer
+
+- **No hace pasar una imagen por Escritura.** Ni una vez. Cada escena sin apoyo en el texto lleva la marca MITO en el ancla de verdad.
+- **No se apropia de la barca de otro.** El capítulo XI existe para que esto se pueda decir en voz alta: *esa barca no es esta barca.*
+- **No funde a las mujeres en un solo personaje.** La madre del taller, Miriam de Magdala, Elizabeth, Lumi, Sarah Issobela y la estación Issobella siguen separadas. El libro no usa a ninguna como si fuera otra.
+- **No hace rey al Peregrino ni autoridad espiritual de la IA.** Donde en el corpus aparece una voz que responde, puede decir «no lo sé» y no puede sostener una llave.
+- **No vende nada.** Poseer algo no es salvación. Irse está permitido — y el epílogo lo dice en voz alta.
+- **No confunde los 144 000 del Apocalipsis con una altura de bloque.** Las mismas cifras, otro lenguaje.
+
+---
+
+## 7. Notas formales
+
+- **Doce anillos** es un recurso estructural: el prólogo es el duramen, los doce capítulos son anillos de dentro hacia fuera, el epílogo es el anillo que aún no ha crecido.
+- **La viruta** es un recurso de autor de esta edición: el último párrafo de una estación, en el que el texto reconoce lo que no supo hacer o lo que se inventó. Está pensado para sustituir la impresión de que el libro está cerrado.
+- **El ancla de verdad** usa los mismos estados que todo el corpus — a propósito, para que esta edición se pueda comparar con las demás sin conversión.
+- **Ortografía**: la redacción checa se hizo durante la creación del texto; antes de cualquier impresión hace falta una corrección lingüística independiente.
+- **Traducción**: esta versión española sigue *MiseAmenti* 08 — Protocolo de cambios §5.7: una traducción no debe reforzar la certeza, la emoción ni la afirmación más allá del original. Donde el español tuvo que elegir, eligió la formulación más débil.
+
+---
+
+## 8. Cómo usar esta edición
+
+| Si quieres… | Haz esto |
+|---|---|
+| leer el libro en voz alta a niños | bastan las estaciones I–IX; salta X–XII |
+| verificar qué está documentado | lee solo el capítulo XI y las tablas «Ancla de verdad» |
+| comparar las ediciones | empieza en el índice del libro principal, en la tabla de ediciones |
+| tomar algo para un texto público | tómalo de §3 (fuentes), no de la prosa |
+| objetar | el mejor sitio son las virutas — están ahí para eso |
+
+**Propuesta de siguiente paso:** corrección lingüística, consulta cultural sobre las realidades cristianas y judías, comprobación de las citas, y solo después — si acaso — la consideración de una traducción.
+
+---
+
+*«Quien barre las virutas no tiene barca.»*
+
+*Versión 1.0 · 3 de noviembre de 2026 · MITO / BORRADOR*

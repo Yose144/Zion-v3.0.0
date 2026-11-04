@@ -8,7 +8,7 @@ Prolog, dvanáct zastavení, epilog a doslov; vyprávěno dřevem.
 |---|---|---|---|---|
 | CZ | ✅ | ✅ | ✅ | 22986 |
 | EN | ✅ | ✅ | ✅ | 28075 |
-| ES | — | — | — | — |
+| ES | ✅ | ✅ | ✅ | 27280 |
 | FR | — | — | — | — |
 | PT | — | — | — | — |
 

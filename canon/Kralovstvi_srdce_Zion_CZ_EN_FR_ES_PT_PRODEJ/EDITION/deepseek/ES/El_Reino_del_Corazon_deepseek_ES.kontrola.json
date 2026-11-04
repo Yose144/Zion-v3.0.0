@@ -1,0 +1,17 @@
+{
+  "edition": "deepseek",
+  "lang": "ES",
+  "source": "El_Reino_del_Corazon_deepseek_ES.md",
+  "words": 27280,
+  "headings": 194,
+  "paragraphs": 734,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 123,
+    "bytes": 365997
+  },
+  "epub": {
+    "documents": 18,
+    "bytes": 78179
+  }
+}
