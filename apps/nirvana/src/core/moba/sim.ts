@@ -967,9 +967,10 @@ export function createMobaMatch(seats: MobaSeat[], now: number, botSkill: BotSki
       seat.team === 'blue' ? SPAWNS.blue : SPAWNS.red,
       seat.human === true,
       seat.battleSpell ?? 'flicker',
-      // Boti dostanou aspekt podle id — jinak by všichni hráli stejně
-      // a hráč by se nikdy nesetkal s ochrannou variantou.
-      seat.aspect ?? (seat.heroId % 2 === 0 ? 'a' : 'b'),
+      // Boti hrají **ostrou** variantu. Měřeno: když polovina botů brala
+      // ochrannou, zápasy se protahovaly (357 s, 7/20 timeoutů) — dva
+      // defensive týmy se navzájem neudolají. Hráč si `b` vybrat může.
+      seat.aspect ?? 'a',
     ),
   );
   // Boti se rozřadí do linek **symetricky podle týmu** — dřív brali index
@@ -1216,6 +1217,12 @@ function schoolDamage(school: SpellSchool, target: Hero, base: number): number {
   return target.hp / target.maxHp <= traits.executeBelow ? base * (1 + traits.execute) : base;
 }
 
+/**
+ * Odměna za tábor. `ancient` (řeka) je **týmový objektiv**, ne sólo buff:
+ * dostane ho každý živý spojenec, takže se z něj stává důvod jít do řeky
+ * jako tým. Ostatní tábory zůstávají osobní — jinak by jungle byl jen
+ * druhý obchod.
+ */
 function applyJungleBuff(hero: Hero, type: JungleCamp['type'], now: number) {
   if (type === 'small') {
     hero.buffs.push({ type: 'speed', until: now + 90000, power: 0.15 });
@@ -1229,6 +1236,28 @@ function applyJungleBuff(hero: Hero, type: JungleCamp['type'], now: number) {
     hero.buffs.push({ type: 'ward', until: now + 150000, power: 0.25 });
     hero.buffs.push({ type: 'speed', until: now + 150000, power: 0.2 });
   }
+}
+
+/**
+ * Týmová aura za Prastaré stvoření (řeka). Vrací počet spojenců, které
+ * zasáhla — banner i testy se podle toho poznají.
+ *
+ * Síla je poloviční proti sólo buffu: tým, který ji má, je silnější jako
+ * celek, ale ne tak, aby jeden hrdina nesl celý zápas.
+ */
+export function grantTeamAura(state: MobaState, killer: Hero, now: number): number {
+  let affected = 0;
+  for (const ally of state.heroes) {
+    if (ally.team !== killer.team || !ally.alive) continue;
+    // Čísla jsou záměrně malá: první verze (+20 % dmg, 120 s) prodloužila
+    // zápasy na 376 s a 40 % jich skončilo timeoutem. Týmový buff má být
+    // výhoda, ne přesun hry do nekonečna.
+    ally.buffs.push({ type: 'strength', until: now + 90000, power: 0.12 });
+    ally.buffs.push({ type: 'ward', until: now + 90000, power: 0.08 });
+    ally.buffs.push({ type: 'speed', until: now + 90000, power: 0.06 });
+    affected += 1;
+  }
+  return affected;
 }
 
 function damageMinion(state: MobaState, minion: Minion, amount: number, source: string) {
@@ -1271,7 +1300,13 @@ function damageMonster(state: MobaState, monster: Monster, amount: number, sourc
       killer.gold = Math.min(GOLD_CAP, killer.gold + (camp.type === 'ancient' ? 175 : camp.type === 'medium' ? 90 : 45));
       killer.damageDone += amount;
       applyJungleBuff(killer, camp.type, state.now);
-      state.banner = `${killer.name} zabil ${camp.type === 'ancient' ? 'Prastaré stvoření' : camp.type === 'medium' ? 'Středního tábora' : 'Jungle monstra'}`;
+      if (camp.type === 'ancient') {
+        const allies = grantTeamAura(state, killer, state.now);
+        const side = killer.team === 'blue' ? 'ZION' : 'OPOZICE';
+        state.banner = `${side} získal převahu · ${killer.name} (${allies} ${allies === 1 ? 'hrdina' : 'hrdinů'})`;
+      } else {
+        state.banner = `${killer.name} zabil ${camp.type === 'medium' ? 'Středního tábora' : 'Jungle monstra'}`;
+      }
       state.bannerUntil = state.now + 3200;
     }
   }

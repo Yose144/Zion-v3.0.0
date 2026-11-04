@@ -7525,3 +7525,37 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   font-size: 0.68rem;
   color: rgba(127, 227, 212, 0.7);
 }
+
+/* Aktivní buffy v HUD — týmová aura z řeky musí být vidět. */
+.moba-buffs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0.2rem 0 0.1rem;
+}
+
+.moba-buff {
+  padding: 0.08rem 0.34rem;
+  border-radius: 999px;
+  border: 1px solid rgba(200, 162, 255, 0.28);
+  background: rgba(200, 162, 255, 0.1);
+  font-size: 0.62rem;
+  font-variant-numeric: tabular-nums;
+  color: rgba(246, 231, 216, 0.78);
+}
+
+.moba-buff.is-ancient {
+  border-color: rgba(255, 209, 102, 0.6);
+  background: rgba(255, 209, 102, 0.16);
+  color: #ffe9a8;
+}
+
+.moba-buff.is-strength {
+  border-color: rgba(255, 122, 107, 0.5);
+  color: #ffb4a4;
+}
+
+.moba-buff.is-ward {
+  border-color: rgba(127, 227, 212, 0.5);
+  color: #a9f0e4;
+}

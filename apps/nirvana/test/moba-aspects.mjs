@@ -103,11 +103,7 @@ const match = createMobaMatch(
 const byId = new Map(match.heroes.map((hero) => [hero.id, hero]));
 check('místnost: hráč 1 má aspekt a', byId.get('a')?.aspect === 'a', byId.get('a')?.aspect);
 check('místnost: hráč 2 má aspekt b', byId.get('b')?.aspect === 'b', byId.get('b')?.aspect);
-check(
-  'bot má aspekt podle id (sudé a, liché b)',
-  byId.get('c')?.aspect === 'a',
-  `${byId.get('c')?.aspect} (heroId 2)`,
-);
+check('bot má ostrý aspekt (a)', byId.get('c')?.aspect === 'a', `${byId.get('c')?.aspect}`);
 
 // škola se čte i bez stavby kouzel (pick screen ji potřebuje dřív)
 check('schoolOfAvatar vrací školu', SCHOOLS.includes(schoolOfAvatar(0)), String(schoolOfAvatar(0)));

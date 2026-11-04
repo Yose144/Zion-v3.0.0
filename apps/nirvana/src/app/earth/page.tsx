@@ -52,6 +52,17 @@ import { MobaTouch } from '@/core/moba/MobaTouch';
 /** Dvanáct startovních hrdinů — zbytek rosteru jde vybrat na `/avatars`. */
 const STARTERS = [0, 1, 2, 3, 4, 5, 82, 84, 85, 86, 19, 20];
 
+/** Ikony buffů — jen to, co hráč opravdu může mít. */
+const BUFF_ICON: Record<string, string> = {
+  strength: '⚔',
+  ward: '🛡',
+  speed: '💨',
+  ancient: '🌟',
+  regen: '✚',
+  burn: '🔥',
+  invisible: '👁',
+};
+
 type Phase = 'pick' | 'playing' | 'ended';
 type Mode = 'solo' | 'online';
 type OnlinePhase = 'connecting' | 'waiting' | 'countdown' | 'running' | 'ended' | 'offline';
@@ -651,6 +662,28 @@ export default function EarthPage() {
                   XP {stats?.xp ?? 0} / {stats?.xpNeed ?? 1}
                 </span>
               </div>
+              {(() => {
+                // Aktivní buffy vlastního hrdiny — týmová aura z řeky musí
+                // být vidět, jinak si jí hráč nevšimne a nic nezmění.
+                const me = stats?.snapshot.heroes.find((entry) => entry.id === stats.youId);
+                const now = stats?.snapshot.time ?? 0;
+                const active = (me?.buffs ?? [])
+                  .filter((buff) => buff.until > now)
+                  .slice(0, 4);
+                if (active.length === 0) return null;
+                return (
+                  <div className="moba-buffs" aria-label={cs ? 'Aktivní posily' : 'Active buffs'}>
+                    {active.map((buff, index) => {
+                      const left = Math.max(0, Math.ceil((buff.until - now) / 1000));
+                      return (
+                        <span key={`${buff.type}-${index}`} className={`moba-buff is-${buff.type}`}>
+                          {BUFF_ICON[buff.type] ?? '✦'} {left}s
+                        </span>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
               <div className="moba-score">
                 <Portrait heroId={stats?.playerHeroId ?? heroId} name={hero.name} />
                 <strong>{hero.name}</strong>
