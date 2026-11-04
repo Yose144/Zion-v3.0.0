@@ -1,6 +1,6 @@
 # PLAN — OASIS avataři: dvojjazyčný kánon (CS + EN)
 
-> **Stav: 2026-11-04 (session 2) — HOTOVO A NASAZENO ✅** · vlastník: 👤 · vykonává: agent
+> **Stav: 2026-11-05 — HOTOVO, NASAZENO A OVĚŘENO ✅** · vlastník: 👤 · vykonává: agent
 > **Cíl:** všech **200 avatarů** má **oba jazyky** (kánon + překlad), stránka `/l4-oasis/avatars` i modální profil fungují v `cs` i `en`, jednou nasazené.
 > Tento dokument je **jediný vstupní bod** pro pokračování. Nová session začíná zde.
 
@@ -13,7 +13,8 @@
 | **Karty avatarů (overlay cs+en)** | ✅ 200/200 — `apps/website-v2.9/scripts/oasis-avatar-copy/*.json` (7 polí × 200 = 1 400 párů) |
 | **Questy (cs+en)** | ✅ 704 questů pro 200 postav (`quests-unique.json` 139, `quests-filler.json` 115, `quests-lite-1..3.json` 450) |
 | **Překlady profilů** | ✅ **200/200** avatarů má oba jazyky → `public/data/oasis/profiles/` = **400 souborů** (200 kánonů + 200 překladů) |
-| **Zbývá** | ✅ nic z překladů — jen build + deploy + live kontrola (§5) |
+| **Parita s kánonem** | ✅ všech 200 párů: stejné nadpisy, code bloky, odkazy; žádný překlad zkrácený pod 85 % |
+| **Zbývá** | ✅ nic — hotovo, nasazeno a ověřeno živě (§5) |
 | **Duplicitní ID 42/43** | ✅ vyřešeno v generátoru (rozhoduje roster, ne `readdir`) |
 | **Jazyk kánonu (09, 44)** | ✅ opraveno — oba byly publikované jako `.cs`, přitom jsou anglické; jejich český překlad se zahazoval |
 | **Deploy webu** | ✅ LIVE `2026-11-04` — hot-file deploy profilů (`public/data/oasis/profiles/`), bez rebuildu (§5) |
@@ -86,7 +87,7 @@ git commit -m "feat(oasis): překlady <id>… (CS→EN)"
 
 ---
 
-## 4. Zbývající práce — ✅ hotovo (session 2)
+## 4. Zbývající práce — ✅ hotovo
 
 Původní seznam 16 souborů (`08`, `40`, `41`, `42`, `43`, `51`, `52`, `62`–`70`) je **přeložený**.
 Session navíc našla **dva avatary, které v seznamu chyběly** (vedené jako hotové, protože měly
@@ -110,6 +111,23 @@ jako kánon; ```json``` bloky zůstaly shodné (až na lidsky čitelné popisné
 překládají i v předchozích dávkách); v EN souborech nezůstala česká věta — kontroluje
 `scripts/check-oasis-i18n.mjs`.
 
+### 4b. Druhá dávka — zkrácené české překlady (2026-11-05)
+
+Až kontrola parity ukázala, že **starší EN→CS překlady nejsou kompletní** (český modal
+ukazoval kratší text než anglický). Doplněno do plné parity:
+
+| id | profil | před | po |
+|---|---|---:|---:|
+| 50 | ZION The Last City | 35/56 nadpisů, 40 % | 56/56, 97 % |
+| 48 | Morpheus | 31/50, 43 % | 50/50, 97 % |
+| 47 | Trinity | 31/50, 51 % | 50/50, 97 % |
+| 46 | Neo | 44/53, 71 % | 53/53, 96 % |
+| 23 | King Arthur | chyběla sekce „You Are All Arthur" | doplněno |
+| 38 | Panna Maria | chyběl blok „Mariin vzkaz ZIONu" | doplněno |
+| 39 | Subhadra | chyběla hlavička | doplněno |
+| 00 / 81 | Krishna-Maitreya / Longchen Rabjam | chybějící odkazy | doplněno |
+| 44 / 45 | Hiranyagarbha / Kalki | odkazy na nekanonické soubory | srovnáno s kánonem |
+
 **Kontrola jedním příkazem:**
 
 ```bash
@@ -118,7 +136,8 @@ node apps/website-v2.9/scripts/check-oasis-i18n.mjs --verbose
 ```
 
 Kontroluje: oba jazyky pro každého z 200 avatarů, EN bez českých vět, CS s češtinou, kánon pro
-duplicitní ID vybraný podle rosteru, a strukturu publikovaných souborů.
+duplicitní ID vybraný podle rosteru, **paritu struktury s kánonem** (počet nadpisů, code bloků,
+množina odkazů, zkrácení pod 85 %) a strukturu publikovaných souborů.
 
 ---
 

@@ -210,3 +210,29 @@ anglicky (dřív obojí anglicky), `44.en.md` a `45.en.md` plně anglicky.
 | 70 Hina | „Tkám kapa na Měsíci" ✅ | „I weave kapa on the Moon" ✅ |
 
 `pageerror: 0`.
+
+### 7.6 Dodatek (stejná session, druhá dávka) — zkrácené české překlady
+
+Kontrola parity odhalila, že **starší EN→CS překlady nejsou kompletní** — český modal
+ukazoval kratší text než anglický:
+
+| id | profil | před | po |
+|---|---|---:|---:|
+| 50 | ZION The Last City | 35/56 nadpisů, 40 % kánonu | **56/56, 97 %** |
+| 48 | Morpheus | 31/50, 43 % | **50/50, 97 %** |
+| 47 | Trinity | 31/50, 51 % | **50/50, 97 %** |
+| 46 | Neo | 44/53, 71 % | **53/53, 96 %** |
+| 23 | King Arthur | chyběla sekce „You Are All Arthur" | doplněno |
+| 38 | Panna Maria | chyběl blok „Mariin vzkaz ZIONu", sekce Zdroje byla jiná adaptace | doplněno |
+| 39 | Subhadra | chyběla hlavička (H1 + motto) | doplněno |
+| 00 | Krishna-Maitreya | 3 chybějící odkazy v „Související" | doplněno |
+| 81 | Longchen Rabjam | chyběl odkaz „Další: 82" | doplněno |
+| 44, 45 | Hiranyagarbha, Kalki | odkazy na 42/43 mířily na nekanonické soubory | srovnáno s kánonem |
+
+**Checker je rozšířený:** `check-oasis-i18n.mjs` teď u každého z 200 párů porovnává
+**počet nadpisů, počet code bloků, množinu odkazů a zkrácení pod 85 %** — kondenzovaný
+překlad už neprojde. Stav: **0 problémů / 200 párů**.
+
+Live: 400/400 souborů 200, `50.cs.md` 9,6 kB → **23,8 kB**; headless test v CS modalu
+potvrdil nové sekce („Meditace obléhání", „Volba červené", „Symbol trojného uzlu",
+„Stát se Vyvoleným"), 0 pageerror.
