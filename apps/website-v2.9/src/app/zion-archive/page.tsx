@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowRight,
+  BookMarked,
   BookOpen,
   Compass,
   Download,
@@ -31,10 +32,11 @@ import NirvanaPanel from './panels/NirvanaPanel';
 import PlanPanel from './panels/PlanPanel';
 import SouvislostiPanel from './panels/SouvislostiPanel';
 import StazeniPanel from './panels/StazeniPanel';
+import MojePanel from './panels/MojePanel';
 import type { Lang } from './panels/shared';
 import { LIBRARY_STATS, READER_BOOKS } from './library-index';
 
-type SectionId = 'cesta' | 'knihovna' | 'stazeni' | 'kniha' | 'nirvana' | 'plan-v33' | 'souvislosti';
+type SectionId = 'cesta' | 'knihovna' | 'moje' | 'stazeni' | 'kniha' | 'nirvana' | 'plan-v33' | 'souvislosti';
 
 const SECTIONS: {
   id: SectionId;
@@ -44,6 +46,7 @@ const SECTIONS: {
 }[] = [
   { id: 'cesta', label: { cs: 'Knihy a pořadí', en: 'Books & reading order' }, icon: Compass, rc: '6, 182, 212' },
   { id: 'knihovna', label: { cs: 'Knihovna', en: 'Library' }, icon: Library, rc: '236, 72, 153' },
+  { id: 'moje', label: { cs: 'Moje knihovna', en: 'My library' }, icon: BookMarked, rc: '6, 182, 212' },
   { id: 'stazeni', label: { cs: 'Ke stažení', en: 'Downloads' }, icon: Download, rc: '52, 211, 153' },
   { id: 'kniha', label: { cs: 'Maitreya', en: 'Maitreya' }, icon: BookOpen, rc: '252, 209, 22' },
   { id: 'nirvana', label: { cs: 'Nirvana', en: 'Nirvana' }, icon: Sun, rc: '251, 146, 60' },
@@ -488,6 +491,13 @@ export default function ZionArchivePage() {
               >
                 {active === 'cesta' && <CestaPanel lang={l} />}
                 {active === 'knihovna' && <KnihovnaPanel lang={l} />}
+                {active === 'moje' && (
+                  <MojePanel
+                    lang={l}
+                    passLabel={passInfo ? passLabel : null}
+                    passVia={passInfo?.via ?? null}
+                  />
+                )}
                 {active === 'stazeni' && <StazeniPanel lang={l} />}
                 {active === 'kniha' && <KnihaPanel lang={l} />}
                 {active === 'nirvana' && <NirvanaPanel lang={l} />}

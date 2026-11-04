@@ -1,0 +1,45 @@
+{
+  "operation": "CUT only",
+  "panels": [
+    {
+      "wall": 1,
+      "stencil_bridges": 2,
+      "new_bridge_width_mm": 1.2,
+      "connected_after_0_3mm_kerf": true
+    },
+    {
+      "wall": 2,
+      "stencil_bridges": 2,
+      "new_bridge_width_mm": 1.2,
+      "connected_after_0_3mm_kerf": true
+    },
+    {
+      "wall": 3,
+      "stencil_bridges": 4,
+      "new_bridge_width_mm": 1.2,
+      "connected_after_0_3mm_kerf": true
+    },
+    {
+      "wall": 4,
+      "stencil_bridges": 6,
+      "new_bridge_width_mm": 1.2,
+      "connected_after_0_3mm_kerf": true
+    },
+    {
+      "wall": 5,
+      "stencil_bridges": 5,
+      "new_bridge_width_mm": 1.2,
+      "connected_after_0_3mm_kerf": true
+    },
+    {
+      "wall": 6,
+      "stencil_bridges": 1,
+      "new_bridge_width_mm": 1.2,
+      "connected_after_0_3mm_kerf": true
+    }
+  ],
+  "changed_only_lower_bands": true,
+  "wall4": "ZION / TERRA NOVA",
+  "wall5": "Království / srdce",
+  "physical_cut_test": false
+}

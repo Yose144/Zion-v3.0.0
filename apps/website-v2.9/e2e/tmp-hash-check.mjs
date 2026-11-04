@@ -1,0 +1,15 @@
+import { chromium } from 'playwright';
+const base = 'http://127.0.0.1:3123';
+const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const ctx = await browser.newContext();
+const page = await ctx.newPage();
+page.on('console', (m) => console.log('[browser]', m.text()));
+await page.goto(base + '/zion-archive', { waitUntil: 'networkidle', timeout: 180000 });
+await page.evaluate(async (code) => { await fetch('/api/archive/access', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ code })}); }, 'ZAP-TEST-LOCAL-1234');
+await page.goto(base + '/zion-archive/nirvana/cist#01-Prvni-Paprsek', { waitUntil: 'networkidle', timeout: 180000 });
+console.log('immediately:', await page.evaluate(() => ({ href: location.href, hash: location.hash })));
+await page.waitForTimeout(1500);
+console.log('after 1.5s:', await page.evaluate(() => ({ href: location.href, hash: location.hash })));
+console.log('h2:', (await page.locator('h2').first().innerText()).trim());
+console.log('active toc:', await page.locator('button.bg-white\\/10').first().innerText().catch(() => 'none'));
+await browser.close();

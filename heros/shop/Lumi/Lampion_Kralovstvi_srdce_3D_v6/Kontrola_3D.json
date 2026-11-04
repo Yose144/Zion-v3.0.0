@@ -1,0 +1,63 @@
+{
+  "source": "Lucerna_A3_POUZE_REZ_1na1.svg",
+  "simplification": false,
+  "units": "mm; GLB meters",
+  "parts": [
+    {
+      "part": "Srdce v lotosu · ÓM",
+      "watertight": true,
+      "holes": 73,
+      "triangles": 18808,
+      "volume_mm3": 16182.0259
+    },
+    {
+      "part": "Květ života · Jin-jang",
+      "watertight": true,
+      "holes": 84,
+      "triangles": 22848,
+      "volume_mm3": 16316.8662
+    },
+    {
+      "part": "Lotos · Peace",
+      "watertight": true,
+      "holes": 78,
+      "triangles": 22188,
+      "volume_mm3": 16511.2267
+    },
+    {
+      "part": "Strom života · ZION / TERRA NOVA",
+      "watertight": true,
+      "holes": 120,
+      "triangles": 22492,
+      "volume_mm3": 17403.9339
+    },
+    {
+      "part": "Srdcová mandala · Království srdce",
+      "watertight": true,
+      "holes": 108,
+      "triangles": 19328,
+      "volume_mm3": 16763.3017
+    },
+    {
+      "part": "Hiranjagarbha · Slunce",
+      "watertight": true,
+      "holes": 80,
+      "triangles": 25188,
+      "volume_mm3": 16170.2497
+    },
+    {
+      "part": "Vršek",
+      "watertight": false,
+      "holes": 97,
+      "triangles": 111544,
+      "volume_mm3": 11417.4243
+    },
+    {
+      "part": "Dno",
+      "watertight": true,
+      "holes": 12,
+      "triangles": 252,
+      "volume_mm3": 37287.7876
+    }
+  ]
+}

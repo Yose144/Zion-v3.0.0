@@ -1,0 +1,12 @@
+KRÁLOVSTVÍ SRDCE - KOMPLETNÍ VÝROBNÍ PODKLADY
+
+1. Otevři 03_NAVOD/Navod_vyroba_a_montaz.pdf.
+2. Do laserového programu importuj JEDEN soubor ze složky 01_REZ: SVG (doporučeno) NEBO DXF. Oba obsahují stejnou geometrii; neimportuj oba zároveň.
+3. Import v mm, 100 %. Pouze průchozí řez, žádný gravír.
+4. Nejdříve test materiálu a spojů, potom celý kus.
+
+A3 420 x 297 mm; nominální překližka 3 mm; 6 stěn + vršek + dno + testovací proužek.
+Strom života: ZION / TERRA NOVA. Srdcová mandala: Království / srdce.
+Digitálně ověřené podklady pro zkušební řez; fyzický výpal a tepelná zkouška s plamenem zatím neproběhly.
+
+PRO AI: přečti NAVOD_PRO_AI.md v kořeni ZIPu. Obsahuje přesné rozměry, pravidla úprav a příkaz pro automatickou kontrolu.

@@ -107,6 +107,10 @@ export default function BookReader({ book }: { book: BookDef }) {
   const [searching, setSearching] = useState(false);
   const searchCache = useRef<Record<string, string>>({});
   const settingsRef = useRef<HTMLDivElement>(null);
+  // URL hash is only written after a user chapter change — writing it on the
+  // first render would overwrite a deep link (#chapter) with the index before
+  // the hash listener has applied it.
+  const userNavigated = useRef(false);
   const bookmarks = useBookmarks(book.id);
   const download = downloadForBook(book.id);
 
@@ -183,6 +187,7 @@ export default function BookReader({ book }: { book: BookDef }) {
       const next = event.key === 'ArrowRight' ? chapters[index + 1] : chapters[index - 1];
       if (!next) return;
       event.preventDefault();
+      userNavigated.current = true;
       setSelectedChapter(next.slug);
       setActivePart(next.part);
       setExpanded((prev) => ({ ...prev, [next.part]: true }));
@@ -337,6 +342,7 @@ export default function BookReader({ book }: { book: BookDef }) {
 
   useEffect(() => {
     if (typeof window === 'undefined' || !selectedChapter) return;
+    if (!userNavigated.current) return; // keep the incoming deep link intact
     const currentHash = window.location.hash.replace('#', '');
     if (currentHash !== selectedChapter) {
       window.history.replaceState(null, '', `#${selectedChapter}`);
@@ -394,6 +400,7 @@ export default function BookReader({ book }: { book: BookDef }) {
   }, [selectedChapter, currentChapter, l, book, singleDoc]);
 
   const handleChapterSelect = (slug: string, part: number) => {
+    userNavigated.current = true;
     setSelectedChapter(slug);
     setActivePart(part);
     setExpanded((prev) => ({ ...prev, [part]: true }));

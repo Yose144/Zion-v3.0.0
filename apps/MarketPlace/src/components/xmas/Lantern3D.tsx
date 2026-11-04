@@ -1,28 +1,28 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Box, Loader2, Rotate3d, TriangleAlert } from 'lucide-react';
+import { Box, Loader2, Maximize2, Rotate3d, TriangleAlert } from 'lucide-react';
 import { useLangT } from '@/lib/useTranslation';
 
 /**
- * Slot pro 3D model lampionu.
+ * 3D náhled lampionu Království srdce.
  *
- * Záměr: až bude `.glb` hotový, jen se nahraje do `public/models/` a **nic
- * v kódu se nemění** — komponenta si dostupnost ověří HEAD requestem.
+ * Model: `public/models/lampion-kralovstvi-srdce.glb` (8 dílů, ~236 k trojúhelníků,
+ * reálné míry z A3 v6, Y-up, metry). Když soubor chybí, ukáže se „připravujeme"
+ * — díky tomu jde model vyměnit bez zásahu do kódu.
  *
- * Proč click-to-load: `three` je ~600 kB. Načítat ho při každém otevření
- * detailu (a to i lidem, kteří se jen přišli podívat na cenu) by zabilo
- * LCP. Proto se stáhne až po stisku tlačítka; do té doby je vidět plakát.
+ * Proč click-to-load: `three` + postprocessing jsou ~700 kB. Načítat je při
+ * každém otevření detailu (i lidem, co se přišli jen podívat na cenu) by zabilo
+ * LCP. Do kliknutí je vidět fotka a tlačítko.
  *
- * Ovládání je vlastní (tažení = rotace, kolečko = přiblížení), ne OrbitControls
- * — ušetří to další chunk a chování je předvídatelné i na dotyku.
+ * Vizuál drží jazyk marketu (tmavá plocha, zlato, rasta linka) — galaxie za
+ * lampionem, teplé světlo jako od svíčky uvnitř, jemný bloom na prosvícených
+ * výřezech, prachové částečky a podstavec se světelným odleskem.
  */
 type Phase = 'idle' | 'checking' | 'loading' | 'ready' | 'missing' | 'error';
 
 interface Props {
-  /** cesta k modelu, např. /models/lampion-kralovstvi-srdce.glb */
   modelUrl: string;
-  /** statický náhled, který se ukazuje před načtením 3D */
   poster: string;
   posterAlt?: string;
 }
@@ -31,15 +31,23 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
   const { lang } = useLangT();
   const cs = lang === 'cs';
   const [phase, setPhase] = useState<Phase>('idle');
+  const [progress, setProgress] = useState(0);
+  const [hintVisible, setHintVisible] = useState(true);
   const mountRef = useRef<HTMLDivElement | null>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => () => cleanupRef.current?.(), []);
 
+  const toggleFullscreen = useCallback(() => {
+    const host = mountRef.current?.parentElement;
+    if (!host) return;
+    if (document.fullscreenElement) document.exitFullscreen?.();
+    else host.requestFullscreen?.().catch(() => {});
+  }, []);
+
   const start = useCallback(async () => {
     setPhase('checking');
 
-    // 1) Existuje model? Když ne, ukážeme „připravujeme" místo chyby.
     let exists = false;
     try {
       const res = await fetch(modelUrl, { method: 'HEAD', cache: 'no-store' });
@@ -56,37 +64,143 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
     try {
       const THREE = await import('three');
       const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
+      const { RoomEnvironment } = await import('three/examples/jsm/environments/RoomEnvironment.js');
+
       const host = mountRef.current;
       if (!host) return;
 
-      const width = host.clientWidth || 640;
-      const height = host.clientHeight || 420;
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
+      const wide = window.innerWidth >= 900;
+      const useBloom = wide && !saveData;
+
+      const width = host.clientWidth || 800;
+      const height = host.clientHeight || 500;
 
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-      camera.position.set(0, 0.9, 3.4);
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      const camera = new THREE.PerspectiveCamera(34, width / height, 0.05, 100);
+      camera.position.set(0, 0.1, 0.6);
+      camera.lookAt(0, 0, 0);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
       renderer.setSize(width, height);
       renderer.outputColorSpace = THREE.SRGBColorSpace;
-      host.appendChild(renderer.domElement);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 0.92;
       renderer.domElement.style.touchAction = 'none';
       renderer.domElement.style.cursor = 'grab';
+      host.appendChild(renderer.domElement);
 
-      // Světla: teplé „svíčkové" světlo zespodu (lampion svítí), chladný
-      // doplněk shora, ať je vidět gravírování.
-      scene.add(new THREE.HemisphereLight(0xfff1d0, 0x141210, 1.15));
-      const key = new THREE.DirectionalLight(0xffd98a, 2.1);
-      key.position.set(2.5, 3.5, 2.5);
+      // ── Prostředí pro PBR odlesky (dřevo + kov) ──────────────────────
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      const envRT = pmrem.fromScene(new RoomEnvironment(), 0.04);
+      scene.environment = envRT.texture;
+      scene.environmentIntensity = 0.42;
+
+      // ── Světla: svíčka uvnitř, klíčové zlato shora, chladný rim ──────
+      scene.add(new THREE.HemisphereLight(0xfff0d2, 0x0a0a0c, 0.4));
+
+      const key = new THREE.DirectionalLight(0xffd089, 1.25);
+      key.position.set(1.6, 2.4, 1.8);
       scene.add(key);
-      const rim = new THREE.DirectionalLight(0x88aaff, 0.55);
-      rim.position.set(-3, 1.5, -2.5);
-      scene.add(rim);
-      const inner = new THREE.PointLight(0xffb347, 1.8, 6);
-      inner.position.set(0, 0.15, 0);
-      scene.add(inner);
 
+      const rim = new THREE.DirectionalLight(0x7fa8ff, 0.7);
+      rim.position.set(-1.8, 0.9, -1.6);
+      scene.add(rim);
+
+      const candle = new THREE.PointLight(0xffa63c, 1.1, 0.9, 2);
+      candle.position.set(0, 0.02, 0);
+      scene.add(candle);
+
+      // ── Galaxie: hvězdy + jemný prach ────────────────────────────────
+      const galaxyGroup = new THREE.Group();
+      scene.add(galaxyGroup);
+
+      const makeStars = (count: number, radius: number, size: number, color: number) => {
+        const pos = new Float32Array(count * 3);
+        for (let i = 0; i < count; i++) {
+          // rovnoměrně na kouli, ale s hustším pásem (mléčná dráha)
+          const u = Math.random() * 2 - 1;
+          const theta = Math.random() * Math.PI * 2;
+          const r = radius * (0.75 + Math.random() * 0.5);
+          const band = 1 - Math.abs(u) * 0.55;
+          const su = u * band;
+          const s = Math.sqrt(Math.max(0, 1 - su * su));
+          pos[i * 3] = r * s * Math.cos(theta);
+          pos[i * 3 + 1] = r * su;
+          pos[i * 3 + 2] = r * s * Math.sin(theta);
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        const mat = new THREE.PointsMaterial({
+          color,
+          size,
+          sizeAttenuation: true,
+          transparent: true,
+          opacity: 0.9,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        });
+        return new THREE.Points(geo, mat);
+      };
+
+      const starsFar = makeStars(2600, 14, 0.028, 0xd9e4ff);
+      const starsNear = makeStars(700, 7, 0.05, 0xffe3b0);
+      galaxyGroup.add(starsFar, starsNear);
+
+      // prachové částečky kolem lampionu
+      const dustCount = reducedMotion ? 0 : 90;
+      let dust: import('three').Points | null = null;
+      let dustBase: Float32Array | null = null;
+      if (dustCount > 0) {
+        const dpos = new Float32Array(dustCount * 3);
+        dustBase = new Float32Array(dustCount * 3);
+        for (let i = 0; i < dustCount; i++) {
+          const r = 0.22 + Math.random() * 0.5;
+          const a = Math.random() * Math.PI * 2;
+          dpos[i * 3] = Math.cos(a) * r;
+          dpos[i * 3 + 1] = (Math.random() - 0.5) * 0.7;
+          dpos[i * 3 + 2] = Math.sin(a) * r;
+          dustBase.set([dpos[i * 3], dpos[i * 3 + 1], dpos[i * 3 + 2]], i * 3);
+        }
+        const dgeo = new THREE.BufferGeometry();
+        dgeo.setAttribute('position', new THREE.BufferAttribute(dpos, 3));
+        dust = new THREE.Points(
+          dgeo,
+          new THREE.PointsMaterial({
+            color: 0xffcf8a,
+            size: 0.012,
+            transparent: true,
+            opacity: 0.55,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+          }),
+        );
+        scene.add(dust);
+      }
+
+      // ── Odlesk pod lampionem (jemný světelný disk) ──────────────────
+      const glowCanvas = document.createElement('canvas');
+      glowCanvas.width = glowCanvas.height = 256;
+      const gctx = glowCanvas.getContext('2d')!;
+      const grad = gctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+      grad.addColorStop(0, 'rgba(255,186,92,0.55)');
+      grad.addColorStop(0.45, 'rgba(255,150,60,0.16)');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      gctx.fillStyle = grad;
+      gctx.fillRect(0, 0, 256, 256);
+      const glowTex = new THREE.CanvasTexture(glowCanvas);
+      const glow = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.05, 1.05),
+        new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+      );
+      glow.rotation.x = -Math.PI / 2;
+      glow.position.y = -0.4;
+      scene.add(glow);
+
+      // ── Model ───────────────────────────────────────────────────────
       const pivot = new THREE.Group();
       scene.add(pivot);
 
@@ -96,14 +210,30 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
       let dragging = false;
       let lastX = 0;
       let lastY = 0;
-      let spin = 0.004;
+      let velY = reducedMotion ? 0 : 0.0028;
+      let velX = 0;
+      let autoRotate = !reducedMotion;
+      let targetZ = camera.position.z;
+      let minZ = 0.2;
+      let maxZ = 2.0;
+      let interacted = false;
+      let visible = true;
 
       const onDown = (e: PointerEvent) => {
         dragging = true;
+        autoRotate = false;
         lastX = e.clientX;
         lastY = e.clientY;
         renderer.domElement.style.cursor = 'grabbing';
-        renderer.domElement.setPointerCapture(e.pointerId);
+        try {
+          renderer.domElement.setPointerCapture(e.pointerId);
+        } catch {
+          /* ignore */
+        }
+        if (!interacted) {
+          interacted = true;
+          setHintVisible(false);
+        }
       };
       const onMove = (e: PointerEvent) => {
         if (!dragging) return;
@@ -111,8 +241,10 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
         const dy = e.clientY - lastY;
         lastX = e.clientX;
         lastY = e.clientY;
-        pivot.rotation.y += dx * 0.008;
-        pivot.rotation.x = Math.max(-0.6, Math.min(0.6, pivot.rotation.x + dy * 0.005));
+        velY = dx * 0.006;
+        velX = dy * 0.003;
+        pivot.rotation.y += velY;
+        pivot.rotation.x = Math.max(-0.45, Math.min(0.45, pivot.rotation.x + velX));
       };
       const onUp = (e: PointerEvent) => {
         dragging = false;
@@ -120,82 +252,201 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
         try {
           renderer.domElement.releasePointerCapture(e.pointerId);
         } catch {
-          /* prohlížeč mohl pointer už uvolnit */
+          /* ignore */
         }
       };
       const onWheel = (e: WheelEvent) => {
         e.preventDefault();
-        camera.position.z = Math.max(1.8, Math.min(6, camera.position.z + e.deltaY * 0.0016));
+        targetZ = Math.max(minZ, Math.min(maxZ, targetZ + e.deltaY * 0.0011));
       };
-
-      let resizeObserver: ResizeObserver | null = null;
-
-      loader.load(
-        modelUrl,
-        (gltf) => {
-          if (disposed) return;
-          const model = gltf.scene;
-
-          // Vycentrovat a zmenšit/natáhnout tak, aby model sedl do záběru
-          // bez ohledu na to, v jakých jednotkách byl exportovaný.
-          const box = new THREE.Box3().setFromObject(model);
-          const size = box.getSize(new THREE.Vector3());
-          const center = box.getCenter(new THREE.Vector3());
-          model.position.sub(center);
-          const maxDim = Math.max(size.x, size.y, size.z) || 1;
-          const scale = 1.9 / maxDim;
-          model.scale.setScalar(scale);
-          model.position.multiplyScalar(scale);
-          pivot.add(model);
-
-          const animate = () => {
-            raf = requestAnimationFrame(animate);
-            if (!dragging) pivot.rotation.y += spin;
-            renderer.render(scene, camera);
-          };
-          animate();
-          setPhase('ready');
-
-          resizeObserver = new ResizeObserver(() => {
-            const w = host.clientWidth || width;
-            const h = host.clientHeight || height;
-            camera.aspect = w / h;
-            camera.updateProjectionMatrix();
-            renderer.setSize(w, h);
-          });
-          resizeObserver.observe(host);
-        },
-        undefined,
-        () => {
-          if (!disposed) setPhase('error');
-        },
-      );
+      const onDouble = () => {
+        pivot.rotation.set(0, 0, 0);
+        targetZ = maxZ / 1.9 * 1.0;
+        velX = 0;
+        velY = reducedMotion ? 0 : 0.0028;
+        autoRotate = !reducedMotion;
+      };
 
       renderer.domElement.addEventListener('pointerdown', onDown);
       renderer.domElement.addEventListener('pointermove', onMove);
       renderer.domElement.addEventListener('pointerup', onUp);
       renderer.domElement.addEventListener('pointercancel', onUp);
       renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
+      renderer.domElement.addEventListener('dblclick', onDouble);
 
+      // ── Postprocessing (bloom jen na širokých obrazovkách) ──────────
+      type Composer = { render: () => void; setSize: (w: number, h: number) => void; dispose: () => void };
+      let composer: Composer | null = null;
+
+      const onResize = () => {
+        const w = host.clientWidth || width;
+        const h = host.clientHeight || height;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+        composer?.setSize(w, h);
+      };
+      const resizeObserver = new ResizeObserver(onResize);
+      resizeObserver.observe(host);
+
+      const io = new IntersectionObserver((entries) => {
+        visible = entries[0]?.isIntersecting ?? true;
+      }, { threshold: 0.05 });
+      io.observe(host);
+
+      loader.load(
+        modelUrl,
+        async (gltf) => {
+          if (disposed) return;
+          const model = gltf.scene;
+
+          // Vycentrovat podle bounding boxu a zmenšit do záběru — model je
+          // v metrech (126 mm výška), takže bez normalizace by byl titěrný.
+          const box = new THREE.Box3().setFromObject(model);
+          const size = box.getSize(new THREE.Vector3());
+          const center = box.getCenter(new THREE.Vector3());
+          model.position.sub(center);
+
+          // Model je v metrech (0,14 × 0,126 × 0,121 m) — NEškálujeme ho,
+          // jen vycentrujeme a kameru dopočítáme z bounding sphere, aby sedl
+          // do záběru bez ohledu na exportní jednotky.
+          const sphere = box.getBoundingSphere(new THREE.Sphere());
+          const radius = Math.max(sphere.radius, 0.02);
+          const fitDist = (radius / Math.sin((camera.fov * Math.PI) / 180 / 2)) * 1.25;
+          camera.position.set(0, radius * 0.28, fitDist);
+          targetZ = fitDist;
+          minZ = fitDist * 0.55;
+          maxZ = fitDist * 1.9;
+
+          // podstavec a prach držíme ve stejných proporcích jako model
+          glow.scale.setScalar(radius * 3.1);
+          glow.position.y = -radius * 1.08;
+          if (dust) dust.scale.setScalar(Math.max(1, radius * 3.4));
+
+          model.traverse((obj) => {
+            const mesh = obj as import('three').Mesh;
+            if (!mesh.isMesh) return;
+            mesh.castShadow = false;
+            mesh.receiveShadow = false;
+            // Dřevo je nasvícené zevnitř — necháme PBR, jen srovnáme hrubost,
+            // aby výřezy nebyly „plastové".
+            const mat = mesh.material as import('three').MeshStandardMaterial;
+            if (mat && 'roughness' in mat) {
+              mat.roughness = Math.min(1, (mat.roughness ?? 0.7) * 1.05);
+              mat.envMapIntensity = 0.6;
+            }
+          });
+
+          pivot.add(model);
+
+          if (useBloom) {
+            const { EffectComposer } = await import('three/examples/jsm/postprocessing/EffectComposer.js');
+            const { RenderPass } = await import('three/examples/jsm/postprocessing/RenderPass.js');
+            const { UnrealBloomPass } = await import('three/examples/jsm/postprocessing/UnrealBloomPass.js');
+            const { OutputPass } = await import('three/examples/jsm/postprocessing/OutputPass.js');
+
+            const comp = new EffectComposer(renderer);
+            comp.addPass(new RenderPass(scene, camera));
+            const bloom = new UnrealBloomPass(new THREE.Vector2(width, height), 0.34, 0.55, 0.95);
+            comp.addPass(bloom);
+            comp.addPass(new OutputPass());
+            comp.setSize(width, height);
+            composer = comp as unknown as Composer;
+          }
+
+          const clock = new THREE.Clock();
+
+          const animate = () => {
+            raf = requestAnimationFrame(animate);
+            if (!visible) return;
+
+            const t = clock.getElapsedTime();
+
+            // setrvačnost po tažení
+            if (!dragging) {
+              velY *= 0.94;
+              velX *= 0.9;
+              pivot.rotation.y += velY;
+              if (autoRotate) pivot.rotation.y += 0.0016;
+              pivot.rotation.x = Math.max(-0.45, Math.min(0.45, pivot.rotation.x + velX));
+            }
+
+            // svíčka „dýchá"
+            candle.intensity = 2.25 + Math.sin(t * 2.1) * 0.16 + Math.sin(t * 5.3) * 0.06;
+            candle.position.x = Math.sin(t * 1.7) * 0.004;
+            candle.position.z = Math.cos(t * 1.3) * 0.004;
+
+            glow.material.opacity = 0.75 + Math.sin(t * 1.9) * 0.08;
+
+            // hvězdy rotují pomalu, prach stoupá
+            galaxyGroup.rotation.y = t * 0.008;
+            if (dust && dustBase) {
+              const pos = dust.geometry.getAttribute('position') as import('three').BufferAttribute;
+              for (let i = 0; i < pos.count; i++) {
+                const y = pos.getY(i) + 0.0006;
+                pos.setY(i, y > 0.42 ? -0.42 : y);
+                pos.setX(i, dustBase[i * 3] + Math.sin(t * 0.6 + i) * 0.012);
+              }
+              pos.needsUpdate = true;
+            }
+
+            camera.position.z += (targetZ - camera.position.z) * 0.08;
+            camera.position.y = fitDist * 0.22 + Math.sin(t * 0.5) * fitDist * 0.01;
+            camera.lookAt(0, 0, 0);
+
+            if (composer) composer.render();
+            else renderer.render(scene, camera);
+          };
+          animate();
+          setPhase('ready');
+
+          cleanupRef.current = () => {
+            disposed = true;
+            cancelAnimationFrame(raf);
+            resizeObserver.disconnect();
+            io.disconnect();
+            renderer.domElement.removeEventListener('pointerdown', onDown);
+            renderer.domElement.removeEventListener('pointermove', onMove);
+            renderer.domElement.removeEventListener('pointerup', onUp);
+            renderer.domElement.removeEventListener('pointercancel', onUp);
+            renderer.domElement.removeEventListener('wheel', onWheel);
+            renderer.domElement.removeEventListener('dblclick', onDouble);
+            composer?.dispose();
+            envRT.dispose();
+            pmrem.dispose();
+            glowTex.dispose();
+            renderer.dispose();
+            renderer.domElement.remove();
+            scene.traverse((o) => {
+              const m = o as import('three').Mesh;
+              if (m.geometry) m.geometry.dispose();
+            });
+            scene.clear();
+          };
+        },
+        (evt) => {
+          if (evt.total) setProgress(Math.round((evt.loaded / evt.total) * 100));
+        },
+        () => {
+          if (!disposed) setPhase('error');
+        },
+      );
+
+      // úklid i pro případ, že model nedorazí
       cleanupRef.current = () => {
         disposed = true;
         cancelAnimationFrame(raf);
-        resizeObserver?.disconnect();
-        renderer.domElement.removeEventListener('pointerdown', onDown);
-        renderer.domElement.removeEventListener('pointermove', onMove);
-        renderer.domElement.removeEventListener('pointerup', onUp);
-        renderer.domElement.removeEventListener('pointercancel', onUp);
-        renderer.domElement.removeEventListener('wheel', onWheel);
+        resizeObserver.disconnect();
+        io.disconnect();
         renderer.dispose();
         renderer.domElement.remove();
-        scene.clear();
       };
     } catch {
       setPhase('error');
     }
   }, [modelUrl]);
 
-  const showPoster = phase === 'idle' || phase === 'checking' || phase === 'missing' || phase === 'error';
+  const showPoster = phase !== 'ready';
 
   return (
     <div className="space-y-3">
@@ -205,28 +456,68 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
           {cs ? 'Lampion ve 3D' : 'Lantern in 3D'}
         </h2>
         <p className="text-xs text-gray-500">
-          {cs ? 'Táhni pro otočení · kolečko přiblíží' : 'Drag to rotate · scroll to zoom'}
+          {cs ? 'Táhni pro otočení · kolečko přiblíží · dvojklik vrátí pohled' : 'Drag to rotate · scroll to zoom · double-click to reset'}
         </p>
       </div>
 
-      <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-white/10 bg-black/40">
-        {/* Plakát — vidí ho každý, kdo 3D nenačte */}
+      <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-white/10 bg-[#05060a]">
+        {/* galaxie pod plátnem — čistě CSS, ať je pozadí i před načtením modelu */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-90"
+          style={{
+            background:
+              'radial-gradient(60% 55% at 50% 62%, rgba(255,168,72,0.16), transparent 70%),' +
+              'radial-gradient(45% 40% at 18% 18%, rgba(96,130,255,0.16), transparent 72%),' +
+              'radial-gradient(50% 45% at 84% 22%, rgba(255,90,120,0.10), transparent 72%),' +
+              'linear-gradient(180deg, #05060a 0%, #080a12 55%, #05060a 100%)',
+          }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            backgroundImage:
+              'radial-gradient(1px 1px at 12% 24%, #fff 0%, transparent 100%),' +
+              'radial-gradient(1px 1px at 28% 68%, #fff 0%, transparent 100%),' +
+              'radial-gradient(1.5px 1.5px at 47% 18%, #ffe6b0 0%, transparent 100%),' +
+              'radial-gradient(1px 1px at 63% 78%, #fff 0%, transparent 100%),' +
+              'radial-gradient(1px 1px at 81% 36%, #cfe0ff 0%, transparent 100%),' +
+              'radial-gradient(1.5px 1.5px at 92% 64%, #fff 0%, transparent 100%)',
+            backgroundSize: '340px 340px',
+          }}
+        />
+
         {showPoster && (
-          <>
-            <img
-              src={poster}
-              alt={posterAlt ?? (cs ? 'Lampion Království srdce' : 'Kingdom of the Heart lantern')}
-              loading="lazy"
-              className={`h-full w-full object-cover ${phase === 'error' || phase === 'missing' ? 'opacity-45' : ''}`}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-          </>
+          <img
+            src={poster}
+            alt={posterAlt ?? (cs ? 'Lampion Království srdce' : 'Kingdom of the Heart lantern')}
+            loading="lazy"
+            className={`relative h-full w-full object-cover ${
+              phase === 'missing' || phase === 'error' ? 'opacity-30' : 'opacity-70'
+            }`}
+          />
         )}
 
-        {/* Plátno pro three.js — mountuje se sem renderer */}
         <div ref={mountRef} className="absolute inset-0 [&>canvas]:h-full [&>canvas]:w-full" />
 
-        {/* Vrstva s akcí / stavem */}
+        {phase === 'ready' && (
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            aria-label={cs ? 'Celá obrazovka' : 'Fullscreen'}
+            className="absolute right-3 top-3 z-10 rounded-lg border border-white/15 bg-black/50 p-2 text-white/80 backdrop-blur-sm transition-colors hover:border-rasta-gold/50 hover:text-rasta-gold"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </button>
+        )}
+
+        {phase === 'ready' && hintVisible && (
+          <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-black/55 px-3 py-1.5 text-[11px] text-white/70 backdrop-blur-sm">
+            {cs ? 'Táhni pro otočení' : 'Drag to rotate'}
+          </div>
+        )}
+
         {phase !== 'ready' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center">
             {phase === 'idle' && (
@@ -234,15 +525,15 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
                 <button
                   type="button"
                   onClick={start}
-                  className="raised inline-flex items-center gap-2 rounded-xl border border-rasta-gold/45 bg-rasta-gold/15 px-5 py-2.5 text-sm font-bold text-rasta-gold transition-colors hover:bg-rasta-gold/25"
+                  className="inline-flex items-center gap-2 rounded-xl border border-rasta-gold/45 bg-rasta-gold/15 px-5 py-2.5 text-sm font-bold text-rasta-gold shadow-[0_0_30px_rgba(252,209,22,0.18)] transition-colors hover:bg-rasta-gold/25"
                 >
                   <Box className="h-4 w-4" />
-                  {cs ? 'Načíst 3D náhled' : 'Load the 3D preview'}
+                  {cs ? 'Otočit lampion ve 3D' : 'Spin the lantern in 3D'}
                 </button>
                 <p className="max-w-xs text-[11px] leading-snug text-gray-400">
                   {cs
-                    ? 'Model se stahuje až po kliknutí — kvůli rychlosti stránky.'
-                    : 'The model downloads only after you click — to keep the page fast.'}
+                    ? 'Model má 8 vyřezávaných dílů a stahuje se až po kliknutí — kvůli rychlosti stránky.'
+                    : 'The model has 8 carved parts and downloads only after you click — to keep the page fast.'}
                 </p>
               </>
             )}
@@ -254,9 +545,17 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
             )}
 
             {phase === 'loading' && (
-              <span className="inline-flex items-center gap-2 text-sm text-gray-300">
-                <Loader2 className="h-4 w-4 animate-spin" /> {cs ? 'Načítám 3D model…' : 'Loading the 3D model…'}
-              </span>
+              <div className="w-56 space-y-2">
+                <span className="inline-flex items-center gap-2 text-sm text-gray-300">
+                  <Loader2 className="h-4 w-4 animate-spin" /> {cs ? 'Načítám 3D model' : 'Loading the 3D model'}
+                </span>
+                <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-rasta-green via-rasta-gold to-rasta-red transition-[width] duration-200"
+                    style={{ width: `${Math.max(6, progress)}%` }}
+                  />
+                </div>
+              </div>
             )}
 
             {phase === 'missing' && (
@@ -292,8 +591,8 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
 
       <p className="text-[11px] leading-snug text-gray-500">
         {cs
-          ? 'Interaktivní náhled pro představu o tvaru a gravírování. Výrobní geometrii určuje technická dokumentace, ne 3D náhled.'
-          : 'An interactive preview of shape and engraving. Production geometry is defined by the technical documentation, not this preview.'}
+          ? 'Vizualizační model z technické dokumentace A3 v6 — osm dílů se skutečnými průchozími výřezy. Není to výrobní dokumentace ani podklad pro 3D tisk; fyzické lícování a bezpečnost svíčky ověřuje dílna.'
+          : 'A visualisation model from the A3 v6 technical drawings — eight parts with real through-cut ornaments. Not production documentation or a 3D-printing file; physical fit and candle safety are verified by the workshop.'}
       </p>
     </div>
   );

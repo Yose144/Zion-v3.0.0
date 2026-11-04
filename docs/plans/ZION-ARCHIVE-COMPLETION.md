@@ -269,3 +269,5 @@ Každý milník = vlastní report v `docs/3.2/REPORTS/` + záznam v `apps/websit
 - ✅ W7: e2e hubu s testovacím passem (5 testů, lokálně 5/5).
 - ✅ W5: „Začni tady" (3 vstupy) v knihovně.
 - ✅ W4: tisk/PDF kapitoly (print stylesheet).
+- ✅ Deep-link fix: fresh load na `#kapitola` už nepřepíše hash na index.
+- ✅ W3/Moje: osobní přehled `#moje` (pass, rozečtené, záložky, stažení).

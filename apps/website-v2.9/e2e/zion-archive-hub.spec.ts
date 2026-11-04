@@ -17,6 +17,7 @@ test.describe('Zion Archive hub (needs ARCHIVE_TEST_PASS)', () => {
   // do not compete for the same on-demand compile.
   test.describe.configure({ mode: 'serial' });
   test.skip(!PASS, 'ARCHIVE_TEST_PASS is not set');
+  test.setTimeout(120_000);
 
   test.beforeEach(async ({ context, baseURL }) => {
     await context.addCookies([
@@ -42,6 +43,18 @@ test.describe('Zion Archive hub (needs ARCHIVE_TEST_PASS)', () => {
     const panel = page.locator('section[data-panel="knihovna"]');
     await expect(panel).toBeVisible({ timeout: 20_000 });
     await expect(panel.locator('article')).toHaveCount(20, { timeout: 20_000 });
+  });
+
+  test('fresh deep link opens the chapter, not the index', async ({ page }) => {
+    await page.goto('/zion-archive/nirvana/cist#01-Prvni-Paprsek', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.zion-docs-prose', { timeout: 20_000 });
+    await page.waitForTimeout(1200);
+    expect(await page.evaluate(() => location.hash)).toBe('#01-Prvni-Paprsek');
+    await expect(page.locator('h2').first()).toContainText(/První paprsek/);
+    const progress = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('zion.archive.progress.v1') ?? '{}'),
+    );
+    expect(progress.nirvana.chapterSlug).toBe('01-Prvni-Paprsek');
   });
 
   test('front matter is not progress, first chapter is', async ({ page }) => {

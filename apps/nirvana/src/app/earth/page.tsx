@@ -355,6 +355,26 @@ export default function EarthPage() {
               </button>
             </div>
             <h2>{cs ? 'Vyber si hrdinu' : 'Pick your hero'}</h2>
+            {(() => {
+              // Nejsilnější hrdina z mistrovství — pochvala, ne bonus.
+              const entries = Object.entries(mastery)
+                .map(([key, value]) => ({ heroId: Number(key), value }))
+                .filter((entry) => Number.isFinite(entry.heroId) && entry.value.xp > 0)
+                .sort((a, b) => b.value.xp - a.value.xp);
+              const top = entries[0];
+              if (!top) return null;
+              const name = AVATARS.find((entry) => entry.id === top.heroId)?.name ?? `#${top.heroId}`;
+              const level = masteryLevel(top.value.xp);
+              return (
+                <p className="moba-best-hero">
+                  {cs ? 'Nejvěrnější hrdina' : 'Most played'}: <strong>{name}</strong>{' '}
+                  <span>
+                    {level.title[cs ? 'cs' : 'en']} · level {level.level} · {top.value.matches}{' '}
+                    {cs ? 'zápasů' : 'matches'}
+                  </span>
+                </p>
+              );
+            })()}
             <div className="moba-pick-grid">
               {STARTERS.map((id) => {
                 const entry = AVATARS.find((candidate) => candidate.id === id);
