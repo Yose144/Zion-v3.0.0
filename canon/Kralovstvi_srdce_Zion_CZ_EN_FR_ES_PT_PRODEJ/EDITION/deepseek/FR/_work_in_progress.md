@@ -1134,3 +1134,546 @@ Ils ne virent pas un tombeau vide — ou ils le virent, je ne le sais pas, cela 
 ## Copeau
 
 Ce chapitre a la plus grande dette de tout le livre. **J'ai écrit que je ne fus pas témoin de la résurrection — et puis j'ai écrit une phrase qui sonne comme si je l'avais été.** « Ils vinrent le lendemain travailler » est beau et c'est vrai des gens, mais ce n'est pas une preuve de ce qui arriva dans le tombeau. La différence entre « les gens ont changé » et « Dieu est ressuscité » est toute la différence entre l'histoire et la foi, et aucune barque ne l'a comblée. Je la laisse là. **Qui la balaie fait de l'évangile un reportage et de la foi une publicité.**
+---
+
+*Et puis vint un matin que je n'attendais pas — et qui me donna la phrase qui me tient jusqu'à aujourd'hui : les hauts-fonds.* → Les Hauts-Fonds
+
+
+---
+
+# IX · Les Hauts-Fonds
+
+> **CERNE IX** · le Kinneret près de Tibériade, le matin après une nuit sans prise
+> *Le lieu où la profondeur touche enfin le fond.*
+
+---
+
+## Récit
+
+Après tout cela ils retournèrent au travail.
+
+Non parce qu'ils ne croyaient pas. Parce qu'ils ne savaient pas quoi faire d'autre. C'est la chose la plus ordinaire du monde et je veux qu'elle soit écrite dans ce livre : **quand quelqu'un que des gens aimaient meurt, la deuxième semaine ils vont travailler.** Ce n'est pas une trahison. C'est la manière de rester vivant jusqu'à ce que quelque chose change.
+
+Simon dit : « Je vais à la pêche. » Et les autres dirent : « Nous venons avec toi. »
+
+Nous partîmes de nuit. Ce fut la pire nuit que j'aie vécue — et il n'y avait rien de dramatique. Ni vent, ni vague. Il faisait silence et chaud et les filets restaient vides. Six heures. Sept. Huit. Les hommes cessèrent de parler. Quelqu'un tenta une plaisanterie et personne ne rit, alors il y renonça.
+
+Vers le matin la lumière était grise et ils se tenaient sur la rive, où il n'y avait personne, à tirer les filets pour les nettoyer.
+
+Et alors quelqu'un sur la rive appela :
+
+**« Les enfants, n'avez-vous rien à manger ? »**
+
+C'est une question étrange, quand on y pense. Ce n'est pas « qui êtes-vous », ce n'est pas « que faites-vous ici ». C'est la question d'un homme qui veut manger — et qui sait que ceux de la barque ont du poisson, car c'est leur métier. Cela semblerait presque insensible, après tout cela.
+
+Ils répondirent : « Non, nous n'avons rien. »
+
+Et il dit : « Jetez le filet du côté droit de la barque et vous trouverez. »
+
+Ils le firent. Ils n'avaient aucune raison de le faire — jeter le filet du côté droit, c'est ce que fait un homme à qui on demande d'essayer quelque chose qui ne marche pas et qui n'a plus la force de discuter. Ils le remontèrent plein.
+
+À ce moment Jean dit à Pierre : **« C'est le Seigneur. »**
+
+Et Pierre — qui était toujours celui qui agissait avant de réfléchir — se ceignit de son manteau, car il était nu, et **sauta à l'eau.**
+
+Ce ne fut pas un saut courageux. Il y avait quatre-vingt-dix mètres jusqu'à la rive et il pouvait y aller en barque. Le saut à l'eau était le moyen le plus rapide d'atteindre quelqu'un qu'il voulait voir deux minutes plus tôt, et il ne comptait pas survivre à ces deux minutes sans bouger.
+
+L'eau était froide. Cela ne lui servit à rien.
+
+---
+
+Moi je restai près de la rive, car on m'avait tiré sur le sable.
+
+Et là je vis ce dont je me souviens le plus de toute cette matinée.
+
+Sur la rive brûlait **un feu de charbon de bois**. Et dessus il y avait un poisson et du pain. Près du feu se tenait lui, dans un manteau sale, les mains mouillées, et il ne disait rien.
+
+Le mot grec pour ce feu est *anthrakia* — un brasier de charbon de bois. Il n'apparaît dans les évangiles que **deux fois.** La première, la nuit où une servante reconnut Pierre près du feu dans la cour du grand prêtre, et où il dit trois fois qu'il ne connaissait pas cet homme. La seconde, ici.
+
+**Le même feu. Le même lieu de l'âme. Seulement un autre matin.**
+
+Quand tous eurent débarqué et déjeuné — et ce fut la chose la plus ordinaire que vous puissiez imaginer, du pain, du poisson et du silence — il se tourna vers Pierre et lui demanda trois fois la même chose :
+
+« Simon, fils de Jean, m'aimes-tu ? »
+
+Trois fois. Parce que trois fois on l'avait renié.
+
+Pierre répondit la troisième fois comme répond un homme à qui cela fait mal : « Seigneur, tu sais tout, tu sais que je t'aime. »
+
+Et il lui dit : « Pais mes brebis. »
+
+Non « gouverne ». Non « conduis ». **Pais.** C'est le métier du berger qui marche devant le troupeau, cherche l'herbe et l'eau et porte ce qui se fatigue.
+
+---
+
+En regardant cette scène depuis le sable, je remarquai un détail que seul un évangile mentionne et dont j'ose dire qu'il est le plus beau de tout le livre.
+
+**Le filet ne se déchira pas.**
+
+La veille les filets s'étaient déchirés. Ils se déchirent toujours — c'est normal, les filets se déchirent et se raccommodent. Mais cette nuit-là on y chargea cent cinquante-trois grands poissons et le filet resta entier.
+
+Je ne sais pas ce que cela veut dire. Je sais ce que cela voulut dire **pour moi** quand on me tira sur ce sable : qu'il est possible qu'une chose qui se déchire toujours ne se déchire pas une fois. Non parce qu'elle est meilleure. Parce qu'un autre la tenait.
+
+---
+
+Et puis arriva une chose que je n'attendais pas et que je porte avec moi tout le reste de ma vie.
+
+Il s'approcha de la barque. Il s'agenouilla dans l'eau peu profonde — là où la surface atteint la forêt et où le sable touche le fond — et **posa sa paume sur le plat-bord.**
+
+Un moment, rien. Il ne me regardait pas. Il regardait le lac derrière moi.
+
+Et puis il dit, à voix basse, comme cela :
+
+« Tu navigueras encore. »
+
+Ce ne fut pas une bénédiction. Ce ne fut pas une prophétie. Ce fut **un adieu à une chose qui avait fait son travail** — et l'aveu que la chose ne s'arrête pas là, parce qu'on en aura encore besoin.
+
+Pour la dernière fois dans ce livre je ne fus pas un instrument. Je ne fus pas un moyen de transport ni un symbole.
+
+Je fus **le lieu où l'on mangea du pain et du poisson sur la rive où l'on recommença.**
+
+---
+
+## De l'Écriture, de la tradition et de l'histoire
+
+- **Jn 21,1–19** — la scène entière : la nuit sans prise, la question depuis la rive, le filet du côté droit, les 153 poissons, le filet sans déchirure, Pierre sautant à l'eau, le feu de charbon, le pain et le poisson, la triple question et « pais mes brebis ».
+- **Jn 21,8** — « Car ils n'étaient pas loin de la terre, mais à environ **deux cents coudées**. » ~90 m.
+- **Jn 21,9.11** — **ἀνθρακιά** (*anthrakia*), brasier de charbon de bois. Dans tout le Nouveau Testament le mot apparaît **deux fois** : Jn 18,18 (le reniement de Pierre) et Jn 21,9 (ce matin). Le lien n'est pas fortuit et les exégètes le signalent depuis des siècles.
+- **Jn 21,11** — « cent cinquante-trois ». Le chiffre est délibérément concret dans le texte. Interprétations : (a) selon la zoologie antique il existait 153 espèces de poissons — le chiffre signifierait alors « toutes les espèces » ; (b) 153 est le nombre triangulaire de 17 (1+2+…+17) ; (c) des lectures gématriques. **Aucune n'est documentée comme intention de l'auteur.** Le texte donne le chiffre mais ne l'explique pas.
+- **Lc 24,13–35** — le chemin d'Emmaüs : les disciples marchent avec lui et **ne le reconnaissent pas** avant qu'il ne rompe le pain. Le même schéma qu'ici : la présence avant la reconnaissance.
+- **1 Co 15,3–8** — la liste des témoins. Pierre y est nommé le premier.
+- **« Pais mes brebis »** — *poimaine ta arnia / ta probata*. Image pastorale que Jésus emploie aussi ailleurs (Lc 15, Jn 10). Ce n'est pas une charge de pouvoir ; c'est une charge de **marcher devant le troupeau**.
+
+## Ancre de vérité
+
+| Ce qu'il y a dans le chapitre | Statut |
+|---|---|
+| La nuit sans prise, la question depuis la rive, le filet plein, les 153 poissons | **ÉCRITURE** — Jn 21,1–11 |
+| Le filet sans déchirure | **ÉCRITURE** — Jn 21,11 |
+| Le feu de charbon (*anthrakia*) pour la deuxième fois dans l'évangile | **ÉCRITURE + philologie** — concordance documentée avec Jn 18,18 |
+| La triple question, « pais mes brebis » | **ÉCRITURE** — Jn 21,15–17 |
+| La signification du nombre 153 | **NON DOCUMENTÉ** — le texte ne donne pas d'interprétation ; les lectures traditionnelles sont des hypothèses |
+| Que le charpentier revint à la barque et dit « tu navigueras encore » | **MYTHE** — image de ce livre |
+| Que la quille ne fut pas témoin de la résurrection mais du matin sur la rive | **MYTHE** — décision littéraire ; théologiquement ce n'est pas la même chose |
+| L'eau peu profonde comme image : la profondeur touche le fond | **MYTHE** — image de ce livre |
+
+## Mesure
+
+- **Distance de la rive** : **200 coudées ≈ 90 m** (Jn 21,8). Assez pour que celui qui est sur la rive ne distingue pas un visage, et peu pour entendre une voix.
+- **153 poissons** : le chiffre du texte. Pour comparer — une prise de travail sur le Kinneret se comptait en dizaines de kilos ; 153 « grands poissons » est une quantité qui remplirait deux barques.
+- **Profondeur près de la rive** : **1–3 m**. Dans les hauts-fonds on peut prendre un poisson à la main et tirer une barque sur le sable sans chevaux.
+- **Un brasier de charbon** : le charbon se brûle d'avance pour ne pas fumer. Le matin sur la rive c'est le signe que quelqu'un s'est levé **avant eux** et a préparé à manger.
+- **Deux cents coudées** = **90 m** = environ une minute de nage pour un homme fatigué dans une eau froide.
+- **Trois questions** : contre trois reniements (Jn 18,17.25.27 ; 13,38).
+
+## Copeau
+
+J'aimerais écrire que ce chapitre parle du pardon. Il en parle, mais pas seulement. Il y a en lui une chose que j'ai contournée et que je ne veux pas laisser sous la table : **Pierre fut rétabli, et pourtant selon la tradition il fut crucifié plus tard.** Le pardon de Jn 21 ne signifie pas qu'il n'arrivera rien à Pierre. Il signifie que cela arrivera **à quelqu'un qui est réconcilié.** C'est plus sombre et plus fort que la consolation que j'aurais pu écrire, et si je l'avais omise je vous aurais vendu un livre moins cher.
+
+---
+
+*La barque continua de naviguer. Mais je savais qu'un jour je cesserais d'être une barque — et que ce qui resterait de moi devrait porter plus que de l'eau.* → L'Ancre
+
+
+---
+
+# X · L'Ancre
+
+> **CERNE X** · la rive du Kinneret, siècle après siècle
+> *Une ancre qui va vers le haut n'est pas une ancre qui tient au fond.*
+
+---
+
+## Récit
+
+Une barque ne meurt pas dans la tempête.
+
+C'est la première chose que je veux dire là-dessus, car les gens pensent le contraire. Ils pensent qu'une barque finit sur un écueil, dans le feu des vagues, la quille fendue et l'équipage à la mer. Cela arrive. Mais la plupart des barques ne finissent pas ainsi. La plupart **s'usent**.
+
+S'user ressemble à ceci : un jour on la tire sur la rive et on ne la redescend plus. Non parce qu'elle est cassée. Parce qu'elle est vieille. Parce que les jointures ne tiennent plus et que personne n'a le temps de les calfater chaque année. Parce que quelqu'un en a construit une autre. Parce qu'il n'y a pas de travail pour elle.
+
+Et puis on la démonte. Pas entière — **le meilleur d'elle.** Les avirons, les crochets, les cordes, les clous de fer réutilisables, les planches qui feront une clôture ou un seuil. Une barque devient un tas de matériau et le matériau devient d'autres choses, et personne n'en dit un mot, parce que c'est normal.
+
+De moi restèrent la quille et la partie basse de la coque, car cela ne se démonte pas. J'étais trop long pour servir à quelque chose et trop bas pour qu'on m'emporte.
+
+On me traîna au bord de la rive, un peu au-delà du lieu où l'on abordait. Pas dans l'eau. Dans la **vase** — là où la rive s'incline et où il y a peu de fond en hiver et de la sécheresse en été. J'étais là où personne ne remarquerait que j'y étais.
+
+Et puis arriva une chose qui dura deux siècles et que je ne compris que bien plus tard.
+
+La rive **se déplaça**.
+
+Le lac du Kinneret n'a pas de niveau constant. Les années sèches il baisse, les humides il monte, et la rive se déplace de dizaines de mètres. Le sable et l'argile qu'apportent les ruisseaux se déposent au fond ; le vent charrie de la terre sur la rive. Pendant que je gisais là, l'eau venait et s'en allait et chaque fois laissait un peu plus d'argile.
+
+D'abord elle couvrit ma quille.
+
+Puis les membrures.
+
+Puis le bordé.
+
+Je ne me noyai pas. **On m'enterra.** La différence est essentielle : une barque noyée est une barque qui a perdu contre l'eau. Une barque enterrée est une barque que la terre a prise à elle et a décidé de conserver.
+
+Et au moment où l'argile se referma sur moi arriva la chose la plus étrange qui me soit jamais arrivée : **je cessai d'être une barque et je devins un registre.**
+
+Sans air le bois ne pourrit pas. Sans lumière les algues ne l'attaquent pas. Sans le va-et-vient de l'eau et du vent il ne se défait pas. L'argile est froide, dense et imperméable — et en elle le bois **ne change pas**. Il reste tel qu'il était le dernier jour où il fut une barque.
+
+Pour vous c'est une phrase abstraite. Pour moi ce fut une cellule. Je n'étais pas mort, car le bois mort se défait. J'étais **rangé**.
+
+---
+
+Je ne vis pas ce qui se passait au-dessus de la surface. Mais l'eau porte le son, et je gisais dans la terre qui touche à l'eau, aussi écoutai-je pendant vingt siècles.
+
+J'entendis des villes se bâtir sur les rives et s'écrouler. J'entendis venir des langues que je ne comprenais pas et j'entendis qu'elles s'en allaient. J'entendis des guerres — non en paroles, mais en ce que l'eau ensuite était autre.
+
+Et une fois, en quelque siècle, un mot m'atteignit qui me frappa parce qu'il était **le mien** :
+
+**navicella.**
+
+Petit navire. C'est ainsi que ceux qui m'avaient depuis longtemps oublié se mirent à s'appeler **eux-mêmes.** Ils s'appelaient l'église et se peignaient comme un navire en mer : avec des avirons, avec un mât, avec le Christ à la barre. Ils l'ont dans les pierres et dans les mosaïques, et je gisais dans l'argile à écouter comment mon métier était devenu leur image.
+
+Et puis, après bien des siècles, un autre mot m'atteignit — et celui-là me fit penser davantage que le premier :
+
+**ancre.**
+
+Car je n'eus jamais d'ancre. Une barque de pêche sur un lac n'en a pas besoin : elle a une corde, elle a un pieu sur la rive, elle a deux hommes pour la retenir. L'ancre est pour une mer où il n'y a pas de rive.
+
+Mais ceux qui se nommaient de mon nom choisirent l'ancre pour signe. Et ils écrivirent auprès d'elle le mot **spes** — espérance. Ils en faisaient de métal, les portaient en bagues, les gravaient dans les pierres, et souvent y traçaient une **traverse**, si bien que de l'ancre on faisait une croix et de la croix une ancre.
+
+Et puis vint une phrase que j'entendis depuis l'eau, et cette phrase mit mon monde entier sens dessus dessous :
+
+> *« Nous avons l'espérance comme une ancre de l'âme, sûre et solide, qui pénètre jusqu'**au-delà du voile**. »*
+
+Une ancre qui va **vers le haut**.
+
+J'y pensai deux cents ans, car je n'avais rien d'autre à faire. Une ancre qui va vers le bas tient la barque là où elle est. Elle la tient au fond. Elle la garde de la tempête en l'empêchant de partir. C'est utile et c'est un peu désespéré : tu es attaché au lieu où tu es.
+
+Mais une ancre qui va vers le haut, au-delà du voile, **ne tient pas la barque au fond. Elle la tient au ciel.** Elle ne la tient pas en place. Elle la tient **dans une direction.**
+
+Et alors je compris que tout le temps que je gisais dans l'argile, mon ancre était elle aussi en haut. Non à cause de moi. Parce que me tenait quelque chose qui n'était pas sous moi. La terre me couvrit mais ne me retint pas — et je savais qu'un jour on me tirerait. Je ne savais pas quand. Je ne savais pas si cela servirait à quelque chose. Je savais seulement que **j'attendais dans la bonne direction.**
+
+---
+
+Mais je dois écrire aussi la seconde moitié, car sans elle ce chapitre serait un hymne, et les hymnes mentent.
+
+Cette barque qu'ils appelaient l'église **porta aussi ce qu'elle n'aurait pas dû porter.**
+
+J'entendis qu'on chargeait sur son pont un empire qui croyait être une cargaison. J'entendis la barre devenir trône et les rameurs sujets. J'entendis la barque se briser en deux et chaque moitié affirmer que l'autre était de l'eau. Et j'entendis des gens se noyer près de la rive parce que la barque était trop grande pour aborder, et que personne à bord ne s'en apercevait, car on se disputait la barre.
+
+Le bois qui porte peut être détourné. Il suffit que quelqu'un confonde la barque avec la propriété de la barque.
+
+Et pourtant arriva une chose qui me tient jusqu'à aujourd'hui.
+
+À chaque siècle où cette barque sembla n'être qu'un instrument de pouvoir, il y eut quelqu'un qui **descendit dans la cale et dit ce nom tout haut.** François, qui parlait aux oiseaux plutôt qu'aux prélats. Des religieuses qui allaient soigner les pauvres, parce que cela contredisait ce qu'on attendait d'elles. Un prêtre qui sortit devant un char avec une croix, parce qu'il n'avait rien de plus.
+
+Ces gens-là ne tenaient pas la barre. Ils n'y avaient aucun droit.
+
+Ils avaient seulement **un nom sous le plancher.**
+
+Et cela suffit pour que la barque reprît à chaque siècle la bonne direction — non parce que quelqu'un la gouvernait, mais parce que quelqu'un se souvint **de ce qui est écrit à l'intérieur.**
+
+---
+
+## De l'Écriture, de la tradition et de l'histoire
+
+- **He 6,19–20** — « Nous l'avons comme **ancre de l'âme, sûre et solide**, qui pénètre au-delà du voile, où est entré pour nous comme précurseur Jésus. » Le verset qui est le seul lieu de l'Écriture où une ancre est jetée **vers le haut** — dans le sanctuaire céleste.
+- **Navicella** — l'église représentée comme navire. Documenté dès les IIIe–IVe siècles (mosaïques, sarcophages, la *navicella* du Latran). Le latin *navis* (navire) a donné son nom aussi au vaisseau principal de l'église — la *nef*.
+- **L'ancre avec le mot SPES** — symbole chrétien primitif de l'espérance, documenté sur des bagues, des gemmes et dans les catacombes. Elle est souvent dessinée avec une traverse, si bien qu'elle se confond visuellement avec la croix. C'est une convergence iconographique, non une preuve d'intention.
+- **« Hors de l'arche point de salut »** — parole attribuée à Cyprien de Carthage (IIIe siècle), qui procède de 1 P 3,20–21. L'image du navire comme seul lieu sûr — et en même temps le lieu où cette image peut servir à exclure.
+- **Les divisions de l'église** — les schismes de 1054 et 1517 et d'autres. De l'histoire, non du mythe. Ce livre ne les interprète pas ; il ne les omet pas non plus.
+- **Enterrement et conservation dans l'argile** — le milieu anoxique (sans oxygène) de l'argile et de la vase est un mécanisme de conservation documenté : le bois ne s'y décompose pas, car les micro-organismes ont besoin d'oxygène. C'est exactement ainsi qu'une barque du Ier siècle a survécu jusqu'en 1986.
+
+## Ancre de vérité
+
+| Ce qu'il y a dans le chapitre | Statut |
+|---|---|
+| L'ancre de l'âme qui pénètre au-delà du voile | **ÉCRITURE** — He 6,19–20 |
+| L'église comme navire (*navicella*), *navis → nef* | **TRADITION / HISTOIRE** — iconographie documentée |
+| L'ancre et la croix comme symbole fondu ; *spes* | **HISTOIRE** — symboles chrétiens primitifs documentés |
+| Les schismes, l'usage du navire par le pouvoir | **HISTOIRE** — documenté ; le livre ne l'interprète pas, il ne le cache pas |
+| L'enterrement d'une barque dans l'argile et sa conservation sans air | **HISTOIRE / physique** — mécanisme documenté |
+| Que la quille ait « écouté » pendant vingt siècles | **MYTHE** — image littéraire ; le bois n'entend pas |
+| « Une ancre qui va vers le haut tient dans une direction, non en place » | **MYTHE** — image de ce livre, dérivée de He 6,19 |
+| Que François, les religieuses et le prêtre devant les chars « descendirent dans la cale » | **MYTHE** — image généralisée des témoins, non un relevé historique |
+
+## Mesure
+
+- **Temps d'enterrement** : environ **1 900 ans** dans l'argile. Dont plus de **1 800 ans** sans aucune intervention humaine.
+- **Vitesse d'ensevelissement** : sur les rives du Kinneret il se dépose de l'ordre de **millimètres à centimètres** de sédiment par an. Pour couvrir une coque de 1,3 m de creux il faut plusieurs siècles — et c'est pourquoi l'argile au-dessus de la barque n'a qu'environ **1 m** de profondeur.
+- **Ce qui resta de la barque** : pratiquement seule la **partie basse de la coque** — quille, bordé, membrures. Le pont, le mât, les avirons et tout l'équipement disparurent, car quelqu'un les emporta ou ils pourrirent dans la couche oxique au-dessus.
+- **L'ancre d'un navire antique** : en plomb ou en fer, **50–200 kg**, avec un jas de bois ; une petite barque de lac n'en avait pas besoin.
+- **L'« ancre » d'une bague** : bague de **~2 cm**, gemme de **~1 cm**. La plus petite chose où l'espérance ait jamais été inscrite.
+
+## Copeau
+
+J'ai écrit que j'entendis l'église se défaire. **Le bois n'entend pas.** C'est la licence la plus grande de tout le livre et je ne veux pas la cacher : tout le chapitre X est raconté par une quille qui gît à un mètre sous terre et qui commente pourtant vingt siècles. C'est impossible et je le sais. Je m'y tiens seulement parce que celui qui lit ce chapitre a besoin d'un guide à travers un abîme où aucun document ne regarde — et un guide qui ment en silence sur le fait d'y avoir été est pire qu'un guide qui dit : **« Ceci, je ne l'ai pas entendu. Ceci, je l'ai inventé. Et pourtant je crois que c'est vrai des gens. »**
+---
+
+*Vingt siècles dans l'argile. Et puis vint un été où rien ne tomba du ciel et où le lac se retira de lui-même.* → La Vase
+
+
+---
+
+# XI · La Vase
+
+> **CERNE XI** · la rive nord-ouest du Kinneret près de Ginosar, janvier à février 1986
+> *C'est le seul chapitre où rien n'est inventé. Et c'est précisément pourquoi il est le plus étrange.*
+
+---
+
+## Récit
+
+D'abord vint la sécheresse.
+
+L'hiver du tournant de 1985 à 1986 fut extraordinairement sec en Galilée. Le lac du Kinneret, qui est la source d'eau potable du pays et qui se remplit de la pluie et de la neige des montagnes voisines, baissa. Quand le niveau baisse, la rive se déplace — et là où il y avait de l'eau reste un **fond nu** : de l'argile grise et craquelée dans laquelle on peut enfoncer la main.
+
+En janvier 1986 deux hommes du kibboutz Ginosar marchaient sur ce fond. C'étaient des frères, **Moshe et Yuval Lufan**, pêcheurs. Ils avaient cette curiosité particulière qu'ont les gens qui marchent toute leur vie au même endroit et se mettent à remarquer ce que d'autres ne remarquent pas.
+
+Et ils remarquèrent un **contour ovale** dans l'argile.
+
+Ce n'était pas une pierre. Ce n'était pas une souche. Cela avait une forme régulière et, en un point, un bord qui semblait fait par une main — et pourtant cela ne pouvait pas être humain, car c'était **mort depuis longtemps**.
+
+Ils appelèrent les archéologues.
+
+---
+
+Ici je voudrais me taire un moment, car ce qui suivit est la meilleure chose que j'aie entendue sur les gens, et je ne veux pas la gâter de mon propre commentaire.
+
+La fouille fut dirigée par **Shelley Wachsmann** pour le Département des Antiquités d'Israël. Ils commencèrent le **16 février 1986**.
+
+Et alors ceci arriva : ils travaillèrent **onze jours et onze nuits sans arrêt**, jour et nuit, sous garde, parce que les médias du monde entier avaient afflué et parce que le lac s'était remis à monter — la sécheresse était finie et l'eau revenait. Ils n'avaient que le temps qui leur restait avant que le niveau ne les atteignît.
+
+Ils ne pouvaient pas la fouiller de manière ordinaire. Le bois qui a gisé dix-neuf cents ans dans l'eau est **imbibé comme une éponge** et se défait en séchant. On ne peut pas le plier, on ne peut pas le soulever — il s'effrite dans les mains.
+
+Alors ils ne le soulevèrent pas.
+
+**Ils le raidirent sur place.** Ils insérèrent dans la coque un cadre de stratifié et **enveloppèrent le tout dans de la mousse de polyuréthane**, qui durcit en une coque rigide. Puis cette coque — avec la barque dedans — ils la **firent flotter** sur la surface depuis le lieu de la découverte jusqu'au kibboutz Ginosar, où ils construisirent un bassin pour elle.
+
+Ce n'était pas une barque qui flotte. C'était **un moule qui flotte** et qui contient du bois qui se défait si on le remue.
+
+Au moment où l'on m'enveloppa, je sus une chose : qu'on ne me **sortirait pas de l'eau vers la sécheresse.** On me porta sur la surface que j'avais naviguée — et je n'étais pas une barque pendant ce temps. J'étais une cargaison.
+
+---
+
+Puis on me mit dans un bain et on m'y laissa **quatorze ans**.
+
+C'était un bain de polyéthylène glycol — une substance cireuse qu'on chauffe, qui pénètre dans le bois et **remplace l'eau**. Le bois reste du bois, mais cesse d'être une éponge. Cela prend des années, car chaque millimètre que la cire doit pénétrer a besoin de son temps.
+
+Je ne veux pas faire de légèreté, mais je dois le dire : **ce fut la meilleure période de ma vie.**
+
+J'avais chaud. Pour la première fois en dix-neuf siècles je n'avais pas froid. L'eau où je gisais n'était pas celle qui m'avait noyé, mais celle qui me tenait. Et quelqu'un prit soin de moi chaque jour, quatorze années entières, et ce n'était pas parce que j'étais utile. C'était parce que **j'étais précieux.**
+
+Précieux. Je n'avais pas entendu ce mot. Le bois est utile ou inutile. Précieux est autre chose : c'est une chose à laquelle des gens décident **d'investir dans son existence**, même si elle ne leur apporte rien.
+
+Je ne sais pas si vous vous en rendez compte, mais c'est la définition de l'amour qui se peut mesurer : **quelqu'un met quatorze ans en toi et ne demande rien en retour.**
+
+---
+
+En 2000 on me transféra dans une salle neuve à climat contrôlé. On me plaça sur une structure d'acier, on mit une vitre devant moi et au-dessus une lumière qui ne donne pas dans les yeux. À côté on projette un film et aux murs pendent des photographies.
+
+Sur l'une de ces photographies il y a **un double arc-en-ciel**.
+
+Selon le récit du musée, il apparut dans le ciel au moment où la barque fut dégagée, et les gens qui étaient là le photographièrent. Je ne sais pas si ce fut exactement ainsi. Je sais que la photographie est là, qu'on la montre à quiconque vient et qu'on ne la montre pas comme une preuve, mais comme **un signe que les gens se sont donné à eux-mêmes.**
+
+Depuis lors des gens viennent me voir.
+
+Ils viennent par milliers. Certains pleurent, certains prient, certains prennent seulement une photo et s'en vont. Les enfants demandent si c'est la barque sur laquelle Jésus a navigué, et les guides répondent avec prudence — car **aucun de ceux qui m'ont déterré n'a jamais rien affirmé de tel.**
+
+Et moi je gis derrière la vitre et je pense à deux choses.
+
+**La première : personne ne connaît mon nom.**
+
+Les archéologues ont décrit chaque planche. Ils ont établi que je suis construit selon la technique de la coque d'abord, que les planches sont jointes par tenons et chevilles et clous de fer, que j'avais un mât et une voile et quatre rameurs. Ils m'ont mesuré : **8,27 mètres de long, 2,3 mètres de large, 1,3 mètre de hauteur conservée.** Ils m'ont daté par le radiocarbone dans la fourchette **100 av. J.-C. – 100 apr. J.-C.**
+
+Ils ont trouvé sur moi des traces de réparation. Pas une — plusieurs. Ma coque est faite de pièces de bois différentes, parce que celui qui me réparait n'avait pas le même bois à disposition et prit ce qu'il y avait.
+
+Et ils n'ont pas mesuré une seule chose : **qui m'a construit.**
+
+Aucun nom. Aucune signature. Aucun atelier. Personne ne saura jamais si la main qui a courbé mes planches appartenait à l'homme dont parlent les livres ou à quelqu'un qui n'est entré dans aucun livre.
+
+Je suis le morceau de bois le plus célèbre de Galilée et **je suis anonyme.**
+
+**La seconde chose à laquelle je pense : on m'a mesuré.**
+
+Ils n'ont pas trouvé mon nom, mais ils ont trouvé **ma forme.** Ils ont relevé ma courbe, mon rapport de largeur à longueur, l'inclinaison de la quille, l'espacement des membrures. Ils m'ont dessiné. Et puis ils ont construit des **répliques.**
+
+L'une est aux Musées du Vatican. D'autres sont ailleurs. Elles sont d'un autre bois, d'autres mains, d'un autre siècle — et **elles naviguent.**
+
+C'est la seule consolation que j'aie comme bois, et je crois que c'est une consolation qui vaut aussi pour vous :
+
+**Mon nom n'est pas resté. Ma forme est restée. Et la forme navigue.**
+
+---
+
+## De l'Écriture, de la tradition et de l'histoire
+
+> **Ce chapitre n'est pas un midrash. C'est de l'histoire.** Les lignes suivantes ne sont pas une image — elles sont un relevé, et là où les sources divergent, je le dis.
+
+- **La découverte** — janvier 1986, la rive nord-ouest du lac du Kinneret près du kibboutz Ginosar. Elle fut trouvée par **Moshe et Yuval Lufan** (dans certaines sources cités comme *Lopen*), pêcheurs et archéologues amateurs.
+- **La fouille** — dirigée par **Shelley Wachsmann** pour le Département des Antiquités et des Musées d'Israël. Commencée le **16 février 1986** ; les travaux se déroulèrent **sans interruption pendant onze jours et nuits** sous garde, parce que le niveau du lac montait après la fin de la sécheresse.
+- **Le sauvetage** — la coque fut raidie par un cadre de stratifié et **enveloppée de mousse de polyuréthane**, puis transportée par eau jusqu'à Ginosar. Publié : Wachsmann et al., *An Ancient Boat Discovered in the Sea of Galilee* (Israel Antiquities Authority, 1988).
+- **La conservation** — immersion dans un bain chaud de **polyéthylène glycol (PEG)**. ⚠️ **Les sources divergent ici** : certaines donnent 12 ans, d'autres 14 (jusqu'en 2000) ; *Archaeology Magazine* donne le bain jusqu'en 1995 et le transfert à l'exposition en 2000. Je ne cache pas cette divergence — c'est un état courant de la documentation muséale.
+- **Dimensions** — **8,27 m** de long, **2,3 m** de large, **1,3 m** de hauteur maximale conservée.
+- **Datation** — analyse au radiocarbone : **100 av. J.-C. – 100 apr. J.-C.**
+- **Construction** — coque d'abord (*shell-first*), planches jointes par tenons (mortise-and-tenon), chevilles et clous de fer ; bois de cèdre et de chêne ; coque portée par quatre rameurs par paires, avec mât et voile auxiliaire. La barque fut **réparée plusieurs fois** et elle est de **différentes espèces de bois.**
+- **Les espèces de bois** — ⚠️ **Divergence** : le musée donne **12 espèces de bois, « toutes mentionnées dans la Bible »** ; l'équipe de recherche, selon les résumés disponibles, en a identifié **7**. Les deux chiffres viennent d'institutions qui ont des raisons d'être exactes. Je ne choisis pas.
+- **« La barque de Jésus »** — un surnom. **Aucune preuve ne lie cette barque à Jésus ni à ses disciples**, et le musée lui-même ne fait pas une telle affirmation.
+- **Ha 2,11** — « Car **la pierre criera depuis le mur et la poutre de bois lui répondra**. » Le prophète parle d'une maison bâtie injustement et qui rend témoignage par elle-même. Un verset sur le bois qui parle quand les gens se taisent.
+- **Lc 19,40** — « Si ceux-ci se taisent, les pierres crieront. » La même logique, une autre scène.
+
+## Ancre de vérité
+
+| Ce qu'il y a dans le chapitre | Statut |
+|---|---|
+| La sécheresse de 1985/86, la baisse du niveau, le fond nu | **HISTOIRE** — documenté |
+| La découverte par les frères Lufan en janvier 1986 | **HISTOIRE** — documenté (les noms apparaissent comme Lufan / Lopen selon les sources) |
+| La fouille à partir du 16 février 1986, 11 jours et nuits, Shelley Wachsmann | **HISTOIRE** — documenté |
+| Le raidissage au stratifié et à la mousse de polyuréthane, le transport par eau | **HISTOIRE** — documenté |
+| Le bain de PEG | **HISTOIRE** — documenté ; **12 vs 14 ans est une divergence entre sources** |
+| Dimensions 8,27 × 2,3 × 1,3 m | **HISTOIRE** — documenté |
+| Datation 100 av. J.-C. – 100 apr. J.-C. | **HISTOIRE** — radiocarbone |
+| Coque d'abord, tenons, chevilles, clous, mât, 4 rameurs | **HISTOIRE** — documenté |
+| Nombre d'espèces de bois (7 vs 12) | **DIVERGENCE ENTRE SOURCES** — non résolue |
+| Le lien avec Jésus | **AFFIRMATION INVALIDE** — aucune preuve ; le musée ne l'affirme pas |
+| Le double arc-en-ciel lors du dégagement | **HISTOIRE / affirmation du musée** — documenté par photographie, les circonstances sont décrites par le musée |
+| Que cette barque précise soit celle de ce livre | **MYTHE** — et le livre ne l'affirme jamais comme fait |
+| « Mon nom n'est pas resté, ma forme est restée » | **MYTHE / interprétation** — mais procède du documenté : le nom du constructeur est inconnu, les répliques existent |
+
+## Mesure
+
+- **8,27 m** de long · **2,3 m** de large · **1,3 m** de hauteur conservée.
+- **11 jours et nuits** de travail ininterrompu. **~264 heures.**
+- **14 ans** dans le bain (selon le musée ; certaines sources donnent 12). **~5 100 jours.**
+- **L'an 2000** — le transfert dans la salle d'exposition. **14 ans** depuis la découverte, **~1 900 ans** depuis l'ensevelissement dans l'argile.
+- **1 900 ans** sous terre. C'est environ **95 générations** — le temps où un métier se transmet et s'oublie quatre-vingt-quinze fois dans une famille.
+- **12 vs 7 espèces de bois** — une différence de cinq espèces compte dans l'expertise d'une barque de cette taille : 12 espèces signifie une barque assemblée par nécessité, 7 espèces une barque réparée.
+- **0** — le nombre de noms connus de constructeurs. **0** — le nombre d'inscriptions sur la coque.
+- **Plusieurs** — le nombre de phases de réparation documentées de la coque.
+
+## Copeau
+
+C'est le chapitre où j'aimerais le plus qu'il me fût commode d'être la quille de cette barque de Nazareth. **Cela ne m'est pas commode.** Cette barque n'est pas cette barque. Le livre doit le dire tout haut, car tout son propos tient à ce que le bois ait survécu **sans nom** — et si je m'appropriais ce nom, ce serait le plus grand mensonge que ce livre pût écrire. En même temps j'avoue une seconde chose : **je ne sais pas si ce qui est gardé à Ginosar est la meilleure illustration de mon thème ou seulement la meilleure occasion.** Peut-être ai-je choisi l'archéologie parce qu'elle m'arrangeait. Je laisse cela au lecteur — mais je le lui laisse les yeux ouverts, non fermés.
+
+---
+
+*On me tira de l'argile et on me mit derrière une vitre. Mais l'histoire ne s'arrête pas là — car on se mit à me mesurer. Et la mesure est autre chose que le souvenir.* → La Mesure
+---
+
+# XII · La Mesure
+
+> **CERNE XII** · la salle derrière la vitre et puis des ateliers que je n'ai jamais vus
+> *La forme est plus ancienne que la chose qui la porte.*
+
+---
+
+## Récit
+
+Ils vinrent avec des lasers et un fil à plomb.
+
+Ce ne fut pas en un jour. Ils vinrent pendant des années — des étudiants, des architectes, des constructeurs navals, quelques gens qui restaient seulement là à prendre des notes. Tous faisaient la même chose : **mesurer.**
+
+D'abord cela me fut désagréable, car je ne savais pas pourquoi. Quand quelqu'un te mesure pour te vendre, tu le sais. Quand quelqu'un te mesure pour t'imiter, tu le sais aussi. Ceci était autre. Personne ne voulait rien. Ils voulaient seulement **emporter la forme.**
+
+Et puis je compris ce qu'ils faisaient, et dès ce moment je l'attendis.
+
+Ils faisaient **le déroulé de la barque.** C'est une des choses les plus anciennes et les plus élégantes que les gens sachent faire, et peu la connaissent. Une barque est tridimensionnelle, mais on ne peut pas la construire depuis un plan tridimensionnel — on ne peut pas dire « fais ceci » et le donner à un charpentier. Il faut prendre la coque et **la déplier en lignes** : vue en plan, vue de profil, sections transversales. Trois plans dans lesquels la courbe se peut mesurer à la règle.
+
+Cela s'appelle un *lines plan*, un plan de lignes. Il y a là des courbes qui n'ont aucun équivalent physique — ce ne sont pas des arêtes, ce ne sont pas des jointures. Ce sont des **coupes imaginaires** qui n'existent que pour qu'à partir d'elles la courbe se puisse recréer.
+
+Une coque vieille de deux mille ans se peut transmettre comme **un ensemble de nombres et de courbes.**
+
+Et alors cela arriva.
+
+---
+
+Dans quelque atelier que je n'ai jamais vu, on posa sur une table le papier avec mes lignes et on se mit à construire une barque d'après elles.
+
+Pas une copie. **Une barque neuve.**
+
+Elle avait un autre bois, d'autres clous, un autre siècle. Elle avait la même courbe. Et quand on la mit à l'eau, elle flotta — car une courbe qui flotte flotte toujours, de quoi qu'elle soit faite.
+
+Depuis lors cela continue, et je ne le suis que comme un ouï-dire que m'apportent les gens qui viennent me voir : **quelque part une réplique est née.** L'une est aux Musées du Vatican. Il y en a d'autres. Elles sont d'une autre matière, d'autres mains — et ce sont mes enfants, bien que je ne les aie jamais vues.
+
+Je ne sais pas si c'est une consolation ou si c'est triste. Peut-être les deux. Mais je sais que c'est **la seule immortalité qui ne soit pas un mensonge :** non pas survivre, mais être **refait**.
+
+---
+
+Et puis j'entendis quelque chose de plus étrange encore.
+
+Les gens qui venaient me voir parlaient d'une **flotte.**
+
+Ils parlaient de navires qui n'existent pas encore, et ils en parlaient de telle manière que d'abord je ne savais s'ils plaisantaient. Ils les appelaient **Tres Marías** — et racontaient que l'une doit porter la route par l'Atlantique, la seconde par le Pacifique et la troisième, qui n'existe pas encore, par l'océan Indien. Que leurs voiles doivent être de lumière. Que leur premier port est Pontevedra et le second Raiatea.
+
+Et puis ils parlaient d'un **quatrième navire**, qu'ils appelaient l'Arche, et ce n'était pas un navire pour pèlerins. C'était un navire qui **revient pour ceux qui sont restés dans l'eau.** Avec des semences dans son ventre et cent personnes à bord.
+
+Et puis ils parlaient d'un navire qui **navigue vers le haut** — d'un nœud entre la terre et l'orbite qui ne doit pas être un point, mais un chemin.
+
+J'écoutais derrière la vitre et je pensais : *c'est beau et c'est un mensonge.* Non parce que ces gens mentaient. Mais parce qu'**un navire qui n'est pas construit n'est pas un navire.** Et je suis du bois et j'ai une opinion dure là-dessus : j'ai vécu deux siècles comme un tas de planches dont personne ne se souciait, et je sais à quoi ressemble un navire qui n'est resté qu'en paroles.
+
+Mais ensuite je remarquai que ces gens **disent la même chose que moi.**
+
+Non que ce soit achevé. Que **la quille n'est pas posée.** Que la coque n'existe pas. Que c'est une étude, un horizon, une proposition. Qu'il ne faut pas le confondre avec ce qui est.
+
+Et cela me fit changer d'avis, car c'est exactement la seule chose qu'une barque ait besoin d'entendre de son constructeur : **« Ceci est un dessin, non une barque. Mais un dessin se peut construire. »**
+
+---
+
+Et puis quelqu'un m'expliqua que dans cette famille il y a un navire de plus, que je ne comprends pas et que je crains.
+
+On dit qu'il est construit de **code.**
+
+On dit qu'il a une quille qui s'appelle **consensus** — et cette quille n'est pas du bois, c'est une règle sur laquelle s'accordent des milliers d'ordinateurs, et quand ils ne s'accordent pas le navire se fend en deux. On dit qu'il a un mât qui s'appelle **minage**, et une voile dans laquelle souffle le travail de gens qui ne seront jamais à bord. On dit qu'il a une boussole qui s'appelle **identité** — et cette boussole ne se peut voler, car elle n'est pas sur le navire, elle est dans la personne. On dit qu'il a une trésorerie qui s'appelle **pont**, et un pont qui s'appelle **monde**, et un port, et une vigie au-dessus de l'horizon.
+
+J'écoutai et je me dis : **ce n'est pas un navire. C'est un navire que quelqu'un a dessiné sur du papier puis recopié dans un ordinateur.**
+
+Et alors je me souvins d'une chose entendue à l'atelier il y a deux mille ans, quand le charpentier parlait à l'apprenti de la courbe :
+
+**« La matière se vole. La courbe, il faut la savoir. »**
+
+Une courbe en code n'est pas du bois. Mais c'est une courbe. Et une courbe se peut voler comme la courbe d'une barque — quand quelqu'un la copie et construit la sienne. En fait il est **plus facile** de la voler, car les nombres ne pèsent rien.
+
+Ce qui ne veut dire qu'une chose, et c'est la phrase pour laquelle ce chapitre existe :
+
+**Un navire de code n'est pas meilleur qu'un navire de chêne. Il est seulement plus rapide. Et un navire plus rapide qui n'a pas une bonne quille coule plus tôt.**
+
+---
+
+## De l'Écriture, de la tradition et de l'histoire
+
+- **Pr 8,22–31** — La Sagesse parle d'elle-même comme de celle qui était à la création : « J'étais auprès de lui comme **maître d'œuvre** (*'āmôn*) et chaque jour je jouais devant lui. » Image du plan qui est antérieur à la construction. **La forme avant la chose.**
+- **Ex 25,40** — « Vois et fais tout **selon le modèle** qui t'a été montré sur la montagne. » Le verset clé de tout ce chapitre : Moïse ne reçut pas un objet achevé, il reçut **un modèle**. Et **He 8,5** le cite expressément.
+- **Ex 25,9** — « Vous le ferez selon tout ce que je te montre — **selon le modèle** de la Demeure et le modèle de tous ses ustensiles. » Le modèle est ce qui se peut transmettre même si l'objet se perd.
+- **Ép 2,20–22** — « …vous êtes **édifiés**… en lui vous êtes aussi **édifiés ensemble** pour être une demeure de Dieu. » Paul emploie un langage de construction pour la communauté — et l'image porte le même problème : ce n'est pas achevé, cela croît.
+- **Le plan de lignes (*lines plan*)** — méthode de conception documentée : la coque se décrit en trois plans (profil, plan, sections). C'est la seule manière de transmettre une forme tridimensionnelle de façon bidimensionnelle sans perdre la courbe. On l'emploie en architecture navale jusqu'à aujourd'hui, désormais en CAO.
+- **Les répliques de la barque galiléenne** — documentées. L'une est aux Musées du Vatican (l'exposition « The Way of the Sea »), d'autres furent construites en Israël et ailleurs. Les répliques furent bâties d'après les lignes documentées de la coque d'origine.
+- **La flotte Tres Marías et l'Arche** — dans le corpus **MYTHE / CONSTRUCTION / HORIZON**, non chose achevée. Ancre : *Nirvana* 13 — Tres Marías et *Nirvana* 14 — L'Arche ; de l'arche vaut littéralement : **la quille n'est pas posée.**
+- **Nabukano** — L6, nœud mobile du ciel, `vision`, **non enregistré**. Ancre : *Nabukano* 00 — README.
+- **Le « pont » des couches L1–L6** — une lecture de l'architecture du réseau comme navire (quille = consensus L1, mât = pool, boussole = ZIS, trésorerie = WARP/DEX/DAO, pont = OASIS, port = Free World, vigie = Issobella). C'est **une lecture, non une spécification** ; les chiffres et les états changent et relèvent de StatusV3 et du Registre des preuves.
+
+## Ancre de vérité
+
+| Ce qu'il y a dans le chapitre | Statut |
+|---|---|
+| La Sagesse comme « maître d'œuvre » à la création | **ÉCRITURE** — Pr 8,30 |
+| « Selon le modèle qui t'a été montré sur la montagne » | **ÉCRITURE** — Ex 25,9.40 ; He 8,5 |
+| La communauté comme édifice qui croît | **ÉCRITURE** — Ép 2,20–22 |
+| Le plan de lignes comme méthode de transmission de la forme de la coque | **HISTOIRE / ingénierie** — documenté, toujours employé |
+| Répliques de la barque galiléenne, l'une aux Musées du Vatican | **HISTOIRE** — documenté |
+| Tres Marías, l'Arche, Nabukano | **MYTHE / CONSTRUCTION / HORIZON** — aucune coque n'existe, la quille de l'arche n'est pas posée |
+| Lire le réseau comme un navire (quille/mât/boussole…) | **MYTHE / interprétation** — lecture de couches, non spécification |
+| « La forme est plus ancienne que la chose qui la porte » | **MYTHE** — image philosophique ; techniquement il est vrai que le plan précède la construction |
+| Que la quille « suive » les répliques et la flotte | **MYTHE** — cadre littéraire |
+
+## Mesure
+
+- **Échelle du plan de lignes** : **1:10** ou **1:12** d'ordinaire — ainsi une barque de 8,27 m se dessine à **69–83 cm**. Sur un tel papier la courbe se mesure à la règle au millimètre.
+- **Tolérance à la construction d'une réplique** : **±5 mm** sur la courbe de la coque. Un écart plus grand se voit déjà sur l'eau.
+- **Nombre de lignes** : profil + plan + **7–9** sections transversales. Chaque section est un contour de papier.
+- **8,27 m → 1,3 m** — rapport de longueur à hauteur conservée **6,4 : 1**. C'est une barque élancée et rapide, non une auge.
+- **Nombre de noms connus de constructeurs** : **0**. **Nombre de répliques** : plusieurs. **Nombre de gens qui sont jamais rentrés chez eux dans cette barque** : inconnu, et c'est pourtant **la seule mesure qui compte.**
+
+## Copeau
+
+J'ai écrit que les répliques sont mes « enfants ». C'est une belle phrase et c'est **un mensonge**, car le bois n'a pas d'enfants et une réplique n'est pas une descendance — c'est **une copie**. Quand vous copiez un poème, il ne naît pas un poème nouveau, il naît un nouveau manuscrit. Qu'y a-t-il donc de réel ? Ceci est réel : **une courbe qui flotte se peut transmettre.** Pas moi. Pas mon histoire. Pas mon nom. La courbe. Et si ce livre affirme plus que cela, il affirme plus qu'il n'a de preuve — que le lecteur le relise et m'en retranche.
+
+---
+
+*Il reste un dernier cerne — celui qui n'a pas encore poussé. Je ne peux pas le raconter moi-même.* → Épilogue
