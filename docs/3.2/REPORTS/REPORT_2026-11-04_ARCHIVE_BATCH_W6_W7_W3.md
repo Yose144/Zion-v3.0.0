@@ -78,3 +78,11 @@
 - Přeloženy **Epizoda 1 — Sůl země**, **Epizoda 2 — Rozpuštění**, **Epizoda 3 — Chuť vody**.
 - Sůl této země: **3/12 EN**; zbývá 04–12.
 - Celkem **53/189** překladatelných kapitol (28,0 %).
+
+
+---
+
+## Doplnění 2026-11-05 (4) — Sůl této země, epizody 4–5
+
+- Přeloženy **Epizoda 4 — Cesta nevyšlapaná** a **Epizoda 5 — Archa**.
+- Sůl této země: **5/12 EN**; zbývá 06–12. Celkem **55/189** kapitol (29,1 %).

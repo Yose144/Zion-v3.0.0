@@ -50,7 +50,7 @@ Principy, které platí pro každou práci:
 | Nirvana | **14/14** | hotovo (QA) |
 | Království srdce | **10/10** (oficiální EN klasická edice) | hotovo 2026-11-04 |
 | NirvanaCloud | **8/8** | hotovo 2026-11-05 |
-| Sůl této země | 3/12 (01, 02, 03) | **P1** |
+| Sůl této země | 5/12 (01–05) | **P1** |
 | Ekam Deeksha | 0/10 (EN jsou 401B stuby) | P1/P2 |
 | Quantum Revolution | 0 (EN je 396B stub) | P2 |
 | BodhiGaia | 0/13 | P2 |
@@ -58,8 +58,8 @@ Principy, které platí pro každou práci:
 | Mise Amenti | 0/8 | P2 (rámec, ne román) |
 | Lumi, Miriam, Růže, MariaCaminho, Na Cestě, Surta Srdce, Království srdce, Kruh Bohyní, Nabukano | 0 | P2/P3 dle 👤 |
 
-> Měřeno auditem 2026-11-05: **204 kapitol, 189 překladatelných, 53 přeložených (28,0 %)**
-> (Království srdce 10/10 oficiální EN, NirvanaCloud 8/8, Sůl této země 3/12).
+> Měřeno auditem 2026-11-05: **204 kapitol, 189 překladatelných, 55 přeložených (29,1 %)**
+> (Království srdce 10/10 oficiální EN, NirvanaCloud 8/8, Sůl této země 5/12).
 > Detail: [`REPORT_2026-11-04_ARCHIVE_W1_AUDIT.md`](../3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_W1_AUDIT.md).
 
 **Další mezery:**
@@ -126,7 +126,7 @@ nezačíná na indexu.
       pro štítky v knihovně i pro report (dnes: audit JSON + `korpusLangs`).
 - [x] Království srdce: oficiální EN klasická edice napojena (10/10) — split podle h1.
 - [x] NirvanaCloud 8/8 EN (2026-11-05).
-- [ ] P1 překlad: **Sůl této země** — hotové 01–03, zbývá 04–12.
+- [ ] P1 překlad: **Sůl této země** — hotové 01–05, zbývá 06–12.
 - [ ] QA checklist pro každou přeloženou kapitolu: markdown parita, nadpisy, anchor slugy,
       odkazy, blokové citáty, tabulky, diakritika, žádné „strojové" vsuvky.
 - [ ] U knih bez EN držet `CZ` štítek a fallback hlášku (už funguje).
