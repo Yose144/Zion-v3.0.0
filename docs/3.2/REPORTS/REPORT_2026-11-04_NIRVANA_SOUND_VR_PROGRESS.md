@@ -311,6 +311,42 @@ ne poškození.
 
 ---
 
+## 8d) Dodatek — aspekty kouzel a týmový objektiv (protokol 29)
+
+**Aspekty kouzel** (`spells.ts`). Před zápasem si hráč vybírá jednu ze dvou
+variant své školy — není to buff, je to **obchod**:
+
+| | ostrá (`a`) | ochranná (`b`) |
+|---|---|---|
+| poškození | +14 % | −12 % |
+| štít a léčení | −20 % | +35 % |
+| rádius | −6 % | +10 % |
+| cooldown | −4 % | +4 % |
+
+Jména jsou per škola (oheň: Žár / Popel, bouře: Blesk / Příliv, vesmír:
+Hvězdný jas / Tichý obzor…), takže volba zní jako ta postava, ne jako
+tabulka. Volba jde do `join.aspect`, server ji předá do sedačky a ta do
+`makeHero`; klient počítá kouzla pro HUD **stejnou funkcí**, takže se
+čísla v HUD a v sim nemůžou rozejít.
+
+**Týmový objektiv.** Zabití Prastarého stvoření v řece dávalo jen sólo buff
+zabijáka, takže tým neměl důvod řeku řešit. Teď `grantTeamAura()` pošle
+auru (síla +12 %, vidění +8 %, rychlost +6 %, 90 s) **všem živým
+spojencům**, sólo buff zůstává, a banner hlásí „ZION získal převahu".
+Buffy jsou v HUD jako žetony s odpočtem — bez toho by aura byla neviditelná.
+
+**Co odhalo měření.** První verze aury (+20 %, 120 s) vypadala, že
+prodlužuje zápasy (357 s, 7/20 timeoutů). A/B běh bez aury ale dal 302 s
+a 6/20 — rozdíl byl šum, ne příčina. Skutečný nález byl jinde: když
+polovina **botů** brala ochranný aspekt, zápasy se protáhly, protože dva
+defenzivní týmy se neudolají. Boti proto hrají ostrou variantu.
+
+**Naměřeno po změnách (20 zápasů):** 293 s průměr, 4/20 timeout, 6,8
+zabití, 11,7 padlých věží — hra je rychlejší než před aurou a nepřestala
+končit Nexou.
+
+---
+
 ## 9) Meze, které se nemají hlásit jako hotové
 
 - **VR na skutečném headsetu** — ověřeno jen headless (scéna se rozjede,

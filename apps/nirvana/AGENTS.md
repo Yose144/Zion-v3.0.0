@@ -1942,3 +1942,32 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Obecné pravidlo: test, který ověřuje **přechodový stav** (mrtvý,
   zraněný, na cooldownu), nesmí číst „aktuální" hodnotu — musí hledat
   v historii zpráv.
+
+## MOBA — aspekty kouzel a týmová aura (2026-11-04, protokol 29)
+
+- **Aspekt je obchod, ne buff.** Každá škola má dvě varianty: ostrá
+  (+14 % dmg, −20 % štítu a léčení) a ochranná (−12 % dmg, +35 % štítu
+  a léčení). Kdyby jedna byla lepší, výběr by nebyl volba, ale kontrola
+  znalosti. Test `moba-aspects.mjs` na tom trvá.
+- **Násobek se aplikuje na celou sadu** v `spellsFor(id, color, aspect)`.
+  Kdyby se počítal po kouzlech, HUD (který volá stejnou funkci) by
+  ukazoval jiná čísla než sim.
+- **Volba jde do `join.aspect`**, server ji předá do sedačky a ta do
+  `makeHero`. Klient si pro HUD počítá kouzla stejnou funkcí se stejným
+  aspektem — jinak by hráč viděl cizí čísla.
+- **Boti hrají `a` (ostrou).** Měřeno: když polovina botů brala `b`,
+  zápasy se protáhly na 357 s a 7/20 skončilo timeoutem — dva defensive
+  týmy se neudolají. Hráč si `b` vybrat může.
+- **`schoolOfAvatar(id)`** čte školu bez stavby kouzel — pick screen ji
+  potřebuje dřív, než začne zápas.
+- **Prastaré stvoření (řeka) je týmový objektiv.** `grantTeamAura()` dá
+  auru všem živým spojencům (síla/vidění/rychlost 90 s), sólo buff
+  zabijáka zůstává. Mrtvý spojenec ji nedostane, soupeř taky ne.
+- **Čísla aury jsou malá** (+12 %/+8 %/+6 %) a nerf přišel po měření:
+  první verze (+20 %, 120 s) vypadala, že prodlužuje zápasy. A/B běh
+  bez aury dal 302 s / 6/20 timeout, s aurou 293 s / 4/20 — rozdíl je
+  šum, ale slabší čísla jsou bezpečnější.
+- **Buffy patří do HUD** (`moba-buffs`): bez viditelného odpočtu hráč
+  nepozná, že tým něco získal, a objektiv nic nemění.
+- Testy: `test/moba-aspects.mjs` (24), `test/moba-team-aura.mjs` (10),
+  balance 20 zápasů po každé změně čísel.
