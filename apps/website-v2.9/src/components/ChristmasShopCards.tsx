@@ -21,7 +21,8 @@ interface CardDef {
 
 const CARDS: CardDef[] = [
   {
-    image: '/images/news/christmas-2026/kingdom-1200.webp',
+    // Původní obrázek produktu (brána se ZION Passem), ne obecná brána Kingdom.
+    image: '/images/news/christmas-2026/card-pass.webp',
     icon: Ticket,
     kicker: { cs: 'Vánoční edice · ZAP kód', en: 'Christmas edition · ZAP code' },
     title: { cs: 'ZION Pass', en: 'ZION Pass' },
@@ -35,13 +36,13 @@ const CARDS: CardDef[] = [
     href: SHOP_URL,
   },
   {
-    image: '/images/news/christmas-2026/kralovstvi-srdce-1200.webp',
+    image: '/images/news/christmas-2026/card-book.webp',
     icon: BookOpen,
     kicker: { cs: 'Vánoční edice · digitální kniha', en: 'Christmas edition · digital book' },
     title: { cs: 'Království srdce', en: 'Kingdom of the Heart' },
     desc: {
-      cs: 'Příběh lodi, kterou postavil tesař. Ilustrovaná edice v 5 jazycích (CZ·EN·FR·ES·PT), PDF + EPUB, se ZION Archive Pass v ceně.',
-      en: 'The story of the ship a carpenter built. Illustrated edition in 5 languages (CZ·EN·FR·ES·PT), PDF + EPUB, ZION Archive Pass included.',
+      cs: 'Příběh lodi, kterou postavil tesař. Osm edic v pěti jazycích — 40 knih, 3 252 stran, PDF + EPUB, se ZION Archive Pass v ceně.',
+      en: 'The story of the ship a carpenter built. Eight editions in five languages — 40 books, 3,252 pages, PDF + EPUB, ZION Archive Pass included.',
     },
     price: '216 Kč',
     bonus: { cs: '+216 000 ZION bonus', en: '+216,000 ZION bonus' },
@@ -49,8 +50,8 @@ const CARDS: CardDef[] = [
     href: SHOP_URL,
   },
   {
-    image: '/images/home/christmas-kingdom.webp',
-    imagePosition: '72% 50%',
+    // Původní scéna s lampionem (tesař s dětmi), ne vánoční trh.
+    image: '/images/news/christmas-2026/card-lampion.webp',
     icon: Flame,
     kicker: { cs: 'Vánoční edice · ruční výroba', en: 'Christmas edition · handcraft' },
     title: { cs: 'Lampion Království srdce', en: 'Kingdom of the Heart lantern' },
@@ -99,7 +100,9 @@ export default function ChristmasShopCards() {
                   {card.kicker[cs ? 'cs' : 'en']}
                 </span>
                 {card.soon && (
-                  <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/60 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/80 backdrop-blur-sm">
+                  // Dole, ne nahoře vpravo: kicker nalevo je dlouhý a štítek se s ním
+                  // na třetí kartě překrýval („VÁNOČNÍ EDICE · RUČNÍ VÝR…").
+                  <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/60 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/80 backdrop-blur-sm">
                     <Lock className="h-3 w-3" />
                     {cs ? 'Připravujeme' : 'Coming soon'}
                   </span>

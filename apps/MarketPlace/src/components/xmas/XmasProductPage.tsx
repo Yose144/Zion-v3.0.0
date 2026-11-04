@@ -55,7 +55,10 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
 
       {/* Hero band */}
       <div className="zion-section overflow-hidden !p-0">
-        <div className="relative aspect-[21/9] max-h-[420px]">
+        {/* Poměr se řídí zdrojem: ultraširoký banner je 2,5:1, běžný obrázek 16:9.
+            Dřív tu byl aspect-[21/9] + max-h-[420px], což banner (2,5:1) ořezávalo
+            shora i zdola — „uříznutý" hero. */}
+        <div className={`relative ${product.heroWide ? 'aspect-[5/2]' : 'aspect-[16/9]'}`}>
           <img
             src={product.heroWide ?? product.image}
             alt={pick(product.imageAlt)}
