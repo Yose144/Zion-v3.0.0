@@ -69,3 +69,12 @@
 - Přeloženy zbývající kapitoly **2** (Pět Buddhů a šest vrstev), **5** (Síně Amenti) a **8** (Kotva pravdy a etické hranice).
 - **NirvanaCloud je 8/8 EN** — knihovna přepne štítek na `CZ + EN` (korpusLangs počítá reálné překlady).
 - Celkem **50/189** překladatelných kapitol (26,5 %).
+
+
+---
+
+## Doplnění 2026-11-05 (3) — Sůl této země, epizody 1–3
+
+- Přeloženy **Epizoda 1 — Sůl země**, **Epizoda 2 — Rozpuštění**, **Epizoda 3 — Chuť vody**.
+- Sůl této země: **3/12 EN**; zbývá 04–12.
+- Celkem **53/189** překladatelných kapitol (28,0 %).
