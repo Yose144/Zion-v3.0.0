@@ -151,6 +151,36 @@ function capOf(game: GameId): number {
   return MAX_PLAYERS;
 }
 
+/** Poslední odeslání seznamu místností — server ho nesmí posílat 30×/s. */
+let roomsPushAt = 0;
+let roomsPushQueued = false;
+
+/**
+ * Živý seznam místností pro lobby. Throttluje na 4×/s a slévá změny:
+ * když se v jedné sekundě otevřou tři místnosti, klient dostane jeden seznam.
+ */
+function pushRooms(force = false): void {
+  const now = Date.now();
+  const wait = 250 - (now - roomsPushAt);
+  if (!force && wait > 0) {
+    if (roomsPushQueued) return;
+    roomsPushQueued = true;
+    setTimeout(() => {
+      roomsPushQueued = false;
+      pushRooms(true);
+    }, wait).unref();
+    return;
+  }
+  roomsPushAt = now;
+  const message: ServerMessage = {
+    t: 'rooms',
+    rooms: [...rooms.values()].map(roomInfo),
+  };
+  for (const conn of connections.values()) {
+    if (conn.helloSent) send(conn, message);
+  }
+}
+
 function roomInfo(room: Room): RoomInfo {
   return {
     id: room.id,
@@ -319,6 +349,8 @@ function createRoom(game: GameId): Room {
   };
   rooms.set(room.id, room);
   log(`room created id=${room.id} total=${rooms.size}`);
+  // pushRooms tady záměrně není: místnost vzniká uvnitř `join`, takže by
+  // lobby bliklo s 0 hráči. Seznam se posílá až po usednutí hráče.
   return room;
 }
 
@@ -336,8 +368,10 @@ function leaveRoom(conn: Conn, reason: string): void {
     rooms.delete(room.id);
     channels.delete(channel);
     log(`room removed id=${room.id} total=${rooms.size}`);
+    pushRooms();
   } else {
     syncPresence(channel);
+    pushRooms();
   }
 
   // zpátky do parku — ohlásit se tam a dát vědět, že je hráč zase venku
@@ -399,6 +433,7 @@ function joinRoom(conn: Conn, game: GameId, wanted?: string, heroId?: number, ba
   // park přišel o hráče, aréna o něm dostane vědět
   syncPresence('park');
   syncPresence(`arena:${room.id}`);
+  pushRooms();
   log(`join room=${room.id} id=${conn.identity.id} role=${conn.identity.role} players=${room.players.size}`);
 }
 
@@ -703,7 +738,12 @@ const gameLoop = setInterval(() => {
         broadcastChannel(channel, { t: 'event', event: { kind: 'chat', ...line } });
       },
     });
-    room.state = room.match.state();
+    const nextState = room.match.state();
+    if (nextState !== room.state) {
+      room.state = nextState;
+      // stav v lobby (waiting/running/ended) se musí projevit i bez snapshotu
+      pushRooms();
+    }
 
     // 2) snapshoty — každý hráč dostane **svůj** (mlha války, skryté ruce)
     if (!withSnapshot) continue;

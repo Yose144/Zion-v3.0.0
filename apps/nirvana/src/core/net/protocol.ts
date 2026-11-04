@@ -62,8 +62,11 @@ const asItemId = (value: unknown): ItemId | null =>
  * 21 — **tanky (Saturn)**: nové `GameId 'tanks'`, zprávy `aim`/`shoot`
  *      a `tanks` ve snapshotu. Starý server by join do `tanks` neuměl a
  *      klient by skončil v chybě.
+ * 22 — **lobby**: server posílá `rooms` při každé změně (nová místnost,
+ *      hráč navíc, konec hry). Starý klient tuhle zprávu ignoroval, takže
+ *      by jen neměl živý seznam — proto se verze zvedá kvůli shodě.
  */
-export const PROTO_VERSION = 21;
+export const PROTO_VERSION = 22;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -400,6 +403,16 @@ export type ServerMessage =
       moba?: MobaSnapshot;
       /** Saturn — tanky (artilerie 1v1). */
       tanks?: TanksView;
+    }
+  | {
+      /**
+       * Živý seznam místností — posílá se **každému**, kdo prošel `hello`,
+       * když se změní počet hráčů nebo stav místnosti. Lobby podle toho
+       * kreslí, co je otevřené; bez toho by klient viděl jen stav při
+       * připojení a seznam by zastaral.
+       */
+      t: 'rooms';
+      rooms: RoomInfo[];
     }
   | { t: 'event'; event: EventPayload }
   | { t: 'pong'; at: number; serverTime: number }

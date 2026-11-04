@@ -15,6 +15,7 @@ import {
   type ChatLine,
   type NetIdentity,
   type PlayerSummary,
+  type RoomInfo,
   type ServerMessage,
 } from './protocol';
 import type { BattleSpellId, ItemId } from '../moba/sim';
@@ -38,6 +39,8 @@ export interface NetApi {
   status: NetStatus;
   you: NetIdentity | null;
   online: number;
+  /** Živý seznam místností (lobby). Server ho posílá při každé změně. */
+  rooms: RoomInfo[];
   /** Kdo je v kanálu (seřazeno podle připojení). */
   members: PlayerSummary[];
   lines: NetLine[];
@@ -53,6 +56,8 @@ export interface NetApi {
   joinArena: () => void;
   /** Připojení do hry (`arena` = Mars, `race` = Venuše, `fight` = Merkur). */
   joinGame: (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', heroId?: number, battleSpell?: BattleSpellId) => void;
+  /** Připojení do konkrétní místnosti z lobby (když je otevřených víc). */
+  joinRoom: (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', roomId: string) => void;
   /**
    * MOBA: kouzlo na bod + držený útok.
    * Vrací `true`, když se zpráva opravdu poslala — kouzlo se nesmí ztratit
@@ -136,6 +141,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<NetStatus>('connecting');
   const [you, setYou] = useState<NetIdentity | null>(null);
   const [online, setOnline] = useState(0);
+  const [rooms, setRooms] = useState<RoomInfo[]>([]);
   const [members, setMembers] = useState<PlayerSummary[]>([]);
   const [lines, setLines] = useState<NetLine[]>([]);
   const [rtt, setRtt] = useState<number | null>(null);
@@ -204,9 +210,14 @@ export function NetProvider({ children }: { children: ReactNode }) {
             setYouPlayerId(message.youPlayerId ?? null);
             return;
           }
+          case 'rooms': {
+            setRooms(message.rooms);
+            return;
+          }
           case 'welcome': {
             setYou(message.you);
             setOnline(message.online);
+            setRooms(message.rooms ?? []);
             setMembers(message.members ?? []);
             setLines(
               message.history.slice(-MAX_LINES).map((line) => ({ kind: 'chat', ...line })),
@@ -309,6 +320,13 @@ export function NetProvider({ children }: { children: ReactNode }) {
   const joinGame = useCallback(
     (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', heroId?: number, battleSpell?: BattleSpellId) => {
       send({ t: 'join', game, heroId, battleSpell });
+    },
+    [send],
+  );
+
+  const joinRoom = useCallback(
+    (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', roomId: string) => {
+      send({ t: 'join', game, room: roomId });
     },
     [send],
   );
@@ -457,6 +475,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       status,
       you,
       online,
+      rooms,
       members,
       lines,
       rtt,
@@ -467,6 +486,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       roomId,
       joinArena,
       joinGame,
+      joinRoom,
       leaveRoom,
       subscribe,
       sendInput,
@@ -488,6 +508,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       status,
       you,
       online,
+      rooms,
       members,
       lines,
       rtt,
@@ -497,6 +518,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       roomId,
       joinArena,
       joinGame,
+      joinRoom,
       leaveRoom,
       subscribe,
       sendInput,

@@ -37,6 +37,19 @@ export function GamesDock() {
           </span>
         </Link>
       ))}
+      {/* Lobby je rozcestník, ne hra — proto vlastní odkaz na konci lišty. */}
+      <Link href="/multiplayer" className="games-card is-lobby">
+        <span className="games-card-glyph" aria-hidden>
+          🌐
+        </span>
+        <span className="games-card-text">
+          <strong>{cs ? 'Online' : 'Online'}</strong>
+          <em>{cs ? 'kdo právě hraje' : 'who is playing'}</em>
+        </span>
+        <span className="games-card-go" aria-hidden>
+          →
+        </span>
+      </Link>
     </nav>
   );
 }
