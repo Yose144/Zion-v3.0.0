@@ -24,7 +24,7 @@ export interface OasisAvatar {
   ability: LocalizedText;
   key: string;
   /** Quest linie — rozepsané questy (prázdné = linie zatím bez questů). */
-  quests: { title: string; description: string }[];
+  quests: { title: LocalizedText; description: LocalizedText }[];
   /** Krátký popis ze SACRED_TRINITY profilu (ESENCE / první odstavec), cs+en ze scripts/oasis-essence-i18n.json. */
   essence: { cs: string; en: string };
   /** Epigraf — cs/en z scripts/oasis-avatar-copy/, fallback = blockquote z profilu. */
@@ -228,24 +228,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "The Flute of Union",
-        "description": "Hear the cosmic vibration in 7 frequencies"
+        "title": {
+          "cs": "Flétna jednoty",
+          "en": "The Flute of Union"
+        },
+        "description": {
+          "cs": "Uslyš kosmické chvění v sedmi frekvencích.",
+          "en": "Hear the cosmic vibration in seven frequencies."
+        }
       },
       {
-        "title": "Dance of Rasa Lila",
-        "description": "Find the hidden gopis across all timelines"
+        "title": {
+          "cs": "Tanec rása líla",
+          "en": "Dance of Rasa Lila"
+        },
+        "description": {
+          "cs": "Najdi skryté gópí napříč všemi časovými liniemi.",
+          "en": "Find the hidden gopis across all timelines."
+        }
       },
       {
-        "title": "Maitreya's Blockchain Prophecy",
-        "description": "Decode the genesis message of the future"
+        "title": {
+          "cs": "Maitrejovo proroctví",
+          "en": "Maitreya's Blockchain Prophecy"
+        },
+        "description": {
+          "cs": "Rozlušti zprávu zrodu, která patří budoucnosti.",
+          "en": "Decode the genesis message of the future."
+        }
       },
       {
-        "title": "Integration of All Paths",
-        "description": "Complete one quest from each tradition"
+        "title": {
+          "cs": "Sjednocení cest",
+          "en": "Integration of All Paths"
+        },
+        "description": {
+          "cs": "Splň jeden quest z každé tradice.",
+          "en": "Complete one quest from each tradition."
+        }
       },
       {
-        "title": "ON THE STAR",
-        "description": "Achieve CL 9 and witness the cosmic vision"
+        "title": {
+          "cs": "Na hvězdě",
+          "en": "On the Star"
+        },
+        "description": {
+          "cs": "Dosáhni CL 9 a spatři kosmické vidění.",
+          "en": "Reach CL 9 and witness the cosmic vision."
+        }
       }
     ],
     "essence": {
@@ -301,24 +331,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "Ramayana Key (1/3)",
     "quests": [
       {
-        "title": "The Exile Test",
-        "description": "Choose between power and dharma"
+        "title": {
+          "cs": "Zkouška vyhnanství",
+          "en": "The Exile Test"
+        },
+        "description": {
+          "cs": "Vyber mezi mocí a dharmou.",
+          "en": "Choose between power and dharma."
+        }
       },
       {
-        "title": "The Golden Deer",
-        "description": "Illusion vs reality puzzle"
+        "title": {
+          "cs": "Zlatý jelen",
+          "en": "The Golden Deer"
+        },
+        "description": {
+          "cs": "Hádanka o iluzi a skutečnosti.",
+          "en": "A puzzle of illusion and reality."
+        }
       },
       {
-        "title": "Bridge of Faith",
-        "description": "Build bridge with devotion (mini-game)"
+        "title": {
+          "cs": "Most víry",
+          "en": "Bridge of Faith"
+        },
+        "description": {
+          "cs": "Postav most z oddanosti (minihra).",
+          "en": "Build a bridge with devotion (mini-game)."
+        }
       },
       {
-        "title": "Sita's Rescue",
-        "description": "Strategic rescue mission"
+        "title": {
+          "cs": "Záchrana Síty",
+          "en": "Sita's Rescue"
+        },
+        "description": {
+          "cs": "Strategická záchranná mise.",
+          "en": "A strategic rescue mission."
+        }
       },
       {
-        "title": "Return to Ayodhya",
-        "description": "Final blessing"
+        "title": {
+          "cs": "Návrat do Ajódhji",
+          "en": "Return to Ayodhya"
+        },
+        "description": {
+          "cs": "Závěrečné požehnání.",
+          "en": "The final blessing."
+        }
       }
     ],
     "essence": {
@@ -374,24 +434,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "Ramayana Key (1/3)",
     "quests": [
       {
-        "title": "The Abduction",
-        "description": "Protect the innocent"
+        "title": {
+          "cs": "Únos",
+          "en": "The Abduction"
+        },
+        "description": {
+          "cs": "Ochraň nevinné.",
+          "en": "Protect the innocent."
+        }
       },
       {
-        "title": "Captivity in Lanka",
-        "description": "Maintain faith in darkness"
+        "title": {
+          "cs": "Zajetí na Lance",
+          "en": "Captivity in Lanka"
+        },
+        "description": {
+          "cs": "Udrž víru i ve tmě.",
+          "en": "Keep faith in the dark."
+        }
       },
       {
-        "title": "Fire Test",
-        "description": "Purity meter challenge"
+        "title": {
+          "cs": "Zkouška ohněm",
+          "en": "Fire Test"
+        },
+        "description": {
+          "cs": "Projdi měřením čistoty.",
+          "en": "Pass the measure of purity."
+        }
       },
       {
-        "title": "Earth's Embrace",
-        "description": "Environmental puzzle"
+        "title": {
+          "cs": "Náruč země",
+          "en": "Earth's Embrace"
+        },
+        "description": {
+          "cs": "Hádanka o přírodě a rovnováze.",
+          "en": "A puzzle of nature and balance."
+        }
       },
       {
-        "title": "Divine Union",
-        "description": "Blessing ceremony"
+        "title": {
+          "cs": "Božské spojení",
+          "en": "Divine Union"
+        },
+        "description": {
+          "cs": "Obřad požehnání.",
+          "en": "A ceremony of blessing."
+        }
       }
     ],
     "essence": {
@@ -447,24 +537,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "Ramayana Key (1/3)",
     "quests": [
       {
-        "title": "The Mountain Lift",
-        "description": "Strength mini-game"
+        "title": {
+          "cs": "Zvednutí hory",
+          "en": "The Mountain Lift"
+        },
+        "description": {
+          "cs": "Minihra na sílu.",
+          "en": "A test of strength."
+        }
       },
       {
-        "title": "Ocean Crossing",
-        "description": "Leap of faith mechanic"
+        "title": {
+          "cs": "Přechod oceánu",
+          "en": "Ocean Crossing"
+        },
+        "description": {
+          "cs": "Skok, který se dělá jen jednou.",
+          "en": "The leap you take only once."
+        }
       },
       {
-        "title": "Lanka Infiltration",
-        "description": "Stealth mission"
+        "title": {
+          "cs": "Vniknutí na Lanku",
+          "en": "Lanka Infiltration"
+        },
+        "description": {
+          "cs": "Tichá mise bez jediného slitování.",
+          "en": "A stealth mission without a single kill."
+        }
       },
       {
-        "title": "Tail of Fire",
-        "description": "Burning Lanka puzzle"
+        "title": {
+          "cs": "Ocas v plamenech",
+          "en": "Tail of Fire"
+        },
+        "description": {
+          "cs": "Zapal Lanku, ale ne lidi.",
+          "en": "Set Lanka alight, but not its people."
+        }
       },
       {
-        "title": "Rama's Messenger",
-        "description": "Final devotion test"
+        "title": {
+          "cs": "Rámův posel",
+          "en": "Rama's Messenger"
+        },
+        "description": {
+          "cs": "Závěrečná zkouška oddanosti.",
+          "en": "The final test of devotion."
+        }
       }
     ],
     "essence": {
@@ -520,24 +640,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "Welcome to ZION",
-        "description": "Tutorial quest"
+        "title": {
+          "cs": "Vítej v ZIONu",
+          "en": "Welcome to ZION"
+        },
+        "description": {
+          "cs": "Úvodní quest světa.",
+          "en": "The world's opening quest."
+        }
       },
       {
-        "title": "The Round Table",
-        "description": "Introduce DAO governance"
+        "title": {
+          "cs": "Kulatý stůl",
+          "en": "The Round Table"
+        },
+        "description": {
+          "cs": "Seznam se se správou DAO.",
+          "en": "Meet the practice of DAO governance."
+        }
       },
       {
-        "title": "Consciousness Mining",
-        "description": "Explain CL system"
+        "title": {
+          "cs": "Těžení vědomí",
+          "en": "Consciousness Mining"
+        },
+        "description": {
+          "cs": "Pochop, jak funguje žebřík CL.",
+          "en": "Understand how the CL ladder works."
+        }
       },
       {
-        "title": "Humanitarian Tithe",
-        "description": "Charity mission"
+        "title": {
+          "cs": "Humanitární desátek",
+          "en": "Humanitarian Tithe"
+        },
+        "description": {
+          "cs": "Mise, která něco dá dál.",
+          "en": "A mission that gives something on."
+        }
       },
       {
-        "title": "Golden Egg Prophecy",
-        "description": "Unlock treasure hunt"
+        "title": {
+          "cs": "Proroctví zlatého vejce",
+          "en": "Golden Egg Prophecy"
+        },
+        "description": {
+          "cs": "Odemkni honbu za pokladem.",
+          "en": "Unlock the treasure hunt."
+        }
       }
     ],
     "essence": {
@@ -593,24 +743,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "The Library Initiation",
-        "description": "Unlock Sacred Library access"
+        "title": {
+          "cs": "Zasvěcení do knihovny",
+          "en": "The Library Initiation"
+        },
+        "description": {
+          "cs": "Získej přístup do posvátné knihovny.",
+          "en": "Gain access to the sacred library."
+        }
       },
       {
-        "title": "Bhagavad Gita Quiz",
-        "description": "Comprehension test"
+        "title": {
+          "cs": "Kvíz Bhagavadgíty",
+          "en": "Bhagavad Gita Quiz"
+        },
+        "description": {
+          "cs": "Zkouška porozumění textu.",
+          "en": "A test of understanding the text."
+        }
       },
       {
-        "title": "Upanishad Meditation",
-        "description": "Contemplation mini-game"
+        "title": {
+          "cs": "Meditace na upanišady",
+          "en": "Upanishad Meditation"
+        },
+        "description": {
+          "cs": "Minihra ztišení a soustředění.",
+          "en": "A mini-game of stillness and focus."
+        }
       },
       {
-        "title": "Veena of Harmony",
-        "description": "Music puzzle"
+        "title": {
+          "cs": "Víny ze strun",
+          "en": "Veena of Harmony"
+        },
+        "description": {
+          "cs": "Hudební hádanka.",
+          "en": "A musical puzzle."
+        }
       },
       {
-        "title": "Blessing of Knowledge",
-        "description": "Final wisdom test"
+        "title": {
+          "cs": "Požehnání poznání",
+          "en": "Blessing of Knowledge"
+        },
+        "description": {
+          "cs": "Závěrečná zkouška moudrosti.",
+          "en": "The final test of wisdom."
+        }
       }
     ],
     "essence": {
@@ -666,24 +846,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "The Throne of Isis",
-        "description": "Reassemble the scattered ankh fragments"
+        "title": {
+          "cs": "Isidin trůn",
+          "en": "The Throne of Isis"
+        },
+        "description": {
+          "cs": "Slož znovu rozptýlené úlomky ankh.",
+          "en": "Reassemble the scattered ankh fragments."
+        }
       },
       {
-        "title": "Wings of Ma'at",
-        "description": "Restore balance in the cosmic scale"
+        "title": {
+          "cs": "Křídla Maʿăt",
+          "en": "Wings of Ma'at"
+        },
+        "description": {
+          "cs": "Obnov rovnováhu na kosmických vahách.",
+          "en": "Restore balance on the cosmic scales."
+        }
       },
       {
-        "title": "Sistrum of Resonance",
-        "description": "Attune to the 108 Hz carrier frequency"
+        "title": {
+          "cs": "Rezonanční sistrum",
+          "en": "Sistrum of Resonance"
+        },
+        "description": {
+          "cs": "Nalaď se na nosnou frekvenci 108 Hz.",
+          "en": "Attune to the 108 Hz carrier frequency."
+        }
       },
       {
-        "title": "Nile Flood Memory",
-        "description": "Decode the water-witness memory glyphs"
+        "title": {
+          "cs": "Paměť nilské záplavy",
+          "en": "Nile Flood Memory"
+        },
+        "description": {
+          "cs": "Rozlušti znaky, které psala voda.",
+          "en": "Decode the glyphs written by water."
+        }
       },
       {
-        "title": "Ankh of Life",
-        "description": "Revive a fallen ally in guild warfare"
+        "title": {
+          "cs": "Ankh života",
+          "en": "Ankh of Life"
+        },
+        "description": {
+          "cs": "Vzkřis padlého spojence ve válce gild.",
+          "en": "Revive a fallen ally in guild warfare."
+        }
       }
     ],
     "essence": {
@@ -739,24 +949,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "The Guardian's Vigil",
-        "description": "Patrol ZION City walls for 24 hours"
+        "title": {
+          "cs": "Strážcova hlídka",
+          "en": "The Guardian's Vigil"
+        },
+        "description": {
+          "cs": "Hlídej hradby města ZION celých 24 hodin.",
+          "en": "Patrol the walls of ZION for twenty-four hours."
+        }
       },
       {
-        "title": "Shield of Light",
-        "description": "Defend a territory from 3 enemy raids"
+        "title": {
+          "cs": "Štít světla",
+          "en": "Shield of Light"
+        },
+        "description": {
+          "cs": "Ubraň území třem nepřátelským nájezdům.",
+          "en": "Defend a territory from three enemy raids."
+        }
       },
       {
-        "title": "Issobela's Oath",
-        "description": "Swear the Bodhisattva vow of protection"
+        "title": {
+          "cs": "Issobelina přísaha",
+          "en": "Issobela's Oath"
+        },
+        "description": {
+          "cs": "Slož slib bódhisattvy: chránit, ne ovládat.",
+          "en": "Take the bodhisattva vow to protect, not to control."
+        }
       },
       {
-        "title": "Watchtower Ascension",
-        "description": "Build 5 consciousness beacons"
+        "title": {
+          "cs": "Vzestup strážnice",
+          "en": "Watchtower Ascension"
+        },
+        "description": {
+          "cs": "Postav pět majáků vědomí.",
+          "en": "Build five beacons of consciousness."
+        }
       },
       {
-        "title": "The Last Stand",
-        "description": "Win a guild war as the sole defender"
+        "title": {
+          "cs": "Poslední postoj",
+          "en": "The Last Stand"
+        },
+        "description": {
+          "cs": "Vyhraj válku gild jako jediný obránce.",
+          "en": "Win a guild war as the sole defender."
+        }
       }
     ],
     "essence": {
@@ -812,24 +1052,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "The Way of Ahimsa",
-        "description": "Resolve 3 conflicts without combat"
+        "title": {
+          "cs": "Cesta ahinsá",
+          "en": "The Way of Ahimsa"
+        },
+        "description": {
+          "cs": "Vyřeš tři spory bez boje.",
+          "en": "Resolve three conflicts without a fight."
+        }
       },
       {
-        "title": "Ashram Meditation",
-        "description": "Complete 7 days of meditation streak"
+        "title": {
+          "cs": "Meditace v ášramu",
+          "en": "Ashram Meditation"
+        },
+        "description": {
+          "cs": "Vydrž sedm dní meditační řady.",
+          "en": "Keep a seven-day meditation streak."
+        }
       },
       {
-        "title": "Gandhi's Salt March",
-        "description": "Walk the full territory circuit"
+        "title": {
+          "cs": "Gándhího pochod za sůl",
+          "en": "Gandhi's Salt March"
+        },
+        "description": {
+          "cs": "Projdi celý okruh území pěšky.",
+          "en": "Walk the full circuit of the territory."
+        }
       },
       {
-        "title": "Peaceful Resolution",
-        "description": "Convert an enemy guild to allies"
+        "title": {
+          "cs": "Mírové rozuzlení",
+          "en": "Peaceful Resolution"
+        },
+        "description": {
+          "cs": "Proměň nepřátelskou gild ve spojence.",
+          "en": "Turn an enemy guild into allies."
+        }
       },
       {
-        "title": "Non-Violence Mastery",
-        "description": "Reach CL 6 without any combat XP"
+        "title": {
+          "cs": "Mistrovství nenásilí",
+          "en": "Non-Violence Mastery"
+        },
+        "description": {
+          "cs": "Dosáhni CL 6 bez jediného bojového XP.",
+          "en": "Reach CL 6 without a single point of combat XP."
+        }
       }
     ],
     "essence": {
@@ -885,24 +1155,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "The Sacred Sword",
-        "description": "Find the sword in the Camelot ruins"
+        "title": {
+          "cs": "Posvátný meč",
+          "en": "The Sacred Sword"
+        },
+        "description": {
+          "cs": "Najdi meč ve zříceninách Camelotu.",
+          "en": "Find the sword in the ruins of Camelot."
+        }
       },
       {
-        "title": "Crusade of Truth",
-        "description": "Defeat 10 adharmic shadow creatures"
+        "title": {
+          "cs": "Křížová výprava pravdy",
+          "en": "Crusade of Truth"
+        },
+        "description": {
+          "cs": "Poraž deset stínů bezpráví.",
+          "en": "Defeat ten shadows of wrongdoing."
+        }
       },
       {
-        "title": "Holy Strike Trial",
-        "description": "Land a perfect righteous combat combo"
+        "title": {
+          "cs": "Zkouška svatého úderu",
+          "en": "Holy Strike Trial"
+        },
+        "description": {
+          "cs": "Zasáhni dokonalou spravedlivou kombinaci.",
+          "en": "Land a perfect righteous combination."
+        }
       },
       {
-        "title": "Warrior Priest Ordination",
-        "description": "Heal and fight in the same battle"
+        "title": {
+          "cs": "Svěcení válečného kněze",
+          "en": "Warrior Priest Ordination"
+        },
+        "description": {
+          "cs": "V jedné bitvě léči i bojuj.",
+          "en": "Heal and fight in the same battle."
+        }
       },
       {
-        "title": "Fight for Truth, Not Ego",
-        "description": "Win a duel without taking damage"
+        "title": {
+          "cs": "Bojuj za pravdu, ne za ego",
+          "en": "Fight for Truth, Not Ego"
+        },
+        "description": {
+          "cs": "Vyhraj souboj bez jediného zásahu.",
+          "en": "Win a duel without taking a single hit."
+        }
       }
     ],
     "essence": {
@@ -958,24 +1258,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "Mahabharata Key (2/3)",
     "quests": [
       {
-        "title": "The Dilemma",
-        "description": "Moral choice: fight family or abandon duty?"
+        "title": {
+          "cs": "Dilema",
+          "en": "The Dilemma"
+        },
+        "description": {
+          "cs": "Rozhodni: bojovat proti rodině, nebo opustit povinnost?",
+          "en": "Decide: fight your family, or abandon duty?"
+        }
       },
       {
-        "title": "Krishna's Teaching",
-        "description": "Bhagavad Gita dialogue tree"
+        "title": {
+          "cs": "Krišnovo učení",
+          "en": "Krishna's Teaching"
+        },
+        "description": {
+          "cs": "Dialogový strom Bhagavadgíty.",
+          "en": "The dialogue tree of the Bhagavad Gita."
+        }
       },
       {
-        "title": "The Battlefield",
-        "description": "Strategy combat"
+        "title": {
+          "cs": "Bitevní pole",
+          "en": "The Battlefield"
+        },
+        "description": {
+          "cs": "Strategický boj.",
+          "en": "Strategic combat."
+        }
       },
       {
-        "title": "Detachment Lesson",
-        "description": "Emotional control test"
+        "title": {
+          "cs": "Lekce odpoutání",
+          "en": "Detachment Lesson"
+        },
+        "description": {
+          "cs": "Zkouška zvládnutí emocí.",
+          "en": "A test of emotional command."
+        }
       },
       {
-        "title": "Victory Without Pride",
-        "description": "Final Gita wisdom"
+        "title": {
+          "cs": "Vítězství bez pýchy",
+          "en": "Victory Without Pride"
+        },
+        "description": {
+          "cs": "Závěrečná moudrost Gíty.",
+          "en": "The closing wisdom of the Gita."
+        }
       }
     ],
     "essence": {
@@ -1031,24 +1361,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "Mahabharata Key (2/3)",
     "quests": [
       {
-        "title": "The Mace of Thunder",
-        "description": "Destroy a fortress gate in guild war"
+        "title": {
+          "cs": "Kyj hromu",
+          "en": "The Mace of Thunder"
+        },
+        "description": {
+          "cs": "Rozbij bránu pevnosti ve válce gild.",
+          "en": "Break a fortress gate in guild war."
+        }
       },
       {
-        "title": "Strength Serves Justice",
-        "description": "Defend the weak from 5 bandit raids"
+        "title": {
+          "cs": "Síla slouží spravedlnosti",
+          "en": "Strength Serves Justice"
+        },
+        "description": {
+          "cs": "Ubraň slabší pěti nájezdům banditů.",
+          "en": "Defend the weak from five bandit raids."
+        }
       },
       {
-        "title": "Bhima's Feast",
-        "description": "Gather 108 sacred ingredients"
+        "title": {
+          "cs": "Bhímova hostina",
+          "en": "Bhima's Feast"
+        },
+        "description": {
+          "cs": "Sesbírej 108 posvátných surovin.",
+          "en": "Gather a hundred and eight sacred ingredients."
+        }
       },
       {
-        "title": "River Crossing",
-        "description": "Carry 10 allies across a hazard zone"
+        "title": {
+          "cs": "Přechod řeky",
+          "en": "River Crossing"
+        },
+        "description": {
+          "cs": "Přenos deseti spojenců přes nebezpečnou zónu.",
+          "en": "Carry ten allies across a hazard zone."
+        }
       },
       {
-        "title": "The Mighty One",
-        "description": "Deal 1,000,000 damage in a single war"
+        "title": {
+          "cs": "Ten mocný",
+          "en": "The Mighty One"
+        },
+        "description": {
+          "cs": "Dej milion poškození v jedné válce.",
+          "en": "Deal a million damage in a single war."
+        }
       }
     ],
     "essence": {
@@ -1104,24 +1464,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "The Chief's Burden",
-        "description": "Lead a guild of 50+ members for 30 days"
+        "title": {
+          "cs": "Břemeno náčelníka",
+          "en": "The Chief's Burden"
+        },
+        "description": {
+          "cs": "Veď gild o padesáti členech třicet dní.",
+          "en": "Lead a guild of fifty or more for thirty days."
+        }
       },
       {
-        "title": "Rally Troops",
-        "description": "Inspire 100 players simultaneously"
+        "title": {
+          "cs": "Shromáždi oddíl",
+          "en": "Rally Troops"
+        },
+        "description": {
+          "cs": "Nadchni sto hráčů najednou.",
+          "en": "Inspire a hundred players at once."
+        }
       },
       {
-        "title": "Council of Seven Rays",
-        "description": "Form a full-spectrum alliance"
+        "title": {
+          "cs": "Rada sedmi paprsků",
+          "en": "Council of Seven Rays"
+        },
+        "description": {
+          "cs": "Vytvoř spojenectví celého spektra.",
+          "en": "Form a full-spectrum alliance."
+        }
       },
       {
-        "title": "Lead by Example",
-        "description": "Have the highest contribution in 10 wars"
+        "title": {
+          "cs": "Veď příkladem",
+          "en": "Lead by Example"
+        },
+        "description": {
+          "cs": "Měj nejvyšší příspěvek v deseti válkách.",
+          "en": "Have the highest contribution in ten wars."
+        }
       },
       {
-        "title": "The Round Table",
-        "description": "Host a DAO governance summit"
+        "title": {
+          "cs": "Kulatý stůl",
+          "en": "The Round Table"
+        },
+        "description": {
+          "cs": "Svol správní summit DAO.",
+          "en": "Host a DAO governance summit."
+        }
       }
     ],
     "essence": {
@@ -1177,24 +1567,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "Mahabharata Key (2/3)",
     "quests": [
       {
-        "title": "Baby Krishna",
-        "description": "Care for divine child mini-game"
+        "title": {
+          "cs": "Malý Krišna",
+          "en": "Baby Krishna"
+        },
+        "description": {
+          "cs": "Postarej se o božské dítě.",
+          "en": "Care for the divine child."
+        }
       },
       {
-        "title": "The Butter Thief",
-        "description": "Playful puzzle"
+        "title": {
+          "cs": "Zloděj másla",
+          "en": "The Butter Thief"
+        },
+        "description": {
+          "cs": "Hravá hádanka.",
+          "en": "A playful puzzle."
+        }
       },
       {
-        "title": "Cosmic Vision",
-        "description": "See universe in Krishna's mouth"
+        "title": {
+          "cs": "Kosmické vidění",
+          "en": "Cosmic Vision"
+        },
+        "description": {
+          "cs": "Spatři vesmír v Krišnových ústech.",
+          "en": "See the universe inside Krishna's mouth."
+        }
       },
       {
-        "title": "Letting Go",
-        "description": "Detachment lesson"
+        "title": {
+          "cs": "Pouštění",
+          "en": "Letting Go"
+        },
+        "description": {
+          "cs": "Lekce odpoutání.",
+          "en": "A lesson in letting go."
+        }
       },
       {
-        "title": "Blessing of Motherhood",
-        "description": "Final heart opening"
+        "title": {
+          "cs": "Požehnání mateřství",
+          "en": "Blessing of Motherhood"
+        },
+        "description": {
+          "cs": "Závěrečné otevření srdce.",
+          "en": "The final opening of the heart."
+        }
       }
     ],
     "essence": {
@@ -1250,24 +1670,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "Mahabharata Key (2/3)",
     "quests": [
       {
-        "title": "The 108 Pillars",
-        "description": "Build EKAM Temple"
+        "title": {
+          "cs": "108 sloupů",
+          "en": "The 108 Pillars"
+        },
+        "description": {
+          "cs": "Postav chrám EKAM.",
+          "en": "Build the EKAM temple."
+        }
       },
       {
-        "title": "Golden Ratio",
-        "description": "Fibonacci pattern puzzle"
+        "title": {
+          "cs": "Zlatý řez",
+          "en": "Golden Ratio"
+        },
+        "description": {
+          "cs": "Hádanka Fibonacciho vzoru.",
+          "en": "A puzzle of the Fibonacci pattern."
+        }
       },
       {
-        "title": "Platonic Solids",
-        "description": "3D geometry challenge"
+        "title": {
+          "cs": "Platónská tělesa",
+          "en": "Platonic Solids"
+        },
+        "description": {
+          "cs": "Výzva v prostorové geometrii.",
+          "en": "A challenge in spatial geometry."
+        }
       },
       {
-        "title": "Source Code",
-        "description": "Meta-game: find clues in game files"
+        "title": {
+          "cs": "Zdrojový kód",
+          "en": "Source Code"
+        },
+        "description": {
+          "cs": "Najdi stopy ve světě, ne v souborech.",
+          "en": "Find the clues in the world, not in the files."
+        }
       },
       {
-        "title": "Architect's Blessing",
-        "description": "Unlock hidden areas"
+        "title": {
+          "cs": "Architektovo požehnání",
+          "en": "Architect's Blessing"
+        },
+        "description": {
+          "cs": "Odemkni skryté prostory.",
+          "en": "Unlock the hidden spaces."
+        }
       }
     ],
     "essence": {
@@ -1323,24 +1773,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "Ramayana Key (1/3)",
     "quests": [
       {
-        "title": "The Eternal Dance",
-        "description": "Complete the rasa lila rhythm mini-game"
+        "title": {
+          "cs": "Věčný tanec",
+          "en": "The Eternal Dance"
+        },
+        "description": {
+          "cs": "Dokonči rytmickou minihru rása líla.",
+          "en": "Complete the rasa lila rhythm mini-game."
+        }
       },
       {
-        "title": "Radha Kund Pilgrimage",
-        "description": "Visit all 8 territory sacred lakes"
+        "title": {
+          "cs": "Pouť k Rádhákundu",
+          "en": "Radha Kund Pilgrimage"
+        },
+        "description": {
+          "cs": "Navštiv všech osm posvátných jezer.",
+          "en": "Visit all eight sacred lakes."
+        }
       },
       {
-        "title": "Love Transcends Form",
-        "description": "Form a cross-guild friendship bond"
+        "title": {
+          "cs": "Láska přesahuje formu",
+          "en": "Love Transcends Form"
+        },
+        "description": {
+          "cs": "Vytvoř přátelské pouto mezi gildami.",
+          "en": "Form a friendship bond across guilds."
+        }
       },
       {
-        "title": "Divine Union",
-        "description": "Complete a co-op quest with Krishna-Maitreya"
+        "title": {
+          "cs": "Božské spojení",
+          "en": "Divine Union"
+        },
+        "description": {
+          "cs": "Splň společný quest s Krishna-Maitreyou.",
+          "en": "Complete a co-op quest with Krishna-Maitreya."
+        }
       },
       {
-        "title": "The Beloved's Devotion",
-        "description": "Maintain 30-day daily streak"
+        "title": {
+          "cs": "Oddanost milované",
+          "en": "The Beloved's Devotion"
+        },
+        "description": {
+          "cs": "Vydrž třicetidenní denní řadu.",
+          "en": "Keep a thirty-day daily streak."
+        }
       }
     ],
     "essence": {
@@ -1396,24 +1876,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "Mahabharata Key (2/3)",
     "quests": [
       {
-        "title": "The Mahabharata Recitation",
-        "description": "Story comprehension"
+        "title": {
+          "cs": "Přednes Mahábháraty",
+          "en": "The Mahabharata Recitation"
+        },
+        "description": {
+          "cs": "Zkouška porozumění příběhu.",
+          "en": "A test of understanding the story."
+        }
       },
       {
-        "title": "18 Parvas",
-        "description": "Complete 18 chapter challenges"
+        "title": {
+          "cs": "18 parvas",
+          "en": "18 Parvas"
+        },
+        "description": {
+          "cs": "Splň osmnáct kapitolových výzev.",
+          "en": "Complete eighteen chapter challenges."
+        }
       },
       {
-        "title": "Ganesha's Pen",
-        "description": "Writing puzzle"
+        "title": {
+          "cs": "Ganéšovo pero",
+          "en": "Ganesha's Pen"
+        },
+        "description": {
+          "cs": "Písařská hádanka.",
+          "en": "A scribe's puzzle."
+        }
       },
       {
-        "title": "Timeless Wisdom",
-        "description": "Apply ancient lessons to modern problems"
+        "title": {
+          "cs": "Moudrost bez věku",
+          "en": "Timeless Wisdom"
+        },
+        "description": {
+          "cs": "Použij staré lekce na dnešní problém.",
+          "en": "Apply an ancient lesson to a present problem."
+        }
       },
       {
-        "title": "Sage's Blessing",
-        "description": "Unlock all lore entries"
+        "title": {
+          "cs": "Mudrcovo požehnání",
+          "en": "Sage's Blessing"
+        },
+        "description": {
+          "cs": "Odemkni všechny záznamy kánonu.",
+          "en": "Unlock every entry of the lore."
+        }
       }
     ],
     "essence": {
@@ -1469,24 +1979,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "The Apostle of Apostles",
-        "description": "Restore a forgotten sacred text"
+        "title": {
+          "cs": "Apoštolka apoštolů",
+          "en": "The Apostle of Apostles"
+        },
+        "description": {
+          "cs": "Obnov zapomenutý posvátný text.",
+          "en": "Restore a forgotten sacred text."
+        }
       },
       {
-        "title": "Rose of Sharon",
-        "description": "Heal 1,000 players across all territories"
+        "title": {
+          "cs": "Růže ze Šáronu",
+          "en": "Rose of Sharon"
+        },
+        "description": {
+          "cs": "Uzdrav tisíc hráčů napříč územími.",
+          "en": "Heal a thousand players across the territories."
+        }
       },
       {
-        "title": "Sacred Union",
-        "description": "Form a divine partnership quest duo"
+        "title": {
+          "cs": "Posvátné spojení",
+          "en": "Sacred Union"
+        },
+        "description": {
+          "cs": "Vytvoř dvojici pro společný quest.",
+          "en": "Form a duo for a shared quest."
+        }
       },
       {
-        "title": "Tears of Compassion",
-        "description": "Comfort 100 distressed NPCs"
+        "title": {
+          "cs": "Slzy soucitu",
+          "en": "Tears of Compassion"
+        },
+        "description": {
+          "cs": "Utěš sto ztrápených postav.",
+          "en": "Comfort a hundred distressed characters."
+        }
       },
       {
-        "title": "The Garden Encounter",
-        "description": "Discover the hidden resurrection spring"
+        "title": {
+          "cs": "Setkání v zahradě",
+          "en": "The Garden Encounter"
+        },
+        "description": {
+          "cs": "Najdi skrytý pramen vzkříšení.",
+          "en": "Find the hidden spring of resurrection."
+        }
       }
     ],
     "essence": {
@@ -1542,24 +2082,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "The Sermon on the Mount",
-        "description": "Beatitudes teaching"
+        "title": {
+          "cs": "Kázání na hoře",
+          "en": "The Sermon on the Mount"
+        },
+        "description": {
+          "cs": "Učení blahoslavenství.",
+          "en": "The teaching of the beatitudes."
+        }
       },
       {
-        "title": "Cleansing the Temple",
-        "description": "Righteous anger vs compassion"
+        "title": {
+          "cs": "Očištění chrámu",
+          "en": "Cleansing the Temple"
+        },
+        "description": {
+          "cs": "Spravedlivý hněv proti soucitu.",
+          "en": "Righteous anger against compassion."
+        }
       },
       {
-        "title": "The Last Supper",
-        "description": "Unity ritual"
+        "title": {
+          "cs": "Poslední večeře",
+          "en": "The Last Supper"
+        },
+        "description": {
+          "cs": "Obřad jednoty.",
+          "en": "A ritual of unity."
+        }
       },
       {
-        "title": "Gethsemane Choice",
-        "description": "Ultimate sacrifice test"
+        "title": {
+          "cs": "Volba v Getsemane",
+          "en": "Gethsemane Choice"
+        },
+        "description": {
+          "cs": "Zkouška krajní oběti.",
+          "en": "The test of ultimate sacrifice."
+        }
       },
       {
-        "title": "Easter Dawn",
-        "description": "Resurrection celebration"
+        "title": {
+          "cs": "Velikonoční svítání",
+          "en": "Easter Dawn"
+        },
+        "description": {
+          "cs": "Slavnost vzkříšení.",
+          "en": "A celebration of resurrection."
+        }
       }
     ],
     "essence": {
@@ -1615,24 +2185,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "The Immaculate Conception",
-        "description": "Find the sacred grail in hidden ruins"
+        "title": {
+          "cs": "Neposkvrněné početí",
+          "en": "The Immaculate Conception"
+        },
+        "description": {
+          "cs": "Najdi posvátný grál ve skrytých zříceninách.",
+          "en": "Find the sacred grail in hidden ruins."
+        }
       },
       {
-        "title": "Hail Mary Protection",
-        "description": "Shield 50 players from fatal damage"
+        "title": {
+          "cs": "Ochrana Zdrávas",
+          "en": "Hail Mary Protection"
+        },
+        "description": {
+          "cs": "Uchraň padesát hráčů před smrtícím zásahem.",
+          "en": "Shield fifty players from fatal damage."
+        }
       },
       {
-        "title": "The Rosary Path",
-        "description": "Complete 108 meditation beads cycle"
+        "title": {
+          "cs": "Cesta růžence",
+          "en": "The Rosary Path"
+        },
+        "description": {
+          "cs": "Projdi cyklus 108 meditačních korálků.",
+          "en": "Complete a cycle of a hundred and eight beads."
+        }
       },
       {
-        "title": "Star of the Sea",
-        "description": "Navigate the treacherous astral waters"
+        "title": {
+          "cs": "Hvězda moře",
+          "en": "Star of the Sea"
+        },
+        "description": {
+          "cs": "Propluj zrádnými astrálními vodami.",
+          "en": "Navigate the treacherous astral waters."
+        }
       },
       {
-        "title": "Assumption to Heaven",
-        "description": "Ascend to CL 6 in a single day"
+        "title": {
+          "cs": "Nanebevzetí",
+          "en": "Assumption to Heaven"
+        },
+        "description": {
+          "cs": "Vystup na CL 6 během jediného dne.",
+          "en": "Ascend to CL 6 in a single day."
+        }
       }
     ],
     "essence": {
@@ -1688,24 +2288,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "The Twenty-One Praises",
-        "description": "Find all 21 Tara shrines"
+        "title": {
+          "cs": "Jedenadvacet chval",
+          "en": "The Twenty-One Praises"
+        },
+        "description": {
+          "cs": "Najdi všech 21 Tářiných svatyní.",
+          "en": "Find all twenty-one Tara shrines."
+        }
       },
       {
-        "title": "Liberation from Samsara",
-        "description": "Free 100 trapped souls in shadow realms"
+        "title": {
+          "cs": "Osvobození ze samsáry",
+          "en": "Liberation from Samsara"
+        },
+        "description": {
+          "cs": "Osvoboď sto uvězněných duší v říších stínu.",
+          "en": "Free a hundred trapped souls in the shadow realms."
+        }
       },
       {
-        "title": "Green Tara's Swift Action",
-        "description": "Complete 10 quests in under 1 hour"
+        "title": {
+          "cs": "Rychlý zásah Zelené Táry",
+          "en": "Green Tara's Swift Action"
+        },
+        "description": {
+          "cs": "Splň deset questů za méně než hodinu.",
+          "en": "Complete ten quests in under an hour."
+        }
       },
       {
-        "title": "White Tara's Long Life",
-        "description": "Maintain 100-day daily streak"
+        "title": {
+          "cs": "Dlouhý život Bílé Táry",
+          "en": "White Tara's Long Life"
+        },
+        "description": {
+          "cs": "Vydrž stodenní denní řadu.",
+          "en": "Keep a hundred-day daily streak."
+        }
       },
       {
-        "title": "The Bodhisattva Vow",
-        "description": "Swear to liberate all beings before self"
+        "title": {
+          "cs": "Slib bódhisattvy",
+          "en": "The Bodhisattva Vow"
+        },
+        "description": {
+          "cs": "Přísahuj osvobodit všechny bytosti dřív než sebe.",
+          "en": "Vow to liberate all beings before yourself."
+        }
       }
     ],
     "essence": {
@@ -1761,24 +2391,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "The Thousand Arms",
-        "description": "Help 1,000 different players"
+        "title": {
+          "cs": "Tisíc rukou",
+          "en": "The Thousand Arms"
+        },
+        "description": {
+          "cs": "Pomoz tisíci různým hráčům.",
+          "en": "Help a thousand different players."
+        }
       },
       {
-        "title": "Om Mani Padme Hum",
-        "description": "Recite the mantra across 108 locations"
+        "title": {
+          "cs": "Óm mani padmé húm",
+          "en": "Om Mani Padme Hum"
+        },
+        "description": {
+          "cs": "Odříkej mantru na 108 místech.",
+          "en": "Recite the mantra in a hundred and eight places."
+        }
       },
       {
-        "title": "Compassion Without Limits",
-        "description": "Forgive 100 enemy guild attackers"
+        "title": {
+          "cs": "Soucit bez hranic",
+          "en": "Compassion Without Limits"
+        },
+        "description": {
+          "cs": "Odpusť sto útočníkům z nepřátelských gild.",
+          "en": "Forgive a hundred attackers from enemy guilds."
+        }
       },
       {
-        "title": "Guanyin's Tears",
-        "description": "Witness the world's suffering and heal it"
+        "title": {
+          "cs": "Kuanjininy slzy",
+          "en": "Guanyin's Tears"
+        },
+        "description": {
+          "cs": "Uvidět utrpení světa a uzdravit ho.",
+          "en": "See the world's suffering and heal it."
+        }
       },
       {
-        "title": "The All-Seeing Lord",
-        "description": "Discover every hidden secret in OASIS"
+        "title": {
+          "cs": "Pán, který vidí vše",
+          "en": "The All-Seeing Lord"
+        },
+        "description": {
+          "cs": "Objev každé skryté tajemství OASIS.",
+          "en": "Discover every hidden secret in OASIS."
+        }
       }
     ],
     "essence": {
@@ -1834,24 +2494,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "The Hundred-Syllable Mantra",
-        "description": "Chant the purification mantra 100 times"
+        "title": {
+          "cs": "Mantra sta slabik",
+          "en": "The Hundred-Syllable Mantra"
+        },
+        "description": {
+          "cs": "Odříkej očistnou mantru stokrát.",
+          "en": "Chant the purification mantra a hundred times."
+        }
       },
       {
-        "title": "Diamond Mind",
-        "description": "Clear all negative karma points"
+        "title": {
+          "cs": "Diamantová mysl",
+          "en": "Diamond Mind"
+        },
+        "description": {
+          "cs": "Vymaž všechny body negativní karmy.",
+          "en": "Clear every point of negative karma."
+        }
       },
       {
-        "title": "The Mirror of Truth",
-        "description": "Face and defeat your shadow self"
+        "title": {
+          "cs": "Zrcadlo pravdy",
+          "en": "The Mirror of Truth"
+        },
+        "description": {
+          "cs": "Postav se svému stínu a poraz ho.",
+          "en": "Face your shadow self and defeat it."
+        }
       },
       {
-        "title": "Purification Fire",
-        "description": "Burn away 108 attachments in ritual"
+        "title": {
+          "cs": "Očistný oheň",
+          "en": "Purification Fire"
+        },
+        "description": {
+          "cs": "Spal 108 vazeb v obřadu.",
+          "en": "Burn away a hundred and eight attachments in ritual."
+        }
       },
       {
-        "title": "Vajra Body",
-        "description": "Achieve perfect health status for 30 days"
+        "title": {
+          "cs": "Vadžrové tělo",
+          "en": "Vajra Body"
+        },
+        "description": {
+          "cs": "Udrž si plné zdraví třicet dní.",
+          "en": "Keep perfect health for thirty days."
+        }
       }
     ],
     "essence": {
@@ -1907,24 +2597,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "The Middle Way",
-        "description": "Balance wisdom and compassion in 10 quests"
+        "title": {
+          "cs": "Střední cesta",
+          "en": "The Middle Way"
+        },
+        "description": {
+          "cs": "Vyvaž moudrost a soucit v deseti questech.",
+          "en": "Balance wisdom and compassion across ten quests."
+        }
       },
       {
-        "title": "Tibetan Freedom",
-        "description": "Liberate a captured territory peacefully"
+        "title": {
+          "cs": "Tibetská svoboda",
+          "en": "Tibetan Freedom"
+        },
+        "description": {
+          "cs": "Osvoboď obsazené území bez násilí.",
+          "en": "Liberate an occupied territory peacefully."
+        }
       },
       {
-        "title": "Loving Kindness Meditation",
-        "description": "Send metta to 100 players simultaneously"
+        "title": {
+          "cs": "Meditace milující laskavosti",
+          "en": "Loving Kindness Meditation"
+        },
+        "description": {
+          "cs": "Pošli mettu stu hráčů najednou.",
+          "en": "Send metta to a hundred players at once."
+        }
       },
       {
-        "title": "The Art of Happiness",
-        "description": "Achieve maximum happiness score"
+        "title": {
+          "cs": "Umění štěstí",
+          "en": "The Art of Happiness"
+        },
+        "description": {
+          "cs": "Dosáhni nejvyššího skóre štěstí.",
+          "en": "Reach the highest happiness score."
+        }
       },
       {
-        "title": "Universal Responsibility",
-        "description": "Lead a humanitarian tithe campaign"
+        "title": {
+          "cs": "Univerzální odpovědnost",
+          "en": "Universal Responsibility"
+        },
+        "description": {
+          "cs": "Veď kampaň humanitárního desátku.",
+          "en": "Lead a humanitarian tithe campaign."
+        }
       }
     ],
     "essence": {
@@ -1980,24 +2700,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "První rozhodnutí",
+          "en": "The First Decision"
+        },
+        "description": {
+          "cs": "Zvol cestu a sedm dní ji nezpochybňuj.",
+          "en": "Choose a path and do not second-guess it for seven days."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Paprsek vůle",
+          "en": "Ray of Will"
+        },
+        "description": {
+          "cs": "Pomoz gildě rozhodnout spor jediným hlasováním.",
+          "en": "Help a guild settle a dispute in a single vote."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Náčelníkův stolec",
+          "en": "The Chief's Seat"
+        },
+        "description": {
+          "cs": "Veď deset výprav bez ztráty jediného člena.",
+          "en": "Lead ten expeditions without losing a single member."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Klidná rána",
+          "en": "The Calm Blow"
+        },
+        "description": {
+          "cs": "Ukonči bitvu dřív, než opravdu začne.",
+          "en": "End a battle before it truly begins."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Síla bez tvrdohlavosti",
+          "en": "Strength Without Stubbornness"
+        },
+        "description": {
+          "cs": "Přiznej omyl veřejně a oprav ho.",
+          "en": "Admit a mistake publicly and repair it."
+        }
       }
     ],
     "essence": {
@@ -2053,24 +2803,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "První světlo",
+          "en": "First Light"
+        },
+        "description": {
+          "cs": "Najdi souvislost, kterou ostatní přehlédli.",
+          "en": "Find a connection others walked past."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Kniha bez odpovědí",
+          "en": "The Book Without Answers"
+        },
+        "description": {
+          "cs": "Přečti text, který nedává řešení — jen otázku.",
+          "en": "Read a text that offers no solution, only a question."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Zkouška porozumění",
+          "en": "Trial of Understanding"
+        },
+        "description": {
+          "cs": "Vysvětli složité pravidlo nováčkovi tak, aby ho použil.",
+          "en": "Explain a complex rule so a newcomer can actually use it."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Soustředění",
+          "en": "Focus"
+        },
+        "description": {
+          "cs": "Vyřeš hádanku bez jediné nápovědy.",
+          "en": "Solve a puzzle without a single hint."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Světlo bez oslnění",
+          "en": "Light Without Blinding"
+        },
+        "description": {
+          "cs": "Nauč někoho to, co umíš sám nejlépe.",
+          "en": "Teach someone the thing you do best."
+        }
       }
     ],
     "essence": {
@@ -2126,24 +2906,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Dílna",
+          "en": "The Workshop"
+        },
+        "description": {
+          "cs": "Vytvoř předmět, na kterém je vidět péče.",
+          "en": "Make an object in which care is visible."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Ruka, která vidí",
+          "en": "The Hand That Sees"
+        },
+        "description": {
+          "cs": "Obnov poškozené dílo tak, aby neztratilo historii.",
+          "en": "Restore a damaged work without erasing its history."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Krása jako argument",
+          "en": "Beauty as Argument"
+        },
+        "description": {
+          "cs": "Přesvědč někoho bez jediného slova.",
+          "en": "Convince someone without a single word."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Místo k žití",
+          "en": "A Place to Live"
+        },
+        "description": {
+          "cs": "Uprav prostor tak, aby v něm chtěli lidé zůstat.",
+          "en": "Shape a space so people want to stay in it."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Pán civilizace",
+          "en": "Lord of Civilisation"
+        },
+        "description": {
+          "cs": "Nech po sobě něco, co přežije tvoji generaci.",
+          "en": "Leave behind something that outlives your generation."
+        }
       }
     ],
     "essence": {
@@ -2199,24 +3009,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Práh",
+          "en": "The Threshold"
+        },
+        "description": {
+          "cs": "Odlož, co už nepotřebuješ, a vejdi.",
+          "en": "Set down what you no longer need, then enter."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Bílý oheň",
+          "en": "White Fire"
+        },
+        "description": {
+          "cs": "Projdi očistou bez jediné stížnosti.",
+          "en": "Pass through cleansing without a single complaint."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Disciplína",
+          "en": "Discipline"
+        },
+        "description": {
+          "cs": "Vydrž jednadvacet dní v řadě.",
+          "en": "Hold a twenty-one-day streak."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Vzestup",
+          "en": "Ascension"
+        },
+        "description": {
+          "cs": "Pomoz někomu jinému výš, ne sobě.",
+          "en": "Help someone else higher, not yourself."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Mistr bílého světla",
+          "en": "Master of White Light"
+        },
+        "description": {
+          "cs": "Veď obřad klidu v nejisté době.",
+          "en": "Lead a rite of calm in an uncertain hour."
+        }
       }
     ],
     "essence": {
@@ -2272,24 +3112,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Co se stalo",
+          "en": "What Happened"
+        },
+        "description": {
+          "cs": "Zjisti pravdu o nehodě, i když to nikomu nevyhovuje.",
+          "en": "Find out what really happened, even if it suits no one."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Léčba ran",
+          "en": "Healing"
+        },
+        "description": {
+          "cs": "Ošetři sto zraněných bez ohledu na stranu.",
+          "en": "Treat a hundred wounded regardless of side."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Nástroj, ne zbraň",
+          "en": "A Tool, Not a Weapon"
+        },
+        "description": {
+          "cs": "Odhal lež, aniž bys někoho ponížil.",
+          "en": "Expose a lie without humiliating anyone."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Archiv pravdy",
+          "en": "The Truth Archive"
+        },
+        "description": {
+          "cs": "Zapiš událost bez přikrášlení.",
+          "en": "Record an event without embellishment."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Mistr pravdy",
+          "en": "Master of Truth"
+        },
+        "description": {
+          "cs": "Přiznej vlastní chybu dřív, než ji najde někdo jiný.",
+          "en": "Admit your own mistake before someone else finds it."
+        }
       }
     ],
     "essence": {
@@ -2345,24 +3215,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Neviditelná služba",
+          "en": "Invisible Service"
+        },
+        "description": {
+          "cs": "Pomoz tak, aby o tom nikdo nevěděl.",
+          "en": "Help in a way no one will know about."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Ruce, které hojí",
+          "en": "Hands That Heal"
+        },
+        "description": {
+          "cs": "Uzdrav ránu, kterou druhý skrývá.",
+          "en": "Heal a wound the other person hides."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Mír v domě",
+          "en": "Peace at Home"
+        },
+        "description": {
+          "cs": "Urovnej spor, který se táhne roky.",
+          "en": "Settle a quarrel that has lasted years."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Dvojplamen",
+          "en": "Twin Flame"
+        },
+        "description": {
+          "cs": "Spoj dvě služby v jednu, která drží.",
+          "en": "Join two services into one that holds."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Dáma milosrdenství",
+          "en": "Lady of Mercy"
+        },
+        "description": {
+          "cs": "Odpusť tomu, kdo ti odmítl pomoct.",
+          "en": "Forgive the one who refused to help you."
+        }
       }
     ],
     "essence": {
@@ -2418,24 +3318,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "The Alchemist's Laboratory",
-        "description": "Transmutation puzzles"
+        "title": {
+          "cs": "Alchymistova laboratoř",
+          "en": "The Alchemist's Laboratory"
+        },
+        "description": {
+          "cs": "Hádanky proměny.",
+          "en": "Puzzles of transmutation."
+        }
       },
       {
-        "title": "I AM Presence",
-        "description": "Identity meditation"
+        "title": {
+          "cs": "Přítomnost JÁ JSEM",
+          "en": "I AM Presence"
+        },
+        "description": {
+          "cs": "Meditace o identitě.",
+          "en": "A meditation on identity."
+        }
       },
       {
-        "title": "Freedom from Karma",
-        "description": "Release past burdens"
+        "title": {
+          "cs": "Svoboda od karmy",
+          "en": "Freedom from Karma"
+        },
+        "description": {
+          "cs": "Odlož břemena, která už nejsou tvoje.",
+          "en": "Set down burdens that are no longer yours."
+        }
       },
       {
-        "title": "The Philosopher's Stone",
-        "description": "Create spiritual gold"
+        "title": {
+          "cs": "Kámen mudrců",
+          "en": "The Philosopher's Stone"
+        },
+        "description": {
+          "cs": "Vytvoř duchovní zlato.",
+          "en": "Create spiritual gold."
+        }
       },
       {
-        "title": "Violet Flame Blessing",
-        "description": "Master transmutation"
+        "title": {
+          "cs": "Požehnání fialového plamene",
+          "en": "Violet Flame Blessing"
+        },
+        "description": {
+          "cs": "Zvládni proměnu.",
+          "en": "Master transmutation."
+        }
       }
     ],
     "essence": {
@@ -2491,24 +3421,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Pohled shora",
+          "en": "View from Above"
+        },
+        "description": {
+          "cs": "Uvidět celek aspoň jednou za měsíc.",
+          "en": "See the whole at least once a month."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Šambala",
+          "en": "Shambhala"
+        },
+        "description": {
+          "cs": "Ochraň posvátné místo tím, že do něj nezasáhneš.",
+          "en": "Protect a sacred place by not interfering with it."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Planeta jako systém",
+          "en": "Planet as a System"
+        },
+        "description": {
+          "cs": "Vysvětli, jak spolu souvisí voda, les a město.",
+          "en": "Explain how water, forest and city depend on each other."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Nejtemnější hodina",
+          "en": "The Darkest Hour"
+        },
+        "description": {
+          "cs": "Zůstaň, když všichni ostatní odejdou.",
+          "en": "Stay when everyone else leaves."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Pán světa",
+          "en": "Lord of the World"
+        },
+        "description": {
+          "cs": "Rozhodni ve prospěch celku proti vlastnímu zájmu.",
+          "en": "Decide for the whole against your own interest."
+        }
       }
     ],
     "essence": {
@@ -2564,24 +3524,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Dech",
+          "en": "The Breath"
+        },
+        "description": {
+          "cs": "Sto osm nádechů bez rozptýlení.",
+          "en": "A hundred and eight breaths without distraction."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Himálaj",
+          "en": "The Himalaya"
+        },
+        "description": {
+          "cs": "Dojdi na místo, které není na mapě.",
+          "en": "Reach a place that is not on the map."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Krija",
+          "en": "Kriya"
+        },
+        "description": {
+          "cs": "Zmiz a vrať se tak, aby to nikdo nezpozoroval.",
+          "en": "Vanish and return without anyone noticing."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Nesmrtelnost",
+          "en": "Immortality"
+        },
+        "description": {
+          "cs": "Vydrž ve světě celý rok bez ztráty sebe.",
+          "en": "Endure a full year in the world without losing yourself."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Učitel bez jména",
+          "en": "Teacher Without a Name"
+        },
+        "description": {
+          "cs": "Uč bez odměny a bez podpisu.",
+          "en": "Teach without reward and without a signature."
+        }
       }
     ],
     "essence": {
@@ -2637,24 +3627,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Půda",
+          "en": "The Soil"
+        },
+        "description": {
+          "cs": "Vrať život místu, které bylo vytěžené.",
+          "en": "Return life to a place that was mined out."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Náruč",
+          "en": "Embrace"
+        },
+        "description": {
+          "cs": "Ochraň druh, který nemá zastoupení.",
+          "en": "Protect a species that has no substitute."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Jádro",
+          "en": "The Core"
+        },
+        "description": {
+          "cs": "Sestup k jádru a vrať se s odpovědí.",
+          "en": "Descend to the core and come back with an answer."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Koloběh",
+          "en": "The Cycle"
+        },
+        "description": {
+          "cs": "Vrať přírodě, co jsi jí vzal.",
+          "en": "Give back to nature what you took from it."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Matka Země",
+          "en": "Earth Mother"
+        },
+        "description": {
+          "cs": "Nech po sobě místo v lepším stavu, než jsi ho našel.",
+          "en": "Leave a place better than you found it."
+        }
       }
     ],
     "essence": {
@@ -2710,24 +3730,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Meč v kameni",
+          "en": "The Sword in the Stone"
+        },
+        "description": {
+          "cs": "Najdi volbu, kterou nemůže udělat nikdo jiný.",
+          "en": "Find the choice no one else can make."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Kulatý stůl",
+          "en": "The Round Table"
+        },
+        "description": {
+          "cs": "Posaď k jednomu stolu dvanáct, kdo si nerozumí.",
+          "en": "Seat twelve who disagree at one table."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Excalibur",
+          "en": "Excalibur"
+        },
+        "description": {
+          "cs": "Použij sílu jednou — a správně.",
+          "en": "Use force once — and rightly."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Kamelot",
+          "en": "Camelot"
+        },
+        "description": {
+          "cs": "Postav místo, které se udrží i po tobě.",
+          "en": "Build a place that holds after you."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Král, který se vrátí",
+          "en": "The King Who Returns"
+        },
+        "description": {
+          "cs": "Vrať se tam, kde tě potřebují, ne kde tě slaví.",
+          "en": "Return where you are needed, not where you are celebrated."
+        }
       }
     ],
     "essence": {
@@ -2783,24 +3833,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Koruna a zákon",
+          "en": "Crown and Law"
+        },
+        "description": {
+          "cs": "Napiš pravidlo, které zavazuje i tebe.",
+          "en": "Write a rule that binds you too."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Univerzita",
+          "en": "The University"
+        },
+        "description": {
+          "cs": "Založ místo, kde se učí bez ohledu na původ.",
+          "en": "Found a place of learning open to any origin."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Karlštejn",
+          "en": "Karlštejn"
+        },
+        "description": {
+          "cs": "Ukryj to nejcennější tak, aby to neztratilo hodnotu.",
+          "en": "Hide what is most precious without devaluing it."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Most",
+          "en": "The Bridge"
+        },
+        "description": {
+          "cs": "Spoj dva břehy, které se navzájem nevidí.",
+          "en": "Join two banks that cannot see each other."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Otec vlasti",
+          "en": "Father of the Land"
+        },
+        "description": {
+          "cs": "Nech zemi fungující i bez svého jména.",
+          "en": "Leave the land working without your name on it."
+        }
       }
     ],
     "essence": {
@@ -2856,24 +3936,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Myšlenkový experiment",
+          "en": "Thought Experiment"
+        },
+        "description": {
+          "cs": "Vyřeš problém bez jediného nástroje — jen představou.",
+          "en": "Solve a problem without a tool, only by imagining it."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Patentový úřad",
+          "en": "The Patent Office"
+        },
+        "description": {
+          "cs": "Najdi odpověď v nudě, ne v chaosu.",
+          "en": "Find the answer in boredom, not in chaos."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Relativita",
+          "en": "Relativity"
+        },
+        "description": {
+          "cs": "Popiš stejnou událost ze dvou různých pohledů.",
+          "en": "Describe the same event from two different viewpoints."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "E = mc²",
+          "en": "E = mc²"
+        },
+        "description": {
+          "cs": "Přeměň energii v hmotu a zpátky.",
+          "en": "Convert energy into matter and back."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Pokora vědce",
+          "en": "The Humility of Science"
+        },
+        "description": {
+          "cs": "Odvolej tvrzení, které už neplatí.",
+          "en": "Retract a claim that no longer holds."
+        }
       }
     ],
     "essence": {
@@ -2929,24 +4039,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Sůl",
+          "en": "Salt"
+        },
+        "description": {
+          "cs": "Poruš nesmyslné pravidlo — bez jediné rány.",
+          "en": "Break a senseless rule without a single blow."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Satyágraha",
+          "en": "Satyagraha"
+        },
+        "description": {
+          "cs": "Vydrž sto dní odporu bez násilí.",
+          "en": "Hold a hundred days of resistance without violence."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Tkadlena",
+          "en": "The Spinner"
+        },
+        "description": {
+          "cs": "Staň se soběstačným v jedné věci.",
+          "en": "Become self-sufficient in one thing."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Půst",
+          "en": "The Fast"
+        },
+        "description": {
+          "cs": "Sedm dní bez slova, jen naslouchej.",
+          "en": "Seven days without words, only listening."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Nenásilí",
+          "en": "Non-Violence"
+        },
+        "description": {
+          "cs": "Vyhraj spor, aniž bys někoho porazil.",
+          "en": "Win a dispute without defeating anyone."
+        }
       }
     ],
     "essence": {
@@ -3002,24 +4142,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Nit",
+          "en": "The Thread"
+        },
+        "description": {
+          "cs": "Spoj dvě znepřátelené rodiny.",
+          "en": "Join two feuding families."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Rákhi",
+          "en": "Rakhi"
+        },
+        "description": {
+          "cs": "Uzavři spojenectví, které se nedá jen tak vypovědět.",
+          "en": "Form an alliance that cannot simply be called off."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Dváraka",
+          "en": "Dvaraka"
+        },
+        "description": {
+          "cs": "Ochraň dům, i když v něm nejsi.",
+          "en": "Protect a house even when you are not in it."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Spor",
+          "en": "The Quarrel"
+        },
+        "description": {
+          "cs": "Urovnej hádku tak, aby nevyhrál nikdo.",
+          "en": "Settle an argument so that no one wins."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Sestra",
+          "en": "The Sister"
+        },
+        "description": {
+          "cs": "Pamatuj na toho, kdo zůstal stranou.",
+          "en": "Remember the one who was left aside."
+        }
       }
     ],
     "essence": {
@@ -3075,24 +4245,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Přechod řeky",
+          "en": "The River Crossing"
+        },
+        "description": {
+          "cs": "Přenos přes řeku v nejhorší možné noci.",
+          "en": "A crossing on the worst possible night."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Noc",
+          "en": "The Night"
+        },
+        "description": {
+          "cs": "Nes dítě přes nebezpečí, aniž bys ho probudil.",
+          "en": "Carry a child through danger without waking it."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Otec",
+          "en": "The Father"
+        },
+        "description": {
+          "cs": "Vezmi ránu, která patřila jinému.",
+          "en": "Take the blow meant for another."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Návrat",
+          "en": "The Return"
+        },
+        "description": {
+          "cs": "Přiveď zpátky toho, kdo se ztratil.",
+          "en": "Bring back the one who got lost."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Přísaha",
+          "en": "The Oath"
+        },
+        "description": {
+          "cs": "Slib, který splníš i za cenu vlastního pohodlí.",
+          "en": "A promise you keep even at your own cost."
+        }
       }
     ],
     "essence": {
@@ -3148,24 +4348,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "Red Pill / Blue Pill",
-        "description": "Choice that defines path"
+        "title": {
+          "cs": "Červená, nebo modrá",
+          "en": "Red Pill / Blue Pill"
+        },
+        "description": {
+          "cs": "Volba, která určí cestu.",
+          "en": "The choice that defines the path."
+        }
       },
       {
-        "title": "Training Simulation",
-        "description": "Combat tutorial"
+        "title": {
+          "cs": "Výcviková simulace",
+          "en": "Training Simulation"
+        },
+        "description": {
+          "cs": "Bojový tutoriál.",
+          "en": "A combat tutorial."
+        }
       },
       {
-        "title": "The Oracle's Prophecy",
-        "description": "Meet ZION AI Oracle"
+        "title": {
+          "cs": "Věštkynino proroctví",
+          "en": "The Oracle's Prophecy"
+        },
+        "description": {
+          "cs": "Setkej se s orákulem ZIONu.",
+          "en": "Meet the oracle of ZION."
+        }
       },
       {
-        "title": "Agent Smith Battle",
-        "description": "Boss fight (ego dissolution)"
+        "title": {
+          "cs": "Souboj s agentem Smithem",
+          "en": "Agent Smith Battle"
+        },
+        "description": {
+          "cs": "Souboj s bossem (rozpust ego).",
+          "en": "A boss fight (dissolve the ego)."
+        }
       },
       {
-        "title": "I AM Neo",
-        "description": "Self-realization ending"
+        "title": {
+          "cs": "JÁ JSEM Neo",
+          "en": "I AM Neo"
+        },
+        "description": {
+          "cs": "Konec, kdy si uvědomíš sám sebe.",
+          "en": "An ending of self-realisation."
+        }
       }
     ],
     "essence": {
@@ -3221,24 +4451,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Víra před důkazem",
+          "en": "Faith Before Proof"
+        },
+        "description": {
+          "cs": "Věř někomu dřív, než ti dá důkaz.",
+          "en": "Believe someone before they give you proof."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Operátor",
+          "en": "The Operator"
+        },
+        "description": {
+          "cs": "Spoj dva ztracené, kteří o sobě nevědí.",
+          "en": "Connect two lost people who do not know of each other."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Signál",
+          "en": "The Signal"
+        },
+        "description": {
+          "cs": "Najdi slabé místo v síti dřív, než ji ztratíš.",
+          "en": "Find the weak point in the network before you lose it."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Trojice",
+          "en": "Trinity"
+        },
+        "description": {
+          "cs": "Udrž tři lidi pohromadě i ve sporu.",
+          "en": "Keep three people together even in conflict."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Ta, která věří",
+          "en": "The Believer"
+        },
+        "description": {
+          "cs": "Vydrž u někoho, kdo už sám sobě nevěří.",
+          "en": "Stay with someone who no longer believes in themselves."
+        }
       }
     ],
     "essence": {
@@ -3294,24 +4554,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Červená tableta",
+          "en": "The Red Pill"
+        },
+        "description": {
+          "cs": "Nabídni pravdu a nech rozhodnutí na druhém.",
+          "en": "Offer the truth and leave the choice to the other."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Výcvik",
+          "en": "The Training"
+        },
+        "description": {
+          "cs": "Nauč nováčka to, co ho jednou zachrání.",
+          "en": "Teach a newcomer what will one day save them."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Volba",
+          "en": "The Choice"
+        },
+        "description": {
+          "cs": "Nerozhodni za nikoho, kdo rozhodnout může sám.",
+          "en": "Never decide for someone who can decide themselves."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Průvodce",
+          "en": "The Guide"
+        },
+        "description": {
+          "cs": "Doveď deset lidí z iluze bez donucení.",
+          "en": "Lead ten people out of illusion without coercion."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Učitel",
+          "en": "The Teacher"
+        },
+        "description": {
+          "cs": "Vychovej nástupce, který tě překoná.",
+          "en": "Raise a successor who surpasses you."
+        }
       }
     ],
     "essence": {
@@ -3367,24 +4657,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Město",
+          "en": "The City"
+        },
+        "description": {
+          "cs": "Postav sto obydlí, ve kterých se dá žít.",
+          "en": "Build a hundred dwellings fit to live in."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Dohoda",
+          "en": "The Agreement"
+        },
+        "description": {
+          "cs": "Sepiš pravidla společně s komunitou.",
+          "en": "Write the rules together with the community."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Hradby",
+          "en": "The Walls"
+        },
+        "description": {
+          "cs": "Ubraň město, aniž bys zavřel brány.",
+          "en": "Defend the city without closing the gates."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Světlo",
+          "en": "The Light"
+        },
+        "description": {
+          "cs": "Přiveď sto nových a neztratí se v davu.",
+          "en": "Bring in a hundred newcomers and lose none in the crowd."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Poslední město",
+          "en": "The Last City"
+        },
+        "description": {
+          "cs": "Dokaž, že se tu lidé chovají jinak i bez dohledu.",
+          "en": "Prove people behave differently here even unwatched."
+        }
       }
     ],
     "essence": {
@@ -3440,24 +4760,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Trojí zrcadlo",
+          "en": "The Threefold Mirror"
+        },
+        "description": {
+          "cs": "Uvidět sebe jako tvůrce, strážce i toho, kdo odchází.",
+          "en": "See yourself as maker, keeper and the one who leaves."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Tvořit",
+          "en": "To Create"
+        },
+        "description": {
+          "cs": "Vytvoř něco, co tu ještě nebylo.",
+          "en": "Make something that was not here before."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Udržovat",
+          "en": "To Sustain"
+        },
+        "description": {
+          "cs": "Udrž při životě to, co už existuje.",
+          "en": "Keep alive what already exists."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Rozpustit",
+          "en": "To Dissolve"
+        },
+        "description": {
+          "cs": "Nechat odejít to, co už netvoří.",
+          "en": "Let go of what no longer creates."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Učitel všech",
+          "en": "Teacher of All"
+        },
+        "description": {
+          "cs": "Uč se od země, ohně i psa.",
+          "en": "Learn from earth, fire and a dog."
+        }
       }
     ],
     "essence": {
@@ -3513,24 +4863,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Planetka B-612",
+          "en": "Asteroid B-612"
+        },
+        "description": {
+          "cs": "Postarej se o místo, které je jen tvoje.",
+          "en": "Look after a place that is only yours."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Růže",
+          "en": "The Rose"
+        },
+        "description": {
+          "cs": "Pečuj o jednu věc tak dlouho, až bude výjimečná.",
+          "en": "Care for one thing until it becomes exceptional."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Liška",
+          "en": "The Fox"
+        },
+        "description": {
+          "cs": "Nech se ochočit a nezůstaň při tom sám.",
+          "en": "Let yourself be tamed, and do not stay alone in it."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Had",
+          "en": "The Snake"
+        },
+        "description": {
+          "cs": "Pochop konec, aniž bys ho uspěchal.",
+          "en": "Understand the ending without rushing it."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Srdce",
+          "en": "The Heart"
+        },
+        "description": {
+          "cs": "Podívej se na věc srdcem a řekni, co vidíš.",
+          "en": "Look at a thing with the heart and say what you see."
+        }
       }
     ],
     "essence": {
@@ -3586,24 +4966,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Vejce",
+          "en": "The Egg"
+        },
+        "description": {
+          "cs": "Najdi možnost, kterou ještě nikdo nepustil.",
+          "en": "Find a possibility no one has dropped yet."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Zlaté semeno",
+          "en": "The Golden Seed"
+        },
+        "description": {
+          "cs": "Zasaď něco, co přežije tvoje století.",
+          "en": "Plant something that outlives your century."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Dech před časem",
+          "en": "Breath Before Time"
+        },
+        "description": {
+          "cs": "Vydrž v tichu, kde ještě nic nezačalo.",
+          "en": "Wait in the silence where nothing has begun."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Znovuzrození",
+          "en": "Rebirth"
+        },
+        "description": {
+          "cs": "Vrať svět do stavu, kdy se dá začít znovu.",
+          "en": "Return the world to a state where it can begin again."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Počátek",
+          "en": "The Beginning"
+        },
+        "description": {
+          "cs": "Otevři nový kruh a nezavři starý bez poděkování.",
+          "en": "Open a new circle and do not close the old one without thanks."
+        }
       }
     ],
     "essence": {
@@ -3659,24 +5069,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Meč posledního věku",
+          "en": "Sword of the Last Age"
+        },
+        "description": {
+          "cs": "Přesekni karmu, která už nikomu neslouží.",
+          "en": "Sever karma that serves no one any more."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Šambala",
+          "en": "Shambhala"
+        },
+        "description": {
+          "cs": "Najdi bránu věku dřív, než se zavře.",
+          "en": "Find the gate of the age before it closes."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Očista",
+          "en": "The Cleansing"
+        },
+        "description": {
+          "cs": "Uklidit, ne soudit.",
+          "en": "To clear, not to judge."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Konec, který není trest",
+          "en": "An End That Is Not Punishment"
+        },
+        "description": {
+          "cs": "Ukonči to, co se přežilo, bez zloby.",
+          "en": "End what has outlived itself without spite."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Nový věk",
+          "en": "The New Age"
+        },
+        "description": {
+          "cs": "Začni znovu a neopakuj staré chyby.",
+          "en": "Begin again without repeating the old mistakes."
+        }
       }
     ],
     "essence": {
@@ -3732,24 +5172,54 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "",
     "quests": [
       {
-        "title": "First Awakening",
-        "description": "Begin the sacred journey"
+        "title": {
+          "cs": "Lůžko",
+          "en": "The Sickbed"
+        },
+        "description": {
+          "cs": "Zůstaň u nemocného, dokud se neuzdraví.",
+          "en": "Stay with the sick until they recover."
+        }
       },
       {
-        "title": "Path of Dedication",
-        "description": "Prove commitment through 7 trials"
+        "title": {
+          "cs": "Dekret",
+          "en": "The Decree"
+        },
+        "description": {
+          "cs": "Prosaď pravidlo, že péče má přednost.",
+          "en": "Establish that care comes first."
+        }
       },
       {
-        "title": "Sacred Knowledge",
-        "description": "Uncover the hidden teaching"
+        "title": {
+          "cs": "Dvůr",
+          "en": "The Court"
+        },
+        "description": {
+          "cs": "Uzdrav vladaře, který nechce být uzdraven.",
+          "en": "Heal a ruler who does not want to be healed."
+        }
       },
       {
-        "title": "Divine Service",
-        "description": "Serve the community selflessly"
+        "title": {
+          "cs": "Rána",
+          "en": "The Wound"
+        },
+        "description": {
+          "cs": "Ošetři nepřítele, který by to samé neudělal.",
+          "en": "Treat an enemy who would not do the same."
+        }
       },
       {
-        "title": "Ultimate Realization",
-        "description": "Attain the highest truth"
+        "title": {
+          "cs": "Královská léčitelka",
+          "en": "The Royal Healer"
+        },
+        "description": {
+          "cs": "Rozhodni, komu koruna patří — a komu ne.",
+          "en": "Decide whom the crown belongs to, and whom it does not."
+        }
       }
     ],
     "essence": {
@@ -11605,40 +13075,94 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "key": "Maya Cycle Key",
     "quests": [
       {
-        "title": "Krok 1: Rozpoznání",
-        "description": "Find Tortuguero Monument 6 in the rainforest and read the eroded glyphs."
+        "title": {
+          "cs": "Krok 1: Rozpoznání",
+          "en": "Step 1: Recognition"
+        },
+        "description": {
+          "cs": "Najdi v deštném lese Monument 6 z Tortuguera a přečti ohlazené znaky.",
+          "en": "Find Tortuguero Monument 6 in the rainforest and read the eroded glyphs."
+        }
       },
       {
-        "title": "Krok 2: Pouta",
-        "description": "Reveal the rope symbol: who is the prisoner and who is the guard?"
+        "title": {
+          "cs": "Krok 2: Pouta",
+          "en": "Step 2: Bonds"
+        },
+        "description": {
+          "cs": "Odhal symbol provazu: kdo je vězeň a kdo strážce?",
+          "en": "Reveal the rope symbol: who is the prisoner and who is the guard?"
+        }
       },
       {
-        "title": "Krok 3: Xibalba",
-        "description": "Descend into the nine lords of the underworld."
+        "title": {
+          "cs": "Krok 3: Xibalba",
+          "en": "Step 3: Xibalba"
+        },
+        "description": {
+          "cs": "Sestup k devíti pánům podsvětí.",
+          "en": "Descend to the nine lords of the underworld."
+        }
       },
       {
-        "title": "Krok 4: Strom",
-        "description": "Find the Ceiba tree growing on the border of three worlds."
+        "title": {
+          "cs": "Krok 4: Strom",
+          "en": "Step 4: The Tree"
+        },
+        "description": {
+          "cs": "Najdi strom ceiba, který roste na hranici tří světů.",
+          "en": "Find the ceiba tree growing on the border of three worlds."
+        }
       },
       {
-        "title": "Krok 5: Čas",
-        "description": "Understand the difference between linear and cyclical time."
+        "title": {
+          "cs": "Krok 5: Čas",
+          "en": "Step 5: Time"
+        },
+        "description": {
+          "cs": "Pochop rozdíl mezi přímým a cyklickým časem.",
+          "en": "Understand the difference between linear and cyclical time."
+        }
       },
       {
-        "title": "Krok 6: Smrt jako tvorba",
-        "description": "Accept death as creation through the Fountain vision."
+        "title": {
+          "cs": "Krok 6: Smrt jako tvorba",
+          "en": "Step 6: Death as Creation"
+        },
+        "description": {
+          "cs": "Přijmi smrt jako tvoření skrze vidění pramene.",
+          "en": "Accept death as creation through the Fountain vision."
+        }
       },
       {
-        "title": "Krok 7: Investitura",
-        "description": "Ceremony of changing: remove the old avatar skin and take the new."
+        "title": {
+          "cs": "Krok 7: Investitura",
+          "en": "Step 7: Investiture"
+        },
+        "description": {
+          "cs": "Obřad změny: odlož starou kůži avatara a vezmi si novou.",
+          "en": "Ceremony of changing: remove the old avatar skin and take the new."
+        }
       },
       {
-        "title": "Krok 8: Slunce",
-        "description": "Birth a new cycle by activating the Genesis block in the temple courtyard."
+        "title": {
+          "cs": "Krok 8: Slunce",
+          "en": "Step 8: The Sun"
+        },
+        "description": {
+          "cs": "Zroď nový cyklus aktivací genesis bloku na nádvoří chrámu.",
+          "en": "Birth a new cycle by activating the genesis block in the temple courtyard."
+        }
       },
       {
-        "title": "Krok 9: Zobrazení",
-        "description": "Bolon Yokte manifests in full form; the player gains a permanent ability."
+        "title": {
+          "cs": "Krok 9: Zobrazení",
+          "en": "Step 9: Manifestation"
+        },
+        "description": {
+          "cs": "Bolon Jokte se zjeví v plné podobě a hráč získá trvalou schopnost.",
+          "en": "Bolon Yokte manifests in full form and the player gains a permanent ability."
+        }
       }
     ],
     "essence": {

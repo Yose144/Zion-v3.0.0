@@ -61,23 +61,42 @@ o „šestnácti dalších" (kruhů je 23 včetně sedmi základních).
 | Autorských polí (cs+en páry) | **1 400** (7 polí × 200) |
 | Přepsaných essencí z datového výpisu | **31** |
 | `tsc --noEmit` | **0 chyb** |
-| Nasazeno | `20261104T093736Z` (app., build `zb1O43jNAA0lT3S2brH1A`) |
+| Nasazeno | `20261104T112120Z` (app.), předchozí `20261104T093736Z` |
 
 Ověřeno živě: `/l4-oasis/avatars` 200, český tagline i autorské texty
-(„Ta, která tvoří tím, že spálí") v SSR, anglická větev v client chunku
-(`page-975ae798a908ff67.js` — „She who creates by burning"). Ostatní
-povrchy (`/`, `/pool`, `/dao`, `/explorer`, `/api/health`) 200.
+(„Ta, která tvoří tím, že spálí") v SSR; obě jazykové větve i questy
+v client chunku. **Pozor při ověřování:** produkční bundle escapuje
+non-ASCII jako `\xNN` (např. `Prvn\xed rozhodnut\xed`), takže `grep`
+na holou češtinu v `.js` selže — nutné escapy nejdřív dekódovat.
+Ostatní povrchy (`/`, `/pool`, `/dao`, `/explorer`, `/api/health`) 200.
 
 
 Rozsah textů: `subtitle`, `role`, `location`, `questLine`, `teaching`,
 `ability`, `quote` — vše autorsky, s jednotným hlasem (věcný, klidný,
 bez marketingu a bez internalit typu „DAO timelock" / „M1 milestone").
 
-## 5. Meze (poctivě)
+## 5. Questy (druhá dávka)
 
-- **Questy zůstaly anglicky** (👤 rozhodl „ponechat existující, prázdné
-  skrýt"). Mají je 50 avatarů; v českém režimu se zobrazí v původním
-  znění. Překlad ~250 titulů a popisů je samostatná dávka.
+Questy byly jediná část, která zůstala anglicky — a zároveň největší kvalitativní
+defekt: **23 avatarů mělo identickou pětičlennou linii** („First Awakening /
+Path of Dedication / Sacred Knowledge / Divine Service / Ultimate Realization"),
+takže překlad by jen zopakoval stejnou nudu 23×.
+
+| | |
+|---|---|
+| Avatarů s questy | 50 / 200 |
+| Questů celkem | **254** (z toho 115 nově napsaných) |
+| Unikátních linií přeloženo | 27 (139 questů) |
+| Generická linie nahrazena vlastní | **23 avatarů** (115 questů) |
+| Jazyky | cs + en u všech 254 |
+
+Dva soubory v overlayi: `quests-unique.json` (překlady existujících linií)
+a `quests-filler.json` (nové linie tam, kde byla kopie). Stránka i generátor
+umí `quests[].title/.description` jako `LocalizedText`; prázdné questy se
+zahazují už v generátoru.
+
+## 6. Meze (poctivě)
+
 - **Jména jsou v původním znění** (Krishna-Maitreya, Ọṣun, Þórr…) — to je
   záměr kánonu, needituje se.
 - Klíče (`key`) zůstávají jen tam, kde existují (10/200); je to lore
@@ -85,6 +104,9 @@ bez marketingu a bez internalit typu „DAO timelock" / „M1 milestone").
 - Texty jsou autorské ve smyslu „veřejná prezentace postavy", ne nový
   náboženský nebo historický výklad; u prvních národů, Aotearoa a Afriky
   drží popisnou rovinu a nezavádí obřadní tvrzení.
+- 150 avatarů questy nemá — u nich se sekce nezobrazuje (rozhodnutí
+  „ponechat existující, prázdné skrýt").
+
 
 ## 6. Jak přidat nebo změnit text
 

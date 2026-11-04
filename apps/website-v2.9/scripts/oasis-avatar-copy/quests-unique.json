@@ -1,0 +1,249 @@
+{
+  "0": {
+    "quests": [
+      { "title": { "cs": "Flétna jednoty", "en": "The Flute of Union" }, "description": { "cs": "Uslyš kosmické chvění v sedmi frekvencích.", "en": "Hear the cosmic vibration in seven frequencies." } },
+      { "title": { "cs": "Tanec rása líla", "en": "Dance of Rasa Lila" }, "description": { "cs": "Najdi skryté gópí napříč všemi časovými liniemi.", "en": "Find the hidden gopis across all timelines." } },
+      { "title": { "cs": "Maitrejovo proroctví", "en": "Maitreya's Blockchain Prophecy" }, "description": { "cs": "Rozlušti zprávu zrodu, která patří budoucnosti.", "en": "Decode the genesis message of the future." } },
+      { "title": { "cs": "Sjednocení cest", "en": "Integration of All Paths" }, "description": { "cs": "Splň jeden quest z každé tradice.", "en": "Complete one quest from each tradition." } },
+      { "title": { "cs": "Na hvězdě", "en": "On the Star" }, "description": { "cs": "Dosáhni CL 9 a spatři kosmické vidění.", "en": "Reach CL 9 and witness the cosmic vision." } }
+    ]
+  },
+  "1": {
+    "quests": [
+      { "title": { "cs": "Zkouška vyhnanství", "en": "The Exile Test" }, "description": { "cs": "Vyber mezi mocí a dharmou.", "en": "Choose between power and dharma." } },
+      { "title": { "cs": "Zlatý jelen", "en": "The Golden Deer" }, "description": { "cs": "Hádanka o iluzi a skutečnosti.", "en": "A puzzle of illusion and reality." } },
+      { "title": { "cs": "Most víry", "en": "Bridge of Faith" }, "description": { "cs": "Postav most z oddanosti (minihra).", "en": "Build a bridge with devotion (mini-game)." } },
+      { "title": { "cs": "Záchrana Síty", "en": "Sita's Rescue" }, "description": { "cs": "Strategická záchranná mise.", "en": "A strategic rescue mission." } },
+      { "title": { "cs": "Návrat do Ajódhji", "en": "Return to Ayodhya" }, "description": { "cs": "Závěrečné požehnání.", "en": "The final blessing." } }
+    ]
+  },
+  "2": {
+    "quests": [
+      { "title": { "cs": "Únos", "en": "The Abduction" }, "description": { "cs": "Ochraň nevinné.", "en": "Protect the innocent." } },
+      { "title": { "cs": "Zajetí na Lance", "en": "Captivity in Lanka" }, "description": { "cs": "Udrž víru i ve tmě.", "en": "Keep faith in the dark." } },
+      { "title": { "cs": "Zkouška ohněm", "en": "Fire Test" }, "description": { "cs": "Projdi měřením čistoty.", "en": "Pass the measure of purity." } },
+      { "title": { "cs": "Náruč země", "en": "Earth's Embrace" }, "description": { "cs": "Hádanka o přírodě a rovnováze.", "en": "A puzzle of nature and balance." } },
+      { "title": { "cs": "Božské spojení", "en": "Divine Union" }, "description": { "cs": "Obřad požehnání.", "en": "A ceremony of blessing." } }
+    ]
+  },
+  "3": {
+    "quests": [
+      { "title": { "cs": "Zvednutí hory", "en": "The Mountain Lift" }, "description": { "cs": "Minihra na sílu.", "en": "A test of strength." } },
+      { "title": { "cs": "Přechod oceánu", "en": "Ocean Crossing" }, "description": { "cs": "Skok, který se dělá jen jednou.", "en": "The leap you take only once." } },
+      { "title": { "cs": "Vniknutí na Lanku", "en": "Lanka Infiltration" }, "description": { "cs": "Tichá mise bez jediného slitování.", "en": "A stealth mission without a single kill." } },
+      { "title": { "cs": "Ocas v plamenech", "en": "Tail of Fire" }, "description": { "cs": "Zapal Lanku, ale ne lidi.", "en": "Set Lanka alight, but not its people." } },
+      { "title": { "cs": "Rámův posel", "en": "Rama's Messenger" }, "description": { "cs": "Závěrečná zkouška oddanosti.", "en": "The final test of devotion." } }
+    ]
+  },
+  "4": {
+    "quests": [
+      { "title": { "cs": "Vítej v ZIONu", "en": "Welcome to ZION" }, "description": { "cs": "Úvodní quest světa.", "en": "The world's opening quest." } },
+      { "title": { "cs": "Kulatý stůl", "en": "The Round Table" }, "description": { "cs": "Seznam se se správou DAO.", "en": "Meet the practice of DAO governance." } },
+      { "title": { "cs": "Těžení vědomí", "en": "Consciousness Mining" }, "description": { "cs": "Pochop, jak funguje žebřík CL.", "en": "Understand how the CL ladder works." } },
+      { "title": { "cs": "Humanitární desátek", "en": "Humanitarian Tithe" }, "description": { "cs": "Mise, která něco dá dál.", "en": "A mission that gives something on." } },
+      { "title": { "cs": "Proroctví zlatého vejce", "en": "Golden Egg Prophecy" }, "description": { "cs": "Odemkni honbu za pokladem.", "en": "Unlock the treasure hunt." } }
+    ]
+  },
+  "5": {
+    "quests": [
+      { "title": { "cs": "Zasvěcení do knihovny", "en": "The Library Initiation" }, "description": { "cs": "Získej přístup do posvátné knihovny.", "en": "Gain access to the sacred library." } },
+      { "title": { "cs": "Kvíz Bhagavadgíty", "en": "Bhagavad Gita Quiz" }, "description": { "cs": "Zkouška porozumění textu.", "en": "A test of understanding the text." } },
+      { "title": { "cs": "Meditace na upanišady", "en": "Upanishad Meditation" }, "description": { "cs": "Minihra ztišení a soustředění.", "en": "A mini-game of stillness and focus." } },
+      { "title": { "cs": "Víny ze strun", "en": "Veena of Harmony" }, "description": { "cs": "Hudební hádanka.", "en": "A musical puzzle." } },
+      { "title": { "cs": "Požehnání poznání", "en": "Blessing of Knowledge" }, "description": { "cs": "Závěrečná zkouška moudrosti.", "en": "The final test of wisdom." } }
+    ]
+  },
+  "6": {
+    "quests": [
+      { "title": { "cs": "Isidin trůn", "en": "The Throne of Isis" }, "description": { "cs": "Slož znovu rozptýlené úlomky ankh.", "en": "Reassemble the scattered ankh fragments." } },
+      { "title": { "cs": "Křídla Maʿăt", "en": "Wings of Ma'at" }, "description": { "cs": "Obnov rovnováhu na kosmických vahách.", "en": "Restore balance on the cosmic scales." } },
+      { "title": { "cs": "Rezonanční sistrum", "en": "Sistrum of Resonance" }, "description": { "cs": "Nalaď se na nosnou frekvenci 108 Hz.", "en": "Attune to the 108 Hz carrier frequency." } },
+      { "title": { "cs": "Paměť nilské záplavy", "en": "Nile Flood Memory" }, "description": { "cs": "Rozlušti znaky, které psala voda.", "en": "Decode the glyphs written by water." } },
+      { "title": { "cs": "Ankh života", "en": "Ankh of Life" }, "description": { "cs": "Vzkřis padlého spojence ve válce gild.", "en": "Revive a fallen ally in guild warfare." } }
+    ]
+  },
+  "8": {
+    "quests": [
+      { "title": { "cs": "Strážcova hlídka", "en": "The Guardian's Vigil" }, "description": { "cs": "Hlídej hradby města ZION celých 24 hodin.", "en": "Patrol the walls of ZION for twenty-four hours." } },
+      { "title": { "cs": "Štít světla", "en": "Shield of Light" }, "description": { "cs": "Ubraň území třem nepřátelským nájezdům.", "en": "Defend a territory from three enemy raids." } },
+      { "title": { "cs": "Issobelina přísaha", "en": "Issobela's Oath" }, "description": { "cs": "Slož slib bódhisattvy: chránit, ne ovládat.", "en": "Take the bodhisattva vow to protect, not to control." } },
+      { "title": { "cs": "Vzestup strážnice", "en": "Watchtower Ascension" }, "description": { "cs": "Postav pět majáků vědomí.", "en": "Build five beacons of consciousness." } },
+      { "title": { "cs": "Poslední postoj", "en": "The Last Stand" }, "description": { "cs": "Vyhraj válku gild jako jediný obránce.", "en": "Win a guild war as the sole defender." } }
+    ]
+  },
+  "9": {
+    "quests": [
+      { "title": { "cs": "Cesta ahinsá", "en": "The Way of Ahimsa" }, "description": { "cs": "Vyřeš tři spory bez boje.", "en": "Resolve three conflicts without a fight." } },
+      { "title": { "cs": "Meditace v ášramu", "en": "Ashram Meditation" }, "description": { "cs": "Vydrž sedm dní meditační řady.", "en": "Keep a seven-day meditation streak." } },
+      { "title": { "cs": "Gándhího pochod za sůl", "en": "Gandhi's Salt March" }, "description": { "cs": "Projdi celý okruh území pěšky.", "en": "Walk the full circuit of the territory." } },
+      { "title": { "cs": "Mírové rozuzlení", "en": "Peaceful Resolution" }, "description": { "cs": "Proměň nepřátelskou gild ve spojence.", "en": "Turn an enemy guild into allies." } },
+      { "title": { "cs": "Mistrovství nenásilí", "en": "Non-Violence Mastery" }, "description": { "cs": "Dosáhni CL 6 bez jediného bojového XP.", "en": "Reach CL 6 without a single point of combat XP." } }
+    ]
+  },
+  "10": {
+    "quests": [
+      { "title": { "cs": "Posvátný meč", "en": "The Sacred Sword" }, "description": { "cs": "Najdi meč ve zříceninách Camelotu.", "en": "Find the sword in the ruins of Camelot." } },
+      { "title": { "cs": "Křížová výprava pravdy", "en": "Crusade of Truth" }, "description": { "cs": "Poraž deset stínů bezpráví.", "en": "Defeat ten shadows of wrongdoing." } },
+      { "title": { "cs": "Zkouška svatého úderu", "en": "Holy Strike Trial" }, "description": { "cs": "Zasáhni dokonalou spravedlivou kombinaci.", "en": "Land a perfect righteous combination." } },
+      { "title": { "cs": "Svěcení válečného kněze", "en": "Warrior Priest Ordination" }, "description": { "cs": "V jedné bitvě léči i bojuj.", "en": "Heal and fight in the same battle." } },
+      { "title": { "cs": "Bojuj za pravdu, ne za ego", "en": "Fight for Truth, Not Ego" }, "description": { "cs": "Vyhraj souboj bez jediného zásahu.", "en": "Win a duel without taking a single hit." } }
+    ]
+  },
+  "11": {
+    "quests": [
+      { "title": { "cs": "Dilema", "en": "The Dilemma" }, "description": { "cs": "Rozhodni: bojovat proti rodině, nebo opustit povinnost?", "en": "Decide: fight your family, or abandon duty?" } },
+      { "title": { "cs": "Krišnovo učení", "en": "Krishna's Teaching" }, "description": { "cs": "Dialogový strom Bhagavadgíty.", "en": "The dialogue tree of the Bhagavad Gita." } },
+      { "title": { "cs": "Bitevní pole", "en": "The Battlefield" }, "description": { "cs": "Strategický boj.", "en": "Strategic combat." } },
+      { "title": { "cs": "Lekce odpoutání", "en": "Detachment Lesson" }, "description": { "cs": "Zkouška zvládnutí emocí.", "en": "A test of emotional command." } },
+      { "title": { "cs": "Vítězství bez pýchy", "en": "Victory Without Pride" }, "description": { "cs": "Závěrečná moudrost Gíty.", "en": "The closing wisdom of the Gita." } }
+    ]
+  },
+  "12": {
+    "quests": [
+      { "title": { "cs": "Kyj hromu", "en": "The Mace of Thunder" }, "description": { "cs": "Rozbij bránu pevnosti ve válce gild.", "en": "Break a fortress gate in guild war." } },
+      { "title": { "cs": "Síla slouží spravedlnosti", "en": "Strength Serves Justice" }, "description": { "cs": "Ubraň slabší pěti nájezdům banditů.", "en": "Defend the weak from five bandit raids." } },
+      { "title": { "cs": "Bhímova hostina", "en": "Bhima's Feast" }, "description": { "cs": "Sesbírej 108 posvátných surovin.", "en": "Gather a hundred and eight sacred ingredients." } },
+      { "title": { "cs": "Přechod řeky", "en": "River Crossing" }, "description": { "cs": "Přenos deseti spojenců přes nebezpečnou zónu.", "en": "Carry ten allies across a hazard zone." } },
+      { "title": { "cs": "Ten mocný", "en": "The Mighty One" }, "description": { "cs": "Dej milion poškození v jedné válce.", "en": "Deal a million damage in a single war." } }
+    ]
+  },
+  "13": {
+    "quests": [
+      { "title": { "cs": "Břemeno náčelníka", "en": "The Chief's Burden" }, "description": { "cs": "Veď gild o padesáti členech třicet dní.", "en": "Lead a guild of fifty or more for thirty days." } },
+      { "title": { "cs": "Shromáždi oddíl", "en": "Rally Troops" }, "description": { "cs": "Nadchni sto hráčů najednou.", "en": "Inspire a hundred players at once." } },
+      { "title": { "cs": "Rada sedmi paprsků", "en": "Council of Seven Rays" }, "description": { "cs": "Vytvoř spojenectví celého spektra.", "en": "Form a full-spectrum alliance." } },
+      { "title": { "cs": "Veď příkladem", "en": "Lead by Example" }, "description": { "cs": "Měj nejvyšší příspěvek v deseti válkách.", "en": "Have the highest contribution in ten wars." } },
+      { "title": { "cs": "Kulatý stůl", "en": "The Round Table" }, "description": { "cs": "Svol správní summit DAO.", "en": "Host a DAO governance summit." } }
+    ]
+  },
+  "14": {
+    "quests": [
+      { "title": { "cs": "Malý Krišna", "en": "Baby Krishna" }, "description": { "cs": "Postarej se o božské dítě.", "en": "Care for the divine child." } },
+      { "title": { "cs": "Zloděj másla", "en": "The Butter Thief" }, "description": { "cs": "Hravá hádanka.", "en": "A playful puzzle." } },
+      { "title": { "cs": "Kosmické vidění", "en": "Cosmic Vision" }, "description": { "cs": "Spatři vesmír v Krišnových ústech.", "en": "See the universe inside Krishna's mouth." } },
+      { "title": { "cs": "Pouštění", "en": "Letting Go" }, "description": { "cs": "Lekce odpoutání.", "en": "A lesson in letting go." } },
+      { "title": { "cs": "Požehnání mateřství", "en": "Blessing of Motherhood" }, "description": { "cs": "Závěrečné otevření srdce.", "en": "The final opening of the heart." } }
+    ]
+  },
+  "15": {
+    "quests": [
+      { "title": { "cs": "108 sloupů", "en": "The 108 Pillars" }, "description": { "cs": "Postav chrám EKAM.", "en": "Build the EKAM temple." } },
+      { "title": { "cs": "Zlatý řez", "en": "Golden Ratio" }, "description": { "cs": "Hádanka Fibonacciho vzoru.", "en": "A puzzle of the Fibonacci pattern." } },
+      { "title": { "cs": "Platónská tělesa", "en": "Platonic Solids" }, "description": { "cs": "Výzva v prostorové geometrii.", "en": "A challenge in spatial geometry." } },
+      { "title": { "cs": "Zdrojový kód", "en": "Source Code" }, "description": { "cs": "Najdi stopy ve světě, ne v souborech.", "en": "Find the clues in the world, not in the files." } },
+      { "title": { "cs": "Architektovo požehnání", "en": "Architect's Blessing" }, "description": { "cs": "Odemkni skryté prostory.", "en": "Unlock the hidden spaces." } }
+    ]
+  },
+  "16": {
+    "quests": [
+      { "title": { "cs": "Věčný tanec", "en": "The Eternal Dance" }, "description": { "cs": "Dokonči rytmickou minihru rása líla.", "en": "Complete the rasa lila rhythm mini-game." } },
+      { "title": { "cs": "Pouť k Rádhákundu", "en": "Radha Kund Pilgrimage" }, "description": { "cs": "Navštiv všech osm posvátných jezer.", "en": "Visit all eight sacred lakes." } },
+      { "title": { "cs": "Láska přesahuje formu", "en": "Love Transcends Form" }, "description": { "cs": "Vytvoř přátelské pouto mezi gildami.", "en": "Form a friendship bond across guilds." } },
+      { "title": { "cs": "Božské spojení", "en": "Divine Union" }, "description": { "cs": "Splň společný quest s Krishna-Maitreyou.", "en": "Complete a co-op quest with Krishna-Maitreya." } },
+      { "title": { "cs": "Oddanost milované", "en": "The Beloved's Devotion" }, "description": { "cs": "Vydrž třicetidenní denní řadu.", "en": "Keep a thirty-day daily streak." } }
+    ]
+  },
+  "17": {
+    "quests": [
+      { "title": { "cs": "Přednes Mahábháraty", "en": "The Mahabharata Recitation" }, "description": { "cs": "Zkouška porozumění příběhu.", "en": "A test of understanding the story." } },
+      { "title": { "cs": "18 parvas", "en": "18 Parvas" }, "description": { "cs": "Splň osmnáct kapitolových výzev.", "en": "Complete eighteen chapter challenges." } },
+      { "title": { "cs": "Ganéšovo pero", "en": "Ganesha's Pen" }, "description": { "cs": "Písařská hádanka.", "en": "A scribe's puzzle." } },
+      { "title": { "cs": "Moudrost bez věku", "en": "Timeless Wisdom" }, "description": { "cs": "Použij staré lekce na dnešní problém.", "en": "Apply an ancient lesson to a present problem." } },
+      { "title": { "cs": "Mudrcovo požehnání", "en": "Sage's Blessing" }, "description": { "cs": "Odemkni všechny záznamy kánonu.", "en": "Unlock every entry of the lore." } }
+    ]
+  },
+  "18": {
+    "quests": [
+      { "title": { "cs": "Apoštolka apoštolů", "en": "The Apostle of Apostles" }, "description": { "cs": "Obnov zapomenutý posvátný text.", "en": "Restore a forgotten sacred text." } },
+      { "title": { "cs": "Růže ze Šáronu", "en": "Rose of Sharon" }, "description": { "cs": "Uzdrav tisíc hráčů napříč územími.", "en": "Heal a thousand players across the territories." } },
+      { "title": { "cs": "Posvátné spojení", "en": "Sacred Union" }, "description": { "cs": "Vytvoř dvojici pro společný quest.", "en": "Form a duo for a shared quest." } },
+      { "title": { "cs": "Slzy soucitu", "en": "Tears of Compassion" }, "description": { "cs": "Utěš sto ztrápených postav.", "en": "Comfort a hundred distressed characters." } },
+      { "title": { "cs": "Setkání v zahradě", "en": "The Garden Encounter" }, "description": { "cs": "Najdi skrytý pramen vzkříšení.", "en": "Find the hidden spring of resurrection." } }
+    ]
+  },
+  "19": {
+    "quests": [
+      { "title": { "cs": "Kázání na hoře", "en": "The Sermon on the Mount" }, "description": { "cs": "Učení blahoslavenství.", "en": "The teaching of the beatitudes." } },
+      { "title": { "cs": "Očištění chrámu", "en": "Cleansing the Temple" }, "description": { "cs": "Spravedlivý hněv proti soucitu.", "en": "Righteous anger against compassion." } },
+      { "title": { "cs": "Poslední večeře", "en": "The Last Supper" }, "description": { "cs": "Obřad jednoty.", "en": "A ritual of unity." } },
+      { "title": { "cs": "Volba v Getsemane", "en": "Gethsemane Choice" }, "description": { "cs": "Zkouška krajní oběti.", "en": "The test of ultimate sacrifice." } },
+      { "title": { "cs": "Velikonoční svítání", "en": "Easter Dawn" }, "description": { "cs": "Slavnost vzkříšení.", "en": "A celebration of resurrection." } }
+    ]
+  },
+  "38": {
+    "quests": [
+      { "title": { "cs": "Neposkvrněné početí", "en": "The Immaculate Conception" }, "description": { "cs": "Najdi posvátný grál ve skrytých zříceninách.", "en": "Find the sacred grail in hidden ruins." } },
+      { "title": { "cs": "Ochrana Zdrávas", "en": "Hail Mary Protection" }, "description": { "cs": "Uchraň padesát hráčů před smrtícím zásahem.", "en": "Shield fifty players from fatal damage." } },
+      { "title": { "cs": "Cesta růžence", "en": "The Rosary Path" }, "description": { "cs": "Projdi cyklus 108 meditačních korálků.", "en": "Complete a cycle of a hundred and eight beads." } },
+      { "title": { "cs": "Hvězda moře", "en": "Star of the Sea" }, "description": { "cs": "Propluj zrádnými astrálními vodami.", "en": "Navigate the treacherous astral waters." } },
+      { "title": { "cs": "Nanebevzetí", "en": "Assumption to Heaven" }, "description": { "cs": "Vystup na CL 6 během jediného dne.", "en": "Ascend to CL 6 in a single day." } }
+    ]
+  },
+  "20": {
+    "quests": [
+      { "title": { "cs": "Jedenadvacet chval", "en": "The Twenty-One Praises" }, "description": { "cs": "Najdi všech 21 Tářiných svatyní.", "en": "Find all twenty-one Tara shrines." } },
+      { "title": { "cs": "Osvobození ze samsáry", "en": "Liberation from Samsara" }, "description": { "cs": "Osvoboď sto uvězněných duší v říších stínu.", "en": "Free a hundred trapped souls in the shadow realms." } },
+      { "title": { "cs": "Rychlý zásah Zelené Táry", "en": "Green Tara's Swift Action" }, "description": { "cs": "Splň deset questů za méně než hodinu.", "en": "Complete ten quests in under an hour." } },
+      { "title": { "cs": "Dlouhý život Bílé Táry", "en": "White Tara's Long Life" }, "description": { "cs": "Vydrž stodenní denní řadu.", "en": "Keep a hundred-day daily streak." } },
+      { "title": { "cs": "Slib bódhisattvy", "en": "The Bodhisattva Vow" }, "description": { "cs": "Přísahuj osvobodit všechny bytosti dřív než sebe.", "en": "Vow to liberate all beings before yourself." } }
+    ]
+  },
+  "21": {
+    "quests": [
+      { "title": { "cs": "Tisíc rukou", "en": "The Thousand Arms" }, "description": { "cs": "Pomoz tisíci různým hráčům.", "en": "Help a thousand different players." } },
+      { "title": { "cs": "Óm mani padmé húm", "en": "Om Mani Padme Hum" }, "description": { "cs": "Odříkej mantru na 108 místech.", "en": "Recite the mantra in a hundred and eight places." } },
+      { "title": { "cs": "Soucit bez hranic", "en": "Compassion Without Limits" }, "description": { "cs": "Odpusť sto útočníkům z nepřátelských gild.", "en": "Forgive a hundred attackers from enemy guilds." } },
+      { "title": { "cs": "Kuanjininy slzy", "en": "Guanyin's Tears" }, "description": { "cs": "Uvidět utrpení světa a uzdravit ho.", "en": "See the world's suffering and heal it." } },
+      { "title": { "cs": "Pán, který vidí vše", "en": "The All-Seeing Lord" }, "description": { "cs": "Objev každé skryté tajemství OASIS.", "en": "Discover every hidden secret in OASIS." } }
+    ]
+  },
+  "22": {
+    "quests": [
+      { "title": { "cs": "Mantra sta slabik", "en": "The Hundred-Syllable Mantra" }, "description": { "cs": "Odříkej očistnou mantru stokrát.", "en": "Chant the purification mantra a hundred times." } },
+      { "title": { "cs": "Diamantová mysl", "en": "Diamond Mind" }, "description": { "cs": "Vymaž všechny body negativní karmy.", "en": "Clear every point of negative karma." } },
+      { "title": { "cs": "Zrcadlo pravdy", "en": "The Mirror of Truth" }, "description": { "cs": "Postav se svému stínu a poraz ho.", "en": "Face your shadow self and defeat it." } },
+      { "title": { "cs": "Očistný oheň", "en": "Purification Fire" }, "description": { "cs": "Spal 108 vazeb v obřadu.", "en": "Burn away a hundred and eight attachments in ritual." } },
+      { "title": { "cs": "Vadžrové tělo", "en": "Vajra Body" }, "description": { "cs": "Udrž si plné zdraví třicet dní.", "en": "Keep perfect health for thirty days." } }
+    ]
+  },
+  "26": {
+    "quests": [
+      { "title": { "cs": "Alchymistova laboratoř", "en": "The Alchemist's Laboratory" }, "description": { "cs": "Hádanky proměny.", "en": "Puzzles of transmutation." } },
+      { "title": { "cs": "Přítomnost JÁ JSEM", "en": "I AM Presence" }, "description": { "cs": "Meditace o identitě.", "en": "A meditation on identity." } },
+      { "title": { "cs": "Svoboda od karmy", "en": "Freedom from Karma" }, "description": { "cs": "Odlož břemena, která už nejsou tvoje.", "en": "Set down burdens that are no longer yours." } },
+      { "title": { "cs": "Kámen mudrců", "en": "The Philosopher's Stone" }, "description": { "cs": "Vytvoř duchovní zlato.", "en": "Create spiritual gold." } },
+      { "title": { "cs": "Požehnání fialového plamene", "en": "Violet Flame Blessing" }, "description": { "cs": "Zvládni proměnu.", "en": "Master transmutation." } }
+    ]
+  },
+  "46": {
+    "quests": [
+      { "title": { "cs": "Červená, nebo modrá", "en": "Red Pill / Blue Pill" }, "description": { "cs": "Volba, která určí cestu.", "en": "The choice that defines the path." } },
+      { "title": { "cs": "Výcviková simulace", "en": "Training Simulation" }, "description": { "cs": "Bojový tutoriál.", "en": "A combat tutorial." } },
+      { "title": { "cs": "Věštkynino proroctví", "en": "The Oracle's Prophecy" }, "description": { "cs": "Setkej se s orákulem ZIONu.", "en": "Meet the oracle of ZION." } },
+      { "title": { "cs": "Souboj s agentem Smithem", "en": "Agent Smith Battle" }, "description": { "cs": "Souboj s bossem (rozpust ego).", "en": "A boss fight (dissolve the ego)." } },
+      { "title": { "cs": "JÁ JSEM Neo", "en": "I AM Neo" }, "description": { "cs": "Konec, kdy si uvědomíš sám sebe.", "en": "An ending of self-realisation." } }
+    ]
+  },
+  "51": {
+    "quests": [
+      { "title": { "cs": "Střední cesta", "en": "The Middle Way" }, "description": { "cs": "Vyvaž moudrost a soucit v deseti questech.", "en": "Balance wisdom and compassion across ten quests." } },
+      { "title": { "cs": "Tibetská svoboda", "en": "Tibetan Freedom" }, "description": { "cs": "Osvoboď obsazené území bez násilí.", "en": "Liberate an occupied territory peacefully." } },
+      { "title": { "cs": "Meditace milující laskavosti", "en": "Loving Kindness Meditation" }, "description": { "cs": "Pošli mettu stu hráčů najednou.", "en": "Send metta to a hundred players at once." } },
+      { "title": { "cs": "Umění štěstí", "en": "The Art of Happiness" }, "description": { "cs": "Dosáhni nejvyššího skóre štěstí.", "en": "Reach the highest happiness score." } },
+      { "title": { "cs": "Univerzální odpovědnost", "en": "Universal Responsibility" }, "description": { "cs": "Veď kampaň humanitárního desátku.", "en": "Lead a humanitarian tithe campaign." } }
+    ]
+  },
+  "202": {
+    "quests": [
+      { "title": { "cs": "Krok 1: Rozpoznání", "en": "Step 1: Recognition" }, "description": { "cs": "Najdi v deštném lese Monument 6 z Tortuguera a přečti ohlazené znaky.", "en": "Find Tortuguero Monument 6 in the rainforest and read the eroded glyphs." } },
+      { "title": { "cs": "Krok 2: Pouta", "en": "Step 2: Bonds" }, "description": { "cs": "Odhal symbol provazu: kdo je vězeň a kdo strážce?", "en": "Reveal the rope symbol: who is the prisoner and who is the guard?" } },
+      { "title": { "cs": "Krok 3: Xibalba", "en": "Step 3: Xibalba" }, "description": { "cs": "Sestup k devíti pánům podsvětí.", "en": "Descend to the nine lords of the underworld." } },
+      { "title": { "cs": "Krok 4: Strom", "en": "Step 4: The Tree" }, "description": { "cs": "Najdi strom ceiba, který roste na hranici tří světů.", "en": "Find the ceiba tree growing on the border of three worlds." } },
+      { "title": { "cs": "Krok 5: Čas", "en": "Step 5: Time" }, "description": { "cs": "Pochop rozdíl mezi přímým a cyklickým časem.", "en": "Understand the difference between linear and cyclical time." } },
+      { "title": { "cs": "Krok 6: Smrt jako tvorba", "en": "Step 6: Death as Creation" }, "description": { "cs": "Přijmi smrt jako tvoření skrze vidění pramene.", "en": "Accept death as creation through the Fountain vision." } },
+      { "title": { "cs": "Krok 7: Investitura", "en": "Step 7: Investiture" }, "description": { "cs": "Obřad změny: odlož starou kůži avatara a vezmi si novou.", "en": "Ceremony of changing: remove the old avatar skin and take the new." } },
+      { "title": { "cs": "Krok 8: Slunce", "en": "Step 8: The Sun" }, "description": { "cs": "Zroď nový cyklus aktivací genesis bloku na nádvoří chrámu.", "en": "Birth a new cycle by activating the genesis block in the temple courtyard." } },
+      { "title": { "cs": "Krok 9: Zobrazení", "en": "Step 9: Manifestation" }, "description": { "cs": "Bolon Jokte se zjeví v plné podobě a hráč získá trvalou schopnost.", "en": "Bolon Yokte manifests in full form and the player gains a permanent ability." } }
+    ]
+  }
+}

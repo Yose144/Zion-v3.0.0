@@ -472,8 +472,8 @@ function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose:
                     {i + 1}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white">{q.title}</p>
-                    <p className="text-xs leading-relaxed text-gray-400">{q.description}</p>
+                    <p className="text-sm font-semibold text-white">{tx(q.title, cs)}</p>
+                    <p className="text-xs leading-relaxed text-gray-400">{tx(q.description, cs)}</p>
                   </div>
                 </li>
               ))}

@@ -314,11 +314,19 @@ const rows = avatars.map((a, i) => {
     teaching: loc('teaching', (a.teaching ?? '').replace(/^"|"$/g, '')),
     ability: loc('ability', a.ability),
     key: cleanLegacy(a.key),
-    quests: Array.isArray(a.quests)
-      ? a.quests
-          .map((q) => ({ title: mdInline(q.title ?? ''), description: mdInline(q.description ?? '') }))
-          .filter((q) => q.title)
-      : [],
+    // Overlay má přednost; legacy questy jsou jen anglicky (cs zůstane prázdné).
+    quests: (Array.isArray(c.quests) && c.quests.length
+      ? c.quests.map((q) => ({
+          title: { cs: q.title?.cs ?? '', en: q.title?.en ?? '' },
+          description: { cs: q.description?.cs ?? '', en: q.description?.en ?? '' },
+        }))
+      : Array.isArray(a.quests)
+        ? a.quests.map((q) => ({
+            title: { cs: '', en: mdInline(q.title ?? '') },
+            description: { cs: '', en: mdInline(q.description ?? '') },
+          }))
+        : []
+    ).filter((q) => q.title.cs || q.title.en),
     essence: c.essence
       ? { cs: c.essence.cs ?? '', en: c.essence.en ?? '' }
       : { cs: essenceI18n[a.id]?.cs ?? essence, en: essenceI18n[a.id]?.en ?? essence },
@@ -360,7 +368,7 @@ export interface OasisAvatar {
   ability: LocalizedText;
   key: string;
   /** Quest linie — rozepsané questy (prázdné = linie zatím bez questů). */
-  quests: { title: string; description: string }[];
+  quests: { title: LocalizedText; description: LocalizedText }[];
   /** Krátký popis ze SACRED_TRINITY profilu (ESENCE / první odstavec), cs+en ze scripts/oasis-essence-i18n.json. */
   essence: { cs: string; en: string };
   /** Epigraf — cs/en z scripts/oasis-avatar-copy/, fallback = blockquote z profilu. */
