@@ -126,7 +126,7 @@ Když byl první díl kýlu opracovaný, přisedli k ohni tři skupiny poutník�
 
 „To záleží, odkud se díváš,“ řekl Buddha a položil svou misku na zem. „Když se díváš na utrpení, první je ten, kdo ho uvidí — a nezamění soucit za vlastnictví druhého člověka.“
 
-„Když se díváš na práci,“ řekl Krišna a odložil flétnu, „první je ten, kdo ji udělá celým srdcem, ale nepřiváže si výsledek ke krku jako trofej.“f7
+„Když se díváš na práci,“ řekl Krišna a odložil flétnu, „první je ten, kdo ji udělá celým srdcem, ale nepřiváže si výsledek ke krku jako trofej.“
 
 
 „A když se díváš na most,“ řekla Sítá, „první není ten, kdo stojí uprostřed. Je to ten, kdo druhému nechá místo přejít.“ Hanuman už mezitím odklízel kameny od cesty k vodě; Ráma mu přidržel lampu.

@@ -1,0 +1,17 @@
+{
+  "edition": "gpt",
+  "lang": "EN",
+  "source": "Kingdom_of_the_Heart_gpt_EN.md",
+  "words": 8450,
+  "headings": 87,
+  "paragraphs": 285,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 54,
+    "bytes": 203025
+  },
+  "epub": {
+    "documents": 6,
+    "bytes": 24047
+  }
+}
