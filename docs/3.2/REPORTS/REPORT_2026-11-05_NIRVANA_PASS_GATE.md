@@ -63,11 +63,39 @@ aby výpadek EDGE2 nevyhodil rozehrané hráče.
 | lokálně, audit hook | `/mars` 200, hra se vykreslí; **mobile audit PASSED**, **first-world E2E VŠE OK** |
 | deploy smoke | `/` 200, textury 200, `/api/pass` 200, `/mars` 307 |
 
+## 4b. Ověřeno reálným ZAP kódem (2026-11-05)
+
+Operátor dodal platný kód; prošel jsem celý řetěz proti produkci.
+
+| Krok | Výsledek |
+|---|---|
+| `POST /api/pass` s kódem | `{"access":true}` + `Set-Cookie zion_nirvana_pass` (HttpOnly, Secure, 90 d) |
+| `GET /api/pass` s cookie | `{"access":true}` |
+| `/mars`, `/earth`, `/park`, `/saturn`, `/avatars`, `/hiran`, `/multiplayer` s cookie | **200** |
+| bez cookie | **307** na bránu |
+| `/earth` bez pasu → kód → | vrátí se na **`/earth`**, pick screen, sólo hra běží |
+| HUD → Mars | `/mars`, aréna dostupná |
+| WS `join tanks` s cookie | **místnost `tanks-*`** (bots) |
+| WS `join` bez cookie | `pass_required` |
+
+### Dvě chyby, které teprve reálný kód odhalil
+
+`?next=` (návrat na původní stránku) nefungoval — a měl dvě příčiny:
+
+1. **Mountoval se vesmír, než redirect proběhl** — 3D scéna zablokovala hlavní
+   vlákno a navigace se opozdila o ~3 s. Řešení: dokud `next` visí, brána
+   kreslí „Nirvana se otevírá…" a děti nemountuje.
+2. **`router.replace(next)` se ztratil** — klientská navigace z layoutu
+   skončila zpátky na `/` (Shell má vlastní hash-sync, který URL přepsal).
+   Řešení: po odemčení **plná navigace** `window.location.assign(next)` —
+   cookie už je nastavená, takže middleware pustí dál a strom se načte čistě.
+
 ## 5. Meze
 
-- **Validní pas v prohlížeči jsem netestoval** — nemám ZAP kód. Ověřená je
-  cesta „bez pasu" a „zfalšovaný pas"; cesta „platný pas" stojí na stejném
-  `/api/pass`, který web používá od 31. 10.
+- **Validní pas je ověřený** (viz §4b) — včetně návratu na původní stránku
+  a WS joinu. Netestoval jsem **revokaci** za běhu (nemám jak kód zrušit):
+  teorie je stejná jako u archivu — `GET /api/pass` ověří při každém mountu
+  a `DELETE` cookie smaže.
 - Middleware kontroluje **přítomnost** cookie, ne platnost (Edge nesmí na
   každý request volat orákulum). Platnost řeší klientská brána, `/api/pass`
   a net služba. Kdo si cookie zfalšuje, nedostane obsah ani hru, ale

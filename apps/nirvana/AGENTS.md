@@ -1740,8 +1740,12 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **`PassGate` je v `app/layout.tsx`** a **`GameHud` i `ChatDock` jsou až
   za ní.** HUD v layoutu mimo bránu = lišta s přepínáním her na zamčené
   stránce (přesně to uživatel nahlásil).
-- **`?next=` se přijímá jen jako interní cesta** (`/`, ne `//evil.com`)
-  a po odemčení se `router.replace` vrací tam, kam člověk šel.
+- **`?next=` se přijímá jen jako interní cesta** (`/`, ne `//evil.com`).
+  Po odemčení se vrací **plnou navigací** (`window.location.assign`):
+  `router.replace` z layoutu se ztratil (Shell na `/` má hash-sync a URL
+  přepsal zpět) a děti se nesmí mountovat dřív, než navigace proběhne —
+  jinak se na chvíli načte 3D vesmír a redirect se opozdí o sekundy.
+  Reálně to znamenalo „kód zadal správně a stejně skončil ve vesmíru".
 - **Middleware kontroluje jen přítomnost cookie.** Platnost ověřuje
   `/api/pass` (klientská brána), `/present/*` layout a net služba.
   Zfalšovaná cookie nedostane obsah ani hru, ale HTML dokument se vyrenderuje.
