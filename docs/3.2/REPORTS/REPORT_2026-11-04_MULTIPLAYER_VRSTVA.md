@@ -129,6 +129,27 @@ Dvě věci, které to odhalilo:
 - Plovoucí dok je na `/multiplayer` schovaný — lobby má vlastní chat a dvě
   počítadla nepřečtených by mátla.
 
+## 4d. Reconnect, pozvánky z her a hala (proto 24)
+
+**Reconnect**
+- Server vydá ve `welcome` token; klient ho drží v `sessionStorage` a posílá
+  v `hello`. Po výpadku se hráč vrací do **stejného sedla** — server mu
+  převezme staré `conn.id`, takže hry (klíčované podle id) ho poznají
+  a v tancích mu zůstane i tah.
+- Sedlo drží `NIRVANA_NET_RESUME_MS` (default 45 s). Sweeper běží **po 1 s**;
+  v heartbeatu (20 s) by se grace protáhl o půl minuty — přesně to odhalil
+  test, kdy místnost po 2 s ještě existovala.
+- Mrtvý socket: `send()` zprávu zahodí, místo aby snapshot spadl.
+
+**Pozvánka z her**
+- `InviteButton` je jedno místo pro URL: hlavička chatu (na každé stránce),
+  chrome tanků a lobby banner. Fallback bez schránky je pole s odkazem.
+
+**Hala slyšet všude**
+- Zprávy z parku (mimo místnost) jdou i hráčům v místnostech (`park: true`,
+  v chatu „hala ·"). Zprávy z místnosti zůstávají v místnosti — taktika 5v5
+  nemá téct do celé Nirvany.
+
 ## 5. Ověření
 
 | Test | Výsledek |
@@ -144,6 +165,10 @@ Dvě věci, které to odhalilo:
 | live `/net/health` | `proto 21` |
 | live 2 prohlížeče | A „TVŮJ TAH", B „SOUPEŘ MÍŘÍ"; po Aho výstřelu **tah předán B**; 0 chyb |
 | mobile audit | **PASSED** (Saturn tanky 5 dotykových prvků) |
+| live reconnect | token → close → resume: `resumed=true`, **stejná místnost i id**, snapshoty tečou dál |
+| live pozvánka | tlačítko v tankách zkopírovalo `…/multiplayer?room=tanks-1`; v chatu na `/mars` je taky |
+| mobil (390) | lobby chat s kanálem i pozvánkou, 0 chyb, 0 px přesahu |
+| `test/resume.mjs` (nový) | **RESUME OK** — token, stejné id i místnost po reconnectu, snapshoty dál, hala do místnosti, úklid po grace |
 | `test/rooms.mjs` (nový) | **ROOMS OK** — seznam se rozšíří při vytvoření, příchodu, změně stavu i odchodu; úklid prázdné místnosti |
 | live lobby (2 prohlížeče) | 5 karet, „Rychlá hra" → `tanks-1`, druhý vidí 1/2 „čeká na hráče" a připojí se, po odchodu banner zmizí, 0 chyb |
 | `/multiplayer` responzivita | 390×844 / 844×390 / 768×1024 / 1440×900 → **0 px** přesahu |

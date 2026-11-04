@@ -1692,3 +1692,23 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   proto kanál ukazuje — jinak je to matoucí.
 - **Na `/multiplayer` je plovoucí dok skrytý** (`usePathname`), lobby má
   vlastní chat; dvě počítadla nepřečtených mátla.
+
+## Reconnect, pozvánky z her, hala (2026-11-04, proto 24)
+
+- **Reconnect = stejné `conn.id`.** Server drží spadlé připojení v `resumes`
+  a při `hello` s tokenem **převezme staré id** — všechny hry klíčují hráče
+  podle `conn.id`, takže se tím vrátí do stejné pozice (a v tancích do
+  stejného tahu). Nové id by znamenalo nové sedlo a v tancích cizí tah.
+- **`send()` musí zahodit zprávu pro mrtvý socket.** Během grace sedí hráč
+  v `room.players`, ale socket je zavřený; bez guardu by snapshot shodil
+  celou smyčku.
+- **Grace sweep běží po 1 s, ne v heartbeatu (20 s).** Jinak by se
+  `NIRVANA_NET_RESUME_MS=1200` v testu protáhl na 20 s a úklid „nefungoval".
+- **`NIRVANA_NET_RESUME_MS=0` reconnect vypíná** — testy úklidu to používají,
+  protože jinak sedlo po odpojení drží 45 s a místnosti nemizí.
+- **Pozvánka má jednu komponentu** (`InviteButton`): hlavička chatu, chrome
+  tanků, lobby banner. URL se skládá na jednom místě; fallback bez schránky
+  je pole s odkazem, nikdy `window.prompt` (blokuje stránku).
+- **Hala (park) je slyšet všude.** Zprávy z `park` kanálu se posílají i do
+  místností (`park: true`, v chatu „hala ·"); zprávy z místnosti zůstávají
+  v místnosti. Kdyby šlo všechno všude, taktika 5v5 by tekla do celé Nirvany.
