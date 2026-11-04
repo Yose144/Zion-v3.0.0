@@ -1,0 +1,17 @@
+{
+  "edition": "gemini",
+  "lang": "FR",
+  "source": "Le_Royaume_du_Coeur_gemini_FR.md",
+  "words": 33270,
+  "headings": 142,
+  "paragraphs": 546,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 155,
+    "bytes": 456668
+  },
+  "epub": {
+    "documents": 8,
+    "bytes": 84910
+  }
+}
