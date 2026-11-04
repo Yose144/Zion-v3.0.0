@@ -207,7 +207,9 @@ SSH "chown -R zion:zion '${REMOTE_DIR}' && \
   systemctl daemon-reload && systemctl restart ${SERVICE} zion-l1-watcher.service"
 
 echo "[deploy-marketplace] Smoke check download endpoint..."
-DL_PATH="$(SSH "grep -o 'https://market.zionterranova.com/shop/downloads/[^']*' '${REMOTE_DIR}/.env' 2>/dev/null | head -1" || true)"
+# Pozor: REMOTE_DIR obsahuje `&`, takže skládání remote příkazu s uvozovkami
+# tady dřív rozbilo quoting (`unexpected EOF while looking for matching '`).
+# URL se bere z env override / defaultu — čtení z remote .env je jen šum.
 DL_URL="${MARKET_DOWNLOAD_URL:-https://market.zionterranova.com/shop/downloads/Kralovstvi_srdce_kompletni_edice_5_jazyku.zip}"
 dl_code=$(curl -s -o /dev/null -w '%{http_code}' -r 0-1023 --max-time 20 "$DL_URL" || echo 000)
 if [[ "$dl_code" != "206" && "$dl_code" != "200" ]]; then
