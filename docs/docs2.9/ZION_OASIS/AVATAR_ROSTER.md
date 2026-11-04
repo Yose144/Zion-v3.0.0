@@ -150,7 +150,7 @@
 
 ---
 
-### **06. Isis-Enamataru** (Divine Feminine)
+### **06. Isis** (Divine Feminine)
 **Ray:** Pink (Love) + White (Purity)
 **Role:** Feminine Power Teacher
 **Location:** Luxor Temple (Egypt)
@@ -231,7 +231,7 @@
 
 ---
 
-### **13. Artem-Vudce** (Leader)
+### **13. Yudhishthira** (Leader)
 **Ray:** Blue (Will/Power)
 **Role:** Leadership Mentor
 **Location:** ZION Council Chambers

@@ -811,7 +811,7 @@ export const OASIS_AVATARS: OasisAvatar[] = [
   },
   {
     "id": 6,
-    "name": "Isis-Enamataru",
+    "name": "Isis",
     "subtitle": {
       "cs": "Božská ženskost",
       "en": "Divine Feminine"
@@ -1429,7 +1429,7 @@ export const OASIS_AVATARS: OasisAvatar[] = [
   },
   {
     "id": 13,
-    "name": "Artem-Vudce",
+    "name": "Yudhishthira",
     "subtitle": {
       "cs": "Vůdce",
       "en": "Leader"

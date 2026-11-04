@@ -1,11 +1,11 @@
-# 🎖️ ARTEM: The Strategic Commander (Vůdce)
+# 🎖️ YUDHISHTHIRA: The Strategic Commander
 
 > **Kamarád Maitreyi - Leadership Dharma**  
 > **"True leader doesn't command from throne. He fights on front line."**
 
 ---
 
-## 🌟 Kdo je Artem v ZION?
+## 🌟 Kdo je Yudhishthira v ZION?
 
 **Jméno:** Artem  
 **Titul:** Vůdce (Commander/Leader)  

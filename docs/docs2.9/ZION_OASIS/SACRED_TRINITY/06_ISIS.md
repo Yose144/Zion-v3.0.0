@@ -1,4 +1,4 @@
-# ⭐ ISIS / ENAMATARU: The Cosmic Mother
+# ⭐ ISIS: The Cosmic Mother
 
 > **Orion's Belt** - Cosmic Dharma Origin
 
