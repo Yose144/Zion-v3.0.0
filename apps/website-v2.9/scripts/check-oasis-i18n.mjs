@@ -141,7 +141,7 @@ for (const a of avatars) {
     rows.push(`cs=${cs.length} en=${en.length}`);
   }
 
-  // 5) kánon musí mít protějšek v i18n
+  // 5) kánon musí mít protějšek v i18n + parita struktury s kánonem
   if (canon) {
     const c = read(join(PROFILES_DIR, canon));
     const diac = count(DIACRITICS, c);
@@ -149,8 +149,32 @@ for (const a of avatars) {
     const lang = diac > enW * 3 ? 'cs' : enW > diac * 3 ? 'en' : enW > diac ? 'en' : 'cs';
     const other = lang === 'cs' ? 'en' : 'cs';
     const otherPath = join(I18N_DIR, `${pad2(id)}.${other}.md`);
-    if (!existsSync(otherPath)) problems.push(`id ${id}: chybí překlad ${pad2(id)}.${other}.md (kánon je ${lang})`);
     rows.push(`kánon=${lang}`);
+    if (!existsSync(otherPath)) {
+      problems.push(`id ${id}: chybí překlad ${pad2(id)}.${other}.md (kánon je ${lang})`);
+    } else {
+      const tr = read(otherPath);
+      const heads = (t) => count(/^#{1,6}\s/gm, t);
+      const blocks = (t) => (t.match(/```\w*\n[\s\S]*?```/g) ?? []).length;
+      const links = (t) => (t.match(/\]\(([^)]+)\)/g) ?? []).map((s) => s.slice(2, -1)).sort();
+      if (heads(c) !== heads(tr)) {
+        problems.push(`id ${id}: ${pad2(id)}.${other}.md má ${heads(tr)} nadpisů, kánon ${heads(c)}`);
+      }
+      if (blocks(c) !== blocks(tr)) {
+        problems.push(`id ${id}: ${pad2(id)}.${other}.md má ${blocks(tr)} code bloků, kánon ${blocks(c)}`);
+      }
+      const lc = links(c);
+      const lt = links(tr);
+      if (lc.join('|') !== lt.join('|')) {
+        const missing = lc.filter((x) => !lt.includes(x)).slice(0, 4);
+        problems.push(`id ${id}: ${pad2(id)}.${other}.md nemá stejné odkazy jako kánon (chybí: ${missing.join(', ') || '—'})`);
+      }
+      const ratio = tr.length / Math.max(c.length, 1);
+      if (ratio < 0.85) {
+        problems.push(`id ${id}: ${pad2(id)}.${other}.md je zkrácený (${tr.length}/${c.length} = ${(ratio * 100).toFixed(0)} %)`);
+      }
+      rows.push(`překlad=${other}:${ratio.toFixed(2)}`);
+    }
   }
 
   report.push({ id, name: a.name, details: rows.join(' ') });
