@@ -1,4 +1,5 @@
 export { default as HeroSection } from './HeroSection';
+export { ZionPassSection, LampionSection } from './ChristmasEdition';
 export { default as BookSection } from './BookSection';
 export { default as StatsSection } from './StatsSection';
 export { default as CategoriesSection } from './CategoriesSection';

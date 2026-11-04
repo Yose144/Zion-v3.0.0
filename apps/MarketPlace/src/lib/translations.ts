@@ -122,6 +122,48 @@ const t = {
     tokens: { cs: '+{amount} ZION tokenů', en: '+{amount} ZION tokens' },
   },
 
+  xmas: {
+    badge: { cs: 'Vánoční edice 2026', en: 'Christmas Edition 2026' },
+    bonus: { cs: '+{amount} ZION bonus', en: '+{amount} ZION bonus' },
+    passKicker: { cs: 'Novinka · ZION Pass', en: 'New · ZION Pass' },
+    passTitle: { cs: 'ZION Pass', en: 'ZION Pass' },
+    passSubtitle: {
+      cs: 'Karta, která otevírá bránu do Království',
+      en: 'The card that opens the gate to the Kingdom',
+    },
+    passDescription: {
+      cs: 'Vánoční ZION Pass je vstupenka do světa OASIS a ZION Archivu — dárek, který otevírá novou zemi. Za 108 Kč navíc 108 000 ZION bonusů: tisíc ZION za každou korunu.',
+      en: 'The Christmas ZION Pass is your ticket into the OASIS world and the ZION Archive — a gift that opens a new land. For 108 CZK it also carries a 108,000 ZION bonus: a thousand ZION for every crown.',
+    },
+    passChipAccess: { cs: 'Vstup do ZION Archivu', en: 'ZION Archive access' },
+    passChipGift: { cs: 'Dárek, který otevírá světy', en: 'A gift that opens worlds' },
+    passCta: { cs: 'Koupit ZION Pass', en: 'Get ZION Pass' },
+    passImageAlt: {
+      cs: 'ZION Pass — zlatá brána do Království srdce',
+      en: 'ZION Pass — golden gate into the Kingdom of Hearts',
+    },
+    lampionKicker: { cs: 'Novinka · Gravírovaný výrobek', en: 'New · Engraved craft' },
+    lampionTitle: { cs: 'Lampion – Království srdce', en: 'Lantern – Kingdom of Hearts' },
+    lampionSubtitle: {
+      cs: 'Světlo srdce pro novou zemi',
+      en: 'Light of the heart for a new land',
+    },
+    lampionDescription: {
+      cs: 'Ručně gravírovaný lampion se vzorem Srdce Království — z tesařské dílny příběhu. Vánoční edice: ke každému lampionu digitální kniha Království srdce v ceně a 333 000 ZION bonusů.',
+      en: 'A hand-engraved lantern bearing the Heart of the Kingdom pattern — straight from the carpenter\'s workshop of the story. Christmas edition: every lantern includes the digital Kingdom of Hearts book and a 333,000 ZION bonus.',
+    },
+    lampionChipEngraved: { cs: 'Ruční gravírování', en: 'Hand-engraved' },
+    lampionChipBook: {
+      cs: '+ kniha Království srdce v ceně',
+      en: '+ Kingdom of Hearts book included',
+    },
+    lampionCta: { cs: 'Koupit lampion', en: 'Get the lantern' },
+    lampionImageAlt: {
+      cs: 'Lampion Království srdce — gravírovaný vánoční výrobek z dílny tesaře',
+      en: 'Kingdom of Hearts lantern — engraved Christmas craft from the carpenter\'s workshop',
+    },
+  },
+
   featured: {
     kicker: { cs: 'Vybrané', en: 'Curated' },
     title: { cs: 'Doporučené', en: 'Featured' },
