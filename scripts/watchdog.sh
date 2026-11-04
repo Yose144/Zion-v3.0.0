@@ -247,7 +247,30 @@ check_sync() {
       gap=$(( -gap ))
     fi
     if [[ $gap -gt 20 ]]; then
-      restart_service "$BACKUP_NODE_SERVICE" "sync gap ${gap} > 20 (edge=${edge_height} local=${local_height})"
+      # A node that is actively catching up gains height between two checks.
+      # Restarting it throws away in-memory progress, and bulk P2P sync runs at
+      # roughly 0.5 blocks/s — closing a ~1.5k gap needs ~45 uninterrupted
+      # minutes. A blind restart therefore turns a slow catch-up into a
+      # permanent restart loop (measured 2026-11-04: local stuck at ~107.8k
+      # while the tip was ~109.4k, killed every 5 min for 6+ restarts).
+      # Only restart when the height did NOT move since the previous check.
+      local state_dir state_file prev_height=""
+      state_dir="${XDG_STATE_HOME:-${HOME}/.local/state}/zion"
+      state_file="${state_dir}/backup-node-height"
+      if [[ -r "$state_file" ]]; then
+        prev_height=$(tr -cd '0-9' <"$state_file" 2>/dev/null || true)
+      fi
+      mkdir -p "$state_dir" 2>/dev/null || true
+      printf '%s\n' "$local_height" >"$state_file" 2>/dev/null || true
+
+      if [[ -n "$prev_height" && "$local_height" -gt "$prev_height" ]]; then
+        log "INFO: catching up +$((local_height - prev_height)) blocks since last check (edge=${edge_height} local=${local_height} gap=${gap}) — not restarting"
+      elif [[ -z "$prev_height" ]]; then
+        log "INFO: sync gap ${gap} (edge=${edge_height} local=${local_height}) — baseline recorded, progress is measured on the next run"
+      else
+        restart_service "$BACKUP_NODE_SERVICE" "sync gap ${gap} > 20 with no progress (edge=${edge_height} local=${local_height})"
+        printf '%s\n' "$local_height" >"$state_file" 2>/dev/null || true
+      fi
     elif [[ $gap -gt 5 ]]; then
       log "INFO: sync gap ${gap} (edge=${edge_height} local=${local_height}) — monitoring"
     fi
