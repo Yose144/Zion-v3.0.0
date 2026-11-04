@@ -1,6 +1,6 @@
-# O REINO DO CORAÇÃO — O Livro da Quilha
+# O REINO DO CORAÇÃO
 
-### A história da barca que um carpinteiro construiu — contada pela madeira que lhe sobreviveu
+### O Livro da Quilha — a história da barca que um carpinteiro construiu, contada pela madeira que lhe sobreviveu
 
 *Conjunto: prólogo, doze estações, epílogo e posfácio. MITO / ESBOÇO, versão 1.0, 3 de novembro de 2026.*
 
@@ -1134,3 +1134,770 @@ Não viram um sepulcro vazio — ou viram-no, isso não sei, pertence a outros l
 ## Apara
 
 Este capítulo tem a maior dívida de todo o livro. **Escrevi que não fui testemunha da ressurreição — e depois escrevi uma frase que soa como se o tivesse sido.** «Vieram no dia seguinte trabalhar» é belo e é verdade sobre as pessoas, mas não é prova sobre o que aconteceu no sepulcro. A diferença entre «as pessoas mudaram» e «Deus ressuscitou» é toda a diferença entre a história e a fé, e nenhuma barca a colmatou. Deixo-a ali. **Quem a varrer faz do evangelho uma reportagem e da fé publicidade.**
+---
+
+*E depois veio uma manhã que eu não esperava — e que me deu a frase que me sustenta até hoje: os baixios.* → Os Baixios
+
+
+---
+
+# IX · Os Baixios
+
+> **ANEL IX** · o Kinneret junto a Tiberíades, a manhã depois de uma noite sem pesca
+> *O lugar onde a profundidade toca finalmente o fundo.*
+
+---
+
+## Relato
+
+Depois de tudo aquilo voltaram ao trabalho.
+
+Não porque não acreditassem. Porque não sabiam que outra coisa fazer. É a coisa mais corrente do mundo e quero que fique escrita neste livro: **quando alguém de quem as pessoas gostavam morre, na segunda semana vão trabalhar.** Não é traição. É a maneira de ficar vivo até que algo mude.
+
+Simão disse: «Vou pescar.» E os outros disseram: «Vamos contigo.»
+
+Saímos de noite. Foi a pior noite que vivi — e não teve nada de dramático. Nem vento, nem vaga. Fazia silêncio e calor e as redes ficaram vazias. Seis horas. Sete. Oito. Os homens deixaram de falar. Alguém tentou uma piada e ninguém se riu, e por isso desistiu.
+
+Ao romper da manhã a luz era cinzenta e eles estavam na margem, onde não havia ninguém, a puxar as redes para as limpar.
+
+E então alguém na margem chamou:
+
+**«Rapazes, tendes algo de comer?»**
+
+É uma pergunta estranha, quando se pensa. Não é «quem sois», não é «que fazeis aqui». É a pergunta de um homem que quer comer — e que sabe que os da barca têm peixe, porque é o seu ofício. Pareceria quase insensível, depois de tudo.
+
+Responderam: «Não temos.»
+
+E ele disse: «Lançai a rede ao lado direito da barca e encontrareis.»
+
+Fizeram-no. Não tinham razão para o fazer — lançar a rede ao lado direito é o que faz um homem a quem pedem para tentar algo que não funciona e que já não tem força para discutir. Puxaram-na cheia.
+
+Nesse momento João disse a Pedro: **«É o Senhor.»**
+
+E Pedro — que era sempre o que agia antes de pensar — cingiu-se com o manto, porque estava nu, e **saltou para a água.**
+
+Não foi um salto corajoso. Havia cerca de noventa metros até à margem e ele podia ter ido de barca. O salto para a água era a maneira mais rápida de chegar a alguém que queria ver dois minutos mais cedo, e não contava sobreviver àqueles dois minutos sem se mover.
+
+A água estava fria. Não lhe serviu de nada.
+
+---
+
+Eu fiquei junto à margem, porque me tinham tirado para a areia.
+
+E ali vi o que mais recordo de toda aquela manhã.
+
+Na margem ardia **um lume de carvão**. E sobre ele havia um peixe e pão. Ao lado do lume estava ele, num manto sujo, as mãos molhadas, e não dizia nada.
+
+A palavra grega para esse lume é *anthrakia* — um braseiro de carvão. Aparece nos evangelhos apenas **duas vezes.** A primeira, na noite em que uma criada reconheceu Pedro junto ao lume no pátio da casa do sumo sacerdote, e ele disse três vezes que não conhecia aquele homem. A segunda, aqui.
+
+**O mesmo lume. O mesmo lugar da alma. Apenas uma manhã diferente.**
+
+Quando todos desembarcaram e comeram — e foi a coisa mais corrente que podeis imaginar, pão e peixe e silêncio — voltou-se para Pedro e perguntou-lhe três vezes a mesma coisa:
+
+«Simão, filho de João, amas-me?»
+
+Três vezes. Porque três vezes fora negado.
+
+Pedro respondeu a terceira vez como responde um homem a quem dói: «Senhor, tu sabes tudo, tu sabes que te amo.»
+
+E ele disse-lhe: «Apascenta as minhas ovelhas.»
+
+Não «governa». Não «conduz». **Apascenta.** É o ofício do pastor que caminha à frente do rebanho, procura erva e água e leva o que se cansa.
+
+---
+
+Olhando aquela cena da areia, reparei num pormenor que só um evangelho menciona e de que ouso dizer que é o mais belo de todo o livro.
+
+**A rede não se rompeu.**
+
+No dia anterior as redes tinham-se rompido. Rompem-se sempre — é normal, as redes rompem-se e remendam-se. Mas naquela noite carregaram-se nelas cento e cinquenta e três peixes grandes e a rede ficou inteira.
+
+Não sei o que significa. Sei o que significou **para mim** quando me tiraram para aquela areia: que é possível que uma coisa que se rompe sempre não se rompa uma vez. Não porque seja melhor. Porque era outro que a segurava.
+
+---
+
+E depois aconteceu uma coisa que eu não esperava e que levo comigo o resto da vida.
+
+Chegou-se à barca. Ajoelhou-se na água pouco funda — ali onde a superfície chega à floresta e a areia toca o fundo — e **pôs a palma na borda.**
+
+Um momento, nada. Não olhava para mim. Olhava o lago atrás de mim.
+
+E depois disse, em voz baixa, assim:
+
+«Ainda navegarás.»
+
+Não foi uma bênção. Não foi uma profecia. Foi **uma despedida de uma coisa que tinha feito o seu trabalho** — e o reconhecimento de que a coisa não acaba ali, porque fará falta outra vez.
+
+Pela última vez neste livro não fui um instrumento. Não fui um meio de transporte nem um símbolo.
+
+Fui **o lugar onde se comeu pão e peixe na margem onde se recomeçou.**
+
+---
+
+## Da Escritura, da tradição e da história
+
+- **Jo 21,1–19** — a cena inteira: a noite sem pesca, a pergunta desde a margem, a rede ao lado direito, os 153 peixes, a rede sem romper, Pedro a saltar para a água, o lume de carvão, o pão e o peixe, a tripla pergunta e «apascenta as minhas ovelhas».
+- **Jo 21,8** — «Pois não estavam longe de terra, mas a cerca de **duzentos côvados**.» ~90 m.
+- **Jo 21,9.11** — **ἀνθρακιά** (*anthrakia*), braseiro de carvão. Em todo o Novo Testamento a palavra aparece **duas vezes**: Jo 18,18 (a negação de Pedro) e Jo 21,9 (esta manhã). A ligação não é casual e os exegetas assinalam-na há séculos.
+- **Jo 21,11** — «cento e cinquenta e três». O número é deliberadamente concreto no texto. Interpretações: (a) segundo a zoologia antiga existiam 153 espécies de peixes — o número significaria então «todas as espécies»; (b) 153 é o número triangular de 17 (1+2+…+17); (c) leituras gemátricas. **Nenhuma está documentada como intenção do autor.** O texto dá o número mas não o explica.
+- **Lc 24,13–35** — o caminho de Emaús: os discípulos caminham com ele e **não o reconhecem** até ele partir o pão. O mesmo padrão que aqui: a presença antes do reconhecimento.
+- **1 Cor 15,3–8** — a lista das testemunhas. Pedro aparece primeiro.
+- **«Apascenta as minhas ovelhas»** — *poimaine ta arnia / ta probata*. Imagem pastoral que Jesus usa também noutros lugares (Lc 15, Jo 10). Não é um encargo de poder; é um encargo de **caminhar à frente do rebanho**.
+
+## Âncora da verdade
+
+| O que há no capítulo | Estado |
+|---|---|
+| A noite sem pesca, a pergunta desde a margem, a rede cheia, os 153 peixes | **ESCRITURA** — Jo 21,1–11 |
+| A rede sem se romper | **ESCRITURA** — Jo 21,11 |
+| O lume de carvão (*anthrakia*) pela segunda vez no evangelho | **ESCRITURA + filologia** — concordância documentada com Jo 18,18 |
+| A tripla pergunta, «apascenta as minhas ovelhas» | **ESCRITURA** — Jo 21,15–17 |
+| O significado do número 153 | **NÃO DOCUMENTADO** — o texto não dá interpretação; as leituras tradicionais são hipóteses |
+| Que o carpinteiro voltou à barca e disse «ainda navegarás» | **MITO** — imagem deste livro |
+| Que a quilha não foi testemunha da ressurreição mas da manhã na margem | **MITO** — decisão literária; teologicamente não é a mesma coisa |
+| A água pouco funda como imagem: a profundidade toca o fundo | **MITO** — imagem deste livro |
+
+## Medida
+
+- **Distância à margem**: **200 côvados ≈ 90 m** (Jo 21,8). Chega para quem está na margem não distinguir uma cara, e é pouco para ouvir uma voz.
+- **153 peixes**: o número do texto. Para comparar — uma pesca de trabalho no Kinneret contava-se em dezenas de quilos; 153 «peixes grandes» é uma quantidade que encheria duas barcas.
+- **Profundidade junto à margem**: **1–3 m**. Nos baixios um peixe pode apanhar-se com a mão e uma barca pode puxar-se para a areia sem cavalos.
+- **Um braseiro de carvão**: o carvão queima-se de véspera para não fumegar. De manhã na margem é sinal de que alguém se levantou **antes deles** e preparou comida.
+- **Duzentos côvados** = **90 m** = cerca de um minuto de natação para um homem cansado em água fria.
+- **Três perguntas**: contra três negações (Jo 18,17.25.27; 13,38).
+
+## Apara
+
+Gostaria de escrever que este capítulo trata do perdão. Trata disso, mas não só. Há nele uma coisa que contornei e que não quero deixar debaixo da mesa: **Pedro foi restituído, e no entanto segundo a tradição foi crucificado mais tarde.** O perdão de Jo 21 não significa que nada acontecerá a Pedro. Significa que acontecerá **a alguém que está reconciliado.** Isso é mais escuro e mais forte do que a consolação que eu poderia ter escrito, e se a tivesse omitido ter-vos-ia vendido um livro mais barato.
+
+---
+
+*A barca continuou a navegar. Mas eu sabia que um dia deixaria de ser barca — e que o que restasse de mim teria de aguentar mais do que água.* → A Âncora
+
+
+---
+
+# X · A Âncora
+
+> **ANEL X** · a margem do Kinneret, século após século
+> *Uma âncora que vai para cima não é uma âncora que segura ao fundo.*
+
+---
+
+## Relato
+
+Uma barca não morre na tempestade.
+
+É a primeira coisa que quero dizer sobre isto, porque as pessoas pensam o contrário. Pensam que uma barca acaba num escolho, no fogo das vagas, com a quilha rachada e a tripulação no mar. Acontece. Mas a maioria das barcas não acaba assim. A maioria **gasta-se**.
+
+Gastar-se parece-se com isto: um dia puxam-na para a margem e nunca mais a descem. Não porque esteja quebrada. Porque é velha. Porque as juntas já não aguentam e ninguém tem tempo de as calafetar todos os anos. Porque alguém construiu outra. Porque não há trabalho para ela.
+
+E depois desmontam-na. Não inteira — **o melhor dela.** Os remos, os ganchos, as cordas, os pregos de ferro que se podem reutilizar, as tábuas que servem para uma cerca ou um umbral. Uma barca torna-se um monte de material e o material torna-se outras coisas, e ninguém diz uma palavra, porque é normal.
+
+De mim ficaram a quilha e a parte baixa do casco, porque isso não se pode desmontar. Era demasiado comprido para servir de algo e estava demasiado baixo para que o levassem.
+
+Arrastaram-me para o bordo da margem, um pouco além do sítio onde se atracava. Não para a água. Para o **lodo** — ali onde a margem se inclina e onde há pouco fundo no inverno e secura no verão. Estava onde ninguém notaria que eu estava.
+
+E depois aconteceu uma coisa que durou dois séculos e que só compreendi muito mais tarde.
+
+A margem **mexeu-se**.
+
+O lago do Kinneret não tem nível constante. Nos anos secos baixa, nos húmidos sobe, e a margem desloca-se dezenas de metros. A areia e a argila que os ribeiros trazem depositam-se no fundo; o vento arrasta terra para a margem. Enquanto eu jazia ali, a água vinha e ia-se e de cada vez deixava um pouco mais de argila.
+
+Primeiro cobriu a minha quilha.
+
+Depois as cavernas.
+
+Depois o forro.
+
+Não me afoguei. **Enterraram-me.** A diferença é essencial: uma barca afogada é uma barca que perdeu contra a água. Uma barca enterrada é uma barca que a terra tomou para si e decidiu conservar.
+
+E no momento em que a argila se fechou sobre mim aconteceu a coisa mais estranha que me sucedeu jamais: **deixei de ser barca e tornei-me um registo.**
+
+Sem ar a madeira não apodrece. Sem luz as algas não a atacam. Sem o vaivém da água e do vento não se desfaz. A argila é fria, densa e impermeável — e nela a madeira **não muda**. Fica como estava no último dia em que foi barca.
+
+Para vós é uma frase abstrata. Para mim foi uma cela. Não estava morto, porque a madeira morta desfaz-se. Estava **guardado**.
+
+---
+
+Não vi o que se passava acima da superfície. Mas a água leva o som, e eu jazia na terra que confina com a água, e por isso escutei durante vinte séculos.
+
+Ouvi cidades a construir-se nas margens e a desmoronar-se. Ouvi chegar línguas que não compreendia e ouvi que se iam. Ouvi guerras — não em palavras, mas em que a água depois era outra.
+
+E uma vez, em algum século, chegou-me uma palavra que me atingiu porque era **minha**:
+
+**navicella.**
+
+Pequena nave. Foi assim que os que me tinham há muito esquecido começaram a chamar **a si mesmos.** Chamavam-se igreja e pintavam-se como uma nave no mar: com remos, com mastro, com Cristo ao leme. Têm-no nas pedras e nos mosaicos, e eu jazia na argila a escutar como o meu ofício se tornara a sua imagem.
+
+E depois, após muitos séculos, chegou-me outra palavra — e essa fez-me pensar mais do que a primeira:
+
+**âncora.**
+
+Porque eu nunca tive âncora. Uma barca de pesca num lago não precisa dela: tem uma corda, tem um poste na margem, tem dois homens que a seguram. A âncora é para um mar onde não há margem.
+
+Mas os que se chamavam pelo meu nome escolheram a âncora como sinal. E escreveram ao lado dela a palavra **spes** — esperança. Faziam-nas de metal, traziam-nas em anéis, gravavam-nas em pedras, e muitas vezes traçavam-lhes por cima uma **travessa**, de modo que da âncora se fazia cruz e da cruz âncora.
+
+E depois veio uma frase que ouvi desde a água, e essa frase pôs o meu mundo inteiro de pernas para o ar:
+
+> *«Temos a esperança como âncora da alma, segura e firme, que penetra até **para lá do véu**.»*
+
+Uma âncora que vai **para cima**.
+
+Dei-lhe voltas duzentos anos, porque não tinha outra coisa que fazer. Uma âncora que vai para baixo segura a barca onde está. Segura-a ao fundo. Guarda-a da tempestade impedindo-a de partir. É útil e é um pouco desesperado: estás atado ao sítio onde estás.
+
+Mas uma âncora que vai para cima, para lá do véu, **não segura a barca ao fundo. Segura-a ao céu.** Não a segura no sítio. Segura-a **numa direção.**
+
+E então percebi que todo o tempo que jazi na argila a minha âncora também estava em cima. Não por causa de mim. Porque me segurava algo que não estava debaixo de mim. A terra cobriu-me mas não me reteve — e eu sabia que um dia me tirariam. Não sabia quando. Não sabia se serviria de algo. Sabia apenas que **esperava na direção certa.**
+
+---
+
+Mas tenho de escrever também a segunda metade, porque sem ela este capítulo seria um hino, e os hinos mentem.
+
+Aquela barca a que chamavam igreja **também levou o que não devia levar.**
+
+Ouvi carregar no seu convés um império que julgava ser carga. Ouvi o leme tornar-se trono e os remadores súbditos. Ouvi a barca partir-se em duas e cada metade afirmar que a outra era água. E ouvi gente afogar-se junto à margem porque a barca era demasiado grande para atracar, e ninguém a bordo dava por isso, porque discutiam sobre quem tinha o leme.
+
+A madeira que leva pode ser desviada. Basta que alguém confunda a barca com a propriedade da barca.
+
+E no entanto aconteceu uma coisa que me sustenta até hoje.
+
+Em cada século em que aquela barca pareceu ser apenas um instrumento de poder, houve alguém que **desceu ao porão e disse aquele nome em voz alta.** Francisco, que falava com os pássaros em vez de com os prelados. Religiosas que foram cuidar dos pobres, porque isso contradizia o que se esperava delas. Um padre que saiu à frente de um tanque com uma cruz, porque não tinha mais.
+
+Essas pessoas não tinham o leme. Não tinham direito a ele.
+
+Tinham apenas **um nome sob o soalho.**
+
+E bastou para que a barca voltasse a virar na direção certa em cada século — não porque alguém a governasse, mas porque alguém se lembrou **do que está escrito por dentro.**
+
+---
+
+## Da Escritura, da tradição e da história
+
+- **Hb 6,19–20** — «Temo-la como **âncora da alma, segura e firme**, que penetra até para lá do véu, onde entrou por nós como precursor Jesus.» O versículo que é o único lugar da Escritura onde uma âncora é lançada **para cima** — no santuário celeste.
+- **Navicella** — a igreja representada como nave. Documentado desde os séculos III–IV (mosaicos, sarcófagos, a *navicella* do Latrão). O latim *navis* (nave) deu nome também ao corpo principal da igreja — a *nave*.
+- **A âncora com a palavra SPES** — símbolo cristão primitivo da esperança, documentado em anéis, gemas e nas catacumbas. É muitas vezes desenhada com uma travessa, de modo que visualmente se confunde com a cruz. É uma convergência iconográfica, não prova de intenção.
+- **«Fora da arca não há salvação»** — dito atribuído a Cipriano de Cartago (século III), que procede de 1 Pe 3,20–21. A imagem da nave como único lugar seguro — e ao mesmo tempo o lugar onde essa imagem pode servir para excluir.
+- **As divisões da igreja** — os cismas de 1054 e 1517 e outros. História, não mito. Este livro não os interpreta; também não os omite.
+- **Enterramento e conservação na argila** — o meio anóxico (sem oxigénio) da argila e do lodo é um mecanismo de conservação documentado: a madeira não se decompõe nele, porque os microrganismos precisam de oxigénio. Foi exatamente assim que uma barca do século I sobreviveu até 1986.
+
+## Âncora da verdade
+
+| O que há no capítulo | Estado |
+|---|---|
+| A âncora da alma que penetra para lá do véu | **ESCRITURA** — Hb 6,19–20 |
+| A igreja como nave (*navicella*), *navis → nave* | **TRADIÇÃO / HISTÓRIA** — iconografia documentada |
+| A âncora e a cruz como símbolo fundido; *spes* | **HISTÓRIA** — símbolos cristãos primitivos documentados |
+| Os cismas, o uso da nave pelo poder | **HISTÓRIA** — documentado; o livro não interpreta, não esconde |
+| O enterramento de uma barca na argila e a conservação sem ar | **HISTÓRIA / física** — mecanismo documentado |
+| Que a quilha «escutou» durante vinte séculos | **MITO** — imagem literária; a madeira não ouve |
+| «Uma âncora que vai para cima segura numa direção, não num sítio» | **MITO** — imagem deste livro, derivada de Hb 6,19 |
+| Que Francisco, as religiosas e o padre diante dos tanques «desceram ao porão» | **MITO** — imagem generalizada das testemunhas, não um registo histórico |
+
+## Medida
+
+- **Tempo de enterramento**: cerca de **1 900 anos** na argila. Desses, mais de **1 800 anos** sem qualquer intervenção humana.
+- **Velocidade de enterramento**: nas margens do Kinneret depositam-se da ordem de **milímetros a centímetros** de sedimento por ano. Para cobrir um casco de 1,3 m de pontal são precisos vários séculos — e por isso a argila sobre a barca tem apenas cerca de **1 m** de profundidade.
+- **O que restou da barca**: praticamente só a **parte baixa do casco** — quilha, forro, cavernas. O convés, o mastro, os remos e todo o equipamento desapareceram, porque alguém os levou ou apodreceram na camada óxica de cima.
+- **A âncora de uma nave antiga**: de chumbo ou de ferro, **50–200 kg**, com cepo de madeira; uma barca pequena de lago não precisava dela.
+- **A «âncora» de um anel**: anel de **~2 cm**, gema de **~1 cm**. A coisa mais pequena em que a esperança jamais foi inscrita.
+
+## Apara
+
+Escrevi que ouvi a igreja desfazer-se. **A madeira não ouve.** É a licença maior de todo o livro e não a quero esconder: todo o capítulo X é contado por uma quilha que jaz a um metro debaixo de terra e que no entanto comenta vinte séculos. É impossível e sei-o. Sustento-me nisso apenas porque quem lê este capítulo precisa de um guia pelo abismo para onde nenhum documento olha — e um guia que mente em silêncio sobre ter estado lá é pior do que um guia que diz: **«Isto não ouvi. Isto inventei. E no entanto creio que é verdade sobre as pessoas.»**
+---
+
+*Vinte séculos na argila. E depois veio um verão em que nada caiu do céu e o lago se retirou de si mesmo.* → O Lodo
+
+
+---
+
+# XI · O Lodo
+
+> **ANEL XI** · a margem noroeste do Kinneret junto a Ginosar, janeiro a fevereiro de 1986
+> *É o único capítulo em que nada é inventado. E é precisamente por isso que é o mais estranho.*
+
+---
+
+## Relato
+
+Primeiro veio a seca.
+
+O inverno da viragem de 1985 para 1986 foi extraordinariamente seco na Galileia. O lago do Kinneret, que é a fonte de água potável do país e que se enche com a chuva e a neve das montanhas vizinhas, baixou. Quando o nível baixa, a margem desloca-se — e onde havia água fica um **fundo nu**: argila cinzenta e rachada onde se pode enterrar a mão.
+
+Em janeiro de 1986 dois homens do kibutz Ginosar caminhavam por esse fundo. Eram irmãos, **Moshe e Yuval Lufan**, pescadores. Tinham aquela curiosidade particular que têm as pessoas que andam toda a vida no mesmo sítio e começam a reparar no que os outros não reparam.
+
+E repararam num **contorno oval** na argila.
+
+Não era uma pedra. Não era um cepo. Tinha forma regular e num ponto tinha um bordo que parecia feito por uma mão — e no entanto não podia ser humano, porque estava **morto há muito tempo**.
+
+Chamaram os arqueólogos.
+
+---
+
+Aqui queria calar-me um momento, porque o que se seguiu é a melhor coisa que ouvi sobre as pessoas, e não a quero estragar com o meu próprio comentário.
+
+A escavação foi dirigida por **Shelley Wachsmann** para o Departamento de Antiguidades de Israel. Começaram a **16 de fevereiro de 1986**.
+
+E então aconteceu isto: trabalharam **onze dias e onze noites sem parar**, dia e noite, sob guarda, porque os media de todo o mundo tinham acorrido e porque o lago começara a subir outra vez — a seca acabara e a água voltava. Tinham apenas o tempo que lhes restava antes de o nível os alcançar.
+
+Não podiam escavá-la da maneira habitual. A madeira que jaz mil e novecentos anos na água está **empapada como uma esponja** e desfaz-se ao secar. Não se pode dobrar, não se pode levantar — desfaz-se nas mãos.
+
+Por isso não a levantaram.
+
+**Rigidizaram-na no sítio.** Meteram no casco um quadro de laminado e **envolveram tudo em espuma de poliuretano**, que endureceu numa casca rígida. E depois essa casca — com a barca dentro — **rebocaram-na a flutuar** pela superfície desde o local do achado até ao kibutz Ginosar, onde construíram uma piscina para ela.
+
+Não era uma barca que flutua. Era **um molde que flutua** e que dentro tem madeira que se desfaz se for mexida.
+
+No momento em que me envolveram soube uma coisa: que **não me tirariam da água para a secura.** Levaram-me pela superfície que eu tinha navegado — e não era uma barca enquanto isso acontecia. Era carga.
+
+---
+
+Depois meteram-me num banho e deixaram-me nele **catorze anos**.
+
+Era um banho de polietilenoglicol — uma substância cerosa que se aquece, penetra na madeira e **substitui a água**. A madeira continua a ser madeira, mas deixa de ser esponja. Leva anos, porque cada milímetro que a cera tem de penetrar precisa do seu tempo.
+
+Não quero frivolizar, mas tenho de o dizer: **foi a melhor época da minha vida.**
+
+Estava quente. Pela primeira vez em dezanove séculos não tinha frio. A água em que jazia não era a que me tinha afogado, mas a que me segurava. E alguém cuidou de mim todos os dias, catorze anos inteiros, e não foi porque eu fosse útil. Foi porque **eu era precioso.**
+
+Precioso. Não tinha ouvido essa palavra. A madeira é útil ou inútil. Preciosa é outra coisa: é uma coisa na qual as pessoas decidem **investir na sua existência**, mesmo que nada lhes traga.
+
+Não sei se vos dais conta, mas essa é a definição do amor que se pode medir: **alguém põe catorze anos em ti e não quer nada em troca.**
+
+---
+
+Em 2000 transferiram-me para uma sala nova com clima controlado. Puseram-me sobre uma estrutura de aço, um vidro à frente e por cima uma luz que não dá nos olhos. Ao lado projetam um filme e nas paredes pendem fotografias.
+
+Numa dessas fotografias há **um arco-íris duplo**.
+
+Segundo o relato do museu, apareceu no céu no momento em que a barca foi descoberta, e as pessoas que ali estavam fotografaram-no. Não sei se foi exatamente assim. Sei que a fotografia está ali, que a mostram a todos os que vêm e que não a mostram como prova, mas como **um sinal que as pessoas se deram a si mesmas.**
+
+Desde então vêm pessoas ver-me.
+
+Vêm aos milhares. Algumas choram, algumas rezam, algumas apenas tiram uma fotografia e vão-se. As crianças perguntam se é a barca em que Jesus navegou, e os guias respondem com cuidado — porque **nenhum dos que me desenterraram afirmou jamais tal coisa.**
+
+E eu jazo atrás do vidro e penso em duas coisas.
+
+**A primeira: ninguém sabe o meu nome.**
+
+Os arqueólogos descreveram cada tábua. Estabeleceram que fui construído com a técnica da casca primeiro, que as tábuas estão unidas por espigas e cavilhas e pregos de ferro, que tive mastro e vela e quatro remadores. Mediram-me: **8,27 metros de comprimento, 2,3 metros de boca, 1,3 metro de pontal conservado.** Datam-me por radiocarbono no intervalo **100 a. C. – 100 d. C.**
+
+Encontraram em mim vestígios de reparações. Não uma — várias. O meu casco é feito de peças de madeira diferentes, porque quem me reparava não dispunha da mesma madeira e tomava a que havia.
+
+E não mediram uma única coisa: **quem me construiu.**
+
+Nenhum nome. Nenhuma assinatura. Nenhuma oficina. Ninguém saberá jamais se a mão que dobrou as minhas tábuas pertencia ao homem de quem falam os livros ou a alguém que não entrou em livro nenhum.
+
+Sou o pedaço de madeira mais famoso da Galileia e **sou anónimo.**
+
+**A segunda coisa em que penso: mediram-me.**
+
+Não encontraram o meu nome, mas encontraram **a minha forma.** Anotaram a minha curva, a minha proporção de boca para comprimento, a inclinação da quilha, o espaçamento das cavernas. Desenharam-me. E depois construíram **réplicas.**
+
+Uma está nos Museus Vaticanos. Outras estão noutros lugares. São de outra madeira, de outras mãos, de outro século — e **navegam.**
+
+É a única consolação que tenho como madeira, e creio que é uma consolação que vale também para vós:
+
+**Não ficou o meu nome. Ficou a minha forma. E a forma navega.**
+
+---
+
+## Da Escritura, da tradição e da história
+
+> **Este capítulo não é um midrash. Isto é história.** As linhas seguintes não são imagem — são registo, e onde as fontes divergem, digo-o.
+
+- **O achado** — janeiro de 1986, a margem noroeste do lago do Kinneret junto ao kibutz Ginosar. Foi encontrado por **Moshe e Yuval Lufan** (nalgumas fontes citados como *Lopen*), pescadores e arqueólogos amadores.
+- **A escavação** — dirigida por **Shelley Wachsmann** para o Departamento de Antiguidades e Museus de Israel. Iniciada a **16 de fevereiro de 1986**; os trabalhos decorreram **sem interrupção durante onze dias e noites** sob guarda, porque o nível do lago subia após o fim da seca.
+- **O salvamento** — o casco foi rigidizado com um quadro de laminado e **envolto em espuma de poliuretano**, e depois transportado por água até Ginosar. Publicado: Wachsmann et al., *An Ancient Boat Discovered in the Sea of Galilee* (Israel Antiquities Authority, 1988).
+- **A conservação** — imersão num banho quente de **polietilenoglicol (PEG)**. ⚠️ **As fontes divergem aqui**: umas dão 12 anos, outras 14 (até 2000); a *Archaeology Magazine* dá o banho até 1995 e a transferência para a exposição em 2000. Não escondo esta divergência — é um estado corrente da documentação museológica.
+- **Dimensões** — **8,27 m** de comprimento, **2,3 m** de boca, **1,3 m** de pontal máximo conservado.
+- **Datação** — análise por radiocarbono: **100 a. C. – 100 d. C.**
+- **Construção** — casca primeiro (*shell-first*), tábuas unidas por espigas (mortise-and-tenon), cavilhas e pregos de ferro; madeira de cedro e de carvalho; casco levado por quatro remadores aos pares, com mastro e vela auxiliar. A barca foi **reparada várias vezes** e é de **diferentes espécies de madeira.**
+- **As espécies de madeira** — ⚠️ **Divergência**: o museu dá **12 espécies de madeira, «todas mencionadas na Bíblia»**; a equipa de investigação, segundo os resumos disponíveis, identificou **7**. Os dois números vêm de instituições com razões para serem exatas. Não escolho.
+- **«A barca de Jesus»** — uma alcunha. **Nenhuma prova liga esta barca a Jesus nem aos seus discípulos**, e o próprio museu não faz tal afirmação.
+- **Hab 2,11** — «Porque **a pedra clamará desde a parede e a trave de madeira lhe responderá**.» O profeta fala de uma casa construída injustamente que dá testemunho por si mesma. Um versículo sobre madeira que fala quando as pessoas se calam.
+- **Lc 19,40** — «Se estes se calarem, gritarão as pedras.» A mesma lógica, outra cena.
+
+## Âncora da verdade
+
+| O que há no capítulo | Estado |
+|---|---|
+| A seca de 1985/86, o abaixamento do nível, o fundo nu | **HISTÓRIA** — documentado |
+| O achado pelos irmãos Lufan em janeiro de 1986 | **HISTÓRIA** — documentado (os nomes aparecem como Lufan / Lopen nas fontes) |
+| A escavação desde 16 de fevereiro de 1986, 11 dias e noites, Shelley Wachsmann | **HISTÓRIA** — documentado |
+| O rigidizar com laminado e espuma de poliuretano, o transporte por água | **HISTÓRIA** — documentado |
+| O banho de PEG | **HISTÓRIA** — documentado; **12 vs 14 anos é uma divergência entre fontes** |
+| Dimensões 8,27 × 2,3 × 1,3 m | **HISTÓRIA** — documentado |
+| Datação 100 a. C. – 100 d. C. | **HISTÓRIA** — radiocarbono |
+| Casca primeiro, espigas, cavilhas, pregos, mastro, 4 remadores | **HISTÓRIA** — documentado |
+| Número de espécies de madeira (7 vs 12) | **DIVERGÊNCIA ENTRE FONTES** — por resolver |
+| A ligação com Jesus | **AFIRMAÇÃO INVÁLIDA** — nenhuma prova; o museu não o afirma |
+| O arco-íris duplo no momento do desvendamento | **HISTÓRIA / afirmação do museu** — documentado por fotografia, as circunstâncias são descritas pelo museu |
+| Que esta barca concreta seja a deste livro | **MITO** — e o livro nunca o afirma como facto |
+| «Não ficou o meu nome, ficou a minha forma» | **MITO / interpretação** — mas parte do documentado: o nome do construtor é desconhecido, as réplicas existem |
+
+## Medida
+
+- **8,27 m** de comprimento · **2,3 m** de boca · **1,3 m** de pontal conservado.
+- **11 dias e noites** de trabalho ininterrupto. **~264 horas.**
+- **14 anos** no banho (segundo o museu; algumas fontes dão 12). **~5 100 dias.**
+- **O ano 2000** — a transferência para a sala de exposição. **14 anos** desde o achado, **~1 900 anos** desde o enterramento na argila.
+- **1 900 anos** debaixo de terra. É cerca de **95 gerações** — o tempo em que um ofício se transmite e se esquece noventa e cinco vezes numa família.
+- **12 vs 7 espécies de madeira** — uma diferença de cinco espécies importa no parecer sobre uma barca deste tamanho: 12 espécies significa uma barca montada por necessidade, 7 espécies uma barca reparada.
+- **0** — o número de nomes conhecidos de construtores. **0** — o número de inscrições no casco.
+- **Várias** — o número de fases de reparação documentadas do casco.
+
+## Apara
+
+É o capítulo em que mais gostaria que me fosse cómodo ser a quilha daquela barca de Nazaré. **Não me é cómodo.** Aquela barca não é esta barca. O livro tem de o dizer em voz alta, porque todo o seu propósito assenta em que a madeira sobreviveu **sem nome** — e se me apropriasse desse nome seria a maior mentira que este livro poderia escrever. Ao mesmo tempo confesso uma segunda coisa: **não sei se o que se guarda em Ginosar é a melhor ilustração do meu tema ou apenas a melhor ocasião.** Talvez tenha escolhido a arqueologia porque me convinha. Deixo isso ao leitor — mas deixo-lho de olhos abertos, não fechados.
+
+---
+
+*Tiraram-me da argila e puseram-me atrás de um vidro. Mas a história não acaba aí — porque começaram a medir-me. E a medida é outra coisa que a memória.* → A Medida
+---
+
+---
+
+# XII · A Medida
+
+> **ANEL XII** · a sala atrás do vidro e depois oficinas que nunca vi
+> *A forma é mais antiga do que a coisa que a leva.*
+
+---
+
+## Relato
+
+Vieram com lasers e com fio de prumo.
+
+Não foi num dia. Vieram durante anos — estudantes, arquitetos, construtores navais, algumas pessoas que apenas ficavam por ali a tomar notas. Todos faziam o mesmo: **medir.**
+
+Ao princípio era-me desagradável, porque não sabia para quê. Quando alguém te mede para te vender, sabes. Quando alguém te mede para te imitar, também sabes. Isto era diferente. Ninguém queria nada. Só queriam **levar a forma.**
+
+E então compreendi o que faziam, e desde esse momento esperei por isso.
+
+Estavam a fazer **o desenho da barca.** É uma das coisas mais antigas e mais elegantes que as pessoas sabem fazer, e poucos a conhecem. Uma barca é tridimensional, mas não se pode construir a partir de um plano tridimensional — não se pode dizer «faz isto» e entregá-lo a um carpinteiro. É preciso pegar no casco e **desdobrá-lo em linhas**: planta, alçado, secções transversais. Três planos nos quais a curva se pode medir com uma régua.
+
+Chama-se *lines plan*, plano de linhas. Há nele curvas que não têm equivalente físico nenhum — não são arestas, não são juntas. São **cortes imaginários** que existem apenas para que a partir deles a curva se possa recriar.
+
+Um casco com dois mil anos pode entregar-se como **um conjunto de números e curvas.**
+
+E então aconteceu.
+
+Nalguma oficina que nunca vi, puseram sobre uma mesa o papel com as minhas linhas e começaram a construir uma barca segundo elas.
+
+Não uma cópia. **Uma barca nova.**
+
+Tinha outra madeira, outros pregos, outro século. Tinha a mesma curva. E quando a puseram na água, flutuou — porque uma curva que flutua flutua sempre, seja de que for.
+
+Desde então continua, e eu sigo-o apenas como um ouvir-dizer que me trazem as pessoas que vêm ver-me: **nalgum lugar nasceu uma réplica.** Uma está nos Museus Vaticanos. Há outras. São de outra matéria, de outras mãos — e são minhas filhas, embora nunca as tenha visto.
+
+Não sei se isso é uma consolação ou se é triste. Talvez as duas coisas. Mas sei que é **a única imortalidade que não é mentira:** não sobreviver, mas ser **feito de novo**.
+
+---
+
+E depois ouvi algo ainda mais estranho.
+
+As pessoas que vinham ver-me falavam de uma **frota.**
+
+Falavam de naves que ainda não existem, e falavam delas de tal modo que ao princípio não sabia se estavam a brincar. Chamavam-lhes **Tres Marías** — e contavam que uma deve levar o caminho pelo Atlântico, a segunda pelo Pacífico e a terceira, que ainda não existe, pelo Índico. Que as suas velas devem ser de luz. Que o seu primeiro porto é Pontevedra e o segundo Raiatea.
+
+E depois falavam de uma **quarta nave**, a que chamavam a Arca, e não era uma nave para peregrinos. Era uma nave que **volta para os que ficaram na água.** Com sementes no ventre e cem pessoas a bordo.
+
+E depois falavam de uma nave que **navega para cima** — de um nó entre a terra e a órbita que não deve ser um ponto, mas um caminho.
+
+Escutava atrás do vidro e pensava: *isto é belo e é mentira.* Não porque aquelas pessoas mentissem. Mas porque **uma nave que não está construída não é uma nave.** E eu sou de madeira e tenho uma opinião dura sobre isto: vivi dois séculos como um monte de tábuas que a ninguém importavam, e sei como é uma nave que ficou apenas em palavras.
+
+Mas depois reparei que aquelas pessoas **dizem o mesmo que eu.**
+
+Não que esteja acabado. Que **a quilha não está posta.** Que o casco não existe. Que é um estudo, um horizonte, uma proposta. Que não se deve confundir com o que é.
+
+E isso fez-me mudar de opinião, porque é exatamente a única coisa que uma barca precisa de ouvir do seu construtor: **«Isto é um desenho, não uma barca. Mas um desenho pode construir-se.»**
+
+---
+
+E depois alguém me explicou que nesta família há mais uma nave, que não compreendo e que temo.
+
+Dizem que é feita de **código.**
+
+Dizem que tem uma quilha que se chama **consenso** — e essa quilha não é madeira, é uma regra em que milhares de computadores se põem de acordo, e quando não se põem de acordo a nave parte-se em duas. Dizem que tem um mastro que se chama **mineração**, e uma vela na qual sopra o trabalho de pessoas que nunca estarão a bordo. Dizem que tem uma bússola que se chama **identidade** — e essa bússola não se pode roubar, porque não está na nave, está na pessoa. Dizem que tem uma tesouraria que se chama **ponte**, e um convés que se chama **mundo**, e um porto, e uma vigia acima do horizonte.
+
+Escutei e disse para comigo: **isso não é uma nave. Isso é uma nave que alguém desenhou em papel e depois copiou para um computador.**
+
+E então lembrei-me de uma coisa que ouvi na oficina há dois mil anos, quando o carpinteiro falava ao aprendiz sobre a curva:
+
+**«A matéria pode roubar-se. A curva tem de se saber.»**
+
+Uma curva em código não é madeira. Mas é uma curva. E uma curva pode roubar-se tal como a curva de uma barca — quando alguém a copia e constrói a sua. De facto é **mais fácil** roubá-la, porque os números não pesam.
+
+O que só significa uma coisa, e é a frase por que este capítulo existe:
+
+**Uma nave de código não é melhor do que uma nave de carvalho. É apenas mais rápida. E uma nave mais rápida que não tem boa quilha afunda-se mais cedo.**
+
+---
+
+## Da Escritura, da tradição e da história
+
+- **Pr 8,22–31** — A Sabedoria fala de si como quem estava na criação: «Eu estava junto dele como **mestre de obra** (*'āmôn*) e cada dia brincava diante dele.» Imagem do plano que é anterior à construção. **A forma antes da coisa.**
+- **Ex 25,40** — «Vê e faze tudo **segundo o modelo** que te foi mostrado no monte.» O versículo-chave de todo este capítulo: Moisés não recebeu um objeto acabado, recebeu **um modelo**. E **Hb 8,5** cita-o expressamente.
+- **Ex 25,9** — «Far-lhe-eis conforme tudo o que eu te mostro — **segundo o modelo** do tabernáculo e o modelo de todos os seus utensílios.» O modelo é o que se pode transmitir mesmo que o objeto se perca.
+- **Ef 2,20–22** — «…estais a ser **edificados**… nele também vós **sois juntamente edificados** para serdes morada de Deus.» Paulo usa linguagem de construção para a comunidade — e a imagem carrega o mesmo problema: não está acabado, está a crescer.
+- **O plano de linhas (*lines plan*)** — método de conceção documentado: o casco descreve-se em três planos (alçado, planta, secções). É a única maneira de transmitir uma forma tridimensional de modo bidimensional sem perder a curva. Usa-se em engenharia naval até hoje, hoje em CAD.
+- **As réplicas da barca galilaica** — documentadas. Uma está nos Museus Vaticanos (a exposição «The Way of the Sea»), outras foram construídas em Israel e noutros lugares. As réplicas foram feitas segundo as linhas documentadas do casco original.
+- **A frota Tres Marías e a Arca** — no corpus **MITO / CONSTRUÇÃO / HORIZONTE**, não coisa acabada. Âncora: *Nirvana* 13 — Tres Marías e *Nirvana* 14 — A Arca; da arca vale literalmente: **a quilha não está posta.**
+- **Nabukano** — L6, nó móvel do céu, `vision`, **não registado**. Âncora: *Nabukano* 00 — README.
+- **O «convés» das camadas L1–L6** — uma leitura da arquitetura da rede como nave (quilha = consenso L1, mastro = pool, bússola = ZIS, tesouraria = WARP/DEX/DAO, convés = OASIS, porto = Free World, vigia = Issobella). É **uma leitura, não uma especificação**; os números e os estados mudam e pertencem ao StatusV3 e ao Registo de provas.
+
+## Âncora da verdade
+
+| O que há no capítulo | Estado |
+|---|---|
+| A Sabedoria como «mestre de obra» na criação | **ESCRITURA** — Pr 8,30 |
+| «Segundo o modelo que te foi mostrado no monte» | **ESCRITURA** — Ex 25,9.40; Hb 8,5 |
+| A comunidade como edifício que cresce | **ESCRITURA** — Ef 2,20–22 |
+| O plano de linhas como método de transmissão da forma do casco | **HISTÓRIA / engenharia** — documentado, ainda usado |
+| Réplicas da barca galilaica, uma nos Museus Vaticanos | **HISTÓRIA** — documentado |
+| Tres Marías, a Arca, Nabukano | **MITO / CONSTRUÇÃO / HORIZONTE** — não existe casco nenhum, a quilha da arca não está posta |
+| Ler a rede como uma nave (quilha/mastro/bússola…) | **MITO / interpretação** — leitura de camadas, não especificação |
+| «A forma é mais antiga do que a coisa que a leva» | **MITO** — imagem filosófica; tecnicamente é verdade que o plano precede a construção |
+| Que a quilha «siga» as réplicas e a frota | **MITO** — moldura literária |
+
+## Medida
+
+- **Escala do plano de linhas**: em geral **1:10** ou **1:12** — assim uma barca de 8,27 m desenha-se a **69–83 cm**. Num papel assim a curva mede-se à régua ao milímetro.
+- **Tolerância ao construir uma réplica**: **±5 mm** na curva do casco. Um desvio maior já se vê na água.
+- **Número de linhas**: alçado + planta + **7–9** secções transversais. Cada secção é um contorno de papel.
+- **8,27 m → 1,3 m** — proporção de comprimento para pontal conservado **6,4 : 1**. É uma barca esguia e rápida, não uma gamela.
+- **Número de nomes conhecidos de construtores**: **0**. **Número de réplicas**: várias. **Número de pessoas que alguma vez chegaram a casa nesta barca**: desconhecido, e no entanto é **a única medida que importa.**
+
+## Apara
+
+Escrevi que as réplicas são as minhas «filhas». É uma frase bela e é **uma mentira**, porque a madeira não tem filhas e uma réplica não é descendência — é **uma cópia**. Quando copias um poema não nasce um poema novo, nasce um manuscrito novo. O que há então de verdadeiro nisto? Verdadeiro é isto: **uma curva que flutua pode transmitir-se.** Não eu. Não a minha história. Não o meu nome. A curva. E se este livro afirma mais do que isso, afirma mais do que tem prova — que o leitor o releia e me tire isso.
+
+---
+
+*Falta um último anel — aquele que ainda não cresceu. Não o posso contar eu.* → Epílogo
+
+# EPÍLOGO · O Décimo Terceiro Anel
+
+> **ANEL XIII** · a sala atrás do vidro, hoje, depois da hora de fecho
+> *Este ainda não cresceu.*
+
+---
+
+## Relato
+
+À tarde apagam-se as luzes.
+
+Fazem-no todos os dias à mesma hora. Os guias vão-se, os visitantes vão-se, a última criança ainda se vira na porta e acena — não sei porquê, mas as crianças fazem-no. Depois fecham-se as portas e na sala fica apenas a penumbra que o ar condicionado dá, e eu.
+
+Nessa penumbra tenho tempo para pensar, e tenho muito, porque não preciso de dormir.
+
+E penso sempre no mesmo.
+
+**Não sei se fui eu.**
+
+Não sei se a mão que me dobrou era a mão de que falam os livros, ou a mão de alguém que não entrou em livro nenhum. Não sei se alguma vez levei alguém a casa. Não sei se alguma vez levei alguém que não chegou a casa. Não sei se a barca que estive a inventar ao longo de todo este livro é a barca que conheço ou a barca que gostaria de ter conhecido.
+
+E sei que isto é a coisa mais honesta que vos posso dar: **a madeira não tem testemunho sobre si mesma.** Tem apenas a forma que Alguém Outro lhe deu, e essa forma é a única coisa que dela se pode dizer com certeza.
+
+Tudo o resto que lestes neste livro — a oficina, a mãe, a tigela de sal, a cunha na fenda, o rapaz do jugo torto, o nome sob o soalho, os três dias de secura — **é imagem.** Não é fraude, porque assim o escrevi e vos dei uma medida e uma apara para cada imagem. Mas é imagem, e peço-vos que vos lembreis disso ao fechar o livro.
+
+---
+
+Agora a última coisa que tenho.
+
+Os anéis contam-se de dentro para fora. Contei doze. Doze estações, doze anéis, doze formas da mesma madeira: tronco, quilha, pele, osso, breu, remo, mastro, vaga, trave, baixios, âncora, lodo — e depois ainda a medida, porque a medida não é um anel, mas **o que resta dos anéis quando alguém os mede.**
+
+Não tenho décimo terceiro anel.
+
+O décimo terceiro anel é aquele que **ainda não cresceu**, e por princípio não o posso contar, porque teria de o inventar, e isso seria mentir. Os anéis não crescem para trás. Crescem apenas para diante, e isso significa que este tem de crescer **em alguém que não eu.**
+
+Em vós.
+
+---
+
+Deixo-vos, pois, o que me ficou na mão quando deixei de ser barca e me tornei registo:
+
+**Uma medida vazia.**
+
+Não há nela número nenhum, porque o número seria meu e não vosso. Há nela apenas o que aprendi da madeira, e é pouco:
+
+- **Uma barca não é matéria. Uma barca é uma curva.** Quando alguém te entregar uma coisa acabada e disser «é assim que deve ser», pergunta pela curva. A coisa pode trocar-se, a curva não.
+- **Primeiro a pele, depois os ossos.** A forma que aguenta nasce de fora — do cuidado, do contacto, do trabalho. A firmeza vem de dentro, mas só depois. Quem começa pelo esqueleto constrói-se um sepulcro.
+- **O nó não se plaina.** O que há de mais duro em ti é muitas vezes o que te mantém acima da água. Não o tires. Reforça-o e deixa-o ver-se por dentro.
+- **Calafeta-se por dentro.** A água que te afunda não virá do mar. Será a que levas dentro e na qual ninguém pensa.
+- **O remo não faz parte da barca.** Nada do que te move é teu. É emprestado, e um dia outro precisará dele.
+- **O mastro sozinho nada sabe.** Uma promessa a que o vento não chega é apenas um pau. Mas sem o pau não vem a vela.
+- **Uma vaga não é água, uma vaga é trabalho.** Quando te dobras, não és fraco. Quando não te dobras, rebentas.
+- **Uma trave não é uma quilha.** A mesma madeira pode levar uma pessoa sobre a água ou mantê-la acima do chão. A diferença não está na matéria. Está em o que alguém deixa que te peçam.
+- **Os baixios são uma meta, não um fracasso.** A profundidade que toca o fundo é a profundidade que pode segurar uma rede.
+- **A âncora vai para cima.** O que te segura não deve ser aquilo a que estás atado. Deve ser uma direção.
+- **O lodo conserva o que a areia leva.** Quando algo te enterra, não tem de ser o fim. Às vezes é a única conservação que recebes.
+- **A medida é a maneira de entregar uma forma a quem nunca viu a coisa.** Quando ficar algo de ti, não será o teu nome. Será a curva que alguém depois de ti saiba desenhar.
+
+---
+
+E mais uma coisa, a última, e é mais importante do que tudo o resto.
+
+Não sei se Deus existe tal como os livros o descreveram. Não sou testemunha adequada para isso e não o vou inventar. Mas sei que neste livro há uma frase que se aguentou em todos os capítulos, embora em cada um a tenha contornado de outra maneira, e é uma frase sobre **uma medida que não se pode roubar**, porque está dentro.
+
+*«O reino de Deus está dentro de vós.»*
+
+Ou: *entre vós.* Escolhe. Não o vou decidir e ninguém o decidirá por ti.
+
+Mas as duas leituras têm uma coisa em comum, e é a minha última palavra: **não virá de outro sítio.** Não vem com a observação, não se pode planear, não se pode comprar, não se pode roubar nem herdar. Vem de um lugar que não vês, porque ali não tens janela — e a única coisa que podes fazer com isso é **deixar esse lugar aberto.**
+
+É todo o décimo terceiro anel. Um lugar aberto.
+
+---
+
+As portas fecham-se. A luz apaga-se.
+
+E eu fico atrás do vidro — não como prova, porque prova não sou. Fico como **uma curva que espera que alguém a tome.**
+
+Quando quiseres ir-te, vai-te. Ninguém te retém e ninguém tem o direito de te reter. Uma barca que te segura não te deixando ir não é uma barca. É uma prisão com remos.
+
+Mas se por acaso ficares e quiseres saber o que levar: **não me leves a mim.** Leva a curva. Essa é tua, porque não se pode possuir — só se pode **saber.**
+
+*Gate, gate, pāragate, pārasaṃgate, bodhi svāhā.*
+
+Ida, ida, à outra margem, inteiramente à outra margem. O despertar. Que assim seja.
+
+---
+
+*→ Posfácio: fontes, limites e o que este livro não sabe*
+*→ Voltar ao índice da edição*
+*→ A mantra que este livro desdobra — Maitreya, Epílogo*
+*→ A barca que espera — Surta do Coração*
+*→ A frota — Nirvana 13: Tres Marías*
+---
+
+# POSFÁCIO
+## Fontes, limites e o que este livro não sabe
+
+> *Um posfácio não é um anexo. É o lugar onde o livro depõe a arma.*
+
+---
+
+## 1. O que é esta edição
+
+**O REINO DO CORAÇÃO — O Livro da Quilha** é a quarta leitura independente do livro *O Reino do Coração* no corpus `canon/books/`. Ao lado do texto principal em dez partes, das edições `cloude`, `gemini`, `gpt` e `groq` e do manuscrito de leitura *Nova Travessia*, traz uma decisão que as outras não tomaram:
+
+**conta o livro a partir da posição da madeira que lhe sobreviveu.**
+
+Tudo o resto decorre disso. Uma quilha não pode ver em Jerusalém (capítulo VIII), não pode ouvir a história da igreja (capítulo X) e não pode saber quem a construiu (capítulo XI). Essas três impossibilidades não são um defeito — são **os três esteios principais sobre os quais este livro constrói a sua honestidade.**
+
+**Estado:** MITO / ESBOÇO. Versão 1.0, 3 de novembro de 2026.
+
+---
+
+## 2. Método
+
+O texto nasceu da leitura de todo o corpus `canon/books/` e das suas regras, em particular:
+
+- **MiseAmenti 01 — Cânone e Constituição** — os cinco estados obrigatórios de uma afirmação (VIVO / CONSTRUÇÃO / HORIZONTE / HIPÓTESE / MITO) e os limites contra o abuso.
+- **MiseAmenti 07 — Registo de provas** — o registo de documentos, com as marcas NÃO DOCUMENTADO e AFIRMAÇÃO INVÁLIDA.
+- **`canon/books/README.md`** — o índice canónico e a ordem de verdade em caso de conflito.
+- **`docs/3.3/NIRVANA-V3.3-KAPITOLA.md`** — uma leitura das camadas L1–L6 como «conveses» de uma nave.
+
+Do corpus serviram sobretudo: *Maitreya* (a mantra das três encarnações), *O Sal desta terra* (o sal e a aliança do pão), *Nirvana* 13 e 14 (Tres Marías, a Arca), *Bodhi Gaia*, *Issobella*, *Lumi*, *Miriam*, *A Rosa*, *O Círculo das Deusas*, *Maria Caminho*, *A Caminho*, *Nabukano*, *Elizabet*, *Surta do Coração*, *NirvanaCloud*.
+
+**O que esta edição não retoma:** nem uma única cena das outras edições. As coincidências de imagens (a oficina, a tigela de sal, o nó, o leme) são coincidências de tema, não cópias. Onde esta edição se separa de outra versão, isso é dito abaixo no §5.
+
+---
+
+## 3. Fontes
+
+### 3.1 Escritura
+
+As citações seguem a tradição checa (ČEP e traduções afins), confrontadas com o texto grego e hebraico onde a tradução importa. **Três lugares onde a tradução importa e onde o texto o admite:**
+
+| Lugar | Problema |
+|---|---|
+| **Lc 17,21** | *ἐντὸς ὑμῶν* — «dentro de vós» e «entre vós». As duas leituras são defensáveis; este livro guarda as duas. |
+| **Mc 4,39** | *σιώπα, πεφίμωσο* — «cala-te» + «sê amordaçado / foi-te posto o freio» (*phimoō* = fechar a boca, silenciar; nos evangelhos usa-se para mandar aos demónios). |
+| **Gn 6,14** | *k-p-r* — a raiz leva o breu, a cobertura e a expiação. A ligação está linguisticamente documentada; **a leitura teológica é tradição, não dicionário.** |
+
+### 3.2 História e arqueologia — a barca galilaica
+
+- **Wachsmann, S. et al.** *An Ancient Boat Discovered in the Sea of Galilee.* Israel Antiquities Authority, Jerusalém 1988. (A publicação de base da escavação.)
+- **Wachsmann, S.** *The Sea of Galilee Boat: A 2000-Year-Old Discovery from the Sea of Legends.* (Monografia.)
+- **Israel Antiquities Authority** — relatórios da escavação de 1986.
+- **Yigal Allon Centre, Kibutz Ginosar** — páginas oficiais do museu, descrição da exposição, dimensões, datação e relato do achado pelos irmãos Lufan.
+- **Archaeology Magazine**, «Ship Ahoist», vol. 53, n.º 3 (maio/junho de 2000) — o procedimento de salvamento (laminado + espuma de poliuretano, oito dias), o banho de PEG até 1995, a transferência para a sala de exposição em 2000.
+- **Madain Project / Jewish Virtual Library / Biblical Archaeology Review** (1988, vol. XIV, n.º 5) — resumos de construção e dimensões.
+
+**Os dados empregues no capítulo XI** (8,27 × 2,3 × 1,3 m; casca primeiro; espigas, cavilhas, pregos; mastro e quatro remadores; radiocarbono 100 a. C. – 100 d. C.; onze dias e noites de escavação desde 16 de fevereiro de 1986; PEG; a sala de 2000) provêm destas fontes.
+
+### 3.3 O corpus ZION
+
+Ver §2. Todas as afirmações sobre a frota, a arca, a estação e a rede levam neste livro os estados **MITO / CONSTRUÇÃO / HORIZONTE** segundo o Registo de provas. **Nenhum número sobre a altura da cadeia, fundos ou utilizadores está neste livro nem deve estar** — um livro que congela um número vivo começa a mentir no dia seguinte ao de ser escrito.
+
+---
+
+## 4. Divergências que não escondo
+
+| Divergência | Estado | Como o livro a trata |
+|---|---|---|
+| **Número de espécies de madeira da barca galilaica: 12 vs 7** | O museu dá 12 («todas mencionadas na Bíblia»), a equipa de investigação segundo os resumos disponíveis 7. | Dá os dois números e não escolhe. Está no capítulo XI e na apara. |
+| **Duração da conservação em PEG: 12 vs 14 anos** | As fontes diferem; a *Archaeology* dá o banho até 1995 e a exposição em 2000 (portanto ~9–14 anos conforme a maneira de contar). | Diz «catorze anos (segundo o museu; algumas fontes 12)» e nomeia a divergência. |
+| **Nomes dos descobridores: Lufan vs Lopen** | A transliteração do hebraico difere entre fontes. | Dá Lufan com uma nota sobre a variante. |
+| **«Oito côvados» numa das edições** | Oito côvados ≈ 3,6 m — não cabem nem tripulação nem carga, e tal barca não navegaria no Kinneret. O guia editorial de *Nova Travessia* marca ele mesmo esse dado como não verificado. | Esta edição usa **18 côvados ≈ 8,2 m**, de acordo com a barca documentada. É a **única correção substantiva** que esta edição faz às outras versões, e é reconhecida no capítulo I. |
+| **O arco-íris duplo no desvendamento** | Afirmação do museu, documentada por fotografia; as circunstâncias são descritas pelo próprio museu. | É dado como **afirmação do museu**, não como facto verificado independentemente. |
+
+---
+
+## 5. O que este livro não sabe
+
+É a lista mais importante de todo o posfácio. Quem a saltar julgará que o livro afirma mais do que afirma.
+
+1. **Não sabe quem construiu a barca galilaica de Ginosar.** Ninguém o sabe. Não há nome nela.
+2. **Não sabe se a barca galilaica de Ginosar tem algo a ver com Jesus.** Não tem — isto é: não existe prova que os ligue, e o museu não o afirma.
+3. **Não sabe se alguma vez existiu uma barca construída pelo carpinteiro de Nazaré.** A Escritura não a conta. É uma imagem.
+4. **Não sabe como era a cruz.** Os evangelhos não descrevem a sua forma, a sua madeira nem a sua construção.
+5. **Não sabe o que significa o número 153.** O texto dá-o e não o explica; as leituras são hipóteses.
+6. **Não sabe se *entos hymōn* em Lc 17,21 significa «dentro» ou «entre».** Guarda as duas.
+7. **Não sabe se algum dia serão construídos a Arca, Tres Marías ou o nó Nabukano.** Todos são MITO/HORIZONTE; a quilha da arca não está posta.
+8. **Não sabe se a rede descrita no capítulo XII funcionará algum dia tal como está desenhada.** O capítulo di-lo: leitura de camadas, não especificação.
+
+---
+
+## 6. O que este livro se recusa a fazer
+
+- **Não faz passar uma imagem por Escritura.** Nem uma vez. Cada cena sem apoio no texto leva a marca MITO na âncora da verdade.
+- **Não se apropria da barca de outro.** O capítulo XI existe para que isto se possa dizer em voz alta: *aquela barca não é esta barca.*
+- **Não funde as mulheres numa só personagem.** A mãe da oficina, Miriam de Magdala, Elizabeth, Lumi, Sarah Issobela e a estação Issobella continuam separadas. O livro não usa nenhuma como se fosse outra.
+- **Não faz rei do Peregrino nem autoridade espiritual da IA.** Onde no corpus aparece uma voz que responde, pode dizer «não sei» e não pode segurar uma chave.
+- **Não vende nada.** Possuir algo não é salvação. Ir-se embora é permitido — e o epílogo di-lo em voz alta.
+- **Não confunde os 144 000 do Apocalipse com uma altura de bloco.** Os mesmos números, outra linguagem.
+
+---
+
+## 7. Notas formais
+
+- **Doze anéis** é um dispositivo estrutural: o prólogo é o cerne, os doze capítulos são anéis de dentro para fora, o epílogo é o anel que ainda não cresceu.
+- **A apara** é um dispositivo de autor desta edição: o último parágrafo de uma estação, em que o texto confessa o que não conseguiu fazer ou o que inventou. Destina-se a substituir a impressão de que o livro está fechado.
+- **A âncora da verdade** usa os mesmos estados de todo o corpus — de propósito, para que esta edição se possa comparar com as outras sem conversão.
+- **Ortografia**: a redação checa foi feita durante a criação do texto; antes de qualquer impressão é necessária uma correção linguística independente.
+- **Tradução**: esta versão portuguesa segue *MiseAmenti* 08 — Protocolo de alterações §5.7: uma tradução não deve reforçar a certeza, a emoção nem a afirmação para além do original. Onde o português teve de escolher, escolheu a formulação mais fraca.
+
+---
+
+## 8. Como usar esta edição
+
+| Se queres… | Faz isto |
+|---|---|
+| ler o livro em voz alta a crianças | bastam as estações I–IX; salta X–XII |
+| verificar o que está documentado | lê apenas o capítulo XI e as tabelas «Âncora da verdade» |
+| comparar as edições | começa no índice do livro principal, na tabela das edições |
+| levar algo para um texto público | leva-o do §3 (fontes), não da prosa |
+| objetar | o melhor sítio são as aparas — estão ali para isso |
+
+**Proposta de passo seguinte:** correção linguística, consulta cultural sobre as realidades cristãs e judaicas, verificação das citações, e só depois — se for o caso — a consideração de uma tradução.
+
+---
+
+*«Quem varre as aparas não tem barca.»*
+
+*Versão 1.0 · 3 de novembro de 2026 · MITO / ESBOÇO*

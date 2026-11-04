@@ -1,0 +1,17 @@
+{
+  "edition": "deepseek",
+  "lang": "PT",
+  "source": "O_Reino_do_Coracao_deepseek_PT.md",
+  "words": 26196,
+  "headings": 194,
+  "paragraphs": 727,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 123,
+    "bytes": 363897
+  },
+  "epub": {
+    "documents": 18,
+    "bytes": 77587
+  }
+}

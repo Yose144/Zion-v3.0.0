@@ -10,7 +10,7 @@ Prolog, dvanáct zastavení, epilog a doslov; vyprávěno dřevem.
 | EN | ✅ | ✅ | ✅ | 28075 |
 | ES | ✅ | ✅ | ✅ | 27280 |
 | FR | ✅ | ✅ | ✅ | 29130 |
-| PT | — | — | — | — |
+| PT | ✅ | ✅ | ✅ | 26196 |
 
 ## Zdroj
 
