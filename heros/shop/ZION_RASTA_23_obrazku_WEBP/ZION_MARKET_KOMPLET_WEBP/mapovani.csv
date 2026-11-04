@@ -1,0 +1,40 @@
+﻿group,product_id,title,role,file,width,height,bytes,sha256
+Katalog,zion-pass-001,ZION Pass — vstup do Nirvany a Archivu,katalog,obrazky/katalog/zion-pass-001_zion-pass.webp,1024,1024,302366,3c9a2875b9d12053fa63e89ca668fecd6d562a8aeb5afc537e74f6d474a2a024
+Katalog,book-001,Království srdce — digitální kniha,katalog,obrazky/katalog/book-001_kralovstvi-srdce.webp,1024,1024,245196,fb16df77551ff9eabd8a5a351f0cee56f7386d9efaf49392c8f8592f95c9d8d7
+Katalog,vr-001,VR Experience — virtuální realita na míru,katalog,obrazky/katalog/vr-001_vr-experience.webp,1024,1024,207202,e93db1040a4c8cfbb489a794407d1cdb17e4eef6a4ac9d8f29591960accd7635
+Katalog,soft-003,Zion RTX 5060 Miner & OASIS Ready,katalog,obrazky/katalog/soft-003_rtx-5060-miner-oasis.webp,1024,1024,196512,23c00937c3a35f3d187749d861e1bf10dca76f5d9f4820fab3f23a82bde60788
+Katalog,soft-002,DAO Pool License,katalog,obrazky/katalog/soft-002_dao-pool-license.webp,1024,1024,163818,ba041aa65b2131d68a16d8452d9cc9147515518bfe26b5e0648906f1c22fc8fa
+Katalog,soft-001,Miner Pro Desktop,katalog,obrazky/katalog/soft-001_miner-pro-desktop.webp,1024,1024,167866,063e5a602246cc325d639d4bd88061e04d7f7e3cc23dfb5feb4e55e843eb58aa
+Katalog,digi-004,Fullstack web application,katalog,obrazky/katalog/digi-004_fullstack-aplikace.webp,1024,1024,166044,755153b53f1e334be399b9b1ae5f53e8faf8a2aebf7a420918144b721fecd275
+Katalog,digi-003,eShop řešení,katalog,obrazky/katalog/digi-003_eshop-reseni.webp,1024,1024,170434,ad0e8b65958c0e8afd72fb0bf9ec2fda4a8e72291387d07aef95d32e41a6745b
+Katalog,digi-002,Firemní / osobní web OnePage,katalog,obrazky/katalog/digi-002_onepage-web.webp,1024,1024,209986,5c434ae3e12c4e472233de47c6461a8a426028b8d2e26a7cf32c6ae9436a5dd7
+Katalog,digi-001,Web Development — konzultace,katalog,obrazky/katalog/digi-001_web-konzultace.webp,1024,1024,171524,bb40b40847e1121ae4ba7ec2e93624f9f12734e52d5fb5571b488c974b0b6ea9
+Katalog,engr-003,QR kód vizitka — dřevěná,katalog,obrazky/katalog/engr-003_qr-vizitka.webp,1024,1024,229868,507790cdd064eb0b1dbe8aeddbdd1e30527f2871031b0d5bab09aa3b2a246c8f
+Katalog,engr-002,Gravírovaná fotka na dřevo,katalog,obrazky/katalog/engr-002_gravirovana-fotografie.webp,1024,1024,251030,c5d9934892f11e8ab1b119fbc093f7579544a3e6204c9041f346ffce23e0c56f
+Katalog,engr-001,Gravírování loga — dřevo,katalog,obrazky/katalog/engr-001_gravirovani-loga.webp,1024,1024,225772,16e32b0ee0356df56f8365b868e7bf2bc25a5655dfbf950e8fb7b117d5069c84
+Katalog,wood-004,Dětský domek na stromě,katalog,obrazky/katalog/wood-004_domek-na-strome.webp,1024,1024,238686,e503b525ab030edaea2af49bdc99e4f4ac14a0eb585c5b0f92fd30790eaa31c9
+Katalog,wood-003,Pergola na míru — konzultace,katalog,obrazky/katalog/wood-003_pergola.webp,1024,1024,250684,c2dcf1128d2b2dfa5f4ccf65e62404052f9aeb3d3d2380ae2ec67444d6b51786
+Katalog,star-001,A-Wing Wooden Starfighter,katalog,obrazky/katalog/star-001_a-wing.webp,1024,1024,149296,2e2cbc39c0a3d35edbafb21d745afaeb66d0812a945a8df0bb9bd13b37e10840
+Katalog,star-002,B-Wing Wooden Starfighter,katalog,obrazky/katalog/star-002_b-wing.webp,1024,1024,150464,07dd0dc2b688cf658e915f86bbff4975c201d7c6073e20c068e117d01a659a7b
+Katalog,star-003,X-Wing Wooden Starfighter,katalog,obrazky/katalog/star-003_x-wing.webp,1024,1024,156370,ae84ac8ed252184da87d34d0a5e57395adf6ed2d596c77daaac4ed81444ab045
+Katalog,star-004,Ikaruga Wooden Starfighter,katalog,obrazky/katalog/star-004_ikaruga.webp,1024,1024,158248,a82cbbbc440c9e0ca7b3cc1e9a9f5e58017c39e605075bbb3cd17c8b7a22f5df
+Katalog,star-005,Snowspeeder Wooden Kit,katalog,obrazky/katalog/star-005_snowspeeder.webp,1024,1024,181180,c5e6aa6097ce86694accbb5b33363e00ad103c96e8314102a833d843ec1548c5
+Katalog,star-006,TIE Fighter Wooden Kit,katalog,obrazky/katalog/star-006_tie-fighter.webp,1024,1024,159432,c33a9b049325937df1292f778ba522590b737f541d7f8efd720ed42b0b5f05c2
+Katalog,star-007,TIE Interceptor Wooden Kit,katalog,obrazky/katalog/star-007_tie-interceptor.webp,1024,1024,169582,d7e26e43646ec82b8887696485fd0a12fb2ea8acba8dc799931fceb8f4a7dbd5
+Katalog,star-008,Millennium Falcon Wooden Kit,katalog,obrazky/katalog/star-008_millennium-falcon.webp,1024,1024,205046,5cb2fae6fd97152e25dc081884df6844010748bd83096d0e9ade8fecf62025a9
+Homepage,zion-pass-001,ZION Pass,hlavni,obrazky/home/01_zion_pass.webp,1672,941,423372,3456533153fe4babcf3c7f883ac7c1b4fa0b481407e0da2dbf1b1034d5cee8fe
+Homepage,book-001,Království srdce,hlavni,obrazky/home/02_kralovstvi_srdce.webp,1672,941,319938,592fd8f48e936540771321fc1d6cb5e403d50ab308c825fffc5afe0052281306
+Homepage,lampion,"Lampion — tesař a děti, oprava v4",hlavni,obrazky/home/03_lampion_tesar_deti_v4.webp,1672,941,248596,94fe42278aee5bda14a297401a14e7fb07ad25c3a5968974c9e4729037990bcb
+Galerie — ZION Pass,zion-pass-001,Nirvana a Archiv,galerie,obrazky/galerie/zion-pass/02_nirvana_a_archiv.webp,1672,941,407700,0458d488bde668c8b5eea537818710b6172001ed95c5c504be24e8ef9786e624
+Galerie — ZION Pass,zion-pass-001,Digitální dárek,galerie,obrazky/galerie/zion-pass/03_digitalni_darek.webp,1672,941,236652,a66f3fb7241e2de038b49e773a90aa9b23d1c59860e2243b67140564b29a38a9
+Galerie — kniha,book-001,Ediční sada,galerie,obrazky/galerie/kralovstvi-srdce/02_edicni_sada.webp,1672,941,370412,ffa09fbb1d87eb06cc7bf6c004ecc3cefa914b4b748f1a116385c7bb81533ace
+Galerie — kniha,book-001,Čtení a Kotva pravdy,galerie,obrazky/galerie/kralovstvi-srdce/03_cteni.webp,1672,941,279312,ba24744467742c6f1474ebf7c3c8c775560110c6bd0449e3c99af5d74f0860bd
+Galerie — lampion v4,lampion,Balíček s knihou a passem,galerie,obrazky/galerie/lampion/01_balicek_v4.webp,1672,941,282742,f435780ecaab97d81de570147a7bd038625d44899d418510be642e6ae88a057b
+Galerie — lampion v4,lampion,Konstrukce v4,galerie,obrazky/galerie/lampion/02_konstrukce_v4.webp,1672,941,132454,4dd26e8233472718ca329d8697370cc25f2785bb5a8f0b993198b9295864fdac
+Galerie — lampion v4,lampion,Večerní světlo,galerie,obrazky/galerie/lampion/03_vecerni_svetlo_v4.webp,1672,941,135270,e5e3aa15ff343151a0593985b299c4f0875d335e8dd9f39a3ae773ba27b29ad9
+Ilustrace z knihy,book-001,Tesařova dílna,ilustrace,obrazky/kniha-pribeh/01_tesarova_dilna.webp,1672,941,297510,a60d96db4d0d99031fd0ee89bb5a66abc5a83f8a1262a90c5143890d37f70870
+Ilustrace z knihy,book-001,Loď na Kinneret,ilustrace,obrazky/kniha-pribeh/02_lod_na_kinneret.webp,1672,941,362186,ec9b7947d1013497561d29934407e66d53caa403e6b179514c8e7e0d704fc044
+Ilustrace z knihy,book-001,Utišení bouře,ilustrace,obrazky/kniha-pribeh/03_utiseni_boure.webp,1672,941,267684,1938de31bb427c8b268eb684a88167c7977b2d8208ef5d69079cfa4853db50fc
+Ilustrace z knihy,book-001,Jméno lodi,ilustrace,obrazky/kniha-pribeh/04_jmeno_lodi.webp,1672,941,272758,111cffd516fb3442dc8fcdef7a88eb3ddc79f1d01857d7601fe176046767d2df
+Ilustrace z knihy,book-001,Světla u brány,ilustrace,obrazky/kniha-pribeh/05_svetla_u_brany.webp,1672,941,316886,f3c63c5a86a59b550d5345f7808355be26b80434b243d5055aa042167b9493fa
+Ilustrace z knihy,book-001,Místo navíc,ilustrace,obrazky/kniha-pribeh/06_misto_navic.webp,1672,941,358384,b8a31adeea7839a859c97b6b918af4ab795ce507e40ccdc4097e76740b190ac0

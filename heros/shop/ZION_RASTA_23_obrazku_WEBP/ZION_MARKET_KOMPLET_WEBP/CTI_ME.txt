@@ -1,0 +1,30 @@
+ZION MARKET — KOMPLETNÍ OBRAZOVÝ BALÍČEK
+4. listopadu 2026
+
+39 různých optimalizovaných WebP obrázků:
+- 23 katalogových produktů, 1024 × 1024 px.
+- 3 hlavní obrázky pro homepage, 1672 × 941 px.
+- 7 dalších produktových náhledů (pass 2, kniha 2, lampion 3).
+- 6 příběhových ilustrací ke knize, 1672 × 941 px.
+
+PRO HOMEPAGE POUŽIJTE:
+obrazky/home/01_zion_pass.webp
+obrazky/home/02_kralovstvi_srdce.webp
+obrazky/home/03_lampion_tesar_deti_v4.webp
+
+Lampion na homepage je poslední opravená scéna s tesařem a dětmi.
+Galerie lampionu používá v4: nízké šestihranné tělo, plochý otevřený vršek,
+mandalové výřezy. Varianty se stříškou nebo poutkem nejsou zařazeny.
+Hlavní obrázek každého produktu lze použít také jako první obrázek galerie.
+V archivu nejsou duplicitní kopie téhož zdrojového obrázku.
+
+NAHLED.html otevřete v prohlížeči po rozbalení celého ZIPu.
+mapovani.csv / mapovani.json přiřazují soubory k produktům a použití.
+ID lampion je popisný identifikátor; není převzatý z databáze marketu.
+
+Jde o AI ilustrace a produktové vizualizace. Výrobní geometrii lampionu určuje
+SVG/DXF v4; náhledy nejsou výrobní dokumentací. Fyzické modely a hardware
+je nutné porovnat se skutečně dodávaným provedením. QR motiv je ilustrativní.
+Stránky a vedlejší obálky knih jsou prezentační mockupy, ne screenshoty sazby.
+Tento balíček obsahuje pouze obrázky a přehledy, nikoli knihy či přístupové kódy.
+Na web nebylo nic automaticky nahráno.
