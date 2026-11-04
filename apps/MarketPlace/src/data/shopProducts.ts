@@ -88,7 +88,7 @@ export const shopProducts: ShopProductSeed[] = [
       'Ručně gravírovaný lampion se vzorem Srdce Království — z tesařské dílny příběhu. Vánoční edice: ke každému lampionu digitální kniha Království srdce a ZION Pass v ceně. 🛡️ BONUS: 43 200 ZION. Připravujeme — prodej zahájíme, jakmile bude výrobek hotový.',
     priceCzk: 432,
     oldPriceCzk: undefined,
-    image: '/vanoce-lampion.webp',
+    image: '/vanoce-lampion.webp?v=6',
     badge: '🎄 Vánoční edice',
     inStock: false,
     size: 'Ruční výroba · gravírování',

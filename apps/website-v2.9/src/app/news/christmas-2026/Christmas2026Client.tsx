@@ -32,7 +32,7 @@ const Article = {
       {
         icon: Lamp,
         title: 'Lampion Království srdce — světlo z příběhu',
-        image: '/images/news/christmas-2026/lampion-wide.webp',
+        image: '/images/news/christmas-2026/lampion-wide.webp?v=6',
         imageAlt: 'Tesař s dětmi u hořícího lampionu, na stole kniha Království srdce a ZION Pass',
         text: 'Ručně gravírovaný lampion se vzorem Srdce Království vychází ze scény, kde Lumi nese lampu k bráně. Vzory na těle nejsou dekorace — jsou to mandaly z knihy. Vánoční edice za 432 Kč obsahuje digitální knihu v plné sadě, ZION Pass a bonus 43 200 ZION; digitální část dorazí hned, fyzický lampion odejde ze dílny, až bude hotový, proto je prodej zatím označený jako připravujeme. Geometrii výrobku určuje samostatná technická dokumentace, ne ilustrace.',
       },
@@ -123,7 +123,7 @@ const Article = {
       {
         icon: Lamp,
         title: 'The Kingdom of the Heart lantern — light from the story',
-        image: '/images/news/christmas-2026/lampion-wide.webp',
+        image: '/images/news/christmas-2026/lampion-wide.webp?v=6',
         imageAlt: 'The carpenter with children around the lit lantern, the Kingdom of the Heart book and ZION Pass on the table',
         text: 'A hand-engraved lantern bearing the Heart of the Kingdom pattern comes from the scene where Lumi carries her lamp to the gate. The patterns on its body are not decoration — they are the mandalas from the book. The Christmas edition at 432 CZK includes the full digital book set, a ZION Pass and a 43,200 ZION bonus; the digital part arrives immediately, while the crafted lantern ships from the workshop once finished, which is why the sale is still marked as coming soon. The geometry of the piece is defined by its own technical documentation, not by an illustration.',
       },
@@ -222,8 +222,8 @@ export default function Christmas2026Client() {
 
           <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-2xl border border-white/10">
             <img
-              src="/images/news/christmas-2026/hero-1600.webp"
-              srcSet="/images/news/christmas-2026/hero-960.webp 960w, /images/news/christmas-2026/hero-1600.webp 1600w"
+              src="/images/news/christmas-2026/hero-1600.webp?v=6"
+              srcSet="/images/news/christmas-2026/hero-960.webp?v=6 960w, /images/news/christmas-2026/hero-1600.webp?v=6 1600w"
               sizes="(min-width: 768px) 46rem, 100vw"
               alt={t.imageAlt}
               width={1672}
