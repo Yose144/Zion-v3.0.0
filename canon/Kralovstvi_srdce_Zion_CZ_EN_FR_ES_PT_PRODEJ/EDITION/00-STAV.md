@@ -11,7 +11,7 @@
 | Gemini edice · Svorník korpusu | 24 863 slov · PDF · EPUB | 32 932 slov · PDF · EPUB | ⏳ 8 848 slov | — | — |
 | GPT edice · Tesař, který zůstává u práce | 6 435 slov · PDF · EPUB | — | — | — | — |
 | Groq edice · Loď, která se ptá | 7 441 slov · PDF · EPUB | — | — | — | — |
-| Quen edice · Účetnice | 5 903 slov · PDF · EPUB | 7 500 slov · PDF · EPUB | — | — | — |
+| Quen edice · Účetnice | 5 903 slov · PDF · EPUB | 7 500 slov · PDF · EPUB | 7 354 slov · PDF · EPUB | — | — |
 | DeepSeek edice · Kniha Kýlu | 22 986 slov · PDF · EPUB | 28 075 slov · PDF · EPUB | 27 280 slov · PDF · EPUB | 29 130 slov · PDF · EPUB | 26 196 slov · PDF · EPUB |
 
 **Legenda:** číslo = počet slov českého/ přeloženého rukopisu, `PDF`/`EPUB` = hotový produkt.

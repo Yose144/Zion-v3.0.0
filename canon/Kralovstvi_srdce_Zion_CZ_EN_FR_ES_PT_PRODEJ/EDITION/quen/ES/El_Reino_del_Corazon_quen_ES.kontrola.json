@@ -1,0 +1,17 @@
+{
+  "edition": "quen",
+  "lang": "ES",
+  "source": "El_Reino_del_Corazon_quen_ES.md",
+  "words": 7354,
+  "headings": 56,
+  "paragraphs": 158,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 45,
+    "bytes": 199322
+  },
+  "epub": {
+    "documents": 19,
+    "bytes": 32252
+  }
+}
