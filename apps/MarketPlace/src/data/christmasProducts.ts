@@ -597,6 +597,7 @@ export const christmasProducts: XmasProduct[] = [
     externalId: 'lamp-001',
     image: '/vanoce-lampion.webp',
     hero: '/vanoce/home/03_lampion_tesar_deti_v4.webp',
+    heroWide: '/vanoce/hero/lampion-wide.webp',
     gallery: [
       {
         src: '/vanoce/galerie/lampion/01_balicek_v4.webp',
