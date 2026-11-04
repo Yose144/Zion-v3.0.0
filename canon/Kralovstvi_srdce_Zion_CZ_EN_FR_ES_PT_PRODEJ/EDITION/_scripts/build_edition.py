@@ -1068,6 +1068,10 @@ def human_date(iso: str, bcp47: str) -> str:
     months = MONTHS.get(bcp47, MONTHS["en"])
     if bcp47 == "en":
         return f"{d} {months[m - 1]} {y}"
+    if bcp47 == "fr":
+        return f"{d} {months[m - 1]} {y}"
+    if bcp47 in ("es", "pt"):
+        return f"{d} de {months[m - 1]} de {y}"
     return f"{d}. {months[m - 1]} {y}"
 
 

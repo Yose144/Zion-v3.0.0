@@ -1,0 +1,17 @@
+{
+  "edition": "klasicka",
+  "lang": "FR",
+  "source": "Le_Royaume_du_Coeur_klasicka_FR.md",
+  "words": 6993,
+  "headings": 56,
+  "paragraphs": 133,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 37,
+    "bytes": 177713
+  },
+  "epub": {
+    "documents": 13,
+    "bytes": 26080
+  }
+}

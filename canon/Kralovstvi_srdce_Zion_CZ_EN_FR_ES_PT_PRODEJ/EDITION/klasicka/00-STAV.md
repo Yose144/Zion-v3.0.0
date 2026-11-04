@@ -9,8 +9,8 @@ Deset zastavení, každé s oddíly Příběh / Z Písma a tradice / Kotva pravd
 | CZ | ✅ | ✅ | ✅ | 5220 |
 | EN | ✅ | ✅ | ✅ | 6745 |
 | ES | ✅ | ✅ | ✅ | 6650 |
-| FR | — | — | — | — |
-| PT | — | — | — | — |
+| FR | ✅ | ✅ | ✅ | 6993 |
+| PT | ✅ | ✅ | ✅ | 6348 |
 
 ## Zdroj
 

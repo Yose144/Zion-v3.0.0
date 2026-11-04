@@ -1,0 +1,17 @@
+{
+  "edition": "klasicka",
+  "lang": "PT",
+  "source": "O_Reino_do_Coracao_klasicka_PT.md",
+  "words": 6348,
+  "headings": 56,
+  "paragraphs": 133,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 35,
+    "bytes": 172316
+  },
+  "epub": {
+    "documents": 13,
+    "bytes": 25056
+  }
+}
