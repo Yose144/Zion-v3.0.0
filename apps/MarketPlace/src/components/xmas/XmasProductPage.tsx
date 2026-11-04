@@ -22,6 +22,7 @@ import type { XmasProduct } from '@/data/christmasProducts';
 import { useLangT } from '@/lib/useTranslation';
 import ExperimentalNotice from '@/components/xmas/ExperimentalNotice';
 import FactsStrip from '@/components/xmas/FactsStrip';
+import Lantern3D from '@/components/xmas/Lantern3D';
 
 /** Lehký renderer **tučného** inline markdownu v detailních odstavcích. */
 function renderInline(text: string) {
@@ -129,6 +130,17 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
               </span>
             ))}
           </div>
+
+          {/* 3D slot — model se načte až po kliknutí, když je nahraný */}
+          {product.model3d && (
+            <div className="pt-6">
+              <Lantern3D
+                modelUrl={product.model3d}
+                poster={product.gallery?.[1]?.src ?? product.image}
+                posterAlt={product.gallery?.[1] ? pick(product.gallery[1].alt) : pick(product.title)}
+              />
+            </div>
+          )}
 
           {/* Samples — real text from the manuscript */}
           {product.samples && product.samples.length > 0 && (

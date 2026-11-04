@@ -49,6 +49,8 @@ export interface XmasProduct {
   hero?: string;
   /** Ultraširoký banner pro hero na detailu (1983×793 ≈ 21:9) */
   heroWide?: string;
+  /** Cesta k 3D modelu (glb) — slot na detailu; když soubor chybí, ukáže se „připravujeme" */
+  model3d?: string;
   /** Doplňkové snímky do galerie na detailu */
   gallery?: { src: string; alt: XmasText }[];
 }
@@ -598,6 +600,7 @@ export const christmasProducts: XmasProduct[] = [
     image: '/vanoce-lampion.webp',
     hero: '/vanoce/home/03_lampion_tesar_deti_v4.webp',
     heroWide: '/vanoce/hero/lampion-wide.webp',
+    model3d: '/models/lampion-kralovstvi-srdce.glb',
     gallery: [
       {
         src: '/vanoce/galerie/lampion/01_balicek_v4.webp',
