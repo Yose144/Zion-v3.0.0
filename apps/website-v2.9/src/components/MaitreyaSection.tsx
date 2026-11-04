@@ -48,7 +48,7 @@ export default function MaitreyaSection() {
             {/* artwork panel */}
             <Link
               href="/zion-archive"
-              className="group/img relative block aspect-[16/9] overflow-hidden rounded-xl border border-white/10 lg:aspect-auto lg:h-full"
+              className="group/img relative block aspect-[16/9] overflow-hidden rounded-xl border border-white/10"
             >
               <img
                 src="/images/zion-archive/hero.webp"
