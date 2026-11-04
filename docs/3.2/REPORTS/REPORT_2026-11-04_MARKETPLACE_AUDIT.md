@@ -353,3 +353,27 @@ Po změně jsou vánoční produkty **10× nad katalogem** — prémie zůstáv�
 **Pojistka proti regresi:** `scripts/ops/check-bonus-copy.sh` — projde `apps/`, najde staré částky v bonusovém kontextu i starou formulaci „tisíc ZION za každou korunu", a vrací exit 1. Whitepapery vynechává (mají vlastní čísla). Aktuálně **✓ ✓**.
 
 **Ověřeno živě:** `/api/shop/products` vrací `10800`/`21600` a popisy s `10 800 ZION` / `21 600 ZION`; na šesti živých površích (market `/`, `/shop`, oba detaily, web `/`, novinky) **0 výskytů** starých částek.
+
+---
+
+## 17. Dodatek 11 — 3D slot pro lampion
+
+👤: „máme nový lampion konečně, vytvoř v detailu na marketu placeholder pro vložení 3D lampionku".
+
+Nový `apps/MarketPlace/src/components/xmas/Lantern3D.tsx`, vykreslený na `/vanoce/lampion` mezi detaily a ukázkami.
+
+**Jak to funguje:**
+1. Uživatel vidí **plakát** (fotka lampionu) a tlačítko **„Načíst 3D náhled"**.
+2. Po kliknutí komponenta udělá `HEAD` na `/models/lampion-kralovstvi-srdce.glb`:
+   - **404** → stav „3D náhled se připravuje" (žádná chybová hláška, fotky výše platí),
+   - **200** → dynamicky natáhne `three` + `GLTFLoader`, model vycentruje podle bounding boxu, automaticky zvětší do záběru, přidá tři světla (teplé „svíčkové" zespodu, klíčové shora, modrý rim) a roztočí.
+3. Ovládání: tažení = rotace (Y i X s limitem), kolečko = zoom, auto-rotace se při tažení zastaví.
+
+**Proč click-to-load:** `three` je ~600 kB. Načítat ho při každém otevření detailu (i lidem, co se jen přišli podívat na cenu) by zabilo LCP — a právě proběhl performance pass (report `REPORT_2026-11-04_PERFORMANCE.md`). Vlastní rotace místo `OrbitControls` ušetří další chunk.
+
+**Nasazení modelu = nahrátí souboru.** `model3d` v datech už na cestu ukazuje, takže stačí položit `.glb` do `public/models/` a **nic v kódu se nemění**. Formát a doporučení (glb, 50–150 k tris, textury ≤2048, <5 MB) jsou v `public/models/README.md`.
+
+**Ověřeno oběma cestami:**
+- s testovací kostkou: canvas se vytvořil (`1280×900`), model se vycentroval a rotoval, 0 chyb v konzoli (kromě pre-existing 401 z `/api/auth/me`),
+- po smazání kostky: HEAD → 404, zobrazí se „3D náhled se připravuje", **žádný** 3D canvas se nevytvoří.
+Testovací kostka byla z repa i z nasazeného artefaktu odstraněna.
