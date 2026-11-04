@@ -213,3 +213,34 @@ Dodržena pravidla `apps/website-v2.9/AGENTS.md` §2 (public copy): žádné int
 `/news/christmas-2026` 200 (text obsahuje 3 252, 619 498, „Jak to funguje", „Časté otázky"), oba bannery 200, `app.zionterranova.com` 200, `market/vanoce/*` 200.
 
 **Deploy poznámka:** `deploy-web2.9.sh --artifact-dir` selhal na `incomplete standalone artifact` — artifact potřebuje `node_modules/next` **uvnitř** app dir (workspace hoisting), což skript doplňuje jen v cestě bez `--artifact-dir`. Řešení: složit `node_modules`, `.next/static`, `public/`, `archive-content/` do `.next/standalone/apps/website-v2.9/` a volat `scripts/ops/deploy-next-artifact.sh` přímo.
+
+---
+
+## 11. Dodatek 5 — hero bez ořezu a původní obrázky na webu
+
+### Hero na detailu produktu byl uříznutý
+
+Hero box měl `aspect-[21/9]` **a** `max-h-[420px]`. Ultraširoký banner je 1983×793 = **2,5:1**, takže:
+- `21/9` (2,33) už sám ořezával,
+- a `max-h-[420px]` při 1280px kontejneru capoval výšku z 548 na 420 → poměr spadl na ~3:1 a `object-cover` ukrojil dalších ~20 % shora i zdola.
+
+**Fix:** `aspect-[5/2]` (přesně 2,5:1) pro produkty s `heroWide`, `aspect-[16/9]` pro ostatní (lampion), `max-h` zrušen.
+Ověřeno screenshotem: u Passu jsou vidět celé oblouky brány i knihovna, u knihy celá scéna s tesařem, obálkou, tabletem i dětmi.
+
+### Tři karty na webu měly cizí obrázky
+
+`apps/website-v2.9/src/components/ChristmasShopCards.tsx` — sekce „Vánoční edice v eShopu" na `app.zionterranova.com`:
+
+| Karta | Bylo | Je |
+|---|---|---|
+| ZION Pass | `kingdom-1200.webp` (obecná brána Kingdom) | `card-pass.webp` — brána s Passem |
+| Království srdce | `kralovstvi-srdce-1200.webp` (tesař) | `card-book.webp` — obálky + tablet |
+| Lampion | `images/home/christmas-kingdom.webp` (vánoční trh) | `card-lampion.webp` — tesař s dětmi a lampionem |
+
+Všechny tři jsou původní snímky 1672×941 z dodané sady. Zároveň:
+- štítek **„Připravujeme"** přesunut z pravého horního rohu dolů vpravo — nahoře se překrýval s dlouhým kickerem („VÁNOČNÍ EDICE · RUČNÍ VÝR…"),
+- text karty knihy srovnán s realitou: osm edic, 40 knih, 3 252 stran.
+
+### Ověřeno živě
+
+`market/vanoce/zion-pass` a `/kniha-kralovstvi-srdce` — bannery bez ořezu · `app.zionterranova.com` 200, tři `card-*.webp` 200 a v HTML · `news/christmas-2026` 200.
