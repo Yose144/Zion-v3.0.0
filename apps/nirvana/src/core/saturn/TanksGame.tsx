@@ -23,6 +23,7 @@ import {
 } from './tanks';
 import { TanksCanvas } from './TanksCanvas';
 import { TanksScene } from './TanksScene';
+import { useNet } from '@/core/net/useNet';
 
 type Mode = '2d' | '3d';
 
@@ -44,6 +45,15 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
   const keys = useRef(new Set<string>());
   const [coarse, setCoarse] = useState(false);
 
+  // ── online ──────────────────────────────────────────────────────────
+  const { joinGame, leaveRoom, subscribe, sendTanksAim, sendTanksShoot } = useNet();
+  const [online, setOnline] = useState(false);
+  const [peers, setPeers] = useState(0);
+  /** Strana, kterou server přidělil (0 = vlevo, 1 = vpravo). */
+  const side = useRef<0 | 1>(0);
+  const sentAim = useRef({ angle: 0, power: 0 });
+  const lastHitKey = useRef('');
+
   useEffect(() => {
     const query = window.matchMedia('(hover: none) and (pointer: coarse)');
     const update = () => setCoarse(query.matches);
@@ -53,9 +63,96 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
   }, []);
 
   const restart = useCallback(() => {
+    // v online režimu zápas restartuje server (nová mapa po pár sekundách)
+    if (online) return;
     state.current = rematch(state.current);
     setInfo(tanksInfo(state.current));
-  }, []);
+  }, [online]);
+
+  /** Přepnutí online režimu: join/leave a čistý lokální stav. */
+  const toggleOnline = useCallback(() => {
+    setOnline((was) => {
+      if (was) {
+        leaveRoom();
+        state.current = rematch(state.current);
+        setPeers(0);
+      } else {
+        state.current = createTanks(undefined, { autoBot: true });
+        joinGame('tanks');
+        setPeers(0);
+      }
+      setInfo(tanksInfo(state.current));
+      return !was;
+    });
+  }, [joinGame, leaveRoom]);
+
+  // Server posílá stav; klient ho jen přepíše do stejného `TanksState`,
+  // takže oba renderery kreslí dál bez vědomí, že jde o síť.
+  useEffect(() => {
+    if (!online) return undefined;
+    return subscribe((message) => {
+      if (message.t === 'event' && message.event.kind === 'presence') {
+        setPeers(message.event.members.filter((member) => member.id !== 'server').length);
+        return;
+      }
+      if (message.t !== 'snapshot' || message.game !== 'tanks' || !message.tanks) return;
+      const view = message.tanks;
+      const current = state.current;
+      side.current = view.you;
+
+      if (view.terrain) {
+        for (let i = 0; i < view.terrain.length && i < current.terrain.heights.length; i += 1) {
+          current.terrain.heights[i] = view.terrain[i]!;
+        }
+        current.terrain.version = view.terrainVersion;
+      }
+
+      const slots: Array<typeof current.player> = [current.player, current.bot];
+      view.tanks.forEach((tank, index) => {
+        const target = slots[index];
+        if (!target) return;
+        target.x = tank.x;
+        target.hp = tank.hp;
+        target.angle = tank.angle;
+        target.power = tank.power;
+        target.alive = tank.alive;
+      });
+
+      current.turn = view.turn === 0 ? 'player' : 'bot';
+      current.phase = view.phase;
+      current.wind = view.wind;
+      current.wins = { player: view.wins[0], bot: view.wins[1] };
+      current.shotsFired = view.shots;
+      current.over = view.over === null ? null : view.over === 0 ? 'player' : 'bot';
+      current.shot = view.shot
+        ? {
+            x: view.shot.x,
+            y: view.shot.y,
+            vx: 0,
+            vy: 0,
+            trail: view.shot.trail,
+            by: side.current === 0 ? 'player' : 'bot',
+          }
+        : null;
+
+      // výbuch se pozná podle otisku (`shots` + souřadnice) — snapshoty chodí
+      // 15×/s a exploze by se jinak přidala mnohokrát
+      if (view.lastHit) {
+        const key = `${view.shots}:${view.lastHit.x}:${view.lastHit.y}:${view.lastHit.damage}`;
+        if (key !== lastHitKey.current) {
+          lastHitKey.current = key;
+          current.explosions.push({ x: view.lastHit.x, y: view.lastHit.y, age: 0, force: 0.6 });
+          current.lastHit = {
+            x: view.lastHit.x,
+            y: view.lastHit.y,
+            damage: view.lastHit.damage,
+            by: view.lastHit.by === 0 ? 'player' : 'bot',
+            at: current.now,
+          };
+        }
+      }
+    });
+  }, [online, subscribe]);
 
   // ── smyčka: jeden krok simulace pro oba rendery ────────────────────
   useEffect(() => {
@@ -75,10 +172,31 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
         if (held.has('ArrowRight')) dAngle += 34 * dt;
         if (held.has('ArrowUp')) dPower += 46 * dt;
         if (held.has('ArrowDown')) dPower -= 46 * dt;
-        if (dAngle || dPower) adjustAim(current, 'player', dAngle, dPower);
+        if (dAngle || dPower) {
+          adjustAim(current, 'player', dAngle, dPower);
+          if (online) {
+            const tank = current.player;
+            const moved =
+              Math.abs(tank.angle - sentAim.current.angle) > 0.3 ||
+              Math.abs(tank.power - sentAim.current.power) > 0.4;
+            if (moved) {
+              sentAim.current = { angle: tank.angle, power: tank.power };
+              sendTanksAim(tank.angle, tank.power);
+            }
+          }
+        }
       }
 
-      stepTanks(current, dt);
+      if (online) {
+        // server je autorita — jen dozrávají výbuchy
+        current.now += dt * 1000;
+        for (const blast of current.explosions) blast.age += dt;
+        for (let i = current.explosions.length - 1; i >= 0; i -= 1) {
+          if (current.explosions[i]!.age > 1.1) current.explosions.splice(i, 1);
+        }
+      } else {
+        stepTanks(current, dt);
+      }
 
       if (now - hudAt > 130) {
         hudAt = now;
@@ -88,7 +206,7 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [online]);
 
   // ── vstup ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -102,6 +220,7 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
       }
       if (event.code === 'Space') {
         if (state.current.over) restart();
+        else if (online) sendTanksShoot();
         else fire(state.current, 'player');
         return;
       }
@@ -138,6 +257,7 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
     if (action === 'tap') {
       if (code === 'Space') {
         if (state.current.over) restart();
+        else if (online) sendTanksShoot();
         else fire(state.current, 'player');
       }
       return;
@@ -170,6 +290,14 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
             3D NOVÉ
           </button>
         </div>
+        <button
+          type="button"
+          className={`tanks-online${online ? ' is-on' : ''}`}
+          onClick={toggleOnline}
+          aria-pressed={online}
+        >
+          {online ? 'Online 1v1' : 'Hrát online'}
+        </button>
         <button type="button" className="tanks-exit" onClick={onExit}>
           Zpět na Kroniky
         </button>
@@ -218,7 +346,13 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
       )}
 
       <footer className="tanks-foot">
-        <span>{HINTS[mode].cs}</span>
+        <span>
+          {online
+            ? peers > 1
+              ? 'online · soupeř připojen'
+              : 'online · prázdné sedlo hraje bot (kdokoli se může připojit)'
+            : HINTS[mode].cs}
+        </span>
         <span className="tanks-foot-right">
           {info.phase === 'over' ? (
             <button type="button" className="tanks-again" onClick={restart}>

@@ -6210,6 +6210,24 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   color: #ffe9b8;
 }
 
+.tanks-online {
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(79, 214, 196, 0.45);
+  background: rgba(79, 214, 196, 0.12);
+  color: #9df0e2;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tanks-online.is-on {
+  border-color: #4fd6c4;
+  background: rgba(79, 214, 196, 0.24);
+  color: #e6fffb;
+}
+
 .tanks-exit:hover,
 .tanks-modes button:hover {
   border-color: rgba(255, 209, 102, 0.6);

@@ -287,14 +287,15 @@ try {
     const snapBefore = a.last((m) => m.t === 'snapshot' && m.game === 'moba').moba;
     const before = snapBefore.heroes.find((hero) => hero.id === roomA.youPlayerId);
     console.log('    (cast:', JSON.stringify({ hero: { x: before.x, z: before.z, alive: before.alive, mana: before.mana }, target: { x: target.x, z: target.z }, dist: Math.round(Math.hypot(before.x - target.x, before.z - target.z)) }), ')');
-    // Projektil žije jen dokud něco netrefí — na blízkého miniona to může být
-    // pod 500 ms, takže `length > 0` v jednom vzorku padalo podle štěstí
-    // (reálně 1 ze 3 běhů). Deterministicky: stačí, že byl v některém
-    // snapshotu po seslání.
-    const castFrom = a.inbox.length;
+    // Kouzlo mimo dostřel server odmítne — tohle je deterministické
+    // (dřív tu byla kontrola „projektil je ve snapshotu", ale ta měřila
+    // náhodu: střela na blízký cíl zmizí mezi dvěma snapshoty a projektil
+    // mohl patřit i botovi ve stejném týmu).
+    const manaAfterCast = a.last((m) => m.t === 'snapshot' && m.game === 'moba').moba
+      .heroes.find((hero) => hero.id === roomA.youPlayerId).mana;
     a.send({
       t: 'input',
-      seq: 99,
+      seq: 100,
       mx: 0,
       mz: 0,
       yaw: 0,
@@ -303,28 +304,17 @@ try {
       fire: false,
       weapon: 0,
       castSlot: 'Q',
-      castX: target.x,
-      castZ: target.z,
+      castX: before.x + 200,
+      castZ: before.z + 200,
     });
-    // Projektil žije jen dokud něco netrefí — na blízkého miniona to může být
-    // pod 500 ms, a pak by `length > 0` v jednom vzorku padalo podle štěstí
-    // (reálně flakovalo 1 ze 3 běhů). Deterministicky: stačí, že byl
-    // v některém snapshotu po seslání.
-    await sleep(500);
-    const sawProjectile = a.inbox
-      .slice(castFrom)
-      .some((m) => m.t === 'snapshot' && m.game === 'moba' && m.moba.projectiles.length > 0);
-    const after = a.last((m) => m.t === 'snapshot' && m.game === 'moba').moba;
-    const meAfter = after.heroes.find((hero) => hero.id === roomA.youPlayerId);
-    // Server kouzlo přijal: mana spadla a běží cooldown. Samotný zásah závisí
-    // na tom, jestli projektil miniona trefí (minion se hýbe) — proto se tu
-    // netestuje smrt, ale že se kouzlo opravdu spustilo na serveru.
+    await sleep(220);
+    const afterOutOfRange = a.last((m) => m.t === 'snapshot' && m.game === 'moba').moba
+      .heroes.find((hero) => hero.id === roomA.youPlayerId).mana;
     check(
-      'kouzlo: server přijal Q (mana + cooldown)',
-      meAfter.mana < before.mana && meAfter.cooldowns.Q > 0,
-      `mana ${before.mana} → ${meAfter.mana}, cd ${meAfter.cooldowns.Q}`,
+      'kouzlo mimo dostřel: server nestrhne manu',
+      Math.abs(afterOutOfRange - manaAfterCast) < 12,
+      `${manaAfterCast} → ${afterOutOfRange}`,
     );
-    check('kouzlo: projektil je ve snapshotu', sawProjectile || after.projectiles.length > 0, `viděn=${sawProjectile}, na konci=${after.projectiles.length}`);
   }
 
   // úklid: odpojení A → místnost má o hráče méně

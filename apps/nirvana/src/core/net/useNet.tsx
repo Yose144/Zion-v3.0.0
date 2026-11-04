@@ -52,13 +52,17 @@ export interface NetApi {
   roomId: string | null;
   joinArena: () => void;
   /** Připojení do hry (`arena` = Mars, `race` = Venuše, `fight` = Merkur). */
-  joinGame: (game: 'arena' | 'race' | 'fight' | 'moba', heroId?: number, battleSpell?: BattleSpellId) => void;
+  joinGame: (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', heroId?: number, battleSpell?: BattleSpellId) => void;
   /**
    * MOBA: kouzlo na bod + držený útok.
    * Vrací `true`, když se zpráva opravdu poslala — kouzlo se nesmí ztratit
    * jen proto, že ho zrovna zahodil throttle (20 Hz).
    */
   sendMobaInput: (input: { moveX: number; moveZ: number; attack: boolean; cast: { slot: 'Q' | 'W' | 'E' | 'R'; x: number; z: number } | null }) => boolean;
+  /** Tanky: mířidlo (absolutní úhel/síla). Server ho přijme jen na tvém tahu. */
+  sendTanksAim: (angle: number, power: number) => void;
+  /** Tanky: výstřel. */
+  sendTanksShoot: () => void;
   /** MOBA: nákup itemu (server rozhodne, jestli na něj je zlato). */
   sendBuy: (item: ItemId) => void;
   /** MOBA: prodej itemu (server vrátí 60 % ceny). */
@@ -303,7 +307,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const joinGame = useCallback(
-    (game: 'arena' | 'race' | 'fight' | 'moba', heroId?: number, battleSpell?: BattleSpellId) => {
+    (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', heroId?: number, battleSpell?: BattleSpellId) => {
       send({ t: 'join', game, heroId, battleSpell });
     },
     [send],
@@ -360,6 +364,20 @@ export function NetProvider({ children }: { children: ReactNode }) {
         castZ: input.cast ? Math.round(input.cast.z * 100) / 100 : undefined,
       });
       return true;
+    },
+    [send],
+  );
+
+  const sendTanksAim = useCallback<NetApi['sendTanksAim']>(
+    (angle, power) => {
+      send({ t: 'aim', angle, power });
+    },
+    [send],
+  );
+
+  const sendTanksShoot = useCallback<NetApi['sendTanksShoot']>(
+    () => {
+      send({ t: 'shoot' });
     },
     [send],
   );
@@ -460,6 +478,8 @@ export function NetProvider({ children }: { children: ReactNode }) {
       sendBattleSpell,
       sendRecall,
       sendEmote,
+      sendTanksAim,
+      sendTanksShoot,
       sendBuyback,
       sendUseItem,
       sendTalent,
@@ -488,6 +508,8 @@ export function NetProvider({ children }: { children: ReactNode }) {
       sendBattleSpell,
       sendRecall,
       sendEmote,
+      sendTanksAim,
+      sendTanksShoot,
       sendBuyback,
       sendUseItem,
       sendTalent,

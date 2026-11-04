@@ -59,8 +59,11 @@ const asItemId = (value: unknown): ItemId | null =>
  *      u hrdiny. Starý klient by v multiplayeru vždy dostal Flicker.
  * 20 — **emotes**: zpráva `emote` a event `emote` (bublina nad hrdinou).
  *      Starý klient by emote neuměl poslat ani zobrazit.
+ * 21 — **tanky (Saturn)**: nové `GameId 'tanks'`, zprávy `aim`/`shoot`
+ *      a `tanks` ve snapshotu. Starý server by join do `tanks` neuměl a
+ *      klient by skončil v chybě.
  */
-export const PROTO_VERSION = 20;
+export const PROTO_VERSION = 21;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -84,7 +87,7 @@ export const CHAT_HISTORY_LEN = 200;
 export const HEARTBEAT_MS = 20_000;
 export const IDLE_TIMEOUT_MS = 60_000;
 
-export type GameId = 'arena' | 'race' | 'fight' | 'moba';
+export type GameId = 'arena' | 'race' | 'fight' | 'moba' | 'tanks';
 /** `guest` = bez ZIS (hraje, ale nepíše), `zis` = ověřený uživatel. */
 export type Role = 'guest' | 'zis';
 export type RoomState = 'waiting' | 'running' | 'ended';
@@ -197,6 +200,38 @@ export interface FightPlayerState {
   attack: { kind: 'punch' | 'kick'; elapsed: number } | null;
 }
 
+/** Saturn — tanky: strana 0 = levý hráč, 1 = pravý (dřív bot). */
+export type TankSideId = 0 | 1;
+
+export interface TanksViewTank {
+  side: TankSideId;
+  x: number;
+  hp: number;
+  angle: number;
+  power: number;
+  alive: boolean;
+}
+
+/**
+ * Snapshot tanků. `terrain` se posílá **jen když se změnil** (kráter) —
+ * 161 výšek při 15 Hz by jinak byl zbytečný provoz.
+ */
+export interface TanksView {
+  you: TankSideId;
+  turn: TankSideId;
+  phase: 'aim' | 'flight' | 'resolve' | 'over';
+  wind: number;
+  tanks: [TanksViewTank, TanksViewTank];
+  shot: { x: number; y: number; trail: number[] } | null;
+  lastHit: { x: number; y: number; damage: number; by: TankSideId } | null;
+  wins: [number, number];
+  shots: number;
+  over: TankSideId | null;
+  terrainVersion: number;
+  /** Jen při změně terénu (jinak `null`). */
+  terrain: number[] | null;
+}
+
 export type SnapshotPlayer = ArenaPlayerState | RacePlayerState | FightPlayerState;
 
 /** Raketa ve snapshotu (pohybuje se jen server). */
@@ -289,6 +324,10 @@ export type ClientMessage =
   | { t: 'recall' }
   /** MOBA: emote (0–3) — bublina nad hrdinou pro celý tým/soupeře. */
   | { t: 'emote'; id: number }
+  /** Tanky: nastavení mířidla (absolutní hodnoty, server validuje rozsah). */
+  | { t: 'aim'; angle: number; power: number }
+  /** Tanky: výstřel — platí jen ve fázi `aim` a na tahu. */
+  | { t: 'shoot' }
   | { t: 'leave' }
   | {
       t: 'input';
@@ -359,6 +398,8 @@ export type ServerMessage =
       round?: number;
       /** MOBA (První svět): celý stav hry — hrdinové, věže, uzly, efekty. */
       moba?: MobaSnapshot;
+      /** Saturn — tanky (artilerie 1v1). */
+      tanks?: TanksView;
     }
   | { t: 'event'; event: EventPayload }
   | { t: 'pong'; at: number; serverTime: number }
@@ -407,14 +448,15 @@ export function parseClientMessage(raw: string): ClientMessage | null {
     case 'join':
       return {
         t: 'join',
+        // neznámá hra nesmí tiše skončit v aréně — buď je v seznamu, nebo join propadne
         game:
-          message.game === 'race'
-            ? 'race'
-            : message.game === 'fight'
-              ? 'fight'
-              : message.game === 'moba'
-                ? 'moba'
-                : 'arena',
+          message.game === 'race' ||
+          message.game === 'fight' ||
+          message.game === 'moba' ||
+          message.game === 'tanks' ||
+          message.game === 'arena'
+            ? (message.game as GameId)
+            : 'arena',
         room: typeof message.room === 'string' ? message.room.slice(0, 32) : undefined,
         heroId: typeof message.heroId === 'number' ? num(message.heroId, 0, 202) : undefined,
         battleSpell:
@@ -425,6 +467,16 @@ export function parseClientMessage(raw: string): ClientMessage | null {
 
     case 'leave':
       return { t: 'leave' };
+
+    case 'aim':
+      return {
+        t: 'aim',
+        angle: num(message.angle, 0, 90),
+        power: num(message.power, 0, 100),
+      };
+
+    case 'shoot':
+      return { t: 'shoot' };
 
     case 'input':
       return {

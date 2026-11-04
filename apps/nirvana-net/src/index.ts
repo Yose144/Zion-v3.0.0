@@ -51,52 +51,9 @@ import {
   type ServerMessage,
 } from '../../nirvana/src/core/net/protocol.js';
 import type { BattleSpellId } from '../../nirvana/src/core/moba/sim.js';
-import {
-  addMobaSeat,
-  buyMobaItem,
-  createMobaRoom,
-  mobaBuyback,
-  mobaRoomSnapshot,
-  pickMobaTalent,
-  placeMobaSentry,
-  placeMobaWard,
-  removeMobaSeat,
-  sellMobaItem,
-  setMobaInput,
-  startMobaRecall,
-  useMobaBattleSpell,
-  useMobaItem,
-  stepMobaRoom,
-  MOBA_ROOM_SIZE,
-  type MobaRoomSim,
-} from './moba.js';
-import {
-  addPlayer,
-  arenaSnapshot,
-  createArena,
-  removePlayer,
-  setInput,
-  stepArena,
-  type ArenaSim,
-} from './arena.js';
-import {
-  addRacePlayer,
-  createRace,
-  raceSnapshot,
-  removeRacePlayer,
-  setRaceInput,
-  stepRace,
-  type RaceSim,
-} from './race.js';
-import {
-  addFightPlayer,
-  createFight,
-  fightSnapshot,
-  removeFightPlayer,
-  setFightInput,
-  stepFight,
-  type FightRoomSim,
-} from './fight.js';
+import { createMatch } from './matches.js';
+import type { Match } from './match.js';
+import { MOBA_ROOM_SIZE } from './moba.js';
 import { identityCacheSize, resolveIdentity } from './zis.js';
 
 const SERVICE = 'zion-nirvana-net';
@@ -136,20 +93,18 @@ interface Conn {
   lastSeen: number;
 }
 
+/**
+ * Místnost = hráči + **jedna** hra. Dřív tu byly čtyři volitelné simulace
+ * (`arena | race | fight | moba`) a každá větev se rozšiřovala na čtyřech
+ * místech; dnes všechno prochází kontraktem `Match` (`match.ts`).
+ */
 interface Room {
   id: string;
   game: GameId;
   state: RoomState;
   createdAt: number;
   players: Map<string, Conn>;
-  /** Aréna má serverovou simulaci; chat místnost ne. */
-  arena: ArenaSim | null;
-  /** Venuše má simulaci závodu. */
-  race: RaceSim | null;
-  /** Merkur má duel (best of 3). */
-  fight: FightRoomSim | null;
-  /** První svět má MOBA zápas (2v2). */
-  moba: MobaRoomSim | null;
+  match: Match;
 }
 
 const rooms = new Map<string, Room>();
@@ -192,6 +147,7 @@ function summary(identity: NetIdentity): PlayerSummary {
 function capOf(game: GameId): number {
   if (game === 'fight') return FIGHT_ROOM_SIZE;
   if (game === 'moba') return MOBA_ROOM_SIZE;
+  if (game === 'tanks') return 2;
   return MAX_PLAYERS;
 }
 
@@ -359,10 +315,7 @@ function createRoom(game: GameId): Room {
     state: 'waiting',
     createdAt: Date.now(),
     players: new Map(),
-    arena: game === 'arena' ? createArena(Date.now()) : null,
-    race: game === 'race' ? createRace(Date.now()) : null,
-    fight: game === 'fight' ? createFight(Date.now()) : null,
-    moba: game === 'moba' ? createMobaRoom(Date.now()) : null,
+    match: createMatch(game, Date.now()),
   };
   rooms.set(room.id, room);
   log(`room created id=${room.id} total=${rooms.size}`);
@@ -375,10 +328,7 @@ function leaveRoom(conn: Conn, reason: string): void {
 
   const channel = `arena:${room.id}`;
   conn.room = null;
-  if (room.arena) removePlayer(room.arena, conn.id);
-  if (room.race) removeRacePlayer(room.race, conn.id);
-  if (room.fight) removeFightPlayer(room.fight, conn.id);
-  if (room.moba) removeMobaSeat(room.moba, conn.id);
+  room.match.leave(conn.id);
   room.players.delete(conn.id);
   log(`leave room=${room.id} id=${conn.identity.id} reason=${reason} players=${room.players.size}`);
 
@@ -429,16 +379,18 @@ function joinRoom(conn: Conn, game: GameId, wanted?: string, heroId?: number, ba
 
   room.players.set(conn.id, conn);
   conn.room = room;
-  if (room.arena) addPlayer(room.arena, conn.id, conn.identity.name, conn.identity.avatarId, Date.now());
-  if (room.race) addRacePlayer(room.race, conn.id, conn.identity.name, conn.identity.avatarId, Date.now());
-  if (room.fight) addFightPlayer(room.fight, conn.id, conn.identity.name, conn.identity.avatarId, Date.now());
-  if (room.moba) addMobaSeat(room.moba, conn.id, heroId ?? conn.identity.avatarId ?? 0, Date.now(), battleSpell);
+  room.match.join(conn.id, {
+    name: conn.identity.name,
+    avatarId: conn.identity.avatarId ?? undefined,
+    heroId,
+    battleSpell,
+  });
 
   send(conn, {
     t: 'room',
     room: roomInfo(room),
     occupants: [...room.players.values()].map((player) => summary(player.identity)),
-    youPlayerId: room.arena || room.race || room.fight || room.moba ? conn.id : undefined,
+    youPlayerId: conn.id,
     // spawn posílá server až ve snapshotech; klient si drží vlastní predikci
     spawn: null,
     history: [...historyOf(`arena:${room.id}`)],
@@ -495,149 +447,16 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
       leaveRoom(conn, 'leave');
       return;
 
-    case 'buy': {
-      const room = conn.room;
-      if (!room) {
+    // Všechno herní (`input`, `buy`, `ward`, `shoot`, …) jde do hry samotné.
+    // Když ji zpráva nezná, vrátí `false` a my odpovíme chybou — takže nová
+    // hra nemusí sahat do `index.ts`.
+    default: {
+      if (!conn.room) {
         sendError(conn, 'not_in_room');
         return;
       }
-      if (!room.moba) {
-        sendError(conn, 'not_available');
-        return;
-      }
-      buyMobaItem(room.moba, conn.id, message.item);
-      return;
-    }
-
-    case 'sell': {
-      const room = conn.room;
-      if (!room) {
-        sendError(conn, 'not_in_room');
-        return;
-      }
-      if (!room.moba) {
-        sendError(conn, 'not_available');
-        return;
-      }
-      sellMobaItem(room.moba, conn.id, message.item);
-      return;
-    }
-
-    case 'ward': {
-      const room = conn.room;
-      if (!room?.moba) {
-        sendError(conn, room ? 'not_available' : 'not_in_room');
-        return;
-      }
-      placeMobaWard(room.moba, conn.id, message.x, message.z);
-      return;
-    }
-
-    case 'recall': {
-      const room = conn.room;
-      if (!room?.moba) {
-        sendError(conn, room ? 'not_available' : 'not_in_room');
-        return;
-      }
-      startMobaRecall(room.moba, conn.id);
-      return;
-    }
-
-    case 'battlespell': {
-      const room = conn.room;
-      if (!room?.moba) {
-        sendError(conn, room ? 'not_available' : 'not_in_room');
-        return;
-      }
-      useMobaBattleSpell(room.moba, conn.id, message.x, message.z);
-      return;
-    }
-
-    case 'sentry': {
-      const room = conn.room;
-      if (!room?.moba) {
-        sendError(conn, room ? 'not_available' : 'not_in_room');
-        return;
-      }
-      placeMobaSentry(room.moba, conn.id, message.x, message.z);
-      return;
-    }
-
-    case 'talent': {
-      const room = conn.room;
-      if (!room?.moba) {
-        sendError(conn, room ? 'not_available' : 'not_in_room');
-        return;
-      }
-      pickMobaTalent(room.moba, conn.id, message.tier, message.pick);
-      return;
-    }
-
-    case 'use': {
-      const room = conn.room;
-      if (!room?.moba) {
-        sendError(conn, room ? 'not_available' : 'not_in_room');
-        return;
-      }
-      useMobaItem(room.moba, conn.id, message.item, message.x ?? 0, message.z ?? 0);
-      return;
-    }
-
-    case 'buyback': {
-      const room = conn.room;
-      if (!room?.moba) {
-        sendError(conn, room ? 'not_available' : 'not_in_room');
-        return;
-      }
-      mobaBuyback(room.moba, conn.id);
-      return;
-    }
-
-    case 'input': {
-      const another = conn.room;
-      if (!another) {
-        sendError(conn, 'not_in_room');
-        return;
-      }
-      if (another.arena) {
-        setInput(another.arena, conn.id, {
-          forward: message.mz,
-          strafe: message.mx,
-          yaw: message.yaw,
-          pitch: message.pitch,
-          jump: message.jump,
-          fire: message.fire,
-          weapon: message.weapon === 1 ? 'rocket' : 'rail',
-        });
-        return;
-      }
-      if (another.moba) {
-        // MOBA: `mx`/`mz` pohyb, `castSlot`+`castX/Z` kouzlo, `attack` útok
-        setMobaInput(another.moba, conn.id, {
-          moveX: message.mx,
-          moveZ: message.mz,
-          cast: message.castSlot ? { slot: message.castSlot, x: message.castX ?? 0, z: message.castZ ?? 0 } : null,
-          attack: message.attack === true,
-        });
-        return;
-      }
-      if (another.race) {
-        // u závodu je `mz` plyn a `mx` zatáčení (stejná konvence jako sólo)
-        setRaceInput(another.race, conn.id, { throttle: message.mz, steer: message.mx });
-        return;
-      }
-      if (another.fight) {
-        // duel: `mx` = pohyb podél ose, `fire` + `weapon` volí úder (0 pěst, 1 kop), `block` blok
-        setFightInput(another.fight, conn.id, {
-          move: message.mx,
-          jump: message.jump,
-          punch: message.fire && message.weapon === 0,
-          kick: message.fire && message.weapon === 1,
-          block: message.block === true,
-        });
-        return;
-      }
-      sendError(conn, 'not_in_room');
+      if (conn.room.match.message(conn.id, message)) return;
+      sendError(conn, 'not_available');
       return;
     }
 
@@ -646,8 +465,9 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
       return;
 
     case 'emote': {
-      if (!conn.room?.moba) {
-        sendError(conn, conn.room ? 'not_available' : 'not_in_room');
+      // Emote je obecný: funguje v každé místnosti, ne jen v MOBA.
+      if (!conn.room) {
+        sendError(conn, 'not_in_room');
         return;
       }
       broadcastChannel(channelOf(conn), {
@@ -861,105 +681,35 @@ let tickCount = 0;
 const gameLoop = setInterval(() => {
   const now = Date.now();
   tickCount += 1;
+  const withSnapshot = tickCount % SNAPSHOT_EVERY === 0;
 
   for (const room of rooms.values()) {
-    if (room.fight && room.players.size > 0) {
-      const events = stepFight(room.fight, TICK_MS / 1000, now);
-      room.state =
-        room.fight.duel.phase === 'fighting'
-          ? 'running'
-          : room.fight.duel.phase === 'matchEnd'
-            ? 'ended'
-            : 'waiting';
-      for (const event of events) {
-        broadcastChannel(`arena:${room.id}`, { t: 'event', event: event as never });
-      }
-      if (tickCount % SNAPSHOT_EVERY === 0) {
-        const snapshot = fightSnapshot(room.fight, now);
-        broadcastChannel(`arena:${room.id}`, {
-          t: 'snapshot',
-          game: 'fight',
-          seq: room.fight.seq,
-          time: now,
-          ...snapshot,
-        });
-      }
-      continue;
-    }
+    if (room.players.size === 0) continue;
 
-    if (room.moba) {
-      stepMobaRoom(room.moba, TICK_MS / 1000, now);
-      room.state =
-        room.moba.phase === 'running' ? 'running' : room.moba.phase === 'ended' ? 'ended' : 'waiting';
-      if (tickCount % SNAPSHOT_EVERY === 0) {
-        // **Mlha války:** každý tým dostane jiný snapshot. Skládá se jednou
-        // na tým (ne na hráče) — 5v5 by jinak stavělo 10 snapshotů za tick.
-        const channel = `arena:${room.id}`;
-        const byTeam = new Map<string, Conn[]>();
-        for (const conn of membersOf(channel)) {
-          const seat = room.moba.seats.get(conn.id);
-          const key = seat?.team ?? '*';
-          const list = byTeam.get(key) ?? [];
-          list.push(conn);
-          byTeam.set(key, list);
-        }
-        for (const [key, conns] of byTeam) {
-          const viewerTeam = key === '*' ? undefined : (key as 'blue' | 'red');
-          const snapshot = mobaRoomSnapshot(room.moba, now, viewerTeam);
-          const message: ServerMessage = {
-            t: 'snapshot',
-            game: 'moba',
-            seq: room.moba.seq,
-            time: now,
-            players: [],
-            moba: snapshot.moba,
-            countdown: snapshot.countdown,
-            state:
-              snapshot.phase === 'running' ? 'running' : snapshot.phase === 'ended' ? 'ended' : 'countdown',
-          };
-          for (const conn of conns) send(conn, message);
-        }
-      }
-      continue;
-    }
+    // 1) simulace + eventy (každá hra si je posílá sama přes `ctx.emit`)
+    const channel = `arena:${room.id}`;
+    room.match.step(TICK_MS / 1000, {
+      now,
+      emit: (event) => broadcastChannel(channel, { t: 'event', event: event as never }),
+      system: (text) => {
+        const line: ChatLine = {
+          id: `s_${randomBytes(4).toString('hex')}`,
+          name: 'server',
+          role: 'zis',
+          text,
+          at: now,
+        };
+        pushLine(channel, line);
+        broadcastChannel(channel, { t: 'event', event: { kind: 'chat', ...line } });
+      },
+    });
+    room.state = room.match.state();
 
-    if (room.race && room.players.size > 0) {
-      const events = stepRace(room.race, TICK_MS / 1000, now);
-      room.state = room.race.phase === 'running' ? 'running' : room.race.phase === 'ended' ? 'ended' : 'waiting';
-      for (const event of events) {
-        broadcastChannel(`arena:${room.id}`, { t: 'event', event });
-      }
-      if (tickCount % SNAPSHOT_EVERY === 0) {
-        const snapshot = raceSnapshot(room.race, now);
-        broadcastChannel(`arena:${room.id}`, {
-          t: 'snapshot',
-          game: 'race',
-          seq: room.race.seq,
-          time: now,
-          ...snapshot,
-        });
-      }
-      continue;
-    }
-
-    const arena = room.arena;
-    if (!arena || room.players.size === 0) continue;
-
-    const events = stepArena(arena, TICK_MS / 1000, now);
-    room.state = arena.state === 'running' ? 'running' : 'ended';
-    for (const event of events) {
-      broadcastChannel(`arena:${room.id}`, { t: 'event', event });
-    }
-
-    if (tickCount % SNAPSHOT_EVERY === 0) {
-      const snapshot = arenaSnapshot(arena, now);
-      broadcastChannel(`arena:${room.id}`, {
-        t: 'snapshot',
-        game: 'arena',
-        seq: arena.seq,
-        time: now,
-        ...snapshot,
-      });
+    // 2) snapshoty — každý hráč dostane **svůj** (mlha války, skryté ruce)
+    if (!withSnapshot) continue;
+    for (const conn of room.players.values()) {
+      const message = room.match.snapshot(conn.id, now);
+      if (message) send(conn, message);
     }
   }
 }, TICK_MS);

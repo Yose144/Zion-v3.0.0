@@ -107,6 +107,11 @@ export interface TanksState {
   lastHit: LastHit | null;
   shotsFired: number;
   seed: number;
+  /**
+   * Kdo hraje pravou stranu. Sólo: `true` (bot). Online: `false`, když sedí
+   * člověk — jinak by bot střílel za něj.
+   */
+  autoBot: boolean;
 }
 
 // ── pomocné ────────────────────────────────────────────────────────────
@@ -197,7 +202,10 @@ function speedFor(power: number): number {
 
 // ── stav hry ───────────────────────────────────────────────────────────
 
-export function createTanks(seed = Math.floor(Math.random() * 1e9)): TanksState {
+export function createTanks(
+  seed = Math.floor(Math.random() * 1e9),
+  options: { autoBot?: boolean } = {},
+): TanksState {
   const terrain = makeTerrain(seed);
   const player = makeTank('player', WORLD_W * 0.12, terrain);
   const bot = makeTank('bot', WORLD_W * 0.88, terrain);
@@ -218,12 +226,13 @@ export function createTanks(seed = Math.floor(Math.random() * 1e9)): TanksState 
     lastHit: null,
     shotsFired: 0,
     seed,
+    autoBot: options.autoBot ?? true,
   };
 }
 
 /** Nové kolo na nové mapě, skóre zůstává. */
 export function rematch(state: TanksState, seed = Math.floor(Math.random() * 1e9)): TanksState {
-  const next = createTanks(seed);
+  const next = createTanks(seed, { autoBot: state.autoBot });
   next.wins = { ...state.wins };
   return next;
 }
@@ -399,7 +408,7 @@ export function stepTanks(state: TanksState, dt: number): void {
     return;
   }
 
-  if (state.phase === 'aim' && state.turn === 'bot' && !state.over) {
+  if (state.phase === 'aim' && state.turn === 'bot' && state.autoBot && !state.over) {
     state.waitMs -= step * 1000;
     if (state.waitMs <= 0) {
       const aim = botAim(state);
