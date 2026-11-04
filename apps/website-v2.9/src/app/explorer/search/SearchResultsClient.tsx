@@ -49,6 +49,7 @@ export default function SearchResultsClient() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'block' | 'transaction' | 'address'>('all');
 
   const fetchResults = useCallback(async () => {
@@ -58,11 +59,13 @@ export default function SearchResultsClient() {
     }
     setLoading(true);
     setError(null);
+    setHint(null);
     try {
-      const res = await apiClient<{ query: string; results: SearchResult[] }>(
+      const res = await apiClient<{ query: string; results: SearchResult[]; hint?: string }>(
         `/blockchain/search?q=${encodeURIComponent(query)}`
       );
       setResults(res?.results ?? []);
+      setHint(res?.hint ?? null);
     } catch (e) {
       setError(ExplorerSearchSearchResultsClientCopy.searchError[cs ? 'cs' : 'en']);
     } finally {
@@ -180,8 +183,14 @@ export default function SearchResultsClient() {
               <Search className="h-10 w-10 text-gray-600" />
               <p className="text-gray-400">{ExplorerSearchSearchResultsClientCopy.nothingFound[cs ? 'cs' : 'en']}</p>
               <p className="text-xs text-gray-600 max-w-md text-center">
-                {ExplorerSearchSearchResultsClientCopy.trySearchingByBlockHeightTrans[cs ? 'cs' : 'en']}
+                {hint || ExplorerSearchSearchResultsClientCopy.trySearchingByBlockHeightTrans[cs ? 'cs' : 'en']}
               </p>
+            </div>
+          )}
+
+          {!loading && !error && results.length > 0 && hint && (
+            <div className="mb-4 rounded-2xl border border-zion-gold/20 bg-zion-gold/5 px-4 py-3 text-xs text-zion-gold/80">
+              {hint}
             </div>
           )}
 

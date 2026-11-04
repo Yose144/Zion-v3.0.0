@@ -9,6 +9,10 @@
  *
  * Returns all matching results so the frontend can present them
  * in a disambiguation / results page.
+ *
+ * Truncated pastes ("zion1abc…def") are reported explicitly instead of being
+ * silently treated as a block hash — that used to route users to
+ * /explorer/block?id=zion1… and show an unrelated "block not found" page.
  */
 
 export const dynamic = 'force-dynamic';
@@ -24,12 +28,43 @@ interface SearchResult {
   data?: Record<string, unknown>;
 }
 
+const ZION_ADDRESS_RE = /^zion1[0-9a-z]{30,64}$/i;
+const ACCOUNT_ADDRESS_RE = /^[A-Za-z][A-Za-z0-9]{30,70}$/;
+
 export async function GET(request: NextRequest) {
   const rpc = getZionRpc();
-  const q = (request.nextUrl.searchParams.get('q') || request.nextUrl.searchParams.get('query') || '').trim();
+  const rawQuery = (request.nextUrl.searchParams.get('q') || request.nextUrl.searchParams.get('query') || '').trim();
 
-  if (!q) {
+  if (!rawQuery) {
     return NextResponse.json({ query: '', results: [] });
+  }
+
+  // Normalise "zion1abc…def" / "zion1abc...def" — keep the trimmed text for
+  // display, resolve against the sanitised value when it is unambiguous.
+  const isTruncatedAddress = /^zion1[0-9a-z]+[…]/i.test(rawQuery) || /^zion1[0-9a-z]+\.{2,}/i.test(rawQuery);
+  if (isTruncatedAddress) {
+    return NextResponse.json(
+      {
+        query: rawQuery,
+        results: [],
+        code: 'truncated_address',
+        hint: 'Adresa je zkrácená (obsahuje „…"). Zkopíruj celou adresu z peněženky nebo z exploreru.',
+      },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
+
+  const q = rawQuery.replace(/[\s]/g, '');
+  if (/[…]/.test(q) || q.includes('...')) {
+    return NextResponse.json(
+      {
+        query: rawQuery,
+        results: [],
+        code: 'invalid_query',
+        hint: 'Hledaný výraz obsahuje výpustku. Vlož celý hash nebo celou adresu.',
+      },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
   }
 
   const results: SearchResult[] = [];
@@ -84,20 +119,22 @@ export async function GET(request: NextRequest) {
     } catch { /* not found */ }
   }
 
-  // 4) Address (zion1... or Z... prefix)
-  if (/^(zion|ZION|Z)[a-zA-Z0-9]{40,}$/i.test(q)) {
+  // 4) Address (zion1... or legacy Z... prefix). Pure hex strings are block/tx
+  //    hashes, never addresses — don't burn an RPC call on them.
+  const looksLikeAddress = ZION_ADDRESS_RE.test(q)
+    || (ACCOUNT_ADDRESS_RE.test(q) && !/^[a-fA-F0-9]{40,}$/.test(q));
+  if (looksLikeAddress) {
     try {
-      const info = await rpc.getWalletSnapshot(q);
-      if (info) {
-        const balanceZion = info.balance_zion ?? 0;
-        results.push({
-          type: 'address',
-          href: `/explorer/address?addr=${encodeURIComponent(q)}`,
-          title: `Address ${q.slice(0, 12)}…${q.slice(-8)}`,
-          meta: `Balance: ${balanceZion.toLocaleString(undefined, { maximumFractionDigits: 6 })} ZION`,
-          data: { address: q, balance: balanceZion, tx_count: info.utxo_count },
-        });
-      }
+      // Totals-only read: `getAddressBalance` pages getUtxos (limit 0), so a
+      // 130k-UTXO payout wallet costs ~2 ms instead of a 27 MB payload.
+      const balance = await rpc.getAddressBalance(q);
+      results.push({
+        type: 'address',
+        href: `/explorer/address?addr=${encodeURIComponent(q)}`,
+        title: `Address ${q.slice(0, 12)}…${q.slice(-8)}`,
+        meta: `Balance: ${balance.balance_zion.toLocaleString(undefined, { maximumFractionDigits: 6 })} ZION`,
+        data: { address: q, balance: balance.balance_zion, tx_count: balance.utxo_count },
+      });
     } catch { /* not found */ }
   }
 
@@ -109,7 +146,14 @@ export async function GET(request: NextRequest) {
     return true;
   });
 
-  return NextResponse.json({ query: q, results: unique }, {
+  const payload: Record<string, unknown> = { query: q, results: unique };
+  if (unique.length === 0) {
+    payload.hint = /^zion1/i.test(q)
+      ? 'Adresa nebyla nalezena nebo nemá žádné UTXO v této síti.'
+      : 'Nic nenalezeno. Zadej výšku bloku, hash transakce/bloku nebo celou ZION adresu.';
+  }
+
+  return NextResponse.json(payload, {
     headers: { 'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=15' },
   });
 }

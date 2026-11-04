@@ -42,6 +42,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Transaction hash required (?hash=<txid>)' }, { status: 400 });
     }
 
+    // A tx id is 64 hex chars. Anything else is a client error, not an
+    // upstream failure — returning 503 here made the UI retry and log it.
+    if (!/^[a-f0-9]{64}$/.test(txHash)) {
+      return NextResponse.json(
+        {
+          error: 'Invalid transaction hash',
+          hint: 'Hash transakce má 64 hex znaků.',
+          code: 'invalid_tx_hash',
+          tx_hash: txHash,
+        },
+        { status: 400 },
+      );
+    }
+
     // Fetch TX via RPC — getTransactions handles the V3 getTransaction call
     const txs = await rpc.getTransactions([txHash]);
     if (txs.length === 0) {

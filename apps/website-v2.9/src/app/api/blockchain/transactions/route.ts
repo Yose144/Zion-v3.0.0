@@ -57,6 +57,17 @@ export async function GET(request: NextRequest) {
 
     // ── Single TX lookup by hash ──
     if (txHash) {
+      if (!/^[a-f0-9]{64}$/.test(txHash)) {
+        return NextResponse.json(
+          {
+            error: 'Invalid transaction hash',
+            hint: 'Hash transakce má 64 hex znaků.',
+            code: 'invalid_tx_hash',
+            tx_hash: txHash,
+          },
+          { status: 400 },
+        );
+      }
       try {
         const txs = await rpc.getTransactions([txHash]);
         if (txs.length > 0) {

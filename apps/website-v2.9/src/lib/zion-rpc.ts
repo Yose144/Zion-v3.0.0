@@ -220,6 +220,10 @@ export interface ZionWalletSnapshot {
   transaction_model: string;
   utxo_count: number;
   total_utxo_amount: number;
+  /** True when `utxo_count` exceeds the paged `utxos` list. */
+  utxos_truncated?: boolean;
+  /** True when the UTXO leg failed but the balance leg answered. */
+  utxos_failed?: boolean;
   utxos: Array<{
     tx_hash: string;
     output_index: number;
@@ -247,6 +251,31 @@ export interface V3PoolRoutingStats {
 
 const RPC_TIMEOUT_MS = 8000;
 const POOL_TIMEOUT_MS = 5000;
+
+/** Default UTXO page size for address reads. The native RPC returns the full
+ *  UTXO set when `limit` is omitted — a pool payout wallet can hold >100k
+ *  outputs (27 MB, >10 s per call). Address paths must always page. */
+const ADDRESS_UTXO_LIMIT = 200;
+/** Address-read cache: absorbs page + widget bursts and crawler retries. */
+const ADDRESS_CACHE_TTL_MS = 10_000;
+const ADDRESS_CACHE_MAX = 256;
+
+/** Miner lookup is a *secondary* panel on address pages: the pool API is
+ *  local and answers in ms, so a slow one must not hold the whole page. */
+const MINER_POOL_TIMEOUT_MS = 4_000;
+const MINER_CHAIN_PAYOUT_BUDGET_MS = 5_000;
+const MINER_CACHE_TTL_MS = 30_000;
+
+/** RPC amounts arrive as number (atomic) or string (JSON u64). */
+function toAtomicNumber(value: unknown): number {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  if (typeof value === 'bigint') return Number(value);
+  return 0;
+}
 
 /**
  * Send a JSON-RPC 2.0 request over raw TCP to the V3 node.
@@ -593,6 +622,10 @@ class ZionRpcClient {
   private infoPromise: Promise<ZionNetworkInfo> | null = null;
   private poolStatsCache: { value: any; timestamp: number } | null = null;
   private poolStatsPromise: Promise<any> | null = null;
+  private addressBalanceCache = new Map<string, { at: number; value: { balance_atomic: number; balance_zion: number; utxo_count: number } }>();
+  private addressSnapshotCache = new Map<string, { at: number; value: ZionWalletSnapshot }>();
+  private minerInfoCache = new Map<string, { at: number; value: any }>();
+  private minerInfoInflight = new Map<string, Promise<any>>();
 
   constructor() {
     this.nodes = getSeedNodesConfig();
@@ -1498,14 +1531,35 @@ class ZionRpcClient {
 
   /** Get miner info by address — try V3 getBalance */
   async getMinerInfo(address: string): Promise<any> {
+    const key = address.toLowerCase();
+    const cached = this.cacheGet(this.minerInfoCache, key);
+    if (cached) return cached;
+
+    // Single-flight: a burst of page loads for the same address must not run
+    // the 120-block chain payout scan N times in parallel.
+    const inflight = this.minerInfoInflight.get(key);
+    if (inflight) return inflight;
+
+    const request = this.fetchMinerInfo(address)
+      .then((value) => {
+        this.cacheSet(this.minerInfoCache, key, value);
+        return value;
+      })
+      .finally(() => { this.minerInfoInflight.delete(key); });
+
+    this.minerInfoInflight.set(key, request);
+    return request;
+  }
+
+  private async fetchMinerInfo(address: string): Promise<any> {
     const lowerAddress = address.toLowerCase();
 
     // First try direct pool API by worker name/address and telemetry list.
     // Each call is wrapped so one slow/failing endpoint doesn't abort the others.
     const [statsPayload, payoutsPayload, minersList] = await Promise.all([
-      this.poolHttpGet<any>(`/api/v1/miners/${encodeURIComponent(address)}`, 15000).catch(() => null),
-      this.poolHttpGet<any>(`/api/v1/payouts?miner=${encodeURIComponent(address)}&limit=50`, 15000).catch(() => null),
-      this.poolHttpGet<any>('/miners?limit=50', 15000).catch(() => null),
+      this.poolHttpGet<any>(`/api/v1/miners/${encodeURIComponent(address)}`, MINER_POOL_TIMEOUT_MS).catch(() => null),
+      this.poolHttpGet<any>(`/api/v1/payouts?miner=${encodeURIComponent(address)}&limit=50`, MINER_POOL_TIMEOUT_MS).catch(() => null),
+      this.poolHttpGet<any>('/miners?limit=50', MINER_POOL_TIMEOUT_MS).catch(() => null),
     ]);
 
     // Try to find the miner either from direct stats, telemetry list, or share store.
@@ -1533,7 +1587,7 @@ class ZionRpcClient {
     const chainPayouts = await Promise.race([
       this.getChainPayoutsForAddress(address, 120),
       new Promise<{ totalPaidAtomic: number; payouts: any[] }>((resolve) =>
-        setTimeout(() => resolve({ totalPaidAtomic: 0, payouts: [] }), 8_000),
+        setTimeout(() => resolve({ totalPaidAtomic: 0, payouts: [] }), MINER_CHAIN_PAYOUT_BUDGET_MS),
       ),
     ]).catch(() => ({ totalPaidAtomic: 0, payouts: [] }));
 
@@ -1609,69 +1663,133 @@ class ZionRpcClient {
     }
   }
 
-  /** Get address balance from V3 */
+  /** Get address balance from V3.
+   *
+   *  Native UTXO wallets must page `getUtxos`: when `limit` is omitted the
+   *  node returns the *whole* UTXO set. A pool payout wallet can hold 130k
+   *  outputs → 27 MB and >10 s per call, which used to blow the explorer's
+   *  8 s RPC timeout (and then silently reported a 0 balance). `limit: 0`
+   *  asks for totals only (total_count / total_amount) — 200 bytes, ~2 ms. */
   async getAddressBalance(address: string): Promise<{ balance_atomic: number; balance_zion: number; utxo_count: number }> {
+    const cacheKey = address.toLowerCase();
+    const cached = this.cacheGet(this.addressBalanceCache, cacheKey);
+    if (cached) return cached;
+
     try {
-      const [balance, utxos] = await Promise.all([
-        this.rpcCall<any>('getBalance', { address }),
-        address.startsWith('zion1')
-          ? this.rpcCall<any>('getUtxos', { address }).catch(() => null)
-          : Promise.resolve(null),
-      ]);
+      let balanceAtomic = 0;
+      let utxoCount = 0;
+      let resolved = false;
 
-      const rawUtxos = Array.isArray(utxos?.utxos) ? utxos.utxos : [];
-      const utxoTotal = utxos?.total_amount ?? rawUtxos.reduce((sum: number, item: any) => sum + Number(item?.amount ?? 0), 0);
-      const balanceAtomic = utxoTotal > 0
-        ? utxoTotal
-        : Number(balance?.balance_flowers ?? balance?.balance_atomic ?? balance?.balance ?? 0);
-      const balanceZion = typeof balance?.balance_zion === 'number' && balance.balance_zion > 0
-        ? balance.balance_zion
-        : balanceAtomic / ATOMIC_PER_ZION;
+      if (address.startsWith('zion1')) {
+        try {
+          const utxos = await this.rpcCall<any>('getUtxos', { address, limit: 0 });
+          if (utxos && (utxos.total_amount !== undefined || utxos.total_count !== undefined)) {
+            balanceAtomic = toAtomicNumber(utxos.total_amount);
+            utxoCount = toAtomicNumber(utxos.total_count);
+            resolved = true;
+          }
+        } catch {
+          // Older node without limit/totals support — fall through to getBalance.
+        }
+      }
 
-      return {
+      if (!resolved) {
+        const balance = await this.rpcCall<any>('getBalance', { address });
+        balanceAtomic = toAtomicNumber(balance?.balance_flowers ?? balance?.balance_atomic ?? balance?.balance);
+        utxoCount = toAtomicNumber(balance?.utxo_count ?? balance?.count);
+      }
+
+      const result = {
         balance_atomic: balanceAtomic,
-        balance_zion: balanceZion,
-        utxo_count: utxos?.count ?? rawUtxos.length,
+        balance_zion: balanceAtomic / ATOMIC_PER_ZION,
+        utxo_count: utxoCount,
       };
+      this.cacheSet(this.addressBalanceCache, cacheKey, result);
+      return result;
     } catch {
       return { balance_atomic: 0, balance_zion: 0, utxo_count: 0 };
     }
   }
 
-  async getWalletSnapshot(address: string): Promise<ZionWalletSnapshot> {
+  /** Wallet snapshot for the explorer / wallet pages.
+   *
+   *  `utxoLimit` bounds the UTXO page (default 200). Never call `getUtxos`
+   *  without a limit from a request path — see `getAddressBalance`. */
+  async getWalletSnapshot(address: string, opts: { utxoLimit?: number } = {}): Promise<ZionWalletSnapshot> {
+    const isUtxo = address.startsWith('zion1');
+    const utxoLimit = Math.max(0, Math.floor(opts.utxoLimit ?? ADDRESS_UTXO_LIMIT));
+    const cacheKey = `${address.toLowerCase()}|${utxoLimit}`;
+
+    const cached = this.cacheGet(this.addressSnapshotCache, cacheKey);
+    if (cached) return cached;
+
     const [balance, utxos] = await Promise.all([
-      this.rpcCall<any>('getBalance', { address }),
-      address.startsWith('zion1')
-        ? this.rpcCall<any>('getUtxos', { address }).catch(() => null)
+      this.rpcCall<any>('getBalance', { address }).catch(() => null),
+      isUtxo
+        ? this.rpcCall<any>('getUtxos', { address, limit: utxoLimit }).catch(() => null)
         : Promise.resolve(null),
     ]);
 
+    // Both legs failing means the node is unreachable — do not fabricate a
+    // zero balance, let the caller surface "node unavailable".
+    if (balance === null && utxos === null) {
+      throw new Error(`RPC unavailable for address ${address}`);
+    }
+
     const rawUtxos = Array.isArray(utxos?.utxos) ? utxos.utxos : [];
-    const utxoTotal = utxos?.total_amount ?? rawUtxos.reduce((sum: number, item: any) => sum + Number(item?.amount ?? 0), 0);
+    const hasTotals = utxos && (utxos.total_amount !== undefined || utxos.total_count !== undefined);
+    const utxoTotal = hasTotals
+      ? toAtomicNumber(utxos.total_amount)
+      : rawUtxos.reduce((sum: number, item: any) => sum + toAtomicNumber(item?.amount), 0);
+    const utxoCount = hasTotals
+      ? toAtomicNumber(utxos.total_count)
+      : rawUtxos.length;
+
     const balanceAtomic = utxoTotal > 0
       ? utxoTotal
-      : Number(balance?.balance_flowers ?? balance?.balance_atomic ?? balance?.balance ?? 0);
-    const balanceZion = typeof balance?.balance_zion === 'number' && balance.balance_zion > 0
-      ? balance.balance_zion
-      : balanceAtomic / ATOMIC_PER_ZION;
+      : toAtomicNumber(balance?.balance_flowers ?? balance?.balance_atomic ?? balance?.balance);
 
-    return {
+    const snapshot: ZionWalletSnapshot = {
       address,
       balance_atomic: balanceAtomic,
-      balance_zion: balanceZion,
-      chain_height: balance?.chain_height ?? utxos?.chain_height ?? 0,
-      transaction_model: balance?.transaction_model ?? (address.startsWith('zion1') ? 'utxo' : 'account'),
-      utxo_count: utxos?.count ?? rawUtxos.length,
+      balance_zion: balanceAtomic / ATOMIC_PER_ZION,
+      chain_height: balance?.chain_height ?? utxos?.chain_height ?? this.infoCache?.value.height ?? 0,
+      transaction_model: balance?.transaction_model ?? (isUtxo ? 'utxo' : 'account'),
+      utxo_count: utxoCount,
       total_utxo_amount: utxoTotal,
+      utxos_truncated: utxoCount > rawUtxos.length,
+      utxos_failed: isUtxo && utxos === null,
       utxos: rawUtxos.map((item: any) => ({
         tx_hash: item.tx_hash ?? '',
         output_index: item.output_index ?? 0,
-        amount: Number(item.amount ?? 0),
+        amount: toAtomicNumber(item.amount),
         address: item.address ?? address,
         height: item.block_height ?? item.height ?? 0,
         timestamp: item.timestamp ?? 0,
       })),
     };
+
+    this.cacheSet(this.addressSnapshotCache, cacheKey, snapshot);
+    return snapshot;
+  }
+
+  /** Bounded in-memory cache for address reads (10 s TTL, LRU-ish cap). */
+  private cacheGet<T>(map: Map<string, { at: number; value: T }>, key: string, ttlMs = ADDRESS_CACHE_TTL_MS): T | null {
+    const hit = map.get(key);
+    if (!hit) return null;
+    if (Date.now() - hit.at > ttlMs) {
+      map.delete(key);
+      return null;
+    }
+    return hit.value;
+  }
+
+  private cacheSet<T>(map: Map<string, { at: number; value: T }>, key: string, value: T): void {
+    if (map.size >= ADDRESS_CACHE_MAX) {
+      const oldest = map.keys().next().value;
+      if (oldest !== undefined) map.delete(oldest);
+    }
+    map.set(key, { at: Date.now(), value });
   }
 
   /** Enrich UTXO metadata (height/timestamp) for a small list of tx hashes.

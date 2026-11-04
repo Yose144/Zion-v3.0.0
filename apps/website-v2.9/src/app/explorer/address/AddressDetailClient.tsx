@@ -188,6 +188,9 @@ interface AddressData {
     height: number;
     timestamp?: number;
   }>;
+  partial?: boolean;
+  utxos_truncated?: boolean;
+  chain_height?: number;
   transaction_model: string;
 }
 
@@ -249,15 +252,34 @@ export default function AddressDetailClient() {
   };
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         setError(null); setLoading(true); setData(null);
         if (!addr) { setError(ExplorerAddressAddressDetailClientCopy.missingAddressUseAddrZion1OrAd[cs ? 'cs' : 'en']); return; }
-        const result = await apiClient<AddressData>(`/blockchain/address?addr=${encodeURIComponent(addr)}`, { cache: "no-store" });
+        const result = await apiClient<AddressData>(`/blockchain/address?addr=${encodeURIComponent(addr)}`, { cache: "no-store", timeoutMs: 20_000 });
+        if (cancelled) return;
         setData(result);
-      } catch (err) { setError(cs ? `Nepodařilo se načíst adresu: ${err}` : `Failed to load address: ${err}`); }
-      finally { setLoading(false); }
+      } catch (err) {
+        if (cancelled) return;
+        const msg = err instanceof Error ? err.message : String(err);
+        // Distinguish "node is down / try again" from "this address does not exist"
+        // — a gateway/timeout error must never be rendered as "address not found".
+        if (/API error: 400/.test(msg)) {
+          setError(cs
+            ? `${msg.replace(/^API error: 400:?\s*/, '')} — zkontroluj, že je adresa celá (zion1…, 44+ znaků).`
+            : `${msg.replace(/^API error: 400:?\s*/, '')} — make sure the address is complete (zion1…, 44+ chars).`);
+        } else if (/API error: 5\d\d/.test(msg) || /timeout|abort|fetch failed/i.test(msg)) {
+          setError(cs
+            ? `Uzel právě neodpovídá (${msg}). Zkus to za okamžik znovu — data jsou načítaná živě z blockchainu.`
+            : `The node is not responding right now (${msg}). Try again in a moment — this data is read live from the chain.`);
+        } else {
+          setError(cs ? `Nepodařilo se načíst adresu: ${msg}` : `Failed to load address: ${msg}`);
+        }
+      }
+      finally { if (!cancelled) setLoading(false); }
     })();
+    return () => { cancelled = true; };
   }, [addr, cs]);
 
   /* ── loading ─────────────────────────────────────────────── */
@@ -372,6 +394,13 @@ export default function AddressDetailClient() {
         </div>
 
         {/* ── balance summary ──────────────────────────── */}
+        {data.partial && (
+          <div className="mb-4 rounded-xl border border-zion-gold/20 bg-zion-gold/5 px-4 py-2.5 text-[12px] text-zion-gold/80">
+            {cs
+              ? 'Část dat se nepodařilo načíst včas (uzel nebo pool neodpověděl) — zobrazené hodnoty jsou částečné.'
+              : 'Part of the data could not be loaded in time (node or pool did not answer) — values shown are partial.'}
+          </div>
+        )}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[
             { label: ExplorerAddressAddressDetailClientCopy.onChainBalance[cs ? 'cs' : 'en'], value: `${data.balance.total.toFixed(4)} ZION`, color: "text-white" },
@@ -618,13 +647,18 @@ export default function AddressDetailClient() {
         {/* ── UTXO list (only for UTXO-model addresses) ────── */}
         {data.transaction_model === 'utxo' && (
           <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-x-auto overflow-y-hidden mt-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-            <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between gap-3 flex-wrap">
               <h2 className="text-sm font-semibold text-white/70 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-zion-cyan" />
                 {ExplorerAddressAddressDetailClientCopy.utxoList[cs ? 'cs' : 'en']} ({data.utxos.length})
+                {data.utxos_truncated && (
+                  <span className="text-[11px] font-normal text-white/40 normal-case" title={cs ? 'Zobrazena je jen první stránka UTXO' : 'Only the first page of UTXOs is shown'}>
+                    {cs ? `z ${(data.balance.utxo_count ?? data.utxos.length).toLocaleString(locale)}` : `of ${(data.balance.utxo_count ?? data.utxos.length).toLocaleString(locale)}`}
+                  </span>
+                )}
               </h2>
               <span className="text-[11px] text-white/30 uppercase tracking-wider">
-                {ExplorerAddressAddressDetailClientCopy.total[cs ? 'cs' : 'en']} {(data.utxos.reduce((s, u) => s + u.amount, 0) / FLOWERS_PER_ZION).toFixed(4)} ZION
+                {ExplorerAddressAddressDetailClientCopy.total[cs ? 'cs' : 'en']} {(data.balance.total ?? 0).toFixed(4)} ZION
               </span>
             </div>
 

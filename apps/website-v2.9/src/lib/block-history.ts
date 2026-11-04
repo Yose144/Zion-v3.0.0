@@ -11,8 +11,6 @@ const RANGE_BLOCKS: Record<string, number> = {
 
 const CACHE_TTL_MS = 15_000;
 const STALE_TTL_MS = 300_000;
-const BATCH_SIZE = 500;
-const CONCURRENCY = 4;
 
 type BlockHistory = {
   range: string;
@@ -48,24 +46,27 @@ async function loadBlockHistory(range: string, resolution: number): Promise<Bloc
   }
 
   const startHeight = Math.max(0, chainHeight - blocksToFetch);
-  const ranges: Array<[number, number]> = [];
-  for (let start = startHeight; start <= chainHeight; start += BATCH_SIZE) {
-    ranges.push([start, Math.min(start + BATCH_SIZE - 1, chainHeight)]);
-  }
 
-  const allHeaders: ZionBlockHeader[] = [];
-  for (let i = 0; i < ranges.length; i += CONCURRENCY) {
-    const batches = await Promise.all(
-      ranges.slice(i, i + CONCURRENCY).map(([start, end]) =>
-        rpc.getBlockHeaders(start, end).catch(() => []),
-      ),
+  // Sample *before* fetching. The previous version fetched every block in the
+  // range and then kept every `step`-th header — for the 7d/30d/all ranges
+  // that meant 10k–43k `getBlockByHeight` round-trips (one TCP socket each),
+  // which is what made /api/blockchain/charts hang past the proxy timeout.
+  // Now only the sampled heights (≤ ~200) are requested.
+  const heights: number[] = [];
+  for (let h = startHeight; h <= chainHeight; h += step) heights.push(h);
+  if (heights.length === 0 || heights[heights.length - 1] !== chainHeight) heights.push(chainHeight);
+
+  const CONCURRENCY = 25;
+  const headers: ZionBlockHeader[] = [];
+  for (let i = 0; i < heights.length; i += CONCURRENCY) {
+    const batch = heights.slice(i, i + CONCURRENCY);
+    const batchHeaders = await Promise.all(
+      batch.map((height) => rpc.getBlockHeaderByHeight(height).catch(() => null)),
     );
-    for (const batch of batches) allHeaders.push(...batch);
+    for (const header of batchHeaders) if (header) headers.push(header);
   }
 
-  const headers = step > 1
-    ? allHeaders.filter((_, index) => index % step === 0 || index === allHeaders.length - 1)
-    : allHeaders;
+  headers.sort((a, b) => a.height - b.height);
 
   return { range, resolution: step, chainHeight, info, headers };
 }

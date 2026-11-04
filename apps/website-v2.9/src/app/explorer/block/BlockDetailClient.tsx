@@ -154,13 +154,24 @@ export default function BlockDetailClient() {
       try {
         setError(null); setLoading(true); setBlock(null); setRawJson(null);
         if (!id) { setError(ExplorerBlockBlockDetailClientCopy.missingBlockIdHeight[cs ? 'cs' : 'en']); return; }
+        const isHeight = /^\d+$/.test(id);
         const isHash = /^[a-f0-9]{64}$/i.test(id);
+        if (!isHeight && !isHash) {
+          // Never send a pasted address / elided text to the block endpoint.
+          setError(cs
+            ? 'Tento odkaz neobsahuje výšku ani hash bloku. Zadej číslo bloku nebo 64znakový hash — adresa peněženky patří do /explorer/address.'
+            : 'This link has neither a block height nor a block hash. Enter a block number or a 64-char hash — a wallet address belongs to /explorer/address.');
+          return;
+        }
         const query = isHash ? `/blockchain/block?hash=${id}` : `/blockchain/block?height=${id}`;
         const data = await apiClient<BlockDetail>(query);
         setBlock(data);
         try { setRawJson(JSON.stringify(data, null, 2)); } catch { setRawJson(null); }
       } catch (err) {
-        setError(cs ? `Nepodařilo se načíst blok: ${err}` : `Failed to load block: ${err}`);
+        const msg = err instanceof Error ? err.message : String(err);
+        setError(/API error: 40[04]/.test(msg)
+          ? (cs ? 'Blok v této síti neexistuje.' : 'This block does not exist on this network.')
+          : (cs ? `Nepodařilo se načíst blok: ${msg}` : `Failed to load block: ${msg}`));
       } finally {
         setLoading(false);
       }

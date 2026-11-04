@@ -1,7 +1,18 @@
 /**
  * ZION Explorer — Address API
- * 
- * Returns address info combining pool API (mining stats) and blockchain data.
+ *
+ * Returns address info combining on-chain data (balances, UTXOs, tx history)
+ * with pool-side mining stats.
+ *
+ * Performance contract (why this file is defensive):
+ *  - `getUtxos` MUST be paged. Without `limit` the native node returns the
+ *    whole UTXO set — a pool payout wallet holds ~130k outputs = 27 MB and
+ *    >10 s per call. That used to exceed the 8 s RPC timeout, which then made
+ *    the route report a 0 balance after ~26 s and (under load) surface to
+ *    users as a gateway error.
+ *  - Every sub-fetch is bounded, because mining stats (pool HTTP + chain
+ *    payout scan) and tx-history attribution are secondary data: a slow leg
+ *    degrades the response, it never hangs the page.
  */
 
 export const dynamic = 'force-dynamic';
@@ -11,6 +22,63 @@ import { getZionRpc } from '@/lib/zion-rpc';
 import { KNOWN_ADDRESS_MAP } from '@/lib/explorer/known-addresses';
 import { SITE_PRIMARY_POOL_API_URL } from '@/lib/site';
 import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
+
+const ADDRESS_PAGE_BUDGET_MS = 9_000;
+const MINER_BUDGET_MS = 4_500;
+const HISTORY_BUDGET_MS = 7_000;
+const ATTRIBUTION_BUDGET_MS = 5_000;
+const ATTRIBUTION_CONCURRENCY = 10;
+
+/** Resolve with `fallback` when `promise` is slower than `ms` (never rejects). */
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise<T>((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (!settled) { settled = true; resolve(fallback); }
+    }, ms);
+    promise.then(
+      (value) => { if (!settled) { settled = true; clearTimeout(timer); resolve(value); } },
+      () => { if (!settled) { settled = true; clearTimeout(timer); resolve(fallback); } },
+    );
+  });
+}
+
+interface AddressValidation {
+  address?: string;
+  error?: string;
+  hint?: string;
+}
+
+/** Reject pasted/truncated strings (e.g. "zion1abc…def") before they reach
+ *  the node — the search box happily passes ellipsis-decorated text. */
+function validateAddress(raw: string): AddressValidation {
+  const address = raw.trim();
+  if (!address) {
+    return { error: 'Address required', hint: 'Použij ?addr=zion1... nebo ?address=zion1...' };
+  }
+  if (/[…]/.test(address) || address.includes('...') || /\s/.test(address)) {
+    return {
+      error: 'Address looks truncated',
+      hint:
+        'Vložená adresa obsahuje výpustku nebo mezeru. Zkopíruj celou adresu (zion1…, 44+ znaků).',
+    };
+  }
+  if (!/^[A-Za-z0-9]+$/.test(address)) {
+    return {
+      error: 'Invalid address characters',
+      hint: 'ZION adresa obsahuje jen písmena a číslice (zion1…).',
+    };
+  }
+  const isUtxo = /^zion1[0-9a-z]{30,64}$/i.test(address);
+  const isAccount = /^[A-Za-z][A-Za-z0-9]{30,70}$/.test(address);
+  if (!isUtxo && !isAccount) {
+    return {
+      error: 'Invalid ZION address',
+      hint: 'Adresa musí začínat "zion1" a mít alespoň 34 znaků.',
+    };
+  }
+  return { address };
+}
 
 // Pool PPLNS unpaid is pool-side accounting — the node RPC does not know it.
 // Public endpoint: /public/v1/miner/<coin>/<wallet> → { unpaid: "<flowers>" }.
@@ -33,25 +101,76 @@ async function fetchPoolUnpaid(address: string, timeoutMs = 4000): Promise<numbe
   }
 }
 
+/** Fetch tx outputs for a bounded page of transactions, with concurrency + a
+ *  hard overall budget. Returns a map keyed by tx hash. */
+async function fetchAttributionDetails(
+  rpc: ReturnType<typeof getZionRpc>,
+  txHashes: string[],
+): Promise<Map<string, any[]>> {
+  const unique = Array.from(new Set(txHashes.filter(Boolean)));
+  const map = new Map<string, any[]>();
+
+  const work = (async () => {
+    for (let i = 0; i < unique.length; i += ATTRIBUTION_CONCURRENCY) {
+      const batch = unique.slice(i, i + ATTRIBUTION_CONCURRENCY);
+      const results = await Promise.all(
+        batch.map(async (txid) => {
+          const detail = await withTimeout(
+            rpc.rpcCall<any>('getTransaction', { txid }).catch(() => null),
+            4_000,
+            null,
+          );
+          return [txid, Array.isArray(detail?.transaction?.outputs) ? detail.transaction.outputs : []] as const;
+        }),
+      );
+      for (const [txid, outputs] of results) {
+        if (outputs.length > 0) map.set(txid, outputs);
+      }
+    }
+    return map;
+  })();
+
+  return withTimeout(work, ATTRIBUTION_BUDGET_MS, map);
+}
+
 export async function GET(request: NextRequest) {
   const rpc = getZionRpc();
 
   try {
     const searchParams = request.nextUrl.searchParams;
-    const address = searchParams.get('addr') || searchParams.get('address') || '';
+    const rawAddress = searchParams.get('addr') || searchParams.get('address') || '';
 
-    if (!address) {
-      return NextResponse.json({ error: 'Address required' }, { status: 400 });
+    const validation = validateAddress(rawAddress);
+    if (!validation.address) {
+      return NextResponse.json(
+        { error: validation.error, hint: validation.hint, code: 'invalid_address', address: rawAddress },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } },
+      );
     }
+    const address = validation.address;
 
     // Fetch blockchain balance (authoritative) + pool mining stats + on-chain TXs
-    // + pool PPLNS unpaid in parallel
+    // + pool PPLNS unpaid in parallel. Secondary legs are bounded.
     const [walletSnapshot, minerData, txHistory, poolUnpaid] = await Promise.all([
-      rpc.getWalletSnapshot(address).catch(() => null),
-      rpc.getMinerInfo(address).catch(() => null),
-      rpc.getTransactionHistory(address, 50, 0).catch(() => null),
+      withTimeout(rpc.getWalletSnapshot(address).catch(() => null), ADDRESS_PAGE_BUDGET_MS, null),
+      withTimeout(rpc.getMinerInfo(address).catch(() => null), MINER_BUDGET_MS, null),
+      withTimeout(rpc.getTransactionHistory(address, 50, 0).catch(() => null), HISTORY_BUDGET_MS, null),
       fetchPoolUnpaid(address),
     ]);
+
+    // No chain data at all → the node is down/slow. Never answer with a
+    // fabricated zero balance (that is how a 0-ZION whale wallet was shown).
+    if (!walletSnapshot && !txHistory && !minerData) {
+      return NextResponse.json(
+        {
+          error: 'Blockchain node is temporarily unavailable',
+          hint: 'Zkus to prosím za okamžik znovu.',
+          code: 'node_unavailable',
+          address,
+        },
+        { status: 503, headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
 
     // Build address info — chain balance is the real balance
     const balanceZion = walletSnapshot?.balance_zion ?? 0;
@@ -69,7 +188,7 @@ export async function GET(request: NextRequest) {
       pool_paid: minerData?.balance?.paid || 0,
     };
 
-    // UTXO list (for zion1 addresses)
+    // UTXO list (for zion1 addresses) — paged by the RPC client.
     const utxoList = walletSnapshot?.utxos ?? [];
 
     // Build address transaction history.
@@ -79,6 +198,7 @@ export async function GET(request: NextRequest) {
     let transactions: any[];
     let totalReceived: number;
     let totalSent = 0;
+    let attributionPartial = false;
 
     // `to`/`from` are comma-joined lists of every distinct output/input
     // address on a UTXO transaction (e.g. "zion1abc..., zion1def..."), not a
@@ -107,15 +227,15 @@ export async function GET(request: NextRequest) {
 
       // Per-output attribution: txHistory.amount_zion is the WHOLE tx sum,
       // which overstates amounts on multi-output txs (coinbase 89/5/5/1
-      // splits, genesis premine). Fetch outputs in parallel and keep only
-      // this address's share.
-      const details = await Promise.all(
-        transactions.map((tx) =>
-          rpc.rpcCall<any>('getTransaction', { txid: tx.tx_hash }).catch(() => null),
-        ),
+      // splits, genesis premine). Keep only this address's share.
+      const details = await fetchAttributionDetails(
+        rpc,
+        transactions.map((tx) => tx.tx_hash),
       );
-      transactions.forEach((tx, i) => {
-        const outs = details[i]?.transaction?.outputs;
+      if (details.size < transactions.filter((tx) => tx.tx_hash).length) attributionPartial = true;
+
+      transactions.forEach((tx) => {
+        const outs = details.get(tx.tx_hash);
         if (!Array.isArray(outs) || outs.length === 0) return;
         const toMe = outs
           .filter((o: any) => (o?.address?.encoded ?? o?.address) === address)
@@ -176,7 +296,7 @@ export async function GET(request: NextRequest) {
     // tells the UI whether the window covers the full history.
     const txTotal = (txHistory && txHistory.total > 0)
       ? txHistory.total
-      : (utxoList.length > 0 ? utxoList.length : transactions.length);
+      : (utxoCount > 0 ? utxoCount : transactions.length);
     const totalsWindow = transactions.length;
     const totalsScope: 'lifetime' | 'window' =
       totalsWindow >= txTotal ? 'lifetime' : 'window';
@@ -190,6 +310,10 @@ export async function GET(request: NextRequest) {
       (minerData.worker_name && minerData.worker_name !== 'default')
     );
 
+    const timestamps = utxoList.map((u: any) => u.timestamp ?? 0).filter((t: number) => t > 0);
+    const firstSeen = minerData?.first_seen || (timestamps.length ? Math.min(...timestamps) : 0);
+    const lastSeen = minerData?.last_seen || (timestamps.length ? Math.max(...timestamps) : 0);
+
     const addressInfo = {
       address,
       known_label: knownAddress?.label || null,
@@ -201,8 +325,13 @@ export async function GET(request: NextRequest) {
       totals_window: totalsWindow,
       net_balance: balanceZion,
       transaction_count: txTotal,
-      first_seen: minerData?.first_seen || (utxoList.length ? Math.min(...utxoList.map((u: any) => u.timestamp ?? 0).filter((t: number) => t > 0)) : 0),
-      last_seen: minerData?.last_seen || (utxoList.length ? Math.max(...utxoList.map((u: any) => u.timestamp ?? 0)) : 0),
+      first_seen: firstSeen,
+      last_seen: lastSeen,
+
+      // Degradation flags — the UI can say "partial data" instead of lying.
+      partial: !walletSnapshot || !txHistory || attributionPartial,
+      utxos_truncated: walletSnapshot?.utxos_truncated ?? false,
+      chain_height: walletSnapshot?.chain_height ?? 0,
 
       // Mining stats (ZION-specific)
       is_miner: isMiner,
@@ -221,10 +350,10 @@ export async function GET(request: NextRequest) {
       transactions: transactions.slice(0, 50),
       recent_transactions: transactions.slice(0, 10),
 
-      // UTXO list — capped; active pool/mining wallets can hold tens of
-      // thousands of outputs and serializing all of them stalls the page.
+      // UTXO list — already paged by the RPC client (default 200). Active
+      // pool/mining wallets hold tens of thousands of outputs; serializing
+      // all of them stalls the page.
       utxos: utxoList.slice(0, 200),
-      utxos_truncated: utxoList.length > 200,
       transaction_model: walletSnapshot?.transaction_model ?? (address.startsWith('zion1') ? 'utxo' : 'account'),
     };
 
@@ -233,7 +362,10 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Failed to fetch address:', error);
-    return NextResponse.json({ error: 'Failed to fetch address info' }, { status: 503 });
+    return NextResponse.json(
+      { error: 'Failed to fetch address info', code: 'internal_error' },
+      { status: 503, headers: { 'Cache-Control': 'no-store' } },
+    );
   }
 }
 

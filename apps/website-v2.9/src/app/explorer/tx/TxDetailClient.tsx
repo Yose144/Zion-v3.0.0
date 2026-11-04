@@ -172,10 +172,21 @@ export default function TxDetailClient() {
       try {
         setError(null); setLoading(true); setTx(null); setRawJson(null);
         if (!hash) { setError(ExplorerTxTxDetailClientCopy.missingTransactionHash[cs ? 'cs' : 'en']); return; }
+        if (!/^[a-fA-F0-9]{64}$/.test(hash.replace(/^0x/i, ''))) {
+          setError(cs
+            ? 'Tohle není hash transakce — tx hash má 64 hex znaků. Adresa peněženky patří do /explorer/address.'
+            : 'This is not a transaction hash — a tx hash has 64 hex chars. A wallet address belongs to /explorer/address.');
+          return;
+        }
         const data = await apiClient<Transaction>(`/blockchain/transactions?hash=${encodeURIComponent(hash)}`);
         setTx(data);
         try { setRawJson(JSON.stringify(data, null, 2)); } catch { setRawJson(null); }
-      } catch (err) { setError(cs ? `Nepodařilo se načíst transakci: ${err}` : `Failed to load transaction: ${err}`); }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setError(/API error: 40[04]/.test(msg)
+          ? (cs ? 'Transakce v této síti neexistuje.' : 'This transaction does not exist on this network.')
+          : (cs ? `Nepodařilo se načíst transakci: ${msg}` : `Failed to load transaction: ${msg}`));
+      }
       finally { setLoading(false); }
     })();
   }, [hash, cs]);

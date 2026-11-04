@@ -67,10 +67,19 @@ function detectType(q: string, forcedType?: SearchType): SearchType {
   const s = q.trim();
   if (/^\d+$/.test(s)) return "block_height";
   if (/^[a-fA-F0-9]{64}$/.test(s)) return "tx_hash"; // Could be block or tx hash
-  if (/^(zion|ZION|Z)[a-zA-Z0-9]{40,}$/i.test(s)) return "address";
+  if (/^zion1[0-9a-z]{30,64}$/i.test(s)) return "address";
+  if (/^(ZION|Z)[A-Za-z0-9]{30,70}$/.test(s)) return "address";
   if (/^zion_txid_/i.test(s)) return "tx_hash";
-  if (/^[a-fA-F0-9]{10,}$/i.test(s)) return "block_hash";
+  if (/^[a-fA-F0-9]{10,}$/.test(s)) return "block_hash";
   return "unknown";
+}
+
+/** A pasted wallet address is often elided ("zion1abc…def"). Detect it so we
+ *  can send the user to a page that explains it instead of a block lookup. */
+function looksTruncatedAddress(q: string): boolean {
+  const s = q.trim();
+  if (!/^zion1/i.test(s)) return false;
+  return s.includes("…") || /\.{2,}/.test(s) || s.includes(".");
 }
 
 function buildPreviews(query: string, cs: boolean): SearchPreview[] {
@@ -129,12 +138,17 @@ function buildPreviews(query: string, cs: boolean): SearchPreview[] {
       break;
     default:
       if (s.length > 2) {
+        const truncatedAddress = looksTruncatedAddress(s);
         previews.push({
           type: "unknown",
-          label: `${ProSearchBarCopy.search[cs ? 'cs' : 'en']} "${s.length > 20 ? s.slice(0, 20) + "…" : s}"`,
+          label: truncatedAddress
+            ? `${ProSearchBarCopy.search[cs ? 'cs' : 'en']} "${s.length > 20 ? s.slice(0, 20) + "…" : s}"`
+            : `${ProSearchBarCopy.search[cs ? 'cs' : 'en']} "${s.length > 20 ? s.slice(0, 20) + "…" : s}"`,
           icon: Search,
-          href: `/explorer/block?id=${s}`,
-          meta: ProSearchBarCopy.trySearchingAsBlockTx[cs ? 'cs' : 'en'],
+          href: `/explorer/search?q=${encodeURIComponent(s)}`,
+          meta: truncatedAddress
+            ? (cs ? "Adresa je zkrácená — vysvětlíme co doplnit" : "Address is truncated — we explain what to paste")
+            : ProSearchBarCopy.trySearchingAsBlockTx[cs ? 'cs' : 'en'],
         });
       }
   }

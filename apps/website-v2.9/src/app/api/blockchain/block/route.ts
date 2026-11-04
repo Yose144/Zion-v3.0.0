@@ -17,11 +17,39 @@ export async function GET(request: NextRequest) {
 
   try {
     const searchParams = request.nextUrl.searchParams;
-    const height = searchParams.get('height') || searchParams.get('id');
-    const hash = searchParams.get('hash');
+    const rawId = searchParams.get('height') || searchParams.get('id');
+    const hashParam = searchParams.get('hash');
 
-    if (!height && !hash) {
+    if (!rawId && !hashParam) {
       return NextResponse.json({ error: 'Block height or hash required' }, { status: 400 });
+    }
+
+    // Normalise the identifier: a block is addressed by decimal height or by
+    // a 64-char hex hash. Anything else (pasted address, elided text) is a
+    // client error — returning 503 there made the UI think the node was down.
+    let heightId: number | null = null;
+    let hashId: string | null = null;
+    if (hashParam) {
+      if (!/^[a-fA-F0-9]{64}$/.test(hashParam)) {
+        return NextResponse.json(
+          { error: 'Invalid block hash', hint: 'Hash bloku má 64 hex znaků.', code: 'invalid_block_id' },
+          { status: 400 },
+        );
+      }
+      hashId = hashParam;
+    } else if (/^\d+$/.test(rawId!)) {
+      heightId = parseInt(rawId!, 10);
+    } else if (/^[a-fA-F0-9]{64}$/.test(rawId!)) {
+      hashId = rawId!;
+    } else {
+      return NextResponse.json(
+        {
+          error: 'Invalid block id',
+          hint: 'Zadej výšku bloku (číslo) nebo hash bloku (64 hex znaků) — tohle není ani jedno.',
+          code: 'invalid_block_id',
+        },
+        { status: 400 },
+      );
     }
 
     // Get current chain height for confirmations
@@ -29,17 +57,14 @@ export async function GET(request: NextRequest) {
 
     // Fetch full block
     let block;
-    if (height && /^\d+$/.test(height)) {
-      block = await rpc.getBlock(parseInt(height));
-    } else if (hash) {
-      block = await rpc.getBlock(hash);
-    } else if (height) {
-      // Could be a hash passed as 'id'
-      block = await rpc.getBlock(height);
+    try {
+      block = heightId !== null ? await rpc.getBlock(heightId) : await rpc.getBlock(hashId!);
+    } catch {
+      block = null;
     }
 
     if (!block) {
-      return NextResponse.json({ error: 'Block not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Block not found', code: 'block_not_found' }, { status: 404 });
     }
 
     // Extract miner address from V3 block fields
