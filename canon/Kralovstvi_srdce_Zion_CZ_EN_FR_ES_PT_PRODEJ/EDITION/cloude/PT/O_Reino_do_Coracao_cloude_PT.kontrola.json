@@ -1,0 +1,17 @@
+{
+  "edition": "cloude",
+  "lang": "PT",
+  "source": "O_Reino_do_Coracao_cloude_PT.md",
+  "words": 18210,
+  "headings": 123,
+  "paragraphs": 483,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 98,
+    "bytes": 280735
+  },
+  "epub": {
+    "documents": 6,
+    "bytes": 43730
+  }
+}
