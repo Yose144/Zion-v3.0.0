@@ -88,6 +88,20 @@ export function PassGate({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Odemčeno, ale máme se vrátit na konkrétní stránku: nevykreslovat děti,
+  // dokud redirect neproběhne. Jinak se na chvíli mountuje vesmír (3D scéna),
+  // zablokuje hlavní vlákno a redirect se opozdí o sekundy.
+  if (state === 'open' && next) {
+    return (
+      <div className="pass-gate flex min-h-screen items-center justify-center bg-[#02030a] p-4 text-white">
+        <div className="text-center text-white/50">
+          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
+          <p className="text-sm">{t('gateOpening')}</p>
+        </div>
+      </div>
+    );
+  }
+
   if (state === 'open') return <>{children}</>;
 
   return (
