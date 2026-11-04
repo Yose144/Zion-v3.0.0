@@ -255,3 +255,19 @@ Všechny tři jsou původní snímky 1672×941 z dodané sady. Zároveň:
 - `apps/website-v2.9/public/images/news/christmas-2026/lampion-wide.webp` → sekce Lampion v novinkách používá tentýž banner místo obecného snímku dílny.
 
 Ověřeno: `/vanoce/lampion` 200, oba soubory 200, `news/christmas-2026` 200, screenshot hero bez ořezu (vidět celý lampion, kniha na tabletu i děti).
+
+---
+
+## 13. Dodatek 7 — IntroPage: pozvánka „Market is open" pod menu
+
+👤: „na intropage vyměníme kartu pozvánku do marketu, ale posunul bych ji až pod menu".
+
+**IntroPage** (`apps/IntroPage`) je statický export (`output: 'export'`, zdroj `src/app/maintenance.html`), na apexu ho servíruje systémový nginx z `/var/www/zion-maintenance`.
+
+Co se změnilo:
+- nový banner `heros/shop/heros/Vánoční příběh ZION pod hvězdami.png` (1672×941) → `public/images/market-open.webp` (242 kB),
+- `.hero-christmas` přesunut z hero bloku **`.inner`** (kde visel jako malá karta pod glifem, `min(72vw, 26rem)`) do **pod `<nav>`**; banner nese vlastní typografii („Market is open", „PF 2027"), takže potřebuje plnou šířku — nově `min(94vw, 1150px)`,
+- odkaz změněn z novinkového článku na **market.zionterranova.com** (je to pozvánka do Marketu),
+- stará `images/christmas-market.webp` už v HTML není.
+
+**Ověřeno:** lokálně 1440 i 390 px bez vodorovného přetečení (`overflow` false), karta je v DOM **za** `<nav>` (index 12 037 > 10 898), live `zionterranova.com` 200, `images/market-open.webp` 200 (242 kB), screenshot potvrzuje banner pod menu.
