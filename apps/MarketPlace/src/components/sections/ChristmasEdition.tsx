@@ -62,35 +62,32 @@ function ChristmasCard({
   return (
     <section>
       <div className="zion-section overflow-hidden !p-0">
-        <div className="grid md:grid-cols-[minmax(0,340px)_1fr]">
-          {/* Visual */}
+        <div className="grid items-start xl:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)]">
+          {/* Visual — drží formát fotek (16:9), nikdy se neroztahuje.
+              Dřív tu byl pevný sloupec 340 px s `aspect-auto` + `min-h`,
+              takže se široký hero obrázek ořezal do vysokého pruhu. */}
           <div
-            className={`relative aspect-video md:aspect-auto md:min-h-[320px] ${
-              reverse ? 'md:order-2' : ''
-            }`}
+            className={`relative flex items-start p-3 md:p-4 ${reverse ? 'xl:order-2' : ''}`}
           >
-            <img
-              src={image}
-              alt={imageAlt}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            <div
-              className={`absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent ${
-                reverse
-                  ? 'md:bg-gradient-to-l md:from-transparent md:to-black/25'
-                  : 'md:bg-gradient-to-r md:from-transparent md:to-black/25'
-              }`}
-            />
-            <div className="absolute top-3 left-3 z-10">
-              <span className="rarity-badge rarity-legendary inline-flex items-center gap-1.5">
-                <Snowflake className="w-3 h-3" /> {badge}
-              </span>
+            <div className="relative aspect-[16/9] xl:aspect-[4/3] w-full overflow-hidden rounded-xl ring-1 ring-white/10">
+              <img
+                src={image}
+                alt={imageAlt}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+              <div className="absolute left-3 top-3">
+                <span className="rarity-badge rarity-legendary inline-flex items-center gap-1.5">
+                  <Snowflake className="h-3 w-3" /> {badge}
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Content */}
           <div
-            className={`p-6 md:p-8 flex flex-col justify-center ${reverse ? 'md:order-1' : ''}`}
+            className={`p-6 md:p-8 flex flex-col justify-center xl:justify-start ${reverse ? 'xl:order-1' : ''}`}
           >
             <div className="zion-kicker inline-flex items-center gap-2">{kicker}</div>
             <h2 className="text-2xl md:text-3xl font-black font-display mt-3">

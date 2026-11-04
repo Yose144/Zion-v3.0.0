@@ -18,7 +18,7 @@ export default function FactsStrip({ facts, compact = false }: { facts: XmasFact
   const { lang } = useLangT();
   return (
     <dl
-      className={`grid gap-2 ${compact ? 'grid-cols-2' : ''}`}
+      className={`grid gap-2 ${compact ? 'grid-cols-2 xl:grid-cols-4 mobile-keep-cols' : ''}`}
       // auto-fit drží rozumné sloupce i v úzkém kontejneru na detailu produktu
       style={compact ? undefined : { gridTemplateColumns: 'repeat(auto-fit, minmax(118px, 1fr))' }}
     >

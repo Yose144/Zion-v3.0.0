@@ -48,19 +48,22 @@ export default function BookSection() {
   return (
     <section>
       <div className="zion-section overflow-hidden !p-0">
-        <div className="grid md:grid-cols-[minmax(0,340px)_1fr]">
-          {/* Cover */}
-          <div className="relative aspect-square md:aspect-auto md:min-h-[380px]">
-            <img
-              src={xmas?.hero ?? '/shop/img/books/kralovstvi-srdce-cover.webp'}
-              alt="Království srdce — obálka knihy"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:to-black/25" />
+        <div className="grid items-start xl:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)]">
+          {/* Cover — 16:9 jako hero obrázky, aby se neroztahoval do vysokého pruhu */}
+          <div className="relative flex items-start p-3 md:p-4">
+            <div className="relative aspect-[16/9] xl:aspect-[4/3] w-full overflow-hidden rounded-xl ring-1 ring-white/10">
+              <img
+                src={xmas?.hero ?? '/shop/img/books/kralovstvi-srdce-cover.webp'}
+                alt="Království srdce — obálka knihy"
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+            </div>
           </div>
 
           {/* Content */}
-          <div className="p-6 md:p-8 flex flex-col justify-center">
+          <div className="p-6 md:p-8 flex flex-col justify-center xl:justify-start">
             <div className="zion-kicker inline-flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5" /> {t('book.kicker')}
             </div>
