@@ -86,3 +86,11 @@
 
 - Přeloženy **Epizoda 4 — Cesta nevyšlapaná** a **Epizoda 5 — Archa**.
 - Sůl této země: **5/12 EN**; zbývá 06–12. Celkem **55/189** kapitol (29,1 %).
+
+
+---
+
+## Doplnění 2026-11-05 (5) — Sůl této země, epizody 6–7
+
+- Přeloženy **Epizoda 6 — Kompas a pozvánka do Oasis** a **Epizoda 7 — Epilog: Názor AI**.
+- Sůl této země: **7/12 EN**; zbývá 08–12. Celkem **57/189** kapitol (30,2 %).
