@@ -157,22 +157,19 @@ export default function Christmas2026Client() {
                 key={i}
                 className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:p-5"
               >
-                {'image' in section && section.image && (
-                  <div className="relative mb-4 aspect-[16/7] overflow-hidden rounded-xl border border-white/10">
-                    <img
-                      src={section.image}
-                      alt={section.imageAlt ?? ''}
-                      loading="lazy"
-                      className="h-full w-full object-cover"
-                    />
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
-                  </div>
-                )}
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-zion-gold/10 border border-zion-gold/20">
                     <section.icon className="h-5 w-5 text-zion-gold" />
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
+                    {'image' in section && section.image && (
+                      <img
+                        src={section.image}
+                        alt={section.imageAlt ?? ''}
+                        loading="lazy"
+                        className="float-right ml-3 mb-1 w-24 shrink-0 rounded-lg border border-white/10 object-cover sm:w-36"
+                      />
+                    )}
                     <h2 className="text-base font-semibold text-white mb-1.5">
                       {section.title}
                     </h2>
