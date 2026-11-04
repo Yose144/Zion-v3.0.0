@@ -9,7 +9,7 @@ Edice spáry: co není doložené, zůstává jako otázka.
 | CZ | ✅ | ✅ | ✅ | 7441 |
 | EN | ✅ | ✅ | ✅ | 9977 |
 | ES | ✅ | ✅ | ✅ | 9633 |
-| FR | — | — | — | — |
+| FR | ✅ | ✅ | ✅ | 10170 |
 | PT | — | — | — | — |
 
 ## Zdroj

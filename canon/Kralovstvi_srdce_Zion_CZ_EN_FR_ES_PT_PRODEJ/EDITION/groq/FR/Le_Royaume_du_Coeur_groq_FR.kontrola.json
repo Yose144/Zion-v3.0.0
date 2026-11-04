@@ -1,0 +1,17 @@
+{
+  "edition": "groq",
+  "lang": "FR",
+  "source": "Le_Royaume_du_Coeur_groq_FR.md",
+  "words": 10170,
+  "headings": 73,
+  "paragraphs": 216,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 51,
+    "bytes": 207987
+  },
+  "epub": {
+    "documents": 5,
+    "bytes": 26391
+  }
+}
