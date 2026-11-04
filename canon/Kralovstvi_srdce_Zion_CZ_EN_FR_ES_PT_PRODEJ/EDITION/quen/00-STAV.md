@@ -9,7 +9,7 @@ Loď, která nemá uzavřený účet; kapitoly jsou nejvyšší úroveň.
 | CZ | ✅ | ✅ | ✅ | 5903 |
 | EN | ✅ | ✅ | ✅ | 7500 |
 | ES | ✅ | ✅ | ✅ | 7354 |
-| FR | — | — | — | — |
+| FR | ✅ | ✅ | ✅ | 8047 |
 | PT | — | — | — | — |
 
 ## Zdroj

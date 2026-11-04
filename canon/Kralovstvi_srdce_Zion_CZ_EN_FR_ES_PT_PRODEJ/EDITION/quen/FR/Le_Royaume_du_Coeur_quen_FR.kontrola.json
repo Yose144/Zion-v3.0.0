@@ -1,0 +1,17 @@
+{
+  "edition": "quen",
+  "lang": "FR",
+  "source": "Le_Royaume_du_Coeur_quen_FR.md",
+  "words": 8047,
+  "headings": 56,
+  "paragraphs": 158,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 45,
+    "bytes": 204513
+  },
+  "epub": {
+    "documents": 19,
+    "bytes": 33254
+  }
+}
