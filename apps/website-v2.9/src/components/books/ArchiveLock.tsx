@@ -107,6 +107,7 @@ const Copy = {
       'Pokračování ve čtení a poslední kapitola',
       'Anglické kapitoly tam, kde existují',
       'Nové kapitoly bez dalšího placení',
+      'Kompletní edice ke stažení (ZIP, PDF, EPUB)',
       'Kód platí 90 dní a jde navázat na ZIS',
     ],
     en: [
@@ -114,6 +115,7 @@ const Copy = {
       'Continue reading and your last chapter',
       'English chapters wherever they exist',
       'New chapters without another payment',
+      'Complete editions to download (ZIP, PDF, EPUB)',
       'The code lasts 90 days and can be bound to ZIS',
     ],
   },

@@ -17,10 +17,12 @@ import {
   Sparkles,
   Languages,
   Clock,
+  Download,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import type { BookDef, BookChapter, Lang } from '@/lib/books/types';
 import BookNav from '@/components/books/BookNav';
+import { downloadForBook } from '@/lib/books/downloads';
 import { saveReadingProgress } from '@/lib/books/progress';
 import { splitSingleDoc, type SingleDocBook } from '@/lib/books/singleDoc';
 
@@ -62,6 +64,7 @@ export default function BookReader({ book }: { book: BookDef }) {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({ 0: true, 1: true });
   const [czFallback, setCzFallback] = useState(false);
   const [readingMinutes, setReadingMinutes] = useState<number | null>(null);
+  const download = downloadForBook(book.id);
 
   const currentChapter = chapters.find((c) => c.slug === selectedChapter);
   const chapterIndex = currentChapter
@@ -329,6 +332,18 @@ export default function BookReader({ book }: { book: BookDef }) {
                 </div>
               ))}
             </div>
+
+            {download && (
+              <a
+                href={`/api/archive/downloads/${download.id}`}
+                className="mx-auto mt-3 inline-flex items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-sm font-semibold text-emerald-300 transition-colors hover:bg-emerald-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zion-gold/60"
+              >
+                <Download className="h-4 w-4" />
+                {l === 'cs'
+                  ? `Stáhnout kompletní edici (ZIP, ${download.sizeLabel})`
+                  : `Download the complete edition (ZIP, ${download.sizeLabel})`}
+              </a>
+            )}
           </div>
         </div>
       </div>

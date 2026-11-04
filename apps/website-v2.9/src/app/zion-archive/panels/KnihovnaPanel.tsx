@@ -6,6 +6,7 @@ import Link from 'next/link';
 import {
   BookOpen,
   CheckCircle2,
+  Download,
   ExternalLink,
   FileText,
   Library,
@@ -23,6 +24,7 @@ import {
   searchHaystack,
   type LibraryEntry,
 } from '../library-index';
+import { downloadForBook } from '@/lib/books/downloads';
 import { progressPercent, useReadingProgress } from '@/lib/books/progress';
 import { Panel, PanelHeader, type Lang } from './shared';
 
@@ -74,6 +76,7 @@ const Copy = {
   markerHere: { cs: 'jsme tady', en: 'we are here' },
   markerGoal: { cs: 'cíl cesty', en: 'the destination' },
   czOnly: { cs: 'CZ', en: 'CZ' },
+  downloadTitle: { cs: 'Stáhnout kompletní edici (ZIP)', en: 'Download the complete edition (ZIP)' },
   moreTitle: { cs: 'Další zdroje', en: 'More resources' },
   docs: { cs: 'Knihovna dokumentů', en: 'Document library' },
   whitepapers: { cs: 'Whitepapery', en: 'Whitepapers' },
@@ -130,6 +133,7 @@ export default function KnihovnaPanel({ lang }: { lang: Lang }) {
     const Icon = entry.icon;
     const saved = progress[entry.id];
     const pct = progressPercent(saved);
+    const download = downloadForBook(entry.id);
     const primaryHref = saved && entry.reader ? `${saved.path}#${saved.chapterSlug}` : entry.href;
     const primaryLabel = !entry.reader
       ? Copy.open[l]
@@ -283,6 +287,16 @@ export default function KnihovnaPanel({ lang }: { lang: Lang }) {
                   <FileText className="h-3.5 w-3.5" />
                   {Copy.enIndex[l]}
                 </Link>
+              )}
+              {download && (
+                <a
+                  href={`/api/archive/downloads/${download.id}`}
+                  title={Copy.downloadTitle[l]}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-400/30 bg-emerald-400/[0.06] px-3 py-1.5 text-xs font-semibold text-emerald-300 transition-colors hover:border-emerald-400/60 hover:bg-emerald-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zion-gold/60"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  ZIP
+                </a>
               )}
             </div>
           </div>

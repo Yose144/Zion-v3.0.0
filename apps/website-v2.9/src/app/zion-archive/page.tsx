@@ -7,6 +7,7 @@ import {
   ArrowRight,
   BookOpen,
   Compass,
+  Download,
   Egg,
   Library,
   ListChecks,
@@ -28,10 +29,11 @@ import KnihovnaPanel from './panels/KnihovnaPanel';
 import NirvanaPanel from './panels/NirvanaPanel';
 import PlanPanel from './panels/PlanPanel';
 import SouvislostiPanel from './panels/SouvislostiPanel';
+import StazeniPanel from './panels/StazeniPanel';
 import type { Lang } from './panels/shared';
 import { LIBRARY_STATS, READER_BOOKS } from './library-index';
 
-type SectionId = 'cesta' | 'knihovna' | 'kniha' | 'nirvana' | 'plan-v33' | 'souvislosti';
+type SectionId = 'cesta' | 'knihovna' | 'stazeni' | 'kniha' | 'nirvana' | 'plan-v33' | 'souvislosti';
 
 const SECTIONS: {
   id: SectionId;
@@ -41,6 +43,7 @@ const SECTIONS: {
 }[] = [
   { id: 'cesta', label: { cs: 'Knihy a pořadí', en: 'Books & reading order' }, icon: Compass, rc: '6, 182, 212' },
   { id: 'knihovna', label: { cs: 'Knihovna', en: 'Library' }, icon: Library, rc: '236, 72, 153' },
+  { id: 'stazeni', label: { cs: 'Ke stažení', en: 'Downloads' }, icon: Download, rc: '52, 211, 153' },
   { id: 'kniha', label: { cs: 'Maitreya', en: 'Maitreya' }, icon: BookOpen, rc: '252, 209, 22' },
   { id: 'nirvana', label: { cs: 'Nirvana', en: 'Nirvana' }, icon: Sun, rc: '251, 146, 60' },
   { id: 'plan-v33', label: { cs: 'Plán v3.3', en: 'v3.3 plan' }, icon: ListChecks, rc: '168, 85, 247' },
@@ -445,6 +448,7 @@ export default function ZionArchivePage() {
               >
                 {active === 'cesta' && <CestaPanel lang={l} />}
                 {active === 'knihovna' && <KnihovnaPanel lang={l} />}
+                {active === 'stazeni' && <StazeniPanel lang={l} />}
                 {active === 'kniha' && <KnihaPanel lang={l} />}
                 {active === 'nirvana' && <NirvanaPanel lang={l} />}
                 {active === 'plan-v33' && <PlanPanel lang={l} />}

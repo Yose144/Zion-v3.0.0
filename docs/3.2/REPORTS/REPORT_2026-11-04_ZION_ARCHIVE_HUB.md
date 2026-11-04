@@ -82,6 +82,9 @@ knihovna byla statický seznam bez hledání, reader si nepamatoval, kde čtená
     hub po návratu zobrazil „Pokračovat ve čtení";
   - mobil 390×844: **0 px** horizontálního přesahu;
   - **0 chyb** v konzoli / žádný pageerror.
+- **Stažení:** headless test — panel `#stazeni` (1 karta, správný href, odkaz na knihu), ZIP
+  tlačítko v knihovně (1×) i v hero readeru („Stáhnout kompletní edici (ZIP, 62 MB)"),
+  EN režim bez českých labelů, mobil 390×844 **0 px** přesahu; curl gate test 403/307/404.
 - **Živě** `https://app.zionterranova.com/zion-archive` (nasazeno paralelní deploy dávkou):
   lock page nese nový design („Vstup přes ZION Pass", „Odemknout archiv", „Co uvnitř"), 18 knih
   včetně `Nabukano`; `/market` má „Otevřít archiv"; homepage badge „Vstup přes ZION Pass".
@@ -90,6 +93,21 @@ Screenshoty: `/tmp/archive-lock.png`, `/tmp/archive-hub.png`, `/tmp/archive-libr
 `/tmp/archive-continue.png`, `/tmp/archive-reader.png`, `/tmp/archive-hub-mobile.png`.
 
 ---
+
+## 3a. Ke stažení (W3, M1)
+
+- **Katalog** `src/lib/books/downloads.ts` — metadata edic (název, popis, formát, jazyky,
+  velikost, datum, highlights); soubory samotné zůstávají v marketplace, protože 62MB ZIP
+  nepatří do deploye ani do gitu.
+- **Gate route** `GET /api/archive/downloads/[slug]` — `hasArchiveAccess()`, pak 307 na
+  zabalenou edici; `404` pro neznámý slug, `403` bez passu (ověřeno curl: anon 403,
+  authed 307 → `market.zionterranova.com/shop/downloads/Kralovstvi_srdce_kompletni_edice_5_jazyku.zip`,
+  unknown 404). Adresa marketplace je veřejná (produkt), brána chrání archiv, ne tajemství URL.
+- **První edice: Království srdce — kompletní edice** (8 edic × 5 jazyků = 40 knih, PDF + EPUB,
+  3 252 stran, 619 498 slov, 62 MB). Karta nese formát, jazyky, velikost, datum i obsah.
+- **Tři vstupy:** nová sekce hubu `#stazeni`, tlačítko **ZIP** na kartě knihy v knihovně a CTA
+  v hero readeru Království srdce („Stáhnout kompletní edici (ZIP, 62 MB)").
+- Lock page v „co pass odemyká" nově zmiňuje stažení (ZIP, PDF, EPUB).
 
 ## 3b. CZ/EN kontrola
 
@@ -122,6 +140,8 @@ Screenshoty: `/tmp/archive-lock.png`, `/tmp/archive-hub.png`, `/tmp/archive-libr
   se stejným kódem (testovací `ARCHIVE_PASS_CODES`).
 - Progress je jen v prohlížeči (záměr — archiv je placený, nechceme účet ani tracking); po
   vymazání localStorage se historie ztratí.
+- Stažení je dnes 307 redirect na veřejnou URL marketplace — kdo URL zná, stáhne soubor i bez
+  passu. Pro skutečné uzamčení je v plánu signed URL s TTL (W3).
 - Žádné cover assety — karty používají akcent + ikonu z registru (konzistentní se zbytkem webu).
 - E2E `maitreya-hub.spec.ts` zůstává `describe.skip` (archiv je za passem); selektory a labely
   jsou ale aktualizované na `#knihovna`, aby při otevření archivu neselhal.
