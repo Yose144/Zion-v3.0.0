@@ -4,7 +4,12 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   Check,
+  ChevronDown,
   Coins,
+  KeyRound,
+  ListOrdered,
+  Mail,
+  Milestone,
   Package,
   Quote,
   ShoppingCart,
@@ -95,6 +100,38 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
             ))}
           </div>
 
+          {/* How it works — steps */}
+          <div className="pt-4 space-y-4">
+            <h2 className="text-xl font-bold font-display flex items-center gap-2">
+              <ListOrdered className="w-5 h-5 text-rasta-gold" />
+              {t('xmasPage.howTitle')}
+            </h2>
+            <ol className="space-y-3">
+              {(lang === 'cs' ? product.steps.cs : product.steps.en).map((step, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="shrink-0 w-6 h-6 rounded-full bg-rasta-gold/15 border border-rasta-gold/40 text-rasta-gold text-[11px] font-bold inline-flex items-center justify-center mt-0.5">
+                    {i + 1}
+                  </span>
+                  <p className="text-sm md:text-[15px] text-gray-300 leading-relaxed">
+                    {renderInline(step)}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          {/* Wallet e-mail note */}
+          <div className="zion-section !p-5 border-rasta-green/30 bg-rasta-green/[0.04] space-y-2.5">
+            <h3 className="font-display font-bold text-base flex items-center gap-2 text-rasta-green">
+              <Mail className="w-4 h-4" /> {t('xwallet.title')}
+            </h3>
+            <p className="text-sm text-gray-300 leading-relaxed">{renderInline(t('xwallet.body'))}</p>
+            <p className="text-xs text-gray-400 leading-relaxed flex items-start gap-1.5">
+              <KeyRound className="w-3.5 h-3.5 text-rasta-gold mt-0.5 shrink-0" />
+              {t('xwallet.importHint')}
+            </p>
+          </div>
+
           {/* Quotes (book) */}
           {product.quotes && product.quotes.length > 0 && (
             <div className="pt-4 space-y-4">
@@ -169,6 +206,67 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
 
           <ExperimentalNotice />
         </aside>
+      </div>
+
+      {/* Roadmap — kam to směřuje */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold font-display flex items-center gap-2">
+          <Milestone className="w-5 h-5 text-rasta-gold" />
+          {t('xroad.title')}
+        </h2>
+        <div className="grid md:grid-cols-3 gap-4">
+          {(['p1', 'p2', 'p3'] as const).map((phase, i) => (
+            <div
+              key={phase}
+              className={`zion-section !p-5 space-y-2 ${
+                i === 0 ? 'border-rasta-gold/40' : 'border-white/10'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-gray-500">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                    i === 0
+                      ? 'bg-rasta-gold/15 border-rasta-gold/40 text-rasta-gold'
+                      : 'bg-white/5 border-white/15 text-gray-400'
+                  }`}
+                >
+                  {t(`xroad.${phase}status`)}
+                </span>
+              </div>
+              <h3 className="font-display font-bold text-sm text-white">
+                {t(`xroad.${phase}name`)}
+              </h3>
+              <p className="text-xs text-gray-400 leading-relaxed">{t(`xroad.${phase}desc`)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* FAQ */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold font-display flex items-center gap-2">
+          <Quote className="w-5 h-5 text-rasta-gold" />
+          {t('xmasPage.faqTitle')}
+        </h2>
+        <div className="space-y-2.5">
+          {product.faq.map((item, i) => (
+            <details
+              key={i}
+              className="group zion-section !p-0 overflow-hidden [&_summary]:list-none"
+            >
+              <summary className="flex items-center justify-between gap-3 px-5 py-3.5 cursor-pointer select-none text-sm font-semibold text-gray-200 hover:text-rasta-gold transition-colors">
+                {pick(item.q)}
+                <ChevronDown className="w-4 h-4 shrink-0 text-gray-500 transition-transform group-open:rotate-180" />
+              </summary>
+              <p className="px-5 pb-4 text-sm text-gray-400 leading-relaxed">
+                {renderInline(pick(item.a))}
+              </p>
+            </details>
+          ))}
+        </div>
       </div>
     </div>
   );

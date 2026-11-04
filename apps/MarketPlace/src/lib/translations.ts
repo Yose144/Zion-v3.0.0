@@ -172,6 +172,45 @@ const t = {
     buyInShop: { cs: 'Koupit v obchodě', en: 'Buy in the shop' },
     comingSoon: { cs: 'Připravujeme — brzy', en: 'Coming soon' },
     moreInfo: { cs: 'Více informací', en: 'More info' },
+    howTitle: { cs: 'Jak to funguje — krok za krokem', en: 'How it works — step by step' },
+    faqTitle: { cs: 'Časté otázky', en: 'Frequently asked questions' },
+  },
+
+  xwallet: {
+    title: {
+      cs: 'Peněženka přijde e-mailem — se seedy i bonusem',
+      en: 'Your wallet arrives by e-mail — seeds & bonus included',
+    },
+    body: {
+      cs: 'Po dokončení objednávky ti na e-mail dorazí **ZION peněženka**: adresa, seed phrase a privátní klíč — už s připsaným bonusem. Seed phrase **ulož offline** (papír, trezor — ne cloud ani screenshot). Peněženku pak jedním krokem **naimportuješ do ZIS** (identita celého ekosystému) a dalších ZION aplikací — mobilních i desktopového agenta.',
+      en: 'Once your order completes, your **ZION wallet** arrives by e-mail: address, seed phrase and private key — already carrying the bonus. **Store the seed phrase offline** (paper, safe — not cloud or screenshots). Then **import it into ZIS** (the identity of the whole ecosystem) and other ZION apps — mobile and the desktop agent — in one step.',
+    },
+    importHint: {
+      cs: 'Import do ZIS: aplikace ZIS → Import peněženky → seed phrase → hotovo. Žádná registrace navíc.',
+      en: 'Import into ZIS: open the ZIS app → Import wallet → seed phrase → done. No extra registration.',
+    },
+  },
+
+  xroad: {
+    title: { cs: 'Kam to směřuje — roadmapa edice', en: 'Where this is heading — edition roadmap' },
+    p1name: { cs: 'ZION Pass', en: 'ZION Pass' },
+    p1desc: {
+      cs: 'Vstup do Nirvany a ZION Archivu — hry, světy, chat a kanonické texty.',
+      en: 'Entry into Nirvana and the ZION Archive — games, worlds, chat and canonical texts.',
+    },
+    p1status: { cs: 'Teď', en: 'Now' },
+    p2name: { cs: 'ZION Wallet v desktop AgentOS', en: 'ZION Wallet in the desktop AgentOS' },
+    p2desc: {
+      cs: 'Peněženka z e-mailu přímo v desktopovém agentovi — bonus, převody a identita na jednom místě.',
+      en: 'The e-mail wallet living inside the desktop agent — bonus, transfers and identity in one place.',
+    },
+    p2status: { cs: 'Připravujeme', en: 'Coming next' },
+    p3name: { cs: 'Kingdom', en: 'Kingdom' },
+    p3desc: {
+      cs: 'Svět, který z příběhu Království srdce vyrůstá — teprve ho tvoříme.',
+      en: 'The world growing out of the Kingdom of Hearts story — being created right now.',
+    },
+    p3status: { cs: 'Ve vývoji', en: 'In development' },
   },
 
   xlegal: {
