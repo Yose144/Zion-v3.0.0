@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { useI18n } from '@/core/i18n';
 import { useNet } from '@/core/net/useNet';
 import { ChatPanel } from '@/core/net/ChatPanel';
+import { InviteButton } from '@/core/net/InviteButton';
 import type { GameId, RoomState } from '@/core/net/protocol';
 
 interface LobbyGame {
@@ -173,13 +174,11 @@ export default function MultiplayerPage() {
               {cs ? 'Otevřít hru' : 'Open the game'} →
             </Link>
           ) : null}
-          <button
-            type="button"
+          <InviteButton
+            roomId={roomId}
             className="lobby-btn is-invite"
-            onClick={() => copy(inviteLink(roomId), 'link')}
-          >
-            {copied === 'link' ? (cs ? 'zkopírováno ✓' : 'copied ✓') : cs ? 'Pozvat odkazem' : 'Copy invite link'}
-          </button>
+            label={{ cs: 'Pozvat odkazem', en: 'Copy invite link' }}
+          />
           <button type="button" className="lobby-btn" onClick={() => copy(roomId, 'code')}>
             {copied === 'code' ? (cs ? 'kód ✓' : 'code ✓') : cs ? 'Kód' : 'Code'}
           </button>

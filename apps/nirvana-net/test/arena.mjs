@@ -72,6 +72,8 @@ const server = spawn(process.execPath, [entry], {
     // deterministický test: boti by stříleli do testovacích hráčů
     NIRVANA_ARENA_BOTS: '0',
     ZIS_URL: 'http://127.0.0.1:1',
+    // testy úklidu: reconnect vypnutý, jinak sedlo drží 45 s
+    NIRVANA_NET_RESUME_MS: '0',
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 });

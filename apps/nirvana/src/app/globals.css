@@ -6812,3 +6812,55 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   font-size: 0.72rem;
   font-family: ui-monospace, monospace;
 }
+
+/* ── Pozvánka a zprávy z haly ────────────────────────────────────────── */
+
+.invite-btn {
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 227, 212, 0.45);
+  background: rgba(127, 227, 212, 0.12);
+  color: #bfeee5;
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.invite-btn:hover {
+  border-color: rgba(127, 227, 212, 0.8);
+  color: #e6fffb;
+}
+
+.invite-manual {
+  width: 100%;
+  margin-top: 0.3rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  background: rgba(6, 8, 16, 0.85);
+  color: #ffe9b8;
+  font-size: 0.68rem;
+  font-family: ui-monospace, monospace;
+}
+
+/* v hlavičce chatu sedí pozvánka mezi stavem a křížkem */
+.chat-invite {
+  margin-left: auto;
+  font-size: 0.58rem;
+  padding: 0.18rem 0.5rem;
+}
+
+.chat-invite + .chat-close {
+  margin-left: 0.3rem;
+}
+
+/* zpráva z haly (park) — v místnosti je vidět, odkud přišla */
+.chat-line.is-park .chat-name {
+  color: #9db7ff;
+  font-style: italic;
+}
+
+.chat-line.is-park .chat-text {
+  color: rgba(246, 231, 216, 0.72);
+}

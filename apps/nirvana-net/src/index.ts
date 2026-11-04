@@ -91,6 +91,10 @@ interface Conn {
   /** Časy posledních zpráv v chatu (okno `CHAT_RATE_WINDOW_MS`). */
   chatTimes: number[];
   lastSeen: number;
+  /** Token pro obnovení session po výpadku. */
+  resumeToken: string;
+  /** Kdy socket spadl (drží se `RESUME_GRACE_MS`); 0 = připojen. */
+  detachedAt?: number;
 }
 
 /**
@@ -109,6 +113,14 @@ interface Room {
 
 const rooms = new Map<string, Room>();
 const connections = new Map<string, Conn>();
+
+/**
+ * Rozehráté session pro reconnect: token → připojení, které zrovna spadlo.
+ * Drží se `GRACE_MS`, aby výpadek sítě neznamenal novou místnost (a v tancích
+ * ani to, že sedlo převezme bot). Po vypršení se hráč normálně odhlásí.
+ */
+const resumes = new Map<string, Conn>();
+const RESUME_GRACE_MS = Number(process.env.NIRVANA_NET_RESUME_MS ?? 45_000);
 const roomCounters = new Map<GameId, number>();
 /** Historie kanálů — jen v paměti, po restartu prázdná (záměr, žádná DB). */
 const channels = new Map<string, ChatLine[]>();
@@ -120,6 +132,8 @@ function log(line: string): void {
 }
 
 function send(conn: Conn, message: ServerMessage): void {
+  // hráč na reconnectu sedlo pořád drží, ale socket je pryč
+  if (conn.socket.readyState !== WebSocket.OPEN) return;
   if (conn.socket.readyState !== WebSocket.OPEN) return;
   conn.socket.send(encodeMessage(message));
   stats.messagesOut += 1;
@@ -334,9 +348,23 @@ function postChat(conn: Conn, raw: string): void {
     text,
     at: now,
   };
-  pushLine(channelOf(conn), line);
+  const channel = channelOf(conn);
+  pushLine(channel, line);
   stats.chat += 1;
-  broadcastChannel(channelOf(conn), { t: 'event', event: { kind: 'chat', ...line } });
+  broadcastChannel(channel, { t: 'event', event: { kind: 'chat', ...line } });
+
+  /**
+   * **Hala je slyšet všude.** Zprávy z parku (mimo místnost) jdou i hráčům,
+   * kteří sedí ve hře — jinak se v lobby nedá domluvit s tím, kdo už
+   * nastoupil. Zprávy z místnosti zůstávají v místnosti: taktika 5v5 nemá
+   * téct do celé Nirvany.
+   */
+  if (channel === 'park') {
+    for (const other of connections.values()) {
+      if (other.id === conn.id || !other.helloSent || !other.room) continue;
+      send(other, { t: 'event', event: { kind: 'chat', ...line, park: true } });
+    }
+  }
 }
 
 // ── místnosti ─────────────────────────────────────────────────────────
@@ -471,6 +499,33 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
       conn.identity = await conn.identityReady;
       conn.helloSent = true;
 
+      /**
+       * Reconnect: klient posílá token z předchozího `welcome`. Když sedlo
+       * ještě držíme, **převezmeme staré id** — všechny hry mají hráče
+       * klíčované podle `conn.id`, takže se tím vrátí do stejné pozice
+       * (a v tancích do stejného tahu).
+       */
+      let resumed = false;
+      if (message.resume) {
+        const old = resumes.get(message.resume);
+        resumes.delete(message.resume);
+        if (old && old.room) {
+          const room = old.room;
+          connections.delete(conn.id);
+          conn.id = old.id;
+          conn.room = room;
+          conn.identity = old.identity;
+          conn.chatTimes = old.chatTimes;
+          conn.resumeToken = old.resumeToken;
+          connections.set(conn.id, conn);
+          room.players.set(conn.id, conn);
+          resumed = true;
+          log(`resume id=${conn.id} room=${room.id}`);
+        }
+      }
+
+      if (!conn.resumeToken) conn.resumeToken = randomBytes(12).toString('hex');
+
       const channel = channelOf(conn);
       send(conn, {
         t: 'welcome',
@@ -483,7 +538,22 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
         history: [...historyOf(channel)],
         online: membersOf(channel).length,
         members: membersOf(channel).map((member) => summary(member.identity)),
+        resume: conn.resumeToken,
+        resumed,
       });
+
+      if (resumed && conn.room) {
+        const room = conn.room;
+        send(conn, {
+          t: 'room',
+          room: roomInfo(room),
+          occupants: [...room.players.values()].map((player) => summary(player.identity)),
+          youPlayerId: conn.id,
+          spawn: null,
+          history: [...historyOf(`arena:${room.id}`)],
+        });
+        syncPresence(`arena:${room.id}`);
+      }
       syncPresence(channel);
       log(
         `hello id=${conn.identity.id} role=${conn.identity.role} name=${conn.identity.name} channel=${channel}`,
@@ -553,6 +623,7 @@ function onConnection(socket: WebSocket, request: IncomingMessage): void {
     windowCount: 0,
     chatTimes: [],
     lastSeen: Date.now(),
+    resumeToken: '',
   };
   connections.set(conn.id, conn);
   log(`connect id=${conn.id} ip=${request.socket.remoteAddress ?? '?'} conns=${connections.size}`);
@@ -591,6 +662,17 @@ function onConnection(socket: WebSocket, request: IncomingMessage): void {
   });
 
   socket.on('close', () => {
+    // Když hráč sedí v místnosti, držíme mu sedlo `RESUME_GRACE_MS` —
+    // výpadek sítě nemá znamenat novou hru (a v tancích cizí tah).
+    // `NIRVANA_NET_RESUME_MS=0` = reconnect vypnutý (testy úklidu)
+    if (conn.room && conn.helloSent && conn.resumeToken && RESUME_GRACE_MS > 0) {
+      resumes.set(conn.resumeToken, conn);
+      conn.detachedAt = Date.now();
+      connections.delete(conn.id);
+      syncPresence(channelOf(conn));
+      log(`detached id=${conn.id} room=${conn.room.id} grace=${RESUME_GRACE_MS}ms`);
+      return;
+    }
     leaveRoom(conn, 'close');
     const channel = channelOf(conn);
     connections.delete(conn.id);
@@ -775,6 +857,21 @@ const gameLoop = setInterval(() => {
   }
 }, TICK_MS);
 
+/**
+ * Reconnect grace kontrolujeme každou sekundu — heartbeat běží po 20 s,
+ * takže by se `NIRVANA_NET_RESUME_MS` protáhl až o pul minuty.
+ */
+const resumeSweeper = setInterval(() => {
+  const now = Date.now();
+  for (const [token, conn] of resumes) {
+    if (now - (conn.detachedAt ?? now) < RESUME_GRACE_MS) continue;
+    resumes.delete(token);
+    log(`resume expired id=${conn.id}`);
+    leaveRoom(conn, 'resume timeout');
+    syncPresence(channelOf(conn));
+  }
+}, 1000);
+
 const heartbeat = setInterval(() => {
   const now = Date.now();
   for (const conn of connections.values()) {
@@ -791,6 +888,7 @@ const heartbeat = setInterval(() => {
 function shutdown(signal: string): void {
   log(`shutdown signal=${signal}`);
   clearInterval(heartbeat);
+  clearInterval(resumeSweeper);
   clearInterval(gameLoop);
   for (const conn of connections.values()) conn.socket.close(1001, 'server shutdown');
   sockets.close();

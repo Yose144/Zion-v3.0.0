@@ -68,6 +68,8 @@ const server = spawn(process.execPath, [entry], {
     NIRVANA_NET_PORT: String(PORT),
     NIRVANA_NET_ALLOWED_ORIGINS: 'http://127.0.0.1:3999',
     ZIS_URL: 'http://127.0.0.1:1',
+    // testy úklidu: reconnect vypnutý, jinak sedlo drží 45 s
+    NIRVANA_NET_RESUME_MS: '0',
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 });

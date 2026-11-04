@@ -32,8 +32,11 @@ import type { BattleSpellId, ItemId } from '../moba/sim';
 export type NetStatus = 'connecting' | 'open' | 'offline';
 
 export type NetLine =
-  | ({ kind: 'chat' } & ChatLine)
+  | ({ kind: 'chat'; park?: true } & ChatLine)
   | { kind: 'system'; text: string; at: number };
+
+/** Klíč v `sessionStorage` pro obnovení session po výpadku. */
+const RESUME_KEY = 'nirvana.net.resume';
 
 export interface NetApi {
   status: NetStatus;
@@ -191,7 +194,15 @@ export function NetProvider({ children }: { children: ReactNode }) {
       socket.onopen = () => {
         attemptRef.current = 0;
         setStatus('open');
-        socket.send(JSON.stringify({ t: 'hello', proto: PROTO_VERSION }));
+        let resume: string | null = null;
+        try {
+          resume = window.sessionStorage.getItem(RESUME_KEY);
+        } catch {
+          // privátní režim bez storage — reconnect prostě nebude
+        }
+        socket.send(
+          JSON.stringify({ t: 'hello', proto: PROTO_VERSION, resume: resume ?? undefined }),
+        );
 
         pingTimer = setInterval(() => {
           if (socket.readyState === WebSocket.OPEN) {
@@ -225,6 +236,16 @@ export function NetProvider({ children }: { children: ReactNode }) {
             setOnline(message.online);
             setRooms(message.rooms ?? []);
             setMembers(message.members ?? []);
+            if (message.resume) {
+              try {
+                window.sessionStorage.setItem(RESUME_KEY, message.resume);
+              } catch {
+                // bez storage reconnect nebude — hra jede dál
+              }
+            }
+            if (message.resumed) {
+              append({ kind: 'system', text: 'připojení obnoveno — jsi zpátky ve hře', at: Date.now() });
+            }
             setLines(
               message.history.slice(-MAX_LINES).map((line) => ({ kind: 'chat', ...line })),
             );

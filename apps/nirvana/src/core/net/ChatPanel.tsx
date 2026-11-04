@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useI18n } from '@/core/i18n';
 import { CHAT_MAX_LEN } from './protocol';
 import { useNet, type NetLine } from './useNet';
+import { InviteButton } from './InviteButton';
 
 function time(at: number): string {
   const date = new Date(at);
@@ -78,6 +79,7 @@ export function ChatPanel({
           )}
         </strong>
         <span className={`chat-state${status === 'open' ? ' is-live' : ''}`}>{statusLabel}</span>
+        <InviteButton roomId={roomId} className="chat-invite" />
         {onClose && (
           <button type="button" className="chat-close" onClick={onClose} aria-label={t('close')}>
             ×
@@ -110,9 +112,15 @@ export function ChatPanel({
               {line.text}
             </p>
           ) : (
-            <p key={`c-${line.at}-${index}`} className={`chat-line${line.role === 'zis' ? ' is-zis' : ''}`}>
+            <p
+              key={`c-${line.at}-${index}`}
+              className={`chat-line${line.role === 'zis' ? ' is-zis' : ''}${line.park ? ' is-park' : ''}`}
+            >
               <span className="chat-time">{time(line.at)}</span>
-              <span className="chat-name">{line.name}</span>
+              <span className="chat-name">
+                {line.park ? (cs ? 'hala · ' : 'hall · ') : ''}
+                {line.name}
+              </span>
               <span className="chat-text">{line.text}</span>
             </p>
           ),

@@ -24,6 +24,7 @@ import {
 import { TanksCanvas } from './TanksCanvas';
 import { TanksScene } from './TanksScene';
 import { useNet } from '@/core/net/useNet';
+import { InviteButton } from '@/core/net/InviteButton';
 
 type Mode = '2d' | '3d';
 
@@ -46,7 +47,7 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
   const [coarse, setCoarse] = useState(false);
 
   // ── online ──────────────────────────────────────────────────────────
-  const { joinGame, leaveRoom, subscribe, sendTanksAim, sendTanksShoot } = useNet();
+  const { joinGame, leaveRoom, subscribe, sendTanksAim, sendTanksShoot, roomId } = useNet();
   const [online, setOnline] = useState(false);
   const [peers, setPeers] = useState(0);
   /** Strana, kterou server přidělil (0 = vlevo, 1 = vpravo). */
@@ -296,6 +297,7 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
             3D NOVÉ
           </button>
         </div>
+        <InviteButton roomId={online ? roomId : null} className="tanks-invite" />
         <button
           type="button"
           className={`tanks-online${online ? ' is-on' : ''}`}

@@ -68,8 +68,12 @@ const asItemId = (value: unknown): ItemId | null =>
  * 23 — **pozvánky a chat hostů**: `join` s neexistující místností vrací
  *      `room_missing` (dřív se tiše založila nová) a psát smí i host
  *      (1 zpráva / 4 s, 120 znaků) — jinak byl chat v multiplayeru mrtvý.
+ * 24 — **reconnect**: `hello` nese `resume` token, `welcome` ho vrací
+ *      (`resume`/`resumed`), takže po výpadku se hráč vrátí do stejného
+ *      sedla. Starý server by token ignoroval a poslal hráče do nové
+ *      místnosti, proto se verze zvedá.
  */
-export const PROTO_VERSION = 23;
+export const PROTO_VERSION = 24;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -269,7 +273,16 @@ export type EventPayload =
    * při přechodu park → aréna napočítal člena dvakrát.)
    */
   | { kind: 'presence'; members: PlayerSummary[]; online: number }
-  | { kind: 'chat'; id: string; name: string; role: Role; text: string; at: number }
+  | {
+      kind: 'chat';
+      id: string;
+      name: string;
+      role: Role;
+      text: string;
+      at: number;
+      /** Zpráva z haly (park) — vidí ji i hráči v místnostech. */
+      park?: true;
+    }
   | { kind: 'kill'; killer: string; victim: string; weapon: WeaponName; at: number }
   | { kind: 'respawn'; id: string }
   | { kind: 'pickup'; id: string; item: 'health' | 'armor' | 'ammo' }
@@ -310,7 +323,12 @@ export type ErrorCode =
   | 'origin';
 
 export type ClientMessage =
-  | { t: 'hello'; proto: number }
+  | {
+      t: 'hello';
+      proto: number;
+      /** Token z předchozího `welcome` — obnovení rozehráté session. */
+      resume?: string;
+    }
   | { t: 'join'; game: GameId; room?: string; heroId?: number; battleSpell?: BattleSpellId }
   /** MOBA: nákup itemu (jen v místnosti typu `moba`). */
   | { t: 'buy'; item: ItemId }
@@ -374,6 +392,10 @@ export type ServerMessage =
       online: number;
       /** Kdo je v kanálu — pro seznam přítomných s avatary. */
       members: PlayerSummary[];
+      /** Token pro obnovení session po výpadku (ukládá klient). */
+      resume?: string;
+      /** `true` = server navázal na předchozí session (místnost zůstala). */
+      resumed?: boolean;
     }
   | {
       t: 'room';
@@ -461,7 +483,11 @@ export function parseClientMessage(raw: string): ClientMessage | null {
   const message = data as Record<string, unknown>;
   switch (message.t) {
     case 'hello':
-      return { t: 'hello', proto: num(message.proto, 0, 10_000) };
+      return {
+        t: 'hello',
+        proto: num(message.proto, 0, 10_000),
+        resume: typeof message.resume === 'string' ? message.resume.slice(0, 64) : undefined,
+      };
 
     case 'join':
       return {
