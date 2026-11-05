@@ -8077,3 +8077,24 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   line-height: 1.5;
   color: rgba(232, 244, 255, 0.4);
 }
+
+/* Zamčená cesta — vidět, že existuje, ale nejde na ni kliknout */
+.lumi-path.is-locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.lumi-path.is-locked strong {
+  color: rgba(232, 244, 255, 0.6);
+}
+
+.lumi-paths {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 760px) {
+  .lumi-paths {
+    grid-template-columns: 1fr;
+  }
+}

@@ -20,7 +20,7 @@ globalThis.window = {
   },
 };
 
-const { EMPTY_JOURNAL, loadJournal, missingInJournal, recordJourney } = await import(
+const { EMPTY_JOURNAL, isPathUnlocked, loadJournal, missingInJournal, recordJourney } = await import(
   '../src/core/lumi/journal.ts'
 );
 
@@ -70,6 +70,35 @@ check('poškozený deník = prázdný', loadJournal().found.length === 0);
 store.set('nirvana.lumi.v1', JSON.stringify({ found: 'ahoj', runs: -5, gifts: { keep: 'x' } }));
 const repaired = loadJournal();
 check('nesmyslná pole se opraví', repaired.found.length === 0 && repaired.runs === 0 && repaired.gifts.keep === 0, JSON.stringify(repaired));
+
+// ── 7) odemykání třetí cesty ─────────────────────────────────────────
+const { LUMI_PATHS, pathData } = await import('../src/core/lumi/world.ts');
+
+check('třetí cesta existuje', Boolean(LUMI_PATHS.light), Object.keys(LUMI_PATHS).join(','));
+check('třetí cesta má sedm světel', pathData('light').lights.length === 7, String(pathData('light').lights.length));
+check(
+  'světla třetí cesty stoupají spirálou',
+  pathData('light').lights.every((light, index, all) => index === 0 || light.y > all[index - 1].y),
+);
+check(
+  'všechna světla třetí cesty jsou v mapě',
+  pathData('light').lights.every((light) => light.x > 2 && light.x < 98 && light.y > 2 && light.y < 98),
+);
+
+store.clear();
+const fresh = loadJournal();
+check('calm je odemčená hned', isPathUnlocked('calm', fresh));
+check('wind je odemčená hned', isPathUnlocked('wind', fresh));
+check('light je na startu zamčená', !isPathUnlocked('light', fresh));
+
+const afterCalm = recordJourney([1, 2, 3, 4, 5, 6, 7], 'give', 'calm');
+check('po calm je light pořád zamčená', !isPathUnlocked('light', afterCalm), afterCalm.paths.join(','));
+const afterWind = recordJourney([1, 2, 3, 4, 5, 6, 7], 'keep', 'wind');
+check('deník zná obě cesty', afterWind.paths.includes('calm') && afterWind.paths.includes('wind'), afterWind.paths.join(','));
+check('po obou cestách je light odemčená', isPathUnlocked('light', afterWind));
+
+const repeated = recordJourney([1], 'keep', 'calm');
+check('cesta se v deníku nezdvojí', repeated.paths.filter((id) => id === 'calm').length === 1, repeated.paths.join(','));
 
 console.log('');
 if (failures > 0) {

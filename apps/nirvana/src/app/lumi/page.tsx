@@ -29,7 +29,7 @@ import {
   type LumiPathId,
 } from '@/core/lumi/world';
 import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
-import { loadJournal, recordJourney, type LumiJournal } from '@/core/lumi/journal';
+import { EMPTY_JOURNAL, isPathUnlocked, loadJournal, recordJourney, type LumiJournal } from '@/core/lumi/journal';
 import { play, startWindLoop, type LoopHandle } from '@/core/audio/engine';
 import { unlock } from '@/core/audio/engine';
 import { TouchButton } from '@/core/games/TouchPad';
@@ -64,7 +64,7 @@ export default function LumiPage() {
   const [run, setRun] = useState(0);
   const recorded = useRef(false);
   /** Deník: sebraná světla zůstávají, i když hra skončí. */
-  const [journal, setJournal] = useState<LumiJournal>({ found: [], runs: 0, gifts: { keep: 0, give: 0 } });
+  const [journal, setJournal] = useState<LumiJournal>(EMPTY_JOURNAL);
   const [journalOpen, setJournalOpen] = useState(false);
   /** Vítr běží jen během letu — po doletu zmlkne. */
   const wind = useRef<LoopHandle | null>(null);
@@ -117,6 +117,7 @@ export default function LumiPage() {
   }, [stats.lastLight, cs, path]);
 
   const start = useCallback(() => {
+    if (!isPathUnlocked(pathId, journal)) return;
     unlock();
     recorded.current = false;
     setStats({ ...EMPTY, total: pathData(pathId).lights.length });
@@ -127,7 +128,7 @@ export default function LumiPage() {
     setRun((value) => value + 1);
     setPhase('flying');
     play('lanternIgnite');
-  }, [pathId]);
+  }, [pathId, journal]);
 
   /** Scéna jen oznámí dolet — zapisuje se až po volbě (nechat / darovat). */
   const finish = useCallback((score: number) => {
@@ -143,7 +144,7 @@ export default function LumiPage() {
       const score = baseScore + (kind === 'give' ? LUMI_GIFT_BONUS : 0);
       const outcome = recordRun({ game: 'lumi', score, nickname: pickNickname() });
       // deník: světla i volba zůstávají pro příště
-      setJournal(recordJourney(stats.lightIds ?? [], kind));
+      setJournal(recordJourney(stats.lightIds ?? [], kind, pathId));
       play(kind === 'give' ? 'gift' : 'shrineOpen');
       setNotice(
         describeRun(outcome, cs, [
@@ -152,7 +153,7 @@ export default function LumiPage() {
         ]),
       );
     },
-    [baseScore, cs],
+    [baseScore, cs, pathId, stats.lightIds],
   );
 
   return (
@@ -256,19 +257,39 @@ export default function LumiPage() {
           </ul>
 
           <div className="lumi-paths" role="radiogroup" aria-label={cs ? 'Cesta' : 'Path'}>
-            {(Object.values(LUMI_PATHS) as (typeof LUMI_PATHS)[LumiPathId][]).map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                role="radio"
-                aria-checked={pathId === option.id}
-                className={`lumi-path${pathId === option.id ? ' is-active' : ''}`}
-                onClick={() => setPathId(option.id)}
-              >
-                <strong>{option.name[cs ? 'cs' : 'en']}</strong>
-                <span>{option.note[cs ? 'cs' : 'en']}</span>
-              </button>
-            ))}
+            {(Object.values(LUMI_PATHS) as (typeof LUMI_PATHS)[LumiPathId][]).map((option) => {
+              const unlocked = isPathUnlocked(option.id, journal);
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={pathId === option.id}
+                  disabled={!unlocked}
+                  className={`lumi-path${pathId === option.id ? ' is-active' : ''}${unlocked ? '' : ' is-locked'}`}
+                  onClick={() => unlocked && setPathId(option.id)}
+                  title={
+                    unlocked
+                      ? option.note[cs ? 'cs' : 'en']
+                      : cs
+                        ? 'Odemkne se po dohrání obou cest'
+                        : 'Unlocks after finishing both paths'
+                  }
+                >
+                  <strong>
+                    {unlocked ? '' : '🔒 '}
+                    {option.name[cs ? 'cs' : 'en']}
+                  </strong>
+                  <span>
+                    {unlocked
+                      ? option.note[cs ? 'cs' : 'en']
+                      : cs
+                        ? 'nejdřív doleť obě předchozí cesty'
+                        : 'finish the two earlier paths first'}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           <div className="lumi-intro-actions">

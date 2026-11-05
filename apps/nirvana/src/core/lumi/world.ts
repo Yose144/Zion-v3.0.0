@@ -165,7 +165,7 @@ export const LUMI_FINISH = {
  * Data jsou tady, ne ve scéně: testy díky tomu ověří, že každá cesta má
  * sedm světel a že se dají doletět (žádné světlo mimo mapu).
  */
-export type LumiPathId = 'calm' | 'wind';
+export type LumiPathId = 'calm' | 'wind' | 'light';
 
 export interface LumiPath {
   id: LumiPathId;
@@ -206,6 +206,34 @@ const WIND_ISLANDS: LumiIsland[] = [
   { id: 'shrine', x: 88, y: 90, r: 6, z: 0, tone: '#e8f6f4' },
 ];
 
+/**
+ * Třetí cesta — **Cesta světla**. Není to delší trasa, je to jiný tvar:
+ * světla stoupají ve spirále vzhůru, proudy jsou vysoko a úzké, mezi nimi
+ * dlouhé prázdno. Odemyká se až po dohrání obou předchozích cest, aby
+ * nový hráč nezačínal tím nejtěžším.
+ */
+const LIGHT_LIGHTS: LumiLight[] = LUMI_LIGHTS.map((light, index) => ({
+  ...light,
+  // spirála: x i y plynule rostou, aby cesta vedla jedním tahem nahoru
+  x: 14 + index * 11,
+  y: 12 + index * 12,
+}));
+
+const LIGHT_CURRENTS: LumiCurrent[] = [
+  { id: 'l1', x: 18, y: 26, r: 4.5, lift: 50 },
+  { id: 'l2', x: 40, y: 44, r: 4.5, lift: 54 },
+  { id: 'l3', x: 62, y: 62, r: 4.5, lift: 58 },
+  { id: 'l4', x: 80, y: 80, r: 5, lift: 62 },
+];
+
+const LIGHT_ISLANDS: LumiIsland[] = [
+  { id: 'start', x: 8, y: 8, r: 7, z: 0, tone: '#9fd8dc' },
+  { id: 'l1', x: 30, y: 30, r: 4, z: -10, tone: '#cfe9ea' },
+  { id: 'l2', x: 52, y: 52, r: 4, z: -16, tone: '#b9e6e8' },
+  { id: 'l3', x: 72, y: 72, r: 4, z: -8, tone: '#a9d6dc' },
+  { id: 'shrine', x: 92, y: 92, r: 6, z: 0, tone: '#e8f6f4' },
+];
+
 export const LUMI_PATHS: Record<LumiPathId, LumiPath> = {
   calm: {
     id: 'calm',
@@ -228,6 +256,19 @@ export const LUMI_PATHS: Record<LumiPathId, LumiPath> = {
     intro: {
       cs: 'Větrná cesta vede výš, než kam dohlédneš ze startu. Proudy jsou užší a mezi nimi je delší prázdno — lucerna tu není na ozdobu.',
       en: 'The windy way climbs higher than you can see from the start. The currents are narrower and the gaps between them longer — the lantern is not decoration here.',
+    },
+  },
+  light: {
+    id: 'light',
+    name: { cs: 'Cesta světla', en: 'The way of light' },
+    note: { cs: 'spirála vzhůru, úzké proudy, dlouhé prázdno', en: 'a spiral upward, narrow currents, long gaps' },
+    lights: LIGHT_LIGHTS,
+    currents: LIGHT_CURRENTS,
+    islands: LIGHT_ISLANDS,
+    shrine: { x: 92, y: 92, r: 6 },
+    intro: {
+      cs: 'Cesta světla vede nahoru ve spirále. Proudy jsou vysoko a úzké, mezi nimi je prázdno, které musíš přečkat. Sem se nechodí pro rychlost — chodí se sem, když už víš, že lucerna vydrží.',
+      en: 'The way of light climbs in a spiral. The currents sit high and narrow, with empty air between them you have to endure. You do not come here for speed — you come when you already know the lantern will last.',
     },
   },
 };
