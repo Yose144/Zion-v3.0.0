@@ -41,7 +41,7 @@ export function IssobellaPortal({ onClose }: { onClose: () => void }) {
             router.push('/avatars');
           }}
         >
-          {cs ? 'Všech 200 postav' : 'All 200 figures'}
+          {cs ? 'Všech 202 postav' : 'All 202 figures'}
         </a>
       </div>
       <KingdomLink portalId="issobella" />

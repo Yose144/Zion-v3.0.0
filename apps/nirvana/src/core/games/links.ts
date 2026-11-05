@@ -102,7 +102,7 @@ export const GAME_LINKS: GameLink[] = [
     id: 'avatars',
     href: '/avatars',
     title: { cs: 'Avatar', en: 'Avatar' },
-    note: { cs: '200 postav z OASISu', en: '200 OASIS figures' },
+    note: { cs: '202 postav z OASISu', en: '202 OASIS figures' },
     glyph: '✦',
     tone: '#7fe3d4',
   },
