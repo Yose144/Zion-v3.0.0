@@ -1,0 +1,13 @@
+ZION — LAMPION V6 / KOMPLETNÍ VIZUÁLNÍ BALÍČEK
+
+1. Otevřete PREHLED.html nebo PREHLED_NOVYCH_VIZUALU.jpg.
+2. AI předejte NAVOD_PRO_AI.md, MAPA_NAHRAD.md a replacement_manifest.json.
+3. replacements/ obsahuje 16 hotových WebP pro 3 domény v původních rozměrech.
+4. masters/ obsahuje 11 PNG hlavních scén.
+5. reference_v6/ obsahuje přesný GLB, otočný HTML model a výrobní SVG/DXF/návod.
+6. audit/ obsahuje rozsah kontroly veřejných webů a neověřená místa.
+7. apply_replacements.py umí nejprve dry-run a potom ověřenou výměnu se zálohou.
+
+Tento ZIP připravuje výměnu; živé weby dosud změněny nebyly.
+Newearth.cz se nepodařilo ověřit (HTTP 503).
+Marketingové obrázky jsou AI ilustrace; přesnou geometrii určuje výrobní SVG/3D.

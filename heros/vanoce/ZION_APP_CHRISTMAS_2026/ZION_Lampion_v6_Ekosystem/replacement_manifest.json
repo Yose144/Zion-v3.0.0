@@ -1,0 +1,354 @@
+{
+  "revision": "lampion-v6-2026-11-04",
+  "status": "prepared_not_deployed",
+  "generation": "built-in imagegen; artistic product illustrations",
+  "masters": [
+    {
+      "key": "workshop",
+      "title": "Tesař a děti — produktová karta",
+      "file": "masters/workshop_v6.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "c01d53a00a32d1a5bd8b5eaca1e10cf1a2347f07bd6c9827ebc5444d7a7a59ee"
+    },
+    {
+      "key": "workshop_wide",
+      "title": "Tesař a děti — široký banner",
+      "file": "masters/workshop_wide_v6.png",
+      "width": 1983,
+      "height": 793,
+      "sha256": "30d0f6cada68f5ee95c363205ed098bc22e2c389e6b77a8e5ca15393a7006c2e"
+    },
+    {
+      "key": "app_christmas",
+      "title": "App — vánoční Kingdom",
+      "file": "masters/app_christmas_v6.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "8efd42e7f67c76a4132661a966d5662d19874912043573ebfe1add2f96e709f0"
+    },
+    {
+      "key": "market_hero",
+      "title": "Market — hlavní vánoční hero",
+      "file": "masters/market_hero_v6.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "a1f608d46592b05022c76a0773d4ef0b17cb15daa68903aa4e3314d20da244f3"
+    },
+    {
+      "key": "main_invitation",
+      "title": "Hlavní web — Market is open",
+      "file": "masters/main_invitation_v6.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "a87fee960672480dfce4925e8f40549d1c85a1a6da2536b104620cd22ec5315c"
+    },
+    {
+      "key": "product_day",
+      "title": "Produkt — denní detail",
+      "file": "masters/product_day_v6.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "302c0682fec67f4154bc2217328cfeaba179f53031572b412b534d0593b99704"
+    },
+    {
+      "key": "product_evening",
+      "title": "Produkt — večerní světlo",
+      "file": "masters/product_evening_v6.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "131a0f0a6e94603515c404d96a4993b0503ea31a9fbff332ff0903512058d1c2"
+    },
+    {
+      "key": "product_bundle",
+      "title": "Produkt — vánoční balíček",
+      "file": "masters/product_bundle_v6.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "88c1b7ab401aa10333b4b2c0620edc8a578702e3789dce07dd446b8a876a07ab"
+    },
+    {
+      "key": "story_gate",
+      "title": "Příběh — Světlo před svítáním",
+      "file": "masters/story_gate_v6.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "489456bf4ad49472991e63d2d29cbfe633cb15d426b69fda8d6103ba99e35a8f"
+    },
+    {
+      "key": "story_welcome",
+      "title": "Příběh — Místo navíc",
+      "file": "masters/story_welcome_v6.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "481c64fa34a11485884a4e01f1e408d1c7529dd62fdcd1f8da6460e61cd249c5"
+    },
+    {
+      "key": "news_hero",
+      "title": "App — novinka Vánoce 2026",
+      "file": "masters/news_hero_v6.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "98bdd7b46dc130d01db99db8c522399fd45aeed9e8790b578656ea277202db0a"
+    }
+  ],
+  "replacements": [
+    {
+      "source_audit_id": 3,
+      "master": "workshop",
+      "old_url": "https://market.zionterranova.com/vanoce/home/03_lampion_tesar_deti_v4.webp",
+      "domain": "market.zionterranova.com",
+      "target_public_path": "vanoce/home/03_lampion_tesar_deti_v4.webp",
+      "package_file": "replacements/market.zionterranova.com/vanoce/home/03_lampion_tesar_deti_v4.webp",
+      "width": 1672,
+      "height": 941,
+      "old_sha256": "94fe42278aee5bda14a297401a14e7fb07ad25c3a5968974c9e4729037990bcb",
+      "new_sha256": "ba9c33459ee207212311ca88541823f1a7719dbdee65abe050885ee27ead03ff",
+      "used_on_pages": [
+        "https://market.zionterranova.com/"
+      ],
+      "note": ""
+    },
+    {
+      "source_audit_id": 8,
+      "master": "workshop",
+      "old_url": "https://app.zionterranova.com/images/news/christmas-2026/card-lampion.webp",
+      "domain": "app.zionterranova.com",
+      "target_public_path": "images/news/christmas-2026/card-lampion.webp",
+      "package_file": "replacements/app.zionterranova.com/images/news/christmas-2026/card-lampion.webp",
+      "width": 960,
+      "height": 540,
+      "old_sha256": "908650b92efb160504e0dfe615ba29758bb68dc6b7298ab596ffad88c0ce1477",
+      "new_sha256": "5df1e5005b56c78cca9f296a02a4cc668458a3ec21681d8135b39cd71030c7bb",
+      "used_on_pages": [
+        "https://app.zionterranova.com/"
+      ],
+      "note": ""
+    },
+    {
+      "source_audit_id": 102,
+      "master": "workshop",
+      "old_url": "https://market.zionterranova.com/vanoce-lampion.webp",
+      "domain": "market.zionterranova.com",
+      "target_public_path": "vanoce-lampion.webp",
+      "package_file": "replacements/market.zionterranova.com/vanoce-lampion.webp",
+      "width": 960,
+      "height": 540,
+      "old_sha256": "04250bad06700deff7a636b5e3d484e16c7067f4fafb99f3006151d57cd6c475",
+      "new_sha256": "5df1e5005b56c78cca9f296a02a4cc668458a3ec21681d8135b39cd71030c7bb",
+      "used_on_pages": [
+        "https://market.zionterranova.com/vanoce"
+      ],
+      "note": "Legacy card intentionally unified with new canonical workshop scene"
+    },
+    {
+      "source_audit_id": 52,
+      "master": "workshop_wide",
+      "old_url": "https://app.zionterranova.com/images/news/christmas-2026/lampion-wide.webp",
+      "domain": "app.zionterranova.com",
+      "target_public_path": "images/news/christmas-2026/lampion-wide.webp",
+      "package_file": "replacements/app.zionterranova.com/images/news/christmas-2026/lampion-wide.webp",
+      "width": 1983,
+      "height": 793,
+      "old_sha256": "c7087bde18f20b953851ed0564cce2c73c5a20a6a5c8eeb0431a2bd84b53d8fa",
+      "new_sha256": "f0f99d2920608972c9f95ff49a6f73276644f929afbd1a1cf1c33b1c2562e4ec",
+      "used_on_pages": [
+        "https://app.zionterranova.com/news/christmas-2026"
+      ],
+      "note": ""
+    },
+    {
+      "source_audit_id": 62,
+      "master": "workshop_wide",
+      "old_url": "https://market.zionterranova.com/vanoce/hero/lampion-wide.webp",
+      "domain": "market.zionterranova.com",
+      "target_public_path": "vanoce/hero/lampion-wide.webp",
+      "package_file": "replacements/market.zionterranova.com/vanoce/hero/lampion-wide.webp",
+      "width": 1983,
+      "height": 793,
+      "old_sha256": "c7087bde18f20b953851ed0564cce2c73c5a20a6a5c8eeb0431a2bd84b53d8fa",
+      "new_sha256": "f0f99d2920608972c9f95ff49a6f73276644f929afbd1a1cf1c33b1c2562e4ec",
+      "used_on_pages": [
+        "https://market.zionterranova.com/vanoce/lampion"
+      ],
+      "note": ""
+    },
+    {
+      "source_audit_id": 9,
+      "master": "app_christmas",
+      "old_url": "https://app.zionterranova.com/images/home/christmas-kingdom.webp",
+      "domain": "app.zionterranova.com",
+      "target_public_path": "images/home/christmas-kingdom.webp",
+      "package_file": "replacements/app.zionterranova.com/images/home/christmas-kingdom.webp",
+      "width": 1672,
+      "height": 941,
+      "old_sha256": "2663890b1cc2dd83630dfa39bdce66cdd46c9e2b9024a93c9be2776aaf962f61",
+      "new_sha256": "ac4614e69b72069474eea1c420a865a14fed45f534b947a8a48a56dd4bc79103",
+      "used_on_pages": [
+        "https://app.zionterranova.com/"
+      ],
+      "note": ""
+    },
+    {
+      "source_audit_id": 177,
+      "master": "app_christmas",
+      "old_url": "https://app.zionterranova.com/images/home/christmas-kingdom-m.webp",
+      "domain": "app.zionterranova.com",
+      "target_public_path": "images/home/christmas-kingdom-m.webp",
+      "package_file": "replacements/app.zionterranova.com/images/home/christmas-kingdom-m.webp",
+      "width": 960,
+      "height": 540,
+      "old_sha256": "08344577404a40dedaae1f257af832f716c0413fe92b5df46c85f0d23d7785e4",
+      "new_sha256": "763145566ab0f5de12ef3bd4c6b710c99f80bacbc119cd926ff5596ee45e1867",
+      "used_on_pages": [
+        "https://app.zionterranova.com/"
+      ],
+      "note": ""
+    },
+    {
+      "source_audit_id": 103,
+      "master": "market_hero",
+      "old_url": "https://market.zionterranova.com/hero-kolekce-2027.webp",
+      "domain": "market.zionterranova.com",
+      "target_public_path": "hero-kolekce-2027.webp",
+      "package_file": "replacements/market.zionterranova.com/hero-kolekce-2027.webp",
+      "width": 1672,
+      "height": 941,
+      "old_sha256": "39bc0225c1c2cd002c60cd7afdfa832c7b322f9ff3325130166ad53ca5a746bb",
+      "new_sha256": "150eb6a18c45988d12c47ee2e17e99fbabc7b720a0650ecbd92110f2cc5e31f8",
+      "used_on_pages": [
+        "https://market.zionterranova.com/"
+      ],
+      "note": ""
+    },
+    {
+      "source_audit_id": 16,
+      "master": "main_invitation",
+      "old_url": "https://zionterranova.com/images/market-open.webp",
+      "domain": "zionterranova.com",
+      "target_public_path": "images/market-open.webp",
+      "package_file": "replacements/zionterranova.com/images/market-open.webp",
+      "width": 1672,
+      "height": 941,
+      "old_sha256": "4692e66b3877edcd625c4fa6337235944ac4968de424bcad6642357158b52ee0",
+      "new_sha256": "5a287060c42bf2e501d99e3c83795208b5d69ee38574c5d3bf1f215ae7fca03d",
+      "used_on_pages": [
+        "https://zionterranova.com/"
+      ],
+      "note": ""
+    },
+    {
+      "source_audit_id": 64,
+      "master": "product_day",
+      "old_url": "https://market.zionterranova.com/vanoce/galerie/lampion/02_konstrukce_v4.webp",
+      "domain": "market.zionterranova.com",
+      "target_public_path": "vanoce/galerie/lampion/02_konstrukce_v4.webp",
+      "package_file": "replacements/market.zionterranova.com/vanoce/galerie/lampion/02_konstrukce_v4.webp",
+      "width": 1672,
+      "height": 941,
+      "old_sha256": "4dd26e8233472718ca329d8697370cc25f2785bb5a8f0b993198b9295864fdac",
+      "new_sha256": "321f56ad7d15327e2deeec4cd573ec05d507ff90ac4b92df001686d20da80dfb",
+      "used_on_pages": [
+        "https://market.zionterranova.com/vanoce/lampion"
+      ],
+      "note": ""
+    },
+    {
+      "source_audit_id": 65,
+      "master": "product_evening",
+      "old_url": "https://market.zionterranova.com/vanoce/galerie/lampion/03_vecerni_svetlo_v4.webp",
+      "domain": "market.zionterranova.com",
+      "target_public_path": "vanoce/galerie/lampion/03_vecerni_svetlo_v4.webp",
+      "package_file": "replacements/market.zionterranova.com/vanoce/galerie/lampion/03_vecerni_svetlo_v4.webp",
+      "width": 1672,
+      "height": 941,
+      "old_sha256": "e5e3aa15ff343151a0593985b299c4f0875d335e8dd9f39a3ae773ba27b29ad9",
+      "new_sha256": "5b4608172b002e1a959c445320540c8c503be23d138ac3aa04fce59011b27baf",
+      "used_on_pages": [
+        "https://market.zionterranova.com/vanoce/lampion"
+      ],
+      "note": ""
+    },
+    {
+      "source_audit_id": 63,
+      "master": "product_bundle",
+      "old_url": "https://market.zionterranova.com/vanoce/galerie/lampion/01_balicek_v4.webp",
+      "domain": "market.zionterranova.com",
+      "target_public_path": "vanoce/galerie/lampion/01_balicek_v4.webp",
+      "package_file": "replacements/market.zionterranova.com/vanoce/galerie/lampion/01_balicek_v4.webp",
+      "width": 1672,
+      "height": 941,
+      "old_sha256": "f435780ecaab97d81de570147a7bd038625d44899d418510be642e6ae88a057b",
+      "new_sha256": "b405f6746363694f9fe93441bde39c840c2d2c2aa18b690637356f010774403c",
+      "used_on_pages": [
+        "https://market.zionterranova.com/vanoce/lampion"
+      ],
+      "note": ""
+    },
+    {
+      "source_audit_id": 59,
+      "master": "story_gate",
+      "old_url": "https://market.zionterranova.com/vanoce/pribeh/05_svetla_u_brany.webp",
+      "domain": "market.zionterranova.com",
+      "target_public_path": "vanoce/pribeh/05_svetla_u_brany.webp",
+      "package_file": "replacements/market.zionterranova.com/vanoce/pribeh/05_svetla_u_brany.webp",
+      "width": 1672,
+      "height": 941,
+      "old_sha256": "f3c63c5a86a59b550d5345f7808355be26b80434b243d5055aa042167b9493fa",
+      "new_sha256": "b66d44ec06185034208471b643b8acdfe3d2ae963a10f20c510f4b4be0cf9583",
+      "used_on_pages": [
+        "https://market.zionterranova.com/vanoce/kniha-kralovstvi-srdce"
+      ],
+      "note": ""
+    },
+    {
+      "source_audit_id": 61,
+      "master": "story_welcome",
+      "old_url": "https://market.zionterranova.com/vanoce/pribeh/06_misto_navic.webp",
+      "domain": "market.zionterranova.com",
+      "target_public_path": "vanoce/pribeh/06_misto_navic.webp",
+      "package_file": "replacements/market.zionterranova.com/vanoce/pribeh/06_misto_navic.webp",
+      "width": 1672,
+      "height": 941,
+      "old_sha256": "b8a31adeea7839a859c97b6b918af4ab795ce507e40ccdc4097e76740b190ac0",
+      "new_sha256": "1a9fe44ed98638ced08e0254471b3cb18c24f1e91ff310016136047b2fd4f36f",
+      "used_on_pages": [
+        "https://market.zionterranova.com/vanoce/kniha-kralovstvi-srdce"
+      ],
+      "note": ""
+    },
+    {
+      "source_audit_id": 11,
+      "master": "news_hero",
+      "old_url": "https://app.zionterranova.com/images/news/christmas-2026/hero-960.webp",
+      "domain": "app.zionterranova.com",
+      "target_public_path": "images/news/christmas-2026/hero-960.webp",
+      "package_file": "replacements/app.zionterranova.com/images/news/christmas-2026/hero-960.webp",
+      "width": 960,
+      "height": 540,
+      "old_sha256": "0783ebc3bd089c5fe5e2813e4f2f152d5c1aa08ff8b4a35b46d89bafa7d56348",
+      "new_sha256": "1fb386637406b6338064455754af88d9e5ac2c6acb8b503d3de6013534a93861",
+      "used_on_pages": [
+        "https://app.zionterranova.com/",
+        "https://app.zionterranova.com/news"
+      ],
+      "note": ""
+    },
+    {
+      "source_audit_id": 49,
+      "master": "news_hero",
+      "old_url": "https://app.zionterranova.com/images/news/christmas-2026/hero-1600.webp",
+      "domain": "app.zionterranova.com",
+      "target_public_path": "images/news/christmas-2026/hero-1600.webp",
+      "package_file": "replacements/app.zionterranova.com/images/news/christmas-2026/hero-1600.webp",
+      "width": 1600,
+      "height": 900,
+      "old_sha256": "258f58e6e9426ff73040d141174ef11962ebe1ab8fd3e551c581743b6c93af41",
+      "new_sha256": "a5f54782114d72e37e6dd5644b77091a9c07dfccf509c07d8902acb46977dcc8",
+      "used_on_pages": [
+        "https://app.zionterranova.com/news/christmas-2026"
+      ],
+      "note": ""
+    }
+  ]
+}

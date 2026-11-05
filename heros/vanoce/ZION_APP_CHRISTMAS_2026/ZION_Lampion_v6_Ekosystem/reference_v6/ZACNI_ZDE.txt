@@ -1,0 +1,30 @@
+KRÁLOVSTVÍ SRDCE — LAMPION V6 / 3D PREVIEW
+
+1. Rozbalte celý ZIP.
+2. Otevřete Lampion_3D.html v aktuálním Chrome, Edge nebo Firefoxu.
+   Náhled je samostatný, nepotřebuje internet ani instalaci.
+3. Tažením otáčíte, kolečkem přibližujete. Tlačítka ovládají rozložení,
+   pohledy na jednotlivé motivy, teplé světlo a export PNG.
+
+Lampion_Kralovstvi_srdce_v6.glb je model pro Blender a webové 3D prohlížeče.
+Jednotky GLB jsou metry, svislá osa Y. Osm samostatně pojmenovaných dílů.
+PNG zachycují sestavený a rozložený lampion.
+
+PODKLAD
+Lucerna_A3_POUZE_REZ_1na1.svg z dodaného balíčku A3 v6.
+Původní kontury byly vytaženy na 3 mm bez zjednodušení nebo změny motivů.
+Přes vrcholy 140 mm, přes plochy 121,24356 mm, výška 126 mm.
+Veškeré ornamenty a texty jsou skutečné průchozí otvory.
+
+OMEZENÍ
+Jde o vizualizační model, nikoli novou výrobní dokumentaci či model pro 3D tisk.
+Vršek zachovává dva bodové dotyky původních výřezů; po vytažení vytvářejí
+2 ne-manifold svislé hrany. Ostatních sedm dílů tvoří uzavřené sítě.
+Výrobní SVG/DXF tento balíček nemění ani nenahrazuje.
+Fyzické lícování, pevnost a tepelná bezpečnost svíčky nebyly tímto modelem ověřeny.
+Osvětlení je ilustrační bez fyzikální simulace stínů a plamene.
+
+KONTROLA
+Shadery byly zkompilovány a sestava vykreslena offscreen přes OpenGL.
+Ověřeno načtení všech 8 sítí, rozbalení dat a ovládací logika náhledu.
+Úplný vizuální test HTML v prohlížeči v tomto prostředí nebyl dostupný.

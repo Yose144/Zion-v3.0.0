@@ -1,0 +1,2543 @@
+[
+  {
+    "url": "https://market.zionterranova.com/zion-social-banner.png",
+    "alt": "og:image",
+    "pages": [
+      "https://market.zionterranova.com/",
+      "https://market.zionterranova.com/shop",
+      "https://market.zionterranova.com/shop?category=books",
+      "https://market.zionterranova.com/shopping-guide",
+      "https://market.zionterranova.com/vanoce/kniha-kralovstvi-srdce",
+      "https://market.zionterranova.com/vanoce/lampion",
+      "https://market.zionterranova.com/vanoce/zion-pass",
+      "https://market.zionterranova.com/vanoce"
+    ],
+    "id": 0,
+    "size": [
+      1200,
+      630
+    ],
+    "sha256": "ca52b271b4bcf1e356ef752c55e5f2ec788a2360365770af3ae116d06150d3c6"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce/home/01_zion_pass.webp",
+    "alt": "ZION Pass — zlatá brána do Království srdce",
+    "pages": [
+      "https://market.zionterranova.com/"
+    ],
+    "id": 1,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "3456533153fe4babcf3c7f883ac7c1b4fa0b481407e0da2dbf1b1034d5cee8fe"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce/home/02_kralovstvi_srdce.webp",
+    "alt": "Království srdce — obálka knihy",
+    "pages": [
+      "https://market.zionterranova.com/"
+    ],
+    "id": 2,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "592fd8f48e936540771321fc1d6cb5e403d50ab308c825fffc5afe0052281306"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce/home/03_lampion_tesar_deti_v4.webp",
+    "alt": "Lampion Království srdce — gravírovaný vánoční výrobek z dílny tesaře",
+    "pages": [
+      "https://market.zionterranova.com/"
+    ],
+    "id": 3,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "94fe42278aee5bda14a297401a14e7fb07ad25c3a5968974c9e4729037990bcb"
+  },
+  {
+    "url": "https://app.zionterranova.com/opengraph-image?8bed3b58be3d4da5",
+    "alt": "og:image",
+    "pages": [
+      "https://app.zionterranova.com/",
+      "https://app.zionterranova.com/l4-oasis",
+      "https://app.zionterranova.com/l5-free-world",
+      "https://app.zionterranova.com/news",
+      "https://app.zionterranova.com/news/christmas-2026",
+      "https://app.zionterranova.com/zion-archive",
+      "https://app.zionterranova.com/zion-archive/cist",
+      "https://app.zionterranova.com/zion-archive/nirvana/cist",
+      "https://app.zionterranova.com/terranova/amenti",
+      "https://app.zionterranova.com/terranova/boa-esperanca",
+      "https://app.zionterranova.com/terranova/bodhi-lanka",
+      "https://app.zionterranova.com/terranova/dharma-temple",
+      "https://app.zionterranova.com/terranova/ekam",
+      "https://app.zionterranova.com/terranova/genesis",
+      "https://app.zionterranova.com/terranova/golden-republic-bohemia",
+      "https://app.zionterranova.com/terranova/kailash",
+      "https://app.zionterranova.com/terranova/kralovstvi-srdce",
+      "https://app.zionterranova.com/terranova/maria-del-camino",
+      "https://app.zionterranova.com/terranova/nabukano",
+      "https://app.zionterranova.com/terranova/nova-amerika",
+      "https://app.zionterranova.com/terranova/te-piko-ora",
+      "https://app.zionterranova.com/terranova/uluru"
+    ],
+    "id": 4,
+    "size": [
+      1200,
+      630
+    ],
+    "sha256": "bf50e46a7b08da629060706a7a04d0f1655ed31209382847493a516dc7128920"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/nirvana-preview-v2.webp",
+    "alt": "Nirvana — vesmír prvního světa OASIS",
+    "pages": [
+      "https://app.zionterranova.com/"
+    ],
+    "id": 5,
+    "size": [
+      1000,
+      800
+    ],
+    "sha256": "ed65bded96bde66cd35509569e72320ef27dba4d65f2ada6a4dfd60dc96e58db"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/news/christmas-2026/card-pass.webp",
+    "alt": "ZION Pass",
+    "pages": [
+      "https://app.zionterranova.com/"
+    ],
+    "id": 6,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "cf6a8ed28bfc7dd90430414d749015f10acc1b639e6a857660f46cfe764cf6cd"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/news/christmas-2026/card-book.webp",
+    "alt": "Království srdce",
+    "pages": [
+      "https://app.zionterranova.com/"
+    ],
+    "id": 7,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "670669dc825e64e3d662bd4e059a909902504b7d2a57ccb2d01a9d8b2973eebc"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/news/christmas-2026/card-lampion.webp",
+    "alt": "Lampion Království srdce",
+    "pages": [
+      "https://app.zionterranova.com/"
+    ],
+    "id": 8,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "908650b92efb160504e0dfe615ba29758bb68dc6b7298ab596ffad88c0ce1477"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/home/christmas-kingdom.webp",
+    "alt": "Veselé Vánoce a šťastný nový rok 2027 — Kingdom, archa a Strom života ve sněhu",
+    "pages": [
+      "https://app.zionterranova.com/"
+    ],
+    "id": 9,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "2663890b1cc2dd83630dfa39bdce66cdd46c9e2b9024a93c9be2776aaf962f61"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/zion-archive/hero.webp",
+    "alt": "Oasis — jedna rodina pod Stromem života, vizuál Nirvana Hubu",
+    "pages": [
+      "https://app.zionterranova.com/"
+    ],
+    "id": 10,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "4d4fcc8b67eafbaf4fc17ebdbe8c258736fdf020b306444dd0c6c6640a1f5f1d"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/news/christmas-2026/hero-960.webp",
+    "alt": "Vánoce 2026 — tesař s knihou, archa, brána Kingdom a svět Nirvana",
+    "pages": [
+      "https://app.zionterranova.com/",
+      "https://app.zionterranova.com/news"
+    ],
+    "id": 11,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "0783ebc3bd089c5fe5e2813e4f2f152d5c1aa08ff8b4a35b46d89bafa7d56348"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/news/beta-cosmic-utopia.webp",
+    "alt": "ZION Mainnet Beta — ekosystém L1–L6, Maitreya a multichain pool ZION / QTC / PEARL",
+    "pages": [
+      "https://app.zionterranova.com/",
+      "https://app.zionterranova.com/news"
+    ],
+    "id": 12,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "5a72b3fec67fe41a8a4782e5373d4215821155a695712c19c6fc213f1bd658d9"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/home/hero-l5-map.webp",
+    "alt": "Mapa L5 Free World — dvanáct bodů a vrstvy L1–L6",
+    "pages": [
+      "https://app.zionterranova.com/",
+      "https://app.zionterranova.com/news"
+    ],
+    "id": 13,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "0ebddf34c9e3f9f62ee27b87365c3ffbecec82e1ca5ed481a872df55ba4c3288"
+  },
+  {
+    "url": "https://zionterranova.com/zion-social-banner.png",
+    "alt": "og:image",
+    "pages": [
+      "https://zionterranova.com/"
+    ],
+    "id": 14,
+    "size": [
+      1200,
+      630
+    ],
+    "sha256": "9dc5dd1af59ba3e12e84d0852b0fdd2e0ed3394cef977bd2a3094b5e8321330e"
+  },
+  {
+    "url": "https://zionterranova.com/images/nirvana-preview.webp",
+    "alt": "Nirvana — první svět OASIS",
+    "pages": [
+      "https://zionterranova.com/"
+    ],
+    "id": 15,
+    "size": [
+      1000,
+      800
+    ],
+    "sha256": "ed65bded96bde66cd35509569e72320ef27dba4d65f2ada6a4dfd60dc96e58db"
+  },
+  {
+    "url": "https://zionterranova.com/images/market-open.webp",
+    "alt": "Market is open — vánoční pozvánka do ZION Marketu (PF 2027)",
+    "pages": [
+      "https://zionterranova.com/"
+    ],
+    "id": 16,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "4692e66b3877edcd625c4fa6337235944ac4968de424bcad6642357158b52ee0"
+  },
+  {
+    "url": "https://freeworld.zionterranova.com/assets/img/mark.png",
+    "alt": "ZION",
+    "pages": [
+      "https://freeworld.zionterranova.com/",
+      "https://freeworld.zionterranova.com/p/maria-del-camino/"
+    ],
+    "id": 17,
+    "size": [
+      200,
+      200
+    ],
+    "sha256": "2c5e2bc4b181d918bd93b35a4fb34acb32483d2011b39e743d6f01f297e992e1"
+  },
+  {
+    "url": "https://freeworld.zionterranova.com/assets/img/hero.webp?v=7f3e9ada",
+    "alt": "ZION Free World",
+    "pages": [
+      "https://freeworld.zionterranova.com/"
+    ],
+    "id": 18,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "a7048e9daf99a93ce0f8ab3dc0f6ef301a65806a6b9f9ca32adf03127632589a"
+  },
+  {
+    "url": "https://freeworld.zionterranova.com/assets/img/genesis-garden/render.webp?v=b2d8b91e",
+    "alt": "Genesis Garden",
+    "pages": [
+      "https://freeworld.zionterranova.com/"
+    ],
+    "id": 19,
+    "size": [
+      1400,
+      787
+    ],
+    "sha256": "5968317baa9d571229938e1f4034b8a52750f447a5d85020f1563d66eb8cbf15"
+  },
+  {
+    "url": "https://freeworld.zionterranova.com/assets/img/dharma-temple/render.webp?v=b1b03ebe",
+    "alt": "Dharma Temple",
+    "pages": [
+      "https://freeworld.zionterranova.com/"
+    ],
+    "id": 20,
+    "size": [
+      1400,
+      895
+    ],
+    "sha256": "30f59f01ba9166855a903730517600f8aa0ec4ca8a30fa1e9c9c71885296ce0f"
+  },
+  {
+    "url": "https://freeworld.zionterranova.com/assets/img/te-piko-ora/render.webp?v=9d12c998",
+    "alt": "Te Pīko Ora",
+    "pages": [
+      "https://freeworld.zionterranova.com/"
+    ],
+    "id": 21,
+    "size": [
+      1400,
+      933
+    ],
+    "sha256": "3b7ac4f4820d99da9b309669e14caedaf28e26300be633fc9b30cdebe5282657"
+  },
+  {
+    "url": "https://freeworld.zionterranova.com/assets/img/golden-republic-bohemia/render.webp?v=de81c99e",
+    "alt": "Golden Republic Bohemia",
+    "pages": [
+      "https://freeworld.zionterranova.com/"
+    ],
+    "id": 22,
+    "size": [
+      1168,
+      784
+    ],
+    "sha256": "8973b40539b6979c820a647b0c13f0d39bc0cd4c8dc678ba1e193c5ea21d29cc"
+  },
+  {
+    "url": "https://freeworld.zionterranova.com/assets/img/bodhi-lanka/render.webp?v=006df8db",
+    "alt": "Bodhi Lanka",
+    "pages": [
+      "https://freeworld.zionterranova.com/"
+    ],
+    "id": 23,
+    "size": [
+      1168,
+      784
+    ],
+    "sha256": "dfd0a207f021584250e2ea535374076ab381ac57edd0af05d7838d20df308f1e"
+  },
+  {
+    "url": "https://freeworld.zionterranova.com/assets/img/ekam/render.webp?v=2d56c077",
+    "alt": "Ekam",
+    "pages": [
+      "https://freeworld.zionterranova.com/"
+    ],
+    "id": 24,
+    "size": [
+      1400,
+      787
+    ],
+    "sha256": "7a0678a461e70df74b51f60a9baa11fc67318edb9b9be61f9581f3c66ea0f327"
+  },
+  {
+    "url": "https://freeworld.zionterranova.com/assets/img/lumi-nova-amerika/render.webp?v=5121e7bd",
+    "alt": "LUMI · Nová Amerika",
+    "pages": [
+      "https://freeworld.zionterranova.com/"
+    ],
+    "id": 25,
+    "size": [
+      1400,
+      787
+    ],
+    "sha256": "d18fe0c8336fd4e1c183c0918307d5b6b63b4ec616f6877593559fe449f3df3f"
+  },
+  {
+    "url": "https://freeworld.zionterranova.com/assets/img/uluru/render.webp?v=d693c9ca",
+    "alt": "Uluru",
+    "pages": [
+      "https://freeworld.zionterranova.com/"
+    ],
+    "id": 26,
+    "size": [
+      1400,
+      787
+    ],
+    "sha256": "cf63184ad1599dd9267cc795ec0901f82500977db406d6f6be8cbf8dc96dc244"
+  },
+  {
+    "url": "https://freeworld.zionterranova.com/assets/img/maria-del-camino/render.webp?v=4e63ee6e",
+    "alt": "María del Camino",
+    "pages": [
+      "https://freeworld.zionterranova.com/",
+      "https://freeworld.zionterranova.com/p/maria-del-camino/"
+    ],
+    "id": 27,
+    "size": [
+      1400,
+      787
+    ],
+    "sha256": "5c990fbce94747d3a64f899ef73c70dcc08adb8d3e12aa9ce935bc7250412a69"
+  },
+  {
+    "url": "https://freeworld.zionterranova.com/assets/img/boa-esperanca/render.webp?v=8f17ecc2",
+    "alt": "Boa Esperança",
+    "pages": [
+      "https://freeworld.zionterranova.com/"
+    ],
+    "id": 28,
+    "size": [
+      1280,
+      720
+    ],
+    "sha256": "3caa96d00fc7bf98c7b38a56b92d091284cfb0a415927b90225aa2998fa7e9c2"
+  },
+  {
+    "url": "https://freeworld.zionterranova.com/assets/img/kailash/render.webp?v=e4d8c9db",
+    "alt": "Kailash",
+    "pages": [
+      "https://freeworld.zionterranova.com/"
+    ],
+    "id": 29,
+    "size": [
+      1400,
+      788
+    ],
+    "sha256": "b78089c8fbea4d3de3679b9404118692f6c69fd41ca16297890d2dcb821c9d33"
+  },
+  {
+    "url": "https://freeworld.zionterranova.com/assets/img/amenti/render.webp?v=25466bb5",
+    "alt": "Amenti",
+    "pages": [
+      "https://freeworld.zionterranova.com/"
+    ],
+    "id": 30,
+    "size": [
+      1280,
+      720
+    ],
+    "sha256": "3e084b99739ac032883136b6761c35089ce0218029d2a44ff68d1317374ebad5"
+  },
+  {
+    "url": "https://oasis.zionterranova.com/zion-social-banner.png",
+    "alt": "og:image",
+    "pages": [
+      "https://oasis.zionterranova.com/"
+    ],
+    "id": 31,
+    "size": [
+      1200,
+      630
+    ],
+    "sha256": "ca52b271b4bcf1e356ef752c55e5f2ec788a2360365770af3ae116d06150d3c6"
+  },
+  {
+    "url": "https://pool.zionterranova.com/brand/hero-multichain.webp",
+    "alt": "og:image",
+    "pages": [
+      "https://pool.zionterranova.com/",
+      "https://pool.zionterranova.com/"
+    ],
+    "id": 32,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "1534d7a867addde1f05c7bcc1c3d40505ef61ccdcf90ac1bf508cb993c44cbdd"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/l4-oasis/hero.webp",
+    "alt": "ZION Oasis — Strom života a Zlaté vejce ve spirální galaxii",
+    "pages": [
+      "https://app.zionterranova.com/l4-oasis"
+    ],
+    "id": 33,
+    "size": [
+      1280,
+      720
+    ],
+    "sha256": "da8d26ec6c5966275171dafbf72bbf7c8ffd9641fdf83d58240d0a10f73360ec"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/kralovstvi-srdce/hero.webp",
+    "alt": "L5 Free World — třináctý uzel: archa Království srdce · Nirvana, keporkaci a břeh Nové země",
+    "pages": [
+      "https://app.zionterranova.com/l5-free-world",
+      "https://app.zionterranova.com/terranova/kralovstvi-srdce"
+    ],
+    "id": 34,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "256e8aabb35463ddd5ba6066cf13b7c9c93ee9bb7a511ce81d3524100bffb7ac"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/genesis-garden/hero-m.webp",
+    "alt": "Genesis Garden",
+    "pages": [
+      "https://app.zionterranova.com/l5-free-world"
+    ],
+    "id": 35,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "d60c332439d2a88496a67a0585976d4cc01ea45441547788204ae710cb1d9ffe"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/dharma-temple/hero-m.webp",
+    "alt": "Dharma Temple",
+    "pages": [
+      "https://app.zionterranova.com/l5-free-world"
+    ],
+    "id": 36,
+    "size": [
+      960,
+      614
+    ],
+    "sha256": "b527dd8c46c65ea0964ee72935cae7a2cf8e081749114ec7bb0c3db1e7e9cbe8"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/te-piko-ora/hero-m.webp",
+    "alt": "Te Pīko Ora",
+    "pages": [
+      "https://app.zionterranova.com/l5-free-world"
+    ],
+    "id": 37,
+    "size": [
+      960,
+      639
+    ],
+    "sha256": "db8ef92ab92fcfa07952d1ad22a32a4514de8441e722f0d336560137d0cfd2fb"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/golden-republic-bohemia/hero-m.webp",
+    "alt": "Golden Republic Bohemia",
+    "pages": [
+      "https://app.zionterranova.com/l5-free-world"
+    ],
+    "id": 38,
+    "size": [
+      960,
+      644
+    ],
+    "sha256": "3b647c60ddf7036ca33fdc74bbe872ce3fed8beb16161d4177c4ae54d2724113"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/bodhi-lanka/hero-m.webp",
+    "alt": "Bodhi Lanka",
+    "pages": [
+      "https://app.zionterranova.com/l5-free-world"
+    ],
+    "id": 39,
+    "size": [
+      960,
+      644
+    ],
+    "sha256": "a2bb765cc87b05be779e2332b248b698e7c872f22e7c5ee5bdb3d7185f62a1ee"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/ekam/hero-m.webp",
+    "alt": "Ekam · Oneness Temple",
+    "pages": [
+      "https://app.zionterranova.com/l5-free-world"
+    ],
+    "id": 40,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "9621a75797be02136c27348541d9018e1b46fad4916719a131531b98247a69da"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/nova-amerika/hero-m.webp",
+    "alt": "LUMI",
+    "pages": [
+      "https://app.zionterranova.com/l5-free-world"
+    ],
+    "id": 41,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "ef29881e836d1282e79454f4a45498d38f24de7ad48365cd6c6fbacf00a09f25"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/uluru/hero-m.webp",
+    "alt": "Uluru",
+    "pages": [
+      "https://app.zionterranova.com/l5-free-world"
+    ],
+    "id": 42,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "14c457a3ee79d7cf2c028676483daab0eaac6646407f8d5d0706e506015dc1dc"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/maria-del-camino/hero-m.webp",
+    "alt": "María del Camino",
+    "pages": [
+      "https://app.zionterranova.com/l5-free-world"
+    ],
+    "id": 43,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "c728b4916734a88ed570799112b5a23238deddf7b1d00346cbd279a8c18391f9"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/boa-esperanca/hero-m.webp",
+    "alt": "Boa Esperança",
+    "pages": [
+      "https://app.zionterranova.com/l5-free-world"
+    ],
+    "id": 44,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "1a2ec005be5842be57ba86e04735e7888711767fca8e5054957145e0f3bc3641"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/kailash/hero-m.webp",
+    "alt": "Kailash",
+    "pages": [
+      "https://app.zionterranova.com/l5-free-world"
+    ],
+    "id": 45,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "2c97e2bd9fb8bd19779836705cd5415c42a12a5e918a6cc975ca44f9503e0710"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/amenti/hero-m.webp",
+    "alt": "Amenti",
+    "pages": [
+      "https://app.zionterranova.com/l5-free-world"
+    ],
+    "id": 46,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "9e8985b04ca540575921701a472d8b8d6e7c83f4a22ecbe40fc0abc6361fe028"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/kralovstvi-srdce/hero-m.webp",
+    "alt": "Království srdce · Archa",
+    "pages": [
+      "https://app.zionterranova.com/l5-free-world"
+    ],
+    "id": 47,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "3182c392f1eae4ff25395b3382c74ecb6fc6f4cd7f19b28efa28fa01aa3d8386"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/pearl/qtc-pearl-news.webp",
+    "alt": "Quantus + Pearl — dva blockchainy nové generace nativně v ZION",
+    "pages": [
+      "https://app.zionterranova.com/news"
+    ],
+    "id": 48,
+    "size": [
+      1280,
+      720
+    ],
+    "sha256": "bcfde56dc6f883786cd79bc7e19fe7e7c83b83584ba21615bf650288bc7fa446"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/news/christmas-2026/hero-1600.webp",
+    "alt": "Vánoce 2026 — tesař s knihou, archa na vodě, brána Kingdom a svět Nirvana v jednom obraze",
+    "pages": [
+      "https://app.zionterranova.com/news/christmas-2026"
+    ],
+    "id": 49,
+    "size": [
+      1600,
+      900
+    ],
+    "sha256": "258f58e6e9426ff73040d141174ef11962ebe1ab8fd3e551c581743b6c93af41"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/news/christmas-2026/pass-wide.webp",
+    "alt": "Zlatá brána mezi světy — ZION Pass na podstavci mezi stromem života a knihovnou",
+    "pages": [
+      "https://app.zionterranova.com/news/christmas-2026"
+    ],
+    "id": 50,
+    "size": [
+      1983,
+      793
+    ],
+    "sha256": "32a68e96cb0ad46082eda73c917ca03bca36fb95a437cd26d3348708d5e1d20e"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/news/christmas-2026/book-wide.webp",
+    "alt": "Tesař u hoblice s dětmi, na tabletu obálka knihy Království srdce",
+    "pages": [
+      "https://app.zionterranova.com/news/christmas-2026"
+    ],
+    "id": 51,
+    "size": [
+      1983,
+      793
+    ],
+    "sha256": "80871587ad1d2f16ee49235cf310ffef01ade2236891d35ed5200598448583dd"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/news/christmas-2026/lampion-wide.webp",
+    "alt": "Tesař s dětmi u hořícího lampionu, na stole kniha Království srdce a ZION Pass",
+    "pages": [
+      "https://app.zionterranova.com/news/christmas-2026"
+    ],
+    "id": 52,
+    "size": [
+      1983,
+      793
+    ],
+    "sha256": "c7087bde18f20b953851ed0564cce2c73c5a20a6a5c8eeb0431a2bd84b53d8fa"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/news/christmas-2026/kingdom-1200.webp",
+    "alt": "Zlatá brána Kingdom s lucernou — portály do světů a služeb ekosystému",
+    "pages": [
+      "https://app.zionterranova.com/news/christmas-2026"
+    ],
+    "id": 53,
+    "size": [
+      1200,
+      675
+    ],
+    "sha256": "52cc849926097ed6e516a815b90009b489ccdc5f1648039eb81eff58ad7fa595"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/news/christmas-2026/nirvana-worlds-1200.webp",
+    "alt": "Vesmír Nirvany — planety otevírají hry: Venuše, Měsíc, Saturn, Mars, Země a strom Brány do OASIS",
+    "pages": [
+      "https://app.zionterranova.com/news/christmas-2026"
+    ],
+    "id": 54,
+    "size": [
+      1200,
+      675
+    ],
+    "sha256": "262fa26bd2fc225d0faf8a4814ef9ec8c45f61b33295b8505958fbe307762d81"
+  },
+  {
+    "url": "https://freeworld.zionterranova.com/assets/img/maria-del-camino/board.webp?v=a9a6559f",
+    "alt": "María del Camino masterplan",
+    "pages": [
+      "https://freeworld.zionterranova.com/p/maria-del-camino/"
+    ],
+    "id": 55,
+    "size": [
+      1600,
+      1000
+    ],
+    "sha256": "3df4ca40630885cfd137fda226f60bf77ed1be2914759e64146ad451e10b5bf0"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce/hero/kralovstvi-srdce-wide.webp",
+    "alt": "Kniha Království srdce — obálka ilustrované edice",
+    "pages": [
+      "https://market.zionterranova.com/vanoce/kniha-kralovstvi-srdce"
+    ],
+    "id": 56,
+    "size": [
+      1983,
+      793
+    ],
+    "sha256": "80871587ad1d2f16ee49235cf310ffef01ade2236891d35ed5200598448583dd"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce/galerie/kralovstvi-srdce/02_edicni_sada.webp",
+    "alt": "Osmička edic Království srdce v jedné sadě",
+    "pages": [
+      "https://market.zionterranova.com/vanoce/kniha-kralovstvi-srdce"
+    ],
+    "id": 57,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "ffa09fbb1d87eb06cc7bf6c004ecc3cefa914b4b748f1a116385c7bb81533ace"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce/galerie/kralovstvi-srdce/03_cteni.webp",
+    "alt": "Čtení Království srdce v PDF i EPUB",
+    "pages": [
+      "https://market.zionterranova.com/vanoce/kniha-kralovstvi-srdce"
+    ],
+    "id": 58,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "ba24744467742c6f1474ebf7c3c8c775560110c6bd0449e3c99af5d74f0860bd"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce/pribeh/05_svetla_u_brany.webp",
+    "alt": "Světlo před svítáním",
+    "pages": [
+      "https://market.zionterranova.com/vanoce/kniha-kralovstvi-srdce"
+    ],
+    "id": 59,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "f3c63c5a86a59b550d5345f7808355be26b80434b243d5055aa042167b9493fa"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce/pribeh/04_jmeno_lodi.webp",
+    "alt": "Království je uvnitř vás",
+    "pages": [
+      "https://market.zionterranova.com/vanoce/kniha-kralovstvi-srdce"
+    ],
+    "id": 60,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "111cffd516fb3442dc8fcdef7a88eb3ddc79f1d01857d7601fe176046767d2df"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce/pribeh/06_misto_navic.webp",
+    "alt": "První prkno",
+    "pages": [
+      "https://market.zionterranova.com/vanoce/kniha-kralovstvi-srdce"
+    ],
+    "id": 61,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "b8a31adeea7839a859c97b6b918af4ab795ce507e40ccdc4097e76740b190ac0"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce/hero/lampion-wide.webp",
+    "alt": "Lampion Království srdce — gravírovaný výrobek z dílny tesaře",
+    "pages": [
+      "https://market.zionterranova.com/vanoce/lampion"
+    ],
+    "id": 62,
+    "size": [
+      1983,
+      793
+    ],
+    "sha256": "c7087bde18f20b953851ed0564cce2c73c5a20a6a5c8eeb0431a2bd84b53d8fa"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce/galerie/lampion/01_balicek_v4.webp",
+    "alt": "Lampion Království srdce jako vánoční balíček",
+    "pages": [
+      "https://market.zionterranova.com/vanoce/lampion"
+    ],
+    "id": 63,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "f435780ecaab97d81de570147a7bd038625d44899d418510be642e6ae88a057b"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce/galerie/lampion/02_konstrukce_v4.webp",
+    "alt": "Šestihranné tělo lampionu a mandalové výřezy",
+    "pages": [
+      "https://market.zionterranova.com/vanoce/lampion",
+      "https://market.zionterranova.com/vanoce/lampion"
+    ],
+    "id": 64,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "4dd26e8233472718ca329d8697370cc25f2785bb5a8f0b993198b9295864fdac"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce/galerie/lampion/03_vecerni_svetlo_v4.webp",
+    "alt": "Lampion ve večerním světle",
+    "pages": [
+      "https://market.zionterranova.com/vanoce/lampion"
+    ],
+    "id": 65,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "e5e3aa15ff343151a0593985b299c4f0875d335e8dd9f39a3ae773ba27b29ad9"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce/hero/zion-pass-wide.webp",
+    "alt": "ZION Pass — zlatá brána do Království srdce",
+    "pages": [
+      "https://market.zionterranova.com/vanoce/zion-pass"
+    ],
+    "id": 66,
+    "size": [
+      1983,
+      793
+    ],
+    "sha256": "32a68e96cb0ad46082eda73c917ca03bca36fb95a437cd26d3348708d5e1d20e"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce/galerie/zion-pass/02_nirvana_a_archiv.webp",
+    "alt": "Nirvana a ZION Archiv za jednou branou",
+    "pages": [
+      "https://market.zionterranova.com/vanoce/zion-pass"
+    ],
+    "id": 67,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "0458d488bde668c8b5eea537818710b6172001ed95c5c504be24e8ef9786e624"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce/galerie/zion-pass/03_digitalni_darek.webp",
+    "alt": "ZION Pass jako digitální dárek do e-mailu",
+    "pages": [
+      "https://market.zionterranova.com/vanoce/zion-pass"
+    ],
+    "id": 68,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "a66f3fb7241e2de038b49e773a90aa9b23d1c59860e2243b67140564b29a38a9"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/amenti/hero.webp",
+    "alt": "ZION Amenti — Kvetoucí Plamen nad pyramidami a sfingou, světelný strom a síť vědomí",
+    "pages": [
+      "https://app.zionterranova.com/terranova/amenti"
+    ],
+    "id": 69,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "ce1a87345f98db6c968b5a3e19d69028babbef365313b5536304deef6ce341cc"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/amenti/heart.webp",
+    "alt": "Srdce Amenti — planoucí srdce sítě",
+    "pages": [
+      "https://app.zionterranova.com/terranova/amenti"
+    ],
+    "id": 70,
+    "size": [
+      1200,
+      781
+    ],
+    "sha256": "d9681df8b9e15a39951ff1d9de3b9683bde2692f085c6ef23bc4782c2b5fbb60"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/amenti/halls.webp",
+    "alt": "Síně Amenti — síně mrtvých a živých pod pískem",
+    "pages": [
+      "https://app.zionterranova.com/terranova/amenti"
+    ],
+    "id": 71,
+    "size": [
+      1400,
+      415
+    ],
+    "sha256": "60e661c505cccd132a957df080e1c9a5451da7c34ead3783015d6d4a898b4dab"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/amenti/book-quantum.webp",
+    "alt": "Kvantová revoluce & One Love",
+    "pages": [
+      "https://app.zionterranova.com/terranova/amenti"
+    ],
+    "id": 72,
+    "size": [
+      480,
+      679
+    ],
+    "sha256": "0646a92d946695c43c76d7a76ce02b792f369bcaf303cdf2292a1550eb4f8dce"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/boa-esperanca/hero.webp",
+    "alt": "Boa Esperança — úsvit nad Mysem dobré naděje, šev dvou oceánů",
+    "pages": [
+      "https://app.zionterranova.com/terranova/boa-esperanca"
+    ],
+    "id": 73,
+    "size": [
+      1600,
+      900
+    ],
+    "sha256": "6e62143516a6ec4878b082d02ff359761c88be890bc1fa6afe4d3fd5572ff55c"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/bodhi-lanka/hero.webp",
+    "alt": "Bodhi Lanka",
+    "pages": [
+      "https://app.zionterranova.com/terranova/bodhi-lanka"
+    ],
+    "id": 74,
+    "size": [
+      1168,
+      784
+    ],
+    "sha256": "36585edd8cb0cdfec9c260989b0b3d9c62b6d8f5038efc986f89f826e3539660"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/bodhi-lanka/concept-og.webp",
+    "alt": "Návrh Bodhi Lanka",
+    "pages": [
+      "https://app.zionterranova.com/terranova/bodhi-lanka"
+    ],
+    "id": 75,
+    "size": [
+      1168,
+      784
+    ],
+    "sha256": "a2a90ab3b5881a5826eb9122ee3813e1286946e8ec8b67c8dbf6e9c792616a91"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/dharma-temple/hero.webp",
+    "alt": "Dharma Temple — koncept",
+    "pages": [
+      "https://app.zionterranova.com/terranova/dharma-temple"
+    ],
+    "id": 76,
+    "size": [
+      1400,
+      896
+    ],
+    "sha256": "ec6b744e5edef01c06e46224bea2926fe4e44e71d9c87a66dda61e4061de08b5"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/dharma-temple/concept-og.webp",
+    "alt": "Návrh Dharma Temple",
+    "pages": [
+      "https://app.zionterranova.com/terranova/dharma-temple"
+    ],
+    "id": 77,
+    "size": [
+      1400,
+      933
+    ],
+    "sha256": "93322a5f6776e6dbb0da1aca9d294f8d42aed99d9d2bfef3ee18f297ff2820da"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/ekam/hero.webp",
+    "alt": "Ekam — bílý mramorový chrám Jednoty se Zlatou koulí, Andhra Pradesh",
+    "pages": [
+      "https://app.zionterranova.com/terranova/ekam"
+    ],
+    "id": 78,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "b4bb9add6582caada4812e8ad1c4a91d2c0e0b778d5ce7a5ef24ea4a8960e4e0"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/genesis-garden/hero.webp",
+    "alt": "Genesis Garden — koncept",
+    "pages": [
+      "https://app.zionterranova.com/terranova/genesis"
+    ],
+    "id": 79,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "f56951548a54f15f89e07b1ba6ed865648a859cdfe89700bbf1be6d988dcfad3"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/genesis-garden/concept-og.webp",
+    "alt": "Návrh Genesis Garden",
+    "pages": [
+      "https://app.zionterranova.com/terranova/genesis"
+    ],
+    "id": 80,
+    "size": [
+      1568,
+      1003
+    ],
+    "sha256": "1b52bff06030d2e3792790e08f2673712e79e32cdc4667c3b175849f3a60847b"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/golden-republic-bohemia/hero.webp",
+    "alt": "Golden Republic Bohemia",
+    "pages": [
+      "https://app.zionterranova.com/terranova/golden-republic-bohemia"
+    ],
+    "id": 81,
+    "size": [
+      1168,
+      784
+    ],
+    "sha256": "d1e3aa5670836787e54ef8edaedbd7cedab33aceb2a95364c41680d979302559"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/golden-republic-bohemia/concept-og.webp",
+    "alt": "Návrh Golden Republic Bohemia",
+    "pages": [
+      "https://app.zionterranova.com/terranova/golden-republic-bohemia"
+    ],
+    "id": 82,
+    "size": [
+      1168,
+      784
+    ],
+    "sha256": "f3cd357bd2b75e041f64957f421f917ac2247051fde0d7ce46477d86499785e1"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/kailash/hero.webp",
+    "alt": "Kailash — pyramida Gang Rinpoche za hvězdné noci, prastarý oheň a kora poutníků",
+    "pages": [
+      "https://app.zionterranova.com/terranova/kailash"
+    ],
+    "id": 83,
+    "size": [
+      1600,
+      901
+    ],
+    "sha256": "411f53a3bef8b1c327966d554d7631dd9234e017e3911ddb685205590898d16c"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/kralovstvi-srdce/seal.webp",
+    "alt": "Pečeť Království srdce",
+    "pages": [
+      "https://app.zionterranova.com/terranova/kralovstvi-srdce",
+      "https://app.zionterranova.com/terranova/kralovstvi-srdce"
+    ],
+    "id": 84,
+    "size": [
+      512,
+      512
+    ],
+    "sha256": "bd84b2b83a110bf3781ffec325f34045baded087820a7373e9ec7fa3a86e1e26"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/kralovstvi-srdce/shipyard.webp",
+    "alt": "Tesař z Nazareta hoblí trám pro velkou archu — v dílně, kde příběh začal, s Malým princem a dívkou s lucernou",
+    "pages": [
+      "https://app.zionterranova.com/terranova/kralovstvi-srdce"
+    ],
+    "id": 85,
+    "size": [
+      1280,
+      720
+    ],
+    "sha256": "3025dcd680d168af58fa4e81c2220819e64596a6e2382009406e006744a045e6"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/kralovstvi-srdce/paradise.webp",
+    "alt": "Zahrada a chrám na břehu s plujícími loděmi — představa kolonie, kterou archa zásobuje",
+    "pages": [
+      "https://app.zionterranova.com/terranova/kralovstvi-srdce"
+    ],
+    "id": 86,
+    "size": [
+      1280,
+      720
+    ],
+    "sha256": "fde9e717010207060c5ecc5faf4265d748c7828395c261ce3a4ad364e042ce56"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/kralovstvi-srdce/deck-plans.webp",
+    "alt": "Studie B3 — obytná archa inspirovaná keporkakem: čtyři paluby, interiéry, konstrukce a pohon",
+    "pages": [
+      "https://app.zionterranova.com/terranova/kralovstvi-srdce"
+    ],
+    "id": 87,
+    "size": [
+      1536,
+      1024
+    ],
+    "sha256": "1af71672bdac992277146388f819669b21893acee1a7669ab281cfaec00631eb"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/kralovstvi-srdce/timeline.webp",
+    "alt": "Časová osa sítě: 2008 EvoluZion · 2012 Srdce Amenti · 2026 Nirvana · 2029 OASIS · L6 Issobella",
+    "pages": [
+      "https://app.zionterranova.com/terranova/kralovstvi-srdce"
+    ],
+    "id": 88,
+    "size": [
+      1600,
+      639
+    ],
+    "sha256": "da92a1c0f27e84195b2b01a3e6e12f6016af68602c47d738552b0b118f6aee25"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/maria-del-camino/hero.webp",
+    "alt": "María del Camino — tři plachetnice Tres Marías na oceánu při západu slunce",
+    "pages": [
+      "https://app.zionterranova.com/terranova/maria-del-camino"
+    ],
+    "id": 89,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "908dc0b49a6f471eaaf455aad8a1153f8749574c4e793bff0dc2e8d895d98f3e"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/maria-del-camino/plans.webp",
+    "alt": "Výkres Království srdce — jednotrupá plachetnice a katamarán, půdorysy a interiéry",
+    "pages": [
+      "https://app.zionterranova.com/terranova/maria-del-camino"
+    ],
+    "id": 90,
+    "size": [
+      1536,
+      1024
+    ],
+    "sha256": "1c9f5506bb512ff74240352e4af092ae9ace4288ccc12e5bc084fa40457a14f6"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/maria-del-camino/patron.webp",
+    "alt": "Malý princ — Pražské Jezulátko s korunou a světem v dlani, Elizabeth s lucernou a tři lodě na moři",
+    "pages": [
+      "https://app.zionterranova.com/terranova/maria-del-camino"
+    ],
+    "id": 91,
+    "size": [
+      1200,
+      800
+    ],
+    "sha256": "dd60d59c617b3b5a3452e4d3dce15bedd891e6754393583c4ca4ff00ccbecd95"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/nabukano/hero.webp",
+    "alt": "Nebeská flotila Nabukano — mateřská loď s dokem a tři nebeské Marie nad Novou Zemí",
+    "pages": [
+      "https://app.zionterranova.com/terranova/nabukano"
+    ],
+    "id": 92,
+    "size": [
+      1920,
+      1080
+    ],
+    "sha256": "ceac8dceccf42c54d25d9a26fc1d06d94e3918f6297bd5c8dacc079e0c1f9dbb"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/nabukano/concept-board.webp",
+    "alt": "Nabukano — studie 02: dok se třemi kotvišti, podélný řez, půdorys, knihovna, zahrada, ordinace a lucerna",
+    "pages": [
+      "https://app.zionterranova.com/terranova/nabukano"
+    ],
+    "id": 93,
+    "size": [
+      1536,
+      1024
+    ],
+    "sha256": "a920e7abe1cca2eb353ddb4c13d5f323cee16466db649a8bb4f013f12ca76261"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/nabukano/cradle.webp",
+    "alt": "Nabukano — dokovací rám se třemi kotvišti pod trupem, lucerna na konci",
+    "pages": [
+      "https://app.zionterranova.com/terranova/nabukano"
+    ],
+    "id": 94,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "bd1af7aada262ab1473525b790a98e241e4e1e3ac620498722d09f636fffe497"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/nova-amerika/hero.webp",
+    "alt": "LUMI — Nová Amerika",
+    "pages": [
+      "https://app.zionterranova.com/terranova/nova-amerika"
+    ],
+    "id": 95,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "d5f6b3ce905c675226830d591b0535eac478b179f1b644ac480f333b4fea0d48"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/nova-amerika/concept-og.webp",
+    "alt": "Koncept sdíleného kampusu LUMI a Issobella",
+    "pages": [
+      "https://app.zionterranova.com/terranova/nova-amerika"
+    ],
+    "id": 96,
+    "size": [
+      1671,
+      941
+    ],
+    "sha256": "c1a4cafa0627a339a54b58f7922a8346016dd5f251f3dff5c98175d47a6a6295"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/te-piko-ora/hero.webp",
+    "alt": "Te Pīko Ora",
+    "pages": [
+      "https://app.zionterranova.com/terranova/te-piko-ora"
+    ],
+    "id": 97,
+    "size": [
+      1400,
+      933
+    ],
+    "sha256": "d08377ce0b455d3f8110bb2ec5a800b896dcddf58587e6f8b5be5dbd2527d49f"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/te-piko-ora/concept-og.webp",
+    "alt": "Návrh Te Pīko Ora",
+    "pages": [
+      "https://app.zionterranova.com/terranova/te-piko-ora"
+    ],
+    "id": 98,
+    "size": [
+      1400,
+      933
+    ],
+    "sha256": "9d6819da6a9c282a79157615f21407afae70ed1fe280396e230fc4625ac9bfd4"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/uluru/hero.webp",
+    "alt": "Uluru — poselství protinožců nad posvátným monolitem",
+    "pages": [
+      "https://app.zionterranova.com/terranova/uluru"
+    ],
+    "id": 99,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "671f68e6cba63359a3a1a3df46ebf10554c8ca36ae504ee79714ceab869a28c5"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce-pass.webp",
+    "alt": "ZION Pass — zlatá brána do Království srdce",
+    "pages": [
+      "https://market.zionterranova.com/vanoce"
+    ],
+    "id": 100,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "a6d4e6d793d52c089dd995352f57013cf30bd69f09eb16d052616136b72ac6c8"
+  },
+  {
+    "url": "https://market.zionterranova.com/shop/img/books/kralovstvi-srdce-wide.webp",
+    "alt": "Kniha Království srdce — obálka ilustrované edice",
+    "pages": [
+      "https://market.zionterranova.com/vanoce"
+    ],
+    "id": 101,
+    "size": [
+      1600,
+      640
+    ],
+    "sha256": "fc404f00959ee78f503df44d5b98c2b6a5f70770bbdd962b95369872f61d3ce1"
+  },
+  {
+    "url": "https://market.zionterranova.com/vanoce-lampion.webp",
+    "alt": "Lampion Království srdce — gravírovaný výrobek z dílny tesaře",
+    "pages": [
+      "https://market.zionterranova.com/vanoce"
+    ],
+    "id": 102,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "04250bad06700deff7a636b5e3d484e16c7067f4fafb99f3006151d57cd6c475"
+  },
+  {
+    "url": "https://market.zionterranova.com/hero-kolekce-2027.webp",
+    "alt": "Market hero CSS",
+    "pages": [
+      "https://market.zionterranova.com/"
+    ],
+    "id": 103,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "39bc0225c1c2cd002c60cd7afdfa832c7b322f9ff3325130166ad53ca5a746bb"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/ekam/founders.webp",
+    "alt": "Sri Amma & Sri Bhagavan",
+    "pages": [
+      "https://app.zionterranova.com/ekam"
+    ],
+    "id": 104,
+    "size": [
+      1600,
+      500
+    ],
+    "sha256": "824583aa18359424d692f30f386e963c1140f49eed4df8e835b310aa14100b9f"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/ekam/preethaji.webp",
+    "alt": "Sri Preethaji & Sri Krishnaji",
+    "pages": [
+      "https://app.zionterranova.com/ekam"
+    ],
+    "id": 105,
+    "size": [
+      1400,
+      627
+    ],
+    "sha256": "724ccfbb2e83020a5a96d2afa9ad927c2d40d0a26ffdb2ed62e518555c5f00c9"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/ekam/temple.webp",
+    "alt": "Ekam — Oneness Temple",
+    "pages": [
+      "https://app.zionterranova.com/ekam"
+    ],
+    "id": 106,
+    "size": [
+      1400,
+      648
+    ],
+    "sha256": "e7a48ecbb6de1bff7d6717fd73b0489503eff72c50f6f4dd14d4808caaf5d7df"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/ekam/turiya.webp",
+    "alt": "Sacred meditation space",
+    "pages": [
+      "https://app.zionterranova.com/ekam"
+    ],
+    "id": 107,
+    "size": [
+      1400,
+      535
+    ],
+    "sha256": "581a0cd531d99435f40f6e9d8c7ae9e67ea93d494ac7e1233c46137bb2879312"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/ekam/nordic.webp",
+    "alt": "Oneness Nordic — European Centre",
+    "pages": [
+      "https://app.zionterranova.com/ekam"
+    ],
+    "id": 108,
+    "size": [
+      1400,
+      933
+    ],
+    "sha256": "34bbcdfda0bf8fdd8438f26507ee63664cea826b6855e96bebba1196beca8dde"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/l3-hiran/hero.webp",
+    "alt": "ZION Hiranyagarbha — L3 AI vrstva",
+    "pages": [
+      "https://app.zionterranova.com/l3-hiran"
+    ],
+    "id": 109,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "ec5174601dec5cba9553a8e16819eaf1a33aeb856af1e483f2b84bc4d25f436d"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/l3-hiran/tree-of-life.webp",
+    "alt": "Strom života — vědění · harmonie · evoluce",
+    "pages": [
+      "https://app.zionterranova.com/l3-hiran"
+    ],
+    "id": 110,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "5e38e0ca7de7ea80cde34a4bdbb4e5cba3b0599a5a869eeea02d25d33dc7fb4e"
+  },
+  {
+    "url": "https://app.zionterranova.com/oasis-assets/oasis-gateway-1920x1080.webp",
+    "alt": "Brána ZION OASIS — úvodní ilustrace",
+    "pages": [
+      "https://app.zionterranova.com/l4-oasis/avatars"
+    ],
+    "id": 111,
+    "size": [
+      1920,
+      1080
+    ],
+    "sha256": "e97a2457daa79129ce1d67580dd91c346515abe54ef46993b11776b3566c341e"
+  },
+  {
+    "url": "https://app.zionterranova.com/docs/l6/img/Issabela1stSkelet.png",
+    "alt": "ZION Issobella — koncept orbitální stanice",
+    "pages": [
+      "https://app.zionterranova.com/l6-issobella"
+    ],
+    "id": 112,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "13887d424d59f1cf59be5fa946162c948aa498aa651bd80fed45277afdd2e35b"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/l6-issobella/ground-station.webp",
+    "alt": "Pozemní stanice Kostarika",
+    "pages": [
+      "https://app.zionterranova.com/l6-issobella"
+    ],
+    "id": 113,
+    "size": [
+      1200,
+      675
+    ],
+    "sha256": "e584879121a0d204a8802e4fcd5e27e2681215141ee6a5d710af56373727d970"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/l6-issobella/artificial-gravity.webp",
+    "alt": "Orbitální stanice",
+    "pages": [
+      "https://app.zionterranova.com/l6-issobella",
+      "https://app.zionterranova.com/l6-issobella"
+    ],
+    "id": 114,
+    "size": [
+      1600,
+      900
+    ],
+    "sha256": "ac20b3dc56a8c82815d4bb26166e08fe6eaee1b7388aacf06cebc0f379f42e36"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/l6-issobella/seti-observatory.webp",
+    "alt": "SETI + Deep Research",
+    "pages": [
+      "https://app.zionterranova.com/l6-issobella"
+    ],
+    "id": 115,
+    "size": [
+      1200,
+      675
+    ],
+    "sha256": "5df860559a3b34d1c16388cc2b9bcb4c97b111626d9be3f32f577b6b3a66a223"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/l6-issobella/mining-asteroid.webp",
+    "alt": "Orbital Mining",
+    "pages": [
+      "https://app.zionterranova.com/l6-issobella"
+    ],
+    "id": 116,
+    "size": [
+      1200,
+      675
+    ],
+    "sha256": "954bd511adbcfaf2541564283542748d2b69bec0faf9fbcab6d0624f596bdbe4"
+  },
+  {
+    "url": "https://app.zionterranova.com/docs/l6/img/1stMock.png",
+    "alt": "První vizualizace stanice Issobella",
+    "pages": [
+      "https://app.zionterranova.com/l6-issobella"
+    ],
+    "id": 117,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "b853f48ab3b7b2c8481507b2c67d885b1285cecf0ef1985078121329250010dd"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/l6-issobella/study-02.webp",
+    "alt": "Koncepční studie 02 — řezy prstencové stanice Issobella s botanickými kopulemi, kajutami, jídelnou a centrálním uzlem",
+    "pages": [
+      "https://app.zionterranova.com/l6-issobella"
+    ],
+    "id": 118,
+    "size": [
+      1536,
+      1024
+    ],
+    "sha256": "217ba84ce8173a61cccee7e7f1eb22fabcf109a0bf077901647a9e353262e5b2"
+  },
+  {
+    "url": "https://zionterranova.com/images/Zion.jpg",
+    "alt": "Kvantová Revoluce — obálka knihy",
+    "pages": [
+      "https://app.zionterranova.com/quantum-revolution",
+      "https://zionterranova.com/amenti/"
+    ],
+    "id": 119,
+    "size": [
+      1587,
+      2245
+    ],
+    "sha256": "502b6d138c0358d638bb9b573f3f4868010ab9ae6a16ece85a96c25922ca3f91"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/team/hero.webp",
+    "alt": "ZION Team — lidé, agenti a komunita kolem Stromu života",
+    "pages": [
+      "https://app.zionterranova.com/team"
+    ],
+    "id": 120,
+    "size": [
+      1672,
+      941
+    ],
+    "sha256": "2a1d916a36dba107c28830d8b7f0533fa65ffa90989bf317fc9e603367eb702c"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/Vzestup/vzestup.webpark.cz/violetfire.jpg",
+    "alt": "Fialový plamen",
+    "pages": [
+      "https://zionterranova.com/Vzestup/"
+    ],
+    "id": 121,
+    "size": [
+      119,
+      150
+    ],
+    "sha256": "c18f8027533be8fca04817b6f865963387efbc373dc58d126c90ecc27f3cdc6f"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/Vzestup/vzestup.webpark.cz/threecircle.jpg",
+    "alt": "Vzestup",
+    "pages": [
+      "https://zionterranova.com/Vzestup/"
+    ],
+    "id": 122,
+    "size": [
+      111,
+      150
+    ],
+    "sha256": "c7052fae694b5758bc30d7973e5bfffa7b24e7bfb6b33c1eedf87231af21940f"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/Vzestup/vzestup.webpark.cz/gautama.jpg",
+    "alt": "Moudrosti",
+    "pages": [
+      "https://zionterranova.com/Vzestup/"
+    ],
+    "id": 123,
+    "size": [
+      93,
+      150
+    ],
+    "sha256": "dcf1100bf9a480d8a455dfb98175adccb5dcdc16ec4d9029c1a7f266a599efcb"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/Vzestup/vzestup.webpark.cz/kkniha_1s.jpg",
+    "alt": "Knihy",
+    "pages": [
+      "https://zionterranova.com/Vzestup/"
+    ],
+    "id": 124,
+    "size": [
+      109,
+      150
+    ],
+    "sha256": "ece9fdae254ec30efbddb581d6e3a845bde44010d82dd7cd2371df3ecc433f07"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/Vzestup/vzestup.webpark.cz/prst.jpg",
+    "alt": "Reconnection",
+    "pages": [
+      "https://zionterranova.com/Vzestup/"
+    ],
+    "id": 125,
+    "size": [
+      120,
+      120
+    ],
+    "sha256": "7d36d7ab22b55bb2ffd0b74f8ec8da72328c82d84dfc08764943476e6e336e76"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/144Halls.jpg",
+    "alt": "Halls of Amenti",
+    "pages": [
+      "https://zionterranova.com/amenti/",
+      "https://zionterranova.com/amenti/"
+    ],
+    "id": 126,
+    "size": [
+      1555,
+      462
+    ],
+    "sha256": "2436773e7b507d243967fe0906cde518eef31f88d3727bbdeed96d14075c3f00"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/Heart2012.jpg",
+    "alt": "Heart of Amenti",
+    "pages": [
+      "https://zionterranova.com/amenti/"
+    ],
+    "id": 127,
+    "size": [
+      2211,
+      1440
+    ],
+    "sha256": "40422bf5ae8d2c73a9069ecceb06812fb4a3ba46bde93d4a8feb0acf16f78ff1"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/Vzestup/vzestup.webpark.cz/portal.jpg",
+    "alt": "Vzestup",
+    "pages": [
+      "https://zionterranova.com/amenti/"
+    ],
+    "id": 128,
+    "size": [
+      111,
+      150
+    ],
+    "sha256": "2d536d99d174c85540706fa72580bc2b1a773235956a6172d411605e46f1b418"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/radhakrishna.jpg",
+    "alt": "Sri Sri Radha Govinda / Goloka",
+    "pages": [
+      "https://zionterranova.com/amenti/"
+    ],
+    "id": 129,
+    "size": [
+      600,
+      400
+    ],
+    "sha256": "e5e90af9cef0a0a3a182280dc042a99ca84a2115a3aecb3ff5fa1c9de7233ceb"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/ramasita.jpg",
+    "alt": "Sri Sri Rama Sita",
+    "pages": [
+      "https://zionterranova.com/amenti/"
+    ],
+    "id": 130,
+    "size": [
+      640,
+      1137
+    ],
+    "sha256": "5b673957fc3d5d0e1310ff5a1d3311df9c80bda1a8efa793aeee7f7654faa87b"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/gouranga.jpg",
+    "alt": "Sri Caitanja Mahaprabhu / Panca Tattva",
+    "pages": [
+      "https://zionterranova.com/amenti/"
+    ],
+    "id": 131,
+    "size": [
+      750,
+      600
+    ],
+    "sha256": "7d9ab203e356ff04d5757999fbf0e52c821d3f6f70493dee5b506d438dd87c05"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/pra-1.png",
+    "alt": "Srila Prabhupada",
+    "pages": [
+      "https://zionterranova.com/amenti/"
+    ],
+    "id": 132,
+    "size": [
+      684,
+      666
+    ],
+    "sha256": "2fcbefb0beee16e9bcd0ba94d60bc21a5d206f58e877bb8fc633be6405c8b609"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/Hirarchy.jpg",
+    "alt": "Vedanta Universe",
+    "pages": [
+      "https://zionterranova.com/amenti/"
+    ],
+    "id": 133,
+    "size": [
+      1059,
+      1600
+    ],
+    "sha256": "95a48ca9da0c41450ab0641a7ea4f0a627f8c35c898fbe2536a26db9ef4f9a44"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/tibet.jpg",
+    "alt": "Tibet guardians",
+    "pages": [
+      "https://zionterranova.com/amenti/",
+      "https://zionterranova.com/camp/"
+    ],
+    "id": 134,
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/varja.png",
+    "alt": "Varja symbol",
+    "pages": [
+      "https://zionterranova.com/amenti/"
+    ],
+    "id": 135,
+    "size": [
+      340,
+      388
+    ],
+    "sha256": "b62b7938c0e0ca4825e20a2634fd36bf22d3a790e14c5df8c7bf7452294c4ed2"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/org1.jpg",
+    "alt": "Blog",
+    "pages": [
+      "https://zionterranova.com/blog/",
+      "https://zionterranova.com/camp/",
+      "https://zionterranova.com/evoluzion/"
+    ],
+    "id": 136,
+    "size": [
+      2000,
+      1200
+    ],
+    "sha256": "62d226c2ccefec4ef87da2fce444b82d5fa011ab812ab933b748e1a56ecfbed0"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2026-02-rebirth-native.jpg",
+    "alt": "Rebirth Native — ZionTerraNova.com Live Dashboard, Pool, Explorer",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 137,
+    "size": [
+      1024,
+      1536
+    ],
+    "sha256": "64b598c32c7e5dd4d8060dfe225918c6ed1dfd3db53e1f9db56fc417b7637dca"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2026-02-native-awakening.jpg",
+    "alt": "3.1.0 MAINNET ALPHA: Kvantová Revoluce & Pre-Mainnet",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 138,
+    "size": [
+      1024,
+      1536
+    ],
+    "sha256": "a3df49415ff6bbe6a0cc7c9cde8a6efc990419e5c1c1a4c57fcc364fc6c6610b"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2026-01-legal.jpg",
+    "alt": "Legal · Rules · Conscious Use",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 139,
+    "size": [
+      1024,
+      1536
+    ],
+    "sha256": "c55c75e284e8585c58175cb54fe594f67cdb4d80c239e9825399cd11bf774798"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2026-01-manifesto.jpg",
+    "alt": "Manifesto: Rozhodnutí k MAINNET ALPHA",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 140,
+    "size": [
+      1024,
+      1536
+    ],
+    "sha256": "a3df49415ff6bbe6a0cc7c9cde8a6efc990419e5c1c1a4c57fcc364fc6c6610b"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2026-01-finalni-report.jpg",
+    "alt": "Finální Report 3.1 Quantum Leap",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 141,
+    "size": [
+      1024,
+      1536
+    ],
+    "sha256": "64b598c32c7e5dd4d8060dfe225918c6ed1dfd3db53e1f9db56fc417b7637dca"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2025-12-testnet-launch.jpg",
+    "alt": "✨ ZION v3.1.0 MAINNET ALPHA ✨ Live! 🚀 Pf 2026",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 142,
+    "size": [
+      1600,
+      1200
+    ],
+    "sha256": "3f3cdc4ad79f9b26b1fd5661bd9af56f0657945da3763e474d5b0dd31ac70e88"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2025-11-quantum-leap.jpg",
+    "alt": "ZION 3.1 – Quantum Leap & Rebirth evoluZion eshop v2",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 143,
+    "size": [
+      1600,
+      1200
+    ],
+    "sha256": "3f3cdc4ad79f9b26b1fd5661bd9af56f0657945da3763e474d5b0dd31ac70e88"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2025-10-testnet285.jpg",
+    "alt": "Testnet 2.8.5 Estrella with Warp — Nebula — Milky Way",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 144,
+    "size": [
+      1600,
+      1200
+    ],
+    "sha256": "3f3cdc4ad79f9b26b1fd5661bd9af56f0657945da3763e474d5b0dd31ac70e88"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2025-07-baltic.jpg",
+    "alt": "Yeshuae on the bike vol.2 — Baltic Express Bikepacking",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 145,
+    "size": [
+      4032,
+      3024
+    ],
+    "sha256": "73195b3bce7ddb254a9e175bd5d96aa4a2f7fe1804d191c70a3a3ccdcf4c397d"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2024-12-tibet.jpg",
+    "alt": "Tändzin Gjamccho — 90. Dalajlama",
+    "pages": [
+      "https://zionterranova.com/blog/",
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 146,
+    "size": [
+      4032,
+      3024
+    ],
+    "sha256": "f7d8cecc8f18d1c9330509f555265eee284dd91ce9c416a5342a15cc3ec2cc01"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2024-11-konstanta.jpg",
+    "alt": "Škola Vzestupu — Human Design",
+    "pages": [
+      "https://zionterranova.com/blog/",
+      "https://zionterranova.com/blog/",
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 147,
+    "size": [
+      2211,
+      1440
+    ],
+    "sha256": "a810cedec85e5a2233c88617df0b86706e32d553c9e855555a116378b1cf2521"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2024-12-rose.jpg",
+    "alt": "Příběh Růže / Story of Rose",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 148,
+    "size": [
+      1440,
+      1080
+    ],
+    "sha256": "38924c7d6fd436a3eeff6ba75c0dc33cf65f2c757d6be9ccbff8b845532672eb"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2024-10-oraculum.jpg",
+    "alt": "Oraculum",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 149,
+    "size": [
+      1920,
+      1080
+    ],
+    "sha256": "9e20dd3fbfbfe3185baf76f80ef13a597dbc334840acf587e3fa271808c98901"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2024-08-liongate.jpg",
+    "alt": "8:8 Lion Gate — Wingmakers & James Mahu",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 150,
+    "size": [
+      1100,
+      880
+    ],
+    "sha256": "7d86b8f0e40e29011fe24593c376cec4cb52cc8f071f016979587563eeb5fbe2"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2024-08-paris.jpg",
+    "alt": "Paris 2024 Olympic — Surfing Teahupoo",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 151,
+    "size": [
+      2048,
+      1365
+    ],
+    "sha256": "e5e5b62342e9277ef199913a8e0b506b54adfde5165b9422740d2ab31aebd916"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2024-05-yeshuae-bike.jpg",
+    "alt": "Yeshuae on the bike O:)",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 152,
+    "size": [
+      400,
+      400
+    ],
+    "sha256": "d205a055dbcb14efbfae2271b531b9d3e30ea4edc16418521e84ade8bfdcd25c"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2024-04-newweb.jpg",
+    "alt": "New web page www.zionterranova.com",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 153,
+    "size": [
+      2667,
+      1167
+    ],
+    "sha256": "56e3b02dd4374b9dc27c90496e1c933e66f81a87dc5292658fe1bd22ab043652"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2023-04-genesis.jpg",
+    "alt": "Genesis",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 154,
+    "size": [
+      800,
+      800
+    ],
+    "sha256": "445248bbfb99877c4b59fa97903040e4728eed499b8fc8dee48e409feb3735f8"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2023-04-newearth.jpg",
+    "alt": "Hledání a tvoření Nové Země",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 155,
+    "size": [
+      564,
+      545
+    ],
+    "sha256": "207c28fc9f9af355fb6e7b7b7a12db4530cb3d82ccbd351a8d2577274874aca9"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2023-04-transparent.jpg",
+    "alt": "Transparentní účet",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 156,
+    "size": [
+      564,
+      545
+    ],
+    "sha256": "207c28fc9f9af355fb6e7b7b7a12db4530cb3d82ccbd351a8d2577274874aca9"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2023-03-quotes.jpg",
+    "alt": "Citáty a básně",
+    "pages": [
+      "https://zionterranova.com/blog/",
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 157,
+    "size": [
+      1152,
+      720
+    ],
+    "sha256": "4f1ca9f95372d2a7704d0a851a702bf89474750e027a3724cfa3851f1f90a304"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2023-03-photos.jpg",
+    "alt": "Fotky a videa",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 158,
+    "size": [
+      564,
+      545
+    ],
+    "sha256": "207c28fc9f9af355fb6e7b7b7a12db4530cb3d82ccbd351a8d2577274874aca9"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/blog/2023-03-projekt.jpg",
+    "alt": "Projekt New Earth — Den 1",
+    "pages": [
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 159,
+    "size": [
+      564,
+      545
+    ],
+    "sha256": "207c28fc9f9af355fb6e7b7b7a12db4530cb3d82ccbd351a8d2577274874aca9"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/srimurti.jpg",
+    "alt": "Kingdom Antahkarana 44:44",
+    "pages": [
+      "https://zionterranova.com/blog/",
+      "https://zionterranova.com/blog/"
+    ],
+    "id": 160,
+    "size": [
+      734,
+      1024
+    ],
+    "sha256": "b002b39e423f4b4ce97775ab861ff909e74ce0835dac340a390d81e8a4b074d1"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/gal/4.jpeg",
+    "alt": "Terra Nova eko farma",
+    "pages": [
+      "https://zionterranova.com/camp/"
+    ],
+    "id": 161,
+    "size": [
+      4032,
+      3024
+    ],
+    "sha256": "a4610f90b6c62ffd9d0b8a6870b357646d4f903d8c9039e6d41822ef1b956597"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/gal/1.jpeg",
+    "alt": "Glamping v přírodě",
+    "pages": [
+      "https://zionterranova.com/camp/"
+    ],
+    "id": 162,
+    "size": [
+      1440,
+      1080
+    ],
+    "sha256": "30da56e8827e286be85a0080ceea5f8de93f542ce85a4464cb7426d543b2b691"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/gal/3.jpeg",
+    "alt": "Propojení s přírodou",
+    "pages": [
+      "https://zionterranova.com/camp/"
+    ],
+    "id": 163,
+    "size": [
+      1440,
+      1080
+    ],
+    "sha256": "5f69505018654a0b5b7b349559f9c8d6e95272b47592cfd4d22293f79229af20"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/gal/2.jpeg",
+    "alt": "Organické zahrady",
+    "pages": [
+      "https://zionterranova.com/camp/"
+    ],
+    "id": 164,
+    "size": [
+      4032,
+      3024
+    ],
+    "sha256": "351d482c0b7d91f5fdd8eb484d70e1e41994ae8a585ea09c3868ba295a08c8b3"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/gal/5.jpeg",
+    "alt": "Komunitní život",
+    "pages": [
+      "https://zionterranova.com/camp/"
+    ],
+    "id": 165,
+    "size": [
+      4032,
+      3024
+    ],
+    "sha256": "73193d0907adfd4b3d1987f69e388897994d08d55409cf56cb00c49398f08f88"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/evol.jpeg",
+    "alt": "®evoluZion Original Head 2008",
+    "pages": [
+      "https://zionterranova.com/evoluzion/"
+    ],
+    "id": 166,
+    "size": [
+      719,
+      281
+    ],
+    "sha256": "ccad93c2553980e6138527e1c053081229b88a94938cf3cda8a40fd1f05eb527"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img2/matrix.jpg",
+    "alt": "System Error",
+    "pages": [
+      "https://zionterranova.com/evoluzion/"
+    ],
+    "id": 167,
+    "size": [
+      640,
+      480
+    ],
+    "sha256": "e7a11fa61d36f4d59bc60d66bba7034f24ad3d11443602bc3eabbf6a1773b822"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img2/newGene.jpg",
+    "alt": "New Generation",
+    "pages": [
+      "https://zionterranova.com/evoluzion/"
+    ],
+    "id": 168,
+    "size": [
+      431,
+      372
+    ],
+    "sha256": "f658f0687a66c713a3ebd0c353ecb6396d8a9d312775ca8058eff6fcfa46ca05"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img2/nathanael.jpg",
+    "alt": "Heart of Amenti",
+    "pages": [
+      "https://zionterranova.com/evoluzion/"
+    ],
+    "id": 169,
+    "size": [
+      719,
+      575
+    ],
+    "sha256": "5e051052c4a959e964f13535a558256015a2d1da541f551af68a83b422bf92d7"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/lion.jpg",
+    "alt": "Lion Drop",
+    "pages": [
+      "https://zionterranova.com/evoluzion/"
+    ],
+    "id": 170,
+    "size": [
+      556,
+      720
+    ],
+    "sha256": "10cd0e3bd2b70497782a7f8b9ab4005e6bef9e2d553b9b7c7a6d0e193bdf2d97"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/onelove.jpg",
+    "alt": "One Love",
+    "pages": [
+      "https://zionterranova.com/evoluzion/"
+    ],
+    "id": 171,
+    "size": [
+      2048,
+      1333
+    ],
+    "sha256": "beaed5f704149985a4e4b59fc1b17e175ab144dec2391fb0b42ffe84dc8583ac"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/seeds/emc2.jpg",
+    "alt": "Seeds",
+    "pages": [
+      "https://zionterranova.com/seeds/",
+      "https://zionterranova.com/seeds/",
+      "https://zionterranova.com/seeds/emc2/",
+      "https://zionterranova.com/seeds/emc2/",
+      "https://zionterranova.com/seeds/genesis/",
+      "https://zionterranova.com/seeds/genesis/",
+      "https://zionterranova.com/seeds/jaganath/",
+      "https://zionterranova.com/seeds/jaganath/",
+      "https://zionterranova.com/seeds/paramajoti/",
+      "https://zionterranova.com/seeds/paramajoti/",
+      "https://zionterranova.com/seeds/ramayana/",
+      "https://zionterranova.com/seeds/ramayana/"
+    ],
+    "id": 172,
+    "size": [
+      620,
+      800
+    ],
+    "sha256": "7fe46e56ebf3dce029577d5181227587430cb3dcc8a5c4da0ab5bcdb1597a785"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/kalacakra1.png",
+    "alt": "GENESIS",
+    "pages": [
+      "https://zionterranova.com/seeds/"
+    ],
+    "id": 173,
+    "size": [
+      926,
+      925
+    ],
+    "sha256": "a6fecf82709aae1309b63289c289c3c65e8ecfb933f51a49d86858436900a01f"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/seeds/jaganath.jpg",
+    "alt": "JAGANATH KRISHNA",
+    "pages": [
+      "https://zionterranova.com/seeds/"
+    ],
+    "id": 174,
+    "size": [
+      620,
+      800
+    ],
+    "sha256": "1c56d0da0718ae346c73d6ad068d1955483d6a83e18ef33f79c43cb58df68262"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/seeds/paramjoti.jpg",
+    "alt": "PARAMAJOTI HIRANYAGARBHA",
+    "pages": [
+      "https://zionterranova.com/seeds/"
+    ],
+    "id": 175,
+    "size": [
+      620,
+      800
+    ],
+    "sha256": "7512c851059b823b0468094c2ae4e64601ea653cde1b23d87e0a95a167c8125c"
+  },
+  {
+    "url": "https://zionterranova.com/legacy/img/seeds/ramayana.jpg",
+    "alt": "RAMAYANA",
+    "pages": [
+      "https://zionterranova.com/seeds/"
+    ],
+    "id": 176,
+    "size": [
+      620,
+      800
+    ],
+    "sha256": "c439c7a8b4c93f8db6158c9775a674818780fbe7ed7190ed5d31e0fa87d350ee"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/home/christmas-kingdom-m.webp",
+    "alt": "Veselé Vánoce a šťastný nový rok 2027 — Kingdom, archa a Strom života ve sněhu",
+    "pages": [
+      "https://app.zionterranova.com/"
+    ],
+    "id": 177,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "08344577404a40dedaae1f257af832f716c0413fe92b5df46c85f0d23d7785e4"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/zion-archive/hero-m.webp",
+    "alt": "Oasis — jedna rodina pod Stromem života, vizuál Nirvana Hubu",
+    "pages": [
+      "https://app.zionterranova.com/"
+    ],
+    "id": 178,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "99aaaa33ad572ffdab3eb5a406b73d3e3c63b473f38cb52dd34ca75f97269edd"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/news/beta-cosmic-utopia-m.webp",
+    "alt": "ZION Mainnet Beta — ekosystém L1–L6, Maitreya a multichain pool ZION / QTC / PEARL",
+    "pages": [
+      "https://app.zionterranova.com/",
+      "https://app.zionterranova.com/news",
+      "https://app.zionterranova.com/news/mainnet-beta"
+    ],
+    "id": 179,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "5d04d668f438f6fbb9c9bd0ca8a186381624477a443beb38fb2601ed7ce1cbf2"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/home/hero-l5-map-m.webp",
+    "alt": "Mapa L5 Free World — dvanáct bodů a vrstvy L1–L6",
+    "pages": [
+      "https://app.zionterranova.com/",
+      "https://app.zionterranova.com/news"
+    ],
+    "id": 180,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "d491b36c118c507ea0188b771ce9fd968c29b0d8e42e26970c926992e99a27a6"
+  },
+  {
+    "url": "https://freeworld.zionterranova.com/assets/img/hero-m.webp?v=3a8f37c8",
+    "alt": "ZION Free World",
+    "pages": [
+      "https://freeworld.zionterranova.com/"
+    ],
+    "id": 181,
+    "size": [
+      900,
+      506
+    ],
+    "sha256": "4bbe45f85f0d0d00d68f77dbbcbf04fd1d4228dc34a5c12aa36aa8fd5b6b4d76"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/l4-oasis/hero-m.webp",
+    "alt": "ZION Oasis — Strom života a Zlaté vejce ve spirální galaxii",
+    "pages": [
+      "https://app.zionterranova.com/l4-oasis"
+    ],
+    "id": 182,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "355adabeffadd998717cbaf9831bd12ab62ce7da6135f074e7da1165d716a1f2"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/pearl/qtc-pearl-news-m.webp",
+    "alt": "Quantus + Pearl — dva blockchainy nové generace nativně v ZION",
+    "pages": [
+      "https://app.zionterranova.com/news"
+    ],
+    "id": 183,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "aa2ebb49eccd90aa928d0718b759b19c0e7ae19e1d297a5abdff3108d8b98660"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/kralovstvi-srdce/deck-plans-m.webp",
+    "alt": "Studie B3 — obytná archa inspirovaná keporkakem: čtyři paluby, interiéry, konstrukce a pohon",
+    "pages": [
+      "https://app.zionterranova.com/terranova/kralovstvi-srdce"
+    ],
+    "id": 184,
+    "size": [
+      960,
+      640
+    ],
+    "sha256": "a95679d38559e26744d07ef42fa11c8643b218ec5df1e315116e08dcb92d6001"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/nabukano/hero-m.webp",
+    "alt": "Nebeská flotila Nabukano — mateřská loď s dokem a tři nebeské Marie nad Novou Zemí",
+    "pages": [
+      "https://app.zionterranova.com/terranova/nabukano"
+    ],
+    "id": 185,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "8f3e5b99ae34baf411f20e1bad1bebe0c952ac6e953a950a38d1031d34961bf3"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/nabukano/concept-board-m.webp",
+    "alt": "Nabukano — studie 02: dok se třemi kotvišti, podélný řez, půdorys, knihovna, zahrada, ordinace a lucerna",
+    "pages": [
+      "https://app.zionterranova.com/terranova/nabukano"
+    ],
+    "id": 186,
+    "size": [
+      900,
+      600
+    ],
+    "sha256": "f0eb60ba018e7bcc52e48ab4863e50ab936ffb8eb9d114bddd7ad7d93b81dbc5"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/nabukano/cradle-m.webp",
+    "alt": "Nabukano — dokovací rám se třemi kotvišti pod trupem, lucerna na konci",
+    "pages": [
+      "https://app.zionterranova.com/terranova/nabukano"
+    ],
+    "id": 187,
+    "size": [
+      900,
+      507
+    ],
+    "sha256": "a6bcd6365b314a045a520ee5572d0dd55dc36afc06c6e98d26c476e6c870d955"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/l3-hiran/hero-m.webp",
+    "alt": "ZION Hiranyagarbha — L3 AI vrstva",
+    "pages": [
+      "https://app.zionterranova.com/l3-hiran"
+    ],
+    "id": 188,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "c85afd2ca14182345859b1386df793ba700f6301a9896df6c54d9d584365ea0c"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/l6-issobella/study-02-m.webp",
+    "alt": "Koncepční studie 02 — řezy prstencové stanice Issobella s botanickými kopulemi, kajutami, jídelnou a centrálním uzlem",
+    "pages": [
+      "https://app.zionterranova.com/l6-issobella"
+    ],
+    "id": 189,
+    "size": [
+      960,
+      640
+    ],
+    "sha256": "20eca1b9e7d381c40b2aac46fb0eeb0609fb2a4c26cf70702b15b3f6867aff3c"
+  },
+  {
+    "url": "https://app.zionterranova.com/images/team/hero-m.webp",
+    "alt": "ZION Team — lidé, agenti a komunita kolem Stromu života",
+    "pages": [
+      "https://app.zionterranova.com/team"
+    ],
+    "id": 190,
+    "size": [
+      960,
+      540
+    ],
+    "sha256": "33bb7fbf6a7f10c442a0b18b14adf33433ba96ca86aec38df9586de289c6cddc"
+  }
+]
