@@ -1,7 +1,7 @@
-# REPORT — ZION Archive: překladová session T1–T9 (68 kapitol)
+# REPORT — ZION Archive: překladová session T1–T10 (81 kapitol)
 
 > **Datum:** 2026-11-05 · **Vlastník:** 👤 · **Plán:** [`TRANSLATION-PLAN.md`](../../../TRANSLATION-PLAN.md)
-> **Kód:** `apps/website-v2.9` · **Stav po session:** **133 / 189 kapitol (70,4 %)**, zbývá **56**
+> **Kód:** `apps/website-v2.9` · **Stav po session:** **146 / 189 kapitol (77,2 %)**, zbývá **43**
 
 ---
 
@@ -21,19 +21,20 @@ přes standalone → commit **jen vlastních souborů** → push.
 | **T7** | MariaCaminho | 12 | `69616cb5c`, `56e131bbd`, `8973e06f7`, `c1f949f54`, `7c4038495` | flotila Tres Marias |
 | **T8** | Ekam Deeksha | 10 | `8aca7fc52`, `0ab03826e`, `7bca4fe1b`, `6f7ae7e98`, `59a8b85dd`, `f72a85dfd` | public-docs, náhrada 401B stubů |
 | **T9** | Quantum Revolution | 1 (single-doc) | `34e3e804b` | náhrada 396B stubu |
+| **T10** | Miriam | 13 | `8824241ea`, `81e889ece`, `920a54d89`, `0bda808fe`, `505195f79` | tři vrstvy Stone/Clay/Dream |
 
-**Celkem tato session: 68 kapitol** (z 65 na 133).
+**Celkem tato session: 81 kapitol** (z 65 na 146).
 
 ## 2. Ověření (poslední běh)
 
 Audit `GET /api/archive/audit` na standalone (`PORT=3124`, `ARCHIVE_ADMIN_TOKEN`):
 
 ```
-TOTALS: {books: 18, declaredChapters: 204, missingCs: 1, missingEn: 56,
+TOTALS: {books: 18, declaredChapters: 204, missingCs: 1, missingEn: 43,
          frontMatter: 15, duplicates: 0, missingParts: 0}
 surta-srdce 100 % · nabukano 100 % · miseamenti 100 % · ruze 100 %
 issobella 100 % · naceste 100 % · mariacaminho 100 % · ekam 100 %
-quantum-revolution: singleDoc. cs 10 kapitol / en 10 kapitol, missingEn []
+miriam 100 % · quantum-revolution: singleDoc. cs 10 / en 10 kapitol
 ```
 
 - `npm run build` EXIT 0 u každé dávky, `npx tsc --noEmit` 0 chyb.
@@ -54,11 +55,10 @@ quantum-revolution: singleDoc. cs 10 kapitol / en 10 kapitol, missingEn []
 - **Neměnné:** čísla, adresy, env klíče, id a data (`zion1z4s3a5…`, `zion1f5h5k6t8…`, 300M ZION, 2,5 mld, lock 144 000, `ISSOBELLA_PCT = 5`, 89/5/5/1 %, `node_reward_activation_height = u64::MAX`, 0,38 g / 200 m / ~2 RPM, LEO 400–550 km, `48dcc0b2-…`, 1984/1994/2003/2008/2018, 1917, 352, 1676, 1488).
 - **Kód:** placeholdery (`issobella tracker`, `zion-*-service`, `interní port` → `internal port`), `interní repozitář` → `internal repository` (odkaz `../../../interní%20repozitář`), code blocky Cosmic Harmony v3 **doslova**.
 
-## 5. Co zbývá (56 kapitol, ~0,62 MB)
+## 5. Co zbývá (43 kapitol, ~0,49 MB)
 
 | Milník | Kniha | Kapitol | Odhad dávek |
 |---|---|---:|---:|
-| **T10** | Miriam | 13 | 4 |
 | **T11** | Lumi | 13 | 4 |
 | **T12** | Kruh Bohyní | 17 | 5 |
 | **T13** | BodhiGaia | 13 | 5 |
@@ -69,3 +69,4 @@ quantum-revolution: singleDoc. cs 10 kapitol / en 10 kapitol, missingEn []
 - Front matter (`00-README`, `00-*`) se nepřekládá a do coverage nevstupuje — u Nabukana, Mise Amenti, Růže a dalších tedy zůstává CZ.
 - `missingCs: 1` u `miseamenti/README` je **flaky** (souběžný `npm run build` paralelní session přepisuje `.next/standalone` pod běžícím auditem); soubor na disku i v manifestu existuje.
 - Deploy na EDGE2 nebyl proveden — live build by kolidoval s běžící paralelní session (nirvana/OASIS).
+- **`npx tsc --noEmit` v `apps/website-v2.9` hlásí ~32 chyb, které nejsou z překladu:** paralelní session rozpracovala `apps/MarketPlace/src/lib/translations.ts` (`Lang` rozšířen na `cs/en/es/fr/pt`), zatímco `whitepapers`, `roadmap`, `ai-native`, `NavAuthButton` a `translations.ts` drží dvoujazyčné slovníky. Po `git stash` mých dvou TS úprav počet chyb naopak vzroste (33) → chyby jsou cizí a neopravovaly se. `npm run build` je zelený (EXIT 0).
