@@ -256,15 +256,36 @@ fokus nepřesune) a jediná cesta zavření, která **vrací fokus na kartu**. P
 
 ## 6g. Co zůstalo otevřené
 
-- **Deploy nirvany je blokovaný:** kód má `PROTO_VERSION = 30`, živý net je **26** —
-  `scripts/ops/nirvana-proto-check.sh` to správně zablokuje (deploy appky by rozbil chat
-  i multiplayer). Katalog 202 avatarů i copy („202 postav") jsou připravené v kódu; nasadí se
-  až s protokolem, tedy nejdřív net, pak appka. Live nirvana proto dál korektně hlásí 200.
+- ~~**Deploy nirvany je blokovaný**~~ → **✅ nasazeno 2026-11-05 11:18 UTC** (viz §6h).
 - **Transliterace v CS kánonu je smíšená** (Krišna 83× vs Krishna 122×, Ráma 36 vs Rama 18,
   Lakšmí 7 vs Lakshmi 31, Sarasvatí 29 vs Sarasvati 8, Orákulum 14 vs Oracle 9). Automatická
   náhrada je riskantní (skloňování, „Hare Krishna" mantra, názvy souborů v odkazech), takže
   jsem sjednotil jen jednoznačné případy (kapa). Zbytek je **editoriální úkol pro rodilého
   mluvčího** — zdokumentováno, ne „opraveno naslepo".
+
+---
+
+## 6h. Nirvana nasazena (202 avatarů ve hře) — a jak obejít cizí rozdělanou práci
+
+Zbýval blokovaný deploy: kód `PROTO_VERSION = 30`, živý net **26**. Postup (dle pravidla
+„nejdřív net, pak appka"):
+
+| krok | výsledek |
+|---|---|
+| `deploy-nirvana-net.sh` | net **proto 30**, build `20261105T111813Z`, health OK |
+| `deploy-nirvana.sh --artifact-dir …` | appka build `20261105T111827Z`, smoke 6/6 OK |
+| `/net/health` vs `protocol.ts` | **30 = 30** |
+| katalog v nasazeném bundlu | obsahuje `Sri Anagha Lakshmi` i `Sri Chaitanya Mahaprabhu` → **202 ve hře** |
+
+**Past, která málem rozbila produkci:** v pracovním stromu byla **rozdělaná (necommitnutá)
+práce jiné session** — flotila (`/fleet`, 4,7 MB modelů). Postavit z pracovního stromu by ji
+do produkce odeslalo, což její zápis výslovně zakazuje („nenasazeno", otevřený IP blocker).
+Řešení: **čistý git worktree na HEAD** + `cp -al` (hardlink klon, 2,5 min, bez kopírování dat)
+→ build → `--artifact-dir`. Artefakt měl 46 rout a **žádnou `/fleet`**, takže se nasadilo jen
+to zamýšlené. Po deployi worktree zrušen.
+
+⚠️ Okno mezi netem a appkou (~2 min) je nutné: stará appka (proto 26) by s novým netem hlásila
+`proto_mismatch`. Proto se artefakt **připraví předem** a deploy appky jde hned po netu.
 
 ---
 
