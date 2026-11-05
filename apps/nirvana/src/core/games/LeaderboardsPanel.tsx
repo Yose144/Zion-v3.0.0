@@ -11,7 +11,7 @@
  */
 
 import { useEffect } from 'react';
-import { useI18n } from '@/core/i18n';
+import { useI18n, tx } from '@/core/i18n';
 import { GAME_ORDER, GAME_TITLES, useScores } from '@/core/progress/boards';
 
 export function LeaderboardsPanel({ onClose }: { onClose: () => void }) {
@@ -58,7 +58,7 @@ export function LeaderboardsPanel({ onClose }: { onClose: () => void }) {
               <section key={game} className="boards-card">
                 <header>
                   <span aria-hidden>{GAME_TITLES[game].glyph}</span>
-                  <strong>{GAME_TITLES[game][lang]}</strong>
+                  <strong>{tx(GAME_TITLES[game], lang)}</strong>
                 </header>
                 {rows.length === 0 ? (
                   <p className="boards-empty">{cs ? 'volné' : 'open'}</p>

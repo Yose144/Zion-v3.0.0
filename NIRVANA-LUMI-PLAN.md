@@ -20,7 +20,7 @@
 | **Multiplayer** | Společné létání pro **4** (`GameId 'lumi'`, `PROTO_VERSION = 30`) — **relay**, ne autoritativní simulace. |
 | **Hotovo** | 3 cesty, 7 světel + úlomky příběhu, darování, deník, zvuk, LOD lucerny, kompas, HUD, co-op, **duchové** (L-2), **foto mód** (L-5), **reduced motion** (L-9), **stopa** (L-3), **denní obloha** (L-7), **kapitoly** (L-8), **VR vrstva** (L-4, bez headsetu). |
 | **Dluh** | Živý net je na protokolu **26**, repo na **30** → co-op se do nasazení nepřipojí (viz §9). |
-| **Ověřeno** | **53** + **43** + **15** + **18** + **54** kontrol (tab. §8), `tsc` a `next build` čisté. |
+| **Ověřeno** | **53** + **43** + **15** + **23** + **54** kontrol (tab. §8), `tsc` a `next build` čisté; `es`/`en`/`cs` bez přesahu na 390 px. |
 
 ---
 
@@ -442,7 +442,7 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
 | **L-7** | Denní světlo: jedenkrát denně jiná pozice sedmi světel (seed z datumu) | stejný den = stejná obloha pro všechny, zítra jiná; test determinismu | nízké | ✅ 2026-11-05 |
 | **L-8** | Kapitoly příběhu mezi cestami (text po každé cestě) | po `calm` a `wind` se odemkne jiný úvodní text, ne jen cesta | nízké | ✅ 2026-11-05 |
 | **L-9** | Přístupnost: `prefers-reduced-motion` vypne vítr a částice | s preferencí se nehýbe pozadí, hra zůstane hratelná | nízké | ✅ 2026-11-05 |
-| **L-10** | Lokalizace do třetího jazyka (EN je hotové; CS je výchozí) | všechny texty z `world.ts` mají klíč, žádný hardcoded string v `page.tsx` | nízké | ⬜ |
+| **L-10** | Lokalizace do třetího jazyka (**ES** — trh + kánon) | všechny texty z `world.ts` mají klíč, žádný hardcoded string v `page.tsx` | nízké | ⚠️ Lumi hotové, hry dědí `en` |
 | **L-11** | Odměna za darování v kooperaci (společná svatyně = +body všem) | dva hráči doletí → oba dostanou bonus, ne jen ten, kdo doletěl první | střední | ⬜ |
 | **L-12** | Výkon: instancované částice na mobilu | 390×844 ≥ 30 fps (měřeno `.artifacts/probe/lumi-perf.mjs` — rAF 2 s + `__lumiDebug()`), draw calls < 60 | střední | ✅ 2026-11-05 |
 
@@ -484,6 +484,13 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
   stejná obloha, zítra jiná, meze mapy, žádné světlo ve svatyni). Pozor: testy musí
   číst `pathData(...).lights`, ne `LUMI_LIGHTS`, jinak běží proti jiné obloze, než
   jakou hra kreslí.
+- **L-10 (jazyky) — ⚠️ infrastruktura + Lumi hotové.** `Lang = 'cs' | 'en' | 'es'`,
+  `LANGS`/`nextLang`/`langLabel`/`LANG_NAMES`, `tx()` s fallbackem (`es` chybí → `en`),
+  persistence `nirvana.lang.v1` + `?lang=es` override + detekce z prohlížeče.
+  Lumi je celá ve slovníku `core/lumi/copy.ts` (**žádný `cs ? :` v `page.tsx`**) a data
+  světa (`world.ts`) mají `es`. Chrome (COPY 63 klíčů) má `es` taky. **Co zbývá:**
+  ostatní hry (`/earth` 79, `/mercury` 35, `/park` 32, `/venus` 26, `/mars` 20, `/fleet` 20,
+  `/multiplayer` 17, `/avatars` 15 inline textů) — ty dnes pro `es` spadnou na angličtinu.
 - **L-6 (předání světla) — ✅ hotovo.** Vlastní zpráva `{t:'handoff', light}` (ne pole
   ve `fly` — to nese pozici, takže by ji šlo omylem vynulovat). Server si u každého letce
   drží **jeho vlastní sebraná světla** (`Set`), takže darovat jde jen to, co opravdu má;
@@ -545,3 +552,4 @@ co pokazit; jakákoli „výzva" by rozbila její smysl.
 | 2026-11-05 | **L-3 stopa** přepsána do `trail.ts` (vzorky pohybem, doznívání, `setColorAt`, na mobilu vypnuto) — **15/15**; **L-7 denní obloha** (`lightsFor`/`pathData` seed z UTC data) — `lumi-flight` **53/53**; testy musí číst `pathData().lights`, ne `LUMI_LIGHTS` |
 | 2026-11-05 | **L-8 kapitoly** (dozvuk po každé cestě + jiný úvod pro vracejícího se hráče, bez změny schématu deníku) — `lumi-journal` **43/43**; **L-4 VR vrstva** (`<XR>`, `XROrigin`, syntetické klávesy, `VrButton`) — 2D ověřeno auditem (**54/54**), headset netestován a „letět pohledem" chybí |
 | 2026-11-05 | **L-6 předání světla** (`{t:'handoff'}`, per-flyer světla na serveru, cíl = nejbližší letec, event `gift`, HUD `🤲 N` + hláška) — net **23/23**, živý test dvou prohlížečů **4/4**, audit 54/54; `PROTO_VERSION 32`, nenasazeno |
+| 2026-11-05 | **L-10 jazyky**: `Lang` na tři hodnoty, `tx()` s fallbackem, `nextLang` cyklus, persistence `nirvana.lang.v1`, `?lang=es`; celá Lumi ve slovníku `core/lumi/copy.ts` + 19 textů světa v ES; chrome (63 klíčů) v ES. Ověřeno: ES/EN/CS render, uložení volby, cyklus přepínače, 0 přesahu na 390 px |

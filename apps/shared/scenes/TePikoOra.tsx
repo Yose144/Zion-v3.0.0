@@ -4,10 +4,15 @@
 import { React, useFrame, useThree, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
-import { KeyLight, SceneInstances, ScenePalms, SkyFill, sandGround } from './kit';
+import { KeyLight, SceneInstances, ScenePalms, SkyFill, sandGround, pickLang } from './kit';
 import { LagoonLandscape } from './LagoonLandscape';
 
-type Lang = 'cs' | 'en';
+/**
+ * Jazyky scény. `es` přidává aplikace (L-10) — scéna sama španělský text nemá,
+ * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
+ * patří sem stejně jako cs/en.
+ */
+type Lang = 'cs' | 'en' | 'es';
 
 // Shared prop geometry and materials — instanced, so a stone circle is one draw call.
 const KILN_ROCK = new THREE.DodecahedronGeometry(1, 0);
@@ -182,7 +187,7 @@ function Fare({ fare, lang, roofTexture }: { fare: Fare; lang: Lang; roofTexture
       <pointLight position={[0, 0.9, len * 0.5]} intensity={0.9} distance={3.2} color="#ffaa55" decay={2} />
 
       {name && (
-        <SceneLabel position={[0, roofH + 1.0, 0]} text={name[lang]} />
+        <SceneLabel position={[0, roofH + 1.0, 0]} text={pickLang(name, lang)} />
       )}
     </group>
   );

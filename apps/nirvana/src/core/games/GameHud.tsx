@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useI18n } from '@/core/i18n';
+import { useI18n, tx } from '@/core/i18n';
 import { useAuth } from '@/core/session/AuthProvider';
 import { useNet } from '@/core/net/useNet';
 import { loadProfile, type ParkProfile } from '@/core/park/profile';
@@ -75,7 +75,7 @@ export function GameHud() {
   // `null` = profil se ještě nenačetl; ukazovat v tu chvíli „level 1"
   // by každému na půl vteřiny lhalo o pokroku.
   const level = profile ? levelProgress(profile.runs) : null;
-  const controls = CONTROLS[pathname]?.[lang] ?? '';
+  const controls = tx(CONTROLS[pathname], lang);
   const name =
     user?.avatar3d?.callsign ??
     user?.displayName ??
@@ -102,7 +102,7 @@ export function GameHud() {
             aria-current={pathname === game.href ? 'page' : undefined}
           >
             <span aria-hidden>{game.glyph}</span>
-            <span className="game-hud-tab-text">{game.title[lang]}</span>
+            <span className="game-hud-tab-text">{tx(game.title, lang)}</span>
           </Link>
         ))}
         {/* Lobby je rozcestník, ne hra — vlastní odkaz na konci řady. */}

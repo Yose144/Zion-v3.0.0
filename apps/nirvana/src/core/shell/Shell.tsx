@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/core/session/AuthProvider';
 import { GAME_LINKS } from '@/core/games/links';
-import { useI18n } from '@/core/i18n';
+import { langLabel, nextLang, tx, useI18n } from '@/core/i18n';
 import { PORTALS, type SceneSlot } from '@/core/portals/manifest';
 import { backendForXr, resolveGpuBackend, type GpuBackend } from '@/core/scene/backends';
 import { SceneRoot } from '@/core/scene/SceneRoot';
@@ -142,7 +142,7 @@ const PLANET_PANELS: Record<PlanetGameId, {
 };
 
 export function Shell() {
-  const { t, lang, setLang } = useI18n();
+  const { t, lang, cycleLang } = useI18n();
   const { user, loading } = useAuth();
   const [backend, setBackend] = useState<GpuBackend | null>(null);
   const [worlds, setWorlds] = useState<WorldPoint[]>([]);
@@ -303,8 +303,8 @@ export function Shell() {
   }, []);
 
   const toggleLang = useCallback(() => {
-    setLang(lang === 'cs' ? 'en' : 'cs');
-  }, [lang, setLang]);
+    cycleLang();
+  }, [cycleLang]);
 
   const address = user?.primaryAddress ?? '';
   const short = address.length > 16 ? `${address.slice(0, 10)}…${address.slice(-4)}` : address;
@@ -380,7 +380,7 @@ export function Shell() {
               style={{ borderLeftColor: game.tone }}
             >
               <span className="holo-drawer-dot" style={{ background: game.tone }} />
-              <span className="holo-drawer-name">{game.title[lang]}</span>
+              <span className="holo-drawer-name">{tx(game.title, lang)}</span>
               <em className="holo-drawer-tag holo-drawer-tag-play">
                 {lang === 'cs' ? 'hrát' : 'play'} →
               </em>
@@ -397,7 +397,7 @@ export function Shell() {
               onClick={() => openPortal(p.id)}
             >
               <span className="holo-drawer-dot" style={{ background: SLOT_COLOR[p.scene.slot] }} />
-              <span className="holo-drawer-name">{p.title[lang]}</span>
+              <span className="holo-drawer-name">{tx(p.title, lang)}</span>
               <em className="holo-drawer-tag">{lang === 'cs' ? 'otevřít' : 'open'}</em>
             </button>
           ))}
@@ -412,7 +412,7 @@ export function Shell() {
               onClick={() => openPortal(p.id)}
             >
               <span className="holo-drawer-dot" style={{ background: SLOT_COLOR[p.scene.slot] }} />
-              <span className="holo-drawer-name">{p.title[lang]}</span>
+              <span className="holo-drawer-name">{tx(p.title, lang)}</span>
               <em className="holo-drawer-tag">{lang === 'cs' ? 'otevřít' : 'open'}</em>
             </button>
           ))}
@@ -429,7 +429,7 @@ export function Shell() {
               onClick={() => openPortal(p.id)}
             >
               <span className="holo-drawer-dot" style={{ background: 'rgba(246,231,216,0.3)' }} />
-              <span className="holo-drawer-name">{p.title[lang]}</span>
+              <span className="holo-drawer-name">{tx(p.title, lang)}</span>
               <em className="holo-drawer-tag holo-drawer-tag-soon">
                 {lang === 'cs' ? 've výstavbě' : 'in progress'}
               </em>
@@ -438,7 +438,7 @@ export function Shell() {
         </div>
         <footer className="holo-drawer-foot">
           <button type="button" className="holo-btn" onClick={toggleLang}>
-            {lang === 'cs' ? 'EN' : 'CS'}
+            {langLabel(nextLang(lang))}
           </button>
           {xrSupported && !xrWanted && (
             <button type="button" className="holo-btn holo-btn-vr" onClick={enterVr}>

@@ -8,7 +8,7 @@
  * `LeaderboardsPanel` v HUD.
  */
 
-import { useI18n } from '@/core/i18n';
+import { useI18n, tx } from '@/core/i18n';
 import type { ParkGameId } from '@/core/park/games';
 import { GAME_TITLES, useScores } from '@/core/progress/boards';
 
@@ -25,7 +25,7 @@ export function GameBoard({
   const cs = lang === 'cs';
   const { scores, loading } = useScores();
   const rows = (scores[game] ?? []).slice(0, limit);
-  const title = GAME_TITLES[game][lang];
+  const title = tx(GAME_TITLES[game], lang);
 
   return (
     <section className={`game-board ${className}`.trim()} aria-label={cs ? `Tabule ${title}` : `${title} leaderboard`}>

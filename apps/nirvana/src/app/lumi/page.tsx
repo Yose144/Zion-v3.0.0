@@ -18,8 +18,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useI18n } from '@/core/i18n';
+import { tx, useI18n } from '@/core/i18n';
 import { LumiCanvas, type LumiStats } from '@/core/lumi/LumiScene';
+import { LUMI_COPY, fill, type LumiCopyKey } from '@/core/lumi/copy';
 import {
   LUMI_FINISH,
   LUMI_GIFT,
@@ -60,7 +61,20 @@ const EMPTY: LumiStats = {
 
 export default function LumiPage() {
   const { lang } = useI18n();
+  /**
+   * Texty obrazovky jdou přes jeden slovník (`core/lumi/copy.ts`), ne přes
+   * ternární výrazy v JSX — jinak by se třetí jazyk doplňoval na padesáti
+   * místech a polovina by zůstala nedotčená.
+   */
+  /** Boolean pro netextová místa (efekty, `describeRun`) — texty jdou přes `l`. */
   const cs = lang === 'cs';
+  const l = useCallback(
+    (key: LumiCopyKey, values?: Record<string, string | number>) => {
+      const text = tx(LUMI_COPY[key], lang);
+      return values ? fill(text, values) : text;
+    },
+    [lang],
+  );
 
   const [phase, setPhase] = useState<Phase>('intro');
   const [pathId, setPathId] = useState<LumiPathId>('calm');
@@ -146,10 +160,10 @@ export default function LumiPage() {
         if (gift.to === youPlayerId) {
           setGiftsGot((value) => value + 1);
           setGiftToast(
-            cs ? `Světlo od ${gift.fromName}` : `A light from ${gift.fromName}`,
+            l('giftFrom', { name: gift.fromName }),
           );
         } else if (gift.from === youPlayerId) {
-          setGiftToast(cs ? `Světlo předáno — ${gift.fromName}` : `Light passed on — ${gift.fromName}`);
+          setGiftToast(l('giftGiven', { name: gift.fromName }));
         }
         return;
       }
@@ -242,7 +256,7 @@ export default function LumiPage() {
     if (!stats.lastLight) return;
     const light = path.lights.find((entry) => entry.id === stats.lastLight);
     if (!light) return;
-    setFragment({ id: light.id, text: light.fragment[cs ? 'cs' : 'en'] });
+    setFragment({ id: light.id, text: tx(light.fragment, lang) });
     const timer = window.setTimeout(() => setFragment(null), 8000);
     return () => window.clearTimeout(timer);
   }, [stats.lastLight, cs, path]);
@@ -280,8 +294,8 @@ export default function LumiPage() {
       play(kind === 'give' ? 'gift' : 'shrineOpen');
       setNotice(
         describeRun(outcome, cs, [
-          `${score} ${cs ? 'bodů' : 'points'}`,
-          ...(kind === 'give' ? [cs ? 'darováno' : 'given'] : []),
+          `${score} ${l('points')}`,
+          ...(kind === 'give' ? [l('given')] : []),
         ]),
       );
     },
@@ -314,21 +328,21 @@ export default function LumiPage() {
 
       <header className="lumi-chrome">
         <div>
-          <p className="lumi-kicker">{cs ? 'Uran · vnější soustava' : 'Uranus · outer system'}</p>
+          <p className="lumi-kicker">{l('kicker')}</p>
           <h1>Lumi</h1>
           <p className="lumi-sub">
-            {cs ? 'děvčátko s lucernou' : 'the girl with the lantern'} · {path.name[cs ? 'cs' : 'en']}
+            {l('subtitle')} · {tx(path.name, lang)}
           </p>
         </div>
         <Link href="/uranus" className="saturn-back">
-          ← {cs ? 'Uran' : 'Uranus'}
+          ← {l('backToPlanet')}
         </Link>
       </header>
 
       {phase === 'flying' && (
         <>
           <div className="lumi-hud">
-            <span className="lumi-lights" aria-label={cs ? 'Sebraná světla' : 'Lights gathered'}>
+            <span className="lumi-lights" aria-label={l('lightsAria')}>
               {Array.from({ length: stats.total }, (_, index) => (
                 <i key={index} className={index < stats.lights ? 'is-on' : undefined} />
               ))}
@@ -336,30 +350,18 @@ export default function LumiPage() {
                 {stats.lights}/{stats.total}
               </b>
             </span>
-            <span className="lumi-energy" title={cs ? 'světlo lucerny' : 'lantern light'}>
+            <span className="lumi-energy" title={l('energyTitle')}>
               <i style={{ width: `${Math.max(0, Math.min(100, stats.energy))}%` }} />
             </span>
             <span className="lumi-time">{stats.time.toFixed(0)} s</span>
             {compass && (
               <span
                 className={`lumi-compass${compass.kind === 'shrine' ? ' is-shrine' : ''}`}
-                aria-label={
-                  compass.kind === 'shrine'
-                    ? cs
-                      ? 'kompas ke svatyni'
-                      : 'compass to the shrine'
-                    : cs
-                      ? 'kompas k nejbližšímu světlu'
-                      : 'compass to the nearest light'
-                }
+                aria-label={compass.kind === 'shrine' ? l('compassShrineAria') : l('compassLightAria')}
                 title={
                   compass.kind === 'shrine'
-                    ? cs
-                      ? `svatyně · ${Math.round(compass.dist)}`
-                      : `shrine · ${Math.round(compass.dist)}`
-                    : cs
-                      ? `světlo · ${Math.round(compass.dist)}`
-                      : `light · ${Math.round(compass.dist)}`
+                    ? l('compassShrineTitle', { n: Math.round(compass.dist) })
+                    : l('compassLightTitle', { n: Math.round(compass.dist) })
                 }
               >
                 <i aria-hidden>
@@ -391,14 +393,14 @@ export default function LumiPage() {
                     ? 'předat světlo nejbližšímu spolulentci'
                     : 'hand a light to the nearest flyer'
                 }
-                aria-label={cs ? 'předat světlo' : 'hand a light off'}
+                aria-label={l('handoffAria')}
               >
                 🤲
               </button>
             )}
 
             {giftsGot > 0 && (
-              <span className="lumi-gifted" title={cs ? 'darovaná světla' : 'gifted lights'}>
+              <span className="lumi-gifted" title={l('giftedTitle')}>
                 🤲 {giftsGot}
               </span>
             )}
@@ -407,8 +409,8 @@ export default function LumiPage() {
               type="button"
               className="lumi-photo"
               onClick={() => setPhoto(true)}
-              title={cs ? 'foto mód — schová HUD (Esc vrátí)' : 'photo mode — hides the HUD (Esc returns)'}
-              aria-label={cs ? 'foto mód' : 'photo mode'}
+              title={l('photoTitle')}
+              aria-label={l('photoAria')}
             >
               📷
             </button>
@@ -428,10 +430,10 @@ export default function LumiPage() {
 
           {missing > 0 ? (
             <p className="lumi-goal">
-              {cs ? `Do svatyně zbývá ${missing} světel` : `${missing} lights to the shrine`}
+              {l('toShrine', { n: missing })}
             </p>
           ) : (
-            <p className="lumi-goal is-open">{cs ? 'Svatyně je otevřená — doleť k ní' : 'The shrine is open — fly to it'}</p>
+            <p className="lumi-goal is-open">{l('shrineOpen')}</p>
           )}
 
           {fragment && (
@@ -465,7 +467,7 @@ export default function LumiPage() {
           {coarse && (
             <div className="lumi-touch">
               <TouchButton code="ArrowUp" className="is-up">
-                {cs ? 'VZHŮRU' : 'UP'}
+                {l('touchUp')}
               </TouchButton>
               <TouchButton code="ArrowLeft" className="is-left">
                 ←
@@ -484,26 +486,22 @@ export default function LumiPage() {
       {/* Foto mód: jediný viditelný prvek, aby se z něj dalo vrátit i bez Esc. */}
       {photo && (
         <button type="button" className="lumi-photo-exit" onClick={() => setPhoto(false)}>
-          ✕ {cs ? 'zpět' : 'exit'}
-          <em>{cs ? 'nebo Esc' : 'or Esc'}</em>
+          ✕ {l('photoExit')}
+          <em>{l('photoExitHint')}</em>
         </button>
       )}
 
       {phase === 'intro' && (
         <section className="lumi-panel">
           <h2>Lumi</h2>
-          <p>{intro.text[cs ? 'cs' : 'en']}</p>
+          <p>{tx(intro.text, lang)}</p>
           <ul className="lumi-rules">
-            <li>
-              {cs
-                ? 'Lucerna svítí a nese, ale dohořívá. Klouzání ji dobíjí.'
-                : 'The lantern shines and carries you, but it burns down. Gliding refills it.'}
-            </li>
-            <li>{cs ? 'Proudy vzduchu nesou a dobíjejí — hledej je.' : 'Air currents carry you and refill you — look for them.'}</li>
-            <li>{cs ? 'Svatyně se otevře, až když máš všech sedm.' : 'The shrine opens only when you have all seven.'}</li>
+            <li>{l('rules1')}</li>
+            <li>{l('rules2')}</li>
+            <li>{l('rules3')}</li>
           </ul>
 
-          <div className="lumi-paths" role="radiogroup" aria-label={cs ? 'Cesta' : 'Path'}>
+          <div className="lumi-paths" role="radiogroup" aria-label={l('pathsAria')}>
             {(Object.values(LUMI_PATHS) as (typeof LUMI_PATHS)[LumiPathId][]).map((option) => {
               const unlocked = isPathUnlocked(option.id, journal);
               return (
@@ -517,7 +515,7 @@ export default function LumiPage() {
                   onClick={() => unlocked && setPathId(option.id)}
                   title={
                     unlocked
-                      ? option.note[cs ? 'cs' : 'en']
+                      ? tx(option.note, lang)
                       : cs
                         ? 'Odemkne se po dohrání obou cest'
                         : 'Unlocks after finishing both paths'
@@ -525,11 +523,11 @@ export default function LumiPage() {
                 >
                   <strong>
                     {unlocked ? '' : '🔒 '}
-                    {option.name[cs ? 'cs' : 'en']}
+                    {tx(option.name, lang)}
                   </strong>
                   <span>
                     {unlocked
-                      ? option.note[cs ? 'cs' : 'en']
+                      ? tx(option.note, lang)
                       : cs
                         ? 'nejdřív doleť obě předchozí cesty'
                         : 'finish the two earlier paths first'}
@@ -539,49 +537,49 @@ export default function LumiPage() {
             })}
           </div>
 
-          <div className="lumi-coop" role="group" aria-label={cs ? 'S kým letět' : 'Fly with'}>
+          <div className="lumi-coop" role="group" aria-label={l('coopAria')}>
             <button
               type="button"
               className={`lumi-coop-btn${coop ? '' : ' is-active'}`}
               aria-pressed={!coop}
               onClick={() => setCoop(false)}
             >
-              {cs ? 'Sólo' : 'Solo'}
+              {l('solo')}
             </button>
             <button
               type="button"
               className={`lumi-coop-btn${coop ? ' is-active' : ''}`}
               aria-pressed={coop}
               onClick={() => setCoop(true)}
-              title={connected ? undefined : cs ? 'server není dostupný' : 'server unavailable'}
+              title={connected ? undefined : l('serverDown')}
             >
-              {cs ? 'S kamarádem' : 'With a friend'}
+              {l('withFriend')}
             </button>
           </div>
 
           <div className="lumi-intro-actions">
             <button type="button" className="park-btn lumi-start" onClick={start}>
-              {cs ? 'Vzlétnout' : 'Take off'}
+              {l('start')}
             </button>
             <button type="button" className="arena-link lumi-journal-open" onClick={() => setJournalOpen(true)}>
-              {cs ? 'Deník' : 'Journal'} {journal.found.length}/7
+              {l('journal')} {journal.found.length}/7
             </button>
           </div>
         </section>
       )}
 
       {journalOpen && (
-        <section className="lumi-journal" role="dialog" aria-modal="true" aria-label={cs ? 'Deník světel' : 'Journal of lights'}>
+        <section className="lumi-journal" role="dialog" aria-modal="true" aria-label={l('journalAria')}>
           <header>
             <div>
-              <strong>{cs ? 'Deník světel' : 'Journal of lights'}</strong>
+              <strong>{l('journalTitle')}</strong>
               <span>
                 {cs
                   ? `${journal.found.length}/7 nalezeno · ${journal.runs} cest · darováno ${journal.gifts.give}×`
                   : `${journal.found.length}/7 found · ${journal.runs} journeys · given ${journal.gifts.give}×`}
               </span>
             </div>
-            <button type="button" className="lumi-journal-close" onClick={() => setJournalOpen(false)} aria-label={cs ? 'Zavřít' : 'Close'}>
+            <button type="button" className="lumi-journal-close" onClick={() => setJournalOpen(false)} aria-label={l('close')}>
               ×
             </button>
           </header>
@@ -591,7 +589,7 @@ export default function LumiPage() {
               return (
                 <li key={light.id} className={found ? 'is-found' : undefined}>
                   <span className="lumi-journal-index">{light.id}</span>
-                  <p>{found ? light.fragment[cs ? 'cs' : 'en'] : cs ? '— ještě nenalezeno —' : '— not found yet —'}</p>
+                  <p>{found ? tx(light.fragment, lang) : l('notFound')}</p>
                 </li>
               );
             })}
@@ -606,39 +604,39 @@ export default function LumiPage() {
 
       {phase === 'done' && (
         <section className="lumi-panel is-done">
-          <h2>{cs ? 'Světlo se vrátilo' : 'The light returned'}</h2>
-          <p>{gift ? LUMI_GIFT[gift].text[cs ? 'cs' : 'en'] : LUMI_FINISH[cs ? 'cs' : 'en']}</p>
+          <h2>{l('done')}</h2>
+          <p>{gift ? tx(LUMI_GIFT[gift].text, lang) : tx(LUMI_FINISH, lang)}</p>
 
           {/* Kapitola patří k doletěné cestě — zůstává v deníku, i když se text níž ztratí. */}
           <figure className="lumi-chapter">
-            <figcaption>{chapter.title[cs ? 'cs' : 'en']}</figcaption>
-            <blockquote>{chapter.text[cs ? 'cs' : 'en']}</blockquote>
+            <figcaption>{tx(chapter.title, lang)}</figcaption>
+            <blockquote>{tx(chapter.text, lang)}</blockquote>
           </figure>
 
           <dl className="lumi-score">
             <div>
-              <dt>{cs ? 'světla' : 'lights'}</dt>
+              <dt>{l('scoreLights')}</dt>
               <dd>
                 {stats.lights}/{stats.total}
               </dd>
             </div>
             <div>
-              <dt>{cs ? 'čas' : 'time'}</dt>
+              <dt>{l('scoreTime')}</dt>
               <dd>{stats.time.toFixed(0)} s</dd>
             </div>
             <div>
-              <dt>{cs ? 'cesta' : 'path'}</dt>
-              <dd>{path.name[cs ? 'cs' : 'en']}</dd>
+              <dt>{l('scorePath')}</dt>
+              <dd>{tx(path.name, lang)}</dd>
             </div>
           </dl>
 
           {!gift ? (
-            <div className="lumi-gift" role="group" aria-label={cs ? 'Co uděláš se světlem' : 'What you do with the light'}>
+            <div className="lumi-gift" role="group" aria-label={l('giftAria')}>
               <button type="button" className="park-btn" onClick={() => chooseGift('keep')}>
-                {LUMI_GIFT.keep.label[cs ? 'cs' : 'en']}
+                {tx(LUMI_GIFT.keep.label, lang)}
               </button>
               <button type="button" className="park-btn lumi-gift-give" onClick={() => chooseGift('give')}>
-                {LUMI_GIFT.give.label[cs ? 'cs' : 'en']}
+                {tx(LUMI_GIFT.give.label, lang)}
                 <em>+{LUMI_GIFT_BONUS}</em>
               </button>
             </div>
@@ -658,10 +656,10 @@ export default function LumiPage() {
 
           <div className="lumi-actions">
             <button type="button" className="park-btn" onClick={start}>
-              {cs ? 'Znovu' : 'Again'}
+              {l('again')}
             </button>
             <Link href="/uranus" className="arena-link">
-              ← {cs ? 'zpět na Uran' : 'back to Uranus'}
+              ← {l('backToUranus')}
             </Link>
           </div>
         </section>

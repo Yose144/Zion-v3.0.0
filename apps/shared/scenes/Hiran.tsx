@@ -18,7 +18,12 @@ import {
 } from './kit';
 import { sriYantraGeometry } from './kit/yantra';
 
-type Lang = 'cs' | 'en';
+/**
+ * Jazyky scény. `es` přidává aplikace (L-10) — scéna sama španělský text nemá,
+ * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
+ * patří sem stejně jako cs/en.
+ */
+type Lang = 'cs' | 'en' | 'es';
 
 /** Stavy, které scéna umí. `listening`/`speaking` nemáme — žádný hlas v repu není. */
 export type HiranSceneState = 'idle' | 'thinking' | 'offline' | 'error';

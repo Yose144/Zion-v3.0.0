@@ -2298,6 +2298,31 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Deploy:** `PROTO_VERSION` 32 → **net první, pak appka** (starý net nový `handoff`
   odmítne jako `unknown_type`).
 
+## Jazyky a i18n (L-10, 2026-11-05)
+
+- **Tři jazyky, jeden typ.** `Lang = 'cs' | 'en' | 'es'` v `core/i18n`; `LANGS`
+  určuje i pořadí přepínače (`nextLang`), takže se cyklus nedá rozjet na třech
+  místech zvlášť (dřív to byly tři ternárky v Shell/HoloConsole/ProjectLanguageButton).
+- **`es` je nepovinné u textů, povinné u klíčů chrome.** `tx(text, lang)` padá
+  na `en`, takže částečný překlad nikdy nezobrazí `undefined` — proto jde
+  překládat po částech. `COPY` (63 klíčů) má `es` kompletní, protože je to chrome.
+- **Texty obrazovky patří do slovníku, ne do JSX.** Lumi má `core/lumi/copy.ts`
+  (`LUMI_COPY` + `fill()` pro `{n}`/`{name}`); v `page.tsx` nesmí zůstat žádný
+  `cs ? '…' : '…'`. Když se přidává jazyk, hledá se v jednom souboru.
+- **Data světa zůstávají v `world.ts`** (`LumiText` = `{cs, en, es?}`) — čte je
+  i simulace a testy, ne jen UI.
+- **Volba jazyka:** `?lang=es` (override pro audity) → `localStorage['nirvana.lang.v1']`
+  → `navigator.language` (`cs`/`sk` → cs, `es` → es, jinak en). `cs` je výchozí pro
+  SSR a první render, skutečná volba se dohrává v efektu (jinak hydration mismatch).
+- **Sdílené scény mají vlastní `Lang`** a nesmí importovat z appky (canon: jen
+  `three` + `@genesis/runtime`). Pro výběr textu je `kit/localized.ts`
+  (`pickLang`), který chybějící `es` shodí na `en`; přímé `text[lang]` v shared
+  scéně neprojde `tsc`, jakmile `lang` umí i jazyky, které scéna nemá.
+- **Co ještě není v ES:** hry (`/earth` 79, `/mercury` 35, `/park` 32, `/venus` 26,
+  `/mars` 20, `/fleet` 20, `/multiplayer` 17, `/avatars` 15 inline textů) dnes pro
+  `es` zobrazí angličtinu. Je to fallback, ne chyba — ale nemá se to hlásit jako
+  „přeloženo".
+
 ## Flotila z marketu — `/fleet` (2026-11-05)
 
 - **Lodě jsou produkty z marketu, ne nové assety.** Zdroj jsou STL skládačky

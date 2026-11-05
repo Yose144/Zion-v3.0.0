@@ -11,7 +11,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Canvas } from '@react-three/fiber';
-import { useI18n } from '@/core/i18n';
+import { useI18n, tx } from '@/core/i18n';
 import { SATURN_CAMERA, SaturnArchive, SATURN_CHAPTERS } from '@/core/saturn/SaturnArchive';
 import { TanksGame } from '@/core/saturn/TanksGame';
 import { MISSION_ORIGIN, MISSION_STATUS_COLOR, type MissionStatus } from '@/lib/freeworld-sites';
@@ -91,7 +91,7 @@ export default function SaturnPage() {
           {(['built', 'preparation', 'vision'] as MissionStatus[]).map((s) => (
             <span key={s}>
               <i aria-hidden style={{ background: MISSION_STATUS_COLOR[s] }} />
-              {STATUS_LABEL[s][lang]}
+              {tx(STATUS_LABEL[s], lang)}
             </span>
           ))}
         </div>
@@ -115,7 +115,7 @@ export default function SaturnPage() {
           </header>
           <p>
             <span style={{ color: MISSION_STATUS_COLOR[chapter.status] }}>
-              {STATUS_LABEL[chapter.status][lang]}
+              {tx(STATUS_LABEL[chapter.status], lang)}
             </span>
             {' · L5 Free World'}
           </p>

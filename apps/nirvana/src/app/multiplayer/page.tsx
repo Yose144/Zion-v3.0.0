@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useI18n } from '@/core/i18n';
+import { useI18n, tx } from '@/core/i18n';
 import { useNet } from '@/core/net/useNet';
 import { watchHref } from '@/core/net/watch';
 import { ChatPanel } from '@/core/net/ChatPanel';
@@ -278,8 +278,8 @@ export default function MultiplayerPage() {
                   {game.glyph}
                 </span>
                 <div>
-                  <h2>{game.title[lang]}</h2>
-                  <p>{game.note[lang]}</p>
+                  <h2>{tx(game.title, lang)}</h2>
+                  <p>{tx(game.note, lang)}</p>
                 </div>
                 <span className="lobby-count">
                   {open.reduce((sum, room) => sum + room.players, 0)}/{busiest?.maxPlayers ?? game.seats}
@@ -298,7 +298,7 @@ export default function MultiplayerPage() {
                         {room.mode === 'humans' ? '👤' : '🤖'} {room.id}
                       </span>
                       <span className={`lobby-room-state is-${room.state}`}>
-                        {STATE_LABEL[room.state][lang]}
+                        {tx(STATE_LABEL[room.state], lang)}
                       </span>
                       <span className="lobby-room-players">
                         {room.players}/{room.maxPlayers}

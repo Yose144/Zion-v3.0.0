@@ -75,3 +75,6 @@ export {
 } from './terrain';
 export { CinematicIntro, reducedMotion, useReducedMotion, type CinematicIntroProps } from './camera';
 export { NabukanoModel, SkyMaria, SISTERS, type SkyMariaType } from './vessels';
+
+export type { LocalizedText, SceneLang } from './localized';
+export { pickLang } from './localized';

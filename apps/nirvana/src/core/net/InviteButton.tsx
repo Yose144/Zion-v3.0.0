@@ -12,7 +12,7 @@
  */
 
 import { useCallback, useState } from 'react';
-import { useI18n } from '@/core/i18n';
+import { useI18n, tx } from '@/core/i18n';
 
 export function InviteButton({
   roomId,
@@ -54,7 +54,7 @@ export function InviteButton({
           ? lang === 'cs'
             ? 'odkaz zkopírován ✓'
             : 'link copied ✓'
-          : (label?.[lang] ?? (lang === 'cs' ? 'Pozvat' : 'Invite'))}
+          : (tx(label, lang) ?? (lang === 'cs' ? 'Pozvat' : 'Invite'))}
       </button>
       {manual && (
         <input

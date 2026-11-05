@@ -5,7 +5,12 @@ import { React, useFrame, THREE } from '@genesis/runtime';
 
 import { motionTime } from './ScenePresentation';
 
-type Lang = 'cs' | 'en';
+/**
+ * Jazyky scény. `es` přidává aplikace (L-10) — scéna sama španělský text nemá,
+ * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
+ * patří sem stejně jako cs/en.
+ */
+type Lang = 'cs' | 'en' | 'es';
 
 type PointerEventLike = { stopPropagation: () => void };
 

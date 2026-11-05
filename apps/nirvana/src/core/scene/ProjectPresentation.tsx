@@ -12,7 +12,11 @@ import { useI18n } from '@/core/i18n';
 import { MISSION_ORIGIN } from '@/lib/freeworld-sites';
 import { quality } from '../../../../shared/scenes/kit/quality';
 
-type Lang = 'cs' | 'en';
+/**
+ * Jazyk předávaný scénám. Třetí jazyk (`es`) scény nemusí znát — dostanou ho
+ * jen ty, které si ho přeloží samy; ostatní se chovají jako `en`.
+ */
+type Lang = 'cs' | 'en' | 'es';
 
 export interface ProjectPresentationProps {
   title: string;

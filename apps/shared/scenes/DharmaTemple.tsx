@@ -4,10 +4,15 @@
 import { React, useFrame, useThree, useEffect, useLayoutEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
-import { KeyLight, SceneWater, SkyFill, stoneCool } from './kit';
+import { KeyLight, SceneWater, SkyFill, stoneCool, pickLang } from './kit';
 import { CoastalLandscape } from './CoastalLandscape';
 
-type Lang = 'cs' | 'en';
+/**
+ * Jazyky scény. `es` přidává aplikace (L-10) — scéna sama španělský text nemá,
+ * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
+ * patří sem stejně jako cs/en.
+ */
+type Lang = 'cs' | 'en' | 'es';
 
 /* ─── Rozměry dle konceptu ───────────────────────────────────────────
  * Hlavní kopule ⌀ ~42 m (výška 21 m), 6 muzeí ⌀ ~28 m v hexagonu,
@@ -136,7 +141,7 @@ function Dome({ radius, pos, lang, label, inner }: {
       {/* vnitřní záře — chrám svítí v soumraku */}
       <pointLight position={[pos[0], pos[1] + radius * 0.45, pos[2]]} intensity={3.4} distance={radius * 2.6} color="#ffb85e" decay={2} />
 
-      <SceneLabel position={[pos[0], pos[1] + radius + 0.5, pos[2]]} text={label[lang]} />
+      <SceneLabel position={[pos[0], pos[1] + radius + 0.5, pos[2]]} text={pickLang(label, lang)} />
     </group>
   );
 }

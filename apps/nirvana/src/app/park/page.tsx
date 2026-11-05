@@ -6,7 +6,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { XR, createXRStore } from '@react-three/xr';
 import * as THREE from 'three';
-import { useI18n } from '@/core/i18n';
+import { useI18n, tx } from '@/core/i18n';
 import { GAME_LINKS } from '@/core/games/links';
 import { play, unlock, type SoundName } from '@/core/audio/engine';
 import { PARK_CAMERA, ParkScene } from '@/core/scene/park/ParkScene';
@@ -583,8 +583,8 @@ export default function ParkPage() {
                   {game.glyph}
                 </span>
                 <span className="park-game-text">
-                  <strong>{game.title[lang]}</strong>
-                  <em>{game.note[lang]}</em>
+                  <strong>{tx(game.title, lang)}</strong>
+                  <em>{tx(game.note, lang)}</em>
                 </span>
                 <span className="park-game-go" aria-hidden>
                   →

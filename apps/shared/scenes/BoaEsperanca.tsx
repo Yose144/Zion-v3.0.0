@@ -7,7 +7,12 @@ import { AtlanticOcean } from './CoastalLandscape';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, SkyFill, basaltRock } from './kit';
 
-type Lang = 'cs' | 'en';
+/**
+ * Jazyky scény. `es` přidává aplikace (L-10) — scéna sama španělský text nemá,
+ * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
+ * patří sem stejně jako cs/en.
+ */
+type Lang = 'cs' | 'en' | 'es';
 
 /* ─── Boa Esperança — Cape of Good Hope · Jihoafrická republika ────────
  * Dle hero: masivní mořské útesy s majákem na hřebenu, fynbos křoviny

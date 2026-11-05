@@ -9,7 +9,7 @@
  */
 
 import Link from 'next/link';
-import { useI18n } from '@/core/i18n';
+import { useI18n, tx } from '@/core/i18n';
 import { OuterWorldScene } from './OuterWorldScene';
 import { OUTER_WORLDS, type OuterWorldId } from './worlds';
 
@@ -29,7 +29,7 @@ export function OuterWorldPage({ id }: { id: OuterWorldId }) {
         <div>
           <p className="outer-kicker">{cs ? 'vnější soustava' : 'outer system'}</p>
           <h1>{world.name}</h1>
-          <p className="outer-epithet">{world.epithet[lang]}</p>
+          <p className="outer-epithet">{tx(world.epithet, lang)}</p>
         </div>
         <Link href="/" className="saturn-back">
           ← {cs ? 'Nirvana' : 'Nirvana'}
@@ -40,13 +40,13 @@ export function OuterWorldPage({ id }: { id: OuterWorldId }) {
         <dl className="outer-facts">
           {world.facts.map((fact) => (
             <div key={fact.label.en}>
-              <dt>{fact.label[lang]}</dt>
-              <dd>{fact.value[lang]}</dd>
+              <dt>{tx(fact.label, lang)}</dt>
+              <dd>{tx(fact.value, lang)}</dd>
             </div>
           ))}
         </dl>
 
-        <p className="outer-lore">{world.lore[lang]}</p>
+        <p className="outer-lore">{tx(world.lore, lang)}</p>
 
         <div className="outer-actions">
           {id === 'uranus' && (

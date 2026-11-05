@@ -6,7 +6,12 @@ import { ScenePresentation, motionTime } from './ScenePresentation';
 import { KeyLight, SkyFill } from './kit';
 import { NabukanoModel } from './kit/vessels';
 
-type Lang = 'cs' | 'en';
+/**
+ * Jazyky scény. `es` přidává aplikace (L-10) — scéna sama španělský text nemá,
+ * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
+ * patří sem stejně jako cs/en.
+ */
+type Lang = 'cs' | 'en' | 'es';
 type Point = [number, number, number];
 
 /* ─── Nebeská flotila — Nabukano (L6) ─────────────────────────────────────

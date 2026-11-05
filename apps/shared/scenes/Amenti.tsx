@@ -6,7 +6,12 @@ import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, SceneMotes, SceneTerrain, SceneWater, SkyFill, gold as goldMaterial, stoneWarm } from './kit';
 
-type Lang = 'cs' | 'en';
+/**
+ * Jazyky scény. `es` přidává aplikace (L-10) — scéna sama španělský text nemá,
+ * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
+ * patří sem stejně jako cs/en.
+ */
+type Lang = 'cs' | 'en' | 'es';
 
 /* ─── Amenti · Giza — Síň záznamů · Egypt ─────────────────────────────
  * Dle hero: zlatá pyramida s otevřenou síní a světelným paprskem

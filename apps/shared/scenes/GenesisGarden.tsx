@@ -5,9 +5,14 @@ import { React, useFrame, useThree, useEffect, useLayoutEffect, useMemo, useRef,
 
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
-import { KeyLight, SceneTerrain, SkyFill, grassGround, sandGround } from './kit';
+import { KeyLight, SceneTerrain, SkyFill, grassGround, sandGround, pickLang } from './kit';
 
-type Lang = 'cs' | 'en';
+/**
+ * Jazyky scény. `es` přidává aplikace (L-10) — scéna sama španělský text nemá,
+ * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
+ * patří sem stejně jako cs/en.
+ */
+type Lang = 'cs' | 'en' | 'es';
 
 interface PyramidData {
   position: [number, number, number];
@@ -329,7 +334,7 @@ function CrystalPyramid({ position, height, radius, accent, label, lang }: Pyram
       </mesh>
       <pointLight position={[position[0], height * 0.3, position[2]]} intensity={1.4} distance={radius * 2.2} color="#ffce8a" decay={2} />
 
-      <SceneLabel position={[position[0], height + 0.55, position[2]]} text={label[lang]} />
+      <SceneLabel position={[position[0], height + 0.55, position[2]]} text={pickLang(label, lang)} />
     </group>
   );
 }

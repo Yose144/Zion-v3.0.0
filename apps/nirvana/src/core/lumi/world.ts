@@ -29,13 +29,23 @@ export interface LumiIsland {
   tone: string;
 }
 
+/**
+ * Text světa ve třech jazycích. `es` je nepovinné — `tx()` v i18n padá na `en`,
+ * takže částečný překlad nikdy nezobrazí prázdno.
+ */
+export interface LumiText {
+  cs: string;
+  en: string;
+  es?: string;
+}
+
 export interface LumiLight {
   id: number;
   x: number;
   y: number;
   z: number;
   /** Text, který se objeví po sebrání — kousek příběhu. */
-  fragment: { cs: string; en: string };
+  fragment: LumiText;
 }
 
 export interface LumiCurrent {
@@ -57,6 +67,7 @@ export const LUMI_LIGHTS: LumiLight[] = [
     fragment: {
       cs: 'Nejdřív jsem si myslel, že létám proto, že mám křídla. Pak jsem zjistil, že křídla jsou jen to, co zbylo, když mě někdo podržel.',
       en: 'At first I thought I flew because I had wings. Later I learned wings are only what remains after someone held you up.',
+        es: 'Al principio creía que volaba porque tenía alas. Después aprendí que las alas son solo lo que queda cuando alguien te sostuvo.',
     },
   },
   {
@@ -67,6 +78,7 @@ export const LUMI_LIGHTS: LumiLight[] = [
     fragment: {
       cs: 'Světlo není moje. Jen prochází. Kdo si ho nechá, zhasne dřív než ten, kdo ho podá dál.',
       en: 'The light is not mine. It only passes through. Whoever keeps it goes dark sooner than whoever hands it on.',
+        es: 'La luz no es mía. Solo pasa a través. Quien se la queda se apaga antes que quien la entrega.',
     },
   },
   {
@@ -77,6 +89,7 @@ export const LUMI_LIGHTS: LumiLight[] = [
     fragment: {
       cs: 'Na Uranu se planeta převrátila na bok. Řekli mi, že to je chyba. Ale co je nahoře, rozhoduje ten, kdo se dívá.',
       en: 'On Uranus the planet rolled onto its side. They told me it was a mistake. But what counts as up is decided by whoever looks.',
+        es: 'En Urano el planeta rodó de lado. Me dijeron que fue un error. Pero lo que está arriba lo decide quien mira.',
     },
   },
   {
@@ -87,6 +100,7 @@ export const LUMI_LIGHTS: LumiLight[] = [
     fragment: {
       cs: 'Potkal jsem jiné dítě světla. Nemluvili jsme. Letěli jsme vedle sebe a bylo to víc než rozhovor.',
       en: 'I met another child of light. We did not speak. We flew side by side, and it was more than a conversation.',
+        es: 'Conocí a otro niño de luz. No hablamos. Volamos uno al lado del otro, y fue más que una conversación.',
     },
   },
   {
@@ -97,6 +111,7 @@ export const LUMI_LIGHTS: LumiLight[] = [
     fragment: {
       cs: 'Každé světlo, které sebereš, trochu bolí. Ne proto, že bys ho bral, ale protože už víš, že ho budeš muset vydat.',
       en: 'Every light you gather hurts a little. Not because you take it, but because you already know you will have to give it away.',
+        es: 'Cada luz que recoges duele un poco. No porque la tomes, sino porque ya sabes que tendrás que entregarla.',
     },
   },
   {
@@ -107,6 +122,7 @@ export const LUMI_LIGHTS: LumiLight[] = [
     fragment: {
       cs: 'Nejvýš se neletí silou. Nejvýš se doletí tím, že přestaneš tlačit.',
       en: 'You do not reach the highest place by force. You get there by stopping the pushing.',
+        es: 'A lo más alto no se llega por la fuerza. Se llega cuando dejas de empujar.',
     },
   },
   {
@@ -117,6 +133,7 @@ export const LUMI_LIGHTS: LumiLight[] = [
     fragment: {
       cs: 'Světlo, které držíš pro druhé, svítí dál než to, které držíš pro sebe.',
       en: 'The light you keep for others shines farther than the light you keep for yourself.',
+        es: 'La luz que guardas para otros brilla más lejos que la que guardas para ti.',
     },
   },
 ];
@@ -150,11 +167,13 @@ export const LUMI_ISLANDS: LumiIsland[] = [
 export const LUMI_INTRO = {
   cs: 'Lumi je děvčátko s lucernou. V ledové obloze Uranu zůstalo sedm světel a nikdo neříká, co udělat — jen lucerna ví cestu. Odnes je do svatyně na konci oblohy.',
   en: 'Lumi is the girl with the lantern. Seven lights remain in the ice sky of Uranus and nobody says what to do — only the lantern knows the way. Carry them to the shrine at the edge of the sky.',
+        es: 'Lumi es la niña con la linterna. En el cielo de hielo de Urano quedan siete luces y nadie dice qué hacer: solo la linterna conoce el camino. Llévalas al santuario al borde del cielo.',
 };
 
 export const LUMI_FINISH = {
   cs: 'Světlo se vrátilo do oblohy. Lucerna zhasla a Lumi zůstala ve tmě sama se sebou — a to je víc než dost.',
   en: 'The light returned to the sky. The lantern went out and Lumi stood in the dark with herself — and that is more than enough.',
+        es: 'La luz volvió al cielo. La linterna se apagó y Lumi se quedó a solas en la oscuridad — y eso es más que suficiente.',
 };
 
 /**
@@ -169,13 +188,13 @@ export type LumiPathId = 'calm' | 'wind' | 'light';
 
 export interface LumiPath {
   id: LumiPathId;
-  name: { cs: string; en: string };
-  note: { cs: string; en: string };
+  name: LumiText;
+  note: LumiText;
   lights: LumiLight[];
   currents: LumiCurrent[];
   islands: LumiIsland[];
   shrine: { x: number; y: number; r: number };
-  intro: { cs: string; en: string };
+  intro: LumiText;
 }
 
 /** Texty světel jsou společné oběma cestám — příběh se nemění podle obtížnosti. */
@@ -256,6 +275,7 @@ export const LUMI_PATHS: Record<LumiPathId, LumiPath> = {
     intro: {
       cs: 'Větrná cesta vede výš, než kam dohlédneš ze startu. Proudy jsou užší a mezi nimi je delší prázdno — lucerna tu není na ozdobu.',
       en: 'The windy way climbs higher than you can see from the start. The currents are narrower and the gaps between them longer — the lantern is not decoration here.',
+        es: 'El camino del viento sube más alto de lo que ves al empezar. Las corrientes son más estrechas y los huecos entre ellas más largos: aquí la linterna no es un adorno.',
     },
   },
   light: {
@@ -269,6 +289,7 @@ export const LUMI_PATHS: Record<LumiPathId, LumiPath> = {
     intro: {
       cs: 'Cesta světla vede nahoru ve spirále. Proudy jsou vysoko a úzké, mezi nimi je prázdno, které musíš přečkat. Sem se nechodí pro rychlost — chodí se sem, když už víš, že lucerna vydrží.',
       en: 'The way of light climbs in a spiral. The currents sit high and narrow, with empty air between them you have to endure. You do not come here for speed — you come when you already know the lantern will last.',
+        es: 'El camino de la luz sube en espiral. Las corrientes están altas y estrechas, y entre ellas hay un vacío que hay que resistir. Aquí no se viene por velocidad: se viene cuando ya sabes que la linterna aguantará.',
     },
   },
 };
@@ -369,8 +390,8 @@ export function pathData(id: LumiPathId, date: Date = new Date()): LumiPath {
 export interface LumiChapter {
   /** Id kapitoly = id cesty, po které se odemkne. */
   id: LumiPathId;
-  title: { cs: string; en: string };
-  text: { cs: string; en: string };
+  title: LumiText;
+  text: LumiText;
 }
 
 export const LUMI_CHAPTERS: Record<LumiPathId, LumiChapter> = {
@@ -380,6 +401,7 @@ export const LUMI_CHAPTERS: Record<LumiPathId, LumiChapter> = {
     text: {
       cs: 'Doletěla jsi. Světlo v dlani bylo těžší, než vypadalo, a poprvé bylo ticho, které nebylo prázdné. Lucerna se zakymácela — a v obloze se objevilo další místo, kam se dá letět.',
       en: 'You made it. The light in your palm was heavier than it looked, and for the first time the silence was not empty. The lantern swayed — and another place appeared in the sky to fly to.',
+        es: 'Lo lograste. La luz en tu palma pesaba más de lo que parecía, y por primera vez el silencio no estaba vacío. La linterna se meció — y en el cielo apareció otro lugar al que volar.',
     },
   },
   wind: {
@@ -388,6 +410,7 @@ export const LUMI_CHAPTERS: Record<LumiPathId, LumiChapter> = {
     text: {
       cs: 'Vítr už tě nevede, jen ti stojí v cestě — a ty letíš dál. Mezi proudy je prázdno, které se nedá obejít; dá se jen přečkat. Zjistila jsi, že lucerna vydrží, i když si nejsi jistá.',
       en: 'The wind no longer leads you, it only stands in the way — and you keep flying. Between the currents there is emptiness you cannot go around; you can only outlast it. You learned the lantern holds even when you are not sure.',
+        es: 'El viento ya no te guía, solo se interpone — y tú sigues volando. Entre las corrientes hay un vacío que no se puede rodear; solo se puede resistir. Aprendiste que la linterna aguanta incluso cuando no estás seguro.',
     },
   },
   light: {
@@ -396,6 +419,7 @@ export const LUMI_CHAPTERS: Record<LumiPathId, LumiChapter> = {
     text: {
       cs: 'Doletěla jsi na konec spirály. Sedmé světlo nesvítí víc než první — jen je jiné, protože už víš, co jsi cestou nechala za sebou. Svatyně se otevírá zevnitř.',
       en: 'You reached the end of the spiral. The seventh light does not shine brighter than the first — it is only different, because you now know what you left behind on the way. The shrine opens from the inside.',
+        es: 'Llegaste al final de la espiral. La séptima luz no brilla más que la primera: es solo distinta, porque ahora sabes lo que dejaste atrás en el camino. El santuario se abre desde dentro.',
     },
   },
 };
@@ -411,23 +435,26 @@ export function chapterAfter(pathId: LumiPathId): LumiChapter {
  * Vracející se hráč nedostane stejný text: obloha se posunula (L-7) a hra to
  * přizná. První průchod = základní intro z `LUMI_PATHS`.
  */
-export function introFor(pathId: LumiPathId, paths: string[] = []): { text: { cs: string; en: string }; returning: boolean } {
+export function introFor(pathId: LumiPathId, paths: string[] = []): { text: LumiText; returning: boolean } {
   const path = LUMI_PATHS[pathId] ?? LUMI_PATHS.calm;
   const returning = paths.includes(path.id);
   if (!returning) return { text: path.intro, returning: false };
 
-  const again: Record<LumiPathId, { cs: string; en: string }> = {
+  const again: Record<LumiPathId, LumiText> = {
     calm: {
       cs: 'Tuhle cestu už znáš. Světla se posunula a proudy tečou jinudy — obloha si tě pamatuje, ale nechce ti to usnadnit.',
       en: 'You know this way already. The lights have shifted and the currents run elsewhere — the sky remembers you, but it will not make it easier.',
+        es: 'Ya conoces este camino. Las luces se han movido y las corrientes van por otro lado: el cielo te recuerda, pero no te lo pondrá más fácil.',
     },
     wind: {
       cs: 'Vracíš se výš. Vítr je dnes jinde než minule; kdo spoléhá na paměť, doletí dřív, kdo na odvahu, dál.',
       en: 'You return higher. The wind is elsewhere than last time; whoever trusts memory arrives sooner, whoever trusts courage arrives farther.',
+        es: 'Vuelves más alto. El viento está hoy en otro sitio; quien confía en la memoria llega antes, quien confía en el valor llega más lejos.',
     },
     light: {
       cs: 'Spirála je pořád stejná a ty taky — jen světla se posunula. Cesta není těžší, jen méně známá.',
       en: 'The spiral is the same and so are you — only the lights have moved. The way is not harder, just less known.',
+        es: 'La espiral es la misma y tú también: solo se han movido las luces. El camino no es más difícil, solo menos conocido.',
     },
   };
 
@@ -441,6 +468,7 @@ export const LUMI_GIFT = {
     text: {
       cs: 'Světlo zůstalo u tebe. Je teplé a tiché — a nikomu jinému nesvítí.',
       en: 'The light stayed with you. It is warm and quiet — and it shines for no one else.',
+        es: 'La luz se quedó contigo. Es cálida y silenciosa — y no brilla para nadie más.',
     },
   },
   give: {
@@ -448,6 +476,7 @@ export const LUMI_GIFT = {
     text: {
       cs: 'Položil jsi světlo do svatyně a odešel bez něj. V oblaze zůstalo o jedno světlo víc, než když jsi přišel.',
       en: 'You set the light down in the shrine and left without it. The sky holds one more light than when you came.',
+        es: 'Dejaste la luz en el santuario y te fuiste sin ella. El cielo tiene una luz más que cuando llegaste.',
     },
   },
 } as const;

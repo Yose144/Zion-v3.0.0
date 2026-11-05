@@ -5,7 +5,7 @@ import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Portal, SceneSlot } from '@/core/portals/manifest';
-import type { Lang } from '@/core/i18n';
+import { langLabel, nextLang, tx, type Lang } from '@/core/i18n';
 import { LINK_COLOR, LINK_OPACITY, LINK_ACTIVE_OPACITY } from './links';
 
 const SLOT_COLOR: Record<SceneSlot, string> = {
@@ -97,7 +97,7 @@ function HoloTile({
       </lineLoop>
       <Html center transform={false} distanceFactor={11} style={{ pointerEvents: 'none' }} position={[0, 0, 0.01]}>
         <span className="holo-tile-label" style={{ borderColor: color, color }}>
-          {portal.title[lang]}
+          {tx(portal.title, lang)}
           {portal.status === 'stub' && <em> ·</em>}
         </span>
       </Html>
@@ -234,7 +234,7 @@ export function HoloConsole({
       >
         <span className="holo-actions">
           <button type="button" className="holo-btn" onClick={() => onToggleLang()}>
-            {lang === 'cs' ? 'EN' : 'CS'}
+            {langLabel(nextLang(lang))}
           </button>
           {vrSupported && (
             <button type="button" className="holo-btn holo-btn-vr" onClick={onEnterVr}>

@@ -9,7 +9,11 @@ import { ScenePresentation, motionDelta, motionTime } from './ScenePresentation'
 
 type PointerEventLike = { stopPropagation: () => void };
 
-type Lang = 'cs' | 'en';
+/**
+ * Jazyky scény. `es` je tu jen proto, že ho posílá aplikace (L-10); scéna sama
+ * žádný španělský text nemá, takže se chová jako `en` (`cs` je false).
+ */
+type Lang = 'cs' | 'en' | 'es';
 
 const TARGET: [number, number, number] = [0, 2.0, 1.0];
 

@@ -7,7 +7,11 @@ import { GlowSprite, useHallFloorTexture } from './MatrixDetail';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionDelta, motionTime, prefersReducedMotion } from './ScenePresentation';
 
-type Lang = 'cs' | 'en';
+/**
+ * Jazyky scény. `es` je tu jen proto, že ho posílá aplikace (L-10); scéna sama
+ * žádný španělský text nemá, takže se chová jako `en` (`cs` je false).
+ */
+type Lang = 'cs' | 'en' | 'es';
 
 const TARGET: [number, number, number] = [0, 1.5, -1];
 

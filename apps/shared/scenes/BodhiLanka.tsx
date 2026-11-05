@@ -6,7 +6,12 @@ import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, SceneInstances, ScenePalms, SceneTerrain, SceneWater, SkyFill, mergeParts, type MergedPart } from './kit';
 
-type Lang = 'cs' | 'en';
+/**
+ * Jazyky scény. `es` přidává aplikace (L-10) — scéna sama španělský text nemá,
+ * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
+ * patří sem stejně jako cs/en.
+ */
+type Lang = 'cs' | 'en' | 'es';
 
 /* ─── Bodhi Lanka — Akáša Node, Srí Lanka ─────────────────────────────
  * Dle koncept boardu: centrální Sri Maha Bodhi (živý strom osvícení) na
