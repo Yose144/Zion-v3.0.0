@@ -34,6 +34,7 @@ import {
   MAX_PLAYERS,
   MAX_ROOMS,
   FIGHT_ROOM_SIZE,
+  LUMI_ROOM_SIZE,
   PROTO_VERSION,
   SNAPSHOT_HZ,
   TICK_HZ,
@@ -210,6 +211,7 @@ function capOf(game: GameId): number {
   if (game === 'fight') return FIGHT_ROOM_SIZE;
   if (game === 'moba') return MOBA_ROOM_SIZE;
   if (game === 'tanks') return 2;
+  if (game === 'lumi') return LUMI_ROOM_SIZE;
   return MAX_PLAYERS;
 }
 
@@ -486,6 +488,7 @@ async function joinRoom(
   requestedMode: RoomMode = 'bots',
   spectate = false,
   aspect?: 'a' | 'b',
+  lumiPath?: 'calm' | 'wind' | 'light',
 ): Promise<void> {
   if (!conn.helloSent) {
     sendError(conn, 'bad_frame', 'nejdřív hello');
@@ -566,7 +569,9 @@ async function joinRoom(
     heroId,
     battleSpell,
     aspect,
-  });
+    // Lumi: cestu posílá klient v `join`, ostatní hry pole ignorují
+    ...(game === 'lumi' ? { path: lumiPath } : {}),
+  } as Parameters<typeof room.match.join>[1]);
 
   send(conn, {
     t: 'room',
@@ -670,6 +675,7 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
         message.mode,
         message.spectate === true,
         message.aspect,
+        message.path,
       );
       return;
 

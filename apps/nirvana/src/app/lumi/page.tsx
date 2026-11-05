@@ -31,6 +31,9 @@ import {
 import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
 import { EMPTY_JOURNAL, isPathUnlocked, loadJournal, recordJourney, type LumiJournal } from '@/core/lumi/journal';
 import { play, startWindLoop, type LoopHandle } from '@/core/audio/engine';
+import { useNet } from '@/core/net/useNet';
+import { InviteButton } from '@/core/net/InviteButton';
+import type { LumiRemote } from '@/core/lumi/LumiScene';
 import { unlock } from '@/core/audio/engine';
 import { TouchButton } from '@/core/games/TouchPad';
 
@@ -69,12 +72,53 @@ export default function LumiPage() {
   /** Vítr běží jen během letu — po doletu zmlkne. */
   const wind = useRef<LoopHandle | null>(null);
 
+  // ── společné létání ────────────────────────────────────────────────
+  const { subscribe, joinLumi, leaveRoom, sendFly, connected, roomId } = useNet();
+  /** `true` = letí se s ostatními; sólo zůstává výchozí. */
+  const [coop, setCoop] = useState(false);
+  /** Ostatní letci a sdílená světla — refy, protože chodí 15×/s. */
+  const remotes = useRef<LumiRemote[]>([]);
+  const sharedLights = useRef<number[]>([]);
+  const [peers, setPeers] = useState(0);
+
   const path = pathData(pathId);
   const missing = Math.max(0, stats.total - stats.lights);
 
   useEffect(() => {
     setJournal(loadJournal());
   }, []);
+
+  // snapshoty společného letu
+  useEffect(() => {
+    if (!coop) return;
+    return subscribe((message) => {
+      if (message.t !== 'snapshot' || message.game !== 'lumi' || !message.lumi) return;
+      remotes.current = message.lumi.flyers.map((flyer) => ({
+        id: flyer.id,
+        name: flyer.name,
+        x: flyer.x,
+        y: flyer.y,
+        vx: flyer.vx,
+        vy: flyer.vy,
+        energy: flyer.energy,
+        finished: flyer.finished,
+      }));
+      sharedLights.current = message.lumi.lights;
+      setPeers(message.lumi.flyers.length);
+    });
+  }, [coop, subscribe]);
+
+  // připojení / odpojení podle fáze
+  useEffect(() => {
+    if (!coop || phase !== 'flying' || !connected) return;
+    joinLumi(pathId);
+    return () => {
+      leaveRoom();
+      remotes.current = [];
+      sharedLights.current = [];
+      setPeers(0);
+    };
+  }, [coop, phase, connected, joinLumi, leaveRoom, pathId]);
 
   // vítr: start s letem, stop při doletu i při odchodu ze stránky
   useEffect(() => {
@@ -166,6 +210,15 @@ export default function LumiPage() {
           onFinish={finish}
           paused={phase !== 'flying'}
           detail={!coarse}
+          remotes={coop ? remotes : undefined}
+          sharedLights={coop ? sharedLights : undefined}
+          onFly={
+            coop
+              ? (state) => {
+                  sendFly(state);
+                }
+              : undefined
+          }
         />
       </div>
 
@@ -221,6 +274,13 @@ export default function LumiPage() {
             <figure className="lumi-fragment" key={fragment.id}>
               <cite>{fragment.text}</cite>
             </figure>
+          )}
+
+          {coop && (
+            <div className="lumi-peers" role="status">
+              <span>🌐 {peers > 0 ? (cs ? `s tebou letí ${peers}` : `${peers} flying with you`) : cs ? 'hledám další…' : 'looking for others…'}</span>
+              <InviteButton roomId={roomId} className="lumi-invite" label={{ cs: 'pozvat', en: 'invite' }} />
+            </div>
           )}
 
           {coarse && (
@@ -290,6 +350,26 @@ export default function LumiPage() {
                 </button>
               );
             })}
+          </div>
+
+          <div className="lumi-coop" role="group" aria-label={cs ? 'S kým letět' : 'Fly with'}>
+            <button
+              type="button"
+              className={`lumi-coop-btn${coop ? '' : ' is-active'}`}
+              aria-pressed={!coop}
+              onClick={() => setCoop(false)}
+            >
+              {cs ? 'Sólo' : 'Solo'}
+            </button>
+            <button
+              type="button"
+              className={`lumi-coop-btn${coop ? ' is-active' : ''}`}
+              aria-pressed={coop}
+              onClick={() => setCoop(true)}
+              title={connected ? undefined : cs ? 'server není dostupný' : 'server unavailable'}
+            >
+              {cs ? 'S kamarádem' : 'With a friend'}
+            </button>
           </div>
 
           <div className="lumi-intro-actions">

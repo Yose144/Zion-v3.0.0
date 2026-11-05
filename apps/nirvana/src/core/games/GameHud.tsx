@@ -8,6 +8,7 @@ import { useAuth } from '@/core/session/AuthProvider';
 import { useNet } from '@/core/net/useNet';
 import { loadProfile, type ParkProfile } from '@/core/park/profile';
 import { levelProgress } from '@/core/progress/run';
+import { loadJournal } from '@/core/lumi/journal';
 import { SoundToggle } from '@/core/shell/SoundToggle';
 import { LeaderboardsPanel } from './LeaderboardsPanel';
 import { GAME_LINKS } from './links';
@@ -45,16 +46,24 @@ export function GameHud() {
   const { online } = useNet();
   const wallet = useWallet();
   const [profile, setProfile] = useState<ParkProfile | null>(null);
+  /** Lumi: kolik světel z deníku už máš (0..7). */
+  const [lumiLights, setLumiLights] = useState(0);
   const [boards, setBoards] = useState(false);
 
   useEffect(() => {
     // profil čte localStorage — až po mountu, ať SSR nesedí na jiném čísle
-    const timer = setTimeout(() => setProfile(loadProfile()), 250);
+    const timer = setTimeout(() => {
+      setProfile(loadProfile());
+      setLumiLights(loadJournal().found.length);
+    }, 250);
     return () => clearTimeout(timer);
   }, [pathname]);
 
   useEffect(() => {
-    const refresh = () => setProfile(loadProfile());
+    const refresh = () => {
+      setProfile(loadProfile());
+      setLumiLights(loadJournal().found.length);
+    };
     window.addEventListener('focus', refresh);
     return () => window.removeEventListener('focus', refresh);
   }, []);
@@ -114,6 +123,17 @@ export function GameHud() {
         <span className="game-hud-chip" title={lang === 'cs' ? 'žetony z pouti' : 'fair tokens'}>
           <em aria-hidden>◎</em> {tokens === null ? '—' : tokens}
         </span>
+        <Link
+          href="/lumi"
+          className="game-hud-chip is-lumi"
+          title={
+            lang === 'cs'
+              ? `Lumi · ${lumiLights}/7 světel v deníku`
+              : `Lumi · ${lumiLights}/7 lights in the journal`
+          }
+        >
+          <em aria-hidden>🏮</em> {lumiLights}/7
+        </Link>
         <span
           className="game-hud-chip is-level"
           title={

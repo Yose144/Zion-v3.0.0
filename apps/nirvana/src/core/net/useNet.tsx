@@ -60,19 +60,19 @@ export interface NetApi {
   joinArena: () => void;
   /** Připojení do hry (`arena` = Mars, `race` = Venuše, `fight` = Merkur). */
   joinGame: (
-    game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks',
+    game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi',
     heroId?: number,
     battleSpell?: BattleSpellId,
     mode?: RoomMode,
     aspect?: 'a' | 'b',
   ) => void;
   /** Připojení do konkrétní místnosti z lobby (když je otevřených víc). */
-  joinRoom: (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', roomId: string) => void;
+  joinRoom: (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi', roomId: string) => void;
   /**
    * Dívat se na rozehranou místnost. Divák nedostane sedlo, jen snapshoty —
    * vstup se na serveru zahazuje, takže se nedá „připojit do hry" omylem.
    */
-  spectateRoom: (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', roomId: string) => void;
+  spectateRoom: (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi', roomId: string) => void;
   /** Sedím v hledišti (nesedím v sedle)? */
   spectator: boolean;
   /**
@@ -85,6 +85,10 @@ export interface NetApi {
   sendTanksAim: (angle: number, power: number) => void;
   /** Tanky: výstřel. */
   sendTanksShoot: () => void;
+  /** Lumi: pošli svůj stav letu (relay — server ho jen předá ostatním). */
+  sendFly: (state: { x: number; y: number; vx: number; vy: number; energy: number; collect?: number; finished?: boolean }) => boolean;
+  /** Lumi: připoj se ke společné obloze na dané cestě. */
+  joinLumi: (path: 'calm' | 'wind' | 'light') => void;
   /** MOBA: nákup itemu (server rozhodne, jestli na něj je zlato). */
   sendBuy: (item: ItemId) => void;
   /** MOBA: prodej itemu (server vrátí 60 % ceny). */
@@ -363,7 +367,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
 
   const joinGame = useCallback(
     (
-      game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks',
+      game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi',
       heroId?: number,
       battleSpell?: BattleSpellId,
       mode?: RoomMode,
@@ -375,14 +379,14 @@ export function NetProvider({ children }: { children: ReactNode }) {
   );
 
   const joinRoom = useCallback(
-    (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', roomId: string) => {
+    (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi', roomId: string) => {
       send({ t: 'join', game, room: roomId });
     },
     [send],
   );
 
   const spectateRoom = useCallback(
-    (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks', roomId: string) => {
+    (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi', roomId: string) => {
       send({ t: 'join', game, room: roomId, spectate: true });
     },
     [send],
@@ -453,6 +457,30 @@ export function NetProvider({ children }: { children: ReactNode }) {
   const sendTanksShoot = useCallback<NetApi['sendTanksShoot']>(
     () => {
       send({ t: 'shoot' });
+    },
+    [send],
+  );
+
+  /**
+   * Lumi: stav letu 20×/s. Vrací `true`, když se zpráva opravdu odeslala —
+   * sebrané světlo se nesmí ztratit jen proto, že ho throttle zahodil.
+   */
+  const flyAt = useRef(0);
+  const joinLumi = useCallback<NetApi['joinLumi']>(
+    (path) => {
+      send({ t: 'join', game: 'lumi', path });
+    },
+    [send],
+  );
+
+  const sendFly = useCallback<NetApi['sendFly']>(
+    (state) => {
+      const now = Date.now();
+      const carrying = state.collect !== undefined;
+      if (!carrying && now - flyAt.current < 50) return false;
+      flyAt.current = now;
+      send({ t: 'fly', ...state });
+      return true;
     },
     [send],
   );
@@ -559,6 +587,8 @@ export function NetProvider({ children }: { children: ReactNode }) {
       sendEmote,
       sendTanksAim,
       sendTanksShoot,
+      sendFly,
+      joinLumi,
       sendBuyback,
       sendUseItem,
       sendTalent,
@@ -593,6 +623,8 @@ export function NetProvider({ children }: { children: ReactNode }) {
       sendEmote,
       sendTanksAim,
       sendTanksShoot,
+      sendFly,
+      joinLumi,
       sendBuyback,
       sendUseItem,
       sendTalent,

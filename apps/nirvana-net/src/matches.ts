@@ -50,6 +50,7 @@ import {
   useMobaItem,
 } from './moba.js';
 import { createTanksMatch } from './tanks.js';
+import { createLumiMatch } from './lumi.js';
 import type { Match, MatchCtx, MatchSeat } from './match.js';
 import type {
   ClientMessage,
@@ -285,6 +286,8 @@ export function createMatch(game: GameId, now: number, mode: RoomMode = 'bots'):
       return mobaMatch(now);
     case 'tanks':
       return createTanksMatch(now, mode);
+    case 'lumi':
+      return createLumiMatch(now);
     default: {
       // nový `GameId` bez obalu = chyba při překladu, ne až v produkci
       const exhaustive: never = game;

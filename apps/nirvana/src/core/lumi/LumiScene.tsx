@@ -29,6 +29,18 @@ import {
 import { LUMI_HEIGHT, LUMI_WIDTH, type LumiLight, type LumiPath } from './world';
 import { play, playTone } from '@/core/audio/engine';
 
+/** Jeden vzdálený letec (relay ze serveru). */
+export interface LumiRemote {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  energy: number;
+  finished: boolean;
+}
+
 export interface LumiStats {
   lights: number;
   /** Rychlost letu (pro zvuk větru a HUD). */
@@ -473,11 +485,28 @@ export function LumiScene({
   onFinish,
   paused = false,
   detail = true,
+  remotes,
+  sharedLights,
+  onFly,
 }: {
   /** Kterou cestou se letí — data i simulace se berou odsud. */
   path: LumiPath;
   /** `false` = lehká varianta pro mobil (bez 250k modelu lucerny). */
   detail?: boolean;
+  /** Společné létání: ostatní letci ze serveru (ref, ne state — 15×/s). */
+  remotes?: React.MutableRefObject<LumiRemote[]>;
+  /** Společná světla místnosti — server je zdroj pravdy. */
+  sharedLights?: React.MutableRefObject<number[]>;
+  /** Poslat vlastní stav na server (relay). */
+  onFly?: (state: {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    energy: number;
+    collect?: number;
+    finished?: boolean;
+  }) => void;
   onStats: (stats: LumiStats) => void;
   onFinish: (score: number) => void;
   paused?: boolean;
@@ -489,6 +518,9 @@ export function LumiScene({
   const finishedSent = useRef(false);
   /** Zvukové hrany: předchozí stav, aby se nehrálo každý snímek. */
   const audioEdges = useRef({ inCurrent: false, opened: false });
+  const lastFly = useRef(0);
+  /** Světlo, které se má poslat serveru při nejbližší zprávě. */
+  const pendingFly = useRef<number | null>(null);
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
@@ -555,6 +587,30 @@ export function LumiScene({
       onFinish(700 + Math.max(0, 600 - Math.floor(flight.time) * 2));
     }
 
+    // ── společný let ────────────────────────────────────────────────
+    // Světla drží server: co sebral někdo jiný, mizí i mně.
+    if (sharedLights?.current) {
+      for (const id of sharedLights.current) {
+        if (!flight.lights.includes(id)) flight.lights.push(id);
+      }
+    }
+    if (onFly) {
+      const now = flight.time;
+      if (now - (lastFly.current || 0) > 0.05) {
+        lastFly.current = now;
+        onFly({
+          x: flight.x,
+          y: flight.y,
+          vx: flight.vx,
+          vy: flight.vy,
+          energy: flight.energy,
+          collect: pendingFly.current ?? undefined,
+          finished: flight.finished,
+        });
+        pendingFly.current = null;
+      }
+    }
+
     // telemetrie 6×/s — častěji by překreslovala celý React strom
     if (flight.time - lastReport.current > 0.16) {
       lastReport.current = flight.time;
@@ -563,6 +619,7 @@ export function LumiScene({
       const lastLight = flight.lastLight;
       flight.lastLight = null;
       if (lastLight !== null) {
+        pendingFly.current = lastLight;
         // Výška tónu roste s počtem světel — cesta má být slyšet jako stupnice.
         const step = Math.max(0, flight.lights.length - 1);
         const freq = 784 * Math.pow(2, step / 12);
@@ -615,7 +672,62 @@ export function LumiScene({
       ))}
       <Shrine open={state.current.lights.length === path.lights.length} shrine={path.shrine} />
       <Lumi state={state} detail={detail} />
+      {remotes && <RemoteFlyers remotes={remotes} />}
       <CameraRig state={state} />
+    </>
+  );
+}
+
+/**
+ * Ostatní letci.
+ *
+ * Kreslí se **bez modelu lucerny** (jen svítící koule): model má 13k
+ * trojúhelníků a čtyři kopie by z oblohy udělaly pomalou scénu. Z dálky
+ * stejně není rozdíl vidět a světlo je to, co je z nich poznat.
+ */
+function RemoteFlyers({ remotes }: { remotes: React.MutableRefObject<LumiRemote[]> }) {
+  const groups = useRef<(THREE.Group | null)[]>([]);
+  const MAX = 4;
+
+  useFrame(() => {
+    const list = remotes.current ?? [];
+    for (let index = 0; index < MAX; index += 1) {
+      const group = groups.current[index];
+      const remote = list[index];
+      if (!group) continue;
+      group.visible = Boolean(remote);
+      if (!remote) continue;
+      group.position.set(remote.x, remote.y, 2);
+      group.rotation.z = -Math.max(-0.45, Math.min(0.45, remote.vy / 45));
+    }
+  });
+
+  return (
+    <>
+      {Array.from({ length: MAX }, (_, index) => (
+        <group
+          key={index}
+          ref={(node) => {
+            groups.current[index] = node;
+          }}
+          visible={false}
+          scale={1.35}
+        >
+          <mesh position={[0, -0.28, 0]}>
+            <coneGeometry args={[0.4, 0.9, 12]} />
+            <meshStandardMaterial color="#cfe6e0" roughness={0.85} emissive="#9fe4ea" emissiveIntensity={0.18} />
+          </mesh>
+          <mesh position={[0, 0.5, 0]}>
+            <sphereGeometry args={[0.19, 14, 10]} />
+            <meshStandardMaterial color="#f2d9bd" roughness={0.7} />
+          </mesh>
+          <mesh position={[0.3, -0.1, 0]}>
+            <sphereGeometry args={[0.16, 12, 10]} />
+            <meshBasicMaterial color="#ffe9b8" toneMapped={false} />
+          </mesh>
+          <pointLight position={[0.3, -0.1, 0]} intensity={2.2} distance={9} color="#ffd9a0" />
+        </group>
+      ))}
     </>
   );
 }
@@ -656,6 +768,17 @@ export function LumiCanvas(props: {
   onFinish: (score: number) => void;
   paused?: boolean;
   detail?: boolean;
+  remotes?: React.MutableRefObject<LumiRemote[]>;
+  sharedLights?: React.MutableRefObject<number[]>;
+  onFly?: (state: {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    energy: number;
+    collect?: number;
+    finished?: boolean;
+  }) => void;
 }) {
   return (
     <Canvas dpr={[1, 1.75]} camera={{ position: [22, 22, 58], fov: 44, near: 0.5, far: 400 }}>

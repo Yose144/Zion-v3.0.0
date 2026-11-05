@@ -18,6 +18,7 @@ export const GAME_ROUTES: Record<GameId, string> = {
   fight: '/mercury',
   moba: '/earth',
   tanks: '/saturn',
+  lumi: '/lumi',
 };
 
 /** Id místnosti z `?watch=` — nebo `null`, když tam nic rozumného není. */

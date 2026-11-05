@@ -8098,3 +8098,68 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
     grid-template-columns: 1fr;
   }
 }
+
+/* Lumi v HUD — malý ukazatel postupu, klikacím na svět */
+a.game-hud-chip.is-lumi {
+  color: #ffe9b0;
+  border-color: rgba(255, 209, 102, 0.28);
+  text-decoration: none;
+}
+
+a.game-hud-chip.is-lumi:hover {
+  border-color: rgba(255, 209, 102, 0.6);
+  background: rgba(255, 209, 102, 0.1);
+}
+
+a.game-hud-chip.is-lumi em {
+  color: #ffd166;
+}
+
+/* ── Lumi · společné létání ────────────────────────────────────────── */
+
+.lumi-coop {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0 0 0.7rem;
+}
+
+.lumi-coop-btn {
+  flex: 1 1 0;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(159, 228, 234, 0.22);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(232, 244, 255, 0.7);
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+
+.lumi-coop-btn.is-active {
+  border-color: #9fe4ea;
+  background: rgba(159, 228, 234, 0.14);
+  color: #eaf7ff;
+}
+
+.lumi-peers {
+  position: absolute;
+  z-index: 14;
+  top: calc(9.4rem + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: rgba(159, 228, 234, 0.8);
+  pointer-events: auto;
+}
+
+.lumi-invite {
+  font-size: 0.66rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(159, 228, 234, 0.3);
+  background: rgba(255, 255, 255, 0.04);
+  color: #9fe4ea;
+  cursor: pointer;
+}

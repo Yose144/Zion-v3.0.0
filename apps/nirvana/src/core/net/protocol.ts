@@ -79,7 +79,7 @@ const asItemId = (value: unknown): ItemId | null =>
  *      odmítne `join` (`pass_required`). Klient bez pasu by se jinak dostal
  *      do hry přes vlastní WebSocket klient.
  */
-export const PROTO_VERSION = 29;
+export const PROTO_VERSION = 30;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -90,6 +90,8 @@ export const MAX_PLAYERS = 8;
 export const MAX_ROOMS = 4;
 /** Místnost souboje na Merkuru — duel je vždy dva. */
 export const FIGHT_ROOM_SIZE = 2;
+/** Kolik lidí může letět v Lumi najednou (víc by z oblohy udělalo trh). */
+export const LUMI_ROOM_SIZE = 4;
 /** Maximum jednoho WS rámce. Větší = zahodit, ne parsovat. */
 export const MAX_FRAME_BYTES = 4096;
 /** Strop příchozích zpráv na spojení (vstup 20 Hz + rezerva). */
@@ -103,7 +105,7 @@ export const CHAT_HISTORY_LEN = 200;
 export const HEARTBEAT_MS = 20_000;
 export const IDLE_TIMEOUT_MS = 60_000;
 
-export type GameId = 'arena' | 'race' | 'fight' | 'moba' | 'tanks';
+export type GameId = 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi';
 /** `guest` = bez ZIS (hraje, ale nepíše), `zis` = ověřený uživatel. */
 export type Role = 'guest' | 'zis';
 export type RoomState = 'waiting' | 'running' | 'ended';
@@ -354,6 +356,8 @@ export type ClientMessage =
       battleSpell?: BattleSpellId;
       /** Aspekt kouzel (`a` ostrý, `b` ochranný) — volba před zápasem. */
       aspect?: AspectId;
+      /** Lumi: kterou cestou se letí (`calm` | `wind` | `light`). */
+      path?: 'calm' | 'wind' | 'light';
       /** Režim nové místnosti (u existující se ignoruje). */
       mode?: RoomMode;
       /**
@@ -387,6 +391,14 @@ export type ClientMessage =
   | { t: 'aim'; angle: number; power: number }
   /** Tanky: výstřel — platí jen ve fázi `aim` a na tahu. */
   | { t: 'shoot' }
+  /**
+   * Lumi: stav letu od klienta.
+   *
+   * Lumi je **relay** hra, ne autoritativní simulace: nemá zásahy ani skóre,
+   * které by šlo podvádět, takže klient počítá svůj let sám a server ho jen
+   * předává ostatním (a drží sdílený seznam sebraných světel).
+   */
+  | { t: 'fly'; x: number; y: number; vx: number; vy: number; energy: number; collect?: number; finished?: boolean }
   | { t: 'leave' }
   | {
       t: 'input';
@@ -448,6 +460,26 @@ export type ServerMessage =
       time: number;
       /** Aréna/závod/duel: stav hráčů. MOBA posílá `moba` a tohle nechává prázdné. */
       players: SnapshotPlayer[];
+      /** Jen Lumi: sdílená světla místnosti a stav ostatních letců. */
+      lumi?: {
+        path: 'calm' | 'wind' | 'light';
+        /** Sebraná světla — společná pro celou místnost. */
+        lights: number[];
+        /** Je svatyně otevřená (máme všech sedm)? */
+        open: boolean;
+        /** Ostatní letci (relay; vlastní stav klient nepotřebuje). */
+        flyers: {
+          id: string;
+          name: string;
+          avatarId: number | null;
+          x: number;
+          y: number;
+          vx: number;
+          vy: number;
+          energy: number;
+          finished: boolean;
+        }[];
+      };
       /** Jen aréna: rakety ve vzduchu. */
       projectiles?: RocketView[];
       pickups?: PickupView[];
@@ -533,6 +565,7 @@ export function parseClientMessage(raw: string): ClientMessage | null {
           message.game === 'fight' ||
           message.game === 'moba' ||
           message.game === 'tanks' ||
+          message.game === 'lumi' ||
           message.game === 'arena'
             ? (message.game as GameId)
             : 'arena',
@@ -544,6 +577,10 @@ export function parseClientMessage(raw: string): ClientMessage | null {
             ? message.battleSpell
             : undefined,
         aspect: message.aspect === 'b' ? 'b' : message.aspect === 'a' ? 'a' : undefined,
+        path:
+          message.path === 'wind' || message.path === 'light' || message.path === 'calm'
+            ? message.path
+            : undefined,
         spectate: message.spectate === true ? true : undefined,
       };
 
@@ -559,6 +596,18 @@ export function parseClientMessage(raw: string): ClientMessage | null {
 
     case 'shoot':
       return { t: 'shoot' };
+
+    case 'fly':
+      return {
+        t: 'fly',
+        x: num(message.x, 0, 120),
+        y: num(message.y, 0, 120),
+        vx: num(message.vx, -60, 60),
+        vy: num(message.vy, -60, 60),
+        energy: num(message.energy, 0, 100),
+        collect: typeof message.collect === 'number' ? num(message.collect, 1, 7) : undefined,
+        finished: message.finished === true ? true : undefined,
+      };
 
     case 'input':
       return {
