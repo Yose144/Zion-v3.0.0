@@ -33,11 +33,19 @@ interface Flyer {
   finished: boolean;
   /** Kdy naposledy poslal stav (ms) — pro úklid tichých klientů. */
   seenAt: number;
+  /**
+   * Duch: hráč odešel, ale ostatní ho ještě chvíli vidí na poslední pozici.
+   * Odejít uprostřed letu je pro ostatní rušivé — postava zmizí v půlce
+   * oblohy. Duch to zjemní a hlavně nerozbije počet letců v místnosti.
+   */
+  ghostUntil: number;
 }
 
 const SPAWN = { x: 10, y: 12 };
 /** Po jak dlouhé době bez zprávy letce schováme z obrazovky. */
 const IDLE_MS = 12_000;
+/** Jak dlouho po odchodu zůstane na obloze duch (ms). */
+const GHOST_MS = 3_000;
 /** Kolik světel má cesta (stejné číslo jako v klientovi). */
 const TOTAL_LIGHTS = 7;
 
@@ -48,10 +56,18 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
   let startedAt = now;
 
   const state = (): 'waiting' | 'running' | 'ended' => {
-    if (flyers.size === 0) return 'ended';
-    if (flyers.size === 1) return 'waiting';
+    const live = liveCount();
+    if (live === 0) return 'ended';
+    if (live === 1) return 'waiting';
     return 'running';
   };
+
+  /** Živí letci — duch se do počtu nepočítá (jinak by místnost 3 s „hrála"). */
+  function liveCount(): number {
+    let live = 0;
+    for (const flyer of flyers.values()) if (!flyer.ghostUntil) live += 1;
+    return live;
+  }
 
   return {
     game: 'lumi' as never,
@@ -73,16 +89,25 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
         energy: 100,
         finished: false,
         seenAt: Date.now(),
+        ghostUntil: 0,
       });
     },
 
     leave(id: string) {
-      flyers.delete(id);
+      const flyer = flyers.get(id);
+      if (!flyer) return;
+      // Neodebírat hned: ostatní ho ještě 3 s vidí na poslední pozici.
+      // Když se stihne vrátit (reconnect se stejným id), `message()` ho oživí.
+      flyer.ghostUntil = Date.now() + GHOST_MS;
     },
 
     step() {
       const now = Date.now();
       for (const [id, flyer] of flyers) {
+        if (flyer.ghostUntil) {
+          if (now > flyer.ghostUntil) flyers.delete(id);
+          continue;
+        }
         if (now - flyer.seenAt > IDLE_MS) flyers.delete(id);
       }
     },
@@ -106,7 +131,7 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
           // vlastní stav klient nepotřebuje — predikuje si ho sám
           flyers: [...flyers.values()]
             .filter((flyer) => flyer.id !== id)
-            .map(({ id: flyerId, name, avatarId, x, y, vx, vy, energy, finished }) => ({
+            .map(({ id: flyerId, name, avatarId, x, y, vx, vy, energy, finished, ghostUntil }) => ({
               id: flyerId,
               name,
               avatarId,
@@ -116,6 +141,8 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
               vy,
               energy,
               finished,
+              // duch = hráč odešel; klient ho dokresluje s klesající průhledností
+              ...(ghostUntil ? { ghost: true as const } : {}),
             })),
         },
       };
@@ -125,6 +152,9 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
       const flyer = flyers.get(id);
       if (!flyer) return false;
       if (message.t !== 'fly') return false;
+
+      // Vrátil se dřív, než duch vypršel (reconnect) — je zase živý.
+      if (flyer.ghostUntil) flyer.ghostUntil = 0;
 
       flyer.x = message.x;
       flyer.y = message.y;
@@ -142,6 +172,7 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
       return true;
     },
 
-    size: () => flyers.size,
+    // Duch nedrží sedlo — kapacita místnosti se uvolní hned při odchodu.
+    size: () => liveCount(),
   };
 }

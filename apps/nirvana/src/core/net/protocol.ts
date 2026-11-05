@@ -478,6 +478,12 @@ export type ServerMessage =
           vy: number;
           energy: number;
           finished: boolean;
+          /**
+           * Hráč odešel a tohle je jen **duch** na poslední pozici (3 s).
+           * Klient ho kreslí s klesající průhledností; nepočítá se do
+           * „letí s tebou", protože už tam není.
+           */
+          ghost?: boolean;
         }[];
       };
       /** Jen aréna: rakety ve vzduchu. */

@@ -170,8 +170,32 @@ try {
   const afterLeave = await b.waitFor((m) => m.t === 'snapshot' && m.game === 'lumi', 5000).catch(() => null);
   check('po odchodu třetího druhý dostává snapshoty', Boolean(afterLeave));
 
-  a.close();
+  // ── L-2: duch (odpojený letce ještě 3 s na obloze) ────────────────
+  b.send(state(52, 60));
+  await a.waitFor(
+    (m) => m.t === 'snapshot' && (m.lumi?.flyers ?? []).some((f) => f.id === roomB.youPlayerId && f.x === 52),
+    5000,
+  );
   b.close();
+  const ghost = await a
+    .waitFor(
+      (m) => m.t === 'snapshot' && (m.lumi?.flyers ?? []).some((f) => f.id === roomB.youPlayerId && f.ghost === true),
+      3000,
+    )
+    .catch(() => null);
+  check('odpojený letce zůstane jako duch', Boolean(ghost));
+  const ghostFlyer = (ghost?.lumi?.flyers ?? []).find((f) => f.id === roomB.youPlayerId);
+  check('duch sedí na poslední pozici', ghostFlyer?.x === 52 && ghostFlyer?.y === 60, JSON.stringify(ghostFlyer));
+
+  await sleep(3600);
+  const settled = a.last((m) => m.t === 'snapshot' && m.game === 'lumi');
+  check(
+    'duch po 3 s zmizí',
+    !(settled?.lumi?.flyers ?? []).some((f) => f.id === roomB.youPlayerId),
+    JSON.stringify(settled?.lumi?.flyers),
+  );
+
+  a.close();
 } catch (error) {
   failures += 1;
   console.log(`  FAIL výjimka: ${error.message}`);

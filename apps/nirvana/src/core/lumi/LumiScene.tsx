@@ -40,6 +40,8 @@ export interface LumiRemote {
   vy: number;
   energy: number;
   finished: boolean;
+  /** Hráč odešel — kreslí se jako duch, který během 3 s zmizí. */
+  ghost?: boolean;
 }
 
 export interface LumiStats {
@@ -99,6 +101,19 @@ function softSpriteTexture(): THREE.Texture | null {
   return texture;
 }
 
+/**
+ * Respektuje `prefers-reduced-motion` (L-9).
+ *
+ * Čte se **jednou při mountu**: hra se po změně systémového nastavení
+ * nenačítá znovu a překreslovat celou scénu kvůli tomu nemá smysl.
+ * Vypíná se jen pohyb na pozadí (mraky, jiskry proudů, blikání lucerny) —
+ * letět se musí dát dál, jinak by „bez pohybu" znamenalo „bez hry".
+ */
+function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 /** Hvězdy — jedna geometrie, žádný shader. */
 function Stars() {
   const geometry = useMemo(() => {
@@ -129,6 +144,7 @@ function Stars() {
 /** Mraky — pár velkých měkkých koulí, které se pomalu posouvají. */
 function Clouds() {
   const group = useRef<THREE.Group>(null);
+  const still = useMemo(prefersReducedMotion, []);
   const puffs = useMemo(
     () =>
       Array.from({ length: 14 }, (_, index) => ({
@@ -142,7 +158,7 @@ function Clouds() {
   );
 
   useFrame((_, delta) => {
-    if (!group.current) return;
+    if (still || !group.current) return;
     group.current.children.forEach((child, index) => {
       const puff = puffs[index];
       if (!puff) return;
@@ -199,6 +215,7 @@ function Island({ x, y, z, r, tone }: { x: number; y: number; z: number; r: numb
  */
 function Current({ x, y, r, lift }: { x: number; y: number; r: number; lift: number }) {
   const group = useRef<THREE.Group>(null);
+  const still = useMemo(prefersReducedMotion, []);
   const texture = softSpriteTexture();
   const sparks = useMemo(
     () =>
@@ -212,13 +229,13 @@ function Current({ x, y, r, lift }: { x: number; y: number; r: number; lift: num
 
   useFrame(({ clock }) => {
     if (!group.current) return;
-    const t = clock.elapsedTime;
+    const t = still ? 0 : clock.elapsedTime;
     group.current.children.forEach((child, index) => {
       const spark = sparks[index];
       if (!spark) return;
-      const climb = ((spark.phase + t * (0.12 + lift * 0.002)) % 1) * 34 - 17;
+      const climb = still ? spark.phase * 34 - 17 : ((spark.phase + t * (0.12 + lift * 0.002)) % 1) * 34 - 17;
       child.position.y = climb;
-      child.position.x = spark.dx + Math.sin(t * 0.8 + index) * 0.6;
+      child.position.x = spark.dx + (still ? 0 : Math.sin(t * 0.8 + index) * 0.6);
     });
   });
 
@@ -367,8 +384,14 @@ function LanternFallback() {
  */
 function Lantern({ energy, detail }: { energy: number; detail: boolean }) {
   const light = useRef<THREE.PointLight>(null);
+  const still = useMemo(prefersReducedMotion, []);
   useFrame(({ clock }) => {
     if (!light.current) return;
+    if (still) {
+      // Bez blikání: světlo má pořád stejnou sílu, jen podle energie.
+      light.current.intensity = 2.5 + energy * 0.03;
+      return;
+    }
     const flicker = 0.85 + Math.sin(clock.elapsedTime * 7.3) * 0.06 + Math.sin(clock.elapsedTime * 2.1) * 0.05;
     light.current.intensity = (2.5 + energy * 0.03) * flicker;
   });
@@ -698,18 +721,61 @@ export function LumiScene({
  */
 function RemoteFlyers({ remotes }: { remotes: React.MutableRefObject<LumiRemote[]> }) {
   const groups = useRef<(THREE.Group | null)[]>([]);
+  /**
+   * Kdy se ten který letce stal duchem (v hodinách scény). Server duchovi
+   * pošle `ghost` a po 3 s ho vyhodí; klientskou průhlednost dopočítáme
+   * z tohohle razítka, aby mizení bylo plynulé a ne skokové.
+   */
+  const ghostSince = useRef(new Map<string, number>());
   const MAX = 4;
 
-  useFrame(() => {
+  useFrame((state) => {
     const list = remotes.current ?? [];
+    const now = state.clock.elapsedTime;
+    const seen = new Set<string>();
+
     for (let index = 0; index < MAX; index += 1) {
       const group = groups.current[index];
       const remote = list[index];
       if (!group) continue;
       group.visible = Boolean(remote);
       if (!remote) continue;
+      seen.add(remote.id);
+
+      let fade = 1;
+      if (remote.ghost) {
+        let since = ghostSince.current.get(remote.id);
+        if (since === undefined) {
+          since = now;
+          ghostSince.current.set(remote.id, since);
+        }
+        // 1 → 0 za 3 s, ale nikdy úplně nula (poslední snímek nesmí bliknout)
+        fade = Math.max(0.08, 1 - (now - since) / 3);
+      } else if (ghostSince.current.has(remote.id)) {
+        ghostSince.current.delete(remote.id);
+      }
+
       group.position.set(remote.x, remote.y, 2);
       group.rotation.z = -Math.max(-0.45, Math.min(0.45, remote.vy / 45));
+      group.scale.setScalar(1.35 * (0.88 + 0.12 * fade));
+
+      // Materiály jsou pro každou skupinu vlastní, takže stačí projít děti.
+      for (const child of group.children) {
+        const mesh = child as THREE.Mesh | THREE.PointLight;
+        if (mesh.type === 'PointLight') {
+          (mesh as THREE.PointLight).intensity = 2.2 * fade;
+          continue;
+        }
+        const material = (mesh as THREE.Mesh).material;
+        if (material && !Array.isArray(material)) {
+          material.opacity = fade;
+        }
+      }
+    }
+
+    // Úklid: id, které už server neposílá, nemá co držet razítko.
+    for (const id of [...ghostSince.current.keys()]) {
+      if (!seen.has(id)) ghostSince.current.delete(id);
     }
   });
 
@@ -726,15 +792,21 @@ function RemoteFlyers({ remotes }: { remotes: React.MutableRefObject<LumiRemote[
         >
           <mesh position={[0, -0.28, 0]}>
             <coneGeometry args={[0.4, 0.9, 12]} />
-            <meshStandardMaterial color="#cfe6e0" roughness={0.85} emissive="#9fe4ea" emissiveIntensity={0.18} />
+            <meshStandardMaterial
+              color="#cfe6e0"
+              roughness={0.85}
+              emissive="#9fe4ea"
+              emissiveIntensity={0.18}
+              transparent
+            />
           </mesh>
           <mesh position={[0, 0.5, 0]}>
             <sphereGeometry args={[0.19, 14, 10]} />
-            <meshStandardMaterial color="#f2d9bd" roughness={0.7} />
+            <meshStandardMaterial color="#f2d9bd" roughness={0.7} transparent />
           </mesh>
           <mesh position={[0.3, -0.1, 0]}>
             <sphereGeometry args={[0.16, 12, 10]} />
-            <meshBasicMaterial color="#ffe9b8" toneMapped={false} />
+            <meshBasicMaterial color="#ffe9b8" toneMapped={false} transparent />
           </mesh>
           <pointLight position={[0.3, -0.1, 0]} intensity={2.2} distance={9} color="#ffd9a0" />
         </group>

@@ -2137,6 +2137,40 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Planeta:** panel Uranu má druhé CTA „Letět s Lumi" (`href2: '/lumi'`), text mluví
   o Lumi, ne o Křídlech; `/uranus` na Lumi odkazuje.
 
+## Lumi — duchové, foto mód a klid (2026-11-05)
+
+- **Duch je soft delete, ne nový stav hry.** `leave()` v `apps/nirvana-net/src/lumi.ts`
+  neodstraní letce, ale nastaví `ghostUntil = now + 3 s`; `step()` ho pak uklidí,
+  `message()` oživí (reconnect se stejným id). Snapshot posílá `ghost: true` —
+  pole je **volitelné**, takže protokol zůstává 30.
+- **Počty se musí ptát na živé, ne na záznamy.** `state()` i `size()` volají
+  `liveCount()`; kdyby počítaly `flyers.size`, místnost by po odchodu posledního
+  hráče 3 s „hrála" a duch by držel sedlo v místnosti pro 4.
+- **Klient si drží vlastní razítko** (`ghostSince` v `RemoteFlyers`) a podle něj
+  3 s stahuje `opacity` materiálů i sílu světla. Server neposílá čas — posílá jen
+  přechod (`ghost` se objeví a po 3 s zmizí), takže se hodiny nekopírují přes síť.
+  Materiály musí mít `transparent` **už při vytvoření**; nastavovat ho za běhu
+  znamená rekompilaci shaderu.
+- **`setPeers` počítá jen živé.** „Letí s tebou 1" u hráče, který už zavřel kartu,
+  je lež — duch patří do scény, ne do HUD.
+- **Foto mód skrývá přes `opacity`, ne `display`.** Kdyby chrome zmizel z layoutu,
+  posunula by se scéna i kamera a snímek by nebyl z místa, kde hráč stál.
+  `Esc` + samostatný `✕ zpět` (mimo skrývanou vrstvu) — na mobilu žádný `Esc` není.
+- **Přístupnost patří do `useFrame`, ne do CSS.** `prefers-reduced-motion` v
+  `globals.css` řeší přechody, ale mraky a jiskry se hýbou ve scéně; `LumiScene`
+  proto čte `prefersReducedMotion()` a vypne posun/animaci. Letět se musí dát dál —
+  „bez pohybu" nesmí znamenat „bez hry". Zvuk větru zůstává (vypíná ho `SoundToggle`).
+
+### Pasti, které to odhalilo
+
+- **`cp -a src dst` do existujícího `dst`** zanoří obsah (`static/static/…`) a server
+  vrací 404 na chunky, i když jsou soubory na disku. Vždy `rm -rf dst && cp -R src dst`.
+- **Paralelní `next build` maže `.next/standalone`.** Audit proti lokální appce pak
+  hlásí `canvas=0`/404, protože artefakt mezitím zmizel. Ověřuj z izolované kopie
+  (`cp -R .next/standalone /tmp/run`, do ní `static` + `public`).
+- **Netestuj `opacity === '0'`.** Přechod 0,25 s vrátí `1.04542e-08`; test musí
+  porovnávat číslo (`< 0.05`).
+
 ## Flotila z marketu — `/fleet` (2026-11-05)
 
 - **Lodě jsou produkty z marketu, ne nové assety.** Zdroj jsou STL skládačky

@@ -84,6 +84,12 @@ export default function LumiPage() {
   const sharedLights = useRef<number[]>([]);
   const [peers, setPeers] = useState(0);
   const [peerNames, setPeerNames] = useState<string[]>([]);
+  /**
+   * Foto mód (L-5): schová veškerý chrome, aby šel udělat snímek oblohy.
+   * Vypíná se `Esc` nebo křížkem — na mobilu `Esc` není, takže křížek
+   * zůstává viditelný i s vypnutým HUD.
+   */
+  const [photo, setPhoto] = useState(false);
 
   const path = pathData(pathId);
   const missing = Math.max(0, stats.total - stats.lights);
@@ -129,10 +135,14 @@ export default function LumiPage() {
         vy: flyer.vy,
         energy: flyer.energy,
         finished: flyer.finished,
+        ghost: flyer.ghost === true,
       }));
       sharedLights.current = message.lumi.lights;
-      setPeers(message.lumi.flyers.length);
-      setPeerNames(message.lumi.flyers.map((flyer) => flyer.name).filter(Boolean).slice(0, 3));
+      // Duch se do „letí s tebou" nepočítá — hráč už v místnosti není,
+      // jen se 3 s rozpouští na obloze.
+      const live = message.lumi.flyers.filter((flyer) => !flyer.ghost);
+      setPeers(live.length);
+      setPeerNames(live.map((flyer) => flyer.name).filter(Boolean).slice(0, 3));
     });
   }, [coop, subscribe]);
 
@@ -179,6 +189,19 @@ export default function LumiPage() {
     };
   }, [phase]);
 
+  // foto mód: `Esc` vrátí chrome zpět (na mobilu je křížek v rohu)
+  useEffect(() => {
+    if (!photo) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      // `Esc` má v prohlížeči i jiné významy (ukončení fullscreenu) —
+      // my ho jen použijeme k návratu HUD a nic dalšího neblokujeme.
+      setPhoto(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [photo]);
+
   // text příběhu po každém sebraném světle
   useEffect(() => {
     if (!stats.lastLight) return;
@@ -193,6 +216,7 @@ export default function LumiPage() {
     if (!isPathUnlocked(pathId, journal)) return;
     unlock();
     recorded.current = false;
+    setPhoto(false);
     setStats({ ...EMPTY, total: pathData(pathId).lights.length });
     setNotice(null);
     setFragment(null);
@@ -230,7 +254,7 @@ export default function LumiPage() {
   );
 
   return (
-    <main className="sky">
+    <main className={`sky${photo ? ' is-photo' : ''}`}>
       <div className="lumi-stage">
         <LumiCanvas
           key={`${pathId}-${run}`}
@@ -316,6 +340,16 @@ export default function LumiPage() {
                 <b>{Math.round(compass.dist)}</b>
               </span>
             )}
+
+            <button
+              type="button"
+              className="lumi-photo"
+              onClick={() => setPhoto(true)}
+              title={cs ? 'foto mód — schová HUD (Esc vrátí)' : 'photo mode — hides the HUD (Esc returns)'}
+              aria-label={cs ? 'foto mód' : 'photo mode'}
+            >
+              📷
+            </button>
           </div>
 
           <p className="lumi-hint">
@@ -375,6 +409,14 @@ export default function LumiPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Foto mód: jediný viditelný prvek, aby se z něj dalo vrátit i bez Esc. */}
+      {photo && (
+        <button type="button" className="lumi-photo-exit" onClick={() => setPhoto(false)}>
+          ✕ {cs ? 'zpět' : 'exit'}
+          <em>{cs ? 'nebo Esc' : 'or Esc'}</em>
+        </button>
       )}
 
       {phase === 'intro' && (
