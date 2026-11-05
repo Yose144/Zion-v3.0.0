@@ -289,6 +289,30 @@ to zamýšlené. Po deployi worktree zrušen.
 
 ---
 
+## 6i. Detail nových avatarů na stejné úrovni (turnaround + kánonický spec)
+
+Portrét 203/204 měly, ale v modalu chyběly dvě sekce, které mají ostatní: **turnaround**
+(4 pohledy) a **atributy z kánonu + paleta + prompt**. Obě mapy končily na 200.
+
+| krok | výsledek |
+|---|---|
+| `scripts/ops/oasis-canon/build-canon.mjs` | `specs.json` 200 → **202** (atributy 139, paleta 202, SACRED_TRINITY 202) |
+| `render.mjs --sheets --ids 203,204 --force` | 2 turnaroundy (54,6 + 48,6 kB) |
+| `character-sheet-images.json` | 200 → **202** |
+
+Symboly z kánonu: **203** = čakra, lotos, meč, kniha, víná; **204** = čakra, lotos, zrcadlo.
+
+⚠️ **Past (druhý výskyt):** renderer přepočítává mapy podle souborů na disku a **zahodil 11
+sheetů** (jména se od původního renderu změnila, soubory zůstaly pod starými slugy) — mapy
+vráceny z gitu a doplněny jen 203/204, takže `game-portraits` i `character-sheets` zůstaly na 202.
+Stejná past jako u portrétů (§6c); **pravidlo: po každém `render.mjs` zkontroluj počet v mapě**.
+
+Ověřeno live (deploy `20261105T120554Z`): `specs.json` 202 s oběma novými (prompt + paleta +
+symboly), oba turnaroundy 200, v modalu se obě sekce renderují („Atributy", „Prompt pro finální
+portrét"), 0 pageerror.
+
+---
+
 ## 7. Meze a co zůstává
 
 - **Kánon 42/43 vs. lore.** Roster (a tedy stránka) říká 42 = Dattatreya, 43 = Maly Princ;
