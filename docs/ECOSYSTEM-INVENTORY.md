@@ -1,5 +1,7 @@
 # ZION Ecosystem — Hluboká inventarizace (měřeno 2026-10-22)
 
+> **Update 2026-11-05 (živý re-měř, viz `docs/3.2/REPORTS/REPORT_2026-11-05_EDGE1_EDGE2_AUDIT.md`):** **Na EDGE2 nově běží nginx** (:80/:443, 12 vhostů) — web ingress se částečně přestěhoval z EDGE. DNS rozdělení: → EDGE2 apex/www/app/market/oasis/pool/rpc/auth/freeworld/kingdom; → EDGE nirvana/dashboard/explorer/api/dex/grafana/newearth. EDGE si ponechává pool+followeři+ops+nirvana+dashboard+grafana. Na EDGE přibydly TLS vhosty `api.`/`dex.` (stopgap → EDGE2 :80, cert `zion-ops-20261105`) a `grafana.` dostal :443+cert. `api.`/`dex.` EDGE2 vhosty jsou stále **jen :80** — certbot --nginx až po DNS flipu. `zion-v31-node` na EDGE2 je nově `enabled`. Chain 110 559, pool 1 234 bloků/24 h accepted. Zbytek этого dokumentu = snapshot 2026-10-22, kde „EDGE = jediný ingress" už neplatí.
+
 > Zdroj pravdy pro přestavbu. Všechna data níže jsou naměřená živým průzkumem (systemctl, ss, nginx conf, git, dig), ne z dokumentace. Tam, kde se realita liší od docs, **platí toto**.
 
 ---

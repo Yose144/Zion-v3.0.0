@@ -7,13 +7,14 @@
 
 ## Status
 
-> **Last updated: 2026-10-26 (lifecycle = 3.2.0 Mainnet Beta — EDGE2 = primary + web ingress + app stack, EDGE = pool + followeři + ops)**
+> **Last updated: 2026-11-05 (lifecycle = 3.2.0 Mainnet Beta — DNS split: většina vhostů na EDGE2 nginx, EDGE = pool + followeři + ops + nirvana/dashboard/grafana)**
 >
-> **Topologie snapshot 2026-10-21 (EDGE → EDGE2 split hotov — 2 boxy, EDGE2 = primary + celý app stack, EDGE = ingress + pool + followeři; chain ~90 400 bloků; G8 stall RCA + 3 fixy nasazeny; `zion-ncl` živý na :8098)**
+> **Topologie snapshot 2026-11-05 (naměřeno živě — web ingress částečně na EDGE2; EDGE2 nově hostuje vlastní nginx :80/:443 s 12 vhosty; EDGE si ponechává pool + followeři + ops + nirvana + dashboard + grafana + api/dex stopgap; chain ~110 560 bloků)**
 
-- **Topologie (2026-10-21, split v3):**
-  - **EDGE2** `207.180.217.100` (vmi3684458, 6c EPYC / 11 G / 193 G) — V31 **primary** node (RPC 9445, P2P 8335), bitcoind mainnet (8332, pruned), quantus (9944 + QUIC 9833), pearl stack (44207/8477), PostgreSQL 16 (5432), WARP (8453/8454), ZIS (8096), db-sync, DAO (8456), OASIS (8094), free-world (8095), issobella (8097), NCL (8098), website (3000), marketplace (3100), ai-native (8001), btcunlock (8779).
-  - **EDGE** `62.171.141.136` (vmi3425821) — nginx ingress (všechny veřejné vhosty), **pool** 8444/8445 (stratum + TLS) + API 8080, fallback-miner, node2 (9446) + node3 (9447) followeři, regtest BTC, dashboard (8766), grafana, prometheus, fail2ban.
+- **Topologie (2026-11-05, DNS split ingress):**
+  - **EDGE2** `207.180.217.100` (vmi3684458, 6c EPYC / 11 G / 193 G) — V31 **primary** node (RPC 9445, P2P 8335), bitcoind mainnet (8332, pruned), quantus (9944 + QUIC 9833), pearl stack (44207/8477), PostgreSQL 16 (5432), WARP (8453/8454), ZIS (8096), db-sync, DAO (8456), OASIS (8094), free-world (8095), issobella (8097), NCL (8098), website (3000), marketplace (3100), ai-native (8001), btcunlock (8779), kingdom (3020), **nginx ingress :80/:443** (vhosts: apex/www/app/market/oasis/pool/rpc/auth/freeworld/kingdom/api/dex + catchall).
+  - **EDGE** `62.171.141.136` (vmi3425821) — nginx pro **nirvana, dashboard, explorer, grafana, api./dex. stopgap, newearth**, **pool** 8444/8445 (stratum + TLS) + API 8080, fallback-miner, node2 (9446) + node3 (9447) followeři, regtest BTC, dashboard (8766), grafana, prometheus, fail2ban, nirvana app+net.
+  - **DNS rozdělení (naměřeno 2026-11-05):** → EDGE2: apex, www, app, market, oasis, pool, rpc, auth, freeworld, kingdom · → EDGE: nirvana, dashboard, explorer, api, dex, grafana, newearth.cz. `api.`/`dex.` na EDGE jsou **stopgap** (TLS → EDGE2 :80); po DNS flipu na EDGE2 nejdřív `certbot --nginx` tam, pak EDGE vhosty sundat.
   - **Tunely:** `zion-chain-tunnel` (edge→EDGE2) a `zion-edge-tunnel` (EDGE2→edge), oba s `permitopen` whitelist. Latence edge↔EDGE2 ≈ 1 ms.
   - **Pool zůstává na EDGI záměrně** — stratum musí vidět reálné IP minerů (`ZION_POOL_MAX_SESSIONS_PER_IP=10` + IP ban); stream proxy by je sjednotil pod jednu IP a rozbil per-IP limity.
   - Plán + execution log + rollback skripty: [`INFRA-SPLIT-PLAN.md`](docs/plans/INFRA-SPLIT-PLAN.md).
@@ -126,12 +127,12 @@ ZION_STREAM3_FORCE_COIN=MONERO ./target/release/zion-miner \
 
 ## Network topology
 
-Aktuální rozdělení EDGE/EDGE2 je shrnuté také v úvodu [`AGENTS.md`](AGENTS.md); detailní stav a rollback postup jsou v [`INFRA-SPLIT-PLAN.md`](docs/plans/INFRA-SPLIT-PLAN.md). [`StatusV3.md`](docs/3.2/StatusV3.md) obsahuje starší technický/statusový kontext a nemusí odrážet poslední změny infrastruktury. Stručně:
+Aktuální rozdělení EDGE/EDGE2 + částečná migrace web ingressu na EDGE2 nginx je shrnutá v úvodu [`AGENTS.md`](AGENTS.md) a výše; detailní stav a rollback postup jsou v [`INFRA-SPLIT-PLAN.md`](docs/plans/INFRA-SPLIT-PLAN.md). [`StatusV3.md`](docs/3.2/StatusV3.md) obsahuje starší technický/statusový kontext a nemusí odrážet poslední změny infrastruktury. Stručně:
 
-- **EDGE2** `207.180.217.100` — V31 **primary** node, chain stack (bitcoind/quantus/pearl), multichain/WARP, DAO, OASIS, Free World, Issobella, NCL, ZIS, db-sync, PostgreSQL, website, marketplace, ai-native, btcunlock.
-- **EDGE** `62.171.141.136` — nginx public ingress, **pool** (stratum 8444/8445 + API 8080), fallback-miner, follower nodes node2/node3, regtest BTC, dashboard, grafana/prometheus.
-- Public RPC is served by nginx TCP stream on port 8443 (edge → EDGE2 chain tunnel).
-- Two SSH tunnels (`zion-chain-tunnel` / `zion-edge-tunnel`) connect the boxes; `permitopen` whitelist only.
+- **EDGE2** `207.180.217.100` — V31 **primary** node, chain stack (bitcoind/quantus/pearl), multichain/WARP, DAO, OASIS, Free World, Issobella, NCL, ZIS, db-sync, PostgreSQL, website, marketplace, kingdom, **nginx ingress** (vhosts viz výše).
+- **EDGE** `62.171.141.136` — nginx pro nirvana/dashboard/explorer/grafana/api/dex-stopgap/newearth, **pool** (stratum 8444/8445 + API 8080), fallback-miner, follower nodes node2/node3, regtest BTC, dashboard, grafana/prometheus, nirvana app+net.
+- Public RPC is served by nginx on EDGE2 → `127.0.0.1:9445` (zion) + `:9944` (qtc); `rpc.zionterranova.com` DNS → EDGE2.
+- Two SSH tunnels (`zion-chain-tunnel` / `zion-edge-tunnel`) connect the boxes; `permitopen` whitelist only. EDGE2 nginx stále používá edge-tunnel pro pool API (:8080) a další forwarded porty.
 
 ---
 
