@@ -77,7 +77,7 @@ function isFrontMatter(slug: string, num: { cs: string; en: string }): boolean {
   return /^(00-)?readme$/i.test(slug) || num.cs === 'Index' || num.en === 'Index';
 }
 
-/** Count `### Kapitola N` headings in a single-doc book (quantum-revolution). */
+/** Count `### Kapitola N` / `### Chapter N` headings in a single-doc book (quantum-revolution). */
 function singleDocInfo(docPath: string): { exists: boolean; chapters: number } {
   const resolved = resolveDoc(docPath);
   if (!resolved || !existsSync(resolved.abs) || isTranslationStub(resolved.abs)) {
@@ -85,7 +85,8 @@ function singleDocInfo(docPath: string): { exists: boolean; chapters: number } {
   }
   try {
     const text = readFileSync(resolved.abs, 'utf8');
-    const chapters = (text.match(/^###\s+Kapitola\s+\d+/gim) ?? []).length;
+    // CS uses "Kapitola N", EN uses "Chapter N" — count both.
+    const chapters = (text.match(/^###\s+(?:Kapitola|Chapter)\s+\d+/gim) ?? []).length;
     return { exists: true, chapters };
   } catch {
     return { exists: false, chapters: 0 };

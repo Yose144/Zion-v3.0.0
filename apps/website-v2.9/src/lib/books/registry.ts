@@ -218,7 +218,7 @@ export const QR_BOOK: BookDef = {
   accent: '6, 182, 212',
   icon: Atom,
   partIcons: [Compass],
-  kicker: { cs: 'Kniha druhá · povídka u ohně · CZ', en: 'Book Two · a campfire tale · CZ' },
+  kicker: { cs: 'Kniha druhá · povídka u ohně · CZ + EN', en: 'Book Two · a campfire tale · CZ + EN' },
   title: { cs: 'KVANTOVÁ REVOLUCE', en: 'QUANTUM REVOLUTION' },
   subtitle: {
     cs: 'Příběh u ohně o Nové Zemi — když věda potkává duši. Pravda, kterou lze ověřit.',
@@ -241,7 +241,9 @@ export const QR_BOOK: BookDef = {
     docPath: (lang) =>
       lang === 'cs' ? '/docs/books/quantum-revolution.md' : '/docs/en/books/quantum-revolution.md',
     partMatch: null,
-    chapterMatch: { level: 3, re: /^Kapitola\s+\d+/i },
+    // Bilingual: the CS doc marks chapters "### Kapitola N", the EN doc
+    // "### Chapter N" — the splitter runs on whichever language was fetched.
+    chapterMatch: { level: 3, re: /^(?:Kapitola|Chapter)\s+\d+/i },
     introPartTitle: { cs: 'Povídka u ohně', en: 'A campfire tale' },
     chapterNumPrefix: { cs: 'Kapitola', en: 'Chapter' },
   },
