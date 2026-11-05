@@ -456,7 +456,14 @@ stopa příběhu: text se ve hře ukáže na osm sekund, v deníku zůstává.
 V úvodu je tlačítko „Deník X/7" a panel se sedmi texty (nalezené plné,
 nenalezené jako obrys), plus počet cest a kolikrát jsi světlo daroval.
 
-**Meze:** dvě cesty (žádné další větve), úspory jen v prohlížeči, na
+### Třetí cesta (2026-11-05)
+
+Po dohrání obou cest se odemkne **Cesta světla** — sedm světel ve spirále
+vzhůru, čtyři úzké proudy vysoko, dlouhé prázdno mezi nimi, svatyně
+v 92/92. Zámek je v datech (`isPathUnlocked`), ne v UI: deník si nese
+dohrané cesty (`paths`) a stránka jen vykresluje dashed kartu s 🔒.
+
+**Meze:** tři cesty (žádné další větve), úspory jen v prohlížeči, na
 mobilu čtyři směry a lehká lucerna, ve VR netestováno. Deník se
 nesynchronizuje mezi zařízeními (záměr — žádný účet).
 
