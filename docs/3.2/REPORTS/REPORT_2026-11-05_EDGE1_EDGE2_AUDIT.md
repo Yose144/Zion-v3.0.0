@@ -56,7 +56,7 @@ EDGE2 nginx proxy destinations (naměřeno): `app`→:3000 + `/rig-output/`→ED
 | **api.** | **404** (DNS→EDGE, vhost jen na EDGE2 :80) | **200** `/health`, chat completions 401-auth reachable |
 | **dex.** | **404** | **200** `/health`, `/v1/swap/pools` 200 |
 | **grafana.** | **000** (HTTPS = default auth cert, name mismatch) | **200** + `/api/health` 200 |
-| newearth.cz | 404/000 (vhost v `sites-available`, ne enabled) | **beze změny — čeká 👤 rozhodnutí** (cert i conf připraveny, `ln -s` od restore) |
+| newearth.cz | 404/000 (vhost v `sites-available`, ne enabled) | **200/301 OBNOVENO 05. 11. ~12:19 UTC** — viz §5b |
 
 ## 5. Provedené změny (nasazeno 05.11. ~11:35–11:50 UTC)
 
@@ -68,6 +68,10 @@ Na **EDGE** (`/etc/nginx/sites-enabled/`):
 4. **Cert:** `certbot certonly --webroot` → **`zion-ops-20261105`** (SAN: api+dex+grafana, exp 2027-02-03). `nginx -t` PASS před každým reloadem; graceful reload, bez výpadku.
 
 **Varování — stopgap:** api./dex.EDGE vhosty jsou **dočasné** — až 👤 přepne DNS A na `207.180.217.100`, nejdřív na EDGE2 dobezpečně přidat :443 vhosty + `certbot --nginx` (HTTP-01 z EDGE2 projde až po flipu), pak EDGE vhosty z `sites-enabled` sundat. Repo kopie: `infra/nginx/edge-current/`.
+
+### 5b. `newearth.cz` — RESTORE (05. 11. ~12:19 UTC, DNS beze změny)
+
+👤 se ptal na DNS — **DNS už bylo správné**: `newearth.cz` i `www.newearth.cz` A → `62.171.141.136` (EDGE), NS `ns1-3.webglobe.*` (registrar Webglobe/Wedos). Skutečná příčina 404: conf v `sites-available` bez symlinku + obsah archivován cleanupem 24. 10. Provedeno na EDGE: `tar xzf /opt/zion/archive/cleanup-20261024/varwww-newearth-retired.tar.gz` → `/var/www/newearth` (428M), `ln -s` conf do `sites-enabled`, `nginx -t` + graceful reload. **Ověřeno:** `/` a `/index.html` → 301 `zionterranova.com`, `/V2/` → 200, HTTP→HTTPS 301. Cert LE `newearth.cz` (SAN apex+www) stále platný. Tarball zůstává v archivu jako záloha.
 
 ## 6. G8 run #6 (`g8-20261029T234617Z`, cíl 28. 11. 23:46 UTC)
 
@@ -94,7 +98,7 @@ Na **EDGE** (`/etc/nginx/sites-enabled/`):
 | # | Položka | Kdo |
 |---|---|---|
 | 1 | DNS flip `api.`+`dex.` → EDGE2 + certbot --nginx na EDGE2 (pak EDGE vhosty sundat) | 👤 DNS panel → 🤖 zbytek |
-| 2 | `newearth.cz` — restore (conf+cert připraveny) nebo retire | 👤 |
+| 2 | ~~`newearth.cz`~~ **Vyřešeno 05. 11.** — restore (viz §5b), DNS i tak už bylo správné | ✅ hotovo |
 | 3 | G8: pochopit `chain_live` 360 s incident (04. 11.) + hlídat budget ~17 min | 🤖/👤 |
 | 4 | 52 ZION payoutů na 7denní hranici — ověřit, že sweep resurrectuje | 🤖 monitoring |
 | 5 | QTC treasury funding + re-enable (leg zůstává OFF) | 👤 |
