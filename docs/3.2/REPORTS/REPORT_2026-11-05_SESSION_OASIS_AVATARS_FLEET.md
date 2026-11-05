@@ -147,6 +147,47 @@ d61316ccd docs(oasis): plán i18n uzavřen — překlady hotové, deploy a nále
 
 ---
 
+## 6b. Dodatky z autonomní části (po sepsání reportu)
+
+### Questy pro všech 202 avatarů (OASIS API 264 → 714)
+
+Daemon (`QuestRegistry`) čte `V31/L4/oasis/data/avatars.json`, ale **150 avatarů** mělo questy
+jen v overlayi (`scripts/oasis-avatar-copy/quests-*.json`) → API servírovalo 264 questů.
+Doplněno **450 questů** (anglické tvary z overlaye) do `avatars.json` → **714** v datech
+i v API (`Loaded 714 quests`, `/api/v1/oasis/quests` → 714). Web se nezměnil (overlay má přednost).
+
+### E2E test rosteru (regrese pro tři reálné chyby)
+
+`apps/website-v2.9/e2e/oasis-avatars.spec.ts` — **3/3 proti produkci** (10 s):
+
+1. **202 karet** + oba jazyky profilů (vzorek `0, 43, 52, 70, 202, 203, 204`), bez `../`
+   a bez `.md` odkazů v publikovaném textu,
+2. **modal**: `aria-modal`, fokus po otevření uvnitř, 10× Tab nesmí utéct, Escape zavře
+   a **fokus se vrátí na kartu**,
+3. **přepnutí jazyka**: EN tagline + profil 43 se v obou jazycích liší.
+
+⚠️ **Past:** karty mají v CS `„— Detail"`, v EN `„— Details"` — testy musí selektovat jazykově
+nezávisle (`aria-label*=" — "`). První verze testu kvůli tomu hlásila „0 karet v EN", což
+vypadalo jako chyba aplikace.
+
+### Dokumentace aktualizovaná
+
+| soubor | co |
+|---|---|
+| `AGENTS.md` (root) | nová entry: 202/202, opravy generátoru, OASIS API, a11y, pasti (renderer, kolize buildů, proto pre-flight) |
+| `apps/website-v2.9/AGENTS.md` | entry: checker, e2e, jazykově nezávislé selektory, `sanitizeProfile` (`../`), mapy portrétů |
+| `apps/nirvana/AGENTS.md` | nová sekce **Flotila z marketplace** — nasazeno, pasti, otevřené body |
+| `apps/website-v2.9/package.json` | `npm run check:oasis-i18n` |
+| `docs/docs2.9/ZION_OASIS/TRANSLITERACE.md` | podklad pro jazykovou korekturu (nový) |
+
+### Ops (read-only, naměřeno)
+
+EDGE2: 0 failed / 24 zion služeb / disk 58 % / RAM 6,2 GB / cert `app.` do 27. 12. 2026.
+EDGE: **1 kosmetický failed unit** (`systemd-networkd-wait-online`) → `reset-failed`, nyní **0**;
+disk 58 %, RAM ~1,8 GB. Chain **110 762**. Pool **4 740 accepted / 0 rejected**.
+
+---
+
 ## 7. Otevřené pro 👤
 
 1. **Flotila: IP blocker** (Star Wars tvary + cizí kit) — teď veřejně za ZAP pasem; rozhodnout
