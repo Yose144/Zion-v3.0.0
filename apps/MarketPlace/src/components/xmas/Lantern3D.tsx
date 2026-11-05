@@ -348,7 +348,10 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
           pivot.add(model);
 
           // ── Stíny na modelu ────────────────────────────────────────
-          const floorY = box.min.y; // model je vycentrovaný, dno je v -h/2
+          // POZOR: `box` je z doby PŘED vycentrováním (model.position.sub(center)),
+          // takže box.min.y je 0, ne dno. Po vycentrování je dno v -size.y/2 —
+          // dřív kvůli tomu svíčka stála uprostřed lampionu.
+          const floorY = box.min.y - center.y; // = -size.y / 2
           model.traverse((obj) => {
             const mesh = obj as import('three').Mesh;
             if (!mesh.isMesh) return;
@@ -421,12 +424,12 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
 
           // plamen — emissive kužel, bloom z něj udělá skutečné světlo
           const flameMat = new THREE.MeshBasicMaterial({ color: 0xffd08a, toneMapped: false });
-          const flame = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.055, radius * 0.19, 12), flameMat);
-          flame.position.y = waxH / 2 + radius * 0.075;
+          const flame = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.075, radius * 0.26, 14), flameMat);
+          flame.position.y = waxH / 2 + radius * 0.1;
           candleGroup.add(flame);
 
           const flameCore = new THREE.Mesh(
-            new THREE.ConeGeometry(radius * 0.028, radius * 0.1, 10),
+            new THREE.ConeGeometry(radius * 0.036, radius * 0.13, 12),
             new THREE.MeshBasicMaterial({ color: 0xfff6df, toneMapped: false }),
           );
           flameCore.position.copy(flame.position);
@@ -435,10 +438,41 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
           candleGroup.position.set(0, floorY + waxH / 2 + 0.002, 0);
           scene.add(candleGroup);
 
-          // světlo plamene (point light) — dýchá s plamenem
+          // halo kolem plamene — teplá záře, kterou bloom podrží
+          const haloCanvas = document.createElement('canvas');
+          haloCanvas.width = haloCanvas.height = 128;
+          const hctx = haloCanvas.getContext('2d')!;
+          const hgrad = hctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+          hgrad.addColorStop(0, 'rgba(255,236,190,0.95)');
+          hgrad.addColorStop(0.28, 'rgba(255,186,96,0.5)');
+          hgrad.addColorStop(0.6, 'rgba(255,140,50,0.16)');
+          hgrad.addColorStop(1, 'rgba(255,120,30,0)');
+          hctx.fillStyle = hgrad;
+          hctx.fillRect(0, 0, 128, 128);
+          const haloTex = new THREE.CanvasTexture(haloCanvas);
+          const halo = new THREE.Sprite(
+            new THREE.SpriteMaterial({
+              map: haloTex,
+              transparent: true,
+              depthWrite: false,
+              blending: THREE.AdditiveBlending,
+            }),
+          );
+          halo.scale.setScalar(radius * 1.9);
+          halo.position.set(0, waxH / 2 + radius * 0.12, 0);
+          candleGroup.add(halo);
+
+          // světlo plamene (point light) — dýchá s plamenem a vrhá stín
           candle.position.set(0, floorY + waxH + radius * 0.09, 0);
           candle.distance = radius * 3.2;
           candle.intensity = 0.4;
+          if (shadowsOn) {
+            candle.castShadow = true;
+            candle.shadow.mapSize.set(512, 512);
+            candle.shadow.bias = -0.0025;
+            candle.shadow.camera.near = radius * 0.05;
+            candle.shadow.camera.far = radius * 3.4;
+          }
 
           if (useBloom) {
             const { EffectComposer } = await import('three/examples/jsm/postprocessing/EffectComposer.js');
@@ -482,6 +516,7 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
             flameCore.scale.copy(flame.scale).multiplyScalar(0.92);
             flameCore.position.copy(flame.position);
             candle.intensity = 0.38 * flick + 0.05;
+            halo.material.opacity = 0.55 + (flick - 0.86) * 1.2;
             candle.position.x = Math.sin(t * 4.4) * radius * 0.008;
             candle.position.z = Math.cos(t * 3.8) * radius * 0.008;
 
@@ -525,6 +560,7 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
             envRT.dispose();
             pmrem.dispose();
             moonTex.dispose();
+            haloTex.dispose();
             snowTex.dispose();
             renderer.dispose();
             renderer.domElement.remove();
