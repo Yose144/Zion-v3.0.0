@@ -385,6 +385,12 @@ export default function FleetPage() {
             <Link href="/multiplayer">{cs ? 'Online místnosti' : 'Online rooms'}</Link>
           </div>
 
+          <p className="fleet-homage-note">
+            {cs
+              ? 'Pocta lodím, se kterými jsme vyrůstali — flotila je fanouškovská pocta, ne oficiální produkt ani spojení s držiteli práv. Modely jsou vlastní render z podkladů marketplace.'
+              : 'An homage to the ships we grew up with — the fleet is a fan tribute, not an official product or an association with the rights holders. Models are our own render of the marketplace source files.'}
+          </p>
+
           {coop && (
             <p className="fleet-coop-note">
               {cs
