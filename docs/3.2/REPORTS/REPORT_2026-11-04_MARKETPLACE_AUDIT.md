@@ -485,3 +485,15 @@ Stíny jsou **vypnuté pod 720 px** — model má 236 k trojúhelníků a stíno
 - svíčka mírně přisvícena, protože bez podlahy chybí odraz.
 
 **Poznámka k „přes GPU":** canvas používá WebGL s `powerPreference: 'high-performance'`; v headless testu jede přes ANGLE/Metal. Stíny jsou pod 720 px vypnuté, takže mobil neztrácí snímky.
+
+### Doladění — svíčka na dno a oheň (2026-11-05)
+
+👤: „tu svíčku umísti na spod, jestli k ní umíš udělat oheň a vyzařující světlo a stíny."
+
+**Skutečná chyba:** `floorY = box.min.y` bral dno z bounding boxu, který vznikl **před** vycentrováním modelu (`model.position.sub(center)`), kde je `min.y = 0`. Svíčka proto stála v polovině výšky lampionu. Po vycentrování je dno v `-size.y/2`, takže nově `floorY = box.min.y - center.y`.
+
+**Oheň:** plamen zvětšen (0,075R × 0,26R), přibyl teplý **halo sprite**, který pulzuje s plamenem; světlo prosvítá výřezy a osvětluje vnitřek vršku.
+
+**Stíny:** `candle.castShadow` s bodovou stínovou mapou 512 (near/far těsně kolem knotu) — oheň vrhá stíny ornamentů; měsíční směrové světlo drží stín modelu. `haloTex` se uvolňuje v cleanupu.
+
+**Ověřeno:** live 200, 0 chyb v konzoli, screenshot `fire-live.png` — teplé světlo jde zespodu, vršek je prosvícený a výřezy svítí.
