@@ -74,10 +74,16 @@ async function main() {
   await page.screenshot({ path: `${SHOTS}/shop-catalog.png` });
 
   console.log('\n▸ detail produktu s 3D náhledem');
-  await page.evaluate(() => {
-    const card = document.querySelector('.zion-rainbow-sub[role="button"]');
-    card?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  // Pozor: první karta v kategorii je Millennium Falcon, který **lokální model
+  // nemá** (odkaz na Thingiverse) — ukazuje proto fotografii. Kliká se proto
+  // na loď, která model má; jinak test měří produkt, který 3D vůbec nemá.
+  const opened = await page.evaluate(() => {
+    const cards = Array.from(document.querySelectorAll('.zion-rainbow-sub[role="button"]'));
+    const target = cards.find((card) => /X-Wing/i.test(card.textContent ?? ''));
+    target?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    return Boolean(target);
   });
+  check('v katalogu je X-Wing s modelem', opened);
   await waitFor(() => page.evaluate(() => Boolean(document.querySelector('[role="dialog"]'))), 15000, 'modal');
   await waitFor(
     () => page.evaluate(() => Boolean(document.querySelector('[role="dialog"] canvas'))),
@@ -86,14 +92,19 @@ async function main() {
   );
   check('modal otevřel 3D náhled', true);
 
+  // Pozor: prázdné pole je v JS truthy, takže `waitFor` by ho vrátil hned
+  // a test by hlásil chybu dřív, než request vůbec vznikne. Predikát musí
+  // vracet `null`, dokud seznam není neprázdný.
   const loaded = await waitFor(
     () =>
-      page.evaluate(() =>
-        performance
-          .getEntriesByType('resource')
-          .map((entry) => entry.name)
-          .filter((name) => name.includes('/shop/models3d/')),
-      ),
+      page
+        .evaluate(() =>
+          performance
+            .getEntriesByType('resource')
+            .map((entry) => entry.name)
+            .filter((name) => name.includes('/shop/models3d/')),
+        )
+        .then((list) => (list.length > 0 ? list : null)),
     25000,
     'stažení GLB',
   );
@@ -112,6 +123,20 @@ async function main() {
 
   const ignored = (line) => line.includes('401') || line.includes('prisma') || line.includes('DATABASE');
   check('v konzoli nejsou chyby', errors.filter((line) => !ignored(line)).length === 0, errors.slice(0, 3).join(' | '));
+
+  console.log('\n▸ produkt bez lokálního modelu (Falcon)');
+  await page.evaluate(() => document.querySelector('[role="dialog"] button[aria-label]')?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+  await sleep(400);
+  await page.evaluate(() => {
+    const cards = Array.from(document.querySelectorAll('.zion-rainbow-sub[role="button"]'));
+    cards.find((card) => /Falcon/i.test(card.textContent ?? ''))?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+  await waitFor(() => page.evaluate(() => Boolean(document.querySelector('[role="dialog"]'))), 15000, 'modal Falcona');
+  const falcon = await page.evaluate(() => ({
+    canvas: Boolean(document.querySelector('[role="dialog"] canvas')),
+    image: Boolean(document.querySelector('[role="dialog"] img')),
+  }));
+  check('Falcon ukazuje fotografii, ne prázdné 3D', falcon.image === true && falcon.canvas === false, JSON.stringify(falcon));
 
   await browser.close();
   console.log(`\n${failed === 0 ? '✓' : '✗'} shop-3d: ${passed} prošlo, ${failed} selhalo\n`);

@@ -493,7 +493,7 @@ const t = {
     close: { cs: 'Zavřít', en: 'Close' },
     quantity: { cs: 'Množství:', en: 'Quantity:' },
     inStockModal: { cs: '{stock} ks skladem', en: '{stock} pcs in stock' },
-    capability3d: { cs: '3D STL náhled', en: '3D STL preview' },
+    capability3d: { cs: '3D náhled (GLB)', en: '3D preview (GLB)' },
     capabilityLaser: { cs: 'Připraveno pro laser', en: 'Laser ready' },
     capabilityPdf: { cs: 'PDF průvodce', en: 'PDF guide' },
   },

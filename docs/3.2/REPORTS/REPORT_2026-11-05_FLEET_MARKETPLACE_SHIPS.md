@@ -355,6 +355,22 @@ katalog nevykreslí — komponenta se proto ověřovala **harnessem s reálným 
 chybová hláška) a pohledem na snímky (X-Wing, TIE, B-Wing — správné rámování i lak).
 Do repa jde i `apps/MarketPlace/e2e/shop-3d.mjs` pro běh proti instanci s databází.
 
+**Nasazeno a ověřeno živě (market.zionterranova.com):** deploy prošel, ale katalog **pořád
+vracel `/shop/models/xwing.stl`**. Důvod: živý katalog **nečte statický `shopProducts.ts`** —
+ten je jen seed; stránka servíruje řádky z Postgresu (`ShopProduct.modelUrl`). Provedl se tedy
+**cílený UPDATE jen toho pole** pro `star-001…star-007` (záloha původních hodnot:
+`/opt/zion/data/marketplace-modelurl-backup-20261105T170706.txt` na EDGE2), ne plný re-seed —
+ten by přepsal i ostatní pole, která mohl operátor mezitím měnit. Seed i DB jsou teď
+konzistentní (katalog v repu má GLB cesty), takže budoucí `POST /api/shop/seed` to nevrátí zpět.
+
+**Živě naměřeno (`apps/MarketPlace/e2e/shop-3d.mjs` proti produkci): 9/9** — katalog má
+produkty, X-Wing otevře 3D náhled, **stáhne se `/shop/models3d/xwing.glb`**, žádná chybová
+hláška, a Millennium Falcon (bez lokálního modelu) správně ukáže fotografii, ne prázdné
+plátno. Badge v modalu se opravil z „3D STL náhled" na **„3D náhled (GLB)"** (text lhal).
+
+**Otevřené pro 👤:** *popisy produktů* v DB pořád mluví o „STL náhledu" (marketingový text,
+needituju ho bez domluvy).
+
 **Dvě pasti při ověřování:** (a) harness bez Tailwindu nemá `w-full/h-full`, takže plátno
 mělo 300×150 a model se rámoval do špatného poměru — v produkci Tailwind je, ale test to
 musí napodobit; (b) **dva `next-server` procesy umí sdílet stejný port** (SO_REUSEPORT) —
