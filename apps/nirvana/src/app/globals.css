@@ -8940,3 +8940,59 @@ a.game-hud-chip.is-lumi em {
     height: 1.4rem;
   }
 }
+
+/* ── LUMI · předání světla (L-6) ───────────────────────────────────── */
+
+.lumi-handoff,
+.lumi-gifted {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  min-height: 1.85rem;
+  padding: 0 0.45rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  background: rgba(255, 209, 102, 0.1);
+  color: #ffe9a8;
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.lumi-handoff {
+  cursor: pointer;
+}
+
+.lumi-handoff:hover {
+  border-color: rgba(255, 209, 102, 0.7);
+  background: rgba(255, 209, 102, 0.18);
+}
+
+/* Hláška o daru visí nad lištou, aby ji nezakryla nápověda ani HUD. */
+.lumi-gift-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 6.2rem;
+  transform: translateX(-50%);
+  z-index: 22;
+  margin: 0;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  background: rgba(8, 4, 16, 0.86);
+  color: #ffe9a8;
+  font-size: 0.74rem;
+  white-space: nowrap;
+  animation: lumi-fade 0.4s ease both;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .lumi-handoff {
+    min-height: 2.5rem;
+    padding: 0 0.6rem;
+  }
+
+  .lumi-gift-toast {
+    bottom: 12rem;
+  }
+}

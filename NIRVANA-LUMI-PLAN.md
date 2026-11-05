@@ -251,7 +251,7 @@ záměr, jinak by šlo „vrátit se do rozjetého").
   - kdo je v místnosti a kdo už doletěl,
   - **cestu** — bere se z prvního `join` a nemění se pod rukama.
 
-Protokol (`PROTO_VERSION = 30`):
+Protokol (`PROTO_VERSION = 32`; 31 přidala flotila, 30 Lumi):
 
 ```ts
 // klient → server (20 Hz; zpráva se sebraným světlem jde vždy, bez ohledu na throttle)
@@ -340,7 +340,7 @@ batching nemá co slít; případná další úspora by byla v ubírání objekt
 | Let | `apps/nirvana/test/lumi-flight.mjs` | **53** | lucerna zvedá a dochází, proudy nesou a dobíjí, cesta jde dohrát, skóre nezáporné, **kompas** míří na nejbližší světlo / svatyni / `null` |
 | Deník + kapitoly | `apps/nirvana/test/lumi-journal.mjs` | **43** | ukládání, idempotence světel, odemykání `light`, darování, **kapitola ke každé cestě, jiný úvod pro vracejícího se hráče** |
 | Stopa | `apps/nirvana/test/lumi-trail.mjs` | **15** | vzorky vznikají pohybem (ne každým snímkem), strop ohonu, doznívání po `TRAIL_TTL`, jas 1→0, **nezávislost na fps** |
-| Společný let (server) | `apps/nirvana-net/test/lumi.mjs` | **18** | dva se vidí, světla sdílená, nový hráč je dostane, cesta z prvního joinu, svatyně až po sedmi, odchod jednoho nezhroutí druhého, **duch zůstane 3 s na poslední pozici a pak zmizí** |
+| Společný let (server) | `apps/nirvana-net/test/lumi.mjs` | **23** | dva se vidí, světla sdílená, nový hráč je dostane, cesta z prvního joinu, svatyně až po sedmi, odchod jednoho nezhroutí druhého, **duch zůstane 3 s na poslední pozici a pak zmizí, **darování světla (event, `gifts` ve `flyers`, cizí světlo darovat nejde)** |
 | Audit v prohlížeči | `.artifacts/probe/lumi-audit.mjs` | **54** | scéna se vykreslí, let reaguje na vstup, 7 světel → svatyně → panel → dar → skóre na tabuli, deník, **kompas**, model lucerny se opravdu načetl, **foto mód skryje chrome a `Esc` ho vrátí**, konzole bez chyb |
 | Živý co-op | `.artifacts/probe/lumi-coop-live.mjs` | 5 | dva prohlížeče: oba vidí „letí 1", světlo sebrané jedním má i druhý |
 
@@ -363,7 +363,7 @@ Regresní minimum před commitem: `npx tsc --noEmit`, `npx next build`, `lumi-au
 
 ## 9. Nasazení
 
-> **Blokující fakt:** živý net je na protokolu **26**, repo na **30**.
+> **Blokující fakt:** živý net je na protokolu **31** (flotila), repo na **32** (L-6).
 > Deploy **net první, pak appka**. Opačné pořadí = `proto_mismatch` a mrtvý chat i multiplayer.
 
 **Měřeno 2026-11-05** (`curl https://nirvana.zionterranova.com/net/health`):
@@ -438,7 +438,7 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
 | **L-3** | Světelná stopa za lucernou (trail), jen `detail` | na M1 ≥ 50 fps, na mobilu vypnuto | nízké | ✅ 2026-11-05 |
 | **L-4** | VR let (`core/xr` už existuje pro Merkur/Venuši/Saturn) | v headsetu jde letět pohledem, lucerna na spoušti; bez headsetu se jen nesmí rozbít 2D | střední | ⚠️ částečně 2026-11-05 |
 | **L-5** | Foto mód (skrýt HUD, volná kamera) | tlačítko skryje veškerý chrome, `Esc` vrátí | nízké | ✅ 2026-11-05 |
-| **L-6** | Druhá ruka: lucerna jde „předat" spoluletci (co-op emote) | druhý hráč dostane světlo do HUD, server to vidí ve `flyers` | střední (protokol) | ⬜ |
+| **L-6** | Druhá ruka: lucerna jde „předat" spoluletci (co-op emote) | druhý hráč dostane světlo do HUD, server to vidí ve `flyers` | střední (protokol) | ✅ 2026-11-05 |
 | **L-7** | Denní světlo: jedenkrát denně jiná pozice sedmi světel (seed z datumu) | stejný den = stejná obloha pro všechny, zítra jiná; test determinismu | nízké | ✅ 2026-11-05 |
 | **L-8** | Kapitoly příběhu mezi cestami (text po každé cestě) | po `calm` a `wind` se odemkne jiný úvodní text, ne jen cesta | nízké | ✅ 2026-11-05 |
 | **L-9** | Přístupnost: `prefers-reduced-motion` vypne vítr a částice | s preferencí se nehýbe pozadí, hra zůstane hratelná | nízké | ✅ 2026-11-05 |
@@ -484,9 +484,13 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
   stejná obloha, zítra jiná, meze mapy, žádné světlo ve svatyni). Pozor: testy musí
   číst `pathData(...).lights`, ne `LUMI_LIGHTS`, jinak běží proti jiné obloze, než
   jakou hra kreslí.
-- **L-6 (předání lucerny):** mění `fly` zprávu → **další bump protokolu** (31 už zabrala
-  flotila, takže 32) a znovu platí „net první, pak appka". Server musí ověřit, že dárce
-  to světlo opravdu má (jinak jde darovat cizí).
+- **L-6 (předání světla) — ✅ hotovo.** Vlastní zpráva `{t:'handoff', light}` (ne pole
+  ve `fly` — to nese pozici, takže by ji šlo omylem vynulovat). Server si u každého letce
+  drží **jeho vlastní sebraná světla** (`Set`), takže darovat jde jen to, co opravdu má;
+  cíl vybírá **server** (nejbližší jiný letec, duch se nepočítá), takže klient neposílá
+  identitu. Efekt: dárce o světlo přijde, příjemci se zvýší `gifts`, do místnosti jde
+  event `{kind:'gift', light, from, fromName, to}`. Klient podle `to` pozná, že se to
+  týká jeho HUD (badge `🤲 N` + hláška 4 s). **PROTO_VERSION 32**, deploy net → appka.
 - **L-12 (výkon) — ✅ hotovo, měřeno.** `?fps=1` v appce **neexistuje**; měří se
   `lumi-mobile-perf.mjs` (dvě velikosti, rAF 2 s + `__lumiDebug().renderer`).
   Naměřeno 390×844: **31 draw calls, 59 fps**, 19 795 tris, 2 textury; desktop 1440×900:
@@ -540,3 +544,4 @@ co pokazit; jakákoli „výzva" by rozbila její smysl.
 | 2026-11-05 | **L-2 duchové** (server: `ghostUntil` 3 s, `liveCount()`; klient: rozpouštění), **L-5 foto mód** (`is-photo`, `Esc`/`✕ zpět`), **L-9 reduced motion** (mraky, jiskry, blikání lucerny). Testy: net **18/18**, audit **50/50**, `tsc` + `next build` čisté. Nenasazeno (proto 30 stále čeká) |
 | 2026-11-05 | **L-3 stopa** přepsána do `trail.ts` (vzorky pohybem, doznívání, `setColorAt`, na mobilu vypnuto) — **15/15**; **L-7 denní obloha** (`lightsFor`/`pathData` seed z UTC data) — `lumi-flight` **53/53**; testy musí číst `pathData().lights`, ne `LUMI_LIGHTS` |
 | 2026-11-05 | **L-8 kapitoly** (dozvuk po každé cestě + jiný úvod pro vracejícího se hráče, bez změny schématu deníku) — `lumi-journal` **43/43**; **L-4 VR vrstva** (`<XR>`, `XROrigin`, syntetické klávesy, `VrButton`) — 2D ověřeno auditem (**54/54**), headset netestován a „letět pohledem" chybí |
+| 2026-11-05 | **L-6 předání světla** (`{t:'handoff'}`, per-flyer světla na serveru, cíl = nejbližší letec, event `gift`, HUD `🤲 N` + hláška) — net **23/23**, živý test dvou prohlížečů **4/4**, audit 54/54; `PROTO_VERSION 32`, nenasazeno |

@@ -16,7 +16,7 @@
  * jinak by musel hledat světla, která na obrazovce nejsou.
  */
 
-import type { Match, MatchSeat } from './match.js';
+import type { Match, MatchCtx, MatchSeat } from './match.js';
 import type { ClientMessage, ServerMessage } from '../../nirvana/src/core/net/protocol.js';
 
 export type LumiPath = 'calm' | 'wind' | 'light';
@@ -39,6 +39,14 @@ interface Flyer {
    * oblohy. Duch to zjemní a hlavně nerozbije počet letců v místnosti.
    */
   ghostUntil: number;
+  /** Která světla tenhle letec sám sebral (podklad pro darování, L-6). */
+  lights: Set<number>;
+  /** Kolik světel dostal darem od ostatních. */
+  gifts: number;
+  /** Kolik jich sám daroval. */
+  given: number;
+  /** Nevyřízené předání (světlo → vyřídí se v `step`, kde je `ctx.emit`). */
+  handoff: number[];
 }
 
 const SPAWN = { x: 10, y: 12 };
@@ -90,6 +98,10 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
         finished: false,
         seenAt: Date.now(),
         ghostUntil: 0,
+        lights: new Set<number>(),
+        gifts: 0,
+        given: 0,
+        handoff: [],
       });
     },
 
@@ -101,7 +113,7 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
       flyer.ghostUntil = Date.now() + GHOST_MS;
     },
 
-    step() {
+    step(_dt: number, ctx?: MatchCtx) {
       const now = Date.now();
       for (const [id, flyer] of flyers) {
         if (flyer.ghostUntil) {
@@ -109,6 +121,36 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
           continue;
         }
         if (now - flyer.seenAt > IDLE_MS) flyers.delete(id);
+      }
+
+      // Předání světla: dárce musí světlo mít, cíl je **nejbližší jiný letec**.
+      // Duch se do výběru nepočítá — darovat světlo odcházejícímu nemá smysl.
+      for (const [id, flyer] of flyers) {
+        if (!flyer.handoff.length) continue;
+        for (const light of flyer.handoff.splice(0)) {
+          if (!flyer.lights.has(light)) continue;
+          let best: { id: string; name: string; distance: number } | null = null;
+          for (const [otherId, other] of flyers) {
+            if (otherId === id || other.ghostUntil) continue;
+            const distance = Math.hypot(other.x - flyer.x, other.y - flyer.y);
+            if (!best || distance < best.distance) best = { id: otherId, name: other.name, distance };
+          }
+          if (!best) continue;
+
+          flyer.lights.delete(light);
+          flyer.given += 1;
+          const target = flyers.get(best.id);
+          if (target) target.gifts += 1;
+
+          ctx?.emit({
+            kind: 'gift',
+            light,
+            from: id,
+            fromName: flyer.name,
+            to: best.id,
+            at: now,
+          });
+        }
       }
     },
 
@@ -131,7 +173,7 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
           // vlastní stav klient nepotřebuje — predikuje si ho sám
           flyers: [...flyers.values()]
             .filter((flyer) => flyer.id !== id)
-            .map(({ id: flyerId, name, avatarId, x, y, vx, vy, energy, finished, ghostUntil }) => ({
+            .map(({ id: flyerId, name, avatarId, x, y, vx, vy, energy, finished, ghostUntil, gifts }) => ({
               id: flyerId,
               name,
               avatarId,
@@ -143,6 +185,8 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
               finished,
               // duch = hráč odešel; klient ho dokresluje s klesající průhledností
               ...(ghostUntil ? { ghost: true as const } : {}),
+              // darovaná světla jsou vidět i u ostatních (L-6)
+              ...(gifts > 0 ? { gifts } : {}),
             })),
         },
       };
@@ -151,6 +195,16 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
     message(id: string, message: ClientMessage): boolean {
       const flyer = flyers.get(id);
       if (!flyer) return false;
+
+      // Předání světla (L-6): jen když ho opravdu má; cíl vybere `step`.
+      if (message.t === 'handoff') {
+        const light = Math.round(message.light);
+        if (light >= 1 && light <= TOTAL_LIGHTS && flyer.lights.has(light)) {
+          if (flyer.handoff.length < 4) flyer.handoff.push(light);
+        }
+        return true;
+      }
+
       if (message.t !== 'fly') return false;
 
       // Vrátil se dřív, než duch vypršel (reconnect) — je zase živý.
@@ -164,11 +218,16 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
       flyer.seenAt = Date.now();
       if (message.finished) flyer.finished = true;
 
-      // Sdílená světla: bere se jen id 1..7, jednou.
+      // Sdílená světla: bere se jen id 1..7, jednou (pro celou místnost).
       if (typeof message.collect === 'number') {
         const light = Math.round(message.collect);
-        if (light >= 1 && light <= TOTAL_LIGHTS) lights.add(light);
+        if (light >= 1 && light <= TOTAL_LIGHTS) {
+          lights.add(light);
+          // a zároveň si letec pamatuje, která sebral **on** — jen ta může darovat
+          flyer.lights.add(light);
+        }
       }
+
       return true;
     },
 

@@ -79,7 +79,7 @@ const asItemId = (value: unknown): ItemId | null =>
  *      odmítne `join` (`pass_required`). Klient bez pasu by se jinak dostal
  *      do hry přes vlastní WebSocket klient.
  */
-export const PROTO_VERSION = 31;
+export const PROTO_VERSION = 32;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -313,6 +313,11 @@ export type EventPayload =
   | { kind: 'pickup'; id: string; item: 'health' | 'armor' | 'ammo' }
   | { kind: 'system'; text: string; at: number }
   | { kind: 'emote'; playerId: string; emote: number; at: number }
+  /**
+   * Lumi: světlo bylo předáno (L-6). Nese oba konce, takže to vidí dárce
+   * i obdarovaný — klient si podle `to` pozná, že se to týká jeho HUD.
+   */
+  | { kind: 'gift'; light: number; from: string; fromName: string; to: string; at: number }
   | { kind: 'match_start'; at: number }
   | { kind: 'match_end'; scoreboard: ScoreRow[] }
   | { kind: 'race_start'; at: number }
@@ -412,7 +417,25 @@ export type ClientMessage =
    * které by šlo podvádět, takže klient počítá svůj let sám a server ho jen
    * předává ostatním (a drží sdílený seznam sebraných světel).
    */
-  | { t: 'fly'; x: number; y: number; vx: number; vy: number; energy: number; collect?: number; finished?: boolean }
+  | {
+      t: 'fly';
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      energy: number;
+      collect?: number;
+      finished?: boolean;
+    }
+  /**
+   * Lumi: předat světlo spolulentci (L-6).
+   *
+   * Vlastní zpráva, ne pole ve `fly` — jinak by musel klient posílat i pozici
+   * a mohl by ji omylem vynulovat. Posílá se **id světla**, ne komu: cíl
+   * vybírá server (nejbližší jiný letec), takže klient nepotřebuje znát cizí
+   * identitu a nemůže darovat „někomu, kdo tam není".
+   */
+  | { t: 'handoff'; light: number }
   /**
    * Flotila: stav letu od klienta (3D).
    *
@@ -518,6 +541,8 @@ export type ServerMessage =
            * „letí s tebou", protože už tam není.
            */
           ghost?: boolean;
+          /** Kolik světel tenhle letec dostal darem (L-6). */
+          gifts?: number;
         }[];
       };
       /** Jen aréna: rakety ve vzduchu. */
@@ -676,6 +701,9 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         collect: typeof message.collect === 'number' ? num(message.collect, 1, 7) : undefined,
         finished: message.finished === true ? true : undefined,
       };
+
+    case 'handoff':
+      return { t: 'handoff', light: num(message.light, 1, 7) };
 
     // Flotila: volný let. Rozsahy odpovídají `core/fleet/flight.ts` —
       // souřadnice jsou v lokální soustavě Nové Země (±WORLD_RADIUS 34),

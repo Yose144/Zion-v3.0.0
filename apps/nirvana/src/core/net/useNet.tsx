@@ -90,6 +90,8 @@ export interface NetApi {
   sendFly: (state: { x: number; y: number; vx: number; vy: number; energy: number; collect?: number; finished?: boolean }) => boolean;
   /** Lumi: připoj se ke společné obloze na dané cestě. */
   joinLumi: (path: 'calm' | 'wind' | 'light') => void;
+  /** Lumi: předat sebrané světlo nejbližšímu spolulentci (L-6). */
+  sendHandoff: (light: number) => void;
   /** Flotila: připoj se ke společné obloze s vybranou lodí. */
   joinFleet: (shipId: string) => void;
   /** Flotila: pošli stav letu (throttlováno na 20 Hz). */
@@ -491,6 +493,14 @@ export function NetProvider({ children }: { children: ReactNode }) {
     [send],
   );
 
+  const sendHandoff = useCallback<NetApi['sendHandoff']>(
+    (light) => {
+      // Cíl vybírá server — klient posílá jen id světla (a jen své).
+      send({ t: 'handoff', light });
+    },
+    [send],
+  );
+
   const sendFly = useCallback<NetApi['sendFly']>(
     (state) => {
       const now = Date.now();
@@ -640,6 +650,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       sendTanksAim,
       sendTanksShoot,
       sendFly,
+      sendHandoff,
       joinLumi,
       joinFleet,
       sendFlight,
@@ -678,6 +689,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       sendTanksAim,
       sendTanksShoot,
       sendFly,
+      sendHandoff,
       joinLumi,
       joinFleet,
       sendFlight,

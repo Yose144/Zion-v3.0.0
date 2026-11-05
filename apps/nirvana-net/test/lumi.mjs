@@ -118,8 +118,12 @@ try {
   check('druhý se přidal do stejné místnosti', roomB.room.id === roomA.room.id, roomB.room.id);
 
   b.send(state(44, 55));
+  // Čeká se na **pozici**, ne na první výskyt: hráč se ve snapshotu objeví
+  // dřív, než dorazí jeho `fly` (spawn 10,12) — test by pak měřil spawn.
   const aSeesB = await a.waitFor(
-    (m) => m.t === 'snapshot' && (m.lumi?.flyers ?? []).some((flyer) => flyer.id === roomB.youPlayerId),
+    (m) =>
+      m.t === 'snapshot' &&
+      (m.lumi?.flyers ?? []).some((flyer) => flyer.id === roomB.youPlayerId && flyer.x === 44),
     6000,
   );
   const bFlyer = aSeesB.lumi.flyers.find((flyer) => flyer.id === roomB.youPlayerId);
@@ -135,6 +139,34 @@ try {
   b.send(state(44, 55, { collect: 1 }));
   const shared = await a.waitFor((m) => m.t === 'snapshot' && (m.lumi?.lights ?? []).includes(1), 5000);
   check('světlo je společné pro místnost', shared.lumi.lights.includes(1), JSON.stringify(shared.lumi.lights));
+
+  // ── L-6: předání světla spolulentci ────────────────────────────────
+  b.send({ t: 'handoff', light: 1 });
+  const gift = await a
+    .waitFor((m) => m.t === 'event' && m.event.kind === 'gift', 4000)
+    .catch(() => null);
+  check('druhý dostane světlo darem (event)', Boolean(gift), JSON.stringify(gift?.event));
+  check('dar má správného dárce i příjemce', gift?.event.from === roomB.youPlayerId && gift?.event.to === roomA.youPlayerId, JSON.stringify(gift?.event));
+  check('dar nese jméno dárce', typeof gift?.event.fromName === 'string' && gift.event.fromName.length > 0, String(gift?.event.fromName));
+
+  // dar vidí i ostatní: B má ve svém snapshotu A s `gifts: 1`
+  const giftsSeen = await b
+    .waitFor(
+      (m) =>
+        m.t === 'snapshot' &&
+        (m.lumi?.flyers ?? []).some((flyer) => flyer.id === roomA.youPlayerId && flyer.gifts === 1),
+      4000,
+    )
+    .catch(() => null);
+  check('server vidí dar ve flyers', Boolean(giftsSeen), JSON.stringify(giftsSeen?.lumi?.flyers));
+
+  // světlo, které sám neseberu, darovat nejde
+  const before = a.inbox.filter((m) => m.t === 'event' && m.event.kind === 'gift').length;
+  a.send({ t: 'handoff', light: 5 });
+  a.send({ t: 'handoff', light: 1 });
+  await sleep(700);
+  const after = a.inbox.filter((m) => m.t === 'event' && m.event.kind === 'gift').length;
+  check('darovat cizí (nebo už darované) světlo nejde', after === before, `${before} → ${after}`);
 
   // nový hráč dostane už sebraná světla
   const c = client();

@@ -80,7 +80,7 @@ export default function LumiPage() {
   const wind = useRef<LoopHandle | null>(null);
 
   // ── společné létání ────────────────────────────────────────────────
-  const { subscribe, joinLumi, leaveRoom, sendFly, connected, roomId } = useNet();
+  const { subscribe, joinLumi, leaveRoom, sendFly, sendHandoff, connected, roomId, youPlayerId } = useNet();
   /** `true` = letí se s ostatními; sólo zůstává výchozí. */
   const [coop, setCoop] = useState(false);
   /** Ostatní letci a sdílená světla — refy, protože chodí 15×/s. */
@@ -88,6 +88,9 @@ export default function LumiPage() {
   const sharedLights = useRef<number[]>([]);
   const [peers, setPeers] = useState(0);
   const [peerNames, setPeerNames] = useState<string[]>([]);
+  /** Darovaná světla (L-6): kolik jich hráč dostal a co se právě stalo. */
+  const [giftsGot, setGiftsGot] = useState(0);
+  const [giftToast, setGiftToast] = useState<string | null>(null);
   /**
    * Foto mód (L-5): schová veškerý chrome, aby šel udělat snímek oblohy.
    * Vypíná se `Esc` nebo křížkem — na mobilu `Esc` není, takže křížek
@@ -137,6 +140,19 @@ export default function LumiPage() {
   useEffect(() => {
     if (!coop) return;
     return subscribe((message) => {
+      // Předání světla (L-6): event nese oba konce, takže je vidět u obou.
+      if (message.t === 'event' && message.event.kind === 'gift') {
+        const gift = message.event;
+        if (gift.to === youPlayerId) {
+          setGiftsGot((value) => value + 1);
+          setGiftToast(
+            cs ? `Světlo od ${gift.fromName}` : `A light from ${gift.fromName}`,
+          );
+        } else if (gift.from === youPlayerId) {
+          setGiftToast(cs ? `Světlo předáno — ${gift.fromName}` : `Light passed on — ${gift.fromName}`);
+        }
+        return;
+      }
       if (message.t !== 'snapshot' || message.game !== 'lumi' || !message.lumi) return;
       remotes.current = message.lumi.flyers.map((flyer) => ({
         id: flyer.id,
@@ -156,7 +172,7 @@ export default function LumiPage() {
       setPeers(live.length);
       setPeerNames(live.map((flyer) => flyer.name).filter(Boolean).slice(0, 3));
     });
-  }, [coop, subscribe]);
+  }, [coop, subscribe, youPlayerId, cs]);
 
   // připojení / odpojení podle fáze
   useEffect(() => {
@@ -200,6 +216,13 @@ export default function LumiPage() {
       document.body.dataset.playing = '';
     };
   }, [phase]);
+
+  // hláška o darovaném světle zmizí sama — jinak by zůstala viset navždy
+  useEffect(() => {
+    if (!giftToast) return;
+    const timer = window.setTimeout(() => setGiftToast(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [giftToast]);
 
   // foto mód: `Esc` vrátí chrome zpět (na mobilu je křížek v rohu)
   useEffect(() => {
@@ -355,6 +378,31 @@ export default function LumiPage() {
               </span>
             )}
 
+            {coop && peers > 0 && stats.lights > 0 && (
+              <button
+                type="button"
+                className="lumi-handoff"
+                onClick={() => {
+                  const light = (stats.lightIds ?? [])[0];
+                  if (light) sendHandoff(light);
+                }}
+                title={
+                  cs
+                    ? 'předat světlo nejbližšímu spolulentci'
+                    : 'hand a light to the nearest flyer'
+                }
+                aria-label={cs ? 'předat světlo' : 'hand a light off'}
+              >
+                🤲
+              </button>
+            )}
+
+            {giftsGot > 0 && (
+              <span className="lumi-gifted" title={cs ? 'darovaná světla' : 'gifted lights'}>
+                🤲 {giftsGot}
+              </span>
+            )}
+
             <button
               type="button"
               className="lumi-photo"
@@ -406,6 +454,12 @@ export default function LumiPage() {
               </span>
               <InviteButton roomId={roomId} className="lumi-invite" label={{ cs: 'pozvat', en: 'invite' }} />
             </div>
+          )}
+
+          {giftToast && (
+            <p className="lumi-gift-toast" role="status">
+              {giftToast}
+            </p>
           )}
 
           {coarse && (

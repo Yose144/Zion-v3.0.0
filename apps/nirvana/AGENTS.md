@@ -2278,6 +2278,26 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   materiál; další úspora by znamenala ubírat objekty (kvalitativní tiery to už dělají),
   ne slít meshe.
 
+## Lumi — předání světla (L-6, proto 32)
+
+- **Darování je vlastní zpráva, ne pole ve `fly`.** `fly` nese pozici; kdyby v něm
+  šel i dar, klient by musel posílat i souřadnice a mohl je omylem vynulovat.
+  Proto `{ t: 'handoff', light }` a server si pozici nechá z posledního `fly`.
+- **Server si drží světla každého letce zvlášť** (`flyer.lights`), ne jen sdílenou
+  množinu místnosti. Bez toho by šlo darovat cizí světlo — kontrola je
+  `flyer.lights.has(light)`, ne „je v místnosti".
+- **Cíl vybírá server** (nejbližší jiný letec; duch se nepočítá). Klient neposílá
+  identitu, takže nemůže darovat „někomu, kdo tam není", a nemusí znát cizí id.
+- **Event nese oba konce** (`{kind:'gift', light, from, fromName, to}`), takže dárce
+  i obdarovaný vidí, co se stalo. Kdo si event vyloží jako „mě se to týká", rozhoduje
+  podle `to === youPlayerId`.
+- **Emit jde z `step`, ne z `message`.** `MatchCtx.emit` je k dispozici jen ve `step`,
+  takže se dar zařadí do `flyer.handoff` a vyřídí v nejbližším ticku.
+- **HUD:** tlačítko `🤲` se ukáže jen v co-opu, když máš světlo a někdo další letí;
+  badge `🤲 N` drží počet darů, hláška visí 4 s. Na mobilu má tlačítko 40 px.
+- **Deploy:** `PROTO_VERSION` 32 → **net první, pak appka** (starý net nový `handoff`
+  odmítne jako `unknown_type`).
+
 ## Flotila z marketu — `/fleet` (2026-11-05)
 
 - **Lodě jsou produkty z marketu, ne nové assety.** Zdroj jsou STL skládačky
