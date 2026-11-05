@@ -2058,3 +2058,24 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Testy: `test/lumi-flight.mjs` (39 kontrol) a
   `.artifacts/probe/lumi-audit.mjs` (25 kontrol, včetně „model se
   opravdu stáhl" přes resource timing a měření tri/tris).
+
+### Lumi — zvuk a deník (2026-11-05)
+
+- **Zvuk jde přes sdílený engine** (`core/audio/engine.ts`), žádné
+  soubory: `lanternIgnite`, `lightPickup`, `gust`, `shrineOpen`, `gift`
+  a spojitý `startWindLoop()` (růžový šum s pomalým LFO).
+- **Výška tónu světla roste s pořadím** (`playTone` s `784·2^(n/12)`) —
+  jinak by sedm světel znělo jako jedno a cesta by neměla stupnici.
+- **Hrany, ne snímky:** proud vzduchu a otevření svatyně se hrají při
+  **změně stavu** (`audioEdges` ref), ne každý frame.
+- **Vítr patří k letu, ne ke stránce:** startuje v efektu na
+  `phase === 'flying'` a v cleanupu se zastaví — jinak hučí i po doletu.
+  Intenzita jde z `stats.speed`, proto ho `LumiStats` nese.
+- **Deník je trvalá stopa příběhu** (`core/lumi/journal.ts`,
+  `nirvana.lumi.v1`): sebraná světla, počet cest a volby nechat/darovat.
+  Text se ukazuje 8 s, deník ho drží navždy.
+- **`LumiStats.lightIds`** (ne jen počet) — deník potřebuje id; počet by
+  nestačil a do deníku by se zapisovalo „něco".
+- **Testy:** `test/lumi-journal.mjs` (16 kontrol) a `lumi-audit`
+  (31 kontrol: deník 7 textů, před cestou prázdný, po cestě 7/7 + runs +
+  gift, během letu hra zní).
