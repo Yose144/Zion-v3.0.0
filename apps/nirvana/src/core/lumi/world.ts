@@ -7,17 +7,17 @@
  * a svatyně na konci oblohy.
  *
  * Co je v tomhle souboru: **data světa**. Fyzika je v `flight.ts`, kreslení
- * v `SkyScene.tsx`. Drží se to oddělené, aby se dala simulace testovat
+ * v `LumiScene.tsx`. Drží se to oddělené, aby se dala simulace testovat
  * v Node bez WebGL — a aby se pozice světel nemusela opsat do scény znovu.
  *
  * Souřadnice: hřiště je 100 × 100 jednotek (`x` doprava, `y` nahoru), `z`
  * je jen hloubka kulis. Stejná čísla používá simulace i kamera.
  */
 
-export const SKY_WIDTH = 100;
-export const SKY_HEIGHT = 100;
+export const LUMI_WIDTH = 100;
+export const LUMI_HEIGHT = 100;
 
-export interface SkyIsland {
+export interface LumiIsland {
   id: string;
   x: number;
   y: number;
@@ -29,7 +29,7 @@ export interface SkyIsland {
   tone: string;
 }
 
-export interface SkyLight {
+export interface LumiLight {
   id: number;
   x: number;
   y: number;
@@ -38,7 +38,7 @@ export interface SkyLight {
   fragment: { cs: string; en: string };
 }
 
-export interface SkyCurrent {
+export interface LumiCurrent {
   id: string;
   x: number;
   y: number;
@@ -48,7 +48,7 @@ export interface SkyCurrent {
 }
 
 /** Sedm světel = sedm kusů příběhu. Počet je záměrně malý: cesta má trvat pár minut. */
-export const SKY_LIGHTS: SkyLight[] = [
+export const LUMI_LIGHTS: LumiLight[] = [
   {
     id: 1,
     x: 18,
@@ -122,12 +122,12 @@ export const SKY_LIGHTS: SkyLight[] = [
 ];
 
 /** Svatyně na konci — otevře se, až když máš všech sedm. */
-export const SKY_SHRINE = { x: 82, y: 86, r: 7 } as const;
+export const LUMI_SHRINE = { x: 82, y: 86, r: 7 } as const;
 
 
 
 /** Proudy vzduchu — jediné „palivo" kromě pláštěnky. */
-export const SKY_CURRENTS: SkyCurrent[] = [
+export const LUMI_CURRENTS: LumiCurrent[] = [
   { id: 'c1', x: 26, y: 30, r: 7, lift: 34 },
   { id: 'c2', x: 54, y: 46, r: 8, lift: 40 },
   { id: 'c3', x: 40, y: 70, r: 9, lift: 44 },
@@ -135,7 +135,7 @@ export const SKY_CURRENTS: SkyCurrent[] = [
 ];
 
 /** Plošiny — nejsou nutné k dohrání, ale dávají světu hloubku a odpočinek. */
-export const SKY_ISLANDS: SkyIsland[] = [
+export const LUMI_ISLANDS: LumiIsland[] = [
   { id: 'start', x: 8, y: 8, r: 7, z: 0, tone: '#9fd8dc' },
   { id: 'i1', x: 22, y: 20, r: 6, z: -6, tone: '#b9e6e8' },
   { id: 'i2', x: 38, y: 36, r: 5, z: -14, tone: '#cfe9ea' },
@@ -147,14 +147,14 @@ export const SKY_ISLANDS: SkyIsland[] = [
 ];
 
 /** Úvodní a závěrečný text — rámují cestu, ne každé světlo. */
-export const SKY_INTRO = {
-  cs: 'V ledové obloze Uranu zůstalo sedm světel. Nikdo neříká, co udělat. Odnes je do svatyně na konci oblohy.',
-  en: 'Seven lights remain in the ice sky of Uranus. Nobody tells you what to do. Carry them to the shrine at the edge of the sky.',
+export const LUMI_INTRO = {
+  cs: 'Lumi je děvčátko s lucernou. V ledové obloze Uranu zůstalo sedm světel a nikdo neříká, co udělat — jen lucerna ví cestu. Odnes je do svatyně na konci oblohy.',
+  en: 'Lumi is the girl with the lantern. Seven lights remain in the ice sky of Uranus and nobody says what to do — only the lantern knows the way. Carry them to the shrine at the edge of the sky.',
 };
 
-export const SKY_FINISH = {
-  cs: 'Světlo se vrátilo do oblohy. Nezůstalo ti nic než to, co sis odnesl — a to je víc než dost.',
-  en: 'The light returned to the sky. Nothing stayed with you but what you carried inside — and that is more than enough.',
+export const LUMI_FINISH = {
+  cs: 'Světlo se vrátilo do oblohy. Lucerna zhasla a Lumi zůstala ve tmě sama se sebou — a to je víc než dost.',
+  en: 'The light returned to the sky. The lantern went out and Lumi stood in the dark with herself — and that is more than enough.',
 };
 
 /**
@@ -165,31 +165,31 @@ export const SKY_FINISH = {
  * Data jsou tady, ne ve scéně: testy díky tomu ověří, že každá cesta má
  * sedm světel a že se dají doletět (žádné světlo mimo mapu).
  */
-export type SkyPathId = 'calm' | 'wind';
+export type LumiPathId = 'calm' | 'wind';
 
-export interface SkyPath {
-  id: SkyPathId;
+export interface LumiPath {
+  id: LumiPathId;
   name: { cs: string; en: string };
   note: { cs: string; en: string };
-  lights: SkyLight[];
-  currents: SkyCurrent[];
-  islands: SkyIsland[];
+  lights: LumiLight[];
+  currents: LumiCurrent[];
+  islands: LumiIsland[];
   shrine: { x: number; y: number; r: number };
   intro: { cs: string; en: string };
 }
 
 /** Texty světel jsou společné oběma cestám — příběh se nemění podle obtížnosti. */
-const CALM_CURRENTS: SkyCurrent[] = SKY_CURRENTS;
-const CALM_ISLANDS: SkyIsland[] = SKY_ISLANDS;
+const CALM_CURRENTS: LumiCurrent[] = LUMI_CURRENTS;
+const CALM_ISLANDS: LumiIsland[] = LUMI_ISLANDS;
 
-const WIND_LIGHTS: SkyLight[] = SKY_LIGHTS.map((light, index) => ({
+const WIND_LIGHTS: LumiLight[] = LUMI_LIGHTS.map((light, index) => ({
   ...light,
   // druhá cesta rozhází světla víc do šířky i výšky
-  x: Math.min(SKY_WIDTH - 8, Math.max(8, light.x + (index % 2 === 0 ? 14 : -10))),
-  y: Math.min(SKY_HEIGHT - 10, light.y + 14 + (index % 3) * 4),
+  x: Math.min(LUMI_WIDTH - 8, Math.max(8, light.x + (index % 2 === 0 ? 14 : -10))),
+  y: Math.min(LUMI_HEIGHT - 10, light.y + 14 + (index % 3) * 4),
 }));
 
-const WIND_CURRENTS: SkyCurrent[] = [
+const WIND_CURRENTS: LumiCurrent[] = [
   { id: 'w1', x: 16, y: 40, r: 5, lift: 46 },
   { id: 'w2', x: 36, y: 62, r: 5, lift: 50 },
   { id: 'w3', x: 58, y: 36, r: 5, lift: 48 },
@@ -197,7 +197,7 @@ const WIND_CURRENTS: SkyCurrent[] = [
   { id: 'w5', x: 46, y: 88, r: 6, lift: 56 },
 ];
 
-const WIND_ISLANDS: SkyIsland[] = [
+const WIND_ISLANDS: LumiIsland[] = [
   { id: 'start', x: 8, y: 8, r: 7, z: 0, tone: '#9fd8dc' },
   { id: 'w1', x: 24, y: 44, r: 4.5, z: -8, tone: '#b9e6e8' },
   { id: 'w2', x: 44, y: 66, r: 4, z: -15, tone: '#cfe9ea' },
@@ -206,16 +206,16 @@ const WIND_ISLANDS: SkyIsland[] = [
   { id: 'shrine', x: 88, y: 90, r: 6, z: 0, tone: '#e8f6f4' },
 ];
 
-export const SKY_PATHS: Record<SkyPathId, SkyPath> = {
+export const LUMI_PATHS: Record<LumiPathId, LumiPath> = {
   calm: {
     id: 'calm',
     name: { cs: 'Klidná cesta', en: 'The calm way' },
     note: { cs: 'světla blízko sebe, proudy štědré', en: 'lights close together, generous currents' },
-    lights: SKY_LIGHTS,
+    lights: LUMI_LIGHTS,
     currents: CALM_CURRENTS,
     islands: CALM_ISLANDS,
-    shrine: SKY_SHRINE,
-    intro: SKY_INTRO,
+    shrine: LUMI_SHRINE,
+    intro: LUMI_INTRO,
   },
   wind: {
     id: 'wind',
@@ -226,18 +226,18 @@ export const SKY_PATHS: Record<SkyPathId, SkyPath> = {
     islands: WIND_ISLANDS,
     shrine: { x: 88, y: 90, r: 6 },
     intro: {
-      cs: 'Větrná cesta vede výš, než kam dohlédneš ze startu. Proudy jsou užší a mezi nimi je delší prázdno — pláštěnka tu není na ozdobu.',
-      en: 'The windy way climbs higher than you can see from the start. The currents are narrower and the gaps between them longer — the cape is not decoration here.',
+      cs: 'Větrná cesta vede výš, než kam dohlédneš ze startu. Proudy jsou užší a mezi nimi je delší prázdno — lucerna tu není na ozdobu.',
+      en: 'The windy way climbs higher than you can see from the start. The currents are narrower and the gaps between them longer — the lantern is not decoration here.',
     },
   },
 };
 
-export function pathData(id: SkyPathId): SkyPath {
-  return SKY_PATHS[id] ?? SKY_PATHS.calm;
+export function pathData(id: LumiPathId): LumiPath {
+  return LUMI_PATHS[id] ?? LUMI_PATHS.calm;
 }
 
 /** Dárek na konci: nechat si, nebo darovat. Texty i odměna. */
-export const SKY_GIFT = {
+export const LUMI_GIFT = {
   keep: {
     label: { cs: 'Nechat si světlo', en: 'Keep the light' },
     text: {
@@ -255,4 +255,4 @@ export const SKY_GIFT = {
 } as const;
 
 /** Bonus za darování — odměna je jen číslo, ne síla. */
-export const SKY_GIFT_BONUS = 150;
+export const LUMI_GIFT_BONUS = 150;

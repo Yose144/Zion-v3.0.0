@@ -124,7 +124,7 @@ const PLANET_PANELS: Record<PlanetGameId, {
     note: 'Ledový archiv — planeta nakloněná na bok. Prstence jako zmrzlé záznamy kruhů. A nad ním Křídla: sedm světel a cesta.',
     href: '/uranus',
     cta: 'Otevřít archiv',
-    href2: '/kridla',
+    href2: '/lumi',
     cta2: 'Vzlétnout',
   },
   neptune: {

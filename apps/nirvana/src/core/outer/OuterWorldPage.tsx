@@ -50,8 +50,8 @@ export function OuterWorldPage({ id }: { id: OuterWorldId }) {
 
         <div className="outer-actions">
           {id === 'uranus' && (
-            <Link href="/kridla" className="park-btn">
-              {cs ? 'Vzlétnout do Křídel →' : 'Fly into Wings →'}
+            <Link href="/lumi" className="park-btn">
+              {cs ? 'Vstoupit k Lumi →' : 'Fly into Wings →'}
             </Link>
           )}
           <Link href="/" className="arena-link">

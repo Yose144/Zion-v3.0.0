@@ -6,11 +6,11 @@
  * nepřátelé, žádné poškození, žádný časový limit — hra je o cestě.
  *
  * Drží se to mimo React i mimo three.js, protože takhle se dá simulace
- * otestovat v Node (`test/sky-flight.mjs`) a nemůže se rozejít s tím, co
+ * otestovat v Node (`test/lumi-flight.mjs`) a nemůže se rozejít s tím, co
  * hráč vidí.
  */
 
-import { SKY_HEIGHT, SKY_WIDTH, pathData, type SkyPathId } from './world';
+import { LUMI_HEIGHT, LUMI_WIDTH, pathData, type LumiPathId } from './world';
 
 export interface FlightInput {
   up: boolean;
@@ -23,7 +23,7 @@ export const NO_FLIGHT: FlightInput = { up: false, down: false, left: false, rig
 
 export interface FlightState {
   /** Kterou cestou letíš — světla, proudy i svatyně se berou odsud. */
-  path: SkyPathId;
+  path: LumiPathId;
   x: number;
   y: number;
   vx: number;
@@ -65,7 +65,7 @@ export const LIGHT_REFILL = 18;
 export const LIGHT_RADIUS = 3.4;
 export const SHRINE_RADIUS = 6;
 
-export function createFlight(path: SkyPathId = 'calm'): FlightState {
+export function createFlight(path: LumiPathId = 'calm'): FlightState {
   const data = pathData(path);
   return {
     path: data.id,
@@ -83,7 +83,7 @@ export function createFlight(path: SkyPathId = 'calm'): FlightState {
 }
 
 /** Je bod v proudu vzduchu? Vrací nejsilnější proud (nebo 0). */
-export function currentAt(x: number, y: number, path: SkyPathId = 'calm'): number {
+export function currentAt(x: number, y: number, path: LumiPathId = 'calm'): number {
   let lift = 0;
   for (const current of pathData(path).currents) {
     const dx = x - current.x;
@@ -139,15 +139,15 @@ export function stepFlight(state: FlightState, input: FlightInput, dt: number): 
   if (state.x < 2) {
     state.x = 2;
     state.vx = Math.abs(state.vx) * 0.3;
-  } else if (state.x > SKY_WIDTH - 2) {
-    state.x = SKY_WIDTH - 2;
+  } else if (state.x > LUMI_WIDTH - 2) {
+    state.x = LUMI_WIDTH - 2;
     state.vx = -Math.abs(state.vx) * 0.3;
   }
   if (state.y < 2) {
     state.y = 2;
     state.vy = Math.abs(state.vy) * 0.35;
-  } else if (state.y > SKY_HEIGHT - 2) {
-    state.y = SKY_HEIGHT - 2;
+  } else if (state.y > LUMI_HEIGHT - 2) {
+    state.y = LUMI_HEIGHT - 2;
     state.vy = -Math.abs(state.vy) * 0.2;
   }
 
@@ -177,7 +177,7 @@ export function stepFlight(state: FlightState, input: FlightInput, dt: number): 
  * být potrestaný na úroveň toho, kdo jen proletí. Proto se čas odečítá
  * mírně (1 bod za 2 s) a jen do nuly.
  */
-export function skyScore(state: FlightState): number {
+export function lumiScore(state: FlightState): number {
   if (!state.finished) return state.lights.length * 100;
   const bonus = Math.max(0, 600 - Math.floor(state.time) * 2);
   return state.lights.length * 100 + bonus;

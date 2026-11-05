@@ -7570,18 +7570,18 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   color: rgba(232, 244, 255, 0.92);
 }
 
-.sky-stage {
+.lumi-stage {
   position: absolute;
   inset: 0;
 }
 
-.sky-stage canvas {
+.lumi-stage canvas {
   display: block;
   width: 100%;
   height: 100%;
 }
 
-.sky-chrome {
+.lumi-chrome {
   position: absolute;
   z-index: 12;
   top: 0;
@@ -7595,11 +7595,11 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   pointer-events: none;
 }
 
-.sky-chrome > * {
+.lumi-chrome > * {
   pointer-events: auto;
 }
 
-.sky-chrome h1 {
+.lumi-chrome h1 {
   margin: 0.1rem 0 0;
   font-size: clamp(1.5rem, 4.4vw, 2.4rem);
   letter-spacing: 0.24em;
@@ -7608,7 +7608,7 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   text-shadow: 0 0 24px rgba(159, 228, 234, 0.45);
 }
 
-.sky-kicker {
+.lumi-kicker {
   margin: 0;
   font-size: 0.64rem;
   letter-spacing: 0.24em;
@@ -7616,13 +7616,13 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   color: rgba(159, 228, 234, 0.7);
 }
 
-.sky-sub {
+.lumi-sub {
   margin: 0.2rem 0 0;
   font-size: 0.78rem;
   color: rgba(232, 244, 255, 0.55);
 }
 
-.sky-hud {
+.lumi-hud {
   position: absolute;
   z-index: 13;
   left: 50%;
@@ -7638,13 +7638,13 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   backdrop-filter: blur(6px);
 }
 
-.sky-lights {
+.lumi-lights {
   display: inline-flex;
   align-items: center;
   gap: 0.22rem;
 }
 
-.sky-lights i {
+.lumi-lights i {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 999px;
@@ -7652,19 +7652,19 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   box-shadow: none;
 }
 
-.sky-lights i.is-on {
+.lumi-lights i.is-on {
   background: #ffe9b0;
   box-shadow: 0 0 8px rgba(255, 233, 176, 0.9);
 }
 
-.sky-lights b {
+.lumi-lights b {
   margin-left: 0.3rem;
   font-size: 0.72rem;
   color: #ffe9b0;
   font-variant-numeric: tabular-nums;
 }
 
-.sky-energy {
+.lumi-energy {
   width: 6.5rem;
   height: 0.42rem;
   border-radius: 999px;
@@ -7672,21 +7672,21 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   overflow: hidden;
 }
 
-.sky-energy i {
+.lumi-energy i {
   display: block;
   height: 100%;
   background: linear-gradient(90deg, #7fe3d4, #bfe6ea);
   transition: width 0.12s linear;
 }
 
-.sky-time {
+.lumi-time {
   font-size: 0.72rem;
   color: rgba(232, 244, 255, 0.6);
   font-variant-numeric: tabular-nums;
 }
 
-.sky-hint,
-.sky-goal {
+.lumi-hint,
+.lumi-goal {
   position: absolute;
   z-index: 12;
   left: 50%;
@@ -7700,26 +7700,27 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
 }
 
 /* nad celoappkovou lištou her — jinak se nápověda schová za ni */
-.sky-hint {
+.lumi-hint {
   bottom: calc(6.6rem + env(safe-area-inset-bottom, 0px));
 }
 
-.sky-goal {
+.lumi-goal {
   top: calc(5.2rem + env(safe-area-inset-top, 0px));
   color: rgba(159, 228, 234, 0.6);
   letter-spacing: 0.06em;
 }
 
-.sky-goal.is-open {
+.lumi-goal.is-open {
   color: #ffe9b0;
   text-shadow: 0 0 16px rgba(255, 233, 176, 0.5);
 }
 
-.sky-fragment {
+.lumi-fragment {
   position: absolute;
   z-index: 14;
   left: 50%;
-  top: 42%;
+  /* pod hlavičkou, ne uprostřed — jinak karta zakryje Lumi i lucernu */
+  top: calc(8.2rem + env(safe-area-inset-top, 0px));
   transform: translateX(-50%);
   width: min(34rem, calc(100vw - 3rem));
   margin: 0;
@@ -7728,18 +7729,18 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   border: 1px solid rgba(255, 233, 176, 0.22);
   background: rgba(6, 14, 24, 0.72);
   backdrop-filter: blur(8px);
-  animation: sky-fade 0.5s ease both;
+  animation: lumi-fade 0.5s ease both;
   pointer-events: none;
 }
 
-.sky-fragment cite {
+.lumi-fragment cite {
   font-style: normal;
   font-size: 0.88rem;
   line-height: 1.65;
   color: rgba(255, 245, 224, 0.9);
 }
 
-@keyframes sky-fade {
+@keyframes lumi-fade {
   from {
     opacity: 0;
     transform: translateX(-50%) translateY(0.6rem);
@@ -7750,7 +7751,7 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   }
 }
 
-.sky-panel {
+.lumi-panel {
   position: absolute;
   z-index: 15;
   left: 50%;
@@ -7766,7 +7767,7 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   backdrop-filter: blur(10px);
 }
 
-.sky-panel h2 {
+.lumi-panel h2 {
   margin: 0 0 0.5rem;
   font-size: clamp(1.2rem, 3.4vw, 1.7rem);
   letter-spacing: 0.16em;
@@ -7774,14 +7775,14 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   color: #eaf7ff;
 }
 
-.sky-panel p {
+.lumi-panel p {
   margin: 0 0 0.7rem;
   font-size: 0.83rem;
   line-height: 1.65;
   color: rgba(232, 244, 255, 0.72);
 }
 
-.sky-rules {
+.lumi-rules {
   margin: 0 0 0.9rem;
   padding-left: 1rem;
   font-size: 0.76rem;
@@ -7789,43 +7790,43 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   color: rgba(232, 244, 255, 0.6);
 }
 
-.sky-start {
+.lumi-start {
   width: 100%;
 }
 
-.sky-score {
+.lumi-score {
   display: flex;
   gap: 1.4rem;
   margin: 0 0 0.8rem;
 }
 
-.sky-score dt {
+.lumi-score dt {
   font-size: 0.62rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(159, 228, 234, 0.7);
 }
 
-.sky-score dd {
+.lumi-score dd {
   margin: 0.1rem 0 0;
   font-size: 1.1rem;
   color: #ffe9b0;
   font-variant-numeric: tabular-nums;
 }
 
-.sky-notice {
+.lumi-notice {
   color: #7fe3d4 !important;
   font-size: 0.76rem !important;
 }
 
-.sky-actions {
+.lumi-actions {
   display: flex;
   align-items: center;
   gap: 0.7rem;
 }
 
 /* dotykové ovládání — joystick ne, jen čtyři směry (hra není o přesnosti) */
-.sky-touch {
+.lumi-touch {
   position: absolute;
   z-index: 16;
   right: calc(0.9rem + env(safe-area-inset-right, 0px));
@@ -7836,51 +7837,51 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   gap: 0.35rem;
 }
 
-.sky-touch .is-up {
+.lumi-touch .is-up {
   grid-column: 2;
   grid-row: 1;
 }
 
-.sky-touch .is-left {
+.lumi-touch .is-left {
   grid-column: 1;
   grid-row: 2;
 }
 
-.sky-touch .is-down {
+.lumi-touch .is-down {
   grid-column: 2;
   grid-row: 2;
 }
 
-.sky-touch .is-right {
+.lumi-touch .is-right {
   grid-column: 3;
   grid-row: 2;
 }
 
 @media (max-width: 760px) {
-  .sky-hud {
+  .lumi-hud {
     bottom: calc(11.5rem + env(safe-area-inset-bottom, 0px));
     gap: 0.55rem;
     padding: 0.35rem 0.7rem;
   }
 
-  .sky-hint {
+  .lumi-hint {
     display: none;
   }
 
-  .sky-fragment {
+  .lumi-fragment {
     top: 34%;
   }
 }
 
 /* Volba cesty a darování světla — dvě karty, žádná hierarchie */
-.sky-paths {
+.lumi-paths {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
   margin: 0 0 0.9rem;
 }
 
-.sky-path {
+.lumi-path {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
@@ -7894,30 +7895,30 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.sky-path strong {
+.lumi-path strong {
   font-size: 0.8rem;
   color: #eaf7ff;
 }
 
-.sky-path span {
+.lumi-path span {
   font-size: 0.68rem;
   color: rgba(232, 244, 255, 0.5);
 }
 
-.sky-path.is-active {
+.lumi-path.is-active {
   border-color: #9fe4ea;
   background: rgba(159, 228, 234, 0.12);
   box-shadow: 0 0 0 1px rgba(159, 228, 234, 0.28);
 }
 
-.sky-gift {
+.lumi-gift {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
   margin: 0 0 0.7rem;
 }
 
-.sky-gift .park-btn {
+.lumi-gift .park-btn {
   flex: 1 1 12rem;
   display: inline-flex;
   align-items: center;
@@ -7925,25 +7926,25 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   gap: 0.4rem;
 }
 
-.sky-gift em {
+.lumi-gift em {
   font-style: normal;
   font-size: 0.68rem;
   color: rgba(255, 233, 176, 0.75);
 }
 
-.sky-gift-give {
+.lumi-gift-give {
   border-color: rgba(255, 209, 102, 0.5);
   background: rgba(255, 209, 102, 0.12);
 }
 
-.sky-gift-done {
+.lumi-gift-done {
   margin: 0 0 0.6rem;
   font-size: 0.78rem;
   color: #7fe3d4;
 }
 
 @media (max-width: 560px) {
-  .sky-paths {
+  .lumi-paths {
     grid-template-columns: 1fr;
   }
 }

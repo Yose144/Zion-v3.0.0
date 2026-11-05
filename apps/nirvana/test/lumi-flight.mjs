@@ -1,5 +1,5 @@
 /**
- * Test letu ve Křídlech — bez prohlížeče i bez WebGL.
+ * Test letu v Lumi — bez prohlížeče i bez WebGL.
  *
  * Hra stojí na třech věcech a každá se dá změřit:
  *  1. **pláštěnka zvedá, ale dochází** — bez energie padáš, s ní stoupáš,
@@ -9,7 +9,7 @@
  *
  * Bonus: skóre nesmí být záporné ani při hodinovém kochání.
  *
- * Spuštění: cd apps/nirvana && npx tsx test/sky-flight.mjs
+ * Spuštění: cd apps/nirvana && npx tsx test/lumi-flight.mjs
  */
 
 const {
@@ -17,11 +17,11 @@ const {
   createFlight,
   currentAt,
   missingLights,
-  skyScore,
+  lumiScore,
   stepFlight,
-} = await import('../src/core/sky/flight.ts');
-const { SKY_LIGHTS, SKY_PATHS, SKY_SHRINE, SKY_GIFT, SKY_GIFT_BONUS, pathData } = await import(
-  '../src/core/sky/world.ts'
+} = await import('../src/core/lumi/flight.ts');
+const { LUMI_LIGHTS, LUMI_PATHS, LUMI_SHRINE, LUMI_GIFT, LUMI_GIFT_BONUS, pathData } = await import(
+  '../src/core/lumi/world.ts'
 );
 
 let failures = 0;
@@ -89,7 +89,7 @@ check('hráč nevyletí nad mapu', ceiling.y <= 100, String(ceiling.y.toFixed(1)
 
 // ── 5) světla ────────────────────────────────────────────────────────
 const collector = createFlight();
-for (const light of SKY_LIGHTS) {
+for (const light of LUMI_LIGHTS) {
   collector.x = light.x;
   collector.y = light.y;
   fly(collector, 0.1);
@@ -100,8 +100,8 @@ check('světlo dobije energii', collector.energy > 0);
 
 // světlo se nedá sebrat dvakrát
 const twice = createFlight();
-twice.x = SKY_LIGHTS[0].x;
-twice.y = SKY_LIGHTS[0].y;
+twice.x = LUMI_LIGHTS[0].x;
+twice.y = LUMI_LIGHTS[0].y;
 fly(twice, 0.1);
 const afterFirst = twice.lights.length;
 fly(twice, 0.6);
@@ -109,19 +109,19 @@ check('světlo se nedá sebrat dvakrát', twice.lights.length === afterFirst, `$
 
 // ── 6) svatyně ───────────────────────────────────────────────────────
 const premature = createFlight();
-premature.x = SKY_SHRINE.x;
-premature.y = SKY_SHRINE.y;
+premature.x = LUMI_SHRINE.x;
+premature.y = LUMI_SHRINE.y;
 fly(premature, 0.3);
 check('svatyně bez světel neotevře', premature.finished === false);
 
 const finish = createFlight();
-for (const light of SKY_LIGHTS) {
+for (const light of LUMI_LIGHTS) {
   finish.x = light.x;
   finish.y = light.y;
   fly(finish, 0.1);
 }
-finish.x = SKY_SHRINE.x;
-finish.y = SKY_SHRINE.y;
+finish.x = LUMI_SHRINE.x;
+finish.y = LUMI_SHRINE.y;
 fly(finish, 0.3);
 check('se všemi světly se svatyně otevře', finish.finished === true);
 
@@ -131,10 +131,10 @@ fast.lights = [1, 2, 3, 4, 5, 6, 7];
 fast.finished = true;
 fast.time = 40;
 const slow = { ...fast, time: 400 };
-check('dokončená cesta má kladné skóre', skyScore(fast) > 0, String(skyScore(fast)));
-check('rychlejší cesta má víc', skyScore(fast) > skyScore(slow), `${skyScore(fast)} vs ${skyScore(slow)}`);
-check('skóre nikdy není záporné', skyScore(slow) >= 0, String(skyScore(slow)));
-check('nedokončená cesta počítá jen světla', skyScore({ ...fast, finished: false }) === 700, String(skyScore({ ...fast, finished: false })));
+check('dokončená cesta má kladné skóre', lumiScore(fast) > 0, String(lumiScore(fast)));
+check('rychlejší cesta má víc', lumiScore(fast) > lumiScore(slow), `${lumiScore(fast)} vs ${lumiScore(slow)}`);
+check('skóre nikdy není záporné', lumiScore(slow) >= 0, String(lumiScore(slow)));
+check('nedokončená cesta počítá jen světla', lumiScore({ ...fast, finished: false }) === 700, String(lumiScore({ ...fast, finished: false })));
 
 // ── 8) determinismus ─────────────────────────────────────────────────
 const a = createFlight();
@@ -173,13 +173,13 @@ fly(windFlight, 0.3);
 check('svatyně větrné cesty se otevře', windFlight.finished === true);
 
 // ── 10) darování světla ──────────────────────────────────────────────
-check('darování má bonus', SKY_GIFT_BONUS > 0, String(SKY_GIFT_BONUS));
-check('obě volby mají text v cs+en', Boolean(SKY_GIFT.keep.text.cs && SKY_GIFT.give.text.en));
-check('volby se jmenují jinak', SKY_GIFT.keep.label.cs !== SKY_GIFT.give.label.cs);
+check('darování má bonus', LUMI_GIFT_BONUS > 0, String(LUMI_GIFT_BONUS));
+check('obě volby mají text v cs+en', Boolean(LUMI_GIFT.keep.text.cs && LUMI_GIFT.give.text.en));
+check('volby se jmenují jinak', LUMI_GIFT.keep.label.cs !== LUMI_GIFT.give.label.cs);
 
 console.log('');
 if (failures > 0) {
-  console.log(`SKY FLIGHT FAILED (${failures})`);
+  console.log(`LUMI FLIGHT FAILED (${failures})`);
   process.exit(1);
 }
-console.log('SKY FLIGHT OK');
+console.log('LUMI FLIGHT OK');

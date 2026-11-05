@@ -23,7 +23,7 @@ export function emptyScores(): ParkScores {
     fight: [],
     moba: [],
     tanks: [],
-    wings: [],
+    lumi: [],
   };
 }
 

@@ -98,7 +98,7 @@ export const GAME_TITLES: Record<ParkGameId, { cs: string; en: string; glyph: st
   fight: { cs: 'Merkur souboj', en: 'Mercury duel', glyph: '⚔' },
   moba: { cs: 'První svět', en: 'First world', glyph: '🌍' },
   tanks: { cs: 'Saturn tanky', en: 'Saturn tanks', glyph: '🛡' },
-  wings: { cs: 'Křídla', en: 'Wings', glyph: '🕊️' },
+  lumi: { cs: 'Lumi', en: 'Lumi', glyph: '🏮' },
 };
 
 /** Pořadí, v jakém se hry ukazují v žebříčcích (od nejhranějších). */
@@ -108,7 +108,7 @@ export const GAME_ORDER: ParkGameId[] = [
   'race',
   'fight',
   'tanks',
-  'wings',
+  'lumi',
   'gallery',
   'pong',
   'breakout',

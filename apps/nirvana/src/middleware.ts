@@ -30,6 +30,8 @@ const PUBLIC_PREFIXES = [
   '/icons',
   '/textures',
   '/portraits',
+  // 3D modely (lucerna pro Lumi) — statický asset, ne herní obsah
+  '/models',
   '/audio',
   '/robots.txt',
   '/manifest',

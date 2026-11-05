@@ -14,8 +14,9 @@
  * Simulace je v `flight.ts`; tady se jen čte a kreslí.
  */
 
-import { useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import {
   ENERGY_MAX,
@@ -24,9 +25,9 @@ import {
   type FlightInput,
   type FlightState,
 } from './flight';
-import { SKY_HEIGHT, SKY_WIDTH, type SkyLight, type SkyPath } from './world';
+import { LUMI_HEIGHT, LUMI_WIDTH, type LumiLight, type LumiPath } from './world';
 
-export interface SkyStats {
+export interface LumiStats {
   lights: number;
   total: number;
   energy: number;
@@ -86,8 +87,8 @@ function Stars() {
       return seed / 0xffffffff;
     };
     for (let i = 0; i < count; i += 1) {
-      positions[i * 3] = rand() * SKY_WIDTH * 1.6 - SKY_WIDTH * 0.3;
-      positions[i * 3 + 1] = rand() * SKY_HEIGHT * 1.3 - SKY_HEIGHT * 0.15;
+      positions[i * 3] = rand() * LUMI_WIDTH * 1.6 - LUMI_WIDTH * 0.3;
+      positions[i * 3 + 1] = rand() * LUMI_HEIGHT * 1.3 - LUMI_HEIGHT * 0.15;
       positions[i * 3 + 2] = -40 - rand() * 60;
     }
     const geo = new THREE.BufferGeometry();
@@ -108,7 +109,7 @@ function Clouds() {
   const puffs = useMemo(
     () =>
       Array.from({ length: 14 }, (_, index) => ({
-        x: (index * 13.7) % SKY_WIDTH,
+        x: (index * 13.7) % LUMI_WIDTH,
         y: 16 + ((index * 29) % 70),
         z: -14 - (index % 4) * 6,
         r: 7 + (index % 3) * 3,
@@ -123,7 +124,7 @@ function Clouds() {
       const puff = puffs[index];
       if (!puff) return;
       child.position.x += puff.speed * delta;
-      if (child.position.x > SKY_WIDTH + 12) child.position.x = -12;
+      if (child.position.x > LUMI_WIDTH + 12) child.position.x = -12;
     });
   });
 
@@ -155,9 +156,9 @@ function Island({ x, y, z, r, tone }: { x: number; y: number; z: number; r: numb
         <meshStandardMaterial color={tone} roughness={0.5} metalness={0.2} emissive={tone} emissiveIntensity={0.18} />
       </mesh>
       {/* spodní kužel — bez něj ostrov vypadá jako placka ve vzduchu */}
-      <mesh position={[0, -r * 0.28, 0]}>
-        <coneGeometry args={[r * 0.94, r * 0.62, 22]} />
-        <meshStandardMaterial color="#6b9aa4" roughness={0.8} metalness={0.1} transparent opacity={0.85} />
+      <mesh position={[0, -r * 0.22, 0]}>
+        <coneGeometry args={[r * 0.82, r * 0.46, 22]} />
+        <meshStandardMaterial color="#8fb8c0" roughness={0.75} metalness={0.1} transparent opacity={0.7} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.3, 0]}>
         <ringGeometry args={[r * 0.86, r * 1.02, 48]} />
@@ -217,7 +218,7 @@ function Current({ x, y, r, lift }: { x: number; y: number; r: number; lift: num
 }
 
 /** Světlo — koule s pulsem a malým bodovým světlem. */
-function Light({ light, taken }: { light: SkyLight; taken: boolean }) {
+function Light({ light, taken }: { light: LumiLight; taken: boolean }) {
   const group = useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     if (!group.current) return;
@@ -249,7 +250,7 @@ function Light({ light, taken }: { light: SkyLight; taken: boolean }) {
 }
 
 /** Svatyně — oblouk, který se rozsvítí, až máš všechna světla. */
-function Shrine({ open, shrine }: { open: boolean; shrine: SkyPath['shrine'] }) {
+function Shrine({ open, shrine }: { open: boolean; shrine: LumiPath['shrine'] }) {
   const ring = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     if (ring.current) ring.current.rotation.z = clock.elapsedTime * 0.2;
@@ -275,40 +276,134 @@ function Shrine({ open, shrine }: { open: boolean; shrine: SkyPath['shrine'] }) 
   );
 }
 
-/** Hráč: pláštěnka z kužele, tělo z koule, stopa ze světýlek. */
-function Flyer({ state }: { state: React.MutableRefObject<FlightState> }) {
+/**
+ * LUMI — děvčátko s lucernou.
+ *
+ * Postava je z primitiv (v repu není lidský model a primitiva stačí: silueta
+ * holčičky s kšiltem a lucernou se čte z každé dálky). **Lucerna je skutečný
+ * model** z `public/models/lampion.glb` — ten, který vznikl pro Království
+ * srdce. Je těžký (4,3 MB, ~250k trojúhelníků), takže se načítá lazy a
+ * scéna má pro něj `Suspense`; do té doby svítí primitivní náhrada.
+ */
+function LanternModel() {
+  const { scene } = useGLTF('/models/lampion.glb');
+  const model = useMemo(() => {
+    const clone = scene.clone(true);
+    // Model je v metrech a neznámé velikosti — normalizuje se podle bounding
+    // boxu na výšku 0,55 jednotky, aby seděl do ručky.
+    const box = new THREE.Box3().setFromObject(clone);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const scale = size.y > 0 ? 0.55 / size.y : 1;
+    clone.scale.setScalar(scale);
+    clone.position.set(0, -size.y * scale * 0.5, 0);
+    clone.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+      const material = mesh.material as THREE.MeshStandardMaterial;
+      if (material) {
+        material.emissive = new THREE.Color('#ffd98a');
+        material.emissiveIntensity = 0.35;
+        material.roughness = 0.55;
+        material.metalness = Math.min(0.6, material.metalness ?? 0.3);
+      }
+    });
+    return clone;
+  }, [scene]);
+  return <primitive object={model} />;
+}
+
+/** Náhrada, když se model ještě načítá (nebo selže) — stejná silueta. */
+function LanternFallback() {
+  return (
+    <group>
+      <mesh position={[0, 0.16, 0]}>
+        <boxGeometry args={[0.26, 0.06, 0.26]} />
+        <meshStandardMaterial color="#c9a55c" metalness={0.7} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, 0, 0]}>
+        <boxGeometry args={[0.22, 0.3, 0.22]} />
+        <meshStandardMaterial color="#ffd98a" emissive="#ffd166" emissiveIntensity={1.4} transparent opacity={0.9} />
+      </mesh>
+      <mesh position={[0, -0.17, 0]}>
+        <boxGeometry args={[0.26, 0.05, 0.26]} />
+        <meshStandardMaterial color="#c9a55c" metalness={0.7} roughness={0.3} />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * Lucerna v ruce: model + teplé světlo.
+ *
+ * Model má ~250 000 trojúhelníků (změřeno: scéna 259k tris, 128 draw calls,
+ * 60 fps na M1). Na telefonu je to zbytečné — `detail=false` použije
+ * primitivní náhradu, která vypadá stejně a nestojí nic.
+ */
+function Lantern({ energy, detail }: { energy: number; detail: boolean }) {
+  const light = useRef<THREE.PointLight>(null);
+  useFrame(({ clock }) => {
+    if (!light.current) return;
+    const flicker = 0.85 + Math.sin(clock.elapsedTime * 7.3) * 0.06 + Math.sin(clock.elapsedTime * 2.1) * 0.05;
+    light.current.intensity = (2.5 + energy * 0.03) * flicker;
+  });
+  return (
+    <group>
+      {detail ? (
+        <Suspense fallback={<LanternFallback />}>
+          <LanternModel />
+        </Suspense>
+      ) : (
+        <LanternFallback />
+      )}
+      <pointLight ref={light} intensity={4} distance={14} color="#ffd9a0" />
+    </group>
+  );
+}
+
+/**
+ * Hráčka: holčička v šatech, s vlasy a lucernou v ruce.
+ *
+ * Všechno je z primitiv a drží se **jednoho měřítka** (postava 1 jednotka),
+ * aby se dala snadno přebarvit nebo vyměnit za model, až bude.
+ */
+function Lumi({ state, detail }: { state: React.MutableRefObject<FlightState>; detail: boolean }) {
   const group = useRef<THREE.Group>(null);
-  const cape = useRef<THREE.Mesh>(null);
+  const lantern = useRef<THREE.Group>(null);
   const trail = useRef<THREE.InstancedMesh>(null);
   const tmp = useMemo(() => new THREE.Object3D(), []);
   const history = useRef<{ x: number; y: number }[]>([]);
 
   useFrame(({ clock }) => {
     const flight = state.current;
+    const tilt = Math.max(-0.45, Math.min(0.45, flight.vy / 45));
     if (group.current) {
       group.current.position.set(flight.x, flight.y, 2);
-      const tilt = Math.max(-0.5, Math.min(0.5, flight.vy / 40));
       group.current.rotation.z = -tilt;
-      group.current.rotation.y = flight.vx >= 0 ? 0.2 : -0.2;
+      group.current.rotation.y = flight.vx >= 0 ? 0.25 : -0.25;
+      // jemné nadnášení — postava nikdy nestojí dokonale rovně
+      group.current.position.y += Math.sin(clock.elapsedTime * 1.6) * 0.12;
     }
-    if (cape.current) {
-      const beat = 1 + Math.sin(clock.elapsedTime * 3.2) * 0.08 * (flight.energy / ENERGY_MAX);
-      cape.current.scale.set(beat, beat, 1);
+    if (lantern.current) {
+      // lucerna se houpe protisměrně k pohybu, jako když ji nese v ruce
+      lantern.current.rotation.z = tilt * 0.9 + Math.sin(clock.elapsedTime * 1.9) * 0.08;
     }
 
-    // stopa: posledních 16 pozic jako jiskry
+    // stopa: posledních 18 pozic jako jiskry z lucerny
     history.current.push({ x: flight.x, y: flight.y });
-    if (history.current.length > 16) history.current.shift();
+    if (history.current.length > 18) history.current.shift();
     if (trail.current) {
       history.current.forEach((point, index) => {
         const k = index / history.current.length;
-        tmp.position.set(point.x, point.y, 1.6);
-        tmp.scale.setScalar(0.16 + k * 0.34);
+        tmp.position.set(point.x, point.y - 0.4, 1.7);
+        tmp.scale.setScalar(0.12 + k * 0.3);
         tmp.rotation.set(0, 0, 0);
         tmp.updateMatrix();
         trail.current!.setMatrixAt(index, tmp.matrix);
       });
-      for (let i = history.current.length; i < 16; i += 1) {
+      for (let i = history.current.length; i < 18; i += 1) {
         tmp.position.set(0, 0, -1000);
         tmp.updateMatrix();
         trail.current.setMatrixAt(i, tmp.matrix);
@@ -319,44 +414,69 @@ function Flyer({ state }: { state: React.MutableRefObject<FlightState> }) {
 
   return (
     <>
-      <group ref={group} scale={1.7}>
-        <mesh>
-          <sphereGeometry args={[0.9, 18, 14]} />
-          <meshStandardMaterial color="#eaf7ff" emissive="#9fe4ea" emissiveIntensity={0.35} roughness={0.4} />
+      <group ref={group} scale={1.6}>
+        {/* šaty — kužel, který dává siluetu do dálky */}
+        <mesh position={[0, -0.28, 0]}>
+          <coneGeometry args={[0.42, 0.95, 14]} />
+          <meshStandardMaterial color="#e8dcc4" roughness={0.85} emissive="#7fe3d4" emissiveIntensity={0.06} />
         </mesh>
-        <mesh ref={cape} position={[-0.7, -0.2, 0]} rotation={[0, 0, Math.PI / 2.4]}>
-          <coneGeometry args={[0.85, 2.1, 10, 1, true]} />
-          <meshStandardMaterial
-            color="#bfe6ea"
-            transparent
-            opacity={0.72}
-            side={THREE.DoubleSide}
-            emissive="#7fe3d4"
-            emissiveIntensity={0.25}
-          />
+        {/* trup */}
+        <mesh position={[0, 0.22, 0]}>
+          <capsuleGeometry args={[0.19, 0.24, 6, 12]} />
+          <meshStandardMaterial color="#dfd2b8" roughness={0.8} />
         </mesh>
-        <pointLight intensity={3.5} distance={12} color="#ffd9a0" />
+        {/* hlava */}
+        <mesh position={[0, 0.56, 0]}>
+          <sphereGeometry args={[0.2, 18, 14]} />
+          <meshStandardMaterial color="#f2d9bd" roughness={0.7} />
+        </mesh>
+        {/* vlasy — koule seříznutá nad obočím + drdol */}
+        <mesh position={[0, 0.6, -0.02]}>
+          <sphereGeometry args={[0.215, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
+          <meshStandardMaterial color="#3b2a24" roughness={0.95} />
+        </mesh>
+        <mesh position={[0, 0.78, -0.06]}>
+          <sphereGeometry args={[0.11, 12, 10]} />
+          <meshStandardMaterial color="#3b2a24" roughness={0.95} />
+        </mesh>
+        {/* paže: levá volně, pravá drží lucernu */}
+        <mesh position={[-0.24, 0.16, 0]} rotation={[0, 0, 0.5]}>
+          <capsuleGeometry args={[0.055, 0.34, 4, 8]} />
+          <meshStandardMaterial color="#e8dcc4" roughness={0.85} />
+        </mesh>
+        <mesh position={[0.24, 0.1, 0]} rotation={[0, 0, -0.35]}>
+          <capsuleGeometry args={[0.055, 0.3, 4, 8]} />
+          <meshStandardMaterial color="#e8dcc4" roughness={0.85} />
+        </mesh>
+        {/* lucerna visí z pravé ruky */}
+        <group ref={lantern} position={[0.34, -0.12, 0]}>
+          <Lantern energy={state.current.energy} detail={detail} />
+        </group>
       </group>
-      <instancedMesh ref={trail} args={[undefined, undefined, 16]} frustumCulled={false}>
+      <instancedMesh ref={trail} args={[undefined, undefined, 18]} frustumCulled={false}>
         <sphereGeometry args={[1, 8, 6]} />
-        <meshBasicMaterial color="#ffe9b8" transparent opacity={0.4} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color="#ffe9b8" transparent opacity={0.42} depthWrite={false} blending={THREE.AdditiveBlending} />
       </instancedMesh>
     </>
   );
 }
 
-export function SkyScene({
+export function LumiScene({
   path,
   onStats,
   onFinish,
   paused = false,
+  detail = true,
 }: {
   /** Kterou cestou se letí — data i simulace se berou odsud. */
-  path: SkyPath;
-  onStats: (stats: SkyStats) => void;
+  path: LumiPath;
+  /** `false` = lehká varianta pro mobil (bez 250k modelu lucerny). */
+  detail?: boolean;
+  onStats: (stats: LumiStats) => void;
   onFinish: (score: number) => void;
   paused?: boolean;
 }) {
+  const { gl } = useThree();
   const state = useRef<FlightState>(createFlight(path.id));
   const keys = useRef<Record<keyof FlightInput, boolean>>({ up: false, down: false, left: false, right: false });
   const lastReport = useRef(0);
@@ -389,29 +509,33 @@ export function SkyScene({
     };
   }, []);
 
-  // Ladicí háček pro headless test (`?skyDebug=1`) — bez něj by E2E
+  // Ladicí háček pro headless test (`?lumiDebug=1`) — bez něj by E2E
   // muselo doletět celou cestu klávesnicí.
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (new URLSearchParams(window.location.search).get('skyDebug') !== '1') return;
+    if (new URLSearchParams(window.location.search).get('lumiDebug') !== '1') return;
     const bag = window as unknown as Record<string, unknown>;
-    bag.__skyDebug = () => ({ ...state.current, lights: [...state.current.lights] });
+    bag.__lumiDebug = () => ({
+      ...state.current,
+      lights: [...state.current.lights],
+      renderer: { calls: gl.info.render.calls, triangles: gl.info.render.triangles, textures: gl.info.memory.textures },
+    });
     // polohy světel a svatyně pro test — jinak by E2E muselo znát data cesty
-    bag.__skyLights = path.lights.map((light) => ({ id: light.id, x: light.x, y: light.y }));
-    bag.__skyShrine = { x: path.shrine.x, y: path.shrine.y };
-    bag.__skyTeleport = (x: number, y: number) => {
+    bag.__lumiLights = path.lights.map((light) => ({ id: light.id, x: light.x, y: light.y }));
+    bag.__lumiShrine = { x: path.shrine.x, y: path.shrine.y };
+    bag.__lumiTeleport = (x: number, y: number) => {
       state.current.x = x;
       state.current.y = y;
       state.current.vx = 0;
       state.current.vy = 0;
     };
     return () => {
-      delete bag.__skyDebug;
-      delete bag.__skyTeleport;
-      delete bag.__skyLights;
-      delete bag.__skyShrine;
+      delete bag.__lumiDebug;
+      delete bag.__lumiTeleport;
+      delete bag.__lumiLights;
+      delete bag.__lumiShrine;
     };
-  }, [path]);
+  }, [path, gl]);
 
   useFrame((_, delta) => {
     if (paused) return;
@@ -461,42 +585,52 @@ export function SkyScene({
         <Light key={light.id} light={light} taken={state.current.lights.includes(light.id)} />
       ))}
       <Shrine open={state.current.lights.length === path.lights.length} shrine={path.shrine} />
-      <Flyer state={state} />
+      <Lumi state={state} detail={detail} />
       <CameraRig state={state} />
     </>
   );
 }
 
-/** Kamera jemně sleduje hráče, ale drží celý záběr — hra není o přesnosti. */
+/**
+ * Kamera sleduje Lumi zblízka, aby byla vidět jako postava, ne jako tečka.
+ *
+ * První verze držela celou mapu (kamera ve výšce 118), takže holčička byla
+ * 20 px vysoká a splývala s ostrovy. Teď je kamera blíž a mírně napřed ve
+ * směru letu — hráč vidí, kam letí, a přitom zůstává v záběru.
+ */
 function CameraRig({ state }: { state: React.MutableRefObject<FlightState> }) {
   const { camera } = useThree();
-  const target = useMemo(() => new THREE.Vector3(SKY_WIDTH / 2, SKY_HEIGHT / 2, 0), []);
+  const target = useMemo(() => new THREE.Vector3(50, 50, 0), []);
   const desired = useMemo(() => new THREE.Vector3(), []);
+  const look = useMemo(() => new THREE.Vector3(), []);
 
   useFrame((_, delta) => {
     const flight = state.current;
+    const ahead = THREE.MathUtils.clamp(flight.vx * 0.35, -6, 6);
     desired.set(
-      THREE.MathUtils.clamp(flight.x * 0.35 + SKY_WIDTH * 0.3, 20, 80),
-      THREE.MathUtils.clamp(flight.y * 0.3 + SKY_HEIGHT * 0.35, 25, 75),
-      118,
+      THREE.MathUtils.clamp(flight.x + 12 + ahead, 14, 96),
+      THREE.MathUtils.clamp(flight.y + 9, 14, 94),
+      58,
     );
-    camera.position.lerp(desired, Math.min(1, delta * 2.2));
-    target.lerp(new THREE.Vector3(flight.x * 0.35 + SKY_WIDTH * 0.3, flight.y * 0.3 + SKY_HEIGHT * 0.35, 0), Math.min(1, delta * 2.6));
+    camera.position.lerp(desired, Math.min(1, delta * 2.4));
+    look.set(flight.x + 3 + ahead, flight.y + 2, 0);
+    target.lerp(look, Math.min(1, delta * 3));
     camera.lookAt(target);
   });
   return null;
 }
 
 /** Obal, aby stránka nemusela řešit Canvas ani kameru. */
-export function SkyCanvas(props: {
-  path: SkyPath;
-  onStats: (stats: SkyStats) => void;
+export function LumiCanvas(props: {
+  path: LumiPath;
+  onStats: (stats: LumiStats) => void;
   onFinish: (score: number) => void;
   paused?: boolean;
+  detail?: boolean;
 }) {
   return (
-    <Canvas dpr={[1, 1.75]} camera={{ position: [50, 46, 118], fov: 44, near: 0.5, far: 400 }}>
-      <SkyScene {...props} />
+    <Canvas dpr={[1, 1.75]} camera={{ position: [22, 22, 58], fov: 44, near: 0.5, far: 400 }}>
+      <LumiScene {...props} />
     </Canvas>
   );
 }
