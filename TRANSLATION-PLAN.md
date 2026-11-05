@@ -1,7 +1,7 @@
 # TRANSLATION PLAN — Zion Archive (CZ → EN)
 
-> **Verze:** 1.6 · **Datum:** 2026-11-05 · **Vlastník:** 👤
-> **Stav:** 110 / 189 překladatelných kapitol (**58,2 %**), zbývá **79 kapitol** (~0,79 MB zdroje)
+> **Verze:** 1.7 · **Datum:** 2026-11-05 · **Vlastník:** 👤
+> **Stav:** 122 / 189 překladatelných kapitol (**64,6 %**), zbývá **67 kapitol** (~0,74 MB zdroje)
 > **Kód:** `apps/website-v2.9` · **Plán archivu:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](docs/plans/ZION-ARCHIVE-COMPLETION.md)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md`](docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md)
 
@@ -55,14 +55,14 @@ vlastní ENindex mimo kapitoly.
 | Lumi | 13 | 0 | **13** | |
 | Miriam | 13 | 0 | **13** | |
 | BodhiGaia | 13 | 0 | **13** | největší objem (180 kB) |
-| MariaCaminho | 12 | 0 | **12** | |
+| MariaCaminho | 12 | **12** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Růže | 11 | **11** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Na Cestě | 2 | **2** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Issobella | 11 | **11** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Nabukano | 7 | **7** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Kruh Bohyní | 17 | 0 | **17** | |
 | Mise Amenti | 8 | **8** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
-| **CELKEM** | **189** | **110** | **79** | ~0,79 MB zdroje |
+| **CELKEM** | **189** | **122** | **67** | ~0,74 MB zdroje |
 
 Stav kdykoli zjistíš:
 
@@ -113,8 +113,14 @@ Korpusová konvence (`korpus/NaCeste/<slug>_EN.md`). Audit `enCoverage: 100`, `m
 knihovní karta bez `czOnly`. Velká kapitola má **1:1 strukturu s CZ** (429 řádků, 215 neprázdných, 9 sekcí, 9 oddělovačů).
 MÝTUS/HORIZONT statusy a hranice (odmítnutá návštěva Raiatea + Uluru, pozastavený převoz semene, FPIC) opisovat doslovně.
 
-### MariaCaminho — 12
-`01-Caminha` (7k) · `02-Cervena-Marie` (6k) · `03-Prvni-Plachetnice` (6k) · `04-Bila-Nevesta` (6k) · `05-Nevesta-z-Pacifiku` (7k) · `06-Most-Lumi` (7k) · `07-Zlata-Marie` (9k) · `08-Treti-Marie` (7k) · `09-Dokonceni-a-Obrat` (8k) · `10-Compostela` (6k) · `11-Kotva-Pravdy-a-Hranice` (12k) · `Epilog-More-Nekonci` (4k)
+### MariaCaminho — hotovo (12/12, 2026-11-05)
+Korpusová konvence (`korpus/MariaCaminho/<slug>_EN.md`). Audit `enCoverage: 100`, `missingEn: []`,
+kicker `CZ + EN`, knihovní karta bez `czOnly`. Zjevení = `MYTH` na `LIVE` tradici; trup I–II `BUILDING`,
+trup III `HORIZON`; rezerva 300M ZION = `LIVE` registry záznam (ne flotila). Neměnit: `48dcc0b2-…` id,
+data 2026-10-01, 1917 / 352 / 1676 / 1488 / 2008, Ø~91 cm, ~2 090 m², Blombos 75–100 tis. let.
+**Konvence jmen flotily (závazná i pro Lumi/NaCeste/MariaCaminho kříže):** `Poutník → the Pilgrim`,
+kapitánky `Inés Varela`, `Teura`, `Anjali`, `Hina`; trupy `Santa María la Mayor` (I), `Nossa Senhora de Fátima` (II),
+`María de las Nieves` (III); dítě `Elizabeth` = Lumi = Malý princ / Pražské Jezulátko.
 
 ### Ekam Deeksha — 10
 `BOOK-00-PREDMLUVA` (5k) · `BOOK-CAST-I` (12k) · `BOOK-CAST-II` (11k) · `BOOK-CAST-III` (12k) · `BOOK-CAST-IV` (11k) · `BOOK-CAST-V` (12k) · `BOOK-CAST-VI` (**20k**) · `BOOK-CAST-VII` (12k) · `BOOK-ZAVER` (4k) · `BOOK-GLOSAR` (17k)
@@ -250,7 +256,7 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 | **T4** | Růže ✅ | 11 | hotovo 2026-11-05 |
 | **T5** | Issobella ✅ | 11 | hotovo 2026-11-05 |
 | **T6** | Na Cestě ✅ | 2 | hotovo 2026-11-05 |
-| **T7** | MariaCaminho | 12 | 4 |
+| **T7** | MariaCaminho ✅ | 12 | hotovo 2026-11-05 |
 | **T8** | Ekam Deeksha | 10 | 4 (jedna 20k) |
 | **T9** | Quantum Revolution | 1 | 1 (celý dokument) |
 | **T10** | Miriam | 13 | 4 |
@@ -258,7 +264,7 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 | **T12** | Kruh Bohyní | 17 | 5 |
 | **T13** | BodhiGaia | 13 | 5 (největší objem) |
 
-**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **22–32 session-dávek** na zbývajících 79
+**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **19–29 session-dávek** na zbývajících 67
 kapitol. Po každé knize: report + commit + push.
 
 **Alternativní pořadí podle priority 👤:** pokud má být první „hlavní osa“ (Ekam, Quantum
