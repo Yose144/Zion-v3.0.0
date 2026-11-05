@@ -443,9 +443,22 @@ na náhradě. Teď je asset veřejný a audit to ověřuje přes resource timing
 kamera sleduje zblízka a mírně napřed ve směru letu. Text příběhu se
 přesunul pod hlavičku, aby neležel na postavě.
 
+### Zvuk a deník (2026-11-05)
+
+**Zvuk** jde přes sdílený engine, žádné soubory: zapálení lucerny, sebrané
+světlo (výška tónu roste s pořadím — cesta je slyšet jako stupnice), nádech
+při vstupu do proudu, otevření svatyně, darování a **spojitý vítr**
+(`startWindLoop` — růžový šum s pomalým LFO, intenzita podle rychlosti letu).
+Hrany se hrají při změně stavu, ne každý snímek.
+
+**Deník světel** (`core/lumi/journal.ts`, `nirvana.lumi.v1`) je trvalá
+stopa příběhu: text se ve hře ukáže na osm sekund, v deníku zůstává.
+V úvodu je tlačítko „Deník X/7" a panel se sedmi texty (nalezené plné,
+nenalezené jako obrys), plus počet cest a kolikrát jsi světlo daroval.
+
 **Meze:** dvě cesty (žádné další větve), úspory jen v prohlížeči, na
-mobilu čtyři směry a lehká lucerna, ve VR netestováno. Model lucerny
-nemá LOD — na slabším zařízení je to nejdražší objekt scény.
+mobilu čtyři směry a lehká lucerna, ve VR netestováno. Deník se
+nesynchronizuje mezi zařízeními (záměr — žádný účet).
 
 ---
 
