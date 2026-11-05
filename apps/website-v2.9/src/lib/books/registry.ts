@@ -360,7 +360,7 @@ export const RUZE_BOOK = korpusBook({
   dir: 'Ruze',
   accent: '244, 63, 94',
   icon: Flower2,
-  kicker: { cs: 'Bajka · průsečík vztahů · CZ', en: 'A fable · the intersection of relations · CZ' },
+  kicker: { cs: 'Bajka · průsečík vztahů · CZ + EN', en: 'A fable · the intersection of relations · CZ + EN' },
   title: { cs: 'Příběh Růže', en: 'The Rose Story' },
   subtitle: { cs: 'Co nelze vlastnit — malá kniha o Lumi a růži u řeky za otevřenou bránou.', en: 'What cannot be owned — a small book about Lumi and the rose by the river behind the open gate.' },
   description: {

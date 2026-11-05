@@ -197,11 +197,10 @@ export const COMPANION_GROUPS: CompanionGroup[] = [
         title: { cs: 'Příběh Růže', en: 'The Rose Story' },
         description: {
           cs: 'Malá bajka o Lumi a růži u řeky za otevřenou bránou — péče bez vlastnění. Samostatná kniha; celý děj mýtus.',
-          en: 'A small fable of Lumi and the rose by the river behind the open gate — care without ownership. A standalone book; the whole story is myth. Czech only.',
+          en: 'A small fable of Lumi and the rose by the river behind the open gate — care without ownership. A standalone book; the whole story is myth.',
         },
         status: 'draft',
         href: '/zion-archive/ruze/cist',
-        czOnly: true,
         rc: '244, 63, 94',
       },
     ],
