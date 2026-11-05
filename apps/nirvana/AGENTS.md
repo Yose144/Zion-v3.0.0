@@ -2033,9 +2033,19 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   Normalizuje se podle bounding boxu na výšku 0,55 jednotky, dostane
   teplé emissive a v ruce se houpe. `Suspense` má primitivní náhradu,
   takže hra nikdy nečeká na soubor.
-- **Model je drahý**: měřeno 128 draw calls / 259 216 tris / 60 fps na M1
-  (1440×900). Na mobilu (`coarse`) se model vůbec nestahuje a svítí
-  primitivní lucerna. Kdo přidá další 3D asset, měří stejně.
+- **Model se MUSÍ zjednodušit, než jde do hry.** Zdroj má 242 648
+  trojúhelníků (víc než celá MOBA) a 4,3 MB; po `scripts/ops/lumi-lantern-lod.py`
+  je z něj 13 325 tris / 0,21 MB. Skript dělá **vertex clustering**
+  (kvantizace na mřížku) — quadrická dekurace na tenkých vyříznutých
+  panelech skončila na 65 % a vracela nekonzistentní indexy.
+- **Naměřeno po optimalizaci:** 35 draw calls (bylo 128), 19 323 tris
+  (bylo 259 216), 60 fps na M1 (1440×900). Na mobilu (`coarse`) se model
+  vůbec nestahuje a svítí primitivní lucerna.
+- **Past v generátoru LOD:** uvnitř `cluster_simplify` se nesmí použít
+  jméno `faces` pro lokální počet — přepíše vnější pole, které čte
+  closure, a shodí to `IndexError` s nesmyslným indexem.
+- Zdroj modelu zůstává v `heros/`; do repa jde jen herní (zjednodušená)
+  kopie. Kdo mění model, spustí skript znovu.
 - **`/models` musí být v `PUBLIC_PREFIXES`** v `middleware.ts` — jinak
   middleware vrátí 307, `GLTFLoader` dostane HTML a hra tiše pojede na
   náhradě (přesně to se stalo a audit to odhalil).

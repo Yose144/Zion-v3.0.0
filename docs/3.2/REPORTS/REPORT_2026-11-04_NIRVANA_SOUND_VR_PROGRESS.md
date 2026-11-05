@@ -417,9 +417,23 @@ ruce). Silueta se čte z dálky a jde snadno vyměnit za skutečný model.
 se podle bounding boxu, dostane teplé emissive a v ruce se houpe. `Suspense`
 má primitivní náhradu, takže hra nikdy nečeká na soubor.
 
-**Měřeno:** 128 draw calls, 259 216 trojúhelníků, **60 fps** (M1, 1440×900).
-Model sám je ~250k tris (víc než celá MOBA scéna), proto na mobilu
-(`coarse`) svítí primitivní lucerna a model se vůbec nestahuje.
+**Optimalizace modelu (2026-11-05).** Zdroj má 242 648 trojúhelníků
+a 4,3 MB — víc než celá MOBA scéna. Nový skript
+`scripts/ops/lumi-lantern-lod.py` ho zjednoduší **vertex clusteringem**
+(kvantizace na mřížku; quadrická dekurace na tenkých vyříznutých panelech
+skončila na 65 % a vracela nekonzistentní indexy) a spojí osm dílů do
+jednoho meshe.
+
+| | před | po |
+|---|---|---|
+| trojúhelníky modelu | 242 648 | **13 325** (−94,5 %) |
+| velikost souboru | 4,36 MB | **0,21 MB** (−95 %) |
+| trojúhelníky scény | 259 216 | **19 323** |
+| draw calls | 128 | **35** |
+| fps (M1, 1440×900) | 60 | 60 |
+
+Na mobilu (`coarse`) se model vůbec nestahuje a svítí primitivní lucerna.
+Zdroj zůstává v `heros/`; do repa jde jen zjednodušená herní kopie.
 
 **Opravená chyba (odhalil audit):** `/models/*` nebyl v `PUBLIC_PREFIXES`,
 takže middleware vracel **307**; `GLTFLoader` dostal HTML a hra tiše jela
