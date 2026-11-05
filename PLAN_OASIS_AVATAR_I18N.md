@@ -251,4 +251,4 @@ začíná u **nového obsahu** (nový avatar, revize textu), ne u překladů:
 | Publikované profily | `apps/website-v2.9/public/data/oasis/profiles/` |
 | Roster / kruhy | `docs/docs2.9/ZION_OASIS/AVATAR_ROSTER.md` |
 | Deploy | `apps/website-v2.9/deploy/deploy-web2.9.sh` |
-| Reporty | `docs/3.2/REPORTS/REPORT_2026-11-04_AVATARI_WEB.md`, `…_OASIS_AVATAR_I18N.md` |
+| Reporty | `docs/3.2/REPORTS/REPORT_2026-11-04_AVATARI_WEB.md`, `…_OASIS_AVATAR_I18N.md`, `REPORT_2026-11-05_OASIS_AVATAR_I18N.md` |
