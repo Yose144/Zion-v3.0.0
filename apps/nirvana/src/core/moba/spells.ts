@@ -4,7 +4,7 @@
  * **Každá postava umí kouzla, protože je má v kánonu.** Ability v
  * `V31/L4/oasis/data/avatars.json` (`Dharma Shield`, `Agni Pariksha`,
  * `Cosmic Vision`…) se přeloží na sadu Q/W/E/R podle toho, co ta schopnost
- * dělá. Nic se nevymýšlí ručně pro 200 postav — pravidla jsou tady a jsou
+ * dělá. Nic se nevymýšlí ručně pro 202 postav — pravidla jsou tady a jsou
  * deterministická: stejné id dá vždy stejnou sadu.
  *
  * Kouzla nejsou dekorace: sim je počítá (dmg, štít, heal, zpomalení, dash)

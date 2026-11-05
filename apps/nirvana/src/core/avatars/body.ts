@@ -265,7 +265,7 @@ export function buildAvatarMesh(look: AvatarLook): AvatarMeshData {
 
   // ── paže ────────────────────────────────────────────────────────────
   for (const side of [-1, 1]) {
-    // postoj: jinak stojí všech 200 postav jako vojáčci
+    // postoj: jinak stojí všech 202 postav jako vojáčci
     const raised = look.pose === 'raise' && side === 1;
     const open = look.pose === 'open';
     const guard = look.pose === 'guard';

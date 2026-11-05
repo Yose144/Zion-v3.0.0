@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
@@ -265,6 +265,46 @@ function AvatarCard({ a, cs, onOpen }: { a: OasisAvatar; cs: boolean; onOpen: ()
 function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose: () => void }) {
   const ray = RAY_META[a.ray] ?? RAY_META.Blue;
   const rarity = RARITY_META[a.rarity] ?? RARITY_META.Rare;
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Fokus nesmí utéct z dialogu (Tab/Shift+Tab cyklí uvnitř). Bez toho se
+  // klávesnicí dostaneš na obsah pod modálem, který je vizuálně zakrytý.
+  useEffect(() => {
+    const el = dialogRef.current;
+    if (!el) return;
+    const focusables = () =>
+      Array.from(
+        el.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((n) => n.offsetParent !== null || n === document.activeElement);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const items = focusables();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && (active === first || !el.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !el.contains(active))) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    el.addEventListener('keydown', onKeyDown);
+    // `autoFocus` na křížku nestačí: když prohlížeč fokus při otevření nepřesune
+    // (např. po programovém focusu na kartu), Tab by začal mimo dialog a past
+    // by se nikdy nechytla. Proto fokus do dialogu aktivně vtáhneme.
+    if (!el.contains(document.activeElement)) {
+      const first = el.querySelector<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      (first ?? el).focus();
+    }
+    return () => el.removeEventListener('keydown', onKeyDown);
+  }, []);
   const [profile, setProfile] = useState<string | null>(null);
   const [profileFailed, setProfileFailed] = useState(false);
   const [spec, setSpec] = useState<SheetSpec | null>(null);
@@ -311,9 +351,11 @@ function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose:
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={a.name}
+        tabIndex={-1}
         className="zion-rainbow-card relative flex max-h-full w-full max-w-3xl flex-col"
         style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         onClick={(e) => e.stopPropagation()}
@@ -515,10 +557,17 @@ export default function OasisAvatarsPage() {
   const [rayFilter, setRayFilter] = useState<OasisAvatarRay | 'all'>('all');
   const [rarityFilter, setRarityFilter] = useState<OasisAvatarRarity | 'all'>('all');
   const [selected, setSelected] = useState<OasisAvatar | null>(null);
+  // Kdo otevřel modal — po zavření se na něj vrátí fokus (klávesnice).
+  const lastFocusRef = useRef<HTMLElement | null>(null);
+  // Jediná cesta zavření: Escape, křížek i klik na pozadí vrací fokus na kartu.
+  const closeModal = () => {
+    setSelected(null);
+    lastFocusRef.current?.focus?.();
+  };
 
   useEffect(() => {
     if (!selected) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelected(null); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal(); };
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -736,7 +785,10 @@ export default function OasisAvatarsPage() {
                   {note && <span className="text-xs italic text-gray-500">{note[cs ? 'cs' : 'en']}</span>}
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                  {list.map((a) => <AvatarCard key={a.id} a={a} cs={cs} onOpen={() => setSelected(a)} />)}
+                  {list.map((a) => <AvatarCard key={a.id} a={a} cs={cs} onOpen={() => {
+                    lastFocusRef.current = document.activeElement as HTMLElement | null;
+                    setSelected(a);
+                  }} />)}
                 </div>
               </motion.div>
             );
@@ -771,7 +823,7 @@ export default function OasisAvatarsPage() {
 
       </div>
 
-      {selected && <AvatarModal a={selected} cs={cs} onClose={() => setSelected(null)} />}
+      {selected && <AvatarModal a={selected} cs={cs} onClose={closeModal} />}
     </div>
   );
 }

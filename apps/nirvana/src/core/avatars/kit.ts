@@ -1,7 +1,7 @@
 /**
  * AVATAR — jak vypadá ve 3D.
  *
- * V repu nejsou žádné modely (0× glb/gltf) a 200 avatarů nejde namodelovat
+ * V repu nejsou žádné modely (0× glb/gltf) a 202 avatarů nejde namodelovat
  * ručně, takže vzhled **počítáme z dat**: id → PRNG → tělo, plášť, ornamenty,
  * aura. Paprsek a vzácnost bereme z katalogu, takže Ráma je modrý a
  * Krišna-Maitreya zlatý, jak říká roster.
@@ -24,7 +24,7 @@ export type AvatarHair = 'bald' | 'topknot' | 'long' | 'short' | 'braids' | 'hoo
 export type AvatarOutfit = 'robe' | 'tunic' | 'armor' | 'sari';
 /** Pokrývka hlavy nad vlasy (kultura / hodnost). */
 export type AvatarHeadwear = 'none' | 'turban' | 'laurel' | 'feathers' | 'mitre' | 'circlet';
-/** Postoj — jinak stojí všech 200 postav stejně jako vojáčci. */
+/** Postoj — jinak stojí všech 202 postav stejně jako vojáčci. */
 export type AvatarPose = 'neutral' | 'open' | 'guard' | 'raise';
 
 export type Ornament =

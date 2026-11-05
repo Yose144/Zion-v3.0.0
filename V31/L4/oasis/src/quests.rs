@@ -1,6 +1,6 @@
 //! Quest System — Avatar Quest Lines
 //!
-//! Each of the 201 avatars offers a quest line (typically 5 quests).
+//! Each of the 202 avatars offers a quest line (typically 5 quests).
 //! Completing a quest awards XP and progresses the Golden Egg eligibility.
 
 use crate::db::OasisDb;
