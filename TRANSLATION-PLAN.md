@@ -1,7 +1,7 @@
 # TRANSLATION PLAN — Zion Archive (CZ → EN)
 
-> **Verze:** 1.2 · **Datum:** 2026-11-05 · **Vlastník:** 👤
-> **Stav:** 78 / 189 překladatelných kapitol (**41,3 %**), zbývá **111 kapitol** (~1,01 MB zdroje)
+> **Verze:** 1.3 · **Datum:** 2026-11-05 · **Vlastník:** 👤
+> **Stav:** 86 / 189 překladatelných kapitol (**45,5 %**), zbývá **103 kapitol** (~0,92 MB zdroje)
 > **Kód:** `apps/website-v2.9` · **Plán archivu:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](docs/plans/ZION-ARCHIVE-COMPLETION.md)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md`](docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md)
 
@@ -61,8 +61,8 @@ vlastní ENindex mimo kapitoly.
 | Issobella | 11 | 0 | **11** | |
 | Nabukano | 7 | **7** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Kruh Bohyní | 17 | 0 | **17** | |
-| Mise Amenti | 8 | 0 | **8** | |
-| **CELKEM** | **189** | **78** | **111** | ~1,01 MB zdroje |
+| Mise Amenti | 8 | **8** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
+| **CELKEM** | **189** | **86** | **103** | ~0,92 MB zdroje |
 
 Stav kdykoli zjistíš:
 
@@ -86,8 +86,11 @@ Kicker i fakt „Jazyky" = `CZ + EN`, knihovní karta bez `czOnly`.
 Korpusová konvence: `<slug>_EN.md` přímo v `korpus/Nabukano/`. Audit `enCoverage: 100`, `missingEn: []`,
 fakt „Jazyky" = `CZ + EN` (odvozeno z reálných `_EN` souborů přes `korpusLangs`, bez zásahu do registru).
 
-### Mise Amenti — 8
-`01-Kanon-a-Ustava` (7k) · `02-Pribeh-a-Architektura` (11k) · `03-Zivy-Zaklad-3.3` (10k) · `04-Exekucni-Charta-3.3` (12k) · `05-Autonomie-a-Bezpecnost` (9k) · `06-Generacni-Kompas-2026-2126` (10k) · `07-Registr-Dukazu` (15k) · `08-Protokol-Zmen` (6k)
+### Mise Amenti — hotovo (8/8, 2026-11-05)
+Korpusová konvence (`korpus/MiseAmenti/<slug>_EN.md`), front matter `README` se nepřekládá (EN index už existoval).
+Audit `enCoverage: 100`, `missingEn: []`; kicker = `CZ + EN`. Statusy (`ŽIVÉ/STAVBA/HORIZONT/HYPOTÉZA/MÝTUS`,
+`NEDOLOŽENO`, `NEPLATNÝ NÁROK`) překládány doslovně jako `LIVE/BUILDING/HORIZON/HYPOTHESIS/MYTH`,
+`UNSUBSTANTIATED`, `INVALID CLAIM`; čísla (89/5/5/1 %, 23 000+ bloků, 60 s, 512 KiB, `u64::MAX`) nezměněna.
 
 ### Růže — 11
 `01-Prazdna-Nadoba` (3k) · `02-Jmeno-Bez-Titulu` (3k) · `03-Trn-Rika-Ne` (3k) · `04-Zahradnik-Zrcadel` (3k) · `05-Kupec-s-Vuni` (3k) · `06-Zahrada-Mnoha-Ruzi` (3k) · `07-Noc-bez-Svedku` (3k) · `08-Dovoleni-Odejit` (3k) · `09-Oba-Brehy` (3k) · `10-Kotva-Pribehu` (8k) · `Epilog-Zahrada-Genesis` (5k)
@@ -231,7 +234,7 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 |---|---|---:|---:|
 | **T1** | Surta Srdce ✅ | 9 | hotovo 2026-11-05 |
 | **T2** | Nabukano ✅ | 7 | hotovo 2026-11-05 |
-| **T3** | Mise Amenti | 8 | 3 |
+| **T3** | Mise Amenti ✅ | 8 | hotovo 2026-11-05 |
 | **T4** | Růže | 11 | 3 (krátké) |
 | **T5** | Issobella | 11 | 3 |
 | **T6** | Na Cestě | 2 | 1–2 (jedna 31k) |
@@ -243,7 +246,7 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 | **T12** | Kruh Bohyní | 17 | 5 |
 | **T13** | BodhiGaia | 13 | 5 (největší objem) |
 
-**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **31–41 session-dávek** na zbývajících 111
+**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **29–39 session-dávek** na zbývajících 103
 kapitol. Po každé knize: report + commit + push.
 
 **Alternativní pořadí podle priority 👤:** pokud má být první „hlavní osa“ (Ekam, Quantum
