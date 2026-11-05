@@ -466,3 +466,22 @@ Po výměně obrázků zbývaly dvě věci, které by v praxi znamenaly „nové
 Stíny jsou **vypnuté pod 720 px** — model má 236 k trojúhelníků a stínový průchod by na telefonu sežral snímky. Bloom zůstává jen na ≥900 px a bez `saveData`. Všechny nové textury (vločka, sníh, měsíc, alpha země) se uvolňují v cleanupu.
 
 **Ověřeno:** live `/vanoce/lampion` 200, 0 chyb v konzoli, screenshoty ze tří iterací v `.artifacts/render/xmas-20261104/candle-{1..4}.png` a `moon-final.png`.
+
+### Doladění — podlaha pryč a kvalitnější render (2026-11-05)
+
+👤: „máš tam chyby, podlahu úplně zruš, propadá se do ní… a udělej to líp, vyrenderuj přes GPU."
+
+**Chyba:** sníh byl položený na `floorY - 0.0005`, tedy **přesně na dně modelu** → z-fighting a dojem, že se lampion boří. Navíc k tomu byly dva „placeholdery podlahy" (světelný disk a kontaktní stín), které bez podlahy nedávaly smysl.
+
+**Řešení:** všechny tři pryč. Lampion teď visí v noční obloze mezi hvězdami a chumelenicí; hloubku drží vlastní stíny modelu a obrysové světlo.
+
+**Kvalita renderu:**
+- pixel ratio strop **1,75 → 2** (retina),
+- stínová mapa **1024 → 2048**, `shadow.radius` 4,
+- **MSAA render target se 4 vzorky** v `EffectComposer` — hrany vyřezávaných ornamentů už nejsou zubaté,
+- doplněné **zadní obrysové světlo** (0,7), aby se silhoueta neztratila ve tmavé obloze,
+- vločky **zmenšeny** (0,011 → 0,0045) a přeškálovány k modelu — dřív byly velké jako koule, protože `Math.max(1, radius*3.4)` je držel v jednotkovém měřítku,
+- měsíc menší a posunutý dál (byl to rozmazaný flek přes půl oblohy),
+- svíčka mírně přisvícena, protože bez podlahy chybí odraz.
+
+**Poznámka k „přes GPU":** canvas používá WebGL s `powerPreference: 'high-performance'`; v headless testu jede přes ANGLE/Metal. Stíny jsou pod 720 px vypnuté, takže mobil neztrácí snímky.
