@@ -175,4 +175,3 @@ Náropa byl učitelem Marpy, tedy „pra-pradědem“ Milarepova učení. V syst
 **▶ Následující:** 74. TSONGKHAPA — Mistr Cesty
 
 > *„Nepřál bych si zlato, ani slávu. Přeji si jen kopřivový plášť a jeskyni, kde můžu zpívat pravdu.“ — Milarepa*
-```

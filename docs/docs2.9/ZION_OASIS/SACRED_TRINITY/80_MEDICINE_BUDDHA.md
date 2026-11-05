@@ -152,4 +152,3 @@ Medicine Buddha: "To je diagnóza. Lék: přestaňte bojovat sami. Sdílejte. M�
 **Další:** [81_LONGCHEN_RABJAM.md](81_LONGCHEN_RABJAM.md)
 
 *S úctou k tradicím Tibetu (Bod) — OASIS zrcadlo ctí živé kořeny.*
-```

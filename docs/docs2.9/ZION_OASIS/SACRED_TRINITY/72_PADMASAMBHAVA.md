@@ -179,4 +179,3 @@ Nágárdžuna byl filosofickým základem, na němž Padmasambhava stavěl své 
 **▶ Následující:** 73. MILAREPA — Šedý Yogi
 
 > *„Nepřicházím, abych tě zachránil. Přicházím, abych ti ukázal, že jsi už svobodný.“ — Padmasambhava*
-```

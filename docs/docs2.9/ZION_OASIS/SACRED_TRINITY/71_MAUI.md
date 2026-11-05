@@ -175,4 +175,3 @@ Kāne dal Maui sílu, ale odebírá mu ji, když se polobůh chová sobecky. Jej
 **▶ Následující:** 72. PADMASAMBHAVA — Guru z Lotosu
 
 > *„Když nemůžeš být silný, buď chytrý. A když nejsi chytrý, buď statečný. A když nejsi statečný... no, tak držím palce.“ — Maui*
-```

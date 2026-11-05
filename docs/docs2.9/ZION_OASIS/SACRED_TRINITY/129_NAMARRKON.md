@@ -1,6 +1,6 @@
 # 129. NAMARRKON — Bouřlivý předek Arnhem ⚡️
 
-***Kunwinjku** region folklore ve veřejné literatuře — žádné mock dance emotes***
+***Kunwinjku*** region folklore ve veřejné literatuře — žádné mock dance emotes
 
 ---
 

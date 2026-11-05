@@ -10,7 +10,7 @@
 
 ## 🌟 ESENCE
 
-Amaterasu — **nebelský princip světla a živnosti** (*kami*) v klasických kōkišinných pověstech. V OASIS = arc **„obnova veřejného prostoru"* poté co toxic debuff („tmavý úhel") zavládne městu.
+Amaterasu — **nebelský princip světla a živnosti** (*kami*) v klasických kōkišinných pověstech. V OASIS = arc **„obnova veřejného prostoru"** poté co toxic debuff („tmavý úhel") zavládne městu.
 
 ---
 

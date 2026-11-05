@@ -153,4 +153,3 @@ Machik: "Prázdnost není chyba. Je to start. Z mé linie nejsou ti, kdo měli v
 **Další:** [78_MANJUSHRI.md](78_MANJUSHRI.md)
 
 *S úctou k tradicím Tibetu (Bod) — OASIS zrcadlo ctí živé kořeny.*
-```

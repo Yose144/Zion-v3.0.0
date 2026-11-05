@@ -152,4 +152,3 @@ Marpa: "Já šel do Indie třikrát. První dvě cesty jsem přišel o vše. Tř
 **Další:** [77_MACHIK_LABDRON.md](77_MACHIK_LABDRON.md)
 
 *S úctou k tradicím Tibetu (Bod) — OASIS zrcadlo ctí živé kořeny.*
-```

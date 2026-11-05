@@ -133,6 +133,32 @@ dd1381746 docs(oasis): druhá dávka — zkrácené CS překlady doplněny, chec
 
 ---
 
+## 6b. Kontrola obsahu publikovaných profilů (druhá vlna)
+
+Po nasazení jsem projel **všech 400 publikovaných profilů** (to, co uživatel reálně vidí v modalu)
+na markdown vady: neuzavřené code fences, liché `**`, prázdné nadpisy, odkazy na `.md`, literální
+`\n`/HTML entity, duplicitní odstavce, markery `TODO`/`TBD`.
+
+**Nalezeno a opraveno:**
+
+| soubor | vada |
+|---|---|
+| `71`–`80` (tibetský kruh, 10 kánonů) | na konci **osiřelý code fence** (` ``` ` bez otevíracího) → konec profilu se renderoval jako kód; odstraněno |
+| `42_SRI_DATTATREYA.md` | požehnání mělo lichý `**` (4 řádky jako samostatné boldy + uzavírací uvozovka) → jeden bold span |
+| `92_AMATERASU.md` | `**„obnova veřejného prostoru"*` — neuzavřený bold (jedna hvězdička) |
+| `129_NAMARRKON.md` + `i18n/129.en.md` | `***Kunwinjku** …***` — rozbité bold+italic |
+| `i18n/43.en.md` | `…is eternal."*` — překlep, chyběla hvězdička |
+
+Po opravě: **0 nálezů na 400 souborech** (kontrola respektuje odstavce, takže víceryádkový bold
+v blockquote — což je legitimní — nehlásí). Markery `TODO`/`TBD` v obsahu jsou **záměrné**
+(lore „balance TBD", komentář v pseudo-kódu) a nechaly se být.
+
+Ověřeno živě: 400/400 souborů SHA-256 shoda s lokálem, v modalu je vidět konec profilů
+(`Maui` → „72. PADMASAMBHAVA", `Padmasambhava` → „73. MILAREPA"), požehnání Dattatreyi
+i opravený bold u Amaterasu; 0 pageerror.
+
+---
+
 ## 7. Meze a co zůstává
 
 - **Kánon 42/43 vs. lore.** Roster (a tedy stránka) říká 42 = Dattatreya, 43 = Maly Princ;

@@ -152,4 +152,3 @@ Samantabhadra: "Ano. A právě v tom je krása. Nekonečnost není trest. Je to 
 **Další:** [80_MEDICINE_BUDDHA.md](80_MEDICINE_BUDDHA.md)
 
 *S úctou k tradicím Tibetu (Bod) — OASIS zrcadlo ctí živé kořeny.*
-```

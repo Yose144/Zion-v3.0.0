@@ -150,4 +150,3 @@ Mañjuśrí: "Pravda není v tom, kdo má pravdu. Je v tom, proč ji chceš mít
 **Další:** [79_SAMANTABHADRA.md](79_SAMANTABHADRA.md)
 
 *S úctou k tradicím Tibetu (Bod) — OASIS zrcadlo ctí živé kořeny.*
-```
