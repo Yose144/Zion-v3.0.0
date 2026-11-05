@@ -8,6 +8,7 @@ import { useI18n } from '@/core/i18n';
 import { AVATARS, RAY_COLOR, RARITY_COLOR, type AvatarRay } from '@/core/avatars/catalog';
 import { avatarLook, type BodyType } from '@/core/avatars/kit';
 import { AvatarModel } from '@/core/avatars/AvatarModel';
+import { canvasDpr } from '@/core/design/dpr';
 
 /**
  * VÝBĚR AVATARA — všech 200 z OASIS rosteru.
@@ -192,7 +193,7 @@ export default function AvatarsPage() {
         <section className="avatars-preview-pane">
           <div className="avatars-stage">
             <Canvas
-              dpr={[1, 1.5]}
+              dpr={canvasDpr(1.5)}
               camera={{ position: [0, 1.15, 3.5], fov: 36, near: 0.1, far: 50 }}
               gl={{ antialias: true, alpha: true }}
               // kamera musí mířit na hrudník, ne na počátek — jinak je hlava z záběru

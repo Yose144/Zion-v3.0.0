@@ -27,6 +27,7 @@ import {
   terrainAt,
   type TanksState,
 } from './tanks';
+import { canvasDpr } from '@/core/design/dpr';
 
 /**
  * Hřiště je 2D (1000 × 0), takže se profil vytáhne do strany. Deska je
@@ -276,7 +277,7 @@ export function TanksScene({
     <Canvas
       className="tanks-3d"
       camera={{ position: [WORLD_W / 2, 780, 980], fov: 46, far: 6000 }}
-      dpr={[1, 1.75]}
+      dpr={canvasDpr(1.75)}
       shadows
     >
       {xrStore ? (

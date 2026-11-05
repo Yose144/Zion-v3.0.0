@@ -18,6 +18,7 @@ import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { proceduralTexture } from '@/core/scene/universe/proceduralTexture';
 import type { OuterWorld } from './worlds';
+import { canvasDpr } from '@/core/design/dpr';
 
 function useTexture(path: string | null, id: string, tint: string): THREE.Texture | null {
   const [loaded, setLoaded] = useState<THREE.Texture | null>(null);
@@ -91,7 +92,7 @@ export function OuterWorldScene({ world }: { world: OuterWorld }) {
   return (
     <Canvas
       camera={{ position: [0, 1.1, 9.6], fov: 42 }}
-      dpr={[1, 1.75]}
+      dpr={canvasDpr(1.75)}
       gl={{ antialias: true }}
     >
       <color attach="background" args={['#03040c']} />

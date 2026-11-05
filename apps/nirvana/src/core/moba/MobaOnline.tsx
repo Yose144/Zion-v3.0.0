@@ -26,6 +26,7 @@ import { MobaFxOverlay, pushEmote, type DamageFloater } from './MobaFxOverlay';
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import type { MobaSnapshot } from './sim';
+import { canvasDpr } from '@/core/design/dpr';
 
 /**
  * Rychlost predikce. Serverovej sim jede 6,2 m/s (viz `sim.ts`); když se
@@ -140,7 +141,7 @@ export function MobaOnline({
     <>
       <MobaFxOverlay floaters={floaters} cameraRef={cameraRef} />
       <Canvas
-        dpr={[1, 1.8]}
+        dpr={canvasDpr(1.8)}
         shadows={false}
         camera={{ position: [0, 20, 17], fov: 42, near: 0.5, far: 220 }}
         gl={{ antialias: true }}

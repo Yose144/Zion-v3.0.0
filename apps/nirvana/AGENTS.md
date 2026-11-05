@@ -2213,6 +2213,34 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Co VR ještě neumí:** letět směrem pohledu (dnes joystick) a není ověřené na
   headsetu. Audit kontroluje jen to, že klik na `VR` bez WebXR scénu nerozbije.
 
+## Mobil a výkon napříč Nirvanou (2026-11-05)
+
+- **Měř dřív, než optimalizuješ.** Dva prose: `responsive.mjs` (10 rout × 4 viewporty,
+  počítá přesah a prvky mimo viewport) a `draw-calls.mjs` (obalí WebGL draw funkce,
+  takže draw calls sedí i na swiftshaderu; fps je jen orientační). Třetí je
+  `lumi-mobile-perf.mjs` pro Lumi ve dvou velikostech.
+- **`canvasDpr()` (`core/design/dpr.ts`) je jediný strop pixel ratia.** Drží se
+  `[1, max]` na monitoru a `[1, 1.25]` na dotyku/úzkém okně. Kdo píše nové plátno,
+  použije `dpr={canvasDpr(1.75)}`, ne vlastní číslo — jinak se seznam za chvíli
+  rozjede a půlka her zůstane na 1,75.
+- **Nesahat na `quality()`** ve `SceneRoot`/`ProjectPresentation`: tam se rozhoduje
+  i o post-processingu a tierech A/B/C pro sdílené scény. `canvasDpr` je jen pro
+  herní plátna, která tiery nemají.
+- **Lišta her na mobilu potřebuje vlastní řádek.** `.game-hud-stats` má
+  `flex: 0 0 auto` + `margin-left: auto`, takže si drží obsahovou šířku — na 390 px
+  přetékala o 31 px doleva (žetony i tlačítko zvuku mimo obraz). Řeší
+  `@media (max-width: 760px) { .game-hud-stats { flex: 1 1 100%; min-width: 0 } }`.
+  **Past:** `left: 50%` + `translateX(-50%)` se nesmí míchat s `right` — jedno
+  z nich musí na malých šířkách zmizet, jinak box „visí" mimo.
+- **Dotykové cíle ≥ 40 px** (`WCAG 2.5.8`) platí i pro doplňky: holo tlačítka
+  v konzoli (26×22) a posuvník citlivosti v Marsu (16 px) se zvětšují jen na
+  `(hover: none) and (pointer: coarse)`, myš má pořád kompaktní vzhled.
+- **Známý zbytek:** na tabletu 768 px je label skříně v pouti 4 px mimo viewport
+  (pozice jde z 3D projekce `<Html>`, ne z CSS). Obsah není ztracený — nechte být,
+  dokud se `<Html>` nepřepne na vlastní clamping.
+- **Stav měření:** 390×844 bez přesahu na všech 10 površích, `mobile-audit` PASSED
+  (všechny hry mají dotykové ovládání a kouzlo v MOBĚ opravdu ubere manu).
+
 ## Flotila z marketu — `/fleet` (2026-11-05)
 
 - **Lodě jsou produkty z marketu, ne nové assety.** Zdroj jsou STL skládačky

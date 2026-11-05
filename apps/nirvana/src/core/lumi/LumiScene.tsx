@@ -33,6 +33,7 @@ import {
 import { LUMI_HEIGHT, LUMI_WIDTH, type LumiLight, type LumiPath } from './world';
 import { createTrail, pruneTrail, pushTrail, trailFade, TRAIL_LEN, type TrailPoint } from './trail';
 import { play, playTone } from '@/core/audio/engine';
+import { canvasDpr } from '@/core/design/dpr';
 
 /** Jeden vzdálený letec (relay ze serveru). */export interface LumiRemote {
   id: string;
@@ -973,7 +974,7 @@ export function LumiCanvas(props: {
 }) {
   const { xrStore, ...scene } = props;
   return (
-    <Canvas dpr={[1, 1.75]} camera={{ position: [22, 22, 58], fov: 44, near: 0.5, far: 400 }}>
+    <Canvas dpr={canvasDpr(1.75)} camera={{ position: [22, 22, 58], fov: 44, near: 0.5, far: 400 }}>
       {xrStore ? (
         <XR store={xrStore}>
           <LumiScene {...scene} />

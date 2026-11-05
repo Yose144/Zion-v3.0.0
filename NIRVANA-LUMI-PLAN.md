@@ -310,7 +310,20 @@ snapshot.lumi = {
   skrývanou vrstvu (a má 40 px cíl). Skrytý je i dotykový pad — na snímku nemá co dělat.
 - **Přístupnost (L-9):** `prefers-reduced-motion` vypne pohyb pozadí (mraky, jiskry proudů)
   a blikání lucerny; **letět se musí dát dál**. Čte se jednou při mountu.
-- Měřeno na 1440×900 (M1, ANGLE): ~44 draw calls, ~20,5 tis. trojúhelníků, 2 textury.
+- **Měřeno (2026-11-05, headless swiftshader):** 390×844 → **31 draw calls, 59 fps**,
+  19 795 tris, 2 textury; 1440×900 → 36 calls. Na mobilu se nekreslí stopa ani model lucerny.
+- **`canvasDpr()`** (`core/design/dpr.ts`) stropuje pixel ratio na dotyku/úzkém okně na
+  **1,25** — u 11 pláten (Lumi, MOBA, pouť, Mars, Venuše, Merkur, Saturn, vnější planety,
+  avatary) to je nejlevnější výkonnostní zisk, protože jde o vyplňování pixelů, ne o kód.
+
+**Napříč Nirvanou (stejná dávka, 2026-11-05):** audit 10 povrchů × 4 viewporty
+(`.artifacts/probe/responsive.mjs`) našel jediný skutečný přesah — lištu her na 390 px
+(`.game-hud-stats` o 31 px mimo obraz); opraveno vlastním řádkem v `@media (max-width:
+760px)`. Dotykové cíle se zvedly u holo tlačítek a posuvníku citlivosti. Draw calls
+měřené po površích (`draw-calls.mjs`, 390×844): `/lumi` 31, `/mars` 30, `/mercury` 27,
+`/saturn` 20, `/park` 46, `/hiran` 139, `/` 141. Poslední dvě jsou sdílené scény
+s tiery kvality — další Optimalizace by znamenala instancovat brány/lotosy, což je
+samostatná dávka, ne „mobilní úklid"; `mobile-audit` je PASSED.
 
 ---
 
@@ -425,7 +438,7 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
 | **L-9** | Přístupnost: `prefers-reduced-motion` vypne vítr a částice | s preferencí se nehýbe pozadí, hra zůstane hratelná | nízké | ✅ 2026-11-05 |
 | **L-10** | Lokalizace do třetího jazyka (EN je hotové; CS je výchozí) | všechny texty z `world.ts` mají klíč, žádný hardcoded string v `page.tsx` | nízké | ⬜ |
 | **L-11** | Odměna za darování v kooperaci (společná svatyně = +body všem) | dva hráči doletí → oba dostanou bonus, ne jen ten, kdo doletěl první | střední | ⬜ |
-| **L-12** | Výkon: instancované částice na mobilu | 390×844 ≥ 30 fps (měřeno `.artifacts/probe/lumi-perf.mjs` — rAF 2 s + `__lumiDebug()`), draw calls < 60 | střední | ⬜ |
+| **L-12** | Výkon: instancované částice na mobilu | 390×844 ≥ 30 fps (měřeno `.artifacts/probe/lumi-perf.mjs` — rAF 2 s + `__lumiDebug()`), draw calls < 60 | střední | ✅ 2026-11-05 |
 
 **Implementační poznámky k backlogu** (kde přesně sáhnout — ověřeno v kódu, ne odhad):
 
@@ -468,8 +481,11 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
 - **L-6 (předání lucerny):** mění `fly` zprávu → **další bump protokolu** (31 už zabrala
   flotila, takže 32) a znovu platí „net první, pak appka". Server musí ověřit, že dárce
   to světlo opravdu má (jinak jde darovat cizí).
-- **L-12 (výkon):** `?fps=1` v appce **neexistuje**; měří se probem `lumi-perf.mjs`
-  (počítá rAF po dobu 2 s a čte `__lumiDebug()`). Akceptace musí používat tenhle nástroj.
+- **L-12 (výkon) — ✅ hotovo, měřeno.** `?fps=1` v appce **neexistuje**; měří se
+  `lumi-mobile-perf.mjs` (dvě velikosti, rAF 2 s + `__lumiDebug().renderer`).
+  Naměřeno 390×844: **31 draw calls, 59 fps**, 19 795 tris, 2 textury; desktop 1440×900:
+  36 calls. Akceptace (< 60 calls, ≥ 30 fps) je splněná. Stopa se na mobilu nekreslí
+  (`detail=false`) a pixel ratio je stropované přes `canvasDpr()` (viz §7).
 
 **Co záměrně nedělat:** nepřidávat nepřátele ani časový limit. Lumi je místo, kde se nemá
 co pokazit; jakákoli „výzva" by rozbila její smysl.

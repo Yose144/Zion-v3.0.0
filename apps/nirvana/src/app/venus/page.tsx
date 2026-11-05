@@ -17,6 +17,7 @@ import { unlock } from '@/core/audio/engine';
 import { XR } from '@react-three/xr';
 import { useXr } from '@/core/xr';
 import { VrButton } from '@/core/xr/VrButton';
+import { canvasDpr } from '@/core/design/dpr';
 
 /** VENUŠE — tři kola proti třem soupeřům. Čas, pořadí, osobní rekord a tabule. */
 
@@ -103,7 +104,7 @@ export default function VenusPage() {
     <main className="arena race">
       <div className="arena-stage">
         <Canvas
-          dpr={[1, 1.5]}
+          dpr={canvasDpr(1.5)}
           camera={{ position: [0, 8, 20], fov: 68, near: 0.1, far: 600 }}
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
         >

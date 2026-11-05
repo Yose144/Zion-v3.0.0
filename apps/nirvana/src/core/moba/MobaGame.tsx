@@ -25,6 +25,7 @@ import type { AspectId, SpellSchool, SpellSlot } from './spells';
 import { spellCooldown, spellMana, spellRank } from './spells';
 import { MobaFxOverlay, type DamageFloater } from './MobaFxOverlay';
 import { SPELL_BY_KEY } from './keys';
+import { canvasDpr } from '@/core/design/dpr';
 
 const STEP = 1 / 30;
 
@@ -176,7 +177,7 @@ export function MobaGame({
     <>
     <MobaFxOverlay floaters={floaters} cameraRef={cameraRef} />
     <Canvas
-      dpr={[1, 1.8]}
+      dpr={canvasDpr(1.8)}
       shadows={false}
       camera={{ position: [0, 20, 17], fov: 42, near: 0.5, far: 220 }}
       gl={{ antialias: true }}

@@ -8893,3 +8893,50 @@ a.game-hud-chip.is-lumi em {
     align-items: center;
   }
 }
+
+/* ── RESPONZIVITA: nálezy z měření (2026-11-05) ─────────────────────── */
+
+/*
+ * 1) Lišta her na 390 px přetékala doleva.
+ *
+ * `.game-hud-stats` má `flex: 0 0 auto` + `margin-left: auto`, takže si drží
+ * obsahovou šířku (383 px) i ve chvíli, kdy je řádek jen ~296 px široký.
+ * Na mobilu proto dostane **vlastní řádek** a smí se zmenšit — jinak žetony
+ * (a s nimi tlačítko zvuku) vyčnívaly mimo obrazovku o 31 px.
+ */
+@media (max-width: 760px) {
+  .game-hud-stats {
+    flex: 1 1 100%;
+    min-width: 0;
+    margin-left: 0;
+    justify-content: center;
+  }
+}
+
+/*
+ * 2) Dotykové cíle v holo konzoli měly 26×22 px.
+ * Minimum je 40 px (WCAG 2.5.8); zvětšuje se jen na dotyku, myš má pořád
+ * kompaktní vzhled, protože na desktopu jde o doplněk, ne o hlavní ovládání.
+ */
+@media (hover: none) and (pointer: coarse) {
+  .holo-btn {
+    min-height: 2.5rem;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.72rem;
+  }
+}
+
+/*
+ * 3) Posuvník citlivosti pohledu (Mars) byl 16 px vysoký — na dotyku se
+ * špatně trefuje. Zvedá se jen samotný pásek a palec, popisek zůstává.
+ */
+@media (hover: none) and (pointer: coarse) {
+  .arena-slider input[type='range'] {
+    height: 2.5rem;
+  }
+
+  .arena-slider input[type='range']::-webkit-slider-thumb {
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+}

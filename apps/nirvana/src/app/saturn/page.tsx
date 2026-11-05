@@ -17,6 +17,7 @@ import { TanksGame } from '@/core/saturn/TanksGame';
 import { MISSION_ORIGIN, MISSION_STATUS_COLOR, type MissionStatus } from '@/lib/freeworld-sites';
 import { GameBoard } from '@/core/games/GameBoard';
 import { watchRoom } from '@/core/net/watch';
+import { canvasDpr } from '@/core/design/dpr';
 
 const STATUS_LABEL: Record<MissionStatus, { cs: string; en: string }> = {
   built: { cs: 'stojí', en: 'built' },
@@ -44,7 +45,7 @@ export default function SaturnPage() {
       <div className="stage">
         <Canvas
           camera={{ position: SATURN_CAMERA.position, fov: SATURN_CAMERA.fov }}
-          dpr={[1, 1.75]}
+          dpr={canvasDpr(1.75)}
         >
           <SaturnArchive chapters={SATURN_CHAPTERS} selected={selected} onSelect={setSelected} />
         </Canvas>

@@ -24,6 +24,7 @@ import { describeRun, recordRun as recordGameRun } from '@/core/progress/run';
 import { emptyScores, type ParkScores } from '@/core/park/scores';
 import { GALLERY_SECONDS } from '@/core/scene/park/ShootingGallery';
 import { TouchButton } from '@/core/games/TouchPad';
+import { canvasDpr } from '@/core/design/dpr';
 
 /**
  * Jupiter Station — pouť.
@@ -406,7 +407,7 @@ export default function ParkPage() {
     <main className="park">
       <div className="park-stage">
         <Canvas
-          dpr={[1, 1.6]}
+          dpr={canvasDpr(1.6)}
           shadows
           camera={{ ...PARK_CAMERA }}
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}

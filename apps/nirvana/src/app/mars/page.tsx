@@ -14,6 +14,7 @@ import { describeRun, nickname as pickNickname, recordRun } from '@/core/progres
 import { watchRoom } from '@/core/net/watch';
 import { SpectatorBar } from '@/core/net/SpectatorBar';
 import { GameBoard } from '@/core/games/GameBoard';
+import { canvasDpr } from '@/core/design/dpr';
 
 /**
  * MARS ARENA — Quake-style deathmatch v prohlížeči.
@@ -118,7 +119,7 @@ export default function MarsPage() {
     <main className="arena">
       <div className="arena-stage">
         <Canvas
-          dpr={[1, 1.5]}
+          dpr={canvasDpr(1.5)}
           camera={{ position: [0, 1.7, 15], fov: 88, near: 0.05, far: 400 }}
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
         >

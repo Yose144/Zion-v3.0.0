@@ -16,6 +16,7 @@ import { useNet } from '@/core/net/useNet';
 import { useXr } from '@/core/xr';
 import { VrButton } from '@/core/xr/VrButton';
 import { XR } from '@react-three/xr';
+import { canvasDpr } from '@/core/design/dpr';
 
 /**
  * MERKUR — souboj bok po boku. Sólo cvičení proti botovi i online duel
@@ -184,7 +185,7 @@ export default function MercuryPage() {
     <main className="arena is-mercury">
       <div className="arena-stage">
         <Canvas
-          dpr={[1, 1.5]}
+          dpr={canvasDpr(1.5)}
           camera={{ position: [0, 2, 12], fov: 50, near: 0.05, far: 200 }}
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
         >
