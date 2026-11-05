@@ -1,7 +1,7 @@
 # TRANSLATION PLAN — Zion Archive (CZ → EN)
 
-> **Verze:** 1.9 · **Datum:** 2026-11-05 · **Vlastník:** 👤
-> **Stav:** 133 / 189 překladatelných kapitol (**70,4 %**), zbývá **56 kapitol** (~0,62 MB zdroje)
+> **Verze:** 2.0 · **Datum:** 2026-11-05 · **Vlastník:** 👤
+> **Stav:** 146 / 189 překladatelných kapitol (**77,2 %**), zbývá **43 kapitol** (~0,49 MB zdroje)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md`](docs/3.2/REPORTS/REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md)
 > **Kód:** `apps/website-v2.9` · **Plán archivu:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](docs/plans/ZION-ARCHIVE-COMPLETION.md)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md`](docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md)
@@ -54,7 +54,7 @@ vlastní ENindex mimo kapitoly.
 | Ekam Deeksha | 10 | **10** | 0 | **dokončeno 2026-11-05** — 401B stuby nahrazeny (CZ + EN) |
 | Quantum Revolution | 1 (single-doc) | **1** | 0 | **dokončeno 2026-11-05** — 396B stub nahrazen (CZ + EN) |
 | Lumi | 13 | 0 | **13** | |
-| Miriam | 13 | 0 | **13** | |
+| Miriam | 13 | **13** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | BodhiGaia | 13 | 0 | **13** | největší objem (180 kB) |
 | MariaCaminho | 12 | **12** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Růže | 11 | **11** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
@@ -63,7 +63,7 @@ vlastní ENindex mimo kapitoly.
 | Nabukano | 7 | **7** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Kruh Bohyní | 17 | 0 | **17** | |
 | Mise Amenti | 8 | **8** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
-| **CELKEM** | **189** | **133** | **56** | ~0,62 MB zdroje |
+| **CELKEM** | **189** | **146** | **43** | ~0,49 MB zdroje |
 
 Stav kdykoli zjistíš:
 
@@ -136,8 +136,13 @@ reader spadl na jednu kapitolu; stejně `singleDocInfo()` v `/api/archive/audit`
 Emoji, tabulky (CL1–CL9, roadmapa 2026–2040+), čísla (144 000, 1B ZION, 108 indicií, 144B/1,44B, `$50M`, 885 řádků)
 a tabulka 11 jazykových edic zůstávají doslova.
 
-### Miriam — 13
-`01-Zena-z-Veze` (8k) · `02-Alabastrova-Nadobka` (6k) · `03-Zahradnik` (8k) · `04-Chybejici-Stranky` (8k) · `05-Tri-Zeny-v-Jedne` (7k) · `06-Lod-bez-Plachet` (7k) · `07-Mozoly-misto-Koruny` (8k) · `08-Kalich` (9k) · `09-Zena-Odena-Sluncem` (7k) · `10-Svatba-na-Konci-Knihy` (8k) · `11-Mesto-jako-Nevesta` (8k) · `12-Reka-a-Dite-s-Lucernou` (8k) · `13-Kotva-Pravdy-a-Hranice` (11k)
+### Miriam — hotovo (13/13, 2026-11-05)
+Korpusová konvence (`korpus/Miriam/<slug>_EN.md`). Audit `enCoverage: 100`, `missingEn: []`, kicker `CZ + EN`,
+karta bez `czOnly`. **Tři vrstvy knihy** (`Kámen / Hlína / Sen`) překládány jako **Stone / Clay / Dream** a nikdy
+nezaměňovány; statusy `LIVE / UNSUBSTANTIATED / INVALID CLAIM / HYPOTHESIS`. Neměnit: 591 (Řehoř, homilie 33),
+1969 + 2016 (dekrety), 1180 / ~1260 (Chrétien, Zlatá legenda), 1896/1955 (BG 8502), `P.Oxy. 3525`, `P.Ryl. 463`,
+NHC II, 144 000 / 144 loktů, 12 000 honů, 1260 dní, 9 000 denárů, 1956 / 1993 (Plantard).
+**Pozor:** tabulky v CZ mají někde zdvojené `||` (prázdný první sloupec) — v EN normalizováno na `|`.
 
 ### Lumi — 13
 `01-Dite-na-Pridi` (8k) · `02-Dum-Jmen` (8k) · `03-Mosty-a-Trziste-u-Mostu` (8k) · `04-Zlate-Luno-a-Hlas-Bez-Klice` (8k) · `05-Brana-a-Dve-Knezky` (9k) · `06-Semeno-pod-Domem` (10k) · `07-Pet-Zahrad-Jedne-Zeme` (10k) · `08-Jmeno-Ktere-Uz-Mela` (8k) · `09-Strom-nad-Zemi` (9k) · `10-Kvantovy-Ohen-a-Hlidac` (10k) · `11-Sto-Let-Lucerny` (12k) · `12-Brana-Zustava-Otevrena` (10k) · `13-Kotva-Pravdy-a-Hranice` (16k)
@@ -266,12 +271,12 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 | **T7** | MariaCaminho ✅ | 12 | hotovo 2026-11-05 |
 | **T8** | Ekam Deeksha ✅ | 10 | hotovo 2026-11-05 |
 | **T9** | Quantum Revolution ✅ | 1 | hotovo 2026-11-05 |
-| **T10** | Miriam | 13 | 4 |
+| **T10** | Miriam ✅ | 13 | hotovo 2026-11-05 |
 | **T11** | Lumi | 13 | 4 |
 | **T12** | Kruh Bohyní | 17 | 5 |
 | **T13** | BodhiGaia | 13 | 5 (největší objem) |
 
-**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **16–25 session-dávek** na zbývajících 56
+**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **12–19 session-dávek** na zbývajících 43
 kapitol. Po každé knize: report + commit + push.
 
 **Alternativní pořadí podle priority 👤:** pokud má být první „hlavní osa“ (Ekam, Quantum
