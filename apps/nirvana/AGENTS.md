@@ -2096,3 +2096,25 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Test: `test/lumi-journal.mjs` (28 kontrol, včetně zámku a odemčení)
   a `lumi-audit` (36 kontrol: zamčená karta s 🔒, po seedu deníku
   odemčená a volatelná).
+
+## Lumi — společné létání (2026-11-05, protokol 30)
+
+- **Lumi je relay hra, ne autoritativní simulace.** Nemá zásahy, skóre ani
+  soupeře, takže není co podvádět: klient počítá svůj let sám (stejný
+  `stepFlight`) a server ho jen předává. Serverová fyzika by platila
+  latenci a složitost za ochranu, kterou hra nepotřebuje.
+- **Server drží jen sdílená světla a stav letců.** Sebrané světlo je
+  společná pravda místnosti — kdo se přidá později, dostane je ve
+  snapshotu (jinak by hledal světla, která na obrazovce nejsou).
+- **Whitelist her v `join` je past:** `lumi` v něm chybělo, takže join
+  tiše propadl do `arena` (místnost `arena-1`). Nová hra = nový záznam
+  v tom whitelistu (stejná chyba jako u tanků).
+- **`sendFly` nesmí zahodit sebrané světlo.** Běžný stav se throttluje na
+  20 Hz, ale zpráva s `collect` jde vždy — jinak by se světlo ztratilo.
+- **Ostatní letci se kreslí bez modelu lucerny** (jen svítící koule):
+  model má 13k trojúhelníků a čtyři kopie by scénu zabily.
+- **E2E se dvěma prohlížeči:** prohlížeč uspí `requestAnimationFrame` na
+  kartě v pozadí, takže hra na ní stojí. Před akcí je nutné
+  `page.bringToFront()` — jinak teleport proběhne, ale sim ho nezaznamená
+  (přesně to mě mate při prvním běhu).
+- Mistnost je pro 4 (`LUMI_ROOM_SIZE`); víc by z oblohy udělalo trh.
