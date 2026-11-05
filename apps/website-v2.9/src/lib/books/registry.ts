@@ -182,7 +182,7 @@ export const EKAM_BOOK: BookDef = {
   accent: '168, 85, 247',
   icon: Sparkles,
   partIcons: [Compass, BookOpen, Sun, ListChecks],
-  kicker: { cs: 'Kniha třetí · kompletní · CZ', en: 'Book Three · complete · CZ' },
+  kicker: { cs: 'Kniha třetí · kompletní · CZ + EN', en: 'Book Three · complete · CZ + EN' },
   title: { cs: 'EKAM DEEKSHA', en: 'EKAM DEEKSHA' },
   subtitle: {
     cs: 'Algoritmus jednoty — filozofie, kosmologie a praxe Zlatého věku. Éra, která požehnala síť svým jménem.',
