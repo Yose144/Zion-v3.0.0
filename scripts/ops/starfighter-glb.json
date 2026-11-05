@@ -1,0 +1,90 @@
+{
+  "note": "Marketplace STL skládačky → herní GLB. Generuje scripts/ops/starfighter-glb.py, needitovat ručně.",
+  "source": "apps/MarketPlace/public/shop/models",
+  "ships": [
+    {
+      "id": "awing",
+      "name": "A-Wing",
+      "file": "/models/fleet/awing.glb",
+      "triangles": 11162,
+      "vertices": 8959,
+      "panels": 1273,
+      "width": 0.5559,
+      "height": 0.2924,
+      "length": 1.0,
+      "bytes": 457564
+    },
+    {
+      "id": "bwing",
+      "name": "B-Wing",
+      "file": "/models/fleet/bwing.glb",
+      "triangles": 21750,
+      "vertices": 22937,
+      "panels": 4429,
+      "width": 0.4838,
+      "height": 0.7441,
+      "length": 1.0,
+      "bytes": 1087832
+    },
+    {
+      "id": "ikaruga",
+      "name": "Ikaruga",
+      "file": "/models/fleet/ikaruga.glb",
+      "triangles": 22320,
+      "vertices": 18568,
+      "panels": 2755,
+      "width": 0.7823,
+      "height": 0.325,
+      "length": 1.0,
+      "bytes": 937388
+    },
+    {
+      "id": "snowspeeder",
+      "name": "Snowspeeder",
+      "file": "/models/fleet/snowspeeder.glb",
+      "triangles": 11847,
+      "vertices": 10808,
+      "panels": 1627,
+      "width": 0.7813,
+      "height": 0.3029,
+      "length": 1.0,
+      "bytes": 532360
+    },
+    {
+      "id": "tiefighter",
+      "name": "TIE Fighter",
+      "file": "/models/fleet/tiefighter.glb",
+      "triangles": 10224,
+      "vertices": 9644,
+      "panels": 1637,
+      "width": 1.4395,
+      "height": 1.3333,
+      "length": 1.0,
+      "bytes": 470976
+    },
+    {
+      "id": "tieinterceptor",
+      "name": "TIE Interceptor",
+      "file": "/models/fleet/tieinterceptor.glb",
+      "triangles": 11628,
+      "vertices": 8820,
+      "panels": 1175,
+      "width": 0.8179,
+      "height": 0.7089,
+      "length": 1.0,
+      "bytes": 458168
+    },
+    {
+      "id": "xwing",
+      "name": "X-Wing",
+      "file": "/models/fleet/xwing.glb",
+      "triangles": 24332,
+      "vertices": 18501,
+      "panels": 2463,
+      "width": 0.9008,
+      "height": 0.3612,
+      "length": 1.0,
+      "bytes": 959120
+    }
+  ]
+}

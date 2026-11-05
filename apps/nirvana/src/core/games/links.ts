@@ -19,6 +19,14 @@ export interface GameLink {
 
 export const GAME_LINKS: GameLink[] = [
   {
+    id: 'fleet',
+    href: '/fleet',
+    title: { cs: 'Flotila', en: 'Fleet' },
+    note: { cs: 'volný let · Nabukano a Issobella', en: 'free flight · Nabukano & Issobella' },
+    glyph: '🚀',
+    tone: '#7ec8ff',
+  },
+  {
     id: 'earth',
     href: '/earth',
     title: { cs: 'První svět', en: 'First World' },

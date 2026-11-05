@@ -2136,3 +2136,44 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   `GameHud` = žeton `🏮 X/7` z deníku (klikacím na `/lumi`), aby byl postup vidět i mimo let.
 - **Planeta:** panel Uranu má druhé CTA „Letět s Lumi" (`href2: '/lumi'`), text mluví
   o Lumi, ne o Křídlech; `/uranus` na Lumi odkazuje.
+
+## Flotila z marketu — `/fleet` (2026-11-05)
+
+- **Lodě jsou produkty z marketu, ne nové assety.** Zdroj jsou STL skládačky
+  (`apps/MarketPlace/public/shop/models/*.stl`), konvertor
+  `scripts/ops/starfighter-glb.py` z nich dělá herní GLB do
+  `apps/nirvana/public/models/fleet/`. Kdo mění model, spustí konvertor **a**
+  `scripts/ops/fleet-render/render.mjs` — orientace se v datech zkontrolovat nedá.
+- **Tabulka `SHIPS` v konvertoru je ruční.** Heuristika „nejdelší osa = nos"
+  na skládačce nefunguje (B-Wing má nejdelší osu křídlo, TIE panely). Špatné
+  znaménko znamená, že loď letí pozadu.
+- **Panelový lak je ve vrcholových barvách, ne v textuře.** Skládačka je *už*
+  rozdělená na 1 200–4 400 destiček, takže plátování vznikne zdarma. Cena:
+  konverze musí převést paletu ze sRGB do **lineárního** prostoru (glTF
+  `COLOR_0`) a srovnat normály od středu trupu ven — otevřené plochy mají
+  polovinu normál dovnitř a ve hře se to projeví jako černé fleky.
+- **`trimesh.export` nezapíše `NORMAL` ani `COLOR_0`.** Model se načte, ale je
+  černý a bez odlesků. Proto má konvertor vlastní `write_glb`. Když se GLB
+  „tváří v pořádku" a přesto nesvítí, první kontrola je JSON chunk.
+- **GLB musí ležet pod `/models`** — jen ten prefix je v `middleware.ts`
+  veřejný. Pod `/fleet/` by request dostal 307 na ZAP bránu a `GLTFLoader`
+  by načetl HTML (stejná past jako u Lumi lucerny).
+- **Materiál potřebuje `scene.environment`.** `metalness > 0` odráží jen
+  prostředí; bez `RoomEnvironment` je loď černá i při silných světlech.
+- **Doky jsou funkce času** (`core/fleet/docks.ts`): Nabukano 3 kotviště ×
+  `NABUKANO_SCALE=4` otočená `fleetHeading(t)`, Issobella z `Euler(0.32,
+  ringSpinAngle(t), −0,14)` — **stejná** rotace jako `IssobellaRing`. Zakotvená
+  loď kopíruje pozici doku; kdyby si držela vlastní souřadnice, ujede z něj.
+- **Dokovací paprsek není kosmetika.** Volnoběh táhne dopředu 0,35 × maximum,
+  takže bez přitažení a zbrzdění v okruhu `DOCK_RADIUS` se přistání nedá
+  dokončit. Odhalil to `test/fleet-flight.mjs`, ne hra.
+- **Brzda je 2,2× silnější než plyn** (`BRAKE_FACTOR`) — je to nástroj, kterým
+  se doletí na dok. Kdyby brzdila stejně, hráč vždy přeletí.
+- **Kamera při zakotvení jde zespodu** (`+2,6; −2,0; +2,6`). Za lodí by stála
+  uvnitř dokovacího rámu a hráč by místo stroje viděl tmavou desku.
+- **Startovní pozice je součást designu:** `(-6, 7, 24)` míří tak, aby v záběru
+  byly **planeta i Nabukano**. Start u trupu vypadal jako temná stěna.
+- **Test:** `npx tsx test/fleet-flight.mjs` (35 kontrol, čistá simulace) a
+  `.artifacts/probe/fleet-audit.mjs` (16 kontrol v prohlížeči — mimo jiné že se
+  model opravdu stáhl, ne jen že existuje canvas).
+- **Co tu není:** multiplayer, VR, LOD, ověření na skutečném telefonu.

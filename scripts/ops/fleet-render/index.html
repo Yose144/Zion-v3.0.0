@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <title>Nirvana · flotila z marketu</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        background: #06080d;
+        font-family: Helvetica, Arial, sans-serif;
+        color: #dfe6f0;
+      }
+      #frame {
+        position: relative;
+        width: 1600px;
+        height: 900px;
+      }
+      canvas {
+        display: block;
+        width: 1600px;
+        height: 900px;
+      }
+      .label {
+        position: absolute;
+        pointer-events: none;
+      }
+      #masthead {
+        left: 0;
+        top: 0;
+        width: 1600px;
+        height: 118px;
+        background: linear-gradient(180deg, rgba(8, 11, 18, 0.96) 0%, rgba(8, 11, 18, 0) 100%);
+      }
+      #title {
+        left: 48px;
+        top: 30px;
+        font-size: 32px;
+        font-weight: 600;
+        letter-spacing: 0.4px;
+      }
+      #subtitle {
+        left: 48px;
+        top: 74px;
+        font-size: 15px;
+        color: #c9b06a;
+      }
+      #meta {
+        right: 48px;
+        top: 34px;
+        text-align: right;
+        font-size: 13px;
+        line-height: 1.6;
+        color: #8b93a7;
+      }
+      .view {
+        position: absolute;
+        font-size: 11px;
+        letter-spacing: 3px;
+        color: #7c8496;
+      }
+      #footer {
+        left: 48px;
+        bottom: 14px;
+        font-size: 11px;
+        letter-spacing: 1px;
+        color: #4d5464;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="frame">
+      <canvas id="stage" width="1600" height="900"></canvas>
+      <div class="label" id="masthead"></div>
+      <div class="label" id="title">—</div>
+      <div class="label" id="subtitle">—</div>
+      <div class="label" id="meta">—</div>
+      <div class="label view" style="left: 24px; top: 140px">PŘÍĎ</div>
+      <div class="label view" style="left: 824px; top: 140px">TŘI ČTVRTĚ</div>
+      <div class="label view" style="left: 24px; top: 527px">BOK</div>
+      <div class="label view" style="left: 824px; top: 527px">ZÁĎ</div>
+      <div class="label" id="footer">NIRVANA · flotila z marketu · panelový lak ve vrcholových barvách, žádná textura</div>
+    </div>
+    <script src="./render.js"></script>
+  </body>
+</html>
