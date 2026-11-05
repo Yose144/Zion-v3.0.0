@@ -1827,7 +1827,20 @@
       "consciousness_level_name": "Emotional → Sacred",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Circle",
+          "description": "Draw a circle and invite in whoever stands outside it."
+        },
+        {
+          "title": "The Vision",
+          "description": "Complete a vision quest without food or water."
+        },
+        {
+          "title": "Passing It On",
+          "description": "Tell your vision to someone younger."
+        }
+      ]
     },
     {
       "id": 53,
@@ -1843,7 +1856,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Pipe",
+          "description": "End a quarrel with the pipe, not with a signature."
+        },
+        {
+          "title": "Seven Generations",
+          "description": "Plant something that will outlast seven generations."
+        },
+        {
+          "title": "The Gift",
+          "description": "Receive a gift and do not turn it into a debt."
+        }
+      ]
     },
     {
       "id": 54,
@@ -1859,7 +1885,20 @@
       "consciousness_level_name": "Quantum → Enlightened",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Thread",
+          "description": "Connect two players who do not know each other."
+        },
+        {
+          "title": "The Web",
+          "description": "Form an alliance of three guilds."
+        },
+        {
+          "title": "Pass Through",
+          "description": "Walk the whole web without breaking a single strand."
+        }
+      ]
     },
     {
       "id": 55,
@@ -1875,7 +1914,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "Xibalba",
+          "description": "Descend into the underworld and accept its game."
+        },
+        {
+          "title": "Twin Trick",
+          "description": "Expose the guardian's weakness without a single blow."
+        },
+        {
+          "title": "Return",
+          "description": "Come back up with the one who was left below."
+        }
+      ]
     },
     {
       "id": 56,
@@ -1891,7 +1943,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "Ayni",
+          "description": "Thank the land before you take from it."
+        },
+        {
+          "title": "Call of the Apu",
+          "description": "Bring water where it has run dry."
+        },
+        {
+          "title": "Reciprocity",
+          "description": "Give back twice what you received."
+        }
+      ]
     },
     {
       "id": 57,
@@ -1907,7 +1972,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "By Heart",
+          "description": "Learn a whole story by heart."
+        },
+        {
+          "title": "Ancestors",
+          "description": "Tell a story that has not been told for a long time."
+        },
+        {
+          "title": "Handover",
+          "description": "Pass a story on without paper or notes."
+        }
+      ]
     },
     {
       "id": 58,
@@ -1923,7 +2001,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "True Pahana",
+          "description": "Tell a promise from a lure."
+        },
+        {
+          "title": "The Stone",
+          "description": "Read what is written in stone, not in speech."
+        },
+        {
+          "title": "Patience",
+          "description": "Wait until the promise shows itself."
+        }
+      ]
     },
     {
       "id": 59,
@@ -1939,7 +2030,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "Rainbow",
+          "description": "Give the group courage at the decisive moment."
+        },
+        {
+          "title": "Fire",
+          "description": "Pass the trial without stepping back."
+        },
+        {
+          "title": "The Children",
+          "description": "Teach those no one believed in."
+        }
+      ]
     },
     {
       "id": 60,
@@ -1955,7 +2059,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "Dream Reversal",
+          "description": "See the consequence before it happens."
+        },
+        {
+          "title": "The Forest",
+          "description": "Protect a territory from being stripped."
+        },
+        {
+          "title": "The Word",
+          "description": "Speak for those who cannot speak."
+        }
+      ]
     },
     {
       "id": 61,
@@ -1971,7 +2088,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "Backwards",
+          "description": "Do everything backwards for one day."
+        },
+        {
+          "title": "Laughter",
+          "description": "Make the one who is afraid laugh."
+        },
+        {
+          "title": "Truth",
+          "description": "Tell the truth in a way that can be heard."
+        }
+      ]
     },
     {
       "id": 62,
@@ -1987,7 +2117,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Lineage",
+          "description": "Trace where someone came from."
+        },
+        {
+          "title": "Three Branches",
+          "description": "Join three lineages into one."
+        },
+        {
+          "title": "Continuation",
+          "description": "Pass a name on without changing it."
+        }
+      ]
     },
     {
       "id": 63,
@@ -2003,7 +2146,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Fire",
+          "description": "Burn what no longer holds."
+        },
+        {
+          "title": "New Ground",
+          "description": "Plant something on the burn."
+        },
+        {
+          "title": "Respect",
+          "description": "Do not ask for an exception, ask for a way."
+        }
+      ]
     },
     {
       "id": 64,
@@ -2019,7 +2175,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Dance",
+          "description": "Heal with dance, not with words."
+        },
+        {
+          "title": "Mele",
+          "description": "Compose a song for someone who is ill."
+        },
+        {
+          "title": "Sister's Return",
+          "description": "Bring back the one who left."
+        }
+      ]
     },
     {
       "id": 65,
@@ -2035,7 +2204,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Spring",
+          "description": "Find the place where something begins."
+        },
+        {
+          "title": "Silence",
+          "description": "Create something without noise or announcement."
+        },
+        {
+          "title": "Space",
+          "description": "Leave room for a place to come into being."
+        }
+      ]
     },
     {
       "id": 66,
@@ -2051,7 +2233,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "Flow",
+          "description": "Release what has stopped moving."
+        },
+        {
+          "title": "The Deep",
+          "description": "Descend where you cannot see."
+        },
+        {
+          "title": "Sharing",
+          "description": "Give strength where it is missing."
+        }
+      ]
     },
     {
       "id": 67,
@@ -2067,7 +2262,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "Stone",
+          "description": "Build a wall that lasts a year."
+        },
+        {
+          "title": "Daily Work",
+          "description": "Thirty days without a single break."
+        },
+        {
+          "title": "Stand",
+          "description": "Hold the place others walked away from."
+        }
+      ]
     },
     {
       "id": 68,
@@ -2083,7 +2291,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "Makahiki",
+          "description": "Declare a truce and keep it."
+        },
+        {
+          "title": "Harvest",
+          "description": "Divide the harvest evenly."
+        },
+        {
+          "title": "Abundance",
+          "description": "Find what you have spare and give it on."
+        }
+      ]
     },
     {
       "id": 69,
@@ -2099,7 +2320,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "Listen",
+          "description": "Hear a story to its end without interrupting."
+        },
+        {
+          "title": "The Story",
+          "description": "Tell across two traditions."
+        },
+        {
+          "title": "Sit Down",
+          "description": "Food first, questions after."
+        }
+      ]
     },
     {
       "id": 70,
@@ -2115,7 +2349,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "Phase",
+          "description": "Wait for the right phase even when you are in a hurry."
+        },
+        {
+          "title": "Weaving",
+          "description": "Weave the night from what is at hand."
+        },
+        {
+          "title": "Rhythm",
+          "description": "Do not hurry, and still arrive on time."
+        }
+      ]
     },
     {
       "id": 71,
@@ -2131,7 +2378,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "Catch the Sun",
+          "description": "Slow down whoever is rushing."
+        },
+        {
+          "title": "The Trick",
+          "description": "Beat someone stronger without a single blow."
+        },
+        {
+          "title": "Share the Fire",
+          "description": "Pass the fire on without losing it."
+        }
+      ]
     },
     {
       "id": 72,
@@ -2147,7 +2407,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Hidden Teaching",
+          "description": "Find the teaching hidden for this age."
+        },
+        {
+          "title": "The Hiding",
+          "description": "Hide something for whoever comes after you."
+        },
+        {
+          "title": "Right Time",
+          "description": "Wait until it is ripe."
+        }
+      ]
     },
     {
       "id": 73,
@@ -2163,7 +2436,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Song",
+          "description": "Compose a song about your own mistake."
+        },
+        {
+          "title": "The Cave",
+          "description": "Stay nine days in silence."
+        },
+        {
+          "title": "Transformation",
+          "description": "Do not repeat what you regretted."
+        }
+      ]
     },
     {
       "id": 74,
@@ -2179,7 +2465,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "Order",
+          "description": "Do three things in the right order."
+        },
+        {
+          "title": "Study",
+          "description": "Read a text in full, not just the summary."
+        },
+        {
+          "title": "Stages",
+          "description": "Walk the path in stages without skipping."
+        }
+      ]
     },
     {
       "id": 75,
@@ -2195,7 +2494,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Lamp",
+          "description": "Light someone's way and stay behind."
+        },
+        {
+          "title": "The Vow",
+          "description": "Promise something small and keep it."
+        },
+        {
+          "title": "Ethics",
+          "description": "Wound no one by word or by silence."
+        }
+      ]
     },
     {
       "id": 76,
@@ -2211,7 +2523,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "Translation",
+          "description": "Translate a message without losing the meaning."
+        },
+        {
+          "title": "Bridge",
+          "description": "Join two worlds that do not understand each other."
+        },
+        {
+          "title": "No Betrayal",
+          "description": "Pass it on faithfully even when it does not pay."
+        }
+      ]
     },
     {
       "id": 77,
@@ -2227,7 +2552,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "Fear",
+          "description": "Face what you fear most."
+        },
+        {
+          "title": "Charnel Ground",
+          "description": "Walk the night without a weapon."
+        },
+        {
+          "title": "The Gift",
+          "description": "Give away what you fear losing."
+        }
+      ]
     },
     {
       "id": 78,
@@ -2243,7 +2581,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Sword",
+          "description": "Cut through a view that no longer holds."
+        },
+        {
+          "title": "The Question",
+          "description": "Keep asking until you understand."
+        },
+        {
+          "title": "Speech",
+          "description": "Explain it in one sentence."
+        }
+      ]
     },
     {
       "id": 79,
@@ -2259,7 +2610,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "Ten Vows",
+          "description": "Take the vows and keep them day by day."
+        },
+        {
+          "title": "Pilgrimage",
+          "description": "Walk to a place you could have driven to."
+        },
+        {
+          "title": "Service",
+          "description": "Do one small thing for others every day."
+        }
+      ]
     },
     {
       "id": 80,
@@ -2275,7 +2639,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Herb",
+          "description": "Find the medicine where it grows."
+        },
+        {
+          "title": "Time",
+          "description": "Give time to someone who has none."
+        },
+        {
+          "title": "Lapis",
+          "description": "Restore the strength of the whole group."
+        }
+      ]
     },
     {
       "id": 81,
@@ -2291,7 +2668,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Add Nothing",
+          "description": "Spend ten minutes simply being."
+        },
+        {
+          "title": "The Cave",
+          "description": "Set down every role for a day."
+        },
+        {
+          "title": "Return",
+          "description": "Return among people unchanged."
+        }
+      ]
     },
     {
       "id": 82,
@@ -2307,7 +2697,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Dance",
+          "description": "End what has outlived itself."
+        },
+        {
+          "title": "Third Eye",
+          "description": "Look at a thing without illusion."
+        },
+        {
+          "title": "Space",
+          "description": "Clear space for what comes next."
+        }
+      ]
     },
     {
       "id": 83,
@@ -2323,7 +2726,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Bond",
+          "description": "Join two strengths so they reinforce each other."
+        },
+        {
+          "title": "The House",
+          "description": "Hold a house together through three days of quarrels."
+        },
+        {
+          "title": "The Mountain",
+          "description": "Stay beside someone who is burning."
+        }
+      ]
     },
     {
       "id": 84,
@@ -2339,7 +2755,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "Threshold",
+          "description": "Open a road that was closed."
+        },
+        {
+          "title": "The Obstacle",
+          "description": "Find what you are carrying for no reason."
+        },
+        {
+          "title": "The Pen",
+          "description": "Write the story down before it is lost."
+        }
+      ]
     },
     {
       "id": 85,
@@ -2355,7 +2784,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Bowl",
+          "description": "Give a little of every gain onward."
+        },
+        {
+          "title": "Flow",
+          "description": "Let money pass through rather than locking it up."
+        },
+        {
+          "title": "The Pond",
+          "description": "Restore abundance to a place that dried up."
+        }
+      ]
     },
     {
       "id": 86,
@@ -2371,7 +2813,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "Nine Nights",
+          "description": "Hold nine nights of defence."
+        },
+        {
+          "title": "The Lion",
+          "description": "Walk into the fire first."
+        },
+        {
+          "title": "Shakti",
+          "description": "Protect the weaker even when it does not pay."
+        }
+      ]
     },
     {
       "id": 87,
@@ -2387,7 +2842,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Night Without Time",
+          "description": "Put the clock away for a whole day."
+        },
+        {
+          "title": "Ego",
+          "description": "Bow before someone who does not expect it."
+        },
+        {
+          "title": "The End",
+          "description": "End something without spite."
+        }
+      ]
     },
     {
       "id": 88,
@@ -2403,7 +2871,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "Formation",
+          "description": "Arrange a group so it can hear itself."
+        },
+        {
+          "title": "Six Faces",
+          "description": "Watch every direction at once."
+        },
+        {
+          "title": "Direction",
+          "description": "Decide where we are going before we set out."
+        }
+      ]
     },
     {
       "id": 89,
@@ -2419,7 +2900,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Dawn",
+          "description": "Begin the day again even if yesterday was worthless."
+        },
+        {
+          "title": "Noon",
+          "description": "Do the hardest thing at midday."
+        },
+        {
+          "title": "Dusk",
+          "description": "Close the day honestly, not by postponing."
+        }
+      ]
     },
     {
       "id": 90,
@@ -2435,7 +2929,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "Vajra",
+          "description": "Interrupt one attack, however strong."
+        },
+        {
+          "title": "Storm",
+          "description": "Find out who is still standing."
+        },
+        {
+          "title": "Humility",
+          "description": "Let yourself be questioned without defending."
+        }
+      ]
     },
     {
       "id": 91,
@@ -2451,7 +2958,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "Source",
+          "description": "Find where the problem begins."
+        },
+        {
+          "title": "Current",
+          "description": "Carry the dirt away and do not stop."
+        },
+        {
+          "title": "The Sea",
+          "description": "Go all the way to the sea even when no one is watching."
+        }
+      ]
     },
     {
       "id": 92,
@@ -2467,7 +2987,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Cave",
+          "description": "Close yourself away for a day and return."
+        },
+        {
+          "title": "The Mirror",
+          "description": "Show light to someone who cannot see it."
+        },
+        {
+          "title": "Sunrise",
+          "description": "Return hope to a place that gave up."
+        }
+      ]
     },
     {
       "id": 93,
@@ -2483,7 +3016,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Sword",
+          "description": "Find what is hidden in the tail."
+        },
+        {
+          "title": "Storm",
+          "description": "Sweep away rotten order."
+        },
+        {
+          "title": "Purge",
+          "description": "Clean up after yourself, not after others."
+        }
+      ]
     },
     {
       "id": 94,
@@ -2499,7 +3045,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Night",
+          "description": "Look at what was missed by day."
+        },
+        {
+          "title": "Review",
+          "description": "Find the fault before it does damage."
+        },
+        {
+          "title": "Dawn",
+          "description": "Bring the result by daylight, without excuses."
+        }
+      ]
     },
     {
       "id": 95,
@@ -2515,7 +3074,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Torii",
+          "description": "Open the gate for someone new."
+        },
+        {
+          "title": "Rice",
+          "description": "Divide the harvest so no one leaves empty-handed."
+        },
+        {
+          "title": "First Step",
+          "description": "Help a beginner take the first step."
+        }
+      ]
     },
     {
       "id": 96,
@@ -2531,7 +3103,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Guest",
+          "description": "Host a stranger for one night."
+        },
+        {
+          "title": "The House",
+          "description": "Leave the door open even when it is inconvenient."
+        },
+        {
+          "title": "Fair Trade",
+          "description": "Close a deal where the other gains as much."
+        }
+      ]
     },
     {
       "id": 97,
@@ -2547,7 +3132,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Threshold",
+          "description": "Say goodbye properly, not on your way out."
+        },
+        {
+          "title": "Yomi",
+          "description": "Walk through darkness without a light."
+        },
+        {
+          "title": "No Return",
+          "description": "Accept that some things do not come back."
+        }
+      ]
     },
     {
       "id": 98,
@@ -2563,7 +3161,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Bastion",
+          "description": "Raise a defence that survives the first blow."
+        },
+        {
+          "title": "Arrow",
+          "description": "Leave the arrow in the quiver when you can."
+        },
+        {
+          "title": "Watch",
+          "description": "Keep the peace for one full week."
+        }
+      ]
     },
     {
       "id": 99,
@@ -2579,7 +3190,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Melody",
+          "description": "Play alone until it has a shape."
+        },
+        {
+          "title": "Together",
+          "description": "Play together until it has meaning."
+        },
+        {
+          "title": "Flow",
+          "description": "Let the music flow even when it goes wrong."
+        }
+      ]
     },
     {
       "id": 100,
@@ -2595,7 +3219,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Mandala",
+          "description": "Draw the world as you see it."
+        },
+        {
+          "title": "Two Mandalas",
+          "description": "Join the inner and the outer picture."
+        },
+        {
+          "title": "Stencil",
+          "description": "Make a complicated plan legible."
+        }
+      ]
     },
     {
       "id": 101,
@@ -2611,7 +3248,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Aloud",
+          "description": "Read a text in public, without apology."
+        },
+        {
+          "title": "Chorus",
+          "description": "Sing with others even when it is not perfect."
+        },
+        {
+          "title": "Text for All",
+          "description": "Explain a teaching without learnedness."
+        }
+      ]
     },
     {
       "id": 102,
@@ -2627,7 +3277,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Physician",
+          "description": "Act before the illness becomes visible."
+        },
+        {
+          "title": "Order",
+          "description": "Write the settlement's rules and have them agreed."
+        },
+        {
+          "title": "The Whole",
+          "description": "Look after those who were forgotten."
+        }
+      ]
     },
     {
       "id": 103,
@@ -2643,7 +3306,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Peach",
+          "description": "Let ripen what you want to eat now."
+        },
+        {
+          "title": "The Garden",
+          "description": "Tend something for thirty days without visible result."
+        },
+        {
+          "title": "The Guard",
+          "description": "Guard a value that is not yet yours."
+        }
+      ]
     },
     {
       "id": 104,
@@ -2659,7 +3335,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Silence",
+          "description": "Do not intervene even when you know how."
+        },
+        {
+          "title": "The Pass",
+          "description": "Leave when the work is done."
+        },
+        {
+          "title": "The Way",
+          "description": "Walk without a map or a plan."
+        }
+      ]
     },
     {
       "id": 105,
@@ -2675,7 +3364,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Word",
+          "description": "Keep what you said even when things change."
+        },
+        {
+          "title": "The Teacher",
+          "description": "Explain one thing to one person."
+        },
+        {
+          "title": "The Record",
+          "description": "Record one good deed each day."
+        }
+      ]
     },
     {
       "id": 106,
@@ -2691,7 +3393,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Compact",
+          "description": "Close an agreement that does not favour only you."
+        },
+        {
+          "title": "Loyalty",
+          "description": "Abandon no one in trouble."
+        },
+        {
+          "title": "The Market",
+          "description": "Settle a market dispute fairly."
+        }
+      ]
     },
     {
       "id": 107,
@@ -2707,7 +3422,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Light",
+          "description": "Light a road you will not walk yourself."
+        },
+        {
+          "title": "Harbour",
+          "description": "Bring a ship home through fog."
+        },
+        {
+          "title": "Storm",
+          "description": "Help in the worst weather, not after it."
+        }
+      ]
     },
     {
       "id": 108,
@@ -2723,7 +3451,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Lotus",
+          "description": "Rise differently than you fell."
+        },
+        {
+          "title": "Second Chance",
+          "description": "Return where you were thrown out."
+        },
+        {
+          "title": "Responsibility",
+          "description": "Carry the consequences of your return."
+        }
+      ]
     },
     {
       "id": 109,
@@ -2739,7 +3480,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Journey",
+          "description": "Walk instead of leaping."
+        },
+        {
+          "title": "The Trick",
+          "description": "Go around an obstacle that cannot be broken."
+        },
+        {
+          "title": "Home",
+          "description": "Return humbler than you left."
+        }
+      ]
     },
     {
       "id": 110,
@@ -2755,7 +3509,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Riverbed",
+          "description": "Channel pressure so it does not burst the system."
+        },
+        {
+          "title": "Thirteen Years",
+          "description": "Stay with one job until it is finished."
+        },
+        {
+          "title": "The House",
+          "description": "Pass your own house and do not go in."
+        }
+      ]
     },
     {
       "id": 111,
@@ -2771,7 +3538,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Thunder",
+          "description": "Announce the fault you found."
+        },
+        {
+          "title": "The Court",
+          "description": "Investigate without anger or haste."
+        },
+        {
+          "title": "Repair",
+          "description": "Repair what you announced."
+        }
+      ]
     },
     {
       "id": 112,
@@ -2787,7 +3567,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Grain",
+          "description": "Waste not a single grain."
+        },
+        {
+          "title": "Harvest",
+          "description": "Share the harvest before it spoils."
+        },
+        {
+          "title": "Season",
+          "description": "Return to the soil what you took."
+        }
+      ]
     },
     {
       "id": 113,
@@ -2803,7 +3596,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Tide",
+          "description": "Return to the shore what was taken from it."
+        },
+        {
+          "title": "The Cliff",
+          "description": "Guard what belongs to everyone."
+        },
+        {
+          "title": "Sea",
+          "description": "Take no more than you can carry."
+        }
+      ]
     },
     {
       "id": 114,
@@ -2819,7 +3625,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Table",
+          "description": "Sit with both sides at once."
+        },
+        {
+          "title": "Truth",
+          "description": "Say the uncomfortable thing out loud."
+        },
+        {
+          "title": "Accord",
+          "description": "Find one sentence both can leave with."
+        }
+      ]
     },
     {
       "id": 115,
@@ -2835,7 +3654,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Translation",
+          "description": "Explain a complex decision in human words."
+        },
+        {
+          "title": "The Document",
+          "description": "Write instructions that work without you."
+        },
+        {
+          "title": "Question",
+          "description": "Ask about what you did not understand."
+        }
+      ]
     },
     {
       "id": 116,
@@ -2851,7 +3683,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Dance",
+          "description": "Calm panic before it spreads."
+        },
+        {
+          "title": "Mask",
+          "description": "Stand against fear, not against people."
+        },
+        {
+          "title": "Courtyard",
+          "description": "Return calm to a place that was arguing."
+        }
+      ]
     },
     {
       "id": 117,
@@ -2867,7 +3712,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Wings",
+          "description": "Deliver help where you cannot drive."
+        },
+        {
+          "title": "Cargo",
+          "description": "Carry only what is needed."
+        },
+        {
+          "title": "Return",
+          "description": "Come back for the next one, not for the reward."
+        }
+      ]
     },
     {
       "id": 118,
@@ -2883,7 +3741,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Escort",
+          "description": "Bring someone safely through danger."
+        },
+        {
+          "title": "Clouds",
+          "description": "Fly a route that cannot be walked."
+        },
+        {
+          "title": "Back",
+          "description": "Come back with the one you took."
+        }
+      ]
     },
     {
       "id": 119,
@@ -2899,7 +3770,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Name",
+          "description": "Set the title aside and walk among people."
+        },
+        {
+          "title": "Disguise",
+          "description": "Pass through a place unrecognised."
+        },
+        {
+          "title": "True Face",
+          "description": "Show yourself as you are."
+        }
+      ]
     },
     {
       "id": 120,
@@ -2915,7 +3799,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Condition",
+          "description": "State your conditions before the work starts."
+        },
+        {
+          "title": "A Thousand Statues",
+          "description": "Stop whoever rushes past your boundaries."
+        },
+        {
+          "title": "Spindle",
+          "description": "Say ‘not like this' without explaining."
+        }
+      ]
     },
     {
       "id": 121,
@@ -2931,7 +3828,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Guest",
+          "description": "Let yourself be invited even if you are not good at it."
+        },
+        {
+          "title": "Shelter",
+          "description": "Rest and explain nothing."
+        },
+        {
+          "title": "Help",
+          "description": "Let someone you helped help you."
+        }
+      ]
     },
     {
       "id": 122,
@@ -2947,7 +3857,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Stars",
+          "description": "Learn the sky without an app."
+        },
+        {
+          "title": "The Road",
+          "description": "Navigate by stars, not by signs."
+        },
+        {
+          "title": "Hand Over",
+          "description": "Teach the sky to someone else."
+        }
+      ]
     },
     {
       "id": 123,
@@ -2963,7 +3886,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "River",
+          "description": "Let the water go where it wants."
+        },
+        {
+          "title": "Drought",
+          "description": "Return water to a dry riverbed."
+        },
+        {
+          "title": "Law",
+          "description": "Respect the land even where it earns nothing."
+        }
+      ]
     },
     {
       "id": 124,
@@ -2979,7 +3915,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The View",
+          "description": "Climb higher so you can see the whole."
+        },
+        {
+          "title": "Balance",
+          "description": "Find what holds together and what does not."
+        },
+        {
+          "title": "Nest",
+          "description": "Protect what you saw from above."
+        }
+      ]
     },
     {
       "id": 125,
@@ -2995,7 +3944,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Listen",
+          "description": "Let the land speak before people do."
+        },
+        {
+          "title": "Waterhole",
+          "description": "Find a source no one is watching."
+        },
+        {
+          "title": "Teach Slowly",
+          "description": "Teach one thing in a month, not in a day."
+        }
+      ]
     },
     {
       "id": 126,
@@ -3011,7 +3973,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Tide",
+          "description": "Wait for the right moment even when it hurts."
+        },
+        {
+          "title": "Canoe",
+          "description": "Prepare everything beforehand, not on the way."
+        },
+        {
+          "title": "Passage",
+          "description": "Cross when it is time, and not before."
+        }
+      ]
     },
     {
       "id": 127,
@@ -3027,7 +4002,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Emptiness",
+          "description": "Look for what is missing from the picture."
+        },
+        {
+          "title": "Dark",
+          "description": "Walk without a lantern or certainty."
+        },
+        {
+          "title": "Shape",
+          "description": "Name the shape that came from nothing."
+        }
+      ]
     },
     {
       "id": 128,
@@ -3043,7 +4031,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Seed",
+          "description": "Plant a rule, not just a promise."
+        },
+        {
+          "title": "Law",
+          "description": "Write down who is protected and who is not."
+        },
+        {
+          "title": "Arrival",
+          "description": "Bring, do not take."
+        }
+      ]
     },
     {
       "id": 129,
@@ -3059,7 +4060,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Bolt",
+          "description": "Find the weak point before the storm."
+        },
+        {
+          "title": "Storm",
+          "description": "Prepare for the outage that is coming."
+        },
+        {
+          "title": "Repair",
+          "description": "Restore what fell and record why."
+        }
+      ]
     },
     {
       "id": 130,
@@ -3075,7 +4089,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Walk",
+          "description": "Walk without a destination for at least an hour."
+        },
+        {
+          "title": "Trace",
+          "description": "Find a trace you cannot see elsewhere."
+        },
+        {
+          "title": "Silence",
+          "description": "Do not speak for a day, only listen."
+        }
+      ]
     },
     {
       "id": 131,
@@ -3091,7 +4118,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Truth",
+          "description": "Name the harm, not only the intention."
+        },
+        {
+          "title": "Bridge",
+          "description": "Join two languages that do not listen to each other."
+        },
+        {
+          "title": "Treaty",
+          "description": "Close the agreement only after repair."
+        }
+      ]
     },
     {
       "id": 132,
@@ -3107,7 +4147,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Soil",
+          "description": "Restore a place that was exhausted."
+        },
+        {
+          "title": "Embrace",
+          "description": "Protect what has no substitute."
+        },
+        {
+          "title": "Return",
+          "description": "Give back to the land what you took."
+        }
+      ]
     },
     {
       "id": 133,
@@ -3123,7 +4176,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Space",
+          "description": "Open the sky over a place that is suffocating."
+        },
+        {
+          "title": "Rain",
+          "description": "Let it fall even if it delays the journey."
+        },
+        {
+          "title": "Separation",
+          "description": "Let go of what must go."
+        }
+      ]
     },
     {
       "id": 134,
@@ -3139,7 +4205,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Light",
+          "description": "Separate so that there may be light."
+        },
+        {
+          "title": "Tree",
+          "description": "Plant a tree that outlives you."
+        },
+        {
+          "title": "Growth",
+          "description": "Let it grow without interference."
+        }
+      ]
     },
     {
       "id": 135,
@@ -3155,7 +4234,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Quota",
+          "description": "Limit the catch before it disappears."
+        },
+        {
+          "title": "Rāhui",
+          "description": "Let the sea rest for a season."
+        },
+        {
+          "title": "Return",
+          "description": "Return when there is something to catch again."
+        }
+      ]
     },
     {
       "id": 136,
@@ -3171,7 +4263,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Field",
+          "description": "Sow before you settle the disputes."
+        },
+        {
+          "title": "Harvest",
+          "description": "Share the harvest even with whoever did not help."
+        },
+        {
+          "title": "Truce",
+          "description": "End the quarrel before the harvest is lost."
+        }
+      ]
     },
     {
       "id": 137,
@@ -3187,7 +4292,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Wall",
+          "description": "Build a defence, not an attack."
+        },
+        {
+          "title": "Kin",
+          "description": "Shield the weakest members of the group."
+        },
+        {
+          "title": "Withdraw",
+          "description": "Withdraw in time and without losses."
+        }
+      ]
     },
     {
       "id": 138,
@@ -3203,7 +4321,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Gust",
+          "description": "Test what falls apart."
+        },
+        {
+          "title": "Roots",
+          "description": "Check what actually holds."
+        },
+        {
+          "title": "Calm",
+          "description": "After the storm, calm what remains."
+        }
+      ]
     },
     {
       "id": 139,
@@ -3219,7 +4350,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Foraging",
+          "description": "Take two and leave the third."
+        },
+        {
+          "title": "Forest",
+          "description": "Leave the forest growing after you go."
+        },
+        {
+          "title": "Hunger",
+          "description": "Feed someone without emptying the place."
+        }
+      ]
     },
     {
       "id": 140,
@@ -3235,7 +4379,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Transformation",
+          "description": "Pass through a change that cannot be undone."
+        },
+        {
+          "title": "Night",
+          "description": "Stay in the dark until it passes."
+        },
+        {
+          "title": "New Day",
+          "description": "Return different, not the same."
+        }
+      ]
     },
     {
       "id": 141,
@@ -3251,7 +4408,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Reckoning",
+          "description": "Find your way home without a signal."
+        },
+        {
+          "title": "Star",
+          "description": "Find north without a compass."
+        },
+        {
+          "title": "Home",
+          "description": "Sail back to where you set out."
+        }
+      ]
     },
     {
       "id": 142,
@@ -3267,7 +4437,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Current",
+          "description": "Release means that got stuck."
+        },
+        {
+          "title": "Confluence",
+          "description": "Join two rivers that ran apart."
+        },
+        {
+          "title": "Sweetness",
+          "description": "Share what you have to spare."
+        }
+      ]
     },
     {
       "id": 143,
@@ -3283,7 +4466,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Proof",
+          "description": "Prove the accusation before you strike."
+        },
+        {
+          "title": "Thunder",
+          "description": "Strike once and precisely."
+        },
+        {
+          "title": "Calm",
+          "description": "After the strike, be silent."
+        }
+      ]
     },
     {
       "id": 144,
@@ -3299,7 +4495,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Stillness",
+          "description": "Slow a decision to a readable pace."
+        },
+        {
+          "title": "White Hill",
+          "description": "Calm your head before the meeting."
+        },
+        {
+          "title": "Decision",
+          "description": "Decide in calm, not under pressure."
+        }
+      ]
     },
     {
       "id": 145,
@@ -3315,7 +4524,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Wind",
+          "description": "Carry away what no longer belongs."
+        },
+        {
+          "title": "Moving",
+          "description": "Move a whole elsewhere without breaking it."
+        },
+        {
+          "title": "Return",
+          "description": "Settle elsewhere and do not stall."
+        }
+      ]
     },
     {
       "id": 146,
@@ -3331,7 +4553,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Day",
+          "description": "Speak first and let the other answer."
+        },
+        {
+          "title": "Night",
+          "description": "Let the other speak and listen."
+        },
+        {
+          "title": "Alternation",
+          "description": "Take turns without interrupting."
+        }
+      ]
     },
     {
       "id": 147,
@@ -3347,7 +4582,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Briefly",
+          "description": "Say it in one sentence."
+        },
+        {
+          "title": "Silence",
+          "description": "Do not speak until you must."
+        },
+        {
+          "title": "Truth",
+          "description": "Say only what you can carry."
+        }
+      ]
     },
     {
       "id": 148,
@@ -3363,7 +4611,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Web",
+          "description": "Link two things that do not seem connected."
+        },
+        {
+          "title": "Story",
+          "description": "Tell a rule as a story instead of a sermon."
+        },
+        {
+          "title": "Ending",
+          "description": "Let the listener finish the point."
+        }
+      ]
     },
     {
       "id": 149,
@@ -3379,7 +4640,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Dismemberment",
+          "description": "Take apart what does not work."
+        },
+        {
+          "title": "Reassembly",
+          "description": "Put it together differently, not the same."
+        },
+        {
+          "title": "Renewal",
+          "description": "Return the whole to service."
+        }
+      ]
     },
     {
       "id": 150,
@@ -3395,7 +4669,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Feather",
+          "description": "Weigh words against deeds."
+        },
+        {
+          "title": "Heart",
+          "description": "Admit what is heavy."
+        },
+        {
+          "title": "Truth",
+          "description": "Say it aloud with the consequences."
+        }
+      ]
     },
     {
       "id": 151,
@@ -3411,7 +4698,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Level Table",
+          "description": "Negotiate without the upper hand even if you have it."
+        },
+        {
+          "title": "Dignity",
+          "description": "Do not let the other be humiliated or beaten down."
+        },
+        {
+          "title": "Accord",
+          "description": "Close a peace that lasts."
+        }
+      ]
     },
     {
       "id": 152,
@@ -3427,7 +4727,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Ten Regions",
+          "description": "Join ten different interests into one accord."
+        },
+        {
+          "title": "The Sky",
+          "description": "Hold the whole until it decides."
+        },
+        {
+          "title": "Rest",
+          "description": "Set down what you do not have to carry."
+        }
+      ]
     },
     {
       "id": 153,
@@ -3443,7 +4756,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Charter",
+          "description": "Write the rules clearly enough that they cannot be dodged."
+        },
+        {
+          "title": "Sanctuary",
+          "description": "Protect a place from being rebuilt in the stronger's image."
+        },
+        {
+          "title": "Reading",
+          "description": "Block the reading that would harm the weaker."
+        }
+      ]
     },
     {
       "id": 154,
@@ -3459,7 +4785,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Strait",
+          "description": "Set the order so the road does not jam."
+        },
+        {
+          "title": "Rule",
+          "description": "Let through even the one who travels slowly."
+        },
+        {
+          "title": "Return",
+          "description": "Ensure the way back as well."
+        }
+      ]
     },
     {
       "id": 155,
@@ -3475,7 +4814,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Granary",
+          "description": "Divide the stores without favour."
+        },
+        {
+          "title": "Scales",
+          "description": "Weigh who needs more, not who asks louder."
+        },
+        {
+          "title": "Hunger",
+          "description": "Feed the last one in the queue."
+        }
+      ]
     },
     {
       "id": 156,
@@ -3491,7 +4843,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Custom",
+          "description": "Establish a practice that works unwatched."
+        },
+        {
+          "title": "Review",
+          "description": "Check that it is actually followed."
+        },
+        {
+          "title": "Handover",
+          "description": "Let the practice live after you leave."
+        }
+      ]
     },
     {
       "id": 157,
@@ -3507,7 +4872,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Record",
+          "description": "Record an event without embellishment."
+        },
+        {
+          "title": "Mistake",
+          "description": "Put your own mistake in the record."
+        },
+        {
+          "title": "Archive",
+          "description": "Open the archive to whoever needs it."
+        }
+      ]
     },
     {
       "id": 158,
@@ -3523,7 +4901,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Threshold",
+          "description": "Ask the locals before you decide."
+        },
+        {
+          "title": "Last Word",
+          "description": "Leave the last word to those who live there."
+        },
+        {
+          "title": "Stay",
+          "description": "Stay even when they decide against you."
+        }
+      ]
     },
     {
       "id": 159,
@@ -3539,7 +4930,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Lane",
+          "description": "Keep the road open for the small player."
+        },
+        {
+          "title": "Queue",
+          "description": "Let someone smaller go ahead of you."
+        },
+        {
+          "title": "Flow",
+          "description": "Do not stop the flow even when you are in a hurry."
+        }
+      ]
     },
     {
       "id": 160,
@@ -3555,7 +4959,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Table",
+          "description": "Call both sides to one table."
+        },
+        {
+          "title": "Sentence",
+          "description": "Find the sentence both can leave with."
+        },
+        {
+          "title": "Return",
+          "description": "Bring them back when they walk out."
+        }
+      ]
     },
     {
       "id": 161,
@@ -3571,7 +4988,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Test",
+          "description": "Find the limit before production does."
+        },
+        {
+          "title": "Load",
+          "description": "Load carefully and watch what cracks."
+        },
+        {
+          "title": "Rest",
+          "description": "Let the system breathe before you try again."
+        }
+      ]
     },
     {
       "id": 162,
@@ -3587,7 +5017,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Species",
+          "description": "Protect what has no substitute elsewhere."
+        },
+        {
+          "title": "Forest",
+          "description": "Leave alone what you cannot restore."
+        },
+        {
+          "title": "Counting",
+          "description": "Record what is disappearing."
+        }
+      ]
     },
     {
       "id": 163,
@@ -3603,7 +5046,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Map",
+          "description": "Correct the map that no longer lies."
+        },
+        {
+          "title": "Retraction",
+          "description": "Retract an error even if you wrote it."
+        },
+        {
+          "title": "Humility",
+          "description": "Keep learning even after you taught."
+        }
+      ]
     },
     {
       "id": 164,
@@ -3619,7 +5075,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Reef",
+          "description": "Record the state, not the impression."
+        },
+        {
+          "title": "Loss",
+          "description": "Attest harm that would go unacknowledged."
+        },
+        {
+          "title": "Repair",
+          "description": "Return at least part of what was lost."
+        }
+      ]
     },
     {
       "id": 165,
@@ -3635,7 +5104,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Tide",
+          "description": "Slow the system so the slower one keeps up."
+        },
+        {
+          "title": "Shallows",
+          "description": "Wait for whoever fell behind."
+        },
+        {
+          "title": "Rhythm",
+          "description": "Hold a tempo that drowns no one."
+        }
+      ]
     },
     {
       "id": 166,
@@ -3651,7 +5133,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Ridge",
+          "description": "Measure time in millennia, not days."
+        },
+        {
+          "title": "Patience",
+          "description": "Do not speed a decision with pressure."
+        },
+        {
+          "title": "Calm",
+          "description": "Protect a decision from haste."
+        }
+      ]
     },
     {
       "id": 167,
@@ -3667,7 +5162,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Seed",
+          "description": "Pass on an idea with no claim of ownership."
+        },
+        {
+          "title": "Foam",
+          "description": "Do not stay, but do not destroy what you brought."
+        },
+        {
+          "title": "Growth",
+          "description": "Let it grow without you."
+        }
+      ]
     },
     {
       "id": 168,
@@ -3683,7 +5191,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Bridge",
+          "description": "Join two islands without dominion."
+        },
+        {
+          "title": "Harbour",
+          "description": "Open the harbour to foreign ships too."
+        },
+        {
+          "title": "Alliance",
+          "description": "Form an alliance without rewriting either's rules."
+        }
+      ]
     },
     {
       "id": 169,
@@ -3699,7 +5220,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Waterline",
+          "description": "Tell the truth about how far the water reaches."
+        },
+        {
+          "title": "Coast",
+          "description": "Protect what the water would take."
+        },
+        {
+          "title": "Retreat",
+          "description": "Plan the retreat before it is too late."
+        }
+      ]
     },
     {
       "id": 170,
@@ -3715,7 +5249,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Pause",
+          "description": "Do nothing for five minutes and endure it."
+        },
+        {
+          "title": "Breath",
+          "description": "Breathe until the panic shrinks."
+        },
+        {
+          "title": "Decision",
+          "description": "Decide afterwards, not during."
+        }
+      ]
     },
     {
       "id": 171,
@@ -3731,7 +5278,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Chapter",
+          "description": "Close what is finished and name it."
+        },
+        {
+          "title": "Handover",
+          "description": "Pass the torch before it goes out."
+        },
+        {
+          "title": "Full Stop",
+          "description": "Bow and leave."
+        }
+      ]
     },
     {
       "id": 172,
@@ -3747,7 +5307,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Beat",
+          "description": "Align the tempo of the whole group."
+        },
+        {
+          "title": "Centre",
+          "description": "Find what time is counted by."
+        },
+        {
+          "title": "Accord",
+          "description": "Keep accord even when views diverge."
+        }
+      ]
     },
     {
       "id": 173,
@@ -3763,7 +5336,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Cadence",
+          "description": "Space out effort so it lasts."
+        },
+        {
+          "title": "Pause",
+          "description": "Rest before you need to."
+        },
+        {
+          "title": "Endurance",
+          "description": "Last long, not fast."
+        }
+      ]
     },
     {
       "id": 174,
@@ -3779,7 +5365,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Dual Signature",
+          "description": "Confirm a decision together with another."
+        },
+        {
+          "title": "Separation",
+          "description": "Split roles so no one duplicates another."
+        },
+        {
+          "title": "Agreement",
+          "description": "Never decide alone."
+        }
+      ]
     },
     {
       "id": 175,
@@ -3795,7 +5394,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Vision",
+          "description": "Describe what you want to do in one sentence."
+        },
+        {
+          "title": "Act",
+          "description": "Take the first concrete step."
+        },
+        {
+          "title": "Monday",
+          "description": "Repeat it on an ordinary day."
+        }
+      ]
     },
     {
       "id": 176,
@@ -3811,7 +5423,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Key",
+          "description": "Keep a key where no one can find it."
+        },
+        {
+          "title": "Secret",
+          "description": "Do not tell a thing that is not yours."
+        },
+        {
+          "title": "Hygiene",
+          "description": "Clean up the traces of your work."
+        }
+      ]
     },
     {
       "id": 177,
@@ -3827,7 +5452,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Spiral",
+          "description": "Teach someone what you know."
+        },
+        {
+          "title": "Higher",
+          "description": "Pull the other up, not yourself."
+        },
+        {
+          "title": "Reward",
+          "description": "Value teaching, not competing."
+        }
+      ]
     },
     {
       "id": 178,
@@ -3843,7 +5481,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Violet Flame",
+          "description": "Transform an old solution into something that holds."
+        },
+        {
+          "title": "Old",
+          "description": "Clean it, do not demolish it."
+        },
+        {
+          "title": "New",
+          "description": "Build the new on the old foundation."
+        }
+      ]
     },
     {
       "id": 179,
@@ -3859,7 +5510,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Assembly",
+          "description": "Call the diverse to one table."
+        },
+        {
+          "title": "Mandate",
+          "description": "Assign mandate by work, not by name."
+        },
+        {
+          "title": "Voice",
+          "description": "Give everyone an equal voice."
+        }
+      ]
     },
     {
       "id": 180,
@@ -3875,7 +5539,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Journal",
+          "description": "Write down what you do not want remembered publicly."
+        },
+        {
+          "title": "Privacy",
+          "description": "Do not publish what belongs only to you."
+        },
+        {
+          "title": "Deletion",
+          "description": "Let be deleted what someone asks to delete."
+        }
+      ]
     },
     {
       "id": 181,
@@ -3891,7 +5568,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Twelve",
+          "description": "Close the circle of twelve."
+        },
+        {
+          "title": "Threshold",
+          "description": "Open the thirteenth step."
+        },
+        {
+          "title": "Handover",
+          "description": "Point the way on and stay behind."
+        }
+      ]
     },
     {
       "id": 182,
@@ -3907,7 +5597,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Hall",
+          "description": "Rest until you are truly rested."
+        },
+        {
+          "title": "Wound",
+          "description": "Treat the wound before you go on."
+        },
+        {
+          "title": "Return",
+          "description": "Return strong, not merely quick."
+        }
+      ]
     },
     {
       "id": 183,
@@ -3923,7 +5626,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Question",
+          "description": "Ask before you decide."
+        },
+        {
+          "title": "Raven",
+          "description": "Find out both versions of the same story."
+        },
+        {
+          "title": "Decision",
+          "description": "Decide and write down why."
+        }
+      ]
     },
     {
       "id": 184,
@@ -3939,7 +5655,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Hammer",
+          "description": "Hold together what is falling apart."
+        },
+        {
+          "title": "Thunder",
+          "description": "Avert the outage before it stops everyone."
+        },
+        {
+          "title": "Calm",
+          "description": "Let the system run and do not interfere."
+        }
+      ]
     },
     {
       "id": 185,
@@ -3955,7 +5684,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Portion",
+          "description": "Divide the reward without loss of dignity."
+        },
+        {
+          "title": "Privacy",
+          "description": "Protect what should not be seen."
+        },
+        {
+          "title": "Courage",
+          "description": "Stand by your share."
+        }
+      ]
     },
     {
       "id": 186,
@@ -3971,7 +5713,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Oath",
+          "description": "Make a promise that will cost something."
+        },
+        {
+          "title": "Hand",
+          "description": "Pay the price and do not complain."
+        },
+        {
+          "title": "Word",
+          "description": "Keep it even when it is no longer convenient."
+        }
+      ]
     },
     {
       "id": 187,
@@ -3987,7 +5742,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Forge",
+          "description": "Make a tool that helps."
+        },
+        {
+          "title": "Text",
+          "description": "Write instructions people understand."
+        },
+        {
+          "title": "Bandage",
+          "description": "Tend to whoever needs it."
+        }
+      ]
     },
     {
       "id": 188,
@@ -4003,7 +5771,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Cauldron",
+          "description": "Fill the common stores."
+        },
+        {
+          "title": "Harp",
+          "description": "Calm a dispute over resources."
+        },
+        {
+          "title": "Sharing",
+          "description": "Share even with those who do not need it."
+        }
+      ]
     },
     {
       "id": 189,
@@ -4019,7 +5800,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Raven",
+          "description": "Warn before it is late."
+        },
+        {
+          "title": "Triage",
+          "description": "Sort what is on fire from what can wait."
+        },
+        {
+          "title": "Accountability",
+          "description": "Admit what you missed."
+        }
+      ]
     },
     {
       "id": 190,
@@ -4035,7 +5829,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Gate",
+          "description": "Show what you can do, not who you are."
+        },
+        {
+          "title": "Stand-in",
+          "description": "Cover for the missing member of the team."
+        },
+        {
+          "title": "Handover",
+          "description": "Teach others what you can do."
+        }
+      ]
     },
     {
       "id": 191,
@@ -4051,7 +5858,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Mist",
+          "description": "Walk carefully when you cannot see far."
+        },
+        {
+          "title": "Step",
+          "description": "Take only the next step."
+        },
+        {
+          "title": "Crossing",
+          "description": "Cross between worlds without getting lost."
+        }
+      ]
     },
     {
       "id": 192,
@@ -4067,7 +5887,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Morning",
+          "description": "Begin the day even after a bad night."
+        },
+        {
+          "title": "Noon",
+          "description": "Do the hardest thing at full strength."
+        },
+        {
+          "title": "Night",
+          "description": "Pass through the dark without stopping."
+        }
+      ]
     },
     {
       "id": 193,
@@ -4083,7 +5916,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Two Crowns",
+          "description": "Join two administrations into one."
+        },
+        {
+          "title": "Border",
+          "description": "Hold the border so it does not break."
+        },
+        {
+          "title": "Eye",
+          "description": "Watch what you joined."
+        }
+      ]
     },
     {
       "id": 194,
@@ -4099,7 +5945,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Record",
+          "description": "Record what happened, without interpretation."
+        },
+        {
+          "title": "Accuracy",
+          "description": "Verify the number before you pass it on."
+        },
+        {
+          "title": "Archive",
+          "description": "Keep the record so it can be found."
+        }
+      ]
     },
     {
       "id": 195,
@@ -4115,7 +5974,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Feast",
+          "description": "Hold a feast anyone may attend."
+        },
+        {
+          "title": "Music",
+          "description": "Play for someone who cannot arrange it themselves."
+        },
+        {
+          "title": "No One Left",
+          "description": "Invite whoever the others overlooked."
+        }
+      ]
     },
     {
       "id": 196,
@@ -4131,7 +6003,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Reckoning",
+          "description": "Deduct what was taken."
+        },
+        {
+          "title": "Explanation",
+          "description": "Explain why it was necessary."
+        },
+        {
+          "title": "Cooling",
+          "description": "Let it cool before you return."
+        }
+      ]
     },
     {
       "id": 197,
@@ -4147,7 +6032,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Template",
+          "description": "Create a pattern that can be repaired by."
+        },
+        {
+          "title": "First Stone",
+          "description": "Lay the foundation so it holds."
+        },
+        {
+          "title": "Repair",
+          "description": "Repair by the pattern, not by eye."
+        }
+      ]
     },
     {
       "id": 198,
@@ -4163,7 +6061,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Luggage",
+          "description": "Weigh what you actually need to carry."
+        },
+        {
+          "title": "Backup",
+          "description": "Make sure nothing is lost."
+        },
+        {
+          "title": "Departure",
+          "description": "Leave prepared, not surprised."
+        }
+      ]
     },
     {
       "id": 199,
@@ -4179,7 +6090,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Hidden Voice",
+          "description": "Vote so that no one can pressure you."
+        },
+        {
+          "title": "Pressure",
+          "description": "Resist pressure and reveal no source."
+        },
+        {
+          "title": "Result",
+          "description": "Publish the result honestly and in full."
+        }
+      ]
     },
     {
       "id": 200,
@@ -4195,7 +6119,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Foundation",
+          "description": "Check what holds the service up from below."
+        },
+        {
+          "title": "Matter",
+          "description": "Renew what wore out."
+        },
+        {
+          "title": "Operation",
+          "description": "Keep it running even when no one looks."
+        }
+      ]
     },
     {
       "id": 201,
@@ -4211,7 +6148,20 @@
       "consciousness_level_name": "",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "Night",
+          "description": "Maintain the system while everyone sleeps."
+        },
+        {
+          "title": "Stars",
+          "description": "Record what changed overnight."
+        },
+        {
+          "title": "Dawn",
+          "description": "Hand over the state in the morning without loss."
+        }
+      ]
     },
     {
       "id": 202,

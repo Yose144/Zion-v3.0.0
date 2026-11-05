@@ -473,6 +473,26 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Dlaždice v konzoli** přibyla automaticky z manifestu (`id: 'archa'`), okno
   `ArchaPortal` má dvě cesty: `/present/kralovstvi-srdce` a misijní stránku.
 
+## Flotila z marketplace — `/fleet` (2026-11-05, NASAZENO)
+
+Volný let se 7 loděmi z marketplace (`public/models/fleet/*.glb`, 4,7 MB, panelový lak
+ve `COLOR_0`) + doky Nabukano (3 kotviště) a Issobella. Simulace `core/fleet/flight.ts`,
+doky `core/fleet/docks.ts` (funkce času, zakotvená loď kopíruje pohyb doku), scéna
+`FleetScene.tsx`, stránka `app/fleet/page.tsx`, dotyk přes `TouchButton`, `?fleetDebug=1`.
+
+**Nasazeno:** 2026-11-05 (deploy `20261105T113053Z`, mobilní audit `20261105T123201Z`).
+**Deploy artefakt se staví v čistém worktree na HEAD** — v pracovním stromu bývá rozdělaná
+práce jiné session (např. proto 31), kterou do produkce nechceme.
+
+**Pasti:** GLB **musí** ležet pod `/models` (jen ten prefix je v middleware veřejný, jinak
+loader dostane 307/HTML); `render.mjs` přepočítává mapy portrétů/sheetů z disků a zahodí
+záznamy se starými slugy; proto pre-flight čte `PROTO_VERSION` z **pracovního stromu**, ne
+z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvodni.
+
+**Otevřené:** Star Wars IP + cizí kit (před-launch blocker), multiplayer flotily, VR, skutečný mobil.
+
+---
+
 ## Nebeská flotila — Nabukano (2026-11-01)
 
 - **Slot `fleet` je nový `SceneSlot`.** `SLOT_COLOR` je exhaustivní `Record`
