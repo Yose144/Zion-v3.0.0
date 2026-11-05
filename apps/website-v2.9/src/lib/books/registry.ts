@@ -320,7 +320,7 @@ export const MIRIAM_BOOK = korpusBook({
   dir: 'Miriam',
   accent: '236, 72, 153',
   icon: Moon,
-  kicker: { cs: 'Příběh · osa času · CZ', en: 'A story · the axis of time · CZ' },
+  kicker: { cs: 'Příběh · osa času · CZ + EN', en: 'A story · the axis of time · CZ + EN' },
   title: { cs: 'Miriam', en: 'Miriam' },
   subtitle: { cs: 'Maria Magdaléna — metoda kámen / hlína / sen.', en: 'Mary Magdalene — the stone / clay / dream method.' },
   description: {

@@ -185,11 +185,10 @@ export const COMPANION_GROUPS: CompanionGroup[] = [
         title: { cs: 'Miriam', en: 'Miriam' },
         description: {
           cs: 'Osa času — Maria Magdaléna, metoda kámen / hlína / sen.',
-          en: 'The axis of time — Mary Magdalene, the stone / clay / dream method. Czech original.',
+          en: 'The axis of time — Mary Magdalene, the stone / clay / dream method.',
         },
         status: 'draft',
         href: '/zion-archive/miriam/cist',
-        czOnly: true,
         rc: '236, 72, 153',
       },
       {
