@@ -196,6 +196,34 @@ a oba nové modaly v CS i EN, portréty 200, 0 pageerror.
 
 ---
 
+## 6d. Incident: 502 po deployi (kolize dvou buildů) — a ponaučení
+
+Při druhém deployi (copy „200 → 202") web na ~4 minuty spadl. Timeline:
+
+| čas (CET) | co se stalo |
+|---|---|
+| 10:55 | `deploy-web2.9.sh` → `Deployed 20261105T095544Z`, smoke check OK |
+| 10:58 | služba `zion-website` padá: `Cannot find module '../trace/shared'` (chybí `node_modules/next/dist/trace/shared.js`) → **502** na všech routách |
+| 11:00 | paralelní session dokončila svůj deploy → strom je kompletní, web 200 (`NRestarts=3`) |
+
+**Příčina:** dvě session deployovaly současně. Ta druhá spustila `rm -rf .next && npm run build`,
+což mazalo `standalone/` **pod běžícím rsync** → rsync ohlásil `file has vanished (code 24)`
+a přenesl **neúplný `node_modules/next`**. Deploy skript smoke check prošel, protože proces
+v tu chvíli ještě běžel; spadl až o ~2,5 min později, kdy mu zmizely soubory pod rukama.
+
+**Prevence (platí pro každý deploy webu):**
+1. Před `deploy-web2.9.sh` zkontroluj `pgrep -fl "next build|npm run build"` — když něco běží, počkej.
+2. Zkontroluj stale lock: `apps/website-v2.9/.next/lock` (0 B, zůstává po přerušeném buildu).
+   Když neběží žádný build, `rm -f .next/lock`.
+3. `rsync warning: file has vanished (code 24)` **není** benigní — po něm vždy ověř
+   `node_modules/next/dist/trace/shared.js` v nasazeném stromu a HTTP 200 na `/api/health`.
+4. Smoke check hned po restartu nestačí — ověř web znovu **po ~3 minutách** (a hashovat obsah).
+
+Po obnovení: 202 karet, badge „202 avatarů", oba nové modaly v CS i EN s vlastními portréty,
+404/404 profilů SHA-256 shoda, 202 portrétů 200, 0 pageerror.
+
+---
+
 ## 7. Meze a co zůstává
 
 - **Kánon 42/43 vs. lore.** Roster (a tedy stránka) říká 42 = Dattatreya, 43 = Maly Princ;

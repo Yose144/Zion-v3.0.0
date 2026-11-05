@@ -173,6 +173,11 @@ curl -s -o /dev/null -w '%{http_code}\n' https://app.zionterranova.com/data/oasi
 #   → v modalu přepnout CS/EN a ověřit, že se mění text profilu
 ```
 
+⚠️ **Před každým deployem zkontroluj, že neběží cizí build** (`pgrep -fl "next build|npm run build"`)
+a že nezůstal stale `apps/website-v2.9/.next/lock` — dva souběžné buildy si mažou `standalone/`
+pod rsyncem, výsledkem je `file has vanished (code 24)` a **502** (incident 2026-11-05,
+`REPORT_2026-11-05_OASIS_AVATAR_I18N.md` §6d). Po deployi ověř web znovu po ~3 minutách.
+
 ⚠️ **Restart `zion-website` je u hot-file deploye povinný** — nové cesty v `public/` vrací 404,
 dokud standalone server neaktualizuje manifest (přepsané soubory se projeví hned).
 Server servíruje `public/` jen z `.next/standalone/public/` (top-level `public/` tam není).
