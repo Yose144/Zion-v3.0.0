@@ -402,7 +402,7 @@ export const ISSOBELLA_BOOK = korpusBook({
   dir: 'Issobella',
   accent: '251, 146, 60',
   icon: Satellite,
-  kicker: { cs: 'Příběh · nebe nad námi · CZ (+EN index)', en: 'A story · the sky above · CZ (+EN index)' },
+  kicker: { cs: 'Příběh · nebe nad námi · CZ + EN', en: 'A story · the sky above · CZ + EN' },
   title: { cs: 'Issobella', en: 'Issobella' },
   subtitle: { cs: 'Orbitální stanice L6, kvantový oheň — příběh, ne příslib technologie.', en: 'The L6 orbital station, the quantum fire — a story, not a technology promise.' },
   description: {
