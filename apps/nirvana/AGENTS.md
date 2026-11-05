@@ -2194,6 +2194,25 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Světlo nesmí spadnout do svatyně** (`r + 6`). Kdyby ano, hráč by ho „sebral“
   až u cíle a poslední úsek cesty by byl bez hledání.
 
+## Lumi — kapitoly a VR (2026-11-05)
+
+- **Kapitola nemá vlastní stav.** `LUMI_CHAPTERS` v `world.ts` je dozvuk jedné cesty
+  (titulek + text cs/en) a odemyká se **odvozeně** z `journal.paths` — žádné nové pole
+  v `nirvana.lumi.v1`, takže starý deník funguje beze změny.
+- **`introFor(pathId, paths)`** vrací jiný úvod, když cestu už doletěla: obloha se
+  posunula (L-7) a hra to přizná. Texty jsou v `world.ts`, ne v JSX — jinak by je
+  testy neviděly a `page.tsx` by byl plný literálů.
+- **VR: `<XR>` patří do plátna, store do stránky.** `LumiCanvas` bere `xrStore` a obalí
+  jím scénu (stejný vzor jako Saturn/MOBA). V XR se **nesmí použít `CameraRig`** —
+  kamera patří headsetu a každý frame by s ní cloumal.
+- **`XROrigin` letí za Lumi**, ne v ní: origin na `(x−2,4; y+1,1; 4,4)`, mírně stočený,
+  takže hráč vidí postavu i oblohu před sebou. Kdyby seděl na její pozici, koukal by
+  zevnitř hlavy.
+- **Vstup přes `VrInputs` → syntetické klávesy** (`ArrowUp/Left/Down/Right`, spoušť
+  `Space`). Stejná pravidla jako dotyk: hra má jednu vstupní větev.
+- **Co VR ještě neumí:** letět směrem pohledu (dnes joystick) a není ověřené na
+  headsetu. Audit kontroluje jen to, že klik na `VR` bez WebXR scénu nerozbije.
+
 ## Flotila z marketu — `/fleet` (2026-11-05)
 
 - **Lodě jsou produkty z marketu, ne nové assety.** Zdroj jsou STL skládačky

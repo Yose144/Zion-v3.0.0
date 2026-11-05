@@ -17,7 +17,10 @@
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
+import { XR, XROrigin, type XRStore } from '@react-three/xr';
 import * as THREE from 'three';
+import { VR_DEADZONE, useVrKeys } from '@/core/xr';
+import { VrInputs } from '@/core/xr/inputs';
 import {
   ENERGY_MAX,
   createFlight,
@@ -572,6 +575,7 @@ export function LumiScene({
   remotes,
   sharedLights,
   onFly,
+  xr = false,
 }: {
   /** Kterou cestou se letí — data i simulace se berou odsud. */
   path: LumiPath;
@@ -594,6 +598,8 @@ export function LumiScene({
   onStats: (stats: LumiStats) => void;
   onFinish: (score: number) => void;
   paused?: boolean;
+  /** Běží immersive session? Kamera pak patří headsetu, ne `CameraRig`. */
+  xr?: boolean;
 }) {
   const { gl } = useThree();
   const state = useRef<FlightState>(createFlight(path.id));
@@ -763,7 +769,7 @@ export function LumiScene({
       <Shrine open={state.current.lights.length === path.lights.length} shrine={path.shrine} />
       <Lumi state={state} detail={detail} />
       {remotes && <RemoteFlyers remotes={remotes} />}
-      <CameraRig state={state} />
+      {xr ? <LumiXr state={state} active={!paused} /> : <CameraRig state={state} />}
     </>
   );
 }
@@ -900,6 +906,49 @@ function CameraRig({ state }: { state: React.MutableRefObject<FlightState> }) {
   return null;
 }
 
+/**
+ * VR let (L-4).
+ *
+ * V headsetu **kameru vlastní headset**, takže `CameraRig` se nepoužívá
+ * (jinak by se scéna každý snímek „řítila hlavou"). Místo toho se hýbe
+ * `XROrigin` — nese tělo hráče a letí kousek za Lumi, takže ji člověk vidí
+ * před sebou a nesedí uvnitř její hlavy.
+ *
+ * Vstup jde přes **syntetické klávesy** (`useVrKeys`), stejné, jaké posílá
+ * dotyk a klávesnice. Kdyby VR mělo vlastní větev, rozešlo by se to se
+ * simulací i se serverem — stejné pravidlo jako u `TouchPad`.
+ */
+function LumiXr({ state, active }: { state: React.MutableRefObject<FlightState>; active: boolean }) {
+  const origin = useRef<THREE.Group>(null);
+  const keys = useVrKeys();
+
+  useFrame(() => {
+    const flight = state.current;
+    if (origin.current) {
+      // za a nad Lumi, mírně z boku — zepředu by zakrývala výhled
+      origin.current.position.set(flight.x - 2.4, flight.y + 1.1, 4.4);
+      origin.current.rotation.y = 0.32;
+    }
+  });
+
+  return (
+    <>
+      <XROrigin ref={origin} />
+      <VrInputs
+        onInput={(input) => {
+          const stick = input.left.stick;
+          // levý stick = směr (stejné osy jako šipky), spoušť = lucerna
+          keys.set('ArrowUp', active && stick.y > VR_DEADZONE);
+          keys.set('ArrowDown', active && stick.y < -VR_DEADZONE);
+          keys.set('ArrowLeft', active && stick.x < -VR_DEADZONE);
+          keys.set('ArrowRight', active && stick.x > VR_DEADZONE);
+          keys.set('Space', active && (input.right.trigger || input.left.trigger));
+        }}
+      />
+    </>
+  );
+}
+
 /** Obal, aby stránka nemusela řešit Canvas ani kameru. */
 export function LumiCanvas(props: {
   path: LumiPath;
@@ -918,10 +967,20 @@ export function LumiCanvas(props: {
     collect?: number;
     finished?: boolean;
   }) => void;
+  /** XR store z `useXr()` — `<XR>` musí být uvnitř plátna, store patří ven. */
+  xrStore?: XRStore;
+  xr?: boolean;
 }) {
+  const { xrStore, ...scene } = props;
   return (
     <Canvas dpr={[1, 1.75]} camera={{ position: [22, 22, 58], fov: 44, near: 0.5, far: 400 }}>
-      <LumiScene {...props} />
+      {xrStore ? (
+        <XR store={xrStore}>
+          <LumiScene {...scene} />
+        </XR>
+      ) : (
+        <LumiScene {...scene} />
+      )}
     </Canvas>
   );
 }

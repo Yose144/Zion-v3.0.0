@@ -358,6 +358,82 @@ export function pathData(id: LumiPathId, date: Date = new Date()): LumiPath {
   return { ...path, lights: lightsFor(path.id, date) };
 }
 
+/**
+ * Kapitoly mezi cestami (L-8).
+ *
+ * Každá cesta má **dozvuk**: text, který se ukáže po doletu a zůstane
+ * v deníku. Není to odměna ani skóre — je to důvod, proč jít znovu.
+ * Drží se tady (data), ne ve stránce, aby se text nedal „zapomenout"
+ * v JSX a aby ho viděly testy.
+ */
+export interface LumiChapter {
+  /** Id kapitoly = id cesty, po které se odemkne. */
+  id: LumiPathId;
+  title: { cs: string; en: string };
+  text: { cs: string; en: string };
+}
+
+export const LUMI_CHAPTERS: Record<LumiPathId, LumiChapter> = {
+  calm: {
+    id: 'calm',
+    title: { cs: 'První světlo', en: 'The first light' },
+    text: {
+      cs: 'Doletěla jsi. Světlo v dlani bylo těžší, než vypadalo, a poprvé bylo ticho, které nebylo prázdné. Lucerna se zakymácela — a v obloze se objevilo další místo, kam se dá letět.',
+      en: 'You made it. The light in your palm was heavier than it looked, and for the first time the silence was not empty. The lantern swayed — and another place appeared in the sky to fly to.',
+    },
+  },
+  wind: {
+    id: 'wind',
+    title: { cs: 'Výš než strach', en: 'Higher than fear' },
+    text: {
+      cs: 'Vítr už tě nevede, jen ti stojí v cestě — a ty letíš dál. Mezi proudy je prázdno, které se nedá obejít; dá se jen přečkat. Zjistila jsi, že lucerna vydrží, i když si nejsi jistá.',
+      en: 'The wind no longer leads you, it only stands in the way — and you keep flying. Between the currents there is emptiness you cannot go around; you can only outlast it. You learned the lantern holds even when you are not sure.',
+    },
+  },
+  light: {
+    id: 'light',
+    title: { cs: 'Světlo, které zůstává', en: 'The light that stays' },
+    text: {
+      cs: 'Doletěla jsi na konec spirály. Sedmé světlo nesvítí víc než první — jen je jiné, protože už víš, co jsi cestou nechala za sebou. Svatyně se otevírá zevnitř.',
+      en: 'You reached the end of the spiral. The seventh light does not shine brighter than the first — it is only different, because you now know what you left behind on the way. The shrine opens from the inside.',
+    },
+  },
+};
+
+/** Kapitola, která patří k doletěné cestě. */
+export function chapterAfter(pathId: LumiPathId): LumiChapter {
+  return LUMI_CHAPTERS[pathId] ?? LUMI_CHAPTERS.calm;
+}
+
+/**
+ * Úvod cesty podle toho, co už hráč doletěl.
+ *
+ * Vracející se hráč nedostane stejný text: obloha se posunula (L-7) a hra to
+ * přizná. První průchod = základní intro z `LUMI_PATHS`.
+ */
+export function introFor(pathId: LumiPathId, paths: string[] = []): { text: { cs: string; en: string }; returning: boolean } {
+  const path = LUMI_PATHS[pathId] ?? LUMI_PATHS.calm;
+  const returning = paths.includes(path.id);
+  if (!returning) return { text: path.intro, returning: false };
+
+  const again: Record<LumiPathId, { cs: string; en: string }> = {
+    calm: {
+      cs: 'Tuhle cestu už znáš. Světla se posunula a proudy tečou jinudy — obloha si tě pamatuje, ale nechce ti to usnadnit.',
+      en: 'You know this way already. The lights have shifted and the currents run elsewhere — the sky remembers you, but it will not make it easier.',
+    },
+    wind: {
+      cs: 'Vracíš se výš. Vítr je dnes jinde než minule; kdo spoléhá na paměť, doletí dřív, kdo na odvahu, dál.',
+      en: 'You return higher. The wind is elsewhere than last time; whoever trusts memory arrives sooner, whoever trusts courage arrives farther.',
+    },
+    light: {
+      cs: 'Spirála je pořád stejná a ty taky — jen světla se posunula. Cesta není těžší, jen méně známá.',
+      en: 'The spiral is the same and so are you — only the lights have moved. The way is not harder, just less known.',
+    },
+  };
+
+  return { text: again[path.id] ?? path.intro, returning: true };
+}
+
 /** Dárek na konci: nechat si, nebo darovat. Texty i odměna. */
 export const LUMI_GIFT = {
   keep: {

@@ -72,7 +72,7 @@ const repaired = loadJournal();
 check('nesmyslná pole se opraví', repaired.found.length === 0 && repaired.runs === 0 && repaired.gifts.keep === 0, JSON.stringify(repaired));
 
 // ── 7) odemykání třetí cesty ─────────────────────────────────────────
-const { LUMI_PATHS, pathData } = await import('../src/core/lumi/world.ts');
+const { LUMI_CHAPTERS, LUMI_PATHS, chapterAfter, introFor, pathData } = await import('../src/core/lumi/world.ts');
 
 check('třetí cesta existuje', Boolean(LUMI_PATHS.light), Object.keys(LUMI_PATHS).join(','));
 check('třetí cesta má sedm světel', pathData('light').lights.length === 7, String(pathData('light').lights.length));
@@ -99,6 +99,25 @@ check('po obou cestách je light odemčená', isPathUnlocked('light', afterWind)
 
 const repeated = recordJourney([1], 'keep', 'calm');
 check('cesta se v deníku nezdvojí', repeated.paths.filter((id) => id === 'calm').length === 1, repeated.paths.join(','));
+
+// ── kapitoly mezi cestami (L-8) ─────────────────────────────────────
+for (const id of Object.keys(LUMI_PATHS)) {
+  const chapter = chapterAfter(id);
+  check(`kapitola pro ${id} má titulek i text (cs+en)`, Boolean(chapter.title.cs && chapter.title.en && chapter.text.cs && chapter.text.en));
+  check(`kapitola ${id} sedí na svou cestu`, chapter.id === id, chapter.id);
+}
+const chapters = Object.values(LUMI_CHAPTERS);
+check('každá cesta má vlastní kapitolu', new Set(chapters.map((c) => c.text.cs)).size === chapters.length);
+check('kapitola se nemění podle pořadí', chapterAfter('wind').text.en !== chapterAfter('calm').text.en);
+
+// úvod se mění podle toho, co už hráč doletěl
+const introFirst = introFor('calm', []);
+const introAgain = introFor('calm', ['calm']);
+check('první návštěva má základní intro', introFirst.text.cs === LUMI_PATHS.calm.intro.cs && introFirst.returning === false);
+check('po doletění má cesta jiný úvod', introAgain.text.cs !== introFirst.text.cs && introAgain.returning === true);
+check('jiný úvod má i jiný jazyk', introAgain.text.en !== introFirst.text.en);
+check('nedoletěná cesta intro nemění', introFor('wind', ['calm']).returning === false);
+check('intro se nededupuje podle více cest', introFor('wind', ['calm', 'wind']).returning === true);
 
 console.log('');
 if (failures > 0) {

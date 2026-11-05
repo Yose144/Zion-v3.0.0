@@ -25,6 +25,8 @@ import {
   LUMI_GIFT,
   LUMI_GIFT_BONUS,
   LUMI_PATHS,
+  chapterAfter,
+  introFor,
   pathData,
   type LumiPathId,
 } from '@/core/lumi/world';
@@ -36,6 +38,8 @@ import { InviteButton } from '@/core/net/InviteButton';
 import type { LumiRemote } from '@/core/lumi/LumiScene';
 import { unlock } from '@/core/audio/engine';
 import { TouchButton } from '@/core/games/TouchPad';
+import { useXr } from '@/core/xr';
+import { VrButton } from '@/core/xr/VrButton';
 
 type Phase = 'intro' | 'flying' | 'done';
 type Gift = 'keep' | 'give';
@@ -90,8 +94,16 @@ export default function LumiPage() {
    * zůstává viditelný i s vypnutým HUD.
    */
   const [photo, setPhoto] = useState(false);
+  /** VR (L-4): store patří stránce, `<XR>` musí být uvnitř plátna. */
+  const xr = useXr();
 
   const path = pathData(pathId);
+  /**
+   * Kapitola patří k cestě (L-8). Vrací se i do úvodu: kdo už cestu doletěl,
+   * dostane jiný text než ten, kdo ji vidí poprvé — obloha se mezitím posunula.
+   */
+  const chapter = chapterAfter(pathId);
+  const intro = useMemo(() => introFor(pathId, journal.paths), [pathId, journal.paths]);
   const missing = Math.max(0, stats.total - stats.lights);
 
   /**
@@ -272,6 +284,8 @@ export default function LumiPage() {
                 }
               : undefined
           }
+          xrStore={xr.store}
+          xr={xr.presenting}
         />
       </div>
 
@@ -350,6 +364,8 @@ export default function LumiPage() {
             >
               📷
             </button>
+
+            <VrButton xr={xr} className="lumi-vr" />
           </div>
 
           <p className="lumi-hint">
@@ -422,7 +438,7 @@ export default function LumiPage() {
       {phase === 'intro' && (
         <section className="lumi-panel">
           <h2>Lumi</h2>
-          <p>{path.intro[cs ? 'cs' : 'en']}</p>
+          <p>{intro.text[cs ? 'cs' : 'en']}</p>
           <ul className="lumi-rules">
             <li>
               {cs
@@ -538,6 +554,12 @@ export default function LumiPage() {
         <section className="lumi-panel is-done">
           <h2>{cs ? 'Světlo se vrátilo' : 'The light returned'}</h2>
           <p>{gift ? LUMI_GIFT[gift].text[cs ? 'cs' : 'en'] : LUMI_FINISH[cs ? 'cs' : 'en']}</p>
+
+          {/* Kapitola patří k doletěné cestě — zůstává v deníku, i když se text níž ztratí. */}
+          <figure className="lumi-chapter">
+            <figcaption>{chapter.title[cs ? 'cs' : 'en']}</figcaption>
+            <blockquote>{chapter.text[cs ? 'cs' : 'en']}</blockquote>
+          </figure>
 
           <dl className="lumi-score">
             <div>

@@ -18,9 +18,9 @@
 | **Není to** | Arkáda. Žádné nepřátele, časomíra ani skóre, které by šlo prohrát. |
 | **Kde** | `/lumi` v `apps/nirvana`; v HUD liště jako `🏮 X/7`; z panelu planety Uran jako **„Letět s Lumi"**. |
 | **Multiplayer** | Společné létání pro **4** (`GameId 'lumi'`, `PROTO_VERSION = 30`) — **relay**, ne autoritativní simulace. |
-| **Hotovo** | 3 cesty, 7 světel + úlomky příběhu, darování, deník, zvuk, LOD lucerny, kompas, HUD, co-op, **duchové** (L-2), **foto mód** (L-5), **reduced motion** (L-9), **stopa** (L-3), **denní obloha** (L-7). |
+| **Hotovo** | 3 cesty, 7 světel + úlomky příběhu, darování, deník, zvuk, LOD lucerny, kompas, HUD, co-op, **duchové** (L-2), **foto mód** (L-5), **reduced motion** (L-9), **stopa** (L-3), **denní obloha** (L-7), **kapitoly** (L-8), **VR vrstva** (L-4, bez headsetu). |
 | **Dluh** | Živý net je na protokolu **26**, repo na **30** → co-op se do nasazení nepřipojí (viz §9). |
-| **Ověřeno** | **53** + 30 + **15** + **18** + **50** kontrol (tab. §8), `tsc` a `next build` čisté. |
+| **Ověřeno** | **53** + **43** + **15** + **18** + **54** kontrol (tab. §8), `tsc` a `next build` čisté. |
 
 ---
 
@@ -86,9 +86,9 @@ nemyslí, že k něčemu patří.
 
 | Soubor | Řádků | Role | Když chybí / přejmenuje se |
 |---|---|---|---|
-| `world.ts` | 380 | Jediný zdroj pravdy: `LUMI_LIGHTS` (7), `WIND_LIGHTS`, `LIGHT_LIGHTS`, `LUMI_CURRENTS`, `LUMI_ISLANDS`, `LUMI_SHRINE`, `LUMI_PATHS` (calm/wind/light), `LUMI_GIFT` + `LUMI_GIFT_BONUS = 150`, texty | světla a cesty zmizí ze scény i z UI; nová cesta = nový záznam tady, ne v `page.tsx` |
+| `world.ts` | 456 | Jediný zdroj pravdy: `LUMI_LIGHTS` (7), `WIND_LIGHTS`, `LIGHT_LIGHTS`, `LUMI_CURRENTS`, `LUMI_ISLANDS`, `LUMI_SHRINE`, `LUMI_PATHS` (calm/wind/light), `LUMI_GIFT` + `LUMI_GIFT_BONUS = 150`, texty | světla a cesty zmizí ze scény i z UI; nová cesta = nový záznam tady, ne v `page.tsx` |
 | `flight.ts` | 211 | Čistá simulace: `createFlight`, `stepFlight`, `nextTarget`, `lumiScore`, `missingLights` | nelze testovat bez prohlížeče; fyzika se rozejde mezi sólo a co-opem |
-| `LumiScene.tsx` | 927 | r3f scéna: protagonista, GLB lucerna + LOD, `CameraRig`, `RemoteFlyers`, dotyk, zvuk, `onStats`/`onFly`, debug háčky | hra nemá obraz; E2E přijde o `__lumiDebug`/`__lumiTeleport` |
+| `LumiScene.tsx` | 986 | r3f scéna: protagonista, GLB lucerna + LOD, `CameraRig`, `RemoteFlyers`, dotyk, zvuk, `onStats`/`onFly`, debug háčky | hra nemá obraz; E2E přijde o `__lumiDebug`/`__lumiTeleport` |
 | `journal.ts` | 100 | `localStorage` `nirvana.lumi.v1`: světla (množina), cesty, dary; `isPathUnlocked`, `missingInJournal` | HUD `🏮 X/7` padá na 0 a cesta `light` se odemkne vždy |
 | `trail.ts` | 66 | Čistá logika stopy (L-3): `pushTrail`/`pruneTrail`/`trailFade`, konstanty `TRAIL_LEN/STEP/TTL` | stopa se vzorkuje každým snímkem → jiná na 60 fps než na 20 fps; testy v Node by nešly |
 
@@ -96,7 +96,7 @@ nemyslí, že k něčemu patří.
 
 | Soubor | Řádků | Role | Když chybí |
 |---|---|---|---|
-| `src/app/lumi/page.tsx` | 595 | Fáze `intro → flying → done`, HUD, kompas, dar, co-op panel | route 404 (i s přesměrováním z `/kridla`) |
+| `src/app/lumi/page.tsx` | 617 | Fáze `intro → flying → done`, HUD, kompas, dar, co-op panel | route 404 (i s přesměrováním z `/kridla`) |
 | `src/app/kridla/page.tsx` | ~30 | `router.replace('/lumi')` staré adresy | staré odkazy v chatu/historii skončí na 404 |
 | `src/core/games/links.ts` | 117 | dlaždice hry v `GamesDock` | Lumi zmizí z nabídky her, i když funguje |
 | `src/core/games/GameHud.tsx` | 182 | žeton `🏮 X/7` (čte `loadJournal`) | hráč nevidí postup mezi návštěvami |
@@ -126,7 +126,7 @@ nemyslí, že k něčemu patří.
 
 **Testy** — soubory a počty kontrol jsou v §8, ať seznam není dvakrát.
 
-### 3.1 `src/core/lumi/world.ts` (380 řádků) — data
+### 3.1 `src/core/lumi/world.ts` (456 řádků) — data
 
 - `LUMI_LIGHTS` (7), `WIND_LIGHTS`, `LIGHT_LIGHTS` — pozice, prstenec, tón.
 - `LUMI_CURRENTS` — proudy vzduchu (střed, poloměr, `lift`).
@@ -169,7 +169,7 @@ Funkce:
 - `lumiScore(state)` — `lights.length * 100` + časový bonus (max 600) po doletu.
 - `missingLights(state)` — pro text „zbývá N světel".
 
-### 3.3 `src/core/lumi/LumiScene.tsx` (927 řádků) — scéna
+### 3.3 `src/core/lumi/LumiScene.tsx` (986 řádků) — scéna
 
 - **Protagonista** z primitiv (`Lumi`), lucerna je decimovaný GLB
   (`public/models/lampion.glb`, 13 325 trojúhelníků, 0,21 MB; originál 242 648 / 4,36 MB).
@@ -191,7 +191,7 @@ Funkce:
   černá = neviditelná), ne přes `opacity` materiálu — ta je pro všechny instance společná.
 - **Telemetrie** `onStats` ~6×/s (`LumiStats`), sdílený let posílá `onFly` 20×/s.
 
-### 3.4 `src/app/lumi/page.tsx` (595 řádků) — UI
+### 3.4 `src/app/lumi/page.tsx` (617 řádků) — UI
 
 Fáze `intro → flying → done`:
 
@@ -319,10 +319,10 @@ snapshot.lumi = {
 | Test | Kde | Kontrol | Co ověřuje |
 |---|---|---|---|
 | Let | `apps/nirvana/test/lumi-flight.mjs` | **53** | lucerna zvedá a dochází, proudy nesou a dobíjí, cesta jde dohrát, skóre nezáporné, **kompas** míří na nejbližší světlo / svatyni / `null` |
-| Deník | `apps/nirvana/test/lumi-journal.mjs` | **30** | ukládání, idempotence světel, odemykání `light` až po `calm`+`wind`, darování |
+| Deník + kapitoly | `apps/nirvana/test/lumi-journal.mjs` | **43** | ukládání, idempotence světel, odemykání `light`, darování, **kapitola ke každé cestě, jiný úvod pro vracejícího se hráče** |
 | Stopa | `apps/nirvana/test/lumi-trail.mjs` | **15** | vzorky vznikají pohybem (ne každým snímkem), strop ohonu, doznívání po `TRAIL_TTL`, jas 1→0, **nezávislost na fps** |
 | Společný let (server) | `apps/nirvana-net/test/lumi.mjs` | **18** | dva se vidí, světla sdílená, nový hráč je dostane, cesta z prvního joinu, svatyně až po sedmi, odchod jednoho nezhroutí druhého, **duch zůstane 3 s na poslední pozici a pak zmizí** |
-| Audit v prohlížeči | `.artifacts/probe/lumi-audit.mjs` | **50** | scéna se vykreslí, let reaguje na vstup, 7 světel → svatyně → panel → dar → skóre na tabuli, deník, **kompas**, model lucerny se opravdu načetl, **foto mód skryje chrome a `Esc` ho vrátí**, konzole bez chyb |
+| Audit v prohlížeči | `.artifacts/probe/lumi-audit.mjs` | **54** | scéna se vykreslí, let reaguje na vstup, 7 světel → svatyně → panel → dar → skóre na tabuli, deník, **kompas**, model lucerny se opravdu načetl, **foto mód skryje chrome a `Esc` ho vrátí**, konzole bez chyb |
 | Živý co-op | `.artifacts/probe/lumi-coop-live.mjs` | 5 | dva prohlížeče: oba vidí „letí 1", světlo sebrané jedním má i druhý |
 
 ```bash
@@ -417,11 +417,11 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
 | **L-1** | Nasadit proto 30 (net → app) | `/net/health` hlásí 30; `smoke`+`lumi` projdou na novém buildu; živý co-op ve dvou oknech se vidí | nízké, ale **musí být první** | ⏳ čeká na 👤 |
 | **L-2** | Duchové: doletět místnost i po odpojení (poslední známá pozice 3 s) | odpojený hráč mizí z oblohy až po 3 s, ne okamžitě | nízké | ✅ 2026-11-05 |
 | **L-3** | Světelná stopa za lucernou (trail), jen `detail` | na M1 ≥ 50 fps, na mobilu vypnuto | nízké | ✅ 2026-11-05 |
-| **L-4** | VR let (`core/xr` už existuje pro Merkur/Venuši/Saturn) | v headsetu jde letět pohledem, lucerna na spoušti; bez headsetu se jen nesmí rozbít 2D | střední | ⬜ |
+| **L-4** | VR let (`core/xr` už existuje pro Merkur/Venuši/Saturn) | v headsetu jde letět pohledem, lucerna na spoušti; bez headsetu se jen nesmí rozbít 2D | střední | ⚠️ částečně 2026-11-05 |
 | **L-5** | Foto mód (skrýt HUD, volná kamera) | tlačítko skryje veškerý chrome, `Esc` vrátí | nízké | ✅ 2026-11-05 |
 | **L-6** | Druhá ruka: lucerna jde „předat" spoluletci (co-op emote) | druhý hráč dostane světlo do HUD, server to vidí ve `flyers` | střední (protokol) | ⬜ |
 | **L-7** | Denní světlo: jedenkrát denně jiná pozice sedmi světel (seed z datumu) | stejný den = stejná obloha pro všechny, zítra jiná; test determinismu | nízké | ✅ 2026-11-05 |
-| **L-8** | Kapitoly příběhu mezi cestami (text po každé cestě) | po `calm` a `wind` se odemkne jiný úvodní text, ne jen cesta | nízké | ⬜ |
+| **L-8** | Kapitoly příběhu mezi cestami (text po každé cestě) | po `calm` a `wind` se odemkne jiný úvodní text, ne jen cesta | nízké | ✅ 2026-11-05 |
 | **L-9** | Přístupnost: `prefers-reduced-motion` vypne vítr a částice | s preferencí se nehýbe pozadí, hra zůstane hratelná | nízké | ✅ 2026-11-05 |
 | **L-10** | Lokalizace do třetího jazyka (EN je hotové; CS je výchozí) | všechny texty z `world.ts` mají klíč, žádný hardcoded string v `page.tsx` | nízké | ⬜ |
 | **L-11** | Odměna za darování v kooperaci (společná svatyně = +body všem) | dva hráči doletí → oba dostanou bonus, ne jen ten, kdo doletěl první | střední | ⬜ |
@@ -447,17 +447,27 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
   delší na 60 fps než na 20; dozníváním se zkrátí i při stání. Na mobilu (`detail=false`)
   se nekreslí. Jas jde přes `setColorAt`, ne `opacity` materiálu (ta je pro instanci
   společná).
+- **L-8 (kapitoly) — ✅ hotovo.** `LUMI_CHAPTERS` v `world.ts` (jeden dozvuk na cestu:
+  titulek + text cs/en), `chapterAfter(pathId)` pro panel po doletu a `introFor(pathId, paths)`
+  pro **jiný úvod vracejícímu se hráči** — splňuje akceptaci „odemkne se jiný úvodní text,
+  ne jen cesta". Nic se neukládá: kapitola plyne z `journal.paths`, takže není potřeba
+  měnit schéma `nirvana.lumi.v1` (starý deník funguje dál).
+- **L-4 (VR) — ⚠️ částečně.** `LumiCanvas` bere `xrStore` a obalí scénu `<XR>` (stejný
+  vzor jako Saturn/MOBA); v XR se **nepoužívá `CameraRig`** (kamera patří headsetu), místo
+  toho `XROrigin` letí kousek za Lumi, aby ji člověk viděl a neseděl v její hlavě. Vstup jde
+  přes `VrInputs` → **syntetické klávesy** (`ArrowUp/Left/Down/Right`, spoušť = `Space`),
+  takže fyzika i server vidí totéž co z klávesnice. **Chybí:** „letět pohledem" (dnes
+  joystick, ne směr hlavy) a jakékoli ověření na headsetu — audit hlídá jen to, že klik na
+  `VR` bez WebXR scénu nerozbije.
 - **L-7 (denní světlo) — ✅ hotovo.** `lightsFor(pathId, date)` seeduje z data v UTC,
   `pathData(id, date)` je jediná cesta k datům. Posun ±9 jednotek, světlo nesmí do
   svatyně (`r + 6`), id ani texty se nemění. **Test:** `lumi-flight.mjs` (stejný den =
   stejná obloha, zítra jiná, meze mapy, žádné světlo ve svatyni). Pozor: testy musí
   číst `pathData(...).lights`, ne `LUMI_LIGHTS`, jinak běží proti jiné obloze, než
   jakou hra kreslí.
-- **L-4 (VR):** `core/xr` má `VrButton` + `inputs` a sousední hry mají `<X>Xr.tsx` varianty
-  (Merkur, Saturn, MOBA) — Lumi potřebuje stejný pár, ne novou infrastrukturu.
-- **L-6 (předání lucerny):** mění `fly` zprávu → **`PROTO_VERSION 31`** a znovu platí
-  „net první, pak appka". Server musí ověřit, že dárce to světlo opravdu má (jinak jde
-  darovat cizí).
+- **L-6 (předání lucerny):** mění `fly` zprávu → **další bump protokolu** (31 už zabrala
+  flotila, takže 32) a znovu platí „net první, pak appka". Server musí ověřit, že dárce
+  to světlo opravdu má (jinak jde darovat cizí).
 - **L-12 (výkon):** `?fps=1` v appce **neexistuje**; měří se probem `lumi-perf.mjs`
   (počítá rAF po dobu 2 s a čte `__lumiDebug()`). Akceptace musí používat tenhle nástroj.
 
@@ -507,3 +517,4 @@ co pokazit; jakákoli „výzva" by rozbila její smysl.
 | 2026-11-05 | Plán doplněn: **mapa souborů** (§3), měřený stav živého netu (`proto 26`, build `20261104T050941Z`) a implementační poznámky k L-2…L-12 s pastmi, které v kódu reálně jsou |
 | 2026-11-05 | **L-2 duchové** (server: `ghostUntil` 3 s, `liveCount()`; klient: rozpouštění), **L-5 foto mód** (`is-photo`, `Esc`/`✕ zpět`), **L-9 reduced motion** (mraky, jiskry, blikání lucerny). Testy: net **18/18**, audit **50/50**, `tsc` + `next build` čisté. Nenasazeno (proto 30 stále čeká) |
 | 2026-11-05 | **L-3 stopa** přepsána do `trail.ts` (vzorky pohybem, doznívání, `setColorAt`, na mobilu vypnuto) — **15/15**; **L-7 denní obloha** (`lightsFor`/`pathData` seed z UTC data) — `lumi-flight` **53/53**; testy musí číst `pathData().lights`, ne `LUMI_LIGHTS` |
+| 2026-11-05 | **L-8 kapitoly** (dozvuk po každé cestě + jiný úvod pro vracejícího se hráče, bez změny schématu deníku) — `lumi-journal` **43/43**; **L-4 VR vrstva** (`<XR>`, `XROrigin`, syntetické klávesy, `VrButton`) — 2D ověřeno auditem (**54/54**), headset netestován a „letět pohledem" chybí |

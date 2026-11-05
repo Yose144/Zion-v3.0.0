@@ -7979,6 +7979,30 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   color: #7fe3d4;
 }
 
+/* Kapitola cesty (L-8) — dozvuk po doletu, ne odměna. */
+.lumi-chapter {
+  margin: 0 0 0.9rem;
+  padding: 0.6rem 0.75rem;
+  border-left: 2px solid rgba(159, 228, 234, 0.45);
+  border-radius: 0 0.5rem 0.5rem 0;
+  background: rgba(159, 228, 234, 0.06);
+}
+
+.lumi-chapter figcaption {
+  margin-bottom: 0.3rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 233, 176, 0.8);
+}
+
+.lumi-chapter blockquote {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(232, 244, 255, 0.82);
+}
+
 @media (max-width: 560px) {
   .lumi-paths {
     grid-template-columns: 1fr;
@@ -8737,7 +8761,8 @@ a.game-hud-chip.is-lumi em {
 /* ── LUMI · foto mód (L-5) ─────────────────────────────────────────── */
 
 /* Tlačítko sedí v HUD jako další žeton; nesmí ale spolknout klik na scénu. */
-.lumi-photo {
+.lumi-photo,
+.lumi-vr {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -8754,7 +8779,8 @@ a.game-hud-chip.is-lumi em {
   pointer-events: auto;
 }
 
-.lumi-photo:hover {
+.lumi-photo:hover,
+.lumi-vr:hover {
   border-color: rgba(159, 228, 234, 0.6);
   background: rgba(159, 228, 234, 0.14);
 }
@@ -8801,7 +8827,8 @@ a.game-hud-chip.is-lumi em {
 }
 
 @media (hover: none) and (pointer: coarse) {
-  .lumi-photo {
+  .lumi-photo,
+  .lumi-vr {
     width: 2.5rem;
     height: 2.5rem;
   }
