@@ -1,7 +1,7 @@
 # TRANSLATION PLAN — Zion Archive (CZ → EN)
 
-> **Verze:** 1.5 · **Datum:** 2026-11-05 · **Vlastník:** 👤
-> **Stav:** 108 / 189 překladatelných kapitol (**57,1 %**), zbývá **81 kapitol** (~0,82 MB zdroje)
+> **Verze:** 1.6 · **Datum:** 2026-11-05 · **Vlastník:** 👤
+> **Stav:** 110 / 189 překladatelných kapitol (**58,2 %**), zbývá **79 kapitol** (~0,79 MB zdroje)
 > **Kód:** `apps/website-v2.9` · **Plán archivu:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](docs/plans/ZION-ARCHIVE-COMPLETION.md)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md`](docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md)
 
@@ -57,12 +57,12 @@ vlastní ENindex mimo kapitoly.
 | BodhiGaia | 13 | 0 | **13** | největší objem (180 kB) |
 | MariaCaminho | 12 | 0 | **12** | |
 | Růže | 11 | **11** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
-| Na Cestě | 2 | 0 | **2** | jedna kapitola 31 kB |
+| Na Cestě | 2 | **2** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Issobella | 11 | **11** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Nabukano | 7 | **7** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Kruh Bohyní | 17 | 0 | **17** | |
 | Mise Amenti | 8 | **8** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
-| **CELKEM** | **189** | **108** | **81** | ~0,82 MB zdroje |
+| **CELKEM** | **189** | **110** | **79** | ~0,79 MB zdroje |
 
 Stav kdykoli zjistíš:
 
@@ -108,8 +108,10 @@ Audit `enCoverage: 100`, `missingEn: []`, kicker = `CZ + EN`. Statusy doslovně 
 3-of-3 multisig, port 8097, 0,38 g / 200 m / ~2 RPM / 1,0 g 20 min / r=12 m / 12 RPM, LEO 400–550 km,
 100 kW → 1 MW+. Sanitizované placeholdery (`issobella tracker`, `zion-*-service`, `interní port`) zůstávají placeholdery.
 
-### Na Cestě — 2
-`01-Na-Ceste` (**31k**) · `02-Kotva-Pravdy` (4k)
+### Na Cestě — hotovo (2/2, 2026-11-05)
+Korpusová konvence (`korpus/NaCeste/<slug>_EN.md`). Audit `enCoverage: 100`, `missingEn: []`, kicker `CZ + EN`,
+knihovní karta bez `czOnly`. Velká kapitola má **1:1 strukturu s CZ** (429 řádků, 215 neprázdných, 9 sekcí, 9 oddělovačů).
+MÝTUS/HORIZONT statusy a hranice (odmítnutá návštěva Raiatea + Uluru, pozastavený převoz semene, FPIC) opisovat doslovně.
 
 ### MariaCaminho — 12
 `01-Caminha` (7k) · `02-Cervena-Marie` (6k) · `03-Prvni-Plachetnice` (6k) · `04-Bila-Nevesta` (6k) · `05-Nevesta-z-Pacifiku` (7k) · `06-Most-Lumi` (7k) · `07-Zlata-Marie` (9k) · `08-Treti-Marie` (7k) · `09-Dokonceni-a-Obrat` (8k) · `10-Compostela` (6k) · `11-Kotva-Pravdy-a-Hranice` (12k) · `Epilog-More-Nekonci` (4k)
@@ -247,7 +249,7 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 | **T3** | Mise Amenti ✅ | 8 | hotovo 2026-11-05 |
 | **T4** | Růže ✅ | 11 | hotovo 2026-11-05 |
 | **T5** | Issobella ✅ | 11 | hotovo 2026-11-05 |
-| **T6** | Na Cestě | 2 | 1–2 (jedna 31k) |
+| **T6** | Na Cestě ✅ | 2 | hotovo 2026-11-05 |
 | **T7** | MariaCaminho | 12 | 4 |
 | **T8** | Ekam Deeksha | 10 | 4 (jedna 20k) |
 | **T9** | Quantum Revolution | 1 | 1 (celý dokument) |
@@ -256,7 +258,7 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 | **T12** | Kruh Bohyní | 17 | 5 |
 | **T13** | BodhiGaia | 13 | 5 (největší objem) |
 
-**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **23–33 session-dávek** na zbývajících 81
+**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **22–32 session-dávek** na zbývajících 79
 kapitol. Po každé knize: report + commit + push.
 
 **Alternativní pořadí podle priority 👤:** pokud má být první „hlavní osa“ (Ekam, Quantum
