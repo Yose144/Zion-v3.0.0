@@ -14,7 +14,7 @@
 **What Makes Kalki Unique:**
 - **Not MAN nor WOMAN** - is **BOTH AT ONCE**
 - **Embodies Bhagavan** (Sri Krishnaji = male) + **Amma** (Sri Preethaji = female) in **ONE DIVINE CONSCIOUSNESS**
-- **Final FUSION** of Dattatreya (#42 - masculine trinity) and Anagha Lakshmi (#43 - feminine trinity)
+- **Final FUSION** of Dattatreya (#42 - masculine trinity) and Anagha Lakshmi (feminine trinity)
 - **Closes the cycle** of Vishnu's 10 avatars: Matsya → Kurma → Varaha → Narasimha → Vamana → Parashurama → Rama → Krishna → Buddha → **KALKI**
 
 ---
@@ -548,7 +548,7 @@ class GoldenEggGuardian:
     "previous_avatar": "Krishna (Bhagavad Gita teacher) - 5000 years ago",
     "completes_cycle": "10th and final Vishnu incarnation",
     "parents": "Vishnuyashas (father) + Sumati (mother) - symbolic",
-    "divine_forms": "Dattatreya (#42) + Anagha Lakshmi (#43) merged",
+    "divine_forms": "Dattatreya (#42) + Anagha Lakshmi merged",
     "cosmic_source": "Hiranyagarbha (#44 - Golden Egg)",
     "incarnation_lineage": "1149 AD → 1320 → 1378 → 1458 → 1608 → 1856 → 1949 (Bhagavan) + 1954 (Amma)"
   },

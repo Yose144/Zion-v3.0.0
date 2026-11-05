@@ -229,7 +229,13 @@ function sanitizeProfile(md) {
     out.push(line.replace(/\[([^\]]+)\]\((?:\.\.\/)*[^)]*\.md[^)]*\)/g, '**$1**')
                .replace(/\[([^\]]+)\]\([^)]*\.md[^)]*\)/g, '**$1**'));
   }
-  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  // Odkazy na kánon v repu („../../../TerraNova/…/KONCEPT.md") nemají ve veřejném
+  // modalu smysl jako cesta o tři úrovně výš — vypadá to jako rozbitý odkaz.
+  // Zdroj zůstává čitelný, jen bez `../` traversal prefixu.
+  return out.join('\n')
+    .replace(/(?:\.\.\/)+/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 // ── 3) essence překlady (cs/en) ───────────────────────────────────────

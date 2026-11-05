@@ -157,6 +157,17 @@ Ověřeno živě: 400/400 souborů SHA-256 shoda s lokálem, v modalu je vidět 
 (`Maui` → „72. PADMASAMBHAVA", `Padmasambhava` → „73. MILAREPA"), požehnání Dattatreyi
 i opravený bold u Amaterasu; 0 pageerror.
 
+**Dvě další opravy ze stejné kontroly:**
+
+- **Surové cesty v modalu (335 profilů, 458 výskytů).** Sekce „Zdroje" ukazovala
+  `` `../../../TerraNova/japan/KONCEPT-AVATARI-OASIS.md` `` — v veřejném modalu to vypadá jako
+  rozbitý odkaz. `sanitizeProfile()` teď `../` traversal odstraní, zdroj zůstává čitelný
+  (`` `TerraNova/japan/KONCEPT-AVATARI-OASIS.md` ``). Po opravě 0 souborů s `../`.
+- **Nesprávné číslo u Anagha Lakshmi.** Profil `45` tvrdil „Anagha Lakshmi (#43 – feminine
+  trinity)", ale roster má **43 = Maly Princ**. Číslo jsem z textu odstranil (jméno zůstalo);
+  `#42` u Dattatreyi sedí a zůstalo. Hlubší varianta — přečíslovat Anaghu na volné ID (203+)
+  a přidat ji do rosteru jako 201. avatara — je rozhodnutí 👤 (§7).
+
 ---
 
 ## 7. Meze a co zůstává
@@ -165,8 +176,10 @@ i opravený bold u Amaterasu; 0 pageerror.
   texty `44`/`45` ale mluví o „Anagha Lakshmi (#43 – ženská trojice)". Je to **rozpor v lore**,
   který jsem neřešil — překlad jen srovnal odkazy s kánonem. Rozhodnout 👤 (přejmenovat profil
   Anaghy, nebo přečíslovat).
-- **Tři kánony mimo roster** (`07`, `34`, `49`) zůstávají v adresáři a nepublikují se — stejný
-  stav jako před prací, nic se nemazalo.
+- **Tři soubory mimo roster** (`07`, `34`, `49`) nejsou avataři, ale doprovodné dokumenty:
+  `07_FAMILY_TREE.md` (mapa vztahů), `34_VIA_LUCIS_PROPHECY.md` (Komenského proroctví),
+  `49_MATRIX_TRINITY_COMPLETE.md` (souhrn Matrix trojice). Proto se nepublikují jako karty;
+  zůstávají v adresáři a odkazuje se na ně z jiných profilů.
 - **Plný rebuild webu** neproběhl (nebyl potřeba). Až poběží `deploy-web2.9.sh`, přenese se
   i obsah ostatních sessions; data avatarů jsou v něm už teď.
 - **Kvalita překladů** je ověřená strukturálně (parita, žádná čeština v EN) — ne jazykovou
