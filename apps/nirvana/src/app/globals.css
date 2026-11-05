@@ -7685,6 +7685,42 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   font-variant-numeric: tabular-nums;
 }
 
+.lumi-compass {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding-left: 0.5rem;
+  margin-left: 0.1rem;
+  border-left: 1px solid rgba(159, 228, 234, 0.2);
+  color: rgba(232, 244, 255, 0.62);
+}
+
+.lumi-compass i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  color: #9fe4ea;
+}
+
+.lumi-compass i svg {
+  display: block;
+}
+
+.lumi-compass b {
+  font-size: 0.68rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.lumi-compass.is-shrine i {
+  color: #ffe9b0;
+}
+
+.lumi-compass.is-shrine b {
+  color: #ffe9b0;
+}
+
 .lumi-hint,
 .lumi-goal {
   position: absolute;

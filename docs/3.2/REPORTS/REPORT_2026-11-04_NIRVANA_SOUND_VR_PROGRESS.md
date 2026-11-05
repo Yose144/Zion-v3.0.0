@@ -482,6 +482,25 @@ do `arena` — stejná chyba jako u tanků. **Druhá past:** prohlížeč uspí
 vidí „letí 1", světlo sebrané jedním má i druhý), net sady 11/11,
 `lumi-audit` 36/36, routy 16/16, progrese 13/13.
 
+### Kompas a jména spolulentců (2026-11-05)
+
+Otevřená obloha 118 × 118 bez kompasu je slepá: sedm světel se rozprostírá tak, že hráč
+nemá jak poznat, kterým směrem je nejbližší. HUD proto dostal **kompas** — šipku a
+vzdálenost k cíli; po sedmi světlech zlatou a mířící na svatyni.
+
+Cíl počítá `nextTarget()` v `flight.ts` (čistá funkce, testovaná bez prohlížeče), takže se
+kompas nemůže rozejít se simulací. U co-opu přibyla i **jména spolulentců** („s tebou letí
+2 — Lumi, Noctis").
+
+**Past, která to odhalila:** `transform: rotate()` na HTML prvku se v headless prohlížeči
+kreslí jinam než v reálném (SwiftShader) — matice byla správně, ale šipka mířila opačně.
+Řešení: otáčet **SVG atributem** `transform="rotate(a 12 12)"`; ověřeno měřením pixelů na
+zvětšené šipce (54° vs. cíl 41°). Druhá past: WebGL ve swiftshad eru startuje 1–3 s, takže
+audit musí čekat na selektor, ne na pevný `wait`.
+
+**Ověřeno:** `lumi-flight` 45/45 (7 nových kontrol kompasu), `lumi-journal` 30/30,
+`apps/nirvana-net/test/lumi.mjs` 15/15, `lumi-audit` 46/46, `tsc` + build čisté.
+
 ### Třetí cesta (2026-11-05)
 
 Po dohrání obou cest se odemkne **Cesta světla** — sedm světel ve spirále

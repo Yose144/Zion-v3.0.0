@@ -430,7 +430,7 @@ export const NABUKANO_BOOK = korpusBook({
   dir: 'Nabukano',
   accent: '56, 189, 248',
   icon: Orbit,
-  kicker: { cs: 'Nebeská flotila · L6 · CZ', en: 'The sky fleet · L6 · CZ' },
+  kicker: { cs: 'Nebeská flotila · L6 · CZ + EN', en: 'The sky fleet · L6 · CZ + EN' },
   title: { cs: 'Nabukano', en: 'Nabukano' },
   subtitle: {
     cs: 'Kniha Nebeské flotily — loď, která pluje nahoru, a dok, který se hýbe.',
@@ -447,7 +447,7 @@ export const MISEAMENTI_BOOK = korpusBook({
   dir: 'MiseAmenti',
   accent: '148, 163, 184',
   icon: ScrollText,
-  kicker: { cs: 'Prováděcí rámec 3.3 · CZ (+EN index)', en: 'The 3.3 execution framework · CZ (+EN index)' },
+  kicker: { cs: 'Prováděcí rámec 3.3 · CZ + EN', en: 'The 3.3 execution framework · CZ + EN' },
   title: { cs: 'Mise Amenti', en: 'Mise Amenti' },
   subtitle: { cs: 'Evidence, brány a review — rámec, ne román.', en: 'Evidence, gates and reviews — a framework, not a novel.' },
   description: {

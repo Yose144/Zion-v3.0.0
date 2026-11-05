@@ -16,7 +16,7 @@
  * progrese (`recordRun`). Fyzika i scéna jsou v `core/sky/`.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useI18n } from '@/core/i18n';
 import { LumiCanvas, type LumiStats } from '@/core/lumi/LumiScene';
@@ -44,6 +44,9 @@ const EMPTY: LumiStats = {
   lights: 0,
   speed: 0,
   lightIds: [],
+  x: 0,
+  y: 0,
+  target: null,
   total: 7,
   energy: 100,
   time: 0,
@@ -80,9 +83,33 @@ export default function LumiPage() {
   const remotes = useRef<LumiRemote[]>([]);
   const sharedLights = useRef<number[]>([]);
   const [peers, setPeers] = useState(0);
+  const [peerNames, setPeerNames] = useState<string[]>([]);
 
   const path = pathData(pathId);
   const missing = Math.max(0, stats.total - stats.lights);
+
+  /**
+   * Kompas k nejbližšímu světlu (a po sedmi ke svatyni).
+   *
+   * Otevřená obloha je bez kompasu slepá: sedm světel se rozprostírá po
+   * mapě 118 × 118 a hráč nemá jak poznat, kterým směrem je to nejbližší.
+   * Cíl počítá `nextTarget` ve flight.ts — stejná funkce jako simulace,
+   * takže se kompas nemůže rozejít s tím, co hra opravdu považuje za cíl.
+   */
+  const compass = useMemo(() => {
+    if (!stats.target) return null;
+    const dx = stats.target.x - stats.x;
+    const dy = stats.target.y - stats.y;
+    const dist = Math.hypot(dx, dy);
+    return {
+      // Kamera kouká na scénu z +z, takže na obrazovce je +x vpravo a +y
+      // nahoru — osa y se proto obrací (jinak by šipka mířila zrcadlově).
+      // Šipka je kreslená jako „▲" (0° = nahoru), proto +90°.
+      angle: (Math.atan2(-dy, dx) * 180) / Math.PI + 90,
+      dist,
+      kind: stats.target.kind,
+    };
+  }, [stats.target, stats.x, stats.y]);
 
   useEffect(() => {
     setJournal(loadJournal());
@@ -105,6 +132,7 @@ export default function LumiPage() {
       }));
       sharedLights.current = message.lumi.lights;
       setPeers(message.lumi.flyers.length);
+      setPeerNames(message.lumi.flyers.map((flyer) => flyer.name).filter(Boolean).slice(0, 3));
     });
   }, [coop, subscribe]);
 
@@ -117,6 +145,7 @@ export default function LumiPage() {
       remotes.current = [];
       sharedLights.current = [];
       setPeers(0);
+      setPeerNames([]);
     };
   }, [coop, phase, connected, joinLumi, leaveRoom, pathId]);
 
@@ -250,6 +279,43 @@ export default function LumiPage() {
               <i style={{ width: `${Math.max(0, Math.min(100, stats.energy))}%` }} />
             </span>
             <span className="lumi-time">{stats.time.toFixed(0)} s</span>
+            {compass && (
+              <span
+                className={`lumi-compass${compass.kind === 'shrine' ? ' is-shrine' : ''}`}
+                aria-label={
+                  compass.kind === 'shrine'
+                    ? cs
+                      ? 'kompas ke svatyni'
+                      : 'compass to the shrine'
+                    : cs
+                      ? 'kompas k nejbližšímu světlu'
+                      : 'compass to the nearest light'
+                }
+                title={
+                  compass.kind === 'shrine'
+                    ? cs
+                      ? `svatyně · ${Math.round(compass.dist)}`
+                      : `shrine · ${Math.round(compass.dist)}`
+                    : cs
+                      ? `světlo · ${Math.round(compass.dist)}`
+                      : `light · ${Math.round(compass.dist)}`
+                }
+              >
+                <i aria-hidden>
+                  {/* Otáčí se **atributem** uvnitř SVG, ne CSS transformem:
+                      `transform: rotate()` na HTML prvku se v headless
+                      rendereru (SwiftShader) kreslí o čtvrtinu otáčky jinde
+                      a šipka pak míří špatně. Atribut je v obou světech
+                      stejný a test ho umí změřit. */}
+                  <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden focusable="false">
+                    <g transform={`rotate(${compass.angle} 12 12)`}>
+                      <path d="M12 3 L21 21 L3 21 Z" fill="currentColor" />
+                    </g>
+                  </svg>
+                </i>
+                <b>{Math.round(compass.dist)}</b>
+              </span>
+            )}
           </div>
 
           <p className="lumi-hint">
@@ -278,7 +344,16 @@ export default function LumiPage() {
 
           {coop && (
             <div className="lumi-peers" role="status">
-              <span>🌐 {peers > 0 ? (cs ? `s tebou letí ${peers}` : `${peers} flying with you`) : cs ? 'hledám další…' : 'looking for others…'}</span>
+              <span>
+                🌐{' '}
+                {peers > 0
+                  ? cs
+                    ? `s tebou letí ${peers}${peerNames.length ? ` — ${peerNames.join(', ')}` : ''}`
+                    : `${peers} flying with you${peerNames.length ? ` — ${peerNames.join(', ')}` : ''}`
+                  : cs
+                    ? 'hledám další…'
+                    : 'looking for others…'}
+              </span>
               <InviteButton roomId={roomId} className="lumi-invite" label={{ cs: 'pozvat', en: 'invite' }} />
             </div>
           )}

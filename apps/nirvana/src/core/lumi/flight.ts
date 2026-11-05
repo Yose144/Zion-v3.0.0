@@ -183,6 +183,28 @@ export function lumiScore(state: FlightState): number {
   return state.lights.length * 100 + bonus;
 }
 
+/**
+ * Kam teď letět: nejbližší nesebrané světlo, a když máš všechna, svatyně.
+ *
+ * Vrací `null`, když je hotovo (svatyně dosažena). Funkce je čistá, takže ji
+ * testuje i HUD — kompas se tak nemůže rozejít se simulací.
+ */
+export function nextTarget(state: FlightState): { x: number; y: number; kind: 'light' | 'shrine'; id: number | null } | null {
+  if (state.finished) return null;
+  const data = pathData(state.path);
+  let best: { x: number; y: number; kind: 'light'; id: number; dist: number } | null = null;
+  for (const light of data.lights) {
+    if (state.lights.includes(light.id)) continue;
+    const dist = (state.x - light.x) ** 2 + (state.y - light.y) ** 2;
+    if (!best || dist < best.dist) best = { x: light.x, y: light.y, kind: 'light', id: light.id, dist };
+  }
+  if (best) return { x: best.x, y: best.y, kind: 'light', id: best.id };
+  if (state.lights.length >= state.total) {
+    return { x: data.shrine.x, y: data.shrine.y, kind: 'shrine', id: null };
+  }
+  return null;
+}
+
 /** Kolik světel ještě chybí. */
 export function missingLights(state: FlightState): number {
   return state.total - state.lights.length;

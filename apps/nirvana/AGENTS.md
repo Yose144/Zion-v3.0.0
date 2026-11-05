@@ -2118,3 +2118,21 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   `page.bringToFront()` — jinak teleport proběhne, ale sim ho nezaznamená
   (přesně to mě mate při prvním běhu).
 - Mistnost je pro 4 (`LUMI_ROOM_SIZE`); víc by z oblohy udělalo trh.
+
+## Lumi — kompas a HUD (2026-11-05)
+
+- **Kompas není UI věc, je to `nextTarget()` z `flight.ts`.** HUD jen zobrazuje, co
+  simulace považuje za cíl (nejbližší nesebrané světlo → svatyně → `null`). Kdyby si HUD
+  počítal cíl sám, dřív nebo později se rozejde s tím, co hra opravdu dělá.
+- **Otáčení šipky atributem, ne CSS transformem.** `transform: rotate()` na HTML prvku
+  se v auditním (headless, SwiftShader) prohlížeči kreslí jinam než v reálném — kompas
+  pak „míří špatně", i když je matice správná. Šipka je proto SVG s
+  `transform="rotate(a 12 12)"`; ten se kreslí správně v obou světech a jde změřit
+  z pixelů (měřeno na zvětšené šipce: 54° vs. cíl 41°).
+- **Testy nesmí čekat pevný čas.** WebGL ve swiftshad eru startuje 1–3 s, takže první
+  telemetrie (a tím i kompas) přijde později než `wait(1200)`. Audit čeká na selektor
+  (poll 40×200 ms), ne na čas — jinak padá na něčem, co funguje.
+- **HUD lišta má Lumi jako odkaz i jako ukazatel.** `games/links.ts` = položka do lišty,
+  `GameHud` = žeton `🏮 X/7` z deníku (klikacím na `/lumi`), aby byl postup vidět i mimo let.
+- **Planeta:** panel Uranu má druhé CTA „Letět s Lumi" (`href2: '/lumi'`), text mluví
+  o Lumi, ne o Křídlech; `/uranus` na Lumi odkazuje.

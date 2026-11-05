@@ -18,6 +18,7 @@ const {
   currentAt,
   missingLights,
   lumiScore,
+  nextTarget,
   stepFlight,
 } = await import('../src/core/lumi/flight.ts');
 const { LUMI_LIGHTS, LUMI_PATHS, LUMI_SHRINE, LUMI_GIFT, LUMI_GIFT_BONUS, pathData } = await import(
@@ -172,7 +173,39 @@ windFlight.y = wind.shrine.y;
 fly(windFlight, 0.3);
 check('svatyně větrné cesty se otevře', windFlight.finished === true);
 
-// ── 10) darování světla ──────────────────────────────────────────────
+// ── 10) kompas ───────────────────────────────────────────────────────
+// Kompas je to jediné, co hráči říká, kam letět; když míří na špatné
+// světlo, hra je slepá. Test proto počítá očekávaný cíl nezávisle.
+
+{
+  const state = createFlight('calm');
+  const data = pathData('calm');
+  const nearest = [...data.lights].sort(
+    (a, b) =>
+      (state.x - a.x) ** 2 + (state.y - a.y) ** 2 - ((state.x - b.x) ** 2 + (state.y - b.y) ** 2),
+  )[0];
+  const target = nextTarget(state);
+  check('kompas na startu míří na nejbližší světlo', target?.id === nearest.id, JSON.stringify(target));
+  check('kompas ví, že jde o světlo', target?.kind === 'light', String(target?.kind));
+  check('kompas míří na souřadnice světla', target?.x === nearest.x && target?.y === nearest.y);
+
+  // sebrané světlo se přeskakuje
+  state.lights.push(nearest.id);
+  const afterCollect = nextTarget(state);
+  check('sebrané světlo kompas přestane nabízet', afterCollect?.id !== nearest.id, String(afterCollect?.id));
+
+  // po všech sedmi → svatyně
+  state.lights = data.lights.map((light) => light.id);
+  const shrine = nextTarget(state);
+  check('po sedmi světlech míří kompas na svatyni', shrine?.kind === 'shrine', String(shrine?.kind));
+  check('svatyně má souřadnice z mapy', shrine?.x === data.shrine.x && shrine?.y === data.shrine.y);
+
+  // doletěno → žádný cíl
+  state.finished = true;
+  check('po doletu kompas nic neukazuje', nextTarget(state) === null);
+}
+
+// ── 11) darování světla ──────────────────────────────────────────────
 check('darování má bonus', LUMI_GIFT_BONUS > 0, String(LUMI_GIFT_BONUS));
 check('obě volby mají text v cs+en', Boolean(LUMI_GIFT.keep.text.cs && LUMI_GIFT.give.text.en));
 check('volby se jmenují jinak', LUMI_GIFT.keep.label.cs !== LUMI_GIFT.give.label.cs);

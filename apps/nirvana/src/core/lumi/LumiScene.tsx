@@ -22,6 +22,7 @@ import {
   ENERGY_MAX,
   createFlight,
   currentAt,
+  nextTarget,
   stepFlight,
   type FlightInput,
   type FlightState,
@@ -47,6 +48,10 @@ export interface LumiStats {
   speed: number;
   /** Id sebraných světel (deník je potřebuje, ne jen počet). */
   lightIds: number[];
+  /** Poloha hráčky a cíl, kam má letět (kompas v HUD). */
+  x: number;
+  y: number;
+  target: { x: number; y: number; kind: 'light' | 'shrine' } | null;
   total: number;
   energy: number;
   time: number;
@@ -642,6 +647,12 @@ export function LumiScene({
         lights: flight.lights.length,
         speed: Math.hypot(flight.vx, flight.vy),
         lightIds: [...flight.lights],
+        x: flight.x,
+        y: flight.y,
+        target: (() => {
+          const target = nextTarget(flight);
+          return target ? { x: target.x, y: target.y, kind: target.kind } : null;
+        })(),
         total: flight.total,
         energy: flight.energy,
         time: flight.time,
