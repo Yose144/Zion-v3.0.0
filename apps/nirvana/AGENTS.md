@@ -2079,3 +2079,20 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Testy:** `test/lumi-journal.mjs` (16 kontrol) a `lumi-audit`
   (31 kontrol: deník 7 textů, před cestou prázdný, po cestě 7/7 + runs +
   gift, během letu hra zní).
+
+### Lumi — třetí cesta a zámek v datech (2026-11-05)
+
+- **`LUMI_PATHS.light` („Cesta světla")** je třetí, nejtěžší varianta:
+  světla ve spirále vzhůru, čtyři úzké proudy vysoko, dlouhé prázdno
+  mezi nimi, svatyně v 92/92. Není to delší trasa, je to jiný tvar.
+- **Zámek patří do dat, ne do UI.** `isPathUnlocked(pathId, journal)`
+  v `journal.ts` je jediné pravidlo; stránka ho jen vykresluje (dashed
+  karta s 🔒). Kdyby podmínka žila v JSX, šla by obejít a test by ji
+  neviděl.
+- **Deník si nese dohrané cesty** (`paths`), `recordJourney(lights,
+  gift, path)` je zapisuje bez duplicit — z toho plyne odemčení.
+- **Pořadí karet je progrese** (calm → wind → light), ne pořadí klíčů
+  v objektu; jinak se `light` objeví uprostřed a mate.
+- Test: `test/lumi-journal.mjs` (28 kontrol, včetně zámku a odemčení)
+  a `lumi-audit` (36 kontrol: zamčená karta s 🔒, po seedu deníku
+  odemčená a volatelná).
