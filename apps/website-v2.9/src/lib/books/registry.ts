@@ -290,7 +290,7 @@ export const SULZEME_BOOK = korpusBook({
   dir: 'SulZeme',
   accent: '52, 211, 153',
   icon: Gem,
-  kicker: { cs: 'Kmenový kanon · střed kompasu · CZ (+EN index)', en: 'Root canon · compass center · CZ (+EN index)' },
+  kicker: { cs: 'Kmenový kanon · střed kompasu · CZ + EN', en: 'Root canon · compass center · CZ + EN' },
   title: { cs: 'Sůl této země', en: 'The Salt of this Earth' },
   subtitle: { cs: 'Zastavení přes proroky a archu — kanonický kořen cesty.', en: 'Stations through the prophets and the ark — the canonical root of the path.' },
   description: {

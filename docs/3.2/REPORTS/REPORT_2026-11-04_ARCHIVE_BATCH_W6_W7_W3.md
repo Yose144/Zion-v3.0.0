@@ -110,3 +110,12 @@
 
 - Přeloženy **Epizoda 9 — Bohyně Rádha a avataři v Oasis** a **Epizoda 10 — První svět Oasis a Best of Avataři**.
 - Sůl této země: **10/12 EN**; zbývá 11–12. Celkem **60/189** kapitol (31,7 %).
+
+
+---
+
+## Doplnění 2026-11-05 (8) — Sůl této země dokončena
+
+- Přeloženy **Epizoda 11 — Brána prvního hráče** (sedm cest) a **Epizoda 12 — Hodina před deštěm** (Bitcoin Pizza Day, emise, obtížnost, rizika).
+- **Sůl této země: 12/12 EN** — knihovna přepíná štítek na `CZ + EN`.
+- Celkem **62/189** kapitol (32,8 %).
