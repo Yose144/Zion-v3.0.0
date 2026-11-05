@@ -497,3 +497,13 @@ Stíny jsou **vypnuté pod 720 px** — model má 236 k trojúhelníků a stíno
 **Stíny:** `candle.castShadow` s bodovou stínovou mapou 512 (near/far těsně kolem knotu) — oheň vrhá stíny ornamentů; měsíční směrové světlo drží stín modelu. `haloTex` se uvolňuje v cleanupu.
 
 **Ověřeno:** live 200, 0 chyb v konzoli, screenshot `fire-live.png` — teplé světlo jde zespodu, vršek je prosvícený a výřezy svítí.
+
+### Doladění — Nirvana Hub karta na app homepage (2026-11-05)
+
+👤: „v nirvana hub na homepage vylítává obr z rámečku."
+
+**Příčina (změřená):** obrázkový box měl `aspect-[16/9]` a rodičovský grid je `items-stretch` (default). Prohlížeč u stretched itemu počítá `aspect-ratio` **z výšky řádku**: řádek 389 px → šířka 389 × 16/9 = **692 px**, ačkoli kolej gridu je 490 px. Rámeček proto vjel do textového sloupce a překryl titulek „Zion Archive" i začátek textu.
+
+**Fix:** `self-center w-full max-w-full` na odkazu s obrázkem — box zůstane ve své koleji a 16:9 se počítá ze šířky (490 × 276). Ověřeno v prohlížeči: `link {x:97,w:490,h:276}`, text `{x:607}`, `overlap:false`.
+
+**Poznámka k deployi:** build nejdřív spadl na `ENOENT .next/server/app/_not-found/page.js.nft.json` (rozbitý `.next` po souběhu s paralelní session) — pomohl `rm -rf .next`. Následný rsync dvakrát skončil `code 24` („file has vanished") na souborech, které paralelní session právě přepisovala; deploy se povedl na třetí pokus.
