@@ -76,6 +76,55 @@ nirvana-net   relay místnosti (sdílená světla, ostatní letci)
 **Pravidlo:** simulace nikdy neimportuje React, scéna nikdy nepočítá fyziku znovu. Když se
 něco rozbije („sebral jsem světlo a nic"), hledá se v `flight.ts`, ne ve scéně.
 
+### Mapa souborů
+
+Kompletní seznam toho, čeho se Lumi dotýká. Sloupec „když chybí" říká, co se rozbije —
+to je důvod, proč tu tabulka je: při refaktoru se snadno smaže soubor, o kterém si nikdo
+nemyslí, že k něčemu patří.
+
+**Klient — jádro světa (`apps/nirvana/src/core/lumi/`)**
+
+| Soubor | Řádků | Role | Když chybí / přejmenuje se |
+|---|---|---|---|
+| `world.ts` | 299 | Jediný zdroj pravdy: `LUMI_LIGHTS` (7), `WIND_LIGHTS`, `LIGHT_LIGHTS`, `LUMI_CURRENTS`, `LUMI_ISLANDS`, `LUMI_SHRINE`, `LUMI_PATHS` (calm/wind/light), `LUMI_GIFT` + `LUMI_GIFT_BONUS = 150`, texty | světla a cesty zmizí ze scény i z UI; nová cesta = nový záznam tady, ne v `page.tsx` |
+| `flight.ts` | 211 | Čistá simulace: `createFlight`, `stepFlight`, `nextTarget`, `lumiScore`, `missingLights` | nelze testovat bez prohlížeče; fyzika se rozejde mezi sólo a co-opem |
+| `LumiScene.tsx` | 799 | r3f scéna: protagonista, GLB lucerna + LOD, `CameraRig`, `RemoteFlyers`, dotyk, zvuk, `onStats`/`onFly`, debug háčky | hra nemá obraz; E2E přijde o `__lumiDebug`/`__lumiTeleport` |
+| `journal.ts` | 100 | `localStorage` `nirvana.lumi.v1`: světla (množina), cesty, dary; `isPathUnlocked`, `missingInJournal` | HUD `🏮 X/7` padá na 0 a cesta `light` se odemkne vždy |
+
+**Klient — povrchy a UI**
+
+| Soubor | Řádků | Role | Když chybí |
+|---|---|---|---|
+| `src/app/lumi/page.tsx` | 553 | Fáze `intro → flying → done`, HUD, kompas, dar, co-op panel | route 404 (i s přesměrováním z `/kridla`) |
+| `src/app/kridla/page.tsx` | ~30 | `router.replace('/lumi')` staré adresy | staré odkazy v chatu/historii skončí na 404 |
+| `src/core/games/links.ts` | 117 | dlaždice hry v `GamesDock` | Lumi zmizí z nabídky her, i když funguje |
+| `src/core/games/GameHud.tsx` | 182 | žeton `🏮 X/7` (čte `loadJournal`) | hráč nevidí postup mezi návštěvami |
+| `src/core/progress/boards.ts` + `run.ts` | 119 + 179 | 13. hra v žebříčku (`lumi: { cs: 'Lumi', glyph: '🏮' }`) | skóre se nemá kam uložit, tabule nemá řádek |
+| `src/core/shell/Shell.tsx` | 572 | panel Uranu: druhý CTA **„Letět s Lumi"** + text planety | Lumi jde otevřít jen z adresy |
+| `src/core/outer/OuterWorldPage.tsx` | 75 | odkaz na `/lumi` ze stránky Uranu | — |
+| `src/core/audio/engine.ts` | 613 | 5 eventů (`lanternIgnite`, `lightPickup`, `gust`, `shrineOpen`, `gift`), `startWindLoop`, mute | hra je tichá; **nesahat** na `unlock()` (autoplay) |
+| `src/core/shell/SoundToggle.tsx` | — | `🔊/🔇` v chrome, stav v `localStorage` | zvuk nejde vypnout jinde než v systému |
+| `src/middleware.ts` | 69 | `PUBLIC_PREFIXES` (`/models`, `/textures`, `/portraits`, `/audio`, `/api/health`) | GLB se načte jako 307 → tichý primitiv (past P-4) |
+
+**Síť — relay**
+
+| Soubor | Řádků | Role | Když chybí |
+|---|---|---|---|
+| `src/core/net/protocol.ts` | 687 | `PROTO_VERSION = 30`, `GameId 'lumi'`, `fly`, `snapshot.lumi`, whitelist v `join` | co-op se připojí do `arena` (past P-1) |
+| `apps/nirvana-net/src/lumi.ts` | 147 | Místnost: sdílená světla, letci, `IDLE_MS = 12 s`, cesta z prvního `join` | místnost se neregistruje, `join lumi` skončí chybou |
+| `apps/nirvana-net/src/matches.ts` | 299 | `createLumiMatch` v dispatcheru | hra nemá `Match` objekt |
+| `apps/nirvana-net/src/index.ts` | 1034 | `gameTypeSize('lumi') → LUMI_ROOM_SIZE` (4), `lumiPath` v `join` | místnost spadne na výchozí velikost |
+
+**Assety a nástroje**
+
+| Soubor | Role |
+|---|---|
+| `apps/nirvana/public/models/lampion.glb` | Decimovaná lucerna: **13 325 trojúhelníků, 0,21 MB** (originál 242 648 / 4,36 MB). Bez něj se kreslí primitiv (a mobil to dělá záměrně). |
+| `scripts/ops/lumi-lantern-lod.py` | Pipeline, která LOD vyrábí — kdyby se ztratila, další úprava modelu by ho vrátila na 4,4 MB. |
+| `apps/nirvana/src/core/xr/` (`VrButton`, `inputs`) | VR vrstva, kterou L-4 použije; dnes ji Lumi nevyužívá. |
+
+**Testy** — soubory a počty kontrol jsou v §8, ať seznam není dvakrát.
+
 ### 3.1 `src/core/lumi/world.ts` (299 řádků) — data
 
 - `LUMI_LIGHTS` (7), `WIND_LIGHTS`, `LIGHT_LIGHTS` — pozice, prstenec, tón.
@@ -206,6 +255,18 @@ snapshot.lumi = {
 - `sendFly` **nesmí zahodit sebrané světlo**: běžný stav se throttluje na 20 Hz, ale zpráva
   s `collect` jde vždy.
 
+**Co je v `apps/nirvana-net/src/lumi.ts` opravdu implementované** (ověřeno 2026-11-05, ne odhad):
+
+| Detail | Chování dnes | Proč |
+|---|---|---|
+| `join` a cesta | `path` se bere **jen od prvního** letce (`flyers.size === 0`), pozdější se přidají k jeho cestě | aby se cesta neměnila pod rukama |
+| `leave` | `flyers.delete(id)` — **okamžitě** | to je díra, kterou řeší **L-2** (duch) |
+| Tichý klient | `IDLE_MS = 12 000` — bez `fly` zprávy 12 s a letce schová `step()` | zamrzlá karta nesmí blokovat místnost navěky |
+| `seq` | `lights.size` (ne pořadové číslo snímku) | klient z něj pozná, kolik světel je sebraných |
+| `players` | **vždy prázdné pole** | arénová pole by mátla klienty; Lumi posílá jen `lumi` |
+| `collect` | `Math.round`, jen `1..7`, množina (ne pole) | dvojí sběr stejného světla nic nezkazí |
+| `size()` | `flyers.size` | velikost místnosti pro `LUMI_ROOM_SIZE = 4` |
+
 ---
 
 ## 6. Zvuk
@@ -260,6 +321,18 @@ Regresní minimum před commitem: `npx tsc --noEmit`, `npx next build`, `lumi-au
 > **Blokující fakt:** živý net je na protokolu **26**, repo na **30**.
 > Deploy **net první, pak appka**. Opačné pořadí = `proto_mismatch` a mrtvý chat i multiplayer.
 
+**Měřeno 2026-11-05** (`curl https://nirvana.zionterranova.com/net/health`):
+
+```json
+{"ok":true,"service":"zion-nirvana-net","proto":26,
+ "build":"20261104T050941Z","uptimeSec":107406,"connections":0,"rooms":0}
+```
+
+Tedy: net běží z buildu 4. 11. 05:09 UTC (~29,8 h) a **nemá otevřenou ani jednu místnost** —
+deploy v tuhle chvíli nikoho nepřeruší. Rozdíl 26 → 30 není kosmetický: mezi tím přibyly
+světy Uran/Neptun/Pluto, hlediště (diváci), MOBA mistrovství a aspekty kouzel — a Lumi.
+Starý server nový `join` odmítne `proto_mismatch`.
+
 ```bash
 # 1) net
 bash apps/nirvana-net/deploy/deploy-nirvana-net.sh
@@ -293,6 +366,19 @@ node .artifacts/probe/pass-oracle.mjs &
 `public/` ani `.next/static`; bez ručního zkopírování se GLB lucerny nenačte a hra
 tiše použije primitiv (proto je v auditu kontrola „model se opravdu načetl").
 
+**Po nasazení — co musí projít, jinak rollback:**
+
+1. `curl -s https://nirvana.zionterranova.com/net/health` → `"proto":30` (nové `build`).
+2. `apps/nirvana-net/test/{smoke,lumi}.mjs` na novém `dist` — **pozor:** tyhle testy si
+   startují **vlastní** instanci na náhodném portu (`LUMI_PORT`/`SMOKE_PORT`), takže
+   „proti živému serveru" neběží; ověřují, že nový build je vnitřně zdravý.
+3. Živý co-op: `/lumi` → **S kamarádem** ve dvou oknech, oba vidí „letí 1", sebrané světlo
+   zmizí i druhému. (`lumi-coop-live.mjs` to dělá hlavičkou, ale míří na `127.0.0.1:3014`.)
+4. Regrese chatu: `/park` + dvě karty → zpráva dorazí. Chat je nejrychlejší důkaz, že
+   protokol sedí na obou stranách.
+5. `curl -s https://nirvana.zionterranova.com/models/lampion.glb -o /dev/null -w '%{http_code}'`
+   → `200` (ne `307`); jinak middleware gatuje assety (past P-4).
+
 ---
 
 ## 10. Backlog pro novou session
@@ -302,7 +388,7 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
 
 | ID | Co | Akceptace | Riziko |
 |---|---|---|---|
-| **L-1** | Nasadit proto 30 (net → app) | `/net/health` hlásí 30, co-op se připojí, `lumi.mjs` projde proti živému netu | nízké, ale **musí být první** |
+| **L-1** | Nasadit proto 30 (net → app) | `/net/health` hlásí 30; `smoke`+`lumi` projdou na novém buildu; živý co-op ve dvou oknech se vidí | nízké, ale **musí být první** |
 | **L-2** | Duchové: doletět místnost i po odpojení (poslední známá pozice 3 s) | odpojený hráč mizí z oblohy až po 3 s, ne okamžitě | nízké |
 | **L-3** | Světelná stopa za lucernou (trail), jen `detail` | na M1 ≥ 50 fps, na mobilu vypnuto | nízké |
 | **L-4** | VR let (`core/xr` už existuje pro Merkur/Venuši/Saturn) | v headsetu jde letět pohledem, lucerna na spoušti; bez headsetu se jen nesmí rozbít 2D | střední |
@@ -313,7 +399,30 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
 | **L-9** | Přístupnost: `prefers-reduced-motion` vypne vítr a částice | s preferencí se nehýbe pozadí, hra zůstane hratelná | nízké |
 | **L-10** | Lokalizace do třetího jazyka (EN je hotové; CS je výchozí) | všechny texty z `world.ts` mají klíč, žádný hardcoded string v `page.tsx` | nízké |
 | **L-11** | Odměna za darování v kooperaci (společná svatyně = +body všem) | dva hráči doletí → oba dostanou bonus, ne jen ten, kdo doletěl první | střední |
-| **L-12** | Výkon: instancované částice na mobilu | 390×844 ≥ 30 fps (měřeno `?fps=1`), draw calls < 60 | střední |
+| **L-12** | Výkon: instancované částice na mobilu | 390×844 ≥ 30 fps (měřeno `.artifacts/probe/lumi-perf.mjs` — rAF 2 s + `__lumiDebug()`), draw calls < 60 | střední |
+
+**Implementační poznámky k backlogu** (kde přesně sáhnout — ověřeno v kódu, ne odhad):
+
+- **L-2 (duchové):** `leave()` dnes maže hned (`apps/nirvana-net/src/lumi.ts`, řádek 79) a
+  `IDLE_MS = 12 s` je jen pro tiché klienty. Duch = **soft delete**: nechat letce se
+  `ghostUntil`, posílat ho ve snapshotu s `ghost: true`, klient kreslí klesající opacity,
+  `step()` ho pak smaže. **Past:** `state()` počítá `flyers.size`, takže duch by držel
+  místnost ve stavu `running` — počet živých musí být oddělený od počtu záznamů.
+- **L-3 (trail):** `LumiScene` už má `detail` prop (`detail=false` na dotyku) — stopa se
+  napojí na něj; instancované body, ne 30 samostatných meshů.
+- **L-4 (VR):** `core/xr` má `VrButton` + `inputs` a sousední hry mají `<X>Xr.tsx` varianty
+  (Merkur, Saturn, MOBA) — Lumi potřebuje stejný pár, ne novou infrastrukturu.
+- **L-6 (předání lucerny):** mění `fly` zprávu → **`PROTO_VERSION 31`** a znovu platí
+  „net první, pak appka". Server musí ověřit, že dárce to světlo opravdu má (jinak jde
+  darovat cizí).
+- **L-7 (denní světlo):** `LUMI_LIGHTS` je dnes konstanta (`world.ts`, řádek 51) a `flight.ts`
+  ji importuje. Musí vzniknout `lightsFor(date)` (seed `YYYY-MM-DD`, UTC) a **předávat se
+  parametrem** — jinak si sólo a co-op spočítají jinou oblohu a dva hráči se nesejdou.
+- **L-9 (přístupnost):** `globals.css` už `prefers-reduced-motion` řeší na dvou místech;
+  **ale** scéna se hýbe v `useFrame`, ne v CSS, takže redukce musí být i v `LumiScene`
+  (částice, vítr, houpání lucerny) — samotné CSS médium nestačí.
+- **L-12 (výkon):** `?fps=1` v appce **neexistuje**; měří se probem `lumi-perf.mjs`
+  (počítá rAF po dobu 2 s a čte `__lumiDebug()`). Akceptace musí používat tenhle nástroj.
 
 **Co záměrně nedělat:** nepřidávat nepřátele ani časový limit. Lumi je místo, kde se nemá
 co pokazit; jakákoli „výzva" by rozbila její smysl.
@@ -355,3 +464,4 @@ co pokazit; jakákoli „výzva" by rozbila její smysl.
 | 2026-11-04 | Svět vzniká jako `/kridla` (Křídla), tři cesty, deník, zvuk, LOD lucerny |
 | 2026-11-05 | Přejmenováno na **Lumi**; HUD `🏮 X/7`, panel Uranu „Letět s Lumi"; společné létání (proto 30) |
 | 2026-11-05 | Kompas k nejbližšímu světlu / svatyni (`nextTarget`), jména spolulentců, testy 45/30/15/46 |
+| 2026-11-05 | Plán doplněn: **mapa souborů** (§3), měřený stav živého netu (`proto 26`, build `20261104T050941Z`) a implementační poznámky k L-2…L-12 s pastmi, které v kódu reálně jsou |
