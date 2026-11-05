@@ -242,11 +242,10 @@ export const COMPANION_GROUPS: CompanionGroup[] = [
         title: { cs: 'Na Cestě', en: 'Na Cestě (On the Way)' },
         description: {
           cs: 'Lumen na flotile — pracovní deník cesty. Draft, zatím nepodložený review.',
-          en: 'Lumen aboard the fleet — a working log of the path. Draft, not yet independently reviewed. Czech original.',
+          en: 'Lumen aboard the fleet — a working log of the path. Draft, not yet independently reviewed.',
         },
         status: 'draft',
         href: '/zion-archive/naceste/cist',
-        czOnly: true,
         rc: '148, 163, 184',
       },
     ],

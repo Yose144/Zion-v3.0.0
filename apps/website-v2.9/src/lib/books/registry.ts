@@ -374,7 +374,7 @@ export const NACESTE_BOOK = korpusBook({
   dir: 'NaCeste',
   accent: '148, 163, 184',
   icon: NotebookPen,
-  kicker: { cs: 'Deník · draft · CZ', en: 'A log · draft · CZ' },
+  kicker: { cs: 'Deník · draft · CZ + EN', en: 'A log · draft · CZ + EN' },
   title: { cs: 'Na Cestě', en: 'On the Way' },
   subtitle: { cs: 'Lumen na flotile — pracovní deník cesty.', en: 'Lumen aboard the fleet — a working log of the path.' },
   description: {
