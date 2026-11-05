@@ -321,9 +321,15 @@ snapshot.lumi = {
 (`.game-hud-stats` o 31 px mimo obraz); opraveno vlastním řádkem v `@media (max-width:
 760px)`. Dotykové cíle se zvedly u holo tlačítek a posuvníku citlivosti. Draw calls
 měřené po površích (`draw-calls.mjs`, 390×844): `/lumi` 31, `/mars` 30, `/mercury` 27,
-`/saturn` 20, `/park` 46, `/hiran` 139, `/` 141. Poslední dvě jsou sdílené scény
-s tiery kvality — další Optimalizace by znamenala instancovat brány/lotosy, což je
-samostatná dávka, ne „mobilní úklid"; `mobile-audit` je PASSED.
+`/saturn` 20, `/park` 47, **`/hiran` 39** (bylo 139), `/` 141. `mobile-audit` PASSED.
+
+**`/hiran` — brány instancované (2026-11-05).** Šest meshů na bránu × 15 bran = ~90
+draw callů, přičemž se brány liší jen barvou prstence. Nově je to šest `SceneInstances`
+(pylon, podstavec, hlava, prstenec, clona, klenot) s barvou v `instanceColor`;
+klikání jde dál po brnách přes `event.instanceId`. Ověřeno: klik na bránu v 3D
+naviguje na `/present/nebeska-flotila`, obraz je stejný (screenshot), `tsc` čistý
+v Nirvaně i na webu. Zbývá `/` (141) — tam jsou planety s vlastní texturou, takže
+batching nemá co slít; případná další úspora by byla v ubírání objektů, ne v instancích.
 
 ---
 

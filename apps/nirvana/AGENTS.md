@@ -2241,6 +2241,23 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Stav měření:** 390×844 bez přesahu na všech 10 površích, `mobile-audit` PASSED
   (všechny hry mají dotykové ovládání a kouzlo v MOBĚ opravdu ubere manu).
 
+### Instancování bran v chrámu (`/hiran`, 2026-11-05)
+
+- **Šest meshů na bránu byl nejdražší kus scény.** Patnáct bran × 6 = ~90 draw callů,
+  a přitom se brány liší **jen barvou prstence**. Nově šest `SceneInstances`
+  (pylon, podstavec, hlava, prstenec, clona, klenot) s barvou v `instanceColor`.
+  Naměřeno: **139 → 39 draw callů** (71 %), obraz stejný (screenshot před/po).
+- **Klikání po brnách zůstává.** Handler visí na obalujícím `<group>`, r3f k eventu
+  přidá `instanceId`; z něj se dohledá `gates[index]` a zkontroluje `gate.present`.
+  Ověřeno v prohlížeči: klik na bránu → `/present/nebeska-flotila`.
+- **Scéna je sdílená s webem** (`apps/website-v2.9` → `HiranPreview`), takže se po
+  každé změně musí projít `tsc` v **obou** appkách. API komponenty se neměnilo.
+- **`InstanceItem` bere `position`/`rotation`/`scale`/`color`** — kdo přidá do brány
+  další díl, přidá ho jako další instanci do `Gates`, ne jako nový `<mesh>` v `map()`.
+- **`/` (141 calls) se neinstancuje.** Planety mají každá vlastní texturu a jiný
+  materiál; další úspora by znamenala ubírat objekty (kvalitativní tiery to už dělají),
+  ne slít meshe.
+
 ## Flotila z marketu — `/fleet` (2026-11-05)
 
 - **Lodě jsou produkty z marketu, ne nové assety.** Zdroj jsou STL skládačky

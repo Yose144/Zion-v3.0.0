@@ -370,95 +370,145 @@ function GoldenOrb({
 }
 
 /** Brána do jednoho světa — pylon, prstenec, clona a popisek. */
-function Gate({
-  gate,
-  index,
-  total,
+/**
+ * Brány jako **šest instancovaných meshů**, ne šest meshů na každou bránu.
+ *
+ * Do 2026-11-05 to bylo 6 draw callů × počet bran (patnáct bran = devadesát),
+ * a přitom se brány liší jen barvou prstence. Ta jde do `instanceColor`,
+ * takže i prstenec a clona jsou jeden mesh. Naměřeno na `/hiran`: 139 → ~55
+ * draw callů při stejném obrazu.
+ *
+ * Klikání zůstává po brnách: `event.instanceId` je index instance a z něj se
+ * dohledá `gates[index]`. Kdo přidá do brány další díl, přidá ho jako další
+ * instanci sem — jinak se počet draw callů vrátí.
+ */
+type GateEvent = { instanceId?: number; stopPropagation: () => void };
+
+function Gates({
+  gates,
   onSelect,
   showLabel = true,
 }: {
-  gate: HiranGate;
-  index: number;
-  total: number;
+  gates: HiranGate[];
   onSelect?: (gate: HiranGate) => void;
-  /** Na úzkém displeji se popisky 13 bran překrývají — kreslí se jen na širokém. */
   showLabel?: boolean;
 }) {
-  const angle = (index / Math.max(1, total)) * Math.PI * 2;
-  const color = gateColor(index, total);
-  const ringMaterial = React.useMemo(
-    () => new THREE.MeshBasicMaterial({ color, toneMapped: false }),
-    [color],
+  const total = Math.max(1, gates.length);
+
+  const parts = React.useMemo(() => {
+    const pylon: InstanceItem[] = [];
+    const base: InstanceItem[] = [];
+    const cap: InstanceItem[] = [];
+    const ring: InstanceItem[] = [];
+    const veil: InstanceItem[] = [];
+    const finial: InstanceItem[] = [];
+    gates.forEach((gate, index) => {
+      const angle = (index / total) * Math.PI * 2;
+      const x = Math.cos(angle) * GATE_R;
+      const z = Math.sin(angle) * GATE_R;
+      const rotation: [number, number, number] = [0, -angle, 0];
+      const color = gateColor(index, total);
+      pylon.push({ position: [x, GATE_Y / 2 + 0.5, z], rotation });
+      base.push({ position: [x, 0.35, z], rotation });
+      cap.push({ position: [x, GATE_Y + 0.5, z], rotation });
+      ring.push({ position: [x, GATE_Y + 1.5, z], rotation, color });
+      veil.push({ position: [x, GATE_Y + 1.5, z], rotation, color });
+      finial.push({ position: [x, GATE_Y + 3.05, z], rotation });
+    });
+    return { pylon, base, cap, ring, veil, finial };
+  }, [gates, total]);
+
+  const geometries = React.useMemo(
+    () => ({
+      pylon: new THREE.CylinderGeometry(0.17, 0.3, GATE_Y, 10),
+      base: new THREE.CylinderGeometry(0.7, 0.9, 0.7, 12),
+      cap: new THREE.CylinderGeometry(0.34, 0.26, 0.28, 10),
+      ring: new THREE.TorusGeometry(1.15, 0.085, 8, 72),
+      veil: new THREE.CircleGeometry(1.09, 40),
+      finial: new THREE.OctahedronGeometry(0.26, 0),
+    }),
+    [],
   );
-  const veilMaterial = React.useMemo(
-    () =>
-      new THREE.MeshBasicMaterial({
-        color,
+  React.useEffect(
+    () => () => {
+      Object.values(geometries).forEach((geometry) => geometry.dispose());
+    },
+    [geometries],
+  );
+
+  const materials = React.useMemo(
+    () => ({
+      stone: marbleWhite(2),
+      pedestal: marbleMatte(3),
+      gold: gold(0.22),
+      // Bílý základ + `instanceColor` = barva se dopočítá per instance.
+      ring: new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }),
+      veil: new THREE.MeshBasicMaterial({
+        color: '#ffffff',
         transparent: true,
         opacity: 0.055,
         depthWrite: false,
         side: THREE.DoubleSide,
         blending: THREE.AdditiveBlending,
       }),
-    [color],
+    }),
+    [],
   );
-  React.useEffect(() => () => ringMaterial.dispose(), [ringMaterial]);
-  React.useEffect(() => () => veilMaterial.dispose(), [veilMaterial]);
+  React.useEffect(
+    () => () => {
+      materials.ring.dispose();
+      materials.veil.dispose();
+    },
+    [materials],
+  );
 
-  const interactive = Boolean(onSelect && gate.present);
+  if (gates.length === 0) return null;
+
+  /** Brána pod kurzorem/klikem — jen `present` brány jsou interaktivní. */
+  const gateAt = (event: GateEvent): HiranGate | null => {
+    const index = event.instanceId;
+    if (index === undefined) return null;
+    const gate = gates[index];
+    if (!gate || !gate.present || !onSelect) return null;
+    return gate;
+  };
 
   return (
     <group
-      position={[Math.cos(angle) * GATE_R, 0, Math.sin(angle) * GATE_R]}
-      rotation={[0, -angle, 0]}
-      onClick={
-        interactive
-          ? (event) => {
-              event.stopPropagation();
-              onSelect!(gate);
-            }
-          : undefined
-      }
-      onPointerOver={
-        interactive
-          ? (event) => {
-              event.stopPropagation();
-              document.body.style.cursor = 'pointer';
-            }
-          : undefined
-      }
-      onPointerOut={
-        interactive
-          ? () => {
-              document.body.style.cursor = 'auto';
-            }
-          : undefined
-      }
+      onClick={(event) => {
+        const gate = gateAt(event);
+        if (!gate) return;
+        event.stopPropagation();
+        onSelect!(gate);
+      }}
+      onPointerOver={(event) => {
+        if (!gateAt(event)) return;
+        event.stopPropagation();
+        document.body.style.cursor = 'pointer';
+      }}
+      onPointerOut={() => {
+        document.body.style.cursor = 'auto';
+      }}
     >
-      {/* pylon */}
-      <mesh position={[0, GATE_Y / 2 + 0.5, 0]} castShadow material={marbleWhite(2)}>
-        <cylinderGeometry args={[0.17, 0.3, GATE_Y, 10]} />
-      </mesh>
-      <mesh position={[0, 0.35, 0]} receiveShadow material={marbleMatte(3)}>
-        <cylinderGeometry args={[0.7, 0.9, 0.7, 12]} />
-      </mesh>
-      <mesh position={[0, GATE_Y + 0.5, 0]} material={marbleWhite(2)}>
-        <cylinderGeometry args={[0.34, 0.26, 0.28, 10]} />
-      </mesh>
-      {/* prstenec + clona */}
-      <mesh position={[0, GATE_Y + 1.5, 0]} material={ringMaterial}>
-        <torusGeometry args={[1.15, 0.085, 8, 72]} />
-      </mesh>
-      <mesh position={[0, GATE_Y + 1.5, 0]} material={veilMaterial}>
-        <circleGeometry args={[1.09, 40]} />
-      </mesh>
-      {/* zlatý klenot na vrcholu */}
-      <mesh position={[0, GATE_Y + 3.05, 0]} material={gold(0.22)}>
-        <octahedronGeometry args={[0.26, 0]} />
-      </mesh>
-      {showLabel ? (
-        <SceneLabel position={[0, GATE_Y + 4.0, 0]} text={gate.name} scale={0.95} />
-      ) : null}
+      <SceneInstances geometry={geometries.pylon} material={materials.stone} items={parts.pylon} receiveShadow={false} />
+      <SceneInstances geometry={geometries.base} material={materials.pedestal} items={parts.base} castShadow={false} />
+      <SceneInstances geometry={geometries.cap} material={materials.stone} items={parts.cap} castShadow={false} receiveShadow={false} />
+      <SceneInstances geometry={geometries.ring} material={materials.ring} items={parts.ring} castShadow={false} receiveShadow={false} />
+      <SceneInstances geometry={geometries.veil} material={materials.veil} items={parts.veil} castShadow={false} receiveShadow={false} />
+      <SceneInstances geometry={geometries.finial} material={materials.gold} items={parts.finial} castShadow={false} receiveShadow={false} />
+      {showLabel
+        ? gates.map((gate, index) => {
+            const angle = (index / total) * Math.PI * 2;
+            return (
+              <SceneLabel
+                key={`label-${gate.key}`}
+                position={[Math.cos(angle) * GATE_R, GATE_Y + 4.0, Math.sin(angle) * GATE_R]}
+                text={gate.name}
+                scale={0.95}
+              />
+            );
+          })
+        : null}
     </group>
   );
 }
@@ -507,16 +557,7 @@ export function HiranScene({
       <LotusDais />
       <GoldenOrb state={state} onOrbClick={onOrbClick} />
 
-      {gates.map((gate, index) => (
-        <Gate
-          key={gate.key}
-          gate={gate}
-          index={index}
-          total={gates.length}
-          onSelect={onSelectGate}
-          showLabel={gateLabels}
-        />
-      ))}
+      <Gates gates={gates} onSelect={onSelectGate} showLabel={gateLabels} />
 
       <SceneMotes
         count={180}
