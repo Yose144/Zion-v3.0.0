@@ -230,11 +230,10 @@ export const COMPANION_GROUPS: CompanionGroup[] = [
         title: { cs: 'MariaCaminho', en: 'MariaCaminho' },
         description: {
           cs: 'Osa prostoru — tři zjevení, credencial, flotila Tres Marías.',
-          en: 'The axis of space — three apparitions, the credencial, the Tres Marías fleet. Czech original.',
+          en: 'The axis of space — three apparitions, the credencial, the Tres Marías fleet.',
         },
         status: 'draft',
         href: '/zion-archive/mariacaminho/cist',
-        czOnly: true,
         rc: '6, 182, 212',
       },
       {

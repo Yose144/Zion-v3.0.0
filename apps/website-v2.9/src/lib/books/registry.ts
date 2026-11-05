@@ -346,7 +346,7 @@ export const MARIACAMINHO_BOOK = korpusBook({
   dir: 'MariaCaminho',
   accent: '6, 182, 212',
   icon: Sailboat,
-  kicker: { cs: 'Příběh · osa prostoru · CZ', en: 'A story · the axis of space · CZ' },
+  kicker: { cs: 'Příběh · osa prostoru · CZ + EN', en: 'A story · the axis of space · CZ + EN' },
   title: { cs: 'MariaCaminho', en: 'MariaCaminho' },
   subtitle: { cs: 'Tři zjevení, credencial, flotila Tres Marías.', en: 'Three apparitions, the credencial, the Tres Marías fleet.' },
   description: {
