@@ -456,6 +456,32 @@ stopa příběhu: text se ve hře ukáže na osm sekund, v deníku zůstává.
 V úvodu je tlačítko „Deník X/7" a panel se sedmi texty (nalezené plné,
 nenalezené jako obrys), plus počet cest a kolikrát jsi světlo daroval.
 
+### Společné létání a Lumi v HUD (2026-11-05, protokol 30)
+
+👤: „hlavně Lumi přidej do HUD a na planetu link a pak lítání".
+
+**HUD:** Lumi je v liště her (🏮) a přibyl **ukazatel postupu** `🏮 4/7`
+(klikací žeton s počtem světel z deníku). **Planeta:** panel Uranu má
+druhé CTA „Letět s Lumi", text mluví o Lumi.
+
+**Společné létání** je **relay**, ne autoritativní simulace: Lumi nemá
+zásahy ani skóre, takže klient počítá let sám (stejný `stepFlight`) a
+server ho předává ostatním. Server drží jen **sdílená světla místnosti**
+a kdo doletěl — nový hráč dostane už sebraná světla. Místnost pro 4.
+
+V klientu: `joinLumi(path)`, `sendFly()` (20 Hz, ale zpráva se sebraným
+světlem jde vždy), adoptování serverových světel a kreslení ostatních
+letců bez modelu lucerny (čtyři kopie 13k modelu by scénu zabily).
+
+**Past:** whitelist her v `join` neznal `lumi`, takže join tiše propadl
+do `arena` — stejná chyba jako u tanků. **Druhá past:** prohlížeč uspí
+`requestAnimationFrame` na kartě v pozadí, takže E2E musí před akcí
+`bringToFront()`.
+
+**Ověřeno:** net `lumi.mjs` 15/15, živý test dvou prohlížečů 5/5 (oba
+vidí „letí 1", světlo sebrané jedním má i druhý), net sady 11/11,
+`lumi-audit` 36/36, routy 16/16, progrese 13/13.
+
 ### Třetí cesta (2026-11-05)
 
 Po dohrání obou cest se odemkne **Cesta světla** — sedm světel ve spirále
