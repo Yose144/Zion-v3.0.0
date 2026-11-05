@@ -94,3 +94,11 @@
 
 - Přeloženy **Epizoda 6 — Kompas a pozvánka do Oasis** a **Epizoda 7 — Epilog: Názor AI**.
 - Sůl této země: **7/12 EN**; zbývá 08–12. Celkem **57/189** kapitol (30,2 %).
+
+
+---
+
+## Doplnění 2026-11-05 (6) — Sůl této země, epizoda 8
+
+- Přeložena **ZION — Nová civilizace** (nejdelší kapitola série, onboarding + závazky + rizika + MiCA).
+- Sůl této země: **8/12 EN**; zbývá 09–12. Celkem **58/189** kapitol (30,7 %).
