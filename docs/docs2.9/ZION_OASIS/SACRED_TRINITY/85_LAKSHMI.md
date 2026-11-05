@@ -10,7 +10,7 @@
 
 ## 🌟 ESENCE
 
-**Lakṣmī / Śrī** — štěstí vzniklé z **dharmické činnosti** a vděku. Tento slot (**#85**) klasického **śrī** archetypu doplňuje kompozit **[43 Sri Anagha Lakshmi](43_SRI_ANAGHA_LAKSHMI.md)** (Sarasvatī+Lakṣmī+Kālī amalgam).
+**Lakṣmī / Śrī** — štěstí vzniklé z **dharmické činnosti** a vděku. Tento slot (**#85**) klasického **śrī** archetypu doplňuje kompozit **[203 Sri Anagha Lakshmi](203_SRI_ANAGHA_LAKSHMI.md)** (Sarasvatī+Lakṣmī+Kālī amalgam).
 
 ---
 
@@ -29,7 +29,7 @@
   "name": "Sri Lakshmi",
   "circle": "India Extended",
   "cl_range": [3, 8],
-  "related_profile": "43_SRI_ANAGHA_LAKSHMI.md — triple Śakti",
+  "related_profile": "203_SRI_ANAGHA_LAKSHMI.md — triple Śakti",
   "terranova_source": "docs/TerraNova/india/KONCEPT-AVATARI-OASIS.md"
 }
 ```

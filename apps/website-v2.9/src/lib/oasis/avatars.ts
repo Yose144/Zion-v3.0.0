@@ -1,6 +1,6 @@
 /* eslint-disable */
 // GENEROVÁNO — scripts/gen-oasis-avatars.mjs, needituj ručně.
-// Zdroj: V31/L4/oasis/data/avatars.json (200 záznamů)
+// Zdroj: V31/L4/oasis/data/avatars.json (202 záznamů)
 // Kruhy: docs/docs2.9/ZION_OASIS/AVATAR_ROSTER.md (sekce = kruhy, id 202 → maya)
 
 export type OasisAvatarRay = 'Blue' | 'Pink' | 'Yellow' | 'Violet' | 'AllRays' | 'White' | 'Green' | 'RubyGold' | 'Obsidian';
@@ -17830,5 +17830,211 @@ export const OASIS_AVATARS: OasisAvatar[] = [
       "final": false
     },
     "circle": "maya"
+  },
+  {
+    "id": 203,
+    "name": "Sri Anagha Lakshmi",
+    "subtitle": {
+      "cs": "Trojjediná Božská Matka",
+      "en": "Divine Mother Trinity"
+    },
+    "ray": "AllRays",
+    "rarity": "Legendary",
+    "cl": 9,
+    "clName": {
+      "cs": "Na hvězdě",
+      "en": "On the Star"
+    },
+    "role": {
+      "cs": "Ta, v níž jsou tři bohyně jedna",
+      "en": "She in whom three goddesses are one"
+    },
+    "location": {
+      "cs": "Oneness University, Indie",
+      "en": "Oneness University, India"
+    },
+    "questLine": {
+      "cs": "Tři bohyně v jednom těle",
+      "en": "Three Goddesses in One Body"
+    },
+    "teaching": {
+      "cs": "Kde je Dattatréja otcem, je Anagha Lakšmí matkou.",
+      "en": "Where Dattatreya is the father, Anagha Lakshmi is the mother."
+    },
+    "ability": {
+      "cs": "Trojí šakti — tvořit, udržovat, osvobozovat.",
+      "en": "Triple Shakti — to create, sustain, liberate."
+    },
+    "key": "",
+    "quests": [
+      {
+        "title": {
+          "cs": "Tři tváře",
+          "en": "The Three Faces"
+        },
+        "description": {
+          "cs": "Projdi tři podoby Matky: tvořit, chránit, rozpouštět.",
+          "en": "Walk the three faces of the Mother: create, protect, dissolve."
+        }
+      },
+      {
+        "title": {
+          "cs": "Bílý lotos",
+          "en": "White Lotus"
+        },
+        "description": {
+          "cs": "Nauč někoho jiného to, co sám umíš.",
+          "en": "Teach someone what you already know."
+        }
+      },
+      {
+        "title": {
+          "cs": "Růžový lotos",
+          "en": "Pink Lotus"
+        },
+        "description": {
+          "cs": "Přerozděl tak, aby nikdo nezůstal stranou.",
+          "en": "Redistribute so that no one is left outside."
+        }
+      },
+      {
+        "title": {
+          "cs": "Černý lotos",
+          "en": "Black Lotus"
+        },
+        "description": {
+          "cs": "Nechat odejít to, co už tě drží.",
+          "en": "Let go of what still holds you."
+        }
+      },
+      {
+        "title": {
+          "cs": "Sjednocení",
+          "en": "Union"
+        },
+        "description": {
+          "cs": "Uvidět v trojím jedno.",
+          "en": "See the one in the three."
+        }
+      }
+    ],
+    "essence": {
+      "cs": "Ženská polovina trojice: Mahasarasvatí tvoří, Mahalakšmí chrání, Mahakálí osvobozuje. V OASIS drží tři hrany téhož trojúhelníku — vzdělání, přerozdělení a spálení ega.",
+      "en": "The feminine half of the trinity: Mahasarasvati creates, Mahalakshmi preserves, Mahakali liberates. In OASIS she holds the three edges of one triangle — education, redistribution and the burning of the ego."
+    },
+    "quote": {
+      "cs": "Nejsem tři. Jsem jedna — a přesto mě každý potká jinak.",
+      "en": "I am not three. I am one — and yet everyone meets me differently."
+    },
+    "hasProfile": true,
+    "art": {
+      "card": "",
+      "full": "",
+      "final": false
+    },
+    "circle": "zion"
+  },
+  {
+    "id": 204,
+    "name": "Sri Chaitanya Mahaprabhu",
+    "subtitle": {
+      "cs": "Zlatý Avatar",
+      "en": "Golden Avatar"
+    },
+    "ray": "Yellow",
+    "rarity": "Legendary",
+    "cl": 8,
+    "clName": {
+      "cs": "Transcendence",
+      "en": "Transcendent"
+    },
+    "role": {
+      "cs": "Ten, kdo zpívá jména a rozdává je všem",
+      "en": "He who chants the names and gives them to everyone"
+    },
+    "location": {
+      "cs": "Majapúr, Navadvíp (Bengálsko, Indie)",
+      "en": "Mayapur, Navadvipa (Bengal, India)"
+    },
+    "questLine": {
+      "cs": "Zlatý Avatar",
+      "en": "The Golden Avatar"
+    },
+    "teaching": {
+      "cs": "Zpívej, a srdce se stane chrámem.",
+      "en": "Chant, and the heart becomes a temple."
+    },
+    "ability": {
+      "cs": "Sankírtan — společný zpěv, který rozpouští ego.",
+      "en": "Sankirtan — the shared chant that dissolves the ego."
+    },
+    "key": "",
+    "quests": [
+      {
+        "title": {
+          "cs": "První zpěv",
+          "en": "The First Chant"
+        },
+        "description": {
+          "cs": "Zazpívej mantru nahlas, i když se stydíš.",
+          "en": "Chant the mantra aloud, even if you feel shy."
+        }
+      },
+      {
+        "title": {
+          "cs": "Sankírtan",
+          "en": "Sankirtan"
+        },
+        "description": {
+          "cs": "Zpívej ve skupině; nikdo nezačíná ani nekončí sám.",
+          "en": "Chant in a group; no one starts or ends alone."
+        }
+      },
+      {
+        "title": {
+          "cs": "Osm veršů",
+          "en": "Eight Verses"
+        },
+        "description": {
+          "cs": "Projdi Šikšáštaku verš po verši.",
+          "en": "Walk the Shikshashtaka verse by verse."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rozdávej jméno",
+          "en": "Give the Name"
+        },
+        "description": {
+          "cs": "Nauč mantru někoho, kdo ji nezná.",
+          "en": "Teach the mantra to someone who does not know it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Zlatý věk",
+          "en": "The Golden Age"
+        },
+        "description": {
+          "cs": "Uvidět, že radost není odměna, ale metoda.",
+          "en": "See that joy is not a reward but a method."
+        }
+      }
+    ],
+    "essence": {
+      "cs": "Krišna a Rádhá v jednom těle, zlatá barva Gaurángy. Pro OASIS je to princip sdílené radosti: hodnota nevzniká těžbou o samotě, ale tím, že se o ni zpívá společně.",
+      "en": "Krishna and Radha in one body, the golden complexion of Gauranga. For OASIS he is the principle of shared joy: value is not mined alone but sung together."
+    },
+    "quote": {
+      "cs": "Nepotřebuješ se ke mně modlit. Zazpívej jméno a už jsi uvnitř.",
+      "en": "You do not need to pray to me. Sing the name and you are already inside."
+    },
+    "hasProfile": true,
+    "art": {
+      "card": "",
+      "full": "",
+      "final": false
+    },
+    "circle": "hindu"
   }
 ];

@@ -4265,6 +4265,38 @@
           "description": "Bolon Yokte manifests in full form; the player gains a permanent ability."
         }
       ]
+    },
+    {
+      "id": 203,
+      "name": "Sri Anagha Lakshmi",
+      "subtitle": "Divine Mother Trinity",
+      "ray": "AllRays",
+      "role": "Divine Mother of the Trinity",
+      "location": "Oneness University (India)",
+      "quest_line": "\"Three Goddesses in One\"",
+      "teaching": "\"Where Dattatreya is the Father, Anagha Lakshmi is the Mother\"",
+      "ability": "**Triple Shakti** - Create, sustain, liberate",
+      "consciousness_level_required": 9,
+      "consciousness_level_name": "On the Star",
+      "key": "",
+      "rarity": "Legendary",
+      "quests": []
+    },
+    {
+      "id": 204,
+      "name": "Sri Chaitanya Mahaprabhu",
+      "subtitle": "Golden Avatar",
+      "ray": "Yellow",
+      "role": "Golden Avatar - Krishna and Radha united",
+      "location": "Mayapur, Navadvipa (Bengal, India)",
+      "quest_line": "\"The Golden Avatar\"",
+      "teaching": "\"Chant, and the heart becomes the temple\"",
+      "ability": "**Sankirtan** - the shared chant that dissolves the ego",
+      "consciousness_level_required": 8,
+      "consciousness_level_name": "Transcendent",
+      "key": "",
+      "rarity": "Legendary",
+      "quests": []
     }
   ]
 }

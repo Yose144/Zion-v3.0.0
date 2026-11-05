@@ -639,7 +639,7 @@ She proves **Divine Feminine is UNIVERSAL** (all traditions honor Her):
 - Yang (masculine) + Yin (feminine) = Tao (harmony)
 - **ZION Tech (masculine) + ZION Community (feminine) = Golden Age**
 
-**See Full Profile:** [43_SRI_ANAGHA_LAKSHMI.md](../SACRED_TRINITY/43_SRI_ANAGHA_LAKSHMI.md)
+**See Full Profile:** [203_SRI_ANAGHA_LAKSHMI.md](../SACRED_TRINITY/203_SRI_ANAGHA_LAKSHMI.md)
 
 ---
 

@@ -8,7 +8,7 @@
 
 ## 📊 AVATAR CATEGORIES
 
-### **Total: 202 Playable/NPC Avatars** *(rozšířeno 2026-05; Norse–Celtic #182–191; Staroegypt #192–201; Maya #202)*
+### **Total: 202 Playable/NPC Avatars** *(rozšířeno 2026-11; #203 Sri Anagha Lakshmi, #204 Sri Chaitanya Mahaprabhu; dříve 2026-05; Norse–Celtic #182–191; Staroegypt #192–201; Maya #202)*
 
 ```
 🕉️ Sacred Trinity Hindu / Indo-lineage „core roster" (#00–17 v tabulce níže) + India Extended #82–91 + Japan #92–101 + China #102–111 + Indonesia #112–121 + Australia #122–131 + Aotearoa #132–141 + **Africa #142–151** + **Atlantis literary #152–161** + **Lemuria speculative-humility #162–171** + **Cosmic/Vzestup #172–181** + **Norse–Celtic #182–191** + **Staroegypt #192–201** + **🌳 Maya #202**
@@ -38,7 +38,7 @@
 
 ---
 
-## 🕉️ HINDU DEITIES (17 Avatars)
+## 🕉️ HINDU DEITIES (18 Avatars)
 
 ### **00. Krishna** (Cosmic Integration)
 **Ray:** All Rays (Cosmic Unity)
@@ -313,6 +313,18 @@
 3. "Ganesha's Pen" - Writing puzzle
 4. "Timeless Wisdom" - Apply ancient lessons to modern problems
 5. "Sage's Blessing" - Unlock all lore entries
+
+---
+
+### **204. Sri Chaitanya Mahaprabhu** (Golden Avatar)
+**Ray:** Yellow (Golden / Gauranga)
+**Role:** Golden Avatar — Krishna and Radha united
+**Location:** Mayapur, Navadvipa (Bengal, India)
+**Quest Line:** "The Golden Avatar"
+**Teaching:** "Chant, and the heart becomes the temple"
+**Ability:** **Sankirtan** - the shared chant that dissolves the ego
+**CL Required:** 8 (Transcendent)
+**NFT Rarity:** Legendary
 
 ---
 
@@ -732,6 +744,18 @@
 **Ability:** **Royal Decree** - Influence all NPCs
 **CL Required:** 5 (Quantum)
 **NFT Rarity:** Rare
+
+---
+
+### **203. Sri Anagha Lakshmi** (Divine Mother Trinity)
+**Ray:** All Rays (Sarasvatī + Lakṣmī + Kālī)
+**Role:** Divine Mother of the Trinity
+**Location:** Oneness University (India)
+**Quest Line:** "Three Goddesses in One"
+**Teaching:** "Where Dattatreya is the Father, Anagha Lakshmi is the Mother"
+**Ability:** **Triple Shakti** - Create, sustain, liberate
+**CL Required:** 9 (On the Star)
+**NFT Rarity:** Legendary
 
 ---
 
@@ -1163,7 +1187,7 @@
 **CL Required:** 3–8
 **NFT Rarity:** Epic
 
-**Note:** odkazy na **[43_SRI_ANAGHA_LAKSHMI.md](./SACRED_TRINITY/43_SRI_ANAGHA_LAKSHMI.md)** (triple goddess) — **85** je klasická **Śrī Lakṣmī**.
+**Note:** odkazy na **[203_SRI_ANAGHA_LAKSHMI.md](./SACRED_TRINITY/203_SRI_ANAGHA_LAKSHMI.md)** (triple goddess) — **85** je klasická **Śrī Lakṣmī**.
 
 ---
 

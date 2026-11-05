@@ -463,13 +463,13 @@ This clue tests: **Are you solving for moksha (liberation) or money (bondage)?**
 
 ### Avatar #43: श्री अनघा लक्ष्मी (Sri Anagha Lakshmi) - Triple Goddess
 
-**Full Profile:** [43_SRI_ANAGHA_LAKSHMI.md](../SACRED_TRINITY/43_SRI_ANAGHA_LAKSHMI.md)
+**Full Profile:** [203_SRI_ANAGHA_LAKSHMI.md](../SACRED_TRINITY/203_SRI_ANAGHA_LAKSHMI.md)
 
 ---
 
 ### 🔍 CLUE #107: The Triple Goddess Test
 
-**Found in:** 43_SRI_ANAGHA_LAKSHMI.md (Triple Goddess Structure)
+**Found in:** 203_SRI_ANAGHA_LAKSHMI.md (Triple Goddess Structure)
 
 **Anagha Lakshmi = Sarasvati + Lakshmi + Kali unified:**
 
@@ -620,7 +620,7 @@ The Golden Egg is NOT about getting rich. It's about **consciousness transformat
 
 ### 🔍 CLUE #108: The Padmavathi Prophecy Coordinates
 
-**Found in:** 43_SRI_ANAGHA_LAKSHMI.md (Prophecy Fulfillment section)
+**Found in:** 203_SRI_ANAGHA_LAKSHMI.md (Prophecy Fulfillment section)
 
 **The Prophecy (1320 CE):**
 
@@ -696,7 +696,7 @@ The 800-year prophecy proves **divine consciousness exists** (how else explain s
 
 ### 🔍 CLUE #109: The 12 Oneness Teachings
 
-**Found in:** 43_SRI_ANAGHA_LAKSHMI.md (12 Oneness University Teachings)
+**Found in:** 203_SRI_ANAGHA_LAKSHMI.md (12 Oneness University Teachings)
 
 **Amma's 12 Core Teachings:**
 

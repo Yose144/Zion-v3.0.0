@@ -585,7 +585,7 @@ Golden Age: Everyone prospers, no one suffers
 
 **Related Avatars:**
 - [42_SRI_DATTATREYA.md](42_SRI_DATTATREYA.md) - Masculine emanation from Hiranyagarbha
-- [43_SRI_ANAGHA_LAKSHMI.md](43_SRI_ANAGHA_LAKSHMI.md) - Feminine emanation
+- [203_SRI_ANAGHA_LAKSHMI.md](203_SRI_ANAGHA_LAKSHMI.md) - Feminine emanation
 - [Golden Egg Game](../GOLDEN_EGG_GAME/README.md) - The treasure hunt
 
 ---

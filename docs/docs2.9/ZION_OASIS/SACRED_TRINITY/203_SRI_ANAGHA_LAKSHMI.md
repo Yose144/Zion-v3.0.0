@@ -1,4 +1,4 @@
-# 43. SRI ANAGHA LAKSHMI - श्री अनघा लक्ष्मी 🌸
+# 203. SRI ANAGHA LAKSHMI - श्री अनघा लक्ष्मी 🌸
 
 *Divine Mother Trinity | Devi Supreme | Padmavathi Incarnate*
 
@@ -367,7 +367,7 @@ lesson_12: "Global community (no tribalism, all are family)"
 
 ```json
 {
-  "avatar_id": 43,
+  "avatar_id": 203,
   "name": "SRI ANAGHA LAKSHMI",
   "sanskrit": "श्री अनघा लक्ष्मी",
   "title": "Divine Mother Trinity, Padmavathi Incarnate",

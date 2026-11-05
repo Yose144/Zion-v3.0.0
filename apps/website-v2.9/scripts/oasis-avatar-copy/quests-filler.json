@@ -1,209 +1,1352 @@
 {
   "29": {
     "quests": [
-      { "title": { "cs": "První rozhodnutí", "en": "The First Decision" }, "description": { "cs": "Zvol cestu a sedm dní ji nezpochybňuj.", "en": "Choose a path and do not second-guess it for seven days." } },
-      { "title": { "cs": "Paprsek vůle", "en": "Ray of Will" }, "description": { "cs": "Pomoz gildě rozhodnout spor jediným hlasováním.", "en": "Help a guild settle a dispute in a single vote." } },
-      { "title": { "cs": "Náčelníkův stolec", "en": "The Chief's Seat" }, "description": { "cs": "Veď deset výprav bez ztráty jediného člena.", "en": "Lead ten expeditions without losing a single member." } },
-      { "title": { "cs": "Klidná rána", "en": "The Calm Blow" }, "description": { "cs": "Ukonči bitvu dřív, než opravdu začne.", "en": "End a battle before it truly begins." } },
-      { "title": { "cs": "Síla bez tvrdohlavosti", "en": "Strength Without Stubbornness" }, "description": { "cs": "Přiznej omyl veřejně a oprav ho.", "en": "Admit a mistake publicly and repair it." } }
+      {
+        "title": {
+          "cs": "První rozhodnutí",
+          "en": "The First Decision"
+        },
+        "description": {
+          "cs": "Zvol cestu a sedm dní ji nezpochybňuj.",
+          "en": "Choose a path and do not second-guess it for seven days."
+        }
+      },
+      {
+        "title": {
+          "cs": "Paprsek vůle",
+          "en": "Ray of Will"
+        },
+        "description": {
+          "cs": "Pomoz gildě rozhodnout spor jediným hlasováním.",
+          "en": "Help a guild settle a dispute in a single vote."
+        }
+      },
+      {
+        "title": {
+          "cs": "Náčelníkův stolec",
+          "en": "The Chief's Seat"
+        },
+        "description": {
+          "cs": "Veď deset výprav bez ztráty jediného člena.",
+          "en": "Lead ten expeditions without losing a single member."
+        }
+      },
+      {
+        "title": {
+          "cs": "Klidná rána",
+          "en": "The Calm Blow"
+        },
+        "description": {
+          "cs": "Ukonči bitvu dřív, než opravdu začne.",
+          "en": "End a battle before it truly begins."
+        }
+      },
+      {
+        "title": {
+          "cs": "Síla bez tvrdohlavosti",
+          "en": "Strength Without Stubbornness"
+        },
+        "description": {
+          "cs": "Přiznej omyl veřejně a oprav ho.",
+          "en": "Admit a mistake publicly and repair it."
+        }
+      }
     ]
   },
   "30": {
     "quests": [
-      { "title": { "cs": "První světlo", "en": "First Light" }, "description": { "cs": "Najdi souvislost, kterou ostatní přehlédli.", "en": "Find a connection others walked past." } },
-      { "title": { "cs": "Kniha bez odpovědí", "en": "The Book Without Answers" }, "description": { "cs": "Přečti text, který nedává řešení — jen otázku.", "en": "Read a text that offers no solution, only a question." } },
-      { "title": { "cs": "Zkouška porozumění", "en": "Trial of Understanding" }, "description": { "cs": "Vysvětli složité pravidlo nováčkovi tak, aby ho použil.", "en": "Explain a complex rule so a newcomer can actually use it." } },
-      { "title": { "cs": "Soustředění", "en": "Focus" }, "description": { "cs": "Vyřeš hádanku bez jediné nápovědy.", "en": "Solve a puzzle without a single hint." } },
-      { "title": { "cs": "Světlo bez oslnění", "en": "Light Without Blinding" }, "description": { "cs": "Nauč někoho to, co umíš sám nejlépe.", "en": "Teach someone the thing you do best." } }
+      {
+        "title": {
+          "cs": "První světlo",
+          "en": "First Light"
+        },
+        "description": {
+          "cs": "Najdi souvislost, kterou ostatní přehlédli.",
+          "en": "Find a connection others walked past."
+        }
+      },
+      {
+        "title": {
+          "cs": "Kniha bez odpovědí",
+          "en": "The Book Without Answers"
+        },
+        "description": {
+          "cs": "Přečti text, který nedává řešení — jen otázku.",
+          "en": "Read a text that offers no solution, only a question."
+        }
+      },
+      {
+        "title": {
+          "cs": "Zkouška porozumění",
+          "en": "Trial of Understanding"
+        },
+        "description": {
+          "cs": "Vysvětli složité pravidlo nováčkovi tak, aby ho použil.",
+          "en": "Explain a complex rule so a newcomer can actually use it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Soustředění",
+          "en": "Focus"
+        },
+        "description": {
+          "cs": "Vyřeš hádanku bez jediné nápovědy.",
+          "en": "Solve a puzzle without a single hint."
+        }
+      },
+      {
+        "title": {
+          "cs": "Světlo bez oslnění",
+          "en": "Light Without Blinding"
+        },
+        "description": {
+          "cs": "Nauč někoho to, co umíš sám nejlépe.",
+          "en": "Teach someone the thing you do best."
+        }
+      }
     ]
   },
   "31": {
     "quests": [
-      { "title": { "cs": "Dílna", "en": "The Workshop" }, "description": { "cs": "Vytvoř předmět, na kterém je vidět péče.", "en": "Make an object in which care is visible." } },
-      { "title": { "cs": "Ruka, která vidí", "en": "The Hand That Sees" }, "description": { "cs": "Obnov poškozené dílo tak, aby neztratilo historii.", "en": "Restore a damaged work without erasing its history." } },
-      { "title": { "cs": "Krása jako argument", "en": "Beauty as Argument" }, "description": { "cs": "Přesvědč někoho bez jediného slova.", "en": "Convince someone without a single word." } },
-      { "title": { "cs": "Místo k žití", "en": "A Place to Live" }, "description": { "cs": "Uprav prostor tak, aby v něm chtěli lidé zůstat.", "en": "Shape a space so people want to stay in it." } },
-      { "title": { "cs": "Pán civilizace", "en": "Lord of Civilisation" }, "description": { "cs": "Nech po sobě něco, co přežije tvoji generaci.", "en": "Leave behind something that outlives your generation." } }
+      {
+        "title": {
+          "cs": "Dílna",
+          "en": "The Workshop"
+        },
+        "description": {
+          "cs": "Vytvoř předmět, na kterém je vidět péče.",
+          "en": "Make an object in which care is visible."
+        }
+      },
+      {
+        "title": {
+          "cs": "Ruka, která vidí",
+          "en": "The Hand That Sees"
+        },
+        "description": {
+          "cs": "Obnov poškozené dílo tak, aby neztratilo historii.",
+          "en": "Restore a damaged work without erasing its history."
+        }
+      },
+      {
+        "title": {
+          "cs": "Krása jako argument",
+          "en": "Beauty as Argument"
+        },
+        "description": {
+          "cs": "Přesvědč někoho bez jediného slova.",
+          "en": "Convince someone without a single word."
+        }
+      },
+      {
+        "title": {
+          "cs": "Místo k žití",
+          "en": "A Place to Live"
+        },
+        "description": {
+          "cs": "Uprav prostor tak, aby v něm chtěli lidé zůstat.",
+          "en": "Shape a space so people want to stay in it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pán civilizace",
+          "en": "Lord of Civilisation"
+        },
+        "description": {
+          "cs": "Nech po sobě něco, co přežije tvoji generaci.",
+          "en": "Leave behind something that outlives your generation."
+        }
+      }
     ]
   },
   "27": {
     "quests": [
-      { "title": { "cs": "Práh", "en": "The Threshold" }, "description": { "cs": "Odlož, co už nepotřebuješ, a vejdi.", "en": "Set down what you no longer need, then enter." } },
-      { "title": { "cs": "Bílý oheň", "en": "White Fire" }, "description": { "cs": "Projdi očistou bez jediné stížnosti.", "en": "Pass through cleansing without a single complaint." } },
-      { "title": { "cs": "Disciplína", "en": "Discipline" }, "description": { "cs": "Vydrž jednadvacet dní v řadě.", "en": "Hold a twenty-one-day streak." } },
-      { "title": { "cs": "Vzestup", "en": "Ascension" }, "description": { "cs": "Pomoz někomu jinému výš, ne sobě.", "en": "Help someone else higher, not yourself." } },
-      { "title": { "cs": "Mistr bílého světla", "en": "Master of White Light" }, "description": { "cs": "Veď obřad klidu v nejisté době.", "en": "Lead a rite of calm in an uncertain hour." } }
+      {
+        "title": {
+          "cs": "Práh",
+          "en": "The Threshold"
+        },
+        "description": {
+          "cs": "Odlož, co už nepotřebuješ, a vejdi.",
+          "en": "Set down what you no longer need, then enter."
+        }
+      },
+      {
+        "title": {
+          "cs": "Bílý oheň",
+          "en": "White Fire"
+        },
+        "description": {
+          "cs": "Projdi očistou bez jediné stížnosti.",
+          "en": "Pass through cleansing without a single complaint."
+        }
+      },
+      {
+        "title": {
+          "cs": "Disciplína",
+          "en": "Discipline"
+        },
+        "description": {
+          "cs": "Vydrž jednadvacet dní v řadě.",
+          "en": "Hold a twenty-one-day streak."
+        }
+      },
+      {
+        "title": {
+          "cs": "Vzestup",
+          "en": "Ascension"
+        },
+        "description": {
+          "cs": "Pomoz někomu jinému výš, ne sobě.",
+          "en": "Help someone else higher, not yourself."
+        }
+      },
+      {
+        "title": {
+          "cs": "Mistr bílého světla",
+          "en": "Master of White Light"
+        },
+        "description": {
+          "cs": "Veď obřad klidu v nejisté době.",
+          "en": "Lead a rite of calm in an uncertain hour."
+        }
+      }
     ]
   },
   "32": {
     "quests": [
-      { "title": { "cs": "Co se stalo", "en": "What Happened" }, "description": { "cs": "Zjisti pravdu o nehodě, i když to nikomu nevyhovuje.", "en": "Find out what really happened, even if it suits no one." } },
-      { "title": { "cs": "Léčba ran", "en": "Healing" }, "description": { "cs": "Ošetři sto zraněných bez ohledu na stranu.", "en": "Treat a hundred wounded regardless of side." } },
-      { "title": { "cs": "Nástroj, ne zbraň", "en": "A Tool, Not a Weapon" }, "description": { "cs": "Odhal lež, aniž bys někoho ponížil.", "en": "Expose a lie without humiliating anyone." } },
-      { "title": { "cs": "Archiv pravdy", "en": "The Truth Archive" }, "description": { "cs": "Zapiš událost bez přikrášlení.", "en": "Record an event without embellishment." } },
-      { "title": { "cs": "Mistr pravdy", "en": "Master of Truth" }, "description": { "cs": "Přiznej vlastní chybu dřív, než ji najde někdo jiný.", "en": "Admit your own mistake before someone else finds it." } }
+      {
+        "title": {
+          "cs": "Co se stalo",
+          "en": "What Happened"
+        },
+        "description": {
+          "cs": "Zjisti pravdu o nehodě, i když to nikomu nevyhovuje.",
+          "en": "Find out what really happened, even if it suits no one."
+        }
+      },
+      {
+        "title": {
+          "cs": "Léčba ran",
+          "en": "Healing"
+        },
+        "description": {
+          "cs": "Ošetři sto zraněných bez ohledu na stranu.",
+          "en": "Treat a hundred wounded regardless of side."
+        }
+      },
+      {
+        "title": {
+          "cs": "Nástroj, ne zbraň",
+          "en": "A Tool, Not a Weapon"
+        },
+        "description": {
+          "cs": "Odhal lež, aniž bys někoho ponížil.",
+          "en": "Expose a lie without humiliating anyone."
+        }
+      },
+      {
+        "title": {
+          "cs": "Archiv pravdy",
+          "en": "The Truth Archive"
+        },
+        "description": {
+          "cs": "Zapiš událost bez přikrášlení.",
+          "en": "Record an event without embellishment."
+        }
+      },
+      {
+        "title": {
+          "cs": "Mistr pravdy",
+          "en": "Master of Truth"
+        },
+        "description": {
+          "cs": "Přiznej vlastní chybu dřív, než ji najde někdo jiný.",
+          "en": "Admit your own mistake before someone else finds it."
+        }
+      }
     ]
   },
   "33": {
     "quests": [
-      { "title": { "cs": "Neviditelná služba", "en": "Invisible Service" }, "description": { "cs": "Pomoz tak, aby o tom nikdo nevěděl.", "en": "Help in a way no one will know about." } },
-      { "title": { "cs": "Ruce, které hojí", "en": "Hands That Heal" }, "description": { "cs": "Uzdrav ránu, kterou druhý skrývá.", "en": "Heal a wound the other person hides." } },
-      { "title": { "cs": "Mír v domě", "en": "Peace at Home" }, "description": { "cs": "Urovnej spor, který se táhne roky.", "en": "Settle a quarrel that has lasted years." } },
-      { "title": { "cs": "Dvojplamen", "en": "Twin Flame" }, "description": { "cs": "Spoj dvě služby v jednu, která drží.", "en": "Join two services into one that holds." } },
-      { "title": { "cs": "Dáma milosrdenství", "en": "Lady of Mercy" }, "description": { "cs": "Odpusť tomu, kdo ti odmítl pomoct.", "en": "Forgive the one who refused to help you." } }
+      {
+        "title": {
+          "cs": "Neviditelná služba",
+          "en": "Invisible Service"
+        },
+        "description": {
+          "cs": "Pomoz tak, aby o tom nikdo nevěděl.",
+          "en": "Help in a way no one will know about."
+        }
+      },
+      {
+        "title": {
+          "cs": "Ruce, které hojí",
+          "en": "Hands That Heal"
+        },
+        "description": {
+          "cs": "Uzdrav ránu, kterou druhý skrývá.",
+          "en": "Heal a wound the other person hides."
+        }
+      },
+      {
+        "title": {
+          "cs": "Mír v domě",
+          "en": "Peace at Home"
+        },
+        "description": {
+          "cs": "Urovnej spor, který se táhne roky.",
+          "en": "Settle a quarrel that has lasted years."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dvojplamen",
+          "en": "Twin Flame"
+        },
+        "description": {
+          "cs": "Spoj dvě služby v jednu, která drží.",
+          "en": "Join two services into one that holds."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dáma milosrdenství",
+          "en": "Lady of Mercy"
+        },
+        "description": {
+          "cs": "Odpusť tomu, kdo ti odmítl pomoct.",
+          "en": "Forgive the one who refused to help you."
+        }
+      }
     ]
   },
   "28": {
     "quests": [
-      { "title": { "cs": "Pohled shora", "en": "View from Above" }, "description": { "cs": "Uvidět celek aspoň jednou za měsíc.", "en": "See the whole at least once a month." } },
-      { "title": { "cs": "Šambala", "en": "Shambhala" }, "description": { "cs": "Ochraň posvátné místo tím, že do něj nezasáhneš.", "en": "Protect a sacred place by not interfering with it." } },
-      { "title": { "cs": "Planeta jako systém", "en": "Planet as a System" }, "description": { "cs": "Vysvětli, jak spolu souvisí voda, les a město.", "en": "Explain how water, forest and city depend on each other." } },
-      { "title": { "cs": "Nejtemnější hodina", "en": "The Darkest Hour" }, "description": { "cs": "Zůstaň, když všichni ostatní odejdou.", "en": "Stay when everyone else leaves." } },
-      { "title": { "cs": "Pán světa", "en": "Lord of the World" }, "description": { "cs": "Rozhodni ve prospěch celku proti vlastnímu zájmu.", "en": "Decide for the whole against your own interest." } }
+      {
+        "title": {
+          "cs": "Pohled shora",
+          "en": "View from Above"
+        },
+        "description": {
+          "cs": "Uvidět celek aspoň jednou za měsíc.",
+          "en": "See the whole at least once a month."
+        }
+      },
+      {
+        "title": {
+          "cs": "Šambala",
+          "en": "Shambhala"
+        },
+        "description": {
+          "cs": "Ochraň posvátné místo tím, že do něj nezasáhneš.",
+          "en": "Protect a sacred place by not interfering with it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Planeta jako systém",
+          "en": "Planet as a System"
+        },
+        "description": {
+          "cs": "Vysvětli, jak spolu souvisí voda, les a město.",
+          "en": "Explain how water, forest and city depend on each other."
+        }
+      },
+      {
+        "title": {
+          "cs": "Nejtemnější hodina",
+          "en": "The Darkest Hour"
+        },
+        "description": {
+          "cs": "Zůstaň, když všichni ostatní odejdou.",
+          "en": "Stay when everyone else leaves."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pán světa",
+          "en": "Lord of the World"
+        },
+        "description": {
+          "cs": "Rozhodni ve prospěch celku proti vlastnímu zájmu.",
+          "en": "Decide for the whole against your own interest."
+        }
+      }
     ]
   },
   "24": {
     "quests": [
-      { "title": { "cs": "Dech", "en": "The Breath" }, "description": { "cs": "Sto osm nádechů bez rozptýlení.", "en": "A hundred and eight breaths without distraction." } },
-      { "title": { "cs": "Himálaj", "en": "The Himalaya" }, "description": { "cs": "Dojdi na místo, které není na mapě.", "en": "Reach a place that is not on the map." } },
-      { "title": { "cs": "Krija", "en": "Kriya" }, "description": { "cs": "Zmiz a vrať se tak, aby to nikdo nezpozoroval.", "en": "Vanish and return without anyone noticing." } },
-      { "title": { "cs": "Nesmrtelnost", "en": "Immortality" }, "description": { "cs": "Vydrž ve světě celý rok bez ztráty sebe.", "en": "Endure a full year in the world without losing yourself." } },
-      { "title": { "cs": "Učitel bez jména", "en": "Teacher Without a Name" }, "description": { "cs": "Uč bez odměny a bez podpisu.", "en": "Teach without reward and without a signature." } }
+      {
+        "title": {
+          "cs": "Dech",
+          "en": "The Breath"
+        },
+        "description": {
+          "cs": "Sto osm nádechů bez rozptýlení.",
+          "en": "A hundred and eight breaths without distraction."
+        }
+      },
+      {
+        "title": {
+          "cs": "Himálaj",
+          "en": "The Himalaya"
+        },
+        "description": {
+          "cs": "Dojdi na místo, které není na mapě.",
+          "en": "Reach a place that is not on the map."
+        }
+      },
+      {
+        "title": {
+          "cs": "Krija",
+          "en": "Kriya"
+        },
+        "description": {
+          "cs": "Zmiz a vrať se tak, aby to nikdo nezpozoroval.",
+          "en": "Vanish and return without anyone noticing."
+        }
+      },
+      {
+        "title": {
+          "cs": "Nesmrtelnost",
+          "en": "Immortality"
+        },
+        "description": {
+          "cs": "Vydrž ve světě celý rok bez ztráty sebe.",
+          "en": "Endure a full year in the world without losing yourself."
+        }
+      },
+      {
+        "title": {
+          "cs": "Učitel bez jména",
+          "en": "Teacher Without a Name"
+        },
+        "description": {
+          "cs": "Uč bez odměny a bez podpisu.",
+          "en": "Teach without reward and without a signature."
+        }
+      }
     ]
   },
   "25": {
     "quests": [
-      { "title": { "cs": "Půda", "en": "The Soil" }, "description": { "cs": "Vrať život místu, které bylo vytěžené.", "en": "Return life to a place that was mined out." } },
-      { "title": { "cs": "Náruč", "en": "Embrace" }, "description": { "cs": "Ochraň druh, který nemá zastoupení.", "en": "Protect a species that has no substitute." } },
-      { "title": { "cs": "Jádro", "en": "The Core" }, "description": { "cs": "Sestup k jádru a vrať se s odpovědí.", "en": "Descend to the core and come back with an answer." } },
-      { "title": { "cs": "Koloběh", "en": "The Cycle" }, "description": { "cs": "Vrať přírodě, co jsi jí vzal.", "en": "Give back to nature what you took from it." } },
-      { "title": { "cs": "Matka Země", "en": "Earth Mother" }, "description": { "cs": "Nech po sobě místo v lepším stavu, než jsi ho našel.", "en": "Leave a place better than you found it." } }
+      {
+        "title": {
+          "cs": "Půda",
+          "en": "The Soil"
+        },
+        "description": {
+          "cs": "Vrať život místu, které bylo vytěžené.",
+          "en": "Return life to a place that was mined out."
+        }
+      },
+      {
+        "title": {
+          "cs": "Náruč",
+          "en": "Embrace"
+        },
+        "description": {
+          "cs": "Ochraň druh, který nemá zastoupení.",
+          "en": "Protect a species that has no substitute."
+        }
+      },
+      {
+        "title": {
+          "cs": "Jádro",
+          "en": "The Core"
+        },
+        "description": {
+          "cs": "Sestup k jádru a vrať se s odpovědí.",
+          "en": "Descend to the core and come back with an answer."
+        }
+      },
+      {
+        "title": {
+          "cs": "Koloběh",
+          "en": "The Cycle"
+        },
+        "description": {
+          "cs": "Vrať přírodě, co jsi jí vzal.",
+          "en": "Give back to nature what you took from it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Matka Země",
+          "en": "Earth Mother"
+        },
+        "description": {
+          "cs": "Nech po sobě místo v lepším stavu, než jsi ho našel.",
+          "en": "Leave a place better than you found it."
+        }
+      }
     ]
   },
   "23": {
     "quests": [
-      { "title": { "cs": "Meč v kameni", "en": "The Sword in the Stone" }, "description": { "cs": "Najdi volbu, kterou nemůže udělat nikdo jiný.", "en": "Find the choice no one else can make." } },
-      { "title": { "cs": "Kulatý stůl", "en": "The Round Table" }, "description": { "cs": "Posaď k jednomu stolu dvanáct, kdo si nerozumí.", "en": "Seat twelve who disagree at one table." } },
-      { "title": { "cs": "Excalibur", "en": "Excalibur" }, "description": { "cs": "Použij sílu jednou — a správně.", "en": "Use force once — and rightly." } },
-      { "title": { "cs": "Kamelot", "en": "Camelot" }, "description": { "cs": "Postav místo, které se udrží i po tobě.", "en": "Build a place that holds after you." } },
-      { "title": { "cs": "Král, který se vrátí", "en": "The King Who Returns" }, "description": { "cs": "Vrať se tam, kde tě potřebují, ne kde tě slaví.", "en": "Return where you are needed, not where you are celebrated." } }
+      {
+        "title": {
+          "cs": "Meč v kameni",
+          "en": "The Sword in the Stone"
+        },
+        "description": {
+          "cs": "Najdi volbu, kterou nemůže udělat nikdo jiný.",
+          "en": "Find the choice no one else can make."
+        }
+      },
+      {
+        "title": {
+          "cs": "Kulatý stůl",
+          "en": "The Round Table"
+        },
+        "description": {
+          "cs": "Posaď k jednomu stolu dvanáct, kdo si nerozumí.",
+          "en": "Seat twelve who disagree at one table."
+        }
+      },
+      {
+        "title": {
+          "cs": "Excalibur",
+          "en": "Excalibur"
+        },
+        "description": {
+          "cs": "Použij sílu jednou — a správně.",
+          "en": "Use force once — and rightly."
+        }
+      },
+      {
+        "title": {
+          "cs": "Kamelot",
+          "en": "Camelot"
+        },
+        "description": {
+          "cs": "Postav místo, které se udrží i po tobě.",
+          "en": "Build a place that holds after you."
+        }
+      },
+      {
+        "title": {
+          "cs": "Král, který se vrátí",
+          "en": "The King Who Returns"
+        },
+        "description": {
+          "cs": "Vrať se tam, kde tě potřebují, ne kde tě slaví.",
+          "en": "Return where you are needed, not where you are celebrated."
+        }
+      }
     ]
   },
   "35": {
     "quests": [
-      { "title": { "cs": "Koruna a zákon", "en": "Crown and Law" }, "description": { "cs": "Napiš pravidlo, které zavazuje i tebe.", "en": "Write a rule that binds you too." } },
-      { "title": { "cs": "Univerzita", "en": "The University" }, "description": { "cs": "Založ místo, kde se učí bez ohledu na původ.", "en": "Found a place of learning open to any origin." } },
-      { "title": { "cs": "Karlštejn", "en": "Karlštejn" }, "description": { "cs": "Ukryj to nejcennější tak, aby to neztratilo hodnotu.", "en": "Hide what is most precious without devaluing it." } },
-      { "title": { "cs": "Most", "en": "The Bridge" }, "description": { "cs": "Spoj dva břehy, které se navzájem nevidí.", "en": "Join two banks that cannot see each other." } },
-      { "title": { "cs": "Otec vlasti", "en": "Father of the Land" }, "description": { "cs": "Nech zemi fungující i bez svého jména.", "en": "Leave the land working without your name on it." } }
+      {
+        "title": {
+          "cs": "Koruna a zákon",
+          "en": "Crown and Law"
+        },
+        "description": {
+          "cs": "Napiš pravidlo, které zavazuje i tebe.",
+          "en": "Write a rule that binds you too."
+        }
+      },
+      {
+        "title": {
+          "cs": "Univerzita",
+          "en": "The University"
+        },
+        "description": {
+          "cs": "Založ místo, kde se učí bez ohledu na původ.",
+          "en": "Found a place of learning open to any origin."
+        }
+      },
+      {
+        "title": {
+          "cs": "Karlštejn",
+          "en": "Karlštejn"
+        },
+        "description": {
+          "cs": "Ukryj to nejcennější tak, aby to neztratilo hodnotu.",
+          "en": "Hide what is most precious without devaluing it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Most",
+          "en": "The Bridge"
+        },
+        "description": {
+          "cs": "Spoj dva břehy, které se navzájem nevidí.",
+          "en": "Join two banks that cannot see each other."
+        }
+      },
+      {
+        "title": {
+          "cs": "Otec vlasti",
+          "en": "Father of the Land"
+        },
+        "description": {
+          "cs": "Nech zemi fungující i bez svého jména.",
+          "en": "Leave the land working without your name on it."
+        }
+      }
     ]
   },
   "36": {
     "quests": [
-      { "title": { "cs": "Myšlenkový experiment", "en": "Thought Experiment" }, "description": { "cs": "Vyřeš problém bez jediného nástroje — jen představou.", "en": "Solve a problem without a tool, only by imagining it." } },
-      { "title": { "cs": "Patentový úřad", "en": "The Patent Office" }, "description": { "cs": "Najdi odpověď v nudě, ne v chaosu.", "en": "Find the answer in boredom, not in chaos." } },
-      { "title": { "cs": "Relativita", "en": "Relativity" }, "description": { "cs": "Popiš stejnou událost ze dvou různých pohledů.", "en": "Describe the same event from two different viewpoints." } },
-      { "title": { "cs": "E = mc²", "en": "E = mc²" }, "description": { "cs": "Přeměň energii v hmotu a zpátky.", "en": "Convert energy into matter and back." } },
-      { "title": { "cs": "Pokora vědce", "en": "The Humility of Science" }, "description": { "cs": "Odvolej tvrzení, které už neplatí.", "en": "Retract a claim that no longer holds." } }
+      {
+        "title": {
+          "cs": "Myšlenkový experiment",
+          "en": "Thought Experiment"
+        },
+        "description": {
+          "cs": "Vyřeš problém bez jediného nástroje — jen představou.",
+          "en": "Solve a problem without a tool, only by imagining it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Patentový úřad",
+          "en": "The Patent Office"
+        },
+        "description": {
+          "cs": "Najdi odpověď v nudě, ne v chaosu.",
+          "en": "Find the answer in boredom, not in chaos."
+        }
+      },
+      {
+        "title": {
+          "cs": "Relativita",
+          "en": "Relativity"
+        },
+        "description": {
+          "cs": "Popiš stejnou událost ze dvou různých pohledů.",
+          "en": "Describe the same event from two different viewpoints."
+        }
+      },
+      {
+        "title": {
+          "cs": "E = mc²",
+          "en": "E = mc²"
+        },
+        "description": {
+          "cs": "Přeměň energii v hmotu a zpátky.",
+          "en": "Convert energy into matter and back."
+        }
+      },
+      {
+        "title": {
+          "cs": "Pokora vědce",
+          "en": "The Humility of Science"
+        },
+        "description": {
+          "cs": "Odvolej tvrzení, které už neplatí.",
+          "en": "Retract a claim that no longer holds."
+        }
+      }
     ]
   },
   "37": {
     "quests": [
-      { "title": { "cs": "Sůl", "en": "Salt" }, "description": { "cs": "Poruš nesmyslné pravidlo — bez jediné rány.", "en": "Break a senseless rule without a single blow." } },
-      { "title": { "cs": "Satyágraha", "en": "Satyagraha" }, "description": { "cs": "Vydrž sto dní odporu bez násilí.", "en": "Hold a hundred days of resistance without violence." } },
-      { "title": { "cs": "Tkadlena", "en": "The Spinner" }, "description": { "cs": "Staň se soběstačným v jedné věci.", "en": "Become self-sufficient in one thing." } },
-      { "title": { "cs": "Půst", "en": "The Fast" }, "description": { "cs": "Sedm dní bez slova, jen naslouchej.", "en": "Seven days without words, only listening." } },
-      { "title": { "cs": "Nenásilí", "en": "Non-Violence" }, "description": { "cs": "Vyhraj spor, aniž bys někoho porazil.", "en": "Win a dispute without defeating anyone." } }
+      {
+        "title": {
+          "cs": "Sůl",
+          "en": "Salt"
+        },
+        "description": {
+          "cs": "Poruš nesmyslné pravidlo — bez jediné rány.",
+          "en": "Break a senseless rule without a single blow."
+        }
+      },
+      {
+        "title": {
+          "cs": "Satyágraha",
+          "en": "Satyagraha"
+        },
+        "description": {
+          "cs": "Vydrž sto dní odporu bez násilí.",
+          "en": "Hold a hundred days of resistance without violence."
+        }
+      },
+      {
+        "title": {
+          "cs": "Tkadlena",
+          "en": "The Spinner"
+        },
+        "description": {
+          "cs": "Staň se soběstačným v jedné věci.",
+          "en": "Become self-sufficient in one thing."
+        }
+      },
+      {
+        "title": {
+          "cs": "Půst",
+          "en": "The Fast"
+        },
+        "description": {
+          "cs": "Sedm dní bez slova, jen naslouchej.",
+          "en": "Seven days without words, only listening."
+        }
+      },
+      {
+        "title": {
+          "cs": "Nenásilí",
+          "en": "Non-Violence"
+        },
+        "description": {
+          "cs": "Vyhraj spor, aniž bys někoho porazil.",
+          "en": "Win a dispute without defeating anyone."
+        }
+      }
     ]
   },
   "39": {
     "quests": [
-      { "title": { "cs": "Nit", "en": "The Thread" }, "description": { "cs": "Spoj dvě znepřátelené rodiny.", "en": "Join two feuding families." } },
-      { "title": { "cs": "Rákhi", "en": "Rakhi" }, "description": { "cs": "Uzavři spojenectví, které se nedá jen tak vypovědět.", "en": "Form an alliance that cannot simply be called off." } },
-      { "title": { "cs": "Dváraka", "en": "Dvaraka" }, "description": { "cs": "Ochraň dům, i když v něm nejsi.", "en": "Protect a house even when you are not in it." } },
-      { "title": { "cs": "Spor", "en": "The Quarrel" }, "description": { "cs": "Urovnej hádku tak, aby nevyhrál nikdo.", "en": "Settle an argument so that no one wins." } },
-      { "title": { "cs": "Sestra", "en": "The Sister" }, "description": { "cs": "Pamatuj na toho, kdo zůstal stranou.", "en": "Remember the one who was left aside." } }
+      {
+        "title": {
+          "cs": "Nit",
+          "en": "The Thread"
+        },
+        "description": {
+          "cs": "Spoj dvě znepřátelené rodiny.",
+          "en": "Join two feuding families."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rákhi",
+          "en": "Rakhi"
+        },
+        "description": {
+          "cs": "Uzavři spojenectví, které se nedá jen tak vypovědět.",
+          "en": "Form an alliance that cannot simply be called off."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dváraka",
+          "en": "Dvaraka"
+        },
+        "description": {
+          "cs": "Ochraň dům, i když v něm nejsi.",
+          "en": "Protect a house even when you are not in it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Spor",
+          "en": "The Quarrel"
+        },
+        "description": {
+          "cs": "Urovnej hádku tak, aby nevyhrál nikdo.",
+          "en": "Settle an argument so that no one wins."
+        }
+      },
+      {
+        "title": {
+          "cs": "Sestra",
+          "en": "The Sister"
+        },
+        "description": {
+          "cs": "Pamatuj na toho, kdo zůstal stranou.",
+          "en": "Remember the one who was left aside."
+        }
+      }
     ]
   },
   "41": {
     "quests": [
-      { "title": { "cs": "Přechod řeky", "en": "The River Crossing" }, "description": { "cs": "Přenos přes řeku v nejhorší možné noci.", "en": "A crossing on the worst possible night." } },
-      { "title": { "cs": "Noc", "en": "The Night" }, "description": { "cs": "Nes dítě přes nebezpečí, aniž bys ho probudil.", "en": "Carry a child through danger without waking it." } },
-      { "title": { "cs": "Otec", "en": "The Father" }, "description": { "cs": "Vezmi ránu, která patřila jinému.", "en": "Take the blow meant for another." } },
-      { "title": { "cs": "Návrat", "en": "The Return" }, "description": { "cs": "Přiveď zpátky toho, kdo se ztratil.", "en": "Bring back the one who got lost." } },
-      { "title": { "cs": "Přísaha", "en": "The Oath" }, "description": { "cs": "Slib, který splníš i za cenu vlastního pohodlí.", "en": "A promise you keep even at your own cost." } }
+      {
+        "title": {
+          "cs": "Přechod řeky",
+          "en": "The River Crossing"
+        },
+        "description": {
+          "cs": "Přenos přes řeku v nejhorší možné noci.",
+          "en": "A crossing on the worst possible night."
+        }
+      },
+      {
+        "title": {
+          "cs": "Noc",
+          "en": "The Night"
+        },
+        "description": {
+          "cs": "Nes dítě přes nebezpečí, aniž bys ho probudil.",
+          "en": "Carry a child through danger without waking it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Otec",
+          "en": "The Father"
+        },
+        "description": {
+          "cs": "Vezmi ránu, která patřila jinému.",
+          "en": "Take the blow meant for another."
+        }
+      },
+      {
+        "title": {
+          "cs": "Návrat",
+          "en": "The Return"
+        },
+        "description": {
+          "cs": "Přiveď zpátky toho, kdo se ztratil.",
+          "en": "Bring back the one who got lost."
+        }
+      },
+      {
+        "title": {
+          "cs": "Přísaha",
+          "en": "The Oath"
+        },
+        "description": {
+          "cs": "Slib, který splníš i za cenu vlastního pohodlí.",
+          "en": "A promise you keep even at your own cost."
+        }
+      }
     ]
   },
   "47": {
     "quests": [
-      { "title": { "cs": "Víra před důkazem", "en": "Faith Before Proof" }, "description": { "cs": "Věř někomu dřív, než ti dá důkaz.", "en": "Believe someone before they give you proof." } },
-      { "title": { "cs": "Operátor", "en": "The Operator" }, "description": { "cs": "Spoj dva ztracené, kteří o sobě nevědí.", "en": "Connect two lost people who do not know of each other." } },
-      { "title": { "cs": "Signál", "en": "The Signal" }, "description": { "cs": "Najdi slabé místo v síti dřív, než ji ztratíš.", "en": "Find the weak point in the network before you lose it." } },
-      { "title": { "cs": "Trojice", "en": "Trinity" }, "description": { "cs": "Udrž tři lidi pohromadě i ve sporu.", "en": "Keep three people together even in conflict." } },
-      { "title": { "cs": "Ta, která věří", "en": "The Believer" }, "description": { "cs": "Vydrž u někoho, kdo už sám sobě nevěří.", "en": "Stay with someone who no longer believes in themselves." } }
+      {
+        "title": {
+          "cs": "Víra před důkazem",
+          "en": "Faith Before Proof"
+        },
+        "description": {
+          "cs": "Věř někomu dřív, než ti dá důkaz.",
+          "en": "Believe someone before they give you proof."
+        }
+      },
+      {
+        "title": {
+          "cs": "Operátor",
+          "en": "The Operator"
+        },
+        "description": {
+          "cs": "Spoj dva ztracené, kteří o sobě nevědí.",
+          "en": "Connect two lost people who do not know of each other."
+        }
+      },
+      {
+        "title": {
+          "cs": "Signál",
+          "en": "The Signal"
+        },
+        "description": {
+          "cs": "Najdi slabé místo v síti dřív, než ji ztratíš.",
+          "en": "Find the weak point in the network before you lose it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Trojice",
+          "en": "Trinity"
+        },
+        "description": {
+          "cs": "Udrž tři lidi pohromadě i ve sporu.",
+          "en": "Keep three people together even in conflict."
+        }
+      },
+      {
+        "title": {
+          "cs": "Ta, která věří",
+          "en": "The Believer"
+        },
+        "description": {
+          "cs": "Vydrž u někoho, kdo už sám sobě nevěří.",
+          "en": "Stay with someone who no longer believes in themselves."
+        }
+      }
     ]
   },
   "48": {
     "quests": [
-      { "title": { "cs": "Červená tableta", "en": "The Red Pill" }, "description": { "cs": "Nabídni pravdu a nech rozhodnutí na druhém.", "en": "Offer the truth and leave the choice to the other." } },
-      { "title": { "cs": "Výcvik", "en": "The Training" }, "description": { "cs": "Nauč nováčka to, co ho jednou zachrání.", "en": "Teach a newcomer what will one day save them." } },
-      { "title": { "cs": "Volba", "en": "The Choice" }, "description": { "cs": "Nerozhodni za nikoho, kdo rozhodnout může sám.", "en": "Never decide for someone who can decide themselves." } },
-      { "title": { "cs": "Průvodce", "en": "The Guide" }, "description": { "cs": "Doveď deset lidí z iluze bez donucení.", "en": "Lead ten people out of illusion without coercion." } },
-      { "title": { "cs": "Učitel", "en": "The Teacher" }, "description": { "cs": "Vychovej nástupce, který tě překoná.", "en": "Raise a successor who surpasses you." } }
+      {
+        "title": {
+          "cs": "Červená tableta",
+          "en": "The Red Pill"
+        },
+        "description": {
+          "cs": "Nabídni pravdu a nech rozhodnutí na druhém.",
+          "en": "Offer the truth and leave the choice to the other."
+        }
+      },
+      {
+        "title": {
+          "cs": "Výcvik",
+          "en": "The Training"
+        },
+        "description": {
+          "cs": "Nauč nováčka to, co ho jednou zachrání.",
+          "en": "Teach a newcomer what will one day save them."
+        }
+      },
+      {
+        "title": {
+          "cs": "Volba",
+          "en": "The Choice"
+        },
+        "description": {
+          "cs": "Nerozhodni za nikoho, kdo rozhodnout může sám.",
+          "en": "Never decide for someone who can decide themselves."
+        }
+      },
+      {
+        "title": {
+          "cs": "Průvodce",
+          "en": "The Guide"
+        },
+        "description": {
+          "cs": "Doveď deset lidí z iluze bez donucení.",
+          "en": "Lead ten people out of illusion without coercion."
+        }
+      },
+      {
+        "title": {
+          "cs": "Učitel",
+          "en": "The Teacher"
+        },
+        "description": {
+          "cs": "Vychovej nástupce, který tě překoná.",
+          "en": "Raise a successor who surpasses you."
+        }
+      }
     ]
   },
   "50": {
     "quests": [
-      { "title": { "cs": "Město", "en": "The City" }, "description": { "cs": "Postav sto obydlí, ve kterých se dá žít.", "en": "Build a hundred dwellings fit to live in." } },
-      { "title": { "cs": "Dohoda", "en": "The Agreement" }, "description": { "cs": "Sepiš pravidla společně s komunitou.", "en": "Write the rules together with the community." } },
-      { "title": { "cs": "Hradby", "en": "The Walls" }, "description": { "cs": "Ubraň město, aniž bys zavřel brány.", "en": "Defend the city without closing the gates." } },
-      { "title": { "cs": "Světlo", "en": "The Light" }, "description": { "cs": "Přiveď sto nových a neztratí se v davu.", "en": "Bring in a hundred newcomers and lose none in the crowd." } },
-      { "title": { "cs": "Poslední město", "en": "The Last City" }, "description": { "cs": "Dokaž, že se tu lidé chovají jinak i bez dohledu.", "en": "Prove people behave differently here even unwatched." } }
+      {
+        "title": {
+          "cs": "Město",
+          "en": "The City"
+        },
+        "description": {
+          "cs": "Postav sto obydlí, ve kterých se dá žít.",
+          "en": "Build a hundred dwellings fit to live in."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dohoda",
+          "en": "The Agreement"
+        },
+        "description": {
+          "cs": "Sepiš pravidla společně s komunitou.",
+          "en": "Write the rules together with the community."
+        }
+      },
+      {
+        "title": {
+          "cs": "Hradby",
+          "en": "The Walls"
+        },
+        "description": {
+          "cs": "Ubraň město, aniž bys zavřel brány.",
+          "en": "Defend the city without closing the gates."
+        }
+      },
+      {
+        "title": {
+          "cs": "Světlo",
+          "en": "The Light"
+        },
+        "description": {
+          "cs": "Přiveď sto nových a neztratí se v davu.",
+          "en": "Bring in a hundred newcomers and lose none in the crowd."
+        }
+      },
+      {
+        "title": {
+          "cs": "Poslední město",
+          "en": "The Last City"
+        },
+        "description": {
+          "cs": "Dokaž, že se tu lidé chovají jinak i bez dohledu.",
+          "en": "Prove people behave differently here even unwatched."
+        }
+      }
     ]
   },
   "42": {
     "quests": [
-      { "title": { "cs": "Trojí zrcadlo", "en": "The Threefold Mirror" }, "description": { "cs": "Uvidět sebe jako tvůrce, strážce i toho, kdo odchází.", "en": "See yourself as maker, keeper and the one who leaves." } },
-      { "title": { "cs": "Tvořit", "en": "To Create" }, "description": { "cs": "Vytvoř něco, co tu ještě nebylo.", "en": "Make something that was not here before." } },
-      { "title": { "cs": "Udržovat", "en": "To Sustain" }, "description": { "cs": "Udrž při životě to, co už existuje.", "en": "Keep alive what already exists." } },
-      { "title": { "cs": "Rozpustit", "en": "To Dissolve" }, "description": { "cs": "Nechat odejít to, co už netvoří.", "en": "Let go of what no longer creates." } },
-      { "title": { "cs": "Učitel všech", "en": "Teacher of All" }, "description": { "cs": "Uč se od země, ohně i psa.", "en": "Learn from earth, fire and a dog." } }
+      {
+        "title": {
+          "cs": "Trojí zrcadlo",
+          "en": "The Threefold Mirror"
+        },
+        "description": {
+          "cs": "Uvidět sebe jako tvůrce, strážce i toho, kdo odchází.",
+          "en": "See yourself as maker, keeper and the one who leaves."
+        }
+      },
+      {
+        "title": {
+          "cs": "Tvořit",
+          "en": "To Create"
+        },
+        "description": {
+          "cs": "Vytvoř něco, co tu ještě nebylo.",
+          "en": "Make something that was not here before."
+        }
+      },
+      {
+        "title": {
+          "cs": "Udržovat",
+          "en": "To Sustain"
+        },
+        "description": {
+          "cs": "Udrž při životě to, co už existuje.",
+          "en": "Keep alive what already exists."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rozpustit",
+          "en": "To Dissolve"
+        },
+        "description": {
+          "cs": "Nechat odejít to, co už netvoří.",
+          "en": "Let go of what no longer creates."
+        }
+      },
+      {
+        "title": {
+          "cs": "Učitel všech",
+          "en": "Teacher of All"
+        },
+        "description": {
+          "cs": "Uč se od země, ohně i psa.",
+          "en": "Learn from earth, fire and a dog."
+        }
+      }
     ]
   },
   "43": {
     "quests": [
-      { "title": { "cs": "Planetka B-612", "en": "Asteroid B-612" }, "description": { "cs": "Postarej se o místo, které je jen tvoje.", "en": "Look after a place that is only yours." } },
-      { "title": { "cs": "Růže", "en": "The Rose" }, "description": { "cs": "Pečuj o jednu věc tak dlouho, až bude výjimečná.", "en": "Care for one thing until it becomes exceptional." } },
-      { "title": { "cs": "Liška", "en": "The Fox" }, "description": { "cs": "Nech se ochočit a nezůstaň při tom sám.", "en": "Let yourself be tamed, and do not stay alone in it." } },
-      { "title": { "cs": "Had", "en": "The Snake" }, "description": { "cs": "Pochop konec, aniž bys ho uspěchal.", "en": "Understand the ending without rushing it." } },
-      { "title": { "cs": "Srdce", "en": "The Heart" }, "description": { "cs": "Podívej se na věc srdcem a řekni, co vidíš.", "en": "Look at a thing with the heart and say what you see." } }
+      {
+        "title": {
+          "cs": "Planetka B-612",
+          "en": "Asteroid B-612"
+        },
+        "description": {
+          "cs": "Postarej se o místo, které je jen tvoje.",
+          "en": "Look after a place that is only yours."
+        }
+      },
+      {
+        "title": {
+          "cs": "Růže",
+          "en": "The Rose"
+        },
+        "description": {
+          "cs": "Pečuj o jednu věc tak dlouho, až bude výjimečná.",
+          "en": "Care for one thing until it becomes exceptional."
+        }
+      },
+      {
+        "title": {
+          "cs": "Liška",
+          "en": "The Fox"
+        },
+        "description": {
+          "cs": "Nech se ochočit a nezůstaň při tom sám.",
+          "en": "Let yourself be tamed, and do not stay alone in it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Had",
+          "en": "The Snake"
+        },
+        "description": {
+          "cs": "Pochop konec, aniž bys ho uspěchal.",
+          "en": "Understand the ending without rushing it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Srdce",
+          "en": "The Heart"
+        },
+        "description": {
+          "cs": "Podívej se na věc srdcem a řekni, co vidíš.",
+          "en": "Look at a thing with the heart and say what you see."
+        }
+      }
     ]
   },
   "44": {
     "quests": [
-      { "title": { "cs": "Vejce", "en": "The Egg" }, "description": { "cs": "Najdi možnost, kterou ještě nikdo nepustil.", "en": "Find a possibility no one has dropped yet." } },
-      { "title": { "cs": "Zlaté semeno", "en": "The Golden Seed" }, "description": { "cs": "Zasaď něco, co přežije tvoje století.", "en": "Plant something that outlives your century." } },
-      { "title": { "cs": "Dech před časem", "en": "Breath Before Time" }, "description": { "cs": "Vydrž v tichu, kde ještě nic nezačalo.", "en": "Wait in the silence where nothing has begun." } },
-      { "title": { "cs": "Znovuzrození", "en": "Rebirth" }, "description": { "cs": "Vrať svět do stavu, kdy se dá začít znovu.", "en": "Return the world to a state where it can begin again." } },
-      { "title": { "cs": "Počátek", "en": "The Beginning" }, "description": { "cs": "Otevři nový kruh a nezavři starý bez poděkování.", "en": "Open a new circle and do not close the old one without thanks." } }
+      {
+        "title": {
+          "cs": "Vejce",
+          "en": "The Egg"
+        },
+        "description": {
+          "cs": "Najdi možnost, kterou ještě nikdo nepustil.",
+          "en": "Find a possibility no one has dropped yet."
+        }
+      },
+      {
+        "title": {
+          "cs": "Zlaté semeno",
+          "en": "The Golden Seed"
+        },
+        "description": {
+          "cs": "Zasaď něco, co přežije tvoje století.",
+          "en": "Plant something that outlives your century."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dech před časem",
+          "en": "Breath Before Time"
+        },
+        "description": {
+          "cs": "Vydrž v tichu, kde ještě nic nezačalo.",
+          "en": "Wait in the silence where nothing has begun."
+        }
+      },
+      {
+        "title": {
+          "cs": "Znovuzrození",
+          "en": "Rebirth"
+        },
+        "description": {
+          "cs": "Vrať svět do stavu, kdy se dá začít znovu.",
+          "en": "Return the world to a state where it can begin again."
+        }
+      },
+      {
+        "title": {
+          "cs": "Počátek",
+          "en": "The Beginning"
+        },
+        "description": {
+          "cs": "Otevři nový kruh a nezavři starý bez poděkování.",
+          "en": "Open a new circle and do not close the old one without thanks."
+        }
+      }
     ]
   },
   "45": {
     "quests": [
-      { "title": { "cs": "Meč posledního věku", "en": "Sword of the Last Age" }, "description": { "cs": "Přesekni karmu, která už nikomu neslouží.", "en": "Sever karma that serves no one any more." } },
-      { "title": { "cs": "Šambala", "en": "Shambhala" }, "description": { "cs": "Najdi bránu věku dřív, než se zavře.", "en": "Find the gate of the age before it closes." } },
-      { "title": { "cs": "Očista", "en": "The Cleansing" }, "description": { "cs": "Uklidit, ne soudit.", "en": "To clear, not to judge." } },
-      { "title": { "cs": "Konec, který není trest", "en": "An End That Is Not Punishment" }, "description": { "cs": "Ukonči to, co se přežilo, bez zloby.", "en": "End what has outlived itself without spite." } },
-      { "title": { "cs": "Nový věk", "en": "The New Age" }, "description": { "cs": "Začni znovu a neopakuj staré chyby.", "en": "Begin again without repeating the old mistakes." } }
+      {
+        "title": {
+          "cs": "Meč posledního věku",
+          "en": "Sword of the Last Age"
+        },
+        "description": {
+          "cs": "Přesekni karmu, která už nikomu neslouží.",
+          "en": "Sever karma that serves no one any more."
+        }
+      },
+      {
+        "title": {
+          "cs": "Šambala",
+          "en": "Shambhala"
+        },
+        "description": {
+          "cs": "Najdi bránu věku dřív, než se zavře.",
+          "en": "Find the gate of the age before it closes."
+        }
+      },
+      {
+        "title": {
+          "cs": "Očista",
+          "en": "The Cleansing"
+        },
+        "description": {
+          "cs": "Uklidit, ne soudit.",
+          "en": "To clear, not to judge."
+        }
+      },
+      {
+        "title": {
+          "cs": "Konec, který není trest",
+          "en": "An End That Is Not Punishment"
+        },
+        "description": {
+          "cs": "Ukonči to, co se přežilo, bez zloby.",
+          "en": "End what has outlived itself without spite."
+        }
+      },
+      {
+        "title": {
+          "cs": "Nový věk",
+          "en": "The New Age"
+        },
+        "description": {
+          "cs": "Začni znovu a neopakuj staré chyby.",
+          "en": "Begin again without repeating the old mistakes."
+        }
+      }
     ]
   },
   "40": {
     "quests": [
-      { "title": { "cs": "Lůžko", "en": "The Sickbed" }, "description": { "cs": "Zůstaň u nemocného, dokud se neuzdraví.", "en": "Stay with the sick until they recover." } },
-      { "title": { "cs": "Dekret", "en": "The Decree" }, "description": { "cs": "Prosaď pravidlo, že péče má přednost.", "en": "Establish that care comes first." } },
-      { "title": { "cs": "Dvůr", "en": "The Court" }, "description": { "cs": "Uzdrav vladaře, který nechce být uzdraven.", "en": "Heal a ruler who does not want to be healed." } },
-      { "title": { "cs": "Rána", "en": "The Wound" }, "description": { "cs": "Ošetři nepřítele, který by to samé neudělal.", "en": "Treat an enemy who would not do the same." } },
-      { "title": { "cs": "Královská léčitelka", "en": "The Royal Healer" }, "description": { "cs": "Rozhodni, komu koruna patří — a komu ne.", "en": "Decide whom the crown belongs to, and whom it does not." } }
+      {
+        "title": {
+          "cs": "Lůžko",
+          "en": "The Sickbed"
+        },
+        "description": {
+          "cs": "Zůstaň u nemocného, dokud se neuzdraví.",
+          "en": "Stay with the sick until they recover."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dekret",
+          "en": "The Decree"
+        },
+        "description": {
+          "cs": "Prosaď pravidlo, že péče má přednost.",
+          "en": "Establish that care comes first."
+        }
+      },
+      {
+        "title": {
+          "cs": "Dvůr",
+          "en": "The Court"
+        },
+        "description": {
+          "cs": "Uzdrav vladaře, který nechce být uzdraven.",
+          "en": "Heal a ruler who does not want to be healed."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rána",
+          "en": "The Wound"
+        },
+        "description": {
+          "cs": "Ošetři nepřítele, který by to samé neudělal.",
+          "en": "Treat an enemy who would not do the same."
+        }
+      },
+      {
+        "title": {
+          "cs": "Královská léčitelka",
+          "en": "The Royal Healer"
+        },
+        "description": {
+          "cs": "Rozhodni, komu koruna patří — a komu ne.",
+          "en": "Decide whom the crown belongs to, and whom it does not."
+        }
+      }
+    ]
+  },
+  "203": {
+    "quests": [
+      {
+        "title": {
+          "cs": "Tři tváře",
+          "en": "The Three Faces"
+        },
+        "description": {
+          "cs": "Projdi tři podoby Matky: tvořit, chránit, rozpouštět.",
+          "en": "Walk the three faces of the Mother: create, protect, dissolve."
+        }
+      },
+      {
+        "title": {
+          "cs": "Bílý lotos",
+          "en": "White Lotus"
+        },
+        "description": {
+          "cs": "Nauč někoho jiného to, co sám umíš.",
+          "en": "Teach someone what you already know."
+        }
+      },
+      {
+        "title": {
+          "cs": "Růžový lotos",
+          "en": "Pink Lotus"
+        },
+        "description": {
+          "cs": "Přerozděl tak, aby nikdo nezůstal stranou.",
+          "en": "Redistribute so that no one is left outside."
+        }
+      },
+      {
+        "title": {
+          "cs": "Černý lotos",
+          "en": "Black Lotus"
+        },
+        "description": {
+          "cs": "Nechat odejít to, co už tě drží.",
+          "en": "Let go of what still holds you."
+        }
+      },
+      {
+        "title": {
+          "cs": "Sjednocení",
+          "en": "Union"
+        },
+        "description": {
+          "cs": "Uvidět v trojím jedno.",
+          "en": "See the one in the three."
+        }
+      }
+    ]
+  },
+  "204": {
+    "quests": [
+      {
+        "title": {
+          "cs": "První zpěv",
+          "en": "The First Chant"
+        },
+        "description": {
+          "cs": "Zazpívej mantru nahlas, i když se stydíš.",
+          "en": "Chant the mantra aloud, even if you feel shy."
+        }
+      },
+      {
+        "title": {
+          "cs": "Sankírtan",
+          "en": "Sankirtan"
+        },
+        "description": {
+          "cs": "Zpívej ve skupině; nikdo nezačíná ani nekončí sám.",
+          "en": "Chant in a group; no one starts or ends alone."
+        }
+      },
+      {
+        "title": {
+          "cs": "Osm veršů",
+          "en": "Eight Verses"
+        },
+        "description": {
+          "cs": "Projdi Šikšáštaku verš po verši.",
+          "en": "Walk the Shikshashtaka verse by verse."
+        }
+      },
+      {
+        "title": {
+          "cs": "Rozdávej jméno",
+          "en": "Give the Name"
+        },
+        "description": {
+          "cs": "Nauč mantru někoho, kdo ji nezná.",
+          "en": "Teach the mantra to someone who does not know it."
+        }
+      },
+      {
+        "title": {
+          "cs": "Zlatý věk",
+          "en": "The Golden Age"
+        },
+        "description": {
+          "cs": "Uvidět, že radost není odměna, ale metoda.",
+          "en": "See that joy is not a reward but a method."
+        }
+      }
     ]
   }
 }

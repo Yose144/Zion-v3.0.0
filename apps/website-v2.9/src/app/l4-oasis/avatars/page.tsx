@@ -41,8 +41,8 @@ const Copy = {
   badge: { cs: 'L4 · ZION Oasis · Avatar Roster', en: 'L4 · ZION Oasis · Avatar Roster' },
   title: { cs: 'Avatáři ZION Oasis', en: 'ZION Oasis Avatars' },
   tagline: {
-    cs: 'Dvě stě posvátných postav — každá s vlastním příběhem, výukou a schopností, česky i anglicky.',
-    en: 'Two hundred sacred characters — each with its own story, teaching and ability, in Czech and English.',
+    cs: 'Posvátné postavy OASIS — každá s vlastním příběhem, výukou a schopností, česky i anglicky.',
+    en: 'The sacred figures of OASIS — each with its own story, teaching and ability, in Czech and English.',
   },
   desc: {
     cs: 'Kompletní roster z OASIS canonu: hinduistické božské trojky a ascendovaní mistři, křesťanští svatí a buddhističtí učitelé, historické legendy, hrdinové Matrixu, ZION originals a šestnáct dalších kruhů — od prvních národů přes Tibet, Pacifiku a Afriku po Atlantidu, Lemurii, seversko-keltský kruh, starověký Egypt a Mayu. Jména uvádíme v původním znění.',

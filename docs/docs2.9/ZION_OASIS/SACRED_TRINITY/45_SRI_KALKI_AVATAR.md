@@ -1100,7 +1100,7 @@ If answer is NO to any:
 1. **Golden Egg Game:** [README.md](../../GOLDEN_EGG_GAME/README.md)
 2. **EKAM Temple:** [EKAM_SACRED_ARCHITECTURE.md](../../GOLDEN_EGG_GAME/EKAM_SACRED_ARCHITECTURE.md)
 3. **Dattatreya (Masculine):** [42_SRI_DATTATREYA.md](42_SRI_DATTATREYA.md)
-4. **Anagha Lakshmi (Feminine):** [43_SRI_ANAGHA_LAKSHMI.md](43_SRI_ANAGHA_LAKSHMI.md)
+4. **Anagha Lakshmi (Feminine):** [203_SRI_ANAGHA_LAKSHMI.md](203_SRI_ANAGHA_LAKSHMI.md)
 5. **Hiranyagarbha (Source):** [44_HIRANYAGARBHA.md](44_HIRANYAGARBHA.md)
 
 ---
