@@ -1,7 +1,7 @@
 # TRANSLATION PLAN — Zion Archive (CZ → EN)
 
-> **Verze:** 1.1 · **Datum:** 2026-11-05 · **Vlastník:** 👤
-> **Stav:** 71 / 189 překladatelných kapitol (**37,6 %**), zbývá **118 kapitol** (~1,04 MB zdroje)
+> **Verze:** 1.2 · **Datum:** 2026-11-05 · **Vlastník:** 👤
+> **Stav:** 78 / 189 překladatelných kapitol (**41,3 %**), zbývá **111 kapitol** (~1,01 MB zdroje)
 > **Kód:** `apps/website-v2.9` · **Plán archivu:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](docs/plans/ZION-ARCHIVE-COMPLETION.md)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md`](docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md)
 
@@ -59,10 +59,10 @@ vlastní ENindex mimo kapitoly.
 | Růže | 11 | 0 | **11** | krátké kapitoly |
 | Na Cestě | 2 | 0 | **2** | jedna kapitola 31 kB |
 | Issobella | 11 | 0 | **11** | |
-| Nabukano | 7 | 0 | **7** | |
+| Nabukano | 7 | **7** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Kruh Bohyní | 17 | 0 | **17** | |
 | Mise Amenti | 8 | 0 | **8** | |
-| **CELKEM** | **189** | **71** | **118** | ~1,04 MB zdroje |
+| **CELKEM** | **189** | **78** | **111** | ~1,01 MB zdroje |
 
 Stav kdykoli zjistíš:
 
@@ -82,8 +82,9 @@ Formát: `slug (velikost CZ)`. Slugs jsou zároveň cílové názvy EN souborů 
 Přeloženo 01–09 na `en/books/surta-srdce/kapitoly/`; audit hlásí `enCoverage: 100`, `missingEn: []`.
 Kicker i fakt „Jazyky" = `CZ + EN`, knihovní karta bez `czOnly`.
 
-### Nabukano — 7
-`01-Jmeno-z-Babylonu` (5k) · `02-Lod-ktera-pluje-nahoru` (4k) · `03-Tri-nebeske-Marie` (7k) · `04-Dok-a-lucerna` (5k) · `05-Uzel-ktery-neni-bod` (6k) · `06-Pripojeni-k-Issobelle` (6k) · `07-Kdo-se-vraci-dolu` (5k)
+### Nabukano — hotovo (7/7, 2026-11-05)
+Korpusová konvence: `<slug>_EN.md` přímo v `korpus/Nabukano/`. Audit `enCoverage: 100`, `missingEn: []`,
+fakt „Jazyky" = `CZ + EN` (odvozeno z reálných `_EN` souborů přes `korpusLangs`, bez zásahu do registru).
 
 ### Mise Amenti — 8
 `01-Kanon-a-Ustava` (7k) · `02-Pribeh-a-Architektura` (11k) · `03-Zivy-Zaklad-3.3` (10k) · `04-Exekucni-Charta-3.3` (12k) · `05-Autonomie-a-Bezpecnost` (9k) · `06-Generacni-Kompas-2026-2126` (10k) · `07-Registr-Dukazu` (15k) · `08-Protokol-Zmen` (6k)
@@ -229,7 +230,7 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 | Milník | Kniha | Kapitol | Odhad dávek |
 |---|---|---:|---:|
 | **T1** | Surta Srdce ✅ | 9 | hotovo 2026-11-05 |
-| **T2** | Nabukano | 7 | 2 |
+| **T2** | Nabukano ✅ | 7 | hotovo 2026-11-05 |
 | **T3** | Mise Amenti | 8 | 3 |
 | **T4** | Růže | 11 | 3 (krátké) |
 | **T5** | Issobella | 11 | 3 |
@@ -242,7 +243,7 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 | **T12** | Kruh Bohyní | 17 | 5 |
 | **T13** | BodhiGaia | 13 | 5 (největší objem) |
 
-**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **33–43 session-dávek** na zbývajících 118
+**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **31–41 session-dávek** na zbývajících 111
 kapitol. Po každé knize: report + commit + push.
 
 **Alternativní pořadí podle priority 👤:** pokud má být první „hlavní osa“ (Ekam, Quantum
