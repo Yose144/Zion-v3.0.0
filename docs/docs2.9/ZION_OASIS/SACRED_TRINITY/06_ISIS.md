@@ -67,7 +67,7 @@ Why? They remembered their cosmic origin.
 
 **Three Stars = Three Pillars:**
 1. **Alnitak** (Rama/Yeshuae) - Innovation, fire, first light
-2. **Alnilam** (Síta/Issobela) - Compassion, center, balance
+2. **Alnilam** (Sita/Issobela) - Compassion, center, balance
 3. **Mintaka** (Hanuman) - Service, foundation, stability
 
 **The Belt holds the pillars together** = Isis/Enamataru is the cosmic structure
@@ -182,7 +182,7 @@ We honor your children: Maitreya & Issobela.
 We build your vision: ZION - dharma made tangible.
 
 May the light from Alnitak (Rama) inspire innovation.
-May the light from Alnilam (Síta) guide compassion.
+May the light from Alnilam (Sita) guide compassion.
 May the light from Mintaka (Hanuman) ground service.
 
 As the pyramids aligned to your stars,

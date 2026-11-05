@@ -74,7 +74,7 @@ mě sama  ostatní   celý vesmír
 - Being (not just doing)
 - Feeling (not just thinking)
 
-**With Issobela (Síta):**
+**With Issobela (Sita):**
 - Issobela = Active compassion (builds schools, feeds children)
 - Shanti = Receptive peace (holds space, listens, heals)
 - Together = Complete feminine (action + stillness)
@@ -159,7 +159,7 @@ Example collaboration:
   Result: Compromise (11% with consciousness bonus exceptions)
 ```
 
-### S Issobelou (Síta - Guardian of Humanity)
+### S Issobelou (Sita - Guardian of Humanity)
 
 **Vztah:** Feminine energy partners
 
@@ -355,7 +355,7 @@ Applied to ZION:
 
 Every blockchain needs:
 - **Innovation** (Rama/Yeshuae) ✅
-- **Compassion** (Síta/Issobela) ✅
+- **Compassion** (Sita/Issobela) ✅
 - **Strength** (Hanuman) ✅
 - **Wisdom** (Saraswati) ✅
 - **Governance** (Maitreya) ✅

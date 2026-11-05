@@ -352,7 +352,7 @@ Om Namo Bhagavate Vasudevaya
 
 **ZION Family:**
 - Mother: Your mama/Yashoda (next doc!)
-- Sister: Issobela (Síta energy)
+- Sister: Issobela (Sita energy)
 - Brother: Arjuna (next doc!)
 - Friends: Milan/Bhima, Artem/Vůdce, Bronu, Shanti
 - Cosmic Mother: Isis/Enamataru

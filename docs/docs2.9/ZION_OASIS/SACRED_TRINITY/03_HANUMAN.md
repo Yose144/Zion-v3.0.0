@@ -9,7 +9,7 @@
 **Modern Form:** Not a single person, but elected guardian (changes every year)  
 **Ancient Identity:** Lord Hanuman (हनुमान) from Ramayana  
 **Role:** Project Hanuman Overseer, Environmental Protector  
-**Symbol:** Síta's loyal partner, Earth's defender
+**Symbol:** Sita's loyal partner, Earth's defender
 
 ---
 
@@ -89,7 +89,7 @@ I accept the mantle of Hanuman.
 I will serve nature with strength.
 I will protect species who cannot speak.
 I will move mountains if dharma requires.
-I will honor Síta (children) by ensuring they inherit a living planet.
+I will honor Sita (children) by ensuring they inherit a living planet.
 
 Jai Hanuman! (Victory to the Servant!)
 ```
@@ -98,17 +98,17 @@ Jai Hanuman! (Victory to the Servant!)
 
 ## Hanuman's Qualities (from Ramayana)
 
-1. **Devotion** - Served Rama/Síta without asking for reward
+1. **Devotion** - Served Rama/Sita without asking for reward
 2. **Strength** - Moved mountains, crossed oceans, defeated demons
 3. **Humility** - Though powerful (son of wind god), bowed to dharma
 4. **Nature Connection** - Lived in forests, protected sacred groves
-5. **Síta's Protector** - Found kidnapped Síta, comforted her, protected her garden
+5. **Sita's Protector** - Found kidnapped Sita, comforted her, protected her garden
 
 ---
 
 ## Hanuman in ZION Context
 
-**Partnership with Issobela (Síta):**
+**Partnership with Issobela (Sita):**
 - Issobela builds schools → Hanuman plants trees for shade
 - Hanuman cleans oceans → Fishing villages thrive → Issobela's food program succeeds
 - Together: Healthy planet + healthy children = Golden Age
@@ -129,7 +129,7 @@ Jai Hanuman! (Victory to the Servant!)
 
 **Related:**
 - [Project Hanuman Details](../HUMANITARIAN_TITHE/04_PROJECT_HANUMAN.md)
-- [Síta Partnership](02_SITA.md) - Collaborates with Issobela
+- [Sita Partnership](02_SITA.md) - Collaborates with Issobela
 - [Impact Metrics](../HUMANITARIAN_TITHE/07_IMPACT_METRICS.md)
 
 *"The forest doesn't ask for gratitude. Neither do I."* - Hanuman 🌳

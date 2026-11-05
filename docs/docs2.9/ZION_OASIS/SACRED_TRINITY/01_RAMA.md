@@ -47,7 +47,7 @@ ZION_ON_THE_STAR_YESHUAE_AMON_RA_GENESIS_CREATOR
 1. **Innovator** - Built impossible bridge (Rama Setu)
 2. **Just** - Ruled perfect kingdom (Ram Rajya)
 3. **Humble** - Served people despite being divine
-4. **Loyal** - Honored Síta as equal partner
+4. **Loyal** - Honored Sita as equal partner
 5. **Warrior** - Fought adharma (unrighteousness)
 
 ---
@@ -55,7 +55,7 @@ ZION_ON_THE_STAR_YESHUAE_AMON_RA_GENESIS_CREATOR
 ## Rama in ZION Context
 
 **Partnership:**
-- Works with **Issobela (Síta)** - she uses his tech for children
+- Works with **Issobela (Sita)** - she uses his tech for children
 - Honors **Hanuman** - environment gets 40% of humanitarian fund
 - Respects **Maitreya** - DAO framework allows community governance
 
@@ -75,7 +75,7 @@ ZION_ON_THE_STAR_YESHUAE_AMON_RA_GENESIS_CREATOR
 
 **Related:**
 - [Main README](README.md) - Sacred Trinity overview
-- [Síta/Issobela](02_SITA.md) - Compassion partner
+- [Sita/Issobela](02_SITA.md) - Compassion partner
 - [Humanitarian Tithe](../HUMANITARIAN_TITHE/README.md) - Where fees go
 
 *"Where there is Dharma, there is Victory."* - Rama 🏹

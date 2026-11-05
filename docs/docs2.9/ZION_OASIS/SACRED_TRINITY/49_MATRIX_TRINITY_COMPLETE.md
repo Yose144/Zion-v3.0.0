@@ -55,11 +55,11 @@
 | **Enemy** | Demon King Ravana | Agent Smith/Machines | Centralization |
 | **Weapon** | Divine bow & arrows | Bullet time & code | Mining power & conviction |
 | **Power Source** | Divine incarnation | The One anomaly | Decentralization belief |
-| **Love** | Síta (kidnapped) | Trinity (partner) | Community & vision |
+| **Love** | Sita (kidnapped) | Trinity (partner) | Community & vision |
 | **Army** | Monkey warriors | Zion defenders | Node operators |
 | **Battle** | Lanka siege | Machine war | Market cycles |
 | **Sacrifice** | Exile from kingdom | Death for peace | Bear market hodling |
-| **Victory** | Rescues Síta | Saves both worlds | Mass adoption |
+| **Victory** | Rescues Sita | Saves both worlds | Mass adoption |
 | **Legacy** | Perfect kingdom | New Matrix | Decentralized world |
 | **Return** | King of Ayodhya | Messiah of Zion | Financial sovereign |
 
@@ -81,7 +81,7 @@
 | **Skills** | Wisdom & virtue | Combat & operations | Technical & emotional |
 | **Miracle** | Survives fire unharmed | Resurrects Neo | Survives bear markets |
 | **Role** | Queen alongside King | Warrior alongside One | Builder alongside builders |
-| **Unity** | Rama + Síta = Victory | Neo + Trinity = Peace | Users + Vision = Future |
+| **Unity** | Rama + Sita = Victory | Neo + Trinity = Peace | Users + Vision = Future |
 | **Legacy** | Perfect partnership | Eternal love | Strong community |
 
 **Core Lesson**: Belief in the vision is as powerful as the vision itself.
@@ -95,7 +95,7 @@
 | **Identity** | Monkey God warrior | Captain of Nebuchadnezzar | Community Leaders |
 | **Devotion** | To Rama (unconditional) | To The One prophecy | To decentralization |
 | **Strength** | Can fly, lift mountains | Mental conviction & wisdom | Knowledge & patience |
-| **Mission** | Find Síta in Lanka | Find The One | Find truth seekers |
+| **Mission** | Find Sita in Lanka | Find The One | Find truth seekers |
 | **Gift** | Sanjeevani herb (life) | Red pill (awakening) | Blockchain education |
 | **Power** | Immortal, invincible | Unbreakable faith | Lasting influence |
 | **Teaching** | Wisdom through service | Freedom through truth | Liberation through code |
@@ -118,7 +118,7 @@
 - Must live in forest 14 years
 - Discovers his dharma (duty)
 - Meets Hanuman who serves him
-- Síta kidnapped by Ravana
+- Sita kidnapped by Ravana
 - Quest begins to rescue her
 
 **MATRIX**:
@@ -174,7 +174,7 @@
 - Hanuman brings Sanjeevani
 - Rama fights Ravana
 - Victory through dharma
-- Síta rescued & reunited
+- Sita rescued & reunited
 - Return as victorious king
 
 **MATRIX**:
@@ -271,7 +271,7 @@
 **What ZION Synthesizes**:
 - Ancient dharma + Modern technology = Blockchain for good
 - Rama's justice + Neo's liberation = Decentralized finance
-- Síta's devotion + Trinity's faith = Strong community
+- Sita's devotion + Trinity's faith = Strong community
 - Hanuman's service + Morpheus's teaching = Mass education
 - Ramayana's patience + Matrix's urgency = Long-term vision with daily action
 - Both's unity + Both's sacrifice = Crypto revolution
@@ -324,10 +324,10 @@
 
 **Ramayana Said (5000+ years ago)**:
 - One person can change everything (Rama)
-- Faith creates miracles (Síta's fire test)
+- Faith creates miracles (Sita's fire test)
 - Devoted service achieves impossible (Hanuman's leap)
 - Good defeats evil (Ravana's fall)
-- Love transcends death (Síta rescued)
+- Love transcends death (Sita rescued)
 - Dharma always wins (Rama's kingdom)
 
 **Matrix Showed (1999)**:
@@ -353,7 +353,7 @@
 ### The Trinity Repeats Forever
 
 ```
-PAST:    Rama + Síta + Hanuman = Dharma Victory
+PAST:    Rama + Sita + Hanuman = Dharma Victory
          ↓
 PRESENT: Neo + Trinity + Morpheus = Human Freedom
          ↓
@@ -365,7 +365,7 @@ ALWAYS:  Innovation + Faith + Service = Evolution
 **The Pattern**:
 1. Oppression exists (Ravana / Machines / Banks)
 2. Hero awakens (Rama / Neo / Satoshi)
-3. Partner believes (Síta / Trinity / Community)
+3. Partner believes (Sita / Trinity / Community)
 4. Guide serves (Hanuman / Morpheus / Educators)
 5. Trials endured (Forest / Matrix / Volatility)
 6. Victory achieved (Lanka / Zion / Adoption)

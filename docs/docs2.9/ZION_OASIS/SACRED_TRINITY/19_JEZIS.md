@@ -207,7 +207,7 @@ Humanity (Awakening)
 - 90% reduced PTSD symptoms (forgiveness heals trauma)
 - 0% recidivism (forgiven people don't re-offend)
 
-**Budget:** 15% humanitarian tithe (Síta/Issobela partnership)
+**Budget:** 15% humanitarian tithe (Sita/Issobela partnership)
 
 ---
 

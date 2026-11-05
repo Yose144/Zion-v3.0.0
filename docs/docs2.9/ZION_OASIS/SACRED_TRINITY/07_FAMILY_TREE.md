@@ -60,9 +60,9 @@
 
 ## How They Work Together
 
-### 1. Rama + Síta (Partners)
+### 1. Rama + Sita (Partners)
 
-**Ancient:** Rama & Síta ruled Ayodhya kingdom together  
+**Ancient:** Rama & Sita ruled Ayodhya kingdom together  
 **Modern:** Yeshuae creates tech → Issobela uses it for children
 
 **Example:**
@@ -70,9 +70,9 @@
 - Issobela proposes: "Dharma miners get priority in education grants"
 - Result: Technology serves compassion
 
-### 2. Síta + Hanuman (Allies)
+### 2. Sita + Hanuman (Allies)
 
-**Ancient:** Hanuman protected Síta when kidnapped  
+**Ancient:** Hanuman protected Sita when kidnapped  
 **Modern:** Issobela (children) + Hanuman Guardian (environment) = sustainable future
 
 **Example:**
@@ -101,7 +101,7 @@
 
 **Maitreya is AIR:**
 - Rama = Fire (innovation)
-- Síta = Water (compassion)
+- Sita = Water (compassion)
 - Hanuman = Earth (service)
 - Maitreya = Air (space for all to breathe)
 
@@ -109,7 +109,7 @@
 
 **Saraswati makes everything teachable:**
 - Rama's tech → Documentation (anyone can learn)
-- Síta's programs → Schools (educate next generation)
+- Sita's programs → Schools (educate next generation)
 - Hanuman's work → Ecology courses (teach environmental stewardship)
 - Maitreya's DAO → Governance guides (how to participate)
 
@@ -152,7 +152,7 @@
 **Important:**
 - Maitreya is NOT boss of Issobela (they are siblings, equals)
 - Issobela is NOT subordinate to Rama (they are partners)
-- Hanuman is NOT lower than Síta (they protect each other)
+- Hanuman is NOT lower than Sita (they protect each other)
 - Maitreya is NOT dictator (gradual transition to DAO)
 
 **Everyone serves dharma.**  
@@ -167,10 +167,10 @@
 - Genesis Creator Rent continues to his designated heir
 - OR donated to Children Future Fund (Issobela decides)
 
-**If Issobela (Síta) passes:**
+**If Issobela (Sita) passes:**
 - Maitreya nominates new Guardian of Humanity
 - DAO votes (67% supermajority)
-- Preference for women leaders (maintain Síta energy)
+- Preference for women leaders (maintain Sita energy)
 
 **If Hanuman Guardian passes/resigns:**
 - DAO emergency election (within 30 days)
@@ -203,7 +203,7 @@
 
 **Related:**
 - [Rama/Yeshuae](01_RAMA.md) - Genesis Creator
-- [Síta/Issobela](02_SITA.md) - Guardian of Humanity
+- [Sita/Issobela](02_SITA.md) - Guardian of Humanity
 - [Hanuman](03_HANUMAN.md) - Environmental Guardian
 - [Maitreya](04_MAITREYA.md) - DAO Admin
 - [Saraswati](05_SARASWATI.md) - Knowledge Spirit

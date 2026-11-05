@@ -78,7 +78,7 @@ Divine Union → Sacred Partnership
 
 ---
 
-## 🕉️ Sacred Parallels: Síta & Trinity
+## 🕉️ Sacred Parallels: Sita & Trinity
 
 | Aspect | SÍTA (Ancient) | TRINITY (Modern) | ZION User |
 |--------|---------------|------------------|-----------|
@@ -437,7 +437,7 @@ Both are:
 - Embody perfect love and loyalty
 
 **The sacred feminine principle:**
-- Ancient: Síta's devotion enables Rama's victory
+- Ancient: Sita's devotion enables Rama's victory
 - Modern: Trinity's belief awakens Neo's power
 - Future: ZION community's faith enables decentralization
 

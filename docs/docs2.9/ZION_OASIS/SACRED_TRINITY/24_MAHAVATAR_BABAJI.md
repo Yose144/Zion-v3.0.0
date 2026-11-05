@@ -352,7 +352,7 @@ Example of Intervention:
 ```
 ZION's Many Avatars:
 ├─ Rama (Innovation - always creating new)
-├─ Síta (Compassion - nurturing, evolving)
+├─ Sita (Compassion - nurturing, evolving)
 ├─ Hanuman (Service - dedicated, loyal)
 ├─ Maitreya (Future - transformation)
 ├─ Meriam/Yeshua (Love - sacred union)
