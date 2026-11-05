@@ -1,7 +1,7 @@
 # TRANSLATION PLAN — Zion Archive (CZ → EN)
 
-> **Verze:** 1.7 · **Datum:** 2026-11-05 · **Vlastník:** 👤
-> **Stav:** 122 / 189 překladatelných kapitol (**64,6 %**), zbývá **67 kapitol** (~0,74 MB zdroje)
+> **Verze:** 1.8 · **Datum:** 2026-11-05 · **Vlastník:** 👤
+> **Stav:** 132 / 189 překladatelných kapitol (**69,8 %**), zbývá **57 kapitol** (~0,62 MB zdroje)
 > **Kód:** `apps/website-v2.9` · **Plán archivu:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](docs/plans/ZION-ARCHIVE-COMPLETION.md)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md`](docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md)
 
@@ -50,7 +50,7 @@ vlastní ENindex mimo kapitoly.
 | NirvanaCloud | 8 | **8** | 0 | přeloženo 2026-11-05 |
 | Sůl této země | 12 | **12** | 0 | přeloženo 2026-11-05 |
 | Surta Srdce | 9 | **9** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
-| Ekam Deeksha | 10 | 0 | **10** | EN soubory jsou 401B stuby — nutno přeložit |
+| Ekam Deeksha | 10 | **10** | 0 | **dokončeno 2026-11-05** — 401B stuby nahrazeny (CZ + EN) |
 | Quantum Revolution | 1 (single-doc) | 0 | **1** | EN je 396B stub |
 | Lumi | 13 | 0 | **13** | |
 | Miriam | 13 | 0 | **13** | |
@@ -62,7 +62,7 @@ vlastní ENindex mimo kapitoly.
 | Nabukano | 7 | **7** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Kruh Bohyní | 17 | 0 | **17** | |
 | Mise Amenti | 8 | **8** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
-| **CELKEM** | **189** | **122** | **67** | ~0,74 MB zdroje |
+| **CELKEM** | **189** | **132** | **57** | ~0,62 MB zdroje |
 
 Stav kdykoli zjistíš:
 
@@ -122,8 +122,11 @@ data 2026-10-01, 1917 / 352 / 1676 / 1488 / 2008, Ø~91 cm, ~2 090 m², Blombos 
 kapitánky `Inés Varela`, `Teura`, `Anjali`, `Hina`; trupy `Santa María la Mayor` (I), `Nossa Senhora de Fátima` (II),
 `María de las Nieves` (III); dítě `Elizabeth` = Lumi = Malý princ / Pražské Jezulátko.
 
-### Ekam Deeksha — 10
-`BOOK-00-PREDMLUVA` (5k) · `BOOK-CAST-I` (12k) · `BOOK-CAST-II` (11k) · `BOOK-CAST-III` (12k) · `BOOK-CAST-IV` (11k) · `BOOK-CAST-V` (12k) · `BOOK-CAST-VI` (**20k**) · `BOOK-CAST-VII` (12k) · `BOOK-ZAVER` (4k) · `BOOK-GLOSAR` (17k)
+### Ekam Deeksha — hotovo (10/10, 2026-11-05)
+Public-docs konvence (`public/docs/books/ekam-deeksha/` → **`public/docs/en/books/ekam-deeksha/`**).
+EN soubory byly **401B stuby s „language note"** — překlad je **přepsal** (ne přidal vedle); audit `enCoverage: 100`, `missingEn: []`.
+Kicker = `CZ + EN`. Zachovat: `BOOK-FULL-VERSION.md` (126 kB) **není kapitola** a zůstává stub; code blocky v kap. 16
+(`seed = BLAKE2b(block_header)` … `return result <= target_difficulty`) opisovat **doslova**, včetně 256 KiB / 100 bloků / 2016 epoch.
 
 ### Quantum Revolution — 1
 Celý dokument `public/docs/books/quantum-revolution.md` (10,6 kB, 10 kapitol) → přeložit jako
@@ -257,14 +260,14 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 | **T5** | Issobella ✅ | 11 | hotovo 2026-11-05 |
 | **T6** | Na Cestě ✅ | 2 | hotovo 2026-11-05 |
 | **T7** | MariaCaminho ✅ | 12 | hotovo 2026-11-05 |
-| **T8** | Ekam Deeksha | 10 | 4 (jedna 20k) |
+| **T8** | Ekam Deeksha ✅ | 10 | hotovo 2026-11-05 |
 | **T9** | Quantum Revolution | 1 | 1 (celý dokument) |
 | **T10** | Miriam | 13 | 4 |
 | **T11** | Lumi | 13 | 4 |
 | **T12** | Kruh Bohyní | 17 | 5 |
 | **T13** | BodhiGaia | 13 | 5 (největší objem) |
 
-**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **19–29 session-dávek** na zbývajících 67
+**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **16–26 session-dávek** na zbývajících 57
 kapitol. Po každé knize: report + commit + push.
 
 **Alternativní pořadí podle priority 👤:** pokud má být první „hlavní osa“ (Ekam, Quantum
