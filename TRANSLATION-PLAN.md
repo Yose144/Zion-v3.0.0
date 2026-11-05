@@ -1,7 +1,8 @@
 # TRANSLATION PLAN — Zion Archive (CZ → EN)
 
-> **Verze:** 1.8 · **Datum:** 2026-11-05 · **Vlastník:** 👤
-> **Stav:** 132 / 189 překladatelných kapitol (**69,8 %**), zbývá **57 kapitol** (~0,62 MB zdroje)
+> **Verze:** 1.9 · **Datum:** 2026-11-05 · **Vlastník:** 👤
+> **Stav:** 133 / 189 překladatelných kapitol (**70,4 %**), zbývá **56 kapitol** (~0,62 MB zdroje)
+> **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md`](docs/3.2/REPORTS/REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md)
 > **Kód:** `apps/website-v2.9` · **Plán archivu:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](docs/plans/ZION-ARCHIVE-COMPLETION.md)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md`](docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md)
 
@@ -51,7 +52,7 @@ vlastní ENindex mimo kapitoly.
 | Sůl této země | 12 | **12** | 0 | přeloženo 2026-11-05 |
 | Surta Srdce | 9 | **9** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Ekam Deeksha | 10 | **10** | 0 | **dokončeno 2026-11-05** — 401B stuby nahrazeny (CZ + EN) |
-| Quantum Revolution | 1 (single-doc) | 0 | **1** | EN je 396B stub |
+| Quantum Revolution | 1 (single-doc) | **1** | 0 | **dokončeno 2026-11-05** — 396B stub nahrazen (CZ + EN) |
 | Lumi | 13 | 0 | **13** | |
 | Miriam | 13 | 0 | **13** | |
 | BodhiGaia | 13 | 0 | **13** | největší objem (180 kB) |
@@ -62,7 +63,7 @@ vlastní ENindex mimo kapitoly.
 | Nabukano | 7 | **7** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Kruh Bohyní | 17 | 0 | **17** | |
 | Mise Amenti | 8 | **8** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
-| **CELKEM** | **189** | **132** | **57** | ~0,62 MB zdroje |
+| **CELKEM** | **189** | **133** | **56** | ~0,62 MB zdroje |
 
 Stav kdykoli zjistíš:
 
@@ -128,9 +129,12 @@ EN soubory byly **401B stuby s „language note"** — překlad je **přepsal** 
 Kicker = `CZ + EN`. Zachovat: `BOOK-FULL-VERSION.md` (126 kB) **není kapitola** a zůstává stub; code blocky v kap. 16
 (`seed = BLAKE2b(block_header)` … `return result <= target_difficulty`) opisovat **doslova**, včetně 256 KiB / 100 bloků / 2016 epoch.
 
-### Quantum Revolution — 1
-Celý dokument `public/docs/books/quantum-revolution.md` (10,6 kB, 10 kapitol) → přeložit jako
-jeden EN dokument do `public/docs/en/books/quantum-revolution.md` (nahradit 396B stub).
+### Quantum Revolution — hotovo (1/1, 2026-11-05)
+Single-doc: `public/docs/books/quantum-revolution.md` → **`public/docs/en/books/quantum-revolution.md`** (396B stub přepsán).
+**Pozor na čtenář:** `QR_BOOK.singleDoc.chapterMatch.re` je `/^(?:Kapitola|Chapter)\s+\d+/i` — bez `Chapter` by EN
+reader spadl na jednu kapitolu; stejně `singleDocInfo()` v `/api/archive/audit`. Po fixu audit hlásí `cs 10 / en 10`.
+Emoji, tabulky (CL1–CL9, roadmapa 2026–2040+), čísla (144 000, 1B ZION, 108 indicií, 144B/1,44B, `$50M`, 885 řádků)
+a tabulka 11 jazykových edic zůstávají doslova.
 
 ### Miriam — 13
 `01-Zena-z-Veze` (8k) · `02-Alabastrova-Nadobka` (6k) · `03-Zahradnik` (8k) · `04-Chybejici-Stranky` (8k) · `05-Tri-Zeny-v-Jedne` (7k) · `06-Lod-bez-Plachet` (7k) · `07-Mozoly-misto-Koruny` (8k) · `08-Kalich` (9k) · `09-Zena-Odena-Sluncem` (7k) · `10-Svatba-na-Konci-Knihy` (8k) · `11-Mesto-jako-Nevesta` (8k) · `12-Reka-a-Dite-s-Lucernou` (8k) · `13-Kotva-Pravdy-a-Hranice` (11k)
@@ -261,13 +265,13 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 | **T6** | Na Cestě ✅ | 2 | hotovo 2026-11-05 |
 | **T7** | MariaCaminho ✅ | 12 | hotovo 2026-11-05 |
 | **T8** | Ekam Deeksha ✅ | 10 | hotovo 2026-11-05 |
-| **T9** | Quantum Revolution | 1 | 1 (celý dokument) |
+| **T9** | Quantum Revolution ✅ | 1 | hotovo 2026-11-05 |
 | **T10** | Miriam | 13 | 4 |
 | **T11** | Lumi | 13 | 4 |
 | **T12** | Kruh Bohyní | 17 | 5 |
 | **T13** | BodhiGaia | 13 | 5 (největší objem) |
 
-**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **16–26 session-dávek** na zbývajících 57
+**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **16–25 session-dávek** na zbývajících 56
 kapitol. Po každé knize: report + commit + push.
 
 **Alternativní pořadí podle priority 👤:** pokud má být první „hlavní osa“ (Ekam, Quantum
