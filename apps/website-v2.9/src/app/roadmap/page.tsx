@@ -406,8 +406,8 @@ export default function RoadmapPage() {
 
   const nirvanaPillars = NIRVANA_WORKSTREAMS.map((w) => ({
     layer: w.layer,
-    title: w.title[lang],
-    desc: w.goal[lang],
+    title: w.title[lang as 'cs' | 'en'] ?? w.title.en,
+    desc: w.goal[lang as 'cs' | 'en'] ?? w.goal.en,
   }));
 
   const postLaunch = [

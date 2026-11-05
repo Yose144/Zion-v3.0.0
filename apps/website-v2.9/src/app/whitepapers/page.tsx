@@ -178,6 +178,8 @@ function findCategoryIdByPaper(paperId: string): string | null {
 
 export default function WhitepapersPage() {
   const { lang } = useLang();
+  // Lokalizované texty whitelistu existují jen cs/en; es/pt/fr čtou angličtinu.
+  const L: 'cs' | 'en' = lang === 'cs' ? 'cs' : 'en';
   const [selectedPaper, setSelectedPaper] = useState('readme');
   const [activeCategory, setActiveCategory] = useState('overview');
   const [content, setContent] = useState('');
@@ -235,7 +237,7 @@ export default function WhitepapersPage() {
       } catch (err) {
         console.error('Failed to load whitepaper:', err);
         if (!isCancelled) {
-          setContent(`${tr('whitepapers', 'not_available_title', lang)}\n\n${currentPaper.title[lang]} (${currentPaper.file}) ${tr('whitepapers', 'not_available_body', lang)}`);
+          setContent(`${tr('whitepapers', 'not_available_title', lang)}\n\n${currentPaper.title[lang as 'cs' | 'en'] ?? currentPaper.title.en} (${currentPaper.file}) ${tr('whitepapers', 'not_available_body', lang)}`);
         }
       } finally {
         if (!isCancelled) setLoading(false);
@@ -282,7 +284,7 @@ export default function WhitepapersPage() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
               {quickFacts.map((fact, i) => (
                 <div key={i} className="rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm px-3 py-3">
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1">{fact.label[lang]}</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1">{fact.label[L]}</p>
                   <p className="text-sm font-semibold text-white font-mono break-all">{fact.value}</p>
                 </div>
               ))}
@@ -312,7 +314,7 @@ export default function WhitepapersPage() {
           >
             <div className="flex items-center gap-2 min-w-0">
               <BookOpen className="w-5 h-5 text-zion-purple shrink-0" />
-              <span className="font-semibold min-w-0 break-words">{currentCategory?.title[lang]}</span>
+              <span className="font-semibold min-w-0 break-words">{currentCategory?.title[L]}</span>
             </div>
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -334,7 +336,7 @@ export default function WhitepapersPage() {
                     >
                       <div className="flex items-center gap-2">
                         <Icon className={`w-4 h-4 ${category.accentText}`} />
-                        {category.title[lang]}
+                        {category.title[L]}
                       </div>
                       <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                     </button>
@@ -349,7 +351,7 @@ export default function WhitepapersPage() {
                         }`}
                         style={selectedPaper === paper.id ? { '--rc': '228, 30, 43' } as React.CSSProperties : undefined}
                       >
-                        {paper.title[lang]}
+                        {paper.title[L]}
                       </button>
                     ))}
                   </div>
@@ -382,7 +384,7 @@ export default function WhitepapersPage() {
                       >
                         <div className="flex items-center gap-2">
                           <Icon className={`w-4 h-4 ${category.accentText}`} />
-                          <span className="font-semibold">{category.title[lang]}</span>
+                          <span className="font-semibold">{category.title[L]}</span>
                         </div>
                         <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                       </button>
@@ -401,7 +403,7 @@ export default function WhitepapersPage() {
                               style={selectedPaper === paper.id ? { '--rc': '228, 30, 43' } as React.CSSProperties : undefined}
                             >
                               {paper.format === 'pdf' ? <Download className="w-3.5 h-3.5 shrink-0" /> : <FileText className="w-3.5 h-3.5 shrink-0" />}
-                              {paper.title[lang]}
+                              {paper.title[L]}
                             </button>
                           ))}
                         </div>
@@ -418,14 +420,14 @@ export default function WhitepapersPage() {
             {currentPaper && (
               <div className="mb-10 pb-8 border-b border-white/10">
                 <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-                  <span className={currentCategory?.accentText}>{currentCategory?.title[lang]}</span>
+                  <span className={currentCategory?.accentText}>{currentCategory?.title[L]}</span>
                   <ChevronRight className="w-3 h-3" />
-                  <span className="text-zion-purple">{currentPaper.title[lang]}</span>
+                  <span className="text-zion-purple">{currentPaper.title[L]}</span>
                 </div>
                 <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight text-gradient">
-                  {currentPaper.title[lang]}
+                  {currentPaper.title[L]}
                 </h1>
-                <p className="text-gray-400">{currentPaper.description[lang]}</p>
+                <p className="text-gray-400">{currentPaper.description[L]}</p>
                 {currentPaper.format === 'pdf' && (
                   <a
                     href={pdfUrl ?? ''}
@@ -460,7 +462,7 @@ export default function WhitepapersPage() {
                     <iframe
                       src={pdfUrl ?? ''}
                       className="w-full h-full min-h-[600px]"
-                      title={currentPaper.title[lang]}
+                      title={currentPaper.title[L]}
                     />
                   </div>
                 </div>

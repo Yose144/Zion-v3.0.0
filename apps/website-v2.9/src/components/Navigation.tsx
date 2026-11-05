@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import NavAuthButton from './NavAuthButton';
 import NotificationBell from './NotificationBell';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, LANGS, langMeta, type Lang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
 
@@ -19,6 +19,48 @@ type NavGroup = { title: string; color: string; items: NavItem[] };
 /* Stable DOM id for a nav href (used by aria-controls) */
 const anchorId = (prefix: string, href: string) =>
   `${prefix}-${href.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '')}`;
+
+/**
+ * Přepínač jazyka — 5 kódů (cs/en/es/pt/fr) podle rozhodnutí 👤 2026-11-05
+ * („cely ecosystem by mel podporovat nativne prepinani 5 jazyku").
+ * `<details>` je záměrně: funguje klávesnicí i dotykem bez JS stavu.
+ * Texty v es/pt/fr zatím nejsou → `tr()`/`tx()` spadnou na angličtinu.
+ */
+function LangSwitcher({ compact = false }: { compact?: boolean }) {
+  const { lang, setLang } = useLang();
+  const current = langMeta(lang);
+  const pick = (code: Lang) => (e: React.MouseEvent<HTMLButtonElement>) => {
+    setLang(code);
+    e.currentTarget.closest('details')?.removeAttribute('open');
+  };
+  return (
+    <details className="relative">
+      <summary
+        className={`flex cursor-pointer list-none items-center gap-1 rounded-lg border border-white/15 bg-black/75 font-semibold text-zion-gold/85 transition-colors hover:border-white/30 hover:bg-black hover:text-white ${compact ? 'min-h-[44px] px-4 py-2 text-xs' : 'px-2 py-1 text-[10px]'}`}
+        title={`${current.label} — ${current.short}`}
+        aria-label={`Language: ${current.label}`}
+      >
+        <span aria-hidden>{current.flag}</span>
+        <span>{current.short}</span>
+      </summary>
+      <div className="absolute right-0 z-[80] mt-1 w-44 overflow-hidden rounded-lg border border-white/15 bg-[#0b0b12] shadow-2xl">
+        {LANGS.map((l) => (
+          <button
+            key={l.code}
+            type="button"
+            onClick={pick(l.code)}
+            aria-current={l.code === lang ? 'true' : undefined}
+            className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-white/10 ${l.code === lang ? 'text-zion-gold' : 'text-gray-200'}`}
+          >
+            <span aria-hidden>{l.flag}</span>
+            <span className="flex-1">{l.label}</span>
+            <span className="text-[10px] uppercase tracking-wider text-gray-500">{l.short}</span>
+          </button>
+        ))}
+      </div>
+    </details>
+  );
+}
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
@@ -390,13 +432,9 @@ export default function Navigation() {
 
           {/* Right cluster: lang + GitHub + auth + dashboard */}
           <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
-              className={`hidden sm:flex items-center gap-1 rounded-lg border border-white/15 bg-black/75 text-[10px] font-semibold hover:border-white/30 hover:bg-black transition-colors text-zion-gold/85 hover:text-white ${scrolled ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1'}`}
-              title={lang === 'cs' ? tr('nav', 'switch_to_en', lang) : tr('nav', 'switch_to_cs', lang)}
-            >
-              {lang === 'cs' ? tr('nav', 'language_toggle_desktop_cs', lang) : tr('nav', 'language_toggle_desktop_en', lang)}
-            </button>
+            <div className="hidden sm:block">
+              <LangSwitcher />
+            </div>
             <Link
               prefetch={false} href="https://github.com/Zion-TerraNova/v3-Mainnet"
               target="_blank"
@@ -747,12 +785,7 @@ export default function Navigation() {
                 })}
                 <div className="h-px w-full bg-white/10" />
                 <div className="flex justify-center">
-                  <button
-                    onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 text-xs font-semibold hover:border-white/30 transition-colors text-zion-gold/85 hover:text-white min-h-[44px]"
-                  >
-                    {lang === 'cs' ? tr('nav', 'language_toggle_mobile_cs', lang) : tr('nav', 'language_toggle_mobile_en', lang)}
-                  </button>
+                  <LangSwitcher compact />
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <Link

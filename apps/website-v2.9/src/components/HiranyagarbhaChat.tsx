@@ -1,3 +1,4 @@
+import type { Lang } from '@/contexts/LanguageContext';
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -25,7 +26,9 @@ const SUGGESTED_QUESTIONS = [
   { cs: 'Jak spustit vlastní nód?', en: 'How to run a node?' },
 ];
 
-export default function HiranyagarbhaChat({ lang = 'cs' }: { lang?: 'cs' | 'en' }) {
+export default function HiranyagarbhaChat({ lang: rawLang = 'cs' }: { lang?: Lang }) {
+  // es/pt/fr zatím nemají vlastní texty → bezpečný fallback na angličtinu.
+  const lang: 'cs' | 'en' = rawLang === 'cs' ? 'cs' : 'en';
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

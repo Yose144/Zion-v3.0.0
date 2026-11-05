@@ -1,3 +1,4 @@
+import type { Lang } from '@/contexts/LanguageContext';
 'use client';
 
 import { Store, Cpu, Database, Server, Clock } from 'lucide-react';
@@ -35,7 +36,9 @@ const MARKETPLACE_ITEMS = [
   },
 ];
 
-export default function MarketplacePlaceholder({ lang = 'cs' }: { lang?: 'cs' | 'en' }) {
+export default function MarketplacePlaceholder({ lang: rawLang = 'cs' }: { lang?: Lang }) {
+  // es/pt/fr zatím nemají vlastní texty → bezpečný fallback na angličtinu.
+  const lang: 'cs' | 'en' = rawLang === 'cs' ? 'cs' : 'en';
   return (
     <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-zion-gold/30">
       <div className="text-center mb-8">

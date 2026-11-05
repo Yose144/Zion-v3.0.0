@@ -26,6 +26,8 @@ const NavAuthCopy = {
 export default function NavAuthButton() {
   const { user, authenticated, loading, logout } = useAuth();
   const { lang } = useLang();
+  // es/pt/fr čtou angličtinu (texty existují jen cs/en)
+  const L: 'cs' | 'en' = lang === 'cs' ? 'cs' : 'en';
   const [showLogin, setShowLogin] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const router = useRouter();
@@ -45,12 +47,12 @@ export default function NavAuthButton() {
           className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/15 bg-black/85 text-sm font-semibold text-white hover:border-zion-cyan/40 hover:text-zion-cyan transition-colors"
         >
           <LogIn className="w-4 h-4" />
-          {NavAuthCopy.login[lang]}
+          {NavAuthCopy.login[L]}
         </button>
         <button
           onClick={() => setShowLogin(true)}
           className="sm:hidden p-2 rounded-xl border border-white/15 bg-black/85 text-white"
-          aria-label={NavAuthCopy.login[lang]}
+          aria-label={NavAuthCopy.login[L]}
         >
           <LogIn className="w-4 h-4" />
         </button>
@@ -89,7 +91,7 @@ export default function NavAuthButton() {
             <div className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 bg-[rgba(13,13,13,0.95)] backdrop-blur-xl shadow-[0_18px_60px_rgba(0,0,0,0.55)] z-50 overflow-hidden">
               <div className="px-4 py-3 border-b border-white/5">
                 <p className="text-xs font-semibold text-white truncate">
-                  {user?.displayName || NavAuthCopy.user[lang]}
+                  {user?.displayName || NavAuthCopy.user[L]}
                 </p>
                 <p className="text-[10px] font-mono text-zion-gold/70 truncate">
                   {isChainAddress ? user?.address : (user?.email ?? '')}
@@ -102,7 +104,7 @@ export default function NavAuthButton() {
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-zion-gold/85 hover:bg-white/5 hover:text-white transition-colors"
               >
-                <LayoutDashboard className="w-3.5 h-3.5" /> {NavAuthCopy.account[lang]}
+                <LayoutDashboard className="w-3.5 h-3.5" /> {NavAuthCopy.account[L]}
               </button>
               <button
                 onClick={() => {
@@ -111,7 +113,7 @@ export default function NavAuthButton() {
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-zion-gold/85 hover:bg-white/5 hover:text-white transition-colors"
               >
-                <User className="w-3.5 h-3.5" /> {NavAuthCopy.wallet[lang]}
+                <User className="w-3.5 h-3.5" /> {NavAuthCopy.wallet[L]}
               </button>
               <button
                 onClick={() => {
@@ -120,7 +122,7 @@ export default function NavAuthButton() {
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-zion-gold/85 hover:bg-white/5 hover:text-white transition-colors"
               >
-                <Shield className="w-3.5 h-3.5" /> {NavAuthCopy.privateDashboard[lang]}
+                <Shield className="w-3.5 h-3.5" /> {NavAuthCopy.privateDashboard[L]}
               </button>
               <div className="h-px bg-white/5" />
               <button
@@ -131,7 +133,7 @@ export default function NavAuthButton() {
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-zion-purple hover:bg-zion-purple/10 transition-colors"
               >
-                <LogOut className="w-3.5 h-3.5" /> {NavAuthCopy.logout[lang]}
+                <LogOut className="w-3.5 h-3.5" /> {NavAuthCopy.logout[L]}
               </button>
             </div>
           </>

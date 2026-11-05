@@ -1,3 +1,4 @@
+import type { Lang } from '@/contexts/LanguageContext';
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -22,7 +23,9 @@ const SUGGESTED_QUESTIONS = [
   { cs: 'Co je AI Native?', en: 'What is AI Native?' },
 ];
 
-export default function HiranMiniChat({ lang = 'cs', defaultOpen = false }: { lang?: 'cs' | 'en'; defaultOpen?: boolean }) {
+export default function HiranMiniChat({ lang: rawLang = 'cs', defaultOpen = false }: { lang?: Lang; defaultOpen?: boolean }) {
+  // es/pt/fr zatím nemají vlastní texty → fallback na angličtinu.
+  const lang: 'cs' | 'en' = rawLang === 'cs' ? 'cs' : 'en';
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

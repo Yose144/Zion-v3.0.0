@@ -684,12 +684,13 @@ export function tr<
   const sectionObj = (t as unknown as Record<string, Record<string, { cs: string; en: string }>>)[String(section)];
   const entry = sectionObj?.[String(key)];
   if (!entry) return `${String(section)}.${String(key)}`;
-  return entry[lang] ?? entry['cs'];
+  // es/pt/fr zatím nemají vlastní texty → EN fallback (a pak cs), nikdy prázdno.
+  return (entry as unknown as Record<string, string | undefined>)[lang] ?? entry.en ?? entry.cs;
 }
 
 /** Convenience hook-free getter for use in non-hook contexts */
 export function tx(entry: { cs: string; en: string }, lang: Lang): string {
-  return entry[lang] ?? entry['cs'];
+  return (entry as unknown as Record<string, string | undefined>)[lang] ?? entry.en ?? entry.cs;
 }
 
 export default t;
