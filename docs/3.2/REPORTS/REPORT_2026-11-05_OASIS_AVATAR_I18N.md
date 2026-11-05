@@ -224,6 +224,50 @@ Po obnovení: 202 karet, badge „202 avatarů", oba nové modaly v CS i EN s vl
 
 ---
 
+## 6e. OASIS daemon: API vracelo prázdno (opraveno)
+
+`GET /api/v1/oasis/avatars` a `/quests` vracely **prázdné pole** — daemon má
+`WorkingDirectory=/opt/zion`, takže `data/avatars.json` hledal v `/opt/zion/data/`, kde soubor
+nikdy nebyl (log: `Could not read data/avatars.json: No such file or directory`). Nebyla to
+regrese z této práce, ale roky tichý stav.
+
+Oprava: soubor nakopírován na `/opt/zion/data/avatars.json` (záloha staré verze v
+`/opt/zion/V31/L4/oasis/data/avatars.json.bak-20261105-200`), restart `zion-v31-oasis`.
+Log: `Loaded 264 quests`. **Live API teď vrací 202 avatarů / 264 questů** (dřív 0 / 0).
+
+## 6f. Mobil + a11y audit stránky (a dvě opravy)
+
+Měřeno headless Chromem na 390×844, 844×390 a 1440×900 proti produkci:
+
+| kontrola | výsledek |
+|---|---|
+| horizontální přesah | **0 px** na všech třech |
+| karty (202) menší než 44 px | **0** |
+| obrázky bez `alt` | **0** z 205 |
+| tlačítka bez přístupného názvu | **0** z 227 |
+| `h1` / `lang` | 1 / `cs` |
+| tap targety filtrů | ≥ 32 px (4 „nízké" byly skryté položky menu 0×0) |
+
+**Nalezená vada:** modal propouštěl fokus — **10 z 12** Tabů skončilo mimo dialog a po zavření
+fokus zmizel, takže se klávesnicí nedalo pokračovat. Opraveno: focus trap (Tab/Shift+Tab cyklí
+uvnitř), aktivní vtáhnutí fokusu při otevření (`autoFocus` na křížku nestačí, když prohlížeč
+fokus nepřesune) a jediná cesta zavření, která **vrací fokus na kartu**. Po opravě: 0 útěků ze
+14 Tabů, Escape zavírá, fokus se vrací (ověřeno i pro scénář „klik po programovém focusu").
+
+## 6g. Co zůstalo otevřené
+
+- **Deploy nirvany je blokovaný:** kód má `PROTO_VERSION = 30`, živý net je **26** —
+  `scripts/ops/nirvana-proto-check.sh` to správně zablokuje (deploy appky by rozbil chat
+  i multiplayer). Katalog 202 avatarů i copy („202 postav") jsou připravené v kódu; nasadí se
+  až s protokolem, tedy nejdřív net, pak appka. Live nirvana proto dál korektně hlásí 200.
+- **Transliterace v CS kánonu je smíšená** (Krišna 83× vs Krishna 122×, Ráma 36 vs Rama 18,
+  Lakšmí 7 vs Lakshmi 31, Sarasvatí 29 vs Sarasvati 8, Orákulum 14 vs Oracle 9). Automatická
+  náhrada je riskantní (skloňování, „Hare Krishna" mantra, názvy souborů v odkazech), takže
+  jsem sjednotil jen jednoznačné případy (kapa). Zbytek je **editoriální úkol pro rodilého
+  mluvčího** — zdokumentováno, ne „opraveno naslepo".
+
+---
+
 ## 7. Meze a co zůstává
 
 - **Kánon 42/43 vs. lore.** Roster (a tedy stránka) říká 42 = Dattatreya, 43 = Maly Princ;
