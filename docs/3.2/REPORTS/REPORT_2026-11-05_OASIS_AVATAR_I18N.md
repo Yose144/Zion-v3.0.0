@@ -12,11 +12,11 @@
 
 | Metrika | Před | Po |
 |---|---:|---:|
-| Avatarů s **oběma jazyky** | 182 / 200 | **200 / 200** |
+| Avatarů s **oběma jazyky** | 182 / 200 | **202 / 202** |
 | `i18n/*.en.md` | 141 | **157** |
 | `i18n/*.cs.md` | 47 | **47** |
-| Publikovaných profilů (`public/data/oasis/profiles/`) | 382 | **400** (200 kánonů + 200 překladů) |
-| Párů v **paritě s kánonem** | — | **200 / 200** |
+| Publikovaných profilů (`public/data/oasis/profiles/`) | 382 | **404** (202 kánonů + 202 překladů) |
+| Párů v **paritě s kánonem** | — | **202 / 202** |
 | `check-oasis-i18n.mjs` | — | **0 problémů** |
 
 Přeloženo **16 profilů** (CS→EN, 332 kB): `08` Issobela, `40` Lumi, `41` Vasudeva,
@@ -167,6 +167,32 @@ i opravený bold u Amaterasu; 0 pageerror.
   trinity)", ale roster má **43 = Maly Princ**. Číslo jsem z textu odstranil (jméno zůstalo);
   `#42` u Dattatreyi sedí a zůstalo. Hlubší varianta — přečíslovat Anaghu na volné ID (203+)
   a přidat ji do rosteru jako 201. avatara — je rozhodnutí 👤 (§7).
+
+---
+
+## 6c. Dva noví avataři: Anagha Lakshmi (#203) a Chaitanya Mahaprabhu (#204)
+
+Dva profily měly v kánonu vlastní dokument, ale nebyly v rosteru — a jejich čísla
+**kolidovala** s řádnými avatary (42 = Dattatreya, 43 = Maly Princ). 👤 rozhodl variantu
+„přečíslovat a přidat do rosteru".
+
+| krok | co |
+|---|---|
+| soubory | `43_SRI_ANAGHA_LAKSHMI.md` → **`203_…`**, `42_SRI_CHAITANYA_MAHAPRABHU.md` → **`204_…`** (+ H1 a `avatar_id` uvnitř) |
+| roster | `AVATAR_ROSTER.md` += obě položky (203 → ZION Originals, 204 → Hindu; počty kruhů 5→6 a 17→18), `V31/L4/oasis/data/avatars.json` += 2 záznamy |
+| karty cs+en | overlay `zion.json` (203) a `hindu.json` (204): subtitle, role, location, questLine, teaching, ability, quote, essence; 5 questů pro každého v `quests-filler.json` |
+| překlady | `i18n/203.en.md` (17,5 kB) a `i18n/204.en.md` (28,3 kB), plná parita s kánonem |
+| portréty | vyrenderované ze stejného 3D modelu (`--ids 203,204`) → `game-portraits.json` 200 → **202** |
+| odkazy | README, 44, 45, 85, `GOLDEN_EGG_GAME/*` a oba překlady převedeny na nová ID |
+| copy stránky | tagline už netvrdí pevný počet („Dvě stě…"), počet se bere z rosteru |
+
+⚠️ **Past:** renderer přepočítává `game-portraits.json` z toho, co najde na disku, a **zahodil
+11 existujících záznamů** (jména se od původního renderu změnila, soubory zůstaly pod starým
+slugem). Vráceno z gitu a doplněny jen dva nové záznamy — jinak by web ztratil portréty u 11 postav.
+
+**Stav:** 202 avatarů, **404 profilů** (202 kánonů + 202 překladů), checker 0 problémů,
+tsc 0 chyb, deploy `20261105T094659Z`, live **404/404 SHA-256 shoda**, v prohlížeči 202 karet
+a oba nové modaly v CS i EN, portréty 200, 0 pageerror.
 
 ---
 

@@ -12,8 +12,8 @@
 |---|---|
 | **Karty avatarů (overlay cs+en)** | ✅ 200/200 — `apps/website-v2.9/scripts/oasis-avatar-copy/*.json` (7 polí × 200 = 1 400 párů) |
 | **Questy (cs+en)** | ✅ 704 questů pro 200 postav (`quests-unique.json` 139, `quests-filler.json` 115, `quests-lite-1..3.json` 450) |
-| **Překlady profilů** | ✅ **200/200** avatarů má oba jazyky → `public/data/oasis/profiles/` = **400 souborů** (200 kánonů + 200 překladů) |
-| **Parita s kánonem** | ✅ všech 200 párů: stejné nadpisy, code bloky, odkazy; žádný překlad zkrácený pod 85 % |
+| **Překlady profilů** | ✅ **202/202** avatarů má oba jazyky → `public/data/oasis/profiles/` = **404 souborů** (202 kánonů + 202 překladů) |
+| **Parita s kánonem** | ✅ všech 202 párů: stejné nadpisy, code bloky, odkazy; žádný překlad zkrácený pod 85 % |
 | **Zbývá** | ✅ nic — hotovo, nasazeno a ověřeno živě (§5) |
 | **Duplicitní ID 42/43** | ✅ vyřešeno v generátoru (rozhoduje roster, ne `readdir`) |
 | **Jazyk kánonu (09, 44)** | ✅ opraveno — oba byly publikované jako `.cs`, přitom jsou anglické; jejich český překlad se zahazoval |
