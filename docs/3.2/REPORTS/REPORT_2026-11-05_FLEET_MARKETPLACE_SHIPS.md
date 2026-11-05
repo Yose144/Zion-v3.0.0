@@ -2,7 +2,7 @@
 
 **Datum:** 2026-11-05
 **Rozsah:** `apps/MarketPlace/public/shop/models/*.stl` → `apps/nirvana/public/models/fleet/*.glb` → route `/fleet`
-**Stav:** funkční lokálně (build čistý, 35 testů simulace, 16 kontrol v prohlížeči), **nenasazeno**
+**Stav:** **NASAZENO 2026-11-05 11:30 UTC** (`deploy-nirvana.sh --artifact-dir` build `20261105T113053Z`) — předtím funkční lokálně (build čistý, 35 testů simulace, 16 kontrol v prohlížeči)
 
 ---
 
@@ -241,3 +241,25 @@ cd apps/nirvana && npx tsc --noEmit && npx next build
 
 Když se změní **měřítko modelu** v konvertoru, musí se změnit i `NABUKANO_SCALE` nebo
 `BERTH_DROP` v `docks.ts` — jinak lodě kotví mimo rám.
+
+---
+
+## Nasazení (2026-11-05 11:30 UTC)
+
+`/fleet` je live na `https://nirvana.zionterranova.com/fleet` (za ZAP pasem, proto HTTP 307 pro
+nepřihlášené — stejně jako `/mars` a `/park`).
+
+| kontrola | výsledek |
+|---|---|
+| route v `app-paths-manifest.json` | `/fleet/page` (47 rout celkem) |
+| statický výstup | `.next/server/app/fleet.html` (9,9 kB) + `.rsc` |
+| klientský chunk s `models/fleet` | `.next/static/chunks/026_fa_s2ot_s.js` |
+| 7 GLB modelů | **200** (`/models/fleet/{xwing,bwing,awing,tiefighter,tieinterceptor,snowspeeder,ikaruga}.glb`, 4,7 MB) |
+| net protokol | 30 = 30 (klient i server) |
+
+**Jak se nasazovalo:** artefakt se postavil v **čistém git worktree na HEAD** (`cp -al`
+node_modules, build, `--artifact-dir`), protože v pracovním stromu byla **rozpracovaná Lumi
+práce jiné session** a stavět z pracovního stromu by ji odeslalo do produkce.
+
+**Otevřené (nezměněno):** Star Wars IP + cizí kit = před-launch blocker; multiplayer, VR a
+skutečný mobil neověřeny; Millennium Falcon nemá lokální model; marketplace dál kreslí holé STL.
