@@ -334,6 +334,35 @@ vědomě přes `ZION_SKIP_PROTO_CHECK=1`.
 
 ---
 
+## 6d. Marketplace: stejný model ve hře i v obchodě
+
+Produktová karta dřív ukazovala **holé STL** (jeden šedý `MeshStandardMaterial`) — CAD náhled,
+ne produkt, a navíc jinou podobu, než jakou loď má ve hře.
+
+**Změna:** `StarfighterViewer` načítá `/shop/models3d/<loď>.glb` — tatáž konverze z STL
+(`scripts/ops/starfighter-glb.py`) s panelovým lakem ve vrcholových barvách. STL soubory
+zůstávají (jsou to výrobní podklady pro laser), mění se jen náhled.
+
+Co se muselo udělat správně: `DoubleSide` (destičky jsou otevřené), `RoomEnvironment` +
+PMREM (**kov bez prostředí je černý** — stejná past jako ve hře) a rámování kamery
+z bounding boxu (pevná vzdálenost uřízne křídla X-Wingu a TIE zmenší na tečku).
+Materiál je shodný s `core/fleet/FleetScene.tsx`; kdyby se rozešel, zákazník uvidí jinou
+loď, než dostane.
+
+**Ověřeno:** `tsc` čistý, `npm run build` OK. `/shop` tahá produkty z Prisma, takže bez DB
+katalog nevykreslí — komponenta se proto ověřovala **harnessem s reálným GLB**
+(`.artifacts/probe/mp-viewer/`, 10/10: model se stáhl, plátno má správný rozměr, žádná
+chybová hláška) a pohledem na snímky (X-Wing, TIE, B-Wing — správné rámování i lak).
+Do repa jde i `apps/MarketPlace/e2e/shop-3d.mjs` pro běh proti instanci s databází.
+
+**Dvě pasti při ověřování:** (a) harness bez Tailwindu nemá `w-full/h-full`, takže plátno
+mělo 300×150 a model se rámoval do špatného poměru — v produkci Tailwind je, ale test to
+musí napodobit; (b) **dva `next-server` procesy umí sdílet stejný port** (SO_REUSEPORT) —
+starší instance servírovala starý build a na `models3d` vracela 404, i když soubory na disku
+byly. Před auditem zkontroluj `lsof -ti :3100`.
+
+---
+
 ## 7. Meze (co se nemá hlásit jako hotové)
 
 * **Multiplayer je hotový lokálně, ale nenasazený** — živá net služba je na protokolu 30,
