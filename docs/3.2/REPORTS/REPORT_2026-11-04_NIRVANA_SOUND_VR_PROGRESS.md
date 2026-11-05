@@ -400,8 +400,38 @@ když ho telemetrie (6×/s) stihla — simulace ho mazala každý krok, takže
 text příběhu se ukázal ve 2 ze 3 běhů. Teď ho vyzvedne až ten, kdo ho
 zobrazí.
 
-**Meze:** dvě cesty (žádné další větve), úspory jsou jen v prohlížeči,
-na mobilu jen čtyři směry (bez joysticku), ve VR netestováno.
+## 8f) Svět dostal jméno — Lumi, děvčátko s lucernou (2026-11-05)
+
+👤: „tu hru nazveme Lumi - děvčátko s lucernou … na lucerničku už máme
+3D model v heros".
+
+**Přejmenování:** route `/lumi`, hra v žebříčcích `lumi` (13. položka),
+odkazy v panelu Uranu, na stránce Uranu i v liště her. Stará `/kridla`
+**jen přesměruje** (`router.replace`) — odkaz v historii nemá skončit na 404.
+
+**Hrdinka:** holčička z primitiv (šaty, hlava, vlasy, paže, lucerna v pravé
+ruce). Silueta se čte z dálky a jde snadno vyměnit za skutečný model.
+
+**Lucerna je skutečný model** z `heros/…/Lampion_Kralovstvi_srdce_v6.glb`
+(`public/models/lampion.glb`, 4,3 MB, ~250 000 trojúhelníků). Normalizuje
+se podle bounding boxu, dostane teplé emissive a v ruce se houpe. `Suspense`
+má primitivní náhradu, takže hra nikdy nečeká na soubor.
+
+**Měřeno:** 128 draw calls, 259 216 trojúhelníků, **60 fps** (M1, 1440×900).
+Model sám je ~250k tris (víc než celá MOBA scéna), proto na mobilu
+(`coarse`) svítí primitivní lucerna a model se vůbec nestahuje.
+
+**Opravená chyba (odhalil audit):** `/models/*` nebyl v `PUBLIC_PREFIXES`,
+takže middleware vracel **307**; `GLTFLoader` dostal HTML a hra tiše jela
+na náhradě. Teď je asset veřejný a audit to ověřuje přes resource timing.
+
+**Kamera:** první verze držela celou mapu a Lumi byla 20px tečka — teď ji
+kamera sleduje zblízka a mírně napřed ve směru letu. Text příběhu se
+přesunul pod hlavičku, aby neležel na postavě.
+
+**Meze:** dvě cesty (žádné další větve), úspory jen v prohlížeči, na
+mobilu čtyři směry a lehká lucerna, ve VR netestováno. Model lucerny
+nemá LOD — na slabším zařízení je to nejdražší objekt scény.
 
 ---
 
