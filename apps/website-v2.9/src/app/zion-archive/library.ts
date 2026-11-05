@@ -129,11 +129,10 @@ export const COMPANION_GROUPS: CompanionGroup[] = [
         title: { cs: 'Surta Srdce', en: 'Surta Srdce (Surta’s Heart)' },
         description: {
           cs: 'Sūtra srdce pro Surtu — Malý Buddha dosáhne probuzení na lotosu v Dharma Templu na La Palmě a vrátí se jako bodhisattva nové země. Kapitoly s kotvami pravdy + soupis korpusu.',
-          en: 'A heart sūtra for Surta — the little Buddha awakens on a lotus in the Dharma Temple on La Palma and returns as the bodhisattva of the new earth. Truth anchors + corpus compendium. Czech original.',
+          en: 'A heart sūtra for Surta — the little Buddha awakens on a lotus in the Dharma Temple on La Palma and returns as the bodhisattva of the new earth. Truth anchors + corpus compendium.',
         },
         status: 'draft',
         href: `/zion-archive/surta-srdce/cist`,
-        czOnly: true,
         rc: '251, 113, 133',
       },
       {

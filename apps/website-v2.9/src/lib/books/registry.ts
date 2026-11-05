@@ -113,7 +113,7 @@ export const SURTA_BOOK: BookDef = {
   accent: '251, 113, 133',
   icon: Mail,
   partIcons: [Compass, Mail, Route, Sparkles, PenLine],
-  kicker: { cs: 'Zpáteční kniha · pro syna i veřejnost · CZ', en: 'The return book · for a son and the public · CZ' },
+  kicker: { cs: 'Zpáteční kniha · pro syna i veřejnost · CZ + EN', en: 'The return book · for a son and the public · CZ + EN' },
   title: { cs: 'SURTA SRDCE', en: 'SURTA SRDCE' },
   subtitle: {
     cs: 'Sūtra srdce pro Surtu — otcův dopis synovi a soupis celé cesty od gate gate po om mani padme hūṃ.',
@@ -121,12 +121,12 @@ export const SURTA_BOOK: BookDef = {
   },
   description: {
     cs: 'Malý Buddha na Santa María la Mayor do Dharma Temple na La Palmě: zlaté vejce Hiranyagarbhy se vylíhne a bodhisattva nové země se vrací. Každá kapitola = příběh, poklad pro Surtu a kotva pravdy.',
-    en: 'The little Buddha sails on Santa María la Mayor to the Dharma Temple on La Palma: the golden egg of Hiranyagarbha hatches and the bodhisattva of the new earth returns. Each chapter = story, treasure for Surta, truth anchor. Czech original.',
+    en: 'The little Buddha sails on Santa María la Mayor to the Dharma Temple on La Palma: the golden egg of Hiranyagarbha hatches and the bodhisattva of the new earth returns. Each chapter = story, treasure for Surta, truth anchor.',
   },
   facts: [
     { label: { cs: 'Bran', en: 'Gates' }, value: '6' },
     { label: { cs: 'Mantra', en: 'Mantra' }, value: 'gate → svāhā' },
-    { label: { cs: 'Jazyky', en: 'Languages' }, value: 'CZ' },
+    { label: { cs: 'Jazyky', en: 'Languages' }, value: 'CZ + EN' },
   ],
   notAvailable: loadError,
   czOnly: czFallbackNote,

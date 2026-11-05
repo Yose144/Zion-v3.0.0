@@ -1,7 +1,7 @@
 # TRANSLATION PLAN — Zion Archive (CZ → EN)
 
-> **Verze:** 1.0 · **Datum:** 2026-11-05 · **Vlastník:** 👤
-> **Stav:** 65 / 189 překladatelných kapitol (**34,4 %**), zbývá **124 kapitol** (~1,06 MB zdroje)
+> **Verze:** 1.1 · **Datum:** 2026-11-05 · **Vlastník:** 👤
+> **Stav:** 71 / 189 překladatelných kapitol (**37,6 %**), zbývá **118 kapitol** (~1,04 MB zdroje)
 > **Kód:** `apps/website-v2.9` · **Plán archivu:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](docs/plans/ZION-ARCHIVE-COMPLETION.md)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md`](docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md)
 
@@ -49,7 +49,7 @@ vlastní ENindex mimo kapitoly.
 | Království srdce | 10 | **10** | 0 | **oficiální EN edice** (klasická) |
 | NirvanaCloud | 8 | **8** | 0 | přeloženo 2026-11-05 |
 | Sůl této země | 12 | **12** | 0 | přeloženo 2026-11-05 |
-| Surta Srdce | 9 | 3 | **6** | prolog + 2 brány hotové |
+| Surta Srdce | 9 | **9** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Ekam Deeksha | 10 | 0 | **10** | EN soubory jsou 401B stuby — nutno přeložit |
 | Quantum Revolution | 1 (single-doc) | 0 | **1** | EN je 396B stub |
 | Lumi | 13 | 0 | **13** | |
@@ -62,7 +62,7 @@ vlastní ENindex mimo kapitoly.
 | Nabukano | 7 | 0 | **7** | |
 | Kruh Bohyní | 17 | 0 | **17** | |
 | Mise Amenti | 8 | 0 | **8** | |
-| **CELKEM** | **189** | **65** | **124** | ~1,06 MB zdroje |
+| **CELKEM** | **189** | **71** | **118** | ~1,04 MB zdroje |
 
 Stav kdykoli zjistíš:
 
@@ -78,8 +78,9 @@ curl -s -H "Authorization: Bearer $ARCHIVE_ADMIN_TOKEN" \
 
 Formát: `slug (velikost CZ)`. Slugs jsou zároveň cílové názvy EN souborů (viz §4).
 
-### Surta Srdce — 6 zbývá
-`04-Paragate-K-Dalsimu-Brehu` (4k) · `05-Parasamgate-Uplne-Za` (4k) · `06-Bodhi-Maly-Buddha-na-Lotosu` (5k) · `07-Svaha-Bodhisattva-Nove-Zeme` (3k) · `08-Om-Mani-Padme-Hum` (4k) · `09-Epilog-Otcuv-Podpis` (4k)
+### Surta Srdce — hotovo (9/9, 2026-11-05)
+Přeloženo 01–09 na `en/books/surta-srdce/kapitoly/`; audit hlásí `enCoverage: 100`, `missingEn: []`.
+Kicker i fakt „Jazyky" = `CZ + EN`, knihovní karta bez `czOnly`.
 
 ### Nabukano — 7
 `01-Jmeno-z-Babylonu` (5k) · `02-Lod-ktera-pluje-nahoru` (4k) · `03-Tri-nebeske-Marie` (7k) · `04-Dok-a-lucerna` (5k) · `05-Uzel-ktery-neni-bod` (6k) · `06-Pripojeni-k-Issobelle` (6k) · `07-Kdo-se-vraci-dolu` (5k)
@@ -227,7 +228,7 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 
 | Milník | Kniha | Kapitol | Odhad dávek |
 |---|---|---:|---:|
-| **T1** | Surta Srdce (dokončit) | 6 | 2 |
+| **T1** | Surta Srdce ✅ | 9 | hotovo 2026-11-05 |
 | **T2** | Nabukano | 7 | 2 |
 | **T3** | Mise Amenti | 8 | 3 |
 | **T4** | Růže | 11 | 3 (krátké) |
@@ -241,7 +242,7 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 | **T12** | Kruh Bohyní | 17 | 5 |
 | **T13** | BodhiGaia | 13 | 5 (největší objem) |
 
-**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **35–45 session-dávek** na všech 124
+**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **33–43 session-dávek** na zbývajících 118
 kapitol. Po každé knize: report + commit + push.
 
 **Alternativní pořadí podle priority 👤:** pokud má být první „hlavní osa“ (Ekam, Quantum
