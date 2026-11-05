@@ -468,6 +468,8 @@ apps/Stripe.md
 
 # Local screenshots and browser audit evidence
 .artifacts/
+# build artefakty render skriptů (bundle esbuild) — generuje se, necommituje
+scripts/ops/fleet-render/.build/
 # Python venv for the scene audit harness (playwright, local only)
 .venv-audit/
 
