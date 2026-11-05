@@ -302,3 +302,21 @@ práce jiné session** a stavět z pracovního stromu by ji odeslalo do produkce
 
 **Otevřené (nezměněno):** Star Wars IP + cizí kit = před-launch blocker; multiplayer, VR a
 skutečný mobil neověřeny; Millennium Falcon nemá lokální model; marketplace dál kreslí holé STL.
+
+### Druhý deploy — mobilní audit (2026-11-05 12:32 UTC)
+
+Po commitu `e06b617dd` („flotila — mobilní audit (dotyk, layout) + měření výkonu") nasazen
+build **`20261105T123201Z`**. Artefakt opět z **čistého worktree na HEAD** — v pracovním stromu
+byla nová rozdělaná práce (proto 31, `/fleet/page.tsx`, `multiplayer/page.tsx`).
+
+| kontrola | výsledek |
+|---|---|
+| `/fleet` v manifestu | 47 rout, `/fleet/page` |
+| mobilní CSS (`fleet-touch`, `fleet-hud`, `fleet-hangar`, `fleet-dock`) | v `_next/static/chunks/0_-pz9ydbo_-j.css` |
+| 7 GLB modelů | 7/7 → 200 |
+| net protokol | 30 = 30 |
+
+⚠️ **Pozor pro další deploy:** pracovní strom má rozpracovaný **proto 31**, živý net je **30**.
+Deploy appky z pracovního stromu proto **pre-flight zablokuje** (správně) — nejdřív net 31, pak
+appka. Artefakt z HEAD (proto 30) se nasadil s vědomým `ZION_SKIP_PROTO_CHECK=1`, protože
+30 = 30 (kontrola čte pracovní strom, ne artefakt).
