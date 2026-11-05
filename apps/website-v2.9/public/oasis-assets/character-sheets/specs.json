@@ -1,7 +1,7 @@
 {
- "generatedAt": "2026-11-01T22:28:53.174Z",
+ "generatedAt": "2026-11-05T12:00:55.827Z",
  "note": "Kanonický vizuální spec + hotový prompt pro generování finálních portrétů. Zdroj: SACRED_TRINITY, avatars.json, web2.9 esence, AVATAR_ROSTER.md.",
- "count": 200,
+ "count": 202,
  "artDirection": {
   "format": "1:1 master 2048×2048, WebP 1024 a 512, bez textu, 8% bezpečný okraj",
   "views": [
@@ -21,7 +21,7 @@
  "entries": [
   {
    "id": 0,
-   "name": "Krishna-Maitreya",
+   "name": "Krishna",
    "subtitle": "Cosmic Integration",
    "circle": "hindu",
    "ray": "AllRays",
@@ -44,10 +44,11 @@
    "skin": "#6f9bf0",
    "headwear": "circlet",
    "companions": [
-    "horse"
+    "horse",
+    "deer"
    ],
    "culture": "Indian (Hindu) iconography",
-   "prompt": "Krishna-Maitreya — Cosmic Integration.\nCurrent name: Maitreya Buddha.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: flute, feather, chakra, lotus; companion motifs: horse.\nPalette: all-rays teal #7fe3d4, canonical #6f9bf0, gold #f2c14e, blue #5b8fe8.\nCanonical skin tone per tradition (see palette).\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-000 · ray AllRays · rarity Legendary · CL 9.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Krishna — Cosmic Integration.\nCurrent name: Maitreya Buddha.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: flute, feather, chakra, lotus; companion motifs: horse, deer.\nPalette: all-rays teal #7fe3d4, canonical #6f9bf0, gold #f2c14e, blue #5b8fe8.\nCanonical skin tone per tradition (see palette).\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-000 · ray AllRays · rarity Legendary · CL 9.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -168,7 +169,8 @@
    "palette": [
     "#7fe3d4",
     "#f2c14e",
-    "#5b8fe8"
+    "#5b8fe8",
+    "#e86fa8"
    ],
    "skin": null,
    "headwear": "circlet",
@@ -176,7 +178,7 @@
     "deer"
    ],
    "culture": "Indian (Hindu) iconography",
-   "prompt": "Maitreya — Future Buddha.\nRole: DAO Admin, Transition Steward.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: lotus, book; companion motifs: deer.\nPalette: all-rays teal #7fe3d4, gold #f2c14e, blue #5b8fe8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-004 · ray AllRays · rarity Legendary · CL 7.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Maitreya — Future Buddha.\nRole: DAO Admin, Transition Steward.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: lotus, book; companion motifs: deer.\nPalette: all-rays teal #7fe3d4, gold #f2c14e, blue #5b8fe8, pink #e86fa8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-004 · ray AllRays · rarity Legendary · CL 7.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -219,7 +221,7 @@
   },
   {
    "id": 6,
-   "name": "Isis-Enamataru",
+   "name": "Isis",
    "subtitle": "Divine Feminine",
    "circle": "hindu",
    "ray": "Pink",
@@ -242,7 +244,7 @@
    "headwear": "circlet",
    "companions": [],
    "culture": "Indian (Hindu) iconography",
-   "prompt": "Isis-Enamataru — Divine Feminine.\nIsis (Egyptian: 𓊨𓏏𓆇𓁐) — mother goddess, throne of pharaohs, magic and wisdom.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: ankh, staff, feather.\nPalette: ray pink #ff6ec7, gold #f2c14e, blue #5b8fe8, pink #e86fa8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-006 · ray Pink · rarity Epic · CL 5.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Isis — Divine Feminine.\nIsis (Egyptian: 𓊨𓏏𓆇𓁐) — mother goddess, throne of pharaohs, magic and wisdom.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: ankh, staff, feather.\nPalette: ray pink #ff6ec7, gold #f2c14e, blue #5b8fe8, pink #e86fa8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-006 · ray Pink · rarity Epic · CL 5.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -252,7 +254,7 @@
   },
   {
    "id": 8,
-   "name": "Issobela Guardian",
+   "name": "Issobela",
    "subtitle": "Protector",
    "circle": "hindu",
    "ray": "Blue",
@@ -274,7 +276,7 @@
    "headwear": null,
    "companions": [],
    "culture": "Indian (Hindu) iconography",
-   "prompt": "Issobela Guardian — Protector.\nFull name: Issobela.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: sword, book.\nPalette: ray blue #4a7bff, gold #f2c14e, blue #5b8fe8, ivory white #f2ead8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-008 · ray Blue · rarity Rare · CL 4.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Issobela — Protector.\nFull name: Issobela.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: sword, book.\nPalette: ray blue #4a7bff, gold #f2c14e, blue #5b8fe8, ivory white #f2ead8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-008 · ray Blue · rarity Rare · CL 4.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -315,7 +317,7 @@
   },
   {
    "id": 10,
-   "name": "Bronu-Christ",
+   "name": "Christ",
    "subtitle": "Sacred Warrior",
    "circle": "hindu",
    "ray": "Blue",
@@ -325,21 +327,18 @@
    "location": "Camelot Ruins",
    "symbols": [
     "sword",
-    "bow",
     "cross",
     "cobra"
    ],
    "palette": [
     "#4a7bff",
-    "#5b8fe8",
-    "#f2ead8",
     "#2a2233"
    ],
    "skin": null,
    "headwear": null,
    "companions": [],
    "culture": "Indian (Hindu) iconography",
-   "prompt": "Bronu-Christ — Sacred Warrior.\nName: Bronu.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: sword, bow, cross, cobra.\nPalette: ray blue #4a7bff, blue #5b8fe8, ivory white #f2ead8, obsidian black #2a2233.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-010 · ray Blue · rarity Epic · CL 5.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Christ — Sacred Warrior.\nName: Bronu.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: sword, cross, cobra.\nPalette: ray blue #4a7bff, obsidian black #2a2233.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-010 · ray Blue · rarity Epic · CL 5.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -368,9 +367,11 @@
    ],
    "skin": null,
    "headwear": null,
-   "companions": [],
+   "companions": [
+    "raven"
+   ],
    "culture": "Indian (Hindu) iconography",
-   "prompt": "Arjuna — Warrior Seeker.\nName: (the brother — real name withheld).\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: bow.\nPalette: ray blue #4a7bff, gold #f2c14e, blue #5b8fe8, ivory white #f2ead8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-011 · ray Blue · rarity Epic · CL 6.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Arjuna — Warrior Seeker.\nName: (the brother — real name withheld).\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: bow; companion motifs: raven.\nPalette: ray blue #4a7bff, gold #f2c14e, blue #5b8fe8, ivory white #f2ead8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-011 · ray Blue · rarity Epic · CL 6.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -380,7 +381,7 @@
   },
   {
    "id": 12,
-   "name": "Milan-Bhima",
+   "name": "Bhima",
    "subtitle": "Strong Protector",
    "circle": "hindu",
    "ray": "Blue",
@@ -401,7 +402,7 @@
    "headwear": null,
    "companions": [],
    "culture": "Indian (Hindu) iconography",
-   "prompt": "Milan-Bhima — Strong Protector.\nName: Milan.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: hammer.\nPalette: ray blue #4a7bff, gold #f2c14e, blue #5b8fe8, pink #e86fa8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-012 · ray Blue · rarity Epic · CL 5.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Bhima — Strong Protector.\nName: Milan.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: hammer.\nPalette: ray blue #4a7bff, gold #f2c14e, blue #5b8fe8, pink #e86fa8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-012 · ray Blue · rarity Epic · CL 5.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -411,7 +412,7 @@
   },
   {
    "id": 13,
-   "name": "Artem-Vudce",
+   "name": "Yudhishthira",
    "subtitle": "Leader",
    "circle": "hindu",
    "ray": "Blue",
@@ -432,7 +433,7 @@
     "elephant"
    ],
    "culture": "Indian (Hindu) iconography",
-   "prompt": "Artem-Vudce — Leader.\nName: Artem.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: plain ceremonial dress; companion motifs: elephant.\nPalette: ray blue #4a7bff, gold #f2c14e, blue #5b8fe8, pink #e86fa8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-013 · ray Blue · rarity Rare · CL 6.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Yudhishthira — Leader.\nName: Artem.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: plain ceremonial dress; companion motifs: elephant.\nPalette: ray blue #4a7bff, gold #f2c14e, blue #5b8fe8, pink #e86fa8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-013 · ray Blue · rarity Rare · CL 6.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -442,7 +443,7 @@
   },
   {
    "id": 14,
-   "name": "Mama Yashoda",
+   "name": "Jašóda",
    "subtitle": "Divine Mother",
    "circle": "hindu",
    "ray": "Pink",
@@ -460,7 +461,7 @@
    "headwear": null,
    "companions": [],
    "culture": "Indian (Hindu) iconography",
-   "prompt": "Mama Yashoda — Divine Mother.\nName: (the mother — real name withheld).\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: plain ceremonial dress.\nPalette: ray pink #ff6ec7, gold #f2c14e, pink #e86fa8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-014 · ray Pink · rarity Epic · CL 4.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Jašóda — Divine Mother.\nName: (the mother — real name withheld).\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: plain ceremonial dress.\nPalette: ray pink #ff6ec7, gold #f2c14e, pink #e86fa8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-014 · ray Pink · rarity Epic · CL 4.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -538,7 +539,7 @@
   },
   {
    "id": 17,
-   "name": "Vyasa-Kamil",
+   "name": "Vyasa",
    "subtitle": "Cosmic Sage",
    "circle": "hindu",
    "ray": "Yellow",
@@ -556,7 +557,7 @@
     "#ffd166",
     "#8c6244",
     "#f2c14e",
-    "#e86fa8"
+    "#f2ead8"
    ],
    "skin": "#8c6244",
    "headwear": null,
@@ -564,7 +565,7 @@
     "elephant"
    ],
    "culture": "Indian (Hindu) iconography",
-   "prompt": "Vyasa-Kamil — Cosmic Sage.\nModern form: Kamil (कामिल).\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: lotus, bow, cross, cobra; companion motifs: elephant.\nPalette: ray gold #ffd166, canonical #8c6244, gold #f2c14e, pink #e86fa8.\nCanonical skin tone per tradition (see palette).\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-017 · ray Yellow · rarity Legendary · CL 8.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Vyasa — Cosmic Sage.\nModern form: Kamil (कामिल).\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: lotus, bow, cross, cobra; companion motifs: elephant.\nPalette: ray gold #ffd166, canonical #8c6244, gold #f2c14e, ivory white #f2ead8.\nCanonical skin tone per tradition (see palette).\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-017 · ray Yellow · rarity Legendary · CL 8.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -574,7 +575,7 @@
   },
   {
    "id": 18,
-   "name": "Meriam Rose",
+   "name": "Maria Magdalena",
    "subtitle": "Mary Magdalene",
    "circle": "christian",
    "ray": "Pink",
@@ -598,7 +599,7 @@
    "headwear": null,
    "companions": [],
    "culture": "Christian / Byzantine iconography",
-   "prompt": "Meriam Rose — Mary Magdalene.\nAncient name: Mary Magdalene (מרים המגדלית — Miriam of Magdala).\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Christian / Byzantine iconography.\nCostume & props: chakra, sword, cross, cobra.\nPalette: ray pink #ff6ec7, gold #f2c14e, pink #e86fa8, crimson / saffron #e8664a.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-018 · ray Pink · rarity Epic · CL 5.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Maria Magdalena — Mary Magdalene.\nAncient name: Mary Magdalene (מרים המגדלית — Miriam of Magdala).\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Christian / Byzantine iconography.\nCostume & props: chakra, sword, cross, cobra.\nPalette: ray pink #ff6ec7, gold #f2c14e, pink #e86fa8, crimson / saffron #e8664a.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-018 · ray Pink · rarity Epic · CL 5.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -608,7 +609,7 @@
   },
   {
    "id": 19,
-   "name": "Yeshua Sananda",
+   "name": "Ježíš",
    "subtitle": "Jesus Christ",
    "circle": "christian",
    "ray": "Pink",
@@ -631,7 +632,7 @@
    "headwear": "mitre",
    "companions": [],
    "culture": "Christian / Byzantine iconography",
-   "prompt": "Yeshua Sananda — Jesus Christ.\nHistorical name: Jesus of Nazareth (Yeshua ben Yosef).\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Christian / Byzantine iconography.\nCostume & props: staff, lantern, cross.\nPalette: ray pink #ff6ec7, gold #f2c14e, pink #e86fa8, ivory white #f2ead8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-019 · ray Pink · rarity Legendary · CL 7.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Ježíš — Jesus Christ.\nHistorical name: Jesus of Nazareth (Yeshua ben Yosef).\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Christian / Byzantine iconography.\nCostume & props: staff, lantern, cross.\nPalette: ray pink #ff6ec7, gold #f2c14e, pink #e86fa8, ivory white #f2ead8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-019 · ray Pink · rarity Legendary · CL 7.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -1249,7 +1250,7 @@
   },
   {
    "id": 40,
-   "name": "Elizabet",
+   "name": "Lumi",
    "subtitle": "Royal Healer",
    "circle": "zion",
    "ray": "Pink",
@@ -1272,7 +1273,7 @@
    "headwear": null,
    "companions": [],
    "culture": "ZION original sci-fi fantasy",
-   "prompt": "Elizabet — Royal Healer.\nElizabet, known in prophecy as the Oracle, is a mystical being from a distant future — a messenger of the Creator sent to humanity.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, ZION original sci-fi fantasy.\nCostume & props: chakra, book, cross.\nPalette: ray pink #ff6ec7, gold #f2c14e, pink #e86fa8, emerald green #63c48a.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-040 · ray Pink · rarity Rare · CL 5.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Lumi — Royal Healer.\nElizabet, known in prophecy as the Oracle, is a mystical being from a distant future — a messenger of the Creator sent to humanity.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, ZION original sci-fi fantasy.\nCostume & props: chakra, book, cross.\nPalette: ray pink #ff6ec7, gold #f2c14e, pink #e86fa8, emerald green #63c48a.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-040 · ray Pink · rarity Rare · CL 5.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -1335,8 +1336,7 @@
    "palette": [
     "#7fe3d4",
     "#f2c14e",
-    "#e86fa8",
-    "#2a2233"
+    "#e86fa8"
    ],
    "skin": null,
    "headwear": null,
@@ -1346,7 +1346,7 @@
     "cow"
    ],
    "culture": "ZION original sci-fi fantasy",
-   "prompt": "Sri Dattatreya — Trimurti Avatar.\nSri Dattatreya (श्री दत्तात्रेय) is the most complete manifestation of the Divine — the single being who unites all three aspects of the Trinity (Trimurti) in one body.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, ZION original sci-fi fantasy.\nCostume & props: staff, conch, chakra; companion motifs: elephant, deer, cow.\nPalette: all-rays teal #7fe3d4, gold #f2c14e, pink #e86fa8, obsidian black #2a2233.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-042 · ray AllRays · rarity Legendary · CL 8.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Sri Dattatreya — Trimurti Avatar.\nSri Dattatreya (श्री दत्तात्रेय) is the most complete manifestation of the Divine — the single being who unites all three aspects of the Trinity (Trimurti) in one body.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, ZION original sci-fi fantasy.\nCostume & props: staff, conch, chakra; companion motifs: elephant, deer, cow.\nPalette: all-rays teal #7fe3d4, gold #f2c14e, pink #e86fa8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-042 · ray AllRays · rarity Legendary · CL 8.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -1366,10 +1366,7 @@
    "location": "Asteroid B-612",
    "symbols": [
     "chakra",
-    "lotus",
-    "sword",
     "book",
-    "veena",
     "cobra"
    ],
    "palette": [
@@ -1380,13 +1377,9 @@
    ],
    "skin": null,
    "headwear": null,
-   "companions": [
-    "lion",
-    "elephant",
-    "swan"
-   ],
+   "companions": [],
    "culture": "ZION original sci-fi fantasy",
-   "prompt": "Maly Princ — The Little Prince.\nSri Anagha Lakshmi (श्री अनघा लक्ष्मी) is the feminine form of the Trimurti — the three-in-one Goddess who unites all three aspects of the Divine Mother in one body.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, ZION original sci-fi fantasy.\nCostume & props: chakra, lotus, sword, book, veena, cobra; companion motifs: lion, elephant, swan.\nPalette: ray gold #ffd166, gold #f2c14e, blue #5b8fe8, pink #e86fa8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-043 · ray Yellow · rarity Rare · CL 4.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Maly Princ — The Little Prince.\nSri Anagha Lakshmi (श्री अनघा लक्ष्मी) is the feminine form of the Trimurti — the three-in-one Goddess who unites all three aspects of the Divine Mother in one body.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, ZION original sci-fi fantasy.\nCostume & props: chakra, book, cobra.\nPalette: ray gold #ffd166, gold #f2c14e, blue #5b8fe8, pink #e86fa8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-043 · ray Yellow · rarity Rare · CL 4.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -2666,8 +2659,8 @@
    ],
    "palette": [
     "#ffd166",
-    "#e86fa8",
-    "#f2ead8"
+    "#f2c14e",
+    "#e86fa8"
    ],
    "skin": null,
    "headwear": null,
@@ -2675,7 +2668,7 @@
     "elephant"
    ],
    "culture": "Indian classical tradition",
-   "prompt": "Ganesha — Vinayaka — Remover of Obstacles.\nGaṇeśa / Vināyaka — remover of vighna (obstacles), patron of beginnings; in the Mahābhārata-writing tradition he takes Vyāsa's dictation (see #17 Vyāsa and the quest 'Ganesha's Pen').\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian classical tradition.\nCostume & props: axe, book, orb; companion motifs: elephant.\nAnatomy: elephant head with one broken tusk, four arms, pot belly.\nPalette: ray gold #ffd166, pink #e86fa8, ivory white #f2ead8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-084 · ray Yellow · rarity Epic · CL 1.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Ganesha — Vinayaka — Remover of Obstacles.\nGaṇeśa / Vināyaka — remover of vighna (obstacles), patron of beginnings; in the Mahābhārata-writing tradition he takes Vyāsa's dictation (see #17 Vyāsa and the quest 'Ganesha's Pen').\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian classical tradition.\nCostume & props: axe, book, orb; companion motifs: elephant.\nAnatomy: elephant head with one broken tusk, four arms, pot belly.\nPalette: ray gold #ffd166, gold #f2c14e, pink #e86fa8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-084 · ray Yellow · rarity Epic · CL 1.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -2698,10 +2691,7 @@
     "conch"
    ],
    "palette": [
-    "#ff6ec7",
-    "#f2c14e",
-    "#5b8fe8",
-    "#e86fa8"
+    "#ff6ec7"
    ],
    "skin": null,
    "headwear": null,
@@ -2709,7 +2699,7 @@
     "elephant"
    ],
    "culture": "Indian classical tradition",
-   "prompt": "Lakshmi — Śri — Śrī Lakṣmī.\nLakṣmī / Śrī — fortune born of dharmic activity and gratitude.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian classical tradition.\nCostume & props: lotus, conch; companion motifs: elephant.\nPalette: ray pink #ff6ec7, gold #f2c14e, blue #5b8fe8, pink #e86fa8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-085 · ray Pink · rarity Epic · CL 3.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "prompt": "Lakshmi — Śri — Śrī Lakṣmī.\nLakṣmī / Śrī — fortune born of dharmic activity and gratitude.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian classical tradition.\nCostume & props: lotus, conch; companion motifs: elephant.\nPalette: ray pink #ff6ec7.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-085 · ray Pink · rarity Epic · CL 3.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
    "sources": {
     "trinity": true,
     "essence": true,
@@ -6188,6 +6178,77 @@
    "sources": {
     "trinity": true,
     "essence": true,
+    "roster": true,
+    "curated": false
+   }
+  },
+  {
+   "id": 203,
+   "name": "Sri Anagha Lakshmi",
+   "subtitle": "Divine Mother Trinity",
+   "circle": "zion",
+   "ray": "AllRays",
+   "rarity": "Legendary",
+   "cl": 9,
+   "role": "Divine Mother of the Trinity",
+   "location": "Oneness University (India)",
+   "symbols": [
+    "chakra",
+    "lotus",
+    "sword",
+    "book",
+    "veena"
+   ],
+   "palette": [
+    "#7fe3d4",
+    "#f2c14e",
+    "#5b8fe8",
+    "#e86fa8"
+   ],
+   "skin": null,
+   "headwear": null,
+   "companions": [
+    "lion",
+    "elephant",
+    "swan"
+   ],
+   "culture": "ZION original sci-fi fantasy",
+   "prompt": "Sri Anagha Lakshmi — Divine Mother Trinity.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, ZION original sci-fi fantasy.\nCostume & props: chakra, lotus, sword, book, veena; companion motifs: lion, elephant, swan.\nPalette: all-rays teal #7fe3d4, gold #f2c14e, blue #5b8fe8, pink #e86fa8.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-203 · ray AllRays · rarity Legendary · CL 9.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "sources": {
+    "trinity": true,
+    "essence": false,
+    "roster": true,
+    "curated": false
+   }
+  },
+  {
+   "id": 204,
+   "name": "Sri Chaitanya Mahaprabhu",
+   "subtitle": "Golden Avatar",
+   "circle": "hindu",
+   "ray": "Yellow",
+   "rarity": "Legendary",
+   "cl": 8,
+   "role": "Golden Avatar - Krishna and Radha united",
+   "location": "Mayapur, Navadvipa (Bengal, India)",
+   "symbols": [
+    "chakra",
+    "lotus",
+    "mirror"
+   ],
+   "palette": [
+    "#ffd166",
+    "#f2c14e",
+    "#2a2233"
+   ],
+   "skin": null,
+   "headwear": null,
+   "companions": [],
+   "culture": "Indian (Hindu) iconography",
+   "prompt": "Sri Chaitanya Mahaprabhu — Golden Avatar.\nProduction character turnaround sheet: front, three-quarter, side and back views aligned on a shared ground line, consistent proportions and materials, neutral studio background, full body, no text.\nStyle: stylized AAA game character concept art, painterly semi-realism, Indian (Hindu) iconography.\nCostume & props: chakra, lotus, mirror.\nPalette: ray gold #ffd166, gold #f2c14e, obsidian black #2a2233.\nArt direction: mythic wonder, elegant sci-fi fantasy, ornate but tasteful sacred geometry, atmospheric volumetric light, single readable silhouette, refined material detail (silk, gold, stone, light).\nCharacter ID OASIS-204 · ray Yellow · rarity Legendary · CL 8.\nNegative: no text, no logo, no watermark, no signature, no existing actor or celebrity likeness, no gore, no nudity, no exaggerated cosplay, no cultural caricature.",
+   "sources": {
+    "trinity": true,
+    "essence": false,
     "roster": true,
     "curated": false
    }
