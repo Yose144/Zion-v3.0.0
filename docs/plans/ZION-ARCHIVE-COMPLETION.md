@@ -56,10 +56,11 @@ Principy, které platí pro každou práci:
 | BodhiGaia | 0/13 | P2 |
 | Issobella | 0/11 | P2 |
 | Mise Amenti | 0/8 | P2 (rámec, ne román) |
-| Lumi, Miriam, Růže, MariaCaminho, Na Cestě, Surta Srdce, Království srdce, Kruh Bohyní, Nabukano | 0 | P2/P3 dle 👤 |
+| Surta Srdce | 3/9 (01–03) | **P2 (rozpracováno)** |
+| Lumi, Miriam, Růže, MariaCaminho, Na Cestě, Kruh Bohyní, Nabukano | 0 | P2/P3 dle 👤 |
 
-> Měřeno auditem 2026-11-05: **204 kapitol, 189 překladatelných, 62 přeložených (32,8 %)**
-> (Království srdce 10/10 oficiální EN, NirvanaCloud 8/8, Sůl této země 12/12).
+> Měřeno auditem 2026-11-05: **204 kapitol, 189 překladatelných, 65 přeložených (34,4 %)**
+> (Království srdce 10/10 oficiální EN, NirvanaCloud 8/8, Sůl této země 12/12, Surta Srdce 3/9).
 > Detail: [`REPORT_2026-11-04_ARCHIVE_W1_AUDIT.md`](../3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_W1_AUDIT.md).
 
 **Další mezery:**
@@ -127,6 +128,7 @@ nezačíná na indexu.
 - [x] Království srdce: oficiální EN klasická edice napojena (10/10) — split podle h1.
 - [x] NirvanaCloud 8/8 EN (2026-11-05).
 - [x] Sůl této země 12/12 EN (2026-11-05).
+- [~] Surta Srdce 3/9 EN (prolog, první a druhá brána).
 - [ ] QA checklist pro každou přeloženou kapitolu: markdown parita, nadpisy, anchor slugy,
       odkazy, blokové citáty, tabulky, diakritika, žádné „strojové" vsuvky.
 - [ ] U knih bez EN držet `CZ` štítek a fallback hlášku (už funguje).

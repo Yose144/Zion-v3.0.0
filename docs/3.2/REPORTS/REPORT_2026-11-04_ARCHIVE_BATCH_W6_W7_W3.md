@@ -119,3 +119,11 @@
 - Přeloženy **Epizoda 11 — Brána prvního hráče** (sedm cest) a **Epizoda 12 — Hodina před deštěm** (Bitcoin Pizza Day, emise, obtížnost, rizika).
 - **Sůl této země: 12/12 EN** — knihovna přepíná štítek na `CZ + EN`.
 - Celkem **62/189** kapitol (32,8 %).
+
+
+---
+
+## Doplnění 2026-11-05 (9) — Surta Srdce, kapitoly 1–2
+
+- Přeloženy **Dopis pro Surtu (prolog)**, **První brána — gate** a **Druhá brána — gate**.
+- Surta Srdce: **3/9 EN**; celkem **65/189** kapitol (34,4 %).
