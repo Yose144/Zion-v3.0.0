@@ -300,6 +300,31 @@ WebGL se táhne a druhý kontext by měřil latenci, ne hru.
    `NEXT_PUBLIC_NIRVANA_NET_URL`; lokální `.next` proto není důkaz o buildu. Deploy skript
    buildí sám.
 
+### Nasazeno (2026-11-05, 14:00 UTC)
+
+| krok | release | ověření |
+|---|---|---|
+| `deploy-nirvana-net.sh` | `20261105T140031Z` | `/net/health` → `proto 31` |
+| `deploy-nirvana.sh --artifact-dir` | `20261105T140642Z` | `/api/health` → `proto_match: true`, smoke 7/7 |
+
+App artefakt se **nestavěl z pracovního stromu** (paralelní session tam má rozdělanou Lumi
+práci a `.next` může být kontaminovaný cizím buildem), ale z **čistého worktree na commitu
+`8eb02aaef`**: `git worktree add`, `cp -al node_modules` (hardlink klon — symlink rozbije
+standalone strom), `next build`, zploštění artefaktu a `--artifact-dir`, takže deploy skript
+už jen rsyncoval hotový strom. Před nasazením se v bundlu kontrolovalo, že neobsahuje cizí
+`ws://127.0.0.1:<port>` (nález z dřívějška: souběžný build umí do `.next` vnést cizí
+`NEXT_PUBLIC_*`).
+
+**Živě ověřeno:** app i net `active`, oba `proto 31`, `/fleet` → 307 (ZAP brána), všech 7 GLB
+200, v nasazeném klientu je `t:"flight"`, `fleet-` i `proto:31`. Dva WS klienti proti
+produkci dostanou `welcome proto 31` a `join` je odmítnut `pass_required` — brána platí i na
+WS vrstvě. **Plný dvouklientový test místnosti na produkci neproběhl**: vyžaduje platný ZAP
+pass a použít zákaznický kód z `archive-market-codes.json` by nebylo v pořádku. Stejný kód
+je ověřený lokálně (12/12).
+
+Rollback: předchozí strom zůstává v `/opt/zion/APP&WEB/nirvana.before-20261105T140642Z`
+a `/opt/zion/APP&WEB/nirvana-net.before-20261105T140031Z`.
+
 ### Pořadí nasazení (důležité)
 
 `PROTO_VERSION` je **31**, živá net služba je na **30**. Platí pravidlo: **nejdřív

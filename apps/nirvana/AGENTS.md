@@ -2319,8 +2319,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   `ShipSpec | undefined`, fallback potřebuje `!`.
 - **Origin allowlist:** bez `NIRVANA_NET_ALLOWED_ORIGINS` služba zavře spojení
   z `:3010` (403) a hra zůstane „offline" bez chybové zprávy. V E2E to nastavuj.
-- **Pořadí deploye:** `deploy-nirvana-net.sh` **první**, pak appka (proto 31 vs 30).
-  `deploy-nirvana.sh` to kontroluje sám a při novějším klientovi se zastaví.
+- **Pořadí deploye:** `deploy-nirvana-net.sh` **první**, pak appka. `deploy-nirvana.sh`
+  to kontroluje sám (`nirvana-proto-check.sh`) a při novějším klientovi se zastaví.
+  **Nasazeno 2026-11-05:** net `20261105T140031Z`, app `20261105T140642Z` (artefakt
+  z čistého worktree na `8eb02aaef`, protože pracovní strom měl cizí rozpracovanou práci
+  a `.next` mohl být kontaminovaný cizím buildem).
 - **Testy:** `apps/nirvana-net/test/fleet.mjs` (24 kontrol, server) a
   `apps/nirvana/e2e/fleet-online.mjs` (12, appka ↔ net; protistrana je Node WS
   klient, ne druhé okno — headless WebGL by měřil latenci, ne hru). Online test
