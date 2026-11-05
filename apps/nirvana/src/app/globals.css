@@ -8211,11 +8211,15 @@ a.game-hud-chip.is-lumi em {
   min-height: 100dvh;
   background: radial-gradient(circle at 50% 18%, #0d1523 0%, #05070c 62%, #030408 100%);
   color: #e7eefb;
-  overflow: hidden;
 }
 
+/* `overflow: hidden` patří jen letu (plátno je `absolute inset:0`).
+   Na hangáru by z něj byl scrollovací kontejner a `position: sticky` lišta
+   s tlačítkem „Vzlétnout" by se přilepila ke dnu celé stránky, ne k oknu —
+   tlačítko pak zůstalo pod okrajem (odhalil mobilní audit). */
 .fleet.is-flying {
   height: 100dvh;
+  overflow: hidden;
 }
 
 .fleet-canvas {
@@ -8648,6 +8652,39 @@ a.game-hud-chip.is-lumi em {
 
 /* ── malé obrazovky ─────────────────────────────────────────────────── */
 @media (max-width: 760px) {
+  /* Na telefonu je sedm karet vysokých přes celou obrazovku, takže tlačítko
+     „Vzlétnout" zůstávalo pod okrajem. Lišta je proto přilepená dole —
+     hráč nemusí hádat, že má scrollovat. */
+  .fleet-launch {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    margin: 0 -1.2rem;
+    padding: 0.7rem 1.2rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(180deg, rgba(5, 7, 12, 0) 0%, rgba(5, 7, 12, 0.94) 42%);
+    backdrop-filter: blur(6px);
+  }
+
+  /* Bublina chatu je `fixed` vpravo dole (z 60) a sedí přesně v místě téhle
+     lišty — bez pravého insetu přikryje odkaz „Online místnosti" (vidět na
+     prvním mobilním snímku). Odkaz jde pod tlačítko, ne vedle něj. */
+  .fleet-launch {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.45rem;
+    padding-right: calc(1.2rem + 4.4rem);
+  }
+
+  .fleet-launch button {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .fleet-launch a {
+    align-self: center;
+    font-size: 0.76rem;
+  }
+
   .fleet-hud {
     min-width: 0;
     padding: 0.5rem 0.6rem;
@@ -8694,5 +8731,83 @@ a.game-hud-chip.is-lumi em {
 
   .fleet-docked {
     bottom: 12%;
+  }
+}
+
+/* ── LUMI · foto mód (L-5) ─────────────────────────────────────────── */
+
+/* Tlačítko sedí v HUD jako další žeton; nesmí ale spolknout klik na scénu. */
+.lumi-photo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(159, 228, 234, 0.28);
+  background: rgba(8, 20, 32, 0.55);
+  color: #eaf7ff;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.lumi-photo:hover {
+  border-color: rgba(159, 228, 234, 0.6);
+  background: rgba(159, 228, 234, 0.14);
+}
+
+/*
+ * Foto mód schová **veškerý** chrome, aby na snímku zůstala jen obloha.
+ * `opacity` (ne `display`) drží prvky v layoutu — kdyby zmizely, skočila by
+ * kamera i kompas a screenshot by nebyl z toho místa, kde hráč stál.
+ */
+.sky.is-photo .lumi-chrome,
+.sky.is-photo .lumi-hud,
+.sky.is-photo .lumi-hint,
+.sky.is-photo .lumi-goal,
+.sky.is-photo .lumi-fragment,
+.sky.is-photo .lumi-peers,
+.sky.is-photo .lumi-touch {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+/* Jediná cesta zpět — existuje i na mobilu, kde žádný Esc není. */
+.lumi-photo-exit {
+  position: fixed;
+  z-index: 45;
+  right: 1rem;
+  top: 1rem;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(159, 228, 234, 0.3);
+  background: rgba(8, 20, 32, 0.6);
+  color: rgba(234, 247, 255, 0.85);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.lumi-photo-exit em {
+  font-style: normal;
+  font-size: 0.62rem;
+  color: rgba(234, 247, 255, 0.45);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .lumi-photo {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .lumi-photo-exit {
+    min-height: 2.5rem;
+    align-items: center;
   }
 }

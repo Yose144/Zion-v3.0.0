@@ -109,6 +109,18 @@ export async function launch(options = {}) {
 }
 
 /**
+ * Dotykové zařízení.
+ *
+ * `isMobile` + `hasTouch` nestačí jen na viewport — bez nich se v Chromiu
+ * **nevyhodnotí `@media (hover: none) and (pointer: coarse)`**, takže hra
+ * schová dotykové ovládání a audit by mohl „projít" na prázdné obrazovce
+ * (přesně tahle past je zapsaná u mobilního auditu MOBY).
+ */
+/** Tvar je `{ viewport, isMobile, hasTouch }` — projde oběma cestami (Playwright i Puppeteer). */
+export const PHONE = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true };
+export const PHONE_LANDSCAPE = { viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true };
+
+/**
  * Puppeteer fallback.
  *
  * Repo nemá Playwright jako závislost (E2E si ho tahá zvenčí), ale puppeteer
@@ -116,6 +128,15 @@ export async function launch(options = {}) {
  * stejně — rozdíly (viewport, `waitUntil: 'networkidle'`) se srovnají tady,
  * aby testy zůstaly napsané jednou.
  */
+/** Z options vytáhne jen to, co patří do `setViewport` (dotyk, škálování). */
+function pickTouch(options = {}) {
+  const picked = {};
+  for (const key of ['isMobile', 'hasTouch', 'deviceScaleFactor']) {
+    if (options[key] !== undefined) picked[key] = options[key];
+  }
+  return picked;
+}
+
 async function launchPuppeteer(options) {
   const puppeteer = await import('puppeteer');
   const browser = await puppeteer.default.launch({
@@ -127,9 +148,10 @@ async function launchPuppeteer(options) {
   });
 
   return {
-    async newPage({ viewport } = {}) {
+    async newPage({ viewport, ...rest } = {}) {
       const page = await browser.newPage();
-      if (viewport) await page.setViewport(viewport);
+      // `isMobile`/`hasTouch` patří do `setViewport`, ne do `newPage`
+      if (viewport) await page.setViewport({ ...viewport, ...pickTouch(rest) });
       // Playwright umí 'networkidle', puppeteer 'networkidle0'
       const goto = page.goto.bind(page);
       page.goto = (url, opts = {}) =>

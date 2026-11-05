@@ -195,13 +195,52 @@ Test **nespustí** hru bez modelu: `performance.getEntriesByType('resource')` mu
 
 ---
 
+## 6b. Mobil a výkon (druhá vlna, 2026-11-05)
+
+**Mobil** — `apps/nirvana/e2e/fleet-mobile.mjs` → **16/16**. Emuluje `isMobile` + `hasTouch`
+(bez nich se v Chromiu nevyhodnotí `(pointer: coarse)` a hra dotykové ovládání vůbec nevykreslí —
+proto je `PHONE`/`PHONE_LANDSCAPE` v `e2e/_browser.mjs` a `pickTouch` v puppeteer větvi).
+
+Test měří **důsledek, ne počet tlačítek**: po stisku PLYN musí loď zrychlit
+(`0,9 → 3,5`), po stisku ← se musí změnit kurz. Dále: 7 dotykových tlačítek ≥ 44 px,
+HUD nepřekrývá pad, panel doku se vejde do obrazu, tlačítka doku ≥ 38 px,
+na šířku (844 × 390) nic nepřetéká a ovládání zůstane celé v obraze.
+
+**Dvě chyby, které to odhalilo (obojí reálné, ne kosmetika):**
+
+1. **Tlačítko „Vzlétnout" bylo na telefonu pod okrajem.** Sedm karet je vyšších než
+   displej, takže se na CTA muselo scrollovat — a nikdo to neuhodne. Lišta je teď
+   `position: sticky` dole. **Past:** `.fleet` měl `overflow: hidden`, takže sticky
+   se lepilo ke dnu *celé stránky*, ne k oknu, a tlačítko zůstalo mimo obraz.
+   `overflow: hidden` proto patří jen `.fleet.is-flying`.
+2. **Bublina chatu (`fixed`, z 60) seděla přes odkaz „Online místnosti".** Na ≤760 px
+   má lišta pravý inset `4,4rem` a odkaz jde pod tlačítko.
+
+**Výkon** (1440 × 900, M1 Metal, `?fleetDebug=1` → `renderer()`):
+
+| metrika | hodnota | strop |
+|---|---|---|
+| draw calls | **21** | < 200 (univerzum 175) |
+| trojúhelníky | **25 960** | < 120 000 (univerzum 90 k) |
+| textury | **4** | 32 (univerzum 21) |
+| fps | **60** | ≥ 30 |
+
+Pro srovnání: lucerna v Lumi má 13 k tris sama o sobě; celá flotila i s carrierem
+a stanicí je pod polovinou scény univerza.
+
+**Past s E2E:** `npx next start` se zabíjí špatně (`child.kill()` ukončí jen wrapper,
+`next-server` zůstane na portu) — druhý běh auditu pak mluvil se starou instancí bez
+oracle stubu a test prošel na ZAP bráně. Proto `e2e/_app.mjs`: spouští binárku přímo,
+`detached: true` a zabíjí celou procesní skupinu; když appka už běží, **řekne nahlas**,
+že brána nevrací `access:true`.
+
+---
+
 ## 7. Meze (co se nemá hlásit jako hotové)
 
 * **Multiplayer není.** Let je sólo; `nirvana-net` (`Match` kontrakt) je připravený, ale
   vyžaduje bump protokolu a deploy net-first.
-* **Mobil nebyl ověřen na zařízení ani emulací `coarse`.** Dotykové ovládání je
-  implementované (`TouchButton`), layout má media queries, ale audit běžel na desktopu —
-  tvrzení „funguje na telefonu" by bylo nepodložené.
+* **Mobil ověřen emulací (`isMobile` + `hasTouch`), ne na skutečném zařízení.** Detail v §6b.
 * **VR není.** Scéna nemá `<XR>`; kamera je cinematic (v headsetu by to „letělo hlavou").
 * **LOD není.** 7 × ~16 k tris je v rozpočtu scény (univerzum má 90 k), ale při multiplayeru
   s deseti loděmi se to bude muset řešit zjednodušením.

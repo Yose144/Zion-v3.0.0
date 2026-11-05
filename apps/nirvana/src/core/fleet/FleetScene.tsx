@@ -323,7 +323,7 @@ function Flight({
   undockSignal,
   debug,
 }: FleetCanvasProps) {
-  const { camera, clock } = useThree();
+  const { camera, clock, gl } = useThree();
   const input = useRef<ShipInput>({ throttle: 0, yaw: 0, pitch: 0, roll: 0, boost: false, brake: false });
   const state = useRef<ShipState>(createShip(spec, start));
   const docks = useRef<Dock[]>([]);
@@ -415,6 +415,14 @@ function Flight({
         speed: (value: number) => {
           state.current.speed = value;
         },
+        // Výkon scény — bez tohohle se „měří" odhadem. Čte se `gl.info`
+        // hned po snímku, takže čísla patří poslednímu vykreslenému framu.
+        renderer: () => ({
+          calls: gl.info.render.calls,
+          triangles: gl.info.render.triangles,
+          geometries: gl.info.memory.geometries,
+          textures: gl.info.memory.textures,
+        }),
         dock: (id: string) => {
           const dock = dockTargets(clock.elapsedTime).find((entry) => entry.id === id);
           if (!dock) return false;

@@ -17,16 +17,12 @@
  *   FLEET_URL=https://… node apps/nirvana/e2e/fleet.mjs   # proti běžící instanci
  */
 
-import { createServer } from 'node:http';
-import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 import { launch } from './_browser.mjs';
+import { ensureApp, grantPass } from './_app.mjs';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const repo = resolve(here, '../../..');
-const BASE = process.env.FLEET_URL ?? 'http://127.0.0.1:3010';
+const repo = resolve(import.meta.dirname, '../../..');
 const SHOTS = resolve(repo, '.artifacts/render/fleet');
 
 let passed = 0;
@@ -43,16 +39,6 @@ const check = (name, ok, detail = '') => {
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 
-/** Stub ZAP oracle — lokální běh nemá jak ověřit skutečný kód. */
-async function startOracle() {
-  const server = createServer((request, response) => {
-    response.writeHead(200, { 'content-type': 'application/json' });
-    response.end(JSON.stringify({ valid: true }));
-  });
-  await new Promise((done) => server.listen(9099, '127.0.0.1', done));
-  return server;
-}
-
 /** Počká na `predicate` v prohlížeči; polluje z Node (ne `waitForFunction`). */
 async function waitFor(page, fn, timeout = 20000, label = 'stav') {
   const started = Date.now();
@@ -65,29 +51,9 @@ async function waitFor(page, fn, timeout = 20000, label = 'stav') {
 }
 
 async function main() {
-  const oracle = await startOracle();
-  const app = process.env.FLEET_URL
-    ? null
-    : spawn('npx', ['next', 'start', '-p', '3010'], {
-        cwd: resolve(repo, 'apps/nirvana'),
-        env: {
-          ...process.env,
-          ZION_RENDER_AUDIT: '1',
-          ARCHIVE_VERIFY_URL: 'http://127.0.0.1:9099/verify',
-        },
-        stdio: 'ignore',
-      });
-
-  // než appka naběhne
-  for (let i = 0; i < 60; i += 1) {
-    try {
-      const res = await fetch(`${BASE}/api/health`, { headers: { 'x-render-audit': '1' } });
-      if (res.ok) break;
-    } catch {
-      // ještě neběží
-    }
-    await sleep(1000);
-  }
+  const app = await ensureApp({ base: process.env.FLEET_URL ?? 'http://127.0.0.1:3010' });
+  const BASE = app.base;
+  const host = new URL(BASE).hostname;
 
   await mkdir(SHOTS, { recursive: true });
   if (!process.env.ZION_GPU) process.env.ZION_GPU = 'metal';
@@ -99,10 +65,7 @@ async function main() {
     if (message.type() === 'error') errors.push(message.text());
   });
 
-  await page.context?.().addCookies?.([
-    { name: 'zion_nirvana_pass', value: 'ZAP-AUDIT0000000', domain: '127.0.0.1', path: '/' },
-  ]);
-  await page.setCookie?.({ name: 'zion_nirvana_pass', value: 'ZAP-AUDIT0000000', domain: '127.0.0.1', path: '/' });
+  await grantPass(page, host);
 
   console.log('\n▸ hangár');
   await page.goto(`${BASE}/fleet?fleetDebug=1`, { waitUntil: 'networkidle' });
@@ -186,11 +149,35 @@ async function main() {
   await sleep(1200);
   await page.screenshot({ path: `${SHOTS}/flight.png` });
 
+  console.log('\n▸ výkon');
+  const renderer = await page.evaluate(() => window.__fleetDebug.renderer());
+  const fps = await page.evaluate(
+    () =>
+      new Promise((done) => {
+        let frames = 0;
+        const start = performance.now();
+        const tick = () => {
+          frames += 1;
+          if (performance.now() - start < 1500) requestAnimationFrame(tick);
+          else done(Math.round((frames / (performance.now() - start)) * 1000));
+        };
+        requestAnimationFrame(tick);
+      }),
+  );
+  console.log(
+    `  · ${renderer.calls} draw calls · ${renderer.triangles} trojúhelníků · ` +
+      `${renderer.textures} textur · ${renderer.geometries} geometrií · ${fps} fps`,
+  );
+  // Strop scény univerza je ~175 draw calls / 90 k tris; flotila je jeden svět,
+  // takže se do něj musí vejít i s carrierem a stanicí.
+  check('draw calls pod 200', renderer.calls < 200, String(renderer.calls));
+  check('trojúhelníky pod 120 k', renderer.triangles < 120000, String(renderer.triangles));
+  check('fps ≥ 30 (Metal)', fps >= 30, `${fps} fps`);
+
   check('v konzoli nejsou chyby', errors.filter((line) => !line.includes('401')).length === 0, errors.slice(0, 3).join(' | '));
 
   await browser.close();
-  oracle.close();
-  if (app) app.kill();
+  app.stop();
   console.log(`\n${failed === 0 ? '✓' : '✗'} fleet-audit: ${passed} prošlo, ${failed} selhalo\n`);
   process.exit(failed === 0 ? 0 : 1);
 }
