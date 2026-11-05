@@ -84,7 +84,7 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
       camera.lookAt(0, 0, 0);
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(width, height);
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -111,9 +111,14 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
       key.position.set(1.6, 2.4, 1.8);
       scene.add(key);
 
-      const rim = new THREE.DirectionalLight(0x7fa8ff, 0.5);
+      const rim = new THREE.DirectionalLight(0x7fa8ff, 0.9);
       rim.position.set(-1.8, 0.9, -1.6);
       scene.add(rim);
+
+      // zadní obrysové světlo: bez podlahy by se lampion ztrácel ve tmě
+      const backLight = new THREE.DirectionalLight(0xffc98a, 0.7);
+      backLight.position.set(0.9, 1.4, -2.2);
+      scene.add(backLight);
 
       const candle = new THREE.PointLight(0xffa63c, 0.5, 0.36, 2);
       candle.position.set(0, 0.02, 0);
@@ -193,7 +198,7 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
           dgeo,
           new THREE.PointsMaterial({
             color: 0xeaf2ff,
-            size: 0.011,
+            size: 0.0045,
             map: snowTex,
             alphaTest: 0.02,
             transparent: true,
@@ -204,43 +209,6 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
         );
         scene.add(dust);
       }
-
-      // ── Odlesk pod lampionem (jemný světelný disk) ──────────────────
-      const glowCanvas = document.createElement('canvas');
-      glowCanvas.width = glowCanvas.height = 256;
-      const gctx = glowCanvas.getContext('2d')!;
-      const grad = gctx.createRadialGradient(128, 128, 0, 128, 128, 128);
-      grad.addColorStop(0, 'rgba(255,186,92,0.55)');
-      grad.addColorStop(0.45, 'rgba(255,150,60,0.16)');
-      grad.addColorStop(1, 'rgba(0,0,0,0)');
-      gctx.fillStyle = grad;
-      gctx.fillRect(0, 0, 256, 256);
-      const glowTex = new THREE.CanvasTexture(glowCanvas);
-      const glow = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.05, 1.05),
-        new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
-      );
-      glow.rotation.x = -Math.PI / 2;
-      glow.position.y = -0.4;
-      scene.add(glow);
-
-      // kontaktní stín — tmavý měkký disk, ať lampion stojí a nevznáší se
-      const shCanvas = document.createElement('canvas');
-      shCanvas.width = shCanvas.height = 256;
-      const sctx = shCanvas.getContext('2d')!;
-      const sgrad = sctx.createRadialGradient(128, 128, 0, 128, 128, 128);
-      sgrad.addColorStop(0, 'rgba(0,0,0,0.62)');
-      sgrad.addColorStop(0.55, 'rgba(0,0,0,0.22)');
-      sgrad.addColorStop(1, 'rgba(0,0,0,0)');
-      sctx.fillStyle = sgrad;
-      sctx.fillRect(0, 0, 256, 256);
-      const shTex = new THREE.CanvasTexture(shCanvas);
-      const shadow = new THREE.Mesh(
-        new THREE.PlaneGeometry(1, 1),
-        new THREE.MeshBasicMaterial({ map: shTex, transparent: true, depthWrite: false }),
-      );
-      shadow.rotation.x = -Math.PI / 2;
-      scene.add(shadow);
 
       // ── Model ───────────────────────────────────────────────────────
       const pivot = new THREE.Group();
@@ -361,11 +329,7 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
           maxZ = fitDist * 1.9;
 
           // podstavec a prach držíme ve stejných proporcích jako model
-          glow.scale.setScalar(radius * 2.3);
-          glow.position.y = -radius * 1.08;
-          shadow.scale.setScalar(radius * 1.5);
-          shadow.position.y = -radius * 1.06;
-          if (dust) dust.scale.setScalar(Math.max(1, radius * 3.4));
+          if (dust) dust.scale.setScalar(radius * 2.2);
 
           model.traverse((obj) => {
             const mesh = obj as import('three').Mesh;
@@ -393,36 +357,6 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
           });
 
           // ── Zimní zem: sníh, na kterém lampion stojí ────────────────
-          // okraj sněhu do ztracena, aby nebyl vidět kruh ve tmě
-          const groundAlphaCanvas = document.createElement('canvas');
-          groundAlphaCanvas.width = groundAlphaCanvas.height = 256;
-          const gactx = groundAlphaCanvas.getContext('2d')!;
-          const ggrad = gactx.createRadialGradient(128, 128, 0, 128, 128, 128);
-          ggrad.addColorStop(0, 'rgba(255,255,255,1)');
-          ggrad.addColorStop(0.55, 'rgba(255,255,255,0.92)');
-          ggrad.addColorStop(0.86, 'rgba(255,255,255,0.25)');
-          ggrad.addColorStop(1, 'rgba(255,255,255,0)');
-          gactx.fillStyle = ggrad;
-          gactx.fillRect(0, 0, 256, 256);
-          const groundAlpha = new THREE.CanvasTexture(groundAlphaCanvas);
-
-          const snowGround = new THREE.Mesh(
-            new THREE.CircleGeometry(radius * 8, 64),
-            new THREE.MeshStandardMaterial({
-              color: 0x64748b,
-              roughness: 1,
-              metalness: 0,
-              envMapIntensity: 0.15,
-              transparent: true,
-              alphaMap: groundAlpha,
-              depthWrite: true,
-            }),
-          );
-          snowGround.rotation.x = -Math.PI / 2;
-          snowGround.position.y = floorY - 0.0005;
-          snowGround.receiveShadow = shadowsOn;
-          scene.add(snowGround);
-
           // ── Měsíc: studené světlo zleva, vrhá stín po sněhu ────────
           const moonDir = new THREE.DirectionalLight(0xdce8ff, shadowsOn ? 1.15 : 0.6);
           moonDir.position.set(-radius * 7, radius * 6, radius * 5);
@@ -430,7 +364,7 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
           scene.add(moonDir.target);
           if (shadowsOn) {
             moonDir.castShadow = true;
-            moonDir.shadow.mapSize.set(1024, 1024);
+            moonDir.shadow.mapSize.set(2048, 2048);
             moonDir.shadow.camera.near = radius * 1.5;
             moonDir.shadow.camera.far = radius * 30;
             moonDir.shadow.camera.left = -radius * 2.4;
@@ -438,7 +372,7 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
             moonDir.shadow.camera.top = radius * 2.4;
             moonDir.shadow.camera.bottom = -radius * 2.4;
             moonDir.shadow.bias = -0.0007;
-            moonDir.shadow.radius = 3;
+            moonDir.shadow.radius = 4;
           }
           scene.add(moonDir);
 
@@ -457,8 +391,8 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
           const moonSprite = new THREE.Sprite(
             new THREE.SpriteMaterial({ map: moonTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
           );
-          moonSprite.scale.setScalar(radius * 5.2);
-          moonSprite.position.set(-radius * 4.6, radius * 1.9, -radius * 8);
+          moonSprite.scale.setScalar(radius * 3.2);
+          moonSprite.position.set(-radius * 4.8, radius * 2.1, -radius * 13);
           scene.add(moonSprite);
 
           // ── Hořící svíčka uvnitř lampionu ──────────────────────────
@@ -512,7 +446,10 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
             const { UnrealBloomPass } = await import('three/examples/jsm/postprocessing/UnrealBloomPass.js');
             const { OutputPass } = await import('three/examples/jsm/postprocessing/OutputPass.js');
 
-            const comp = new EffectComposer(renderer);
+            // MSAA render target — jinak jsou hrany vyřezávaných ornamentů zubaté
+            const bufferSize = renderer.getDrawingBufferSize(new THREE.Vector2());
+            const rt = new THREE.WebGLRenderTarget(bufferSize.x, bufferSize.y, { samples: 4 });
+            const comp = new EffectComposer(renderer, rt);
             comp.addPass(new RenderPass(scene, camera));
             const bloom = new UnrealBloomPass(new THREE.Vector2(width, height), 0.16, 0.4, 1.25);
             comp.addPass(bloom);
@@ -544,13 +481,11 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
             flame.position.x = Math.sin(t * 5.2) * radius * 0.006;
             flameCore.scale.copy(flame.scale).multiplyScalar(0.92);
             flameCore.position.copy(flame.position);
-            candle.intensity = 0.3 * flick + 0.04;
+            candle.intensity = 0.38 * flick + 0.05;
             candle.position.x = Math.sin(t * 4.4) * radius * 0.008;
             candle.position.z = Math.cos(t * 3.8) * radius * 0.008;
 
             moonDir.intensity = (shadowsOn ? 1.15 : 0.6) + Math.sin(t * 0.4) * 0.05;
-
-            glow.material.opacity = 0.42 + Math.sin(t * 1.9) * 0.05;
 
             // hvězdy se otáčejí, chumelenice padá
             galaxyGroup.rotation.y = t * 0.008;
@@ -589,10 +524,8 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
             composer?.dispose();
             envRT.dispose();
             pmrem.dispose();
-            glowTex.dispose();
             moonTex.dispose();
             snowTex.dispose();
-            groundAlpha.dispose();
             renderer.dispose();
             renderer.domElement.remove();
             scene.traverse((o) => {
