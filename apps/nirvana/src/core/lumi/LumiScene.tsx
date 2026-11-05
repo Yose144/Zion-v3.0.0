@@ -14,7 +14,7 @@
  * Simulace je v `flight.ts`; tady se jen čte a kreslí.
  */
 
-import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -28,10 +28,10 @@ import {
   type FlightState,
 } from './flight';
 import { LUMI_HEIGHT, LUMI_WIDTH, type LumiLight, type LumiPath } from './world';
+import { createTrail, pruneTrail, pushTrail, trailFade, TRAIL_LEN, type TrailPoint } from './trail';
 import { play, playTone } from '@/core/audio/engine';
 
-/** Jeden vzdálený letec (relay ze serveru). */
-export interface LumiRemote {
+/** Jeden vzdálený letec (relay ze serveru). */export interface LumiRemote {
   id: string;
   name: string;
   x: number;
@@ -73,6 +73,12 @@ const KEY_MAP: Record<string, keyof FlightInput> = {
   ArrowRight: 'right',
   KeyD: 'right',
 };
+
+/**
+ * Stopa za lucernou (L-3): logika je v `trail.ts` (testuje se bez WebGL),
+ * tady se jen plní instance a barvy. Čísla (`TRAIL_LEN`, `TRAIL_STEP`,
+ * `TRAIL_TTL`) patří tam, ne sem.
+ */
 
 /**
  * Měkká kruhová textura (radiální přechod) pro mraky a proudy.
@@ -420,42 +426,85 @@ function Lumi({ state, detail }: { state: React.MutableRefObject<FlightState>; d
   const lantern = useRef<THREE.Group>(null);
   const trail = useRef<THREE.InstancedMesh>(null);
   const tmp = useMemo(() => new THREE.Object3D(), []);
-  const history = useRef<{ x: number; y: number }[]>([]);
+  const sparkColor = useMemo(() => new THREE.Color(), []);
+  /**
+   * Stopa za lucernou (L-3) — vzorky jdou přes `trail.ts`, aby se dala
+   * logika testovat v Node a nemohla se rozejít s testy.
+   */
+  const history = useRef<TrailPoint[]>(createTrail());
+  /** Na mobilu se stopa vůbec nekreslí — 24 dalších instancí nemá cenu. */
+  const trailOn = detail;
+
+  // Barvy instancí musí existovat dřív, než je frame poprvé zapíše —
+  // `instanceColor` se jinak vytvoří až za běhu a materiál by se rekompiloval.
+  useLayoutEffect(() => {
+    const mesh = trail.current;
+    if (!mesh) return;
+    sparkColor.setRGB(0, 0, 0);
+    for (let index = 0; index < TRAIL_LEN; index += 1) mesh.setColorAt(index, sparkColor);
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  }, [sparkColor]);
 
   useFrame(({ clock }) => {
     const flight = state.current;
+    const now = clock.elapsedTime;
     const tilt = Math.max(-0.45, Math.min(0.45, flight.vy / 45));
     if (group.current) {
       group.current.position.set(flight.x, flight.y, 2);
       group.current.rotation.z = -tilt;
       group.current.rotation.y = flight.vx >= 0 ? 0.25 : -0.25;
       // jemné nadnášení — postava nikdy nestojí dokonale rovně
-      group.current.position.y += Math.sin(clock.elapsedTime * 1.6) * 0.12;
+      group.current.position.y += Math.sin(now * 1.6) * 0.12;
     }
     if (lantern.current) {
       // lucerna se houpe protisměrně k pohybu, jako když ji nese v ruce
-      lantern.current.rotation.z = tilt * 0.9 + Math.sin(clock.elapsedTime * 1.9) * 0.08;
+      lantern.current.rotation.z = tilt * 0.9 + Math.sin(now * 1.9) * 0.08;
     }
 
-    // stopa: posledních 18 pozic jako jiskry z lucerny
-    history.current.push({ x: flight.x, y: flight.y });
-    if (history.current.length > 18) history.current.shift();
-    if (trail.current) {
-      history.current.forEach((point, index) => {
-        const k = index / history.current.length;
-        tmp.position.set(point.x, point.y - 0.4, 1.7);
-        tmp.scale.setScalar(0.12 + k * 0.3);
-        tmp.rotation.set(0, 0, 0);
-        tmp.updateMatrix();
-        trail.current!.setMatrixAt(index, tmp.matrix);
-      });
-      for (let i = history.current.length; i < 18; i += 1) {
-        tmp.position.set(0, 0, -1000);
-        tmp.updateMatrix();
-        trail.current.setMatrixAt(i, tmp.matrix);
+    const mesh = trail.current;
+    if (!mesh) return;
+
+    if (!trailOn) {
+      // Jednorázově odklidit a dál nic nepočítat (mobil).
+      if (history.current.length) {
+        history.current = createTrail();
+        for (let index = 0; index < TRAIL_LEN; index += 1) {
+          tmp.position.set(0, 0, -1000);
+          tmp.scale.setScalar(0);
+          tmp.updateMatrix();
+          mesh.setMatrixAt(index, tmp.matrix);
+        }
+        mesh.instanceMatrix.needsUpdate = true;
       }
-      trail.current.instanceMatrix.needsUpdate = true;
+      return;
     }
+
+    pushTrail(history.current, flight.x, flight.y - 0.4, now);
+    pruneTrail(history.current, now);
+
+    for (let index = 0; index < TRAIL_LEN; index += 1) {
+      const point = history.current[index];
+      if (!point) {
+        tmp.position.set(0, 0, -1000);
+        tmp.scale.setScalar(0);
+        tmp.updateMatrix();
+        mesh.setMatrixAt(index, tmp.matrix);
+        sparkColor.setRGB(0, 0, 0);
+        mesh.setColorAt(index, sparkColor);
+        continue;
+      }
+      const fade = trailFade(point, now);
+      // nejmladší je největší a nejjasnější; nejstarší se rozpustí do nuly
+      tmp.position.set(point.x, point.y, 1.7);
+      tmp.scale.setScalar(0.06 + fade * 0.16);
+      tmp.rotation.set(0, 0, 0);
+      tmp.updateMatrix();
+      mesh.setMatrixAt(index, tmp.matrix);
+      sparkColor.setRGB(1, 0.9, 0.72).multiplyScalar(fade * 0.9);
+      mesh.setColorAt(index, sparkColor);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   });
 
   return (
@@ -499,9 +548,16 @@ function Lumi({ state, detail }: { state: React.MutableRefObject<FlightState>; d
           <Lantern energy={state.current.energy} detail={detail} />
         </group>
       </group>
-      <instancedMesh ref={trail} args={[undefined, undefined, 18]} frustumCulled={false}>
+      <instancedMesh ref={trail} args={[undefined, undefined, TRAIL_LEN]} frustumCulled={false}>
         <sphereGeometry args={[1, 8, 6]} />
-        <meshBasicMaterial color="#ffe9b8" transparent opacity={0.42} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial
+          color="#ffe9b8"
+          transparent
+          opacity={0.55}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          toneMapped={false}
+        />
       </instancedMesh>
     </>
   );

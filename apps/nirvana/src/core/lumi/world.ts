@@ -273,8 +273,89 @@ export const LUMI_PATHS: Record<LumiPathId, LumiPath> = {
   },
 };
 
-export function pathData(id: LumiPathId): LumiPath {
-  return LUMI_PATHS[id] ?? LUMI_PATHS.calm;
+/**
+ * Denní obloha (L-7).
+ *
+ * Každý den se sedm světel posune, ale **deterministicky**: stejný den (UTC)
+ * = stejná obloha pro všechny — což je podmínka, aby se dva lidé ve společném
+ * letu potkali u stejných světel. `Math.random()` by tuhle vlastnost zabil,
+ * proto se seed bere z data.
+ *
+ * Co se nehýbe: id světel, jejich texty, proudy, ostrovy i svatyně. Mění se
+ * jen poloha, a to v pásu ±9 jednotek kolem základní pozice z `LUMI_LIGHTS`.
+ */
+function hashSeed(text: string): number {
+  let hash = 2166136261 >>> 0;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return hash;
+}
+
+/** Pseudonáhodné číslo 0–1 z hashe — deterministické napříč prohlížeči. */
+function unit(seed: number, salt: number): number {
+  let x = (seed ^ Math.imul(salt + 1, 0x9e3779b9)) >>> 0;
+  x ^= x >>> 16;
+  x = Math.imul(x, 0x7feb352d) >>> 0;
+  x ^= x >>> 15;
+  x = Math.imul(x, 0x846ca68b) >>> 0;
+  x ^= x >>> 16;
+  return x / 0xffffffff;
+}
+
+/** `YYYY-MM-DD` v UTC — společná hodnota pro všechny klienty. */
+export function dayKey(date: Date = new Date()): string {
+  return date.toISOString().slice(0, 10);
+}
+
+const DAY_RANGE = 9;
+const dailyCache = new Map<string, LumiLight[]>();
+
+/**
+ * Světla cesty pro daný den. Bez data = dnešek (UTC).
+ *
+ * Vrací **nová** pole (ne objekty z `LUMI_PATHS`), aby si simulace ani scéna
+ * nemohly přepsat základní data.
+ */
+export function lightsFor(pathId: LumiPathId, date: Date = new Date()): LumiLight[] {
+  const path = LUMI_PATHS[pathId] ?? LUMI_PATHS.calm;
+  const day = dayKey(date);
+  const key = `${path.id}:${day}`;
+  const cached = dailyCache.get(key);
+  if (cached) return cached;
+
+  const seed = hashSeed(key);
+  const shrine = path.shrine;
+  const shifted = path.lights.map((light) => {
+    const dx = (unit(seed, light.id * 2) - 0.5) * 2 * DAY_RANGE;
+    const dy = (unit(seed, light.id * 2 + 1) - 0.5) * 2 * DAY_RANGE;
+    let x = Math.min(LUMI_WIDTH - 10, Math.max(10, light.x + dx));
+    let y = Math.min(LUMI_HEIGHT - 10, Math.max(10, light.y + dy));
+
+    // Světlo nesmí spadnout do svatyně — hráč by ho „sebral" až u cíle
+    // a poslední kus cesty by byl bez hledání.
+    const away = Math.hypot(x - shrine.x, y - shrine.y);
+    const keepOut = shrine.r + 6;
+    if (away < keepOut) {
+      const k = away === 0 ? 1 : (keepOut + 2) / away;
+      x = Math.min(LUMI_WIDTH - 8, Math.max(8, shrine.x + (x - shrine.x) * k));
+      y = Math.min(LUMI_HEIGHT - 8, Math.max(8, shrine.y + (y - shrine.y) * k));
+    }
+
+    return { ...light, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+  });
+
+  // Cache drží jen dnešek a včerejšek — dlouhý běh serveru nemá růst.
+  if (dailyCache.size > 12) dailyCache.clear();
+  dailyCache.set(key, shifted);
+  return shifted;
+}
+
+/** Cesta s **dnešní** oblohou. Jediné místo, kudy se k datům chodí. */
+export function pathData(id: LumiPathId, date: Date = new Date()): LumiPath {
+  const path = LUMI_PATHS[id] ?? LUMI_PATHS.calm;
+  return { ...path, lights: lightsFor(path.id, date) };
 }
 
 /** Dárek na konci: nechat si, nebo darovat. Texty i odměna. */

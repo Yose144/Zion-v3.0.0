@@ -2171,6 +2171,29 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Netestuj `opacity === '0'`.** Přechod 0,25 s vrátí `1.04542e-08`; test musí
   porovnávat číslo (`< 0.05`).
 
+## Lumi — stopa a denní obloha (2026-11-05)
+
+- **Stopa se nevzorkuje každým snímkem.** `core/lumi/trail.ts` drží `pushTrail`
+  (vzorek po `TRAIL_STEP` = 0,55 j.), `pruneTrail` (`TRAIL_TTL` = 1,3 s) a
+  `trailFade`. Kdyby se plnila každým framem, měl by hráč na 60 fps stopu 0,3 s
+  a na 20 fps tři sekundy — jinou hru podle výkonu stroje. Test to hlídá
+  (`test/lumi-trail.mjs`, 15 kontrol, včetně „stejná dráha na 60/20 fps“).
+- **Jas jde přes `setColorAt`, ne `opacity`.** `opacity` je u `instancedMesh`
+  společná pro všechny instance, takže by zhasla celá stopa naráz. Aditivní
+  blending + barva k nule = plynulé doznívání; `instanceColor` musí existovat
+  **před prvním framem** (`useLayoutEffect`), jinak se materiál rekompiluje.
+- **Na mobilu se stopa nekreslí** (`detail = false`) — 24 instancí je na dotyku
+  zbytečných a `detail` už řídí i model lucerny.
+- **Denní obloha patří do `world.ts`, ne do stránky.** `lightsFor(pathId, date)`
+  posune světla podle data v **UTC** (stejný den = stejná obloha pro všechny,
+  jinak by si dva lidé v co-opu nenašli stejná světla). `pathData(id)` je jediná
+  cesta k datům — simulace, scéna i HUD ho volají bez data.
+- **Testy ať čtou `pathData().lights`, ne `LUMI_LIGHTS`.** Statická konstanta je
+  základ, ne dnešní obloha; test, který teleportuje na `LUMI_LIGHTS`, sebrne jen
+  část světel (přesně to se stalo po zavedení L-7 — 3 testy spadly).
+- **Světlo nesmí spadnout do svatyně** (`r + 6`). Kdyby ano, hráč by ho „sebral“
+  až u cíle a poslední úsek cesty by byl bez hledání.
+
 ## Flotila z marketu — `/fleet` (2026-11-05)
 
 - **Lodě jsou produkty z marketu, ne nové assety.** Zdroj jsou STL skládačky

@@ -21,7 +21,7 @@ const {
   nextTarget,
   stepFlight,
 } = await import('../src/core/lumi/flight.ts');
-const { LUMI_LIGHTS, LUMI_PATHS, LUMI_SHRINE, LUMI_GIFT, LUMI_GIFT_BONUS, pathData } = await import(
+const { LUMI_LIGHTS, LUMI_PATHS, LUMI_SHRINE, LUMI_GIFT, LUMI_GIFT_BONUS, pathData, lightsFor } = await import(
   '../src/core/lumi/world.ts'
 );
 
@@ -90,7 +90,9 @@ check('hráč nevyletí nad mapu', ceiling.y <= 100, String(ceiling.y.toFixed(1)
 
 // ── 5) světla ────────────────────────────────────────────────────────
 const collector = createFlight();
-for (const light of LUMI_LIGHTS) {
+// dnešní obloha, ne základní konstanta — jinak by test běžel proti jiné
+// obloze, než jakou hra opravdu vykreslí (L-7)
+for (const light of pathData('calm').lights) {
   collector.x = light.x;
   collector.y = light.y;
   fly(collector, 0.1);
@@ -101,8 +103,8 @@ check('světlo dobije energii', collector.energy > 0);
 
 // světlo se nedá sebrat dvakrát
 const twice = createFlight();
-twice.x = LUMI_LIGHTS[0].x;
-twice.y = LUMI_LIGHTS[0].y;
+twice.x = pathData('calm').lights[0].x;
+twice.y = pathData('calm').lights[0].y;
 fly(twice, 0.1);
 const afterFirst = twice.lights.length;
 fly(twice, 0.6);
@@ -116,7 +118,7 @@ fly(premature, 0.3);
 check('svatyně bez světel neotevře', premature.finished === false);
 
 const finish = createFlight();
-for (const light of LUMI_LIGHTS) {
+for (const light of pathData('calm').lights) {
   finish.x = light.x;
   finish.y = light.y;
   fly(finish, 0.1);
@@ -209,6 +211,39 @@ check('svatyně větrné cesty se otevře', windFlight.finished === true);
 check('darování má bonus', LUMI_GIFT_BONUS > 0, String(LUMI_GIFT_BONUS));
 check('obě volby mají text v cs+en', Boolean(LUMI_GIFT.keep.text.cs && LUMI_GIFT.give.text.en));
 check('volby se jmenují jinak', LUMI_GIFT.keep.label.cs !== LUMI_GIFT.give.label.cs);
+
+// ── 12) denní obloha (L-7) ───────────────────────────────────────────
+{
+  const a = new Date('2026-11-05T08:00:00Z');
+  const b = new Date('2026-11-05T23:30:00Z');
+  const c = new Date('2026-11-06T08:00:00Z');
+
+  const first = lightsFor('calm', a).map((l) => `${l.id}:${l.x},${l.y}`).join('|');
+  const second = lightsFor('calm', b).map((l) => `${l.id}:${l.x},${l.y}`).join('|');
+  const nextDay = lightsFor('calm', c).map((l) => `${l.id}:${l.x},${l.y}`).join('|');
+
+  check('stejný den = stejná obloha', first === second, `${first.slice(0, 40)} vs ${second.slice(0, 40)}`);
+  check('zítra je obloha jiná', first !== nextDay);
+  check('denní obloha má pořád sedm světel', lightsFor('calm', a).length === 7);
+  check(
+    'id světel se nemění (příběh drží)',
+    lightsFor('calm', a).map((l) => l.id).join(',') === '1,2,3,4,5,6,7',
+  );
+
+  const shifted = lightsFor('calm', a);
+  const bounds = shifted.every((l) => l.x >= 8 && l.x <= 92 && l.y >= 8 && l.y <= 92);
+  check('světla zůstanou na mapě', bounds, JSON.stringify(shifted.map((l) => [l.x, l.y])));
+
+  const data = pathData('calm', c);
+  const shrine = data.shrine;
+  const clash = data.lights.some((l) => Math.hypot(l.x - shrine.x, l.y - shrine.y) < shrine.r + 4);
+  check('žádné světlo nesedí ve svatyni', !clash);
+
+  // fyzika i kompas musí vidět stejnou oblohu (jinak by hráč letěl za duchem)
+  const flight = createFlight('calm');
+  check('let zná všech sedm světel', flight.total === 7, String(flight.total));
+  check('start letu není na světle', flight.lights.length === 0);
+}
 
 console.log('');
 if (failures > 0) {
