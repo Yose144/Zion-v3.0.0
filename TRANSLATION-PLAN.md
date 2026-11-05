@@ -1,7 +1,7 @@
 # TRANSLATION PLAN — Zion Archive (CZ → EN)
 
-> **Verze:** 1.3 · **Datum:** 2026-11-05 · **Vlastník:** 👤
-> **Stav:** 86 / 189 překladatelných kapitol (**45,5 %**), zbývá **103 kapitol** (~0,92 MB zdroje)
+> **Verze:** 1.4 · **Datum:** 2026-11-05 · **Vlastník:** 👤
+> **Stav:** 97 / 189 překladatelných kapitol (**51,3 %**), zbývá **92 kapitol** (~0,87 MB zdroje)
 > **Kód:** `apps/website-v2.9` · **Plán archivu:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](docs/plans/ZION-ARCHIVE-COMPLETION.md)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md`](docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md)
 
@@ -56,13 +56,13 @@ vlastní ENindex mimo kapitoly.
 | Miriam | 13 | 0 | **13** | |
 | BodhiGaia | 13 | 0 | **13** | největší objem (180 kB) |
 | MariaCaminho | 12 | 0 | **12** | |
-| Růže | 11 | 0 | **11** | krátké kapitoly |
+| Růže | 11 | **11** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Na Cestě | 2 | 0 | **2** | jedna kapitola 31 kB |
 | Issobella | 11 | 0 | **11** | |
 | Nabukano | 7 | **7** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Kruh Bohyní | 17 | 0 | **17** | |
 | Mise Amenti | 8 | **8** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
-| **CELKEM** | **189** | **86** | **103** | ~0,92 MB zdroje |
+| **CELKEM** | **189** | **97** | **92** | ~0,87 MB zdroje |
 
 Stav kdykoli zjistíš:
 
@@ -92,8 +92,13 @@ Audit `enCoverage: 100`, `missingEn: []`; kicker = `CZ + EN`. Statusy (`ŽIVÉ/S
 `NEDOLOŽENO`, `NEPLATNÝ NÁROK`) překládány doslovně jako `LIVE/BUILDING/HORIZON/HYPOTHESIS/MYTH`,
 `UNSUBSTANTIATED`, `INVALID CLAIM`; čísla (89/5/5/1 %, 23 000+ bloků, 60 s, 512 KiB, `u64::MAX`) nezměněna.
 
-### Růže — 11
-`01-Prazdna-Nadoba` (3k) · `02-Jmeno-Bez-Titulu` (3k) · `03-Trn-Rika-Ne` (3k) · `04-Zahradnik-Zrcadel` (3k) · `05-Kupec-s-Vuni` (3k) · `06-Zahrada-Mnoha-Ruzi` (3k) · `07-Noc-bez-Svedku` (3k) · `08-Dovoleni-Odejit` (3k) · `09-Oba-Brehy` (3k) · `10-Kotva-Pribehu` (8k) · `Epilog-Zahrada-Genesis` (5k)
+### Růže — hotovo (11/11, 2026-11-05)
+Korpusová konvence (`korpus/Ruze/<slug>_EN.md`). Audit `enCoverage: 100`, `missingEn: []`, kicker `CZ + EN`,
+knihovní karta bez `czOnly`. Celý děj = MÝTUS; kotva příběhu (kap. X) přeložena 1:1 včetně tabulky tvrzení
+a smíšených stavů (`LIVE` existence řádku / `BUILDING` metadata / `MYTH` obsah / `UNSUBSTANTIATED` fyzická
+růže / `HORIZON / NOT STARTED` pilot).
+**Konvence jmen (závazná i pro Miriam/Lumi):** `Sára → Sarah`, `Rádha → Radha`, `Lumi`, `Ana`, `Miriam`
+beze změny; `Exupéry` s diakritikou.
 
 ### Issobella — 11
 `01-Jmeno-z-Hvez` (5k) · `02-Kvantovy-Ohen` (5k) · `03-Kolo-Ktere-Drzi-Zem` (4k) · `04-Posadka` (4k) · `05-Dedictvi-Stanic` (5k) · `06-Pet-Procent-Nahoru` (5k) · `07-Hlidac-Na-Okraji` (4k) · `08-Zrcadlo` (4k) · `09-Cesta-Poutnika` (4k) · `10-Kotva-Pravdy-a-Hranice` (6k) · `11-Pozemni-Uzel-Kostarika` (7k)
@@ -235,7 +240,7 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 | **T1** | Surta Srdce ✅ | 9 | hotovo 2026-11-05 |
 | **T2** | Nabukano ✅ | 7 | hotovo 2026-11-05 |
 | **T3** | Mise Amenti ✅ | 8 | hotovo 2026-11-05 |
-| **T4** | Růže | 11 | 3 (krátké) |
+| **T4** | Růže ✅ | 11 | hotovo 2026-11-05 |
 | **T5** | Issobella | 11 | 3 |
 | **T6** | Na Cestě | 2 | 1–2 (jedna 31k) |
 | **T7** | MariaCaminho | 12 | 4 |
@@ -246,7 +251,7 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 | **T12** | Kruh Bohyní | 17 | 5 |
 | **T13** | BodhiGaia | 13 | 5 (největší objem) |
 
-**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **29–39 session-dávek** na zbývajících 103
+**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **26–36 session-dávek** na zbývajících 92
 kapitol. Po každé knize: report + commit + push.
 
 **Alternativní pořadí podle priority 👤:** pokud má být první „hlavní osa“ (Ekam, Quantum
