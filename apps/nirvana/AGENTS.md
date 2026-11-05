@@ -2022,3 +2022,29 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   test tak nemusí znát souřadnice a přežije změnu rozptylu.
 - Test: `test/sky-flight.mjs` 39 kontrol, `.artifacts/probe/sky-audit.mjs`
   24 kontrol.
+
+## Lumi — děvčátko s lucernou (2026-11-05)
+
+- **Jméno světa je Lumi**, ne Křídla. Route `/lumi`, hra v žebříčcích
+  `lumi`, stará `/kridla` **jen přesměruje** (`router.replace`) — odkaz
+  z historie nebo chatu nemá skončit na 404.
+- **Lucerna je skutečný model** (`public/models/lampion.glb`, 4,3 MB,
+  ~250 000 trojúhelníků, původem `heros/…/Lampion_Kralovstvi_srdce_v6.glb`).
+  Normalizuje se podle bounding boxu na výšku 0,55 jednotky, dostane
+  teplé emissive a v ruce se houpe. `Suspense` má primitivní náhradu,
+  takže hra nikdy nečeká na soubor.
+- **Model je drahý**: měřeno 128 draw calls / 259 216 tris / 60 fps na M1
+  (1440×900). Na mobilu (`coarse`) se model vůbec nestahuje a svítí
+  primitivní lucerna. Kdo přidá další 3D asset, měří stejně.
+- **`/models` musí být v `PUBLIC_PREFIXES`** v `middleware.ts` — jinak
+  middleware vrátí 307, `GLTFLoader` dostane HTML a hra tiše pojede na
+  náhradě (přesně to se stalo a audit to odhalil).
+- **Hrdinka je z primitiv** (šaty, hlava, vlasy, paže) a drží jedno
+  měřítko — jde snadno vyměnit za skutečný model, až bude.
+- **Kamera je blízko a mírně napřed** ve směru letu; při pohledu na celou
+  mapu byla postava 20px tečka (první verze).
+- **Text k příběhu nesmí ležet na postavě**: karta je pod hlavičkou
+  (`top: 8.2rem`), ne ve středu — jinak zakryje Lumi i lucernu.
+- Testy: `test/lumi-flight.mjs` (39 kontrol) a
+  `.artifacts/probe/lumi-audit.mjs` (25 kontrol, včetně „model se
+  opravdu stáhl" přes resource timing a měření tri/tris).
