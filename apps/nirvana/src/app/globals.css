@@ -7948,3 +7948,132 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── LUMI · deník a úvodní akce ────────────────────────────────────── */
+
+.lumi-intro-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.lumi-intro-actions .lumi-start {
+  flex: 1 1 auto;
+}
+
+.lumi-journal-open {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.lumi-journal {
+  position: absolute;
+  z-index: 40;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(38rem, calc(100vw - 2.4rem));
+  max-height: min(80dvh, 44rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1rem 1.2rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(159, 228, 234, 0.28);
+  background: rgba(4, 10, 18, 0.94);
+  backdrop-filter: blur(10px);
+  color: rgba(232, 244, 255, 0.85);
+}
+
+.lumi-journal header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.lumi-journal header strong {
+  display: block;
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffe9b0;
+}
+
+.lumi-journal header span {
+  font-size: 0.7rem;
+  color: rgba(232, 244, 255, 0.5);
+}
+
+.lumi-journal-close {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(159, 228, 234, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  color: #eaf7ff;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.lumi-journal ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  overflow-y: auto;
+}
+
+.lumi-journal li {
+  display: grid;
+  grid-template-columns: 1.4rem 1fr;
+  gap: 0.6rem;
+  align-items: start;
+  padding: 0.45rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.lumi-journal li.is-found {
+  border-color: rgba(255, 209, 102, 0.25);
+  background: rgba(255, 209, 102, 0.06);
+}
+
+.lumi-journal-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  border: 1px solid rgba(159, 228, 234, 0.3);
+  font-size: 0.66rem;
+  color: #9fe4ea;
+}
+
+.lumi-journal li.is-found .lumi-journal-index {
+  border-color: rgba(255, 209, 102, 0.6);
+  color: #ffe9b0;
+}
+
+.lumi-journal li p {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: rgba(232, 244, 255, 0.7);
+}
+
+.lumi-journal li.is-found p {
+  color: rgba(255, 245, 224, 0.9);
+}
+
+.lumi-journal-note {
+  margin: 0;
+  font-size: 0.66rem;
+  line-height: 1.5;
+  color: rgba(232, 244, 255, 0.4);
+}

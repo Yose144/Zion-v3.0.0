@@ -21,14 +21,20 @@ import * as THREE from 'three';
 import {
   ENERGY_MAX,
   createFlight,
+  currentAt,
   stepFlight,
   type FlightInput,
   type FlightState,
 } from './flight';
 import { LUMI_HEIGHT, LUMI_WIDTH, type LumiLight, type LumiPath } from './world';
+import { play, playTone } from '@/core/audio/engine';
 
 export interface LumiStats {
   lights: number;
+  /** Rychlost letu (pro zvuk větru a HUD). */
+  speed: number;
+  /** Id sebraných světel (deník je potřebuje, ne jen počet). */
+  lightIds: number[];
   total: number;
   energy: number;
   time: number;
@@ -481,6 +487,8 @@ export function LumiScene({
   const keys = useRef<Record<keyof FlightInput, boolean>>({ up: false, down: false, left: false, right: false });
   const lastReport = useRef(0);
   const finishedSent = useRef(false);
+  /** Zvukové hrany: předchozí stav, aby se nehrálo každý snímek. */
+  const audioEdges = useRef({ inCurrent: false, opened: false });
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
@@ -554,8 +562,29 @@ export function LumiScene({
       // kdyby ho simulace mazala každý krok, telemetrie by ho minula
       const lastLight = flight.lastLight;
       flight.lastLight = null;
+      if (lastLight !== null) {
+        // Výška tónu roste s počtem světel — cesta má být slyšet jako stupnice.
+        const step = Math.max(0, flight.lights.length - 1);
+        const freq = 784 * Math.pow(2, step / 12);
+        play('lightPickup');
+        playTone({ freq, duration: 0.5, type: 'sine', gain: 0.07 });
+        playTone({ freq: freq * 1.5, duration: 0.35, type: 'triangle', gain: 0.035, delay: 0.06 });
+      }
+
+      // Proud vzduchu: nádech při vstupu, ne každý snímek.
+      const inCurrent = currentAt(flight.x, flight.y, flight.path) > 0;
+      if (inCurrent && !audioEdges.current.inCurrent) play('gust');
+      audioEdges.current.inCurrent = inCurrent;
+
+      // Svatyně se otevřela — jednou.
+      if (flight.lights.length === flight.total && !audioEdges.current.opened) {
+        audioEdges.current.opened = true;
+        play('shrineOpen');
+      }
       onStats({
         lights: flight.lights.length,
+        speed: Math.hypot(flight.vx, flight.vy),
+        lightIds: [...flight.lights],
         total: flight.total,
         energy: flight.energy,
         time: flight.time,

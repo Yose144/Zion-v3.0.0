@@ -134,6 +134,7 @@ const names = [
   'punch', 'kick', 'block', 'whiff', 'ko', 'bell', 'roundEnd', 'victory', 'defeat',
   'lap', 'wall', 'finish', 'countdown',
   'cannon', 'impact', 'turn',
+  'lanternIgnite', 'lightPickup', 'gust', 'shrineOpen', 'gift',
   'paddle', 'brick', 'eat', 'lock', 'clear', 'shoot', 'target', 'ticket', 'over',
   'click', 'open', 'error',
 ];

@@ -274,6 +274,12 @@ export type SoundName =
   | 'target'
   | 'ticket'
   | 'over'
+  // Lumi (Uran — světlo a cesty)
+  | 'lanternIgnite'
+  | 'lightPickup'
+  | 'gust'
+  | 'shrineOpen'
+  | 'gift'
   // rozhraní
   | 'click'
   | 'open'
@@ -398,6 +404,24 @@ const SOUNDS: Record<SoundName, Voice> = {
   ticket: () => chime([880, 1108, 1320], 0.08, 0.07, 0.24),
   over: () => scale([440, 370, 294, 220], 0.075, 0.13, 0.34),
 
+  // ── Lumi ─────────────────────────────────────────────────────────────
+  // Zapálení lucerny: teplý nádech, ne klik.
+  lanternIgnite: () => {
+    chime([392, 523, 659], 0.06, 0.06, 0.5);
+    noise({ duration: 0.5, gain: 0.05, cutoff: 900 });
+  },
+  // Světlo: krátký zvonivý tón. Výšku určuje stránka podle pořadí (viz `playNote`).
+  lightPickup: () => chime([1046, 1568], 0.07, 0.05, 0.25),
+  // Proud vzduchu: tichý nádech větru.
+  gust: () => noise({ duration: 0.9, gain: 0.06, cutoff: 1400, type: 'bandpass' }),
+  // Svatyně se otevřela: hluboký souzvuk, ne fanfára.
+  shrineOpen: () => chime([262, 392, 523, 784], 0.07, 0.14, 0.9),
+  // Darování: teplý zvon, který dozní.
+  gift: () => {
+    chime([659, 880, 1318], 0.075, 0.1, 0.8);
+    noise({ duration: 0.6, gain: 0.03, cutoff: 700 });
+  },
+
   // ── rozhraní ─────────────────────────────────────────────────────────
   click: () => tone({ freq: 620, to: 820, duration: 0.045, type: 'sine', gain: 0.05 }),
   open: () => chime([587, 880], 0.06, 0.06, 0.2),
@@ -444,6 +468,76 @@ export function playNoise(options: NoiseOptions): void {
 }
 
 // ── spojité zvuky (motor, ambient) ─────────────────────────────────────────
+
+/** Vítr ve Křídlech/Lumi: jemný šum s pomalým dýcháním. */
+export function startWindLoop(): LoopHandle | null {
+  const ctx = ensure();
+  if (!ctx || !master || muted) return null;
+  try {
+    const length = Math.max(1, Math.floor(ctx.sampleRate * 2));
+    const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < length; i += 1) {
+      const white = Math.random() * 2 - 1;
+      // růžový šum: integrace bílého — zní jako vzduch, ne jako televize
+      last = 0.985 * last + 0.015 * white;
+      data[i] = last * 2.4;
+    }
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.loop = true;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 620;
+    filter.Q.value = 0.6;
+
+    const amp = ctx.createGain();
+    amp.gain.value = 0.0001;
+
+    // pomalé dýchání větru: LFO na frekvenci filtru
+    const lfo = ctx.createOscillator();
+    const lfoGain = ctx.createGain();
+    lfo.frequency.value = 0.07;
+    lfoGain.gain.value = 220;
+    lfo.connect(lfoGain).connect(filter.frequency);
+    lfo.start();
+    source.start();
+    source.connect(filter).connect(amp).connect(master);
+    amp.gain.exponentialRampToValueAtTime(0.07, ctx.currentTime + 1.2);
+
+    let stopped = false;
+    return {
+      setIntensity(value: number) {
+        if (stopped) return;
+        const clamped = Math.max(0, Math.min(1, value));
+        amp.gain.setTargetAtTime(0.045 + clamped * 0.05, ctx.currentTime, 0.25);
+        lfo.frequency.setTargetAtTime(0.06 + clamped * 0.12, ctx.currentTime, 0.4);
+      },
+      stop() {
+        if (stopped) return;
+        stopped = true;
+        amp.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.15);
+        window.setTimeout(() => {
+          try {
+            source.stop();
+            lfo.stop();
+          } catch {
+            /* už zastaveno */
+          }
+          source.disconnect();
+          filter.disconnect();
+          amp.disconnect();
+          lfo.disconnect();
+          lfoGain.disconnect();
+        }, 500);
+      },
+    };
+  } catch {
+    return null;
+  }
+}
 
 export interface LoopHandle {
   /** 0..1 — plyn, rychlost, intenzita. */

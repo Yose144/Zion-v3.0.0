@@ -29,19 +29,32 @@ import {
   type LumiPathId,
 } from '@/core/lumi/world';
 import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
+import { loadJournal, recordJourney, type LumiJournal } from '@/core/lumi/journal';
+import { play, startWindLoop, type LoopHandle } from '@/core/audio/engine';
 import { unlock } from '@/core/audio/engine';
 import { TouchButton } from '@/core/games/TouchPad';
 
 type Phase = 'intro' | 'flying' | 'done';
 type Gift = 'keep' | 'give';
 
-export default function KridlaPage() {
+const EMPTY: LumiStats = {
+  lights: 0,
+  speed: 0,
+  lightIds: [],
+  total: 7,
+  energy: 100,
+  time: 0,
+  finished: false,
+  lastLight: null,
+};
+
+export default function LumiPage() {
   const { lang } = useI18n();
   const cs = lang === 'cs';
 
   const [phase, setPhase] = useState<Phase>('intro');
   const [pathId, setPathId] = useState<LumiPathId>('calm');
-  const [stats, setStats] = useState<LumiStats>({ lights: 0, total: 7, energy: 100, time: 0, finished: false, lastLight: null });
+  const [stats, setStats] = useState<LumiStats>(EMPTY);
   const [notice, setNotice] = useState<string | null>(null);
   const [fragment, setFragment] = useState<{ id: number; text: string } | null>(null);
   const [baseScore, setBaseScore] = useState(0);
@@ -50,9 +63,32 @@ export default function KridlaPage() {
   /** Klíč remountuje scénu — jinak by „Znovu" pokračovalo v doletěné cestě. */
   const [run, setRun] = useState(0);
   const recorded = useRef(false);
+  /** Deník: sebraná světla zůstávají, i když hra skončí. */
+  const [journal, setJournal] = useState<LumiJournal>({ found: [], runs: 0, gifts: { keep: 0, give: 0 } });
+  const [journalOpen, setJournalOpen] = useState(false);
+  /** Vítr běží jen během letu — po doletu zmlkne. */
+  const wind = useRef<LoopHandle | null>(null);
 
   const path = pathData(pathId);
   const missing = Math.max(0, stats.total - stats.lights);
+
+  useEffect(() => {
+    setJournal(loadJournal());
+  }, []);
+
+  // vítr: start s letem, stop při doletu i při odchodu ze stránky
+  useEffect(() => {
+    if (phase !== 'flying') return;
+    wind.current = startWindLoop();
+    return () => {
+      wind.current?.stop();
+      wind.current = null;
+    };
+  }, [phase]);
+
+  useEffect(() => {
+    wind.current?.setIntensity(Math.min(1, (stats.speed ?? 0) / 26));
+  }, [stats.speed]);
 
   useEffect(() => {
     const query = window.matchMedia('(hover: none) and (pointer: coarse)');
@@ -83,13 +119,14 @@ export default function KridlaPage() {
   const start = useCallback(() => {
     unlock();
     recorded.current = false;
-    setStats({ lights: 0, total: pathData(pathId).lights.length, energy: 100, time: 0, finished: false, lastLight: null });
+    setStats({ ...EMPTY, total: pathData(pathId).lights.length });
     setNotice(null);
     setFragment(null);
     setGift(null);
     setBaseScore(0);
     setRun((value) => value + 1);
     setPhase('flying');
+    play('lanternIgnite');
   }, [pathId]);
 
   /** Scéna jen oznámí dolet — zapisuje se až po volbě (nechat / darovat). */
@@ -105,6 +142,9 @@ export default function KridlaPage() {
       setGift(kind);
       const score = baseScore + (kind === 'give' ? LUMI_GIFT_BONUS : 0);
       const outcome = recordRun({ game: 'lumi', score, nickname: pickNickname() });
+      // deník: světla i volba zůstávají pro příště
+      setJournal(recordJourney(stats.lightIds ?? [], kind));
+      play(kind === 'give' ? 'gift' : 'shrineOpen');
       setNotice(
         describeRun(outcome, cs, [
           `${score} ${cs ? 'bodů' : 'points'}`,
@@ -231,9 +271,48 @@ export default function KridlaPage() {
             ))}
           </div>
 
-          <button type="button" className="park-btn lumi-start" onClick={start}>
-            {cs ? 'Vzlétnout' : 'Take off'}
-          </button>
+          <div className="lumi-intro-actions">
+            <button type="button" className="park-btn lumi-start" onClick={start}>
+              {cs ? 'Vzlétnout' : 'Take off'}
+            </button>
+            <button type="button" className="arena-link lumi-journal-open" onClick={() => setJournalOpen(true)}>
+              {cs ? 'Deník' : 'Journal'} {journal.found.length}/7
+            </button>
+          </div>
+        </section>
+      )}
+
+      {journalOpen && (
+        <section className="lumi-journal" role="dialog" aria-modal="true" aria-label={cs ? 'Deník světel' : 'Journal of lights'}>
+          <header>
+            <div>
+              <strong>{cs ? 'Deník světel' : 'Journal of lights'}</strong>
+              <span>
+                {cs
+                  ? `${journal.found.length}/7 nalezeno · ${journal.runs} cest · darováno ${journal.gifts.give}×`
+                  : `${journal.found.length}/7 found · ${journal.runs} journeys · given ${journal.gifts.give}×`}
+              </span>
+            </div>
+            <button type="button" className="lumi-journal-close" onClick={() => setJournalOpen(false)} aria-label={cs ? 'Zavřít' : 'Close'}>
+              ×
+            </button>
+          </header>
+          <ol>
+            {pathData('calm').lights.map((light) => {
+              const found = journal.found.includes(light.id);
+              return (
+                <li key={light.id} className={found ? 'is-found' : undefined}>
+                  <span className="lumi-journal-index">{light.id}</span>
+                  <p>{found ? light.fragment[cs ? 'cs' : 'en'] : cs ? '— ještě nenalezeno —' : '— not found yet —'}</p>
+                </li>
+              );
+            })}
+          </ol>
+          <p className="lumi-journal-note">
+            {cs
+              ? 'Deník se ukládá v prohlížeči. Cesty jsou dvě a světla jsou v obou stejná — jde o to je donést.'
+              : 'The journal lives in your browser. There are two paths and the lights are the same in both — carrying them is the point.'}
+          </p>
         </section>
       )}
 
