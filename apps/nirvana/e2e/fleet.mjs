@@ -1,0 +1,201 @@
+#!/usr/bin/env node
+/**
+ * FLOTILA — audit v prohlížeči.
+ *
+ * Ověřuje **funkci, ne vzhled**: že se loď opravdu rozjede na plyn, že doletí
+ * na dok (přes teleport v debug háčku, protože doletět 15 jednotek ručně by
+ * v auditu znamenalo minuty), že se zakotví, že se odpojí a že se přitom nic
+ * nerozbije v konzoli.
+ *
+ * Proč se nepoužívá jen `test/fleet-flight.mjs`: ten ověřuje simulaci.
+ * Tenhle skript ověřuje, že simulace je **napojená** — že klávesa dojde do
+ * refu, že scéna čte stav a že se model z marketu skutečně stáhne
+ * (`/models/fleet/*.glb` je pod veřejným prefixem middleware).
+ *
+ * Spuštění:
+ *   node apps/nirvana/e2e/fleet.mjs            # appku na :3010 si spustí sám
+ *   FLEET_URL=https://… node apps/nirvana/e2e/fleet.mjs   # proti běžící instanci
+ */
+
+import { createServer } from 'node:http';
+import { spawn } from 'node:child_process';
+import { mkdir } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { launch } from './_browser.mjs';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const repo = resolve(here, '../../..');
+const BASE = process.env.FLEET_URL ?? 'http://127.0.0.1:3010';
+const SHOTS = resolve(repo, '.artifacts/render/fleet');
+
+let passed = 0;
+let failed = 0;
+const check = (name, ok, detail = '') => {
+  if (ok) {
+    passed += 1;
+    console.log(`  ✓ ${name}`);
+  } else {
+    failed += 1;
+    console.error(`  ✗ ${name}${detail ? ` — ${detail}` : ''}`);
+  }
+};
+
+const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
+
+/** Stub ZAP oracle — lokální běh nemá jak ověřit skutečný kód. */
+async function startOracle() {
+  const server = createServer((request, response) => {
+    response.writeHead(200, { 'content-type': 'application/json' });
+    response.end(JSON.stringify({ valid: true }));
+  });
+  await new Promise((done) => server.listen(9099, '127.0.0.1', done));
+  return server;
+}
+
+/** Počká na `predicate` v prohlížeči; polluje z Node (ne `waitForFunction`). */
+async function waitFor(page, fn, timeout = 20000, label = 'stav') {
+  const started = Date.now();
+  while (Date.now() - started < timeout) {
+    const value = await page.evaluate(fn);
+    if (value) return value;
+    await sleep(200);
+  }
+  throw new Error(`timeout: ${label}`);
+}
+
+async function main() {
+  const oracle = await startOracle();
+  const app = process.env.FLEET_URL
+    ? null
+    : spawn('npx', ['next', 'start', '-p', '3010'], {
+        cwd: resolve(repo, 'apps/nirvana'),
+        env: {
+          ...process.env,
+          ZION_RENDER_AUDIT: '1',
+          ARCHIVE_VERIFY_URL: 'http://127.0.0.1:9099/verify',
+        },
+        stdio: 'ignore',
+      });
+
+  // než appka naběhne
+  for (let i = 0; i < 60; i += 1) {
+    try {
+      const res = await fetch(`${BASE}/api/health`, { headers: { 'x-render-audit': '1' } });
+      if (res.ok) break;
+    } catch {
+      // ještě neběží
+    }
+    await sleep(1000);
+  }
+
+  await mkdir(SHOTS, { recursive: true });
+  if (!process.env.ZION_GPU) process.env.ZION_GPU = 'metal';
+  const browser = await launch();
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+
+  await page.context?.().addCookies?.([
+    { name: 'zion_nirvana_pass', value: 'ZAP-AUDIT0000000', domain: '127.0.0.1', path: '/' },
+  ]);
+  await page.setCookie?.({ name: 'zion_nirvana_pass', value: 'ZAP-AUDIT0000000', domain: '127.0.0.1', path: '/' });
+
+  console.log('\n▸ hangár');
+  await page.goto(`${BASE}/fleet?fleetDebug=1`, { waitUntil: 'networkidle' });
+  await waitFor(page, () => document.querySelectorAll('.fleet-card').length > 0, 30000, 'karty lodí');
+  const cards = await page.evaluate(() => document.querySelectorAll('.fleet-card').length);
+  check('hangár nabízí 7 lodí', cards === 7, `count=${cards}`);
+  const title = await page.evaluate(() => document.querySelector('.fleet-hangar h1')?.textContent ?? '');
+  check('hangár má nadpis', (title ?? '').length > 3, title);
+  await page.screenshot({ path: `${SHOTS}/hangar.png` });
+
+  console.log('\n▸ start letu');
+  await page.click('.fleet-launch button');
+  await waitFor(page, () => Boolean(document.querySelector('.fleet-canvas canvas')), 40000, 'canvas');
+  check('scéna se spustila', true);
+  await waitFor(page, () => Boolean(window.__fleetDebug), 60000, 'debug háček');
+
+  const modelLoaded = await page.evaluate(() =>
+    performance.getEntriesByType('resource').some((entry) => entry.name.includes('/models/fleet/')),
+  );
+  check('model lodi se stáhl z /models/fleet', modelLoaded);
+
+  // snímek hned po startu: musí v něm být planeta i flotila, ne prázdno
+  await sleep(1500);
+  await page.screenshot({ path: `${SHOTS}/launch.png` });
+
+  const start = await page.evaluate(() => window.__fleetDebug.state());
+  // Volnoběh táhne dopředu (0,35 × maximum) — loď nemá viset na místě.
+  // Ověřuje se tedy „neletí plnou rychlostí", ne nula.
+  check('na startu loď neletí plnou rychlostí', Math.abs(start.speed) < 9.5 * 0.45, `speed=${start.speed.toFixed(2)}`);
+
+  console.log('\n▸ plyn a zatáčení');
+  await page.keyboard.down('w');
+  await sleep(1500);
+  await page.keyboard.up('w');
+  const moving = await page.evaluate(() => window.__fleetDebug.state());
+  check('plyn loď rozjede', moving.speed > 1.5, `speed=${moving.speed.toFixed(2)}`);
+  check('loď se posunula', Math.hypot(moving.x - start.x, moving.y - start.y, moving.z - start.z) > 1);
+
+  const yaw0 = moving.yaw;
+  await page.keyboard.down('w');
+  await page.keyboard.down('a');
+  await sleep(900);
+  await page.keyboard.up('a');
+  await page.keyboard.up('w');
+  const turned = await page.evaluate(() => window.__fleetDebug.state());
+  check('zatáčení funguje', Math.abs(turned.yaw - yaw0) > 0.2, `Δyaw=${(turned.yaw - yaw0).toFixed(2)}`);
+
+  console.log('\n▸ kotvení');
+  await page.evaluate(() => window.__fleetDebug.dock('nabukano-2'));
+  await waitFor(page, () => Boolean(document.querySelector('.fleet-docked')), 15000, 'panel doku');
+  const dockedState = await page.evaluate(() => window.__fleetDebug.state());
+  check('loď je zakotvená na Nabukanu', dockedState.docked === 'nabukano-2', String(dockedState.docked));
+  const dockText = await page.evaluate(() => document.querySelector('.fleet-docked h2')?.textContent ?? '');
+  check('panel hlásí Nabukano', dockText.includes('Nabukano'), dockText);
+  await page.screenshot({ path: `${SHOTS}/docked.png` });
+
+  console.log('\n▸ odpojení');
+  await page.evaluate(() => {
+    const buttons = Array.from(document.querySelectorAll('.fleet-docked-actions button'));
+    buttons[0]?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+  await waitFor(page, () => !window.__fleetDebug.state().docked, 15000, 'odpojení');
+  const undocked = await page.evaluate(() => window.__fleetDebug.state());
+  check('po odpojení není zakotveno', undocked.docked === null);
+  check('po odpojení má loď impuls', undocked.speed > 0);
+
+  console.log('\n▸ Issobella');
+  await page.evaluate(() => window.__fleetDebug.dock('issobella'));
+  await waitFor(page, () => window.__fleetDebug.state().docked === 'issobella', 15000, 'dok Issobella');
+  check('kotvení na Issobelle funguje', true);
+
+  console.log('\n▸ HUD a scéna');
+  const hud = await page.evaluate(() => ({
+    gauges: document.querySelectorAll('.fleet-gauges span').length,
+    target: document.querySelector('.fleet-target strong')?.textContent ?? '',
+  }));
+  check('HUD má tři údaje', hud.gauges === 3, String(hud.gauges));
+  check('HUD ukazuje cíl', hud.target.length > 2, hud.target);
+
+  await page.evaluate(() => window.__fleetDebug.teleport(0, 8, 22));
+  await sleep(1200);
+  await page.screenshot({ path: `${SHOTS}/flight.png` });
+
+  check('v konzoli nejsou chyby', errors.filter((line) => !line.includes('401')).length === 0, errors.slice(0, 3).join(' | '));
+
+  await browser.close();
+  oracle.close();
+  if (app) app.kill();
+  console.log(`\n${failed === 0 ? '✓' : '✗'} fleet-audit: ${passed} prošlo, ${failed} selhalo\n`);
+  process.exit(failed === 0 ? 0 : 1);
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
