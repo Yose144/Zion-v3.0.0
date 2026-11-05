@@ -4280,7 +4280,28 @@
       "consciousness_level_name": "On the Star",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Three Faces",
+          "description": "Walk the three faces of the Mother: create, protect, dissolve."
+        },
+        {
+          "title": "White Lotus",
+          "description": "Teach someone what you already know."
+        },
+        {
+          "title": "Pink Lotus",
+          "description": "Redistribute so that no one is left outside."
+        },
+        {
+          "title": "Black Lotus",
+          "description": "Let go of what still holds you."
+        },
+        {
+          "title": "Union",
+          "description": "See the one in the three."
+        }
+      ]
     },
     {
       "id": 204,
@@ -4296,7 +4317,28 @@
       "consciousness_level_name": "Transcendent",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "The First Chant",
+          "description": "Chant the mantra aloud, even if you feel shy."
+        },
+        {
+          "title": "Sankirtan",
+          "description": "Chant in a group; no one starts or ends alone."
+        },
+        {
+          "title": "Eight Verses",
+          "description": "Walk the Shikshashtaka verse by verse."
+        },
+        {
+          "title": "Give the Name",
+          "description": "Teach the mantra to someone who does not know it."
+        },
+        {
+          "title": "The Golden Age",
+          "description": "See that joy is not a reward but a method."
+        }
+      ]
     }
   ]
 }
