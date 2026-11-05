@@ -102,3 +102,11 @@
 
 - Přeložena **ZION — Nová civilizace** (nejdelší kapitola série, onboarding + závazky + rizika + MiCA).
 - Sůl této země: **8/12 EN**; zbývá 09–12. Celkem **58/189** kapitol (30,7 %).
+
+
+---
+
+## Doplnění 2026-11-05 (7) — Sůl této země, epizody 9–10
+
+- Přeloženy **Epizoda 9 — Bohyně Rádha a avataři v Oasis** a **Epizoda 10 — První svět Oasis a Best of Avataři**.
+- Sůl této země: **10/12 EN**; zbývá 11–12. Celkem **60/189** kapitol (31,7 %).
