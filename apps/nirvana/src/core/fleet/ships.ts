@@ -147,7 +147,8 @@ export const SHIPS: ShipSpec[] = [
 ];
 
 export function shipById(id: string): ShipSpec {
-  return SHIPS.find((ship) => ship.id === id) ?? SHIPS[1];
+  // `SHIPS[1]` je X-Wing; `!` kvůli `noUncheckedIndexedAccess` v nirvana-net
+  return SHIPS.find((ship) => ship.id === id) ?? SHIPS[1]!;
 }
 
 /** Výchozí loď — X-Wing, protože je nejznámější a nejlépe se s ním startuje. */

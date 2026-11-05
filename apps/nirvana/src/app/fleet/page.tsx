@@ -15,10 +15,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useI18n } from '@/core/i18n';
-import { FleetCanvas, type FleetStats } from '@/core/fleet/FleetScene';
+import { FleetCanvas, type FleetStats, type RemotePilot } from '@/core/fleet/FleetScene';
 import { SHIPS, shipById, DEFAULT_SHIP } from '@/core/fleet/ships';
 import { DOCK_HOLD, DOCK_RADIUS } from '@/core/fleet/flight';
 import { play, unlock } from '@/core/audio/engine';
+import { useNet } from '@/core/net/useNet';
+import { InviteButton } from '@/core/net/InviteButton';
 import { TouchButton } from '@/core/games/TouchPad';
 
 type Phase = 'intro' | 'flying';
@@ -59,6 +61,14 @@ export default function FleetPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [run, setRun] = useState(0);
   const lastDock = useRef<string | null>(null);
+
+  // ── společný let ───────────────────────────────────────────────────
+  const { subscribe, joinFleet, leaveRoom, sendFlight, connected, roomId } = useNet();
+  /** `true` = letí se s ostatními; sólo zůstává výchozí. */
+  const [coop, setCoop] = useState(false);
+  /** Ostatní piloti chodí 15×/s, takže v refu — ne v React state. */
+  const remotes = useRef<RemotePilot[]>([]);
+  const [peers, setPeers] = useState(0);
 
   /** Debug háček se čte při prvním renderu — efekt by ho nestihl (viz AGENTS). */
   const debug = useMemo(
@@ -126,6 +136,45 @@ export default function FleetPage() {
     setDocked(null);
   }, []);
 
+  // snapshoty společného letu
+  useEffect(() => {
+    if (!coop) return;
+    return subscribe((message) => {
+      if (message.t !== 'snapshot' || message.game !== 'fleet' || !message.fleet) return;
+      remotes.current = message.fleet.pilots;
+      setPeers(message.fleet.pilots.length);
+    });
+  }, [coop, subscribe]);
+
+  // připojení / odpojení podle fáze
+  useEffect(() => {
+    if (!coop || phase !== 'flying' || !connected) return;
+    joinFleet(shipId);
+    return () => {
+      leaveRoom();
+      remotes.current = [];
+      setPeers(0);
+    };
+  }, [coop, phase, connected, joinFleet, leaveRoom, shipId]);
+
+  /** Stav letu do sítě — `sendFlight` si sám hlídá 20 Hz i změnu doku. */
+  const relay = useCallback(
+    (ship: { x: number; y: number; z: number; yaw: number; pitch: number; roll: number; speed: number; docked: string | null }) => {
+      sendFlight({
+        x: ship.x,
+        y: ship.y,
+        z: ship.z,
+        yaw: ship.yaw,
+        pitch: ship.pitch,
+        roll: ship.roll,
+        speed: ship.speed,
+        docked: Boolean(ship.docked),
+        dockId: ship.docked ?? undefined,
+      });
+    },
+    [sendFlight],
+  );
+
   const nearest = stats.nearest;
   const targetName = nearest
     ? nearest.kind === 'nabukano'
@@ -147,6 +196,8 @@ export default function FleetPage() {
           onDock={onDock}
           undockSignal={undockSignal}
           debug={debug}
+          remotes={coop ? remotes : undefined}
+          onFlight={coop ? relay : undefined}
         />
       )}
 
@@ -168,6 +219,14 @@ export default function FleetPage() {
                 <em>{cs ? 'výška' : 'altitude'}</em> {Math.max(0, Math.round(stats.altitude))}
               </span>
             </div>
+            {coop && (
+              <div className="fleet-peers">
+                <span>{connected ? (cs ? 'společný let' : 'shared flight') : cs ? 'offline' : 'offline'}</span>
+                <strong>{peers + 1}</strong>
+                {roomId && <em>{roomId}</em>}
+                {roomId && <InviteButton roomId={roomId} className="fleet-invite" />}
+              </div>
+            )}
             <div className="fleet-bars">
               <div className="fleet-bar">
                 <span>{cs ? 'tah' : 'thrust'}</span>
@@ -312,8 +371,27 @@ export default function FleetPage() {
             <button type="button" onClick={start}>
               {cs ? 'Vzlétnout' : 'Launch'}
             </button>
+            <button
+              type="button"
+              className={`fleet-coop ${coop ? 'is-active' : ''}`}
+              onClick={() => {
+                setCoop((value) => !value);
+                play('turn');
+              }}
+              aria-pressed={coop}
+            >
+              {coop ? (cs ? '✈ Letí se společně' : '✈ Flying together') : cs ? 'Letět s ostatními' : 'Fly with others'}
+            </button>
             <Link href="/multiplayer">{cs ? 'Online místnosti' : 'Online rooms'}</Link>
           </div>
+
+          {coop && (
+            <p className="fleet-coop-note">
+              {cs
+                ? 'Ostatní uvidí tvoji loď i to, kdy přistaneš. Místnost má šest pilotů — když je plná, přidej se jinam.'
+                : 'Others see your ship and when you dock. A room holds six pilots — if it is full, join elsewhere.'}
+            </p>
+          )}
 
           <footer className="fleet-foot">
             {cs

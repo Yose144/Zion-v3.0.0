@@ -19,6 +19,7 @@ export const GAME_ROUTES: Record<GameId, string> = {
   moba: '/earth',
   tanks: '/saturn',
   lumi: '/lumi',
+  fleet: '/fleet',
 };
 
 /** Id místnosti z `?watch=` — nebo `null`, když tam nic rozumného není. */
@@ -27,7 +28,7 @@ export function watchRoom(search?: string): string | null {
     search ?? (typeof window === 'undefined' ? '' : window.location.search);
   const value = new URLSearchParams(query).get('watch');
   if (!value) return null;
-  return /^(arena|race|fight|moba|tanks)-\d{1,4}$/.test(value) ? value : null;
+  return /^(arena|race|fight|moba|tanks|lumi|fleet)-\d{1,4}$/.test(value) ? value : null;
 }
 
 /** Odkaz na hlediště — jedno místo, kde se skládá. */

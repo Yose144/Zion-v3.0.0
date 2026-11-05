@@ -54,9 +54,11 @@ export async function ensureApp({ base = 'http://127.0.0.1:3010', repo = resolve
       .then((res) => res.json())
       .catch(() => ({ access: null }));
     if (!verdict.access) {
-      console.warn(
-        `! appka na ${base} běží, ale ZAP brána nevrací access:true (${JSON.stringify(verdict)}).\n` +
-          '  Ukonči ji (nebo nastav ARCHIVE_VERIFY_URL na stub) — jinak test měří přihlašovací obrazovku.',
+      // Tichá poznámka byla málo: test pak měřil přihlašovací obrazovku a
+      // padal na „0 karet". Radši ať to spadne tady a nahlas.
+      throw new Error(
+        `appka na ${base} běží, ale ZAP brána nevrací access:true (${JSON.stringify(verdict)}).\n` +
+          'Ukonči ji (lsof -ti :3010 | xargs kill) nebo nastav ARCHIVE_VERIFY_URL na stub — jinak test měří bránu, ne hru.',
       );
     }
     return { base, stop: () => {} };
@@ -81,6 +83,19 @@ export async function ensureApp({ base = 'http://127.0.0.1:3010', repo = resolve
       .catch(() => false);
     if (ok) break;
     await sleep(1000);
+  }
+
+  // Ověř i to, co jsme sami spustili: když se `next start` nepřipojil (port
+  // obsadila stařičká instance), brána vrací `access:false` a test by měřil
+  // přihlašovací obrazovku. Radši hlasitá chyba než falešná zelená.
+  const verdict = await fetch(`${base}/api/pass`, { headers: { cookie: 'zion_nirvana_pass=ZAP-AUDIT0000000' } })
+    .then((res) => res.json())
+    .catch(() => ({ access: null }));
+  if (!verdict.access) {
+    throw new Error(
+      `appka na ${base} nevrací access:true (${JSON.stringify(verdict)}) — port 3010 pravděpodobně drží jiná instance.\n` +
+        'Ukonči ji: lsof -ti :3010 | xargs kill -9',
+    );
   }
 
   return {

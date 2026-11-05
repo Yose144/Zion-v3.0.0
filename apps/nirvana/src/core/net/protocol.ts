@@ -79,7 +79,7 @@ const asItemId = (value: unknown): ItemId | null =>
  *      odmítne `join` (`pass_required`). Klient bez pasu by se jinak dostal
  *      do hry přes vlastní WebSocket klient.
  */
-export const PROTO_VERSION = 30;
+export const PROTO_VERSION = 31;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -92,6 +92,14 @@ export const MAX_ROOMS = 4;
 export const FIGHT_ROOM_SIZE = 2;
 /** Kolik lidí může letět v Lumi najednou (víc by z oblohy udělalo trh). */
 export const LUMI_ROOM_SIZE = 4;
+/**
+ * Kolik stíhaček letí jednou místností flotily.
+ *
+ * Šest je strop kvůli modelům: každá loď z marketu je 10–24 k trojúhelníků,
+ * takže šest cizích lodí + vlastní už je za polovinou rozpočtu scény
+ * (naměřeno 26 k s jednou lodí; univerzum má 90 k).
+ */
+export const FLEET_ROOM_SIZE = 6;
 /** Maximum jednoho WS rámce. Větší = zahodit, ne parsovat. */
 export const MAX_FRAME_BYTES = 4096;
 /** Strop příchozích zpráv na spojení (vstup 20 Hz + rezerva). */
@@ -105,7 +113,7 @@ export const CHAT_HISTORY_LEN = 200;
 export const HEARTBEAT_MS = 20_000;
 export const IDLE_TIMEOUT_MS = 60_000;
 
-export type GameId = 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi';
+export type GameId = 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi' | 'fleet';
 /** `guest` = bez ZIS (hraje, ale nepíše), `zis` = ověřený uživatel. */
 export type Role = 'guest' | 'zis';
 export type RoomState = 'waiting' | 'running' | 'ended';
@@ -358,6 +366,12 @@ export type ClientMessage =
       aspect?: AspectId;
       /** Lumi: kterou cestou se letí (`calm` | `wind` | `light`). */
       path?: 'calm' | 'wind' | 'light';
+      /**
+       * Flotila: kterou lodí se letí (`awing`, `xwing`, …).
+       * Server id jen ověří proti seznamu a přeposílá ostatním — kdyby si
+       * klient posílal id každý snímek, byl by to zbytečný provoz.
+       */
+      shipId?: string;
       /** Režim nové místnosti (u existující se ignoruje). */
       mode?: RoomMode;
       /**
@@ -399,6 +413,26 @@ export type ClientMessage =
    * předává ostatním (a drží sdílený seznam sebraných světel).
    */
   | { t: 'fly'; x: number; y: number; vx: number; vy: number; energy: number; collect?: number; finished?: boolean }
+  /**
+   * Flotila: stav letu od klienta (3D).
+   *
+   * Stejný princip jako Lumi — **relay, ne autoritativní simulace**: volný let
+   * nemá zásahy ani skóre, takže není co podvádět. Server hodnoty jen ověří
+   * (konečná čísla, rozsahy, `dockId` proti seznamu doků) a přepošle.
+   */
+  | {
+      t: 'flight';
+      x: number;
+      y: number;
+      z: number;
+      yaw: number;
+      pitch: number;
+      roll: number;
+      speed: number;
+      /** Kotví loď? Ostatní díky tomu vidí, kdo stojí na doku. */
+      docked?: boolean;
+      dockId?: string;
+    }
   | { t: 'leave' }
   | {
       t: 'input';
@@ -503,6 +537,30 @@ export type ServerMessage =
       moba?: MobaSnapshot;
       /** Saturn — tanky (artilerie 1v1). */
       tanks?: TanksView;
+      /**
+       * Flotila: ostatní stíhačky v místnosti (relay, vlastní stav klient
+       * nepotřebuje — predikuje si ho sám stejnou `stepShip`).
+       */
+      fleet?: {
+        pilots: {
+          id: string;
+          name: string;
+          avatarId: number | null;
+          /** Která loď z marketu — klient ji vykreslí stejnou cestou jako svou. */
+          shipId: string;
+          x: number;
+          y: number;
+          z: number;
+          yaw: number;
+          pitch: number;
+          roll: number;
+          speed: number;
+          docked: boolean;
+          dockId?: string;
+          /** Hráč odešel, tohle je duch na poslední pozici (3 s). */
+          ghost?: boolean;
+        }[];
+      };
     }
   | {
       /**
@@ -572,6 +630,7 @@ export function parseClientMessage(raw: string): ClientMessage | null {
           message.game === 'moba' ||
           message.game === 'tanks' ||
           message.game === 'lumi' ||
+          message.game === 'fleet' ||
           message.game === 'arena'
             ? (message.game as GameId)
             : 'arena',
@@ -587,6 +646,9 @@ export function parseClientMessage(raw: string): ClientMessage | null {
           message.path === 'wind' || message.path === 'light' || message.path === 'calm'
             ? message.path
             : undefined,
+        // id lodi ověří až server proti seznamu z `core/fleet/ships` — tady
+        // jen ořežeme, co přes síť může přijít
+        shipId: typeof message.shipId === 'string' ? message.shipId.slice(0, 24) : undefined,
         spectate: message.spectate === true ? true : undefined,
       };
 
@@ -613,6 +675,24 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         energy: num(message.energy, 0, 100),
         collect: typeof message.collect === 'number' ? num(message.collect, 1, 7) : undefined,
         finished: message.finished === true ? true : undefined,
+      };
+
+    // Flotila: volný let. Rozsahy odpovídají `core/fleet/flight.ts` —
+      // souřadnice jsou v lokální soustavě Nové Země (±WORLD_RADIUS 34),
+      // pitch ±1,15 a roll ±0,8 (sim je tak drží), yaw se posílá zabalený
+      // do (−π, π], takže ±4 stačí s rezervou.
+    case 'flight':
+      return {
+        t: 'flight',
+        x: num(message.x, -40, 40),
+        y: num(message.y, -40, 40),
+        z: num(message.z, -40, 40),
+        yaw: num(message.yaw, -4, 4),
+        pitch: num(message.pitch, -1.2, 1.2),
+        roll: num(message.roll, -1, 1),
+        speed: num(message.speed, -30, 40),
+        docked: message.docked === true ? true : undefined,
+        dockId: typeof message.dockId === 'string' ? message.dockId.slice(0, 24) : undefined,
       };
 
     case 'input':

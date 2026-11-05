@@ -34,6 +34,15 @@ interface LobbyGame {
 
 const GAMES: LobbyGame[] = [
   {
+    id: 'fleet',
+    href: '/fleet',
+    title: { cs: 'Flotila', en: 'Fleet' },
+    note: { cs: 'volný let · 6 pilotů · doky', en: 'free flight · 6 pilots · docks' },
+    glyph: '🚀',
+    tone: '#7ec8ff',
+    seats: 6,
+  },
+  {
     id: 'moba',
     href: '/earth',
     title: { cs: 'První svět', en: 'First World' },

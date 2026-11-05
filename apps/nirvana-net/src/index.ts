@@ -33,6 +33,7 @@ import {
   MAX_INBOUND_PER_SEC,
   MAX_PLAYERS,
   MAX_ROOMS,
+  FLEET_ROOM_SIZE,
   FIGHT_ROOM_SIZE,
   LUMI_ROOM_SIZE,
   PROTO_VERSION,
@@ -212,6 +213,7 @@ function capOf(game: GameId): number {
   if (game === 'moba') return MOBA_ROOM_SIZE;
   if (game === 'tanks') return 2;
   if (game === 'lumi') return LUMI_ROOM_SIZE;
+  if (game === 'fleet') return FLEET_ROOM_SIZE;
   return MAX_PLAYERS;
 }
 
@@ -489,6 +491,7 @@ async function joinRoom(
   spectate = false,
   aspect?: 'a' | 'b',
   lumiPath?: 'calm' | 'wind' | 'light',
+  shipId?: string,
 ): Promise<void> {
   if (!conn.helloSent) {
     sendError(conn, 'bad_frame', 'nejdřív hello');
@@ -571,6 +574,8 @@ async function joinRoom(
     aspect,
     // Lumi: cestu posílá klient v `join`, ostatní hry pole ignorují
     ...(game === 'lumi' ? { path: lumiPath } : {}),
+    // Flotila: loď volí klient, server id ověří proti seznamu (ne opak)
+    ...(game === 'fleet' ? { shipId } : {}),
   } as Parameters<typeof room.match.join>[1]);
 
   send(conn, {
@@ -676,6 +681,7 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
         message.spectate === true,
         message.aspect,
         message.path,
+        message.shipId,
       );
       return;
 

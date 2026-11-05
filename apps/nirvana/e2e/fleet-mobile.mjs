@@ -38,6 +38,18 @@ const check = (name, ok, detail = '') => {
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 
+/**
+ * Co se v konzoli ignoruje: hra je **navržená tak, že bez realtime služby
+ * jede dál sólo**, takže neúspěšné WS spojení a 401 z `/api/auth/me` nejsou
+ * chyby hry. Kdyby se filtrovalo víc, audit by mohl zakrýt skutečnou chybu.
+ */
+const ignoreOffline = (line) =>
+  line.includes('401') ||
+  line.includes('ws://') ||
+  line.includes('wss://') ||
+  line.includes('WebSocket') ||
+  line.includes('/net');
+
 async function waitFor(page, fn, timeout = 25000, label = 'stav') {
   const started = Date.now();
   while (Date.now() - started < timeout) {
@@ -197,7 +209,7 @@ async function main() {
   check('na šířku nejsou chyby v konzoli', wideErrors.length === 0, wideErrors.slice(0, 2).join(' | '));
   await wide.screenshot({ path: `${SHOTS}/mobile-landscape.png` });
 
-  check('v konzoli nejsou chyby', errors.filter((line) => !line.includes('401')).length === 0, errors.slice(0, 3).join(' | '));
+  check('v konzoli nejsou chyby', errors.filter((line) => !ignoreOffline(line)).length === 0, errors.slice(0, 3).join(' | '));
 
   await browser.close();
   app.stop();

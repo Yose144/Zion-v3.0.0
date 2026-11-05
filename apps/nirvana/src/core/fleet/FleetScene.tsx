@@ -16,7 +16,7 @@
  *     při zatáčení vypadá jako chyba renderu.
  */
 
-import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
@@ -36,7 +36,24 @@ import {
   type ShipInput,
   type ShipState,
 } from './flight';
-import { SHIPS, type ShipSpec } from './ships';
+import { SHIPS, shipById, type ShipSpec } from './ships';
+
+/** Jeden vzdálený pilot (relay ze serveru; vlastní stav klient nepotřebuje). */
+export interface RemotePilot {
+  id: string;
+  name: string;
+  shipId: string;
+  x: number;
+  y: number;
+  z: number;
+  yaw: number;
+  pitch: number;
+  roll: number;
+  speed: number;
+  docked: boolean;
+  dockId?: string;
+  ghost?: boolean;
+}
 
 /** Prstenec Issobelly — stejná geometrie jako ve vesmíru (`IssobellaRing`). */
 const RING_TILT_LOCAL: [number, number, number] = [Math.PI / 2 - 0.32, 0, 0.14];
@@ -236,6 +253,86 @@ function Nabukano() {
   );
 }
 
+/**
+ * Vzdálené stíhačky.
+ *
+ * Vykreslují se **stejným modelem i materiálem** jako vlastní loď — kdyby
+ * měly zjednodušenou náhradu, dva lidé v místnosti by viděli jinou hru.
+ * Stavy chodí 15×/s v refu, takže se skládají ve `useFrame`, ne v React
+ * state (jinak by se celý strom překresloval 15×/s).
+ *
+ * Sloty jsou klíčované **id pilota**, ne indexem: když někdo odejde a jiný
+ * se přidá, nesmí se mu „převléknout" loď pod rukama.
+ */
+function RemoteFleet({ remotes }: { remotes: React.MutableRefObject<RemotePilot[]> }) {
+  const [slots, setSlots] = useState<{ id: string; shipId: string }[]>([]);
+  const signature = useRef('');
+  const groups = useRef(new Map<string, THREE.Group>());
+  /** Kdy se ten který pilot stal duchem — pro plynulé mizení. */
+  const ghosts = useRef(new Map<string, number>());
+
+  useFrame(({ clock }) => {
+    const list = remotes.current ?? [];
+    const next = list.map((pilot) => `${pilot.id}:${pilot.shipId}`).join('|');
+    if (next !== signature.current) {
+      signature.current = next;
+      setSlots(list.map((pilot) => ({ id: pilot.id, shipId: pilot.shipId })));
+    }
+
+    const now = clock.elapsedTime;
+    for (const pilot of list) {
+      const group = groups.current.get(pilot.id);
+      if (!group) continue;
+      group.position.set(pilot.x, pilot.y, pilot.z);
+      group.rotation.set(-pilot.pitch, pilot.yaw, pilot.roll, 'YXZ');
+
+      if (pilot.ghost) {
+        if (!ghosts.current.has(pilot.id)) ghosts.current.set(pilot.id, now);
+        const fade = Math.max(0, 1 - (now - ghosts.current.get(pilot.id)!) / 3);
+        group.scale.setScalar(0.35 + fade * 0.65);
+        group.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          const material = mesh.material as THREE.MeshStandardMaterial;
+          material.transparent = true;
+          material.opacity = fade;
+        });
+      } else if (ghosts.current.delete(pilot.id)) {
+        group.scale.setScalar(1);
+        group.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          const material = mesh.material as THREE.MeshStandardMaterial;
+          material.transparent = false;
+          material.opacity = 1;
+        });
+      }
+    }
+
+    // úklid: kdo v seznamu není, tomu skupinu zapomeneme
+    const alive = new Set(list.map((pilot) => pilot.id));
+    for (const id of groups.current.keys()) if (!alive.has(id)) groups.current.delete(id);
+  });
+
+  return (
+    <>
+      {slots.map((slot) => (
+        <group
+          key={slot.id}
+          ref={(group) => {
+            if (group) groups.current.set(slot.id, group);
+            else groups.current.delete(slot.id);
+          }}
+        >
+          <Suspense fallback={null}>
+            <MarketShip spec={shipById(slot.shipId)} thrust={0.35} />
+          </Suspense>
+        </group>
+      ))}
+    </>
+  );
+}
+
 /** Značky doků — pulzující prstenec v barvě podle místa. */
 function DockMarkers({ docks, time }: { docks: Dock[]; time: number }) {
   return (
@@ -312,6 +409,10 @@ export interface FleetCanvasProps {
   /** Odpojení — stránka ho vyvolá tlačítkem. */
   undockSignal: number;
   debug?: boolean;
+  /** Ostatní letci (jen když je zapnutý multiplayer). */
+  remotes?: React.MutableRefObject<RemotePilot[]>;
+  /** Každý snímek stav letu ven — stránka ho throttlovaně posílá na server. */
+  onFlight?: (state: ShipState) => void;
 }
 
 /** Vnitřek `<Canvas>`: simulace, kamera, telemetrie, debug háček. */
@@ -322,6 +423,8 @@ function Flight({
   onDock,
   undockSignal,
   debug,
+  remotes,
+  onFlight,
 }: FleetCanvasProps) {
   const { camera, clock, gl } = useThree();
   const input = useRef<ShipInput>({ throttle: 0, yaw: 0, pitch: 0, roll: 0, boost: false, brake: false });
@@ -380,6 +483,9 @@ function Flight({
     const targetGlow = input.current.brake ? 0 : 0.25 + (input.current.throttle > 0 ? 0.55 : 0) + (input.current.boost ? 0.4 : 0);
     glow.current += (targetGlow - glow.current) * dampFactor(delta, 6);
 
+    // ── relay do sítě (stránka si throttle hlídá sama) ────────────────
+    if (onFlight) onFlight(ship);
+
     // ── telemetrie 5×/s ───────────────────────────────────────────────
     lastStats.current += delta;
     if (lastStats.current > 0.2) {
@@ -423,6 +529,10 @@ function Flight({
           geometries: gl.info.memory.geometries,
           textures: gl.info.memory.textures,
         }),
+        /** Kolik cizích pilotů scéna opravdu kreslí. */
+        remotes: () => remotes?.current?.length ?? 0,
+        /** Detaily pro E2E: co server poslal o ostatních (dok, duch, loď). */
+        remoteList: () => (remotes?.current ?? []).map((pilot) => ({ ...pilot })),
         dock: (id: string) => {
           const dock = dockTargets(clock.elapsedTime).find((entry) => entry.id === id);
           if (!dock) return false;
@@ -460,6 +570,8 @@ function Flight({
           <MarketShip spec={spec} thrust={glow.current} />
         </Suspense>
       </group>
+
+      {remotes && <RemoteFleet remotes={remotes} />}
     </>
   );
 }

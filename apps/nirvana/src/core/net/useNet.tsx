@@ -12,6 +12,7 @@ import {
 } from 'react';
 import {
   PROTO_VERSION,
+  type GameId,
   type ChatLine,
   type NetIdentity,
   type PlayerSummary,
@@ -60,19 +61,19 @@ export interface NetApi {
   joinArena: () => void;
   /** Připojení do hry (`arena` = Mars, `race` = Venuše, `fight` = Merkur). */
   joinGame: (
-    game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi',
+    game: GameId,
     heroId?: number,
     battleSpell?: BattleSpellId,
     mode?: RoomMode,
     aspect?: 'a' | 'b',
   ) => void;
   /** Připojení do konkrétní místnosti z lobby (když je otevřených víc). */
-  joinRoom: (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi', roomId: string) => void;
+  joinRoom: (game: GameId, roomId: string) => void;
   /**
    * Dívat se na rozehranou místnost. Divák nedostane sedlo, jen snapshoty —
    * vstup se na serveru zahazuje, takže se nedá „připojit do hry" omylem.
    */
-  spectateRoom: (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi', roomId: string) => void;
+  spectateRoom: (game: GameId, roomId: string) => void;
   /** Sedím v hledišti (nesedím v sedle)? */
   spectator: boolean;
   /**
@@ -89,6 +90,20 @@ export interface NetApi {
   sendFly: (state: { x: number; y: number; vx: number; vy: number; energy: number; collect?: number; finished?: boolean }) => boolean;
   /** Lumi: připoj se ke společné obloze na dané cestě. */
   joinLumi: (path: 'calm' | 'wind' | 'light') => void;
+  /** Flotila: připoj se ke společné obloze s vybranou lodí. */
+  joinFleet: (shipId: string) => void;
+  /** Flotila: pošli stav letu (throttlováno na 20 Hz). */
+  sendFlight: (state: {
+    x: number;
+    y: number;
+    z: number;
+    yaw: number;
+    pitch: number;
+    roll: number;
+    speed: number;
+    docked?: boolean;
+    dockId?: string;
+  }) => boolean;
   /** MOBA: nákup itemu (server rozhodne, jestli na něj je zlato). */
   sendBuy: (item: ItemId) => void;
   /** MOBA: prodej itemu (server vrátí 60 % ceny). */
@@ -367,7 +382,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
 
   const joinGame = useCallback(
     (
-      game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi',
+      game: GameId,
       heroId?: number,
       battleSpell?: BattleSpellId,
       mode?: RoomMode,
@@ -379,14 +394,14 @@ export function NetProvider({ children }: { children: ReactNode }) {
   );
 
   const joinRoom = useCallback(
-    (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi', roomId: string) => {
+    (game: GameId, roomId: string) => {
       send({ t: 'join', game, room: roomId });
     },
     [send],
   );
 
   const spectateRoom = useCallback(
-    (game: 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi', roomId: string) => {
+    (game: GameId, roomId: string) => {
       send({ t: 'join', game, room: roomId, spectate: true });
     },
     [send],
@@ -466,6 +481,9 @@ export function NetProvider({ children }: { children: ReactNode }) {
    * sebrané světlo se nesmí ztratit jen proto, že ho throttle zahodil.
    */
   const flyAt = useRef(0);
+  const flightAt = useRef(0);
+  /** Poslední odeslaný stav doku — změna se posílá mimo throttle. */
+  const lastDockSent = useRef<boolean | null>(null);
   const joinLumi = useCallback<NetApi['joinLumi']>(
     (path) => {
       send({ t: 'join', game: 'lumi', path });
@@ -481,6 +499,40 @@ export function NetProvider({ children }: { children: ReactNode }) {
       flyAt.current = now;
       send({ t: 'fly', ...state });
       return true;
+    },
+    [send],
+  );
+
+  /**
+   * Flotila: stav letu.
+   *
+   * `yaw` se posílá **zabalený do (−π, π]** — v simulaci roste otáčením
+   * donekonečna, ale do sítě nemá smysl posílat 300 rad; server i klient
+   * počítají se stejnou orientací.
+   */
+  const sendFlight = useCallback<NetApi['sendFlight']>(
+    (state) => {
+      const now = Date.now();
+      // změna doku (přistání/odpojení) musí projít vždy, jinak by ostatní
+      // viděli loď na doku, který už opustila
+      const urgent = state.docked !== undefined && state.docked !== lastDockSent.current;
+      if (!urgent && now - flightAt.current < 50) return false;
+      flightAt.current = now;
+      lastDockSent.current = state.docked ?? null;
+      const tau = Math.PI * 2;
+      let yaw = state.yaw % tau;
+      if (yaw > Math.PI) yaw -= tau;
+      if (yaw <= -Math.PI) yaw += tau;
+      send({ t: 'flight', ...state, yaw });
+      return true;
+    },
+    [send],
+  );
+
+  const joinFleet = useCallback<NetApi['joinFleet']>(
+    (shipId) => {
+      lastDockSent.current = null;
+      send({ t: 'join', game: 'fleet', shipId });
     },
     [send],
   );
@@ -589,6 +641,8 @@ export function NetProvider({ children }: { children: ReactNode }) {
       sendTanksShoot,
       sendFly,
       joinLumi,
+      joinFleet,
+      sendFlight,
       sendBuyback,
       sendUseItem,
       sendTalent,
@@ -625,6 +679,8 @@ export function NetProvider({ children }: { children: ReactNode }) {
       sendTanksShoot,
       sendFly,
       joinLumi,
+      joinFleet,
+      sendFlight,
       sendBuyback,
       sendUseItem,
       sendTalent,

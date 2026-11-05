@@ -39,6 +39,18 @@ const check = (name, ok, detail = '') => {
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 
+/**
+ * Co se v konzoli ignoruje: hra je **navržená tak, že bez realtime služby
+ * jede dál sólo**, takže neúspěšné WS spojení a 401 z `/api/auth/me` nejsou
+ * chyby hry. Kdyby se filtrovalo víc, audit by mohl zakrýt skutečnou chybu.
+ */
+const ignoreOffline = (line) =>
+  line.includes('401') ||
+  line.includes('ws://') ||
+  line.includes('wss://') ||
+  line.includes('WebSocket') ||
+  line.includes('/net');
+
 /** Počká na `predicate` v prohlížeči; polluje z Node (ne `waitForFunction`). */
 async function waitFor(page, fn, timeout = 20000, label = 'stav') {
   const started = Date.now();
@@ -174,7 +186,7 @@ async function main() {
   check('trojúhelníky pod 120 k', renderer.triangles < 120000, String(renderer.triangles));
   check('fps ≥ 30 (Metal)', fps >= 30, `${fps} fps`);
 
-  check('v konzoli nejsou chyby', errors.filter((line) => !line.includes('401')).length === 0, errors.slice(0, 3).join(' | '));
+  check('v konzoli nejsou chyby', errors.filter((line) => !ignoreOffline(line)).length === 0, errors.slice(0, 3).join(' | '));
 
   await browser.close();
   app.stop();

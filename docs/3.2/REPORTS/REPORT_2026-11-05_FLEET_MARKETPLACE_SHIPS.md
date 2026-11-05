@@ -236,10 +236,83 @@ oracle stubu a test prošel na ZAP bráně. Proto `e2e/_app.mjs`: spouští bin�
 
 ---
 
+## 6c. Společný let — multiplayer (protokol 31)
+
+**Architektura: relay, ne autoritativní simulace.** Volný let nemá zásahy, skóre ani soupeře,
+takže není co podvádět: klient počítá svůj pohyb sám (stejná `stepShip`) a server ho jen
+předává ostatním. Serverová fyzika by znamenala platit latenci a složitost za ochranu, kterou
+hra nepotřebuje — stejná úvaha jako u Lumi.
+
+**Co server drží doopravdy** (`apps/nirvana-net/src/fleet.ts`, kontrakt `Match`):
+
+* kdo je v místnosti a **kterou lodí letí** (id ověřené proti `SHIPS`, ne proti tomu, co
+  pošle klient; neznámé id spadne na `xwing`),
+* **ověřené hodnoty** — konečná čísla, souřadnice v hranicích prostoru (±34), `yaw`
+  zabalený do (−π, π], pitch ±1,2, roll ±1, rychlost ±40, `dockId` **jen ze seznamu
+  skutečných doků** (neexistující dok se zahodí i s příznakem `docked`),
+* **duchy** odpojených (3 s), aby loď nezmizela uprostřed oblohy; sedlo se uvolní hned.
+
+**Protokol (30 → 31):**
+
+| prvek | změna |
+|---|---|
+| `GameId` | `+ 'fleet'` |
+| `join` | `+ shipId?: string` |
+| `ClientMessage` | `+ { t: 'flight', x, y, z, yaw, pitch, roll, speed, docked?, dockId? }` |
+| `SnapshotMessage` | `+ fleet?: { pilots: [...] }` (vlastní stav se nevrací) |
+| konstanta | `FLEET_ROOM_SIZE = 6` |
+
+**Klient:** `useNet` dostal `joinFleet(shipId)` a `sendFlight(...)` (throttle 20 Hz;
+**změna doku jde mimo throttle**, jinak by ostatní viděli loď na doku, který už opustila).
+`FleetScene` kreslí cizí piloty **stejným modelem i materiálem** jako vlastní loď (jinak by
+dva lidé viděli jinou hru), pozice čte z refu ve `useFrame` — snapshoty 15×/s by jinak
+překreslovaly celý strom. Sloty jsou klíčované **id pilota**, ne indexem: když někdo odejde
+a jiný se přidá, nesmí se mu „převléknout" loď. Duch mizí plynule (opacity + zmenšení).
+
+**Lobby:** flotila má dlaždici v `/multiplayer` (`seats: 6`) a `watch.ts` zná
+`fleet-N`, takže jde místnost i sledovat.
+
+### Ověření
+
+| test | výsledek |
+|---|---|
+| `apps/nirvana-net/test/fleet.mjs` | **24/24** (dva piloti, poloha/natočení, ořezy, neexistující dok, neznámá loď, duch 3 s, kapacita 6 + přebytek do druhé místnosti) |
+| `apps/nirvana/e2e/fleet-online.mjs` | **12/12** (appka ↔ net: join z tlačítka, cizí loď ve scéně, pohyb, **přistání protistrany vidět**, zpětný směr) |
+
+Online test používá jako protistranu **Node WS klienta**, ne druhé okno prohlížeče: headless
+WebGL se táhne a druhý kontext by měřil latenci, ne hru.
+
+### Pasti (reálné, stály čas)
+
+1. **Origin allowlist.** Služba bez `NIRVANA_NET_ALLOWED_ORIGINS` zavře spojení z `:3010`
+   (403) a hra zůstane „offline", aniž by cokoli řekla — v testu to vypadalo jako rozbitý join.
+2. **Server nesmí tahat `three`.** `docks.ts` počítá polohy přes `three`, a deploy
+   `nirvana-net` kopíruje jen `ws` — `require('three')` by službu shodil při startu. Proto má
+   server vlastní seznam `DOCK_IDS` (**kopie**, ne import) a když se doky v klientovi změní,
+   musí se změnit i tam.
+3. **`noUncheckedIndexedAccess`** v `nirvana-net` je přísnější než v appce — `SHIPS[1]`
+   je `ShipSpec | undefined`, takže fallback loď potřebuje `!`.
+4. **Zabíjení dětí.** Když test spadl na timeout, `next-server` i net služba zůstaly na portu;
+   druhý běh se pak připojil ke staré instanci **bez oracle stubu** a měřil ZAP bránu.
+   `_app.mjs` teď binárku spouští přímo (`detached`), zabíjí celou skupinu a navíc **ověří
+   `access:true`** — jinak hlasitě spadne.
+5. **Souběžný build ve stejném `.next`** (paralelní session) dokáže do bundlu vnést cizí
+   `NEXT_PUBLIC_NIRVANA_NET_URL`; lokální `.next` proto není důkaz o buildu. Deploy skript
+   buildí sám.
+
+### Pořadí nasazení (důležité)
+
+`PROTO_VERSION` je **31**, živá net služba je na **30**. Platí pravidlo: **nejdřív
+`deploy-nirvana-net.sh`, pak appku.** `deploy-nirvana.sh` to kontroluje sám
+(`scripts/ops/nirvana-proto-check.sh`) a při novějším klientovi se zastaví — obejít jen
+vědomě přes `ZION_SKIP_PROTO_CHECK=1`.
+
+---
+
 ## 7. Meze (co se nemá hlásit jako hotové)
 
-* **Multiplayer není.** Let je sólo; `nirvana-net` (`Match` kontrakt) je připravený, ale
-  vyžaduje bump protokolu a deploy net-first.
+* **Multiplayer je hotový lokálně, ale nenasazený** — živá net služba je na protokolu 30,
+  klient na 31. Bez deploye net-first by se hráči připojili a dostali `proto_mismatch`.
 * **Mobil ověřen emulací (`isMobile` + `hasTouch`), ne na skutečném zařízení.** Detail v §6b.
 * **VR není.** Scéna nemá `<XR>`; kamera je cinematic (v headsetu by to „letělo hlavou").
 * **LOD není.** 7 × ~16 k tris je v rozpočtu scény (univerzum má 90 k), ale při multiplayeru

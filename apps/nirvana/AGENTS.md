@@ -2253,3 +2253,33 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   `.artifacts/probe/fleet-audit.mjs` (16 kontrol v prohlížeči — mimo jiné že se
   model opravdu stáhl, ne jen že existuje canvas).
 - **Co tu není:** multiplayer, VR, LOD, ověření na skutečném telefonu.
+
+## Flotila — společný let (2026-11-05, protokol 31)
+
+- **Relay, ne autoritativní simulace.** Volný let nemá zásahy ani skóre, takže
+  klient počítá pohyb sám a server ho jen předává. Server ověřuje **rozsahy**
+  (poloha ±34, yaw zabalený, pitch/roll/speed stropy) a `dockId` **proti seznamu
+  doků** — neexistující dok se zahodí i s příznakem `docked`.
+- **Změna doku jde mimo throttle.** `sendFlight` posílá 20 Hz, ale když se změní
+  `docked`, zpráva projde vždy — jinak by ostatní viděli loď na doku, který už
+  opustila.
+- **Cizí piloti se kreslí stejným modelem** (`MarketShip`), ne zjednodušenou
+  náhradou: dva lidé v místnosti mají vidět stejnou hru. Pozice jdou z refu ve
+  `useFrame` (snapshoty 15×/s by překreslovaly celý strom), sloty jsou klíčované
+  **id pilota** — ne indexem, jinak se po odchodu „převlékne" loď.
+- **Server nesmí importovat `docks.ts`** — ten počítá přes `three`, a deploy
+  `nirvana-net` kopíruje jen `ws`. `apps/nirvana-net/src/fleet.ts` má proto
+  **vlastní kopii seznamu doků**; při změně doků je nutné sáhnout na obě místa.
+- **`nirvana-net` má `noUncheckedIndexedAccess`** — `SHIPS[1]` je
+  `ShipSpec | undefined`, fallback potřebuje `!`.
+- **Origin allowlist:** bez `NIRVANA_NET_ALLOWED_ORIGINS` služba zavře spojení
+  z `:3010` (403) a hra zůstane „offline" bez chybové zprávy. V E2E to nastavuj.
+- **Pořadí deploye:** `deploy-nirvana-net.sh` **první**, pak appka (proto 31 vs 30).
+  `deploy-nirvana.sh` to kontroluje sám a při novějším klientovi se zastaví.
+- **Testy:** `apps/nirvana-net/test/fleet.mjs` (24 kontrol, server) a
+  `apps/nirvana/e2e/fleet-online.mjs` (12, appka ↔ net; protistrana je Node WS
+  klient, ne druhé okno — headless WebGL by měřil latenci, ne hru). Online test
+  potřebuje build s `NEXT_PUBLIC_NIRVANA_NET_URL`; pozor, souběžný build
+  v paralelní session umí do `.next` vnést cizí hodnotu.
+- **Co tu není:** hlas, kolize lodí mezi sebou, týmové mise, pořadí/„kdo dřív
+  přistál\" (server jen relayuje). Místnost má 6 pilotů.
