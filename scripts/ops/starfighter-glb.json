@@ -106,6 +106,21 @@
       "glbLod": "/models/fleet/lod/xwing.glb",
       "lodTriangles": 8202,
       "lodBytes": 140176
+    },
+    {
+      "id": "falcon",
+      "name": "Millennium Falcon",
+      "file": "/models/fleet/falcon.glb",
+      "triangles": 37545,
+      "vertices": 25747,
+      "panels": 1466,
+      "width": 0.7645,
+      "height": 0.2142,
+      "length": 1.0,
+      "bytes": 1378536,
+      "glbLod": "/models/fleet/lod/falcon.glb",
+      "lodTriangles": 12076,
+      "lodBytes": 214744
     }
   ]
 }

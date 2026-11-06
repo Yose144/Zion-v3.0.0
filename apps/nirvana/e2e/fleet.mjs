@@ -83,7 +83,12 @@ async function main() {
   await page.goto(`${BASE}/fleet?fleetDebug=1`, { waitUntil: 'networkidle' });
   await waitFor(page, () => document.querySelectorAll('.fleet-card').length > 0, 30000, 'karty lodí');
   const cards = await page.evaluate(() => document.querySelectorAll('.fleet-card').length);
-  check('hangár nabízí 7 lodí', cards === 7, `count=${cards}`);
+  // 8 = sedm stíhaček z marketu + Millennium Falcon (z archivu Thingiverse)
+  check('hangár nabízí 8 lodí', cards === 8, `count=${cards}`);
+  const falcon = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('.fleet-card-name')).some((el) => el.textContent?.includes('Falcon')),
+  );
+  check('v hangáru je Millennium Falcon', falcon);
   const title = await page.evaluate(() => document.querySelector('.fleet-hangar h1')?.textContent ?? '');
   check('hangár má nadpis', (title ?? '').length > 3, title);
   await page.screenshot({ path: `${SHOTS}/hangar.png` });

@@ -210,11 +210,12 @@ console.log('\n▸ telemetrie');
 
 console.log('\n▸ lodě se od sebe liší');
 {
-  check('je sedm lodí', SHIPS.length === 7, `count=${SHIPS.length}`);
+  check('je osm lodí', SHIPS.length === 8, `count=${SHIPS.length}`);
   const speeds = SHIPS.map((ship) => ship.maxSpeed);
   const fastest = SHIPS[speeds.indexOf(Math.max(...speeds))];
   const slowest = SHIPS[speeds.indexOf(Math.min(...speeds))];
   check('nejrychlejší je TIE Interceptor', fastest.id === 'tieinterceptor', fastest.id);
+  check('Falcon je mezi loděmi', SHIPS.some((ship) => ship.id === 'falcon'));
   check('nejpomalejší je B-Wing', slowest.id === 'bwing', slowest.id);
   check(
     'každá loď má trysky',

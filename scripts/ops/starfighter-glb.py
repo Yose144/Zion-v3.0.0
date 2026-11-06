@@ -74,6 +74,13 @@ SHIPS: list[dict] = [
     dict(id='tiefighter', nose='y', up='z', flip=False, roll=0, name='TIE Fighter'),
     dict(id='tieinterceptor', nose='y', up='z', flip=False, roll=0, name='TIE Interceptor'),
     dict(id='xwing', nose='x', up='z', flip=True, roll=0, name='X-Wing'),
+    # Falcon nemá vlastní model z marketu — přišel z archivu Thingiverse
+    # (thing 967387, CC-BY-SA 3.0). Zdroj:
+    # https://archive.org/details/thingiverse-967387 → Falcon.stl
+    # Pozor na orientaci: u tohohle modelu je **délka podél Y** (bbox 52,8 × 69,1 × 14,8),
+    # ne X jako u stíhaček. Se `nose='x'` se saucer postavil na hranu a render
+    # vypadal jako dort — pozná se to jen pohledem na sheet.
+    dict(id='falcon', nose='y', up='z', flip=False, roll=0, name='Millennium Falcon'),
 ]
 
 AXES = {'x': np.array([1.0, 0.0, 0.0]), 'y': np.array([0.0, 1.0, 0.0]), 'z': np.array([0.0, 0.0, 1.0])}

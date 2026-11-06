@@ -107,6 +107,34 @@ Rollback stromy zůstávají v `/opt/zion/APP&WEB/<app>.before-<timestamp>`, DB 
 
 ---
 
+## 4b. Millennium Falcon — model z online zdroje
+
+Produkt `star-008` neměl lokální geometrii (odkaz na Thingiverse). Thingiverse je dnes za
+Cloudflare (403 i pro headless prohlížeč) a jeho API chce token, **ale Internet Archive má
+archivované položky `thingiverse-<id>`** — odtud se dá stáhnout původní ZIP bez překážek.
+
+Kandidáti (všechny CC):
+
+| thing | obsah | tris | výsledek |
+|---|---|---|---|
+| 2179843 „minimalist" | 1 STL | 20 422 | **vyřazen** — po konverzi to vypadá jako dort, ne Falcon |
+| 6771 „kit" | 4 STL (top/middle/bottom) | 12 359 | **vyřazen** — pláště bez objemu, slepenec nedrží tvar |
+| **967387** | 1 STL `Falcon.stl` | **37 545** | **použit** — saucer, mandibuly, kokpit i radar sedí |
+
+Dvě věci, které rozhodly až pohled na render:
+1. **Osa.** U modelu 967387 je délka podél **Y** (bbox 52,8 × 69,1 × 14,8), ne podél X jako
+   u stíhaček. Se `nose='x'` se saucer postavil na hranu a sheet vypadal jako dort.
+2. **Kvalita.** „Minimalist" má sice správný počet trojúhelníků, ale po přemalování
+   panelovým lakem nevypadá jako Falcon — použit byl detailnější model (37 545 tris).
+
+Integrace: osmá loď v `ships.ts` (nákladní: max 9, obratnost 0,75, scale 0,62 — větší než
+stíhačky), LOD 13 000 tris, náhled v marketu `/shop/models3d/falcon.glb` (produkt `star-008`
+už neodkazuje na Thingiverse), atribuce v `apps/MarketPlace/public/shop/models3d/ATTRIBUTION.md`.
+**Licence je CC BY-SA 3.0** — jméno autora v archivu chybí, před veřejným launchem se musí
+dohledat (zapsáno jako blocker).
+
+---
+
 ## 5. Otevřené (mimo autonomní dosah)
 
 * **Živý dvouklientový test místnosti** — potřebuje platný ZAP pas (cizí kódy se nepoužívají).
