@@ -16,6 +16,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { CheckCircle2, Lock, LogIn, Minus, Plus, Vote } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from '@/hooks/usePolling';
 import {
   FwApiError,
@@ -158,7 +159,7 @@ export default function QvSection() {
     try {
       await fwApi.castBallot(selected.id, entries);
       setSubmitState('ok');
-      setSubmitMsg(copy.success[cs ? 'cs' : 'en']);
+      setSubmitMsg(tx5(copy.success, lang));
       void poll();
     } catch (e) {
       setSubmitState('error');
@@ -166,9 +167,9 @@ export default function QvSection() {
         setSubmitMsg('');
         setShowLogin(true);
       } else if (e instanceof FwApiError && e.status === 400) {
-        setSubmitMsg(copy.errBudget[cs ? 'cs' : 'en']);
+        setSubmitMsg(tx5(copy.errBudget, lang));
       } else {
-        setSubmitMsg(copy.errGeneric[cs ? 'cs' : 'en']);
+        setSubmitMsg(tx5(copy.errGeneric, lang));
       }
     }
   };
@@ -176,14 +177,14 @@ export default function QvSection() {
   if (offline && rounds === null) {
     return (
       <div className="zion-rainbow-sub p-5 text-sm text-gray-400" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-        {copy.offline[cs ? 'cs' : 'en']}
+        {tx5(copy.offline, lang)}
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-gray-400 max-w-3xl">{copy.intro[cs ? 'cs' : 'en']}</p>
+      <p className="text-sm text-gray-400 max-w-3xl">{tx5(copy.intro, lang)}</p>
 
       {/* ── Round list ── */}
       <div className="grid md:grid-cols-2 gap-4">
@@ -193,7 +194,7 @@ export default function QvSection() {
           ))
         ) : rounds.length === 0 ? (
           <p className="zion-rainbow-sub p-4 text-sm text-gray-500 md:col-span-2" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-            {copy.empty[cs ? 'cs' : 'en']}
+            {tx5(copy.empty, lang)}
           </p>
         ) : (
           rounds.map((r) => (
@@ -212,13 +213,13 @@ export default function QvSection() {
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
                 <span>
-                  {r.credits_per_voter.toLocaleString(cs ? 'cs-CZ' : 'en-US')} {copy.credits[cs ? 'cs' : 'en']}
+                  {r.credits_per_voter.toLocaleString(cs ? 'cs-CZ' : t5('en-US', lang))} {tx5(copy.credits, lang)}
                 </span>
                 <span>
-                  {formatZion(r.matching_pool_zion, cs)} ZION {copy.pool[cs ? 'cs' : 'en']}
+                  {formatZion(r.matching_pool_zion, cs)} ZION {tx5(copy.pool, lang)}
                 </span>
                 <span>
-                  {r.ballot_count} {copy.ballots[cs ? 'cs' : 'en']}
+                  {r.ballot_count} {tx5(copy.ballots, lang)}
                 </span>
               </div>
             </button>
@@ -227,7 +228,7 @@ export default function QvSection() {
       </div>
 
       {selectedLoading && (
-        <p className="text-sm text-gray-500 animate-pulse">{copy.loadingRound[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm text-gray-500 animate-pulse">{tx5(copy.loadingRound, lang)}</p>
       )}
 
       {/* ── Selected round ── */}
@@ -239,7 +240,7 @@ export default function QvSection() {
           </div>
 
           {!selected.grants || selected.grants.length === 0 ? (
-            <p className="text-sm text-gray-500">{copy.noGrants[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-500">{tx5(copy.noGrants, lang)}</p>
           ) : selected.status === 'open' ? (
             <>
               {/* Ballot editor */}
@@ -251,7 +252,7 @@ export default function QvSection() {
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-white truncate">{g.title}</p>
                         <p className="text-xs text-gray-500">
-                          {g.category} · {formatZion(g.amount_zion, cs)} ZION {copy.requested[cs ? 'cs' : 'en']}
+                          {g.category} · {formatZion(g.amount_zion, cs)} ZION {tx5(copy.requested, lang)}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -275,7 +276,7 @@ export default function QvSection() {
                           <Plus className="h-4 w-4 mx-auto" />
                         </button>
                         <span className="text-xs text-gray-500 w-20 text-right">
-                          {copy.cost[cs ? 'cs' : 'en']}: {v * v}
+                          {tx5(copy.cost, lang)}: {v * v}
                         </span>
                       </div>
                     </div>
@@ -287,10 +288,10 @@ export default function QvSection() {
               <div className="mt-4">
                 <div className="flex justify-between text-xs text-gray-500 mb-1">
                   <span>
-                    {copy.spent[cs ? 'cs' : 'en']}: {spentCredits} / {credits} {copy.credits[cs ? 'cs' : 'en']}
+                    {tx5(copy.spent, lang)}: {spentCredits} / {credits} {tx5(copy.credits, lang)}
                   </span>
                   <span>
-                    {copy.remaining[cs ? 'cs' : 'en']}: {remaining}
+                    {tx5(copy.remaining, lang)}: {remaining}
                   </span>
                 </div>
                 <div className="h-2 rounded-full bg-white/5 overflow-hidden">
@@ -311,7 +312,7 @@ export default function QvSection() {
                     className="zion-button-primary inline-flex items-center gap-2 px-5 py-2.5 text-sm disabled:opacity-40"
                   >
                     <Vote className="h-4 w-4" />
-                    {submitState === 'sending' ? copy.submitting[cs ? 'cs' : 'en'] : copy.submit[cs ? 'cs' : 'en']}
+                    {submitState === 'sending' ? tx5(copy.submitting, lang) : tx5(copy.submit, lang)}
                   </button>
                 ) : (
                   <button
@@ -321,7 +322,7 @@ export default function QvSection() {
                     className="zion-button-secondary inline-flex items-center gap-2 px-5 py-2.5 text-sm"
                   >
                     <LogIn className="h-4 w-4" />
-                    {copy.signIn[cs ? 'cs' : 'en']}
+                    {tx5(copy.signIn, lang)}
                   </button>
                 )}
                 {authenticated && user && (
@@ -347,15 +348,15 @@ export default function QvSection() {
               </div>
             </>
           ) : selected.status === 'tallying' ? (
-            <p className="text-sm text-gray-400">{copy.tallyingNote[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(copy.tallyingNote, lang)}</p>
           ) : selected.status === 'closed' && results ? (
             <div className="space-y-3">
               <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500">
                 <span>
-                  {copy.results[cs ? 'cs' : 'en']}: {results.ballots} {copy.ballots[cs ? 'cs' : 'en']} · {results.total_votes} {copy.votes[cs ? 'cs' : 'en']}
+                  {tx5(copy.results, lang)}: {results.ballots} {tx5(copy.ballots, lang)} · {results.total_votes} {tx5(copy.votes, lang)}
                 </span>
                 <span>
-                  {copy.allocated[cs ? 'cs' : 'en']}: {formatZion(results.allocated_zion, cs)} ZION · {copy.unallocated[cs ? 'cs' : 'en']}: {formatZion(results.unallocated_zion, cs)} ZION
+                  {tx5(copy.allocated, lang)}: {formatZion(results.allocated_zion, cs)} ZION · {tx5(copy.unallocated, lang)}: {formatZion(results.unallocated_zion, cs)} ZION
                 </span>
               </div>
               {results.grants.map((g) => {
@@ -367,9 +368,9 @@ export default function QvSection() {
                     <div className="flex items-center justify-between gap-2 text-sm mb-1">
                       <span className="text-white truncate">{title}</span>
                       <span className="text-xs text-gray-400 whitespace-nowrap">
-                        {g.votes} {copy.votes[cs ? 'cs' : 'en']} · {g.voters} {copy.voters[cs ? 'cs' : 'en']} ·{' '}
+                        {g.votes} {tx5(copy.votes, lang)} · {g.voters} {tx5(copy.voters, lang)} ·{' '}
                         {formatZion(g.allocated_zion, cs)} ZION
-                        {g.capped ? ` (${copy.capped[cs ? 'cs' : 'en']})` : ''}
+                        {g.capped ? ` (${tx5(copy.capped, lang)})` : ''}
                       </span>
                     </div>
                     <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
@@ -383,7 +384,7 @@ export default function QvSection() {
             <p className="text-sm text-gray-500 flex items-center gap-2">
               <Lock className="h-4 w-4" />
               {selected.status === 'draft'
-                ? copy.status.draft[cs ? 'cs' : 'en']
+                ? tx5(copy.status.draft, lang)
                 : copy.status[selected.status][cs ? 'cs' : 'en']}
             </p>
           )}

@@ -22,7 +22,8 @@ import {
   X,
   Loader2,
 } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { CONTRACTS, CHAINS, ACTIVE_CHAIN } from '@/lib/defi-contracts';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
 import { usePolling } from '@/hooks/usePolling';
@@ -245,6 +246,7 @@ function getContractStats(
   key: string,
   defi: DefiStatusData | null,
   cs: boolean,
+  lang: Lang,
 ): { label: string; value: string }[] {
   const d = defi?.data;
   if (!d) return [];
@@ -252,7 +254,7 @@ function getContractStats(
   switch (key) {
     case 'wZION':
       return d.wZION?.totalSupply
-        ? [{ label: copy.totalSupply[cs ? 'cs' : 'en'], value: fmtAmount(d.wZION.totalSupply, 'wZION') }]
+        ? [{ label: tx5(copy.totalSupply, lang), value: fmtAmount(d.wZION.totalSupply, 'wZION') }]
         : [];
     case 'WETH':
       return Number.isFinite(d.weth_usd) && (d.weth_usd ?? 0) > 0
@@ -266,7 +268,7 @@ function getContractStats(
       return d.bridge
         ? [
             {
-              label: copy.validators[cs ? 'cs' : 'en'],
+              label: tx5(copy.validators, lang),
               value: `${d.bridge.validatorCount ?? 0} / ${d.bridge.threshold ?? 0}`,
             },
           ]
@@ -274,40 +276,40 @@ function getContractStats(
     case 'ZIONStaking':
       return [
         ...(d.staking?.totalStaked
-          ? [{ label: copy.staked[cs ? 'cs' : 'en'], value: fmtAmount(d.staking.totalStaked, 'wZION') }]
+          ? [{ label: tx5(copy.staked, lang), value: fmtAmount(d.staking.totalStaked, 'wZION') }]
           : []),
         ...(d.staking?.apr
           ? [{ label: 'APR', value: d.staking.apr }]
           : []),
         ...(d.staking?.rewardPool
-          ? [{ label: copy.rewardPool[cs ? 'cs' : 'en'], value: fmtAmount(d.staking.rewardPool, 'wZION') }]
+          ? [{ label: tx5(copy.rewardPool, lang), value: fmtAmount(d.staking.rewardPool, 'wZION') }]
           : []),
         ...(d.staking?.cooldownDays
-          ? [{ label: copy.cooldown[cs ? 'cs' : 'en'], value: `${d.staking.cooldownDays}d` }]
+          ? [{ label: tx5(copy.cooldown, lang), value: `${d.staking.cooldownDays}d` }]
           : []),
       ];
     case 'ZIONFarm':
       return [
         ...(d.farm?.rewardPerSecond
-          ? [{ label: copy.rewardPerSecond[cs ? 'cs' : 'en'], value: fmtAmount(d.farm.rewardPerSecond, 'wZION/s') }]
+          ? [{ label: tx5(copy.rewardPerSecond, lang), value: fmtAmount(d.farm.rewardPerSecond, 'wZION/s') }]
           : []),
         ...(d.farm?.poolCount !== undefined
-          ? [{ label: copy.pools[cs ? 'cs' : 'en'], value: String(d.farm.poolCount) }]
+          ? [{ label: tx5(copy.pools, lang), value: String(d.farm.poolCount) }]
           : []),
         ...(d.farm?.totalAllocPoints
-          ? [{ label: copy.allocPoints[cs ? 'cs' : 'en'], value: formatNumber(d.farm.totalAllocPoints) }]
+          ? [{ label: tx5(copy.allocPoints, lang), value: formatNumber(d.farm.totalAllocPoints) }]
           : []),
         ...(d.farm?.rewardPool
-          ? [{ label: copy.rewardPool[cs ? 'cs' : 'en'], value: fmtAmount(d.farm.rewardPool, 'wZION') }]
+          ? [{ label: tx5(copy.rewardPool, lang), value: fmtAmount(d.farm.rewardPool, 'wZION') }]
           : []),
       ];
     case 'ZIONGovernance':
       return [
         ...(d.governance?.proposalCount !== undefined
-          ? [{ label: copy.proposals[cs ? 'cs' : 'en'], value: String(d.governance.proposalCount) }]
+          ? [{ label: tx5(copy.proposals, lang), value: String(d.governance.proposalCount) }]
           : []),
         ...(d.governance?.votingPeriod
-          ? [{ label: copy.votingPeriod[cs ? 'cs' : 'en'], value: formatNumber(d.governance.votingPeriod) }]
+          ? [{ label: tx5(copy.votingPeriod, lang), value: formatNumber(d.governance.votingPeriod) }]
           : []),
       ];
     case 'UniV3PoolUSDT':
@@ -328,9 +330,9 @@ function getContractStats(
       if (!pool) return [];
       const price = pool.active === false ? '—' : fmtUsd(pool.price_usd ?? 0);
       return [
-        { label: copy.price[cs ? 'cs' : 'en'], value: price },
-        { label: copy.liquidity[cs ? 'cs' : 'en'], value: formatNumber(Number(pool.liquidity ?? 0)) },
-        { label: copy.fee[cs ? 'cs' : 'en'], value: pool.feeLabel ?? '—' },
+        { label: tx5(copy.price, lang), value: price },
+        { label: tx5(copy.liquidity, lang), value: formatNumber(Number(pool.liquidity ?? 0)) },
+        { label: tx5(copy.fee, lang), value: pool.feeLabel ?? '—' },
       ];
     }
     default:
@@ -342,12 +344,14 @@ function ContractStats({
   contractKey,
   defi,
   cs,
+  lang,
 }: {
   contractKey: string;
   defi: DefiStatusData | null;
   cs: boolean;
+  lang: Lang;
 }) {
-  const stats = useMemo(() => getContractStats(contractKey, defi, cs), [contractKey, defi, cs]);
+  const stats = useMemo(() => getContractStats(contractKey, defi, cs, lang), [contractKey, defi, cs, lang]);
   if (!stats.length) return null;
 
   return (
@@ -367,17 +371,19 @@ function ContractStats({
 function ContractCard({
   entry,
   cs,
+  lang,
   baseUrl,
   defi,
 }: {
   entry: ContractEntry;
   cs: boolean;
+  lang: Lang;
   baseUrl: string;
   defi: DefiStatusData | null;
 }) {
   const config = CATEGORY_CONFIG[entry.category];
   const CategoryIcon = config.icon;
-  const hasLive = getContractStats(entry.key, defi, cs).length > 0;
+  const hasLive = getContractStats(entry.key, defi, cs, lang).length > 0;
 
   return (
     <motion.div
@@ -398,10 +404,10 @@ function ContractCard({
           {hasLive && (
             <span
               className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium border border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-              title={copy.live[cs ? 'cs' : 'en']}
+              title={tx5(copy.live, lang)}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              {copy.live[cs ? 'cs' : 'en']}
+              {tx5(copy.live, lang)}
             </span>
           )}
           <span
@@ -417,22 +423,22 @@ function ContractCard({
         <span className="font-mono text-xs text-white/70 break-all">{entry.address}</span>
       </div>
 
-      <ContractStats contractKey={entry.key} defi={defi} cs={cs} />
+      <ContractStats contractKey={entry.key} defi={defi} cs={cs} lang={lang} />
 
       <div className="mt-3 flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-[11px] text-white/40">
           <Globe className="w-3 h-3" />
-          <span>{copy.network[cs ? 'cs' : 'en']}:</span>
+          <span>{tx5(copy.network, lang)}:</span>
           <span className="text-zion-cyan">Base</span>
         </div>
         <div className="flex items-center gap-2">
-          <ExplorerCopyButton text={entry.address} iconSize={14} title={copy.copy[cs ? 'cs' : 'en']} />
+          <ExplorerCopyButton text={entry.address} iconSize={14} title={tx5(copy.copy, lang)} />
           <a
             href={`${baseUrl}/${entry.address}`}
             target="_blank"
             rel="noopener noreferrer"
-            title={copy.viewOnBasescan[cs ? 'cs' : 'en']}
-            aria-label={copy.viewOnBasescan[cs ? 'cs' : 'en']}
+            title={tx5(copy.viewOnBasescan, lang)}
+            aria-label={tx5(copy.viewOnBasescan, lang)}
             className="text-white/30 hover:text-zion-gold transition-colors"
           >
             <ExternalLink className="w-3.5 h-3.5" />
@@ -551,10 +557,10 @@ export default function ContractsPageClient() {
             className="hover:text-white/70 transition-colors flex items-center gap-1"
           >
             <ChevronLeft className="w-4 h-4" />
-            {copy.explorer[cs ? 'cs' : 'en']}
+            {tx5(copy.explorer, lang)}
           </Link>
           <span>/</span>
-          <span className="text-white/80">{copy.contracts[cs ? 'cs' : 'en']}</span>
+          <span className="text-white/80">{tx5(copy.contracts, lang)}</span>
         </div>
 
         {/* ═══════ HERO ═══════ */}
@@ -569,20 +575,20 @@ export default function ContractsPageClient() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
                 <FileCode className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {copy.contracts[cs ? 'cs' : 'en']}
+                {SITE_RELEASE_LABEL} · {tx5(copy.contracts, lang)}
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                  {copy.subtitle[cs ? 'cs' : 'en']}
+                  {tx5(copy.subtitle, lang)}
                 </p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {copy.title[cs ? 'cs' : 'en']}
+                  {tx5(copy.title, lang)}
                 </h1>
               </div>
             </div>
 
             <div className="zion-rainbow-sub p-6 rounded-2xl" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-              <div className="text-xs text-gray-500 mb-1 uppercase tracking-wider">{copy.network[cs ? 'cs' : 'en']}</div>
+              <div className="text-xs text-gray-500 mb-1 uppercase tracking-wider">{tx5(copy.network, lang)}</div>
               <div className="text-2xl font-bold text-zion-cyan">{network.label}</div>
               <div className="text-[11px] text-gray-500 mt-1">Chain ID {network.chainId}</div>
             </div>
@@ -599,7 +605,7 @@ export default function ContractsPageClient() {
         >
           <div className="flex items-start gap-3">
             <Shield className="w-5 h-5 text-zion-cyan shrink-0 mt-0.5" />
-            <p className="text-sm text-white/70">{copy.infoNote[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-white/70">{tx5(copy.infoNote, lang)}</p>
           </div>
         </motion.div>
 
@@ -621,8 +627,8 @@ export default function ContractsPageClient() {
                   setQuery(e.target.value);
                   setActiveCategory('All');
                 }}
-                placeholder={copy.searchPlaceholder[cs ? 'cs' : 'en']}
-                aria-label={copy.searchPlaceholder[cs ? 'cs' : 'en']}
+                placeholder={tx5(copy.searchPlaceholder, lang)}
+                aria-label={tx5(copy.searchPlaceholder, lang)}
                 autoComplete="off"
                 spellCheck={false}
                 className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-9 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-zion-cyan/50 transition-colors"
@@ -632,7 +638,7 @@ export default function ContractsPageClient() {
                   type="button"
                   onClick={() => setQuery('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
-                  aria-label={copy.clear[cs ? 'cs' : 'en']}
+                  aria-label={tx5(copy.clear, lang)}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -658,7 +664,7 @@ export default function ContractsPageClient() {
                     }`}
                   >
                     {CategoryIcon && <CategoryIcon className="w-3 h-3" />}
-                    <span>{cat === 'All' ? copy.all[cs ? 'cs' : 'en'] : cat}</span>
+                    <span>{cat === 'All' ? tx5(copy.all, lang) : cat}</span>
                     <span className="text-white/30">({count})</span>
                   </button>
                 );
@@ -669,7 +675,7 @@ export default function ContractsPageClient() {
           {initialLoading && (
             <div className="mt-3 flex items-center gap-2 text-xs text-white/40">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              {copy.loading[cs ? 'cs' : 'en']}
+              {tx5(copy.loading, lang)}
             </div>
           )}
         </motion.div>
@@ -682,7 +688,7 @@ export default function ContractsPageClient() {
               animate={{ opacity: 1 }}
               className="text-center py-16 text-white/40 text-sm"
             >
-              {copy.noMatches[cs ? 'cs' : 'en']}
+              {tx5(copy.noMatches, lang)}
             </motion.div>
           ) : (
             CATEGORY_ORDER.map((category, categoryIndex) => {
@@ -711,7 +717,7 @@ export default function ContractsPageClient() {
                       <span className="text-sm text-white/30">({group.length})</span>
                     </div>
                     {category === 'Reference' && (
-                      <p className="text-sm text-white/40 pl-12">{copy.referenceNote[cs ? 'cs' : 'en']}</p>
+                      <p className="text-sm text-white/40 pl-12">{tx5(copy.referenceNote, lang)}</p>
                     )}
                   </div>
 
@@ -725,6 +731,7 @@ export default function ContractsPageClient() {
                           key={entry.key}
                           entry={entry}
                           cs={cs}
+                          lang={lang}
                           baseUrl={baseUrl}
                           defi={defi}
                         />

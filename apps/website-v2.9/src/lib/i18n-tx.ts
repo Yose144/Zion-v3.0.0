@@ -33,6 +33,18 @@ import whitepapersFr from './ui-strings/whitepapers.fr.json';
 import tepikooraEs from './ui-strings/tepikoora.es.json';
 import tepikooraPt from './ui-strings/tepikoora.pt.json';
 import tepikooraFr from './ui-strings/tepikoora.fr.json';
+import contractsEs from './ui-strings/contracts.es.json';
+import contractsPt from './ui-strings/contracts.pt.json';
+import contractsFr from './ui-strings/contracts.fr.json';
+import knihovnaEs from './ui-strings/knihovna.es.json';
+import knihovnaPt from './ui-strings/knihovna.pt.json';
+import knihovnaFr from './ui-strings/knihovna.fr.json';
+import qvEs from './ui-strings/qv.es.json';
+import qvPt from './ui-strings/qv.pt.json';
+import qvFr from './ui-strings/qv.fr.json';
+import teamEs from './ui-strings/team.es.json';
+import teamPt from './ui-strings/team.pt.json';
+import teamFr from './ui-strings/team.fr.json';
 
 
 /**
@@ -54,9 +66,9 @@ type Dict = Record<string, string>;
 const merge = (...parts: Dict[]): Dict => Object.assign({}, ...parts);
 
 const DICTS: Record<'es' | 'pt' | 'fr', Dict> = {
-  es: merge(avatarsEs, newsfeedEs, issobellaEs, treeoflifeEs, mariaEs, kralovstviEs, nabukanoEs, archivelockEs, zionarchiveEs, whitepapersEs, tepikooraEs),
-  pt: merge(avatarsPt, newsfeedPt, issobellaPt, treeoflifePt, mariaPt, kralovstviPt, nabukanoPt, archivelockPt, zionarchivePt, whitepapersPt, tepikooraPt),
-  fr: merge(avatarsFr, newsfeedFr, issobellaFr, treeoflifeFr, mariaFr, kralovstviFr, nabukanoFr, archivelockFr, zionarchiveFr, whitepapersFr, tepikooraFr),
+  es: merge(avatarsEs, newsfeedEs, issobellaEs, treeoflifeEs, mariaEs, kralovstviEs, nabukanoEs, archivelockEs, zionarchiveEs, whitepapersEs, tepikooraEs, contractsEs, knihovnaEs, qvEs, teamEs),
+  pt: merge(avatarsPt, newsfeedPt, issobellaPt, treeoflifePt, mariaPt, kralovstviPt, nabukanoPt, archivelockPt, zionarchivePt, whitepapersPt, tepikooraPt, contractsPt, knihovnaPt, qvPt, teamPt),
+  fr: merge(avatarsFr, newsfeedFr, issobellaFr, treeoflifeFr, mariaFr, kralovstviFr, nabukanoFr, archivelockFr, zionarchiveFr, whitepapersFr, tepikooraFr, contractsFr, knihovnaFr, qvFr, teamFr),
 };
 
 /** Přeloží lokalizovaný objekt pro daný jazyk (5 kódů). */

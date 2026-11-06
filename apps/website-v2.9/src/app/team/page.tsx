@@ -9,7 +9,8 @@ import {
   Rocket, Cpu, Network, Brain, Code2, Server, TestTube2, FileText,
   Mountain, Sailboat, Sunrise, Sun, Pyramid,
 } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const TeamCopy = {
   kicker: { cs: `Lidé a agenti za ZION ekosystémem`, en: `The people and agents behind the ZION ecosystem` },
@@ -309,7 +310,7 @@ const PODS = [
   { layer: 'L6', name: 'Issobella', focus: { cs: 'Vědomí · příběh · knihy', en: 'Consciousness · story · books' }, status: 'open' as const, accent: '232, 121, 249' },
 ];
 
-function StatusBadge({ status, cs }: { status: 'active' | 'open'; cs: boolean }) {
+function StatusBadge({ status, cs, lang }: { status: 'active' | 'open'; cs: boolean; lang: Lang }) {
   return (
     <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold border shrink-0 ${
       status === 'active'
@@ -317,8 +318,8 @@ function StatusBadge({ status, cs }: { status: 'active' | 'open'; cs: boolean })
         : 'bg-zion-gold/10 text-zion-gold border-zion-gold/25'
     }`}>
       {status === 'active'
-        ? TeamCopy.statusActive[cs ? 'cs' : 'en']
-        : TeamCopy.statusOpen[cs ? 'cs' : 'en']}
+        ? tx5(TeamCopy.statusActive, lang)
+        : tx5(TeamCopy.statusOpen, lang)}
     </span>
   );
 }
@@ -346,24 +347,24 @@ export default function TeamPage() {
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                  {TeamCopy.kicker[cs ? 'cs' : 'en']}
+                  {tx5(TeamCopy.kicker, lang)}
                 </p>
                 <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
-                  {TeamCopy.title[cs ? 'cs' : 'en']}
+                  {tx5(TeamCopy.title, lang)}
                 </h1>
               </div>
               <p className="text-lg text-gray-300">
-                {TeamCopy.intro[cs ? 'cs' : 'en']}
+                {tx5(TeamCopy.intro, lang)}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-amber-200">
-                  <GitBranch className="h-3 w-3" /> {TeamCopy.chipOpenSource[cs ? 'cs' : 'en']}
+                  <GitBranch className="h-3 w-3" /> {tx5(TeamCopy.chipOpenSource, lang)}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-emerald-200">
-                  <ShieldCheck className="h-3 w-3" /> {TeamCopy.chipDao[cs ? 'cs' : 'en']}
+                  <ShieldCheck className="h-3 w-3" /> {tx5(TeamCopy.chipDao, lang)}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Heart className="h-3 w-3" /> {TeamCopy.chipFair[cs ? 'cs' : 'en']}
+                  <Heart className="h-3 w-3" /> {tx5(TeamCopy.chipFair, lang)}
                 </span>
               </div>
             </div>
@@ -372,7 +373,7 @@ export default function TeamPage() {
                 src="/images/team/hero.webp"
                 srcSet="/images/team/hero-m.webp 960w, /images/team/hero.webp 1672w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
-                alt={cs ? 'ZION Team — lidé, agenti a komunita kolem Stromu života' : 'ZION Team — people, agents and community around the Tree of Life'}
+                alt={cs ? 'ZION Team — lidé, agenti a komunita kolem Stromu života' : t5('ZION Team — people, agents and community around the Tree of Life', lang)}
                 width={1672}
                 height={941}
                 loading="eager"
@@ -393,12 +394,12 @@ export default function TeamPage() {
           style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{TeamCopy.coreCircle[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(TeamCopy.coreCircle, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Crown className="h-7 w-7 text-zion-gold" />
-              {TeamCopy.coreCircleTitle[cs ? 'cs' : 'en']}
+              {tx5(TeamCopy.coreCircleTitle, lang)}
             </h2>
-            <p className="text-sm text-gray-400 max-w-3xl">{TeamCopy.coreCircleDesc[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400 max-w-3xl">{tx5(TeamCopy.coreCircleDesc, lang)}</p>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {CORE.map((person) => (
@@ -413,13 +414,13 @@ export default function TeamPage() {
                       <span className={`text-lg font-bold ${person.text}`}>{person.monogram}</span>
                     </div>
                   </div>
-                  <StatusBadge status={person.status} cs={cs} />
+                  <StatusBadge status={person.status} cs={cs} lang={lang} />
                 </div>
-                <h3 className="text-xl font-bold text-white">{person.name[cs ? 'cs' : 'en']}</h3>
+                <h3 className="text-xl font-bold text-white">{tx5(person.name, lang)}</h3>
                 <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${person.text} mt-1 mb-3`}>
-                  {person.role[cs ? 'cs' : 'en']}
+                  {tx5(person.role, lang)}
                 </p>
-                <p className="text-sm text-gray-400 leading-relaxed flex-1">{person.desc[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm text-gray-400 leading-relaxed flex-1">{tx5(person.desc, lang)}</p>
                 <div className="flex flex-wrap gap-1.5 mt-4">
                   {person.tags.map((tag) => (
                     <span key={tag} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-gray-300">
@@ -441,12 +442,12 @@ export default function TeamPage() {
           style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{TeamCopy.l5Leads[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(TeamCopy.l5Leads, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Globe2 className="h-7 w-7 text-emerald-300" />
-              {TeamCopy.l5LeadsTitle[cs ? 'cs' : 'en']}
+              {tx5(TeamCopy.l5LeadsTitle, lang)}
             </h2>
-            <p className="text-sm text-gray-400 max-w-3xl">{TeamCopy.l5LeadsDesc[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400 max-w-3xl">{tx5(TeamCopy.l5LeadsDesc, lang)}</p>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {L5_LEADS.map((lead) => (
@@ -463,15 +464,15 @@ export default function TeamPage() {
                   >
                     <lead.icon className={`h-5 w-5 ${lead.text}`} />
                   </div>
-                  <StatusBadge status="open" cs={cs} />
+                  <StatusBadge status="open" cs={cs} lang={lang} />
                 </div>
                 <h3 className="font-semibold text-white leading-tight">{lead.name}</h3>
                 <p className={`text-[11px] font-semibold uppercase tracking-[0.15em] ${lead.text} mt-1`}>
-                  {lead.element[cs ? 'cs' : 'en']}
+                  {tx5(lead.element, lang)}
                 </p>
-                <p className="text-xs text-gray-500 mt-1.5">{lead.location[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs text-gray-500 mt-1.5">{tx5(lead.location, lang)}</p>
                 <div className="mt-auto pt-4 flex items-center justify-between">
-                  <span className="text-xs text-gray-400">{TeamCopy.projectLead[cs ? 'cs' : 'en']}</span>
+                  <span className="text-xs text-gray-400">{tx5(TeamCopy.projectLead, lang)}</span>
                   <ArrowRight className="h-4 w-4 text-gray-500 group-hover:translate-x-1 group-hover:text-white transition-all" />
                 </div>
               </Link>
@@ -488,12 +489,12 @@ export default function TeamPage() {
           style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{TeamCopy.engKicker[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(TeamCopy.engKicker, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Code2 className="h-7 w-7 text-zion-cyan" />
-              {TeamCopy.engTitle[cs ? 'cs' : 'en']}
+              {tx5(TeamCopy.engTitle, lang)}
             </h2>
-            <p className="text-sm text-gray-400 max-w-3xl">{TeamCopy.engDesc[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400 max-w-3xl">{tx5(TeamCopy.engDesc, lang)}</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {ENGINEERING.map((seat) => (
@@ -509,10 +510,10 @@ export default function TeamPage() {
                   >
                     <seat.icon className={`h-5 w-5 ${seat.text}`} />
                   </div>
-                  <StatusBadge status="open" cs={cs} />
+                  <StatusBadge status="open" cs={cs} lang={lang} />
                 </div>
-                <h3 className="font-semibold text-white leading-tight">{seat.role[cs ? 'cs' : 'en']}</h3>
-                <p className="text-xs text-gray-500 mt-2 leading-relaxed">{seat.desc[cs ? 'cs' : 'en']}</p>
+                <h3 className="font-semibold text-white leading-tight">{tx5(seat.role, lang)}</h3>
+                <p className="text-xs text-gray-500 mt-2 leading-relaxed">{tx5(seat.desc, lang)}</p>
               </div>
             ))}
           </div>
@@ -527,12 +528,12 @@ export default function TeamPage() {
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{TeamCopy.sketchKicker[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(TeamCopy.sketchKicker, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Layers className="h-7 w-7 text-zion-purple" />
-              {TeamCopy.sketchTitle[cs ? 'cs' : 'en']}
+              {tx5(TeamCopy.sketchTitle, lang)}
             </h2>
-            <p className="text-sm text-gray-400 max-w-3xl">{TeamCopy.sketchDesc[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400 max-w-3xl">{tx5(TeamCopy.sketchDesc, lang)}</p>
           </div>
 
           {/* Ring 1 — stewardship */}
@@ -540,23 +541,23 @@ export default function TeamPage() {
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-1">
                 <Crown className="h-4 w-4 text-zion-gold" />
-                <p className="text-sm font-semibold text-zion-gold">{TeamCopy.ringSteward[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm font-semibold text-zion-gold">{tx5(TeamCopy.ringSteward, lang)}</p>
               </div>
-              <p className="text-xs text-gray-400">{TeamCopy.ringStewardDesc[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs text-gray-400">{tx5(TeamCopy.ringStewardDesc, lang)}</p>
             </div>
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-1">
                 <Layers className="h-4 w-4 text-zion-purple" />
-                <p className="text-sm font-semibold text-zion-purple">{TeamCopy.ringPods[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm font-semibold text-zion-purple">{tx5(TeamCopy.ringPods, lang)}</p>
               </div>
-              <p className="text-xs text-gray-400">{TeamCopy.ringPodsDesc[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs text-gray-400">{tx5(TeamCopy.ringPodsDesc, lang)}</p>
             </div>
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-1">
                 <Users className="h-4 w-4 text-zion-cyan" />
-                <p className="text-sm font-semibold text-zion-cyan">{TeamCopy.ringGuilds[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm font-semibold text-zion-cyan">{tx5(TeamCopy.ringGuilds, lang)}</p>
               </div>
-              <p className="text-xs text-gray-400">{TeamCopy.ringGuildsDesc[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs text-gray-400">{tx5(TeamCopy.ringGuildsDesc, lang)}</p>
             </div>
           </div>
 
@@ -570,9 +571,9 @@ export default function TeamPage() {
               >
                 <p className="text-2xl font-bold text-white">{pod.layer}</p>
                 <p className="text-xs font-semibold text-gray-300 mt-0.5">{pod.name}</p>
-                <p className="text-[11px] text-gray-500 mt-1.5 leading-snug">{pod.focus[cs ? 'cs' : 'en']}</p>
+                <p className="text-[11px] text-gray-500 mt-1.5 leading-snug">{tx5(pod.focus, lang)}</p>
                 <div className="mt-3 flex justify-center">
-                  <StatusBadge status={pod.status} cs={cs} />
+                  <StatusBadge status={pod.status} cs={cs} lang={lang} />
                 </div>
               </div>
             ))}
@@ -589,12 +590,12 @@ export default function TeamPage() {
         >
           <div className="flex flex-col md:flex-row md:items-center gap-6 justify-between">
             <div className="max-w-2xl">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500 mb-2">{TeamCopy.joinKicker[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500 mb-2">{tx5(TeamCopy.joinKicker, lang)}</p>
               <h2 className="text-2xl sm:text-3xl font-semibold text-white flex items-center gap-3 mb-3">
                 <UserPlus className="h-7 w-7 text-zion-cyan" />
-                {TeamCopy.joinTitle[cs ? 'cs' : 'en']}
+                {tx5(TeamCopy.joinTitle, lang)}
               </h2>
-              <p className="text-sm text-gray-400">{TeamCopy.joinDesc[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm text-gray-400">{tx5(TeamCopy.joinDesc, lang)}</p>
             </div>
             <div className="flex flex-wrap gap-3 shrink-0">
               <a
@@ -604,11 +605,11 @@ export default function TeamPage() {
                 className="zion-button-primary inline-flex items-center gap-2"
               >
                 <Github className="h-4 w-4" />
-                {TeamCopy.joinGithub[cs ? 'cs' : 'en']}
+                {tx5(TeamCopy.joinGithub, lang)}
               </a>
               <Link href="/docs" className="zion-button-secondary inline-flex items-center gap-2">
                 <BookOpen className="h-4 w-4" />
-                {TeamCopy.joinDocs[cs ? 'cs' : 'en']}
+                {tx5(TeamCopy.joinDocs, lang)}
               </Link>
             </div>
           </div>
