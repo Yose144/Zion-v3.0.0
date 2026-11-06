@@ -124,7 +124,7 @@ async function main() {
   const ignored = (line) => line.includes('401') || line.includes('prisma') || line.includes('DATABASE');
   check('v konzoli nejsou chyby', errors.filter((line) => !ignored(line)).length === 0, errors.slice(0, 3).join(' | '));
 
-  console.log('\n▸ produkt bez lokálního modelu (Falcon)');
+  console.log('\n▸ Millennium Falcon (od 2026-11-06 má lokální model)');
   await page.evaluate(() => document.querySelector('[role="dialog"] button[aria-label]')?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
   await sleep(400);
   await page.evaluate(() => {
@@ -132,11 +132,30 @@ async function main() {
     cards.find((card) => /Falcon/i.test(card.textContent ?? ''))?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
   });
   await waitFor(() => page.evaluate(() => Boolean(document.querySelector('[role="dialog"]'))), 15000, 'modal Falcona');
+  // GLB se načítá asynchronně — canvas existuje dřív než model. Čeká se na
+  // resource entry, ne na to, že „tam něco je" (jinak test hlásí chybu, která
+  // není: soubor se stáhne o pár set ms později).
+  const falconGlb = await waitFor(
+    () =>
+      page
+        .evaluate(() =>
+          performance
+            .getEntriesByType('resource')
+            .map((entry) => entry.name)
+            .filter((name) => name.includes('/shop/models3d/falcon.glb')),
+        )
+        .then((list) => (list.length > 0 ? list : null)),
+    20000,
+    'falcon.glb',
+  );
   const falcon = await page.evaluate(() => ({
     canvas: Boolean(document.querySelector('[role="dialog"] canvas')),
     image: Boolean(document.querySelector('[role="dialog"] img')),
   }));
-  check('Falcon ukazuje fotografii, ne prázdné 3D', falcon.image === true && falcon.canvas === false, JSON.stringify(falcon));
+  // Dřív tu byl opak (Falcon model neměl a ukazoval fotografii). Když se model
+  // přidá, test musí tvrdit novou pravdu — jinak hlídá minulost.
+  check('Falcon má 3D náhled', falcon.canvas === true && falcon.image === false, JSON.stringify(falcon));
+  check('a stáhl se falcon.glb', falconGlb.length > 0, JSON.stringify(falconGlb));
 
   await browser.close();
   console.log(`\n${failed === 0 ? '✓' : '✗'} shop-3d: ${passed} prošlo, ${failed} selhalo\n`);

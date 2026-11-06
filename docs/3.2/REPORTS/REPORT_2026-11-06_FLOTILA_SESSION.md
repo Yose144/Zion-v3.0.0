@@ -133,6 +133,12 @@ už neodkazuje na Thingiverse), atribuce v `apps/MarketPlace/public/shop/models3
 **Licence je CC BY-SA 3.0** — jméno autora v archivu chybí, před veřejným launchem se musí
 dohledat (zapsáno jako blocker).
 
+**Nasazeno (2026-11-06):** app z worktree na `dee420a75`; živě `/models/fleet/falcon.glb`
+(1,38 MB) i `lod/falcon.glb` (215 kB) → 200, klient nese „Millennium Falcon".
+Marketplace nasazen zvlášť (`star-008` → `/shop/models3d/falcon.glb`, DB záloha
+`/opt/zion/data/marketplace-falcon-backup-*.txt`), E2E proti produkci **10/10**
+(Falcon má 3D náhled a stáhl se `falcon.glb`).
+
 ---
 
 ## 5. Otevřené (mimo autonomní dosah)
