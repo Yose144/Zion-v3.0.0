@@ -115,6 +115,8 @@ ssh zion-edge2 "chown -R zion:zion '/opt/zion/APP&WEB/website-v2.9' && systemctl
 
 ⚠️ **Nové public soubory = 404 do restartu:** Standalone server drží seznam `public/` souborů z manifestu při startu. **Přepsání** existujícího souboru se projeví okamžitě, ale **nová cesta** vrací Next 404 stránku, dokud se neprovede `systemctl restart zion-website` (hot-deploy nových markdownů → rsync na obě místa + restart).
 
+⚠️ **`archive-content/` na serveru existuje DVAKRÁT a deploy aktualizuje jen jednu kopii (nález 2026-11-06):** `deploy-next-artifact.sh` swapuje pouze `/opt/zion/APP&WEB/website-v2.9/.next/standalone`, takže **top-level `archive-content/` zamrzne** ve stavu, kdy tam byla naposledy rsyncována celá aplikace. Reálně to znamenalo **294 vs 422 `.md`** — chyběly `en/books/surta-srdce/*`, `en/books/kralovstvi-srdce/*` a jeden korpusový adresář, takže EN reader těch knih mohl spadnout na češtinu. Oba `route.ts` (`/api/archive/docs`, `/api/archive/audit`) zkoušejí `cwd/archive-content` **prvně**. **Pravidlo: po každém artefaktovém deployi (nebo po hot-copy markdownu) srovnat obě kopie** (`rsync -a --delete .next/standalone/archive-content/ archive-content/`), jinak se stromy rozejdou. Záloha staré kopie před srovnáním: `/root/archive-content-toplevel-backup-20261106T183611Z.tgz`. **Trvalé řešení (doporučeno 👤):** top-level `archive-content/` odstranit — route pak použije `.next/standalone/archive-content`, které deploy vždycky obnoví.
+
 ```bash
 # Hot markdown deploy (bez buildu) — příklad
 rsync -avzs -e ssh "public/docs/books/maitreya/kapitoly/epilog.md" \
