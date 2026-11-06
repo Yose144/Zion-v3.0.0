@@ -83,13 +83,18 @@ Tyto **nejsou** práce překladatele — jsou to „další kroky" z registrů. 
 
 **`Miriam/13` §„Návrh klasifikace a review":** doplnit řádek do `MiseAmenti/07-Registr-Dukazu.md`, zařadit do `canon/books/README.md` jako `DRAFT / HORIZON`, revize historických tvrzení, korektura CZ, kulturní citlivost.
 
-**Rozpory, které knihy samy hlásí a které nejsou opravené** (nezaměňovat s chybou překladu):
-- `docs/TerraNova/06-L5-SVOBODA.md` §6.2 — uvádí 10 % místo 5 % + 5 % a obsahuje cenový odhad (porušuje zákaz predikcí) → třída B + E.
-- `docs/3.2/L5_L6_ACTIVATION_PLAN.md` §4.2/§5 — zastaralý inventář (`fund_address` placeholder, špatný RPC port) vs. skutečný kód.
-- `canon/books/nirvana/04-Domov.md` — ZIS s Passkeys/WebAuthn jako současnost (má být HORIZON).
-- `canon/books/nirvana/10-Prameny-Zivota.md` — statická čísla („23 600 plateb") a „živý graf" na `/l5-free-world`.
-- `canon/books/nirvana/01` — „23 600+ bloků" jako statické číslo (snímek 2026-09-14: 43 500+).
-- OASIS `WorldPanel.tsx` / `PioneerProjectCards.tsx` — ručně psané statusy bez zdroje v L5 API; Te Pīko Ora „Tahiti" vs. „Raiatea".
+**Rozpory, které knihy samy hlásí a které nejsou opravené** (nezaměňovat s chybou překladu) — **stav 2026-11-06 večer:**
+
+> **✅ Opraveno v `d6d2b0346`** (ověřeno proti kódu a živé síti, nasazeno hot-copy):
+> - `docs/TerraNova/06-L5-SVOBODA.md` §6.2 — bylo **10 %** a cenový odhad (`$1`, `$280 milionů`); teď **5 % + 5 % + 1 %** v konsenzu, příklad jen z protokolu (~388 800 ZION/den, ~142 M ZION/rok **nominálně**) a místo ceny odkaz na `total_disbursed` v trackeru. Publikovaná kopie `apps/website-v2.9/public/docs/terranova/06-L5-SVOBODA.md` synchronizována.
+> - `docs/3.2/L5_L6_ACTIVATION_PLAN.md` §4.2/§5 — inventář srovnán s kódem: fund adresy jsou **kanonické konstanty** (ne placeholdery), RPC default **9445**, scanner čte `transactions` (alias `utxo_transactions`) a iteruje všechny tx i outputs; rizika 1–4 uzavřena, otevřené zůstávají **DAO UI** a **summary-only treasury execution** (`runtime.rs`).
+> - `canon/books/nirvana/04-Domov.md` — ZIS Passkeys/WebAuthn byly podané jako dnešní přihlašování; webauthn endpointy vrací **404** a login je schovává za `NEXT_PUBLIC_PASSKEY_ENABLED` → text říká `STAVBA` (e-mail + session + Google dnes).
+> - `canon/books/nirvana/10-Prameny-Zivota.md` — „živý graf zůstatku a projektových toků" → **živý zůstatek fondu**; „přes 23 600 plateb" → snímek k výšce 112 326: **30 305 717 ZION** nashromážděno, `total_disbursed` = **0** (fond dosud nevyplatil nic).
+> - `canon/books/nirvana/01` — „23 600+ bloků" → **112 000 bloků** se snímkem 2026-11-06 a odkazem na živý zdroj.
+> - Registr důkazů `MiseAmenti/07` — doplněna pravidla **8** (Kruh Bohyní: DRAFT/FÁZE 0, dvě vrstvy, CL není kvalifikace) a **9** (ztotožnění Lumi = MÝTUS), jak to předepisují `KruhBohyní/13` a `Lumi/13`.
+
+**Stále otevřené:**
+- OASIS `WorldPanel.tsx` / `PioneerProjectCards.tsx` — ručně psané statusy bez zdroje v L5 API; Te Pīko Ora „Tahiti" vs. „Raiatea" (rozhodnutí 👤, kniha to sama nechává otevřené).
 
 ---
 
