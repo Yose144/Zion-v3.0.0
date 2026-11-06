@@ -1,7 +1,7 @@
 # TRANSLATION PLAN — Zion Archive (CZ → EN)
 
-> **Verze:** 2.2 · **Datum:** 2026-11-06 · **Vlastník:** 👤
-> **Stav:** 176 / 189 překladatelných kapitol (**93,1 %**), zbývá **13 kapitol** (~0,18 MB zdroje)
+> **Verze:** 2.3 · **Datum:** 2026-11-06 · **Vlastník:** 👤
+> **Stav:** 177 / 189 překladatelných kapitol (**93,7 %**), zbývá **12 kapitol** (~0,17 MB zdroje)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md`](docs/3.2/REPORTS/REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md)
 > **Kód:** `apps/website-v2.9` · **Plán archivu:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](docs/plans/ZION-ARCHIVE-COMPLETION.md)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md`](docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md)
@@ -63,7 +63,7 @@ vlastní ENindex mimo kapitoly.
 | Nabukano | 7 | **7** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Kruh Bohyní | 17 | **17** | 0 | **dokončeno 2026-11-06** (CZ + EN) |
 | Mise Amenti | 8 | **8** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
-| **CELKEM** | **189** | **176** | **13** | ~0,18 MB zdroje |
+| **CELKEM** | **189** | **177** | **12** | ~0,17 MB zdroje |
 
 Stav kdykoli zjistíš:
 
