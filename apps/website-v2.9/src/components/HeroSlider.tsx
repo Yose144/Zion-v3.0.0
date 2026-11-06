@@ -15,8 +15,8 @@ interface Slide {
 
 const SLIDES: Slide[] = [
   {
-    src: '/images/home/christmas-kingdom.webp?v=6',
-    srcM: '/images/home/christmas-kingdom-m.webp?v=6',
+    src: '/images/home/christmas-kingdom.webp?v=7',
+    srcM: '/images/home/christmas-kingdom-m.webp?v=7',
     alt: {
       cs: 'Veselé Vánoce a šťastný nový rok 2027 — Kingdom, archa a Strom života ve sněhu',
       en: 'Merry Christmas & Happy New Year 2027 — Kingdom, the ark and the Tree of Life in the snow',

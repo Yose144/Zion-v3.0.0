@@ -609,7 +609,7 @@ export const christmasProducts: XmasProduct[] = [
     externalId: 'lamp-001',
     image: '/vanoce-lampion.webp?v=6',
     hero: '/vanoce/home/03_lampion_tesar_deti_v4.webp?v=6',
-    heroWide: '/vanoce/hero/lampion-wide.webp?v=6',
+    heroWide: '/vanoce/hero/lampion-wide.webp?v=7',
     model3d: '/models/lumi-2.glb',
     guide: {
       title: { cs: 'Složení lampionu — šest kroků', en: 'Assembling the lantern — six steps' },
