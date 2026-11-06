@@ -219,3 +219,5 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+> **⚠️ Pravidlo pro commit v překladové session (2026-11-06, incident):** paralelní session nechává své soubory **nastagedované** (`apps/nirvana/**`, `apps/MarketPlace/**`). Když se `git add` mých souborů spojí s `git commit` v jednom kroku, cizí staged soubory se **strhnou do mého commitu** (stalo se: `e1079c272` obsahuje i 13 souborů nirvany). Proto: (1) kontrolovat `git diff --cached --name-status` v **samostatném** kroku před commitem, (2) commitovat výhradně přes `git commit -m … -- <konkrétní cesty>` (pathspec), nikdy bez pathspec. Historie se nepřepisuje (force-push na `main` je zakázán bez 👤).
