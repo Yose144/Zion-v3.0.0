@@ -111,3 +111,25 @@ přeložený — Krishna „Integración Cósmica" / „Integração Cósmica" /
 - **F3 zbytek**: `location`, `questLine`, `teaching`, `ability`, `quote`, `essence` (202 × 6 × 3),
   714 questů, 202 profilů.
 - F4 Nirvana UI, F5 Archiv, F6 hreflang/sitemap.
+
+---
+
+## 7. F2b — dávka 1: stránka avatarů (page-local copy)
+
+Page-local texty nežijí v `translations.ts`, ale v objektech `{cs, en}` přímo ve stránkách
+(67 souborů, ~1 522 klíčů). Místo přepisu každého objektu na 5 jazyků se překládá **anglický
+řetězec**:
+
+- `src/lib/i18n-tx.ts` — `tx5(entry, lang)` (entry → slovník → en → cs) a `t5(en, lang)`;
+- `src/lib/ui-strings/avatars.{es,pt,fr}.json` — 47 řetězců stránky avatarů;
+- stránka: 50 indexací `[cs ? 'cs' : 'en']` → `tx5(...)`, komponenty dostávají `lang`.
+
+**Ověřeno živě** (deploy `20261106T113931Z`): placeholder hledání a filtry v 5 jazycích
+(„Todos los rayos" / „Todos os raios" / „Tous les rayons"), 202 karet, 0 pageerror.
+
+**Chyba z codemodu (chycena `tsc`):** inline náhrada rozbila načítání profilu
+(`const lang = cs ? 'cs' : t5('en', lang)` — sebe-reference). Opraveno na
+`profileLang = lang === 'cs' ? 'cs' : 'en'` (profily existují jen cs/en).
+
+**Zbývá F2b:** 66 souborů / ~1 450 klíčů (tree-of-life 150, NewsFeed 115, l6-issobella 76,
+maria-del-camino 58, kralovstvi-srdce 45, nabukano 44, ArchiveLock 42, …).
