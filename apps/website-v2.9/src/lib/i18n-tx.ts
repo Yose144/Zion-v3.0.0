@@ -66,6 +66,27 @@ import daoFr from './ui-strings/dao.fr.json';
 import hiranEs from './ui-strings/hiran.es.json';
 import hiranPt from './ui-strings/hiran.pt.json';
 import hiranFr from './ui-strings/hiran.fr.json';
+import deekshaEs from './ui-strings/deeksha.es.json';
+import deekshaPt from './ui-strings/deeksha.pt.json';
+import deekshaFr from './ui-strings/deeksha.fr.json';
+import ainativeEs from './ui-strings/ainative.es.json';
+import ainativePt from './ui-strings/ainative.pt.json';
+import ainativeFr from './ui-strings/ainative.fr.json';
+import genesisEs from './ui-strings/genesis.es.json';
+import genesisPt from './ui-strings/genesis.pt.json';
+import genesisFr from './ui-strings/genesis.fr.json';
+import walletEs from './ui-strings/wallet.es.json';
+import walletPt from './ui-strings/wallet.pt.json';
+import walletFr from './ui-strings/wallet.fr.json';
+import bodhilankaEs from './ui-strings/bodhilanka.es.json';
+import bodhilankaPt from './ui-strings/bodhilanka.pt.json';
+import bodhilankaFr from './ui-strings/bodhilanka.fr.json';
+import downloadEs from './ui-strings/download.es.json';
+import downloadPt from './ui-strings/download.pt.json';
+import downloadFr from './ui-strings/download.fr.json';
+import homeEs from './ui-strings/home.es.json';
+import homePt from './ui-strings/home.pt.json';
+import homeFr from './ui-strings/home.fr.json';
 
 
 /**
@@ -87,9 +108,9 @@ type Dict = Record<string, string>;
 const merge = (...parts: Dict[]): Dict => Object.assign({}, ...parts);
 
 const DICTS: Record<'es' | 'pt' | 'fr', Dict> = {
-  es: merge(avatarsEs, newsfeedEs, issobellaEs, treeoflifeEs, mariaEs, kralovstviEs, nabukanoEs, archivelockEs, zionarchiveEs, whitepapersEs, tepikooraEs, contractsEs, knihovnaEs, qvEs, teamEs, l4hubEs, bohemiaEs, marketEs, networkEs, freeworldEs, daoEs, hiranEs),
-  pt: merge(avatarsPt, newsfeedPt, issobellaPt, treeoflifePt, mariaPt, kralovstviPt, nabukanoPt, archivelockPt, zionarchivePt, whitepapersPt, tepikooraPt, contractsPt, knihovnaPt, qvPt, teamPt, l4hubPt, bohemiaPt, marketPt, networkPt, freeworldPt, daoPt, hiranPt),
-  fr: merge(avatarsFr, newsfeedFr, issobellaFr, treeoflifeFr, mariaFr, kralovstviFr, nabukanoFr, archivelockFr, zionarchiveFr, whitepapersFr, tepikooraFr, contractsFr, knihovnaFr, qvFr, teamFr, l4hubFr, bohemiaFr, marketFr, networkFr, freeworldFr, daoFr, hiranFr),
+  es: merge(avatarsEs, newsfeedEs, issobellaEs, treeoflifeEs, mariaEs, kralovstviEs, nabukanoEs, archivelockEs, zionarchiveEs, whitepapersEs, tepikooraEs, contractsEs, knihovnaEs, qvEs, teamEs, l4hubEs, bohemiaEs, marketEs, networkEs, freeworldEs, daoEs, hiranEs, deekshaEs, ainativeEs, genesisEs, walletEs, bodhilankaEs, downloadEs, homeEs),
+  pt: merge(avatarsPt, newsfeedPt, issobellaPt, treeoflifePt, mariaPt, kralovstviPt, nabukanoPt, archivelockPt, zionarchivePt, whitepapersPt, tepikooraPt, contractsPt, knihovnaPt, qvPt, teamPt, l4hubPt, bohemiaPt, marketPt, networkPt, freeworldPt, daoPt, hiranPt, deekshaPt, ainativePt, genesisPt, walletPt, bodhilankaPt, downloadPt, homePt),
+  fr: merge(avatarsFr, newsfeedFr, issobellaFr, treeoflifeFr, mariaFr, kralovstviFr, nabukanoFr, archivelockFr, zionarchiveFr, whitepapersFr, tepikooraFr, contractsFr, knihovnaFr, qvFr, teamFr, l4hubFr, bohemiaFr, marketFr, networkFr, freeworldFr, daoFr, hiranFr, deekshaFr, ainativeFr, genesisFr, walletFr, bodhilankaFr, downloadFr, homeFr),
 };
 
 /** Přeloží lokalizovaný objekt pro daný jazyk (5 kódů). */

@@ -24,7 +24,8 @@ import {
   TreePine,
   Users,
 } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
@@ -290,7 +291,7 @@ export default function BodhiLankaPage() {
   const [docError, setDocError] = useState(false);
 
   useEffect(() => {
-    const file = cs ? '/docs/terranova/bodhi-lanka.cs.md' : '/docs/terranova/bodhi-lanka.en.md';
+    const file = cs ? '/docs/terranova/bodhi-lanka.cs.md' : t5('/docs/terranova/bodhi-lanka.en.md', lang);
     fetch(file)
       .then((res) => {
         if (!res.ok) throw new Error('not found');
@@ -316,7 +317,7 @@ export default function BodhiLankaPage() {
             className="inline-flex items-center gap-2 text-sm text-zion-gold/65 hover:text-zion-cyan transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {TerranovaBodhiLankaCopy.backToTerraNova[cs ? 'cs' : 'en']}
+            {tx5(TerranovaBodhiLankaCopy.backToTerraNova, lang)}
           </Link>
         </motion.div>
 
@@ -343,7 +344,7 @@ export default function BodhiLankaPage() {
                     </span>
                     <span className="zion-badge-gold inline-flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {TerranovaBodhiLankaCopy.planned2029[cs ? 'cs' : 'en']}
+                      {tx5(TerranovaBodhiLankaCopy.planned2029, lang)}
                     </span>
                   </div>
 
@@ -351,7 +352,7 @@ export default function BodhiLankaPage() {
                     Bodhi Lanka
                   </h1>
                   <p className="text-lg text-zion-gold font-medium">
-                    {TerranovaBodhiLankaCopy.akasaSriLankaTerraNova[cs ? 'cs' : 'en']}
+                    {tx5(TerranovaBodhiLankaCopy.akasaSriLankaTerraNova, lang)}
                   </p>
 
                   <div className="flex items-center gap-1.5 text-white/70">
@@ -360,7 +361,7 @@ export default function BodhiLankaPage() {
                   </div>
 
                   <blockquote className="mt-4 pl-4 border-l-2 border-white/10 text-sm text-white/70 italic leading-relaxed max-w-lg">
-                    {TerranovaBodhiLankaCopy.loveIsTheElementFireCannotBurn[cs ? 'cs' : 'en']}
+                    {tx5(TerranovaBodhiLankaCopy.loveIsTheElementFireCannotBurn, lang)}
                   </blockquote>
 
                   <div className="grid gap-3 pt-3 sm:grid-cols-3">
@@ -410,21 +411,21 @@ export default function BodhiLankaPage() {
             <div className="relative z-10 grid md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-3">
                 <h3 className="text-lg font-bold text-zion-gold">
-                  {TerranovaBodhiLankaCopy.sriLankaPearlOfTheIndianOcean[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaBodhiLankaCopy.sriLankaPearlOfTheIndianOcean, lang)}
                 </h3>
                 <p className="text-white/70 text-sm leading-relaxed">
-                  {TerranovaBodhiLankaCopy.sriLankaIsATropicalParadiseWhe[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaBodhiLankaCopy.sriLankaIsATropicalParadiseWhe, lang)}
                 </p>
                 <p className="text-zion-gold/65 text-sm leading-relaxed">
-                  {TerranovaBodhiLankaCopy.ramaSetuIsTheBridgeThatConnect[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaBodhiLankaCopy.ramaSetuIsTheBridgeThatConnect, lang)}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3 content-start">
                 {[
                   { label: 'Sri Maha Bodhi', val: '288 BC' },
-                  { label: TerranovaBodhiLankaCopy.axis[cs ? 'cs' : 'en'], val: 'Anuradhapura' },
-                  { label: TerranovaBodhiLankaCopy.layer[cs ? 'cs' : 'en'], val: 'L5' },
-                  { label: TerranovaBodhiLankaCopy.region[cs ? 'cs' : 'en'], val: TerranovaBodhiLankaCopy.sriLanka[cs ? 'cs' : 'en'] },
+                  { label: tx5(TerranovaBodhiLankaCopy.axis, lang), val: 'Anuradhapura' },
+                  { label: tx5(TerranovaBodhiLankaCopy.layer, lang), val: 'L5' },
+                  { label: tx5(TerranovaBodhiLankaCopy.region, lang), val: tx5(TerranovaBodhiLankaCopy.sriLanka, lang) },
                 ].map((s) => (
                   <div key={s.label} className="text-center p-3 zion-rainbow-sub" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
                     <p className="text-white/85 font-bold text-xs">{s.val}</p>
@@ -446,16 +447,16 @@ export default function BodhiLankaPage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {TerranovaBodhiLankaCopy.sitePlan[cs ? 'cs' : 'en']}
+                {tx5(TerranovaBodhiLankaCopy.sitePlan, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {TerranovaBodhiLankaCopy.sitePlanSubtitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaBodhiLankaCopy.sitePlanSubtitle, lang)}
               </h2>
             </div>
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/bodhi-lanka/concept-og.webp"
-                alt={cs ? 'Návrh Bodhi Lanka' : 'Bodhi Lanka concept'}
+                alt={cs ? 'Návrh Bodhi Lanka' : t5('Bodhi Lanka concept', lang)}
                 width={1168}
                 height={784}
                 loading="lazy"
@@ -476,10 +477,10 @@ export default function BodhiLankaPage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {TerranovaBodhiLankaCopy.threeDPreview[cs ? 'cs' : 'en']}
+                {tx5(TerranovaBodhiLankaCopy.threeDPreview, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {TerranovaBodhiLankaCopy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaBodhiLankaCopy.threeDPreviewSubtitle, lang)}
               </h2>
             </div>
             <BodhiLankaPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
@@ -495,17 +496,17 @@ export default function BodhiLankaPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaBodhiLankaCopy.inspiration[cs ? 'cs' : 'en']}
+              {tx5(TerranovaBodhiLankaCopy.inspiration, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaBodhiLankaCopy.symbolismZion[cs ? 'cs' : 'en']}
+              {tx5(TerranovaBodhiLankaCopy.symbolismZion, lang)}
             </h2>
           </div>
 
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[11px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
-              <div className="p-3 text-zion-gold/65">{TerranovaBodhiLankaCopy.sriLanka[cs ? 'cs' : 'en']}</div>
-              <div className="p-3 text-white/85 sm:border-l border-white/10">{TerranovaBodhiLankaCopy.principle[cs ? 'cs' : 'en']}</div>
+              <div className="p-3 text-zion-gold/65">{tx5(TerranovaBodhiLankaCopy.sriLanka, lang)}</div>
+              <div className="p-3 text-white/85 sm:border-l border-white/10">{tx5(TerranovaBodhiLankaCopy.principle, lang)}</div>
               <div className="p-3 text-white/85 sm:border-l border-white/10">ZION</div>
             </div>
             {SYMBOLISM.map((row, i) => (
@@ -527,10 +528,10 @@ export default function BodhiLankaPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaBodhiLankaCopy.projectConcept[cs ? 'cs' : 'en']}
+              {tx5(TerranovaBodhiLankaCopy.projectConcept, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaBodhiLankaCopy.activitiesVision[cs ? 'cs' : 'en']}
+              {tx5(TerranovaBodhiLankaCopy.activitiesVision, lang)}
             </h2>
           </div>
 
@@ -583,10 +584,10 @@ export default function BodhiLankaPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaBodhiLankaCopy.developmentPhases[cs ? 'cs' : 'en']}
+              {tx5(TerranovaBodhiLankaCopy.developmentPhases, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaBodhiLankaCopy.fromVisionToReality[cs ? 'cs' : 'en']}
+              {tx5(TerranovaBodhiLankaCopy.fromVisionToReality, lang)}
             </h2>
           </div>
 
@@ -620,7 +621,7 @@ export default function BodhiLankaPage() {
                         className="text-xs font-bold tracking-wider"
                         style={{ color: p.active ? '#22D3EE' : 'rgba(255,255,255,0.3)' }}
                       >
-                        {cs ? `Fáze ${p.num}` : `Phase ${p.num}`}
+                        {cs ? `Fáze ${p.num}` : t5(`Phase ${p.num}`, lang)}
                       </span>
                       <span className="text-sm font-semibold text-white/80">
                         {cs ? p.cs : p.en}
@@ -628,7 +629,7 @@ export default function BodhiLankaPage() {
                       {p.active ? (
                         <span className="inline-flex items-center gap-1 text-zion-cyan text-xs animate-pulse">
                           <PlayCircle className="w-3.5 h-3.5" />
-                          {TerranovaBodhiLankaCopy.exploringNow[cs ? 'cs' : 'en']}
+                          {tx5(TerranovaBodhiLankaCopy.exploringNow, lang)}
                         </span>
                       ) : (
                         <Circle className="w-3.5 h-3.5 text-white/30" />
@@ -651,17 +652,17 @@ export default function BodhiLankaPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaBodhiLankaCopy.terraNovaNetwork[cs ? 'cs' : 'en']}
+              {tx5(TerranovaBodhiLankaCopy.terraNovaNetwork, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaBodhiLankaCopy.connectionWithSisterProjects[cs ? 'cs' : 'en']}
+              {tx5(TerranovaBodhiLankaCopy.connectionWithSisterProjects, lang)}
             </h2>
           </div>
 
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             {/* Header row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[11px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
-              <div className="p-3 text-zion-gold/65">{TerranovaBodhiLankaCopy.dimension[cs ? 'cs' : 'en']}</div>
+              <div className="p-3 text-zion-gold/65">{tx5(TerranovaBodhiLankaCopy.dimension, lang)}</div>
               <div className="p-3 text-white/85 sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Zahrada Genesis</span></div>
               <div className="p-3 text-zion-gold sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Bodhi Lanka</span></div>
             </div>
@@ -678,7 +679,7 @@ export default function BodhiLankaPage() {
           </div>
 
           <p className="text-zion-gold/55 text-xs text-center mt-4">
-            {TerranovaBodhiLankaCopy.bothProjectsShareSourceCodeTer[cs ? 'cs' : 'en']}
+            {tx5(TerranovaBodhiLankaCopy.bothProjectsShareSourceCodeTer, lang)}
           </p>
         </motion.section>
 
@@ -691,7 +692,7 @@ export default function BodhiLankaPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaBodhiLankaCopy.blockchainIntegration[cs ? 'cs' : 'en']}
+              {tx5(TerranovaBodhiLankaCopy.blockchainIntegration, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
@@ -710,11 +711,11 @@ export default function BodhiLankaPage() {
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
                     <p className="text-[11px] text-zion-gold/55 capitalize">
                       {item.status === 'active'
-                        ? TerranovaBodhiLankaCopy.active[cs ? 'cs' : 'en']
+                        ? tx5(TerranovaBodhiLankaCopy.active, lang)
                         : item.status === 'planned'
-                        ? TerranovaBodhiLankaCopy.planned[cs ? 'cs' : 'en']
+                        ? tx5(TerranovaBodhiLankaCopy.planned, lang)
                         : item.status === 'vision'
-                        ? STATUS_LABEL.vision[cs ? 'cs' : 'en']
+                        ? tx5(STATUS_LABEL.vision, lang)
                         : 'TBD'}
                     </p>
                   </div>
@@ -735,19 +736,19 @@ export default function BodhiLankaPage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {TerranovaBodhiLankaCopy.documentation[cs ? 'cs' : 'en']}
+                {tx5(TerranovaBodhiLankaCopy.documentation, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {TerranovaBodhiLankaCopy.documentationSubtitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaBodhiLankaCopy.documentationSubtitle, lang)}
               </h2>
             </div>
             <div className="relative z-10 rounded-2xl border border-white/10 bg-black/40 p-4 md:p-6">
               {docError ? (
-                <p className="text-sm text-zion-red">{TerranovaBodhiLankaCopy.documentationError[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm text-zion-red">{tx5(TerranovaBodhiLankaCopy.documentationError, lang)}</p>
               ) : doc ? (
                 <DocMarkdownArticle content={doc} className="zion-docs-prose max-w-4xl mx-auto" />
               ) : (
-                <p className="text-sm text-white/60">{TerranovaBodhiLankaCopy.documentationLoading[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm text-white/60">{tx5(TerranovaBodhiLankaCopy.documentationLoading, lang)}</p>
               )}
             </div>
           </div>
@@ -762,16 +763,16 @@ export default function BodhiLankaPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-zion-gold">
-              {TerranovaBodhiLankaCopy.openQuestionsLookingForGuardia[cs ? 'cs' : 'en']}
+              {tx5(TerranovaBodhiLankaCopy.openQuestionsLookingForGuardia, lang)}
             </h3>
             <ul className="space-y-2">
               {[
-                TerranovaBodhiLankaCopy.exactGpsCoordinatesAndLandArea[cs ? 'cs' : 'en'],
-                TerranovaBodhiLankaCopy.legalFormInSriLankaNgoTrustCom[cs ? 'cs' : 'en'],
-                TerranovaBodhiLankaCopy.zionNodeCoordinatorRecruitingA[cs ? 'cs' : 'en'],
-                TerranovaBodhiLankaCopy.partnershipsWithSriLankanUniver[cs ? 'cs' : 'en'],
-                TerranovaBodhiLankaCopy.seedLibraryWhichSriLankanHerita[cs ? 'cs' : 'en'],
-                TerranovaBodhiLankaCopy.bhaktiProtocolDesignHowDevotio[cs ? 'cs' : 'en'],
+                tx5(TerranovaBodhiLankaCopy.exactGpsCoordinatesAndLandArea, lang),
+                tx5(TerranovaBodhiLankaCopy.legalFormInSriLankaNgoTrustCom, lang),
+                tx5(TerranovaBodhiLankaCopy.zionNodeCoordinatorRecruitingA, lang),
+                tx5(TerranovaBodhiLankaCopy.partnershipsWithSriLankanUniver, lang),
+                tx5(TerranovaBodhiLankaCopy.seedLibraryWhichSriLankanHerita, lang),
+                tx5(TerranovaBodhiLankaCopy.bhaktiProtocolDesignHowDevotio, lang),
               ].map((q, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-white/70">
                   <Dot className="w-4 h-4 text-zion-gold shrink-0 mt-0.5" />
@@ -780,7 +781,7 @@ export default function BodhiLankaPage() {
               ))}
             </ul>
             <p className="text-zion-gold/55 text-xs pt-2">
-              {TerranovaBodhiLankaCopy.doYouHearTheCallOfTheBodhiTree[cs ? 'cs' : 'en']}
+              {tx5(TerranovaBodhiLankaCopy.doYouHearTheCallOfTheBodhiTree, lang)}
             </p>
             <a
               href="https://discord.gg/wvxJ7DhZ8"
@@ -789,7 +790,7 @@ export default function BodhiLankaPage() {
               className="zion-button-secondary"
             >
               <Users className="w-4 h-4" />
-              {TerranovaBodhiLankaCopy.joinDiscord[cs ? 'cs' : 'en']}
+              {tx5(TerranovaBodhiLankaCopy.joinDiscord, lang)}
             </a>
           </div>
         </motion.section>
@@ -814,14 +815,14 @@ export default function BodhiLankaPage() {
               className="inline-flex items-center gap-2 text-sm text-white/85 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>{TerranovaBodhiLankaCopy.home[cs ? 'cs' : 'en']}</span>
+              <span>{tx5(TerranovaBodhiLankaCopy.home, lang)}</span>
             </Link>
             <span className="text-zion-gold/45">|</span>
             <Link
               href="/terranova"
               className="inline-flex items-center gap-2 text-sm text-white/85 hover:text-white transition-colors"
             >
-              <span>{TerranovaBodhiLankaCopy.terraNova[cs ? 'cs' : 'en']}</span>
+              <span>{tx5(TerranovaBodhiLankaCopy.terraNova, lang)}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

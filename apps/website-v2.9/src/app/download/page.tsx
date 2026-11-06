@@ -12,7 +12,8 @@ import {
   Monitor,
   ExternalLink,
 } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
 
 const DownloadCopy = {
@@ -91,37 +92,37 @@ const DownloadCopy = {
 const DownloadToolBrowser = dynamic(() => import('@/components/download/DownloadToolBrowser'));
 const DownloadFaq = dynamic(() => import('@/components/download/DownloadFaq'));
 
-const getDesktopAgentFeatures = (cs: boolean) => [
-  DownloadCopy.guiDashboardWithRealTimeHashra[cs ? 'cs' : 'en'],
-  DownloadCopy.oneClickMiningNoTerminalNeeded[cs ? 'cs' : 'en'],
-  DownloadCopy.builtInWalletGeneratorManager[cs ? 'cs' : 'en'],
-  DownloadCopy.autoUpdatesSystemTrayIntegrati[cs ? 'cs' : 'en'],
-  DownloadCopy.remoteMonitoringGamingMode[cs ? 'cs' : 'en'],
-  DownloadCopy.availableForWindowsMacosLinux[cs ? 'cs' : 'en'],
+const getDesktopAgentFeatures = (cs: boolean, lang: Lang) => [
+  tx5(DownloadCopy.guiDashboardWithRealTimeHashra, lang),
+  tx5(DownloadCopy.oneClickMiningNoTerminalNeeded, lang),
+  tx5(DownloadCopy.builtInWalletGeneratorManager, lang),
+  tx5(DownloadCopy.autoUpdatesSystemTrayIntegrati, lang),
+  tx5(DownloadCopy.remoteMonitoringGamingMode, lang),
+  tx5(DownloadCopy.availableForWindowsMacosLinux, lang),
 ];
 
-const getCliQuickstartSteps = (cs: boolean) => [
+const getCliQuickstartSteps = (cs: boolean, lang: Lang) => [
   {
-    title: DownloadCopy.k1DownloadMiner[cs ? 'cs' : 'en'],
+    title: tx5(DownloadCopy.k1DownloadMiner, lang),
     items: [
-      DownloadCopy.pickYourPlatformBelowAndExtra[cs ? 'cs' : 'en'],
+      tx5(DownloadCopy.pickYourPlatformBelowAndExtra, lang),
       'Linux/macOS: tar xzf zion-miner-*.tar.gz',
       'Windows: right-click the .zip → Extract All',
     ],
   },
   {
-    title: DownloadCopy.k2StartMining[cs ? 'cs' : 'en'],
+    title: tx5(DownloadCopy.k2StartMining, lang),
     items: [
-      DownloadCopy.runZionMinerNoArgsForMenu[cs ? 'cs' : 'en'],
-      DownloadCopy.windowsDoubleClickZionMinerExe[cs ? 'cs' : 'en'],
+      tx5(DownloadCopy.runZionMinerNoArgsForMenu, lang),
+      tx5(DownloadCopy.windowsDoubleClickZionMinerExe, lang),
       'Advanced: ./start.sh or ./start.bat',
     ],
   },
   {
-    title: DownloadCopy.k3CheckBalance[cs ? 'cs' : 'en'],
+    title: tx5(DownloadCopy.k3CheckBalance, lang),
     items: [
-      DownloadCopy.orVisitTheExplorerAtZionterran[cs ? 'cs' : 'en'],
-      DownloadCopy.needAWalletUseV305CliBelow[cs ? 'cs' : 'en'],
+      tx5(DownloadCopy.orVisitTheExplorerAtZionterran, lang),
+      tx5(DownloadCopy.needAWalletUseV305CliBelow, lang),
       'Community CLI can also create wallets, run node & pool',
     ],
   },
@@ -132,8 +133,8 @@ const getCliQuickstartSteps = (cs: boolean) => [
 export default function DownloadPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const desktopAgentFeatures = getDesktopAgentFeatures(cs);
-  const cliQuickstartSteps = getCliQuickstartSteps(cs);
+  const desktopAgentFeatures = getDesktopAgentFeatures(cs, lang);
+  const cliQuickstartSteps = getCliQuickstartSteps(cs, lang);
 
   return (
     <div className="zion-page">
@@ -150,15 +151,15 @@ export default function DownloadPage() {
               {SITE_RELEASE_LABEL}
             </div>
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{DownloadCopy.tripleStreamMinerGpuCpuZionLiq[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{tx5(DownloadCopy.tripleStreamMinerGpuCpuZionLiq, lang)}</p>
               <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
-                {DownloadCopy.downloadMineEarn[cs ? 'cs' : 'en']}
+                {tx5(DownloadCopy.downloadMineEarn, lang)}
               </h1>
             </div>
             <p className="text-lg text-gray-300">
-              {DownloadCopy.zionV310BoostMinerThreeStream[cs ? 'cs' : 'en']}{' '}
+              {tx5(DownloadCopy.zionV310BoostMinerThreeStream, lang)}{' '}
               <span className="text-white font-semibold">Zion Liquidity</span>{' '}
-              {DownloadCopy.invertsTraditionalMiningMineHo[cs ? 'cs' : 'en']}
+              {tx5(DownloadCopy.invertsTraditionalMiningMineHo, lang)}
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
@@ -166,7 +167,7 @@ export default function DownloadPage() {
                 className="zion-button-primary text-sm"
               >
                 <ArrowDownToLine className="h-4 w-4" />
-                {DownloadCopy.downloadBinaries[cs ? 'cs' : 'en']}
+                {tx5(DownloadCopy.downloadBinaries, lang)}
               </Link>
               <Link
                 href="https://github.com/Zion-TerraNova/v3-Mainnet/releases"
@@ -175,7 +176,7 @@ export default function DownloadPage() {
                 className="zion-button-secondary text-sm"
               >
                 <ExternalLink className="h-3 w-3" />
-                {DownloadCopy.githubReleases[cs ? 'cs' : 'en']}
+                {tx5(DownloadCopy.githubReleases, lang)}
               </Link>
             </div>
           </div>
@@ -186,19 +187,19 @@ export default function DownloadPage() {
           <div className="flex flex-col gap-2">
             <p className="text-sm uppercase tracking-[0.4em] text-zion-cyan">Desktop App</p>
             <h2 className="text-3xl font-semibold text-white">ZION Desktop App · {SITE_VERSION}</h2>
-            <p className="text-gray-400">{DownloadCopy.oneClickGuiForMiningWalletMana[cs ? 'cs' : 'en']}</p>
+            <p className="text-gray-400">{tx5(DownloadCopy.oneClickGuiForMiningWalletMana, lang)}</p>
           </div>
 
           <div className="relative overflow-hidden zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="absolute top-4 right-4 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-3 py-1 text-xs font-semibold tracking-wider text-zion-cyan">
-              ✅ {DownloadCopy.allPlatforms[cs ? 'cs' : 'en']}
+              ✅ {tx5(DownloadCopy.allPlatforms, lang)}
             </div>
             <div className="flex items-start gap-4 mb-6">
               <Monitor className="mt-1 h-10 w-10 shrink-0 text-zion-gold" />
               <div>
                 <h3 className="text-2xl font-semibold text-white">ZION Desktop App</h3>
                 <p className="text-gray-400 mt-1">
-                  {DownloadCopy.fullGuiApplicationWithBuiltInM[cs ? 'cs' : 'en']}
+                  {tx5(DownloadCopy.fullGuiApplicationWithBuiltInM, lang)}
                 </p>
               </div>
             </div>
@@ -220,7 +221,7 @@ export default function DownloadPage() {
                 className="zion-button-primary text-sm"
               >
                 <Package className="h-4 w-4" />
-                {DownloadCopy.desktopLinuxAppImage[cs ? 'cs' : 'en']}
+                {tx5(DownloadCopy.desktopLinuxAppImage, lang)}
               </Link>
               <Link
                 href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.2.0-desktop/zion-desktop-agent-v3.2.0-linux-x86_64.deb"
@@ -229,7 +230,7 @@ export default function DownloadPage() {
                 className="zion-button-primary text-sm"
               >
                 <Package className="h-4 w-4" />
-                {DownloadCopy.desktopLinuxDeb[cs ? 'cs' : 'en']}
+                {tx5(DownloadCopy.desktopLinuxDeb, lang)}
               </Link>
               <Link
                 href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.2.0-desktop/zion-desktop-agent-v3.2.0-windows-x64.exe"
@@ -238,7 +239,7 @@ export default function DownloadPage() {
                 className="zion-button-primary text-sm"
               >
                 <Package className="h-4 w-4" />
-                {DownloadCopy.desktopWindowsExe[cs ? 'cs' : 'en']}
+                {tx5(DownloadCopy.desktopWindowsExe, lang)}
               </Link>
               <Link
                 href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.2.0-desktop/zion-desktop-agent-v3.2.0-windows-x64.zip"
@@ -247,7 +248,7 @@ export default function DownloadPage() {
                 className="zion-button-primary text-sm"
               >
                 <Package className="h-4 w-4" />
-                {DownloadCopy.desktopWindowsZip[cs ? 'cs' : 'en']}
+                {tx5(DownloadCopy.desktopWindowsZip, lang)}
               </Link>
               <Link
                 href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.2.0-desktop/zion-desktop-agent-v3.2.0-mac-arm64.dmg"
@@ -256,30 +257,30 @@ export default function DownloadPage() {
                 className="zion-button-primary text-sm"
               >
                 <Package className="h-4 w-4" />
-                {DownloadCopy.desktopMacDmg[cs ? 'cs' : 'en']}
+                {tx5(DownloadCopy.desktopMacDmg, lang)}
               </Link>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-400">
               <span className="flex items-center gap-1.5">
                 <Package className="h-3.5 w-3.5 text-zion-cyan" />
-                {DownloadCopy.desktopLinuxAppImageDesc[cs ? 'cs' : 'en']}
+                {tx5(DownloadCopy.desktopLinuxAppImageDesc, lang)}
               </span>
               <span className="flex items-center gap-1.5">
                 <Package className="h-3.5 w-3.5 text-zion-cyan" />
-                {DownloadCopy.desktopLinuxDebDesc[cs ? 'cs' : 'en']}
+                {tx5(DownloadCopy.desktopLinuxDebDesc, lang)}
               </span>
               <span className="flex items-center gap-1.5">
                 <Package className="h-3.5 w-3.5 text-zion-cyan" />
-                {DownloadCopy.desktopWindowsExeDesc[cs ? 'cs' : 'en']}
+                {tx5(DownloadCopy.desktopWindowsExeDesc, lang)}
               </span>
               <span className="flex items-center gap-1.5">
                 <Package className="h-3.5 w-3.5 text-zion-cyan" />
-                {DownloadCopy.desktopWindowsZipDesc[cs ? 'cs' : 'en']}
+                {tx5(DownloadCopy.desktopWindowsZipDesc, lang)}
               </span>
               <span className="flex items-center gap-1.5">
                 <Package className="h-3.5 w-3.5 text-zion-cyan" />
-                {DownloadCopy.desktopMacDmgDesc[cs ? 'cs' : 'en']}
+                {tx5(DownloadCopy.desktopMacDmgDesc, lang)}
               </span>
               <Link
                 href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.2.0-desktop"
@@ -288,14 +289,14 @@ export default function DownloadPage() {
                 className="inline-flex items-center gap-1.5 text-zion-cyan hover:underline"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
-                {DownloadCopy.desktopReleaseNotes[cs ? 'cs' : 'en']}
+                {tx5(DownloadCopy.desktopReleaseNotes, lang)}
               </Link>
             </div>
 
             <div className="mt-6 zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <p className="text-sm text-gray-300">
-                <span className="text-zion-gold font-semibold">💡 {DownloadCopy.desktopNeedHelp[cs ? 'cs' : 'en']}</span>{' '}
-                {DownloadCopy.desktopJoinDiscordForSupport[cs ? 'cs' : 'en']}{' '}
+                <span className="text-zion-gold font-semibold">💡 {tx5(DownloadCopy.desktopNeedHelp, lang)}</span>{' '}
+                {tx5(DownloadCopy.desktopJoinDiscordForSupport, lang)}{' '}
                 <Link href="https://discord.gg/wvxJ7DhZ8" target="_blank" className="text-zion-gold underline hover:no-underline">
                   Discord
                 </Link>
@@ -306,21 +307,21 @@ export default function DownloadPage() {
 
         <section className="space-y-6">
           <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DownloadCopy.publicMainnetRelease[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(DownloadCopy.publicMainnetRelease, lang)}</p>
             <h2 className="text-3xl font-semibold text-white">ZION v3.2.0 &quot;One Love&quot; · Terminal Miner</h2>
             <p className="text-gray-400 max-w-3xl">
-              {DownloadCopy.theLatestReleaseBringsTheTripl[cs ? 'cs' : 'en']}
+              {tx5(DownloadCopy.theLatestReleaseBringsTheTripl, lang)}
             </p>
           </div>
 
           <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <p className="text-sm text-gray-300">
-              <span className="text-zion-cyan font-semibold">{DownloadCopy.sourceOfTruth[cs ? 'cs' : 'en']}</span>{' '}
-              {DownloadCopy.operatorCommandsGuideFaqRefere[cs ? 'cs' : 'en']}
+              <span className="text-zion-cyan font-semibold">{tx5(DownloadCopy.sourceOfTruth, lang)}</span>{' '}
+              {tx5(DownloadCopy.operatorCommandsGuideFaqRefere, lang)}
               <Link href="/docs" className="text-zion-cyan underline hover:no-underline">ZION CLI</Link>
-              {DownloadCopy.sectionOfTheDocsSourceCodeIsOp[cs ? 'cs' : 'en']}
+              {tx5(DownloadCopy.sectionOfTheDocsSourceCodeIsOp, lang)}
               <Link href="https://github.com/Zion-TerraNova/v3-Mainnet" target="_blank" className="text-zion-cyan underline hover:no-underline">GitHub</Link>
-              {DownloadCopy.mitLicense[cs ? 'cs' : 'en']}
+              {tx5(DownloadCopy.mitLicense, lang)}
             </p>
           </div>
         </section>
@@ -329,9 +330,7 @@ export default function DownloadPage() {
           <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Hiranyagarbha</p>
           <h2 className="mt-2 text-3xl font-semibold text-white">Zion Hiran CLI</h2>
           <p className="mt-3 max-w-3xl text-gray-400">
-            {cs
-              ? 'Session klient: strom Genesis, menu, FAQ a slovníček. macOS a Linux, stačí Python 3.'
-              : 'A session client: the Genesis tree, a menu, an FAQ, and a glossary. macOS and Linux, Python 3 only.'}
+            {cs ? 'Session klient: strom Genesis, menu, FAQ a slovníček. macOS a Linux, stačí Python 3.' : t5('A session client: the Genesis tree, a menu, an FAQ, and a glossary. macOS and Linux, Python 3 only.', lang)}
           </p>
           <pre className="mt-5 overflow-x-auto rounded-xl bg-black/50 p-4 text-sm text-zion-gold">{`curl -fsSL https://app.zionterranova.com/install-hiran.sh | bash
 zion-hiran`}</pre>
@@ -344,15 +343,15 @@ zion-hiran`}</pre>
         {/* ─── 3-step onboarding ─── */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DownloadCopy.quickStart[cs ? 'cs' : 'en']}</p>
-            <h2 className="text-3xl font-semibold text-white">{DownloadCopy.k3StepsToMining[cs ? 'cs' : 'en']}</h2>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(DownloadCopy.quickStart, lang)}</p>
+            <h2 className="text-3xl font-semibold text-white">{tx5(DownloadCopy.k3StepsToMining, lang)}</h2>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {cliQuickstartSteps.map((step) => (
               <div key={step.title} className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                 <div className="flex items-center gap-3">
                   <Shield className="h-5 w-5 text-zion-cyan" />
-                  <p className="text-xs uppercase tracking-[0.35em] text-gray-400">{DownloadCopy.step[cs ? 'cs' : 'en']}</p>
+                  <p className="text-xs uppercase tracking-[0.35em] text-gray-400">{tx5(DownloadCopy.step, lang)}</p>
                 </div>
                 <h3 className="mt-3 text-xl font-semibold text-white">{step.title}</h3>
                 <ul className="mt-4 space-y-2 text-sm text-gray-300">
@@ -371,15 +370,15 @@ zion-hiran`}</pre>
         {/* ─── Requirements ─── */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DownloadCopy.hardware[cs ? 'cs' : 'en']}</p>
-            <h2 className="text-3xl font-semibold text-white">{DownloadCopy.systemRequirements[cs ? 'cs' : 'en']}</h2>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(DownloadCopy.hardware, lang)}</p>
+            <h2 className="text-3xl font-semibold text-white">{tx5(DownloadCopy.systemRequirements, lang)}</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {[
-              { label: DownloadCopy.minimum[cs ? 'cs' : 'en'], value: DownloadCopy.k2CoreCpu2GbRam100MbDisk[cs ? 'cs' : 'en'] },
-              { label: DownloadCopy.recommended[cs ? 'cs' : 'en'], value: DownloadCopy.k4CoreCpu4GbRam500MbSsd[cs ? 'cs' : 'en'] },
-              { label: DownloadCopy.supportedOs[cs ? 'cs' : 'en'], value: DownloadCopy.windows1011LinuxX8664Arm64Maco[cs ? 'cs' : 'en'] },
-              { label: DownloadCopy.network[cs ? 'cs' : 'en'], value: DownloadCopy.stableInternetOutboundTcpPort8[cs ? 'cs' : 'en'] },
+              { label: tx5(DownloadCopy.minimum, lang), value: tx5(DownloadCopy.k2CoreCpu2GbRam100MbDisk, lang) },
+              { label: tx5(DownloadCopy.recommended, lang), value: tx5(DownloadCopy.k4CoreCpu4GbRam500MbSsd, lang) },
+              { label: tx5(DownloadCopy.supportedOs, lang), value: tx5(DownloadCopy.windows1011LinuxX8664Arm64Maco, lang) },
+              { label: tx5(DownloadCopy.network, lang), value: tx5(DownloadCopy.stableInternetOutboundTcpPort8, lang) },
             ].map((req) => (
               <div key={req.label} className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                 <div className="flex items-center gap-3">
@@ -397,9 +396,9 @@ zion-hiran`}</pre>
         {/* ─── CTA ─── */}
         <section className="zion-cta-banner">
           <TerminalSquare className="mx-auto h-12 w-12 text-zion-gold" />
-          <h2 className="mt-6 text-3xl font-semibold text-white">{DownloadCopy.readyToMine[cs ? 'cs' : 'en']}</h2>
+          <h2 className="mt-6 text-3xl font-semibold text-white">{tx5(DownloadCopy.readyToMine, lang)}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            {DownloadCopy.joinOurCommunityForMiningSuppo[cs ? 'cs' : 'en']}
+            {tx5(DownloadCopy.joinOurCommunityForMiningSuppo, lang)}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
@@ -408,7 +407,7 @@ zion-hiran`}</pre>
               rel="noreferrer"
               className="zion-button-primary text-sm"
             >
-              {DownloadCopy.joinDiscord[cs ? 'cs' : 'en']}
+              {tx5(DownloadCopy.joinDiscord, lang)}
             </Link>
             <Link
               href="https://t.me/zionterranova"
@@ -422,14 +421,14 @@ zion-hiran`}</pre>
               href="/docs"
               className="zion-button-secondary text-sm"
             >
-              {DownloadCopy.documentation[cs ? 'cs' : 'en']}
+              {tx5(DownloadCopy.documentation, lang)}
             </Link>
             <Link
               href="#downloads"
               className="zion-button-secondary text-sm"
             >
               <ArrowDownToLine className="h-4 w-4" />
-              {DownloadCopy.publicDownloads[cs ? 'cs' : 'en']}
+              {tx5(DownloadCopy.publicDownloads, lang)}
             </Link>
           </div>
         </section>

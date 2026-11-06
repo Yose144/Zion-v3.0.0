@@ -24,7 +24,8 @@ import {
   Waves,
   Zap,
 } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
@@ -332,7 +333,7 @@ export default function ZahradaGenesisPage() {
   const [docError, setDocError] = useState(false);
 
   useEffect(() => {
-    const file = cs ? '/docs/terranova/genesis-garden.cs.md' : '/docs/terranova/genesis-garden.en.md';
+    const file = cs ? '/docs/terranova/genesis-garden.cs.md' : t5('/docs/terranova/genesis-garden.en.md', lang);
     fetch(file)
       .then((res) => {
         if (!res.ok) throw new Error('not found');
@@ -358,7 +359,7 @@ export default function ZahradaGenesisPage() {
             className="inline-flex items-center gap-2 text-sm text-zion-gold/65 hover:text-zion-cyan transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {TerranovaGenesisCopy.backToTerraNova[cs ? 'cs' : 'en']}
+            {tx5(TerranovaGenesisCopy.backToTerraNova, lang)}
           </Link>
         </motion.div>
 
@@ -389,7 +390,7 @@ export default function ZahradaGenesisPage() {
                   </span>
                   <span className="zion-badge-gold inline-flex items-center gap-1">
                     <Zap className="w-3 h-3" />
-                    {TerranovaGenesisCopy.inPreparation[cs ? 'cs' : 'en']}
+                    {tx5(TerranovaGenesisCopy.inPreparation, lang)}
                   </span>
                 </div>
 
@@ -400,11 +401,11 @@ export default function ZahradaGenesisPage() {
 
                 <div className="flex items-center gap-1.5 text-white/70">
                   <MapPin className="w-4 h-4 text-zion-cyan shrink-0" />
-                  <span className="text-sm">{cs ? 'Sabacheira · Tomar · Portugalsko' : 'Sabacheira · Tomar · Portugal'}</span>
+                  <span className="text-sm">{cs ? 'Sabacheira · Tomar · Portugalsko' : t5('Sabacheira · Tomar · Portugal', lang)}</span>
                 </div>
 
                 <blockquote className="mt-4 pl-4 border-l-2 border-zion-cyan/40 text-sm text-white/70 italic leading-relaxed max-w-lg">
-                  {TerranovaGenesisCopy.oneLoveOneHeartTogetherWeCreat[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaGenesisCopy.oneLoveOneHeartTogetherWeCreat, lang)}
                 </blockquote>
 
                 <div className="grid gap-3 pt-3 sm:grid-cols-3">
@@ -430,7 +431,7 @@ export default function ZahradaGenesisPage() {
                 src="/images/genesis-garden/hero.webp"
                 srcSet="/images/genesis-garden/hero-m.webp 960w, /images/genesis-garden/hero.webp 1280w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
-                alt={cs ? 'Genesis Garden — koncept' : 'Genesis Garden — concept render'}
+                alt={cs ? 'Genesis Garden — koncept' : t5('Genesis Garden — concept render', lang)}
                 width={1280}
                 height={720}
                 loading="eager"
@@ -453,13 +454,13 @@ export default function ZahradaGenesisPage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 flex flex-col items-center gap-2 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {TerranovaGenesisCopy.threeDPreview[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.threeDPreview, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {TerranovaGenesisCopy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.threeDPreviewSubtitle, lang)}
               </h2>
               <span className="inline-flex items-center gap-1.5 rounded border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-amber-400">
-                {TerranovaGenesisCopy.conceptOnlyLabel[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.conceptOnlyLabel, lang)}
               </span>
             </div>
             <GenesisGardenPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
@@ -477,17 +478,17 @@ export default function ZahradaGenesisPage() {
           <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 mb-6 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {TerranovaGenesisCopy.sitePlan[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.sitePlan, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {TerranovaGenesisCopy.sitePlanSubtitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.sitePlanSubtitle, lang)}
               </h2>
             </div>
 
             <div className="relative z-10 mb-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/genesis-garden/concept-og.webp"
-                alt={cs ? 'Návrh Genesis Garden' : 'Genesis Garden concept'}
+                alt={cs ? 'Návrh Genesis Garden' : t5('Genesis Garden concept', lang)}
                 width={1568}
                 height={1003}
                 loading="lazy"
@@ -499,37 +500,33 @@ export default function ZahradaGenesisPage() {
             <div className="relative z-10 grid gap-6 md:grid-cols-2">
               <div className="space-y-4">
                 <h3 className="text-lg font-bold text-zion-gold">
-                  {cs ? 'Tři pyramidy a Strom života' : 'Three pyramids and the Tree of Life'}
+                  {cs ? 'Tři pyramidy a Strom života' : t5('Three pyramids and the Tree of Life', lang)}
                 </h3>
                 <p className="text-sm text-white/70 leading-relaxed">
-                  {cs
-                    ? 'Srdce areálu tvoří tři moderní krystalické pyramidy uspořádané kolem centrální zahrady s Bodhi stromem a reflektujícím bazénem. Střední pyramida Consciousness je největší a slouží komunitě. Pyramida Memory uchovává semena a znalosti. Pyramida Future hostí ZION node a technologické centrum.'
-                    : 'The heart of the site is three modern crystalline pyramids arranged around a central garden with a Bodhi tree and reflecting pool. The central Consciousness pyramid is the largest and serves the community. The Memory pyramid holds seeds and knowledge. The Future pyramid hosts the ZION node and technology center.'}
+                  {cs ? 'Srdce areálu tvoří tři moderní krystalické pyramidy uspořádané kolem centrální zahrady s Bodhi stromem a reflektujícím bazénem. Střední pyramida Consciousness je největší a slouží komunitě. Pyramida Memory uchovává semena a znalosti. Pyramida Future hostí ZION node a technologické centrum.' : t5('The heart of the site is three modern crystalline pyramids arranged around a central garden with a Bodhi tree and reflecting pool. The central Consciousness pyramid is the largest and serves the community. The Memory pyramid holds seeds and knowledge. The Future pyramid hosts the ZION node and technology center.', lang)}
                 </p>
                 <ul className="space-y-2 text-sm text-white/70">
-                  <li className="flex items-start gap-2"><Landmark className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />{cs ? 'Pyramida Memory — archiv / historie / semínka' : 'Pyramid of Memory — archive / history / seeds'}</li>
-                  <li className="flex items-start gap-2"><Users className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />{cs ? 'Pyramida Consciousness — meditace / komunita / jídelna' : 'Pyramid of Consciousness — meditation / community / dining'}</li>
-                  <li className="flex items-start gap-2"><Zap className="h-4 w-4 text-purple-400 shrink-0 mt-0.5" />{cs ? 'Pyramida Future — ZION / technologie / dílny' : 'Pyramid of Future — ZION / technology / workshops'}</li>
+                  <li className="flex items-start gap-2"><Landmark className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />{cs ? 'Pyramida Memory — archiv / historie / semínka' : t5('Pyramid of Memory — archive / history / seeds', lang)}</li>
+                  <li className="flex items-start gap-2"><Users className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />{cs ? 'Pyramida Consciousness — meditace / komunita / jídelna' : t5('Pyramid of Consciousness — meditation / community / dining', lang)}</li>
+                  <li className="flex items-start gap-2"><Zap className="h-4 w-4 text-purple-400 shrink-0 mt-0.5" />{cs ? 'Pyramida Future — ZION / technologie / dílny' : t5('Pyramid of Future — ZION / technology / workshops', lang)}</li>
                 </ul>
               </div>
 
               <div className="space-y-4">
                 <h3 className="text-lg font-bold text-zion-gold">
-                  {cs ? 'Prezentační board (v přípravě)' : 'Presentation board (in preparation)'}
+                  {cs ? 'Prezentační board (v přípravě)' : t5('Presentation board (in preparation)', lang)}
                 </h3>
                 <p className="text-sm text-white/70 leading-relaxed">
-                  {cs
-                    ? 'První návrh zpracujeme jako architektonický koncept ve stylu Dharma Temple: hero perspektiva z ptačího pohledu, top-down site plan, půdorys přízemí, řez pyramidami, pohled, konstrukční princip, voda, solar, farma a Strom života.'
-                    : 'The first draft will be produced as an architectural concept in the style of Dharma Temple: aerial hero perspective, top-down site plan, ground-floor plan, pyramid section, elevation, construction principle, water, solar, farm and Tree of Life.'}
+                  {cs ? 'První návrh zpracujeme jako architektonický koncept ve stylu Dharma Temple: hero perspektiva z ptačího pohledu, top-down site plan, půdorys přízemí, řez pyramidami, pohled, konstrukční princip, voda, solar, farma a Strom života.' : t5('The first draft will be produced as an architectural concept in the style of Dharma Temple: aerial hero perspective, top-down site plan, ground-floor plan, pyramid section, elevation, construction principle, water, solar, farm and Tree of Life.', lang)}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    cs ? 'Masterplan' : 'Masterplan',
-                    cs ? 'Půdorys' : 'Floor plan',
-                    cs ? 'Řez' : 'Section',
-                    cs ? 'Pohled' : 'Elevation',
-                    cs ? 'Materiály' : 'Materials',
-                    cs ? 'Solar + voda' : 'Solar + water',
+                    cs ? 'Masterplan' : t5('Masterplan', lang),
+                    cs ? 'Půdorys' : t5('Floor plan', lang),
+                    cs ? 'Řez' : t5('Section', lang),
+                    cs ? 'Pohled' : t5('Elevation', lang),
+                    cs ? 'Materiály' : t5('Materials', lang),
+                    cs ? 'Solar + voda' : t5('Solar + water', lang),
                   ].map((tag) => (
                     <span key={tag} className="zion-badge text-[11px]">{tag}</span>
                   ))}
@@ -549,10 +546,10 @@ export default function ZahradaGenesisPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaGenesisCopy.projectConcept[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGenesisCopy.projectConcept, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaGenesisCopy.activitiesVision[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGenesisCopy.activitiesVision, lang)}
             </h2>
           </div>
 
@@ -605,10 +602,10 @@ export default function ZahradaGenesisPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaGenesisCopy.developmentPhases[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGenesisCopy.developmentPhases, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaGenesisCopy.fromVisionToReality[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGenesisCopy.fromVisionToReality, lang)}
             </h2>
           </div>
 
@@ -644,7 +641,7 @@ export default function ZahradaGenesisPage() {
                         className="text-xs font-bold tracking-wider"
                         style={{ color: p.done ? 'rgb(252,209,22)' : p.active ? 'rgb(6,105,40)' : 'rgba(255,255,255,0.3)' }}
                       >
-                        {cs ? `Fáze ${p.num}` : `Phase ${p.num}`}
+                        {cs ? `Fáze ${p.num}` : t5(`Phase ${p.num}`, lang)}
                       </span>
                       <span className="text-sm font-semibold text-white/80">
                         {cs ? p.cs : p.en}
@@ -675,10 +672,10 @@ export default function ZahradaGenesisPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaGenesisCopy.physicalFoundation[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGenesisCopy.physicalFoundation, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaGenesisCopy.infrastructureOffGrid[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGenesisCopy.infrastructureOffGrid, lang)}
             </h2>
           </div>
 
@@ -690,13 +687,13 @@ export default function ZahradaGenesisPage() {
                 <span className="inline-flex h-9 w-9 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                   <Sun className="h-4 w-4 text-zion-gold" />
                 </span>
-                <h3 className="font-bold text-zion-gold text-sm">{TerranovaGenesisCopy.energy[cs ? 'cs' : 'en']}</h3>
+                <h3 className="font-bold text-zion-gold text-sm">{tx5(TerranovaGenesisCopy.energy, lang)}</h3>
               </div>
               <div className="space-y-1.5 relative z-10">
                 {[
-                  { label: TerranovaGenesisCopy.source[cs ? 'cs' : 'en'], val: 'Solar FV systém' },
-                  { label: TerranovaGenesisCopy.backup[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.inDevelopment[cs ? 'cs' : 'en'] },
-                  { label: TerranovaGenesisCopy.status[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.installing[cs ? 'cs' : 'en'] },
+                  { label: tx5(TerranovaGenesisCopy.source, lang), val: 'Solar FV systém' },
+                  { label: tx5(TerranovaGenesisCopy.backup, lang), val: tx5(TerranovaGenesisCopy.inDevelopment, lang) },
+                  { label: tx5(TerranovaGenesisCopy.status, lang), val: tx5(TerranovaGenesisCopy.installing, lang) },
                 ].map((r) => (
                   <div key={r.label} className="flex justify-between text-xs gap-2">
                     <span className="text-zion-gold/65">{r.label}</span>
@@ -705,7 +702,7 @@ export default function ZahradaGenesisPage() {
                 ))}
               </div>
               <p className="text-[11px] text-zion-gold/55 relative z-10">
-                {TerranovaGenesisCopy.goalFullEnergySelfSufficiency[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.goalFullEnergySelfSufficiency, lang)}
               </p>
             </div>
 
@@ -716,13 +713,13 @@ export default function ZahradaGenesisPage() {
                 <span className="inline-flex h-9 w-9 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                   <Droplets className="h-4 w-4 text-zion-cyan" />
                 </span>
-                <h3 className="font-bold text-zion-cyan text-sm">{TerranovaGenesisCopy.water[cs ? 'cs' : 'en']}</h3>
+                <h3 className="font-bold text-zion-cyan text-sm">{tx5(TerranovaGenesisCopy.water, lang)}</h3>
               </div>
               <div className="space-y-1.5 relative z-10">
                 {[
-                  { label: TerranovaGenesisCopy.source[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.wellRainwater[cs ? 'cs' : 'en'] },
-                  { label: TerranovaGenesisCopy.filter[cs ? 'cs' : 'en'], val: 'Gravitace + UV' },
-                  { label: TerranovaGenesisCopy.status[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.basicSystem[cs ? 'cs' : 'en'] },
+                  { label: tx5(TerranovaGenesisCopy.source, lang), val: tx5(TerranovaGenesisCopy.wellRainwater, lang) },
+                  { label: tx5(TerranovaGenesisCopy.filter, lang), val: 'Gravitace + UV' },
+                  { label: tx5(TerranovaGenesisCopy.status, lang), val: tx5(TerranovaGenesisCopy.basicSystem, lang) },
                 ].map((r) => (
                   <div key={r.label} className="flex justify-between text-xs gap-2">
                     <span className="text-zion-gold/65">{r.label}</span>
@@ -731,7 +728,7 @@ export default function ZahradaGenesisPage() {
                 ))}
               </div>
               <p className="text-[11px] text-zion-gold/55 relative z-10">
-                {TerranovaGenesisCopy.plannedRainwaterHarvestingFull[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.plannedRainwaterHarvestingFull, lang)}
               </p>
             </div>
 
@@ -742,13 +739,13 @@ export default function ZahradaGenesisPage() {
                 <span className="inline-flex h-9 w-9 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                   <Sprout className="h-4 w-4 text-zion-cyan" />
                 </span>
-                <h3 className="font-bold text-zion-cyan text-sm">{TerranovaGenesisCopy.gardenFood[cs ? 'cs' : 'en']}</h3>
+                <h3 className="font-bold text-zion-cyan text-sm">{tx5(TerranovaGenesisCopy.gardenFood, lang)}</h3>
               </div>
               <div className="space-y-1.5 relative z-10">
                 {[
-                  { label: TerranovaGenesisCopy.method[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.organicFarming[cs ? 'cs' : 'en'] },
-                  { label: TerranovaGenesisCopy.goal[cs ? 'cs' : 'en'], val: '40–60 % kalorií' },
-                  { label: TerranovaGenesisCopy.status[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.growing[cs ? 'cs' : 'en'] },
+                  { label: tx5(TerranovaGenesisCopy.method, lang), val: tx5(TerranovaGenesisCopy.organicFarming, lang) },
+                  { label: tx5(TerranovaGenesisCopy.goal, lang), val: '40–60 % kalorií' },
+                  { label: tx5(TerranovaGenesisCopy.status, lang), val: tx5(TerranovaGenesisCopy.growing, lang) },
                 ].map((r) => (
                   <div key={r.label} className="flex justify-between text-xs gap-2">
                     <span className="text-zion-gold/65">{r.label}</span>
@@ -757,7 +754,7 @@ export default function ZahradaGenesisPage() {
                 ))}
               </div>
               <p className="text-[11px] text-zion-gold/55 relative z-10">
-                {TerranovaGenesisCopy.treePlantingBiodiversityRestor[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.treePlantingBiodiversityRestor, lang)}
               </p>
             </div>
           </div>
@@ -773,10 +770,10 @@ export default function ZahradaGenesisPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaGenesisCopy.communityGovernance[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGenesisCopy.communityGovernance, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaGenesisCopy.governanceDao[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGenesisCopy.governanceDao, lang)}
             </h2>
           </div>
 
@@ -784,14 +781,14 @@ export default function ZahradaGenesisPage() {
             <div className="relative z-10 grid md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <h3 className="text-zion-cyan font-bold text-sm uppercase tracking-widest">
-                  {TerranovaGenesisCopy.decisionModel[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaGenesisCopy.decisionModel, lang)}
                 </h3>
                 <div className="space-y-3">
                   {[
-                    { label: TerranovaGenesisCopy.model[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.communityGovernanceTerraNovaFr[cs ? 'cs' : 'en'] },
-                    { label: TerranovaGenesisCopy.decisions[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.consensusForKeyDecisions[cs ? 'cs' : 'en'] },
-                    { label: TerranovaGenesisCopy.zionDao[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.plannedProofOfCareGovernance[cs ? 'cs' : 'en'] },
-                    { label: TerranovaGenesisCopy.minCell[cs ? 'cs' : 'en'], val: TerranovaGenesisCopy.k35PermanentGuardiansSeasonal[cs ? 'cs' : 'en'] },
+                    { label: tx5(TerranovaGenesisCopy.model, lang), val: tx5(TerranovaGenesisCopy.communityGovernanceTerraNovaFr, lang) },
+                    { label: tx5(TerranovaGenesisCopy.decisions, lang), val: tx5(TerranovaGenesisCopy.consensusForKeyDecisions, lang) },
+                    { label: tx5(TerranovaGenesisCopy.zionDao, lang), val: tx5(TerranovaGenesisCopy.plannedProofOfCareGovernance, lang) },
+                    { label: tx5(TerranovaGenesisCopy.minCell, lang), val: tx5(TerranovaGenesisCopy.k35PermanentGuardiansSeasonal, lang) },
                   ].map((row) => (
                     <div key={row.label} className="flex gap-3">
                       <span className="text-zion-gold/65 text-xs w-28 shrink-0 pt-0.5">{row.label}</span>
@@ -802,16 +799,16 @@ export default function ZahradaGenesisPage() {
               </div>
               <div className="space-y-4">
                 <h3 className="text-zion-gold font-bold text-sm uppercase tracking-widest">
-                  {TerranovaGenesisCopy.humanitarianCommitment[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaGenesisCopy.humanitarianCommitment, lang)}
                 </h3>
                 <div className="relative zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                   <div className="text-3xl font-black text-zion-gold mb-1">10 %</div>
                   <p className="text-white/70 text-sm">
-                    {TerranovaGenesisCopy.ofZionNetworkNodeRewardsGoToTh[cs ? 'cs' : 'en']}
+                    {tx5(TerranovaGenesisCopy.ofZionNetworkNodeRewardsGoToTh, lang)}
                   </p>
                 </div>
                 <p className="text-zion-gold/55 text-xs">
-                  {TerranovaGenesisCopy.everyGuardianNodeOperatedOnThe[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaGenesisCopy.everyGuardianNodeOperatedOnThe, lang)}
                 </p>
               </div>
             </div>
@@ -829,23 +826,23 @@ export default function ZahradaGenesisPage() {
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 max-w-2xl space-y-4">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65">
-                {TerranovaGenesisCopy.characterOfPlace[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.characterOfPlace, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {TerranovaGenesisCopy.aFarmOnTheEdgeOfTwoWorlds[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.aFarmOnTheEdgeOfTwoWorlds, lang)}
               </h2>
               <p className="text-white/70 text-sm leading-relaxed">
-                {TerranovaGenesisCopy.zahradaGenesisStandsOnTheBound[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.zahradaGenesisStandsOnTheBound, lang)}
               </p>
               <p className="text-zion-gold/65 text-sm leading-relaxed">
-                {TerranovaGenesisCopy.treePlantingIsNotAPrActivityIt[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.treePlantingIsNotAPrActivityIt, lang)}
               </p>
               <div className="pt-2 flex flex-wrap gap-2">
                 {[
-                  TerranovaGenesisCopy.oceanMovement[cs ? 'cs' : 'en'],
-                  TerranovaGenesisCopy.soilSilence[cs ? 'cs' : 'en'],
-                  TerranovaGenesisCopy.biologicalTime[cs ? 'cs' : 'en'],
-                  TerranovaGenesisCopy.authenticIntention[cs ? 'cs' : 'en'],
+                  tx5(TerranovaGenesisCopy.oceanMovement, lang),
+                  tx5(TerranovaGenesisCopy.soilSilence, lang),
+                  tx5(TerranovaGenesisCopy.biologicalTime, lang),
+                  tx5(TerranovaGenesisCopy.authenticIntention, lang),
                 ].map((tag) => (
                   <span key={tag} className="zion-badge">
                     {tag}
@@ -867,21 +864,19 @@ export default function ZahradaGenesisPage() {
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {TerranovaGenesisCopy.caminoSubtitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.caminoSubtitle, lang)}
               </p>
               <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-3 mb-4">
                 <Footprints className="h-6 w-6 text-zion-gold" />
-                {TerranovaGenesisCopy.caminoTitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.caminoTitle, lang)}
               </h2>
               <p className="text-white/70 text-sm leading-relaxed max-w-3xl mb-6">
-                {TerranovaGenesisCopy.caminoLead[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.caminoLead, lang)}
               </p>
               <div className="mb-6">
                 <CaminhoDoJardimMap lang={cs ? 'cs' : 'en'} />
                 <p className="mt-2 text-[11px] uppercase tracking-widest text-white/40">
-                  {cs
-                    ? 'Koncept — schematické vedení, trasa není vyznačená ani proměřená (GPX pending)'
-                    : 'Concept — schematic alignment, not waymarked or surveyed (GPX pending)'}
+                  {cs ? 'Koncept — schematické vedení, trasa není vyznačená ani proměřená (GPX pending)' : t5('Concept — schematic alignment, not waymarked or surveyed (GPX pending)', lang)}
                 </p>
               </div>
               <div className="space-y-3">
@@ -897,7 +892,7 @@ export default function ZahradaGenesisPage() {
                 ))}
               </div>
               <p className="text-zion-gold/65 text-sm leading-relaxed mt-6 max-w-3xl">
-                {TerranovaGenesisCopy.caminoFoot[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.caminoFoot, lang)}
               </p>
             </div>
           </div>
@@ -913,19 +908,19 @@ export default function ZahradaGenesisPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaGenesisCopy.terraNovaNetwork[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGenesisCopy.terraNovaNetwork, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaGenesisCopy.connectionWithDharma[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGenesisCopy.connectionWithDharma, lang)}
             </h2>
           </div>
 
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             {/* Header row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[11px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
-              <div className="p-3 text-zion-gold/65">{TerranovaGenesisCopy.dimension[cs ? 'cs' : 'en']}</div>
-              <div className="p-3 text-white/85 sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> {cs ? 'Zahrada Genesis' : 'Zahrada Genesis'}</span></div>
-              <div className="p-3 text-zion-gold sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> {cs ? 'Dharma Temple' : 'Dharma Temple'}</span></div>
+              <div className="p-3 text-zion-gold/65">{tx5(TerranovaGenesisCopy.dimension, lang)}</div>
+              <div className="p-3 text-white/85 sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> {cs ? 'Zahrada Genesis' : t5('Zahrada Genesis', lang)}</span></div>
+              <div className="p-3 text-zion-gold sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> {cs ? 'Dharma Temple' : t5('Dharma Temple', lang)}</span></div>
             </div>
             {COMPARE.map((row, i) => (
               <div
@@ -940,7 +935,7 @@ export default function ZahradaGenesisPage() {
           </div>
 
           <p className="text-zion-gold/55 text-xs text-center mt-4">
-            {TerranovaGenesisCopy.bothProjectsShareSourceCodeTer[cs ? 'cs' : 'en']}
+            {tx5(TerranovaGenesisCopy.bothProjectsShareSourceCodeTer, lang)}
           </p>
         </motion.section>
 
@@ -954,7 +949,7 @@ export default function ZahradaGenesisPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaGenesisCopy.blockchainIntegration[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGenesisCopy.blockchainIntegration, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
@@ -973,11 +968,11 @@ export default function ZahradaGenesisPage() {
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
                     <p className="text-[11px] text-zion-gold/55 capitalize">
                       {item.status === 'active'
-                        ? (TerranovaGenesisCopy.active[cs ? 'cs' : 'en'])
+                        ? (tx5(TerranovaGenesisCopy.active, lang))
                         : item.status === 'planned'
-                        ? (TerranovaGenesisCopy.planned[cs ? 'cs' : 'en'])
+                        ? (tx5(TerranovaGenesisCopy.planned, lang))
                         : item.status === 'vision'
-                        ? STATUS_LABEL.vision[cs ? 'cs' : 'en']
+                        ? tx5(STATUS_LABEL.vision, lang)
                         : 'TBD'}
                     </p>
                   </div>
@@ -998,19 +993,19 @@ export default function ZahradaGenesisPage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {TerranovaGenesisCopy.documentation[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.documentation, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {TerranovaGenesisCopy.documentationSubtitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGenesisCopy.documentationSubtitle, lang)}
               </h2>
             </div>
             <div className="relative z-10 rounded-2xl border border-white/10 bg-black/40 p-4 md:p-6">
               {docError ? (
-                <p className="text-sm text-zion-red">{TerranovaGenesisCopy.documentationError[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm text-zion-red">{tx5(TerranovaGenesisCopy.documentationError, lang)}</p>
               ) : doc ? (
                 <DocMarkdownArticle content={doc} className="zion-docs-prose max-w-4xl mx-auto" />
               ) : (
-                <p className="text-sm text-white/60">{TerranovaGenesisCopy.documentationLoading[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm text-white/60">{tx5(TerranovaGenesisCopy.documentationLoading, lang)}</p>
               )}
             </div>
           </div>
@@ -1026,7 +1021,7 @@ export default function ZahradaGenesisPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-zion-gold">
-              {TerranovaGenesisCopy.openQuestionsLookingForGuardia[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGenesisCopy.openQuestionsLookingForGuardia, lang)}
             </h3>
             <ul className="space-y-2">
               {OPEN_QUESTIONS.map((q, i) => (
@@ -1043,7 +1038,7 @@ export default function ZahradaGenesisPage() {
               className="zion-button-secondary"
             >
               <Users className="w-4 h-4" />
-              {TerranovaGenesisCopy.joinDiscord[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGenesisCopy.joinDiscord, lang)}
             </a>
           </div>
         </motion.section>
@@ -1058,7 +1053,7 @@ export default function ZahradaGenesisPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-zion-gold">
-              {TerranovaGenesisCopy.resourcesContact[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGenesisCopy.resourcesContact, lang)}
             </h3>
             <div className="flex flex-wrap gap-3">
               <a
@@ -1087,7 +1082,7 @@ export default function ZahradaGenesisPage() {
               </a>
             </div>
             <p className="text-zion-gold/55 text-xs">
-              {TerranovaGenesisCopy.instagramTerranovaProjectThisP[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGenesisCopy.instagramTerranovaProjectThisP, lang)}
             </p>
           </div>
         </motion.section>
@@ -1105,21 +1100,21 @@ export default function ZahradaGenesisPage() {
             className="inline-flex items-center gap-2 text-sm text-zion-gold/65 hover:text-zion-gold transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {TerranovaGenesisCopy.backToTerraNova[cs ? 'cs' : 'en']}
+            {tx5(TerranovaGenesisCopy.backToTerraNova, lang)}
           </Link>
           <div className="flex gap-3">
             <Link
               href="/terranova/dharma-temple"
               className="zion-button-secondary"
             >
-              <span>{TerranovaGenesisCopy.dharmaTemple[cs ? 'cs' : 'en']}</span>
+              <span>{tx5(TerranovaGenesisCopy.dharmaTemple, lang)}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/terranova/te-piko-ora"
               className="zion-button-secondary"
             >
-              <span>{TerranovaGenesisCopy.tePikoOra[cs ? 'cs' : 'en']}</span>
+              <span>{tx5(TerranovaGenesisCopy.tePikoOra, lang)}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
