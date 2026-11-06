@@ -23,6 +23,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const PoolBenchmarksCopy = {
   cosmicHarmonyPow: { cs: `Cosmic Harmony PoW`, en: `Cosmic Harmony PoW` },
@@ -359,13 +360,13 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
               <div className="flex-1">
                 <div className="zion-kicker mb-3" style={{ borderColor: 'rgba(228,30,43,0.3)' }}>
                   <Cpu className="w-3.5 h-3.5 text-zion-purple" />
-                  {PoolBenchmarksCopy.cosmicHarmonyPow[cs ? 'cs' : 'en']}
+                  {tx5(PoolBenchmarksCopy.cosmicHarmonyPow, lang)}
                 </div>
                 <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">
-                  {PoolBenchmarksCopy.hardwareBenchmarks[cs ? 'cs' : 'en']}
+                  {tx5(PoolBenchmarksCopy.hardwareBenchmarks, lang)}
                 </h1>
                 <p className="text-gray-400 text-base md:text-lg max-w-2xl">
-                  {PoolBenchmarksCopy.cosmicHarmonyPowGpuCpuPerforma[cs ? 'cs' : 'en']}
+                  {tx5(PoolBenchmarksCopy.cosmicHarmonyPowGpuCpuPerforma, lang)}
                 </p>
               </div>
               <Link
@@ -373,7 +374,7 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-zion-purple/30 bg-zion-purple/10 text-zion-purple hover:bg-zion-purple/20 transition-colors text-sm font-medium shrink-0"
               >
                 <ArrowLeft className="w-4 h-4" />
-                {PoolBenchmarksCopy.backToPool[cs ? 'cs' : 'en']}
+                {tx5(PoolBenchmarksCopy.backToPool, lang)}
               </Link>
             </div>
           </motion.section>
@@ -389,7 +390,7 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
         >
           <CheckCircle2 className="w-5 h-5 text-zion-cyan shrink-0 mt-0.5" />
           <p className="text-sm text-gray-300 leading-relaxed">
-            {PoolBenchmarksCopy.theseBenchmarksAreFromRealMeas[cs ? 'cs' : 'en']}
+            {tx5(PoolBenchmarksCopy.theseBenchmarksAreFromRealMeas, lang)}
           </p>
         </motion.section>
 
@@ -404,21 +405,21 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
           <div className="flex items-center gap-2 mb-4 text-zion-purple">
             <Filter className="w-4 h-4" />
             <span className="text-sm font-semibold uppercase tracking-wider">
-              {PoolBenchmarksCopy.filtersSorting[cs ? 'cs' : 'en']}
+              {tx5(PoolBenchmarksCopy.filtersSorting, lang)}
             </span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Algorithm filter */}
             <div>
               <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wider">
-                {PoolBenchmarksCopy.algorithm[cs ? 'cs' : 'en']}
+                {tx5(PoolBenchmarksCopy.algorithm, lang)}
               </label>
               <select
                 value={algoFilter}
                 onChange={(e) => setAlgoFilter(e.target.value as AlgoFilter)}
                 className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:border-zion-purple/50 focus:outline-none transition-colors"
               >
-                <option value="all">{PoolBenchmarksCopy.all[cs ? 'cs' : 'en']}</option>
+                <option value="all">{tx5(PoolBenchmarksCopy.all, lang)}</option>
                 <option value="deeksha_lite_v1">Deeksha Lite v1</option>
                 <option value="deeksha_lite_fire">Deeksha Lite Fire</option>
                 <option value="ekam_deeksha_v2">Ekam Deeksha v2</option>
@@ -427,14 +428,14 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
             {/* Hardware type filter */}
             <div>
               <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wider">
-                {PoolBenchmarksCopy.hardwareType[cs ? 'cs' : 'en']}
+                {tx5(PoolBenchmarksCopy.hardwareType, lang)}
               </label>
               <select
                 value={hwFilter}
                 onChange={(e) => setHwFilter(e.target.value as HwFilter)}
                 className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:border-zion-purple/50 focus:outline-none transition-colors"
               >
-                <option value="all">{PoolBenchmarksCopy.all_2[cs ? 'cs' : 'en']}</option>
+                <option value="all">{tx5(PoolBenchmarksCopy.all_2, lang)}</option>
                 <option value="GPU">GPU</option>
                 <option value="CPU">CPU</option>
               </select>
@@ -442,16 +443,16 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
             {/* Sort by */}
             <div>
               <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wider">
-                {PoolBenchmarksCopy.sortBy[cs ? 'cs' : 'en']}
+                {tx5(PoolBenchmarksCopy.sortBy, lang)}
               </label>
               <select
                 value={sortKey}
                 onChange={(e) => setSortKey(e.target.value as SortKey)}
                 className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:border-zion-purple/50 focus:outline-none transition-colors"
               >
-                <option value="hashrate">{PoolBenchmarksCopy.hashrate[cs ? 'cs' : 'en']}</option>
-                <option value="efficiency">{PoolBenchmarksCopy.efficiencyHW[cs ? 'cs' : 'en']}</option>
-                <option value="profitability">{PoolBenchmarksCopy.profitabilityDay[cs ? 'cs' : 'en']}</option>
+                <option value="hashrate">{tx5(PoolBenchmarksCopy.hashrate, lang)}</option>
+                <option value="efficiency">{tx5(PoolBenchmarksCopy.efficiencyHW, lang)}</option>
+                <option value="profitability">{tx5(PoolBenchmarksCopy.profitabilityDay, lang)}</option>
               </select>
             </div>
           </div>
@@ -466,30 +467,30 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
         >
           <SummaryCard
             icon={<TrendingUp className="w-5 h-5 text-zion-cyan" />}
-            label={PoolBenchmarksCopy.bestGpuHashrate[cs ? 'cs' : 'en']}
+            label={tx5(PoolBenchmarksCopy.bestGpuHashrate, lang)}
             value={summary.bestGpu ? `${summary.bestGpu.hashrate} KH/s` : '—'}
             sub={summary.bestGpu?.hardware}
             rc={rcStyle}
           />
           <SummaryCard
             icon={<Cpu className="w-5 h-5 text-zion-cyan" />}
-            label={PoolBenchmarksCopy.bestCpuHashrate[cs ? 'cs' : 'en']}
-            value={summary.bestCpu ? `${summary.bestCpu.hashrate} KH/s` : (PoolBenchmarksCopy.noData[cs ? 'cs' : 'en'])}
-            sub={summary.bestCpu?.hardware ?? (PoolBenchmarksCopy.cpuBenchmarksPending[cs ? 'cs' : 'en'])}
+            label={tx5(PoolBenchmarksCopy.bestCpuHashrate, lang)}
+            value={summary.bestCpu ? `${summary.bestCpu.hashrate} KH/s` : (tx5(PoolBenchmarksCopy.noData, lang))}
+            sub={summary.bestCpu?.hardware ?? (tx5(PoolBenchmarksCopy.cpuBenchmarksPending, lang))}
             rc={rcStyle}
           />
           <SummaryCard
             icon={<Zap className="w-5 h-5 text-zion-gold" />}
-            label={PoolBenchmarksCopy.mostEfficientHW[cs ? 'cs' : 'en']}
+            label={tx5(PoolBenchmarksCopy.mostEfficientHW, lang)}
             value={summary.mostEff ? `${efficiency(summary.mostEff).toFixed(2)} KH/W` : '—'}
             sub={summary.mostEff?.hardware}
             rc={rcStyle}
           />
           <SummaryCard
             icon={<Server className="w-5 h-5 text-zion-purple" />}
-            label={PoolBenchmarksCopy.totalBenchmarks[cs ? 'cs' : 'en']}
+            label={tx5(PoolBenchmarksCopy.totalBenchmarks, lang)}
             value={`${summary.total}`}
-            sub={PoolBenchmarksCopy.verifiedMeasurements[cs ? 'cs' : 'en']}
+            sub={tx5(PoolBenchmarksCopy.verifiedMeasurements, lang)}
             rc={rcStyle}
           />
         </motion.section>
@@ -505,25 +506,25 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
           <div className="p-5 border-b border-white/10 flex items-center gap-2">
             <Activity className="w-5 h-5 text-zion-purple" />
             <h2 className="text-lg font-semibold text-white">
-              {PoolBenchmarksCopy.mainBenchmarkTable[cs ? 'cs' : 'en']}
+              {tx5(PoolBenchmarksCopy.mainBenchmarkTable, lang)}
             </h2>
             <span className="ml-auto text-xs text-gray-500">
-              {filteredRows.length} {PoolBenchmarksCopy.entries[cs ? 'cs' : 'en']}
+              {filteredRows.length} {tx5(PoolBenchmarksCopy.entries, lang)}
             </span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left text-white/50 text-xs uppercase tracking-wider">
-                  <th className="px-4 py-3">{PoolBenchmarksCopy.hardware[cs ? 'cs' : 'en']}</th>
-                  <th className="px-4 py-3">{PoolBenchmarksCopy.type[cs ? 'cs' : 'en']}</th>
-                  <th className="px-4 py-3">{PoolBenchmarksCopy.algorithm[cs ? 'cs' : 'en']}</th>
-                  <SortHeader label={PoolBenchmarksCopy.hashrate[cs ? 'cs' : 'en']} active={sortKey === 'hashrate'} dir={sortDir} onClick={() => handleSort('hashrate')} align="right" />
-                  <th className="px-4 py-3 text-right">{PoolBenchmarksCopy.powerW[cs ? 'cs' : 'en']}</th>
-                  <SortHeader label={PoolBenchmarksCopy.efficiencyHW[cs ? 'cs' : 'en']} active={sortKey === 'efficiency'} dir={sortDir} onClick={() => handleSort('efficiency')} align="right" />
-                  <th className="px-4 py-3">{PoolBenchmarksCopy.memory[cs ? 'cs' : 'en']}</th>
-                  <th className="px-4 py-3 text-right">{PoolBenchmarksCopy.estZionDay[cs ? 'cs' : 'en']}</th>
-                  <SortHeader label={PoolBenchmarksCopy.estDay[cs ? 'cs' : 'en']} active={sortKey === 'profitability'} dir={sortDir} onClick={() => handleSort('profitability')} align="right" />
+                  <th className="px-4 py-3">{tx5(PoolBenchmarksCopy.hardware, lang)}</th>
+                  <th className="px-4 py-3">{tx5(PoolBenchmarksCopy.type, lang)}</th>
+                  <th className="px-4 py-3">{tx5(PoolBenchmarksCopy.algorithm, lang)}</th>
+                  <SortHeader label={tx5(PoolBenchmarksCopy.hashrate, lang)} active={sortKey === 'hashrate'} dir={sortDir} onClick={() => handleSort('hashrate')} align="right" />
+                  <th className="px-4 py-3 text-right">{tx5(PoolBenchmarksCopy.powerW, lang)}</th>
+                  <SortHeader label={tx5(PoolBenchmarksCopy.efficiencyHW, lang)} active={sortKey === 'efficiency'} dir={sortDir} onClick={() => handleSort('efficiency')} align="right" />
+                  <th className="px-4 py-3">{tx5(PoolBenchmarksCopy.memory, lang)}</th>
+                  <th className="px-4 py-3 text-right">{tx5(PoolBenchmarksCopy.estZionDay, lang)}</th>
+                  <SortHeader label={tx5(PoolBenchmarksCopy.estDay, lang)} active={sortKey === 'profitability'} dir={sortDir} onClick={() => handleSort('profitability')} align="right" />
                 </tr>
               </thead>
               <tbody>
@@ -542,9 +543,9 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
                         <td className="px-4 py-3 font-medium text-white whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             {row.measured ? (
-                              <span className="w-1.5 h-1.5 rounded-full bg-zion-cyan shrink-0" title={PoolBenchmarksCopy.measured[cs ? 'cs' : 'en']} />
+                              <span className="w-1.5 h-1.5 rounded-full bg-zion-cyan shrink-0" title={tx5(PoolBenchmarksCopy.measured, lang)} />
                             ) : (
-                              <span className="w-1.5 h-1.5 rounded-full bg-zion-gold/60 shrink-0" title={PoolBenchmarksCopy.estimated[cs ? 'cs' : 'en']} />
+                              <span className="w-1.5 h-1.5 rounded-full bg-zion-gold/60 shrink-0" title={tx5(PoolBenchmarksCopy.estimated, lang)} />
                             )}
                             {row.hardware}
                           </div>
@@ -579,28 +580,28 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
                           <td colSpan={9} className="px-4 py-4">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                               <div>
-                                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{PoolBenchmarksCopy.architecture[cs ? 'cs' : 'en']}</div>
+                                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{tx5(PoolBenchmarksCopy.architecture, lang)}</div>
                                 <div className="text-white/80">{row.arch}</div>
                               </div>
                               <div>
-                                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{PoolBenchmarksCopy.backend[cs ? 'cs' : 'en']}</div>
+                                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{tx5(PoolBenchmarksCopy.backend, lang)}</div>
                                 <div className="text-white/80">{row.backend}</div>
                               </div>
                               <div>
-                                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{PoolBenchmarksCopy.status[cs ? 'cs' : 'en']}</div>
+                                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{tx5(PoolBenchmarksCopy.status, lang)}</div>
                                 <div className={row.measured ? 'text-zion-cyan' : 'text-zion-gold'}>
-                                  {row.measured ? (PoolBenchmarksCopy.measured[cs ? 'cs' : 'en']) : (PoolBenchmarksCopy.estimated[cs ? 'cs' : 'en'])}
+                                  {row.measured ? (tx5(PoolBenchmarksCopy.measured, lang)) : (tx5(PoolBenchmarksCopy.estimated, lang))}
                                 </div>
                               </div>
                               <div className="md:col-span-3">
-                                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{PoolBenchmarksCopy.notes[cs ? 'cs' : 'en']}</div>
-                                <div className="text-white/60 leading-relaxed">{row.notes[cs ? 'cs' : 'en']}</div>
+                                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{tx5(PoolBenchmarksCopy.notes, lang)}</div>
+                                <div className="text-white/60 leading-relaxed">{tx5(row.notes, lang)}</div>
                               </div>
                               <div className="md:col-span-3 grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-white/5">
-                                <MiniStat label={PoolBenchmarksCopy.hashrate[cs ? 'cs' : 'en']} value={`${row.hashrate} KH/s`} />
-                                <MiniStat label={PoolBenchmarksCopy.power[cs ? 'cs' : 'en']} value={`${row.power} W`} />
-                                <MiniStat label={PoolBenchmarksCopy.efficiency[cs ? 'cs' : 'en']} value={`${efficiency(row).toFixed(2)} KH/W`} />
-                                <MiniStat label={PoolBenchmarksCopy.energyDay[cs ? 'cs' : 'en']} value={`${((row.power / 1000) * 24).toFixed(2)} kWh`} />
+                                <MiniStat label={tx5(PoolBenchmarksCopy.hashrate, lang)} value={`${row.hashrate} KH/s`} />
+                                <MiniStat label={tx5(PoolBenchmarksCopy.power, lang)} value={`${row.power} W`} />
+                                <MiniStat label={tx5(PoolBenchmarksCopy.efficiency, lang)} value={`${efficiency(row).toFixed(2)} KH/W`} />
+                                <MiniStat label={tx5(PoolBenchmarksCopy.energyDay, lang)} value={`${((row.power / 1000) * 24).toFixed(2)} kWh`} />
                               </div>
                             </div>
                           </td>
@@ -612,7 +613,7 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
                 {filteredRows.length === 0 && (
                   <tr>
                     <td colSpan={9} className="px-4 py-12 text-center text-gray-500">
-                      {PoolBenchmarksCopy.noEntriesMatchTheSelectedFilte[cs ? 'cs' : 'en']}
+                      {tx5(PoolBenchmarksCopy.noEntriesMatchTheSelectedFilte, lang)}
                     </td>
                   </tr>
                 )}
@@ -621,16 +622,16 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
           </div>
           <div className="px-4 py-3 border-t border-white/5 text-xs text-gray-500 flex items-center gap-4 flex-wrap">
             <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-zion-cyan" /> {PoolBenchmarksCopy.measured[cs ? 'cs' : 'en']}
+              <span className="w-1.5 h-1.5 rounded-full bg-zion-cyan" /> {tx5(PoolBenchmarksCopy.measured, lang)}
             </span>
             <span className="ml-auto">
-              {PoolBenchmarksCopy.clickARowForDetails[cs ? 'cs' : 'en']}
+              {tx5(PoolBenchmarksCopy.clickARowForDetails, lang)}
             </span>
           </div>
           <div className="px-4 py-3 border-t border-white/5 flex items-center gap-2 text-xs text-gray-500">
             <AlertCircle className="w-3.5 h-3.5 text-zion-gold/70 shrink-0" />
             <span>
-              {PoolBenchmarksCopy.onlyVerifiedMeasurementsAreSho[cs ? 'cs' : 'en']}
+              {tx5(PoolBenchmarksCopy.onlyVerifiedMeasurementsAreSho, lang)}
             </span>
           </div>
         </motion.section>
@@ -646,7 +647,7 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
           <div className="flex items-center gap-2 mb-6">
             <Zap className="w-5 h-5 text-zion-gold" />
             <h2 className="text-lg font-semibold text-white">
-              {PoolBenchmarksCopy.efficiencyChartHW[cs ? 'cs' : 'en']}
+              {tx5(PoolBenchmarksCopy.efficiencyChartHW, lang)}
             </h2>
           </div>
           <div className="space-y-2.5">
@@ -674,9 +675,9 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
             })}
           </div>
           <div className="flex items-center gap-4 mt-4 text-xs text-gray-500">
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-zion-cyan" /> {PoolBenchmarksCopy.best[cs ? 'cs' : 'en']}</span>
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-zion-gold" /> {PoolBenchmarksCopy.mid[cs ? 'cs' : 'en']}</span>
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-zion-purple" /> {PoolBenchmarksCopy.worst[cs ? 'cs' : 'en']}</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-zion-cyan" /> {tx5(PoolBenchmarksCopy.best, lang)}</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-zion-gold" /> {tx5(PoolBenchmarksCopy.mid, lang)}</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-zion-purple" /> {tx5(PoolBenchmarksCopy.worst, lang)}</span>
           </div>
         </motion.section>
 
@@ -691,7 +692,7 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
           <div className="flex items-center gap-2 mb-6">
             <TrendingUp className="w-5 h-5 text-zion-purple" />
             <h2 className="text-lg font-semibold text-white">
-              {PoolBenchmarksCopy.hashrateComparison[cs ? 'cs' : 'en']}
+              {tx5(PoolBenchmarksCopy.hashrateComparison, lang)}
             </h2>
           </div>
           <div className="space-y-2.5">
@@ -732,13 +733,13 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
           <div className="flex items-center gap-2 mb-5">
             <Calculator className="w-5 h-5 text-zion-purple" />
             <h2 className="text-lg font-semibold text-white">
-              {PoolBenchmarksCopy.profitabilityCalculator[cs ? 'cs' : 'en']}
+              {tx5(PoolBenchmarksCopy.profitabilityCalculator, lang)}
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <div>
               <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wider">
-                {PoolBenchmarksCopy.electricityCostKwh[cs ? 'cs' : 'en']}
+                {tx5(PoolBenchmarksCopy.electricityCostKwh, lang)}
               </label>
               <input
                 type="number"
@@ -751,7 +752,7 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wider">
-                {PoolBenchmarksCopy.zionPrice[cs ? 'cs' : 'en']}
+                {tx5(PoolBenchmarksCopy.zionPrice, lang)}
               </label>
               <input
                 type="number"
@@ -765,26 +766,26 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
           </div>
           <div className="text-xs text-gray-500 mb-4 flex items-center gap-2">
             <Activity className="w-3.5 h-3.5 text-zion-purple" />
-            {PoolBenchmarksCopy.livePoolHashrate[cs ? 'cs' : 'en']}{' '}
+            {tx5(PoolBenchmarksCopy.livePoolHashrate, lang)}{' '}
             <span className="font-mono text-zion-purple">
               {(poolStats.poolHashrate / 1000).toFixed(2)} KH/s
             </span>
             {' · '}
-            {PoolBenchmarksCopy.blocksDay[cs ? 'cs' : 'en']}{' '}
+            {tx5(PoolBenchmarksCopy.blocksDay, lang)}{' '}
             <span className="font-mono text-zion-purple">{poolStats.blocksPerDay.toFixed(0)}</span>
             {' · '}
-            {PoolBenchmarksCopy.reward[cs ? 'cs' : 'en']}{' '}
+            {tx5(PoolBenchmarksCopy.reward, lang)}{' '}
             <span className="font-mono text-zion-purple">{poolStats.rewardPerBlock} ZION</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left text-white/50 text-xs uppercase tracking-wider">
-                  <th className="px-3 py-2">{PoolBenchmarksCopy.hardware[cs ? 'cs' : 'en']}</th>
-                  <th className="px-3 py-2 text-right">{PoolBenchmarksCopy.zionDay[cs ? 'cs' : 'en']}</th>
-                  <th className="px-3 py-2 text-right">{PoolBenchmarksCopy.elecDay[cs ? 'cs' : 'en']}</th>
-                  <th className="px-3 py-2 text-right">{PoolBenchmarksCopy.grossDay[cs ? 'cs' : 'en']}</th>
-                  <th className="px-3 py-2 text-right">{PoolBenchmarksCopy.netDay[cs ? 'cs' : 'en']}</th>
+                  <th className="px-3 py-2">{tx5(PoolBenchmarksCopy.hardware, lang)}</th>
+                  <th className="px-3 py-2 text-right">{tx5(PoolBenchmarksCopy.zionDay, lang)}</th>
+                  <th className="px-3 py-2 text-right">{tx5(PoolBenchmarksCopy.elecDay, lang)}</th>
+                  <th className="px-3 py-2 text-right">{tx5(PoolBenchmarksCopy.grossDay, lang)}</th>
+                  <th className="px-3 py-2 text-right">{tx5(PoolBenchmarksCopy.netDay, lang)}</th>
                 </tr>
               </thead>
               <tbody>
@@ -822,40 +823,40 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
           <div className="flex items-center gap-2 mb-5">
             <Info className="w-5 h-5 text-zion-purple" />
             <h2 className="text-lg font-semibold text-white">
-              {PoolBenchmarksCopy.benchmarkMethodology[cs ? 'cs' : 'en']}
+              {tx5(PoolBenchmarksCopy.benchmarkMethodology, lang)}
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="zion-tile">
               <h3 className="text-sm font-semibold text-zion-purple mb-2 flex items-center gap-2">
                 <span className="font-mono text-xs bg-zion-purple/15 px-2 py-0.5 rounded">--ekam-bench</span>
-                {PoolBenchmarksCopy.benchmarkTool[cs ? 'cs' : 'en']}
+                {tx5(PoolBenchmarksCopy.benchmarkTool, lang)}
               </h3>
               <p className="text-sm text-white/60 leading-relaxed">
-                {PoolBenchmarksCopy.benchmarksRunWithEkamBenchMode[cs ? 'cs' : 'en']}
+                {tx5(PoolBenchmarksCopy.benchmarksRunWithEkamBenchMode, lang)}
               </p>
             </div>
             <div className="zion-tile">
               <h3 className="text-sm font-semibold text-zion-purple mb-2">
-                {PoolBenchmarksCopy.stratumVsBenchmarkDifference[cs ? 'cs' : 'en']}
+                {tx5(PoolBenchmarksCopy.stratumVsBenchmarkDifference, lang)}
               </h3>
               <p className="text-sm text-white/60 leading-relaxed">
-                {PoolBenchmarksCopy.theEkamBenchBenchmarkUsesWorkS[cs ? 'cs' : 'en']}
+                {tx5(PoolBenchmarksCopy.theEkamBenchBenchmarkUsesWorkS, lang)}
               </p>
             </div>
             <div className="zion-tile">
               <h3 className="text-sm font-semibold text-zion-purple mb-2">
-                {PoolBenchmarksCopy.gpuBackends[cs ? 'cs' : 'en']}
+                {tx5(PoolBenchmarksCopy.gpuBackends, lang)}
               </h3>
               <ul className="text-sm text-white/60 leading-relaxed space-y-1">
-                <li>• <span className="font-mono text-zion-purple/80">OpenCL</span> — {PoolBenchmarksCopy.amdGpusRdna1Rdna2Gcn[cs ? 'cs' : 'en']}</li>
-                <li>• <span className="font-mono text-zion-purple/80">CUDA</span> — {PoolBenchmarksCopy.nvidiaGpusPascalBlackwell[cs ? 'cs' : 'en']}</li>
-                <li>• <span className="font-mono text-zion-purple/80">Metal</span> — {PoolBenchmarksCopy.appleSiliconM1M2M3[cs ? 'cs' : 'en']}</li>
+                <li>• <span className="font-mono text-zion-purple/80">OpenCL</span> — {tx5(PoolBenchmarksCopy.amdGpusRdna1Rdna2Gcn, lang)}</li>
+                <li>• <span className="font-mono text-zion-purple/80">CUDA</span> — {tx5(PoolBenchmarksCopy.nvidiaGpusPascalBlackwell, lang)}</li>
+                <li>• <span className="font-mono text-zion-purple/80">Metal</span> — {tx5(PoolBenchmarksCopy.appleSiliconM1M2M3, lang)}</li>
               </ul>
             </div>
             <div className="zion-tile">
               <h3 className="text-sm font-semibold text-zion-purple mb-2">
-                {PoolBenchmarksCopy.howToReproduce[cs ? 'cs' : 'en']}
+                {tx5(PoolBenchmarksCopy.howToReproduce, lang)}
               </h3>
               <pre className="text-xs font-mono text-white/70 bg-black/40 rounded-lg p-3 overflow-x-auto leading-relaxed">
 {`# Build with GPU support
@@ -880,10 +881,10 @@ ZION_GPU_BACKEND=opencl \\
               className="zion-cta-banner"
             >
               <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
-                {PoolBenchmarksCopy.runYourOwnBenchmark[cs ? 'cs' : 'en']}
+                {tx5(PoolBenchmarksCopy.runYourOwnBenchmark, lang)}
               </h2>
               <p className="text-white/70 mb-6 max-w-xl mx-auto">
-                {PoolBenchmarksCopy.downloadTheZionMinerCompileWit[cs ? 'cs' : 'en']}
+                {tx5(PoolBenchmarksCopy.downloadTheZionMinerCompileWit, lang)}
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
@@ -891,7 +892,7 @@ ZION_GPU_BACKEND=opencl \\
                   className="zion-button-primary"
                 >
                   <Download className="w-4 h-4" />
-                  {PoolBenchmarksCopy.downloadMiner[cs ? 'cs' : 'en']}
+                  {tx5(PoolBenchmarksCopy.downloadMiner, lang)}
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
@@ -899,7 +900,7 @@ ZION_GPU_BACKEND=opencl \\
                   className="zion-button-secondary"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  {PoolBenchmarksCopy.backToPool[cs ? 'cs' : 'en']}
+                  {tx5(PoolBenchmarksCopy.backToPool, lang)}
                 </Link>
               </div>
             </motion.section>

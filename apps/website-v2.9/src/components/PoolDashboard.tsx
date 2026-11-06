@@ -49,7 +49,8 @@ const PoolCalculatorClient = dynamic(() => import('@/components/pool/PoolCalcula
 const PoolBenchmarksClient = dynamic(() => import('@/components/pool/PoolBenchmarksClient'));
 const PoolQtcClient = dynamic(() => import('@/components/pool/PoolQtcClient'));
 const PoolPrlClient = dynamic(() => import('@/components/pool/PoolPrlClient'));
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from '@/hooks/usePolling';
 import { SITE_POOL_PRIMARY, SITE_RELEASE_LABEL } from '@/lib/site';
 
@@ -437,13 +438,15 @@ function fmtDifficulty(d?: number): string {
   return String(d);
 }
 
-function timeAgo(ts: number, cs = false): string {
+function timeAgo(ts: number, lang: Lang): string {
   const now = Math.floor(Date.now() / 1000);
   const diff = now - ts;
-  if (diff < 60) return cs ? `před ${diff} s` : `${diff}s ago`;
-  if (diff < 3600) return cs ? `před ${Math.floor(diff / 60)} min` : `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return cs ? `před ${Math.floor(diff / 3600)} h` : `${Math.floor(diff / 3600)}h ago`;
-  return cs ? `před ${Math.floor(diff / 86400)} d` : `${Math.floor(diff / 86400)}d ago`;
+  // Intl umí všech 5 jazyků nativně (cs/en/es/pt/fr) — žádný slovník.
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'always', style: 'narrow' });
+  if (diff < 60) return rtf.format(-diff, 'second');
+  if (diff < 3600) return rtf.format(-Math.floor(diff / 60), 'minute');
+  if (diff < 86400) return rtf.format(-Math.floor(diff / 3600), 'hour');
+  return rtf.format(-Math.floor(diff / 86400), 'day');
 }
 
 function fmtUptime(secs?: number): string {
@@ -639,36 +642,36 @@ export default function PoolDashboard() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <Pickaxe className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {PoolDashboardCopy.miningPool[cs ? 'cs' : 'en']}
+                {SITE_RELEASE_LABEL} · {tx5(PoolDashboardCopy.miningPool, lang)}
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Deeksha PoW</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {PoolDashboardCopy.mineZion[cs ? 'cs' : 'en']}
+                  {tx5(PoolDashboardCopy.mineZion, lang)}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {PoolDashboardCopy.pplnsRewards89Miner5Humanitari[cs ? 'cs' : 'en']}
+                {tx5(PoolDashboardCopy.pplnsRewards89Miner5Humanitari, lang)}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> {PoolDashboardCopy.liveData[cs ? 'cs' : 'en']}
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> {tx5(PoolDashboardCopy.liveData, lang)}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Activity className="h-3 w-3 text-zion-cyan" /> {PoolDashboardCopy.autoRefresh15s[cs ? 'cs' : 'en']}
+                  <Activity className="h-3 w-3 text-zion-cyan" /> {tx5(PoolDashboardCopy.autoRefresh15s, lang)}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Globe className="h-3 w-3 text-zion-cyan" /> {PoolDashboardCopy.edgeNode1[cs ? 'cs' : 'en']}
+                  <Globe className="h-3 w-3 text-zion-cyan" /> {tx5(PoolDashboardCopy.edgeNode1, lang)}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-emerald-200">
-                  {PoolDashboardCopy.trinity1111Services[cs ? 'cs' : 'en']}
+                  {tx5(PoolDashboardCopy.trinity1111Services, lang)}
                 </span>
               </div>
             </div>
             {/* Stratum quick connect */}
             <div className="w-full lg:max-w-md space-y-3">
               <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{PoolDashboardCopy.quickConnect[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{tx5(PoolDashboardCopy.quickConnect, lang)}</p>
                 <div className="space-y-2">
                   {(data?.servers ?? []).filter(s => s.online).map(s => (
                     <div key={s.id} className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
@@ -681,11 +684,11 @@ export default function PoolDashboard() {
                   ))}
                 </div>
                 <a href="#start-mining" className="mt-3 inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
-                  {PoolDashboardCopy.gettingStartedGuide[cs ? 'cs' : 'en']} <ArrowRight className="h-3.5 w-3.5" />
+                  {tx5(PoolDashboardCopy.gettingStartedGuide, lang)} <ArrowRight className="h-3.5 w-3.5" />
                 </a>
                 <a href="https://pool.zionterranova.com" target="_blank" rel="noreferrer"
                   className="mt-2 inline-flex items-center gap-2 text-sm text-zion-gold hover:text-white transition-colors">
-                  {cs ? 'Nový pool portál — pool.zionterranova.com' : 'New pool portal — pool.zionterranova.com'} <ArrowRight className="h-3.5 w-3.5" />
+                  {cs ? 'Nový pool portál — pool.zionterranova.com' : t5('New pool portal — pool.zionterranova.com', lang)} <ArrowRight className="h-3.5 w-3.5" />
                 </a>
               </div>
             </div>
@@ -702,16 +705,16 @@ export default function PoolDashboard() {
         >
           <div className="flex flex-wrap items-center gap-2 md:gap-3">
               <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
-                {PoolDashboardCopy.poolSections[cs ? 'cs' : 'en']}
+                {tx5(PoolDashboardCopy.poolSections, lang)}
               </span>
               {[
-                { id: 'overview', label: PoolDashboardCopy.overview[cs ? 'cs' : 'en'], icon: Activity },
-                { id: 'blocks', label: PoolDashboardCopy.blocks[cs ? 'cs' : 'en'], icon: Box },
-                { id: 'miners', label: PoolDashboardCopy.miners[cs ? 'cs' : 'en'], icon: Users },
-                { id: 'calculator', label: PoolDashboardCopy.calculator[cs ? 'cs' : 'en'], icon: TrendingUp },
-                { id: 'benchmarks', label: PoolDashboardCopy.benchmarks[cs ? 'cs' : 'en'], icon: Cpu },
-                { id: 'qtc', label: PoolDashboardCopy.qtc[cs ? 'cs' : 'en'], icon: Atom },
-                { id: 'prl', label: PoolDashboardCopy.prl[cs ? 'cs' : 'en'], icon: Gem },
+                { id: 'overview', label: tx5(PoolDashboardCopy.overview, lang), icon: Activity },
+                { id: 'blocks', label: tx5(PoolDashboardCopy.blocks, lang), icon: Box },
+                { id: 'miners', label: tx5(PoolDashboardCopy.miners, lang), icon: Users },
+                { id: 'calculator', label: tx5(PoolDashboardCopy.calculator, lang), icon: TrendingUp },
+                { id: 'benchmarks', label: tx5(PoolDashboardCopy.benchmarks, lang), icon: Cpu },
+                { id: 'qtc', label: tx5(PoolDashboardCopy.qtc, lang), icon: Atom },
+                { id: 'prl', label: tx5(PoolDashboardCopy.prl, lang), icon: Gem },
               ].map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -749,7 +752,7 @@ export default function PoolDashboard() {
               const addr = minerSearch.trim().toLowerCase();
               if (!addr) return;
               if (!addr.startsWith("zion1") || addr.length < 20) {
-                setSearchError(PoolDashboardCopy.invalidZionAddressMustStartWit[cs ? 'cs' : 'en']);
+                setSearchError(tx5(PoolDashboardCopy.invalidZionAddressMustStartWit, lang));
                 return;
               }
               setSearchError("");
@@ -763,7 +766,7 @@ export default function PoolDashboard() {
                   type="text"
                   value={minerSearch}
                   onChange={(e) => { setMinerSearch(e.target.value); setSearchError(""); }}
-                  placeholder={PoolDashboardCopy.enterYourZionAddressToViewMine[cs ? 'cs' : 'en']}
+                  placeholder={tx5(PoolDashboardCopy.enterYourZionAddressToViewMine, lang)}
                   className={`w-full rounded-xl border ${searchError ? 'border-zion-purple/60' : 'border-white/10'} bg-white/5 pl-12 pr-4 py-3 text-sm text-white placeholder:text-gray-500 outline-none focus:border-zion-cyan/50 focus:ring-1 focus:ring-zion-cyan/30 transition-colors font-mono`}
                 />
                 {searchError && (
@@ -775,7 +778,7 @@ export default function PoolDashboard() {
                 className="zion-button-primary text-sm whitespace-nowrap"
                 style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
               >
-                {PoolDashboardCopy.searchMiner[cs ? 'cs' : 'en']}
+                {tx5(PoolDashboardCopy.searchMiner, lang)}
               </button>
             </div>
           </form>
@@ -790,12 +793,12 @@ export default function PoolDashboard() {
           style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.telemetry[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolDashboardCopy.telemetry, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-zion-cyan" />
-              {PoolDashboardCopy.poolStatistics[cs ? 'cs' : 'en']}
+              {tx5(PoolDashboardCopy.poolStatistics, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{PoolDashboardCopy.realTimeMetricsAggregatedFromT[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(PoolDashboardCopy.realTimeMetricsAggregatedFromT, lang)}</p>
           </div>
 
           {loading ? (
@@ -810,18 +813,18 @@ export default function PoolDashboard() {
             </div>
           ) : data ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-              <StatCard icon={<Activity className="h-5 w-5" />} color="text-zion-cyan" bg="bg-zion-cyan/10" label={PoolDashboardCopy.poolHashrate[cs ? 'cs' : 'en']} value={fmtHashOrPending(data.aggregate.hashrate)} sub={data.aggregate.hashrate > 0 ? `${PoolDashboardCopy.k24hAvg[cs ? 'cs' : 'en']}: ${fmtHash(data.aggregate.hashrate_24h)}` : (PoolDashboardCopy.liveBackendIsNotExportingHashr[cs ? 'cs' : 'en'])} tip={PoolDashboardCopy.totalComputationalPowerOfAllMi[cs ? 'cs' : 'en']} />
-              <StatCard icon={<Users className="h-5 w-5" />} color="text-zion-purple" bg="bg-zion-purple/10" label={PoolDashboardCopy.activeMiners[cs ? 'cs' : 'en']} value={String(data.aggregate.active_miners)} sub={cs ? `${data.aggregate.total_miners} celkem registrovaných` : `${data.aggregate.total_miners} total registered`} tip={PoolDashboardCopy.numberOfMinersWhoSubmittedASha[cs ? 'cs' : 'en']} />
-              <StatCard icon={<Layers className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={PoolDashboardCopy.blocksFound[cs ? 'cs' : 'en']} value={fmtNum(data.aggregate.blocks_found)} tip={PoolDashboardCopy.totalNumberOfBlocksFoundByThis[cs ? 'cs' : 'en']} />
-              <StatCard icon={<Shield className="h-5 w-5" />} color="text-zion-cyan" bg="bg-zion-cyan/10" label={PoolDashboardCopy.shareEfficiency[cs ? 'cs' : 'en']} value={`${data.aggregate.share_efficiency}%`} sub={cs ? `${fmtNum(data.aggregate.valid_shares)} validních` : `${fmtNum(data.aggregate.valid_shares)} valid`} tip={PoolDashboardCopy.ratioOfValidSharesToTotalSubmi[cs ? 'cs' : 'en']} />
-              <StatCard icon={<Check className="h-5 w-5" />} color="text-zion-cyan" bg="bg-zion-cyan/10" label={PoolDashboardCopy.acceptRate[cs ? 'cs' : 'en']} value={fmtPct(data.aggregate.accept_rate_pct)} sub={cs ? `${fmtNum(data.aggregate.accepted_total)} přijatých` : `${fmtNum(data.aggregate.accepted_total)} accepted`} tip={PoolDashboardCopy.percentageOfSharesAcceptedByTh[cs ? 'cs' : 'en']} />
-              <StatCard icon={<XCircle className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={PoolDashboardCopy.rejectedShares[cs ? 'cs' : 'en']} value={fmtNum(data.aggregate.rejected_total)} sub={cs ? `${fmtNum(data.aggregate.submits_total)} submitů celkem` : `${fmtNum(data.aggregate.submits_total)} total submits`} tip={PoolDashboardCopy.numberOfRejectedSharesOftenCau[cs ? 'cs' : 'en']} />
-              <StatCard icon={<Globe className="h-5 w-5" />} color="text-zion-purple" bg="bg-zion-purple/10" label={PoolDashboardCopy.serversOnline[cs ? 'cs' : 'en']} value={`${data.servers.filter(s => s.online).length} / ${data.servers.length}`} tip={PoolDashboardCopy.numberOfAvailablePoolServers[cs ? 'cs' : 'en']} />
-              <StatCard icon={<Heart className="h-5 w-5" />} color="text-zion-purple" bg="bg-zion-purple/10" label={PoolDashboardCopy.minerShare[cs ? 'cs' : 'en']} value={`${data.fee.miner_share}%`} sub={cs ? `${data.fee.pool_fee}% fee` : `${data.fee.pool_fee}% fee`} tip={PoolDashboardCopy.percentageOfRewardGoingToTheMi[cs ? 'cs' : 'en']} />
-              <StatCard icon={<HardHat className="h-5 w-5" />} color="text-zion-purple" bg="bg-zion-purple/10" label="PPLNS Fill" value={fmtPct(data.pplns.window_pct)} sub={cs ? `${fmtNum(data.pplns.window_used)} / ${fmtNum(data.pplns.window_size)} share` : `${fmtNum(data.pplns.window_used)} / ${fmtNum(data.pplns.window_size)} shares`} tip={PoolDashboardCopy.pplnsWindowFillDeterminesHowMa[cs ? 'cs' : 'en']} />
-              <StatCard icon={<Wallet className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={PoolDashboardCopy.totalPaid[cs ? 'cs' : 'en']} value={`${data.pplns.total_paid_zion.toFixed(2)} ZION`} sub={cs ? `${fmtNum(data.pplns.payout_rounds)} payout kol` : `${fmtNum(data.pplns.payout_rounds)} payout rounds`} tip={PoolDashboardCopy.totalZionPaidOutToMinersInPool[cs ? 'cs' : 'en']} />
-              <StatCard icon={<Cpu className="h-5 w-5" />} color="text-zion-cyan" bg="bg-zion-cyan/10" label={PoolDashboardCopy.networkHashrate[cs ? 'cs' : 'en']} value={fmtHashOrPending(data.runtime.network_hashrate, PoolDashboardCopy.offline[cs ? 'cs' : 'en'])} sub={cs ? `Výška ${fmtNum(data.runtime.chain_height)}` : `Height ${fmtNum(data.runtime.chain_height)}`} tip={PoolDashboardCopy.totalComputationalPowerOfTheEn[cs ? 'cs' : 'en']} />
-              <StatCard icon={<Bell className="h-5 w-5" />} color="text-zion-purple" bg="bg-zion-purple/10" label={PoolDashboardCopy.templateFees[cs ? 'cs' : 'en']} value={`${data.runtime.template_fees_zion.toFixed(4)} ZION`} sub={cs ? `Obtížnost ${fmtDifficulty(data.runtime.difficulty)}` : `Difficulty ${fmtDifficulty(data.runtime.difficulty)}`} tip={PoolDashboardCopy.sumOfFeesFromTransactionsInThe[cs ? 'cs' : 'en']} />
+              <StatCard icon={<Activity className="h-5 w-5" />} color="text-zion-cyan" bg="bg-zion-cyan/10" label={tx5(PoolDashboardCopy.poolHashrate, lang)} value={fmtHashOrPending(data.aggregate.hashrate)} sub={data.aggregate.hashrate > 0 ? `${tx5(PoolDashboardCopy.k24hAvg, lang)}: ${fmtHash(data.aggregate.hashrate_24h)}` : (tx5(PoolDashboardCopy.liveBackendIsNotExportingHashr, lang))} tip={tx5(PoolDashboardCopy.totalComputationalPowerOfAllMi, lang)} />
+              <StatCard icon={<Users className="h-5 w-5" />} color="text-zion-purple" bg="bg-zion-purple/10" label={tx5(PoolDashboardCopy.activeMiners, lang)} value={String(data.aggregate.active_miners)} sub={cs ? `${data.aggregate.total_miners} celkem registrovaných` : t5(`${data.aggregate.total_miners} total registered`, lang)} tip={tx5(PoolDashboardCopy.numberOfMinersWhoSubmittedASha, lang)} />
+              <StatCard icon={<Layers className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={tx5(PoolDashboardCopy.blocksFound, lang)} value={fmtNum(data.aggregate.blocks_found)} tip={tx5(PoolDashboardCopy.totalNumberOfBlocksFoundByThis, lang)} />
+              <StatCard icon={<Shield className="h-5 w-5" />} color="text-zion-cyan" bg="bg-zion-cyan/10" label={tx5(PoolDashboardCopy.shareEfficiency, lang)} value={`${data.aggregate.share_efficiency}%`} sub={cs ? `${fmtNum(data.aggregate.valid_shares)} validních` : t5(`${fmtNum(data.aggregate.valid_shares)} valid`, lang)} tip={tx5(PoolDashboardCopy.ratioOfValidSharesToTotalSubmi, lang)} />
+              <StatCard icon={<Check className="h-5 w-5" />} color="text-zion-cyan" bg="bg-zion-cyan/10" label={tx5(PoolDashboardCopy.acceptRate, lang)} value={fmtPct(data.aggregate.accept_rate_pct)} sub={cs ? `${fmtNum(data.aggregate.accepted_total)} přijatých` : t5(`${fmtNum(data.aggregate.accepted_total)} accepted`, lang)} tip={tx5(PoolDashboardCopy.percentageOfSharesAcceptedByTh, lang)} />
+              <StatCard icon={<XCircle className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={tx5(PoolDashboardCopy.rejectedShares, lang)} value={fmtNum(data.aggregate.rejected_total)} sub={cs ? `${fmtNum(data.aggregate.submits_total)} submitů celkem` : t5(`${fmtNum(data.aggregate.submits_total)} total submits`, lang)} tip={tx5(PoolDashboardCopy.numberOfRejectedSharesOftenCau, lang)} />
+              <StatCard icon={<Globe className="h-5 w-5" />} color="text-zion-purple" bg="bg-zion-purple/10" label={tx5(PoolDashboardCopy.serversOnline, lang)} value={`${data.servers.filter(s => s.online).length} / ${data.servers.length}`} tip={tx5(PoolDashboardCopy.numberOfAvailablePoolServers, lang)} />
+              <StatCard icon={<Heart className="h-5 w-5" />} color="text-zion-purple" bg="bg-zion-purple/10" label={tx5(PoolDashboardCopy.minerShare, lang)} value={`${data.fee.miner_share}%`} sub={cs ? `${data.fee.pool_fee}% fee` : t5(`${data.fee.pool_fee}% fee`, lang)} tip={tx5(PoolDashboardCopy.percentageOfRewardGoingToTheMi, lang)} />
+              <StatCard icon={<HardHat className="h-5 w-5" />} color="text-zion-purple" bg="bg-zion-purple/10" label="PPLNS Fill" value={fmtPct(data.pplns.window_pct)} sub={cs ? `${fmtNum(data.pplns.window_used)} / ${fmtNum(data.pplns.window_size)} share` : t5(`${fmtNum(data.pplns.window_used)} / ${fmtNum(data.pplns.window_size)} shares`, lang)} tip={tx5(PoolDashboardCopy.pplnsWindowFillDeterminesHowMa, lang)} />
+              <StatCard icon={<Wallet className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={tx5(PoolDashboardCopy.totalPaid, lang)} value={`${data.pplns.total_paid_zion.toFixed(2)} ZION`} sub={cs ? `${fmtNum(data.pplns.payout_rounds)} payout kol` : t5(`${fmtNum(data.pplns.payout_rounds)} payout rounds`, lang)} tip={tx5(PoolDashboardCopy.totalZionPaidOutToMinersInPool, lang)} />
+              <StatCard icon={<Cpu className="h-5 w-5" />} color="text-zion-cyan" bg="bg-zion-cyan/10" label={tx5(PoolDashboardCopy.networkHashrate, lang)} value={fmtHashOrPending(data.runtime.network_hashrate, tx5(PoolDashboardCopy.offline, lang))} sub={cs ? `Výška ${fmtNum(data.runtime.chain_height)}` : t5(`Height ${fmtNum(data.runtime.chain_height)}`, lang)} tip={tx5(PoolDashboardCopy.totalComputationalPowerOfTheEn, lang)} />
+              <StatCard icon={<Bell className="h-5 w-5" />} color="text-zion-purple" bg="bg-zion-purple/10" label={tx5(PoolDashboardCopy.templateFees, lang)} value={`${data.runtime.template_fees_zion.toFixed(4)} ZION`} sub={cs ? `Obtížnost ${fmtDifficulty(data.runtime.difficulty)}` : t5(`Difficulty ${fmtDifficulty(data.runtime.difficulty)}`, lang)} tip={tx5(PoolDashboardCopy.sumOfFeesFromTransactionsInThe, lang)} />
               {data.servers.filter(s => s.stats?.blockchain?.connected).map(srv => (
                 <StatCard
                   key={srv.id}
@@ -847,7 +850,7 @@ export default function PoolDashboard() {
           ) : (
             <div className="zion-rainbow-sub p-6 text-center" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <XCircle className="h-8 w-8 text-zion-purple mx-auto mb-3" />
-              <p className="text-gray-400">{PoolDashboardCopy.poolDataUnavailableServersMayB[cs ? 'cs' : 'en']}</p>
+              <p className="text-gray-400">{tx5(PoolDashboardCopy.poolDataUnavailableServersMayB, lang)}</p>
               {error && <p className="text-xs text-zion-purple mt-2 font-mono">{error}</p>}
             </div>
           )}
@@ -863,12 +866,12 @@ export default function PoolDashboard() {
           style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.performance[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolDashboardCopy.performance, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-cyan" />
-              {PoolDashboardCopy.poolPerformance[cs ? 'cs' : 'en']}
+              {tx5(PoolDashboardCopy.poolPerformance, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{PoolDashboardCopy.liveHashrateChartNetworkShareA[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(PoolDashboardCopy.liveHashrateChartNetworkShareA, lang)}</p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
@@ -876,11 +879,11 @@ export default function PoolDashboard() {
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">{PoolDashboardCopy.poolHashrateLastHour[cs ? 'cs' : 'en']}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">{tx5(PoolDashboardCopy.poolHashrateLastHour, lang)}</p>
                   <p className="text-2xl font-bold text-zion-cyan font-mono mt-1">{fmtHash(data.aggregate.hashrate)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-500">{PoolDashboardCopy.k24hAverage[cs ? 'cs' : 'en']}</p>
+                  <p className="text-xs text-gray-500">{tx5(PoolDashboardCopy.k24hAverage, lang)}</p>
                   <p className="text-sm font-mono text-gray-300">{fmtHash(data.aggregate.hashrate_24h)}</p>
                 </div>
               </div>
@@ -891,7 +894,7 @@ export default function PoolDashboard() {
             <div className="space-y-4">
               {/* Network Share */}
               <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{PoolDashboardCopy.networkShare[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{tx5(PoolDashboardCopy.networkShare, lang)}</p>
                 {(() => {
                   const netHash = data.runtime.network_hashrate ?? 0;
                   const poolHash = data.aggregate.hashrate ?? 0;
@@ -904,7 +907,7 @@ export default function PoolDashboard() {
                       </div>
                       <div className="mt-2 flex justify-between text-[10px] text-gray-500">
                         <span>Pool: {fmtHash(poolHash)}</span>
-                        <span>{PoolDashboardCopy.network[cs ? 'cs' : 'en']}: {fmtHash(netHash)}</span>
+                        <span>{tx5(PoolDashboardCopy.network, lang)}: {fmtHash(netHash)}</span>
                       </div>
                     </>
                   );
@@ -913,7 +916,7 @@ export default function PoolDashboard() {
 
               {/* Pool Luck */}
               <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{PoolDashboardCopy.poolLuck[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{tx5(PoolDashboardCopy.poolLuck, lang)}</p>
                 {(() => {
                   const netHash = data.runtime.network_hashrate ?? 0;
                   const poolHash = data.aggregate.hashrate ?? 0;
@@ -926,7 +929,7 @@ export default function PoolDashboard() {
                     <>
                       <p className={`text-2xl font-bold font-mono ${luckColor}`}>{luck > 0 ? `${luck.toFixed(0)}%` : '—'}</p>
                       <p className="text-[11px] text-gray-500 mt-1">
-                        {blocksFound} {PoolDashboardCopy.found[cs ? 'cs' : 'en']} / {expectedBlocks.toFixed(1)} {PoolDashboardCopy.expected[cs ? 'cs' : 'en']}
+                        {blocksFound} {tx5(PoolDashboardCopy.found, lang)} / {expectedBlocks.toFixed(1)} {tx5(PoolDashboardCopy.expected, lang)}
                       </p>
                     </>
                   );
@@ -935,7 +938,7 @@ export default function PoolDashboard() {
 
               {/* Pending Payouts */}
               <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{PoolDashboardCopy.pendingPayouts[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{tx5(PoolDashboardCopy.pendingPayouts, lang)}</p>
                 {(() => {
                   const srv = data.servers.find(s => s.stats?.payouts);
                   const pending = srv?.stats?.payouts;
@@ -944,7 +947,7 @@ export default function PoolDashboard() {
                   return (
                     <>
                       <p className="text-2xl font-bold text-zion-gold font-mono">{pendingZion} ZION</p>
-                      <p className="text-[11px] text-gray-500 mt-1">{pendingMiners} {PoolDashboardCopy.minersQueued[cs ? 'cs' : 'en']}</p>
+                      <p className="text-[11px] text-gray-500 mt-1">{pendingMiners} {tx5(PoolDashboardCopy.minersQueued, lang)}</p>
                     </>
                   );
                 })()}
@@ -971,12 +974,12 @@ export default function PoolDashboard() {
           style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.operations[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolDashboardCopy.operations, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-cyan" />
-              {PoolDashboardCopy.poolRuntimeOverview[cs ? 'cs' : 'en']}
+              {tx5(PoolDashboardCopy.poolRuntimeOverview, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{PoolDashboardCopy.submissionFlowPplnsEngineFillA[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(PoolDashboardCopy.submissionFlowPplnsEngineFillA, lang)}</p>
           </div>
 
           <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
@@ -998,10 +1001,10 @@ export default function PoolDashboard() {
                     <div key={name} className="zion-rainbow-sub p-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                       <p className="text-[11px] uppercase tracking-[0.3em] text-gray-500">{name}</p>
                       <p className="mt-2 text-2xl font-semibold text-white font-mono">{fmtNum(group.accepted)}</p>
-                      <p className="text-xs text-gray-500">{PoolDashboardCopy.acceptedShares[cs ? 'cs' : 'en']}</p>
+                      <p className="text-xs text-gray-500">{tx5(PoolDashboardCopy.acceptedShares, lang)}</p>
                       <div className="mt-3 space-y-1 text-xs">
-                        <div className="flex items-center justify-between text-gray-400"><span>{PoolDashboardCopy.submits[cs ? 'cs' : 'en']}</span><span className="font-mono text-gray-200">{fmtNum(group.submits)}</span></div>
-                        <div className="flex items-center justify-between text-gray-400"><span>{PoolDashboardCopy.acceptRate_2[cs ? 'cs' : 'en']}</span><span className="font-mono text-zion-cyan">{fmtPct(groupRate)}</span></div>
+                        <div className="flex items-center justify-between text-gray-400"><span>{tx5(PoolDashboardCopy.submits, lang)}</span><span className="font-mono text-gray-200">{fmtNum(group.submits)}</span></div>
+                        <div className="flex items-center justify-between text-gray-400"><span>{tx5(PoolDashboardCopy.acceptRate_2, lang)}</span><span className="font-mono text-zion-cyan">{fmtPct(groupRate)}</span></div>
                       </div>
                     </div>
                   );
@@ -1014,7 +1017,7 @@ export default function PoolDashboard() {
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-gray-400">{PoolDashboardCopy.windowUtilization[cs ? 'cs' : 'en']}</span>
+                    <span className="text-gray-400">{tx5(PoolDashboardCopy.windowUtilization, lang)}</span>
                     <span className="text-white font-mono">{fmtPct(data?.pplns?.window_pct)}</span>
                   </div>
                   <div className="h-3 rounded-full bg-white/5 overflow-hidden">
@@ -1027,34 +1030,34 @@ export default function PoolDashboard() {
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                    <p className="text-xs text-gray-500">{PoolDashboardCopy.registeredMiners[cs ? 'cs' : 'en']}</p>
+                    <p className="text-xs text-gray-500">{tx5(PoolDashboardCopy.registeredMiners, lang)}</p>
                     <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtNum(data?.pplns?.registered_miners)}</p>
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                    <p className="text-xs text-gray-500">{PoolDashboardCopy.payoutRounds[cs ? 'cs' : 'en']}</p>
+                    <p className="text-xs text-gray-500">{tx5(PoolDashboardCopy.payoutRounds, lang)}</p>
                     <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtNum(data?.pplns?.payout_rounds)}</p>
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                    <p className="text-xs text-gray-500">{PoolDashboardCopy.totalPaid_2[cs ? 'cs' : 'en']}</p>
+                    <p className="text-xs text-gray-500">{tx5(PoolDashboardCopy.totalPaid_2, lang)}</p>
                     <p className="mt-1 text-xl font-semibold text-white font-mono">{(data?.pplns?.total_paid_zion ?? 0).toFixed(4)}</p>
                     <p className="text-xs text-gray-500">ZION</p>
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                    <p className="text-xs text-gray-500">{PoolDashboardCopy.poolUptime[cs ? 'cs' : 'en']}</p>
+                    <p className="text-xs text-gray-500">{tx5(PoolDashboardCopy.poolUptime, lang)}</p>
                     <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtUptime(data?.runtime?.pool_uptime_seconds)}</p>
                   </div>
                 </div>
 
                 <div className="zion-rainbow-sub p-4 text-sm text-zion-cyan" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                   <div className="flex items-center justify-between gap-3">
-                    <span>{PoolDashboardCopy.telemetryStatus[cs ? 'cs' : 'en']}</span>
+                    <span>{tx5(PoolDashboardCopy.telemetryStatus, lang)}</span>
                     <span className="font-mono text-xs text-white">
                       pool {data?.runtime?.data_sources?.pool_tcp ? 'on' : 'off'} · rpc {data?.runtime?.data_sources?.core_rpc ? 'on' : 'off'} · prom {data?.runtime?.data_sources?.prometheus ? 'on' : 'off'}
                     </span>
                   </div>
                   {data?.aggregate?.hashrate !== undefined && data.aggregate.hashrate <= 0 && (
                     <p className="mt-2 text-xs text-zion-cyan/80">
-                      {PoolDashboardCopy.poolHashrateIsStillUnavailable[cs ? 'cs' : 'en']}
+                      {tx5(PoolDashboardCopy.poolHashrateIsStillUnavailable, lang)}
                     </p>
                   )}
                 </div>
@@ -1073,15 +1076,13 @@ export default function PoolDashboard() {
           style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.profitRouter[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolDashboardCopy.profitRouter, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-cyan" />
-              {PoolDashboardCopy.profitSwitcher[cs ? 'cs' : 'en']}
+              {tx5(PoolDashboardCopy.profitSwitcher, lang)}
             </h2>
             <p className="text-sm text-gray-400">
-              {cs
-                ? `Pool automaticky vybírá nejprofitabilnější GPU a CPU coiny z dostupných bridge. Kontrola každých ${data.profit_switcher.interval_secs}s, hysteresis ${data.profit_switcher.hysteresis_pct}%. Zdroj: WhatToMine (USD) + NiceHash (monitoring).`
-                : `Pool automatically selects the most profitable GPU and CPU coins from available bridges. Check every ${data.profit_switcher.interval_secs}s, hysteresis ${data.profit_switcher.hysteresis_pct}%. Source: WhatToMine (USD) + NiceHash (monitoring).`}
+              {cs ? `Pool automaticky vybírá nejprofitabilnější GPU a CPU coiny z dostupných bridge. Kontrola každých ${data.profit_switcher.interval_secs}s, hysteresis ${data.profit_switcher.hysteresis_pct}%. Zdroj: WhatToMine (USD) + NiceHash (monitoring).` : t5(`Pool automatically selects the most profitable GPU and CPU coins from available bridges. Check every ${data.profit_switcher.interval_secs}s, hysteresis ${data.profit_switcher.hysteresis_pct}%. Source: WhatToMine (USD) + NiceHash (monitoring).`, lang)}
             </p>
           </div>
 
@@ -1091,7 +1092,7 @@ export default function PoolDashboard() {
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-2">
                 <Zap className="h-5 w-5 text-zion-cyan" />
-                <span className="text-xs uppercase tracking-wider text-gray-400">{PoolDashboardCopy.bestGpuCoin[cs ? 'cs' : 'en']}</span>
+                <span className="text-xs uppercase tracking-wider text-gray-400">{tx5(PoolDashboardCopy.bestGpuCoin, lang)}</span>
               </div>
               <div className="text-3xl font-bold text-white">
                 {data.profit_switcher.best_gpu_coin ?? '—'}
@@ -1104,7 +1105,7 @@ export default function PoolDashboard() {
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-2">
                 <Cpu className="h-5 w-5 text-zion-purple" />
-                <span className="text-xs uppercase tracking-wider text-gray-400">{PoolDashboardCopy.bestCpuCoin[cs ? 'cs' : 'en']}</span>
+                <span className="text-xs uppercase tracking-wider text-gray-400">{tx5(PoolDashboardCopy.bestCpuCoin, lang)}</span>
               </div>
               <div className="text-3xl font-bold text-white">
                 {data.profit_switcher.best_cpu_coin ?? '—'}
@@ -1118,10 +1119,10 @@ export default function PoolDashboard() {
           {/* ── Last check ── */}
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
             <RefreshCw className="h-3 w-3" />
-            {PoolDashboardCopy.lastCheck[cs ? 'cs' : 'en']}
+            {tx5(PoolDashboardCopy.lastCheck, lang)}
             {data.profit_switcher.last_check_unix > 0
               ? new Date(data.profit_switcher.last_check_unix * 1000).toLocaleTimeString()
-              : (PoolDashboardCopy.in5Min[cs ? 'cs' : 'en'])}
+              : (tx5(PoolDashboardCopy.in5Min, lang))}
           </div>
 
           {/* ── Profit estimates table ── */}
@@ -1130,11 +1131,11 @@ export default function PoolDashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-gray-500">
-                    <th className="text-left py-2 px-3">{PoolDashboardCopy.coin[cs ? 'cs' : 'en']}</th>
-                    <th className="text-left py-2 px-3">{PoolDashboardCopy.algorithm[cs ? 'cs' : 'en']}</th>
-                    <th className="text-right py-2 px-3">{PoolDashboardCopy.revenueUsdDay[cs ? 'cs' : 'en']}</th>
-                    <th className="text-right py-2 px-3">{PoolDashboardCopy.profitUsdDay[cs ? 'cs' : 'en']}</th>
-                    <th className="text-center py-2 px-3">{PoolDashboardCopy.type[cs ? 'cs' : 'en']}</th>
+                    <th className="text-left py-2 px-3">{tx5(PoolDashboardCopy.coin, lang)}</th>
+                    <th className="text-left py-2 px-3">{tx5(PoolDashboardCopy.algorithm, lang)}</th>
+                    <th className="text-right py-2 px-3">{tx5(PoolDashboardCopy.revenueUsdDay, lang)}</th>
+                    <th className="text-right py-2 px-3">{tx5(PoolDashboardCopy.profitUsdDay, lang)}</th>
+                    <th className="text-center py-2 px-3">{tx5(PoolDashboardCopy.type, lang)}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1167,7 +1168,7 @@ export default function PoolDashboard() {
           {data.profit_switcher.nicehash_rates?.length > 0 && (
             <details className="mt-4">
               <summary className="cursor-pointer text-xs uppercase tracking-wider text-gray-500 hover:text-gray-300 transition">
-                {cs ? `NiceHash paying rates (${data.profit_switcher.nicehash_rates.length})` : `NiceHash paying rates (${data.profit_switcher.nicehash_rates.length})`}
+                {cs ? `NiceHash paying rates (${data.profit_switcher.nicehash_rates.length})` : t5(`NiceHash paying rates (${data.profit_switcher.nicehash_rates.length})`, lang)}
               </summary>
               <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                 {data.profit_switcher.nicehash_rates.map((nh) => (
@@ -1191,12 +1192,12 @@ export default function PoolDashboard() {
           style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.infrastructure[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolDashboardCopy.infrastructure, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Server className="h-7 w-7 text-zion-gold" />
-              {PoolDashboardCopy.poolServers[cs ? 'cs' : 'en']}
+              {tx5(PoolDashboardCopy.poolServers, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{PoolDashboardCopy.currentPublicPoolHostAndStratu[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(PoolDashboardCopy.currentPublicPoolHostAndStratu, lang)}</p>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
@@ -1225,29 +1226,29 @@ export default function PoolDashboard() {
                       }`}
                     >
                       {!srv.online ? (
-                        <><XCircle className="h-3 w-3" /> {PoolDashboardCopy.offline[cs ? 'cs' : 'en']}</>
+                        <><XCircle className="h-3 w-3" /> {tx5(PoolDashboardCopy.offline, lang)}</>
                       ) : connected && active ? (
-                        <><CircleDot className="h-3 w-3" /> {PoolDashboardCopy.mining[cs ? 'cs' : 'en']}</>
+                        <><CircleDot className="h-3 w-3" /> {tx5(PoolDashboardCopy.mining, lang)}</>
                       ) : connected ? (
-                        <><CircleDot className="h-3 w-3" /> {PoolDashboardCopy.idle[cs ? 'cs' : 'en']}</>
+                        <><CircleDot className="h-3 w-3" /> {tx5(PoolDashboardCopy.idle, lang)}</>
                       ) : (
-                        <><XCircle className="h-3 w-3" /> {PoolDashboardCopy.disconnected[cs ? 'cs' : 'en']}</>
+                        <><XCircle className="h-3 w-3" /> {tx5(PoolDashboardCopy.disconnected, lang)}</>
                       )}
                     </span>
                   </div>
                   {srv.stats ? (
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                       <MiniStat label="Hashrate" value={fmtHash(srv.stats.hashrate?.pool)} highlight />
-                      <MiniStat label={PoolDashboardCopy.activeTotal[cs ? 'cs' : 'en']} value={`${srv.stats.miners?.active ?? 0} / ${srv.stats.miners?.total ?? 0}`} />
-                      <MiniStat label={PoolDashboardCopy.validShares[cs ? 'cs' : 'en']} value={fmtNum(srv.stats.shares?.valid)} />
-                      <MiniStat label={PoolDashboardCopy.invalid[cs ? 'cs' : 'en']} value={String(srv.stats.shares?.invalid ?? 0)} />
-                      <MiniStat label={PoolDashboardCopy.blocksFound[cs ? 'cs' : 'en']} value={fmtNum(srv.stats.blocks?.found)} />
+                      <MiniStat label={tx5(PoolDashboardCopy.activeTotal, lang)} value={`${srv.stats.miners?.active ?? 0} / ${srv.stats.miners?.total ?? 0}`} />
+                      <MiniStat label={tx5(PoolDashboardCopy.validShares, lang)} value={fmtNum(srv.stats.shares?.valid)} />
+                      <MiniStat label={tx5(PoolDashboardCopy.invalid, lang)} value={String(srv.stats.shares?.invalid ?? 0)} />
+                      <MiniStat label={tx5(PoolDashboardCopy.blocksFound, lang)} value={fmtNum(srv.stats.blocks?.found)} />
                       <MiniStat label="PPLNS Window" value={fmtNum(srv.stats.pplns_window_size)} />
-                      <MiniStat label={PoolDashboardCopy.height[cs ? 'cs' : 'en']} value={fmtNum(srv.stats.blockchain?.height)} />
+                      <MiniStat label={tx5(PoolDashboardCopy.height, lang)} value={fmtNum(srv.stats.blockchain?.height)} />
                       <MiniStat label="Uptime" value={fmtUptime(srv.stats.pool?.uptime_secs)} />
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500">{PoolDashboardCopy.noDataAvailable[cs ? 'cs' : 'en']}</p>
+                    <p className="text-sm text-gray-500">{tx5(PoolDashboardCopy.noDataAvailable, lang)}</p>
                   )}
                   <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-2">
                     <Terminal className="h-3.5 w-3.5 text-gray-500" />
@@ -1279,26 +1280,26 @@ export default function PoolDashboard() {
           style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.directory[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolDashboardCopy.directory, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Users className="h-7 w-7 text-zion-cyan" />
-              {PoolDashboardCopy.activeMiners[cs ? 'cs' : 'en']} ({visibleMiners.length})
+              {tx5(PoolDashboardCopy.activeMiners, lang)} ({visibleMiners.length})
             </h2>
-            <p className="text-sm text-gray-400">{PoolDashboardCopy.recentMinerDirectoryFromTheLiv[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(PoolDashboardCopy.recentMinerDirectoryFromTheLiv, lang)}</p>
             <div className="mt-1 inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
               <button
                 onClick={() => setActiveOnly(true)}
                 className={`px-3 py-1.5 text-xs rounded-lg transition ${activeOnly ? 'zion-rainbow-sub text-white' : 'text-gray-400 hover:text-white'}`}
                 style={activeOnly ? ({ '--rc': '228, 30, 43' } as React.CSSProperties) : undefined}
               >
-                {PoolDashboardCopy.activeOnly[cs ? 'cs' : 'en']}
+                {tx5(PoolDashboardCopy.activeOnly, lang)}
               </button>
               <button
                 onClick={() => setActiveOnly(false)}
                 className={`px-3 py-1.5 text-xs rounded-lg transition ${!activeOnly ? 'zion-rainbow-sub text-white' : 'text-gray-400 hover:text-white'}`}
                 style={!activeOnly ? ({ '--rc': '228, 30, 43' } as React.CSSProperties) : undefined}
               >
-                {PoolDashboardCopy.allMiners[cs ? 'cs' : 'en']}
+                {tx5(PoolDashboardCopy.allMiners, lang)}
               </button>
             </div>
           </div>
@@ -1309,13 +1310,13 @@ export default function PoolDashboard() {
                 <thead>
                   <tr className="border-b border-white/[0.08]">
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">#</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.minerWorker[cs ? 'cs' : 'en']}</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.payoutAddress[cs ? 'cs' : 'en']}</th>
-                    <th className="text-right px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.hashrate[cs ? 'cs' : 'en']}</th>
-                    <th className="text-right px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.shares[cs ? 'cs' : 'en']}</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.server[cs ? 'cs' : 'en']}</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.lastShare[cs ? 'cs' : 'en']}</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.status[cs ? 'cs' : 'en']}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tx5(PoolDashboardCopy.minerWorker, lang)}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tx5(PoolDashboardCopy.payoutAddress, lang)}</th>
+                    <th className="text-right px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tx5(PoolDashboardCopy.hashrate, lang)}</th>
+                    <th className="text-right px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tx5(PoolDashboardCopy.shares, lang)}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tx5(PoolDashboardCopy.server, lang)}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tx5(PoolDashboardCopy.lastShare, lang)}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tx5(PoolDashboardCopy.status, lang)}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1350,7 +1351,7 @@ export default function PoolDashboard() {
                         <td className="px-5 py-3.5 text-right text-gray-300 font-mono text-xs">{formatHashrate(m.hashrate ?? 0)}</td>
                         <td className="px-5 py-3.5 text-right text-gray-400 font-mono text-xs">{m.valid_shares ?? 0}</td>
                         <td className="px-5 py-3.5 text-gray-400 text-sm">{serverObj?.flag} {serverObj?.name ?? m.server}</td>
-                        <td className="px-5 py-3.5 text-gray-400 font-mono text-xs">{timeAgo(m.last_share, cs)}</td>
+                        <td className="px-5 py-3.5 text-gray-400 font-mono text-xs">{timeAgo(m.last_share, lang)}</td>
                         <td className="px-5 py-3.5">
                           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
                             isActive
@@ -1358,14 +1359,14 @@ export default function PoolDashboard() {
                               : "text-gray-500 bg-white/5 border border-white/[0.06]"
                           }`}>
                             <CircleDot className="h-3 w-3" />
-                            {isActive ? (PoolDashboardCopy.active[cs ? 'cs' : 'en']) : (PoolDashboardCopy.inactive[cs ? 'cs' : 'en'])}
+                            {isActive ? (tx5(PoolDashboardCopy.active, lang)) : (tx5(PoolDashboardCopy.inactive, lang))}
                           </span>
                         </td>
                       </tr>
                     );
                   })}
                   {visibleMiners.length === 0 && (
-                    <tr><td colSpan={8} className="px-5 py-10 text-center text-gray-500">{PoolDashboardCopy.liveBackendIsNotExposingRecent[cs ? 'cs' : 'en']}</td></tr>
+                    <tr><td colSpan={8} className="px-5 py-10 text-center text-gray-500">{tx5(PoolDashboardCopy.liveBackendIsNotExposingRecent, lang)}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -1383,12 +1384,12 @@ export default function PoolDashboard() {
           style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.ledger[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolDashboardCopy.ledger, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Box className="h-7 w-7 text-zion-gold" />
-              {PoolDashboardCopy.recentNetworkBlocks[cs ? 'cs' : 'en']} ({data?.recent_blocks.length ?? 0})
+              {tx5(PoolDashboardCopy.recentNetworkBlocks, lang)} ({data?.recent_blocks.length ?? 0})
             </h2>
-            <p className="text-sm text-gray-400">{PoolDashboardCopy.latestConfirmedChainBlocksFrom[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(PoolDashboardCopy.latestConfirmedChainBlocksFrom, lang)}</p>
           </div>
 
           <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
@@ -1396,12 +1397,12 @@ export default function PoolDashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/[0.08]">
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.height[cs ? 'cs' : 'en']}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tx5(PoolDashboardCopy.height, lang)}</th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">Hash</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.difficulty[cs ? 'cs' : 'en']}</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.reward[cs ? 'cs' : 'en']}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tx5(PoolDashboardCopy.difficulty, lang)}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tx5(PoolDashboardCopy.reward, lang)}</th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">Miner</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{PoolDashboardCopy.time[cs ? 'cs' : 'en']}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tx5(PoolDashboardCopy.time, lang)}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1420,11 +1421,11 @@ export default function PoolDashboard() {
                       <td className="px-5 py-3.5">
                         <code className="text-xs text-gray-400 font-mono">{shortAddr(b.miner_address)}</code>
                       </td>
-                      <td className="px-5 py-3.5 text-gray-500 text-xs">{timeAgo(b.timestamp, cs)}</td>
+                      <td className="px-5 py-3.5 text-gray-500 text-xs">{timeAgo(b.timestamp, lang)}</td>
                     </tr>
                   ))}
                   {(!data?.recent_blocks || data.recent_blocks.length === 0) && (
-                    <tr><td colSpan={6} className="px-5 py-10 text-center text-gray-500">{PoolDashboardCopy.noRecentChainBlocksAvailable[cs ? 'cs' : 'en']}</td></tr>
+                    <tr><td colSpan={6} className="px-5 py-10 text-center text-gray-500">{tx5(PoolDashboardCopy.noRecentChainBlocksAvailable, lang)}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -1445,12 +1446,12 @@ export default function PoolDashboard() {
           style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.gettingStarted[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolDashboardCopy.gettingStarted, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Rocket className="h-7 w-7 text-zion-gold" />
-              {PoolDashboardCopy.startMiningZion[cs ? 'cs' : 'en']}
+              {tx5(PoolDashboardCopy.startMiningZion, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{PoolDashboardCopy.followTheseStepsToBeginMiningI[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(PoolDashboardCopy.followTheseStepsToBeginMiningI, lang)}</p>
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
@@ -1461,17 +1462,17 @@ export default function PoolDashboard() {
                   <Wallet className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{PoolDashboardCopy.k1GetAZionWallet[cs ? 'cs' : 'en']}</h3>
-                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.valid44CharZion1AddressRequire[cs ? 'cs' : 'en']}</p>
+                  <h3 className="text-base font-semibold text-white">{tx5(PoolDashboardCopy.k1GetAZionWallet, lang)}</h3>
+                  <p className="text-[11px] text-gray-500">{tx5(PoolDashboardCopy.valid44CharZion1AddressRequire, lang)}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-300 mb-3">{PoolDashboardCopy.downloadTheZionDesktopWalletOr[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm text-gray-300 mb-3">{tx5(PoolDashboardCopy.downloadTheZionDesktopWalletOr, lang)}</p>
               <div className="zion-rainbow-sub p-3 text-xs text-amber-200 flex items-start gap-2 mb-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                 <Bell className="h-3.5 w-3.5 mt-0.5" />
-                <span>{PoolDashboardCopy.criticalZionPayoutAddressMustB[cs ? 'cs' : 'en']}</span>
+                <span>{tx5(PoolDashboardCopy.criticalZionPayoutAddressMustB, lang)}</span>
               </div>
               <Link href="/download" className="inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
-                {PoolDashboardCopy.downloadWallet[cs ? 'cs' : 'en']} <ExternalLink className="h-3.5 w-3.5" />
+                {tx5(PoolDashboardCopy.downloadWallet, lang)} <ExternalLink className="h-3.5 w-3.5" />
               </Link>
             </div>
 
@@ -1482,20 +1483,20 @@ export default function PoolDashboard() {
                   <Cpu className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{PoolDashboardCopy.k2BuildTheMiner[cs ? 'cs' : 'en']}</h3>
-                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.rustToolchainV3Source[cs ? 'cs' : 'en']}</p>
+                  <h3 className="text-base font-semibold text-white">{tx5(PoolDashboardCopy.k2BuildTheMiner, lang)}</h3>
+                  <p className="text-[11px] text-gray-500">{tx5(PoolDashboardCopy.rustToolchainV3Source, lang)}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-300 mb-3">{PoolDashboardCopy.zionMinerIsTheRustBinaryFromTh[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm text-gray-300 mb-3">{tx5(PoolDashboardCopy.zionMinerIsTheRustBinaryFromTh, lang)}</p>
               <div className="space-y-3">
                 <div>
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{PoolDashboardCopy.cpuBuild[cs ? 'cs' : 'en']}</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{tx5(PoolDashboardCopy.cpuBuild, lang)}</p>
                   <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
 {`cargo build --release --manifest-path V3/Cargo.toml -p zion-miner`}
                   </pre>
                 </div>
                 <div>
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{PoolDashboardCopy.gpuBuildOpencl[cs ? 'cs' : 'en']}</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{tx5(PoolDashboardCopy.gpuBuildOpencl, lang)}</p>
                   <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
 {`cargo build --release --manifest-path V3/Cargo.toml -p zion-miner --features gpu-opencl`}
                   </pre>
@@ -1503,10 +1504,10 @@ export default function PoolDashboard() {
               </div>
               <div className="mt-3 flex flex-wrap gap-3 text-sm">
                 <Link href="/mining/node-setup" className="inline-flex items-center gap-2 text-zion-cyan hover:text-white transition-colors">
-                  {PoolDashboardCopy.nodeSetupGuide[cs ? 'cs' : 'en']} <ExternalLink className="h-3.5 w-3.5" />
+                  {tx5(PoolDashboardCopy.nodeSetupGuide, lang)} <ExternalLink className="h-3.5 w-3.5" />
                 </Link>
                 <Link href="/mining/guides" className="inline-flex items-center gap-2 text-zion-cyan hover:text-white transition-colors">
-                  {PoolDashboardCopy.moreGuides[cs ? 'cs' : 'en']} <ExternalLink className="h-3.5 w-3.5" />
+                  {tx5(PoolDashboardCopy.moreGuides, lang)} <ExternalLink className="h-3.5 w-3.5" />
                 </Link>
               </div>
             </div>
@@ -1518,15 +1519,15 @@ export default function PoolDashboard() {
                   <Layers className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{PoolDashboardCopy.k3ChooseAlgorithm[cs ? 'cs' : 'en']}</h3>
-                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.k3DeekshaPowVariants[cs ? 'cs' : 'en']}</p>
+                  <h3 className="text-base font-semibold text-white">{tx5(PoolDashboardCopy.k3ChooseAlgorithm, lang)}</h3>
+                  <p className="text-[11px] text-gray-500">{tx5(PoolDashboardCopy.k3DeekshaPowVariants, lang)}</p>
                 </div>
               </div>
               <div className="grid gap-3 md:grid-cols-3">
                 {[
-                  { algo: 'deeksha_lite_v1', tag: PoolDashboardCopy.defaultCpuGpuBalanced[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.standardDeekshaLiteRecommended[cs ? 'cs' : 'en'] },
-                  { algo: 'cosmic_harmony_ekam_deeksha_v2', tag: PoolDashboardCopy.advancedCpuGpu[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.ekamV2AdvancedDeekshaVariant[cs ? 'cs' : 'en'] },
-                  { algo: 'deeksha_lite_fire', tag: PoolDashboardCopy.thermalIntensive512KibScratchp[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.fireHigherHashrateHigherPowerR[cs ? 'cs' : 'en'] },
+                  { algo: 'deeksha_lite_v1', tag: tx5(PoolDashboardCopy.defaultCpuGpuBalanced, lang), desc: tx5(PoolDashboardCopy.standardDeekshaLiteRecommended, lang) },
+                  { algo: 'cosmic_harmony_ekam_deeksha_v2', tag: tx5(PoolDashboardCopy.advancedCpuGpu, lang), desc: tx5(PoolDashboardCopy.ekamV2AdvancedDeekshaVariant, lang) },
+                  { algo: 'deeksha_lite_fire', tag: tx5(PoolDashboardCopy.thermalIntensive512KibScratchp, lang), desc: tx5(PoolDashboardCopy.fireHigherHashrateHigherPowerR, lang) },
                 ].map((a) => (
                   <div key={a.algo} className="zion-rainbow-sub p-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                     <div className="flex items-center justify-between mb-2">
@@ -1547,8 +1548,8 @@ export default function PoolDashboard() {
                   <Terminal className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{PoolDashboardCopy.k4ConfigureConnect[cs ? 'cs' : 'en']}</h3>
-                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.runZionMinerWithTheRightEnvVar[cs ? 'cs' : 'en']}</p>
+                  <h3 className="text-base font-semibold text-white">{tx5(PoolDashboardCopy.k4ConfigureConnect, lang)}</h3>
+                  <p className="text-[11px] text-gray-500">{tx5(PoolDashboardCopy.runZionMinerWithTheRightEnvVar, lang)}</p>
                 </div>
               </div>
 
@@ -1560,14 +1561,14 @@ export default function PoolDashboard() {
                     className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${miningMode === 'cpu' ? 'zion-rainbow-sub text-white' : 'text-gray-400 hover:text-white'}`}
                     style={miningMode === 'cpu' ? ({ '--rc': '228, 30, 43' } as React.CSSProperties) : undefined}
                   >
-                    <Cpu className="h-3.5 w-3.5 inline mr-1.5" /> {PoolDashboardCopy.cpuMining[cs ? 'cs' : 'en']}
+                    <Cpu className="h-3.5 w-3.5 inline mr-1.5" /> {tx5(PoolDashboardCopy.cpuMining, lang)}
                   </button>
                   <button
                     onClick={() => setMiningMode('gpu')}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${miningMode === 'gpu' ? 'zion-rainbow-sub text-white' : 'text-gray-400 hover:text-white'}`}
                     style={miningMode === 'gpu' ? ({ '--rc': '228, 30, 43' } as React.CSSProperties) : undefined}
                   >
-                    <Zap className="h-3.5 w-3.5 inline mr-1.5" /> {PoolDashboardCopy.gpuMining[cs ? 'cs' : 'en']}
+                    <Zap className="h-3.5 w-3.5 inline mr-1.5" /> {tx5(PoolDashboardCopy.gpuMining, lang)}
                   </button>
                 </div>
                 <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
@@ -1592,7 +1593,7 @@ export default function PoolDashboard() {
                 {minerOS === 'linux' ? (
                   <div>
                     <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5 flex items-center">
-                      {PoolDashboardCopy.linuxMacosBash[cs ? 'cs' : 'en']}
+                      {tx5(PoolDashboardCopy.linuxMacosBash, lang)}
                       <CopyButton text={`ZION_POOL_ADDR=${SITE_POOL_PRIMARY} \\\nZION_WORKER_NAME=my-rig \\\nZION_MINER_ID=worker-01 \\\nZION_PAYOUT_ADDRESS=zion1...your44charaddress \\\nZION_MINER_ALGORITHM=deeksha_lite_v1 \\\nZION_LOOP_COUNT=1000000${miningMode === 'gpu' ? ' \\\nZION_GPU_BACKEND=opencl \\\nZION_NONCE_COUNT_GPU=262144' : ''} \\\ncargo run --release --manifest-path V3/Cargo.toml -p zion-miner`} />
                     </p>
                     <pre className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs text-gray-200 overflow-x-auto font-mono">
@@ -1629,12 +1630,12 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
                 {miningMode === 'gpu' && (
                   <div className="zion-rainbow-sub p-3 text-xs text-zion-cyan/90 flex items-start gap-2" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                     <Zap className="h-3.5 w-3.5 mt-0.5" />
-                    <span>{PoolDashboardCopy.gpuZionGpuBackendOpenclOrCudaM[cs ? 'cs' : 'en']}</span>
+                    <span>{tx5(PoolDashboardCopy.gpuZionGpuBackendOpenclOrCudaM, lang)}</span>
                   </div>
                 )}
                 <div className="zion-rainbow-sub p-3 text-xs text-amber-200 flex items-start gap-2" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <Shield className="h-3.5 w-3.5 mt-0.5" />
-                  <span>{PoolDashboardCopy.poolAndMinerBinariesMustBeComp[cs ? 'cs' : 'en']}</span>
+                  <span>{tx5(PoolDashboardCopy.poolAndMinerBinariesMustBeComp, lang)}</span>
                 </div>
               </div>
             </div>
@@ -1646,34 +1647,34 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
                   <TrendingUp className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{PoolDashboardCopy.k5MonitorEarn[cs ? 'cs' : 'en']}</h3>
-                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.trackYourRewardsInRealTime[cs ? 'cs' : 'en']}</p>
+                  <h3 className="text-base font-semibold text-white">{tx5(PoolDashboardCopy.k5MonitorEarn, lang)}</h3>
+                  <p className="text-[11px] text-gray-500">{tx5(PoolDashboardCopy.trackYourRewardsInRealTime, lang)}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-300 mb-3">{PoolDashboardCopy.onceConnectedMonitorYourMining[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm text-gray-300 mb-3">{tx5(PoolDashboardCopy.onceConnectedMonitorYourMining, lang)}</p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                 <div className="zion-rainbow-sub p-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.minPayout[cs ? 'cs' : 'en']}</p>
+                  <p className="text-[11px] text-gray-500">{tx5(PoolDashboardCopy.minPayout, lang)}</p>
                   <p className="text-lg font-bold text-white font-mono">{(data?.fee?.min_payout ?? 0.1)} ZION</p>
                 </div>
                 <div className="zion-rainbow-sub p-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.minerShare[cs ? 'cs' : 'en']}</p>
+                  <p className="text-[11px] text-gray-500">{tx5(PoolDashboardCopy.minerShare, lang)}</p>
                   <p className="text-lg font-bold text-white font-mono">{(data?.fee?.miner_share ?? 89)}%</p>
                 </div>
                 <div className="zion-rainbow-sub p-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.rewardMethod[cs ? 'cs' : 'en']}</p>
+                  <p className="text-[11px] text-gray-500">{tx5(PoolDashboardCopy.rewardMethod, lang)}</p>
                   <p className="text-lg font-bold text-white">PPLNS</p>
                 </div>
                 <div className="zion-rainbow-sub p-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <p className="text-[11px] text-gray-500">{PoolDashboardCopy.poolFee[cs ? 'cs' : 'en']}</p>
+                  <p className="text-[11px] text-gray-500">{tx5(PoolDashboardCopy.poolFee, lang)}</p>
                   <p className="text-lg font-bold text-white font-mono">{(data?.fee?.pool_fee ?? 1)}%</p>
                 </div>
               </div>
               <div className="zion-rainbow-sub p-3 text-xs text-gray-300 mb-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                {PoolDashboardCopy.coinbaseSplit89Miner5Humanitar[cs ? 'cs' : 'en']}
+                {tx5(PoolDashboardCopy.coinbaseSplit89Miner5Humanitar, lang)}
               </div>
               <Link href="/pool/miner/YOUR_ADDRESS" className="inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
-                {PoolDashboardCopy.openMinerDashboard[cs ? 'cs' : 'en']} <ArrowRight className="h-3.5 w-3.5" />
+                {tx5(PoolDashboardCopy.openMinerDashboard, lang)} <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
           </div>
@@ -1688,22 +1689,22 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
           style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.features[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolDashboardCopy.features, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-7 w-7 text-zion-purple" />
-              {PoolDashboardCopy.whyMineWithUs[cs ? 'cs' : 'en']}
+              {tx5(PoolDashboardCopy.whyMineWithUs, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{PoolDashboardCopy.fairTransparentAndHumanitarian[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(PoolDashboardCopy.fairTransparentAndHumanitarian, lang)}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { icon: <Zap className="h-5 w-5 text-white" />, color: "from-zion-purple/80 to-zion-purple/80", title: PoolDashboardCopy.deekshaPowAlgorithm[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.nativeZionPowCpuGpuAsicResista[cs ? 'cs' : 'en'] },
-              { icon: <Heart className="h-5 w-5 text-white" />, color: "from-zion-purple/80 to-zion-purple/80", title: PoolDashboardCopy.humanitarianMission[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.k5Humanitarian5IssobellaFundMin[cs ? 'cs' : 'en'] },
-              { icon: <Server className="h-5 w-5 text-white" />, color: "from-zion-purple/80 to-zion-cyan/80", title: PoolDashboardCopy.v306PoolInfrastructure[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.edgeNode1PoolRealStratumPplns2[cs ? 'cs' : 'en'] },
-              { icon: <Shield className="h-5 w-5 text-white" />, color: "from-zion-cyan/80 to-zion-cyan/80", title: PoolDashboardCopy.pplnsRewards[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.fairRewardDistributionBasedOnY[cs ? 'cs' : 'en'] },
-              { icon: <Zap className="h-5 w-5 text-white" />, color: "from-zion-gold/80 to-zion-gold/80", title: PoolDashboardCopy.gpuAcceleration[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.openclCudaMetalSupportRx5700Xt[cs ? 'cs' : 'en'] },
-              { icon: <Signal className="h-5 w-5 text-white" />, color: "from-zion-cyan/80 to-zion-purple/80", title: PoolDashboardCopy.realTimeMonitoring[cs ? 'cs' : 'en'], desc: PoolDashboardCopy.liveHashrateSharesAndEarningsV[cs ? 'cs' : 'en'] },
+              { icon: <Zap className="h-5 w-5 text-white" />, color: "from-zion-purple/80 to-zion-purple/80", title: tx5(PoolDashboardCopy.deekshaPowAlgorithm, lang), desc: tx5(PoolDashboardCopy.nativeZionPowCpuGpuAsicResista, lang) },
+              { icon: <Heart className="h-5 w-5 text-white" />, color: "from-zion-purple/80 to-zion-purple/80", title: tx5(PoolDashboardCopy.humanitarianMission, lang), desc: tx5(PoolDashboardCopy.k5Humanitarian5IssobellaFundMin, lang) },
+              { icon: <Server className="h-5 w-5 text-white" />, color: "from-zion-purple/80 to-zion-cyan/80", title: tx5(PoolDashboardCopy.v306PoolInfrastructure, lang), desc: tx5(PoolDashboardCopy.edgeNode1PoolRealStratumPplns2, lang) },
+              { icon: <Shield className="h-5 w-5 text-white" />, color: "from-zion-cyan/80 to-zion-cyan/80", title: tx5(PoolDashboardCopy.pplnsRewards, lang), desc: tx5(PoolDashboardCopy.fairRewardDistributionBasedOnY, lang) },
+              { icon: <Zap className="h-5 w-5 text-white" />, color: "from-zion-gold/80 to-zion-gold/80", title: tx5(PoolDashboardCopy.gpuAcceleration, lang), desc: tx5(PoolDashboardCopy.openclCudaMetalSupportRx5700Xt, lang) },
+              { icon: <Signal className="h-5 w-5 text-white" />, color: "from-zion-cyan/80 to-zion-purple/80", title: tx5(PoolDashboardCopy.realTimeMonitoring, lang), desc: tx5(PoolDashboardCopy.liveHashrateSharesAndEarningsV, lang) },
             ].map((f) => (
               <div key={f.title} className="group zion-rainbow-sub p-5 transition-all duration-200" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                 <div className={`flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br ${f.color} opacity-80 group-hover:opacity-100 transition mb-4`}>
@@ -1725,53 +1726,53 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
           style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolDashboardCopy.proTools[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolDashboardCopy.proTools, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-cyan" />
-              {PoolDashboardCopy.operatorToolkit[cs ? 'cs' : 'en']}
+              {tx5(PoolDashboardCopy.operatorToolkit, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{PoolDashboardCopy.failoverTemplatesProfitEstimat[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(PoolDashboardCopy.failoverTemplatesProfitEstimat, lang)}</p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-3">
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{PoolDashboardCopy.profitEstimator[cs ? 'cs' : 'en']}</p>
-              <label className="text-xs text-gray-400">{PoolDashboardCopy.yourHashrateSupportsKMGT[cs ? 'cs' : 'en']}</label>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{tx5(PoolDashboardCopy.profitEstimator, lang)}</p>
+              <label className="text-xs text-gray-400">{tx5(PoolDashboardCopy.yourHashrateSupportsKMGT, lang)}</label>
               <input
                 value={myHashrateInput}
                 onChange={(e) => setMyHashrateInput(e.target.value)}
-                placeholder={PoolDashboardCopy.eG250m[cs ? 'cs' : 'en']}
+                placeholder={tx5(PoolDashboardCopy.eG250m, lang)}
                 className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 font-mono outline-none focus:border-zion-cyan/50"
               />
               <div className="mt-4 space-y-2 text-sm">
-                <div className="flex items-center justify-between"><span className="text-gray-500">{PoolDashboardCopy.parsedHashrate[cs ? 'cs' : 'en']}</span><span className="text-white font-mono">{fmtHash(myHashrate)}</span></div>
-                <div className="flex items-center justify-between"><span className="text-gray-500">{PoolDashboardCopy.poolShare[cs ? 'cs' : 'en']}</span><span className="text-zion-cyan font-mono">{mySharePct.toFixed(6)}%</span></div>
-                <div className="flex items-center justify-between"><span className="text-gray-500">{PoolDashboardCopy.observedBlocksDay[cs ? 'cs' : 'en']}</span><span className="text-gray-200 font-mono">{blocksPerDay.toFixed(2)}</span></div>
-                <div className="flex items-center justify-between"><span className="text-gray-500">{PoolDashboardCopy.rewardBlock[cs ? 'cs' : 'en']}</span><span className="text-gray-200 font-mono">{rewardPerBlock.toFixed(4)} ZION</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">{tx5(PoolDashboardCopy.parsedHashrate, lang)}</span><span className="text-white font-mono">{fmtHash(myHashrate)}</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">{tx5(PoolDashboardCopy.poolShare, lang)}</span><span className="text-zion-cyan font-mono">{mySharePct.toFixed(6)}%</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">{tx5(PoolDashboardCopy.observedBlocksDay, lang)}</span><span className="text-gray-200 font-mono">{blocksPerDay.toFixed(2)}</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">{tx5(PoolDashboardCopy.rewardBlock, lang)}</span><span className="text-gray-200 font-mono">{rewardPerBlock.toFixed(4)} ZION</span></div>
                 <div className="mt-3 zion-rainbow-sub p-3 flex items-center justify-between" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <span className="text-emerald-200 text-xs uppercase tracking-wider">{PoolDashboardCopy.estimatedDailyReward[cs ? 'cs' : 'en']}</span>
+                  <span className="text-emerald-200 text-xs uppercase tracking-wider">{tx5(PoolDashboardCopy.estimatedDailyReward, lang)}</span>
                   <span className="text-zion-cyan font-bold font-mono">{myDailyZion.toFixed(4)} ZION</span>
                 </div>
               </div>
             </div>
 
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{PoolDashboardCopy.failoverConfig[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{tx5(PoolDashboardCopy.failoverConfig, lang)}</p>
               <div className="space-y-3">
                 <div className="zion-rainbow-sub p-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{PoolDashboardCopy.zionMinerPrimaryBackup[cs ? 'cs' : 'en']}</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{tx5(PoolDashboardCopy.zionMinerPrimaryBackup, lang)}</p>
                   <pre className="block text-xs text-zion-cyan whitespace-pre-wrap break-all font-mono">{zionMinerFailoverCmd}</pre>
                   <div className="mt-2"><CopyButton text={zionMinerFailoverCmd} /></div>
                 </div>
                 <div className="zion-rainbow-sub p-3 text-xs text-amber-200 flex items-start gap-2" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <Shield className="h-3.5 w-3.5 mt-0.5" />
-                  <span>{PoolDashboardCopy.forFailoverSwitchZionPoolAddrT[cs ? 'cs' : 'en']}</span>
+                  <span>{tx5(PoolDashboardCopy.forFailoverSwitchZionPoolAddrT, lang)}</span>
                 </div>
               </div>
             </div>
 
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{PoolDashboardCopy.automationExport[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{tx5(PoolDashboardCopy.automationExport, lang)}</p>
               <div className="space-y-2.5 text-sm">
                 <a href="/api/pool/stats" target="_blank" rel="noreferrer" className="flex items-center justify-between zion-rainbow-sub px-3 py-2 transition" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <span className="text-gray-200 font-mono text-xs">/api/pool/stats</span>
@@ -1787,7 +1788,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
                 </a>
                 <div className="zion-rainbow-sub p-3 text-xs text-amber-200 flex items-start gap-2" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <Bell className="h-3.5 w-3.5 mt-0.5" />
-                  <span>{PoolDashboardCopy.setAlertIfLastShareExceeds10Mi[cs ? 'cs' : 'en']}</span>
+                  <span>{tx5(PoolDashboardCopy.setAlertIfLastShareExceeds10Mi, lang)}</span>
                 </div>
               </div>
             </div>
@@ -1806,23 +1807,23 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">FAQ</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <span className="flex items-center justify-center h-7 w-7 rounded-full border border-zion-purple/30 bg-zion-purple/10 text-zion-purple text-sm font-bold">?</span>
-              {PoolDashboardCopy.frequentlyAskedQuestions[cs ? 'cs' : 'en']}
+              {tx5(PoolDashboardCopy.frequentlyAskedQuestions, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{PoolDashboardCopy.answersToTheMostCommonMinerQue[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(PoolDashboardCopy.answersToTheMostCommonMinerQue, lang)}</p>
           </div>
 
           <div className="space-y-3">
             {[
-              { q: PoolDashboardCopy.whatAlgorithmDoesZionUse[cs ? 'cs' : 'en'], a: PoolDashboardCopy.zionUsesDeekshaACustomAsicResi[cs ? 'cs' : 'en'] },
-              { q: PoolDashboardCopy.howDoesPplnsWork[cs ? 'cs' : 'en'], a: PoolDashboardCopy.pplnsPayPerLastNSharesRewardsM[cs ? 'cs' : 'en'] },
-              { q: PoolDashboardCopy.whatIsTheMinimumPayout[cs ? 'cs' : 'en'], a: cs ? `Minimální výplata je ${data?.fee?.min_payout ?? 0.1} ZION. Výplaty probíhají automaticky po nalezení bloku, jakmile váš zůstatek dosáhne prahu.` : `The minimum payout is ${data?.fee?.min_payout ?? 0.1} ZION. Payouts happen automatically after a block is found once your balance reaches the threshold.` },
-              { q: PoolDashboardCopy.whereDoTitheAndFundsGo[cs ? 'cs' : 'en'], a: PoolDashboardCopy.coinbaseDistribution89Miner5Hu[cs ? 'cs' : 'en'] },
-              { q: PoolDashboardCopy.canIUseXmrig[cs ? 'cs' : 'en'], a: PoolDashboardCopy.noZionUsesDeekshaPowWhichIsNot[cs ? 'cs' : 'en'] },
-              { q: PoolDashboardCopy.whatDoesPoolLuckMean[cs ? 'cs' : 'en'], a: PoolDashboardCopy.poolLuckShowsTheRatioOfBlocksF[cs ? 'cs' : 'en'] },
-              { q: PoolDashboardCopy.howDoISetUpFailover[cs ? 'cs' : 'en'], a: PoolDashboardCopy.forFailoverSwitchZionPoolAddrT_2[cs ? 'cs' : 'en'] },
-              { q: PoolDashboardCopy.howOftenArePayoutsProcessed[cs ? 'cs' : 'en'], a: PoolDashboardCopy.payoutsAreProcessedAfterEveryB[cs ? 'cs' : 'en'] },
-              { q: PoolDashboardCopy.doINeedAGpu[cs ? 'cs' : 'en'], a: PoolDashboardCopy.noCpuMiningWorksButGpuOpenclCu[cs ? 'cs' : 'en'] },
-              { q: PoolDashboardCopy.whatIsZionPayoutAddress[cs ? 'cs' : 'en'], a: PoolDashboardCopy.criticalMustBeAValid44CharZion[cs ? 'cs' : 'en'] },
+              { q: tx5(PoolDashboardCopy.whatAlgorithmDoesZionUse, lang), a: tx5(PoolDashboardCopy.zionUsesDeekshaACustomAsicResi, lang) },
+              { q: tx5(PoolDashboardCopy.howDoesPplnsWork, lang), a: tx5(PoolDashboardCopy.pplnsPayPerLastNSharesRewardsM, lang) },
+              { q: tx5(PoolDashboardCopy.whatIsTheMinimumPayout, lang), a: cs ? `Minimální výplata je ${data?.fee?.min_payout ?? 0.1} ZION. Výplaty probíhají automaticky po nalezení bloku, jakmile váš zůstatek dosáhne prahu.` : t5(`The minimum payout is ${data?.fee?.min_payout ?? 0.1} ZION. Payouts happen automatically after a block is found once your balance reaches the threshold.`, lang) },
+              { q: tx5(PoolDashboardCopy.whereDoTitheAndFundsGo, lang), a: tx5(PoolDashboardCopy.coinbaseDistribution89Miner5Hu, lang) },
+              { q: tx5(PoolDashboardCopy.canIUseXmrig, lang), a: tx5(PoolDashboardCopy.noZionUsesDeekshaPowWhichIsNot, lang) },
+              { q: tx5(PoolDashboardCopy.whatDoesPoolLuckMean, lang), a: tx5(PoolDashboardCopy.poolLuckShowsTheRatioOfBlocksF, lang) },
+              { q: tx5(PoolDashboardCopy.howDoISetUpFailover, lang), a: tx5(PoolDashboardCopy.forFailoverSwitchZionPoolAddrT_2, lang) },
+              { q: tx5(PoolDashboardCopy.howOftenArePayoutsProcessed, lang), a: tx5(PoolDashboardCopy.payoutsAreProcessedAfterEveryB, lang) },
+              { q: tx5(PoolDashboardCopy.doINeedAGpu, lang), a: tx5(PoolDashboardCopy.noCpuMiningWorksButGpuOpenclCu, lang) },
+              { q: tx5(PoolDashboardCopy.whatIsZionPayoutAddress, lang), a: tx5(PoolDashboardCopy.criticalMustBeAValid44CharZion, lang) },
             ].map((item) => (
               <FAQItem key={item.q} question={item.q} answer={item.a} />
             ))}
@@ -1837,16 +1838,16 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
           className="zion-cta-banner"
         >
           <Pickaxe className="mx-auto h-12 w-12 text-zion-cyan" />
-          <h2 className="mt-6 text-3xl font-semibold text-white">{PoolDashboardCopy.zionMiningPool[cs ? 'cs' : 'en']}</h2>
+          <h2 className="mt-6 text-3xl font-semibold text-white">{tx5(PoolDashboardCopy.zionMiningPool, lang)}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            {PoolDashboardCopy.mineZionWithDeekshaPowAFairTra[cs ? 'cs' : 'en']}
+            {tx5(PoolDashboardCopy.mineZionWithDeekshaPowAFairTra, lang)}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
-            {PoolDashboardCopy.k89Miner5Humanitarian5Issobella[cs ? 'cs' : 'en']}
+            {tx5(PoolDashboardCopy.k89Miner5Humanitarian5Issobella, lang)}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <a href="#start-mining" className="zion-button-primary group text-sm" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              <Zap className="h-4 w-4" /> {PoolDashboardCopy.startMining[cs ? 'cs' : 'en']}
+              <Zap className="h-4 w-4" /> {tx5(PoolDashboardCopy.startMining, lang)}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>
             <Link href="/explorer" className="zion-button-secondary text-sm">
@@ -1873,8 +1874,8 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
         {activeTab === 'prl' && <PoolPrlClient embedded />}
 
         <p className="text-center text-xs text-gray-600">
-          {cs ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Data v reálném čase z primárního stratum endpointu · Edge Node 1 · v3.0.6 E2E Trinity` : `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Real-time data from the primary stratum endpoint · Edge Node 1 · v3.0.6 E2E Trinity`}
-          {lastUpdate && <> · {PoolDashboardCopy.lastUpdate[cs ? 'cs' : 'en']}: {lastUpdate.toLocaleTimeString(PoolDashboardCopy.enUs[cs ? 'cs' : 'en'])}</>}
+          {cs ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Data v reálném čase z primárního stratum endpointu · Edge Node 1 · v3.0.6 E2E Trinity` : t5(`ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Real-time data from the primary stratum endpoint · Edge Node 1 · v3.0.6 E2E Trinity`, lang)}
+          {lastUpdate && <> · {tx5(PoolDashboardCopy.lastUpdate, lang)}: {lastUpdate.toLocaleTimeString(tx5(PoolDashboardCopy.enUs, lang))}</>}
         </p>
       </div>
 

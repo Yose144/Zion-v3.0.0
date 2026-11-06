@@ -22,6 +22,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 import { SITE_POOL_PRIMARY } from "@/lib/site";
 
@@ -239,16 +240,16 @@ export default function PoolQtcClient({ embedded = false }: { embedded?: boolean
           <div>
             <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3">
               <Atom className="h-7 w-7 text-purple-400" />
-              {C.title[cs ? 'cs' : 'en']}
+              {tx5(C.title, lang)}
             </h2>
-            <p className="text-sm text-gray-400 mt-1">{C.sub[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400 mt-1">{tx5(C.sub, lang)}</p>
           </div>
           <button
             onClick={() => void fetchData()}
             className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm border border-white/10 bg-white/5 text-gray-300 hover:border-white/25 hover:text-white transition"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-            {C.refresh[cs ? 'cs' : 'en']}
+            {tx5(C.refresh, lang)}
           </button>
         </div>
       </motion.section>
@@ -256,24 +257,24 @@ export default function PoolQtcClient({ embedded = false }: { embedded?: boolean
       {/* KPI strip */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         {kpi(n?.ok === true && n?.syncing === false ? true : n?.ok === true ? null : false,
-          C.title[cs ? 'cs' : 'en'].split(' ')[0],
-          C.live[cs ? 'cs' : 'en'],
-          n?.ok ? C.syncing[cs ? 'cs' : 'en'] : C.down[cs ? 'cs' : 'en'])}
+          tx5(C.title, lang).split(' ')[0],
+          tx5(C.live, lang),
+          n?.ok ? tx5(C.syncing, lang) : tx5(C.down, lang))}
         <div className="bg-black/25 rounded-xl p-3 text-center border border-white/5">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{C.height[cs ? 'cs' : 'en']}</div>
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{tx5(C.height, lang)}</div>
           <div className="text-lg font-bold text-cyan-400">{n?.height != null ? n.height.toLocaleString() : '—'}</div>
         </div>
         <div className="bg-black/25 rounded-xl p-3 text-center border border-white/5">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{C.peers[cs ? 'cs' : 'en']}</div>
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{tx5(C.peers, lang)}</div>
           <div className="text-lg font-bold">{n?.peers != null ? n.peers : '—'}</div>
         </div>
-        {kpi(nv?.connected, C.nativeLeg[cs ? 'cs' : 'en'], 'LINKED', 'DOWN')}
+        {kpi(nv?.connected, tx5(C.nativeLeg, lang), 'LINKED', 'DOWN')}
         <div className="bg-black/25 rounded-xl p-3 text-center border border-white/5">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{C.shareSplit[cs ? 'cs' : 'en']}</div>
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{tx5(C.shareSplit, lang)}</div>
           <div className="text-lg font-bold text-amber-400">{nv?.share_pct != null ? `${nv.share_pct} %` : '—'}</div>
         </div>
         <div className="bg-black/25 rounded-xl p-3 text-center border border-white/5">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{C.blocksMined[cs ? 'cs' : 'en']}</div>
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{tx5(C.blocksMined, lang)}</div>
           <div className="text-lg font-bold text-emerald-400">{rw?.mined_count ?? '0'}</div>
         </div>
       </div>
@@ -289,23 +290,23 @@ export default function PoolQtcClient({ embedded = false }: { embedded?: boolean
         >
           <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
             <Server className="h-5 w-5 text-cyan-400" />
-            {C.nodeTitle[cs ? 'cs' : 'en']}
+            {tx5(C.nodeTitle, lang)}
             <span className="text-xs text-gray-500 font-normal">mainnet · validator</span>
           </h3>
           <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
-            <div className="text-gray-500">{C.chainLabel[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.chainLabel, lang)}</div>
             <div className="font-mono text-gray-200">{n?.chain || '—'}</div>
-            <div className="text-gray-500">{C.version[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.version, lang)}</div>
             <div className="font-mono text-gray-200 truncate" title={n?.version || ''}>{n?.version || '—'}</div>
-            <div className="text-gray-500">{C.runtime[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.runtime, lang)}</div>
             <div className="font-mono text-gray-200">
               {n?.spec_version != null ? `spec ${n.spec_version}` : '—'}{n?.tx_version != null ? ` · tx ${n.tx_version}` : ''}
             </div>
-            <div className="text-gray-500">{C.syncState[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.syncState, lang)}</div>
             <div className={`font-mono ${n?.syncing === false ? 'text-emerald-400' : 'text-amber-400'}`}>
-              {n?.syncing == null ? '—' : n.syncing ? 'syncing…' : C.synced[cs ? 'cs' : 'en']}
+              {n?.syncing == null ? '—' : n.syncing ? 'syncing…' : tx5(C.synced, lang)}
             </div>
-            <div className="text-gray-500">{C.publicRpc[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.publicRpc, lang)}</div>
             <div className="font-mono">
               <a href="https://rpc.zionterranova.com/qtc" target="_blank" rel="noreferrer"
                  className="text-cyan-400 hover:text-white transition inline-flex items-center gap-1">
@@ -325,28 +326,28 @@ export default function PoolQtcClient({ embedded = false }: { embedded?: boolean
         >
           <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-1">
             <Pickaxe className="h-5 w-5 text-amber-400" />
-            {C.poolTitle[cs ? 'cs' : 'en']}
+            {tx5(C.poolTitle, lang)}
           </h3>
-          <p className="text-xs text-gray-500 mb-4">{C.poolSub[cs ? 'cs' : 'en']}</p>
+          <p className="text-xs text-gray-500 mb-4">{tx5(C.poolSub, lang)}</p>
           <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
-            <div className="text-gray-500">{C.enabled[cs ? 'cs' : 'en']}</div>
-            <div className="font-mono text-gray-200">{nv?.enabled == null ? '—' : nv.enabled ? C.yes[cs ? 'cs' : 'en'] : C.no[cs ? 'cs' : 'en']}</div>
-            <div className="text-gray-500">{C.connected[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.enabled, lang)}</div>
+            <div className="font-mono text-gray-200">{nv?.enabled == null ? '—' : nv.enabled ? tx5(C.yes, lang) : tx5(C.no, lang)}</div>
+            <div className="text-gray-500">{tx5(C.connected, lang)}</div>
             <div className={`font-mono ${nv?.connected ? 'text-emerald-400' : 'text-red-400'}`}>
               {nv?.connected == null ? '—' : nv.connected ? '● connected' : '● disconnected'}
             </div>
-            <div className="text-gray-500">{C.currentJob[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.currentJob, lang)}</div>
             <div className="font-mono text-gray-200">{nv?.job_id || '—'}</div>
-            <div className="text-gray-500">{C.jobAge[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.jobAge, lang)}</div>
             <div className="font-mono text-gray-200">{fmtAge(nv?.job_age_ms)}</div>
-            <div className="text-gray-500">{C.upstream[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.upstream, lang)}</div>
             <div className="font-mono text-gray-200 truncate" title={p?.upstream || ''}>{p?.upstream || '—'}</div>
-            <div className="text-gray-500">{C.upstreamJob[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.upstreamJob, lang)}</div>
             <div className="font-mono text-gray-200">
               {p?.upstream_job_id || '—'}
               <span className={p?.upstream_fresh ? 'text-emerald-400' : 'text-red-400'}> · {fmtAge(p?.upstream_job_age_ms)}</span>
             </div>
-            <div className="text-gray-500">{C.pendingPayouts[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.pendingPayouts, lang)}</div>
             <div className="font-mono text-gray-200">{p?.pending_payouts != null ? p.pending_payouts : '—'}</div>
           </div>
         </motion.section>
@@ -363,23 +364,23 @@ export default function PoolQtcClient({ embedded = false }: { embedded?: boolean
         <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
             <Gauge className="h-5 w-5 text-amber-400" />
-            {C.srbTitle[cs ? 'cs' : 'en']}
+            {tx5(C.srbTitle, lang)}
           </h3>
           <a href="https://github.com/doktor83/SRBMiner-Multi/releases" target="_blank" rel="noreferrer"
              className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:border-amber-400/60 transition">
-            {C.srbDownload[cs ? 'cs' : 'en']} <ExternalLink className="h-3 w-3" />
+            {tx5(C.srbDownload, lang)} <ExternalLink className="h-3 w-3" />
           </a>
         </div>
-        <p className="text-xs text-gray-500 mb-4">{C.srbSub[cs ? 'cs' : 'en']}</p>
-        <div className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{C.srbCmd[cs ? 'cs' : 'en']}</div>
+        <p className="text-xs text-gray-500 mb-4">{tx5(C.srbSub, lang)}</p>
+        <div className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{tx5(C.srbCmd, lang)}</div>
         <pre className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-amber-200/90 overflow-x-auto mb-4">{`SRBMiner-MULTI --algorithm quantus \\
   --pool stratum+tcp://${SITE_POOL_PRIMARY} \\
   --wallet qzYourAddress.yourWorker \\
   --password x --disable-cpu`}</pre>
         <ul className="space-y-1.5 text-xs text-gray-400 list-disc list-inside">
-          <li>{C.srbWalletNote[cs ? 'cs' : 'en']}</li>
-          <li>{C.srbGpuNote[cs ? 'cs' : 'en']}</li>
-          <li>{C.srbPplnsNote[cs ? 'cs' : 'en']}</li>
+          <li>{tx5(C.srbWalletNote, lang)}</li>
+          <li>{tx5(C.srbGpuNote, lang)}</li>
+          <li>{tx5(C.srbPplnsNote, lang)}</li>
         </ul>
       </motion.section>
 
@@ -394,28 +395,28 @@ export default function PoolQtcClient({ embedded = false }: { embedded?: boolean
         >
           <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-1">
             <Sparkles className="h-5 w-5 text-emerald-400" />
-            {C.rewardsTitle[cs ? 'cs' : 'en']}
+            {tx5(C.rewardsTitle, lang)}
           </h3>
-          <p className="text-xs text-gray-500 mb-3">{C.rewardsSub[cs ? 'cs' : 'en']}</p>
+          <p className="text-xs text-gray-500 mb-3">{tx5(C.rewardsSub, lang)}</p>
           {rw?.address && (
             <div className="text-[11px] font-mono text-emerald-300/80 break-all mb-3 bg-black/20 rounded-lg px-3 py-2 border border-emerald-500/10">
               {rw.address}
             </div>
           )}
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-3">
-            <div className="text-gray-500">{C.blocksMined[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.blocksMined, lang)}</div>
             <div className="font-mono text-emerald-400 font-semibold">{rw?.mined_count ?? '0'}</div>
-            <div className="text-gray-500">{C.lastReward[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.lastReward, lang)}</div>
             <div className="font-mono text-gray-200">{fmtTs(rw?.last_ts)}</div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>
                 <tr className="text-gray-500 border-b border-white/10">
-                  <th className="py-1.5 px-2">{C.heightCol[cs ? 'cs' : 'en']}</th>
-                  <th className="py-1.5 px-2 text-right">{C.rewardCol[cs ? 'cs' : 'en']}</th>
-                  <th className="py-1.5 px-2">{C.leafCol[cs ? 'cs' : 'en']}</th>
-                  <th className="py-1.5 px-2">{C.timeCol[cs ? 'cs' : 'en']}</th>
+                  <th className="py-1.5 px-2">{tx5(C.heightCol, lang)}</th>
+                  <th className="py-1.5 px-2 text-right">{tx5(C.rewardCol, lang)}</th>
+                  <th className="py-1.5 px-2">{tx5(C.leafCol, lang)}</th>
+                  <th className="py-1.5 px-2">{tx5(C.timeCol, lang)}</th>
                 </tr>
               </thead>
               <tbody>
@@ -427,7 +428,7 @@ export default function PoolQtcClient({ embedded = false }: { embedded?: boolean
                     <td className="py-1.5 px-2 text-gray-400">{fmtTs(r.ts)}</td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={4} className="py-4 text-gray-500 italic text-center">{C.noRewards[cs ? 'cs' : 'en']}</td></tr>
+                  <tr><td colSpan={4} className="py-4 text-gray-500 italic text-center">{tx5(C.noRewards, lang)}</td></tr>
                 )}
               </tbody>
             </table>
@@ -444,15 +445,15 @@ export default function PoolQtcClient({ embedded = false }: { embedded?: boolean
         >
           <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-1">
             <Wallet className="h-5 w-5 text-blue-400" />
-            {C.lookupTitle[cs ? 'cs' : 'en']}
+            {tx5(C.lookupTitle, lang)}
           </h3>
-          <p className="text-xs text-gray-500 mb-3">{C.lookupSub[cs ? 'cs' : 'en']}</p>
+          <p className="text-xs text-gray-500 mb-3">{tx5(C.lookupSub, lang)}</p>
           <div className="flex gap-2 mb-4">
             <input
               value={addr}
               onChange={(e) => setAddr(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') setLookupAddr(addr.trim()); }}
-              placeholder={C.lookupPlaceholder[cs ? 'cs' : 'en']}
+              placeholder={tx5(C.lookupPlaceholder, lang)}
               className="flex-1 bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-cyan-500/40 text-gray-200"
               spellCheck={false}
             />
@@ -461,27 +462,27 @@ export default function PoolQtcClient({ embedded = false }: { embedded?: boolean
               className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-medium zion-rainbow-sub text-white"
               style={{ '--rc': '59, 130, 246' } as React.CSSProperties}
             >
-              <Search className="h-3.5 w-3.5" /> {C.lookup[cs ? 'cs' : 'en']}
+              <Search className="h-3.5 w-3.5" /> {tx5(C.lookup, lang)}
             </button>
           </div>
           {w && (
             <>
               {w.valid === false ? (
-                <div className="text-xs text-red-400 mb-3">{C.invalidAddress[cs ? 'cs' : 'en']}</div>
+                <div className="text-xs text-red-400 mb-3">{tx5(C.invalidAddress, lang)}</div>
               ) : (
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   <div className="bg-black/25 rounded-lg p-2.5 text-center border border-white/5">
-                    <div className="text-[10px] text-gray-500 uppercase mb-0.5">{C.balance[cs ? 'cs' : 'en']}</div>
+                    <div className="text-[10px] text-gray-500 uppercase mb-0.5">{tx5(C.balance, lang)}</div>
                     <div className="text-sm font-bold text-emerald-400">
                       {w.balance ? w.balance.free_qtc.toFixed(6) : '0.000000'}
                     </div>
                   </div>
                   <div className="bg-black/25 rounded-lg p-2.5 text-center border border-white/5">
-                    <div className="text-[10px] text-gray-500 uppercase mb-0.5">{C.nonce[cs ? 'cs' : 'en']}</div>
+                    <div className="text-[10px] text-gray-500 uppercase mb-0.5">{tx5(C.nonce, lang)}</div>
                     <div className="text-sm font-bold">{w.balance ? w.balance.nonce : '0'}</div>
                   </div>
                   <div className="bg-black/25 rounded-lg p-2.5 text-center border border-white/5">
-                    <div className="text-[10px] text-gray-500 uppercase mb-0.5">{C.transfers[cs ? 'cs' : 'en']}</div>
+                    <div className="text-[10px] text-gray-500 uppercase mb-0.5">{tx5(C.transfers, lang)}</div>
                     <div className="text-sm font-bold">{w.history?.length ?? 0}</div>
                   </div>
                 </div>
@@ -491,10 +492,10 @@ export default function PoolQtcClient({ embedded = false }: { embedded?: boolean
                   <thead>
                     <tr className="text-gray-500 border-b border-white/10">
                       <th className="py-1.5 px-2"></th>
-                      <th className="py-1.5 px-2">{C.counterparty[cs ? 'cs' : 'en']}</th>
-                      <th className="py-1.5 px-2 text-right">{C.amount[cs ? 'cs' : 'en']}</th>
-                      <th className="py-1.5 px-2">{C.heightCol[cs ? 'cs' : 'en']}</th>
-                      <th className="py-1.5 px-2">{C.timeCol[cs ? 'cs' : 'en']}</th>
+                      <th className="py-1.5 px-2">{tx5(C.counterparty, lang)}</th>
+                      <th className="py-1.5 px-2 text-right">{tx5(C.amount, lang)}</th>
+                      <th className="py-1.5 px-2">{tx5(C.heightCol, lang)}</th>
+                      <th className="py-1.5 px-2">{tx5(C.timeCol, lang)}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -511,7 +512,7 @@ export default function PoolQtcClient({ embedded = false }: { embedded?: boolean
                         <td className="py-1.5 px-2 text-gray-400">{fmtTs(r.ts)}</td>
                       </tr>
                     )) : (
-                      <tr><td colSpan={5} className="py-4 text-gray-500 italic text-center">{C.noTransfers[cs ? 'cs' : 'en']}</td></tr>
+                      <tr><td colSpan={5} className="py-4 text-gray-500 italic text-center">{tx5(C.noTransfers, lang)}</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -531,19 +532,19 @@ export default function PoolQtcClient({ embedded = false }: { embedded?: boolean
       >
         <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-1">
           <Activity className="h-5 w-5 text-cyan-400" />
-          {C.feedTitle[cs ? 'cs' : 'en']}
-          <span className="text-xs text-gray-500 font-normal">{C.feedSub[cs ? 'cs' : 'en']}</span>
+          {tx5(C.feedTitle, lang)}
+          <span className="text-xs text-gray-500 font-normal">{tx5(C.feedSub, lang)}</span>
         </h3>
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead>
               <tr className="text-gray-500 border-b border-white/10">
-                <th className="py-2 px-2">{C.heightCol[cs ? 'cs' : 'en']}</th>
-                <th className="py-2 px-2">{C.from[cs ? 'cs' : 'en']}</th>
-                <th className="py-2 px-2">{C.to[cs ? 'cs' : 'en']}</th>
-                <th className="py-2 px-2 text-right">{C.amount[cs ? 'cs' : 'en']}</th>
-                <th className="py-2 px-2">{C.kind[cs ? 'cs' : 'en']}</th>
-                <th className="py-2 px-2">{C.timeCol[cs ? 'cs' : 'en']}</th>
+                <th className="py-2 px-2">{tx5(C.heightCol, lang)}</th>
+                <th className="py-2 px-2">{tx5(C.from, lang)}</th>
+                <th className="py-2 px-2">{tx5(C.to, lang)}</th>
+                <th className="py-2 px-2 text-right">{tx5(C.amount, lang)}</th>
+                <th className="py-2 px-2">{tx5(C.kind, lang)}</th>
+                <th className="py-2 px-2">{tx5(C.timeCol, lang)}</th>
               </tr>
             </thead>
             <tbody>
@@ -555,13 +556,13 @@ export default function PoolQtcClient({ embedded = false }: { embedded?: boolean
                   <td className="py-2 px-2 text-right">{r.amount_qtc}</td>
                   <td className="py-2 px-2">
                     {r.is_reward
-                      ? <span className="text-emerald-400">{C.reward[cs ? 'cs' : 'en']}</span>
-                      : <span className="text-cyan-400">{C.transfer[cs ? 'cs' : 'en']}</span>}
+                      ? <span className="text-emerald-400">{tx5(C.reward, lang)}</span>
+                      : <span className="text-cyan-400">{tx5(C.transfer, lang)}</span>}
                   </td>
                   <td className="py-2 px-2 text-gray-400">{fmtTs(r.ts)}</td>
                 </tr>
               )) : (
-                <tr><td colSpan={6} className="py-4 text-gray-500 italic text-center">{C.feedEmpty[cs ? 'cs' : 'en']}</td></tr>
+                <tr><td colSpan={6} className="py-4 text-gray-500 italic text-center">{tx5(C.feedEmpty, lang)}</td></tr>
               )}
             </tbody>
           </table>
