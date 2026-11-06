@@ -130,8 +130,20 @@ Dvě věci, které rozhodly až pohled na render:
 Integrace: osmá loď v `ships.ts` (nákladní: max 9, obratnost 0,75, scale 0,62 — větší než
 stíhačky), LOD 13 000 tris, náhled v marketu `/shop/models3d/falcon.glb` (produkt `star-008`
 už neodkazuje na Thingiverse), atribuce v `apps/MarketPlace/public/shop/models3d/ATTRIBUTION.md`.
-**Licence je CC BY-SA 3.0** — jméno autora v archivu chybí, před veřejným launchem se musí
-dohledat (zapsáno jako blocker).
+**Autor a licence (doplněno 👤):** model je od **Grahama Smitha, 2014** ([eigenbloom.com](https://eigenbloom.com)),
+licence **CC BY-SA 3.0** — atribuce je povinná (jméno + rok + zdroj + stejná licence pro
+odvozeniny, což zahrnuje náš přebarvený GLB i LOD). Zapsáno do
+`apps/MarketPlace/public/shop/models3d/ATTRIBUTION.md` i `apps/nirvana/public/models/fleet/ATTRIBUTION.md`.
+
+**Vedlejší nález:** stejný autor dělá i **dřevěné stíhačky** (`eigenbloom.com/woodenstarfighter`,
+„Graham Smith 2014-15"), takže atribuce platí pro všech osm modelů — a licence kitů
+v repu (`handpanda/wooden-starfighter`) **žádná není**, to zůstává blocker.
+
+**🔴 Rozbité odkazy v marketu:** produktová data u všech sedmi stíhaček odkazují na
+`raw.githubusercontent.com/handpanda/wooden-starfighter/master/instr/*_instructions.pdf`
+a `.../svg/*_svg.zip` — oba vrací **404** (repo obsahuje jen sedm STL, žádné `instr/` ani `svg/`).
+`filesUrl` je přitom **dodávka digitálního zboží** v e-mailu po zaplacení. Neopravoval jsem to
+sám, protože jde o obchodní rozhodnutí (odkázat na autorovu stránku vs. dodat vlastní kopie).
 
 **Nasazeno (2026-11-06):** app z worktree na `dee420a75`; živě `/models/fleet/falcon.glb`
 (1,38 MB) i `lod/falcon.glb` (215 kB) → 200, klient nese „Millennium Falcon".

@@ -245,15 +245,19 @@ def run_probes(config: dict) -> dict:
         1 for name, res in services.items()
         if name.startswith("node_") and res.get("success")
     )
-    # Tip source = first node in port order that answered getBlockByHeight —
-    # normally the primary, with followers as fallback when it is unreachable.
+    # Tip source = the node reporting the freshest tip timestamp. Port order
+    # is only a tiebreak: a slow/stale primary (e.g. its RPC answers but
+    # reports an old tip while a follower is current) must not mask a live
+    # chain — `chain_live` means "any node observed a fresh tip".
     tip_res = {}
+    best_tip_ts = -1
     for idx in range(len(config["node_rpc_ports"])):
         label = NODE_LABELS[idx] if idx < len(NODE_LABELS) else f"node_{idx + 1}"
         res = services.get(label, {})
-        if res.get("tip_timestamp") is not None:
+        ts = res.get("tip_timestamp")
+        if ts is not None and ts > best_tip_ts:
+            best_tip_ts = ts
             tip_res = res
-            break
     return {
         "services": services,
         "chain_height": tip_res.get("chain_height") or primary.get("chain_height"),
