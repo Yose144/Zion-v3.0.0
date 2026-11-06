@@ -41,12 +41,28 @@ const MINER_HISTORY_SEEN_S: u64 = 24 * 60 * 60;
 /// A miner counts as online for a coin when its last share is younger.
 const ONLINE_WINDOW_S: u64 = 600;
 
-/// Hard cap on concurrent API requests. Each connection is served on its
-/// own OS thread — without a bound, a stalled backend piles up threads
-/// until the process suffocates (seen live: 437 threads on a hung lock).
-/// The accept loop sheds excess load with a fast 503 instead.
-const API_MAX_IN_FLIGHT: usize = 64;
+/// Bound on *expensive* API requests — endpoints that can block on the
+/// pool/PPLNS/SQLite locks, do real CPU work, or stream multi-MB state
+/// exports. Cheap snapshot-served paths (`/health`, `/stats`, `/metrics`,
+/// `/public/v1/coins`, `/public/v1/pplns`) are admitted under the larger
+/// total cap instead, so a burst of expensive handlers can never starve
+/// the liveness probes the watchdog and the G8 exporter depend on
+/// (2026-11-05: `pool_api_shed_load in_flight=64` 503'd `/stats` twice →
+/// watchdog restarted a healthy pool → G8 incident).
+const API_MAX_EXPENSIVE_IN_FLIGHT: usize = 64;
+/// Absolute cap on concurrent handler threads — the accept-loop backstop
+/// against connect-and-stall floods. 4× the expensive cap leaves headroom
+/// for cheap traffic; each connection still costs one OS thread.
+const API_MAX_TOTAL_IN_FLIGHT: usize = 256;
 static API_IN_FLIGHT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static API_EXPENSIVE_IN_FLIGHT: std::sync::atomic::AtomicUsize =
+    std::sync::atomic::AtomicUsize::new(0);
+/// Min interval between `/api/v1/state/db` exports — `VACUUM INTO` holds
+/// the single store mutex for the whole snapshot, so overlapping exports
+/// must never stack vacuums (the hourly standby sync is the only client).
+const DB_EXPORT_MIN_INTERVAL_S: u64 = 120;
+static LAST_DB_EXPORT_UNIX: std::sync::atomic::AtomicU64 =
+    std::sync::atomic::AtomicU64::new(0);
 
 /// RAII decrement for `API_IN_FLIGHT` — released when the handler thread
 /// exits, on success or panic alike.
@@ -57,6 +73,38 @@ impl Drop for ApiPermit {
     }
 }
 
+/// RAII decrement for `API_EXPENSIVE_IN_FLIGHT` — same lifetime as the
+/// handler thread, acquired only by expensive-class paths.
+struct ApiExpensivePermit;
+impl Drop for ApiExpensivePermit {
+    fn drop(&mut self) {
+        API_EXPENSIVE_IN_FLIGHT.fetch_sub(1, Ordering::Relaxed);
+    }
+}
+
+/// `true` for request paths that can block on pool/PPLNS/SQLite locks,
+/// burn CPU, or stream large state — the class bounded by
+/// `API_MAX_EXPENSIVE_IN_FLIGHT`. Only the known-cheap set is exempt:
+/// snapshot-served payloads and `/health`. Unknown paths stay expensive —
+/// the 404 fallthrough is trivial anyway, and unrecognized routes are
+/// exactly what a load generator would aim at.
+fn is_expensive_api_path(path: &str) -> bool {
+    !matches!(path, "/health" | "/metrics" | "/stats" | "/" | "/pool")
+        && path != "/public/v1/coins"
+        && path != "/public/v1/pplns"
+}
+
+/// One cached payload plus the unix time its body was last built. The
+/// timestamp lets `/stats` refuse to serve a snapshot the refresher has
+/// not renewed — that staleness is the wedge signal the watchdog restarts
+/// on, and it stays meaningful even when request-path saturation can no
+/// longer produce 503s on cheap routes.
+#[derive(Clone)]
+struct SnapshotEntry {
+    body: Arc<str>,
+    refreshed_unix: u64,
+}
+
 /// Periodic snapshot cache for the heavy read-only payloads. One refresher
 /// thread rebuilds them; readers always get the last good build, so a
 /// `pool`-starved build cycle can never park request threads (2026-10-28
@@ -65,10 +113,10 @@ impl Drop for ApiPermit {
 /// wait on `pool`.
 #[derive(Default)]
 struct PayloadSnapshots {
-    stats: RwLock<Option<Arc<str>>>,
-    metrics: RwLock<Option<Arc<str>>>,
-    public_coins: RwLock<Option<Arc<str>>>,
-    public_pplns: RwLock<Option<Arc<str>>>,
+    stats: RwLock<Option<SnapshotEntry>>,
+    metrics: RwLock<Option<SnapshotEntry>>,
+    public_coins: RwLock<Option<SnapshotEntry>>,
+    public_pplns: RwLock<Option<SnapshotEntry>>,
 }
 
 /// Snapshot refresh cadence — `ZION_POOL_API_SNAPSHOT_MS` overrides.
@@ -161,6 +209,14 @@ pub struct PoolApi {
     /// `/public/v1/coins` are served from it so a `pool`-lock starvation
     /// storm cannot park request threads.
     snapshots: PayloadSnapshots,
+    /// `/stats` answers 503 once its snapshot is older than this — the
+    /// wedge signal the watchdog restarts on. `ZION_POOL_API_SNAPSHOT_STALE_S`
+    /// overrides (default 90 s ≈ 45 missed 2 s refresh cycles).
+    snapshot_stale_limit_s: u64,
+    /// API/admin keys cloned once at construction — config is immutable
+    /// for the process lifetime, so auth checks never need `pool.lock()`.
+    api_key: Option<String>,
+    admin_key: Option<String>,
     started_at: Instant,
 }
 
@@ -197,13 +253,17 @@ impl PoolApi {
             }
         }
         // Extract the shard handles once — every later use skips the
-        // global pool mutex entirely.
-        let (telemetry, pplns, worker_addresses) = {
+        // global pool mutex entirely. The API/admin keys ride along: they
+        // are startup config, so caching them here keeps every `/api` and
+        // `/admin` auth check off the pool mutex too.
+        let (telemetry, pplns, worker_addresses, api_key, admin_key) = {
             let p = pool.lock().expect("pool lock poisoned");
             (
                 p.telemetry.clone(),
                 p.pplns.clone(),
                 p.worker_addresses.clone(),
+                p.config.api_key.clone(),
+                p.config.admin_key.clone(),
             )
         };
         // A2.3: restore persisted per-wallet payout threshold overrides into
@@ -238,6 +298,13 @@ impl PoolApi {
             coin_stats_cache: Mutex::new(std::collections::HashMap::new()),
             zis: crate::zis::ZisVerifier::from_env(),
             snapshots: PayloadSnapshots::default(),
+            snapshot_stale_limit_s: std::env::var("ZION_POOL_API_SNAPSHOT_STALE_S")
+                .ok()
+                .and_then(|v| v.parse::<u64>().ok())
+                .unwrap_or(90)
+                .max(10),
+            api_key,
+            admin_key,
             started_at: Instant::now(),
         }
     }
@@ -434,7 +501,7 @@ impl PoolApi {
                 }
             };
             let prev = API_IN_FLIGHT.fetch_add(1, Ordering::Relaxed);
-            if prev >= API_MAX_IN_FLIGHT {
+            if prev >= API_MAX_TOTAL_IN_FLIGHT {
                 API_IN_FLIGHT.fetch_sub(1, Ordering::Relaxed);
                 warn!("pool_api_shed_load in_flight={prev}");
                 let mut s = stream;
@@ -528,6 +595,28 @@ impl PoolApi {
         let raw_path = *parts.get(1).unwrap_or(&"/stats");
         let path = raw_path.split('?').next().unwrap_or(raw_path);
 
+        // Cost-class admission: expensive paths share a bounded budget so
+        // they can never occupy every handler thread; cheap snapshot and
+        // liveness paths always get a slot under the larger total cap.
+        let _expensive_permit = if is_expensive_api_path(path) {
+            let prev = API_EXPENSIVE_IN_FLIGHT.fetch_add(1, Ordering::Relaxed);
+            if prev >= API_MAX_EXPENSIVE_IN_FLIGHT {
+                API_EXPENSIVE_IN_FLIGHT.fetch_sub(1, Ordering::Relaxed);
+                warn!("pool_api_shed_load class=expensive in_flight={prev}");
+                let body = "{\"ok\":false,\"error\":\"service busy\"}";
+                let _ = write!(
+                    stream,
+                    "HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                return Ok(());
+            }
+            Some(ApiExpensivePermit)
+        } else {
+            None
+        };
+
         let mut content_length = 0usize;
         let mut api_key_header = None;
         let mut admin_key_header = None;
@@ -605,25 +694,21 @@ impl PoolApi {
             }
         }
 
-        // API key authorization for /api/* and admin endpoints. Only paths
-        // that actually require auth take the pool lock — /health and other
-        // public endpoints must stay reachable even when a lock is contended.
+        // API key authorization for /api/* and admin endpoints. Keys were
+        // cloned at construction, so auth never touches the pool mutex —
+        // /health and other public endpoints must stay reachable even when
+        // a lock is contended.
         if path.starts_with("/admin") || path.starts_with("/api") {
-            let (api_key, admin_key) = {
-                let pool = self.pool.lock().expect("pool lock poisoned");
-                (pool.config.api_key.clone(), pool.config.admin_key.clone())
-            };
-
             let ok = if path.starts_with("/admin") {
-                admin_key.as_deref().is_some()
-                    && (admin_key_header.as_deref() == admin_key.as_deref()
-                        || auth_bearer.as_deref() == admin_key.as_deref())
+                self.admin_key.as_deref().is_some()
+                    && (admin_key_header.as_deref() == self.admin_key.as_deref()
+                        || auth_bearer.as_deref() == self.admin_key.as_deref())
             } else {
                 // POL-004 fix: default-deny. If no API key is configured, reject
                 // all /api/* requests rather than leaving them open.
-                api_key.as_deref().is_some()
-                    && (api_key_header.as_deref() == api_key.as_deref()
-                        || auth_bearer.as_deref() == api_key.as_deref())
+                self.api_key.as_deref().is_some()
+                    && (api_key_header.as_deref() == self.api_key.as_deref()
+                        || auth_bearer.as_deref() == self.api_key.as_deref())
             };
             if !ok {
                 self.note_auth_failure(client_ip);
@@ -670,8 +755,16 @@ impl PoolApi {
         let (status, content_type, body) = match path {
             "/health" => {
                 let uptime_s = self.started_at.elapsed().as_secs();
+                let snapshot_age_s = self
+                    .snapshots
+                    .stats
+                    .read()
+                    .ok()
+                    .and_then(|g| g.as_ref().map(|e| e.refreshed_unix))
+                    .map(|t| now_unix_seconds().saturating_sub(t))
+                    .unwrap_or_else(|| self.started_at.elapsed().as_secs());
                 let body = format!(
-                    "{{\"status\":\"ok\",\"uptime_s\":{uptime_s},\"build\":\"{}\"}}",
+                    "{{\"status\":\"ok\",\"uptime_s\":{uptime_s},\"build\":\"{}\",\"snapshot_age_s\":{snapshot_age_s}}}",
                     env!("ZION_BUILD_ID")
                 );
                 ("200 OK", "application/json", body)
@@ -682,8 +775,22 @@ impl PoolApi {
                 ("200 OK", "text/plain; version=0.0.4", body)
             }
             p if p == "/stats" || p == "/" || p == "/pool" => {
-                let body = Self::snapshot_or(&self.snapshots.stats, || self.build_stats_payload());
-                ("200 OK", "application/json", body)
+                let entry =
+                    Self::snapshot_entry(&self.snapshots.stats, || self.build_stats_payload());
+                // Stale-snapshot guard: the refresher rebuilds every ~2 s,
+                // so an old entry means the builders are wedged on a lock.
+                // Serving 503 keeps the watchdog's /stats probe an honest
+                // wedge detector now that saturation can no longer 503
+                // this cheap route.
+                if Self::snapshot_is_stale(&entry, self.snapshot_stale_limit_s) {
+                    (
+                        "503 Service Unavailable",
+                        "application/json",
+                        "{\"ok\":false,\"error\":\"stats snapshot stale\"}".to_string(),
+                    )
+                } else {
+                    ("200 OK", "application/json", entry.body.to_string())
+                }
             }
             p if p.starts_with("/miners") => {
                 let limit = parse_query_limit(raw_path, 200);
@@ -1417,7 +1524,7 @@ impl PoolApi {
     /// `api-snapshot` refresher thread. A panic in any single builder must
     /// not kill the refresher (frozen snapshots would look like a wedge).
     fn refresh_snapshots(&self) {
-        let builds: [(&RwLock<Option<Arc<str>>>, &dyn Fn(&Self) -> String); 4] = [
+        let builds: [(&RwLock<Option<SnapshotEntry>>, &dyn Fn(&Self) -> String); 4] = [
             (&self.snapshots.stats, &Self::build_stats_payload),
             (&self.snapshots.metrics, &Self::build_prometheus_payload),
             (
@@ -1431,19 +1538,46 @@ impl PoolApi {
         ];
         for (slot, build) in builds {
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| build(self))) {
-                Ok(body) => *slot.write().expect("snapshot lock poisoned") = Some(body.into()),
+                // Stamp the build time — a panicking builder keeps the last
+                // good body AND its old timestamp, so `/stats` still ages
+                // out instead of serving silently-frozen data forever.
+                Ok(body) => {
+                    *slot.write().expect("snapshot lock poisoned") = Some(SnapshotEntry {
+                        body: body.into(),
+                        refreshed_unix: now_unix_seconds(),
+                    })
+                }
                 Err(_) => error!("api-snapshot: payload build panicked — keeping last good"),
             }
         }
     }
 
-    /// Serve the cached payload, building inline only while the refresher
+    /// Return the cached entry, building inline only while the refresher
     /// has not produced its first copy yet (first seconds after boot).
-    fn snapshot_or(slot: &RwLock<Option<Arc<str>>>, build: impl Fn() -> String) -> String {
-        if let Some(body) = slot.read().expect("snapshot lock poisoned").as_ref() {
-            return body.to_string();
+    fn snapshot_entry(
+        slot: &RwLock<Option<SnapshotEntry>>,
+        build: impl Fn() -> String,
+    ) -> SnapshotEntry {
+        if let Some(entry) = slot.read().expect("snapshot lock poisoned").as_ref() {
+            return entry.clone();
         }
-        build()
+        SnapshotEntry {
+            body: build().into(),
+            refreshed_unix: now_unix_seconds(),
+        }
+    }
+
+    /// `true` when the snapshot is older than the wedge threshold — the
+    /// refresher rebuilds every ~2 s, so an old entry means the builders
+    /// are stuck on a lock.
+    fn snapshot_is_stale(entry: &SnapshotEntry, limit_s: u64) -> bool {
+        now_unix_seconds().saturating_sub(entry.refreshed_unix) > limit_s
+    }
+
+    /// Serve the cached payload body, building inline only while the
+    /// refresher has not produced its first copy yet.
+    fn snapshot_or(slot: &RwLock<Option<SnapshotEntry>>, build: impl Fn() -> String) -> String {
+        Self::snapshot_entry(slot, build).body.to_string()
     }
 
     fn build_stats_payload(&self) -> String {
@@ -2386,6 +2520,23 @@ impl PoolApi {
     /// taken under it.
     fn respond_state_export(&self, stream: &mut TcpStream, path: &str) -> Result<()> {
         let name = path.trim_start_matches("/api/v1/state/");
+        if name == "db" {
+            // Serialize VACUUM INTO exports — stamp before the vacuum so a
+            // second concurrent pull is shed immediately, not queued
+            // behind a multi-minute snapshot.
+            let now = now_unix_seconds();
+            let last = LAST_DB_EXPORT_UNIX.swap(now, Ordering::Relaxed);
+            if now.saturating_sub(last) < DB_EXPORT_MIN_INTERVAL_S {
+                let body = "{\"ok\":false,\"error\":\"db export rate limited\"}";
+                let response = format!(
+                    "HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(response.as_bytes())?;
+                return Ok(());
+            }
+        }
         let bytes = match name {
             "pplns" | "payouts" => {
                 let state_path = {
@@ -4605,6 +4756,7 @@ mod tests {
             .unwrap()
             .as_ref()
             .unwrap()
+            .body
             .to_string();
         assert!(!cached.is_empty());
         assert_eq!(
@@ -4621,7 +4773,10 @@ mod tests {
         // A stale slot is replaced wholesale, never appended — the served
         // body always matches the latest successful build.
         let api = PoolApi::new(test_pool(), None, None);
-        *api.snapshots.stats.write().unwrap() = Some("STALE-MARKER".into());
+        *api.snapshots.stats.write().unwrap() = Some(SnapshotEntry {
+            body: "STALE-MARKER".into(),
+            refreshed_unix: 0,
+        });
         api.refresh_snapshots();
         let cached = api
             .snapshots
@@ -4630,9 +4785,31 @@ mod tests {
             .unwrap()
             .as_ref()
             .unwrap()
+            .body
             .to_string();
         assert_ne!(cached, "STALE-MARKER");
         assert!(cached.contains("\"ok\":true") || cached.contains("ok"));
+    }
+
+    #[test]
+    fn snapshot_staleness_tracks_refresh_age() {
+        let fresh = SnapshotEntry {
+            body: "x".into(),
+            refreshed_unix: now_unix_seconds(),
+        };
+        assert!(!PoolApi::snapshot_is_stale(&fresh, 90));
+        let stale = SnapshotEntry {
+            body: "x".into(),
+            refreshed_unix: now_unix_seconds().saturating_sub(120),
+        };
+        assert!(PoolApi::snapshot_is_stale(&stale, 90));
+        // A panicked builder keeps the old timestamp — the entry must age
+        // out rather than serve frozen data forever.
+        let ancient = SnapshotEntry {
+            body: "x".into(),
+            refreshed_unix: 0,
+        };
+        assert!(PoolApi::snapshot_is_stale(&ancient, 10));
     }
 
     #[test]
