@@ -32,6 +32,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { SITE_RELEASE_LABEL, SITE_POOL_PRIMARY, SITE_PRIMARY_HOST } from '@/lib/site';
 
 const MiningUnifiedCopy = {
@@ -307,18 +308,18 @@ export default function MiningUnifiedClient() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   const guideTabLabels: Record<GuideTab, string> = {
-    cpu: MiningUnifiedCopy.cpuMining[cs ? 'cs' : 'en'],
-    gpu: MiningUnifiedCopy.gpuMining[cs ? 'cs' : 'en'],
-    pool: MiningUnifiedCopy.poolMining[cs ? 'cs' : 'en'],
-    solo: MiningUnifiedCopy.soloMining[cs ? 'cs' : 'en'],
+    cpu: tx5(MiningUnifiedCopy.cpuMining, lang),
+    gpu: tx5(MiningUnifiedCopy.gpuMining, lang),
+    pool: tx5(MiningUnifiedCopy.poolMining, lang),
+    solo: tx5(MiningUnifiedCopy.soloMining, lang),
   };
 
   const sectionLabels: Record<string, string> = {
-    'quick-start': MiningUnifiedCopy.quickStart[cs ? 'cs' : 'en'],
-    algorithms: MiningUnifiedCopy.algorithms[cs ? 'cs' : 'en'],
-    guides: MiningUnifiedCopy.miningGuides[cs ? 'cs' : 'en'],
-    hardware: MiningUnifiedCopy.hardware[cs ? 'cs' : 'en'],
-    'node-setup': MiningUnifiedCopy.nodeSetup[cs ? 'cs' : 'en'],
+    'quick-start': tx5(MiningUnifiedCopy.quickStart, lang),
+    algorithms: tx5(MiningUnifiedCopy.algorithms, lang),
+    guides: tx5(MiningUnifiedCopy.miningGuides, lang),
+    hardware: tx5(MiningUnifiedCopy.hardware, lang),
+    'node-setup': tx5(MiningUnifiedCopy.nodeSetup, lang),
     faq: 'FAQ',
   };
 
@@ -339,7 +340,7 @@ export default function MiningUnifiedClient() {
   const quickStartSteps = [
     {
       step: '1',
-      title: MiningUnifiedCopy.createWallet[cs ? 'cs' : 'en'],
+      title: tx5(MiningUnifiedCopy.createWallet, lang),
       color: 'text-zion-cyan border-zion-cyan/20 bg-zion-cyan/10',
       items: cs
         ? [
@@ -355,7 +356,7 @@ export default function MiningUnifiedClient() {
     },
     {
       step: '2',
-      title: MiningUnifiedCopy.startMining[cs ? 'cs' : 'en'],
+      title: tx5(MiningUnifiedCopy.startMining, lang),
       color: 'text-zion-gold border-zion-gold/20 bg-zion-gold/10',
       items: cs
         ? [
@@ -371,7 +372,7 @@ export default function MiningUnifiedClient() {
     },
     {
       step: '3',
-      title: MiningUnifiedCopy.checkBalance[cs ? 'cs' : 'en'],
+      title: tx5(MiningUnifiedCopy.checkBalance, lang),
       color: 'text-zion-purple border-zion-purple/20 bg-zion-purple/10',
       items: cs
         ? [
@@ -390,8 +391,8 @@ export default function MiningUnifiedClient() {
   const nodeRequirementsView = [
     { ...nodeRequirements[0], value: cs ? '2+ jadra (ARM64 nebo x86_64)' : nodeRequirements[0].value },
     { ...nodeRequirements[1], label: 'RAM', value: cs ? '4 GB minimum (8 GB doporuceno)' : nodeRequirements[1].value },
-    { ...nodeRequirements[2], label: MiningUnifiedCopy.disk[cs ? 'cs' : 'en'], value: cs ? '20 GB SSD (roste asi 2 GB/rok)' : nodeRequirements[2].value },
-    { ...nodeRequirements[3], label: MiningUnifiedCopy.network[cs ? 'cs' : 'en'], value: cs ? 'Stabilni broadband, 10 Mbps+' : nodeRequirements[3].value },
+    { ...nodeRequirements[2], label: tx5(MiningUnifiedCopy.disk, lang), value: cs ? '20 GB SSD (roste asi 2 GB/rok)' : nodeRequirements[2].value },
+    { ...nodeRequirements[3], label: tx5(MiningUnifiedCopy.network, lang), value: cs ? 'Stabilni broadband, 10 Mbps+' : nodeRequirements[3].value },
     { ...nodeRequirements[4], label: 'OS', value: cs ? 'Linux, macOS, Windows (WSL2)' : nodeRequirements[4].value },
   ];
 
@@ -465,15 +466,15 @@ export default function MiningUnifiedClient() {
               </div>
               <div>
                 <h1 className="text-3xl md:text-5xl font-bold text-gradient">
-                  {MiningUnifiedCopy.miningNodeGuide[cs ? 'cs' : 'en']}
+                  {tx5(MiningUnifiedCopy.miningNodeGuide, lang)}
                 </h1>
                 <p className="text-white/40 text-sm mt-0.5">
-                  {SITE_RELEASE_LABEL} · Ekam Deeksha dual-algo · {MiningUnifiedCopy.cpuGpuPoolSolo[cs ? 'cs' : 'en']}
+                  {SITE_RELEASE_LABEL} · Ekam Deeksha dual-algo · {tx5(MiningUnifiedCopy.cpuGpuPoolSolo, lang)}
                 </p>
               </div>
             </div>
             <p className="text-white/50 max-w-2xl text-lg mt-4">
-              {MiningUnifiedCopy.everythingYouNeedFromFirstWall[cs ? 'cs' : 'en']}
+              {tx5(MiningUnifiedCopy.everythingYouNeedFromFirstWall, lang)}
             </p>
 
             {/* In-page nav */}
@@ -496,7 +497,7 @@ export default function MiningUnifiedClient() {
                 className="inline-flex items-center gap-2 rounded-2xl bg-zion-gold/20 border border-zion-gold/30 px-5 py-2.5 text-sm font-semibold text-white hover:bg-zion-gold/30 transition-colors"
               >
                 <ArrowDownToLine className="h-4 w-4" />
-                {MiningUnifiedCopy.downloadBinaries[cs ? 'cs' : 'en']}
+                {tx5(MiningUnifiedCopy.downloadBinaries, lang)}
               </Link>
               <Link
                 href={GH_RELEASES_PAGE}
@@ -506,7 +507,7 @@ export default function MiningUnifiedClient() {
                 style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
               >
                 <Github className="h-4 w-4" />
-                {MiningUnifiedCopy.githubReleases[cs ? 'cs' : 'en']}
+                {tx5(MiningUnifiedCopy.githubReleases, lang)}
                 <ExternalLink className="h-3 w-3" />
               </Link>
               <Link
@@ -515,7 +516,7 @@ export default function MiningUnifiedClient() {
                 style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
               >
                 <Globe className="h-4 w-4" />
-                {MiningUnifiedCopy.poolDashboard[cs ? 'cs' : 'en']}
+                {tx5(MiningUnifiedCopy.poolDashboard, lang)}
               </Link>
             </div>
           </div>
@@ -532,9 +533,9 @@ export default function MiningUnifiedClient() {
         >
           <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
             <Rocket className="w-6 h-6 text-zion-gold" />
-            {MiningUnifiedCopy.quickStart3Steps[cs ? 'cs' : 'en']}
+            {tx5(MiningUnifiedCopy.quickStart3Steps, lang)}
           </h2>
-          <p className="text-white/40 text-sm mb-6">{MiningUnifiedCopy.fromZeroToMiningInUnder5Minute[cs ? 'cs' : 'en']}</p>
+          <p className="text-white/40 text-sm mb-6">{tx5(MiningUnifiedCopy.fromZeroToMiningInUnder5Minute, lang)}</p>
 
           <div className="grid gap-6 md:grid-cols-3">
             {quickStartSteps.map((s) => (
@@ -558,7 +559,7 @@ export default function MiningUnifiedClient() {
           {/* One-line install */}
           <div className="mt-6 zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-2">
-              {MiningUnifiedCopy.quickInstallLinuxX8664[cs ? 'cs' : 'en']}
+              {tx5(MiningUnifiedCopy.quickInstallLinuxX8664, lang)}
             </p>
             <div className="zion-rainbow-sub p-3 bg-black/40 font-mono text-xs text-gray-300 overflow-x-auto" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <span className="text-gray-500">$</span>{" "}
@@ -569,7 +570,7 @@ export default function MiningUnifiedClient() {
               tar xzf zion-miner-linux-x86_64.tar.gz && chmod +x zion-miner && ./zion-miner --version
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              {MiningUnifiedCopy.zionCliIsAUnifiedBinaryMinerNo[cs ? 'cs' : 'en']}
+              {tx5(MiningUnifiedCopy.zionCliIsAUnifiedBinaryMinerNo, lang)}
             </p>
           </div>
         </motion.section>
@@ -585,18 +586,18 @@ export default function MiningUnifiedClient() {
         >
           <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
             <Layers className="w-6 h-6 text-zion-purple" />
-            {MiningUnifiedCopy.supportedAlgorithms[cs ? 'cs' : 'en']}
+            {tx5(MiningUnifiedCopy.supportedAlgorithms, lang)}
           </h2>
           <p className="text-white/40 text-sm mb-5">
-            {MiningUnifiedCopy.ekamDeekshaIsADualAlgoPowConse[cs ? 'cs' : 'en']}
+            {tx5(MiningUnifiedCopy.ekamDeekshaIsADualAlgoPowConse, lang)}
           </p>
 
           <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <div className="grid grid-cols-[1fr_80px_80px_1fr] gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02] hidden md:grid">
-              <span className="text-[11px] text-white/30 uppercase tracking-wider">{MiningUnifiedCopy.algorithm[cs ? 'cs' : 'en']}</span>
-              <span className="text-[11px] text-white/30 uppercase tracking-wider">{MiningUnifiedCopy.type[cs ? 'cs' : 'en']}</span>
-              <span className="text-[11px] text-white/30 uppercase tracking-wider">{MiningUnifiedCopy.memory[cs ? 'cs' : 'en']}</span>
-              <span className="text-[11px] text-white/30 uppercase tracking-wider">{MiningUnifiedCopy.bestFor[cs ? 'cs' : 'en']}</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider">{tx5(MiningUnifiedCopy.algorithm, lang)}</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider">{tx5(MiningUnifiedCopy.type, lang)}</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider">{tx5(MiningUnifiedCopy.memory, lang)}</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider">{tx5(MiningUnifiedCopy.bestFor, lang)}</span>
             </div>
             {algorithmsView.map((algo, i) => (
               <div
@@ -628,10 +629,10 @@ export default function MiningUnifiedClient() {
         >
           <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
             <BookOpen className="w-6 h-6 text-zion-gold" />
-            {MiningUnifiedCopy.miningGuides[cs ? 'cs' : 'en']}
+            {tx5(MiningUnifiedCopy.miningGuides, lang)}
           </h2>
           <p className="text-white/40 text-sm mb-5">
-            {MiningUnifiedCopy.stepByStepForAnyHardwareFromRa[cs ? 'cs' : 'en']}
+            {tx5(MiningUnifiedCopy.stepByStepForAnyHardwareFromRa, lang)}
           </p>
 
           {/* Tab selector */}
@@ -661,16 +662,16 @@ export default function MiningUnifiedClient() {
               <div className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                   <Cpu className="w-5 h-5 text-zion-cyan" />
-                  {MiningUnifiedCopy.cpuMiningWithZionNativeMiner[cs ? 'cs' : 'en']}
+                  {tx5(MiningUnifiedCopy.cpuMiningWithZionNativeMiner, lang)}
                 </h3>
                 <p className="text-white/40 text-sm mb-5">
-                  {MiningUnifiedCopy.worksOnAnyX8664OrArm64CpuAlgor[cs ? 'cs' : 'en']}{" "}
+                  {tx5(MiningUnifiedCopy.worksOnAnyX8664OrArm64CpuAlgor, lang)}{" "}
                   <strong className="text-white/60">Ekam Deeksha — BLAKE3</strong>{" "}
-                  {MiningUnifiedCopy.primaryHashLowMemoryFast[cs ? 'cs' : 'en']}
+                  {tx5(MiningUnifiedCopy.primaryHashLowMemoryFast, lang)}
                 </p>
                 <div className="space-y-4">
                   <CodeBlock
-                    title={MiningUnifiedCopy.optionAPreCompiledBinaryRecomm[cs ? 'cs' : 'en']}
+                    title={tx5(MiningUnifiedCopy.optionAPreCompiledBinaryRecomm, lang)}
                     code={`# Download ZION CLI from GitHub Releases (Linux, macOS, Windows)
 # → https://github.com/Zion-TerraNova/v3-Mainnet/releases
 
@@ -680,14 +681,14 @@ chmod +x zion-miner
 ./zion-miner --version`}
                   />
                   <CodeBlock
-                    title={MiningUnifiedCopy.optionBBuildFromSource[cs ? 'cs' : 'en']}
+                    title={tx5(MiningUnifiedCopy.optionBBuildFromSource, lang)}
                     code={`git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
 cd v3-Mainnet/V3
 cargo build --release -p zion-public
 ls -la target/release/zion-miner`}
                   />
                   <CodeBlock
-                    title={MiningUnifiedCopy.startMiningPool[cs ? 'cs' : 'en']}
+                    title={tx5(MiningUnifiedCopy.startMiningPool, lang)}
                     code={`zion mine start \\
   --pool stratum+tcp://${POOL}:8444 \\
   --wallet YOUR_ZION_ADDRESS \\
@@ -696,10 +697,10 @@ ls -la target/release/zion-miner`}
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <h4 className="text-sm font-medium text-zion-cyan mb-2">💡 CPU Tips</h4>
                     <ul className="text-sm text-white/40 space-y-1">
-                      <li>• {MiningUnifiedCopy.ekamDeekshaBlake3IsFastAndLowM[cs ? 'cs' : 'en']}</li>
-                      <li>• {MiningUnifiedCopy.leave12CoresFreeForSystemIfMin[cs ? 'cs' : 'en']}</li>
-                      <li>• {MiningUnifiedCopy.monitorTemperatureKeepBelow85C[cs ? 'cs' : 'en']}</li>
-                      <li>• {MiningUnifiedCopy.arm64RaspberryPi45BuildFromSou[cs ? 'cs' : 'en']}</li>
+                      <li>• {tx5(MiningUnifiedCopy.ekamDeekshaBlake3IsFastAndLowM, lang)}</li>
+                      <li>• {tx5(MiningUnifiedCopy.leave12CoresFreeForSystemIfMin, lang)}</li>
+                      <li>• {tx5(MiningUnifiedCopy.monitorTemperatureKeepBelow85C, lang)}</li>
+                      <li>• {tx5(MiningUnifiedCopy.arm64RaspberryPi45BuildFromSou, lang)}</li>
                     </ul>
                   </div>
                 </div>
@@ -713,10 +714,10 @@ ls -la target/release/zion-miner`}
               <div className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                   <Monitor className="w-5 h-5 text-zion-gold" />
-                  {MiningUnifiedCopy.gpuMiningMetalCudaOpencl[cs ? 'cs' : 'en']}
+                  {tx5(MiningUnifiedCopy.gpuMiningMetalCudaOpencl, lang)}
                 </h3>
                 <p className="text-white/40 text-sm mb-5">
-                  {MiningUnifiedCopy.appleMetalM1M4NvidiaCudaGtxRtx[cs ? 'cs' : 'en']}
+                  {tx5(MiningUnifiedCopy.appleMetalM1M4NvidiaCudaGtxRtx, lang)}
                 </p>
 
                 <div className="mb-6">
@@ -776,12 +777,12 @@ cargo build --release -p zion-public --features gpu-opencl
                 <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                   <h4 className="text-sm font-medium text-zion-gold mb-2">⚡ GPU Tips</h4>
                   <ul className="text-sm text-white/40 space-y-1">
-                    <li>• {MiningUnifiedCopy.ekamDeekshaUses256KibScratchpa[cs ? 'cs' : 'en']}</li>
-                    <li>• {MiningUnifiedCopy.blake3HashIsPrimaryFastRandomn[cs ? 'cs' : 'en']}</li>
-                    <li>• {MiningUnifiedCopy.undervoltFor2030PowerSaving[cs ? 'cs' : 'en']}</li>
-                    <li>• {MiningUnifiedCopy.keepGpu80CVram95C[cs ? 'cs' : 'en']}</li>
-                    <li>• <code className="text-zion-gold/60 text-xs">--gpu-intensity 60-80</code> {MiningUnifiedCopy.forDesktopUseWhileMining[cs ? 'cs' : 'en']}</li>
-                    <li>• {MiningUnifiedCopy.benchmark[cs ? 'cs' : 'en']}<code className="text-zion-gold/60 text-xs">zion-miner --gpu-benchmark-all</code></li>
+                    <li>• {tx5(MiningUnifiedCopy.ekamDeekshaUses256KibScratchpa, lang)}</li>
+                    <li>• {tx5(MiningUnifiedCopy.blake3HashIsPrimaryFastRandomn, lang)}</li>
+                    <li>• {tx5(MiningUnifiedCopy.undervoltFor2030PowerSaving, lang)}</li>
+                    <li>• {tx5(MiningUnifiedCopy.keepGpu80CVram95C, lang)}</li>
+                    <li>• <code className="text-zion-gold/60 text-xs">--gpu-intensity 60-80</code> {tx5(MiningUnifiedCopy.forDesktopUseWhileMining, lang)}</li>
+                    <li>• {tx5(MiningUnifiedCopy.benchmark, lang)}<code className="text-zion-gold/60 text-xs">zion-miner --gpu-benchmark-all</code></li>
                   </ul>
                 </div>
               </div>
@@ -794,14 +795,14 @@ cargo build --release -p zion-public --features gpu-opencl
               <div className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                   <Users className="w-5 h-5 text-zion-purple" />
-                  {MiningUnifiedCopy.poolMiningSteadyRewards[cs ? 'cs' : 'en']}
+                  {tx5(MiningUnifiedCopy.poolMiningSteadyRewards, lang)}
                 </h3>
                 <p className="text-white/40 text-sm mb-5">
-                  {MiningUnifiedCopy.combinesHashrateFromManyMiners[cs ? 'cs' : 'en']}
+                  {tx5(MiningUnifiedCopy.combinesHashrateFromManyMiners, lang)}
                 </p>
 
                 <div className="zion-rainbow-sub p-5 mb-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                  <h4 className="text-sm font-medium text-white/60 mb-3">{MiningUnifiedCopy.zionOfficialPoolEndpoints[cs ? 'cs' : 'en']}</h4>
+                  <h4 className="text-sm font-medium text-white/60 mb-3">{tx5(MiningUnifiedCopy.zionOfficialPoolEndpoints, lang)}</h4>
                   <div className="space-y-2">
                     {algorithmsView.map((algo, i) => (
                       <div key={i} className="flex flex-col md:flex-row md:items-center justify-between gap-1 py-2 border-b border-white/[0.04] last:border-0">
@@ -813,7 +814,7 @@ cargo build --release -p zion-public --features gpu-opencl
                 </div>
 
                 <CodeBlock
-                  title={MiningUnifiedCopy.quickStartPoolMining[cs ? 'cs' : 'en']}
+                  title={tx5(MiningUnifiedCopy.quickStartPoolMining, lang)}
                   code={`zion mine start \\
   --pool stratum+tcp://${POOL}:8444 \\
   --wallet YOUR_ZION_ADDRESS \\
@@ -823,10 +824,10 @@ cargo build --release -p zion-public --features gpu-opencl
 
                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
-                    { label: MiningUnifiedCopy.fee[cs ? 'cs' : 'en'], value: '1%', desc: MiningUnifiedCopy.lowestInClass[cs ? 'cs' : 'en'] },
-                    { label: MiningUnifiedCopy.payout[cs ? 'cs' : 'en'], value: 'PPLNS', desc: MiningUnifiedCopy.payPerLastNShares[cs ? 'cs' : 'en'] },
-                    { label: MiningUnifiedCopy.minPayout[cs ? 'cs' : 'en'], value: '10 ZION', desc: MiningUnifiedCopy.automaticTransfer[cs ? 'cs' : 'en'] },
-                    { label: MiningUnifiedCopy.interval[cs ? 'cs' : 'en'], value: MiningUnifiedCopy.every2h[cs ? 'cs' : 'en'], desc: MiningUnifiedCopy.whenThresholdMet[cs ? 'cs' : 'en'] },
+                    { label: tx5(MiningUnifiedCopy.fee, lang), value: '1%', desc: tx5(MiningUnifiedCopy.lowestInClass, lang) },
+                    { label: tx5(MiningUnifiedCopy.payout, lang), value: 'PPLNS', desc: tx5(MiningUnifiedCopy.payPerLastNShares, lang) },
+                    { label: tx5(MiningUnifiedCopy.minPayout, lang), value: '10 ZION', desc: tx5(MiningUnifiedCopy.automaticTransfer, lang) },
+                    { label: tx5(MiningUnifiedCopy.interval, lang), value: tx5(MiningUnifiedCopy.every2h, lang), desc: tx5(MiningUnifiedCopy.whenThresholdMet, lang) },
                   ].map((feat, i) => (
                     <div key={i} className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                       <div className="flex items-center justify-between mb-1">
@@ -839,10 +840,10 @@ cargo build --release -p zion-public --features gpu-opencl
                 </div>
 
                 <div className="mt-5 zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                  <h4 className="text-sm font-medium text-zion-purple mb-2">📊 {MiningUnifiedCopy.monitorYourMiner[cs ? 'cs' : 'en']}</h4>
+                  <h4 className="text-sm font-medium text-zion-purple mb-2">📊 {tx5(MiningUnifiedCopy.monitorYourMiner, lang)}</h4>
                   <p className="text-sm text-white/40">
-                    {MiningUnifiedCopy.trackHashrateSharesAndPayoutsO[cs ? 'cs' : 'en']}
-                    <Link href="/pool" className="text-zion-purple underline hover:text-white transition-colors">{MiningUnifiedCopy.poolDashboard_2[cs ? 'cs' : 'en']}</Link>.
+                    {tx5(MiningUnifiedCopy.trackHashrateSharesAndPayoutsO, lang)}
+                    <Link href="/pool" className="text-zion-purple underline hover:text-white transition-colors">{tx5(MiningUnifiedCopy.poolDashboard_2, lang)}</Link>.
                   </p>
                 </div>
               </div>
@@ -855,16 +856,16 @@ cargo build --release -p zion-public --features gpu-opencl
               <div className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-zion-cyan" />
-                  {MiningUnifiedCopy.soloMiningFullBlockRewards[cs ? 'cs' : 'en']}
+                  {tx5(MiningUnifiedCopy.soloMiningFullBlockRewards, lang)}
                 </h3>
                 <p className="text-white/40 text-sm mb-5">
-                  {MiningUnifiedCopy.mineDirectlyAgainstTheBlockcha[cs ? 'cs' : 'en']}
+                  {tx5(MiningUnifiedCopy.mineDirectlyAgainstTheBlockcha, lang)}
                 </p>
 
                 <div className="zion-rainbow-sub p-4 mb-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                  <h4 className="text-sm font-medium text-zion-gold mb-1">⚠️ {MiningUnifiedCopy.whoShouldSoloMine[cs ? 'cs' : 'en']}</h4>
+                  <h4 className="text-sm font-medium text-zion-gold mb-1">⚠️ {tx5(MiningUnifiedCopy.whoShouldSoloMine, lang)}</h4>
                   <p className="text-sm text-white/40">
-                    {MiningUnifiedCopy.recommendedIfYouHaveSignifican[cs ? 'cs' : 'en']}
+                    {tx5(MiningUnifiedCopy.recommendedIfYouHaveSignifican, lang)}
                   </p>
                 </div>
 
@@ -874,7 +875,7 @@ cargo build --release -p zion-public --features gpu-opencl
                 />
                 <div className="mt-4">
                   <CodeBlock
-                    title={MiningUnifiedCopy.step2MineAgainstYourNode[cs ? 'cs' : 'en']}
+                    title={tx5(MiningUnifiedCopy.step2MineAgainstYourNode, lang)}
                     code={`zion mine start \\
   --node http://127.0.0.1:8443 \\
   --wallet YOUR_ZION_ADDRESS \\
@@ -885,21 +886,21 @@ cargo build --release -p zion-public --features gpu-opencl
 
                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                    <h4 className="text-sm font-medium text-zion-cyan mb-2">✅ {MiningUnifiedCopy.pros[cs ? 'cs' : 'en']}</h4>
+                    <h4 className="text-sm font-medium text-zion-cyan mb-2">✅ {tx5(MiningUnifiedCopy.pros, lang)}</h4>
                     <ul className="text-sm text-white/40 space-y-1">
-                      <li>• {MiningUnifiedCopy.fullCurrentBlockRewardFees[cs ? 'cs' : 'en']}</li>
-                      <li>• {MiningUnifiedCopy.noPoolFees[cs ? 'cs' : 'en']}</li>
-                      <li>• {MiningUnifiedCopy.maximumDecentralization[cs ? 'cs' : 'en']}</li>
-                      <li>• {MiningUnifiedCopy.privacyNoPoolKnowsYourAddress[cs ? 'cs' : 'en']}</li>
+                      <li>• {tx5(MiningUnifiedCopy.fullCurrentBlockRewardFees, lang)}</li>
+                      <li>• {tx5(MiningUnifiedCopy.noPoolFees, lang)}</li>
+                      <li>• {tx5(MiningUnifiedCopy.maximumDecentralization, lang)}</li>
+                      <li>• {tx5(MiningUnifiedCopy.privacyNoPoolKnowsYourAddress, lang)}</li>
                     </ul>
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                    <h4 className="text-sm font-medium text-zion-purple mb-2">❌ {MiningUnifiedCopy.cons[cs ? 'cs' : 'en']}</h4>
+                    <h4 className="text-sm font-medium text-zion-purple mb-2">❌ {tx5(MiningUnifiedCopy.cons, lang)}</h4>
                     <ul className="text-sm text-white/40 space-y-1">
-                      <li>• {MiningUnifiedCopy.irregularPayoutsLuckBased[cs ? 'cs' : 'en']}</li>
-                      <li>• {MiningUnifiedCopy.needToRunAFullNode[cs ? 'cs' : 'en']}</li>
-                      <li>• {MiningUnifiedCopy.highVarianceWithLowHashrate[cs ? 'cs' : 'en']}</li>
-                      <li>• {MiningUnifiedCopy.noPartialShareRewards[cs ? 'cs' : 'en']}</li>
+                      <li>• {tx5(MiningUnifiedCopy.irregularPayoutsLuckBased, lang)}</li>
+                      <li>• {tx5(MiningUnifiedCopy.needToRunAFullNode, lang)}</li>
+                      <li>• {tx5(MiningUnifiedCopy.highVarianceWithLowHashrate, lang)}</li>
+                      <li>• {tx5(MiningUnifiedCopy.noPartialShareRewards, lang)}</li>
                     </ul>
                   </div>
                 </div>
@@ -917,16 +918,16 @@ cargo build --release -p zion-public --features gpu-opencl
         >
           <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
             <Zap className="w-6 h-6 text-zion-gold" />
-            {MiningUnifiedCopy.hardwareComparison[cs ? 'cs' : 'en']}
+            {tx5(MiningUnifiedCopy.hardwareComparison, lang)}
           </h2>
-          <p className="text-white/40 text-sm mb-5">{MiningUnifiedCopy.realEkamDeekshaBenchmarksBlake[cs ? 'cs' : 'en']}</p>
+          <p className="text-white/40 text-sm mb-5">{tx5(MiningUnifiedCopy.realEkamDeekshaBenchmarksBlake, lang)}</p>
 
           <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <div className="grid grid-cols-[1fr_100px_80px_100px] gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02] hidden md:grid">
-              <span className="text-[11px] text-white/30 uppercase tracking-wider">{MiningUnifiedCopy.hardware[cs ? 'cs' : 'en']}</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider">{tx5(MiningUnifiedCopy.hardware, lang)}</span>
               <span className="text-[11px] text-white/30 uppercase tracking-wider">Hashrate</span>
-              <span className="text-[11px] text-white/30 uppercase tracking-wider">{MiningUnifiedCopy.power[cs ? 'cs' : 'en']}</span>
-              <span className="text-[11px] text-white/30 uppercase tracking-wider">{MiningUnifiedCopy.efficiency[cs ? 'cs' : 'en']}</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider">{tx5(MiningUnifiedCopy.power, lang)}</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider">{tx5(MiningUnifiedCopy.efficiency, lang)}</span>
             </div>
             {hardware.map((row, i) => (
               <div
@@ -956,10 +957,10 @@ cargo build --release -p zion-public --features gpu-opencl
           <div>
             <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
               <Server className="w-6 h-6 text-zion-cyan" />
-              {MiningUnifiedCopy.runAFullNode[cs ? 'cs' : 'en']}
+              {tx5(MiningUnifiedCopy.runAFullNode, lang)}
             </h2>
             <p className="text-white/50 text-sm">
-              {MiningUnifiedCopy.strengthenTheNetworkByValidati[cs ? 'cs' : 'en']}
+              {tx5(MiningUnifiedCopy.strengthenTheNetworkByValidati, lang)}
             </p>
           </div>
 
@@ -967,7 +968,7 @@ cargo build --release -p zion-public --features gpu-opencl
           <div>
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <Cog className="w-5 h-5 text-zion-gold" />
-              {MiningUnifiedCopy.systemRequirements[cs ? 'cs' : 'en']}
+              {tx5(MiningUnifiedCopy.systemRequirements, lang)}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {nodeRequirementsView.map((req, i) => (
@@ -986,13 +987,13 @@ cargo build --release -p zion-public --features gpu-opencl
           <div className="space-y-4">
             <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
               <Download className="w-5 h-5 text-zion-cyan" />
-              {MiningUnifiedCopy.installation[cs ? 'cs' : 'en']}
+              {tx5(MiningUnifiedCopy.installation, lang)}
             </h3>
 
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center w-7 h-7 rounded-full bg-zion-gold/10 border border-zion-gold/20 text-zion-gold text-xs font-bold">1</span>
-                <h4 className="text-white font-medium">{MiningUnifiedCopy.preCompiledBinaryRecommended[cs ? 'cs' : 'en']}</h4>
+                <h4 className="text-white font-medium">{tx5(MiningUnifiedCopy.preCompiledBinaryRecommended, lang)}</h4>
               </div>
               <CodeBlock
                 code={`# Download ZION CLI from GitHub Releases (Linux, macOS, Windows)
@@ -1008,7 +1009,7 @@ chmod +x zion-miner
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center w-7 h-7 rounded-full bg-zion-cyan/10 border border-zion-cyan/20 text-zion-cyan text-xs font-bold">2</span>
-                <h4 className="text-white font-medium">{MiningUnifiedCopy.buildFromSource[cs ? 'cs' : 'en']}</h4>
+                <h4 className="text-white font-medium">{tx5(MiningUnifiedCopy.buildFromSource, lang)}</h4>
               </div>
               <CodeBlock
                 code={`git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
@@ -1021,7 +1022,7 @@ cargo build --release -p zion-public
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center w-7 h-7 rounded-full bg-zion-purple/10 border border-zion-purple/20 text-zion-purple text-xs font-bold">3</span>
-                <h4 className="text-white font-medium">{MiningUnifiedCopy.zionCliUnifiedBinary[cs ? 'cs' : 'en']}</h4>
+                <h4 className="text-white font-medium">{tx5(MiningUnifiedCopy.zionCliUnifiedBinary, lang)}</h4>
               </div>
               <CodeBlock
                 code={`# ZION v3.0.6-beta Triple Stream Miner (Linux x86_64)
@@ -1037,7 +1038,7 @@ chmod +x zion-miner
           <div>
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <Network className="w-5 h-5 text-zion-purple" />
-              {MiningUnifiedCopy.networkConfiguration[cs ? 'cs' : 'en']}
+              {tx5(MiningUnifiedCopy.networkConfiguration, lang)}
             </h3>
 
             <div className="flex items-center gap-2 mb-4">
@@ -1058,7 +1059,7 @@ chmod +x zion-miner
 
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <p className="text-white/50 text-sm mb-4">
-                {networkConfigsView[activeNetwork].description} - {MiningUnifiedCopy.config[cs ? 'cs' : 'en']}:{" "}
+                {networkConfigsView[activeNetwork].description} - {tx5(MiningUnifiedCopy.config, lang)}:{" "}
                 <code className="text-zion-cyan/80 bg-zion-cyan/5 px-2 py-0.5 rounded text-xs">
                   config/{networkConfigsView[activeNetwork].file}
                 </code>
@@ -1095,15 +1096,15 @@ bootstrap = [
           <div>
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <Shield className="w-5 h-5 text-zion-cyan" />
-              {MiningUnifiedCopy.portsFirewall[cs ? 'cs' : 'en']}
+              {tx5(MiningUnifiedCopy.portsFirewall, lang)}
             </h3>
 
             <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="grid grid-cols-4 gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02]">
                 <span className="text-[11px] text-white/30 uppercase tracking-wider">Port</span>
-                <span className="text-[11px] text-white/30 uppercase tracking-wider">{MiningUnifiedCopy.protocol[cs ? 'cs' : 'en']}</span>
-                <span className="text-[11px] text-white/30 uppercase tracking-wider">{MiningUnifiedCopy.purpose[cs ? 'cs' : 'en']}</span>
-                <span className="text-[11px] text-white/30 uppercase tracking-wider text-right">{MiningUnifiedCopy.required[cs ? 'cs' : 'en']}</span>
+                <span className="text-[11px] text-white/30 uppercase tracking-wider">{tx5(MiningUnifiedCopy.protocol, lang)}</span>
+                <span className="text-[11px] text-white/30 uppercase tracking-wider">{tx5(MiningUnifiedCopy.purpose, lang)}</span>
+                <span className="text-[11px] text-white/30 uppercase tracking-wider text-right">{tx5(MiningUnifiedCopy.required, lang)}</span>
               </div>
               {portsView.map((p, i) => (
                 <div key={i} className="grid grid-cols-4 gap-2 px-6 py-3 border-b border-white/[0.04] last:border-0">
@@ -1112,9 +1113,9 @@ bootstrap = [
                   <span className="text-sm text-white/70">{p.purpose}</span>
                   <span className="text-right">
                     {p.required ? (
-                      <span className="text-[10px] bg-zion-cyan/10 text-zion-cyan border border-zion-cyan/20 px-2 py-0.5 rounded-full">{MiningUnifiedCopy.required[cs ? 'cs' : 'en']}</span>
+                      <span className="text-[10px] bg-zion-cyan/10 text-zion-cyan border border-zion-cyan/20 px-2 py-0.5 rounded-full">{tx5(MiningUnifiedCopy.required, lang)}</span>
                     ) : (
-                      <span className="text-[10px] bg-white/5 text-white/30 border border-white/10 px-2 py-0.5 rounded-full">{MiningUnifiedCopy.optional[cs ? 'cs' : 'en']}</span>
+                      <span className="text-[10px] bg-white/5 text-white/30 border border-white/10 px-2 py-0.5 rounded-full">{tx5(MiningUnifiedCopy.optional, lang)}</span>
                     )}
                   </span>
                 </div>
@@ -1135,7 +1136,7 @@ sudo ufw status`}
           <div>
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <Terminal className="w-5 h-5 text-zion-gold" />
-              {MiningUnifiedCopy.nodeCliReference[cs ? 'cs' : 'en']}
+              {tx5(MiningUnifiedCopy.nodeCliReference, lang)}
             </h3>
 
             <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
@@ -1152,7 +1153,7 @@ sudo ufw status`}
           <div className="zion-rainbow-sub p-6 space-y-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <Rocket className="w-5 h-5 text-zion-cyan" />
-              {MiningUnifiedCopy.verifyYourNode[cs ? 'cs' : 'en']}
+              {tx5(MiningUnifiedCopy.verifyYourNode, lang)}
             </h3>
             <CodeBlock
               title="Check sync status"
@@ -1170,12 +1171,12 @@ sudo ufw status`}
               <div className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-zion-cyan mt-0.5 shrink-0" />
                 <div className="text-sm text-white/60">
-                  <p className="font-medium text-zion-cyan mb-1">{MiningUnifiedCopy.successCriteria[cs ? 'cs' : 'en']}</p>
+                  <p className="font-medium text-zion-cyan mb-1">{tx5(MiningUnifiedCopy.successCriteria, lang)}</p>
                   <ul className="space-y-1 text-white/40">
-                    <li>• {MiningUnifiedCopy.blockHeightMatches[cs ? 'cs' : 'en']}<Link href="/explorer" className="text-zion-cyan/60 hover:text-zion-cyan underline">{MiningUnifiedCopy.explorer[cs ? 'cs' : 'en']}</Link></li>
-                    <li>• {MiningUnifiedCopy.k2PeersConnected[cs ? 'cs' : 'en']}</li>
-                    <li>• {MiningUnifiedCopy.newBlocksEvery60Seconds[cs ? 'cs' : 'en']}</li>
-                    <li>• {MiningUnifiedCopy.rpcRespondsToQueries[cs ? 'cs' : 'en']}</li>
+                    <li>• {tx5(MiningUnifiedCopy.blockHeightMatches, lang)}<Link href="/explorer" className="text-zion-cyan/60 hover:text-zion-cyan underline">{tx5(MiningUnifiedCopy.explorer, lang)}</Link></li>
+                    <li>• {tx5(MiningUnifiedCopy.k2PeersConnected, lang)}</li>
+                    <li>• {tx5(MiningUnifiedCopy.newBlocksEvery60Seconds, lang)}</li>
+                    <li>• {tx5(MiningUnifiedCopy.rpcRespondsToQueries, lang)}</li>
                   </ul>
                 </div>
               </div>
@@ -1192,7 +1193,7 @@ sudo ufw status`}
         >
           <h2 className="text-2xl font-bold text-white mb-5 flex items-center gap-2">
             <Settings className="w-6 h-6 text-zion-gold" />
-            {MiningUnifiedCopy.faqTroubleshooting[cs ? 'cs' : 'en']}
+            {tx5(MiningUnifiedCopy.faqTroubleshooting, lang)}
           </h2>
 
           <div className="space-y-3">
@@ -1227,9 +1228,9 @@ sudo ufw status`}
           className="zion-cta-banner"
         >
           <Pickaxe className="mx-auto h-12 w-12 text-zion-gold" />
-          <h2 className="mt-6 text-3xl font-semibold text-white">{MiningUnifiedCopy.readyToMineZion[cs ? 'cs' : 'en']}</h2>
+          <h2 className="mt-6 text-3xl font-semibold text-white">{tx5(MiningUnifiedCopy.readyToMineZion, lang)}</h2>
           <p className="mt-4 text-gray-100 max-w-2xl mx-auto">
-            {MiningUnifiedCopy.joinTheCommunityEveryHashStren[cs ? 'cs' : 'en']}
+            {tx5(MiningUnifiedCopy.joinTheCommunityEveryHashStren, lang)}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
@@ -1237,14 +1238,14 @@ sudo ufw status`}
               className="inline-flex items-center gap-2 rounded-2xl bg-zion-gold/80 px-6 py-3 text-sm font-semibold text-black border border-zion-gold hover:brightness-110 transition-all"
             >
               <ArrowDownToLine className="h-4 w-4" />
-              {MiningUnifiedCopy.downloadBinaries[cs ? 'cs' : 'en']}
+              {tx5(MiningUnifiedCopy.downloadBinaries, lang)}
             </Link>
             <Link
               href="/pool"
               className="inline-flex items-center gap-2 rounded-2xl bg-zion-purple/70 px-6 py-3 text-sm font-semibold text-white border border-zion-purple"
             >
               <Globe className="h-4 w-4" />
-              {MiningUnifiedCopy.poolDashboard[cs ? 'cs' : 'en']}
+              {tx5(MiningUnifiedCopy.poolDashboard, lang)}
             </Link>
             <Link
               href={GH_RELEASES_PAGE}
@@ -1253,13 +1254,13 @@ sudo ufw status`}
               className="inline-flex items-center gap-2 rounded-2xl bg-white/10 border border-white/20 px-6 py-3 text-sm font-semibold text-white"
             >
               <Github className="h-4 w-4" />
-              {MiningUnifiedCopy.githubReleases[cs ? 'cs' : 'en']}
+              {tx5(MiningUnifiedCopy.githubReleases, lang)}
             </Link>
             <Link
               href="/explorer"
               className="inline-flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 px-6 py-3 text-sm font-semibold text-gray-300"
             >
-              {MiningUnifiedCopy.explorer_2[cs ? 'cs' : 'en']}
+              {tx5(MiningUnifiedCopy.explorer_2, lang)}
             </Link>
           </div>
         </motion.section>

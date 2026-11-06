@@ -20,6 +20,7 @@ import {
   Info,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from '@/hooks/usePolling';
 
 const PoolCalculatorCopy = {
@@ -342,13 +343,13 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               <div className="space-y-3">
                 <span className="zion-kicker">
                   <Calculator className="h-3.5 w-3.5" />
-                  {PoolCalculatorCopy.rewardCalculator[cs ? 'cs' : 'en']}
+                  {tx5(PoolCalculatorCopy.rewardCalculator, lang)}
                 </span>
                 <h1 className="zion-section-title text-3xl md:text-5xl">
-                  {PoolCalculatorCopy.miningRewardCalculator[cs ? 'cs' : 'en']}
+                  {tx5(PoolCalculatorCopy.miningRewardCalculator, lang)}
                 </h1>
                 <p className="zion-section-sub">
-                  {PoolCalculatorCopy.estimateYourDailyMonthlyAndYea[cs ? 'cs' : 'en']}
+                  {tx5(PoolCalculatorCopy.estimateYourDailyMonthlyAndYea, lang)}
                 </p>
                 <div className="flex flex-wrap gap-3 pt-2">
                   <Link
@@ -356,14 +357,14 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                     className="zion-button-secondary text-sm px-4 py-2.5"
                   >
                     <ArrowLeft className="h-4 w-4" />
-                    {PoolCalculatorCopy.backToPool[cs ? 'cs' : 'en']}
+                    {tx5(PoolCalculatorCopy.backToPool, lang)}
                   </Link>
                   <Link
                     href="/pool#start-mining"
                     className="zion-button-primary text-sm px-4 py-2.5"
                   >
                     <Zap className="h-4 w-4" />
-                    {PoolCalculatorCopy.startMining[cs ? 'cs' : 'en']}
+                    {tx5(PoolCalculatorCopy.startMining, lang)}
                   </Link>
                 </div>
               </div>
@@ -391,20 +392,20 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <div className="mb-6 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
                 <Gauge className="h-5 w-5 text-zion-purple" />
-                {PoolCalculatorCopy.inputParameters[cs ? 'cs' : 'en']}
+                {tx5(PoolCalculatorCopy.inputParameters, lang)}
               </h2>
               <button
                 onClick={reset}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-gray-300 transition-colors hover:border-white/20 hover:text-white"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                {PoolCalculatorCopy.reset[cs ? 'cs' : 'en']}
+                {tx5(PoolCalculatorCopy.reset, lang)}
               </button>
             </div>
 
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {/* Hashrate */}
-              <Field label={PoolCalculatorCopy.yourHashrate[cs ? 'cs' : 'en']} hint={PoolCalculatorCopy.eG18K2M1G[cs ? 'cs' : 'en']}>
+              <Field label={tx5(PoolCalculatorCopy.yourHashrate, lang)} hint={tx5(PoolCalculatorCopy.eG18K2M1G, lang)}>
                 <input
                   type="text"
                   value={hashrateInput}
@@ -418,7 +419,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </Field>
 
               {/* Hardware type */}
-              <Field label={PoolCalculatorCopy.hardwareType[cs ? 'cs' : 'en']}>
+              <Field label={tx5(PoolCalculatorCopy.hardwareType, lang)}>
                 <select
                   value={hardwareType}
                   onChange={(e) => setHardwareType(e.target.value as HardwareType)}
@@ -431,7 +432,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </Field>
 
               {/* Power */}
-              <Field label={PoolCalculatorCopy.powerConsumptionW[cs ? 'cs' : 'en']}>
+              <Field label={tx5(PoolCalculatorCopy.powerConsumptionW, lang)}>
                 <input
                   type="number"
                   value={powerW}
@@ -442,7 +443,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </Field>
 
               {/* Electricity cost */}
-              <Field label={PoolCalculatorCopy.electricityCostKwh[cs ? 'cs' : 'en']}>
+              <Field label={tx5(PoolCalculatorCopy.electricityCostKwh, lang)}>
                 <input
                   type="number"
                   step="0.01"
@@ -454,7 +455,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </Field>
 
               {/* ZION price */}
-              <Field label={PoolCalculatorCopy.zionPrice[cs ? 'cs' : 'en']}>
+              <Field label={tx5(PoolCalculatorCopy.zionPrice, lang)}>
                 <input
                   type="number"
                   step="0.00001"
@@ -466,7 +467,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </Field>
 
               {/* Pool fee */}
-              <Field label={PoolCalculatorCopy.poolFee[cs ? 'cs' : 'en']}>
+              <Field label={tx5(PoolCalculatorCopy.poolFee, lang)}>
                 <input
                   type="number"
                   step="0.1"
@@ -478,7 +479,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </Field>
 
               {/* Difficulty */}
-              <Field label={PoolCalculatorCopy.networkDifficulty[cs ? 'cs' : 'en']} hint={PoolCalculatorCopy.autoFetched[cs ? 'cs' : 'en']}>
+              <Field label={tx5(PoolCalculatorCopy.networkDifficulty, lang)} hint={tx5(PoolCalculatorCopy.autoFetched, lang)}>
                 <input
                   type="number"
                   step="0.01"
@@ -490,7 +491,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </Field>
 
               {/* Hardware cost */}
-              <Field label={PoolCalculatorCopy.hardwareCost[cs ? 'cs' : 'en']} hint={PoolCalculatorCopy.forRoiCalc[cs ? 'cs' : 'en']}>
+              <Field label={tx5(PoolCalculatorCopy.hardwareCost, lang)} hint={tx5(PoolCalculatorCopy.forRoiCalc, lang)}>
                 <input
                   type="number"
                   step="50"
@@ -502,7 +503,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </Field>
 
               {/* Reward per block */}
-              <Field label={PoolCalculatorCopy.rewardPerBlockZion[cs ? 'cs' : 'en']}>
+              <Field label={tx5(PoolCalculatorCopy.rewardPerBlockZion, lang)}>
                 <input
                   type="number"
                   step="1"
@@ -516,7 +517,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
 
             {/* Quick preset chips */}
             <div className="mt-6 flex flex-wrap items-center gap-2">
-              <span className="text-xs text-gray-500">{PoolCalculatorCopy.presets[cs ? 'cs' : 'en']}</span>
+              <span className="text-xs text-gray-500">{tx5(PoolCalculatorCopy.presets, lang)}</span>
               {HARDWARE_PRESETS.map((hw) => (
                 <button
                   key={hw.id}
@@ -533,10 +534,10 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
               <span className={`inline-block h-2 w-2 rounded-full ${loading ? 'bg-zion-gold' : poolStats ? 'bg-zion-cyan' : 'bg-gray-600'}`} />
               {loading
-                ? PoolCalculatorCopy.loadingPoolData[cs ? 'cs' : 'en']
+                ? tx5(PoolCalculatorCopy.loadingPoolData, lang)
                 : poolStats
-                ? cs ? `Pool: ${fmtHash(poolHashrate)} · ${poolStats.aggregate?.active_miners ?? 0} minerů` : `Pool: ${fmtHash(poolHashrate)} · ${poolStats.aggregate?.active_miners ?? 0} miners`
-                : PoolCalculatorCopy.poolDataUnavailableUsingDefaul[cs ? 'cs' : 'en']}
+                ? cs ? `Pool: ${fmtHash(poolHashrate)} · ${poolStats.aggregate?.active_miners ?? 0} minerů` : t5(`Pool: ${fmtHash(poolHashrate)} · ${poolStats.aggregate?.active_miners ?? 0} miners`, lang)
+                : tx5(PoolCalculatorCopy.poolDataUnavailableUsingDefaul, lang)}
             </div>
           </div>
         </motion.section>
@@ -550,7 +551,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
         >
           <h2 className="flex items-center gap-2 text-xl font-semibold text-white">
             <Activity className="h-5 w-5 text-zion-purple" />
-            {PoolCalculatorCopy.resultsDashboard[cs ? 'cs' : 'en']}
+            {tx5(PoolCalculatorCopy.resultsDashboard, lang)}
           </h2>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -558,7 +559,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <ResultCard
               style={purpleStyle}
               icon={<Coins className="h-4 w-4 text-zion-purple" />}
-              title={PoolCalculatorCopy.dailyRewards[cs ? 'cs' : 'en']}
+              title={tx5(PoolCalculatorCopy.dailyRewards, lang)}
               big={fmtZion(calc.myZionPerDay)}
               bigLabel="ZION/day"
               sub={fmtUsd(calc.myUsdPerDay)}
@@ -569,7 +570,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <ResultCard
               style={purpleStyle}
               icon={<Coins className="h-4 w-4 text-zion-purple" />}
-              title={PoolCalculatorCopy.monthlyRewards[cs ? 'cs' : 'en']}
+              title={tx5(PoolCalculatorCopy.monthlyRewards, lang)}
               big={fmtZion(calc.myZionPerMonth)}
               bigLabel="ZION/month"
               sub={fmtUsd(calc.myUsdPerMonth)}
@@ -580,7 +581,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <ResultCard
               style={purpleStyle}
               icon={<Coins className="h-4 w-4 text-zion-purple" />}
-              title={PoolCalculatorCopy.yearlyRewards[cs ? 'cs' : 'en']}
+              title={tx5(PoolCalculatorCopy.yearlyRewards, lang)}
               big={fmtZion(calc.myZionPerYear)}
               bigLabel="ZION/year"
               sub={fmtUsd(calc.myUsdPerYear)}
@@ -591,7 +592,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <ResultCard
               style={purpleStyle}
               icon={<Zap className="h-4 w-4 text-zion-gold" />}
-              title={PoolCalculatorCopy.electricityCost[cs ? 'cs' : 'en']}
+              title={tx5(PoolCalculatorCopy.electricityCost, lang)}
               big={fmtUsd(calc.electricityPerDay)}
               bigLabel="$/day"
               sub={`${fmtUsd(calc.electricityPerMonth)} / ${fmtUsd(calc.electricityPerYear)}`}
@@ -602,7 +603,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <ResultCard
               style={purpleStyle}
               icon={<DollarSign className="h-4 w-4 text-zion-cyan" />}
-              title={PoolCalculatorCopy.netProfit[cs ? 'cs' : 'en']}
+              title={tx5(PoolCalculatorCopy.netProfit, lang)}
               big={fmtUsd(calc.netProfitPerDay)}
               bigLabel="$/day"
               sub={`${fmtUsd(calc.netProfitPerMonth)} / ${fmtUsd(calc.netProfitPerYear)}`}
@@ -614,33 +615,33 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <ResultCard
               style={purpleStyle}
               icon={<TrendingUp className="h-4 w-4 text-zion-cyan" />}
-              title={PoolCalculatorCopy.roiBreakEven[cs ? 'cs' : 'en']}
+              title={tx5(PoolCalculatorCopy.roiBreakEven, lang)}
               big={breakEvenDay !== null ? `${fmtNum(breakEvenDay)} d` : '—'}
-              bigLabel={PoolCalculatorCopy.daysToBreakEven[cs ? 'cs' : 'en']}
-              sub={hardwareCost > 0 ? fmtUsd(hardwareCost) : PoolCalculatorCopy.enterHardwareCost[cs ? 'cs' : 'en']}
-              subLabel={PoolCalculatorCopy.investment[cs ? 'cs' : 'en']}
+              bigLabel={tx5(PoolCalculatorCopy.daysToBreakEven, lang)}
+              sub={hardwareCost > 0 ? fmtUsd(hardwareCost) : tx5(PoolCalculatorCopy.enterHardwareCost, lang)}
+              subLabel={tx5(PoolCalculatorCopy.investment, lang)}
             />
 
             {/* Pool share */}
             <ResultCard
               style={purpleStyle}
               icon={<Server className="h-4 w-4 text-zion-purple" />}
-              title={PoolCalculatorCopy.poolShare[cs ? 'cs' : 'en']}
+              title={tx5(PoolCalculatorCopy.poolShare, lang)}
               big={`${calc.mySharePct.toFixed(4)}%`}
-              bigLabel={PoolCalculatorCopy.ofPoolHashrate[cs ? 'cs' : 'en']}
+              bigLabel={tx5(PoolCalculatorCopy.ofPoolHashrate, lang)}
               sub={fmtHash(poolHashrate)}
-              subLabel={PoolCalculatorCopy.totalPool[cs ? 'cs' : 'en']}
+              subLabel={tx5(PoolCalculatorCopy.totalPool, lang)}
             />
 
             {/* Blocks per day */}
             <ResultCard
               style={purpleStyle}
               icon={<Activity className="h-4 w-4 text-zion-purple" />}
-              title={PoolCalculatorCopy.blocksPerDay[cs ? 'cs' : 'en']}
+              title={tx5(PoolCalculatorCopy.blocksPerDay, lang)}
               big={calc.myBlocksPerDay > 0 ? calc.myBlocksPerDay.toFixed(6) : '0'}
-              bigLabel={PoolCalculatorCopy.expectedBlocks[cs ? 'cs' : 'en']}
+              bigLabel={tx5(PoolCalculatorCopy.expectedBlocks, lang)}
               sub={`${calc.blocksPerDay}`}
-              subLabel={PoolCalculatorCopy.totalBlocksDay[cs ? 'cs' : 'en']}
+              subLabel={tx5(PoolCalculatorCopy.totalBlocksDay, lang)}
             />
           </div>
         </motion.section>
@@ -656,19 +657,19 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
           <div className="relative z-[1]">
             <h2 className="mb-5 flex items-center gap-2 text-lg font-semibold text-white">
               <Cpu className="h-5 w-5 text-zion-purple" />
-              {PoolCalculatorCopy.hardwareComparison[cs ? 'cs' : 'en']}
+              {tx5(PoolCalculatorCopy.hardwareComparison, lang)}
             </h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wider text-gray-400">
-                    <th className="py-3 pr-4">{PoolCalculatorCopy.hardware[cs ? 'cs' : 'en']}</th>
-                    <th className="py-3 pr-4">{PoolCalculatorCopy.hashrate[cs ? 'cs' : 'en']}</th>
-                    <th className="py-3 pr-4">{PoolCalculatorCopy.power[cs ? 'cs' : 'en']}</th>
+                    <th className="py-3 pr-4">{tx5(PoolCalculatorCopy.hardware, lang)}</th>
+                    <th className="py-3 pr-4">{tx5(PoolCalculatorCopy.hashrate, lang)}</th>
+                    <th className="py-3 pr-4">{tx5(PoolCalculatorCopy.power, lang)}</th>
                     <th className="py-3 pr-4">ZION/day</th>
                     <th className="py-3 pr-4">$/day</th>
                     <th className="py-3 pr-4">$/month</th>
-                    <th className="py-3 pr-4">{PoolCalculatorCopy.netProfitMonth[cs ? 'cs' : 'en']}</th>
+                    <th className="py-3 pr-4">{tx5(PoolCalculatorCopy.netProfitMonth, lang)}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -687,7 +688,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                             <span className={isSelected ? 'font-semibold text-white' : 'text-gray-200'}>{hw.label}</span>
                             {isSelected && (
                               <span className="rounded bg-zion-purple/20 px-1.5 py-0.5 text-[10px] font-medium text-zion-purple">
-                                {PoolCalculatorCopy.selected[cs ? 'cs' : 'en']}
+                                {tx5(PoolCalculatorCopy.selected, lang)}
                               </span>
                             )}
                           </div>
@@ -708,7 +709,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             </div>
             <p className="mt-3 flex items-start gap-1.5 text-xs text-gray-500">
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              {PoolCalculatorCopy.estimatesAreBasedOnCurrentPool[cs ? 'cs' : 'en']}
+              {tx5(PoolCalculatorCopy.estimatesAreBasedOnCurrentPool, lang)}
             </p>
           </div>
         </motion.section>
@@ -726,7 +727,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="flex items-center gap-2 text-base font-semibold text-white">
                   <TrendingUp className="h-4 w-4 text-zion-cyan" />
-                  {PoolCalculatorCopy.currentZionPrice[cs ? 'cs' : 'en']}
+                  {tx5(PoolCalculatorCopy.currentZionPrice, lang)}
                 </h3>
                 <span className="font-mono text-sm text-zion-cyan">${zionPrice.toFixed(6)}</span>
               </div>
@@ -735,21 +736,21 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                   ${zionPrice.toFixed(6)}
                 </span>
                 <span className="text-xs text-gray-500">
-                  {PoolCalculatorCopy.usdPer1ZionSpot[cs ? 'cs' : 'en']}
+                  {tx5(PoolCalculatorCopy.usdPer1ZionSpot, lang)}
                 </span>
                 {priceSource && (
                   <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] uppercase tracking-wider text-gray-500">
                     {priceSource === 'live'
-                      ? PoolCalculatorCopy.live[cs ? 'cs' : 'en']
+                      ? tx5(PoolCalculatorCopy.live, lang)
                       : priceSource === 'seed-uninitialized'
-                        ? PoolCalculatorCopy.seedPoolUninitialized[cs ? 'cs' : 'en']
+                        ? tx5(PoolCalculatorCopy.seedPoolUninitialized, lang)
                         : priceSource === 'seed-fallback'
-                          ? PoolCalculatorCopy.seedFallback[cs ? 'cs' : 'en']
+                          ? tx5(PoolCalculatorCopy.seedFallback, lang)
                           : priceSource}
                   </span>
                 )}
                 <p className="mt-1 max-w-xs text-center text-[11px] text-gray-600">
-                  {PoolCalculatorCopy.noHistoricalPriceSeriesAvailab[cs ? 'cs' : 'en']}
+                  {tx5(PoolCalculatorCopy.noHistoricalPriceSeriesAvailab, lang)}
                 </p>
               </div>
             </div>
@@ -761,18 +762,18 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="flex items-center gap-2 text-base font-semibold text-white">
                   <Activity className="h-4 w-4 text-zion-purple" />
-                  {PoolCalculatorCopy.profitabilityTimeline365d[cs ? 'cs' : 'en']}
+                  {tx5(PoolCalculatorCopy.profitabilityTimeline365d, lang)}
                 </h3>
                 {breakEvenDay !== null && (
                   <span className="rounded-full bg-zion-purple/20 px-2.5 py-1 text-xs text-zion-purple">
-                    {cs ? `Break-even: ${breakEvenDay}d` : `Break-even: ${breakEvenDay}d`}
+                    {cs ? `Break-even: ${breakEvenDay}d` : t5(`Break-even: ${breakEvenDay}d`, lang)}
                   </span>
                 )}
               </div>
               <ProfitTimeline points={timeline} />
               <div className="mt-3 flex justify-between text-xs text-gray-500">
-                <span>{PoolCalculatorCopy.day0[cs ? 'cs' : 'en']}</span>
-                <span>{PoolCalculatorCopy.day365[cs ? 'cs' : 'en']}</span>
+                <span>{tx5(PoolCalculatorCopy.day0, lang)}</span>
+                <span>{tx5(PoolCalculatorCopy.day365, lang)}</span>
               </div>
             </div>
           </div>
@@ -790,22 +791,22 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               <div className="relative z-[1] flex flex-col items-center gap-4 text-center">
                 <span className="zion-kicker">
                   <Sparkles className="h-3.5 w-3.5" />
-                  {PoolCalculatorCopy.readyToMine[cs ? 'cs' : 'en']}
+                  {tx5(PoolCalculatorCopy.readyToMine, lang)}
                 </span>
                 <h2 className="zion-section-title text-2xl md:text-4xl">
-                  {PoolCalculatorCopy.startMiningZionToday[cs ? 'cs' : 'en']}
+                  {tx5(PoolCalculatorCopy.startMiningZionToday, lang)}
                 </h2>
                 <p className="zion-section-sub mx-auto">
-                  {PoolCalculatorCopy.joinOurPplnsPoolWith89MinerSha[cs ? 'cs' : 'en']}
+                  {tx5(PoolCalculatorCopy.joinOurPplnsPoolWith89MinerSha, lang)}
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 pt-2">
                   <Link href="/pool#start-mining" className="zion-button-primary text-sm px-5 py-3">
                     <Zap className="h-4 w-4" />
-                    {PoolCalculatorCopy.startMining[cs ? 'cs' : 'en']}
+                    {tx5(PoolCalculatorCopy.startMining, lang)}
                   </Link>
                   <Link href="/pool" className="zion-button-secondary text-sm px-5 py-3">
                     <Server className="h-4 w-4" />
-                    {PoolCalculatorCopy.viewPoolStats[cs ? 'cs' : 'en']}
+                    {tx5(PoolCalculatorCopy.viewPoolStats, lang)}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>

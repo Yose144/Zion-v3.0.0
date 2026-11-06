@@ -22,7 +22,8 @@ import {
   Trophy,
   Zap,
 } from "lucide-react";
-import { useLang } from "@/contexts/LanguageContext";
+import { useLang, type Lang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 
 const PoolBlocksCopy = {
@@ -196,13 +197,14 @@ function fmtDifficulty(d?: number): string {
   return String(d);
 }
 
-function timeAgo(ts: number, cs = false): string {
+function timeAgo(ts: number, lang: Lang): string {
   const now = Math.floor(Date.now() / 1000);
   const diff = now - ts;
-  if (diff < 60) return cs ? `před ${diff} s` : `${diff}s ago`;
-  if (diff < 3600) return cs ? `před ${Math.floor(diff / 60)} min` : `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return cs ? `před ${Math.floor(diff / 3600)} h` : `${Math.floor(diff / 3600)}h ago`;
-  return cs ? `před ${Math.floor(diff / 86400)} d` : `${Math.floor(diff / 86400)}d ago`;
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'always', style: 'narrow' });
+  if (diff < 60) return rtf.format(-diff, 'second');
+  if (diff < 3600) return rtf.format(-Math.floor(diff / 60), 'minute');
+  if (diff < 86400) return rtf.format(-Math.floor(diff / 3600), 'hour');
+  return rtf.format(-Math.floor(diff / 86400), 'day');
 }
 
 function atomicToZion(atomic: number): string {
@@ -214,16 +216,16 @@ function shortAddr(addr: string): string {
   return `${addr.slice(0, 12)}…${addr.slice(-8)}`;
 }
 
-function fmtDuration(seconds: number, cs = false): string {
+function fmtDuration(seconds: number): string {
   if (!seconds || seconds <= 0) return "—";
   const d = Math.floor(seconds / 86400);
   const h = Math.floor((seconds % 86400) / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
-  if (d > 0) return cs ? `${d}d ${h}h ${m}m` : `${d}d ${h}h ${m}m`;
-  if (h > 0) return cs ? `${h}h ${m}m ${s}s` : `${h}h ${m}m ${s}s`;
-  if (m > 0) return cs ? `${m}m ${s}s` : `${m}m ${s}s`;
-  return cs ? `${s}s` : `${s}s`;
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
 }
 
 function fmtDate(ts: number): string {
@@ -315,11 +317,11 @@ function StatCard({
 /* ═══════════════════════ INSUFFICIENT DATA PLACEHOLDER ═══════════════════════ */
 function InsufficientData({
   height = 220,
-  cs = false,
+  lang,
   hashrate = false,
 }: {
   height?: number;
-  cs?: boolean;
+  lang: Lang;
   hashrate?: boolean;
 }) {
   return (
@@ -329,22 +331,22 @@ function InsufficientData({
     >
       <p className="text-sm text-gray-400">
         {hashrate
-          ? PoolBlocksCopy.historicalHashrateDataUnavaila[cs ? 'cs' : 'en']
-          : PoolBlocksCopy.insufficientHistoricalData[cs ? 'cs' : 'en']}
+          ? tx5(PoolBlocksCopy.historicalHashrateDataUnavaila, lang)
+          : tx5(PoolBlocksCopy.insufficientHistoricalData, lang)}
       </p>
       <p className="text-xs text-gray-600">
         {hashrate
-          ? PoolBlocksCopy.chartWillPopulateAsMoreBlocksA[cs ? 'cs' : 'en']
-          : PoolBlocksCopy.chartsWillPopulateAsMoreBlocks[cs ? 'cs' : 'en']}
+          ? tx5(PoolBlocksCopy.chartWillPopulateAsMoreBlocksA, lang)
+          : tx5(PoolBlocksCopy.chartsWillPopulateAsMoreBlocks, lang)}
       </p>
     </div>
   );
 }
 
 /* ═══════════════════════ DISCOVERY AREA CHART ═══════════════════════ */
-function DiscoveryChart({ data, height = 220, cs = false }: { data: DayBucket[]; height?: number; cs?: boolean }) {
+function DiscoveryChart({ data, height = 220, cs = false, lang }: { data: DayBucket[]; height?: number; cs?: boolean; lang: Lang }) {
   if (data.length < 2) {
-    return <InsufficientData height={height} cs={cs} />;
+    return <InsufficientData height={height} lang={lang} />;
   }
   const values = data.map((d) => d.blocks);
   const max = Math.max(...values, 1);
@@ -411,9 +413,9 @@ function DiscoveryChart({ data, height = 220, cs = false }: { data: DayBucket[];
 }
 
 /* ═══════════════════════ LUCK TREND CHART ═══════════════════════ */
-function LuckChart({ data, height = 220, cs = false }: { data: DayBucket[]; height?: number; cs?: boolean }) {
+function LuckChart({ data, height = 220, cs = false, lang }: { data: DayBucket[]; height?: number; cs?: boolean; lang: Lang }) {
   if (data.length < 2) {
-    return <InsufficientData height={height} cs={cs} />;
+    return <InsufficientData height={height} lang={lang} />;
   }
   // Cumulative luck
   let cumFound = 0;
@@ -492,9 +494,9 @@ function LuckChart({ data, height = 220, cs = false }: { data: DayBucket[]; heig
 }
 
 /* ═══════════════════════ REWARD BAR CHART ═══════════════════════ */
-function RewardChart({ data, height = 220, cs = false }: { data: DayBucket[]; height?: number; cs?: boolean }) {
+function RewardChart({ data, height = 220, cs = false, lang }: { data: DayBucket[]; height?: number; cs?: boolean; lang: Lang }) {
   if (data.length < 2) {
-    return <InsufficientData height={height} cs={cs} />;
+    return <InsufficientData height={height} lang={lang} />;
   }
   const values = data.map((d) => d.rewards / 1e6); // ZION
   const max = Math.max(...values, 1);
@@ -551,13 +553,13 @@ function RewardChart({ data, height = 220, cs = false }: { data: DayBucket[]; he
 }
 
 /* ═══════════════════════ DUAL-LINE HASHRATE CHART ═══════════════════════ */
-function HashrateTimeline({ data, height = 240, cs = false }: { data: DayBucket[]; height?: number; cs?: boolean }) {
+function HashrateTimeline({ data, height = 240, cs = false, lang }: { data: DayBucket[]; height?: number; cs?: boolean; lang: Lang }) {
   // The API only exposes the current hashrate snapshot, not a historical
   // series. Without per-day historical hashrate we cannot draw a real
   // timeline, so show an honest placeholder instead of fake/flat data.
   const hasHashData = data.some((d) => d.poolHashrate > 0 || d.networkHashrate > 0);
   if (data.length < 2 || !hasHashData) {
-    return <InsufficientData height={height} cs={cs} hashrate />;
+    return <InsufficientData height={height} lang={lang} hashrate />;
   }
   const pool = data.map((d) => d.poolHashrate);
   const net = data.map((d) => d.networkHashrate);
@@ -765,13 +767,13 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-1">
-                      {PoolBlocksCopy.miningPoolHistory[cs ? 'cs' : 'en']}
+                      {tx5(PoolBlocksCopy.miningPoolHistory, lang)}
                     </p>
                     <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
-                      {PoolBlocksCopy.poolBlocksHistory[cs ? 'cs' : 'en']}
+                      {tx5(PoolBlocksCopy.poolBlocksHistory, lang)}
                     </h1>
                     <p className="text-sm text-gray-400 mt-2 max-w-xl">
-                      {PoolBlocksCopy.historicalBlockDiscoveryChartL[cs ? 'cs' : 'en']}
+                      {tx5(PoolBlocksCopy.historicalBlockDiscoveryChartL, lang)}
                     </p>
                   </div>
                 </div>
@@ -780,7 +782,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] text-sm text-gray-300 hover:text-white hover:border-white/20 transition-colors flex-shrink-0"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  {PoolBlocksCopy.backToDashboard[cs ? 'cs' : 'en']}
+                  {tx5(PoolBlocksCopy.backToDashboard, lang)}
                 </Link>
               </div>
             </div>
@@ -793,7 +795,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs uppercase tracking-wider text-gray-500 mr-2">
-                  {PoolBlocksCopy.timeRange[cs ? 'cs' : 'en']}
+                  {tx5(PoolBlocksCopy.timeRange, lang)}
                 </span>
                 {rangeOptions.map((opt) => (
                   <button
@@ -813,7 +815,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                 {loading && <Loader2 className="h-4 w-4 text-gray-500 animate-spin" />}
                 {error && (
                   <span className="text-xs text-zion-purple">
-                    {PoolBlocksCopy.loadError[cs ? 'cs' : 'en']}: {error}
+                    {tx5(PoolBlocksCopy.loadError, lang)}: {error}
                   </span>
                 )}
                 <button
@@ -824,7 +826,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                   className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-xs text-gray-300 hover:text-white hover:border-white/20 transition-colors"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
-                  {PoolBlocksCopy.refresh[cs ? 'cs' : 'en']}
+                  {tx5(PoolBlocksCopy.refresh, lang)}
                 </button>
               </div>
             </div>
@@ -834,53 +836,53 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
         {/* ═══════ C. STATS SUMMARY ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
           <div className="flex flex-col gap-2 mb-5">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolBlocksCopy.summary[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolBlocksCopy.summary, lang)}</p>
             <h2 className="text-2xl font-semibold text-white flex items-center gap-3">
               <Layers className="h-6 w-6 text-zion-gold" />
-              {PoolBlocksCopy.periodStatistics[cs ? 'cs' : 'en']}
+              {tx5(PoolBlocksCopy.periodStatistics, lang)}
             </h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <StatCard
               icon={<Blocks className="h-5 w-5 text-white" />}
-              label={PoolBlocksCopy.totalBlocks[cs ? 'cs' : 'en']}
+              label={tx5(PoolBlocksCopy.totalBlocks, lang)}
               value={fmtNum(stats.totalBlocks)}
-              sub={cs ? `za ${days} dní` : `over ${days} days`}
+              sub={cs ? `za ${days} dní` : t5(`over ${days} days`, lang)}
               accent="purple"
             />
             <StatCard
               icon={<Clock className="h-5 w-5 text-white" />}
-              label={PoolBlocksCopy.avgBlockTime[cs ? 'cs' : 'en']}
-              value={fmtDuration(stats.avgBlockTime, cs)}
-              sub={PoolBlocksCopy.betweenBlocks[cs ? 'cs' : 'en']}
+              label={tx5(PoolBlocksCopy.avgBlockTime, lang)}
+              value={fmtDuration(stats.avgBlockTime)}
+              sub={tx5(PoolBlocksCopy.betweenBlocks, lang)}
               accent="cyan"
             />
             <StatCard
               icon={<Coins className="h-5 w-5 text-white" />}
-              label={PoolBlocksCopy.avgReward[cs ? 'cs' : 'en']}
+              label={tx5(PoolBlocksCopy.avgReward, lang)}
               value={`${atomicToZion(stats.avgReward)} ZION`}
-              sub={PoolBlocksCopy.perBlock[cs ? 'cs' : 'en']}
+              sub={tx5(PoolBlocksCopy.perBlock, lang)}
               accent="emerald"
             />
             <StatCard
               icon={<Trophy className="h-5 w-5 text-white" />}
-              label={PoolBlocksCopy.bestStreak[cs ? 'cs' : 'en']}
-              value={`${stats.bestStreak} ${PoolBlocksCopy.days[cs ? 'cs' : 'en']}`}
-              sub={PoolBlocksCopy.consecutive[cs ? 'cs' : 'en']}
+              label={tx5(PoolBlocksCopy.bestStreak, lang)}
+              value={`${stats.bestStreak} ${tx5(PoolBlocksCopy.days, lang)}`}
+              sub={tx5(PoolBlocksCopy.consecutive, lang)}
               accent="gold"
             />
             <StatCard
               icon={<TrendingUp className="h-5 w-5 text-white" />}
-              label={PoolBlocksCopy.luckIndex[cs ? 'cs' : 'en']}
+              label={tx5(PoolBlocksCopy.luckIndex, lang)}
               value={stats.luckIndex === null ? "—" : `${(stats.luckIndex * 100).toFixed(1)}%`}
-              sub={PoolBlocksCopy.foundExpected[cs ? 'cs' : 'en']}
+              sub={tx5(PoolBlocksCopy.foundExpected, lang)}
               accent={stats.luckIndex === null ? "purple" : stats.luckIndex >= 1 ? "emerald" : stats.luckIndex >= 0.8 ? "amber" : "rose"}
             />
             <StatCard
               icon={<Gift className="h-5 w-5 text-white" />}
-              label={PoolBlocksCopy.totalRewards[cs ? 'cs' : 'en']}
+              label={tx5(PoolBlocksCopy.totalRewards, lang)}
               value={`${atomicToZion(stats.totalRewards)} ZION`}
-              sub={PoolBlocksCopy.distributed[cs ? 'cs' : 'en']}
+              sub={tx5(PoolBlocksCopy.distributed, lang)}
               accent="purple"
             />
           </div>
@@ -889,105 +891,105 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
         {/* ═══════ D. BLOCK DISCOVERY CHART ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
           <div className="flex flex-col gap-2 mb-5">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolBlocksCopy.discovery[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolBlocksCopy.discovery, lang)}</p>
             <h2 className="text-2xl font-semibold text-white flex items-center gap-3">
               <Box className="h-6 w-6 text-zion-gold" />
-              {PoolBlocksCopy.blocksPerDay[cs ? 'cs' : 'en']}
+              {tx5(PoolBlocksCopy.blocksPerDay, lang)}
             </h2>
             <p className="text-sm text-gray-400">
-              {PoolBlocksCopy.numberOfBlocksDiscoveredByTheP[cs ? 'cs' : 'en']}
+              {tx5(PoolBlocksCopy.numberOfBlocksDiscoveredByTheP, lang)}
             </p>
           </div>
           <div className="zion-rainbow-card p-6" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
-            {hasEnough ? <DiscoveryChart data={buckets} cs={cs} /> : <InsufficientData height={220} cs={cs} />}
+            {hasEnough ? <DiscoveryChart data={buckets} cs={cs} lang={lang} /> : <InsufficientData height={220} lang={lang} />}
           </div>
         </motion.section>
 
         {/* ═══════ E. LUCK TREND CHART ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <div className="flex flex-col gap-2 mb-5">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolBlocksCopy.luck[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolBlocksCopy.luck, lang)}</p>
             <h2 className="text-2xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-6 w-6 text-zion-gold" />
-              {PoolBlocksCopy.luckTrend[cs ? 'cs' : 'en']}
+              {tx5(PoolBlocksCopy.luckTrend, lang)}
             </h2>
             <p className="text-sm text-gray-400">
-              {PoolBlocksCopy.cumulativeRatioOfFoundVsExpect[cs ? 'cs' : 'en']}
+              {tx5(PoolBlocksCopy.cumulativeRatioOfFoundVsExpect, lang)}
             </p>
           </div>
           <div className="zion-rainbow-card p-6" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
             <div className="flex items-center gap-4 mb-3 text-xs">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-zion-cyan" />
-                <span className="text-gray-400">{PoolBlocksCopy.lucky100[cs ? 'cs' : 'en']}</span>
+                <span className="text-gray-400">{tx5(PoolBlocksCopy.lucky100, lang)}</span>
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-zion-gold" />
-                <span className="text-gray-400">{PoolBlocksCopy.average80100[cs ? 'cs' : 'en']}</span>
+                <span className="text-gray-400">{tx5(PoolBlocksCopy.average80100, lang)}</span>
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-zion-purple" />
-                <span className="text-gray-400">{PoolBlocksCopy.unlucky80[cs ? 'cs' : 'en']}</span>
+                <span className="text-gray-400">{tx5(PoolBlocksCopy.unlucky80, lang)}</span>
               </span>
             </div>
-            {hasEnough ? <LuckChart data={buckets} cs={cs} /> : <InsufficientData height={220} cs={cs} />}
+            {hasEnough ? <LuckChart data={buckets} cs={cs} lang={lang} /> : <InsufficientData height={220} lang={lang} />}
           </div>
         </motion.section>
 
         {/* ═══════ F. REWARD HISTORY CHART ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
           <div className="flex flex-col gap-2 mb-5">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolBlocksCopy.rewards[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolBlocksCopy.rewards, lang)}</p>
             <h2 className="text-2xl font-semibold text-white flex items-center gap-3">
               <Coins className="h-6 w-6 text-zion-gold" />
-              {PoolBlocksCopy.rewardHistory[cs ? 'cs' : 'en']}
+              {tx5(PoolBlocksCopy.rewardHistory, lang)}
             </h2>
             <p className="text-sm text-gray-400">
-              {PoolBlocksCopy.totalZionRewardedEachDayOverTh[cs ? 'cs' : 'en']}
+              {tx5(PoolBlocksCopy.totalZionRewardedEachDayOverTh, lang)}
             </p>
           </div>
           <div className="zion-rainbow-card p-6" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
-            {hasEnough ? <RewardChart data={buckets} cs={cs} /> : <InsufficientData height={220} cs={cs} />}
+            {hasEnough ? <RewardChart data={buckets} cs={cs} lang={lang} /> : <InsufficientData height={220} lang={lang} />}
           </div>
         </motion.section>
 
         {/* ═══════ G. POOL VS NETWORK HASHRATE ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
           <div className="flex flex-col gap-2 mb-5">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolBlocksCopy.power[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolBlocksCopy.power, lang)}</p>
             <h2 className="text-2xl font-semibold text-white flex items-center gap-3">
               <Gauge className="h-6 w-6 text-zion-gold" />
-              {PoolBlocksCopy.poolVsNetworkHashrate[cs ? 'cs' : 'en']}
+              {tx5(PoolBlocksCopy.poolVsNetworkHashrate, lang)}
             </h2>
             <p className="text-sm text-gray-400">
-              {PoolBlocksCopy.timelineOfPoolHashratePurpleVs[cs ? 'cs' : 'en']}
+              {tx5(PoolBlocksCopy.timelineOfPoolHashratePurpleVs, lang)}
             </p>
           </div>
           <div className="zion-rainbow-card p-6" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
             <div className="flex items-center gap-4 mb-3 text-xs">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-zion-purple" />
-                <span className="text-gray-400">{PoolBlocksCopy.pool[cs ? 'cs' : 'en']}</span>
+                <span className="text-gray-400">{tx5(PoolBlocksCopy.pool, lang)}</span>
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-zion-cyan" />
-                <span className="text-gray-400">{PoolBlocksCopy.network[cs ? 'cs' : 'en']}</span>
+                <span className="text-gray-400">{tx5(PoolBlocksCopy.network, lang)}</span>
               </span>
             </div>
-            <HashrateTimeline data={buckets} cs={cs} />
+            <HashrateTimeline data={buckets} cs={cs} lang={lang} />
           </div>
         </motion.section>
 
         {/* ═══════ H. DETAILED BLOCKS TABLE ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolBlocksCopy.ledger[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolBlocksCopy.ledger, lang)}</p>
             <h2 className="text-2xl font-semibold text-white flex items-center gap-3">
               <Blocks className="h-6 w-6 text-zion-gold" />
-              {PoolBlocksCopy.detailedBlocksTable[cs ? 'cs' : 'en']} ({fmtNum(realBlocks.length)})
+              {tx5(PoolBlocksCopy.detailedBlocksTable, lang)} ({fmtNum(realBlocks.length)})
             </h2>
             <p className="text-sm text-gray-400">
-              {PoolBlocksCopy.realBlocksDiscoveredByThePoolI[cs ? 'cs' : 'en']}
+              {tx5(PoolBlocksCopy.realBlocksDiscoveredByThePoolI, lang)}
             </p>
           </div>
 
@@ -997,22 +999,22 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                 <thead>
                   <tr className="border-b border-white/[0.08]">
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">
-                      {PoolBlocksCopy.height[cs ? 'cs' : 'en']}
+                      {tx5(PoolBlocksCopy.height, lang)}
                     </th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">
-                      {PoolBlocksCopy.time[cs ? 'cs' : 'en']}
+                      {tx5(PoolBlocksCopy.time, lang)}
                     </th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">
-                      {PoolBlocksCopy.difficulty[cs ? 'cs' : 'en']}
+                      {tx5(PoolBlocksCopy.difficulty, lang)}
                     </th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">
-                      {PoolBlocksCopy.reward[cs ? 'cs' : 'en']}
+                      {tx5(PoolBlocksCopy.reward, lang)}
                     </th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">
                       Miner
                     </th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">
-                      {PoolBlocksCopy.poolLuck[cs ? 'cs' : 'en']}
+                      {tx5(PoolBlocksCopy.poolLuck, lang)}
                     </th>
                   </tr>
                 </thead>
@@ -1039,7 +1041,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                         </td>
                         <td className="px-5 py-3.5 text-gray-500 text-xs">
                           <div>{fmtDateTime(b.timestamp)}</div>
-                          <div className="text-gray-600">{timeAgo(b.timestamp, cs)}</div>
+                          <div className="text-gray-600">{timeAgo(b.timestamp, lang)}</div>
                         </td>
                         <td className="px-5 py-3.5 text-gray-400 font-mono text-xs">
                           {b.difficulty > 0 ? fmtDifficulty(b.difficulty) : "—"}
@@ -1070,7 +1072,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                   {realBlocks.length === 0 && (
                     <tr>
                       <td colSpan={6} className="px-5 py-10 text-center text-gray-500">
-                        {PoolBlocksCopy.noBlocksInThisPeriod[cs ? 'cs' : 'en']}
+                        {tx5(PoolBlocksCopy.noBlocksInThisPeriod, lang)}
                       </td>
                     </tr>
                   )}
@@ -1080,15 +1082,13 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
             {visibleCount < realBlocks.length && (
               <div className="px-5 py-4 border-t border-white/[0.06] flex items-center justify-between">
                 <span className="text-xs text-gray-500">
-                  {cs
-                    ? `Zobrazeno ${visibleCount} z ${fmtNum(realBlocks.length)}`
-                    : `Showing ${visibleCount} of ${fmtNum(realBlocks.length)}`}
+                  {cs ? `Zobrazeno ${visibleCount} z ${fmtNum(realBlocks.length)}` : t5(`Showing ${visibleCount} of ${fmtNum(realBlocks.length)}`, lang)}
                 </span>
                 <button
                   onClick={() => setVisibleCount((c) => c + 25)}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/[0.03] text-xs text-gray-300 hover:text-white hover:border-white/20 transition-colors"
                 >
-                  {PoolBlocksCopy.loadMore[cs ? 'cs' : 'en']}
+                  {tx5(PoolBlocksCopy.loadMore, lang)}
                   <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -1106,10 +1106,10 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-white">
-                      {PoolBlocksCopy.startMiningOrExploreTheChain[cs ? 'cs' : 'en']}
+                      {tx5(PoolBlocksCopy.startMiningOrExploreTheChain, lang)}
                     </h3>
                     <p className="text-sm text-gray-400 mt-1">
-                      {PoolBlocksCopy.joinThePoolAndMineZionOrExplor[cs ? 'cs' : 'en']}
+                      {tx5(PoolBlocksCopy.joinThePoolAndMineZionOrExplor, lang)}
                     </p>
                   </div>
                 </div>
@@ -1119,13 +1119,13 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                     className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-linear-to-br from-zion-purple/80 to-zion-purple/80 text-sm font-medium text-white hover:opacity-90 transition-opacity"
                   >
                     <ArrowLeft className="h-4 w-4" />
-                    {PoolBlocksCopy.poolDashboard[cs ? 'cs' : 'en']}
+                    {tx5(PoolBlocksCopy.poolDashboard, lang)}
                   </Link>
                   <Link
                     href="/explorer"
                     className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] text-sm text-gray-300 hover:text-white hover:border-white/20 transition-colors"
                   >
-                    {PoolBlocksCopy.blockchainExplorer[cs ? 'cs' : 'en']}
+                    {tx5(PoolBlocksCopy.blockchainExplorer, lang)}
                     <ExternalLink className="h-4 w-4" />
                   </Link>
                 </div>
