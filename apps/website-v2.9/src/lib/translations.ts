@@ -1,4 +1,5 @@
 import type { Lang } from '@/contexts/LanguageContext';
+import { overrideFor } from './translations-langs';
 
 const t = {
   /* ─── Navigation ─── */
@@ -684,7 +685,9 @@ export function tr<
   const sectionObj = (t as unknown as Record<string, Record<string, { cs: string; en: string }>>)[String(section)];
   const entry = sectionObj?.[String(key)];
   if (!entry) return `${String(section)}.${String(key)}`;
-  // es/pt/fr zatím nemají vlastní texty → EN fallback (a pak cs), nikdy prázdno.
+  // es/pt/fr: nejdřív částečné překlady (translations-langs.ts), pak EN, pak cs.
+  const override = overrideFor(lang, String(section), String(key));
+  if (override) return override;
   return (entry as unknown as Record<string, string | undefined>)[lang] ?? entry.en ?? entry.cs;
 }
 
