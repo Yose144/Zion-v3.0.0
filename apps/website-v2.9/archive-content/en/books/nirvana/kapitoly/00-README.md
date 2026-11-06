@@ -49,6 +49,7 @@ Each episode follows the rule of absolute honesty: **a beautiful archetypal stor
 | 10 | [Springs of Life](./10-Prameny-Zivota.md) | **Free World** · *L5 Planetary Ecology* | 5% of every block dedicated to clean water, reforestation, seed banks, and community microgrids. |
 | 11 | [Quantum Fire Issobella](./11-Kvantovy-Ohen-Issobella.md) | **Warp Engine** · *L6 Deep Science* | 5% science stream, Alcubierre-Ekam metric, harmonic $\Phi$ resonances, and open DeSci repository. |
 | 12 | [The Grand Unification](./12-Velke-Sjednoceni.md) | **Grand Unification** · *Amenti Mission* | Unification of all six layers, return of global attention to creation, launch postponed (TBD). |
+| 13 | [Tres Marías](./13-Tres-Marias.md) | **Fleet of the Way** · *L5 — the eighth point as a line* | Three hulls for three oceans; Santa María la Mayor, Nossa Senhora de Fátima, María de las Nieves — a path that does not end at the sea. *(An addition made after the twelve stations were closed — the L5 vision grew the fleet later.)* |
 
 ---
 
@@ -58,7 +59,9 @@ Readers who want to go beyond this book's concept and horizon into the full cosm
 
 Readers who want to descend from episode 10 (*Springs of Life*) all the way to the soil — to the five physical L5 gardens (Genesis Garden, Dharma Temple / New Bodhi Gaia, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka), their shared protocols, onboarding and a full truth anchor — should continue into [`BodhiGaia/` — The Book of Earth](../BodhiGaia/00-README_EN.md) (DRAFT for 3.3).
 
-Readers who want to follow the whole path as one story — from the child at the bow (episode 1) through the gardens of Earth and the tree above the Earth to the gate where a priestess stands with a lantern — should continue into [`Lumi/` — The Way Home](../Lumi/00-README.md) (DRAFT for 3.3; Czech only for now): a unification of Nirvana, Bodhi Gaia and Issobella around the girl Lumi / Elizabeth.
+Readers who want to follow the whole path as one story — from the child at the bow (episode 1) through the gardens of Earth and the tree above the Earth to the gate where a priestess stands with a lantern — should continue into [`Lumi/` — The Way Home](../Lumi/00-README.md) (DRAFT for 3.3; **CZ + EN**): a unification of Nirvana, Bodhi Gaia and Issobella around the girl Lumi / Elizabeth.
+
+Readers who want to step out of episode 11 (*Quantum Fire Issobella*) all the way to orbit — the architecture of the station, artificial gravity, human factors, the inheritance of stations, the fund and the promise, the watcher at the edge and the complete anchor of truth — should continue into [`Issobella/` — The Book of the Sky](../Issobella/00-README.md) (DRAFT for 3.3).
 
 ---
 

@@ -3,6 +3,7 @@
 > **Verze:** 3.0 · **Datum:** 2026-11-06 · **Vlastník:** 👤
 > **Stav:** 189 / 189 překladatelných kapitol (**100 %**) — archiv je přeložený celý, 2026-11-06
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md`](docs/3.2/REPORTS/REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md)
+> **Předání pro další session:** [`docs/3.2/REPORTS/HANDOVER_2026-11-06_ARCHIVE_NEXT.md`](docs/3.2/REPORTS/HANDOVER_2026-11-06_ARCHIVE_NEXT.md) — co zbývá po dokončení překladu (parita CZ⇄EN, redakce, kulturní review, deploy)
 > **Kód:** `apps/website-v2.9` · **Plán archivu:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](docs/plans/ZION-ARCHIVE-COMPLETION.md)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md`](docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md)
 
