@@ -1,7 +1,7 @@
 # TRANSLATION PLAN — Zion Archive (CZ → EN)
 
-> **Verze:** 2.1 · **Datum:** 2026-11-06 · **Vlastník:** 👤
-> **Stav:** 159 / 189 překladatelných kapitol (**84,1 %**), zbývá **30 kapitol** (~0,36 MB zdroje)
+> **Verze:** 2.2 · **Datum:** 2026-11-06 · **Vlastník:** 👤
+> **Stav:** 176 / 189 překladatelných kapitol (**93,1 %**), zbývá **13 kapitol** (~0,18 MB zdroje)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md`](docs/3.2/REPORTS/REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md)
 > **Kód:** `apps/website-v2.9` · **Plán archivu:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](docs/plans/ZION-ARCHIVE-COMPLETION.md)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md`](docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md)
@@ -61,9 +61,9 @@ vlastní ENindex mimo kapitoly.
 | Na Cestě | 2 | **2** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Issobella | 11 | **11** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Nabukano | 7 | **7** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
-| Kruh Bohyní | 17 | 0 | **17** | |
+| Kruh Bohyní | 17 | **17** | 0 | **dokončeno 2026-11-06** (CZ + EN) |
 | Mise Amenti | 8 | **8** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
-| **CELKEM** | **189** | **159** | **30** | ~0,36 MB zdroje |
+| **CELKEM** | **189** | **176** | **13** | ~0,18 MB zdroje |
 
 Stav kdykoli zjistíš:
 
@@ -158,8 +158,17 @@ G8 2026-08-23 → 2026-09-22, T0+18 let, dead man's switch 5 let.
 **Pozor:** v kap. 12 je bash blok — přeložený jen placeholder (`--wallet zion1...your_address`,
 `--worker my-first-machine`), jinak opsán doslova.
 
-### Kruh Bohyní — 17
-`00-LODE-A-LUCERNA` (8k) · `00-OUTLINE` (9k) · `00-PROLOG` (8k) · `01-Dcera-Hliny` (9k) · `02-Strazkyne-Ohne-a-Ticha` (9k) · `03-Dcera-Laguny` (6k) · `04-Strazkyne-Kruhu` (6k) · `05-Strazkyne-Stromu` (6k) · `06-Seste-Sedadlo` (7k) · `07-Ta-Ktera-Drzi-Nebe` (6k) · `08-Studna-Ktera-Prsi` (6k) · `09-Tri-Klice` (5k) · `10-Jak-Se-Kruh-Drzi` (5k) · `11-Kdyz-Zena-Dojde-Cestu` (6k) · `12-Dvanact-Ohnu` (5k) · `13-Kotva-Pravdy` (4k) · `14-Epilog` (4k)
+### Kruh Bohyní — hotovo (17/17, 2026-11-06)
+Korpusová konvence (`korpus/KruhBohyni/<slug>_EN.md`), včetně tří front-matter souborů `00-*`,
+které tato kniha deklaruje jako kapitoly (audit je počítá do coverage). Kicker `CZ + EN`, karta bez `czOnly`.
+**Konvence jmen:** `Síta/Sítá → Sita`, `Rádha → Radha`, `Hina`, `Ana`, `Meriam`, `Hina od vody` →
+`Hina of the water`, `Ana od moře` → `Ana from the sea`, `Dcera Hlíny` → `the Daughter of Clay`,
+`Strážkyně Ohně a Ticha` → `the Keeper of Fire and Silence`, `Ta, Která Drží Nebe` → `She Who Holds the Sky`.
+**Statusy:** `ŽIVÉ → LIVE`, `STAVBA → BUILDING`, `HORIZONT → HORIZON`, `MÝTUS → MYTH`,
+`NEDOLOŽENO → UNSUBSTANTIATED`, `ZÁMĚR → INTENT`, `NÁVRH / FÁZE 0 → DRAFT / PHASE 0`.
+**Neměnit:** 144 000 bloků (timelock), 2,5 mld ZION (slot 6), 6×500M + rezerva 300M, 89/5/5/1,
+5 400,067 ZION, 144 mld strop, Sri Maha Bodhi 288 př. n. l. / 2 300 let, Bajada každých 5 let,
+48 h cooling, 5-of-7 guardians, 3-of-3 admin multisig, 1 ZION = 1 hlas, FPIC, UNDRIP.
 
 ### BodhiGaia — 13
 `01-Semeno-a-Sul` (8k) · `02-Tri-Stromy-Jedna-Zahrada` (10k) · `03-Zahrada-Genesis` (11k) · `04-Dharma-Temple-Nova-Bodhi-Gaia` (12k) · `05-Te-Piko-Ora` (13k) · `06-Protokoly-Zeme` (14k) · `07-Zahrada-v-Oasis-a-na-Webu` (13k) · `08-Cesta-Poutnika-Onboarding-L5` (13k) · `09-Kotva-Pravdy-a-Hranice` (**22k**) · `10-Golden-Republic-Bohemia` (18k) · `11-Bodhi-Lanka` (**22k**) · `12-Ruze-v-Zahrade-Genesis` (8k) · `13-Nova-Amerika` (11k)
@@ -284,10 +293,10 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 | **T9** | Quantum Revolution ✅ | 1 | hotovo 2026-11-05 |
 | **T10** | Miriam ✅ | 13 | hotovo 2026-11-05 |
 | **T11** | Lumi ✅ | 13 | hotovo 2026-11-06 |
-| **T12** | Kruh Bohyní | 17 | 5 |
+| **T12** | Kruh Bohyní ✅ | 17 | hotovo 2026-11-06 |
 | **T13** | BodhiGaia | 13 | 5 (největší objem) |
 
-**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **8–13 session-dávek** na zbývajících 30
+**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **4–5 session-dávek** na zbývajících 13
 kapitol. Po každé knize: report + commit + push.
 
 **Alternativní pořadí podle priority 👤:** pokud má být první „hlavní osa“ (Ekam, Quantum
