@@ -6,12 +6,16 @@
  * that a translation must preserve: relative link set, heading count, table rows,
  * code fences and size ratio. Flags stubs and structural drift.
  *
+ * Second pass: the whole English corpus is scanned for ad-hoc translations of the
+ * canonical claim-state labels (`MiseAmenti/01-Kanon-a-Ustava.md` defines
+ * LIVE / BUILDING / HORIZON / HYPOTHESIS / MYTH) and for untranslated Czech labels.
+ *
  * Usage:
  *   node scripts/check-archive-parity.mjs            # summary
  *   node scripts/check-archive-parity.mjs --verbose  # per-file problems
  *   node scripts/check-archive-parity.mjs --json     # machine readable
  *
- * Exit code 1 when any file drifts (link set, headings, tables, stubs).
+ * Exit code 1 when any file drifts (link set, headings, tables, stubs, labels).
  */
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, dirname, basename, relative } from 'node:path';
@@ -93,6 +97,7 @@ function pairs() {
 
 const rows = [];
 let problems = 0;
+let labelProblems = 0;
 
 for (const [czFile, enFile] of pairs()) {
   const cz = stats(czFile);
@@ -122,9 +127,47 @@ for (const [czFile, enFile] of pairs()) {
   });
 }
 
+/**
+ * Canonical English claim-state labels are defined once, in
+ * `korpus/MiseAmenti/01-Kanon-a-Ustava.md`: LIVE / BUILDING / HORIZON /
+ * HYPOTHESIS / MYTH (plus the derived UNSUBSTANTIATED, INVALID CLAIM, INTENT and
+ * DRAFT / PHASE 0). Earlier drafts translated STAVBA ad hoc; Czech labels must
+ * never survive into an English file.
+ */
+const BANNED_LABELS = [
+  ['UNDER CONSTRUCTION', 'BUILDING'],
+  ['IN CONSTRUCTION', 'BUILDING'],
+  ['UNDER BUILD', 'BUILDING'],
+  ['ŽIVÉ', 'LIVE'],
+  ['STAVBA', 'BUILDING'],
+  ['HORIZONT', 'HORIZON'],
+  ['HYPOTÉZA', 'HYPOTHESIS'],
+  ['MÝTUS', 'MYTH'],
+  ['NEDOLOŽENO', 'UNSUBSTANTIATED'],
+  ['ZÁMĚR', 'INTENT'],
+];
+
+const labelRows = [];
+for (const file of walk(CONTENT)) {
+  if (!file.endsWith('_EN.md')) continue;
+  const text = readFileSync(file, 'utf8');
+  const hits = [];
+  text.split('\n').forEach((line, i) => {
+    for (const [bad, good] of BANNED_LABELS) {
+      if (line.includes(bad)) hits.push({ line: i + 1, bad, good });
+    }
+  });
+  if (hits.length) {
+    labelProblems += hits.length;
+    labelRows.push({ file: relative(CONTENT, file), hits });
+  }
+}
+
 if (JSON_OUT) {
-  console.log(JSON.stringify({ pairs: rows.length, problems, rows }, null, 2));
-  process.exit(problems ? 1 : 0);
+  console.log(
+    JSON.stringify({ pairs: rows.length, problems, labelProblems, rows, labels: labelRows }, null, 2)
+  );
+  process.exit(problems || labelProblems ? 1 : 0);
 }
 
 console.log(`\nZION Archive — CZ ⇄ EN parity: ${rows.length} pairs, ${problems} with drift\n`);
@@ -139,5 +182,15 @@ if (VERBOSE || problems) {
   console.log('');
 }
 
+if (labelRows.length) {
+  console.log(`ZION Archive — claim-state labels: ${labelProblems} non-canonical occurrence(s)\n`);
+  for (const r of labelRows) {
+    console.log(`  ✗ ${r.file}`);
+    for (const h of r.hits) console.log(`      ${h.line}: "${h.bad}" → use "${h.good}"`);
+  }
+  console.log('');
+}
+
 if (!problems) console.log('  ✓ all pairs preserve links, headings, tables and code fences\n');
-process.exit(problems ? 1 : 0);
+if (!labelRows.length) console.log('  ✓ every English file uses the canonical claim-state labels\n');
+process.exit(problems || labelProblems ? 1 : 0);

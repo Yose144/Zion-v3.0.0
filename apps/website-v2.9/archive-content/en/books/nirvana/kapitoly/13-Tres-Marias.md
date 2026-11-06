@@ -45,7 +45,7 @@ The seven fixed nodes (Garden of Genesis, Dharma Temple / Nová Bodhi Gaia, Te P
 3. **The solar sail as protocol:** sail = solar cell. The intention is the same as with the 5% stream from each block — infrastructure that feeds itself on light, not on extraction.
 4. **An initiation route for Guardians:** the form of the route is a circumnavigation of the world — whoever is to hold the network's witness first passes through the water that binds the witness together.
 
-The status according to the corpus, honestly: hulls I and II are **UNDER CONSTRUCTION** — concept, route, five phases and the reserve are designed, no keel is laid. Hull III is **HORIZON** — a ship that is not yet. The apparitions on which the names stand are **MYTH** — an authorial layer on living traditions (Fátima 1917, the Bajada on La Palma, the basilica of the seafaring people in Pontevedra).
+The status according to the corpus, honestly: hulls I and II are **BUILDING** — concept, route, five phases and the reserve are designed, no keel is laid. Hull III is **HORIZON** — a ship that is not yet. The apparitions on which the names stand are **MYTH** — an authorial layer on living traditions (Fátima 1917, the Bajada on La Palma, the basilica of the seafaring people in Pontevedra).
 
 ---
 
@@ -56,7 +56,7 @@ The status according to the corpus, honestly: hulls I and II are **UNDER CONSTRU
 | Story element | What is verifiable |
 |---|---|
 | **Three hulls and their names** | The canon of the book [`MariaCaminho`](../MariaCaminho/00-README.md) (DRAFT proposed for canonization under class E); the working concept `docs/3.2/L5MariaDelCamino.md`. |
-| **Status of the hulls** | Honestly: I *Santa María la Mayor* and II *Nossa Senhora de Fátima* = UNDER CONSTRUCTION (designed phases, route, reserve); III *María de las Nieves* = HORIZON. |
+| **Status of the hulls** | Honestly: I *Santa María la Mayor* and II *Nossa Senhora de Fátima* = BUILDING (designed phases, route, reserve); III *María de las Nieves* = HORIZON. |
 | **The eighth point = a line** | The concept `L5MariaDelCamino.md` §1: the seven fixed nodes of Terra Nova become a network through circulation; the ship carries the path itself. The web page `/terranova/maria-del-camino` is LIVE; the physical fleet remains a horizon. |
 | **Sails of light** | A technical concept of solar sails (flex-PV ~60–200 kWp from sails + hydrogenerators) — working parameters, not a deployed technology. |
 | **Seven nodes on the shore** | [`BodhiGaia`](../BodhiGaia/00-README.md) — the five physical gardens of L5 + LUMI + Uluru (DRAFT for 3.3). |

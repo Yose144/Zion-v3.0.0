@@ -10,7 +10,7 @@
 `08-ZION-Nova-Civilizace.md` introduced three categories that this document honors across the entire hundred-year horizon:
 
 - **LIVE** — what can be verified today, on the running network.
-- **UNDER CONSTRUCTION** — what is actively being built and may change.
+- **BUILDING** — what is actively being built and may change.
 - **HORIZON** — a direction, not a promised product or date.
 
 The further forward this plan looks, the larger the share of text that is **HORIZON**. That is not a weakness of the document — it is **the only intellectually honest way** to write about a hundred years without pretending to a certainty no one can actually have. This plan **explicitly contains no predictions of price, yield, or a specific date of "success"** — it works exclusively with **infrastructural, generational, and civilizational milestones**.
@@ -32,7 +32,7 @@ This is the epoch we live in today. According to the *World Economic Forum Globa
 | Category | What happens in this epoch |
 |---|---|
 | **LIVE** (2026) | L1–L3 in production on Edge; ZIS identity; DAO governance runtime; L5/L6 fund trackers active; chain height 23,000+. |
-| **UNDER CONSTRUCTION** (through ~2035) | Full ZIS Passkey adoption; L2 multichain maturity (BTC/EVM/Solana); L3 Hiranyagarbha 2.4 Orchestration and 2.5 Amitābha/Amṛtabhoja; L4 OASIS on Unreal Engine with WebGPU preview. |
+| **BUILDING** (through ~2035) | Full ZIS Passkey adoption; L2 multichain maturity (BTC/EVM/Solana); L3 Hiranyagarbha 2.4 Orchestration and 2.5 Amitābha/Amṛtabhoja; L4 OASIS on Unreal Engine with WebGPU preview. |
 | **HORIZON** (through 2051) | The generation born between 2026–2040 (today's children and young adults) reaches adulthood and leadership roles in communities that have been building this network since its earliest years. L5 Free World reaches measurable impact on water and food security in its first pilot regions. |
 
 **What NirvanaCloud does not pretend in this epoch:** that ZION alone will solve the climate crisis, demographic imbalance, or AI governance. It offers **one verifiable tool among many that are needed** — not a messianic solution.
@@ -97,7 +97,7 @@ If the previous three epochs unfold as this plan hopes (not predicts), the follo
 | Element of the plan | What is verifiable today |
 |---|---|
 | Epoch I infrastructure | `StatusV3.md` — chain height, active services, ZIS, DAO, L5/L6 trackers |
-| Horizon of Epochs II–IV | Explicitly marked as **HORIZON**, not UNDER CONSTRUCTION or LIVE, per `08-ZION-Nova-Civilizace.md` |
+| Horizon of Epochs II–IV | Explicitly marked as **HORIZON**, not BUILDING or LIVE, per `08-ZION-Nova-Civilizace.md` |
 | Source of the demographic and risk framework | WEF *Global Risks Report 2024*; Global Challenges Foundation *Global Catastrophic Risks 2026*; The Millennium Project *State of the Future 20.0* |
 | Scientific research direction of L6 | `docs/TerraNova/BASE_FINAL/en/09-ISSOBELLA.md`; `V33_NIRVANA_MASTER_PLAN.md` §7 |
 | No price predictions | `08-Kotva-Pravdy-Eticke-Hranice.md` |

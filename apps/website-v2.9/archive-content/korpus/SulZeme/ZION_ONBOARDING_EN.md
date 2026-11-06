@@ -106,7 +106,7 @@ This can be checked today on the running network, in blocks, or in the repositor
 - **Open source MIT code** at `https://github.com/Zion-TerraNova/v3-Mainnet`.
 - **L2 on Base / EVM:** wZION, bridge, governance, treasury, staking, farm and atomic swap — addresses verifiable on Basescan.
 
-### Trunk — UNDER CONSTRUCTION
+### Trunk — BUILDING
 
 It works, but it is not finished; details change and the status must be verified against the current release:
 

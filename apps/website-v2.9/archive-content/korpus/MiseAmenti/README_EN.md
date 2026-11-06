@@ -52,7 +52,7 @@ Source documents remain in their original locations to prevent stale copies. Mis
 - **Global Assimilation** — exclusively **voluntary interoperability, open adoption, and cooperation**. Never cultural, political, economic, or personal coercion.
 - **Global Attention** — human attention and computation directed toward education, care, creation, and verifiable contribution; never dark patterns, addictive UX, or manipulation.
 - **Consciousness** — in narrative texts, a metaphor for attention, ethics, and coherence. No claim is made that software, models, or agents have demonstrable subjective consciousness or spiritual authority.
-- **LIVE / UNDER CONSTRUCTION / HORIZON / HYPOTHESIS / MYTH** — mandatory claim-state labels defined in [`01-Kanon-a-Ustava.md`](./01-Kanon-a-Ustava.md).
+- **LIVE / BUILDING / HORIZON / HYPOTHESIS / MYTH** — mandatory claim-state labels defined in [`01-Kanon-a-Ustava.md`](./01-Kanon-a-Ustava.md).
 
 ---
 
