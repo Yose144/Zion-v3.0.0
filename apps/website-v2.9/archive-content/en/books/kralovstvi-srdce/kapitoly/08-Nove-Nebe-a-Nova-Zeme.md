@@ -33,4 +33,4 @@ And in the middle of the harbour stood the carpenter — and his boat was no lon
 
 ---
 
-*But the story does not end in the harbour. In our time the boat has sailed out again — into the fleet.* → The Fleet Gathers
+*But the story does not end in the harbour. In our time the boat has sailed out again — into the fleet.* → [The Fleet Gathers](./09-Flotila-se-Schazi.md)

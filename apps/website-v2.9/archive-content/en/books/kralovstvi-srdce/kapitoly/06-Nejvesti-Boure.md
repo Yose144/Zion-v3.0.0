@@ -36,4 +36,4 @@ The boat sailed on. Death could never take it again — because it had passed th
 
 ---
 
-*And then the boat sailed out into the centuries — with crews that changed, and storms that remained.* → Navicella
+*And then the boat sailed out into the centuries — with crews that changed, and storms that remained.* → [Navicella](./07-Navicella.md)

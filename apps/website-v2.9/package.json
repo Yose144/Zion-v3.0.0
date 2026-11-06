@@ -9,6 +9,7 @@
     "prebuild": "node scripts/gen-doc-manifest.mjs && npm run build -w zion-wallet-sdk",
     "build": "next build --webpack",
     "check:links": "node scripts/check-doc-links.mjs",
+    "check:archive-parity": "node scripts/check-archive-parity.mjs",
     "analyze": "ANALYZE=true next build --webpack",
     "start": "next start",
     "lint": "eslint",

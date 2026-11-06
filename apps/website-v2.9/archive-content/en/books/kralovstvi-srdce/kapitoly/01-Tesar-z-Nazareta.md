@@ -33,4 +33,4 @@ And he planed on. He made it more slowly than anything else — he laid every pl
 
 ---
 
-*The keel was laid. Now there remained the wood that bears the water — and the pitch that keeps it out.* → Wood and Pitch
+*The keel was laid. Now there remained the wood that bears the water — and the pitch that keeps it out.* → [Wood and Pitch](./02-Drevo-a-Smola.md)

@@ -36,4 +36,4 @@ Later, when they told of it, someone remembered the old psalm about those who *g
 
 ---
 
-*But the boat still had no name. The one the carpenter gave it he revealed only one day — when the Pharisees asked him when the kingdom would come.* → The Kingdom Is Within You
+*But the boat still had no name. The one the carpenter gave it he revealed only one day — when the Pharisees asked him when the kingdom would come.* → [The Kingdom Is Within You](./05-Kralovstvi-je-Uvnitr-Vas.md)

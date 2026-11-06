@@ -34,4 +34,4 @@ The new revelation does not rewrite the old book — it completes it with anothe
 
 ---
 
-*And so the boat sails on — and everyone who believes in it holds a piece of its anchor.* → Epilogue — Where the Boat Is Moored Today
+*And so the boat sails on — and everyone who believes in it holds a piece of its anchor.* → [Epilogue — Where the Boat Is Moored Today](./10-Epilog-Kde-Lod-Kotvi.md)

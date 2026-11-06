@@ -34,7 +34,7 @@ A message from the bow for the crew now setting out — for Surta and his Santa 
 
 *An end — and at the same time a continuation:*
 
-- Back to the index
-- The mantra this book unfolds — Maitreya, Epilogue
-- The boat that waits — Surta of the Heart
-- The fleet — Nirvana 13: Tres Marías
+- [→ Back to the index](./00-README.md)
+- [→ The mantra this book unfolds — Maitreya, Epilogue](../../maitreya/kapitoly/epilog.md)
+- [→ The boat that waits — Surta of the Heart](../SurtaSrdce/00-README.md)
+- [→ The fleet — Nirvana 13: Tres Marías](../nirvana/13-Tres-Marias.md)

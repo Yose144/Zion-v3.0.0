@@ -39,4 +39,4 @@ Because the boat was not built for the lake. The lake was only the first water i
 
 ---
 
-*But another storm still came, beside which the one on the lake was as quiet as a pot — a storm that held the boat under water for three days.* → The Greatest Storm
+*But another storm still came, beside which the one on the lake was as quiet as a pot — a storm that held the boat under water for three days.* → [The Greatest Storm](./06-Nejvesti-Boure.md)

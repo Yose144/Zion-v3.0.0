@@ -35,4 +35,4 @@ And they left the nets and the little boats and went. The boat stayed on the wat
 
 ---
 
-*The boat sailed. And the lake that was smooth as stone in the morning could be as stormy as a heart by evening.* → The Storm on the Lake
+*The boat sailed. And the lake that was smooth as stone in the morning could be as stormy as a heart by evening.* → [The Storm on the Lake](./04-Boure-na-Jezere.md)

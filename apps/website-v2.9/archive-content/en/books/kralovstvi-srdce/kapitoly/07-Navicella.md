@@ -31,4 +31,4 @@ People called it different things — *navicella*, bark, ark, church. But on its
 
 ---
 
-*And then came the last book — the one that shows the end of the voyage: a sea of calm, a lake that no longer storms, and a shore where the boat is no longer needed.* → A New Heaven and a New Earth
+*And then came the last book — the one that shows the end of the voyage: a sea of calm, a lake that no longer storms, and a shore where the boat is no longer needed.* → [A New Heaven and a New Earth](./08-Nove-Nebe-a-Nova-Zeme.md)

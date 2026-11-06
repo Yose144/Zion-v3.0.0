@@ -36,4 +36,4 @@ In the old books that nobody in the workshop read and yet everyone knew, it stoo
 
 ---
 
-*The hull stood. Now it remained to lower it onto the water — onto the lake where the fishermen were hauling empty nets.* → The Boat on the Kinneret
+*The hull stood. Now it remained to lower it onto the water — onto the lake where the fishermen were hauling empty nets.* → [The Boat on the Kinneret](./03-Lod-na-Kinneret.md)
