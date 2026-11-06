@@ -91,7 +91,7 @@ export default function ShopProductCard({ product, onOpen }: ShopProductCardProp
           </span>
           {tokens > 0 && (
             <span className="inline-flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded text-rasta-gold">
-              <Coins className="w-3 h-3" /> {t('shop.tokens', { amount: tokens })}
+              <Coins className="w-3 h-3" /> {t('shop.tokens', { amount: tokens.toLocaleString('cs-CZ') })}
             </span>
           )}
         </div>
