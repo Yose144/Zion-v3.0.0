@@ -178,7 +178,7 @@ for (const spec of pages) {
       await page.waitForTimeout(3500);
 
       if (spec.control) {
-        const visible = await page.locator(spec.control).first().isVisible().catch(() => false);
+        const visible = await page.locator(spec.control).locator('.touch-key, button').first().isVisible().catch(() => false);
         controls = await page
           .locator(`${spec.control} button, ${spec.control} .arena-touch-stick, ${spec.control} .moba-touch-stick`)
           .count()

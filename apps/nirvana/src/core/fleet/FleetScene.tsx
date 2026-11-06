@@ -83,9 +83,15 @@ function hullMaterial() {
   });
 }
 
-/** Loď z marketu + trysky. `spec.engines` je v modelovém prostoru (nos = +Z). */
-function MarketShip({ spec, thrust }: { spec: ShipSpec; thrust: number }) {
-  const { scene } = useGLTF(spec.glb);
+/**
+ * Loď z marketu + trysky. `spec.engines` je v modelovém prostoru (nos = +Z).
+ *
+ * `lod` = použít zjednodušený model. Cizí lodě ho mají vždy (jsou od kamery
+ * dál a je jich v místnosti až pět), vlastní loď vždy plný — hráč na svůj
+ * trup kouká zblízka.
+ */
+function MarketShip({ spec, thrust, lod = false }: { spec: ShipSpec; thrust: number; lod?: boolean }) {
+  const { scene } = useGLTF(lod && spec.glbLod ? spec.glbLod : spec.glb);
   const model = useMemo(() => {
     const clone = scene.clone(true);
     clone.traverse((child) => {
@@ -326,7 +332,7 @@ function RemoteFleet({ remotes }: { remotes: React.MutableRefObject<RemotePilot[
           }}
         >
           <Suspense fallback={null}>
-            <MarketShip spec={shipById(slot.shipId)} thrust={0.35} />
+            <MarketShip spec={shipById(slot.shipId)} thrust={0.35} lod />
           </Suspense>
         </group>
       ))}
@@ -615,4 +621,9 @@ export function FleetCanvas(props: FleetCanvasProps) {
  * Modely se přednačítají hned při mountu scény: přepnutí lodi ve výběru by
  * jinak znamenalo půl sekundy prázdna ve chvíli, kdy hráč čeká akci.
  */
-for (const spec of SHIPS) useGLTF.preload(spec.glb);
+// Přednačtou se i LOD (612 kB celkem) — jinak by cizí loď při připojení
+// nejdřív půl sekundy chyběla a pak se objevila.
+for (const spec of SHIPS) {
+  useGLTF.preload(spec.glb);
+  useGLTF.preload(spec.glbLod);
+}

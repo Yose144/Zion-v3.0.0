@@ -8513,6 +8513,11 @@ a.game-hud-chip.is-lumi em {
   touch-action: none;
 }
 
+/* Globální .touch-key je absolute (aréna). Ve flotile má řadu skládat flex. */
+.fleet-touch .touch-key {
+  position: static;
+}
+
 .fleet-touch.is-left {
   left: 0.9rem;
 }
@@ -8539,7 +8544,7 @@ a.game-hud-chip.is-lumi em {
 }
 
 .fleet-touch .touch-key.is-wide {
-  min-height: 2.2rem;
+  min-height: 44px;
   border-radius: 0.55rem;
   font-size: 0.66rem;
   letter-spacing: 0.1em;

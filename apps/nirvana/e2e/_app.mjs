@@ -16,23 +16,22 @@ import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 
-export const ORACLE_PORT = 9099;
-
 /**
  * Stub archivního oracle — vrací „kód je platný" pro jakýkoli vstup.
- * Když už na portu něco sedí (z předchozího běhu), použije se to: opakovaný
- * audit nemá spadnout na `EADDRINUSE`.
+ *
+ * Port se bere **volný** (`listen(0)`), ne pevný 9099: na 9099 může běžet
+ * cizí služba (jiná session, skutečný oracle) a dřívější „reuse při
+ * EADDRINUSE" znamenal, že test mluvil s ní — dostal `{"valid": false}`
+ * a měřil ZAP bránu místo hry. Volný port tenhle hazard odstraní.
  */
 async function startOracle() {
   const server = createServer((request, response) => {
     response.writeHead(200, { 'content-type': 'application/json' });
     response.end(JSON.stringify({ valid: true }));
   });
-  const reused = await new Promise((done) => {
-    server.once('error', (error) => done(error.code === 'EADDRINUSE'));
-    server.listen(ORACLE_PORT, '127.0.0.1', () => done(false));
-  });
-  return { close: () => (!reused ? server.close() : undefined) };
+  await new Promise((done) => server.listen(0, '127.0.0.1', done));
+  const port = server.address().port;
+  return { port, close: () => server.close() };
 }
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
@@ -72,7 +71,7 @@ export async function ensureApp({ base = 'http://127.0.0.1:3010', repo = resolve
   const binary = resolve(repo, 'node_modules/.bin/next');
   const app = spawn(binary, ['start', '-p', '3010'], {
     cwd: resolve(repo, 'apps/nirvana'),
-    env: { ...process.env, ZION_RENDER_AUDIT: '1', ARCHIVE_VERIFY_URL: `http://127.0.0.1:${ORACLE_PORT}/verify` },
+    env: { ...process.env, ZION_RENDER_AUDIT: '1', ARCHIVE_VERIFY_URL: `http://127.0.0.1:${oracle.port}/verify` },
     stdio: 'ignore',
     detached: true,
   });

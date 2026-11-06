@@ -451,6 +451,40 @@ v net distu `dockConflict`; obě služby `active`. Rollback:
 
 ---
 
+## 6f. Výkon v plné místnosti → LOD podle měření
+
+Nejdřív se měřilo, pak se optimalizovalo (`apps/nirvana/e2e/fleet-load.mjs` — pět
+**Node WS klientů** v jedné místnosti, každý letí po vlastní kružnici, aby scéna opravdu
+kreslila šest lodí; jinak by stály na sobě a měřily jednu):
+
+| stav | draw calls | trojúhelníky | textury | fps |
+|---|---|---|---|---|
+| sólo (1 loď) | 93 | 42 376 | 4 | 60 |
+| plná místnost **před LOD** | 122 | **109 755** | 4 | 60 |
+| plná místnost **s LOD** | 116 | **62 848** | 4 | 60 |
+
+109 755 se sice vešlo pod strop 120 000, ale rezerva byla 10 k — na mobilu žádná. Proto:
+
+* konvertor umí **LOD** (`cluster_lod` — kvantizace mřížkou; quadrická dekurace na tenkých
+  destičkách končí na 65 %), výstup `models/fleet/lod/<id>.glb` = **25–34 % trojúhelníků**
+  (612 kB za všech 7),
+* `ships.ts` má `glbLod`, `MarketShip` bere `lod` — **cizí lodě jedou LOD, vlastní plná
+  kvalita** (hráč na svůj trup kouká zblízka),
+* LOD se přednačítá (612 kB), aby cizí loď při připojení nemizela.
+
+Výsledek: −43 % trojúhelníků v plné místnosti, fps beze změny, vzhled u vzdálených lodí
+nerozlišitelný (snímek `load-6-pilots.png`).
+
+**Past s testem:** zátěžový test nejdřív klikal na `.fleet-coop` za letu — přepínač je jen
+v hangáru, takže se nikdy nezapnul a test čekal na `id místnosti`, které nemohlo vzniknout.
+Musí se vrátit přes „Hangár".
+
+**Past s oracle stubem:** `e2e/_app.mjs` dřív používal pevný port 9099 a při `EADDRINUSE`
+se připojil k cizí službě — ta vracela `{"valid": false}`, takže test měřil ZAP bránu.
+Teď si stub bere **volný port** (`listen(0)`).
+
+---
+
 ## 7. Meze (co se nemá hlásit jako hotové)
 
 * **Multiplayer je hotový lokálně, ale nenasazený** — živá net služba je na protokolu 30,

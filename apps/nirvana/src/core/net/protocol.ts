@@ -543,7 +543,17 @@ export type ServerMessage =
           ghost?: boolean;
           /** Kolik světel tenhle letec dostal darem (L-6). */
           gifts?: number;
+          /**
+           * Kolik světel **sám** sebral (L-11). Slouží k rozdělení koop
+           * odměny podílem — obdoba PPLNS: kdo přinesl víc, dostane víc.
+           */
+          collected?: number;
         }[];
+        /**
+         * Vlastní souhrn (snapshot jinak sebe neposílá) — bez něj by klient
+         * nemohl spočítat svůj podíl na koop odměně.
+         */
+        you?: { collected: number };
       };
       /** Jen aréna: rakety ve vzduchu. */
       projectiles?: RocketView[];

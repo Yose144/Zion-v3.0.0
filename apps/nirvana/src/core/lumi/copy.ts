@@ -110,6 +110,7 @@ export const LUMI_COPY = {
   points: { cs: 'bodů', en: 'points', es: 'puntos' },
   given: { cs: 'darováno', en: 'given', es: 'regalado' },
   again: { cs: 'Znovu', en: 'Again', es: 'Otra vez' },
+  coopBonus: { cs: 'koop podíl', en: 'co-op share', es: 'parte coop' },
   backToUranus: { cs: 'zpět na Uran', en: 'back to Uranus', es: 'volver a Urano' },
   journalStats: {
     cs: '{found}/7 nalezeno · {runs} cest · darováno {given}×',

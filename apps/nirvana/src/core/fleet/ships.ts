@@ -15,8 +15,14 @@ export interface ShipSpec {
   /** Jméno z marketu (produkt se jmenuje stejně). */
   name: string;
   role: { cs: string; en: string };
-  /** Herní GLB — `/fleet/<id>.glb`, délka trupu = 1,0. */
+  /** Herní GLB — `/models/fleet/<id>.glb`, délka trupu = 1,0. */
   glb: string;
+  /**
+   * Zjednodušená verze pro **cizí** lodě v místnosti (~30 % trojúhelníků).
+   * Naměřeno: šest pilotů v plné kvalitě = 109 755 tris ze stropu 120 000,
+   * takže na mobilu nezbývala rezerva. Vlastní loď zůstává plná.
+   */
+  glbLod: string;
   /** Délka trupu ve světových jednotkách (Nabukano má 2,0). */
   scale: number;
   /** Cestovní rychlost, jednotky/s. */
@@ -42,6 +48,7 @@ export const SHIPS: ShipSpec[] = [
     name: 'A-Wing',
     role: { cs: 'průzkumník · nejrychlejší', en: 'scout · fastest' },
     glb: '/models/fleet/awing.glb',
+    glbLod: '/models/fleet/lod/awing.glb',
     scale: 0.5,
     maxSpeed: 11,
     accel: 6,
@@ -58,6 +65,7 @@ export const SHIPS: ShipSpec[] = [
     name: 'X-Wing',
     role: { cs: 'stíhač · vyvážený', en: 'fighter · balanced' },
     glb: '/models/fleet/xwing.glb',
+    glbLod: '/models/fleet/lod/xwing.glb',
     scale: 0.5,
     maxSpeed: 9.5,
     accel: 5.5,
@@ -76,6 +84,7 @@ export const SHIPS: ShipSpec[] = [
     name: 'B-Wing',
     role: { cs: 'těžký · pomalý, ale pevný', en: 'heavy · slow but steady' },
     glb: '/models/fleet/bwing.glb',
+    glbLod: '/models/fleet/lod/bwing.glb',
     scale: 0.52,
     maxSpeed: 7,
     accel: 3.8,
@@ -92,6 +101,7 @@ export const SHIPS: ShipSpec[] = [
     name: 'Ikaruga',
     role: { cs: 'prototyp · hravý', en: 'prototype · playful' },
     glb: '/models/fleet/ikaruga.glb',
+    glbLod: '/models/fleet/lod/ikaruga.glb',
     scale: 0.5,
     maxSpeed: 10,
     accel: 6,
@@ -107,6 +117,7 @@ export const SHIPS: ShipSpec[] = [
     name: 'Snowspeeder',
     role: { cs: 'bitevník · obratný u země', en: 'gunship · nimble low' },
     glb: '/models/fleet/snowspeeder.glb',
+    glbLod: '/models/fleet/lod/snowspeeder.glb',
     scale: 0.48,
     maxSpeed: 8,
     accel: 5,
@@ -123,6 +134,7 @@ export const SHIPS: ShipSpec[] = [
     name: 'TIE Fighter',
     role: { cs: 'přesila · rychlý a křehký', en: 'interceptor · fast and thin' },
     glb: '/models/fleet/tiefighter.glb',
+    glbLod: '/models/fleet/lod/tiefighter.glb',
     scale: 0.46,
     maxSpeed: 10.5,
     accel: 6.2,
@@ -136,6 +148,7 @@ export const SHIPS: ShipSpec[] = [
     name: 'TIE Interceptor',
     role: { cs: 'eskorta · nejobratnější', en: 'escort · most agile' },
     glb: '/models/fleet/tieinterceptor.glb',
+    glbLod: '/models/fleet/lod/tieinterceptor.glb',
     scale: 0.46,
     maxSpeed: 11.5,
     accel: 6.4,

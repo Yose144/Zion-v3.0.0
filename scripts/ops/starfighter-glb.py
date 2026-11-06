@@ -95,9 +95,66 @@ GOLD = (0.72, 0.55, 0.24)
 ENGINE = (0.95, 0.62, 0.28)
 
 # prahy pro regionální pravidla (podíl délky trupu od přídě)
+# Cílová velikost LOD vůči plnému modelu (35 % drží vzhled; 20 % už řeže křídla).
+LOD_RATIO = 0.35
+
 ENGINE_ZONE = -0.40  # záď: za tuhle hranici (z < ENGINE_ZONE) a blízko osy
 ENGINE_RADIUS = 0.10
 COCKPIT_ZONE = 0.22  # příď: odsud dopředu a vysoko = sklo
+
+
+def cluster_lod(
+    vertices: np.ndarray,
+    faces: np.ndarray,
+    colors: np.ndarray,
+    target_faces: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Zjednodušení mřížkou (vertex clustering) na cílový počet ploch.
+
+    Proč zrovna clustering: model je soubor tenkých destiček, takže quadrická
+    dekurace (z Lumi lucerny) na nich končí na 65 % a vrací nekonzistentní
+    indexy. Mřížka je robustní a **říditelná** — hledá se nejmenší kvantum,
+    které se vejde do stropu, takže se dá přesně trefit rozpočet.
+
+    Barvy se průměrují po buňkách; jinak by po slití panelů zůstal lak
+    z jednoho kusu a model by vypadal flekatě.
+    """
+    best: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None
+    quantum = 0.0025
+    while quantum < 0.12:
+        keys = np.round(vertices / quantum).astype(np.int64)
+        _, first, inverse = np.unique(keys, axis=0, return_index=True, return_inverse=True)
+        if len(first) < 3:
+            quantum *= 1.35
+            continue
+        new_colors = np.zeros((len(first), 3), dtype=np.float64)
+        counts = np.zeros(len(first), dtype=np.float64)
+        np.add.at(new_colors, inverse, colors)
+        np.add.at(counts, inverse, 1.0)
+        new_colors /= counts[:, None]
+
+        mapped = inverse[faces]
+        keep = (
+            (mapped[:, 0] != mapped[:, 1])
+            & (mapped[:, 1] != mapped[:, 2])
+            & (mapped[:, 0] != mapped[:, 2])
+        )
+        mapped = mapped[keep]
+        if len(mapped) == 0:
+            quantum *= 1.35
+            continue
+        # tatáž plocha může vzniknout vícekrát — zahoď duplicity
+        _, unique_index = np.unique(np.sort(mapped, axis=1), axis=0, return_index=True)
+        mapped = mapped[np.sort(unique_index)]
+
+        best = (vertices[first], mapped, new_colors)
+        if len(mapped) <= target_faces:
+            break
+        quantum *= 1.35
+
+    if best is None:
+        return vertices, faces, colors
+    return best
 
 
 def srgb_to_linear(color: np.ndarray) -> np.ndarray:
@@ -389,6 +446,19 @@ def build_ship(spec: dict) -> dict:
     target = OUT / f"{spec['id']}.glb"
     write_glb(target, vertices, normals, colors, faces)
 
+    # ── LOD pro cizí lodě v místnosti ──────────────────────────────────
+    # Vlastní loď = plná kvalita, ostatní = ~35 %. Naměřeno: plná místnost
+    # (6 pilotů) byla 109 755 tris ze stropu 120 000, takže na mobilu
+    # nezbývala rezerva. LOD je jen pro vzdálené/pohyblivé lodě, kde rozdíl
+    # není vidět — viz `RemoteFleet` v `FleetScene`.
+    lod_target = max(2500, int(len(faces) * LOD_RATIO))
+    lod_vertices, lod_faces, lod_colors = cluster_lod(vertices, faces, colors, lod_target)
+    lod_faces = orient_outward(lod_vertices, lod_faces)
+    lod_normals = vertex_normals(lod_vertices, lod_faces)
+    (OUT / 'lod').mkdir(exist_ok=True)
+    lod_target_path = OUT / 'lod' / f"{spec['id']}.glb"
+    write_glb(lod_target_path, lod_vertices, lod_normals, lod_colors, lod_faces)
+
     bbox = np.stack([vertices.min(axis=0), vertices.max(axis=0)])
 
     return {
@@ -403,6 +473,9 @@ def build_ship(spec: dict) -> dict:
         'height': round(float(bbox[1][1] - bbox[0][1]), 4),
         'length': round(float(bbox[1][2] - bbox[0][2]), 4),
         'bytes': target.stat().st_size,
+        'glbLod': f"/models/fleet/lod/{spec['id']}.glb",
+        'lodTriangles': int(len(lod_faces)),
+        'lodBytes': lod_target_path.stat().st_size,
     }
 
 
