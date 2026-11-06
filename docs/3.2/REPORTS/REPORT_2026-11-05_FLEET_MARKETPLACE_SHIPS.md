@@ -443,6 +443,12 @@ při zažehnutí boostu. Divák motor neslyší (nemá loď).
 **Naměřeno po změnách:** simulace 35/35, `fleet.mjs` 19/19, `fleet-mobile.mjs` 16/16,
 `fleet-online.mjs` **19/19**, `nirvana-net/test/fleet.mjs` **29/29** (5 nových na obsazenost).
 
+**Nasazeno (2026-11-06):** net `20261106T115047Z` (dock claims + `occupied`/`conflict`),
+app `20261106T115147Z` (artefakt z čistého worktree na `01b1ef176`). Živě: `proto_match: true`
+(32/32), v klientu jsou `obsazeno`, `Vzlétnout z Nabukana` i `prefers-reduced-motion`,
+v net distu `dockConflict`; obě služby `active`. Rollback:
+`/opt/zion/APP&WEB/nirvana.before-20261106T115147Z`, `…/nirvana-net.before-20261106T115047Z`.
+
 ---
 
 ## 7. Meze (co se nemá hlásit jako hotové)
