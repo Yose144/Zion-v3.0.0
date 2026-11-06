@@ -424,3 +424,27 @@ ale početné. Fallback na angličtinu funguje všude.
    + fix hydration #418 na /explorer/supply
 0d71271db  dávka 16 — mission control + miner dashboard (491)
 ```
+
+## 27. Dávka 15 — doplnění: hero slider + WARP BTC widget (2026-11-06)
+
+Dvě místa, která codemod dávky 15 minul:
+
+- **`HeroSlider`** — `alt` popisky slidů, CTA label a `aria-label` (play/pause, „Slide N")
+  čtou `tx5()`/`t5()`; slovník je `home.*.json`, který už existoval. Ověřeno živě:
+  ES „Feliz Navidad…" / „Navidad 2026 · Kingdom", PT „Feliz Natal…" / „Natal 2026 · Kingdom",
+  FR „Joyeux Noël…" / „Noël 2026 · Kingdom", `aria-label` „Diapositiva/Diapositivo/Diapositive 1".
+- **`WarpBtcSwapWidget`** — pomocník `t()` vracel `Copy_map[k][cs ? 'cs' : 'en']`, takže
+  i s hotovým `warpbtc.*.json` (60 klíčů) se v es/pt/fr zobrazovala angličtina. Teď
+  `cs ? Copy_map[k].cs : t5(Copy_map[k].en, lang)`. Ověřeno živě na `/market` → záložka
+  **WARP BTC/ZION**: 12–13 přeložených řetězců v každém jazyce (např. „¿Cuánto tarda un swap?",
+  „Quanto tempo demora um swap?", „Combien de temps prend un swap ?"), 0 pageerror.
+
+**Ověřovací sonda** (`.artifacts/probe/i18n-batch15.mjs`, gitignored): pro každou stránku a jazyk
+počítá, kolik hodnot ze slovníku se reálně objeví v `innerText`, a kontroluje `<html lang>`.
+Výsledek proti produkci (deploy `20261106T214149Z`): cex 24–27/29, explorer/supply 17–18/23,
+explorer/address 4–5/26, dharma-temple 4/39, market/WARP 12–13/42 — **PASS**, 0 pageerror.
+Past: `/explorer/address` v es jednou vrátil 0 shod (stránka se ještě načítala) — proto se
+čeká 8 s a test se opakuje; a WARP widget se mountuje **až po kliknutí na záložku**, jinak
+je 0 shod i správně přeložený.
+
+Commit: `af666ad75`.
