@@ -27,6 +27,8 @@ import {
 export interface RivalSpec {
   id: string;
   nameCs: string;
+  /** Španělské jméno (L-10); chybí = použije se `nameEn`. */
+  nameEs?: string;
   nameEn: string;
   color: string;
   /** 0–1 — jen rozhodování (brzdný bod, stopa). Fyzika je pro všechny stejná. */
@@ -34,9 +36,9 @@ export interface RivalSpec {
 }
 
 export const RIVALS: RivalSpec[] = [
-  { id: 'jitrenka', nameCs: 'Jitřenka', nameEn: 'Dawnstar', color: '#c8f56a', skill: 0.93 },
-  { id: 'fosfor', nameCs: 'Fosfor', nameEn: 'Phosphor', color: '#ff9de2', skill: 0.79 },
-  { id: 'vega', nameCs: 'Vega', nameEn: 'Vega', color: '#7fe3d4', skill: 0.63 },
+  { id: 'jitrenka', nameCs: 'Jitřenka', nameEn: 'Dawnstar', nameEs: 'Lucero', color: '#c8f56a', skill: 0.93 },
+  { id: 'fosfor', nameCs: 'Fosfor', nameEn: 'Phosphor', nameEs: 'Fósforo', color: '#ff9de2', skill: 0.79 },
+  { id: 'vega', nameCs: 'Vega', nameEn: 'Vega', nameEs: 'Vega', color: '#7fe3d4', skill: 0.63 },
 ];
 
 /** Rošt: hráč a nejrychlejší soupeř v první řadě, zbytek o kus zpět. */
@@ -232,6 +234,8 @@ export interface StandingRow {
   id: string;
   nameCs: string;
   nameEn: string;
+  /** Španělské jméno (L-10); chybí = použije se `nameEn`. */
+  nameEs?: string;
   color: string;
   isPlayer: boolean;
   lap: number;
@@ -245,6 +249,7 @@ export interface RankInput {
   id: string;
   nameCs: string;
   nameEn: string;
+  nameEs?: string;
   color: string;
   isPlayer: boolean;
   lap: LapState;
@@ -270,6 +275,7 @@ export function buildStandings(input: StandingsInput): StandingRow[] {
       id: PLAYER_ID,
       nameCs: 'Ty',
       nameEn: 'You',
+      nameEs: 'Tú',
       color: '#ffd166',
       isPlayer: true,
       lap: input.playerLap,
@@ -306,6 +312,7 @@ export function rankRacers(entries: RankInput[], metresPerProgress: number): Sta
     id: entry.id,
     nameCs: entry.nameCs,
     nameEn: entry.nameEn,
+    nameEs: entry.nameEs,
     color: entry.color,
     isPlayer: entry.isPlayer,
     lap: Math.min(LAPS, entry.lap.lap),

@@ -272,12 +272,28 @@ a jiný se přidá, nesmí se mu „převléknout" loď. Duch mizí plynule (opa
 **Lobby:** flotila má dlaždici v `/multiplayer` (`seats: 6`) a `watch.ts` zná
 `fleet-N`, takže jde místnost i sledovat.
 
+### Hlediště (`?watch=`)
+
+Lobby nabízí u každé místnosti „Dívat se" a `watch.ts` zná `fleet-N` — jenže stránka
+parametr ignorovala, takže divák místo sledování **letěl sám**. Doplněno:
+
+* `?watch=fleet-1` → stránka přeskočí hangár, nastaví `coop` a zavolá `spectateRoom`
+  (divák **nedostane sedlo**, takže nezabírá místnost),
+* scéna má `spectator`: nekreslí vlastní loď, neposílá stav letu, kamera pomalu obletuje
+  a míří na nejbližšího pilota,
+* HUD ztratí letové údaje a ovládání, přibude pruh **„👁 DÍVÁŠ SE"**.
+
+**🔴 Chyba, kterou to odhalilo:** `createFleetMatch.snapshot()` vracelo `null` pro každého,
+kdo není v `pilots` — tedy i pro diváka. Hlediště u flotily by bylo **prázdné**.
+U relay hry není co skrývat, takže snapshot se teď staví i pro diváka. (Stejný vzorec má
+i Lumi — tam diváctví vrací `null` taky; u Lumi to nikdo netestoval, u flotily ano.)
+
 ### Ověření
 
 | test | výsledek |
 |---|---|
 | `apps/nirvana-net/test/fleet.mjs` | **24/24** (dva piloti, poloha/natočení, ořezy, neexistující dok, neznámá loď, duch 3 s, kapacita 6 + přebytek do druhé místnosti) |
-| `apps/nirvana/e2e/fleet-online.mjs` | **12/12** (appka ↔ net: join z tlačítka, cizí loď ve scéně, pohyb, **přistání protistrany vidět**, zpětný směr) |
+| `apps/nirvana/e2e/fleet-online.mjs` | **16/16** (appka ↔ net: join z tlačítka, cizí loď ve scéně, pohyb, **přistání protistrany vidět**, zpětný směr, **hlediště: divák vidí loď, neovládá a nezabírá sedlo**) |
 
 Online test používá jako protistranu **Node WS klienta**, ne druhé okno prohlížeče: headless
 WebGL se táhne a druhý kontext by měřil latenci, ne hru.
@@ -368,8 +384,10 @@ produkty, X-Wing otevře 3D náhled, **stáhne se `/shop/models3d/xwing.glb`**, 
 hláška, a Millennium Falcon (bez lokálního modelu) správně ukáže fotografii, ne prázdné
 plátno. Badge v modalu se opravil z „3D STL náhled" na **„3D náhled (GLB)"** (text lhal).
 
-**Otevřené pro 👤:** *popisy produktů* v DB pořád mluví o „STL náhledu" (marketingový text,
-needituju ho bez domluvy).
+**Opraveno i v copy:** popisy produktů v DB mluvily o „STL náhledu" (u Falcona dokonce
+o náhledu, který vůbec neexistuje — nemá lokální model). Změněny jen nepravdivé věty
+(`star-001`, `star-004`, `star-006`, `star-008`), zbytek textu zůstal doslova; záloha
+`/opt/zion/data/marketplace-desc-backup-20261106T005713.txt`. Seed v repu je s DB v souladu.
 
 **Dvě pasti při ověřování:** (a) harness bez Tailwindu nemá `w-full/h-full`, takže plátno
 mělo 300×150 a model se rámoval do špatného poměru — v produkci Tailwind je, ale test to

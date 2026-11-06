@@ -136,9 +136,14 @@ export function createFleetMatch(now: number): Match {
 
     state,
 
+    /**
+     * `id` nemusí být pilot — divák (`?watch=`) sedlo nemá a přesto musí
+     * dostávat snapshoty. Dřív se tu vracelo `null` pro každého, kdo není
+     * v `pilots`, takže hlediště u flotily zůstalo prázdné (odhalil
+     * `fleet-online.mjs`). U relay hry není co skrývat, takže divák vidí
+     * totéž co hráči.
+     */
     snapshot(id: string): ServerMessage | null {
-      const me = pilots.get(id);
-      if (!me) return null;
       return {
         t: 'snapshot',
         game: 'fleet',

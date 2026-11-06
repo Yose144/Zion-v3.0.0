@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Canvas } from '@react-three/fiber';
-import { useI18n } from '@/core/i18n';
+import { useI18n, tx } from '@/core/i18n';
 import { MercurySolo, type DuelStats } from '@/core/fight/MercurySolo';
 import { MercuryDuel, type DuelMpStats } from '@/core/fight/MercuryDuel';
 import { MAX_HP, type BotDifficulty } from '@/core/fight/duel';
@@ -17,6 +17,7 @@ import { useXr } from '@/core/xr';
 import { VrButton } from '@/core/xr/VrButton';
 import { XR } from '@react-three/xr';
 import { canvasDpr } from '@/core/design/dpr';
+import { DUEL_COPY, type DuelCopyKey } from './copy';
 
 /**
  * MERKUR — souboj bok po boku. Sólo cvičení proti botovi i online duel
@@ -101,6 +102,8 @@ function TouchButton({
 
 export default function MercuryPage() {
   const { lang } = useI18n();
+  /** Texty obrazovky jdou přes `./copy` — žádné `cs ? :` v JSX. */
+  const l = useCallback((key: DuelCopyKey) => tx(DUEL_COPY[key], lang), [lang]);
   const cs = lang === 'cs';
   const { you } = useNet();
   const [phase, setPhase] = useState<Phase>('idle');
@@ -144,8 +147,8 @@ export default function MercuryPage() {
     if (score <= 0 || mpStats.foeIsBot) {
       setNotice(
         mpStats.foeIsBot
-          ? cs ? 'soupeř byl bot — zápas se nepočítá do tabule' : 'opponent was a bot — not ranked'
-          : cs ? 'duel skončil bez bodů' : 'duel ended without points',
+          ? l('botOpponent')
+          : l('noPoints'),
       );
       return;
     }
@@ -156,14 +159,14 @@ export default function MercuryPage() {
       nickname: pickNickname(you?.name || 'hrac'),
       bonus: won ? 2 : 0,
     });
-    setNotice(describeRun(result, cs, won ? [cs ? 'výhra' : 'win'] : []));
+    setNotice(describeRun(result, cs, won ? [l('win')] : []));
   }, [mode, phase, mpStats, cs, you?.name]);
 
   const top = mode === 'online' ? mpStats : soloStats;
   const selfHp = mode === 'online' ? mpStats.selfHp : soloStats.selfHp;
   const foeHp = mode === 'online' ? mpStats.foeHp : soloStats.foeHp;
-  const selfName = mode === 'online' ? mpStats.selfName : cs ? 'Ty' : 'You';
-  const foeName = mode === 'online' ? mpStats.foeName : cs ? 'Cvičný stín' : 'Practice shadow';
+  const selfName = mode === 'online' ? mpStats.selfName : l('you');
+  const foeName = mode === 'online' ? mpStats.foeName : l('practiceShadow');
   const round = mode === 'online' ? mpStats.round : soloStats.round;
   const countdown = mode === 'online' ? mpStats.countdown : soloStats.countdown;
   const secondsLeft = mode === 'online' ? mpStats.secondsLeft : soloStats.timer;
@@ -214,14 +217,14 @@ export default function MercuryPage() {
           <button
             type="button"
             className="duel-exit"
-            aria-label={cs ? 'Ukončit souboj a vrátit se do menu' : 'Leave duel and return to menu'}
+            aria-label={l('leaveDuel')}
             onClick={() => {
               setPhase('idle');
               setMpStats(EMPTY_MP);
               setNotice(null);
             }}
           >
-            {cs ? 'Menu' : 'Menu'}
+            {l('menu')}
           </button>
           <div className="duel-vr">
             <VrButton xr={{ store: xrStore, presenting }} className="arena-vr" />
@@ -240,16 +243,16 @@ export default function MercuryPage() {
               </div>
             </div>
             <div className="duel-clock">
-              <div>{cs ? 'kolo' : 'round'} {round}</div>
+              <div>{l('round')} {round}</div>
               <strong>{state === 'countdown' ? `…${countdown}` : `${secondsLeft}s`}</strong>
               <div className="duel-clock-sub">
                 {mode === 'online'
                   ? mpStats.foeIsBot
-                    ? cs ? 'čeká se na soupeře' : 'waiting for opponent'
+                    ? l('waiting')
                     : mpStats.connected
                       ? `${mpStats.ping ?? 0} ms`
-                      : cs ? 'offline' : 'offline'
-                  : cs ? 'cvičení' : 'practice'}
+                      : l('offline')
+                  : l('practice')}
               </div>
             </div>
             <div className="duel-fighter is-foe">
@@ -267,29 +270,29 @@ export default function MercuryPage() {
 
           {mode === 'online' && (!mpStats.connected || mpStats.state === null) && (
             <div className="duel-status" role="status" aria-live="polite">
-              <strong>{cs ? 'Připojuji duel…' : 'Connecting to duel…'}</strong>
-              <span>{mpStats.connected ? (cs ? 'Hledám volnou klec na Merkuru.' : 'Finding an open Mercury ring.') : (cs ? 'Obnovuji spojení s herním serverem.' : 'Reconnecting to the game server.')}</span>
+              <strong>{l('connecting')}</strong>
+              <span>{mpStats.connected ? (l('findingRing')) : (l('reconnecting'))}</span>
             </div>
           )}
 
           {state === 'countdown' && <div className="duel-flash is-count">{countdown > 0 ? countdown : '…'}</div>}
           {top && state === 'roundEnd' && (
             <div className="duel-flash is-round">
-              {mode === 'online' && mpStats.lastRoundReason === 'ko' ? 'K.O.' : cs ? 'kolo' : 'round'}
+              {mode === 'online' && mpStats.lastRoundReason === 'ko' ? 'K.O.' : l('round')}
             </div>
           )}
           {mode === 'online' && mpStats.matchWinner !== null && (
             <div className="arena-respawn">
               {duelScore(mpStats.selfWins, mpStats.foeWins) > 0 && mpStats.matchWinner === mpStats.selfId
-                ? cs ? 'vyhrál jsi — nový duel začne za chvíli' : 'you won — new duel starts shortly'
-                : cs ? 'prohra — odplata začne za chvíli' : 'defeat — rematch incoming'}
+                ? l('youWon')
+                : l('youLost')}
               {notice ? ` · ${notice}` : ''}
             </div>
           )}
           {mode === 'solo' && soloStats.phase === 'matchEnd' && (
             <div className="duel-result" role="status" aria-live="polite">
-              <strong>{soloStats.winner === 'self' ? (cs ? 'VÍTĚZSTVÍ' : 'VICTORY') : (cs ? 'PROHRA' : 'DEFEAT')}</strong>
-              <span>{cs ? 'Cvičný souboj se za chvíli obnoví.' : 'Practice match resets shortly.'}</span>
+              <strong>{soloStats.winner === 'self' ? (l('victory')) : (l('defeat'))}</strong>
+              <span>{l('practiceResets')}</span>
             </div>
           )}
 
@@ -301,14 +304,14 @@ export default function MercuryPage() {
 
           <div className="duel-touch" aria-label="ovládání">
             <div className="duel-touch-row">
-              <TouchButton code="KeyA" label="←" ariaLabel={cs ? 'Doleva' : 'Move left'} />
-              <TouchButton code="KeyD" label="→" ariaLabel={cs ? 'Doprava' : 'Move right'} />
+              <TouchButton code="KeyA" label="←" ariaLabel={l('left')} />
+              <TouchButton code="KeyD" label="→" ariaLabel={l('right')} />
             </div>
             <div className="duel-touch-row">
-              <TouchButton code="KeyJ" label="J" ariaLabel={cs ? 'Pěst' : 'Punch'} />
-              <TouchButton code="KeyK" label="K" ariaLabel={cs ? 'Kop' : 'Kick'} />
-              <TouchButton code="KeyS" label={cs ? 'blok' : 'block'} ariaLabel={cs ? 'Blokovat' : 'Block'} />
-              <TouchButton code="Space" label={cs ? 'skok' : 'jump'} ariaLabel={cs ? 'Skočit' : 'Jump'} />
+              <TouchButton code="KeyJ" label="J" ariaLabel={l('punch')} />
+              <TouchButton code="KeyK" label="K" ariaLabel={l('kick')} />
+              <TouchButton code="KeyS" label={l('blockShort')} ariaLabel={l('block')} />
+              <TouchButton code="Space" label={l('jumpShort')} ariaLabel={l('jump')} />
             </div>
           </div>
         </>
@@ -317,25 +320,23 @@ export default function MercuryPage() {
       {phase === 'idle' && (
         <section className="arena-panel" aria-label="Merkur">
           <header>
-            <strong>{cs ? 'Merkur — souboj' : 'Mercury — duel'}</strong>
+            <strong>{l('title')}</strong>
             <span>best of 3 · 60 s</span>
           </header>
           <p>
-            {cs
-              ? 'Klec na Merkuru, dva bojovníci, pěst a kop. Cvič proti stínu, nebo připoj online duel — server rozhoduje každý zásah.'
-              : 'A cage on Mercury, two fighters, fists and kicks. Practice against the shadow, or join an online duel — the server rules every hit.'}
+            {l('intro')}
           </p>
           <div className="arena-keys">
-            <kbd>A/D</kbd> {cs ? 'pohyb' : 'move'} · <kbd>W</kbd> {cs ? 'skok' : 'jump'} · <kbd>J</kbd>{' '}
-            {cs ? 'pěst' : 'punch'} · <kbd>K</kbd> {cs ? 'kop' : 'kick'} · <kbd>S</kbd> {cs ? 'blok' : 'block'}
+            <kbd>A/D</kbd> {l('moveShort')} · <kbd>W</kbd> {l('jumpShort')} · <kbd>J</kbd>{' '}
+            {l('punchShort')} · <kbd>K</kbd> {l('kickShort')} · <kbd>S</kbd> {l('blockShort')}
           </div>
-          <section className="duel-difficulty" aria-label={cs ? 'Obtížnost soupeře' : 'Opponent difficulty'}>
-            <strong>{cs ? 'Síla cvičného stínu' : 'Practice shadow skill'}</strong>
+          <section className="duel-difficulty" aria-label={l('difficulty')}>
+            <strong>{l('shadowSkill')}</strong>
             <div className="duel-difficulty-options">
               {([
-                { id: 'gentle' as const, cs: 'Klidný', en: 'Gentle', noteCs: 'pomalejší reakce', noteEn: 'slower reactions' },
-                { id: 'standard' as const, cs: 'Vyrovnaný', en: 'Balanced', noteCs: 'doporučeno', noteEn: 'recommended' },
-                { id: 'champion' as const, cs: 'Mistr', en: 'Champion', noteCs: 'rychlý blok a kop', noteEn: 'quick guards & kicks' },
+                { id: 'gentle' as const, name: { cs: 'Klidný', en: 'Gentle', es: 'Tranquilo' }, note: { cs: 'pomalejší reakce', en: 'slower reactions', es: 'reacciones más lentas' } },
+                { id: 'standard' as const, name: { cs: 'Vyrovnaný', en: 'Balanced', es: 'Equilibrado' }, note: { cs: 'doporučeno', en: 'recommended', es: 'recomendado' } },
+                { id: 'champion' as const, name: { cs: 'Mistr', en: 'Champion', es: 'Maestro' }, note: { cs: 'rychlý blok a kop', en: 'quick guards & kicks', es: 'bloqueo y patada rápidos' } },
               ]).map((option) => (
                 <button
                   key={option.id}
@@ -344,16 +345,14 @@ export default function MercuryPage() {
                   aria-pressed={difficulty === option.id}
                   onClick={() => setDifficulty(option.id)}
                 >
-                  <strong>{cs ? option.cs : option.en}</strong>
-                  <span>{cs ? option.noteCs : option.noteEn}</span>
+                  <strong>{tx(option.name, lang)}</strong>
+                  <span>{tx(option.note, lang)}</span>
                 </button>
               ))}
             </div>
           </section>
           <p className="duel-coach-tip">
-            {cs
-              ? 'Nejdřív dojdi do dosahu. Pěst je rychlá, kop zasáhne dál a blok výrazně tlumí poškození.'
-              : 'Close the distance first. Punches are quick, kicks reach farther, and blocking cuts damage.'}
+            {l('coachTip')}
           </p>
           <div className="arena-actions">
             <button
@@ -366,7 +365,7 @@ export default function MercuryPage() {
                 setPhase('playing');
               }}
             >
-              {cs ? 'Cvičit proti botovi' : 'Practice vs bot'}
+              {l('practiceVsBot')}
             </button>
             <button
               type="button"
@@ -379,16 +378,16 @@ export default function MercuryPage() {
                 setPhase('playing');
               }}
             >
-              {cs ? 'Online duel — proti lidem' : 'Online duel — against people'}
+              {l('online')}
             </button>
           </div>
           {notice && <div className="arena-result">{notice}</div>}
           <GameBoard game="fight" className="duel-board-panel" />
           <Link href="/mars" className="arena-link arena-small">
-            {cs ? '← Mars aréna' : '← Mars arena'}
+            {l('backToMars')}
           </Link>
           <Link href="/venus" className="arena-link arena-small">
-            {cs ? 'Venuše závod →' : 'Venus race →'}
+            {l('toVenus')}
           </Link>
         </section>
       )}

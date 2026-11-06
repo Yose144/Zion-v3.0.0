@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Canvas } from '@react-three/fiber';
-import { useI18n } from '@/core/i18n';
+import { useI18n, tx } from '@/core/i18n';
 import { VenusRace, type RaceResult, type RaceStats } from '@/core/race/VenusRace';
 import { VenusMultiplayer, type MpRaceStats } from '@/core/race/VenusMultiplayer';
 import { LAPS, raceScore } from '@/core/race/track';
@@ -18,6 +18,7 @@ import { XR } from '@react-three/xr';
 import { useXr } from '@/core/xr';
 import { VrButton } from '@/core/xr/VrButton';
 import { canvasDpr } from '@/core/design/dpr';
+import { RACE_COPY, type RaceCopyKey } from './copy';
 
 /** VENUŠE — tři kola proti třem soupeřům. Čas, pořadí, osobní rekord a tabule. */
 
@@ -48,6 +49,8 @@ function format(seconds: number | null): string {
 
 export default function VenusPage() {
   const { lang } = useI18n();
+  /** Texty obrazovky jdou přes `./copy` — žádné `cs ? :` v JSX. */
+  const l = useCallback((key: RaceCopyKey) => tx(RACE_COPY[key], lang), [lang]);
   const cs = lang === 'cs';
   const [phase, setPhase] = useState<Phase>('idle');
   const [stats, setStats] = useState<RaceStats>(EMPTY);
@@ -123,10 +126,10 @@ export default function VenusPage() {
       {phase === 'playing' && coarse && (
         <TouchPad>
           <TouchButton code="KeyW" className="is-up">
-            {cs ? 'PLYN' : 'GAS'}
+            {l('gas')}
           </TouchButton>
           <TouchButton code="KeyS" className="is-down">
-            {cs ? 'BRZDA' : 'BRAKE'}
+            {l('brake')}
           </TouchButton>
           <TouchButton code="KeyA" className="is-left">
             ←
@@ -145,11 +148,11 @@ export default function VenusPage() {
               {mpStats?.position ?? 1}/{mpStats?.total ?? 1}
             </span>
             <span>
-              {cs ? 'kolo' : 'lap'} {mpStats?.lap ?? 1}/{mpStats?.laps ?? LAPS}
+              {l('lap')} {mpStats?.lap ?? 1}/{mpStats?.laps ?? LAPS}
             </span>
             <span>{format(mpStats?.elapsed ?? 0)}</span>
             <span className={`race-best${mpStats?.connected ? '' : ' is-offline'}`}>
-              {mpStats?.connected ? `${mpStats?.ping ?? 0} ms` : cs ? 'offline' : 'offline'}
+              {mpStats?.connected ? `${mpStats?.ping ?? 0} ms` : l('offline')}
             </span>
             <VrButton xr={{ store: xrStore, presenting }} className="arena-vr" />
           </div>
@@ -162,7 +165,7 @@ export default function VenusPage() {
                 >
                   <span className="race-board-name">{row.name}</span>
                   <span className="race-board-gap">
-                    {row.finishedAtMs !== null ? format(row.finishedAtMs / 1000) : `${cs ? 'k' : 'l'}${row.lap}`}
+                    {row.finishedAtMs !== null ? format(row.finishedAtMs / 1000) : `${l('lapShort')}${row.lap}`}
                   </span>
                 </li>
               ))}
@@ -170,11 +173,11 @@ export default function VenusPage() {
           )}
           {mpStats?.state === 'countdown' && (
             <div className="race-go race-countdown">
-              {mpStats.countdown > 0 ? mpStats.countdown : cs ? 'start!' : 'go!'}
+              {mpStats.countdown > 0 ? mpStats.countdown : l('start')}
             </div>
           )}
           {mpStats?.state === 'ended' && (
-            <div className="race-go">{cs ? 'cíl — nový závod za chvíli' : 'finish — new race soon'}</div>
+            <div className="race-go">{l('finish')}</div>
           )}
         </>
       )}
@@ -186,13 +189,13 @@ export default function VenusPage() {
             {stats.position}/{racers}
           </span>
           <span>
-            {cs ? 'kolo' : 'lap'} {stats.lap}/{stats.laps}
+            {l('lap')} {stats.lap}/{stats.laps}
           </span>
           <span>{format(stats.elapsed)}</span>
           <span className="race-best">
-            {cs ? 'nej' : 'best'} {format(stats.bestLap)}
+            {l('best')} {format(stats.bestLap)}
           </span>
-          {stats.offTrack && <span className="race-off">{cs ? 'mimo trať' : 'off track'}</span>}
+          {stats.offTrack && <span className="race-off">{l('offTrack')}</span>}
           <VrButton xr={{ store: xrStore, presenting }} className="arena-vr" />
         </div>
       )}
@@ -202,13 +205,13 @@ export default function VenusPage() {
           {liveRows.map((row, index) => (
             <li key={row.id} className={row.isPlayer ? 'me' : undefined}>
               <i style={{ background: row.color }} />
-              <span className="race-board-name">{cs ? row.nameCs : row.nameEn}</span>
+              <span className="race-board-name">{lang === 'cs' ? row.nameCs : lang === 'es' ? row.nameEs ?? row.nameEn : row.nameEn}</span>
               <span className="race-board-gap">
                 {row.totalSeconds !== null || index > 0
                   ? row.totalSeconds !== null
                     ? format(row.totalSeconds)
                     : `+${row.gap.toFixed(1)} m`
-                  : `${cs ? 'k' : 'l'}${row.lap}`}
+                  : `${l('lapShort')}${row.lap}`}
               </span>
             </li>
           ))}
@@ -216,14 +219,14 @@ export default function VenusPage() {
       )}
 
       {phase === 'playing' && !mp && !stats.started && (
-        <div className="race-go">{cs ? 'plyn = start' : 'throttle to start'}</div>
+        <div className="race-go">{l('throttleToStart')}</div>
       )}
 
       {phase !== 'playing' && (
         <section className="arena-panel">
           <header>
             <strong>VENUŠE</strong>
-            <span>{cs ? 'okruh · 3 kola · 3 soupeři' : 'circuit · 3 laps · 3 rivals'}</span>
+            <span>{l('circuit')}</span>
           </header>
 
           {phase === 'idle' && (
@@ -235,13 +238,13 @@ export default function VenusPage() {
               </p>
               <ul className="arena-keys">
                 <li>
-                  <kbd>W</kbd>/<kbd>↑</kbd> {cs ? 'plyn' : 'throttle'}
+                  <kbd>W</kbd>/<kbd>↑</kbd> {l('throttle')}
                 </li>
                 <li>
-                  <kbd>S</kbd>/<kbd>↓</kbd> {cs ? 'brzda' : 'brake'}
+                  <kbd>S</kbd>/<kbd>↓</kbd> {l('brakeLower')}
                 </li>
                 <li>
-                  <kbd>A</kbd>/<kbd>D</kbd> {cs ? 'zatáčení' : 'steer'}
+                  <kbd>A</kbd>/<kbd>D</kbd> {l('steer')}
                 </li>
               </ul>
               <div className="arena-actions">
@@ -249,7 +252,7 @@ export default function VenusPage() {
                   unlock();
                   setPhase('playing');
                 }}>
-                  {cs ? 'Na start' : 'To the grid'}
+                  {l('toGrid')}
                 </button>
                 <button
                   type="button"
@@ -260,10 +263,10 @@ export default function VenusPage() {
                     setPhase('playing');
                   }}
                 >
-                  {cs ? 'Multiplayer — proti lidem' : 'Multiplayer — against people'}
+                  {l('multiplayer')}
                 </button>
                 <Link href="/park" className="arena-link">
-                  {cs ? '← zpět na pouť' : '← back to the fair'}
+                  {l('backToFair')}
                 </Link>
               </div>
               <GameBoard game="race" className="race-board-panel" />
@@ -283,15 +286,15 @@ export default function VenusPage() {
               </p>
               <div className="arena-result">
                 <div>
-                  <em>{cs ? 'celkem' : 'total'}</em>
+                  <em>{l('total')}</em>
                   <strong>{format(result.totalSeconds)}</strong>
                 </div>
                 <div>
-                  <em>{cs ? 'nejlepší kolo' : 'best lap'}</em>
+                  <em>{l('bestLap')}</em>
                   <strong>{format(result.bestLap)}</strong>
                 </div>
                 <div>
-                  <em>{cs ? 'skóre' : 'score'}</em>
+                  <em>{l('score')}</em>
                   <strong>{raceScore(result.totalSeconds, result.laps)}</strong>
                 </div>
               </div>
@@ -300,7 +303,7 @@ export default function VenusPage() {
                   <li key={row.id} className={row.isPlayer ? 'me' : undefined}>
                     <span className="race-board-place">{index + 1}.</span>
                     <i style={{ background: row.color }} />
-                    <span className="race-board-name">{cs ? row.nameCs : row.nameEn}</span>
+                    <span className="race-board-name">{lang === 'cs' ? row.nameCs : lang === 'es' ? row.nameEs ?? row.nameEn : row.nameEn}</span>
                     <span className="race-board-gap">
                       {row.totalSeconds !== null
                         ? format(row.totalSeconds)
@@ -317,10 +320,10 @@ export default function VenusPage() {
                   unlock();
                   setPhase('playing');
                 }}>
-                  {cs ? 'Znovu' : 'Again'}
+                  {l('again')}
                 </button>
                 <Link href="/park" className="arena-link">
-                  {cs ? '← zpět na pouť' : '← back to the fair'}
+                  {l('backToFair')}
                 </Link>
               </div>
             </>

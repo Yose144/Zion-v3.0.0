@@ -26,6 +26,10 @@ import { resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { WebSocket } from 'ws';
 import { launch } from './_browser.mjs';
+// Protokol se čte z **postaveného** netu, ne z literálu: paralelní session
+// ho umí zvednout (31 → 32) a test s natvrdo zapsaným číslem pak padá na
+// `proto_mismatch`, přestože je vše v pořádku. Stejné pravidlo jako u net testů.
+import { PROTO_VERSION as PROTO } from '../../nirvana-net/dist/nirvana/src/core/net/protocol.js';
 import { ensureApp, grantPass } from './_app.mjs';
 
 const repo = resolve(import.meta.dirname, '../../..');
@@ -144,8 +148,12 @@ async function main() {
   console.log('\n▸ protistrana se připojí');
   const b = pilot();
   await b.opened;
-  b.send({ t: 'hello', proto: 31, name: 'b' });
+  b.send({ t: 'hello', proto: PROTO, name: 'b' });
   await waitFor(async () => Boolean(b.last((m) => m.t === 'welcome')), 8000, 'welcome protistrany');
+  if (!b.last((m) => m.t === 'welcome')) {
+    const error = b.last((m) => m.t === 'error');
+    console.error('  ! server odpověděl:', JSON.stringify(error));
+  }
   b.send({ t: 'join', game: 'fleet', room: roomLabel, shipId: 'bwing' });
   await waitFor(async () => Boolean(b.last((m) => m.t === 'room')), 8000, 'room protistrany');
 
@@ -196,6 +204,32 @@ async function main() {
   );
   check('protistrana vidí naši loď', mine.shipId === 'xwing', mine.shipId);
   check('a její polohu', Number.isFinite(mine.x) && Number.isFinite(mine.z), JSON.stringify([mine.x, mine.z]));
+
+  console.log('\n▸ hlediště (?watch=)');
+  const watcher = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await grantPass(watcher, new URL(app.base).hostname);
+  await watcher.goto(`${app.base}/fleet?watch=${roomLabel}&fleetDebug=1`, { waitUntil: 'networkidle' });
+  await waitFor(
+    () => watcher.evaluate(() => Boolean(document.querySelector('.arena-spectator'))),
+    40000,
+    'pruh DÍVÁŠ SE',
+  );
+  check('divák vidí pruh „DÍVÁŠ SE"', true);
+  check(
+    'divák nevidí ovládání lodi',
+    await watcher.evaluate(() => !document.querySelector('.fleet-keys') && !document.querySelector('.fleet-touch')),
+  );
+  const seen = await waitFor(
+    () => watcher.evaluate(() => window.__fleetDebug?.remoteList?.() ?? []).then((list) => (list.length > 0 ? list : null)),
+    25000,
+    'cizí pilot u diváka',
+  );
+  check('divák vidí letící loď', seen.length >= 1, String(seen.length));
+  // Divák nesmí zabrat sedlo: protistrana pořád vidí jen jednoho pilota.
+  await sleep(1200);
+  const pilotsForPlayer = await page.evaluate(() => window.__fleetDebug.remoteList().length);
+  check('divák nezabral sedlo', pilotsForPlayer === 1, `pilots=${pilotsForPlayer}`);
+  await watcher.screenshot({ path: `${SHOTS}/online-watch.png` });
 
   await page.screenshot({ path: `${SHOTS}/online.png` });
   check('v konzoli nejsou chyby', errors.filter((line) => !line.includes('401')).length === 0, errors.slice(0, 3).join(' | '));

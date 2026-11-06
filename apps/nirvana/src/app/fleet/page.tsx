@@ -21,6 +21,8 @@ import { DOCK_HOLD, DOCK_RADIUS } from '@/core/fleet/flight';
 import { play, unlock } from '@/core/audio/engine';
 import { useNet } from '@/core/net/useNet';
 import { InviteButton } from '@/core/net/InviteButton';
+import { SpectatorBar } from '@/core/net/SpectatorBar';
+import { watchRoom } from '@/core/net/watch';
 import { TouchButton } from '@/core/games/TouchPad';
 
 type Phase = 'intro' | 'flying';
@@ -63,7 +65,13 @@ export default function FleetPage() {
   const lastDock = useRef<string | null>(null);
 
   // ── společný let ───────────────────────────────────────────────────
-  const { subscribe, joinFleet, leaveRoom, sendFlight, connected, roomId } = useNet();
+  const { subscribe, joinFleet, leaveRoom, sendFlight, spectateRoom, connected, roomId } = useNet();
+  /**
+   * Hlediště: `?watch=fleet-1` z lobby nebo z chatu. Čte se v efektu (na
+   * serveru `window` není) a **neprosazuje se do `intro`** — divák nemá
+   * vybírat loď, takže jde rovnou do scény.
+   */
+  const [watchId, setWatchId] = useState<string | null>(null);
   /** `true` = letí se s ostatními; sólo zůstává výchozí. */
   const [coop, setCoop] = useState(false);
   /** Ostatní piloti chodí 15×/s, takže v refu — ne v React state. */
@@ -71,6 +79,14 @@ export default function FleetPage() {
   const [peers, setPeers] = useState(0);
 
   /** Debug háček se čte při prvním renderu — efekt by ho nestihl (viz AGENTS). */
+  useEffect(() => {
+    const room = watchRoom();
+    if (!room) return;
+    setWatchId(room);
+    setCoop(true);
+    setPhase('flying');
+  }, []);
+
   const debug = useMemo(
     () => (typeof window === 'undefined' ? false : new URLSearchParams(window.location.search).has('fleetDebug')),
     [],
@@ -146,16 +162,17 @@ export default function FleetPage() {
     });
   }, [coop, subscribe]);
 
-  // připojení / odpojení podle fáze
+  // připojení / odpojení podle fáze — divák se připojí do hlediště
   useEffect(() => {
     if (!coop || phase !== 'flying' || !connected) return;
-    joinFleet(shipId);
+    if (watchId) spectateRoom('fleet', watchId);
+    else joinFleet(shipId);
     return () => {
       leaveRoom();
       remotes.current = [];
       setPeers(0);
     };
-  }, [coop, phase, connected, joinFleet, leaveRoom, shipId]);
+  }, [coop, phase, connected, joinFleet, leaveRoom, shipId, spectateRoom, watchId]);
 
   /** Stav letu do sítě — `sendFlight` si sám hlídá 20 Hz i změnu doku. */
   const relay = useCallback(
@@ -198,6 +215,7 @@ export default function FleetPage() {
           debug={debug}
           remotes={coop ? remotes : undefined}
           onFlight={coop ? relay : undefined}
+          spectator={Boolean(watchId)}
         />
       )}
 
@@ -205,9 +223,18 @@ export default function FleetPage() {
         <>
           <div className="fleet-hud">
             <div className="fleet-ship">
-              <strong>{spec.name}</strong>
-              <span>{cs ? spec.role.cs : spec.role.en}</span>
+              <strong>{watchId ? (cs ? 'Hlediště' : 'Spectator') : spec.name}</strong>
+              <span>
+                {watchId
+                  ? cs
+                    ? 'díváš se na let'
+                    : 'watching the flight'
+                  : cs
+                    ? spec.role.cs
+                    : spec.role.en}
+              </span>
             </div>
+            {!watchId && (
             <div className="fleet-gauges">
               <span>
                 <em>{cs ? 'rychlost' : 'speed'}</em> {Math.round(Math.abs(stats.speed) * 10)}
@@ -219,6 +246,7 @@ export default function FleetPage() {
                 <em>{cs ? 'výška' : 'altitude'}</em> {Math.max(0, Math.round(stats.altitude))}
               </span>
             </div>
+            )}
             {coop && (
               <div className="fleet-peers">
                 <span>{connected ? (cs ? 'společný let' : 'shared flight') : cs ? 'offline' : 'offline'}</span>
@@ -227,6 +255,7 @@ export default function FleetPage() {
                 {roomId && <InviteButton roomId={roomId} className="fleet-invite" />}
               </div>
             )}
+            {!watchId && (
             <div className="fleet-bars">
               <div className="fleet-bar">
                 <span>{cs ? 'tah' : 'thrust'}</span>
@@ -237,8 +266,11 @@ export default function FleetPage() {
                 <i style={{ width: `${Math.round(stats.boost * 100)}%` }} />
               </div>
             </div>
+            )}
           </div>
 
+          {watchId && <SpectatorBar room={watchId} />}
+          {!watchId && (
           <div className="fleet-target">
             <span className="fleet-target-kind">{cs ? 'nejbližší dok' : 'nearest dock'}</span>
             <strong>{targetName}</strong>
@@ -249,8 +281,9 @@ export default function FleetPage() {
               </div>
             )}
           </div>
+          )}
 
-          {!coarse && (
+          {!coarse && !watchId && (
             <div className="fleet-keys">
               {cs
                 ? 'W plyn · S brzda · A/D zatáčení · ↑↓ klopení · Q/E náklon · Shift boost'
@@ -301,7 +334,7 @@ export default function FleetPage() {
             ← {cs ? 'Hangár' : 'Hangar'}
           </button>
 
-          {coarse && (
+          {coarse && !watchId && (
             <>
               <div className="fleet-touch is-left">
                 <TouchButton code="KeyA" className="is-round">

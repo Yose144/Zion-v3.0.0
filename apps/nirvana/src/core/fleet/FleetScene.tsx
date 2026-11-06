@@ -413,6 +413,12 @@ export interface FleetCanvasProps {
   remotes?: React.MutableRefObject<RemotePilot[]>;
   /** Každý snímek stav letu ven — stránka ho throttlovaně posílá na server. */
   onFlight?: (state: ShipState) => void;
+  /**
+   * Divák (hlediště): nemá vlastní loď ani vstup, jen kameru a cizí piloty.
+   * Server mu neposílá sedlo, takže kdyby scéna kreslila „svoji" loď, stála
+   * by na startu a mátla by.
+   */
+  spectator?: boolean;
 }
 
 /** Vnitřek `<Canvas>`: simulace, kamera, telemetrie, debug háček. */
@@ -425,6 +431,7 @@ function Flight({
   debug,
   remotes,
   onFlight,
+  spectator = false,
 }: FleetCanvasProps) {
   const { camera, clock, gl } = useThree();
   const input = useRef<ShipInput>({ throttle: 0, yaw: 0, pitch: 0, roll: 0, boost: false, brake: false });
@@ -453,7 +460,7 @@ function Flight({
   useFrame((_, delta) => {
     const t = clock.elapsedTime;
     docks.current = dockTargets(t);
-    stepShip(state.current, input.current, spec, delta, docks.current, t);
+    if (!spectator) stepShip(state.current, input.current, spec, delta, docks.current, t);
 
     // ── loď ───────────────────────────────────────────────────────────
     const ship = state.current;
@@ -464,7 +471,14 @@ function Flight({
 
     // ── kamera: dohání pozici za lodí ─────────────────────────────────
     const [fx, fy, fz] = forwardOf(ship);
-    if (ship.docked) {
+    if (spectator) {
+      // Pomalý oblet + pohled na nejbližšího pilota (když nějaký je).
+      // Statická kamera by u volného letu ukazovala prázdno.
+      const angle = t * 0.06;
+      chase.current.set(Math.cos(angle) * 15, 8.5, Math.sin(angle) * 15);
+      const pilot = remotes?.current?.[0];
+      look.current.set(pilot?.x ?? 0, pilot?.y ?? 4, pilot?.z ?? 0);
+    } else if (ship.docked) {
       // Zakotveno: pohled zvenku a zespodu. Kamera za lodí by totiž stála
       // uvnitř dokovacího rámu (rámy běží ±1,68 jednotky kolem lodě) a hráč
       // by místo svého stroje viděl tmavou desku.
@@ -484,7 +498,7 @@ function Flight({
     glow.current += (targetGlow - glow.current) * dampFactor(delta, 6);
 
     // ── relay do sítě (stránka si throttle hlídá sama) ────────────────
-    if (onFlight) onFlight(ship);
+    if (onFlight && !spectator) onFlight(ship);
 
     // ── telemetrie 5×/s ───────────────────────────────────────────────
     lastStats.current += delta;
@@ -565,11 +579,13 @@ function Flight({
       <Nabukano />
       <DockMarkers docks={dockTargets(clock.elapsedTime)} time={clock.elapsedTime} />
 
-      <group ref={shipGroup}>
-        <Suspense fallback={null}>
-          <MarketShip spec={spec} thrust={glow.current} />
-        </Suspense>
-      </group>
+      {!spectator && (
+        <group ref={shipGroup}>
+          <Suspense fallback={null}>
+            <MarketShip spec={spec} thrust={glow.current} />
+          </Suspense>
+        </group>
+      )}
 
       {remotes && <RemoteFleet remotes={remotes} />}
     </>

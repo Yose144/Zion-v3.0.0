@@ -28,14 +28,19 @@ export function GameBoard({
   const title = tx(GAME_TITLES[game], lang);
 
   return (
-    <section className={`game-board ${className}`.trim()} aria-label={cs ? `Tabule ${title}` : `${title} leaderboard`}>
+    <section className={`game-board ${className}`.trim()} aria-label={tx({ cs: `Tabule ${title}`, en: `${title} leaderboard`, es: `Tabla · ${title}` }, lang)}>
       <header>
         <span aria-hidden>{GAME_TITLES[game].glyph}</span>
-        <strong>{cs ? `Tabule · ${title}` : `${title} board`}</strong>
+        <strong>{tx({ cs: `Tabule · ${title}`, en: `${title} board`, es: `Tabla · ${title}` }, lang)}</strong>
       </header>
       {rows.length === 0 ? (
         <p className="game-board-empty">
-          {loading ? (cs ? 'načítám…' : 'loading…') : cs ? 'nikdo zatím — první místo je volné' : 'nobody yet — first place is open'}
+          {loading
+            ? tx({ cs: 'načítám…', en: 'loading…', es: 'cargando…' }, lang)
+            : tx(
+                { cs: 'nikdo zatím — první místo je volné', en: 'nobody yet — first place is open', es: 'nadie todavía — el primer puesto está libre' },
+                lang,
+              )}
         </p>
       ) : (
         <ol>
