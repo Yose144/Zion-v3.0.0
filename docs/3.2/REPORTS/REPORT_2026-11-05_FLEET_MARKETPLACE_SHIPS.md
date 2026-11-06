@@ -483,6 +483,17 @@ Musí se vrátit přes „Hangár".
 se připojil k cizí službě — ta vracela `{"valid": false}`, takže test měřil ZAP bránu.
 Teď si stub bere **volný port** (`listen(0)`).
 
+**Nasazeno (2026-11-06):** app z **čistého worktree na HEAD `d8b7dd3bd`** (LOD commit
+`48953d538` + commitnutá Lumi práce paralelní session; nic necommitnutého se neodeslalo).
+Živě: `proto_match: true` (32/32), `/fleet` 307, plný `xwing.glb` 959 kB a LOD `lod/xwing.glb`
+140 kB → **200**. Rollback: `/opt/zion/APP&WEB/nirvana.before-20261106T141122Z`.
+
+**🔴 Druhý případ rozbitého HEAD (stejná třída jako `./copy`):** build z worktree na mém
+commitu spadl na `Can't resolve '@/core/lumi/coop'` — paralelní session commitla import
+dřív než soubor (`575bc994d` ho doplnil až později). Řešení: build z **HEAD**, ne z vlastního
+commitu, a vždy z worktree (pracovní strom obsahuje necommitnutou práci). Dvě takové díry
+za jeden den znamenají, že „build prošel lokálně" opravdu není důkaz o commitu.
+
 ---
 
 ## 7. Meze (co se nemá hlásit jako hotové)
