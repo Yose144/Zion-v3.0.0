@@ -55,7 +55,7 @@ const CARDS: CardDef[] = [
   },
   {
     // Původní scéna s lampionem (tesař s dětmi), ne vánoční trh.
-    image: '/images/news/christmas-2026/card-lampion.webp?v=6',
+    image: '/images/news/christmas-2026/card-lampion.webp?v=7',
     icon: Flame,
     kicker: { cs: 'Vánoční edice · ruční výroba', en: 'Christmas edition · handcraft' },
     title: { cs: 'Lampion Království srdce', en: 'Kingdom of the Heart lantern' },

@@ -561,7 +561,7 @@ export const christmasProducts: XmasProduct[] = [
       {
         label: { cs: 'Ukázka · Prolog', en: 'Sample · Prologue' },
         title: { cs: 'Světlo před svítáním', en: 'Light Before Dawn' },
-        image: '/vanoce/pribeh/05_svetla_u_brany.webp?v=6',
+        image: '/vanoce/pribeh/05_svetla_u_brany.webp?v=7',
         paragraphs: [
           {
             cs: "U brány hořela dvě světla. Jedno v kamenném ohništi, kde Rádha pekla chléb. Druhé za střepem skla v malé cedrové lucerně. Plamen se nehýbal s větrem. Když však z mlhy zazněly kroky, sklonil se ke stezce. Elizabeth jej sledovala. Na rukávu měla záplatu, kterou už nikdo z přicházejících neuměl ušít. Její země ležela tak daleko v budoucnosti, že z měst tohoto pobřeží nezůstala ani jména. Zůstalo v ní cosi jiného: při večeři se pokaždé prostíralo jedno místo navíc. Kdysi se zeptala proč. Odpověděli jí, že to pochází od jisté lodi. A tak se vydala hledat její začátek.",
@@ -589,7 +589,7 @@ export const christmasProducts: XmasProduct[] = [
       {
         label: { cs: 'Ukázka · Epilog', en: 'Sample · Epilogue' },
         title: { cs: 'První prkno', en: 'The First Plank' },
-        image: '/vanoce/pribeh/06_misto_navic.webp?v=6',
+        image: '/vanoce/pribeh/06_misto_navic.webp?v=7',
         paragraphs: [
           {
             cs: "Z mlhy před branou vystoupil člověk, kterého žádný z nich neznal. Měl kabát převázaný provazem, na rameni nesl spící dítě a druhou rukou svíral boty. Zastavil se tak daleko od ohně, aby nemusel být vyzván k odchodu. Poutník se zvedl. Nohy měl ztuhlé a v dlaních jej zabolely staré rány.",
@@ -607,8 +607,8 @@ export const christmasProducts: XmasProduct[] = [
   {
     slug: 'lampion',
     externalId: 'lamp-001',
-    image: '/vanoce-lampion.webp?v=6',
-    hero: '/vanoce/home/03_lampion_tesar_deti_v4.webp?v=6',
+    image: '/vanoce-lampion.webp?v=7',
+    hero: '/vanoce/home/03_lampion_tesar_deti_v4.webp?v=7',
     heroWide: '/vanoce/hero/lampion-wide.webp?v=7',
     model3d: '/models/lumi-2.glb',
     guide: {
@@ -664,15 +664,15 @@ export const christmasProducts: XmasProduct[] = [
     },
     gallery: [
       {
-        src: '/vanoce/galerie/lampion/01_balicek_v4.webp?v=6',
+        src: '/vanoce/galerie/lampion/01_balicek_v4.webp?v=7',
         alt: { cs: 'Lampion Království srdce jako vánoční balíček', en: 'The Kingdom of Hearts lantern as a Christmas parcel' },
       },
       {
-        src: '/vanoce/galerie/lampion/02_konstrukce_v4.webp?v=6',
+        src: '/vanoce/galerie/lampion/02_konstrukce_v4.webp?v=7',
         alt: { cs: 'Šestihranné tělo lampionu a mandalové výřezy', en: 'Hexagonal lantern body and mandala cut-outs' },
       },
       {
-        src: '/vanoce/galerie/lampion/03_vecerni_svetlo_v4.webp?v=6',
+        src: '/vanoce/galerie/lampion/03_vecerni_svetlo_v4.webp?v=7',
         alt: { cs: 'Lampion ve večerním světle', en: 'The lantern in evening light' },
       },
     ],

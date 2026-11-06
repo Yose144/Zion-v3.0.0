@@ -194,7 +194,7 @@ export function LampionSection() {
 
   return (
     <ChristmasCard
-      image={product?.hero ?? '/vanoce-lampion.webp?v=6'}
+      image={product?.hero ?? '/vanoce-lampion.webp?v=7'}
       imageAlt={t('xmas.lampionImageAlt')}
       badge={t('xmas.badge')}
       kicker={t('xmas.lampionKicker')}
