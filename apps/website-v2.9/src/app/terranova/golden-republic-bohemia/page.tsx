@@ -25,6 +25,7 @@ import {
   Vote,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
@@ -289,7 +290,7 @@ export default function GoldenRepublicBohemiaPage() {
   const [docError, setDocError] = useState(false);
 
   useEffect(() => {
-    const file = cs ? '/docs/terranova/golden-republic-bohemia.cs.md' : '/docs/terranova/golden-republic-bohemia.en.md';
+    const file = cs ? '/docs/terranova/golden-republic-bohemia.cs.md' : t5('/docs/terranova/golden-republic-bohemia.en.md', lang);
     fetch(file)
       .then((res) => {
         if (!res.ok) throw new Error('not found');
@@ -315,7 +316,7 @@ export default function GoldenRepublicBohemiaPage() {
             className="inline-flex items-center gap-2 text-sm text-zion-gold/65 hover:text-zion-gold transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {TerranovaGoldenRepublicBohemiaCopy.backToTerraNova[cs ? 'cs' : 'en']}
+            {tx5(TerranovaGoldenRepublicBohemiaCopy.backToTerraNova, lang)}
           </Link>
         </motion.div>
 
@@ -342,7 +343,7 @@ export default function GoldenRepublicBohemiaPage() {
                     </span>
                     <span className="zion-badge-gold inline-flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {TerranovaGoldenRepublicBohemiaCopy.planned2029[cs ? 'cs' : 'en']}
+                      {tx5(TerranovaGoldenRepublicBohemiaCopy.planned2029, lang)}
                     </span>
                   </div>
 
@@ -350,7 +351,7 @@ export default function GoldenRepublicBohemiaPage() {
                     Golden Republic Bohemia
                   </h1>
                   <p className="text-lg text-zion-gold font-medium">
-                    {TerranovaGoldenRepublicBohemiaCopy.livingCentreBohemiaTerraNova[cs ? 'cs' : 'en']}
+                    {tx5(TerranovaGoldenRepublicBohemiaCopy.livingCentreBohemiaTerraNova, lang)}
                   </p>
 
                   <div className="flex items-center gap-1.5 text-white/70">
@@ -359,7 +360,7 @@ export default function GoldenRepublicBohemiaPage() {
                   </div>
 
                   <blockquote className="mt-4 pl-4 border-l-2 border-white/10 text-sm text-white/70 italic leading-relaxed max-w-lg">
-                    {TerranovaGoldenRepublicBohemiaCopy.saltOnTheTableABridgeBetweenMy[cs ? 'cs' : 'en']}
+                    {tx5(TerranovaGoldenRepublicBohemiaCopy.saltOnTheTableABridgeBetweenMy, lang)}
                   </blockquote>
 
                   <div className="grid gap-3 pt-3 sm:grid-cols-3">
@@ -409,21 +410,21 @@ export default function GoldenRepublicBohemiaPage() {
             <div className="relative z-10 grid md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-3">
                 <h3 className="text-lg font-bold text-zion-gold">
-                  {TerranovaGoldenRepublicBohemiaCopy.bohemiaHeartOfEurope[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaGoldenRepublicBohemiaCopy.bohemiaHeartOfEurope, lang)}
                 </h3>
                 <p className="text-white/70 text-sm leading-relaxed">
-                  {TerranovaGoldenRepublicBohemiaCopy.bohemiaIsTheLandWhereTheSaltOf[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaGoldenRepublicBohemiaCopy.bohemiaIsTheLandWhereTheSaltOf, lang)}
                 </p>
                 <p className="text-zion-gold/65 text-sm leading-relaxed">
-                  {TerranovaGoldenRepublicBohemiaCopy.ripIsANationalCulturalMonument[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaGoldenRepublicBohemiaCopy.ripIsANationalCulturalMonument, lang)}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3 content-start">
                 {[
                   { label: 'Říp', val: '456 m' },
-                  { label: TerranovaGoldenRepublicBohemiaCopy.axis[cs ? 'cs' : 'en'], val: 'Národní památka' },
-                  { label: TerranovaGoldenRepublicBohemiaCopy.layer[cs ? 'cs' : 'en'], val: 'L5' },
-                  { label: TerranovaGoldenRepublicBohemiaCopy.region[cs ? 'cs' : 'en'], val: TerranovaGoldenRepublicBohemiaCopy.bohemia[cs ? 'cs' : 'en'] },
+                  { label: tx5(TerranovaGoldenRepublicBohemiaCopy.axis, lang), val: 'Národní památka' },
+                  { label: tx5(TerranovaGoldenRepublicBohemiaCopy.layer, lang), val: 'L5' },
+                  { label: tx5(TerranovaGoldenRepublicBohemiaCopy.region, lang), val: tx5(TerranovaGoldenRepublicBohemiaCopy.bohemia, lang) },
                 ].map((s) => (
                   <div key={s.label} className="text-center p-3 zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <p className="text-white/85 font-bold text-xs">{s.val}</p>
@@ -445,16 +446,16 @@ export default function GoldenRepublicBohemiaPage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {TerranovaGoldenRepublicBohemiaCopy.sitePlan[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGoldenRepublicBohemiaCopy.sitePlan, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {TerranovaGoldenRepublicBohemiaCopy.sitePlanSubtitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGoldenRepublicBohemiaCopy.sitePlanSubtitle, lang)}
               </h2>
             </div>
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/golden-republic-bohemia/concept-og.webp"
-                alt={cs ? 'Návrh Golden Republic Bohemia' : 'Golden Republic Bohemia concept'}
+                alt={cs ? 'Návrh Golden Republic Bohemia' : t5('Golden Republic Bohemia concept', lang)}
                 width={1168}
                 height={784}
                 loading="lazy"
@@ -475,10 +476,10 @@ export default function GoldenRepublicBohemiaPage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {TerranovaGoldenRepublicBohemiaCopy.threeDPreview[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGoldenRepublicBohemiaCopy.threeDPreview, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {TerranovaGoldenRepublicBohemiaCopy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGoldenRepublicBohemiaCopy.threeDPreviewSubtitle, lang)}
               </h2>
             </div>
             <GoldenRepublicBohemiaPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
@@ -494,17 +495,17 @@ export default function GoldenRepublicBohemiaPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaGoldenRepublicBohemiaCopy.inspiration[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGoldenRepublicBohemiaCopy.inspiration, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaGoldenRepublicBohemiaCopy.czechWisdomZion[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGoldenRepublicBohemiaCopy.czechWisdomZion, lang)}
             </h2>
           </div>
 
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[11px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
-              <div className="p-3 text-zion-gold/65">{TerranovaGoldenRepublicBohemiaCopy.bohemia[cs ? 'cs' : 'en']}</div>
-              <div className="p-3 text-white/85 sm:border-l border-white/10">{TerranovaGoldenRepublicBohemiaCopy.principle[cs ? 'cs' : 'en']}</div>
+              <div className="p-3 text-zion-gold/65">{tx5(TerranovaGoldenRepublicBohemiaCopy.bohemia, lang)}</div>
+              <div className="p-3 text-white/85 sm:border-l border-white/10">{tx5(TerranovaGoldenRepublicBohemiaCopy.principle, lang)}</div>
               <div className="p-3 text-white/85 sm:border-l border-white/10">ZION</div>
             </div>
             {CZECH_WISDOM.map((row, i) => (
@@ -526,10 +527,10 @@ export default function GoldenRepublicBohemiaPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaGoldenRepublicBohemiaCopy.projectConcept[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGoldenRepublicBohemiaCopy.projectConcept, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaGoldenRepublicBohemiaCopy.activitiesVision[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGoldenRepublicBohemiaCopy.activitiesVision, lang)}
             </h2>
           </div>
 
@@ -582,10 +583,10 @@ export default function GoldenRepublicBohemiaPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaGoldenRepublicBohemiaCopy.developmentPhases[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGoldenRepublicBohemiaCopy.developmentPhases, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaGoldenRepublicBohemiaCopy.fromVisionToReality[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGoldenRepublicBohemiaCopy.fromVisionToReality, lang)}
             </h2>
           </div>
 
@@ -619,7 +620,7 @@ export default function GoldenRepublicBohemiaPage() {
                         className="text-xs font-bold tracking-wider"
                         style={{ color: p.active ? '#22D3EE' : 'rgba(255,255,255,0.3)' }}
                       >
-                        {cs ? `Fáze ${p.num}` : `Phase ${p.num}`}
+                        {cs ? `Fáze ${p.num}` : t5(`Phase ${p.num}`, lang)}
                       </span>
                       <span className="text-sm font-semibold text-white/80">
                         {cs ? p.cs : p.en}
@@ -627,7 +628,7 @@ export default function GoldenRepublicBohemiaPage() {
                       {p.active ? (
                         <span className="inline-flex items-center gap-1 text-zion-cyan text-xs animate-pulse">
                           <PlayCircle className="w-3.5 h-3.5" />
-                          {TerranovaGoldenRepublicBohemiaCopy.exploringNow[cs ? 'cs' : 'en']}
+                          {tx5(TerranovaGoldenRepublicBohemiaCopy.exploringNow, lang)}
                         </span>
                       ) : (
                         <Circle className="w-3.5 h-3.5 text-white/30" />
@@ -650,17 +651,17 @@ export default function GoldenRepublicBohemiaPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaGoldenRepublicBohemiaCopy.terraNovaNetwork[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGoldenRepublicBohemiaCopy.terraNovaNetwork, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaGoldenRepublicBohemiaCopy.connectionWithSisterProjects[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGoldenRepublicBohemiaCopy.connectionWithSisterProjects, lang)}
             </h2>
           </div>
 
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             {/* Header row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[11px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
-              <div className="p-3 text-zion-gold/65">{TerranovaGoldenRepublicBohemiaCopy.dimension[cs ? 'cs' : 'en']}</div>
+              <div className="p-3 text-zion-gold/65">{tx5(TerranovaGoldenRepublicBohemiaCopy.dimension, lang)}</div>
               <div className="p-3 text-white/85 sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Zahrada Genesis</span></div>
               <div className="p-3 text-zion-gold sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Golden Republic Bohemia</span></div>
             </div>
@@ -677,7 +678,7 @@ export default function GoldenRepublicBohemiaPage() {
           </div>
 
           <p className="text-zion-gold/55 text-xs text-center mt-4">
-            {TerranovaGoldenRepublicBohemiaCopy.bothProjectsShareSourceCodeTer[cs ? 'cs' : 'en']}
+            {tx5(TerranovaGoldenRepublicBohemiaCopy.bothProjectsShareSourceCodeTer, lang)}
           </p>
         </motion.section>
 
@@ -690,7 +691,7 @@ export default function GoldenRepublicBohemiaPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaGoldenRepublicBohemiaCopy.blockchainIntegration[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGoldenRepublicBohemiaCopy.blockchainIntegration, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
@@ -709,11 +710,11 @@ export default function GoldenRepublicBohemiaPage() {
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
                     <p className="text-[11px] text-zion-gold/55 capitalize">
                       {item.status === 'active'
-                        ? TerranovaGoldenRepublicBohemiaCopy.active[cs ? 'cs' : 'en']
+                        ? tx5(TerranovaGoldenRepublicBohemiaCopy.active, lang)
                         : item.status === 'planned'
-                        ? TerranovaGoldenRepublicBohemiaCopy.planned[cs ? 'cs' : 'en']
+                        ? tx5(TerranovaGoldenRepublicBohemiaCopy.planned, lang)
                         : item.status === 'vision'
-                        ? STATUS_LABEL.vision[cs ? 'cs' : 'en']
+                        ? tx5(STATUS_LABEL.vision, lang)
                         : 'TBD'}
                     </p>
                   </div>
@@ -734,19 +735,19 @@ export default function GoldenRepublicBohemiaPage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {TerranovaGoldenRepublicBohemiaCopy.documentation[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGoldenRepublicBohemiaCopy.documentation, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {TerranovaGoldenRepublicBohemiaCopy.documentationSubtitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGoldenRepublicBohemiaCopy.documentationSubtitle, lang)}
               </h2>
             </div>
             <div className="relative z-10 rounded-2xl border border-white/10 bg-black/40 p-4 md:p-6">
               {docError ? (
-                <p className="text-sm text-zion-red">{TerranovaGoldenRepublicBohemiaCopy.documentationError[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm text-zion-red">{tx5(TerranovaGoldenRepublicBohemiaCopy.documentationError, lang)}</p>
               ) : doc ? (
                 <DocMarkdownArticle content={doc} className="zion-docs-prose max-w-4xl mx-auto" />
               ) : (
-                <p className="text-sm text-white/60">{TerranovaGoldenRepublicBohemiaCopy.documentationLoading[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm text-white/60">{tx5(TerranovaGoldenRepublicBohemiaCopy.documentationLoading, lang)}</p>
               )}
             </div>
           </div>
@@ -761,15 +762,15 @@ export default function GoldenRepublicBohemiaPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-zion-gold">
-              {TerranovaGoldenRepublicBohemiaCopy.openQuestionsLookingForGuardia[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGoldenRepublicBohemiaCopy.openQuestionsLookingForGuardia, lang)}
             </h3>
             <ul className="space-y-2">
               {[
-                TerranovaGoldenRepublicBohemiaCopy.exactGpsCoordinatesAndLandArea[cs ? 'cs' : 'en'],
-                TerranovaGoldenRepublicBohemiaCopy.legalFormZsAssociationVsZuInsti[cs ? 'cs' : 'en'],
-                TerranovaGoldenRepublicBohemiaCopy.zionNodeCoordinatorRecruitingA[cs ? 'cs' : 'en'],
-                TerranovaGoldenRepublicBohemiaCopy.partnershipsWithCzechUniversit[cs ? 'cs' : 'en'],
-                TerranovaGoldenRepublicBohemiaCopy.seedLibraryWhichCzechHeritageV[cs ? 'cs' : 'en'],
+                tx5(TerranovaGoldenRepublicBohemiaCopy.exactGpsCoordinatesAndLandArea, lang),
+                tx5(TerranovaGoldenRepublicBohemiaCopy.legalFormZsAssociationVsZuInsti, lang),
+                tx5(TerranovaGoldenRepublicBohemiaCopy.zionNodeCoordinatorRecruitingA, lang),
+                tx5(TerranovaGoldenRepublicBohemiaCopy.partnershipsWithCzechUniversit, lang),
+                tx5(TerranovaGoldenRepublicBohemiaCopy.seedLibraryWhichCzechHeritageV, lang),
               ].map((q, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-white/70">
                   <Dot className="w-4 h-4 text-zion-gold shrink-0 mt-0.5" />
@@ -778,7 +779,7 @@ export default function GoldenRepublicBohemiaPage() {
               ))}
             </ul>
             <p className="text-zion-gold/55 text-xs pt-2">
-              {TerranovaGoldenRepublicBohemiaCopy.doYouHearTheCallOfTheCircleAre[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGoldenRepublicBohemiaCopy.doYouHearTheCallOfTheCircleAre, lang)}
             </p>
             <a
               href="https://discord.gg/wvxJ7DhZ8"
@@ -787,7 +788,7 @@ export default function GoldenRepublicBohemiaPage() {
               className="zion-button-secondary"
             >
               <Users className="w-4 h-4" />
-              {TerranovaGoldenRepublicBohemiaCopy.joinDiscord[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGoldenRepublicBohemiaCopy.joinDiscord, lang)}
             </a>
           </div>
         </motion.section>
@@ -812,14 +813,14 @@ export default function GoldenRepublicBohemiaPage() {
               className="inline-flex items-center gap-2 text-sm text-white/85 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>{TerranovaGoldenRepublicBohemiaCopy.home[cs ? 'cs' : 'en']}</span>
+              <span>{tx5(TerranovaGoldenRepublicBohemiaCopy.home, lang)}</span>
             </Link>
             <span className="text-zion-gold/45">|</span>
             <Link
               href="/terranova"
               className="inline-flex items-center gap-2 text-sm text-white/85 hover:text-white transition-colors"
             >
-              <span>{TerranovaGoldenRepublicBohemiaCopy.terraNova[cs ? 'cs' : 'en']}</span>
+              <span>{tx5(TerranovaGoldenRepublicBohemiaCopy.terraNova, lang)}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

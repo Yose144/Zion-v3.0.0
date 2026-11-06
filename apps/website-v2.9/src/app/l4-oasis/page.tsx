@@ -11,7 +11,8 @@ import {
   Bot, Compass, Atom, Dna, Infinity as InfinityIcon,
   MonitorPlay, MousePointerClick
 } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import OasisPreviewLazy from '@/components/OasisPreviewLazy';
 
 const OASIS_URL = 'https://oasis.zionterranova.com';
@@ -201,49 +202,49 @@ const CONSCIOUSNESS_LEVELS = [
   { name: 'On The Star', xp: '10,000,000', mult: '15.0×', bonus: '5,000,000' },
 ];
 
-const getMultiverseLayers = (cs: boolean) => [
-  { title: L4OasisCopy.layer1Title[cs ? 'cs' : 'en'], desc: L4OasisCopy.layer1Desc[cs ? 'cs' : 'en'], icon: Orbit, color: 'text-zion-cyan' },
-  { title: L4OasisCopy.layer2Title[cs ? 'cs' : 'en'], desc: L4OasisCopy.layer2Desc[cs ? 'cs' : 'en'], icon: Layers, color: 'text-zion-purple' },
-  { title: L4OasisCopy.layer3Title[cs ? 'cs' : 'en'], desc: L4OasisCopy.layer3Desc[cs ? 'cs' : 'en'], icon: Clock, color: 'text-zion-gold' },
-  { title: L4OasisCopy.layer4Title[cs ? 'cs' : 'en'], desc: L4OasisCopy.layer4Desc[cs ? 'cs' : 'en'], icon: Dna, color: 'text-zion-cyan' },
-  { title: L4OasisCopy.layer5Title[cs ? 'cs' : 'en'], desc: L4OasisCopy.layer5Desc[cs ? 'cs' : 'en'], icon: InfinityIcon, color: 'text-zion-purple' },
+const getMultiverseLayers = (cs: boolean, lang: Lang) => [
+  { title: tx5(L4OasisCopy.layer1Title, lang), desc: tx5(L4OasisCopy.layer1Desc, lang), icon: Orbit, color: 'text-zion-cyan' },
+  { title: tx5(L4OasisCopy.layer2Title, lang), desc: tx5(L4OasisCopy.layer2Desc, lang), icon: Layers, color: 'text-zion-purple' },
+  { title: tx5(L4OasisCopy.layer3Title, lang), desc: tx5(L4OasisCopy.layer3Desc, lang), icon: Clock, color: 'text-zion-gold' },
+  { title: tx5(L4OasisCopy.layer4Title, lang), desc: tx5(L4OasisCopy.layer4Desc, lang), icon: Dna, color: 'text-zion-cyan' },
+  { title: tx5(L4OasisCopy.layer5Title, lang), desc: tx5(L4OasisCopy.layer5Desc, lang), icon: InfinityIcon, color: 'text-zion-purple' },
 ];
 
-const getZones = (cs: boolean) => [
-  { name: L4OasisCopy.zoneDashboard[cs ? 'cs' : 'en'], icon: Compass },
-  { name: L4OasisCopy.zoneAvatars[cs ? 'cs' : 'en'], icon: Star },
-  { name: L4OasisCopy.zoneQuests[cs ? 'cs' : 'en'], icon: Swords },
-  { name: L4OasisCopy.zoneLeaderboard[cs ? 'cs' : 'en'], icon: Trophy },
-  { name: L4OasisCopy.zoneTerritories[cs ? 'cs' : 'en'], icon: MapPin },
-  { name: L4OasisCopy.zoneGuilds[cs ? 'cs' : 'en'], icon: Users },
-  { name: L4OasisCopy.zoneGoldenEgg[cs ? 'cs' : 'en'], icon: Gem },
-  { name: L4OasisCopy.zoneHangar[cs ? 'cs' : 'en'], icon: Rocket },
+const getZones = (cs: boolean, lang: Lang) => [
+  { name: tx5(L4OasisCopy.zoneDashboard, lang), icon: Compass },
+  { name: tx5(L4OasisCopy.zoneAvatars, lang), icon: Star },
+  { name: tx5(L4OasisCopy.zoneQuests, lang), icon: Swords },
+  { name: tx5(L4OasisCopy.zoneLeaderboard, lang), icon: Trophy },
+  { name: tx5(L4OasisCopy.zoneTerritories, lang), icon: MapPin },
+  { name: tx5(L4OasisCopy.zoneGuilds, lang), icon: Users },
+  { name: tx5(L4OasisCopy.zoneGoldenEgg, lang), icon: Gem },
+  { name: tx5(L4OasisCopy.zoneHangar, lang), icon: Rocket },
 ];
 
-const getAiBridge = (cs: boolean) => [
-  { title: L4OasisCopy.aiQuestNarrative[cs ? 'cs' : 'en'], desc: L4OasisCopy.aiQuestNarrativeDesc[cs ? 'cs' : 'en'], icon: BookOpen, color: 'text-zion-cyan' },
-  { title: L4OasisCopy.aiNpcDialogue[cs ? 'cs' : 'en'], desc: L4OasisCopy.aiNpcDialogueDesc[cs ? 'cs' : 'en'], icon: Bot, color: 'text-zion-purple' },
-  { title: L4OasisCopy.aiConsciousnessEval[cs ? 'cs' : 'en'], desc: L4OasisCopy.aiConsciousnessEvalDesc[cs ? 'cs' : 'en'], icon: Sparkles, color: 'text-zion-gold' },
+const getAiBridge = (cs: boolean, lang: Lang) => [
+  { title: tx5(L4OasisCopy.aiQuestNarrative, lang), desc: tx5(L4OasisCopy.aiQuestNarrativeDesc, lang), icon: BookOpen, color: 'text-zion-cyan' },
+  { title: tx5(L4OasisCopy.aiNpcDialogue, lang), desc: tx5(L4OasisCopy.aiNpcDialogueDesc, lang), icon: Bot, color: 'text-zion-purple' },
+  { title: tx5(L4OasisCopy.aiConsciousnessEval, lang), desc: tx5(L4OasisCopy.aiConsciousnessEvalDesc, lang), icon: Sparkles, color: 'text-zion-gold' },
 ];
 
-const getProtocols = (cs: boolean) => [
-  { title: L4OasisCopy.avatarMinting[cs ? 'cs' : 'en'], desc: L4OasisCopy.everyAvatarIsAnNftOnZionL1Erc7[cs ? 'cs' : 'en'], icon: Star, color: 'text-zion-gold' },
-  { title: L4OasisCopy.questEngine_2[cs ? 'cs' : 'en'], desc: L4OasisCopy.questEngineDesc2[cs ? 'cs' : 'en'], icon: Swords, color: 'text-zion-cyan' },
-  { title: L4OasisCopy.nftInventory[cs ? 'cs' : 'en'], desc: L4OasisCopy.itemsWeaponsArmorAllAsNftsWith[cs ? 'cs' : 'en'], icon: Shield, color: 'text-zion-cyan' },
-  { title: L4OasisCopy.guildTreasury[cs ? 'cs' : 'en'], desc: L4OasisCopy.guildsAsSubDaosOnChainTreasury[cs ? 'cs' : 'en'], icon: Coins, color: 'text-zion-purple' },
-  { title: L4OasisCopy.territoryClaims[cs ? 'cs' : 'en'], desc: L4OasisCopy.digitalTerritoriesOnZionMapL1R[cs ? 'cs' : 'en'], icon: MapPin, color: 'text-zion-gold' },
-  { title: L4OasisCopy.xpZionBridge[cs ? 'cs' : 'en'], desc: L4OasisCopy.xpFromQuestsConvertibleToZionT[cs ? 'cs' : 'en'], icon: Zap, color: 'text-zion-gold' },
+const getProtocols = (cs: boolean, lang: Lang) => [
+  { title: tx5(L4OasisCopy.avatarMinting, lang), desc: tx5(L4OasisCopy.everyAvatarIsAnNftOnZionL1Erc7, lang), icon: Star, color: 'text-zion-gold' },
+  { title: tx5(L4OasisCopy.questEngine_2, lang), desc: tx5(L4OasisCopy.questEngineDesc2, lang), icon: Swords, color: 'text-zion-cyan' },
+  { title: tx5(L4OasisCopy.nftInventory, lang), desc: tx5(L4OasisCopy.itemsWeaponsArmorAllAsNftsWith, lang), icon: Shield, color: 'text-zion-cyan' },
+  { title: tx5(L4OasisCopy.guildTreasury, lang), desc: tx5(L4OasisCopy.guildsAsSubDaosOnChainTreasury, lang), icon: Coins, color: 'text-zion-purple' },
+  { title: tx5(L4OasisCopy.territoryClaims, lang), desc: tx5(L4OasisCopy.digitalTerritoriesOnZionMapL1R, lang), icon: MapPin, color: 'text-zion-gold' },
+  { title: tx5(L4OasisCopy.xpZionBridge, lang), desc: tx5(L4OasisCopy.xpFromQuestsConvertibleToZionT, lang), icon: Zap, color: 'text-zion-gold' },
 ];
 
-const getPools = (cs: boolean) => [
-  { title: L4OasisCopy.poolMining[cs ? 'cs' : 'en'], desc: L4OasisCopy.poolMiningDesc[cs ? 'cs' : 'en'], icon: Cpu, color: 'text-zion-cyan' },
-  { title: L4OasisCopy.poolChallenges[cs ? 'cs' : 'en'], desc: L4OasisCopy.poolChallengesDesc[cs ? 'cs' : 'en'], icon: Swords, color: 'text-zion-gold' },
-  { title: L4OasisCopy.poolGuildTerritory[cs ? 'cs' : 'en'], desc: L4OasisCopy.poolGuildTerritoryDesc[cs ? 'cs' : 'en'], icon: Users, color: 'text-zion-purple' },
+const getPools = (cs: boolean, lang: Lang) => [
+  { title: tx5(L4OasisCopy.poolMining, lang), desc: tx5(L4OasisCopy.poolMiningDesc, lang), icon: Cpu, color: 'text-zion-cyan' },
+  { title: tx5(L4OasisCopy.poolChallenges, lang), desc: tx5(L4OasisCopy.poolChallengesDesc, lang), icon: Swords, color: 'text-zion-gold' },
+  { title: tx5(L4OasisCopy.poolGuildTerritory, lang), desc: tx5(L4OasisCopy.poolGuildTerritoryDesc, lang), icon: Users, color: 'text-zion-purple' },
 ];
 
-const getRoadmap = (cs: boolean) => [
+const getRoadmap = (cs: boolean, lang: Lang) => [
   {
-    phase: L4OasisCopy.alpha[cs ? 'cs' : 'en'],
+    phase: tx5(L4OasisCopy.alpha, lang),
     period: '2027 Q3',
     status: 'planned',
     items: cs
@@ -251,7 +252,7 @@ const getRoadmap = (cs: boolean) => [
       : ['Basic UE5 world', 'On-chain avatars', 'XP system', 'Test network'],
   },
   {
-    phase: L4OasisCopy.beta[cs ? 'cs' : 'en'],
+    phase: tx5(L4OasisCopy.beta, lang),
     period: '2028 Q2',
     status: 'planned',
     items: cs
@@ -259,7 +260,7 @@ const getRoadmap = (cs: boolean) => [
       : ['NFT inventory', 'Guild system', 'PvE quests', 'ZION marketplace integration'],
   },
   {
-    phase: L4OasisCopy.live[cs ? 'cs' : 'en'],
+    phase: tx5(L4OasisCopy.live, lang),
     period: '2028 Q4',
     status: 'vision',
     items: cs
@@ -271,12 +272,12 @@ const getRoadmap = (cs: boolean) => [
 export default function L4OasisPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const multiverseLayers = getMultiverseLayers(cs);
-  const zones = getZones(cs);
-  const aiBridge = getAiBridge(cs);
-  const protocols = getProtocols(cs);
-  const pools = getPools(cs);
-  const roadmap = getRoadmap(cs);
+  const multiverseLayers = getMultiverseLayers(cs, lang);
+  const zones = getZones(cs, lang);
+  const aiBridge = getAiBridge(cs, lang);
+  const protocols = getProtocols(cs, lang);
+  const pools = getPools(cs, lang);
+  const roadmap = getRoadmap(cs, lang);
 
   const [oasisStatus, setOasisStatus] = useState<OasisStatus>('checking');
 
@@ -303,7 +304,7 @@ export default function L4OasisPage() {
           ? <Wifi className="h-3 w-3 text-zion-cyan" />
           : <WifiOff className="h-3 w-3 text-zion-purple" />}
       <span className={status === 'online' ? 'text-zion-cyan' : status === 'offline' ? 'text-zion-purple' : 'text-zion-gold'}>
-        {label} · {status === 'checking' ? L4OasisCopy.checking[cs ? 'cs' : 'en'] : status === 'online' ? L4OasisCopy.online[cs ? 'cs' : 'en'] : L4OasisCopy.offline[cs ? 'cs' : 'en']}
+        {label} · {status === 'checking' ? tx5(L4OasisCopy.checking, lang) : status === 'online' ? tx5(L4OasisCopy.online, lang) : tx5(L4OasisCopy.offline, lang)}
       </span>
     </div>
   );
@@ -325,7 +326,7 @@ export default function L4OasisPage() {
                 <Gamepad2 className="h-4 w-4" />
                 L4 · ZION Oasis · Game Layer
               </div>
-              {statusPill(oasisStatus, L4OasisCopy.oasisApi[cs ? 'cs' : 'en'])}
+              {statusPill(oasisStatus, tx5(L4OasisCopy.oasisApi, lang))}
               <a
                 href={OASIS_URL}
                 target="_blank"
@@ -333,35 +334,35 @@ export default function L4OasisPage() {
                 className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-3 py-1 text-xs text-zion-cyan hover:bg-zion-cyan/15 transition-colors"
               >
                 <Globe2 className="h-3 w-3" />
-                {L4OasisCopy.webClient[cs ? 'cs' : 'en']} · {L4OasisCopy.online[cs ? 'cs' : 'en']}
+                {tx5(L4OasisCopy.webClient, lang)} · {tx5(L4OasisCopy.online, lang)}
               </a>
             </div>
             <div className="max-w-3xl">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                {L4OasisCopy.gameLayerOfTheZionEcosystem[cs ? 'cs' : 'en']}
+                {tx5(L4OasisCopy.gameLayerOfTheZionEcosystem, lang)}
               </p>
               <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
-                {L4OasisCopy.zionOasisL4[cs ? 'cs' : 'en']}
+                {tx5(L4OasisCopy.zionOasisL4, lang)}
               </h1>
               <p className="mt-2 text-lg font-medium text-zion-gold/90">
-                {L4OasisCopy.oasisTagline[cs ? 'cs' : 'en']}
+                {tx5(L4OasisCopy.oasisTagline, lang)}
               </p>
             </div>
             <p className="text-lg text-gray-300 max-w-3xl">
-              {L4OasisCopy.heroDesc[cs ? 'cs' : 'en']}
+              {tx5(L4OasisCopy.heroDesc, lang)}
             </p>
             <div className="flex flex-wrap gap-3 text-xs">
               <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-orange-200">
-                <Star className="h-3 w-3" /> {AVATAR_COUNT} {cs ? 'avatarů' : 'avatars'}
+                <Star className="h-3 w-3" /> {AVATAR_COUNT} {cs ? 'avatarů' : t5('avatars', lang)}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-cyan-200">
-                <Globe2 className="h-3 w-3" /> {WORLD_STATS.total} {cs ? 'světů' : 'worlds'}
+                <Globe2 className="h-3 w-3" /> {WORLD_STATS.total} {cs ? 'světů' : t5('worlds', lang)}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-zion-purple/30 bg-zion-purple/10 px-4 py-2 text-purple-200">
                 <KeyRound className="h-3 w-3" /> 108 clues · 3 keys
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-amber-200">
-                <Gem className="h-3 w-3" /> 1B ZION {cs ? 'hlavní cena' : 'grand prize'}
+                <Gem className="h-3 w-3" /> 1B ZION {cs ? 'hlavní cena' : t5('grand prize', lang)}
               </span>
             </div>
             <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
@@ -369,7 +370,7 @@ export default function L4OasisPage() {
                 src="/images/l4-oasis/hero.webp"
                 srcSet="/images/l4-oasis/hero-m.webp 960w, /images/l4-oasis/hero.webp 1280w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
-                alt={cs ? 'ZION Oasis — Strom života a Zlaté vejce ve spirální galaxii' : 'ZION Oasis — the Tree of Life and the Golden Egg in a spiral galaxy'}
+                alt={cs ? 'ZION Oasis — Strom života a Zlaté vejce ve spirální galaxii' : t5('ZION Oasis — the Tree of Life and the Golden Egg in a spiral galaxy', lang)}
                 width={1280}
                 height={720}
                 loading="eager"
@@ -390,12 +391,12 @@ export default function L4OasisPage() {
           style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.liveClient[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L4OasisCopy.liveClient, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <MonitorPlay className="h-7 w-7 text-zion-cyan" />
-              {L4OasisCopy.oasisWebLive[cs ? 'cs' : 'en']}
+              {tx5(L4OasisCopy.oasisWebLive, lang)}
             </h2>
-            <p className="text-sm text-gray-400 max-w-3xl">{L4OasisCopy.liveClientDesc[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400 max-w-3xl">{tx5(L4OasisCopy.liveClientDesc, lang)}</p>
           </div>
           <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
@@ -408,21 +409,21 @@ export default function L4OasisPage() {
                   </div>
                 ))}
               </div>
-              <p className="mt-4 text-xs text-gray-500">{L4OasisCopy.shipsNote[cs ? 'cs' : 'en']}</p>
-              <p className="mt-1 text-xs text-gray-500">{L4OasisCopy.hiranKeysNote[cs ? 'cs' : 'en']}</p>
+              <p className="mt-4 text-xs text-gray-500">{tx5(L4OasisCopy.shipsNote, lang)}</p>
+              <p className="mt-1 text-xs text-gray-500">{tx5(L4OasisCopy.hiranKeysNote, lang)}</p>
             </div>
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
                 <MousePointerClick className="h-4 w-4 text-zion-purple" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-zion-purple">{L4OasisCopy.pilgrimRite[cs ? 'cs' : 'en']}</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-zion-purple">{tx5(L4OasisCopy.pilgrimRite, lang)}</span>
               </div>
-              <p className="text-xs text-gray-400 leading-relaxed mb-4">{L4OasisCopy.pilgrimRiteDesc[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs text-gray-400 leading-relaxed mb-4">{tx5(L4OasisCopy.pilgrimRiteDesc, lang)}</p>
               <div className="flex flex-col gap-2">
                 <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300">
-                  {L4OasisCopy.redPill[cs ? 'cs' : 'en']}
+                  {tx5(L4OasisCopy.redPill, lang)}
                 </div>
                 <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-300">
-                  {L4OasisCopy.bluePill[cs ? 'cs' : 'en']}
+                  {tx5(L4OasisCopy.bluePill, lang)}
                 </div>
               </div>
               <a
@@ -431,7 +432,7 @@ export default function L4OasisPage() {
                 rel="noopener noreferrer"
                 className="mt-4 inline-flex items-center gap-2 rounded-xl bg-zion-gold/90 px-4 py-2.5 text-sm font-bold text-black hover:bg-zion-gold transition-colors"
               >
-                {L4OasisCopy.enterOasis[cs ? 'cs' : 'en']} <ArrowRight className="h-4 w-4" />
+                {tx5(L4OasisCopy.enterOasis, lang)} <ArrowRight className="h-4 w-4" />
               </a>
             </div>
           </div>
@@ -446,12 +447,12 @@ export default function L4OasisPage() {
           style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.multiverse[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L4OasisCopy.multiverse, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Atom className="h-7 w-7 text-zion-purple" />
-              {L4OasisCopy.fiveLayersOfReality[cs ? 'cs' : 'en']}
+              {tx5(L4OasisCopy.fiveLayersOfReality, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{L4OasisCopy.multiverseDesc[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(L4OasisCopy.multiverseDesc, lang)}</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5 mb-6">
             {multiverseLayers.map((l) => (
@@ -465,15 +466,15 @@ export default function L4OasisPage() {
           <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="max-w-md">
-                <p className="text-xs font-semibold uppercase tracking-wider text-zion-cyan mb-1">{L4OasisCopy.worldRegistry[cs ? 'cs' : 'en']} · {WORLD_STATS.total}</p>
-                <p className="text-xs text-gray-400 leading-relaxed">{L4OasisCopy.worldsRegistryDesc[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-zion-cyan mb-1">{tx5(L4OasisCopy.worldRegistry, lang)} · {WORLD_STATS.total}</p>
+                <p className="text-xs text-gray-400 leading-relaxed">{tx5(L4OasisCopy.worldsRegistryDesc, lang)}</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <span className="rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-3 py-1.5 text-xs text-cyan-200">{WORLD_STATS.starSystems} {L4OasisCopy.starSystems[cs ? 'cs' : 'en']}</span>
-                <span className="rounded-full border border-zion-gold/30 bg-zion-gold/10 px-3 py-1.5 text-xs text-amber-200">{WORLD_STATS.planets} {L4OasisCopy.planets[cs ? 'cs' : 'en']}</span>
-                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-gray-300">{WORLD_STATS.sectors} {L4OasisCopy.sectors[cs ? 'cs' : 'en']}</span>
-                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-gray-300">{WORLD_STATS.worlds} {L4OasisCopy.worldsCount[cs ? 'cs' : 'en']}</span>
-                <span className="rounded-full border border-zion-purple/30 bg-zion-purple/10 px-3 py-1.5 text-xs text-purple-200">{WORLD_STATS.dimensions} {L4OasisCopy.dimensions[cs ? 'cs' : 'en']}</span>
+                <span className="rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-3 py-1.5 text-xs text-cyan-200">{WORLD_STATS.starSystems} {tx5(L4OasisCopy.starSystems, lang)}</span>
+                <span className="rounded-full border border-zion-gold/30 bg-zion-gold/10 px-3 py-1.5 text-xs text-amber-200">{WORLD_STATS.planets} {tx5(L4OasisCopy.planets, lang)}</span>
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-gray-300">{WORLD_STATS.sectors} {tx5(L4OasisCopy.sectors, lang)}</span>
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-gray-300">{WORLD_STATS.worlds} {tx5(L4OasisCopy.worldsCount, lang)}</span>
+                <span className="rounded-full border border-zion-purple/30 bg-zion-purple/10 px-3 py-1.5 text-xs text-purple-200">{WORLD_STATS.dimensions} {tx5(L4OasisCopy.dimensions, lang)}</span>
               </div>
             </div>
           </div>
@@ -488,12 +489,12 @@ export default function L4OasisPage() {
           style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.liveSystem[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L4OasisCopy.liveSystem, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Star className="h-7 w-7 text-zion-gold" />
-              {L4OasisCopy.avatarSystemActive[cs ? 'cs' : 'en']}
+              {tx5(L4OasisCopy.avatarSystemActive, lang)}
             </h2>
-            <p className="text-sm text-gray-400 max-w-3xl">{L4OasisCopy.avatarSystemDesc[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400 max-w-3xl">{tx5(L4OasisCopy.avatarSystemDesc, lang)}</p>
           </div>
           <div className="grid md:grid-cols-4 gap-4 mb-6">
             {AVATAR_RARITY.map((r) => (
@@ -508,11 +509,11 @@ export default function L4OasisPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-xl border border-white/10 bg-black/30 p-4 flex items-start gap-3">
               <Swords className="h-5 w-5 text-zion-cyan shrink-0 mt-0.5" />
-              <p className="text-sm text-gray-400">{L4OasisCopy.avatarQuestsNote[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm text-gray-400">{tx5(L4OasisCopy.avatarQuestsNote, lang)}</p>
             </div>
             <div className="rounded-xl border border-zion-gold/20 bg-zion-gold/5 p-4 flex items-start gap-3">
               <Gem className="h-5 w-5 text-zion-gold shrink-0 mt-0.5" />
-              <p className="text-sm text-gray-300">{L4OasisCopy.krishnaNote[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm text-gray-300">{tx5(L4OasisCopy.krishnaNote, lang)}</p>
             </div>
           </div>
           <Link
@@ -520,7 +521,7 @@ export default function L4OasisPage() {
             className="mt-6 inline-flex items-center gap-2 rounded-xl border border-zion-gold/30 bg-zion-gold/10 px-5 py-2.5 text-sm font-semibold text-zion-gold hover:bg-zion-gold/15 transition-colors"
           >
             <Users className="h-4 w-4" />
-            {L4OasisCopy.browseRoster[cs ? 'cs' : 'en']} <ArrowRight className="h-4 w-4" />
+            {tx5(L4OasisCopy.browseRoster, lang)} <ArrowRight className="h-4 w-4" />
           </Link>
         </motion.section>
 
@@ -533,10 +534,10 @@ export default function L4OasisPage() {
           style={{ '--rc': '255, 215, 0' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.treasure[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L4OasisCopy.treasure, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Trophy className="h-7 w-7 text-zion-gold" />
-              {L4OasisCopy.goldenEggTitle[cs ? 'cs' : 'en']}
+              {tx5(L4OasisCopy.goldenEggTitle, lang)}
             </h2>
           </div>
           <div className="mb-6">
@@ -544,24 +545,24 @@ export default function L4OasisPage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L4OasisCopy.grandPrize[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{tx5(L4OasisCopy.grandPrize, lang)}</p>
               <p className="text-xl md:text-2xl font-bold text-zion-gold">1B ZION</p>
             </div>
             <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L4OasisCopy.totalPrizePool[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{tx5(L4OasisCopy.totalPrizePool, lang)}</p>
               <p className="text-xl md:text-2xl font-bold text-zion-gold">~1.94B ZION</p>
             </div>
             <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L4OasisCopy.clues[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{tx5(L4OasisCopy.clues, lang)}</p>
               <p className="text-xl md:text-2xl font-bold text-zion-cyan">108</p>
             </div>
             <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L4OasisCopy.masterKeys[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{tx5(L4OasisCopy.masterKeys, lang)}</p>
               <p className="text-xl md:text-2xl font-bold text-zion-purple">3</p>
             </div>
           </div>
           <p className="text-sm text-gray-300 leading-relaxed mb-6 max-w-4xl">
-            {L4OasisCopy.goldenEggDesc[cs ? 'cs' : 'en']}
+            {tx5(L4OasisCopy.goldenEggDesc, lang)}
           </p>
 
           <div className="grid gap-4 md:grid-cols-3 mb-6">
@@ -577,14 +578,14 @@ export default function L4OasisPage() {
           </div>
 
           <div className="zion-rainbow-sub p-5 overflow-x-auto mb-4" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
-            <p className="text-xs font-semibold uppercase tracking-wider text-zion-gold mb-3">{L4OasisCopy.prizeTiersTitle[cs ? 'cs' : 'en']}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-zion-gold mb-3">{tx5(L4OasisCopy.prizeTiersTitle, lang)}</p>
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-white/10 text-gray-500">
-                  <th className="pb-2 pr-4 font-medium">{L4OasisCopy.tierRank[cs ? 'cs' : 'en']}</th>
-                  <th className="pb-2 pr-4 font-medium">{L4OasisCopy.tierTitle[cs ? 'cs' : 'en']}</th>
-                  <th className="pb-2 pr-4 font-medium">{L4OasisCopy.tierPrize[cs ? 'cs' : 'en']}</th>
-                  <th className="pb-2 font-medium">{L4OasisCopy.tierUnlock[cs ? 'cs' : 'en']}</th>
+                  <th className="pb-2 pr-4 font-medium">{tx5(L4OasisCopy.tierRank, lang)}</th>
+                  <th className="pb-2 pr-4 font-medium">{tx5(L4OasisCopy.tierTitle, lang)}</th>
+                  <th className="pb-2 pr-4 font-medium">{tx5(L4OasisCopy.tierPrize, lang)}</th>
+                  <th className="pb-2 font-medium">{tx5(L4OasisCopy.tierUnlock, lang)}</th>
                 </tr>
               </thead>
               <tbody>
@@ -601,7 +602,7 @@ export default function L4OasisPage() {
           </div>
           <div className="rounded-xl border border-zion-purple/20 bg-zion-purple/5 p-4 flex items-start gap-3">
             <KeyRound className="h-5 w-5 text-zion-purple shrink-0 mt-0.5" />
-            <p className="text-sm text-gray-300">{L4OasisCopy.finalUnlock[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-300">{tx5(L4OasisCopy.finalUnlock, lang)}</p>
           </div>
         </motion.section>
 
@@ -614,22 +615,22 @@ export default function L4OasisPage() {
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.consciousness[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L4OasisCopy.consciousness, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-7 w-7 text-zion-purple" />
-              {L4OasisCopy.nineLevels[cs ? 'cs' : 'en']}
+              {tx5(L4OasisCopy.nineLevels, lang)}
             </h2>
-            <p className="text-sm text-gray-400 max-w-3xl">{L4OasisCopy.consciousnessDesc[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400 max-w-3xl">{tx5(L4OasisCopy.consciousnessDesc, lang)}</p>
           </div>
           <div className="zion-rainbow-sub p-5 overflow-x-auto" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-white/10 text-gray-500">
                   <th className="pb-2 pr-4 font-medium">#</th>
-                  <th className="pb-2 pr-4 font-medium">{L4OasisCopy.clName[cs ? 'cs' : 'en']}</th>
-                  <th className="pb-2 pr-4 font-medium">{L4OasisCopy.clXp[cs ? 'cs' : 'en']}</th>
-                  <th className="pb-2 pr-4 font-medium">{L4OasisCopy.clMultiplier[cs ? 'cs' : 'en']}</th>
-                  <th className="pb-2 font-medium">{L4OasisCopy.clBonus[cs ? 'cs' : 'en']}</th>
+                  <th className="pb-2 pr-4 font-medium">{tx5(L4OasisCopy.clName, lang)}</th>
+                  <th className="pb-2 pr-4 font-medium">{tx5(L4OasisCopy.clXp, lang)}</th>
+                  <th className="pb-2 pr-4 font-medium">{tx5(L4OasisCopy.clMultiplier, lang)}</th>
+                  <th className="pb-2 font-medium">{tx5(L4OasisCopy.clBonus, lang)}</th>
                 </tr>
               </thead>
               <tbody>
@@ -656,12 +657,12 @@ export default function L4OasisPage() {
           style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.rewards[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L4OasisCopy.rewards, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Coins className="h-7 w-7 text-zion-gold" />
-              {L4OasisCopy.oasisPool[cs ? 'cs' : 'en']} — 4.95B ZION
+              {tx5(L4OasisCopy.oasisPool, lang)} — 4.95B ZION
             </h2>
-            <p className="text-sm text-gray-400">{L4OasisCopy.oasisPoolDesc[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(L4OasisCopy.oasisPoolDesc, lang)}</p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {pools.map((p) => (
@@ -683,12 +684,12 @@ export default function L4OasisPage() {
           style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.aiBridge[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L4OasisCopy.aiBridge, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Bot className="h-7 w-7 text-zion-cyan" />
-              {L4OasisCopy.hiranInsideOasis[cs ? 'cs' : 'en']}
+              {tx5(L4OasisCopy.hiranInsideOasis, lang)}
             </h2>
-            <p className="text-sm text-gray-400 max-w-3xl">{L4OasisCopy.aiBridgeDesc[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400 max-w-3xl">{tx5(L4OasisCopy.aiBridgeDesc, lang)}</p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {aiBridge.map((item) => (
@@ -710,13 +711,13 @@ export default function L4OasisPage() {
           style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.baselineProtocols[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L4OasisCopy.baselineProtocols, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Shield className="h-7 w-7 text-zion-cyan" />
-              {L4OasisCopy.oasisGameProtocols[cs ? 'cs' : 'en']}
+              {tx5(L4OasisCopy.oasisGameProtocols, lang)}
             </h2>
             <p className="text-sm text-gray-400">
-              {L4OasisCopy.coreGameProtocolsForInteropera[cs ? 'cs' : 'en']}
+              {tx5(L4OasisCopy.coreGameProtocolsForInteropera, lang)}
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -741,10 +742,10 @@ export default function L4OasisPage() {
           style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.developmentPath[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L4OasisCopy.developmentPath, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Clock className="h-7 w-7 text-zion-cyan" />
-              {L4OasisCopy.l4OasisRoadmap[cs ? 'cs' : 'en']}
+              {tx5(L4OasisCopy.l4OasisRoadmap, lang)}
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
@@ -785,7 +786,7 @@ export default function L4OasisPage() {
           className="zion-cta-banner"
         >
           <h2 className="text-2xl font-semibold text-white text-center mb-6">
-            {L4OasisCopy.learnMoreAboutL4AndTheEcosyste[cs ? 'cs' : 'en']}
+            {tx5(L4OasisCopy.learnMoreAboutL4AndTheEcosyste, lang)}
           </h2>
           <div className="flex flex-wrap justify-center gap-4">
             <a
@@ -795,7 +796,7 @@ export default function L4OasisPage() {
               className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
               style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
             >
-              <Gamepad2 className="h-4 w-4" /> {L4OasisCopy.enterOasis[cs ? 'cs' : 'en']}
+              <Gamepad2 className="h-4 w-4" /> {tx5(L4OasisCopy.enterOasis, lang)}
             </a>
             <Link href="/l3-hiran" className="inline-flex items-center gap-2 rounded-2xl border border-zion-purple/30 bg-zion-purple/5 px-6 py-3 text-sm font-semibold text-purple-200 hover:bg-zion-purple/10 transition-colors">
               <Sparkles className="h-4 w-4" /> L3 Hiran
