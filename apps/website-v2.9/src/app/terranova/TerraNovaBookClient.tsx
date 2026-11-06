@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import MarkdownDoc from '@/components/docs/MarkdownDoc';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
 import editionsJson from '../../../public/terranova-editions.json';
 import PioneerProjectCards from './components/PioneerProjectCards';
@@ -197,13 +198,13 @@ function chapterGlyph(number: string): string {
 }
 
 /** "Prolog" | "Kapitola 7"/"Chapter 7" | "Příloha A"/"Appendix A" | "Závěr"/"Conclusion" */
-function chapterKindLabel(number: string, cs: boolean): string {
-  if (number === 'Prolog') return cs ? 'Prolog' : 'Prologue';
-  if (number === 'Závěr') return cs ? 'Závěr' : 'Conclusion';
+function chapterKindLabel(number: string, cs: boolean, lang: Lang): string {
+  if (number === 'Prolog') return cs ? 'Prolog' : t5('Prologue', lang);
+  if (number === 'Závěr') return cs ? 'Závěr' : t5('Conclusion', lang);
   const m = number.match(APPENDIX_RE);
-  if (m) return `${cs ? 'Příloha' : 'Appendix'} ${m[1].toUpperCase()}`;
+  if (m) return `${cs ? 'Příloha' : t5('Appendix', lang)} ${m[1].toUpperCase()}`;
   const d = number.replace(/\D/g, '');
-  return `${cs ? 'Kapitola' : 'Chapter'} ${d || number}`;
+  return `${cs ? 'Kapitola' : t5('Chapter', lang)} ${d || number}`;
 }
 
 /** Strip duplicated numbering stored inside titles ("Kapitola 01 — X" → "X"). */
@@ -211,9 +212,9 @@ function displayTitle(title: string): string {
   return title.replace(TITLE_NUMBER_RE, '');
 }
 
-function formatChapterLabel(chapter: BookChapter, cs: boolean) {
+function formatChapterLabel(chapter: BookChapter, cs: boolean, lang: Lang) {
   const title = displayTitle(cs ? chapter.titleCs : chapter.titleEn);
-  const kind = chapterKindLabel(chapter.number, cs);
+  const kind = chapterKindLabel(chapter.number, cs, lang);
   return title.toLowerCase().startsWith(kind.toLowerCase())
     ? title
     : `${kind} — ${title}`;
@@ -844,7 +845,7 @@ export default function TerraNovaBookClient() {
   const meta = META;
   const intro = INTRO;
   const compositionLines = useMemo(
-    () => currentChapters.map((chapter) => formatChapterLabel(chapter, cs)),
+    () => currentChapters.map((chapter) => formatChapterLabel(chapter, cs, lang)),
     [currentChapters, cs],
   );
 
@@ -972,18 +973,16 @@ export default function TerraNovaBookClient() {
   );
   const chapterEpigraph = cs ? chapter.epigraphCs : chapter.epigraphEn;
   const progress = ((activeChapter + 1) / currentChapters.length) * 100;
-  const chapterLabel = chapterKindLabel(chapter.number, cs);
+  const chapterLabel = chapterKindLabel(chapter.number, cs, lang);
   const selectedDirection = compassDir !== null ? ACCELERATION_DIRECTIONS[compassDir] : null;
   const selectedDharmaSpoke = DHARMA_WHEEL_SPOKES[dharmaSpoke];
-  const flowersPerZionLabel = cs
-    ? `1 ZION = 10^${Math.log10(ATOMIC_UNITS_PER_ZION)} květů`
-    : `1 ZION = 10^${Math.log10(ATOMIC_UNITS_PER_ZION)} flowers`;
+  const flowersPerZionLabel = cs ? `1 ZION = 10^${Math.log10(ATOMIC_UNITS_PER_ZION)} květů` : t5(`1 ZION = 10^${Math.log10(ATOMIC_UNITS_PER_ZION)} flowers`, lang);
   const introSignals = cs ? intro.signalsCs : intro.signalsEn;
   const introLead = cs ? intro.leadCs : intro.leadEn;
   const introBody = cs ? intro.bodyCs : intro.bodyEn;
   const introNotes = cs ? intro.notesCs : intro.notesEn;
-  const introQuote = COPY.gateGateParagateParasamgateBod[cs ? 'cs' : 'en'];
-  const introDedication = COPY.forSarahIssobelMaitreyaBuddhaR[cs ? 'cs' : 'en'];
+  const introQuote = tx5(COPY.gateGateParagateParasamgateBod, lang);
+  const introDedication = tx5(COPY.forSarahIssobelMaitreyaBuddhaR, lang);
   const genesisOverlayLines = cs
     ? [
         'Genesis není jen předmluva. Je to okamžik, kdy se jazyk, síť a závazek poprvé dotknou stejného horizontu.',
@@ -1060,7 +1059,7 @@ export default function TerraNovaBookClient() {
                       className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
                     >
                       <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-zion-gold/65">
-                        {`${COPY.layer[cs ? 'cs' : 'en']} ${index + 1}`}
+                        {`${tx5(COPY.layer, lang)} ${index + 1}`}
                       </p>
                       <p className="text-sm leading-relaxed text-white/85">{note}</p>
                     </div>
@@ -1076,7 +1075,7 @@ export default function TerraNovaBookClient() {
                     className="zion-button-primary"
                   >
                     <BookOpen className="h-4 w-4" />
-                    {COPY.openGenesis[cs ? 'cs' : 'en']}
+                    {tx5(COPY.openGenesis, lang)}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                   <button
@@ -1087,14 +1086,14 @@ export default function TerraNovaBookClient() {
                     className="zion-button-secondary"
                   >
                     <Terminal className="h-4 w-4" />
-                    {COPY.visualZionCliPanel[cs ? 'cs' : 'en']}
+                    {tx5(COPY.visualZionCliPanel, lang)}
                   </button>
                   <button
                     onClick={() => setTocOpen(true)}
                     className="zion-button-secondary"
                   >
                     <List className="h-4 w-4" />
-                    {COPY.terraNovaContents[cs ? 'cs' : 'en']}
+                    {tx5(COPY.terraNovaContents, lang)}
                   </button>
                 </div>
               </div>
@@ -1109,14 +1108,14 @@ export default function TerraNovaBookClient() {
                     </div>
                     <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-zion-gold/65">
                       <Terminal className="h-3.5 w-3.5 text-zion-cyan" />
-                      {COPY.visualZionCli[cs ? 'cs' : 'en']}
+                      {tx5(COPY.visualZionCli, lang)}
                     </div>
                   </div>
 
                   <div className="space-y-4 px-4 py-4">
                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                       <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-zion-cyan/70">
-                        {COPY.mainnetLaunchPulse[cs ? 'cs' : 'en']}
+                        {tx5(COPY.mainnetLaunchPulse, lang)}
                       </p>
                       <pre className="overflow-x-auto whitespace-pre font-mono text-[11px] leading-relaxed text-zion-cyan/90" style={{ fontFamily: '"Courier New", Courier, monospace' }}>
 {GENESIS_BANNER}
@@ -1125,7 +1124,7 @@ export default function TerraNovaBookClient() {
 
                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                       <p className="mb-3 text-[11px] uppercase tracking-[0.28em] text-zion-gold/65">
-                        {COPY.liveTerminalZionCli[cs ? 'cs' : 'en']}
+                        {tx5(COPY.liveTerminalZionCli, lang)}
                       </p>
                       <div className="min-h-22 space-y-2 font-mono text-[12px] text-white/85">
                         <div className="rounded-xl bg-white/3 px-3 py-2.5">
@@ -1144,7 +1143,7 @@ export default function TerraNovaBookClient() {
                         </div>
                         <div className="flex items-center gap-2 px-1 text-[11px] uppercase tracking-[0.24em] text-zion-gold/65">
                           <span className="inline-block h-2 w-2 rounded-full bg-zion-cyan animate-pulse" />
-                          {COPY.orbitalReaderOnline[cs ? 'cs' : 'en']}
+                          {tx5(COPY.orbitalReaderOnline, lang)}
                         </div>
                       </div>
                       <div className="mt-4 flex flex-wrap gap-2">
@@ -1153,7 +1152,7 @@ export default function TerraNovaBookClient() {
                           className="zion-button-secondary"
                         >
                           <Terminal className="h-3.5 w-3.5" />
-                          {COPY.expandCliOverlay[cs ? 'cs' : 'en']}
+                          {tx5(COPY.expandCliOverlay, lang)}
                         </button>
                         <Link
                           href="/docs"
@@ -1197,13 +1196,13 @@ export default function TerraNovaBookClient() {
         >
           <div className="mb-6 text-center">
             <p className="text-[11px] uppercase tracking-[0.36em] text-zion-gold/70">
-              {COPY.issobellaVisionDeck[cs ? 'cs' : 'en']}
+              {tx5(COPY.issobellaVisionDeck, lang)}
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
-              {COPY.goldenCompassOnTheOrbitalStati[cs ? 'cs' : 'en']}
+              {tx5(COPY.goldenCompassOnTheOrbitalStati, lang)}
             </h2>
             <p className="mt-2 text-sm text-white/70 sm:text-base">
-              {COPY.earthViewFromTheIssobellaObser[cs ? 'cs' : 'en']}
+              {tx5(COPY.earthViewFromTheIssobellaObser, lang)}
             </p>
           </div>
 
@@ -1211,12 +1210,12 @@ export default function TerraNovaBookClient() {
           <div className="mb-6 overflow-hidden zion-rainbow-card" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="px-5 py-3 flex items-center justify-between gap-3">
               <p className="text-[11px] uppercase tracking-[0.4em] text-zion-gold/60">
-                {COPY.canonicalTerraNovaBranch[cs ? 'cs' : 'en']}
+                {tx5(COPY.canonicalTerraNovaBranch, lang)}
               </p>
               <button
                 onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
                 className="zion-button-secondary"
-                title={COPY.pEpnoutDoETiny[lang === 'cs' ? 'cs' : 'en']}
+                title={tx5(COPY.pEpnoutDoETiny, lang)}
               >
                 {lang === 'cs' ? 'EN' : 'CS'}
               </button>
@@ -1261,10 +1260,10 @@ export default function TerraNovaBookClient() {
 
               <div className="relative z-10 space-y-3">
                 <p className="text-[11px] uppercase tracking-[0.3em] font-mono text-zion-cyan/80">
-                  {COPY.issobellaObservationDeck[cs ? 'cs' : 'en']}
+                  {tx5(COPY.issobellaObservationDeck, lang)}
                 </p>
                 <p className="max-w-[85%] text-sm leading-relaxed text-white/90 drop-shadow-md">
-                  {COPY.thisIsWhereTomorrowScaleApplie[cs ? 'cs' : 'en']}
+                  {tx5(COPY.thisIsWhereTomorrowScaleApplie, lang)}
                 </p>
                 <div
                   className="inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.28em]"
@@ -1301,22 +1300,22 @@ export default function TerraNovaBookClient() {
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
                 <div>
                   <p className="text-[11px] uppercase tracking-[0.3em] text-zion-gold/70">
-                    {COPY.mainPanelIssobellaStation[cs ? 'cs' : 'en']}
+                    {tx5(COPY.mainPanelIssobellaStation, lang)}
                   </p>
                   <p className="mt-1 text-sm text-white/85">
-                    {COPY.interactiveGoldenCompass[cs ? 'cs' : 'en']}
+                    {tx5(COPY.interactiveGoldenCompass, lang)}
                   </p>
                 </div>
                 <div className="zion-badge-green">
                   <span className="h-2 w-2 rounded-full bg-zion-cyan animate-pulse" />
-                  {COPY.navigationOnline[cs ? 'cs' : 'en']}
+                  {tx5(COPY.navigationOnline, lang)}
                 </div>
               </div>
 
               <div className="mb-4 zion-rainbow-sub p-3 md:p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <p className="text-[11px] uppercase tracking-[0.3em] text-zion-gold/65">
-                    {COPY.l1ToL6CompassNodes[cs ? 'cs' : 'en']}
+                    {tx5(COPY.l1ToL6CompassNodes, lang)}
                   </p>
                   <p className="text-[11px] uppercase tracking-[0.24em]" style={{ color: selectedDirection?.color ?? '#fcd116' }}>
                     {selectedDirection ? `${selectedDirection.symbol} · ${cs ? selectedDirection.titleCs : selectedDirection.titleEn}` : ''}
@@ -1371,7 +1370,7 @@ export default function TerraNovaBookClient() {
                     {selectedDirection ? (
                       <>
                         <p className="text-[11px] uppercase tracking-[0.28em]" style={{ color: selectedDirection.color }}>
-                          {COPY.selectedDirection[cs ? 'cs' : 'en']}
+                          {tx5(COPY.selectedDirection, lang)}
                         </p>
                         <h3 className="mt-2 text-lg font-semibold" style={{ color: selectedDirection.color }}>
                           {cs ? selectedDirection.titleCs : selectedDirection.titleEn}
@@ -1381,7 +1380,7 @@ export default function TerraNovaBookClient() {
                         </p>
                         <div className="mt-3 zion-rainbow-sub px-3 py-2" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                           <p className="text-[11px] uppercase tracking-[0.24em] text-zion-gold/65">
-                            {COPY.technicalPoint[cs ? 'cs' : 'en']}
+                            {tx5(COPY.technicalPoint, lang)}
                           </p>
                           <p className="mt-1 text-sm leading-relaxed text-white/85">
                             {cs ? selectedDirection.techCs : selectedDirection.techEn}
@@ -1389,7 +1388,7 @@ export default function TerraNovaBookClient() {
                         </div>
                         <div className="mt-3 zion-rainbow-sub px-3 py-2.5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                           <p className="text-[11px] uppercase tracking-[0.24em] text-zion-gold/65">
-                            {COPY.phaseChecklist[cs ? 'cs' : 'en']}
+                            {tx5(COPY.phaseChecklist, lang)}
                           </p>
                           <ul className="mt-2 space-y-1.5">
                             {(cs ? selectedDirection.checklistCs : selectedDirection.checklistEn).map((item) => (
@@ -1403,7 +1402,7 @@ export default function TerraNovaBookClient() {
                       </>
                     ) : (
                       <div className="h-full min-h-[136px] flex items-center justify-center text-center text-sm text-zion-gold/65">
-                        {COPY.clickACompassDirectionToOpenDe[cs ? 'cs' : 'en']}
+                        {tx5(COPY.clickACompassDirectionToOpenDe, lang)}
                       </div>
                     )}
                   </div>
@@ -1411,14 +1410,14 @@ export default function TerraNovaBookClient() {
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-[11px] uppercase tracking-[0.28em] text-zion-cyan/80">
-                          {COPY.dharmachakra[cs ? 'cs' : 'en']}
+                          {tx5(COPY.dharmachakra, lang)}
                         </p>
                         <h3 className="mt-2 text-lg font-semibold text-emerald-200">
-                          {COPY.theNobleEightfoldPath[cs ? 'cs' : 'en']}
+                          {tx5(COPY.theNobleEightfoldPath, lang)}
                         </h3>
                       </div>
                       <p className="max-w-xs text-xs leading-relaxed text-emerald-100/70">
-                        {COPY.buddhaSWheelOfDharmaAsTerraNov[cs ? 'cs' : 'en']}
+                        {tx5(COPY.buddhaSWheelOfDharmaAsTerraNov, lang)}
                       </p>
                     </div>
                     <div className="mt-4 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
@@ -1427,7 +1426,7 @@ export default function TerraNovaBookClient() {
                           viewBox="0 0 220 220"
                           className="h-auto w-full"
                           role="img"
-                          aria-label={COPY.dharmachakraWithEightSpokes[cs ? 'cs' : 'en']}
+                          aria-label={tx5(COPY.dharmachakraWithEightSpokes, lang)}
                           initial={{ opacity: 0, scale: 0.97 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ duration: 0.35, ease: 'easeOut' }}
@@ -1546,7 +1545,7 @@ export default function TerraNovaBookClient() {
                           />
                           <circle cx="110" cy="110" r="10" fill="rgba(254,240,138,0.92)" stroke="rgba(255,255,255,0.45)" strokeWidth="1" />
                           <text x="110" y="106" textAnchor="middle" className="fill-emerald-100 text-[11px] uppercase tracking-[0.28em]">
-                            {COPY.dharma[cs ? 'cs' : 'en']}
+                            {tx5(COPY.dharma, lang)}
                           </text>
                           <text x="110" y="121" textAnchor="middle" className="fill-zion-cyan text-[10px] uppercase tracking-[0.22em]">
                             {dharmaSpoke + 1}/8
@@ -1565,7 +1564,7 @@ export default function TerraNovaBookClient() {
                             style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
                           >
                             <p className="text-[11px] uppercase tracking-[0.24em] text-zion-cyan/70">
-                              {COPY.activeSpoke[cs ? 'cs' : 'en']}
+                              {tx5(COPY.activeSpoke, lang)}
                             </p>
                             <h4 className="mt-1 text-base font-semibold text-emerald-100">
                               {cs ? selectedDharmaSpoke.titleCs : selectedDharmaSpoke.titleEn}
@@ -1575,7 +1574,7 @@ export default function TerraNovaBookClient() {
                             </p>
                             <div className="mt-3 zion-rainbow-sub px-3 py-2" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                               <p className="text-[11px] uppercase tracking-[0.22em] text-zion-gold/65">
-                                {COPY.zionMap[cs ? 'cs' : 'en']}
+                                {tx5(COPY.zionMap, lang)}
                               </p>
                               <p className="mt-1 text-sm text-emerald-100">
                                 {cs ? selectedDharmaSpoke.mapCs : selectedDharmaSpoke.mapEn}
@@ -1614,7 +1613,7 @@ export default function TerraNovaBookClient() {
                     </div>
                   </div>
                   <p className="text-[11px] leading-relaxed text-zion-gold/65">
-                    {COPY.eachCompassPointIsAlsoAnActive[cs ? 'cs' : 'en']}
+                    {tx5(COPY.eachCompassPointIsAlsoAnActive, lang)}
                   </p>
                 </div>
               </div>
@@ -1642,7 +1641,7 @@ export default function TerraNovaBookClient() {
         >
           <div className="zion-badge-gold">
             <BookOpen className="h-4 w-4" />
-            {COPY.fourthBookOfZion[cs ? 'cs' : 'en']}
+            {tx5(COPY.fourthBookOfZion, lang)}
           </div>
 
           <h1 className="zion-page-heading text-gradient">
@@ -1675,7 +1674,7 @@ export default function TerraNovaBookClient() {
 
             <div className="border-t border-white/5 pt-5">
               <p className="text-[11px] uppercase tracking-[0.3em] text-zion-gold/65 mb-3">
-                {COPY.compositionalMap[cs ? 'cs' : 'en']}
+                {tx5(COPY.compositionalMap, lang)}
               </p>
               <ol className="space-y-1.5 list-none pl-0">
                 {compositionLines.map((line: string, i: number) => (
@@ -1697,7 +1696,7 @@ export default function TerraNovaBookClient() {
           className="mb-16"
         >
           <p className="text-[11px] uppercase tracking-[0.4em] text-zion-gold/65 mb-5 text-center">
-            {COPY.contents[cs ? 'cs' : 'en']}
+            {tx5(COPY.contents, lang)}
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             {currentChapters.map((ch: typeof currentChapters[number], i: number) => {
@@ -1733,7 +1732,7 @@ export default function TerraNovaBookClient() {
                       className="mt-1 text-sm font-semibold leading-snug text-wrap transition-colors wrap-break-word"
                       style={{ color: isActive ? ch.color : 'rgba(255,255,255,0.65)' }}
                     >
-                      {formatChapterLabel(ch, cs)}
+                      {formatChapterLabel(ch, cs, lang)}
                     </p>
                   </div>
                 </button>
@@ -1749,7 +1748,7 @@ export default function TerraNovaBookClient() {
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[11px] uppercase tracking-[0.28em] text-zion-gold/65">
-                    {COPY.readingMode[cs ? 'cs' : 'en']}
+                    {tx5(COPY.readingMode, lang)}
                   </p>
                   <p className="truncate text-sm font-semibold text-white">
                     {chapterTitle}
@@ -1759,7 +1758,7 @@ export default function TerraNovaBookClient() {
                   <button
                     onClick={prev}
                     disabled={activeChapter === 0}
-                    aria-label={cs ? 'Předchozí kapitola' : 'Previous chapter'}
+                    aria-label={cs ? 'Předchozí kapitola' : t5('Previous chapter', lang)}
                     className="zion-button-secondary !p-2 disabled:opacity-30"
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -1767,7 +1766,7 @@ export default function TerraNovaBookClient() {
                   <button
                     onClick={next}
                     disabled={activeChapter === currentChapters.length - 1}
-                    aria-label={cs ? 'Další kapitola' : 'Next chapter'}
+                    aria-label={cs ? 'Další kapitola' : t5('Next chapter', lang)}
                     className="zion-button-secondary !p-2 disabled:opacity-30"
                   >
                     <ChevronRight className="h-4 w-4" />
@@ -1799,12 +1798,12 @@ export default function TerraNovaBookClient() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-[11px] uppercase tracking-[0.35em] text-zion-gold/65">
-                    {COPY.readingMode[cs ? 'cs' : 'en']}
+                    {tx5(COPY.readingMode, lang)}
                   </p>
                   <button
                     onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
                     className="rounded-lg border border-white/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-white/70 hover:border-zion-gold/40 hover:text-zion-gold transition-colors"
-                    title={COPY.pEpnoutDoETiny[lang === 'cs' ? 'cs' : 'en']}
+                    title={tx5(COPY.pEpnoutDoETiny, lang)}
                   >
                     {lang === 'cs' ? 'EN' : 'CS'}
                   </button>
@@ -1821,13 +1820,13 @@ export default function TerraNovaBookClient() {
                   />
                 </div>
                 <p className="text-[11px] leading-relaxed text-white/70">
-                  {COPY.eachChapterHoldsADifferentRhyt[cs ? 'cs' : 'en']}
+                  {tx5(COPY.eachChapterHoldsADifferentRhyt, lang)}
                 </p>
               </div>
 
               <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                 <p className="text-[11px] uppercase tracking-[0.3em] text-zion-gold/65 mb-2">
-                  {COPY.currentChapter[cs ? 'cs' : 'en']}
+                  {tx5(COPY.currentChapter, lang)}
                 </p>
                 <p className="text-sm font-semibold" style={{ color: chapter.color }}>
                   {chapterTitle}
@@ -1840,8 +1839,8 @@ export default function TerraNovaBookClient() {
               </div>
 
               <div className="text-[11px] leading-relaxed text-zion-gold/65 space-y-1">
-                <p>{COPY.leftRightArrowsNextChapters[cs ? 'cs' : 'en']}</p>
-                <p>{COPY.escCloseContents[cs ? 'cs' : 'en']}</p>
+                <p>{tx5(COPY.leftRightArrowsNextChapters, lang)}</p>
+                <p>{tx5(COPY.escCloseContents, lang)}</p>
               </div>
             </div>
           </aside>
@@ -1933,7 +1932,7 @@ export default function TerraNovaBookClient() {
                   className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-zion-gold/65 hover:text-white transition-colors"
                 >
                   <List className="w-4 h-4" />
-                  {COPY.contents[cs ? 'cs' : 'en']}
+                  {tx5(COPY.contents, lang)}
                 </button>
 
                 <button
@@ -1962,7 +1961,7 @@ export default function TerraNovaBookClient() {
           className="mt-16 text-center space-y-4"
         >
           <p className="text-zion-gold/65 text-sm italic max-w-xl mx-auto">
-            {COPY.deadMapsTendToBePreciseOnlyOnP[cs ? 'cs' : 'en']}
+            {tx5(COPY.deadMapsTendToBePreciseOnlyOnP, lang)}
           </p>
           <div className="flex items-center justify-center">
             <Link
@@ -1970,7 +1969,7 @@ export default function TerraNovaBookClient() {
               className="zion-button-secondary"
             >
               <BookOpen className="w-4 h-4" />
-              {COPY.documentation[cs ? 'cs' : 'en']}
+              {tx5(COPY.documentation, lang)}
             </Link>
           </div>
         </motion.footer>
@@ -2041,7 +2040,7 @@ export default function TerraNovaBookClient() {
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-sm font-semibold text-white uppercase tracking-[0.2em]">
-                  {COPY.contents[cs ? 'cs' : 'en']}
+                  {tx5(COPY.contents, lang)}
                 </h3>
                 <button
                   onClick={() => setTocOpen(false)}
@@ -2108,12 +2107,12 @@ export default function TerraNovaBookClient() {
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/8 px-4 py-4 sm:px-6">
                 <div>
                   <p className="text-[11px] uppercase tracking-[0.3em] text-zion-gold/65">
-                    {COPY.terraNovaOverlay[cs ? 'cs' : 'en']}
+                    {tx5(COPY.terraNovaOverlay, lang)}
                   </p>
                   <h3 className="mt-1 text-lg font-semibold text-white">
                     {overlayMode === 'genesis'
-                      ? COPY.genesisPanelInsideTerraNova[cs ? 'cs' : 'en']
-                      : COPY.visualZionCliPanel[cs ? 'cs' : 'en']}
+                      ? tx5(COPY.genesisPanelInsideTerraNova, lang)
+                      : tx5(COPY.visualZionCliPanel, lang)}
                   </h3>
                 </div>
 
@@ -2177,20 +2176,20 @@ export default function TerraNovaBookClient() {
                       {/* ── Premine Genesis ── */}
                       <div className="mt-5 zion-rainbow-sub px-4 py-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                         <p className="mb-3 text-[11px] uppercase tracking-[0.32em] text-zion-gold/70">
-                          {COPY.genesisPremine16780000000Zion[cs ? 'cs' : 'en']}
+                          {tx5(COPY.genesisPremine16780000000Zion, lang)}
                         </p>
                         <div className="space-y-1.5 font-mono text-[11px] text-white/70">
                           <div className="flex justify-between gap-2"><span className="text-zion-gold/65">OASIS Golden Egg ×3</span><span className="text-zion-gold/80">4.95B ZION</span></div>
                           <div className="flex justify-between gap-2"><span className="text-zion-gold/65">L5 Free World ×2</span><span className="text-zion-gold/80">3.30B ZION</span></div>
                           <div className="flex justify-between gap-2"><span className="text-zion-gold/65">L6 Issobella ×1</span><span className="text-zion-gold/80">2.50B ZION</span></div>
-                          <div className="flex justify-between gap-2"><span className="text-zion-gold/65">{COPY.daoTreasury[cs ? 'cs' : 'en']} ×2</span><span className="text-zion-gold/80">1.50B ZION</span></div>
-                          <div className="flex justify-between gap-2"><span className="text-zion-gold/65">{COPY.infrastructureDev[cs ? 'cs' : 'en']} ×2</span><span className="text-zion-gold/80">2.00B ZION</span></div>
-                          <div className="flex justify-between gap-2"><span className="text-zion-gold/65">{COPY.genesisProjectsDharmaTemplePik[cs ? 'cs' : 'en']}</span><span className="text-zion-gold/80">0.59B ZION</span></div>
-                          <div className="flex justify-between gap-2"><span className="text-zion-gold/65">{COPY.humanitarianDao[cs ? 'cs' : 'en']}</span><span className="text-zion-gold/80">1.44B ZION</span></div>
-                          <div className="border-t border-white/8 pt-1.5 flex justify-between gap-2"><span className="text-white/70 font-semibold">{COPY.totalGenesis[cs ? 'cs' : 'en']}</span><span className="text-zion-gold font-bold">16.78B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-zion-gold/65">{tx5(COPY.daoTreasury, lang)} ×2</span><span className="text-zion-gold/80">1.50B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-zion-gold/65">{tx5(COPY.infrastructureDev, lang)} ×2</span><span className="text-zion-gold/80">2.00B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-zion-gold/65">{tx5(COPY.genesisProjectsDharmaTemplePik, lang)}</span><span className="text-zion-gold/80">0.59B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-zion-gold/65">{tx5(COPY.humanitarianDao, lang)}</span><span className="text-zion-gold/80">1.44B ZION</span></div>
+                          <div className="border-t border-white/8 pt-1.5 flex justify-between gap-2"><span className="text-white/70 font-semibold">{tx5(COPY.totalGenesis, lang)}</span><span className="text-zion-gold font-bold">16.78B ZION</span></div>
                         </div>
                         <p className="mt-3 text-[10px] uppercase tracking-[0.24em] text-zion-gold/55">
-                          {COPY.blockSplit89Miner5Humanitarian[cs ? 'cs' : 'en']}
+                          {tx5(COPY.blockSplit89Miner5Humanitarian, lang)}
                         </p>
                       </div>
                     </div>
@@ -2198,7 +2197,7 @@ export default function TerraNovaBookClient() {
                     <div className="space-y-4">
                       <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                         <p className="text-[11px] uppercase tracking-[0.3em] text-zion-gold/65">
-                          {COPY.whyItLivesHere[cs ? 'cs' : 'en']}
+                          {tx5(COPY.whyItLivesHere, lang)}
                         </p>
                         <div className="mt-4 space-y-3 text-sm leading-relaxed text-white/85">
                           {genesisOverlayLines.map((line) => (
@@ -2213,7 +2212,7 @@ export default function TerraNovaBookClient() {
                         onClick={() => setOverlayMode(null)}
                       >
                         <BookOpen className="h-4 w-4" />
-                        {COPY.openFullGenesisPage[cs ? 'cs' : 'en']}
+                        {tx5(COPY.openFullGenesisPage, lang)}
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     </div>
@@ -2229,7 +2228,7 @@ export default function TerraNovaBookClient() {
                         </div>
                         <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-zion-gold/70">
                           <Terminal className="h-3.5 w-3.5" />
-                          {COPY.visualZionCli[cs ? 'cs' : 'en']}
+                          {tx5(COPY.visualZionCli, lang)}
                         </div>
                       </div>
                       <div className="space-y-3 p-4 font-mono text-[12px] text-white/90">
@@ -2247,7 +2246,7 @@ export default function TerraNovaBookClient() {
 
                         <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                           <p className="text-[11px] uppercase tracking-[0.3em] text-zion-gold/75">
-                            {COPY.manualCommands[cs ? 'cs' : 'en']}
+                            {tx5(COPY.manualCommands, lang)}
                           </p>
                           <div className="mt-3 space-y-2 text-white/85">
                             {CLI_PRESET.map((line) => (
@@ -2264,7 +2263,7 @@ export default function TerraNovaBookClient() {
                     <div className="space-y-4">
                       <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                         <p className="text-[11px] uppercase tracking-[0.3em] text-zion-gold/65">
-                          {COPY.whyItLivesHere[cs ? 'cs' : 'en']}
+                          {tx5(COPY.whyItLivesHere, lang)}
                         </p>
                         <div className="mt-4 space-y-3 text-sm leading-relaxed text-white/85">
                           {cliOverlayLines.map((line) => (
@@ -2276,17 +2275,17 @@ export default function TerraNovaBookClient() {
                       {/* ── Premine tabulka ── */}
                       <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                         <p className="text-[11px] uppercase tracking-[0.3em] text-zion-gold/70">
-                          {COPY.genesisPremine1628bZion[cs ? 'cs' : 'en']}
+                          {tx5(COPY.genesisPremine1628bZion, lang)}
                         </p>
                         <div className="mt-3 space-y-1.5 font-mono text-[11px]">
                           {[
-                            { label: COPY.oasisGoldenEgg5[cs ? 'cs' : 'en'], amount: '4.95B' },
-                            { label: COPY.l5FreeWorld2[cs ? 'cs' : 'en'], amount: '3.30B' },
-                            { label: COPY.l6Issobella1[cs ? 'cs' : 'en'], amount: '2.50B' },
-                            { label: COPY.daoTreasury2[cs ? 'cs' : 'en'], amount: '1.50B' },
-                            { label: COPY.infrastructureDev2[cs ? 'cs' : 'en'], amount: '2.00B' },
-                            { label: COPY.humanitarianDao[cs ? 'cs' : 'en'], amount: '1.44B' },
-                            { label: COPY.genesisProjectsDharmaTemplePik[cs ? 'cs' : 'en'], amount: '0.59B' },
+                            { label: tx5(COPY.oasisGoldenEgg5, lang), amount: '4.95B' },
+                            { label: tx5(COPY.l5FreeWorld2, lang), amount: '3.30B' },
+                            { label: tx5(COPY.l6Issobella1, lang), amount: '2.50B' },
+                            { label: tx5(COPY.daoTreasury2, lang), amount: '1.50B' },
+                            { label: tx5(COPY.infrastructureDev2, lang), amount: '2.00B' },
+                            { label: tx5(COPY.humanitarianDao, lang), amount: '1.44B' },
+                            { label: tx5(COPY.genesisProjectsDharmaTemplePik, lang), amount: '0.59B' },
                           ].map(({ label, amount }) => (
                             <div key={label} className="flex items-center justify-between gap-2">
                               <span className="flex items-center gap-1.5 text-zion-gold/65">
@@ -2297,13 +2296,13 @@ export default function TerraNovaBookClient() {
                             </div>
                           ))}
                           <div className="border-t border-white/8 pt-1.5 flex justify-between gap-2">
-                            <span className="text-white/70 font-semibold">{COPY.total[cs ? 'cs' : 'en']}</span>
+                            <span className="text-white/70 font-semibold">{tx5(COPY.total, lang)}</span>
                             <span className="text-zion-gold font-bold tabular-nums">16.78B ZION</span>
                           </div>
                         </div>
                         <div className="mt-3 zion-rainbow-sub px-3 py-2" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-zion-gold/55">
-                            {COPY.perBlockSplit89Miner5Humanitar[cs ? 'cs' : 'en']}
+                            {tx5(COPY.perBlockSplit89Miner5Humanitar, lang)}
                           </p>
                         </div>
                       </div>
@@ -2316,7 +2315,7 @@ export default function TerraNovaBookClient() {
                         className="zion-button-secondary"
                       >
                         <List className="h-4 w-4" />
-                        {COPY.openTerraNovaContents[cs ? 'cs' : 'en']}
+                        {tx5(COPY.openTerraNovaContents, lang)}
                       </button>
 
                       <Link
@@ -2325,7 +2324,7 @@ export default function TerraNovaBookClient() {
                         onClick={() => setOverlayMode(null)}
                       >
                         <Terminal className="h-4 w-4" />
-                        {COPY.realZionCliDocs[cs ? 'cs' : 'en']}
+                        {tx5(COPY.realZionCliDocs, lang)}
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     </div>
@@ -2348,7 +2347,7 @@ export default function TerraNovaBookClient() {
             className="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/90 shadow-[0_10px_35px_rgba(0,0,0,0.35)] backdrop-blur-lg transition-colors hover:bg-black/80"
           >
             <ChevronLeft className="h-3.5 w-3.5 rotate-90" />
-            {COPY.top[cs ? 'cs' : 'en']}
+            {tx5(COPY.top, lang)}
           </motion.button>
         )}
       </AnimatePresence>

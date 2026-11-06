@@ -5,7 +5,8 @@ import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { motion } from "framer-motion";
 import ProSearchBar from "@/components/explorer/ProSearchBar";
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 import {
   Activity,
@@ -109,73 +110,73 @@ const SseBlockFeed = dynamic(() => import("@/components/explorer/v4/dashboard/Ss
    EXPLORER PAGE — Redesigned to match Roadmap visual language
    ═══════════════════════════════════════════════════════════ */
 
-const getQuickLinks = (cs: boolean) => [
+const getQuickLinks = (cs: boolean, lang: Lang) => [
   {
-    title: ExplorerCopy.blockArchive[cs ? 'cs' : 'en'],
-    description: ExplorerCopy.completeLedgerOfAllValidatedBl[cs ? 'cs' : 'en'],
+    title: tx5(ExplorerCopy.blockArchive, lang),
+    description: tx5(ExplorerCopy.completeLedgerOfAllValidatedBl, lang),
     href: '/explorer/blocks',
     accent: 'from-zion-gold/80 to-zion-gold/80',
     icon: Layers,
   },
   {
-    title: ExplorerCopy.transactionFeed[cs ? 'cs' : 'en'],
-    description: ExplorerCopy.realTimeFlowOfFundsAndFees[cs ? 'cs' : 'en'],
+    title: tx5(ExplorerCopy.transactionFeed, lang),
+    description: tx5(ExplorerCopy.realTimeFlowOfFundsAndFees, lang),
     href: '/explorer/transactions',
     accent: 'from-zion-cyan/80 to-zion-purple/80',
     icon: Activity,
   },
   {
-    title: ExplorerCopy.mempool[cs ? 'cs' : 'en'],
-    description: ExplorerCopy.pendingTransactionsFeeHistogra[cs ? 'cs' : 'en'],
+    title: tx5(ExplorerCopy.mempool, lang),
+    description: tx5(ExplorerCopy.pendingTransactionsFeeHistogra, lang),
     href: '/explorer/mempool',
     accent: 'from-zion-gold/80 to-zion-gold/80',
     icon: Flame,
   },
   {
-    title: ExplorerCopy.bridgeTracker[cs ? 'cs' : 'en'],
-    description: ExplorerCopy.liveL1BaseBridgeStatusLockMint[cs ? 'cs' : 'en'],
+    title: tx5(ExplorerCopy.bridgeTracker, lang),
+    description: tx5(ExplorerCopy.liveL1BaseBridgeStatusLockMint, lang),
     href: '/explorer/bridge',
     accent: 'from-zion-purple/80 to-zion-cyan/80',
     icon: ArrowLeftRight,
   },
   {
-    title: ExplorerCopy.networkPeers[cs ? 'cs' : 'en'],
-    description: ExplorerCopy.globalNodeConnectivityMap[cs ? 'cs' : 'en'],
+    title: tx5(ExplorerCopy.networkPeers, lang),
+    description: tx5(ExplorerCopy.globalNodeConnectivityMap, lang),
     href: '#peers',
     accent: 'from-zion-purple/80 to-zion-purple/80',
     icon: Globe,
   },
   {
-    title: ExplorerCopy.supplyDashboard[cs ? 'cs' : 'en'],
-    description: ExplorerCopy.circulatingMinedPremineDecadeD[cs ? 'cs' : 'en'],
+    title: tx5(ExplorerCopy.supplyDashboard, lang),
+    description: tx5(ExplorerCopy.circulatingMinedPremineDecadeD, lang),
     href: '/explorer/supply',
     accent: 'from-zion-cyan/80 to-zion-cyan/80',
     icon: BarChart3,
   },
   {
-    title: ExplorerCopy.chartsAnalytics[cs ? 'cs' : 'en'],
-    description: ExplorerCopy.historicalDifficultyHashrateEm[cs ? 'cs' : 'en'],
+    title: tx5(ExplorerCopy.chartsAnalytics, lang),
+    description: tx5(ExplorerCopy.historicalDifficultyHashrateEm, lang),
     href: '#charts',
     accent: 'from-zion-purple/80 to-zion-purple/80',
     icon: TrendingUp,
   },
   {
-    title: ExplorerCopy.networkStats[cs ? 'cs' : 'en'],
-    description: ExplorerCopy.hashrateDifficultyBlockTimeTxT[cs ? 'cs' : 'en'],
+    title: tx5(ExplorerCopy.networkStats, lang),
+    description: tx5(ExplorerCopy.hashrateDifficultyBlockTimeTxT, lang),
     href: '/explorer/network-stats',
     accent: 'from-zion-purple/80 to-zion-purple/80',
     icon: Network,
   },
   {
-    title: ExplorerCopy.search[cs ? 'cs' : 'en'],
-    description: ExplorerCopy.unifiedSearchForBlocksTransact[cs ? 'cs' : 'en'],
+    title: tx5(ExplorerCopy.search, lang),
+    description: tx5(ExplorerCopy.unifiedSearchForBlocksTransact, lang),
     href: '/explorer/search',
     accent: 'from-zion-cyan/80 to-zion-purple/80',
     icon: Search,
   },
   {
-    title: ExplorerCopy.explorerApi[cs ? 'cs' : 'en'],
-    description: ExplorerCopy.directJsonEndpointsForIntegrat[cs ? 'cs' : 'en'],
+    title: tx5(ExplorerCopy.explorerApi, lang),
+    description: tx5(ExplorerCopy.directJsonEndpointsForIntegrat, lang),
     href: '/api-reference',
     accent: 'from-zion-purple/80 to-zion-purple/80',
     icon: ExternalLink,
@@ -185,7 +186,7 @@ const getQuickLinks = (cs: boolean) => [
 export default function ExplorerPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const quickLinks = getQuickLinks(cs);
+  const quickLinks = getQuickLinks(cs, lang);
 
   return (
     <div className="relative min-h-screen pb-24 overflow-x-hidden">
@@ -209,36 +210,34 @@ export default function ExplorerPage() {
             <div className="space-y-5">
               <div className="zion-badge text-zion-cyan border-zion-cyan/40 bg-zion-cyan/10">
                 <SearchCode className="h-4 w-4" />
-                ZION Mainnet · {ExplorerCopy.explorerPro[cs ? 'cs' : 'en']}
+                ZION Mainnet · {tx5(ExplorerCopy.explorerPro, lang)}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{ExplorerCopy.realTime[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{tx5(ExplorerCopy.realTime, lang)}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {ExplorerCopy.blockchainExplorer[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerCopy.blockchainExplorer, lang)}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {cs
-                  ? `Prozkoumejte bloky, transakce a adresy na živém ZION mainnetu. Transparentní, rychlý a otevřený blockchain explorer s aktuálními daty sítě.`
-                  : `Explore blocks, transactions and addresses on the live ZION mainnet. A transparent, fast and open blockchain explorer with live network data.`}
+                {cs ? `Prozkoumejte bloky, transakce a adresy na živém ZION mainnetu. Transparentní, rychlý a otevřený blockchain explorer s aktuálními daty sítě.` : t5(`Explore blocks, transactions and addresses on the live ZION mainnet. A transparent, fast and open blockchain explorer with live network data.`, lang)}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="zion-badge zion-badge-gold">
-                  <Sparkles className="h-3 w-3" /> {ExplorerCopy.liveMainnetData[cs ? 'cs' : 'en']}
+                  <Sparkles className="h-3 w-3" /> {tx5(ExplorerCopy.liveMainnetData, lang)}
                 </span>
                 <span className="zion-badge zion-badge-green">
-                  <Activity className="h-3 w-3" /> {ExplorerCopy.autoRefresh15s[cs ? 'cs' : 'en']}
+                  <Activity className="h-3 w-3" /> {tx5(ExplorerCopy.autoRefresh15s, lang)}
                 </span>
                 <span className="zion-badge text-zion-cyan border-zion-cyan/40 bg-zion-cyan/10">
-                  <Globe className="h-3 w-3" /> {ExplorerCopy.k2NodeMesh[cs ? 'cs' : 'en']}
+                  <Globe className="h-3 w-3" /> {tx5(ExplorerCopy.k2NodeMesh, lang)}
                 </span>
                 <span className="zion-badge zion-badge-green">
-                  {ExplorerCopy.trinity1111Services[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerCopy.trinity1111Services, lang)}
                 </span>
               </div>
               <div className="flex flex-wrap gap-3">
                 <Link href="/explorer/api-docs" className="zion-button-secondary">
-                  <Code className="h-4 w-4" /> {ExplorerCopy.apiDocs[cs ? 'cs' : 'en']}
+                  <Code className="h-4 w-4" /> {tx5(ExplorerCopy.apiDocs, lang)}
                 </Link>
               </div>
             </div>
@@ -255,12 +254,12 @@ export default function ExplorerPage() {
           transition={{ delay: 0.06 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.telemetry[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(ExplorerCopy.telemetry, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-zion-cyan" />
-              {ExplorerCopy.networkStatistics[cs ? 'cs' : 'en']}
+              {tx5(ExplorerCopy.networkStatistics, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{ExplorerCopy.realTimeMetricsFromTheZionBloc[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(ExplorerCopy.realTimeMetricsFromTheZionBloc, lang)}</p>
           </div>
           <Suspense
             fallback={
@@ -286,12 +285,12 @@ export default function ExplorerPage() {
           transition={{ delay: 0.1 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.ledger[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(ExplorerCopy.ledger, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Layers className="h-7 w-7 text-zion-gold" />
-              {ExplorerCopy.blocksTransactions[cs ? 'cs' : 'en']}
+              {tx5(ExplorerCopy.blocksTransactions, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{ExplorerCopy.latestConfirmedBlocksAndTransa[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(ExplorerCopy.latestConfirmedBlocksAndTransa, lang)}</p>
           </div>
 
           <div className="grid gap-6 xl:grid-cols-3">
@@ -319,8 +318,8 @@ export default function ExplorerPage() {
                     <Compass className="h-4.5 w-4.5 text-zion-gold" />
                   </div>
                   <div>
-                    <h3 className="text-base font-semibold text-white">{ExplorerCopy.quickNavigation[cs ? 'cs' : 'en']}</h3>
-                    <p className="text-[11px] text-gray-500">{ExplorerCopy.jumpToSection[cs ? 'cs' : 'en']}</p>
+                    <h3 className="text-base font-semibold text-white">{tx5(ExplorerCopy.quickNavigation, lang)}</h3>
+                    <p className="text-[11px] text-gray-500">{tx5(ExplorerCopy.jumpToSection, lang)}</p>
                   </div>
                 </div>
                 <div className="space-y-2.5">
@@ -354,35 +353,35 @@ export default function ExplorerPage() {
           transition={{ delay: 0.12 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.networkFeatures[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(ExplorerCopy.networkFeatures, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-7 w-7 text-zion-gold" />
-              {ExplorerCopy.v32Ledger[cs ? 'cs' : 'en']}
+              {tx5(ExplorerCopy.v32Ledger, lang)}
             </h2>
             <p className="text-sm text-gray-400">
-              {ExplorerCopy.newFeaturesAndSecurityPatchesV[cs ? 'cs' : 'en']}
+              {tx5(ExplorerCopy.newFeaturesAndSecurityPatchesV, lang)}
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
-                title: ExplorerCopy.accountModelMemo[cs ? 'cs' : 'en'],
-                detail: ExplorerCopy.txMemoFieldForBridgeDaoAndSwap[cs ? 'cs' : 'en'],
+                title: tx5(ExplorerCopy.accountModelMemo, lang),
+                detail: tx5(ExplorerCopy.txMemoFieldForBridgeDaoAndSwap, lang),
                 accent: 'text-zion-cyan',
               },
               {
-                title: ExplorerCopy.f47F5Patches[cs ? 'cs' : 'en'],
-                detail: ExplorerCopy.maxTxAmountCapAndSenderBalance[cs ? 'cs' : 'en'],
+                title: tx5(ExplorerCopy.f47F5Patches, lang),
+                detail: tx5(ExplorerCopy.maxTxAmountCapAndSenderBalance, lang),
                 accent: 'text-zion-cyan',
               },
               {
-                title: ExplorerCopy.k2NodeRpcMesh[cs ? 'cs' : 'en'],
-                detail: ExplorerCopy.rpcAutoFailoverAcrossEdge18443[cs ? 'cs' : 'en'],
+                title: tx5(ExplorerCopy.k2NodeRpcMesh, lang),
+                detail: tx5(ExplorerCopy.rpcAutoFailoverAcrossEdge18443, lang),
                 accent: 'text-zion-purple',
               },
               {
-                title: ExplorerCopy.memoryLeakFix[cs ? 'cs' : 'en'],
-                detail: ExplorerCopy.poolNodeMemoryLeaksFixedWatchd[cs ? 'cs' : 'en'],
+                title: tx5(ExplorerCopy.memoryLeakFix, lang),
+                detail: tx5(ExplorerCopy.poolNodeMemoryLeaksFixedWatchd, lang),
                 accent: 'text-zion-gold',
               },
             ].map((card) => (
@@ -402,12 +401,12 @@ export default function ExplorerPage() {
           id="charts"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.analytics[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(ExplorerCopy.analytics, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <BarChart3 className="h-7 w-7 text-zion-purple" />
-              {ExplorerCopy.networkCharts[cs ? 'cs' : 'en']}
+              {tx5(ExplorerCopy.networkCharts, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{ExplorerCopy.historicalDifficultyHashrateEm_2[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(ExplorerCopy.historicalDifficultyHashrateEm_2, lang)}</p>
           </div>
           <Suspense fallback={<div className="zion-section animate-pulse h-[400px]" />}>
             <ExplorerCharts />
@@ -421,12 +420,12 @@ export default function ExplorerPage() {
           transition={{ delay: 0.18 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.supply[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(ExplorerCopy.supply, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Rocket className="h-7 w-7 text-zion-gold" />
-              {ExplorerCopy.emissionMonitor[cs ? 'cs' : 'en']}
+              {tx5(ExplorerCopy.emissionMonitor, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{ExplorerCopy.trackMiningProgressDecadeDecay[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(ExplorerCopy.trackMiningProgressDecadeDecay, lang)}</p>
           </div>
           <Suspense fallback={<div className="zion-section animate-pulse h-[280px]" />}>
             <EmissionMonitor />
@@ -441,12 +440,12 @@ export default function ExplorerPage() {
           id="peers"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.p2pNetwork[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(ExplorerCopy.p2pNetwork, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Globe className="h-7 w-7 text-zion-cyan" />
-              {ExplorerCopy.networkPeers[cs ? 'cs' : 'en']}
+              {tx5(ExplorerCopy.networkPeers, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{ExplorerCopy.connectivityOfThe2NodeP2pMeshE[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(ExplorerCopy.connectivityOfThe2NodeP2pMeshE, lang)}</p>
           </div>
           <Suspense fallback={<div className="zion-section animate-pulse h-[280px]" />}>
             <NetworkPeers />
@@ -460,12 +459,12 @@ export default function ExplorerPage() {
           transition={{ delay: 0.24 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.realTime_2[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(ExplorerCopy.realTime_2, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Zap className="h-7 w-7 text-zion-gold" />
-              {ExplorerCopy.liveBlockFeed[cs ? 'cs' : 'en']}
+              {tx5(ExplorerCopy.liveBlockFeed, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{ExplorerCopy.newBlocksDeliveredViaServerSen[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(ExplorerCopy.newBlocksDeliveredViaServerSen, lang)}</p>
           </div>
           <Suspense fallback={<div className="zion-section animate-pulse h-[200px]" />}>
             <SseBlockFeed />
@@ -481,12 +480,12 @@ export default function ExplorerPage() {
           className="scroll-mt-28"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.distribution[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(ExplorerCopy.distribution, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-gold" />
-              {ExplorerCopy.richList[cs ? 'cs' : 'en']}
+              {tx5(ExplorerCopy.richList, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{ExplorerCopy.topZionHoldersByBalancePremine[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(ExplorerCopy.topZionHoldersByBalancePremine, lang)}</p>
           </div>
           <Suspense fallback={<div className="zion-section animate-pulse h-[400px]" />}>
             <RichListClient embedded />
@@ -503,17 +502,17 @@ export default function ExplorerPage() {
           <SearchCode className="mx-auto h-12 w-12 text-zion-cyan" />
           <h2 className="mt-6 text-3xl font-semibold text-white">ZION TerraNova Explorer</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            {ExplorerCopy.realTimeBlockchainDataFromNati[cs ? 'cs' : 'en']}
+            {tx5(ExplorerCopy.realTimeBlockchainDataFromNati, lang)}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
-            {ExplorerCopy.decadeDecayEmission5400724Zion[cs ? 'cs' : 'en']}
+            {tx5(ExplorerCopy.decadeDecayEmission5400724Zion, lang)}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link href="/network" className="zion-button-secondary">
-              <Globe className="h-4 w-4" /> {ExplorerCopy.networkStatus[cs ? 'cs' : 'en']}
+              <Globe className="h-4 w-4" /> {tx5(ExplorerCopy.networkStatus, lang)}
             </Link>
             <Link href="/roadmap" className="zion-button-primary">
-              <Activity className="h-4 w-4" /> {ExplorerCopy.roadmap[cs ? 'cs' : 'en']}
+              <Activity className="h-4 w-4" /> {tx5(ExplorerCopy.roadmap, lang)}
             </Link>
             <a
               href="https://github.com/Zion-TerraNova"
@@ -527,9 +526,7 @@ export default function ExplorerPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          {cs
-            ? `ZION TerraNova - Blockchain Explorer · Živá data ze sítě`
-            : `ZION TerraNova - Blockchain Explorer · Live network data`}
+          {cs ? `ZION TerraNova - Blockchain Explorer · Živá data ze sítě` : t5(`ZION TerraNova - Blockchain Explorer · Live network data`, lang)}
         </p>
       </div>
     </div>

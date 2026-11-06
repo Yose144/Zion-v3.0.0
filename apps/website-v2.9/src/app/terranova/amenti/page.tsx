@@ -21,7 +21,8 @@ import {
   Sparkles,
   Users,
 } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
@@ -448,7 +449,7 @@ export default function AmentiPage() {
   const [docError, setDocError] = useState(false);
 
   useEffect(() => {
-    const file = cs ? '/docs/terranova/amenti.cs.md' : '/docs/terranova/amenti.en.md';
+    const file = cs ? '/docs/terranova/amenti.cs.md' : t5('/docs/terranova/amenti.en.md', lang);
     setDoc(null);
     setDocError(false);
     fetch(file)
@@ -476,7 +477,7 @@ export default function AmentiPage() {
             className="inline-flex items-center gap-2 text-sm text-zion-gold/65 hover:text-zion-gold transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {Copy.backToTerraNova[cs ? 'cs' : 'en']}
+            {tx5(Copy.backToTerraNova, lang)}
           </Link>
         </motion.div>
 
@@ -499,7 +500,7 @@ export default function AmentiPage() {
                     <span className="zion-badge">L5 · Terra Nova · Halls of Records</span>
                     <span className="zion-badge-gold inline-flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {Copy.visionStage[cs ? 'cs' : 'en']}
+                      {tx5(Copy.visionStage, lang)}
                     </span>
                   </div>
 
@@ -507,26 +508,26 @@ export default function AmentiPage() {
                     Amenti
                   </h1>
                   <p className={`text-lg ${ACCENT_TEXT} font-medium`}>
-                    {Copy.subtitle[cs ? 'cs' : 'en']}
+                    {tx5(Copy.subtitle, lang)}
                   </p>
 
                   <div className="flex items-center gap-1.5 text-white/70">
                     <MapPin className="w-4 h-4 text-white/85 shrink-0" />
-                    <span className="text-sm">{Copy.locationLine[cs ? 'cs' : 'en']}</span>
+                    <span className="text-sm">{tx5(Copy.locationLine, lang)}</span>
                   </div>
 
                   <blockquote className="mt-4 pl-4 border-l-2 border-white/10 text-sm text-white/70 italic leading-relaxed max-w-lg">
-                    {Copy.quote[cs ? 'cs' : 'en']}
+                    {tx5(Copy.quote, lang)}
                     <cite className="block mt-2 not-italic text-[11px] uppercase tracking-[0.25em] text-white/35">
-                      {cs ? 'Smaragdové desky Thovtovy — Deska II' : 'The Emerald Tablets of Thoth — Tablet II'}
+                      {cs ? 'Smaragdové desky Thovtovy — Deska II' : t5('The Emerald Tablets of Thoth — Tablet II', lang)}
                     </cite>
                   </blockquote>
 
                   <div className="grid gap-3 pt-3 sm:grid-cols-3">
                     {[
-                      { icon: Pyramid, value: cs ? '~4 500 let' : '~4,500 yrs', labelCs: 'Záznam v kameni', labelEn: 'A record in stone' },
-                      { icon: BookOpen, value: cs ? '11 jazyků' : '11 languages', labelCs: 'Amenti Library', labelEn: 'Amenti Library' },
-                      { icon: Sparkles, value: cs ? 'Vize' : 'Vision', labelCs: 'Stav', labelEn: 'Status' },
+                      { icon: Pyramid, value: cs ? '~4 500 let' : t5('~4,500 yrs', lang), labelCs: 'Záznam v kameni', labelEn: 'A record in stone' },
+                      { icon: BookOpen, value: cs ? '11 jazyků' : t5('11 languages', lang), labelCs: 'Amenti Library', labelEn: 'Amenti Library' },
+                      { icon: Sparkles, value: cs ? 'Vize' : t5('Vision', lang), labelCs: 'Stav', labelEn: 'Status' },
                     ].map((signal) => {
                       const Icon = signal.icon;
                       return (
@@ -571,10 +572,10 @@ export default function AmentiPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': ACCENT } as React.CSSProperties}>
             <h2 className="text-2xl md:text-3xl font-semibold text-white mb-4">
-              {Copy.introTitle[cs ? 'cs' : 'en']}
+              {tx5(Copy.introTitle, lang)}
             </h2>
             <p className="text-gray-300 leading-relaxed">
-              {Copy.introBody[cs ? 'cs' : 'en']}
+              {tx5(Copy.introBody, lang)}
             </p>
           </div>
         </motion.section>
@@ -589,10 +590,10 @@ export default function AmentiPage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': ACCENT } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
               <p className={`text-[11px] uppercase tracking-[0.45em] ${ACCENT_TEXT}/65 mb-1`}>
-                {Copy.threeDPreview[cs ? 'cs' : 'en']}
+                {tx5(Copy.threeDPreview, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {Copy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+                {tx5(Copy.threeDPreviewSubtitle, lang)}
               </h2>
             </div>
             <AmentiPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
@@ -607,10 +608,10 @@ export default function AmentiPage() {
           className="mb-16"
         >
           <div className="mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.featuresSubtitle[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.featuresSubtitle, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Compass className={`h-7 w-7 ${ACCENT_SUB}`} />
-              {Copy.featuresTitle[cs ? 'cs' : 'en']}
+              {tx5(Copy.featuresTitle, lang)}
             </h2>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
@@ -635,19 +636,19 @@ export default function AmentiPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '52, 211, 153' } as React.CSSProperties}>
             <div className="mb-4">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.hallsSubtitle[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.hallsSubtitle, lang)}</p>
               <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mt-1">
                 <Flame className="h-7 w-7 text-emerald-300" />
-                {Copy.hallsTitle[cs ? 'cs' : 'en']}
+                {tx5(Copy.hallsTitle, lang)}
               </h2>
             </div>
             <p className="text-gray-300 leading-relaxed mb-6">
-              {Copy.hallsBody[cs ? 'cs' : 'en']}
+              {tx5(Copy.hallsBody, lang)}
             </p>
             <div className="mb-6 overflow-hidden rounded-2xl border border-emerald-300/20 bg-black/30">
               <img
                 src="/images/amenti/heart.webp"
-                alt={Copy.heartAlt[cs ? 'cs' : 'en']}
+                alt={tx5(Copy.heartAlt, lang)}
                 width={1200}
                 height={781}
                 loading="lazy"
@@ -655,19 +656,19 @@ export default function AmentiPage() {
                 className="w-full object-cover"
               />
               <div className="p-4 md:p-6">
-                <p className="text-base md:text-lg font-semibold text-white">{Copy.heartTitle[cs ? 'cs' : 'en']}</p>
-                <p className="mt-1 text-sm md:text-base text-gray-400 leading-relaxed">{Copy.heartBody[cs ? 'cs' : 'en']}</p>
-                <p className="mt-3 text-[11px] md:text-xs font-bold tracking-[0.3em] text-emerald-300">{Copy.heartMantra[cs ? 'cs' : 'en']}</p>
+                <p className="text-base md:text-lg font-semibold text-white">{tx5(Copy.heartTitle, lang)}</p>
+                <p className="mt-1 text-sm md:text-base text-gray-400 leading-relaxed">{tx5(Copy.heartBody, lang)}</p>
+                <p className="mt-3 text-[11px] md:text-xs font-bold tracking-[0.3em] text-emerald-300">{tx5(Copy.heartMantra, lang)}</p>
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              {Copy.hallsPoints[cs ? 'cs' : 'en'].map((point, i) => {
+              {(lang === 'cs' ? Copy.hallsPoints.cs : Copy.hallsPoints.en).map((point, i) => {
                 const PointIcon = [BookOpen, Shield, Users][i];
                 return (
                   <div key={point} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '52, 211, 153' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 text-emerald-300 mb-1">
                       <PointIcon className="h-4 w-4" />
-                      <span className="text-[11px] uppercase tracking-widest text-gray-500">{cs ? 'Princip' : 'Principle'} {i + 1}</span>
+                      <span className="text-[11px] uppercase tracking-widest text-gray-500">{cs ? 'Princip' : t5('Principle', lang)} {i + 1}</span>
                     </div>
                     <p className="text-sm text-gray-300">{point}</p>
                   </div>
@@ -686,19 +687,19 @@ export default function AmentiPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': ACCENT } as React.CSSProperties}>
             <div className="mb-4">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.librarySubtitle[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.librarySubtitle, lang)}</p>
               <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mt-1">
                 <BookOpen className={`h-7 w-7 ${ACCENT_SUB}`} />
-                {Copy.libraryTitle[cs ? 'cs' : 'en']}
+                {tx5(Copy.libraryTitle, lang)}
               </h2>
             </div>
             <p className="text-gray-300 leading-relaxed mb-6">
-              {Copy.libraryBody[cs ? 'cs' : 'en']}
+              {tx5(Copy.libraryBody, lang)}
             </p>
             <div className="mb-8 overflow-hidden rounded-2xl border border-emerald-300/20 bg-black/30">
               <img
                 src="/images/amenti/halls.webp"
-                alt={Copy.hallsAlt[cs ? 'cs' : 'en']}
+                alt={tx5(Copy.hallsAlt, lang)}
                 width={1400}
                 height={415}
                 loading="lazy"
@@ -707,7 +708,7 @@ export default function AmentiPage() {
               />
             </div>
             <div className="grid gap-3 sm:grid-cols-3 mb-8">
-              {Copy.libraryStats[cs ? 'cs' : 'en'].map((stat) => (
+              {(lang === 'cs' ? Copy.libraryStats.cs : Copy.libraryStats.en).map((stat) => (
                 <div key={stat} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': ACCENT } as React.CSSProperties}>
                   <p className="text-sm text-gray-300 flex items-center gap-2">
                     <ScrollText className={`h-4 w-4 shrink-0 ${ACCENT_SUB}`} />
@@ -721,7 +722,7 @@ export default function AmentiPage() {
             <div className="zion-rainbow-sub mb-8 flex flex-col gap-5 p-5 md:flex-row md:items-start" style={{ '--rc': ACCENT } as React.CSSProperties}>
               <img
                 src="/images/amenti/book-quantum.webp"
-                alt={Copy.featuredBookTitle[cs ? 'cs' : 'en']}
+                alt={tx5(Copy.featuredBookTitle, lang)}
                 width={240}
                 height={340}
                 loading="lazy"
@@ -729,9 +730,9 @@ export default function AmentiPage() {
                 className="w-32 shrink-0 rounded-lg border border-emerald-300/20 md:w-40"
               />
               <div className="min-w-0">
-                <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-emerald-300">{Copy.featuredBookTag[cs ? 'cs' : 'en']}</p>
-                <h3 className="mt-1 text-xl font-semibold text-white">{Copy.featuredBookTitle[cs ? 'cs' : 'en']}</h3>
-                <p className="mt-2 text-sm text-gray-400">{Copy.featuredBookDesc[cs ? 'cs' : 'en']}</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-emerald-300">{tx5(Copy.featuredBookTag, lang)}</p>
+                <h3 className="mt-1 text-xl font-semibold text-white">{tx5(Copy.featuredBookTitle, lang)}</h3>
+                <p className="mt-2 text-sm text-gray-400">{tx5(Copy.featuredBookDesc, lang)}</p>
                 <div className="mt-4 flex flex-wrap gap-1.5">
                   {Object.entries(FEATURED_LANGS).map(([langCode, href]) => (
                     <a
@@ -750,8 +751,8 @@ export default function AmentiPage() {
 
             {/* The shelf — same catalogue as the apex library */}
             <div className="mb-8">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.booksSubtitle[cs ? 'cs' : 'en']}</p>
-              <h3 className="mt-1 mb-4 text-xl font-semibold text-white">{Copy.booksTitle[cs ? 'cs' : 'en']}</h3>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.booksSubtitle, lang)}</p>
+              <h3 className="mt-1 mb-4 text-xl font-semibold text-white">{tx5(Copy.booksTitle, lang)}</h3>
               <div className="space-y-2">
                 {BOOKS.map((book) => (
                   <div key={book.titleEn} className="zion-rainbow-sub flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between" style={{ '--rc': ACCENT } as React.CSSProperties}>
@@ -772,7 +773,7 @@ export default function AmentiPage() {
                   </div>
                 ))}
               </div>
-              <p className="mt-3 text-xs text-gray-500">{Copy.booksNote[cs ? 'cs' : 'en']}</p>
+              <p className="mt-3 text-xs text-gray-500">{tx5(Copy.booksNote, lang)}</p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -783,7 +784,7 @@ export default function AmentiPage() {
                 className={`inline-flex items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-300/10 px-6 py-2.5 text-sm font-semibold ${ACCENT_SUB} transition hover:bg-emerald-300/20`}
               >
                 <BookOpen className="h-4 w-4" />
-                {Copy.libraryCta[cs ? 'cs' : 'en']}
+                {tx5(Copy.libraryCta, lang)}
                 <ArrowRight className="h-4 w-4" />
               </a>
               <a
@@ -792,7 +793,7 @@ export default function AmentiPage() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-2.5 text-sm text-gray-300 transition hover:border-emerald-300/40 hover:text-emerald-300"
               >
-                {Copy.libraryCta2[cs ? 'cs' : 'en']}
+                {tx5(Copy.libraryCta2, lang)}
               </a>
             </div>
           </div>
@@ -807,8 +808,8 @@ export default function AmentiPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': ACCENT } as React.CSSProperties}>
             <div className="mb-8">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.phasesSubtitle[cs ? 'cs' : 'en']}</p>
-              <h2 className="text-3xl font-semibold text-white">{Copy.phasesTitle[cs ? 'cs' : 'en']}</h2>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.phasesSubtitle, lang)}</p>
+              <h2 className="text-3xl font-semibold text-white">{tx5(Copy.phasesTitle, lang)}</h2>
             </div>
             <div className="space-y-4">
               {PHASES.map((phase) => (
@@ -823,7 +824,7 @@ export default function AmentiPage() {
                   <div>
                     <h3 className="font-semibold text-white mb-1">
                       {cs ? phase.cs : phase.en}
-                      {phase.active && <span className="ml-2 text-[11px] uppercase tracking-widest text-emerald-200">· {cs ? 'probíhá' : 'in progress'}</span>}
+                      {phase.active && <span className="ml-2 text-[11px] uppercase tracking-widest text-emerald-200">· {cs ? 'probíhá' : t5('in progress', lang)}</span>}
                     </h3>
                     <p className="text-sm text-gray-400">{cs ? phase.descCs : phase.descEn}</p>
                   </div>
@@ -843,10 +844,10 @@ export default function AmentiPage() {
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mb-4">
               <Shield className="h-7 w-7 text-zion-purple" />
-              {Copy.respectTitle[cs ? 'cs' : 'en']}
+              {tx5(Copy.respectTitle, lang)}
             </h2>
             <p className="text-gray-300 leading-relaxed">
-              {Copy.respectBody[cs ? 'cs' : 'en']}
+              {tx5(Copy.respectBody, lang)}
             </p>
           </div>
         </motion.section>
@@ -862,7 +863,7 @@ export default function AmentiPage() {
             <div className="zion-rainbow-card p-6" style={{ '--rc': ACCENT } as React.CSSProperties}>
               <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-4">
                 <Network className={`h-5 w-5 ${ACCENT_TEXT}`} />
-                {Copy.zionTitle[cs ? 'cs' : 'en']}
+                {tx5(Copy.zionTitle, lang)}
               </h2>
               <div className="flex flex-wrap gap-2">
                 {ZION_ITEMS.map((item) => (
@@ -875,23 +876,23 @@ export default function AmentiPage() {
               <div className="mt-5 flex items-center gap-4 rounded-xl border border-emerald-300/20 bg-black/20 p-3 sm:gap-5 sm:p-4">
                 <img
                   src="/images/amenti/logos.webp"
-                  alt={Copy.logosAlt[cs ? 'cs' : 'en']}
+                  alt={tx5(Copy.logosAlt, lang)}
                   width={160}
                   height={183}
                   loading="lazy"
                   decoding="async"
                   className="w-16 shrink-0 rounded-lg opacity-90 sm:w-24"
                 />
-                <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">{Copy.logosCaption[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">{tx5(Copy.logosCaption, lang)}</p>
               </div>
             </div>
             <div className="zion-rainbow-card p-6" style={{ '--rc': ACCENT } as React.CSSProperties}>
               <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-4">
                 <Landmark className={`h-5 w-5 ${ACCENT_TEXT}`} />
-                {Copy.openTitle[cs ? 'cs' : 'en']}
+                {tx5(Copy.openTitle, lang)}
               </h2>
               <ul className="list-disc pl-4 text-sm text-gray-400 space-y-2">
-                {Copy.openItems[cs ? 'cs' : 'en'].map((item) => (
+                {(lang === 'cs' ? Copy.openItems.cs : Copy.openItems.en).map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
@@ -908,12 +909,12 @@ export default function AmentiPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '52, 211, 153' } as React.CSSProperties}>
             <div className="mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.anchorSubtitle[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.anchorSubtitle, lang)}</p>
               <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mt-1">
                 <Scale className="h-7 w-7 text-emerald-300" />
-                {Copy.anchorTitle[cs ? 'cs' : 'en']}
+                {tx5(Copy.anchorTitle, lang)}
               </h2>
-              <p className="text-sm text-gray-400 mt-2">{Copy.anchorBody[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm text-gray-400 mt-2">{tx5(Copy.anchorBody, lang)}</p>
             </div>
             <div className="space-y-3">
               {ANCHORS.map((a) => (
@@ -935,7 +936,7 @@ export default function AmentiPage() {
               href="/quantum-revolution"
               className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-300 hover:text-emerald-200 transition-colors"
             >
-              {Copy.quantumLink[cs ? 'cs' : 'en']}
+              {tx5(Copy.quantumLink, lang)}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -949,15 +950,15 @@ export default function AmentiPage() {
           className="mb-16"
         >
           <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-white">{Copy.documentation[cs ? 'cs' : 'en']}</h2>
-            <p className="text-sm text-gray-500">{Copy.documentationSubtitle[cs ? 'cs' : 'en']}</p>
+            <h2 className="text-2xl font-semibold text-white">{tx5(Copy.documentation, lang)}</h2>
+            <p className="text-sm text-gray-500">{tx5(Copy.documentationSubtitle, lang)}</p>
           </div>
           {doc ? (
             <DocMarkdownArticle content={doc} className="zion-docs-prose max-w-4xl mx-auto" />
           ) : docError ? (
-            <p className="text-sm text-gray-500">{Copy.documentationError[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-500">{tx5(Copy.documentationError, lang)}</p>
           ) : (
-            <p className="text-sm text-gray-500">{Copy.documentationLoading[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-500">{tx5(Copy.documentationLoading, lang)}</p>
           )}
         </motion.section>
 
@@ -970,9 +971,9 @@ export default function AmentiPage() {
         >
           <div className="grid md:grid-cols-2 gap-4">
             <div className="zion-rainbow-card p-6" style={{ '--rc': ACCENT } as React.CSSProperties}>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.sisterSubtitle[cs ? 'cs' : 'en']}</p>
-              <h2 className="text-2xl font-semibold text-white">{Copy.sisterTitle[cs ? 'cs' : 'en']}</h2>
-              <p className="text-sm text-gray-400 mt-2">{Copy.sisterBody[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.sisterSubtitle, lang)}</p>
+              <h2 className="text-2xl font-semibold text-white">{tx5(Copy.sisterTitle, lang)}</h2>
+              <p className="text-sm text-gray-400 mt-2">{tx5(Copy.sisterBody, lang)}</p>
               <div className="mt-5 grid sm:grid-cols-2 gap-3">
                 {SISTERS.map((s) => (
                   <Link
@@ -984,7 +985,7 @@ export default function AmentiPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-semibold text-white group-hover:text-emerald-200 transition-colors">{s.name}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{s.region[cs ? 'cs' : 'en']}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{tx5(s.region, lang)}</p>
                       </div>
                       <ArrowRight className="h-4 w-4 text-emerald-200/70 group-hover:translate-x-0.5 transition-transform" />
                     </div>
@@ -994,9 +995,9 @@ export default function AmentiPage() {
             </div>
             <div className="zion-rainbow-card p-6 flex flex-col justify-between" style={{ '--rc': '52, 211, 153' } as React.CSSProperties}>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Výzva' : 'Call'}</p>
-                <h2 className="text-2xl font-semibold text-white mt-1">{cs ? 'Vzpomenout si, ne znovu objevovat' : 'Remember, do not rediscover'}</h2>
-                <p className="text-sm text-gray-300 mt-3 leading-relaxed">{Copy.cta[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Výzva' : t5('Call', lang)}</p>
+                <h2 className="text-2xl font-semibold text-white mt-1">{cs ? 'Vzpomenout si, ne znovu objevovat' : t5('Remember, do not rediscover', lang)}</h2>
+                <p className="text-sm text-gray-300 mt-3 leading-relaxed">{tx5(Copy.cta, lang)}</p>
               </div>
               <div className="mt-8 space-y-3">
                 <a
@@ -1005,13 +1006,13 @@ export default function AmentiPage() {
                   rel="noreferrer"
                   className="zion-button-primary w-full justify-center"
                 >
-                  {Copy.joinDiscord[cs ? 'cs' : 'en']}
+                  {tx5(Copy.joinDiscord, lang)}
                 </a>
                 <Link
                   href="/l5-free-world"
                   className="zion-button-secondary w-full justify-center"
                 >
-                  {cs ? 'L5 Free World přehled' : 'L5 Free World overview'}
+                  {cs ? 'L5 Free World přehled' : t5('L5 Free World overview', lang)}
                 </Link>
               </div>
             </div>

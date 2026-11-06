@@ -23,7 +23,8 @@ import {
   TrendingUp,
   Zap,
 } from "lucide-react";
-import { useLang } from "@/contexts/LanguageContext";
+import { useLang, type Lang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 import { apiClient } from "@/lib/api";
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from "@/lib/site";
@@ -206,75 +207,75 @@ export default function StatusPageClient() {
   // Health checks
   const healthChecks = [
     {
-      label: ExplorerStatusStatusPageClientCopy.nodeRpc[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerStatusStatusPageClientCopy.nodeRpc, lang),
       status: stats?.connected ? "ok" : "down",
-      detail: stats?.connected ? (ExplorerStatusStatusPageClientCopy.connected[cs ? 'cs' : 'en']) : (ExplorerStatusStatusPageClientCopy.disconnected[cs ? 'cs' : 'en']),
+      detail: stats?.connected ? (tx5(ExplorerStatusStatusPageClientCopy.connected, lang)) : (tx5(ExplorerStatusStatusPageClientCopy.disconnected, lang)),
     },
     {
-      label: ExplorerStatusStatusPageClientCopy.mainnet[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerStatusStatusPageClientCopy.mainnet, lang),
       status: stats?.mainnet ? "ok" : "warn",
-      detail: stats?.mainnet ? (ExplorerStatusStatusPageClientCopy.active[cs ? 'cs' : 'en']) : (ExplorerStatusStatusPageClientCopy.inactive[cs ? 'cs' : 'en']),
+      detail: stats?.mainnet ? (tx5(ExplorerStatusStatusPageClientCopy.active, lang)) : (tx5(ExplorerStatusStatusPageClientCopy.inactive, lang)),
     },
     {
-      label: ExplorerStatusStatusPageClientCopy.mempool[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerStatusStatusPageClientCopy.mempool, lang),
       status: (stats?.tx_pool_size ?? 0) > 0 ? "ok" : "idle",
-      detail: `${stats?.tx_pool_size ?? 0} ${ExplorerStatusStatusPageClientCopy.txPending[cs ? 'cs' : 'en']}`,
+      detail: `${stats?.tx_pool_size ?? 0} ${tx5(ExplorerStatusStatusPageClientCopy.txPending, lang)}`,
     },
     {
-      label: ExplorerStatusStatusPageClientCopy.p2pNetwork[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerStatusStatusPageClientCopy.p2pNetwork, lang),
       status: (stats?.total_connections ?? 0) > 0 ? "ok" : "warn",
-      detail: `${stats?.total_connections ?? 0} ${ExplorerStatusStatusPageClientCopy.connections[cs ? 'cs' : 'en']}`,
+      detail: `${stats?.total_connections ?? 0} ${tx5(ExplorerStatusStatusPageClientCopy.connections, lang)}`,
     },
     {
-      label: ExplorerStatusStatusPageClientCopy.miningPool[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerStatusStatusPageClientCopy.miningPool, lang),
       status: (stats?.active_miners ?? 0) > 0 ? "ok" : "idle",
-      detail: `${stats?.active_miners ?? 0} ${ExplorerStatusStatusPageClientCopy.activeMiners[cs ? 'cs' : 'en']}`,
+      detail: `${stats?.active_miners ?? 0} ${tx5(ExplorerStatusStatusPageClientCopy.activeMiners, lang)}`,
     },
     {
       label: "SSE",
       status: sse.connected ? "ok" : "connecting",
       detail: sse.connected
-        ? `${sse.blockCount} ${ExplorerStatusStatusPageClientCopy.newBlocks[cs ? 'cs' : 'en']}`
-        : (ExplorerStatusStatusPageClientCopy.connecting[cs ? 'cs' : 'en']),
+        ? `${sse.blockCount} ${tx5(ExplorerStatusStatusPageClientCopy.newBlocks, lang)}`
+        : (tx5(ExplorerStatusStatusPageClientCopy.connecting, lang)),
     },
   ];
 
   const nodeInfo = [
-    { label: ExplorerStatusStatusPageClientCopy.protocolVersion[cs ? 'cs' : 'en'], value: stats?.version || "v3.2.0", icon: Hash, color: "text-zion-gold" },
-    { label: ExplorerStatusStatusPageClientCopy.consensusProfile[cs ? 'cs' : 'en'], value: "deeksha_lite_fire", icon: Shield, color: "text-zion-cyan" },
-    { label: ExplorerStatusStatusPageClientCopy.network[cs ? 'cs' : 'en'], value: stats?.mainnet ? "Mainnet" : "Testnet", icon: Network, color: "text-zion-cyan" },
-    { label: ExplorerStatusStatusPageClientCopy.runtime[cs ? 'cs' : 'en'], value: SITE_RUNTIME_LABEL, icon: Cpu, color: "text-zion-purple" },
-    { label: ExplorerStatusStatusPageClientCopy.release[cs ? 'cs' : 'en'], value: SITE_RELEASE_LABEL, icon: Boxes, color: "text-zion-gold" },
-    { label: ExplorerStatusStatusPageClientCopy.status[cs ? 'cs' : 'en'], value: stats?.status || "OK", icon: Activity, color: "text-zion-cyan" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.protocolVersion, lang), value: stats?.version || "v3.2.0", icon: Hash, color: "text-zion-gold" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.consensusProfile, lang), value: "deeksha_lite_fire", icon: Shield, color: "text-zion-cyan" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.network, lang), value: stats?.mainnet ? "Mainnet" : "Testnet", icon: Network, color: "text-zion-cyan" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.runtime, lang), value: SITE_RUNTIME_LABEL, icon: Cpu, color: "text-zion-purple" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.release, lang), value: SITE_RELEASE_LABEL, icon: Boxes, color: "text-zion-gold" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.status, lang), value: stats?.status || "OK", icon: Activity, color: "text-zion-cyan" },
   ];
 
   const networkMetrics = [
-    { label: ExplorerStatusStatusPageClientCopy.blockHeight[cs ? 'cs' : 'en'], value: stats ? `#${stats.block_height.toLocaleString()}` : "—", icon: Boxes, color: "text-zion-gold" },
-    { label: ExplorerStatusStatusPageClientCopy.tipHash[cs ? 'cs' : 'en'], value: stats?.top_block_hash ? `${stats.top_block_hash.slice(0, 12)}…` : "—", icon: Hash, color: "text-zion-cyan" },
-    { label: ExplorerStatusStatusPageClientCopy.hashrate[cs ? 'cs' : 'en'], value: stats?.network_hashrate_formatted ?? "—", icon: Zap, color: "text-zion-cyan" },
-    { label: ExplorerStatusStatusPageClientCopy.difficulty[cs ? 'cs' : 'en'], value: stats ? formatNumber(stats.difficulty) : "—", icon: Activity, color: "text-zion-cyan" },
-    { label: ExplorerStatusStatusPageClientCopy.cumulativeDifficulty[cs ? 'cs' : 'en'], value: stats ? formatNumber(stats.cumulative_difficulty) : "—", icon: TrendingUp, color: "text-zion-cyan" },
-    { label: ExplorerStatusStatusPageClientCopy.targetBlockTime[cs ? 'cs' : 'en'], value: stats ? `${stats.target_block_time}s` : "—", icon: Clock, color: "text-zion-gold" },
-    { label: ExplorerStatusStatusPageClientCopy.avgBlockTime[cs ? 'cs' : 'en'], value: stats ? `${stats.avg_block_time.toFixed(1)}s` : "—", icon: Clock, color: "text-zion-gold" },
-    { label: ExplorerStatusStatusPageClientCopy.totalBlocks[cs ? 'cs' : 'en'], value: stats ? stats.total_blocks.toLocaleString() : "—", icon: Boxes, color: "text-zion-gold" },
-    { label: ExplorerStatusStatusPageClientCopy.totalTransactions[cs ? 'cs' : 'en'], value: stats ? stats.total_transactions.toLocaleString() : "—", icon: Activity, color: "text-zion-cyan" },
-    { label: ExplorerStatusStatusPageClientCopy.mempoolTx[cs ? 'cs' : 'en'], value: stats ? String(stats.tx_pool_size) : "—", icon: Signal, color: "text-zion-purple" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.blockHeight, lang), value: stats ? `#${stats.block_height.toLocaleString()}` : "—", icon: Boxes, color: "text-zion-gold" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.tipHash, lang), value: stats?.top_block_hash ? `${stats.top_block_hash.slice(0, 12)}…` : "—", icon: Hash, color: "text-zion-cyan" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.hashrate, lang), value: stats?.network_hashrate_formatted ?? "—", icon: Zap, color: "text-zion-cyan" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.difficulty, lang), value: stats ? formatNumber(stats.difficulty) : "—", icon: Activity, color: "text-zion-cyan" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.cumulativeDifficulty, lang), value: stats ? formatNumber(stats.cumulative_difficulty) : "—", icon: TrendingUp, color: "text-zion-cyan" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.targetBlockTime, lang), value: stats ? `${stats.target_block_time}s` : "—", icon: Clock, color: "text-zion-gold" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.avgBlockTime, lang), value: stats ? `${stats.avg_block_time.toFixed(1)}s` : "—", icon: Clock, color: "text-zion-gold" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.totalBlocks, lang), value: stats ? stats.total_blocks.toLocaleString() : "—", icon: Boxes, color: "text-zion-gold" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.totalTransactions, lang), value: stats ? stats.total_transactions.toLocaleString() : "—", icon: Activity, color: "text-zion-cyan" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.mempoolTx, lang), value: stats ? String(stats.tx_pool_size) : "—", icon: Signal, color: "text-zion-purple" },
   ];
 
   const peerMetrics = [
-    { label: ExplorerStatusStatusPageClientCopy.incoming[cs ? 'cs' : 'en'], value: stats ? String(stats.incoming_connections) : "—", icon: ArrowDown, color: "text-zion-cyan" },
-    { label: ExplorerStatusStatusPageClientCopy.outgoing[cs ? 'cs' : 'en'], value: stats ? String(stats.outgoing_connections) : "—", icon: ArrowUp, color: "text-zion-cyan" },
-    { label: ExplorerStatusStatusPageClientCopy.total[cs ? 'cs' : 'en'], value: stats ? String(stats.total_connections) : "—", icon: Network, color: "text-zion-gold" },
-    { label: ExplorerStatusStatusPageClientCopy.whitePeerlist[cs ? 'cs' : 'en'], value: stats ? String(stats.white_peerlist_size) : "—", icon: Globe, color: "text-zion-purple" },
-    { label: ExplorerStatusStatusPageClientCopy.greyPeerlist[cs ? 'cs' : 'en'], value: stats ? String(stats.grey_peerlist_size) : "—", icon: Globe, color: "text-gray-400" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.incoming, lang), value: stats ? String(stats.incoming_connections) : "—", icon: ArrowDown, color: "text-zion-cyan" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.outgoing, lang), value: stats ? String(stats.outgoing_connections) : "—", icon: ArrowUp, color: "text-zion-cyan" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.total, lang), value: stats ? String(stats.total_connections) : "—", icon: Network, color: "text-zion-gold" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.whitePeerlist, lang), value: stats ? String(stats.white_peerlist_size) : "—", icon: Globe, color: "text-zion-purple" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.greyPeerlist, lang), value: stats ? String(stats.grey_peerlist_size) : "—", icon: Globe, color: "text-gray-400" },
   ];
 
   const poolMetrics = [
-    { label: ExplorerStatusStatusPageClientCopy.poolHashrate[cs ? 'cs' : 'en'], value: stats?.pool_hashrate_formatted ?? "—", icon: Zap, color: "text-zion-cyan" },
-    { label: ExplorerStatusStatusPageClientCopy.activeMiners_2[cs ? 'cs' : 'en'], value: stats ? String(stats.active_miners) : "—", icon: Pickaxe, color: "text-zion-gold" },
-    { label: ExplorerStatusStatusPageClientCopy.blocksFound[cs ? 'cs' : 'en'], value: stats ? String(stats.pool_blocks_found) : "—", icon: Boxes, color: "text-zion-gold" },
-    { label: ExplorerStatusStatusPageClientCopy.poolUptime[cs ? 'cs' : 'en'], value: stats?.pool_uptime_s ? formatDuration(stats.pool_uptime_s) : "—", icon: Clock, color: "text-zion-cyan" },
-    { label: ExplorerStatusStatusPageClientCopy.pplnsWindow[cs ? 'cs' : 'en'], value: stats ? String(stats.pool_pplns_window) : "—", icon: HardDrive, color: "text-zion-purple" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.poolHashrate, lang), value: stats?.pool_hashrate_formatted ?? "—", icon: Zap, color: "text-zion-cyan" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.activeMiners_2, lang), value: stats ? String(stats.active_miners) : "—", icon: Pickaxe, color: "text-zion-gold" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.blocksFound, lang), value: stats ? String(stats.pool_blocks_found) : "—", icon: Boxes, color: "text-zion-gold" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.poolUptime, lang), value: stats?.pool_uptime_s ? formatDuration(stats.pool_uptime_s) : "—", icon: Clock, color: "text-zion-cyan" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.pplnsWindow, lang), value: stats ? String(stats.pool_pplns_window) : "—", icon: HardDrive, color: "text-zion-purple" },
   ];
 
   /* ── render ──────────────────────────────────────────────── */
@@ -300,33 +301,33 @@ export default function StatusPageClient() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <Server className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {ExplorerStatusStatusPageClientCopy.nodeStatus[cs ? 'cs' : 'en']}
+                {SITE_RELEASE_LABEL} · {tx5(ExplorerStatusStatusPageClientCopy.nodeStatus, lang)}
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                  {ExplorerStatusStatusPageClientCopy.liveHealth[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerStatusStatusPageClientCopy.liveHealth, lang)}
                 </p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {ExplorerStatusStatusPageClientCopy.networkStatus[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerStatusStatusPageClientCopy.networkStatus, lang)}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {ExplorerStatusStatusPageClientCopy.completeOverviewOfZionNodeHeal[cs ? 'cs' : 'en']}
+                {tx5(ExplorerStatusStatusPageClientCopy.completeOverviewOfZionNodeHeal, lang)}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="zion-badge zion-badge-green">
-                  <Activity className="h-3 w-3" /> {ExplorerStatusStatusPageClientCopy.autoRefresh15s[cs ? 'cs' : 'en']}
+                  <Activity className="h-3 w-3" /> {tx5(ExplorerStatusStatusPageClientCopy.autoRefresh15s, lang)}
                 </span>
                 {sse.connected ? (
                   <span className="zion-badge zion-badge-green">
-                    <Zap className="h-3 w-3" /> SSE {ExplorerStatusStatusPageClientCopy.connected_2[cs ? 'cs' : 'en']}
+                    <Zap className="h-3 w-3" /> SSE {tx5(ExplorerStatusStatusPageClientCopy.connected_2, lang)}
                   </span>
                 ) : (
                   <span className="zion-badge text-zion-gold border-zion-gold/40 bg-zion-gold/10">
-                    SSE {ExplorerStatusStatusPageClientCopy.connecting_2[cs ? 'cs' : 'en']}
+                    SSE {tx5(ExplorerStatusStatusPageClientCopy.connecting_2, lang)}
                   </span>
                 )}
-                <LiveBadge label={ExplorerStatusStatusPageClientCopy.live[cs ? 'cs' : 'en']} />
+                <LiveBadge label={tx5(ExplorerStatusStatusPageClientCopy.live, lang)} />
               </div>
             </div>
 
@@ -334,18 +335,18 @@ export default function StatusPageClient() {
             {sse.stats && (
               <div className="zion-rainbow-sub p-6 rounded-2xl" style={{ "--rc": "74, 222, 128" } as React.CSSProperties}>
                 <div className="text-xs text-gray-400 mb-2 uppercase tracking-wider">
-                  {ExplorerStatusStatusPageClientCopy.currentHeightSse[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerStatusStatusPageClientCopy.currentHeightSse, lang)}
                 </div>
                 <div className="text-4xl font-bold text-zion-cyan tabular-nums">
                   #{sse.stats.height.toLocaleString()}
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
                   <div>
-                    <span className="text-gray-500">{ExplorerStatusStatusPageClientCopy.mempool[cs ? 'cs' : 'en']}</span>
+                    <span className="text-gray-500">{tx5(ExplorerStatusStatusPageClientCopy.mempool, lang)}</span>
                     <div className="text-zion-gold font-bold">{sse.stats.mempool_size} TX</div>
                   </div>
                   <div>
-                    <span className="text-gray-500">{ExplorerStatusStatusPageClientCopy.protocol[cs ? 'cs' : 'en']}</span>
+                    <span className="text-gray-500">{tx5(ExplorerStatusStatusPageClientCopy.protocol, lang)}</span>
                     <div className="text-zion-cyan font-bold">{sse.stats.protocol_version}</div>
                   </div>
                 </div>
@@ -362,11 +363,11 @@ export default function StatusPageClient() {
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-              {ExplorerStatusStatusPageClientCopy.health[cs ? 'cs' : 'en']}
+              {tx5(ExplorerStatusStatusPageClientCopy.health, lang)}
             </p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Heart className="h-7 w-7 text-zion-cyan" />
-              {ExplorerStatusStatusPageClientCopy.healthChecks[cs ? 'cs' : 'en']}
+              {tx5(ExplorerStatusStatusPageClientCopy.healthChecks, lang)}
             </h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -407,11 +408,11 @@ export default function StatusPageClient() {
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-              {ExplorerStatusStatusPageClientCopy.node[cs ? 'cs' : 'en']}
+              {tx5(ExplorerStatusStatusPageClientCopy.node, lang)}
             </p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Server className="h-7 w-7 text-zion-gold" />
-              {ExplorerStatusStatusPageClientCopy.nodeInformation[cs ? 'cs' : 'en']}
+              {tx5(ExplorerStatusStatusPageClientCopy.nodeInformation, lang)}
             </h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -446,11 +447,11 @@ export default function StatusPageClient() {
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-              {ExplorerStatusStatusPageClientCopy.metrics[cs ? 'cs' : 'en']}
+              {tx5(ExplorerStatusStatusPageClientCopy.metrics, lang)}
             </p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-zion-cyan" />
-              {ExplorerStatusStatusPageClientCopy.networkMetrics[cs ? 'cs' : 'en']}
+              {tx5(ExplorerStatusStatusPageClientCopy.networkMetrics, lang)}
             </h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -485,11 +486,11 @@ export default function StatusPageClient() {
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-              {ExplorerStatusStatusPageClientCopy.p2p[cs ? 'cs' : 'en']}
+              {tx5(ExplorerStatusStatusPageClientCopy.p2p, lang)}
             </p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Globe className="h-7 w-7 text-zion-purple" />
-              {ExplorerStatusStatusPageClientCopy.networkPeers[cs ? 'cs' : 'en']}
+              {tx5(ExplorerStatusStatusPageClientCopy.networkPeers, lang)}
             </h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
@@ -519,12 +520,12 @@ export default function StatusPageClient() {
           {peers?.peers && peers.peers.length > 0 && (
             <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-x-auto overflow-y-hidden" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
               <div className="grid grid-cols-[1fr_80px_80px_100px_100px_80px] min-w-[460px] gap-3 px-5 py-3 border-b border-white/6">
-                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.address[cs ? 'cs' : 'en']}</span>
-                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.direction[cs ? 'cs' : 'en']}</span>
-                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.height[cs ? 'cs' : 'en']}</span>
-                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.version[cs ? 'cs' : 'en']}</span>
-                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.state[cs ? 'cs' : 'en']}</span>
-                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerStatusStatusPageClientCopy.idle[cs ? 'cs' : 'en']}</span>
+                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{tx5(ExplorerStatusStatusPageClientCopy.address, lang)}</span>
+                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{tx5(ExplorerStatusStatusPageClientCopy.direction, lang)}</span>
+                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{tx5(ExplorerStatusStatusPageClientCopy.height, lang)}</span>
+                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{tx5(ExplorerStatusStatusPageClientCopy.version, lang)}</span>
+                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{tx5(ExplorerStatusStatusPageClientCopy.state, lang)}</span>
+                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{tx5(ExplorerStatusStatusPageClientCopy.idle, lang)}</span>
               </div>
               {peers.peers.slice(0, 10).map((peer, i) => (
                 <div
@@ -535,7 +536,7 @@ export default function StatusPageClient() {
                     {peer.address || peer.host}
                   </span>
                   <span className={`text-[12px] ${peer.incoming ? "text-zion-cyan" : "text-zion-cyan"}`}>
-                    {peer.incoming ? (ExplorerStatusStatusPageClientCopy.incoming_2[cs ? 'cs' : 'en']) : (ExplorerStatusStatusPageClientCopy.outgoing_2[cs ? 'cs' : 'en'])}
+                    {peer.incoming ? (tx5(ExplorerStatusStatusPageClientCopy.incoming_2, lang)) : (tx5(ExplorerStatusStatusPageClientCopy.outgoing_2, lang))}
                   </span>
                   <span className="text-[12px] text-zion-gold tabular-nums">
                     {peer.height > 0 ? `#${peer.height.toLocaleString()}` : "—"}
@@ -563,11 +564,11 @@ export default function StatusPageClient() {
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-              {ExplorerStatusStatusPageClientCopy.pool[cs ? 'cs' : 'en']}
+              {tx5(ExplorerStatusStatusPageClientCopy.pool, lang)}
             </p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Pickaxe className="h-7 w-7 text-zion-gold" />
-              {ExplorerStatusStatusPageClientCopy.miningPool[cs ? 'cs' : 'en']}
+              {tx5(ExplorerStatusStatusPageClientCopy.miningPool, lang)}
             </h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -603,42 +604,42 @@ export default function StatusPageClient() {
           >
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-                {ExplorerStatusStatusPageClientCopy.lastBlock[cs ? 'cs' : 'en']}
+                {tx5(ExplorerStatusStatusPageClientCopy.lastBlock, lang)}
               </p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                 <Boxes className="h-7 w-7 text-zion-gold" />
-                {ExplorerStatusStatusPageClientCopy.latestBlock[cs ? 'cs' : 'en']}
+                {tx5(ExplorerStatusStatusPageClientCopy.latestBlock, lang)}
               </h2>
             </div>
             <div className="zion-rainbow-card rounded-2xl bg-black/60 p-6" style={{ "--rc": "252, 209, 22" } as React.CSSProperties}>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{ExplorerStatusStatusPageClientCopy.height[cs ? 'cs' : 'en']}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{tx5(ExplorerStatusStatusPageClientCopy.height, lang)}</div>
                   <Link href={`/explorer/block?height=${stats.last_block.height}`} className="text-xl font-bold text-zion-gold hover:text-zion-gold tabular-nums">
                     #{stats.last_block.height.toLocaleString()}
                   </Link>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{ExplorerStatusStatusPageClientCopy.reward[cs ? 'cs' : 'en']}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{tx5(ExplorerStatusStatusPageClientCopy.reward, lang)}</div>
                   <div className="text-xl font-bold text-zion-cyan tabular-nums">
                     {stats.last_block.reward.toFixed(2)} ZION
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{ExplorerStatusStatusPageClientCopy.transactions[cs ? 'cs' : 'en']}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{tx5(ExplorerStatusStatusPageClientCopy.transactions, lang)}</div>
                   <div className="text-xl font-bold text-zion-cyan tabular-nums">
                     {stats.last_block.num_txes}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{ExplorerStatusStatusPageClientCopy.age[cs ? 'cs' : 'en']}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{tx5(ExplorerStatusStatusPageClientCopy.age, lang)}</div>
                   <div className="text-xl font-bold text-zion-gold">
                     {formatAge(stats.last_block.timestamp, cs)}
                   </div>
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t border-white/5">
-                <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{ExplorerStatusStatusPageClientCopy.hash[cs ? 'cs' : 'en']}</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{tx5(ExplorerStatusStatusPageClientCopy.hash, lang)}</div>
                 <Link href={`/explorer/block?hash=${stats.last_block.hash}`} className="text-sm font-mono text-zion-cyan hover:text-zion-gold transition-colors break-all">
                   {stats.last_block.hash}
                 </Link>
