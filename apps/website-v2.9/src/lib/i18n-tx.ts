@@ -21,6 +21,18 @@ import kralovstviFr from './ui-strings/kralovstvi.fr.json';
 import nabukanoEs from './ui-strings/nabukano.es.json';
 import nabukanoPt from './ui-strings/nabukano.pt.json';
 import nabukanoFr from './ui-strings/nabukano.fr.json';
+import archivelockEs from './ui-strings/archivelock.es.json';
+import archivelockPt from './ui-strings/archivelock.pt.json';
+import archivelockFr from './ui-strings/archivelock.fr.json';
+import zionarchiveEs from './ui-strings/zionarchive.es.json';
+import zionarchivePt from './ui-strings/zionarchive.pt.json';
+import zionarchiveFr from './ui-strings/zionarchive.fr.json';
+import whitepapersEs from './ui-strings/whitepapers.es.json';
+import whitepapersPt from './ui-strings/whitepapers.pt.json';
+import whitepapersFr from './ui-strings/whitepapers.fr.json';
+import tepikooraEs from './ui-strings/tepikoora.es.json';
+import tepikooraPt from './ui-strings/tepikoora.pt.json';
+import tepikooraFr from './ui-strings/tepikoora.fr.json';
 
 
 /**
@@ -42,9 +54,9 @@ type Dict = Record<string, string>;
 const merge = (...parts: Dict[]): Dict => Object.assign({}, ...parts);
 
 const DICTS: Record<'es' | 'pt' | 'fr', Dict> = {
-  es: merge(avatarsEs, newsfeedEs, issobellaEs, treeoflifeEs, mariaEs, kralovstviEs, nabukanoEs),
-  pt: merge(avatarsPt, newsfeedPt, issobellaPt, treeoflifePt, mariaPt, kralovstviPt, nabukanoPt),
-  fr: merge(avatarsFr, newsfeedFr, issobellaFr, treeoflifeFr, mariaFr, kralovstviFr, nabukanoFr),
+  es: merge(avatarsEs, newsfeedEs, issobellaEs, treeoflifeEs, mariaEs, kralovstviEs, nabukanoEs, archivelockEs, zionarchiveEs, whitepapersEs, tepikooraEs),
+  pt: merge(avatarsPt, newsfeedPt, issobellaPt, treeoflifePt, mariaPt, kralovstviPt, nabukanoPt, archivelockPt, zionarchivePt, whitepapersPt, tepikooraPt),
+  fr: merge(avatarsFr, newsfeedFr, issobellaFr, treeoflifeFr, mariaFr, kralovstviFr, nabukanoFr, archivelockFr, zionarchiveFr, whitepapersFr, tepikooraFr),
 };
 
 /** Přeloží lokalizovaný objekt pro daný jazyk (5 kódů). */

@@ -18,6 +18,7 @@ import {
   Library,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { tr } from '@/lib/translations';
 
 interface Paper {
@@ -284,7 +285,7 @@ export default function WhitepapersPage() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
               {quickFacts.map((fact, i) => (
                 <div key={i} className="rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm px-3 py-3">
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1">{fact.label[L]}</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1">{tx5(fact.label, lang)}</p>
                   <p className="text-sm font-semibold text-white font-mono break-all">{fact.value}</p>
                 </div>
               ))}
@@ -314,7 +315,7 @@ export default function WhitepapersPage() {
           >
             <div className="flex items-center gap-2 min-w-0">
               <BookOpen className="w-5 h-5 text-zion-purple shrink-0" />
-              <span className="font-semibold min-w-0 break-words">{currentCategory?.title[L]}</span>
+              <span className="font-semibold min-w-0 break-words">{tx5(currentCategory?.title, lang)}</span>
             </div>
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -336,7 +337,7 @@ export default function WhitepapersPage() {
                     >
                       <div className="flex items-center gap-2">
                         <Icon className={`w-4 h-4 ${category.accentText}`} />
-                        {category.title[L]}
+                        {tx5(category.title, lang)}
                       </div>
                       <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                     </button>
@@ -351,7 +352,7 @@ export default function WhitepapersPage() {
                         }`}
                         style={selectedPaper === paper.id ? { '--rc': '228, 30, 43' } as React.CSSProperties : undefined}
                       >
-                        {paper.title[L]}
+                        {tx5(paper.title, lang)}
                       </button>
                     ))}
                   </div>
@@ -384,7 +385,7 @@ export default function WhitepapersPage() {
                       >
                         <div className="flex items-center gap-2">
                           <Icon className={`w-4 h-4 ${category.accentText}`} />
-                          <span className="font-semibold">{category.title[L]}</span>
+                          <span className="font-semibold">{tx5(category.title, lang)}</span>
                         </div>
                         <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                       </button>
@@ -403,7 +404,7 @@ export default function WhitepapersPage() {
                               style={selectedPaper === paper.id ? { '--rc': '228, 30, 43' } as React.CSSProperties : undefined}
                             >
                               {paper.format === 'pdf' ? <Download className="w-3.5 h-3.5 shrink-0" /> : <FileText className="w-3.5 h-3.5 shrink-0" />}
-                              {paper.title[L]}
+                              {tx5(paper.title, lang)}
                             </button>
                           ))}
                         </div>
@@ -420,14 +421,14 @@ export default function WhitepapersPage() {
             {currentPaper && (
               <div className="mb-10 pb-8 border-b border-white/10">
                 <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-                  <span className={currentCategory?.accentText}>{currentCategory?.title[L]}</span>
+                  <span className={currentCategory?.accentText}>{tx5(currentCategory?.title, lang)}</span>
                   <ChevronRight className="w-3 h-3" />
-                  <span className="text-zion-purple">{currentPaper.title[L]}</span>
+                  <span className="text-zion-purple">{tx5(currentPaper.title, lang)}</span>
                 </div>
                 <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight text-gradient">
-                  {currentPaper.title[L]}
+                  {tx5(currentPaper.title, lang)}
                 </h1>
-                <p className="text-gray-400">{currentPaper.description[L]}</p>
+                <p className="text-gray-400">{tx5(currentPaper.description, lang)}</p>
                 {currentPaper.format === 'pdf' && (
                   <a
                     href={pdfUrl ?? ''}
@@ -462,7 +463,7 @@ export default function WhitepapersPage() {
                     <iframe
                       src={pdfUrl ?? ''}
                       className="w-full h-full min-h-[600px]"
-                      title={currentPaper.title[L]}
+                      title={tx5(currentPaper.title, lang)}
                     />
                   </div>
                 </div>

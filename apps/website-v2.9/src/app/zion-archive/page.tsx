@@ -18,6 +18,7 @@ import {
   Sun,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import BookNav from '@/components/books/BookNav';
 import {
   clearReadingProgress,
@@ -134,12 +135,12 @@ export default function ZionArchivePage() {
 
   const passLabel = passInfo
     ? passInfo.via === 'zis-oasis'
-      ? Copy.passOasis[l]
+      ? tx5(Copy.passOasis, lang)
       : passInfo.via === 'zis-entitlement'
         ? passInfo.expiresAt
-          ? `${Copy.passUntil[l]} ${new Intl.DateTimeFormat(l === 'cs' ? 'cs-CZ' : 'en-GB', { dateStyle: 'medium' }).format(new Date(passInfo.expiresAt))}`
-          : Copy.passActive[l]
-        : Copy.passCode[l]
+          ? `${tx5(Copy.passUntil, lang)} ${new Intl.DateTimeFormat(l === 'cs' ? 'cs-CZ' : 'en-GB', { dateStyle: 'medium' }).format(new Date(passInfo.expiresAt))}`
+          : tx5(Copy.passActive, lang)
+        : tx5(Copy.passCode, lang)
     : '';
 
   const syncFromHash = useCallback((scroll: boolean) => {
@@ -188,10 +189,10 @@ export default function ZionArchivePage() {
     }`;
 
   const heroStats = [
-    { value: String(LIBRARY_STATS.books), label: Copy.stats.books[l] },
-    { value: String(LIBRARY_STATS.groups), label: Copy.stats.groups[l] },
-    { value: 'CZ + EN', label: Copy.stats.languages[l] },
-    { value: '1', label: Copy.stats.reader[l] },
+    { value: String(LIBRARY_STATS.books), label: tx5(Copy.stats.books, lang) },
+    { value: String(LIBRARY_STATS.groups), label: tx5(Copy.stats.groups, lang) },
+    { value: 'CZ + EN', label: tx5(Copy.stats.languages, lang) },
+    { value: '1', label: tx5(Copy.stats.reader, lang) },
   ];
 
   const latest = recent[0];
@@ -225,7 +226,7 @@ export default function ZionArchivePage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="zion-kicker border-zion-gold/30 bg-zion-gold/10 text-zion-gold">
                     <Egg className="h-3.5 w-3.5" />
-                    {Copy.kicker[l]}
+                    {tx5(Copy.kicker, lang)}
                   </span>
                   {passInfo && (
                     <span className="zion-kicker border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
@@ -235,16 +236,16 @@ export default function ZionArchivePage() {
                   )}
                 </div>
                 <h1 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-                  <span className="text-gradient">{Copy.title[l]}</span>
+                  <span className="text-gradient">{tx5(Copy.title, lang)}</span>
                 </h1>
                 <p className="text-base font-semibold text-zion-gold/90 sm:text-lg">
-                  {Copy.subtitle[l]}
+                  {tx5(Copy.subtitle, lang)}
                 </p>
                 <p className="max-w-xl text-sm leading-relaxed text-gray-300 sm:text-base">
-                  {Copy.lede[l]}
+                  {tx5(Copy.lede, lang)}
                 </p>
                 <p className="max-w-xl text-xs italic text-gray-400 sm:text-sm">
-                  {Copy.tagline[l]}
+                  {tx5(Copy.tagline, lang)}
                 </p>
 
                 <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -264,7 +265,7 @@ export default function ZionArchivePage() {
                 <div className="flex flex-wrap items-center gap-3 pt-1">
                   <Link href={startHref} className="zion-button-primary group">
                     <BookOpen className="h-5 w-5" />
-                    {latest ? Copy.continueReading[l] : Copy.read[l]}
+                    {latest ? tx5(Copy.continueReading, lang) : tx5(Copy.read, lang)}
                     <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Link>
                   <a
@@ -272,14 +273,14 @@ export default function ZionArchivePage() {
                     className="zion-button-secondary border-zion-cyan/30 hover:border-zion-cyan/60 hover:text-zion-cyan"
                   >
                     <Library className="h-4 w-4" />
-                    {Copy.browse[l]}
+                    {tx5(Copy.browse, lang)}
                   </a>
                   <a
                     href="#plan-v33"
                     className="zion-button-secondary border-zion-purple/30 hover:border-zion-purple/60 hover:text-zion-purple"
                   >
                     <Route className="h-4 w-4" />
-                    {Copy.plan[l]}
+                    {tx5(Copy.plan, lang)}
                   </a>
                 </div>
               </div>
@@ -289,7 +290,7 @@ export default function ZionArchivePage() {
                   src="/images/zion-archive/hero.webp"
                   srcSet="/images/zion-archive/hero-m.webp 960w, /images/zion-archive/hero.webp 1536w"
                   sizes="(max-width: 1024px) calc(100vw - 4rem), 560px"
-                  alt={Copy.heroAlt[l]}
+                  alt={tx5(Copy.heroAlt, lang)}
                   width={1536}
                   height={1024}
                   fetchPriority="high"
@@ -297,7 +298,7 @@ export default function ZionArchivePage() {
                 />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
                 <p className="absolute bottom-2.5 left-3 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-100 backdrop-blur-sm">
-                  {Copy.heroBadge[l]}
+                  {tx5(Copy.heroBadge, lang)}
                 </p>
               </div>
             </div>
@@ -319,16 +320,16 @@ export default function ZionArchivePage() {
                     id="continue-reading-title"
                     className="text-sm font-bold uppercase tracking-[0.2em] text-gray-200"
                   >
-                    {Copy.continueTitle[l]}
+                    {tx5(Copy.continueTitle, lang)}
                   </h2>
-                  <p className="mt-1 text-xs text-gray-500">{Copy.continueSub[l]}</p>
+                  <p className="mt-1 text-xs text-gray-500">{tx5(Copy.continueSub, lang)}</p>
                 </div>
                 <button
                   type="button"
                   onClick={clearReadingProgress}
                   className="rounded-md border border-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500 transition-colors hover:border-white/25 hover:text-gray-300"
                 >
-                  {Copy.clearHistory[l]}
+                  {tx5(Copy.clearHistory, lang)}
                 </button>
               </div>
 
@@ -361,7 +362,7 @@ export default function ZionArchivePage() {
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">
-                            {book?.groupLabel[l] ?? Copy.continueTitle[l]}
+                            {tx5(book?.groupLabel, lang) ?? tx5(Copy.continueTitle, lang)}
                           </span>
                           <span className="block truncate text-sm font-bold text-white transition-colors group-hover:text-zion-gold">
                             {entry.bookTitle}
@@ -382,7 +383,7 @@ export default function ZionArchivePage() {
                           </span>
                         </span>
                         <span className="hidden shrink-0 items-center gap-1 text-xs font-semibold text-gray-400 transition-colors group-hover:text-white sm:flex">
-                          {Copy.resume[l]}
+                          {tx5(Copy.resume, lang)}
                           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                         </span>
                       </Link>
@@ -401,7 +402,7 @@ export default function ZionArchivePage() {
           {/* mobile section nav — sticky single-row pills under the global nav */}
           <nav
             ref={mobileNavRef}
-            aria-label={Copy.navLabel[l]}
+            aria-label={tx5(Copy.navLabel, lang)}
             className="sticky top-14 z-30 -mx-4 mb-6 overflow-x-auto border-b border-white/10 bg-black/70 px-4 py-2 backdrop-blur-xl lg:hidden"
           >
             <div className="flex w-max gap-2">
@@ -420,7 +421,7 @@ export default function ZionArchivePage() {
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" />
-                    {s.label[l]}
+                    {tx5(s.label, lang)}
                   </a>
                 );
               })}
@@ -431,7 +432,7 @@ export default function ZionArchivePage() {
           <details className="zion-rainbow-card group mb-6 lg:hidden">
             <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-white [&::-webkit-details-marker]:hidden">
               <Library className="h-4 w-4 text-zion-gold" />
-              {Copy.libraryLabel[l]}
+              {tx5(Copy.libraryLabel, lang)}
               <span className="ml-auto text-xs text-gray-500 transition-transform group-open:rotate-180">▾</span>
             </summary>
             <div className="max-h-[60vh] overflow-y-auto border-t border-white/10 p-3">
@@ -444,7 +445,7 @@ export default function ZionArchivePage() {
             <aside className="hidden w-72 shrink-0 lg:block">
               <div className="sticky top-24 space-y-4">
                 <nav
-                  aria-label={Copy.navLabel[l]}
+                  aria-label={tx5(Copy.navLabel, lang)}
                   className="zion-rainbow-card space-y-1 p-3"
                   style={{ '--rc': activeSection.rc } as React.CSSProperties}
                 >
@@ -462,19 +463,19 @@ export default function ZionArchivePage() {
                           className="h-4 w-4 shrink-0"
                           style={isActive ? { color: `rgb(${s.rc})` } : undefined}
                         />
-                        {s.label[l]}
+                        {tx5(s.label, lang)}
                       </a>
                     );
                   })}
                 </nav>
 
                 <div
-                  aria-label={Copy.libraryLabel[l]}
+                  aria-label={tx5(Copy.libraryLabel, lang)}
                   className="zion-rainbow-card max-h-[calc(100vh-420px)] overflow-y-auto p-3"
                 >
                   <p className="mb-2 flex items-center gap-2 px-3 text-[11px] font-bold uppercase tracking-[0.14em] text-zion-gold">
                     <Library className="h-3.5 w-3.5" />
-                    {Copy.libraryLabel[l]}
+                    {tx5(Copy.libraryLabel, lang)}
                   </p>
                   <BookNav lang={l} expandAll />
                 </div>

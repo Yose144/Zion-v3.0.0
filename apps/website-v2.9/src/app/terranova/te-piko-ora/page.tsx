@@ -24,6 +24,7 @@ import {
   Waves,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
@@ -272,7 +273,7 @@ export default function TePikoOraPage() {
   const [docError, setDocError] = useState(false);
 
   useEffect(() => {
-    const file = cs ? '/docs/terranova/te-piko-ora.cs.md' : '/docs/terranova/te-piko-ora.en.md';
+    const file = cs ? '/docs/terranova/te-piko-ora.cs.md' : t5('/docs/terranova/te-piko-ora.en.md', lang);
     fetch(file)
       .then((res) => {
         if (!res.ok) throw new Error('not found');
@@ -298,7 +299,7 @@ export default function TePikoOraPage() {
             className="inline-flex items-center gap-2 text-sm text-zion-gold/65 hover:text-zion-cyan transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {TerranovaTePikoOraCopy.backToTerraNova[cs ? 'cs' : 'en']}
+            {tx5(TerranovaTePikoOraCopy.backToTerraNova, lang)}
           </Link>
         </motion.div>
 
@@ -325,7 +326,7 @@ export default function TePikoOraPage() {
                   </span>
                   <span className="zion-badge-gold inline-flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
-                    {TerranovaTePikoOraCopy.planned2029[cs ? 'cs' : 'en']}
+                    {tx5(TerranovaTePikoOraCopy.planned2029, lang)}
                   </span>
                 </div>
 
@@ -333,7 +334,7 @@ export default function TePikoOraPage() {
                   Te Pīko Ora
                 </h1>
                 <p className="text-lg text-zion-cyan font-medium">
-                  {TerranovaTePikoOraCopy.livingCentrePolynesiaTerraNova[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaTePikoOraCopy.livingCentrePolynesiaTerraNova, lang)}
                 </p>
 
                 <div className="flex items-center gap-1.5 text-white/70">
@@ -342,7 +343,7 @@ export default function TePikoOraPage() {
                 </div>
 
                 <blockquote className="mt-4 pl-4 border-l-2 border-white/10 text-sm text-white/70 italic leading-relaxed max-w-lg">
-                  {TerranovaTePikoOraCopy.ioranaHereIsTheSandHereIsTheSe[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaTePikoOraCopy.ioranaHereIsTheSandHereIsTheSe, lang)}
                 </blockquote>
 
                 <div className="grid gap-3 pt-3 sm:grid-cols-3">
@@ -392,21 +393,21 @@ export default function TePikoOraPage() {
             <div className="relative z-10 grid md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-3">
                 <h3 className="text-lg font-bold text-zion-gold">
-                  {TerranovaTePikoOraCopy.frenchPolynesiaCrownOfThePacif[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaTePikoOraCopy.frenchPolynesiaCrownOfThePacif, lang)}
                 </h3>
                 <p className="text-white/70 text-sm leading-relaxed">
-                  {TerranovaTePikoOraCopy.fiveArchipelagos118Islands4Mil[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaTePikoOraCopy.fiveArchipelagos118Islands4Mil, lang)}
                 </p>
                 <p className="text-zion-gold/65 text-sm leading-relaxed">
-                  {TerranovaTePikoOraCopy.raiateaIsTheSacredHeartOfPolyn[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaTePikoOraCopy.raiateaIsTheSacredHeartOfPolyn, lang)}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3 content-start">
                 {[
                   { label: 'UNESCO', val: 'Marae Taputapuātea' },
-                  { label: TerranovaTePikoOraCopy.islands[cs ? 'cs' : 'en'], val: '118' },
-                  { label: TerranovaTePikoOraCopy.ocean[cs ? 'cs' : 'en'], val: '4M km²' },
-                  { label: TerranovaTePikoOraCopy.culture[cs ? 'cs' : 'en'], val: TerranovaTePikoOraCopy.polynesia[cs ? 'cs' : 'en'] },
+                  { label: tx5(TerranovaTePikoOraCopy.islands, lang), val: '118' },
+                  { label: tx5(TerranovaTePikoOraCopy.ocean, lang), val: '4M km²' },
+                  { label: tx5(TerranovaTePikoOraCopy.culture, lang), val: tx5(TerranovaTePikoOraCopy.polynesia, lang) },
                 ].map((s) => (
                   <div key={s.label} className="text-center p-3 zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <p className="text-white/85 font-bold text-xs">{s.val}</p>
@@ -429,10 +430,10 @@ export default function TePikoOraPage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {TerranovaTePikoOraCopy.threeDPreview[cs ? 'cs' : 'en']}
+                {tx5(TerranovaTePikoOraCopy.threeDPreview, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {TerranovaTePikoOraCopy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaTePikoOraCopy.threeDPreviewSubtitle, lang)}
               </h2>
             </div>
             <TePikoOraPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
@@ -449,16 +450,16 @@ export default function TePikoOraPage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {TerranovaTePikoOraCopy.sitePlan[cs ? 'cs' : 'en']}
+                {tx5(TerranovaTePikoOraCopy.sitePlan, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {TerranovaTePikoOraCopy.sitePlanSubtitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaTePikoOraCopy.sitePlanSubtitle, lang)}
               </h2>
             </div>
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/te-piko-ora/concept-og.webp"
-                alt={cs ? 'Návrh Te Pīko Ora' : 'Te Pīko Ora concept'}
+                alt={cs ? 'Návrh Te Pīko Ora' : t5('Te Pīko Ora concept', lang)}
                 width={1536}
                 height={1024}
                 loading="lazy"
@@ -478,17 +479,17 @@ export default function TePikoOraPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaTePikoOraCopy.inspiration[cs ? 'cs' : 'en']}
+              {tx5(TerranovaTePikoOraCopy.inspiration, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaTePikoOraCopy.polynesianModelZion[cs ? 'cs' : 'en']}
+              {tx5(TerranovaTePikoOraCopy.polynesianModelZion, lang)}
             </h2>
           </div>
 
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[11px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
-              <div className="p-3 text-zion-gold/65">{TerranovaTePikoOraCopy.polynesia[cs ? 'cs' : 'en']}</div>
-              <div className="p-3 text-white/85 sm:border-l border-white/10">{TerranovaTePikoOraCopy.principle[cs ? 'cs' : 'en']}</div>
+              <div className="p-3 text-zion-gold/65">{tx5(TerranovaTePikoOraCopy.polynesia, lang)}</div>
+              <div className="p-3 text-white/85 sm:border-l border-white/10">{tx5(TerranovaTePikoOraCopy.principle, lang)}</div>
               <div className="p-3 text-white/85 sm:border-l border-white/10">ZION</div>
             </div>
             {[
@@ -531,10 +532,10 @@ export default function TePikoOraPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaTePikoOraCopy.projectConcept[cs ? 'cs' : 'en']}
+              {tx5(TerranovaTePikoOraCopy.projectConcept, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaTePikoOraCopy.activitiesVision[cs ? 'cs' : 'en']}
+              {tx5(TerranovaTePikoOraCopy.activitiesVision, lang)}
             </h2>
           </div>
 
@@ -591,10 +592,10 @@ export default function TePikoOraPage() {
                 <Landmark className="h-8 w-8 text-zion-gold" />
                 <div>
                   <h3 className="text-lg font-bold text-zion-gold">
-                    {TerranovaTePikoOraCopy.rapaNuiLessonsWayfindingSchool[cs ? 'cs' : 'en']}
+                    {tx5(TerranovaTePikoOraCopy.rapaNuiLessonsWayfindingSchool, lang)}
                   </h3>
                   <p className="text-zion-gold/65 text-xs">
-                    {TerranovaTePikoOraCopy.tePKoOraExplicitlyTeachesThese[cs ? 'cs' : 'en']}
+                    {tx5(TerranovaTePikoOraCopy.tePKoOraExplicitlyTeachesThese, lang)}
                   </p>
                 </div>
               </div>
@@ -607,7 +608,7 @@ export default function TePikoOraPage() {
                 ))}
               </ul>
               <p className="text-zion-gold/55 text-xs pt-2">
-                {TerranovaTePikoOraCopy.twoFacesOfOneWaveTePKoOraCrown[cs ? 'cs' : 'en']}
+                {tx5(TerranovaTePikoOraCopy.twoFacesOfOneWaveTePKoOraCrown, lang)}
               </p>
             </div>
           </div>
@@ -622,10 +623,10 @@ export default function TePikoOraPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaTePikoOraCopy.developmentPhases[cs ? 'cs' : 'en']}
+              {tx5(TerranovaTePikoOraCopy.developmentPhases, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaTePikoOraCopy.fromVisionToReality[cs ? 'cs' : 'en']}
+              {tx5(TerranovaTePikoOraCopy.fromVisionToReality, lang)}
             </h2>
           </div>
 
@@ -659,7 +660,7 @@ export default function TePikoOraPage() {
                         className="text-xs font-bold tracking-wider"
                         style={{ color: p.active ? '#22D3EE' : 'rgba(255,255,255,0.3)' }}
                       >
-                        {cs ? `Fáze ${p.num}` : `Phase ${p.num}`}
+                        {cs ? `Fáze ${p.num}` : t5(`Phase ${p.num}`, lang)}
                       </span>
                       <span className="text-sm font-semibold text-white/80">
                         {cs ? p.cs : p.en}
@@ -667,7 +668,7 @@ export default function TePikoOraPage() {
                       {p.active ? (
                         <span className="inline-flex items-center gap-1 text-zion-cyan text-xs animate-pulse">
                           <PlayCircle className="w-3.5 h-3.5" />
-                          {TerranovaTePikoOraCopy.exploringNow[cs ? 'cs' : 'en']}
+                          {tx5(TerranovaTePikoOraCopy.exploringNow, lang)}
                         </span>
                       ) : (
                         <Circle className="w-3.5 h-3.5 text-white/30" />
@@ -690,17 +691,17 @@ export default function TePikoOraPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaTePikoOraCopy.terraNovaNetwork[cs ? 'cs' : 'en']}
+              {tx5(TerranovaTePikoOraCopy.terraNovaNetwork, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaTePikoOraCopy.connectionWithSisterProjects[cs ? 'cs' : 'en']}
+              {tx5(TerranovaTePikoOraCopy.connectionWithSisterProjects, lang)}
             </h2>
           </div>
 
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             {/* Header row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[11px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
-              <div className="p-3 text-zion-gold/65">{TerranovaTePikoOraCopy.dimension[cs ? 'cs' : 'en']}</div>
+              <div className="p-3 text-zion-gold/65">{tx5(TerranovaTePikoOraCopy.dimension, lang)}</div>
               <div className="p-3 text-white/85 sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Zahrada Genesis</span></div>
               <div className="p-3 text-zion-gold sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Te Pīko Ora</span></div>
             </div>
@@ -717,7 +718,7 @@ export default function TePikoOraPage() {
           </div>
 
           <p className="text-zion-gold/55 text-xs text-center mt-4">
-            {TerranovaTePikoOraCopy.bothProjectsShareSourceCodeTer[cs ? 'cs' : 'en']}
+            {tx5(TerranovaTePikoOraCopy.bothProjectsShareSourceCodeTer, lang)}
           </p>
         </motion.section>
 
@@ -730,7 +731,7 @@ export default function TePikoOraPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaTePikoOraCopy.blockchainIntegration[cs ? 'cs' : 'en']}
+              {tx5(TerranovaTePikoOraCopy.blockchainIntegration, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
@@ -749,11 +750,11 @@ export default function TePikoOraPage() {
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
                     <p className="text-[11px] text-zion-gold/55 capitalize">
                       {item.status === 'active'
-                        ? TerranovaTePikoOraCopy.active[cs ? 'cs' : 'en']
+                        ? tx5(TerranovaTePikoOraCopy.active, lang)
                         : item.status === 'planned'
-                        ? TerranovaTePikoOraCopy.planned[cs ? 'cs' : 'en']
+                        ? tx5(TerranovaTePikoOraCopy.planned, lang)
                         : item.status === 'vision'
-                        ? STATUS_LABEL.vision[cs ? 'cs' : 'en']
+                        ? tx5(STATUS_LABEL.vision, lang)
                         : 'TBD'}
                     </p>
                   </div>
@@ -772,15 +773,15 @@ export default function TePikoOraPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-zion-gold">
-              {TerranovaTePikoOraCopy.openQuestionsLookingForGuardia[cs ? 'cs' : 'en']}
+              {tx5(TerranovaTePikoOraCopy.openQuestionsLookingForGuardia, lang)}
             </h3>
             <ul className="space-y-2">
               {[
-                TerranovaTePikoOraCopy.specificLocationRaiateaTahitiA[cs ? 'cs' : 'en'],
-                TerranovaTePikoOraCopy.polynesianPartnersLocalCommuni[cs ? 'cs' : 'en'],
-                TerranovaTePikoOraCopy.foundingGuardiansWithKnowledge[cs ? 'cs' : 'en'],
-                TerranovaTePikoOraCopy.legalFormInFrenchPolynesiaAsso[cs ? 'cs' : 'en'],
-                TerranovaTePikoOraCopy.phase0FinancingZionFundHumanit[cs ? 'cs' : 'en'],
+                tx5(TerranovaTePikoOraCopy.specificLocationRaiateaTahitiA, lang),
+                tx5(TerranovaTePikoOraCopy.polynesianPartnersLocalCommuni, lang),
+                tx5(TerranovaTePikoOraCopy.foundingGuardiansWithKnowledge, lang),
+                tx5(TerranovaTePikoOraCopy.legalFormInFrenchPolynesiaAsso, lang),
+                tx5(TerranovaTePikoOraCopy.phase0FinancingZionFundHumanit, lang),
               ].map((q, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-white/70">
                   <Dot className="w-4 h-4 text-zion-gold shrink-0 mt-0.5" />
@@ -789,7 +790,7 @@ export default function TePikoOraPage() {
               ))}
             </ul>
             <p className="text-zion-gold/55 text-xs pt-2">
-              {TerranovaTePikoOraCopy.doYouHearTheCallOfThePacificAr[cs ? 'cs' : 'en']}
+              {tx5(TerranovaTePikoOraCopy.doYouHearTheCallOfThePacificAr, lang)}
             </p>
             <a
               href="https://discord.gg/wvxJ7DhZ8"
@@ -798,7 +799,7 @@ export default function TePikoOraPage() {
               className="zion-button-secondary"
             >
               <Users className="w-4 h-4" />
-              {TerranovaTePikoOraCopy.joinDiscord[cs ? 'cs' : 'en']}
+              {tx5(TerranovaTePikoOraCopy.joinDiscord, lang)}
             </a>
           </div>
         </motion.section>
@@ -814,19 +815,19 @@ export default function TePikoOraPage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {TerranovaTePikoOraCopy.documentation[cs ? 'cs' : 'en']}
+                {tx5(TerranovaTePikoOraCopy.documentation, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {TerranovaTePikoOraCopy.documentationSubtitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaTePikoOraCopy.documentationSubtitle, lang)}
               </h2>
             </div>
             <div className="relative z-10 rounded-2xl border border-white/10 bg-black/40 p-4 md:p-6">
               {docError ? (
-                <p className="text-sm text-zion-red">{TerranovaTePikoOraCopy.documentationError[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm text-zion-red">{tx5(TerranovaTePikoOraCopy.documentationError, lang)}</p>
               ) : doc ? (
                 <DocMarkdownArticle content={doc} className="zion-docs-prose max-w-4xl mx-auto" />
               ) : (
-                <p className="text-sm text-white/60">{TerranovaTePikoOraCopy.documentationLoading[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm text-white/60">{tx5(TerranovaTePikoOraCopy.documentationLoading, lang)}</p>
               )}
             </div>
           </div>
@@ -852,14 +853,14 @@ export default function TePikoOraPage() {
               className="inline-flex items-center gap-2 text-sm text-white/85 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>{TerranovaTePikoOraCopy.home[cs ? 'cs' : 'en']}</span>
+              <span>{tx5(TerranovaTePikoOraCopy.home, lang)}</span>
             </Link>
             <span className="text-zion-gold/45">|</span>
             <Link
               href="/terranova"
               className="inline-flex items-center gap-2 text-sm text-white/85 hover:text-white transition-colors"
             >
-              <span>{TerranovaTePikoOraCopy.terraNova[cs ? 'cs' : 'en']}</span>
+              <span>{tx5(TerranovaTePikoOraCopy.terraNova, lang)}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

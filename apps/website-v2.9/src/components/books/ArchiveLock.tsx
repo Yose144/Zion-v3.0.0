@@ -18,6 +18,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { useAuth } from '@/hooks/useAuth';
 import { LIBRARY_STATS, READER_BOOKS } from '@/app/zion-archive/library-index';
 
@@ -163,19 +164,19 @@ export default function ArchiveLock() {
         router.refresh();
         return;
       }
-      setError(res.status === 429 ? Copy.codeThrottled[l] : Copy.codeInvalid[l]);
+      setError(res.status === 429 ? tx5(Copy.codeThrottled, lang) : tx5(Copy.codeInvalid, lang));
     } catch {
-      setError(Copy.codeError[l]);
+      setError(tx5(Copy.codeError, lang));
     } finally {
       setBusy(false);
     }
   }
 
   const stats = [
-    { value: String(LIBRARY_STATS.books), label: Copy.statsBooks[l] },
-    { value: String(LIBRARY_STATS.groups), label: Copy.statsGroups[l] },
-    { value: 'CZ + EN', label: Copy.statsLanguages[l] },
-    { value: '1', label: Copy.statsReader[l] },
+    { value: String(LIBRARY_STATS.books), label: tx5(Copy.statsBooks, lang) },
+    { value: String(LIBRARY_STATS.groups), label: tx5(Copy.statsGroups, lang) },
+    { value: 'CZ + EN', label: tx5(Copy.statsLanguages, lang) },
+    { value: '1', label: tx5(Copy.statsReader, lang) },
   ];
 
   return (
@@ -186,20 +187,20 @@ export default function ArchiveLock() {
       <div className="relative mx-auto max-w-6xl px-4 pb-20 pt-20 sm:px-6 md:pt-24">
         {/* ─── hero ─── */}
         <div className="text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.3em] text-zion-gold">{Copy.kicker[l]}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-zion-gold">{tx5(Copy.kicker, lang)}</p>
           <div className="mx-auto mt-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-zion-gold/30 bg-zion-gold/10 shadow-[0_0_40px_rgba(252,209,22,0.18)]">
             <Lock className="h-7 w-7 text-zion-gold" />
           </div>
           <h1 className="text-gradient mt-6 text-4xl font-black tracking-tight sm:text-5xl">
-            {Copy.title[l]}
+            {tx5(Copy.title, lang)}
           </h1>
-          <p className="mt-3 text-base font-semibold text-gray-300">{Copy.sub[l]}</p>
+          <p className="mt-3 text-base font-semibold text-gray-300">{tx5(Copy.sub, lang)}</p>
           <span className="mt-5 inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-zion-gold">
             <Sparkles className="h-3.5 w-3.5" />
-            {Copy.badge[l]}
+            {tx5(Copy.badge, lang)}
           </span>
           <p className="mx-auto mt-6 max-w-2xl text-sm leading-relaxed text-gray-400 sm:text-base">
-            {Copy.lede[l]}
+            {tx5(Copy.lede, lang)}
           </p>
 
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
@@ -210,7 +211,7 @@ export default function ArchiveLock() {
               className="inline-flex items-center gap-2 rounded-xl border border-zion-gold/50 bg-zion-gold/15 px-5 py-2.5 text-sm font-bold text-zion-gold transition-colors hover:bg-zion-gold/25"
             >
               <Gem className="h-4 w-4" />
-              {Copy.buyPass[l]}
+              {tx5(Copy.buyPass, lang)}
               <ExternalLink className="h-3.5 w-3.5 opacity-70" />
             </a>
             <a
@@ -218,7 +219,7 @@ export default function ArchiveLock() {
               className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-white/30 hover:text-white"
             >
               <KeyRound className="h-4 w-4" />
-              {Copy.haveCode[l]}
+              {tx5(Copy.haveCode, lang)}
             </a>
           </div>
 
@@ -245,14 +246,14 @@ export default function ArchiveLock() {
               <KeyRound className="h-4 w-4 text-zion-gold" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">{Copy.unlockTitle[l]}</h2>
-              <p className="mt-1 text-xs leading-relaxed text-gray-400">{Copy.unlockSub[l]}</p>
+              <h2 className="text-sm font-bold text-white">{tx5(Copy.unlockTitle, lang)}</h2>
+              <p className="mt-1 text-xs leading-relaxed text-gray-400">{tx5(Copy.unlockSub, lang)}</p>
             </div>
           </div>
 
           <form onSubmit={submitCode} className="mt-4">
             <label htmlFor="archive-code" className="sr-only">
-              {Copy.codePlaceholder[l]}
+              {tx5(Copy.codePlaceholder, lang)}
             </label>
             <div className="flex flex-col gap-2 sm:flex-row">
               <input
@@ -260,7 +261,7 @@ export default function ArchiveLock() {
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                placeholder={Copy.codePlaceholder[l]}
+                placeholder={tx5(Copy.codePlaceholder, lang)}
                 autoComplete="off"
                 spellCheck={false}
                 className="w-full rounded-xl border border-white/15 bg-white/[0.04] px-3.5 py-2.5 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold/50 focus:outline-none focus:ring-2 focus:ring-zion-gold/30"
@@ -270,7 +271,7 @@ export default function ArchiveLock() {
                 disabled={busy || !code.trim()}
                 className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-zion-gold/40 bg-zion-gold/10 px-4 py-2.5 text-sm font-bold text-zion-gold transition-colors hover:bg-zion-gold/20 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {busy ? Copy.codeWorking[l] : Copy.codeSubmit[l]}
+                {busy ? tx5(Copy.codeWorking, lang) : tx5(Copy.codeSubmit, lang)}
               </button>
             </div>
             {error && (
@@ -280,7 +281,7 @@ export default function ArchiveLock() {
             )}
             {bound && (
               <p className="mt-2 text-xs font-semibold text-emerald-400" role="status">
-                {Copy.codeBound[l]}
+                {tx5(Copy.codeBound, lang)}
               </p>
             )}
           </form>
@@ -288,7 +289,7 @@ export default function ArchiveLock() {
           <div className="mt-4 border-t border-white/10 pt-4">
             {user ? (
               <p className="text-xs text-gray-500">
-                {Copy.loggedInAs[l]}{' '}
+                {tx5(Copy.loggedInAs, lang)}{' '}
                 <span className="font-semibold text-gray-300">
                   {user.displayName || user.primaryAddress.slice(0, 10) + '…'}
                 </span>
@@ -300,18 +301,18 @@ export default function ArchiveLock() {
                   className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-bold text-emerald-300 transition-colors hover:bg-emerald-500/20"
                 >
                   <LogIn className="h-3.5 w-3.5" />
-                  {Copy.loginCta[l]}
+                  {tx5(Copy.loginCta, lang)}
                 </Link>
-                <p className="text-[11px] text-gray-600">{Copy.loginHint[l]}</p>
+                <p className="text-[11px] text-gray-600">{tx5(Copy.loginHint, lang)}</p>
                 <p className="w-full text-[11px] leading-relaxed text-gray-500">
-                  {Copy.autoUnlock[l]}
+                  {tx5(Copy.autoUnlock, lang)}
                 </p>
               </div>
             )}
           </div>
           <p className="mt-3 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-600">
             <ShieldCheck className="h-3 w-3" />
-            {Copy.secure[l]}
+            {tx5(Copy.secure, lang)}
           </p>
         </div>
 
@@ -319,13 +320,13 @@ export default function ArchiveLock() {
         <div className="zion-rainbow-card mt-10 p-5 sm:p-6">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-gray-200">
-              {Copy.insideTitle[l]}
+              {tx5(Copy.insideTitle, lang)}
             </h2>
             <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-600">
               {LIBRARY_STATS.books} {l === 'cs' ? 'knih' : 'books'} · {LIBRARY_STATS.groups}{' '}
               {l === 'cs' ? 'skupin' : 'groups'}
             </span>
-            <p className="w-full text-xs leading-relaxed text-gray-500">{Copy.insideBlurb[l]}</p>
+            <p className="w-full text-xs leading-relaxed text-gray-500">{tx5(Copy.insideBlurb, lang)}</p>
           </div>
 
           <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
@@ -350,10 +351,10 @@ export default function ArchiveLock() {
                     className="absolute right-2 top-2 h-3 w-3 text-white/20"
                   />
                   <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-gray-500">
-                    {book.groupLabel[l]}
+                    {tx5(book.groupLabel, lang)}
                   </p>
                   <p className="mt-1 pr-3 text-[11px] font-bold leading-snug text-white">
-                    {book.title[l]}
+                    {tx5(book.title, lang)}
                   </p>
                 </li>
               );
@@ -364,13 +365,13 @@ export default function ArchiveLock() {
         {/* ─── three ways in ─── */}
         <div className="mt-10">
           <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-gray-200">
-            {Copy.accessTitle[l]}
+            {tx5(Copy.accessTitle, lang)}
           </h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {[
-              { icon: BookOpen, title: Copy.passTitle[l], body: Copy.passBody[l], href: SHOP_URL, label: Copy.passCta[l] },
-              { icon: Gem, title: Copy.oasisTitle[l], body: Copy.oasisBody[l], href: '/login', label: Copy.loginCta[l] },
-              { icon: Building2, title: Copy.b2bTitle[l], body: Copy.b2bBody[l], href: 'mailto:omnity.company@gmail.com', label: Copy.b2bCta[l] },
+              { icon: BookOpen, title: tx5(Copy.passTitle, lang), body: tx5(Copy.passBody, lang), href: SHOP_URL, label: tx5(Copy.passCta, lang) },
+              { icon: Gem, title: tx5(Copy.oasisTitle, lang), body: tx5(Copy.oasisBody, lang), href: '/login', label: tx5(Copy.loginCta, lang) },
+              { icon: Building2, title: tx5(Copy.b2bTitle, lang), body: tx5(Copy.b2bBody, lang), href: 'mailto:omnity.company@gmail.com', label: tx5(Copy.b2bCta, lang) },
             ].map(({ icon: Icon, title, body, href, label }) => (
               <div
                 key={title}
@@ -400,10 +401,10 @@ export default function ArchiveLock() {
         <div className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
           <div>
             <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-gray-200">
-              {Copy.stepsTitle[l]}
+              {tx5(Copy.stepsTitle, lang)}
             </h2>
             <ol className="mt-4 space-y-2.5">
-              {Copy.steps[l].map((step, i) => (
+              {(lang === 'cs' ? Copy.steps.cs : Copy.steps.en).map((step, i) => (
                 <li
                   key={step.title}
                   className="flex gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-4"
@@ -423,10 +424,10 @@ export default function ArchiveLock() {
           <div className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <h2 className="flex items-center gap-2 text-sm font-bold text-white">
               <Library className="h-4 w-4 text-zion-purple" />
-              {Copy.includedTitle[l]}
+              {tx5(Copy.includedTitle, lang)}
             </h2>
             <ul className="mt-3 space-y-2">
-              {Copy.included[l].map((item) => (
+              {(lang === 'cs' ? Copy.included.cs : Copy.included.en).map((item) => (
                 <li key={item} className="flex items-start gap-2 text-xs leading-relaxed text-gray-300">
                   <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
                   {item}
@@ -439,7 +440,7 @@ export default function ArchiveLock() {
               rel="noopener noreferrer"
               className="mt-auto inline-flex items-center gap-1.5 pt-4 text-xs font-semibold text-zion-gold transition-colors hover:text-amber-200"
             >
-              {Copy.passDetailCta[l]}
+              {tx5(Copy.passDetailCta, lang)}
               <ArrowRight className="h-3.5 w-3.5" />
             </a>
           </div>
@@ -447,7 +448,7 @@ export default function ArchiveLock() {
 
         {/* ─── honesty + links ─── */}
         <p className="mx-auto mt-10 max-w-3xl text-center text-xs leading-relaxed text-gray-500">
-          {Copy.publicNote[l]}
+          {tx5(Copy.publicNote, lang)}
         </p>
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -458,20 +459,20 @@ export default function ArchiveLock() {
             className="inline-flex items-center gap-2 rounded-xl border border-zion-gold/40 bg-zion-gold/10 px-5 py-2.5 text-sm font-bold text-zion-gold transition-colors hover:bg-zion-gold/20"
           >
             <Gem className="h-4 w-4" />
-            {Copy.buyPass[l]}
+            {tx5(Copy.buyPass, lang)}
           </a>
           <Link
             href="/docs"
             className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-colors hover:border-white/30 hover:text-white"
           >
             <BookOpen className="h-4 w-4" />
-            {Copy.docs[l]}
+            {tx5(Copy.docs, lang)}
           </Link>
           <Link
             href="/"
             className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-5 py-2.5 text-sm font-semibold text-gray-500 transition-colors hover:text-gray-200"
           >
-            {Copy.home[l]}
+            {tx5(Copy.home, lang)}
           </Link>
         </div>
       </div>
