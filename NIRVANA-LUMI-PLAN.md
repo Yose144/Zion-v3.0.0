@@ -19,7 +19,7 @@
 | **Kde** | `/lumi` v `apps/nirvana`; v HUD liště jako `🏮 X/7`; z panelu planety Uran jako **„Letět s Lumi"**. |
 | **Multiplayer** | Společné létání pro **4** (`GameId 'lumi'`, `PROTO_VERSION = 30`) — **relay**, ne autoritativní simulace. |
 | **Hotovo** | 3 cesty, 7 světel + úlomky příběhu, darování, deník, zvuk, LOD lucerny, kompas, HUD, co-op, **duchové** (L-2), **foto mód** (L-5), **reduced motion** (L-9), **stopa** (L-3), **denní obloha** (L-7), **kapitoly** (L-8), **VR vrstva** (L-4, bez headsetu). |
-| **Dluh** | Živý net je na protokolu **26**, repo na **30** → co-op se do nasazení nepřipojí (viz §9). |
+| **Dluh** | Žádný blokující — živý net i appka jsou na **proto 32** (2026-11-06). |
 | **Ověřeno** | **53** + **43** + **15** + **23** + **54** kontrol (tab. §8), `tsc` a `next build` čisté; `es`/`en`/`cs` bez přesahu na 390 px. |
 
 ---
@@ -364,7 +364,9 @@ Regresní minimum před commitem: `npx tsc --noEmit`, `npx next build`, `lumi-au
 
 ## 9. Nasazení
 
-> **Blokující fakt:** živý net je na protokolu **31** (flotila), repo na **32** (L-6).
+> **Stav (2026-11-06):** živý net **i appka jsou na protokolu 32** — L-1 je nasazené
+> (net `20261106T132714Z`, app `20261106T132919Z`). Deploy pořadí „net první" platí dál
+> pro každou další změnu protokolu.
 > Deploy **net první, pak appka**. Opačné pořadí = `proto_mismatch` a mrtvý chat i multiplayer.
 
 **Měřeno 2026-11-05** (`curl https://nirvana.zionterranova.com/net/health`):
@@ -434,7 +436,7 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
 
 | ID | Co | Akceptace | Riziko | Stav |
 |---|---|---|---|---|
-| **L-1** | Nasadit proto 30 (net → app) | `/net/health` hlásí 30; `smoke`+`lumi` projdou na novém buildu; živý co-op ve dvou oknech se vidí | nízké, ale **musí být první** | ⏳ čeká na 👤 |
+| **L-1** | Nasadit proto 32 (net → app) | `/net/health` hlásí 32; `smoke`+`lumi` projdou na novém buildu; živý co-op ve dvou oknech se vidí | nízké, ale **musí být první** | ✅ 2026-11-06 (net `20261106T132714Z`, app `20261106T132919Z`) |
 | **L-2** | Duchové: doletět místnost i po odpojení (poslední známá pozice 3 s) | odpojený hráč mizí z oblohy až po 3 s, ne okamžitě | nízké | ✅ 2026-11-05 |
 | **L-3** | Světelná stopa za lucernou (trail), jen `detail` | na M1 ≥ 50 fps, na mobilu vypnuto | nízké | ✅ 2026-11-05 |
 | **L-4** | VR let (`core/xr` už existuje pro Merkur/Venuši/Saturn) | v headsetu jde letět pohledem, lucerna na spoušti; bez headsetu se jen nesmí rozbít 2D | střední | ✅ 2026-11-06 (headset netestován) |
@@ -575,3 +577,4 @@ co pokazit; jakákoli „výzva" by rozbila její smysl.
 | 2026-11-06 | **L-10 dokončeno:** První svět (`app/earth/copy.ts`, 78 textů — HUD, obchod, inventář, minimapa, konec zápasu), flotila (`app/fleet/copy.ts`, 31) a avatary (`app/avatars/copy.ts`, 20) v ES; `TeamBoard` bere `lang` místo `cs`, emote kolečko má ES. Všechny herní povrchy 0× `cs ?` i `{cs`. ES render ověřen, 0 přesahu, build čistý |
 | 2026-11-06 | **L-4 VR let pohledem:** `FlightInput.aim/gaze`, `isGaze()`, ve VR `camera.getWorldDirection` → 2D směr, měkká gravitace 0,35 g při pohledu vpřed; 11 nových testů simulace (lumi-flight **64/64**), audit 54/54. Headset netestován |
 | 2026-11-06 | **L-11 koop odměna (PPLNS):** `coop.ts` (pool 300, podlaha 10 %, podíl podle sebraných světel), server posílá `collected` + `you.collected`, klient přičítá podíl k doletu. Testy: `lumi-coop` **17/17**, net `lumi` **25/25**; E2E dvou prohlížečů: A 5 světel → **+201**, B 2 → **+99** (součet = pool) |
+| 2026-11-06 | **L-1 nasazeno:** net `20261106T132714Z` (proto 32, nese `collected`/`you.collected`) → app `20261106T132919Z` (ghost, darování, foto mód, stopa, denní obloha, kapitoly, VR let pohledem, PPLNS, ES). Live: `/api/health` proto 32 `proto_match`, 10 rout 307 za pasem, GLB 200, obě unity active na Node 22 |
