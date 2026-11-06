@@ -295,11 +295,10 @@ export const COMPANION_GROUPS: CompanionGroup[] = [
         title: { cs: 'Kruh Bohyní', en: 'The Circle of Goddesses' },
         description: {
           cs: 'Kniha Strážkyň — sedm sedadel pro šest zahrad L5 a jedno pro nebe L6. Ženský kruh péče a správy bez vlastnění; zjevená budoucnost, celý děj mýtus.',
-          en: 'The Book of Guardians — seven seats for the six L5 gardens and one for the L6 sky. A women’s circle of care and stewardship without ownership; a revealed future, the whole story is myth. Czech only.',
+          en: 'The Book of Guardians — seven seats for the six L5 gardens and one for the L6 sky. A women’s circle of care and stewardship without ownership; a revealed future, the whole story is myth.',
         },
         status: 'draft',
         href: '/zion-archive/kruhbohyni/cist',
-        czOnly: true,
         rc: '217, 70, 239',
       },
       {

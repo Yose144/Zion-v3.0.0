@@ -418,12 +418,12 @@ export const KRUHBOHYNI_BOOK = korpusBook({
   dir: 'KruhBohyni',
   accent: '217, 70, 239',
   icon: Shield,
-  kicker: { cs: 'Kniha Strážkyň · L5 + L6 · CZ', en: 'The Book of Guardians · L5 + L6 · CZ' },
+  kicker: { cs: 'Kniha Strážkyň · L5 + L6 · CZ + EN', en: 'The Book of Guardians · L5 + L6 · CZ + EN' },
   title: { cs: 'Kruh Bohyní', en: 'The Circle of Goddesses' },
   subtitle: { cs: 'Sedm sedadel — šest pro zahrady Země, jedno pro nebe. Ženský kruh péče bez vlastnění.', en: 'Seven seats — six for the gardens of Earth, one for the sky. A women’s circle of care without ownership.' },
   description: {
     cs: 'Příběh strážkyň zahrad a nebe: dcera hlíny, strážkyně ohně i ticha, sesté sedadlo, tři klíče a kruh, který se drží. Zjevená budoucnost — celý děj mýtus/horizont.',
-    en: 'The story of the guardians of the gardens and the sky: the daughter of clay, the keepers of fire and silence, the sixth seat, the three keys and the circle that holds. A revealed future — the whole story is myth/horizon. Czech original.',
+    en: 'The story of the guardians of the gardens and the sky: the daughter of clay, the keepers of fire and silence, the sixth seat, the three keys and the circle that holds. A revealed future — the whole story is myth/horizon.',
   },
 });
 
