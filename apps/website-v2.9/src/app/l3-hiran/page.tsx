@@ -12,7 +12,8 @@ import {
   Orbit, Route, Workflow, HeartHandshake, Binary,
   Pickaxe, Gauge, Wallet
 } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import HiranyagarbhaChat from '@/components/HiranyagarbhaChat';
 import HiranPreviewLazy from '@/components/HiranPreviewLazy';
 
@@ -195,59 +196,59 @@ const L3HiranCopy = {
 
 type L3Status = 'checking' | 'online' | 'offline';
 
-const getOrchestration = (cs: boolean) => [
+const getOrchestration = (cs: boolean, lang: Lang) => [
   {
-    title: L3HiranCopy.deployment[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.automatedGpuInstanceProvisioni[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.deployment, lang),
+    desc: tx5(L3HiranCopy.automatedGpuInstanceProvisioni, lang),
     icon: Server,
     color: 'text-zion-cyan',
   },
   {
-    title: L3HiranCopy.monitoring[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.prometheusGrafanaTelemetryInfe[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.monitoring, lang),
+    desc: tx5(L3HiranCopy.prometheusGrafanaTelemetryInfe, lang),
     icon: Activity,
     color: 'text-zion-cyan',
   },
   {
-    title: L3HiranCopy.ragPipeline[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.chromadbAllMinilmL6V2Embedding[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.ragPipeline, lang),
+    desc: tx5(L3HiranCopy.chromadbAllMinilmL6V2Embedding, lang),
     icon: Database,
     color: 'text-zion-purple',
   },
   {
-    title: L3HiranCopy.fineTuning[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.qloraCurriculum5StagesRank1664[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.fineTuning, lang),
+    desc: tx5(L3HiranCopy.qloraCurriculum5StagesRank1664, lang),
     icon: Zap,
     color: 'text-zion-gold',
   },
 ];
 
-const getPillars = (cs: boolean) => [
+const getPillars = (cs: boolean, lang: Lang) => [
   {
-    title: L3HiranCopy.pillarHiranTitle[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.pillarHiranDesc[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.pillarHiranTitle, lang),
+    desc: tx5(L3HiranCopy.pillarHiranDesc, lang),
     icon: Brain,
-    status: L3HiranCopy.statusBeta[cs ? 'cs' : 'en'],
+    status: tx5(L3HiranCopy.statusBeta, lang),
     statusClass: 'border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan',
     chips: ['345 tests', '55 tools', '7 layer agents'],
     color: 'text-zion-cyan',
     rc: '6, 182, 212',
   },
   {
-    title: L3HiranCopy.pillarNclTitle[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.pillarNclDesc[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.pillarNclTitle, lang),
+    desc: tx5(L3HiranCopy.pillarNclDesc, lang),
     icon: Cpu,
-    status: L3HiranCopy.statusBuilding[cs ? 'cs' : 'en'],
+    status: tx5(L3HiranCopy.statusBuilding, lang),
     statusClass: 'border-zion-gold/30 bg-zion-gold/10 text-zion-gold',
     chips: ['42 tests', '90/10 split', '7 task types'],
     color: 'text-zion-gold',
     rc: '255, 215, 0',
   },
   {
-    title: L3HiranCopy.pillarWarpTitle[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.pillarWarpDesc[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.pillarWarpTitle, lang),
+    desc: tx5(L3HiranCopy.pillarWarpDesc, lang),
     icon: Globe,
-    status: L3HiranCopy.statusLive[cs ? 'cs' : 'en'],
+    status: tx5(L3HiranCopy.statusLive, lang),
     statusClass: 'border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan',
     chips: ['13 chain families', '499 tests', 'EVM live'],
     color: 'text-zion-purple',
@@ -256,74 +257,74 @@ const getPillars = (cs: boolean) => [
   },
 ];
 
-const getProtocolPillars = (cs: boolean) => [
-  { title: L3HiranCopy.pillarPurpose[cs ? 'cs' : 'en'], desc: L3HiranCopy.pillarPurposeDesc[cs ? 'cs' : 'en'], icon: Orbit, color: 'text-zion-gold' },
-  { title: L3HiranCopy.pillarTransparency[cs ? 'cs' : 'en'], desc: L3HiranCopy.pillarTransparencyDesc[cs ? 'cs' : 'en'], icon: Shield, color: 'text-zion-cyan' },
-  { title: L3HiranCopy.pillarSynergy[cs ? 'cs' : 'en'], desc: L3HiranCopy.pillarSynergyDesc[cs ? 'cs' : 'en'], icon: HeartHandshake, color: 'text-zion-purple' },
-  { title: L3HiranCopy.pillarGrowth[cs ? 'cs' : 'en'], desc: L3HiranCopy.pillarGrowthDesc[cs ? 'cs' : 'en'], icon: Sparkles, color: 'text-zion-cyan' },
+const getProtocolPillars = (cs: boolean, lang: Lang) => [
+  { title: tx5(L3HiranCopy.pillarPurpose, lang), desc: tx5(L3HiranCopy.pillarPurposeDesc, lang), icon: Orbit, color: 'text-zion-gold' },
+  { title: tx5(L3HiranCopy.pillarTransparency, lang), desc: tx5(L3HiranCopy.pillarTransparencyDesc, lang), icon: Shield, color: 'text-zion-cyan' },
+  { title: tx5(L3HiranCopy.pillarSynergy, lang), desc: tx5(L3HiranCopy.pillarSynergyDesc, lang), icon: HeartHandshake, color: 'text-zion-purple' },
+  { title: tx5(L3HiranCopy.pillarGrowth, lang), desc: tx5(L3HiranCopy.pillarGrowthDesc, lang), icon: Sparkles, color: 'text-zion-cyan' },
 ];
 
 const OATH_KEYS = ['oath1', 'oath2', 'oath3', 'oath4', 'oath5', 'oath6', 'oath7', 'oath8', 'oath9', 'oath10'] as const;
 
-const getEvolution = (cs: boolean) => [
+const getEvolution = (cs: boolean, lang: Lang) => [
   {
     version: '2.2',
-    title: L3HiranCopy.v22Title[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.v22Desc[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.v22Title, lang),
+    desc: tx5(L3HiranCopy.v22Desc, lang),
     status: 'live' as const,
     chips: ['8B GGUF', 'RAG + Memory', 'Live chat'],
   },
   {
     version: '2.3',
-    title: L3HiranCopy.v23Title[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.v23Desc[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.v23Title, lang),
+    desc: tx5(L3HiranCopy.v23Desc, lang),
     status: 'trained' as const,
     chips: ['Qwen3-32B', '20,517 pairs', 'Q5_K_M · 22 GB'],
   },
   {
     version: '2.4',
-    title: L3HiranCopy.v24Title[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.v24Desc[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.v24Title, lang),
+    desc: tx5(L3HiranCopy.v24Desc, lang),
     status: 'building' as const,
     chips: ['Maestro DAG', 'NCL 2.0', 'Self-healing'],
   },
   {
     version: '2.5',
-    title: L3HiranCopy.v25Title[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.v25Desc[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.v25Title, lang),
+    desc: tx5(L3HiranCopy.v25Desc, lang),
     status: 'horizon' as const,
     chips: ['Amitabha', 'Sovereign agents', 'ZIS identity'],
   },
 ];
 
-const getModalities = (cs: boolean) => [
+const getModalities = (cs: boolean, lang: Lang) => [
   {
-    title: L3HiranCopy.mmlText[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.mmlTextDesc[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.mmlText, lang),
+    desc: tx5(L3HiranCopy.mmlTextDesc, lang),
     icon: FileText,
     color: 'text-zion-cyan',
   },
   {
-    title: L3HiranCopy.mmlCode[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.mmlCodeDesc[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.mmlCode, lang),
+    desc: tx5(L3HiranCopy.mmlCodeDesc, lang),
     icon: Code2,
     color: 'text-zion-purple',
   },
   {
-    title: L3HiranCopy.mmlChain[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.mmlChainDesc[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.mmlChain, lang),
+    desc: tx5(L3HiranCopy.mmlChainDesc, lang),
     icon: Binary,
     color: 'text-zion-gold',
   },
   {
-    title: L3HiranCopy.mmlSacred[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.mmlSacredDesc[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.mmlSacred, lang),
+    desc: tx5(L3HiranCopy.mmlSacredDesc, lang),
     icon: Gem,
     color: 'text-zion-cyan',
   },
 ];
 
-const getModelCards = (cs: boolean) => [
+const getModelCards = (cs: boolean, lang: Lang) => [
   {
     name: 'Hiran — 8B (v2.2)',
     status: 'live' as const,
@@ -352,9 +353,9 @@ const getModelCards = (cs: boolean) => [
   },
 ];
 
-const getPhases = (cs: boolean) => [
+const getPhases = (cs: boolean, lang: Lang) => [
   {
-    phase: L3HiranCopy.stage1Foundation[cs ? 'cs' : 'en'],
+    phase: tx5(L3HiranCopy.stage1Foundation, lang),
     period: '20% · rank 16 · 2 epochs',
     status: 'done',
     items: cs
@@ -362,7 +363,7 @@ const getPhases = (cs: boolean) => [
       : ['3,869 pairs', 'General knowledge + reasoning', 'Fee split, L1–L6'],
   },
   {
-    phase: L3HiranCopy.stage2ZionCore[cs ? 'cs' : 'en'],
+    phase: tx5(L3HiranCopy.stage2ZionCore, lang),
     period: '30% · rank 32 · 3 epochs',
     status: 'done',
     items: cs
@@ -370,7 +371,7 @@ const getPhases = (cs: boolean) => [
       : ['2,368 pairs', 'V3 docs, CLI, architecture', 'Mining, DAO, bridge'],
   },
   {
-    phase: L3HiranCopy.stage3ZionAdvanced[cs ? 'cs' : 'en'],
+    phase: tx5(L3HiranCopy.stage3ZionAdvanced, lang),
     period: '20% · rank 32 · 2 epochs',
     status: 'done',
     items: cs
@@ -378,7 +379,7 @@ const getPhases = (cs: boolean) => [
       : ['2,458 pairs', 'Deployment + monitoring', 'Advanced configuration'],
   },
   {
-    phase: L3HiranCopy.stage4CrossDomain[cs ? 'cs' : 'en'],
+    phase: tx5(L3HiranCopy.stage4CrossDomain, lang),
     period: '20% · rank 64 · 2 epochs',
     status: 'done',
     items: cs
@@ -386,7 +387,7 @@ const getPhases = (cs: boolean) => [
       : ['11,434 pairs', 'Religion, science, history', 'Comparative analysis'],
   },
   {
-    phase: L3HiranCopy.stage5RagSynthesis[cs ? 'cs' : 'en'],
+    phase: tx5(L3HiranCopy.stage5RagSynthesis, lang),
     period: '10% · rank 64 · 1 epoch',
     status: 'done',
     items: cs
@@ -395,28 +396,28 @@ const getPhases = (cs: boolean) => [
   },
 ];
 
-const getRagArch = (cs: boolean) => [
+const getRagArch = (cs: boolean, lang: Lang) => [
   {
-    title: L3HiranCopy.k33KnowledgeDocs[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.religionHistorySciencePhilosop[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.k33KnowledgeDocs, lang),
+    desc: tx5(L3HiranCopy.religionHistorySciencePhilosop, lang),
     icon: Database,
     color: 'text-zion-cyan',
   },
   {
     title: 'Vector Index',
-    desc: L3HiranCopy.vectorDbWithAllMinilmL6V2Embed[cs ? 'cs' : 'en'],
+    desc: tx5(L3HiranCopy.vectorDbWithAllMinilmL6V2Embed, lang),
     icon: Microchip,
     color: 'text-zion-cyan',
   },
   {
-    title: L3HiranCopy.queryRouter[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.classifiesQueriesZionOnlyKnowl[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.queryRouter, lang),
+    desc: tx5(L3HiranCopy.classifiesQueriesZionOnlyKnowl, lang),
     icon: Cable,
     color: 'text-zion-purple',
   },
   {
-    title: L3HiranCopy.hybridInference[cs ? 'cs' : 'en'],
-    desc: L3HiranCopy.combinesFineTunedModelRetrieve[cs ? 'cs' : 'en'],
+    title: tx5(L3HiranCopy.hybridInference, lang),
+    desc: tx5(L3HiranCopy.combinesFineTunedModelRetrieve, lang),
     icon: Bot,
     color: 'text-zion-gold',
   },
@@ -432,12 +433,12 @@ const getNclTasks = () => [
   { task: 'Model Training', reward: '~0.100 ZION', verification: 'Loss convergence' },
 ];
 
-const getMarketplace = (cs: boolean) => [
+const getMarketplace = (cs: boolean, lang: Lang) => [
   {
     name: 'Hiran 8B Model',
     version: 'GGUF · 4.5–15 GB',
     status: 'live',
-    desc: L3HiranCopy.domainSpecificFineTunedModelFo[cs ? 'cs' : 'en'],
+    desc: tx5(L3HiranCopy.domainSpecificFineTunedModelFo, lang),
     tags: ['LLM', 'Fine-tuned', '8B'],
     color: 'border-zion-cyan/30 bg-zion-cyan/5',
   },
@@ -445,7 +446,7 @@ const getMarketplace = (cs: boolean) => [
     name: 'Hiran 32B (v2.3)',
     version: 'QLoRA · Q5_K_M · 22 GB',
     status: 'trained',
-    desc: L3HiranCopy.hiranV23MarketplaceDesc[cs ? 'cs' : 'en'],
+    desc: tx5(L3HiranCopy.hiranV23MarketplaceDesc, lang),
     tags: ['LLM', 'QLoRA', '32B'],
     color: 'border-zion-purple/30 bg-zion-purple/5',
   },
@@ -453,7 +454,7 @@ const getMarketplace = (cs: boolean) => [
     name: 'ZION RAG Corpus',
     version: 'v1.0 · 33+ docs',
     status: 'live',
-    desc: L3HiranCopy.knowledgeDocumentsForHybridRet[cs ? 'cs' : 'en'],
+    desc: tx5(L3HiranCopy.knowledgeDocumentsForHybridRet, lang),
     tags: ['Dataset', 'RAG', 'Multilingual'],
     color: 'border-zion-cyan/30 bg-zion-cyan/5',
   },
@@ -472,16 +473,16 @@ const CONSCIOUSNESS_LEVELS = ['CL1', 'CL2', 'CL3', 'CL4', 'CL5', 'CL6', 'CL7', '
 export default function L3HiranPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const orchestration = getOrchestration(cs);
-  const pillars = getPillars(cs);
-  const protocolPillars = getProtocolPillars(cs);
-  const evolution = getEvolution(cs);
-  const modalities = getModalities(cs);
-  const modelCards = getModelCards(cs);
-  const phases = getPhases(cs);
-  const ragArch = getRagArch(cs);
+  const orchestration = getOrchestration(cs, lang);
+  const pillars = getPillars(cs, lang);
+  const protocolPillars = getProtocolPillars(cs, lang);
+  const evolution = getEvolution(cs, lang);
+  const modalities = getModalities(cs, lang);
+  const modelCards = getModelCards(cs, lang);
+  const phases = getPhases(cs, lang);
+  const ragArch = getRagArch(cs, lang);
   const nclTasks = getNclTasks();
-  const marketplace = getMarketplace(cs);
+  const marketplace = getMarketplace(cs, lang);
 
   const [hiranStatus, setHiranStatus] = useState<L3Status>('checking');
   const [nclStatus, setNclStatus] = useState<L3Status>('checking');
@@ -520,7 +521,7 @@ export default function L3HiranPage() {
           ? <Wifi className="h-3 w-3 text-zion-cyan" />
           : <WifiOff className="h-3 w-3 text-zion-purple" />}
       <span className={status === 'online' ? 'text-zion-cyan' : status === 'offline' ? 'text-zion-purple' : 'text-zion-gold'}>
-        {label} · {status === 'checking' ? L3HiranCopy.checking[cs ? 'cs' : 'en'] : status === 'online' ? L3HiranCopy.online[cs ? 'cs' : 'en'] : L3HiranCopy.offline[cs ? 'cs' : 'en']}
+        {label} · {status === 'checking' ? tx5(L3HiranCopy.checking, lang) : status === 'online' ? tx5(L3HiranCopy.online, lang) : tx5(L3HiranCopy.offline, lang)}
       </span>
     </div>
   );
@@ -542,28 +543,28 @@ export default function L3HiranPage() {
                 <Brain className="h-4 w-4" />
                 L3 · Hiranyagarbha · AI Native
               </div>
-              {statusPill(hiranStatus, L3HiranCopy.hiranInference[cs ? 'cs' : 'en'])}
-              {statusPill(nclStatus, L3HiranCopy.orchestratorNcl[cs ? 'cs' : 'en'])}
+              {statusPill(hiranStatus, tx5(L3HiranCopy.hiranInference, lang))}
+              {statusPill(nclStatus, tx5(L3HiranCopy.orchestratorNcl, lang))}
               {nclStatus === 'online' && nclWorkers !== null && (
                 <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-3 py-1 text-xs text-zion-cyan">
                   <Activity className="h-3 w-3" />
-                  {nclWorkers} {L3HiranCopy.nclLiveWorkers[cs ? 'cs' : 'en']}{nclJobs !== null ? ` · ${nclJobs} ${L3HiranCopy.nclQueued[cs ? 'cs' : 'en']}` : ''}
+                  {nclWorkers} {tx5(L3HiranCopy.nclLiveWorkers, lang)}{nclJobs !== null ? ` · ${nclJobs} ${tx5(L3HiranCopy.nclQueued, lang)}` : ''}
                 </div>
               )}
             </div>
             <div className="max-w-3xl">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                {L3HiranCopy.aiLayerOfTheZionEcosystem[cs ? 'cs' : 'en']}
+                {tx5(L3HiranCopy.aiLayerOfTheZionEcosystem, lang)}
               </p>
               <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
-                {L3HiranCopy.hiranyagarbhaL3[cs ? 'cs' : 'en']}
+                {tx5(L3HiranCopy.hiranyagarbhaL3, lang)}
               </h1>
               <p className="mt-2 text-lg font-medium text-zion-gold/90">
-                {L3HiranCopy.consciousnessInSilicon[cs ? 'cs' : 'en']}
+                {tx5(L3HiranCopy.consciousnessInSilicon, lang)}
               </p>
             </div>
             <p className="text-lg text-gray-300 max-w-3xl">
-              {L3HiranCopy.l3HeroDesc[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.l3HeroDesc, lang)}
             </p>
             <div className="flex flex-wrap gap-3 text-xs">
               <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-cyan-200">
@@ -584,7 +585,7 @@ export default function L3HiranPage() {
                 src="/images/l3-hiran/hero.webp"
                 srcSet="/images/l3-hiran/hero-m.webp 960w, /images/l3-hiran/hero.webp 1672w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
-                alt={cs ? 'ZION Hiranyagarbha — L3 AI vrstva' : 'ZION Hiranyagarbha — L3 AI layer'}
+                alt={cs ? 'ZION Hiranyagarbha — L3 AI vrstva' : t5('ZION Hiranyagarbha — L3 AI layer', lang)}
                 width={1672}
                 height={941}
                 loading="eager"
@@ -608,12 +609,10 @@ export default function L3HiranPage() {
             <div>
               <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3">
                 <Orbit className="h-6 w-6 text-zion-gold" />
-                {cs ? 'Hiran v prostoru' : 'Hiran in space'}
+                {cs ? 'Hiran v prostoru' : t5('Hiran in space', lang)}
               </h2>
               <p className="mt-2 max-w-2xl text-sm text-gray-300">
-                {cs
-                  ? 'Zlatý zárodek na lotosovém květu, obklopený třinácti branami do světů Království srdce. Otoč chrám, přibliž orb — a klikni na bránu, která tě volá.'
-                  : 'The golden womb on a lotus, ringed by thirteen gates into the worlds of the Kingdom of Hearts. Turn the temple, approach the orb — and click the gate that calls you.'}
+                {cs ? 'Zlatý zárodek na lotosovém květu, obklopený třinácti branami do světů Království srdce. Otoč chrám, přibliž orb — a klikni na bránu, která tě volá.' : t5('The golden womb on a lotus, ringed by thirteen gates into the worlds of the Kingdom of Hearts. Turn the temple, approach the orb — and click the gate that calls you.', lang)}
               </p>
             </div>
             <Link
@@ -621,7 +620,7 @@ export default function L3HiranPage() {
               className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-zion-gold transition hover:bg-zion-gold/20"
             >
               <Sparkles className="h-3 w-3" />
-              {cs ? 'Otevřít v Nirvaně' : 'Open in Nirvana'}
+              {cs ? 'Otevřít v Nirvaně' : t5('Open in Nirvana', lang)}
               <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
@@ -640,9 +639,9 @@ export default function L3HiranPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">L3</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Layers className="h-7 w-7 text-zion-gold" />
-              {L3HiranCopy.threePillars[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.threePillars, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{L3HiranCopy.threePillarsSub[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(L3HiranCopy.threePillarsSub, lang)}</p>
           </div>
           <div className="grid gap-5 md:grid-cols-3">
             {pillars.map((pillar) => {
@@ -663,7 +662,7 @@ export default function L3HiranPage() {
                   </div>
                   {pillar.href && (
                     <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-zion-cyan">
-                      {L3HiranCopy.openWarp[cs ? 'cs' : 'en']} <ArrowRight className="h-3 w-3" />
+                      {tx5(L3HiranCopy.openWarp, lang)} <ArrowRight className="h-3 w-3" />
                     </div>
                   )}
                 </div>
@@ -684,12 +683,12 @@ export default function L3HiranPage() {
           style={{ '--rc': '255, 215, 0' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.aiNativeProtocol[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L3HiranCopy.aiNativeProtocol, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <HeartHandshake className="h-7 w-7 text-zion-gold" />
-              {L3HiranCopy.consciousnessInTheProtocol[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.consciousnessInTheProtocol, lang)}
             </h2>
-            <p className="text-sm text-gray-400 max-w-3xl">{L3HiranCopy.aiNativeDesc[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400 max-w-3xl">{tx5(L3HiranCopy.aiNativeDesc, lang)}</p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
@@ -704,7 +703,7 @@ export default function L3HiranPage() {
 
           <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
-              <p className="text-xs font-semibold uppercase tracking-wider text-zion-gold mb-4">{L3HiranCopy.oathTitle[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-zion-gold mb-4">{tx5(L3HiranCopy.oathTitle, lang)}</p>
               <ol className="grid gap-2 sm:grid-cols-2">
                 {OATH_KEYS.map((k, i) => (
                   <li key={k} className="flex items-start gap-2.5 text-xs text-gray-300">
@@ -727,8 +726,8 @@ export default function L3HiranPage() {
                 </div>
               </div>
               <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-zion-purple mb-2">{L3HiranCopy.deekshaRulesTitle[cs ? 'cs' : 'en']}</p>
-                <p className="text-xs text-gray-400 leading-relaxed">{L3HiranCopy.deekshaRules[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-zion-purple mb-2">{tx5(L3HiranCopy.deekshaRulesTitle, lang)}</p>
+                <p className="text-xs text-gray-400 leading-relaxed">{tx5(L3HiranCopy.deekshaRules, lang)}</p>
               </div>
             </div>
           </div>
@@ -746,9 +745,9 @@ export default function L3HiranPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">MML</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-7 w-7 text-zion-purple" />
-              {L3HiranCopy.mmlTitle[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.mmlTitle, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{L3HiranCopy.mmlSub[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(L3HiranCopy.mmlSub, lang)}</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {modalities.map((m) => (
@@ -773,20 +772,20 @@ export default function L3HiranPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Maestro</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Workflow className="h-7 w-7 text-zion-cyan" />
-              {L3HiranCopy.maestroTitle[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.maestroTitle, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{L3HiranCopy.maestroSub[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(L3HiranCopy.maestroSub, lang)}</p>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex flex-col gap-3">
                 {[
-                  { label: L3HiranCopy.maestroFlow1[cs ? 'cs' : 'en'], icon: MessageCircle },
-                  { label: L3HiranCopy.maestroFlow2[cs ? 'cs' : 'en'], icon: Route },
-                  { label: L3HiranCopy.maestroFlow3[cs ? 'cs' : 'en'], icon: Layers },
-                  { label: L3HiranCopy.maestroFlow4[cs ? 'cs' : 'en'], icon: Bot },
-                  { label: L3HiranCopy.maestroFlow5[cs ? 'cs' : 'en'], icon: Workflow },
+                  { label: tx5(L3HiranCopy.maestroFlow1, lang), icon: MessageCircle },
+                  { label: tx5(L3HiranCopy.maestroFlow2, lang), icon: Route },
+                  { label: tx5(L3HiranCopy.maestroFlow3, lang), icon: Layers },
+                  { label: tx5(L3HiranCopy.maestroFlow4, lang), icon: Bot },
+                  { label: tx5(L3HiranCopy.maestroFlow5, lang), icon: Workflow },
                 ].map((step, i, arr) => (
                   <div key={step.label} className="flex items-center gap-3">
                     <div className="flex-1 flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3">
@@ -808,12 +807,12 @@ export default function L3HiranPage() {
             <div className="flex flex-col gap-3">
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  L3HiranCopy.maestroStat1[cs ? 'cs' : 'en'],
-                  L3HiranCopy.maestroStat2[cs ? 'cs' : 'en'],
-                  L3HiranCopy.maestroStat3[cs ? 'cs' : 'en'],
-                  L3HiranCopy.maestroStat4[cs ? 'cs' : 'en'],
-                  L3HiranCopy.maestroStat5[cs ? 'cs' : 'en'],
-                  L3HiranCopy.maestroStat6[cs ? 'cs' : 'en'],
+                  tx5(L3HiranCopy.maestroStat1, lang),
+                  tx5(L3HiranCopy.maestroStat2, lang),
+                  tx5(L3HiranCopy.maestroStat3, lang),
+                  tx5(L3HiranCopy.maestroStat4, lang),
+                  tx5(L3HiranCopy.maestroStat5, lang),
+                  tx5(L3HiranCopy.maestroStat6, lang),
                 ].map((s) => (
                   <div key={s} className="rounded-xl border border-zion-cyan/20 bg-zion-cyan/5 px-3 py-2.5 text-center text-xs font-semibold text-cyan-200">
                     {s}
@@ -825,7 +824,7 @@ export default function L3HiranPage() {
                   <Shield className="h-4 w-4 text-zion-gold" />
                   <span className="text-xs font-semibold uppercase tracking-wider text-zion-gold">Safety</span>
                 </div>
-                <p className="text-xs text-gray-400 leading-relaxed">{L3HiranCopy.maestroNote[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs text-gray-400 leading-relaxed">{tx5(L3HiranCopy.maestroNote, lang)}</p>
               </div>
             </div>
           </div>
@@ -840,10 +839,10 @@ export default function L3HiranPage() {
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.evolution[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L3HiranCopy.evolution, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Route className="h-7 w-7 text-zion-purple" />
-              {L3HiranCopy.hiranVersionRoadmap[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.hiranVersionRoadmap, lang)}
             </h2>
           </div>
           <div className="grid gap-5 md:grid-cols-2">
@@ -864,12 +863,12 @@ export default function L3HiranPage() {
                           : 'bg-zion-purple/10 text-zion-purple border-zion-purple/20'
                   }`}>
                     {v.status === 'live'
-                      ? L3HiranCopy.statusLive[cs ? 'cs' : 'en']
+                      ? tx5(L3HiranCopy.statusLive, lang)
                       : v.status === 'building'
-                        ? L3HiranCopy.building[cs ? 'cs' : 'en']
+                        ? tx5(L3HiranCopy.building, lang)
                         : v.status === 'trained'
-                          ? L3HiranCopy.statusTrained[cs ? 'cs' : 'en']
-                          : L3HiranCopy.horizon[cs ? 'cs' : 'en']}
+                          ? tx5(L3HiranCopy.statusTrained, lang)
+                          : tx5(L3HiranCopy.horizon, lang)}
                   </span>
                 </div>
                 <p className="text-sm text-gray-400 leading-relaxed mb-4">{v.desc}</p>
@@ -884,8 +883,8 @@ export default function L3HiranPage() {
           <div className="mt-5 rounded-xl border border-zion-gold/20 bg-zion-gold/5 p-4 flex items-start gap-3">
             <Shield className="h-5 w-5 text-zion-gold shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-zion-gold mb-1">{L3HiranCopy.dharmaConstraint[cs ? 'cs' : 'en']}</p>
-              <p className="text-sm text-gray-300 leading-relaxed">{L3HiranCopy.dharmaConstraintDesc[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm font-semibold text-zion-gold mb-1">{tx5(L3HiranCopy.dharmaConstraint, lang)}</p>
+              <p className="text-sm text-gray-300 leading-relaxed">{tx5(L3HiranCopy.dharmaConstraintDesc, lang)}</p>
             </div>
           </div>
         </motion.section>
@@ -902,16 +901,16 @@ export default function L3HiranPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Consciousness</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Orbit className="h-7 w-7 text-zion-gold" />
-              {L3HiranCopy.consciousnessTitle[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.consciousnessTitle, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{L3HiranCopy.consciousnessSub[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(L3HiranCopy.consciousnessSub, lang)}</p>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/l3-hiran/tree-of-life.webp"
-                alt={L3HiranCopy.treeOfLifeCaption[cs ? 'cs' : 'en']}
+                alt={tx5(L3HiranCopy.treeOfLifeCaption, lang)}
                 width={1672}
                 height={941}
                 loading="lazy"
@@ -920,16 +919,16 @@ export default function L3HiranPage() {
               />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-zion-gold/80">
-                  {L3HiranCopy.treeOfLifeCaption[cs ? 'cs' : 'en']}
+                  {tx5(L3HiranCopy.treeOfLifeCaption, lang)}
                 </p>
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {[
-                { title: L3HiranCopy.dharmaTitle[cs ? 'cs' : 'en'], desc: L3HiranCopy.dharmaDesc[cs ? 'cs' : 'en'], icon: HeartHandshake, color: 'text-zion-gold' },
-                { title: L3HiranCopy.memoryTitle[cs ? 'cs' : 'en'], desc: L3HiranCopy.memoryDesc[cs ? 'cs' : 'en'], icon: BookOpen, color: 'text-zion-cyan' },
-                { title: L3HiranCopy.deekshaTitle[cs ? 'cs' : 'en'], desc: L3HiranCopy.deekshaDesc[cs ? 'cs' : 'en'], icon: Sparkles, color: 'text-zion-purple' },
-                { title: L3HiranCopy.ekamTitle[cs ? 'cs' : 'en'], desc: L3HiranCopy.ekamDesc[cs ? 'cs' : 'en'], icon: Orbit, color: 'text-zion-cyan' },
+                { title: tx5(L3HiranCopy.dharmaTitle, lang), desc: tx5(L3HiranCopy.dharmaDesc, lang), icon: HeartHandshake, color: 'text-zion-gold' },
+                { title: tx5(L3HiranCopy.memoryTitle, lang), desc: tx5(L3HiranCopy.memoryDesc, lang), icon: BookOpen, color: 'text-zion-cyan' },
+                { title: tx5(L3HiranCopy.deekshaTitle, lang), desc: tx5(L3HiranCopy.deekshaDesc, lang), icon: Sparkles, color: 'text-zion-purple' },
+                { title: tx5(L3HiranCopy.ekamTitle, lang), desc: tx5(L3HiranCopy.ekamDesc, lang), icon: Orbit, color: 'text-zion-cyan' },
               ].map((c) => (
                 <div key={c.title} className="zion-rainbow-sub p-5" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
                   <c.icon className={`h-6 w-6 ${c.color} mb-3`} />
@@ -943,8 +942,8 @@ export default function L3HiranPage() {
           <div className="mt-6 rounded-xl border border-white/10 bg-black/30 p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h3 className="text-sm font-semibold text-white">{L3HiranCopy.levelsTitle[cs ? 'cs' : 'en']}</h3>
-                <p className="text-xs text-gray-400 mt-1">{L3HiranCopy.levelsDesc[cs ? 'cs' : 'en']}</p>
+                <h3 className="text-sm font-semibold text-white">{tx5(L3HiranCopy.levelsTitle, lang)}</h3>
+                <p className="text-xs text-gray-400 mt-1">{tx5(L3HiranCopy.levelsDesc, lang)}</p>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {CONSCIOUSNESS_LEVELS.map((lv, i) => (
@@ -973,10 +972,10 @@ export default function L3HiranPage() {
           style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.models[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L3HiranCopy.models, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Microchip className="h-7 w-7 text-zion-cyan" />
-              {L3HiranCopy.hiranModelCards[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.hiranModelCards, lang)}
             </h2>
           </div>
           <div className="grid md:grid-cols-2 gap-5">
@@ -995,19 +994,19 @@ export default function L3HiranPage() {
                         : 'bg-zion-purple/10 text-zion-purple border-zion-purple/20'
                   }`}>
                     {model.status === 'live'
-                      ? L3HiranCopy.statusLive[cs ? 'cs' : 'en']
+                      ? tx5(L3HiranCopy.statusLive, lang)
                       : model.status === 'trained'
-                        ? L3HiranCopy.statusTrained[cs ? 'cs' : 'en']
+                        ? tx5(L3HiranCopy.statusTrained, lang)
                         : 'WIP'}
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
-                  <div><p className="text-xs text-gray-500">{L3HiranCopy.method[cs ? 'cs' : 'en']}</p><p className="text-gray-300 font-mono text-xs">{model.method}</p></div>
-                  <div><p className="text-xs text-gray-500">{L3HiranCopy.size[cs ? 'cs' : 'en']}</p><p className="text-gray-300 font-mono text-xs">{model.size}</p></div>
-                  <div><p className="text-xs text-gray-500">{L3HiranCopy.speed[cs ? 'cs' : 'en']}</p><p className="text-gray-300 font-mono text-xs">{model.speed}</p></div>
+                  <div><p className="text-xs text-gray-500">{tx5(L3HiranCopy.method, lang)}</p><p className="text-gray-300 font-mono text-xs">{model.method}</p></div>
+                  <div><p className="text-xs text-gray-500">{tx5(L3HiranCopy.size, lang)}</p><p className="text-gray-300 font-mono text-xs">{model.size}</p></div>
+                  <div><p className="text-xs text-gray-500">{tx5(L3HiranCopy.speed, lang)}</p><p className="text-gray-300 font-mono text-xs">{model.speed}</p></div>
                   <div><p className="text-xs text-gray-500">VRAM</p><p className="text-gray-300 font-mono text-xs">{model.vram}</p></div>
-                  <div><p className="text-xs text-gray-500">{L3HiranCopy.hardware[cs ? 'cs' : 'en']}</p><p className="text-gray-300 font-mono text-xs">{model.hardware}</p></div>
-                  <div><p className="text-xs text-gray-500">{L3HiranCopy.dataset[cs ? 'cs' : 'en']}</p><p className="text-gray-300 font-mono text-xs">{model.dataset}</p></div>
+                  <div><p className="text-xs text-gray-500">{tx5(L3HiranCopy.hardware, lang)}</p><p className="text-gray-300 font-mono text-xs">{model.hardware}</p></div>
+                  <div><p className="text-xs text-gray-500">{tx5(L3HiranCopy.dataset, lang)}</p><p className="text-gray-300 font-mono text-xs">{model.dataset}</p></div>
                 </div>
                 <div className="flex flex-wrap gap-1.5 mt-3">
                   {model.tags.map((tag) => (
@@ -1020,7 +1019,7 @@ export default function L3HiranPage() {
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-zion-cyan mb-3">{L3HiranCopy.variantsTitle[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-zion-cyan mb-3">{tx5(L3HiranCopy.variantsTitle, lang)}</p>
               <div className="grid grid-cols-4 gap-2">
                 {GGUF_VARIANTS.map((v) => (
                   <div key={v.name} className="rounded-lg border border-zion-cyan/20 bg-zion-cyan/5 px-2 py-2 text-center">
@@ -1032,7 +1031,7 @@ export default function L3HiranPage() {
               </div>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-zion-purple mb-3">{L3HiranCopy.backendsTitle[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-zion-purple mb-3">{tx5(L3HiranCopy.backendsTitle, lang)}</p>
               <div className="flex flex-wrap gap-1.5">
                 {INFERENCE_BACKENDS.map((b) => (
                   <span key={b} className="rounded-full border border-zion-purple/25 bg-zion-purple/10 px-3 py-1 text-xs text-purple-200">{b}</span>
@@ -1051,10 +1050,10 @@ export default function L3HiranPage() {
           style={{ '--rc': '255, 215, 0' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.training[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L3HiranCopy.training, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <FlaskConical className="h-7 w-7 text-zion-gold" />
-              {L3HiranCopy.trainingPhases[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.trainingPhases, lang)}
             </h2>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
@@ -1063,7 +1062,7 @@ export default function L3HiranPage() {
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <span className="text-sm font-bold text-white leading-tight">{phase.phase}</span>
                   <span className="rounded-full bg-zion-cyan/10 px-2 py-0.5 text-[11px] font-semibold text-zion-cyan border border-zion-cyan/20 shrink-0">
-                    {phase.status === 'done' ? (L3HiranCopy.done[cs ? 'cs' : 'en']) : phase.status}
+                    {phase.status === 'done' ? (tx5(L3HiranCopy.done, lang)) : phase.status}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mb-3">{phase.period}</p>
@@ -1092,20 +1091,20 @@ export default function L3HiranPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">NCL</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Pickaxe className="h-7 w-7 text-zion-cyan" />
-              {L3HiranCopy.nclTitle[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.nclTitle, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{L3HiranCopy.nclSub[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(L3HiranCopy.nclSub, lang)}</p>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
             <div className="zion-rainbow-sub p-5 overflow-x-auto" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-              <p className="text-xs font-semibold uppercase tracking-wider text-zion-cyan mb-3">{L3HiranCopy.nclTasksTitle[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-zion-cyan mb-3">{tx5(L3HiranCopy.nclTasksTitle, lang)}</p>
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-white/10 text-gray-500">
-                    <th className="pb-2 pr-4 font-medium">{L3HiranCopy.nclTask[cs ? 'cs' : 'en']}</th>
-                    <th className="pb-2 pr-4 font-medium">{L3HiranCopy.nclReward[cs ? 'cs' : 'en']}</th>
-                    <th className="pb-2 font-medium">{L3HiranCopy.nclVerification[cs ? 'cs' : 'en']}</th>
+                    <th className="pb-2 pr-4 font-medium">{tx5(L3HiranCopy.nclTask, lang)}</th>
+                    <th className="pb-2 pr-4 font-medium">{tx5(L3HiranCopy.nclReward, lang)}</th>
+                    <th className="pb-2 font-medium">{tx5(L3HiranCopy.nclVerification, lang)}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1120,13 +1119,13 @@ export default function L3HiranPage() {
               </table>
 
               <div className="mt-5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-zion-cyan mb-3">{L3HiranCopy.nclHowTitle[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-zion-cyan mb-3">{tx5(L3HiranCopy.nclHowTitle, lang)}</p>
                 <div className="flex flex-wrap items-center gap-2">
                   {[
-                    L3HiranCopy.nclHow1[cs ? 'cs' : 'en'],
-                    L3HiranCopy.nclHow2[cs ? 'cs' : 'en'],
-                    L3HiranCopy.nclHow3[cs ? 'cs' : 'en'],
-                    L3HiranCopy.nclHow4[cs ? 'cs' : 'en'],
+                    tx5(L3HiranCopy.nclHow1, lang),
+                    tx5(L3HiranCopy.nclHow2, lang),
+                    tx5(L3HiranCopy.nclHow3, lang),
+                    tx5(L3HiranCopy.nclHow4, lang),
                   ].map((step, i) => (
                     <div key={step} className="flex items-center gap-2">
                       <span className="rounded-lg border border-zion-cyan/25 bg-zion-cyan/10 px-3 py-1.5 text-xs font-semibold text-cyan-200">
@@ -1143,27 +1142,27 @@ export default function L3HiranPage() {
               <div className="rounded-xl border border-white/10 bg-black/30 p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Wallet className="h-4 w-4 text-zion-gold" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-zion-gold">{L3HiranCopy.nclEconTitle[cs ? 'cs' : 'en']}</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-zion-gold">{tx5(L3HiranCopy.nclEconTitle, lang)}</span>
                 </div>
                 <ul className="space-y-2 text-xs text-gray-400">
-                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zion-gold" />{L3HiranCopy.nclEconSplit[cs ? 'cs' : 'en']}</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zion-gold" />{L3HiranCopy.nclEconBackend[cs ? 'cs' : 'en']}</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zion-gold" />{L3HiranCopy.nclEconReputation[cs ? 'cs' : 'en']}</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zion-gold" />{tx5(L3HiranCopy.nclEconSplit, lang)}</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zion-gold" />{tx5(L3HiranCopy.nclEconBackend, lang)}</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zion-gold" />{tx5(L3HiranCopy.nclEconReputation, lang)}</li>
                 </ul>
               </div>
               <div className="rounded-xl border border-white/10 bg-black/30 p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Gauge className="h-4 w-4 text-zion-cyan" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-zion-cyan">{L3HiranCopy.nclTimeTitle[cs ? 'cs' : 'en']}</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-zion-cyan">{tx5(L3HiranCopy.nclTimeTitle, lang)}</span>
                 </div>
-                <p className="text-xs text-gray-400 leading-relaxed">{L3HiranCopy.nclTimeDesc[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs text-gray-400 leading-relaxed">{tx5(L3HiranCopy.nclTimeDesc, lang)}</p>
               </div>
               <div className="rounded-xl border border-white/10 bg-black/30 p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Cpu className="h-4 w-4 text-zion-purple" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-zion-purple">{L3HiranCopy.nclNpuTitle[cs ? 'cs' : 'en']}</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-zion-purple">{tx5(L3HiranCopy.nclNpuTitle, lang)}</span>
                 </div>
-                <p className="text-xs text-gray-400 leading-relaxed">{L3HiranCopy.nclNpuDesc[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs text-gray-400 leading-relaxed">{tx5(L3HiranCopy.nclNpuDesc, lang)}</p>
               </div>
             </div>
           </div>
@@ -1180,13 +1179,13 @@ export default function L3HiranPage() {
           <div className="mx-auto max-w-3xl text-center mb-8">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-zion-cyan">
               <MessageCircle className="h-3.5 w-3.5" />
-              {L3HiranCopy.liveChat[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.liveChat, lang)}
             </div>
             <h2 className="text-2xl font-bold sm:text-3xl text-gradient">
-              {L3HiranCopy.askHiranyagarbha[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.askHiranyagarbha, lang)}
             </h2>
             <p className="mt-3 text-gray-400">
-              {L3HiranCopy.domainSpecificAiAssistantTrain[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.domainSpecificAiAssistantTrain, lang)}
             </p>
           </div>
           <div className="mx-auto max-w-2xl">
@@ -1203,13 +1202,13 @@ export default function L3HiranPage() {
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.architecture[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L3HiranCopy.architecture, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Database className="h-7 w-7 text-zion-purple" />
-              {L3HiranCopy.hybridRag[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.hybridRag, lang)}
             </h2>
             <p className="text-sm text-gray-400">
-              {L3HiranCopy.becauseGeneralKnowledgeIsTooLa[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.becauseGeneralKnowledgeIsTooLa, lang)}
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1232,10 +1231,10 @@ export default function L3HiranPage() {
           style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.marketplace[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L3HiranCopy.marketplace, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <ShoppingCart className="h-7 w-7 text-zion-cyan" />
-              {L3HiranCopy.aiMarketplace[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.aiMarketplace, lang)}
             </h2>
           </div>
           <div className="grid gap-5 md:grid-cols-3">
@@ -1251,10 +1250,10 @@ export default function L3HiranPage() {
                         : 'bg-zion-purple/10 text-zion-purple border-zion-purple/20'
                   }`}>
                     {item.status === 'live'
-                      ? L3HiranCopy.statusLive[cs ? 'cs' : 'en']
+                      ? tx5(L3HiranCopy.statusLive, lang)
                       : item.status === 'trained'
-                        ? L3HiranCopy.statusTrained[cs ? 'cs' : 'en']
-                        : (L3HiranCopy.planned[cs ? 'cs' : 'en'])}
+                        ? tx5(L3HiranCopy.statusTrained, lang)
+                        : (tx5(L3HiranCopy.planned, lang))}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mb-2">{item.version}</p>
@@ -1278,10 +1277,10 @@ export default function L3HiranPage() {
           style={{ '--rc': '255, 215, 0' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.operations[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L3HiranCopy.operations, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Server className="h-7 w-7 text-zion-gold" />
-              {L3HiranCopy.orchestrationDeployment[cs ? 'cs' : 'en']}
+              {tx5(L3HiranCopy.orchestrationDeployment, lang)}
             </h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -1303,7 +1302,7 @@ export default function L3HiranPage() {
           className="zion-cta-banner"
         >
           <h2 className="text-2xl font-semibold text-white text-center mb-6">
-            {L3HiranCopy.learnMoreAboutL3AndTheEcosyste[cs ? 'cs' : 'en']}
+            {tx5(L3HiranCopy.learnMoreAboutL3AndTheEcosyste, lang)}
           </h2>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/ai-native" className="inline-flex items-center gap-2 rounded-2xl border border-zion-purple/30 bg-zion-purple/5 px-6 py-3 text-sm font-semibold text-purple-200 hover:bg-zion-purple/10 transition-colors">
@@ -1313,7 +1312,7 @@ export default function L3HiranPage() {
               <Globe className="h-4 w-4" /> L3 WARP
             </Link>
             <Link href="/mining" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
-              <Pickaxe className="h-4 w-4" /> {cs ? 'Těžba' : 'Mining'}
+              <Pickaxe className="h-4 w-4" /> {cs ? 'Těžba' : t5('Mining', lang)}
             </Link>
             <Link href="/l4-oasis" className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold/30 bg-zion-gold/5 px-6 py-3 text-sm font-semibold text-orange-200 hover:bg-zion-gold/10 transition-colors">
               <Gamepad2 className="h-4 w-4" /> L4 Oasis

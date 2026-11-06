@@ -27,7 +27,8 @@ import {
   Globe2,
 } from 'lucide-react';
 import { useEffect, useState, type CSSProperties } from 'react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { useAuth } from '@/contexts/AuthContext';
 import DAOStats from '@/components/dao/DAOStats';
 import ProposalCard from '@/components/dao/ProposalCard';
@@ -304,49 +305,49 @@ function StatCard({
   );
 }
 
-const getPhases = (cs: boolean) => [
+const getPhases = (cs: boolean, lang: Lang) => [
   {
-    title: DaoCopy.phase1LiveFoundation[cs ? 'cs' : 'en'],
+    title: tx5(DaoCopy.phase1LiveFoundation, lang),
     bullets: cs
       ? ['Hybridní lifecycle návrhů běží (vytvořit → hlasovat → sečíst)', 'Hlasovací síla = L1 zůstatek ZION ve snapshot bloku', 'Treasury signer schválení koordinovaná přes approval záznamy']
       : ['Hybrid proposal lifecycle is live (create → vote → tally)', 'Voting power = L1 ZION balance at the snapshot block', 'Treasury signer approvals coordinated via approval records'],
   },
   {
-    title: DaoCopy.phase2DaoParliament[cs ? 'cs' : 'en'],
+    title: tx5(DaoCopy.phase2DaoParliament, lang),
     bullets: cs
       ? ['DAO Parlament — čtyři komory: Péče, Opravy, Poznání, Horizontu', 'Consent registry a co-admin role — návrh a prototyp', 'Hiran jako zrcadlo a pomocník pro drafty — lidský sponsor povinný']
       : ['DAO Parliament — four chambers: Care, Restoration, Knowledge, Horizon', 'Consent registry and co-admin roles — design and prototype', 'Hiran as a mirror and drafting aid — a human sponsor is required'],
   },
   {
-    title: DaoCopy.phase3EarthNetwork[cs ? 'cs' : 'en'],
+    title: tx5(DaoCopy.phase3EarthNetwork, lang),
     bullets: cs
       ? ['Síť Země — symbolický cíl 144 000 earth guardianů (registry pending)', 'Dobrovolná globální síť lokálních kruhů — žádný cap ani privilegovaná třída', 'Transparentní granty a auditovaná governance']
       : ['Earth Network — symbolic goal of 144,000 earth guardians (registry pending)', 'Voluntary global network of local circles — no cap and no privileged class', 'Transparent grants and auditable governance'],
   },
 ];
 
-const getQuickLinks = (cs: boolean) => [
-  { label: DaoCopy.governanceDocs[cs ? 'cs' : 'en'], href: '/docs', description: DaoCopy.proposalFlowVotingPowerEmergen[cs ? 'cs' : 'en'] },
-  { label: DaoCopy.treasuryDashboard[cs ? 'cs' : 'en'], href: '/dashboard', description: DaoCopy.realTimeBalancesAllocationOver[cs ? 'cs' : 'en'] },
-  { label: DaoCopy.defiHub[cs ? 'cs' : 'en'], href: '/market', description: DaoCopy.swapBridgeAndPortfolioOnBaseMa[cs ? 'cs' : 'en'] },
+const getQuickLinks = (cs: boolean, lang: Lang) => [
+  { label: tx5(DaoCopy.governanceDocs, lang), href: '/docs', description: tx5(DaoCopy.proposalFlowVotingPowerEmergen, lang) },
+  { label: tx5(DaoCopy.treasuryDashboard, lang), href: '/dashboard', description: tx5(DaoCopy.realTimeBalancesAllocationOver, lang) },
+  { label: tx5(DaoCopy.defiHub, lang), href: '/market', description: tx5(DaoCopy.swapBridgeAndPortfolioOnBaseMa, lang) },
 ];
 
-const getFaqs = (cs: boolean) => [
+const getFaqs = (cs: boolean, lang: Lang) => [
   {
-    q: DaoCopy.howDoIBecomeADaoGuardian[cs ? 'cs' : 'en'],
-    a: DaoCopy.guardiansAreSelectedBasedOnVer[cs ? 'cs' : 'en'],
+    q: tx5(DaoCopy.howDoIBecomeADaoGuardian, lang),
+    a: tx5(DaoCopy.guardiansAreSelectedBasedOnVer, lang),
   },
   {
-    q: DaoCopy.howDoesVotingPowerWork[cs ? 'cs' : 'en'],
-    a: DaoCopy.everyZionHolderHasBaseVotingPo[cs ? 'cs' : 'en'],
+    q: tx5(DaoCopy.howDoesVotingPowerWork, lang),
+    a: tx5(DaoCopy.everyZionHolderHasBaseVotingPo, lang),
   },
   {
-    q: DaoCopy.whatIsTheHumanitarianTithe[cs ? 'cs' : 'en'],
-    a: DaoCopy.k10OfMiningRewardsGoIntoTheDaoH[cs ? 'cs' : 'en'],
+    q: tx5(DaoCopy.whatIsTheHumanitarianTithe, lang),
+    a: tx5(DaoCopy.k10OfMiningRewardsGoIntoTheDaoH, lang),
   },
   {
-    q: DaoCopy.whenWillTheDaoBeFullyOnChain[cs ? 'cs' : 'en'],
-    a: DaoCopy.theHybridDaoPhaseBeginsInQ2202[cs ? 'cs' : 'en'],
+    q: tx5(DaoCopy.whenWillTheDaoBeFullyOnChain, lang),
+    a: tx5(DaoCopy.theHybridDaoPhaseBeginsInQ2202, lang),
   },
 ];
 
@@ -397,9 +398,9 @@ export default function DaoPage() {
     errors_total: number;
   } | null>(null);
 
-  const phases = getPhases(cs);
-  const quickLinks = getQuickLinks(cs);
-  const faqs = getFaqs(cs);
+  const phases = getPhases(cs, lang);
+  const quickLinks = getQuickLinks(cs, lang);
+  const faqs = getFaqs(cs, lang);
 
   useEffect(() => { loadDAOData(); }, []);
 
@@ -431,7 +432,7 @@ export default function DaoPage() {
 
   async function handleVote(proposalId: string, voteType: string) {
     if (!authenticated) {
-      alert(DaoCopy.signInRequired[cs ? 'cs' : 'en']);
+      alert(tx5(DaoCopy.signInRequired, lang));
       return;
     }
     try {
@@ -449,11 +450,11 @@ export default function DaoPage() {
     e.preventDefault();
     setCreateError(null);
     if (!authenticated) {
-      setCreateError(DaoCopy.signInRequired[cs ? 'cs' : 'en']);
+      setCreateError(tx5(DaoCopy.signInRequired, lang));
       return;
     }
     if (!createTitle.trim() || !createDesc.trim()) {
-      setCreateError(DaoCopy.pleaseEnterATitleAndDescriptio[cs ? 'cs' : 'en']);
+      setCreateError(tx5(DaoCopy.pleaseEnterATitleAndDescriptio, lang));
       return;
     }
     setCreateBusy(true);
@@ -498,7 +499,7 @@ export default function DaoPage() {
       setCandidateAddress(''); setCommunityName(''); setOffenseCategory(''); setExpulsionTier('1');
       await loadDAOData();
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : (DaoCopy.failedToCreateProposal[cs ? 'cs' : 'en']));
+      setCreateError(err instanceof Error ? err.message : (tx5(DaoCopy.failedToCreateProposal, lang)));
     } finally {
       setCreateBusy(false);
     }
@@ -544,34 +545,34 @@ export default function DaoPage() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
                 <Crown className="h-4 w-4" />
-                DAO 2.0 · {DaoCopy.governance[cs ? 'cs' : 'en']}
+                DAO 2.0 · {tx5(DaoCopy.governance, lang)}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{DaoCopy.treasuryProposalsVoting[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{tx5(DaoCopy.treasuryProposalsVoting, lang)}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {DaoCopy.shapeZionSFutureTogether[cs ? 'cs' : 'en']}
+                  {tx5(DaoCopy.shapeZionSFutureTogether, lang)}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {DaoCopy.zionSDaoGovernsTreasuryAllocat[cs ? 'cs' : 'en']}
+                {tx5(DaoCopy.zionSDaoGovernsTreasuryAllocat, lang)}
               </p>
 
               <div className="flex flex-wrap items-center gap-3 text-xs">
                 <span className={`zion-badge ${daemonOnline === false ? 'border-zion-purple/30 bg-zion-purple/10 text-zion-purple' : daemonOnline === true ? 'zion-badge-green' : ''}`}>
                   <span className={`h-2 w-2 rounded-full ${daemonOnline === false ? 'bg-zion-purple' : daemonOnline === true ? 'bg-zion-cyan animate-pulse' : 'bg-gray-500 animate-pulse'}`} />
-                  {daemonOnline === false ? (DaoCopy.daemonOffline[cs ? 'cs' : 'en']) : daemonOnline === true ? (DaoCopy.daemonOnline[cs ? 'cs' : 'en']) : (DaoCopy.checking[cs ? 'cs' : 'en'])}
+                  {daemonOnline === false ? (tx5(DaoCopy.daemonOffline, lang)) : daemonOnline === true ? (tx5(DaoCopy.daemonOnline, lang)) : (tx5(DaoCopy.checking, lang))}
                 </span>
                 {stats && (
                   <span className="zion-badge">
                     <Scale className="h-3.5 w-3.5 text-zion-gold" />
-                    <span className="text-gray-300">{DaoCopy.quorum[cs ? 'cs' : 'en']}</span>
+                    <span className="text-gray-300">{tx5(DaoCopy.quorum, lang)}</span>
                     <span className="font-mono text-white">{stats.quorum_percent}%</span>
                   </span>
                 )}
                 {stats && (
                   <span className="zion-badge">
                     <Activity className="h-3.5 w-3.5 text-zion-cyan" />
-                    <span className="text-gray-300">{DaoCopy.period[cs ? 'cs' : 'en']}</span>
+                    <span className="text-gray-300">{tx5(DaoCopy.period, lang)}</span>
                     <span className="font-mono text-white">{stats.voting_period_days}d</span>
                   </span>
                 )}
@@ -579,18 +580,18 @@ export default function DaoPage() {
                   <span className={`zion-badge ${bridgeStatus.online ? 'zion-badge-green' : 'border-zion-purple/30 bg-zion-purple/10 text-zion-purple'}`}>
                     <ArrowLeftRight className="h-3.5 w-3.5 text-zion-cyan" />
                     <span className="text-gray-300">Bridge:</span>
-                    <span className={bridgeStatus.online ? 'text-zion-cyan' : 'text-zion-purple'}>{bridgeStatus.online ? (DaoCopy.online[cs ? 'cs' : 'en']) : (DaoCopy.offline[cs ? 'cs' : 'en'])}</span>
+                    <span className={bridgeStatus.online ? 'text-zion-cyan' : 'text-zion-purple'}>{bridgeStatus.online ? (tx5(DaoCopy.online, lang)) : (tx5(DaoCopy.offline, lang))}</span>
                   </span>
                 )}
               </div>
 
               <div className="flex flex-wrap gap-4">
                 <button onClick={loadDAOData} disabled={loading} className="zion-button-primary disabled:opacity-50">
-                  {loading ? (DaoCopy.loading[cs ? 'cs' : 'en']) : (DaoCopy.refreshData[cs ? 'cs' : 'en'])}
+                  {loading ? (tx5(DaoCopy.loading, lang)) : (tx5(DaoCopy.refreshData, lang))}
                   <ArrowRight className="h-4 w-4" />
                 </button>
                 <Link href="/docs" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
-                  {DaoCopy.governanceDocs_2[cs ? 'cs' : 'en']}
+                  {tx5(DaoCopy.governanceDocs_2, lang)}
                 </Link>
               </div>
             </div>
@@ -598,33 +599,33 @@ export default function DaoPage() {
             {/* Quick info side card */}
             <div className="w-full lg:max-w-md space-y-3">
               <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{DaoCopy.quickOverview[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{tx5(DaoCopy.quickOverview, lang)}</p>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Landmark className="h-4 w-4 text-zion-gold" />
-                      {DaoCopy.treasury[cs ? 'cs' : 'en']}
+                      {tx5(DaoCopy.treasury, lang)}
                     </div>
                     <span className="font-mono text-white">{(treasury?.total_zion ?? 0).toLocaleString()} ZION</span>
                   </div>
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Wallet className="h-4 w-4 text-zion-cyan" />
-                      {DaoCopy.spendableNow[cs ? 'cs' : 'en']}
+                      {tx5(DaoCopy.spendableNow, lang)}
                     </div>
                     <span className="font-mono text-white">{spendableZion.toLocaleString()} ZION</span>
                   </div>
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Gavel className="h-4 w-4 text-zion-cyan" />
-                      {DaoCopy.proposals[cs ? 'cs' : 'en']}
+                      {tx5(DaoCopy.proposals, lang)}
                     </div>
                     <span className="font-mono text-white">{totalProposals.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <ShieldCheck className="h-4 w-4 text-zion-gold" />
-                      {DaoCopy.guardians[cs ? 'cs' : 'en']}
+                      {tx5(DaoCopy.guardians, lang)}
                     </div>
                     <span className="font-mono text-white">{multisigLabel}</span>
                   </div>
@@ -640,9 +641,9 @@ export default function DaoPage() {
             <div className="flex items-start gap-3">
               <Info className="h-6 w-6 text-zion-purple mt-0.5 shrink-0" />
               <div>
-                <p className="font-semibold text-zion-purple">{DaoCopy.daoDaemonPhase2HybridDao[cs ? 'cs' : 'en']}</p>
+                <p className="font-semibold text-zion-purple">{tx5(DaoCopy.daoDaemonPhase2HybridDao, lang)}</p>
                 <p className="text-sm text-blue-200/80 mt-1">
-                  {DaoCopy.theOnChainDaoGovernanceDaemonW[cs ? 'cs' : 'en']}
+                  {tx5(DaoCopy.theOnChainDaoGovernanceDaemonW, lang)}
                 </p>
               </div>
             </div>
@@ -658,13 +659,13 @@ export default function DaoPage() {
             className="zion-section"
           >
             <div className="flex flex-col gap-2 mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DaoCopy.telemetry[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(DaoCopy.telemetry, lang)}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                 <Activity className="h-7 w-7 text-zion-cyan" />
-                {DaoCopy.daoStatistics[cs ? 'cs' : 'en']}
+                {tx5(DaoCopy.daoStatistics, lang)}
               </h2>
               <p className="text-sm text-gray-400">
-                {DaoCopy.governanceMetricsAggregatedFro[cs ? 'cs' : 'en']}
+                {tx5(DaoCopy.governanceMetricsAggregatedFro, lang)}
               </p>
             </div>
 
@@ -689,66 +690,66 @@ export default function DaoPage() {
                   colorClass="text-zion-gold"
                   bgClass="bg-zion-gold/10"
                   rc="252, 209, 22"
-                  label={DaoCopy.treasury[cs ? 'cs' : 'en']}
+                  label={tx5(DaoCopy.treasury, lang)}
                   value={`${(treasury?.total_zion ?? 0).toLocaleString()} ZION`}
-                  sub={DaoCopy.totalBalance[cs ? 'cs' : 'en']}
-                  tip={DaoCopy.totalTreasuryBalanceIncludingA[cs ? 'cs' : 'en']}
+                  sub={tx5(DaoCopy.totalBalance, lang)}
+                  tip={tx5(DaoCopy.totalTreasuryBalanceIncludingA, lang)}
                 />
                 <StatCard
                   icon={<Wallet className="h-5 w-5" />}
                   colorClass="text-zion-cyan"
                   bgClass="bg-zion-cyan/10"
                   rc="6, 105, 40"
-                  label={DaoCopy.spendableNow[cs ? 'cs' : 'en']}
+                  label={tx5(DaoCopy.spendableNow, lang)}
                   value={`${spendableZion.toLocaleString()} ZION`}
-                  sub={DaoCopy.immediatelyUsable[cs ? 'cs' : 'en']}
-                  tip={DaoCopy.balanceAvailableForGovernanceS[cs ? 'cs' : 'en']}
+                  sub={tx5(DaoCopy.immediatelyUsable, lang)}
+                  tip={tx5(DaoCopy.balanceAvailableForGovernanceS, lang)}
                 />
                 <StatCard
                   icon={<Gavel className="h-5 w-5" />}
                   colorClass="text-zion-cyan"
                   bgClass="bg-zion-cyan/10"
                   rc="6, 105, 40"
-                  label={DaoCopy.proposals[cs ? 'cs' : 'en']}
+                  label={tx5(DaoCopy.proposals, lang)}
                   value={totalProposals.toLocaleString()}
-                  sub={DaoCopy.createdTotal[cs ? 'cs' : 'en']}
+                  sub={tx5(DaoCopy.createdTotal, lang)}
                 />
                 <StatCard
                   icon={<Activity className="h-5 w-5" />}
                   colorClass="text-zion-cyan"
                   bgClass="bg-zion-cyan/10"
                   rc="6, 105, 40"
-                  label={DaoCopy.active[cs ? 'cs' : 'en']}
+                  label={tx5(DaoCopy.active, lang)}
                   value={activeProposals.toLocaleString()}
-                  sub={(stats?.awaiting_tally ?? 0) > 0 ? `${stats?.awaiting_tally} ${DaoCopy.votingClosedAwaitingTally[cs ? 'cs' : 'en']}` : DaoCopy.ongoingVotes[cs ? 'cs' : 'en']}
+                  sub={(stats?.awaiting_tally ?? 0) > 0 ? `${stats?.awaiting_tally} ${tx5(DaoCopy.votingClosedAwaitingTally, lang)}` : tx5(DaoCopy.ongoingVotes, lang)}
                 />
                 <StatCard
                   icon={<CheckCircle2 className="h-5 w-5" />}
                   colorClass="text-zion-gold"
                   bgClass="bg-zion-gold/10"
                   rc="252, 209, 22"
-                  label={DaoCopy.passed[cs ? 'cs' : 'en']}
+                  label={tx5(DaoCopy.passed, lang)}
                   value={(stats?.passed ?? 0).toLocaleString()}
-                  sub={DaoCopy.successfulProposals[cs ? 'cs' : 'en']}
+                  sub={tx5(DaoCopy.successfulProposals, lang)}
                 />
                 <StatCard
                   icon={<Users className="h-5 w-5" />}
                   colorClass="text-zion-gold"
                   bgClass="bg-zion-gold/10"
                   rc="252, 209, 22"
-                  label={DaoCopy.voters[cs ? 'cs' : 'en']}
+                  label={tx5(DaoCopy.voters, lang)}
                   value={(stats?.unique_voters ?? 0).toLocaleString()}
-                  sub={`${stats?.total_votes_cast ?? 0} ${cs ? 'hlasů celkem' : 'votes cast'}`}
+                  sub={`${stats?.total_votes_cast ?? 0} ${cs ? 'hlasů celkem' : t5('votes cast', lang)}`}
                 />
                 <StatCard
                   icon={<ArrowLeftRight className="h-5 w-5" />}
                   colorClass="text-zion-cyan"
                   bgClass="bg-zion-cyan/10"
                   rc="6, 105, 40"
-                  label={DaoCopy.bridge[cs ? 'cs' : 'en']}
-                  value={bridgeStatus?.online ? (DaoCopy.online[cs ? 'cs' : 'en']) : (DaoCopy.offline[cs ? 'cs' : 'en'])}
-                  sub={DaoCopy.l2Relay[cs ? 'cs' : 'en']}
-                  tip={DaoCopy.statusOfTheCrossChainRelayConn[cs ? 'cs' : 'en']}
+                  label={tx5(DaoCopy.bridge, lang)}
+                  value={bridgeStatus?.online ? (tx5(DaoCopy.online, lang)) : (tx5(DaoCopy.offline, lang))}
+                  sub={tx5(DaoCopy.l2Relay, lang)}
+                  tip={tx5(DaoCopy.statusOfTheCrossChainRelayConn, lang)}
                 />
                 <StatCard
                   icon={<Link2 className="h-5 w-5" />}
@@ -757,8 +758,8 @@ export default function DaoPage() {
                   rc="252, 209, 22"
                   label="wZION Mints"
                   value={bridgeStatus?.evm_mints_confirmed?.toLocaleString() ?? '—'}
-                  sub={DaoCopy.confirmedOnBase[cs ? 'cs' : 'en']}
-                  tip={DaoCopy.numberOfWzionMintedOnBaseAfter[cs ? 'cs' : 'en']}
+                  sub={tx5(DaoCopy.confirmedOnBase, lang)}
+                  tip={tx5(DaoCopy.numberOfWzionMintedOnBaseAfter, lang)}
                 />
               </div>
             )}
@@ -776,7 +777,7 @@ export default function DaoPage() {
           >
             <div className="flex flex-wrap items-center gap-2 md:gap-3">
               <span className="text-[11px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
-                {DaoCopy.daoSections[cs ? 'cs' : 'en']}
+                {tx5(DaoCopy.daoSections, lang)}
               </span>
               {TABS.map((t) => {
                 const Icon = t.icon;
@@ -819,33 +820,33 @@ export default function DaoPage() {
               <section className="zion-section">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DaoCopy.governanceProposals[cs ? 'cs' : 'en']}</p>
-                    <h2 className="text-3xl font-semibold text-white">{DaoCopy.voteOnProtocolDecisions[cs ? 'cs' : 'en']}</h2>
+                    <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(DaoCopy.governanceProposals, lang)}</p>
+                    <h2 className="text-3xl font-semibold text-white">{tx5(DaoCopy.voteOnProtocolDecisions, lang)}</h2>
                   </div>
                   <button
-                    onClick={() => authenticated ? setCreateOpen(true) : alert(DaoCopy.signInRequired[cs ? 'cs' : 'en'])}
+                    onClick={() => authenticated ? setCreateOpen(true) : alert(tx5(DaoCopy.signInRequired, lang))}
                     className="zion-button-primary"
                   >
                     <Plus className="h-4 w-4" />
-                    {DaoCopy.createProposal[cs ? 'cs' : 'en']}
+                    {tx5(DaoCopy.createProposal, lang)}
                   </button>
                 </div>
                 {!authenticated && (
                   <div className="zion-rainbow-card p-4 mb-6 flex items-center gap-3" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
                     <Info className="h-5 w-5 text-zion-purple shrink-0" />
-                    <p className="text-sm text-gray-300">{DaoCopy.signInToVote[cs ? 'cs' : 'en']}</p>
+                    <p className="text-sm text-gray-300">{tx5(DaoCopy.signInToVote, lang)}</p>
                   </div>
                 )}
                 {/* Status filter — 'Awaiting tally' is derived (Active + voting closed) */}
                 <div className="flex flex-wrap gap-2 mb-6">
                   {(['all', 'open', 'awaiting', 'passed', 'executed', 'failed'] as const).map((f) => {
                     const labels = {
-                      all: cs ? 'Vše' : 'All',
-                      open: cs ? 'Hlasování' : 'Voting',
-                      awaiting: cs ? 'Čeká na sčítání' : 'Awaiting tally',
-                      passed: cs ? 'Schváleno' : 'Passed',
-                      executed: cs ? 'Exekutováno' : 'Executed',
-                      failed: cs ? 'Neúspěšné' : 'Failed',
+                      all: cs ? 'Vše' : t5('All', lang),
+                      open: cs ? 'Hlasování' : t5('Voting', lang),
+                      awaiting: cs ? 'Čeká na sčítání' : t5('Awaiting tally', lang),
+                      passed: cs ? 'Schváleno' : t5('Passed', lang),
+                      executed: cs ? 'Exekutováno' : t5('Executed', lang),
+                      failed: cs ? 'Neúspěšné' : t5('Failed', lang),
                     };
                     const active = proposalFilter === f;
                     return (
@@ -864,15 +865,15 @@ export default function DaoPage() {
                 {loading ? (
                   <div className="text-center py-12">
                     <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-zion-gold border-r-transparent" />
-                    <p className="mt-4 text-gray-400">{DaoCopy.loadingProposals[cs ? 'cs' : 'en']}</p>
+                    <p className="mt-4 text-gray-400">{tx5(DaoCopy.loadingProposals, lang)}</p>
                   </div>
                 ) : filteredProposals.length === 0 && proposals.length > 0 ? (
-                  <p className="text-sm text-gray-500 py-8 text-center">{cs ? 'Žádné návrhy v této kategorii.' : 'No proposals in this category.'}</p>
+                  <p className="text-sm text-gray-500 py-8 text-center">{cs ? 'Žádné návrhy v této kategorii.' : t5('No proposals in this category.', lang)}</p>
                 ) : proposals.length === 0 ? (
                   <div className="zion-rainbow-card p-12 text-center" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                     <Crown className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                    <p className="text-lg font-semibold text-white mb-2">{DaoCopy.noProposalsYet[cs ? 'cs' : 'en']}</p>
-                    <p className="text-gray-400">{DaoCopy.beTheFirstToCreateAGovernanceP[cs ? 'cs' : 'en']}</p>
+                    <p className="text-lg font-semibold text-white mb-2">{tx5(DaoCopy.noProposalsYet, lang)}</p>
+                    <p className="text-gray-400">{tx5(DaoCopy.beTheFirstToCreateAGovernanceP, lang)}</p>
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -900,7 +901,7 @@ export default function DaoPage() {
               >
                 <div className="mb-6">
                   <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Treasury</p>
-                  <h2 className="text-3xl font-semibold text-white">{DaoCopy.treasuryOverview[cs ? 'cs' : 'en']}</h2>
+                  <h2 className="text-3xl font-semibold text-white">{tx5(DaoCopy.treasuryOverview, lang)}</h2>
                 </div>
                 {treasury && (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
@@ -909,52 +910,52 @@ export default function DaoPage() {
                       <p className="text-lg font-semibold text-white mt-1">{treasury.multisig}</p>
                     </div>
                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
-                      <p className="text-xs uppercase tracking-wider text-gray-400">{DaoCopy.spendableNow[cs ? 'cs' : 'en']}</p>
+                      <p className="text-xs uppercase tracking-wider text-gray-400">{tx5(DaoCopy.spendableNow, lang)}</p>
                       <p className="text-lg font-semibold text-white mt-1">{spendableZion.toLocaleString()} ZION</p>
                     </div>
                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
-                      <p className="text-xs uppercase tracking-wider text-gray-400">{DaoCopy.pendingOps[cs ? 'cs' : 'en']}</p>
+                      <p className="text-xs uppercase tracking-wider text-gray-400">{tx5(DaoCopy.pendingOps, lang)}</p>
                       <p className="text-lg font-semibold text-white mt-1">{treasury.pending_operations}</p>
                     </div>
                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
-                      <p className="text-xs uppercase tracking-wider text-gray-400">{DaoCopy.dailyLimit[cs ? 'cs' : 'en']}</p>
+                      <p className="text-xs uppercase tracking-wider text-gray-400">{tx5(DaoCopy.dailyLimit, lang)}</p>
                       <p className="text-lg font-semibold text-white mt-1">{treasury.daily_spend_limit_zion.toLocaleString()} ZION</p>
                     </div>
                   </div>
                 )}
                 <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
-                  <p className="text-xs uppercase tracking-wider text-gray-400 mb-4">{DaoCopy.lockState[cs ? 'cs' : 'en']}</p>
+                  <p className="text-xs uppercase tracking-wider text-gray-400 mb-4">{tx5(DaoCopy.lockState, lang)}</p>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 text-sm">
                     <div>
-                      <p className="text-[11px] uppercase tracking-wider text-gray-500">{DaoCopy.currentBlock[cs ? 'cs' : 'en']}</p>
+                      <p className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(DaoCopy.currentBlock, lang)}</p>
                       <p className="font-mono text-white mt-0.5">{treasury?.chain_height != null ? treasury.chain_height.toLocaleString() : '—'}</p>
                     </div>
                     <div>
-                      <p className="text-[11px] uppercase tracking-wider text-gray-500">{DaoCopy.unlockBlock[cs ? 'cs' : 'en']}</p>
+                      <p className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(DaoCopy.unlockBlock, lang)}</p>
                       <p className="font-mono text-white mt-0.5">{treasury?.unlock_height != null ? treasury.unlock_height.toLocaleString() : '—'}</p>
                     </div>
                     <div>
-                      <p className="text-[11px] uppercase tracking-wider text-gray-500">{DaoCopy.timeLockLabel[cs ? 'cs' : 'en']}</p>
+                      <p className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(DaoCopy.timeLockLabel, lang)}</p>
                       <p className="font-mono text-white mt-0.5">
                         {treasury?.time_locked == null
-                          ? DaoCopy.stateUnknown[cs ? 'cs' : 'en']
+                          ? tx5(DaoCopy.stateUnknown, lang)
                           : treasury.time_locked
-                            ? DaoCopy.stateLocked[cs ? 'cs' : 'en']
-                            : DaoCopy.stateReached[cs ? 'cs' : 'en']}
+                            ? tx5(DaoCopy.stateLocked, lang)
+                            : tx5(DaoCopy.stateReached, lang)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[11px] uppercase tracking-wider text-gray-500">{DaoCopy.adminUnlockLabel[cs ? 'cs' : 'en']}</p>
+                      <p className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(DaoCopy.adminUnlockLabel, lang)}</p>
                       <p className="font-mono text-white mt-0.5">
                         {treasury?.admin_unlock_known !== true
-                          ? DaoCopy.stateUnknown[cs ? 'cs' : 'en']
+                          ? tx5(DaoCopy.stateUnknown, lang)
                           : treasury.admin_unlocked === true
-                            ? DaoCopy.stateUnlocked[cs ? 'cs' : 'en']
-                            : DaoCopy.stateNotUnlocked[cs ? 'cs' : 'en']}
+                            ? tx5(DaoCopy.stateUnlocked, lang)
+                            : tx5(DaoCopy.stateNotUnlocked, lang)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[11px] uppercase tracking-wider text-gray-500">{DaoCopy.spendableNow[cs ? 'cs' : 'en']}</p>
+                      <p className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(DaoCopy.spendableNow, lang)}</p>
                       <p className="font-mono text-white mt-0.5">{spendableZion.toLocaleString()} ZION</p>
                     </div>
                   </div>
@@ -972,15 +973,15 @@ export default function DaoPage() {
                   <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{multisigLabel}</p>
                   <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                     <ShieldCheck className="h-7 w-7 text-zion-gold" />
-                    {DaoCopy.multisigOperations[cs ? 'cs' : 'en']}
+                    {tx5(DaoCopy.multisigOperations, lang)}
                   </h2>
                   <p className="text-sm text-gray-400 max-w-3xl">
-                    {DaoCopy.approvalRecordsExplainer[cs ? 'cs' : 'en']}
+                    {tx5(DaoCopy.approvalRecordsExplainer, lang)}
                   </p>
                 </div>
                 <TreasuryOpsPanel
                   ops={treasuryOps}
-                  emptyLabel={DaoCopy.noTreasuryOpsYet[cs ? 'cs' : 'en']}
+                  emptyLabel={tx5(DaoCopy.noTreasuryOpsYet, lang)}
                   onChanged={() => { void loadDAOData(); }}
                 />
               </motion.section>
@@ -993,23 +994,23 @@ export default function DaoPage() {
                 style={{ '--rc': '6, 105, 40' } as CSSProperties}
               >
                 <div className="flex flex-col gap-2 mb-6">
-                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DaoCopy.bridgeVault[cs ? 'cs' : 'en']}</p>
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(DaoCopy.bridgeVault, lang)}</p>
                   <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                     <ArrowLeftRight className="h-7 w-7 text-zion-gold" />
-                    {DaoCopy.k100mZionBaseMainnet[cs ? 'cs' : 'en']}
+                    {tx5(DaoCopy.k100mZionBaseMainnet, lang)}
                   </h2>
                   <p className="text-gray-300 max-w-2xl mt-2">
-                    {DaoCopy.k6UtxoLockTransactions1667mZion[cs ? 'cs' : 'en']}
+                    {tx5(DaoCopy.k6UtxoLockTransactions1667mZion, lang)}
                   </p>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
-                    <p className="text-xs uppercase tracking-wider text-gray-400">{DaoCopy.lockedZion[cs ? 'cs' : 'en']}</p>
+                    <p className="text-xs uppercase tracking-wider text-gray-400">{tx5(DaoCopy.lockedZion, lang)}</p>
                     <p className="text-lg font-semibold text-white mt-1">~100,000,000</p>
                     <p className="text-xs text-gray-500">6 UTXO locks</p>
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
-                    <p className="text-xs uppercase tracking-wider text-gray-400">{DaoCopy.relayStatus[cs ? 'cs' : 'en']}</p>
+                    <p className="text-xs uppercase tracking-wider text-gray-400">{tx5(DaoCopy.relayStatus, lang)}</p>
                     <p className="text-lg font-semibold mt-1 flex items-center gap-2">
                       {bridgeStatus?.online ? (
                         <>
@@ -1023,17 +1024,17 @@ export default function DaoPage() {
                         </>
                       )}
                     </p>
-                    <p className="text-xs text-gray-500">{DaoCopy.l2CrossChainRelay[cs ? 'cs' : 'en']}</p>
+                    <p className="text-xs text-gray-500">{tx5(DaoCopy.l2CrossChainRelay, lang)}</p>
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
-                    <p className="text-xs uppercase tracking-wider text-gray-400">{DaoCopy.wzionMints[cs ? 'cs' : 'en']}</p>
+                    <p className="text-xs uppercase tracking-wider text-gray-400">{tx5(DaoCopy.wzionMints, lang)}</p>
                     <p className="text-lg font-semibold text-white mt-1">{bridgeStatus?.evm_mints_confirmed ?? '—'}</p>
-                    <p className="text-xs text-gray-500">{DaoCopy.confirmedOnBase[cs ? 'cs' : 'en']}</p>
+                    <p className="text-xs text-gray-500">{tx5(DaoCopy.confirmedOnBase, lang)}</p>
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
-                    <p className="text-xs uppercase tracking-wider text-gray-400">{DaoCopy.l1Block[cs ? 'cs' : 'en']}</p>
+                    <p className="text-xs uppercase tracking-wider text-gray-400">{tx5(DaoCopy.l1Block, lang)}</p>
                     <p className="text-lg font-semibold text-white mt-1">{bridgeStatus?.last_l1_height ?? '—'}</p>
-                    <p className="text-xs text-gray-500">{DaoCopy.lastScan[cs ? 'cs' : 'en']}</p>
+                    <p className="text-xs text-gray-500">{tx5(DaoCopy.lastScan, lang)}</p>
                   </div>
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-gray-500">
@@ -1042,9 +1043,9 @@ export default function DaoPage() {
                     wZION: <span className="text-gray-400 font-mono">0x0c49…2bb6</span>
                   </span>
                   <span className="text-gray-600">·</span>
-                  <span>{DaoCopy.vault[cs ? 'cs' : 'en']} <span className="text-gray-400 font-mono">zion1w0r0…w0t0</span></span>
+                  <span>{tx5(DaoCopy.vault, lang)} <span className="text-gray-400 font-mono">zion1w0r0…w0t0</span></span>
                   <span className="text-gray-600">·</span>
-                  <span>{DaoCopy.finality60Blocks[cs ? 'cs' : 'en']}</span>
+                  <span>{tx5(DaoCopy.finality60Blocks, lang)}</span>
                 </div>
               </motion.section>
 
@@ -1057,18 +1058,18 @@ export default function DaoPage() {
               >
                 <div className="flex items-center gap-3 mb-4">
                   <Heart className="h-8 w-8 text-zion-cyan" />
-                  <h2 className="text-3xl font-semibold text-white">{DaoCopy.humanitarianTithe[cs ? 'cs' : 'en']}</h2>
+                  <h2 className="text-3xl font-semibold text-white">{tx5(DaoCopy.humanitarianTithe, lang)}</h2>
                 </div>
                 <p className="text-lg text-gray-300 mb-6">
-                  {DaoCopy.k10OfAllMiningRewardsFundCleanW[cs ? 'cs' : 'en']}
+                  {tx5(DaoCopy.k10OfAllMiningRewardsFundCleanW, lang)}
                 </p>
                 {stats && (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     {[
-                      { label: DaoCopy.totalProjects[cs ? 'cs' : 'en'], value: stats.humanitarian.total_proposals },
-                      { label: DaoCopy.activeFunding[cs ? 'cs' : 'en'], value: stats.humanitarian.active_proposals },
-                      { label: DaoCopy.beneficiaries[cs ? 'cs' : 'en'], value: stats.humanitarian.total_beneficiaries.toLocaleString() },
-                      { label: DaoCopy.fundedAmount[cs ? 'cs' : 'en'], value: stats.humanitarian.total_funded.toLocaleString() },
+                      { label: tx5(DaoCopy.totalProjects, lang), value: stats.humanitarian.total_proposals },
+                      { label: tx5(DaoCopy.activeFunding, lang), value: stats.humanitarian.active_proposals },
+                      { label: tx5(DaoCopy.beneficiaries, lang), value: stats.humanitarian.total_beneficiaries.toLocaleString() },
+                      { label: tx5(DaoCopy.fundedAmount, lang), value: stats.humanitarian.total_funded.toLocaleString() },
                     ].map((s) => (
                       <div key={s.label} className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                         <p className="text-xs uppercase tracking-wider text-gray-400">{s.label}</p>
@@ -1100,31 +1101,31 @@ export default function DaoPage() {
                 style={{ '--rc': '252, 209, 22' } as CSSProperties}
               >
                 <div className="flex flex-col gap-2 mb-6">
-                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DaoCopy.onChainRegistry[cs ? 'cs' : 'en']}</p>
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(DaoCopy.onChainRegistry, lang)}</p>
                   <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                     <ShieldCheck className="h-7 w-7 text-zion-gold" />
-                    {DaoCopy.liveGuardianRegistry[cs ? 'cs' : 'en']}
+                    {tx5(DaoCopy.liveGuardianRegistry, lang)}
                   </h2>
                   <p className="text-sm text-gray-400 max-w-3xl">
-                    {DaoCopy.liveGuardianRegistryDesc[cs ? 'cs' : 'en']}
+                    {tx5(DaoCopy.liveGuardianRegistryDesc, lang)}
                   </p>
                 </div>
                 {guardianRegistry ? (
                   <div className="space-y-5">
                     <div className="flex items-center gap-3 zion-rainbow-sub px-4 py-2.5 text-sm w-fit" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                       <Users className="h-4 w-4 text-zion-gold" />
-                      <span className="text-gray-400">{DaoCopy.multisigThreshold[cs ? 'cs' : 'en']}:</span>
+                      <span className="text-gray-400">{tx5(DaoCopy.multisigThreshold, lang)}:</span>
                       <span className="font-mono font-semibold text-zion-gold">{guardianRegistry.threshold}-of-{guardianRegistry.total}</span>
                     </div>
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                         <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
                           <Crown className="h-4 w-4 text-zion-gold" />
-                          {DaoCopy.activeGuardians[cs ? 'cs' : 'en']}
+                          {tx5(DaoCopy.activeGuardians, lang)}
                           <span className="text-xs text-gray-500 font-normal">({guardianRegistry.guardians.length})</span>
                         </h3>
                         {guardianRegistry.guardians.length === 0 ? (
-                          <p className="text-xs text-gray-500">{DaoCopy.noGuardiansConfigured[cs ? 'cs' : 'en']}</p>
+                          <p className="text-xs text-gray-500">{tx5(DaoCopy.noGuardiansConfigured, lang)}</p>
                         ) : (
                           <div className="space-y-2">
                             {guardianRegistry.guardians.map((g) => (
@@ -1142,11 +1143,11 @@ export default function DaoPage() {
                       <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                         <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
                           <Sparkles className="h-4 w-4 text-zion-cyan" />
-                          {DaoCopy.registeredCandidates[cs ? 'cs' : 'en']}
+                          {tx5(DaoCopy.registeredCandidates, lang)}
                           <span className="text-xs text-gray-500 font-normal">({guardianRegistry.candidates.length})</span>
                         </h3>
                         {guardianRegistry.candidates.length === 0 ? (
-                          <p className="text-xs text-gray-500">{DaoCopy.noCandidatesRegistered[cs ? 'cs' : 'en']}</p>
+                          <p className="text-xs text-gray-500">{tx5(DaoCopy.noCandidatesRegistered, lang)}</p>
                         ) : (
                           <div className="space-y-2">
                             {guardianRegistry.candidates.map((c) => (
@@ -1154,7 +1155,7 @@ export default function DaoPage() {
                                 <div className="flex items-center justify-between gap-2">
                                   <span className="text-sm font-mono text-gray-200 truncate">{c.address}</span>
                                 </div>
-                                <p className="text-[11px] text-gray-500 mt-0.5">{DaoCopy.candidateAwaitingAdmission[cs ? 'cs' : 'en']}</p>
+                                <p className="text-[11px] text-gray-500 mt-0.5">{tx5(DaoCopy.candidateAwaitingAdmission, lang)}</p>
                               </div>
                             ))}
                           </div>
@@ -1166,7 +1167,7 @@ export default function DaoPage() {
                 ) : (
                   <div className="space-y-5">
                     <div className="zion-rainbow-sub p-5 text-sm text-gray-500" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
-                      {daemonOnline === false ? DaoCopy.noGuardiansConfigured[cs ? 'cs' : 'en'] : '…'}
+                      {daemonOnline === false ? tx5(DaoCopy.noGuardiansConfigured, lang) : '…'}
                     </div>
                     <GuardianRegisterCard />
                   </div>
@@ -1181,29 +1182,29 @@ export default function DaoPage() {
                 style={{ '--rc': '6, 105, 40' } as CSSProperties}
               >
                 <div className="flex flex-col gap-2 mb-6">
-                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DaoCopy.multiLayerGovernance[cs ? 'cs' : 'en']}</p>
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(DaoCopy.multiLayerGovernance, lang)}</p>
                   <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                     <Crown className="h-7 w-7 text-zion-gold" />
-                    {DaoCopy.coAdminSacredTrinity[cs ? 'cs' : 'en']}
+                    {tx5(DaoCopy.coAdminSacredTrinity, lang)}
                   </h2>
                   <p className="text-sm text-gray-400 max-w-3xl">
-                    {DaoCopy.multiLayerDaoGovernanceAcrossL[cs ? 'cs' : 'en']}
+                    {tx5(DaoCopy.multiLayerDaoGovernanceAcrossL, lang)}
                   </p>
                 </div>
                 <div className="grid md:grid-cols-2 gap-6 mb-6">
                   <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                     <div className="flex items-center gap-2 mb-3">
                       <ShieldCheck className="h-5 w-5 text-zion-cyan" />
-                      <h3 className="font-semibold text-white">{DaoCopy.coAdminSystem[cs ? 'cs' : 'en']}</h3>
+                      <h3 className="font-semibold text-white">{tx5(DaoCopy.coAdminSystem, lang)}</h3>
                     </div>
                     <p className="text-sm text-gray-400 mb-3">
-                      {DaoCopy.eachLayerL1L6HasACoAdminForTec[cs ? 'cs' : 'en']}
+                      {tx5(DaoCopy.eachLayerL1L6HasACoAdminForTec, lang)}
                     </p>
                     <div className="space-y-1.5 text-xs">
                       {(['L1 Consensus', 'L2 DAO/Bridge', 'L3 WARP', 'L4 Oasis', 'L5 Free World', 'L6 Issobella'] as const).map((layer) => (
                         <div key={layer} className="flex items-center justify-between zion-rainbow-sub px-3 py-1.5" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                           <span className="text-gray-300 font-mono">{layer}</span>
-                          <span className="text-gray-500">{DaoCopy.coAdmin[cs ? 'cs' : 'en']} · {DaoCopy.daoAuthority[cs ? 'cs' : 'en']}</span>
+                          <span className="text-gray-500">{tx5(DaoCopy.coAdmin, lang)} · {tx5(DaoCopy.daoAuthority, lang)}</span>
                         </div>
                       ))}
                     </div>
@@ -1211,16 +1212,16 @@ export default function DaoPage() {
                   <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                     <div className="flex items-center gap-2 mb-3">
                       <Star className="h-5 w-5 text-zion-gold" />
-                      <h3 className="font-semibold text-white">{DaoCopy.sacredTrinity[cs ? 'cs' : 'en']}</h3>
+                      <h3 className="font-semibold text-white">{tx5(DaoCopy.sacredTrinity, lang)}</h3>
                     </div>
                     <p className="text-sm text-gray-400 mb-4">
-                      {DaoCopy.cosmicArchetypesOfDaoGovernanc[cs ? 'cs' : 'en']}
+                      {tx5(DaoCopy.cosmicArchetypesOfDaoGovernanc, lang)}
                     </p>
                     <div className="space-y-3">
                       {[
-                        { name: 'Rama', role: DaoCopy.stewardConsensusL1[cs ? 'cs' : 'en'], color: 'text-zion-cyan', desc: DaoCopy.chainDharmaFairMiningProtocolI[cs ? 'cs' : 'en'] },
-                        { name: 'Síta', role: DaoCopy.heartCommunityL5[cs ? 'cs' : 'en'], color: 'text-zion-purple', desc: DaoCopy.humanitarianFundPhysicalCommun[cs ? 'cs' : 'en'] },
-                        { name: 'Hanuman', role: DaoCopy.guardianBridgeL2[cs ? 'cs' : 'en'], color: 'text-zion-gold', desc: DaoCopy.bridgingWorldsProtectionFaithf[cs ? 'cs' : 'en'] },
+                        { name: 'Rama', role: tx5(DaoCopy.stewardConsensusL1, lang), color: 'text-zion-cyan', desc: tx5(DaoCopy.chainDharmaFairMiningProtocolI, lang) },
+                        { name: 'Síta', role: tx5(DaoCopy.heartCommunityL5, lang), color: 'text-zion-purple', desc: tx5(DaoCopy.humanitarianFundPhysicalCommun, lang) },
+                        { name: 'Hanuman', role: tx5(DaoCopy.guardianBridgeL2, lang), color: 'text-zion-gold', desc: tx5(DaoCopy.bridgingWorldsProtectionFaithf, lang) },
                       ].map((archetype) => (
                         <div key={archetype.name} className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                           <div className="flex items-center gap-2 mb-1">
@@ -1236,18 +1237,18 @@ export default function DaoPage() {
                 <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                   <div className="flex items-center gap-3 mb-3">
                     <Sparkles className="h-5 w-5 text-zion-cyan" />
-                    <h3 className="font-semibold text-white">{DaoCopy.consentEngine[cs ? 'cs' : 'en']}</h3>
+                    <h3 className="font-semibold text-white">{tx5(DaoCopy.consentEngine, lang)}</h3>
                     <span className="text-[11px] uppercase tracking-widest border border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan px-2 py-0.5 rounded-full font-semibold">L2 DAO</span>
                   </div>
                   <p className="text-sm text-gray-400 max-w-3xl">
-                    {DaoCopy.theConsentMechanismEnsuresCros[cs ? 'cs' : 'en']}
+                    {tx5(DaoCopy.theConsentMechanismEnsuresCros, lang)}
                   </p>
                   <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
                     {[
-                      { label: DaoCopy.propose[cs ? 'cs' : 'en'], detail: DaoCopy.anyCoAdmin[cs ? 'cs' : 'en'] },
-                      { label: DaoCopy.consent[cs ? 'cs' : 'en'], detail: DaoCopy.affectedLayers[cs ? 'cs' : 'en'] },
-                      { label: DaoCopy.vetoWindow[cs ? 'cs' : 'en'], detail: '72h' },
-                      { label: DaoCopy.execute[cs ? 'cs' : 'en'], detail: DaoCopy.afterConsent[cs ? 'cs' : 'en'] },
+                      { label: tx5(DaoCopy.propose, lang), detail: tx5(DaoCopy.anyCoAdmin, lang) },
+                      { label: tx5(DaoCopy.consent, lang), detail: tx5(DaoCopy.affectedLayers, lang) },
+                      { label: tx5(DaoCopy.vetoWindow, lang), detail: '72h' },
+                      { label: tx5(DaoCopy.execute, lang), detail: tx5(DaoCopy.afterConsent, lang) },
                     ].map((step) => (
                       <div key={step.label} className="zion-rainbow-sub p-2.5 text-center" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                         <p className="font-semibold text-zion-cyan text-xs">{step.label}</p>
@@ -1268,36 +1269,36 @@ export default function DaoPage() {
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
                   <div>
                     <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Tree of Life</p>
-                    <h2 className="text-3xl font-semibold text-white">{DaoCopy.daoCirclesGovernanceTopology[cs ? 'cs' : 'en']}</h2>
+                    <h2 className="text-3xl font-semibold text-white">{tx5(DaoCopy.daoCirclesGovernanceTopology, lang)}</h2>
                     <p className="text-gray-300 max-w-2xl mt-2">
-                      {DaoCopy.treeOfLifeServesAsALivingDaoLe[cs ? 'cs' : 'en']}
+                      {tx5(DaoCopy.treeOfLifeServesAsALivingDaoLe, lang)}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                     <TreeDeciduous className="h-5 w-5 text-zion-cyan" />
-                    <span className="text-gray-300">{DaoCopy.liveTopology[cs ? 'cs' : 'en']}</span>
+                    <span className="text-gray-300">{tx5(DaoCopy.liveTopology, lang)}</span>
                   </div>
                 </div>
                 <div className="grid gap-6 md:grid-cols-3">
                   {[
                     {
-                      level: DaoCopy.crown[cs ? 'cs' : 'en'],
-                      title: DaoCopy.guardiansCouncil[cs ? 'cs' : 'en'],
-                      description: DaoCopy.topDaoGovernanceLayerTreasuryO[cs ? 'cs' : 'en'],
+                      level: tx5(DaoCopy.crown, lang),
+                      title: tx5(DaoCopy.guardiansCouncil, lang),
+                      description: tx5(DaoCopy.topDaoGovernanceLayerTreasuryO, lang),
                       Icon: Crown,
                       iconColor: 'text-zion-gold',
                     },
                     {
-                      level: DaoCopy.heart[cs ? 'cs' : 'en'],
-                      title: DaoCopy.buildersCircle[cs ? 'cs' : 'en'],
-                      description: DaoCopy.ecosystemHeartProtocolDevelopm[cs ? 'cs' : 'en'],
+                      level: tx5(DaoCopy.heart, lang),
+                      title: tx5(DaoCopy.buildersCircle, lang),
+                      description: tx5(DaoCopy.ecosystemHeartProtocolDevelopm, lang),
                       Icon: Sparkles,
                       iconColor: 'text-zion-cyan',
                     },
                     {
-                      level: DaoCopy.roots[cs ? 'cs' : 'en'],
-                      title: DaoCopy.communityGuild[cs ? 'cs' : 'en'],
-                      description: DaoCopy.daoRootsOpenCommunityContribut[cs ? 'cs' : 'en'],
+                      level: tx5(DaoCopy.roots, lang),
+                      title: tx5(DaoCopy.communityGuild, lang),
+                      description: tx5(DaoCopy.daoRootsOpenCommunityContribut, lang),
                       Icon: Users,
                       iconColor: 'text-zion-gold',
                     },
@@ -1328,8 +1329,8 @@ export default function DaoPage() {
               style={{ '--rc': '6, 105, 40' } as CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DaoCopy.governancePhases[cs ? 'cs' : 'en']}</p>
-                <h2 className="text-3xl font-semibold text-white">{DaoCopy.roadToFullDecentralization[cs ? 'cs' : 'en']}</h2>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(DaoCopy.governancePhases, lang)}</p>
+                <h2 className="text-3xl font-semibold text-white">{tx5(DaoCopy.roadToFullDecentralization, lang)}</h2>
               </div>
               <div className="grid gap-6 md:grid-cols-3">
                 {phases.map((phase) => (
@@ -1360,10 +1361,10 @@ export default function DaoPage() {
             className="zion-section"
           >
             <div className="flex flex-col gap-2 mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DaoCopy.support[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(DaoCopy.support, lang)}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                 <HelpCircle className="h-7 w-7 text-zion-purple" />
-                {DaoCopy.faq[cs ? 'cs' : 'en']}
+                {tx5(DaoCopy.faq, lang)}
               </h2>
             </div>
             <div className="space-y-3 max-w-3xl">
@@ -1410,17 +1411,17 @@ export default function DaoPage() {
           className="zion-cta-banner p-10"
         >
           <h2 className="text-3xl font-semibold text-white text-center mb-3">
-            {DaoCopy.exploreTheZionEcosystem[cs ? 'cs' : 'en']}
+            {tx5(DaoCopy.exploreTheZionEcosystem, lang)}
           </h2>
           <p className="text-gray-100 text-center max-w-2xl mx-auto mb-8">
-            {DaoCopy.daoIsTheBridgeBetweenL1Consens[cs ? 'cs' : 'en']}
+            {tx5(DaoCopy.daoIsTheBridgeBetweenL1Consens, lang)}
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
             <Link
               href="/market"
               className="zion-button-primary"
             >
-              {DaoCopy.defiHub[cs ? 'cs' : 'en']}
+              {tx5(DaoCopy.defiHub, lang)}
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
@@ -1448,14 +1449,14 @@ export default function DaoPage() {
           className="zion-rainbow-card p-8"
           style={{ '--rc': '6, 105, 40' } as CSSProperties}
         >
-          <h2 className="text-3xl font-semibold text-white text-center mb-8">{DaoCopy.helpfulLinks[cs ? 'cs' : 'en']}</h2>
+          <h2 className="text-3xl font-semibold text-white text-center mb-8">{tx5(DaoCopy.helpfulLinks, lang)}</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {quickLinks.map((link) => (
               <div key={link.label} className="zion-rainbow-sub p-5 hover:bg-white/5 transition-colors" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                 <p className="text-sm font-semibold text-white">{link.label}</p>
                 <p className="mt-2 text-sm text-gray-300">{link.description}</p>
                 <Link href={link.href} target={link.href.startsWith('http') ? '_blank' : undefined} rel={link.href.startsWith('http') ? 'noreferrer' : undefined} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-zion-gold hover:text-zion-gold/80 transition-colors">
-                  {DaoCopy.open[cs ? 'cs' : 'en']}
+                  {tx5(DaoCopy.open, lang)}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
@@ -1468,64 +1469,64 @@ export default function DaoPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
             <div className="w-full max-w-lg zion-section p-6 shadow-2xl">
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-white">{DaoCopy.newGovernanceProposal[cs ? 'cs' : 'en']}</h3>
+                <h3 className="text-xl font-semibold text-white">{tx5(DaoCopy.newGovernanceProposal, lang)}</h3>
                 <button onClick={() => setCreateOpen(false)} className="text-gray-400 hover:text-white">✕</button>
               </div>
               <form onSubmit={handleCreateProposal} className="space-y-4">
                 <div>
-                  <label className="block text-xs uppercase tracking-wider text-gray-400 mb-1">{DaoCopy.proposalTypeLabel[cs ? 'cs' : 'en']}</label>
+                  <label className="block text-xs uppercase tracking-wider text-gray-400 mb-1">{tx5(DaoCopy.proposalTypeLabel, lang)}</label>
                   <select
                     value={createType}
                     onChange={(e) => setCreateType(e.target.value)}
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white focus:border-zion-gold focus:outline-none"
                   >
-                    <option value="Parameter">{DaoCopy.typeParameter[cs ? 'cs' : 'en']}</option>
-                    <option value="Treasury">{DaoCopy.typeTreasury[cs ? 'cs' : 'en']}</option>
-                    <option value="Grant">{DaoCopy.typeGrant[cs ? 'cs' : 'en']}</option>
-                    <option value="Humanitarian">{DaoCopy.typeHumanitarian[cs ? 'cs' : 'en']}</option>
-                    <option value="Emergency">{DaoCopy.typeEmergency[cs ? 'cs' : 'en']}</option>
-                    <option value="Admission">{DaoCopy.typeAdmission[cs ? 'cs' : 'en']}</option>
-                    <option value="Expulsion">{DaoCopy.typeExpulsion[cs ? 'cs' : 'en']}</option>
+                    <option value="Parameter">{tx5(DaoCopy.typeParameter, lang)}</option>
+                    <option value="Treasury">{tx5(DaoCopy.typeTreasury, lang)}</option>
+                    <option value="Grant">{tx5(DaoCopy.typeGrant, lang)}</option>
+                    <option value="Humanitarian">{tx5(DaoCopy.typeHumanitarian, lang)}</option>
+                    <option value="Emergency">{tx5(DaoCopy.typeEmergency, lang)}</option>
+                    <option value="Admission">{tx5(DaoCopy.typeAdmission, lang)}</option>
+                    <option value="Expulsion">{tx5(DaoCopy.typeExpulsion, lang)}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs uppercase tracking-wider text-gray-400 mb-1">{DaoCopy.title[cs ? 'cs' : 'en']}</label>
+                  <label className="block text-xs uppercase tracking-wider text-gray-400 mb-1">{tx5(DaoCopy.title, lang)}</label>
                   <input
                     type="text"
                     value={createTitle}
                     onChange={(e) => setCreateTitle(e.target.value)}
-                    placeholder={DaoCopy.eGIncreaseBridgeValidatorThres[cs ? 'cs' : 'en']}
+                    placeholder={tx5(DaoCopy.eGIncreaseBridgeValidatorThres, lang)}
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs uppercase tracking-wider text-gray-400 mb-1">{DaoCopy.description[cs ? 'cs' : 'en']}</label>
+                  <label className="block text-xs uppercase tracking-wider text-gray-400 mb-1">{tx5(DaoCopy.description, lang)}</label>
                   <textarea
                     value={createDesc}
                     onChange={(e) => setCreateDesc(e.target.value)}
                     rows={4}
-                    placeholder={DaoCopy.detailedDescriptionOfThePropos[cs ? 'cs' : 'en']}
+                    placeholder={tx5(DaoCopy.detailedDescriptionOfThePropos, lang)}
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none"
                   />
                 </div>
 
                 {createType === 'Parameter' && (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <input type="text" value={paramName} onChange={(e) => setParamName(e.target.value)} placeholder={DaoCopy.parameterName[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
-                    <input type="text" value={paramCurrent} onChange={(e) => setParamCurrent(e.target.value)} placeholder={DaoCopy.currentValue[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
-                    <input type="text" value={paramProposed} onChange={(e) => setParamProposed(e.target.value)} placeholder={DaoCopy.proposedValue[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    <input type="text" value={paramName} onChange={(e) => setParamName(e.target.value)} placeholder={tx5(DaoCopy.parameterName, lang)} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    <input type="text" value={paramCurrent} onChange={(e) => setParamCurrent(e.target.value)} placeholder={tx5(DaoCopy.currentValue, lang)} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    <input type="text" value={paramProposed} onChange={(e) => setParamProposed(e.target.value)} placeholder={tx5(DaoCopy.proposedValue, lang)} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
                   </div>
                 )}
 
                 {(createType === 'Treasury' || createType === 'Grant') && (
                   <div className="space-y-3">
-                    <input type="text" value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder={DaoCopy.recipientAddress[cs ? 'cs' : 'en']} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    <input type="text" value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder={tx5(DaoCopy.recipientAddress, lang)} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
                     <div className="grid grid-cols-2 gap-3">
-                      <input type="number" min="0" value={amountZion} onChange={(e) => setAmountZion(e.target.value)} placeholder={DaoCopy.amountZion[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                      <input type="number" min="0" value={amountZion} onChange={(e) => setAmountZion(e.target.value)} placeholder={tx5(DaoCopy.amountZion, lang)} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
                       {createType === 'Grant' ? (
-                        <input type="number" min="1" value={durationDays} onChange={(e) => setDurationDays(e.target.value)} placeholder={DaoCopy.durationDays[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                        <input type="number" min="1" value={durationDays} onChange={(e) => setDurationDays(e.target.value)} placeholder={tx5(DaoCopy.durationDays, lang)} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
                       ) : (
-                        <input type="text" value={purpose} onChange={(e) => setPurpose(e.target.value)} placeholder={DaoCopy.purpose[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                        <input type="text" value={purpose} onChange={(e) => setPurpose(e.target.value)} placeholder={tx5(DaoCopy.purpose, lang)} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
                       )}
                     </div>
                   </div>
@@ -1533,40 +1534,40 @@ export default function DaoPage() {
 
                 {createType === 'Humanitarian' && (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <input type="text" value={category} onChange={(e) => setCategory(e.target.value)} placeholder={DaoCopy.category[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
-                    <input type="number" min="0" value={amountZion} onChange={(e) => setAmountZion(e.target.value)} placeholder={DaoCopy.amountZion[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
-                    <input type="text" value={region} onChange={(e) => setRegion(e.target.value)} placeholder={DaoCopy.region[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    <input type="text" value={category} onChange={(e) => setCategory(e.target.value)} placeholder={tx5(DaoCopy.category, lang)} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    <input type="number" min="0" value={amountZion} onChange={(e) => setAmountZion(e.target.value)} placeholder={tx5(DaoCopy.amountZion, lang)} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    <input type="text" value={region} onChange={(e) => setRegion(e.target.value)} placeholder={tx5(DaoCopy.region, lang)} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
                   </div>
                 )}
 
                 {createType === 'Emergency' && (
                   <div className="space-y-3">
-                    <input type="text" value={emergencyAction} onChange={(e) => setEmergencyAction(e.target.value)} placeholder={DaoCopy.emergencyAction[cs ? 'cs' : 'en']} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
-                    <input type="text" value={justification} onChange={(e) => setJustification(e.target.value)} placeholder={DaoCopy.justification[cs ? 'cs' : 'en']} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    <input type="text" value={emergencyAction} onChange={(e) => setEmergencyAction(e.target.value)} placeholder={tx5(DaoCopy.emergencyAction, lang)} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    <input type="text" value={justification} onChange={(e) => setJustification(e.target.value)} placeholder={tx5(DaoCopy.justification, lang)} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
                   </div>
                 )}
 
                 {(createType === 'Admission' || createType === 'Expulsion') && (
                   <div className="space-y-3">
-                    <input type="text" value={candidateAddress} onChange={(e) => setCandidateAddress(e.target.value)} placeholder={createType === 'Admission' ? DaoCopy.candidateAddress[cs ? 'cs' : 'en'] : DaoCopy.accusedAddress[cs ? 'cs' : 'en']} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    <input type="text" value={candidateAddress} onChange={(e) => setCandidateAddress(e.target.value)} placeholder={createType === 'Admission' ? tx5(DaoCopy.candidateAddress, lang) : tx5(DaoCopy.accusedAddress, lang)} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
                     {createType === 'Admission' ? (
                       <>
-                        <input type="text" value={communityName} onChange={(e) => setCommunityName(e.target.value)} placeholder={DaoCopy.communityLabel[cs ? 'cs' : 'en']} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
-                        <p className="text-[11px] text-gray-500">{DaoCopy.admissionRequiresOnChainRegistration[cs ? 'cs' : 'en']}</p>
+                        <input type="text" value={communityName} onChange={(e) => setCommunityName(e.target.value)} placeholder={tx5(DaoCopy.communityLabel, lang)} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                        <p className="text-[11px] text-gray-500">{tx5(DaoCopy.admissionRequiresOnChainRegistration, lang)}</p>
                       </>
                     ) : (
                       <div className="grid grid-cols-2 gap-3">
-                        <input type="text" value={offenseCategory} onChange={(e) => setOffenseCategory(e.target.value)} placeholder={DaoCopy.offenseCategoryLabel[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
-                        <input type="number" min="1" max="3" value={expulsionTier} onChange={(e) => setExpulsionTier(e.target.value)} placeholder={DaoCopy.tierLabel[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                        <input type="text" value={offenseCategory} onChange={(e) => setOffenseCategory(e.target.value)} placeholder={tx5(DaoCopy.offenseCategoryLabel, lang)} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                        <input type="number" min="1" max="3" value={expulsionTier} onChange={(e) => setExpulsionTier(e.target.value)} placeholder={tx5(DaoCopy.tierLabel, lang)} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
                       </div>
                     )}
                   </div>
                 )}
 
                 <div className="zion-rainbow-sub p-3 text-[11px] text-gray-400" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
-                  {DaoCopy.proposalThresholdNote[cs ? 'cs' : 'en']}{' '}
+                  {tx5(DaoCopy.proposalThresholdNote, lang)}{' '}
                   <span className="font-mono text-zion-gold">{((stats?.proposal_threshold ?? 0) / 1_000_000).toLocaleString()} ZION</span>
-                  {' · '}{DaoCopy.votesAreWeightedByZionBalance[cs ? 'cs' : 'en']}
+                  {' · '}{tx5(DaoCopy.votesAreWeightedByZionBalance, lang)}
                 </div>
 
                 {createError && (
@@ -1580,14 +1581,14 @@ export default function DaoPage() {
                     onClick={() => setCreateOpen(false)}
                     className="zion-button-secondary flex-1 !px-4 !py-2 !text-sm"
                   >
-                    {DaoCopy.cancel[cs ? 'cs' : 'en']}
+                    {tx5(DaoCopy.cancel, lang)}
                   </button>
                   <button
                     type="submit"
                     disabled={createBusy}
                     className="zion-button-primary flex-1 !px-4 !py-2 !text-sm disabled:opacity-50"
                   >
-                    {createBusy ? (DaoCopy.creating[cs ? 'cs' : 'en']) : (DaoCopy.createProposal[cs ? 'cs' : 'en'])}
+                    {createBusy ? (tx5(DaoCopy.creating, lang)) : (tx5(DaoCopy.createProposal, lang))}
                   </button>
                 </div>
               </form>

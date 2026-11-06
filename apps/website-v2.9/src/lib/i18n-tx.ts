@@ -60,6 +60,12 @@ import networkFr from './ui-strings/network.fr.json';
 import freeworldEs from './ui-strings/freeworld.es.json';
 import freeworldPt from './ui-strings/freeworld.pt.json';
 import freeworldFr from './ui-strings/freeworld.fr.json';
+import daoEs from './ui-strings/dao.es.json';
+import daoPt from './ui-strings/dao.pt.json';
+import daoFr from './ui-strings/dao.fr.json';
+import hiranEs from './ui-strings/hiran.es.json';
+import hiranPt from './ui-strings/hiran.pt.json';
+import hiranFr from './ui-strings/hiran.fr.json';
 
 
 /**
@@ -81,9 +87,9 @@ type Dict = Record<string, string>;
 const merge = (...parts: Dict[]): Dict => Object.assign({}, ...parts);
 
 const DICTS: Record<'es' | 'pt' | 'fr', Dict> = {
-  es: merge(avatarsEs, newsfeedEs, issobellaEs, treeoflifeEs, mariaEs, kralovstviEs, nabukanoEs, archivelockEs, zionarchiveEs, whitepapersEs, tepikooraEs, contractsEs, knihovnaEs, qvEs, teamEs, l4hubEs, bohemiaEs, marketEs, networkEs, freeworldEs),
-  pt: merge(avatarsPt, newsfeedPt, issobellaPt, treeoflifePt, mariaPt, kralovstviPt, nabukanoPt, archivelockPt, zionarchivePt, whitepapersPt, tepikooraPt, contractsPt, knihovnaPt, qvPt, teamPt, l4hubPt, bohemiaPt, marketPt, networkPt, freeworldPt),
-  fr: merge(avatarsFr, newsfeedFr, issobellaFr, treeoflifeFr, mariaFr, kralovstviFr, nabukanoFr, archivelockFr, zionarchiveFr, whitepapersFr, tepikooraFr, contractsFr, knihovnaFr, qvFr, teamFr, l4hubFr, bohemiaFr, marketFr, networkFr, freeworldFr),
+  es: merge(avatarsEs, newsfeedEs, issobellaEs, treeoflifeEs, mariaEs, kralovstviEs, nabukanoEs, archivelockEs, zionarchiveEs, whitepapersEs, tepikooraEs, contractsEs, knihovnaEs, qvEs, teamEs, l4hubEs, bohemiaEs, marketEs, networkEs, freeworldEs, daoEs, hiranEs),
+  pt: merge(avatarsPt, newsfeedPt, issobellaPt, treeoflifePt, mariaPt, kralovstviPt, nabukanoPt, archivelockPt, zionarchivePt, whitepapersPt, tepikooraPt, contractsPt, knihovnaPt, qvPt, teamPt, l4hubPt, bohemiaPt, marketPt, networkPt, freeworldPt, daoPt, hiranPt),
+  fr: merge(avatarsFr, newsfeedFr, issobellaFr, treeoflifeFr, mariaFr, kralovstviFr, nabukanoFr, archivelockFr, zionarchiveFr, whitepapersFr, tepikooraFr, contractsFr, knihovnaFr, qvFr, teamFr, l4hubFr, bohemiaFr, marketFr, networkFr, freeworldFr, daoFr, hiranFr),
 };
 
 /** Přeloží lokalizovaný objekt pro daný jazyk (5 kódů). */
