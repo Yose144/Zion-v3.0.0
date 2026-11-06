@@ -46,7 +46,7 @@ Two supplementary register labels are not product states: **UNSUBSTANTIATED** me
 | Real settlement for any user swap is completely finished. | **BUILDING** | Code exists; the test evidence so far reports `insufficient balance` without a funded test wallet. | An E2E test with a funded test account, reconciliation and independent review. |
 | An independent solver federation runs in production. | **BUILDING** | Intent/solver code and tests exist, but `warp.example.toml` contains `[solver] enabled = false`. | Independent solvers, live config, an auth/availability test and an incident policy. |
 | All EVM, Bitcoin, Lightning, Solana, SUI, Aptos and other chains are supported. | **HORIZON** | `warp.example.toml` explicitly activates only `base` and `zion-l1`; the others have a `disabled_reason`. | Separate evidence for each chain before the claim "supported". |
-| ZIS Passkeys/WebAuthn/Face ID/Touch ID/Windows Hello/YubiKey work. | **HORIZON** | An audit of the source tree `apps/identity/src` found no WebAuthn/FIDO/passkey implementation. | A standard implementation, a device/recovery threat model and E2E tests. |
+| ZIS Passkeys/WebAuthn/Face ID/Touch ID/Windows Hello/YubiKey work. | **HORIZON** | The code exists in `apps/identity/src` (`routes/webauthn.ts`, `lib/webauthn.ts`) but is **not deployed**: the live endpoints return 404 and the login is behind a flag (verified 2026-11-06). | A standard implementation, a device/recovery threat model and E2E tests. |
 | Zero-knowledge Dharma/reputation proofs exist. | **HORIZON** | No ZK circuit/proof system was found. | A protocol, a circuit, an audit, a privacy threat model and a validator. |
 
 ---

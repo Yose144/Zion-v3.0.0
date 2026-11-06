@@ -30,7 +30,7 @@ Every important claim about ZION 3.3, and especially every claim published outsi
 
 | Label | Meaning | Minimum evidence |
 |---|---|---|
-| **LIVE** | The feature or service is deployed and at the same time verifiable. | A link to a live endpoint/on-chain data + relevant code or deployment evidence. |
+| **LIVE** | The feature or service is deployed and verifiable at the same time. | A link to a live endpoint/on-chain data + relevant code or deployment evidence. |
 | **BUILDING** | The work exists in the repository or is actively being realised, but is not yet finished in production. | A link to a branch/commit, an issue, a test or a specific acceptance criterion. |
 | **HORIZON** | A long-term direction; not a binding date, nor a promised product. | A clearly marked goal, dependencies and the limits of the claim. |
 | **HYPOTHESIS** | A research question that requires independent testing and can be refuted. | Methodology, a falsification criterion, open data or a clearly named absence of evidence. |
@@ -64,7 +64,7 @@ It is a voluntary commitment to create an **Ark of record and care**:
 
 ## 4. Boundaries against abuse
 
-The following things are incompatible with this canon, even if they should bring growth, money or popularity in the short term:
+The following things are incompatible with this canon, even if they bring growth, money or popularity in the short term:
 
 - manipulative "last chance" appeals, profit guarantees, price predictions or investment promises;
 - dark patterns, addictive UX, data collection without necessity and clear consent;

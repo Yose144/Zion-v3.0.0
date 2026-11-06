@@ -71,7 +71,7 @@ Emisní konstanty jsou **89 % miner / 5 % humanitarian / 5 % Issobella / 1 % poo
 ### HORIZONT
 
 - `warp.example.toml` má dnes aktivní pouze `base` a `zion-l1`; Arbitrum, Optimism, Polygon, Bitcoin, Solana, SUI, Aptos, Lightning a další jsou explicitně disabled s `disabled_reason`.
-- **Passkeys/WebAuthn, Face ID/Touch ID/Windows Hello a YubiKey integrace nejsou nalezeny v aktuálním ZIS zdrojovém stromu.** Jsou legitimním workstreamem 3.3, ale nikoli současnou funkcí.
+- **Passkeys/WebAuthn, Face ID/Touch ID/Windows Hello a YubiKey integrace** jsou **STAVBA ve zdroji** (`apps/identity/src/routes/webauthn.ts`, `src/lib/webauthn.ts`), ale **nejsou nasazené**: živé endpointy vrací 404 a webový login passkeys schovává za příznakem. Jako uživatelská funkce zůstávají HORIZONT, dokud neexistuje E2E test.
 - Zero-knowledge reputation/Dharma proofs jsou výzkumný cíl bez existujícího circuit/proof systému.
 
 ---
@@ -85,7 +85,7 @@ Emisní konstanty jsou **89 % miner / 5 % humanitarian / 5 % Issobella / 1 % poo
 
 ### STAVBA
 
-- Hiran v2.3 je natrénovaný modelový artefakt uložený mimo Edge; `docs/3.0.6/HIRAN_OVERVIEW.md` explicitně uvádí, že na Edge není GGUF model ani inference služba.
+- Hiran v2.3 je natrénovaný modelový artefakt uložený mimo Edge; `docs/3.0.6/HIRAN_OVERVIEW.md` uvádí, že v době psaní na Edge neběžel GGUF model ani inference služba; toto absolutní tvrzení je nutné před dalším opakováním ověřit proti `StatusV3.md`.
 - Hiran v2.4 Maestro je MVP orchestration code. K produkčnímu použití potřebuje sandboxované nástroje, audit log, důvěryhodnou inference infrastrukturu, load/security tests a lidský approval model.
 - NCL crate a související schedulery existují; live marketplace nebo on-chain odměny pro AI práci doloženy nejsou.
 

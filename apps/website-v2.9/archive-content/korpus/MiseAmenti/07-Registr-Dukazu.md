@@ -46,7 +46,7 @@ Dvě doplňkové registry značky nejsou stavy produktu: **NEDOLOŽENO** znamen�
 | Skutečný settlement pro jakýkoliv user swap je kompletně hotový. | **STAVBA** | Code exists; test evidence dosud uvádí `insufficient balance` bez funded test wallet. | E2E test s financovaným testovacím účtem, reconciliation a independent review. |
 | Nezávislá solver federace běží v produkci. | **STAVBA** | Intent/solver code a testy existují, ale `warp.example.toml` obsahuje `[solver] enabled = false`. | Samostatní solvers, live config, auth/availability test a incident policy. |
 | Všechny EVM, Bitcoin, Lightning, Solana, SUI, Aptos a další chainy jsou podporované. | **HORIZONT** | `warp.example.toml` explicitně aktivuje jen `base` a `zion-l1`; další mají `disabled_reason`. | Samostatná evidence pro každý chain před tvrzením „supported“. |
-| ZIS Passkeys/WebAuthn/Face ID/Touch ID/Windows Hello/YubiKey jsou funkční. | **HORIZONT** | Audit zdrojového stromu `apps/identity/src` nenašel WebAuthn/FIDO/passkey implementaci. | Standardní implementace, device/recovery threat model a E2E testy. |
+| ZIS Passkeys/WebAuthn/Face ID/Touch ID/Windows Hello/YubiKey jsou funkční. | **HORIZONT** | Kód ve `apps/identity/src` existuje (`routes/webauthn.ts`, `lib/webauthn.ts`), ale **není nasazený**: živé endpointy vrací 404 a login je za příznakem (ověřeno 2026-11-06). | Standardní implementace, device/recovery threat model a E2E testy. |
 | Zero-knowledge Dharma/reputation proofs existují. | **HORIZONT** | Nenalezen ZK circuit/proof systém. | Protokol, circuit, audit, privacy threat model a validátor. |
 
 ---

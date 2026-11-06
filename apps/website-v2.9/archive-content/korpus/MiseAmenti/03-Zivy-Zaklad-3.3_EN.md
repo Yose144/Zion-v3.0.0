@@ -71,7 +71,7 @@ The emission constants are **89 % miner / 5 % humanitarian / 5 % Issobella / 1 %
 ### HORIZON
 
 - `warp.example.toml` today has only `base` and `zion-l1` active; Arbitrum, Optimism, Polygon, Bitcoin, Solana, SUI, Aptos, Lightning and others are explicitly disabled with a `disabled_reason`.
-- **Passkeys/WebAuthn, Face ID/Touch ID/Windows Hello and YubiKey integration are not found in the current ZIS source tree.** They are a legitimate 3.3 workstream, but not a current feature.
+- **Passkeys/WebAuthn, Face ID/Touch ID/Windows Hello and YubiKey integration** are **BUILDING in the source** (`apps/identity/src/routes/webauthn.ts`, `src/lib/webauthn.ts`) but **not deployed**: the live endpoints return 404 and the web login hides passkeys behind a flag. As a user-facing feature they remain HORIZON until an E2E test exists.
 - Zero-knowledge reputation/Dharma proofs are a research goal without an existing circuit/proof system.
 
 ---
@@ -85,7 +85,7 @@ The emission constants are **89 % miner / 5 % humanitarian / 5 % Issobella / 1 %
 
 ### BUILDING
 
-- Hiran v2.3 is a trained model artifact stored outside Edge; `docs/3.0.6/HIRAN_OVERVIEW.md` explicitly states that there is no GGUF model and no inference service on Edge.
+- Hiran v2.3 is a trained model artifact stored outside Edge; `docs/3.0.6/HIRAN_OVERVIEW.md` states that no GGUF model and no inference service ran on Edge at the time of writing; that absolute claim must be re-verified against `StatusV3.md` before it is repeated.
 - Hiran v2.4 Maestro is MVP orchestration code. For production use it needs sandboxed tools, an audit log, trustworthy inference infrastructure, load/security tests and a human approval model.
 - The NCL crate and related schedulers exist; a live marketplace or on-chain rewards for AI work are not documented.
 
