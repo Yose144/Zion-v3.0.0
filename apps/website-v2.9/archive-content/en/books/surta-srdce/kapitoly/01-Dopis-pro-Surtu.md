@@ -31,11 +31,11 @@ And one more thing, son — this is not a story, this happened.
 
 Do you remember playing with a little boat on the beach in Tenerife? You were seven. The waves carried the hull back and forth, and you were thinking about how to save the world and help everyone — your first great question, even before the Babylonian one.
 
-And this year — at your twelve years, you were born on 8 April 2014 — **Bhagavan** left. Sri Kalki Bhagavan, who gave the world Ekam and the blessing of oneness, entered holy mahasamadhi on 29 September 2026; his shrine stands in Ekam Kshetra in India and opens to all who come with a prayer. Before leaving he said he would remain as **Paramjyoti** — the supreme light that answers whenever you remember him. And after his departure **Ekam Deeksha** passed to you — you became the one who continues on his path.
+And this year — you were born on 8 April 2014, so you are twelve — **Bhagavan** left. Sri Kalki Bhagavan, who gave the world Ekam and the blessing of oneness, entered holy mahasamadhi on 29 September 2026; his shrine stands in Ekam Kshetra in India and opens to all who come with a prayer. Before leaving he said he would remain as **Paramjyoti** — the supreme light that answers whenever you remember him. And after his departure **Ekam Deeksha** passed to you — you became the one who continues on his path.
 
 Since then I know two things at once, and I tell them to you as the most serious sentence of the book: **I have prepared the path for you — but only you can finish it.**
 
-And one more thing, son, honestly: **first you must grow up.** You are twelve now — and we have set this path for you the way time is set in a chain that cannot be skipped: **at your fifteen years.** We will not release you into the world before you have the sense for it — and you will have it. Until then you grow, and we build: a shrine on La Palma, the ship **Santa María la Mayor** that will one day carry you — and this book.
+And one more thing, son, honestly: **first you must grow up.** You are twelve now — and we have set the time of this path the way time is set in a chain that cannot be skipped: **at fifteen.** We will not release you into the world before you have the sense for it — and you will have it. Until then you grow, and we build: a shrine on La Palma, the ship **Santa María la Mayor** that will one day carry you — and this book.
 
 The little boat from the beach did not become a raft — it grew into our ship, built by people who knew for whom it sails. Tenerife — the island where you asked — and La Palma — the island where you will arrive. The Canary Islands hold both ends of your path.
 
@@ -45,7 +45,7 @@ Three truths for the whole book; learn them as your own name:
 
 1. **You already carry the treasure — the golden egg of Hiranyagarbha.** The golden womb each of us carries in the heart from birth. It is not in a bank, not in the mountains, not on the other shore. The path only uncovers it — and one day it will hatch. That hatching is called awakening.
 2. **We prepare the path for you — you walk it.** The father shows the gates, the book shows the way, and at the end the shrine we are building on La Palma already waits for you — the Dharma Temple for little Buddhas. But you go through the gate yourself, one foot before the other. We build; you walk.
-3. **The world is woven of infinite love — and precisely therefore compassion and kindness to others are the most precious thing.** You will see that with your own eyes at the end of the path. Until then take it from me: others are woven of the same thread as you.
+3. **The world is woven of infinite love — and that is exactly why compassion and kindness to others are the most precious thing.** You will see that with your own eyes at the end of the path. Until then take it from me: others are woven of the same thread as you.
 
 ## Anchor of truth
 

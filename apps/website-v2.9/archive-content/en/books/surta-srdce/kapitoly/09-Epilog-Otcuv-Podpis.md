@@ -5,11 +5,11 @@
 
 ## Dedication
 
-For Surta — born on 8 April 2014 — my heart, which still carries in a small body a great question, and one day will put it to the whole world.
+For Surta — born on 8 April 2014 — my heart, who still carries a great question in a small body, and one day will put it to the whole world.
 
 And for every reader who opened this book and understood that it is for them too — because a treasure is shared out when you hold it, and grows when you give it.
 
-May your path teach you what mine taught me: **that the world is woven of infinite love — and precisely therefore compassion and kindness to others are the most precious thing.** Others are woven of the same thread as you; when you are kind, you touch the very substance of the world.
+May your path teach you what mine taught me: **that the world is woven of infinite love — and that is exactly why compassion and kindness to others are the most precious thing.** Others are woven of the same thread as you; when you are kind, you touch the very substance of the world.
 
 We prepare the way for you — the shrine on La Palma, the book, the map. The steps are yours. And when you one day reach the Dharma Temple and see that thread shining through, you will know that everything — Babylon, the mountains, the sea, us and you — is woven of the same infinite love.
 
@@ -35,7 +35,7 @@ We prepare the way for you — the shrine on La Palma, the book, the map. The st
 
 **What is the corpus:** the links in the [Compendium](./08-Om-Mani-Padme-Hum.md) point to real texts of the ZION ecosystem — their status (readable / draft / horizon) is given for each item and follows the rule that the book distinguishes what is alive and what is still only growing.
 
-**What is the Dharma Temple:** a real L5 project on La Palma (Canary Islands) — a merkaba of wood and light, seven domes, the Tree of Life as the axis, "a place of enlightenment and nirvana for little Buddhas and all beings of light" ([`BodhiGaia/04`](../BodhiGaia/04-Dharma-Temple-Nova-Bodhi-Gaia.md), `/terranova/dharma-temple`). The physical building is being prepared — **we are preparing the way for it**: the shrine, the book and the map stand for the one who will one day arrive.
+**What is the Dharma Temple:** a real L5 project on La Palma (Canary Islands) — a Merkaba of wood and light, seven domes, the Tree of Life as the axis, "a place of enlightenment and nirvana for little Buddhas and all beings of light" ([`BodhiGaia/04`](../BodhiGaia/04-Dharma-Temple-Nova-Bodhi-Gaia.md), `/terranova/dharma-temple`). The physical building is being prepared — **we are preparing the way for it**: the shrine, the book and the map stand for the one who will one day arrive.
 
 **What is the promise:** that the son for whom the book was written will one day understand — not from words, but from the soil under his feet — that the golden egg of Hiranyagarbha, which he has carried in his heart since birth, will one day hatch: the hatching is awakening, our nirvana; and that the whole world is woven of infinite love, therefore compassion and kindness to others are the most precious thing.
 

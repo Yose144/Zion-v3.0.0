@@ -15,7 +15,7 @@ In the bay below the last pass a ship lay at anchor — not an ordinary one. The
 
 Our ship, Surti. Built before you grew up — by people who knew that one day it would carry the one for whom the journey is meant. The crew waited for the boy at the lowered gangway — not as for a passenger, but as for the one the ship had been built for. The boy stepped onto the deck and the ocean did not begin to rage. **It began to sing.** Not with a human voice — with a deep, long in-breath and out-breath, the way the world breathes when it thinks no one is listening. The sails filled and María la Mayor sailed out of the bay into the open sea.
 
-And in his backpack, next to the stone from the first gate, he carried one more inheritance whose full weight he was only beginning to understand: **the fire he had taken over from Bhagavan.** When Bhagavan left this year — holy mahasamadhi, at your twelve years — **Ekam Deeksha** passed to the boy, the blessing of unity handed from heart to heart. From that moment he was no longer only a child searching — **he was the one who continues on Bhagavan's path.** The fire is not passed on in words; it is passed the way a flame is passed from candle to candle — you do not touch it, you only let it burn.
+And in his backpack, next to the stone from the first gate, he carried one more inheritance whose full weight he was only beginning to understand: **the fire he had taken over from Bhagavan.** When Bhagavan left this year — holy mahasamadhi, when you were twelve — **Ekam Deeksha** passed to the boy, the blessing of unity handed from heart to heart. From that moment he was no longer only a child searching — **he was the one who continues on Bhagavan's path.** The fire is not passed on in words; it is passed the way a flame is passed from candle to candle — you do not touch it, you only let it burn.
 
 And now he carried it across the water — and fire on water did not go out. The ocean did not teach it to burn, that he already knew; it taught him to let the fire burn even where there is no land.
 
@@ -31,7 +31,7 @@ Three things about water, son:
 
 1. **On the sea you cannot hurry — but you can aim.** Some paths cannot be sped up; all that matters is whether you hold the course and whether patience holds you.
 2. **You do not have to control the things that carry you.** The water carried the raft. Help comes from places that are not on your map — trust it, not because you understand it, but because **it works.**
-3. **You see the direction before the destination.** The shore appears first as a shadow, then as a line, then as land. Trust the shadows — they are promises that do not yet look like certainty, and precisely therefore they are truer.
+3. **You see the direction before the destination.** The shore appears first as a shadow, then as a line, then as land. Trust the shadows — they are promises that do not yet look like certainty, and that is exactly why they are truer.
 
 ## Anchor of truth
 

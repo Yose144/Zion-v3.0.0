@@ -9,7 +9,7 @@
 
 The boy on the lotus, Surti, could have stayed sitting forever.
 
-No one would have blamed him. He had awakened — that was all the path had promised. He could have sat in the Dharma Temple until the world drank itself, and the volcano would have whispered his name instead of the children. It was the happiest moment of his life — and precisely therefore he left it.
+No one would have blamed him. He had awakened — that was all the path had promised. He could have sat in the Dharma Temple until the world drank itself, and the volcano would have whispered his name instead of the children. It was the happiest moment of his life — and that is exactly why he left it.
 
 Because in it there was no end — there was a **vow.**
 
@@ -33,7 +33,7 @@ And he went back — **not because the awakening had ended, but because it was b
 
 About the vow and the return, son:
 
-1. **The bodhisattva is the one who returns.** It is not a title, it is not a medal — it is an attitude: "I received a gift, and therefore I pass it on." That is how one lives, not by holding a treasure and waiting for the door to close behind you.
+1. **The bodhisattva is the one who returns.** It is not a title, it is not a medal — it is an attitude: "I received a gift, and therefore I pass it on." That is how you live, not by holding a treasure and waiting for the door to close behind you.
 2. **Nirvana without return is half.** True awakening is recognized by whether, after it, you care whether others have woken too. If not — you were sitting on a flower, not on a lotus.
 3. **Carry the seed home.** A coconut is not a treasure — a coconut is a **vow.** To bring back something that can grow even where you began is the most honest thing you can do.
 
@@ -41,8 +41,8 @@ About the vow and the return, son:
 
 | What the chapter builds on | Status |
 |---|---|
-| **Nirvana — the book of the West** | A readable — 13 stations of the path to the western shore; Tres Marías. CZ + EN. |
-| **Maitreya epilogue — Chenrezig** | A readable — the mantra and the tears of compassion; the same symbolism of tears as light. |
+| **Nirvana — the book of the West** | A readable book — 13 stations of the path to the western shore; Tres Marías. CZ + EN. |
+| **Maitreya epilogue — Chenrezig** | A readable book — the mantra and the tears of compassion; the same symbolism of tears as light. |
 | The bodhisattva's vow | Archetypal — from the Mahayana tradition; not a claim about a specific person. |
 | The return to Babylon with a seed | MYTH — an image of service in the everyday world. |
 

@@ -37,7 +37,7 @@ Poslouchej dobře: **první brána je vždy odchod.** Ne od lidí — od toho, c
 
 Odejít neznamená zbourat dům. Znamená zeptat se otázky, na kterou obchod nemá cedulku s cenou: *A co je za tím vším?* Už jsi to udělal — děti se ptají takhle od přírody, než je to Babylon odnaučí. Drž tu otázku jako kámen v kapse. Až se tě svět jednou zeptá, proč pořád nemlčíš, vytáhni ho a podívej se mu do očí.
 
-A pamatuj: matka se ptala, jestli se vrátíš. **Kdo odchází s příslibem návratu, neodchází z lásky — odchází z lásky.** To je rozdíl mezi cestou a útěkem.
+A pamatuj: matka se ptala, jestli se vrátíš. **Kdo odchází s příslibem návratu, neodchází z útěku — odchází z lásky.** To je rozdíl mezi cestou a útěkem.
 
 ## Kotva pravdy
 

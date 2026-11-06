@@ -56,7 +56,7 @@ Here is the whole map the book tells at once — for readers who want to go beyo
 | The revelation from afar | Issobella | Draft | `/docs/view/korpus/Issobella/00-README.md` |
 | The way back | NaCeste | Draft | `/docs/view/korpus/NaCeste/00-README.md` |
 | The cultivators | Miriam, MiseAmenti | Draft | `/docs/view/korpus/…` |
-| The network that teaches | Humanitarian tithe | Under construction | `/docs/view/korpus/HUMANITARIAN_TITHE` |
+| The network that teaches | Humanitarian tithe | Building | `/docs/view/korpus/HUMANITARIAN_TITHE` |
 
 **The rule of the compendium:** a book is truthful only when it distinguishes *readable / draft / horizon / myth.* Here they are marked — and the hard links to every item work on the web.
 

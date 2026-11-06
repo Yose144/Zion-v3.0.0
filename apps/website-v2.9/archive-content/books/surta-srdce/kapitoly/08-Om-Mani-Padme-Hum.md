@@ -56,7 +56,7 @@ Tady je celá mapa, kterou kniha vypráví najednou — pro čtenáře, kteří 
 | Zjevení daleké | Issobella | Draft | `/docs/view/korpus/Issobella/00-README.md` |
 | Cesta zpátky | NaCeste | Draft | `/docs/view/korpus/NaCeste/00-README.md` |
 | Pěstitelé | Miriam, MiseAmenti | Draft | `/docs/view/korpus/…` |
-| Síť, co učí | Humanitární desátek | Ve výstavbě | `/docs/view/korpus/HUMANITARIAN_TITHE` |
+| Síť, co učí | Humanitární desátek | Stavba | `/docs/view/korpus/HUMANITARIAN_TITHE` |
 
 **Pravidlo soupisu:** kniha je pravdivá jen tehdy, když rozlišuje *čtivé / draft / horizont / mýtus.* Tady jsou označené — a tvrdé odkazy na každou položku fungují na webu.
 
