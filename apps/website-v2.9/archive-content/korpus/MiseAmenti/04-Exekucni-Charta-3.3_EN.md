@@ -29,7 +29,7 @@ M0 Evidence & Stability Baseline
  ├── M1 L2 / ZIS: safe identity and real settlement
  │      │
  │      ├── M2 L3: Hiran 2.4 Maestro in a sandbox
- │      │      └── M3 L3: Amitābha / limited agent autonomy
+ │      │      └── M3 L3: Amitabha / limited agent autonomy
  │      │
  │      └── M4 L4: OASIS client and web preview
  │
@@ -95,7 +95,7 @@ M0 Evidence & Stability Baseline
 
 ---
 
-### M3 — Hiran v2.5: Amitābha / Amṛtabhoja as an interface of intent
+### M3 — Hiran v2.5: Amitabha / Amṛtabhoja as an interface of intent
 
 **Goal:** natural language makes a person's work easier without concealing consequences or taking over their right to decide.
 

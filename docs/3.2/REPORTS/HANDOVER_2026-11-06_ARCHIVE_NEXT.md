@@ -44,7 +44,8 @@ Nástroj: `npm run check:archive-parity` (v `apps/website-v2.9`), skript `script
 Překlady jsou **EN drafty**, ne oficiální edice (výjimka: Království srdce = klasická EN edice). Před veřejným vydáním:
 
 > **Stav 2026-11-06:** mechanická část je hotová — statusy sjednoceny na `BUILDING` (7 výskytů `UNDER CONSTRUCTION` ve 4 souborech), gate na labely běží, 0 českých zbytků v EN próze (`není / který / protože …` = 0), `internal repo` (bez „-sitory") = 0, `impact packet` = 38× bez variant, `Poutník` = 0.
-> **Zbývá subjektivní část:** rytmus a „překladatelština" u beletrie, kurzívy u sakrálních slov a jednotná diakritika u vlastních jmen (`Amitābha` 22× vs `Amitabha` 31× — rozhodnout globálně; starší oficiální EN edice a konvence Lumi používají `Amitabha`).
+> **Zbývá subjektivní část:** rytmus a „překladatelština" u beletrie, kurzívy u sakrálních slov.
+> **Diakritika jmen (rozhodnutí 👤, 2026-11-06):** sjednoceno na **`Amitabha`** (22× `Amitābha` → `Amitabha` v MiseAmenti + NirvanaCloud); technické termíny `Amṛtabhoja`, `ākāśa`, `Pṛthvī` si diakritiku drží.
 
 - **Terminologie napříč knihami** — držet konzistenci: `LIVE/BUILDING/HORIZON/HYPOTHESIS/MYTH/UNSUBSTANTIATED/INVALID CLAIM/INTENT`, `internal repository` (ne „internal repo"), `tracker`, `impact packet`, `the Pilgrim`, `Only-that`.
 - **Sakrální a kulturální slova** — kurzívou a v původním přepisu: `piko`, `whenua`, `fa'atere`, `va'a`, `marae`, `ari'i`, `ra'atira`, `tapu`, `noa`, `māna`, `hui`, `va`, `rongorongo`, `tangata manu`, `mā'ohi`, `tatau`, `prema`, `bhakti`, `ākāśa`, `Pṛthvī`, `Agni`, `Āpas`, `Vāyu`, mantry `gate gate pāragate…`, `oṃ maṇi padme hūṃ`.

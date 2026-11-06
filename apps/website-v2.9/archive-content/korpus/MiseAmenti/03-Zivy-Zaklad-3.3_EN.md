@@ -24,7 +24,7 @@ A canon without a real baseline turns into a wish. This document therefore does 
 |---|---|---|---|
 | **L1 Core** | V31 node/pool/miner, native UTXO v2, Ekam Deeksha v3.2, LWMA-60, HTLC and the public chain. | Node reward model 1% — the code exists, activation is a configuration matter and must be verified on the live network. | Further consensus evolution only after proper governance and a security process. |
 | **L2 Multichain & ZIS** | `warpd`, Base + ZION L1 pilot, Base↔ZION E2E bridge round-trip, quote API, ZIS health/session service. | ZIS-backed wallet, deposit/ledger/withdraw, a fully funded deposit→swap→withdraw E2E, an independent solver network. | Passkeys/WebAuthn, further EVM networks, BTC/Lightning and non-EVM chains — until they are deployed and verified, they are not "supported". |
-| **L3 Hiranyagarbha** | `zion-ai-native`, Maestro CLI/orchestration code, health polling, the Dharma Validator as tested auxiliary logic. | Deployment of Hiran v2.3 inference, connection to the 2.4 Maestro, the NCL broker and a safe tool runtime. | The v2.5 Amitābha/Amṛtabhoja interface and autonomous agents with limited action; no autonomous funding or production agent is canonically live today. |
+| **L3 Hiranyagarbha** | `zion-ai-native`, Maestro CLI/orchestration code, health polling, the Dharma Validator as tested auxiliary logic. | Deployment of Hiran v2.3 inference, connection to the 2.4 Maestro, the NCL broker and a safe tool runtime. | The v2.5 Amitabha/Amṛtabhoja interface and autonomous agents with limited action; no autonomous funding or production agent is canonically live today. |
 | **L4 OASIS** | Rust/Axum backend and a separate OASIS web/operational service. | A public web preview, user connection to L1/L2 and a verified asset pipeline. | The UE 5.7 client, Nanite/Lumen/MetaHuman, a WebGPU renderer and Pixel Streaming. |
 | **L5 Free World** | Coinbase tracker, API, database grant/project workflow and a service on Edge. | A trustworthy public UI, project catalogue, impact evidence, grant review and governance UX. | A global network of water/soil/energy projects; no specific impact may be presented as verified without an independent report. |
 | **L6 Issobella** | Coinbase tracker, mission/research proposal API and a service on Edge. | Transparent DeSci workflow, peer review, open data and reproducible simulations. | The orbital programme is a long horizon; a quantum/warp engine is a hypothesis, not a technology or a financial promise. |
@@ -91,7 +91,7 @@ The emission constants are **89 % miner / 5 % humanitarian / 5 % Issobella / 1 %
 
 ### HORIZON
 
-- Hiran v2.5 **Amṛtabhoja** and its public narrative face "Amitābha" are a development vision for a natural intent interface and limited agents. Any future agent may function only in accordance with [`05-Autonomie-a-Bezpecnost.md`](./05-Autonomie-a-Bezpecnost.md).
+- Hiran v2.5 **Amṛtabhoja** and its public narrative face "Amitabha" are a development vision for a natural intent interface and limited agents. Any future agent may function only in accordance with [`05-Autonomie-a-Bezpecnost.md`](./05-Autonomie-a-Bezpecnost.md).
 
 ---
 

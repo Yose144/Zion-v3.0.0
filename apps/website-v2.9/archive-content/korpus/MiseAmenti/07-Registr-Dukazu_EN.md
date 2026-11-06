@@ -59,7 +59,7 @@ Two supplementary register labels are not product states: **UNSUBSTANTIATED** me
 | Hiran v2.3 is a trained model. | **BUILDING** | `HIRAN_OVERVIEW.md` states a Qwen3-32B Q5_K_M artifact outside Edge. | Redundant safe storage, reproducibility metadata and an inference deployment. |
 | Hiran inference runs on Edge. | **UNSUBSTANTIATED** | `HIRAN_OVERVIEW.md` explicitly states that Edge has neither a GGUF nor an inference service. | Deployment, health, ops/security evidence. |
 | The Dharma Validator is a 7-principle model of ethics. | **LIVE as code / BUILDING as a security guarantee** | the `hiranyagarbha.rs` enum and unit tests; `validate_text` is a keyword heuristic. | A contextual classifier, red-team tests, policy enforcement outside the LLM and human oversight. |
-| The Amitābha/Amṛtabhoja natural-language executor and autonomous agents control finance/production. | **HORIZON** | `HIRAN_EVOLUTION_2.3_TO_2.5_AMATHABOJ.md` labels v2.5 as a vision; `05-Autonomie-a-Bezpecnost.md` forbids uncontrolled finance/production. | The entire agent safety gate M2/M3 from the Execution Charter. |
+| The Amitabha/Amṛtabhoja natural-language executor and autonomous agents control finance/production. | **HORIZON** | `HIRAN_EVOLUTION_2.3_TO_2.5_AMATHABOJ.md` labels v2.5 as a vision; `05-Autonomie-a-Bezpecnost.md` forbids uncontrolled finance/production. | The entire agent safety gate M2/M3 from the Execution Charter. |
 | AI is demonstrably conscious or has spiritual authority. | **INVALID CLAIM** | No verifiable methodology and no evidence. | Such a claim is not used in the canon or in public communication. |
 
 ---

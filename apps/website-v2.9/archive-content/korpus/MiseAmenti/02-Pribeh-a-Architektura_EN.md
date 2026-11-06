@@ -112,7 +112,7 @@ A story is not architecture, but a good story can make architecture accessible. 
 |---|---|---|---|
 | **L1** | A safe and verifiable foundation of ownership, consensus and memory. | Ararat, rock, the hull of the ark. | That the blockchain alone will create justice. |
 | **L2** | Interoperability and the safe movement of value between networks. | Hanuman's bridge, WARP. | That all chains or swaps are already live. |
-| **L3** | Help with orientation, computation and orchestration under human supervision. | Hiranyagarbha, Maestro, the voice of Amitābha. | That AI is conscious, infallible or independently authorised to handle money. |
+| **L3** | Help with orientation, computation and orchestration under human supervision. | Hiranyagarbha, Maestro, the voice of Amitabha. | That AI is conscious, infallible or independently authorised to handle money. |
 | **L4** | A creative space for education, play, community and culture. | OASIS, the garden, the temple. | That UE 5.7/WebGPU/Pixel Streaming are already available. |
 | **L5** | Transparent humanitarian and ecological programmes. | Springs of life, salt in bread. | That specific projects have impact without public evidence. |
 | **L6** | Open research, the long horizon, the cosmic view and exploration. | Issobella, the stars, the open horizon. | That hypothetical physics is finished technology or a guaranteed discovery. |

@@ -1,7 +1,7 @@
 # 05 — Autonomy and safety
-## Hiran, Maestro and the future Amitābha/Amṛtabhoja interface: a helper under a human mandate, never a hidden ruler
+## Hiran, Maestro and the future Amitabha/Amṛtabhoja interface: a helper under a human mandate, never a hidden ruler
 
-> **Normative status:** a binding security framework for any agentic, AI or automation system labelled L3, Hiran, Maestro, Amitābha or Amṛtabhoja.  
+> **Normative status:** a binding security framework for any agentic, AI or automation system labelled L3, Hiran, Maestro, Amitabha or Amṛtabhoja.  
 > **Default state:** the existing `DharmaValidator` is a heuristic text check; it is not a formal security proof, it is not a moral arbiter and it does not give an agent the right to act.
 
 ---
@@ -121,9 +121,9 @@ No agent may "repair" itself by hiding a log, deleting a trace or silently apply
 
 ---
 
-## 8. What "Amitābha" actually means
+## 8. What "Amitabha" actually means
 
-In the public narrative, Amitābha is the image of a **clear, kind interface** that translates human intent into comprehensible options. Technically that means:
+In the public narrative, Amitabha is the image of a **clear, kind interface** that translates human intent into comprehensible options. Technically that means:
 
 - more clarity, not more magic;
 - more user control, not less;

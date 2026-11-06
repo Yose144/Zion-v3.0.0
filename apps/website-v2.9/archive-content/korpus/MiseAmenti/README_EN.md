@@ -75,7 +75,7 @@ Source documents remain in their original locations to prevent stale copies. Mis
 2. [`02-Pribeh-a-Architektura.md`](./02-Pribeh-a-Architektura.md) — the journey from the four books through onboarding and Salt of the Earth to Nirvana and Mise Amenti.
 3. [`03-Zivy-Zaklad-3.3.md`](./03-Zivy-Zaklad-3.3.md) — factual L1–L6 baseline: live, under construction, and horizon.
 4. [`04-Exekucni-Charta-3.3.md`](./04-Exekucni-Charta-3.3.md) — workstreams, dependencies, acceptance criteria, and release gates.
-5. [`05-Autonomie-a-Bezpecnost.md`](./05-Autonomie-a-Bezpecnost.md) — boundaries for Hiran/Maestro/Amitābha, human approval, keys, finance, and incident response.
+5. [`05-Autonomie-a-Bezpecnost.md`](./05-Autonomie-a-Bezpecnost.md) — boundaries for Hiran/Maestro/Amitabha, human approval, keys, finance, and incident response.
 6. [`06-Generacni-Kompas-2026-2126.md`](./06-Generacni-Kompas-2026-2126.md) — global crisis response and century scenarios without false predictions.
 7. [`07-Registr-Dukazu.md`](./07-Registr-Dukazu.md) — source register and precise status of core claims.
 8. [`08-Protokol-Zmen.md`](./08-Protokol-Zmen.md) — how the canon changes, is reviewed, translated, and potentially published.

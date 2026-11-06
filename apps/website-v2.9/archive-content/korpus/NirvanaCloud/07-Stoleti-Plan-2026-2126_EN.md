@@ -32,7 +32,7 @@ This is the epoch we live in today. According to the *World Economic Forum Globa
 | Category | What happens in this epoch |
 |---|---|
 | **LIVE** (2026) | L1–L3 in production on Edge; ZIS identity; DAO governance runtime; L5/L6 fund trackers active; chain height 23,000+. |
-| **BUILDING** (through ~2035) | Full ZIS Passkey adoption; L2 multichain maturity (BTC/EVM/Solana); L3 Hiranyagarbha 2.4 Orchestration and 2.5 Amitābha/Amṛtabhoja; L4 OASIS on Unreal Engine with WebGPU preview. |
+| **BUILDING** (through ~2035) | Full ZIS Passkey adoption; L2 multichain maturity (BTC/EVM/Solana); L3 Hiranyagarbha 2.4 Orchestration and 2.5 Amitabha/Amṛtabhoja; L4 OASIS on Unreal Engine with WebGPU preview. |
 | **HORIZON** (through 2051) | The generation born between 2026–2040 (today's children and young adults) reaches adulthood and leadership roles in communities that have been building this network since its earliest years. L5 Free World reaches measurable impact on water and food security in its first pilot regions. |
 
 **What NirvanaCloud does not pretend in this epoch:** that ZION alone will solve the climate crisis, demographic imbalance, or AI governance. It offers **one verifiable tool among many that are needed** — not a messianic solution.
