@@ -21,6 +21,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { useWallet } from '@/contexts/WalletContext';
 import { CONTRACTS, STAKING_ABI, WZION_ABI, STAKING_DEPLOYED } from '@/lib/defi-contracts';
 
@@ -262,14 +263,14 @@ export default function StakingPanel() {
           </div>
         ) : (
           <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-3 py-1 text-[10px] font-semibold tracking-wider text-zion-gold uppercase mb-4 ml-2">
-            <Clock className="h-3 w-3" /> {StakingPanelCopy.deployPending[cs ? 'cs' : 'en']}
+            <Clock className="h-3 w-3" /> {tx5(StakingPanelCopy.deployPending, lang)}
           </div>
         )}
         <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
           ZION Staking
         </h1>
         <p className="mt-4 text-lg text-gray-300 max-w-2xl">
-          {StakingPanelCopy.stakeWzionAndEarnFixedAprCoold[cs ? 'cs' : 'en']}
+          {tx5(StakingPanelCopy.stakeWzionAndEarnFixedAprCoold, lang)}
         </p>
 
         {/* Deploy pending banner */}
@@ -278,7 +279,7 @@ export default function StakingPanel() {
             <AlertCircle className="h-5 w-5 text-zion-gold shrink-0" />
             <div className="flex-1">
               <p className="text-sm text-gray-300">
-                {StakingPanelCopy.stakingContractHasNotYetBeenDe[cs ? 'cs' : 'en']}
+                {tx5(StakingPanelCopy.stakingContractHasNotYetBeenDe, lang)}
               </p>
             </div>
           </div>
@@ -288,7 +289,7 @@ export default function StakingPanel() {
           <div className="mt-6 rounded-2xl border border-zion-purple/20 bg-zion-purple/5 p-4 flex items-center gap-3">
             <AlertCircle className="h-5 w-5 text-zion-purple shrink-0" />
             <p className="text-sm text-gray-300">
-              {StakingPanelCopy.stakingIsCurrentlyPaused[cs ? 'cs' : 'en']}
+              {tx5(StakingPanelCopy.stakingIsCurrentlyPaused, lang)}
             </p>
           </div>
         )}
@@ -298,10 +299,10 @@ export default function StakingPanel() {
             <TrendingUp className="h-3 w-3 text-zion-cyan" /> {apy}% APR
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-            <Clock className="h-3 w-3 text-zion-gold" /> {cooldownDays}d {StakingPanelCopy.cooldown[cs ? 'cs' : 'en']}
+            <Clock className="h-3 w-3 text-zion-gold" /> {cooldownDays}d {tx5(StakingPanelCopy.cooldown, lang)}
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-            <Shield className="h-3 w-3 text-zion-cyan" /> {StakingPanelCopy.bridgeFeeRewards[cs ? 'cs' : 'en']}
+            <Shield className="h-3 w-3 text-zion-cyan" /> {tx5(StakingPanelCopy.bridgeFeeRewards, lang)}
           </span>
           <span className={`inline-flex items-center gap-2 rounded-full px-2 py-0.5 ${bridgeOnline ? 'bg-zion-cyan/10 text-zion-cyan' : 'bg-gray-500/10 text-gray-400'}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${bridgeOnline ? 'bg-zion-cyan animate-pulse' : 'bg-gray-500'}`} />
@@ -314,10 +315,10 @@ export default function StakingPanel() {
       <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: StakingPanelCopy.totalStaked[cs ? 'cs' : 'en'], value: totalStaked, icon: Lock, color: 'text-zion-cyan' },
-            { label: StakingPanelCopy.rewardPool[cs ? 'cs' : 'en'], value: rewardPool, icon: PiggyBank, color: 'text-zion-gold' },
+            { label: tx5(StakingPanelCopy.totalStaked, lang), value: totalStaked, icon: Lock, color: 'text-zion-cyan' },
+            { label: tx5(StakingPanelCopy.rewardPool, lang), value: rewardPool, icon: PiggyBank, color: 'text-zion-gold' },
             { label: 'APR', value: `${apy}%`, icon: TrendingUp, color: 'text-zion-cyan' },
-            { label: StakingPanelCopy.cooldown_2[cs ? 'cs' : 'en'], value: `${cooldownDays}d`, icon: Calendar, color: 'text-zion-cyan' },
+            { label: tx5(StakingPanelCopy.cooldown_2, lang), value: `${cooldownDays}d`, icon: Calendar, color: 'text-zion-cyan' },
           ].map((card) => (
             <div key={card.label} className="zion-tile p-5">
               <div className="flex items-center gap-2 mb-2">
@@ -335,15 +336,15 @@ export default function StakingPanel() {
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
           <div className="grid grid-cols-3 gap-4">
             <div className="zion-tile p-4">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{StakingPanelCopy.myStake[cs ? 'cs' : 'en']}</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{tx5(StakingPanelCopy.myStake, lang)}</p>
               <p className="text-xl font-bold text-zion-cyan">{parseFloat(userStaked).toFixed(2)} wZION</p>
             </div>
             <div className="zion-tile p-4">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{StakingPanelCopy.earned[cs ? 'cs' : 'en']}</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{tx5(StakingPanelCopy.earned, lang)}</p>
               <p className="text-xl font-bold text-zion-gold">{parseFloat(userEarned).toFixed(4)} wZION</p>
             </div>
             <div className="zion-tile p-4">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{StakingPanelCopy.wallet[cs ? 'cs' : 'en']}</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{tx5(StakingPanelCopy.wallet, lang)}</p>
               <p className="text-xl font-bold text-white">{parseFloat(userBalance).toFixed(2)} wZION</p>
             </div>
           </div>
@@ -362,42 +363,42 @@ export default function StakingPanel() {
           <div className="text-center py-8">
             <Wallet className="h-12 w-12 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400 mb-4">
-              {StakingPanelCopy.connectWalletToStake[cs ? 'cs' : 'en']}
+              {tx5(StakingPanelCopy.connectWalletToStake, lang)}
             </p>
             <button
               onClick={connect}
               className="rounded-2xl bg-zion-cyan/20 border border-zion-cyan/30 px-8 py-3 text-sm font-semibold text-zion-cyan hover:bg-zion-cyan/30 transition-colors"
             >
-              {StakingPanelCopy.connectMetamask[cs ? 'cs' : 'en']}
+              {tx5(StakingPanelCopy.connectMetamask, lang)}
             </button>
           </div>
         ) : !isBaseMainnet ? (
           <div className="text-center py-8">
             <AlertCircle className="h-12 w-12 text-zion-gold mx-auto mb-4" />
             <p className="text-gray-400 mb-4">
-              {StakingPanelCopy.switchToBaseMainnet[cs ? 'cs' : 'en']}
+              {tx5(StakingPanelCopy.switchToBaseMainnet, lang)}
             </p>
             <button
               onClick={switchToBase}
               className="rounded-2xl bg-zion-gold/20 border border-zion-gold/30 px-8 py-3 text-sm font-semibold text-zion-gold hover:bg-zion-gold/30 transition-colors"
             >
-              {StakingPanelCopy.switchNetwork[cs ? 'cs' : 'en']}
+              {tx5(StakingPanelCopy.switchNetwork, lang)}
             </button>
           </div>
         ) : !STAKING_DEPLOYED ? (
           <div className="text-center py-8">
             <Clock className="h-12 w-12 text-zion-gold mx-auto mb-4" />
             <p className="text-gray-400">
-              {StakingPanelCopy.stakingContractAwaitingDeploym[cs ? 'cs' : 'en']}
+              {tx5(StakingPanelCopy.stakingContractAwaitingDeploym, lang)}
             </p>
           </div>
         ) : (
           <>
             <div className="flex gap-1 zion-tile p-1 w-fit mb-6">
               {([
-                { key: 'stake', label: StakingPanelCopy.stake[cs ? 'cs' : 'en'], icon: Lock },
-                { key: 'unstake', label: StakingPanelCopy.unstake[cs ? 'cs' : 'en'], icon: Unlock },
-                { key: 'claim', label: StakingPanelCopy.claim[cs ? 'cs' : 'en'], icon: PiggyBank },
+                { key: 'stake', label: tx5(StakingPanelCopy.stake, lang), icon: Lock },
+                { key: 'unstake', label: tx5(StakingPanelCopy.unstake, lang), icon: Unlock },
+                { key: 'claim', label: tx5(StakingPanelCopy.claim, lang), icon: PiggyBank },
               ] as const).map((t) => (
                 <button
                   key={t.key}
@@ -417,7 +418,7 @@ export default function StakingPanel() {
               <div className="space-y-4 max-w-md">
                 <div>
                   <label className="text-xs text-gray-500 uppercase tracking-wider mb-2 block">
-                    {StakingPanelCopy.amountToStake[cs ? 'cs' : 'en']}
+                    {tx5(StakingPanelCopy.amountToStake, lang)}
                   </label>
                   <div className="relative">
                     <input
@@ -431,7 +432,7 @@ export default function StakingPanel() {
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">wZION</span>
                   </div>
                   <p className="text-[10px] text-gray-500 mt-1">
-                    {StakingPanelCopy.available[cs ? 'cs' : 'en']}: {parseFloat(userBalance).toFixed(2)} wZION
+                    {tx5(StakingPanelCopy.available, lang)}: {parseFloat(userBalance).toFixed(2)} wZION
                   </p>
                 </div>
                 <button
@@ -440,9 +441,9 @@ export default function StakingPanel() {
                   className="w-full rounded-2xl bg-zion-cyan/20 border border-zion-cyan/30 px-6 py-3 text-sm font-semibold text-zion-cyan hover:bg-zion-cyan/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {txPhase === 'approving' ? (StakingPanelCopy.approving[cs ? 'cs' : 'en']) :
-                   txPhase === 'staking' ? (StakingPanelCopy.staking[cs ? 'cs' : 'en']) :
-                   StakingPanelCopy.stakeWzion[cs ? 'cs' : 'en']}
+                  {txPhase === 'approving' ? (tx5(StakingPanelCopy.approving, lang)) :
+                   txPhase === 'staking' ? (tx5(StakingPanelCopy.staking, lang)) :
+                   tx5(StakingPanelCopy.stakeWzion, lang)}
                 </button>
               </div>
             )}
@@ -451,11 +452,11 @@ export default function StakingPanel() {
             {tab === 'unstake' && (
               <div className="space-y-4 max-w-md">
                 <div className="zion-tile p-4">
-                  <p className="text-xs text-gray-500 mb-1">{StakingPanelCopy.yourStake[cs ? 'cs' : 'en']}</p>
+                  <p className="text-xs text-gray-500 mb-1">{tx5(StakingPanelCopy.yourStake, lang)}</p>
                   <p className="text-2xl font-bold text-zion-cyan">{parseFloat(userStaked).toFixed(2)} wZION</p>
                   {cooldownStarted > 0 && cooldownAmount > 0 && (
                     <p className="text-[10px] text-zion-gold mt-1">
-                      {StakingPanelCopy.inCooldown[cs ? 'cs' : 'en']}: {ethers.utils.formatEther(cooldownAmount)} wZION
+                      {tx5(StakingPanelCopy.inCooldown, lang)}: {ethers.utils.formatEther(cooldownAmount)} wZION
                     </p>
                   )}
                 </div>
@@ -463,7 +464,7 @@ export default function StakingPanel() {
                   <>
                     <div>
                       <label className="text-xs text-gray-500 uppercase tracking-wider mb-2 block">
-                        {StakingPanelCopy.amountToUnstake[cs ? 'cs' : 'en']}
+                        {tx5(StakingPanelCopy.amountToUnstake, lang)}
                       </label>
                       <div className="relative">
                         <input
@@ -477,7 +478,7 @@ export default function StakingPanel() {
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">wZION</span>
                       </div>
                       <p className="text-[10px] text-gray-500 mt-1">
-                        {StakingPanelCopy.available[cs ? 'cs' : 'en']}: {parseFloat(userStaked).toFixed(2)} wZION
+                        {tx5(StakingPanelCopy.available, lang)}: {parseFloat(userStaked).toFixed(2)} wZION
                       </p>
                     </div>
                     <button
@@ -486,7 +487,7 @@ export default function StakingPanel() {
                       className="w-full rounded-2xl bg-zion-gold/20 border border-zion-gold/30 px-6 py-3 text-sm font-semibold text-zion-gold hover:bg-zion-gold/30 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {StakingPanelCopy.queueUnstake[cs ? 'cs' : 'en']}
+                      {tx5(StakingPanelCopy.queueUnstake, lang)}
                     </button>
                   </>
                 ) : cooldownPassed ? (
@@ -496,13 +497,13 @@ export default function StakingPanel() {
                     className="w-full rounded-2xl bg-zion-purple/20 border border-zion-purple/30 px-6 py-3 text-sm font-semibold text-zion-purple hover:bg-zion-purple/30 transition-colors flex items-center justify-center gap-2"
                   >
                     {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {StakingPanelCopy.withdrawCooldownPassed[cs ? 'cs' : 'en']}
+                    {tx5(StakingPanelCopy.withdrawCooldownPassed, lang)}
                   </button>
                 ) : (
                   <div className="rounded-2xl border border-zion-gold/20 bg-zion-gold/5 p-4 text-center">
                     <Clock className="h-8 w-8 text-zion-gold mx-auto mb-2" />
                     <p className="text-sm text-gray-300">
-                      {StakingPanelCopy.cooldownActive[cs ? 'cs' : 'en']}
+                      {tx5(StakingPanelCopy.cooldownActive, lang)}
                     </p>
                     <p className="text-2xl font-bold text-zion-gold mt-1">
                       {Math.floor(cooldownRemaining / 3600)}h {Math.floor((cooldownRemaining % 3600) / 60)}m
@@ -510,7 +511,7 @@ export default function StakingPanel() {
                   </div>
                 )}
                 <p className="text-[11px] text-gray-500 text-center">
-                  {cs ? `Cooldown: ${cooldownDays} dní po requestu` : `Cooldown: ${cooldownDays} days after request`}
+                  {cs ? `Cooldown: ${cooldownDays} dní po requestu` : t5(`Cooldown: ${cooldownDays} days after request`, lang)}
                 </p>
               </div>
             )}
@@ -519,7 +520,7 @@ export default function StakingPanel() {
             {tab === 'claim' && (
               <div className="space-y-4 max-w-md">
                 <div className="zion-tile p-4">
-                  <p className="text-xs text-gray-500 mb-1">{StakingPanelCopy.earnedRewards[cs ? 'cs' : 'en']}</p>
+                  <p className="text-xs text-gray-500 mb-1">{tx5(StakingPanelCopy.earnedRewards, lang)}</p>
                   <p className="text-2xl font-bold text-zion-gold">{parseFloat(userEarned).toFixed(4)} wZION</p>
                 </div>
                 <button
@@ -528,7 +529,7 @@ export default function StakingPanel() {
                   className="w-full rounded-2xl bg-zion-gold/20 border border-zion-gold/30 px-6 py-3 text-sm font-semibold text-zion-gold hover:bg-zion-gold/30 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {StakingPanelCopy.claimRewards[cs ? 'cs' : 'en']}
+                  {tx5(StakingPanelCopy.claimRewards, lang)}
                 </button>
               </div>
             )}
@@ -556,13 +557,13 @@ export default function StakingPanel() {
       <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
         <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
           <Zap className="h-6 w-6 text-zion-gold" />
-          {StakingPanelCopy.howItWorks[cs ? 'cs' : 'en']}
+          {tx5(StakingPanelCopy.howItWorks, lang)}
         </h2>
         <div className="grid gap-4 sm:grid-cols-3">
           {[
-            { step: '1', title: StakingPanelCopy.lockWzion[cs ? 'cs' : 'en'], desc: StakingPanelCopy.approveWzionAndStakeIntoTheZio[cs ? 'cs' : 'en'], icon: Lock },
-            { step: '2', title: StakingPanelCopy.earnRewards[cs ? 'cs' : 'en'], desc: StakingPanelCopy.autoCompoundingRewardsAtFixedA[cs ? 'cs' : 'en'], icon: Flame },
-            { step: '3', title: StakingPanelCopy.unstake[cs ? 'cs' : 'en'], desc: StakingPanelCopy.requestUnstakeWaitCooldownWith[cs ? 'cs' : 'en'], icon: Unlock },
+            { step: '1', title: tx5(StakingPanelCopy.lockWzion, lang), desc: tx5(StakingPanelCopy.approveWzionAndStakeIntoTheZio, lang), icon: Lock },
+            { step: '2', title: tx5(StakingPanelCopy.earnRewards, lang), desc: tx5(StakingPanelCopy.autoCompoundingRewardsAtFixedA, lang), icon: Flame },
+            { step: '3', title: tx5(StakingPanelCopy.unstake, lang), desc: tx5(StakingPanelCopy.requestUnstakeWaitCooldownWith, lang), icon: Unlock },
           ].map((s) => (
             <div key={s.step} className="zion-tile p-5">
               <div className="flex items-center gap-2 mb-3">
@@ -580,10 +581,10 @@ export default function StakingPanel() {
       <div className="zion-tile p-5">
         <div className="flex items-center gap-2 mb-2">
           <Layers className="h-4 w-4 text-gray-400" />
-          <span className="text-xs text-gray-400 uppercase tracking-wider">{StakingPanelCopy.contract[cs ? 'cs' : 'en']}</span>
+          <span className="text-xs text-gray-400 uppercase tracking-wider">{tx5(StakingPanelCopy.contract, lang)}</span>
         </div>
         <p className="font-mono text-sm text-gray-300 break-all">
-          {STAKING_DEPLOYED ? CONTRACTS.ZIONStaking : StakingPanelCopy.awaitingDeployment[cs ? 'cs' : 'en']}
+          {STAKING_DEPLOYED ? CONTRACTS.ZIONStaking : tx5(StakingPanelCopy.awaitingDeployment, lang)}
         </p>
         <p className="text-[10px] text-gray-500 mt-1">Base Mainnet · ZIONStaking.sol</p>
       </div>

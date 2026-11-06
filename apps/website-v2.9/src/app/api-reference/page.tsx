@@ -2,7 +2,8 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import {
   Activity,
   ArrowUpRight,
@@ -58,23 +59,23 @@ const ApiReferenceCopy = {
   exploreDocumentation: { cs: `Projít dokumentaci`, en: `Explore documentation` },
 };
 
-function ApiQuickstartPanels({ cs }: { cs: boolean }) {
+function ApiQuickstartPanels({ cs, lang }: { cs: boolean; lang: Lang }) {
   const panels = [
     {
-      title: ApiReferenceCopy.explorerTelemetry[cs ? 'cs' : 'en'],
-      body: ApiReferenceCopy.startWithNetworkAndExplorerLiv[cs ? 'cs' : 'en'],
+      title: tx5(ApiReferenceCopy.explorerTelemetry, lang),
+      body: tx5(ApiReferenceCopy.startWithNetworkAndExplorerLiv, lang),
       href: '/network',
       icon: Activity,
     },
     {
-      title: ApiReferenceCopy.poolApi[cs ? 'cs' : 'en'],
-      body: ApiReferenceCopy.poolStatsHashrateSessionsPplns[cs ? 'cs' : 'en'],
+      title: tx5(ApiReferenceCopy.poolApi, lang),
+      body: tx5(ApiReferenceCopy.poolStatsHashrateSessionsPplns, lang),
       href: '/pool',
       icon: Server,
     },
     {
-      title: ApiReferenceCopy.health[cs ? 'cs' : 'en'],
-      body: ApiReferenceCopy.oneEndpointForDependencyChecks[cs ? 'cs' : 'en'],
+      title: tx5(ApiReferenceCopy.health, lang),
+      body: tx5(ApiReferenceCopy.oneEndpointForDependencyChecks, lang),
       href: '/api/health',
       icon: Shield,
     },
@@ -83,10 +84,10 @@ function ApiQuickstartPanels({ cs }: { cs: boolean }) {
   return (
     <section className="zion-section">
       <h3 className="text-2xl font-semibold text-white">
-        {ApiReferenceCopy.quickstart[cs ? 'cs' : 'en']}
+        {tx5(ApiReferenceCopy.quickstart, lang)}
       </h3>
       <p className="mt-2 text-sm text-gray-400">
-        {ApiReferenceCopy.basicPanelsToGetStartedWithThe[cs ? 'cs' : 'en']}
+        {tx5(ApiReferenceCopy.basicPanelsToGetStartedWithThe, lang)}
       </p>
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         {panels.map((p) => (
@@ -104,7 +105,7 @@ function ApiQuickstartPanels({ cs }: { cs: boolean }) {
               {p.body}
             </p>
             <div className="mt-4 inline-flex items-center gap-1.5 text-xs text-zion-gold/70 group-hover:text-zion-gold">
-              <span>{ApiReferenceCopy.open[cs ? 'cs' : 'en']}</span>
+              <span>{tx5(ApiReferenceCopy.open, lang)}</span>
               <ArrowUpRight className="h-3.5 w-3.5" />
             </div>
           </Link>
@@ -114,146 +115,146 @@ function ApiQuickstartPanels({ cs }: { cs: boolean }) {
   );
 }
 
-const getApiStats = (cs: boolean) => [
+const getApiStats = (cs: boolean, lang: Lang) => [
   {
-    label: ApiReferenceCopy.coreEnvironment[cs ? 'cs' : 'en'],
+    label: tx5(ApiReferenceCopy.coreEnvironment, lang),
     value: 'V3 Test Mainnet',
-    detail: ApiReferenceCopy.controlledRehearsalLine[cs ? 'cs' : 'en'],
+    detail: tx5(ApiReferenceCopy.controlledRehearsalLine, lang),
     icon: Shield,
   },
   {
-    label: ApiReferenceCopy.apiPort[cs ? 'cs' : 'en'],
+    label: tx5(ApiReferenceCopy.apiPort, lang),
     value: '8443',
-    detail: ApiReferenceCopy.jsonRpcRest[cs ? 'cs' : 'en'],
+    detail: tx5(ApiReferenceCopy.jsonRpcRest, lang),
     icon: Activity,
   },
   {
-    label: ApiReferenceCopy.poolPort[cs ? 'cs' : 'en'],
+    label: tx5(ApiReferenceCopy.poolPort, lang),
     value: '8080',
-    detail: ApiReferenceCopy.statsEndpoint[cs ? 'cs' : 'en'],
+    detail: tx5(ApiReferenceCopy.statsEndpoint, lang),
     icon: Server,
   },
 ];
 
-const getEndpointGroups = (cs: boolean) => [
+const getEndpointGroups = (cs: boolean, lang: Lang) => [
   {
-    title: ApiReferenceCopy.blockchainCore[cs ? 'cs' : 'en'],
-    description: ApiReferenceCopy.statsBlocksAndRpcForExplorersW[cs ? 'cs' : 'en'],
+    title: tx5(ApiReferenceCopy.blockchainCore, lang),
+    description: tx5(ApiReferenceCopy.statsBlocksAndRpcForExplorersW, lang),
     icon: Database,
     port: '443',
     endpoints: [
       {
         method: 'GET',
         path: '/api/blockchain/stats',
-        description: ApiReferenceCopy.networkHeightSupplyFeeWindowAn[cs ? 'cs' : 'en'],
+        description: tx5(ApiReferenceCopy.networkHeightSupplyFeeWindowAn, lang),
         latency: '45 ms avg'
       },
       {
         method: 'GET',
         path: '/api/blockchain/blocks?limit=50',
-        description: ApiReferenceCopy.paginatedBlockFeedWithMinerRew[cs ? 'cs' : 'en'],
+        description: tx5(ApiReferenceCopy.paginatedBlockFeedWithMinerRew, lang),
         latency: '65 ms avg'
       },
       {
         method: 'GET',
         path: '/api/blockchain/transactions?limit=50',
-        description: ApiReferenceCopy.recentTransactionsForExplorers[cs ? 'cs' : 'en'],
+        description: tx5(ApiReferenceCopy.recentTransactionsForExplorers, lang),
         latency: '70 ms avg'
       },
       {
         method: 'GET',
         path: '/api/blockchain/consensus',
-        description: cs ? 'Parametry konsensu, decade decay a difficulty graf.' : 'Consensus parameters, decade decay schedule and difficulty chart.',
+        description: cs ? 'Parametry konsensu, decade decay a difficulty graf.' : t5('Consensus parameters, decade decay schedule and difficulty chart.', lang),
         latency: '120 ms avg'
       },
       {
         method: 'GET',
         path: '/api/blockchain/miners',
-        description: cs ? 'Live těžební leaderboard z poolu.' : 'Live mining leaderboard from the pool.',
+        description: cs ? 'Live těžební leaderboard z poolu.' : t5('Live mining leaderboard from the pool.', lang),
         latency: '80 ms avg'
       },
       {
         method: 'GET',
         path: '/api/blockchain/richlist',
-        description: cs ? 'Top držitelé ZION včetně premine a pool adres.' : 'Top ZION holders including premine and pool addresses.',
+        description: cs ? 'Top držitelé ZION včetně premine a pool adres.' : t5('Top ZION holders including premine and pool addresses.', lang),
         latency: '90 ms avg'
       },
       {
         method: 'GET',
         path: '/api/blockchain/bridge/status',
-        description: cs ? 'Stav L1↔Base bridge a relay metriky.' : 'L1↔Base bridge status and relay metrics.',
+        description: cs ? 'Stav L1↔Base bridge a relay metriky.' : t5('L1↔Base bridge status and relay metrics.', lang),
         latency: '60 ms avg'
       },
       {
         method: 'GET',
         path: '/api/blockchain/sse',
-        description: cs ? 'Server-Sent Events stream nových bloků a mempoolu.' : 'Server-Sent Events stream for new blocks and mempool.',
+        description: cs ? 'Server-Sent Events stream nových bloků a mempoolu.' : t5('Server-Sent Events stream for new blocks and mempool.', lang),
         latency: 'live'
       },
     ]
   },
   {
-    title: ApiReferenceCopy.miningPool[cs ? 'cs' : 'en'],
-    description: ApiReferenceCopy.stratumTelemetryWorkerBalanceQ[cs ? 'cs' : 'en'],
+    title: tx5(ApiReferenceCopy.miningPool, lang),
+    description: tx5(ApiReferenceCopy.stratumTelemetryWorkerBalanceQ, lang),
     icon: PlugZap,
     port: '443',
     endpoints: [
       {
         method: 'GET',
         path: '/pool/stats',
-        description: ApiReferenceCopy.poolHealthSnapshotMinersHashra[cs ? 'cs' : 'en'],
+        description: tx5(ApiReferenceCopy.poolHealthSnapshotMinersHashra, lang),
         latency: '58 ms avg'
       },
       {
         method: 'GET',
         path: '/pool/miner/{wallet}',
-        description: ApiReferenceCopy.minerWorkerStatsBalancesAndPay[cs ? 'cs' : 'en'],
+        description: tx5(ApiReferenceCopy.minerWorkerStatsBalancesAndPay, lang),
         latency: '62 ms avg'
       }
     ]
   },
   {
-    title: ApiReferenceCopy.observabilityAi[cs ? 'cs' : 'en'],
-    description: ApiReferenceCopy.healthAiSelectorRecommendation[cs ? 'cs' : 'en'],
+    title: tx5(ApiReferenceCopy.observabilityAi, lang),
+    description: tx5(ApiReferenceCopy.healthAiSelectorRecommendation, lang),
     icon: SatelliteDish,
     port: '443',
     endpoints: [
       {
         method: 'GET',
         path: '/health',
-        description: ApiReferenceCopy.fullServiceHeartbeatWithVersio[cs ? 'cs' : 'en'],
+        description: tx5(ApiReferenceCopy.fullServiceHeartbeatWithVersio, lang),
         latency: '30 ms avg'
       },
       {
         method: 'GET',
         path: '/api/network',
-        description: ApiReferenceCopy.networkStatusIncludingConnecti[cs ? 'cs' : 'en'],
+        description: tx5(ApiReferenceCopy.networkStatusIncludingConnecti, lang),
         latency: '48 ms avg'
       },
       {
         method: 'GET',
         path: '/api/network/best-pool',
-        description: ApiReferenceCopy.bestPoolSelectionBasedOnCurren[cs ? 'cs' : 'en'],
+        description: tx5(ApiReferenceCopy.bestPoolSelectionBasedOnCurren, lang),
         latency: '90 ms avg'
       }
     ]
   },
   {
-    title: ApiReferenceCopy.listingsCoingeckoCmc[cs ? 'cs' : 'en'],
-    description: ApiReferenceCopy.machineReadableProjectSupplyAn[cs ? 'cs' : 'en'],
+    title: tx5(ApiReferenceCopy.listingsCoingeckoCmc, lang),
+    description: tx5(ApiReferenceCopy.machineReadableProjectSupplyAn, lang),
     icon: Sparkles,
     port: '443',
     endpoints: [
       {
         method: 'GET',
         path: '/api/listing/coingecko',
-        description: ApiReferenceCopy.coingeckoReadyPayloadLinksSupp[cs ? 'cs' : 'en'],
+        description: tx5(ApiReferenceCopy.coingeckoReadyPayloadLinksSupp, lang),
         latency: '55 ms avg'
       },
       {
         method: 'GET',
         path: '/api/listing/coinmarketcap',
-        description: ApiReferenceCopy.coinmarketcapStylePayloadWithP[cs ? 'cs' : 'en'],
+        description: tx5(ApiReferenceCopy.coinmarketcapStylePayloadWithP, lang),
         latency: '55 ms avg'
       }
     ]
@@ -263,8 +264,8 @@ const getEndpointGroups = (cs: boolean) => [
 export default function ApiReferencePage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const apiStats = getApiStats(cs);
-  const endpointGroups = getEndpointGroups(cs);
+  const apiStats = getApiStats(cs, lang);
+  const endpointGroups = getEndpointGroups(cs, lang);
 
   return (
     <div className="pt-28 pb-20 overflow-x-hidden">
@@ -273,9 +274,9 @@ export default function ApiReferencePage() {
           <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">
             <Sparkles className="h-4 w-4" /> API v2.9 · Orion Mesh
           </div>
-          <h1 className="mt-4 text-4xl md:text-5xl font-bold text-gradient">{ApiReferenceCopy.apiCommandDeck[cs ? 'cs' : 'en']}</h1>
+          <h1 className="mt-4 text-4xl md:text-5xl font-bold text-gradient">{tx5(ApiReferenceCopy.apiCommandDeck, lang)}</h1>
           <p className="mt-4 text-gray-300 max-w-3xl">
-            {ApiReferenceCopy.oneSurfaceForWalletsExplorersA[cs ? 'cs' : 'en']}
+            {tx5(ApiReferenceCopy.oneSurfaceForWalletsExplorersA, lang)}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
               <a
@@ -284,13 +285,13 @@ export default function ApiReferencePage() {
               rel="noreferrer"
               className="zion-button-primary"
             >
-              <Server className="h-4 w-4 text-zion-gold" /> {ApiReferenceCopy.liveHealth[cs ? 'cs' : 'en']}
+              <Server className="h-4 w-4 text-zion-gold" /> {tx5(ApiReferenceCopy.liveHealth, lang)}
             </a>
             <Link
               href="/docs"
               className="zion-button-secondary"
             >
-              <ArrowUpRight className="h-4 w-4 text-zion-gold" /> {ApiReferenceCopy.fullDocs[cs ? 'cs' : 'en']}
+              <ArrowUpRight className="h-4 w-4 text-zion-gold" /> {tx5(ApiReferenceCopy.fullDocs, lang)}
             </Link>
           </div>
         </section>
@@ -348,12 +349,12 @@ export default function ApiReferencePage() {
           })}
         </section>
 
-        <ApiQuickstartPanels cs={cs} />
+        <ApiQuickstartPanels cs={cs} lang={lang} />
 
         <section className="zion-cta-banner">
-          <h3 className="text-3xl font-semibold text-white">{ApiReferenceCopy.readyToWireTheMesh[cs ? 'cs' : 'en']}</h3>
+          <h3 className="text-3xl font-semibold text-white">{tx5(ApiReferenceCopy.readyToWireTheMesh, lang)}</h3>
           <p className="mt-3 text-gray-50">
-            {ApiReferenceCopy.deployTheSdksFromGithubWatchLi[cs ? 'cs' : 'en']}
+            {tx5(ApiReferenceCopy.deployTheSdksFromGithubWatchLi, lang)}
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
             <a
@@ -362,13 +363,13 @@ export default function ApiReferencePage() {
               rel="noreferrer"
               className="zion-button-secondary"
             >
-              {ApiReferenceCopy.openGithubRepo[cs ? 'cs' : 'en']}
+              {tx5(ApiReferenceCopy.openGithubRepo, lang)}
             </a>
             <Link
               href="/docs"
               className="zion-button-primary"
             >
-              {ApiReferenceCopy.exploreDocumentation[cs ? 'cs' : 'en']}
+              {tx5(ApiReferenceCopy.exploreDocumentation, lang)}
             </Link>
           </div>
         </section>

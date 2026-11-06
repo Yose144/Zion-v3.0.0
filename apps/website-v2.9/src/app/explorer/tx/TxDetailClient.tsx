@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { KNOWN_ADDRESS_MAP } from '@/lib/explorer/known-addresses';
 import { default as InfoRow } from '@/components/explorer/v4/shared/ExplorerDetailRow';
 import ExplorerCopyButton from '@/components/explorer/v4/shared/ExplorerCopyButton';
@@ -81,13 +82,14 @@ interface Transaction {
 }
 
 const fmtDate = (ts: number, locale: string) => ts ? new Date(ts * 1000).toLocaleString(locale) : "—";
-const fmtAge = (ts: number, cs: boolean) => {
+const fmtAge = (ts: number, lang: Lang) => {
   if (!ts) return "";
   const s = Math.floor(Date.now() / 1000 - ts);
-  if (s < 60) return cs ? `před ${s} s` : `${s}s ago`;
-  if (s < 3600) return cs ? `před ${Math.floor(s / 60)} min ${s % 60} s` : `${Math.floor(s / 60)}m ${s % 60}s ago`;
-  if (s < 86400) return cs ? `před ${Math.floor(s / 3600)} h` : `${Math.floor(s / 3600)}h ago`;
-  return cs ? `před ${Math.floor(s / 86400)} d` : `${Math.floor(s / 86400)}d ago`;
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'always', style: 'narrow' });
+  if (s < 60) return rtf.format(-s, 'second');
+  if (s < 3600) return rtf.format(-Math.floor(s / 60), 'minute');
+  if (s < 86400) return rtf.format(-Math.floor(s / 3600), 'hour');
+  return rtf.format(-Math.floor(s / 86400), 'day');
 };
 const truncHash = (h: string, n = 12) => h && h.length > n * 2 ? `${h.slice(0, n)}…${h.slice(-n)}` : h || "—";
 const bytesToHex = (bytes: number[]) =>
@@ -157,7 +159,7 @@ function MiniInfo({ label, value, copy, mono, link, color }: { label: string; va
 export default function TxDetailClient() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = ExplorerTxTxDetailClientCopy.enUs[cs ? 'cs' : 'en'];
+  const locale = tx5(ExplorerTxTxDetailClientCopy.enUs, lang);
   const searchParams = useSearchParams();
   const hash = useMemo(() => String(searchParams.get("hash") || "").trim(), [searchParams]);
 
@@ -171,11 +173,9 @@ export default function TxDetailClient() {
     (async () => {
       try {
         setError(null); setLoading(true); setTx(null); setRawJson(null);
-        if (!hash) { setError(ExplorerTxTxDetailClientCopy.missingTransactionHash[cs ? 'cs' : 'en']); return; }
+        if (!hash) { setError(tx5(ExplorerTxTxDetailClientCopy.missingTransactionHash, lang)); return; }
         if (!/^[a-fA-F0-9]{64}$/.test(hash.replace(/^0x/i, ''))) {
-          setError(cs
-            ? 'Tohle není hash transakce — tx hash má 64 hex znaků. Adresa peněženky patří do /explorer/address.'
-            : 'This is not a transaction hash — a tx hash has 64 hex chars. A wallet address belongs to /explorer/address.');
+          setError(cs ? 'Tohle není hash transakce — tx hash má 64 hex znaků. Adresa peněženky patří do /explorer/address.' : t5('This is not a transaction hash — a tx hash has 64 hex chars. A wallet address belongs to /explorer/address.', lang));
           return;
         }
         const data = await apiClient<Transaction>(`/blockchain/transactions?hash=${encodeURIComponent(hash)}`);
@@ -184,8 +184,8 @@ export default function TxDetailClient() {
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         setError(/API error: 40[04]/.test(msg)
-          ? (cs ? 'Transakce v této síti neexistuje.' : 'This transaction does not exist on this network.')
-          : (cs ? `Nepodařilo se načíst transakci: ${msg}` : `Failed to load transaction: ${msg}`));
+          ? (cs ? 'Transakce v této síti neexistuje.' : t5('This transaction does not exist on this network.', lang))
+          : (cs ? `Nepodařilo se načíst transakci: ${msg}` : t5(`Failed to load transaction: ${msg}`, lang)));
       }
       finally { setLoading(false); }
     })();
@@ -196,10 +196,10 @@ export default function TxDetailClient() {
   if (error || !tx) {
     return (
       <ExplorerEmptyState
-        title={ExplorerTxTxDetailClientCopy.transactionNotFound[cs ? 'cs' : 'en']}
+        title={tx5(ExplorerTxTxDetailClientCopy.transactionNotFound, lang)}
         message={error || `Hash: ${hash}`}
         backHref="/explorer"
-        backLabel={ExplorerTxTxDetailClientCopy.backToExplorer[cs ? 'cs' : 'en']}
+        backLabel={tx5(ExplorerTxTxDetailClientCopy.backToExplorer, lang)}
       />
     );
   }
@@ -225,7 +225,7 @@ export default function TxDetailClient() {
         <nav className="flex items-center gap-2 text-sm">
           <Link href="/explorer" className="text-gray-500 hover:text-white transition">Explorer</Link>
           <span className="text-gray-700">/</span>
-          <Link href="/explorer/transactions" className="text-gray-500 hover:text-white transition">{ExplorerTxTxDetailClientCopy.transactions[cs ? 'cs' : 'en']}</Link>
+          <Link href="/explorer/transactions" className="text-gray-500 hover:text-white transition">{tx5(ExplorerTxTxDetailClientCopy.transactions, lang)}</Link>
           <span className="text-gray-700">/</span>
           <span className="text-white font-mono text-xs">{truncHash(tx.tx_hash, 8)}</span>
         </nav>
@@ -236,7 +236,7 @@ export default function TxDetailClient() {
             <ArrowRightLeft className="h-6 w-6 text-zion-cyan" />
           </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white">{ExplorerTxTxDetailClientCopy.transaction[cs ? 'cs' : 'en']}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">{tx5(ExplorerTxTxDetailClientCopy.transaction, lang)}</h1>
             <p className="text-xs text-gray-500 font-mono mt-0.5 break-all">{tx.tx_hash}</p>
           </div>
           <div className="sm:ml-auto flex items-center gap-2 flex-wrap">
@@ -246,7 +246,7 @@ export default function TxDetailClient() {
                 : "bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20"
             }`}>
               {tx.in_pool ? <Clock className="h-3 w-3" /> : <Shield className="h-3 w-3" />}
-              {tx.in_pool ? (ExplorerTxTxDetailClientCopy.pending[cs ? 'cs' : 'en']) : `${tx.confirmations.toLocaleString(locale)} ${ExplorerTxTxDetailClientCopy.confirmations[cs ? 'cs' : 'en']}`}
+              {tx.in_pool ? (tx5(ExplorerTxTxDetailClientCopy.pending, lang)) : `${tx.confirmations.toLocaleString(locale)} ${tx5(ExplorerTxTxDetailClientCopy.confirmations, lang)}`}
             </span>
             {isCoinbase && (
               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border bg-zion-gold/10 text-zion-gold border-zion-gold/20">
@@ -262,7 +262,7 @@ export default function TxDetailClient() {
               }`}
             >
               <Code className="h-3.5 w-3.5" />
-              {showRaw ? (ExplorerTxTxDetailClientCopy.hideRawJson[cs ? 'cs' : 'en']) : (ExplorerTxTxDetailClientCopy.rawJson[cs ? 'cs' : 'en'])}
+              {showRaw ? (tx5(ExplorerTxTxDetailClientCopy.hideRawJson, lang)) : (tx5(ExplorerTxTxDetailClientCopy.rawJson, lang))}
             </button>
           </div>
         </motion.div>
@@ -275,15 +275,15 @@ export default function TxDetailClient() {
         {/* Summary cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {(isV3Account ? [
-            { label: ExplorerTxTxDetailClientCopy.amount[cs ? 'cs' : 'en'], value: `${tx.amount.toFixed(4)} ZION`, color: "text-white" },
+            { label: tx5(ExplorerTxTxDetailClientCopy.amount, lang), value: `${tx.amount.toFixed(4)} ZION`, color: "text-white" },
             { label: "Fee", value: `${tx.fee.toFixed(6)} ZION`, color: "text-zion-gold" },
             { label: "Nonce", value: `${tx.nonce ?? 0}`, color: "text-zion-cyan" },
-            { label: ExplorerTxTxDetailClientCopy.model[cs ? 'cs' : 'en'], value: (tx.transaction_model ?? 'hybrid').toUpperCase(), color: "text-zion-cyan" },
+            { label: tx5(ExplorerTxTxDetailClientCopy.model, lang), value: (tx.transaction_model ?? 'hybrid').toUpperCase(), color: "text-zion-cyan" },
           ] : [
-            { label: ExplorerTxTxDetailClientCopy.amount[cs ? 'cs' : 'en'], value: `${tx.amount.toFixed(4)} ZION`, color: "text-white" },
+            { label: tx5(ExplorerTxTxDetailClientCopy.amount, lang), value: `${tx.amount.toFixed(4)} ZION`, color: "text-white" },
             { label: "Fee", value: `${tx.fee.toFixed(6)} ZION`, color: "text-zion-gold" },
-            { label: ExplorerTxTxDetailClientCopy.inputs[cs ? 'cs' : 'en'], value: `${tx.inputs.length}`, color: "text-zion-cyan" },
-            { label: ExplorerTxTxDetailClientCopy.outputs[cs ? 'cs' : 'en'], value: `${tx.outputs.length}`, color: "text-zion-cyan" },
+            { label: tx5(ExplorerTxTxDetailClientCopy.inputs, lang), value: `${tx.inputs.length}`, color: "text-zion-cyan" },
+            { label: tx5(ExplorerTxTxDetailClientCopy.outputs, lang), value: `${tx.outputs.length}`, color: "text-zion-cyan" },
           ]).map((item) => (
             <div key={item.label} className="zion-tile p-4">
               <p className="text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium mb-1">{item.label}</p>
@@ -299,24 +299,24 @@ export default function TxDetailClient() {
             <div className="h-8 w-8 rounded-xl bg-zion-cyan/10 flex items-center justify-center">
               <Layers className="h-4 w-4 text-zion-cyan" />
             </div>
-            <h2 className="text-lg font-semibold text-white">{ExplorerTxTxDetailClientCopy.transactionDetails[cs ? 'cs' : 'en']}</h2>
+            <h2 className="text-lg font-semibold text-white">{tx5(ExplorerTxTxDetailClientCopy.transactionDetails, lang)}</h2>
           </div>
           <InfoRow label="TX Hash" value={tx.tx_hash} mono copy truncate />
-          <InfoRow label={ExplorerTxTxDetailClientCopy.status[cs ? 'cs' : 'en']} value={tx.in_pool ? (ExplorerTxTxDetailClientCopy.pendingMempool[cs ? 'cs' : 'en']) : (ExplorerTxTxDetailClientCopy.confirmed[cs ? 'cs' : 'en'])}
+          <InfoRow label={tx5(ExplorerTxTxDetailClientCopy.status, lang)} value={tx.in_pool ? (tx5(ExplorerTxTxDetailClientCopy.pendingMempool, lang)) : (tx5(ExplorerTxTxDetailClientCopy.confirmed, lang))}
             color={tx.in_pool ? "text-zion-gold" : "text-zion-cyan"} />
           {tx.block_height > 0 && (
-            <InfoRow label={ExplorerTxTxDetailClientCopy.block[cs ? 'cs' : 'en']} value={`#${tx.block_height.toLocaleString(locale)}`}
+            <InfoRow label={tx5(ExplorerTxTxDetailClientCopy.block, lang)} value={`#${tx.block_height.toLocaleString(locale)}`}
               link={`/explorer/block?id=${tx.block_height}`} />
           )}
-          <InfoRow label={ExplorerTxTxDetailClientCopy.timestamp[cs ? 'cs' : 'en']} value={`${fmtDate(tx.block_timestamp, locale)} (${fmtAge(tx.block_timestamp, cs)})`} />
+          <InfoRow label={tx5(ExplorerTxTxDetailClientCopy.timestamp, lang)} value={`${fmtDate(tx.block_timestamp, locale)} (${fmtAge(tx.block_timestamp, lang)})`} />
           <InfoRow
-            label={hasChange ? ExplorerTxTxDetailClientCopy.amountNet[cs ? 'cs' : 'en'] : ExplorerTxTxDetailClientCopy.amount[cs ? 'cs' : 'en']}
+            label={hasChange ? tx5(ExplorerTxTxDetailClientCopy.amountNet, lang) : tx5(ExplorerTxTxDetailClientCopy.amount, lang)}
             value={`${tx.amount.toFixed(6)} ZION`} color="text-zion-gold" />
           {hasChange && grossAmount !== null && (
-            <InfoRow label={ExplorerTxTxDetailClientCopy.amountGross[cs ? 'cs' : 'en']} value={`${grossAmount.toFixed(6)} ZION`} />
+            <InfoRow label={tx5(ExplorerTxTxDetailClientCopy.amountGross, lang)} value={`${grossAmount.toFixed(6)} ZION`} />
           )}
           {hasChange && (
-            <InfoRow label={ExplorerTxTxDetailClientCopy.changeReturned[cs ? 'cs' : 'en']} value={`${changeAmount.toFixed(6)} ZION`} />
+            <InfoRow label={tx5(ExplorerTxTxDetailClientCopy.changeReturned, lang)} value={`${changeAmount.toFixed(6)} ZION`} />
           )}
           <InfoRow label="Fee" value={`${tx.fee.toFixed(6)} ZION`} color="text-zion-gold" />
           {isCoinbase ? (
@@ -325,18 +325,18 @@ export default function TxDetailClient() {
             <AddressRow label="From" addrs={tx.from || tx.inputs.map((i) => i.address).filter(Boolean).join(', ')} />
           )}
           <AddressRow label="To" addrs={tx.to || tx.outputs.map((o) => o.address || o.key).filter(Boolean).join(', ')} />
-          <InfoRow label={ExplorerTxTxDetailClientCopy.model[cs ? 'cs' : 'en']} value={(tx.transaction_model ?? 'v31-native').toUpperCase()} color="text-zion-cyan" />
+          <InfoRow label={tx5(ExplorerTxTxDetailClientCopy.model, lang)} value={(tx.transaction_model ?? 'v31-native').toUpperCase()} color="text-zion-cyan" />
           {isV3Account && (
             <>
               <InfoRow label="Nonce" value={`${tx.nonce ?? 0}`} />
-              {tx.public_key && <InfoRow label={ExplorerTxTxDetailClientCopy.publicKey[cs ? 'cs' : 'en']} value={tx.public_key} mono copy truncate />}
-              {tx.signature && <InfoRow label={ExplorerTxTxDetailClientCopy.signature[cs ? 'cs' : 'en']} value={truncHash(tx.signature, 16)} copyValue={tx.signature} mono copy truncate />}
+              {tx.public_key && <InfoRow label={tx5(ExplorerTxTxDetailClientCopy.publicKey, lang)} value={tx.public_key} mono copy truncate />}
+              {tx.signature && <InfoRow label={tx5(ExplorerTxTxDetailClientCopy.signature, lang)} value={truncHash(tx.signature, 16)} copyValue={tx.signature} mono copy truncate />}
             </>
           )}
           {!isV3Account && (
             <>
-              <InfoRow label={ExplorerTxTxDetailClientCopy.version[cs ? 'cs' : 'en']} value={tx.version.toString()} />
-              {tx.unlock_time > 0 && <InfoRow label={ExplorerTxTxDetailClientCopy.unlockTime[cs ? 'cs' : 'en']} value={tx.unlock_time.toString()} />}
+              <InfoRow label={tx5(ExplorerTxTxDetailClientCopy.version, lang)} value={tx.version.toString()} />
+              {tx.unlock_time > 0 && <InfoRow label={tx5(ExplorerTxTxDetailClientCopy.unlockTime, lang)} value={tx.unlock_time.toString()} />}
             </>
           )}
           {tx.extra && tx.extra.length > 0 && (
@@ -344,7 +344,7 @@ export default function TxDetailClient() {
               const memo = decodeMemo(tx.extra);
               return (
                 <InfoRow
-                  label={ExplorerTxTxDetailClientCopy.memo[cs ? 'cs' : 'en']}
+                  label={tx5(ExplorerTxTxDetailClientCopy.memo, lang)}
                   value={memo.isText ? memo.text : `${memo.hex.slice(0, 64)}${memo.hex.length > 64 ? '…' : ''}`}
                   mono={!memo.isText}
                   copy
@@ -364,7 +364,7 @@ export default function TxDetailClient() {
               <div className="h-8 w-8 rounded-xl bg-zion-purple/10 flex items-center justify-center">
                 <ArrowRight className="h-4 w-4 text-zion-purple rotate-180" />
               </div>
-              <h3 className="text-lg font-semibold text-white">{ExplorerTxTxDetailClientCopy.inputs[cs ? 'cs' : 'en']} ({tx.inputs.length})</h3>
+              <h3 className="text-lg font-semibold text-white">{tx5(ExplorerTxTxDetailClientCopy.inputs, lang)} ({tx.inputs.length})</h3>
             </div>
             <div className="space-y-2">
               {tx.inputs.map((inp, i) => (
@@ -374,18 +374,18 @@ export default function TxDetailClient() {
                       <span className="text-zion-gold text-[11px] font-bold px-2 py-0.5 bg-zion-gold/10 rounded-md uppercase tracking-wider">
                         ⛏ Coinbase
                       </span>
-                      <span className="text-gray-500 text-xs">{ExplorerTxTxDetailClientCopy.newCoinsGenerated[cs ? 'cs' : 'en']}</span>
+                      <span className="text-gray-500 text-xs">{tx5(ExplorerTxTxDetailClientCopy.newCoinsGenerated, lang)}</span>
                     </div>
                   ) : (
                     <>
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-zion-purple text-[11px] font-mono uppercase tracking-wider">{ExplorerTxTxDetailClientCopy.input[cs ? 'cs' : 'en']} #{i}</span>
+                        <span className="text-zion-purple text-[11px] font-mono uppercase tracking-wider">{tx5(ExplorerTxTxDetailClientCopy.input, lang)} #{i}</span>
                         <span className="text-white text-sm font-semibold tabular-nums">{inp.amount.toFixed(4)} ZION</span>
                       </div>
                       <div className="space-y-0.5">
                         {inp.previous_output && (
                           <MiniInfo
-                            label={ExplorerTxTxDetailClientCopy.previousOutput[cs ? 'cs' : 'en']}
+                            label={tx5(ExplorerTxTxDetailClientCopy.previousOutput, lang)}
                             value={inp.previous_output}
                             copy
                             mono
@@ -394,14 +394,14 @@ export default function TxDetailClient() {
                         )}
                         {typeof inp.output_index === 'number' && (
                           <MiniInfo
-                            label={ExplorerTxTxDetailClientCopy.outputIndex[cs ? 'cs' : 'en']}
+                            label={tx5(ExplorerTxTxDetailClientCopy.outputIndex, lang)}
                             value={String(inp.output_index)}
                             mono
                           />
                         )}
                         {inp.script && (
                           <MiniInfo
-                            label={ExplorerTxTxDetailClientCopy.script[cs ? 'cs' : 'en']}
+                            label={tx5(ExplorerTxTxDetailClientCopy.script, lang)}
                             value={inp.script}
                             copy
                             mono
@@ -423,7 +423,7 @@ export default function TxDetailClient() {
               ))}
               {!isCoinbase && tx.inputs.length > 0 && (
                 <div className="text-right text-sm font-semibold text-white pt-2 border-t border-white/[0.06]">
-                  {ExplorerTxTxDetailClientCopy.totalIn[cs ? 'cs' : 'en']} {totalInput.toFixed(4)} ZION
+                  {tx5(ExplorerTxTxDetailClientCopy.totalIn, lang)} {totalInput.toFixed(4)} ZION
                 </div>
               )}
             </div>
@@ -436,17 +436,17 @@ export default function TxDetailClient() {
               <div className="h-8 w-8 rounded-xl bg-zion-cyan/10 flex items-center justify-center">
                 <ArrowRight className="h-4 w-4 text-zion-cyan" />
               </div>
-              <h3 className="text-lg font-semibold text-white">{ExplorerTxTxDetailClientCopy.outputs_2[cs ? 'cs' : 'en']} ({tx.outputs.length})</h3>
+              <h3 className="text-lg font-semibold text-white">{tx5(ExplorerTxTxDetailClientCopy.outputs_2, lang)} ({tx.outputs.length})</h3>
             </div>
             <div className="space-y-2">
               {tx.outputs.map((out, i) => (
                 <div key={i} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
                   <div className="flex justify-between items-center mb-2">
                     <span className="flex items-center gap-2 text-zion-cyan text-[11px] font-mono uppercase tracking-wider">
-                      {ExplorerTxTxDetailClientCopy.output[cs ? 'cs' : 'en']} #{i}
+                      {tx5(ExplorerTxTxDetailClientCopy.output, lang)} #{i}
                       {out.is_change && (
                         <span className="px-1.5 py-0.5 rounded bg-zion-purple/15 text-zion-purple border border-zion-purple/25 text-[10px] font-semibold uppercase tracking-wider">
-                          {ExplorerTxTxDetailClientCopy.changeBadge[cs ? 'cs' : 'en']}
+                          {tx5(ExplorerTxTxDetailClientCopy.changeBadge, lang)}
                         </span>
                       )}
                     </span>
@@ -470,7 +470,7 @@ export default function TxDetailClient() {
               ))}
               {tx.outputs.length > 0 && (
                 <div className="text-right text-sm font-semibold text-zion-gold pt-2 border-t border-white/[0.06]">
-                  {ExplorerTxTxDetailClientCopy.totalOut[cs ? 'cs' : 'en']} {totalOutput.toFixed(4)} ZION
+                  {tx5(ExplorerTxTxDetailClientCopy.totalOut, lang)} {totalOutput.toFixed(4)} ZION
                 </div>
               )}
             </div>
@@ -489,7 +489,7 @@ export default function TxDetailClient() {
                   <div className="h-8 w-8 rounded-xl bg-gray-500/10 flex items-center justify-center">
                     <Hash className="h-4 w-4 text-gray-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-white">{ExplorerTxTxDetailClientCopy.memo[cs ? 'cs' : 'en']} ({tx.extra.length} {ExplorerTxTxDetailClientCopy.bytes[cs ? 'cs' : 'en']})</h3>
+                  <h3 className="text-lg font-semibold text-white">{tx5(ExplorerTxTxDetailClientCopy.memo, lang)} ({tx.extra.length} {tx5(ExplorerTxTxDetailClientCopy.bytes, lang)})</h3>
                 </div>
                 {memo.isText ? (
                   <div className="bg-black/40 rounded-xl p-4 text-sm text-white break-all overflow-x-auto max-h-40 leading-relaxed">
@@ -510,7 +510,7 @@ export default function TxDetailClient() {
           <div className="flex items-center justify-center pt-2">
             <Link href={`/explorer/block?id=${tx.block_height}`}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white hover:bg-white/10 transition">
-              {ExplorerTxTxDetailClientCopy.viewBlock[cs ? 'cs' : 'en']} #{tx.block_height.toLocaleString(locale)} <ArrowRight className="h-4 w-4" />
+              {tx5(ExplorerTxTxDetailClientCopy.viewBlock, lang)} #{tx.block_height.toLocaleString(locale)} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         )}

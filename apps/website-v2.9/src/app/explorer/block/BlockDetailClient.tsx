@@ -16,7 +16,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { KNOWN_ADDRESS_MAP } from '@/lib/explorer/known-addresses';
 import { default as InfoRow } from '@/components/explorer/v4/shared/ExplorerDetailRow';
 import ExplorerCopyButton from '@/components/explorer/v4/shared/ExplorerCopyButton';
@@ -114,13 +115,14 @@ interface BlockDetail {
 }
 
 const fmtDate = (ts: number, locale: string) => ts ? new Date(ts * 1000).toLocaleString(locale) : "—";
-const fmtAge = (ts: number, cs: boolean) => {
+const fmtAge = (ts: number, lang: Lang) => {
   if (!ts) return "—";
   const s = Math.floor(Date.now() / 1000 - ts);
-  if (s < 60) return cs ? `před ${s} s` : `${s}s ago`;
-  if (s < 3600) return cs ? `před ${Math.floor(s / 60)} min ${s % 60} s` : `${Math.floor(s / 60)}m ${s % 60}s ago`;
-  if (s < 86400) return cs ? `před ${Math.floor(s / 3600)} h ${Math.floor((s % 3600) / 60)} min` : `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m ago`;
-  return cs ? `před ${Math.floor(s / 86400)} d ${Math.floor((s % 86400) / 3600)} h` : `${Math.floor(s / 86400)}d ${Math.floor((s % 86400) / 3600)}h ago`;
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'always', style: 'narrow' });
+  if (s < 60) return rtf.format(-s, 'second');
+  if (s < 3600) return rtf.format(-Math.floor(s / 60), 'minute');
+  if (s < 86400) return rtf.format(-Math.floor(s / 3600), 'hour');
+  return rtf.format(-Math.floor(s / 86400), 'day');
 };
 const fmtSize = (b: number) => {
   if (b >= 1e6) return `${(b / 1e6).toFixed(2)} MB`;
@@ -133,7 +135,7 @@ const truncHash = (h: string, n = 12) =>
 export default function BlockDetailClient() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = ExplorerBlockBlockDetailClientCopy.enUs[cs ? 'cs' : 'en'];
+  const locale = tx5(ExplorerBlockBlockDetailClientCopy.enUs, lang);
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = useMemo(() => {
@@ -153,14 +155,12 @@ export default function BlockDetailClient() {
     (async () => {
       try {
         setError(null); setLoading(true); setBlock(null); setRawJson(null);
-        if (!id) { setError(ExplorerBlockBlockDetailClientCopy.missingBlockIdHeight[cs ? 'cs' : 'en']); return; }
+        if (!id) { setError(tx5(ExplorerBlockBlockDetailClientCopy.missingBlockIdHeight, lang)); return; }
         const isHeight = /^\d+$/.test(id);
         const isHash = /^[a-f0-9]{64}$/i.test(id);
         if (!isHeight && !isHash) {
           // Never send a pasted address / elided text to the block endpoint.
-          setError(cs
-            ? 'Tento odkaz neobsahuje výšku ani hash bloku. Zadej číslo bloku nebo 64znakový hash — adresa peněženky patří do /explorer/address.'
-            : 'This link has neither a block height nor a block hash. Enter a block number or a 64-char hash — a wallet address belongs to /explorer/address.');
+          setError(cs ? 'Tento odkaz neobsahuje výšku ani hash bloku. Zadej číslo bloku nebo 64znakový hash — adresa peněženky patří do /explorer/address.' : t5('This link has neither a block height nor a block hash. Enter a block number or a 64-char hash — a wallet address belongs to /explorer/address.', lang));
           return;
         }
         const query = isHash ? `/blockchain/block?hash=${id}` : `/blockchain/block?height=${id}`;
@@ -170,8 +170,8 @@ export default function BlockDetailClient() {
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         setError(/API error: 40[04]/.test(msg)
-          ? (cs ? 'Blok v této síti neexistuje.' : 'This block does not exist on this network.')
-          : (cs ? `Nepodařilo se načíst blok: ${msg}` : `Failed to load block: ${msg}`));
+          ? (cs ? 'Blok v této síti neexistuje.' : t5('This block does not exist on this network.', lang))
+          : (cs ? `Nepodařilo se načíst blok: ${msg}` : t5(`Failed to load block: ${msg}`, lang)));
       } finally {
         setLoading(false);
       }
@@ -197,10 +197,10 @@ export default function BlockDetailClient() {
   if (error || !block) {
     return (
       <ExplorerEmptyState
-        title={ExplorerBlockBlockDetailClientCopy.blockNotFound[cs ? 'cs' : 'en']}
-        message={error || (ExplorerBlockBlockDetailClientCopy.thisBlockDoesNotExistOnTheZion[cs ? 'cs' : 'en'])}
+        title={tx5(ExplorerBlockBlockDetailClientCopy.blockNotFound, lang)}
+        message={error || (tx5(ExplorerBlockBlockDetailClientCopy.thisBlockDoesNotExistOnTheZion, lang))}
         backHref="/explorer"
-        backLabel={ExplorerBlockBlockDetailClientCopy.backToExplorer[cs ? 'cs' : 'en']}
+        backLabel={tx5(ExplorerBlockBlockDetailClientCopy.backToExplorer, lang)}
       />
     );
   }
@@ -214,7 +214,7 @@ export default function BlockDetailClient() {
         <nav className="flex items-center gap-2 text-sm">
           <Link href="/explorer" className="text-gray-500 hover:text-white transition">Explorer</Link>
           <span className="text-gray-700">/</span>
-          <Link href="/explorer/blocks" className="text-gray-500 hover:text-white transition">{ExplorerBlockBlockDetailClientCopy.blocks[cs ? 'cs' : 'en']}</Link>
+          <Link href="/explorer/blocks" className="text-gray-500 hover:text-white transition">{tx5(ExplorerBlockBlockDetailClientCopy.blocks, lang)}</Link>
           <span className="text-gray-700">/</span>
           <span className="text-white font-medium">#{block.height.toLocaleString(locale)}</span>
         </nav>
@@ -226,9 +226,9 @@ export default function BlockDetailClient() {
           </div>
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white">
-              {ExplorerBlockBlockDetailClientCopy.block[cs ? 'cs' : 'en']} <span className="text-zion-gold">#{block.height.toLocaleString(locale)}</span>
+              {tx5(ExplorerBlockBlockDetailClientCopy.block, lang)} <span className="text-zion-gold">#{block.height.toLocaleString(locale)}</span>
             </h1>
-            <p className="text-sm text-gray-500 mt-0.5">{fmtDate(block.timestamp, locale)} · {fmtAge(block.timestamp, cs)}</p>
+            <p className="text-sm text-gray-500 mt-0.5">{fmtDate(block.timestamp, locale)} · {fmtAge(block.timestamp, lang)}</p>
           </div>
           <div className="sm:ml-auto flex items-center gap-2">
             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${
@@ -237,7 +237,7 @@ export default function BlockDetailClient() {
                 : "bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20"
             }`}>
               <Shield className="h-3 w-3" />
-              {block.orphan_status ? (ExplorerBlockBlockDetailClientCopy.orphaned[cs ? 'cs' : 'en']) : `${block.confirmations.toLocaleString(locale)} ${ExplorerBlockBlockDetailClientCopy.confirmations[cs ? 'cs' : 'en']}`}
+              {block.orphan_status ? (tx5(ExplorerBlockBlockDetailClientCopy.orphaned, lang)) : `${block.confirmations.toLocaleString(locale)} ${tx5(ExplorerBlockBlockDetailClientCopy.confirmations, lang)}`}
             </span>
           </div>
         </motion.div>
@@ -253,7 +253,7 @@ export default function BlockDetailClient() {
               style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
               <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">{ExplorerBlockBlockDetailClientCopy.previousBlock[cs ? 'cs' : 'en']}</span>
+              <span className="hidden sm:inline">{tx5(ExplorerBlockBlockDetailClientCopy.previousBlock, lang)}</span>
               <span className="sm:hidden">#{(block.height - 1).toLocaleString(locale)}</span>
               <span className="hidden sm:inline tabular-nums text-gray-400">#{(block.height - 1).toLocaleString(locale)}</span>
             </button>
@@ -266,7 +266,7 @@ export default function BlockDetailClient() {
             >
               <span className="hidden sm:inline tabular-nums text-gray-400">#{(block.height + 1).toLocaleString(locale)}</span>
               <span className="sm:hidden">#{(block.height + 1).toLocaleString(locale)}</span>
-              <span className="hidden sm:inline">{ExplorerBlockBlockDetailClientCopy.nextBlock[cs ? 'cs' : 'en']}</span>
+              <span className="hidden sm:inline">{tx5(ExplorerBlockBlockDetailClientCopy.nextBlock, lang)}</span>
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -279,7 +279,7 @@ export default function BlockDetailClient() {
             }`}
           >
             <Code className="h-4 w-4" />
-            {showRaw ? (ExplorerBlockBlockDetailClientCopy.hideRawJson[cs ? 'cs' : 'en']) : (ExplorerBlockBlockDetailClientCopy.showRawJson[cs ? 'cs' : 'en'])}
+            {showRaw ? (tx5(ExplorerBlockBlockDetailClientCopy.hideRawJson, lang)) : (tx5(ExplorerBlockBlockDetailClientCopy.showRawJson, lang))}
           </button>
         </div>
 
@@ -297,27 +297,27 @@ export default function BlockDetailClient() {
               <div className="h-8 w-8 rounded-xl bg-zion-cyan/10 flex items-center justify-center">
                 <Layers className="h-4 w-4 text-zion-cyan" />
               </div>
-              <h2 className="text-lg font-semibold text-white">{ExplorerBlockBlockDetailClientCopy.blockDetails[cs ? 'cs' : 'en']}</h2>
+              <h2 className="text-lg font-semibold text-white">{tx5(ExplorerBlockBlockDetailClientCopy.blockDetails, lang)}</h2>
             </div>
-            <InfoRow label={ExplorerBlockBlockDetailClientCopy.height[cs ? 'cs' : 'en']} value={block.height.toLocaleString(locale)} />
-            <InfoRow label={ExplorerBlockBlockDetailClientCopy.timestamp[cs ? 'cs' : 'en']} value={`${fmtDate(block.timestamp, locale)} (${fmtAge(block.timestamp, cs)})`} />
+            <InfoRow label={tx5(ExplorerBlockBlockDetailClientCopy.height, lang)} value={block.height.toLocaleString(locale)} />
+            <InfoRow label={tx5(ExplorerBlockBlockDetailClientCopy.timestamp, lang)} value={`${fmtDate(block.timestamp, locale)} (${fmtAge(block.timestamp, lang)})`} />
             <InfoRow label="Hash" value={block.hash} mono copy truncate />
-            <InfoRow label={ExplorerBlockBlockDetailClientCopy.previousHash[cs ? 'cs' : 'en']} value={block.prev_hash} mono copy truncate
+            <InfoRow label={tx5(ExplorerBlockBlockDetailClientCopy.previousHash, lang)} value={block.prev_hash} mono copy truncate
               link={block.height > 0 ? `/explorer/block?id=${block.height - 1}` : undefined} />
             <InfoRow
-              label={ExplorerBlockBlockDetailClientCopy.merkleRoot[cs ? 'cs' : 'en']}
+              label={tx5(ExplorerBlockBlockDetailClientCopy.merkleRoot, lang)}
               value={block.merkle_root || block.tx_hash_list_merkle_root || "—"}
               mono
               copy={!!(block.merkle_root || block.tx_hash_list_merkle_root)}
               color={!(block.merkle_root || block.tx_hash_list_merkle_root) ? "text-gray-600" : undefined}
               badge={!(block.merkle_root || block.tx_hash_list_merkle_root) ? (
-                <span title={ExplorerBlockBlockDetailClientCopy.merkleRootIsNotExposedByTheCur[cs ? 'cs' : 'en']} className="text-gray-600 cursor-help">
+                <span title={tx5(ExplorerBlockBlockDetailClientCopy.merkleRootIsNotExposedByTheCur, lang)} className="text-gray-600 cursor-help">
                   ⓘ
                 </span>
               ) : undefined}
             />
-            <InfoRow label={ExplorerBlockBlockDetailClientCopy.blockSize[cs ? 'cs' : 'en']} value={`${fmtSize(block.block_size)} (${block.block_size.toLocaleString(locale)} ${ExplorerBlockBlockDetailClientCopy.bytes[cs ? 'cs' : 'en']})`} />
-            <InfoRow label={ExplorerBlockBlockDetailClientCopy.version[cs ? 'cs' : 'en']} value={`${block.major_version}.${block.minor_version}`} />
+            <InfoRow label={tx5(ExplorerBlockBlockDetailClientCopy.blockSize, lang)} value={`${fmtSize(block.block_size)} (${block.block_size.toLocaleString(locale)} ${tx5(ExplorerBlockBlockDetailClientCopy.bytes, lang)})`} />
+            <InfoRow label={tx5(ExplorerBlockBlockDetailClientCopy.version, lang)} value={`${block.major_version}.${block.minor_version}`} />
           </motion.div>
 
           {/* Mining Details */}
@@ -327,16 +327,16 @@ export default function BlockDetailClient() {
               <div className="h-8 w-8 rounded-xl bg-zion-gold/10 flex items-center justify-center">
                 <Cpu className="h-4 w-4 text-zion-gold" />
               </div>
-              <h2 className="text-lg font-semibold text-white">{ExplorerBlockBlockDetailClientCopy.miningDetails[cs ? 'cs' : 'en']}</h2>
+              <h2 className="text-lg font-semibold text-white">{tx5(ExplorerBlockBlockDetailClientCopy.miningDetails, lang)}</h2>
             </div>
-            <InfoRow label={ExplorerBlockBlockDetailClientCopy.difficulty[cs ? 'cs' : 'en']} value={block.difficulty.toLocaleString(locale)} />
+            <InfoRow label={tx5(ExplorerBlockBlockDetailClientCopy.difficulty, lang)} value={block.difficulty.toLocaleString(locale)} />
             <InfoRow label="Nonce" value={block.nonce.toLocaleString()} />
-            <InfoRow label={ExplorerBlockBlockDetailClientCopy.blockReward[cs ? 'cs' : 'en']} value={`${block.reward.toFixed(6)} ZION`} color="text-zion-gold" />
-            <InfoRow label={ExplorerBlockBlockDetailClientCopy.totalFees[cs ? 'cs' : 'en']} value={`${block.total_fees.toFixed(6)} ZION`} color="text-zion-gold" />
-            <InfoRow label={ExplorerBlockBlockDetailClientCopy.transactions[cs ? 'cs' : 'en']} value={`${block.tx_count} (${block.num_txes} ${ExplorerBlockBlockDetailClientCopy.user[cs ? 'cs' : 'en']} + 1 coinbase)`} />
+            <InfoRow label={tx5(ExplorerBlockBlockDetailClientCopy.blockReward, lang)} value={`${block.reward.toFixed(6)} ZION`} color="text-zion-gold" />
+            <InfoRow label={tx5(ExplorerBlockBlockDetailClientCopy.totalFees, lang)} value={`${block.total_fees.toFixed(6)} ZION`} color="text-zion-gold" />
+            <InfoRow label={tx5(ExplorerBlockBlockDetailClientCopy.transactions, lang)} value={`${block.tx_count} (${block.num_txes} ${tx5(ExplorerBlockBlockDetailClientCopy.user, lang)} + 1 coinbase)`} />
             {block.miner && (
               <InfoRow
-                label={ExplorerBlockBlockDetailClientCopy.coinbaseRecipient[cs ? 'cs' : 'en']}
+                label={tx5(ExplorerBlockBlockDetailClientCopy.coinbaseRecipient, lang)}
                 value={block.miner_label || truncHash(block.miner)}
                 copyValue={block.miner}
                 mono={!block.miner_label}
@@ -357,10 +357,10 @@ export default function BlockDetailClient() {
         {/* Summary bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: ExplorerBlockBlockDetailClientCopy.totalOutput[cs ? 'cs' : 'en'], value: `${block.total_output.toFixed(4)} ZION`, color: "text-white" },
-            { label: ExplorerBlockBlockDetailClientCopy.feesCollected[cs ? 'cs' : 'en'], value: `${block.total_fees.toFixed(6)} ZION`, color: "text-zion-gold" },
-            { label: ExplorerBlockBlockDetailClientCopy.blockReward_2[cs ? 'cs' : 'en'], value: `${block.reward.toFixed(4)} ZION`, color: "text-zion-gold" },
-            { label: ExplorerBlockBlockDetailClientCopy.txCount[cs ? 'cs' : 'en'], value: `${block.tx_count}`, color: "text-zion-cyan" },
+            { label: tx5(ExplorerBlockBlockDetailClientCopy.totalOutput, lang), value: `${block.total_output.toFixed(4)} ZION`, color: "text-white" },
+            { label: tx5(ExplorerBlockBlockDetailClientCopy.feesCollected, lang), value: `${block.total_fees.toFixed(6)} ZION`, color: "text-zion-gold" },
+            { label: tx5(ExplorerBlockBlockDetailClientCopy.blockReward_2, lang), value: `${block.reward.toFixed(4)} ZION`, color: "text-zion-gold" },
+            { label: tx5(ExplorerBlockBlockDetailClientCopy.txCount, lang), value: `${block.tx_count}`, color: "text-zion-cyan" },
           ].map((item) => (
             <div key={item.label} className="zion-tile p-4">
               <p className="text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium mb-1">{item.label}</p>
@@ -375,7 +375,7 @@ export default function BlockDetailClient() {
             className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6 mb-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
               <Wallet className="w-4 h-4 text-zion-gold" />
-              {ExplorerBlockBlockDetailClientCopy.rewardDistribution[cs ? 'cs' : 'en']}
+              {tx5(ExplorerBlockBlockDetailClientCopy.rewardDistribution, lang)}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {(['miner', 'humanitarian', 'issobella', 'pool_fee'] as const).map((key) => {
@@ -397,7 +397,7 @@ export default function BlockDetailClient() {
                         {KNOWN_ADDRESS_MAP.get(item.address)?.label || truncHash(item.address, 10)}
                       </Link>
                     ) : (
-                      <p className="text-[11px] text-white/25 font-mono truncate mt-1">{cs ? 'spáleno' : 'burned'}</p>
+                      <p className="text-[11px] text-white/25 font-mono truncate mt-1">{cs ? 'spáleno' : t5('burned', lang)}</p>
                     )}
                   </div>
                 );
@@ -413,7 +413,7 @@ export default function BlockDetailClient() {
             <div className="h-8 w-8 rounded-xl bg-zion-cyan/10 flex items-center justify-center">
               <Hash className="h-4 w-4 text-zion-cyan" />
             </div>
-            <h2 className="text-lg font-semibold text-white">{ExplorerBlockBlockDetailClientCopy.transactions[cs ? 'cs' : 'en']} ({block.txs?.length || 0})</h2>
+            <h2 className="text-lg font-semibold text-white">{tx5(ExplorerBlockBlockDetailClientCopy.transactions, lang)} ({block.txs?.length || 0})</h2>
           </div>
 
           {/* TX Table */}
@@ -421,11 +421,11 @@ export default function BlockDetailClient() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/[0.04]">
-                  <th className="text-left text-[11px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{ExplorerBlockBlockDetailClientCopy.type[cs ? 'cs' : 'en']}</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{tx5(ExplorerBlockBlockDetailClientCopy.type, lang)}</th>
                   <th className="text-left text-[11px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3">Hash</th>
                   <th className="text-left text-[11px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden lg:table-cell">From → To</th>
                   <th className="text-right text-[11px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden md:table-cell">Fee</th>
-                  <th className="text-right text-[11px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{ExplorerBlockBlockDetailClientCopy.amount[cs ? 'cs' : 'en']}</th>
+                  <th className="text-right text-[11px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{tx5(ExplorerBlockBlockDetailClientCopy.amount, lang)}</th>
                 </tr>
               </thead>
               <tbody>
@@ -437,7 +437,7 @@ export default function BlockDetailClient() {
                           ? "bg-zion-gold/10 text-zion-gold border-zion-gold/20"
                           : "bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20"
                       }`}>
-                        {tx.type === "coinbase" ? `⛏ ${ExplorerBlockBlockDetailClientCopy.coinbase[cs ? 'cs' : 'en']}` : `↔ ${ExplorerBlockBlockDetailClientCopy.transfer[cs ? 'cs' : 'en']}`}
+                        {tx.type === "coinbase" ? `⛏ ${tx5(ExplorerBlockBlockDetailClientCopy.coinbase, lang)}` : `↔ ${tx5(ExplorerBlockBlockDetailClientCopy.transfer, lang)}`}
                       </span>
                     </td>
                     <td className="px-3 py-3">
@@ -505,7 +505,7 @@ export default function BlockDetailClient() {
         <div className="flex items-center justify-center pt-2">
           <Link href="/explorer/blocks"
             className="text-xs text-gray-500 hover:text-white transition font-medium">
-            {ExplorerBlockBlockDetailClientCopy.allBlocks[cs ? 'cs' : 'en']}
+            {tx5(ExplorerBlockBlockDetailClientCopy.allBlocks, lang)}
           </Link>
         </div>
       </div>
