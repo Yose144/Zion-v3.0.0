@@ -7,9 +7,9 @@
 
 ## The Story
 
-The fisherman from episode 9 of the book Nirvana — the one who on a little wooden boat took a lens out of his pocket and within three seconds entered OASIS — one day sailed all the way to the bay below the house of Lumi.
+The fisherman from episode 9 of the book Nirvana — who, on a little wooden boat, took a lens out of his pocket and within three seconds entered OASIS — one day sailed all the way to the bay below the house of Lumi.
 
-In OASIS he knew the New Earth well. He went there every evening. He knew the Ancient Tree in the Garden of Hiranyagarbha with its nine storeys of consciousness, he knew the eight Genesis territories, he hunted for traces of the Golden Egg. And for some time he had been seeing a new point on the map of the galaxy: **Dharma Temple — La Palma**, seven domes and the Tree of Life, with the seventh trace of the Golden Egg hidden somewhere in its gardens. And on the "New Earth" panel of the card: the Genesis Garden — *active*, Dharma Temple — *preparation*, Te Pīko Ora — *planned*. And later two more appeared: Golden Republic Bohemia — *preparation*, Bodhi Lanka — *planned*.
+In OASIS he knew the New Earth well. He went there every evening. He knew the Ancient Tree in the Garden of Hiranyagarbha with its nine storeys of consciousness, he knew the eight Genesis territories, he hunted for traces of the Golden Egg. And for some time he had been seeing a new point on the map of the galaxy: **Dharma Temple — La Palma**, seven domes and the Tree of Life, with the seventh trace of the Golden Egg hidden somewhere in its gardens. And on the "New Earth" panel: the Genesis Garden — *active*, Dharma Temple — *preparation*, Te Pīko Ora — *planned*. And later two more appeared: Golden Republic Bohemia — *preparation*, Bodhi Lanka — *planned*.
 
 When he stepped ashore, he expected to see what he knew from the lens: domes of white marble, avatars of pure light, waterfalls with perfect flow.
 
@@ -47,7 +47,7 @@ He left the lens in his pocket and went to fetch a hoe.
 ### What is in the mirror today
 
 **Web — Terra Nova (`/terranova`)**
-- The TerraNova book with chapters and editions (`TerraNovaBookClient`, `generatedEditions.ts`).
+- The TerraNova book with chapters and editions (`TerraNovaBookClient`, `public/terranova-editions.json`).
 - **Pioneer Projects L5** — cards (`PioneerProjectCards.tsx`): Genesis Garden (*Active development*, EU), Dharma Temple (*In preparation*, ES, UNESCO), Te Pīko Ora (*Planned*, PF), Golden Republic Bohemia (*In preparation*, CZ), Bodhi Lanka (*Planned*, LK).
 - `/terranova/genesis` — the character of the place, phases 0–4 (0 complete, 1 active), features (glamping, farm, trees, surf, solar, gatherings), ZION integration (node *planned*, wallet *tbd*, Medical Table *planned*, mesh *planned*, Seed Library *active*, Proof-of-Care DAO *planned*), the humanitarian commitment of 10 % of node rewards.
 - `/terranova/dharma-temple` — La Palma, concept, features, phases (0 active), **3D concept** (7 domes, Tree of Life, Merkaba), **architectural design**, **documentation** loaded from `apps/website-v2.9/public/docs/terranova/dharma-temple.{cs,en}.md`, open questions, Discord.

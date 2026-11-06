@@ -7,7 +7,7 @@
 
 ## Příběh
 
-Ze semene, které Sítá zasadila pod Domem Lumi, nevyrostl jeden strom.
+Ze semene, které Sítá zasadila pod Domem Lumi, nevyrostl jeden strom, ale tři.
 
 Když se poutníci po roce vrátili ze západu — od mostů WARP a od Zlatého lůna Hiranyagarbha — našli na svahu tři sazenice. Rostly z jednoho kořene, ale každá jinam: jedna k moři, jedna k horám a jedna k vodě, která stékala ze svahu do zátoky.
 
@@ -42,7 +42,7 @@ Na jaře vyryl tesař do trámu nad dveřmi vedle semene tři malé čárky. Ko�
 | **Zahrada Genesis** | Země | **Kořen** | Base Camp — vstupní brána, farma, práce, poutní stezka | Sabacheira, Tomar, Portugalsko | Pohyb, albergue, ranní světlo |
 | **Dharma Temple** | Oheň | **Kmen** | Svatyně — ticho, praxe, vzdělání, hloubka | La Palma, Kanárské ostrovy | Klid sopky, noc, hvězdy |
 | **Te Pīko Ora** | Voda | **Koruna** | Naplnění — hojnost, integrace, mořská permakultura | Raiatea, Francouzská Polynésie | Tok, věčné poledne |
-| **Golden Republic Bohemia** | Vzduch | **Srdce** | Governance lab — kruh rozhodování, česká moudrost (sůl, most, Zlatý býk, Přemysl Oráč, Libuše, Karel IV), protokol Zlatá republika | Čechy, Česká republika | Most, most mezi tradicí a experimentem |
+| **Golden Republic Bohemia** | Vzduch | **Srdce** | Governance lab — kruh rozhodování, česká moudrost (sůl, most, Zlatý býk, Přemysl Oráč, Libuše, Karel IV), protokol Zlatá republika | Čechy, Česká republika | Most mezi tradicí a experimentem |
 | **Bodhi Lanka** | Akáša / Éter | **Éter** | Láska — Rama-Sita, Sri Maha Bodhi (nejstarší žijící strom, 288 př. n. l.), Rama Setu most, Bhakti protokol, Ajurvéda | Srí Lanka | Láska, bhakti, nejstarší kořen |
 
 Proč zrovna těchto pět:

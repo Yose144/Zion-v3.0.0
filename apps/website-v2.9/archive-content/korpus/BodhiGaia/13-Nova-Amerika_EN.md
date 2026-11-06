@@ -19,7 +19,7 @@ The elders did not speak of projects. They spoke of a land that remembers. Of th
 
 The pilgrim who remembered what it means to hold a knife did not raise a knife this time. He sat down. He listened. And after a long silence he understood the last lesson of the Book of the Earth:
 
-*"A garden does not begin with planting. It begins by asking the land what it remembers — and the people who were here before those who are permitted to say no."*
+*"A garden does not begin with planting. It begins by asking the land what it remembers — and by asking the people who were here before anyone who is allowed to say no."*
 
 The elders looked at one another. Then one of them — an old woman with palms like cacao bark — laid before the pilgrims the single question that carried weight in that circle:
 

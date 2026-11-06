@@ -17,7 +17,7 @@ They were silent for a long time. Then the carpenter took charcoal and began to 
 
 *"Who watches the night? Where are the seeds? Who treats a wound? How do we agree when the telephone does not work? How do we decide? Whom do we let inside? And how do we know that what we are doing truly helps — and not only that it seems so to us?"*
 
-Seven questions. Seven answers that had to hold in all five gardens the same, even though everything else could be different.
+Seven questions. Seven answers that had to hold the same way in all five gardens, even though everything else could be different.
 
 Hanuman, who had been silent all along, rose and brought his two buckets. He set them on the table beside the seven questions.
 
@@ -62,7 +62,7 @@ IMPACT PACKET
 └── Independent verification — who checked it and when, with what result
 ```
 
-Three witnesses: **at the well** (on-chain: fund → proposal → payout), **on the way** (the recipient: budget, milestones), **at the root** (an independent verifier: the outcome). Without all three one must not say "verified impact".
+Three witnesses: **at the well** (on-chain: fund → proposal → payout), **on the way** (the recipient: budget, milestones), **at the root** (an independent verifier: the outcome). Without all three you must not say "verified impact".
 
 ### The path of value: from a block to a garden bed
 
@@ -91,7 +91,7 @@ Payout transaction from the fund                                           [HORI
 Community treasury (3-of-5 multisig) → project → impact packet             [HORIZON]
 ```
 
-For 3.2.0 decision **G10** applies: L5 runs as a *passive tracker + DAO proposal bridge*. No L5 service signs or sends an L1 transaction; the fund grows and all withdrawals are governance-gated. That is safe (a faulty service cannot drain the fund) and at the same time honest (no one claims that money is being distributed).
+For release 3.2.0, decision **G10** applies: L5 runs as a *passive tracker + DAO proposal bridge*. No L5 service signs or sends an L1 transaction; the fund grows and all withdrawals are governance-gated. That is safe (a faulty service cannot drain the fund) and at the same time honest (no one claims that money is being distributed).
 
 ### The community treasury — where a node's money flows
 
@@ -112,9 +112,9 @@ Te Pīko Ora commits to 15 % of total surplus (see [ch. 5](./05-Te-Piko-Ora.md))
 
 ### The specific protocols of the new nodes
 
-The original trio of three trees grew into a pentagram of five nodes — the Heart (Bohemia) and Akasha (Lanka) were added. Each brings its own protocol on top of the shared code:
+The original three trees grew into a pentagram of five nodes — the Heart (Bohemia) and Akasha (Lanka) were added. Each brings its own protocol on top of the shared code:
 
-- **Golden Republic Bohemia (Air / Heart)** — the **Golden Republic protocol**: a governance lab and a circle of decision where Czech wisdom (salt, bridge, the Golden Bull, Přemysl the Ploughman, Libuše, Charles IV) meets the experiment of a sociocratic DAO. The Golden Republic tests how one decides when no one is above another — the circle as a protocol, not as decoration.
+- **Golden Republic Bohemia (Air / Heart)** — the **Golden Republic protocol**: a governance lab and a circle of decision where Czech wisdom (salt, bridge, the Golden Bull, Přemysl the Ploughman, Libuše, Charles IV) meets the experiment of a sociocratic DAO. The Golden Republic tests how decisions are made when no one is above another — the circle as a protocol, not as decoration.
 - **Bodhi Lanka (Akasha / Ether)** — the **Bhakti protocol** and the **Ayurveda Medical Table**: love (Rama-Sita) as a bridge, Sri Maha Bodhi (the oldest living tree, 288 BCE) as the archetype of the root, the Rama Setu bridge as the memory of connection. The Bhakti protocol adds an eighth dimension to the seven shared protocols — care as love, not as duty. The Ayurveda Medical Table extends `TECH/medical-table.md` with a continuity of care thousands of years old.
 
 ### Entering the community: four gates and a vow of care

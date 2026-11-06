@@ -47,7 +47,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 ### Co dnes v zrcadle je
 
 **Web — Terra Nova (`/terranova`)**
-- Kniha TerraNova s kapitolami a edicemi (`TerraNovaBookClient`, `generatedEditions.ts`).
+- Kniha TerraNova s kapitolami a edicemi (`TerraNovaBookClient`, `public/terranova-editions.json`).
 - **Pioneer Projects L5** — karty (`PioneerProjectCards.tsx`): Zahrada Genesis (*Aktivní rozvoj*, EU), Dharma Temple (*V přípravě*, ES, UNESCO), Te Pīko Ora (*Plánováno*, PF), Golden Republic Bohemia (*V přípravě*, CZ), Bodhi Lanka (*Plánováno*, LK).
 - `/terranova/genesis` — charakter místa, fáze 0–4 (0 hotová, 1 aktivní), rysy (glamping, farma, stromy, surf, solar, setkání), integrace ZION (node *planned*, wallet *tbd*, Medical Table *planned*, mesh *planned*, Seed Library *active*, Proof-of-Care DAO *planned*), humanitární závazek 10 % z node odměn.
 - `/terranova/dharma-temple` — La Palma, koncept, rysy, fáze (0 aktivní), **3D koncept** (7 kopulí, Strom života, Merkaba), **architektonický návrh**, **dokumentace** načítaná z `apps/website-v2.9/public/docs/terranova/dharma-temple.{cs,en}.md`, otevřené otázky, Discord.

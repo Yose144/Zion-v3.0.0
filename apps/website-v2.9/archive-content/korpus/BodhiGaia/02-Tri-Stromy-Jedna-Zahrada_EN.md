@@ -7,11 +7,11 @@
 
 ## The Story
 
-From the seed Sita planted below the house of Lumi, not one tree grew.
+From the seed Sita planted below the house of Lumi, not one tree grew, but three.
 
 When the pilgrims returned from the west after a year — from the bridges of WARP and from the golden womb of Hiranyagarbha — they found three saplings on the slope. They grew from one root, but each in a different direction: one towards the sea, one towards the mountains, and one towards the water that ran down the slope into the bay.
 
-Sita was nowhere. In her place sat by the saplings **Hanuman** — the Servant of Life, the one who in Salt of This Earth built a bridge and in the First World of Oasis gave tithes to the poor. He brought water in two buckets and watered all three alike.
+Sita was nowhere. In her place sat by the saplings **Hanuman** — the Servant of Life, who, in *Salt of This Earth*, built a bridge and in the First World of Oasis gave tithes to the poor. He brought water in two buckets and watered all three alike.
 
 *"Why three?"* asked the carpenter.
 
@@ -35,19 +35,19 @@ In spring the carpenter carved three small strokes into the beam above the door,
 
 ## What it means
 
-**L5 Free World is not one project. It is a network of physical communities that share protocols but differ in place, role and energy.** The original trio of three trees grew into a pentagram of five nodes — the Heart (Bohemia) and Akasha (Lanka) were added. The five nodes form the **L5 Pentagram**:
+**L5 Free World is not one project. It is a network of physical communities that share protocols but differ in place, role and energy.** The original three trees grew into a pentagram of five nodes — the Heart (Bohemia) and Akasha (Lanka) were added. The five nodes form the **L5 Pentagram**:
 
 | Node | Element | Tree archetype | Role in the network | Place | Energy |
 |---|---|---|---|---|---|
 | **Genesis Garden** | Earth | **Root** | Base Camp — the entrance gate, farm, work, pilgrim route | Sabacheira, Tomar, Portugal | Movement, albergue, morning light |
 | **Dharma Temple** | Fire | **Trunk** | Sanctuary — silence, practice, education, depth | La Palma, Canary Islands | The calm of a volcano, night, stars |
 | **Te Pīko Ora** | Water | **Crown** | Fulfilment — abundance, integration, marine permaculture | Raiatea, French Polynesia | Flow, eternal noon |
-| **Golden Republic Bohemia** | Air | **Heart** | Governance lab — a circle of decision, Czech wisdom (salt, bridge, the Golden Bull, Přemysl the Ploughman, Libuše, Charles IV), the Golden Republic protocol | Bohemia, Czech Republic | A bridge, a bridge between tradition and experiment |
+| **Golden Republic Bohemia** | Air | **Heart** | Governance lab — a circle of decision, Czech wisdom (salt, bridge, the Golden Bull, Přemysl the Ploughman, Libuše, Charles IV), the Golden Republic protocol | Bohemia, Czech Republic | A bridge between tradition and experiment |
 | **Bodhi Lanka** | Akasha / Ether | **Ether** | Love — Rama-Sita, Sri Maha Bodhi (the oldest living tree, 288 BCE), the Rama Setu bridge, the Bhakti protocol, Ayurveda | Sri Lanka | Love, bhakti, the oldest root |
 
-Why precisely these five:
+Why exactly these five:
 
-1. **The root must be first and nearest.** The Genesis Garden is in the EU, reachable by car and plane, with a mild climate and a low legal barrier (the Portuguese `Associação`). Whoever is to enter L5 for the first time needs a place where one can arrive for a week, sleep in a tent, dig a bed and leave. That is why Genesis is the *Base Camp*.
+1. **The root must be first and nearest.** The Genesis Garden is in the EU, reachable by car and plane, with a mild climate and a low legal barrier (the Portuguese `Associação`). Whoever is to enter L5 for the first time needs a place where you can arrive for a week, sleep in a tent, dig a bed and leave. That is why Genesis is the *Base Camp*.
 2. **The trunk gives shape.** Dharma Temple is not a farm with meditation added. It is the place where **silence becomes a protocol**: a 21-day silent retreat for every keeper before taking on a role, no electronics in the Dharma Circle, 48 hours of reflection before every major decision. A shape that holds when the wind comes.
 3. **The crown comes last — and must not be promised earlier.** Te Pīko Ora is the furthest, legally the most complicated (foreigners in Polynesia cannot directly own land) and culturally the most sensitive (sacred Raiatea, the *marae* Taputapuātea). Therefore it is marked **Vision / Preparation** and its phases begin last (2027–2028). Whoever sold it as a finished paradise would be lying.
 4. **The heart joins.** Golden Republic Bohemia is a governance lab — a circle of decision where Czech wisdom (salt, bridge, the Golden Bull, Přemysl the Ploughman, Libuše, Charles IV) meets experiment. The Golden Republic protocol tests how one decides when no one is above another. Air is the element that carries a voice — and a voice is what a community needs so as not to stiffen.

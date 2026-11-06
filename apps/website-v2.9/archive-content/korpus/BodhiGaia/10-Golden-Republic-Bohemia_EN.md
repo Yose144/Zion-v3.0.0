@@ -126,9 +126,9 @@ The heart of the grounds is no pavilion. It is the **central circle of decision*
 | **Food** | 1 ha organic + agroforestry; Czech varieties, apple, pear and cherry trees, herbs, bees; 25 % caloric self-sufficiency | 3 ha syntropic agroforestry + keyline; 60 %; goats, ducks, aquaponics |
 | **Accommodation** | 4–6 guests: eco-cabins, the core team in a renovated building | 20–30 guests: wooden eco-cabins, a community yurt, the amphitheatre |
 | **Law** | z.s. (association) — registration under Czech law | z.s. + a foundation / z.ú. (institute) for long-term land holding |
-| **Income** | Governance retreats 40 %, eco-tourism 25 %, workshops 15 %, farm 10 %, node 10 % | Target 80 000 EUR/year; + seed library, education centre |
+| **Income** | Governance retreats 40 %, eco-tourism 25 %, workshops 15 %, farm 10 %, node 10 % | Target 80,000 EUR/year; + seed library, education centre |
 
-**Work exchange:** 25 h/week = accommodation + food, limited to 2 working guests per 4 paying ones — as in the Genesis Garden, so that the circle has both hands and income.
+**Work exchange:** 25 h/week = accommodation + food, limited to 2 working guests per 4 paying guests — as in the Genesis Garden, so that the circle has both hands and income.
 
 **Tithe:** Golden Republic Bohemia gives **10 % of all surplus** (not only of node rewards) to local Czech communities, the protection of the Czech landscape and support for Czech herbal heritage.
 
@@ -155,10 +155,10 @@ All four nodes form L5 Free World + the Heart: Root (earth) → Trunk (fire) →
 
 | Phase | Period | State | Key points |
 |---|---|---|---|
-| 0 — Seed | 2026 Q3–Q4 | 🔵 | A core team of 3–5 keepers, scouting in Bohemia (Říp region / Vysočina), legal research (z.s. vs z.ú. vs foundation), a budget of 60 000 EUR, trial beds of 0.2 ha |
+| 0 — Seed | 2026 Q3–Q4 | 🔵 | A core team of 3–5 keepers, scouting in Bohemia (Říp region / Vysočina), legal research (z.s. vs z.ú. vs foundation), a budget of 60,000 EUR, trial beds of 0.2 ha |
 | 1 — Roots | 2027 | 🔵 | Land (purchase / long-term lease), registration of the z.s., solar 8 kWp, a 30 m³ cistern, eco-cabins for 4–6 units, 1 ha, first guests Q3 2027, ZION wallet + DAO framework, the lime avenue |
 | 2 — Community | 2028 | 🔵 | Guardian node, permanent housing in 3–5 cabins, a monthly governance programme, LoRa mesh, a Medical Table pavilion, connection with the Genesis Garden and Dharma Temple, the first governance retreat |
-| 3 — Network | 2029 | 🔵 | 3 ha, a seed network of 3+ nodes, an education centre (a Wayfinding Governance school), a second node in Bohemia or Slovakia, 80 000 EUR/year |
+| 3 — Network | 2029 | 🔵 | 3 ha, a seed network of 3+ nodes, an education centre (a Wayfinding Governance school), a second node in Bohemia or Slovakia, 80,000 EUR/year |
 | 4 — Radiance | 2030+ | 🔵 | A governance retreat centre for 40+ guests, ZION payments by default, knowledge commons, 1 % of surplus → L6, the first prototype of the Golden Republic in practice |
 
 ### Risks

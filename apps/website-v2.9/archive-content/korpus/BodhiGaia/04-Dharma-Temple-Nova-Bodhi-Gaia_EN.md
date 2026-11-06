@@ -1,5 +1,5 @@
 # BODHI GAIA — Chapter 4: Dharma Temple — the New Bodhi Gaia
-## Sanctuary · La Palma, Canary Islands — a merkaba of wood and light, seven domes and the Tree of Life as the axis
+## Sanctuary · La Palma, Canary Islands — a Merkaba of wood and light, seven domes and the Tree of Life as the axis
 
 > *"Dharma is not a way away from the world. It is a way of being in the world differently."*
 
@@ -7,9 +7,9 @@
 
 ## The Story
 
-Whoever lasted a week in the Genesis Garden and yet remained restless was shown by Ana to the south, where an island rose above the sea with its summit lost in the clouds. *"There. But do not go there for the view. Go when you have so much noise in your head that you can no longer hear your own breath."*
+Anyone who lasted a week in the Genesis Garden and was still restless was shown by Ana to the south, where an island rose above the sea with its summit lost in the clouds. *"There. But do not go there for the view. Go when you have so much noise in your head that you can no longer hear your own breath."*
 
-The island was as green as nothing the pilgrims had ever seen. The soil from volcano ash was black, warm and so fertile that trees grew as though someone were pulling them towards the sky. Water ran down the slopes. At night the sky was so dark that the Milky Way cast a shadow.
+The island was greener than anything the pilgrims had ever seen. The soil from volcano ash was black, warm and so fertile that trees grew as though someone were pulling them towards the sky. Water ran down the slopes. At night the sky was so dark that the Milky Way cast a shadow.
 
 And on the slope halfway between the sea and the summit, at the height where the sunny south meets the rainy north, stood **a temple that was not of marble**.
 
@@ -43,7 +43,7 @@ When they left, each received a seed of a local variety and a small wooden table
 
 ### La Palma — La Isla Bonita
 
-The greenest of the Canary Islands, a UNESCO biosphere reserve, the Caldera de Taburiente national park, 700–1 500 mm of rain per year, volcanic soil that holds both warmth and moisture, and nights so dark that one of the best observatories in the world stands there (Roque de los Muchachos, 2 396 m). Recommended position: the western side, 400–800 m — a balance of sun and rain. And also **a real risk**: Cumbre Vieja erupted in 2021.
+The greenest of the Canary Islands, a UNESCO biosphere reserve, the Caldera de Taburiente national park, 700–1,500 mm of rain per year, volcanic soil that holds both warmth and moisture, and nights so dark that one of the best observatories in the world stands there (Roque de los Muchachos, 2,396 m). Recommended position: the western side, 400–800 m — a balance of sun and rain. And also **a real risk**: Cumbre Vieja erupted in 2021.
 
 ### The architecture of the New Bodhi Gaia
 
@@ -82,7 +82,7 @@ Dharma Temple differs from the other nodes in that **silence is part of governan
 | **Water** | Rainwater (100 m² of roofs → 70 m³/year) + a spring, a 30 m³ cistern, filter + UV, a reed-bed treatment | 300 m² of collection, a 100 m³ cistern, a closed loop → aquaponics, a biodigester |
 | **Food** | Syntropic agroforestry on 0.3 ha (banana, avocado, papaya, sweet potato), 15 % self-sufficiency | 1.5 ha of multi-storey food forest (7+ layers, Götsch's method), 60 % |
 | **Accommodation** | 6–10 guests: meditation cells, eco-cabins for two, a core team of 5–8 | 20–30 guests: a group yurt, an 80 m² Dharma hall, cells for 3–5 |
-| **Income (Phase 1)** | Retreats 60 %, cells 20 %, workshops 10 %, farm 5 %, node 5 % | Target 120 000 EUR/year |
+| **Income (Phase 1)** | Retreats 60 %, cells 20 %, workshops 10 %, farm 5 %, node 5 % | Target 120,000 EUR/year |
 
 Micro-hydro requires an environmental impact assessment (the Canary water laws are strict). The legal path: `Asociación` → `Fundación`; land: a long-term lease with a right of first refusal (arras).
 
@@ -108,12 +108,12 @@ Micro-hydro requires an environmental impact assessment (the Canary water laws a
 
 ## Anchor of truth — verifiable facts
 
-> The domes of the story exist as a 3D model and a ground plan. On La Palma not one of them stands yet.
+> The domes of the story exist as a 3D model and a ground plan. On La Palma not a single one of them stands yet.
 
 | Element of the story | State | What is verifiable | What is still missing |
 |---|---|---|---|
 | **The temple of seven domes, the Merkaba, the Tree of Life** | **HORIZON** (concept) | The architectural concept in `apps/website-v2.9/public/docs/terranova/dharma-temple.{cs,en}.md` (subtitle *New Bodhi Gaia*), an interactive 3D preview and ground plan on `/terranova/dharma-temple` (`DharmaTemplePreviewLazy`), the image `/images/dharma-temple/concept-og.png`. | Land, building permit, structural analysis, construction budget; no dome stands. |
-| **The island, the volcano, the laurisilva, the observatory** | **LIVE** (facts about the place) | La Palma: a UNESCO biosphere reserve, 700–1 500 mm of rain, Cumbre Vieja 2021, Roque de los Muchachos — publicly verifiable; identically in the community document and on the web. | The concrete location (north / south / altitude) is not chosen. |
+| **The island, the volcano, the laurisilva, the observatory** | **LIVE** (facts about the place) | La Palma: a UNESCO biosphere reserve, 700–1,500 mm of rain, Cumbre Vieja 2021, Roque de los Muchachos — publicly verifiable; identically in the community document and on the web. | The concrete location (north / south / altitude) is not chosen. |
 | **Sadhu and the people sitting beneath the tree** | **HORIZON** | The 7 / 14 / 21-day curriculum, price list and work-exchange rules in `public/V3/L5/docs/COMMUNITIES/dharma-temple.md` §12. | The first retreat is planned for Q4 2027; no guest, no teacher, no keeper has yet been entered. |
 | **Silence as a protocol (21 days, 48 h, no electronics)** | **HORIZON** | The governance model in §6 of the community document. | The founding team (5 keepers) does not exist; the legal entity (`Asociación`) is not registered. |
 | **The syntropic garden on the slope** | **HORIZON** | The design guild for the La Palma climate (§14: a banana circle, a subtropical orchard, a medicinal corner; Götsch's principles). | Land, the first planting (Phase 1 plan, 2027). |

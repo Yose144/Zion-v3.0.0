@@ -27,7 +27,7 @@ Sítá se usmála. *„Proto jsem přišla. Chci, abychom si dali slib, který n
 
 *„Jak velký díl?"*
 
-*„Pět z každé stovky. Pět pro zemi, pět pro hvězdy, jedno pro ty, kdo hlídají cestu. Zbytek tomu, kdo chléb upekl."*
+*„Pět pro zemi, pět pro hvězdy, jedno pro ty, kdo hlídají cestu — jedenáct z každé stovky. Zbytek tomu, kdo chléb upekl."*
 
 Tesař se dlouho díval do ohně. Pak vzal dláto a do horního trámu nad dveřmi, hned vedle zlatého paprsku protínajícího vlnu, vyřezal malé semeno s kořínkem. *„Aby to nikdo nemohl přepsat, až zapomeneme, proč jsme to slíbili."*
 
@@ -77,7 +77,7 @@ Konkrétně:
 | **„Kus země v každém bloku chleba"** | **ŽIVÉ** (číslo je dynamické) | Každý blok přidá ~270 ZION do fondu; celkový zůstatek se čte z chainu (explorer `/explorer`, adresa fondu), ne z této stránky. | Historická čísla v starších textech (např. „přes 23 600 plateb") jsou snímky v čase — vždy ověřit `getStatus`/explorer. |
 | **Sítá, tesař, semeno z archy** | **MÝTUS** | Archetypy ze Sůl této země (ep. 4 a 10). | — |
 
-> **Známý rozpor k opravě:** kapitola 6 knihy TerraNova ([`06-L5-SVOBODA.md`](../../TerraNova/06-L5-SVOBODA.md)) uvádí historických **10 %** do humanitárního fondu. Kanonický split je **5 % L5 + 5 % L6**; TerraNova kapitola je historický text a musí být označena nebo opravena (viz [kap. 9](./09-Kotva-Pravdy-a-Hranice.md)).
+> **Známý rozpor — opraveno 2026-11-06:** kapitola 6 knihy TerraNova ([`06-L5-SVOBODA.md`](../../TerraNova/06-L5-SVOBODA.md)) dřív uváděla historických **10 %** do humanitárního fondu a přidávala cenový odhad. Kanonický split je **5 % L5 + 5 % L6 + 1 % node reward**; kapitola teď říká přesně to a počítá jen z protokolu (viz [kap. 9](./09-Kotva-Pravdy-a-Hranice.md)).
 
 ---
 

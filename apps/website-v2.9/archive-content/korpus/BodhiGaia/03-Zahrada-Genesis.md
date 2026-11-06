@@ -93,7 +93,7 @@ Sucho a nedostatek vody (vrt + déšť + šedá voda), **letní požáry** (prot
 
 ## Kotva pravdy — ověřitelná fakta
 
-> Zahrada Genesis je nejdál ze všech tří uzlů — a přesto je to stále sazenice, ne strom.
+> Zahrada Genesis je nejdál ze všech pěti uzlů — a přesto je to stále sazenice, ne strom.
 
 | Prvek příběhu | Stav | Co je ověřitelné | Co ještě chybí |
 |---|---|---|---|
@@ -109,7 +109,7 @@ Sucho a nedostatek vody (vrt + déšť + šedá voda), **letní požáry** (prot
 | **Lumi a Ana sázejí druhé semínko růže** | **MÝTUS** | Epilog [`Ruze/Epilog-Zahrada-Genesis.md`](./12-Ruze-v-Zahrade-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna, ne událost. | — |
 | **Fyzická růže zasazená v Sabacheiře** | **NEDOLOŽENO** | Žádná evidence výsadby neexistuje; návrh [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) je **HORIZONT / NEZAHÁJENO**. | Splnění Gate A–D + Day 0 packet podle pilotního rámce. |
 
-> **Známý rozpor k opravě:** lokalita Genesis Garden byla historicky uváděna jako *Algarve* i jako *Střední Evropa* — od 2026-10-07 je sjednocena na **Sabacheira, concelho Tomar** (freguesie mezi Fátimou a Tomarem; viz [kap. 9](./09-Kotva-Pravdy-a-Hranice.md)).
+> **Známý rozpor — sjednoceno 2026-10-07:** lokalita Genesis Garden byla historicky uváděna jako *Algarve* i jako *Střední Evropa*; od tohoto data je sjednocena na **Sabacheira, concelho Tomar** (freguesie mezi Fátimou a Tomarem; viz [kap. 9](./09-Kotva-Pravdy-a-Hranice.md)).
 
 ---
 

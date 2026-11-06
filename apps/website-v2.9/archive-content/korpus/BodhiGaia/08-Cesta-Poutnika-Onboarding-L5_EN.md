@@ -1,7 +1,7 @@
 # BODHI GAIA — Chapter 8: The path of the pilgrim — onboarding into L5
 ## Seven gates into the gardens of the New Earth — what you need, what no one may ask of you, and what no one may promise you
 
-> The original trio of three trees grew into a pentagram of five nodes — the Heart (Bohemia) and Akasha (Lanka) were added. The gates apply to all five gardens alike; the new entry points are listed below too.
+> The original three trees grew into a pentagram of five nodes — the Heart (Bohemia) and Akasha (Lanka) were added. The gates apply to all five gardens alike; the new entry points are listed below too.
 
 > *"Whoever comes here need not believe in anything. They only have to be able to put a hand to the work and withstand the wind."* — Ana, the Genesis Garden
 
@@ -13,7 +13,7 @@ On the post by the gate of the Genesis Garden a board had hung for some time. It
 
 A young man came with a backpack and a telephone in his hand. *"I want to help the earth. Where do I sign up? How much does it cost? What do I get for it?"*
 
-Ana set down the hoe. *"Three questions, three wrong ones. There is no sign-up. It costs nothing — and if someone tells you it costs something, run. And you will get nothing for it that could be sold. But let us try it differently. How much time do you have?"*
+Ana set down the hoe. *"Three questions, three wrong ones. There is no sign-up. It costs nothing — and if someone tells you it costs something, run. And you will get nothing for it that could be sold. But let's try it differently. How much time do you have?"*
 
 *"A week."*
 
@@ -27,7 +27,7 @@ Ana set down the hoe. *"Three questions, three wrong ones. There is no sign-up. 
 
 *"The third door is narrow. Six months on site. Or twelve in the temple — and there twenty-one days of silence before we give you the key to anything. Four gates: you write who you are and why you are coming; you sit with the circle; you try it for a month; and then the circle says yes or no. No one will test you on faith. They will test you on whether a tidy kitchen remains behind you."*
 
-The man looked at his telephone. *"I… I am more of that sort. Networks, servers."*
+The man looked at his telephone. *"I… I'm more of that sort. Networks, servers."*
 
 *"The fourth door. A technical keeper need not be here. They look after the node, the mesh, the solar remotely, and come once a quarter. But careful — the node does not **stand** here yet. Whoever comes saying they want to 'operate a Guardian node in the Garden' will get the answer: 'Help us build it. Phase two.'"*
 

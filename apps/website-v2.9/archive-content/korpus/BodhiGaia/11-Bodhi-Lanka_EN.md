@@ -17,7 +17,7 @@ Sri Maha Bodhi. A cutting from the original tree of awakening, brought from Budd
 
 Beneath the tree sat a man and a woman. They held hands. They were silent.
 
-The woman was not a stranger. The carpenter recognised her — it was Sita, Mother Earth, the one who in Salt of the Earth tasted salt with the pilgrims at the first fire. But here, beneath this tree, on this island, she was also Sita — the one who was abducted, the one who passed through fire and came out unburned. Not one or the other. Both. Because a land that carried the tree of awakening can also carry the double face of one woman.
+The woman was not a stranger. The carpenter recognised her — it was Sita, Mother Earth, who, in *Salt of the Earth*, tasted salt with the pilgrims at the first fire. But here, beneath this tree, on this island, she was also Sita — the one who was abducted, the one who passed through fire and came out unburned. Not one or the other. Both. Because a land that carried the tree of awakening can also carry the double face of one woman.
 
 The man was not the carpenter. It was Rama — the one who built a bridge of stones across the ocean to get Sita back. The Ramayana tells that monkeys and bears carried stones into the sea and wrote the name of Rama on them, and the stones floated. The bridge is called Rama Setu — Adam's Bridge — and its remains lie to this day as a chain of limestone shoals between India and Sri Lanka.
 
@@ -129,9 +129,9 @@ The pavilions are not replicas of temples. They are **original contemporary stru
 | **Food** | 1.5 ha of Ayurvedic herbs + a food forest (turmeric, curry leaf, jackfruit, mango, banana, coconut, clove, cardamom); 30 % caloric self-sufficiency | 4 ha syntropic agroforestry + Ayurveda; 60 %; goats, ducks, aquaponics |
 | **Accommodation** | 6–10 guests: eco-cabins, the core team in a renovated building | 25–40 guests: wooden eco-cabins, a community meditation hall, an amphitheatre |
 | **Law** | A Sri Lankan NGO (non-governmental organization) — registration under Sri Lankan law | NGO + a foundation / trust for long-term land holding |
-| **Income** | Bodhi retreats 35 %, Ayurveda programmes 30 %, eco-tourism 20 %, farm 10 %, node 5 % | Target 120 000 EUR/year; + Ayurvedic production, education centre |
+| **Income** | Bodhi retreats 35 %, Ayurveda programmes 30 %, eco-tourism 20 %, farm 10 %, node 5 % | Target 120,000 EUR/year; + Ayurvedic production, education centre |
 
-**Work exchange:** 25 h/week = accommodation + food, limited to 2 working guests per 4 paying ones — as in the Genesis Garden and Bohemia, so that the circle has both hands and income.
+**Work exchange:** 25 h/week = accommodation + food, limited to 2 working guests per 4 paying guests — as in the Genesis Garden and Bohemia, so that the circle has both hands and income.
 
 **Tithe:** Bodhi Lanka gives **10 % of all surplus** (not only of node rewards) to local Sri Lankan communities, the protection of Sri Maha Bodhi and support for the Ayurvedic heritage of Sri Lanka.
 
@@ -159,10 +159,10 @@ All five nodes form L5: Root (earth) → Trunk (fire) → Crown (water) → Hear
 
 | Phase | Period | State | Key points |
 |---|---|---|---|
-| 0 — Seed | 2027 Q1–Q2 | 🔵 | A core team of 3–5 keepers, scouting in Sri Lanka (Anuradhapura vs the hill country vs the south coast), legal research (a Sri Lankan NGO), a cultural review of the Ramayana and Buddhist motifs, a budget of 80 000 EUR, a partnership with the Buddhist sangha |
+| 0 — Seed | 2027 Q1–Q2 | 🔵 | A core team of 3–5 keepers, scouting in Sri Lanka (Anuradhapura vs the hill country vs the south coast), legal research (a Sri Lankan NGO), a cultural review of the Ramayana and Buddhist motifs, a budget of 80,000 EUR, a partnership with the Buddhist sangha |
 | 1 — Roots | 2027 Q3–2028 | 🔵 | Land (a long-term lease), NGO registration, solar 10 kWp, a 50 m³ cistern, eco-cabins for 6–10 units, 1.5 ha of Ayurveda + food forest, first guests Q4 2028 ("Bodhi + Ayurveda Immersion"), ZION wallet + DAO framework |
 | 2 — Community | 2029 | 🔵 | Guardian node, permanent housing in 3–5 cabins, a monthly Bhakti governance programme, LoRa mesh, an Ayurveda pavilion, connection with the Genesis Garden, Dharma Temple, Te Pīko Ora and Bohemia, the first Bodhi retreat |
-| 3 — Network | 2030 | 🔵 | 4 ha, Ayurvedic production, an education centre (a Bodhi + Ayurveda school), a second node in South Asia, 120 000 EUR/year |
+| 3 — Network | 2030 | 🔵 | 4 ha, Ayurvedic production, an education centre (a Bodhi + Ayurveda school), a second node in South Asia, 120,000 EUR/year |
 | 4 — Radiance | 2031+ | 🔵 | A Bodhi retreat centre for 40+ guests, ZION payments by default, knowledge commons, 1 % of surplus → L6, the first prototype of Bhakti governance in practice |
 
 ### Risks

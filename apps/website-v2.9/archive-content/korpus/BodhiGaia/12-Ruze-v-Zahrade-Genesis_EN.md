@@ -21,7 +21,7 @@ Later, when work was being divided on the circle of stones, a guest came to her 
 
 "So it is true? Is it that sacred rose?"
 
-Ana looked at the bare earth and then at the guest — for a long time, the way one looks at someone who has time.
+Ana looked at the bare earth and then at the guest — for a long time, the way you look at someone who has time.
 
 "We planted a seed," she said. "An ordinary one, small, brown. A child brought it in a vessel that looked empty the whole way. We are not planting a shrine — we are planting a possibility that will have to defend itself every day there is drought."
 
@@ -66,7 +66,7 @@ This chapter stands at the **intersection** — the place where two books meet t
 
 Literature planted the seed. Physically no one has yet — and if that ever happens, it must stand as a **documented event, not as a legend**. That is why the proposal of a micro-pilot exists: [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md): a decision framework with four gates (consent and place → botany and safety → care → finance and claims), a record packet, Day 0 evidence and checks on Day 30 / 90 / 365.
 
-**State: HORIZON / NOT STARTED.** The document documents no land, no permit, no purchase of a plant, no planting, no survival and no impact. It is not an M5 exit gate, marketing, a ceremony or fundraising — it is the discipline of how a small physical act should be carried out and documented, if it were ever to occur.
+**State: HORIZON / NOT STARTED.** The proposal lists no land, no permit, no purchase of a plant, no planting, no survival and no impact. It is not an M5 exit gate, marketing, a ceremony or fundraising — it is the discipline of how a small physical act should be carried out and documented, if it were ever to occur.
 
 ---
 

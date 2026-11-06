@@ -96,14 +96,14 @@ Registr M0 („claim registry") vyžaduje, aby se rozpory hlásily bez obrany id
 
 | # | Rozpor | Kde | Doporučená oprava | Třída |
 |---|---|---|---|---|
-| 1 | Humanitární podíl uveden jako **10 %** místo kanonických **5 % L5 + 5 % L6**. | `docs/TerraNova/06-L5-SVOBODA.md` §6.2 (a odhad „777 600 ZION/den") | Označit kapitolu jako historickou / opravit na 5 % a odstranit cenový odhad (porušuje zákaz predikcí ceny). | B + E |
+| 1 | ~~Humanitární podíl uveden jako **10 %** místo kanonických **5 % L5 + 5 % L6**.~~ → **VYŘEŠENO 2026-11-06:** kapitola teď uvádí 5 % + 5 % + 1 %, počítá jen z protokolu (~388 800 ZION/den, ~142 M ZION/rok nominálně) a místo ceny odkazuje na `total_disbursed`. | `docs/TerraNova/06-L5-SVOBODA.md` §6.2 (a odhad „777 600 ZION/den") | Označit kapitolu jako historickou / opravit na 5 % a odstranit cenový odhad (porušuje zákaz predikcí ceny). | B + E |
 | 2 | ~~Lokalita Genesis Garden jako **Střední Evropa** místo **Algarve**~~ → **VYŘEŠENO 2026-10-07:** správná lokalita je **Sabacheira, concelho Tomar** — sjednoceno napříč `/l5-free-world`, `/terranova/genesis`, kartami, OASIS, mapami i registry. | — | Zápis ponechán jako historie rozhodnutí. | A |
 | 3 | Svět Dharma Temple byl označen `layer: 3` — ve zdroji již opraveno. | `apps/OasisWeb/src/domain/config/worlds.ts` (`DHARMA_TEMPLE_LA_PALMA` má `layer: 5` + tag `layer 5`) | Ověřit deploy veřejného klienta; přidat štítek „koncept". | A |
 | 4 | Lokalita Te Pīko Ora: web/OASIS **Tahiti**, komunitní dokument preferuje **Raiatea** (Tahiti jako záloha). | `PioneerProjectCards.tsx`, `WorldPanel.tsx` vs `te-piko-ora.md` §3.3 | Uvést „Raiatea / Tahiti (výběr probíhá)" všude stejně. | A |
 | 5 | Komunitní dokumenty datovány **2026-05-21**; timeline Genesis Fáze 1 „první hosté Q3 2026" — Q3 2026 již probíhá bez evidence. | `public/V3/L5/docs/COMMUNITIES/*.md` | Refresh stavů a dat; přidat sekci „Evidence" s odkazy. | B |
-| 6 | Nirvana ep. 10 uvádí konkrétní čísla („přes 23 600 plateb") a „živý graf" na `/l5-free-world`. | `canon/books/nirvana/10-Prameny-Zivota.md` | Čísla označit jako snímek s datem; „živý graf" ověřit nebo změnit na „stránka s adresou fondu". | B |
-| 7 | Nirvana ep. 4 popisuje ZIS s Passkeys / WebAuthn / biometrikou. | `canon/books/nirvana/04-Domov.md` | Podle `MiseAmenti/07` je Passkeys HORIZONT — doplnit štítek. (Mimo L5, ale nalezeno při čtení.) | B |
-| 8 | Inventář v `L5_L6_ACTIVATION_PLAN.md` §4.2 a §5 stále uvádí placeholder `fund_address`, špatný RPC port a chybějící env overrides — **kód je už opraven** (`DEFAULT_HUMANITARIAN_FUND_ADDRESS = zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8`, `l1_rpc_url = interní port`, env `FREE_WORLD_*`). | `docs/3.2/L5_L6_ACTIVATION_PLAN.md` vs `interní repozitář` | Aktualizovat inventář plánu (sekce 4.2 / 5) na skutečný stav kódu; ponechat historické body jako „vyřešeno". | B |
+| 6 | Nirvana ep. 10 uváděla konkrétní čísla („přes 23 600 plateb") a „živý graf" na `/l5-free-world`. → **VYŘEŠENO 2026-11-06:** čísla jsou datovaný snímek (výška 112 326: 30 305 717 ZION nasčítáno, `total_disbursed` = 0) a „živý graf" je „živý zůstatek fondu". | `canon/books/nirvana/10-Prameny-Zivota.md` | Čísla označit jako snímek s datem; „živý graf" ověřit nebo změnit na „stránka s adresou fondu". | B |
+| 7 | Nirvana ep. 4 popisuje ZIS s Passkeys / WebAuthn / biometrikou. → **VYŘEŠENO 2026-11-06:** text teď říká `STAVBA` a pojmenovává dnešní přihlášení (e-mail, ZIS session, volitelné propojení Google účtu). | `canon/books/nirvana/04-Domov.md` | Podle `MiseAmenti/07` je Passkeys HORIZONT — doplnit štítek. (Mimo L5, ale nalezeno při čtení.) | B |
+| 8 | Inventář v `L5_L6_ACTIVATION_PLAN.md` §4.2 a §5 stále uvádí placeholder `fund_address`, špatný RPC port a chybějící env overrides — **kód je už opraven** (`DEFAULT_HUMANITARIAN_FUND_ADDRESS = zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8`, `l1_rpc_url = interní port`, env `FREE_WORLD_*`). | `docs/3.2/L5_L6_ACTIVATION_PLAN.md` vs `interní repozitář` | **VYŘEŠENO 2026-11-06:** §4.2 uvádí kanonické adresy a skutečné env overlaye, §5 označuje rizika 1–4 za uzavřená a nechává jen dva skutečné blokery (DAO UI, summary-only exekuce). | B |
 | 9 | OASIS statusy komunit jsou ručně psané konstanty bez zdroje v L5 API. | `WorldPanel.tsx`, `PioneerProjectCards.tsx` | Zdroj pravdy: `communities` tabulka / `GET /api/v1/projects`. | STAVBA (M5) |
 | 10 | Web `/terranova/genesis` uvádí *Seed Library — active*, komunitní dokument „informal exchange". | web vs `genesis-garden.md` §3.3 | Sjednotit stav (STAVBA), doplnit katalog nebo změnit štítek. | A |
 
@@ -129,7 +129,7 @@ Registr M0 („claim registry") vyžaduje, aby se rozpory hlásily bez obrany id
 
 | Krok | Co | Gate | Stav |
 |---|---|---|---|
-| 1 | Opravit rozpory #1, #2, #4, #10 (redakční) a #8 (config); u #3 je zdroj opraven — zůstává ověření deploy a štítek „koncept". | M0 | ❌ |
+| 1 | Opravit rozpory: #1, #2, #6, #7 a #8 jsou **hotové (2026-11-06)**; #4 (Tahiti vs Raiatea) a #10 (štítek Seed Library) zůstávají redakční; u #3 zbývá ověřit deploy a přidat štítek „koncept". | M0 | 🔄 |
 | 2 | Refresh tří komunitních dokumentů se sekcí *Evidence* (co je doloženo, kdy, kým). | M0 / M5 | ❌ |
 | 3 | Přidat řádky L5 do `MiseAmenti/07-Registr-Dukazu.md` (tato kapitola jako zdroj). | M0 | 🔄 (návrh v [`CHANGELOG`](../MiseAmenti/CHANGELOG.md)) |
 | 4 | Vynutit API klíč na `free-world tracker` před jakýmkoli veřejným exponováním. | M1 (bezpečnost) | ❌ |

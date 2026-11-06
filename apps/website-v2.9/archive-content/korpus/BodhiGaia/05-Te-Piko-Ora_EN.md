@@ -41,7 +41,7 @@ The carpenter carved into the mast of the canoe a circle with a dot in the middl
 
 ## What it means
 
-**Te Pīko Ora is the third node of L5 Free World — the Crown, fulfilment, "ZION fully manifested". Where the Genesis Garden is the root (earth, beginning) and Dharma Temple the trunk (fire, path), Te Pīko Ora is the flower and the fruit (water, completion).** And at the same time it is the node that is furthest, most complicated and most sensitive — which is why it is marked **Vision / Preparation** and **not** as a finished paradise.
+**Te Pīko Ora is the third node of L5 Free World — the Crown, fulfilment, "ZION fully manifested". Where the Genesis Garden is the root (earth, beginning) and Dharma Temple the trunk (fire, path), Te Pīko Ora is the flower and the fruit (water, completion).** It is also the node that is furthest, most complicated and most sensitive — which is why it is marked **Vision / Preparation** and **not** as a finished paradise.
 
 ### Name and cosmology
 
@@ -91,7 +91,7 @@ Deciding: daily operation — a rotating *ari'i* with the consent of the circle;
 **The lesson of Rapa Nui** (both faces of the wave; the teaching is part of the curriculum):
 1. Carrying capacity is a law, not a recommendation.
 2. Dunbar's number (~150) is the natural limit of an *ahu* — exceed it and the chain breaks.
-3. Rotating authority (*tangata manu*) > hereditary power.
+3. Rotating authority (*tangata manu*) beats hereditary power.
 4. Immutable records (*rongorongo*) survive political cycles.
 5. Recovery is possible — Rapa Nui survived a reduction to 111 inhabitants.
 
@@ -100,11 +100,11 @@ Deciding: daily operation — a rotating *ari'i* with the consent of the circle;
 | Area | Phase 1 | Phase 2 | Phase 3 |
 |---|---|---|---|
 | **Energy** | 10 kWp + 20 kWh | 25 kWp + 50 kWh, biodiesel from coconut | 40 kWp + 100 kWh, floating solar on the lagoon |
-| **Water** | A 50 m³ cistern + a spring | 150 m³, small RO | 300 m³ + solar desalination 1 000 l/day |
+| **Water** | A 50 m³ cistern + a spring | 150 m³, small RO | 300 m³ + solar desalination 1,000 l/day |
 | **Food** | *mara* agroforestry, 100 palms, 30 % | *vāvā* ponds, *limu* algae, 60 % | a closed loop, pearls, 90 % |
 | **Accommodation** | *fare pote'e*, *fare va'a*, 8–12 guests | bungalows, tree *fare*, 25–40 | floating *fare*, 60–80 + 15–20 residents |
 | **Law** | Association Loi 1901 (Papeete) | an SCI with a local partner (bail emphytéotique) | a customary *mā'ohi* partnership |
-| **Income** | eco-lodge 50 %, wayfinding school 15 %, culture 15 % | + marine permaculture 20 %, pearls 10 % | export of algae / pearls, target 400 000 EUR/year |
+| **Income** | eco-lodge 50 %, wayfinding school 15 %, culture 15 % | + marine permaculture 20 %, pearls 10 % | export of algae / pearls, target 400,000 EUR/year |
 
 **Tithe:** Te Pīko Ora gives **15 % of all surplus** (not only of node rewards) to local Polynesian communities, ocean protection and Pacific climate resilience — more than the standard 10 %, because Polynesia is on the front line of climate change.
 
@@ -114,10 +114,10 @@ Deciding: daily operation — a rotating *ari'i* with the consent of the circle;
 
 | Phase | Period | State | Key points |
 |---|---|---|---|
-| 0 — Seed | 2026–2027 | 🔵 | A team of 5 keepers including a Polynesian elder / adviser, scouting Raiatea, Association Loi 1901, a *mā'ohi* partnership, a budget of 80 000 EUR, a Starlink order |
+| 0 — Seed | 2026–2027 | 🔵 | A team of 5 keepers including a Polynesian elder / adviser, scouting Raiatea, Association Loi 1901, a *mā'ohi* partnership, a budget of 80,000 EUR, a Starlink order |
 | 1 — Roots | 2027–2028 | 🔵 | A land lease, the first *fare pote'e*, 10 kWp, 50 m³, 100 palms + an orchard, first guests Q4 2028 ("Wayfinding Immersion"), a *va'a* canoe |
-| 2 — Community | 2029 | 🔵 | Guardian node, ponds and algae, a small pearl cooperative, a wayfinding school, LoRa, 150 000 EUR/year |
-| 3 — Network | 2030 | 🔵 | Floating *fare*, export, exchange of plants with Hawaii / NZ / the Cook Islands, 400 000 EUR/year, mentoring of a second Pacific node |
+| 2 — Community | 2029 | 🔵 | Guardian node, ponds and algae, a small pearl cooperative, a wayfinding school, LoRa, 150,000 EUR/year |
+| 3 — Network | 2030 | 🔵 | Floating *fare*, export, exchange of plants with Hawaii / NZ / the Cook Islands, 400,000 EUR/year, mentoring of a second Pacific node |
 | 4 — Radiance | 2031+ | 🔵 | A centre of Polynesian ZION, knowledge commons, 3+ new Pacific nodes, 1 % of surplus → L6 |
 
 ### Risks
