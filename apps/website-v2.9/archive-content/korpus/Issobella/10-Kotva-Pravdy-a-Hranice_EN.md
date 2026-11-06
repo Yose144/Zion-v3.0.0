@@ -35,7 +35,7 @@ Only-that looked up at the sky, where the first stars were beginning to appear a
 |---|---|---|---|
 | `ISSOBELLA_PCT = 5` — 5 % of every subsidy → `zion1z4s3a5...` | **LIVE** | the `internal repository` `{emission,v3_template,v3_compat}.rs`; `StatusV3.md` | — |
 | Premine slot 6 = 2.5 billion ZION, `zion1f5h5k6t8...`, lock 144 000 | **LIVE** | `v3_compat.rs`, `CHANGES_L6_ISSOBELLA.md`, `StatusV3.md` 2026-09-12 | An independent explorer view |
-| `issobella tracker` tracker on Edge, `:8097`, `/api/issobella/` | **LIVE** (read-only) | the `internal repository`, `zion-*-service` (internal service), `StatusV3.md` 2026-08-23 | A public portal; API-key enforcement |
+| `issobella tracker` on Edge, internal port, `/api/issobella/` | **LIVE** (read-only) | the `internal repository`, `zion-*-service` (internal service), `StatusV3.md` 2026-08-23 | A public portal; API-key enforcement |
 | The fund pays out grants | **INVALID** (today) | G10 read-only; the DAO path awaits a UI | DAO UI, payout flow, multisig, first project |
 | The research bundle `L6data/` public in `/docs` | **LIVE** (documentation) | `L6data/README.md`, `apps/website-v2.9/public/docs/l6/`, `apps/website-v2.9/src/app/docs/page.tsx` | Peer review, external experts |
 | An orbital station at 400–550 km, AG 0.38 g, a crew | **HORIZON** | `L6data/Architektura.md`, `Umela_Gravitace.md`, `Lidske_Faktory.md`, `/l6-issobella` | Feasibility, partners, years of work |

@@ -35,7 +35,7 @@ Jen-že se podíval k obloze, kde se nad táborem začínaly objevovat první hv
 |---|---|---|---|
 | `ISSOBELLA_PCT = 5` — 5 % každého subsidy → `zion1z4s3a5...` | **ŽIVÉ** | `interní repozitář{emission,v3_template,v3_compat}.rs`; `StatusV3.md` | — |
 | Premine slot 6 = 2,5 mld ZION, `zion1f5h5k6t8...`, lock 144 000 | **ŽIVÉ** | `v3_compat.rs`, `CHANGES_L6_ISSOBELLA.md`, `StatusV3.md` 2026-09-12 | Nezávislý explorer pohled |
-| `issobella tracker` tracker na Edge, `:8097`, `/api/issobella/` | **ŽIVÉ** (read-only) | `interní repozitář`, `zion-*-service` (interní služba), `StatusV3.md` 2026-08-23 | Veřejný portál; API-key enforcement |
+| `issobella tracker` na Edge, interní port, `/api/issobella/` | **ŽIVÉ** (read-only) | `interní repozitář`, `zion-*-service` (interní služba), `StatusV3.md` 2026-08-23 | Veřejný portál; API-key enforcement |
 | Fond vyplácí granty | **NEPLATNÉ** (dnes) | G10 read-only; DAO cesta čeká na UI | DAO UI, payout flow, multisig, první projekt |
 | Výzkumný balík `L6data/` veřejný v `/docs` | **ŽIVÉ** (dokumentace) | `L6data/README.md`, `apps/website-v2.9/public/docs/l6/`, `apps/website-v2.9/src/app/docs/page.tsx` | Peer review, externí experti |
 | Orbitální stanice 400–550 km, AG 0,38 g, posádka | **HORIZONT** | `L6data/Architektura.md`, `Umela_Gravitace.md`, `Lidske_Faktory.md`, `/l6-issobella` | Feasibility, partneři, roky práce |

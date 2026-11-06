@@ -121,7 +121,7 @@ Směr, který má v ekonomickém modelu místo, ale není dnešním produktem:
 
 - **Free World (L5):** komunity a humanitární mise s ověřitelným dopadem.
 - **Issobella (L6):** dlouhodobý orbitální a open-science horizont.
-- **Golden Egg a celý herní svět Oasis:** questová vrstva a příběhový svět mají popsané parametry; úplná implementace zůstává ve stavbě.
+- **Golden Egg a celý herní svět Oasis:** questová vrstva a příběhový svět mají popsané parametry; úplná implementace zůstává STAVBA.
 
 > **Tohle rozdělení je důležitější než velká slova.** Živé se testuje, stavba se sleduje, horizont se nesmí prodávat jako hotová věc.
 

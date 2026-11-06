@@ -121,7 +121,7 @@ A direction that has space in the economic model, but is not today's product:
 
 - **Free World (L5):** communities and humanitarian missions with verifiable impact.
 - **Issobella (L6):** long-term orbital and open-science horizon.
-- **Golden Egg and the full Oasis game world:** the quest layer and story world have described parameters; complete implementation remains under construction.
+- **Golden Egg and the full Oasis game world:** the quest layer and story world have described parameters; complete implementation remains BUILDING.
 
 > **This division matters more than big words.** Live is tested, construction is tracked, the horizon must not be sold as a finished thing.
 
