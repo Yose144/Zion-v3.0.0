@@ -339,13 +339,14 @@ batching nemá co slít; případná další úspora by byla v ubírání objekt
 |---|---|---|---|
 | Let | `apps/nirvana/test/lumi-flight.mjs` | **53** | lucerna zvedá a dochází, proudy nesou a dobíjí, cesta jde dohrát, skóre nezáporné, **kompas** míří na nejbližší světlo / svatyni / `null` |
 | Deník + kapitoly | `apps/nirvana/test/lumi-journal.mjs` | **43** | ukládání, idempotence světel, odemykání `light`, darování, **kapitola ke každé cestě, jiný úvod pro vracejícího se hráče** |
+| Koop odměna | `apps/nirvana/test/lumi-coop.mjs` | **17** | podíl roste s přínosem, součet zůstává v poolu, podlaha pro „nosiče", rovný díl při nulovém přínosu, `NaN`/zápory nerozhodí |
 | Stopa | `apps/nirvana/test/lumi-trail.mjs` | **15** | vzorky vznikají pohybem (ne každým snímkem), strop ohonu, doznívání po `TRAIL_TTL`, jas 1→0, **nezávislost na fps** |
 | Společný let (server) | `apps/nirvana-net/test/lumi.mjs` | **23** | dva se vidí, světla sdílená, nový hráč je dostane, cesta z prvního joinu, svatyně až po sedmi, odchod jednoho nezhroutí druhého, **duch zůstane 3 s na poslední pozici a pak zmizí, **darování světla (event, `gifts` ve `flyers`, cizí světlo darovat nejde)** |
 | Audit v prohlížeči | `.artifacts/probe/lumi-audit.mjs` | **54** | scéna se vykreslí, let reaguje na vstup, 7 světel → svatyně → panel → dar → skóre na tabuli, deník, **kompas**, model lucerny se opravdu načetl, **foto mód skryje chrome a `Esc` ho vrátí**, konzole bez chyb |
 | Živý co-op | `.artifacts/probe/lumi-coop-live.mjs` | 5 | dva prohlížeče: oba vidí „letí 1", světlo sebrané jedním má i druhý |
 
 ```bash
-cd apps/nirvana       && npx tsx test/lumi-flight.mjs && npx tsx test/lumi-journal.mjs && npx tsx test/lumi-trail.mjs
+cd apps/nirvana       && npx tsx test/lumi-flight.mjs && npx tsx test/lumi-journal.mjs && npx tsx test/lumi-trail.mjs && npx tsx test/lumi-coop.mjs
 cd apps/nirvana-net   && npm run build && node test/lumi.mjs
 # audit + co-op potřebují běžící appku (3014) a net (3012), viz §9
 NIRVANA_BASE=http://127.0.0.1:3014 node .artifacts/probe/lumi-audit.mjs
