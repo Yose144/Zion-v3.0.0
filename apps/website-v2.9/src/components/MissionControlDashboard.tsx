@@ -11,7 +11,8 @@ import {
   Square, Target, Timer, TrendingUp, Wallet, Wrench, Zap, Code2, CalendarDays,
   CircleDot, XCircle, CheckCheck, Construction
 } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from '@/hooks/usePolling';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 import { SEED_PRICE_USD } from '@/lib/defi-contracts';
@@ -807,51 +808,51 @@ function fmtBytes(bytes: number | null | undefined) {
 }
 
 /* ═══════════════════════ TAB CONFIG ═══════════════════════ */
-const getTabs = (cs: boolean) => [
-  { id: 'dashboard', label: MissionControlDashboardCopy.dashboard[cs ? 'cs' : 'en'], icon: Monitor },
-  { id: 'metrics', label: MissionControlDashboardCopy.stackMetrics[cs ? 'cs' : 'en'], icon: BarChart3 },
+const getTabs = (cs: boolean, lang: Lang) => [
+  { id: 'dashboard', label: tx5(MissionControlDashboardCopy.dashboard, lang), icon: Monitor },
+  { id: 'metrics', label: tx5(MissionControlDashboardCopy.stackMetrics, lang), icon: BarChart3 },
   { id: 'upgrade', label: 'Ekam Deeksha', icon: Sparkles },
-  { id: 'roadmap', label: MissionControlDashboardCopy.roadmap[cs ? 'cs' : 'en'], icon: Target },
-  { id: 'layers', label: MissionControlDashboardCopy.layers[cs ? 'cs' : 'en'], icon: Layers },
-  { id: 'constitution', label: MissionControlDashboardCopy.constitution[cs ? 'cs' : 'en'], icon: Lock },
-  { id: 'economy', label: MissionControlDashboardCopy.economy[cs ? 'cs' : 'en'], icon: Wallet },
-  { id: 'security', label: MissionControlDashboardCopy.security[cs ? 'cs' : 'en'], icon: Shield },
-  { id: 'timeline', label: MissionControlDashboardCopy.timeline[cs ? 'cs' : 'en'], icon: CalendarDays },
-  { id: 'priority', label: MissionControlDashboardCopy.priority[cs ? 'cs' : 'en'], icon: Zap },
+  { id: 'roadmap', label: tx5(MissionControlDashboardCopy.roadmap, lang), icon: Target },
+  { id: 'layers', label: tx5(MissionControlDashboardCopy.layers, lang), icon: Layers },
+  { id: 'constitution', label: tx5(MissionControlDashboardCopy.constitution, lang), icon: Lock },
+  { id: 'economy', label: tx5(MissionControlDashboardCopy.economy, lang), icon: Wallet },
+  { id: 'security', label: tx5(MissionControlDashboardCopy.security, lang), icon: Shield },
+  { id: 'timeline', label: tx5(MissionControlDashboardCopy.timeline, lang), icon: CalendarDays },
+  { id: 'priority', label: tx5(MissionControlDashboardCopy.priority, lang), icon: Zap },
 ] as const;
 
 type TabId = 'dashboard' | 'metrics' | 'upgrade' | 'roadmap' | 'layers' | 'constitution' | 'economy' | 'security' | 'timeline' | 'priority';
 
-function getFallbackReadinessMap(cs: boolean): ReadinessMap {
+function getFallbackReadinessMap(cs: boolean, lang: Lang): ReadinessMap {
   return {
     done: [
-      { title: 'Ekam Deeksha v3.2 canonical PoW', detail: cs ? '512 KiB scratchpad · 2 passes · 128 reads · 2 AES rounds · KAT locked' : '512 KiB scratchpad · 2 passes · 128 reads · 2 AES rounds · KAT locked' },
-      { title: 'Mainnet cutover + premine soft-fork', detail: cs ? 'Ekam Deeksha na všech výškách · premine time-locky + admin multisig' : 'Ekam Deeksha at all heights · premine time-locks + admin multisig' },
-      { title: 'Gates G1–G5 · G7 · G11 + E4', detail: cs ? 'Rigy, chaos/load, bridge round-trip, migrace uzavřeny' : 'Rigs, chaos/load, bridge round-trip, migration closed' },
-      { title: MissionControlDashboardCopy.feeSplit89551[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.pplnsPayoutVerifiedAndActive[cs ? 'cs' : 'en'] },
+      { title: 'Ekam Deeksha v3.2 canonical PoW', detail: cs ? '512 KiB scratchpad · 2 passes · 128 reads · 2 AES rounds · KAT locked' : t5('512 KiB scratchpad · 2 passes · 128 reads · 2 AES rounds · KAT locked', lang) },
+      { title: 'Mainnet cutover + premine soft-fork', detail: cs ? 'Ekam Deeksha na všech výškách · premine time-locky + admin multisig' : t5('Ekam Deeksha at all heights · premine time-locks + admin multisig', lang) },
+      { title: 'Gates G1–G5 · G7 · G11 + E4', detail: cs ? 'Rigy, chaos/load, bridge round-trip, migrace uzavřeny' : t5('Rigs, chaos/load, bridge round-trip, migration closed', lang) },
+      { title: tx5(MissionControlDashboardCopy.feeSplit89551, lang), detail: tx5(MissionControlDashboardCopy.pplnsPayoutVerifiedAndActive, lang) },
       { title: 'Public releases v3.2.0', detail: 'Miner · CLI · Desktop Agent' },
-      { title: 'G10 — L5/L6 run mode decided', detail: cs ? 'Pasivní trackery fondů + DAO proposal bridge' : 'Passive fund trackers + DAO proposal bridge' },
-      { title: cs ? 'Rychlý restart nodu' : 'Node fast-restart fix', detail: cs ? 'Perzistentní stavová cache — ověřeno v produkci' : 'Persistent state cache — verified in production' },
-      { title: 'Run evidence + alerting', detail: cs ? 'Vzorkování 60 s, persistentní alerty, retence 40 dní' : '60s sampling, persistent alerts, 40-day retention' },
-      { title: 'Multi-algo GPU verification sweep', detail: cs ? 'Konsensově-exaktní CPU reference + GPU kernely ověřené; finální KAT sweep čistý' : 'Consensus-exact CPU references + GPU kernels verified; final KAT sweep clean' },
-      { title: 'CUDA verified backend', detail: cs ? 'GPU kernely bit-exact vůči CPU referenci; QPoW CUDA prošlo' : 'GPU kernels bit-exact vs CPU reference; QPoW CUDA passed' },
-      { title: 'Pool AuxPoW catalogue', detail: cs ? 'Katalog merged-mining coinů na poolu + one-click přepínání v Desktop Agentu' : 'Merged-mining coin catalogue on the pool + one-click switching in Desktop Agent' },
-      { title: 'Trustless WARP HTLC claim/refund', detail: cs ? 'Veřejný claim/refund autorizovaný preimage, payout pinning — nasazeno na bridgi' : 'Preimage-authorized public claim/refund with payout pinning — deployed on the bridge' },
-      { title: 'Mining duplicate-share fix', detail: cs ? 'Per-session nonce partitioning odstranil duplicitní submity napříč rigy' : 'Per-session nonce partitioning eliminated duplicate submissions across rigs' },
-      { title: 'BTC key lottery fleet', detail: cs ? 'Distribuovaný coordinator + workery + veřejná telemetrie; SQLite persistence' : 'Distributed coordinator + workers + public telemetry; SQLite persistence' },
-      { title: 'L2/WARP ops detail', detail: cs ? 'Operátorský panel — pilot gates, AMM pooly, ledger, reconciliation' : 'Operator panel — pilot gates, AMM pools, ledger, reconciliation' },
+      { title: 'G10 — L5/L6 run mode decided', detail: cs ? 'Pasivní trackery fondů + DAO proposal bridge' : t5('Passive fund trackers + DAO proposal bridge', lang) },
+      { title: cs ? 'Rychlý restart nodu' : t5('Node fast-restart fix', lang), detail: cs ? 'Perzistentní stavová cache — ověřeno v produkci' : t5('Persistent state cache — verified in production', lang) },
+      { title: 'Run evidence + alerting', detail: cs ? 'Vzorkování 60 s, persistentní alerty, retence 40 dní' : t5('60s sampling, persistent alerts, 40-day retention', lang) },
+      { title: 'Multi-algo GPU verification sweep', detail: cs ? 'Konsensově-exaktní CPU reference + GPU kernely ověřené; finální KAT sweep čistý' : t5('Consensus-exact CPU references + GPU kernels verified; final KAT sweep clean', lang) },
+      { title: 'CUDA verified backend', detail: cs ? 'GPU kernely bit-exact vůči CPU referenci; QPoW CUDA prošlo' : t5('GPU kernels bit-exact vs CPU reference; QPoW CUDA passed', lang) },
+      { title: 'Pool AuxPoW catalogue', detail: cs ? 'Katalog merged-mining coinů na poolu + one-click přepínání v Desktop Agentu' : t5('Merged-mining coin catalogue on the pool + one-click switching in Desktop Agent', lang) },
+      { title: 'Trustless WARP HTLC claim/refund', detail: cs ? 'Veřejný claim/refund autorizovaný preimage, payout pinning — nasazeno na bridgi' : t5('Preimage-authorized public claim/refund with payout pinning — deployed on the bridge', lang) },
+      { title: 'Mining duplicate-share fix', detail: cs ? 'Per-session nonce partitioning odstranil duplicitní submity napříč rigy' : t5('Per-session nonce partitioning eliminated duplicate submissions across rigs', lang) },
+      { title: 'BTC key lottery fleet', detail: cs ? 'Distribuovaný coordinator + workery + veřejná telemetrie; SQLite persistence' : t5('Distributed coordinator + workers + public telemetry; SQLite persistence', lang) },
+      { title: 'L2/WARP ops detail', detail: cs ? 'Operátorský panel — pilot gates, AMM pooly, ledger, reconciliation' : t5('Operator panel — pilot gates, AMM pools, ledger, reconciliation', lang) },
     ],
     missing: [],
     not_missing: [
-      { title: MissionControlDashboardCopy.genesisPremine[cs ? 'cs' : 'en'], detail: cs ? '16.78B ZION, 14 výstupů, admin-locked' : '16.78B ZION, 14 outputs, admin-locked' },
-      { title: MissionControlDashboardCopy.wzionErc20[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.deployedOnBaseMainnet[cs ? 'cs' : 'en'] },
-      { title: '89/5/5/1 reward split', detail: cs ? 'On-chain od přechodu na mainnet' : 'On-chain since the mainnet cutover' },
+      { title: tx5(MissionControlDashboardCopy.genesisPremine, lang), detail: cs ? '16.78B ZION, 14 výstupů, admin-locked' : t5('16.78B ZION, 14 outputs, admin-locked', lang) },
+      { title: tx5(MissionControlDashboardCopy.wzionErc20, lang), detail: tx5(MissionControlDashboardCopy.deployedOnBaseMainnet, lang) },
+      { title: '89/5/5/1 reward split', detail: cs ? 'On-chain od přechodu na mainnet' : t5('On-chain since the mainnet cutover', lang) },
     ],
     next_48h: [
-      { title: 'G8 — 30-day continuous run', detail: cs ? 'Aktuální 30denní stabilitní run probíhá — live monitoring a evidence na /g8.' : 'Current 30-day stability run in progress — live monitoring and evidence on /g8.' },
-      { title: 'G9 — security audit', detail: cs ? 'Scope auditu celého projektu připraven; externí audit odložen rozhodnutím operátora (pending).' : 'Whole-project audit scope drafted; external audit postponed by operator decision (pending).' },
-      { title: 'Disaster-recovery drill', detail: cs ? 'Částečný test obnovy jednoho nodu proběhl 5. 10.; plný šifrovaný off-site DR drill stále chybí.' : 'Partial single-node restore test done 2026-10-05; a full encrypted off-site restore drill is still required.' },
-      { title: cs ? 'Release artefakty' : 'Release artifacts', detail: cs ? 'Sjednocení verzí, checksumy, podepsaný tag po stabilitě' : 'Version unification, checksums, signed tag after stability' },
+      { title: 'G8 — 30-day continuous run', detail: cs ? 'Aktuální 30denní stabilitní run probíhá — live monitoring a evidence na /g8.' : t5('Current 30-day stability run in progress — live monitoring and evidence on /g8.', lang) },
+      { title: 'G9 — security audit', detail: cs ? 'Scope auditu celého projektu připraven; externí audit odložen rozhodnutím operátora (pending).' : t5('Whole-project audit scope drafted; external audit postponed by operator decision (pending).', lang) },
+      { title: 'Disaster-recovery drill', detail: cs ? 'Částečný test obnovy jednoho nodu proběhl 5. 10.; plný šifrovaný off-site DR drill stále chybí.' : t5('Partial single-node restore test done 2026-10-05; a full encrypted off-site restore drill is still required.', lang) },
+      { title: cs ? 'Release artefakty' : t5('Release artifacts', lang), detail: cs ? 'Sjednocení verzí, checksumy, podepsaný tag po stabilitě' : t5('Version unification, checksums, signed tag after stability', lang) },
     ],
   };
 }
@@ -862,11 +863,11 @@ const CHART_RANGES: { value: ChartRange; label: string }[] = [
   { value: '24h', label: '24h' },
 ];
 
-const getServiceGroups = (cs: boolean): { value: ServiceGroup; label: string }[] => [
-  { value: 'all', label: MissionControlDashboardCopy.all[cs ? 'cs' : 'en'] },
+const getServiceGroups = (cs: boolean, lang: Lang): { value: ServiceGroup; label: string }[] => [
+  { value: 'all', label: tx5(MissionControlDashboardCopy.all, lang) },
   { value: 'core', label: 'Core' },
-  { value: 'mining', label: MissionControlDashboardCopy.mining[cs ? 'cs' : 'en'] },
-  { value: 'fund', label: MissionControlDashboardCopy.fund[cs ? 'cs' : 'en'] },
+  { value: 'mining', label: tx5(MissionControlDashboardCopy.mining, lang) },
+  { value: 'fund', label: tx5(MissionControlDashboardCopy.fund, lang) },
   { value: 'monitoring', label: 'Monitoring' },
   { value: 'remote', label: 'Remote' },
 ];
@@ -879,7 +880,7 @@ function getServiceGroup(service: ServiceStatus): Exclude<ServiceGroup, 'all'> {
   return 'core';
 }
 
-function getServiceActions(service: ServiceStatus, cs: boolean): { href: string; label: string }[] {
+function getServiceActions(service: ServiceStatus, cs: boolean, lang: Lang): { href: string; label: string }[] {
   const actions: { href: string; label: string }[] = [];
   if (service.job || service.name.includes('core') || service.name.includes('pool') || service.name.includes('redis') || service.name.includes('germany-')) {
     actions.push({ href: '/monitoring', label: 'Monitoring' });
@@ -894,7 +895,7 @@ function getServiceActions(service: ServiceStatus, cs: boolean): { href: string;
     actions.push({ href: '/l6-issobella', label: 'L6' });
   }
   if (actions.length === 0) {
-    actions.push({ href: '/monitoring', label: MissionControlDashboardCopy.inspect[cs ? 'cs' : 'en'] });
+    actions.push({ href: '/monitoring', label: tx5(MissionControlDashboardCopy.inspect, lang) });
   }
   return actions;
 }
@@ -958,7 +959,7 @@ function fmtG8Downtime(s: number, cs: boolean) {
   const m = Math.floor((s % 3600) / 60);
   if (d > 0) return `${d}d ${h}h`;
   if (h > 0) return `${h}h ${m}m`;
-  return cs ? `${m} min` : `${m}m`;
+  return `${m} min`;
 }
 
 function G8RunCard({ run }: { run: G8Run | null }) {
@@ -972,7 +973,7 @@ function G8RunCard({ run }: { run: G8Run | null }) {
           <Activity className="h-5 w-5 text-zion-cyan" />
           <div>
             <h4 className="text-sm font-semibold text-white">30-Day Continuous Run</h4>
-            <p className="text-xs text-gray-400">{cs ? 'Nespuštěno' : 'Not started'}</p>
+            <p className="text-xs text-gray-400">{cs ? 'Nespuštěno' : t5('Not started', lang)}</p>
           </div>
         </div>
       </div>
@@ -996,18 +997,18 @@ function G8RunCard({ run }: { run: G8Run | null }) {
   const isDone = windowStatus === 'completed' || windowStatus === 'complete' || windowStatus === 'ended';
   const isStopped = windowStatus === 'stopped' || run.status === 'stopped';
   const statusLabel = isDone
-    ? (cs ? 'Okno dokončeno' : 'Window ended')
+    ? (cs ? 'Okno dokončeno' : t5('Window ended', lang))
     : isRunning
-    ? (cs ? 'Běží' : 'Running')
+    ? (cs ? 'Běží' : t5('Running', lang))
     : isStopped
-    ? (cs ? 'Zastaveno' : 'Stopped')
-    : (cs ? 'Nespuštěno' : 'Not started');
+    ? (cs ? 'Zastaveno' : t5('Stopped', lang))
+    : (cs ? 'Nespuštěno' : t5('Not started', lang));
   const statusColor = isDone ? '#3B82F6' : isRunning ? '#22C55E' : '#F59E0B';
 
   const gateLabel =
     gateStatus === 'passed' ? 'PASS'
     : gateStatus === 'failed' ? 'FAIL'
-    : gateStatus === 'evidence_incomplete' ? (cs ? 'NEKOMPLETNÍ EVIDENCE' : 'EVIDENCE INCOMPLETE')
+    : gateStatus === 'evidence_incomplete' ? (cs ? 'NEKOMPLETNÍ EVIDENCE' : t5('EVIDENCE INCOMPLETE', lang))
     : gateStatus === 'pending' ? 'PENDING'
     : gateStatus ? gateStatus.toUpperCase() : '—';
   const gateColor =
@@ -1017,15 +1018,15 @@ function G8RunCard({ run }: { run: G8Run | null }) {
     : '#F59E0B';
   const gateReasonLabel =
     run.gate_reason === 'critical_incident'
-      ? (cs ? 'kritický incident' : 'critical incident')
+      ? (cs ? 'kritický incident' : t5('critical incident', lang))
       : run.gate_reason === 'downtime_budget_exhausted'
-        ? (cs ? 'vyčerpán downtime budget' : 'downtime budget exhausted')
+        ? (cs ? 'vyčerpán downtime budget' : t5('downtime budget exhausted', lang))
         : run.gate_reason === 'stopped_before_window_end'
-          ? (cs ? 'běh ukončen předčasně' : 'stopped before window end')
+          ? (cs ? 'běh ukončen předčasně' : t5('stopped before window end', lang))
           : run.gate_reason === 'coverage_below_threshold'
-            ? (cs ? 'nízké pokrytí evidence' : 'coverage below threshold')
+            ? (cs ? 'nízké pokrytí evidence' : t5('coverage below threshold', lang))
             : run.gate_reason === 'uptime_below_threshold'
-              ? (cs ? 'dostupnost pod prahem' : 'uptime below threshold')
+              ? (cs ? 'dostupnost pod prahem' : t5('uptime below threshold', lang))
               : null;
 
   const uptime = typeof run.uptime_percent === 'number' ? run.uptime_percent : null;
@@ -1043,7 +1044,7 @@ function G8RunCard({ run }: { run: G8Run | null }) {
           <div>
             <h4 className="text-sm font-semibold text-white">30-Day Continuous Run</h4>
             <p className="text-[10px] text-gray-400">
-              {cs ? 'Stabilita mainnetu · cíl ≥ 99,9 % uptime · rozhoduje evidence, ne odpočet' : 'Mainnet stability · target ≥99.9% uptime · verdict decided by evidence, not the clock'}
+              {cs ? 'Stabilita mainnetu · cíl ≥ 99,9 % uptime · rozhoduje evidence, ne odpočet' : t5('Mainnet stability · target ≥99.9% uptime · verdict decided by evidence, not the clock', lang)}
             </p>
           </div>
         </div>
@@ -1058,43 +1059,43 @@ function G8RunCard({ run }: { run: G8Run | null }) {
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Start' : 'Started'}</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Start' : t5('Started', lang)}</p>
           <p className="text-xs font-mono text-white">{new Date(run.started).toLocaleString()}</p>
         </div>
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Cílový konec' : 'Target end'}</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Cílový konec' : t5('Target end', lang)}</p>
           <p className="text-xs font-mono text-white">{run.target_end ? new Date(run.target_end).toLocaleString() : '—'}</p>
         </div>
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Uběhlo' : 'Elapsed'}</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Uběhlo' : t5('Elapsed', lang)}</p>
           <p className="text-xs font-mono text-zion-cyan">{fmtG8Duration(elapsed)}</p>
         </div>
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Zbývá' : 'Remaining'}</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Zbývá' : t5('Remaining', lang)}</p>
           <p className="text-xs font-mono text-zion-cyan">{fmtG8Duration(remaining)}</p>
         </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Uptime služeb' : 'Service uptime'}</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Uptime služeb' : t5('Service uptime', lang)}</p>
           <p className="text-xs font-mono font-semibold" style={{ color: uptime != null && uptime >= 99.9 ? '#22C55E' : uptime != null ? '#F59E0B' : '#9CA3AF' }}>
             {uptime != null ? `${uptime.toFixed(3)}%` : '—'}
           </p>
         </div>
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Pokrytí evidence' : 'Evidence coverage'}</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Pokrytí evidence' : t5('Evidence coverage', lang)}</p>
           <p className="text-xs font-mono font-semibold" style={{ color: coverage != null && coverage >= 99 ? '#22C55E' : coverage != null ? '#F59E0B' : '#9CA3AF' }}>
             {coverage != null ? `${coverage.toFixed(2)}%` : '—'}
           </p>
         </div>
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Aktivní alerty' : 'Active alerts'}</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Aktivní alerty' : t5('Active alerts', lang)}</p>
           <p className="text-xs font-mono font-semibold" style={{ color: alerts === 0 ? '#22C55E' : '#EF4444' }}>
             {alerts != null ? alerts : '—'}
           </p>
         </div>
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Incidenty' : 'Incidents'}</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Incidenty' : t5('Incidents', lang)}</p>
           <p className="text-xs font-mono font-semibold" style={{ color: incidents + critical === 0 ? '#22C55E' : critical > 0 ? '#EF4444' : '#F59E0B' }}>
             {incidents}{critical > 0 ? ` (+${critical} crit)` : ''}
           </p>
@@ -1104,12 +1105,10 @@ function G8RunCard({ run }: { run: G8Run | null }) {
       {gateStatus === 'failed' && (
         <div className="mb-4 rounded-xl border border-zion-gold/30 bg-zion-gold/10 px-4 py-3">
           <p className="text-xs font-semibold text-zion-gold uppercase tracking-wider">
-            {cs ? 'Verdikt: gate nesplněn' : 'Verdict: gate failed'}
+            {cs ? 'Verdikt: gate nesplněn' : t5('Verdict: gate failed', lang)}
           </p>
           <p className="mt-1 text-xs text-gray-300">
-            {cs
-              ? 'Okno dobíhá pouze pro sběr evidence — kritické výpadky těžby (chain liveness) 3.–5. 10. vyčerpaly downtime budget. Run #3 po nasazení stabilizace těžby.'
-              : 'Window continues for evidence collection only — critical mining (chain liveness) outages on Oct 3–5 exhausted the downtime budget. Run #3 follows after mining stability fixes.'}
+            {cs ? 'Okno dobíhá pouze pro sběr evidence — kritické výpadky těžby (chain liveness) 3.–5. 10. vyčerpaly downtime budget. Run #3 po nasazení stabilizace těžby.' : t5('Window continues for evidence collection only — critical mining (chain liveness) outages on Oct 3–5 exhausted the downtime budget. Run #3 follows after mining stability fixes.', lang)}
           </p>
         </div>
       )}
@@ -1117,7 +1116,7 @@ function G8RunCard({ run }: { run: G8Run | null }) {
       {/* Per-signal uptime breakdown */}
       {run.service_uptime_percent && Object.keys(run.service_uptime_percent).length > 0 && (
         <div className="mb-4">
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">{cs ? 'Uptime per signál' : 'Uptime per signal'}</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">{cs ? 'Uptime per signál' : t5('Uptime per signal', lang)}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
             {Object.entries(run.service_uptime_percent).map(([name, v]) => (
               <div key={name} className="flex items-center gap-2">
@@ -1142,7 +1141,7 @@ function G8RunCard({ run }: { run: G8Run | null }) {
 
       <div>
         <div className="flex justify-between text-[10px] text-gray-400 mb-1">
-          <span>{cs ? 'Průběh okna' : 'Window progress'}</span>
+          <span>{cs ? 'Průběh okna' : t5('Window progress', lang)}</span>
           <span className="font-mono text-white">{pct.toFixed(4)}%</span>
         </div>
         <ProgressBar pct={pct} />
@@ -1161,7 +1160,7 @@ function G8RunCard({ run }: { run: G8Run | null }) {
               onClick={() => setShowIncidents(v => !v)}
               className="text-[10px] font-semibold uppercase tracking-wider text-zion-cyan hover:text-white transition-colors"
             >
-              {showIncidents ? (cs ? 'Skrýt incidenty ▲' : 'Hide incidents ▲') : (cs ? `Poslední incidenty (${incidents}) ▼` : `Recent incidents (${incidents}) ▼`)}
+              {showIncidents ? (cs ? 'Skrýt incidenty ▲' : t5('Hide incidents ▲', lang)) : (cs ? `Poslední incidenty (${incidents}) ▼` : t5(`Recent incidents (${incidents}) ▼`, lang))}
             </button>
           </div>
           {showIncidents && (
@@ -1172,13 +1171,11 @@ function G8RunCard({ run }: { run: G8Run | null }) {
                   <span className="font-mono text-gray-400">{inc.started ? new Date(inc.started).toLocaleString() : '—'}</span>
                   <span className="font-mono text-gray-300">{inc.duration_seconds != null ? fmtG8Downtime(inc.duration_seconds, cs) : '—'}</span>
                   <span className="text-gray-400">{inc.signals.join(', ')}</span>
-                  {inc.critical && <span className="text-[10px] font-semibold uppercase tracking-wider text-red-300">{cs ? 'kritický' : 'critical'}</span>}
+                  {inc.critical && <span className="text-[10px] font-semibold uppercase tracking-wider text-red-300">{cs ? 'kritický' : t5('critical', lang)}</span>}
                 </div>
               ))}
               <p className="text-[10px] text-gray-500 pt-1">
-                {cs
-                  ? 'Většina incidentů = chain liveness (žádný nový blok > 15 min při výpadku těžby). Celkový downtime: '
-                  : 'Most incidents = chain liveness (no new block > 15 min during mining outages). Total downtime: '}
+                {cs ? 'Většina incidentů = chain liveness (žádný nový blok > 15 min při výpadku těžby). Celkový downtime: ' : t5('Most incidents = chain liveness (no new block > 15 min during mining outages). Total downtime: ', lang)}
                 {fmtG8Downtime(run.incident_summary?.total_downtime_seconds ?? 0, cs)}
               </p>
             </div>
@@ -1193,7 +1190,7 @@ function G8RunCard({ run }: { run: G8Run | null }) {
           {run.last_evidence_update ? ` · evidence ${new Date(run.last_evidence_update).toLocaleTimeString()}` : ''}
         </span>
         <NextLink href="/g8" className="text-zion-cyan hover:text-white transition-colors font-semibold uppercase tracking-wider">
-          {cs ? 'Živé detaily →' : 'Live details →'}
+          {cs ? 'Živé detaily →' : t5('Live details →', lang)}
         </NextLink>
       </div>
     </div>
@@ -1224,7 +1221,7 @@ function ServerCard({ node, name, flag, ip }: { node?: ServerNode; name: string;
       ? `${node.containers_up}/${node.containers_healthy}`
       : '—/—';
 
-  const statusLabel = !s?.status ? (MissionControlDashboardCopy.offline[cs ? 'cs' : 'en']) : isHealthy ? (MissionControlDashboardCopy.online[cs ? 'cs' : 'en']) : isSyncing ? (MissionControlDashboardCopy.syncing[cs ? 'cs' : 'en']) : isStale ? (MissionControlDashboardCopy.stale[cs ? 'cs' : 'en']) : (MissionControlDashboardCopy.unhealthy[cs ? 'cs' : 'en']);
+  const statusLabel = !s?.status ? (tx5(MissionControlDashboardCopy.offline, lang)) : isHealthy ? (tx5(MissionControlDashboardCopy.online, lang)) : isSyncing ? (tx5(MissionControlDashboardCopy.syncing, lang)) : isStale ? (tx5(MissionControlDashboardCopy.stale, lang)) : (tx5(MissionControlDashboardCopy.unhealthy, lang));
   const statusStyle = isHealthy
     ? 'text-emerald-200 bg-zion-cyan/10 border-zion-cyan/30'
     : isSyncing
@@ -1248,27 +1245,27 @@ function ServerCard({ node, name, flag, ip }: { node?: ServerNode; name: string;
         </span>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
-        <MiniMetric label={MissionControlDashboardCopy.height[cs ? 'cs' : 'en']} value={fmt(s?.height)} color="text-zion-cyan" />
-        <MiniMetric label={MissionControlDashboardCopy.peers[cs ? 'cs' : 'en']} value={fmt(s?.peers_connected)} />
-        <MiniMetric label={MissionControlDashboardCopy.difficulty[cs ? 'cs' : 'en']} value={fmt(s?.difficulty)} />
+        <MiniMetric label={tx5(MissionControlDashboardCopy.height, lang)} value={fmt(s?.height)} color="text-zion-cyan" />
+        <MiniMetric label={tx5(MissionControlDashboardCopy.peers, lang)} value={fmt(s?.peers_connected)} />
+        <MiniMetric label={tx5(MissionControlDashboardCopy.difficulty, lang)} value={fmt(s?.difficulty)} />
         <MiniMetric label="Mempool" value={fmt(s?.mempool_size)} />
-        <MiniMetric label={MissionControlDashboardCopy.lastBlock[cs ? 'cs' : 'en']} value={fmtLastBlock(s?.time_since_last_block)} color={isStale ? 'text-zion-gold' : 'text-white'} />
-        <MiniMetric label={MissionControlDashboardCopy.containers[cs ? 'cs' : 'en']} value={containersLabel} />
+        <MiniMetric label={tx5(MissionControlDashboardCopy.lastBlock, lang)} value={fmtLastBlock(s?.time_since_last_block)} color={isStale ? 'text-zion-gold' : 'text-white'} />
+        <MiniMetric label={tx5(MissionControlDashboardCopy.containers, lang)} value={containersLabel} />
         <div className="zion-tile p-3">
-          <p className="text-[10px] uppercase tracking-[0.5px] text-gray-400">{MissionControlDashboardCopy.memory[cs ? 'cs' : 'en']}</p>
+          <p className="text-[10px] uppercase tracking-[0.5px] text-gray-400">{tx5(MissionControlDashboardCopy.memory, lang)}</p>
           <p className={`text-base font-bold font-mono ${valColor(memPct)}`}>{memPct == null ? '—' : `${memPct}%`}</p>
           <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
             <div className={`h-full rounded-full ${barColor(memPct)}`} style={{ width: `${memPct ?? 0}%` }} />
           </div>
         </div>
         <div className="zion-tile p-3">
-          <p className="text-[10px] uppercase tracking-[0.5px] text-gray-400">{MissionControlDashboardCopy.disk[cs ? 'cs' : 'en']}</p>
+          <p className="text-[10px] uppercase tracking-[0.5px] text-gray-400">{tx5(MissionControlDashboardCopy.disk, lang)}</p>
           <p className={`text-base font-bold font-mono ${valColor(diskPct)}`}>{diskPct == null ? '—' : `${diskPct}%`}</p>
           <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
             <div className={`h-full rounded-full ${barColor(diskPct)}`} style={{ width: `${diskPct ?? 0}%` }} />
           </div>
         </div>
-        <MiniMetric label={MissionControlDashboardCopy.load[cs ? 'cs' : 'en']} value={String(node?.load ?? '—')} />
+        <MiniMetric label={tx5(MissionControlDashboardCopy.load, lang)} value={String(node?.load ?? '—')} />
       </div>
     </div>
   );
@@ -1287,7 +1284,7 @@ function OpsServiceCard({ service, onOpen }: { service: ServiceStatus; onOpen: (
   const { lang } = useLang();
   const cs = lang === 'cs';
   const group = getServiceGroup(service);
-  const actions = getServiceActions(service, cs);
+  const actions = getServiceActions(service, cs, lang);
   const statusClass = service.up === true
     ? 'text-zion-cyan border-zion-cyan/30 bg-zion-cyan/10'
     : service.up === false
@@ -1325,7 +1322,7 @@ function OpsServiceCard({ service, onOpen }: { service: ServiceStatus; onOpen: (
       </div>
       <div className="grid grid-cols-2 gap-2 text-[10px]">
         <div className="zion-tile p-2">
-          <div className="uppercase tracking-[0.2em] text-gray-500 mb-1">{MissionControlDashboardCopy.ports[cs ? 'cs' : 'en']}</div>
+          <div className="uppercase tracking-[0.2em] text-gray-500 mb-1">{tx5(MissionControlDashboardCopy.ports, lang)}</div>
           <div className="font-mono text-gray-300 break-all">{service.ports}</div>
         </div>
         <div className="zion-tile p-2">
@@ -1341,7 +1338,7 @@ function ServiceDetailDrawer({ service, onClose }: { service: ServiceStatus; onC
   const { lang } = useLang();
   const cs = lang === 'cs';
   const group = getServiceGroup(service);
-  const actions = getServiceActions(service, cs);
+  const actions = getServiceActions(service, cs, lang);
   const statusLabel = service.up === true ? 'UP' : service.up === false ? 'DOWN' : 'N/A';
   const statusClass = service.up === true
     ? 'text-zion-cyan border-zion-cyan/30 bg-zion-cyan/10'
@@ -1350,11 +1347,11 @@ function ServiceDetailDrawer({ service, onClose }: { service: ServiceStatus; onC
     : 'text-gray-300 border-white/10 bg-white/5';
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm">
-      <button aria-label={MissionControlDashboardCopy.closeDetails[cs ? 'cs' : 'en']} onClick={onClose} className="absolute inset-0" />
+      <button aria-label={tx5(MissionControlDashboardCopy.closeDetails, lang)} onClick={onClose} className="absolute inset-0" />
       <motion.div initial={{ x: 32, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 32, opacity: 0 }} className="relative h-full w-full max-w-lg border-l border-white/10 bg-zinc-950/95 p-5 sm:p-6 overflow-y-auto">
         <div className="flex items-start justify-between gap-4 mb-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{MissionControlDashboardCopy.serviceDetail[cs ? 'cs' : 'en']}</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{tx5(MissionControlDashboardCopy.serviceDetail, lang)}</p>
             <h3 className="text-2xl font-semibold text-white mt-2">{service.displayName ?? service.name}</h3>
             <p className="text-xs text-gray-500 font-mono mt-1">{service.image}</p>
           </div>
@@ -1368,15 +1365,15 @@ function ServiceDetailDrawer({ service, onClose }: { service: ServiceStatus; onC
           {service.job && <span className="text-[10px] font-semibold px-3 py-1 rounded-full border border-zion-cyan/20 bg-zion-cyan/10 text-zion-cyan uppercase tracking-widest">{service.job}</span>}
         </div>
         <div className="grid grid-cols-2 gap-3 mb-5">
-          <MiniMetric label={MissionControlDashboardCopy.ports[cs ? 'cs' : 'en']} value={service.ports} color="text-zion-cyan" />
-          <MiniMetric label={MissionControlDashboardCopy.status[cs ? 'cs' : 'en']} value={statusLabel} color={service.up === true ? 'text-zion-cyan' : service.up === false ? 'text-zion-purple' : 'text-gray-300'} />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.ports, lang)} value={service.ports} color="text-zion-cyan" />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.status, lang)} value={statusLabel} color={service.up === true ? 'text-zion-cyan' : service.up === false ? 'text-zion-purple' : 'text-gray-300'} />
         </div>
         <div className="zion-section p-4 mb-5">
-          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">{MissionControlDashboardCopy.operationalContext[cs ? 'cs' : 'en']}</div>
-          <div className="text-sm text-gray-300 leading-relaxed">{service.note ?? (service.job ? (cs ? 'Telemetry cíl' : 'Telemetry target') : (MissionControlDashboardCopy.localServiceWithoutADirectProm[cs ? 'cs' : 'en']))}</div>
+          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">{tx5(MissionControlDashboardCopy.operationalContext, lang)}</div>
+          <div className="text-sm text-gray-300 leading-relaxed">{service.note ?? (service.job ? (cs ? 'Telemetry cíl' : t5('Telemetry target', lang)) : (tx5(MissionControlDashboardCopy.localServiceWithoutADirectProm, lang)))}</div>
         </div>
         <div className="zion-section p-4 mb-5">
-          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-3">{MissionControlDashboardCopy.quickActions[cs ? 'cs' : 'en']}</div>
+          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-3">{tx5(MissionControlDashboardCopy.quickActions, lang)}</div>
           <div className="flex flex-wrap gap-2">
             {actions.map(action => (
               <a key={`${service.name}_drawer_${action.label}`} href={action.href} target={action.href.startsWith('/grafana') ? '_blank' : undefined} rel={action.href.startsWith('/grafana') ? 'noopener noreferrer' : undefined} className="inline-flex items-center gap-2 rounded-xl border border-zion-cyan/20 bg-zion-cyan/10 px-3 py-2 text-sm text-zion-cyan hover:border-zion-cyan/40 hover:text-cyan-200 transition-colors">
@@ -1387,11 +1384,11 @@ function ServiceDetailDrawer({ service, onClose }: { service: ServiceStatus; onC
           </div>
         </div>
         <div className="zion-section p-4">
-          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-3">{MissionControlDashboardCopy.operatorNotes[cs ? 'cs' : 'en']}</div>
+          <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-3">{tx5(MissionControlDashboardCopy.operatorNotes, lang)}</div>
           <ul className="space-y-2 text-sm text-gray-300">
-            <li>{MissionControlDashboardCopy.statusDownMeansAScrapeFailureO[cs ? 'cs' : 'en']}</li>
-            <li>{MissionControlDashboardCopy.statusNAMeansTheServiceIsNotCo[cs ? 'cs' : 'en']}</li>
-            <li>{MissionControlDashboardCopy.useTheMonitoringOrMetricsActio[cs ? 'cs' : 'en']}</li>
+            <li>{tx5(MissionControlDashboardCopy.statusDownMeansAScrapeFailureO, lang)}</li>
+            <li>{tx5(MissionControlDashboardCopy.statusNAMeansTheServiceIsNotCo, lang)}</li>
+            <li>{tx5(MissionControlDashboardCopy.useTheMonitoringOrMetricsActio, lang)}</li>
           </ul>
         </div>
       </motion.div>
@@ -1417,7 +1414,7 @@ function MetricBar({ value, max, color = 'bg-zion-cyan' }: { value: number; max:
 function MiniSparkline({ data: d, color = '#10b981', height = 28 }: { data: number[]; color?: string; height?: number }) {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  if (d.length < 2) return <div className="h-7 flex items-center text-[10px] text-gray-600">{MissionControlDashboardCopy.awaitingData[cs ? 'cs' : 'en']}</div>;
+  if (d.length < 2) return <div className="h-7 flex items-center text-[10px] text-gray-600">{tx5(MissionControlDashboardCopy.awaitingData, lang)}</div>;
   const min = Math.min(...d), max = Math.max(...d), range = max - min || 1, w = 140;
   const pts = d.map((v, i) => `${(i / (d.length - 1)) * w},${height - ((v - min) / range) * (height - 4) - 2}`).join(' ');
   return <svg viewBox={`0 0 ${w} ${height}`} className="w-full" style={{ height }} preserveAspectRatio="none"><polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
@@ -1426,8 +1423,8 @@ function MiniSparkline({ data: d, color = '#10b981', height = 28 }: { data: numb
 function AreaChart({ data: d, timestamps, label, color = '#10b981', unit = '', height = 120 }: { data: number[]; timestamps?: number[]; label: string; color?: string; unit?: string; height?: number }) {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = MissionControlDashboardCopy.enUs[cs ? 'cs' : 'en'];
-  if (d.length < 2) return <div className="zion-tile p-4"><div className="text-[10px] text-gray-500 mb-1">{label}</div><div className="h-20 flex items-center justify-center text-[10px] text-gray-600">{MissionControlDashboardCopy.awaitingData[cs ? 'cs' : 'en']}</div></div>;
+  const locale = tx5(MissionControlDashboardCopy.enUs, lang);
+  if (d.length < 2) return <div className="zion-tile p-4"><div className="text-[10px] text-gray-500 mb-1">{label}</div><div className="h-20 flex items-center justify-center text-[10px] text-gray-600">{tx5(MissionControlDashboardCopy.awaitingData, lang)}</div></div>;
   const min = Math.min(...d), max = Math.max(...d), range = max - min || 1;
   const w = 600, h = height, pad = 2;
   const pts = d.map((v, i) => `${(i / (d.length - 1)) * w},${h - ((v - min) / range) * (h - pad * 2) - pad}`);
@@ -1510,12 +1507,14 @@ function V3MetricsSection({
   nowSec,
   cs,
   locale,
+  lang,
 }: {
   v3: V3Metrics;
   sparks: V3Sparklines;
   nowSec: number;
   cs: boolean;
   locale: string;
+  lang: Lang;
 }) {
   const memPct = m.memTotal && m.memAvail ? ((1 - m.memAvail / m.memTotal) * 100) : null;
   const diskPct = m.diskTotal && m.diskAvail ? ((1 - m.diskAvail / m.diskTotal) * 100) : null;
@@ -1545,11 +1544,11 @@ function V3MetricsSection({
 
       {/* Status indicators */}
       <div className="flex flex-wrap gap-4 items-center">
-        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.coreUp} /><span className="text-gray-300">{MissionControlDashboardCopy.coreNode[cs ? 'cs' : 'en']}</span></div>
-        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.poolUp} /><span className="text-gray-300">{MissionControlDashboardCopy.miningPool[cs ? 'cs' : 'en']}</span></div>
-        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.minerUp} /><span className="text-gray-300">{MissionControlDashboardCopy.minerRuntime[cs ? 'cs' : 'en']}</span></div>
+        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.coreUp} /><span className="text-gray-300">{tx5(MissionControlDashboardCopy.coreNode, lang)}</span></div>
+        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.poolUp} /><span className="text-gray-300">{tx5(MissionControlDashboardCopy.miningPool, lang)}</span></div>
+        <div className="flex items-center gap-2 text-sm"><StatusDot up={m.minerUp} /><span className="text-gray-300">{tx5(MissionControlDashboardCopy.minerRuntime, lang)}</span></div>
         <div className="flex items-center gap-2 text-sm"><StatusDot up={m.serverLoad1 != null ? 1 : null} /><span className="text-gray-300">Node Exporter</span></div>
-        <div className="ml-auto text-xs text-gray-500 font-mono">{m.chainHeight != null ? `${MissionControlDashboardCopy.block[cs ? 'cs' : 'en']} #${m.chainHeight.toLocaleString(locale)}` : ''}</div>
+        <div className="ml-auto text-xs text-gray-500 font-mono">{m.chainHeight != null ? `${tx5(MissionControlDashboardCopy.block, lang)} #${m.chainHeight.toLocaleString(locale)}` : ''}</div>
       </div>
 
       {/* ── Core Blockchain ── */}
@@ -1560,13 +1559,13 @@ function V3MetricsSection({
           <MiniMetric label="Template Ht" value={fmt(m.templateHeight)} color="text-zion-gold" />
           <MiniMetric label="Peers" value={fmt(m.peerCount)} color="text-zion-cyan" />
           <MiniMetric label="Mempool" value={fmt(m.mempoolSize)} color="text-zion-purple" />
-          <MiniMetric label={MissionControlDashboardCopy.blocksAcc[cs ? 'cs' : 'en']} value={fmt(m.blocksAccepted)} color="text-zion-cyan" />
-          <MiniMetric label={MissionControlDashboardCopy.tmplTxs[cs ? 'cs' : 'en']} value={fmt(m.templateTxs)} color="text-zion-cyan" />
-          <MiniMetric label={MissionControlDashboardCopy.tmplFees[cs ? 'cs' : 'en']} value={m.templateFees != null ? `${m.templateFees}` : '—'} color="text-zion-gold" />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.blocksAcc, lang)} value={fmt(m.blocksAccepted)} color="text-zion-cyan" />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.tmplTxs, lang)} value={fmt(m.templateTxs)} color="text-zion-cyan" />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.tmplFees, lang)} value={m.templateFees != null ? `${m.templateFees}` : '—'} color="text-zion-gold" />
         </div>
         {sparks.chainHeight.length > 1 && (
           <div className="mt-2 zion-tile p-3">
-            <div className="text-[10px] text-gray-500 mb-1">{MissionControlDashboardCopy.chainHeight1h[cs ? 'cs' : 'en']}</div>
+            <div className="text-[10px] text-gray-500 mb-1">{tx5(MissionControlDashboardCopy.chainHeight1h, lang)}</div>
             <MiniSparkline data={sparks.chainHeight} color="#fcd116" height={32} />
           </div>
         )}
@@ -1586,29 +1585,29 @@ function V3MetricsSection({
         </div>
         {(sparks.poolSessions.length > 1 || sparks.shares.length > 1) && (
           <div className="mt-2 grid md:grid-cols-2 gap-2.5">
-            {sparks.poolSessions.length > 1 && (<div className="zion-tile p-3"><div className="text-[10px] text-gray-500 mb-1">{MissionControlDashboardCopy.activeMiners1h[cs ? 'cs' : 'en']}</div><MiniSparkline data={sparks.poolSessions} color="#fcd116" /></div>)}
-            {sparks.shares.length > 1 && (<div className="zion-tile p-3"><div className="text-[10px] text-gray-500 mb-1">{MissionControlDashboardCopy.acceptedShares1h[cs ? 'cs' : 'en']}</div><MiniSparkline data={sparks.shares} color="#10b981" /></div>)}
+            {sparks.poolSessions.length > 1 && (<div className="zion-tile p-3"><div className="text-[10px] text-gray-500 mb-1">{tx5(MissionControlDashboardCopy.activeMiners1h, lang)}</div><MiniSparkline data={sparks.poolSessions} color="#fcd116" /></div>)}
+            {sparks.shares.length > 1 && (<div className="zion-tile p-3"><div className="text-[10px] text-gray-500 mb-1">{tx5(MissionControlDashboardCopy.acceptedShares1h, lang)}</div><MiniSparkline data={sparks.shares} color="#10b981" /></div>)}
           </div>
         )}
       </div>
 
       {/* ── Miner Runtime ── */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Pickaxe className="h-4 w-4 text-zion-cyan" /> {MissionControlDashboardCopy.minerRuntime[cs ? 'cs' : 'en']}</h3>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Pickaxe className="h-4 w-4 text-zion-cyan" /> {tx5(MissionControlDashboardCopy.minerRuntime, lang)}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-          <MiniMetric label={MissionControlDashboardCopy.minerTarget[cs ? 'cs' : 'en']} value={m.minerUp === 1 ? 'UP' : m.minerUp === 0 ? 'DOWN' : '—'} color={m.minerUp === 1 ? 'text-zion-cyan' : m.minerUp === 0 ? 'text-zion-purple' : 'text-gray-400'} />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.minerTarget, lang)} value={m.minerUp === 1 ? 'UP' : m.minerUp === 0 ? 'DOWN' : '—'} color={m.minerUp === 1 ? 'text-zion-cyan' : m.minerUp === 0 ? 'text-zion-purple' : 'text-gray-400'} />
           <MiniMetric label="Hashrate" value={m.minerHashrate != null ? fmtHash(m.minerHashrate) : '—'} color="text-zion-cyan" />
-          <MiniMetric label={MissionControlDashboardCopy.hashrate10s[cs ? 'cs' : 'en']} value={m.minerHashrate10s != null ? fmtHash(m.minerHashrate10s) : '—'} color="text-zion-cyan" />
-          <MiniMetric label={MissionControlDashboardCopy.hashrate60s[cs ? 'cs' : 'en']} value={m.minerHashrate60s != null ? fmtHash(m.minerHashrate60s) : '—'} color="text-zion-cyan" />
-          <MiniMetric label={MissionControlDashboardCopy.accepted[cs ? 'cs' : 'en']} value={fmt(m.minerAccepted)} color="text-zion-cyan" />
-          <MiniMetric label={MissionControlDashboardCopy.rejected[cs ? 'cs' : 'en']} value={fmt(m.minerRejected)} color="text-zion-purple" />
-          <MiniMetric label={MissionControlDashboardCopy.acceptRate[cs ? 'cs' : 'en']} value={m.minerAcceptRate != null ? `${m.minerAcceptRate.toFixed(1)}%` : '—'} color={m.minerAcceptRate != null && m.minerAcceptRate >= 95 ? 'text-zion-cyan' : 'text-zion-gold'} />
-          <MiniMetric label={MissionControlDashboardCopy.submitAvg[cs ? 'cs' : 'en']} value={m.minerSubmitAvgMs != null ? `${m.minerSubmitAvgMs.toFixed(1)} ms` : '—'} color="text-zion-purple" />
-          <MiniMetric label={MissionControlDashboardCopy.poolHeight[cs ? 'cs' : 'en']} value={fmt(m.minerPoolHeight)} color="text-zion-gold" />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.hashrate10s, lang)} value={m.minerHashrate10s != null ? fmtHash(m.minerHashrate10s) : '—'} color="text-zion-cyan" />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.hashrate60s, lang)} value={m.minerHashrate60s != null ? fmtHash(m.minerHashrate60s) : '—'} color="text-zion-cyan" />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.accepted, lang)} value={fmt(m.minerAccepted)} color="text-zion-cyan" />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.rejected, lang)} value={fmt(m.minerRejected)} color="text-zion-purple" />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.acceptRate, lang)} value={m.minerAcceptRate != null ? `${m.minerAcceptRate.toFixed(1)}%` : '—'} color={m.minerAcceptRate != null && m.minerAcceptRate >= 95 ? 'text-zion-cyan' : 'text-zion-gold'} />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.submitAvg, lang)} value={m.minerSubmitAvgMs != null ? `${m.minerSubmitAvgMs.toFixed(1)} ms` : '—'} color="text-zion-purple" />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.poolHeight, lang)} value={fmt(m.minerPoolHeight)} color="text-zion-gold" />
         </div>
         {sparks.minerHashrate.length > 1 && (
           <div className="mt-2 zion-tile p-3">
-            <div className="text-[10px] text-gray-500 mb-1">{MissionControlDashboardCopy.minerHashrate1h[cs ? 'cs' : 'en']}</div>
+            <div className="text-[10px] text-gray-500 mb-1">{tx5(MissionControlDashboardCopy.minerHashrate1h, lang)}</div>
             <MiniSparkline data={sparks.minerHashrate} color="#10b981" height={32} />
           </div>
         )}
@@ -1616,7 +1615,7 @@ function V3MetricsSection({
 
       {/* ── Pool Groups ── */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Network className="h-4 w-4 text-zion-cyan" /> {MissionControlDashboardCopy.poolRoutingGroups[cs ? 'cs' : 'en']}</h3>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Network className="h-4 w-4 text-zion-cyan" /> {tx5(MissionControlDashboardCopy.poolRoutingGroups, lang)}</h3>
         <div className="grid md:grid-cols-2 gap-2.5">
           <PoolGroupRow name="zion (Main)" submits={m.groupZionSub} accepted={m.groupZionAcc} dot="bg-zion-cyan" />
           <PoolGroupRow name="revenue (CH3)" submits={m.groupRevenueSub} accepted={m.groupRevenueAcc} dot="bg-zion-gold" />
@@ -1637,7 +1636,7 @@ function V3MetricsSection({
             <p className="text-[10px] uppercase tracking-wider text-gray-400">Window Used</p>
             <p className="text-base sm:text-lg font-mono font-bold text-zion-purple truncate">{fmt(m.pplnsWindowUsed)}</p>
             {pplnsPct != null && <MetricBar value={m.pplnsWindowUsed ?? 0} max={m.pplnsWindowSize ?? 1} color="bg-zion-purple" />}
-            <p className="text-[10px] text-gray-500">{pplnsPct != null ? (cs ? `${pplnsPct.toFixed(1)} % zaplneno` : `${pplnsPct.toFixed(1)}% full`) : ''}</p>
+            <p className="text-[10px] text-gray-500">{pplnsPct != null ? (cs ? `${pplnsPct.toFixed(1)} % zaplneno` : t5(`${pplnsPct.toFixed(1)}% full`, lang)) : ''}</p>
           </div>
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-wider text-gray-400">Registered Miners</p>
@@ -1659,38 +1658,38 @@ function V3MetricsSection({
         <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><HardDrive className="h-4 w-4 text-zion-cyan" /> Network Infrastructure <span className="text-[10px] text-gray-500 font-normal">ZION network</span></h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="zion-tile p-3">
-            <p className="text-[10px] uppercase tracking-wider text-gray-400 flex items-center gap-1"><Flame className="h-3 w-3" /> {MissionControlDashboardCopy.cpuLoad[cs ? 'cs' : 'en']}</p>
+            <p className="text-[10px] uppercase tracking-wider text-gray-400 flex items-center gap-1"><Flame className="h-3 w-3" /> {tx5(MissionControlDashboardCopy.cpuLoad, lang)}</p>
             <p className="text-lg font-mono font-bold text-zion-cyan">{m.serverLoad1?.toFixed(1) ?? '—'}</p>
             <p className="text-[10px] text-gray-500">{m.serverLoad5?.toFixed(1) ?? '—'} / {m.serverLoad15?.toFixed(1) ?? '—'} (5m/15m)</p>
           </div>
           <div className="zion-tile p-3">
-            <p className="text-[10px] uppercase tracking-wider text-gray-400">{MissionControlDashboardCopy.memory[cs ? 'cs' : 'en']}</p>
+            <p className="text-[10px] uppercase tracking-wider text-gray-400">{tx5(MissionControlDashboardCopy.memory, lang)}</p>
             <p className={`text-lg font-mono font-bold ${memPct != null && memPct > 85 ? 'text-zion-purple' : 'text-zion-purple'}`}>{memPct != null ? `${memPct.toFixed(1)}%` : '—'}</p>
             {m.memTotal && m.memAvail && <MetricBar value={m.memTotal - m.memAvail} max={m.memTotal} color={memPct != null && memPct > 85 ? 'bg-zion-purple' : 'bg-zion-purple'} />}
-            <p className="text-[10px] text-gray-500">{cs ? `${fmtBytes(m.memAvail)} volne / ${fmtBytes(m.memTotal)}` : `${fmtBytes(m.memAvail)} free / ${fmtBytes(m.memTotal)}`}</p>
+            <p className="text-[10px] text-gray-500">{cs ? `${fmtBytes(m.memAvail)} volne / ${fmtBytes(m.memTotal)}` : t5(`${fmtBytes(m.memAvail)} free / ${fmtBytes(m.memTotal)}`, lang)}</p>
           </div>
           <div className="zion-tile p-3">
             <p className="text-[10px] uppercase tracking-wider text-gray-400">Disk</p>
             <p className={`text-lg font-mono font-bold ${diskPct != null && diskPct > 85 ? 'text-zion-purple' : 'text-zion-gold'}`}>{diskPct != null ? `${diskPct.toFixed(1)}%` : '—'}</p>
             {m.diskTotal && m.diskAvail && <MetricBar value={m.diskTotal - m.diskAvail} max={m.diskTotal} color={diskPct != null && diskPct > 85 ? 'bg-zion-purple' : 'bg-zion-gold'} />}
-            <p className="text-[10px] text-gray-500">{cs ? `${fmtBytes(m.diskAvail)} volne / ${fmtBytes(m.diskTotal)}` : `${fmtBytes(m.diskAvail)} free / ${fmtBytes(m.diskTotal)}`}</p>
+            <p className="text-[10px] text-gray-500">{cs ? `${fmtBytes(m.diskAvail)} volne / ${fmtBytes(m.diskTotal)}` : t5(`${fmtBytes(m.diskAvail)} free / ${fmtBytes(m.diskTotal)}`, lang)}</p>
           </div>
           <div className="zion-tile p-3">
-            <p className="text-[10px] uppercase tracking-wider text-gray-400">{MissionControlDashboardCopy.serverUptime[cs ? 'cs' : 'en']}</p>
+            <p className="text-[10px] uppercase tracking-wider text-gray-400">{tx5(MissionControlDashboardCopy.serverUptime, lang)}</p>
             <p className="text-lg font-mono font-bold text-zion-cyan">{fmtUptime(uptime)}</p>
-            <p className="text-[10px] text-gray-500">{MissionControlDashboardCopy.since[cs ? 'cs' : 'en']} {m.bootTime ? new Date(m.bootTime * 1000).toLocaleDateString(locale) : '—'}</p>
+            <p className="text-[10px] text-gray-500">{tx5(MissionControlDashboardCopy.since, lang)} {m.bootTime ? new Date(m.bootTime * 1000).toLocaleDateString(locale) : '—'}</p>
           </div>
         </div>
       </div>
 
       {/* Footer legend */}
       <div className="flex flex-wrap gap-x-5 gap-y-1 text-[10px] text-gray-500 pt-2 border-t border-white/10">
-        <span>{MissionControlDashboardCopy.k30LiveTelemetryMetrics[cs ? 'cs' : 'en']}</span>
-        <span>{MissionControlDashboardCopy.instantRangeQueries[cs ? 'cs' : 'en']}</span>
-        <span>{MissionControlDashboardCopy.k15sAutoRefresh[cs ? 'cs' : 'en']}</span>
-        <span>{MissionControlDashboardCopy.svgSparklines1h[cs ? 'cs' : 'en']}</span>
-        <a href="/monitoring" className="text-zion-cyan hover:text-zion-cyan transition-colors">{MissionControlDashboardCopy.fullMonitoringPage[cs ? 'cs' : 'en']}</a>
-        <a href="/grafana/" target="_blank" rel="noopener noreferrer" className="text-zion-cyan hover:text-zion-cyan transition-colors">{MissionControlDashboardCopy.openMetrics[cs ? 'cs' : 'en']}</a>
+        <span>{tx5(MissionControlDashboardCopy.k30LiveTelemetryMetrics, lang)}</span>
+        <span>{tx5(MissionControlDashboardCopy.instantRangeQueries, lang)}</span>
+        <span>{tx5(MissionControlDashboardCopy.k15sAutoRefresh, lang)}</span>
+        <span>{tx5(MissionControlDashboardCopy.svgSparklines1h, lang)}</span>
+        <a href="/monitoring" className="text-zion-cyan hover:text-zion-cyan transition-colors">{tx5(MissionControlDashboardCopy.fullMonitoringPage, lang)}</a>
+        <a href="/grafana/" target="_blank" rel="noopener noreferrer" className="text-zion-cyan hover:text-zion-cyan transition-colors">{tx5(MissionControlDashboardCopy.openMetrics, lang)}</a>
       </div>
     </motion.section>
   );
@@ -1750,28 +1749,28 @@ function WalletDiagnosticsSection({
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Wallet & RPC</p>
-          <span className="text-[10px] uppercase tracking-widest border border-zion-cyan/40 bg-zion-cyan/10 text-zion-cyan px-2 py-0.5 rounded-full font-semibold">{MissionControlDashboardCopy.signedTxOnly[cs ? 'cs' : 'en']}</span>
+          <span className="text-[10px] uppercase tracking-widest border border-zion-cyan/40 bg-zion-cyan/10 text-zion-cyan px-2 py-0.5 rounded-full font-semibold">{tx5(MissionControlDashboardCopy.signedTxOnly, lang)}</span>
         </div>
         <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
           <Wallet className="h-7 w-7 text-zion-cyan" />
-          {MissionControlDashboardCopy.walletDiagnosticsTransactionSu[cs ? 'cs' : 'en']}
+          {tx5(MissionControlDashboardCopy.walletDiagnosticsTransactionSu, lang)}
         </h2>
-        <p className="text-sm text-gray-400">{MissionControlDashboardCopy.liveRpcHealthBalanceUtxoSnapsh[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm text-gray-400">{tx5(MissionControlDashboardCopy.liveRpcHealthBalanceUtxoSnapsh, lang)}</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
         <Stat label="RPC" value={rpc?.connected ? 'ONLINE' : 'OFFLINE'} color={rpc?.connected ? 'text-zion-cyan' : 'text-zion-purple'} />
-        <Stat label={MissionControlDashboardCopy.chainHeight[cs ? 'cs' : 'en']} value={fmt(rpc?.chain_height)} color="text-zion-cyan" mono />
+        <Stat label={tx5(MissionControlDashboardCopy.chainHeight, lang)} value={fmt(rpc?.chain_height)} color="text-zion-cyan" mono />
         <Stat label="Peers" value={fmt(rpc?.peers)} color="text-zion-cyan" mono />
         <Stat label="Mempool" value={fmt(rpc?.mempool_size)} color="text-zion-purple" mono />
-        <Stat label={MissionControlDashboardCopy.network[cs ? 'cs' : 'en']} value={rpc?.network?.toUpperCase() ?? '—'} color="text-zion-gold" />
-        <Stat label={MissionControlDashboardCopy.rpcVersion[cs ? 'cs' : 'en']} value={rpc?.version ?? '—'} color="text-gray-200" mono />
+        <Stat label={tx5(MissionControlDashboardCopy.network, lang)} value={rpc?.network?.toUpperCase() ?? '—'} color="text-zion-gold" />
+        <Stat label={tx5(MissionControlDashboardCopy.rpcVersion, lang)} value={rpc?.version ?? '—'} color="text-gray-200" mono />
       </div>
 
       <div className="zion-rainbow-sub p-4 sm:p-5 space-y-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
           <div className="flex-1 min-w-0">
-            <label className="block text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">{MissionControlDashboardCopy.walletAddressOrAccount[cs ? 'cs' : 'en']}</label>
+            <label className="block text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">{tx5(MissionControlDashboardCopy.walletAddressOrAccount, lang)}</label>
             <input
               value={addressInput}
               onChange={(event) => onAddressChange(event.target.value)}
@@ -1785,7 +1784,7 @@ function WalletDiagnosticsSection({
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-3 text-sm font-semibold text-zion-cyan transition-colors hover:border-zion-cyan/50 hover:text-cyan-200 disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            {loading ? (MissionControlDashboardCopy.loading[cs ? 'cs' : 'en']) : (MissionControlDashboardCopy.loadWallet[cs ? 'cs' : 'en'])}
+            {loading ? (tx5(MissionControlDashboardCopy.loading, lang)) : (tx5(MissionControlDashboardCopy.loadWallet, lang))}
           </button>
         </div>
 
@@ -1796,21 +1795,21 @@ function WalletDiagnosticsSection({
         )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <MiniMetric label={MissionControlDashboardCopy.address[cs ? 'cs' : 'en']} value={activeAddress || (MissionControlDashboardCopy.notLoaded[cs ? 'cs' : 'en'])} color="text-zion-cyan" />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.address, lang)} value={activeAddress || (tx5(MissionControlDashboardCopy.notLoaded, lang))} color="text-zion-cyan" />
           <MiniMetric label="TX Model" value={wallet?.transaction_model ?? 'rpc-only'} color="text-zion-gold" />
           <MiniMetric label="Balance" value={wallet ? fmtZion(wallet.balance_zion) : '—'} color="text-zion-cyan" />
-          <MiniMetric label={MissionControlDashboardCopy.utxoCount[cs ? 'cs' : 'en']} value={wallet ? fmt(wallet.utxo_count) : '—'} color="text-zion-purple" />
-          <MiniMetric label={MissionControlDashboardCopy.utxoTotal[cs ? 'cs' : 'en']} value={wallet ? fmtZion(wallet.total_utxo_zion) : '—'} color="text-zion-cyan" />
-          <MiniMetric label={MissionControlDashboardCopy.minerPending[cs ? 'cs' : 'en']} value={miner ? fmtZion(miner.pending_balance_zion) : '—'} color="text-zion-gold" />
-          <MiniMetric label={MissionControlDashboardCopy.minerPaid[cs ? 'cs' : 'en']} value={miner ? fmtZion(miner.paid_balance_zion) : '—'} color="text-zion-cyan" />
-          <MiniMetric label={MissionControlDashboardCopy.minerShares[cs ? 'cs' : 'en']} value={miner ? `${fmt(miner.accepted_shares)} / ${fmt(miner.rejected_shares)}` : '—'} color="text-gray-200" />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.utxoCount, lang)} value={wallet ? fmt(wallet.utxo_count) : '—'} color="text-zion-purple" />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.utxoTotal, lang)} value={wallet ? fmtZion(wallet.total_utxo_zion) : '—'} color="text-zion-cyan" />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.minerPending, lang)} value={miner ? fmtZion(miner.pending_balance_zion) : '—'} color="text-zion-gold" />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.minerPaid, lang)} value={miner ? fmtZion(miner.paid_balance_zion) : '—'} color="text-zion-cyan" />
+          <MiniMetric label={tx5(MissionControlDashboardCopy.minerShares, lang)} value={miner ? `${fmt(miner.accepted_shares)} / ${fmt(miner.rejected_shares)}` : '—'} color="text-gray-200" />
         </div>
 
         <div className="grid lg:grid-cols-2 gap-4">
           <div className="zion-section p-4">
             <div className="flex items-center justify-between mb-3">
-              <div className="text-xs uppercase tracking-[0.25em] text-gray-500">{MissionControlDashboardCopy.recentUtxos[cs ? 'cs' : 'en']}</div>
-              <div className="text-[10px] text-gray-500">{MissionControlDashboardCopy.top20FromRpc[cs ? 'cs' : 'en']}</div>
+              <div className="text-xs uppercase tracking-[0.25em] text-gray-500">{tx5(MissionControlDashboardCopy.recentUtxos, lang)}</div>
+              <div className="text-[10px] text-gray-500">{tx5(MissionControlDashboardCopy.top20FromRpc, lang)}</div>
             </div>
             {wallet?.utxos?.length ? (
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
@@ -1820,19 +1819,19 @@ function WalletDiagnosticsSection({
                       <span className="font-mono text-zion-cyan truncate">{utxo.tx_hash.slice(0, 12)}…:{utxo.output_index}</span>
                       <span className="font-mono text-zion-cyan">{fmtZion(utxo.amount / 1_000_000)}</span>
                     </div>
-                    <div className="mt-1 text-gray-500">{MissionControlDashboardCopy.height_2[cs ? 'cs' : 'en']} {fmt(utxo.height)} · {utxo.address}</div>
+                    <div className="mt-1 text-gray-500">{tx5(MissionControlDashboardCopy.height_2, lang)} {fmt(utxo.height)} · {utxo.address}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-sm text-gray-500">{activeAddress ? (MissionControlDashboardCopy.noUtxosReturnedForThisAddress[cs ? 'cs' : 'en']) : (MissionControlDashboardCopy.loadAZion1AddressToInspectUtxo[cs ? 'cs' : 'en'])}</div>
+              <div className="text-sm text-gray-500">{activeAddress ? (tx5(MissionControlDashboardCopy.noUtxosReturnedForThisAddress, lang)) : (tx5(MissionControlDashboardCopy.loadAZion1AddressToInspectUtxo, lang))}</div>
             )}
           </div>
 
           <div className="zion-section p-4">
             <div className="flex items-center justify-between mb-3">
-              <div className="text-xs uppercase tracking-[0.25em] text-gray-500">{MissionControlDashboardCopy.rpcSubmitTester[cs ? 'cs' : 'en']}</div>
-              <div className="text-[10px] text-gray-500">{MissionControlDashboardCopy.signedPayloadOnly[cs ? 'cs' : 'en']}</div>
+              <div className="text-xs uppercase tracking-[0.25em] text-gray-500">{tx5(MissionControlDashboardCopy.rpcSubmitTester, lang)}</div>
+              <div className="text-[10px] text-gray-500">{tx5(MissionControlDashboardCopy.signedPayloadOnly, lang)}</div>
             </div>
             <div className="space-y-3">
               <select
@@ -1856,12 +1855,12 @@ function WalletDiagnosticsSection({
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-3 text-sm font-semibold text-zion-cyan transition-colors hover:border-zion-cyan/50 hover:text-emerald-200 disabled:opacity-50"
               >
                 <ArrowLeftRight className={`h-4 w-4 ${txSubmitting ? 'animate-pulse' : ''}`} />
-                {txSubmitting ? (MissionControlDashboardCopy.submitting[cs ? 'cs' : 'en']) : (MissionControlDashboardCopy.broadcastSignedTx[cs ? 'cs' : 'en'])}
+                {txSubmitting ? (tx5(MissionControlDashboardCopy.submitting, lang)) : (tx5(MissionControlDashboardCopy.broadcastSignedTx, lang))}
               </button>
               {txResult && (
                 <div className={`rounded-xl border px-4 py-3 text-sm ${txResult.accepted ? 'border-zion-cyan/30 bg-zion-cyan/10 text-emerald-200' : 'border-zion-gold/30 bg-zion-gold/10 text-amber-200'}`}>
-                  <div>{MissionControlDashboardCopy.method[cs ? 'cs' : 'en']}: {txResult.method}</div>
-                  <div>{MissionControlDashboardCopy.accepted_2[cs ? 'cs' : 'en']}: {txResult.accepted ? (MissionControlDashboardCopy.yes[cs ? 'cs' : 'en']) : (MissionControlDashboardCopy.no[cs ? 'cs' : 'en'])}</div>
+                  <div>{tx5(MissionControlDashboardCopy.method, lang)}: {txResult.method}</div>
+                  <div>{tx5(MissionControlDashboardCopy.accepted_2, lang)}: {txResult.accepted ? (tx5(MissionControlDashboardCopy.yes, lang)) : (tx5(MissionControlDashboardCopy.no, lang))}</div>
                   <div>tx_id: {txResult.tx_id ?? '—'}</div>
                 </div>
               )}
@@ -2010,9 +2009,9 @@ function LogConsole({ logTail }: { logTail?: string }) {
 export default function MissionControlDashboard() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = MissionControlDashboardCopy.enUs[cs ? 'cs' : 'en'];
-  const tabs = getTabs(cs);
-  const serviceGroups = getServiceGroups(cs);
+  const locale = tx5(MissionControlDashboardCopy.enUs, lang);
+  const tabs = getTabs(cs, lang);
+  const serviceGroups = getServiceGroups(cs, lang);
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
   const [data, setData] = useState<DashData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -2236,11 +2235,11 @@ export default function MissionControlDashboard() {
     servicesNa > 0 ? { id: 'na-services', message: `${servicesNa} service${servicesNa > 1 ? 's' : ''} without a telemetry pull`, severity: 'info', href: '/monitoring' } : null,
   ], [servicesDown, servicesNa, stackSummary]);
   const opsAlerts = useMemo(() => opsAlertsRaw.filter((value): value is OpsAlert => value !== null), [opsAlertsRaw]);
-  const effectiveReadinessMap = useMemo(() => readinessMap ?? getFallbackReadinessMap(cs), [readinessMap, cs]);
+  const effectiveReadinessMap = useMemo(() => readinessMap ?? getFallbackReadinessMap(cs, lang), [readinessMap, cs]);
   const readinessPanels = [
     {
       key: 'done',
-      title: MissionControlDashboardCopy.done[cs ? 'cs' : 'en'],
+      title: tx5(MissionControlDashboardCopy.done, lang),
       badge: 'READY NOW',
       Icon: CheckCheck,
       cardClass: 'border-zion-cyan/20 bg-zion-cyan/5',
@@ -2250,7 +2249,7 @@ export default function MissionControlDashboard() {
     },
     {
       key: 'missing',
-      title: MissionControlDashboardCopy.missingBeforePublicLaunch[cs ? 'cs' : 'en'],
+      title: tx5(MissionControlDashboardCopy.missingBeforePublicLaunch, lang),
       badge: 'BLOCKERS',
       Icon: XCircle,
       cardClass: 'border-zion-purple/20 bg-zion-purple/5',
@@ -2260,7 +2259,7 @@ export default function MissionControlDashboard() {
     },
     {
       key: 'not-missing',
-      title: MissionControlDashboardCopy.noLongerMissing[cs ? 'cs' : 'en'],
+      title: tx5(MissionControlDashboardCopy.noLongerMissing, lang),
       badge: 'CLARIFIED',
       Icon: CircleDot,
       cardClass: 'border-zion-cyan/20 bg-zion-cyan/5',
@@ -2270,7 +2269,7 @@ export default function MissionControlDashboard() {
     },
     {
       key: 'next-48h',
-      title: MissionControlDashboardCopy.next4872h[cs ? 'cs' : 'en'],
+      title: tx5(MissionControlDashboardCopy.next4872h, lang),
       badge: 'REHEARSAL',
       Icon: Construction,
       cardClass: 'border-zion-gold/20 bg-zion-gold/5',
@@ -2298,20 +2297,18 @@ export default function MissionControlDashboard() {
                 MAINNET · LIVE · BETA
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{MissionControlDashboardCopy.liveTelemetry[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{tx5(MissionControlDashboardCopy.liveTelemetry, lang)}</p>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-gradient leading-tight">
-                  {MissionControlDashboardCopy.missionControl[cs ? 'cs' : 'en']}
+                  {tx5(MissionControlDashboardCopy.missionControl, lang)}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {cs
-                  ? 'Živé monitorování One Love Mainnetu. Dashboard sleduje veřejný pool a konsenzus uzel — live chain metriky, pool hashrate a síťový stav.'
-                  : 'Real-time monitoring of One Love Mainnet. The dashboard tracks the public pool and consensus node — live chain metrics, pool hashrate and network status.'
+                {cs ? 'Živé monitorování One Love Mainnetu. Dashboard sleduje veřejný pool a konsenzus uzel — live chain metriky, pool hashrate a síťový stav.' : t5('Real-time monitoring of One Love Mainnet. The dashboard tracks the public pool and consensus node — live chain metrics, pool hashrate and network status.', lang)
                 }
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-zion-cyan animate-pulse" /> {MissionControlDashboardCopy.liveData30sRefresh[cs ? 'cs' : 'en']}
+                  <span className="w-1.5 h-1.5 rounded-full bg-zion-cyan animate-pulse" /> {tx5(MissionControlDashboardCopy.liveData30sRefresh, lang)}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-emerald-200">
                   <CheckCircle2 className="h-3 w-3" /> Mainnet Beta · Live
@@ -2323,7 +2320,7 @@ export default function MissionControlDashboard() {
                   <Rocket className="h-3 w-3" /> Public launch postponed (TBD)
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Shield className="h-3 w-3 text-zion-cyan" /> {allHealthy ? (MissionControlDashboardCopy.allSystemsHealthy[cs ? 'cs' : 'en']) : anyHealthy ? (MissionControlDashboardCopy.partialSystemsUp[cs ? 'cs' : 'en']) : (MissionControlDashboardCopy.systemsMonitoring[cs ? 'cs' : 'en'])}
+                  <Shield className="h-3 w-3 text-zion-cyan" /> {allHealthy ? (tx5(MissionControlDashboardCopy.allSystemsHealthy, lang)) : anyHealthy ? (tx5(MissionControlDashboardCopy.partialSystemsUp, lang)) : (tx5(MissionControlDashboardCopy.systemsMonitoring, lang))}
                 </span>
               </div>
             </div>
@@ -2366,7 +2363,7 @@ export default function MissionControlDashboard() {
               src="/images/mission-control/hero.webp"
                 srcSet="/images/mission-control/hero-m.webp 960w, /images/mission-control/hero.webp 1672w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
-              alt={cs ? 'ZION Mission Control — Terra Nova dashboard se Stromem života a vrstvami L1–L6' : 'ZION Mission Control — Terra Nova dashboard with the Tree of Life and layers L1–L6'}
+              alt={cs ? 'ZION Mission Control — Terra Nova dashboard se Stromem života a vrstvami L1–L6' : t5('ZION Mission Control — Terra Nova dashboard with the Tree of Life and layers L1–L6', lang)}
               width={1672}
               height={941}
               loading="eager"
@@ -2397,7 +2394,7 @@ export default function MissionControlDashboard() {
             ))}
             <div className="ml-auto flex items-center gap-2 text-xs text-zion-cyan whitespace-nowrap pr-2 sm:pr-3">
               <span className="w-2 h-2 rounded-full bg-zion-cyan animate-pulse" />
-              <span className="hidden sm:inline">{MissionControlDashboardCopy.live[cs ? 'cs' : 'en']}</span>
+              <span className="hidden sm:inline">{tx5(MissionControlDashboardCopy.live, lang)}</span>
             </div>
           </div>
         </motion.div>
@@ -2406,7 +2403,7 @@ export default function MissionControlDashboard() {
         {loading && !data && (
           <div className="text-center py-20 text-gray-500">
             <div className="inline-block w-8 h-8 border-2 border-zion-cyan border-t-transparent rounded-full animate-spin mb-4" />
-            <p>{MissionControlDashboardCopy.loadingMissionControlData[cs ? 'cs' : 'en']}</p>
+            <p>{tx5(MissionControlDashboardCopy.loadingMissionControlData, lang)}</p>
           </div>
         )}
 
@@ -2414,9 +2411,9 @@ export default function MissionControlDashboard() {
         {!loading && !data && (
           <div className="text-center py-16 text-gray-500 zion-section border-zion-gold/20 bg-zion-gold/5">
             <Radio className="h-8 w-8 text-zion-gold mx-auto mb-3" />
-            <p className="text-zion-gold font-semibold">{MissionControlDashboardCopy.liveTelemetryUnavailable[cs ? 'cs' : 'en']}</p>
-            <p className="text-sm mt-1">{MissionControlDashboardCopy.nodeApiTemporarilyUnreachableR[cs ? 'cs' : 'en']}</p>
-            <button onClick={refresh} className="mt-4 px-4 py-2 text-xs rounded-xl border border-zion-gold/30 text-zion-gold hover:bg-zion-gold/10 transition-colors">{MissionControlDashboardCopy.retry[cs ? 'cs' : 'en']}</button>
+            <p className="text-zion-gold font-semibold">{tx5(MissionControlDashboardCopy.liveTelemetryUnavailable, lang)}</p>
+            <p className="text-sm mt-1">{tx5(MissionControlDashboardCopy.nodeApiTemporarilyUnreachableR, lang)}</p>
+            <button onClick={refresh} className="mt-4 px-4 py-2 text-xs rounded-xl border border-zion-gold/30 text-zion-gold hover:bg-zion-gold/10 transition-colors">{tx5(MissionControlDashboardCopy.retry, lang)}</button>
           </div>
         )}
 
@@ -2445,9 +2442,7 @@ export default function MissionControlDashboard() {
                   One Love Mainnet — Live Status
                 </h2>
                 <p className="text-sm text-gray-400">
-                  {cs
-                    ? 'Síťová topologie aktivní. Mainnet Beta live, aktuální G8 30denní run probíhá (monitoring na /g8), genesis artefakty potvrzeny. Veřejný mainnet launch je odložen; nové datum oznámíme po splnění podmínek.'
-                    : 'Network topology active. Mainnet Beta live, the current G8 30-day run is in progress (monitoring on /g8), genesis artifacts confirmed. Public mainnet launch is postponed; a new date will be announced once conditions are met.'
+                  {cs ? 'Síťová topologie aktivní. Mainnet Beta live, aktuální G8 30denní run probíhá (monitoring na /g8), genesis artefakty potvrzeny. Veřejný mainnet launch je odložen; nové datum oznámíme po splnění podmínek.' : t5('Network topology active. Mainnet Beta live, the current G8 30-day run is in progress (monitoring on /g8), genesis artifacts confirmed. Public mainnet launch is postponed; a new date will be announced once conditions are met.', lang)
                   }
                 </p>
               </div>
@@ -2456,8 +2451,8 @@ export default function MissionControlDashboard() {
                 <Stat label="Online Nodes" value={`${onlineCount}/${expectedNodes}`} color={allHealthy ? 'text-zion-cyan' : anyHealthy ? 'text-zion-gold' : 'text-zion-purple'} mono />
                 <Stat label="Tip Agreement" value={tipAgreement ? 'LOCKED' : (anyHealthy ? 'SYNCING' : '—')} color={tipAgreement ? 'text-zion-cyan' : 'text-zion-gold'} />
                 <Stat label="Pool Accept" value={poolAcceptRate != null ? `${poolAcceptRate}%` : (primaryNode?.pool?.ok ? '100%' : '—')} color={(poolAcceptRate ?? 100) >= 95 ? 'text-zion-cyan' : 'text-zion-gold'} mono />
-                <Stat label="Security Gate" value="PENDING" color="text-zion-gold" sub={cs ? 'externí audit zatím neproběhl' : 'external audit not started'} />
-                <Stat label="Launch Gate" value={launchGate} color="text-zion-gold" sub={cs ? 'odloženo do splnění G8 + G9' : 'postponed pending G8 + G9'} />
+                <Stat label="Security Gate" value="PENDING" color="text-zion-gold" sub={cs ? 'externí audit zatím neproběhl' : t5('external audit not started', lang)} />
+                <Stat label="Launch Gate" value={launchGate} color="text-zion-gold" sub={cs ? 'odloženo do splnění G8 + G9' : t5('postponed pending G8 + G9', lang)} />
               </div>
               <div className="mt-4">
                 <G8RunCard run={g8} />
@@ -2496,9 +2491,7 @@ export default function MissionControlDashboard() {
                 <ServerCard node={data?.primary} name="Consensus node" flag="🏠" ip="Consensus + public RPC" />
               </div>
               <div className="mt-5 zion-tile px-5 py-4 text-sm text-gray-300">
-                {cs
-                  ? 'Síťová topologie: veřejný uzel pro relay a pool, konsenzus uzel pro primární validaci. P2P spojení přes mainnetovou síť.'
-                  : 'Network topology: public relay and pool node, consensus node for primary validation. P2P connections over mainnet mesh.'
+                {cs ? 'Síťová topologie: veřejný uzel pro relay a pool, konsenzus uzel pro primární validaci. P2P spojení přes mainnetovou síť.' : t5('Network topology: public relay and pool node, consensus node for primary validation. P2P connections over mainnet mesh.', lang)
                 }
               </div>
             </motion.section>
@@ -2560,10 +2553,10 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Launch Gate</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Target className="h-7 w-7 text-zion-gold" />
-                  {MissionControlDashboardCopy.launchReadinessPreLaunchBlocke[cs ? 'cs' : 'en']}
+                  {tx5(MissionControlDashboardCopy.launchReadinessPreLaunchBlocke, lang)}
                 </h2>
                 <p className="text-sm text-gray-400">
-                  {MissionControlDashboardCopy.currentLaunchGateStatusBasedOn[cs ? 'cs' : 'en']}
+                  {tx5(MissionControlDashboardCopy.currentLaunchGateStatusBasedOn, lang)}
                 </p>
               </div>
               <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
@@ -2578,7 +2571,7 @@ export default function MissionControlDashboard() {
                     </div>
                     {panel.items.length === 0 ? (
                       <p className="text-sm text-gray-500 italic">
-                        {MissionControlDashboardCopy.noItems[cs ? 'cs' : 'en']}
+                        {tx5(MissionControlDashboardCopy.noItems, lang)}
                       </p>
                     ) : (
                       <ul className="space-y-2.5">
@@ -2684,10 +2677,10 @@ export default function MissionControlDashboard() {
                 </div>
                 <div className="space-y-1">
                   <h2 className="text-xl font-semibold text-white group-hover:text-zion-gold transition-colors">
-                    {MissionControlDashboardCopy.goldenCompassSevenDirectionsOf[cs ? 'cs' : 'en']}
+                    {tx5(MissionControlDashboardCopy.goldenCompassSevenDirectionsOf, lang)}
                   </h2>
                   <p className="text-sm text-gray-400 leading-relaxed">
-                    {MissionControlDashboardCopy.truthfulnessCareDisciplineComm[cs ? 'cs' : 'en']}
+                    {tx5(MissionControlDashboardCopy.truthfulnessCareDisciplineComm, lang)}
                   </p>
                 </div>
               </a>
@@ -2705,8 +2698,8 @@ export default function MissionControlDashboard() {
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="zion-section border-zion-gold/40 bg-zion-gold/10 p-3 sm:p-4 flex items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-zion-gold shrink-0" />
               <div>
-                <p className="text-sm font-semibold text-zion-gold">{cs ? 'Testovací metriky' : 'Test Metrics'}</p>
-                <p className="text-xs text-amber-200/70">{cs ? 'Tato data pochází z testovacího provozu. Hodnoty nereprezentují produkční mainnet.' : 'These are test-environment metrics, not production mainnet data.'}</p>
+                <p className="text-sm font-semibold text-zion-gold">{cs ? 'Testovací metriky' : t5('Test Metrics', lang)}</p>
+                <p className="text-xs text-amber-200/70">{cs ? 'Tato data pochází z testovacího provozu. Hodnoty nereprezentují produkční mainnet.' : t5('These are test-environment metrics, not production mainnet data.', lang)}</p>
               </div>
             </motion.div>
 
@@ -2763,7 +2756,7 @@ export default function MissionControlDashboard() {
                       <MiniMetric label="Alert services" value={fmt(stackSummary.alertmanagersDiscovered)} color="text-zion-cyan" />
                       <MiniMetric label="Queue Length" value={fmt(stackSummary.prometheusQueueLength)} color="text-zion-cyan" />
                     </div>
-                    <div className="mt-2 text-[10px] text-gray-500">{cs ? 'Alert service není sběrný cíl v této síti, stav se čte přes telemetry notification pipeline.' : 'Alert service is not a collection target in this network; status is read via the telemetry notification pipeline.'}</div>
+                    <div className="mt-2 text-[10px] text-gray-500">{cs ? 'Alert service není sběrný cíl v této síti, stav se čte přes telemetry notification pipeline.' : t5('Alert service is not a collection target in this network; status is read via the telemetry notification pipeline.', lang)}</div>
                   </div>
                   <div className="zion-section p-4">
                     <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">Remote Coverage</div>
@@ -2771,7 +2764,7 @@ export default function MissionControlDashboard() {
                       <MiniMetric label="Core Pool" value={stackSummary.corePoolUp === 1 ? 'UP' : stackSummary.corePoolUp === 0 ? 'DOWN' : '—'} color={stackSummary.corePoolUp === 1 ? 'text-zion-cyan' : 'text-zion-purple'} />
                       <MiniMetric label="Core Node" value={stackSummary.coreNodeUp === 1 ? 'UP' : stackSummary.coreNodeUp === 0 ? 'DOWN' : '—'} color={stackSummary.coreNodeUp === 1 ? 'text-zion-cyan' : 'text-zion-purple'} />
                     </div>
-                    <div className="mt-2 text-[10px] text-gray-500">{cs ? 'Veřejně sbírané cíle z mainnetu.' : 'Publicly collected targets from mainnet telemetry.'}</div>
+                    <div className="mt-2 text-[10px] text-gray-500">{cs ? 'Veřejně sbírané cíle z mainnetu.' : t5('Publicly collected targets from mainnet telemetry.', lang)}</div>
                   </div>
                 </div>
                 {opsAlerts.length > 0 && (
@@ -2841,7 +2834,7 @@ export default function MissionControlDashboard() {
 
             {/* ── TEST-MAINNET METRICS ── */}
             {v3 && v3Sparks && (
-              <V3MetricsSection v3={v3} sparks={v3Sparks} nowSec={nowSec} cs={cs} locale={locale} />
+              <V3MetricsSection v3={v3} sparks={v3Sparks} nowSec={nowSec} cs={cs} lang={lang} locale={locale} />
             )}
 
             {/* ── 6H CHARTS ── */}
@@ -2982,11 +2975,11 @@ export default function MissionControlDashboard() {
                   Ekam Deeksha — ASIC Resistance Upgrade
                 </h2>
                 <p className="text-sm text-gray-400">
-                  {cs ? 'Ekam Deeksha v3.2 je kanonický ASIC-hardened PoW ZION mainnetu: 512 KiB scratchpad se sekvenčním XOR průchodem vpřed i vzad, 128 náhodných čtení na nonce a 2 AES rundy s finálním Keccak-256. Běží na všech výškách ZION chainu; CPU, CUDA, OpenCL a Metal backendy jsou bit-identické podle locknutých KAT vektorů.' : 'Ekam Deeksha v3.2 is the canonical ASIC-hardened PoW of ZION Mainnet: a 512 KiB scratchpad with forward and backward sequential XOR passes, 128 random reads per nonce, and 2 AES rounds with a Keccak-256 finalize. It runs at all heights of the ZION chain; CPU, CUDA, OpenCL and Metal backends are bit-identical against locked KAT vectors.'}
+                  {cs ? 'Ekam Deeksha v3.2 je kanonický ASIC-hardened PoW ZION mainnetu: 512 KiB scratchpad se sekvenčním XOR průchodem vpřed i vzad, 128 náhodných čtení na nonce a 2 AES rundy s finálním Keccak-256. Běží na všech výškách ZION chainu; CPU, CUDA, OpenCL a Metal backendy jsou bit-identické podle locknutých KAT vektorů.' : t5('Ekam Deeksha v3.2 is the canonical ASIC-hardened PoW of ZION Mainnet: a 512 KiB scratchpad with forward and backward sequential XOR passes, 128 random reads per nonce, and 2 AES rounds with a Keccak-256 finalize. It runs at all heights of the ZION chain; CPU, CUDA, OpenCL and Metal backends are bit-identical against locked KAT vectors.', lang)}
                 </p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <Stat label={cs ? 'Verze' : 'Version'} value={SITE_VERSION} sub={`Ekam Deeksha v3.2 · ${SITE_RUNTIME_LABEL}`} color="text-zion-gold" />
+                <Stat label={cs ? 'Verze' : t5('Version', lang)} value={SITE_VERSION} sub={`Ekam Deeksha v3.2 · ${SITE_RUNTIME_LABEL}`} color="text-zion-gold" />
                 <Stat label="KAT vectors" value="LOCKED" sub="CPU + GPU bit-identical" color="text-zion-cyan" mono />
                 <Stat label="Backends" value="4/4" sub="CPU · CUDA · OpenCL · Metal" color="text-zion-cyan" mono />
                 <Stat label="Production" value="G1 CLOSED" sub="rigs E2E on mainnet pool" color="text-zion-cyan" mono />
@@ -3014,17 +3007,17 @@ export default function MissionControlDashboard() {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                       <CheckCheck className="h-5 w-5 text-zion-cyan" />
-                      {cs ? 'Memory-hard pipeline' : 'Memory-hard pipeline'}
+                      {cs ? 'Memory-hard pipeline' : t5('Memory-hard pipeline', lang)}
                     </h3>
                     <span className="text-[10px] uppercase tracking-widest border border-zion-cyan/30 bg-zion-cyan/10 text-emerald-200 px-2 py-0.5 rounded-full font-semibold">CANONICAL</span>
                   </div>
                   <div className="space-y-2 text-sm">
                     {[
-                      { done: true, text: cs ? 'Scratchpad 512 KiB (16 384 bloků × 32 B)' : 'Scratchpad 512 KiB (16,384 blocks × 32 B)' },
-                      { done: true, text: cs ? 'SHA3-512 chain fill' : 'SHA3-512 chain fill' },
-                      { done: true, text: cs ? '2 sekvenční XOR průchody — vpřed + vzad' : '2 sequential XOR passes — forward + backward' },
-                      { done: true, text: cs ? '128 náhodných čtení na nonce (seriální bottleneck)' : '128 random reads per nonce (serial bottleneck)' },
-                      { done: true, text: cs ? 'KAT vektory locknuté — deterministika napříč backendy' : 'KAT vectors locked — determinism across backends' },
+                      { done: true, text: cs ? 'Scratchpad 512 KiB (16 384 bloků × 32 B)' : t5('Scratchpad 512 KiB (16,384 blocks × 32 B)', lang) },
+                      { done: true, text: cs ? 'SHA3-512 chain fill' : t5('SHA3-512 chain fill', lang) },
+                      { done: true, text: cs ? '2 sekvenční XOR průchody — vpřed + vzad' : t5('2 sequential XOR passes — forward + backward', lang) },
+                      { done: true, text: cs ? '128 náhodných čtení na nonce (seriální bottleneck)' : t5('128 random reads per nonce (serial bottleneck)', lang) },
+                      { done: true, text: cs ? 'KAT vektory locknuté — deterministika napříč backendy' : t5('KAT vectors locked — determinism across backends', lang) },
                       { done: true, text: 'Commit e56f627a8' },
                     ].map(item => (
                       <div key={item.text} className="flex items-center gap-2">
@@ -3039,17 +3032,17 @@ export default function MissionControlDashboard() {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                       <CheckCheck className="h-5 w-5 text-zion-cyan" />
-                      {cs ? 'Finalizace + backend parita' : 'Finalize + backend parity'}
+                      {cs ? 'Finalizace + backend parita' : t5('Finalize + backend parity', lang)}
                     </h3>
                     <span className="text-[10px] uppercase tracking-widest border border-zion-cyan/30 bg-zion-cyan/10 text-emerald-200 px-2 py-0.5 rounded-full font-semibold">CANONICAL</span>
                   </div>
                   <div className="space-y-2 text-sm">
                     {[
-                      { done: true, text: cs ? '2 AES rundy + Keccak-256 finále' : '2 AES rounds + Keccak-256 finalize' },
-                      { done: true, text: cs ? 'CPU · CUDA · OpenCL · Metal bit-identické' : 'CPU · CUDA · OpenCL · Metal bit-identical' },
-                      { done: true, text: cs ? 'Apple Silicon: Metal vypnut pro v3.2 — CPU je 8–10× rychlejší' : 'Apple Silicon: Metal disabled for v3.2 — CPU is 8–10× faster' },
-                      { done: true, text: cs ? 'Miner mapuje Ekam Deeksha na kanonický backend automaticky' : 'Miner maps Ekam Deeksha to the canonical backend automatically' },
-                      { done: true, text: cs ? 'Běží na všech výškách ZION chainu od přechodu' : 'Runs at all heights of the ZION chain since cutover' },
+                      { done: true, text: cs ? '2 AES rundy + Keccak-256 finále' : t5('2 AES rounds + Keccak-256 finalize', lang) },
+                      { done: true, text: cs ? 'CPU · CUDA · OpenCL · Metal bit-identické' : t5('CPU · CUDA · OpenCL · Metal bit-identical', lang) },
+                      { done: true, text: cs ? 'Apple Silicon: Metal vypnut pro v3.2 — CPU je 8–10× rychlejší' : t5('Apple Silicon: Metal disabled for v3.2 — CPU is 8–10× faster', lang) },
+                      { done: true, text: cs ? 'Miner mapuje Ekam Deeksha na kanonický backend automaticky' : t5('Miner maps Ekam Deeksha to the canonical backend automatically', lang) },
+                      { done: true, text: cs ? 'Běží na všech výškách ZION chainu od přechodu' : t5('Runs at all heights of the ZION chain since cutover', lang) },
                       { done: true, text: 'Commits 09261d59f · 345b8fdaa · eccf43faf' },
                     ].map(item => (
                       <div key={item.text} className="flex items-center gap-2">
@@ -3125,20 +3118,20 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Technical</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Code2 className="h-7 w-7 text-zion-cyan" />
-                  {cs ? 'Ekam Deeksha — Technické parametry' : 'Ekam Deeksha — Technical Parameters'}
+                  {cs ? 'Ekam Deeksha — Technické parametry' : t5('Ekam Deeksha — Technical Parameters', lang)}
                 </h2>
               </div>
               <div className="grid gap-5 md:grid-cols-2">
                 <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <h3 className="text-base font-semibold text-white mb-4">Ekam Deeksha v3.2 — {cs ? 'Memory-hard pipeline' : 'Memory-hard pipeline'}</h3>
+                  <h3 className="text-base font-semibold text-white mb-4">Ekam Deeksha v3.2 — {cs ? 'Memory-hard pipeline' : t5('Memory-hard pipeline', lang)}</h3>
                   <div className="space-y-2">
                     {[
-                      [cs ? 'Scratchpad' : 'Scratchpad', '512 KiB (524,288 B · 16,384 × 32 B)'],
-                      [cs ? 'Průchody' : 'Passes', '2 (forward + backward XOR)'],
-                      [cs ? 'Náhodná čtení' : 'Random reads', '128 / nonce'],
-                      [cs ? 'Fill' : 'Fill', 'SHA3-512 chain fill'],
-                      [cs ? 'Finále' : 'Finalize', '2 AES rounds + Keccak-256'],
-                      [cs ? 'Soubor' : 'File', 'algorithm/Ekam Deeksha.rs'],
+                      [cs ? 'Scratchpad' : t5('Scratchpad', lang), '512 KiB (524,288 B · 16,384 × 32 B)'],
+                      [cs ? 'Průchody' : t5('Passes', lang), '2 (forward + backward XOR)'],
+                      [cs ? 'Náhodná čtení' : t5('Random reads', lang), '128 / nonce'],
+                      [cs ? 'Fill' : t5('Fill', lang), 'SHA3-512 chain fill'],
+                      [cs ? 'Finále' : t5('Finalize', lang), '2 AES rounds + Keccak-256'],
+                      [cs ? 'Soubor' : t5('File', lang), 'algorithm/Ekam Deeksha.rs'],
                     ].map(([k, v]) => (
                       <div key={k} className="flex justify-between text-sm border-b border-white/5 pb-1.5">
                         <span className="text-gray-400">{k}</span>
@@ -3148,15 +3141,15 @@ export default function MissionControlDashboard() {
                   </div>
                 </div>
                 <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <h3 className="text-base font-semibold text-white mb-4">{cs ? 'Backend parita' : 'Backend Parity'}</h3>
+                  <h3 className="text-base font-semibold text-white mb-4">{cs ? 'Backend parita' : t5('Backend Parity', lang)}</h3>
                   <div className="space-y-2">
                     {[
-                      [cs ? 'Backendy' : 'Backends', 'CPU · CUDA · OpenCL · Metal'],
-                      [cs ? 'KAT vektory' : 'KAT vectors', cs ? 'locknuté — bit-identické' : 'locked — bit-identical'],
-                      [cs ? 'Apple Silicon' : 'Apple Silicon', cs ? 'Metal OFF — CPU 8–10× rychlejší' : 'Metal OFF — CPU 8–10× faster'],
-                      [cs ? 'Konsensus profil' : 'Consensus profile', 'Ekam Deeksha v3.2 (all heights)'],
-                      [cs ? 'Block time target' : 'Block time target', '60 s · LWMA DAA'],
-                      [cs ? 'KAT vector #1' : 'KAT vector #1', '6edcfb4c…7290bf'],
+                      [cs ? 'Backendy' : t5('Backends', lang), 'CPU · CUDA · OpenCL · Metal'],
+                      [cs ? 'KAT vektory' : t5('KAT vectors', lang), cs ? 'locknuté — bit-identické' : t5('locked — bit-identical', lang)],
+                      [cs ? 'Apple Silicon' : t5('Apple Silicon', lang), cs ? 'Metal OFF — CPU 8–10× rychlejší' : t5('Metal OFF — CPU 8–10× faster', lang)],
+                      [cs ? 'Konsensus profil' : t5('Consensus profile', lang), 'Ekam Deeksha v3.2 (all heights)'],
+                      [cs ? 'Block time target' : t5('Block time target', lang), '60 s · LWMA DAA'],
+                      [cs ? 'KAT vector #1' : t5('KAT vector #1', lang), '6edcfb4c…7290bf'],
                     ].map(([k, v]) => (
                       <div key={k} className="flex justify-between text-sm border-b border-white/5 pb-1.5">
                         <span className="text-gray-400">{k}</span>
@@ -3180,19 +3173,19 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Changed Files</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Construction className="h-7 w-7 text-zion-gold" />
-                  {cs ? 'Dotčené soubory' : 'Changed Files'}
+                  {cs ? 'Dotčené soubory' : t5('Changed Files', lang)}
                 </h2>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 {[
-                  { file: 'ZION core — Ekam Deeksha', change: cs ? 'Kanonický v3.2 pipeline — 512 KiB, 2 passes, 128 reads, 2 AES rounds' : 'Canonical v3.2 pipeline — 512 KiB, 2 passes, 128 reads, 2 AES rounds', type: 'new' },
+                  { file: 'ZION core — Ekam Deeksha', change: cs ? 'Kanonický v3.2 pipeline — 512 KiB, 2 passes, 128 reads, 2 AES rounds' : t5('Canonical v3.2 pipeline — 512 KiB, 2 passes, 128 reads, 2 AES rounds', lang), type: 'new' },
                   { file: 'GPU kernel — Ekam Deeksha', change: 'OpenCL kernel — bit-identical to CPU', type: 'mod' },
                   { file: 'OpenCL kernel — Ekam Deeksha', change: 'KAT asserts — SCRATCHPAD 524288, PASSES 2, READS 128', type: 'mod' },
                   { file: 'CUDA / Metal kernels', change: 'CUDA/OpenCL/Metal backend parity + optimization', type: 'mod' },
-                  { file: 'ZION miner GPU', change: cs ? 'Ekam Deeksha → kanonický backend, Apple Silicon → CPU' : 'Ekam Deeksha → canonical backend, Apple Silicon → CPU', type: 'mod' },
+                  { file: 'ZION miner GPU', change: cs ? 'Ekam Deeksha → kanonický backend, Apple Silicon → CPU' : t5('Ekam Deeksha → canonical backend, Apple Silicon → CPU', lang), type: 'mod' },
                   { file: 'ZION core + runtime + auxpow', change: 'public build — Boost branding, protected details', type: 'new' },
                   { file: 'ZION core emission + genesis', change: 'Ekam Deeksha v3.2 consensus profile · 16.78B premine · 89/5/5/1', type: 'mod' },
-                  { file: 'Release build scripts', change: cs ? 'Sestavovací skripty pro veřejné v3.2.0 binárky' : 'Build scripts for public v3.2.0 binaries', type: 'new' },
+                  { file: 'Release build scripts', change: cs ? 'Sestavovací skripty pro veřejné v3.2.0 binárky' : t5('Build scripts for public v3.2.0 binaries', lang), type: 'new' },
                 ].map(f => (
                   <div key={f.file} className="flex items-center gap-3 text-sm py-2.5 px-4 zion-tile">
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${f.type === 'new' ? 'bg-zion-cyan/20 text-zion-cyan' : 'bg-zion-purple/20 text-zion-purple'}`}>
@@ -3262,12 +3255,12 @@ export default function MissionControlDashboard() {
               style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MissionControlDashboardCopy.progress[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(MissionControlDashboardCopy.progress, lang)}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Target className="h-7 w-7 text-zion-gold" />
                   Roadmap — Launch Countdown
                 </h2>
-                <p className="text-sm text-gray-400">{cs ? 'Mainnet Beta live. Gates G1–G7, G10 a G11 hotové; aktuální G8 30denní run probíhá (monitoring /g8). Veřejný launch je odložen (TBD).' : 'Mainnet Beta live. Gates G1–G7, G10 and G11 complete; the current G8 30-day run is in progress (monitoring /g8). Public launch is postponed (TBD).'}</p>
+                <p className="text-sm text-gray-400">{cs ? 'Mainnet Beta live. Gates G1–G7, G10 a G11 hotové; aktuální G8 30denní run probíhá (monitoring /g8). Veřejný launch je odložen (TBD).' : t5('Mainnet Beta live. Gates G1–G7, G10 and G11 complete; the current G8 30-day run is in progress (monitoring /g8). Public launch is postponed (TBD).', lang)}</p>
               </div>
               <div className="relative h-9 zion-section overflow-hidden">
                 <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-zion-gold via-zion-cyan to-zion-purple" initial={{ width: 0 }} animate={{ width: '85%' }} transition={{ duration: 1.2 }} />
@@ -3282,79 +3275,79 @@ export default function MissionControlDashboard() {
               transition={{ delay: 0.12 }}
               className="space-y-5"
             >
-              <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-zion-cyan" />} title={cs ? 'Fáze 0 — Core & Consensus Foundation' : 'Phase 0 — Core & Consensus Foundation'} pct={100} status={MissionControlDashboardCopy.completed[cs ? 'cs' : 'en']} statusColor="border-zion-cyan/30 bg-zion-cyan/10 text-emerald-200" defaultOpen>
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Genesis 1. 1. 2026 · One Love hard reset 6. 8. 2026 · ZION One Love 3.1.0-beta' : 'Genesis 1 Jan 2026 · One Love hard reset 6 Aug 2026 · ZION One Love 3.1.0-beta'}</p>
+              <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-zion-cyan" />} title={cs ? 'Fáze 0 — Core & Consensus Foundation' : t5('Phase 0 — Core & Consensus Foundation', lang)} pct={100} status={tx5(MissionControlDashboardCopy.completed, lang)} statusColor="border-zion-cyan/30 bg-zion-cyan/10 text-emerald-200" defaultOpen>
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Genesis 1. 1. 2026 · One Love hard reset 6. 8. 2026 · ZION One Love 3.1.0-beta' : t5('Genesis 1 Jan 2026 · One Love hard reset 6 Aug 2026 · ZION One Love 3.1.0-beta', lang)}</p>
                 <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
                   <SprintRow name="0.1 Emission & Genesis" content="5,400.067 ZION/block · 16.78B premine (14 outputs) · Decade Decay ×4/5 / 10y" status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} />
-                  <SprintRow name="0.2 DAA & Consensus" content={cs ? 'LWMA · target 60 s · fork-choice · reorg lock 10' : 'LWMA · 60 s target · fork-choice · reorg lock 10'} status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} />
+                  <SprintRow name="0.2 DAA & Consensus" content={cs ? 'LWMA · target 60 s · fork-choice · reorg lock 10' : t5('LWMA · 60 s target · fork-choice · reorg lock 10', lang)} status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} />
                   <SprintRow name="0.3 Fee Market" content="89/5/5/1 split · L1 fee burn · min fee" status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} />
                   <SprintRow name="0.4 Wallet & TX" content="UTXO + Ed25519 · v2 tx format · wallet SDK + CLI aligned" status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} />
                   <SprintRow name="0.5 Premine / Coinbase Soft-Fork" content="Coinbase maturity 100 · premine time-lock + 3-of-3 admin multisig · activation 13100" status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} highlight />
                 </tbody></table></div>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-zion-cyan" />} title={cs ? 'Fáze 1 — Ekam Deeksha v3.2 & Mainnet Cutover' : 'Phase 1 — Ekam Deeksha v3.2 & Mainnet Cutover'} pct={100} status={cs ? 'DOKONČENO' : 'COMPLETED'} statusColor="border-zion-cyan/30 bg-zion-cyan/10 text-emerald-200" defaultOpen>
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Srpen 2026 · kanonický PoW nasazen na všech výškách ZION chainu' : 'August 2026 · canonical PoW deployed at all heights of the ZION chain'}</p>
+              <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-zion-cyan" />} title={cs ? 'Fáze 1 — Ekam Deeksha v3.2 & Mainnet Cutover' : t5('Phase 1 — Ekam Deeksha v3.2 & Mainnet Cutover', lang)} pct={100} status={cs ? 'DOKONČENO' : t5('COMPLETED', lang)} statusColor="border-zion-cyan/30 bg-zion-cyan/10 text-emerald-200" defaultOpen>
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Srpen 2026 · kanonický PoW nasazen na všech výškách ZION chainu' : t5('August 2026 · canonical PoW deployed at all heights of the ZION chain', lang)}</p>
                 <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
-                  <SprintRow name="1.1 Canonical PoW" content={cs ? 'Ekam Deeksha v3.2 — 512 KiB scratchpad, 2 passes, 128 reads, 2 AES rounds, KAT locked' : 'Ekam Deeksha v3.2 — 512 KiB scratchpad, 2 passes, 128 reads, 2 AES rounds, KAT locked'} status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} highlight />
+                  <SprintRow name="1.1 Canonical PoW" content={cs ? 'Ekam Deeksha v3.2 — 512 KiB scratchpad, 2 passes, 128 reads, 2 AES rounds, KAT locked' : t5('Ekam Deeksha v3.2 — 512 KiB scratchpad, 2 passes, 128 reads, 2 AES rounds, KAT locked', lang)} status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} highlight />
                   <SprintRow name="1.2 GPU Backend Parity" content="CPU · CUDA · OpenCL · Metal bit-identical · Apple Silicon CPU routing" status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} />
-                  <SprintRow name="1.3 Mainnet Cutover" content={cs ? 'V3 služby zastaveny a maskovány, ZION node/pool/DAO/OASIS produkční' : 'V3 services stopped and masked, ZION node/pool/DAO/OASIS production'} status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} />
+                  <SprintRow name="1.3 Mainnet Cutover" content={cs ? 'V3 služby zastaveny a maskovány, ZION node/pool/DAO/OASIS produkční' : t5('V3 services stopped and masked, ZION node/pool/DAO/OASIS production', lang)} status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} />
                   <SprintRow name="1.4 Payout Engine" content="PPLNS + payout confirmation sweep s UTXO fallback" status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} />
                   <SprintRow name="1.5 TX / Address Index" content="tx_index + output_index + address_tx_index — backfill v mainnetu" status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} />
                 </tbody></table></div>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-zion-cyan" />} title={cs ? 'Fáze 2 — L2 Bridges, DeFi & Gates G1–G5/G7/G11' : 'Phase 2 — L2 Bridges, DeFi & Gates G1–G5/G7/G11'} pct={100} status={cs ? 'DOKONČENO' : 'COMPLETED'} statusColor="border-zion-cyan/30 bg-zion-cyan/10 text-emerald-200">
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Srpen 2026 · E4 bridge round-trip + chaos/load + migrace uzavřeny' : 'August 2026 · E4 bridge round-trip + chaos/load + migration closed'}</p>
+              <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-zion-cyan" />} title={cs ? 'Fáze 2 — L2 Bridges, DeFi & Gates G1–G5/G7/G11' : t5('Phase 2 — L2 Bridges, DeFi & Gates G1–G5/G7/G11', lang)} pct={100} status={cs ? 'DOKONČENO' : t5('COMPLETED', lang)} statusColor="border-zion-cyan/30 bg-zion-cyan/10 text-emerald-200">
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Srpen 2026 · E4 bridge round-trip + chaos/load + migrace uzavřeny' : t5('August 2026 · E4 bridge round-trip + chaos/load + migration closed', lang)}</p>
                 <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
-                  <SprintRow name="G1 GPU/Rig E2E" content={cs ? 'Produkční rigy na mainnet poolu — >99 % accept rate' : 'Production rigs on mainnet pool — >99% accept rate'} status={<span className="text-zion-cyan">CLOSED</span>} highlight />
-                  <SprintRow name="G2 WARP Registry" content={cs ? 'Config-driven registry, non-EVM chainy gated s disabled_reason' : 'Config-driven registry, non-EVM chains gated with disabled_reason'} status={<span className="text-zion-cyan">CLOSED</span>} />
+                  <SprintRow name="G1 GPU/Rig E2E" content={cs ? 'Produkční rigy na mainnet poolu — >99 % accept rate' : t5('Production rigs on mainnet pool — >99% accept rate', lang)} status={<span className="text-zion-cyan">CLOSED</span>} highlight />
+                  <SprintRow name="G2 WARP Registry" content={cs ? 'Config-driven registry, non-EVM chainy gated s disabled_reason' : t5('Config-driven registry, non-EVM chains gated with disabled_reason', lang)} status={<span className="text-zion-cyan">CLOSED</span>} />
                   <SprintRow name="G3 Solver Network" content="Off-chain solvers · X-Solver-Key auth · intent→bid→settle E2E" status={<span className="text-zion-cyan">CLOSED</span>} />
                   <SprintRow name="G4 Public Subtree" content="public/ sync s v3-Mainnet:main — Everything up-to-date" status={<span className="text-zion-cyan">CLOSED</span>} />
                   <SprintRow name="G5/E8 AuxPoW Path" content="External merged-mining path validated E2E" status={<span className="text-zion-cyan">CLOSED</span>} />
-                  <SprintRow name="G7 Chaos / Load" content={cs ? '10k-miner handshake, DEX/bridge overload, P2P storm, tx fuzz preview' : '10k-miner handshake, DEX/bridge overload, P2P storm, tx fuzz preview'} status={<span className="text-zion-cyan">CLOSED</span>} highlight />
-                  <SprintRow name="E4 Bridge Round-Trip" content={cs ? '100 ZION lock → wZION mint → burn → 100 ZION unlock na Base mainnetu' : '100 ZION lock → wZION mint → burn → 100 ZION unlock on Base mainnet'} status={<span className="text-zion-cyan">CLOSED</span>} highlight />
+                  <SprintRow name="G7 Chaos / Load" content={cs ? '10k-miner handshake, DEX/bridge overload, P2P storm, tx fuzz preview' : t5('10k-miner handshake, DEX/bridge overload, P2P storm, tx fuzz preview', lang)} status={<span className="text-zion-cyan">CLOSED</span>} highlight />
+                  <SprintRow name="E4 Bridge Round-Trip" content={cs ? '100 ZION lock → wZION mint → burn → 100 ZION unlock na Base mainnetu' : t5('100 ZION lock → wZION mint → burn → 100 ZION unlock on Base mainnet', lang)} status={<span className="text-zion-cyan">CLOSED</span>} highlight />
                   <SprintRow name="G11 Public Mainnet Migration" content="Foundry 43 tests · zion deploy/update · miner TUI · CLI build" status={<span className="text-zion-cyan">CLOSED</span>} />
                 </tbody></table></div>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-zion-cyan" />} title={cs ? 'Fáze 3 — Public Release v3.2.0 "One Love"' : 'Phase 3 — Public Release v3.2.0 "One Love"'} pct={100} status={cs ? 'DOKONČENO' : 'COMPLETED'} statusColor="border-zion-cyan/30 bg-zion-cyan/10 text-emerald-200">
+              <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-zion-cyan" />} title={cs ? 'Fáze 3 — Public Release v3.2.0 "One Love"' : t5('Phase 3 — Public Release v3.2.0 "One Love"', lang)} pct={100} status={cs ? 'DOKONČENO' : t5('COMPLETED', lang)} statusColor="border-zion-cyan/30 bg-zion-cyan/10 text-emerald-200">
                 <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
                   <SprintRow name="3.1 Public Miner" content="zion-miner v3.2.0 · public build Boost branding · protected details" status={<span className="text-zion-cyan">DONE</span>} />
                   <SprintRow name="3.2 CLI + Desktop" content="zion-cli v3.2.0 · Desktop Agent — GitHub release workflows" status={<span className="text-zion-cyan">DONE</span>} />
-                  <SprintRow name="3.3 Release Assets" content={cs ? 'macOS aarch64/x86_64 tar.gz + SHA256SUMS · build skripty pro všechny platformy' : 'macOS aarch64/x86_64 tar.gz + SHA256SUMS · build scripts for all platforms'} status={<span className="text-zion-cyan">DONE</span>} />
+                  <SprintRow name="3.3 Release Assets" content={cs ? 'macOS aarch64/x86_64 tar.gz + SHA256SUMS · build skripty pro všechny platformy' : t5('macOS aarch64/x86_64 tar.gz + SHA256SUMS · build scripts for all platforms', lang)} status={<span className="text-zion-cyan">DONE</span>} />
                 </tbody></table></div>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-zion-cyan" />} title={cs ? 'Fáze 4 — G8 30-Day Continuous Run' : 'Phase 4 — G8 30-Day Continuous Run'} pct={29} status={cs ? 'RUN IN PROGRESS' : 'RUN IN PROGRESS'} statusColor="border-zion-gold/30 bg-zion-gold/10 text-amber-200" defaultOpen>
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Run #2: 29. 9. – 29. 10. 2026 · gate nesplněn (kritické výpadky těžby 3.–5. 10.) · aktuální run probíhá — monitoring /g8' : 'Run #2: 29 Sep – 29 Oct 2026 · gate failed (critical mining outages Oct 3–5) · current run in progress — monitoring /g8'}</p>
+              <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-zion-cyan" />} title={cs ? 'Fáze 4 — G8 30-Day Continuous Run' : t5('Phase 4 — G8 30-Day Continuous Run', lang)} pct={29} status={cs ? 'RUN IN PROGRESS' : t5('RUN IN PROGRESS', lang)} statusColor="border-zion-gold/30 bg-zion-gold/10 text-amber-200" defaultOpen>
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Run #2: 29. 9. – 29. 10. 2026 · gate nesplněn (kritické výpadky těžby 3.–5. 10.) · aktuální run probíhá — monitoring /g8' : t5('Run #2: 29 Sep – 29 Oct 2026 · gate failed (critical mining outages Oct 3–5) · current run in progress — monitoring /g8', lang)}</p>
                 <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
-                  <SprintRow name="4.1 Continuous Run #2" content={cs ? 'Celá ZION síť pod trvalým dohledem — node, pool, bridge, web · okno doběhlo 29. 10. jen pro evidence' : 'Full ZION network under continuous watch — node, pool, bridge, web · window ended Oct 29 for evidence only'} status={<span className="text-zion-gold inline-flex items-center gap-1"><XCircle className="h-3.5 w-3.5" /> GATE FAIL</span>} highlight />
-                  <SprintRow name="4.2 Mining Liveness Hardening" content={cs ? 'Duplicate-share fix napříč rigy + restart-safe state + duty-cycle tuning — nasazeno 8. 10.' : 'Duplicate-share fix across rigs + restart-safe state + duty-cycle tuning — deployed Oct 8'} status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} />
-                  <SprintRow name="4.3 F2 Transaction Fuzz" content={cs ? '24h transaction fuzz evidence pending' : '24h transaction fuzz evidence pending'} status={<span className="text-zion-gold inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> PENDING</span>} />
-                  <SprintRow name="4.4 Current Run + Closure Report" content={cs ? 'Aktuální 30denní běh probíhá — uptime ≥ 99,9 % → G8 COMPLETE · live monitoring /g8' : 'Current 30-day run in progress — uptime ≥ 99.9% → G8 COMPLETE · live monitoring /g8'} status={<span className="text-zion-cyan inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> RUNNING</span>} />
+                  <SprintRow name="4.1 Continuous Run #2" content={cs ? 'Celá ZION síť pod trvalým dohledem — node, pool, bridge, web · okno doběhlo 29. 10. jen pro evidence' : t5('Full ZION network under continuous watch — node, pool, bridge, web · window ended Oct 29 for evidence only', lang)} status={<span className="text-zion-gold inline-flex items-center gap-1"><XCircle className="h-3.5 w-3.5" /> GATE FAIL</span>} highlight />
+                  <SprintRow name="4.2 Mining Liveness Hardening" content={cs ? 'Duplicate-share fix napříč rigy + restart-safe state + duty-cycle tuning — nasazeno 8. 10.' : t5('Duplicate-share fix across rigs + restart-safe state + duty-cycle tuning — deployed Oct 8', lang)} status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} />
+                  <SprintRow name="4.3 F2 Transaction Fuzz" content={cs ? '24h transaction fuzz evidence pending' : t5('24h transaction fuzz evidence pending', lang)} status={<span className="text-zion-gold inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> PENDING</span>} />
+                  <SprintRow name="4.4 Current Run + Closure Report" content={cs ? 'Aktuální 30denní běh probíhá — uptime ≥ 99,9 % → G8 COMPLETE · live monitoring /g8' : t5('Current 30-day run in progress — uptime ≥ 99.9% → G8 COMPLETE · live monitoring /g8', lang)} status={<span className="text-zion-cyan inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> RUNNING</span>} />
                 </tbody></table></div>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<Cpu className="h-6 w-6 text-zion-purple" />} title={cs ? 'Fáze 4b — Multi-Algo Expansion & Ops Hardening (říjen 2026)' : 'Phase 4b — Multi-Algo Expansion & Ops Hardening (Oct 2026)'} pct={90} status={cs ? 'PROBÍHÁ' : 'IN PROGRESS'} statusColor="border-zion-purple/30 bg-zion-purple/10 text-zion-purple">
+              <PhaseAccordion icon={<Cpu className="h-6 w-6 text-zion-purple" />} title={cs ? 'Fáze 4b — Multi-Algo Expansion & Ops Hardening (říjen 2026)' : t5('Phase 4b — Multi-Algo Expansion & Ops Hardening (Oct 2026)', lang)} pct={90} status={cs ? 'PROBÍHÁ' : t5('IN PROGRESS', lang)} statusColor="border-zion-purple/30 bg-zion-purple/10 text-zion-purple">
                 <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
-                  <SprintRow name="GPU Kernel Verification" content={cs ? 'Konsensově-exaktní CPU reference + CUDA/OpenCL kernely — KAT sweep čistý napříč katalogem' : 'Consensus-exact CPU references + CUDA/OpenCL kernels — clean KAT sweep across the catalogue'} status={<span className="text-zion-cyan">DONE</span>} highlight />
-                  <SprintRow name="AuxPoW Coin Catalogue" content={cs ? 'Merged-mining coin catalogue na poolu + one-click přepínání v Desktop Agentu' : 'Merged-mining coin catalogue on the pool + one-click switching in Desktop Agent'} status={<span className="text-zion-cyan">DONE</span>} />
-                  <SprintRow name="WARP Trustless HTLC" content={cs ? 'Veřejný claim/refund autorizovaný preimage s payout pinning — poslední code blocker vyřešen' : 'Preimage-authorized public claim/refund with payout pinning — last code blocker resolved'} status={<span className="text-zion-cyan">DONE</span>} />
-                  <SprintRow name="BTC Key Lottery Fleet" content={cs ? 'Distribuovaný coordinator + worker fleet s SQLite persistence, leasemi a veřejnou telemetrií' : 'Distributed coordinator + worker fleet with SQLite persistence, leases and public telemetry'} status={<span className="text-zion-cyan">LIVE</span>} />
-                  <SprintRow name="L2/WARP Ops Observability" content={cs ? 'Operátorský detail panel — pilot gates, AMM pooly, ledger, reconciliation alerting' : 'Operator detail panel — pilot gates, AMM pools, ledger, reconciliation alerting'} status={<span className="text-zion-cyan">DONE</span>} />
-                  <SprintRow name="WARP BTC↔ZION Swap Pilot" content={cs ? 'Capped-pilot provisioning připraven — čeká na externí audit + mainnet relay klíč' : 'Capped-pilot provisioning ready — awaiting external audit + mainnet relay key'} status={<span className="text-zion-gold inline-flex items-center gap-1"><Shield className="h-3.5 w-3.5" /> SAFETY HOLD</span>} />
+                  <SprintRow name="GPU Kernel Verification" content={cs ? 'Konsensově-exaktní CPU reference + CUDA/OpenCL kernely — KAT sweep čistý napříč katalogem' : t5('Consensus-exact CPU references + CUDA/OpenCL kernels — clean KAT sweep across the catalogue', lang)} status={<span className="text-zion-cyan">DONE</span>} highlight />
+                  <SprintRow name="AuxPoW Coin Catalogue" content={cs ? 'Merged-mining coin catalogue na poolu + one-click přepínání v Desktop Agentu' : t5('Merged-mining coin catalogue on the pool + one-click switching in Desktop Agent', lang)} status={<span className="text-zion-cyan">DONE</span>} />
+                  <SprintRow name="WARP Trustless HTLC" content={cs ? 'Veřejný claim/refund autorizovaný preimage s payout pinning — poslední code blocker vyřešen' : t5('Preimage-authorized public claim/refund with payout pinning — last code blocker resolved', lang)} status={<span className="text-zion-cyan">DONE</span>} />
+                  <SprintRow name="BTC Key Lottery Fleet" content={cs ? 'Distribuovaný coordinator + worker fleet s SQLite persistence, leasemi a veřejnou telemetrií' : t5('Distributed coordinator + worker fleet with SQLite persistence, leases and public telemetry', lang)} status={<span className="text-zion-cyan">LIVE</span>} />
+                  <SprintRow name="L2/WARP Ops Observability" content={cs ? 'Operátorský detail panel — pilot gates, AMM pooly, ledger, reconciliation alerting' : t5('Operator detail panel — pilot gates, AMM pools, ledger, reconciliation alerting', lang)} status={<span className="text-zion-cyan">DONE</span>} />
+                  <SprintRow name="WARP BTC↔ZION Swap Pilot" content={cs ? 'Capped-pilot provisioning připraven — čeká na externí audit + mainnet relay klíč' : t5('Capped-pilot provisioning ready — awaiting external audit + mainnet relay key', lang)} status={<span className="text-zion-gold inline-flex items-center gap-1"><Shield className="h-3.5 w-3.5" /> SAFETY HOLD</span>} />
                 </tbody></table></div>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<Rocket className="h-6 w-6 text-zion-gold" />} title={cs ? 'Fáze 5 — G9/G10 & Public Launch (odloženo)' : 'Phase 5 — G9/G10 & Public Launch (postponed)'} pct={20} status="TBD" statusColor="border-zion-purple/30 bg-zion-purple/10 text-zion-purple">
-                <div className="overflow-x-auto"><table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Gate</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">{cs ? 'Aktivita' : 'Activity'}</th></tr></thead><tbody>
+              <PhaseAccordion icon={<Rocket className="h-6 w-6 text-zion-gold" />} title={cs ? 'Fáze 5 — G9/G10 & Public Launch (odloženo)' : t5('Phase 5 — G9/G10 & Public Launch (postponed)', lang)} pct={20} status="TBD" statusColor="border-zion-purple/30 bg-zion-purple/10 text-zion-purple">
+                <div className="overflow-x-auto"><table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Gate</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">{cs ? 'Aktivita' : t5('Activity', lang)}</th></tr></thead><tbody>
                   {[
-                    ['G9', cs ? 'Externí bezpečnostní audit (L1/L2) — plánován před launchem' : 'External security audit (L1/L2) — planned before launch'],
-                    ['G10', cs ? 'L5/L6 rozhodnutí — treasury, humanitární fond, Issobella governance' : 'L5/L6 decision — treasury, humanitarian fund, Issobella governance'],
-                    ['F2', cs ? 'Dokončení 24h transaction fuzz evidence' : '24h transaction fuzz evidence completion'],
-                    ['I', cs ? 'ZIS identity service — finální public auth flows' : 'ZIS identity service — final public auth flows'],
-                    ['LAUNCH', cs ? 'Public launch — One Love Mainnet · odložen (TBD)' : 'Public launch — One Love Mainnet · postponed (TBD)'],
+                    ['G9', cs ? 'Externí bezpečnostní audit (L1/L2) — plánován před launchem' : t5('External security audit (L1/L2) — planned before launch', lang)],
+                    ['G10', cs ? 'L5/L6 rozhodnutí — treasury, humanitární fond, Issobella governance' : t5('L5/L6 decision — treasury, humanitarian fund, Issobella governance', lang)],
+                    ['F2', cs ? 'Dokončení 24h transaction fuzz evidence' : t5('24h transaction fuzz evidence completion', lang)],
+                    ['I', cs ? 'ZIS identity service — finální public auth flows' : t5('ZIS identity service — final public auth flows', lang)],
+                    ['LAUNCH', cs ? 'Public launch — One Love Mainnet · odložen (TBD)' : t5('Public launch — One Love Mainnet · postponed (TBD)', lang)],
                   ].map(([day, act]) => <tr key={day}><td className="py-2.5 px-4 text-sm font-semibold text-white rounded-l-lg">{day}</td><td className="py-2.5 px-4 text-sm text-gray-400 rounded-r-lg">{act}</td></tr>)}
                   <tr className="bg-zion-purple/5"><td className="py-2.5 px-4 text-sm font-semibold text-zion-purple rounded-l-lg"><span className="inline-flex items-center gap-1">T-0 <Rocket className="h-3.5 w-3.5" /></span></td><td className="py-2.5 px-4 text-sm font-bold text-zion-purple rounded-r-lg">PUBLIC MAINNET LAUNCH · POSTPONED (TBD)</td></tr>
                 </tbody></table></div>
@@ -3376,21 +3369,21 @@ export default function MissionControlDashboard() {
               style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-8">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MissionControlDashboardCopy.architecture[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(MissionControlDashboardCopy.architecture, lang)}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Layers className="h-7 w-7 text-zion-gold" />
-                  {MissionControlDashboardCopy.layerStack[cs ? 'cs' : 'en']}
+                  {tx5(MissionControlDashboardCopy.layerStack, lang)}
                 </h2>
-                <p className="text-sm text-gray-400 italic">{cs ? '&quot;Jednoduchý L1 blockchain, který funguje bezchybně, je základem pro nekonečný ekosystém nad ním.&quot;' : '&quot;A simple L1 blockchain that works flawlessly is the foundation for an infinite ecosystem above it.&quot;'}</p>
+                <p className="text-sm text-gray-400 italic">{cs ? '&quot;Jednoduchý L1 blockchain, který funguje bezchybně, je základem pro nekonečný ekosystém nad ním.&quot;' : t5('&quot;A simple L1 blockchain that works flawlessly is the foundation for an infinite ecosystem above it.&quot;', lang)}</p>
               </div>
               <div className="space-y-3">
                 {[
-                  { label: 'L6 — ZION ISSOBELLA', color: 'border-l-rose-400 bg-zion-purple/5', title: 'Orbital Consciousness Station', desc: cs ? 'Vesmírná stanice ZION Issobella — decentralizovaný výzkum, orbital mining, 5% block reward fund' : 'ZION Issobella space station — decentralized research, orbital mining, 5% block reward fund', tags: ['Space Station', 'Orbital Mining', '5% Fund', 'Fund Tracker'], date: cs ? '2026 Q3 — fund tracker live (G10 ✅)' : '2026 Q3 — fund tracker live (G10 ✅)', labelColor: 'text-zion-purple', active: true, Icon: Rocket },
-                  { label: 'L5 — FREE WORLD', color: 'border-l-amber-400 bg-zion-gold/5', title: 'Sovereign Governance Layer', desc: cs ? 'Plně decentralizovaná správa, komunitní governance, svobodný ekosystém bez hranic' : 'Fully decentralized governance, community governance, free ecosystem without borders', tags: ['Governance', 'Sovereignty', 'Community', 'Fund Tracker'], date: cs ? '2026 Q3 — fund tracker live (G10 ✅)' : '2026 Q3 — fund tracker live (G10 ✅)', labelColor: 'text-zion-gold', active: true, Icon: Globe2 },
-                  { label: 'L4 — ZION OASIS', color: 'border-l-pink-400 bg-zion-purple/5', title: 'Consciousness Mining as Gameplay', desc: cs ? 'UE5 open-world, XP/Consciousness levels, NFT avatary, Play-to-Mine' : 'UE5 open-world, XP/Consciousness levels, NFT avatars, Play-to-Mine', tags: ['UE5 World', 'XP System', 'NFT Avatars', 'Play-to-Mine'], date: '2029+', labelColor: 'text-zion-purple', active: false, Icon: Gamepad2 },
-                  { label: 'L3 — WARP & AI NATIVE', color: 'border-l-purple-400 bg-zion-purple/5', title: 'Neural Compute Layer & AI Agents', desc: cs ? 'WARP chain registry config-driven (G2 uzavřen), non-EVM chainy gated, NCL gateway a AI Native SDK navazují' : 'WARP chain registry config-driven (G2 closed), non-EVM chains gated, NCL gateway and AI Native SDK follow', tags: ['WARP Registry', 'NCL Gateway', cs ? 'AI Orchestrátor' : 'AI Orchestrator', cs ? 'GPU za ZION' : 'GPU for ZION'], date: cs ? '2026 Q3 — gated (G2 ✅)' : '2026 Q3 — gated (G2 ✅)', labelColor: 'text-zion-purple', active: true, Icon: Brain },
-                  { label: 'L2 — DEX & DeFi', color: 'border-l-blue-400 bg-zion-purple/5', title: 'Atomic Swaps, AMM & DAO', desc: cs ? 'wZION bridge live na Base mainnetu — E4 round-trip ověřen; trustless BTC↔ZION HTLC claim/refund nasazen, capped pilot v safety hold' : 'wZION bridge live on Base mainnet — E4 round-trip verified; trustless BTC↔ZION HTLC claim/refund deployed, capped pilot in safety hold', tags: ['HTLC Swaps', 'wZION Bridge', 'BTC↔ZION HTLC', 'Base Mainnet', 'DAO Voting'], date: '2026 Q3 — mainnet live (E4 ✅) · HTLC deployed 10/2026', labelColor: 'text-zion-purple', active: true, Icon: ArrowLeftRight },
-                  { label: cs ? 'L1 — ZION BLOCKCHAIN ← ZDE' : 'L1 — ZION BLOCKCHAIN ← HERE', color: 'border-l-cyan-400 bg-zion-cyan/[0.08] border-2 border-zion-cyan/20 shadow-[0_0_30px_rgba(34,211,238,0.12)]', title: 'PoW Ekam Deeksha v3.2 — Canonical', desc: cs ? 'UTXO + Ed25519, Decade Decay emise (-20%/dekádu), LWMA DAA, fee burning, Boost multi-stream mining. Ekam Deeksha v3.2: 512 KiB scratchpad, 2 sekvenční průchody, 128 náhodných čtení, 2 AES rundy — KAT-locked, CPU/CUDA/OpenCL/Metal bit-identické.' : 'UTXO + Ed25519, Decade Decay emission (-20%/decade), LWMA DAA, fee burning, Boost multi-stream mining. Ekam Deeksha v3.2: 512 KiB scratchpad, 2 sequential passes, 128 random reads, 2 AES rounds — KAT-locked, CPU/CUDA/OpenCL/Metal bit-identical.', tags: ['Ekam Deeksha v3.2', 'ASIC-resistant', 'UTXO Model', 'Ed25519', 'Decade Decay', 'Fee Burn', 'Boost Mining'], date: cs ? 'Mainnet Beta live · public launch odložen (TBD)' : 'Mainnet Beta live · public launch postponed (TBD)', labelColor: 'text-zion-cyan', active: true, Icon: Link },
+                  { label: 'L6 — ZION ISSOBELLA', color: 'border-l-rose-400 bg-zion-purple/5', title: 'Orbital Consciousness Station', desc: cs ? 'Vesmírná stanice ZION Issobella — decentralizovaný výzkum, orbital mining, 5% block reward fund' : t5('ZION Issobella space station — decentralized research, orbital mining, 5% block reward fund', lang), tags: ['Space Station', 'Orbital Mining', '5% Fund', 'Fund Tracker'], date: cs ? '2026 Q3 — fund tracker live (G10 ✅)' : t5('2026 Q3 — fund tracker live (G10 ✅)', lang), labelColor: 'text-zion-purple', active: true, Icon: Rocket },
+                  { label: 'L5 — FREE WORLD', color: 'border-l-amber-400 bg-zion-gold/5', title: 'Sovereign Governance Layer', desc: cs ? 'Plně decentralizovaná správa, komunitní governance, svobodný ekosystém bez hranic' : t5('Fully decentralized governance, community governance, free ecosystem without borders', lang), tags: ['Governance', 'Sovereignty', 'Community', 'Fund Tracker'], date: cs ? '2026 Q3 — fund tracker live (G10 ✅)' : t5('2026 Q3 — fund tracker live (G10 ✅)', lang), labelColor: 'text-zion-gold', active: true, Icon: Globe2 },
+                  { label: 'L4 — ZION OASIS', color: 'border-l-pink-400 bg-zion-purple/5', title: 'Consciousness Mining as Gameplay', desc: cs ? 'UE5 open-world, XP/Consciousness levels, NFT avatary, Play-to-Mine' : t5('UE5 open-world, XP/Consciousness levels, NFT avatars, Play-to-Mine', lang), tags: ['UE5 World', 'XP System', 'NFT Avatars', 'Play-to-Mine'], date: '2029+', labelColor: 'text-zion-purple', active: false, Icon: Gamepad2 },
+                  { label: 'L3 — WARP & AI NATIVE', color: 'border-l-purple-400 bg-zion-purple/5', title: 'Neural Compute Layer & AI Agents', desc: cs ? 'WARP chain registry config-driven (G2 uzavřen), non-EVM chainy gated, NCL gateway a AI Native SDK navazují' : t5('WARP chain registry config-driven (G2 closed), non-EVM chains gated, NCL gateway and AI Native SDK follow', lang), tags: ['WARP Registry', 'NCL Gateway', cs ? 'AI Orchestrátor' : t5('AI Orchestrator', lang), cs ? 'GPU za ZION' : t5('GPU for ZION', lang)], date: cs ? '2026 Q3 — gated (G2 ✅)' : t5('2026 Q3 — gated (G2 ✅)', lang), labelColor: 'text-zion-purple', active: true, Icon: Brain },
+                  { label: 'L2 — DEX & DeFi', color: 'border-l-blue-400 bg-zion-purple/5', title: 'Atomic Swaps, AMM & DAO', desc: cs ? 'wZION bridge live na Base mainnetu — E4 round-trip ověřen; trustless BTC↔ZION HTLC claim/refund nasazen, capped pilot v safety hold' : t5('wZION bridge live on Base mainnet — E4 round-trip verified; trustless BTC↔ZION HTLC claim/refund deployed, capped pilot in safety hold', lang), tags: ['HTLC Swaps', 'wZION Bridge', 'BTC↔ZION HTLC', 'Base Mainnet', 'DAO Voting'], date: '2026 Q3 — mainnet live (E4 ✅) · HTLC deployed 10/2026', labelColor: 'text-zion-purple', active: true, Icon: ArrowLeftRight },
+                  { label: cs ? 'L1 — ZION BLOCKCHAIN ← ZDE' : t5('L1 — ZION BLOCKCHAIN ← HERE', lang), color: 'border-l-cyan-400 bg-zion-cyan/[0.08] border-2 border-zion-cyan/20 shadow-[0_0_30px_rgba(34,211,238,0.12)]', title: 'PoW Ekam Deeksha v3.2 — Canonical', desc: cs ? 'UTXO + Ed25519, Decade Decay emise (-20%/dekádu), LWMA DAA, fee burning, Boost multi-stream mining. Ekam Deeksha v3.2: 512 KiB scratchpad, 2 sekvenční průchody, 128 náhodných čtení, 2 AES rundy — KAT-locked, CPU/CUDA/OpenCL/Metal bit-identické.' : t5('UTXO + Ed25519, Decade Decay emission (-20%/decade), LWMA DAA, fee burning, Boost multi-stream mining. Ekam Deeksha v3.2: 512 KiB scratchpad, 2 sequential passes, 128 random reads, 2 AES rounds — KAT-locked, CPU/CUDA/OpenCL/Metal bit-identical.', lang), tags: ['Ekam Deeksha v3.2', 'ASIC-resistant', 'UTXO Model', 'Ed25519', 'Decade Decay', 'Fee Burn', 'Boost Mining'], date: cs ? 'Mainnet Beta live · public launch odložen (TBD)' : t5('Mainnet Beta live · public launch postponed (TBD)', lang), labelColor: 'text-zion-cyan', active: true, Icon: Link },
                 ].map((l, idx) => (
                   <motion.div
                     key={l.label}
@@ -3429,28 +3422,28 @@ export default function MissionControlDashboard() {
                   <Lock className="h-6 w-6 text-zion-gold" />
                   <div>
                     <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-white">Target Mainnet Constitution</h2>
-                    <p className="text-xs sm:text-sm text-gray-400">{cs ? 'Plánované produkční parametry; tento dashboard sleduje Network mainnet proti nim' : 'Planned production parameters; this dashboard tracks the Network mainnet against them'}</p>
+                    <p className="text-xs sm:text-sm text-gray-400">{cs ? 'Plánované produkční parametry; tento dashboard sleduje Network mainnet proti nim' : t5('Planned production parameters; this dashboard tracks the Network mainnet against them', lang)}</p>
                   </div>
                 </div>
                 <div className="space-y-0">
                   {[
                     ['Chain ID', 'zion-mainnet-1'],
-                    [MissionControlDashboardCopy.totalSupply[cs ? 'cs' : 'en'], '144,000,000,000'],
-                    [MissionControlDashboardCopy.miningSupply[cs ? 'cs' : 'en'], '127,220,000,000'],
-                    [MissionControlDashboardCopy.genesisPremine_2[cs ? 'cs' : 'en'], '16,780,000,000'],
-                    [MissionControlDashboardCopy.blockRewardD1[cs ? 'cs' : 'en'], '5,400.067 ZION'],
-                    [MissionControlDashboardCopy.emissionModel[cs ? 'cs' : 'en'], 'Decade Decay (-20%/10y)'],
-                    [MissionControlDashboardCopy.tailEmission[cs ? 'cs' : 'en'], '724.785 ZION/block ∞'],
-                    [MissionControlDashboardCopy.blockTime[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k60Seconds[cs ? 'cs' : 'en']],
-                    ['DAA', cs ? 'LWMA · target 60 s' : 'LWMA · 60 s target'],
-                    [MissionControlDashboardCopy.maxReorg[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k10Blocks[cs ? 'cs' : 'en']],
-                    [MissionControlDashboardCopy.softFinality[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k60Blocks[cs ? 'cs' : 'en']],
-                    [MissionControlDashboardCopy.coinbaseMaturity[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k100Blocks[cs ? 'cs' : 'en']],
+                    [tx5(MissionControlDashboardCopy.totalSupply, lang), '144,000,000,000'],
+                    [tx5(MissionControlDashboardCopy.miningSupply, lang), '127,220,000,000'],
+                    [tx5(MissionControlDashboardCopy.genesisPremine_2, lang), '16,780,000,000'],
+                    [tx5(MissionControlDashboardCopy.blockRewardD1, lang), '5,400.067 ZION'],
+                    [tx5(MissionControlDashboardCopy.emissionModel, lang), 'Decade Decay (-20%/10y)'],
+                    [tx5(MissionControlDashboardCopy.tailEmission, lang), '724.785 ZION/block ∞'],
+                    [tx5(MissionControlDashboardCopy.blockTime, lang), tx5(MissionControlDashboardCopy.k60Seconds, lang)],
+                    ['DAA', cs ? 'LWMA · target 60 s' : t5('LWMA · 60 s target', lang)],
+                    [tx5(MissionControlDashboardCopy.maxReorg, lang), tx5(MissionControlDashboardCopy.k10Blocks, lang)],
+                    [tx5(MissionControlDashboardCopy.softFinality, lang), tx5(MissionControlDashboardCopy.k60Blocks, lang)],
+                    [tx5(MissionControlDashboardCopy.coinbaseMaturity, lang), tx5(MissionControlDashboardCopy.k100Blocks, lang)],
                     ['Consensus', 'PoW Ekam Deeksha v3.2'],
-                    [MissionControlDashboardCopy.distribution[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k89Miner5Humanitarian5Issobella[cs ? 'cs' : 'en']],
-                    ['Presale', cs ? 'NEEXISTUJE' : 'NONE'],
-                    [MissionControlDashboardCopy.atomicUnits[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k1mPerZion[cs ? 'cs' : 'en']],
-                    [MissionControlDashboardCopy.miningHorizon[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k100YearsTail[cs ? 'cs' : 'en']],
+                    [tx5(MissionControlDashboardCopy.distribution, lang), tx5(MissionControlDashboardCopy.k89Miner5Humanitarian5Issobella, lang)],
+                    ['Presale', cs ? 'NEEXISTUJE' : t5('NONE', lang)],
+                    [tx5(MissionControlDashboardCopy.atomicUnits, lang), tx5(MissionControlDashboardCopy.k1mPerZion, lang)],
+                    [tx5(MissionControlDashboardCopy.miningHorizon, lang), tx5(MissionControlDashboardCopy.k100YearsTail, lang)],
                   ].map(([param, value]) => (
                     <div key={param} className="flex items-center justify-between py-2 sm:py-2.5 border-b border-white/5 text-xs sm:text-sm gap-2">
                       <span className="text-gray-400 shrink-0">{param}</span>
@@ -3469,18 +3462,18 @@ export default function MissionControlDashboard() {
                   <Scale className="h-6 w-6 text-zion-purple" />
                   <div>
                     <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-white">Genesis Premine</h2>
-                    <p className="text-xs sm:text-sm text-gray-400">{cs ? '16,780,000,000 ZION — 14 výstupů · admin-locked (3-of-3 multisig + DAO vote)' : '16,780,000,000 ZION — 14 outputs · admin-locked (3-of-3 multisig + DAO vote)'}</p>
+                    <p className="text-xs sm:text-sm text-gray-400">{cs ? '16,780,000,000 ZION — 14 výstupů · admin-locked (3-of-3 multisig + DAO vote)' : t5('16,780,000,000 ZION — 14 outputs · admin-locked (3-of-3 multisig + DAO vote)', lang)}</p>
                   </div>
                 </div>
                 <div className="space-y-4">
                   {[
-                    { cat: 'ZION OASIS + Winners Golden Egg/Xp', Icon: Pickaxe, amount: '4,950,000,000', pct: 29.5, lock: cs ? 'Admin-locked · 3 slotů (Sloty 4 & 5 → L5 Free World)' : 'Admin-locked · 3 slots (Slots 4 & 5 → L5 Free World)', lockColor: 'text-zion-cyan' },
-                    { cat: cs ? 'L5 Free World Projects' : 'L5 Free World Projects', Icon: Globe2, amount: '3,300,000,000', pct: 19.7, lock: cs ? 'Trustee-managed · 2 slotů' : 'Trustee-managed · 2 slots', lockColor: 'text-zion-gold' },
-                    { cat: 'L6 Issobella', Icon: Rocket, amount: '2,500,000,000', pct: 14.9, lock: cs ? 'Repurposed z DAO Treasury · Time-lock do bloku 144,000' : 'Repurposed from DAO Treasury · Time-locked until block 144,000', lockColor: 'text-zion-purple' },
-                    { cat: 'DAO Treasury', Icon: Database, amount: '1,500,000,000', pct: 8.9, lock: cs ? 'Time-lock do bloku 144,000' : 'Time-locked until block 144,000', lockColor: 'text-zion-gold' },
-                    { cat: MissionControlDashboardCopy.infrastructureDev[cs ? 'cs' : 'en'], Icon: Wrench, amount: '2,590,000,000', pct: 15.4, lock: 'Admin-locked', lockColor: 'text-zion-cyan' },
-                    { cat: MissionControlDashboardCopy.humanitarianFund[cs ? 'cs' : 'en'], Icon: Heart, amount: '1,440,000,000', pct: 8.6, lock: 'Admin-locked', lockColor: 'text-zion-cyan' },
-                    { cat: 'Bridge Seed + Vault', Icon: ArrowLeftRight, amount: '500,000,000', pct: 3.0, lock: cs ? 'EVM bridge likvidita' : 'EVM bridge liquidity', lockColor: 'text-zion-purple' },
+                    { cat: 'ZION OASIS + Winners Golden Egg/Xp', Icon: Pickaxe, amount: '4,950,000,000', pct: 29.5, lock: cs ? 'Admin-locked · 3 slotů (Sloty 4 & 5 → L5 Free World)' : t5('Admin-locked · 3 slots (Slots 4 & 5 → L5 Free World)', lang), lockColor: 'text-zion-cyan' },
+                    { cat: cs ? 'L5 Free World Projects' : t5('L5 Free World Projects', lang), Icon: Globe2, amount: '3,300,000,000', pct: 19.7, lock: cs ? 'Trustee-managed · 2 slotů' : t5('Trustee-managed · 2 slots', lang), lockColor: 'text-zion-gold' },
+                    { cat: 'L6 Issobella', Icon: Rocket, amount: '2,500,000,000', pct: 14.9, lock: cs ? 'Repurposed z DAO Treasury · Time-lock do bloku 144,000' : t5('Repurposed from DAO Treasury · Time-locked until block 144,000', lang), lockColor: 'text-zion-purple' },
+                    { cat: 'DAO Treasury', Icon: Database, amount: '1,500,000,000', pct: 8.9, lock: cs ? 'Time-lock do bloku 144,000' : t5('Time-locked until block 144,000', lang), lockColor: 'text-zion-gold' },
+                    { cat: tx5(MissionControlDashboardCopy.infrastructureDev, lang), Icon: Wrench, amount: '2,590,000,000', pct: 15.4, lock: 'Admin-locked', lockColor: 'text-zion-cyan' },
+                    { cat: tx5(MissionControlDashboardCopy.humanitarianFund, lang), Icon: Heart, amount: '1,440,000,000', pct: 8.6, lock: 'Admin-locked', lockColor: 'text-zion-cyan' },
+                    { cat: 'Bridge Seed + Vault', Icon: ArrowLeftRight, amount: '500,000,000', pct: 3.0, lock: cs ? 'EVM bridge likvidita' : t5('EVM bridge liquidity', lang), lockColor: 'text-zion-purple' },
                   ].map(p => (
                     <div key={p.cat} className="zion-rainbow-sub p-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                       <div className="flex items-center justify-between">
@@ -3525,10 +3518,10 @@ export default function MissionControlDashboard() {
                 </h2>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <Stat label={MissionControlDashboardCopy.blockRewardD1[cs ? 'cs' : 'en']} value="5,400.067" sub="ZION/block · Decade Decay" color="text-zion-cyan" mono />
-                <Stat label={MissionControlDashboardCopy.tailEmission[cs ? 'cs' : 'en']} value="724.785" sub={MissionControlDashboardCopy.zionBlockFrom2126[cs ? 'cs' : 'en']} color="text-zion-cyan" mono />
-                <Stat label={MissionControlDashboardCopy.distribution[cs ? 'cs' : 'en']} value="89/5/5/1" sub={MissionControlDashboardCopy.minerHumanitarianIssobellaPool[cs ? 'cs' : 'en']} color="text-zion-purple" mono />
-                <Stat label={MissionControlDashboardCopy.miningHorizon[cs ? 'cs' : 'en']} value={MissionControlDashboardCopy.k100Years[cs ? 'cs' : 'en']} sub={MissionControlDashboardCopy.perpetualTail[cs ? 'cs' : 'en']} color="text-zion-gold" mono />
+                <Stat label={tx5(MissionControlDashboardCopy.blockRewardD1, lang)} value="5,400.067" sub="ZION/block · Decade Decay" color="text-zion-cyan" mono />
+                <Stat label={tx5(MissionControlDashboardCopy.tailEmission, lang)} value="724.785" sub={tx5(MissionControlDashboardCopy.zionBlockFrom2126, lang)} color="text-zion-cyan" mono />
+                <Stat label={tx5(MissionControlDashboardCopy.distribution, lang)} value="89/5/5/1" sub={tx5(MissionControlDashboardCopy.minerHumanitarianIssobellaPool, lang)} color="text-zion-purple" mono />
+                <Stat label={tx5(MissionControlDashboardCopy.miningHorizon, lang)} value={tx5(MissionControlDashboardCopy.k100Years, lang)} sub={tx5(MissionControlDashboardCopy.perpetualTail, lang)} color="text-zion-gold" mono />
               </div>
             </motion.section>
 
@@ -3541,12 +3534,12 @@ export default function MissionControlDashboard() {
               style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MissionControlDashboardCopy.l5L6Treasury[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(MissionControlDashboardCopy.l5L6Treasury, lang)}</p>
                 <h2 className="text-xl sm:text-2xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Heart className="h-6 w-6 text-zion-gold" />
-                  {MissionControlDashboardCopy.humanitarianFundSpaceStation[cs ? 'cs' : 'en']}
+                  {tx5(MissionControlDashboardCopy.humanitarianFundSpaceStation, lang)}
                 </h2>
-                <p className="text-sm text-gray-400">{MissionControlDashboardCopy.k5OfEveryBlockRewardGoesToTheL5[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm text-gray-400">{tx5(MissionControlDashboardCopy.k5OfEveryBlockRewardGoesToTheL5, lang)}</p>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="zion-rainbow-sub p-4 sm:p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
@@ -3557,7 +3550,7 @@ export default function MissionControlDashboard() {
                       <p className="text-xs text-zion-gold font-mono">5% block reward → ~11.7M ZION/měsíc</p>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400 mb-3">{cs ? 'Fyzické komunity, humanitární projekty, Free Energy, terénní governance. 5 % z každého block rewardu jde on-chain od přechodu na mainnet.' : 'Physical communities, humanitarian projects, Free Energy, on-ground governance. 5% of every block reward goes on-chain since the mainnet cutover.'}</p>
+                  <p className="text-xs text-gray-400 mb-3">{cs ? 'Fyzické komunity, humanitární projekty, Free Energy, terénní governance. 5 % z každého block rewardu jde on-chain od přechodu na mainnet.' : t5('Physical communities, humanitarian projects, Free Energy, on-ground governance. 5% of every block reward goes on-chain since the mainnet cutover.', lang)}</p>
                   <div className="space-y-1 text-[10px] font-mono text-gray-500">
                     <p>wallet: zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8</p>
                     <p className="text-zion-gold">~11.7M ZION / měsíc · 5 % subsidy · canonical</p>
@@ -3571,7 +3564,7 @@ export default function MissionControlDashboard() {
                       <p className="text-xs text-zion-purple font-mono">5% block reward → ~11.7M ZION/měsíc</p>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400 mb-3">{cs ? 'Orbitální stanice, vesmírný výzkum, SETI, Overview Effect protokoly. 5 % z každého block rewardu jde on-chain od přechodu na mainnet.' : 'Orbital station, space research, SETI, Overview Effect protocols. 5% of every block reward goes on-chain since the mainnet cutover.'}</p>
+                  <p className="text-xs text-gray-400 mb-3">{cs ? 'Orbitální stanice, vesmírný výzkum, SETI, Overview Effect protokoly. 5 % z každého block rewardu jde on-chain od přechodu na mainnet.' : t5('Orbital station, space research, SETI, Overview Effect protocols. 5% of every block reward goes on-chain since the mainnet cutover.', lang)}</p>
                   <div className="space-y-1 text-[10px] font-mono text-gray-500">
                     <p>wallet: zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0</p>
                     <p className="text-zion-purple">~11.7M ZION / měsíc · 5 % subsidy · canonical</p>
@@ -3588,8 +3581,8 @@ export default function MissionControlDashboard() {
             >
               <Flame className="h-8 w-8 sm:h-10 sm:w-10 text-zion-purple shrink-0" />
               <div>
-                <p className="text-sm sm:text-lg font-bold text-white">{MissionControlDashboardCopy.allL1TransactionFees[cs ? 'cs' : 'en']}<span className="text-zion-purple">{MissionControlDashboardCopy.burned[cs ? 'cs' : 'en']}</span></p>
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">{MissionControlDashboardCopy.sentToABurnAddressWithoutAPriv[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm sm:text-lg font-bold text-white">{tx5(MissionControlDashboardCopy.allL1TransactionFees, lang)}<span className="text-zion-purple">{tx5(MissionControlDashboardCopy.burned, lang)}</span></p>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">{tx5(MissionControlDashboardCopy.sentToABurnAddressWithoutAPriv, lang)}</p>
               </div>
             </motion.section>
           </div>
@@ -3608,31 +3601,31 @@ export default function MissionControlDashboard() {
               style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MissionControlDashboardCopy.security[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(MissionControlDashboardCopy.security, lang)}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Shield className="h-7 w-7 text-zion-cyan" />
                   Mainnet Security Gate
                 </h2>
-                <p className="text-sm text-gray-400">{cs ? 'Mainnet Beta security stack — konsensus hardening, soft-fork, chaos testy a infra zabezpečení nasazené. Před public launchem zbývá externí audit (G9).' : 'Mainnet Beta security stack — consensus hardening, soft-fork, chaos tests, and infra security deployed. External audit (G9) remains before public launch.'}</p>
+                <p className="text-sm text-gray-400">{cs ? 'Mainnet Beta security stack — konsensus hardening, soft-fork, chaos testy a infra zabezpečení nasazené. Před public launchem zbývá externí audit (G9).' : t5('Mainnet Beta security stack — consensus hardening, soft-fork, chaos tests, and infra security deployed. External audit (G9) remains before public launch.', lang)}</p>
               </div>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {[
-                  cs ? 'Ed25519 verifikace podpisů + UTXO ochrana proti double-spend' : 'Ed25519 signature verification + UTXO double-spend protection',
-                  cs ? 'Reorg lock, anti-fork choice a 60-block soft finality' : 'Reorg lock, anti-fork choice, and 60-block soft finality',
-                  cs ? 'Premine time-locky + 3-of-3 admin multisig + coinbase maturity 100 (soft-fork @ 13100)' : 'Premine time-locks + 3-of-3 admin multisig + coinbase maturity 100 (soft-fork @ 13100)',
-                  cs ? 'submit_block / submit_utxo hardening — size caps, 2h timestamp cap, mempool limits' : 'submit_block / submit_utxo hardening — size caps, 2h timestamp cap, mempool limits',
-                  cs ? 'Payout sweeper — skip immature coinbase/premine, 10% fee cap, txid validace' : 'Payout sweeper — skip immature coinbase/premine, 10% fee cap, txid validation',
-                  cs ? 'HTLC SHA-256 secret hashing + preimage flow' : 'HTLC SHA-256 secret hashing + preimage flow',
-                  cs ? 'G7 chaos/load — 10k minerů, DEX/bridge overload, P2P reconnect storm' : 'G7 chaos/load — 10k miners, DEX/bridge overload, P2P reconnect storm',
-                  cs ? 'Ekam Deeksha v3.2 KAT-locked — CPU/GPU bit-identické napříč backendy' : 'Ekam Deeksha v3.2 KAT-locked — CPU/GPU bit-identical across backends',
-                  cs ? 'File permissions and service hardening' : 'File permissions and service hardening',
-                  cs ? 'fail2ban + ufw operator allowlists, nginx IP allowlists pro RPC/DAO' : 'fail2ban + ufw operator allowlists, nginx IP allowlists for RPC/DAO',
-                  cs ? 'Wallet SDK v2 UTXO + CLI zarovnané na nativní ZION transaction format' : 'Wallet SDK v2 UTXO + CLI aligned to the native ZION transaction format',
-                  cs ? 'Watchdog hardened — startup grace během tx_index backfillu' : 'Watchdog hardened — startup grace during tx_index backfill',
-                  cs ? 'WARP trustless HTLC — claim/refund autorizovaný preimage, payout pinning na lockera/claimanta' : 'WARP trustless HTLC — preimage-authorized claim/refund, payout pinned to locker/claimant',
-                  cs ? 'Per-session nonce partitioning v mineru — eliminace duplicate-share mezi rigy' : 'Per-session nonce partitioning in the miner — eliminates duplicate shares across rigs',
-                  cs ? 'L2/WARP mutující routy admin-gated; BTC↔ZION swap capped-pilot safety hold' : 'L2/WARP mutating routes admin-gated; BTC↔ZION swap capped-pilot safety hold',
-                  cs ? 'TLS auto-renewal opraveno — ACME webroot + renewal configs pro všechny weby' : 'TLS auto-renewal repaired — ACME webroot + renewal configs for all sites',
+                  cs ? 'Ed25519 verifikace podpisů + UTXO ochrana proti double-spend' : t5('Ed25519 signature verification + UTXO double-spend protection', lang),
+                  cs ? 'Reorg lock, anti-fork choice a 60-block soft finality' : t5('Reorg lock, anti-fork choice, and 60-block soft finality', lang),
+                  cs ? 'Premine time-locky + 3-of-3 admin multisig + coinbase maturity 100 (soft-fork @ 13100)' : t5('Premine time-locks + 3-of-3 admin multisig + coinbase maturity 100 (soft-fork @ 13100)', lang),
+                  cs ? 'submit_block / submit_utxo hardening — size caps, 2h timestamp cap, mempool limits' : t5('submit_block / submit_utxo hardening — size caps, 2h timestamp cap, mempool limits', lang),
+                  cs ? 'Payout sweeper — skip immature coinbase/premine, 10% fee cap, txid validace' : t5('Payout sweeper — skip immature coinbase/premine, 10% fee cap, txid validation', lang),
+                  cs ? 'HTLC SHA-256 secret hashing + preimage flow' : t5('HTLC SHA-256 secret hashing + preimage flow', lang),
+                  cs ? 'G7 chaos/load — 10k minerů, DEX/bridge overload, P2P reconnect storm' : t5('G7 chaos/load — 10k miners, DEX/bridge overload, P2P reconnect storm', lang),
+                  cs ? 'Ekam Deeksha v3.2 KAT-locked — CPU/GPU bit-identické napříč backendy' : t5('Ekam Deeksha v3.2 KAT-locked — CPU/GPU bit-identical across backends', lang),
+                  cs ? 'File permissions and service hardening' : t5('File permissions and service hardening', lang),
+                  cs ? 'fail2ban + ufw operator allowlists, nginx IP allowlists pro RPC/DAO' : t5('fail2ban + ufw operator allowlists, nginx IP allowlists for RPC/DAO', lang),
+                  cs ? 'Wallet SDK v2 UTXO + CLI zarovnané na nativní ZION transaction format' : t5('Wallet SDK v2 UTXO + CLI aligned to the native ZION transaction format', lang),
+                  cs ? 'Watchdog hardened — startup grace během tx_index backfillu' : t5('Watchdog hardened — startup grace during tx_index backfill', lang),
+                  cs ? 'WARP trustless HTLC — claim/refund autorizovaný preimage, payout pinning na lockera/claimanta' : t5('WARP trustless HTLC — preimage-authorized claim/refund, payout pinned to locker/claimant', lang),
+                  cs ? 'Per-session nonce partitioning v mineru — eliminace duplicate-share mezi rigy' : t5('Per-session nonce partitioning in the miner — eliminates duplicate shares across rigs', lang),
+                  cs ? 'L2/WARP mutující routy admin-gated; BTC↔ZION swap capped-pilot safety hold' : t5('L2/WARP mutating routes admin-gated; BTC↔ZION swap capped-pilot safety hold', lang),
+                  cs ? 'TLS auto-renewal opraveno — ACME webroot + renewal configs pro všechny weby' : t5('TLS auto-renewal repaired — ACME webroot + renewal configs for all sites', lang),
                 ].map((text) => (
                   <div key={text} className="flex items-center gap-3 text-sm py-2.5 px-4 zion-tile">
                     <CheckCircle2 className="h-4 w-4 text-zion-cyan shrink-0" />
@@ -3643,15 +3636,15 @@ export default function MissionControlDashboard() {
               <div className="mt-6 grid gap-3 lg:grid-cols-3">
                 <div className="zion-rainbow-sub p-4 text-sm text-gray-300" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zion-cyan">Mainnet Beta Active</p>
-                  <p className="mt-2">{cs ? 'ZION konsensus, Ekam Deeksha v3.2, reward split 89/5/5/1 a payout sweep běží produkčně na mainnetu.' : 'ZION consensus, Ekam Deeksha v3.2, the 89/5/5/1 reward split, and the payout sweep run in production on mainnet.'}</p>
+                  <p className="mt-2">{cs ? 'ZION konsensus, Ekam Deeksha v3.2, reward split 89/5/5/1 a payout sweep běží produkčně na mainnetu.' : t5('ZION consensus, Ekam Deeksha v3.2, the 89/5/5/1 reward split, and the payout sweep run in production on mainnet.', lang)}</p>
                 </div>
                 <div className="zion-rainbow-sub p-4 text-sm text-gray-300" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">Launch Gate · G8 Run In Progress</p>
-                  <p className="mt-2">{cs ? 'G8 run #2 (29. 9. — 29. 10. 2026) nesplnil gate kvůli kritickým výpadkům těžby — historie. Aktuální 30denní run probíhá, live monitoring na /g8; G9 externí audit odložen (pending).' : 'G8 run #2 (29 Sep — 29 Oct 2026) failed the gate due to critical mining outages — historical. The current 30-day run is in progress, live monitoring on /g8; the G9 external audit is postponed (pending).'}</p>
+                  <p className="mt-2">{cs ? 'G8 run #2 (29. 9. — 29. 10. 2026) nesplnil gate kvůli kritickým výpadkům těžby — historie. Aktuální 30denní run probíhá, live monitoring na /g8; G9 externí audit odložen (pending).' : t5('G8 run #2 (29 Sep — 29 Oct 2026) failed the gate due to critical mining outages — historical. The current 30-day run is in progress, live monitoring on /g8; the G9 external audit is postponed (pending).', lang)}</p>
                 </div>
                 <div className="zion-rainbow-sub p-4 text-sm text-gray-300" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zion-cyan">Pre-Launch</p>
-                  <p className="mt-2">{cs ? 'Před public launchem: G9 externí security audit, G10 governance rozhodnutí a F2 24h fuzz evidence.' : 'Before public launch: G9 external security audit, G10 governance decision, and F2 24h fuzz evidence.'}</p>
+                  <p className="mt-2">{cs ? 'Před public launchem: G9 externí security audit, G10 governance rozhodnutí a F2 24h fuzz evidence.' : t5('Before public launch: G9 external security audit, G10 governance decision, and F2 24h fuzz evidence.', lang)}</p>
                 </div>
               </div>
             </motion.section>
@@ -3671,7 +3664,7 @@ export default function MissionControlDashboard() {
               style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-8">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MissionControlDashboardCopy.timeline[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(MissionControlDashboardCopy.timeline, lang)}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <CalendarDays className="h-7 w-7 text-zion-gold" />
                   Master Timeline — Test Mainnet To Production
@@ -3682,16 +3675,16 @@ export default function MissionControlDashboard() {
                   <h3 className="font-semibold text-white text-base sm:text-lg mb-4 sm:mb-5 flex items-center gap-2"><CalendarDays className="h-5 w-5 text-zion-gold" /> 2026 — One Love Mainnet & Launch</h3>
                   <div className="relative pl-6 sm:pl-8 border-l-2 border-white/20 space-y-4 sm:space-y-6">
                     {([
-                      { done: true, pct: 100, date: cs ? '1. ledna 2026' : '1 January 2026', title: 'MAINNET GENESIS', desc: cs ? 'Genesis block (timestamp 1767225600) — chain start' : 'Genesis block (timestamp 1767225600) — chain start', color: 'text-zion-cyan' },
-                      { done: true, pct: 100, date: cs ? '6. srpna 2026' : '6 August 2026', title: 'v3.2.0 ONE LOVE RESET', desc: cs ? 'Nová genesis, kompletní rotace klíčů (BIP39), přechod na mainnet' : 'New genesis, full key rotation (BIP39), mainnet cutover', color: 'text-zion-cyan' },
-                      { done: true, pct: 100, date: cs ? '22. srpna 2026' : '22 August 2026', title: 'GATES G1–G5/G7/G11 + E4', desc: cs ? 'Rigy E2E, chaos/load, bridge round-trip, migrace na veřejný mainnet uzavřeny' : 'Rigs E2E, chaos/load, bridge round-trip, public mainnet migration closed', color: 'text-zion-cyan' },
-                      { done: true, pct: 100, date: cs ? '5. – 7. října 2026' : '5 – 7 Oct 2026', title: 'MULTI-ALGO GPU VERIFICATION', desc: cs ? 'Konsensově-exaktní CPU reference + CUDA/OpenCL kernely ověřené napříč katalogem — čistý KAT sweep' : 'Consensus-exact CPU references + CUDA/OpenCL kernels verified across the catalogue — clean KAT sweep', color: 'text-zion-cyan' },
-                      { done: true, pct: 100, date: cs ? '7. října 2026' : '7 Oct 2026', title: 'WARP TRUSTLESS HTLC', desc: cs ? 'Veřejný claim/refund s payout pinning nasazen — poslední code blocker BTC↔ZION swapu vyřešen' : 'Public claim/refund with payout pinning deployed — last BTC↔ZION swap code blocker resolved', color: 'text-zion-cyan' },
-                      { done: true, pct: 100, date: cs ? '7. – 8. října 2026' : '7 – 8 Oct 2026', title: 'AUXPOW CATALOGUE + BTC LOTTERY FLEET', desc: cs ? 'Merged-mining katalog na poolu, one-click switching v agentu, distribuovaný lottery fleet s SQLite persistence' : 'Merged-mining catalogue on the pool, one-click switching in the agent, distributed lottery fleet with SQLite persistence', color: 'text-zion-cyan' },
-                      { done: true, pct: 100, date: cs ? '8. října 2026' : '8 Oct 2026', title: 'MINING LIVENESS HARDENING', desc: cs ? 'Duplicate-share fix napříč rigy nasazen — odstraněn hlavní zdroj rejectů; příprava run #3' : 'Duplicate-share fix deployed across rigs — main reject source eliminated; run #3 preparation', color: 'text-zion-cyan' },
-                      { failed: true, date: cs ? '29. 9. — 29. 10. 2026' : '29 Sep — 29 Oct 2026', title: 'G8 30-DAY RUN #2', desc: cs ? 'Gate nesplněn — kritické výpadky těžby; historický záznam' : 'Gate failed — critical mining outages; historical record', color: 'text-zion-gold' },
-                      { active: true, pct: g8?.progress_percent ?? 0, date: cs ? 'aktuální run' : 'current run', title: 'G8 30-DAY RUN — CURRENT', desc: cs ? `Aktuální 30denní běh probíhá (${g8?.incident_count ?? '—'} incidentů, ${g8?.critical_incident_count ?? '—'} kritických) — live monitoring a evidence na /g8` : `Current 30-day run in progress (${g8?.incident_count ?? '—'} incidents, ${g8?.critical_incident_count ?? '—'} critical) — live monitoring and evidence on /g8`, color: 'text-zion-cyan' },
-                      { active: true, pct: 0, date: cs ? 'TBD' : 'TBD', title: 'PUBLIC LAUNCH', desc: cs ? 'One Love Mainnet public GO — odloženo; nové datum po uzavření G8/G9/G10 a splnění Maturity Gate' : 'One Love Mainnet public GO — postponed; new date after G8/G9/G10 closure and Maturity Gate', color: 'text-zion-cyan' },
+                      { done: true, pct: 100, date: cs ? '1. ledna 2026' : t5('1 January 2026', lang), title: 'MAINNET GENESIS', desc: cs ? 'Genesis block (timestamp 1767225600) — chain start' : t5('Genesis block (timestamp 1767225600) — chain start', lang), color: 'text-zion-cyan' },
+                      { done: true, pct: 100, date: cs ? '6. srpna 2026' : t5('6 August 2026', lang), title: 'v3.2.0 ONE LOVE RESET', desc: cs ? 'Nová genesis, kompletní rotace klíčů (BIP39), přechod na mainnet' : t5('New genesis, full key rotation (BIP39), mainnet cutover', lang), color: 'text-zion-cyan' },
+                      { done: true, pct: 100, date: cs ? '22. srpna 2026' : t5('22 August 2026', lang), title: 'GATES G1–G5/G7/G11 + E4', desc: cs ? 'Rigy E2E, chaos/load, bridge round-trip, migrace na veřejný mainnet uzavřeny' : t5('Rigs E2E, chaos/load, bridge round-trip, public mainnet migration closed', lang), color: 'text-zion-cyan' },
+                      { done: true, pct: 100, date: cs ? '5. – 7. října 2026' : t5('5 – 7 Oct 2026', lang), title: 'MULTI-ALGO GPU VERIFICATION', desc: cs ? 'Konsensově-exaktní CPU reference + CUDA/OpenCL kernely ověřené napříč katalogem — čistý KAT sweep' : t5('Consensus-exact CPU references + CUDA/OpenCL kernels verified across the catalogue — clean KAT sweep', lang), color: 'text-zion-cyan' },
+                      { done: true, pct: 100, date: cs ? '7. října 2026' : t5('7 Oct 2026', lang), title: 'WARP TRUSTLESS HTLC', desc: cs ? 'Veřejný claim/refund s payout pinning nasazen — poslední code blocker BTC↔ZION swapu vyřešen' : t5('Public claim/refund with payout pinning deployed — last BTC↔ZION swap code blocker resolved', lang), color: 'text-zion-cyan' },
+                      { done: true, pct: 100, date: cs ? '7. – 8. října 2026' : t5('7 – 8 Oct 2026', lang), title: 'AUXPOW CATALOGUE + BTC LOTTERY FLEET', desc: cs ? 'Merged-mining katalog na poolu, one-click switching v agentu, distribuovaný lottery fleet s SQLite persistence' : t5('Merged-mining catalogue on the pool, one-click switching in the agent, distributed lottery fleet with SQLite persistence', lang), color: 'text-zion-cyan' },
+                      { done: true, pct: 100, date: cs ? '8. října 2026' : t5('8 Oct 2026', lang), title: 'MINING LIVENESS HARDENING', desc: cs ? 'Duplicate-share fix napříč rigy nasazen — odstraněn hlavní zdroj rejectů; příprava run #3' : t5('Duplicate-share fix deployed across rigs — main reject source eliminated; run #3 preparation', lang), color: 'text-zion-cyan' },
+                      { failed: true, date: cs ? '29. 9. — 29. 10. 2026' : t5('29 Sep — 29 Oct 2026', lang), title: 'G8 30-DAY RUN #2', desc: cs ? 'Gate nesplněn — kritické výpadky těžby; historický záznam' : t5('Gate failed — critical mining outages; historical record', lang), color: 'text-zion-gold' },
+                      { active: true, pct: g8?.progress_percent ?? 0, date: cs ? 'aktuální run' : t5('current run', lang), title: 'G8 30-DAY RUN — CURRENT', desc: cs ? `Aktuální 30denní běh probíhá (${g8?.incident_count ?? '—'} incidentů, ${g8?.critical_incident_count ?? '—'} kritických) — live monitoring a evidence na /g8` : t5(`Current 30-day run in progress (${g8?.incident_count ?? '—'} incidents, ${g8?.critical_incident_count ?? '—'} critical) — live monitoring and evidence on /g8`, lang), color: 'text-zion-cyan' },
+                      { active: true, pct: 0, date: cs ? 'TBD' : t5('TBD', lang), title: 'PUBLIC LAUNCH', desc: cs ? 'One Love Mainnet public GO — odloženo; nové datum po uzavření G8/G9/G10 a splnění Maturity Gate' : t5('One Love Mainnet public GO — postponed; new date after G8/G9/G10 closure and Maturity Gate', lang), color: 'text-zion-cyan' },
                     ] as Array<{ done?: boolean; active?: boolean; failed?: boolean; pct?: number; date: string; title: string; desc: string; color?: string }>).map((item, i) => (
                       <div key={i} className="relative">
                         <div className={`absolute -left-[21px] sm:-left-[25px] top-1.5 w-3 h-3 rounded-full border-2 ${item.done ? 'bg-zion-cyan border-zion-cyan' : item.failed ? 'bg-zion-gold border-zion-gold' : item.active ? 'bg-zion-cyan border-zion-cyan shadow-[0_0_12px_var(--color-cyan-400)]' : 'bg-black border-gray-600'}`} />
@@ -3715,11 +3708,11 @@ export default function MissionControlDashboard() {
                   <h3 className="font-semibold text-white text-base sm:text-lg mb-4 sm:mb-5 flex items-center gap-2"><CalendarDays className="h-5 w-5 text-zion-gold" /> Post-Launch Queue — Not Blocking Today</h3>
                   <div className="relative pl-6 sm:pl-8 border-l-2 border-gray-700 space-y-4 sm:space-y-6">
                     {[
-                      { date: cs ? 'Po public genesis' : 'After public genesis', title: 'Post-Launch Ops', desc: 'Longer canaries, exchange onboarding, public binaries', color: 'text-white' },
-                      { date: cs ? 'Po L1 gate' : 'After L1 gate', title: 'L2 — DEX & DeFi', desc: cs ? 'wZION bridge a další DeFi vrstvy nejsou dnešní launch blockers' : 'wZION bridge and further DeFi layers are not today\'s launch blockers', color: 'text-zion-purple' },
-                      { date: cs ? 'Po L1 gate' : 'After L1 gate', title: 'L3 — Warp & AI Native', desc: cs ? 'NCL a AI runtime navazují po stabilním L1 základu' : 'NCL and AI runtime follow after a stable L1 foundation', color: 'text-zion-purple' },
+                      { date: cs ? 'Po public genesis' : t5('After public genesis', lang), title: 'Post-Launch Ops', desc: 'Longer canaries, exchange onboarding, public binaries', color: 'text-white' },
+                      { date: cs ? 'Po L1 gate' : t5('After L1 gate', lang), title: 'L2 — DEX & DeFi', desc: cs ? 'wZION bridge a další DeFi vrstvy nejsou dnešní launch blockers' : t5("wZION bridge and further DeFi layers are not today's launch blockers", lang), color: 'text-zion-purple' },
+                      { date: cs ? 'Po L1 gate' : t5('After L1 gate', lang), title: 'L3 — Warp & AI Native', desc: cs ? 'NCL a AI runtime navazují po stabilním L1 základu' : t5('NCL and AI runtime follow after a stable L1 foundation', lang), color: 'text-zion-purple' },
                       { date: '2029+', title: 'L4 — ZION Oasis', desc: 'UE5 World, XP System, Play-to-Mine', color: 'text-zion-purple' },
-                      { date: '2030+', title: 'L5 — Free World', desc: cs ? 'Sovereignty, decentralizovaná governance' : 'Sovereignty, decentralized governance', color: 'text-zion-gold' },
+                      { date: '2030+', title: 'L5 — Free World', desc: cs ? 'Sovereignty, decentralizovaná governance' : t5('Sovereignty, decentralized governance', lang), color: 'text-zion-gold' },
                       { date: '2040+', title: 'L6 — ZION Issobella', desc: 'Orbital station, 5% block reward fund', color: 'text-zion-purple' },
                     ].map((item, i) => (
                       <div key={i} className="relative">
@@ -3792,26 +3785,26 @@ export default function MissionControlDashboard() {
               style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
               <div className="flex flex-col gap-2 mb-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MissionControlDashboardCopy.priorities[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(MissionControlDashboardCopy.priorities, lang)}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Zap className="h-7 w-7 text-zion-gold" />
                   Launch Priority Map
                 </h2>
-                <p className="text-sm text-gray-400">{cs ? 'Jedna tabulka pro hotovo, blockers a věci, které dnes nejsou launch gate.' : 'One table for completed items, blockers, and things that are not launch gate today.'}</p>
+                <p className="text-sm text-gray-400">{cs ? 'Jedna tabulka pro hotovo, blockers a věci, které dnes nejsou launch gate.' : t5('One table for completed items, blockers, and things that are not launch gate today.', lang)}</p>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-white/10">
                       <th className="text-xs uppercase tracking-[0.3em] text-gray-400 font-medium px-4 py-3">Prio</th>
-                      <th className="text-xs uppercase tracking-[0.3em] text-gray-400 font-medium px-4 py-3">{cs ? 'Úkol' : 'Task'}</th>
-                      <th className="text-xs uppercase tracking-[0.3em] text-gray-400 font-medium px-4 py-3">{cs ? 'Fáze' : 'Phase'}</th>
-                      <th className="text-xs uppercase tracking-[0.3em] text-gray-400 font-medium px-4 py-3">{cs ? 'Stav' : 'Status'}</th>
+                      <th className="text-xs uppercase tracking-[0.3em] text-gray-400 font-medium px-4 py-3">{cs ? 'Úkol' : t5('Task', lang)}</th>
+                      <th className="text-xs uppercase tracking-[0.3em] text-gray-400 font-medium px-4 py-3">{cs ? 'Fáze' : t5('Phase', lang)}</th>
+                      <th className="text-xs uppercase tracking-[0.3em] text-gray-400 font-medium px-4 py-3">{cs ? 'Stav' : t5('Status', lang)}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {[
-                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'On-chain reward split 89/5/5/1 — humanitární + Issobella + pool fee' : 'On-chain reward split 89/5/5/1 — humanitarian + Issobella + pool fee', phase: 'RUNTIME', status: 'VERIFIED', sColor: 'text-zion-cyan' },
+                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'On-chain reward split 89/5/5/1 — humanitární + Issobella + pool fee' : t5('On-chain reward split 89/5/5/1 — humanitarian + Issobella + pool fee', lang), phase: 'RUNTIME', status: 'VERIFIED', sColor: 'text-zion-cyan' },
                       { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: 'PPLNS payout + confirmation sweep (UTXO fallback)', phase: 'POOL', status: 'VERIFIED', sColor: 'text-zion-cyan' },
                       { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: 'Mainnet cutover + premine/coinbase soft-fork (@13100)', phase: 'L1', status: 'CLOSED', sColor: 'text-zion-cyan' },
                       { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: 'G1 — GPU/rig E2E (>99% accept)', phase: 'MINING', status: 'CLOSED', sColor: 'text-zion-cyan' },
@@ -3821,17 +3814,17 @@ export default function MissionControlDashboard() {
                       { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: 'G3 — solver network + G2 WARP registry gating', phase: 'L2/L3', status: 'CLOSED', sColor: 'text-zion-cyan' },
                       { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: 'G4 — public subtree sync s v3-Mainnet', phase: 'DOCS', status: 'CLOSED', sColor: 'text-zion-cyan' },
                       { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: 'Public releases v3.2.0 — miner, CLI, Desktop Agent', phase: 'RELEASE', status: 'CLOSED', sColor: 'text-zion-cyan' },
-                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'Multi-algo GPU verifikace — konsensově-exaktní kernely, čistý KAT sweep' : 'Multi-algo GPU verification — consensus-exact kernels, clean KAT sweep', phase: 'MINING', status: 'VERIFIED', sColor: 'text-zion-cyan' },
-                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'AuxPoW katalog na poolu + one-click přepínání v agentu' : 'AuxPoW catalogue on pool + one-click agent switching', phase: 'POOL', status: 'CLOSED', sColor: 'text-zion-cyan' },
-                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'WARP trustless HTLC claim/refund — payout pinning' : 'WARP trustless HTLC claim/refund — payout pinning', phase: 'L2', status: 'DEPLOYED', sColor: 'text-zion-cyan' },
-                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'Duplicate-share fix — per-session nonce partitioning' : 'Duplicate-share fix — per-session nonce partitioning', phase: 'MINING', status: 'DEPLOYED', sColor: 'text-zion-cyan' },
-                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'BTC key lottery — distribuovaný fleet + SQLite + telemetrie' : 'BTC key lottery — distributed fleet + SQLite + telemetry', phase: 'OPS', status: 'LIVE', sColor: 'text-zion-cyan' },
-                      { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: cs ? 'G8 — run #3 po stabilizaci těžby (run #2 gate fail)' : 'G8 — run #3 after mining stabilization (run #2 gate fail)', phase: 'G8', status: 'PENDING', sColor: 'text-zion-gold' },
+                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'Multi-algo GPU verifikace — konsensově-exaktní kernely, čistý KAT sweep' : t5('Multi-algo GPU verification — consensus-exact kernels, clean KAT sweep', lang), phase: 'MINING', status: 'VERIFIED', sColor: 'text-zion-cyan' },
+                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'AuxPoW katalog na poolu + one-click přepínání v agentu' : t5('AuxPoW catalogue on pool + one-click agent switching', lang), phase: 'POOL', status: 'CLOSED', sColor: 'text-zion-cyan' },
+                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'WARP trustless HTLC claim/refund — payout pinning' : t5('WARP trustless HTLC claim/refund — payout pinning', lang), phase: 'L2', status: 'DEPLOYED', sColor: 'text-zion-cyan' },
+                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'Duplicate-share fix — per-session nonce partitioning' : t5('Duplicate-share fix — per-session nonce partitioning', lang), phase: 'MINING', status: 'DEPLOYED', sColor: 'text-zion-cyan' },
+                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'BTC key lottery — distribuovaný fleet + SQLite + telemetrie' : t5('BTC key lottery — distributed fleet + SQLite + telemetry', lang), phase: 'OPS', status: 'LIVE', sColor: 'text-zion-cyan' },
+                      { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: cs ? 'G8 — run #3 po stabilizaci těžby (run #2 gate fail)' : t5('G8 — run #3 after mining stabilization (run #2 gate fail)', lang), phase: 'G8', status: 'PENDING', sColor: 'text-zion-gold' },
                       { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: 'F2 — 24h transaction fuzz evidence', phase: 'F2', status: 'PENDING', sColor: 'text-zion-gold' },
-                      { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: cs ? 'G9 — externí security audit' : 'G9 — external security audit', phase: 'G9', status: 'SCHEDULED', sColor: 'text-zion-gold' },
+                      { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: cs ? 'G9 — externí security audit' : t5('G9 — external security audit', lang), phase: 'G9', status: 'SCHEDULED', sColor: 'text-zion-gold' },
                       { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: 'G10 — L5/L6 governance decision', phase: 'G10', status: 'PENDING', sColor: 'text-zion-purple' },
-                      { prio: 'NB', prioColor: 'text-zion-cyan font-semibold', task: cs ? 'WARP BTC↔ZION capped pilot — čeká na externí audit + mainnet relay klíč' : 'WARP BTC↔ZION capped pilot — awaiting external audit + mainnet relay key', phase: 'L2', status: 'SAFETY HOLD', sColor: 'text-zion-gold' },
-                      { prio: 'NB', prioColor: 'text-zion-cyan font-semibold', task: cs ? 'L2/L3 rozšíření, exchange onboarding a mobile polish' : 'L2/L3 expansion, exchange onboarding, and mobile polish', phase: 'POST-L1', status: 'NOT BLOCKING', sColor: 'text-zion-cyan' },
+                      { prio: 'NB', prioColor: 'text-zion-cyan font-semibold', task: cs ? 'WARP BTC↔ZION capped pilot — čeká na externí audit + mainnet relay klíč' : t5('WARP BTC↔ZION capped pilot — awaiting external audit + mainnet relay key', lang), phase: 'L2', status: 'SAFETY HOLD', sColor: 'text-zion-gold' },
+                      { prio: 'NB', prioColor: 'text-zion-cyan font-semibold', task: cs ? 'L2/L3 rozšíření, exchange onboarding a mobile polish' : t5('L2/L3 expansion, exchange onboarding, and mobile polish', lang), phase: 'POST-L1', status: 'NOT BLOCKING', sColor: 'text-zion-cyan' },
                     ].map((row, i) => (
                       <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                         <td className={`px-4 py-3 rounded-l-lg ${row.prioColor}`}>{row.prio}</td>
