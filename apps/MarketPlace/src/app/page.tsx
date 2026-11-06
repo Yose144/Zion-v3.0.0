@@ -1,5 +1,6 @@
 import {
   HeroSection,
+  ShopNews,
   ZionPassSection,
   LampionSection,
   BookSection,
@@ -17,6 +18,8 @@ export default function HomePage() {
   return (
     <div className="space-y-16 md:space-y-20">
       <HeroSection />
+      {/* Novinky pod hero — nahradily varovný pruh „ve výstavbě“ */}
+      <ShopNews />
       <ZionPassSection />
       <BookSection />
       <LampionSection />

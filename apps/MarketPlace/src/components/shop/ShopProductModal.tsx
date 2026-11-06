@@ -132,14 +132,31 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
 
             {capabilities.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-5">
-                {capabilities.map((c, i) => (
-                  <span
-                    key={i}
-                    className="inline-flex items-center gap-2 text-xs font-semibold bg-rasta-red/10 text-rasta-red px-3 py-1.5 rounded-full border border-rasta-red/20"
-                  >
-                    <c.icon className="w-3 h-3" /> {c.label}
-                  </span>
-                ))}
+                {capabilities.map((c, i) => {
+                  const chipClass =
+                    'inline-flex items-center gap-2 text-xs font-semibold bg-rasta-red/10 text-rasta-red px-3 py-1.5 rounded-full border border-rasta-red/20';
+                  // Instrukce jsou od 2026-11-06 **u nás** (`/shop/instr/*.pdf`),
+                  // takže plaketa musí být odkaz — dřív to byl jen nápis
+                  // a zákazník se k PDF nedostal vůbec.
+                  if (c.label === t('shop.capabilityPdf') && product.instructionsUrl) {
+                    return (
+                      <a
+                        key={i}
+                        href={product.instructionsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${chipClass} hover:bg-rasta-red/20 transition-colors`}
+                      >
+                        <c.icon className="w-3 h-3" /> {c.label}
+                      </a>
+                    );
+                  }
+                  return (
+                    <span key={i} className={chipClass}>
+                      <c.icon className="w-3 h-3" /> {c.label}
+                    </span>
+                  );
+                })}
               </div>
             )}
 

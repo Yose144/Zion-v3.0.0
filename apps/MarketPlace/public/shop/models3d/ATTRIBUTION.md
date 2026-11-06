@@ -15,6 +15,19 @@ Uvedení autora je u CC BY-SA **povinné** — při každém veřejném použit�
 vidět jméno (Graham Smith), rok (2014) a zdroj (eigenbloom.com / Thingiverse 967387).
 Odvozeniny (náš přebarvený GLB, LOD) zůstávají pod stejnou licencí.
 
+## Návody ke složení (PDF)
+
+Od 2026-11-06 hostujeme **7 návodů** v `apps/MarketPlace/public/shop/instr/`
+(`awing`, `bwing`, `xwing`, `ikaruga`, `snowspeeder`, `tiefighter`, `tieinterceptor`)
+a produktová karta na ně odkazuje (plaketa „PDF průvodce" je odkaz, ne nápis).
+Původ: `eigenbloom.com/woodenstarfighter/instr/<loď>_instructions.pdf`.
+
+**Laser files (SVG) záměrně NEhostujeme** — prodáváme vypálené díly, ne podklady
+k výpalu; jejich zveřejnění by šlo proti produktu.
+
+**Rozhodnutí operátora (2026-11-06):** podklady jsou volně dostupné („je to free"),
+licenční otázku dál neřešíme. Autor a zdroj zůstávají uvedené — je to správně i tak.
+
 ## Co se s modelem dělalo
 
 * konverze STL → GLB: slití destiček do jednoho meshe, srovnání orientace

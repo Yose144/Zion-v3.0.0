@@ -148,6 +148,15 @@ jen proto, že měl 3D náhled. Plaketa „Připraveno pro laser" už nevisí na
 kategorii. Ověřeno živě: API vrací `files: NULL` u `star-001…008`, modal ukazuje
 `3D náhled (GLB)` + `Připraveno pro laser` + `PDF průvodce`, `shop-3d.mjs` proti produkci **10/10**.
 
+**Návody „od nás" (2026-11-06):** 7 PDF stažených z autorova webu
+(`eigenbloom.com/woodenstarfighter/instr/<loď>_instructions.pdf`) je uložených
+v `apps/MarketPlace/public/shop/instr/` (7,2 MB) a `instructionsUrl` u `star-001…007`
+míří **na nás** (`/shop/instr/*.pdf`). Plaketa „PDF průvodce" v modalu je od 2026-11-06
+**skutečný odkaz** (`target=_blank`) — dřív to byl jen nápis, takže se k PDF nedalo dostat.
+Ověřeno živě: PDF 200 `application/pdf`, v modalu `href="/shop/instr/xwing_instructions.pdf"`,
+`shop-3d.mjs` **10/10**. **Laser files (SVG) záměrně nehostujeme** — prodáváme vypálené díly,
+ne podklady k výpalu. Licenční otázku 👤 uzavřel („je to free"), autor a zdroj zůstávají uvedené.
+
 **🔴 (původní nález) Rozbité odkazy v marketu:** produktová data u všech sedmi stíhaček odkazují na
 `raw.githubusercontent.com/handpanda/wooden-starfighter/master/instr/*_instructions.pdf`
 a `.../svg/*_svg.zip` — oba vrací **404** (repo obsahuje jen sedm STL, žádné `instr/` ani `svg/`).
