@@ -15,7 +15,7 @@
 | Audit | `missingEn: 0`, `duplicates: 0`, `missingParts: 0`, `missingCs: 1` (flaky `miseamenti/README`) |
 | Parity CZ ⇄ EN | 187 dvojic, **0 mezer** — doplněno 2026-11-06 odpoledne (viz §1) |
 | `npm run build` | EXIT 0 |
-| Deploy na EDGE2 | **NEDĚLÁN** (důvod viz §5) |
+| Deploy na EDGE2 | **NASAZENO 2026-11-06 14:32 UTC** z čistého worktree na `ee1166a20` (viz §5) |
 
 **Překladatelská session přeložila 124 kapitol** ve 13 dávkách (65 → 189): Surta Srdce, Nabukano, Mise Amenti, Růže, Issobella, Na Cestě, MariaCaminho, Ekam Deeksha, Quantum Revolution, Miriam, Lumi, Kruh Bohyní, BodhiGaia.
 
@@ -94,14 +94,20 @@ Tyto **nejsou** práce překladatele — jsou to „další kroky" z registrů. 
 
 ## 5. Deploy na EDGE2 — proč ne a co je potřeba
 
-**Nedělal jsem ho**, protože pracovní strom obsahuje **cizí rozpracované soubory** (paralelní session): `apps/nirvana/**`, `Kingdom/apps/kingdom/**`, `apps/MarketPlace/**`. `deploy-web2.9.sh` rsyncuje `src` + `.next` + `public` z pracovního stromu → poslal by i je.
+> **✅ NASAZENO 2026-11-06 14:32 UTC** (`20261106T143205Z`) z **čistého worktree na HEAD** (`ee1166a20`), přesně postupem níže. Rollback: `/opt/zion/APP&WEB/website-v2.9/.next/standalone.before-20261106T143205Z`.
+> **Ověřeno live:** `/zion-archive` 200, `/zion-archive/bodhigaia/cist` 200, `/zion-archive/sulzeme/cist` 200, gated `/api/archive/docs/...` bez passu **403**; audit na serveru `missingCs: 0`, `missingEn: 0`, `duplicates: 0`, `missingParts: 0`, `bodhigaia enCoverage 100 %`; `archive-content` s novým indexem i novou CZ sekcí na serveru (`Map of sources` 1×, `kořen, kmen a koruna` 2×).
+> **Poznámka k artefaktu:** worktree je na jiném místě než hlavní strom, takže `node_modules` **nete symlinkovat** (Next symlink nekopíruje a artefakt pak hlásí „incomplete standalone artifact") — použij `cp -al` hardlink klon **rootu i všech `apps/*/node_modules`** (`npm run build` v appce nejdřív staví `zion-wallet-sdk`, takže samotné app node_modules nestačí).
 
-**Bezpečný postup pro novou session:**
-1. Ověřit `git status --short` — pokud je cokoli cizího, **počkat** nebo deployovat z čistého worktree (`git worktree add /tmp/arch-deploy HEAD`).
-2. `cd apps/website-v2.9 && npm run build` (EXIT 0).
-3. `bash apps/website-v2.9/deploy/deploy-web2.9.sh` → EDGE2 `/opt/zion/APP&WEB/website-v2.9`, restart `zion-website`.
-4. Po deployi ověřit: `/zion-archive` 200, `/zion-archive/bodhigaia/cist` 200, `/api/archive/audit` s `missingEn: 0`, `archive-content/` nakopírovaný do `.next/standalone/`.
-5. **Pozor:** `public/` se servíruje z `.next/standalone/public/`; nové soubory potřebují restart.
+Původní zdůvodnění, proč to předchozí session nedělala: pracovní strom obsahoval **cizí rozpracované soubory** (paralelní session): `apps/nirvana/**`, `Kingdom/apps/kingdom/**`, `apps/MarketPlace/**`, resp. v této vlně i `apps/website-v2.9/src/components/books/BookReader.tsx`, `globals.css`, `Navigation.tsx`. `deploy-web2.9.sh` rsyncuje `src` + `.next` + `public` z pracovního stromu → poslal by i je.
+
+**Bezpečný postup (ověřený):**
+1. `git worktree add --detach /cesta/mimo/repo HEAD` + `cp -al` node_modules (viz poznámka výše).
+2. `cd apps/website-v2.9 && npm run build` (EXIT 0) — build z HEAD bez cizích změn.
+3. Zkopírovat artefakt stejně jako skript (`.next/static`, `public/`, `archive-content/` do `standalone/apps/website-v2.9/`, hoisted `node_modules` do app dir).
+4. Ověřit audit lokálně (`PORT=3129 … node server.js`) — `missingEn: 0`.
+5. `bash apps/website-v2.9/deploy/deploy-web2.9.sh --artifact-dir <app dir>`.
+6. Po deployi ověřit: `/zion-archive` 200, `/zion-archive/bodhigaia/cist` 200, `/api/archive/audit` s `missingEn: 0`, `archive-content/` nakopírovaný do `.next/standalone/`.
+7. Worktree uklidit (`git worktree remove --force`).
 
 ---
 
@@ -127,7 +133,7 @@ Tyto **nejsou** práce překladatele — jsou to „další kroky" z registrů. 
 | 3 | Gate v `check-archive-parity.mjs` → vrací 0 | 15 min | **✅ `7c9c9ac92` + `6f540d8e3`** (0 mezer + pass na labely) |
 | 4 | Redakční pass EN draftů (terminologie + kurzívy + délky) | 2–3 dávky | **🟡 mechanické hotovo** (statusy), zbývá stylistika + diakritika jmen |
 | 5 | Kulturní review (třída E) — 9 položek z §3 | externí / 👤 | ⏳ |
-| 6 | Deploy na EDGE2 z čistého worktree | 30 min | ⏳ (čeká na 👤 — produkční deploy) |
+| 6 | Deploy na EDGE2 z čistého worktree | 30 min | **✅ `20261106T143205Z`** — live ověřeno, audit `missingCs 0 / missingEn 0` |
 | 7 | Obsahové kroky z §4 — **samostatný backlog**, ne „překlad" | dle registrů | ⏳ |
 
 ---
