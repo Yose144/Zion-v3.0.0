@@ -6,6 +6,7 @@ import {
   revokeArchivePass,
   unrevokeArchivePass,
 } from '@/lib/archive-pass';
+import { releaseOrderStock } from '@/lib/order-stock';
 import type { Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -164,8 +165,24 @@ export async function POST(request: NextRequest) {
               }),
             };
             if (action === 'shipped') data.shippedAt = now;
-            await prisma.shopOrder.update({ where: { id: order.id }, data });
+
+            // Zrušení musí být atomické a sklad se vrací jen jednou — stejný
+            // claim jako v detailu objednávky, jinak by dvojí klik na
+            // „zrušit“ přidal kus skladu dvakrát.
+            let cancelClaim = false;
             if (action === 'cancelled') {
+              const claim = await prisma.shopOrder.updateMany({
+                where: { id: order.id, status: { not: 'cancelled' } },
+                data,
+              });
+              cancelClaim = claim.count === 1;
+            } else {
+              await prisma.shopOrder.update({ where: { id: order.id }, data });
+            }
+
+            if (cancelClaim) {
+              // Sklad + nezaplacená faktura (dřív bulk cancel nedělal ani jedno)
+              await releaseOrderStock({ id: order.id, items: order.items });
               try {
                 revokeArchivePass(order.orderId);
               } catch (err) {

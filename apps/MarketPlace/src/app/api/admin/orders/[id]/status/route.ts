@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { requireAdminAuth } from '@/lib/admin-guard';
 import { sendPaymentConfirmation, sendShippingNotification } from '@/lib/email';
 import { distributeOrderBonus } from '@/lib/bonus-payout';
+import { releaseOrderStock } from '@/lib/order-stock';
 import {
   ARCHIVE_REDEEM_URL,
   issueArchivePassForOrder,
@@ -200,53 +201,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // Cancel vrací sklad a ruší nezaplacenou fakturu. Dřív se nedělo ani jedno:
     // zrušená objednávka držela kus skladu navěky (oversell riziko) a faktura
     // zůstala `issued`, takže v účetnictví visela jako vystavená.
+    // Logika je v `lib/order-stock.ts`, protože stejnou cestu má i hromadné
+    // zrušení v `/api/admin/orders/bulk` — dvě kopie se rozešly už jednou.
     if (cancelClaim && updated) {
-      const items = Array.isArray(updated.items)
-        ? (updated.items as Array<{ externalId?: unknown; quantity?: unknown }>)
-        : [];
-      const lines = items
-        .map((item) => ({
-          externalId: String(item?.externalId ?? ''),
-          quantity: Number(item?.quantity ?? 0),
-        }))
-        .filter((line) => line.externalId && Number.isFinite(line.quantity) && line.quantity > 0);
-
-      if (lines.length > 0) {
-        try {
-          await prisma.$transaction(
-            lines.map((line) =>
-              prisma.shopProduct.update({
-                where: { externalId: line.externalId },
-                data: { stock: { increment: line.quantity } },
-              }),
-            ),
-          );
-          // Produkt, který se vyprodal, je zase skladem.
-          await prisma.shopProduct.updateMany({
-            where: {
-              externalId: { in: lines.map((line) => line.externalId) },
-              stock: { gt: 0 },
-              inStock: false,
-            },
-            data: { inStock: true },
-          });
-        } catch (err) {
-          // Produkt mohl být mezitím smazaný — sklad se pak nedá vrátit,
-          // ale zrušení objednávky nesmí selhat kvůli tomu.
-          console.error('Stock restore on cancel failed:', err);
-        }
-      }
-
-      // Zaplacená faktura zůstává: peníze se pohnuly a vrácení je samostatný
-      // proces. Ruší se jen to, co ještě není zaplacené.
-      try {
-        await prisma.invoice.updateMany({
-          where: { orderId: updated.id, status: { in: ['draft', 'issued'] } },
-          data: { status: 'cancelled' },
-        });
-      } catch (err) {
-        console.error('Invoice cancel failed:', err);
-      }
+      await releaseOrderStock(updated);
     }
 
     // Obnovení zrušené objednávky sklad znovu nerezervuje — mohlo by to jít do

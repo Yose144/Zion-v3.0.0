@@ -76,7 +76,7 @@ export default function ShopProductCard({ product, onOpen }: ShopProductCardProp
 
       <div className="flex-1 flex flex-col">
         <div className="text-xs text-gray-500 mb-0.5 capitalize">{categoryLabel}</div>
-        <h3 className="font-bold text-white text-sm leading-tight mb-2 line-clamp-1 hover:text-rasta-gold transition-colors">
+        <h3 className="font-bold text-white text-sm leading-snug mb-2 line-clamp-2 min-h-[2.4em] hover:text-rasta-gold transition-colors">
           {product.name}
         </h3>
 

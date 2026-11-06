@@ -129,3 +129,33 @@ DB `ALTER TABLE` proběhl před deployem; `lamp-001` UPDATE po něm.
 6. **`Lang` se v repu rozšířil na pět jazyků** (cizí i18n WIP) a `/ai`, `/ai/cli` indexovaly cs/en
    slovníky pěti hodnotami → 58 chyb `tsc`, build neprošel. Doplněno konverzí „ostatní jazyky čtou
    anglicky“ (místo prázdné stránky), aby build zůstal zelený.
+
+---
+
+## 9) Dodatek — hromadné zrušení objednávky nevracelo sklad
+
+Při ověřování nákupní cesty po refaktoru prohlášení se ukázalo, že **sklad vrací jen detail
+objednávky** (`/api/admin/orders/[id]/status`), ale **hromadná akce ne**
+(`/api/admin/orders/bulk`, akce `cancelled`). Zrušená objednávka držela kus navěky; projeví se
+to až při dalším prodeji (produkt se tváří jako vyprodaný), takže to nikdo nezachytí.
+
+Oprava:
+- nový `src/lib/order-stock.ts` — `orderStockLines()` (rozklad `order.items` z JSONu) a
+  `releaseOrderStock()` (přičtení skladu v transakci, `inStock = true` u doplněných produktů,
+  zrušení **nezaplacené** faktury). Zaplacená faktura se nemění — vrácení peněz je dobropis.
+- detail objednávky i bulk akce volají **stejnou funkci**; v bulk akci přibyl atomický claim
+  (`updateMany … status != cancelled`), aby dvojí klik nepřidal kus dvakrát.
+- test `apps/MarketPlace/e2e/order-stock.mjs` (8/8) — rozklad položek (null, chybějící
+  `externalId`, nula, záporné a nečíselné množství, číselný string, prázdný string).
+
+**Ověřeno na produkci** (skript na EDGE2, `TEST-STOCK-*`):
+
+```
+stock before=998  po_objednavce=997  po_zruseni=998
+order_status=cancelled  invoice_status=cancelled
+```
+
+### Další drobnost ve výloze
+Názvy produktů byly useknuté na jednom řádku (`line-clamp-1`), takže vypadalo jako
+„ZION Pass — vstup do…“ / „Království srdce — digitál…“. Karta teď povolí dva řádky
+s pevnou výškou (`line-clamp-2 min-h-[2.4em]`), takže se karty pořád zarovnají.
