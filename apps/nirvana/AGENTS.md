@@ -2322,9 +2322,9 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   (`app/park/copy.ts`), lobby (`app/multiplayer/copy.ts`), Mars (`app/mars/copy.ts`),
   Merkur (`app/mercury/copy.ts`), Venuše (`app/venus/copy.ts`) — včetně jmen
   soupeřů (`nameEs` v `core/race/rivals.ts`) a tabulek (`GameBoard`).
-- **Co ještě není v ES:** `/earth` (79 inline), `/fleet` (20), `/avatars` (15) —
-  dnes pro `es` zobrazí angličtinu (fallback z `tx()`), takže se to nemá hlásit
-  jako „přeloženo".
+- **V ES je celá Nirvana** (10 herních povrchů + chrome + data světa). Fallback
+  z `tx()` na angličtinu zůstává jako pojistka pro nové texty — ale nesmí být
+  cesta, jak „dodat" překlad: nový string = nový klíč ve slovníku + `es`.
 - **Vícejazyčné ternárky se snadno přehlédnou.** `grep "cs ?"` najde jen
   jednořádkové; texty zlomené do dvou řádků pres `{cs` nový řádek prosviští.
   Po migraci projdi `grep -n "{cs"` a `grep -n "lang === 'cs'"` — v obou musí
