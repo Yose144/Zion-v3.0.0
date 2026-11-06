@@ -29,16 +29,17 @@ Tento dokument je jedním vstupním bodem. Detailní pravdu najdeš v těchto zd
 
 1. [Sůl a kompas — proč to číst](#sůl-a-kompas--proč-to-číst)
 2. [Co je ZION — ve třech větách a ověřitelná fakta](#co-je-zion--ve-třech-větách-a-ověřitelná-fakta)
-3. [Proč je dobré začít zrovna teď](#proč-je-dobré-začít-zrovna-teď)
-4. [Tři cesty na palubu](#tři-cesty-na-palubu)
-5. [Loď ZION — šest palub a čtyři knihy](#loď-zion--šest-palub-a-čtyři-knihy)
-6. [Brána do Oasis](#brána-do-oasis)
-7. [Kniha Sůl této země — dvanáct zastavení](#kniha-sůl-této-země--dvanáct-zastavení)
-8. [Co ZION neslibuje](#co-zion-neslibuje)
-9. [První krok — dnes, za pět minut](#první-krok--dnes-za-pět-minut)
-10. [Technický quickstart](#technický-quickstart)
-11. [Ověřitelná fakta — shrnutí](#ověřitelná-fakta--shrnutí)
-12. [Pro vývojáře a další zdroje](#pro-vývojáře-a-další-zdroje)
+3. [Co je ZION dnes — kořen, kmen a koruna](#co-je-zion-dnes--kořen-kmen-a-koruna)
+4. [Proč je dobré začít zrovna teď](#proč-je-dobré-začít-zrovna-teď)
+5. [Tři cesty na palubu](#tři-cesty-na-palubu)
+6. [Loď ZION — šest palub a čtyři knihy](#loď-zion--šest-palub-a-čtyři-knihy)
+7. [Brána do Oasis](#brána-do-oasis)
+8. [Kniha Sůl této země — dvanáct zastavení](#kniha-sůl-této-země--dvanáct-zastavení)
+9. [Co ZION neslibuje](#co-zion-neslibuje)
+10. [První krok — dnes, za pět minut](#první-krok--dnes-za-pět-minut)
+11. [Technický quickstart](#technický-quickstart)
+12. [Ověřitelná fakta — shrnutí](#ověřitelná-fakta--shrnutí)
+13. [Pro vývojáře a další zdroje](#pro-vývojáře-a-další-zdroje)
 
 ---
 
@@ -88,6 +89,41 @@ Tento dokument je jedním vstupním bodem. Detailní pravdu najdeš v těchto zd
 | Hard cap 144 miliard ZION | `max_supply = 144_000_000_000`; premine 16,78 mld. (11,65 %), zbytek těžbou | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5 |
 | Žádné ICO / VIP vstup | Fair launch: žádný `mint()` pro tým, žádný předprodej; genesis alokace je veřejně vypsaná v coinbase | [`12-Hodina-Pred-Destem.md`](./12-Hodina-Pred-Destem.md), Ověřitelná fakta |
 | PoW: Ekam Deeksha / CosmicHarmony | Kanonický algoritmus v `V3/L1/cosmic-harmony`; šestifázový pipeline Hiranyagarbha, Brahma, Yantra, Karma, Chit, Samadhi; LWMA 60 bloků, ±25 % clamp | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Ověřitelná fakta |
+
+---
+
+## Co je ZION dnes — kořen, kmen a koruna
+
+Pozvánka do ZIONu se často ptá: co je *doopravdy* hotové, co se staví a co je jen vzdálený směr? Tady je hranice, poctivě označená:
+
+### Kořen — ŽIVÉ
+
+Tohle se dá ověřit dnes na běžící síti, v blocích nebo v repozitáři:
+
+- **L1 blockchain s Proof-of-Work** v Rustu; cílový block time 60 s, konsensus Ekam Deeksha / CosmicHarmony.
+- **Veřejný genesis hash:** `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`.
+- **Emise s tvrdým stropem 144 miliard ZION**, rozdělení 89/5/5/1 % je v kódu konsensu.
+- **Otevřený kód pod MIT** na `https://github.com/Zion-TerraNova/v3-Mainnet`.
+- **L2 na Base / EVM:** wZION, bridge, governance, treasury, staking, farm a atomic swap — adresy ověřitelné na Basescanu.
+
+### Kmen — STAVBA
+
+Funguje, ale není hotový; detaily se mění a stav je nutné ověřovat proti aktuálnímu vydání:
+
+- **Zion CLI** — jednotné rozhraní pro peněženku, uzel, těžbu a konfiguraci.
+- **L3 WARP, AI Native, NCL** — cross-chain a AI compute infrastruktura.
+- **L4 Oasis** — vizuální herní vrstva, XP, úrovně vědomí, avataři, questy a guildy. Je oddělená od konsensu L1: herní aktivita nemění odměnu za odvedenou hash práci.
+- **Humanitární tok** — ekonomické pravidlo existuje v konsensu; transparentní vykazování konkrétního dopadu se teprve rozvíjí.
+
+### Koruna — HORIZONT
+
+Směr, který má v ekonomickém modelu místo, ale není dnešním produktem:
+
+- **Free World (L5):** komunity a humanitární mise s ověřitelným dopadem.
+- **Issobella (L6):** dlouhodobý orbitální a open-science horizont.
+- **Golden Egg a celý herní svět Oasis:** questová vrstva a příběhový svět mají popsané parametry; úplná implementace zůstává ve stavbě.
+
+> **Tohle rozdělení je důležitější než velká slova.** Živé se testuje, stavba se sleduje, horizont se nesmí prodávat jako hotová věc.
 
 ---
 

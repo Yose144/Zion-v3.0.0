@@ -47,6 +47,10 @@ The episodes loosely connect (a shared frame: an evening by the fire that slowly
 
 **The fireside Rasta story:** [`../marketing/RASTA_ONBOARD_3.2_ONE_LOVE_EN.md`](../marketing/RASTA_ONBOARD_3.2_ONE_LOVE_EN.md).
 
+**Short marketing version (Czech only):** [`Onboarding.md`](./Onboarding.md).
+
+**Historical onboarding versions (2026-08-03, superseded):** [`ZION_ONBOARDING.md`](./ZION_ONBOARDING.md) — [`English version`](./ZION_ONBOARDING_EN.md).
+
 ---
 
 ## What this series is not

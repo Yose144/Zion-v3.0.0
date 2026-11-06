@@ -81,6 +81,8 @@ Source documents remain in their original locations to prevent stale copies. Mis
 8. [`08-Protokol-Zmen.md`](./08-Protokol-Zmen.md) — how the canon changes, is reviewed, translated, and potentially published.
 9. [`CHANGELOG.md`](./CHANGELOG.md) — an immutable change trail for this corpus.
 
+Czech entry point: [`README.md`](./README.md).
+
 ---
 
 ## The first vow of the Amenti Mission
