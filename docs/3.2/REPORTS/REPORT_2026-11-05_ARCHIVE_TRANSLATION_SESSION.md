@@ -1,7 +1,7 @@
-# REPORT — ZION Archive: překladová session T1–T12 (111 kapitol)
+# REPORT — ZION Archive: překladová session T1–T13 (124 kapitol) — ARCHIV 189/189
 
 > **Datum:** 2026-11-05 (aktualizováno 2026-11-06) · **Vlastník:** 👤 · **Plán:** [`TRANSLATION-PLAN.md`](../../../TRANSLATION-PLAN.md)
-> **Kód:** `apps/website-v2.9` · **Stav po session:** **176 / 189 kapitol (93,1 %)**, zbývá **13**
+> **Kód:** `apps/website-v2.9` · **Stav po session:** **189 / 189 kapitol (100 %)** — archiv je přeložený celý
 
 ---
 
@@ -24,15 +24,16 @@ přes standalone → commit **jen vlastních souborů** → push.
 | **T10** | Miriam | 13 | `8824241ea`, `81e889ece`, `920a54d89`, `0bda808fe`, `505195f79` | tři vrstvy Stone/Clay/Dream |
 | **T11** | Lumi | 13 | `bac3a798e`, `bde928d3f`, `f38555204`, `7ac9e4fc9` | svislá osa světla, Jen-že → Only-that |
 | **T12** | Kruh Bohyní | 17 | `3d0f362cb`, `5c2ef1f60`, `e1079c272`, `b6d164978`, `7e5ec4c51`, `6b5bb6e7b` | sedm sedadel L5 + L6, ZÁMĚR → INTENT, tři `00-*` jako kapitoly |
+| **T13** | BodhiGaia | 13 | `58a36ef5c`, `7e1fb240b`, `f20aaf0b8`, `879b9814f`, `167c2311f`, `68de181b1`, `062e47fb5`, `66797e50a`, `6e8812095` | pět elementů L5, registr s 10 rozpory |
 
-**Celkem tato session: 111 kapitol** (z 65 na 176).
+**Celkem tato session: 124 kapitol** (z 65 na 189 — archiv dokončen).
 
 ## 2. Ověření (poslední běh)
 
 Audit `GET /api/archive/audit` na standalone (`PORT=3124`, `ARCHIVE_ADMIN_TOKEN`):
 
 ```
-TOTALS: {books: 18, declaredChapters: 204, missingCs: 1, missingEn: 13,
+TOTALS: {books: 18, declaredChapters: 204, missingCs: 1, missingEn: 0,
          frontMatter: 15, duplicates: 0, missingParts: 0}
 surta-srdce 100 % · nabukano 100 % · miseamenti 100 % · ruze 100 %
 issobella 100 % · naceste 100 % · mariacaminho 100 % · ekam 100 %
@@ -64,11 +65,9 @@ lumi 100 % · miriam 100 % · quantum-revolution: singleDoc. cs 10 / en 10 kapit
 - **Neměnné:** čísla, adresy, env klíče, id a data (`zion1z4s3a5…`, `zion1f5h5k6t8…`, 300M ZION, 2,5 mld, lock 144 000, `ISSOBELLA_PCT = 5`, 89/5/5/1 %, `node_reward_activation_height = u64::MAX`, 0,38 g / 200 m / ~2 RPM, LEO 400–550 km, `48dcc0b2-…`, 1984/1994/2003/2008/2018, 1917, 352, 1676, 1488).
 - **Kód:** placeholdery (`issobella tracker`, `zion-*-service`, `interní port` → `internal port`), `interní repozitář` → `internal repository` (odkaz `../../../interní%20repozitář`), code blocky Cosmic Harmony v3 **doslova**.
 
-## 5. Co zbývá (13 kapitol, ~0,18 MB)
+## 5. Co zbývá
 
-| Milník | Kniha | Kapitol | Odhad dávek |
-|---|---|---:|---:|
-| **T13** | BodhiGaia | 13 | 5 |
+**Nic — archiv je přeložený celý (189/189, 2026-11-06).** Zbývá jen redakční revize EN draftů, kulturní review (třída E) u L5 knih a případný deploy na EDGE2.
 
 ## 6. Meze
 
