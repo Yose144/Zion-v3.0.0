@@ -483,3 +483,39 @@ boa-esperanca „cabo/cap", ekam es „arquitectura como tecnología".
 Vzorec zbytku je jasný: **explorer detaily** (blok, tx, adresa), **DeFi panely**
 (Farming, Staking), **dashboard** a **monitoring** — dohromady ~2,5 tisíce řetězců
 v 149 souborech, žádný monolit.
+
+---
+
+## 29. Dávka 18 — DeFi panely, detaily bloku/tx, API reference (217 řetězců)
+
+`farming` (41), `staking` (42), `expblock` (45), `exptx` (43), `apiref` (46).
+
+**Čtvrtá a pátá varianta `fmtAge()`** (block a tx detail) — obě skládaly české
+tvary ručně (`před 5 min 30 s`) a pro ostatní jazyky posílaly dynamický template
+do `t5()`; přepsáno na `Intl.RelativeTimeFormat`. `ApiQuickstartPanels` dostal
+prop `lang`, `getApiStats` a `getEndpointGroups` dostaly `lang`.
+
+**Pozor na `ssr: false`:** `FarmingPanel` i `StakingPanel` se načítají dynamicky
+bez SSR (`/wallet/staking`, `/market`), takže se do HTML dostanou až po mountu —
+v ověření to znamená delší čekání, ne chybu.
+
+Ověřeno živě: `/api-reference` „Plná dokumentace / Documentación completa /
+Documentação completa / Documentation complète", `/wallet/staking` pt
+„Período de espera", 0 pageerror.
+
+## 30. Stav po dávce 18
+
+| | hodnota |
+|---|---:|
+| přeložených řetězců (es = pt = fr) | **5 013** |
+| stránek/komponent s vlastním slovníkem | **58** |
+| zbývá | **2 266 klíčů / 144 souborů** |
+| `tsc` / `next build` | 0 / zelený |
+
+**Největší zbývající:** `DashboardClient` (64), `wallet/multichain` (52),
+`dashboard/ch3` (48), `g8` (42), `PoolPrlClient` (39), `DownloadToolBrowser` (39),
+`MonitoringClient` (39), `explorer/network-stats` (37), `BridgeBurnWidget` (35),
+`doge-vs-zion/games/BlockBreaker` (34).
+
+Zbytek se dál drobí — průměr je teď **~16 řetězců na soubor**, takže každá další
+dávka pokryje 15–20 souborů. Fallback na angličtinu funguje všude.
