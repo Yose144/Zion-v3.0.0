@@ -55,7 +55,7 @@ vlastní ENindex mimo kapitoly.
 | Quantum Revolution | 1 (single-doc) | **1** | 0 | **dokončeno 2026-11-05** — 396B stub nahrazen (CZ + EN) |
 | Lumi | 13 | **13** | 0 | **dokončeno 2026-11-06** (CZ + EN) |
 | Miriam | 13 | **13** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
-| BodhiGaia | 13 | 0 | **13** | největší objem (180 kB) |
+| BodhiGaia | 13 | **1** | **12** | 01 hotovo 2026-11-06; největší objem (~180 kB) |
 | MariaCaminho | 12 | **12** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Růže | 11 | **11** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Na Cestě | 2 | **2** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
