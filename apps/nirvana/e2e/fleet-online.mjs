@@ -205,6 +205,35 @@ async function main() {
   check('protistrana vidí naši loď', mine.shipId === 'xwing', mine.shipId);
   check('a její polohu', Number.isFinite(mine.x) && Number.isFinite(mine.z), JSON.stringify([mine.x, mine.z]));
 
+  console.log('\n▸ obsazené kotviště');
+  // Protistrana si sedne na nabukano-2; naše loď zkusí totéž.
+  b.send({ t: 'flight', x: 4, y: 8, z: -6, yaw: 0, pitch: 0, roll: 0, speed: 0, docked: true, dockId: 'nabukano-2' });
+  await sleep(500);
+  await page.evaluate(() => window.__fleetDebug.dock('nabukano-2'));
+  const conflict = await waitFor(
+    () =>
+      page
+        .evaluate(() => ({
+          docked: window.__fleetDebug.state().docked,
+          notice: document.querySelector('.fleet-notice')?.textContent ?? '',
+        }))
+        .then((state) => (state.docked === null && state.notice.includes('obsazen') ? state : null)),
+    15000,
+    'odmítnutí obsazeného kotviště',
+  );
+  check('server odmítne obsazené kotviště', conflict.docked === null);
+  check('hráč to vidí (hláška)', conflict.notice.includes('obsazen'), conflict.notice.slice(0, 60));
+
+  console.log('\n▸ prefers-reduced-motion');
+  await page.emulateMediaFeatures?.([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+  const reduced = await waitFor(
+    () => page.evaluate(() => window.__fleetDebug.reduced?.() === true),
+    8000,
+    'reduced motion',
+  );
+  check('scéna respektuje prefers-reduced-motion', reduced === true);
+  await page.emulateMediaFeatures?.([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
+
   console.log('\n▸ hlediště (?watch=)');
   const watcher = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   await grantPass(watcher, new URL(app.base).hostname);

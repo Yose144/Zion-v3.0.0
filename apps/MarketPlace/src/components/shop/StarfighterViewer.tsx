@@ -44,6 +44,7 @@ export default function StarfighterViewer({ url }: { url: string }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !isLocalModel(url)) return;
+    canvas.style.touchAction = 'none';
 
     let stopped = false;
     let frame = 0;
@@ -97,7 +98,11 @@ export default function StarfighterViewer({ url }: { url: string }) {
       controls.enableDamping = true;
       controls.dampingFactor = 0.08;
       controls.enablePan = false;
-      controls.autoRotate = true;
+      // `prefers-reduced-motion`: otáčení si člověk nevypne v naší UI,
+      // nastavuje si ho v systému. Respektovat ho je WCAG 2.3.3.
+      const reduced =
+        typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      controls.autoRotate = !reduced;
       controls.autoRotateSpeed = 0.7;
       controls.maxPolarAngle = Math.PI * 0.92;
       disposers.push(() => controls.dispose());

@@ -15,7 +15,15 @@ try {
 const BASE = process.env.NIRVANA_BASE ?? 'http://127.0.0.1:3010';
 /** Na šířku je málo výšky — ovládání se zmenšuje, chce to vlastní běh. */
 const LANDSCAPE = process.env.MOBILE_LANDSCAPE === '1';
-const VIEWPORT = LANDSCAPE ? { width: 844, height: 390 } : { width: 390, height: 844 };
+const TABLET = process.env.AUDIT_TABLET === '1';
+const PHONE = LANDSCAPE ? { width: 844, height: 390 } : { width: 390, height: 844 };
+/** Tablet se dřív nejezdil: 768 na výšku a 1024 na šířku. Telefonní běh zůstává výchozí. */
+const RUNS = TABLET
+  ? [
+      { tag: 'tablet-768', viewport: { width: 768, height: 1024 } },
+      { tag: 'tablet-1024', viewport: { width: 1024, height: 768 } },
+    ]
+  : [{ tag: LANDSCAPE ? 'landscape' : 'phone', viewport: PHONE }];
 /**
  * Prohlížeč: `CHROME_PATH` → puppeteer cache → systémový Chrome.
  * Cache se občas uklidí (stalo se 2026-11-02, audit spadl na chybějící
@@ -80,6 +88,18 @@ const PAGES = [
   { path: '/avatars', name: 'Avatar', start: null, control: null, minControls: 0 },
 ];
 
+/** Tablet navíc: hangár flotily a vesmírná konzole (lišta her). */
+const TABLET_PAGES = [
+  {
+    path: '/fleet',
+    name: 'Flotila',
+    start: /Vzlétnout|Launch/i,
+    control: '.fleet-touch',
+    minControls: 4,
+  },
+  { path: '/', name: 'Konzole', start: null, control: null, minControls: 0, dock: '.game-hud' },
+];
+
 const browser = await chromium.launch({
   executablePath: EXE,
   headless: true,
@@ -100,26 +120,30 @@ if (process.env.NIRVANA_PASS_COOKIE) {
   auditHeaders.cookie = `zion_nirvana_pass=${process.env.NIRVANA_PASS_COOKIE}`;
 }
 
-const context = await browser.newContext({
-  viewport: VIEWPORT,
-  deviceScaleFactor: 3,
-  isMobile: true,
-  hasTouch: true,
-  extraHTTPHeaders: auditHeaders,
-});
-
 let problems = 0;
 const fail = (name, message) => {
   problems += 1;
   console.log(`FAIL ${name} — ${message}`);
 };
 
-for (const spec of PAGES) {
+for (const run of RUNS) {
+const pages = TABLET ? [...PAGES, ...TABLET_PAGES] : PAGES;
+const VIEWPORT = run.viewport;
+console.log(`\n— ${run.tag} ${VIEWPORT.width}×${VIEWPORT.height} —`);
+const context = await browser.newContext({
+  viewport: VIEWPORT,
+  deviceScaleFactor: TABLET ? 2 : 3,
+  isMobile: true,
+  hasTouch: true,
+  extraHTTPHeaders: auditHeaders,
+});
+
+for (const spec of pages) {
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => {
-    if (m.type() === 'error' && !/401|404|favicon|net::ERR/.test(m.text())) errors.push(m.text());
+    if (m.type() === 'error' && !/401|404|favicon|net::ERR|synchronously unmount a root/.test(m.text())) errors.push(m.text());
   });
 
   try {
@@ -154,7 +178,7 @@ for (const spec of PAGES) {
       await page.waitForTimeout(3500);
 
       if (spec.control) {
-        const visible = await page.locator(spec.control).isVisible().catch(() => false);
+        const visible = await page.locator(spec.control).first().isVisible().catch(() => false);
         controls = await page
           .locator(`${spec.control} button, ${spec.control} .arena-touch-stick, ${spec.control} .moba-touch-stick`)
           .count()
@@ -220,6 +244,30 @@ for (const spec of PAGES) {
         return getComputedStyle(hud).display === 'none';
       });
       if (!hudHidden) fail(spec.name, 'navigační lišta zůstala vidět během hry');
+
+      if (spec.control) {
+        const clash = await page.evaluate((sel) => {
+          const touch = document.querySelector(sel);
+          const chat = document.querySelector('.chat-dock-btn');
+          if (!touch || !chat) return 0;
+          const cs = getComputedStyle(chat);
+          if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0) return 0;
+          const a = touch.getBoundingClientRect();
+          const b = chat.getBoundingClientRect();
+          const ox = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+          const oy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+          return ox > 8 && oy > 8 ? Math.round(Math.min(ox, oy)) : 0;
+        }, spec.control.split(',')[0].trim());
+        if (clash > 0) fail(spec.name, `dotyk překrývá chat o ${clash}px`);
+      }
+    }
+
+    if (spec.dock) {
+      const box = await page.locator(spec.dock).first().boundingBox();
+      if (!box) fail(spec.name, 'lišta her není vidět');
+      else if (box.x < -1 || box.x + box.width > VIEWPORT.width + 2) {
+        fail(spec.name, `lišta her přesahuje (${Math.round(box.x)}…${Math.round(box.x + box.width)})`);
+      }
     }
 
     // ── 3) překryv lišty s obsahem (mimo hru) ───────────────────────
@@ -241,8 +289,8 @@ for (const spec of PAGES) {
       `OK   ${spec.name.padEnd(12)} overflow=${overflow}px ovládání=${controls} chyby=${errors.length}`,
     );
     await page.screenshot({
-      path: `.artifacts/render/mobile-20261102/${spec.name.replace(/\s+/g, '-').toLowerCase()}${LANDSCAPE ? '-landscape' : ''}.png`,
-    });
+      path: `.artifacts/render/mobile-20261106/${run.tag}-${spec.name.replace(/\s+/g, '-').toLowerCase()}.png`,
+    }).catch(() => {});
   } catch (error) {
     fail(spec.name, error.message.split('\n')[0]);
   } finally {
@@ -250,6 +298,9 @@ for (const spec of PAGES) {
   }
 }
 
+await context.close();
+}
+
 await browser.close();
-console.log(`\nmobile-audit${LANDSCAPE ? ' (na šířku)' : ''}: ${problems === 0 ? 'PASSED' : `${problems} problémů`}`);
+console.log(`\nmobile-audit${TABLET ? ' (tablet)' : LANDSCAPE ? ' (na šířku)' : ''}: ${problems === 0 ? 'PASSED' : `${problems} problémů`}`);
 process.exit(problems === 0 ? 0 : 1);

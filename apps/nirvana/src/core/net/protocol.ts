@@ -567,6 +567,13 @@ export type ServerMessage =
        * nepotřebuje — predikuje si ho sám stejnou `stepShip`).
        */
       fleet?: {
+        /**
+         * Kotviště, která právě drží někdo jiný. Jedno kotviště = jedna loď;
+         * HUD podle toho řekne „obsazeno", aby člověk letěl na volné.
+         */
+        occupied?: string[];
+        /** Kotviště, které server právě odmítl (bylo obsazené) — pro mě. */
+        conflict?: string;
         pilots: {
           id: string;
           name: string;

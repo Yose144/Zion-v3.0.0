@@ -147,7 +147,7 @@ export default function TermsPage() {
       <h3>
         <T cs="3.2 Způsoby platby" en="3.2 Payment methods" />
       </h3>
-      <table>
+      <div className="table-scroll"><table>
         <thead>
           <tr>
             <th><T cs="Způsob platby" en="Payment method" /></th>
@@ -168,7 +168,7 @@ export default function TermsPage() {
             <td><T cs="Platba v hotovosti při převzetí zásilky" en="Cash payment on collection of the parcel" /></td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
 
       <h2 id="section4">
         <T cs="4. Doprava a dodání" en="4. Shipping and delivery" />
@@ -177,7 +177,7 @@ export default function TermsPage() {
       <h3>
         <T cs="4.1 Způsoby dopravy" en="4.1 Delivery options" />
       </h3>
-      <table>
+      <div className="table-scroll"><table>
         <thead>
           <tr>
             <th><T cs="Dopravce" en="Carrier" /></th>
@@ -202,7 +202,7 @@ export default function TermsPage() {
             <td><T cs="Okamžitě po potvrzení platby" en="Immediately after payment confirmation" /></td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
 
       <h3>
         <T cs="4.2 Dodací lhůta" en="4.2 Delivery period" />

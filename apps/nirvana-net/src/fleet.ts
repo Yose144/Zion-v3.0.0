@@ -50,6 +50,8 @@ interface Pilot {
   speed: number;
   docked: boolean;
   dockId?: string;
+  /** Poslední odmítnuté kotviště (obsazené jiným pilotem) — pro HUD. */
+  dockConflict?: string;
   seenAt: number;
   ghostUntil: number;
 }
@@ -144,6 +146,7 @@ export function createFleetMatch(now: number): Match {
      * totéž co hráči.
      */
     snapshot(id: string): ServerMessage | null {
+      const me = pilots.get(id);
       return {
         t: 'snapshot',
         game: 'fleet',
@@ -151,6 +154,10 @@ export function createFleetMatch(now: number): Match {
         time: Math.max(0, Date.now() - startedAt),
         players: [],
         fleet: {
+          // Obsazená kotviště — klient je ukáže v HUD, aby člověk letěl
+          // na volné a ne aby se dozvěděl až odmítnutím.
+          occupied: [...new Set([...pilots.values()].filter((p) => p.docked && p.dockId).map((p) => p.dockId!))],
+          ...(me?.dockConflict ? { conflict: me.dockConflict } : {}),
           // Vlastní stav klient nepotřebuje — predikuje si ho sám.
           pilots: [...pilots.values()]
             .filter((pilot) => pilot.id !== id)
@@ -189,11 +196,35 @@ export function createFleetMatch(now: number): Match {
       pilot.pitch = clamp(message.pitch, -1.2, 1.2);
       pilot.roll = clamp(message.roll, -1, 1);
       pilot.speed = clamp(message.speed, -30, 40);
-      pilot.docked = message.docked === true;
       // `dockId` bere jen existující dok: kdyby klient poslal cokoli, ostatní
       // by u něj viděli loď „na doku", který v mapě není.
-      pilot.dockId = pilot.docked && message.dockId && DOCK_IDS.has(message.dockId) ? message.dockId : undefined;
-      if (pilot.docked && !pilot.dockId) pilot.docked = false;
+      const wants =
+        message.docked === true && message.dockId && DOCK_IDS.has(message.dockId) ? message.dockId : null;
+
+      /**
+       * **Jedno kotviště = jedna loď.** Dřív server `dockId` jen přeposílal,
+       * takže dva piloti mohli stát ve stejném bodě a prolínat se.
+       * Držení se hlásí klient (relay), takže se tu jen kontroluje, jestli
+       * místo není obsazené jiným **živým** pilotem — duch kotviště nedrží.
+       */
+      if (wants) {
+        const taken = [...pilots.values()].some(
+          (other) => other.id !== id && !other.ghostUntil && other.docked && other.dockId === wants,
+        );
+        if (taken) {
+          pilot.docked = false;
+          pilot.dockId = undefined;
+          pilot.dockConflict = wants;
+        } else {
+          pilot.docked = true;
+          pilot.dockId = wants;
+          pilot.dockConflict = undefined;
+        }
+      } else {
+        pilot.docked = false;
+        pilot.dockId = undefined;
+        pilot.dockConflict = undefined;
+      }
 
       pilot.seenAt = Date.now();
       return true;

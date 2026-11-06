@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useI18n } from '@/core/i18n';
 import type { FleetLeg } from '@/core/scene/universe/SkyFleet';
 
@@ -97,6 +98,13 @@ export function FleetPortal({
       </p>
 
       <div className="hiran-actions">
+        {/*
+          Hlavní cesta z okna: **vzlétnout**. Okno dřív vedlo jen na knihu
+          a prezentaci, takže se o hratelné flotile člověk nedozvěděl.
+        */}
+        <Link className="portal-link is-primary" href="/fleet">
+          {cs ? 'Vzlétnout z Nabukana →' : 'Launch from Nabukano →'}
+        </Link>
         <a
           className="portal-link"
           href="https://nirvana.zionterranova.com/present/nebeska-flotila"

@@ -574,9 +574,11 @@ export default function LumiPage() {
             <div>
               <strong>{l('journalTitle')}</strong>
               <span>
-                {cs
-                  ? `${journal.found.length}/7 nalezeno · ${journal.runs} cest · darováno ${journal.gifts.give}×`
-                  : `${journal.found.length}/7 found · ${journal.runs} journeys · given ${journal.gifts.give}×`}
+                {l('journalStats', {
+                  found: journal.found.length,
+                  runs: journal.runs,
+                  given: journal.gifts.give,
+                })}
               </span>
             </div>
             <button type="button" className="lumi-journal-close" onClick={() => setJournalOpen(false)} aria-label={l('close')}>
@@ -595,9 +597,7 @@ export default function LumiPage() {
             })}
           </ol>
           <p className="lumi-journal-note">
-            {cs
-              ? 'Deník se ukládá v prohlížeči. Cesty jsou dvě a světla jsou v obou stejná — jde o to je donést.'
-              : 'The journal lives in your browser. There are two paths and the lights are the same in both — carrying them is the point.'}
+            {l('journalNote')}
           </p>
         </section>
       )}

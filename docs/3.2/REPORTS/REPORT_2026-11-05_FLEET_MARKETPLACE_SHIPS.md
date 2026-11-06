@@ -415,6 +415,36 @@ byly. Před auditem zkontroluj `lsof -ti :3100`.
 
 ---
 
+## 6e. Druhá vlna: viditelnost, přístupnost, obsazenost doků, zvuk
+
+**1) Na flotilu se nedalo dojít z vesmíru.** `FleetPortal` (okno Nabukano) i `IssobellaPortal`
+odkazovaly na knihy a prezentace, ale **ne na `/fleet`** — přitom Issobella je jeden ze dvou
+doků. Přidán hlavní CTA `Vzlétnout z Nabukana →` / `Přiletět k doku →` (`.portal-link.is-primary`),
+ověřeno živým otevřením portálu (`#portal=fleet`): odkaz existuje, je zvýrazněný a míří na `/fleet`.
+
+**2) `prefers-reduced-motion` se nikde nerespektoval.** Ve flotile se neptal nikdo (obletová
+kamera diváka, pulzující značky doků) a v náhledu marketu se model otáčel sám. Nový hook
+`core/design/useReducedMotion.ts` + použití ve `FleetScene` (statický úhel kamery, statické
+značky) a v `StarfighterViewer` (`autoRotate = false`). Test to ověřuje **funkčně**:
+`page.emulateMediaFeatures(prefers-reduced-motion: reduce)` → `__fleetDebug.reduced() === true`
+a scéna se přestane hýbat.
+
+**3) Dvě lodě na jednom kotvišti.** Server `dockId` jen relayoval, takže dva piloti mohli stát
+ve stejném bodě. Teď: **jedno kotviště = jedna loď** (`apps/nirvana-net/src/fleet.ts`) — druhý
+dostane ve snapshotu `conflict`, klient se odpojí, uvidí hlášku a HUD u nejbližšího doku napíše
+„obsazeno“ (`fleet.occupied`). Duch kotviště nedrží. Ověřeno: net test 5 kontrol + E2E, kde
+protistrana sedí na `nabukano-2` a naše loď je odmítnuta a odpojena.
+
+**4) Zvuk motoru.** Nejdřív jsem napsal vlastní `startThrusterLoop` — a pak zjistil, že
+`core/audio/engine.ts` **už `startEngineLoop` má** (jezdí s ním Venuše). Duplikát smazán,
+flotila používá tentýž loop a jen jím řídí plyn (`setIntensity(speed / max)`), plus `gust`
+při zažehnutí boostu. Divák motor neslyší (nemá loď).
+
+**Naměřeno po změnách:** simulace 35/35, `fleet.mjs` 19/19, `fleet-mobile.mjs` 16/16,
+`fleet-online.mjs` **19/19**, `nirvana-net/test/fleet.mjs` **29/29** (5 nových na obsazenost).
+
+---
+
 ## 7. Meze (co se nemá hlásit jako hotové)
 
 * **Multiplayer je hotový lokálně, ale nenasazený** — živá net služba je na protokolu 30,

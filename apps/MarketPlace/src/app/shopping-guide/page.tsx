@@ -74,7 +74,7 @@ export default function ShoppingGuidePage() {
       <h2>
         <T cs="Platební metody" en="Payment methods" />
       </h2>
-      <table>
+      <div className="table-scroll"><table>
         <thead>
           <tr>
             <th><T cs="Metoda" en="Method" /></th>
@@ -114,12 +114,12 @@ export default function ShoppingGuidePage() {
             <td>+30 Kč</td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
 
       <h2>
         <T cs="Způsoby dopravy" en="Delivery options" />
       </h2>
-      <table>
+      <div className="table-scroll"><table>
         <thead>
           <tr>
             <th><T cs="Dopravce" en="Carrier" /></th>
@@ -162,7 +162,7 @@ export default function ShoppingGuidePage() {
             </td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
 
       <div className="warning-box">
         <p>

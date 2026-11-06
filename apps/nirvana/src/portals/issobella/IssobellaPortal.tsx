@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/core/i18n';
 import { KingdomLink } from '@/core/portals/KingdomLink';
@@ -30,6 +31,13 @@ export function IssobellaPortal({ onClose }: { onClose: () => void }) {
       </p>
 
       <div className="hiran-actions">
+        {/*
+          Issobella je **jeden ze dvou doků** flotily — okno na to musí
+          ukázat, jinak se k ní dá doletět jen náhodou.
+        */}
+        <Link className="portal-link is-primary" href="/fleet">
+          {cs ? 'Přiletět k doku →' : 'Fly to the dock →'}
+        </Link>
         <button type="button" onClick={() => router.push('/present/issobella')}>
           {cs ? 'Vstoupit do stanice' : 'Enter the station'}
         </button>

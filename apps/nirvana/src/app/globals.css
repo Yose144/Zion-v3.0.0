@@ -9014,3 +9014,25 @@ a.game-hud-chip.is-lumi em {
   gap: 0.5rem;
   margin-top: 0.4rem;
 }
+
+/* ── Portál: hlavní CTA na hratelnou scénu ─────────────────────────────
+   `FleetPortal` a `IssobellaPortal` vedou na `/fleet` (Nabukano i Issobella
+   jsou herní doky). Bez zvýraznění splýval odkaz s ostatními. */
+.portal-link.is-primary {
+  border-color: rgba(232, 197, 106, 0.55);
+  background: linear-gradient(180deg, rgba(232, 197, 106, 0.22), rgba(232, 197, 106, 0.08));
+  color: #f6e9c4;
+  font-weight: 600;
+}
+
+.portal-link.is-primary:hover {
+  border-color: rgba(232, 197, 106, 0.85);
+  background: linear-gradient(180deg, rgba(232, 197, 106, 0.3), rgba(232, 197, 106, 0.12));
+}
+
+/* Obsazené kotviště v HUD — drobné, ale musí být vidět dřív než odmítnutí. */
+.fleet-taken {
+  font-style: normal;
+  color: #ff9f43;
+  letter-spacing: 0.02em;
+}

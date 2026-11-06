@@ -18,7 +18,7 @@ import { fill, tx, useI18n } from '@/core/i18n';
 import { FleetCanvas, type FleetStats, type RemotePilot } from '@/core/fleet/FleetScene';
 import { SHIPS, shipById, DEFAULT_SHIP } from '@/core/fleet/ships';
 import { DOCK_HOLD, DOCK_RADIUS } from '@/core/fleet/flight';
-import { play, unlock } from '@/core/audio/engine';
+import { play, startEngineLoop, unlock, type LoopHandle } from '@/core/audio/engine';
 import { useNet } from '@/core/net/useNet';
 import { InviteButton } from '@/core/net/InviteButton';
 import { SpectatorBar } from '@/core/net/SpectatorBar';
@@ -86,6 +86,17 @@ export default function FleetPage() {
   /** Ostatní piloti chodí 15×/s, takže v refu — ne v React state. */
   const remotes = useRef<RemotePilot[]>([]);
   const [peers, setPeers] = useState(0);
+  /** Kotviště obsazená někým jiným (server je posílá ve snapshotu). */
+  const [occupied, setOccupied] = useState<string[]>([]);
+  /** Poslední zpracovaný konflikt — aby hláška nevznikala 15×/s. */
+  const conflictSeen = useRef<string | null>(null);
+  const occupiedSignature = useRef('');
+  /**
+   * Spojitý zvuk motoru — **stejný** jako ve Venuši (`startEngineLoop`).
+   * Vlastní loop by byl druhý motor v jedné hře; tady se jen řídí plynem.
+   */
+  const thruster = useRef<LoopHandle | null>(null);
+  const boosting = useRef(false);
 
   /** Debug háček se čte při prvním renderu — efekt by ho nestihl (viz AGENTS). */
   useEffect(() => {
@@ -102,6 +113,30 @@ export default function FleetPage() {
   );
 
   const spec = useMemo(() => shipById(shipId), [shipId]);
+
+  // motor běží jen za letu a jen když letí člověk (divák nic neslyší)
+  useEffect(() => {
+    if (phase !== 'flying' || watchId) return;
+    thruster.current = startEngineLoop();
+    thruster.current?.setIntensity(0.15);
+    return () => {
+      thruster.current?.stop();
+      thruster.current = null;
+    };
+  }, [phase, watchId]);
+
+  // plyn/rychlost řídí výšku i jas motoru
+  useEffect(() => {
+    const top = spec.maxSpeed * spec.boost;
+    thruster.current?.setIntensity(Math.min(1, Math.abs(stats.speed) / top));
+  }, [stats.speed, spec]);
+
+  // boost je slyšet jen při zažehnutí, ne po celou dobu
+  useEffect(() => {
+    const active = stats.boost < 0.999 && stats.speed > spec.maxSpeed * 0.55;
+    if (active && !boosting.current) play('gust');
+    boosting.current = active;
+  }, [stats.boost, stats.speed, spec]);
 
   useEffect(() => {
     const query = window.matchMedia('(hover: none) and (pointer: coarse)');
@@ -166,6 +201,32 @@ export default function FleetPage() {
       if (message.t !== 'snapshot' || message.game !== 'fleet' || !message.fleet) return;
       remotes.current = message.fleet.pilots;
       setPeers(message.fleet.pilots.length);
+
+      // Obsazenost: stav mění jen občas, takže se `setState` volá jen při
+      // změně (15 snapshotů/s by jinak překreslovalo celou stránku).
+      const free = message.fleet.occupied ?? [];
+      const signature = free.join(',');
+      if (signature !== occupiedSignature.current) {
+        occupiedSignature.current = signature;
+        setOccupied(free);
+      }
+
+      // Server odmítl kotviště (bylo obsazené) — vlastní simulace ho drží
+      // dál, takže se loď musí odpojit a hráč to musí vidět.
+      const conflict = message.fleet.conflict ?? null;
+      if (conflict && conflict !== conflictSeen.current) {
+        conflictSeen.current = conflict;
+        play('block');
+        setNotice(
+          cs
+            ? `Kotviště ${conflict.replace('nabukano-', 'Nabukano ')} je obsazené — letíš na jiné`
+            : `Berth ${conflict.replace('nabukano-', 'Nabukano ')} is taken — pick another`,
+        );
+        window.setTimeout(() => setNotice(null), 4200);
+        setUndockSignal((value) => value + 1);
+      } else if (!conflict) {
+        conflictSeen.current = null;
+      }
     });
   }, [coop, subscribe]);
 
@@ -200,6 +261,8 @@ export default function FleetPage() {
   );
 
   const nearest = stats.nearest;
+  const occupiedOthers = occupied.filter((id) => id !== stats.docked);
+  const nearestTaken = nearest ? occupiedOthers.includes(nearest.id) : false;
   const targetName = nearest
     ? nearest.kind === 'nabukano'
       ? l('nabukano')
@@ -277,7 +340,12 @@ export default function FleetPage() {
           <div className="fleet-target">
             <span className="fleet-target-kind">{l('nearestDock')}</span>
             <strong>{targetName}</strong>
-            <span>{nearest ? `${nearest.distance.toFixed(1)} j.` : '—'}</span>
+            <span>
+              {nearest ? `${nearest.distance.toFixed(1)} j.` : '—'}
+              {nearestTaken && (
+                <em className="fleet-taken">{cs ? ' · obsazeno' : ' · taken'}</em>
+              )}
+            </span>
             {stats.dockId && stats.dockProgress > 0.02 && (
               <div className="fleet-dock-progress">
                 <i style={{ width: `${Math.round(stats.dockProgress * 100)}%` }} />

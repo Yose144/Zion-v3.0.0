@@ -656,11 +656,11 @@ export default function CartPage() {
               className="w-56 h-56 mx-auto mb-4 bg-white p-2 rounded-xl"
             />
             <div className="space-y-2 text-sm text-left bg-white/5 p-4 rounded-xl mb-4">
-              <div className="flex justify-between"><span className="text-gray-500">{t('cart.qrAccount')}</span><strong>{orderResult.bank.account}</strong></div>
-              <div className="flex justify-between"><span className="text-gray-500">{t('cart.qrIban')}</span><strong>{orderResult.bank.iban}</strong></div>
-              <div className="flex justify-between"><span className="text-gray-500">{t('cart.qrBic')}</span><strong>{orderResult.bank.bic}</strong></div>
-              <div className="flex justify-between"><span className="text-gray-500">{t('cart.qrVs')}</span><strong>{orderResult.bank.vs}</strong></div>
-              <div className="flex justify-between"><span className="text-gray-500">{t('cart.qrAmount')}</span><strong>{formatPrice(orderResult.bank.amount)}</strong></div>
+              <div className="flex justify-between gap-3"><span className="text-gray-500 shrink-0">{t('cart.qrAccount')}</span><strong className="break-all text-right">{orderResult.bank.account}</strong></div>
+              <div className="flex justify-between gap-3"><span className="text-gray-500 shrink-0">{t('cart.qrIban')}</span><strong className="break-all text-right">{orderResult.bank.iban}</strong></div>
+              <div className="flex justify-between gap-3"><span className="text-gray-500 shrink-0">{t('cart.qrBic')}</span><strong className="break-all text-right">{orderResult.bank.bic}</strong></div>
+              <div className="flex justify-between gap-3"><span className="text-gray-500 shrink-0">{t('cart.qrVs')}</span><strong className="break-all text-right">{orderResult.bank.vs}</strong></div>
+              <div className="flex justify-between gap-3"><span className="text-gray-500 shrink-0">{t('cart.qrAmount')}</span><strong className="text-right">{formatPrice(orderResult.bank.amount)}</strong></div>
             </div>
             <button onClick={closeQr} className="zion-button-primary w-full">
               <Check className="w-4 h-4" /> {t('cart.qrDone')}

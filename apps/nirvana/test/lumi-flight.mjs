@@ -14,6 +14,7 @@
 
 const {
   ENERGY_MAX,
+  isGaze,
   createFlight,
   currentAt,
   missingLights,
@@ -212,7 +213,47 @@ check('darování má bonus', LUMI_GIFT_BONUS > 0, String(LUMI_GIFT_BONUS));
 check('obě volby mají text v cs+en', Boolean(LUMI_GIFT.keep.text.cs && LUMI_GIFT.give.text.en));
 check('volby se jmenují jinak', LUMI_GIFT.keep.label.cs !== LUMI_GIFT.give.label.cs);
 
-// ── 12) denní obloha (L-7) ───────────────────────────────────────────
+// ── 12) let pohledem (VR, L-4) ───────────────────────────────────────
+{
+  check('gaze se pozná podle aim+gaze', isGaze({ ...NO, aim: { x: 1, y: 0 }, gaze: 1 }) === true);
+  check('samotný aim bez tahu nestačí', isGaze({ ...NO, aim: { x: 1, y: 0 }, gaze: 0 }) === false);
+  check('klávesy nejsou gaze', isGaze({ ...NO, up: true }) === false);
+
+  const right = createFlight();
+  const x0 = right.x;
+  fly(right, 1.2, { ...NO, aim: { x: 1, y: 0 }, gaze: 1 });
+  check('pohled doprava letí doprava', right.x > x0 + 1, `${x0} → ${right.x.toFixed(1)}`);
+  check('pohled doprava nemění výšku o moc', Math.abs(right.y - 12) < 8, String(right.y.toFixed(1)));
+
+  const up = createFlight();
+  const energy0 = up.energy;
+  fly(up, 0.8, { ...NO, aim: { x: 0, y: 1 }, gaze: 1 });
+  check('pohled vzhůru zvedá', up.y > 12, String(up.y.toFixed(1)));
+  check('pohled vzhůru bere energii lucerny', up.energy < energy0, `${energy0} → ${up.energy.toFixed(1)}`);
+
+  const down = createFlight();
+  down.y = 60;
+  fly(down, 0.6, { ...NO, aim: { x: 0, y: -1 }, gaze: 1 });
+  check('pohled dolů klesá', down.y < 60, String(down.y.toFixed(1)));
+
+  // klávesy se ignorují, když je zadaný pohled (jinak by se sčítaly dva názory)
+  const both = createFlight();
+  const bx0 = both.x;
+  fly(both, 1, { ...NO, left: true, aim: { x: 1, y: 0 }, gaze: 1 });
+  check('pohled přebije klávesy', both.x > bx0, `${bx0} → ${both.x.toFixed(1)}`);
+
+  // nulový tah = klouzání, ne let
+  const idle = createFlight();
+  fly(idle, 1, { ...NO, aim: { x: 1, y: 0 }, gaze: 0 });
+  check('nulový tah neletí', Math.abs(idle.x - 10) < 0.5, String(idle.x.toFixed(1)));
+
+  // rozbitý vstup nesmí dát NaN
+  const broken = createFlight();
+  fly(broken, 0.5, { ...NO, aim: { x: Number.NaN, y: 0 }, gaze: 1 });
+  check('NaN ve směru nerozbije simulaci', Number.isFinite(broken.x) && Number.isFinite(broken.y), `${broken.x}`);
+}
+
+// ── 13) denní obloha (L-7) ───────────────────────────────────────────
 {
   const a = new Date('2026-11-05T08:00:00Z');
   const b = new Date('2026-11-05T23:30:00Z');

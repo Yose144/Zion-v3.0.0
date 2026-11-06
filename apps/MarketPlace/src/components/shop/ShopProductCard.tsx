@@ -80,7 +80,7 @@ export default function ShopProductCard({ product, onOpen }: ShopProductCardProp
           {product.name}
         </h3>
 
-        <div className="flex flex-wrap gap-2 text-[10px] text-gray-400 mb-3">
+        <div className="flex flex-wrap gap-2 text-xs text-gray-400 mb-3">
           {product.size && (
             <span className="inline-flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded">
               <Ruler className="w-3 h-3" /> {product.size}

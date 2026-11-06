@@ -155,6 +155,25 @@ try {
   const docked = pilotOf(b, idA);
   check('dok je vidět u ostatních', docked?.docked === true && docked?.dockId === 'nabukano-2', JSON.stringify({ docked: docked?.docked, dockId: docked?.dockId }));
 
+  console.log('\n▸ jedno kotviště = jedna loď');
+  // A už je na `nabukano-2` (z předchozí části). B zkusí totéž.
+  b.send({ t: 'flight', x: 1, y: 6, z: 20, yaw: 0, pitch: 0, roll: 0, speed: 0, docked: true, dockId: 'nabukano-2' });
+  await sleep(400);
+  const bConflict = snapshotOf(b);
+  check('druhá loď na obsazené kotviště nedostane', pilotOf(a, idB)?.docked === false, JSON.stringify(pilotOf(a, idB)?.docked));
+  check('a dostane důvod (konflikt)', bConflict?.fleet?.conflict === 'nabukano-2', JSON.stringify(bConflict?.fleet?.conflict));
+  check('obsazenost je vidět ve snapshotu', (bConflict?.fleet?.occupied ?? []).includes('nabukano-2'), JSON.stringify(bConflict?.fleet?.occupied));
+  check('první loď kotviště drží dál', pilotOf(b, idA)?.dockId === 'nabukano-2', pilotOf(b, idA)?.dockId);
+
+  // po uvolnění se kotviště nabídne druhému
+  a.send({ t: 'flight', x: 0, y: 6, z: 20, yaw: 0, pitch: 0, roll: 0, speed: 0, docked: false });
+  await sleep(300);
+  b.send({ t: 'flight', x: 1, y: 6, z: 20, yaw: 0, pitch: 0, roll: 0, speed: 0, docked: true, dockId: 'nabukano-2' });
+  await sleep(400);
+  check('po uvolnění ho druhý dostane', pilotOf(a, idB)?.dockId === 'nabukano-2', pilotOf(a, idB)?.dockId);
+  b.send({ t: 'flight', x: 1, y: 6, z: 20, yaw: 0, pitch: 0, roll: 0, speed: 0, docked: false });
+  await sleep(200);
+
   console.log('\n▸ neznámá loď');
   const c = client();
   await handshake(c, 'c');

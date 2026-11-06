@@ -22,6 +22,7 @@ import { useGLTF } from '@react-three/drei';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import * as THREE from 'three';
 import { dampFactor } from '@/core/design/motion';
+import { useReducedMotion } from '@/core/design/useReducedMotion';
 import { fleetHeading, fleetPosition, ringSpinAngle, RING_R, PLANET_R } from '@/core/scene/universe/positions';
 import { IssobellaStation } from '@/core/scene/universe/IssobellaStation';
 import { NabukanoModel } from '../../../../shared/scenes/kit/vessels';
@@ -333,13 +334,13 @@ function RemoteFleet({ remotes }: { remotes: React.MutableRefObject<RemotePilot[
   );
 }
 
-/** Značky doků — pulzující prstenec v barvě podle místa. */
-function DockMarkers({ docks, time }: { docks: Dock[]; time: number }) {
+/** Značky doků — pulzující prstenec v barvě podle místa (bez pohybu, když si to člověk vypne). */
+function DockMarkers({ docks, time, animate = true }: { docks: Dock[]; time: number; animate?: boolean }) {
   return (
     <group>
       {docks.map((dock, index) => {
         const color = dock.kind === 'nabukano' ? '#38bdf8' : '#e8c56a';
-        const pulse = 0.65 + Math.sin(time * 1.6 + index) * 0.35;
+        const pulse = animate ? 0.65 + Math.sin(time * 1.6 + index) * 0.35 : 0.8;
         return (
           <group key={dock.id} position={dock.position}>
             <mesh rotation={[Math.PI / 2, 0, 0]}>
@@ -434,6 +435,7 @@ function Flight({
   spectator = false,
 }: FleetCanvasProps) {
   const { camera, clock, gl } = useThree();
+  const reduced = useReducedMotion();
   const input = useRef<ShipInput>({ throttle: 0, yaw: 0, pitch: 0, roll: 0, boost: false, brake: false });
   const state = useRef<ShipState>(createShip(spec, start));
   const docks = useRef<Dock[]>([]);
@@ -474,7 +476,8 @@ function Flight({
     if (spectator) {
       // Pomalý oblet + pohled na nejbližšího pilota (když nějaký je).
       // Statická kamera by u volného letu ukazovala prázdno.
-      const angle = t * 0.06;
+      // Bez obletu: statický pohled, když si člověk vypne pohyb.
+      const angle = reduced ? 0.9 : t * 0.06;
       chase.current.set(Math.cos(angle) * 15, 8.5, Math.sin(angle) * 15);
       const pilot = remotes?.current?.[0];
       look.current.set(pilot?.x ?? 0, pilot?.y ?? 4, pilot?.z ?? 0);
@@ -543,6 +546,8 @@ function Flight({
           geometries: gl.info.memory.geometries,
           textures: gl.info.memory.textures,
         }),
+        /** Respektuje scéna `prefers-reduced-motion`? (pro E2E) */
+        reduced: () => reduced,
         /** Kolik cizích pilotů scéna opravdu kreslí. */
         remotes: () => remotes?.current?.length ?? 0,
         /** Detaily pro E2E: co server poslal o ostatních (dok, duch, loď). */
@@ -577,7 +582,7 @@ function Flight({
       <NewEarth />
       <IssobellaRing />
       <Nabukano />
-      <DockMarkers docks={dockTargets(clock.elapsedTime)} time={clock.elapsedTime} />
+      <DockMarkers docks={dockTargets(clock.elapsedTime)} time={clock.elapsedTime} animate={!reduced} />
 
       {!spectator && (
         <group ref={shipGroup}>

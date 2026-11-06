@@ -17,9 +17,32 @@ export interface FlightInput {
   down: boolean;
   left: boolean;
   right: boolean;
+  /**
+   * Směr pohledu pro **let pohledem ve VR** (jednotkový 2D vektor).
+   *
+   * Klávesnice i dotyk posílají čtyři booleany — to je pro obrazovku správně,
+   * protože hráč vidí kurzor. V headsetu ale není „nahoru", je tam „tam, kam
+   * se dívám": stejná simulace proto bere i vektor. Když je `aim` zadaný,
+   * čtyři booleany se ignorují (jinak by se sčítaly dva názory na směr).
+   */
+  aim?: { x: number; y: number };
+  /** Jak silně táhne pohled (0–1). 0 = jen kloužeš. */
+  gaze?: number;
 }
 
 export const NO_FLIGHT: FlightInput = { up: false, down: false, left: false, right: false };
+
+/**
+ * Je tenhle vstup „pohledový"? (VR)
+ *
+ * Drží se na jednom místě, aby simulace i scéna neměly jiný názor na to,
+ * co je ještě klávesnice a co už hlava.
+ */
+export function isGaze(input: FlightInput): boolean {
+  if (!input.aim) return false;
+  if (!Number.isFinite(input.aim.x) || !Number.isFinite(input.aim.y)) return false;
+  return (input.gaze ?? 0) > 0.001;
+}
 
 export interface FlightState {
   /** Kterou cestou letíš — světla, proudy i svatyně se berou odsud. */
@@ -108,27 +131,42 @@ export function stepFlight(state: FlightState, input: FlightInput, dt: number): 
   const lift = currentAt(state.x, state.y, state.path);
   const canLift = state.energy > 0;
 
+  const gaze = isGaze(input);
+  const aim = gaze ? input.aim! : null;
+  const gazePower = gaze ? Math.max(0, Math.min(1, input.gaze ?? 0)) : 0;
+
   // 1) svisle: pláštěnka (dokud je síla) nebo gravitace
-  if (input.up && canLift) {
+  if (gaze && aim && aim.y > 0.15 && canLift) {
+    // Pohled vzhůru = lucerna táhne; spotřeba je úměrná tomu, jak strmě.
+    state.vy += LIFT * aim.y * gazePower * step;
+    state.energy = Math.max(0, state.energy - LIFT_DRAIN * aim.y * gazePower * step);
+  } else if (input.up && canLift) {
     state.vy += LIFT * step;
     state.energy = Math.max(0, state.energy - LIFT_DRAIN * step);
   } else {
-    state.vy -= GRAVITY * step;
+    // Ve VR klesáš při pohledu vpřed **měkce** (0,35 g): hráč nemá klávesu
+    // „stoupat", takže by jinak při každém pohledu dopředu spadl jako kámen.
+    // Kdo chce klesat rychle, podívá se dolů (viz níže).
+    state.vy -= GRAVITY * (gaze ? 0.35 : 1) * step;
   }
   // 2) proudy vzduchu nesou i bez pláštěnky
   if (lift > 0) {
     state.vy += lift * step;
     state.energy = Math.min(ENERGY_MAX, state.energy + CURRENT_REFILL * step);
-  } else if (!input.up) {
+  } else if (!input.up && !(gaze && aim && aim.y > 0.15)) {
     // klouzání samo do nabíjí — jinak by hráč uvízl bez síly
     state.energy = Math.min(ENERGY_MAX, state.energy + GLIDE_REGEN * step);
   }
-  if (input.down) state.vy -= GRAVITY * 0.8 * step;
+  if (input.down || (gaze && aim && aim.y < -0.15)) {
+    // pohled dolů = řízené klesání (nedusí, jen zrychlí pád)
+    const dive = gaze && aim ? Math.abs(aim.y) * gazePower : 1;
+    state.vy -= GRAVITY * 0.8 * dive * step;
+  }
 
   state.vy = Math.max(-MAX_FALL, Math.min(MAX_RISE, state.vy));
 
   // 3) vodorovně
-  const steer = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+  const steer = gaze && aim ? aim.x * gazePower : (input.right ? 1 : 0) - (input.left ? 1 : 0);
   state.vx += steer * ACCEL * step;
   state.vx -= state.vx * DRAG * step;
   state.vx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, state.vx));

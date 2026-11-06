@@ -66,7 +66,7 @@ export interface LumiStats {
   lastLight: number | null;
 }
 
-const KEY_MAP: Record<string, keyof FlightInput> = {
+const KEY_MAP: Record<string, 'up' | 'down' | 'left' | 'right'> = {
   ArrowUp: 'up',
   KeyW: 'up',
   Space: 'up',
@@ -604,7 +604,18 @@ export function LumiScene({
 }) {
   const { gl } = useThree();
   const state = useRef<FlightState>(createFlight(path.id));
-  const keys = useRef<Record<keyof FlightInput, boolean>>({ up: false, down: false, left: false, right: false });
+  /** Klávesy (a dotyk) — čtyři směry, žádný „pohled". */
+  const keys = useRef<{ up: boolean; down: boolean; left: boolean; right: boolean }>({
+    up: false,
+    down: false,
+    left: false,
+    right: false,
+  });
+  /**
+   * Směr pohledu z headsetu (VR). `null` = nejsme ve VR / headset nedodává
+   * směr, takže se letí klávesami. Drží se v refu, protože se čte 60×/s.
+   */
+  const gaze = useRef<{ x: number; y: number } | null>(null);
   const lastReport = useRef(0);
   const finishedSent = useRef(false);
   /** Zvukové hrany: předchozí stav, aby se nehrálo každý snímek. */
@@ -671,7 +682,11 @@ export function LumiScene({
   useFrame((_, delta) => {
     if (paused) return;
     const flight = state.current;
-    stepFlight(flight, { ...keys.current }, Math.min(0.05, delta));
+    // Ve VR letíš tam, kam se díváš (trigger drží lucernu); jinak klávesy.
+    const input: FlightInput = gaze.current
+      ? { ...keys.current, aim: gaze.current, gaze: 1 }
+      : { ...keys.current };
+    stepFlight(flight, input, Math.min(0.05, delta));
 
     if (finishedSent.current === false && flight.finished) {
       finishedSent.current = true;
@@ -770,7 +785,7 @@ export function LumiScene({
       <Shrine open={state.current.lights.length === path.lights.length} shrine={path.shrine} />
       <Lumi state={state} detail={detail} />
       {remotes && <RemoteFlyers remotes={remotes} />}
-      {xr ? <LumiXr state={state} active={!paused} /> : <CameraRig state={state} />}
+      {xr ? <LumiXr state={state} active={!paused} gaze={gaze} /> : <CameraRig state={state} />}
     </>
   );
 }
@@ -919,9 +934,19 @@ function CameraRig({ state }: { state: React.MutableRefObject<FlightState> }) {
  * dotyk a klávesnice. Kdyby VR mělo vlastní větev, rozešlo by se to se
  * simulací i se serverem — stejné pravidlo jako u `TouchPad`.
  */
-function LumiXr({ state, active }: { state: React.MutableRefObject<FlightState>; active: boolean }) {
+function LumiXr({
+  state,
+  active,
+  gaze,
+}: {
+  state: React.MutableRefObject<FlightState>;
+  active: boolean;
+  gaze: React.MutableRefObject<{ x: number; y: number } | null>;
+}) {
   const origin = useRef<THREE.Group>(null);
   const keys = useVrKeys();
+  const { camera } = useThree();
+  const forward = useMemo(() => new THREE.Vector3(), []);
 
   useFrame(() => {
     const flight = state.current;
@@ -930,6 +955,22 @@ function LumiXr({ state, active }: { state: React.MutableRefObject<FlightState>;
       origin.current.position.set(flight.x - 2.4, flight.y + 1.1, 4.4);
       origin.current.rotation.y = 0.32;
     }
+
+    /**
+     * Let pohledem: kam se hlava dívá, tam se letí.
+     *
+     * Kamera v XR **je** hlava, takže se bere její forward vektor a promítne
+     * se do roviny hry (x/y) — `z` je v Lumi jen kulisa. Když se hráč dívá
+     * kolmo dolů, vodorovná složka zmizí a zůstane klesání; to je záměr,
+     * ne degenerace (normalizuje se s minimem).
+     */
+    camera.getWorldDirection(forward);
+    const flat = Math.hypot(forward.x, forward.y);
+    if (!active || flat < 0.02) {
+      gaze.current = null;
+      return;
+    }
+    gaze.current = { x: forward.x / flat, y: forward.y / flat };
   });
 
   return (

@@ -77,7 +77,7 @@ export default function GdprPage() {
       <h3>
         <T cs="2.1 Při nákupu v e-shopu" en="2.1 When you buy in the e-shop" />
       </h3>
-      <table>
+      <div className="table-scroll"><table>
         <thead>
           <tr>
             <th><T cs="Údaj" en="Data" /></th>
@@ -112,7 +112,7 @@ export default function GdprPage() {
             <td><T cs="Oprávněný zájem" en="Legitimate interest" /></td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
 
       <h3>
         <T cs="2.2 Při těžbě ZION tokenů" en="2.2 When mining ZION tokens" />
