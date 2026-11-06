@@ -175,3 +175,23 @@ Codemod: 231 indexací → `tx5`, 21 inline ternárů → `t5`.
 **Stav F2b:** 272 + 424 = **696 řetězců** hotovo; zbývá ~830 v 60 souborech
 (ArchiveLock 42, ContractsPageClient 39, KnihovnaPanel 35, zion-archive 35, whitepapers 35,
 te-piko-ora 35, QvSection 34, team 32, golden-republic-bohemia 31…).
+
+---
+
+## 10. F2b — dávka 4: Archive, whitepapers, Te Pīko Ora (180 řetězců)
+
+`ArchiveLock` (40), `zion-archive` (33), `whitepapers` (34), `te-piko-ora` (73).
+
+**Tři pasti codemodu (vše chyceno `tsc`):**
+1. `X?.prop[l]` → `category?.tx5(title, lang)` rozseklo optional chaining (3 místa).
+2. Pole v copy (`{cs: [...], en: [...]}`) nesmí přes `tx5` (2 místa).
+3. Dvě stránky čtou copy přes alias `const l = lang === 'cs' ? 'cs' : 'en'` → `Copy.x[l]`;
+   nahrazeno `tx5(Copy.x, lang)` (49 + 32 míst), `l` zůstal pro formátování dat.
+
+**Ověřeno živě** (deploy `20261106T141427Z`): ES „Documentación / Descargar",
+PT „Documentação / ilha", FR „Documentation / Télécharger / île / oiseau",
+`/zion-archive` „biblioteca, livro" / „bibliothèque, livre", 0 pageerror, `tsc` 0.
+
+**Stav F2b:** 696 + 180 = **876 řetězců** hotovo; zbývá ~650 v 56 souborech
+(ContractsPageClient 39, KnihovnaPanel 35, QvSection 34, team 32,
+golden-republic-bohemia 31, l5-free-world, market, pool, explorer…).
