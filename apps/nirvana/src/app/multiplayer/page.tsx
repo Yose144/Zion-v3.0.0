@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useI18n, tx } from '@/core/i18n';
+import { LOBBY_COPY, type LobbyCopyKey } from './copy';
 import { useNet } from '@/core/net/useNet';
 import { watchHref } from '@/core/net/watch';
 import { ChatPanel } from '@/core/net/ChatPanel';
@@ -97,6 +98,8 @@ const STATE_LABEL: Record<RoomState, { cs: string; en: string }> = {
 
 export default function MultiplayerPage() {
   const { lang } = useI18n();
+  /** Texty lobby jdou přes `app/multiplayer/copy.ts` — žádné `cs ? :` v JSX. */
+  const l = useCallback((key: LobbyCopyKey) => tx(LOBBY_COPY[key], lang), [lang]);
   const cs = lang === 'cs';
   const { status, you, online, rooms, roomId, joinGame, joinRoom, leaveRoom, lastError } = useNet();
   const [invite, setInvite] = useState<string | null>(null);
@@ -177,7 +180,7 @@ export default function MultiplayerPage() {
       <header className="lobby-chrome">
         <div>
           <strong>MULTIPLAYER</strong>
-          <span>{cs ? 'kdo právě hraje' : 'who is playing right now'}</span>
+          <span>{l('whoPlays')}</span>
         </div>
         <Link href="/" className="lobby-back">
           ← Nirvana
@@ -201,10 +204,10 @@ export default function MultiplayerPage() {
 
       {roomId && (
         <section className="lobby-mine">
-          <strong>{cs ? 'Jsi v místnosti' : 'You are in room'} {roomId}</strong>
+          <strong>{l('inRoom')} {roomId}</strong>
           {myGame ? (
             <Link href={myGame.href} className="lobby-btn is-primary">
-              {cs ? 'Otevřít hru' : 'Open the game'} →
+              {l('openGame')} →
             </Link>
           ) : null}
           <InviteButton
@@ -213,10 +216,10 @@ export default function MultiplayerPage() {
             label={{ cs: 'Pozvat odkazem', en: 'Copy invite link' }}
           />
           <button type="button" className="lobby-btn" onClick={() => copy(roomId, 'code')}>
-            {copied === 'code' ? (cs ? 'kód ✓' : 'code ✓') : cs ? 'Kód' : 'Code'}
+            {copied === 'code' ? (l('codeCopied')) : l('code')}
           </button>
           <button type="button" className="lobby-btn" onClick={leaveRoom}>
-            {cs ? 'Odejít' : 'Leave'}
+            {l('leave')}
           </button>
         </section>
       )}
@@ -228,7 +231,7 @@ export default function MultiplayerPage() {
           <input
             readOnly
             value={manual}
-            aria-label={cs ? 'pozvánka' : 'invite'}
+            aria-label={l('invite')}
             onFocus={(event) => event.currentTarget.select()}
           />
           <button type="button" className="lobby-btn" onClick={() => setManual(null)}>
@@ -237,15 +240,15 @@ export default function MultiplayerPage() {
         </div>
       )}
 
-      <div className="lobby-mode" role="group" aria-label={cs ? 'režim nových místností' : 'new room mode'}>
-        <span>{cs ? 'Nové místnosti' : 'New rooms'}</span>
+      <div className="lobby-mode" role="group" aria-label={l('newRoomMode')}>
+        <span>{l('newRooms')}</span>
         <button
           type="button"
           className={mode === 'bots' ? 'is-active' : ''}
           aria-pressed={mode === 'bots'}
           onClick={() => pickMode('bots')}
         >
-          🤖 {cs ? 's boty' : 'with bots'}
+          🤖 {l('withBots')}
         </button>
         <button
           type="button"
@@ -253,7 +256,7 @@ export default function MultiplayerPage() {
           aria-pressed={mode === 'humans'}
           onClick={() => pickMode('humans')}
         >
-          👤 {cs ? 'jen lidé' : 'humans only'}
+          👤 {l('humansOnly')}
         </button>
         <em>
           {mode === 'humans'
@@ -288,7 +291,7 @@ export default function MultiplayerPage() {
 
               {open.length === 0 ? (
                 <p className="lobby-empty">
-                  {cs ? 'nikdo nehraje — založ místnost' : 'nobody is playing — start a room'}
+                  {l('nobody')}
                 </p>
               ) : (
                 <ul className="lobby-rooms">
@@ -306,8 +309,8 @@ export default function MultiplayerPage() {
                       <button
                         type="button"
                         className="lobby-link"
-                        title={cs ? 'zkopírovat pozvánku' : 'copy invite'}
-                        aria-label={cs ? 'zkopírovat pozvánku' : 'copy invite'}
+                        title={l('copyInvite')}
+                        aria-label={l('copyInvite')}
                         onClick={() => copy(inviteLink(room.id), room.id)}
                       >
                         {copied === room.id ? '✓' : '🔗'}
@@ -318,11 +321,11 @@ export default function MultiplayerPage() {
                         disabled={room.players >= room.maxPlayers}
                         onClick={() => joinRoom(game.id, room.id)}
                       >
-                        {cs ? 'Připojit' : 'Join'}
+                        {l('join')}
                       </button>
                       {/* Dívat se dá i na plnou místnost — divák nezabírá sedlo. */}
                       <a className="lobby-watch" href={watchHref(game.id, room.id)}>
-                        {cs ? 'Dívat se' : 'Watch'}
+                        {l('watch')}
                       </a>
                     </li>
                   ))}
@@ -344,7 +347,7 @@ export default function MultiplayerPage() {
                       : 'Start a room'}
                 </button>
                 <Link href={game.href} className="lobby-btn">
-                  {cs ? 'Sólo' : 'Solo'}
+                  {l('solo')}
                 </Link>
               </div>
             </article>
@@ -354,7 +357,7 @@ export default function MultiplayerPage() {
 
       {/* Chat je tady, ne jen v plovoucím doku: v lobby se domlouváš,
           než do hry vůbec vstoupíš. Stejná komponenta jako dok. */}
-      <section className="lobby-chat" aria-label={cs ? 'chat' : 'chat'}>
+      <section className="lobby-chat" aria-label={l('chat')}>
         <ChatPanel variant="inline" />
       </section>
       </div>

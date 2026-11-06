@@ -7,6 +7,7 @@ import { OrbitControls } from '@react-three/drei';
 import { XR, createXRStore } from '@react-three/xr';
 import * as THREE from 'three';
 import { useI18n, tx } from '@/core/i18n';
+import { PARK_COPY, type ParkCopyKey } from './copy';
 import { GAME_LINKS } from '@/core/games/links';
 import { play, unlock, type SoundName } from '@/core/audio/engine';
 import { PARK_CAMERA, ParkScene } from '@/core/scene/park/ParkScene';
@@ -52,8 +53,9 @@ const TITLES: { id: ParkGameId; title: { cs: string; en: string } }[] = [
 
 const BOARD = TITLES;
 
-function titleOf(id: ParkGameId, cs: boolean): string {
-  return TITLES.find((entry) => entry.id === id)?.title[cs ? 'cs' : 'en'] ?? id;
+function titleOf(id: ParkGameId, lang: 'cs' | 'en' | 'es'): string {
+  const entry = TITLES.find((row) => row.id === id);
+  return entry ? tx(entry.title, lang) : id;
 }
 
 const RIDE_SECONDS = 25; // jedna otočka kola při jízdě
@@ -75,6 +77,8 @@ const SCORE_SOUND: Record<CanvasGameId, SoundName> = {
 
 export default function ParkPage() {
   const { lang } = useI18n();
+  /** Texty obrazovky jdou přes `app/park/copy.ts` — žádné `cs ? :` v JSX. */
+  const l = useCallback((key: ParkCopyKey) => tx(PARK_COPY[key], lang), [lang]);
   const cs = lang === 'cs';
 
   const [profile, setProfile] = useState<ParkProfile | null>(null);
@@ -195,7 +199,7 @@ export default function ParkPage() {
         ctx.fillText('JUPITER STATION', GAME_W / 2, GAME_H / 2 - 26);
         ctx.fillStyle = 'rgba(244, 234, 210, 0.7)';
         ctx.font = '16px ui-monospace, monospace';
-        ctx.fillText(cs ? 'vyber si skříň' : 'pick a cabinet', GAME_W / 2, GAME_H / 2 + 4);
+        ctx.fillText(l('pickCabinet'), GAME_W / 2, GAME_H / 2 + 4);
         ctx.fillStyle = `rgba(255, 209, 102, ${0.35 + Math.sin(t * 2) * 0.25})`;
         ctx.font = 'bold 20px ui-monospace, monospace';
         ctx.fillText('◉', GAME_W / 2, GAME_H / 2 + 46);
@@ -316,7 +320,7 @@ export default function ParkPage() {
     setGalleryTime(GALLERY_SECONDS);
     setGallery(true);
     play('open');
-    setNotice(cs ? 'Střelnice · 25 sekund' : 'Gallery · 25 seconds');
+    setNotice(l('galleryStart'));
   }, [cs, stopGame]);
 
   const endGallery = useCallback(
@@ -330,7 +334,7 @@ export default function ParkPage() {
   const ride = useCallback(() => {
     const current = profile ?? loadProfile();
     if (current.tokens < WHEEL_COST) {
-      setNotice(cs ? 'Chybí žeton — dohraj hru' : 'No token left — finish a game');
+      setNotice(l('noToken'));
       return;
     }
     const next = spendTokens(current, WHEEL_COST);
@@ -338,7 +342,7 @@ export default function ParkPage() {
     setProfile(next);
     stopGame();
     setRiding(true);
-    setNotice(cs ? 'Jízda začíná' : 'Ride starts');
+    setNotice(l('rideStart'));
   }, [cs, profile, stopGame]);
 
   /**
@@ -350,7 +354,7 @@ export default function ParkPage() {
     (completed: boolean) => {
       setRiding(false);
       if (!completed) {
-        setNotice(cs ? 'Jízda ukončena' : 'Ride ended');
+        setNotice(l('rideEnd'));
         return;
       }
       const bonus = claimRideBonus(profile ?? loadProfile());
@@ -415,7 +419,7 @@ export default function ParkPage() {
           {xr ? (
             <XR store={xrStore}>
               <ParkScene
-                lang={cs ? 'cs' : 'en'}
+                lang={lang}
                 activeGame={active}
                 screenTexture={texture}
                 scores={scores}
@@ -431,7 +435,7 @@ export default function ParkPage() {
           ) : (
             <>
               <ParkScene
-                lang={cs ? 'cs' : 'en'}
+                lang={lang}
                 activeGame={active}
                 screenTexture={texture}
                 scores={scores}
@@ -469,10 +473,10 @@ export default function ParkPage() {
         </Link>
         <div className="park-title">
           <strong>Jupiter Station</strong>
-          <span>{cs ? 'pouť · hry · ruské kolo' : 'fair · games · ferris wheel'}</span>
+          <span>{l('kicker')}</span>
         </div>
         <div className="park-hud">
-          <span className="park-tokens" title={cs ? 'Žetony' : 'Tokens'}>
+          <span className="park-tokens" title={l('tokens')}>
             ◉ {tokens}
           </span>
           {!xr && (
@@ -482,7 +486,7 @@ export default function ParkPage() {
           )}
           {riding && (
             <button type="button" className="park-btn" onClick={() => endRide(false)}>
-              {cs ? 'Sesednout' : 'Get off'}
+              {l('getOff')}
             </button>
           )}
         </div>
@@ -490,15 +494,15 @@ export default function ParkPage() {
 
       {gallery && (
         <section className="park-gallery-hud" aria-live="polite">
-          <strong>{cs ? 'STŘELNICE' : 'GALLERY'}</strong>
+          <strong>{l('gallery')}</strong>
           <span>
-            {galleryScore} {cs ? 'b.' : 'pts'}
+            {galleryScore} {l('pointsShort')}
           </span>
           <span className={galleryTime <= 5 ? 'is-low' : ''}>
-            {galleryTime} {cs ? 's' : 's'}
+            {galleryTime} {l('seconds')}
           </span>
           <button type="button" className="park-btn" onClick={() => setGallery(false)}>
-            {cs ? 'Ukončit' : 'Quit'}
+            {l('quit')}
           </button>
         </section>
       )}
@@ -520,7 +524,7 @@ export default function ParkPage() {
               ↑
             </TouchButton>
             <TouchButton code="Space" className="is-small">
-              {cs ? 'AKCE' : 'ACTION'}
+              {l('action')}
             </TouchButton>
             <TouchButton code="ArrowDown" className="is-small">
               ↓
@@ -529,18 +533,18 @@ export default function ParkPage() {
         </div>
         {game && (
           <div className="park-dock-copy">
-            <strong>{game.title[cs ? 'cs' : 'en']}</strong>
+            <strong>{tx(game.title, lang)}</strong>
             <span>
-              {cs ? 'skóre' : 'score'} {score}
+              {l('score')} {score}
             </span>
-            <small>{game.hint[cs ? 'cs' : 'en']}</small>
+            <small>{tx(game.hint, lang)}</small>
             {finished ? (
               <button type="button" className="park-btn" onClick={() => active && startGame(active)}>
-                {cs ? 'Hrát znovu' : 'Play again'}
+                {l('playAgain')}
               </button>
             ) : null}
             <button type="button" className="park-btn" onClick={stopGame}>
-              {cs ? 'Ukončit hru' : 'Quit game'}
+              {l('quitGame')}
             </button>
           </div>
         )}
@@ -549,22 +553,22 @@ export default function ParkPage() {
       {!active && !gallery && (
         <section className="park-panel">
           <header>
-            <strong>{cs ? 'VYBER SI SKŘÍŇ' : 'PICK A CABINET'}</strong>
+            <strong>{l('pickCabinetTitle')}</strong>
           </header>
           <div className="park-games">
             {PARK_GAMES.map((entry) => {
               const best = profile?.best[entry.id];
               return (
                 <button key={entry.id} type="button" onClick={() => startGame(entry.id)}>
-                  <strong>{entry.title[cs ? 'cs' : 'en']}</strong>
-                  <small>{entry.hint[cs ? 'cs' : 'en']}</small>
-                  {best ? <em className="park-best">{cs ? 'rekord' : 'best'} {best}</em> : null}
+                  <strong>{tx(entry.title, lang)}</strong>
+                  <small>{tx(entry.hint, lang)}</small>
+                  {best ? <em className="park-best">{l('best')} {best}</em> : null}
                 </button>
               );
             })}
           </div>
           <button type="button" className="park-btn park-ride-btn" onClick={startGallery}>
-            {cs ? 'Střelnice · 25 s · 3D terče' : 'Shooting gallery · 25 s · 3D targets'}
+            {l('galleryHint')}
           </button>
           <button type="button" className="park-btn park-ride-btn" onClick={ride} disabled={riding}>
             {cs
@@ -595,15 +599,15 @@ export default function ParkPage() {
 
           {challenge && (
             <div className={`park-challenge${challengeDone ? ' is-done' : ''}`}>
-              <strong>{cs ? 'DENNÍ VÝZVA' : 'DAILY CHALLENGE'}</strong>
+              <strong>{l('daily')}</strong>
               <span>
-                {titleOf(challenge.game, cs)}
+                {titleOf(challenge.game, lang)}
                 {' · '}
-                {cs ? 'cíl' : 'target'} {challenge.target}
+                {l('target')} {challenge.target}
               </span>
               {(profile?.best[challenge.game] ?? 0) > 0 && (
                 <em className="park-best">
-                  {cs ? 'rekord' : 'best'} {profile!.best[challenge.game]} / {cs ? 'cíl' : 'target'}{' '}
+                  {l('best')} {profile!.best[challenge.game]} / {l('target')}{' '}
                   {challenge.target}
                 </em>
               )}
@@ -620,11 +624,11 @@ export default function ParkPage() {
           )}
 
           <header className="park-board-head">
-            <strong>{cs ? 'TABULE' : 'BOARD'}</strong>
+            <strong>{l('board')}</strong>
             <input
               value={nick}
               onChange={(event) => nickChange(event.target.value)}
-              aria-label={cs ? 'Přezdívka' : 'Nickname'}
+              aria-label={l('nickname')}
               maxLength={12}
               spellCheck={false}
             />
@@ -632,7 +636,7 @@ export default function ParkPage() {
           <div className="park-board-list">
             {BOARD.map((entry) => (
               <div key={entry.id} className="park-board-col">
-                <em>{entry.title[cs ? 'cs' : 'en']}</em>
+                <em>{tx(entry.title, lang)}</em>
                 {(scores[entry.id] ?? []).slice(0, 5).map((row, index) => (
                   <span key={`${row.at}-${index}`}>
                     {index + 1}. {row.name} · {row.score}

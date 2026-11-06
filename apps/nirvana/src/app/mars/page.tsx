@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Canvas } from '@react-three/fiber';
 import { XR, createXRStore } from '@react-three/xr';
-import { useI18n } from '@/core/i18n';
+import { tx, useI18n } from '@/core/i18n';
+import { ARENA_COPY, type ArenaCopyKey } from './copy';
 import { MarsArena, type ArenaResult, type ArenaStats } from '@/core/arena/MarsArena';
 import { MarsMultiplayer, type MpStats } from '@/core/arena/MarsMultiplayer';
 import { ArenaTouchControls, createTouchState } from '@/core/arena/ArenaTouch';
@@ -39,6 +40,8 @@ const EMPTY_STATS: ArenaStats = {
 
 export default function MarsPage() {
   const { lang } = useI18n();
+  /** Texty HUD jdou přes `app/mars/copy.ts` — žádné `cs ? :` v JSX. */
+  const l = useCallback((key: ArenaCopyKey) => tx(ARENA_COPY[key], lang), [lang]);
   const cs = lang === 'cs';
   const [phase, setPhase] = useState<Phase>('idle');
   const [presenting, setPresenting] = useState(false);
@@ -98,7 +101,7 @@ export default function MarsPage() {
 
       const result = recordRun({ game: 'arena', score: outcome.score, nickname: pickNickname() });
       setNotice(
-        describeRun(result, cs, [outcome.reason === 'frags' ? 'frag limit' : cs ? 'čas' : 'time']),
+        describeRun(result, cs, [outcome.reason === 'frags' ? 'frag limit' : l('time')]),
       );
     },
     [cs],
@@ -151,12 +154,12 @@ export default function MarsPage() {
             </span>
             <span className="arena-armor">🛡 {mpStats?.armor ?? 0}</span>
             <span className="arena-frags">
-              {cs ? 'fraggy' : 'frags'} {mpStats?.frags ?? 0}/{FRAG_LIMIT}
+              {l('frags')} {mpStats?.frags ?? 0}/{FRAG_LIMIT}
             </span>
             <span className="arena-time">{mpStats?.timeLeft ?? MATCH_SECONDS}s</span>
             <span className="arena-weapon">{mpStats?.weapon === 'rocket' ? `ROCKET ×${mpStats?.ammo ?? 0}` : mpStats?.weapon === 'mg' ? `MG ×${mpStats?.ammo ?? 0}` : 'RAIL'}</span>
             <span className={`arena-weapon${mpStats?.connected ? '' : ' is-offline'}`}>
-              {mpStats?.connected ? `${mpStats?.ping ?? 0} ms` : cs ? 'offline' : 'offline'}
+              {mpStats?.connected ? `${mpStats?.ping ?? 0} ms` : l('offline')}
             </span>
           </div>
           {mpStats && mpStats.players.length > 1 && (
@@ -182,7 +185,7 @@ export default function MarsPage() {
           </div>
           {mpStats?.matchState === 'ended' && (
             <div className="arena-respawn">
-              {cs ? 'konec zápasu — nový začne za chvíli' : 'match over — new one starts shortly'}
+              {l('matchOver')}
             </div>
           )}
         </>
@@ -197,7 +200,7 @@ export default function MarsPage() {
             </span>
             <span className="arena-armor">🛡 {stats.armor}</span>
             <span className="arena-frags">
-              {cs ? 'fraggy' : 'frags'} {stats.frags}/{FRAG_LIMIT}
+              {l('frags')} {stats.frags}/{FRAG_LIMIT}
             </span>
             <span className="arena-time">{stats.timeLeft}s</span>
             <span className="arena-weapon">
@@ -226,7 +229,7 @@ export default function MarsPage() {
           </div>
           {stats.respawnIn > 0 && (
             <div className="arena-respawn">
-              {cs ? 'respawN za' : 'respawn in'} {stats.respawnIn}
+              {l('respawnIn')} {stats.respawnIn}
             </div>
           )}
         </>
@@ -236,7 +239,7 @@ export default function MarsPage() {
         <section className="arena-panel">
           <header>
             <strong>MARS ARENA</strong>
-            <span>{cs ? 'deathmatch · Quake-style' : 'deathmatch · Quake-style'}</span>
+            <span>{l('mode')}</span>
           </header>
 
           {phase === 'idle' && (
@@ -248,21 +251,21 @@ export default function MarsPage() {
               </p>
               <ul className="arena-keys">
                 <li>
-                  <kbd>{coarse ? 'joystick' : 'WASD'}</kbd> {cs ? 'pohyb' : 'move'}
+                  <kbd>{coarse ? 'joystick' : 'WASD'}</kbd> {l('move')}
                 </li>
                 <li>
-                  <kbd>mezerník</kbd> {cs ? 'skok' : 'jump'}
+                  <kbd>mezerník</kbd> {l('jump')}
                 </li>
                 <li>
-                  <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> {cs ? 'rail / rakety / MG' : 'rail / rockets / MG'}
+                  <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> {l('weapons')}
                 </li>
                 <li>
-                  <kbd>klik</kbd> {cs ? 'střelba' : 'fire'}
+                  <kbd>klik</kbd> {l('fire')}
                 </li>
               </ul>
               {coarse && (
                 <label className="arena-slider">
-                  <span>{cs ? 'citlivost pohledu' : 'look sensitivity'}</span>
+                  <span>{l('lookSensitivity')}</span>
                   <input
                     type="range"
                     min={LOOK_MIN}
@@ -276,7 +279,7 @@ export default function MarsPage() {
               )}
               <div className="arena-actions">
                 <button type="button" className="park-btn" onClick={() => setPhase('playing')}>
-                  {cs ? 'Vstoupit do arény' : 'Enter the arena'}
+                  {l('enter')}
                 </button>
                 <button
                   type="button"
@@ -286,10 +289,10 @@ export default function MarsPage() {
                     setPhase('playing');
                   }}
                 >
-                  {cs ? 'Multiplayer — proti lidem' : 'Multiplayer — against people'}
+                  {l('multiplayer')}
                 </button>
                 <Link href="/park" className="arena-link">
-                  {cs ? '← zpět na pouť' : '← back to the fair'}
+                  {l('backToFair')}
                 </Link>
               </div>
               <p className="arena-small">
@@ -310,25 +313,25 @@ export default function MarsPage() {
             <>
               <div className="arena-result">
                 <div>
-                  <em>{cs ? 'fraggy' : 'frags'}</em>
+                  <em>{l('frags')}</em>
                   <strong>{result.frags}</strong>
                 </div>
                 <div>
-                  <em>{cs ? 'smrti' : 'deaths'}</em>
+                  <em>{l('deaths')}</em>
                   <strong>{result.deaths}</strong>
                 </div>
                 <div>
-                  <em>{cs ? 'skóre' : 'score'}</em>
+                  <em>{l('score')}</em>
                   <strong>{result.score}</strong>
                 </div>
               </div>
               {notice && <p className="arena-notice">{notice}</p>}
               <div className="arena-actions">
                 <button type="button" className="park-btn" onClick={() => setPhase('playing')}>
-                  {cs ? 'Odveta' : 'Rematch'}
+                  {l('rematch')}
                 </button>
                 <Link href="/park" className="arena-link">
-                  {cs ? '← zpět na pouť' : '← back to the fair'}
+                  {l('backToFair')}
                 </Link>
               </div>
             </>

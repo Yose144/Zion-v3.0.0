@@ -442,7 +442,7 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
 | **L-7** | Denní světlo: jedenkrát denně jiná pozice sedmi světel (seed z datumu) | stejný den = stejná obloha pro všechny, zítra jiná; test determinismu | nízké | ✅ 2026-11-05 |
 | **L-8** | Kapitoly příběhu mezi cestami (text po každé cestě) | po `calm` a `wind` se odemkne jiný úvodní text, ne jen cesta | nízké | ✅ 2026-11-05 |
 | **L-9** | Přístupnost: `prefers-reduced-motion` vypne vítr a částice | s preferencí se nehýbe pozadí, hra zůstane hratelná | nízké | ✅ 2026-11-05 |
-| **L-10** | Lokalizace do třetího jazyka (**ES** — trh + kánon) | všechny texty z `world.ts` mají klíč, žádný hardcoded string v `page.tsx` | nízké | ⚠️ Lumi hotové, hry dědí `en` |
+| **L-10** | Lokalizace do třetího jazyka (**ES** — trh + kánon) | všechny texty z `world.ts` mají klíč, žádný hardcoded string v `page.tsx` | nízké | ⚠️ Lumi + pouť + lobby + Mars hotové; `/earth`, `/mercury`, `/venus`, `/fleet`, `/avatars` dědí `en` |
 | **L-11** | Odměna za darování v kooperaci (společná svatyně = +body všem) | dva hráči doletí → oba dostanou bonus, ne jen ten, kdo doletěl první | střední | ⬜ |
 | **L-12** | Výkon: instancované částice na mobilu | 390×844 ≥ 30 fps (měřeno `.artifacts/probe/lumi-perf.mjs` — rAF 2 s + `__lumiDebug()`), draw calls < 60 | střední | ✅ 2026-11-05 |
 
@@ -553,3 +553,4 @@ co pokazit; jakákoli „výzva" by rozbila její smysl.
 | 2026-11-05 | **L-8 kapitoly** (dozvuk po každé cestě + jiný úvod pro vracejícího se hráče, bez změny schématu deníku) — `lumi-journal` **43/43**; **L-4 VR vrstva** (`<XR>`, `XROrigin`, syntetické klávesy, `VrButton`) — 2D ověřeno auditem (**54/54**), headset netestován a „letět pohledem" chybí |
 | 2026-11-05 | **L-6 předání světla** (`{t:'handoff'}`, per-flyer světla na serveru, cíl = nejbližší letec, event `gift`, HUD `🤲 N` + hláška) — net **23/23**, živý test dvou prohlížečů **4/4**, audit 54/54; `PROTO_VERSION 32`, nenasazeno |
 | 2026-11-05 | **L-10 jazyky**: `Lang` na tři hodnoty, `tx()` s fallbackem, `nextLang` cyklus, persistence `nirvana.lang.v1`, `?lang=es`; celá Lumi ve slovníku `core/lumi/copy.ts` + 19 textů světa v ES; chrome (63 klíčů) v ES. Ověřeno: ES/EN/CS render, uložení volby, cyklus přepínače, 0 přesahu na 390 px |
+| 2026-11-05 | **L-10 pokračování:** pouť (`app/park/copy.ts`, 24 textů), lobby (`app/multiplayer/copy.ts`, 17) a Mars (`app/mars/copy.ts`, 17) ve slovnících a v ES; `ParkScene` dostal `tx()` a `Lang` s `es`. `mobile-audit` PASSED, `tsc` + `next build` čisté |

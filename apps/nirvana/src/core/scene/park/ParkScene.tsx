@@ -8,6 +8,7 @@ import { dampFactor } from '@/core/design/motion';
 import { PARK_GAMES, type CanvasGameId } from '@/core/park/games';
 import { ShootingGallery } from './ShootingGallery';
 import type { ParkScores } from '@/core/park/scores';
+import { tx } from '@/core/i18n';
 
 /**
  * JUPITER STATION — pouť.
@@ -118,7 +119,7 @@ function Cabinet({
 }: {
   id: CanvasGameId;
   angle: number;
-  lang: 'cs' | 'en';
+  lang: 'cs' | 'en' | 'es';
   active: boolean;
   texture: THREE.CanvasTexture | null;
   onSelect: (id: CanvasGameId) => void;
@@ -175,7 +176,7 @@ function Cabinet({
         <meshBasicMaterial color="#e8a33d" transparent opacity={active ? 0.85 : 0.4} />
       </mesh>
       <Html zIndexRange={[11, 0]} position={[0, 3.7, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-        <span className={`park-cabinet${active ? ' is-active' : ''}`}>{game.title[lang]}</span>
+        <span className={`park-cabinet${active ? ' is-active' : ''}`}>{tx(game.title, lang)}</span>
       </Html>
       {active && (
         <pointLight position={[0, 2.2, 1.3]} intensity={6} color="#ffd9a0" distance={6} decay={2} />
@@ -361,7 +362,7 @@ function RideCamera({ active }: { active: boolean }) {
   return null;
 }
 
-function ScoreBoard({ scores, lang }: { scores: ParkScores; lang: 'cs' | 'en' }) {
+function ScoreBoard({ scores, lang }: { scores: ParkScores; lang: 'cs' | 'en' | 'es' }) {
   return (
     <group position={[-9.4, 0, 3.4]} rotation={[0, 0.46, 0]}>
       <mesh position={[0, 2.4, 0]} castShadow>
@@ -374,10 +375,10 @@ function ScoreBoard({ scores, lang }: { scores: ParkScores; lang: 'cs' | 'en' })
       </mesh>
       <Html zIndexRange={[11, 0]} position={[0, 2.4, 0.2]} center distanceFactor={11} style={{ pointerEvents: 'none' }}>
         <div className="park-board">
-          <strong>{lang === 'cs' ? 'TABULE POUTI' : 'FAIR BOARD'}</strong>
+          <strong>{lang === 'cs' ? 'TABULE POUTI' : lang === 'es' ? 'TABLA DE LA FERIA' : 'FAIR BOARD'}</strong>
           {PARK_GAMES.map((game) => (
             <div key={game.id} className="park-board-row">
-              <em>{game.title[lang]}</em>
+              <em>{tx(game.title, lang)}</em>
               <span>{(scores[game.id]?.[0]?.score ?? 0).toString().padStart(4, '0')}</span>
             </div>
           ))}
@@ -401,7 +402,7 @@ export function ParkScene({
   onGalleryTime,
   onGalleryEnd,
 }: {
-  lang: 'cs' | 'en';
+  lang: 'cs' | 'en' | 'es';
   activeGame: CanvasGameId | null;
   screenTexture: THREE.CanvasTexture | null;
   scores: ParkScores;

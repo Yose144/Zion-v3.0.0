@@ -2318,10 +2318,18 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   `three` + `@genesis/runtime`). Pro výběr textu je `kit/localized.ts`
   (`pickLang`), který chybějící `es` shodí na `en`; přímé `text[lang]` v shared
   scéně neprojde `tsc`, jakmile `lang` umí i jazyky, které scéna nemá.
-- **Co ještě není v ES:** hry (`/earth` 79, `/mercury` 35, `/park` 32, `/venus` 26,
-  `/mars` 20, `/fleet` 20, `/multiplayer` 17, `/avatars` 15 inline textů) dnes pro
-  `es` zobrazí angličtinu. Je to fallback, ne chyba — ale nemá se to hlásit jako
-  „přeloženo".
+- **Hotové povrchy v ES:** chrome (`COPY`), Lumi (`core/lumi/copy.ts`), pouť
+  (`app/park/copy.ts`), lobby (`app/multiplayer/copy.ts`), Mars (`app/mars/copy.ts`).
+- **Co ještě není v ES:** `/earth` (79 inline), `/mercury` (35), `/venus` (26),
+  `/fleet` (20), `/avatars` (15) — dnes pro `es` zobrazí angličtinu (fallback
+  z `tx()`), takže se to nemá hlásit jako „přeloženo".
+- **Kopírování textu do slovníku je mechanické, ale nesmí se dělat po jednom
+  kusu.** Vždycky projdi celý soubor (`grep -c "cs ?"` musí skončit na 0), jinak
+  zůstanou v JSX dvě tři věty, které nikdo nenajde — a přesně ty se pak ve
+  španělštině ukážou česky.
+- **Pozor na scene props:** `ParkScene` má vlastní `lang: 'cs' | 'en'`; když se
+  rozšíří `Lang` v appce, musí se rozšířit i prop, jinak `tsc` spadne na
+  předávání (`Type 'Lang' is not assignable to…`). Totéž u `titleOf(id, lang)`.
 
 ## Flotila z marketu — `/fleet` (2026-11-05)
 
