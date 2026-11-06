@@ -84,3 +84,28 @@ lumi 100 % · miriam 100 % · quantum-revolution: singleDoc. cs 10 / en 10 kapit
 - **Nová statusová slova:** `ZÁMĚR → INTENT` a `NÁVRH / FÁZE 0 → DRAFT / PHASE 0`. Zapsáno do plánu i AGENTS.
 - **Pozor na dvě čísla v CZ:** kap. 8 má „bloky po 144 mil. ZION" (kanonicky 144 **mld** — v EN použito 144 bn) a kap. 10/12 mají překlepy `Zlata republika`, `Dvanáct ohněd`, `Pupnek` — přeloženo podle významu, čísla nezměněna.
 - **⚠️ Provozní incident (`e1079c272`):** commit spuštěný jako `git add … && git commit` **strhl do mého commitu i soubory paralelní session**, které byly už nastagedované (`apps/nirvana/**` — 13 souborů + `NIRVANA-LUMI-PLAN.md`). Historie se nepřepisuje (force-push na `main` je zakázán), takže obsah zůstal, ale publikoval se dřív, než jeho autor zamýšlel. **Pravidlo odteď:** `git diff --cached --name-status` **samostatně před** commitem a commit výhradně přes pathspec (`git commit -m … -- <cesty>`). Zapsáno do `apps/website-v2.9/AGENTS.md`.
+
+## 9. Kontrola parity CZ ⇄ EN (2026-11-06, po dokončení překladu)
+
+Po dosažení 189/189 vznikl **trvale použitelný nástroj**, který hlídá, že překlad nerozjede strukturu:
+`apps/website-v2.9/scripts/check-archive-parity.mjs` (`npm run check:archive-parity` v `apps/website-v2.9`).
+
+Pro každou dvojici CZ ⇄ EN porovnává: **množinu relativních odkazů** (s normalizací `%20` a `_EN`/`_CZ` suffixu — EN soubory legitimně odkazují na `*_EN.md`), **počet `##`/`###`**, **počet řádků tabulek**, **počet code fence** a **poměr velikostí** (pod 45 % = podezření na stub). `--json` a `--verbose` pro detail.
+
+**První běh: 187 dvojic, 32 „driftů“.** Triážích se ukázalo, že většina byly false positives (odkazy na `_EN` varianty, `%20` vs. mezera, trailing space v tabulkách). Po zpřesnění pravidel a po opravách zbylo **5 skutečných mezer**:
+
+| Soubor | Co chybí | Povaha |
+|---|---|---|
+| `korpus/BodhiGaia/00-README_EN.md` | 2 sekce („Kompass čtyř knih“, „Mapa zdrojů“) + 7 řádků tabulek (83 % velikosti) | **starší zkrácená EN edice indexu**, ne kapitola |
+| `korpus/SulZeme/ZION_ONBOARDING_EN.md` | 3 podnadpisy (h2 16 vs 15, h3 25 vs 22) | starší EN edice onboarding textu |
+| `en/books/nirvana/kapitoly/00-README.md` | 2 odkazy (`../Issobella/00-README.md`, `./13-Tres-Marias.md`) + 1 řádek tabulky | starší EN edice indexu |
+| `korpus/SulZeme/00-README_EN.md` | 2 odkazy na onboarding (`./Onboarding.md`, `./ZION_ONBOARDING.md`) | index |
+| `korpus/MiseAmenti/README_EN.md` | self-link `./README.md` | kosmetika |
+
+**Všechny patří ke front matter nebo ke starším EN edicím, které nevznikly v této session** — do `enCoverage` nevstupují, takže **189/189 zůstává**. Opraveny byly naopak skutečné chyby v kapitolách:
+
+- **Království srdce, kapitoly 01–09**: EN text měl na konci kapitoly jen *text* (`→ Wood and Pitch`) bez odkazu — **čtenář se z EN kapitoly nemohl posunout dál**. Doplněno 9 odkazů podle CZ předlohy.
+- **Království srdce, `00-README` a `10-Epilog`**: doplněno 10 odkazů v tabulce Zastavení, 3 v Kompasu a 4 v epilogu (Maitreya, Surta, Nirvana 13, index) — EN index tak má stejnou navigaci jako CZ.
+- **`00-README` kralovstvi**: doplněn odkaz na epilog Maitreyi v mottu (`../../maitreya/kapitoly/epilog.md`).
+
+**Pravidlo pro příště:** po každé dávce překladu pustit `npm run check:archive-parity` — odhalí ztracený navigační odkaz nebo vypadlý řádek tabulky dřív, než se dostane do veřejného archivu.
