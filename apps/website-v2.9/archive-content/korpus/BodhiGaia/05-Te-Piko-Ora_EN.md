@@ -57,7 +57,7 @@ The carpenter carved into the mast of the canoe a circle with a dot in the middl
 
 ### Raiatea — the sacred heart of Polynesia
 
-Five archipelagos, 118 islands, 4 million km² of ocean. Raiatea is the place from which, according to tradition, the first settlers sailed to Hawaii, New Zealand and Rapa Nui; the marae **Taputapuātea** is a UNESCO World Heritage site. Phase 1 target: the valley of **Opoa** near Taputapuātea or the coast by the bay of **Fa'aroa** (river + lagoon + mountain). Tahiti (Teahupo'o) as an operational fallback, Huahine and the Marquesas as a horizon for 2030+.
+Five archipelagos, 118 islands, 4 million km² of ocean. Raiatea is the place from which, according to tradition, the first settlers sailed to Hawaii, New Zealand and Rapa Nui; the *marae* **Taputapuātea** is a UNESCO World Heritage site. Phase 1 target: the valley of **Opoa** near Taputapuātea or the coast by the bay of **Fa'aroa** (river + lagoon + mountain). Tahiti (Teahupo'o) as an operational fallback, Huahine and the Marquesas as a horizon for 2030+.
 
 ### The coconut palm as the Tree of Life
 

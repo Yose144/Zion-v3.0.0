@@ -83,7 +83,7 @@ This chapter is a register. It does not rewrite [`MiseAmenti/07-Registr-Dukazu.m
 
 1. **It is not a sale of land, shares or "tokenised soil".** The communities are legally separate entities; the ZION protocol owns no land and the L5 fund does not buy real estate without a DAO process that does not exist today.
 2. **It is not an investment.** No gate, gift or stay carries a yield. The framing "invest in paradise" is a violation of `MiseAmenti/08` §5.
-3. **It is not a religion or a lineage.** Bodhi, Dharma, Merkaba, piko, the Tree of Life are images. The book does not claim that ZION is a sacred text, that Dharma Temple is a Buddhist temple in the traditional sense, or that anyone in the project has spiritual authority.
+3. **It is not a religion or a lineage.** Bodhi, Dharma, Merkaba, *piko*, the Tree of Life are images. The book does not claim that ZION is a sacred text, that Dharma Temple is a Buddhist temple in the traditional sense, or that anyone in the project has spiritual authority.
 4. **It is not a claim about impact.** Without an impact packet (recipient, scope, budget, on-chain ref., evidence with provenance, limitations, independent verification) no project is "verified impact".
 5. **It is not a replacement for `StatusV3.md`, `MiseAmenti/07` or the community documents.** Where it differs, those prevail.
 6. **It is not an instrument of exclusion.** Consciousness Admission, vows and ceremonies must never serve to mark a person as "lesser", "impure" or "an enemy" (`MiseAmenti/05` §4).

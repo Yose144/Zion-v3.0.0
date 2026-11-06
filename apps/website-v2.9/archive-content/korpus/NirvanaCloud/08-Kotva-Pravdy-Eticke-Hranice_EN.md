@@ -42,7 +42,7 @@ This chapter gathers in one place the ethical guardrails that otherwise appear s
 - Mantras, mudras and mandalas mentioned in this series are used **exclusively in a pedagogical-metaphorical context**, never as game cosmetics, sound effects or a marketing symbol for sale.
 - Kailash and other sacred mountains are not depicted in any part of the ZION ecosystem (including OASIS, see `WORLD_TIBET.md`) as "conquerable" challenges.
 - The figure of the 14th Dalai Lama is mentioned only as a **public historical and ethical inspiration** (see `03-DALAJLAMA-A-SAMBHALA.md`), never as a physical person "portrayed" in game content without his consent.
-- Whenever this series is expanded in the future with further elements of Himalayan, Egyptian or other traditions, the same rule as in `WORLD_TIBET.md` §11.3 applies: **recommended consultation with experts on the given tradition** before any expansion into an interactive (game) format.
+- Whenever this series is expanded in the future with further elements of Himalayan, Egyptian or other traditions, the same rule as in `WORLD_TIBET.md` §11.3 applies: **recommended consultation with experts on that tradition** before any expansion into an interactive (game) format.
 
 ---
 

@@ -110,7 +110,7 @@ This book is a **living story** — and a living story survives only when the re
 
 ---
 
-## How to read Revelation in the context of ZION — the boundary
+## How to read Revelation alongside ZION — the boundary
 
 In this book Revelation is a **map**, not a **prediction**:
 

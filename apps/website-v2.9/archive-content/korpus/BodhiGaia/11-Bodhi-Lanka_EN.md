@@ -65,9 +65,9 @@ Sita nodded. *"And every tree. Because a tree does not grow in the earth. It gro
 | **Fire** | *Agni* | Dharma Temple | Trunk | Transformation, path, the silence of a volcano |
 | **Water** | *Āpas* | Te Pīko Ora | Crown | Flow, completion, wayfinding |
 | **Air** | *Vāyu* | Golden Republic Bohemia | Heart | Discourse, deciding, circle |
-| **Ether / space** | **Ākāśa** | **Bodhi Lanka** | **Akasha** | **The space that holds all; love as principle** |
+| **Ether / space** | *Ākāśa* | **Bodhi Lanka** | **Akasha** | **The space that holds all; love as principle** |
 
-Akasha in Hindu cosmology (samkhya, tantra) and Buddhist cosmology (abhidharma) is not "nothing". It is the substrate, the space in which the other four elements manifest. Without akasha there would be no place where earth lies, fire burns, water flows and air blows. **Love — prema — is in this frame not an element but a quality of akasha**: the space that allows everything to exist without itself burning, flowing, blowing or lying.
+Akasha in Hindu cosmology (samkhya, tantra) and Buddhist cosmology (abhidharma) is not "nothing". It is the substrate, the space in which the other four elements manifest. Without akasha there would be no place where earth lies, fire burns, water flows and air blows. **Love — *prema* — is in this frame not an element but a quality of akasha**: the space that allows everything to exist without itself burning, flowing, blowing or lying.
 
 ### Sri Maha Bodhi — the oldest living tree
 

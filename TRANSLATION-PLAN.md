@@ -207,7 +207,7 @@ ale do coverage nevstoupí).
 - Mantry ponechat v původním přepisu (`gate gate pāragate…`, `oṃ maṇi padme hūṃ`), s kurzívou.
 - Jména postav a míst: standardní anglický přepis (Krishna, Radha, Sita, Hanuman, Arjuna,
   Avalokiteshvara, Vairochana, Akshobhya, Amitabha…), konzistentně napříč knihami.
-- Odborné termíny: viz glosář §5.5.
+- Odborné termíny: viz glosář §5.6.
 
 ### 5.2 Markdown a odkazy
 
@@ -239,7 +239,20 @@ ale do coverage nevstoupí).
 - [ ] Soubor na **správné cestě** (§4) a se správným názvem.
 - [ ] `npm run build` prošel; audit hlásí +N kapitol a 0 chyb CS.
 
-### 5.5 Glosář (základ, rozšiřovat)
+### 5.5 Styl angličtiny (redakční standard, 2026-11-06)
+
+Překlady jsou **EN drafty psané z češtiny**; riziko není gramatika, ale **syntax, která je gramaticky správná a přesto není anglická**. Standard:
+
+1. **Jména bez diakritiky, termíny s diakritikou.** Vlastní jména = anglická forma (`Sita`, `Rama`, `Hanuman`, `Sadhu`, `Radha`, `Amitabha`, `Akasha`). Technické a sakrální termíny si drží původní přepis (`ākāśa`, `Pṛthvī`, `Āpas`, `Vāyu`, `Amṛtabhoja`, `bhakti`, `tatau`, `marae`, `tapu`).
+2. **Kurzíva jen v próze**, ne v tabulkových buňkách ani v tučných štítcích (`**The piko ritual:**` zůstává bez kurzívy). Kurzívou se značí slovo, které je v textu **půjčka**, ne vlastní jméno (`Te Pīko Ora` se nikdy nekurzíví jako termín).
+3. **Statusy doslovně** (viz §5.3) — jediná povolená sada je v `MiseAmenti/01-Kanon-a-Ustava`: `LIVE / BUILDING / HORIZON / HYPOTHESIS / MYTH` (+ `UNSUBSTANTIATED`, `INVALID CLAIM`, `INTENT`, `DRAFT / PHASE 0`). `VISION / STORY / PROPOSAL / PHYSICS` jsou interní sada knihy Nabukano.
+4. **Žádné kalky.** `it is necessary to` → imperativ nebo „X must…“; `the given X` → „that X“; `it concerns` → „this is / it is about“; `in the framework of` → „under / as part of“; `from the point of view of` → „for“. Vynucuje `npm run check:archive-parity` (třetí pass).
+5. **Rytmus.** Česká věta snese víc vedlejších vět než anglická. Kde EN přerůstá **80 slov** v próze, rozdělit (skript to hlásí; v tabulkách a seznamech rizik je dlouhý výčet legitimní).
+6. **Čísla se neaktualizují potichu.** Statický údaj musí nést **snímek data** a odkaz na živý zdroj („přes 112 000 bloků, snímek 2026-11-06; živá výška v `StatusV3.md`“), ne nové číslo, které za měsíc zestárne stejně.
+
+**Měření (2026-11-06, 134 korpusových EN souborů / 205 091 slov):** 0 tvrdých kalků; měkké zvyky `already` 131×, `so that` 110×, `precisely` 58× (report, ne chyba — v moderaci jsou v pořádku); 10 vět nad 80 slov v próze, většina z nich je výčet rizik v závorkách, kde je dlouhý dech záměrný.
+
+### 5.6 Glosář (základ, rozšiřovat)
 
 | CZ | EN |
 |---|---|

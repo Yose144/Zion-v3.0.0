@@ -163,11 +163,80 @@ for (const file of walk(CONTENT)) {
   }
 }
 
+/**
+ * Third pass — style. The translations are English drafts written from Czech, so
+ * the recurring risk is syntax that is grammatical but not English. Only true
+ * calques fail; soft habits (words that are fine in moderation) are counted and
+ * reported, never failed, because a machine cannot hear rhythm.
+ */
+const HARD_CALQUES = [
+  ['it is necessary to', 'rewrite as an imperative or "X must …"'],
+  ['it is appropriate to', 'rewrite as "X should …"'],
+  ['in the framework of', 'use "under" / "as part of"'],
+  ['within the framework of', 'use "under" / "as part of"'],
+  ['from the point of view of', 'use "for" / "from the side of"'],
+  ['in the sense that', 'use "in that" / restructure'],
+  ['it concerns', 'use "this is" / "it is about"'],
+  ['this concerns', 'use "this is" / "it is about"'],
+  ['the given ', 'use "that" / "the relevant"'],
+];
+
+const SOFT_HABITS = [
+  'already',
+  'so that',
+  'precisely',
+  'at the same time',
+  'the fact that',
+  'let us',
+  'thereby',
+  'however,',
+  'in the context of',
+  'it is possible to',
+];
+
+let styleProblems = 0;
+let longSentences = 0;
+const styleRows = [];
+const habitTotals = new Map();
+
+for (const file of walk(CONTENT)) {
+  if (!file.endsWith('_EN.md')) continue;
+  const text = readFileSync(file, 'utf8');
+  const hits = [];
+  text.split('\n').forEach((line, i) => {
+    if (/^\s*```/.test(line)) return;
+    const lower = line.toLowerCase();
+    for (const [phrase, fix] of HARD_CALQUES) {
+      // "the given " needs a following noun; skip "the given that/name/day"
+      if (phrase === 'the given ' && /the given (that|name|day|moment)\b/.test(lower)) continue;
+      let from = 0;
+      while (true) {
+        const at = lower.indexOf(phrase, from);
+        if (at === -1) break;
+        hits.push({ line: i + 1, phrase: phrase.trim(), fix });
+        from = at + phrase.length;
+      }
+    }
+    for (const habit of SOFT_HABITS) {
+      const n = lower.split(habit).length - 1;
+      if (n) habitTotals.set(habit, (habitTotals.get(habit) || 0) + n);
+    }
+    if (/^\s*(>|-|\d+\.|\|)/.test(line)) return; // prose only
+    for (const sentence of line.split(/(?<=[.!?])\s+/)) {
+      if (sentence.trim().split(/\s+/).length > 80) longSentences++;
+    }
+  });
+  if (hits.length) {
+    styleProblems += hits.length;
+    styleRows.push({ file: relative(CONTENT, file), hits });
+  }
+}
+
 if (JSON_OUT) {
   console.log(
-    JSON.stringify({ pairs: rows.length, problems, labelProblems, rows, labels: labelRows }, null, 2)
+    JSON.stringify({ pairs: rows.length, problems, labelProblems, styleProblems, style: styleRows, longSentences, rows, labels: labelRows }, null, 2)
   );
-  process.exit(problems || labelProblems ? 1 : 0);
+  process.exit(problems || labelProblems || styleProblems ? 1 : 0);
 }
 
 console.log(`\nZION Archive — CZ ⇄ EN parity: ${rows.length} pairs, ${problems} with drift\n`);
@@ -191,6 +260,24 @@ if (labelRows.length) {
   console.log('');
 }
 
+if (styleRows.length) {
+  console.log(`ZION Archive — style: ${styleProblems} Czech-calque occurrence(s)\n`);
+  for (const r of styleRows) {
+    console.log(`  ✗ ${r.file}`);
+    for (const h of r.hits) console.log(`      ${h.line}: "${h.phrase}" → ${h.fix}`);
+  }
+  console.log('');
+}
+
+const habits = [...habitTotals].sort((a, b) => b[1] - a[1]);
+if (habits.length) {
+  console.log(
+    `ZION Archive — style habits (reported, not failed): ${habits.map(([k, v]) => `${k} ${v}×`).join(' · ')}`,
+  );
+  console.log(`  sentences longer than 80 words in prose: ${longSentences}\n`);
+}
+
 if (!problems) console.log('  ✓ all pairs preserve links, headings, tables and code fences\n');
 if (!labelRows.length) console.log('  ✓ every English file uses the canonical claim-state labels\n');
-process.exit(problems || labelProblems ? 1 : 0);
+if (!styleRows.length) console.log('  ✓ no Czech calques in the English corpus\n');
+process.exit(problems || labelProblems || styleProblems ? 1 : 0);

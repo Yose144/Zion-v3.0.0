@@ -58,7 +58,7 @@ Every chapter holds three planes:
 
 ### 5. The Keeper of the Tree (Lanka · akasha)
 
-- **Revealed:** a woman sits beneath a tree older than empires (Sri Maha Bodhi, 288 BCE — a LIVING tradition); akasha = the space that holds the other elements; bhakti as governance — love as a way of administration.
+- **Revealed:** a woman sits beneath a tree older than empires (Sri Maha Bodhi, 288 BCE — a LIVING tradition); akasha = the space that holds the other elements; *bhakti* as governance — love as a way of administration.
 - **The lantern's tilt:** the project sheet of Bodhi Lanka (HORIZON); the Rama Setu bridge = a myth between islands.
 - **Theme:** the oldest living tree in the world as proof that **a tree outlives an empire** — that is why the circle plants trees, not institutions.
 

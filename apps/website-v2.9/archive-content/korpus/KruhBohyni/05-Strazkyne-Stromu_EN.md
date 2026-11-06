@@ -19,7 +19,7 @@ The sea she took her name from is the Indian one — the ocean that joins the la
 
 ---
 
-Bodhi Lanka holds in the corpus the place where **5 % becomes growth beneath the oldest branch**. Not a temple — a garden where songs of care are learned: bhakti — devotion, which is not learned from books but from the hand of a tree into the hand of a person.
+Bodhi Lanka holds in the corpus the place where **5 % becomes growth beneath the oldest branch**. Not a temple — a garden where songs of care are learned: *bhakti* — devotion, which is not learned from books but from the hand of a tree into the hand of a person.
 
 Ana sits beneath Sri Maha Bodhi and teaches what is learned only where a tree has outlived states: **no leaf is yours — every leaf is borrowed from a branch you were not given to own but to water.** And when the children ask how you recognise that someone is a keeper, she answers them with a question in return:
 

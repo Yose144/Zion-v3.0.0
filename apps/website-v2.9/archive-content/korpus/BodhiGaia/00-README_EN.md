@@ -48,7 +48,7 @@ Every chapter holds one rule of absolute honesty: **archetypal story → deep in
 | 8 | [The Pilgrim's Path — L5 onboarding](./08-Cesta-Poutnika-Onboarding-L5_EN.md) | **Seven gates** · *Onboarding* | Visitor, work stay, Guardian, remote technician, voter, giver, player — what you need and what nobody may ever demand of you. |
 | 9 | [Truth Anchor and Boundaries](./09-Kotva-Pravdy-a-Hranice_EN.md) | **Registry** · *Mise Amenti M5* | The complete L5 evidence table, what Bodhi Gaia is not, known inconsistencies in the documentation and next steps. |
 | 10 | [Golden Republic Bohemia](./10-Golden-Republic-Bohemia_EN.md) | **Heart** · *Bohemia, Czech Republic* | A circle without a throne, salt on the table, a bridge between myth and protocol; Říp, Přemysl the Ploughman, the Golden Bull as proto-DAO, the governance laboratory of the Golden Republic. |
-| 11 | [Bodhi Lanka](./11-Bodhi-Lanka_EN.md) | **Ākāśa** · *Sri Lanka* | The infinite love of Rama and Sita, the oldest living tree on Earth (Sri Maha Bodhi, Anuradhapura, 288 BCE), Rama Setu as a bridge between islands, akasha as the fifth element — the space that holds all the others; bhakti as governance. |
+| 11 | [Bodhi Lanka](./11-Bodhi-Lanka_EN.md) | **Akasha** · *Sri Lanka* | The infinite love of Rama and Sita, the oldest living tree on Earth (Sri Maha Bodhi, Anuradhapura, 288 BCE), Rama Setu as a bridge between islands, akasha as the fifth element — the space that holds all the others; bhakti as governance. |
 | 12 | [The Rose in the Genesis Garden](./12-Ruze-v-Zahrade-Genesis_EN.md) | **Intersection** · *Rose / L5* | A literary seed from *The Story of the Rose* enters the Genesis Garden — the story is MYTH, the physical pilot `GENESIS-ROSE-001` is HORIZON and no planting has taken place. |
 | 13 | [LUMI — Nová Amerika](./13-Nova-Amerika_EN.md) | **Bridge & Memory** · *Costa Rica* | The sixth and last L5 node — a project for the native cultures of the Americas at the geographic midpoint of the continents; FPIC, a council of elders and shared land with the Issobella ground station. |
 
@@ -93,7 +93,7 @@ This book does not create a new world. **It unifies what already exists in the r
 ## What this book is not
 
 - **It is not a sale of land or shares.** No garden here offers an investment, a return or "tokenized soil". The communities are legally independent and economically autonomous.
-- **It is not a religion.** Bodhi, Dharma, Merkaba, piko and the Tree of Life are archetypes borrowed with respect; the book claims no spiritual authority and no lineage.
+- **It is not a religion.** Bodhi, Dharma, Merkaba, *piko* and the Tree of Life are archetypes borrowed with respect; the book claims no spiritual authority and no lineage.
 - **It is not a claim of impact.** Until there is a public *impact packet* with a recipient, a budget, an on-chain reference and independent verification, no project in this book **is** "verified impact".
 - **It is not a replacement for the whitepaper or `StatusV3.md`.** Wherever the story speaks about a number, the canonical source wins.
 

@@ -70,7 +70,7 @@ The man stood before the board for a long time. Then he pointed at the first doo
 
 - **KYC, a personnel reference, a geographical block.** Entry into a community is the consent of the circle, not an identity document. (Legal entities naturally comply with local law — that is a different matter from blockchain identity.)
 - **The purchase of ZION.** No gate requires holding a token. A Guardian node is a voluntary project of the community, not a condition of membership.
-- **Faith.** Bodhi, Dharma, piko, Merkaba are images. The test is a tidy kitchen, not a doctrine.
+- **Faith.** Bodhi, Dharma, *piko*, Merkaba are images. The test is a tidy kitchen, not a doctrine.
 - **Silence about risks.** Fire in central Portugal, a volcano on La Palma, a cyclone on Raiatea, a flood in Bohemia, a monsoon in Sri Lanka, evacuation, insurance, volatility — all of it is in the community documents and must appear in every booking flow too.
 
 ### What no one in L5 may promise you

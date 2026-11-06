@@ -81,7 +81,7 @@ The compass shows north. It does not show whether it is raining now, or will rai
 
 | Claim from the story | What is verifiable |
 |---|---|
-| "Ten thousand coins for two pizzas." | Historical fact: Laszlo Hanyecz paid 10,000 BTC for two pizzas on 22 May 2010 on the Bitcointalk forum — today remembered as Bitcoin Pizza Day. It concerns another, independent network, not ZION. |
+| "Ten thousand coins for two pizzas." | Historical fact: Laszlo Hanyecz paid 10,000 BTC for two pizzas on 22 May 2010 on the Bitcointalk forum — today remembered as Bitcoin Pizza Day. This is a different, independent network, not ZION. |
 | "The reward the protocol will never surpass." | ZION is in decade 1 (2026–2036) with a reward of **5,400.067 ZION/block** — the highest in the entire emission plan. Decade Decay: −20% each decade (5,256,000 blocks), tail 724.784723 ZION/block forever from ~2126. Source: technical whitepaper 3.1, ch. 5.2. |
 | "Difficulty responds to today, not tomorrow." | Difficulty adjustment: LWMA over the last 60 blocks, ±25% clamp, target 30–120 s per block. The algorithm is public and auditable in the L1 core code. |
 | "No one got VIP entry." | Fair launch: no `mint()` for the team, no ICO or presale. The premine of 16.78 billion ZION (11.65%) is publicly listed in the genesis block, not hidden. |
