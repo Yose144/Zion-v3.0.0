@@ -6,7 +6,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { XR, createXRStore } from '@react-three/xr';
 import * as THREE from 'three';
-import { useI18n, tx } from '@/core/i18n';
+import { fill, useI18n, tx } from '@/core/i18n';
 import { PARK_COPY, type ParkCopyKey } from './copy';
 import { GAME_LINKS } from '@/core/games/links';
 import { play, unlock, type SoundName } from '@/core/audio/engine';
@@ -40,14 +40,14 @@ import { canvasDpr } from '@/core/design/dpr';
  */
 
 /** Názvy všech her, které mají skóre — canvas, 3D i hry mimo park. */
-const TITLES: { id: ParkGameId; title: { cs: string; en: string } }[] = [
+const TITLES: { id: ParkGameId; title: { cs: string; en: string; es?: string } }[] = [
   ...PARK_GAMES.map((game) => ({ id: game.id as ParkGameId, title: game.title })),
-  { id: 'gallery', title: { cs: 'Střelnice', en: 'Gallery' } },
-  { id: 'arena', title: { cs: 'Mars aréna', en: 'Mars arena' } },
-  { id: 'race', title: { cs: 'Venuše okruh', en: 'Venus circuit' } },
-  { id: 'fight', title: { cs: 'Merkur souboj', en: 'Mercury duel' } },
-  { id: 'moba', title: { cs: 'První svět', en: 'First World' } },
-  { id: 'tanks', title: { cs: 'Saturn tanky', en: 'Saturn tanks' } },
+  { id: 'gallery', title: { cs: 'Střelnice', en: 'Gallery', es: 'Galería' } },
+  { id: 'arena', title: { cs: 'Mars aréna', en: 'Mars arena', es: 'Arena de Marte' } },
+  { id: 'race', title: { cs: 'Venuše okruh', en: 'Venus circuit', es: 'Circuito de Venus' } },
+  { id: 'fight', title: { cs: 'Merkur souboj', en: 'Mercury duel', es: 'Duelo de Mercurio' } },
+  { id: 'moba', title: { cs: 'První svět', en: 'First World', es: 'Primer Mundo' } },
+  { id: 'tanks', title: { cs: 'Saturn tanky', en: 'Saturn tanks', es: 'Tanques de Saturno' } },
   { id: 'lumi', title: { cs: 'Lumi', en: 'Lumi' } },
 ];
 
@@ -78,7 +78,13 @@ const SCORE_SOUND: Record<CanvasGameId, SoundName> = {
 export default function ParkPage() {
   const { lang } = useI18n();
   /** Texty obrazovky jdou přes `app/park/copy.ts` — žádné `cs ? :` v JSX. */
-  const l = useCallback((key: ParkCopyKey) => tx(PARK_COPY[key], lang), [lang]);
+  const l = useCallback(
+    (key: ParkCopyKey, values?: Record<string, string | number>) => {
+      const text = tx(PARK_COPY[key], lang);
+      return values ? fill(text, values) : text;
+    },
+    [lang],
+  );
   const cs = lang === 'cs';
 
   const [profile, setProfile] = useState<ParkProfile | null>(null);
@@ -571,9 +577,7 @@ export default function ParkPage() {
             {l('galleryHint')}
           </button>
           <button type="button" className="park-btn park-ride-btn" onClick={ride} disabled={riding}>
-            {cs
-              ? `Ruské kolo · ${WHEEL_COST} žeton · první jízda dne zdarma`
-              : `Ferris wheel · ${WHEEL_COST} token · first ride of the day is free`}
+            {l('wheel', { cost: WHEEL_COST })}
           </button>
           <div className="park-games">
             {GAME_LINKS.filter((game) => game.id !== 'park').map((game) => (
@@ -648,9 +652,7 @@ export default function ParkPage() {
           </div>
           {notice && <p className="park-notice">{notice}</p>}
           <p className="park-note">
-            {cs
-              ? 'Žetony jsou jen v prohlížeči a nic se za ně nekupuje. Park nehraje o peníze.'
-              : 'Tokens live in your browser only and buy nothing of value. The fair does not play for money.'}
+            {l('note')}
           </p>
         </section>
       )}

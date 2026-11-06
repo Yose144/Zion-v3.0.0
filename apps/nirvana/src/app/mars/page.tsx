@@ -245,9 +245,7 @@ export default function MarsPage() {
           {phase === 'idle' && (
             <>
               <p>
-                {cs
-                  ? 'Rail a rakety, tři boti, frag limit 10 nebo tři minuty. Mapa je z krabic — žádné modely, jen fyzika a světlo.'
-                  : 'Rail and rockets, three bots, frag limit 10 or three minutes. The map is made of boxes — no models, just physics and light.'}
+                {l('intro')}
               </p>
               <ul className="arena-keys">
                 <li>
@@ -296,14 +294,10 @@ export default function MarsPage() {
                 </Link>
               </div>
               <p className="arena-small">
-                {cs
-                  ? 'Multiplayer: server počítá pohyb i zásahy, ty posíláš jen vstup. Chat (T) je pro přihlášené.'
-                  : 'Multiplayer: the server computes movement and hits, you only send input. Chat (T) is for signed-in users.'}
+                {l('mpNote')}
               </p>
               <p className="arena-small">
-                {cs
-                  ? 'Myš se zamkne kliknutím do plátna. Ve VR (tlačítko VR) míříš pravým ovladačem a střílíš spouští — hráč ale stojí, pohyb ovladačem ještě není.'
-                  : 'The mouse locks when you click the canvas. In VR (VR button) you aim with the right controller and fire with the trigger — the player stands still, controller movement is not implemented yet.'}
+                {l('vrNote')}
               </p>
               <GameBoard game="arena" className="arena-board-panel" />
             </>

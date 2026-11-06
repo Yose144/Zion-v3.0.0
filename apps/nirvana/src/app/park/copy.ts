@@ -31,6 +31,16 @@ export const PARK_COPY = {
   board: { cs: 'TABULE', en: 'BOARD', es: 'TABLA' },
   nickname: { cs: 'Přezdívka', en: 'Nickname', es: 'Apodo' },
   noToken: { cs: 'Chybí žeton — dohraj hru', en: 'No token left — finish a game', es: 'Falta una ficha — termina una partida' },
+  wheel: {
+    cs: 'Ruské kolo · {cost} žeton · první jízda dne zdarma',
+    en: 'Ferris wheel · {cost} token · first ride of the day is free',
+    es: 'Noria · {cost} ficha · primer viaje del día gratis',
+  },
+  note: {
+    cs: 'Žetony jsou jen v prohlížeči a nic se za ně nekupuje. Park nehraje o peníze.',
+    en: 'Tokens live in your browser only and buy nothing of value. The fair does not play for money.',
+    es: 'Las fichas viven solo en tu navegador y no compran nada de valor. La feria no juega por dinero.',
+  },
 } as const satisfies Record<string, Localized>;
 
 export type ParkCopyKey = keyof typeof PARK_COPY;

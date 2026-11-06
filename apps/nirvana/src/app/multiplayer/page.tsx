@@ -25,8 +25,8 @@ import type { GameId, RoomMode, RoomState } from '@/core/net/protocol';
 interface LobbyGame {
   id: GameId;
   href: string;
-  title: { cs: string; en: string };
-  note: { cs: string; en: string };
+  title: { cs: string; en: string; es?: string };
+  note: { cs: string; en: string; es?: string };
   glyph: string;
   tone: string;
   /** Kapacita, když ještě žádná místnost není otevřená. */
@@ -37,8 +37,8 @@ const GAMES: LobbyGame[] = [
   {
     id: 'fleet',
     href: '/fleet',
-    title: { cs: 'Flotila', en: 'Fleet' },
-    note: { cs: 'volný let · 6 pilotů · doky', en: 'free flight · 6 pilots · docks' },
+    title: { cs: 'Flotila', en: 'Fleet', es: 'Flota' },
+    note: { cs: 'volný let · 6 pilotů · doky', en: 'free flight · 6 pilots · docks', es: 'vuelo libre · 6 pilotos · diques' },
     glyph: '🚀',
     tone: '#7ec8ff',
     seats: 6,
@@ -46,8 +46,8 @@ const GAMES: LobbyGame[] = [
   {
     id: 'moba',
     href: '/earth',
-    title: { cs: 'První svět', en: 'First World' },
-    note: { cs: 'MOBA · 5 na 5 · mlha války', en: 'MOBA · 5v5 · fog of war' },
+    title: { cs: 'První svět', en: 'First World', es: 'Primer Mundo' },
+    note: { cs: 'MOBA · 5 na 5 · mlha války', en: 'MOBA · 5v5 · fog of war', es: 'MOBA · 5v5 · niebla de guerra' },
     glyph: '🌍',
     tone: '#7fe3d4',
     seats: 10,
@@ -55,8 +55,8 @@ const GAMES: LobbyGame[] = [
   {
     id: 'arena',
     href: '/mars',
-    title: { cs: 'Mars aréna', en: 'Mars arena' },
-    note: { cs: 'deathmatch · 10 fragů', en: 'deathmatch · 10 frags' },
+    title: { cs: 'Mars aréna', en: 'Mars arena', es: 'Arena de Marte' },
+    note: { cs: 'deathmatch · 10 fragů', en: 'deathmatch · 10 frags', es: 'duelo a muerte · 10 bajas' },
     glyph: '🎯',
     tone: '#ff7a6b',
     seats: 8,
@@ -64,8 +64,8 @@ const GAMES: LobbyGame[] = [
   {
     id: 'race',
     href: '/venus',
-    title: { cs: 'Venuše', en: 'Venus' },
-    note: { cs: 'okruh · 3 kola', en: 'circuit · 3 laps' },
+    title: { cs: 'Venuše', en: 'Venus', es: 'Venus' },
+    note: { cs: 'okruh · 3 kola', en: 'circuit · 3 laps', es: 'circuito · 3 vueltas' },
     glyph: '🏁',
     tone: '#c8f56a',
     seats: 8,
@@ -73,8 +73,8 @@ const GAMES: LobbyGame[] = [
   {
     id: 'fight',
     href: '/mercury',
-    title: { cs: 'Merkur — souboj', en: 'Mercury — duel' },
-    note: { cs: 'best of 3 · 1 na 1', en: 'best of 3 · 1v1' },
+    title: { cs: 'Merkur — souboj', en: 'Mercury — duel', es: 'Mercurio — duelo' },
+    note: { cs: 'best of 3 · 1 na 1', en: 'best of 3 · 1v1', es: 'mejor de 3 · 1v1' },
     glyph: '⚔',
     tone: '#e8a15c',
     seats: 2,
@@ -82,17 +82,17 @@ const GAMES: LobbyGame[] = [
   {
     id: 'tanks',
     href: '/saturn',
-    title: { cs: 'Saturn — tanky', en: 'Saturn — tanks' },
-    note: { cs: 'artilerie · 1 na 1', en: 'artillery · 1v1' },
+    title: { cs: 'Saturn — tanky', en: 'Saturn — tanks', es: 'Saturno — tanques' },
+    note: { cs: 'artilerie · 1 na 1', en: 'artillery · 1v1', es: 'artillería · 1v1' },
     glyph: '💥',
     tone: '#ffd166',
     seats: 2,
   },
 ];
 
-const STATE_LABEL: Record<RoomState, { cs: string; en: string }> = {
-  waiting: { cs: 'čeká na hráče', en: 'waiting' },
-  running: { cs: 'hraje se', en: 'running' },
+const STATE_LABEL: Record<RoomState, { cs: string; en: string; es?: string }> = {
+  waiting: { cs: 'čeká na hráče', en: 'waiting', es: 'esperando jugadores' },
+  running: { cs: 'hraje se', en: 'running', es: 'en juego' },
   ended: { cs: 'do sehrávky', en: 'finished' },
 };
 
@@ -363,9 +363,7 @@ export default function MultiplayerPage() {
       </div>
 
       <p className="lobby-note">
-        {cs
-          ? 'Po připojení otevři hru — server si tě zapamatuje. Prázdná sedla v aréně, MOBA i tancích doplní boti.'
-          : 'After joining, open the game — the server remembers you. Empty seats are filled by bots in the arena, MOBA and tanks.'}
+        {l('note')}
       </p>
     </main>
   );

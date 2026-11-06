@@ -29,6 +29,21 @@ export const ARENA_COPY = {
   multiplayer: { cs: 'Multiplayer — proti lidem', en: 'Multiplayer — against people', es: 'Multijugador — contra personas' },
   backToFair: { cs: '← zpět na pouť', en: '← back to the fair', es: '← volver a la feria' },
   rematch: { cs: 'Odveta', en: 'Rematch', es: 'Revancha' },
+  intro: {
+    cs: 'Rail a rakety, tři boti, frag limit 10 nebo tři minuty. Mapa je z krabic — žádné modely, jen fyzika a světlo.',
+    en: 'Rail and rockets, three bots, frag limit 10 or three minutes. The map is made of boxes — no models, just physics and light.',
+    es: 'Rail y cohetes, tres bots, límite de 10 bajas o tres minutos. El mapa son cajas: sin modelos, solo física y luz.',
+  },
+  mpNote: {
+    cs: 'Multiplayer: server počítá pohyb i zásahy, ty posíláš jen vstup. Chat (T) je pro přihlášené.',
+    en: 'Multiplayer: the server computes movement and hits, you only send input. Chat (T) is for signed-in users.',
+    es: 'Multijugador: el servidor calcula el movimiento y los impactos, tú solo envías la entrada. El chat (T) es para usuarios registrados.',
+  },
+  vrNote: {
+    cs: 'Myš se zamkne kliknutím do plátna. Ve VR (tlačítko VR) míříš pravým ovladačem a střílíš spouští — hráč ale stojí, pohyb ovladačem ještě není.',
+    en: 'The mouse locks when you click the canvas. In VR (VR button) you aim with the right controller and fire with the trigger — the player stands still, controller movement is not implemented yet.',
+    es: 'El ratón se bloquea al hacer clic en el lienzo. En VR (botón VR) apuntas con el mando derecho y disparas con el gatillo: el jugador está quieto, mover con el mando aún no existe.',
+  },
 } as const satisfies Record<string, Localized>;
 
 export type ArenaCopyKey = keyof typeof ARENA_COPY;

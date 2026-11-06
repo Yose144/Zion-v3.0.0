@@ -126,6 +126,18 @@ export interface Localized {
   es?: string;
 }
 
+/**
+ * Doplní `{n}` / `{name}` do přeloženého textu.
+ *
+ * Texty s čísly zůstávají v datech („Faltan {n} luces"), ne v JSX šablonách —
+ * jinak se každý jazyk skládá znovu na místě a číslo se do něj vkládá ručně.
+ */
+export function fill(text: string, values: Record<string, string | number>): string {
+  return text.replace(/\{(\w+)\}/g, (match, key: string) =>
+    values[key] === undefined ? match : String(values[key]),
+  );
+}
+
 /** Vybraný jazyk s fallbackem cs → en (nikdy neprázdno, když text existuje). */
 export function tx(text: Localized | null | undefined, lang: Lang, fallback = ''): string {
   if (!text) return fallback;

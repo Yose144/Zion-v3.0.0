@@ -11,7 +11,7 @@
  * kapitoly) — ty jsou data v `world.ts` vedle pozic, protože se čtou i mimo UI
  * (deník, testy). A jména vlastních světů (Uran, Uran) — ta se nepřekládají.
  */
-import type { Localized } from '@/core/i18n';
+import { fill, type Localized } from '@/core/i18n';
 
 export const LUMI_COPY = {
   // ── hlavička ────────────────────────────────────────────────────────
@@ -111,13 +111,19 @@ export const LUMI_COPY = {
   given: { cs: 'darováno', en: 'given', es: 'regalado' },
   again: { cs: 'Znovu', en: 'Again', es: 'Otra vez' },
   backToUranus: { cs: 'zpět na Uran', en: 'back to Uranus', es: 'volver a Urano' },
+  journalStats: {
+    cs: '{found}/7 nalezeno · {runs} cest · darováno {given}×',
+    en: '{found}/7 found · {runs} journeys · given {given}×',
+    es: '{found}/7 encontradas · {runs} viajes · regaladas {given}×',
+  },
+  journalNote: {
+    cs: 'Deník se ukládá v prohlížeči. Cesty jsou dvě a světla jsou v obou stejná — jde o to je donést.',
+    en: 'The journal lives in your browser. There are two paths and the lights are the same in both — carrying them is the point.',
+    es: 'El diario vive en tu navegador. Hay dos caminos y las luces son las mismas en ambos: llevarlas es lo importante.',
+  },
 } as const satisfies Record<string, Localized>;
 
 export type LumiCopyKey = keyof typeof LUMI_COPY;
 
-/** Doplní `{n}` / `{name}` — texty zůstávají v datech, ne v šablonách v JSX. */
-export function fill(text: string, values: Record<string, string | number>): string {
-  return text.replace(/\{(\w+)\}/g, (match, key: string) =>
-    values[key] === undefined ? match : String(values[key]),
-  );
-}
+/** `fill` bydlí v i18n vedle `tx` — ostatní slovníky ho mají taky. */
+export { fill };

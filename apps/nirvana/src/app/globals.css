@@ -9005,3 +9005,12 @@ a.game-hud-chip.is-lumi em {
   color: rgba(226, 232, 240, 0.55);
   max-width: 46rem;
 }
+
+/* Dvě odkazové „pily" pod sebou se lepily na sebe („← Mars arénaVenuše závod →").
+   Mezera musí být mezi nimi, ne za nimi — jinak ji zalomení řádku ztratí. */
+.duel-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}

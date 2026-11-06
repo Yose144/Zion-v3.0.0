@@ -28,6 +28,11 @@ export const LOBBY_COPY = {
   watch: { cs: 'Dívat se', en: 'Watch', es: 'Ver' },
   solo: { cs: 'Sólo', en: 'Solo', es: 'Solo' },
   chat: { cs: 'chat', en: 'chat', es: 'chat' },
+  note: {
+    cs: 'Po připojení otevři hru — server si tě zapamatuje. Prázdná sedla v aréně, MOBA i tancích doplní boti.',
+    en: 'After joining, open the game — the server remembers you. Empty seats are filled by bots in the arena, MOBA and tanks.',
+    es: 'Tras unirte, abre el juego: el servidor te recuerda. Los asientos vacíos los llenan bots en la arena, MOBA y tanques.',
+  },
 } as const satisfies Record<string, Localized>;
 
 export type LobbyCopyKey = keyof typeof LOBBY_COPY;

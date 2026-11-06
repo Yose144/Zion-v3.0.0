@@ -225,16 +225,14 @@ export default function VenusPage() {
       {phase !== 'playing' && (
         <section className="arena-panel">
           <header>
-            <strong>VENUŠE</strong>
+            <strong>{l('title')}</strong>
             <span>{l('circuit')}</span>
           </header>
 
           {phase === 'idle' && (
             <>
               <p>
-                {cs
-                  ? 'Hovercraft, tři kola a tři soupeři na stejných strojích. Rozhoduje brzdný bod a stopa — kdo jede čistěji, vyhraje. Mimo pás tě to zpomalí a přitáhne zpět.'
-                  : 'A hovercraft, three laps and three rivals on identical machines. Braking points and the racing line decide it — the cleaner driver wins. Off the strip you slow down and get pulled back.'}
+                {l('intro')}
               </p>
               <ul className="arena-keys">
                 <li>

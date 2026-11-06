@@ -297,9 +297,7 @@ export default function MercuryPage() {
           )}
 
           <div className="arena-tip">
-            {cs
-              ? 'A/D pohyb · W skok · J pěst · K kop · S blok'
-              : 'A/D move · W jump · J punch · K kick · S block'}
+            {l('keysTip')}
           </div>
 
           <div className="duel-touch" aria-label="ovládání">
@@ -383,12 +381,14 @@ export default function MercuryPage() {
           </div>
           {notice && <div className="arena-result">{notice}</div>}
           <GameBoard game="fight" className="duel-board-panel" />
-          <Link href="/mars" className="arena-link arena-small">
-            {l('backToMars')}
-          </Link>
-          <Link href="/venus" className="arena-link arena-small">
-            {l('toVenus')}
-          </Link>
+          <nav className="duel-links" aria-label="Mars / Venus">
+            <Link href="/mars" className="arena-link arena-small">
+              {l('backToMars')}
+            </Link>
+            <Link href="/venus" className="arena-link arena-small">
+              {l('toVenus')}
+            </Link>
+          </nav>
         </section>
       )}
     </main>
