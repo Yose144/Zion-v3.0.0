@@ -139,7 +139,16 @@ odvozeniny, což zahrnuje náš přebarvený GLB i LOD). Zapsáno do
 „Graham Smith 2014-15"), takže atribuce platí pro všech osm modelů — a licence kitů
 v repu (`handpanda/wooden-starfighter`) **žádná není**, to zůstává blocker.
 
-**🔴 Rozbité odkazy v marketu:** produktová data u všech sedmi stíhaček odkazují na
+**Opraveno (2026-11-06, nasazeno):** obchod prodává **vypálené díly**, ne soubory. Proto
+`filesUrl` (digitální dodávka) u všech sedmi stíhaček **NULL** a `instructionsUrl` vede na
+autorovy plány (`eigenbloom.com/woodenstarfighter/`); popisy přepsané na „Sada vypálených
+dílů … z 3mm překližky". E-mail navíc **fyzické zboží vyřazuje z „Digitálních stažení"**
+(`digital: false` = rozhodnutí, text i HTML varianta) — dřív se kit objevil v digitální sekci
+jen proto, že měl 3D náhled. Plaketa „Připraveno pro laser" už nevisí na `filesUrl`, ale na
+kategorii. Ověřeno živě: API vrací `files: NULL` u `star-001…008`, modal ukazuje
+`3D náhled (GLB)` + `Připraveno pro laser` + `PDF průvodce`, `shop-3d.mjs` proti produkci **10/10**.
+
+**🔴 (původní nález) Rozbité odkazy v marketu:** produktová data u všech sedmi stíhaček odkazují na
 `raw.githubusercontent.com/handpanda/wooden-starfighter/master/instr/*_instructions.pdf`
 a `.../svg/*_svg.zip` — oba vrací **404** (repo obsahuje jen sedm STL, žádné `instr/` ani `svg/`).
 `filesUrl` je přitom **dodávka digitálního zboží** v e-mailu po zaplacení. Neopravoval jsem to
