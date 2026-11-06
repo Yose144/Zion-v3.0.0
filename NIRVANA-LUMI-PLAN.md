@@ -442,7 +442,7 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
 | **L-7** | Denní světlo: jedenkrát denně jiná pozice sedmi světel (seed z datumu) | stejný den = stejná obloha pro všechny, zítra jiná; test determinismu | nízké | ✅ 2026-11-05 |
 | **L-8** | Kapitoly příběhu mezi cestami (text po každé cestě) | po `calm` a `wind` se odemkne jiný úvodní text, ne jen cesta | nízké | ✅ 2026-11-05 |
 | **L-9** | Přístupnost: `prefers-reduced-motion` vypne vítr a částice | s preferencí se nehýbe pozadí, hra zůstane hratelná | nízké | ✅ 2026-11-05 |
-| **L-10** | Lokalizace do třetího jazyka (**ES** — trh + kánon) | všechny texty z `world.ts` mají klíč, žádný hardcoded string v `page.tsx` | nízké | ⚠️ Lumi + pouť + lobby + Mars hotové; `/earth`, `/mercury`, `/venus`, `/fleet`, `/avatars` dědí `en` |
+| **L-10** | Lokalizace do třetího jazyka (**ES** — trh + kánon) | všechny texty z `world.ts` mají klíč, žádný hardcoded string v `page.tsx` | nízké | ⚠️ Lumi + pouť + lobby + Mars + Merkur + Venuše hotové; `/earth`, `/fleet`, `/avatars` dědí `en` |
 | **L-11** | Odměna za darování v kooperaci (společná svatyně = +body všem) | dva hráči doletí → oba dostanou bonus, ne jen ten, kdo doletěl první | střední | ⬜ |
 | **L-12** | Výkon: instancované částice na mobilu | 390×844 ≥ 30 fps (měřeno `.artifacts/probe/lumi-perf.mjs` — rAF 2 s + `__lumiDebug()`), draw calls < 60 | střední | ✅ 2026-11-05 |
 

@@ -2319,10 +2319,17 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   (`pickLang`), který chybějící `es` shodí na `en`; přímé `text[lang]` v shared
   scéně neprojde `tsc`, jakmile `lang` umí i jazyky, které scéna nemá.
 - **Hotové povrchy v ES:** chrome (`COPY`), Lumi (`core/lumi/copy.ts`), pouť
-  (`app/park/copy.ts`), lobby (`app/multiplayer/copy.ts`), Mars (`app/mars/copy.ts`).
-- **Co ještě není v ES:** `/earth` (79 inline), `/mercury` (35), `/venus` (26),
-  `/fleet` (20), `/avatars` (15) — dnes pro `es` zobrazí angličtinu (fallback
-  z `tx()`), takže se to nemá hlásit jako „přeloženo".
+  (`app/park/copy.ts`), lobby (`app/multiplayer/copy.ts`), Mars (`app/mars/copy.ts`),
+  Merkur (`app/mercury/copy.ts`), Venuše (`app/venus/copy.ts`) — včetně jmen
+  soupeřů (`nameEs` v `core/race/rivals.ts`) a tabulek (`GameBoard`).
+- **Co ještě není v ES:** `/earth` (79 inline), `/fleet` (20), `/avatars` (15) —
+  dnes pro `es` zobrazí angličtinu (fallback z `tx()`), takže se to nemá hlásit
+  jako „přeloženo".
+- **Vícejazyčné ternárky se snadno přehlédnou.** `grep "cs ?"` najde jen
+  jednořádkové; texty zlomené do dvou řádků pres `{cs` nový řádek prosviští.
+  Po migraci projdi `grep -n "{cs"` a `grep -n "lang === 'cs'"` — v obou musí
+  být 0 (kromě samotného `const cs = lang === 'cs'`). Přesně takhle zůstaly
+  v Merkuru dvě věty anglicky a v pouti popisek ruského kola.
 - **Kopírování textu do slovníku je mechanické, ale nesmí se dělat po jednom
   kusu.** Vždycky projdi celý soubor (`grep -c "cs ?"` musí skončit na 0), jinak
   zůstanou v JSX dvě tři věty, které nikdo nenajde — a přesně ty se pak ve
