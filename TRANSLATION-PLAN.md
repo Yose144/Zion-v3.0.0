@@ -1,7 +1,7 @@
 # TRANSLATION PLAN — Zion Archive (CZ → EN)
 
-> **Verze:** 2.6 · **Datum:** 2026-11-06 · **Vlastník:** 👤
-> **Stav:** 183 / 189 překladatelných kapitol (**96,8 %**), zbývá **6 kapitol** (~0,09 MB zdroje)
+> **Verze:** 2.7 · **Datum:** 2026-11-06 · **Vlastník:** 👤
+> **Stav:** 185 / 189 překladatelných kapitol (**97,9 %**), zbývá **4 kapitoly** (~0,06 MB zdroje)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md`](docs/3.2/REPORTS/REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md)
 > **Kód:** `apps/website-v2.9` · **Plán archivu:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](docs/plans/ZION-ARCHIVE-COMPLETION.md)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md`](docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md)
@@ -55,7 +55,7 @@ vlastní ENindex mimo kapitoly.
 | Quantum Revolution | 1 (single-doc) | **1** | 0 | **dokončeno 2026-11-05** — 396B stub nahrazen (CZ + EN) |
 | Lumi | 13 | **13** | 0 | **dokončeno 2026-11-06** (CZ + EN) |
 | Miriam | 13 | **13** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
-| BodhiGaia | 13 | **7** | **6** | 01–07 hotovo 2026-11-06; zbývá 08–13 |
+| BodhiGaia | 13 | **9** | **4** | 01–07, 12–13 hotovo; zbývá 08, 09, 10, 11 |
 | MariaCaminho | 12 | **12** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Růže | 11 | **11** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Na Cestě | 2 | **2** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
@@ -63,7 +63,7 @@ vlastní ENindex mimo kapitoly.
 | Nabukano | 7 | **7** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Kruh Bohyní | 17 | **17** | 0 | **dokončeno 2026-11-06** (CZ + EN) |
 | Mise Amenti | 8 | **8** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
-| **CELKEM** | **189** | **183** | **6** | ~0,09 MB zdroje |
+| **CELKEM** | **189** | **185** | **4** | ~0,06 MB zdroje |
 
 Stav kdykoli zjistíš:
 
