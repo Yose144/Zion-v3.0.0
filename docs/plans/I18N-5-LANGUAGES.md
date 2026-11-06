@@ -52,8 +52,10 @@ po sekcích, `tr()` fallback nechá zbytek v EN, `tsc` + build po každé dávce
 `translations.ts` (67 souborů, ~1 522 klíčů). **Dávka 1 hotová (2026-11-06): stránka avatarů**
 (47 řetězců) — nový `src/lib/i18n-tx.ts` (`tx5(entry, lang)` a `t5(en, lang)`) + slovník
 `src/lib/ui-strings/avatars.{es,pt,fr}.json` **klíčovaný anglickým zněním**, takže `Copy` objekty
-zůstávají nedotčené a překlad jde doplňovat po stránkách. Zbývá: tree-of-life 150, NewsFeed 115,
-l6-issobella 76, maria-del-camino 58, kralovstvi-srdce 45, nabukano 44, ArchiveLock 42,
+zůstávají nedotčené a překlad jde doplňovat po stránkách. **Dávka 2 hotová (2026-11-06): NewsFeed (82) + L6 Issobella (143)** — `ui-strings/newsfeed.*`
+a `ui-strings/issobella.*`, `i18n-tx.ts` slévá slovníky per jazyk (`merge`); issobella měla
+10 pomocných funkcí `getX(cs)` mimo komponentu → dostaly druhý parametr `lang`.
+Zbývá: tree-of-life 150, maria-del-camino 58, kralovstvi-srdce 45, nabukano 44, ArchiveLock 42,
 ContractsPageClient 39, KnihovnaPanel 35, zion-archive 35, whitepapers 35, te-piko-ora 35,
 QvSection 34, team 32, golden-republic-bohemia 31… **Postup:** extrahovat EN řetězce stránky →
 přeložit do 3 jazyků → `ui-strings/<page>.<lang>.json` → codemod `[cs ? 'cs' : 'en']` → `tx5`.

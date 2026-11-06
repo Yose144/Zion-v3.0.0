@@ -133,3 +133,23 @@ Page-local texty nežijí v `translations.ts`, ale v objektech `{cs, en}` přím
 
 **Zbývá F2b:** 66 souborů / ~1 450 klíčů (tree-of-life 150, NewsFeed 115, l6-issobella 76,
 maria-del-camino 58, kralovstvi-srdce 45, nabukano 44, ArchiveLock 42, …).
+
+---
+
+## 8. F2b — dávka 2: NewsFeed (82) + L6 Issobella (143)
+
+Stejný vzor: slovník klíčovaný anglickým zněním, `Copy` objekty zůstávají nedotčené.
+`i18n-tx.ts` teď slévává všechny slovníky per jazyk (`merge`), takže další stránka = jeden JSON
+na jazyk + jeden import.
+
+**Issobella měla 10 pomocných funkcí `getX(cs)` mimo komponentu** — `lang` v nich nebyl v scope,
+takže dostaly druhý parametr (`getX(cs, lang)`) a 10 call sites ho předává.
+
+**Ověřeno živě** (deploy `20261106T125944Z`): homepage (es) „NOTICIAS Y ACTUALIZACIONES",
+„Noticias", „Últimas novedades del desarrollo del ecosistema ZION…", „Leer más";
+`/l6-issobella` kicker cs „VESMÍRNÁ VRSTVA" → es „CAPA ESPACIAL DEL", pt „CAMADA ESPACIAL DO",
+fr „COUCHE SPATIALE DE". 0 pageerror, `tsc` 0.
+
+**Stav F2b:** hotovo 47 (avatarů) + 82 (NewsFeed) + 143 (Issobella) = **272 řetězců**;
+zbývá ~1 250 v 64 souborech (tree-of-life 150, maria-del-camino 58, kralovstvi-srdce 45,
+nabukano 44, ArchiveLock 42, …).
