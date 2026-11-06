@@ -2411,3 +2411,18 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   v paralelní session umí do `.next` vnést cizí hodnotu.
 - **Co tu není:** hlas, kolize lodí mezi sebou, týmové mise, pořadí/„kdo dřív
   přistál\" (server jen relayuje). Místnost má 6 pilotů.
+
+## Flotila — hlediště a past s neúplným HEAD (2026-11-06)
+
+- **`?watch=fleet-N` je hlediště.** Divák nedostane sedlo (`spectateRoom`), scéna má
+  `spectator` (nekreslí vlastní loď, neposílá stav letu, kamera obletuje a míří na
+  nejbližšího pilota), HUD ztratí letové údaje a přibude pruh „👁 DÍVÁŠ SE".
+- **`snapshot()` musí myslet i na diváka.** `createFleetMatch` vracelo `null` pro každého,
+  kdo není v `pilots` → hlediště bylo prázdné. Relay hra nemá co skrývat, takže snapshot
+  se staví i pro diváka. (Stejný vzorec má Lumi a taky vrací `null` — tam to nikdo netestoval.)
+- **Deploy z worktree je jediný důkaz, že HEAD je kompletní.** `venus/page.tsx` a
+  `mercury/page.tsx` importovaly `./copy`, který nebyl v gitu — build v pracovním stromu
+  prošel, build z čistého commitu spadl na `Can't resolve './copy'`. Než něco nasadíš,
+  zkus build z worktree.
+- **Test čte `PROTO_VERSION` z distu**, ne z literálu: paralelní session protokol zvedla
+  (31 → 32) a test s natvrdo zapsaným číslem padal na `proto_mismatch`.

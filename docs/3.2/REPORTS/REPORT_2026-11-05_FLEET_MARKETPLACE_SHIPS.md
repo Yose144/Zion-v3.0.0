@@ -316,6 +316,24 @@ WebGL se táhne a druhý kontext by měřil latenci, ne hru.
    `NEXT_PUBLIC_NIRVANA_NET_URL`; lokální `.next` proto není důkaz o buildu. Deploy skript
    buildí sám.
 
+### Nasazeno (2026-11-06, 00:12 / 00:22 UTC — hlediště)
+
+| krok | release | ověření |
+|---|---|---|
+| `deploy-nirvana-net.sh` | `20261106T001246Z` | `/net/health` → proto 32; divák dostane snapshot |
+| `deploy-nirvana.sh --artifact-dir` | `20261106T002230Z` | `/api/health` → `proto_match: true`, smoke 7/7 |
+
+Hlediště (`?watch=fleet-N`) je součástí tohoto nasazení — v klientu je `spectateRoom`
+(7 chunků), net má opravený `snapshot()` pro diváka. Živé ověření dvou klientů v místnosti
+zůstává na ZAP pasu (vlastní kód se nepoužívá), ale **stejný kód je ověřený lokálně 16/16**.
+
+**🔴 Nález, který deploy blokoval (a je obecný):** z čistého commitu se appka **nedala
+postavit** — `src/app/venus/page.tsx` a `mercury/page.tsx` importují `./copy`, ale ty dva
+soubory nebyly v gitu (`Can't resolve './copy'`). Živý strom to maskoval, protože soubory
+ležely na disku jako untracked. Doplněno commitem `a4c3ec8c4`; teprve pak šel artefakt
+postavit z worktree. Pravidlo: **když build projde jen v pracovním stromu, HEAD je rozbitý** —
+poznej to tak, že zkusíš build z worktree, ne z mainu.
+
 ### Nasazeno (2026-11-05, 14:00 UTC)
 
 | krok | release | ověření |
