@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useI18n } from '@/core/i18n';
+import { fill, tx, useI18n } from '@/core/i18n';
 import { FleetCanvas, type FleetStats, type RemotePilot } from '@/core/fleet/FleetScene';
 import { SHIPS, shipById, DEFAULT_SHIP } from '@/core/fleet/ships';
 import { DOCK_HOLD, DOCK_RADIUS } from '@/core/fleet/flight';
@@ -24,6 +24,7 @@ import { InviteButton } from '@/core/net/InviteButton';
 import { SpectatorBar } from '@/core/net/SpectatorBar';
 import { watchRoom } from '@/core/net/watch';
 import { TouchButton } from '@/core/games/TouchPad';
+import { FLEET_COPY, type FleetCopyKey } from './copy';
 
 type Phase = 'intro' | 'flying';
 
@@ -52,6 +53,14 @@ const START = { x: -6, y: 7, z: 24, yaw: 2.68 };
 
 export default function FleetPage() {
   const { lang } = useI18n();
+  /** Texty obrazovky jdou přes `./copy` — žádné `cs ? :` v JSX. */
+  const l = useCallback(
+    (key: FleetCopyKey, values?: Record<string, string | number>) => {
+      const text = tx(FLEET_COPY[key], lang);
+      return values ? fill(text, values) : text;
+    },
+    [lang],
+  );
   const cs = lang === 'cs';
 
   const [phase, setPhase] = useState<Phase>('intro');
@@ -136,9 +145,7 @@ export default function FleetPage() {
             ? cs
               ? `Přistáno na Nabukanu — ${dockId.replace('nabukano-', 'kotviště ')}`
               : `Docked at Nabukano — ${dockId.replace('nabukano-', 'berth ')}`
-            : cs
-              ? 'Přistáno na Issobelle'
-              : 'Docked at Issobella',
+            : l('dockedIssobella'),
         );
         window.setTimeout(() => setNotice(null), 4200);
       }
@@ -195,9 +202,7 @@ export default function FleetPage() {
   const nearest = stats.nearest;
   const targetName = nearest
     ? nearest.kind === 'nabukano'
-      ? cs
-        ? 'Nabukano'
-        : 'Nabukano'
+      ? l('nabukano')
       : 'Issobella'
     : '—';
   const speedPct = Math.min(1, stats.speed / (spec.maxSpeed * spec.boost));
@@ -223,12 +228,10 @@ export default function FleetPage() {
         <>
           <div className="fleet-hud">
             <div className="fleet-ship">
-              <strong>{watchId ? (cs ? 'Hlediště' : 'Spectator') : spec.name}</strong>
+              <strong>{watchId ? (l('spectator')) : spec.name}</strong>
               <span>
                 {watchId
-                  ? cs
-                    ? 'díváš se na let'
-                    : 'watching the flight'
+                  ? l('watching')
                   : cs
                     ? spec.role.cs
                     : spec.role.en}
@@ -237,19 +240,19 @@ export default function FleetPage() {
             {!watchId && (
             <div className="fleet-gauges">
               <span>
-                <em>{cs ? 'rychlost' : 'speed'}</em> {Math.round(Math.abs(stats.speed) * 10)}
+                <em>{l('speed')}</em> {Math.round(Math.abs(stats.speed) * 10)}
               </span>
               <span>
-                <em>{cs ? 'kurz' : 'heading'}</em> {Math.round(stats.heading)}°
+                <em>{l('heading')}</em> {Math.round(stats.heading)}°
               </span>
               <span>
-                <em>{cs ? 'výška' : 'altitude'}</em> {Math.max(0, Math.round(stats.altitude))}
+                <em>{l('altitude')}</em> {Math.max(0, Math.round(stats.altitude))}
               </span>
             </div>
             )}
             {coop && (
               <div className="fleet-peers">
-                <span>{connected ? (cs ? 'společný let' : 'shared flight') : cs ? 'offline' : 'offline'}</span>
+                <span>{connected ? (l('sharedFlight')) : l('offline')}</span>
                 <strong>{peers + 1}</strong>
                 {roomId && <em>{roomId}</em>}
                 {roomId && <InviteButton roomId={roomId} className="fleet-invite" />}
@@ -258,7 +261,7 @@ export default function FleetPage() {
             {!watchId && (
             <div className="fleet-bars">
               <div className="fleet-bar">
-                <span>{cs ? 'tah' : 'thrust'}</span>
+                <span>{l('thrust')}</span>
                 <i style={{ width: `${Math.round(speedPct * 100)}%` }} />
               </div>
               <div className="fleet-bar is-boost">
@@ -272,7 +275,7 @@ export default function FleetPage() {
           {watchId && <SpectatorBar room={watchId} />}
           {!watchId && (
           <div className="fleet-target">
-            <span className="fleet-target-kind">{cs ? 'nejbližší dok' : 'nearest dock'}</span>
+            <span className="fleet-target-kind">{l('nearestDock')}</span>
             <strong>{targetName}</strong>
             <span>{nearest ? `${nearest.distance.toFixed(1)} j.` : '—'}</span>
             {stats.dockId && stats.dockProgress > 0.02 && (
@@ -285,15 +288,13 @@ export default function FleetPage() {
 
           {!coarse && !watchId && (
             <div className="fleet-keys">
-              {cs
-                ? 'W plyn · S brzda · A/D zatáčení · ↑↓ klopení · Q/E náklon · Shift boost'
-                : 'W throttle · S brake · A/D yaw · ↑↓ pitch · Q/E roll · Shift boost'}
+              {l('keys')}
             </div>
           )}
 
           {stats.dockId && stats.dockProgress > 0.05 && !docked && (
             <div className="fleet-hint">
-              {cs ? 'Drž se u doku…' : 'Hold at the dock…'}{' '}
+              {l('holdAtDock')}{' '}
               {Math.round((stats.dockProgress / 1) * 100)}%
             </div>
           )}
@@ -301,16 +302,12 @@ export default function FleetPage() {
           {notice && <div className="fleet-notice">{notice}</div>}
 
           {docked && (
-            <div className="fleet-docked" role="dialog" aria-label={cs ? 'Přistáno' : 'Docked'}>
+            <div className="fleet-docked" role="dialog" aria-label={l('docked')}>
               <h2>{docked.startsWith('nabukano') ? 'Nabukano' : 'Issobella'}</h2>
               <p>
                 {docked.startsWith('nabukano')
-                  ? cs
-                    ? 'Stojíš na dokovacím rámu mateřské lodi. Rám se otáčí s flotilou, takže i dok jede.'
-                    : 'You are standing on the mother ship dock frame. The frame rotates with the fleet, so the dock moves too.'
-                  : cs
-                    ? 'Stanice na prstenci L6. Prstenec se otáčí, dok jede s ním.'
-                    : 'The L6 ring station. The ring rotates and the dock moves with it.'}
+                  ? l('motherShipNote')
+                  : l('ringNote')}
               </p>
               <div className="fleet-docked-actions">
                 <button
@@ -321,17 +318,17 @@ export default function FleetPage() {
                     setDocked(null);
                   }}
                 >
-                  {cs ? 'Odpojit se' : 'Undock'}
+                  {l('undock')}
                 </button>
                 <button type="button" className="is-ghost" onClick={leave}>
-                  {cs ? 'Zpět do výběru' : 'Back to hangar'}
+                  {l('backToHangar')}
                 </button>
               </div>
             </div>
           )}
 
           <button type="button" className="fleet-exit" onClick={leave}>
-            ← {cs ? 'Hangár' : 'Hangar'}
+            ← {l('hangar')}
           </button>
 
           {coarse && !watchId && (
@@ -354,10 +351,10 @@ export default function FleetPage() {
               </div>
               <div className="fleet-touch is-right">
                 <TouchButton code="KeyW" className="is-wide">
-                  {cs ? 'PLYN' : 'THRUST'}
+                  {l('throttle')}
                 </TouchButton>
                 <TouchButton code="KeyS" className="is-wide is-dim">
-                  {cs ? 'BRZDA' : 'BRAKE'}
+                  {l('brake')}
                 </TouchButton>
                 <TouchButton code="ShiftLeft" className="is-wide is-boost">
                   BOOST
@@ -371,12 +368,10 @@ export default function FleetPage() {
       {phase === 'intro' && (
         <div className="fleet-hangar">
           <header>
-            <p className="fleet-kicker">{cs ? 'Nirvana · nebeská flotila' : 'Nirvana · sky fleet'}</p>
-            <h1>{cs ? 'Flotila z marketu' : 'The marketplace fleet'}</h1>
+            <p className="fleet-kicker">{l('kicker')}</p>
+            <h1>{l('title')}</h1>
             <p className="fleet-lead">
-              {cs
-                ? 'Sedm stíhaček, které v marketu existují jako dřevěné skládačky, teď letí. Vyber si loď a doleť k Nabukanu nebo k Issobelle — oba doky se hýbou, takže se na ně musí doletět.'
-                : 'Seven starfighters that exist as wooden kits in the marketplace now fly. Pick a ship and reach Nabukano or Issobella — both docks move, so you have to fly to them.'}
+              {l('intro')}
             </p>
           </header>
 
@@ -392,7 +387,7 @@ export default function FleetPage() {
                 }}
               >
                 <span className="fleet-card-name">{ship.name}</span>
-                <span className="fleet-card-role">{cs ? ship.role.cs : ship.role.en}</span>
+                <span className="fleet-card-role">{tx(ship.role, lang)}</span>
                 <span className="fleet-card-stats">
                   <i style={{ width: `${Math.round((ship.maxSpeed / 12) * 100)}%` }} />
                 </span>
@@ -402,7 +397,7 @@ export default function FleetPage() {
 
           <div className="fleet-launch">
             <button type="button" onClick={start}>
-              {cs ? 'Vzlétnout' : 'Launch'}
+              {l('launch')}
             </button>
             <button
               type="button"
@@ -413,29 +408,23 @@ export default function FleetPage() {
               }}
               aria-pressed={coop}
             >
-              {coop ? (cs ? '✈ Letí se společně' : '✈ Flying together') : cs ? 'Letět s ostatními' : 'Fly with others'}
+              {coop ? (l('flyingTogether')) : l('flyWithOthers')}
             </button>
-            <Link href="/multiplayer">{cs ? 'Online místnosti' : 'Online rooms'}</Link>
+            <Link href="/multiplayer">{l('onlineRooms')}</Link>
           </div>
 
           <p className="fleet-homage-note">
-            {cs
-              ? 'Pocta lodím, se kterými jsme vyrůstali — flotila je fanouškovská pocta, ne oficiální produkt ani spojení s držiteli práv. Modely jsou vlastní render z podkladů marketplace.'
-              : 'An homage to the ships we grew up with — the fleet is a fan tribute, not an official product or an association with the rights holders. Models are our own render of the marketplace source files.'}
+            {l('tribute')}
           </p>
 
           {coop && (
             <p className="fleet-coop-note">
-              {cs
-                ? 'Ostatní uvidí tvoji loď i to, kdy přistaneš. Místnost má šest pilotů — když je plná, přidej se jinam.'
-                : 'Others see your ship and when you dock. A room holds six pilots — if it is full, join elsewhere.'}
+              {l('roomNote')}
             </p>
           )}
 
           <footer className="fleet-foot">
-            {cs
-              ? `Dok drží ${DOCK_HOLD} s v okruhu ${DOCK_RADIUS} jednotky. Lodě mají vlastní tah i obratnost — B-Wing je pomalý, TIE Interceptor nejobratnější.`
-              : `A dock holds for ${DOCK_HOLD}s within ${DOCK_RADIUS} units. Ships differ in thrust and agility — the B-Wing is slow, the TIE Interceptor the most agile.`}
+            {l('dockNote', { hold: DOCK_HOLD, radius: DOCK_RADIUS })}
           </footer>
         </div>
       )}

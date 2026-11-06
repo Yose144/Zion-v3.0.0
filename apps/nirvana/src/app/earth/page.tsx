@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { AVATARS } from '@/core/avatars/catalog';
-import { useI18n } from '@/core/i18n';
+import { fill, tx, useI18n, type Lang } from '@/core/i18n';
 import { MobaGame, type MobaStats } from '@/core/moba/MobaGame';
 import { MobaOnline } from '@/core/moba/MobaOnline';
 import { useXr } from '@/core/xr';
@@ -48,6 +48,7 @@ import { recommendNextItem, standingFrom } from '@/core/moba/build';
 import { talentsFor } from '@/core/moba/sim';
 import { SPELL_LABEL } from '@/core/moba/keys';
 import { MobaTouch } from '@/core/moba/MobaTouch';
+import { EARTH_COPY, type EarthCopyKey } from './copy';
 
 /** Dvanáct startovních hrdinů — zbytek rosteru jde vybrat na `/avatars`. */
 const STARTERS = [0, 1, 2, 3, 4, 5, 82, 84, 85, 86, 19, 20];
@@ -111,16 +112,18 @@ function Portrait({
 function TeamBoard({
   heroes,
   team,
-  cs,
+  lang,
   youId,
   minutes,
 }: {
   heroes: MobaStats['snapshot']['heroes'];
   team: 'blue' | 'red';
-  cs: boolean;
+  lang: Lang;
   youId: string | null;
   minutes: number;
 }) {
+  /** Vlastní `l` — tabulka je samostatná komponenta, ne součást stránky. */
+  const l = (key: EarthCopyKey) => tx(EARTH_COPY[key], lang);
   const list = heroes
     .filter((hero) => hero.team === team)
     .sort((a, b) => b.kills - a.kills || b.gold - a.gold);
@@ -129,18 +132,18 @@ function TeamBoard({
 
   return (
     <div className={`moba-board is-${team}`}>
-      <strong>{team === 'blue' ? 'ZION' : cs ? 'OPOZICE' : 'OPPOSITION'}</strong>
+      <strong>{team === 'blue' ? 'ZION' : l('opposition')}</strong>
       <table>
         <thead>
           <tr>
-            <th>{cs ? 'Hrdina' : 'Hero'}</th>
+            <th>{l('hero')}</th>
             <th>Lv</th>
             <th>K/D</th>
-            <th>{cs ? 'Zlato' : 'Gold'}</th>
+            <th>{l('gold')}</th>
             <th>GPM</th>
             <th>XPM</th>
-            <th>{cs ? 'Dmg' : 'Dmg'}</th>
-            <th>{cs ? 'Léčení' : 'Heal'}</th>
+            <th>{l('damage')}</th>
+            <th>{l('heal')}</th>
           </tr>
         </thead>
         <tbody>
@@ -176,6 +179,14 @@ export default function EarthPage() {
     setMode('online');
     setPhase('playing');
   }, []);
+  /** Texty obrazovky jdou přes `app/earth/copy.ts` — žádné `cs ? :` v JSX. */
+  const l = useCallback(
+    (key: EarthCopyKey, values?: Record<string, string | number>) => {
+      const text = tx(EARTH_COPY[key], lang);
+      return values ? fill(text, values) : text;
+    },
+    [lang],
+  );
   const cs = lang === 'cs';
   const [heroId, setHeroId] = useState(0);
   const [foeId, setFoeId] = useState(82);
@@ -308,13 +319,13 @@ export default function EarthPage() {
       hero: heroId,
       xp: gain.xp,
       level: gain.after.level,
-      title: gain.after.title[cs ? 'cs' : 'en'],
+      title: tx(gain.after.title, lang),
     });
 
     setNotice(
       describeRun(outcome, cs, [
-        won ? (cs ? 'výhra' : 'win') : cs ? 'prohra' : 'loss',
-        `+${gain.xp} ${cs ? 'mistrovství' : 'mastery'}`,
+        won ? (l('win')) : l('loss'),
+        `+${gain.xp} ${l('mastery')}`,
       ]),
     );
   }, [winner, stats, cs, heroId, mode, star]);
@@ -327,23 +338,21 @@ export default function EarthPage() {
     <main className={`moba ${phase === 'playing' ? 'is-live' : ''}`}>
       <header className="moba-head">
         <div>
-          <p className="moba-kicker">{cs ? 'L4 · první svět · MOBA' : 'L4 · first world · MOBA'}</p>
-          <h1>PRVNÍ SVĚT</h1>
+          <p className="moba-kicker">{l('kicker')}</p>
+          <h1>{l('title')}</h1>
           <p className="moba-sub">
-            {cs
-              ? 'Tři linky mezi ZIONem a Opozicí. Každá postava má čtyři kouzla ze svého kánonu.'
-              : 'Three lanes between ZION and the Opposition. Every character brings four spells from its canon.'}
+            {l('intro')}
           </p>
         </div>
         <div className="moba-head-links">
           {phase !== 'playing' && (
             <Link href="/avatars" className="moba-link">
-              {cs ? 'Celý roster' : 'Full roster'} ↗
+              {l('fullRoster')} ↗
             </Link>
           )}
           {phase === 'playing' && (
             <button type="button" className="moba-link" onClick={() => setPhase('pick')}>
-              {cs ? 'Menu' : 'Menu'}
+              {l('menu')}
             </button>
           )}
         </div>
@@ -358,17 +367,17 @@ export default function EarthPage() {
                 className={`moba-mode-btn${mode === 'solo' ? ' is-active' : ''}`}
                 onClick={() => setMode('solo')}
               >
-                {cs ? 'Sólo vs bot' : 'Solo vs bot'}
+                {l('soloVsBot')}
               </button>
               <button
                 type="button"
                 className={`moba-mode-btn${mode === 'online' ? ' is-active' : ''}`}
                 onClick={() => setMode('online')}
               >
-                {cs ? 'Online 2v2' : 'Online 2v2'}
+                {l('online')}
               </button>
             </div>
-            <h2>{cs ? 'Vyber si hrdinu' : 'Pick your hero'}</h2>
+            <h2>{l('pickHero')}</h2>
             {(() => {
               // Nejsilnější hrdina z mistrovství — pochvala, ne bonus.
               const entries = Object.entries(mastery)
@@ -381,10 +390,10 @@ export default function EarthPage() {
               const level = masteryLevel(top.value.xp);
               return (
                 <p className="moba-best-hero">
-                  {cs ? 'Nejvěrnější hrdina' : 'Most played'}: <strong>{name}</strong>{' '}
+                  {l('mostPlayed')}: <strong>{name}</strong>{' '}
                   <span>
-                    {level.title[cs ? 'cs' : 'en']} · level {level.level} · {top.value.matches}{' '}
-                    {cs ? 'zápasů' : 'matches'}
+                    {tx(level.title, lang)} · level {level.level} · {top.value.matches}{' '}
+                    {l('matches')}
                   </span>
                 </p>
               );
@@ -404,7 +413,7 @@ export default function EarthPage() {
                     }}
                   >
                     {star === id && (
-                      <i className="moba-pick-star" title={cs ? 'hrdina dne · +50 % mistrovství' : 'hero of the day · +50% mastery'}>
+                      <i className="moba-pick-star" title={l('heroOfDay')}>
                         ★
                       </i>
                     )}
@@ -417,7 +426,7 @@ export default function EarthPage() {
                         <b className="moba-mastery">
                           {(() => {
                             const level = masteryLevel(mastery[id]!.xp);
-                            return `${level.level} · ${level.title[cs ? 'cs' : 'en']}`;
+                            return `${level.level} · ${tx(level.title, lang)}`;
                           })()}
                         </b>
                       ) : null}
@@ -428,7 +437,7 @@ export default function EarthPage() {
             </div>
             {mode === 'solo' && (
               <div className="moba-difficulty">
-                <span>{cs ? 'Obtížnost bota' : 'Bot difficulty'}</span>
+                <span>{l('botDifficulty')}</span>
                 {(['easy', 'normal', 'hard'] as BotSkill[]).map((skill) => (
                   <button
                     key={skill}
@@ -436,36 +445,32 @@ export default function EarthPage() {
                     className={`moba-mode-btn${botSkill === skill ? ' is-active' : ''}`}
                     onClick={() => setBotSkill(skill)}
                   >
-                    {skill === 'easy' ? (cs ? 'Lehký' : 'Easy') : skill === 'hard' ? (cs ? 'Těžký' : 'Hard') : cs ? 'Normální' : 'Normal'}
+                    {skill === 'easy' ? (l('easy')) : skill === 'hard' ? (l('hard')) : l('normal')}
                   </button>
                 ))}
               </div>
             )}
             <p className="moba-pick-note">
-              {cs
-                ? `${hero.name} proti ${foe.name} · ${spells.map((spell) => spell.name).join(' · ')}`
-                : `${hero.name} versus ${foe.name} · ${spells.map((spell) => spell.name).join(' · ')}`}
+              {l('pickNote', {
+              hero: hero.name,
+              foe: foe.name,
+              spells: spells.map((spell) => spell.name).join(' · '),
+            })}
             </p>
           </div>
 
           <div className="moba-pick-block">
-            <h2>{cs ? 'Jak se hraje' : 'How to play'}</h2>
+            <h2>{l('howTo')}</h2>
             <ul className="moba-rules">
               <li>
                 {coarse
-                  ? cs
-                    ? 'Joystick pohyb, ÚTOK útok, Q/F/E/R kouzla. Klepni do země a pak na kouzlo — sešle se tam.'
-                    : 'Stick to move, ATTACK to strike, Q/F/E/R spells. Tap the ground, then a spell — it casts there.'
-                  : cs
-                    ? 'WASD pohyb, držené levé tlačítko útok.'
-                    : 'WASD to move, hold left mouse to attack.'}
+                  ? l('touchHow')
+                  : l('mouseMove')}
               </li>
-              <li>{cs ? 'Q/W/E/R kouzlo na kurzor. Mana a cooldowny platí.' : 'Q/W/E/R casts at the cursor. Mana and cooldowns apply.'}</li>
-              <li>{cs ? 'Chraň svůj Nex a znič protivníkův — nebo vyhraj na čas.' : 'Protect your Nexus, destroy theirs — or win on time.'}</li>
+              <li>{l('castHow')}</li>
+              <li>{l('goal')}</li>
               <li>
-                {cs
-                  ? 'Uzly L5 (Kailash, Uluru, Ekam) převezmi stáním — každý držený uzel přidává 5 % poškození.'
-                  : 'Capture L5 nodes (Kailash, Uluru, Ekam) by standing — each held node adds 5% damage.'}
+                {l('nodesHow')}
               </li>
             </ul>
             <div className="moba-spells">
@@ -477,44 +482,44 @@ export default function EarthPage() {
                   <small>
                     {spell.damage > 0 ? `${spell.damage} dmg` : spell.shield > 0 ? `${spell.shield} štít` : 'podpora'} ·{' '}
                     {Math.round(spell.cooldownMs / 100) / 10}s ·{' '}
-                    {cs ? SCHOOL_LABEL[spell.school].cs : SCHOOL_LABEL[spell.school].en}
+                    {tx(SCHOOL_LABEL[spell.school], lang)}
                   </small>
                 </div>
               ))}
             </div>
             <div className="moba-difficulty moba-difficulty-start">
-              <span>{cs ? 'Aspekt kouzel' : 'Spell aspect'}</span>
+              <span>{l('aspect')}</span>
               {aspectOptions.map((option) => (
                 <button
                   key={option.id}
                   type="button"
                   className={`moba-mode-btn${aspect === option.id ? ' is-active' : ''}`}
-                  title={option.note[cs ? 'cs' : 'en']}
+                  title={tx(option.note, lang)}
                   onClick={() => setAspect(option.id)}
                 >
-                  {option.name[cs ? 'cs' : 'en']}
+                  {tx(option.name, lang)}
                 </button>
               ))}
             </div>
             <p className="moba-aspect-note">
-              {aspectOptions.find((option) => option.id === aspect)?.note[cs ? 'cs' : 'en']}
+              {tx(aspectOptions.find((option) => option.id === aspect)?.note, lang)}
             </p>
             <div className="moba-difficulty moba-difficulty-start">
-              <span>{cs ? 'Battle spell' : 'Battle spell'}</span>
+              <span>{l('battleSpell')}</span>
               {(['flicker', 'heal', 'purify'] as BattleSpellId[]).map((id) => (
                 <button
                   key={id}
                   type="button"
                   className={`moba-mode-btn${battleSpell === id ? ' is-active' : ''}`}
-                  title={BATTLE_SPELLS[id].note[cs ? 'cs' : 'en']}
+                  title={tx(BATTLE_SPELLS[id].note, lang)}
                   onClick={() => setBattleSpell(id)}
                 >
-                  {BATTLE_SPELLS[id].name[cs ? 'cs' : 'en']}
+                  {tx(BATTLE_SPELLS[id].name, lang)}
                 </button>
               ))}
             </div>
             <button type="button" className="moba-start" onClick={start}>
-              {phase === 'ended' ? (cs ? 'Hrát znovu' : 'Play again') : cs ? 'Vstoupit na Zemi' : 'Enter Earth'}
+              {phase === 'ended' ? (l('playAgain')) : l('enter')}
             </button>
             {notice && <p className="moba-pick-note">{notice}</p>}
             <GameBoard game="moba" className="moba-board-panel" />
@@ -571,29 +576,17 @@ export default function EarthPage() {
             <div className="moba-status" role="status" aria-live="polite">
               <strong>
                 {onlinePhase === 'offline'
-                  ? cs
-                    ? 'Server neodpovídá'
-                    : 'Server offline'
+                  ? l('serverOffline')
                   : onlinePhase === 'countdown'
-                    ? cs
-                      ? 'Zápas začíná'
-                      : 'Match starting'
+                    ? l('matchStarting')
                     : onlinePhase === 'waiting'
-                      ? cs
-                        ? 'Čekám na hráče'
-                        : 'Waiting for players'
-                      : cs
-                        ? 'Připojuji se'
-                        : 'Connecting'}
+                      ? l('waitingPlayers')
+                      : l('connecting')}
               </strong>
               <span>
                 {onlinePhase === 'offline'
-                  ? cs
-                    ? 'Zkus to znovu za chvíli.'
-                    : 'Try again in a moment.'
-                  : cs
-                    ? 'Volná sedla doplní boti, hra nečeká.'
-                    : 'Empty seats are filled by bots, the game does not wait.'}
+                  ? l('tryAgain')
+                  : l('botsFill')}
               </span>
             </div>
           )}
@@ -609,7 +602,7 @@ export default function EarthPage() {
             <div className="moba-clock">
               <strong>{clock}</strong>
               <small>
-                {cs ? 'vlna' : 'wave'} {stats?.snapshot.wave ?? 0} · {stats?.snapshot.nextWaveIn ?? 0}s
+                {l('wave')} {stats?.snapshot.wave ?? 0} · {stats?.snapshot.nextWaveIn ?? 0}s
               </small>
             </div>
             <div className="moba-nexus is-red">
@@ -635,12 +628,12 @@ export default function EarthPage() {
             {(stats?.recallIn ?? 0) > 0 && (
               <div className="moba-recall-progress" role="status" aria-live="polite">
                 <i style={{ width: `${100 - ((stats?.recallIn ?? 0) / 4000) * 100}%` }} />
-                <span>{cs ? 'návrat do základny' : 'recalling'}</span>
+                <span>{l('recalling')}</span>
               </div>
             )}
             {stats?.invisible && (
               <div className="moba-invisible" role="status">
-                {cs ? 'NEVIDITELNÝ' : 'INVISIBLE'}
+                {l('invisible')}
               </div>
             )}
             <div className="moba-vitals">
@@ -656,7 +649,7 @@ export default function EarthPage() {
                   {stats?.playerMana ?? 0} / {stats?.playerMaxMana ?? 0}
                 </span>
               </div>
-              <div className="moba-bar is-xp" title={cs ? 'zkušenosti' : 'experience'}>
+              <div className="moba-bar is-xp" title={l('xp')}>
                 <i style={{ width: `${((stats?.xp ?? 0) / (stats?.xpNeed ?? 1)) * 100}%` }} />
                 <span>
                   XP {stats?.xp ?? 0} / {stats?.xpNeed ?? 1}
@@ -672,7 +665,7 @@ export default function EarthPage() {
                   .slice(0, 4);
                 if (active.length === 0) return null;
                 return (
-                  <div className="moba-buffs" aria-label={cs ? 'Aktivní posily' : 'Active buffs'}>
+                  <div className="moba-buffs" aria-label={l('buffs')}>
                     {active.map((buff, index) => {
                       const left = Math.max(0, Math.ceil((buff.until - now) / 1000));
                       return (
@@ -689,7 +682,7 @@ export default function EarthPage() {
                 <strong>{hero.name}</strong>
                 <span>
                   Lv {stats?.playerLevel ?? 1} · {stats?.kills ?? 0}/{stats?.deaths ?? 0} ·{' '}
-                  {aspectOptions.find((option) => option.id === aspect)?.name[cs ? 'cs' : 'en']}
+                  {tx(aspectOptions.find((option) => option.id === aspect)?.name, lang)}
                   {(stats?.streak ?? 0) >= 2 && (
                     <b className={`moba-streak${(stats?.streak ?? 0) >= 5 ? ' is-hot' : ''}`}>
                       🔥{stats?.streak}
@@ -710,7 +703,7 @@ export default function EarthPage() {
                       <div className="moba-slot-text">
                         <strong>{spell.name}</strong>
                         <small>
-                          {spell.rank ? `T${spell.rank} · ${spell.mana} mp` : cs ? 'zamčeno do lv 6' : 'locked until lv 6'}
+                          {spell.rank ? `T${spell.rank} · ${spell.mana} mp` : l('lockedLv6')}
                         </small>
                       </div>
                     </div>
@@ -720,20 +713,20 @@ export default function EarthPage() {
               })}
             </div>
 
-            <div className="moba-shop" aria-label={cs ? 'Obchod' : 'Shop'}>
-              <span className="moba-shop-gold" title={cs ? 'zlato' : 'gold'}>
+            <div className="moba-shop" aria-label={l('shop')}>
+              <span className="moba-shop-gold" title={l('goldLower')}>
                 ◈ {stats?.gold ?? 0}
               </span>
-              <span className="moba-ward-count" title={cs ? 'wardy (G položí)' : 'wards (G places)'}>
+              <span className="moba-ward-count" title={l('wards')}>
                 🛡 {stats?.wards ?? 0}
               </span>
-              <span className="moba-sentry-count" title={cs ? 'sentry (H položí) — odhalí neviditelné' : 'sentry (H places) — reveals invisible'}>
+              <span className="moba-sentry-count" title={l('sentry')}>
                 🕯 {stats?.sentries ?? 0}
               </span>
               <button
                 type="button"
                 className={`moba-recall${(stats?.recallIn ?? 0) > 0 ? ' is-channeling' : ''}`}
-                title={cs ? 'Recall (B) — návrat do základny, 4 s channel' : 'Recall (B) — teleport home, 4 s channel'}
+                title={l('recall')}
                 onClick={() => {
                   window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyB', bubbles: true }));
                 }}
@@ -744,7 +737,7 @@ export default function EarthPage() {
               <button
                 type="button"
                 className={`moba-battlespell${(stats?.battleSpellIn ?? 0) > 0 ? ' is-cooling' : ''}`}
-                title={cs ? 'Flicker (V) — krátký skok, 60 s' : 'Flicker (V) — short blink, 60 s'}
+                title={l('flicker')}
                 disabled={(stats?.battleSpellIn ?? 0) > 0}
                 onClick={() => {
                   window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyV', bubbles: true }));
@@ -755,7 +748,7 @@ export default function EarthPage() {
                   <small>{Math.ceil((stats?.battleSpellIn ?? 0) / 1000)}</small>
                 )}
               </button>
-              <div className="moba-inventory" title={cs ? 'inventář: 1–6 použije aktivní item, klik prodá' : 'inventory: 1–6 uses an active item, click sells'}>
+              <div className="moba-inventory" title={l('inventoryHow')}>
                 {Array.from({ length: ITEM_SLOTS }).map((_, index) => {
                   const itemId = stats?.items[index];
                   const item = itemId ? ITEM_BY_ID.get(itemId) : undefined;
@@ -771,10 +764,8 @@ export default function EarthPage() {
                       disabled={!item}
                       title={
                         item
-                          ? `${item.name[cs ? 'cs' : 'en']} — ${item.note[cs ? 'cs' : 'en']}${item.active ? ` · ${cs ? 'klávesa' : 'key'} ${index + 1}` : ` · ${cs ? 'prodej' : 'sell'} +${Math.round(item.cost * SELL_RATIO)} ◈`}`
-                          : cs
-                            ? 'prázdný slot'
-                            : 'empty slot'
+                          ? `${tx(item.name, lang)} — ${tx(item.note, lang)}${item.active ? ` · ${l('key')} ${index + 1}` : ` · ${l('sell')} +${Math.round(item.cost * SELL_RATIO)} ◈`}`
+                          : l('emptySlot')
                       }
                       onClick={() => {
                         if (!itemId) return;
@@ -787,7 +778,7 @@ export default function EarthPage() {
                         sellRequest.current = itemId;
                       }}
                     >
-                      {item ? item.name[cs ? 'cs' : 'en'] : '·'}
+                      {item ? tx(item.name, lang) : '·'}
                       {item && <em className="moba-inv-key">{index + 1}</em>}
                       {cooldownPct > 0 && <i className="moba-inv-cd" style={{ height: `${cooldownPct}%` }} />}
                       {item?.active && (
@@ -795,7 +786,7 @@ export default function EarthPage() {
                           role="button"
                           tabIndex={-1}
                           className="moba-inv-sell"
-                          title={cs ? 'prodat' : 'sell'}
+                          title={l('sellVerb')}
                           onClick={(event) => {
                             event.stopPropagation();
                             sellRequest.current = itemId!;
@@ -812,9 +803,9 @@ export default function EarthPage() {
                 type="button"
                 className={`moba-shop-toggle${shopOpen ? ' is-open' : ''}`}
                 onClick={() => setShopOpen((open) => !open)}
-                title={cs ? 'obchod' : 'shop'}
+                title={l('shopLower')}
               >
-                {shopOpen ? '×' : cs ? 'Obchod' : 'Shop'}
+                {shopOpen ? '×' : l('shop')}
               </button>
             </div>
 
@@ -841,7 +832,7 @@ export default function EarthPage() {
                   const affordable = (stats?.gold ?? 0) >= price;
                   return (
                     <div className="moba-quickbuy">
-                      <strong>{cs ? 'Doporučeno' : 'Recommended'}</strong>
+                      <strong>{l('recommended')}</strong>
                       <button
                         type="button"
                         className="moba-quickbuy-btn"
@@ -850,7 +841,7 @@ export default function EarthPage() {
                           buyRequest.current = next;
                         }}
                       >
-                        <span>{item.name[cs ? 'cs' : 'en']}</span>
+                        <span>{tx(item.name, lang)}</span>
                         <small>{price} ◈</small>
                       </button>
                     </div>
@@ -859,7 +850,7 @@ export default function EarthPage() {
 
                 {(['base', 'built'] as const).map((group) => (
                   <div key={group} className="moba-shop-group">
-                    <strong>{group === 'base' ? (cs ? 'Základ' : 'Base') : cs ? 'Složené' : 'Built'}</strong>
+                    <strong>{group === 'base' ? (l('base')) : l('built')}</strong>
                     <div className="moba-shop-grid">
                       {ITEMS.filter((item) => (item.components ? 'built' : 'base') === group).map((item) => {
                         const items = stats?.items ?? [];
@@ -883,31 +874,25 @@ export default function EarthPage() {
                             type="button"
                             className={`moba-shop-item${owned ? ' is-owned' : ''}${item.components ? ' is-built' : ''}`}
                             disabled={owned || full || maxed || !affordable}
-                            title={item.note[cs ? 'cs' : 'en']}
+                            title={tx(item.note, lang)}
                             onClick={() => {
                               buyRequest.current = item.id;
                             }}
                           >
-                            <strong>{item.name[cs ? 'cs' : 'en']}</strong>
+                            <strong>{tx(item.name, lang)}</strong>
                             <small>
                               {owned
-                                ? cs
-                                  ? 'koupeno'
-                                  : 'owned'
+                                ? l('owned')
                                 : maxed
-                                  ? cs
-                                    ? 'plná zásoba'
-                                    : 'full stock'
+                                  ? l('fullStock')
                                   : full
-                                    ? cs
-                                      ? 'plný inventář'
-                                      : 'inventory full'
+                                    ? l('fullInventory')
                                     : `${price} ◈${consumable ? ` · ${stock}/${WARD_STOCK_MAX}` : ''}`}
                             </small>
                             {item.components && (
                               <em>
                                 {item.components
-                                  .map((component) => ITEM_BY_ID.get(component)?.name[cs ? 'cs' : 'en'] ?? component)
+                                  .map((component) => tx(ITEM_BY_ID.get(component)?.name, lang) || component)
                                   .join(' + ')}
                               </em>
                             )}
@@ -925,7 +910,7 @@ export default function EarthPage() {
                 <button
                   type="button"
                   className={`moba-emote-btn${emoteWheel ? ' is-open' : ''}`}
-                  title={cs ? 'emoty (X) — drž a vyber' : 'emotes (X)'}
+                  title={l('emotes')}
                   onClick={(event) => {
                     setEmoteWheel({ x: event.clientX, y: event.clientY });
                   }}
@@ -944,10 +929,10 @@ export default function EarthPage() {
                     type="button"
                     className="moba-quickchat-btn"
                     onClick={() => {
-                      sendChat(cs ? message.cs : message.en);
+                      sendChat(tx(message, lang));
                     }}
                   >
-                    {cs ? message.cs : message.en}
+                    {tx(message, lang)}
                   </button>
                 ))}
               </div>
@@ -955,27 +940,23 @@ export default function EarthPage() {
 
             <div className="moba-tips">
               {coarse
-                ? cs
-                  ? 'joystick pohyb · Q/F/E/R kouzlo · ÚTOK'
-                  : 'stick move · Q/F/E/R cast · ATTACK'
-                : cs
-                  ? 'WASD pohyb · Q/F/E/R kouzlo · 1–6 item · G ward · H sentry · V flicker · B recall · Tab scoreboard'
-                  : 'WASD move · Q/F/E/R cast · left click attack'}
+                ? l('touchHint')
+                : l('keysHint')}
             </div>
           </div>
 
           <MobaMinimap
             snapshot={stats?.snapshot ?? null}
             youId={stats?.youId ?? null}
-            label={cs ? 'Minimapa Prvního světa' : 'First World minimap'}
+            label={l('minimap')}
           />
 
           {stats?.snapshot.banner && <div className="moba-banner">{stats.snapshot.banner}</div>}
 
           {stats?.talentPending != null && (
-            <div className="moba-talent" role="dialog" aria-label={cs ? 'talent' : 'talent'}>
+            <div className="moba-talent" role="dialog" aria-label={l('talentLower')}>
               <strong>
-                {cs ? 'Talent' : 'Talent'} · {stats.talentPending}
+                {l('talent')} · {stats.talentPending}
               </strong>
               {[0, 1].map((pick) => {
                 const talent = talentsFor(spells[0]?.school ?? 'cosmic')[stats.talentPending!]?.[pick];
@@ -989,8 +970,8 @@ export default function EarthPage() {
                       talentRequest.current = { tier: stats.talentPending!, pick };
                     }}
                   >
-                    <b>{talent.name[cs ? 'cs' : 'en']}</b>
-                    <small>{talent.note[cs ? 'cs' : 'en']}</small>
+                    <b>{tx(talent.name, lang)}</b>
+                    <small>{tx(talent.note, lang)}</small>
                   </button>
                 );
               })}
@@ -1001,25 +982,25 @@ export default function EarthPage() {
             type="button"
             className={`moba-scoreboard-toggle${scoreboard ? ' is-open' : ''}`}
             onClick={() => setScoreboard((open) => !open)}
-            title={cs ? 'scoreboard (Tab)' : 'scoreboard (Tab)'}
+            title={l('scoreboardTab')}
           >
             Σ
           </button>
 
           {scoreboard && stats && (
-            <div className="moba-scoreboard" role="dialog" aria-label={cs ? 'scoreboard' : 'scoreboard'}>
-              <h3>{cs ? 'Scoreboard' : 'Scoreboard'} · {clock}</h3>
+            <div className="moba-scoreboard" role="dialog" aria-label={l('scoreboardLower')}>
+              <h3>{l('scoreboard')} · {clock}</h3>
               <TeamBoard
                 heroes={stats.snapshot.heroes}
                 team="blue"
-                cs={cs}
+                lang={lang}
                 youId={stats.youId}
                 minutes={Math.max(0.1, stats.snapshot.time / 60)}
               />
               <TeamBoard
                 heroes={stats.snapshot.heroes}
                 team="red"
-                cs={cs}
+                lang={lang}
                 youId={stats.youId}
                 minutes={Math.max(0.1, stats.snapshot.time / 60)}
               />
@@ -1029,7 +1010,7 @@ export default function EarthPage() {
           {(stats?.respawnIn ?? 0) > 0 && (
             <div className="moba-respawn">
               <span>
-                {cs ? 'obnova za' : 'respawn in'} {stats?.respawnIn}s
+                {l('respawnIn')} {stats?.respawnIn}s
               </span>
               {(stats?.buybackCost ?? 0) > 0 && (
                 <button
@@ -1039,7 +1020,7 @@ export default function EarthPage() {
                     buybackRequest.current = true;
                   }}
                 >
-                  {cs ? 'Buyback' : 'Buyback'} · {stats?.buybackCost} ◈
+                  {l('buyback')} · {stats?.buybackCost} ◈
                 </button>
               )}
             </div>
@@ -1052,7 +1033,7 @@ export default function EarthPage() {
       {emoteWheel && (
         <MobaEmoteWheel
           origin={emoteWheel}
-          language={cs ? 'cs' : 'en'}
+          language={lang}
           onPick={(index) => {
             sendEmote(index);
             setEmoteWheel(null);
@@ -1063,9 +1044,9 @@ export default function EarthPage() {
 
       {phase === 'ended' && (
         <div className="moba-result">
-          <strong>{winner === 'blue' ? (cs ? 'ZION DRŽÍ ZEMI' : 'ZION HOLDS EARTH') : cs ? 'OPOZICE PROLOMILA LINII' : 'THE OPPOSITION BROKE THROUGH'}</strong>
+          <strong>{winner === 'blue' ? (l('zionHolds')) : l('oppositionBroke')}</strong>
           <span>
-            {cs ? 'Kdo ovládne první svět, určí směr celého OASIS.' : 'Whoever holds the first world sets the course of OASIS.'}
+            {l('epilogue')}
           </span>
           {notice && <p className="moba-result-note">{notice}</p>}
           {masteryGain && (
@@ -1100,14 +1081,14 @@ export default function EarthPage() {
               <TeamBoard
                 heroes={stats.snapshot.heroes}
                 team="blue"
-                cs={cs}
+                lang={lang}
                 youId={stats.youId}
                 minutes={Math.max(0.1, stats.snapshot.time / 60)}
               />
               <TeamBoard
                 heroes={stats.snapshot.heroes}
                 team="red"
-                cs={cs}
+                lang={lang}
                 youId={stats.youId}
                 minutes={Math.max(0.1, stats.snapshot.time / 60)}
               />
@@ -1115,24 +1096,24 @@ export default function EarthPage() {
           )}
           <div className="moba-result-actions">
             <div className="moba-difficulty moba-difficulty-start">
-              <span>{cs ? 'Battle spell' : 'Battle spell'}</span>
+              <span>{l('battleSpell')}</span>
               {(['flicker', 'heal', 'purify'] as BattleSpellId[]).map((id) => (
                 <button
                   key={id}
                   type="button"
                   className={`moba-mode-btn${battleSpell === id ? ' is-active' : ''}`}
-                  title={BATTLE_SPELLS[id].note[cs ? 'cs' : 'en']}
+                  title={tx(BATTLE_SPELLS[id].note, lang)}
                   onClick={() => setBattleSpell(id)}
                 >
-                  {BATTLE_SPELLS[id].name[cs ? 'cs' : 'en']}
+                  {tx(BATTLE_SPELLS[id].name, lang)}
                 </button>
               ))}
             </div>
             <button type="button" className="moba-start" onClick={start}>
-              {cs ? 'Hrát znovu' : 'Play again'}
+              {l('playAgain')}
             </button>
             <button type="button" className="moba-link" onClick={() => setPhase('pick')}>
-              {cs ? 'Změnit hrdinu' : 'Change hero'}
+              {l('changeHero')}
             </button>
           </div>
         </div>

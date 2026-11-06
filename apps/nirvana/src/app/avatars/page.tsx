@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Canvas } from '@react-three/fiber';
 import { useAuth } from '@/core/session/AuthProvider';
-import { useI18n } from '@/core/i18n';
+import { fill, tx, useI18n } from '@/core/i18n';
 import { AVATARS, RAY_COLOR, RARITY_COLOR, type AvatarRay } from '@/core/avatars/catalog';
 import { avatarLook, type BodyType } from '@/core/avatars/kit';
 import { AvatarModel } from '@/core/avatars/AvatarModel';
 import { canvasDpr } from '@/core/design/dpr';
+import { AVATARS_COPY, type AvatarsCopyKey } from './copy';
 
 /**
  * VÝBĚR AVATARA — všech 200 z OASIS rosteru.
@@ -41,6 +42,14 @@ const NEON = ['#4a7bff', '#ff6ec7', '#ffd166', '#9333ea', '#10b981', '#e8b23a'];
 export default function AvatarsPage() {
   const { lang } = useI18n();
   const { user } = useAuth();
+  /** Texty obrazovky jdou přes `./copy` — žádné `cs ? :` v JSX. */
+  const l = useCallback(
+    (key: AvatarsCopyKey, values?: Record<string, string | number>) => {
+      const text = tx(AVATARS_COPY[key], lang);
+      return values ? fill(text, values) : text;
+    },
+    [lang],
+  );
   const cs = lang === 'cs';
 
   const [selected, setSelected] = useState<number>(1);
@@ -101,7 +110,7 @@ export default function AvatarsPage() {
       });
       if (!response.ok) throw new Error(String(response.status));
       setSaved(true);
-      setNotice(cs ? 'Uloženo — ostatní tě uvidí takhle.' : 'Saved — this is what others will see.');
+      setNotice(l('saved'));
     } catch (error) {
       setNotice(
         cs
@@ -117,11 +126,9 @@ export default function AvatarsPage() {
     <main className="avatars">
       <header className="avatars-head">
         <div>
-          <strong>{cs ? 'VYBER SI AVATARA' : 'CHOOSE YOUR AVATAR'}</strong>
+          <strong>{l('title')}</strong>
           <span>
-            {cs
-              ? `· ${AVATARS.length} postav z OASIS rosteru`
-              : `· ${AVATARS.length} figures from the OASIS roster`}
+            {l('roster', { n: AVATARS.length })}
           </span>
         </div>
         <div className="avatars-head-actions">
@@ -131,11 +138,11 @@ export default function AvatarsPage() {
             </span>
           ) : (
             <a href="/#portal=account" className="avatars-signin">
-              {cs ? 'Přihlásit' : 'Sign in'}
+              {l('signIn')}
             </a>
           )}
           <Link href="/park" className="arena-link">
-            {cs ? '← zpět na pouť' : '← back to the fair'}
+            {l('backToFair')}
           </Link>
         </div>
       </header>
@@ -147,8 +154,8 @@ export default function AvatarsPage() {
               className="avatars-search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder={cs ? 'Hledat jméno…' : 'Search name…'}
-              aria-label={cs ? 'Hledat avatara' : 'Search avatar'}
+              placeholder={l('search')}
+              aria-label={l('searchAria')}
             />
           </div>
           <div className="avatars-rays">
@@ -160,7 +167,7 @@ export default function AvatarsPage() {
                 style={value === 'all' ? undefined : { borderColor: RAY_COLOR[value], color: RAY_COLOR[value] }}
                 onClick={() => setRay(value)}
               >
-                {value === 'all' ? (cs ? 'vše' : 'all') : value}
+                {value === 'all' ? (l('all')) : value}
               </button>
             ))}
           </div>
@@ -185,7 +192,7 @@ export default function AvatarsPage() {
               </li>
             ))}
             {list.length === 0 && (
-              <li className="avatars-empty">{cs ? 'Nic takového tu není.' : 'Nothing like that here.'}</li>
+              <li className="avatars-empty">{l('empty')}</li>
             )}
           </ul>
         </section>
@@ -220,7 +227,7 @@ export default function AvatarsPage() {
 
           <div className="avatars-form">
             <label>
-              <span>{cs ? 'Volací jméno' : 'Callsign'}</span>
+              <span>{l('callsign')}</span>
               <input
                 value={callsign}
                 maxLength={24}
@@ -228,12 +235,12 @@ export default function AvatarsPage() {
                   setCallsign(event.target.value);
                   setSaved(false);
                 }}
-                placeholder={cs ? 'jak ti mají říkat' : 'what they call you'}
+                placeholder={l('callsignHint')}
               />
             </label>
 
             <div className="avatars-row">
-              <span>{cs ? 'Postava' : 'Body'}</span>
+              <span>{l('body')}</span>
               <div className="avatars-chips">
                 {BODIES.map((value) => (
                   <button
@@ -245,19 +252,19 @@ export default function AvatarsPage() {
                       setSaved(false);
                     }}
                   >
-                    {value === 'slim' ? (cs ? 'hubená' : 'slim') : value === 'heavy' ? (cs ? 'statná' : 'heavy') : cs ? 'střední' : 'standard'}
+                    {value === 'slim' ? (l('bodySlim')) : value === 'heavy' ? (l('bodyHeavy')) : l('bodyStandard')}
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="avatars-row">
-              <span>{cs ? 'Barva' : 'Colour'}</span>
+              <span>{l('colour')}</span>
               <div className="avatars-chips">
                 <button
                   type="button"
                   className={`avatars-swatch${neon === '' ? ' is-active' : ''}`}
-                  title={cs ? 'barva paprsku' : 'ray colour'}
+                  title={l('rayColour')}
                   onClick={() => {
                     setNeon('');
                     setSaved(false);
@@ -285,15 +292,13 @@ export default function AvatarsPage() {
           {user ? (
             <div className="avatars-actions">
               <button type="button" className="park-btn" onClick={() => void save()} disabled={saving}>
-                {saving ? (cs ? 'Ukládám…' : 'Saving…') : saved ? (cs ? 'Uloženo ✓' : 'Saved ✓') : cs ? 'Uložit avatara' : 'Save avatar'}
+                {saving ? (l('saving')) : saved ? (l('savedShort')) : l('save')}
               </button>
               {notice && <p className={saved ? 'arena-notice' : 'avatars-error'}>{notice}</p>}
             </div>
           ) : (
             <p className="avatars-guest">
-              {cs
-                ? 'Host si může všechno prohlédnout, ale uložit avatara jde jen přihlášenému (ZIS).'
-                : 'Guests can browse everything, but saving an avatar needs a signed-in ZIS account.'}
+              {l('guestNote')}
             </p>
           )}
         </section>

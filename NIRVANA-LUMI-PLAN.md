@@ -442,7 +442,7 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
 | **L-7** | Denní světlo: jedenkrát denně jiná pozice sedmi světel (seed z datumu) | stejný den = stejná obloha pro všechny, zítra jiná; test determinismu | nízké | ✅ 2026-11-05 |
 | **L-8** | Kapitoly příběhu mezi cestami (text po každé cestě) | po `calm` a `wind` se odemkne jiný úvodní text, ne jen cesta | nízké | ✅ 2026-11-05 |
 | **L-9** | Přístupnost: `prefers-reduced-motion` vypne vítr a částice | s preferencí se nehýbe pozadí, hra zůstane hratelná | nízké | ✅ 2026-11-05 |
-| **L-10** | Lokalizace do třetího jazyka (**ES** — trh + kánon) | všechny texty z `world.ts` mají klíč, žádný hardcoded string v `page.tsx` | nízké | ⚠️ Lumi + pouť + lobby + Mars + Merkur + Venuše hotové; `/earth`, `/fleet`, `/avatars` dědí `en` |
+| **L-10** | Lokalizace do třetího jazyka (**ES** — trh + kánon) | všechny texty z `world.ts` mají klíč, žádný hardcoded string v `page.tsx` | nízké | ✅ hotovo — všech 10 herních povrchů, chrome i data (ES fallback už nikde nemusí nastoupit) |
 | **L-11** | Odměna za darování v kooperaci (společná svatyně = +body všem) | dva hráči doletí → oba dostanou bonus, ne jen ten, kdo doletěl první | střední | ⬜ |
 | **L-12** | Výkon: instancované částice na mobilu | 390×844 ≥ 30 fps (měřeno `.artifacts/probe/lumi-perf.mjs` — rAF 2 s + `__lumiDebug()`), draw calls < 60 | střední | ✅ 2026-11-05 |
 
@@ -555,3 +555,4 @@ co pokazit; jakákoli „výzva" by rozbila její smysl.
 | 2026-11-05 | **L-10 jazyky**: `Lang` na tři hodnoty, `tx()` s fallbackem, `nextLang` cyklus, persistence `nirvana.lang.v1`, `?lang=es`; celá Lumi ve slovníku `core/lumi/copy.ts` + 19 textů světa v ES; chrome (63 klíčů) v ES. Ověřeno: ES/EN/CS render, uložení volby, cyklus přepínače, 0 přesahu na 390 px |
 | 2026-11-05 | **L-10 pokračování:** pouť (`app/park/copy.ts`, 24 textů), lobby (`app/multiplayer/copy.ts`, 17) a Mars (`app/mars/copy.ts`, 17) ve slovnících a v ES; `ParkScene` dostal `tx()` a `Lang` s `es`. `mobile-audit` PASSED, `tsc` + `next build` čisté |
 | 2026-11-06 | **L-10 pokračování 2:** Merkur (`app/mercury/copy.ts`, 39) a Venuše (`app/venus/copy.ts`, 23) ve slovnících, včetně jmen soupeřů (`nameEs`) a tabulek (`GameBoard`); opraveno lepení odkazů „← Mars arénaVenuše závod →" (`.duel-links` s `gap`). Dočištěny **víceřádkové** ternárky v pouti/Marsu/Lumi, které `grep "cs ?"` nenašel. `mobile-audit` PASSED, build čistý |
+| 2026-11-06 | **L-10 dokončeno:** První svět (`app/earth/copy.ts`, 78 textů — HUD, obchod, inventář, minimapa, konec zápasu), flotila (`app/fleet/copy.ts`, 31) a avatary (`app/avatars/copy.ts`, 20) v ES; `TeamBoard` bere `lang` místo `cs`, emote kolečko má ES. Všechny herní povrchy 0× `cs ?` i `{cs`. ES render ověřen, 0 přesahu, build čistý |

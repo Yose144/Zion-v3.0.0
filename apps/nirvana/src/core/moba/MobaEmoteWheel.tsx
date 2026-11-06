@@ -15,10 +15,10 @@
 import { useEffect, useRef } from 'react';
 
 const EMOTES = [
-  { glyph: '👍', cs: 'Dobrá práce', en: 'Well played' },
-  { glyph: '⚠️', cs: 'Pozor', en: 'Careful' },
-  { glyph: '🎯', cs: 'Útok', en: 'Attack' },
-  { glyph: '🛡️', cs: 'Kryj mě', en: 'Cover me' },
+  { glyph: '👍', cs: 'Dobrá práce', en: 'Well played', es: 'Bien jugado' },
+  { glyph: '⚠️', cs: 'Pozor', en: 'Careful', es: 'Cuidado' },
+  { glyph: '🎯', cs: 'Útok', en: 'Attack', es: 'Ataque' },
+  { glyph: '🛡️', cs: 'Kryj mě', en: 'Cover me', es: 'Cúbreme' },
 ];
 
 const RADIUS = 86;
@@ -30,7 +30,7 @@ export function MobaEmoteWheel({
   onClose,
 }: {
   origin: { x: number; y: number };
-  language: 'cs' | 'en';
+  language: 'cs' | 'en' | 'es';
   onPick: (index: number) => void;
   onClose: () => void;
 }) {
@@ -99,7 +99,7 @@ export function MobaEmoteWheel({
               left: Math.cos(angle) * RADIUS,
               top: Math.sin(angle) * RADIUS,
             }}
-            title={emote[language]}
+            title={language === 'cs' ? emote.cs : language === 'es' ? emote.es : emote.en}
             onClick={() => onPick(index)}
           >
             <span>{emote.glyph}</span>
