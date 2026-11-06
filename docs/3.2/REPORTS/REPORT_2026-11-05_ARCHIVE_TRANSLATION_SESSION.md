@@ -1,7 +1,7 @@
-# REPORT — ZION Archive: překladová session T1–T10 (81 kapitol)
+# REPORT — ZION Archive: překladová session T1–T11 (94 kapitol)
 
-> **Datum:** 2026-11-05 · **Vlastník:** 👤 · **Plán:** [`TRANSLATION-PLAN.md`](../../../TRANSLATION-PLAN.md)
-> **Kód:** `apps/website-v2.9` · **Stav po session:** **146 / 189 kapitol (77,2 %)**, zbývá **43**
+> **Datum:** 2026-11-05 (aktualizováno 2026-11-06) · **Vlastník:** 👤 · **Plán:** [`TRANSLATION-PLAN.md`](../../../TRANSLATION-PLAN.md)
+> **Kód:** `apps/website-v2.9` · **Stav po session:** **159 / 189 kapitol (84,1 %)**, zbývá **30**
 
 ---
 
@@ -22,19 +22,20 @@ přes standalone → commit **jen vlastních souborů** → push.
 | **T8** | Ekam Deeksha | 10 | `8aca7fc52`, `0ab03826e`, `7bca4fe1b`, `6f7ae7e98`, `59a8b85dd`, `f72a85dfd` | public-docs, náhrada 401B stubů |
 | **T9** | Quantum Revolution | 1 (single-doc) | `34e3e804b` | náhrada 396B stubu |
 | **T10** | Miriam | 13 | `8824241ea`, `81e889ece`, `920a54d89`, `0bda808fe`, `505195f79` | tři vrstvy Stone/Clay/Dream |
+| **T11** | Lumi | 13 | `bac3a798e`, `bde928d3f`, `f38555204`, `7ac9e4fc9` | svislá osa světla, Jen-že → Only-that |
 
-**Celkem tato session: 81 kapitol** (z 65 na 146).
+**Celkem tato session: 94 kapitol** (z 65 na 159).
 
 ## 2. Ověření (poslední běh)
 
 Audit `GET /api/archive/audit` na standalone (`PORT=3124`, `ARCHIVE_ADMIN_TOKEN`):
 
 ```
-TOTALS: {books: 18, declaredChapters: 204, missingCs: 1, missingEn: 43,
+TOTALS: {books: 18, declaredChapters: 204, missingCs: 1, missingEn: 30,
          frontMatter: 15, duplicates: 0, missingParts: 0}
 surta-srdce 100 % · nabukano 100 % · miseamenti 100 % · ruze 100 %
 issobella 100 % · naceste 100 % · mariacaminho 100 % · ekam 100 %
-miriam 100 % · quantum-revolution: singleDoc. cs 10 / en 10 kapitol
+lumi 100 % · miriam 100 % · quantum-revolution: singleDoc. cs 10 / en 10 kapitol
 ```
 
 - `npm run build` EXIT 0 u každé dávky, `npx tsc --noEmit` 0 chyb.
@@ -48,6 +49,13 @@ miriam 100 % · quantum-revolution: singleDoc. cs 10 / en 10 kapitol
 2. **Single-doc reader znal jen „Kapitola"** — `QR_BOOK.singleDoc.chapterMatch.re` bylo `/^Kapitola\s+\d+/i`, takže po přeložení do angličtiny by reader spadl na **jednu** kapitolu místo deseti. Opraveno na `/^(?:Kapitola|Chapter)\s+\d+/i` (commit `34e3e804b`); stejně rozšířen `singleDocInfo()` v audit route, aby EN počítal kapitoly. Po fixu: `cs 10 / en 10`.
 3. **401B / 396B stuby** u Ekam a Quantum Revolution — kdyby se překlad uložil *vedle*, audit by je dál hlásil jako chybějící. Byly **přepsány**; `BOOK-FULL-VERSION.md` (126 kB) kapitola není a zůstává stubem.
 
+### 3b. Co odhalila až kniha Lumi (T11)
+
+- **Konvence `Jen-že → Only-that`** musí v textu držet i slovosled: postava vždy nejdřív řekne „only that" a odpověď přijde až potom — jinak věta ztratí pointu (kap. 10, 11, 13).
+- **Bash blok v kap. 12** — přeložen byl jen *placeholder* (`zion1...tvoje_adresa` → `zion1...your_address`, `--worker muj-prvni-stroj` → `my-first-machine`), zbytek (URL, `cargo build --release --bin zion-miner`, port 8444) opsán doslova.
+- **Kap. 13 je registr, ne kapitola**: ztotožnění šesti stop Lumi = `MÝTUS`, tabulka 10 známých rozporů (§3 #1–#10 s třídami A/B/E), §4 „co kniha není“, §6 návrh změny. Statusy uvnitř se **nesmějí** překládat jinak a řádky se nesmějí mazat.
+- **Dvě čísla, která se pletou:** `89 %` těžař + `1 %` (burn před aktivací) — nikoli 90 %, což je chyba, kterou kap. 13 sama hlásí (`Issobella/06`).
+
 ## 4. Konvence překladu (závazné pro zbytek)
 
 - **Statusy doslovně:** `ŽIVÉ→LIVE`, `STAVBA→BUILDING`, `HORIZONT→HORIZON`, `HYPOTÉZA→HYPOTHESIS`, `MÝTUS→MYTH`, `NEDOLOŽENO→UNSUBSTANTIATED`, `NEPLATNÝ NÁROK / NEPLATNÉ TVRZENÍ→INVALID CLAIM`.
@@ -55,11 +63,10 @@ miriam 100 % · quantum-revolution: singleDoc. cs 10 / en 10 kapitol
 - **Neměnné:** čísla, adresy, env klíče, id a data (`zion1z4s3a5…`, `zion1f5h5k6t8…`, 300M ZION, 2,5 mld, lock 144 000, `ISSOBELLA_PCT = 5`, 89/5/5/1 %, `node_reward_activation_height = u64::MAX`, 0,38 g / 200 m / ~2 RPM, LEO 400–550 km, `48dcc0b2-…`, 1984/1994/2003/2008/2018, 1917, 352, 1676, 1488).
 - **Kód:** placeholdery (`issobella tracker`, `zion-*-service`, `interní port` → `internal port`), `interní repozitář` → `internal repository` (odkaz `../../../interní%20repozitář`), code blocky Cosmic Harmony v3 **doslova**.
 
-## 5. Co zbývá (43 kapitol, ~0,49 MB)
+## 5. Co zbývá (30 kapitol, ~0,36 MB)
 
 | Milník | Kniha | Kapitol | Odhad dávek |
 |---|---|---:|---:|
-| **T11** | Lumi | 13 | 4 |
 | **T12** | Kruh Bohyní | 17 | 5 |
 | **T13** | BodhiGaia | 13 | 5 |
 

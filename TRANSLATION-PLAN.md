@@ -1,7 +1,7 @@
 # TRANSLATION PLAN — Zion Archive (CZ → EN)
 
-> **Verze:** 2.0 · **Datum:** 2026-11-05 · **Vlastník:** 👤
-> **Stav:** 146 / 189 překladatelných kapitol (**77,2 %**), zbývá **43 kapitol** (~0,49 MB zdroje)
+> **Verze:** 2.1 · **Datum:** 2026-11-06 · **Vlastník:** 👤
+> **Stav:** 159 / 189 překladatelných kapitol (**84,1 %**), zbývá **30 kapitol** (~0,36 MB zdroje)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md`](docs/3.2/REPORTS/REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md)
 > **Kód:** `apps/website-v2.9` · **Plán archivu:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](docs/plans/ZION-ARCHIVE-COMPLETION.md)
 > **Poslední report:** [`docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md`](docs/3.2/REPORTS/REPORT_2026-11-04_ARCHIVE_BATCH_W6_W7_W3.md)
@@ -53,7 +53,7 @@ vlastní ENindex mimo kapitoly.
 | Surta Srdce | 9 | **9** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Ekam Deeksha | 10 | **10** | 0 | **dokončeno 2026-11-05** — 401B stuby nahrazeny (CZ + EN) |
 | Quantum Revolution | 1 (single-doc) | **1** | 0 | **dokončeno 2026-11-05** — 396B stub nahrazen (CZ + EN) |
-| Lumi | 13 | 0 | **13** | |
+| Lumi | 13 | **13** | 0 | **dokončeno 2026-11-06** (CZ + EN) |
 | Miriam | 13 | **13** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | BodhiGaia | 13 | 0 | **13** | největší objem (180 kB) |
 | MariaCaminho | 12 | **12** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
@@ -63,7 +63,7 @@ vlastní ENindex mimo kapitoly.
 | Nabukano | 7 | **7** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
 | Kruh Bohyní | 17 | 0 | **17** | |
 | Mise Amenti | 8 | **8** | 0 | **dokončeno 2026-11-05** (CZ + EN) |
-| **CELKEM** | **189** | **146** | **43** | ~0,49 MB zdroje |
+| **CELKEM** | **189** | **159** | **30** | ~0,36 MB zdroje |
 
 Stav kdykoli zjistíš:
 
@@ -144,8 +144,19 @@ nezaměňovány; statusy `LIVE / UNSUBSTANTIATED / INVALID CLAIM / HYPOTHESIS`. 
 NHC II, 144 000 / 144 loktů, 12 000 honů, 1260 dní, 9 000 denárů, 1956 / 1993 (Plantard).
 **Pozor:** tabulky v CZ mají někde zdvojené `||` (prázdný první sloupec) — v EN normalizováno na `|`.
 
-### Lumi — 13
-`01-Dite-na-Pridi` (8k) · `02-Dum-Jmen` (8k) · `03-Mosty-a-Trziste-u-Mostu` (8k) · `04-Zlate-Luno-a-Hlas-Bez-Klice` (8k) · `05-Brana-a-Dve-Knezky` (9k) · `06-Semeno-pod-Domem` (10k) · `07-Pet-Zahrad-Jedne-Zeme` (10k) · `08-Jmeno-Ktere-Uz-Mela` (8k) · `09-Strom-nad-Zemi` (9k) · `10-Kvantovy-Ohen-a-Hlidac` (10k) · `11-Sto-Let-Lucerny` (12k) · `12-Brana-Zustava-Otevrena` (10k) · `13-Kotva-Pravdy-a-Hranice` (16k)
+### Lumi — hotovo (13/13, 2026-11-06)
+Korpusová konvence (`korpus/Lumi/<slug>_EN.md`). Audit `enCoverage: 100`, `missingEn: []`, kicker `CZ + EN`,
+karta bez `czOnly`. **Konvence jmen:** `Sítá → Sita`, `Rádha → Radha`, `Sádhu → Sadhu`, `Stříž → Strizh`,
+`Jen-že → Only-that` (vždy „only that" první, odpověď až potom), `Amitábha → Amitabha`, `Korma`, `Draha`,
+`Hina`, `Hanuman`, `Ana`, `Elizabeth` = Lumi. Statusy doslovně (`LIVE/BUILDING/HORIZON/HYPOTHESIS/MYTH`,
+`UNSUBSTANTIATED`, `INVALID CLAIM`). **Neměnit:** genesis hashe (`961094…`, `4cf756…`), výška 43 500+ (snímek
+2026-09-14), `Ekam Deeksha v3.2` (512 KiB, 2 AES, 128 čtení, Keccak256), LWMA-60, 144 000 000 000 ZION,
+1 ZION = 1 000 000 flowers, 89/5/5/1, 5 400,067 ZION, 16,78 mld ve 14 výstupech, adresy fondů
+(`zion1y3w4z…hv8c8`, `zion1z4s3a…2l0f0`, `zion1f5h5k6t8…7633g5`), kontrakty (`0x0c4937…`, `0x72c8f0…`, `0xbd5cEe…`,
+`0x186b46c2…`), lock 144 000, 2,5 mld, 0,38 g / 200 m / ~2 RPM / 20 min 1,0 g, LEO 400–550 km,
+G8 2026-08-23 → 2026-09-22, T0+18 let, dead man's switch 5 let.
+**Pozor:** v kap. 12 je bash blok — přeložený jen placeholder (`--wallet zion1...your_address`,
+`--worker my-first-machine`), jinak opsán doslova.
 
 ### Kruh Bohyní — 17
 `00-LODE-A-LUCERNA` (8k) · `00-OUTLINE` (9k) · `00-PROLOG` (8k) · `01-Dcera-Hliny` (9k) · `02-Strazkyne-Ohne-a-Ticha` (9k) · `03-Dcera-Laguny` (6k) · `04-Strazkyne-Kruhu` (6k) · `05-Strazkyne-Stromu` (6k) · `06-Seste-Sedadlo` (7k) · `07-Ta-Ktera-Drzi-Nebe` (6k) · `08-Studna-Ktera-Prsi` (6k) · `09-Tri-Klice` (5k) · `10-Jak-Se-Kruh-Drzi` (5k) · `11-Kdyz-Zena-Dojde-Cestu` (6k) · `12-Dvanact-Ohnu` (5k) · `13-Kotva-Pravdy` (4k) · `14-Epilog` (4k)
@@ -272,11 +283,11 @@ Pořadí je od nejmenších knih k největším, aby bylo brzy vidět „hotovo�
 | **T8** | Ekam Deeksha ✅ | 10 | hotovo 2026-11-05 |
 | **T9** | Quantum Revolution ✅ | 1 | hotovo 2026-11-05 |
 | **T10** | Miriam ✅ | 13 | hotovo 2026-11-05 |
-| **T11** | Lumi | 13 | 4 |
+| **T11** | Lumi ✅ | 13 | hotovo 2026-11-06 |
 | **T12** | Kruh Bohyní | 17 | 5 |
 | **T13** | BodhiGaia | 13 | 5 (největší objem) |
 
-**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **12–19 session-dávek** na zbývajících 43
+**Tempo:** 2–4 kapitoly na session (podle velikosti); cca **8–13 session-dávek** na zbývajících 30
 kapitol. Po každé knize: report + commit + push.
 
 **Alternativní pořadí podle priority 👤:** pokud má být první „hlavní osa“ (Ekam, Quantum
