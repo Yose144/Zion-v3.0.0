@@ -141,6 +141,21 @@ import missionFr from './ui-strings/mission.fr.json';
 import minerdashEs from './ui-strings/minerdash.es.json';
 import minerdashPt from './ui-strings/minerdash.pt.json';
 import minerdashFr from './ui-strings/minerdash.fr.json';
+import ekamEs from './ui-strings/ekam.es.json';
+import ekamPt from './ui-strings/ekam.pt.json';
+import ekamFr from './ui-strings/ekam.fr.json';
+import kailashEs from './ui-strings/kailash.es.json';
+import kailashPt from './ui-strings/kailash.pt.json';
+import kailashFr from './ui-strings/kailash.fr.json';
+import uluruEs from './ui-strings/uluru.es.json';
+import uluruPt from './ui-strings/uluru.pt.json';
+import uluruFr from './ui-strings/uluru.fr.json';
+import boaesperancaEs from './ui-strings/boaesperanca.es.json';
+import boaesperancaPt from './ui-strings/boaesperanca.pt.json';
+import boaesperancaFr from './ui-strings/boaesperanca.fr.json';
+import novaamerikaEs from './ui-strings/novaamerika.es.json';
+import novaamerikaPt from './ui-strings/novaamerika.pt.json';
+import novaamerikaFr from './ui-strings/novaamerika.fr.json';
 import homeEs from './ui-strings/home.es.json';
 import homePt from './ui-strings/home.pt.json';
 import homeFr from './ui-strings/home.fr.json';
@@ -165,9 +180,9 @@ type Dict = Record<string, string>;
 const merge = (...parts: Dict[]): Dict => Object.assign({}, ...parts);
 
 const DICTS: Record<'es' | 'pt' | 'fr', Dict> = {
-  es: merge(avatarsEs, newsfeedEs, issobellaEs, treeoflifeEs, mariaEs, kralovstviEs, nabukanoEs, archivelockEs, zionarchiveEs, whitepapersEs, tepikooraEs, contractsEs, knihovnaEs, qvEs, teamEs, l4hubEs, bohemiaEs, marketEs, networkEs, freeworldEs, daoEs, hiranEs, deekshaEs, ainativeEs, genesisEs, walletEs, bodhilankaEs, downloadEs, pooldashEs, poolbenchEs, poolqtcEs, explorerEs, expstatusEs, expbridgeEs, amentiEs, tnbookEs, poolminersEs, poolcalcEs, poolblocksEs, miningEs, expsupplyEs, expaddrEs, cexEs, dharmaEs, warpbtcEs, missionEs, minerdashEs, homeEs),
-  pt: merge(avatarsPt, newsfeedPt, issobellaPt, treeoflifePt, mariaPt, kralovstviPt, nabukanoPt, archivelockPt, zionarchivePt, whitepapersPt, tepikooraPt, contractsPt, knihovnaPt, qvPt, teamPt, l4hubPt, bohemiaPt, marketPt, networkPt, freeworldPt, daoPt, hiranPt, deekshaPt, ainativePt, genesisPt, walletPt, bodhilankaPt, downloadPt, pooldashPt, poolbenchPt, poolqtcPt, explorerPt, expstatusPt, expbridgePt, amentiPt, tnbookPt, poolminersPt, poolcalcPt, poolblocksPt, miningPt, expsupplyPt, expaddrPt, cexPt, dharmaPt, warpbtcPt, missionPt, minerdashPt, homePt),
-  fr: merge(avatarsFr, newsfeedFr, issobellaFr, treeoflifeFr, mariaFr, kralovstviFr, nabukanoFr, archivelockFr, zionarchiveFr, whitepapersFr, tepikooraFr, contractsFr, knihovnaFr, qvFr, teamFr, l4hubFr, bohemiaFr, marketFr, networkFr, freeworldFr, daoFr, hiranFr, deekshaFr, ainativeFr, genesisFr, walletFr, bodhilankaFr, downloadFr, pooldashFr, poolbenchFr, poolqtcFr, explorerFr, expstatusFr, expbridgeFr, amentiFr, tnbookFr, poolminersFr, poolcalcFr, poolblocksFr, miningFr, expsupplyFr, expaddrFr, cexFr, dharmaFr, warpbtcFr, missionFr, minerdashFr, homeFr),
+  es: merge(avatarsEs, newsfeedEs, issobellaEs, treeoflifeEs, mariaEs, kralovstviEs, nabukanoEs, archivelockEs, zionarchiveEs, whitepapersEs, tepikooraEs, contractsEs, knihovnaEs, qvEs, teamEs, l4hubEs, bohemiaEs, marketEs, networkEs, freeworldEs, daoEs, hiranEs, deekshaEs, ainativeEs, genesisEs, walletEs, bodhilankaEs, downloadEs, pooldashEs, poolbenchEs, poolqtcEs, explorerEs, expstatusEs, expbridgeEs, amentiEs, tnbookEs, poolminersEs, poolcalcEs, poolblocksEs, miningEs, expsupplyEs, expaddrEs, cexEs, dharmaEs, warpbtcEs, missionEs, minerdashEs, ekamEs, kailashEs, uluruEs, boaesperancaEs, novaamerikaEs, homeEs),
+  pt: merge(avatarsPt, newsfeedPt, issobellaPt, treeoflifePt, mariaPt, kralovstviPt, nabukanoPt, archivelockPt, zionarchivePt, whitepapersPt, tepikooraPt, contractsPt, knihovnaPt, qvPt, teamPt, l4hubPt, bohemiaPt, marketPt, networkPt, freeworldPt, daoPt, hiranPt, deekshaPt, ainativePt, genesisPt, walletPt, bodhilankaPt, downloadPt, pooldashPt, poolbenchPt, poolqtcPt, explorerPt, expstatusPt, expbridgePt, amentiPt, tnbookPt, poolminersPt, poolcalcPt, poolblocksPt, miningPt, expsupplyPt, expaddrPt, cexPt, dharmaPt, warpbtcPt, missionPt, minerdashPt, ekamPt, kailashPt, uluruPt, boaesperancaPt, novaamerikaPt, homePt),
+  fr: merge(avatarsFr, newsfeedFr, issobellaFr, treeoflifeFr, mariaFr, kralovstviFr, nabukanoFr, archivelockFr, zionarchiveFr, whitepapersFr, tepikooraFr, contractsFr, knihovnaFr, qvFr, teamFr, l4hubFr, bohemiaFr, marketFr, networkFr, freeworldFr, daoFr, hiranFr, deekshaFr, ainativeFr, genesisFr, walletFr, bodhilankaFr, downloadFr, pooldashFr, poolbenchFr, poolqtcFr, explorerFr, expstatusFr, expbridgeFr, amentiFr, tnbookFr, poolminersFr, poolcalcFr, poolblocksFr, miningFr, expsupplyFr, expaddrFr, cexFr, dharmaFr, warpbtcFr, missionFr, minerdashFr, ekamFr, kailashFr, uluruFr, boaesperancaFr, novaamerikaFr, homeFr),
 };
 
 /** Přeloží lokalizovaný objekt pro daný jazyk (5 kódů). */
