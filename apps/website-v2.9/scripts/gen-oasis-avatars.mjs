@@ -38,6 +38,7 @@ const ART_MANIFEST = join(APP_ROOT, 'scripts/oasis-art-manifest.json');
 const ART_PUBLIC_DIR = join(APP_ROOT, 'public/oasis-assets');
 /** Veřejné cs/en texty avatarů (jeden JSON per kruh) — ručně psané, ne generované. */
 const COPY_DIR = join(APP_ROOT, 'scripts/oasis-avatar-copy');
+const CARD_I18N_DIR = join(APP_ROOT, 'scripts/oasis-avatar-copy/i18n-cards');
 
 /**
  * Žebřík úrovní vědomí 1–9 (CL). Čtyři jména jsou z kánonu (Heart Opening,
@@ -261,6 +262,31 @@ if (existsSync(COPY_DIR)) {
     }
   }
   console.log(`[gen-oasis-avatars] copy overlay: ${copyById.size} avatarů`);
+
+// ── 3a2) překlady karet (es/pt/fr) ────────────────────────────────────
+// Struktura: i18n-cards/<lang>.json = { "<id>": { subtitle, role } }.
+// Merge: copyById[id][pole][lang] = překlad (cs/en zůstávají z overlaye).
+const cardLangs = ['es', 'pt', 'fr'];
+let cardTr = 0;
+if (existsSync(CARD_I18N_DIR)) {
+  for (const lang of cardLangs) {
+    const file = join(CARD_I18N_DIR, `${lang}.json`);
+    if (!existsSync(file)) continue;
+    const part = JSON.parse(readFileSync(file, 'utf8'));
+    for (const [rawId, fields] of Object.entries(part)) {
+      const id = Number(rawId);
+      if (!Number.isInteger(id)) continue;
+      const entry = copyById.get(id);
+      if (!entry) continue;
+      for (const [field, text] of Object.entries(fields)) {
+        if (!text) continue;
+        entry[field] = { ...(entry[field] ?? {}), [lang]: text };
+        cardTr += 1;
+      }
+    }
+  }
+  console.log(`[gen-oasis-avatars] překlady karet (es/pt/fr): ${cardTr} polí`);
+}
 }
 
 // ── 3b) art manifest (OASIS_Avatar_Collection) ────────────────────────
@@ -380,7 +406,11 @@ const rows = avatars.map((a, i) => {
   /** cs/en hodnota: overlay → (fallback) očištěný legacy text. */
   const loc = (field, fallback) => {
     const o = c[field];
-    if (o && (o.cs || o.en)) return { cs: o.cs ?? '', en: o.en ?? '' };
+    if (o && (o.cs || o.en)) {
+      const out = { cs: o.cs ?? '', en: o.en ?? '' };
+      for (const lang of ['es', 'pt', 'fr']) if (o[lang]) out[lang] = o[lang];
+      return out;
+    }
     return { cs: '', en: cleanLegacy(fallback) };
   };
   const cl = a.consciousness_level_required ?? 1;
@@ -468,10 +498,13 @@ export interface OasisAvatar {
   circle: OasisAvatarCircle;
 }
 
-/** Dvojjazyčný text; prázdné pole 'cs' znamená „použij 'en'". */
+/** Lokalizovaný text: cs/en vždy, es/pt/fr jen když existuje překlad. */
 export interface LocalizedText {
   cs: string;
   en: string;
+  es?: string;
+  pt?: string;
+  fr?: string;
 }
 
 export interface OasisAvatarCircleMeta {

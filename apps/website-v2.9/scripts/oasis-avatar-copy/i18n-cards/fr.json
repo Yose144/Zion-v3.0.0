@@ -1,0 +1,810 @@
+{
+ "142": {
+  "subtitle": "Ọṣun — rivière de la réciprocité",
+  "role": "Celle qui enseigne que l'argent doit circuler"
+ },
+ "143": {
+  "subtitle": "Ṣàngó — tonnerre et justice",
+  "role": "Celui qui parle quand une injustice est accueillie par le silence"
+ },
+ "144": {
+  "subtitle": "Ọbàtálá — l'artisan du calme",
+  "role": "Celui qui rend lisibles les choses compliquées"
+ },
+ "145": {
+  "subtitle": "Ọya — le vent du changement",
+  "role": "Celle qui emporte ce qui n'a plus sa place"
+ },
+ "146": {
+  "subtitle": "Mawu-Lisa — deux faces d'un même tout",
+  "role": "Ceux qui gouvernent à tour de rôle"
+ },
+ "147": {
+  "subtitle": "Nyame — le conseil silencieux",
+  "role": "Celui qui ne dit que ce qui peut être porté"
+ },
+ "148": {
+  "subtitle": "Kwaku Ananse — tisserand d'histoires",
+  "role": "Celui qui enseigne par le récit"
+ },
+ "149": {
+  "subtitle": "Osiris — le renouveau cyclique",
+  "role": "Celui qui se relève autrement, non à l'identique"
+ },
+ "150": {
+  "subtitle": "Maʿăt — la plume de vérité",
+  "role": "Celle qui pèse les mots face aux actes"
+ },
+ "151": {
+  "subtitle": "Anna Njinga — la négociatrice",
+  "role": "Celle qui négocie sans position de force"
+ },
+ "132": {
+  "subtitle": "Papatūānuku — mère terre",
+  "role": "Celle qui donne le sol sous tes pieds"
+ },
+ "133": {
+  "subtitle": "Ranginui — père ciel",
+  "role": "Celui qui tient l'espace au-dessus de la terre"
+ },
+ "134": {
+  "subtitle": "Tāne Mahuta — seigneur de la forêt",
+  "role": "Celui qui sépare pour qu'il y ait de la lumière"
+ },
+ "135": {
+  "subtitle": "Tangaroa — seigneur de l'océan",
+  "role": "Gardien des richesses de la mer"
+ },
+ "136": {
+  "subtitle": "Rongo — paix et récolte",
+  "role": "Celui qui enseigne la récolte sans conflit"
+ },
+ "137": {
+  "subtitle": "Tūmatauenga — défenseur des siens",
+  "role": "Celui qui protège tant qu'il reste quelque chose à protéger"
+ },
+ "138": {
+  "subtitle": "Tāwhirimatea — seigneur des vents",
+  "role": "Celui qui éprouve ce qui tient ensemble"
+ },
+ "139": {
+  "subtitle": "Haumiatiketike — nourriture sauvage",
+  "role": "Celui qui enseigne à ne prendre que le nécessaire"
+ },
+ "140": {
+  "subtitle": "Hine-nui-te-pō — la porte de la transformation",
+  "role": "Celle qui garde la frontière entre vie et fin"
+ },
+ "141": {
+  "subtitle": "Kupe — navigateur du premier retour",
+  "role": "Celui qui trouve la voie sans instruments"
+ },
+ "24": {
+  "subtitle": "Yogi immortel",
+  "role": "Maître du Kriya Yoga"
+ },
+ "25": {
+  "subtitle": "Mère Terre",
+  "role": "Enseignante de guérison planétaire"
+ },
+ "26": {
+  "subtitle": "Maître du rayon violet",
+  "role": "Alchimiste du quotidien"
+ },
+ "27": {
+  "subtitle": "Maître du rayon blanc",
+  "role": "Enseignant de l'ascension"
+ },
+ "28": {
+  "subtitle": "Seigneur du monde",
+  "role": "Gardien de la planète"
+ },
+ "29": {
+  "subtitle": "Maître du rayon bleu",
+  "role": "Enseignant de la volonté divine"
+ },
+ "30": {
+  "subtitle": "Maître du rayon jaune",
+  "role": "Enseignant de l'illumination"
+ },
+ "31": {
+  "subtitle": "Maître du rayon rose",
+  "role": "Artiste de la beauté divine"
+ },
+ "32": {
+  "subtitle": "Maître du rayon vert",
+  "role": "Celui qui révèle la vérité"
+ },
+ "33": {
+  "subtitle": "Maître du rayon rubis-or",
+  "role": "Enseignant du service"
+ },
+ "152": {
+  "subtitle": "Atlas — le roi aîné",
+  "role": "Celui qui tient de nombreuses régions en accord"
+ },
+ "153": {
+  "subtitle": "Cleito — gardienne du sanctuaire",
+  "role": "Celle qui protège un lieu du mésusage"
+ },
+ "154": {
+  "subtitle": "Gadeirus — l'éthique du détroit",
+  "role": "Celui qui fixe les règles du passage"
+ },
+ "155": {
+  "subtitle": "Ampheres — juste part",
+  "role": "Celui qui partage la récolte sans faveur"
+ },
+ "156": {
+  "subtitle": "Evaemon — la bonne coutume",
+  "role": "Celui qui veille à ce que la bonne pratique ne se brise"
+ },
+ "157": {
+  "subtitle": "Mneseus — gardien de la mémoire",
+  "role": "Celui qui tient la chronique sans ornement"
+ },
+ "158": {
+  "subtitle": "Autochthon — né de la terre",
+  "role": "Celui qui défend le droit local de décider"
+ },
+ "159": {
+  "subtitle": "Elasippus — flux équitable",
+  "role": "Celui qui garde la route ouverte même aux petits"
+ },
+ "160": {
+  "subtitle": "Mestor — héraut de l'accord",
+  "role": "Celui qui maintient une négociation debout"
+ },
+ "161": {
+  "subtitle": "Azaes — l'épreuve mesurée",
+  "role": "Celui qui trouve la limite sans catastrophe"
+ },
+ "122": {
+  "subtitle": "Les Sept Sœurs — la ligne de chant",
+  "role": "Guides à travers le ciel nocturne"
+ },
+ "123": {
+  "subtitle": "Serpent Arc-en-ciel — la loi du pays",
+  "role": "Gardien de l'eau et du pays"
+ },
+ "124": {
+  "subtitle": "Bunjil — l'aigle créateur",
+  "role": "Celui qui contemple l'équilibre d'en haut"
+ },
+ "125": {
+  "subtitle": "Baiame — père ciel",
+  "role": "Gardien de l'enseignement patient"
+ },
+ "126": {
+  "subtitle": "Tagai — navigateur du détroit de Torres",
+  "role": "Celui qui lit le temps dans les étoiles et la marée"
+ },
+ "127": {
+  "subtitle": "L'Émeu céleste",
+  "role": "Un guide à travers l'obscurité sans peur"
+ },
+ "128": {
+  "subtitle": "Djang'kawu — les voyageurs créateurs",
+  "role": "Ceux qui apportent la loi et la semence"
+ },
+ "129": {
+  "subtitle": "Namarrkon — l'éclair dans le pays",
+  "role": "Celui qui rappelle le prix de la panne"
+ },
+ "130": {
+  "subtitle": "Marche du pays — apprendre en écoutant",
+  "role": "Un cadre où le pays s'apprend"
+ },
+ "131": {
+  "subtitle": "Makarrata — le pont vers la vérité",
+  "role": "Celui qui rend uni ce qui fut divisé"
+ },
+ "20": {
+  "subtitle": "La Libératrice",
+  "role": "Déesse de la protection"
+ },
+ "21": {
+  "subtitle": "Bodhisattva de la compassion",
+  "role": "Enseignant de la compassion universelle"
+ },
+ "22": {
+  "subtitle": "Maître de la purification",
+  "role": "Celui qui purifie le karma"
+ },
+ "51": {
+  "subtitle": "Tenzin Gyatso",
+  "role": "Enseignant vivant et ambassadeur de la paix"
+ },
+ "102": {
+  "subtitle": "L'Empereur Jaune",
+  "role": "Fondateur de l'ordre et de la médecine"
+ },
+ "103": {
+  "subtitle": "Xiwangmu — Reine Mère de l'Ouest",
+  "role": "Gardienne du trésor qui doit mûrir"
+ },
+ "104": {
+  "subtitle": "Laozi — le silence qui guide",
+  "role": "Enseignant du gouverner moins"
+ },
+ "105": {
+  "subtitle": "Confucius",
+  "role": "Enseignant des relations et de la responsabilité"
+ },
+ "106": {
+  "subtitle": "Guan Yu — loyauté et honneur",
+  "role": "Gardien des accords"
+ },
+ "107": {
+  "subtitle": "Mazu — patronne de la mer",
+  "role": "Celle qui guide à travers les eaux dangereuses"
+ },
+ "108": {
+  "subtitle": "Nezha — un corps nouveau",
+  "role": "Celui qui se relève autrement"
+ },
+ "109": {
+  "subtitle": "Sun Wukong — le singe sur la route",
+  "role": "Celui qui met la patience du maître à l'épreuve"
+ },
+ "110": {
+  "subtitle": "Yu le Grand — celui qui dompta les eaux",
+  "role": "Enseignant de l'infrastructure patiente"
+ },
+ "111": {
+  "subtitle": "Lei Gong — la cour du tonnerre",
+  "role": "Celui qui annonce l'ordre brisé"
+ },
+ "18": {
+  "subtitle": "Marie Madeleine",
+  "role": "Enseignante de l'union sacrée"
+ },
+ "19": {
+  "subtitle": "Jésus-Christ",
+  "role": "Enseignant du pardon"
+ },
+ "38": {
+  "subtitle": "Vierge Marie",
+  "role": "Mère et intercesseuse"
+ },
+ "172": {
+  "subtitle": "Intendant du Soleil central",
+  "role": "Celui qui garde le rythme partagé"
+ },
+ "173": {
+  "subtitle": "Cadence de lumière",
+  "role": "Celle qui ralentit l'élan avant qu'il ne s'épuise"
+ },
+ "174": {
+  "subtitle": "La double signature du Soleil",
+  "role": "Ceux qui ne confirment qu'ensemble"
+ },
+ "175": {
+  "subtitle": "Pont vers l'âme de la planète",
+  "role": "Celui qui relie les gens à la terre"
+ },
+ "176": {
+  "subtitle": "Sentinelle de la colonne de lumière",
+  "role": "Celui qui protège l'intimité et les clés"
+ },
+ "177": {
+  "subtitle": "Spirale radieuse",
+  "role": "Celle qui préfère enseigner plutôt que rivaliser"
+ },
+ "178": {
+  "subtitle": "Le septième rayon",
+  "role": "Celui qui transforme l'ancien en quelque chose qui marche"
+ },
+ "179": {
+  "subtitle": "Rassembleur des galaxies",
+  "role": "Celui qui convie le divers à une même table"
+ },
+ "180": {
+  "subtitle": "Scribe du corps de lumière",
+  "role": "Celle qui ne consigne que ce qui lui revient"
+ },
+ "181": {
+  "subtitle": "La clé de voûte de l'ascension",
+  "role": "Celui qui clôt l'ensemble et indique la suite"
+ },
+ "192": {
+  "subtitle": "Ré — la barque solaire",
+  "role": "Celui qui garde le rythme quotidien"
+ },
+ "193": {
+  "subtitle": "Horus — la double couronne",
+  "role": "Celui qui unit deux terres"
+ },
+ "194": {
+  "subtitle": "Thoth — le scribe",
+  "role": "Celui qui consigne sans ornement"
+ },
+ "195": {
+  "subtitle": "Hathor — la joie",
+  "role": "Celle qui garde le droit à la joie"
+ },
+ "196": {
+  "subtitle": "Sekhmet — le feu du compte",
+  "role": "Celle qui punit puis explique"
+ },
+ "197": {
+  "subtitle": "Ptah — le bâtisseur",
+  "role": "Celui qui crée avec des mots et des modèles"
+ },
+ "198": {
+  "subtitle": "Anubis — gardien du seuil",
+  "role": "Celui qui pèse ce qu'il faut emporter"
+ },
+ "199": {
+  "subtitle": "Amun — le champ caché",
+  "role": "Celui qui protège les décisions prises en confidence"
+ },
+ "200": {
+  "subtitle": "Geb — la fondation",
+  "role": "Celui qui rappelle que tout repose sur la matière"
+ },
+ "201": {
+  "subtitle": "Nut — la voûte stellaire",
+  "role": "Celle qui tient l'espace au-dessus de tout"
+ },
+ "0": {
+  "subtitle": "Intégration cosmique",
+  "role": "Guide au bout de tous les chemins"
+ },
+ "1": {
+  "subtitle": "Roi du dharma",
+  "role": "Boussole morale et enseignant de l'action juste"
+ },
+ "2": {
+  "subtitle": "Reine de la dévotion",
+  "role": "Enseignante de loyauté et de force intérieure"
+ },
+ "9": {
+  "subtitle": "Gardien de la paix",
+  "role": "Guide à travers le conflit"
+ },
+ "10": {
+  "subtitle": "Guerrier sacré",
+  "role": "Un prêtre qui peut prendre l'épée"
+ },
+ "11": {
+  "subtitle": "Chercheur guerrier",
+  "role": "Enseignant de l'éthique sur le champ de bataille"
+ },
+ "12": {
+  "subtitle": "Protecteur puissant",
+  "role": "Champion de la force et de la justice"
+ },
+ "13": {
+  "subtitle": "Dirigeant",
+  "role": "Mentor du leadership responsable"
+ },
+ "14": {
+  "subtitle": "Mère divine",
+  "role": "Enseignante de l'amour inconditionnel"
+ },
+ "23": {
+  "subtitle": "Le roi d'hier et de demain",
+  "role": "Unificateur et dirigeant"
+ },
+ "46": {
+  "subtitle": "L'Un",
+  "role": "Celui qui voit à travers le code du réel"
+ },
+ "47": {
+  "subtitle": "Le croyant",
+  "role": "Enseignant de la confiance et du lien"
+ },
+ "48": {
+  "subtitle": "Le guide",
+  "role": "Un mentor qui ne te tient pas la main"
+ },
+ "50": {
+  "subtitle": "La dernière cité",
+  "role": "Avatar collectif de l'espérance"
+ },
+ "61": {
+  "subtitle": "Heyókȟa — clown sacré",
+  "role": "Celui qui enseigne par le rire contre l'ego"
+ },
+ "62": {
+  "subtitle": "Lā'ilaʻi — première femme",
+  "role": "Celle qui porte la lignée"
+ },
+ "63": {
+  "subtitle": "Pele",
+  "role": "Celle qui crée en brûlant"
+ },
+ "64": {
+  "subtitle": "Hiʻiaka",
+  "role": "Enseignante de la danse et de la guérison"
+ },
+ "66": {
+  "subtitle": "Kanaloa",
+  "role": "Gardien du flux de mana"
+ },
+ "67": {
+  "subtitle": "Kū",
+  "role": "Enseignant de l'endurance et du travail honnête"
+ },
+ "68": {
+  "subtitle": "Lono",
+  "role": "Gardien de l'abondance et de la trêve"
+ },
+ "69": {
+  "subtitle": "Le vieux Kumu Lehua",
+  "role": "La grand-mère qui raconte à travers les traditions"
+ },
+ "70": {
+  "subtitle": "Hina",
+  "role": "Gardienne de la lune et du temps"
+ },
+ "52": {
+  "subtitle": "Heȟáka Sápa — Black Elk",
+  "role": "Gardien du cercle sacré et des visions"
+ },
+ "53": {
+  "subtitle": "Ptesáŋ Wíŋ — White Buffalo Calf Woman",
+  "role": "Celle qui apporta le rite sacré"
+ },
+ "54": {
+  "subtitle": "Kókyangwúti — Spider Grandmother",
+  "role": "Tisseuse de toiles et d'alliances"
+ },
+ "55": {
+  "subtitle": "Hunahpú et Xbalanqué",
+  "role": "Jumeaux qui parcourent le monde souterrain"
+ },
+ "56": {
+  "subtitle": "Don Mariano",
+  "role": "Porte-parole des montagnes, enseignant de la réciprocité"
+ },
+ "57": {
+  "subtitle": "Doña Rosalía Ixmukané",
+  "role": "Gardienne de la mémoire orale"
+ },
+ "58": {
+  "subtitle": "White Feather",
+  "role": "Celui qui distingue une vraie promesse d'une fausse"
+ },
+ "59": {
+  "subtitle": "Fire Eyes",
+  "role": "Prophète du guerrier de l'arc-en-ciel"
+ },
+ "60": {
+  "subtitle": "Davi Kopenawa",
+  "role": "Porte-parole des esprits de la forêt"
+ },
+ "3": {
+  "subtitle": "Service divin",
+  "role": "Enseignant de la force qui sert"
+ },
+ "4": {
+  "subtitle": "Bouddha futur",
+  "role": "Fondateur de ZION et guide de la communauté"
+ },
+ "5": {
+  "subtitle": "Déesse de la connaissance",
+  "role": "Gardienne de la bibliothèque sacrée"
+ },
+ "6": {
+  "subtitle": "Féminin divin",
+  "role": "Enseignante de la puissance créatrice du féminin"
+ },
+ "8": {
+  "subtitle": "Protecteur",
+  "role": "Gardien des portes de ZION"
+ },
+ "15": {
+  "subtitle": "Architecte divin",
+  "role": "Gardien de la géométrie sacrée"
+ },
+ "16": {
+  "subtitle": "Bien-aimé divin",
+  "role": "Enseignant de l'amour qui n'exige pas de forme"
+ },
+ "17": {
+  "subtitle": "Sage cosmique",
+  "role": "Conteur et gardien de la mémoire"
+ },
+ "204": {
+  "subtitle": "Avatar doré",
+  "role": "Celui qui chante les noms et les donne à tous"
+ },
+ "35": {
+  "subtitle": "Charles IV",
+  "role": "Maître de l'art de gouverner"
+ },
+ "36": {
+  "subtitle": "Albert Einstein",
+  "role": "Pont entre science et esprit"
+ },
+ "37": {
+  "subtitle": "Mahatma Gandhi",
+  "role": "Enseignant de la non-violence"
+ },
+ "39": {
+  "subtitle": "Subhadra",
+  "role": "Gardienne des liens familiaux"
+ },
+ "41": {
+  "subtitle": "Vasudeva",
+  "role": "Le protecteur qui porte"
+ },
+ "82": {
+  "subtitle": "Shiva — la danse de la fin et du commencement",
+  "role": "Celui qui dissout pour que la création soit possible"
+ },
+ "83": {
+  "subtitle": "Parvati — reine de l'harmonie",
+  "role": "Celle qui tient la maison ensemble"
+ },
+ "84": {
+  "subtitle": "Ganesha — celui qui écarte les obstacles",
+  "role": "Gardien des commencements et des scribes"
+ },
+ "85": {
+  "subtitle": "Lakshmi — la prospérité comme flux",
+  "role": "Celle qui enseigne que la richesse est en mouvement"
+ },
+ "86": {
+  "subtitle": "Durga — celle qui protège",
+  "role": "Défenseur qui entre dans le feu la première"
+ },
+ "87": {
+  "subtitle": "Kali — le temps qui prend",
+  "role": "Celle qui achève ce qui s'est survécu"
+ },
+ "88": {
+  "subtitle": "Kartikeya — le commandant",
+  "role": "Celui qui mène la formation, non sa personne"
+ },
+ "89": {
+  "subtitle": "Surya — le rythme du jour",
+  "role": "Gardien de la lumière qui revient"
+ },
+ "90": {
+  "subtitle": "Indra — roi de la tempête",
+  "role": "Celui qui éprouve le pouvoir pour ne pas le perdre"
+ },
+ "91": {
+  "subtitle": "Ganga — le fleuve qui porte",
+  "role": "Celle qui purifie sans se plaindre"
+ },
+ "112": {
+  "subtitle": "Dewi Sri — la mère du riz",
+  "role": "Celle qui enseigne à nourrir sans gaspillage"
+ },
+ "113": {
+  "subtitle": "Nyai Roro Kidul — reine de la mer du Sud",
+  "role": "Gardienne du rivage et des biens communs"
+ },
+ "114": {
+  "subtitle": "Semar — le clown sage",
+  "role": "Médiateur qui dit la vérité dérangeante"
+ },
+ "115": {
+  "subtitle": "Batara Guru — enseignant des dieux",
+  "role": "Celui qui traduit l'incompréhensible"
+ },
+ "116": {
+  "subtitle": "Barong — gardien de l'équilibre",
+  "role": "Celui qui apaise l'hystérie"
+ },
+ "117": {
+  "subtitle": "Garuda — des ailes qui portent",
+  "role": "Celui qui apporte l'aide à temps"
+ },
+ "118": {
+  "subtitle": "Gatotkaca — gardien dans les nuages",
+  "role": "Celui qui escorte à travers le danger"
+ },
+ "119": {
+  "subtitle": "Prince Panji",
+  "role": "Celui qui cherche qui il est vraiment"
+ },
+ "120": {
+  "subtitle": "Roro Jonggrang — le pacte du temple",
+  "role": "Celle qui défend les limites, non la vengeance"
+ },
+ "121": {
+  "subtitle": "Dewi Nawang Wulan — hospitalité lunaire",
+  "role": "Celle qui enseigne la rareté de recevoir de l'aide"
+ },
+ "92": {
+  "subtitle": "Amaterasu — kami solaire",
+  "role": "Celle qui ramène la lumière après l'obscurité"
+ },
+ "93": {
+  "subtitle": "Susanoo — la tempête qui purifie",
+  "role": "Celui qui abat l'ordre pourri"
+ },
+ "94": {
+  "subtitle": "Tsukuyomi — reflet lunaire",
+  "role": "Celui qui voit la nuit ce que le jour a manqué"
+ },
+ "95": {
+  "subtitle": "Inari — gardien du seuil",
+  "role": "Celui qui ouvre les portes aux nouveaux venus"
+ },
+ "96": {
+  "subtitle": "Ōkuninushi — hôte de la terre",
+  "role": "Celui qui enseigne l'hospitalité dans le commerce"
+ },
+ "97": {
+  "subtitle": "Izanami — gardienne du départ",
+  "role": "Celle qui accompagne la fin"
+ },
+ "98": {
+  "subtitle": "Hachiman — protecteur des archers",
+  "role": "Celui qui garde la paix et sait la défendre"
+ },
+ "99": {
+  "subtitle": "Benzaiten — les arts du flux",
+  "role": "Celle qui unit créativité et eau"
+ },
+ "100": {
+  "subtitle": "Kūkai — le bâtisseur de mandalas",
+  "role": "Celui qui enseigne la géométrie du monde"
+ },
+ "101": {
+  "subtitle": "Nichiren — voix du lotus",
+  "role": "Celui qui lit à voix haute pour que tous comprennent"
+ },
+ "162": {
+  "subtitle": "Intendant des lémuriens — la diversité avant tout",
+  "role": "Celui qui protège ce qui est unique"
+ },
+ "163": {
+  "subtitle": "Pont de Sclater — l'humilité de l'erreur",
+  "role": "Celui qui enseigne à retirer ce qui ne tient plus"
+ },
+ "164": {
+  "subtitle": "Le notaire de corail",
+  "role": "Celle qui témoigne de ce qui a été perdu"
+ },
+ "165": {
+  "subtitle": "Colonne des marées — un rythme pour les petits",
+  "role": "Celui qui garde un tempo juste"
+ },
+ "166": {
+  "subtitle": "Chronique de basalte",
+  "role": "Celle qui mesure le temps en géologie"
+ },
+ "167": {
+  "subtitle": "Semence d'écume",
+  "role": "Celui qui se répand sans prendre la place"
+ },
+ "168": {
+  "subtitle": "Pont océanique",
+  "role": "Celui qui relie sans réécrire"
+ },
+ "169": {
+  "subtitle": "Murmure du plateau",
+  "role": "Celui qui dit la vérité de la ligne d'eau"
+ },
+ "170": {
+  "subtitle": "Accalmie d'équinoxe",
+  "role": "Celui qui garde le calme au seuil"
+ },
+ "171": {
+  "subtitle": "Clôture du cercle",
+  "role": "Celui qui passe le flambeau"
+ },
+ "202": {
+  "subtitle": "Bolon Yokte' K'uh — dieu des neuf marches",
+  "role": "Celui qui clôt et ouvre un âge"
+ },
+ "182": {
+  "subtitle": "Intendant du Valhalla",
+  "role": "Celui qui veille à ce que les guerriers se reposent"
+ },
+ "183": {
+  "subtitle": "Óðinn le Voyageur",
+  "role": "Celui qui interroge avant de décider"
+ },
+ "184": {
+  "subtitle": "Þórr — le défenseur",
+  "role": "Celui qui maintient le système en marche"
+ },
+ "185": {
+  "subtitle": "Freyja — l'intendante",
+  "role": "Celle qui partage équitablement et protège l'intimité"
+ },
+ "186": {
+  "subtitle": "Týr — le serment",
+  "role": "Celui qui tient parole au prix d'une main"
+ },
+ "187": {
+  "subtitle": "Brigid — la triple flamme",
+  "role": "Celle qui unit l'artisanat, la parole et le soin"
+ },
+ "188": {
+  "subtitle": "Dagda — la harpe de paix",
+  "role": "Celui qui détient les biens communs"
+ },
+ "189": {
+  "subtitle": "Morrígan — le corbeau de l'avertissement",
+  "role": "Celle qui dit ce qui approche"
+ },
+ "190": {
+  "subtitle": "Lugh — aux multiples talents",
+  "role": "Celui qui sait faire plus d'une chose"
+ },
+ "191": {
+  "subtitle": "Manannán — le guide des brumes",
+  "role": "Celui qui garde la frontière entre les mondes"
+ },
+ "65": {
+  "subtitle": "Kāne",
+  "role": "Le principe du commencement qui ne s'impose pas"
+ },
+ "71": {
+  "subtitle": "Maui",
+  "role": "Le filou qui trouve une issue sans combat"
+ },
+ "72": {
+  "subtitle": "Padmasambhava — Guru Rinpoche",
+  "role": "Celui qui cacha des enseignements pour un âge futur"
+ },
+ "73": {
+  "subtitle": "Milarepa",
+  "role": "Celui qui changea par son propre chant"
+ },
+ "74": {
+  "subtitle": "Tsongkhapa",
+  "role": "Enseignant de l'ordre et de l'étude"
+ },
+ "75": {
+  "subtitle": "Atiśa",
+  "role": "Celui qui éclaire la voie des autres"
+ },
+ "76": {
+  "subtitle": "Marpa le Traducteur",
+  "role": "Pont entre deux mondes"
+ },
+ "77": {
+  "subtitle": "Machik Labdrön",
+  "role": "Celle qui tranche la peur"
+ },
+ "78": {
+  "subtitle": "Mañjuśrī",
+  "role": "Bodhisattva du discernement"
+ },
+ "79": {
+  "subtitle": "Samantabhadra",
+  "role": "Bodhisattva de l'action et du vœu"
+ },
+ "80": {
+  "subtitle": "Bouddha de la médecine",
+  "role": "Celui qui guérit tard, mais guérit"
+ },
+ "81": {
+  "subtitle": "Longchenpa",
+  "role": "Maître de l'état naturel"
+ },
+ "40": {
+  "subtitle": "Guérisseur royal",
+  "role": "Un dirigeant à la paume ouverte"
+ },
+ "42": {
+  "subtitle": "Dattatreya",
+  "role": "Enseignant de la triple puissance"
+ },
+ "43": {
+  "subtitle": "Le Petit Prince",
+  "role": "Guide vers l'enfant intérieur"
+ },
+ "44": {
+  "subtitle": "L'Œuf d'or",
+  "role": "La création elle-même"
+ },
+ "45": {
+  "subtitle": "Kalki",
+  "role": "Le guerrier futur de la fin de l'âge"
+ },
+ "203": {
+  "subtitle": "Trinité de la Mère divine",
+  "role": "Celle en qui trois déesses ne font qu'une"
+ }
+}

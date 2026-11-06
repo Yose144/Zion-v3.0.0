@@ -36,10 +36,13 @@ export interface OasisAvatar {
   circle: OasisAvatarCircle;
 }
 
-/** Dvojjazyčný text; prázdné pole 'cs' znamená „použij 'en'". */
+/** Lokalizovaný text: cs/en vždy, es/pt/fr jen když existuje překlad. */
 export interface LocalizedText {
   cs: string;
   en: string;
+  es?: string;
+  pt?: string;
+  fr?: string;
 }
 
 export interface OasisAvatarCircleMeta {
@@ -196,7 +199,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Krishna",
     "subtitle": {
       "cs": "Kosmické sjednocení",
-      "en": "Cosmic Integration"
+      "en": "Cosmic Integration",
+      "es": "Integración Cósmica",
+      "pt": "Integração Cósmica",
+      "fr": "Intégration cosmique"
     },
     "ray": "AllRays",
     "rarity": "Legendary",
@@ -207,7 +213,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Průvodce na konci všech cest",
-      "en": "Guide at the end of all paths"
+      "en": "Guide at the end of all paths",
+      "es": "Guía al final de todos los caminos",
+      "pt": "Guia no fim de todos os caminhos",
+      "fr": "Guide au bout de tous les chemins"
     },
     "location": {
       "cs": "Chrám EKAM (skrytá dimenze)",
@@ -299,7 +308,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Rama",
     "subtitle": {
       "cs": "Král dharmy",
-      "en": "Dharma King"
+      "en": "Dharma King",
+      "es": "Rey del Dharma",
+      "pt": "Rei do Dharma",
+      "fr": "Roi du dharma"
     },
     "ray": "Blue",
     "rarity": "Epic",
@@ -310,7 +322,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Mravní kompas a učitel správného jednání",
-      "en": "Moral compass and teacher of right action"
+      "en": "Moral compass and teacher of right action",
+      "es": "Brújula moral y maestro de la acción correcta",
+      "pt": "Bússola moral e mestre da ação correta",
+      "fr": "Boussole morale et enseignant de l'action juste"
     },
     "location": {
       "cs": "Palác Ajódhja (oblast Modrého paprsku)",
@@ -402,7 +417,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Sita",
     "subtitle": {
       "cs": "Královna oddanosti",
-      "en": "Devotion Queen"
+      "en": "Devotion Queen",
+      "es": "Reina de la Devoción",
+      "pt": "Rainha da Devoção",
+      "fr": "Reine de la dévotion"
     },
     "ray": "Pink",
     "rarity": "Epic",
@@ -413,7 +431,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitelka věrnosti a vnitřní síly",
-      "en": "Teacher of loyalty and inner strength"
+      "en": "Teacher of loyalty and inner strength",
+      "es": "Maestra de lealtad y fuerza interior",
+      "pt": "Mestre da lealdade e da força interior",
+      "fr": "Enseignante de loyauté et de force intérieure"
     },
     "location": {
       "cs": "Haj Ashoka (oblast Růžového paprsku)",
@@ -505,7 +526,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Hanuman",
     "subtitle": {
       "cs": "Božská služba",
-      "en": "Divine Service"
+      "en": "Divine Service",
+      "es": "Servicio Divino",
+      "pt": "Serviço Divino",
+      "fr": "Service divin"
     },
     "ray": "RubyGold",
     "rarity": "Epic",
@@ -516,7 +540,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitel síly, která slouží",
-      "en": "Teacher of strength that serves"
+      "en": "Teacher of strength that serves",
+      "es": "Maestro de la fuerza que sirve",
+      "pt": "Mestre da força que serve",
+      "fr": "Enseignant de la force qui sert"
     },
     "location": {
       "cs": "Jeskyně v Himálaji (Rubínovo-zlatá oblast)",
@@ -608,7 +635,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Maitreya",
     "subtitle": {
       "cs": "Budoucí Buddha",
-      "en": "Future Buddha"
+      "en": "Future Buddha",
+      "es": "Buda del Futuro",
+      "pt": "Buda Futuro",
+      "fr": "Bouddha futur"
     },
     "ray": "AllRays",
     "rarity": "Legendary",
@@ -619,7 +649,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Zakladatel ZIONu a průvodce komunitou",
-      "en": "Founder of ZION and guide of the community"
+      "en": "Founder of ZION and guide of the community",
+      "es": "Fundador de ZION y guía de la comunidad",
+      "pt": "Fundador de ZION e guia da comunidade",
+      "fr": "Fondateur de ZION et guide de la communauté"
     },
     "location": {
       "cs": "Střed města ZION (uzlový svět)",
@@ -711,7 +744,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Saraswati",
     "subtitle": {
       "cs": "Bohyně poznání",
-      "en": "Goddess of Knowledge"
+      "en": "Goddess of Knowledge",
+      "es": "Diosa del Conocimiento",
+      "pt": "Deusa do Conhecimento",
+      "fr": "Déesse de la connaissance"
     },
     "ray": "Yellow",
     "rarity": "Epic",
@@ -722,7 +758,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážkyně posvátné knihovny",
-      "en": "Guardian of the sacred library"
+      "en": "Guardian of the sacred library",
+      "es": "Guardiana de la biblioteca sagrada",
+      "pt": "Guardiã da biblioteca sagrada",
+      "fr": "Gardienne de la bibliothèque sacrée"
     },
     "location": {
       "cs": "Ústraní Royal Teton (Žlutý paprsek)",
@@ -814,7 +853,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Isis",
     "subtitle": {
       "cs": "Božská ženskost",
-      "en": "Divine Feminine"
+      "en": "Divine Feminine",
+      "es": "Femenino Divino",
+      "pt": "Feminino Divino",
+      "fr": "Féminin divin"
     },
     "ray": "Pink",
     "rarity": "Epic",
@@ -825,7 +867,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitelka tvůrčí síly ženství",
-      "en": "Teacher of the creative power of the feminine"
+      "en": "Teacher of the creative power of the feminine",
+      "es": "Maestra del poder creativo de lo femenino",
+      "pt": "Mestre do poder criador do feminino",
+      "fr": "Enseignante de la puissance créatrice du féminin"
     },
     "location": {
       "cs": "Chrám v Luxoru (Egypt)",
@@ -917,7 +962,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Issobela",
     "subtitle": {
       "cs": "Ochránkyně",
-      "en": "Protector"
+      "en": "Protector",
+      "es": "Protector",
+      "pt": "Protetor",
+      "fr": "Protecteur"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -928,7 +976,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážkyně bran města ZION",
-      "en": "Guardian of the gates of ZION"
+      "en": "Guardian of the gates of ZION",
+      "es": "Guardián de las puertas de ZION",
+      "pt": "Guardião das portas de ZION",
+      "fr": "Gardien des portes de ZION"
     },
     "location": {
       "cs": "Hradby města ZION",
@@ -1020,7 +1071,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Shanti",
     "subtitle": {
       "cs": "Strážkyně míru",
-      "en": "Peace Keeper"
+      "en": "Peace Keeper",
+      "es": "Guardián de la Paz",
+      "pt": "Guardião da Paz",
+      "fr": "Gardien de la paix"
     },
     "ray": "RubyGold",
     "rarity": "Rare",
@@ -1031,7 +1085,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Průvodkyně při řešení sporů",
-      "en": "Guide through conflict"
+      "en": "Guide through conflict",
+      "es": "Guía a través del conflicto",
+      "pt": "Guia através do conflito",
+      "fr": "Guide à travers le conflit"
     },
     "location": {
       "cs": "Gándhího ášram",
@@ -1123,7 +1180,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Christ",
     "subtitle": {
       "cs": "Posvátný válečník",
-      "en": "Sacred Warrior"
+      "en": "Sacred Warrior",
+      "es": "Guerrero Sagrado",
+      "pt": "Guerreiro Sagrado",
+      "fr": "Guerrier sacré"
     },
     "ray": "Blue",
     "rarity": "Epic",
@@ -1134,7 +1194,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Kněz, který umí vzít meč",
-      "en": "A priest who can take up the sword"
+      "en": "A priest who can take up the sword",
+      "es": "Un sacerdote que puede empuñar la espada",
+      "pt": "Um sacerdote que pode empunhar a espada",
+      "fr": "Un prêtre qui peut prendre l'épée"
     },
     "location": {
       "cs": "Zříceniny Camelotu",
@@ -1226,7 +1289,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Arjuna",
     "subtitle": {
       "cs": "Hledající válečník",
-      "en": "Warrior Seeker"
+      "en": "Warrior Seeker",
+      "es": "Buscador Guerrero",
+      "pt": "Buscador Guerreiro",
+      "fr": "Chercheur guerrier"
     },
     "ray": "Blue",
     "rarity": "Epic",
@@ -1237,7 +1303,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitel etiky na bitevním poli",
-      "en": "Teacher of ethics on the battlefield"
+      "en": "Teacher of ethics on the battlefield",
+      "es": "Maestro de ética en el campo de batalla",
+      "pt": "Mestre da ética no campo de batalha",
+      "fr": "Enseignant de l'éthique sur le champ de bataille"
     },
     "location": {
       "cs": "Kurukšétra (kraj Mahábháraty)",
@@ -1329,7 +1398,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Bhima",
     "subtitle": {
       "cs": "Silný ochránce",
-      "en": "Strong Protector"
+      "en": "Strong Protector",
+      "es": "Protector Fuerte",
+      "pt": "Protetor Forte",
+      "fr": "Protecteur puissant"
     },
     "ray": "Blue",
     "rarity": "Epic",
@@ -1340,7 +1412,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Šampion síly a spravedlnosti",
-      "en": "Champion of strength and justice"
+      "en": "Champion of strength and justice",
+      "es": "Campeón de la fuerza y la justicia",
+      "pt": "Campeão da força e da justiça",
+      "fr": "Champion de la force et de la justice"
     },
     "location": {
       "cs": "Palác Hastinápura",
@@ -1432,7 +1507,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Yudhishthira",
     "subtitle": {
       "cs": "Vůdce",
-      "en": "Leader"
+      "en": "Leader",
+      "es": "Líder",
+      "pt": "Líder",
+      "fr": "Dirigeant"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -1443,7 +1521,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Mentor odpovědného vedení",
-      "en": "Mentor of responsible leadership"
+      "en": "Mentor of responsible leadership",
+      "es": "Mentor del liderazgo responsable",
+      "pt": "Mentor da liderança responsável",
+      "fr": "Mentor du leadership responsable"
     },
     "location": {
       "cs": "Rada města ZION",
@@ -1535,7 +1616,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Jašóda",
     "subtitle": {
       "cs": "Božská matka",
-      "en": "Divine Mother"
+      "en": "Divine Mother",
+      "es": "Madre Divina",
+      "pt": "Mãe Divina",
+      "fr": "Mère divine"
     },
     "ray": "Pink",
     "rarity": "Epic",
@@ -1546,7 +1630,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitelka lásky bez podmínek",
-      "en": "Teacher of unconditional love"
+      "en": "Teacher of unconditional love",
+      "es": "Maestra del amor incondicional",
+      "pt": "Mestre do amor incondicional",
+      "fr": "Enseignante de l'amour inconditionnel"
     },
     "location": {
       "cs": "Vrindávan (Krišnova vesnice)",
@@ -1638,7 +1725,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Vishwakarma",
     "subtitle": {
       "cs": "Božský architekt",
-      "en": "Divine Architect"
+      "en": "Divine Architect",
+      "es": "Arquitecto Divino",
+      "pt": "Arquiteto Divino",
+      "fr": "Architecte divin"
     },
     "ray": "Yellow",
     "rarity": "Epic",
@@ -1649,7 +1739,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážce posvátné geometrie",
-      "en": "Keeper of sacred geometry"
+      "en": "Keeper of sacred geometry",
+      "es": "Guardián de la geometría sagrada",
+      "pt": "Guardião da geometria sagrada",
+      "fr": "Gardien de la géométrie sacrée"
     },
     "location": {
       "cs": "Staveniště chrámu EKAM",
@@ -1741,7 +1834,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Radha",
     "subtitle": {
       "cs": "Božská milovaná",
-      "en": "Divine Beloved"
+      "en": "Divine Beloved",
+      "es": "Amado Divino",
+      "pt": "Amado Divino",
+      "fr": "Bien-aimé divin"
     },
     "ray": "Pink",
     "rarity": "Epic",
@@ -1752,7 +1848,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitelka lásky, která netrvá na formě",
-      "en": "Teacher of love that does not insist on form"
+      "en": "Teacher of love that does not insist on form",
+      "es": "Maestro del amor que no exige forma",
+      "pt": "Mestre do amor que não insiste na forma",
+      "fr": "Enseignant de l'amour qui n'exige pas de forme"
     },
     "location": {
       "cs": "Rádhákund (posvátné jezero)",
@@ -1844,7 +1943,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Vyasa",
     "subtitle": {
       "cs": "Kosmický mudrc",
-      "en": "Cosmic Sage"
+      "en": "Cosmic Sage",
+      "es": "Sabio Cósmico",
+      "pt": "Sábio Cósmico",
+      "fr": "Sage cosmique"
     },
     "ray": "Yellow",
     "rarity": "Legendary",
@@ -1855,7 +1957,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Vypravěč a strážce paměti",
-      "en": "Storyteller and keeper of memory"
+      "en": "Storyteller and keeper of memory",
+      "es": "Narrador y guardián de la memoria",
+      "pt": "Narrador e guardião da memória",
+      "fr": "Conteur et gardien de la mémoire"
     },
     "location": {
       "cs": "Himálajská jeskyně (Vjásovo ústraní)",
@@ -1947,7 +2052,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Maria Magdalena",
     "subtitle": {
       "cs": "Marie z Magdaly",
-      "en": "Mary Magdalene"
+      "en": "Mary Magdalene",
+      "es": "María Magdalena",
+      "pt": "Mary Magdalene",
+      "fr": "Marie Madeleine"
     },
     "ray": "Pink",
     "rarity": "Epic",
@@ -1958,7 +2066,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitelka posvátného spojení",
-      "en": "Teacher of sacred union"
+      "en": "Teacher of sacred union",
+      "es": "Maestra de la unión sagrada",
+      "pt": "Mestre da união sagrada",
+      "fr": "Enseignante de l'union sacrée"
     },
     "location": {
       "cs": "Zahrada v Jeruzalémě",
@@ -2050,7 +2161,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Ježíš",
     "subtitle": {
       "cs": "Ježíš Kristus",
-      "en": "Jesus Christ"
+      "en": "Jesus Christ",
+      "es": "Jesucristo",
+      "pt": "Jesus Christ",
+      "fr": "Jésus-Christ"
     },
     "ray": "Pink",
     "rarity": "Legendary",
@@ -2061,7 +2175,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitel odpuštění",
-      "en": "Teacher of forgiveness"
+      "en": "Teacher of forgiveness",
+      "es": "Maestro del perdón",
+      "pt": "Mestre do perdão",
+      "fr": "Enseignant du pardon"
     },
     "location": {
       "cs": "Olivová hora",
@@ -2153,7 +2270,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Panna Maria",
     "subtitle": {
       "cs": "Panna Maria",
-      "en": "Virgin Mary"
+      "en": "Virgin Mary",
+      "es": "Virgen María",
+      "pt": "Virgin Mary",
+      "fr": "Vierge Marie"
     },
     "ray": "Pink",
     "rarity": "Epic",
@@ -2164,7 +2284,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Matka a přímluvkyně",
-      "en": "Mother and intercessor"
+      "en": "Mother and intercessor",
+      "es": "Madre e intercesora",
+      "pt": "Mãe e intercessora",
+      "fr": "Mère et intercesseuse"
     },
     "location": {
       "cs": "Jeskyně v Lourdes",
@@ -2256,7 +2379,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Tara",
     "subtitle": {
       "cs": "Osvoboditelka",
-      "en": "The Liberator"
+      "en": "The Liberator",
+      "es": "La Liberadora",
+      "pt": "A Libertadora",
+      "fr": "La Libératrice"
     },
     "ray": "Green",
     "rarity": "Epic",
@@ -2267,7 +2393,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Bohyně ochrany",
-      "en": "Goddess of protection"
+      "en": "Goddess of protection",
+      "es": "Diosa de la protección",
+      "pt": "Deusa da proteção",
+      "fr": "Déesse de la protection"
     },
     "location": {
       "cs": "Tibetský klášter",
@@ -2359,7 +2488,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Avalokiteshvara",
     "subtitle": {
       "cs": "Bódhisattva soucitu",
-      "en": "Compassion Bodhisattva"
+      "en": "Compassion Bodhisattva",
+      "es": "Bodhisattva de la compasión",
+      "pt": "Bodhisattva da Compaixão",
+      "fr": "Bodhisattva de la compassion"
     },
     "ray": "Pink",
     "rarity": "Epic",
@@ -2370,7 +2502,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitel univerzálního soucitu",
-      "en": "Teacher of universal compassion"
+      "en": "Teacher of universal compassion",
+      "es": "Maestro de la compasión universal",
+      "pt": "Mestre da compaixão universal",
+      "fr": "Enseignant de la compassion universelle"
     },
     "location": {
       "cs": "Palác Potála (Tibet)",
@@ -2462,7 +2597,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Vajrasattva",
     "subtitle": {
       "cs": "Mistr očištění",
-      "en": "Purification Master"
+      "en": "Purification Master",
+      "es": "Maestro de la purificación",
+      "pt": "Mestre da Purificação",
+      "fr": "Maître de la purification"
     },
     "ray": "White",
     "rarity": "Epic",
@@ -2473,7 +2611,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo čistí karmu",
-      "en": "The one who clears karma"
+      "en": "The one who clears karma",
+      "es": "El que limpia el karma",
+      "pt": "Aquele que limpa o karma",
+      "fr": "Celui qui purifie le karma"
     },
     "location": {
       "cs": "Hora Kailáš",
@@ -2565,7 +2706,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Dalai Lama XIV",
     "subtitle": {
       "cs": "Tändzin Gjamccho",
-      "en": "Tenzin Gyatso"
+      "en": "Tenzin Gyatso",
+      "es": "Tenzin Gyatso",
+      "pt": "Tenzin Gyatso",
+      "fr": "Tenzin Gyatso"
     },
     "ray": "Yellow",
     "rarity": "Legendary",
@@ -2576,7 +2720,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Živý učitel a vyslanec míru",
-      "en": "Living teacher and ambassador of peace"
+      "en": "Living teacher and ambassador of peace",
+      "es": "Maestro vivo y embajador de la paz",
+      "pt": "Mestre vivo e embaixador da paz",
+      "fr": "Enseignant vivant et ambassadeur de la paix"
     },
     "location": {
       "cs": "Dharamsala",
@@ -2668,7 +2815,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "El Morya",
     "subtitle": {
       "cs": "Mistr modrého paprsku",
-      "en": "Blue Ray Master"
+      "en": "Blue Ray Master",
+      "es": "Maestro del Rayo Azul",
+      "pt": "Mestre do Raio Azul",
+      "fr": "Maître du rayon bleu"
     },
     "ray": "Blue",
     "rarity": "Epic",
@@ -2679,7 +2829,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitel božské vůle",
-      "en": "Teacher of divine will"
+      "en": "Teacher of divine will",
+      "es": "Maestro de la voluntad divina",
+      "pt": "Mestre da vontade divina",
+      "fr": "Enseignant de la volonté divine"
     },
     "location": {
       "cs": "Chrám vůle v Darjeelingu",
@@ -2771,7 +2924,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Lanto",
     "subtitle": {
       "cs": "Mistr žlutého paprsku",
-      "en": "Yellow Ray Master"
+      "en": "Yellow Ray Master",
+      "es": "Maestro del Rayo Amarillo",
+      "pt": "Mestre do Raio Amarelo",
+      "fr": "Maître du rayon jaune"
     },
     "ray": "Yellow",
     "rarity": "Epic",
@@ -2782,7 +2938,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitel osvícení",
-      "en": "Teacher of illumination"
+      "en": "Teacher of illumination",
+      "es": "Maestro de la iluminación",
+      "pt": "Mestre da iluminação",
+      "fr": "Enseignant de l'illumination"
     },
     "location": {
       "cs": "Chrám světla",
@@ -2874,7 +3033,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Paul the Venetian",
     "subtitle": {
       "cs": "Mistr růžového paprsku",
-      "en": "Pink Ray Master"
+      "en": "Pink Ray Master",
+      "es": "Maestro del Rayo Rosa",
+      "pt": "Mestre do Raio Rosa",
+      "fr": "Maître du rayon rose"
     },
     "ray": "Pink",
     "rarity": "Epic",
@@ -2885,7 +3047,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Umělec božské krásy",
-      "en": "Artist of divine beauty"
+      "en": "Artist of divine beauty",
+      "es": "Artista de la belleza divina",
+      "pt": "Artista da beleza divina",
+      "fr": "Artiste de la beauté divine"
     },
     "location": {
       "cs": "Benátky, dílna u kanálu",
@@ -2977,7 +3142,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Serapis Bey",
     "subtitle": {
       "cs": "Mistr bílého paprsku",
-      "en": "White Ray Master"
+      "en": "White Ray Master",
+      "es": "Maestro del Rayo Blanco",
+      "pt": "Mestre do Raio Branco",
+      "fr": "Maître du rayon blanc"
     },
     "ray": "White",
     "rarity": "Epic",
@@ -2988,7 +3156,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitel vzestupu",
-      "en": "Teacher of ascension"
+      "en": "Teacher of ascension",
+      "es": "Maestro de la ascensión",
+      "pt": "Mestre da ascensão",
+      "fr": "Enseignant de l'ascension"
     },
     "location": {
       "cs": "Chrám vzestupu v Luxoru",
@@ -3080,7 +3251,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Hilarion",
     "subtitle": {
       "cs": "Mistr zeleného paprsku",
-      "en": "Green Ray Master"
+      "en": "Green Ray Master",
+      "es": "Maestro del Rayo Verde",
+      "pt": "Mestre do Raio Verde",
+      "fr": "Maître du rayon vert"
     },
     "ray": "Green",
     "rarity": "Epic",
@@ -3091,7 +3265,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo odhaluje pravdu",
-      "en": "The one who reveals truth"
+      "en": "The one who reveals truth",
+      "es": "El que revela la verdad",
+      "pt": "Aquele que revela a verdade",
+      "fr": "Celui qui révèle la vérité"
     },
     "location": {
       "cs": "Chrám pravdy na Krétě",
@@ -3183,7 +3360,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Lady Nada",
     "subtitle": {
       "cs": "Mistr rubínovo-zlatého paprsku",
-      "en": "Ruby-Gold Ray Master"
+      "en": "Ruby-Gold Ray Master",
+      "es": "Maestro del Rayo Rubí-Oro",
+      "pt": "Mestre do Raio Rubi-Ouro",
+      "fr": "Maître du rayon rubis-or"
     },
     "ray": "RubyGold",
     "rarity": "Epic",
@@ -3194,7 +3374,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitelka služby",
-      "en": "Teacher of service"
+      "en": "Teacher of service",
+      "es": "Maestro del servicio",
+      "pt": "Mestre do serviço",
+      "fr": "Enseignant du service"
     },
     "location": {
       "cs": "Chrám služby",
@@ -3286,7 +3469,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Saint Germain",
     "subtitle": {
       "cs": "Mistr fialového paprsku",
-      "en": "Violet Ray Master"
+      "en": "Violet Ray Master",
+      "es": "Maestro del Rayo Violeta",
+      "pt": "Mestre do Raio Violeta",
+      "fr": "Maître du rayon violet"
     },
     "ray": "Violet",
     "rarity": "Legendary",
@@ -3297,7 +3483,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Alchymista každodennosti",
-      "en": "Alchemist of the everyday"
+      "en": "Alchemist of the everyday",
+      "es": "Alquimista de lo cotidiano",
+      "pt": "Alquimista do quotidiano",
+      "fr": "Alchimiste du quotidien"
     },
     "location": {
       "cs": "Chrám fialového plamene",
@@ -3389,7 +3578,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Sanat Kumara",
     "subtitle": {
       "cs": "Pán světa",
-      "en": "Lord of the World"
+      "en": "Lord of the World",
+      "es": "Señor del Mundo",
+      "pt": "Senhor do Mundo",
+      "fr": "Seigneur du monde"
     },
     "ray": "AllRays",
     "rarity": "Legendary",
@@ -3400,7 +3592,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Dozor nad planetou",
-      "en": "Overseer of the planet"
+      "en": "Overseer of the planet",
+      "es": "Supervisor del planeta",
+      "pt": "Supervisor do planeta",
+      "fr": "Gardien de la planète"
     },
     "location": {
       "cs": "Šambala",
@@ -3492,7 +3687,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Mahavatar Babaji",
     "subtitle": {
       "cs": "Nesmrtelný jogín",
-      "en": "Immortal Yogi"
+      "en": "Immortal Yogi",
+      "es": "Yogui inmortal",
+      "pt": "Yogi imortal",
+      "fr": "Yogi immortel"
     },
     "ray": "White",
     "rarity": "Legendary",
@@ -3503,7 +3701,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Mistr krija jógy",
-      "en": "Master of Kriya Yoga"
+      "en": "Master of Kriya Yoga",
+      "es": "Maestro del Kriya Yoga",
+      "pt": "Mestre de Kriya Yoga",
+      "fr": "Maître du Kriya Yoga"
     },
     "location": {
       "cs": "Himálaj (skryté údolí)",
@@ -3595,7 +3796,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Lady Gaia-Vywamus",
     "subtitle": {
       "cs": "Matka Země",
-      "en": "Earth Mother"
+      "en": "Earth Mother",
+      "es": "Madre Tierra",
+      "pt": "Mãe Terra",
+      "fr": "Mère Terre"
     },
     "ray": "Green",
     "rarity": "Epic",
@@ -3606,7 +3810,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitelka planetárního uzdravení",
-      "en": "Teacher of planetary healing"
+      "en": "Teacher of planetary healing",
+      "es": "Maestra de sanación planetaria",
+      "pt": "Mestre da cura planetária",
+      "fr": "Enseignante de guérison planétaire"
     },
     "location": {
       "cs": "Živé jádro planety",
@@ -3698,7 +3905,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "King Arthur",
     "subtitle": {
       "cs": "Král, který se vrátí",
-      "en": "The Once and Future King"
+      "en": "The Once and Future King",
+      "es": "El Rey que Fue y Será",
+      "pt": "O Rei Que Foi e Será",
+      "fr": "Le roi d'hier et de demain"
     },
     "ray": "Blue",
     "rarity": "Epic",
@@ -3709,7 +3919,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Sjednotitel a vůdce",
-      "en": "Unifier and leader"
+      "en": "Unifier and leader",
+      "es": "Unificador y líder",
+      "pt": "Unificador e líder",
+      "fr": "Unificateur et dirigeant"
     },
     "location": {
       "cs": "Camelot",
@@ -3801,7 +4014,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Karel IV",
     "subtitle": {
       "cs": "Karel IV.",
-      "en": "Charles IV"
+      "en": "Charles IV",
+      "es": "Carlos IV",
+      "pt": "Charles IV",
+      "fr": "Charles IV"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -3812,7 +4028,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Mistr státnictví",
-      "en": "Master of statecraft"
+      "en": "Master of statecraft",
+      "es": "Maestro del arte de gobernar",
+      "pt": "Mestre da arte de governar",
+      "fr": "Maître de l'art de gouverner"
     },
     "location": {
       "cs": "Praha, Karlštejn",
@@ -3904,7 +4123,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Albert Einstein",
     "subtitle": {
       "cs": "Einstein",
-      "en": "Albert Einstein"
+      "en": "Albert Einstein",
+      "es": "Albert Einstein",
+      "pt": "Albert Einstein",
+      "fr": "Albert Einstein"
     },
     "ray": "Yellow",
     "rarity": "Epic",
@@ -3915,7 +4137,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Most mezi vědou a duchen",
-      "en": "Bridge between science and spirit"
+      "en": "Bridge between science and spirit",
+      "es": "Puente entre ciencia y espíritu",
+      "pt": "Ponte entre ciência e espírito",
+      "fr": "Pont entre science et esprit"
     },
     "location": {
       "cs": "Bern, patentový úřad",
@@ -4007,7 +4232,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Mahatma Gandhi",
     "subtitle": {
       "cs": "Gándhí",
-      "en": "Mahatma Gandhi"
+      "en": "Mahatma Gandhi",
+      "es": "Mahatma Gandhi",
+      "pt": "Mahatma Gandhi",
+      "fr": "Mahatma Gandhi"
     },
     "ray": "RubyGold",
     "rarity": "Epic",
@@ -4018,7 +4246,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitel nenásilí",
-      "en": "Teacher of non-violence"
+      "en": "Teacher of non-violence",
+      "es": "Maestro de la no violencia",
+      "pt": "Mestre da não-violência",
+      "fr": "Enseignant de la non-violence"
     },
     "location": {
       "cs": "Sůl na břehu moře, Dándí",
@@ -4110,7 +4341,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Subhadra",
     "subtitle": {
       "cs": "Súbhadra",
-      "en": "Subhadra"
+      "en": "Subhadra",
+      "es": "Subhadra",
+      "pt": "Subhadra",
+      "fr": "Subhadra"
     },
     "ray": "Pink",
     "rarity": "Rare",
@@ -4121,7 +4355,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážkyně rodinných pout",
-      "en": "Keeper of family bonds"
+      "en": "Keeper of family bonds",
+      "es": "Guardiana de los lazos familiares",
+      "pt": "Guardiã dos laços familiares",
+      "fr": "Gardienne des liens familiaux"
     },
     "location": {
       "cs": "Dváraka",
@@ -4213,7 +4450,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Vasudeva",
     "subtitle": {
       "cs": "Vasudéva",
-      "en": "Vasudeva"
+      "en": "Vasudeva",
+      "es": "Vasudeva",
+      "pt": "Vasudeva",
+      "fr": "Vasudeva"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -4224,7 +4464,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ochránce, který nese",
-      "en": "The protector who carries"
+      "en": "The protector who carries",
+      "es": "El protector que carga",
+      "pt": "O protetor que carrega",
+      "fr": "Le protecteur qui porte"
     },
     "location": {
       "cs": "Přechod řeky Jamuny",
@@ -4316,7 +4559,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Neo",
     "subtitle": {
       "cs": "Vyvolený",
-      "en": "The One"
+      "en": "The One",
+      "es": "El Uno",
+      "pt": "O Uno",
+      "fr": "L'Un"
     },
     "ray": "Violet",
     "rarity": "Legendary",
@@ -4327,7 +4573,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo prohlédne kód reality",
-      "en": "The one who sees through the code of reality"
+      "en": "The one who sees through the code of reality",
+      "es": "El que ve a través del código de la realidad",
+      "pt": "Aquele que vê através do código da realidade",
+      "fr": "Celui qui voit à travers le code du réel"
     },
     "location": {
       "cs": "Simulace, vrstva 3",
@@ -4419,7 +4668,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Trinity",
     "subtitle": {
       "cs": "Ta, která věří",
-      "en": "The Believer"
+      "en": "The Believer",
+      "es": "El Creyente",
+      "pt": "O Crente",
+      "fr": "Le croyant"
     },
     "ray": "Pink",
     "rarity": "Epic",
@@ -4430,7 +4682,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitelka důvěry a spojení",
-      "en": "Teacher of trust and connection"
+      "en": "Teacher of trust and connection",
+      "es": "Maestro de la confianza y la conexión",
+      "pt": "Mestre da confiança e da conexão",
+      "fr": "Enseignant de la confiance et du lien"
     },
     "location": {
       "cs": "Nebukadnezar, můstek",
@@ -4522,7 +4777,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Morpheus",
     "subtitle": {
       "cs": "Průvodce",
-      "en": "The Guide"
+      "en": "The Guide",
+      "es": "El Guía",
+      "pt": "O Guia",
+      "fr": "Le guide"
     },
     "ray": "Blue",
     "rarity": "Epic",
@@ -4533,7 +4791,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Mentor, který nevodí za ruku",
-      "en": "A mentor who does not hold your hand"
+      "en": "A mentor who does not hold your hand",
+      "es": "Un mentor que no te lleva de la mano",
+      "pt": "Um mentor que não segura a sua mão",
+      "fr": "Un mentor qui ne te tient pas la main"
     },
     "location": {
       "cs": "Bílý králík, podzemí",
@@ -4625,7 +4886,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "ZION The Last City",
     "subtitle": {
       "cs": "Poslední město",
-      "en": "The Last City"
+      "en": "The Last City",
+      "es": "La Última Ciudad",
+      "pt": "A Última Cidade",
+      "fr": "La dernière cité"
     },
     "ray": "AllRays",
     "rarity": "Legendary",
@@ -4636,7 +4900,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Kolektivní avatar naděje",
-      "en": "Collective avatar of hope"
+      "en": "Collective avatar of hope",
+      "es": "Avatar colectivo de la esperanza",
+      "pt": "Avatar coletivo da esperança",
+      "fr": "Avatar collectif de l'espérance"
     },
     "location": {
       "cs": "ZION, hloubka 4 km",
@@ -4728,7 +4995,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Sri Dattatreya",
     "subtitle": {
       "cs": "Dattátréja",
-      "en": "Dattatreya"
+      "en": "Dattatreya",
+      "es": "Dattatreya",
+      "pt": "Dattatreya",
+      "fr": "Dattatreya"
     },
     "ray": "AllRays",
     "rarity": "Legendary",
@@ -4739,7 +5009,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitel trojí síly",
-      "en": "Teacher of the threefold power"
+      "en": "Teacher of the threefold power",
+      "es": "Maestro del poder triple",
+      "pt": "Mestre do poder tríplice",
+      "fr": "Enseignant de la triple puissance"
     },
     "location": {
       "cs": "Ústraní v pohoří Sahjádri",
@@ -4831,7 +5104,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Maly Princ",
     "subtitle": {
       "cs": "Malý princ",
-      "en": "The Little Prince"
+      "en": "The Little Prince",
+      "es": "El Principito",
+      "pt": "The Little Prince",
+      "fr": "Le Petit Prince"
     },
     "ray": "Yellow",
     "rarity": "Rare",
@@ -4842,7 +5118,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Průvodce vnitřním dítětem",
-      "en": "Guide to the inner child"
+      "en": "Guide to the inner child",
+      "es": "Guía hacia el niño interior",
+      "pt": "Guia para a criança interior",
+      "fr": "Guide vers l'enfant intérieur"
     },
     "location": {
       "cs": "Planetka B-612",
@@ -4934,7 +5213,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Hiranyagarbha",
     "subtitle": {
       "cs": "Zlaté vejce",
-      "en": "The Golden Egg"
+      "en": "The Golden Egg",
+      "es": "El Huevo Dorado",
+      "pt": "O Ovo Dourado",
+      "fr": "L'Œuf d'or"
     },
     "ray": "AllRays",
     "rarity": "OneOfOne",
@@ -4945,7 +5227,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Sama skutečnost stvoření",
-      "en": "Creation itself"
+      "en": "Creation itself",
+      "es": "La creación misma",
+      "pt": "A própria criação",
+      "fr": "La création elle-même"
     },
     "location": {
       "cs": "Před počátkem",
@@ -5037,7 +5322,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Sri Kalki Avatar",
     "subtitle": {
       "cs": "Kalkí",
-      "en": "Kalki"
+      "en": "Kalki",
+      "es": "Kalki",
+      "pt": "Kalki",
+      "fr": "Kalki"
     },
     "ray": "Blue",
     "rarity": "Legendary",
@@ -5048,7 +5336,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Budoucí válečník konce věku",
-      "en": "The future warrior of the age's end"
+      "en": "The future warrior of the age's end",
+      "es": "El guerrero futuro del fin de la era",
+      "pt": "O guerreiro futuro do fim da era",
+      "fr": "Le guerrier futur de la fin de l'âge"
     },
     "location": {
       "cs": "Šambala, brána věku",
@@ -5140,7 +5431,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Lumi",
     "subtitle": {
       "cs": "Královská léčitelka",
-      "en": "Royal Healer"
+      "en": "Royal Healer",
+      "es": "Sanador Real",
+      "pt": "Curador Real",
+      "fr": "Guérisseur royal"
     },
     "ray": "Pink",
     "rarity": "Rare",
@@ -5151,7 +5445,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Vůdkyně s otevřenou dlaní",
-      "en": "A leader with an open palm"
+      "en": "A leader with an open palm",
+      "es": "Un líder con la palma abierta",
+      "pt": "Um líder de mão aberta",
+      "fr": "Un dirigeant à la paume ouverte"
     },
     "location": {
       "cs": "Dvorní infirmarium, ZION",
@@ -5243,7 +5540,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Heȟáka Sápa (Black Elk)",
     "subtitle": {
       "cs": "Heȟáka Sápa — Černý los",
-      "en": "Heȟáka Sápa — Black Elk"
+      "en": "Heȟáka Sápa — Black Elk",
+      "es": "Heȟáka Sápa — Alce Negro",
+      "pt": "Heȟáka Sápa — Black Elk",
+      "fr": "Heȟáka Sápa — Black Elk"
     },
     "ray": "AllRays",
     "rarity": "Rare",
@@ -5254,7 +5554,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážce posvátného kruhu a vizí",
-      "en": "Keeper of the sacred circle and of visions"
+      "en": "Keeper of the sacred circle and of visions",
+      "es": "Guardián del círculo sagrado y de las visiones",
+      "pt": "Guardião do círculo sagrado e das visões",
+      "fr": "Gardien du cercle sacré et des visions"
     },
     "location": {
       "cs": "Pahorky Černých hor",
@@ -5326,7 +5629,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Ptesáŋ Wíŋ (White Buffalo Calf Woman)",
     "subtitle": {
       "cs": "Ptesáŋ Wíŋ — Bílá bizonice",
-      "en": "Ptesáŋ Wíŋ — White Buffalo Calf Woman"
+      "en": "Ptesáŋ Wíŋ — White Buffalo Calf Woman",
+      "es": "Ptesáŋ Wíŋ — Mujer Búfalo Blanco",
+      "pt": "Ptesáŋ Wíŋ — White Buffalo Calf Woman",
+      "fr": "Ptesáŋ Wíŋ — White Buffalo Calf Woman"
     },
     "ray": "AllRays",
     "rarity": "Rare",
@@ -5337,7 +5643,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která přinesla posvátný obřad",
-      "en": "She who brought the sacred rite"
+      "en": "She who brought the sacred rite",
+      "es": "Ella que trajo el rito sagrado",
+      "pt": "Aquela que trouxe o rito sagrado",
+      "fr": "Celle qui apporta le rite sacré"
     },
     "location": {
       "cs": "Prérie u Černých hor",
@@ -5409,7 +5718,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Kókyangwúti (Spider Grandmother)",
     "subtitle": {
       "cs": "Kókyangwúti — Babička pavouk",
-      "en": "Kókyangwúti — Spider Grandmother"
+      "en": "Kókyangwúti — Spider Grandmother",
+      "es": "Kókyangwúti — Abuela Araña",
+      "pt": "Kókyangwúti — Avó Aranha",
+      "fr": "Kókyangwúti — Spider Grandmother"
     },
     "ray": "Yellow",
     "rarity": "Legendary",
@@ -5420,7 +5732,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Tkadlena sítí a spojenectví",
-      "en": "Weaver of webs and alliances"
+      "en": "Weaver of webs and alliances",
+      "es": "Tejedora de redes y alianzas",
+      "pt": "Tecelã de teias e alianças",
+      "fr": "Tisseuse de toiles et d'alliances"
     },
     "location": {
       "cs": "Prastará tkalcovská jeskyně",
@@ -5492,7 +5807,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Hunahpú & Xbalanqué (Hero Twins)",
     "subtitle": {
       "cs": "Hunahpú a Xbalanqué",
-      "en": "Hunahpú and Xbalanqué"
+      "en": "Hunahpú and Xbalanqué",
+      "es": "Hunahpú y Xbalanqué",
+      "pt": "Hunahpú e Xbalanqué",
+      "fr": "Hunahpú et Xbalanqué"
     },
     "ray": "Blue",
     "rarity": "Legendary",
@@ -5503,7 +5821,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Dvojčata, která projdou podsvětím",
-      "en": "Twins who walk the underworld"
+      "en": "Twins who walk the underworld",
+      "es": "Gemelos que recorren el inframundo",
+      "pt": "Gêmeos que caminham no submundo",
+      "fr": "Jumeaux qui parcourent le monde souterrain"
     },
     "location": {
       "cs": "Xibalba, hřiště bohů",
@@ -5575,7 +5896,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Don Mariano",
     "subtitle": {
       "cs": "Don Mariano",
-      "en": "Don Mariano"
+      "en": "Don Mariano",
+      "es": "Don Mariano",
+      "pt": "Don Mariano",
+      "fr": "Don Mariano"
     },
     "ray": "White",
     "rarity": "Epic",
@@ -5586,7 +5910,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Mluvčí hor a učitel vzájemnosti",
-      "en": "Speaker for the mountains, teacher of reciprocity"
+      "en": "Speaker for the mountains, teacher of reciprocity",
+      "es": "Voz de las montañas, maestro de la reciprocidad",
+      "pt": "Porta-voz das montanhas, mestre da reciprocidade",
+      "fr": "Porte-parole des montagnes, enseignant de la réciprocité"
     },
     "location": {
       "cs": "Andy, údolí Q'ero",
@@ -5658,7 +5985,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Doña Rosalía Ixmukané",
     "subtitle": {
       "cs": "Doña Rosalía Ixmukané",
-      "en": "Doña Rosalía Ixmukané"
+      "en": "Doña Rosalía Ixmukané",
+      "es": "Doña Rosalía Ixmukané",
+      "pt": "Doña Rosalía Ixmukané",
+      "fr": "Doña Rosalía Ixmukané"
     },
     "ray": "Yellow",
     "rarity": "Epic",
@@ -5669,7 +5999,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážkyně ústně předávané paměti",
-      "en": "Keeper of oral memory"
+      "en": "Keeper of oral memory",
+      "es": "Guardiana de la memoria oral",
+      "pt": "Guardiã da memória oral",
+      "fr": "Gardienne de la mémoire orale"
     },
     "location": {
       "cs": "Vysočina Guatemaly",
@@ -5741,7 +6074,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Bílé Pero (White Feather)",
     "subtitle": {
       "cs": "Bílé Pero",
-      "en": "White Feather"
+      "en": "White Feather",
+      "es": "Pluma Blanca",
+      "pt": "White Feather",
+      "fr": "White Feather"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -5752,7 +6088,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo rozliší pravý a falešný příslib",
-      "en": "The one who tells a true promise from a false one"
+      "en": "The one who tells a true promise from a false one",
+      "es": "El que distingue una promesa verdadera de una falsa",
+      "pt": "Aquele que distingue a promessa verdadeira da falsa",
+      "fr": "Celui qui distingue une vraie promesse d'une fausse"
     },
     "location": {
       "cs": "Kamenná tabule, Hopi",
@@ -5824,7 +6163,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Ohnivá Oka (Fire Eyes)",
     "subtitle": {
       "cs": "Ohnivá Oka",
-      "en": "Fire Eyes"
+      "en": "Fire Eyes",
+      "es": "Ojos de Fuego",
+      "pt": "Fire Eyes",
+      "fr": "Fire Eyes"
     },
     "ray": "RubyGold",
     "rarity": "Epic",
@@ -5835,7 +6177,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Prorok duhového válečníka",
-      "en": "Prophet of the rainbow warrior"
+      "en": "Prophet of the rainbow warrior",
+      "es": "Profeta del guerrero del arcoíris",
+      "pt": "Profeta do guerreiro do arco-íris",
+      "fr": "Prophète du guerrier de l'arc-en-ciel"
     },
     "location": {
       "cs": "Poušť, kde se sbíhají cesty",
@@ -5907,7 +6252,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Davi Kopenawa",
     "subtitle": {
       "cs": "Davi Kopenawa",
-      "en": "Davi Kopenawa"
+      "en": "Davi Kopenawa",
+      "es": "Davi Kopenawa",
+      "pt": "Davi Kopenawa",
+      "fr": "Davi Kopenawa"
     },
     "ray": "AllRays",
     "rarity": "Epic",
@@ -5918,7 +6266,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Mluvčí duchů lesa",
-      "en": "Speaker for the spirits of the forest"
+      "en": "Speaker for the spirits of the forest",
+      "es": "Voz de los espíritus del bosque",
+      "pt": "Porta-voz dos espíritos da floresta",
+      "fr": "Porte-parole des esprits de la forêt"
     },
     "location": {
       "cs": "Yanomami, horní tok Amazonky",
@@ -5990,7 +6341,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Heyókȟa (Sacred Clown)",
     "subtitle": {
       "cs": "Heyókȟa — Posvátný šašek",
-      "en": "Heyókȟa — Sacred Clown"
+      "en": "Heyókȟa — Sacred Clown",
+      "es": "Heyókȟa — Payaso Sagrado",
+      "pt": "Heyókȟa — Palhaço Sagrado",
+      "fr": "Heyókȟa — clown sacré"
     },
     "ray": "AllRays",
     "rarity": "Legendary",
@@ -6001,7 +6355,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo učí smíchem proti egu",
-      "en": "The one who teaches through laughter against the ego"
+      "en": "The one who teaches through laughter against the ego",
+      "es": "El que enseña con risa contra el ego",
+      "pt": "Aquele que ensina pelo riso contra o ego",
+      "fr": "Celui qui enseigne par le rire contre l'ego"
     },
     "location": {
       "cs": "Tábor uprostřed pláně",
@@ -6073,7 +6430,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Lā'ila'i",
     "subtitle": {
       "cs": "Lā'ilaʻi — První žena",
-      "en": "Lā'ilaʻi — First Woman"
+      "en": "Lā'ilaʻi — First Woman",
+      "es": "Lā'ilaʻi — Primera Mujer",
+      "pt": "Lā'ilaʻi — Primeira Mulher",
+      "fr": "Lā'ilaʻi — première femme"
     },
     "ray": "AllRays",
     "rarity": "Rare",
@@ -6084,7 +6444,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která drží linii rodu",
-      "en": "She who holds the lineage"
+      "en": "She who holds the lineage",
+      "es": "Ella que sostiene el linaje",
+      "pt": "Aquela que guarda a linhagem",
+      "fr": "Celle qui porte la lignée"
     },
     "location": {
       "cs": "Úsvit na Havaji",
@@ -6156,7 +6519,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Pele",
     "subtitle": {
       "cs": "Pele",
-      "en": "Pele"
+      "en": "Pele",
+      "es": "Pele",
+      "pt": "Pele",
+      "fr": "Pele"
     },
     "ray": "Violet",
     "rarity": "Legendary",
@@ -6167,7 +6533,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která tvoří tím, že spálí",
-      "en": "She who creates by burning"
+      "en": "She who creates by burning",
+      "es": "Ella que crea quemando",
+      "pt": "Aquela que cria queimando",
+      "fr": "Celle qui crée en brûlant"
     },
     "location": {
       "cs": "Kilauea, ostrov Havaj",
@@ -6239,7 +6608,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Hiʻiaka",
     "subtitle": {
       "cs": "Hiʻiaka",
-      "en": "Hiʻiaka"
+      "en": "Hiʻiaka",
+      "es": "Hiʻiaka",
+      "pt": "Hiʻiaka",
+      "fr": "Hiʻiaka"
     },
     "ray": "Pink",
     "rarity": "Epic",
@@ -6250,7 +6622,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitelka tance a uzdravení",
-      "en": "Teacher of dance and healing"
+      "en": "Teacher of dance and healing",
+      "es": "Maestra de danza y sanación",
+      "pt": "Mestre da dança e da cura",
+      "fr": "Enseignante de la danse et de la guérison"
     },
     "location": {
       "cs": "Pobřeží Kauai",
@@ -6322,7 +6697,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Kāne",
     "subtitle": {
       "cs": "Kāne",
-      "en": "Kāne"
+      "en": "Kāne",
+      "es": "Kāne",
+      "pt": "Kāne",
+      "fr": "Kāne"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -6333,7 +6711,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Princip vzniku, který se nevnucuje",
-      "en": "The principle of beginning that does not intrude"
+      "en": "The principle of beginning that does not intrude",
+      "es": "El principio del comienzo que no invade",
+      "pt": "O princípio do começo que não se impõe",
+      "fr": "Le principe du commencement qui ne s'impose pas"
     },
     "location": {
       "cs": "Pramen, kde začíná voda",
@@ -6405,7 +6786,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Kanaloa",
     "subtitle": {
       "cs": "Kanaloa",
-      "en": "Kanaloa"
+      "en": "Kanaloa",
+      "es": "Kanaloa",
+      "pt": "Kanaloa",
+      "fr": "Kanaloa"
     },
     "ray": "Blue",
     "rarity": "Legendary",
@@ -6416,7 +6800,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážce toku many",
-      "en": "Keeper of the flow of mana"
+      "en": "Keeper of the flow of mana",
+      "es": "Guardián del flujo del mana",
+      "pt": "Guardião do fluxo de mana",
+      "fr": "Gardien du flux de mana"
     },
     "location": {
       "cs": "Hlubina mezi ostrovy",
@@ -6488,7 +6875,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Kū",
     "subtitle": {
       "cs": "Kū",
-      "en": "Kū"
+      "en": "Kū",
+      "es": "Kū",
+      "pt": "Kū",
+      "fr": "Kū"
     },
     "ray": "Blue",
     "rarity": "Epic",
@@ -6499,7 +6889,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitel vytrvalosti a poctivé práce",
-      "en": "Teacher of endurance and honest work"
+      "en": "Teacher of endurance and honest work",
+      "es": "Maestro de resistencia y trabajo honesto",
+      "pt": "Mestre da resistência e do trabalho honesto",
+      "fr": "Enseignant de l'endurance et du travail honnête"
     },
     "location": {
       "cs": "Kamenná terasa, kde se staví",
@@ -6571,7 +6964,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Lono",
     "subtitle": {
       "cs": "Lono",
-      "en": "Lono"
+      "en": "Lono",
+      "es": "Lono",
+      "pt": "Lono",
+      "fr": "Lono"
     },
     "ray": "Green",
     "rarity": "Legendary",
@@ -6582,7 +6978,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážce hojnosti a příměří",
-      "en": "Keeper of abundance and truce"
+      "en": "Keeper of abundance and truce",
+      "es": "Guardián de la abundancia y la tregua",
+      "pt": "Guardião da abundância e da trégua",
+      "fr": "Gardien de l'abondance et de la trêve"
     },
     "location": {
       "cs": "Pole před sklizní",
@@ -6654,7 +7053,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Stará Kumu Lehua",
     "subtitle": {
       "cs": "Stará Kumu Lehua",
-      "en": "Old Kumu Lehua"
+      "en": "Old Kumu Lehua",
+      "es": "Kumu Lehua la Anciana",
+      "pt": "Velho Kumu Lehua",
+      "fr": "Le vieux Kumu Lehua"
     },
     "ray": "Yellow",
     "rarity": "Epic",
@@ -6665,7 +7067,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Babička, která vypráví napříč tradicemi",
-      "en": "The grandmother who tells across traditions"
+      "en": "The grandmother who tells across traditions",
+      "es": "La abuela que narra entre tradiciones",
+      "pt": "A avó que narra entre tradições",
+      "fr": "La grand-mère qui raconte à travers les traditions"
     },
     "location": {
       "cs": "Dům na konci vesnice",
@@ -6737,7 +7142,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Hina",
     "subtitle": {
       "cs": "Hina",
-      "en": "Hina"
+      "en": "Hina",
+      "es": "Hina",
+      "pt": "Hina",
+      "fr": "Hina"
     },
     "ray": "Pink",
     "rarity": "Epic",
@@ -6748,7 +7156,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážkyně měsíce a času",
-      "en": "Keeper of the moon and of time"
+      "en": "Keeper of the moon and of time",
+      "es": "Guardiana de la luna y del tiempo",
+      "pt": "Guardiã da lua e do tempo",
+      "fr": "Gardienne de la lune et du temps"
     },
     "location": {
       "cs": "Měsíční útes",
@@ -6820,7 +7231,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Maui",
     "subtitle": {
       "cs": "Maui",
-      "en": "Maui"
+      "en": "Maui",
+      "es": "Maui",
+      "pt": "Maui",
+      "fr": "Maui"
     },
     "ray": "Yellow",
     "rarity": "Legendary",
@@ -6831,7 +7245,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Trikster, který nachází cestu bez boje",
-      "en": "The trickster who finds a way without a fight"
+      "en": "The trickster who finds a way without a fight",
+      "es": "El embaucador que halla un camino sin pelear",
+      "pt": "O embusteiro que encontra um caminho sem luta",
+      "fr": "Le filou qui trouve une issue sans combat"
     },
     "location": {
       "cs": "Moře mezi ostrovy",
@@ -6903,7 +7320,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Padmasambhava",
     "subtitle": {
       "cs": "Padmasambhava — Guru Rinpočhe",
-      "en": "Padmasambhava — Guru Rinpoche"
+      "en": "Padmasambhava — Guru Rinpoche",
+      "es": "Padmasambhava — Guru Rinpoche",
+      "pt": "Padmasambhava — Guru Rinpoche",
+      "fr": "Padmasambhava — Guru Rinpoche"
     },
     "ray": "Violet",
     "rarity": "Rare",
@@ -6914,7 +7334,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo ukryl učení pro pozdější dobu",
-      "en": "He who hid teachings for a later age"
+      "en": "He who hid teachings for a later age",
+      "es": "Él que escondió enseñanzas para una era futura",
+      "pt": "Aquele que escondeu ensinamentos para uma era futura",
+      "fr": "Celui qui cacha des enseignements pour un âge futur"
     },
     "location": {
       "cs": "Jeskyně v údolí Paro",
@@ -6986,7 +7409,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Milarepa",
     "subtitle": {
       "cs": "Milarepa",
-      "en": "Milarepa"
+      "en": "Milarepa",
+      "es": "Milarepa",
+      "pt": "Milarepa",
+      "fr": "Milarepa"
     },
     "ray": "Yellow",
     "rarity": "Epic",
@@ -6997,7 +7423,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo se změnil vlastní písní",
-      "en": "He who changed through his own song"
+      "en": "He who changed through his own song",
+      "es": "Él que cambió gracias a su propia canción",
+      "pt": "Aquele que mudou através do próprio canto",
+      "fr": "Celui qui changea par son propre chant"
     },
     "location": {
       "cs": "Jeskyně v Himálaji",
@@ -7069,7 +7498,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Tsongkhapa",
     "subtitle": {
       "cs": "Congkhapa",
-      "en": "Tsongkhapa"
+      "en": "Tsongkhapa",
+      "es": "Tsongkhapa",
+      "pt": "Tsongkhapa",
+      "fr": "Tsongkhapa"
     },
     "ray": "Yellow",
     "rarity": "Epic",
@@ -7080,7 +7512,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitel pořádku a studia",
-      "en": "Teacher of order and study"
+      "en": "Teacher of order and study",
+      "es": "Maestro del orden y del estudio",
+      "pt": "Mestre da ordem e do estudo",
+      "fr": "Enseignant de l'ordre et de l'étude"
     },
     "location": {
       "cs": "Klášter Ganden",
@@ -7152,7 +7587,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Atiśa",
     "subtitle": {
       "cs": "Atíša",
-      "en": "Atiśa"
+      "en": "Atiśa",
+      "es": "Atiśa",
+      "pt": "Atiśa",
+      "fr": "Atiśa"
     },
     "ray": "Yellow",
     "rarity": "Rare",
@@ -7163,7 +7601,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo svítí na cestu druhým",
-      "en": "He who lights the way for others"
+      "en": "He who lights the way for others",
+      "es": "Él que ilumina el camino de los demás",
+      "pt": "Aquele que ilumina o caminho dos outros",
+      "fr": "Celui qui éclaire la voie des autres"
     },
     "location": {
       "cs": "Klášter Radeng",
@@ -7235,7 +7676,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Marpa Lotsawa",
     "subtitle": {
       "cs": "Marpa Překladatel",
-      "en": "Marpa the Translator"
+      "en": "Marpa the Translator",
+      "es": "Marpa el Traductor",
+      "pt": "Marpa o Tradutor",
+      "fr": "Marpa le Traducteur"
     },
     "ray": "Blue",
     "rarity": "Epic",
@@ -7246,7 +7690,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Most mezi dvěma světy",
-      "en": "Bridge between two worlds"
+      "en": "Bridge between two worlds",
+      "es": "Puente entre dos mundos",
+      "pt": "Ponte entre dois mundos",
+      "fr": "Pont entre deux mondes"
     },
     "location": {
       "cs": "Údolí Lhodrak",
@@ -7318,7 +7765,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Machik Labdrön",
     "subtitle": {
       "cs": "Máčik Labdrön",
-      "en": "Machik Labdrön"
+      "en": "Machik Labdrön",
+      "es": "Machik Labdrön",
+      "pt": "Machik Labdrön",
+      "fr": "Machik Labdrön"
     },
     "ray": "Pink",
     "rarity": "Legendary",
@@ -7329,7 +7779,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která řeže strach",
-      "en": "She who cuts fear"
+      "en": "She who cuts fear",
+      "es": "Ella que corta el miedo",
+      "pt": "Aquela que corta o medo",
+      "fr": "Celle qui tranche la peur"
     },
     "location": {
       "cs": "Hřbitov na okraji údolí",
@@ -7401,7 +7854,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Mañjuśrī",
     "subtitle": {
       "cs": "Maňdžušrí",
-      "en": "Mañjuśrī"
+      "en": "Mañjuśrī",
+      "es": "Mañjuśrī",
+      "pt": "Mañjuśrī",
+      "fr": "Mañjuśrī"
     },
     "ray": "Blue",
     "rarity": "Epic",
@@ -7412,7 +7868,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Bódhisattva rozlišování",
-      "en": "Bodhisattva of discernment"
+      "en": "Bodhisattva of discernment",
+      "es": "Bodhisattva del discernimiento",
+      "pt": "Bodhisattva do discernimento",
+      "fr": "Bodhisattva du discernement"
     },
     "location": {
       "cs": "Pět vrcholů Wu-tchaj",
@@ -7484,7 +7943,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Samantabhadra",
     "subtitle": {
       "cs": "Samantabhadra",
-      "en": "Samantabhadra"
+      "en": "Samantabhadra",
+      "es": "Samantabhadra",
+      "pt": "Samantabhadra",
+      "fr": "Samantabhadra"
     },
     "ray": "AllRays",
     "rarity": "Legendary",
@@ -7495,7 +7957,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Bódhisattva skutku a slibu",
-      "en": "Bodhisattva of action and vow"
+      "en": "Bodhisattva of action and vow",
+      "es": "Bodhisattva de la acción y el voto",
+      "pt": "Bodhisattva da ação e do voto",
+      "fr": "Bodhisattva de l'action et du vœu"
     },
     "location": {
       "cs": "Poutní stezka E-mej",
@@ -7567,7 +8032,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Medicine Buddha",
     "subtitle": {
       "cs": "Buddha medicíny",
-      "en": "Medicine Buddha"
+      "en": "Medicine Buddha",
+      "es": "Buda de la Medicina",
+      "pt": "Buda da Medicina",
+      "fr": "Bouddha de la médecine"
     },
     "ray": "Blue",
     "rarity": "Epic",
@@ -7578,7 +8046,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo léčí pozdě, ale léčí",
-      "en": "He who heals late, but heals"
+      "en": "He who heals late, but heals",
+      "es": "Él que sana tarde, pero sana",
+      "pt": "Aquele que cura tarde, mas cura",
+      "fr": "Celui qui guérit tard, mais guérit"
     },
     "location": {
       "cs": "Zahrada léčivých bylin",
@@ -7650,7 +8121,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Longchen Rabjam",
     "subtitle": {
       "cs": "Longčenpa",
-      "en": "Longchenpa"
+      "en": "Longchenpa",
+      "es": "Longchenpa",
+      "pt": "Longchenpa",
+      "fr": "Longchenpa"
     },
     "ray": "White",
     "rarity": "Rare",
@@ -7661,7 +8135,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Mistr přirozeného stavu",
-      "en": "Master of the natural state"
+      "en": "Master of the natural state",
+      "es": "Maestro del estado natural",
+      "pt": "Mestre do estado natural",
+      "fr": "Maître de l'état naturel"
     },
     "location": {
       "cs": "Jeskyně nad údolím",
@@ -7733,7 +8210,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Shiva",
     "subtitle": {
       "cs": "Šiva — tanec konce a počátku",
-      "en": "Shiva — the dance of ending and beginning"
+      "en": "Shiva — the dance of ending and beginning",
+      "es": "Shiva — la danza del final y el comienzo",
+      "pt": "Shiva — a dança do fim e do começo",
+      "fr": "Shiva — la danse de la fin et du commencement"
     },
     "ray": "Blue",
     "rarity": "Legendary",
@@ -7744,7 +8224,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo rozpouští, aby bylo možné tvořit",
-      "en": "He who dissolves so that creation is possible"
+      "en": "He who dissolves so that creation is possible",
+      "es": "Él que disuelve para que la creación sea posible",
+      "pt": "Aquele que dissolve para que a criação seja possível",
+      "fr": "Celui qui dissout pour que la création soit possible"
     },
     "location": {
       "cs": "Mount Kailash, tančiště",
@@ -7816,7 +8299,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Parvati",
     "subtitle": {
       "cs": "Párvatí — královna souladu",
-      "en": "Parvati — Queen of Harmony"
+      "en": "Parvati — Queen of Harmony",
+      "es": "Parvati — Reina de la Armonía",
+      "pt": "Parvati — Rainha da Harmonia",
+      "fr": "Parvati — reine de l'harmonie"
     },
     "ray": "Pink",
     "rarity": "Epic",
@@ -7827,7 +8313,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která drží dům pohromadě",
-      "en": "She who holds the house together"
+      "en": "She who holds the house together",
+      "es": "Ella que mantiene unida la casa",
+      "pt": "Aquela que mantém a casa unida",
+      "fr": "Celle qui tient la maison ensemble"
     },
     "location": {
       "cs": "Horský příbytek",
@@ -7899,7 +8388,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Ganesha",
     "subtitle": {
       "cs": "Ganéša — ten, kdo odstraňuje překážky",
-      "en": "Ganesha — remover of obstacles"
+      "en": "Ganesha — remover of obstacles",
+      "es": "Ganesha — removedor de obstáculos",
+      "pt": "Ganesha — removedor de obstáculos",
+      "fr": "Ganesha — celui qui écarte les obstacles"
     },
     "ray": "Yellow",
     "rarity": "Epic",
@@ -7910,7 +8402,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážce začátků a písařů",
-      "en": "Guardian of beginnings and of scribes"
+      "en": "Guardian of beginnings and of scribes",
+      "es": "Guardián de los comienzos y de los escribas",
+      "pt": "Guardião dos começos e dos escribas",
+      "fr": "Gardien des commencements et des scribes"
     },
     "location": {
       "cs": "Práh každé cesty",
@@ -7982,7 +8477,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Lakshmi",
     "subtitle": {
       "cs": "Lakšmí — blahobyt jako tok",
-      "en": "Lakshmi — prosperity as flow"
+      "en": "Lakshmi — prosperity as flow",
+      "es": "Lakshmi — la prosperidad como flujo",
+      "pt": "Lakshmi — prosperidade como fluxo",
+      "fr": "Lakshmi — la prospérité comme flux"
     },
     "ray": "Pink",
     "rarity": "Epic",
@@ -7993,7 +8491,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která učí, že bohatství je v pohybu",
-      "en": "She who teaches that wealth is in motion"
+      "en": "She who teaches that wealth is in motion",
+      "es": "Ella que enseña que la riqueza está en movimiento",
+      "pt": "Aquela que ensina que a riqueza está em movimento",
+      "fr": "Celle qui enseigne que la richesse est en mouvement"
     },
     "location": {
       "cs": "Lotosský rybník",
@@ -8065,7 +8566,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Durga",
     "subtitle": {
       "cs": "Durga — ta, která chrání",
-      "en": "Durga — she who protects"
+      "en": "Durga — she who protects",
+      "es": "Durga — la que protege",
+      "pt": "Durga — aquela que protege",
+      "fr": "Durga — celle qui protège"
     },
     "ray": "Blue",
     "rarity": "Legendary",
@@ -8076,7 +8580,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Obránkyně, která jde do ohně první",
-      "en": "Defender who walks into the fire first"
+      "en": "Defender who walks into the fire first",
+      "es": "Defensora que entra primero al fuego",
+      "pt": "Defensora que entra primeiro no fogo",
+      "fr": "Défenseur qui entre dans le feu la première"
     },
     "location": {
       "cs": "Horská pevnost",
@@ -8148,7 +8655,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Kali",
     "subtitle": {
       "cs": "Kálí — čas, který bere",
-      "en": "Kali — time that takes"
+      "en": "Kali — time that takes",
+      "es": "Kali — el tiempo que toma",
+      "pt": "Kali — o tempo que leva",
+      "fr": "Kali — le temps qui prend"
     },
     "ray": "Violet",
     "rarity": "Rare",
@@ -8159,7 +8669,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která ukončí, co se přežilo",
-      "en": "She who ends what has outlived itself"
+      "en": "She who ends what has outlived itself",
+      "es": "Ella que termina lo que ya se sobrevivió",
+      "pt": "Aquela que encerra o que já se sobreviveu",
+      "fr": "Celle qui achève ce qui s'est survécu"
     },
     "location": {
       "cs": "Hřbitov u řeky",
@@ -8231,7 +8744,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Kartikeya",
     "subtitle": {
       "cs": "Kártikéja — velitel",
-      "en": "Kartikeya — the commander"
+      "en": "Kartikeya — the commander",
+      "es": "Kartikeya — el comandante",
+      "pt": "Kartikeya — o comandante",
+      "fr": "Kartikeya — le commandant"
     },
     "ray": "Blue",
     "rarity": "Epic",
@@ -8242,7 +8758,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo vede sestavu, ne sebe",
-      "en": "He who leads the formation, not himself"
+      "en": "He who leads the formation, not himself",
+      "es": "Él que guía la formación, no a sí mismo",
+      "pt": "Aquele que lidera a formação, não a si mesmo",
+      "fr": "Celui qui mène la formation, non sa personne"
     },
     "location": {
       "cs": "Horský průsmyk",
@@ -8314,7 +8833,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Surya",
     "subtitle": {
       "cs": "Súrja — rytmus dne",
-      "en": "Surya — the rhythm of the day"
+      "en": "Surya — the rhythm of the day",
+      "es": "Surya — el ritmo del día",
+      "pt": "Surya — o ritmo do dia",
+      "fr": "Surya — le rythme du jour"
     },
     "ray": "White",
     "rarity": "Rare",
@@ -8325,7 +8847,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážce světla, které se vrací",
-      "en": "Keeper of the light that returns"
+      "en": "Keeper of the light that returns",
+      "es": "Guardián de la luz que regresa",
+      "pt": "Guardião da luz que regressa",
+      "fr": "Gardien de la lumière qui revient"
     },
     "location": {
       "cs": "Východ slunce nad pouští",
@@ -8397,7 +8922,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Indra",
     "subtitle": {
       "cs": "Indra — král bouře",
-      "en": "Indra — king of the storm"
+      "en": "Indra — king of the storm",
+      "es": "Indra — rey de la tormenta",
+      "pt": "Indra — rei da tempestade",
+      "fr": "Indra — roi de la tempête"
     },
     "ray": "Blue",
     "rarity": "Epic",
@@ -8408,7 +8936,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo zkouší moc, aby ji neztratil",
-      "en": "He who tests power so as not to lose it"
+      "en": "He who tests power so as not to lose it",
+      "es": "Él que pone a prueba el poder para no perderlo",
+      "pt": "Aquele que testa o poder para não o perder",
+      "fr": "Celui qui éprouve le pouvoir pour ne pas le perdre"
     },
     "location": {
       "cs": "Nebeská citadela",
@@ -8480,7 +9011,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Ganga",
     "subtitle": {
       "cs": "Ganga — řeka, která nese",
-      "en": "Ganga — the river that carries"
+      "en": "Ganga — the river that carries",
+      "es": "Ganga — el río que lleva",
+      "pt": "Ganga — o rio que carrega",
+      "fr": "Ganga — le fleuve qui porte"
     },
     "ray": "Blue",
     "rarity": "Epic",
@@ -8491,7 +9025,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která čistí a nestěžuje si",
-      "en": "She who cleanses and does not complain"
+      "en": "She who cleanses and does not complain",
+      "es": "Ella que limpia y no se queja",
+      "pt": "Aquela que limpa e não se queixa",
+      "fr": "Celle qui purifie sans se plaindre"
     },
     "location": {
       "cs": "Pramen v horách",
@@ -8563,7 +9100,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Amaterasu",
     "subtitle": {
       "cs": "Amaterasu — sluneční bohyně",
-      "en": "Amaterasu — solar kami"
+      "en": "Amaterasu — solar kami",
+      "es": "Amaterasu — kami solar",
+      "pt": "Amaterasu — kami solar",
+      "fr": "Amaterasu — kami solaire"
     },
     "ray": "White",
     "rarity": "Rare",
@@ -8574,7 +9114,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která vrací světlo po tmě",
-      "en": "She who returns light after the dark"
+      "en": "She who returns light after the dark",
+      "es": "Ella que devuelve la luz tras la oscuridad",
+      "pt": "Aquela que devolve a luz depois da escuridão",
+      "fr": "Celle qui ramène la lumière après l'obscurité"
     },
     "location": {
       "cs": "Jeskyně Ama-no-Iwato",
@@ -8646,7 +9189,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Susanoo",
     "subtitle": {
       "cs": "Susanoo — bouře, která uklízí",
-      "en": "Susanoo — the storm that clears"
+      "en": "Susanoo — the storm that clears",
+      "es": "Susanoo — la tormenta que despeja",
+      "pt": "Susanoo — a tempestade que limpa",
+      "fr": "Susanoo — la tempête qui purifie"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -8657,7 +9203,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo bourá zkažené pořádky",
-      "en": "He who tears down rotten order"
+      "en": "He who tears down rotten order",
+      "es": "Él que derriba el orden podrido",
+      "pt": "Aquele que derruba a ordem podre",
+      "fr": "Celui qui abat l'ordre pourri"
     },
     "location": {
       "cs": "Pobřeží Izumo",
@@ -8729,7 +9278,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Tsukuyomi",
     "subtitle": {
       "cs": "Cukujomi — měsíční rozvaha",
-      "en": "Tsukuyomi — lunar reflection"
+      "en": "Tsukuyomi — lunar reflection",
+      "es": "Tsukuyomi — reflejo lunar",
+      "pt": "Tsukuyomi — reflexo lunar",
+      "fr": "Tsukuyomi — reflet lunaire"
     },
     "ray": "Violet",
     "rarity": "Rare",
@@ -8740,7 +9292,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo se dívá v noci, co ve dne přehlédli",
-      "en": "He who sees at night what was missed by day"
+      "en": "He who sees at night what was missed by day",
+      "es": "Él que ve de noche lo que se perdió de día",
+      "pt": "Aquele que vê à noite o que escapou de dia",
+      "fr": "Celui qui voit la nuit ce que le jour a manqué"
     },
     "location": {
       "cs": "Měsíční svatyně",
@@ -8812,7 +9367,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Inari",
     "subtitle": {
       "cs": "Inari — strážce prahu",
-      "en": "Inari — keeper of the threshold"
+      "en": "Inari — keeper of the threshold",
+      "es": "Inari — guardián del umbral",
+      "pt": "Inari — guardião do limiar",
+      "fr": "Inari — gardien du seuil"
     },
     "ray": "Green",
     "rarity": "Rare",
@@ -8823,7 +9381,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo otevírá dveře novým",
-      "en": "He who opens doors for newcomers"
+      "en": "He who opens doors for newcomers",
+      "es": "Él que abre puertas a los recién llegados",
+      "pt": "Aquele que abre portas aos recém-chegados",
+      "fr": "Celui qui ouvre les portes aux nouveaux venus"
     },
     "location": {
       "cs": "Cesta tunelem torii",
@@ -8895,7 +9456,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Ōkuninushi",
     "subtitle": {
       "cs": "Ókuninuši — hostitel země",
-      "en": "Ōkuninushi — host of the land"
+      "en": "Ōkuninushi — host of the land",
+      "es": "Ōkuninushi — anfitrión de la tierra",
+      "pt": "Ōkuninushi — anfitrião da terra",
+      "fr": "Ōkuninushi — hôte de la terre"
     },
     "ray": "Pink",
     "rarity": "Rare",
@@ -8906,7 +9470,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo učí pohostinnosti v obchodu",
-      "en": "He who teaches hospitality in trade"
+      "en": "He who teaches hospitality in trade",
+      "es": "Él que enseña la hospitalidad en el comercio",
+      "pt": "Aquele que ensina hospitalidade no comércio",
+      "fr": "Celui qui enseigne l'hospitalité dans le commerce"
     },
     "location": {
       "cs": "Pole Izumo",
@@ -8978,7 +9545,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Izanami",
     "subtitle": {
       "cs": "Izanami — strážkyně odchodu",
-      "en": "Izanami — keeper of departure"
+      "en": "Izanami — keeper of departure",
+      "es": "Izanami — guardiana de la partida",
+      "pt": "Izanami — guardiã da partida",
+      "fr": "Izanami — gardienne du départ"
     },
     "ray": "Violet",
     "rarity": "Rare",
@@ -8989,7 +9559,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která provází na konec",
-      "en": "She who accompanies the ending"
+      "en": "She who accompanies the ending",
+      "es": "Ella que acompaña el final",
+      "pt": "Aquela que acompanha o fim",
+      "fr": "Celle qui accompagne la fin"
     },
     "location": {
       "cs": "Jomi, země stínů",
@@ -9061,7 +9634,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Hachiman",
     "subtitle": {
       "cs": "Hachiman — ochránce lukostřelců",
-      "en": "Hachiman — protector of archers"
+      "en": "Hachiman — protector of archers",
+      "es": "Hachiman — protector de los arqueros",
+      "pt": "Hachiman — protetor dos arqueiros",
+      "fr": "Hachiman — protecteur des archers"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -9072,7 +9648,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo drží mír a umí ho bránit",
-      "en": "He who keeps peace and can defend it"
+      "en": "He who keeps peace and can defend it",
+      "es": "Él que mantiene la paz y sabe defenderla",
+      "pt": "Aquele que mantém a paz e sabe defendê-la",
+      "fr": "Celui qui garde la paix et sait la défendre"
     },
     "location": {
       "cs": "Hradní věž",
@@ -9144,7 +9723,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Benzaiten",
     "subtitle": {
       "cs": "Benzaiten — proud umění",
-      "en": "Benzaiten — the flowing arts"
+      "en": "Benzaiten — the flowing arts",
+      "es": "Benzaiten — las artes fluidas",
+      "pt": "Benzaiten — as artes fluidas",
+      "fr": "Benzaiten — les arts du flux"
     },
     "ray": "Pink",
     "rarity": "Rare",
@@ -9155,7 +9737,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která propojuje tvořivost a vodu",
-      "en": "She who joins creativity and water"
+      "en": "She who joins creativity and water",
+      "es": "Ella que une creatividad y agua",
+      "pt": "Aquela que une criatividade e água",
+      "fr": "Celle qui unit créativité et eau"
     },
     "location": {
       "cs": "Ostrov v jezeře",
@@ -9227,7 +9812,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Kūkai",
     "subtitle": {
       "cs": "Kúkai — stavitel mandaly",
-      "en": "Kūkai — the mandala builder"
+      "en": "Kūkai — the mandala builder",
+      "es": "Kūkai — el constructor de mandalas",
+      "pt": "Kūkai — o construtor de mandalas",
+      "fr": "Kūkai — le bâtisseur de mandalas"
     },
     "ray": "White",
     "rarity": "Rare",
@@ -9238,7 +9826,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo učí geometrii světa",
-      "en": "He who teaches the geometry of the world"
+      "en": "He who teaches the geometry of the world",
+      "es": "Él que enseña la geometría del mundo",
+      "pt": "Aquele que ensina a geometria do mundo",
+      "fr": "Celui qui enseigne la géométrie du monde"
     },
     "location": {
       "cs": "Hora Kója",
@@ -9310,7 +9901,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Nichiren",
     "subtitle": {
       "cs": "Ničiren — hlas lotosu",
-      "en": "Nichiren — voice of the lotus"
+      "en": "Nichiren — voice of the lotus",
+      "es": "Nichiren — voz del loto",
+      "pt": "Nichiren — voz do lótus",
+      "fr": "Nichiren — voix du lotus"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -9321,7 +9915,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo čte nahlas, aby rozuměli všichni",
-      "en": "He who reads aloud so all may understand"
+      "en": "He who reads aloud so all may understand",
+      "es": "Él que lee en voz alta para que todos entiendan",
+      "pt": "Aquele que lê em voz alta para que todos entendam",
+      "fr": "Celui qui lit à voix haute pour que tous comprennent"
     },
     "location": {
       "cs": "Chrám na hoře Minobu",
@@ -9393,7 +9990,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Xuanyuan Huangdi",
     "subtitle": {
       "cs": "Žlutý císař",
-      "en": "The Yellow Emperor"
+      "en": "The Yellow Emperor",
+      "es": "El Emperador Amarillo",
+      "pt": "O Imperador Amarelo",
+      "fr": "L'Empereur Jaune"
     },
     "ray": "Yellow",
     "rarity": "Rare",
@@ -9404,7 +10004,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Zakladatel řádu a medicíny",
-      "en": "Founder of order and of medicine"
+      "en": "Founder of order and of medicine",
+      "es": "Fundador del orden y de la medicina",
+      "pt": "Fundador da ordem e da medicina",
+      "fr": "Fondateur de l'ordre et de la médecine"
     },
     "location": {
       "cs": "Údolí Žluté řeky",
@@ -9476,7 +10079,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Xiwangmu",
     "subtitle": {
       "cs": "Si-wang-mu — královna Západu",
-      "en": "Xiwangmu — Queen Mother of the West"
+      "en": "Xiwangmu — Queen Mother of the West",
+      "es": "Xiwangmu — Reina Madre del Oeste",
+      "pt": "Xiwangmu — Rainha Mãe do Ocidente",
+      "fr": "Xiwangmu — Reine Mère de l'Ouest"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -9487,7 +10093,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážkyně pokladu, který dozrává",
-      "en": "Keeper of treasure that must ripen"
+      "en": "Keeper of treasure that must ripen",
+      "es": "Guardiana del tesoro que debe madurar",
+      "pt": "Guardiã do tesouro que deve amadurecer",
+      "fr": "Gardienne du trésor qui doit mûrir"
     },
     "location": {
       "cs": "Hora Kchun-lun",
@@ -9559,7 +10168,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Laozi",
     "subtitle": {
       "cs": "Lao-c' — mlčení, které vede",
-      "en": "Laozi — the silence that leads"
+      "en": "Laozi — the silence that leads",
+      "es": "Laozi — el silencio que guía",
+      "pt": "Laozi — o silêncio que conduz",
+      "fr": "Laozi — le silence qui guide"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -9570,7 +10182,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitel méně vlády",
-      "en": "Teacher of governing less"
+      "en": "Teacher of governing less",
+      "es": "Maestro de gobernar menos",
+      "pt": "Mestre de governar menos",
+      "fr": "Enseignant du gouverner moins"
     },
     "location": {
       "cs": "Průsmyk na hranici",
@@ -9642,7 +10257,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Kongzi (Confucius)",
     "subtitle": {
       "cs": "Konfucius",
-      "en": "Confucius"
+      "en": "Confucius",
+      "es": "Confucio",
+      "pt": "Confucius",
+      "fr": "Confucius"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -9653,7 +10271,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitel vztahů a zodpovědnosti",
-      "en": "Teacher of relationships and responsibility"
+      "en": "Teacher of relationships and responsibility",
+      "es": "Maestro de las relaciones y la responsabilidad",
+      "pt": "Mestre das relações e da responsabilidade",
+      "fr": "Enseignant des relations et de la responsabilité"
     },
     "location": {
       "cs": "Akátový dvůr",
@@ -9725,7 +10346,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Guan Yu / Guandi",
     "subtitle": {
       "cs": "Kuan Jü — věrnost a poctivost",
-      "en": "Guan Yu — loyalty and honour"
+      "en": "Guan Yu — loyalty and honour",
+      "es": "Guan Yu — lealtad y honor",
+      "pt": "Guan Yu — lealdade e honra",
+      "fr": "Guan Yu — loyauté et honneur"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -9736,7 +10360,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážce dohod",
-      "en": "Guardian of agreements"
+      "en": "Guardian of agreements",
+      "es": "Guardián de los acuerdos",
+      "pt": "Guardião dos acordos",
+      "fr": "Gardien des accords"
     },
     "location": {
       "cs": "Tržiště se soudní síní",
@@ -9808,7 +10435,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Mazu",
     "subtitle": {
       "cs": "Má-cu — mořská přímluvkyně",
-      "en": "Mazu — patroness of the sea"
+      "en": "Mazu — patroness of the sea",
+      "es": "Mazu — patrona del mar",
+      "pt": "Mazu — padroeira do mar",
+      "fr": "Mazu — patronne de la mer"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -9819,7 +10449,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která provází přes nebezpečnou vodu",
-      "en": "She who guides across dangerous water"
+      "en": "She who guides across dangerous water",
+      "es": "Ella que guía por aguas peligrosas",
+      "pt": "Aquela que guia por águas perigosas",
+      "fr": "Celle qui guide à travers les eaux dangereuses"
     },
     "location": {
       "cs": "Přístav s majákem",
@@ -9891,7 +10524,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Nezha",
     "subtitle": {
       "cs": "Nezha — nové tělo",
-      "en": "Nezha — a new body"
+      "en": "Nezha — a new body",
+      "es": "Nezha — un cuerpo nuevo",
+      "pt": "Nezha — um corpo novo",
+      "fr": "Nezha — un corps nouveau"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -9902,7 +10538,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo se znovu postaví jinak",
-      "en": "He who rises again differently"
+      "en": "He who rises again differently",
+      "es": "Él que resurge de otro modo",
+      "pt": "Aquele que renasce diferente",
+      "fr": "Celui qui se relève autrement"
     },
     "location": {
       "cs": "Lotosové jezero",
@@ -9974,7 +10613,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Sun Wukong",
     "subtitle": {
       "cs": "Sun Wu-kchung — opice na cestě",
-      "en": "Sun Wukong — the monkey on the road"
+      "en": "Sun Wukong — the monkey on the road",
+      "es": "Sun Wukong — el mono en el camino",
+      "pt": "Sun Wukong — o macaco na estrada",
+      "fr": "Sun Wukong — le singe sur la route"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -9985,7 +10627,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo zkouší trpělivost učitele",
-      "en": "He who tests the teacher's patience"
+      "en": "He who tests the teacher's patience",
+      "es": "Él que pone a prueba la paciencia del maestro",
+      "pt": "Aquele que testa a paciência do mestre",
+      "fr": "Celui qui met la patience du maître à l'épreuve"
     },
     "location": {
       "cs": "Hora květů a ovoce",
@@ -10057,7 +10702,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Yu the Great",
     "subtitle": {
       "cs": "Jü Veliký — ten, kdo zkrotil vodu",
-      "en": "Yu the Great — who tamed the water"
+      "en": "Yu the Great — who tamed the water",
+      "es": "Yu el Grande — quien domó el agua",
+      "pt": "Yu o Grande — que domou as águas",
+      "fr": "Yu le Grand — celui qui dompta les eaux"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -10068,7 +10716,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Učitel trpělivé infrastruktury",
-      "en": "Teacher of patient infrastructure"
+      "en": "Teacher of patient infrastructure",
+      "es": "Maestro de la infraestructura paciente",
+      "pt": "Mestre da infraestrutura paciente",
+      "fr": "Enseignant de l'infrastructure patiente"
     },
     "location": {
       "cs": "Soutěska Žluté řeky",
@@ -10140,7 +10791,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Lei Gong",
     "subtitle": {
       "cs": "Lej-kung — hromový soud",
-      "en": "Lei Gong — the thunder court"
+      "en": "Lei Gong — the thunder court",
+      "es": "Lei Gong — la corte del trueno",
+      "pt": "Lei Gong — a corte do trovão",
+      "fr": "Lei Gong — la cour du tonnerre"
     },
     "ray": "Violet",
     "rarity": "Rare",
@@ -10151,7 +10805,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo hlásí porušení řádu",
-      "en": "He who announces broken order"
+      "en": "He who announces broken order",
+      "es": "Él que anuncia el orden roto",
+      "pt": "Aquele que anuncia a ordem quebrada",
+      "fr": "Celui qui annonce l'ordre brisé"
     },
     "location": {
       "cs": "Nebeská strážnice",
@@ -10223,7 +10880,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Dewi Sri",
     "subtitle": {
       "cs": "Dewi Sri — matka rýže",
-      "en": "Dewi Sri — the rice mother"
+      "en": "Dewi Sri — the rice mother",
+      "es": "Dewi Sri — la madre del arroz",
+      "pt": "Dewi Sri — a mãe do arroz",
+      "fr": "Dewi Sri — la mère du riz"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -10234,7 +10894,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která učí sytit bez plýtvání",
-      "en": "She who teaches feeding without waste"
+      "en": "She who teaches feeding without waste",
+      "es": "Ella que enseña a alimentar sin desperdicio",
+      "pt": "Aquela que ensina a alimentar sem desperdício",
+      "fr": "Celle qui enseigne à nourrir sans gaspillage"
     },
     "location": {
       "cs": "Terasy rýžových polí",
@@ -10306,7 +10969,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Nyai Roro Kidul",
     "subtitle": {
       "cs": "Nyai Roro Kidul — královna jižního moře",
-      "en": "Nyai Roro Kidul — Queen of the Southern Sea"
+      "en": "Nyai Roro Kidul — Queen of the Southern Sea",
+      "es": "Nyai Roro Kidul — Reina del Mar del Sur",
+      "pt": "Nyai Roro Kidul — Rainha do Mar do Sul",
+      "fr": "Nyai Roro Kidul — reine de la mer du Sud"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -10317,7 +10983,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážkyně pobřeží a společného majetku",
-      "en": "Guardian of the shore and of the commons"
+      "en": "Guardian of the shore and of the commons",
+      "es": "Guardián de la costa y de los bienes comunes",
+      "pt": "Guardiã da costa e dos bens comuns",
+      "fr": "Gardienne du rivage et des biens communs"
     },
     "location": {
       "cs": "Útes Uluwatu",
@@ -10389,7 +11058,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Semar",
     "subtitle": {
       "cs": "Semar — moudrý šašek",
-      "en": "Semar — the wise clown"
+      "en": "Semar — the wise clown",
+      "es": "Semar — el payaso sabio",
+      "pt": "Semar — o palhaço sábio",
+      "fr": "Semar — le clown sage"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -10400,7 +11072,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Prostředník, který řekne nepříjemnou pravdu",
-      "en": "Mediator who says the uncomfortable truth"
+      "en": "Mediator who says the uncomfortable truth",
+      "es": "Mediador que dice la verdad incómoda",
+      "pt": "Mediador que diz a verdade incómoda",
+      "fr": "Médiateur qui dit la vérité dérangeante"
     },
     "location": {
       "cs": "Stínové loutkové jeviště",
@@ -10472,7 +11147,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Batara Guru",
     "subtitle": {
       "cs": "Batara Guru — učitel bohů",
-      "en": "Batara Guru — teacher of gods"
+      "en": "Batara Guru — teacher of gods",
+      "es": "Batara Guru — maestro de dioses",
+      "pt": "Batara Guru — mestre dos deuses",
+      "fr": "Batara Guru — enseignant des dieux"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -10483,7 +11161,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo překládá nesrozumitelné",
-      "en": "He who translates the incomprehensible"
+      "en": "He who translates the incomprehensible",
+      "es": "Él que traduce lo incomprensible",
+      "pt": "Aquele que traduz o incompreensível",
+      "fr": "Celui qui traduit l'incompréhensible"
     },
     "location": {
       "cs": "Vrchol hory",
@@ -10555,7 +11236,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Barong Ket",
     "subtitle": {
       "cs": "Barong — strážce rovnováhy",
-      "en": "Barong — keeper of balance"
+      "en": "Barong — keeper of balance",
+      "es": "Barong — guardián del equilibrio",
+      "pt": "Barong — guardião do equilíbrio",
+      "fr": "Barong — gardien de l'équilibre"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -10566,7 +11250,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo uklidňuje hystérii",
-      "en": "He who calms hysteria"
+      "en": "He who calms hysteria",
+      "es": "Él que calma la histeria",
+      "pt": "Aquele que acalma a histeria",
+      "fr": "Celui qui apaise l'hystérie"
     },
     "location": {
       "cs": "Nádvoří chrámu",
@@ -10638,7 +11325,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Garuda",
     "subtitle": {
       "cs": "Garuda — křídla, která nesou",
-      "en": "Garuda — wings that carry"
+      "en": "Garuda — wings that carry",
+      "es": "Garuda — alas que llevan",
+      "pt": "Garuda — asas que carregam",
+      "fr": "Garuda — des ailes qui portent"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -10649,7 +11339,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo doručí pomoc včas",
-      "en": "He who delivers help in time"
+      "en": "He who delivers help in time",
+      "es": "Él que entrega ayuda a tiempo",
+      "pt": "Aquele que entrega ajuda a tempo",
+      "fr": "Celui qui apporte l'aide à temps"
     },
     "location": {
       "cs": "Vysoko nad souostrovím",
@@ -10721,7 +11414,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Gatotkaca",
     "subtitle": {
       "cs": "Gatotkaca — ochránce v oblacích",
-      "en": "Gatotkaca — guardian in the clouds"
+      "en": "Gatotkaca — guardian in the clouds",
+      "es": "Gatotkaca — guardián en las nubes",
+      "pt": "Gatotkaca — guardião nas nuvens",
+      "fr": "Gatotkaca — gardien dans les nuages"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -10732,7 +11428,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo doprovází přes nebezpečí",
-      "en": "He who escorts through danger"
+      "en": "He who escorts through danger",
+      "es": "Él que acompaña a través del peligro",
+      "pt": "Aquele que acompanha através do perigo",
+      "fr": "Celui qui escorte à travers le danger"
     },
     "location": {
       "cs": "Oblačný záliv",
@@ -10804,7 +11503,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Prince Panji",
     "subtitle": {
       "cs": "Princ Pandži",
-      "en": "Prince Panji"
+      "en": "Prince Panji",
+      "es": "Príncipe Panji",
+      "pt": "Príncipe Panji",
+      "fr": "Prince Panji"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -10815,7 +11517,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo hledá, kým doopravdy je",
-      "en": "He who searches for who he really is"
+      "en": "He who searches for who he really is",
+      "es": "Él que busca quién es en realidad",
+      "pt": "Aquele que procura quem realmente é",
+      "fr": "Celui qui cherche qui il est vraiment"
     },
     "location": {
       "cs": "Královský dvůr Kediri",
@@ -10887,7 +11592,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Roro Jonggrang",
     "subtitle": {
       "cs": "Roro Jonggrang — smlouva o chrámu",
-      "en": "Roro Jonggrang — the temple bargain"
+      "en": "Roro Jonggrang — the temple bargain",
+      "es": "Roro Jonggrang — el pacto del templo",
+      "pt": "Roro Jonggrang — o pacto do templo",
+      "fr": "Roro Jonggrang — le pacte du temple"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -10898,7 +11606,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která hájí hranice, ne mstu",
-      "en": "She who defends boundaries, not revenge"
+      "en": "She who defends boundaries, not revenge",
+      "es": "Ella que defiende límites, no venganza",
+      "pt": "Aquela que defende limites, não vingança",
+      "fr": "Celle qui défend les limites, non la vengeance"
     },
     "location": {
       "cs": "Chrám Prambanan",
@@ -10970,7 +11681,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Dewi Nawang Wulan",
     "subtitle": {
       "cs": "Dewi Nawang Wulan — měsíční pohostinnost",
-      "en": "Dewi Nawang Wulan — lunar hospitality"
+      "en": "Dewi Nawang Wulan — lunar hospitality",
+      "es": "Dewi Nawang Wulan — hospitalidad lunar",
+      "pt": "Dewi Nawang Wulan — hospitalidade lunar",
+      "fr": "Dewi Nawang Wulan — hospitalité lunaire"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -10981,7 +11695,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která učí vzácnosti přijmout pomoc",
-      "en": "She who teaches the rarity of receiving help"
+      "en": "She who teaches the rarity of receiving help",
+      "es": "Ella que enseña lo raro de recibir ayuda",
+      "pt": "Aquela que ensina a raridade de receber ajuda",
+      "fr": "Celle qui enseigne la rareté de recevoir de l'aide"
     },
     "location": {
       "cs": "Hráz rybníka",
@@ -11053,7 +11770,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Seven Sisters Songline Steward",
     "subtitle": {
       "cs": "Sedm sester — cesta po linii",
-      "en": "The Seven Sisters — the songline"
+      "en": "The Seven Sisters — the songline",
+      "es": "Las Siete Hermanas — la songline",
+      "pt": "As Sete Irmãs — a songline",
+      "fr": "Les Sept Sœurs — la ligne de chant"
     },
     "ray": "Violet",
     "rarity": "Rare",
@@ -11064,7 +11784,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Průvodkyně noční oblohou",
-      "en": "Guides through the night sky"
+      "en": "Guides through the night sky",
+      "es": "Guías a través del cielo nocturno",
+      "pt": "Guiam pelo céu noturno",
+      "fr": "Guides à travers le ciel nocturne"
     },
     "location": {
       "cs": "Pouštní obloha, noční táboření",
@@ -11136,7 +11859,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Rainbow Serpent Country Law",
     "subtitle": {
       "cs": "Duhový had — zákon země",
-      "en": "Rainbow Serpent — the law of country"
+      "en": "Rainbow Serpent — the law of country",
+      "es": "Serpiente Arcoíris — la ley de la tierra",
+      "pt": "Serpente Arco-Íris — a lei da terra",
+      "fr": "Serpent Arc-en-ciel — la loi du pays"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -11147,7 +11873,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážce vody a krajiny",
-      "en": "Keeper of water and country"
+      "en": "Keeper of water and country",
+      "es": "Guardián del agua y de la tierra",
+      "pt": "Guardiã da água e da terra",
+      "fr": "Gardien de l'eau et du pays"
     },
     "location": {
       "cs": "Řeka, která se vrací do země",
@@ -11219,7 +11948,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Bunjil",
     "subtitle": {
       "cs": "Bunjil — orel stvořitel",
-      "en": "Bunjil — the creating eagle"
+      "en": "Bunjil — the creating eagle",
+      "es": "Bunjil — el águila creadora",
+      "pt": "Bunjil — a águia criadora",
+      "fr": "Bunjil — l'aigle créateur"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -11230,7 +11962,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo hledí na rovnováhu shora",
-      "en": "He who looks at balance from above"
+      "en": "He who looks at balance from above",
+      "es": "Él que mira el equilibrio desde arriba",
+      "pt": "Aquele que vê o equilíbrio do alto",
+      "fr": "Celui qui contemple l'équilibre d'en haut"
     },
     "location": {
       "cs": "Vysoké skály nad údolím",
@@ -11302,7 +12037,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Baiame",
     "subtitle": {
       "cs": "Baiame — otec oblohy",
-      "en": "Baiame — sky father"
+      "en": "Baiame — sky father",
+      "es": "Baiame — padre cielo",
+      "pt": "Baiame — pai céu",
+      "fr": "Baiame — père ciel"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -11313,7 +12051,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážce trpělivého učení",
-      "en": "Keeper of patient teaching"
+      "en": "Keeper of patient teaching",
+      "es": "Guardián de la enseñanza paciente",
+      "pt": "Guardião do ensino paciente",
+      "fr": "Gardien de l'enseignement patient"
     },
     "location": {
       "cs": "Vodní dírka v suché zemi",
@@ -11385,7 +12126,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Tagai Navigator",
     "subtitle": {
       "cs": "Tagai — navigátor Torresovy úžiny",
-      "en": "Tagai — Torres Strait navigator"
+      "en": "Tagai — Torres Strait navigator",
+      "es": "Tagai — navegante del Estrecho de Torres",
+      "pt": "Tagai — navegador do Estreito de Torres",
+      "fr": "Tagai — navigateur du détroit de Torres"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -11396,7 +12140,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo čte čas z hvězd a přílivu",
-      "en": "He who reads time from stars and tide"
+      "en": "He who reads time from stars and tide",
+      "es": "Él que lee el tiempo en las estrellas y la marea",
+      "pt": "Aquele que lê o tempo nas estrelas e na maré",
+      "fr": "Celui qui lit le temps dans les étoiles et la marée"
     },
     "location": {
       "cs": "Kánoe na mělčině",
@@ -11468,7 +12215,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Celestial Emu Dreaming Steward",
     "subtitle": {
       "cs": "Nebeský emu",
-      "en": "The Celestial Emu"
+      "en": "The Celestial Emu",
+      "es": "El Emú Celestial",
+      "pt": "O Emu Celeste",
+      "fr": "L'Émeu céleste"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -11479,7 +12229,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Průvodce tmou bez strachu",
-      "en": "A guide through darkness without fear"
+      "en": "A guide through darkness without fear",
+      "es": "Una guía por la oscuridad sin miedo",
+      "pt": "Um guia pela escuridão sem medo",
+      "fr": "Un guide à travers l'obscurité sans peur"
     },
     "location": {
       "cs": "Jižní kříž a temná obloha",
@@ -11551,7 +12304,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Djang'kawu Creator Voyagers",
     "subtitle": {
       "cs": "Djang'kawu — putující stvořitelé",
-      "en": "Djang'kawu — the creator voyagers"
+      "en": "Djang'kawu — the creator voyagers",
+      "es": "Djang'kawu — los viajeros creadores",
+      "pt": "Djang'kawu — os viajantes criadores",
+      "fr": "Djang'kawu — les voyageurs créateurs"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -11562,7 +12318,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ti, kdo přinesou zákon a semeno",
-      "en": "They who bring law and seed"
+      "en": "They who bring law and seed",
+      "es": "Ellos que traen ley y semilla",
+      "pt": "Aqueles que trazem lei e semente",
+      "fr": "Ceux qui apportent la loi et la semence"
     },
     "location": {
       "cs": "Pobřeží Yolŋu",
@@ -11634,7 +12393,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Namarrkon",
     "subtitle": {
       "cs": "Namarrkon — blesk v krajině",
-      "en": "Namarrkon — lightning in country"
+      "en": "Namarrkon — lightning in country",
+      "es": "Namarrkon — el rayo en la tierra",
+      "pt": "Namarrkon — relâmpago na terra",
+      "fr": "Namarrkon — l'éclair dans le pays"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -11645,7 +12407,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo připomíná cenu výpadku",
-      "en": "He who reminds of the cost of outage"
+      "en": "He who reminds of the cost of outage",
+      "es": "Él que recuerda el costo del apagón",
+      "pt": "Aquele que lembra o custo da interrupção",
+      "fr": "Celui qui rappelle le prix de la panne"
     },
     "location": {
       "cs": "Bouřkový hřeben Arnhem",
@@ -11717,7 +12482,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Country Knowledge Walk (Tjukurpa education frame)",
     "subtitle": {
       "cs": "Chůze krajinou — učení poslechem",
-      "en": "Country Walk — learning by listening"
+      "en": "Country Walk — learning by listening",
+      "es": "Country Walk — aprender escuchando",
+      "pt": "Caminhada pela Terra — aprender escutando",
+      "fr": "Marche du pays — apprendre en écoutant"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -11728,7 +12496,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Rámec, ve kterém se poznává země",
-      "en": "A frame in which country is learned"
+      "en": "A frame in which country is learned",
+      "es": "Un marco donde se aprende la tierra",
+      "pt": "Um quadro em que se aprende a terra",
+      "fr": "Un cadre où le pays s'apprend"
     },
     "location": {
       "cs": "Pěšina mezi vodními dírkami",
@@ -11800,7 +12571,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Makarrata Treaty Bridge",
     "subtitle": {
       "cs": "Makarrata — most k pravdě",
-      "en": "Makarrata — the bridge to truth"
+      "en": "Makarrata — the bridge to truth",
+      "es": "Makarrata — el puente a la verdad",
+      "pt": "Makarrata — a ponte para a verdade",
+      "fr": "Makarrata — le pont vers la vérité"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -11811,7 +12585,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo srovnává, co bylo rozděleno",
-      "en": "He who makes even what was divided"
+      "en": "He who makes even what was divided",
+      "es": "Él que iguala incluso lo dividido",
+      "pt": "Aquele que torna igual até o que foi dividido",
+      "fr": "Celui qui rend uni ce qui fut divisé"
     },
     "location": {
       "cs": "Místo setkání dvou řečí",
@@ -11883,7 +12660,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Papatūānuku",
     "subtitle": {
       "cs": "Papatūānuku — matka země",
-      "en": "Papatūānuku — earth mother"
+      "en": "Papatūānuku — earth mother",
+      "es": "Papatūānuku — madre tierra",
+      "pt": "Papatūānuku — mãe terra",
+      "fr": "Papatūānuku — mère terre"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -11894,7 +12674,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která dává půdu pod nohama",
-      "en": "She who gives the ground beneath your feet"
+      "en": "She who gives the ground beneath your feet",
+      "es": "Ella que da el suelo bajo tus pies",
+      "pt": "Aquela que dá o chão sob seus pés",
+      "fr": "Celle qui donne le sol sous tes pieds"
     },
     "location": {
       "cs": "Země pod nohama",
@@ -11966,7 +12749,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Ranginui",
     "subtitle": {
       "cs": "Ranginui — otec oblohy",
-      "en": "Ranginui — sky father"
+      "en": "Ranginui — sky father",
+      "es": "Ranginui — padre cielo",
+      "pt": "Ranginui — pai céu",
+      "fr": "Ranginui — père ciel"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -11977,7 +12763,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo drží prostor nad krajinou",
-      "en": "He who holds the space above the land"
+      "en": "He who holds the space above the land",
+      "es": "Él que sostiene el espacio sobre la tierra",
+      "pt": "Aquele que sustém o espaço acima da terra",
+      "fr": "Celui qui tient l'espace au-dessus de la terre"
     },
     "location": {
       "cs": "Obloha nad horami",
@@ -12049,7 +12838,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Tāne Mahuta",
     "subtitle": {
       "cs": "Tāne Mahuta — pán lesa",
-      "en": "Tāne Mahuta — lord of the forest"
+      "en": "Tāne Mahuta — lord of the forest",
+      "es": "Tāne Mahuta — señor del bosque",
+      "pt": "Tāne Mahuta — senhor da floresta",
+      "fr": "Tāne Mahuta — seigneur de la forêt"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -12060,7 +12852,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo odděluje, aby bylo světlo",
-      "en": "He who separates so there may be light"
+      "en": "He who separates so there may be light",
+      "es": "Él que separa para que haya luz",
+      "pt": "Aquele que separa para que haja luz",
+      "fr": "Celui qui sépare pour qu'il y ait de la lumière"
     },
     "location": {
       "cs": "Prastarý les Waipoua",
@@ -12132,7 +12927,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Tangaroa (Māori strand)",
     "subtitle": {
       "cs": "Tangaroa — pán oceánu",
-      "en": "Tangaroa — lord of the ocean"
+      "en": "Tangaroa — lord of the ocean",
+      "es": "Tangaroa — señor del océano",
+      "pt": "Tangaroa — senhor do oceano",
+      "fr": "Tangaroa — seigneur de l'océan"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -12143,7 +12941,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Strážce mořského bohatství",
-      "en": "Guardian of the sea's wealth"
+      "en": "Guardian of the sea's wealth",
+      "es": "Guardián de la riqueza del mar",
+      "pt": "Guardião da riqueza do mar",
+      "fr": "Gardien des richesses de la mer"
     },
     "location": {
       "cs": "Otevřené moře za útesem",
@@ -12215,7 +13016,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Rongo",
     "subtitle": {
       "cs": "Rongo — mír a pěstování",
-      "en": "Rongo — peace and cultivation"
+      "en": "Rongo — peace and cultivation",
+      "es": "Rongo — paz y cultivo",
+      "pt": "Rongo — paz e cultivo",
+      "fr": "Rongo — paix et récolte"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -12226,7 +13030,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo učí sklízet bez konfliktu",
-      "en": "He who teaches harvest without conflict"
+      "en": "He who teaches harvest without conflict",
+      "es": "Él que enseña la cosecha sin conflicto",
+      "pt": "Aquele que ensina a colheita sem conflito",
+      "fr": "Celui qui enseigne la récolte sans conflit"
     },
     "location": {
       "cs": "Zahrada kumara",
@@ -12298,7 +13105,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Tūmatauenga",
     "subtitle": {
       "cs": "Tūmatauenga — obránce rodu",
-      "en": "Tūmatauenga — defender of kin"
+      "en": "Tūmatauenga — defender of kin",
+      "es": "Tūmatauenga — defensor de los suyos",
+      "pt": "Tūmatauenga — defensor dos parentes",
+      "fr": "Tūmatauenga — défenseur des siens"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -12309,7 +13119,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo chrání, dokud je co chránit",
-      "en": "He who protects while there is anything to protect"
+      "en": "He who protects while there is anything to protect",
+      "es": "Él que protege mientras haya algo que proteger",
+      "pt": "Aquele que protege enquanto houver o que proteger",
+      "fr": "Celui qui protège tant qu'il reste quelque chose à protéger"
     },
     "location": {
       "cs": "Opevněná pā",
@@ -12381,7 +13194,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Tāwhirimatea",
     "subtitle": {
       "cs": "Tāwhirimatea — pán větrů",
-      "en": "Tāwhirimatea — lord of winds"
+      "en": "Tāwhirimatea — lord of winds",
+      "es": "Tāwhirimatea — señor de los vientos",
+      "pt": "Tāwhirimatea — senhor dos ventos",
+      "fr": "Tāwhirimatea — seigneur des vents"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -12392,7 +13208,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo zkouší, co drží pohromadě",
-      "en": "He who tests what holds together"
+      "en": "He who tests what holds together",
+      "es": "Él que pone a prueba lo que se sostiene",
+      "pt": "Aquele que testa o que se mantém unido",
+      "fr": "Celui qui éprouve ce qui tient ensemble"
     },
     "location": {
       "cs": "Větrný hřeben",
@@ -12464,7 +13283,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Haumiatiketike",
     "subtitle": {
       "cs": "Haumiatiketike — divoká potrava",
-      "en": "Haumiatiketike — wild food"
+      "en": "Haumiatiketike — wild food",
+      "es": "Haumiatiketike — alimento silvestre",
+      "pt": "Haumiatiketike — alimento selvagem",
+      "fr": "Haumiatiketike — nourriture sauvage"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -12475,7 +13297,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo učí brát jen to, co je potřeba",
-      "en": "He who teaches taking only what is needed"
+      "en": "He who teaches taking only what is needed",
+      "es": "Él que enseña a tomar solo lo necesario",
+      "pt": "Aquele que ensina a tirar só o necessário",
+      "fr": "Celui qui enseigne à ne prendre que le nécessaire"
     },
     "location": {
       "cs": "Kapradinový les",
@@ -12547,7 +13372,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Hine-nui-te-pō",
     "subtitle": {
       "cs": "Hine-nui-te-pō — brána přerodu",
-      "en": "Hine-nui-te-pō — the gate of transformation"
+      "en": "Hine-nui-te-pō — the gate of transformation",
+      "es": "Hine-nui-te-pō — la puerta de la transformación",
+      "pt": "Hine-nui-te-pō — a porta da transformação",
+      "fr": "Hine-nui-te-pō — la porte de la transformation"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -12558,7 +13386,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která drží hranici mezi životem a koncem",
-      "en": "She who holds the border between life and ending"
+      "en": "She who holds the border between life and ending",
+      "es": "Ella que guarda el límite entre la vida y el final",
+      "pt": "Aquela que guarda a fronteira entre vida e fim",
+      "fr": "Celle qui garde la frontière entre vie et fin"
     },
     "location": {
       "cs": "Temná strana obzoru",
@@ -12630,7 +13461,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Kupe Navigator",
     "subtitle": {
       "cs": "Kupe — navigátor prvního návratu",
-      "en": "Kupe — navigator of the first return"
+      "en": "Kupe — navigator of the first return",
+      "es": "Kupe — navegante del primer regreso",
+      "pt": "Kupe — navegador do primeiro regresso",
+      "fr": "Kupe — navigateur du premier retour"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -12641,7 +13475,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo najde cestu bez přístroje",
-      "en": "He who finds the way without instruments"
+      "en": "He who finds the way without instruments",
+      "es": "Él que encuentra el camino sin instrumentos",
+      "pt": "Aquele que encontra o caminho sem instrumentos",
+      "fr": "Celui qui trouve la voie sans instruments"
     },
     "location": {
       "cs": "Záď kánoe na širém moři",
@@ -12713,7 +13550,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Ọṣun",
     "subtitle": {
       "cs": "Ọṣun — řeka vzájemnosti",
-      "en": "Ọṣun — river of reciprocity"
+      "en": "Ọṣun — river of reciprocity",
+      "es": "Ọṣun — río de la reciprocidad",
+      "pt": "Ọṣun — rio da reciprocidade",
+      "fr": "Ọṣun — rivière de la réciprocité"
     },
     "ray": "RubyGold",
     "rarity": "Rare",
@@ -12724,7 +13564,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která učí, že peníze mají téct",
-      "en": "She who teaches that money must flow"
+      "en": "She who teaches that money must flow",
+      "es": "Ella que enseña que el dinero debe fluir",
+      "pt": "Aquela que ensina que o dinheiro deve fluir",
+      "fr": "Celle qui enseigne que l'argent doit circuler"
     },
     "location": {
       "cs": "Řeka Ọṣun, soutok",
@@ -12796,7 +13639,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Ṣàngó",
     "subtitle": {
       "cs": "Ṣàngó — hrom a spravedlnost",
-      "en": "Ṣàngó — thunder and justice"
+      "en": "Ṣàngó — thunder and justice",
+      "es": "Ṣàngó — trueno y justicia",
+      "pt": "Ṣàngó — trovão e justiça",
+      "fr": "Ṣàngó — tonnerre et justice"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -12807,7 +13653,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo se ozve, když se mlčí o křivdě",
-      "en": "He who speaks when a wrong is met with silence"
+      "en": "He who speaks when a wrong is met with silence",
+      "es": "Él que habla cuando un agravio recibe silencio",
+      "pt": "Aquele que fala quando um erro é recebido com silêncio",
+      "fr": "Celui qui parle quand une injustice est accueillie par le silence"
     },
     "location": {
       "cs": "Bouřkový palác v Oyo",
@@ -12879,7 +13728,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Ọbàtálá",
     "subtitle": {
       "cs": "Ọbàtálá — klidný tvůrce",
-      "en": "Ọbàtálá — the calm maker"
+      "en": "Ọbàtálá — the calm maker",
+      "es": "Ọbàtálá — el hacedor sereno",
+      "pt": "Ọbàtálá — o criador sereno",
+      "fr": "Ọbàtálá — l'artisan du calme"
     },
     "ray": "White",
     "rarity": "Rare",
@@ -12890,7 +13742,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo dělá složité věci čitelnými",
-      "en": "He who makes complicated things readable"
+      "en": "He who makes complicated things readable",
+      "es": "Él que vuelve legible lo complicado",
+      "pt": "Aquele que torna legível o complicado",
+      "fr": "Celui qui rend lisibles les choses compliquées"
     },
     "location": {
       "cs": "Bílý vrcholek kopce",
@@ -12962,7 +13817,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Ọya",
     "subtitle": {
       "cs": "Ọya — vítr změny",
-      "en": "Ọya — the wind of change"
+      "en": "Ọya — the wind of change",
+      "es": "Ọya — el viento del cambio",
+      "pt": "Ọya — o vento da mudança",
+      "fr": "Ọya — le vent du changement"
     },
     "ray": "Violet",
     "rarity": "Rare",
@@ -12973,7 +13831,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která odnese to, co už nepatří",
-      "en": "She who carries away what no longer belongs"
+      "en": "She who carries away what no longer belongs",
+      "es": "Ella que se lleva lo que ya no pertenece",
+      "pt": "Aquela que leva o que já não pertence",
+      "fr": "Celle qui emporte ce qui n'a plus sa place"
     },
     "location": {
       "cs": "Větrná pláň",
@@ -13045,7 +13906,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Mawu-Lisa",
     "subtitle": {
       "cs": "Mawu-Lisa — dvě strany jednoho",
-      "en": "Mawu-Lisa — two sides of one"
+      "en": "Mawu-Lisa — two sides of one",
+      "es": "Mawu-Lisa — dos lados de uno",
+      "pt": "Mawu-Lisa — dois lados de um só",
+      "fr": "Mawu-Lisa — deux faces d'un même tout"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -13056,7 +13920,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ti, kdo vládnou střídavě",
-      "en": "They who rule in turn"
+      "en": "They who rule in turn",
+      "es": "Ellos que gobiernan por turnos",
+      "pt": "Aqueles que governam por turnos",
+      "fr": "Ceux qui gouvernent à tour de rôle"
     },
     "location": {
       "cs": "Místo, kde se střídá den a noc",
@@ -13128,7 +13995,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Nyame / Nyankopon",
     "subtitle": {
       "cs": "Nyame — tichý rádce",
-      "en": "Nyame — the quiet counsel"
+      "en": "Nyame — the quiet counsel",
+      "es": "Nyame — el consejo silencioso",
+      "pt": "Nyame — o conselho silencioso",
+      "fr": "Nyame — le conseil silencieux"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -13139,7 +14009,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo říká jen to, co unese",
-      "en": "He who says only what can be carried"
+      "en": "He who says only what can be carried",
+      "es": "Él que dice solo lo que se puede cargar",
+      "pt": "Aquele que diz apenas o que pode ser carregado",
+      "fr": "Celui qui ne dit que ce qui peut être porté"
     },
     "location": {
       "cs": "Obloha nad zlatým trůnem",
@@ -13211,7 +14084,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Kwaku Ananse",
     "subtitle": {
       "cs": "Kwaku Ananse — tkadlec příběhů",
-      "en": "Kwaku Ananse — weaver of stories"
+      "en": "Kwaku Ananse — weaver of stories",
+      "es": "Kwaku Ananse — tejedor de historias",
+      "pt": "Kwaku Ananse — tecelão de histórias",
+      "fr": "Kwaku Ananse — tisserand d'histoires"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -13222,7 +14098,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo učí skrz vyprávění",
-      "en": "He who teaches through story"
+      "en": "He who teaches through story",
+      "es": "Él que enseña mediante historias",
+      "pt": "Aquele que ensina através de histórias",
+      "fr": "Celui qui enseigne par le récit"
     },
     "location": {
       "cs": "Pavučina mezi dvěma stromy",
@@ -13294,7 +14173,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Ausar-Osiris",
     "subtitle": {
       "cs": "Usir — obnova v cyklu",
-      "en": "Osiris — renewal in cycle"
+      "en": "Osiris — renewal in cycle",
+      "es": "Osiris — renovación en ciclo",
+      "pt": "Osiris — renovação em ciclo",
+      "fr": "Osiris — le renouveau cyclique"
     },
     "ray": "Green",
     "rarity": "Rare",
@@ -13305,7 +14187,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo vstane jinak, ne stejně",
-      "en": "He who rises differently, not the same"
+      "en": "He who rises differently, not the same",
+      "es": "Él que resurge distinto, no igual",
+      "pt": "Aquele que se ergue diferente, não igual",
+      "fr": "Celui qui se relève autrement, non à l'identique"
     },
     "location": {
       "cs": "Břeh zeleného pole",
@@ -13377,7 +14262,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Maʿăt",
     "subtitle": {
       "cs": "Maʿăt — pírko pravdy",
-      "en": "Maʿăt — the feather of truth"
+      "en": "Maʿăt — the feather of truth",
+      "es": "Maʿăt — la pluma de la verdad",
+      "pt": "Maʿăt — a pena da verdade",
+      "fr": "Maʿăt — la plume de vérité"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -13388,7 +14276,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která váží slova proti činům",
-      "en": "She who weighs words against deeds"
+      "en": "She who weighs words against deeds",
+      "es": "Ella que pesa las palabras contra los hechos",
+      "pt": "Aquela que pesa palavras contra atos",
+      "fr": "Celle qui pèse les mots face aux actes"
     },
     "location": {
       "cs": "Síň vážení",
@@ -13460,7 +14351,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Anna Njinga",
     "subtitle": {
       "cs": "Anna Njinga — vyjednavačka",
-      "en": "Anna Njinga — the negotiator"
+      "en": "Anna Njinga — the negotiator",
+      "es": "Anna Njinga — la negociadora",
+      "pt": "Anna Njinga — a negociadora",
+      "fr": "Anna Njinga — la négociatrice"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -13471,7 +14365,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která vyjednává bez převahy",
-      "en": "She who negotiates without the upper hand"
+      "en": "She who negotiates without the upper hand",
+      "es": "Ella que negocia sin llevar ventaja",
+      "pt": "Aquela que negocia sem levar vantagem",
+      "fr": "Celle qui négocie sans position de force"
     },
     "location": {
       "cs": "Hrad v Matambě",
@@ -13543,7 +14440,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Atlas",
     "subtitle": {
       "cs": "Atlas — nejstarší král",
-      "en": "Atlas — the eldest king"
+      "en": "Atlas — the eldest king",
+      "es": "Atlas — el rey más antiguo",
+      "pt": "Atlas — o rei mais antigo",
+      "fr": "Atlas — le roi aîné"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -13554,7 +14454,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo drží souhru mnoha krajů",
-      "en": "He who holds many regions in agreement"
+      "en": "He who holds many regions in agreement",
+      "es": "Él que mantiene muchas regiones en acuerdo",
+      "pt": "Aquele que mantém muitas regiões em acordo",
+      "fr": "Celui qui tient de nombreuses régions en accord"
     },
     "location": {
       "cs": "Kruhové město, vnější prstenec",
@@ -13626,7 +14529,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Cleito",
     "subtitle": {
       "cs": "Kleito — strážkyně chrámu",
-      "en": "Cleito — keeper of the sanctuary"
+      "en": "Cleito — keeper of the sanctuary",
+      "es": "Cleito — guardiana del santuario",
+      "pt": "Cleito — guardiã do santuário",
+      "fr": "Cleito — gardienne du sanctuaire"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -13637,7 +14543,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která chrání místo před zneužitím",
-      "en": "She who protects a place from misuse"
+      "en": "She who protects a place from misuse",
+      "es": "Ella que protege un lugar del abuso",
+      "pt": "Aquela que protege um lugar do abuso",
+      "fr": "Celle qui protège un lieu du mésusage"
     },
     "location": {
       "cs": "Svatyňka na vrcholku ostrova",
@@ -13709,7 +14618,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Gadeirus",
     "subtitle": {
       "cs": "Gadeiros — etika průlivu",
-      "en": "Gadeirus — the ethics of the strait"
+      "en": "Gadeirus — the ethics of the strait",
+      "es": "Gadeirus — la ética del estrecho",
+      "pt": "Gadeirus — a ética do estreito",
+      "fr": "Gadeirus — l'éthique du détroit"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -13720,7 +14632,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo určuje pravidla přechodu",
-      "en": "He who sets the rules of passage"
+      "en": "He who sets the rules of passage",
+      "es": "Él que fija las reglas del paso",
+      "pt": "Aquele que estabelece as regras de passagem",
+      "fr": "Celui qui fixe les règles du passage"
     },
     "location": {
       "cs": "Úzký průliv",
@@ -13792,7 +14707,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Ampheres",
     "subtitle": {
       "cs": "Ampheres — spravedlivý příděl",
-      "en": "Ampheres — fair share"
+      "en": "Ampheres — fair share",
+      "es": "Ampheres — parte justa",
+      "pt": "Ampheres — parte justa",
+      "fr": "Ampheres — juste part"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -13803,7 +14721,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo dělí úrodu bez zvýhodnění",
-      "en": "He who divides the yield without favour"
+      "en": "He who divides the yield without favour",
+      "es": "Él que reparte el fruto sin favoritismos",
+      "pt": "Aquele que divide a colheita sem favorecer",
+      "fr": "Celui qui partage la récolte sans faveur"
     },
     "location": {
       "cs": "Sýpky na druhém prstenci",
@@ -13875,7 +14796,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Evaemon",
     "subtitle": {
       "cs": "Evaemon — dobrý zvyk",
-      "en": "Evaemon — good custom"
+      "en": "Evaemon — good custom",
+      "es": "Evaemon — buena costumbre",
+      "pt": "Evaemon — bom costume",
+      "fr": "Evaemon — la bonne coutume"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -13886,7 +14810,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo hlídá, aby se dobrá praxe nezlomila",
-      "en": "He who guards that good practice does not break"
+      "en": "He who guards that good practice does not break",
+      "es": "Él que cuida que la buena práctica no se rompa",
+      "pt": "Aquele que zela para que a boa prática não se quebre",
+      "fr": "Celui qui veille à ce que la bonne pratique ne se brise"
     },
     "location": {
       "cs": "Síň souhlasu",
@@ -13958,7 +14885,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Mneseus",
     "subtitle": {
       "cs": "Mneseus — strážce paměti",
-      "en": "Mneseus — keeper of memory"
+      "en": "Mneseus — keeper of memory",
+      "es": "Mneseus — guardián de la memoria",
+      "pt": "Mneseus — guardião da memória",
+      "fr": "Mneseus — gardien de la mémoire"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -13969,7 +14899,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo vede záznam bez přikrášlení",
-      "en": "He who keeps the record without embellishment"
+      "en": "He who keeps the record without embellishment",
+      "es": "Él que guarda el registro sin adornos",
+      "pt": "Aquele que guarda o registo sem adornos",
+      "fr": "Celui qui tient la chronique sans ornement"
     },
     "location": {
       "cs": "Archiv pod chrámem",
@@ -14041,7 +14974,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Autochthon",
     "subtitle": {
       "cs": "Autochthon — původ země",
-      "en": "Autochthon — born of the land"
+      "en": "Autochthon — born of the land",
+      "es": "Autochthon — nacido de la tierra",
+      "pt": "Autochthon — nascido da terra",
+      "fr": "Autochthon — né de la terre"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -14052,7 +14988,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo hájí místní právo rozhodovat",
-      "en": "He who defends the local right to decide"
+      "en": "He who defends the local right to decide",
+      "es": "Él que defiende el derecho local a decidir",
+      "pt": "Aquele que defende o direito local de decidir",
+      "fr": "Celui qui défend le droit local de décider"
     },
     "location": {
       "cs": "Kamenný práh",
@@ -14124,7 +15063,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Elasippus",
     "subtitle": {
       "cs": "Elasippus — spravedlivý tok",
-      "en": "Elasippus — fair flow"
+      "en": "Elasippus — fair flow",
+      "es": "Elasippus — flujo justo",
+      "pt": "Elasippus — fluxo justo",
+      "fr": "Elasippus — flux équitable"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -14135,7 +15077,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo drží cestu volnou i pro malé",
-      "en": "He who keeps the road open even for the small"
+      "en": "He who keeps the road open even for the small",
+      "es": "Él que mantiene abierto el camino incluso para el pequeño",
+      "pt": "Aquele que mantém a estrada aberta até aos pequenos",
+      "fr": "Celui qui garde la route ouverte même aux petits"
     },
     "location": {
       "cs": "Silnice mezi prstenci",
@@ -14207,7 +15152,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Mestor",
     "subtitle": {
       "cs": "Mestor — hlasatel dohody",
-      "en": "Mestor — herald of accord"
+      "en": "Mestor — herald of accord",
+      "es": "Mestor — heraldo del acuerdo",
+      "pt": "Mestor — arauto do acordo",
+      "fr": "Mestor — héraut de l'accord"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -14218,7 +15166,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo udrží jednání pohromadě",
-      "en": "He who keeps a negotiation together"
+      "en": "He who keeps a negotiation together",
+      "es": "Él que sostiene una negociación",
+      "pt": "Aquele que mantém uma negociação unida",
+      "fr": "Celui qui maintient une négociation debout"
     },
     "location": {
       "cs": "Síň otevřených dveří",
@@ -14290,7 +15241,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Azaes",
     "subtitle": {
       "cs": "Azaes — ten, kdo zkouší s rozmyslem",
-      "en": "Azaes — the measured tester"
+      "en": "Azaes — the measured tester",
+      "es": "Azaes — el probador mesurado",
+      "pt": "Azaes — o testador comedido",
+      "fr": "Azaes — l'épreuve mesurée"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -14301,7 +15255,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo hledá mez bez katastrofy",
-      "en": "He who finds the limit without catastrophe"
+      "en": "He who finds the limit without catastrophe",
+      "es": "Él que halla el límite sin catástrofe",
+      "pt": "Aquele que encontra o limite sem catástrofe",
+      "fr": "Celui qui trouve la limite sans catastrophe"
     },
     "location": {
       "cs": "Zkušební ostrov",
@@ -14373,7 +15330,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Lemur Steward",
     "subtitle": {
       "cs": "Strážce lemurů — rozmanitost před vším",
-      "en": "Lemur Steward — diversity before everything"
+      "en": "Lemur Steward — diversity before everything",
+      "es": "Guardián de los Lémures — la diversidad antes que todo",
+      "pt": "Guardião dos Lémures — diversidade acima de tudo",
+      "fr": "Intendant des lémuriens — la diversité avant tout"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -14384,7 +15344,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo chrání, co je jedinečné",
-      "en": "He who protects what is unique"
+      "en": "He who protects what is unique",
+      "es": "Él que protege lo único",
+      "pt": "Aquele que protege o que é único",
+      "fr": "Celui qui protège ce qui est unique"
     },
     "location": {
       "cs": "Deštný les, horní patro",
@@ -14456,7 +15419,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Sclater Bridge",
     "subtitle": {
       "cs": "Sclaterův most — pokora omylu",
-      "en": "Sclater Bridge — the humility of error"
+      "en": "Sclater Bridge — the humility of error",
+      "es": "Puente Sclater — la humildad del error",
+      "pt": "Ponte de Sclater — a humildade do erro",
+      "fr": "Pont de Sclater — l'humilité de l'erreur"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -14467,7 +15433,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo učí odvolat, co neplatí",
-      "en": "He who teaches retracting what no longer holds"
+      "en": "He who teaches retracting what no longer holds",
+      "es": "Él que enseña a retractar lo que ya no se sostiene",
+      "pt": "Aquele que ensina a retirar o que já não se sustenta",
+      "fr": "Celui qui enseigne à retirer ce qui ne tient plus"
     },
     "location": {
       "cs": "Muzeum zastaralých map",
@@ -14539,7 +15508,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Coral Notary",
     "subtitle": {
       "cs": "Korálový notář",
-      "en": "The Coral Notary"
+      "en": "The Coral Notary",
+      "es": "El Notario del Coral",
+      "pt": "O Notário do Coral",
+      "fr": "Le notaire de corail"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -14550,7 +15522,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která dosvědčuje, co se ztratilo",
-      "en": "She who witnesses what has been lost"
+      "en": "She who witnesses what has been lost",
+      "es": "Ella que atestigua lo perdido",
+      "pt": "Aquela que testemunha o que se perdeu",
+      "fr": "Celle qui témoigne de ce qui a été perdu"
     },
     "location": {
       "cs": "Korálový útes",
@@ -14622,7 +15597,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Tide Column",
     "subtitle": {
       "cs": "Přílivový sloup — rytmus pro malé",
-      "en": "Tide Column — rhythm for the small"
+      "en": "Tide Column — rhythm for the small",
+      "es": "Columna de Marea — ritmo para los pequeños",
+      "pt": "Coluna da Maré — ritmo para os pequenos",
+      "fr": "Colonne des marées — un rythme pour les petits"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -14633,7 +15611,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo drží férové tempo",
-      "en": "He who keeps a fair tempo"
+      "en": "He who keeps a fair tempo",
+      "es": "Él que mantiene un compás justo",
+      "pt": "Aquele que mantém um tempo justo",
+      "fr": "Celui qui garde un tempo juste"
     },
     "location": {
       "cs": "Mělčina mezi přílivy",
@@ -14705,7 +15686,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Basalt Chronicle",
     "subtitle": {
       "cs": "Čedičová kronika",
-      "en": "Basalt Chronicle"
+      "en": "Basalt Chronicle",
+      "es": "Crónica de Basalto",
+      "pt": "Crónica de Basalto",
+      "fr": "Chronique de basalte"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -14716,7 +15700,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která měří čas v geologii",
-      "en": "She who measures time in geology"
+      "en": "She who measures time in geology",
+      "es": "Ella que mide el tiempo en geología",
+      "pt": "Aquela que mede o tempo em geologia",
+      "fr": "Celle qui mesure le temps en géologie"
     },
     "location": {
       "cs": "Středooceánský hřbet",
@@ -14788,7 +15775,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Foam Seed",
     "subtitle": {
       "cs": "Semínko v pěně",
-      "en": "Foam Seed"
+      "en": "Foam Seed",
+      "es": "Semilla de Espuma",
+      "pt": "Semente de Espuma",
+      "fr": "Semence d'écume"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -14799,7 +15789,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo šíří bez zabírání",
-      "en": "He who spreads without taking over"
+      "en": "He who spreads without taking over",
+      "es": "Él que se extiende sin apropiarse",
+      "pt": "Aquele que se espalha sem dominar",
+      "fr": "Celui qui se répand sans prendre la place"
     },
     "location": {
       "cs": "Pobřeží, kam dopadá příboj",
@@ -14871,7 +15864,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Oceanic Bridge",
     "subtitle": {
       "cs": "Oceánský most",
-      "en": "Oceanic Bridge"
+      "en": "Oceanic Bridge",
+      "es": "Puente Oceánico",
+      "pt": "Ponte Oceânica",
+      "fr": "Pont océanique"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -14882,7 +15878,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo spojuje bez přepisování",
-      "en": "He who connects without rewriting"
+      "en": "He who connects without rewriting",
+      "es": "Él que conecta sin reescribir",
+      "pt": "Aquele que liga sem reescrever",
+      "fr": "Celui qui relie sans réécrire"
     },
     "location": {
       "cs": "Souostroví, mnoho přístavů",
@@ -14954,7 +15953,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Shelf Whisper",
     "subtitle": {
       "cs": "Šepot šelfu",
-      "en": "Shelf Whisper"
+      "en": "Shelf Whisper",
+      "es": "Susurro de la Plataforma",
+      "pt": "Sussurro da Plataforma",
+      "fr": "Murmure du plateau"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -14965,7 +15967,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo říká pravdu o hladině",
-      "en": "He who tells the truth about the waterline"
+      "en": "He who tells the truth about the waterline",
+      "es": "Él que dice la verdad sobre la línea de agua",
+      "pt": "Aquele que diz a verdade sobre a linha de água",
+      "fr": "Celui qui dit la vérité de la ligne d'eau"
     },
     "location": {
       "cs": "Kontinentální šelf",
@@ -15037,7 +16042,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Equinox Lull",
     "subtitle": {
       "cs": "Rovnodenní klid",
-      "en": "Equinox Lull"
+      "en": "Equinox Lull",
+      "es": "Calma del Equinoccio",
+      "pt": "Calmaria do Equinócio",
+      "fr": "Accalmie d'équinoxe"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -15048,7 +16056,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo drží klid na hranici",
-      "en": "He who keeps calm at the threshold"
+      "en": "He who keeps calm at the threshold",
+      "es": "Él que mantiene la calma en el umbral",
+      "pt": "Aquele que mantém a calma no limiar",
+      "fr": "Celui qui garde le calme au seuil"
     },
     "location": {
       "cs": "Místo, kde se potkává den a noc",
@@ -15120,7 +16131,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Circle Closure",
     "subtitle": {
       "cs": "Uzavření kruhu",
-      "en": "Circle Closure"
+      "en": "Circle Closure",
+      "es": "Cierre del Círculo",
+      "pt": "Fecho do Círculo",
+      "fr": "Clôture du cercle"
     },
     "ray": "Violet",
     "rarity": "Rare",
@@ -15131,7 +16145,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo předá pochodeň dál",
-      "en": "He who passes the torch on"
+      "en": "He who passes the torch on",
+      "es": "Él que pasa la antorcha",
+      "pt": "Aquele que passa a tocha",
+      "fr": "Celui qui passe le flambeau"
     },
     "location": {
       "cs": "Práh mezi dvěma příběhy",
@@ -15203,7 +16220,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Great Central Sun Steward",
     "subtitle": {
       "cs": "Strážce centrálního slunce",
-      "en": "Steward of the Central Sun"
+      "en": "Steward of the Central Sun",
+      "es": "Guardián del Sol Central",
+      "pt": "Guardião do Sol Central",
+      "fr": "Intendant du Soleil central"
     },
     "ray": "White",
     "rarity": "Rare",
@@ -15214,7 +16234,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo drží společný rytmus",
-      "en": "He who keeps the shared rhythm"
+      "en": "He who keeps the shared rhythm",
+      "es": "Él que mantiene el ritmo compartido",
+      "pt": "Aquele que mantém o ritmo partilhado",
+      "fr": "Celui qui garde le rythme partagé"
     },
     "location": {
       "cs": "Střed galaxie",
@@ -15286,7 +16309,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Photon Cadence",
     "subtitle": {
       "cs": "Rytmus světla",
-      "en": "Cadence of Light"
+      "en": "Cadence of Light",
+      "es": "Cadencia de Luz",
+      "pt": "Cadência da Luz",
+      "fr": "Cadence de lumière"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -15297,7 +16323,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která brzdí nadšení dřív, než vyhoří",
-      "en": "She who slows enthusiasm before it burns out"
+      "en": "She who slows enthusiasm before it burns out",
+      "es": "Ella que frena el entusiasmo antes de que se agote",
+      "pt": "Aquela que abranda o entusiasmo antes de se esgotar",
+      "fr": "Celle qui ralentit l'élan avant qu'il ne s'épuise"
     },
     "location": {
       "cs": "Práh světelného pásu",
@@ -15369,7 +16398,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Solar Logos Dual",
     "subtitle": {
       "cs": "Dvojí podpis slunce",
-      "en": "The Sun's Dual Signature"
+      "en": "The Sun's Dual Signature",
+      "es": "La Doble Firma del Sol",
+      "pt": "A Assinatura Dupla do Sol",
+      "fr": "La double signature du Soleil"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -15380,7 +16412,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ti, kdo potvrzují jen společně",
-      "en": "They who confirm only together"
+      "en": "They who confirm only together",
+      "es": "Ellos que confirman solo juntos",
+      "pt": "Aqueles que só confirmam juntos",
+      "fr": "Ceux qui ne confirment qu'ensemble"
     },
     "location": {
       "cs": "Dvě strany sluneční brány",
@@ -15452,7 +16487,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Telluric Soul Bridge",
     "subtitle": {
       "cs": "Most k duši planety",
-      "en": "Bridge to the Planet's Soul"
+      "en": "Bridge to the Planet's Soul",
+      "es": "Puente al Alma del Planeta",
+      "pt": "Ponte para a Alma do Planeta",
+      "fr": "Pont vers l'âme de la planète"
     },
     "ray": "Violet",
     "rarity": "Rare",
@@ -15463,7 +16501,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo spojuje lidi se zemí",
-      "en": "He who joins people to the land"
+      "en": "He who joins people to the land",
+      "es": "Él que une a las personas con la tierra",
+      "pt": "Aquele que liga as pessoas à terra",
+      "fr": "Celui qui relie les gens à la terre"
     },
     "location": {
       "cs": "Práh mezi nebem a půdou",
@@ -15535,7 +16576,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Tube-of-Light Sentinel",
     "subtitle": {
       "cs": "Strážce světelného sloupu",
-      "en": "Sentinel of the Light Column"
+      "en": "Sentinel of the Light Column",
+      "es": "Centinela de la Columna de Luz",
+      "pt": "Sentinela da Coluna de Luz",
+      "fr": "Sentinelle de la colonne de lumière"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -15546,7 +16590,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo chrání soukromí a klíče",
-      "en": "He who protects privacy and keys"
+      "en": "He who protects privacy and keys",
+      "es": "Él que protege la privacidad y las claves",
+      "pt": "Aquele que protege a privacidade e as chaves",
+      "fr": "Celui qui protège l'intimité et les clés"
     },
     "location": {
       "cs": "Práh světla",
@@ -15618,7 +16665,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Radiant Spiral",
     "subtitle": {
       "cs": "Zářící spirála",
-      "en": "Radiant Spiral"
+      "en": "Radiant Spiral",
+      "es": "Espiral Radiante",
+      "pt": "Espiral Radiante",
+      "fr": "Spirale radieuse"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -15629,7 +16679,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která oceňuje učení, ne soutěžení",
-      "en": "She who values teaching over competing"
+      "en": "She who values teaching over competing",
+      "es": "Ella que valora enseñar por encima de competir",
+      "pt": "Aquela que valoriza ensinar acima de competir",
+      "fr": "Celle qui préfère enseigner plutôt que rivaliser"
     },
     "location": {
       "cs": "Spirála schodů",
@@ -15701,7 +16754,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Seventh Ray Adjunct",
     "subtitle": {
       "cs": "Sedmý paprsek",
-      "en": "The Seventh Ray"
+      "en": "The Seventh Ray",
+      "es": "El Séptimo Rayo",
+      "pt": "O Sétimo Raio",
+      "fr": "Le septième rayon"
     },
     "ray": "Violet",
     "rarity": "Rare",
@@ -15712,7 +16768,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo proměňuje staré ve funkční",
-      "en": "He who transforms the old into something that works"
+      "en": "He who transforms the old into something that works",
+      "es": "Él que transforma lo viejo en algo que funciona",
+      "pt": "Aquele que transforma o antigo em algo que funciona",
+      "fr": "Celui qui transforme l'ancien en quelque chose qui marche"
     },
     "location": {
       "cs": "Fialová komnata",
@@ -15784,7 +16843,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Galactic Convenor",
     "subtitle": {
       "cs": "Svolavatel galaxií",
-      "en": "Convenor of Galaxies"
+      "en": "Convenor of Galaxies",
+      "es": "Convocante de Galaxias",
+      "pt": "Convocador de Galáxias",
+      "fr": "Rassembleur des galaxies"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -15795,7 +16857,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo svolává různorodé ke stolu",
-      "en": "He who calls the diverse to one table"
+      "en": "He who calls the diverse to one table",
+      "es": "Él que reúne lo diverso en una mesa",
+      "pt": "Aquele que chama os diversos à mesma mesa",
+      "fr": "Celui qui convie le divers à une même table"
     },
     "location": {
       "cs": "Síň sněmovny",
@@ -15867,7 +16932,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Lightbody Scribe",
     "subtitle": {
       "cs": "Písař světelného těla",
-      "en": "Scribe of the Light Body"
+      "en": "Scribe of the Light Body",
+      "es": "Escriba del Cuerpo de Luz",
+      "pt": "Escriba do Corpo de Luz",
+      "fr": "Scribe du corps de lumière"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -15878,7 +16946,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která zapisuje jen to, co jí patří",
-      "en": "She who records only what belongs to her"
+      "en": "She who records only what belongs to her",
+      "es": "Ella que registra solo lo que le pertenece",
+      "pt": "Aquela que registra apenas o que lhe pertence",
+      "fr": "Celle qui ne consigne que ce qui lui revient"
     },
     "location": {
       "cs": "Tichý stůl",
@@ -15950,7 +17021,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Vzestup Capstone",
     "subtitle": {
       "cs": "Závěrečný kámen vzestupu",
-      "en": "The Capstone of Ascension"
+      "en": "The Capstone of Ascension",
+      "es": "La Piedra Angular de la Ascensión",
+      "pt": "A Pedra Angular da Ascensão",
+      "fr": "La clé de voûte de l'ascension"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -15961,7 +17035,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo uzavře celek a ukáže dál",
-      "en": "He who closes the whole and points on"
+      "en": "He who closes the whole and points on",
+      "es": "Él que cierra el conjunto y señala el camino",
+      "pt": "Aquele que fecha o todo e aponta em frente",
+      "fr": "Celui qui clôt l'ensemble et indique la suite"
     },
     "location": {
       "cs": "Poslední schod",
@@ -16033,7 +17110,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Valhalla Hall-Steward",
     "subtitle": {
       "cs": "Správce Valhally",
-      "en": "Steward of Valhalla"
+      "en": "Steward of Valhalla",
+      "es": "Guardián del Valhalla",
+      "pt": "Guardião de Valhalla",
+      "fr": "Intendant du Valhalla"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -16044,7 +17124,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo dbá, aby si bojovníci odpočinuli",
-      "en": "He who makes sure warriors rest"
+      "en": "He who makes sure warriors rest",
+      "es": "Él que asegura que los guerreros descansen",
+      "pt": "Aquele que garante o descanso dos guerreiros",
+      "fr": "Celui qui veille à ce que les guerriers se reposent"
     },
     "location": {
       "cs": "Síň padlých",
@@ -16116,7 +17199,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Óðinn Wayfarer",
     "subtitle": {
       "cs": "Óðinn Poutník",
-      "en": "Óðinn the Wayfarer"
+      "en": "Óðinn the Wayfarer",
+      "es": "Óðinn el Caminante",
+      "pt": "Óðinn o Viajante",
+      "fr": "Óðinn le Voyageur"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -16127,7 +17213,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo se ptá, než rozhodne",
-      "en": "He who asks before deciding"
+      "en": "He who asks before deciding",
+      "es": "Él que pregunta antes de decidir",
+      "pt": "Aquele que pergunta antes de decidir",
+      "fr": "Celui qui interroge avant de décider"
     },
     "location": {
       "cs": "Kamenný kruh",
@@ -16199,7 +17288,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Þórr Storm-Host",
     "subtitle": {
       "cs": "Þórr — ochránce",
-      "en": "Þórr — the defender"
+      "en": "Þórr — the defender",
+      "es": "Þórr — el defensor",
+      "pt": "Þórr — o defensor",
+      "fr": "Þórr — le défenseur"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -16210,7 +17302,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo udrží systém v chodu",
-      "en": "He who keeps the system running"
+      "en": "He who keeps the system running",
+      "es": "Él que mantiene el sistema en marcha",
+      "pt": "Aquele que mantém o sistema a funcionar",
+      "fr": "Celui qui maintient le système en marche"
     },
     "location": {
       "cs": "Hřmotný hřeben",
@@ -16282,7 +17377,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Freyja Van-Ruler",
     "subtitle": {
       "cs": "Freyja — správkyně",
-      "en": "Freyja — the steward"
+      "en": "Freyja — the steward",
+      "es": "Freyja — la guardiana",
+      "pt": "Freyja — a guardiã",
+      "fr": "Freyja — l'intendante"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -16293,7 +17391,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která rozděluje férově a chrání soukromí",
-      "en": "She who divides fairly and guards privacy"
+      "en": "She who divides fairly and guards privacy",
+      "es": "Ella que reparte con justicia y cuida la privacidad",
+      "pt": "Aquela que divide com justiça e protege a privacidade",
+      "fr": "Celle qui partage équitablement et protège l'intimité"
     },
     "location": {
       "cs": "Květná louka",
@@ -16365,7 +17466,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Týr Oath-Fire",
     "subtitle": {
       "cs": "Týr — přísaha",
-      "en": "Týr — the oath"
+      "en": "Týr — the oath",
+      "es": "Týr — el juramento",
+      "pt": "Týr — o juramento",
+      "fr": "Týr — le serment"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -16376,7 +17480,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo drží slovo i za cenu ruky",
-      "en": "He who keeps his word even at the cost of a hand"
+      "en": "He who keeps his word even at the cost of a hand",
+      "es": "Él que cumple su palabra incluso a costa de una mano",
+      "pt": "Aquele que cumpre a palavra mesmo ao custo de uma mão",
+      "fr": "Celui qui tient parole au prix d'une main"
     },
     "location": {
       "cs": "Kámen přísahy",
@@ -16448,7 +17555,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Brigid Triple-Flame",
     "subtitle": {
       "cs": "Brigid — trojí plamen",
-      "en": "Brigid — the triple flame"
+      "en": "Brigid — the triple flame",
+      "es": "Brigid — la triple llama",
+      "pt": "Brigid — a chama tripla",
+      "fr": "Brigid — la triple flamme"
     },
     "ray": "White",
     "rarity": "Rare",
@@ -16459,7 +17569,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která spojuje řemeslo, slovo a péči",
-      "en": "She who joins craft, word and care"
+      "en": "She who joins craft, word and care",
+      "es": "Ella que une oficio, palabra y cuidado",
+      "pt": "Aquela que une ofício, palavra e cuidado",
+      "fr": "Celle qui unit l'artisanat, la parole et le soin"
     },
     "location": {
       "cs": "Kovárna u studny",
@@ -16531,7 +17644,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Dagda Peace-Harp",
     "subtitle": {
       "cs": "Dagda — harfa míru",
-      "en": "Dagda — the harp of peace"
+      "en": "Dagda — the harp of peace",
+      "es": "Dagda — el arpa de la paz",
+      "pt": "Dagda — a harpa da paz",
+      "fr": "Dagda — la harpe de paix"
     },
     "ray": "Green",
     "rarity": "Rare",
@@ -16542,7 +17658,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo drží společné zdroje",
-      "en": "He who holds the common goods"
+      "en": "He who holds the common goods",
+      "es": "Él que custodia los bienes comunes",
+      "pt": "Aquele que guarda os bens comuns",
+      "fr": "Celui qui détient les biens communs"
     },
     "location": {
       "cs": "Palouk u kamene",
@@ -16614,7 +17733,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Morrígan Sovereignty-Raven",
     "subtitle": {
       "cs": "Morrígan — havran varování",
-      "en": "Morrígan — the raven of warning"
+      "en": "Morrígan — the raven of warning",
+      "es": "Morrígan — el cuervo de la advertencia",
+      "pt": "Morrígan — o corvo do aviso",
+      "fr": "Morrígan — le corbeau de l'avertissement"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -16625,7 +17747,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která řekne, co se blíží",
-      "en": "She who says what is approaching"
+      "en": "She who says what is approaching",
+      "es": "Ella que dice lo que se aproxima",
+      "pt": "Aquela que diz o que se aproxima",
+      "fr": "Celle qui dit ce qui approche"
     },
     "location": {
       "cs": "Bitevní pláň před bitvou",
@@ -16697,7 +17822,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Lugh Samildanach",
     "subtitle": {
       "cs": "Lugh — mnoha dovedností",
-      "en": "Lugh — of many skills"
+      "en": "Lugh — of many skills",
+      "es": "Lugh — de muchas habilidades",
+      "pt": "Lugh — de muitas habilidades",
+      "fr": "Lugh — aux multiples talents"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -16708,7 +17836,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo zvládne víc než jednu věc",
-      "en": "He who can do more than one thing"
+      "en": "He who can do more than one thing",
+      "es": "Él que sabe hacer más de una cosa",
+      "pt": "Aquele que sabe fazer mais do que uma coisa",
+      "fr": "Celui qui sait faire plus d'une chose"
     },
     "location": {
       "cs": "Brána královského dvora",
@@ -16780,7 +17911,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Manannán mac Lir",
     "subtitle": {
       "cs": "Manannán — mlžný průvodce",
-      "en": "Manannán — the mist guide"
+      "en": "Manannán — the mist guide",
+      "es": "Manannán — el guía de la niebla",
+      "pt": "Manannán — o guia da névoa",
+      "fr": "Manannán — le guide des brumes"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -16791,7 +17925,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo drží hranici mezi světy",
-      "en": "He who keeps the border between worlds"
+      "en": "He who keeps the border between worlds",
+      "es": "Él que guarda la frontera entre mundos",
+      "pt": "Aquele que guarda a fronteira entre mundos",
+      "fr": "Celui qui garde la frontière entre les mondes"
     },
     "location": {
       "cs": "Pobřeží v mlze",
@@ -16863,7 +18000,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Ré Solar-Barque",
     "subtitle": {
       "cs": "Ré — sluneční bárka",
-      "en": "Ré — the solar barque"
+      "en": "Ré — the solar barque",
+      "es": "Ré — la barca solar",
+      "pt": "Ré — a barca solar",
+      "fr": "Ré — la barque solaire"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -16874,7 +18014,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo drží denní rytmus",
-      "en": "He who keeps the daily rhythm"
+      "en": "He who keeps the daily rhythm",
+      "es": "Él que mantiene el ritmo diario",
+      "pt": "Aquele que mantém o ritmo diário",
+      "fr": "Celui qui garde le rythme quotidien"
     },
     "location": {
       "cs": "Obzor, ráno a večer",
@@ -16946,7 +18089,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Hor Unifier",
     "subtitle": {
       "cs": "Hor — dvojí koruna",
-      "en": "Horus — the double crown"
+      "en": "Horus — the double crown",
+      "es": "Horus — la doble corona",
+      "pt": "Horus — a coroa dupla",
+      "fr": "Horus — la double couronne"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -16957,7 +18103,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo spojuje dvě země",
-      "en": "He who joins two lands"
+      "en": "He who joins two lands",
+      "es": "Él que une dos tierras",
+      "pt": "Aquele que une duas terras",
+      "fr": "Celui qui unit deux terres"
     },
     "location": {
       "cs": "Hranice Horního a Dolního Egypta",
@@ -17029,7 +18178,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Thoth Scribe",
     "subtitle": {
       "cs": "Thovt — písař",
-      "en": "Thoth — the scribe"
+      "en": "Thoth — the scribe",
+      "es": "Thoth — el escriba",
+      "pt": "Thoth — o escriba",
+      "fr": "Thoth — le scribe"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -17040,7 +18192,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo zapisuje bez přikrášlení",
-      "en": "He who records without embellishment"
+      "en": "He who records without embellishment",
+      "es": "Él que registra sin adornos",
+      "pt": "Aquele que registra sem adornos",
+      "fr": "Celui qui consigne sans ornement"
     },
     "location": {
       "cs": "Dům života",
@@ -17112,7 +18267,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Hathor Jubilee",
     "subtitle": {
       "cs": "Hathor — radost",
-      "en": "Hathor — joy"
+      "en": "Hathor — joy",
+      "es": "Hathor — alegría",
+      "pt": "Hathor — alegria",
+      "fr": "Hathor — la joie"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -17123,7 +18281,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která drží právo na radost",
-      "en": "She who keeps the right to joy"
+      "en": "She who keeps the right to joy",
+      "es": "Ella que guarda el derecho a la alegría",
+      "pt": "Aquela que guarda o direito à alegria",
+      "fr": "Celle qui garde le droit à la joie"
     },
     "location": {
       "cs": "Hudební zahrada",
@@ -17195,7 +18356,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Sekhmet Audit-Flame",
     "subtitle": {
       "cs": "Sachmet — oheň účtu",
-      "en": "Sekhmet — the fire of account"
+      "en": "Sekhmet — the fire of account",
+      "es": "Sekhmet — el fuego de la rendición de cuentas",
+      "pt": "Sekhmet — o fogo do acerto de contas",
+      "fr": "Sekhmet — le feu du compte"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -17206,7 +18370,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která trestá a pak vysvětlí",
-      "en": "She who punishes and then explains"
+      "en": "She who punishes and then explains",
+      "es": "Ella que castiga y luego explica",
+      "pt": "Aquela que pune e depois explica",
+      "fr": "Celle qui punit puis explique"
     },
     "location": {
       "cs": "Síň účtování",
@@ -17278,7 +18445,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Ptah Mason",
     "subtitle": {
       "cs": "Ptah — stavitel",
-      "en": "Ptah — the builder"
+      "en": "Ptah — the builder",
+      "es": "Ptah — el constructor",
+      "pt": "Ptah — o construtor",
+      "fr": "Ptah — le bâtisseur"
     },
     "ray": "Green",
     "rarity": "Rare",
@@ -17289,7 +18459,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo tvoří slovy a vzory",
-      "en": "He who creates with words and templates"
+      "en": "He who creates with words and templates",
+      "es": "Él que crea con palabras y plantillas",
+      "pt": "Aquele que cria com palavras e modelos",
+      "fr": "Celui qui crée avec des mots et des modèles"
     },
     "location": {
       "cs": "Dílna u Memfidy",
@@ -17361,7 +18534,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Anubis Threshold",
     "subtitle": {
       "cs": "Anup — prahu strážce",
-      "en": "Anubis — keeper of the threshold"
+      "en": "Anubis — keeper of the threshold",
+      "es": "Anubis — guardián del umbral",
+      "pt": "Anubis — guardião do limiar",
+      "fr": "Anubis — gardien du seuil"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -17372,7 +18548,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo váží, co s sebou nést",
-      "en": "He who weighs what to carry along"
+      "en": "He who weighs what to carry along",
+      "es": "Él que pesa qué llevar consigo",
+      "pt": "Aquele que pesa o que levar consigo",
+      "fr": "Celui qui pèse ce qu'il faut emporter"
     },
     "location": {
       "cs": "Práh mezi dvěma cestami",
@@ -17444,7 +18623,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Amun Hidden-Field",
     "subtitle": {
       "cs": "Amon — skryté pole",
-      "en": "Amun — the hidden field"
+      "en": "Amun — the hidden field",
+      "es": "Amun — el campo oculto",
+      "pt": "Amun — o campo oculto",
+      "fr": "Amun — le champ caché"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -17455,7 +18637,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo chrání rozhodnutí v utajení",
-      "en": "He who protects decisions made in confidence"
+      "en": "He who protects decisions made in confidence",
+      "es": "Él que protege las decisiones tomadas en confianza",
+      "pt": "Aquele que protege decisões tomadas em confiança",
+      "fr": "Celui qui protège les décisions prises en confidence"
     },
     "location": {
       "cs": "Skrytá svatyně",
@@ -17527,7 +18712,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Geb Foundation",
     "subtitle": {
       "cs": "Geb — základ",
-      "en": "Geb — the foundation"
+      "en": "Geb — the foundation",
+      "es": "Geb — el fundamento",
+      "pt": "Geb — o alicerce",
+      "fr": "Geb — la fondation"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -17538,7 +18726,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo připomíná, že vše stojí na hmotě",
-      "en": "He who reminds that everything rests on matter"
+      "en": "He who reminds that everything rests on matter",
+      "es": "Él que recuerda que todo descansa en la materia",
+      "pt": "Aquele que lembra que tudo assenta na matéria",
+      "fr": "Celui qui rappelle que tout repose sur la matière"
     },
     "location": {
       "cs": "Základová deska",
@@ -17610,7 +18801,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Nut Stellar Vault",
     "subtitle": {
       "cs": "Nut — hvězdná klenba",
-      "en": "Nut — the stellar vault"
+      "en": "Nut — the stellar vault",
+      "es": "Nut — la bóveda estelar",
+      "pt": "Nut — a abóbada estelar",
+      "fr": "Nut — la voûte stellaire"
     },
     "ray": "Blue",
     "rarity": "Rare",
@@ -17621,7 +18815,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, která drží prostor nad vším",
-      "en": "She who holds the space above everything"
+      "en": "She who holds the space above everything",
+      "es": "Ella que sostiene el espacio sobre todo",
+      "pt": "Aquela que sustém o espaço acima de tudo",
+      "fr": "Celle qui tient l'espace au-dessus de tout"
     },
     "location": {
       "cs": "Noční obloha",
@@ -17693,7 +18890,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Bolon Yokte' K'uh",
     "subtitle": {
       "cs": "Bolon Jokte' K'uh — bůh devíti kroků",
-      "en": "Bolon Yokte' K'uh — god of nine steps"
+      "en": "Bolon Yokte' K'uh — god of nine steps",
+      "es": "Bolon Yokte' K'uh — dios de nueve pasos",
+      "pt": "Bolon Yokte' K'uh — deus dos nove passos",
+      "fr": "Bolon Yokte' K'uh — dieu des neuf marches"
     },
     "ray": "Obsidian",
     "rarity": "Legendary",
@@ -17704,7 +18904,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo uzavírá a otevírá věk",
-      "en": "He who closes and opens an age"
+      "en": "He who closes and opens an age",
+      "es": "Él que cierra y abre una era",
+      "pt": "Aquele que fecha e abre uma era",
+      "fr": "Celui qui clôt et ouvre un âge"
     },
     "location": {
       "cs": "Práh počítání dnů",
@@ -17836,7 +19039,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Sri Anagha Lakshmi",
     "subtitle": {
       "cs": "Trojjediná Božská Matka",
-      "en": "Divine Mother Trinity"
+      "en": "Divine Mother Trinity",
+      "es": "Trinidad de la Madre Divina",
+      "pt": "Trindade da Mãe Divina",
+      "fr": "Trinité de la Mère divine"
     },
     "ray": "AllRays",
     "rarity": "Legendary",
@@ -17847,7 +19053,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ta, v níž jsou tři bohyně jedna",
-      "en": "She in whom three goddesses are one"
+      "en": "She in whom three goddesses are one",
+      "es": "Ella en quien tres diosas son una",
+      "pt": "Aquela em quem três deusas são uma",
+      "fr": "Celle en qui trois déesses ne font qu'une"
     },
     "location": {
       "cs": "Oneness University, Indie",
@@ -17939,7 +19148,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     "name": "Sri Chaitanya Mahaprabhu",
     "subtitle": {
       "cs": "Zlatý Avatar",
-      "en": "Golden Avatar"
+      "en": "Golden Avatar",
+      "es": "Avatar Dorado",
+      "pt": "Avatar Dourado",
+      "fr": "Avatar doré"
     },
     "ray": "Yellow",
     "rarity": "Legendary",
@@ -17950,7 +19162,10 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "role": {
       "cs": "Ten, kdo zpívá jména a rozdává je všem",
-      "en": "He who chants the names and gives them to everyone"
+      "en": "He who chants the names and gives them to everyone",
+      "es": "Él que canta los nombres y los entrega a todos",
+      "pt": "Aquele que canta os nomes e os dá a todos",
+      "fr": "Celui qui chante les noms et les donne à tous"
     },
     "location": {
       "cs": "Majapúr, Navadvíp (Bengálsko, Indie)",

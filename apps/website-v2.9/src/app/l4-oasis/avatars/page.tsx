@@ -7,7 +7,7 @@ import {
   ArrowLeft, ArrowRight, BookOpen, ChevronRight, Filter, Gamepad2, Gem,
   KeyRound, MapPin, Search, Shield, Sparkles, Star, Swords, Users, X, Zap,
 } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
 import MarkdownDoc from '@/components/docs/MarkdownDoc';
 import {
   AVATAR_CIRCLES, OASIS_AVATARS,
@@ -33,8 +33,15 @@ const OASIS_URL = 'https://oasis.zionterranova.com';
  * Dvojjazyčné pole → text pro aktuální jazyk. Když český překlad chybí,
  * spadne na angličtinu (radši anglický text než prázdný blok).
  */
-const tx = (t: LocalizedText | undefined, cs: boolean): string =>
-  t ? (cs ? t.cs || t.en : t.en || t.cs) : '';
+/**
+ * Lokalizovaný text pro aktuální jazyk: `es/pt/fr` → `en` → `cs`.
+ * (Do 2026-11-05 tu byl jen boolean `cs`; s 5 jazyky se předává kód.)
+ */
+const tx = (t: LocalizedText | undefined, lang: Lang): string => {
+  if (!t) return '';
+  const byLang = (t as unknown as Record<string, string | undefined>)[lang];
+  return byLang || t.en || t.cs || '';
+};
 
 const Copy = {
   backToOasis: { cs: 'L4 Oasis', en: 'L4 Oasis' },
@@ -155,7 +162,8 @@ function loadSpecs(): Promise<SheetSpec[]> {
   return specsPromise;
 }
 
-function AvatarVisual({ a, size, cs }: { a: OasisAvatar; size: 'card' | 'modal'; cs: boolean }) {
+function AvatarVisual({ a, size, lang }: { a: OasisAvatar; size: 'card' | 'modal'; lang: Lang }) {
+  const cs = lang === 'cs';
   const ray = RAY_META[a.ray] ?? RAY_META.Blue;
   const portrait = portraitOf(a);
   // Herní 3D náhled má přednost; koncept z OASIS Collection je fallback.
@@ -184,7 +192,8 @@ function AvatarVisual({ a, size, cs }: { a: OasisAvatar; size: 'card' | 'modal';
   );
 }
 
-function AvatarCard({ a, cs, onOpen }: { a: OasisAvatar; cs: boolean; onOpen: () => void }) {
+function AvatarCard({ a, lang, onOpen }: { a: OasisAvatar; lang: Lang; onOpen: () => void }) {
+  const cs = lang === 'cs';
   const ray = RAY_META[a.ray] ?? RAY_META.Blue;
   const rarity = RARITY_META[a.rarity] ?? RARITY_META.Rare;
   const src = portraitOf(a) ?? a.art.card;
@@ -225,7 +234,7 @@ function AvatarCard({ a, cs, onOpen }: { a: OasisAvatar; cs: boolean; onOpen: ()
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent px-3 pb-2.5 pt-10">
           <h3 className="truncate text-sm font-semibold text-white">{a.name}</h3>
-          <p className="truncate text-[11px] text-zion-gold/85">{tx(a.subtitle, cs)}</p>
+          <p className="truncate text-[11px] text-zion-gold/85">{tx(a.subtitle, lang)}</p>
         </div>
       </div>
 
@@ -252,7 +261,7 @@ function AvatarCard({ a, cs, onOpen }: { a: OasisAvatar; cs: boolean; onOpen: ()
           </p>
         )}
         <p className="mt-auto flex items-center justify-between gap-2 pt-1 text-[10px] uppercase tracking-wider text-gray-500">
-          <span className="truncate">{tx(a.role, cs) || tx(a.location, cs)}</span>
+          <span className="truncate">{tx(a.role, lang) || tx(a.location, lang)}</span>
           <span className="inline-flex shrink-0 items-center gap-0.5 text-zion-gold/70 transition-colors group-hover:text-zion-gold">
             {detail} <ChevronRight className="h-3 w-3" />
           </span>
@@ -262,7 +271,8 @@ function AvatarCard({ a, cs, onOpen }: { a: OasisAvatar; cs: boolean; onOpen: ()
   );
 }
 
-function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose: () => void }) {
+function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose: () => void }) {
+  const cs = lang === 'cs';
   const ray = RAY_META[a.ray] ?? RAY_META.Blue;
   const rarity = RARITY_META[a.rarity] ?? RARITY_META.Rare;
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -340,10 +350,10 @@ function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose:
   const circle = AVATAR_CIRCLES.find((c) => c.key === a.circle);
   const circleLabel = circle ? `${circle.emoji} ${circle[cs ? 'cs' : 'en']}` : a.circle;
   const infoRows: { icon: typeof Star; label: string; value: string }[] = [
-    { icon: Shield, label: Copy.roleLabel[cs ? 'cs' : 'en'], value: tx(a.role, cs) },
-    { icon: MapPin, label: Copy.locationLabel[cs ? 'cs' : 'en'], value: tx(a.location, cs) },
+    { icon: Shield, label: Copy.roleLabel[cs ? 'cs' : 'en'], value: tx(a.role, lang) },
+    { icon: MapPin, label: Copy.locationLabel[cs ? 'cs' : 'en'], value: tx(a.location, lang) },
     { icon: KeyRound, label: Copy.keyLabel[cs ? 'cs' : 'en'], value: a.key },
-    { icon: Swords, label: Copy.questLineLabel[cs ? 'cs' : 'en'], value: tx(a.questLine, cs) },
+    { icon: Swords, label: Copy.questLineLabel[cs ? 'cs' : 'en'], value: tx(a.questLine, lang) },
   ].filter((r) => r.value);
   return (
     <div
@@ -373,15 +383,15 @@ function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose:
         <div className="nav-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 md:p-8">
 
         <div className="flex items-start gap-4">
-          <AvatarVisual a={a} size="modal" cs={cs} />
+          <AvatarVisual a={a} size="modal" lang={lang} />
           <div className="min-w-0 pr-10">
             <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
               {Copy.idLabel[cs ? 'cs' : 'en']} {a.id} · {circleLabel}
             </p>
             <h3 className="mt-1 text-2xl font-semibold text-white">{a.name}</h3>
-            <p className="text-sm text-zion-gold/90">{tx(a.subtitle, cs)}</p>
-            {tx(a.quote, cs) && (
-              <p className="mt-2 text-xs italic leading-relaxed text-gray-400">„{tx(a.quote, cs)}“</p>
+            <p className="text-sm text-zion-gold/90">{tx(a.subtitle, lang)}</p>
+            {tx(a.quote, lang) && (
+              <p className="mt-2 text-xs italic leading-relaxed text-gray-400">„{tx(a.quote, lang)}“</p>
             )}
             {a.art.card && (
               <span className="mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] uppercase tracking-wider text-gray-400">
@@ -402,7 +412,7 @@ function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose:
             {ray[cs ? 'cs' : 'en']}
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-3 py-1 text-zion-gold">
-            {Copy.clLabel[cs ? 'cs' : 'en']} CL{a.cl}{tx(a.clName, cs) ? ` · ${tx(a.clName, cs)}` : ''}
+            {Copy.clLabel[cs ? 'cs' : 'en']} CL{a.cl}{tx(a.clName, lang) ? ` · ${tx(a.clName, lang)}` : ''}
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-gray-400">
             {Copy.nftLabel[cs ? 'cs' : 'en']}: {a.rarity}
@@ -489,22 +499,22 @@ function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose:
           </div>
         )}
 
-        {tx(a.ability, cs) && (
+        {tx(a.ability, lang) && (
           <div className="mt-5">
             <p className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-zion-gold">
               <Zap className="h-3.5 w-3.5" /> {Copy.abilityLabel[cs ? 'cs' : 'en']}
             </p>
-            <p className="text-sm leading-relaxed text-gray-300">{tx(a.ability, cs)}</p>
+            <p className="text-sm leading-relaxed text-gray-300">{tx(a.ability, lang)}</p>
           </div>
         )}
 
-        {tx(a.teaching, cs) && (
+        {tx(a.teaching, lang) && (
           <div className="mt-5">
             <p className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-zion-purple">
               <BookOpen className="h-3.5 w-3.5" /> {Copy.teachingLabel[cs ? 'cs' : 'en']}
             </p>
             <p className="border-l-2 border-zion-purple/40 pl-3 text-sm italic leading-relaxed text-gray-300">
-              {tx(a.teaching, cs)}
+              {tx(a.teaching, lang)}
             </p>
           </div>
         )}
@@ -521,8 +531,8 @@ function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose:
                     {i + 1}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white">{tx(q.title, cs)}</p>
-                    <p className="text-xs leading-relaxed text-gray-400">{tx(q.description, cs)}</p>
+                    <p className="text-sm font-semibold text-white">{tx(q.title, lang)}</p>
+                    <p className="text-xs leading-relaxed text-gray-400">{tx(q.description, lang)}</p>
                   </div>
                 </li>
               ))}
@@ -596,12 +606,12 @@ export default function OasisAvatarsPage() {
       if (!q) return true;
       return [
         a.name,
-        tx(a.subtitle, cs),
-        tx(a.role, cs),
-        tx(a.location, cs),
-        tx(a.teaching, cs),
-        tx(a.ability, cs),
-        tx(a.questLine, cs),
+        tx(a.subtitle, lang),
+        tx(a.role, lang),
+        tx(a.location, lang),
+        tx(a.teaching, lang),
+        tx(a.ability, lang),
+        tx(a.questLine, lang),
       ].some((f) => f.toLowerCase().includes(q));
     });
   }, [query, rayFilter, rarityFilter]);
@@ -785,7 +795,7 @@ export default function OasisAvatarsPage() {
                   {note && <span className="text-xs italic text-gray-500">{note[cs ? 'cs' : 'en']}</span>}
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                  {list.map((a) => <AvatarCard key={a.id} a={a} cs={cs} onOpen={() => {
+                  {list.map((a) => <AvatarCard key={a.id} a={a} lang={lang} onOpen={() => {
                     lastFocusRef.current = document.activeElement as HTMLElement | null;
                     setSelected(a);
                   }} />)}
@@ -823,7 +833,7 @@ export default function OasisAvatarsPage() {
 
       </div>
 
-      {selected && <AvatarModal a={selected} cs={cs} onClose={closeModal} />}
+      {selected && <AvatarModal a={selected} lang={lang} onClose={closeModal} />}
     </div>
   );
 }
