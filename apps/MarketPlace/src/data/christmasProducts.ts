@@ -790,8 +790,8 @@ export const christmasProducts: XmasProduct[] = [
       },
     ],
     note: {
-      cs: 'Fotografie jsou ilustrační — ruční výroba se může v detailu lišit. Zboží na zakázku.',
-      en: 'Photos are illustrative — handmade craft may vary in detail. Made-to-order goods.',
+      cs: 'Fotografie jsou ilustrační — každý kus sestavujeme ručně, drobná odchylka v kresbě dřeva není vada. Zboží na zakázku.',
+      en: 'Photos are illustrative — each piece is assembled by hand; a slight variation in the wood grain is not a defect. Made-to-order goods.',
     },
     home: {
       lead: {
@@ -800,8 +800,8 @@ export const christmasProducts: XmasProduct[] = [
       },
       bullets: [
         {
-          cs: 'Ruční gravírování, limitovaná vánoční série',
-          en: 'Hand-engraved, a limited Christmas run',
+          cs: 'Vyřezávané laserem, sestavované ručně',
+          en: 'Laser-cut, assembled by hand',
         },
         {
           cs: 'Digitální kniha v plné sadě a ZION Pass v ceně',
@@ -820,8 +820,8 @@ export const christmasProducts: XmasProduct[] = [
     facts: [
       {
         label: { cs: 'Výroba', en: 'Craft' },
-        value: { cs: 'ruční', en: 'handmade' },
-        hint: { cs: 'gravírování vzoru Srdce Království', en: 'engraved Heart of the Kingdom pattern' },
+        value: { cs: 'ruční sestavení', en: 'assembled by hand' },
+        hint: { cs: 'vyřezávané a gravírované laserem', en: 'cut and engraved by laser' },
       },
       {
         label: { cs: 'Série', en: 'Run' },
