@@ -2,31 +2,68 @@
 
 Sem patří modely, které se zobrazují v interaktivním náhledu na detailu produktu.
 
-## Lampion
-
-Soubor (už nahraný, 4,3 MB, 8 dílů, ~236 k trojúhelníků):
+## Lampion Lumi 2
 
 ```
-public/models/lampion-kralovstvi-srdce.glb
+public/models/lumi-2.glb     (1,9 MB, meshopt, 8 dílů, 214 k trojúhelníků)
 ```
 
-Detail `/vanoce/lampion` ho **sám** nabídne k načtení —
-v kódu se nic nemění (`model3d` v `src/data/christmasProducts.ts` už na tuhle
-cestu ukazuje). Komponenta `src/components/xmas/Lantern3D.tsx` dělá před
-načtením `HEAD` request; když soubor chybí, zobrazí se „3D náhled se připravuje"
-místo chyby.
+Zdroj je `heros/shop/Lumi/Lumi_2.glb` (12,1 MB, 19 primitiv, f32 pozice i normály).
+Webovou kopii vyrábí **`scripts/ops/lumi-glb-optimize.sh`**:
+
+```bash
+bash scripts/ops/lumi-glb-optimize.sh          # heros → apps/MarketPlace/public/models/lumi-2.glb
+```
+
+Skript model svaří, zkvantuje a zabalí `EXT_meshopt_compression` (12 MB → 1,9 MB)
+a na konci **ověří, že se nezměnil tvar ani materiály** (bbox drift < 0,1 mm,
+tři materiály, meshopt přítomen). Kdyby se model posunul nebo zplastovatěl,
+skript spadne — místo aby tiše poslal do marketu jiný výrobek.
+
+`--simplify false` je záměr: stěny jsou tenké laserované ornamenty, kde každá
+hrana něco drží; kvadrická dekurace z nich dělá kaši.
+
+### Co model nese
+
+- **8 dílů**: šest stěn (čistý lotos, květ života, loď Království srdce, strom
+  života, srdcová mandala, Hiranjagarbha), zdobený vršek s otvorem Ø 90 mm, dno.
+- **3 materiály** — `Překližka` (světlé dřevo), `Řez` (opálená hrana laseru),
+  `Gravír` (tmavý vypálený motiv). Nesmí se slévat do jednoho: bez nich je
+  z lampionu papírová krabice (tak vypadal starý model v6 s jediným krémovým
+  materiálem a bez normálů).
+- **Reálné míry výpalu**: 140 × 126 × 121 mm, metry, Y-up, dno v `y = 0`.
+  Komponenta z bboxu počítá kameru i místo pro svíčku, takže měřítko má význam.
 
 ### Jak má model vypadat
 
-- formát **glTF binární** (`.glb`) — jedna binárka i s texturami,
-- doporučeně 50–150 tis. trojúhelníků, textury ≤ 2048 px,
-- reálné měřítko je jedno (komponenta model automaticky vycentruje a zvětší
-  do záběru), ale **stojí-li lampion na podstavci, nechte ho v modelu**,
-- materiály PBR (metalness/roughness); tělo je světlé dřevo, výřezy prosvícené
-  teplým světlem — komponenta přidává bodové světlo do středu, takže emissive
-  mapa není nutná.
+- formát **glTF binární** (`.glb`), ideálně s meshopt kompresí (dekodér je
+  součástí `three`, nic se nedotahuje ze sítě),
+- textury nejsou potřeba — barvy nese materiál, detaily geometrie,
+- stojí-li lampion na podstavci, nechte ho v modelu.
+
+### Kdo model kreslí
+
+| Kde | Komponenta | Poznámka |
+|---|---|---|
+| `/vanoce/lampion` | `src/components/xmas/Lantern3D.tsx` | galaxie, svíčka, bloom, sníh |
+| karta produktu v `/shop` | `src/components/shop/StarfighterViewer.tsx` | pozná, že GLB nemá vrcholové barvy, a **nechá jeho materiály** |
+
+Oba používají `GLTFLoader` s `setMeshoptDecoder(MeshoptDecoder)`.
 
 ### Výkon
 
 `three` se stahuje **až po kliknutí** na „Načíst 3D náhled", takže model
-nezpomaluje první vykreslení stránky. Držte prosím `.glb` pod ~5 MB.
+nezpomaluje první vykreslení stránky. Držte `.glb` pod ~2 MB — nad to už
+uživatel na mobilních datech čeká.
+
+### Kontrolní render
+
+```bash
+node scripts/ops/lumi-render/render.mjs                    # 4 pohledy
+node scripts/ops/lumi-render/render.mjs --mode turntable   # šest stěn
+node scripts/ops/lumi-render/render.mjs --mode hero        # jeden záběr bez titulků
+```
+
+Výstup jde do `.artifacts/render/lumi-2/`. Render používá **materiály modelu**
+a svíčku uvnitř — slouží ke kontrole tvaru, orientace a opálených hran,
+ne jako finální marketingový obrázek.

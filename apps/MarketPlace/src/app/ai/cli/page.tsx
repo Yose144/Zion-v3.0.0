@@ -122,7 +122,9 @@ const T = {
 };
 
 function CliApproveInner() {
-  const { lang: l } = useLang();
+  // Stejně jako /ai: texty jsou jen cs/en, ostatní jazyky čtou anglicky.
+  const { lang } = useLang();
+  const l: 'cs' | 'en' = lang === 'cs' ? 'cs' : 'en';
   const { authenticated, loading: authLoading } = useAuth();
   const params = useSearchParams();
   const initial = useMemo(

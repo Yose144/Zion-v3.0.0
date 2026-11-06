@@ -751,8 +751,8 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
 
       <p className="text-[11px] leading-snug text-gray-500">
         {cs
-          ? 'Vizualizační model z technické dokumentace A3 v6 — osm dílů se skutečnými průchozími výřezy. Není to výrobní dokumentace ani podklad pro 3D tisk; fyzické lícování a bezpečnost svíčky ověřuje dílna.'
-          : 'A visualisation model from the A3 v6 technical drawings — eight parts with real through-cut ornaments. Not production documentation or a 3D-printing file; physical fit and candle safety are verified by the workshop.'}
+          ? 'Vizualizační model z technické dokumentace A3 (Lumi 2) — šest stěn, zdobený vršek a dno se skutečnými průchozími výřezy. Není to výrobní dokumentace ani podklad pro 3D tisk; fyzické lícování a bezpečnost svíčky ověřuje dílna.'
+          : 'A visualisation model from the A3 (Lumi 2) technical drawings — six walls, the carved crown and the base, with real through-cut ornaments. Not production documentation or a 3D-printing file; physical fit and candle safety are verified by the workshop.'}
       </p>
     </div>
   );

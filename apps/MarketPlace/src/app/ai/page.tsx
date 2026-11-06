@@ -180,7 +180,11 @@ function SectionHead({
 }
 
 function AiPricingInner() {
-  const { lang: l } = useLang();
+  // Texty na téhle stránce jsou zatím jen cs/en (`T` výše). Jazyk má dnes
+  // pět hodnot, proto se ostatní jazyky zobrazí anglicky — místo prázdné
+  // stránky. Až se sem doplní překlady, stačí tuhle konverzi zrušit.
+  const { lang } = useLang();
+  const l: 'cs' | 'en' = lang === 'cs' ? 'cs' : 'en';
   const { authenticated, loading: authLoading } = useAuth();
   const params = useSearchParams();
   const { address, isConnected } = useAccount();

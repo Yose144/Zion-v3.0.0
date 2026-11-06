@@ -11,7 +11,7 @@ import { createInvoiceForOrder } from '@/lib/invoice';
 import { generateCustomerWallet } from '@/lib/zion-l1';
 import { encryptSecret } from '@/lib/crypto';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
-import { FIRE_CONSENT_VERSION, requiresFireConsent } from '@/lib/fire-safety';
+import { FIRE_CONSENT_VERSION, checkFireConsent } from '@/lib/fire-safety';
 import {
   SHOP_VAULT,
   shopPayMemo,
@@ -198,29 +198,17 @@ export async function POST(req: NextRequest) {
     // U zboží s otevřeným plamenem musí být prohlášení odsouhlasené a
     // podepsané. Když chybí, objednávka se odmítne — vypnutý JavaScript
     // v prohlížeči není výmluva a podpis musí být doložitelný.
-    const fireRequired = requiresFireConsent(lineItems);
-    const fireSignature =
-      typeof body.fireSafety?.signature === 'string' ? body.fireSafety.signature.trim() : '';
-    const fireVersion =
-      typeof body.fireSafety?.version === 'string' && body.fireSafety.version
-        ? body.fireSafety.version
-        : FIRE_CONSENT_VERSION;
-    if (fireRequired) {
-      if (!body.fireSafety?.accepted || fireSignature.length < 3 || fireSignature.length > 120) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Fire safety consent and digital signature required',
-            code: 'fire_consent_required',
-          },
-          { status: 400 },
-        );
-      }
-      if (fireVersion !== FIRE_CONSENT_VERSION) {
-        // Zákazník podepsal jiné znění, než jaké je aktuální — uložíme, co
-        // poslal (důkaz), ale upozorníme do logu, aby šlo dohledat.
-        console.warn(`order ${body.orderId}: fire consent version ${fireVersion} != ${FIRE_CONSENT_VERSION}`);
-      }
+    const fireCheck = checkFireConsent(lineItems, body.fireSafety);
+    if (fireCheck && !fireCheck.ok) {
+      return NextResponse.json({ success: false, error: fireCheck.error, code: fireCheck.code }, { status: 400 });
+    }
+    const fireRequired = Boolean(fireCheck);
+    if (fireRequired && fireCheck?.ok && fireCheck.version !== FIRE_CONSENT_VERSION) {
+      // Zákazník podepsal jiné znění, než jaké je aktuální — uložíme, co
+      // poslal (důkaz), ale upozorníme do logu, aby šlo dohledat.
+      console.warn(
+        `order ${body.orderId}: fire consent version ${fireCheck.version} != ${FIRE_CONSENT_VERSION}`,
+      );
     }
 
     // ── Wallet + order create + stock decrement (transaction) ───────
@@ -263,9 +251,9 @@ export async function POST(req: NextRequest) {
           termsAccepted: body.termsAccepted,
           newsletter: body.customer.newsletter ?? false,
           // Důkaz poučení: jméno, čas (server) a verze textu prohlášení
-          fireConsentName: fireRequired ? fireSignature : null,
-          fireConsentAt: fireRequired ? new Date() : null,
-          fireConsentVersion: fireRequired ? fireVersion : null,
+          fireConsentName: fireCheck?.ok ? fireCheck.name : null,
+          fireConsentAt: fireCheck?.ok ? new Date() : null,
+          fireConsentVersion: fireCheck?.ok ? fireCheck.version : null,
         },
       }),
       ...lineItems.map((li) =>
