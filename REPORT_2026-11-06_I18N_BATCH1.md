@@ -363,3 +363,64 @@ ce9bfbde9  dávka 11 — genesis + wallet + bodhi + download (365)
 ```
 
 Dávka 5 (`contracts`/`knihovna`/`qv`/`team`, 193) je v commitu před `14ba24ac4`.
+
+---
+
+## 24. Dávky 15–16 (večer 2026-11-06)
+
+| dávka | obsah | řetězců |
+|---|---|---:|
+| 15 | Explorer supply (55) + address (60) + CEX (55) + Dharma Temple (57) + WARP BTC (60) | **287** |
+| 16 | Mission Control (407) + Miner dashboard (84) | **491** |
+
+### 🔴 Nález, který stál za to: hydration mismatch #418 na `/explorer/supply`
+
+Nebyl to důsledek překladu — bug tam byl dřív, ale odhalil se až při ověřování
+„0 pageerror" v každém jazyce. Dvě nezávislé příčiny:
+
+1. `fmtZion`/`fmtFull` volaly `toLocaleString(undefined, …)`. Na serveru (Node)
+   vyjde locale `en-US`, v prohlížeči locale uživatele → jiné oddělovače tisíců
+   → React zahodí serverové HTML a překreslí (`#418`). Nahrazeno explicitním
+   `'en-US'` (stejné, jaké stránka už používá pro počty bloků).
+2. Graf `SupplyOverTimeChart` počítá popisky os z `Date.now()` — build a prohlížeč
+   vyjdou na jiné dny. Vykresluje se proto až po `useEffect` mountu (do té doby
+   prázdný blok stejné výšky, žádný layout shift).
+
+Po opravě 0 pageerror ve všech čtyřech jazycích (předtím 1 v cs, 2 v es/pt/fr).
+
+### Pasti codemodu v dávce 16
+
+- `'… not today\'s launch blockers'` — escapovaný apostrof rozbil regex; vzniklo
+  `t5('… not today\', lang)s launch blockers'`. Chyceno `tsc` (TS1005).
+- `timeAgo()` se vyskytl **počtvrté** (jiná varianta, `pred …` bez diakritiky).
+- `getTabs`, `getServiceGroups`, `getServiceActions`, `getFallbackReadinessMap`,
+  `V3MetricsSection` — pět modulových celků bez `lang`.
+
+## 25. Stav po dávce 16
+
+| | hodnota |
+|---|---:|
+| přeložených řetězců (es = pt = fr) | **4 558** |
+| stránek/komponent s vlastním slovníkem | **48** |
+| souborů slovníků | **144** |
+| zbývá | **2 695 klíčů / 154 souborů** |
+| `tsc` | 0 |
+| `next build` | zelený |
+| živé ověření | 4 jazyky, 0 pageerror |
+
+**Největší zbývající:** `DashboardClient` (64), `wallet/multichain` (52),
+`dashboard/ch3` (48), `terranova/ekam` (47), `terranova/kailash` (46),
+`FarmingPanel` (44), `terranova/uluru` (43), `explorer/block` (43),
+`terranova/boa-esperanca` (42), `g8` (42).
+
+Zbývající soubory jsou převážně **jednotlivé uzly Terra Nova** (ekam, kailash,
+uluru, boa-esperanca, nova-amerika…) a **panely DeFi/dashboardu** — textově menší,
+ale početné. Fallback na angličtinu funguje všude.
+
+## 26. Commity (dávky 15–16)
+
+```
+0b3fecb43  dávka 15 — explorer supply/address + cex + dharma + warp btc (287)
+   + fix hydration #418 na /explorer/supply
+0d71271db  dávka 16 — mission control + miner dashboard (491)
+```
