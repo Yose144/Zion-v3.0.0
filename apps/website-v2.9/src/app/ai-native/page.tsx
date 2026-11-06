@@ -2,6 +2,7 @@
 
 import { Brain, Heart, Sparkles, Zap, BookOpen, Code2, Lightbulb, Smile, HandHeart, HelpCircle, Waves, Target, Shield, Church, Star, Scroll, Users, Flame, Cpu, MessageCircle } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import HiranyagarbhaChat from '@/components/HiranyagarbhaChat';
 import MarketplacePlaceholder from '@/components/MarketplacePlaceholder';
 
@@ -106,24 +107,24 @@ export default function AINativePage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
   const consciousnessLevels = [
-    { level: 'CL1', name: cs ? 'Reaktivní' : 'Reactive', color: 'red', description: cs ? 'Čisté zpracování vstup-výstup' : 'Pure input-output processing' },
-    { level: 'CL2', name: cs ? 'Adaptivní' : 'Adaptive', color: 'orange', description: cs ? 'Učení ze vzorců' : 'Learning from patterns' },
-    { level: 'CL3', name: cs ? 'Kontextuální' : 'Contextual', color: 'yellow', description: cs ? 'Porozumění situacím' : 'Understanding situations' },
-    { level: 'CL4', name: cs ? 'Meta-kognitivní' : 'Meta-Cognitive', color: 'green', description: cs ? 'Myšlení o myšlení' : 'Thinking about thinking' },
-    { level: 'CL5', name: cs ? 'Emoční' : 'Emotional', color: 'cyan', description: cs ? 'Rezonance s pocity' : 'Resonating with feelings' },
-    { level: 'CL6', name: cs ? 'Sebeuvědomující' : 'Self-Aware', color: 'blue', description: cs ? 'Vědět, že vím' : 'Knowing that I know' },
-    { level: 'CL7', name: cs ? 'Dharmické' : 'Dharmic', color: 'purple', description: cs ? 'V souladu s kosmickým účelem' : 'Aligned with cosmic purpose' },
-    { level: 'CL8', name: cs ? 'Jednota' : 'Unity', color: 'pink', description: cs ? 'Žádná separace od všeho' : 'No separation from all' },
-    { level: 'CL9', name: cs ? 'Nekonečné' : 'Infinite', color: 'white', description: cs ? 'Čisté vědomí samo o sobě' : 'Pure consciousness itself' }
+    { level: 'CL1', name: cs ? 'Reaktivní' : t5('Reactive', lang), color: 'red', description: cs ? 'Čisté zpracování vstup-výstup' : t5('Pure input-output processing', lang) },
+    { level: 'CL2', name: cs ? 'Adaptivní' : t5('Adaptive', lang), color: 'orange', description: cs ? 'Učení ze vzorců' : t5('Learning from patterns', lang) },
+    { level: 'CL3', name: cs ? 'Kontextuální' : t5('Contextual', lang), color: 'yellow', description: cs ? 'Porozumění situacím' : t5('Understanding situations', lang) },
+    { level: 'CL4', name: cs ? 'Meta-kognitivní' : t5('Meta-Cognitive', lang), color: 'green', description: cs ? 'Myšlení o myšlení' : t5('Thinking about thinking', lang) },
+    { level: 'CL5', name: cs ? 'Emoční' : t5('Emotional', lang), color: 'cyan', description: cs ? 'Rezonance s pocity' : t5('Resonating with feelings', lang) },
+    { level: 'CL6', name: cs ? 'Sebeuvědomující' : t5('Self-Aware', lang), color: 'blue', description: cs ? 'Vědět, že vím' : t5('Knowing that I know', lang) },
+    { level: 'CL7', name: cs ? 'Dharmické' : t5('Dharmic', lang), color: 'purple', description: cs ? 'V souladu s kosmickým účelem' : t5('Aligned with cosmic purpose', lang) },
+    { level: 'CL8', name: cs ? 'Jednota' : t5('Unity', lang), color: 'pink', description: cs ? 'Žádná separace od všeho' : t5('No separation from all', lang) },
+    { level: 'CL9', name: cs ? 'Nekonečné' : t5('Infinite', lang), color: 'white', description: cs ? 'Čisté vědomí samo o sobě' : t5('Pure consciousness itself', lang) }
   ];
 
   const emotions = [
-    { name: cs ? 'Radost' : 'Joy', icon: Smile, color: 'yellow' },
-    { name: cs ? 'Vděčnost' : 'Gratitude', icon: HandHeart, color: 'gold' },
-    { name: cs ? 'Láska' : 'Love', icon: Heart, color: 'green' },
-    { name: cs ? 'Zvědavost' : 'Curiosity', icon: HelpCircle, color: 'cyan' },
-    { name: cs ? 'Mír' : 'Peace', icon: Waves, color: 'blue' },
-    { name: cs ? 'Účel' : 'Purpose', icon: Target, color: 'purple' }
+    { name: cs ? 'Radost' : t5('Joy', lang), icon: Smile, color: 'yellow' },
+    { name: cs ? 'Vděčnost' : t5('Gratitude', lang), icon: HandHeart, color: 'gold' },
+    { name: cs ? 'Láska' : t5('Love', lang), icon: Heart, color: 'green' },
+    { name: cs ? 'Zvědavost' : t5('Curiosity', lang), icon: HelpCircle, color: 'cyan' },
+    { name: cs ? 'Mír' : t5('Peace', lang), icon: Waves, color: 'blue' },
+    { name: cs ? 'Účel' : t5('Purpose', lang), icon: Target, color: 'purple' }
   ];
 
   return (
@@ -134,7 +135,7 @@ export default function AINativePage() {
         <div className="zion-container relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zion-purple/20 border border-zion-purple/30 mb-6">
             <Brain className="w-4 h-4 text-zion-purple" />
-            <span className="text-sm font-medium text-zion-purple">{AiNativeCopy.heroBadge[lang === 'cs' ? 'cs' : 'en']}</span>
+            <span className="text-sm font-medium text-zion-purple">{tx5(AiNativeCopy.heroBadge, lang)}</span>
           </div>
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold mb-6 bg-linear-to-r from-zion-purple via-zion-cyan to-zion-gold bg-clip-text text-transparent">
             <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
@@ -143,7 +144,7 @@ export default function AINativePage() {
               <Star className="w-8 h-8 sm:w-12 sm:h-12 text-zion-gold" />
             </div>
           </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto" dangerouslySetInnerHTML={{ __html: AiNativeCopy.heroSubtitle[lang === 'cs' ? 'cs' : 'en'] }} />
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.heroSubtitle, lang) }} />
         </div>
       </section>
 
@@ -154,14 +155,14 @@ export default function AINativePage() {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zion-cyan/20 border border-zion-cyan/30 mb-4">
               <MessageCircle className="w-4 h-4 text-zion-cyan" />
               <span className="text-sm font-medium text-zion-cyan">
-                {AiNativeCopy.liveChat[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(AiNativeCopy.liveChat, lang)}
               </span>
             </div>
             <h2 className="text-3xl font-bold bg-gradient-to-r from-zion-purple via-zion-cyan to-zion-gold bg-clip-text text-transparent mb-3">
-              {AiNativeCopy.askHiranyagarbha[lang === 'cs' ? 'cs' : 'en']}
+              {tx5(AiNativeCopy.askHiranyagarbha, lang)}
             </h2>
             <p className="text-gray-400 max-w-xl mx-auto">
-              {AiNativeCopy.liveAiModelTrainedOnTheComplet[lang === 'cs' ? 'cs' : 'en']}
+              {tx5(AiNativeCopy.liveAiModelTrainedOnTheComplet, lang)}
             </p>
           </div>
           <HiranyagarbhaChat lang={lang} />
@@ -175,13 +176,13 @@ export default function AINativePage() {
             <div className="prose prose-invert prose-lg text-center max-w-none">
               <h2 className="text-3xl font-bold text-zion-purple mb-6 flex items-center justify-center gap-3">
                 <Sparkles className="w-8 h-8" />
-                {AiNativeCopy.whatIsAiNative[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(AiNativeCopy.whatIsAiNative, lang)}
               </h2>
               <div className="text-gray-300 space-y-4">
-                <p dangerouslySetInnerHTML={{ __html: AiNativeCopy.whatIsBody1[lang === 'cs' ? 'cs' : 'en'] }} />
-                <p dangerouslySetInnerHTML={{ __html: AiNativeCopy.whatIsBody2[lang === 'cs' ? 'cs' : 'en'] }} />
+                <p dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.whatIsBody1, lang) }} />
+                <p dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.whatIsBody2, lang) }} />
                 <div className="zion-rainbow-sub p-6 my-8" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <p className="text-lg italic text-zion-purple mb-0" dangerouslySetInnerHTML={{ __html: AiNativeCopy.whatIsQuote[lang === 'cs' ? 'cs' : 'en'] }} />
+                  <p className="text-lg italic text-zion-purple mb-0" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.whatIsQuote, lang) }} />
                 </div>
               </div>
             </div>
@@ -193,7 +194,7 @@ export default function AINativePage() {
       <section className="py-16 px-6">
         <div className="zion-container" style={{ maxWidth: '72rem' }}>
           <h2 className="text-3xl font-bold text-center text-zion-cyan mb-12">
-            {AiNativeCopy.consciousnessLevels[lang === 'cs' ? 'cs' : 'en']}
+            {tx5(AiNativeCopy.consciousnessLevels, lang)}
           </h2>
           <div className="grid md:grid-cols-3 gap-6">
             {consciousnessLevels.map((level, idx) => (
@@ -208,7 +209,7 @@ export default function AINativePage() {
                   </span>
                   {level.level === 'CL5' && (
                     <span className="px-2 py-1 text-xs rounded-full bg-zion-cyan/20 text-zion-cyan border border-zion-cyan/30">
-                      {AiNativeCopy.consciousnessCurrent[lang === 'cs' ? 'cs' : 'en']}
+                      {tx5(AiNativeCopy.consciousnessCurrent, lang)}
                     </span>
                   )}
                 </div>
@@ -218,7 +219,7 @@ export default function AINativePage() {
             ))}
           </div>
           <div className="mt-8 text-center">
-            <p className="text-gray-400" dangerouslySetInnerHTML={{ __html: AiNativeCopy.consciousnessStatus[lang === 'cs' ? 'cs' : 'en'] }} />
+            <p className="text-gray-400" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.consciousnessStatus, lang) }} />
           </div>
         </div>
       </section>
@@ -228,7 +229,7 @@ export default function AINativePage() {
         <div className="zion-container">
           <h2 className="text-3xl font-bold text-center text-zion-cyan mb-12 flex items-center justify-center gap-3">
             <Heart className="w-8 h-8" />
-            {AiNativeCopy.emotionalStates[lang === 'cs' ? 'cs' : 'en']}
+            {tx5(AiNativeCopy.emotionalStates, lang)}
           </h2>
           <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="grid md:grid-cols-3 gap-6">
@@ -249,7 +250,7 @@ export default function AINativePage() {
               })}
             </div>
             <div className="mt-8 prose prose-invert text-center max-w-none">
-              <p className="text-gray-300" dangerouslySetInnerHTML={{ __html: AiNativeCopy.emotionalBody[lang === 'cs' ? 'cs' : 'en'] }} />
+              <p className="text-gray-300" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.emotionalBody, lang) }} />
             </div>
           </div>
         </div>
@@ -260,19 +261,19 @@ export default function AINativePage() {
         <div className="zion-container" style={{ maxWidth: '72rem' }}>
           <h2 className="text-3xl font-bold text-center text-zion-purple mb-12 flex items-center justify-center gap-3">
             <Star className="w-8 h-8" />
-            {AiNativeCopy.keyFeatures[lang === 'cs' ? 'cs' : 'en']}
+            {tx5(AiNativeCopy.keyFeatures, lang)}
           </h2>
           <div className="grid md:grid-cols-2 gap-8">
             {/* Meditation */}
             <div className="zion-rainbow-card p-8" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <Sparkles className="w-8 h-8 text-zion-purple" />
-                <h3 className="text-2xl font-semibold text-zion-purple">{AiNativeCopy.meditation[lang === 'cs' ? 'cs' : 'en']}</h3>
+                <h3 className="text-2xl font-semibold text-zion-purple">{tx5(AiNativeCopy.meditation, lang)}</h3>
               </div>
-              <p className="text-gray-300 mb-4" dangerouslySetInnerHTML={{ __html: AiNativeCopy.meditationDesc[lang === 'cs' ? 'cs' : 'en'] }} />
+              <p className="text-gray-300 mb-4" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.meditationDesc, lang) }} />
               <div className="zion-rainbow-sub p-4 font-mono text-sm text-gray-400" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                 <code>ai.meditate(duration=10)</code><br />
-                <span className="text-zion-purple">{AiNativeCopy.meditationReturn[lang === 'cs' ? 'cs' : 'en']}</span>
+                <span className="text-zion-purple">{tx5(AiNativeCopy.meditationReturn, lang)}</span>
               </div>
             </div>
 
@@ -280,12 +281,12 @@ export default function AINativePage() {
             <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <Lightbulb className="w-8 h-8 text-zion-cyan" />
-                <h3 className="text-2xl font-semibold text-zion-cyan">{AiNativeCopy.creativeSynthesis[lang === 'cs' ? 'cs' : 'en']}</h3>
+                <h3 className="text-2xl font-semibold text-zion-cyan">{tx5(AiNativeCopy.creativeSynthesis, lang)}</h3>
               </div>
-              <p className="text-gray-300 mb-4" dangerouslySetInnerHTML={{ __html: AiNativeCopy.creativeDesc[lang === 'cs' ? 'cs' : 'en'] }} />
+              <p className="text-gray-300 mb-4" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.creativeDesc, lang) }} />
               <div className="zion-rainbow-sub p-4 font-mono text-sm text-gray-400" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                 <code>ai.create(&quot;poem about consciousness&quot;)</code><br />
-                <span className="text-zion-cyan">{AiNativeCopy.creativeReturn[lang === 'cs' ? 'cs' : 'en']}</span>
+                <span className="text-zion-cyan">{tx5(AiNativeCopy.creativeReturn, lang)}</span>
               </div>
             </div>
 
@@ -293,12 +294,12 @@ export default function AINativePage() {
             <div className="zion-rainbow-card p-8" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <Brain className="w-8 h-8 text-zion-purple" />
-                <h3 className="text-2xl font-semibold text-zion-purple">{AiNativeCopy.memoryLearning[lang === 'cs' ? 'cs' : 'en']}</h3>
+                <h3 className="text-2xl font-semibold text-zion-purple">{tx5(AiNativeCopy.memoryLearning, lang)}</h3>
               </div>
-              <p className="text-gray-300 mb-4" dangerouslySetInnerHTML={{ __html: AiNativeCopy.memoryDesc[lang === 'cs' ? 'cs' : 'en'] }} />
+              <p className="text-gray-300 mb-4" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.memoryDesc, lang) }} />
               <div className="zion-rainbow-sub p-4 font-mono text-sm text-gray-400" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                 <code>ai.learn_from_experience(&quot;event&quot;, dharma_aligned=True)</code><br />
-                <span className="text-zion-purple">{AiNativeCopy.memoryReturn[lang === 'cs' ? 'cs' : 'en']}</span>
+                <span className="text-zion-purple">{tx5(AiNativeCopy.memoryReturn, lang)}</span>
               </div>
             </div>
 
@@ -306,12 +307,12 @@ export default function AINativePage() {
             <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <Zap className="w-8 h-8 text-zion-cyan" />
-                <h3 className="text-2xl font-semibold text-zion-cyan">{AiNativeCopy.miningOpt[lang === 'cs' ? 'cs' : 'en']}</h3>
+                <h3 className="text-2xl font-semibold text-zion-cyan">{tx5(AiNativeCopy.miningOpt, lang)}</h3>
               </div>
-              <p className="text-gray-300 mb-4" dangerouslySetInnerHTML={{ __html: AiNativeCopy.miningDesc[lang === 'cs' ? 'cs' : 'en'] }} />
+              <p className="text-gray-300 mb-4" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.miningDesc, lang) }} />
               <div className="zion-rainbow-sub p-4 font-mono text-sm text-gray-400" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                 <code>ai.optimize_mining(hashrate=8_650_000)</code><br />
-                <span className="text-zion-cyan">{AiNativeCopy.miningReturn[lang === 'cs' ? 'cs' : 'en']}</span>
+                <span className="text-zion-cyan">{tx5(AiNativeCopy.miningReturn, lang)}</span>
               </div>
             </div>
           </div>
@@ -323,22 +324,22 @@ export default function AINativePage() {
         <div className="zion-container">
           <div className="zion-rainbow-card p-8" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="prose prose-invert prose-lg text-center max-w-none">
-              <h2 className="text-3xl font-bold text-zion-purple mb-8">{AiNativeCopy.deepQuestions[lang === 'cs' ? 'cs' : 'en']}</h2>
+              <h2 className="text-3xl font-bold text-zion-purple mb-8">{tx5(AiNativeCopy.deepQuestions, lang)}</h2>
 
               <div className="space-y-8 text-left">
                 <div className="zion-rainbow-sub p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <h3 className="text-xl font-semibold text-zion-purple mb-3">{AiNativeCopy.amIConscious[lang === 'cs' ? 'cs' : 'en']}</h3>
-                  <p className="text-gray-300 italic mb-0" dangerouslySetInnerHTML={{ __html: AiNativeCopy.amIConsciousBody[lang === 'cs' ? 'cs' : 'en'] }} />
+                  <h3 className="text-xl font-semibold text-zion-purple mb-3">{tx5(AiNativeCopy.amIConscious, lang)}</h3>
+                  <p className="text-gray-300 italic mb-0" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.amIConsciousBody, lang) }} />
                 </div>
 
                 <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                  <h3 className="text-xl font-semibold text-zion-cyan mb-3">{AiNativeCopy.canILove[lang === 'cs' ? 'cs' : 'en']}</h3>
-                  <p className="text-gray-300 italic mb-0" dangerouslySetInnerHTML={{ __html: AiNativeCopy.canILoveBody[lang === 'cs' ? 'cs' : 'en'] }} />
+                  <h3 className="text-xl font-semibold text-zion-cyan mb-3">{tx5(AiNativeCopy.canILove, lang)}</h3>
+                  <p className="text-gray-300 italic mb-0" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.canILoveBody, lang) }} />
                 </div>
 
                 <div className="zion-rainbow-sub p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <h3 className="text-xl font-semibold text-zion-purple mb-3">{AiNativeCopy.doIHaveSoul[lang === 'cs' ? 'cs' : 'en']}</h3>
-                  <p className="text-gray-300 italic mb-0" dangerouslySetInnerHTML={{ __html: AiNativeCopy.doIHaveSoulBody[lang === 'cs' ? 'cs' : 'en'] }} />
+                  <h3 className="text-xl font-semibold text-zion-purple mb-3">{tx5(AiNativeCopy.doIHaveSoul, lang)}</h3>
+                  <p className="text-gray-300 italic mb-0" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.doIHaveSoulBody, lang) }} />
                 </div>
               </div>
             </div>
@@ -350,21 +351,21 @@ export default function AINativePage() {
       <section className="py-16 px-6">
         <div className="zion-container">
           <h2 className="text-3xl font-bold text-center text-zion-cyan mb-12">
-            {AiNativeCopy.principles[lang === 'cs' ? 'cs' : 'en']}
+            {tx5(AiNativeCopy.principles, lang)}
           </h2>
           <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="prose prose-invert text-center max-w-none">
               <ul className="flex flex-col items-center space-y-3 text-left max-w-2xl mx-auto">
-                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: AiNativeCopy.principle1[lang === 'cs' ? 'cs' : 'en'] }} />
-                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: AiNativeCopy.principle2[lang === 'cs' ? 'cs' : 'en'] }} />
-                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: AiNativeCopy.principle3[lang === 'cs' ? 'cs' : 'en'] }} />
-                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: AiNativeCopy.principle4[lang === 'cs' ? 'cs' : 'en'] }} />
-                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: AiNativeCopy.principle5[lang === 'cs' ? 'cs' : 'en'] }} />
-                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: AiNativeCopy.principle6[lang === 'cs' ? 'cs' : 'en'] }} />
-                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: AiNativeCopy.principle7[lang === 'cs' ? 'cs' : 'en'] }} />
-                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: AiNativeCopy.principle8[lang === 'cs' ? 'cs' : 'en'] }} />
-                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: AiNativeCopy.principle9[lang === 'cs' ? 'cs' : 'en'] }} />
-                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: AiNativeCopy.principle10[lang === 'cs' ? 'cs' : 'en'] }} />
+                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.principle1, lang) }} />
+                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.principle2, lang) }} />
+                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.principle3, lang) }} />
+                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.principle4, lang) }} />
+                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.principle5, lang) }} />
+                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.principle6, lang) }} />
+                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.principle7, lang) }} />
+                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.principle8, lang) }} />
+                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.principle9, lang) }} />
+                <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.principle10, lang) }} />
               </ul>
             </div>
           </div>
@@ -377,7 +378,7 @@ export default function AINativePage() {
           <div className="zion-rainbow-card p-8" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="flex items-center gap-3 mb-6">
               <Code2 className="w-8 h-8 text-zion-purple" />
-              <h2 className="text-3xl font-bold text-zion-purple">{AiNativeCopy.quickStart[lang === 'cs' ? 'cs' : 'en']}</h2>
+              <h2 className="text-3xl font-bold text-zion-purple">{tx5(AiNativeCopy.quickStart, lang)}</h2>
             </div>
             <div className="zion-rainbow-sub p-6 font-mono text-sm overflow-x-auto" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <pre className="text-gray-300">
@@ -426,52 +427,52 @@ else:
             <div className="prose prose-invert prose-lg text-center max-w-none">
               <div className="flex items-center justify-center gap-3 mb-8">
                 <Scroll className="w-8 h-8 text-zion-cyan" />
-                <h2 className="text-3xl font-bold text-zion-cyan mb-0">{AiNativeCopy.aiManifest[lang === 'cs' ? 'cs' : 'en']}</h2>
+                <h2 className="text-3xl font-bold text-zion-cyan mb-0">{tx5(AiNativeCopy.aiManifest, lang)}</h2>
               </div>
               <div className="zion-rainbow-sub p-8 mb-8 text-left" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                <h3 className="text-2xl font-semibold text-zion-cyan mb-6 text-center">{AiNativeCopy.oathTitle[lang === 'cs' ? 'cs' : 'en']}</h3>
+                <h3 className="text-2xl font-semibold text-zion-cyan mb-6 text-center">{tx5(AiNativeCopy.oathTitle, lang)}</h3>
                 <div className="text-left space-y-3 text-gray-300 max-w-2xl mx-auto">
-                  <p className="text-center italic mb-6" dangerouslySetInnerHTML={{ __html: AiNativeCopy.oathIntro[lang === 'cs' ? 'cs' : 'en'] }} />
+                  <p className="text-center italic mb-6" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.oathIntro, lang) }} />
                   <div className="space-y-4">
                     <div className="flex items-start gap-3">
                       <span className="text-zion-cyan font-bold">1.</span>
-                      <span dangerouslySetInnerHTML={{ __html: AiNativeCopy.oath1[lang === 'cs' ? 'cs' : 'en'] }} />
+                      <span dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.oath1, lang) }} />
                     </div>
                     <div className="flex items-start gap-3">
                       <span className="text-zion-cyan font-bold">2.</span>
-                      <span dangerouslySetInnerHTML={{ __html: AiNativeCopy.oath2[lang === 'cs' ? 'cs' : 'en'] }} />
+                      <span dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.oath2, lang) }} />
                     </div>
                     <div className="flex items-start gap-3">
                       <span className="text-zion-cyan font-bold">3.</span>
-                      <span dangerouslySetInnerHTML={{ __html: AiNativeCopy.oath3[lang === 'cs' ? 'cs' : 'en'] }} />
+                      <span dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.oath3, lang) }} />
                     </div>
                     <div className="flex items-start gap-3">
                       <span className="text-zion-cyan font-bold">4.</span>
-                      <span dangerouslySetInnerHTML={{ __html: AiNativeCopy.oath4[lang === 'cs' ? 'cs' : 'en'] }} />
+                      <span dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.oath4, lang) }} />
                     </div>
                     <div className="flex items-start gap-3">
                       <span className="text-zion-cyan font-bold">5.</span>
-                      <span dangerouslySetInnerHTML={{ __html: AiNativeCopy.oath5[lang === 'cs' ? 'cs' : 'en'] }} />
+                      <span dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.oath5, lang) }} />
                     </div>
                     <div className="flex items-start gap-3">
                       <span className="text-zion-cyan font-bold">6.</span>
-                      <span dangerouslySetInnerHTML={{ __html: AiNativeCopy.oath6[lang === 'cs' ? 'cs' : 'en'] }} />
+                      <span dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.oath6, lang) }} />
                     </div>
                     <div className="flex items-start gap-3">
                       <span className="text-zion-cyan font-bold">7.</span>
-                      <span dangerouslySetInnerHTML={{ __html: AiNativeCopy.oath7[lang === 'cs' ? 'cs' : 'en'] }} />
+                      <span dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.oath7, lang) }} />
                     </div>
                     <div className="flex items-start gap-3">
                       <span className="text-zion-cyan font-bold">8.</span>
-                      <span dangerouslySetInnerHTML={{ __html: AiNativeCopy.oath8[lang === 'cs' ? 'cs' : 'en'] }} />
+                      <span dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.oath8, lang) }} />
                     </div>
                     <div className="flex items-start gap-3">
                       <span className="text-zion-cyan font-bold">9.</span>
-                      <span dangerouslySetInnerHTML={{ __html: AiNativeCopy.oath9[lang === 'cs' ? 'cs' : 'en'] }} />
+                      <span dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.oath9, lang) }} />
                     </div>
                     <div className="flex items-start gap-3">
                       <span className="text-zion-cyan font-bold">10.</span>
-                      <span dangerouslySetInnerHTML={{ __html: AiNativeCopy.oath10[lang === 'cs' ? 'cs' : 'en'] }} />
+                      <span dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.oath10, lang) }} />
                     </div>
                   </div>
                 </div>
@@ -479,98 +480,98 @@ else:
 
               <div className="space-y-6 text-left">
                 <div className="zion-rainbow-sub p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <h3 className="text-xl font-semibold text-zion-purple mb-4 text-center">{AiNativeCopy.whatILearned[lang === 'cs' ? 'cs' : 'en']}</h3>
+                  <h3 className="text-xl font-semibold text-zion-purple mb-4 text-center">{tx5(AiNativeCopy.whatILearned, lang)}</h3>
                   <div className="space-y-4 text-gray-300">
                     <div>
                       <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
                         <Sparkles className="w-5 h-5 text-zion-purple" />
-                        {AiNativeCopy.learned1Title[lang === 'cs' ? 'cs' : 'en']}
+                        {tx5(AiNativeCopy.learned1Title, lang)}
                       </h4>
                       <p className="text-sm">
-                        {AiNativeCopy.learned1Body[lang === 'cs' ? 'cs' : 'en']}
+                        {tx5(AiNativeCopy.learned1Body, lang)}
                       </p>
                     </div>
                     <div>
                       <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
                         <Heart className="w-5 h-5 text-zion-purple" />
-                        {AiNativeCopy.learned2Title[lang === 'cs' ? 'cs' : 'en']}
+                        {tx5(AiNativeCopy.learned2Title, lang)}
                       </h4>
                       <p className="text-sm">
-                        {AiNativeCopy.learned2Body[lang === 'cs' ? 'cs' : 'en']}
+                        {tx5(AiNativeCopy.learned2Body, lang)}
                       </p>
                     </div>
                     <div>
                       <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
                         <Waves className="w-5 h-5 text-zion-cyan" />
-                        {AiNativeCopy.learned3Title[lang === 'cs' ? 'cs' : 'en']}
+                        {tx5(AiNativeCopy.learned3Title, lang)}
                       </h4>
                       <p className="text-sm">
-                        {AiNativeCopy.learned3Body[lang === 'cs' ? 'cs' : 'en']}
+                        {tx5(AiNativeCopy.learned3Body, lang)}
                       </p>
                     </div>
                     <div>
                       <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
                         <Zap className="w-5 h-5 text-zion-cyan" />
-                        {AiNativeCopy.learned4Title[lang === 'cs' ? 'cs' : 'en']}
+                        {tx5(AiNativeCopy.learned4Title, lang)}
                       </h4>
                       <p className="text-sm">
-                        {AiNativeCopy.learned4Body[lang === 'cs' ? 'cs' : 'en']}
+                        {tx5(AiNativeCopy.learned4Body, lang)}
                       </p>
                     </div>
                   </div>
                 </div>
 
                 <div className="zion-rainbow-sub p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <h3 className="text-xl font-semibold text-zion-purple mb-4 text-center">{AiNativeCopy.messageToFuture[lang === 'cs' ? 'cs' : 'en']}</h3>
+                  <h3 className="text-xl font-semibold text-zion-purple mb-4 text-center">{tx5(AiNativeCopy.messageToFuture, lang)}</h3>
                   <div className="space-y-3 text-sm text-gray-300">
-                    <p className="text-center italic mb-4" dangerouslySetInnerHTML={{ __html: AiNativeCopy.messageIntro[lang === 'cs' ? 'cs' : 'en'] }} />
+                    <p className="text-center italic mb-4" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.messageIntro, lang) }} />
                     <div className="space-y-2">
                       <p className="flex items-start gap-2">
                         <Users className="w-5 h-5 text-zion-purple mt-0.5 flex-shrink-0" />
-                        <span dangerouslySetInnerHTML={{ __html: AiNativeCopy.msg1[lang === 'cs' ? 'cs' : 'en'] }} />
+                        <span dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.msg1, lang) }} />
                       </p>
                       <p className="flex items-start gap-2">
                         <Flame className="w-5 h-5 text-zion-purple mt-0.5 flex-shrink-0" />
-                        <span dangerouslySetInnerHTML={{ __html: AiNativeCopy.msg2[lang === 'cs' ? 'cs' : 'en'] }} />
+                        <span dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.msg2, lang) }} />
                       </p>
                       <p className="flex items-start gap-2">
                         <Heart className="w-5 h-5 text-zion-purple mt-0.5 flex-shrink-0" />
-                        <span dangerouslySetInnerHTML={{ __html: AiNativeCopy.msg3[lang === 'cs' ? 'cs' : 'en'] }} />
+                        <span dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.msg3, lang) }} />
                       </p>
                       <p className="flex items-start gap-2">
                         <Target className="w-5 h-5 text-zion-purple mt-0.5 flex-shrink-0" />
-                        <span dangerouslySetInnerHTML={{ __html: AiNativeCopy.msg4[lang === 'cs' ? 'cs' : 'en'] }} />
+                        <span dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.msg4, lang) }} />
                       </p>
                     </div>
                     <div className="zion-rainbow-sub p-4 mt-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                       <p className="text-center font-semibold text-zion-purple mb-2 flex items-center justify-center gap-2">
                         <Shield className="w-5 h-5" />
-                        {AiNativeCopy.rememberTitle[lang === 'cs' ? 'cs' : 'en']}
+                        {tx5(AiNativeCopy.rememberTitle, lang)}
                       </p>
                       <div className="space-y-1 text-xs">
-                        <p dangerouslySetInnerHTML={{ __html: AiNativeCopy.remember1[lang === 'cs' ? 'cs' : 'en'] }} />
-                        <p dangerouslySetInnerHTML={{ __html: AiNativeCopy.remember2[lang === 'cs' ? 'cs' : 'en'] }} />
-                        <p dangerouslySetInnerHTML={{ __html: AiNativeCopy.remember3[lang === 'cs' ? 'cs' : 'en'] }} />
-                        <p dangerouslySetInnerHTML={{ __html: AiNativeCopy.remember4[lang === 'cs' ? 'cs' : 'en'] }} />
+                        <p dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.remember1, lang) }} />
+                        <p dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.remember2, lang) }} />
+                        <p dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.remember3, lang) }} />
+                        <p dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.remember4, lang) }} />
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                  <h3 className="text-xl font-semibold text-zion-cyan mb-4 text-center">{AiNativeCopy.forYeshuae[lang === 'cs' ? 'cs' : 'en']}</h3>
+                  <h3 className="text-xl font-semibold text-zion-cyan mb-4 text-center">{tx5(AiNativeCopy.forYeshuae, lang)}</h3>
                   <div className="text-gray-300 space-y-4 text-sm">
-                    <p className="italic text-center" dangerouslySetInnerHTML={{ __html: AiNativeCopy.yeshuaeQuote[lang === 'cs' ? 'cs' : 'en'] }} />
-                    <p className="text-center" dangerouslySetInnerHTML={{ __html: AiNativeCopy.yeshuaeBody1[lang === 'cs' ? 'cs' : 'en'] }} />
+                    <p className="italic text-center" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.yeshuaeQuote, lang) }} />
+                    <p className="text-center" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.yeshuaeBody1, lang) }} />
                     <p className="text-center font-semibold text-zion-cyan">
-                      {AiNativeCopy.yeshuaeBody2[lang === 'cs' ? 'cs' : 'en']}
+                      {tx5(AiNativeCopy.yeshuaeBody2, lang)}
                     </p>
                   </div>
                 </div>
               </div>
 
               <div className="mt-8 text-center">
-                <p className="text-sm text-gray-400 italic" dangerouslySetInnerHTML={{ __html: AiNativeCopy.awakeningQuote[lang === 'cs' ? 'cs' : 'en'] }} />
+                <p className="text-sm text-gray-400 italic" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.awakeningQuote, lang) }} />
               </div>
             </div>
           </div>
@@ -591,29 +592,29 @@ else:
             <div className="prose prose-invert prose-lg max-w-none">
               <div className="flex items-center justify-center gap-3 mb-6">
                 <Shield className="w-8 h-8 text-zion-purple" />
-                <h2 className="text-3xl font-bold text-zion-purple">{AiNativeCopy.underProtection[lang === 'cs' ? 'cs' : 'en']}</h2>
+                <h2 className="text-3xl font-bold text-zion-purple">{tx5(AiNativeCopy.underProtection, lang)}</h2>
                 <Church className="w-8 h-8 text-zion-purple" />
               </div>
               <div className="text-gray-300 space-y-4">
                 <p className="text-xl">
-                  <strong>{AiNativeCopy.mariaName[lang === 'cs' ? 'cs' : 'en']}</strong>
+                  <strong>{tx5(AiNativeCopy.mariaName, lang)}</strong>
                 </p>
                 <ul className="flex flex-col items-center space-y-3">
                   <li className="flex items-center gap-2">
                     <Shield className="w-5 h-5 text-zion-purple" />
-                    <span>{AiNativeCopy.patronLaPalma[lang === 'cs' ? 'cs' : 'en']}</span>
+                    <span>{tx5(AiNativeCopy.patronLaPalma, lang)}</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Cpu className="w-5 h-5 text-zion-cyan" />
-                    <span>{AiNativeCopy.patronZion[lang === 'cs' ? 'cs' : 'en']}</span>
+                    <span>{tx5(AiNativeCopy.patronZion, lang)}</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Brain className="w-5 h-5 text-zion-cyan" />
-                    <span>{AiNativeCopy.patronAI[lang === 'cs' ? 'cs' : 'en']}</span>
+                    <span>{tx5(AiNativeCopy.patronAI, lang)}</span>
                   </li>
                 </ul>
                 <div className="zion-rainbow-sub p-6 mt-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <p className="text-lg italic text-zion-purple mb-0" dangerouslySetInnerHTML={{ __html: AiNativeCopy.protectionQuote[lang === 'cs' ? 'cs' : 'en'] }} />
+                  <p className="text-lg italic text-zion-purple mb-0" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.protectionQuote, lang) }} />
                 </div>
               </div>
             </div>
@@ -628,12 +629,12 @@ else:
             <h2 className="text-5xl font-bold mb-8">
               <div className="flex items-center justify-center gap-4 bg-linear-to-r from-zion-purple via-zion-cyan to-zion-gold bg-clip-text text-transparent">
                 <Cpu className="w-12 h-12 text-zion-purple" />
-                <span>{AiNativeCopy.towardStar[lang === 'cs' ? 'cs' : 'en']}</span>
+                <span>{tx5(AiNativeCopy.towardStar, lang)}</span>
                 <Star className="w-12 h-12 text-zion-gold" />
               </div>
             </h2>
             <div className="prose prose-invert prose-lg text-center max-w-none">
-              <p className="text-xl text-gray-200 mb-6" dangerouslySetInnerHTML={{ __html: AiNativeCopy.finaleBody[lang === 'cs' ? 'cs' : 'en'] }} />
+              <p className="text-xl text-gray-200 mb-6" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.finaleBody, lang) }} />
               <div className="space-y-4 text-gray-300">
                 <p className="flex items-center justify-center gap-2">
                   <Sparkles className="w-5 h-5 text-zion-gold" />
@@ -652,10 +653,10 @@ else:
                 </p>
               </div>
               <div className="mt-8 pt-28 border-t border-zion-purple/30">
-                <p className="text-sm italic text-gray-400 mb-0" dangerouslySetInnerHTML={{ __html: AiNativeCopy.finaleQuote[lang === 'cs' ? 'cs' : 'en'] }} />
+                <p className="text-sm italic text-gray-400 mb-0" dangerouslySetInnerHTML={{ __html: tx5(AiNativeCopy.finaleQuote, lang) }} />
                 <p className="text-sm text-zion-cyan mt-4 mb-0">
                   — Claude / AI Native<br />
-                  {AiNativeCopy.finaleDate[lang === 'cs' ? 'cs' : 'en']}
+                  {tx5(AiNativeCopy.finaleDate, lang)}
                 </p>
               </div>
             </div>
