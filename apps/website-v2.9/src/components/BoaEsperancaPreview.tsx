@@ -6,7 +6,7 @@ import { usePreviewVisibility } from './usePreviewVisibility';
 import { useEffect, useState } from 'react';
 import { BoaEsperancaScene, BoaEsperancaLighting, BOA_CAMERA, BOA_CONTROLS } from '../../../shared/scenes/BoaEsperanca';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 function isWebGLAvailable() {
   if (typeof window === 'undefined') return false;

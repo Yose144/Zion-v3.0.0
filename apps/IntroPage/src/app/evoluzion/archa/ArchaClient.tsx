@@ -8,19 +8,20 @@ import LucideIcon from "../../components/LucideIcon";
 import data from "../../data/archa-data.json";
 
 export default function ArchaClient() {
-  const [lang, setLang] = useState<"cs" | "en">("cs");
+  const [lang, setLang] = useState<"cs" | "en" | "es" | "pt" | "fr">("cs");
+  const copy = lang === "cs" ? "cs" : "en";
 
   const t = {
-    hero: data.hero[lang],
-    kofer: data.kofer[lang],
-    fleet: data.fleet[lang],
-    numbers: data.numbers[lang],
-    decks: data.decks[lang],
-    systems: data.systems[lang],
-    whale: data.whale[lang],
-    studies: data.studies[lang],
-    status: data.status[lang],
-    footer: data.footer[lang],
+    hero: data.hero[copy],
+    kofer: data.kofer[copy],
+    fleet: data.fleet[copy],
+    numbers: data.numbers[copy],
+    decks: data.decks[copy],
+    systems: data.systems[copy],
+    whale: data.whale[copy],
+    studies: data.studies[copy],
+    status: data.status[copy],
+    footer: data.footer[copy],
   };
 
   return (

@@ -7,7 +7,7 @@ import { MountainTerrain } from './MountainTerrain';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, SceneMotes, SceneTerrain, SceneWater, SkyFill } from './kit';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ─── Kailash — Posvátná hora · L5 Spiritual Center · Himaláje ─────────
  * Dle hero: pyramidální Kailash s vrstevnatými svahy a sněhovou čepicí

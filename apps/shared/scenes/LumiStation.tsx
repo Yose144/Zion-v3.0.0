@@ -12,7 +12,7 @@ import { KeyLight, SceneInstances, ScenePalms, SceneTerrain, SkyFill } from './k
  * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
  * patří sem stejně jako cs/en.
  */
-type Lang = 'cs' | 'en' | 'es';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ─── LUMI · Nová Amerika — Issobella L6 Research Station ─────────────
  * Dle hero + koncept boardu: centrální výzkumná kupole se stromovým

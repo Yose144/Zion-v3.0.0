@@ -6,7 +6,7 @@ import { usePreviewVisibility } from './usePreviewVisibility';
 import { useEffect, useState } from 'react';
 import { BodhiLankaScene, LankaLighting, LANKA_CAMERA, LANKA_CONTROLS } from '../../../shared/scenes/BodhiLanka';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 function isWebGLAvailable() {
   if (typeof window === 'undefined') return false;

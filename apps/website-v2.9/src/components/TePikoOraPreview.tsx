@@ -6,7 +6,7 @@ import { usePreviewVisibility } from './usePreviewVisibility';
 import { useEffect, useState } from 'react';
 import { TePikoOraScene, PikoLighting, PIKO_CAMERA, PIKO_CONTROLS } from '../../../shared/scenes/TePikoOra';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 function isWebGLAvailable() {
   if (typeof window === 'undefined') return false;

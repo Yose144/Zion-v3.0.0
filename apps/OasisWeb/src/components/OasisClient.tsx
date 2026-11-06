@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import WarpFlash from './WarpFlash';
+import { oasisIntroText } from './WarpIntro';
+import { usePublicLang } from '../../../shared/ui/usePublicLang';
 import { useAudio } from './AudioEngine';
 import MainMenu from './MainMenu';
 import type { FlightControlsHandle } from './FlightControls';
@@ -34,6 +36,7 @@ const MAX_FLIGHT_SPEED = 18;
 
 export default function OasisClient() {
   const [mounted, setMounted] = useState(false);
+  const [lang] = usePublicLang('cs');
   // Returning pilgrims skip WarpIntro and land straight at the stargate
   // (its threshold click still performs the audio-unlock gesture).
   const [phase, setPhase] = useState<'intro' | 'stargate' | 'arrival' | 'rite' | 'scene'>(() => {
@@ -101,6 +104,11 @@ export default function OasisClient() {
   const { user, authenticated } = useAuth();
 
   useEffect(() => {
+    // The lazy useState above runs on the server, where `window` is missing,
+    // and hydration keeps that value. Re-apply the audit deep link on the client.
+    if (new URLSearchParams(window.location.search).get('skipIntro') === '1') {
+      setPhase('scene');
+    }
     setMounted(true);
   }, []);
 
@@ -311,7 +319,9 @@ export default function OasisClient() {
   const handleArrived = () => {
     // PilgrimRite is a single responsive card grid — mobile pilgrims pick
     // their archetype too (it carries real loadout bonuses).
-    setPhase('rite');
+    // The warp callback also fires when `?skipIntro=1` starts already in the
+    // galaxy. That entry must stay in the scene.
+    setPhase((current) => (current === 'arrival' ? 'rite' : current));
   };
 
   const handleRiteEnter = () => {
@@ -459,7 +469,7 @@ export default function OasisClient() {
           />
         )}
         {inGame && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && <OnboardingHint />}
-        {inGame && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && <FruitCounter />}
+        {inGame && view === 'galaxy' && !flightMode && !uiHidden && !panelsMinimized && <FruitCounter />}
 
         <AnimatePresence>
           {inGame && selectedWorld && view === 'galaxy' && !flightMode && !uiHidden && !panelsMinimized && (
@@ -557,9 +567,9 @@ export default function OasisClient() {
         <button
           type="button"
           onClick={handleEnter}
-          className="fixed bottom-6 right-6 z-[60] rounded-full border border-white/15 bg-black/50 px-4 py-1.5 text-xs font-semibold text-white/60 backdrop-blur-sm transition hover:bg-white/10 hover:text-white"
+          className="fixed bottom-6 right-6 z-[60] inline-flex min-h-11 items-center rounded-full border border-white/15 bg-black/50 px-4 text-xs font-semibold text-white/60 backdrop-blur-sm transition hover:bg-white/10 hover:text-white"
         >
-          Skip intro →
+          {oasisIntroText('skip', lang)}
         </button>
       )}
 

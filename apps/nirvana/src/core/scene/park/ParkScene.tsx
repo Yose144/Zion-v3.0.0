@@ -119,7 +119,7 @@ function Cabinet({
 }: {
   id: CanvasGameId;
   angle: number;
-  lang: 'cs' | 'en' | 'es';
+  lang: 'cs' | 'en' | 'es' | 'pt' | 'fr';
   active: boolean;
   texture: THREE.CanvasTexture | null;
   onSelect: (id: CanvasGameId) => void;
@@ -362,7 +362,7 @@ function RideCamera({ active }: { active: boolean }) {
   return null;
 }
 
-function ScoreBoard({ scores, lang }: { scores: ParkScores; lang: 'cs' | 'en' | 'es' }) {
+function ScoreBoard({ scores, lang }: { scores: ParkScores; lang: 'cs' | 'en' | 'es' | 'pt' | 'fr' }) {
   return (
     <group position={[-9.4, 0, 3.4]} rotation={[0, 0.46, 0]}>
       <mesh position={[0, 2.4, 0]} castShadow>
@@ -402,7 +402,7 @@ export function ParkScene({
   onGalleryTime,
   onGalleryEnd,
 }: {
-  lang: 'cs' | 'en' | 'es';
+  lang: 'cs' | 'en' | 'es' | 'pt' | 'fr';
   activeGame: CanvasGameId | null;
   screenTexture: THREE.CanvasTexture | null;
   scores: ParkScores;

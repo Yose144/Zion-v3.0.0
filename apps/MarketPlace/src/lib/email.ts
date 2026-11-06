@@ -2,6 +2,8 @@ import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 import {
   buildV2OrderConfirmationEmail,
+  formatDigitalDownloadsHtml,
+  formatDigitalDownloadsText,
   buildRastaEmail,
   rastaCard,
   rastaRow,
@@ -435,7 +437,8 @@ export async function sendPaymentConfirmation(order: OrderEmailData): Promise<vo
             )}</p>
             <p style="margin:0;text-align:center;"><a href="${escapeHtml(order.archivePass.url)}" style="display:inline-block;background:#1c7b1c;color:#fff;font-weight:700;padding:12px 28px;border-radius:999px;text-decoration:none;">📖 ${t('Otevřít ZION Archiv', 'Open the ZION Archive')}</a></p>`,
           })
-        : ''),
+        : '') +
+      formatDigitalDownloadsHtml(order, lang),
   });
   const body = t(
     `Dobrý den, ${order.customerName},
@@ -447,6 +450,7 @@ ${order.archivePass ? `
 ZION Archive Pass: ${order.archivePass.code}
 Aktivace: ${order.archivePass.url}
 ` : ''}
+${formatDigitalDownloadsText(order, lang)}
 Vaše zboží bude co nejdříve odesláno.
 
 S pozdravem,
@@ -461,6 +465,7 @@ ${order.archivePass ? `
 ZION Archive Pass: ${order.archivePass.code}
 Activation: ${order.archivePass.url}
 ` : ''}
+${formatDigitalDownloadsText(order, lang)}
 Your goods will be dispatched as soon as possible.
 
 Best regards,

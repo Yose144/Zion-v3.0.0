@@ -128,15 +128,76 @@
       'meta.timeline': 'Timeline',
       'nav.back': '← All projects', 'nav.prev': '← Previous', 'nav.next': 'Next →',
     },
+    es: {
+      'nav.projects': 'Proyectos', 'nav.map': 'Mapa', 'nav.fund': 'Fondo', 'nav.qv': 'Votación',
+      'nav.docs': 'Documentación', 'nav.app': 'Abrir la app',
+      'hero.kicker': 'L5 · Free World · Terra Nova',
+      'hero.title': 'Un mundo donde la cadena <em>encuentra la tierra</em>',
+      'hero.tagline': 'Siete puntos financiados, la visión de Uluru, Boa Esperança, Kailash y Amenti, el nodo flotante María del Camino — y Ekam, el templo en India que ya es el modelo de los demás. El 5 % de cada bloque va al fondo humanitario.',
+      'hero.badge1': '12 puntos', 'hero.badge2': '5 % de cada bloque', 'hero.badge3': 'L5 Free World',
+      'projects.kicker': 'Comunidades fundadoras', 'projects.title': 'Doce puntos de la red',
+      'projects.more': 'Abrir proyecto →',
+      'map.kicker': 'Mapa planetario', 'map.title': 'Del Nabão al océano abierto',
+      'fund.kicker': 'Tesorería en vivo', 'fund.title': '5 % de cada bloque → fondo L5',
+      'fund.acc': 'Acumulado', 'fund.disb': 'Pagado', 'fund.block': 'Último bloque',
+      'qv.kicker': 'Votación cuadrática', 'qv.title': 'La comunidad aconseja, la DAO decide',
+      'qv.submit': 'Enviar voto', 'qv.signin': 'Entra con ZIS para votar',
+      'footer.explore': 'Explorar', 'footer.network': 'Red', 'footer.docs': 'Docs',
+    },
+    pt: {
+      'nav.projects': 'Projetos', 'nav.map': 'Mapa', 'nav.fund': 'Fundo', 'nav.qv': 'Votação',
+      'nav.docs': 'Documentação', 'nav.app': 'Abrir a app',
+      'hero.kicker': 'L5 · Free World · Terra Nova',
+      'hero.title': 'Um mundo onde a cadeia <em>encontra a terra</em>',
+      'hero.tagline': 'Sete pontos financiados, a visão de Uluru, Boa Esperança, Kailash e Amenti, o nó flutuante María del Camino — e Ekam, o templo na Índia que já é o modelo dos outros. 5 % de cada bloco vai para o fundo humanitário.',
+      'hero.badge1': '12 pontos', 'hero.badge2': '5 % de cada bloco', 'hero.badge3': 'L5 Free World',
+      'projects.kicker': 'Comunidades fundadoras', 'projects.title': 'Doze pontos da rede',
+      'projects.more': 'Abrir projeto →',
+      'map.kicker': 'Mapa planetário', 'map.title': 'Do Nabão ao oceano aberto',
+      'fund.kicker': 'Tesouraria ao vivo', 'fund.title': '5 % de cada bloco → fundo L5',
+      'fund.acc': 'Acumulado', 'fund.disb': 'Pago', 'fund.block': 'Último bloco',
+      'qv.kicker': 'Votação quadrática', 'qv.title': 'A comunidade aconselha, a DAO decide',
+      'qv.submit': 'Enviar voto', 'qv.signin': 'Entra com o ZIS para votar',
+      'footer.explore': 'Explorar', 'footer.network': 'Rede', 'footer.docs': 'Docs',
+    },
+    fr: {
+      'nav.projects': 'Projets', 'nav.map': 'Carte', 'nav.fund': 'Fonds', 'nav.qv': 'Vote',
+      'nav.docs': 'Documentation', 'nav.app': 'Ouvrir l’app',
+      'hero.kicker': 'L5 · Free World · Terra Nova',
+      'hero.title': 'Un monde où la chaîne <em>rencontre la terre</em>',
+      'hero.tagline': 'Sept points financés, la vision d’Uluru, Boa Esperança, Kailash et Amenti, le nœud flottant María del Camino — et Ekam, le temple en Inde qui sert déjà de modèle. 5 % de chaque bloc va au fonds humanitaire.',
+      'hero.badge1': '12 points', 'hero.badge2': '5 % de chaque bloc', 'hero.badge3': 'L5 Free World',
+      'projects.kicker': 'Communautés fondatrices', 'projects.title': 'Douze points du réseau',
+      'projects.more': 'Ouvrir le projet →',
+      'map.kicker': 'Carte planétaire', 'map.title': 'Du Nabão à l’océan ouvert',
+      'fund.kicker': 'Trésor en direct', 'fund.title': '5 % de chaque bloc → fonds L5',
+      'fund.acc': 'Accumulé', 'fund.disb': 'Versé', 'fund.block': 'Dernier bloc',
+      'qv.kicker': 'Vote quadratique', 'qv.title': 'La communauté conseille, la DAO décide',
+      'qv.submit': 'Envoyer le vote', 'qv.signin': 'Connecte-toi avec ZIS pour voter',
+      'footer.explore': 'Explorer', 'footer.network': 'Réseau', 'footer.docs': 'Docs',
+    },
   };
 
+  function canonLang(value) {
+    return /^(cs|en|es|pt|fr)$/.test(value || '') ? value : null;
+  }
   var lang = (function () {
-    var m = location.search.match(/[?&]lang=(cs|en)/);
+    var m = location.search.match(/[?&]lang=(cs|en|es|pt|fr)/);
     if (m) return m[1];
-    try { return localStorage.getItem('fw-lang') || 'cs'; } catch (e) { return 'cs'; }
+    var cookie = document.cookie.match(/(?:^|; )zion_locale=([^;]+)/);
+    var fromCookie = canonLang(cookie && decodeURIComponent(cookie[1]));
+    if (fromCookie) return fromCookie;
+    try {
+      return canonLang(localStorage.getItem('zion-lang')) || canonLang(localStorage.getItem('fw-lang')) || 'cs';
+    } catch (e) { return 'cs'; }
   })();
 
-  function t(key) { return (I18N[lang] && I18N[lang][key]) || key; }
+  function t(key) {
+    var pack = I18N[lang] || {};
+    if (pack[key]) return pack[key];
+    if (lang !== 'cs' && I18N.en && I18N.en[key]) return I18N.en[key];
+    return (I18N.cs && I18N.cs[key]) || key;
+  }
   window.FW_T = t;
   window.FW_LANG = lang;
 
@@ -147,16 +208,24 @@
       var v = t(k);
       if (v !== k) el.innerHTML = v;
     });
+    var docLang = lang === 'cs' ? 'cs' : 'en';
     document.querySelectorAll('[data-lang-show]').forEach(function (el) {
-      el.classList.toggle('fw-hidden', el.getAttribute('data-lang-show') !== lang);
+      el.classList.toggle('fw-hidden', el.getAttribute('data-lang-show') !== docLang);
     });
     document.querySelectorAll('.fw-lang button').forEach(function (b) {
       b.classList.toggle('active', b.dataset.lang === lang);
     });
   }
   window.FW_SETLANG = function (l) {
+    if (!canonLang(l)) return;
     lang = l;
-    try { localStorage.setItem('fw-lang', l); } catch (e) {}
+    try {
+      localStorage.setItem('fw-lang', l);
+      localStorage.setItem('zion-lang', l);
+    } catch (e) {}
+    var host = location.hostname;
+    var domain = (host === 'zionterranova.com' || host.endsWith('.zionterranova.com')) ? '; domain=.zionterranova.com' : '';
+    document.cookie = 'zion_locale=' + l + '; path=/; max-age=31536000; samesite=lax' + domain;
     window.FW_LANG = l;
     applyI18n();
   };
@@ -174,7 +243,8 @@
   /* ── Formatting ───────────────────────────────────────────── */
   function fmtZion(flowers) {
     var z = (Number(flowers) || 0) / 1e6;
-    return z.toLocaleString(lang === 'cs' ? 'cs-CZ' : 'en-US', { maximumFractionDigits: 0 });
+    var locales = { cs: 'cs-CZ', en: 'en-US', es: 'es-ES', pt: 'pt-PT', fr: 'fr-FR' };
+    return z.toLocaleString(locales[lang] || 'en-US', { maximumFractionDigits: 0 });
   }
   window.FW_FMT = fmtZion;
 

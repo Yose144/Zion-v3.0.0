@@ -6,16 +6,17 @@
  * TypeScript to po právu odmítne. Tenhle helper je jediné místo, kde se
  * rozhoduje, a **chybějící překlad spadne na angličtinu**, nikdy na `undefined`.
  */
-export type SceneLang = 'cs' | 'en' | 'es';
+export type SceneLang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 export interface LocalizedText {
   cs: string;
   en: string;
   es?: string;
+  pt?: string;
+  fr?: string;
 }
 
 export function pickLang(text: LocalizedText, lang: SceneLang): string {
   if (lang === 'cs') return text.cs ?? text.en;
-  if (lang === 'es') return text.es ?? text.en ?? text.cs;
-  return text.en ?? text.cs;
+  return text[lang] ?? text.en ?? text.cs;
 }

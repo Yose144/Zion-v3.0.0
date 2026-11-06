@@ -6,7 +6,7 @@ import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, SceneMotes, SceneTerrain, SkyFill } from './kit';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ─── Uluru — Tjukurpa · Songlines · Austrálie ────────────────────────
  * Dle hero: červený monolit Uluru s vertikálním žíháním dominuje

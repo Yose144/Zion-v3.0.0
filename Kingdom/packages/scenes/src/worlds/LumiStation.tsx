@@ -7,7 +7,7 @@ import { MountainTerrain } from './MountainTerrain';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, ScenePalms, SceneTerrain, SkyFill } from './kit';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ─── LUMI · Nová Amerika — Issobella L6 Research Station ─────────────
  * Dle hero + koncept boardu: centrální výzkumná kupole se stromovým

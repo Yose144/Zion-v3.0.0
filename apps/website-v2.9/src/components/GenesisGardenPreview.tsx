@@ -6,7 +6,7 @@ import { usePreviewVisibility } from './usePreviewVisibility';
 import { useEffect, useState } from 'react';
 import { GenesisGardenScene, GenesisGardenLighting, GENESIS_CAMERA, GENESIS_CONTROLS } from '../../../shared/scenes/GenesisGarden';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 function isWebGLAvailable() {
   if (typeof window === 'undefined') return false;

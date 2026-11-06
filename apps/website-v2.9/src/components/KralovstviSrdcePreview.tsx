@@ -6,7 +6,7 @@ import { usePreviewVisibility } from './usePreviewVisibility';
 import { useEffect, useState } from 'react';
 import { ArkLighting, ARK_CAMERA, ARK_CONTROLS, KralovstviSrdceScene } from '../../../shared/scenes/KralovstviSrdce';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 function isWebGLAvailable() {
   if (typeof window === 'undefined') return false;

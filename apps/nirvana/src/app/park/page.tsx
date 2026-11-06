@@ -53,7 +53,7 @@ const TITLES: { id: ParkGameId; title: { cs: string; en: string; es?: string } }
 
 const BOARD = TITLES;
 
-function titleOf(id: ParkGameId, lang: 'cs' | 'en' | 'es'): string {
+function titleOf(id: ParkGameId, lang: 'cs' | 'en' | 'es' | 'pt' | 'fr'): string {
   const entry = TITLES.find((row) => row.id === id);
   return entry ? tx(entry.title, lang) : id;
 }

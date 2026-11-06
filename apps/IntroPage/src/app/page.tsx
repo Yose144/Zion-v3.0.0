@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import Script from "next/script";
 import NirvanaUniverseEmbed from "./components/NirvanaUniverseEmbed";
 
 export default function Home() {
@@ -19,6 +20,7 @@ export default function Home() {
         suppressHydrationWarning
       />
       {/* portals into #nirvana-embed inside maintenance.html (under the header links) */}
+      <Script src="/assets/js/intro-tabs.js" strategy="afterInteractive" />
       <NirvanaUniverseEmbed />
     </>
   );

@@ -9,8 +9,9 @@ import LucideIcon from "../components/LucideIcon";
 import data from "../data/seeds-data.json";
 
 export default function SeedsIndexPage() {
-  const [lang, setLang] = useState<"cs" | "en">("cs");
-  const t = data.index[lang];
+  const [lang, setLang] = useState<"cs" | "en" | "es" | "pt" | "fr">("cs");
+  const copy = lang === "cs" ? "cs" : "en";
+  const t = data.index[copy];
 
   return (
     <PageLayout lang={lang} setLang={setLang}>
@@ -82,7 +83,7 @@ export default function SeedsIndexPage() {
             <LucideIcon name="fa-leaf" size={24} />
             <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[#fcd116]"></div>
           </div>
-          <p className="italic text-[#078930]">{data.footer[lang]}</p>
+          <p className="italic text-[#078930]">{data.footer[copy]}</p>
           <div className="mt-6 flex justify-center gap-6 text-2xl">
             {data.socials.map((s: any, i: number) => (
               <a

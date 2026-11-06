@@ -11,7 +11,7 @@ import { NabukanoModel } from './kit/vessels';
  * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
  * patří sem stejně jako cs/en.
  */
-type Lang = 'cs' | 'en' | 'es';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 type Point = [number, number, number];
 
 /* ─── Nebeská flotila — Nabukano (L6) ─────────────────────────────────────

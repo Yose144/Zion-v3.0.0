@@ -7,7 +7,7 @@ import { AtlanticOcean } from './CoastalLandscape';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, SkyFill, basaltRock } from './kit';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ─── Boa Esperança — Cape of Good Hope · Jihoafrická republika ────────
  * Dle hero: masivní mořské útesy s majákem na hřebenu, fynbos křoviny

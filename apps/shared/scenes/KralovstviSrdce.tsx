@@ -25,7 +25,7 @@ import { AtlanticOcean } from './CoastalLandscape';
  * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
  * patří sem stejně jako cs/en.
  */
-type Lang = 'cs' | 'en' | 'es';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 type Point = [number, number, number];
 
 const HULL_LENGTH = 21;

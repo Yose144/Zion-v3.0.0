@@ -75,7 +75,7 @@ export interface LinkCtx {
   clock: { elapsedTime: number };
   earthPos: THREE.Vector3;
   reducedMotion: boolean;
-  lang: 'cs' | 'en';
+  lang: 'cs' | 'en' | 'es' | 'pt' | 'fr';
 }
 
 export interface LinkFraming {

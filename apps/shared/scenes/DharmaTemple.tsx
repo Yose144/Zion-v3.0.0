@@ -12,7 +12,7 @@ import { CoastalLandscape } from './CoastalLandscape';
  * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
  * patří sem stejně jako cs/en.
  */
-type Lang = 'cs' | 'en' | 'es';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ─── Rozměry dle konceptu ───────────────────────────────────────────
  * Hlavní kopule ⌀ ~42 m (výška 21 m), 6 muzeí ⌀ ~28 m v hexagonu,

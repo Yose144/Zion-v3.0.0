@@ -12,16 +12,16 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import NavDropdown from '@/components/NavDropdown';
 
 const LINKS = [
-  { href: '/', cs: 'Přehled', en: 'Overview' },
-  { href: '/start/', cs: 'Jak těžit', en: 'Start mining' },
-  { href: '/blocks/', cs: 'Bloky', en: 'Blocks' },
-  { href: '/payouts/', cs: 'Výplaty', en: 'Payouts' },
-  { href: '/miners/', cs: 'Mineři', en: 'Miners' },
-  { href: '/stats/', cs: 'Statistiky', en: 'Stats' },
-  { href: '/status/', cs: 'Status', en: 'Status' },
-  { href: '/announcements/', cs: 'Oznámení', en: 'News' },
-  { href: '/api-docs/', cs: 'API', en: 'API' },
-  { href: '/faq/', cs: 'FAQ', en: 'FAQ' },
+  { href: '/', cs: 'Přehled', en: 'Overview', es: 'Resumen', pt: 'Resumo', fr: 'Aperçu' },
+  { href: '/start/', cs: 'Jak těžit', en: 'Start mining', es: 'Empezar a minar', pt: 'Começar a minerar', fr: 'Commencer à miner' },
+  { href: '/blocks/', cs: 'Bloky', en: 'Blocks', es: 'Bloques', pt: 'Blocos', fr: 'Blocs' },
+  { href: '/payouts/', cs: 'Výplaty', en: 'Payouts', es: 'Pagos', pt: 'Pagamentos', fr: 'Paiements' },
+  { href: '/miners/', cs: 'Mineři', en: 'Miners', es: 'Mineros', pt: 'Mineiros', fr: 'Mineurs' },
+  { href: '/stats/', cs: 'Statistiky', en: 'Stats', es: 'Estadísticas', pt: 'Estatísticas', fr: 'Statistiques' },
+  { href: '/status/', cs: 'Status', en: 'Status', es: 'Estado', pt: 'Estado', fr: 'État' },
+  { href: '/announcements/', cs: 'Oznámení', en: 'News', es: 'Avisos', pt: 'Avisos', fr: 'Annonces' },
+  { href: '/api-docs/', cs: 'API', en: 'API', es: 'API', pt: 'API', fr: 'API' },
+  { href: '/faq/', cs: 'FAQ', en: 'FAQ', es: 'FAQ', pt: 'FAQ', fr: 'FAQ' },
 ];
 
 // Coin menu groups — static metadata, same order as the homepage table.
@@ -41,11 +41,17 @@ const coinItem = (key: string) => ({
 const ECOSYSTEM_GROUPS: {
   cs: string;
   en: string;
+  es?: string;
+  pt?: string;
+  fr?: string;
   items: { href: string; label: string; sub: string }[];
 }[] = [
   {
     cs: 'Ekosystém',
     en: 'Ecosystem',
+    es: 'Ecosistema',
+    pt: 'Ecossistema',
+    fr: 'Écosystème',
     items: [
       { href: 'https://zionterranova.com', label: 'ZION TerraNova', sub: 'zionterranova.com' },
       { href: 'https://app.zionterranova.com', label: 'Wallet & Explorer', sub: 'app.zionterranova.com' },
@@ -56,12 +62,23 @@ const ECOSYSTEM_GROUPS: {
   {
     cs: 'Pro vývojáře',
     en: 'Developers',
+    es: 'Desarrolladores',
+    pt: 'Programadores',
+    fr: 'Développeurs',
     items: [
       { href: 'https://rpc.zionterranova.com', label: 'Public RPC', sub: 'rpc.zionterranova.com' },
       { href: 'https://github.com/Yose144/Zion-v3.0.0', label: 'GitHub', sub: 'Zion-v3.0.0' },
     ],
   },
 ];
+
+function lab(label: { cs: string; en: string; es?: string; pt?: string; fr?: string }, lang: string) {
+  if (lang === 'cs') return label.cs;
+  if (lang === 'es') return label.es || label.en;
+  if (lang === 'pt') return label.pt || label.en;
+  if (lang === 'fr') return label.fr || label.en;
+  return label.en;
+}
 
 export default function Nav() {
   const pathname = usePathname();
@@ -135,7 +152,7 @@ export default function Nav() {
             <div className="rasta-nav-logo-text">
               <span className="rasta-nav-brand">ZION Pool</span>
               <span className="rasta-nav-kicker">
-                {t('TerraNova ekosystém', 'TerraNova ecosystem')}
+                {t('TerraNova ekosystém', 'TerraNova ecosystem', { es: 'ecosistema TerraNova', pt: 'ecossistema TerraNova', fr: 'écosystème TerraNova' })}
               </span>
             </div>
           </Link>
@@ -147,10 +164,10 @@ export default function Nav() {
                 href={l.href}
                 className={`rasta-nav-link ${isActive(l.href) ? 'active' : ''}`}
               >
-                {lang === 'cs' ? l.cs : l.en}
+                {lab(l, lang)}
               </Link>
             ))}
-            <NavDropdown label={t('Coiny', 'Coins')}>
+            <NavDropdown label={t('Coiny', 'Coins', { es: 'Monedas', pt: 'Moedas', fr: 'Pièces' })}>
               <div className="rasta-nav-dropheader">{t('Nativní', 'Native')}</div>
               {NATIVE_COIN_KEYS.map((k) => {
                 const c = coinItem(k);
@@ -178,11 +195,11 @@ export default function Nav() {
                 );
               })}
             </NavDropdown>
-            <NavDropdown label={t('Ekosystém', 'Ecosystem')}>
+            <NavDropdown label={t('Ekosystém', 'Ecosystem', { es: 'Ecosistema', pt: 'Ecossistema', fr: 'Écosystème' })}>
               {ECOSYSTEM_GROUPS.map((g) => (
                 <div key={g.en}>
                   <div className="rasta-nav-dropheader">
-                    {lang === 'cs' ? g.cs : g.en}
+                    {lab(g, lang)}
                   </div>
                   {g.items.map((item) => (
                     <a
@@ -215,7 +232,9 @@ export default function Nav() {
               type="button"
               className={`rasta-hamburger ${open ? 'active' : ''}`}
               onClick={() => setOpen(!open)}
-              aria-label={open ? t('Zavřít menu', 'Close menu') : t('Otevřít menu', 'Open menu')}
+              aria-label={open
+                ? t('Zavřít menu', 'Close menu', { es: 'Cerrar menú', pt: 'Fechar menu', fr: 'Fermer le menu' })
+                : t('Otevřít menu', 'Open menu', { es: 'Abrir menú', pt: 'Abrir menu', fr: 'Ouvrir le menu' })}
               aria-expanded={open}
               aria-controls="pool-mobile-menu"
             >
@@ -256,7 +275,7 @@ export default function Nav() {
             onClick={() => setOpen(false)}
             className={`rasta-nav-link ${isActive(l.href) ? 'active' : ''}`}
           >
-            {lang === 'cs' ? l.cs : l.en}
+            {lab(l, lang)}
           </Link>
         ))}
         <div className="rasta-mobile-subheader">{t('Coiny — nativní', 'Coins — native')}</div>
@@ -298,7 +317,7 @@ export default function Nav() {
         {ECOSYSTEM_GROUPS.map((g) => (
           <div key={g.en}>
             <div className="rasta-mobile-subheader">
-              {lang === 'cs' ? g.cs : g.en}
+              {lab(g, lang)}
             </div>
             {g.items.map((item) => (
               <a

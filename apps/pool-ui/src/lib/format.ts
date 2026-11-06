@@ -49,7 +49,7 @@ export function fmtDifficulty(d: number | null): string {
   return `${d}`;
 }
 
-export function fmtAgo(ts: number, lang: 'cs' | 'en'): string {
+export function fmtAgo(ts: number, lang: string): string {
   const s = Math.max(0, Math.floor(Date.now() / 1000) - ts);
   const units: [number, string, string][] = [
     [86_400, 'd', 'd'],

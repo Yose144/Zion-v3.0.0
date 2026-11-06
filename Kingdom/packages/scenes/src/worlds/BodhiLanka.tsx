@@ -6,7 +6,7 @@ import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, ScenePalms, SceneTerrain, SceneWater, SkyFill } from './kit';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ─── Bodhi Lanka — Akáša Node, Srí Lanka ─────────────────────────────
  * Dle koncept boardu: centrální Sri Maha Bodhi (živý strom osvícení) na

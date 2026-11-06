@@ -7,7 +7,7 @@ import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation'
 import { KeyLight, SceneInstances, ScenePalms, SkyFill, sandGround } from './kit';
 import { LagoonLandscape } from './LagoonLandscape';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 // Shared prop geometry and materials — instanced, so a stone circle is one draw call.
 const KILN_ROCK = new THREE.DodecahedronGeometry(1, 0);
@@ -159,7 +159,7 @@ function Fare({ fare, lang, roofTexture }: { fare: Fare; lang: Lang; roofTexture
       <pointLight position={[0, 0.9, len * 0.5]} intensity={0.9} distance={3.2} color="#ffaa55" decay={2} />
 
       {name && (
-        <SceneLabel position={[0, roofH + 1.0, 0]} text={name[lang]} />
+        <SceneLabel position={[0, roofH + 1.0, 0]} text={lang === 'cs' ? name.cs : name.en} />
       )}
     </group>
   );

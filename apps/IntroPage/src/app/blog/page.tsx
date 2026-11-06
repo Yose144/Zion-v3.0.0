@@ -15,13 +15,14 @@ const monthNames = {
   en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
 };
 
-function formatDate(dateStr: string, lang: "cs" | "en") {
+function formatDate(dateStr: string, lang: string) {
+  const copy = lang === "cs" ? "cs" : "en";
   const d = new Date(dateStr);
-  return `${d.getDate()}. ${monthNames[lang][d.getMonth()]} ${d.getFullYear()}`;
+  return `${d.getDate()}. ${monthNames[copy][d.getMonth()]} ${d.getFullYear()}`;
 }
 
 export default function BlogPage() {
-  const [lang, setLang] = useState<"cs" | "en">("cs");
+  const [lang, setLang] = useState<"cs" | "en" | "es" | "pt" | "fr">("cs");
   const [filter, setFilter] = useState("all");
 
   const filtered = useMemo(() => {

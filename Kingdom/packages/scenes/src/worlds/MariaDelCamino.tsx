@@ -7,7 +7,7 @@ import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation'
 import { KeyLight, SkyFill } from './kit';
 import { AtlanticOcean } from './CoastalLandscape';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 type Point = [number, number, number];
 
 // One fleet model used by the website and Nirvana. The first two hull types
@@ -175,7 +175,7 @@ function Vessel({ spec, index, lang, tex, reduced }: { spec: typeof VESSELS[numb
     </group>)}
     <Sail z={1.68} height={3.65} width={2.3} jib tex={tex} />
     <mesh position={[.18, 6.4, masts[spec.cat ? 0 : 1].z]}><planeGeometry args={[.34, .2]} /><meshStandardMaterial color={spec.flag} side={THREE.DoubleSide} roughness={1} /></mesh>
-    <SceneLabel position={[0, 7.55, -.1]} text={`${spec.name} · ${spec.ocean[lang]}`} />
+    <SceneLabel position={[0, 7.55, -.1]} text={`${spec.name} · ${lang === 'cs' ? spec.ocean.cs : spec.ocean.en}`} />
     {[-1, 1].map(side => <mesh key={side} position={[side * (spec.cat ? 1.5 : .86), .43, -1.8]} rotation={[0, side * Math.PI / 2, 0]}>
       <torusGeometry args={[.13, .035, 6, 14]} /><meshStandardMaterial color="#efdfb9" roughness={.9} />
     </mesh>)}

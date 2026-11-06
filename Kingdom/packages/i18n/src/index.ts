@@ -1,4 +1,5 @@
 import type { Locale } from '@zion/contract';
+import { es, fr, pt } from './extra';
 
 /**
  * @zion/i18n — jediná implementace překladů.
@@ -304,22 +305,26 @@ const en: Record<TranslationKey, string> = {
   miningClientOnly: 'Mining lives in the desktop client — get Kingdom for your rig.',
 };
 
-const dictionaries: Record<Locale, Record<TranslationKey, string>> = { cs, en };
+const extra: Partial<Record<Locale, Partial<Record<TranslationKey, string>>>> = { es, pt, fr };
 
 export function resolveLocale(value: string | undefined | null): Locale {
-  return value === 'en' ? 'en' : 'cs';
+  if (value === 'en' || value === 'es' || value === 'pt' || value === 'fr' || value === 'cs') return value;
+  return 'cs';
 }
 
 export function t(locale: Locale, key: TranslationKey): string {
-  return dictionaries[locale][key];
+  if (locale === 'cs') return cs[key];
+  return extra[locale]?.[key] ?? en[key];
 }
 
 /** Lokální tvary (tisíce, desetinná místa) bez Intl závislosti na ICU datech. */
 export function fmtNumber(locale: Locale, value: number, digits = 0): string {
   const fixed = value.toFixed(digits);
   const [whole, frac] = fixed.split('.');
-  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, locale === 'cs' ? ' ' : ',');
-  return frac ? `${grouped}${locale === 'cs' ? ',' : '.'}${frac}` : grouped;
+  const space = locale === 'cs' || locale === 'fr';
+  const commaDec = locale !== 'en';
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, space ? ' ' : commaDec ? '.' : ',');
+  return frac ? `${grouped}${commaDec ? ',' : '.'}${frac}` : grouped;
 }
 
 export function fmtCompact(locale: Locale, value: number): string {

@@ -7,7 +7,7 @@ import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, SceneTerrain, SkyFill, grassGround, sandGround } from './kit';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 interface PyramidData {
   position: [number, number, number];
@@ -329,7 +329,7 @@ function CrystalPyramid({ position, height, radius, accent, label, lang }: Pyram
       </mesh>
       <pointLight position={[position[0], height * 0.3, position[2]]} intensity={1.4} distance={radius * 2.2} color="#ffce8a" decay={2} />
 
-      <SceneLabel position={[position[0], height + 0.55, position[2]]} text={label[lang]} />
+      <SceneLabel position={[position[0], height + 0.55, position[2]]} text={lang === 'cs' ? label.cs : label.en} />
     </group>
   );
 }

@@ -12,7 +12,7 @@ import { KeyLight, SceneMotes, SceneTerrain, SceneWater, SkyFill } from './kit';
  * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
  * patří sem stejně jako cs/en.
  */
-type Lang = 'cs' | 'en' | 'es';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ─── Kailash — Posvátná hora · L5 Spiritual Center · Himaláje ─────────
  * Dle hero: pyramidální Kailash s vrstevnatými svahy a sněhovou čepicí

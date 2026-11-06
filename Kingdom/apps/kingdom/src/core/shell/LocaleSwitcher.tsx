@@ -15,13 +15,25 @@ export function LocaleSwitcher({ locale }: { locale: Locale }) {
 
   function choose(next: Locale) {
     if (next === locale) return;
-    document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
+    const host = location.hostname;
+    const domain =
+      host === 'zionterranova.com' || host.endsWith('.zionterranova.com')
+        ? '; domain=.zionterranova.com'
+        : '';
+    document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax${domain}`;
+    try {
+      localStorage.setItem('zion-lang', next);
+    } catch {
+      /* private mode */
+    }
     startTransition(() => router.refresh());
   }
 
+  const short: Record<Locale, string> = { cs: 'CZ', en: 'EN', es: 'ES', pt: 'PT', fr: 'FR' };
+
   return (
-    <div className="k-row" style={{ gap: 4 }} data-pending={pending}>
-      {(['cs', 'en'] as const).map((code) => (
+    <div className="k-row" style={{ gap: 4, flexWrap: 'wrap' }} data-pending={pending}>
+      {(['cs', 'en', 'es', 'pt', 'fr'] as const).map((code) => (
         <button
           key={code}
           type="button"
@@ -34,7 +46,7 @@ export function LocaleSwitcher({ locale }: { locale: Locale }) {
               : undefined
           }
         >
-          {code.toUpperCase()}
+          {short[code]}
         </button>
       ))}
     </div>

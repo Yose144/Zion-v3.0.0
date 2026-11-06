@@ -12,7 +12,7 @@ import { LagoonLandscape } from './LagoonLandscape';
  * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
  * patří sem stejně jako cs/en.
  */
-type Lang = 'cs' | 'en' | 'es';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 // Shared prop geometry and materials — instanced, so a stone circle is one draw call.
 const KILN_ROCK = new THREE.DodecahedronGeometry(1, 0);

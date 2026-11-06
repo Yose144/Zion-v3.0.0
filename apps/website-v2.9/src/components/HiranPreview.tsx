@@ -13,7 +13,7 @@ import {
   type HiranGate,
 } from '../../../shared/scenes/Hiran';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /** Brány jsou dekorace — na veřejném webu se z náhledu nikam neodchází. */
 const GATES: HiranGate[] = FREE_WORLD_SITES.map((site) => ({ key: site.key, name: site.name }));

@@ -1,22 +1,20 @@
 'use client';
 
-// Lightweight CS/EN language context — same {cs, en} label convention
-// as website-v2.9 pool components.
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import {
+  isPublicLang,
+  readPublicLang,
+  writePublicLang,
+  type PublicLang,
+} from '../../../shared/i18n/persist';
 
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
-
-export type Lang = 'cs' | 'en';
+export type Lang = PublicLang;
 
 type LangCtx = {
   lang: Lang;
   setLang: (l: Lang) => void;
-  t: (cs: string, en: string) => string;
+  /** Czech, a translation for es/pt/fr when passed, otherwise English. */
+  t: (cs: string, en: string, more?: { es?: string; pt?: string; fr?: string }) => string;
 };
 
 const Ctx = createContext<LangCtx>({
@@ -29,18 +27,34 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>('cs');
 
   useEffect(() => {
+    const shared = readPublicLang();
+    if (shared) {
+      setLangState(shared);
+      return;
+    }
     const saved = window.localStorage.getItem('pool-lang');
-    if (saved === 'cs' || saved === 'en') setLangState(saved);
+    if (isPublicLang(saved)) setLangState(saved);
   }, []);
 
   const setLang = useCallback((l: Lang) => {
     setLangState(l);
-    window.localStorage.setItem('pool-lang', l);
-    document.documentElement.lang = l;
+    writePublicLang(l);
+    try {
+      window.localStorage.setItem('pool-lang', l);
+    } catch {
+      /* private mode */
+    }
   }, []);
 
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
   const t = useCallback(
-    (cs: string, en: string) => (lang === 'cs' ? cs : en),
+    (cs: string, en: string, more?: { es?: string; pt?: string; fr?: string }) => {
+      if (lang === 'cs') return cs;
+      return more?.[lang] ?? en;
+    },
     [lang],
   );
 

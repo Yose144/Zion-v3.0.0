@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { text } from '@zion/contract';
 import { t } from '@zion/i18n';
 import { worldEntry } from '@zion/world';
 import { getLocale } from '@/core/locale.server';
@@ -22,7 +23,7 @@ export default async function WorldPage({ params }: { params: Promise<{ id: stri
         </Link>
         <span className="k-topbar-spacer" />
         <span className="k-world-title">{entry.title}</span>
-        <span className="k-world-sub">{entry.subtitle[locale]}</span>
+        <span className="k-world-sub">{text(entry.subtitle, locale)}</span>
         <span className="k-badge">{entry.layer}</span>
       </div>
 

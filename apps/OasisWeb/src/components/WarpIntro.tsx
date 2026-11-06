@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
+import { LanguageMenu } from '../../../shared/ui/LanguageMenu';
+import { usePublicLang } from '../../../shared/ui/usePublicLang';
 import { createRandom } from '../domain/ports/random';
 import { useGameStore } from '../store/gameStore';
 
@@ -11,11 +13,28 @@ interface WarpIntroProps {
   onEnter: () => void;
 }
 
+const INTRO_COPY = {
+  enter: { cs: 'Vstoupit do OASIS', en: 'Enter the OASIS', es: 'Entrar en OASIS', pt: 'Entrar no OASIS', fr: 'Entrer dans OASIS' },
+  preview: {
+    cs: 'Náhled OASIS — projdi světy napříč šesti vrstvami. Najdi Novou Zemi, zakotvi u Issobelly, hledej Zlaté vejce.',
+    en: 'OASIS Preview — explore the worlds across six galactic layers. Find Nova Zeme, dock at Issobella, search for the Golden Egg.',
+    es: 'Vista previa de OASIS — recorre los mundos en seis capas. Encuentra Nova Zeme, atraca en Issobella, busca el Huevo de Oro.',
+    pt: 'Pré-visualização OASIS — percorre os mundos em seis camadas. Encontra a Nova Zeme, atraca na Issobella, procura o Ovo de Ouro.',
+    fr: 'Aperçu OASIS — parcours les mondes sur six couches. Trouve Nova Zeme, accoste à Issobella, cherche l’Œuf d’Or.',
+  },
+  skip: { cs: 'Přeskočit úvod →', en: 'Skip intro →', es: 'Saltar intro →', pt: 'Saltar intro →', fr: 'Passer l’intro →' },
+} as const;
+
+export function oasisIntroText(key: keyof typeof INTRO_COPY, lang: 'cs' | 'en' | 'es' | 'pt' | 'fr') {
+  return INTRO_COPY[key][lang];
+}
+
 const BASE_SPEED = 18;
 const WARP_SPEED = 120;
 const WARP_SEED = 420777;
 
 export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProps) {
+  const [lang, setLang] = usePublicLang('cs');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [warping, setWarping] = useState(false);
   const [exiting, setExiting] = useState(false);
@@ -235,9 +254,12 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
               <p className="mt-4 text-xs tracking-wider text-white/45">— CARL SAGAN, CONTACT</p>
 
               <p className="mt-6 text-xs text-white/50 leading-relaxed max-w-md">
-                OASIS Preview — explore {worldCount} worlds across six galactic layers.
-                Find Nova Zeme, dock at Issobella, search for the Golden Egg.
+                {oasisIntroText('preview', lang)}
               </p>
+
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <LanguageMenu lang={lang} setLang={setLang} summaryClassName="rounded-full border border-white/20 bg-black/40 px-3 py-2 text-xs font-bold text-white" />
+              </div>
 
               <motion.button
                 onClick={handleEnter}
@@ -245,7 +267,7 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
                 whileTap={{ scale: 0.97 }}
                 className="group mt-7 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-oasis-gold via-oasis-purple to-oasis-cyan px-8 py-3.5 text-sm font-bold text-white shadow-[0_0_60px_rgba(252,209,22,0.25)] transition-shadow hover:shadow-[0_0_90px_rgba(228,30,43,0.55)]"
               >
-                Enter the OASIS
+                {oasisIntroText('enter', lang)}
                 <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </motion.button>
 

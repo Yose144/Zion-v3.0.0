@@ -11,7 +11,7 @@ import { KeyLight, SceneMotes, SceneTerrain, SkyFill } from './kit';
  * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
  * patří sem stejně jako cs/en.
  */
-type Lang = 'cs' | 'en' | 'es';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ─── Uluru — Tjukurpa · Songlines · Austrálie ────────────────────────
  * Dle hero: červený monolit Uluru s vertikálním žíháním dominuje

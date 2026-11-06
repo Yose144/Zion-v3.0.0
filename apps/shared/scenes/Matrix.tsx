@@ -13,7 +13,7 @@ type PointerEventLike = { stopPropagation: () => void };
  * Jazyky scény. `es` je tu jen proto, že ho posílá aplikace (L-10); scéna sama
  * žádný španělský text nemá, takže se chová jako `en` (`cs` je false).
  */
-type Lang = 'cs' | 'en' | 'es';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 const TARGET: [number, number, number] = [0, 2.0, 1.0];
 

@@ -15,9 +15,10 @@ const monthNames = {
   en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
 };
 
-function formatDate(dateStr: string, lang: "cs" | "en") {
+function formatDate(dateStr: string, lang: string) {
+  const copy = lang === "cs" ? "cs" : "en";
   const d = new Date(dateStr);
-  return `${d.getDate()}. ${monthNames[lang][d.getMonth()]} ${d.getFullYear()}`;
+  return `${d.getDate()}. ${monthNames[copy][d.getMonth()]} ${d.getFullYear()}`;
 }
 
 type BlogPostClientProps = {
@@ -29,7 +30,7 @@ export default function BlogPostClient({
   slug,
   fullContent,
 }: BlogPostClientProps) {
-  const [lang, setLang] = useState<"cs" | "en">("cs");
+  const [lang, setLang] = useState<"cs" | "en" | "es" | "pt" | "fr">("cs");
 
   const index = posts.findIndex((p) => p.slug === slug);
   const post = posts[index];

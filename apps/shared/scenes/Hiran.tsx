@@ -23,7 +23,7 @@ import { sriYantraGeometry } from './kit/yantra';
  * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
  * patří sem stejně jako cs/en.
  */
-type Lang = 'cs' | 'en' | 'es';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /** Stavy, které scéna umí. `listening`/`speaking` nemáme — žádný hlas v repu není. */
 export type HiranSceneState = 'idle' | 'thinking' | 'offline' | 'error';

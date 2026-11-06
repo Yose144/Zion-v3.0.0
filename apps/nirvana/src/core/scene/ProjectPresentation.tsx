@@ -16,7 +16,7 @@ import { quality } from '../../../../shared/scenes/kit/quality';
  * Jazyk předávaný scénám. Třetí jazyk (`es`) scény nemusí znát — dostanou ho
  * jen ty, které si ho přeloží samy; ostatní se chovají jako `en`.
  */
-type Lang = 'cs' | 'en' | 'es';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 export interface ProjectPresentationProps {
   title: string;

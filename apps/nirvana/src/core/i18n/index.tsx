@@ -1,18 +1,16 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { isPublicLang, readPublicLang, writePublicLang } from '../../../../shared/i18n/persist';
+import { SHELL_EXTRA } from './extra';
 
 /**
- * Jazyky Nirvany. Pořadí je zároveň pořadím přepínače (CS → EN → ES).
- *
- * Třetí jazyk (L-10) je **španělština**: nejvyšší krypto adopce v LatAm
- * a jediná volba, kde se potkává trh s kánonem (MariaCaminho, mariánská
- * linie). Když se přidá další, stačí ho dát sem a do `COPY` — typ `Lang`
- * pak donutí doplnit všechny texty (chybějící klíč = chyba překladu).
+ * Jazyky Nirvany: cs, en, es (sp), pt (ptg), fr.
+ * Chybějící pt/fr v `COPY` spadne na angličtinu (`SHELL_EXTRA` drží shell).
  */
-export const LANGS: Lang[] = ['cs', 'en', 'es'];
+export const LANGS: Lang[] = ['cs', 'en', 'es', 'pt', 'fr'];
 
-export type Lang = 'cs' | 'en' | 'es';
+export type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /** Cyklus přepínače. Jeden zdroj pravdy — dřív to bylo natvrdo na třech místech. */
 export function nextLang(lang: Lang): Lang {
@@ -25,11 +23,13 @@ export const LANG_NAMES: Record<Lang, string> = {
   cs: 'Čeština',
   en: 'English',
   es: 'Español',
+  pt: 'Português',
+  fr: 'Français',
 };
 
 /** Krátký štítek do tlačítka (`CS`/`EN`/`ES`). */
 export function langLabel(lang: Lang): string {
-  return lang.toUpperCase();
+  return lang === 'cs' ? 'CZ' : lang.toUpperCase();
 }
 
 const STORAGE_KEY = 'nirvana.lang.v1';
@@ -40,6 +40,8 @@ function detectLang(): Lang {
   const tag = (navigator.language || '').toLowerCase();
   if (tag.startsWith('cs') || tag.startsWith('sk')) return 'cs';
   if (tag.startsWith('es')) return 'es';
+  if (tag.startsWith('pt')) return 'pt';
+  if (tag.startsWith('fr')) return 'fr';
   return 'en';
 }
 
@@ -124,6 +126,8 @@ export interface Localized {
   cs: string;
   en: string;
   es?: string;
+  pt?: string;
+  fr?: string;
 }
 
 /**
@@ -141,9 +145,8 @@ export function fill(text: string, values: Record<string, string | number>): str
 /** Vybraný jazyk s fallbackem cs → en (nikdy neprázdno, když text existuje). */
 export function tx(text: Localized | null | undefined, lang: Lang, fallback = ''): string {
   if (!text) return fallback;
-  if (lang === 'es' && text.es) return text.es;
   if (lang === 'cs') return text.cs ?? text.en ?? fallback;
-  return text.en ?? text.cs ?? fallback;
+  return text[lang] ?? text.en ?? text.cs ?? fallback;
 }
 
 interface I18n {
@@ -164,14 +167,18 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // 1) `?lang=es` vyhraje vždy — audity a screenshoty potřebují jistotu.
     const param = new URLSearchParams(window.location.search).get('lang');
-    if (param && (LANGS as string[]).includes(param)) {
-      setLangState(param as Lang);
+    if (isPublicLang(param)) {
+      setLangState(param);
       return;
     }
-    // 2) uložená volba
+    const shared = readPublicLang();
+    if (shared) {
+      setLangState(shared);
+      return;
+    }
     try {
-      const stored = window.localStorage.getItem(STORAGE_KEY) as Lang | null;
-      if (stored && (LANGS as string[]).includes(stored)) {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      if (isPublicLang(stored)) {
         setLangState(stored);
         return;
       }
@@ -189,6 +196,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const setLang = useCallback((next: Lang) => {
     setLangState(next);
+    writePublicLang(next);
     try {
       window.localStorage.setItem(STORAGE_KEY, next);
     } catch {
@@ -203,7 +211,13 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       lang,
       setLang,
       cycleLang,
-      t: (key) => COPY[key][lang],
+      t: (key) => {
+        const row = COPY[key] as { cs: string; en: string; es?: string };
+        if (lang === 'cs') return row.cs;
+        if (lang === 'es') return row.es ?? row.en;
+        if (lang === 'pt' || lang === 'fr') return SHELL_EXTRA[key]?.[lang] ?? row.en;
+        return row.en;
+      },
     }),
     [lang, setLang, cycleLang],
   );

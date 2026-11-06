@@ -13,6 +13,27 @@ import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 import type { MusicPlayerState } from './AudioEngine';
 import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
 import { CATEGORY_COLORS, CATEGORY_LABELS } from '../lib/categoryColors';
+import { LanguageMenu } from '../../../shared/ui/LanguageMenu';
+import { usePublicLang } from '../../../shared/ui/usePublicLang';
+import type { PublicLang } from '../../../shared/i18n/persist';
+
+const MENU_COPY = {
+  menu: { cs: 'Menu poutníka', en: 'Pilgrim Menu', es: 'Menú del peregrino', pt: 'Menu do peregrino', fr: 'Menu du pèlerin' },
+  worlds: { cs: 'Světy', en: 'Worlds', es: 'Mundos', pt: 'Mundos', fr: 'Mondes' },
+  ship: { cs: 'Loď', en: 'Ship', es: 'Nave', pt: 'Nave', fr: 'Vaisseau' },
+  identity: { cs: 'Identita', en: 'Identity', es: 'Identidad', pt: 'Identidade', fr: 'Identité' },
+  audio: { cs: 'Zvuk', en: 'Audio', es: 'Audio', pt: 'Áudio', fr: 'Audio' },
+  flight: { cs: 'Let', en: 'Flight', es: 'Vuelo', pt: 'Voo', fr: 'Vol' },
+  unmute: { cs: 'Zapnout', en: 'Unmute', es: 'Sonido', pt: 'Som', fr: 'Son' },
+  mute: { cs: 'Ztlumit', en: 'Mute', es: 'Silencio', pt: 'Silêncio', fr: 'Muet' },
+  show: { cs: 'Zobrazit', en: 'Show UI', es: 'Mostrar', pt: 'Mostrar', fr: 'Afficher' },
+  hide: { cs: 'Skrýt', en: 'Hide UI', es: 'Ocultar', pt: 'Ocultar', fr: 'Masquer' },
+  game: { cs: 'Hra', en: 'Game', es: 'Juego', pt: 'Jogo', fr: 'Jeu' },
+} as const;
+
+function menuText(key: keyof typeof MENU_COPY, lang: PublicLang) {
+  return MENU_COPY[key][lang] ?? MENU_COPY[key].en;
+}
 
 const WORLD_CATEGORIES: WorldCategory[] = ['star-system', 'planet', 'sector', 'world', 'dimension'];
 const LAYERS = [1, 2, 3, 4, 5, 6] as const;
@@ -55,6 +76,7 @@ function MainMenu({
   isMobile,
 }: MainMenuProps) {
   const router = useRouter();
+  const [lang, setLang] = usePublicLang('cs');
   const [tab, setTab] = useState<Tab | 'worlds'>('worlds');
   const { xp, credits, discoveredWorlds, scannedWorlds, collectedEggs, completedQuests, address, shipLoadout, worlds } = useGameStore();
   const level = getLevel(xp);
@@ -118,10 +140,11 @@ function MainMenu({
                     {level}
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-white">Pilgrim Menu</h2>
+                    <h2 className="text-sm font-bold text-white">{menuText('menu', lang)}</h2>
                     <p className="text-[10px] text-white/70">{credits} Z · Lv {level} · {Math.round(progress * 100)}%</p>
                   </div>
                 </div>
+                <LanguageMenu lang={lang} setLang={setLang} summaryClassName="rounded-full border border-white/15 px-3 py-2 text-xs font-bold text-white" />
                 <button
                   onClick={onClose}
                   className="rounded-full p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
@@ -144,7 +167,7 @@ function MainMenu({
                       }`}
                     >
                       <Icon className="h-4 w-4" />
-                      {t.label}
+                      {t.id === 'worlds' || t.id === 'ship' || t.id === 'identity' || t.id === 'audio' ? menuText(t.id, lang) : 'OASIS'}
                     </button>
                   );
                 })}
@@ -175,25 +198,25 @@ function MainMenu({
               <div className="grid grid-cols-4 gap-2 border-t border-white/10 p-3">
                 <QuickAction
                   icon={Plane}
-                  label="Flight"
+                  label={menuText('flight', lang)}
                   color="text-rasta-gold/80"
                   onClick={() => { onEnterFlight(); onClose(); }}
                 />
                 <QuickAction
                   icon={muted ? VolumeX : Volume2}
-                  label={muted ? 'Unmute' : 'Mute'}
+                  label={menuText(muted ? 'unmute' : 'mute', lang)}
                   color={muted ? 'text-white/70' : 'text-oasis-cyan'}
                   onClick={onToggleMute}
                 />
                 <QuickAction
                   icon={uiHidden ? Eye : EyeOff}
-                  label={uiHidden ? 'Show UI' : 'Hide UI'}
+                  label={menuText(uiHidden ? 'show' : 'hide', lang)}
                   color="text-white/80"
                   onClick={onToggleUiHidden}
                 />
                 <QuickAction
                   icon={LogIn}
-                  label="Game"
+                  label={menuText('game', lang)}
                   color="text-oasis-emerald"
                   onClick={() => { onClose(); router.push('/dashboard'); }}
                 />
@@ -230,7 +253,7 @@ function QuickAction({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 rounded-lg border border-white/5 bg-white/[0.03] py-2 text-[10px] font-semibold transition hover:bg-white/10 ${color}`}
+      className={`flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg border border-white/5 bg-white/[0.03] py-2 text-[10px] font-semibold transition hover:bg-white/10 ${color}`}
     >
       <Icon className="h-4 w-4" />
       {label}

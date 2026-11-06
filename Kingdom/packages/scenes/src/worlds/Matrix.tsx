@@ -9,7 +9,7 @@ import { ScenePresentation, motionDelta, motionTime } from './ScenePresentation'
 
 type PointerEventLike = { stopPropagation: () => void };
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 const TARGET: [number, number, number] = [0, 2.0, 1.0];
 

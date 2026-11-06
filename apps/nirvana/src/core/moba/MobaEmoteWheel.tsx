@@ -30,7 +30,7 @@ export function MobaEmoteWheel({
   onClose,
 }: {
   origin: { x: number; y: number };
-  language: 'cs' | 'en' | 'es';
+  language: 'cs' | 'en' | 'es' | 'pt' | 'fr';
   onPick: (index: number) => void;
   onClose: () => void;
 }) {

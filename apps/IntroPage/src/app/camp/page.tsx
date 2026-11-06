@@ -9,16 +9,17 @@ import ImageSlider from "../components/ImageSlider";
 import data from "../data/camp-data.json";
 
 export default function CampPage() {
-  const [lang, setLang] = useState<"cs" | "en">("cs");
+  const [lang, setLang] = useState<"cs" | "en" | "es" | "pt" | "fr">("cs");
+  const copy = lang === "cs" ? "cs" : "en";
 
   const t = {
-    hero: data.hero[lang],
-    about: data.about[lang],
-    featuresTitle: data.featuresTitle[lang],
-    features: data.features[lang],
-    gallery: { title: data.gallery[lang].title, slides: data.gallery.slides },
-    vision: data.vision[lang],
-    footer: data.footer[lang],
+    hero: data.hero[copy],
+    about: data.about[copy],
+    featuresTitle: data.featuresTitle[copy],
+    features: data.features[copy],
+    gallery: { title: data.gallery[copy].title, slides: data.gallery.slides },
+    vision: data.vision[copy],
+    footer: data.footer[copy],
     socials: data.socials,
     visionImage: data.vision.image,
     visionImageAlt: data.vision.imageAlt,
@@ -91,8 +92,8 @@ export default function CampPage() {
           <ImageSlider
             slides={t.gallery.slides.map((s: any) => ({
               src: s.src,
-              alt: s.caption[lang],
-              caption: s.caption[lang],
+              alt: s.caption[copy],
+              caption: s.caption[copy],
             }))}
           />
         </section>

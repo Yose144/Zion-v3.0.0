@@ -6,7 +6,7 @@ import { usePreviewVisibility } from './usePreviewVisibility';
 import { useEffect, useState } from 'react';
 import { GoldenRepublicBohemiaScene, BohemiaLighting, BOHEMIA_CAMERA, BOHEMIA_CONTROLS } from '../../../shared/scenes/GoldenRepublicBohemia';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 function isWebGLAvailable() {
   if (typeof window === 'undefined') return false;

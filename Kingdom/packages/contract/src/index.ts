@@ -5,11 +5,14 @@
  * odkud čte a co (ne)píše. Nic víc. Implementace je v aplikaci, ne tady.
  */
 
-export type Locale = 'cs' | 'en';
+export type Locale = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 export interface LocalizedText {
   cs: string;
   en: string;
+  es?: string;
+  pt?: string;
+  fr?: string;
 }
 
 /** Služby, které Kingdom čte. Backendy zůstávají samostatné. */
@@ -98,7 +101,8 @@ export function readSpec(manifest: PortalManifest, id: string): EndpointSpec {
   return spec;
 }
 
-/** Lokalizovaný text s fallbackem na cs. */
+/** Lokalizovaný text. Chybějící es/pt/fr spadne na angličtinu, pak na češtinu. */
 export function text(value: LocalizedText, locale: Locale): string {
-  return value[locale] ?? value.cs;
+  if (locale === 'cs') return value.cs;
+  return value[locale] ?? value.en ?? value.cs;
 }

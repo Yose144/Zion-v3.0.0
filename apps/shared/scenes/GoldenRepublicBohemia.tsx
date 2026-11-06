@@ -11,7 +11,7 @@ import { KeyLight, SceneInstances, SceneTerrain, SkyFill } from './kit';
  * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
  * patří sem stejně jako cs/en.
  */
-type Lang = 'cs' | 'en' | 'es';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ─── Golden Republic Bohemia — Živý střed u Řípu ─────────────────────
  * Dle koncept boardu: tři síně v zlatém řezu (Mýtu SZ · Protokolu V ·

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { requireAdminAuth } from '@/lib/admin-guard';
 import { markShopOrderPaid } from '@/lib/shop-zionpay';
@@ -6,6 +7,7 @@ import { distributeOrderBonus } from '@/lib/bonus-payout';
 import { getTokenDistribution } from '@/lib/tokens';
 import { getArchivePassForOrder } from '@/lib/archive-pass';
 import { randomBytes } from 'crypto';
+import { shopProducts } from '@/data/shopProducts';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +15,9 @@ export const dynamic = 'force-dynamic';
  * Admin ZION gift — one call creates a gift order, marks it paid and
  * runs the whole paid pipeline: custodial wallet + seed email, native
  * L1 payout (BONUS:<orderId>), Archive Pass (item externalId gift-001
- * carries the archive-pass grant) and the payment-confirmation email.
+ * carries the archive-pass grant), the Kingdom of Hearts ZIP (book-001
+ * filesUrl, tokens stay 0 so the admin amount is the only payout) and
+ * the payment-confirmation email.
  *
  * Orders use payment='admin-gift' so they stay out of revenue stats by
  * filter and are listed back via GET here.
@@ -21,7 +25,11 @@ export const dynamic = 'force-dynamic';
 
 const GIFT_PRODUCT_WITH_PASS = 'gift-001';
 const GIFT_PRODUCT_TOKENS_ONLY = 'gift-token';
+const BOOK_PRODUCT_ID = 'book-001';
 const MAX_GIFT_ZION = 10_000_000;
+
+const BOOK_ZIP =
+  shopProducts.find((p) => p.externalId === BOOK_PRODUCT_ID)?.filesUrl ?? '';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -31,6 +39,7 @@ interface GiftBody {
   phone?: string;
   amountZion?: number;
   withPass?: boolean;
+  withBook?: boolean;
   note?: string;
 }
 
@@ -57,10 +66,11 @@ export async function POST(request: NextRequest) {
     }
 
     const withPass = body.withPass !== false;
+    const withBook = body.withBook !== false && Boolean(BOOK_ZIP);
     const name = body.name?.trim() || email.split('@')[0];
     const orderId = `GIFT-${Date.now().toString(36).toUpperCase()}-${randomBytes(3).toString('hex').toUpperCase()}`;
 
-    const items = [
+    const items: Array<Record<string, unknown>> = [
       {
         externalId: withPass ? GIFT_PRODUCT_WITH_PASS : GIFT_PRODUCT_TOKENS_ONLY,
         name: withPass
@@ -69,9 +79,23 @@ export async function POST(request: NextRequest) {
         quantity: 1,
         priceCzk: 0,
         tokens: amountZion,
-        digital: true,
+        // Peněženka a pass nejsou soubor. Kniha má vlastní řádek s odkazem na ZIP.
+        digital: false,
       },
     ];
+    if (withBook) {
+      items.push({
+        // book-001 nese grant Archive Pass. Když admin pass vypne, řádek
+        // nesmí ten grant spustit — ZIP se pošle i tak, jen pod jiným id.
+        externalId: withPass ? BOOK_PRODUCT_ID : 'gift-book',
+        name: 'Království srdce — kompletní edice (PDF + EPUB, 5 jazyků)',
+        quantity: 1,
+        priceCzk: 0,
+        tokens: 0,
+        digital: true,
+        filesUrl: BOOK_ZIP,
+      });
+    }
 
     await prisma.shopOrder.create({
       data: {
@@ -85,7 +109,7 @@ export async function POST(request: NextRequest) {
         payment: 'admin-gift',
         totalCzk: 0,
         shippingCzk: 0,
-        items,
+        items: items as Prisma.InputJsonValue,
         zionTokens: amountZion,
         note: body.note?.trim() || null,
         statusHistory: [
@@ -148,6 +172,7 @@ export async function POST(request: NextRequest) {
         paymentStatus: order?.paymentStatus ?? 'paid',
         wallet: order?.customerWalletAddress ?? null,
         pass: pass ? { code: pass.code } : null,
+        book: withBook ? { filesUrl: BOOK_ZIP } : null,
         bonus,
       },
     });
@@ -177,6 +202,7 @@ export async function GET(request: NextRequest) {
       paymentStatus: true,
       customerWalletAddress: true,
       note: true,
+      items: true,
       createdAt: true,
       paidAt: true,
     },
@@ -186,9 +212,19 @@ export async function GET(request: NextRequest) {
     orders.map(async (o) => {
       const dist = await getTokenDistribution(o.orderId);
       const pass = getArchivePassForOrder(o.orderId);
+      const lines = Array.isArray(o.items) ? o.items : [];
+      const bookLine = lines.find(
+        (item) =>
+          item &&
+          typeof item === 'object' &&
+          (item as { externalId?: string }).externalId === BOOK_PRODUCT_ID ||
+          (item as { externalId?: string }).externalId === 'gift-book',
+      ) as { filesUrl?: string } | undefined;
+      const { items: _items, ...rest } = o;
       return {
-        ...o,
+        ...rest,
         pass: pass ? { code: pass.code } : null,
+        book: bookLine?.filesUrl ? { filesUrl: bookLine.filesUrl } : null,
         bonus: dist
           ? { status: dist.status, txHash: dist.txHash, distributedAt: dist.distributedAt }
           : null,

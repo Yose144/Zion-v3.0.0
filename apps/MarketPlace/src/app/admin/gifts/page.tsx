@@ -50,6 +50,7 @@ export default function AdminGiftsPage() {
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('1000000');
   const [withPass, setWithPass] = useState(true);
+  const [withBook, setWithBook] = useState(true);
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<AdminGiftResult | null>(null);
@@ -75,7 +76,12 @@ export default function AdminGiftsPage() {
       setResult({ success: false, error: 'Zadejte platný email a kladné celé množství ZION' });
       return;
     }
-    if (!window.confirm(`Odeslat dárek ${amountZion.toLocaleString('cs-CZ')} ZION na ${email.trim()}?`)) return;
+    const extras = [
+      withPass ? 'Archive Pass' : null,
+      withBook ? 'kniha Království srdce (ZIP)' : null,
+    ].filter(Boolean).join(' + ');
+    const extraText = extras ? ` včetně ${extras}` : '';
+    if (!window.confirm(`Odeslat dárek ${amountZion.toLocaleString('cs-CZ')} ZION${extraText} na ${email.trim()}?`)) return;
     setSending(true);
     setResult(null);
     const res = await sendAdminGift({
@@ -83,6 +89,7 @@ export default function AdminGiftsPage() {
       name: name.trim() || undefined,
       amountZion,
       withPass,
+      withBook,
       note: note.trim() || undefined,
     });
     setSending(false);
@@ -101,7 +108,7 @@ export default function AdminGiftsPage() {
         <h1 className="text-2xl font-black text-white">🎁 ZION Dárky</h1>
         <p className="text-sm text-white/50 mt-1">
           Jeden klik = objednávka → paid → custodial peněženka + seed emailem → nativní L1
-          payout → Archive Pass → potvrzovací email. Vše přes standardní paid pipeline.
+          payout → Archive Pass → ZIP knihy Království srdce → potvrzovací email. Vše přes standardní paid pipeline.
         </p>
       </div>
 
@@ -165,6 +172,16 @@ export default function AdminGiftsPage() {
           🎟️ Připojit ZION Archive Pass (Archiv + OASIS svět NIRVANA + portál nirvana.)
         </label>
 
+        <label className="flex items-center gap-2 text-sm text-white/80 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={withBook}
+            onChange={(e) => setWithBook(e.target.checked)}
+            className="w-4 h-4 accent-yellow-500"
+          />
+          📖 Přiložit knihu Království srdce (ZIP, PDF + EPUB, 5 jazyků)
+        </label>
+
         <button
           type="submit"
           disabled={sending}
@@ -174,7 +191,7 @@ export default function AdminGiftsPage() {
         </button>
         <p className="text-[11px] text-white/40">
           ⚠️ Payout jde okamžitě z pool walletu on-chain — příjemce dostane email se seed
-          slovy peněženky, bonus emailem s txHash a potvrzení s pass kódem.
+          slovy peněženky, bonus emailem s txHash a potvrzení s pass kódem a odkazem na ZIP knihy.
         </p>
       </form>
 
@@ -195,6 +212,15 @@ export default function AdminGiftsPage() {
                 <p>
                   Pass: <span className="text-rasta-gold font-bold">{result.data.pass.code}</span>
                   <CopyBtn value={result.data.pass.code} />
+                </p>
+              )}
+              {result.data.book && (
+                <p>
+                  Kniha:{' '}
+                  <a href={result.data.book.filesUrl} className="text-rasta-gold underline break-all" target="_blank" rel="noreferrer">
+                    ZIP Království srdce
+                  </a>
+                  <CopyBtn value={result.data.book.filesUrl} />
                 </p>
               )}
               <p>
@@ -221,16 +247,17 @@ export default function AdminGiftsPage() {
                 <th className="px-4 py-2.5">Příjemce</th>
                 <th className="px-4 py-2.5">ZION</th>
                 <th className="px-4 py-2.5">Pass</th>
+                <th className="px-4 py-2.5">Kniha</th>
                 <th className="px-4 py-2.5">Payout</th>
                 <th className="px-4 py-2.5">Vytvořeno</th>
               </tr>
             </thead>
             <tbody>
               {loadingList && (
-                <tr><td colSpan={6} className="px-4 py-6 text-center text-white/40">Načítám…</td></tr>
+                <tr><td colSpan={7} className="px-4 py-6 text-center text-white/40">Načítám…</td></tr>
               )}
               {!loadingList && gifts.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-6 text-center text-white/40">Zatím žádné dárky</td></tr>
+                <tr><td colSpan={7} className="px-4 py-6 text-center text-white/40">Zatím žádné dárky</td></tr>
               )}
               {gifts.map((g) => (
                 <tr key={g.orderId} className="border-b border-white/5 hover:bg-white/5">
@@ -248,6 +275,13 @@ export default function AdminGiftsPage() {
                         {g.pass.code}
                         <CopyBtn value={g.pass.code} />
                       </span>
+                    ) : (
+                      <span className="text-white/30">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2.5 text-xs">
+                    {g.book?.filesUrl ? (
+                      <a href={g.book.filesUrl} className="text-rasta-gold underline" target="_blank" rel="noreferrer">ZIP</a>
                     ) : (
                       <span className="text-white/30">—</span>
                     )}

@@ -10,10 +10,15 @@ import * as THREE from 'three';
 const NIRVANA_URL = 'https://nirvana.zionterranova.com';
 
 /* IntroPage i18n runs outside React (intro-tabs.js sets <html lang>) — mirror it. */
-function useIntroLang(): 'cs' | 'en' {
-  const [lang, setLang] = useState<'cs' | 'en'>('cs');
+type IntroLang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
+
+function useIntroLang(): IntroLang {
+  const [lang, setLang] = useState<IntroLang>('cs');
   useEffect(() => {
-    const read = () => setLang(document.documentElement.lang === 'en' ? 'en' : 'cs');
+    const read = () => {
+      const code = document.documentElement.lang;
+      setLang(code === 'en' || code === 'es' || code === 'pt' || code === 'fr' ? code : 'cs');
+    };
     read();
     const mo = new MutationObserver(read);
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });

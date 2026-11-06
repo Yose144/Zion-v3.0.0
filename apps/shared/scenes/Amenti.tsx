@@ -11,7 +11,7 @@ import { KeyLight, SceneMotes, SceneTerrain, SceneWater, SkyFill, gold as goldMa
  * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
  * patří sem stejně jako cs/en.
  */
-type Lang = 'cs' | 'en' | 'es';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ─── Amenti · Giza — Síň záznamů · Egypt ─────────────────────────────
  * Dle hero: zlatá pyramida s otevřenou síní a světelným paprskem

@@ -9,8 +9,9 @@ import ImageSlider from "../components/ImageSlider";
 import data from "../data/amenti-data.json";
 
 export default function AmentiPage() {
-  const [lang, setLang] = useState<"cs" | "en">("cs");
-  const t = data[lang];
+  const [lang, setLang] = useState<"cs" | "en" | "es" | "pt" | "fr">("cs");
+  const copy = lang === "cs" ? "cs" : "en";
+  const t = data[copy];
 
   return (
     <PageLayout lang={lang} setLang={setLang}>
@@ -111,7 +112,7 @@ export default function AmentiPage() {
                 className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-center backdrop-blur-sm transition hover:border-[#fcd116]/40"
               >
                 <h4 className="mb-2 text-[#fcd116]">{g.title}</h4>
-                <p className="!text-sm !text-white/70">{g[lang]}</p>
+                <p className="!text-sm !text-white/70">{g[copy]}</p>
               </div>
             ))}
           </div>

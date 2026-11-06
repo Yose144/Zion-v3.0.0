@@ -70,7 +70,7 @@ export default async function RoomPage() {
         {WORLD_CATALOG.map((world) => (
           <Link key={world.id} href={`/world/${world.id}`} className="k-card" data-link="true">
             <div className="k-card-title">{world.title}</div>
-            <p className="k-card-desc">{world.subtitle[locale]}</p>
+            <p className="k-card-desc">{text(world.subtitle, locale)}</p>
             <div className="k-meta">
               <span className="k-badge">{world.layer}</span>
               <span>3D</span>

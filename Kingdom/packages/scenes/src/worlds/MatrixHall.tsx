@@ -7,7 +7,7 @@ import { GlowSprite, useHallFloorTexture } from './MatrixDetail';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionDelta, motionTime, prefersReducedMotion } from './ScenePresentation';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 const TARGET: [number, number, number] = [0, 1.5, -1];
 

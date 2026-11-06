@@ -14,7 +14,7 @@ import { PikoLighting, TePikoOraScene, PIKO_CAMERA, PIKO_CONTROLS } from './TePi
 import { UluruLighting, UluruScene, ULURU_CAMERA, ULURU_CONTROLS } from './Uluru';
 import type { WorldControls } from './OrbitRig';
 
-export type Lang = 'cs' | 'en';
+export type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 export interface SceneCamera {
   position: [number, number, number];

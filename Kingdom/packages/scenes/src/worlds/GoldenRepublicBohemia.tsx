@@ -6,7 +6,7 @@ import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, SceneTerrain, SkyFill } from './kit';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ─── Golden Republic Bohemia — Živý střed u Řípu ─────────────────────
  * Dle koncept boardu: tři síně v zlatém řezu (Mýtu SZ · Protokolu V ·

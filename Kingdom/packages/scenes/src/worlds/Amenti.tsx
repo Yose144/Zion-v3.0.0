@@ -6,7 +6,7 @@ import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, SceneMotes, SceneTerrain, SceneWater, SkyFill, gold as goldMaterial, stoneWarm } from './kit';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ─── Amenti · Giza — Síň záznamů · Egypt ─────────────────────────────
  * Dle hero: zlatá pyramida s otevřenou síní a světelným paprskem

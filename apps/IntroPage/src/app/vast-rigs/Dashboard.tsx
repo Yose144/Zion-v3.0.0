@@ -767,7 +767,7 @@ function PoolStatsPanel({ p, miners, stale, minersStale }: { p: PoolStats; miner
 }
 
 export default function Dashboard() {
-  const [lang, setLang] = useState<"cs" | "en">("en");
+  const [lang, setLang] = useState<"cs" | "en" | "es" | "pt" | "fr">("en");
   const [snap, setSnap] = useState<Snap | null>(null);
   const [err, setErr] = useState("");
   const [ai, setAi] = useState<AiStatus | null>(null);

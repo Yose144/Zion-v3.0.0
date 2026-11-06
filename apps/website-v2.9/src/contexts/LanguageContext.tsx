@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { readPublicLang, writePublicLang } from '../../../shared/i18n/persist';
 
 /**
  * Jazyky ekosystému. 👤 2026-11-05: „cely ecosystem by mel podporovat nativne
@@ -46,16 +47,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>('cs');
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem('zion-lang');
-      if (isLang(stored)) setLangState(stored);
-    } catch { /* SSR or privacy mode */ }
+    const stored = readPublicLang();
+    if (isLang(stored)) setLangState(stored);
   }, []);
 
   const setLang = (l: Lang) => {
     if (!isLang(l)) return;
     setLangState(l);
-    try { localStorage.setItem('zion-lang', l); } catch {}
+    writePublicLang(l);
   };
 
   useEffect(() => {

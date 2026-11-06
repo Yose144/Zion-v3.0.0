@@ -182,7 +182,7 @@ const L = {
 } as const;
 
 type Key = keyof typeof L;
-const t = (lang: 'cs' | 'en', k: Key) => L[k][lang];
+const t = (lang: string, k: Key) => (lang === 'cs' ? L[k].cs : L[k].en);
 
 function fmtUsd(n?: number, digits = 2) {
   return n == null || Number.isNaN(n) ? '—' : `$${n.toFixed(digits)}`;
@@ -219,7 +219,7 @@ function OcRow({
 }: {
   rigId: string;
   postOps: (path: string, payload: unknown) => Promise<unknown>;
-  lang: 'cs' | 'en';
+  lang: string;
 }) {
   const [gpu, setGpu] = useState('0');
   const [core, setCore] = useState('');

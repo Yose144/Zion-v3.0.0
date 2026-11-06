@@ -7,7 +7,7 @@ import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation'
 import { KeyLight, SceneWater, SkyFill, stoneCool } from './kit';
 import { CoastalLandscape } from './CoastalLandscape';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ─── Rozměry dle konceptu ───────────────────────────────────────────
  * Hlavní kopule ⌀ ~42 m (výška 21 m), 6 muzeí ⌀ ~28 m v hexagonu,
@@ -136,7 +136,7 @@ function Dome({ radius, pos, lang, label, inner }: {
       {/* vnitřní záře — chrám svítí v soumraku */}
       <pointLight position={[pos[0], pos[1] + radius * 0.45, pos[2]]} intensity={3.4} distance={radius * 2.6} color="#ffb85e" decay={2} />
 
-      <SceneLabel position={[pos[0], pos[1] + radius + 0.5, pos[2]]} text={label[lang]} />
+      <SceneLabel position={[pos[0], pos[1] + radius + 0.5, pos[2]]} text={lang === 'cs' ? label.cs : label.en} />
     </group>
   );
 }

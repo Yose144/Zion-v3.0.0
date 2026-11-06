@@ -583,6 +583,7 @@ export interface AdminGiftResult {
     paymentStatus: string;
     wallet: string | null;
     pass: { code: string } | null;
+    book: { filesUrl: string } | null;
     bonus: { txHash?: string; tokens?: number; status: string };
   };
   error?: string;
@@ -593,6 +594,7 @@ export async function sendAdminGift(input: {
   name?: string;
   amountZion: number;
   withPass?: boolean;
+  withBook?: boolean;
   note?: string;
 }): Promise<AdminGiftResult | null> {
   try {
@@ -621,6 +623,7 @@ export interface AdminGiftListItem {
   createdAt: string;
   paidAt: string | null;
   pass: { code: string } | null;
+  book: { filesUrl: string } | null;
   bonus: { status: string; txHash?: string; distributedAt?: string } | null;
 }
 

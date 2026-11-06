@@ -5,7 +5,7 @@ import { React, useFrame, THREE } from '../runtime';
 
 import { motionTime } from './ScenePresentation';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 type PointerEventLike = { stopPropagation: () => void };
 

@@ -22,7 +22,7 @@ import {
   stoneWarm,
 } from './kit';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ─── Ekam · Oneness Temple — Andhra Pradesh, Indie ───────────────────
  * Reálná stavba (status: built). Dlouhá bílá mramorová síň ve třech

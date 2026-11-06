@@ -10,24 +10,25 @@ import ImageSlider from "../components/ImageSlider";
 import data from "../data/evoluzion-data.json";
 
 export default function EvoluzionPage() {
-  const [lang, setLang] = useState<"cs" | "en">("cs");
+  const [lang, setLang] = useState<"cs" | "en" | "es" | "pt" | "fr">("cs");
+  const copy = lang === "cs" ? "cs" : "en";
 
   const t = {
-    hero: data.hero[lang],
-    manifest: data.manifest[lang],
-    head: data.head2008[lang],
-    stats: data.stats[lang],
-    pillarsTitle: data.pillarsTitle[lang],
-    pillars: data.pillars[lang],
-    timelineTitle: data.timelineTitle[lang],
-    timeline: data.timeline[lang],
-    gallery: { ...data.gallery, ...data.gallery[lang] },
-    dropsTitle: data.dropsTitle[lang],
-    drops: data.drops[lang],
-    music: { ...data.music[lang], spotify: data.music.spotify },
-    cta: data.cta[lang],
-    connect: { ...data.connect, ...data.connect[lang], links: data.connect.links },
-    footer: data.footer[lang],
+    hero: data.hero[copy],
+    manifest: data.manifest[copy],
+    head: data.head2008[copy],
+    stats: data.stats[copy],
+    pillarsTitle: data.pillarsTitle[copy],
+    pillars: data.pillars[copy],
+    timelineTitle: data.timelineTitle[copy],
+    timeline: data.timeline[copy],
+    gallery: { ...data.gallery, ...data.gallery[copy] },
+    dropsTitle: data.dropsTitle[copy],
+    drops: data.drops[copy],
+    music: { ...data.music[copy], spotify: data.music.spotify },
+    cta: data.cta[copy],
+    connect: { ...data.connect, ...data.connect[copy], links: data.connect.links },
+    footer: data.footer[copy],
   };
 
   return (

@@ -116,7 +116,7 @@ function Planet({
 }: {
   def: PlanetDef;
   index: number;
-  lang: 'cs' | 'en';
+  lang: 'cs' | 'en' | 'es' | 'pt' | 'fr';
   selected: boolean;
   onSelect?: (id: PlanetId) => void;
   /** Brána je dítě planety — obíhá s ní (Jupiter ji drží pořád nablízku). */
@@ -260,7 +260,7 @@ export function SolarSystem({
   onOpenPark?: () => void;
   onSelectPlanet?: (id: PlanetId) => void;
   focused?: string;
-  lang?: 'cs' | 'en';
+  lang?: 'cs' | 'en' | 'es' | 'pt' | 'fr';
   /** Brána do OASIS — vykreslí se jako dítě Jupiteru. */
   gatePortal?: Portal | null;
   onOpenPortal?: (id: string) => void;

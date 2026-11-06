@@ -11,7 +11,7 @@ import { KeyLight, SceneInstances, ScenePalms, SceneTerrain, SceneWater, SkyFill
  * takže se chová jako `en` (`cs` je false). Když scéna dostane vlastní ES text,
  * patří sem stejně jako cs/en.
  */
-type Lang = 'cs' | 'en' | 'es';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ─── Bodhi Lanka — Akáša Node, Srí Lanka ─────────────────────────────
  * Dle koncept boardu: centrální Sri Maha Bodhi (živý strom osvícení) na

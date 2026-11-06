@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type * as Leaflet from 'leaflet';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 /* ── verified waypoints (Nominatim / user-provided parcel) ── */
 const P = {

@@ -5,7 +5,7 @@ import { OrbitControls, Html, Stars } from '@react-three/drei';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 
-type Lang = 'cs' | 'en';
+type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 interface ModuleData {
   angle: number;
@@ -262,7 +262,7 @@ function BioDome({
             className="pointer-events-none whitespace-nowrap rounded border bg-black/70 px-2 py-1 text-[10px] font-semibold shadow-lg"
             style={{ borderColor: `${labelColor}55`, color: labelColor }}
           >
-            {label[lang]}
+            {label[lang as 'cs' | 'en'] ?? label.en}
           </div>
         </Html>
       )}
