@@ -1,8 +1,11 @@
-export type Lang = 'cs' | 'en';
+export type Lang = 'cs' | 'en' | 'es' | 'pt' | 'fr';
 
 export interface TranslationEntry {
   cs: string;
   en: string;
+  es?: string;
+  pt?: string;
+  fr?: string;
 }
 
 function applyParams(value: string, params?: Record<string, string | number>): string {
@@ -15,42 +18,45 @@ function applyParams(value: string, params?: Record<string, string | number>): s
 
 const t = {
   nav: {
-    home: { cs: 'Domů', en: 'Home' },
-    explore: { cs: 'Prozkoumat', en: 'Explore' },
-    shop: { cs: 'Obchod', en: 'Shop' },
-    create: { cs: 'Vytvořit', en: 'Create' },
-    ai: { cs: 'AI', en: 'AI' },
-    pool: { cs: 'Pool', en: 'Pool' },
-    cart: { cs: 'Košík', en: 'Cart' },
-    cartAria: { cs: 'Košík', en: 'Cart' },
-    menu: { cs: 'Menu', en: 'Menu' },
-    logoPrimary: { cs: 'ZION Market', en: 'ZION Market' },
-    logoSecondary: { cs: 'OASIS Artefakty', en: 'OASIS Artifacts' },
-    open: { cs: 'Otevřít menu', en: 'Open menu' },
-    close: { cs: 'Zavřít menu', en: 'Close menu' },
+    home: { cs: 'Domů', en: 'Home', es: 'Inicio', pt: 'Início', fr: 'Accueil' },
+    explore: { cs: 'Prozkoumat', en: 'Explore', es: 'Explorar', pt: 'Explorar', fr: 'Explorer' },
+    shop: { cs: 'Obchod', en: 'Shop', es: 'Tienda', pt: 'Loja', fr: 'Boutique' },
+    create: { cs: 'Vytvořit', en: 'Create', es: 'Crear', pt: 'Criar', fr: 'Créer' },
+    ai: { cs: 'AI', en: 'AI', es: 'IA', pt: 'IA', fr: 'IA' },
+    pool: { cs: 'Pool', en: 'Pool', es: 'Pool', pt: 'Pool', fr: 'Pool' },
+    cart: { cs: 'Košík', en: 'Cart', es: 'Carrito', pt: 'Carrinho', fr: 'Panier' },
+    cartAria: { cs: 'Košík', en: 'Cart', es: 'Carrito', pt: 'Carrinho', fr: 'Panier' },
+    menu: { cs: 'Menu', en: 'Menu', es: 'Menú', pt: 'Menu', fr: 'Menu' },
+    logoPrimary: { cs: 'ZION Market', en: 'ZION Market', es: 'ZION Market', pt: 'ZION Market', fr: 'ZION Market' },
+    logoSecondary: { cs: 'OASIS Artefakty', en: 'OASIS Artifacts', es: 'Artefactos OASIS', pt: 'Artefactos OASIS', fr: 'Artefacts OASIS' },
+    open: { cs: 'Otevřít menu', en: 'Open menu', es: 'Abrir menú', pt: 'Abrir menu', fr: 'Ouvrir le menu' },
+    close: { cs: 'Zavřít menu', en: 'Close menu', es: 'Cerrar menú', pt: 'Fechar menu', fr: 'Fermer le menu' },
     switchToEnglish: { cs: 'Přepnout do angličtiny', en: 'Switch to English' },
     switchToCzech: { cs: 'Přepnout do češtiny', en: 'Switch to Czech' },
     langCs: { cs: 'CS', en: 'CS' },
     langEn: { cs: 'EN', en: 'EN' },
-    connectWallet: { cs: 'Připojit peněženku', en: 'Connect Wallet' },
-    connecting: { cs: 'Připojování…', en: 'Connecting…' },
-    chooseWallet: { cs: 'Vyberte peněženku', en: 'Choose wallet' },
+    connectWallet: { cs: 'Připojit peněženku', en: 'Connect Wallet', es: 'Conectar cartera', pt: 'Ligar carteira', fr: 'Connecter le portefeuille' },
+    connecting: { cs: 'Připojování…', en: 'Connecting…', es: 'Conectando…', pt: 'A ligar…', fr: 'Connexion…' },
+    chooseWallet: { cs: 'Vyberte peněženku', en: 'Choose wallet', es: 'Elige cartera', pt: 'Escolhe a carteira', fr: 'Choisir le portefeuille' },
     viewOnBasescan: { cs: 'Zobrazit na Basescanu ↗', en: 'View on Basescan ↗' },
-    myProfile: { cs: 'Můj profil', en: 'My Profile' },
-    disconnect: { cs: 'Odpojit', en: 'Disconnect' },
+    myProfile: { cs: 'Můj profil', en: 'My Profile', es: 'Mi perfil', pt: 'O meu perfil', fr: 'Mon profil' },
+    disconnect: { cs: 'Odpojit', en: 'Disconnect', es: 'Desconectar', pt: 'Desligar', fr: 'Déconnecter' },
     wrongNetwork: { cs: 'Špatná síť — přepněte na Base', en: 'Wrong network — switch to Base' },
   },
 
   hero: {
-    kicker: { cs: 'ZION TerraNova · OASIS univerzum', en: 'ZION TerraNova · OASIS universe' },
-    title1: { cs: 'OASIS Artefakt', en: 'OASIS Artifact' },
-    title2: { cs: 'Tržiště', en: 'Marketplace' },
+    kicker: { cs: 'ZION TerraNova · OASIS univerzum', en: 'ZION TerraNova · OASIS universe', es: 'ZION TerraNova · universo OASIS', pt: 'ZION TerraNova · universo OASIS', fr: 'ZION TerraNova · univers OASIS' },
+    title1: { cs: 'OASIS Artefakt', en: 'OASIS Artifact', es: 'Artefacto OASIS', pt: 'Artefacto OASIS', fr: 'Artefact OASIS' },
+    title2: { cs: 'Tržiště', en: 'Marketplace', es: 'Mercado', pt: 'Mercado', fr: 'Marché' },
     description: {
       cs: 'Brána do světa OASIS — digitální kniha Království srdce s přístupem do ZION Archivu a sbírka unikátních artefaktů. Tržiště odstartuje spolu se spuštěním OASIS.',
       en: 'Your gateway into the OASIS world — the digital book Kingdom of Hearts with ZION Archive access, and a collection of unique artifacts. The marketplace launches together with the OASIS world.',
+      es: 'La puerta al mundo OASIS — el libro digital Reino del Corazón con acceso al Archivo ZION y una colección de artefactos únicos. El mercado arranca junto con OASIS.',
+      pt: 'A porta para o mundo OASIS — o livro digital Reino do Coração com acesso ao Arquivo ZION e uma coleção de artefactos únicos. O mercado arranca com o OASIS.',
+      fr: 'La porte du monde OASIS — le livre numérique Royaume du Cœur avec l’accès aux Archives ZION et une collection d’artefacts uniques. Le marché s’ouvre avec OASIS.',
     },
-    ctaPrimary: { cs: 'Prozkoumat artefakty', en: 'Browse Artifacts' },
-    ctaSecondary: { cs: 'Koupit knihu', en: 'Buy the Book' },
+    ctaPrimary: { cs: 'Prozkoumat artefakty', en: 'Browse Artifacts', es: 'Ver artefactos', pt: 'Ver artefactos', fr: 'Voir les artefacts' },
+    ctaSecondary: { cs: 'Koupit knihu', en: 'Buy the Book', es: 'Comprar el libro', pt: 'Comprar o livro', fr: 'Acheter le livre' },
   },
 
   stats: {
@@ -149,10 +155,10 @@ const t = {
       en: 'Light of the heart for a new land',
     },
     lampionDescription: {
-      cs: 'Ručně gravírovaný lampion se vzorem Srdce Království — z tesařské dílny příběhu. Vánoční edice: ke každému lampionu digitální kniha Království srdce a ZION Pass v ceně a 43 200 ZION bonusů. Připravujeme — prodej zahájíme, jakmile bude výrobek hotový.',
-      en: 'A hand-engraved lantern bearing the Heart of the Kingdom pattern — straight from the carpenter\'s workshop of the story. Christmas edition: every lantern includes the digital Kingdom of Hearts book and a ZION Pass, plus a 43,200 ZION bonus. Coming soon — sales open once the craft is ready.',
+      cs: 'Lampion Lumi 2 — šestihranná lucerna vyřezávaná a gravírovaná laserem z 3mm březové překližky, se vzorem Srdce Království. Vánoční edice: ke každému lampionu digitální kniha Království srdce a ZION Pass v ceně a 43 200 ZION bonusů. Připravujeme — prodej zahájíme, jakmile bude výrobek hotový.',
+      en: 'The Lumi 2 lantern — a hexagonal lamp laser-cut and engraved from 3 mm birch plywood, bearing the Heart of the Kingdom pattern. Christmas edition: every lantern includes the digital Kingdom of Hearts book and a ZION Pass, plus a 43,200 ZION bonus. Coming soon — sales open once the craft is ready.',
     },
-    lampionChipEngraved: { cs: 'Ruční gravírování', en: 'Hand-engraved' },
+    lampionChipEngraved: { cs: 'Laserové vyřezávání', en: 'Laser-cut' },
     lampionChipBook: {
       cs: '+ kniha a ZION Pass v ceně',
       en: '+ book and ZION Pass included',
@@ -1153,12 +1159,12 @@ export function tr(
 ): string {
   const sectionObj = (t as Record<string, Record<string, TranslationEntry>>)[section];
   const entry = sectionObj?.[key];
-  const value = entry?.[lang] ?? entry?.cs ?? key;
+  const value = (lang === 'cs' ? entry?.cs : entry?.[lang] ?? entry?.en ?? entry?.cs) ?? key;
   return applyParams(value, params);
 }
 
 export function tx(entry: TranslationEntry, lang: Lang, params?: Record<string, string | number>): string {
-  const value = entry[lang] ?? entry.cs;
+  const value = lang === 'cs' ? entry.cs : entry[lang] ?? entry.en ?? entry.cs;
   return applyParams(value, params);
 }
 

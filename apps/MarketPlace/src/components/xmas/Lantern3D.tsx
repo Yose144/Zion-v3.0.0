@@ -5,11 +5,19 @@ import { Box, Loader2, Maximize2, Rotate3d, TriangleAlert } from 'lucide-react';
 import { useLangT } from '@/lib/useTranslation';
 
 /**
- * 3D náhled lampionu Království srdce.
+ * 3D náhled lampionu Království srdce — Lumi 2.
  *
- * Model: `public/models/lampion-kralovstvi-srdce.glb` (8 dílů, ~236 k trojúhelníků,
- * reálné míry z A3 v6, Y-up, metry). Když soubor chybí, ukáže se „připravujeme"
- * — díky tomu jde model vyměnit bez zásahu do kódu.
+ * Model: `public/models/lumi-2.glb` (8 dílů — šest stěn, zdobený vršek, dno —
+ * 214 k trojúhelníků, skutečné míry výpalu: 140 × 126 × 121 mm, Y-up, metry).
+ * Vzniká z `heros/shop/Lumi/Lumi_2.glb` skriptem
+ * `scripts/ops/lumi-glb-optimize.sh` (meshopt, 12 MB → 1,9 MB). Když soubor
+ * chybí, ukáže se „připravujeme" — díky tomu jde model vyměnit bez zásahu
+ * do kódu.
+ *
+ * Materiály modelu se **nepřepisují**: `Překližka` / `Řez` / `Gravír` nesou
+ * opálenou hranu laseru a tmavý gravír. Přemalovat je jednou barvou by
+ * z lampionu udělalo papírovou krabici (přesně tak vypadal starý model v6,
+ * který měl jediný krémový materiál a žádné normály).
  *
  * Proč click-to-load: `three` + postprocessing jsou ~700 kB. Načítat je při
  * každém otevření detailu (i lidem, co se přišli jen podívat na cenu) by zabilo
@@ -64,6 +72,7 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
     try {
       const THREE = await import('three');
       const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
+      const { MeshoptDecoder } = await import('three/examples/jsm/libs/meshopt_decoder.module.js');
       const { RoomEnvironment } = await import('three/examples/jsm/environments/RoomEnvironment.js');
 
       const host = mountRef.current;
@@ -214,7 +223,11 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
       const pivot = new THREE.Group();
       scene.add(pivot);
 
+      // Model je zabalený `EXT_meshopt_compression` (12 MB → 1,9 MB, viz
+      // scripts/ops/lumi-glb-optimize.sh). Bez dekodéru by se nenačetl vůbec;
+      // je součástí `three`, takže se nic nedotahuje ze sítě.
       const loader = new GLTFLoader();
+      loader.setMeshoptDecoder(MeshoptDecoder);
       let raf = 0;
       let disposed = false;
       let dragging = false;
@@ -679,8 +692,8 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
                 </button>
                 <p className="max-w-xs text-[11px] leading-snug text-gray-400">
                   {cs
-                    ? 'Model má 8 vyřezávaných dílů a stahuje se až po kliknutí — kvůli rychlosti stránky.'
-                    : 'The model has 8 carved parts and downloads only after you click — to keep the page fast.'}
+                    ? 'Model je skutečný výpal — šest stěn, zdobený vršek a dno. Stahuje se až po kliknutí, kvůli rychlosti stránky.'
+                    : 'The model is the real cut: six walls, the carved crown and the base. It downloads only after you click, to keep the page fast.'}
                 </p>
               </>
             )}

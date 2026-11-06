@@ -288,6 +288,18 @@ function OrderModal({ order, onClose, onRefresh, onAction }: OrderModalProps) {
                     <div><span className="text-gray-500">Adresa:</span> {order.addressStreet}, {order.addressZip} {order.addressCity}</div>
                   )}
                   <div><span className="text-gray-500">Newsletter:</span> {order.newsletter ? '✅ Ano' : 'Ne'}</div>
+                  {order.fireConsentName && (
+                    <div className="mt-2 rounded-lg border border-red-500/40 bg-red-500/10 p-2 text-xs leading-relaxed">
+                      🔥 <span className="text-gray-400">Bezpečnostní prohlášení (oheň):</span>{' '}
+                      <strong>{order.fireConsentName}</strong>
+                      {order.fireConsentAt && (
+                        <span className="text-gray-500"> · {new Date(order.fireConsentAt).toLocaleString('cs-CZ')}</span>
+                      )}
+                      {order.fireConsentVersion && (
+                        <span className="text-gray-500"> · {order.fireConsentVersion}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

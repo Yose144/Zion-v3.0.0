@@ -36,8 +36,7 @@ export default function StatusBanner() {
   const [lang, setLang] = useState<'cs' | 'en'>('cs');
 
   useEffect(() => {
-    const l = document.documentElement.lang;
-    if (l === 'en' || l === 'cs') setLang(l);
+    setLang(document.documentElement.lang === 'cs' ? 'cs' : 'en');
     fetch('/status.json', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((j: StatusNotice | null) => {

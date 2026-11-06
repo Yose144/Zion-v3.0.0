@@ -3,11 +3,25 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart, Trash2, Minus, Plus, Truck, User, CreditCard, Check, AlertTriangle, X } from 'lucide-react';
+import { ShoppingCart, Trash2, Minus, Plus, Truck, User, CreditCard, Check, AlertTriangle, X, Flame } from 'lucide-react';
 import { useCart } from '@/components/shop/CartContext';
 import { SHIPPING_PRICES, type ShippingMethod } from '@/types/shop';
 import { isVirtualOnlyCart, createShopOrder, createStripeCheckoutSession, createCommerceCheckout, trackOrder } from '@/lib/shop-api';
 import { useLangT } from '@/lib/useTranslation';
+import { FIRE_CONSENT_VERSION, FIRE_SAFETY, requiresFireConsent } from '@/lib/fire-safety';
+
+/** Zvýraznění **tučného** v bezpečnostních bodech (stejná konvence jako detail produktu). */
+function renderBold(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, index) =>
+    part.startsWith('**') && part.endsWith('**') ? (
+      <strong key={index} className="text-white font-semibold">
+        {part.slice(2, -2)}
+      </strong>
+    ) : (
+      part
+    ),
+  );
+}
 
 const shippingOptions: { value: ShippingMethod; labelKey: string; descKey: string; price: number }[] = [
   { value: 'zasilkovna', labelKey: 'cart.shippingZasilkovna', descKey: 'cart.shippingZasilkovnaDesc', price: SHIPPING_PRICES.zasilkovna },
@@ -35,7 +49,8 @@ type ZionPayData = {
 export default function CartPage() {
   const { items, count, total, updateQuantity, remove, clear } = useCart();
   const router = useRouter();
-  const { t } = useLangT();
+  const { t, lang } = useLangT();
+  const pick = (text: { cs: string; en: string }) => (lang === 'cs' ? text.cs : text.en);
 
   const [shipping, setShipping] = useState<ShippingMethod>('zasilkovna');
   const [payment, setPayment] = useState<'transfer' | 'card' | 'crypto' | 'zion' | 'commerce'>('transfer');
@@ -56,6 +71,9 @@ export default function CartPage() {
   const [isCompany, setIsCompany] = useState(false);
   const [terms, setTerms] = useState(false);
   const [newsletter, setNewsletter] = useState(false);
+  // Svíčkové zboží (lampion ze dřeva) — odsouhlasení + digitální podpis
+  const [fireAck, setFireAck] = useState(false);
+  const [fireSignature, setFireSignature] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showQr, setShowQr] = useState(false);
   const [orderResult, setOrderResult] = useState<{
@@ -68,6 +86,13 @@ export default function CartPage() {
   const [zionPaid, setZionPaid] = useState(false);
 
   const virtualOnly = useMemo(() => isVirtualOnlyCart(items), [items]);
+  /**
+   * Bezpečnostní prohlášení se týká jen zboží se skutečným plamenem.
+   * Rozhoduje se z košíku (stejná funkce běží i na serveru, takže se nedá
+   * obejít vypnutým JavaScriptem).
+   */
+  const needsFireConsent = useMemo(() => requiresFireConsent(items), [items]);
+  const fireSigned = fireAck && fireSignature.trim().length >= 3;
   const cardEnabled = caps?.modes.card ?? false;
   const zionEnabled = caps?.modes.zion ?? true;
   const commerceEnabled = caps?.modes.commerce ?? false;
@@ -112,6 +137,7 @@ export default function CartPage() {
     terms &&
     (!needsAddress || (form.street && form.city && form.zip)) &&
     (!needsPickup || form.pickupPoint.trim().length >= 3) &&
+    (!needsFireConsent || fireSigned) &&
     (!isCompany || (form.companyName.trim() && /^\d{8}$/.test(form.ico.replace(/\s/g, ''))));
 
   const formatPrice = (price: number) => t('common.price', { price, symbol: t('common.kcSymbol') });
@@ -153,6 +179,15 @@ export default function CartPage() {
       total: finalTotal,
       zionTokens,
       termsAccepted: terms,
+      // U zboží se svíčkou se ukládá jméno + čas + verze textu (důkaz poučení)
+      fireSafety: needsFireConsent
+        ? {
+            accepted: fireAck,
+            signature: fireSignature.trim(),
+            version: FIRE_CONSENT_VERSION,
+            signedAt: new Date().toISOString(),
+          }
+        : undefined,
     });
 
     if (result?.success && result.data) {
@@ -568,6 +603,51 @@ export default function CartPage() {
             </div>
           </div>
 
+          {/* Bezpečnost — jen když košík obsahuje zboží s otevřeným plamenem */}
+          {needsFireConsent && (
+            <div className="zion-section p-5 border-2 border-rasta-red/40 bg-rasta-red/5">
+              <h2 className="text-lg font-black font-display mb-2 flex items-center gap-2">
+                <Flame className="w-5 h-5 text-rasta-gold" />
+                <span className="text-gradient-gold">{pick(FIRE_SAFETY.title)}</span>
+              </h2>
+              <p className="text-sm text-gray-300 leading-relaxed mb-3">{pick(FIRE_SAFETY.lead)}</p>
+              <ol className="space-y-2 text-sm text-gray-300 mb-3">
+                {FIRE_SAFETY.points.map((point, index) => (
+                  <li key={index} className="flex gap-2">
+                    <span className="text-rasta-gold font-bold shrink-0">{index + 1}.</span>
+                    <span>{renderBold(pick(point))}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="text-xs text-gray-400 leading-relaxed mb-4">{pick(FIRE_SAFETY.disclaimer)}</p>
+
+              <label className="flex items-start gap-3 text-sm mb-3">
+                <input
+                  type="checkbox"
+                  checked={fireAck}
+                  onChange={(e) => setFireAck(e.target.checked)}
+                  className="mt-1 accent-rasta-green"
+                  required
+                />
+                <span className="text-gray-300">{pick(FIRE_SAFETY.ackLabel)}</span>
+              </label>
+
+              <label className="block text-sm">
+                <span className="block mb-1 text-gray-400">{pick(FIRE_SAFETY.signatureLabel)}</span>
+                <input
+                  type="text"
+                  value={fireSignature}
+                  onChange={(e) => setFireSignature(e.target.value)}
+                  placeholder={form.name || ''}
+                  className="input-zion w-full"
+                  autoComplete="off"
+                  required
+                />
+                <span className="mt-1 block text-[11px] text-gray-500">{pick(FIRE_SAFETY.signatureHint)}</span>
+              </label>
+            </div>
+          )}
+
           {/* Summary */}
           <div className="zion-section p-5 border-2 border-rasta-gold/30 bg-rasta-gold/5">
             <h2 className="text-lg font-black font-display mb-4 flex items-center gap-2 text-gradient-gold">
@@ -623,7 +703,7 @@ export default function CartPage() {
               {submitting ? (
                 t('cart.submitting')
               ) : !canSubmit ? (
-                <span className="inline-flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> {t('cart.fillRequired')}</span>
+                <span className="inline-flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> {needsFireConsent && !fireSigned ? pick(FIRE_SAFETY.requiredError) : t('cart.fillRequired')}</span>
               ) : (
                 <span className="inline-flex items-center gap-2"><Check className="w-4 h-4" /> {t('cart.completeOrder')}</span>
               )}

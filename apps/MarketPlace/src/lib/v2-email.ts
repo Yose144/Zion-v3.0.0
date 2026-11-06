@@ -254,11 +254,19 @@ ${t('Platbu prosím uhraďte do 7 dnů.', 'Please pay within 7 days.')}`;
   return '';
 }
 
-function formatDigitalDownloadsText(order: OrderEmailData, lang: EmailLang = 'cs'): string {
+export function formatDigitalDownloadsText(order: OrderEmailData, lang: EmailLang = 'cs'): string {
   const t = (cs: string, en: string) => tl(lang, cs, en);
   const items = Array.isArray(order.items) ? (order.items as Record<string, unknown>[]) : [];
   const digi = items.filter((it) => {
     if (it.digital === true) return true;
+    /**
+     * **Fyzické zboží sem nepatří.** Dřevěné stíhačky jsou vypalované kity —
+     * `digital: false` — ale mají `modelUrl` (3D náhled) a `instructionsUrl`
+     * (plány u autora), takže se dřív objevily v sekci „Digitální stažení"
+     * a zákazník si mohl myslet, že si koupil soubory. `false` je rozhodnutí,
+     * ne „nevím" — respektuje se.
+     */
+    if (it.digital === false) return false;
     return Boolean(it.filesUrl || it.instructionsUrl || it.modelUrl);
   });
   if (digi.length === 0) return '';
@@ -281,11 +289,13 @@ ${rows.join('\n')}
 ${t('Uložte si odkazy pro pozdější použití.', 'Save the links for later.')}`;
 }
 
-function formatDigitalDownloadsHtml(order: OrderEmailData, lang: EmailLang = 'cs'): string {
+export function formatDigitalDownloadsHtml(order: OrderEmailData, lang: EmailLang = 'cs'): string {
   const t = (cs: string, en: string) => tl(lang, cs, en);
   const items = Array.isArray(order.items) ? (order.items as Record<string, unknown>[]) : [];
   const digi = items.filter((it) => {
     if (it.digital === true) return true;
+    // fyzické zboží (vypalované kity) nemá digitální dodávku — viz text varianta
+    if (it.digital === false) return false;
     return Boolean(it.filesUrl || it.instructionsUrl || it.modelUrl);
   });
   if (digi.length === 0) return '';

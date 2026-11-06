@@ -62,4 +62,11 @@ export interface ShopOrderInput {
   total: number;
   zionTokens: number;
   termsAccepted: boolean;
+  /** U zboží s otevřeným plamenem — odsouhlasení + digitální podpis */
+  fireSafety?: {
+    accepted: boolean;
+    signature: string;
+    version: string;
+    signedAt: string;
+  };
 }

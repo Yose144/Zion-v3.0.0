@@ -1,8 +1,14 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import {
+  isPublicLang,
+  readPublicLang,
+  writePublicLang,
+  type PublicLang,
+} from '../../../shared/i18n/persist';
 
-export type Lang = 'cs' | 'en';
+export type Lang = PublicLang;
 
 interface LanguageContextType {
   lang: Lang;
@@ -15,26 +21,22 @@ const LanguageContext = createContext<LanguageContextType>({
 });
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  // Default to 'cs' for SSR and the first client render to avoid hydration mismatches.
   const [lang, setLangState] = useState<Lang>('cs');
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem('zion-lang') as Lang | null;
-      if (stored === 'cs' || stored === 'en') {
-        setLangState(stored);
-      }
-    } catch { /* SSR or privacy mode */ }
+    const stored = readPublicLang();
+    if (stored) setLangState(stored);
   }, []);
 
   const setLang = (l: Lang) => {
+    if (!isPublicLang(l)) return;
     setLangState(l);
-    try { localStorage.setItem('zion-lang', l); } catch {}
+    writePublicLang(l);
   };
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    document.documentElement.lang = lang === 'en' ? 'en' : 'cs';
+    document.documentElement.lang = lang;
   }, [lang]);
 
   return (

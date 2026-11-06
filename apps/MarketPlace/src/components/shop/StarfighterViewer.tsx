@@ -6,14 +6,16 @@ import { useEffect, useRef, useState } from 'react';
 import type * as Three from 'three';
 
 /**
- * 3D náhled produktu — **stejný model jako ve hře**.
+ * 3D náhled produktu — **stejný model jako ve hře / ve výrobě**.
  *
  * Historicky tu bylo holé STL (`/shop/models/*.stl`) s jedním šedým
  * `MeshStandardMaterial`: vypadalo to jako CAD náhled, ne jako produkt.
- * Od 2026-11-05 se načítá **herní GLB** (`/shop/models3d/*.glb`), které
- * vzniká konverzí téhož STL (`scripts/ops/starfighter-glb.py`) a nese
+ * Od 2026-11-05 se u stíhaček načítá **herní GLB** (`/shop/models3d/*.glb`),
+ * které vzniká konverzí téhož STL (`scripts/ops/starfighter-glb.py`) a nese
  * panelový lak ve vrcholových barvách — takže karta v marketu ukazuje přesně
  * to, co hráč dostane v Nirvaně. Kdyby se modely rozešly, je to chyba.
+ * Stejnou cestou jde i **lampion Lumi 2** (`/models/lumi-2.glb`), který
+ * na rozdíl od lodí má vlastní dřevěné materiály (viz `applyModel`).
  *
  * Tři věci, které se nesmí zjednodušit:
  *  1. **`side: DoubleSide`** — model je soubor otevřených destiček, mezerami
@@ -27,7 +29,7 @@ import type * as Three from 'three';
  */
 
 /** Starší název — kvůli importům z jiných komponent. */
-const LOCAL_MODEL = /^\/shop\/models3?d?\/[a-z0-9_-]+\.(stl|glb)$/i;
+const LOCAL_MODEL = /^(?:\/shop\/models3?d?|\/models)\/[a-z0-9_-]+\.(stl|glb)$/i;
 
 export function isLocalModel(url?: string | null): url is string {
   return typeof url === 'string' && LOCAL_MODEL.test(url);
@@ -145,28 +147,56 @@ export default function StarfighterViewer({ url }: { url: string }) {
         controls.update();
       };
 
-      const onModel = (object: Three.Object3D) => {
+      const onModel = (object: Three.Object3D, note = 'táhni pro otočení · zelené tóny') => {
         if (stopped) return;
         scene.add(object);
         frameObject(object);
-        setNote('táhni pro otočení · zelené tóny');
+        setNote(note);
       };
 
       const glb = /\.glb$/i.test(url);
 
-      /** Zpracování jednoho modelu — GLB má barvy i normály, STL ne. */
+      /**
+       * Zpracování jednoho modelu.
+       *
+       * `GLB` ze hry (stíhačky) nese panelový lak ve **vrcholových barvách**
+       * a jeden sdílený materiál — tam se materiál nahrazuje herním, aby karta
+       * ukazovala přesně to, co hráč vidí v Nirvaně.
+       *
+       * Lampion (`/models/lumi-2.glb`) má naopak **tři vlastní materiály**
+       * (`Překližka` / `Řez` / `Gravír`) a vrcholové barvy nemá. Přemalovat ho
+       * jedním lakem by z něj udělalo papírovou krabici, takže se jeho
+       * materiály nechávají — jen se srovná `DoubleSide` (destičky jsou
+       * otevřené plochy) a odlesky prostředí.
+       */
       const applyModel = (result: unknown) => {
         if (stopped) return;
         if (glb) {
           const root = (result as { scene: Three.Group }).scene;
+          const meshes: Three.Mesh[] = [];
           root.traverse((child: Three.Object3D) => {
             const mesh = child as Three.Mesh;
-            if (!mesh.isMesh) return;
-            const material = hullMaterial();
-            mesh.material = material;
-            disposers.push(() => material.dispose());
+            if (mesh.isMesh) meshes.push(mesh);
           });
-          onModel(root);
+          const hasVertexColors = meshes.some((mesh) => Boolean(mesh.geometry.getAttribute('color')));
+          for (const mesh of meshes) {
+            if (hasVertexColors) {
+              const material = hullMaterial();
+              mesh.material = material;
+              disposers.push(() => material.dispose());
+              continue;
+            }
+            const own = (Array.isArray(mesh.material) ? mesh.material : [mesh.material]) as Three.MeshStandardMaterial[];
+            const kept = own.map((material) => {
+              const clone = material.clone() as Three.MeshStandardMaterial;
+              clone.side = THREE.DoubleSide;
+              clone.envMapIntensity = 0.7;
+              disposers.push(() => clone.dispose());
+              return clone;
+            });
+            mesh.material = Array.isArray(mesh.material) ? kept : kept[0];
+          }
+          onModel(root, hasVertexColors ? 'táhni pro otočení · zelené tóny' : 'táhni pro otočení · dřevo a gravír');
           return;
         }
         const geometry = (result as Three.BufferGeometry).clone();
@@ -188,7 +218,12 @@ export default function StarfighterViewer({ url }: { url: string }) {
 
       if (glb) {
         const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
-        new GLTFLoader().load(url, applyModel, undefined, handleError);
+        // lampion je zabalený `EXT_meshopt_compression` (12 MB → 1,9 MB);
+        // bez dekodéru by se nenačetl. Dekodér je součástí `three`.
+        const { MeshoptDecoder } = await import('three/examples/jsm/libs/meshopt_decoder.module.js');
+        const loader = new GLTFLoader();
+        loader.setMeshoptDecoder(MeshoptDecoder);
+        loader.load(url, applyModel, undefined, handleError);
       } else {
         const { STLLoader } = await import('three/examples/jsm/loaders/STLLoader.js');
         new STLLoader().load(url, applyModel, undefined, handleError);

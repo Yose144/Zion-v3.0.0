@@ -11,6 +11,7 @@ import { createInvoiceForOrder } from '@/lib/invoice';
 import { generateCustomerWallet } from '@/lib/zion-l1';
 import { encryptSecret } from '@/lib/crypto';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
+import { FIRE_CONSENT_VERSION, requiresFireConsent } from '@/lib/fire-safety';
 import {
   SHOP_VAULT,
   shopPayMemo,
@@ -193,6 +194,35 @@ export async function POST(req: NextRequest) {
     const shippingCzk = SHIPPING_PRICES[shippingMethod];
     const totalCzk = itemsTotal + shippingCzk;
 
+    // ── Bezpečnostní prohlášení (oheň + dřevo) ─────────────────────
+    // U zboží s otevřeným plamenem musí být prohlášení odsouhlasené a
+    // podepsané. Když chybí, objednávka se odmítne — vypnutý JavaScript
+    // v prohlížeči není výmluva a podpis musí být doložitelný.
+    const fireRequired = requiresFireConsent(lineItems);
+    const fireSignature =
+      typeof body.fireSafety?.signature === 'string' ? body.fireSafety.signature.trim() : '';
+    const fireVersion =
+      typeof body.fireSafety?.version === 'string' && body.fireSafety.version
+        ? body.fireSafety.version
+        : FIRE_CONSENT_VERSION;
+    if (fireRequired) {
+      if (!body.fireSafety?.accepted || fireSignature.length < 3 || fireSignature.length > 120) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Fire safety consent and digital signature required',
+            code: 'fire_consent_required',
+          },
+          { status: 400 },
+        );
+      }
+      if (fireVersion !== FIRE_CONSENT_VERSION) {
+        // Zákazník podepsal jiné znění, než jaké je aktuální — uložíme, co
+        // poslal (důkaz), ale upozorníme do logu, aby šlo dohledat.
+        console.warn(`order ${body.orderId}: fire consent version ${fireVersion} != ${FIRE_CONSENT_VERSION}`);
+      }
+    }
+
     // ── Wallet + order create + stock decrement (transaction) ───────
     let customerWallet: ReturnType<typeof generateCustomerWallet> | null = null;
     if (zionTokens > 0) {
@@ -232,6 +262,10 @@ export async function POST(req: NextRequest) {
           customerWalletSecretKey: customerWallet ? encryptSecret(customerWallet.secretKey) : null,
           termsAccepted: body.termsAccepted,
           newsletter: body.customer.newsletter ?? false,
+          // Důkaz poučení: jméno, čas (server) a verze textu prohlášení
+          fireConsentName: fireRequired ? fireSignature : null,
+          fireConsentAt: fireRequired ? new Date() : null,
+          fireConsentVersion: fireRequired ? fireVersion : null,
         },
       }),
       ...lineItems.map((li) =>

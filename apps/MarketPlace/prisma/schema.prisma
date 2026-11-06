@@ -246,6 +246,11 @@ model ShopOrder {
   statusHistory        Json?
   termsAccepted        Boolean  @default(false)
   newsletter           Boolean  @default(false)
+  // Bezpečnostní prohlášení u zboží s otevřeným plamenem (lampion Lumi 2).
+  // Digitální podpis = jméno, které zákazník napsal; čas = server; verze = text.
+  fireConsentName      String?
+  fireConsentAt        DateTime?
+  fireConsentVersion   String?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
   invoices             Invoice[]

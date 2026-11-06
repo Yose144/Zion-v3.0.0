@@ -12,6 +12,7 @@ import {
   ListOrdered,
   Mail,
   Milestone,
+  Flame,
   Package,
   Quote,
   ShoppingCart,
@@ -23,6 +24,7 @@ import { useLangT } from '@/lib/useTranslation';
 import ExperimentalNotice from '@/components/xmas/ExperimentalNotice';
 import FactsStrip from '@/components/xmas/FactsStrip';
 import Lantern3D from '@/components/xmas/Lantern3D';
+import { FIRE_SAFETY, requiresFireConsent } from '@/lib/fire-safety';
 
 /** Lehký renderer **tučného** inline markdownu v detailních odstavcích. */
 function renderInline(text: string) {
@@ -43,6 +45,8 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
   const pick = <T extends { cs: string; en: string }>(x: T) => (lang === 'cs' ? x.cs : x.en);
   const bonus = product.bonus.toLocaleString(lang === 'cs' ? 'cs-CZ' : 'en-US');
   const price = t('common.price', { price: product.priceCzk, symbol: t('common.kcSymbol') });
+  /** Svíčkové zboží = detail ukazuje i bezpečnostní blok (stejný text jako pokladna). */
+  const needsFireSafety = requiresFireConsent([{ externalId: product.externalId }]);
 
   return (
     <div className="space-y-8">
@@ -130,6 +134,57 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
               </span>
             ))}
           </div>
+
+          {/* Jak výrobek složit + bezpečnost (jen fyzické zboží se svíčkou) */}
+          {product.guide && (
+            <div id="slozeni" className="pt-6 space-y-4 scroll-mt-24">
+              <h2 className="text-xl font-bold font-display flex items-center gap-2">
+                <ListOrdered className="w-5 h-5 text-rasta-gold" />
+                {pick(product.guide.title)}
+              </h2>
+              <p className="text-sm md:text-[15px] text-gray-300 leading-relaxed">{pick(product.guide.intro)}</p>
+              <ol className="space-y-3">
+                {product.guide.steps.map((step, index) => (
+                  <li
+                    key={index}
+                    className="flex gap-3 rounded-xl border border-white/10 bg-white/5 p-3"
+                  >
+                    <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rasta-gold/15 text-xs font-bold text-rasta-gold">
+                      {index + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold text-white">{pick(step.title)}</div>
+                      <p className="mt-1 text-sm text-gray-300 leading-relaxed">{renderInline(pick(step.body))}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+
+              {needsFireSafety && (
+                <div className="rounded-xl border border-rasta-red/40 bg-rasta-red/5 p-4">
+                  <h3 className="mb-2 flex items-center gap-2 text-sm font-black uppercase tracking-wider text-rasta-gold">
+                    <Flame className="h-4 w-4" />
+                    {pick(FIRE_SAFETY.title)}
+                  </h3>
+                  <p className="mb-3 text-sm text-gray-300 leading-relaxed">{pick(FIRE_SAFETY.lead)}</p>
+                  <ol className="space-y-2 text-sm text-gray-300">
+                    {FIRE_SAFETY.points.map((point, index) => (
+                      <li key={index} className="flex gap-2">
+                        <span className="shrink-0 font-bold text-rasta-gold">{index + 1}.</span>
+                        <span>{renderInline(pick(point))}</span>
+                      </li>
+                    ))}
+                  </ol>
+                  <p className="mt-3 text-xs leading-relaxed text-gray-400">{pick(FIRE_SAFETY.disclaimer)}</p>
+                  <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
+                    {lang === 'cs'
+                      ? 'Před dokončením objednávky u pokladny tento text odsouhlasíte a podepíšete se jménem — podpis se uloží k objednávce i s časem.'
+                      : 'Before completing the order at checkout you will accept this text and sign it with your name — the signature is stored with the order along with the time.'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 3D slot — model se načte až po kliknutí, když je nahraný */}
           {product.model3d && (

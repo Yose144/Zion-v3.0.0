@@ -51,6 +51,16 @@ export interface XmasProduct {
   heroWide?: string;
   /** Cesta k 3D modelu (glb) — slot na detailu; když soubor chybí, ukáže se „připravujeme" */
   model3d?: string;
+  /**
+   * Jak výrobek složit (jen u fyzických kusů). Bezpečnostní blok se
+   * nepíše sem — ten drží `lib/fire-safety.ts`, aby pokladna, detail
+   * i e-mail mluvily stejně.
+   */
+  guide?: {
+    title: XmasText;
+    intro: XmasText;
+    steps: { title: XmasText; body: XmasText }[];
+  };
   /** Doplňkové snímky do galerie na detailu */
   gallery?: { src: string; alt: XmasText }[];
 }
@@ -600,7 +610,58 @@ export const christmasProducts: XmasProduct[] = [
     image: '/vanoce-lampion.webp?v=6',
     hero: '/vanoce/home/03_lampion_tesar_deti_v4.webp?v=6',
     heroWide: '/vanoce/hero/lampion-wide.webp?v=6',
-    model3d: '/models/lampion-kralovstvi-srdce.glb',
+    model3d: '/models/lumi-2.glb',
+    guide: {
+      title: { cs: 'Složení lampionu — šest kroků', en: 'Assembling the lantern — six steps' },
+      intro: {
+        cs: 'Lampion přijde jako ploché díly z 3mm překližky: šest stěn, zdobený vršek a dno. Skládá se bez nářadí, stačí dřevěné lepidlo a půl hodiny času. Návod je psaný tak, aby ho zvládl i ten, kdo nikdy nic neskládal.',
+        en: 'The lantern arrives as flat 3 mm plywood parts: six walls, the carved crown and the base. No tools needed — wood glue and half an hour is enough. The instructions are written so that someone who has never assembled anything can follow them.',
+      },
+      steps: [
+        {
+          title: { cs: 'Vybalte a nic nelepte', en: 'Unpack and glue nothing yet' },
+          body: {
+            cs: 'Vyndejte všech osm dílů a položte je na stůl. Nic nelepte, dokud sestava nedrží nasucho. Díly jsou z překližky, takže se snadno poškodí rohem stolu — pracujte na měkkém podkladu.',
+            en: 'Take out all eight parts and lay them on the table. Do not glue anything until the dry fit holds. The parts are plywood and a table corner damages them easily — work on a soft surface.',
+          },
+        },
+        {
+          title: { cs: 'Sestavte nasucho', en: 'Dry-fit first' },
+          body: {
+            cs: 'Šest stěn zasuňte do drážek dna — **gravírovanou stranou ven** a malým emblémem nahoru. Pak nasaďte zdobený vršek na jazýčky. Když stěna nejde, je otočená: drážky mají jednu správnou orientaci.',
+            en: 'Slide the six walls into the base slots — **engraved side out**, small emblem up. Then set the carved crown onto the tabs. If a wall will not go in, it is reversed: the slots have one correct orientation.',
+          },
+        },
+        {
+          title: { cs: 'Zkontrolujte vzory', en: 'Check the patterns' },
+          body: {
+            cs: 'Projděte pohledem všech šest stěn. Každá nese jinou mandalu z knihy (lotos, strom života, srdcová mandala, loď Království srdce, Hiranjagarbha, květ života) a mají být ve správném pořadí jako v příběhu. Když některá nesedí, vyměňte ji ještě před lepením.',
+            en: 'Look over all six walls. Each carries a different mandala from the book (lotus, tree of life, heart mandala, the ship of the Kingdom of Hearts, Hiranyagarbha, flower of life) and they should follow the order of the story. If one is wrong, swap it before gluing.',
+          },
+        },
+        {
+          title: { cs: 'Lepte jen spoje', en: 'Glue only the joints' },
+          body: {
+            cs: 'Trochou dřevěného lepidla do drážek dna a na jazýčky vršku. Stačí tenká vrstva — přebytek vytlačený ven setřete hadříkem. Přidržte 30 sekund, nechte 30 minut zaschnout. Lepidlo nedávejte na výřezy, jen do spojů.',
+            en: 'A little wood glue into the base slots and onto the crown tabs. A thin layer is enough — wipe off the excess with a cloth. Hold for 30 seconds, let it set for 30 minutes. Never put glue on the cut-outs, only in the joints.',
+          },
+        },
+        {
+          title: { cs: 'Svíčku do sklenice', en: 'Candle into a glass' },
+          body: {
+            cs: 'Vezměte čajovou svíčku a postavte ji **do sklenice — ideálně od malé Nutelly nebo od zavařeniny**. Sklo zachytí vosk i případný plamen a lampion tak stojí na skle, ne na dřevě. Sklenici postavte doprostřed dna.',
+            en: 'Take a tea light and place it **in a glass — a small Nutella jar or a jam jar is perfect**. The glass catches the wax and any flame, so the lantern stands on glass, not wood. Put the glass in the middle of the base.',
+          },
+        },
+        {
+          title: { cs: 'Rozsviťte (a zase zhasněte)', en: 'Light it (and put it out)' },
+          body: {
+            cs: 'Zapalte svíčku, zavřete vršek a nechte světlo projít výřezy. Než odejdete z místnosti nebo jdete spát, **zhasněte**. Kde jsou děti nebo zvířata, použijte raději LED čajovou svíčku — svítí skoro stejně a nic nehoří.',
+            en: 'Light the candle, close the crown and let the light pass through the cut-outs. Before you leave the room or go to sleep, **blow it out**. Where there are children or pets, use an LED tea light instead — it glows almost the same and nothing burns.',
+          },
+        },
+      ],
+    },
     gallery: [
       {
         src: '/vanoce/galerie/lampion/01_balicek_v4.webp?v=6',
@@ -629,8 +690,8 @@ export const christmasProducts: XmasProduct[] = [
       en: 'Light of the heart for a new land — from the carpenter\u2019s workshop of the story.',
     },
     intro: {
-      cs: 'Ručně gravírovaný lampion se vzorem Srdce Království — světlo, jaké nesla Lumi u brány, a jaké viselo nad tesařovým hoblíkem v Nazaretě.',
-      en: 'A hand-engraved lantern bearing the Heart of the Kingdom pattern — the light Lumi carried at the gate, the one that hung above the carpenter\u2019s plane in Nazareth.',
+      cs: 'Lampion Lumi 2 — šestihranná lucerna vyřezávaná a gravírovaná laserem z 3mm březové překližky. Světlo, jaké nesla Lumi u brány a jaké viselo nad tesařovým hoblíkem v Nazaretě.',
+      en: 'The Lumi 2 lantern — a hexagonal lamp laser-cut and engraved from 3 mm birch plywood. The light Lumi carried at the gate, the one that hung above the carpenter\u2019s plane in Nazareth.',
     },
     details: [
       {
@@ -642,8 +703,8 @@ export const christmasProducts: XmasProduct[] = [
         en: 'A **43,200 ZION** bonus to your wallet — a hundred ZION for every crown.',
       },
       {
-        cs: 'Lampion vyrábíme ručně — prodej zahájíme, jakmile bude výrobek hotový. Číslo vánoční edice bude omezené.',
-        en: 'The lantern is made by hand — sales open once the craft is ready. The Christmas edition run will be limited.',
+        cs: 'Každý kus sestavujeme ručně — prodej zahájíme, jakmile bude výrobek hotový. Číslo vánoční edice bude omezené.',
+        en: 'Each piece is assembled by hand — sales open once the craft is ready. The Christmas edition run will be limited.',
       },
       {
         cs: '**Co dostanete hned:** digitální knihu v plné sadě (40 knih, 5 jazyků) a ZION Pass. Na ty se nečeká — přijdou e-mailem. Fyzický lampion jde ze dílny samostatně, proto má vlastní termín.',
@@ -656,20 +717,20 @@ export const christmasProducts: XmasProduct[] = [
     ],
     inBox: {
       cs: [
-        'Ručně gravírovaný lampion — vzor Srdce Království',
+        'Lampion Lumi 2 z 3mm překližky — vzor Srdce Království',
         'Digitální kniha Království srdce (40 knih, 5 jazyků)',
         'ZION Pass — Nirvana + Archiv',
         'Bonus 43 200 ZION na peněženku',
       ],
       en: [
-        'Hand-engraved lantern — Heart of the Kingdom pattern',
+        'Lumi 2 lantern in 3 mm plywood — Heart of the Kingdom pattern',
         'Digital Kingdom of Hearts book (40 books, 5 languages)',
         'ZION Pass — Nirvana + Archive',
         '43,200 ZION bonus to your wallet',
       ],
     },
     features: [
-      { cs: 'Ruční gravírování', en: 'Hand-engraved' },
+      { cs: 'Laserové vyřezávání', en: 'Laser-cut' },
       { cs: 'Omezená vánoční série', en: 'Limited Christmas run' },
       { cs: 'Kniha a ZION Pass v ceně', en: 'Book and ZION Pass included' },
     ],
@@ -678,7 +739,7 @@ export const christmasProducts: XmasProduct[] = [
         '**Teď:** produkt se připravuje — prodej spustíme, jakmile bude výrobek hotový.',
         'Digitální část přijde **e-mailem hned po objednávce**: kniha (40 knih, 5 jazyků) + ZION Pass kód.',
         'Zároveň ti dorazí **ZION peněženka** (adresa + seed phrase) s bonusem **43 200 ZION**.',
-        'Lampion mezitím vzniká v dílně — ruční gravírování vzoru Srdce Království.',
+        'Lampion mezitím vzniká v dílně — vyřezávání a gravírování vzoru Srdce Království.',
         'Hotový výrobek pošleme **Zásilkovnou** — dorazí zabalený jako dárek.',
         'Peněženku **naimportuješ do ZIS** a dalších ZION aplikací — bonus použiješ v ekosystému.',
       ],
@@ -686,7 +747,7 @@ export const christmasProducts: XmasProduct[] = [
         '**Now:** the product is in preparation — sales open once the craft is ready.',
         'The digital part arrives **by e-mail right after ordering**: the book (40 books, 5 languages) + ZION Pass code.',
         'Your **ZION wallet** (address + seed phrase) also arrives carrying the **43,200 ZION** bonus.',
-        'Meanwhile the lantern is made in the workshop — hand-engraved Heart of the Kingdom pattern.',
+        'Meanwhile the lantern is made in the workshop — the Heart of the Kingdom pattern cut and engraved.',
         'The finished craft ships by **Zásilkovna** — arriving wrapped like a gift.',
         '**Import the wallet into ZIS** and other ZION apps — and use the bonus across the ecosystem.',
       ],
@@ -695,15 +756,15 @@ export const christmasProducts: XmasProduct[] = [
       {
         q: { cs: 'Kdy bude lampion k prodeji?', en: 'When will the lantern be on sale?' },
         a: {
-          cs: 'Jakmile bude výrobek hotový — jde o ruční výrobu, ne skladový kus. Sledujte stránku; vánoční série bude číselně omezená.',
-          en: 'Once the craft is ready — this is handmade work, not a stocked item. Watch this page; the Christmas run will be numerically limited.',
+          cs: 'Jakmile bude výrobek hotový — jde o malou sérii, ne skladový kus. Sledujte stránku; vánoční série bude číselně omezená.',
+          en: 'Once the craft is ready — this is a small run, not a stocked item. Watch this page; the Christmas run will be numerically limited.',
         },
       },
       {
         q: { cs: 'Co přesně je v ceně 432 Kč?', en: 'What exactly does the 432 CZK include?' },
         a: {
-          cs: 'Tři věci: ručně gravírovaný lampion (fyzický výrobek), digitální knihu Království srdce v plné sadě a ZION Pass do Nirvany i Archivu. Plus bonus 43 200 ZION na peněženku.',
-          en: 'Three things: the hand-engraved lantern (a physical craft), the full digital Kingdom of Hearts book set, and a ZION Pass for Nirvana and the Archive. Plus a 43,200 ZION bonus to your wallet.',
+          cs: 'Tři věci: lampion Lumi 2 (fyzický výrobek), digitální knihu Království srdce v plné sadě a ZION Pass do Nirvany i Archivu. Plus bonus 43 200 ZION na peněženku.',
+          en: 'Three things: the Lumi 2 lantern (a physical craft), the full digital Kingdom of Hearts book set, and a ZION Pass for Nirvana and the Archive. Plus a 43,200 ZION bonus to your wallet.',
         },
       },
       {

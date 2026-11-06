@@ -259,6 +259,9 @@ export interface AdminOrdersListResult {
       deletedAt: string | null;
       note: string | null;
       newsletter: boolean;
+      fireConsentName?: string | null;
+      fireConsentAt?: string | null;
+      fireConsentVersion?: string | null;
       createdAt: string;
       updatedAt: string;
       invoices: { id: string; invoiceNumber: string; status: string; pdfUrl: string | null; totalCzk: number; issuedAt: string; stripeSession: string | null }[];
