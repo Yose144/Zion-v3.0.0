@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { t5, tx5 } from '@/lib/i18n-tx';
 
 interface Slide {
   src: string;
@@ -110,7 +111,6 @@ const AUTOPLAY_MS = 7000;
 
 export default function HeroSlider() {
   const { lang } = useLang();
-  const cs = lang === 'cs';
   // displayed = what is on screen; pending loads the next image invisibly
   // and swaps only once it has actually decoded — never a blank frame.
   const [displayed, setDisplayed] = useState(0);
@@ -209,7 +209,7 @@ export default function HeroSlider() {
                 src={slide.src}
                 srcSet={`${slide.srcM} 960w, ${slide.src} 1672w`}
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
-                alt={slide.alt[cs ? 'cs' : 'en']}
+                alt={tx5(slide.alt, lang)}
                 loading={isLive && displayed === 0 ? 'eager' : 'lazy'}
                 decoding="async"
                 className="h-full w-full object-cover"
@@ -228,7 +228,7 @@ export default function HeroSlider() {
           prefetch={false}
           className="inline-flex min-w-0 items-center gap-2 rounded-full border border-white/15 bg-black/45 px-3.5 py-1.5 text-xs font-medium text-white/90 transition-colors hover:border-zion-gold/50 hover:text-zion-gold sm:text-sm"
         >
-          <span className="min-w-0 whitespace-normal">{SLIDES[displayed].label[cs ? 'cs' : 'en']}</span>
+          <span className="min-w-0 whitespace-normal">{tx5(SLIDES[displayed].label, lang)}</span>
           <ArrowRight className="h-3.5 w-3.5 shrink-0 opacity-60" />
         </Link>
         <div className="flex items-center gap-3">
@@ -236,7 +236,7 @@ export default function HeroSlider() {
           <button
             type="button"
             onClick={() => setUserPaused((v) => !v)}
-            aria-label={cs ? (userPaused ? 'Přehrát slideshow' : 'Pozastavit slideshow') : (userPaused ? 'Play slideshow' : 'Pause slideshow')}
+            aria-label={lang === 'cs' ? (userPaused ? 'Přehrát slideshow' : 'Pozastavit slideshow') : t5(userPaused ? 'Play slideshow' : 'Pause slideshow', lang)}
             aria-pressed={userPaused}
             className="rounded-full border border-white/15 bg-black/40 px-2.5 py-1 text-[10px] font-semibold text-white/70 transition-colors hover:border-zion-gold/40 hover:text-zion-gold"
           >
@@ -249,7 +249,7 @@ export default function HeroSlider() {
                 key={slide.src}
                 type="button"
                 onClick={() => go(i)}
-                aria-label={`${cs ? 'Slajd' : 'Slide'} ${i + 1}`}
+                aria-label={`${lang === 'cs' ? 'Slajd' : t5('Slide', lang)} ${i + 1}`}
                 className="flex h-[44px] items-center justify-center"
                 style={{ minWidth: 32 }}
               >
@@ -268,7 +268,7 @@ export default function HeroSlider() {
       <button
         type="button"
         onClick={() => go(displayed - 1)}
-        aria-label={cs ? 'Předchozí obrázek' : 'Previous slide'}
+        aria-label={lang === 'cs' ? 'Předchozí obrázek' : t5('Previous slide', lang)}
         className="absolute left-2 top-[42%] z-20 -translate-y-1/2 rounded-full border border-white/10 bg-black/40 p-2 text-white/70 backdrop-blur-sm transition-all hover:border-zion-gold/50 hover:text-zion-gold sm:opacity-0 sm:group-hover/slider:opacity-100 sm:focus-visible:opacity-100"
       >
         <ChevronLeft className="h-5 w-5" />
@@ -276,7 +276,7 @@ export default function HeroSlider() {
       <button
         type="button"
         onClick={() => go(displayed + 1)}
-        aria-label={cs ? 'Další obrázek' : 'Next slide'}
+        aria-label={lang === 'cs' ? 'Další obrázek' : t5('Next slide', lang)}
         className="absolute right-2 top-[42%] z-20 -translate-y-1/2 rounded-full border border-white/10 bg-black/40 p-2 text-white/70 backdrop-blur-sm transition-all hover:border-zion-gold/50 hover:text-zion-gold sm:opacity-0 sm:group-hover/slider:opacity-100 sm:focus-visible:opacity-100"
       >
         <ChevronRight className="h-5 w-5" />

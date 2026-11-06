@@ -178,7 +178,7 @@ function CopyBtn({ value }: { value: string }) {
 export default function WarpBtcSwapWidget() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const t = (k: keyof typeof Copy_map) => Copy_map[k][cs ? 'cs' : 'en'];
+  const t = (k: keyof typeof Copy_map) => (cs ? Copy_map[k].cs : t5(Copy_map[k].en, lang));
 
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [swaps, setSwaps] = useState<BtcSwapRecord[]>([]);
