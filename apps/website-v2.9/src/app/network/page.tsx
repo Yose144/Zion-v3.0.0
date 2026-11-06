@@ -3,7 +3,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from '@/hooks/usePolling';
 import {
   Activity,
@@ -283,104 +284,102 @@ const LiveToast = dynamic(() => import('@/components/explorer/LiveToast'));
    NETWORK PAGE — Redesigned to match Roadmap visual language
    ═══════════════════════════════════════════════════════════ */
 
-const getHeroStats = (cs: boolean) => [
+const getHeroStats = (cs: boolean, lang: Lang) => [
   {
-    label: NetworkCopy.publicNodes[cs ? 'cs' : 'en'],
+    label: tx5(NetworkCopy.publicNodes, lang),
     value: '2',
-    descriptor: NetworkCopy.k2NodeP2pMeshEdge1Edge2LocalBac[cs ? 'cs' : 'en'],
+    descriptor: tx5(NetworkCopy.k2NodeP2pMeshEdge1Edge2LocalBac, lang),
   },
   {
-    label: NetworkCopy.p2pMesh[cs ? 'cs' : 'en'],
-    value: NetworkCopy.k2Nodes[cs ? 'cs' : 'en'],
-    descriptor: NetworkCopy.edge1Edge2Within2BlockSyncLoca[cs ? 'cs' : 'en'],
+    label: tx5(NetworkCopy.p2pMesh, lang),
+    value: tx5(NetworkCopy.k2Nodes, lang),
+    descriptor: tx5(NetworkCopy.edge1Edge2Within2BlockSyncLoca, lang),
   },
   {
-    label: NetworkCopy.telemetry[cs ? 'cs' : 'en'],
+    label: tx5(NetworkCopy.telemetry, lang),
     value: '30s',
-    descriptor: NetworkCopy.autoRefreshInterval[cs ? 'cs' : 'en'],
+    descriptor: tx5(NetworkCopy.autoRefreshInterval, lang),
   },
   {
-    label: NetworkCopy.topology[cs ? 'cs' : 'en'],
-    value: NetworkCopy.v306E2e[cs ? 'cs' : 'en'],
-    descriptor: NetworkCopy.sshTunnelsApparmorUfwRpcAuditL[cs ? 'cs' : 'en'],
+    label: tx5(NetworkCopy.topology, lang),
+    value: tx5(NetworkCopy.v306E2e, lang),
+    descriptor: tx5(NetworkCopy.sshTunnelsApparmorUfwRpcAuditL, lang),
   },
   {
-    label: NetworkCopy.network[cs ? 'cs' : 'en'],
-    value: NetworkCopy.trinity[cs ? 'cs' : 'en'],
-    descriptor: NetworkCopy.mainnetBeta1111ServicesProtoco[cs ? 'cs' : 'en'],
+    label: tx5(NetworkCopy.network, lang),
+    value: tx5(NetworkCopy.trinity, lang),
+    descriptor: tx5(NetworkCopy.mainnetBeta1111ServicesProtoco, lang),
   },
 ];
 
-const getInfraFeatures = (cs: boolean) => [
+const getInfraFeatures = (cs: boolean, lang: Lang) => [
   {
     icon: Server,
-    title: NetworkCopy.edgeNode1PrimaryPool[cs ? 'cs' : 'en'],
-    detail: NetworkCopy.publicP2p8333Stratum8444Rpc844[cs ? 'cs' : 'en'],
+    title: tx5(NetworkCopy.edgeNode1PrimaryPool, lang),
+    detail: tx5(NetworkCopy.publicP2p8333Stratum8444Rpc844, lang),
     ip: SITE_PRIMARY_HOST,
-    status: NetworkCopy.active[cs ? 'cs' : 'en'],
+    status: tx5(NetworkCopy.active, lang),
     color: 'text-zion-cyan',
     border: 'border-zion-cyan/30',
     bg: 'bg-zion-cyan/5',
   },
   {
     icon: Server,
-    title: NetworkCopy.localBackupNodePrague[cs ? 'cs' : 'en'],
-    detail: NetworkCopy.backupNodeViaSshReverseForward[cs ? 'cs' : 'en'],
-    ip: NetworkCopy.zionBackupTunnel[cs ? 'cs' : 'en'],
-    status: NetworkCopy.offline[cs ? 'cs' : 'en'],
+    title: tx5(NetworkCopy.localBackupNodePrague, lang),
+    detail: tx5(NetworkCopy.backupNodeViaSshReverseForward, lang),
+    ip: tx5(NetworkCopy.zionBackupTunnel, lang),
+    status: tx5(NetworkCopy.offline, lang),
     color: 'text-gray-400',
     border: 'border-gray-500/30',
     bg: 'bg-gray-500/5',
   },
 ];
 
-const getRuntimePanels = (cs: boolean) => [
+const getRuntimePanels = (cs: boolean, lang: Lang) => [
   {
     icon: Radio,
-    label: NetworkCopy.publicStratum[cs ? 'cs' : 'en'],
+    label: tx5(NetworkCopy.publicStratum, lang),
     value: SITE_POOL_PRIMARY,
-    detail: NetworkCopy.primaryMiningIngressPoolApi845[cs ? 'cs' : 'en'],
+    detail: tx5(NetworkCopy.primaryMiningIngressPoolApi845, lang),
     accent: 'text-zion-gold',
   },
   {
     icon: Terminal,
     label: 'RPC Endpoint',
     value: SITE_PRIMARY_RPC_URL,
-    detail: NetworkCopy.nativeRustJsonRpcForExplorersA[cs ? 'cs' : 'en'],
+    detail: tx5(NetworkCopy.nativeRustJsonRpcForExplorersA, lang),
     accent: 'text-zion-cyan',
   },
   {
     icon: Globe,
     label: 'P2P Mesh',
     value: `${SITE_PRIMARY_HOST}:8333`,
-    detail: NetworkCopy.k2NodeMesh83338334Backup8335Off[cs ? 'cs' : 'en'],
+    detail: tx5(NetworkCopy.k2NodeMesh83338334Backup8335Off, lang),
     accent: 'text-zion-cyan',
   },
   {
     icon: BookOpen,
-    label: NetworkCopy.releaseContext[cs ? 'cs' : 'en'],
+    label: tx5(NetworkCopy.releaseContext, lang),
     value: SITE_RELEASE_LABEL,
-    detail: cs
-      ? `Veřejná linka nad ${SITE_RUNTIME_LABEL}; E2E memo testy potvrzené v bloku 752`
-      : `Public line over ${SITE_RUNTIME_LABEL}; E2E memo tests confirmed in block 752`,
+    detail: cs ? `Veřejná linka nad ${SITE_RUNTIME_LABEL}; E2E memo testy potvrzené v bloku 752` : t5(`Public line over ${SITE_RUNTIME_LABEL}; E2E memo tests confirmed in block 752`, lang),
     accent: 'text-zion-purple',
   },
   {
     icon: Zap,
-    label: NetworkCopy.v306E2eStatus[cs ? 'cs' : 'en'],
-    value: NetworkCopy.trinity_2[cs ? 'cs' : 'en'],
-    detail: NetworkCopy.k1111ServicesActiveF47F5ActiveM[cs ? 'cs' : 'en'],
+    label: tx5(NetworkCopy.v306E2eStatus, lang),
+    value: tx5(NetworkCopy.trinity_2, lang),
+    detail: tx5(NetworkCopy.k1111ServicesActiveF47F5ActiveM, lang),
     accent: 'text-zion-gold',
   },
 ];
 
-const getGuideBlocks = (cs: boolean) => [
+const getGuideBlocks = (cs: boolean, lang: Lang) => [
   {
     icon: Zap,
-    title: NetworkCopy.mining[cs ? 'cs' : 'en'],
-    description: NetworkCopy.connectAnyCosmicHarmonyCpuMine[cs ? 'cs' : 'en'],
+    title: tx5(NetworkCopy.mining, lang),
+    description: tx5(NetworkCopy.connectAnyCosmicHarmonyCpuMine, lang),
     items: [
-      `Pool: ${SITE_POOL_PRIMARY} ${NetworkCopy.currentPrimary[cs ? 'cs' : 'en']}`,
+      `Pool: ${SITE_POOL_PRIMARY} ${tx5(NetworkCopy.currentPrimary, lang)}`,
       'Wallet: YOUR_ZION_ADDRESS',
       'Password: x',
     ],
@@ -388,10 +387,10 @@ const getGuideBlocks = (cs: boolean) => [
   {
     icon: Terminal,
     title: 'RPC API',
-    description: NetworkCopy.nativeRustJsonRpcEndpointForEx[cs ? 'cs' : 'en'],
+    description: tx5(NetworkCopy.nativeRustJsonRpcEndpointForEx, lang),
     items: [
       `Primary: ${SITE_PRIMARY_RPC_URL}`,
-      `Scope: ${NetworkCopy.publicRuntimeEndpoint[cs ? 'cs' : 'en']}`,
+      `Scope: ${tx5(NetworkCopy.publicRuntimeEndpoint, lang)}`,
       `Backup RPC: on standby`,
       'Method: POST',
     ],
@@ -399,37 +398,37 @@ const getGuideBlocks = (cs: boolean) => [
   {
     icon: Globe,
     title: 'P2P Layer',
-    description: NetworkCopy.nativeRustP2pNetwork2NodeMeshW[cs ? 'cs' : 'en'],
+    description: tx5(NetworkCopy.nativeRustP2pNetwork2NodeMeshW, lang),
     items: [
-      `${NetworkCopy.publicPeerEdge1[cs ? 'cs' : 'en']}: ${SITE_PRIMARY_HOST}:8333`,
-      `${NetworkCopy.backupPeerTunnel[cs ? 'cs' : 'en']}: on standby — offline`,
-      `${NetworkCopy.hardcodedSeedPeers[cs ? 'cs' : 'en']}: ${SITE_PRIMARY_HOST}:8333`,
+      `${tx5(NetworkCopy.publicPeerEdge1, lang)}: ${SITE_PRIMARY_HOST}:8333`,
+      `${tx5(NetworkCopy.backupPeerTunnel, lang)}: on standby — offline`,
+      `${tx5(NetworkCopy.hardcodedSeedPeers, lang)}: ${SITE_PRIMARY_HOST}:8333`,
     ],
   },
 ];
 
-const getNetworkFacts = (cs: boolean) => [
-  { text: NetworkCopy.nativeRustP2p2NodeMesh[cs ? 'cs' : 'en'], done: true },
+const getNetworkFacts = (cs: boolean, lang: Lang) => [
+  { text: tx5(NetworkCopy.nativeRustP2p2NodeMesh, lang), done: true },
   {
-    text: NetworkCopy.v306TrinityMainnetBeta1111Serv[cs ? 'cs' : 'en'],
+    text: tx5(NetworkCopy.v306TrinityMainnetBeta1111Serv, lang),
     done: true,
   },
   {
-    text: cs ? `Public stratum endpoint: ${SITE_POOL_PRIMARY}` : `Public stratum endpoint: ${SITE_POOL_PRIMARY}`,
+    text: cs ? `Public stratum endpoint: ${SITE_POOL_PRIMARY}` : t5(`Public stratum endpoint: ${SITE_POOL_PRIMARY}`, lang),
     done: true,
   },
-  { text: NetworkCopy.jsonRpcEndpointsLive84438448Ba[cs ? 'cs' : 'en'], done: true },
-  { text: NetworkCopy.e2eMemoTestsConfirmedInBlock75[cs ? 'cs' : 'en'], done: true },
-  { text: NetworkCopy.f47MaxTxAmountCapF5SenderBalan[cs ? 'cs' : 'en'], done: true },
-  { text: NetworkCopy.lwmaDaaTarget60sBlockTime[cs ? 'cs' : 'en'], done: true },
-  { text: NetworkCopy.systemdServicesWithAutoRestart[cs ? 'cs' : 'en'], done: true },
-  { text: NetworkCopy.telemetryMetricsMonitoring[cs ? 'cs' : 'en'], done: true },
+  { text: tx5(NetworkCopy.jsonRpcEndpointsLive84438448Ba, lang), done: true },
+  { text: tx5(NetworkCopy.e2eMemoTestsConfirmedInBlock75, lang), done: true },
+  { text: tx5(NetworkCopy.f47MaxTxAmountCapF5SenderBalan, lang), done: true },
+  { text: tx5(NetworkCopy.lwmaDaaTarget60sBlockTime, lang), done: true },
+  { text: tx5(NetworkCopy.systemdServicesWithAutoRestart, lang), done: true },
+  { text: tx5(NetworkCopy.telemetryMetricsMonitoring, lang), done: true },
   {
-    text: NetworkCopy.ufwFirewallApparmorRpcAuditLog[cs ? 'cs' : 'en'],
+    text: tx5(NetworkCopy.ufwFirewallApparmorRpcAuditLog, lang),
     done: true,
   },
   {
-    text: NetworkCopy.sshTunnelsForBackupNodeReverse[cs ? 'cs' : 'en'],
+    text: tx5(NetworkCopy.sshTunnelsForBackupNodeReverse, lang),
     done: true,
   },
 ];
@@ -527,12 +526,12 @@ async function fetchMonitoringSnapshot(): Promise<MonitoringSnapshot> {
 export default function NetworkPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = NetworkCopy.enUs[cs ? 'cs' : 'en'];
-  const heroStats = useMemo(() => getHeroStats(cs), [cs]);
-  const infraFeatures = useMemo(() => getInfraFeatures(cs), [cs]);
-  const runtimePanels = useMemo(() => getRuntimePanels(cs), [cs]);
-  const guideBlocks = useMemo(() => getGuideBlocks(cs), [cs]);
-  const networkFacts = useMemo(() => getNetworkFacts(cs), [cs]);
+  const locale = tx5(NetworkCopy.enUs, lang);
+  const heroStats = useMemo(() => getHeroStats(cs, lang), [cs]);
+  const infraFeatures = useMemo(() => getInfraFeatures(cs, lang), [cs]);
+  const runtimePanels = useMemo(() => getRuntimePanels(cs, lang), [cs]);
+  const guideBlocks = useMemo(() => getGuideBlocks(cs, lang), [cs]);
+  const networkFacts = useMemo(() => getNetworkFacts(cs, lang), [cs]);
   const factsDone = useMemo(() => networkFacts.filter((f) => f.done).length, [networkFacts]);
   const factsTotal = networkFacts.length;
 
@@ -617,26 +616,26 @@ export default function NetworkPage() {
             <div className="space-y-5">
               <div className="zion-kicker border-zion-cyan/35 bg-zion-cyan/10 text-cyan-200">
                 <Radio className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {NetworkCopy.network[cs ? 'cs' : 'en']}
+                {SITE_RELEASE_LABEL} · {tx5(NetworkCopy.network, lang)}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{NetworkCopy.liveStatus[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{tx5(NetworkCopy.liveStatus, lang)}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {NetworkCopy.p2pNetwork[cs ? 'cs' : 'en']}
+                  {tx5(NetworkCopy.p2pNetwork, lang)}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {NetworkCopy.realTimeTelemetryFromTheCurren[cs ? 'cs' : 'en']}
+                {tx5(NetworkCopy.realTimeTelemetryFromTheCurren, lang)}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200 backdrop-blur-sm">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> {NetworkCopy.nativeRust[cs ? 'cs' : 'en']}
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> {tx5(NetworkCopy.nativeRust, lang)}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200 backdrop-blur-sm">
                   <Orbit className="h-3 w-3 text-zion-cyan" /> Runtime: {SITE_RUNTIME_LABEL}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200 backdrop-blur-sm">
-                  <ShieldCheck className="h-3 w-3 text-zion-cyan" /> {NetworkCopy.k1PublicHost2InternalSeeds[cs ? 'cs' : 'en']}
+                  <ShieldCheck className="h-3 w-3 text-zion-cyan" /> {tx5(NetworkCopy.k1PublicHost2InternalSeeds, lang)}
                 </span>
               </div>
             </div>
@@ -659,12 +658,12 @@ export default function NetworkPage() {
         {/* ═══════ RUNTIME SNAPSHOT ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.runtimeSnapshot[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkCopy.runtimeSnapshot, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Orbit className="h-7 w-7 text-zion-cyan" />
-              {NetworkCopy.publicNetworkSurface[cs ? 'cs' : 'en']}
+              {tx5(NetworkCopy.publicNetworkSurface, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{NetworkCopy.theCurrentLiveFootprintDistill[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(NetworkCopy.theCurrentLiveFootprintDistill, lang)}</p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-4">
@@ -689,24 +688,24 @@ export default function NetworkPage() {
         {chainStats && (
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.health[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkCopy.health, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <ShieldCheck className="h-7 w-7 text-zion-cyan" />
-              {NetworkCopy.networkHealthScore[cs ? 'cs' : 'en']}
+              {tx5(NetworkCopy.networkHealthScore, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{NetworkCopy.aggregateHealthIndicatorBasedO[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(NetworkCopy.aggregateHealthIndicatorBasedO, lang)}</p>
           </div>
 
           {(() => {
             const checks = [
-              { label: NetworkCopy.nodeOnline[cs ? 'cs' : 'en'], ok: chainStats.connected, weight: 25 },
-              { label: NetworkCopy.blocksMining[cs ? 'cs' : 'en'], ok: chainStats.block_height > 0, weight: 20 },
-              { label: NetworkCopy.activeMiners[cs ? 'cs' : 'en'], ok: chainStats.active_miners > 0, weight: 15 },
-              { label: NetworkCopy.normalBlockTime[cs ? 'cs' : 'en'], ok: chainStats.avg_block_time > 0 && chainStats.avg_block_time < 180, weight: 15 },
+              { label: tx5(NetworkCopy.nodeOnline, lang), ok: chainStats.connected, weight: 25 },
+              { label: tx5(NetworkCopy.blocksMining, lang), ok: chainStats.block_height > 0, weight: 20 },
+              { label: tx5(NetworkCopy.activeMiners, lang), ok: chainStats.active_miners > 0, weight: 15 },
+              { label: tx5(NetworkCopy.normalBlockTime, lang), ok: chainStats.avg_block_time > 0 && chainStats.avg_block_time < 180, weight: 15 },
               { label: 'P2P Peers', ok: chainStats.total_connections >= 1, weight: 10 },
               { label: 'Mempool', ok: true, weight: 5 },
-              { label: NetworkCopy.databaseOk[cs ? 'cs' : 'en'], ok: chainStats.database_size > 0, weight: 5 },
-              { label: NetworkCopy.poolOnline[cs ? 'cs' : 'en'], ok: chainStats.pool_hashrate > 0 || chainStats.active_miners > 0, weight: 5 },
+              { label: tx5(NetworkCopy.databaseOk, lang), ok: chainStats.database_size > 0, weight: 5 },
+              { label: tx5(NetworkCopy.poolOnline, lang), ok: chainStats.pool_hashrate > 0 || chainStats.active_miners > 0, weight: 5 },
             ];
             const score = checks.reduce((acc, c) => acc + (c.ok ? c.weight : 0), 0);
             const scoreColor = score >= 90 ? 'text-zion-cyan' : score >= 70 ? 'text-zion-gold' : score >= 50 ? 'text-zion-gold' : 'text-zion-purple';
@@ -720,7 +719,7 @@ export default function NetworkPage() {
                   <div className={`relative w-40 h-40 rounded-full border-4 ${scoreBorder} flex items-center justify-center shadow-lg ${scoreGlow}`}>
                     <div className="text-center">
                       <p className={`text-5xl font-bold tabular-nums ${scoreColor}`}>{score}</p>
-                      <p className="text-xs text-gray-500 mt-1">{NetworkCopy.of100[cs ? 'cs' : 'en']}</p>
+                      <p className="text-xs text-gray-500 mt-1">{tx5(NetworkCopy.of100, lang)}</p>
                     </div>
                     <svg className="absolute inset-0" viewBox="0 0 160 160">
                       <circle cx="80" cy="80" r="74" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
@@ -732,7 +731,7 @@ export default function NetworkPage() {
                     </svg>
                   </div>
                   <p className={`mt-4 text-sm font-semibold ${scoreColor}`}>
-                    {score >= 90 ? (NetworkCopy.excellent[cs ? 'cs' : 'en']) : score >= 70 ? (NetworkCopy.good[cs ? 'cs' : 'en']) : score >= 50 ? (NetworkCopy.fair[cs ? 'cs' : 'en']) : (NetworkCopy.critical[cs ? 'cs' : 'en'])}
+                    {score >= 90 ? (tx5(NetworkCopy.excellent, lang)) : score >= 70 ? (tx5(NetworkCopy.good, lang)) : score >= 50 ? (tx5(NetworkCopy.fair, lang)) : (tx5(NetworkCopy.critical, lang))}
                   </p>
                 </div>
 
@@ -744,8 +743,8 @@ export default function NetworkPage() {
                         <div className={`w-2 h-2 rounded-full ${c.ok ? 'bg-zion-cyan' : 'bg-zion-purple'}`} />
                         <span className="text-[11px] text-gray-400 uppercase tracking-wider">{c.label}</span>
                       </div>
-                      <p className={`text-lg font-bold ${c.ok ? 'text-zion-cyan' : 'text-zion-purple'}`}>{c.ok ? (NetworkCopy.ok[cs ? 'cs' : 'en']) : (NetworkCopy.fail[cs ? 'cs' : 'en'])}</p>
-                      <p className="text-[11px] text-gray-500 mt-0.5">{c.weight} {NetworkCopy.pts[cs ? 'cs' : 'en']}</p>
+                      <p className={`text-lg font-bold ${c.ok ? 'text-zion-cyan' : 'text-zion-purple'}`}>{c.ok ? (tx5(NetworkCopy.ok, lang)) : (tx5(NetworkCopy.fail, lang))}</p>
+                      <p className="text-[11px] text-gray-500 mt-0.5">{c.weight} {tx5(NetworkCopy.pts, lang)}</p>
                     </div>
                   ))}
                 </div>
@@ -759,12 +758,12 @@ export default function NetworkPage() {
         {chainStats && (
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.performance[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkCopy.performance, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-cyan" />
-              {NetworkCopy.chainPerformance[cs ? 'cs' : 'en']}
+              {tx5(NetworkCopy.chainPerformance, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{NetworkCopy.liveSparklinesForHashrateDiffi[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(NetworkCopy.liveSparklinesForHashrateDiffi, lang)}</p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-3">
@@ -772,7 +771,7 @@ export default function NetworkPage() {
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">{NetworkCopy.networkHashrate[cs ? 'cs' : 'en']}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">{tx5(NetworkCopy.networkHashrate, lang)}</p>
                   <p className="text-2xl font-bold text-zion-cyan font-mono mt-1">{chainStats.network_hashrate_formatted}</p>
                 </div>
               </div>
@@ -783,7 +782,7 @@ export default function NetworkPage() {
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">{NetworkCopy.difficulty[cs ? 'cs' : 'en']}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">{tx5(NetworkCopy.difficulty, lang)}</p>
                   <p className="text-2xl font-bold text-zion-cyan font-mono mt-1">{fmtLargeNum(chainStats.difficulty)}</p>
                 </div>
               </div>
@@ -794,10 +793,10 @@ export default function NetworkPage() {
             <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">{NetworkCopy.avgBlockTime[cs ? 'cs' : 'en']}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">{tx5(NetworkCopy.avgBlockTime, lang)}</p>
                   <p className="text-2xl font-bold text-zion-purple font-mono mt-1">{chainStats.avg_block_time}s</p>
                 </div>
-                <span className="text-xs text-gray-500">{NetworkCopy.target[cs ? 'cs' : 'en']}: {chainStats.target_block_time ?? BLOCK_TIME_SECONDS}s</span>
+                <span className="text-xs text-gray-500">{tx5(NetworkCopy.target, lang)}: {chainStats.target_block_time ?? BLOCK_TIME_SECONDS}s</span>
               </div>
               <NetSparkline data={blockTimeHistory.map(p => p.value)} color="rgb(96, 165, 250)" height={80} />
             </div>
@@ -820,35 +819,35 @@ export default function NetworkPage() {
         {chainStats && (
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.statistics[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkCopy.statistics, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <BarChart3 className="h-7 w-7 text-zion-gold" />
-              {NetworkCopy.chainStatistics[cs ? 'cs' : 'en']}
+              {tx5(NetworkCopy.chainStatistics, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{NetworkCopy.detailedMetricsFromTheLiveBloc[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(NetworkCopy.detailedMetricsFromTheLiveBloc, lang)}</p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-            <ChainStatCard label={NetworkCopy.blockHeight[cs ? 'cs' : 'en']} value={chainStats.block_height.toLocaleString(locale)} color="text-zion-gold" tip={NetworkCopy.totalNumberOfMinedBlocksSinceG[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.difficulty[cs ? 'cs' : 'en']} value={fmtLargeNum(chainStats.difficulty)} color="text-zion-cyan" tip={NetworkCopy.currentMiningDifficultySetByLw[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.cumulativeDiff[cs ? 'cs' : 'en']} value={fmtLargeNum(chainStats.cumulative_difficulty)} color="text-zion-cyan" tip={NetworkCopy.sumOfDifficultyAcrossAllBlocks[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.circulatingSupply[cs ? 'cs' : 'en']} value={`${fmtLargeNum(chainStats.circulating_supply)} ZION`} color="text-zion-gold" tip={NetworkCopy.totalZionInCirculationIncludin[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.emission[cs ? 'cs' : 'en']} value={`${chainStats.emission_pct}%`} color="text-zion-purple" tip={NetworkCopy.percentageOfTotalSupplyMinedAc[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.totalTx[cs ? 'cs' : 'en']} value={chainStats.tx_count.toLocaleString(locale)} color="text-zion-purple" tip={NetworkCopy.totalNumberOfTransactionsRecor[cs ? 'cs' : 'en']} />
-            <ChainStatCard label="Mempool" value={`${chainStats.tx_pool_size} tx`} color={chainStats.tx_pool_size > 0 ? 'text-zion-gold' : 'text-gray-400'} tip={NetworkCopy.transactionsWaitingForConfirma[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.totalPeers[cs ? 'cs' : 'en']} value={`${chainStats.total_connections}`} sub={`↓${chainStats.incoming_connections} ↑${chainStats.outgoing_connections}`} color="text-zion-purple" tip={NetworkCopy.activeP2pConnectionsIncomingAn[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.knownPeers[cs ? 'cs' : 'en']} value={`${chainStats.white_peerlist_size}`} sub={`${chainStats.grey_peerlist_size} grey`} color="text-zion-purple" tip={NetworkCopy.knownWhiteAndUnknownGreyPeerLi[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.blockSizeLimit[cs ? 'cs' : 'en']} value={fmtBytes(chainStats.block_size_limit)} sub={`${NetworkCopy.median[cs ? 'cs' : 'en']}: ${fmtBytes(chainStats.block_size_median)}`} color="text-zion-cyan" tip={NetworkCopy.maximumAndMedianBlockSizeInByt[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.database[cs ? 'cs' : 'en']} value={fmtBytes(chainStats.database_size)} color="text-zion-purple" tip={NetworkCopy.sizeOfTheLocalBlockchainDataba[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.version[cs ? 'cs' : 'en']} value={chainStats.version ? `v${chainStats.version}` : '—'} color="text-gray-300" tip={NetworkCopy.nodeSoftwareVersion[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.altBlocks[cs ? 'cs' : 'en']} value={`${chainStats.alt_blocks_count ?? 0}`} color="text-zion-gold" tip={NetworkCopy.numberOfAlternativeBranchesOrp[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.activeMiners[cs ? 'cs' : 'en']} value={`${chainStats.active_miners}`} color="text-zion-cyan" tip={NetworkCopy.numberOfActiveMinersConnectedT[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.poolHashrate[cs ? 'cs' : 'en']} value={chainStats.pool_hashrate_formatted || '—'} color="text-zion-cyan" tip={NetworkCopy.totalComputationalPowerOfAllMi[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.poolBlocks[cs ? 'cs' : 'en']} value={`${chainStats.pool_blocks_found ?? 0}`} color="text-zion-gold" tip={NetworkCopy.numberOfBlocksFoundByThisPool[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={tx5(NetworkCopy.blockHeight, lang)} value={chainStats.block_height.toLocaleString(locale)} color="text-zion-gold" tip={tx5(NetworkCopy.totalNumberOfMinedBlocksSinceG, lang)} />
+            <ChainStatCard label={tx5(NetworkCopy.difficulty, lang)} value={fmtLargeNum(chainStats.difficulty)} color="text-zion-cyan" tip={tx5(NetworkCopy.currentMiningDifficultySetByLw, lang)} />
+            <ChainStatCard label={tx5(NetworkCopy.cumulativeDiff, lang)} value={fmtLargeNum(chainStats.cumulative_difficulty)} color="text-zion-cyan" tip={tx5(NetworkCopy.sumOfDifficultyAcrossAllBlocks, lang)} />
+            <ChainStatCard label={tx5(NetworkCopy.circulatingSupply, lang)} value={`${fmtLargeNum(chainStats.circulating_supply)} ZION`} color="text-zion-gold" tip={tx5(NetworkCopy.totalZionInCirculationIncludin, lang)} />
+            <ChainStatCard label={tx5(NetworkCopy.emission, lang)} value={`${chainStats.emission_pct}%`} color="text-zion-purple" tip={tx5(NetworkCopy.percentageOfTotalSupplyMinedAc, lang)} />
+            <ChainStatCard label={tx5(NetworkCopy.totalTx, lang)} value={chainStats.tx_count.toLocaleString(locale)} color="text-zion-purple" tip={tx5(NetworkCopy.totalNumberOfTransactionsRecor, lang)} />
+            <ChainStatCard label="Mempool" value={`${chainStats.tx_pool_size} tx`} color={chainStats.tx_pool_size > 0 ? 'text-zion-gold' : 'text-gray-400'} tip={tx5(NetworkCopy.transactionsWaitingForConfirma, lang)} />
+            <ChainStatCard label={tx5(NetworkCopy.totalPeers, lang)} value={`${chainStats.total_connections}`} sub={`↓${chainStats.incoming_connections} ↑${chainStats.outgoing_connections}`} color="text-zion-purple" tip={tx5(NetworkCopy.activeP2pConnectionsIncomingAn, lang)} />
+            <ChainStatCard label={tx5(NetworkCopy.knownPeers, lang)} value={`${chainStats.white_peerlist_size}`} sub={`${chainStats.grey_peerlist_size} grey`} color="text-zion-purple" tip={tx5(NetworkCopy.knownWhiteAndUnknownGreyPeerLi, lang)} />
+            <ChainStatCard label={tx5(NetworkCopy.blockSizeLimit, lang)} value={fmtBytes(chainStats.block_size_limit)} sub={`${tx5(NetworkCopy.median, lang)}: ${fmtBytes(chainStats.block_size_median)}`} color="text-zion-cyan" tip={tx5(NetworkCopy.maximumAndMedianBlockSizeInByt, lang)} />
+            <ChainStatCard label={tx5(NetworkCopy.database, lang)} value={fmtBytes(chainStats.database_size)} color="text-zion-purple" tip={tx5(NetworkCopy.sizeOfTheLocalBlockchainDataba, lang)} />
+            <ChainStatCard label={tx5(NetworkCopy.version, lang)} value={chainStats.version ? `v${chainStats.version}` : '—'} color="text-gray-300" tip={tx5(NetworkCopy.nodeSoftwareVersion, lang)} />
+            <ChainStatCard label={tx5(NetworkCopy.altBlocks, lang)} value={`${chainStats.alt_blocks_count ?? 0}`} color="text-zion-gold" tip={tx5(NetworkCopy.numberOfAlternativeBranchesOrp, lang)} />
+            <ChainStatCard label={tx5(NetworkCopy.activeMiners, lang)} value={`${chainStats.active_miners}`} color="text-zion-cyan" tip={tx5(NetworkCopy.numberOfActiveMinersConnectedT, lang)} />
+            <ChainStatCard label={tx5(NetworkCopy.poolHashrate, lang)} value={chainStats.pool_hashrate_formatted || '—'} color="text-zion-cyan" tip={tx5(NetworkCopy.totalComputationalPowerOfAllMi, lang)} />
+            <ChainStatCard label={tx5(NetworkCopy.poolBlocks, lang)} value={`${chainStats.pool_blocks_found ?? 0}`} color="text-zion-gold" tip={tx5(NetworkCopy.numberOfBlocksFoundByThisPool, lang)} />
             {chainStats.last_block && (
               <>
-                <ChainStatCard label={NetworkCopy.lastBlock[cs ? 'cs' : 'en']} value={`#${chainStats.last_block.height.toLocaleString(locale)}`} sub={new Date(chainStats.last_block.timestamp * 1000).toLocaleTimeString(locale)} color="text-zion-gold" tip={NetworkCopy.latestConfirmedBlockAndItsMini[cs ? 'cs' : 'en']} />
-                <ChainStatCard label={NetworkCopy.lastReward[cs ? 'cs' : 'en']} value={`${(chainStats.last_block.reward / 1e6).toFixed(2)} ZION`} color="text-zion-cyan" tip={NetworkCopy.rewardForTheLatestBlockPerDeca[cs ? 'cs' : 'en']} />
+                <ChainStatCard label={tx5(NetworkCopy.lastBlock, lang)} value={`#${chainStats.last_block.height.toLocaleString(locale)}`} sub={new Date(chainStats.last_block.timestamp * 1000).toLocaleTimeString(locale)} color="text-zion-gold" tip={tx5(NetworkCopy.latestConfirmedBlockAndItsMini, lang)} />
+                <ChainStatCard label={tx5(NetworkCopy.lastReward, lang)} value={`${(chainStats.last_block.reward / 1e6).toFixed(2)} ZION`} color="text-zion-cyan" tip={tx5(NetworkCopy.rewardForTheLatestBlockPerDeca, lang)} />
               </>
             )}
           </div>
@@ -862,18 +861,18 @@ export default function NetworkPage() {
         {chainStats && (
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.emission[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkCopy.emission, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Coins className="h-7 w-7 text-zion-gold" />
-              {NetworkCopy.emissionProgress[cs ? 'cs' : 'en']}
+              {tx5(NetworkCopy.emissionProgress, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{NetworkCopy.decadeDecayModel20Every10Years[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(NetworkCopy.decadeDecayModel20Every10Years, lang)}</p>
           </div>
 
           {/* Overall progress bar */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-400">{NetworkCopy.mined[cs ? 'cs' : 'en']}: {chainStats.emission_pct}%</span>
+              <span className="text-sm text-gray-400">{tx5(NetworkCopy.mined, lang)}: {chainStats.emission_pct}%</span>
               <span className="text-sm text-gray-400">{fmtLargeNum(chainStats.circulating_supply)} / {fmtLargeNum(TOTAL_SUPPLY_ZION)} ZION</span>
             </div>
             <div className="h-4 rounded-full bg-white/5 overflow-hidden">
@@ -893,12 +892,12 @@ export default function NetworkPage() {
               return (
                 <div key={i} className="zion-rainbow-sub p-4" style={{ '--rc': isCurrent ? '252, 209, 22' : isPast ? '52, 211, 153' : '255, 255, 255' } as React.CSSProperties}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] uppercase tracking-wider text-gray-500">{NetworkCopy.decade[cs ? 'cs' : 'en']} {i + 1}</span>
-                    {isCurrent && <span className="text-[10px] font-bold uppercase tracking-widest text-zion-gold bg-zion-gold/20 px-2 py-0.5 rounded-full">{NetworkCopy.now[cs ? 'cs' : 'en']}</span>}
+                    <span className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(NetworkCopy.decade, lang)} {i + 1}</span>
+                    {isCurrent && <span className="text-[10px] font-bold uppercase tracking-widest text-zion-gold bg-zion-gold/20 px-2 py-0.5 rounded-full">{tx5(NetworkCopy.now, lang)}</span>}
                     {isPast && <span className="text-[10px] text-zion-cyan">✓</span>}
                   </div>
                   <p className={`text-lg font-bold font-mono ${isCurrent ? 'text-zion-gold' : isPast ? 'text-zion-cyan' : 'text-gray-400'}`}>{reward.toFixed(2)}</p>
-                  <p className="text-[11px] text-gray-500">ZION/{NetworkCopy.block[cs ? 'cs' : 'en']}</p>
+                  <p className="text-[11px] text-gray-500">ZION/{tx5(NetworkCopy.block, lang)}</p>
                   <p className="text-[11px] text-gray-500 mt-1 font-mono">{fmtLargeNum(decadeStart)}–{fmtLargeNum(decadeEnd)}</p>
                 </div>
               );
@@ -910,12 +909,12 @@ export default function NetworkPage() {
         {/* ═══════ INFRASTRUCTURE ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.infrastructure[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkCopy.infrastructure, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Shield className="h-7 w-7 text-zion-gold" />
-              {NetworkCopy.currentRuntime[cs ? 'cs' : 'en']}
+              {tx5(NetworkCopy.currentRuntime, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{NetworkCopy.currentPublicRuntimeIsA2NodeV3[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(NetworkCopy.currentPublicRuntimeIsA2NodeV3, lang)}</p>
           </div>
           <div className="grid gap-5 md:grid-cols-1 lg:max-w-2xl">
             {infraFeatures.map((node) => (
@@ -943,15 +942,15 @@ export default function NetworkPage() {
                   </div>
                   <div className="flex items-center gap-2 text-gray-300">
                     <Zap className="w-3.5 h-3.5 text-gray-500" />
-                    <span>{NetworkCopy.portEndpointsSeeNodeDescriptio[cs ? 'cs' : 'en']}</span>
+                    <span>{tx5(NetworkCopy.portEndpointsSeeNodeDescriptio, lang)}</span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-300">
                     <Terminal className="w-3.5 h-3.5 text-gray-500" />
-                    <span>{NetworkCopy.rpcAutoFailoverAcross2NodeMesh[cs ? 'cs' : 'en']}</span>
+                    <span>{tx5(NetworkCopy.rpcAutoFailoverAcross2NodeMesh, lang)}</span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-300">
                     <Globe className="w-3.5 h-3.5 text-gray-500" />
-                    <span>{NetworkCopy.p2pMesh83338334Backup8335Offli[cs ? 'cs' : 'en']}</span>
+                    <span>{tx5(NetworkCopy.p2pMesh83338334Backup8335Offli, lang)}</span>
                   </div>
                 </div>
               </div>
@@ -965,53 +964,53 @@ export default function NetworkPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">v3.2.0 E2E</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-7 w-7 text-zion-gold" />
-              {NetworkCopy.e2eStack[cs ? 'cs' : 'en']}
+              {tx5(NetworkCopy.e2eStack, lang)}
             </h2>
             <p className="text-sm text-gray-400">
-              {NetworkCopy.allV306ComponentsHaveBeenVerif[cs ? 'cs' : 'en']}
+              {tx5(NetworkCopy.allV306ComponentsHaveBeenVerif, lang)}
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 icon: CheckCircle,
-                title: NetworkCopy.k1111Services[cs ? 'cs' : 'en'],
-                detail: NetworkCopy.nodePoolWatchersBridgeWebDashb[cs ? 'cs' : 'en'],
+                title: tx5(NetworkCopy.k1111Services, lang),
+                detail: tx5(NetworkCopy.nodePoolWatchersBridgeWebDashb, lang),
               },
               {
                 icon: Shield,
-                title: NetworkCopy.f47F5Active[cs ? 'cs' : 'en'],
-                detail: NetworkCopy.maxTxAmountCapAndSenderBalance[cs ? 'cs' : 'en'],
+                title: tx5(NetworkCopy.f47F5Active, lang),
+                detail: tx5(NetworkCopy.maxTxAmountCapAndSenderBalance, lang),
               },
               {
                 icon: FileText,
-                title: NetworkCopy.memoE2eTests[cs ? 'cs' : 'en'],
-                detail: NetworkCopy.k3AccountModelTxsWithMemosConfi[cs ? 'cs' : 'en'],
+                title: tx5(NetworkCopy.memoE2eTests, lang),
+                detail: tx5(NetworkCopy.k3AccountModelTxsWithMemosConfi, lang),
               },
               {
                 icon: Activity,
-                title: NetworkCopy.memoryLeakFix[cs ? 'cs' : 'en'],
-                detail: NetworkCopy.poolNodeMemoryLeaksFixedWatchd[cs ? 'cs' : 'en'],
+                title: tx5(NetworkCopy.memoryLeakFix, lang),
+                detail: tx5(NetworkCopy.poolNodeMemoryLeaksFixedWatchd, lang),
               },
               {
                 icon: Terminal,
-                title: NetworkCopy.rpcAuditLog[cs ? 'cs' : 'en'],
-                detail: NetworkCopy.nodeRpcAuditLogForSecurityFore[cs ? 'cs' : 'en'],
+                title: tx5(NetworkCopy.rpcAuditLog, lang),
+                detail: tx5(NetworkCopy.nodeRpcAuditLogForSecurityFore, lang),
               },
               {
                 icon: Lock,
-                title: NetworkCopy.apparmorUfw[cs ? 'cs' : 'en'],
-                detail: NetworkCopy.edgeServerIsProtectedByApparmo[cs ? 'cs' : 'en'],
+                title: tx5(NetworkCopy.apparmorUfw, lang),
+                detail: tx5(NetworkCopy.edgeServerIsProtectedByApparmo, lang),
               },
               {
                 icon: Globe,
-                title: NetworkCopy.bridgeBaseMainnet[cs ? 'cs' : 'en'],
-                detail: NetworkCopy.zionbridgeAndL2WatchersSynchro[cs ? 'cs' : 'en'],
+                title: tx5(NetworkCopy.bridgeBaseMainnet, lang),
+                detail: tx5(NetworkCopy.zionbridgeAndL2WatchersSynchro, lang),
               },
               {
                 icon: Server,
-                title: NetworkCopy.k2NodeMesh[cs ? 'cs' : 'en'],
-                detail: NetworkCopy.edge1AndEdge2Within2BlockSyncL[cs ? 'cs' : 'en'],
+                title: tx5(NetworkCopy.k2NodeMesh, lang),
+                detail: tx5(NetworkCopy.edge1AndEdge2Within2BlockSyncL, lang),
               },
             ].map((item) => (
               <div key={item.title} className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
@@ -1032,12 +1031,12 @@ export default function NetworkPage() {
         {/* ═══════ LIVE TELEMETRY ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.liveTelemetry[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkCopy.liveTelemetry, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-zion-cyan" />
-              {NetworkCopy.nodeStatus[cs ? 'cs' : 'en']}
+              {tx5(NetworkCopy.nodeStatus, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{NetworkCopy.realTimeHealthBlockHeightHashr[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(NetworkCopy.realTimeHealthBlockHeightHashr, lang)}</p>
           </div>
           <NetworkStatus className="max-w-none" />
         </section>
@@ -1051,12 +1050,12 @@ export default function NetworkPage() {
         {/* ═══════ NETWORK MAP + POOL FINDER ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.geography[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkCopy.geography, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Globe2 className="h-7 w-7 text-zion-cyan" />
-              {NetworkCopy.networkMapPoolFinder[cs ? 'cs' : 'en']}
+              {tx5(NetworkCopy.networkMapPoolFinder, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{NetworkCopy.visualizeTheCurrentTopologyAnd[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(NetworkCopy.visualizeTheCurrentTopologyAnd, lang)}</p>
           </div>
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
@@ -1072,12 +1071,12 @@ export default function NetworkPage() {
         {/* ═══════ CONNECTION GUIDES ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.connect[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkCopy.connect, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Layers className="h-7 w-7 text-zion-purple" />
-              {NetworkCopy.connectionGuides[cs ? 'cs' : 'en']}
+              {tx5(NetworkCopy.connectionGuides, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{NetworkCopy.everythingYouNeedToConnectAMin[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(NetworkCopy.everythingYouNeedToConnectAMin, lang)}</p>
           </div>
           <div className="grid gap-5 lg:grid-cols-3">
             {guideBlocks.map((block) => (
@@ -1104,10 +1103,10 @@ export default function NetworkPage() {
         {/* ═══════ NETWORK CHECKLIST ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.status[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkCopy.status, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <ShieldCheck className="h-7 w-7 text-zion-cyan" />
-              {NetworkCopy.networkReadiness[cs ? 'cs' : 'en']}
+              {tx5(NetworkCopy.networkReadiness, lang)}
             </h2>
           </div>
           <div className="grid gap-2 md:grid-cols-3">
@@ -1122,7 +1121,7 @@ export default function NetworkPage() {
             <span className="font-mono text-zion-cyan">{factsDone}</span>
             <span>/</span>
             <span className="font-mono">{factsTotal}</span>
-            <span>{NetworkCopy.completed[cs ? 'cs' : 'en']}</span>
+            <span>{tx5(NetworkCopy.completed, lang)}</span>
             <div className="h-2 flex-1 max-w-xs rounded-full bg-white/10">
               <div className="h-2 rounded-full bg-zion-cyan" style={{ width: `${(factsDone / factsTotal) * 100}%` }} />
             </div>
@@ -1138,19 +1137,19 @@ export default function NetworkPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">FAQ</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Hash className="h-7 w-7 text-zion-purple" />
-              {NetworkCopy.frequentlyAskedQuestions[cs ? 'cs' : 'en']}
+              {tx5(NetworkCopy.frequentlyAskedQuestions, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{NetworkCopy.everythingAboutTheZionNetworkI[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(NetworkCopy.everythingAboutTheZionNetworkI, lang)}</p>
           </div>
-          <NetFAQSection cs={cs} />
+          <NetFAQSection cs={cs} lang={lang} />
         </section>
 
         {/* ═══════ CTA ═══════ */}
         <section className="zion-cta-banner">
           <Radio className="mx-auto h-12 w-12 text-zion-gold" />
-          <h2 className="mt-6 text-3xl font-semibold text-white">{NetworkCopy.joinTheZionNetwork[cs ? 'cs' : 'en']}</h2>
+          <h2 className="mt-6 text-3xl font-semibold text-white">{tx5(NetworkCopy.joinTheZionNetwork, lang)}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            {NetworkCopy.nativeRustInfrastructureRunnin[cs ? 'cs' : 'en']}
+            {tx5(NetworkCopy.nativeRustInfrastructureRunnin, lang)}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
             89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · Public launch postponed (TBD)
@@ -1158,10 +1157,10 @@ export default function NetworkPage() {
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs">
             {[
               'Cosmic Harmony PoW',
-              NetworkCopy.primaryHostLive[cs ? 'cs' : 'en'],
-              NetworkCopy.internalSeeds[cs ? 'cs' : 'en'],
-              NetworkCopy.containerNative[cs ? 'cs' : 'en'],
-              NetworkCopy.archivedMultiHostHistory[cs ? 'cs' : 'en'],
+              tx5(NetworkCopy.primaryHostLive, lang),
+              tx5(NetworkCopy.internalSeeds, lang),
+              tx5(NetworkCopy.containerNative, lang),
+              tx5(NetworkCopy.archivedMultiHostHistory, lang),
             ].map((item) => (
               <span key={item} className="zion-badge-gold">
                 {item}
@@ -1170,10 +1169,10 @@ export default function NetworkPage() {
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link href="/explorer" className="zion-button-secondary">
-              <Activity className="h-4 w-4" /> {NetworkCopy.explorer[cs ? 'cs' : 'en']}
+              <Activity className="h-4 w-4" /> {tx5(NetworkCopy.explorer, lang)}
             </Link>
             <Link href="/roadmap" className="zion-button-primary">
-              <Rocket className="h-4 w-4" /> {NetworkCopy.roadmap[cs ? 'cs' : 'en']}
+              <Rocket className="h-4 w-4" /> {tx5(NetworkCopy.roadmap, lang)}
             </Link>
             <a
               href="https://github.com/Zion-TerraNova"
@@ -1187,9 +1186,7 @@ export default function NetworkPage() {
         </section>
 
         <p className="text-center text-xs text-gray-600">
-          {cs
-            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Síť Pro · One Love mesh · v3.2.0 E2E Trinity`
-            : `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Network Pro · One Love mesh · v3.2.0 E2E Trinity`}
+          {cs ? `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Síť Pro · One Love mesh · v3.2.0 E2E Trinity` : t5(`ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Network Pro · One Love mesh · v3.2.0 E2E Trinity`, lang)}
         </p>
       </div>
 
@@ -1253,17 +1250,17 @@ function ChainStatCard({ label, value, sub, color, tip }: { label: string; value
 }
 
 /* ─── NetFAQSection ─── */
-function NetFAQSection({ cs }: { cs: boolean }) {
+function NetFAQSection({ cs, lang }: { cs: boolean; lang: Lang }) {
   const [open, setOpen] = useState<number | null>(null);
   const faqs = useMemo(() => [
-    { q: NetworkCopy.whatConsensusDoesZionUse[cs ? 'cs' : 'en'], a: NetworkCopy.cosmicHarmonyProofOfWorkACusto[cs ? 'cs' : 'en'] },
-    { q: NetworkCopy.whatIsTheTargetBlockTime[cs ? 'cs' : 'en'], a: NetworkCopy.k60SecondsDifficultyAdjustsDyna[cs ? 'cs' : 'en'] },
-    { q: NetworkCopy.howManyZionAreMinedPerBlock[cs ? 'cs' : 'en'], a: cs ? `V první dekádě je odměna ${BLOCK_REWARD_ZION.toFixed(3)} ZION/blok. Každých 10 let (${BLOCKS_PER_DECADE.toLocaleString()} bloků) se odměna sníží o 20 % (Decade Decay).` : `In the first decade the reward is ${BLOCK_REWARD_ZION.toFixed(3)} ZION/block. Every 10 years (${BLOCKS_PER_DECADE.toLocaleString()} blocks) the reward decreases by 20% (Decade Decay).` },
-    { q: NetworkCopy.whatIsTheMaximumSupply[cs ? 'cs' : 'en'], a: cs ? `Maximální supply je ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} miliard ZION včetně genesis premine ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)} mld ZION.` : `Maximum supply is ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} billion ZION including genesis premine of ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)}B ZION.` },
-    { q: NetworkCopy.howToConnectAsAMiner[cs ? 'cs' : 'en'], a: cs ? `Stáhněte si XMRig nebo Desktop App a použijte stratum+tcp://${SITE_POOL_PRIMARY} jako pool adresu. Detaily najdete v Connection Guides výše.` : `Download XMRig or the Desktop App and use stratum+tcp://${SITE_POOL_PRIMARY} as the pool address. See the Connection Guides section above for details.` },
-    { q: NetworkCopy.howToRunYourOwnFullNode[cs ? 'cs' : 'en'], a: cs ? `Klonujte repo, sestavte zion-node pomocí cargo build --release a spusťte ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333. Kontejnerové nastavení je k dispozici v repozitáři.` : `Clone the repo, build zion-node with cargo build --release, then run ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333. Container setup is available in the repo.` },
-    { q: NetworkCopy.whatPoolFeeDoesZionCharge[cs ? 'cs' : 'en'], a: NetworkCopy.k89GoesToTheMiner5ToTheHumanita[cs ? 'cs' : 'en'] },
-    { q: NetworkCopy.isTheNetworkPubliclyLaunched[cs ? 'cs' : 'en'], a: NetworkCopy.mainnetGenesisTookPlaceOn11Jun[cs ? 'cs' : 'en'] },
+    { q: tx5(NetworkCopy.whatConsensusDoesZionUse, lang), a: tx5(NetworkCopy.cosmicHarmonyProofOfWorkACusto, lang) },
+    { q: tx5(NetworkCopy.whatIsTheTargetBlockTime, lang), a: tx5(NetworkCopy.k60SecondsDifficultyAdjustsDyna, lang) },
+    { q: tx5(NetworkCopy.howManyZionAreMinedPerBlock, lang), a: cs ? `V první dekádě je odměna ${BLOCK_REWARD_ZION.toFixed(3)} ZION/blok. Každých 10 let (${BLOCKS_PER_DECADE.toLocaleString()} bloků) se odměna sníží o 20 % (Decade Decay).` : t5(`In the first decade the reward is ${BLOCK_REWARD_ZION.toFixed(3)} ZION/block. Every 10 years (${BLOCKS_PER_DECADE.toLocaleString()} blocks) the reward decreases by 20% (Decade Decay).`, lang) },
+    { q: tx5(NetworkCopy.whatIsTheMaximumSupply, lang), a: cs ? `Maximální supply je ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} miliard ZION včetně genesis premine ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)} mld ZION.` : t5(`Maximum supply is ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} billion ZION including genesis premine of ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)}B ZION.`, lang) },
+    { q: tx5(NetworkCopy.howToConnectAsAMiner, lang), a: cs ? `Stáhněte si XMRig nebo Desktop App a použijte stratum+tcp://${SITE_POOL_PRIMARY} jako pool adresu. Detaily najdete v Connection Guides výše.` : t5(`Download XMRig or the Desktop App and use stratum+tcp://${SITE_POOL_PRIMARY} as the pool address. See the Connection Guides section above for details.`, lang) },
+    { q: tx5(NetworkCopy.howToRunYourOwnFullNode, lang), a: cs ? `Klonujte repo, sestavte zion-node pomocí cargo build --release a spusťte ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333. Kontejnerové nastavení je k dispozici v repozitáři.` : t5(`Clone the repo, build zion-node with cargo build --release, then run ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333. Container setup is available in the repo.`, lang) },
+    { q: tx5(NetworkCopy.whatPoolFeeDoesZionCharge, lang), a: tx5(NetworkCopy.k89GoesToTheMiner5ToTheHumanita, lang) },
+    { q: tx5(NetworkCopy.isTheNetworkPubliclyLaunched, lang), a: tx5(NetworkCopy.mainnetGenesisTookPlaceOn11Jun, lang) },
   ], [cs]);
   return (
     <div className="divide-y divide-white/[0.06]">

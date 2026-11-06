@@ -54,6 +54,12 @@ import bohemiaFr from './ui-strings/bohemia.fr.json';
 import marketEs from './ui-strings/market.es.json';
 import marketPt from './ui-strings/market.pt.json';
 import marketFr from './ui-strings/market.fr.json';
+import networkEs from './ui-strings/network.es.json';
+import networkPt from './ui-strings/network.pt.json';
+import networkFr from './ui-strings/network.fr.json';
+import freeworldEs from './ui-strings/freeworld.es.json';
+import freeworldPt from './ui-strings/freeworld.pt.json';
+import freeworldFr from './ui-strings/freeworld.fr.json';
 
 
 /**
@@ -75,9 +81,9 @@ type Dict = Record<string, string>;
 const merge = (...parts: Dict[]): Dict => Object.assign({}, ...parts);
 
 const DICTS: Record<'es' | 'pt' | 'fr', Dict> = {
-  es: merge(avatarsEs, newsfeedEs, issobellaEs, treeoflifeEs, mariaEs, kralovstviEs, nabukanoEs, archivelockEs, zionarchiveEs, whitepapersEs, tepikooraEs, contractsEs, knihovnaEs, qvEs, teamEs, l4hubEs, bohemiaEs, marketEs),
-  pt: merge(avatarsPt, newsfeedPt, issobellaPt, treeoflifePt, mariaPt, kralovstviPt, nabukanoPt, archivelockPt, zionarchivePt, whitepapersPt, tepikooraPt, contractsPt, knihovnaPt, qvPt, teamPt, l4hubPt, bohemiaPt, marketPt),
-  fr: merge(avatarsFr, newsfeedFr, issobellaFr, treeoflifeFr, mariaFr, kralovstviFr, nabukanoFr, archivelockFr, zionarchiveFr, whitepapersFr, tepikooraFr, contractsFr, knihovnaFr, qvFr, teamFr, l4hubFr, bohemiaFr, marketFr),
+  es: merge(avatarsEs, newsfeedEs, issobellaEs, treeoflifeEs, mariaEs, kralovstviEs, nabukanoEs, archivelockEs, zionarchiveEs, whitepapersEs, tepikooraEs, contractsEs, knihovnaEs, qvEs, teamEs, l4hubEs, bohemiaEs, marketEs, networkEs, freeworldEs),
+  pt: merge(avatarsPt, newsfeedPt, issobellaPt, treeoflifePt, mariaPt, kralovstviPt, nabukanoPt, archivelockPt, zionarchivePt, whitepapersPt, tepikooraPt, contractsPt, knihovnaPt, qvPt, teamPt, l4hubPt, bohemiaPt, marketPt, networkPt, freeworldPt),
+  fr: merge(avatarsFr, newsfeedFr, issobellaFr, treeoflifeFr, mariaFr, kralovstviFr, nabukanoFr, archivelockFr, zionarchiveFr, whitepapersFr, tepikooraFr, contractsFr, knihovnaFr, qvFr, teamFr, l4hubFr, bohemiaFr, marketFr, networkFr, freeworldFr),
 };
 
 /** Přeloží lokalizovaný objekt pro daný jazyk (5 kódů). */
@@ -95,6 +101,11 @@ export function tx5(entry: Entry, lang: Lang): string {
 }
 
 /** Přeloží holý anglický řetězec (inline ternáry typu `cs ? 'A' : 'B'`). */
+// Pole řetězců (tagy) — každý prvek přes slovník, fallback na EN.
+export function t5a(items: readonly string[], lang: Lang): string[] {
+  return items.map((s) => t5(s, lang));
+}
+
 export function t5(en: string, lang: Lang): string {
   if (!en) return '';
   if (lang === 'cs' || lang === 'en') return en;

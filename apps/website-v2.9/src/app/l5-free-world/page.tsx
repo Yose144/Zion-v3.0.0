@@ -8,7 +8,8 @@ import {
   Sprout, Activity, Radio, Brain, Music,
   Eye, Home, Wrench, MapPin, FileCheck2, Vote,
 } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5, t5a } from '@/lib/i18n-tx';
 import FundBalance, { FundBalanceSum } from '@/components/FundBalance';
 import FreeWorldMap from '@/components/FreeWorldMap';
 import L5FundTracker from '@/components/L5FundTracker';
@@ -118,54 +119,54 @@ const L5_PREMINE_WALLETS = [
 type CommunityStatus = 'development' | 'preparation' | 'vision' | 'built';
 type OnboardingStatus = 'live' | 'building' | 'horizon';
 
-const getStatusStyle = (cs: boolean, status: CommunityStatus) => {
+const getStatusStyle = (cs: boolean, lang: Lang, status: CommunityStatus) => {
   const map = {
     development: {
-      label: L5FreeWorldCopy.statusDevelopment[cs ? 'cs' : 'en'],
+      label: tx5(L5FreeWorldCopy.statusDevelopment, lang),
       class: 'border-zion-gold/30 bg-zion-gold/10 text-zion-gold',
     },
     preparation: {
-      label: L5FreeWorldCopy.statusPreparation[cs ? 'cs' : 'en'],
+      label: tx5(L5FreeWorldCopy.statusPreparation, lang),
       class: 'border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan',
     },
     vision: {
-      label: L5FreeWorldCopy.statusVision[cs ? 'cs' : 'en'],
+      label: tx5(L5FreeWorldCopy.statusVision, lang),
       class: 'border-zion-purple/30 bg-zion-purple/10 text-zion-purple',
     },
     built: {
-      label: L5FreeWorldCopy.statusBuilt[cs ? 'cs' : 'en'],
+      label: tx5(L5FreeWorldCopy.statusBuilt, lang),
       class: 'border-amber-200/40 bg-amber-100/10 text-amber-200',
     },
   };
   return map[status];
 };
 
-const getOnboardingStatusStyle = (cs: boolean, status: OnboardingStatus) => {
+const getOnboardingStatusStyle = (cs: boolean, lang: Lang, status: OnboardingStatus) => {
   const copy = L5FreeWorldCopy;
   const map = {
     live: {
-      label: copy.onboardingStatusLive[cs ? 'cs' : 'en'],
+      label: tx5(copy.onboardingStatusLive, lang),
       class: 'border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan',
     },
     building: {
-      label: copy.onboardingStatusBuilding[cs ? 'cs' : 'en'],
+      label: tx5(copy.onboardingStatusBuilding, lang),
       class: 'border-zion-gold/30 bg-zion-gold/10 text-zion-gold',
     },
     horizon: {
-      label: copy.onboardingStatusHorizon[cs ? 'cs' : 'en'],
+      label: tx5(copy.onboardingStatusHorizon, lang),
       class: 'border-zion-purple/30 bg-zion-purple/10 text-zion-purple',
     },
   };
   return map[status];
 };
 
-const getCommunities = (cs: boolean) => [
+const getCommunities = (cs: boolean, lang: Lang) => [
   {
     name: 'Genesis Garden',
-    location: L5FreeWorldCopy.algarvePortugal[cs ? 'cs' : 'en'],
+    location: tx5(L5FreeWorldCopy.algarvePortugal, lang),
     status: 'preparation' as const,
-    desc: L5FreeWorldCopy.pioneerL5CommunityPermaculture[cs ? 'cs' : 'en'],
-    tags: ['Permaculture', 'Guardian Node', 'DAO Circle'],
+    desc: tx5(L5FreeWorldCopy.pioneerL5CommunityPermaculture, lang),
+    tags: t5a(['Permaculture', 'Guardian Node', 'DAO Circle'], lang),
     href: '/terranova/genesis',
     cover: '/images/genesis-garden/hero.webp',
   },
@@ -173,8 +174,8 @@ const getCommunities = (cs: boolean) => [
     name: 'Dharma Temple',
     location: 'La Palma — Terra Nova Sanctuary',
     status: 'preparation' as const,
-    desc: L5FreeWorldCopy.educationalAndMeditationCenter[cs ? 'cs' : 'en'],
-    tags: ['Education', 'Off-grid', 'Meditation'],
+    desc: tx5(L5FreeWorldCopy.educationalAndMeditationCenter, lang),
+    tags: t5a(['Education', 'Off-grid', 'Meditation'], lang),
     href: '/terranova/dharma-temple',
     cover: '/images/dharma-temple/hero.webp',
   },
@@ -182,179 +183,159 @@ const getCommunities = (cs: boolean) => [
     name: 'Te Pīko Ora',
     location: 'Raiatea · French Polynesia',
     status: 'preparation' as const,
-    desc: L5FreeWorldCopy.tePikoOraPolynesianRevival[cs ? 'cs' : 'en'],
-    tags: ['Cultural Revival', 'Heritage', 'L5 Fund'],
+    desc: tx5(L5FreeWorldCopy.tePikoOraPolynesianRevival, lang),
+    tags: t5a(['Cultural Revival', 'Heritage', 'L5 Fund'], lang),
     href: '/terranova/te-piko-ora',
     cover: '/images/te-piko-ora/hero.webp',
   },
   {
     name: 'Golden Republic Bohemia',
-    location: cs ? 'Čechy, Česká republika' : 'Bohemia, Czech Republic',
+    location: cs ? 'Čechy, Česká republika' : t5('Bohemia, Czech Republic', lang),
     status: 'preparation' as const,
-    desc: cs
-      ? 'Governance laboratoř Zlaté republiky — kruh rozhodování, česká moudrost a ZION protokol v srdci Evropy.'
-      : 'Governance laboratory for the Golden Republic — decision circle, Czech wisdom and ZION protocol in the heart of Europe.',
-    tags: ['Governance', 'DAO Circle', 'Golden Republic'],
+    desc: cs ? 'Governance laboratoř Zlaté republiky — kruh rozhodování, česká moudrost a ZION protokol v srdci Evropy.' : t5('Governance laboratory for the Golden Republic — decision circle, Czech wisdom and ZION protocol in the heart of Europe.', lang),
+    tags: t5a(['Governance', 'DAO Circle', 'Golden Republic'], lang),
     href: '/terranova/golden-republic-bohemia',
     cover: '/images/golden-republic-bohemia/hero.webp',
   },
   {
     name: 'Bodhi Lanka',
-    location: cs ? 'Srí Lanka' : 'Sri Lanka',
+    location: cs ? 'Srí Lanka' : t5('Sri Lanka', lang),
     status: 'preparation' as const,
-    desc: cs
-      ? 'Akáša uzel — prostor, který drží všechny elementy. Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi a ZION protokol.'
-      : 'Akasha node — the space that holds all elements. Infinite love of Rama and Sita, the oldest living tree on Earth, and ZION protocol.',
-    tags: ['Bhakti', 'Ayurveda', 'Bodhi Tree'],
+    desc: cs ? 'Akáša uzel — prostor, který drží všechny elementy. Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi a ZION protokol.' : t5('Akasha node — the space that holds all elements. Infinite love of Rama and Sita, the oldest living tree on Earth, and ZION protocol.', lang),
+    tags: t5a(['Bhakti', 'Ayurveda', 'Bodhi Tree'], lang),
     href: '/terranova/bodhi-lanka',
     cover: '/images/bodhi-lanka/hero.webp',
   },
   {
     name: 'Ekam · Oneness Temple',
-    location: cs ? 'Varadaiahpalem, Andhra Pradesh, Indie' : 'Varadaiahpalem, Andhra Pradesh, India',
+    location: cs ? 'Varadaiahpalem, Andhra Pradesh, Indie' : t5('Varadaiahpalem, Andhra Pradesh, India', lang),
     status: 'built' as const,
-    desc: cs
-      ? 'Jediný uzel, který už stojí — chrám Jednoty postavený 2008: bílý mramor, zlatý řez, bezsloupová hala a Zlatá koule. Předloha pro všechny uzly a místo, které pojmenovalo samotný chain (ekam_deeksha).'
-      : 'The only node already standing — the Temple of Oneness built in 2008: white marble, golden ratio, a column-free hall and the Golden Orb. The template for every node and the place that named the chain itself (ekam_deeksha).',
-    tags: cs ? ['Postaveno 2008', 'Předloha', 'Zlatá koule'] : ['Built 2008', 'The Template', 'Golden Orb'],
+    desc: cs ? 'Jediný uzel, který už stojí — chrám Jednoty postavený 2008: bílý mramor, zlatý řez, bezsloupová hala a Zlatá koule. Předloha pro všechny uzly a místo, které pojmenovalo samotný chain (ekam_deeksha).' : t5('The only node already standing — the Temple of Oneness built in 2008: white marble, golden ratio, a column-free hall and the Golden Orb. The template for every node and the place that named the chain itself (ekam_deeksha).', lang),
+    tags: t5a(['Built 2008', 'The Template', 'Golden Orb'], lang),
     href: '/terranova/ekam',
     cover: '/images/ekam/hero.webp',
   },
   {
     name: 'LUMI',
-    location: cs ? 'Kostarika · Nová Amerika' : 'Costa Rica · Nová Amerika',
+    location: cs ? 'Kostarika · Nová Amerika' : t5('Costa Rica · Nová Amerika', lang),
     status: 'preparation' as const,
-    desc: cs
-      ? 'Most Amerik — projekt pro nativní kultury (Bribri, Cabécar, Boruca) na zeměpisném středobodu kontinentů, sdílený pozemek s pozemní stanicí Issobella.'
-      : 'Americas bridge — a project for the native cultures (Bribri, Cabécar, Boruca) at the geographic midpoint of the continents, sharing land with the Issobella ground station.',
-    tags: cs ? ['Nativní kultury', 'FPIC', 'Most Amerik'] : ['Native Cultures', 'FPIC', 'Americas Bridge'],
+    desc: cs ? 'Most Amerik — projekt pro nativní kultury (Bribri, Cabécar, Boruca) na zeměpisném středobodu kontinentů, sdílený pozemek s pozemní stanicí Issobella.' : t5('Americas bridge — a project for the native cultures (Bribri, Cabécar, Boruca) at the geographic midpoint of the continents, sharing land with the Issobella ground station.', lang),
+    tags: t5a(['Native Cultures', 'FPIC', 'Americas Bridge'], lang),
     href: '/terranova/nova-amerika',
     cover: '/images/nova-amerika/hero.webp',
   },
   {
     name: 'Uluru',
-    location: cs ? 'Northern Territory, Austrálie' : 'Northern Territory, Australia',
+    location: cs ? 'Northern Territory, Austrálie' : t5('Northern Territory, Australia', lang),
     status: 'vision' as const,
-    desc: cs
-      ? 'Poselství protinožců — odkaz domorodé Austrálie: Tjukurpa, songlines, škola vnímání a každoroční festival oslavy života. Uzel jako vztah, ne stavba.'
-      : 'Message from the antipodes — the heritage of Aboriginal Australia: Tjukurpa, songlines, a school of perception and an annual celebration-of-life festival. A node as a relationship, not a construction.',
-    tags: cs ? ['Tjukurpa', 'Songlines', 'Domorodé dědictví'] : ['Tjukurpa', 'Songlines', 'Indigenous Heritage'],
+    desc: cs ? 'Poselství protinožců — odkaz domorodé Austrálie: Tjukurpa, songlines, škola vnímání a každoroční festival oslavy života. Uzel jako vztah, ne stavba.' : t5('Message from the antipodes — the heritage of Aboriginal Australia: Tjukurpa, songlines, a school of perception and an annual celebration-of-life festival. A node as a relationship, not a construction.', lang),
+    tags: t5a(['Tjukurpa', 'Songlines', 'Indigenous Heritage'], lang),
     href: '/terranova/uluru',
     cover: '/images/uluru/hero.webp',
   },
   {
     name: 'María del Camino',
-    location: cs ? 'Světové oceány · domovský přístav Galicie' : 'World oceans · home port Galicia',
+    location: cs ? 'Světové oceány · domovský přístav Galicie' : t5('World oceans · home port Galicia', lang),
     status: 'preparation' as const,
-    desc: cs
-      ? 'Osmý bod sítě — plující uzel, flotila Tres Marias: atlantická plachetnice Santa María la Mayor, pacifický solární katamarán Nossa Senhora de Fátima a indickooceánská María de las Nieves. ~50 poutníků na trup spojuje všechny uzly sítě po mořském Caminu.'
-      : 'The eighth point of the network — a sailing node, the Tres Marias fleet: the Atlantic tall ship Santa María la Mayor, the Pacific solar catamaran Nossa Senhora de Fátima and the Indian-ocean María de las Nieves. ~50 pilgrims per hull connecting every node of the network on a sea Camino.',
-    tags: cs ? ['Mořské Camino', 'Solární plachty', 'Mobilní uzel'] : ['Sea Camino', 'Solar Sails', 'Mobile Node'],
+    desc: cs ? 'Osmý bod sítě — plující uzel, flotila Tres Marias: atlantická plachetnice Santa María la Mayor, pacifický solární katamarán Nossa Senhora de Fátima a indickooceánská María de las Nieves. ~50 poutníků na trup spojuje všechny uzly sítě po mořském Caminu.' : t5('The eighth point of the network — a sailing node, the Tres Marias fleet: the Atlantic tall ship Santa María la Mayor, the Pacific solar catamaran Nossa Senhora de Fátima and the Indian-ocean María de las Nieves. ~50 pilgrims per hull connecting every node of the network on a sea Camino.', lang),
+    tags: t5a(['Sea Camino', 'Solar Sails', 'Mobile Node'], lang),
     href: '/terranova/maria-del-camino',
     cover: '/images/maria-del-camino/hero.webp',
   },
   {
     name: 'Boa Esperança',
-    location: cs ? 'Mys dobré naděje, Jihoafrická republika' : 'Cape of Good Hope, South Africa',
+    location: cs ? 'Mys dobré naděje, Jihoafrická republika' : t5('Cape of Good Hope, South Africa', lang),
     status: 'vision' as const,
-    desc: cs
-      ? 'Devátý bod sítě — druhý šev světa, kde se bouře přejmenovává na naději a dvě Marie se setkávají na vodě. Domov nejstarší lidské linie (Khoisan), fynbos zahrada a kelp seaforest, vodní laboratoř Day Zero. Uzel jako vztah, ne stavba.'
-      : 'The ninth point of the network — the second seam of the world, where the storm is renamed hope and the two Marias meet at sea. Home of humanity’s oldest lineage (Khoisan), a fynbos garden and kelp seaforest, a Day-Zero water lab. A node as a relationship, not a construction.',
-    tags: cs ? ['Naděje', 'Dva oceány', 'Khoisan'] : ['Hope', 'Two Oceans', 'Khoisan'],
+    desc: cs ? 'Devátý bod sítě — druhý šev světa, kde se bouře přejmenovává na naději a dvě Marie se setkávají na vodě. Domov nejstarší lidské linie (Khoisan), fynbos zahrada a kelp seaforest, vodní laboratoř Day Zero. Uzel jako vztah, ne stavba.' : t5('The ninth point of the network — the second seam of the world, where the storm is renamed hope and the two Marias meet at sea. Home of humanity’s oldest lineage (Khoisan), a fynbos garden and kelp seaforest, a Day-Zero water lab. A node as a relationship, not a construction.', lang),
+    tags: t5a(['Hope', 'Two Oceans', 'Khoisan'], lang),
     href: '/terranova/boa-esperanca',
     cover: '/images/boa-esperanca/hero.webp',
   },
   {
     name: 'Kailash',
-    location: cs ? 'Ngari, Tibet' : 'Ngari, Tibet',
+    location: cs ? 'Ngari, Tibet' : t5('Ngari, Tibet', lang),
     status: 'vision' as const,
-    desc: cs
-      ? 'Jedenáctý bod sítě — poušť očištění kolem jediné hory, na kterou se nikdy nevylezlo. Gang Rinpoche drží shodu čtyř tradic (hindu, buddha, bön, džina); poutník ji nechodí na ni, ale kolem — kora. U prastarého ohně sedí mistři všech linií Šambhaly. Uzel jako vztah, ne stavba.'
-      : 'The eleventh point of the network — the desert of purification around the only mountain never climbed. Gang Rinpoche holds the agreement of four traditions (Hindu, Buddhist, Bön, Jain); the pilgrim walks around it, not up — the kora. At the primordial fire sit the masters of all Shambhala lineages. A node as a relationship, not a construction.',
-    tags: cs ? ['Očištění', 'Kora', 'Šambhala'] : ['Purification', 'Kora', 'Shambhala'],
+    desc: cs ? 'Jedenáctý bod sítě — poušť očištění kolem jediné hory, na kterou se nikdy nevylezlo. Gang Rinpoche drží shodu čtyř tradic (hindu, buddha, bön, džina); poutník ji nechodí na ni, ale kolem — kora. U prastarého ohně sedí mistři všech linií Šambhaly. Uzel jako vztah, ne stavba.' : t5('The eleventh point of the network — the desert of purification around the only mountain never climbed. Gang Rinpoche holds the agreement of four traditions (Hindu, Buddhist, Bön, Jain); the pilgrim walks around it, not up — the kora. At the primordial fire sit the masters of all Shambhala lineages. A node as a relationship, not a construction.', lang),
+    tags: t5a(['Purification', 'Kora', 'Shambhala'], lang),
     href: '/terranova/kailash',
     cover: '/images/kailash/hero.webp',
   },
   {
     name: 'Amenti',
-    location: cs ? 'Gíza, Egypt' : 'Giza, Egypt',
+    location: cs ? 'Gíza, Egypt' : t5('Giza, Egypt', lang),
     status: 'vision' as const,
-    desc: cs
-      ? 'Dvanáctý a poslední bod sítě — kolébka záznamu na plateu Gízy: poslední dochovaný div antického světa (~4 500 let) a v mýtické geografii sítě Síně Amenti pod pískem — síně, kde 32 Dětí Světla hlídá Kvetoucí Plamen. Sedm Pánů = sedm ctností implementovaných v L3; Amenti Library už sítí běží. Uzel jako vztah, ne stavba.'
-      : 'The twelfth and final point of the network — the cradle of the record on the Giza plateau: the last surviving Wonder of the ancient world (~4,500 yrs) and, in the network’s mythic geography, the Halls of Amenti beneath the sand — where the 32 Children of Light keep the Flower of Light. Seven Lords = seven virtues implemented in L3; the Amenti Library already runs on the network. A node as a relationship, not a construction.',
-    tags: cs ? ['Vzpomínka', 'Síně záznamu', 'Smaragdové desky'] : ['Remembrance', 'Halls of Records', 'Emerald Tablets'],
+    desc: cs ? 'Dvanáctý a poslední bod sítě — kolébka záznamu na plateu Gízy: poslední dochovaný div antického světa (~4 500 let) a v mýtické geografii sítě Síně Amenti pod pískem — síně, kde 32 Dětí Světla hlídá Kvetoucí Plamen. Sedm Pánů = sedm ctností implementovaných v L3; Amenti Library už sítí běží. Uzel jako vztah, ne stavba.' : t5('The twelfth and final point of the network — the cradle of the record on the Giza plateau: the last surviving Wonder of the ancient world (~4,500 yrs) and, in the network’s mythic geography, the Halls of Amenti beneath the sand — where the 32 Children of Light keep the Flower of Light. Seven Lords = seven virtues implemented in L3; the Amenti Library already runs on the network. A node as a relationship, not a construction.', lang),
+    tags: t5a(['Remembrance', 'Halls of Records', 'Emerald Tablets'], lang),
     href: '/terranova/amenti',
     cover: '/images/amenti/hero.webp',
   },
   {
     name: 'Království srdce · Archa',
-    location: cs ? 'Světové oceány · velrybí koridor' : 'World oceans · whale corridor',
+    location: cs ? 'Světové oceány · velrybí koridor' : t5('World oceans · whale corridor', lang),
     status: 'vision' as const,
-    desc: cs
-      ? 'Třináctý uzel sítě — a jediný, který je na vodě. Archa Nirvana: plující kolonie do sta lidí, semenný archiv při −18 °C, knihovna civilizace a plný uzel řetězce. Čtvrté plavidlo vedle Tres Marías, které se vrací pro ty, kdo zůstali ve vodě; trasu mu určují keporkaci — sezónně mezi tropy a mírným pásmem, v rytmu cyklónových oken obou hemisfér. Koncept se čtyřmi pracovními studiemi, bez položeného kýlu.'
-      : 'The thirteenth node of the network — and the only one on the water. The ark Nirvana: a sailing colony of up to one hundred people, a seed vault at −18 °C, a library of civilisation and a full chain node. The fourth vessel beside the Tres Marías, returning for those left in the water; its route is set by the humpbacks — seasonally between the tropics and the temperate band, in the rhythm of both hemispheres’ cyclone windows. A concept with four working studies and no keel laid.',
-    tags: cs ? ['Archa', 'Velrybí obrace', 'Kolonie do sta'] : ['The Ark', 'Whale circuit', 'Colony of one hundred'],
+    desc: cs ? 'Třináctý uzel sítě — a jediný, který je na vodě. Archa Nirvana: plující kolonie do sta lidí, semenný archiv při −18 °C, knihovna civilizace a plný uzel řetězce. Čtvrté plavidlo vedle Tres Marías, které se vrací pro ty, kdo zůstali ve vodě; trasu mu určují keporkaci — sezónně mezi tropy a mírným pásmem, v rytmu cyklónových oken obou hemisfér. Koncept se čtyřmi pracovními studiemi, bez položeného kýlu.' : t5('The thirteenth node of the network — and the only one on the water. The ark Nirvana: a sailing colony of up to one hundred people, a seed vault at −18 °C, a library of civilisation and a full chain node. The fourth vessel beside the Tres Marías, returning for those left in the water; its route is set by the humpbacks — seasonally between the tropics and the temperate band, in the rhythm of both hemispheres’ cyclone windows. A concept with four working studies and no keel laid.', lang),
+    tags: t5a(['The Ark', 'Whale circuit', 'Colony of one hundred'], lang),
     href: '/terranova/kralovstvi-srdce',
     cover: '/images/kralovstvi-srdce/hero.webp',
   },
 ];
 
-const getPremineAllocation = (cs: boolean) => [
-  { name: 'Genesis Garden', amount: cs ? '500 mil.' : '500M', href: '/terranova/genesis' },
-  { name: 'Dharma Temple', amount: cs ? '500 mil.' : '500M', href: '/terranova/dharma-temple' },
-  { name: 'Te Pīko Ora', amount: cs ? '500 mil.' : '500M', href: '/terranova/te-piko-ora' },
-  { name: 'Golden Republic Bohemia', amount: cs ? '500 mil.' : '500M', href: '/terranova/golden-republic-bohemia' },
-  { name: 'Bodhi Lanka', amount: cs ? '500 mil.' : '500M', href: '/terranova/bodhi-lanka' },
-  { name: 'LUMI (Nová Amerika)', amount: cs ? '500 mil.' : '500M', href: '/terranova/nova-amerika' },
-  { name: 'María del Camino', amount: cs ? '300 mil.' : '300M', href: '/terranova/maria-del-camino' },
+const getPremineAllocation = (cs: boolean, lang: Lang) => [
+  { name: 'Genesis Garden', amount: cs ? '500 mil.' : t5('500M', lang), href: '/terranova/genesis' },
+  { name: 'Dharma Temple', amount: cs ? '500 mil.' : t5('500M', lang), href: '/terranova/dharma-temple' },
+  { name: 'Te Pīko Ora', amount: cs ? '500 mil.' : t5('500M', lang), href: '/terranova/te-piko-ora' },
+  { name: 'Golden Republic Bohemia', amount: cs ? '500 mil.' : t5('500M', lang), href: '/terranova/golden-republic-bohemia' },
+  { name: 'Bodhi Lanka', amount: cs ? '500 mil.' : t5('500M', lang), href: '/terranova/bodhi-lanka' },
+  { name: 'LUMI (Nová Amerika)', amount: cs ? '500 mil.' : t5('500M', lang), href: '/terranova/nova-amerika' },
+  { name: 'María del Camino', amount: cs ? '300 mil.' : t5('300M', lang), href: '/terranova/maria-del-camino' },
 ];
 
-const getProtocols = (cs: boolean) => [
+const getProtocols = (cs: boolean, lang: Lang) => [
   {
-    title: L5FreeWorldCopy.guardianNode[cs ? 'cs' : 'en'],
-    desc: L5FreeWorldCopy.everyL5CommunityValidatesBlock[cs ? 'cs' : 'en'],
+    title: tx5(L5FreeWorldCopy.guardianNode, lang),
+    desc: tx5(L5FreeWorldCopy.everyL5CommunityValidatesBlock, lang),
     icon: Shield,
     color: 'text-zion-cyan',
   },
   {
-    title: L5FreeWorldCopy.seedLibrary[cs ? 'cs' : 'en'],
-    desc: L5FreeWorldCopy.seedLibraryDesc[cs ? 'cs' : 'en'],
+    title: tx5(L5FreeWorldCopy.seedLibrary, lang),
+    desc: tx5(L5FreeWorldCopy.seedLibraryDesc, lang),
     icon: Sprout,
     color: 'text-zion-gold',
   },
   {
-    title: L5FreeWorldCopy.medicalTable[cs ? 'cs' : 'en'],
-    desc: L5FreeWorldCopy.medicalTableDesc[cs ? 'cs' : 'en'],
+    title: tx5(L5FreeWorldCopy.medicalTable, lang),
+    desc: tx5(L5FreeWorldCopy.medicalTableDesc, lang),
     icon: Activity,
     color: 'text-zion-cyan',
   },
   {
-    title: L5FreeWorldCopy.mesh[cs ? 'cs' : 'en'],
-    desc: L5FreeWorldCopy.meshDesc[cs ? 'cs' : 'en'],
+    title: tx5(L5FreeWorldCopy.mesh, lang),
+    desc: tx5(L5FreeWorldCopy.meshDesc, lang),
     icon: Radio,
     color: 'text-zion-purple',
   },
   {
-    title: L5FreeWorldCopy.sociocraticDao[cs ? 'cs' : 'en'],
-    desc: L5FreeWorldCopy.hybridGovernanceOffChainCircle[cs ? 'cs' : 'en'],
+    title: tx5(L5FreeWorldCopy.sociocraticDao, lang),
+    desc: tx5(L5FreeWorldCopy.hybridGovernanceOffChainCircle, lang),
     icon: Users,
     color: 'text-zion-purple',
   },
   {
-    title: L5FreeWorldCopy.consciousnessAdmission[cs ? 'cs' : 'en'],
-    desc: L5FreeWorldCopy.consciousnessAdmissionDesc[cs ? 'cs' : 'en'],
+    title: tx5(L5FreeWorldCopy.consciousnessAdmission, lang),
+    desc: tx5(L5FreeWorldCopy.consciousnessAdmissionDesc, lang),
     icon: Brain,
     color: 'text-zion-gold',
   },
   {
-    title: L5FreeWorldCopy.resonanceProtocol[cs ? 'cs' : 'en'],
-    desc: L5FreeWorldCopy.soundAttunementBeforeGovernanc[cs ? 'cs' : 'en'],
+    title: tx5(L5FreeWorldCopy.resonanceProtocol, lang),
+    desc: tx5(L5FreeWorldCopy.soundAttunementBeforeGovernanc, lang),
     icon: Music,
     color: 'text-zion-cyan',
   },
 ];
 
-const getOnboardingGates = (cs: boolean) => [
+const getOnboardingGates = (cs: boolean, lang: Lang) => [
   {
     title: { cs: `1. Pozorovatel`, en: `1. Observer` },
     desc: { cs: `Čti komunitní dokumenty, ověř fond v exploreru, porovnej web s chainem.`, en: `Read community docs, verify the fund in the explorer, compare web vs chain.` },
@@ -446,12 +427,12 @@ const ONBOARDING_PROMISES = {
 export default function L5FreeWorldPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const communities = getCommunities(cs);
-  const premineAllocation = getPremineAllocation(cs);
-  const protocols = getProtocols(cs);
-  const onboarding = getOnboardingGates(cs);
-  const rules = ONBOARDING_RULES[cs ? 'cs' : 'en'];
-  const promises = ONBOARDING_PROMISES[cs ? 'cs' : 'en'];
+  const communities = getCommunities(cs, lang);
+  const premineAllocation = getPremineAllocation(cs, lang);
+  const protocols = getProtocols(cs, lang);
+  const onboarding = getOnboardingGates(cs, lang);
+  const rules = lang === 'cs' ? ONBOARDING_RULES.cs : ONBOARDING_RULES.en;
+  const promises = lang === 'cs' ? ONBOARDING_PROMISES.cs : ONBOARDING_PROMISES.en;
 
   return (
     <div className="zion-page">
@@ -467,24 +448,24 @@ export default function L5FreeWorldPage() {
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                  {L5FreeWorldCopy.physicalLayerOfTheZionEcosyste[cs ? 'cs' : 'en']}
+                  {tx5(L5FreeWorldCopy.physicalLayerOfTheZionEcosyste, lang)}
                 </p>
                 <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
-                  {L5FreeWorldCopy.freeWorldL5[cs ? 'cs' : 'en']}
+                  {tx5(L5FreeWorldCopy.freeWorldL5, lang)}
                 </h1>
               </div>
               <p className="text-lg text-gray-300">
-                {L5FreeWorldCopy.l5IsThePhysicalLayerOfZionWher[cs ? 'cs' : 'en']}
+                {tx5(L5FreeWorldCopy.l5IsThePhysicalLayerOfZionWher, lang)}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-amber-200">
-                  <Heart className="h-3 w-3" /> {L5FreeWorldCopy.k5OfEveryBlockL5Fund[cs ? 'cs' : 'en']}
+                  <Heart className="h-3 w-3" /> {tx5(L5FreeWorldCopy.k5OfEveryBlockL5Fund, lang)}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-emerald-200">
-                  <CheckCircle2 className="h-3 w-3" /> {L5FreeWorldCopy.k117mZionMonth[cs ? 'cs' : 'en']}
+                  <CheckCircle2 className="h-3 w-3" /> {tx5(L5FreeWorldCopy.k117mZionMonth, lang)}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3" /> {L5FreeWorldCopy.fundActiveFromGenesis[cs ? 'cs' : 'en']}
+                  <Sparkles className="h-3 w-3" /> {tx5(L5FreeWorldCopy.fundActiveFromGenesis, lang)}
                 </span>
               </div>
             </div>
@@ -493,9 +474,7 @@ export default function L5FreeWorldPage() {
                 src="/images/kralovstvi-srdce/hero.webp"
                 srcSet="/images/kralovstvi-srdce/hero-m.webp 960w, /images/kralovstvi-srdce/hero.webp 1600w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
-                alt={cs
-                  ? 'L5 Free World — třináctý uzel: archa Království srdce · Nirvana, keporkaci a břeh Nové země'
-                  : 'L5 Free World — the thirteenth node: the ark Kingdom of the Heart · Nirvana, humpback whales and the shore of the new world'}
+                alt={cs ? 'L5 Free World — třináctý uzel: archa Království srdce · Nirvana, keporkaci a břeh Nové země' : t5('L5 Free World — the thirteenth node: the ark Kingdom of the Heart · Nirvana, humpback whales and the shore of the new world', lang)}
                 width={1600}
                 height={640}
                 loading="eager"
@@ -510,51 +489,51 @@ export default function L5FreeWorldPage() {
         {/* ── Fund Info ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L5FreeWorldCopy.humanitarianFund[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L5FreeWorldCopy.humanitarianFund, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Heart className="h-7 w-7 text-zion-gold" />
-              {L5FreeWorldCopy.l5Fund5BlockReward[cs ? 'cs' : 'en']}
+              {tx5(L5FreeWorldCopy.l5Fund5BlockReward, lang)}
             </h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="zion-rainbow-sub p-4 text-center transition-colors hover:bg-white/5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L5FreeWorldCopy.blockShare[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{tx5(L5FreeWorldCopy.blockShare, lang)}</p>
               <p className="text-3xl font-bold text-zion-gold">5%</p>
-              <p className="text-xs text-gray-500 mt-1">{L5FreeWorldCopy.everyBlockForever[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs text-gray-500 mt-1">{tx5(L5FreeWorldCopy.everyBlockForever, lang)}</p>
             </div>
             <div className="zion-rainbow-sub p-4 text-center transition-colors hover:bg-white/5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L5FreeWorldCopy.approxMonth[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{tx5(L5FreeWorldCopy.approxMonth, lang)}</p>
               <p className="text-3xl font-bold text-zion-cyan">~11,7M</p>
               <p className="text-xs text-gray-500 mt-1">ZION</p>
             </div>
             <div className="zion-rainbow-sub p-4 text-center transition-colors hover:bg-white/5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L5FreeWorldCopy.governedBy[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{tx5(L5FreeWorldCopy.governedBy, lang)}</p>
               <p className="text-2xl font-bold text-zion-cyan">DAO</p>
-              <p className="text-xs text-gray-500 mt-1">{L5FreeWorldCopy.l5Council[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs text-gray-500 mt-1">{tx5(L5FreeWorldCopy.l5Council, lang)}</p>
             </div>
-            <FundBalance address={HUMANITARIAN_WALLET} rc="252, 209, 22" label={L5FreeWorldCopy.liveBalance[cs ? 'cs' : 'en']} />
+            <FundBalance address={HUMANITARIAN_WALLET} rc="252, 209, 22" label={tx5(L5FreeWorldCopy.liveBalance, lang)} />
           </div>
           <div className="zion-rainbow-sub p-4 text-sm text-gray-400 font-mono break-all" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-            <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{L5FreeWorldCopy.fundWallet[cs ? 'cs' : 'en']}</p>
+            <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{tx5(L5FreeWorldCopy.fundWallet, lang)}</p>
             {HUMANITARIAN_WALLET}
           </div>
           <div className="mt-4">
             <L5FundTracker />
           </div>
           <p className="mt-4 text-xs text-gray-500">
-            {L5FreeWorldCopy.fundDisbursementNote[cs ? 'cs' : 'en']}
+            {tx5(L5FreeWorldCopy.fundDisbursementNote, lang)}
           </p>
         </motion.section>
 
         {/* ── Planetary map ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L5FreeWorldCopy.planetaryMap[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L5FreeWorldCopy.planetaryMap, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <MapPin className="h-7 w-7 text-emerald-400" />
-              {L5FreeWorldCopy.sixNodesOnPlanet[cs ? 'cs' : 'en']}
+              {tx5(L5FreeWorldCopy.sixNodesOnPlanet, lang)}
             </h2>
-            <p className="text-sm text-gray-400 max-w-3xl">{L5FreeWorldCopy.l5MapDesc[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400 max-w-3xl">{tx5(L5FreeWorldCopy.l5MapDesc, lang)}</p>
           </div>
           <FreeWorldMap />
         </motion.section>
@@ -562,12 +541,12 @@ export default function L5FreeWorldPage() {
         {/* ── Genesis premine allocation ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L5FreeWorldCopy.genesisAllocation[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L5FreeWorldCopy.genesisAllocation, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Wallet className="h-7 w-7 text-teal-300" />
-              {L5FreeWorldCopy.l5PremineTitle[cs ? 'cs' : 'en']}
+              {tx5(L5FreeWorldCopy.l5PremineTitle, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{L5FreeWorldCopy.l5PremineIntro[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(L5FreeWorldCopy.l5PremineIntro, lang)}</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {premineAllocation.map((item) => (
@@ -577,39 +556,39 @@ export default function L5FreeWorldPage() {
                   <ArrowRight className="h-4 w-4 text-teal-300/60 group-hover:translate-x-1 transition-transform" />
                 </div>
                 <p className="text-2xl font-bold text-teal-300">{item.amount}</p>
-                <p className="text-xs text-gray-500 mt-1">ZION · {L5FreeWorldCopy.perProjectAmount[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs text-gray-500 mt-1">ZION · {tx5(L5FreeWorldCopy.perProjectAmount, lang)}</p>
               </Link>
             ))}
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-2">
                 <Sprout className="h-4 w-4 text-teal-300" />
-                <h3 className="font-semibold text-white text-sm">{L5FreeWorldCopy.l5ReserveFund[cs ? 'cs' : 'en']}</h3>
+                <h3 className="font-semibold text-white text-sm">{tx5(L5FreeWorldCopy.l5ReserveFund, lang)}</h3>
               </div>
-              <p className="text-2xl font-bold text-teal-300">{cs ? '300 mil.' : '300M'}</p>
-              <p className="text-xs text-gray-500 mt-1">{cs ? 'Vyhrazeno jako founding rezerva plujícího uzlu María del Camino.' : 'Earmarked as the founding reserve of the María del Camino vessel node.'}</p>
+              <p className="text-2xl font-bold text-teal-300">{cs ? '300 mil.' : t5('300M', lang)}</p>
+              <p className="text-xs text-gray-500 mt-1">{cs ? 'Vyhrazeno jako founding rezerva plujícího uzlu María del Camino.' : t5('Earmarked as the founding reserve of the María del Camino vessel node.', lang)}</p>
             </div>
           </div>
           <div className="mt-6 grid sm:grid-cols-2 gap-4">
             <div className="flex flex-wrap items-baseline justify-between gap-3 zion-rainbow-sub p-4" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{L5FreeWorldCopy.totalL5Allocation[cs ? 'cs' : 'en']}</p>
-              <p className="text-2xl font-bold text-teal-300">{cs ? '3 300 000 000 ZION' : '3,300,000,000 ZION'}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{tx5(L5FreeWorldCopy.totalL5Allocation, lang)}</p>
+              <p className="text-2xl font-bold text-teal-300">{cs ? '3 300 000 000 ZION' : t5('3,300,000,000 ZION', lang)}</p>
             </div>
-            <FundBalanceSum addresses={[...L5_PREMINE_WALLETS]} rc="20, 184, 166" label={L5FreeWorldCopy.liveGenesisBalance[cs ? 'cs' : 'en']} />
+            <FundBalanceSum addresses={[...L5_PREMINE_WALLETS]} rc="20, 184, 166" label={tx5(L5FreeWorldCopy.liveGenesisBalance, lang)} />
           </div>
           <p className="mt-4 text-xs text-gray-500">
-            {L5FreeWorldCopy.l5PremineNote[cs ? 'cs' : 'en']}
+            {tx5(L5FreeWorldCopy.l5PremineNote, lang)}
           </p>
         </motion.section>
 
         {/* ── L5 Protocol suite ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L5FreeWorldCopy.sharedProtocols[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L5FreeWorldCopy.sharedProtocols, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Shield className="h-7 w-7 text-zion-cyan" />
-              {L5FreeWorldCopy.baselineL5Protocols[cs ? 'cs' : 'en']}
+              {tx5(L5FreeWorldCopy.baselineL5Protocols, lang)}
             </h2>
-            <p className="text-sm text-gray-400">{L5FreeWorldCopy.everyL5CommunityImplementsThes[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400">{tx5(L5FreeWorldCopy.everyL5CommunityImplementsThes, lang)}</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {protocols.map((p) => (
@@ -627,18 +606,18 @@ export default function L5FreeWorldPage() {
         {/* ── Onboarding: Seven Gates ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L5FreeWorldCopy.sevenGates[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L5FreeWorldCopy.sevenGates, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TreeDeciduous className="h-7 w-7 text-zion-cyan" />
-              {L5FreeWorldCopy.sevenGates[cs ? 'cs' : 'en']}
+              {tx5(L5FreeWorldCopy.sevenGates, lang)}
             </h2>
-            <p className="text-sm text-gray-400 max-w-3xl">{L5FreeWorldCopy.sevenGatesSubtitle[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400 max-w-3xl">{tx5(L5FreeWorldCopy.sevenGatesSubtitle, lang)}</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {onboarding.map((gate) => {
               const Icon = gate.icon;
-              const status = getOnboardingStatusStyle(cs, gate.status);
+              const status = getOnboardingStatusStyle(cs, lang, gate.status);
               return (
                 <div key={gate.title.en} className="zion-rainbow-sub p-4 flex flex-col justify-between" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                   <div>
@@ -660,7 +639,7 @@ export default function L5FreeWorldPage() {
 
           <div className="grid md:grid-cols-2 gap-4 mt-4">
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-              <h3 className="font-semibold text-white mb-3">{L5FreeWorldCopy.noRequirementsTitle[cs ? 'cs' : 'en']}</h3>
+              <h3 className="font-semibold text-white mb-3">{tx5(L5FreeWorldCopy.noRequirementsTitle, lang)}</h3>
               <ul className="list-disc pl-4 text-sm text-gray-400 space-y-1">
                 {rules.map((item) => (
                   <li key={item}>{item}</li>
@@ -668,7 +647,7 @@ export default function L5FreeWorldPage() {
               </ul>
             </div>
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-              <h3 className="font-semibold text-white mb-3">{L5FreeWorldCopy.noPromisesTitle[cs ? 'cs' : 'en']}</h3>
+              <h3 className="font-semibold text-white mb-3">{tx5(L5FreeWorldCopy.noPromisesTitle, lang)}</h3>
               <ul className="list-disc pl-4 text-sm text-gray-400 space-y-1">
                 {promises.map((item) => (
                   <li key={item}>{item}</li>
@@ -681,15 +660,15 @@ export default function L5FreeWorldPage() {
         {/* ── Communities ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L5FreeWorldCopy.communities[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L5FreeWorldCopy.communities, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TreeDeciduous className="h-7 w-7 text-zion-cyan" />
-              {L5FreeWorldCopy.l5NodesCommunities[cs ? 'cs' : 'en']}
+              {tx5(L5FreeWorldCopy.l5NodesCommunities, lang)}
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {communities.map((community) => {
-              const status = getStatusStyle(cs, community.status);
+              const status = getStatusStyle(cs, lang, community.status);
               const Card = (
                 <div className={`zion-rainbow-sub p-5 transition-all duration-300 ${community.href ? 'cursor-pointer' : ''}`} style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                   {community.cover && (
@@ -725,7 +704,7 @@ export default function L5FreeWorldPage() {
                   {community.href && (
                     <div className="mt-3 flex items-center gap-1 text-xs text-zion-gold/70 group-hover:text-zion-gold transition-colors">
                       <ArrowRight className="h-3 w-3" />
-                      {L5FreeWorldCopy.details[cs ? 'cs' : 'en']}
+                      {tx5(L5FreeWorldCopy.details, lang)}
                     </div>
                   )}
                 </div>
@@ -740,19 +719,19 @@ export default function L5FreeWorldPage() {
             })}
           </div>
           <p className="text-xs text-gray-500 mt-4 text-center">
-            {L5FreeWorldCopy.wantToProposeANewL5CommunityOp[cs ? 'cs' : 'en']}
+            {tx5(L5FreeWorldCopy.wantToProposeANewL5CommunityOp, lang)}
           </p>
         </motion.section>
 
         {/* ── Live registry: projects & grants ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L5FreeWorldCopy.liveRegistry[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L5FreeWorldCopy.liveRegistry, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <FileCheck2 className="h-7 w-7 text-emerald-400" />
-              {L5FreeWorldCopy.projectsAndGrants[cs ? 'cs' : 'en']}
+              {tx5(L5FreeWorldCopy.projectsAndGrants, lang)}
             </h2>
-            <p className="text-sm text-gray-400 max-w-3xl">{L5FreeWorldCopy.registryDesc[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400 max-w-3xl">{tx5(L5FreeWorldCopy.registryDesc, lang)}</p>
           </div>
           <FreeWorldRegistry />
         </motion.section>
@@ -760,10 +739,10 @@ export default function L5FreeWorldPage() {
         {/* ── Quadratic voting ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '168, 85, 247' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L5FreeWorldCopy.quadraticVoting[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(L5FreeWorldCopy.quadraticVoting, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Vote className="h-7 w-7 text-zion-purple" />
-              {L5FreeWorldCopy.qvTitle[cs ? 'cs' : 'en']}
+              {tx5(L5FreeWorldCopy.qvTitle, lang)}
             </h2>
           </div>
           <QvSection />
@@ -773,13 +752,13 @@ export default function L5FreeWorldPage() {
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-6">
             <Wallet className="h-7 w-7 text-zion-cyan" />
-            <h2 className="text-3xl font-semibold text-white">{L5FreeWorldCopy.l5EconomicModel[cs ? 'cs' : 'en']}</h2>
+            <h2 className="text-3xl font-semibold text-white">{tx5(L5FreeWorldCopy.l5EconomicModel, lang)}</h2>
           </div>
           <div className="space-y-3 text-sm font-mono">
             {[
-              { label: L5FreeWorldCopy.blockRewardNetwork[cs ? 'cs' : 'en'], split: L5FreeWorldCopy.revenueNetworkSplit[cs ? 'cs' : 'en'], color: 'text-zion-cyan' },
-              { label: L5FreeWorldCopy.guardianNodeLocal[cs ? 'cs' : 'en'], split: L5FreeWorldCopy.k90CommunityMiner10CommunityTre[cs ? 'cs' : 'en'], color: 'text-zion-cyan' },
-              { label: L5FreeWorldCopy.communityTreasury[cs ? 'cs' : 'en'], split: L5FreeWorldCopy.k40Ops25Infra20Reserve10Tithe5[cs ? 'cs' : 'en'], color: 'text-zion-gold' },
+              { label: tx5(L5FreeWorldCopy.blockRewardNetwork, lang), split: tx5(L5FreeWorldCopy.revenueNetworkSplit, lang), color: 'text-zion-cyan' },
+              { label: tx5(L5FreeWorldCopy.guardianNodeLocal, lang), split: tx5(L5FreeWorldCopy.k90CommunityMiner10CommunityTre, lang), color: 'text-zion-cyan' },
+              { label: tx5(L5FreeWorldCopy.communityTreasury, lang), split: tx5(L5FreeWorldCopy.k40Ops25Infra20Reserve10Tithe5, lang), color: 'text-zion-gold' },
             ].map((row) => (
               <div key={row.label} className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <p className={`text-xs uppercase tracking-wider mb-1 ${row.color}`}>{row.label}</p>
@@ -791,13 +770,13 @@ export default function L5FreeWorldPage() {
 
         {/* ── Links ── */}
         <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="zion-cta-banner">
-          <h2 className="text-2xl font-semibold text-white text-center mb-6">{L5FreeWorldCopy.learnMoreAboutL5[cs ? 'cs' : 'en']}</h2>
+          <h2 className="text-2xl font-semibold text-white text-center mb-6">{tx5(L5FreeWorldCopy.learnMoreAboutL5, lang)}</h2>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/dao" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <Crown className="h-4 w-4 text-zion-gold" /> DAO Governance
             </Link>
             <Link href="/network" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-              <Globe2 className="h-4 w-4 text-zion-cyan" /> {L5FreeWorldCopy.network[cs ? 'cs' : 'en']}
+              <Globe2 className="h-4 w-4 text-zion-cyan" /> {tx5(L5FreeWorldCopy.network, lang)}
             </Link>
             <Link href="/l6-issobella" className="inline-flex items-center gap-2 rounded-2xl border border-zion-purple/30 bg-zion-purple/5 px-6 py-3 text-sm font-semibold text-rose-200 hover:bg-zion-purple/10 transition-colors">
               L6 Issobella <ArrowRight className="h-4 w-4" />
