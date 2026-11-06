@@ -13,7 +13,7 @@
 | Přeložené kapitoly | **189 / 189 (100 %)** |
 | Knihy na `enCoverage: 100` | **18 / 18** (`quantum-revolution` = `singleDoc cs 10 / en 10`) |
 | Audit | `missingEn: 0`, `duplicates: 0`, `missingParts: 0`, `missingCs: 1` (flaky `miseamenti/README`) |
-| Parity CZ ⇄ EN | 187 dvojic, **4 zbývající mezery** (viz §1) |
+| Parity CZ ⇄ EN | 187 dvojic, **0 mezer** — doplněno 2026-11-06 odpoledne (viz §1) |
 | `npm run build` | EXIT 0 |
 | Deploy na EDGE2 | **NEDĚLÁN** (důvod viz §5) |
 
@@ -25,20 +25,26 @@
 
 Nástroj: `npm run check:archive-parity` (v `apps/website-v2.9`), skript `scripts/check-archive-parity.mjs`.
 
-| # | Soubor | Co chybí | Povaha / návrh |
-|---|---|---|---|
-| 1 | `korpus/BodhiGaia/00-README_EN.md` | 2 sekce („Kde to sedí v kompasu čtyř knih", „Mapa zdrojů") + 7 řádků tabulek; EN je 83 % CZ (11,7 vs 14,1 kB) | **starší zkrácená EN edice indexu**. Doporučeno **přepsat celý podle CZ**, ne záplatovat — nese poctivostní rámec („pět stavů tvrzení", mapa zdrojů). |
-| 2 | `korpus/SulZeme/ZION_ONBOARDING_EN.md` | 3 podnadpisy (h2 16 vs 15, h3 25 vs 22) | starší EN edice onboarding textu. Porovnat s CZ a doplnit chybějící sekce. |
-| 3 | `korpus/SulZeme/00-README_EN.md` | 2 odkazy: `./Onboarding.md`, `./ZION_ONBOARDING.md` („zkrácená marketingová verze", „historické verze") | **CZ-only aux dokumenty** — EN index je vůbec neuvádí. Buď doplnit s poznámkou „Czech only", nebo vědomě nechat (pak zapsat do allowlistu skriptu). |
-| 4 | `korpus/MiseAmenti/README_EN.md` | self-link `./README.md` | kosmetika, lze ignorovat nebo allowlistovat. |
+> **✅ VYŘEŠENO 2026-11-06 (commit `7c9c9ac92`):** všech 187 dvojic bez driftu, `check:archive-parity` = EXIT 0.
+> Allowlist nebyl potřeba — všechny čtyři mezery se daly vyřešit poctivě (doplněním odkazu nebo překladem), takže gate zůstal striktní.
 
-**Nástroj má `--json` a `--verbose`.** Doporučení: u #3 a #4 rozšířit skript o allowlist (`ACCEPTED` mapa soubor → odůvodnění), aby `check:archive-parity` vracel 0 a zůstal použitelný jako gate.
+| # | Soubor | Co chybělo | Povaha / návrh | Stav |
+|---|---|---|---|---|
+| 1 | `korpus/BodhiGaia/00-README_EN.md` | 2 sekce („Kde to sedí v kompasu čtyř knih", „Mapa zdrojů") + 7 řádků tabulek; EN bylo 83 % CZ | **starší zkrácená EN edice indexu** — přepsáno celé podle CZ, ne záplatováno | **✅ hotovo** (index má 8 h2, mapu 13 zdrojů, stav „anglická edice = index + 13 kapitol") |
+| 2 | `korpus/SulZeme/ZION_ONBOARDING_EN.md` | 3 podnadpisy (h2 16 vs 15, h3 25 vs 22) | drift byl **opačný**, než handover čekal: EN mělo **navíc** sekci *What is ZION today — root, trunk and crown* | **✅ hotovo** (👤 rozhodl doplnit sekci do CZ; `ZION_ONBOARDING.md` má nově `## Co je ZION dnes — kořen, kmen a koruna` + obsah přečíslován) |
+| 3 | `korpus/SulZeme/00-README_EN.md` | 2 odkazy: `./Onboarding.md`, `./ZION_ONBOARDING.md` | CZ-only aux dokumenty — EN index je neuváděl | **✅ hotovo** (doplněno s poznámkou „Short marketing version (Czech only)" a „Historical onboarding versions") |
+| 4 | `korpus/MiseAmenti/README_EN.md` | self-link `./README.md` | kosmetika | **✅ hotovo** (EN má „Czech entry point: README.md") |
+
+**Nástroj má `--json` a `--verbose`.** Navíc (commit `6f540d8e3`) přibyl **druhý pass**: skenuje všechny `*_EN.md` a hlásí nekanonické překlady stavových značek (`UNDER CONSTRUCTION → BUILDING`, `ŽIVÉ → LIVE`, `STAVBA → BUILDING`, `HORIZONT → HORIZON`, `HYPOTÉZA → HYPOTHESIS`, `MÝTUS → MYTH`, `NEDOLOŽENO → UNSUBSTANTIATED`, `ZÁMĚR → INTENT`) a české labely přeživší do angličtiny. Kanonická sada je definovaná v `korpus/MiseAmenti/01-Kanon-a-Ustava.md` (LIVE / BUILDING / HORIZON / HYPOTHESIS / MYTH).
 
 ---
 
 ## 2. Redakční revize EN draftů (189 souborů)
 
 Překlady jsou **EN drafty**, ne oficiální edice (výjimka: Království srdce = klasická EN edice). Před veřejným vydáním:
+
+> **Stav 2026-11-06:** mechanická část je hotová — statusy sjednoceny na `BUILDING` (7 výskytů `UNDER CONSTRUCTION` ve 4 souborech), gate na labely běží, 0 českých zbytků v EN próze (`není / který / protože …` = 0), `internal repo` (bez „-sitory") = 0, `impact packet` = 38× bez variant, `Poutník` = 0.
+> **Zbývá subjektivní část:** rytmus a „překladatelština" u beletrie, kurzívy u sakrálních slov a jednotná diakritika u vlastních jmen (`Amitābha` 22× vs `Amitabha` 31× — rozhodnout globálně; starší oficiální EN edice a konvence Lumi používají `Amitabha`).
 
 - **Terminologie napříč knihami** — držet konzistenci: `LIVE/BUILDING/HORIZON/HYPOTHESIS/MYTH/UNSUBSTANTIATED/INVALID CLAIM/INTENT`, `internal repository` (ne „internal repo"), `tracker`, `impact packet`, `the Pilgrim`, `Only-that`.
 - **Sakrální a kulturální slova** — kurzívou a v původním přepisu: `piko`, `whenua`, `fa'atere`, `va'a`, `marae`, `ari'i`, `ra'atira`, `tapu`, `noa`, `māna`, `hui`, `va`, `rongorongo`, `tangata manu`, `mā'ohi`, `tatau`, `prema`, `bhakti`, `ākāśa`, `Pṛthvī`, `Agni`, `Āpas`, `Vāyu`, mantry `gate gate pāragate…`, `oṃ maṇi padme hūṃ`.
@@ -114,15 +120,15 @@ Tyto **nejsou** práce překladatele — jsou to „další kroky" z registrů. 
 
 ## 7. Doporučené pořadí pro novou session
 
-| Priorita | Úkol | Odhad |
-|---|---|---|
-| 1 | `BodhiGaia/00-README_EN.md` — přepsat celý podle CZ (2 sekce + 7 řádků tabulek) | 1 dávka |
-| 2 | `SulZeme/ZION_ONBOARDING_EN.md` — doplnit 3 chybějící podnadpisy | 1 dávka |
-| 3 | Allowlist v `check-archive-parity.mjs` pro #3 a #4 → gate vrací 0 | 15 min |
-| 4 | Redakční pass EN draftů (terminologie + kurzívy + délky) | 2–3 dávky |
-| 5 | Kulturní review (třída E) — 9 položek z §3 | externí / 👤 |
-| 6 | Deploy na EDGE2 z čistého worktree | 30 min |
-| 7 | Obsahové kroky z §4 — **samostatný backlog**, ne „překlad“ | dle registrů |
+| Priorita | Úkol | Odhad | Stav |
+|---|---|---|---|
+| 1 | `BodhiGaia/00-README_EN.md` — přepsat celý podle CZ | 1 dávka | **✅ `7c9c9ac92`** |
+| 2 | `SulZeme/ZION_ONBOARDING_EN.md` — srovnat hlavičky | 1 dávka | **✅ `7c9c9ac92`** (opačný směr: sekce doplněna do CZ) |
+| 3 | Gate v `check-archive-parity.mjs` → vrací 0 | 15 min | **✅ `7c9c9ac92` + `6f540d8e3`** (0 mezer + pass na labely) |
+| 4 | Redakční pass EN draftů (terminologie + kurzívy + délky) | 2–3 dávky | **🟡 mechanické hotovo** (statusy), zbývá stylistika + diakritika jmen |
+| 5 | Kulturní review (třída E) — 9 položek z §3 | externí / 👤 | ⏳ |
+| 6 | Deploy na EDGE2 z čistého worktree | 30 min | ⏳ (čeká na 👤 — produkční deploy) |
+| 7 | Obsahové kroky z §4 — **samostatný backlog**, ne „překlad" | dle registrů | ⏳ |
 
 ---
 
