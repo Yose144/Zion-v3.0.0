@@ -173,11 +173,10 @@ export const COMPANION_GROUPS: CompanionGroup[] = [
         title: { cs: 'Lumi', en: 'Lumi' },
         description: {
           cs: 'Svislá osa světla — dítě s lucernou, brána zůstává otevřená.',
-          en: 'The vertical axis of light — the child with the lantern; the gate stays open. Czech original.',
+          en: 'The vertical axis of light — the child with the lantern; the gate stays open.',
         },
         status: 'draft',
         href: '/zion-archive/lumi/cist',
-        czOnly: true,
         rc: '252, 209, 22',
       },
       {

@@ -306,12 +306,12 @@ export const LUMI_BOOK = korpusBook({
   dir: 'Lumi',
   accent: '252, 209, 22',
   icon: Sun,
-  kicker: { cs: 'Příběh · svislá osa světla · CZ', en: 'A story · the vertical axis of light · CZ' },
+  kicker: { cs: 'Příběh · svislá osa světla · CZ + EN', en: 'A story · the vertical axis of light · CZ + EN' },
   title: { cs: 'Lumi', en: 'Lumi' },
   subtitle: { cs: 'Dítě s lucernou — brána zůstává otevřená.', en: 'The child with the lantern — the gate stays open.' },
   description: {
     cs: 'Příběh světla: dítě na přídi, dům jmen, sto let lucerny a brána, která zůstává otevřená.',
-    en: 'The tale of light: the child on the prow, the house of names, a hundred years of the lantern and the gate that stays open. Czech original.',
+    en: 'The tale of light: the child on the prow, the house of names, a hundred years of the lantern and the gate that stays open.',
   },
 });
 
