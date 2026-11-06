@@ -217,7 +217,7 @@ export default function StarfighterViewer({ url }: { url: string }) {
 
   return (
     <div className="relative w-full h-full">
-      <canvas ref={canvasRef} className="block w-full h-full" aria-label="3D náhled" />
+      <canvas ref={canvasRef} className="block h-full w-full touch-none" aria-label="3D náhled" />
       <div className="absolute bottom-3 left-3 text-[11px] text-rasta-gold/80 bg-black/50 px-2 py-1 rounded">
         {note}
       </div>
