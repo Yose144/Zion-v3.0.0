@@ -63,7 +63,7 @@ Světlo se zúžilo a Lumi uviděla dům takový, jaký roku 2026 skutečně sto
 2. **Uzlík dvanácti slov = peněženka vzniká lokálně.** Mnemonik a privátní klíč se generují na zařízení uživatele. Nikdo z projektu je nikdy nepotřebuje a nikdo je nemůže obnovit. Ztracený klíč je ztracený ZION — to není chyba návrhu, to je jeho cena.
 3. **Síň ozvěn = Dům jmen.** Člověk není titul. Do sítě vstupuje tak malý, jak sám chce — bez posudku, bez občanství, bez toho, aby prozradil víc, než musí. Titul „strážkyně brány" zní krásně; „jen Lumi" stačí.
 4. **Hlas, který váží tolik, kolik neseš.** DAO počítá váhu hlasu z L1 zůstatku ve snímkovém bloku; identitu hlasujícího ověřuje ZIS. Pokladna společenství (1,5 mld ZION z genesis slotů 7 a 8) je držena strážcovským multisigem 5 ze 7.
-5. **Co dům ještě neumí — a poctivě to říká.** Nirvana ve čtvrté epizodě popsala dům s Passkeys, biometrikou a WebAuthn. Registr důkazů je přesnější: nic z toho v současném zdrojovém stromu ZIS není. Je to legitimní práce 3.3 (workstream M1.5), ne dnešní funkce. Tato kniha to nepřepisuje zpětně — jen si zapamatuje, které světlo je které.
+5. **Co dům ještě neumí — a poctivě to říká.** Nirvana ve čtvrté epizodě popsala dům s Passkeys, biometrikou a WebAuthn. Registr důkazů je přesnější: kód ve zdrojovém stromu ZIS existuje (`routes/webauthn.ts`, `lib/webauthn.ts`), ale není nasazený — živé endpointy vrací 404 a webový login passkeys schovává za příznakem. Je to legitimní práce 3.3 (workstream M1.5), ne dnešní funkce. Tato kniha to nepřepisuje zpětně — jen si zapamatuje, které světlo je které.
 
 ---
 
