@@ -23,6 +23,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
@@ -205,7 +206,7 @@ export default function DharmaTemplePage() {
   const [docError, setDocError] = useState(false);
 
   useEffect(() => {
-    const file = cs ? '/docs/terranova/dharma-temple.cs.md' : '/docs/terranova/dharma-temple.en.md';
+    const file = cs ? '/docs/terranova/dharma-temple.cs.md' : t5('/docs/terranova/dharma-temple.en.md', lang);
     fetch(file)
       .then((res) => {
         if (!res.ok) throw new Error('not found');
@@ -231,7 +232,7 @@ export default function DharmaTemplePage() {
             className="inline-flex items-center gap-2 text-sm text-zion-gold/65 hover:text-zion-gold transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {TerranovaDharmaTempleCopy.backToTerraNova[cs ? 'cs' : 'en']}
+            {tx5(TerranovaDharmaTempleCopy.backToTerraNova, lang)}
           </Link>
         </motion.div>
 
@@ -260,7 +261,7 @@ export default function DharmaTemplePage() {
                   </span>
                   <span className="zion-badge-gold inline-flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    {TerranovaDharmaTempleCopy.planning[cs ? 'cs' : 'en']}
+                    {tx5(TerranovaDharmaTempleCopy.planning, lang)}
                   </span>
                 </div>
 
@@ -275,7 +276,7 @@ export default function DharmaTemplePage() {
                 </div>
 
                 <blockquote className="mt-4 pl-4 border-l-2 border-white/10 text-sm text-white/70 italic leading-relaxed max-w-lg">
-                  {TerranovaDharmaTempleCopy.dharmaIsNotAPathAwayFromTheWor[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaDharmaTempleCopy.dharmaIsNotAPathAwayFromTheWor, lang)}
                 </blockquote>
 
                 <div className="grid gap-3 pt-3 sm:grid-cols-3">
@@ -301,7 +302,7 @@ export default function DharmaTemplePage() {
                 src="/images/dharma-temple/hero.webp"
                 srcSet="/images/dharma-temple/hero-m.webp 960w, /images/dharma-temple/hero.webp 1400w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
-                alt={cs ? 'Dharma Temple — koncept' : 'Dharma Temple — concept render'}
+                alt={cs ? 'Dharma Temple — koncept' : t5('Dharma Temple — concept render', lang)}
                 width={1568}
                 height={1003}
                 loading="eager"
@@ -324,10 +325,10 @@ export default function DharmaTemplePage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {TerranovaDharmaTempleCopy.threeDPreview[cs ? 'cs' : 'en']}
+                {tx5(TerranovaDharmaTempleCopy.threeDPreview, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {TerranovaDharmaTempleCopy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaDharmaTempleCopy.threeDPreviewSubtitle, lang)}
               </h2>
             </div>
             <DharmaTemplePreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
@@ -345,16 +346,16 @@ export default function DharmaTemplePage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {TerranovaDharmaTempleCopy.sitePlan[cs ? 'cs' : 'en']}
+                {tx5(TerranovaDharmaTempleCopy.sitePlan, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {TerranovaDharmaTempleCopy.sitePlanSubtitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaDharmaTempleCopy.sitePlanSubtitle, lang)}
               </h2>
             </div>
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/dharma-temple/concept-og.webp"
-                alt={cs ? 'Návrh Dharma Temple' : 'Dharma Temple concept'}
+                alt={cs ? 'Návrh Dharma Temple' : t5('Dharma Temple concept', lang)}
                 width={1536}
                 height={1024}
                 loading="lazy"
@@ -363,9 +364,7 @@ export default function DharmaTemplePage() {
               />
             </div>
             <p className="relative z-10 mt-4 text-center text-xs text-white/50">
-              {cs
-                ? 'První konceptový board: půdorysy, řezy, legenda a energetický systém.'
-                : 'First concept board: floor plans, sections, legend and energy system.'}
+              {cs ? 'První konceptový board: půdorysy, řezy, legenda a energetický systém.' : t5('First concept board: floor plans, sections, legend and energy system.', lang)}
             </p>
           </div>
         </motion.section>
@@ -381,21 +380,21 @@ export default function DharmaTemplePage() {
             <div className="relative z-10 grid md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-3">
                 <h3 className="text-lg font-bold text-zion-gold">
-                  {TerranovaDharmaTempleCopy.laPalmaLaIslaBonita[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaDharmaTempleCopy.laPalmaLaIslaBonita, lang)}
                 </h3>
                 <p className="text-white/70 text-sm leading-relaxed">
-                  {TerranovaDharmaTempleCopy.laPalmaIsCalledTheBeautifulIsl[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaDharmaTempleCopy.laPalmaIsCalledTheBeautifulIsl, lang)}
                 </p>
                 <p className="text-zion-gold/65 text-sm leading-relaxed">
-                  {TerranovaDharmaTempleCopy.theVolcanicSoilRetainsHeatHold[cs ? 'cs' : 'en']}
+                  {tx5(TerranovaDharmaTempleCopy.theVolcanicSoilRetainsHeatHold, lang)}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3 content-start">
                 {[
-                  { label: 'UNESCO', val: TerranovaDharmaTempleCopy.biosphere[cs ? 'cs' : 'en'] },
-                  { label: TerranovaDharmaTempleCopy.rainfall[cs ? 'cs' : 'en'], val: '700–1500mm' },
-                  { label: TerranovaDharmaTempleCopy.soil[cs ? 'cs' : 'en'], val: TerranovaDharmaTempleCopy.volcanic[cs ? 'cs' : 'en'] },
-                  { label: TerranovaDharmaTempleCopy.observatory[cs ? 'cs' : 'en'], val: 'ORM' },
+                  { label: 'UNESCO', val: tx5(TerranovaDharmaTempleCopy.biosphere, lang) },
+                  { label: tx5(TerranovaDharmaTempleCopy.rainfall, lang), val: '700–1500mm' },
+                  { label: tx5(TerranovaDharmaTempleCopy.soil, lang), val: tx5(TerranovaDharmaTempleCopy.volcanic, lang) },
+                  { label: tx5(TerranovaDharmaTempleCopy.observatory, lang), val: 'ORM' },
                 ].map((s) => (
                   <div key={s.label} className="text-center p-3 zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <p className="text-white/85 font-bold text-sm">{s.val}</p>
@@ -416,10 +415,10 @@ export default function DharmaTemplePage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaDharmaTempleCopy.projectConcept[cs ? 'cs' : 'en']}
+              {tx5(TerranovaDharmaTempleCopy.projectConcept, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaDharmaTempleCopy.activitiesVision[cs ? 'cs' : 'en']}
+              {tx5(TerranovaDharmaTempleCopy.activitiesVision, lang)}
             </h2>
           </div>
 
@@ -470,10 +469,10 @@ export default function DharmaTemplePage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaDharmaTempleCopy.developmentPhases[cs ? 'cs' : 'en']}
+              {tx5(TerranovaDharmaTempleCopy.developmentPhases, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaDharmaTempleCopy.fromVisionToReality[cs ? 'cs' : 'en']}
+              {tx5(TerranovaDharmaTempleCopy.fromVisionToReality, lang)}
             </h2>
           </div>
 
@@ -507,7 +506,7 @@ export default function DharmaTemplePage() {
                         className="text-xs font-bold tracking-wider"
                         style={{ color: p.active ? 'rgb(6,105,40)' : 'rgba(255,255,255,0.3)' }}
                       >
-                        {cs ? `Fáze ${p.num}` : `Phase ${p.num}`}
+                        {cs ? `Fáze ${p.num}` : t5(`Phase ${p.num}`, lang)}
                       </span>
                       <span className="text-sm font-semibold text-white/80">
                         {cs ? p.cs : p.en}
@@ -515,7 +514,7 @@ export default function DharmaTemplePage() {
                       {p.active ? (
                         <span className="inline-flex items-center gap-1 text-zion-cyan text-xs animate-pulse">
                           <PlayCircle className="w-3.5 h-3.5" />
-                          {TerranovaDharmaTempleCopy.now[cs ? 'cs' : 'en']}
+                          {tx5(TerranovaDharmaTempleCopy.now, lang)}
                         </span>
                       ) : (
                         <Circle className="w-3.5 h-3.5 text-white/30" />
@@ -538,17 +537,17 @@ export default function DharmaTemplePage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaDharmaTempleCopy.terraNovaNetwork[cs ? 'cs' : 'en']}
+              {tx5(TerranovaDharmaTempleCopy.terraNovaNetwork, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaDharmaTempleCopy.connectionWithZahradaGenesis[cs ? 'cs' : 'en']}
+              {tx5(TerranovaDharmaTempleCopy.connectionWithZahradaGenesis, lang)}
             </h2>
           </div>
 
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             {/* Header row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[11px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
-              <div className="p-3 text-zion-gold/65">{TerranovaDharmaTempleCopy.dimension[cs ? 'cs' : 'en']}</div>
+              <div className="p-3 text-zion-gold/65">{tx5(TerranovaDharmaTempleCopy.dimension, lang)}</div>
               <div className="p-3 text-white/85 sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Zahrada Genesis</span></div>
               <div className="p-3 text-zion-gold sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Dharma Temple</span></div>
             </div>
@@ -565,7 +564,7 @@ export default function DharmaTemplePage() {
           </div>
 
           <p className="text-zion-gold/55 text-xs text-center mt-4">
-            {TerranovaDharmaTempleCopy.bothProjectsShareSourceCodeTer[cs ? 'cs' : 'en']}
+            {tx5(TerranovaDharmaTempleCopy.bothProjectsShareSourceCodeTer, lang)}
           </p>
         </motion.section>
 
@@ -578,7 +577,7 @@ export default function DharmaTemplePage() {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaDharmaTempleCopy.blockchainIntegration[cs ? 'cs' : 'en']}
+              {tx5(TerranovaDharmaTempleCopy.blockchainIntegration, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
@@ -597,11 +596,11 @@ export default function DharmaTemplePage() {
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
                     <p className="text-[11px] text-zion-gold/55 capitalize">
                       {item.status === 'active'
-                        ? (TerranovaDharmaTempleCopy.active[cs ? 'cs' : 'en'])
+                        ? (tx5(TerranovaDharmaTempleCopy.active, lang))
                         : item.status === 'planned'
-                        ? (TerranovaDharmaTempleCopy.planned[cs ? 'cs' : 'en'])
+                        ? (tx5(TerranovaDharmaTempleCopy.planned, lang))
                         : item.status === 'vision'
-                        ? STATUS_LABEL.vision[cs ? 'cs' : 'en']
+                        ? tx5(STATUS_LABEL.vision, lang)
                         : 'TBD'}
                     </p>
                   </div>
@@ -622,19 +621,19 @@ export default function DharmaTemplePage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {TerranovaDharmaTempleCopy.documentation[cs ? 'cs' : 'en']}
+                {tx5(TerranovaDharmaTempleCopy.documentation, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {TerranovaDharmaTempleCopy.documentationSubtitle[cs ? 'cs' : 'en']}
+                {tx5(TerranovaDharmaTempleCopy.documentationSubtitle, lang)}
               </h2>
             </div>
             <div className="relative z-10 rounded-2xl border border-white/10 bg-black/40 p-4 md:p-6">
               {docError ? (
-                <p className="text-sm text-zion-red">{TerranovaDharmaTempleCopy.documentationError[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm text-zion-red">{tx5(TerranovaDharmaTempleCopy.documentationError, lang)}</p>
               ) : doc ? (
                 <DocMarkdownArticle content={doc} className="zion-docs-prose max-w-4xl mx-auto" />
               ) : (
-                <p className="text-sm text-white/60">{TerranovaDharmaTempleCopy.documentationLoading[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm text-white/60">{tx5(TerranovaDharmaTempleCopy.documentationLoading, lang)}</p>
               )}
             </div>
           </div>
@@ -649,15 +648,15 @@ export default function DharmaTemplePage() {
         >
           <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-zion-gold">
-              {TerranovaDharmaTempleCopy.openQuestionsLookingForGuardia[cs ? 'cs' : 'en']}
+              {tx5(TerranovaDharmaTempleCopy.openQuestionsLookingForGuardia, lang)}
             </h3>
             <ul className="space-y-2">
               {[
-                TerranovaDharmaTempleCopy.specificLocationOnLaPalmaNorth[cs ? 'cs' : 'en'],
-                TerranovaDharmaTempleCopy.foundingGuardiansWhoIsTheCoreT[cs ? 'cs' : 'en'],
-                TerranovaDharmaTempleCopy.legalFormSpanishAsociaciNSlCom[cs ? 'cs' : 'en'],
-                TerranovaDharmaTempleCopy.phase01FinancingZionFundCrowdf[cs ? 'cs' : 'en'],
-                TerranovaDharmaTempleCopy.seedLibraryCoordinationWithZah[cs ? 'cs' : 'en'],
+                tx5(TerranovaDharmaTempleCopy.specificLocationOnLaPalmaNorth, lang),
+                tx5(TerranovaDharmaTempleCopy.foundingGuardiansWhoIsTheCoreT, lang),
+                tx5(TerranovaDharmaTempleCopy.legalFormSpanishAsociaciNSlCom, lang),
+                tx5(TerranovaDharmaTempleCopy.phase01FinancingZionFundCrowdf, lang),
+                tx5(TerranovaDharmaTempleCopy.seedLibraryCoordinationWithZah, lang),
               ].map((q, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-white/70">
                   <Dot className="w-4 h-4 text-zion-gold shrink-0 mt-0.5" />
@@ -666,7 +665,7 @@ export default function DharmaTemplePage() {
               ))}
             </ul>
             <p className="text-zion-gold/55 text-xs pt-2">
-              {TerranovaDharmaTempleCopy.areYouAGuardianWhoHearsLaPalma[cs ? 'cs' : 'en']}
+              {tx5(TerranovaDharmaTempleCopy.areYouAGuardianWhoHearsLaPalma, lang)}
             </p>
             <a
               href="https://discord.gg/wvxJ7DhZ8"
@@ -675,7 +674,7 @@ export default function DharmaTemplePage() {
               className="zion-button-secondary"
             >
               <Users className="w-4 h-4" />
-              {TerranovaDharmaTempleCopy.joinDiscord[cs ? 'cs' : 'en']}
+              {tx5(TerranovaDharmaTempleCopy.joinDiscord, lang)}
             </a>
           </div>
         </motion.section>
@@ -692,7 +691,7 @@ export default function DharmaTemplePage() {
             className="zion-button-secondary"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>{TerranovaDharmaTempleCopy.zahradaGenesis[cs ? 'cs' : 'en']}</span>
+            <span>{tx5(TerranovaDharmaTempleCopy.zahradaGenesis, lang)}</span>
           </Link>
           <Link
             href="/terranova/te-piko-ora"

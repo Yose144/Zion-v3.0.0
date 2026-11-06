@@ -20,6 +20,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { CONTRACTS, SEED_PRICE_USD } from '@/lib/defi-contracts';
 
 const CexCopy = {
@@ -253,7 +254,7 @@ export default function CexPage() {
               className="ml-auto inline-flex items-center gap-1 text-[11px] text-gray-500 hover:text-white transition-colors"
             >
               <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
-              {CexCopy.refresh[cs ? 'cs' : 'en']}
+              {tx5(CexCopy.refresh, lang)}
             </button>
           </div>
 
@@ -262,14 +263,14 @@ export default function CexPage() {
           </h1>
 
           <p className="mb-6 max-w-2xl text-lg leading-relaxed text-gray-300">
-            {CexCopy.trackZionListingsOnCentralized[cs ? 'cs' : 'en']}
+            {tx5(CexCopy.trackZionListingsOnCentralized, lang)}
           </p>
 
           {/* Quick stats */}
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <Activity className="h-3.5 w-3.5 text-zion-gold" />
-              <span className="text-gray-300">{CexCopy.dexPrice[cs ? 'cs' : 'en']}:</span>
+              <span className="text-gray-300">{tx5(CexCopy.dexPrice, lang)}:</span>
               <span className="font-mono text-white">${bestPrice.toFixed(6)}</span>
               <span className={`text-[11px] ${dex?.source === 'dexscreener' ? 'text-zion-cyan' : 'text-zion-gold'}`}>
                 {dex?.source === 'dexscreener' ? 'live' : (dex?.source ?? 'seed')}
@@ -277,17 +278,17 @@ export default function CexPage() {
             </div>
             <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <DollarSign className="h-3.5 w-3.5 text-zion-cyan" />
-              <span className="text-gray-300">{CexCopy.dexVolume24h[cs ? 'cs' : 'en']}:</span>
+              <span className="text-gray-300">{tx5(CexCopy.dexVolume24h, lang)}:</span>
               <span className="font-mono text-white">{formatVolume(dex?.total_volume_24h ?? 0)}</span>
             </div>
             <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <DollarSign className="h-3.5 w-3.5 text-zion-cyan" />
-              <span className="text-gray-300">{CexCopy.dexLiquidity[cs ? 'cs' : 'en']}:</span>
+              <span className="text-gray-300">{tx5(CexCopy.dexLiquidity, lang)}:</span>
               <span className="font-mono text-white">{formatVolume(dex?.total_liquidity_usd ?? 0)}</span>
             </div>
             <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <Building2 className="h-3.5 w-3.5 text-zion-purple" />
-              <span className="text-gray-300">{CexCopy.exchanges[cs ? 'cs' : 'en']}:</span>
+              <span className="text-gray-300">{tx5(CexCopy.exchanges, lang)}:</span>
               <span className="font-mono text-white">{summary?.listed ?? 0}/{summary?.total_exchanges ?? 0}</span>
             </div>
           </div>
@@ -309,14 +310,14 @@ export default function CexPage() {
               <div className="flex items-center gap-2 mb-1">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-zion-cyan/10 border border-zion-cyan/20 px-3 py-1 text-[11px] font-semibold text-zion-cyan">
                   <CheckCircle2 className="h-3 w-3" />
-                  {CexCopy.availableNow[cs ? 'cs' : 'en']}
+                  {tx5(CexCopy.availableNow, lang)}
                 </span>
                 {dex?.source === 'dexscreener' && (
                   <span className="text-[11px] text-gray-500">via DexScreener</span>
                 )}
               </div>
-              <h2 className="text-2xl font-bold text-white">{CexCopy.dexTradingUniswapV3[cs ? 'cs' : 'en']}</h2>
-              <p className="text-sm text-gray-400 mt-1">{CexCopy.tradeWzionWithoutKycDirectlyFr[cs ? 'cs' : 'en']}</p>
+              <h2 className="text-2xl font-bold text-white">{tx5(CexCopy.dexTradingUniswapV3, lang)}</h2>
+              <p className="text-sm text-gray-400 mt-1">{tx5(CexCopy.tradeWzionWithoutKycDirectlyFr, lang)}</p>
             </div>
             <a
               href={`https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${CONTRACTS.wZION}`}
@@ -324,7 +325,7 @@ export default function CexPage() {
               rel="noopener noreferrer"
               className="zion-button-primary"
             >
-              {CexCopy.openUniswap[cs ? 'cs' : 'en']}
+              {tx5(CexCopy.openUniswap, lang)}
               <ExternalLink className="h-4 w-4" />
             </a>
           </div>
@@ -332,22 +333,22 @@ export default function CexPage() {
           {/* DEX aggregate stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              <p className="text-[11px] uppercase tracking-wider text-gray-500">{CexCopy.price[cs ? 'cs' : 'en']}</p>
+              <p className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(CexCopy.price, lang)}</p>
               <p className="text-lg font-bold text-white mt-1">${bestPrice.toFixed(6)}</p>
               <p className="text-[11px] text-gray-500">USD / wZION</p>
             </div>
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              <p className="text-[11px] uppercase tracking-wider text-gray-500">{CexCopy.volume24h[cs ? 'cs' : 'en']}</p>
+              <p className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(CexCopy.volume24h, lang)}</p>
               <p className="text-lg font-bold text-white mt-1">{formatVolume(dex?.total_volume_24h ?? 0)}</p>
-              <p className="text-[11px] text-gray-500">{CexCopy.total[cs ? 'cs' : 'en']}</p>
+              <p className="text-[11px] text-gray-500">{tx5(CexCopy.total, lang)}</p>
             </div>
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              <p className="text-[11px] uppercase tracking-wider text-gray-500">{CexCopy.liquidity[cs ? 'cs' : 'en']}</p>
+              <p className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(CexCopy.liquidity, lang)}</p>
               <p className="text-lg font-bold text-white mt-1">{formatVolume(dex?.total_liquidity_usd ?? 0)}</p>
-              <p className="text-[11px] text-gray-500">{CexCopy.inPools[cs ? 'cs' : 'en']}</p>
+              <p className="text-[11px] text-gray-500">{tx5(CexCopy.inPools, lang)}</p>
             </div>
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              <p className="text-[11px] uppercase tracking-wider text-gray-500">{CexCopy.txns24h[cs ? 'cs' : 'en']}</p>
+              <p className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(CexCopy.txns24h, lang)}</p>
               <p className="text-lg font-bold text-white mt-1">{(dex?.total_txns_24h ?? 0).toLocaleString()}</p>
               <p className="text-[11px] text-gray-500">
                 <span className="text-zion-cyan">{dex?.total_buys_24h ?? 0} buys</span>
@@ -363,8 +364,8 @@ export default function CexPage() {
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/2">
-                    <th className="p-3 text-left font-medium text-gray-400">{CexCopy.pair[cs ? 'cs' : 'en']}</th>
-                    <th className="p-3 text-right font-medium text-gray-400">{CexCopy.price[cs ? 'cs' : 'en']}</th>
+                    <th className="p-3 text-left font-medium text-gray-400">{tx5(CexCopy.pair, lang)}</th>
+                    <th className="p-3 text-right font-medium text-gray-400">{tx5(CexCopy.price, lang)}</th>
                     <th className="p-3 text-right font-medium text-gray-400">24h %</th>
                     <th className="p-3 text-right font-medium text-gray-500">Liquidity</th>
                     <th className="p-3 text-right font-medium text-gray-500">Volume 24h</th>
@@ -442,11 +443,11 @@ export default function CexPage() {
           transition={{ duration: 0.5 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">{CexCopy.exchangeListings[cs ? 'cs' : 'en']}</h2>
+            <h2 className="text-lg font-semibold text-white">{tx5(CexCopy.exchangeListings, lang)}</h2>
             <div className="flex gap-3 text-xs text-gray-400">
-              <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-zion-cyan" />{summary?.listed ?? 0} {CexCopy.listed[cs ? 'cs' : 'en']}</span>
-              <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-zion-cyan" />{summary?.planned ?? 0} {CexCopy.planned[cs ? 'cs' : 'en']}</span>
-              <span className="flex items-center gap-1"><BarChart3 className="h-3 w-3 text-gray-400" />{summary?.total_pairs ?? 0} {CexCopy.pairs[cs ? 'cs' : 'en']}</span>
+              <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-zion-cyan" />{summary?.listed ?? 0} {tx5(CexCopy.listed, lang)}</span>
+              <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-zion-cyan" />{summary?.planned ?? 0} {tx5(CexCopy.planned, lang)}</span>
+              <span className="flex items-center gap-1"><BarChart3 className="h-3 w-3 text-gray-400" />{summary?.total_pairs ?? 0} {tx5(CexCopy.pairs, lang)}</span>
             </div>
           </div>
 
@@ -455,13 +456,13 @@ export default function CexPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/2">
-                    <th className="p-4 text-left font-medium text-gray-400">{CexCopy.exchange[cs ? 'cs' : 'en']}</th>
-                    <th className="p-4 text-left font-medium text-gray-400">{CexCopy.status[cs ? 'cs' : 'en']}</th>
-                    <th className="p-4 text-left font-medium text-gray-400">{CexCopy.pairs_2[cs ? 'cs' : 'en']}</th>
-                    <th className="p-4 text-left font-medium text-gray-400">{CexCopy.kyc[cs ? 'cs' : 'en']}</th>
-                    <th className="p-4 text-left font-medium text-gray-400">{CexCopy.fee[cs ? 'cs' : 'en']}</th>
-                    <th className="p-4 text-left font-medium text-gray-400">{CexCopy.notes[cs ? 'cs' : 'en']}</th>
-                    <th className="p-4 text-right font-medium text-gray-400">{CexCopy.link[cs ? 'cs' : 'en']}</th>
+                    <th className="p-4 text-left font-medium text-gray-400">{tx5(CexCopy.exchange, lang)}</th>
+                    <th className="p-4 text-left font-medium text-gray-400">{tx5(CexCopy.status, lang)}</th>
+                    <th className="p-4 text-left font-medium text-gray-400">{tx5(CexCopy.pairs_2, lang)}</th>
+                    <th className="p-4 text-left font-medium text-gray-400">{tx5(CexCopy.kyc, lang)}</th>
+                    <th className="p-4 text-left font-medium text-gray-400">{tx5(CexCopy.fee, lang)}</th>
+                    <th className="p-4 text-left font-medium text-gray-400">{tx5(CexCopy.notes, lang)}</th>
+                    <th className="p-4 text-right font-medium text-gray-400">{tx5(CexCopy.link, lang)}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -512,7 +513,7 @@ export default function CexPage() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-xs text-zion-gold/80 hover:text-zion-gold transition-colors"
                           >
-                            {CexCopy.visit[cs ? 'cs' : 'en']} <ExternalLink className="h-3 w-3" />
+                            {tx5(CexCopy.visit, lang)} <ExternalLink className="h-3 w-3" />
                           </a>
                         </td>
                       </tr>
@@ -533,20 +534,20 @@ export default function CexPage() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="mb-4 text-lg font-semibold text-white">{CexCopy.howToBuyZion[cs ? 'cs' : 'en']}</h2>
+          <h2 className="mb-4 text-lg font-semibold text-white">{tx5(CexCopy.howToBuyZion, lang)}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* DEX path */}
             <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="rounded-lg bg-zion-cyan/10 border border-zion-cyan/20 px-2 py-1 text-[11px] font-mono text-zion-cyan">DEX</span>
-                <h3 className="font-semibold text-white text-sm">{CexCopy.viaUniswapRecommended[cs ? 'cs' : 'en']}</h3>
+                <h3 className="font-semibold text-white text-sm">{tx5(CexCopy.viaUniswapRecommended, lang)}</h3>
               </div>
               <ol className="space-y-2 text-xs text-gray-300">
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">1.</span> {CexCopy.connectWalletMetamaskRabby[cs ? 'cs' : 'en']}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">2.</span> {CexCopy.switchToBaseMainnet[cs ? 'cs' : 'en']}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">3.</span> {CexCopy.haveEthForSwapGas[cs ? 'cs' : 'en']}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">4.</span> {CexCopy.swapEthWzionOnUniswapV3[cs ? 'cs' : 'en']}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">5.</span> {CexCopy.wzionIsInYourWallet[cs ? 'cs' : 'en']}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">1.</span> {tx5(CexCopy.connectWalletMetamaskRabby, lang)}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">2.</span> {tx5(CexCopy.switchToBaseMainnet, lang)}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">3.</span> {tx5(CexCopy.haveEthForSwapGas, lang)}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">4.</span> {tx5(CexCopy.swapEthWzionOnUniswapV3, lang)}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">5.</span> {tx5(CexCopy.wzionIsInYourWallet, lang)}</li>
               </ol>
               <a
                 href={`https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${CONTRACTS.wZION}`}
@@ -554,7 +555,7 @@ export default function CexPage() {
                 rel="noopener noreferrer"
                 className="zion-button-primary mt-4"
               >
-                {CexCopy.openUniswap[cs ? 'cs' : 'en']} <ArrowRight className="h-3 w-3" />
+                {tx5(CexCopy.openUniswap, lang)} <ArrowRight className="h-3 w-3" />
               </a>
             </div>
 
@@ -562,36 +563,36 @@ export default function CexPage() {
             <div className="zion-rainbow-card p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="rounded-lg bg-zion-gold/10 border border-zion-gold/20 px-2 py-1 text-[11px] font-mono text-zion-gold">CEX</span>
-                <h3 className="font-semibold text-white text-sm">{CexCopy.viaCentralizedExchange[cs ? 'cs' : 'en']}</h3>
+                <h3 className="font-semibold text-white text-sm">{tx5(CexCopy.viaCentralizedExchange, lang)}</h3>
               </div>
               <ol className="space-y-2 text-xs text-gray-300">
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">1.</span> {CexCopy.createAccountOnAListedExchange[cs ? 'cs' : 'en']}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">2.</span> {CexCopy.completeKycVerification[cs ? 'cs' : 'en']}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">3.</span> {CexCopy.depositUsdtUsdc[cs ? 'cs' : 'en']}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">4.</span> {CexCopy.tradeZionUsdtPair[cs ? 'cs' : 'en']}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">5.</span> {CexCopy.withdrawZionToOwnWallet[cs ? 'cs' : 'en']}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">1.</span> {tx5(CexCopy.createAccountOnAListedExchange, lang)}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">2.</span> {tx5(CexCopy.completeKycVerification, lang)}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">3.</span> {tx5(CexCopy.depositUsdtUsdc, lang)}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">4.</span> {tx5(CexCopy.tradeZionUsdtPair, lang)}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">5.</span> {tx5(CexCopy.withdrawZionToOwnWallet, lang)}</li>
               </ol>
-              <p className="mt-4 text-[11px] text-zion-gold/70">{CexCopy.cexListingPlannedNotYetAvailab[cs ? 'cs' : 'en']}</p>
+              <p className="mt-4 text-[11px] text-zion-gold/70">{tx5(CexCopy.cexListingPlannedNotYetAvailab, lang)}</p>
             </div>
 
             {/* Bridge path */}
             <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="rounded-lg bg-zion-cyan/10 border border-zion-cyan/20 px-2 py-1 text-[11px] font-mono text-zion-cyan">Bridge</span>
-                <h3 className="font-semibold text-white text-sm">{CexCopy.l1L2Bridge[cs ? 'cs' : 'en']}</h3>
+                <h3 className="font-semibold text-white text-sm">{tx5(CexCopy.l1L2Bridge, lang)}</h3>
               </div>
               <ol className="space-y-2 text-xs text-gray-300">
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">1.</span> {CexCopy.haveZionInL1Wallet[cs ? 'cs' : 'en']}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">2.</span> {CexCopy.openZionBridge[cs ? 'cs' : 'en']}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">3.</span> {CexCopy.lockZionOnL1[cs ? 'cs' : 'en']}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">4.</span> {CexCopy.relayMintsWzionOnBase[cs ? 'cs' : 'en']}</li>
-                <li className="flex gap-2"><span className="text-zion-gold font-bold">5.</span> {CexCopy.wzionAvailableOnBaseL2[cs ? 'cs' : 'en']}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">1.</span> {tx5(CexCopy.haveZionInL1Wallet, lang)}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">2.</span> {tx5(CexCopy.openZionBridge, lang)}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">3.</span> {tx5(CexCopy.lockZionOnL1, lang)}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">4.</span> {tx5(CexCopy.relayMintsWzionOnBase, lang)}</li>
+                <li className="flex gap-2"><span className="text-zion-gold font-bold">5.</span> {tx5(CexCopy.wzionAvailableOnBaseL2, lang)}</li>
               </ol>
               <a
                 href="/bridge"
                 className="zion-button-secondary mt-4"
               >
-                {CexCopy.openBridge[cs ? 'cs' : 'en']} <ArrowRight className="h-3 w-3" />
+                {tx5(CexCopy.openBridge, lang)} <ArrowRight className="h-3 w-3" />
               </a>
             </div>
           </div>
@@ -606,7 +607,7 @@ export default function CexPage() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="mb-4 text-lg font-semibold text-white">{CexCopy.faq[cs ? 'cs' : 'en']}</h2>
+          <h2 className="mb-4 text-lg font-semibold text-white">{tx5(CexCopy.faq, lang)}</h2>
           <div className="space-y-2 max-w-3xl">
             {FAQ_ITEMS.map((item, i) => (
               <div key={i} className="zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
@@ -648,23 +649,23 @@ export default function CexPage() {
           transition={{ delay: 0.3 }}
           className="zion-cta-banner"
         >
-          <h2 className="text-2xl font-bold mb-3">{CexCopy.startTrading[cs ? 'cs' : 'en']}</h2>
+          <h2 className="text-2xl font-bold mb-3">{tx5(CexCopy.startTrading, lang)}</h2>
           <p className="mx-auto mb-6 max-w-lg text-gray-300">
-            {CexCopy.wzionIsAvailableOnUniswapV3Bas[cs ? 'cs' : 'en']}
+            {tx5(CexCopy.wzionIsAvailableOnUniswapV3Bas, lang)}
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
             <a
               href="/market"
               className="zion-button-primary"
             >
-              {CexCopy.defiHub[cs ? 'cs' : 'en']}
+              {tx5(CexCopy.defiHub, lang)}
               <ArrowRight className="h-4 w-4" />
             </a>
             <a
               href="/bridge"
               className="zion-button-secondary"
             >
-              {CexCopy.bridge[cs ? 'cs' : 'en']}
+              {tx5(CexCopy.bridge, lang)}
               <ArrowRight className="h-4 w-4" />
             </a>
           </div>

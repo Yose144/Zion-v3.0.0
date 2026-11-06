@@ -29,7 +29,8 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { sha256 } from '@noble/hashes/sha2.js';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import {
   getBtcSwapList,
   getBtcSwapMetrics,
@@ -133,12 +134,12 @@ function normPhase(phase: unknown): string {
   return s.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase();
 }
 
-function phaseLabel(phase: string, cs: boolean): { text: string; cls: string } {
+function phaseLabel(phase: string, cs: boolean, lang: Lang): { text: string; cls: string } {
   switch (phase) {
     case 'awaiting_user_lock':
-      return { text: cs ? 'Čeká na BTC lock' : 'Awaiting BTC lock', cls: 'text-amber-400 border-amber-500/30 bg-amber-500/10' };
+      return { text: cs ? 'Čeká na BTC lock' : t5('Awaiting BTC lock', lang), cls: 'text-amber-400 border-amber-500/30 bg-amber-500/10' };
     case 'locked':
-      return { text: cs ? 'Zamčeno — claim možný' : 'Locked — claimable', cls: 'text-cyan-400 border-cyan-500/30 bg-cyan-500/10' };
+      return { text: cs ? 'Zamčeno — claim možný' : t5('Locked — claimable', lang), cls: 'text-cyan-400 border-cyan-500/30 bg-cyan-500/10' };
     case 'settled':
       return { text: 'Settled', cls: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10' };
     case 'refunded':
@@ -511,7 +512,7 @@ export default function WarpBtcSwapWidget() {
           <p className="text-[10px] uppercase tracking-wider text-zinc-500">{t('yourSwaps')}</p>
           {mySwaps.map((s) => {
             const ph = normPhase(s.phase);
-            const lbl = phaseLabel(ph, cs);
+            const lbl = phaseLabel(ph, cs, lang);
             return (
               <div key={s.swap_id} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3.5 space-y-2">
                 <div className="flex items-center justify-between gap-2">
