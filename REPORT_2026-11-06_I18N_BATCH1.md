@@ -153,3 +153,25 @@ fr „COUCHE SPATIALE DE". 0 pageerror, `tsc` 0.
 **Stav F2b:** hotovo 47 (avatarů) + 82 (NewsFeed) + 143 (Issobella) = **272 řetězců**;
 zbývá ~1 250 v 64 souborech (tree-of-life 150, maria-del-camino 58, kralovstvi-srdce 45,
 nabukano 44, ArchiveLock 42, …).
+
+---
+
+## 9. F2b — dávka 3: Strom života + Terra Nova (424 řetězců)
+
+`tree-of-life` (219), `maria-del-camino` (90), `kralovstvi-srdce` (81), `nabukano` (34).
+Codemod: 231 indexací → `tx5`, 21 inline ternárů → `t5`.
+
+**Dvě pasti codemodu (obojí chyceno `tsc`):**
+1. **Pole v copy objektech** (`Copy.quarterPoints` = `{cs: [...], en: [...]}`) — `tx5(...).map()`
+   nevrací pole → `(lang === 'cs' ? X.cs : X.en).map(...)` (7 míst).
+2. **`?.name[cs ? …]`** — codemod rozsekl optional chaining na `?.tx5(name, lang)` → opraveno.
+
+**Navíc:** h1 `/terranova/kralovstvi-srdce` byl natvrdo česky ve všech jazycích → lokalizován
+(Kingdom / Reino / Reino / Royaume).
+
+**Ověřeno živě** (deploy `20261106T133709Z`): `/tree-of-life` a `kralovstvi-srdce` h1 v 5 jazycích,
+0 pageerror, `tsc` 0.
+
+**Stav F2b:** 272 + 424 = **696 řetězců** hotovo; zbývá ~830 v 60 souborech
+(ArchiveLock 42, ContractsPageClient 39, KnihovnaPanel 35, zion-archive 35, whitepapers 35,
+te-piko-ora 35, QvSection 34, team 32, golden-republic-bohemia 31…).
