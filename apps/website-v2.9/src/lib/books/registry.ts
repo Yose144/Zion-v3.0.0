@@ -334,7 +334,7 @@ export const BODHIGAIA_BOOK = korpusBook({
   dir: 'BodhiGaia',
   accent: '52, 211, 153',
   icon: Sprout,
-  kicker: { cs: 'Země a cesta · zahrady · CZ (+EN index)', en: 'Earth & journey · the gardens · CZ (+EN index)' },
+  kicker: { cs: 'Země a cesta · zahrady · CZ + EN', en: 'Earth & journey · the gardens · CZ + EN' },
   title: { cs: 'BodhiGaia', en: 'BodhiGaia' },
   subtitle: { cs: 'Hlína pod nohama — zahrady Země, do nichž trupy dovážejí sůl.', en: 'The clay underfoot — the gardens of Earth the hulls carry salt to.' },
   description: {
