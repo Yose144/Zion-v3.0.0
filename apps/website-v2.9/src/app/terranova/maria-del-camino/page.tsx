@@ -28,6 +28,7 @@ import {
   Waves,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
@@ -421,7 +422,7 @@ export default function MariaDelCaminoPage() {
   const [docError, setDocError] = useState(false);
 
   useEffect(() => {
-    const file = cs ? '/docs/terranova/maria-del-camino.cs.md' : '/docs/terranova/maria-del-camino.en.md';
+    const file = cs ? '/docs/terranova/maria-del-camino.cs.md' : t5('/docs/terranova/maria-del-camino.en.md', lang);
     setDoc(null);
     setDocError(false);
     fetch(file)
@@ -449,7 +450,7 @@ export default function MariaDelCaminoPage() {
             className="inline-flex items-center gap-2 text-sm text-zion-gold/65 hover:text-zion-gold transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {Copy.backToTerraNova[cs ? 'cs' : 'en']}
+            {tx5(Copy.backToTerraNova, lang)}
           </Link>
         </motion.div>
 
@@ -472,7 +473,7 @@ export default function MariaDelCaminoPage() {
                     <span className="zion-badge">L5 · Terra Nova · World Oceans</span>
                     <span className="zion-badge-gold inline-flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {Copy.researchStage[cs ? 'cs' : 'en']}
+                      {tx5(Copy.researchStage, lang)}
                     </span>
                   </div>
 
@@ -480,23 +481,23 @@ export default function MariaDelCaminoPage() {
                     María del Camino
                   </h1>
                   <p className="text-lg text-sky-300 font-medium">
-                    {Copy.subtitle[cs ? 'cs' : 'en']}
+                    {tx5(Copy.subtitle, lang)}
                   </p>
 
                   <div className="flex items-center gap-1.5 text-white/70">
                     <MapPin className="w-4 h-4 text-white/85 shrink-0" />
-                    <span className="text-sm">{Copy.locationLine[cs ? 'cs' : 'en']}</span>
+                    <span className="text-sm">{tx5(Copy.locationLine, lang)}</span>
                   </div>
 
                   <blockquote className="mt-4 pl-4 border-l-2 border-white/10 text-sm text-white/70 italic leading-relaxed max-w-lg">
-                    {Copy.quote[cs ? 'cs' : 'en']}
+                    {tx5(Copy.quote, lang)}
                   </blockquote>
 
                   <div className="grid gap-3 pt-3 sm:grid-cols-3">
                     {[
                       { icon: Users, value: '14–15', labelCs: 'Osob na lodi', labelEn: 'People aboard' },
-                      { icon: Sailboat, value: cs ? '8. bod' : '8th point', labelCs: 'Uzel', labelEn: 'Node' },
-                      { icon: Sparkles, value: cs ? 'Příprava' : 'Preparation', labelCs: 'Stav', labelEn: 'Status' },
+                      { icon: Sailboat, value: cs ? '8. bod' : t5('8th point', lang), labelCs: 'Uzel', labelEn: 'Node' },
+                      { icon: Sparkles, value: cs ? 'Příprava' : t5('Preparation', lang), labelCs: 'Stav', labelEn: 'Status' },
                     ].map((signal) => {
                       const Icon = signal.icon;
                       return (
@@ -541,10 +542,10 @@ export default function MariaDelCaminoPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
             <h2 className="text-2xl md:text-3xl font-semibold text-white mb-4">
-              {Copy.introTitle[cs ? 'cs' : 'en']}
+              {tx5(Copy.introTitle, lang)}
             </h2>
             <p className="text-gray-300 leading-relaxed">
-              {Copy.introBody[cs ? 'cs' : 'en']}
+              {tx5(Copy.introBody, lang)}
             </p>
           </div>
         </motion.section>
@@ -557,10 +558,10 @@ export default function MariaDelCaminoPage() {
           className="mb-16"
         >
           <div className="mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.fleetSubtitle[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.fleetSubtitle, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Ship className="h-7 w-7 text-sky-400" />
-              {Copy.fleetTitle[cs ? 'cs' : 'en']}
+              {tx5(Copy.fleetTitle, lang)}
             </h2>
           </div>
           <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30 mb-4">
@@ -577,28 +578,28 @@ export default function MariaDelCaminoPage() {
             />
           </div>
           <p className="mb-6 text-center text-xs leading-relaxed text-white/50">
-            {Copy.fleetPlanCaption[cs ? 'cs' : 'en']}
+            {tx5(Copy.fleetPlanCaption, lang)}
           </p>
           <div className="grid md:grid-cols-3 gap-4 mb-4">
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '239, 68, 68' } as React.CSSProperties}>
-              <h3 className="font-semibold text-white mb-1">Santa María la Mayor <span className="text-xs text-gray-500 font-normal">· {cs ? 'Atlantik' : 'Atlantic'}</span></h3>
-              <p className="text-sm text-gray-400">{Copy.fleetAtlantic[cs ? 'cs' : 'en']}</p>
+              <h3 className="font-semibold text-white mb-1">Santa María la Mayor <span className="text-xs text-gray-500 font-normal">· {cs ? 'Atlantik' : t5('Atlantic', lang)}</span></h3>
+              <p className="text-sm text-gray-400">{tx5(Copy.fleetAtlantic, lang)}</p>
             </div>
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
               <h3 className="font-semibold text-white mb-1">Nossa Senhora de Fátima <span className="text-xs text-gray-500 font-normal">· Pacifik</span></h3>
-              <p className="text-sm text-gray-400">{Copy.fleetPacific[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm text-gray-400">{tx5(Copy.fleetPacific, lang)}</p>
             </div>
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
-              <h3 className="font-semibold text-white mb-1">María de las Nieves <span className="text-xs text-gray-500 font-normal">· {cs ? 'Indický oceán' : 'Indian Ocean'}</span></h3>
-              <p className="text-sm text-gray-400">{Copy.fleetIndian[cs ? 'cs' : 'en']}</p>
+              <h3 className="font-semibold text-white mb-1">María de las Nieves <span className="text-xs text-gray-500 font-normal">· {cs ? 'Indický oceán' : t5('Indian Ocean', lang)}</span></h3>
+              <p className="text-sm text-gray-400">{tx5(Copy.fleetIndian, lang)}</p>
             </div>
           </div>
           <div className="zion-rainbow-sub p-5" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
             <div className="flex items-center gap-2 mb-2">
               <Anchor className="h-4 w-4 text-teal-300" />
-              <span className="text-xs uppercase tracking-widest text-gray-500">LUMI · {cs ? 'scháziště' : 'meeting point'}</span>
+              <span className="text-xs uppercase tracking-widest text-gray-500">LUMI · {cs ? 'scháziště' : t5('meeting point', lang)}</span>
             </div>
-            <p className="text-sm text-gray-300">{Copy.fleetMeet[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-300">{tx5(Copy.fleetMeet, lang)}</p>
           </div>
         </motion.section>
 
@@ -613,10 +614,10 @@ export default function MariaDelCaminoPage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {Copy.threeDPreview[cs ? 'cs' : 'en']}
+                {tx5(Copy.threeDPreview, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {Copy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+                {tx5(Copy.threeDPreviewSubtitle, lang)}
               </h2>
             </div>
             <MariaDelCaminoPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
@@ -646,16 +647,16 @@ export default function MariaDelCaminoPage() {
                 </div>
               </div>
               <div className="flex-1">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500 mb-1">{Copy.patronSubtitle[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500 mb-1">{tx5(Copy.patronSubtitle, lang)}</p>
                 <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mb-4">
                   <Crown className="h-7 w-7 text-amber-200" />
-                  {Copy.patronTitle[cs ? 'cs' : 'en']}
+                  {tx5(Copy.patronTitle, lang)}
                 </h2>
                 <p className="text-gray-300 leading-relaxed mb-6">
-                  {Copy.patronBody[cs ? 'cs' : 'en']}
+                  {tx5(Copy.patronBody, lang)}
                 </p>
                 <div className="space-y-3">
-                  {Copy.patronPoints[cs ? 'cs' : 'en'].map((point, i) => (
+                  {(lang === 'cs' ? Copy.patronPoints.cs : Copy.patronPoints.en).map((point, i) => (
                     <div key={i} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
                       <div className="flex items-center gap-2 text-amber-200 mb-1">
                         <Sparkles className="h-4 w-4" />
@@ -671,14 +672,14 @@ export default function MariaDelCaminoPage() {
                   <div className="flex items-center gap-2 text-amber-200 mb-2">
                     <Flame className="h-4 w-4" />
                     <span className="text-[11px] uppercase tracking-widest text-gray-500">
-                      {Copy.elizabethTitle[cs ? 'cs' : 'en']}
+                      {tx5(Copy.elizabethTitle, lang)}
                     </span>
                   </div>
                   <p className="text-sm text-gray-300 leading-relaxed mb-3">
-                    {Copy.elizabethBody[cs ? 'cs' : 'en']}
+                    {tx5(Copy.elizabethBody, lang)}
                   </p>
                   <p className="text-xs italic text-amber-100/70">
-                    {Copy.elizabethQuote[cs ? 'cs' : 'en']}
+                    {tx5(Copy.elizabethQuote, lang)}
                   </p>
                 </div>
               </div>
@@ -695,14 +696,14 @@ export default function MariaDelCaminoPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
             <div className="mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.routeSubtitle[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.routeSubtitle, lang)}</p>
               <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mt-1">
                 <Compass className="h-7 w-7 text-sky-400" />
-                {Copy.routeTitle[cs ? 'cs' : 'en']}
+                {tx5(Copy.routeTitle, lang)}
               </h2>
             </div>
             <p className="text-gray-300 leading-relaxed mb-8">
-              {Copy.routeLead[cs ? 'cs' : 'en']}
+              {tx5(Copy.routeLead, lang)}
             </p>
             <div className="space-y-3">
               {ROUTE.map((leg) => {
@@ -715,19 +716,19 @@ export default function MariaDelCaminoPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                        <h3 className="font-semibold text-white">{leg.stop[cs ? 'cs' : 'en']}</h3>
+                        <h3 className="font-semibold text-white">{tx5(leg.stop, lang)}</h3>
                         <span className="text-xs uppercase tracking-widest text-gray-500">
-                          {cs ? 'iniciace' : 'initiation'} · {leg.initiation[cs ? 'cs' : 'en']}
+                          {cs ? 'iniciace' : t5('initiation', lang)} · {tx5(leg.initiation, lang)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-400 mt-1">{leg.desc[cs ? 'cs' : 'en']}</p>
+                      <p className="text-sm text-gray-400 mt-1">{tx5(leg.desc, lang)}</p>
                     </div>
                     <div className="hidden sm:flex shrink-0 flex-col items-end gap-1">
                       {hulls.map((h) => {
                         const m = HULL_META[h] ?? HULL_META.I;
                         return (
                           <span key={h} className={`text-[11px] uppercase tracking-widest ${m.text}`}>
-                            {m.label[cs ? 'cs' : 'en']}
+                            {tx5(m.label, lang)}
                           </span>
                         );
                       })}
@@ -747,10 +748,10 @@ export default function MariaDelCaminoPage() {
           className="mb-16"
         >
           <div className="mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.featuresSubtitle[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.featuresSubtitle, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Ship className="h-7 w-7 text-sky-400" />
-              {Copy.featuresTitle[cs ? 'cs' : 'en']}
+              {tx5(Copy.featuresTitle, lang)}
             </h2>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
@@ -775,23 +776,23 @@ export default function MariaDelCaminoPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
             <div className="mb-4">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.caminoSubtitle[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.caminoSubtitle, lang)}</p>
               <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mt-1">
                 <Route className="h-7 w-7 text-sky-400" />
-                {Copy.caminoTitle[cs ? 'cs' : 'en']}
+                {tx5(Copy.caminoTitle, lang)}
               </h2>
             </div>
             <p className="text-gray-300 leading-relaxed mb-6">
-              {Copy.caminoBody[cs ? 'cs' : 'en']}
+              {tx5(Copy.caminoBody, lang)}
             </p>
             <div className="grid gap-3 sm:grid-cols-3">
-              {Copy.caminoPoints[cs ? 'cs' : 'en'].map((point, i) => {
+              {(lang === 'cs' ? Copy.caminoPoints.cs : Copy.caminoPoints.en).map((point, i) => {
                 const PointIcon = [Anchor, Shell, Compass][i];
                 return (
                   <div key={point} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 text-sky-300 mb-1">
                       <PointIcon className="h-4 w-4" />
-                      <span className="text-[11px] uppercase tracking-widest text-gray-500">{cs ? 'Princip' : 'Principle'} {i + 1}</span>
+                      <span className="text-[11px] uppercase tracking-widest text-gray-500">{cs ? 'Princip' : t5('Principle', lang)} {i + 1}</span>
                     </div>
                     <p className="text-sm text-gray-300">{point}</p>
                   </div>
@@ -810,8 +811,8 @@ export default function MariaDelCaminoPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
             <div className="mb-8">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.phasesSubtitle[cs ? 'cs' : 'en']}</p>
-              <h2 className="text-3xl font-semibold text-white">{Copy.phasesTitle[cs ? 'cs' : 'en']}</h2>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.phasesSubtitle, lang)}</p>
+              <h2 className="text-3xl font-semibold text-white">{tx5(Copy.phasesTitle, lang)}</h2>
             </div>
             <div className="space-y-4">
               {PHASES.map((phase) => (
@@ -826,7 +827,7 @@ export default function MariaDelCaminoPage() {
                   <div>
                     <h3 className="font-semibold text-white mb-1">
                       {cs ? phase.cs : phase.en}
-                      {phase.active && <span className="ml-2 text-[11px] uppercase tracking-widest text-sky-300">· {cs ? 'probíhá' : 'in progress'}</span>}
+                      {phase.active && <span className="ml-2 text-[11px] uppercase tracking-widest text-sky-300">· {cs ? 'probíhá' : t5('in progress', lang)}</span>}
                     </h3>
                     <p className="text-sm text-gray-400">{cs ? phase.descCs : phase.descEn}</p>
                   </div>
@@ -846,10 +847,10 @@ export default function MariaDelCaminoPage() {
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mb-4">
               <Shell className="h-7 w-7 text-zion-purple" />
-              {Copy.nameTitle[cs ? 'cs' : 'en']}
+              {tx5(Copy.nameTitle, lang)}
             </h2>
             <p className="text-gray-300 leading-relaxed">
-              {Copy.nameBody[cs ? 'cs' : 'en']}
+              {tx5(Copy.nameBody, lang)}
             </p>
           </div>
         </motion.section>
@@ -865,7 +866,7 @@ export default function MariaDelCaminoPage() {
             <div className="zion-rainbow-card p-6" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
               <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-4">
                 <Network className="h-5 w-5 text-sky-300" />
-                {Copy.zionTitle[cs ? 'cs' : 'en']}
+                {tx5(Copy.zionTitle, lang)}
               </h2>
               <div className="flex flex-wrap gap-2">
                 {ZION_ITEMS.map((item) => (
@@ -879,10 +880,10 @@ export default function MariaDelCaminoPage() {
             <div className="zion-rainbow-card p-6" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
               <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-4">
                 <Landmark className="h-5 w-5 text-sky-300" />
-                {Copy.openTitle[cs ? 'cs' : 'en']}
+                {tx5(Copy.openTitle, lang)}
               </h2>
               <ul className="list-disc pl-4 text-sm text-gray-400 space-y-2">
-                {Copy.openItems[cs ? 'cs' : 'en'].map((item) => (
+                {(lang === 'cs' ? Copy.openItems.cs : Copy.openItems.en).map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
@@ -898,15 +899,15 @@ export default function MariaDelCaminoPage() {
           className="mb-16"
         >
           <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-white">{Copy.documentation[cs ? 'cs' : 'en']}</h2>
-            <p className="text-sm text-gray-500">{Copy.documentationSubtitle[cs ? 'cs' : 'en']}</p>
+            <h2 className="text-2xl font-semibold text-white">{tx5(Copy.documentation, lang)}</h2>
+            <p className="text-sm text-gray-500">{tx5(Copy.documentationSubtitle, lang)}</p>
           </div>
           {doc ? (
             <DocMarkdownArticle content={doc} className="zion-docs-prose max-w-4xl mx-auto" />
           ) : docError ? (
-            <p className="text-sm text-gray-500">{Copy.documentationError[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-500">{tx5(Copy.documentationError, lang)}</p>
           ) : (
-            <p className="text-sm text-gray-500">{Copy.documentationLoading[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-500">{tx5(Copy.documentationLoading, lang)}</p>
           )}
         </motion.section>
 
@@ -919,9 +920,9 @@ export default function MariaDelCaminoPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <div className="mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.sisterSubtitle[cs ? 'cs' : 'en']}</p>
-              <h2 className="text-2xl font-semibold text-white">{Copy.sisterTitle[cs ? 'cs' : 'en']}</h2>
-              <p className="text-sm text-gray-400 mt-2">{Copy.sisterBody[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.sisterSubtitle, lang)}</p>
+              <h2 className="text-2xl font-semibold text-white">{tx5(Copy.sisterTitle, lang)}</h2>
+              <p className="text-sm text-gray-400 mt-2">{tx5(Copy.sisterBody, lang)}</p>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {SISTERS.map((s) => (
@@ -937,7 +938,7 @@ export default function MariaDelCaminoPage() {
               ))}
             </div>
             <div className="mt-8 text-center">
-              <p className="text-gray-300 mb-4">{Copy.cta[cs ? 'cs' : 'en']}</p>
+              <p className="text-gray-300 mb-4">{tx5(Copy.cta, lang)}</p>
               <a
                 href="https://discord.gg/zionterranova"
                 target="_blank"
@@ -945,7 +946,7 @@ export default function MariaDelCaminoPage() {
                 className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
                 style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
               >
-                {Copy.joinDiscord[cs ? 'cs' : 'en']} <ArrowRight className="h-4 w-4" />
+                {tx5(Copy.joinDiscord, lang)} <ArrowRight className="h-4 w-4" />
               </a>
             </div>
           </div>

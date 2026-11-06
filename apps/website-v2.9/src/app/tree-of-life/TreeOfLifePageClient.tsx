@@ -11,6 +11,7 @@ import {
   AlertTriangle, FlaskConical, Construction,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const TreeOfLifeTreeOfLifePageClientCopy = {
   projectUnderConstantDevelopmen: { cs: `Projekt v neustálém vývoji — Work in Progress`, en: `Project under constant development — Work in Progress` },
@@ -579,22 +580,22 @@ export default function TreeOfLifePageClient() {
             </div>
             <div className="space-y-1.5">
               <h3 className="text-sm font-bold text-zion-gold">
-                {TreeOfLifeTreeOfLifePageClientCopy.projectUnderConstantDevelopmen[cs ? 'cs' : 'en']}
+                {tx5(TreeOfLifeTreeOfLifePageClientCopy.projectUnderConstantDevelopmen, lang)}
               </h3>
               <p className="text-xs leading-relaxed text-amber-200/70">
-                {TreeOfLifeTreeOfLifePageClientCopy.zionTerranovaIsAnExperimentalP[cs ? 'cs' : 'en']}
+                {tx5(TreeOfLifeTreeOfLifePageClientCopy.zionTerranovaIsAnExperimentalP, lang)}
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
                 <span className="zion-badge zion-badge-amber">
                   <FlaskConical className="h-3 w-3" />
-                  {TreeOfLifeTreeOfLifePageClientCopy.experimental[cs ? 'cs' : 'en']}
+                  {tx5(TreeOfLifeTreeOfLifePageClientCopy.experimental, lang)}
                 </span>
                 <span className="zion-badge zion-badge-rasta">
                   <Construction className="h-3 w-3" />
-                  {TreeOfLifeTreeOfLifePageClientCopy.activelyBuilding[cs ? 'cs' : 'en']}
+                  {tx5(TreeOfLifeTreeOfLifePageClientCopy.activelyBuilding, lang)}
                 </span>
                 <span className="zion-badge border-zion-purple/30 bg-zion-purple/10 text-zion-purple">
-                  {TreeOfLifeTreeOfLifePageClientCopy.mainnetBetaAtYourOwnRisk[cs ? 'cs' : 'en']}
+                  {tx5(TreeOfLifeTreeOfLifePageClientCopy.mainnetBetaAtYourOwnRisk, lang)}
                 </span>
               </div>
             </div>
@@ -610,16 +611,16 @@ export default function TreeOfLifePageClient() {
         >
           <div className="zion-kicker border-zion-gold/30 bg-zion-gold/10 text-zion-gold">
             <Sparkles className="h-4 w-4" />
-            {TreeOfLifeTreeOfLifePageClientCopy.kabbalah10Sephirot22Paths3Pill[cs ? 'cs' : 'en']}
+            {tx5(TreeOfLifeTreeOfLifePageClientCopy.kabbalah10Sephirot22Paths3Pill, lang)}
           </div>
           <h1 className="text-4xl md:text-6xl font-bold leading-tight text-white">
-            {TreeOfLifeTreeOfLifePageClientCopy.treeOfLife[cs ? 'cs' : 'en']}
+            {tx5(TreeOfLifeTreeOfLifePageClientCopy.treeOfLife, lang)}
             <span className="block bg-linear-to-r from-zion-gold via-zion-gold to-zion-cyan bg-clip-text text-transparent">
-              {TreeOfLifeTreeOfLifePageClientCopy.zionLayersL1L6[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.zionLayersL1L6, lang)}
             </span>
           </h1>
           <p className="mx-auto max-w-3xl text-base md:text-lg leading-relaxed text-gray-400">
-            {TreeOfLifeTreeOfLifePageClientCopy.theKabbalisticTreeOfLifeTransl[cs ? 'cs' : 'en']}
+            {tx5(TreeOfLifeTreeOfLifePageClientCopy.theKabbalisticTreeOfLifeTransl, lang)}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <Link
@@ -627,14 +628,14 @@ export default function TreeOfLifePageClient() {
               className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/10 hover:text-white transition-all"
             >
               <TreePine className="h-4 w-4" />
-              {TreeOfLifeTreeOfLifePageClientCopy.treeOnHomepage[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.treeOnHomepage, lang)}
             </Link>
             <Link
               href="/terranova"
               className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/30 bg-zion-cyan/5 px-5 py-2.5 text-sm font-medium text-zion-cyan hover:bg-zion-cyan/10 transition-all"
             >
               <BookOpen className="h-4 w-4" />
-              {TreeOfLifeTreeOfLifePageClientCopy.terranovaBook[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.terranovaBook, lang)}
             </Link>
           </div>
         </motion.section>
@@ -650,36 +651,36 @@ export default function TreeOfLifePageClient() {
           <div className="flex items-center gap-3">
             <BookOpen className="h-5 w-5 text-zion-gold" />
             <h2 className="text-2xl md:text-3xl font-bold text-white">
-              {TreeOfLifeTreeOfLifePageClientCopy.aboutTheBookOfZohar[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.aboutTheBookOfZohar, lang)}
             </h2>
           </div>
           <div className="grid gap-6 md:grid-cols-2">
             <div className="zion-rainbow-card space-y-4 p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-              <h3 className="text-lg font-semibold text-white">{TreeOfLifeTreeOfLifePageClientCopy.whatIsTheZohar[cs ? 'cs' : 'en']}</h3>
+              <h3 className="text-lg font-semibold text-white">{tx5(TreeOfLifeTreeOfLifePageClientCopy.whatIsTheZohar, lang)}</h3>
               <p className="text-sm leading-relaxed text-gray-400">
-                {TreeOfLifeTreeOfLifePageClientCopy.theZoharLightSplendorIsOneOfTh[cs ? 'cs' : 'en']}
+                {tx5(TreeOfLifeTreeOfLifePageClientCopy.theZoharLightSplendorIsOneOfTh, lang)}
               </p>
               <p className="text-sm leading-relaxed text-gray-400">
-                {TreeOfLifeTreeOfLifePageClientCopy.itIsAMysticalCommentaryOnTheTo[cs ? 'cs' : 'en']}
+                {tx5(TreeOfLifeTreeOfLifePageClientCopy.itIsAMysticalCommentaryOnTheTo, lang)}
               </p>
             </div>
             <div className="zion-rainbow-card space-y-4 p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-              <h3 className="text-lg font-semibold text-white">{TreeOfLifeTreeOfLifePageClientCopy.structureOfTheZohar[cs ? 'cs' : 'en']}</h3>
+              <h3 className="text-lg font-semibold text-white">{tx5(TreeOfLifeTreeOfLifePageClientCopy.structureOfTheZohar, lang)}</h3>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><span className="text-zion-gold font-semibold">Hlavní Zohar</span> — {TreeOfLifeTreeOfLifePageClientCopy.commentaryOnWeeklyTorahReading[cs ? 'cs' : 'en']}</li>
-                <li><span className="text-zion-gold font-semibold">Zohar chadaš</span> — {TreeOfLifeTreeOfLifePageClientCopy.newZoharAdditionsAndMysticalIn[cs ? 'cs' : 'en']}</li>
-                <li><span className="text-zion-gold font-semibold">Tikunej Zohar</span> — {TreeOfLifeTreeOfLifePageClientCopy.k70InterpretationsOfTheWordBere[cs ? 'cs' : 'en']}</li>
-                <li><span className="text-zion-gold font-semibold">Ra&apos;aja mehemna</span> — {TreeOfLifeTreeOfLifePageClientCopy.faithfulShepherdOnTheMysticism[cs ? 'cs' : 'en']}</li>
-                <li><span className="text-zion-gold font-semibold">Sitrej Tora, Midraš ha-ne&apos;elam</span> — {TreeOfLifeTreeOfLifePageClientCopy.partialMysticalTractates[cs ? 'cs' : 'en']}</li>
+                <li><span className="text-zion-gold font-semibold">Hlavní Zohar</span> — {tx5(TreeOfLifeTreeOfLifePageClientCopy.commentaryOnWeeklyTorahReading, lang)}</li>
+                <li><span className="text-zion-gold font-semibold">Zohar chadaš</span> — {tx5(TreeOfLifeTreeOfLifePageClientCopy.newZoharAdditionsAndMysticalIn, lang)}</li>
+                <li><span className="text-zion-gold font-semibold">Tikunej Zohar</span> — {tx5(TreeOfLifeTreeOfLifePageClientCopy.k70InterpretationsOfTheWordBere, lang)}</li>
+                <li><span className="text-zion-gold font-semibold">Ra&apos;aja mehemna</span> — {tx5(TreeOfLifeTreeOfLifePageClientCopy.faithfulShepherdOnTheMysticism, lang)}</li>
+                <li><span className="text-zion-gold font-semibold">Sitrej Tora, Midraš ha-ne&apos;elam</span> — {tx5(TreeOfLifeTreeOfLifePageClientCopy.partialMysticalTractates, lang)}</li>
               </ul>
             </div>
           </div>
           <div className="zion-rainbow-card space-y-4 p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <h3 className="text-lg font-semibold text-white">
-              {TreeOfLifeTreeOfLifePageClientCopy.whyTreeOfLifeInZion[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.whyTreeOfLifeInZion, lang)}
             </h3>
             <p className="text-sm leading-relaxed text-gray-400">
-              {TreeOfLifeTreeOfLifePageClientCopy.zoharInZionIsNotAReligiousText[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.zoharInZionIsNotAReligiousText, lang)}
             </p>
             <div className="grid gap-3 sm:grid-cols-2 pt-2">
               <Link href="/docs/view/Zohar/README.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold transition-colors">
@@ -703,41 +704,41 @@ export default function TreeOfLifePageClient() {
           {/* Vývoj sefirot — genealogie */}
           <div className="zion-rainbow-card space-y-4 p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <h3 className="text-lg font-semibold text-white">
-              {TreeOfLifeTreeOfLifePageClientCopy.evolutionOfTheSephirotGenealog[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.evolutionOfTheSephirotGenealog, lang)}
             </h3>
             <p className="text-sm leading-relaxed text-gray-400">
-              {TreeOfLifeTreeOfLifePageClientCopy.theDoctrineOfThe10SephirotDidN[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.theDoctrineOfThe10SephirotDidN, lang)}
             </p>
             <div className="space-y-2 font-mono text-xs text-gray-400">
               <div className="flex items-center gap-2">
                 <span className="rounded bg-zion-purple/20 px-2 py-0.5 text-zion-purple">~2. stol.</span>
                 <span className="text-gray-500">→</span>
-                <span><span className="text-white">Sefer Yetzirah</span> — {TreeOfLifeTreeOfLifePageClientCopy.k10SefirotBelimahUnnamedAttribu[cs ? 'cs' : 'en']}</span>
+                <span><span className="text-white">Sefer Yetzirah</span> — {tx5(TreeOfLifeTreeOfLifePageClientCopy.k10SefirotBelimahUnnamedAttribu, lang)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="rounded bg-zion-purple/20 px-2 py-0.5 text-zion-purple">~1150</span>
                 <span className="text-gray-500">→</span>
-                <span><span className="text-white">Sefer ha-Bahir</span> — {TreeOfLifeTreeOfLifePageClientCopy.sephirotNamedChannelsOfDivineP[cs ? 'cs' : 'en']}</span>
+                <span><span className="text-white">Sefer ha-Bahir</span> — {tx5(TreeOfLifeTreeOfLifePageClientCopy.sephirotNamedChannelsOfDivineP, lang)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="rounded bg-zion-purple/20 px-2 py-0.5 text-zion-purple">~1200</span>
                 <span className="text-gray-500">→</span>
-                <span><span className="text-white">Sha&apos;arei Orah</span> — {TreeOfLifeTreeOfLifePageClientCopy.firstTreeOfLifeDiagramIlanRGik[cs ? 'cs' : 'en']}</span>
+                <span><span className="text-white">Sha&apos;arei Orah</span> — {tx5(TreeOfLifeTreeOfLifePageClientCopy.firstTreeOfLifeDiagramIlanRGik, lang)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="rounded bg-zion-gold/20 px-2 py-0.5 text-zion-gold">~1280</span>
                 <span className="text-gray-500">→</span>
-                <span><span className="text-white">Zohar</span> — {TreeOfLifeTreeOfLifePageClientCopy.fullMysticalSystemMDeLeN[cs ? 'cs' : 'en']}</span>
+                <span><span className="text-white">Zohar</span> — {tx5(TreeOfLifeTreeOfLifePageClientCopy.fullMysticalSystemMDeLeN, lang)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="rounded bg-zion-cyan/20 px-2 py-0.5 text-zion-cyan">~1570</span>
                 <span className="text-gray-500">→</span>
-                <span><span className="text-white">Etz Chaim</span> — {TreeOfLifeTreeOfLifePageClientCopy.modernFormOfTheTreeRLuriaAri[cs ? 'cs' : 'en']}</span>
+                <span><span className="text-white">Etz Chaim</span> — {tx5(TreeOfLifeTreeOfLifePageClientCopy.modernFormOfTheTreeRLuriaAri, lang)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="rounded bg-zion-gold/20 px-2 py-0.5 text-zion-gold">2026</span>
                 <span className="text-gray-500">→</span>
-                <span><span className="text-white">ZION Tree of Life</span> — {TreeOfLifeTreeOfLifePageClientCopy.sephirotMappedToL1L6Layers[cs ? 'cs' : 'en']}</span>
+                <span><span className="text-white">ZION Tree of Life</span> — {tx5(TreeOfLifeTreeOfLifePageClientCopy.sephirotMappedToL1L6Layers, lang)}</span>
               </div>
             </div>
           </div>
@@ -745,7 +746,7 @@ export default function TreeOfLifePageClient() {
           {/* Citát */}
           <div className="zion-rainbow-card space-y-3 p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <p className="text-sm italic leading-relaxed text-gray-300">
-              {TreeOfLifeTreeOfLifePageClientCopy.theUniverseBeingAccordingToTha[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.theUniverseBeingAccordingToTha, lang)}
             </p>
             <p className="text-xs uppercase tracking-[0.3em] text-zion-gold">— Jewish Virtual Library, o Zoharu / Stromu života</p>
           </div>
@@ -755,19 +756,19 @@ export default function TreeOfLifePageClient() {
             <div className="zion-rainbow-card space-y-2 p-5" style={{ '--rc': '255, 255, 255' } as React.CSSProperties}>
               <h4 className="text-sm font-bold text-white">Ein Sof</h4>
               <p className="text-xs text-gray-400">
-                {TreeOfLifeTreeOfLifePageClientCopy.withoutEndTheInfiniteUnknowabl[cs ? 'cs' : 'en']}
+                {tx5(TreeOfLifeTreeOfLifePageClientCopy.withoutEndTheInfiniteUnknowabl, lang)}
               </p>
             </div>
             <div className="zion-rainbow-card space-y-2 p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <h4 className="text-sm font-bold text-white">Da&apos;at</h4>
               <p className="text-xs text-gray-400">
-                {TreeOfLifeTreeOfLifePageClientCopy.knowledgeHidden11thSephiraBrid[cs ? 'cs' : 'en']}
+                {tx5(TreeOfLifeTreeOfLifePageClientCopy.knowledgeHidden11thSephiraBrid, lang)}
               </p>
             </div>
             <div className="zion-rainbow-card space-y-2 p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <h4 className="text-sm font-bold text-white">Sitra Ahra</h4>
               <p className="text-xs text-gray-400">
-                {TreeOfLifeTreeOfLifePageClientCopy.theOtherSideDualityOfGoodAndEv[cs ? 'cs' : 'en']}
+                {tx5(TreeOfLifeTreeOfLifePageClientCopy.theOtherSideDualityOfGoodAndEv, lang)}
               </p>
             </div>
           </div>
@@ -777,11 +778,11 @@ export default function TreeOfLifePageClient() {
             <div className="flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-zion-cyan" />
               <h4 className="text-sm font-bold text-white">
-                {TreeOfLifeTreeOfLifePageClientCopy.gershomScholem18971982[cs ? 'cs' : 'en']}
+                {tx5(TreeOfLifeTreeOfLifePageClientCopy.gershomScholem18971982, lang)}
               </h4>
             </div>
             <p className="text-xs leading-relaxed text-gray-400">
-              {TreeOfLifeTreeOfLifePageClientCopy.founderOfAcademicKabbalahStudy[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.founderOfAcademicKabbalahStudy, lang)}
             </p>
           </div>
         </motion.section>
@@ -796,13 +797,13 @@ export default function TreeOfLifePageClient() {
         >
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-gold">
-              {TreeOfLifeTreeOfLifePageClientCopy.interactiveMap[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.interactiveMap, lang)}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
-              {TreeOfLifeTreeOfLifePageClientCopy.k10SephirotZionLayers[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.k10SephirotZionLayers, lang)}
             </h2>
             <p className="mx-auto max-w-2xl text-sm text-gray-400">
-              {TreeOfLifeTreeOfLifePageClientCopy.clickASephiraForDetailsColorPi[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.clickASephiraForDetailsColorPi, lang)}
             </p>
           </div>
 
@@ -956,7 +957,7 @@ export default function TreeOfLifePageClient() {
 
                     <div className="space-y-3 pt-2">
                       <div>
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.zionLayer[cs ? 'cs' : 'en']}</p>
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{tx5(TreeOfLifeTreeOfLifePageClientCopy.zionLayer, lang)}</p>
                         <p className="mt-1 text-base font-semibold" style={{ color: `rgb(${selected.color})` }}>
                           {selected.zionLayer}
                         </p>
@@ -964,14 +965,14 @@ export default function TreeOfLifePageClient() {
                       </div>
 
                       <div>
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.whatItEmanates[cs ? 'cs' : 'en']}</p>
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{tx5(TreeOfLifeTreeOfLifePageClientCopy.whatItEmanates, lang)}</p>
                         <p className="mt-1 text-sm leading-relaxed text-gray-300">
                           {cs ? selected.emanates.cs : selected.emanates.en}
                         </p>
                       </div>
 
                       <div className="zion-rainbow-sub p-3" style={{ '--rc': selected.color } as React.CSSProperties}>
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.question[cs ? 'cs' : 'en']}</p>
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{tx5(TreeOfLifeTreeOfLifePageClientCopy.question, lang)}</p>
                         <p className="mt-1 text-sm italic text-gray-300">
                           {cs ? selected.question.cs : selected.question.en}
                         </p>
@@ -992,7 +993,7 @@ export default function TreeOfLifePageClient() {
                           {STATUS_LABEL[selected.status][cs ? 'cs' : 'en']}
                         </span>
                         <span className="text-[10px] uppercase tracking-wider text-gray-500">
-                          {TreeOfLifeTreeOfLifePageClientCopy.pillar[cs ? 'cs' : 'en']}: {PILLARS.find((p) => p.id === selected.pillar)?.name[cs ? 'cs' : 'en']}
+                          {tx5(TreeOfLifeTreeOfLifePageClientCopy.pillar, lang)}: {tx5(PILLARS.find((p) => p.id === selected.pillar)?.name, lang)}
                         </span>
                       </div>
                     </div>
@@ -1010,7 +1011,7 @@ export default function TreeOfLifePageClient() {
                       <Sparkles className="h-8 w-8 text-zion-gold" />
                     </div>
                     <p className="text-sm text-gray-400">
-                      {TreeOfLifeTreeOfLifePageClientCopy.selectASephiraOnTheTreeToExplo[cs ? 'cs' : 'en']}
+                      {tx5(TreeOfLifeTreeOfLifePageClientCopy.selectASephiraOnTheTreeToExplo, lang)}
                     </p>
                     <div className="grid grid-cols-3 gap-2 pt-2 text-center">
                       <div className="zion-rainbow-sub p-2" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
@@ -1069,10 +1070,10 @@ export default function TreeOfLifePageClient() {
         >
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-gold">
-              {TreeOfLifeTreeOfLifePageClientCopy.architectureOfTheTree[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.architectureOfTheTree, lang)}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
-              {TreeOfLifeTreeOfLifePageClientCopy.threePillars[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.threePillars, lang)}
             </h2>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
@@ -1118,13 +1119,13 @@ export default function TreeOfLifePageClient() {
         >
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-cyan">
-              {TreeOfLifeTreeOfLifePageClientCopy.organismDiagnosticsLiveData[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.organismDiagnosticsLiveData, lang)}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
-              {TreeOfLifeTreeOfLifePageClientCopy.emanationStatus[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.emanationStatus, lang)}
             </h2>
             <p className="mx-auto max-w-2xl text-sm text-gray-400">
-              {TreeOfLifeTreeOfLifePageClientCopy.whichAspectsOfZionAreAliveInRu[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.whichAspectsOfZionAreAliveInRu, lang)}
             </p>
           </div>
 
@@ -1132,7 +1133,7 @@ export default function TreeOfLifePageClient() {
           {treeHealth && (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.treeOverall[cs ? 'cs' : 'en']}</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{tx5(TreeOfLifeTreeOfLifePageClientCopy.treeOverall, lang)}</p>
                 <p className="text-4xl font-bold text-zion-gold">{treeHealth.treeHealth}<span className="text-lg text-gray-500">/100</span></p>
                 <div className="mx-auto h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                   <div
@@ -1142,19 +1143,19 @@ export default function TreeOfLifePageClient() {
                 </div>
               </div>
               <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.pillarOfMercy[cs ? 'cs' : 'en']}</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{tx5(TreeOfLifeTreeOfLifePageClientCopy.pillarOfMercy, lang)}</p>
                 <p className="text-3xl font-bold text-zion-cyan">{treeHealth.pillars.mercy}<span className="text-base text-gray-500">/100</span></p>
-                <p className="text-[10px] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.chokmahChesedNetzach[cs ? 'cs' : 'en']}</p>
+                <p className="text-[10px] text-gray-500">{tx5(TreeOfLifeTreeOfLifePageClientCopy.chokmahChesedNetzach, lang)}</p>
               </div>
               <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.pillarOfSeverity[cs ? 'cs' : 'en']}</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{tx5(TreeOfLifeTreeOfLifePageClientCopy.pillarOfSeverity, lang)}</p>
                 <p className="text-3xl font-bold text-zion-purple">{treeHealth.pillars.severity}<span className="text-base text-gray-500">/100</span></p>
-                <p className="text-[10px] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.binahGevurahHod[cs ? 'cs' : 'en']}</p>
+                <p className="text-[10px] text-gray-500">{tx5(TreeOfLifeTreeOfLifePageClientCopy.binahGevurahHod, lang)}</p>
               </div>
               <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.pillarOfEquilibrium[cs ? 'cs' : 'en']}</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{tx5(TreeOfLifeTreeOfLifePageClientCopy.pillarOfEquilibrium, lang)}</p>
                 <p className="text-3xl font-bold text-zion-gold">{treeHealth.pillars.equilibrium}<span className="text-base text-gray-500">/100</span></p>
-                <p className="text-[10px] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.keterTiferetYesodMalkhut[cs ? 'cs' : 'en']}</p>
+                <p className="text-[10px] text-gray-500">{tx5(TreeOfLifeTreeOfLifePageClientCopy.keterTiferetYesodMalkhut, lang)}</p>
               </div>
             </div>
           )}
@@ -1197,7 +1198,7 @@ export default function TreeOfLifePageClient() {
                       className="text-[10px] font-semibold uppercase tracking-wider"
                       style={{ color: `rgb(${s.color})` }}
                     >
-                      {STATUS_LABEL[liveStatus as keyof typeof STATUS_LABEL]?.[cs ? 'cs' : 'en'] ?? STATUS_LABEL.horizon[cs ? 'cs' : 'en']}
+                      {STATUS_LABEL[liveStatus as keyof typeof STATUS_LABEL]?.[cs ? 'cs' : 'en'] ?? tx5(STATUS_LABEL.horizon, lang)}
                     </p>
                     {liveData && (
                       <p className="text-[10px] font-mono text-gray-400">{health}/100</p>
@@ -1224,15 +1225,15 @@ export default function TreeOfLifePageClient() {
                   <span className="text-xs font-bold text-gray-300">11</span>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-white">Da&apos;at — {TreeOfLifeTreeOfLifePageClientCopy.bridgeOfConsciousness[cs ? 'cs' : 'en']}</p>
+                  <p className="text-sm font-semibold text-white">Da&apos;at — {tx5(TreeOfLifeTreeOfLifePageClientCopy.bridgeOfConsciousness, lang)}</p>
                   <p className="text-xs text-gray-400">
-                    {TreeOfLifeTreeOfLifePageClientCopy.liveSephirot[cs ? 'cs' : 'en']}: {treeHealth.daat.metrics.live_sephirot}/{treeHealth.daat.metrics.total_sephirot}
+                    {tx5(TreeOfLifeTreeOfLifePageClientCopy.liveSephirot, lang)}: {treeHealth.daat.metrics.live_sephirot}/{treeHealth.daat.metrics.total_sephirot}
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-2xl font-bold text-white">{treeHealth.daat.health}<span className="text-sm text-gray-500">/100</span></p>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.mythCodeConnection[cs ? 'cs' : 'en']}</p>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500">{tx5(TreeOfLifeTreeOfLifePageClientCopy.mythCodeConnection, lang)}</p>
               </div>
             </div>
           )}
@@ -1242,20 +1243,20 @@ export default function TreeOfLifePageClient() {
             {healthLoading && (
               <span className="inline-flex items-center gap-2">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-zion-gold" />
-                {TreeOfLifeTreeOfLifePageClientCopy.loadingLiveData[cs ? 'cs' : 'en']}
+                {tx5(TreeOfLifeTreeOfLifePageClientCopy.loadingLiveData, lang)}
               </span>
             )}
             {treeHealth?.sources?.length > 0 && (
-              <span>{TreeOfLifeTreeOfLifePageClientCopy.sources[cs ? 'cs' : 'en']} {treeHealth.sources.join(', ')}</span>
+              <span>{tx5(TreeOfLifeTreeOfLifePageClientCopy.sources, lang)} {treeHealth.sources.join(', ')}</span>
             )}
             <span className="inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-zion-cyan" /> {TreeOfLifeTreeOfLifePageClientCopy.liveInRuntime[cs ? 'cs' : 'en']}
+              <span className="h-2 w-2 rounded-full bg-zion-cyan" /> {tx5(TreeOfLifeTreeOfLifePageClientCopy.liveInRuntime, lang)}
             </span>
             <span className="inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-zion-gold/50" /> {TreeOfLifeTreeOfLifePageClientCopy.partialSeed[cs ? 'cs' : 'en']}
+              <span className="h-2 w-2 rounded-full bg-zion-gold/50" /> {tx5(TreeOfLifeTreeOfLifePageClientCopy.partialSeed, lang)}
             </span>
             <span className="inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-gray-600" /> {TreeOfLifeTreeOfLifePageClientCopy.horizon[cs ? 'cs' : 'en']}
+              <span className="h-2 w-2 rounded-full bg-gray-600" /> {tx5(TreeOfLifeTreeOfLifePageClientCopy.horizon, lang)}
             </span>
           </div>
         </motion.section>
@@ -1270,10 +1271,10 @@ export default function TreeOfLifePageClient() {
         >
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-purple">
-              {TreeOfLifeTreeOfLifePageClientCopy.implementation[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.implementation, lang)}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
-              {TreeOfLifeTreeOfLifePageClientCopy.treeOfLifeZionRoadmap[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.treeOfLifeZionRoadmap, lang)}
             </h2>
           </div>
           <div className="space-y-3">
@@ -1361,13 +1362,13 @@ export default function TreeOfLifePageClient() {
         >
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-cyan">
-              {TreeOfLifeTreeOfLifePageClientCopy.consensusEvolution10YearHybrid[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.consensusEvolution10YearHybrid, lang)}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
-              {TreeOfLifeTreeOfLifePageClientCopy.evoluzionV2FromPowToProtocolOf[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.evoluzionV2FromPowToProtocolOf, lang)}
             </h2>
             <p className="mx-auto max-w-3xl text-sm text-gray-400">
-              {TreeOfLifeTreeOfLifePageClientCopy.zionIsNotBornAsAnotherBlockcha[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.zionIsNotBornAsAnotherBlockcha, lang)}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <a
@@ -1427,12 +1428,12 @@ export default function TreeOfLifePageClient() {
                     }}
                   >
                     {p.status === 'live' && <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ backgroundColor: `rgb(${p.color})` }} />}
-                    {p.status === 'live' ? (TreeOfLifeTreeOfLifePageClientCopy.current[cs ? 'cs' : 'en']) : (TreeOfLifeTreeOfLifePageClientCopy.horizon[cs ? 'cs' : 'en'])}
+                    {p.status === 'live' ? (tx5(TreeOfLifeTreeOfLifePageClientCopy.current, lang)) : (tx5(TreeOfLifeTreeOfLifePageClientCopy.horizon, lang))}
                   </span>
                   {p.npuValidators !== '—' && (
                     <span className="text-[10px] text-gray-500">
                       <Cpu className="mr-1 inline h-3 w-3" />
-                      {TreeOfLifeTreeOfLifePageClientCopy.npuValidators[cs ? 'cs' : 'en']}: {p.npuValidators}
+                      {tx5(TreeOfLifeTreeOfLifePageClientCopy.npuValidators, lang)}: {p.npuValidators}
                     </span>
                   )}
                 </div>
@@ -1472,13 +1473,13 @@ export default function TreeOfLifePageClient() {
         >
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-cyan">
-              {TreeOfLifeTreeOfLifePageClientCopy.protocolOfCareProofOfCare[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.protocolOfCareProofOfCare, lang)}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
-              {TreeOfLifeTreeOfLifePageClientCopy.miningCareNotWaste[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.miningCareNotWaste, lang)}
             </h2>
             <p className="mx-auto max-w-3xl text-sm text-gray-400">
-              {TreeOfLifeTreeOfLifePageClientCopy.powMeasuresStrengthPosMeasures[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.powMeasuresStrengthPosMeasures, lang)}
             </p>
           </div>
 
@@ -1494,7 +1495,7 @@ export default function TreeOfLifePageClient() {
                 <p className="text-sm text-gray-300">{cs ? m.desc.cs : m.desc.en}</p>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <Zap className="h-3.5 w-3.5" />
-                  {TreeOfLifeTreeOfLifePageClientCopy.energy[cs ? 'cs' : 'en']}: {cs ? m.energy.cs : m.energy.en}
+                  {tx5(TreeOfLifeTreeOfLifePageClientCopy.energy, lang)}: {cs ? m.energy.cs : m.energy.en}
                 </div>
               </div>
             ))}
@@ -1502,7 +1503,7 @@ export default function TreeOfLifePageClient() {
 
           {/* Care Tasks */}
           <div className="space-y-3">
-            <h3 className="text-lg font-bold text-white">{TreeOfLifeTreeOfLifePageClientCopy.careTasksUsefulWorkInEveryBloc[cs ? 'cs' : 'en']}</h3>
+            <h3 className="text-lg font-bold text-white">{tx5(TreeOfLifeTreeOfLifePageClientCopy.careTasksUsefulWorkInEveryBloc, lang)}</h3>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {CARE_TASKS.map((t) => (
                 <div
@@ -1525,11 +1526,11 @@ export default function TreeOfLifePageClient() {
             <div className="flex items-center gap-2">
               <Cpu className="h-5 w-5 text-zion-cyan" />
               <h3 className="text-lg font-bold text-white">
-                {TreeOfLifeTreeOfLifePageClientCopy.npuMiningDemocratizingMining[cs ? 'cs' : 'en']}
+                {tx5(TreeOfLifeTreeOfLifePageClientCopy.npuMiningDemocratizingMining, lang)}
               </h3>
             </div>
             <p className="text-sm text-gray-400">
-              {TreeOfLifeTreeOfLifePageClientCopy.insteadOfExpensiveGpuRigs30005[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.insteadOfExpensiveGpuRigs30005, lang)}
             </p>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               {NPU_CHIPS.map((c) => (
@@ -1613,7 +1614,7 @@ export default function TreeOfLifePageClient() {
               <h3 className="text-lg font-bold text-white">Care Proof</h3>
             </div>
             <p className="text-sm text-gray-400">
-              {TreeOfLifeTreeOfLifePageClientCopy.careProofStructureAiInferenceO[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.careProofStructureAiInferenceO, lang)}
             </p>
             <pre className="zion-rainbow-sub overflow-x-auto p-4 text-xs text-gray-300" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}><code>{`struct CareProof {
     validator_id: [u8; 32],     // Identifikátor validátora
@@ -1638,13 +1639,13 @@ export default function TreeOfLifePageClient() {
         >
           <div className="text-center space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-gold">
-              {TreeOfLifeTreeOfLifePageClientCopy.ethicalFoundationBodhisattvaVo[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.ethicalFoundationBodhisattvaVo, lang)}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
-              {TreeOfLifeTreeOfLifePageClientCopy.eightGreatBodhisattvasGuardian[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.eightGreatBodhisattvasGuardian, lang)}
             </h2>
             <p className="mx-auto max-w-3xl text-sm text-gray-400">
-              {TreeOfLifeTreeOfLifePageClientCopy.zionIsNotACryptoEconomicProtoc[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.zionIsNotACryptoEconomicProtoc, lang)}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <a
@@ -1663,7 +1664,7 @@ export default function TreeOfLifePageClient() {
           {/* Four Great Vows */}
           <div className="zion-rainbow-card space-y-4 p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-white">
-              {TreeOfLifeTreeOfLifePageClientCopy.fourGreatVows[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.fourGreatVows, lang)}
             </h3>
             <div className="grid gap-3 sm:grid-cols-2">
               {FOUR_GREAT_VOWS.map((v, i) => (
@@ -1673,7 +1674,7 @@ export default function TreeOfLifePageClient() {
               ))}
             </div>
             <p className="text-xs text-gray-500">
-              {TreeOfLifeTreeOfLifePageClientCopy.theFourVowsAreImpossibleByDesi[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.theFourVowsAreImpossibleByDesi, lang)}
             </p>
           </div>
 
@@ -1725,7 +1726,7 @@ export default function TreeOfLifePageClient() {
                 </div>
                 {/* ZION Role */}
                 <div className="flex items-start gap-2">
-                  <span className="text-[10px] uppercase tracking-wider text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.zionRole[cs ? 'cs' : 'en']}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-gray-500">{tx5(TreeOfLifeTreeOfLifePageClientCopy.zionRole, lang)}</span>
                   <p className="flex-1 text-xs text-gray-400">{cs ? b.zionRole.cs : b.zionRole.en}</p>
                 </div>
               </div>
@@ -1735,10 +1736,10 @@ export default function TreeOfLifePageClient() {
           {/* Eight Pledges */}
           <div className="space-y-3">
             <h3 className="text-lg font-bold text-white">
-              {TreeOfLifeTreeOfLifePageClientCopy.eightGuardianPledges[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.eightGuardianPledges, lang)}
             </h3>
             <p className="text-sm text-gray-400">
-              {TreeOfLifeTreeOfLifePageClientCopy.theBodhisattvaVowIsTheHighestC[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.theBodhisattvaVowIsTheHighestC, lang)}
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
               {EIGHT_PLEDGES.map((p) => (
@@ -1761,23 +1762,23 @@ export default function TreeOfLifePageClient() {
             <div className="zion-rainbow-card space-y-3 p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
                 <HeartHandshake className="h-5 w-5 text-zion-purple" />
-                <h4 className="text-sm font-bold text-white">{TreeOfLifeTreeOfLifePageClientCopy.dualVow[cs ? 'cs' : 'en']}</h4>
+                <h4 className="text-sm font-bold text-white">{tx5(TreeOfLifeTreeOfLifePageClientCopy.dualVow, lang)}</h4>
               </div>
               <p className="text-xs text-gray-400">
-                {TreeOfLifeTreeOfLifePageClientCopy.aGuardianWhoHoldsBothTheSefiro[cs ? 'cs' : 'en']}
+                {tx5(TreeOfLifeTreeOfLifePageClientCopy.aGuardianWhoHoldsBothTheSefiro, lang)}
               </p>
               <p className="font-mono text-[10px] text-zion-purple">DUAL_VOW_CARE_SCORE_BONUS_BPS = 10_500</p>
             </div>
             <div className="zion-rainbow-card space-y-3 p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-zion-gold" />
-                <h4 className="text-sm font-bold text-white">{TreeOfLifeTreeOfLifePageClientCopy.theThousandBreakings[cs ? 'cs' : 'en']}</h4>
+                <h4 className="text-sm font-bold text-white">{tx5(TreeOfLifeTreeOfLifePageClientCopy.theThousandBreakings, lang)}</h4>
               </div>
               <p className="text-sm italic text-gray-300">
-                {TreeOfLifeTreeOfLifePageClientCopy.mayIBreakItAThousandTimesAndRe[cs ? 'cs' : 'en']}
+                {tx5(TreeOfLifeTreeOfLifePageClientCopy.mayIBreakItAThousandTimesAndRe, lang)}
               </p>
               <p className="text-xs text-gray-400">
-                {TreeOfLifeTreeOfLifePageClientCopy.theVowIsADirectionNotADestinat[cs ? 'cs' : 'en']}
+                {tx5(TreeOfLifeTreeOfLifePageClientCopy.theVowIsADirectionNotADestinat, lang)}
               </p>
             </div>
           </div>
@@ -1785,7 +1786,7 @@ export default function TreeOfLifePageClient() {
           {/* Shantideva quote */}
           <div className="zion-rainbow-card space-y-3 p-6 text-center" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <p className="text-lg italic text-gray-300">
-              {TreeOfLifeTreeOfLifePageClientCopy.forAsLongAsSpaceEnduresAndForA[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.forAsLongAsSpaceEnduresAndForA, lang)}
             </p>
             <p className="text-xs uppercase tracking-[0.3em] text-zion-cyan">— Shantideva, Bodhicharyavatara 10.55</p>
           </div>
@@ -1801,9 +1802,9 @@ export default function TreeOfLifePageClient() {
         >
           <div className="zion-rainbow-card space-y-4 p-8" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <p className="text-lg italic text-gray-300">
-              {TreeOfLifeTreeOfLifePageClientCopy.notTheOneWhoHasTheGreatestStre[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.notTheOneWhoHasTheGreatestStre, lang)}
             </p>
-            <p className="text-xs uppercase tracking-[0.3em] text-zion-gold">— {TreeOfLifeTreeOfLifePageClientCopy.protocolOfCare[cs ? 'cs' : 'en']}</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-zion-gold">— {tx5(TreeOfLifeTreeOfLifePageClientCopy.protocolOfCare, lang)}</p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -1811,7 +1812,7 @@ export default function TreeOfLifePageClient() {
               className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/30 bg-zion-cyan/5 px-5 py-2.5 text-sm font-medium text-zion-cyan hover:bg-zion-cyan/10 transition-all"
             >
               <BookOpen className="h-4 w-4" />
-              {TreeOfLifeTreeOfLifePageClientCopy.terranovaBook[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.terranovaBook, lang)}
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
@@ -1819,14 +1820,14 @@ export default function TreeOfLifePageClient() {
               className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/10 hover:text-white transition-all"
             >
               <TreePine className="h-4 w-4" />
-              {TreeOfLifeTreeOfLifePageClientCopy.treeOnHomepage[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.treeOnHomepage, lang)}
             </Link>
             <Link
               href="/l6-issobella"
               className="inline-flex items-center gap-2 rounded-2xl border border-zion-purple/30 bg-zion-purple/5 px-5 py-2.5 text-sm font-medium text-zion-purple hover:bg-zion-purple/10 transition-all"
             >
               <Star className="h-4 w-4" />
-              {TreeOfLifeTreeOfLifePageClientCopy.l6IssobellaMalkhut[cs ? 'cs' : 'en']}
+              {tx5(TreeOfLifeTreeOfLifePageClientCopy.l6IssobellaMalkhut, lang)}
             </Link>
           </div>
         </motion.section>

@@ -33,6 +33,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
@@ -451,7 +452,7 @@ export default function KralovstviSrdcePage() {
             className="inline-flex items-center gap-2 text-sm text-zion-gold/65 hover:text-zion-gold transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {Copy.backToTerraNova[cs ? 'cs' : 'en']}
+            {tx5(Copy.backToTerraNova, lang)}
           </Link>
         </motion.div>
 
@@ -468,7 +469,7 @@ export default function KralovstviSrdcePage() {
                 <div className="shrink-0 w-20 h-20 flex items-center justify-center overflow-hidden zion-rainbow-sub" style={{ '--rc': SEA } as React.CSSProperties}>
                   <img
                     src="/images/kralovstvi-srdce/seal.webp"
-                    alt={cs ? 'Pečeť Království srdce' : 'The Kingdom of the Heart seal'}
+                    alt={cs ? 'Pečeť Království srdce' : t5('The Kingdom of the Heart seal', lang)}
                     width={80}
                     height={80}
                     loading="eager"
@@ -482,31 +483,40 @@ export default function KralovstviSrdcePage() {
                     <span className="zion-badge">L5 · 13. uzel · Terra Nova</span>
                     <span className="zion-badge-gold inline-flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {Copy.stage[cs ? 'cs' : 'en']}
+                      {tx5(Copy.stage, lang)}
                     </span>
                   </div>
 
                   <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient">
-                    Království srdce · Nirvana
+                    {tx5(
+                      {
+                        cs: 'Království srdce · Nirvana',
+                        en: 'Kingdom of the Heart · Nirvana',
+                        es: 'Reino del Corazón · Nirvana',
+                        pt: 'Reino do Coração · Nirvana',
+                        fr: 'Royaume du Cœur · Nirvana',
+                      },
+                      lang,
+                    )}
                   </h1>
                   <p className="text-lg text-cyan-300 font-medium">
-                    {Copy.subtitle[cs ? 'cs' : 'en']}
+                    {tx5(Copy.subtitle, lang)}
                   </p>
 
                   <div className="flex items-center gap-1.5 text-white/70">
                     <MapPin className="w-4 h-4 text-white/85 shrink-0" />
-                    <span className="text-sm">{Copy.locationLine[cs ? 'cs' : 'en']}</span>
+                    <span className="text-sm">{tx5(Copy.locationLine, lang)}</span>
                   </div>
 
                   <blockquote className="mt-4 pl-4 border-l-2 border-white/10 text-sm text-white/70 italic leading-relaxed max-w-lg">
-                    {Copy.quote[cs ? 'cs' : 'en']}
+                    {tx5(Copy.quote, lang)}
                   </blockquote>
 
                   <div className="grid gap-3 pt-3 sm:grid-cols-3">
                     {[
                       { icon: Users, value: '≤ 100', labelCs: 'Lidí na palubě', labelEn: 'People aboard' },
                       { icon: Fish, value: '~30 000 nm', labelCs: 'Velrybí obvod', labelEn: 'Whale circuit' },
-                      { icon: Waves, value: cs ? '13. uzel' : '13th node', labelCs: 'Stav: vize', labelEn: 'Status: vision' },
+                      { icon: Waves, value: cs ? '13. uzel' : t5('13th node', lang), labelCs: 'Stav: vize', labelEn: 'Status: vision' },
                     ].map((signal) => {
                       const Icon = signal.icon;
                       return (
@@ -556,10 +566,10 @@ export default function KralovstviSrdcePage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': SEA } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {Copy.threeD[cs ? 'cs' : 'en']}
+                {tx5(Copy.threeD, lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {Copy.threeDSubtitle[cs ? 'cs' : 'en']}
+                {tx5(Copy.threeDSubtitle, lang)}
               </h2>
             </div>
             <KralovstviSrdcePreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
@@ -575,10 +585,10 @@ export default function KralovstviSrdcePage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': SEA } as React.CSSProperties}>
             <h2 className="text-2xl md:text-3xl font-semibold text-white mb-4">
-              {Copy.introTitle[cs ? 'cs' : 'en']}
+              {tx5(Copy.introTitle, lang)}
             </h2>
             <p className="text-gray-300 leading-relaxed">
-              {Copy.introBody[cs ? 'cs' : 'en']}
+              {tx5(Copy.introBody, lang)}
             </p>
           </div>
         </motion.section>
@@ -591,25 +601,25 @@ export default function KralovstviSrdcePage() {
           className="mb-16"
         >
           <div className="mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.quarterSubtitle[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.quarterSubtitle, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Anchor className="h-7 w-7 text-cyan-400" />
-              {Copy.quarterTitle[cs ? 'cs' : 'en']}
+              {tx5(Copy.quarterTitle, lang)}
             </h2>
           </div>
           <div className="zion-rainbow-card p-6 md:p-10 mb-4" style={{ '--rc': SEA } as React.CSSProperties}>
             <p className="text-gray-300 leading-relaxed">
-              {Copy.quarterBody[cs ? 'cs' : 'en']}
+              {tx5(Copy.quarterBody, lang)}
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              {Copy.quarterPoints[cs ? 'cs' : 'en'].map((point, i) => {
+              {(lang === 'cs' ? Copy.quarterPoints.cs : Copy.quarterPoints.en).map((point, i) => {
                 const PointIcon = [Ship, Users, Shield][i];
                 return (
                   <div key={point} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': SEA } as React.CSSProperties}>
                     <div className="flex items-center gap-2 text-cyan-300 mb-1">
                       <PointIcon className="h-4 w-4" />
                       <span className="text-[11px] uppercase tracking-widest text-gray-500">
-                        {cs ? 'Princip' : 'Principle'} {i + 1}
+                        {cs ? 'Princip' : t5('Principle', lang)} {i + 1}
                       </span>
                     </div>
                     <p className="text-sm text-gray-300">{point}</p>
@@ -661,10 +671,10 @@ export default function KralovstviSrdcePage() {
           className="mb-16"
         >
           <div className="mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.decksSubtitle[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.decksSubtitle, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Compass className="h-7 w-7 text-cyan-400" />
-              {Copy.decksTitle[cs ? 'cs' : 'en']}
+              {tx5(Copy.decksTitle, lang)}
             </h2>
           </div>
           <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30 mb-4">
@@ -683,10 +693,10 @@ export default function KralovstviSrdcePage() {
             />
           </div>
           <p className="mb-6 text-center text-xs leading-relaxed text-white/50">
-            {Copy.decksNote[cs ? 'cs' : 'en']}
+            {tx5(Copy.decksNote, lang)}
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
-            {Copy.decks[cs ? 'cs' : 'en'].map((deck, i) => {
+            {(lang === 'cs' ? Copy.decks.cs : Copy.decks.en).map((deck, i) => {
               const DeckIcon = [Sun, Users, Heart, Wrench][i];
               return (
                 <div key={deck.name} className="zion-rainbow-sub p-4" style={{ '--rc': SEA } as React.CSSProperties}>
@@ -702,10 +712,10 @@ export default function KralovstviSrdcePage() {
           <div className="mt-4 zion-rainbow-sub p-5" style={{ '--rc': '202, 138, 4' } as React.CSSProperties}>
             <h3 className="font-semibold text-white mb-2 flex items-center gap-2">
               <Waves className="h-4 w-4 text-amber-300" />
-              {Copy.systemsTitle[cs ? 'cs' : 'en']}
+              {tx5(Copy.systemsTitle, lang)}
             </h3>
             <ul className="list-disc pl-4 space-y-1.5 text-sm text-gray-400">
-              {Copy.systems[cs ? 'cs' : 'en'].map((item) => (
+              {(lang === 'cs' ? Copy.systems.cs : Copy.systems.en).map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
@@ -721,14 +731,14 @@ export default function KralovstviSrdcePage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
             <div className="mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.whaleSubtitle[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.whaleSubtitle, lang)}</p>
               <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mt-1">
                 <Fish className="h-7 w-7 text-sky-400" />
-                {Copy.whaleTitle[cs ? 'cs' : 'en']}
+                {tx5(Copy.whaleTitle, lang)}
               </h2>
             </div>
             <p className="text-gray-300 leading-relaxed mb-8">
-              {Copy.whaleLead[cs ? 'cs' : 'en']}
+              {tx5(Copy.whaleLead, lang)}
             </p>
             <div className="space-y-3">
               {WHALE_CYCLE.map((leg, i) => (
@@ -738,21 +748,21 @@ export default function KralovstviSrdcePage() {
                   style={{ '--rc': '14, 165, 233' } as React.CSSProperties}
                 >
                   <div className="shrink-0 sm:w-40">
-                    <p className="text-sm font-semibold text-white">{leg.period[cs ? 'cs' : 'en']}</p>
-                    <p className="text-[11px] uppercase tracking-widest text-gray-500">{leg.hemisphere[cs ? 'cs' : 'en']}</p>
+                    <p className="text-sm font-semibold text-white">{tx5(leg.period, lang)}</p>
+                    <p className="text-[11px] uppercase tracking-widest text-gray-500">{tx5(leg.hemisphere, lang)}</p>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-sky-200/90 flex items-start gap-2">
                       <Fish className="h-4 w-4 mt-0.5 shrink-0 text-sky-400" />
-                      <span>{leg.whale[cs ? 'cs' : 'en']}</span>
+                      <span>{tx5(leg.whale, lang)}</span>
                     </p>
                     <p className="mt-1 text-sm text-gray-400 flex items-start gap-2">
                       <Ship className="h-4 w-4 mt-0.5 shrink-0 text-cyan-400" />
-                      <span>{leg.ark[cs ? 'cs' : 'en']}</span>
+                      <span>{tx5(leg.ark, lang)}</span>
                     </p>
                   </div>
                   <div className="shrink-0 sm:w-40 sm:text-right">
-                    <p className="text-[11px] uppercase tracking-widest text-gray-500">{cs ? 'uzel' : 'node'}</p>
+                    <p className="text-[11px] uppercase tracking-widest text-gray-500">{cs ? 'uzel' : t5('node', lang)}</p>
                     {leg.href ? (
                       <Link href={leg.href} className="text-sm text-zion-gold hover:text-zion-gold/80 transition-colors">
                         {leg.node}
@@ -780,10 +790,10 @@ export default function KralovstviSrdcePage() {
           className="mb-16"
         >
           <div className="mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.numbersSubtitle[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.numbersSubtitle, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Compass className="h-7 w-7 text-cyan-400" />
-              {Copy.numbersTitle[cs ? 'cs' : 'en']}
+              {tx5(Copy.numbersTitle, lang)}
             </h2>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -799,7 +809,7 @@ export default function KralovstviSrdcePage() {
               </div>
             ))}
           </div>
-          <p className="mt-4 text-xs leading-relaxed text-white/50">{Copy.numbersNote[cs ? 'cs' : 'en']}</p>
+          <p className="mt-4 text-xs leading-relaxed text-white/50">{tx5(Copy.numbersNote, lang)}</p>
         </motion.section>
 
         {/* ═══ WHAT IT HOLDS ═══ */}
@@ -810,10 +820,10 @@ export default function KralovstviSrdcePage() {
           className="mb-16"
         >
           <div className="mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.holdsSubtitle[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.holdsSubtitle, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Ship className="h-7 w-7 text-cyan-400" />
-              {Copy.holdsTitle[cs ? 'cs' : 'en']}
+              {tx5(Copy.holdsTitle, lang)}
             </h2>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
@@ -838,8 +848,8 @@ export default function KralovstviSrdcePage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': SEA } as React.CSSProperties}>
             <div className="mb-8">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.phasesSubtitle[cs ? 'cs' : 'en']}</p>
-              <h2 className="text-3xl font-semibold text-white">{Copy.phasesTitle[cs ? 'cs' : 'en']}</h2>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.phasesSubtitle, lang)}</p>
+              <h2 className="text-3xl font-semibold text-white">{tx5(Copy.phasesTitle, lang)}</h2>
             </div>
             <div className="space-y-4">
               {PHASES.map((phase) => (
@@ -856,7 +866,7 @@ export default function KralovstviSrdcePage() {
                       {cs ? phase.cs : phase.en}
                       {phase.active && (
                         <span className="ml-2 text-[11px] uppercase tracking-widest text-cyan-300">
-                          · {cs ? 'probíhá' : 'in progress'}
+                          · {cs ? 'probíhá' : t5('in progress', lang)}
                         </span>
                       )}
                     </h3>
@@ -893,18 +903,18 @@ export default function KralovstviSrdcePage() {
                 </div>
               </div>
               <div className="flex-1">
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500 mb-1">{Copy.patronSubtitle[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500 mb-1">{tx5(Copy.patronSubtitle, lang)}</p>
                 <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mb-4">
                   <Crown className="h-7 w-7 text-amber-200" />
-                  {Copy.patronTitle[cs ? 'cs' : 'en']}
+                  {tx5(Copy.patronTitle, lang)}
                 </h2>
-                <p className="text-gray-300 leading-relaxed mb-6">{Copy.patronBody[cs ? 'cs' : 'en']}</p>
+                <p className="text-gray-300 leading-relaxed mb-6">{tx5(Copy.patronBody, lang)}</p>
                 <div className="border-t border-white/10 pt-5">
                   <div className="flex items-center gap-2 text-amber-200 mb-2">
                     <Feather className="h-4 w-4" />
-                    <span className="text-[11px] uppercase tracking-widest text-gray-500">{Copy.keelTitle[cs ? 'cs' : 'en']}</span>
+                    <span className="text-[11px] uppercase tracking-widest text-gray-500">{tx5(Copy.keelTitle, lang)}</span>
                   </div>
-                  <p className="text-sm text-gray-300 leading-relaxed">{Copy.keelBody[cs ? 'cs' : 'en']}</p>
+                  <p className="text-sm text-gray-300 leading-relaxed">{tx5(Copy.keelBody, lang)}</p>
                 </div>
                 <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
                   <img
@@ -935,7 +945,7 @@ export default function KralovstviSrdcePage() {
             <div className="zion-rainbow-card p-6" style={{ '--rc': SEA } as React.CSSProperties}>
               <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-4">
                 <Network className="h-5 w-5 text-cyan-300" />
-                {Copy.zionTitle[cs ? 'cs' : 'en']}
+                {tx5(Copy.zionTitle, lang)}
               </h2>
               <div className="flex flex-wrap gap-2">
                 {ZION_ITEMS.map((item) => (
@@ -949,10 +959,10 @@ export default function KralovstviSrdcePage() {
             <div className="zion-rainbow-card p-6" style={{ '--rc': SEA } as React.CSSProperties}>
               <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-4">
                 <Landmark className="h-5 w-5 text-cyan-300" />
-                {Copy.openTitle[cs ? 'cs' : 'en']}
+                {tx5(Copy.openTitle, lang)}
               </h2>
               <ul className="list-disc pl-4 text-sm text-gray-400 space-y-2">
-                {Copy.openItems[cs ? 'cs' : 'en'].map((item) => (
+                {(lang === 'cs' ? Copy.openItems.cs : Copy.openItems.en).map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
@@ -968,15 +978,15 @@ export default function KralovstviSrdcePage() {
           className="mb-16"
         >
           <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-white">{Copy.documentation[cs ? 'cs' : 'en']}</h2>
-            <p className="text-sm text-gray-500">{Copy.documentationSubtitle[cs ? 'cs' : 'en']}</p>
+            <h2 className="text-2xl font-semibold text-white">{tx5(Copy.documentation, lang)}</h2>
+            <p className="text-sm text-gray-500">{tx5(Copy.documentationSubtitle, lang)}</p>
           </div>
           {doc ? (
             <DocMarkdownArticle content={doc} className="zion-docs-prose max-w-4xl mx-auto" />
           ) : docError ? (
-            <p className="text-sm text-gray-500">{Copy.documentationError[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-500">{tx5(Copy.documentationError, lang)}</p>
           ) : (
-            <p className="text-sm text-gray-500">{Copy.documentationLoading[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-500">{tx5(Copy.documentationLoading, lang)}</p>
           )}
         </motion.section>
 
@@ -989,9 +999,9 @@ export default function KralovstviSrdcePage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <div className="mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.sisterSubtitle[cs ? 'cs' : 'en']}</p>
-              <h2 className="text-2xl font-semibold text-white">{Copy.sisterTitle[cs ? 'cs' : 'en']}</h2>
-              <p className="text-sm text-gray-400 mt-2">{Copy.sisterBody[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.sisterSubtitle, lang)}</p>
+              <h2 className="text-2xl font-semibold text-white">{tx5(Copy.sisterTitle, lang)}</h2>
+              <p className="text-sm text-gray-400 mt-2">{tx5(Copy.sisterBody, lang)}</p>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {SISTERS.map((s) => (
@@ -1007,7 +1017,7 @@ export default function KralovstviSrdcePage() {
               ))}
             </div>
             <div className="mt-8 text-center">
-              <p className="text-gray-300 mb-4">{Copy.cta[cs ? 'cs' : 'en']}</p>
+              <p className="text-gray-300 mb-4">{tx5(Copy.cta, lang)}</p>
               <a
                 href="https://discord.gg/zionterranova"
                 target="_blank"
@@ -1015,7 +1025,7 @@ export default function KralovstviSrdcePage() {
                 className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
                 style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
               >
-                {Copy.joinDiscord[cs ? 'cs' : 'en']} <ArrowRight className="h-4 w-4" />
+                {tx5(Copy.joinDiscord, lang)} <ArrowRight className="h-4 w-4" />
               </a>
             </div>
           </div>

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const NebeskaFlotilaPreviewLazy = dynamic(() => import('@/components/NebeskaFlotilaPreviewLazy'), { ssr: false });
 import { useState } from 'react';
@@ -149,7 +150,7 @@ export default function NabukanoPage() {
         <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4 }} className="mb-10">
           <Link href="/terranova" className="inline-flex items-center gap-2 text-sm text-zion-gold/65 hover:text-zion-gold transition-colors">
             <ArrowLeft className="w-4 h-4" />
-            {Copy.back[cs ? 'cs' : 'en']}
+            {tx5(Copy.back, lang)}
           </Link>
         </motion.div>
 
@@ -162,20 +163,20 @@ export default function NabukanoPage() {
               </div>
               <div className="space-y-3 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="zion-badge">{Copy.badge[cs ? 'cs' : 'en']}</span>
+                  <span className="zion-badge">{tx5(Copy.badge, lang)}</span>
                   <span className="zion-badge-gold inline-flex items-center gap-1">
                     <Sparkles className="w-3 h-3" />
-                    {Copy.status[cs ? 'cs' : 'en']}
+                    {tx5(Copy.status, lang)}
                   </span>
                 </div>
                 <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient">Nabukano</h1>
-                <p className="text-lg text-sky-300 font-medium">{Copy.subtitle[cs ? 'cs' : 'en']}</p>
+                <p className="text-lg text-sky-300 font-medium">{tx5(Copy.subtitle, lang)}</p>
                 <div className="flex items-center gap-1.5 text-white/70">
                   <Route className="w-4 h-4 text-white/85 shrink-0" />
-                  <span className="text-sm">{Copy.location[cs ? 'cs' : 'en']}</span>
+                  <span className="text-sm">{tx5(Copy.location, lang)}</span>
                 </div>
                 <blockquote className="mt-4 pl-4 border-l-2 border-white/10 text-sm text-white/70 italic leading-relaxed max-w-lg">
-                  {Copy.quote[cs ? 'cs' : 'en']}
+                  {tx5(Copy.quote, lang)}
                 </blockquote>
               </div>
             </div>
@@ -187,7 +188,7 @@ export default function NabukanoPage() {
                   src="/images/nabukano/hero.webp"
                   srcSet="/images/nabukano/hero-m.webp 960w, /images/nabukano/hero.webp 1920w"
                   sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
-                  alt={cs ? 'Nebeská flotila Nabukano — mateřská loď s dokem a tři nebeské Marie nad Novou Zemí' : 'The Nabukano sky fleet — mother ship with a docking frame and three sky Marías above New Earth'}
+                  alt={cs ? 'Nebeská flotila Nabukano — mateřská loď s dokem a tři nebeské Marie nad Novou Zemí' : t5('The Nabukano sky fleet — mother ship with a docking frame and three sky Marías above New Earth', lang)}
                   width={1920}
                   height={1080}
                   loading="eager"
@@ -203,9 +204,9 @@ export default function NabukanoPage() {
                 >
                   <Orbit className="h-8 w-8 text-sky-300/70" />
                   <p className="text-sm font-semibold uppercase tracking-[0.3em] text-sky-200/80">
-                    {Copy.heroPending[cs ? 'cs' : 'en']}
+                    {tx5(Copy.heroPending, lang)}
                   </p>
-                  <p className="max-w-md text-xs text-white/45">{Copy.heroHint[cs ? 'cs' : 'en']}</p>
+                  <p className="max-w-md text-xs text-white/45">{tx5(Copy.heroHint, lang)}</p>
                 </div>
               )}
             </div>
@@ -214,7 +215,7 @@ export default function NabukanoPage() {
               {[
                 { icon: Waves, value: '4', labelCs: 'trupy', labelEn: 'hulls' },
                 { icon: Route, value: '2', labelCs: 'trasy', labelEn: 'routes' },
-                { icon: Sparkles, value: cs ? 'Vize' : 'Vision', labelCs: 'stav', labelEn: 'status' },
+                { icon: Sparkles, value: cs ? 'Vize' : t5('Vision', lang), labelCs: 'stav', labelEn: 'status' },
               ].map((signal) => {
                 const Icon = signal.icon;
                 return (
@@ -236,16 +237,16 @@ export default function NabukanoPage() {
         {/* ═══ INTRO ═══ */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-14">
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': RC } as React.CSSProperties}>
-            <h2 className="text-2xl md:text-3xl font-semibold text-white mb-4">{Copy.introTitle[cs ? 'cs' : 'en']}</h2>
-            <p className="text-gray-300 leading-relaxed">{Copy.introBody[cs ? 'cs' : 'en']}</p>
+            <h2 className="text-2xl md:text-3xl font-semibold text-white mb-4">{tx5(Copy.introTitle, lang)}</h2>
+            <p className="text-gray-300 leading-relaxed">{tx5(Copy.introBody, lang)}</p>
           </div>
         </motion.section>
 
         {/* ═══ VESSELS ═══ */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-14">
           <div className="mb-6 text-center">
-            <p className="text-[11px] uppercase tracking-[0.45em] text-sky-200/65 mb-1">{Copy.vesselsSubtitle[cs ? 'cs' : 'en']}</p>
-            <h2 className="text-2xl md:text-3xl font-semibold text-gradient">{Copy.vesselsTitle[cs ? 'cs' : 'en']}</h2>
+            <p className="text-[11px] uppercase tracking-[0.45em] text-sky-200/65 mb-1">{tx5(Copy.vesselsSubtitle, lang)}</p>
+            <h2 className="text-2xl md:text-3xl font-semibold text-gradient">{tx5(Copy.vesselsTitle, lang)}</h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {VESSELS.map((v) => {
@@ -260,9 +261,9 @@ export default function NabukanoPage() {
                         {v.call}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm text-gray-400">{v.role[cs ? 'cs' : 'en']}</p>
+                    <p className="mt-2 text-sm text-gray-400">{tx5(v.role, lang)}</p>
                     <span className="mt-3 inline-block rounded-full border border-white/15 px-2 py-0.5 text-[10px] uppercase tracking-widest text-white/55">
-                      {v.status[cs ? 'cs' : 'en']}
+                      {tx5(v.status, lang)}
                     </span>
                   </div>
                 </div>
@@ -277,7 +278,7 @@ export default function NabukanoPage() {
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': RC } as React.CSSProperties}>
             <div className="relative z-10 mb-3 text-center">
               <p className="text-[11px] uppercase tracking-[0.45em] text-sky-200/65 mb-1">
-                {cs ? '3D model' : '3D model'}
+                {cs ? '3D model' : t5('3D model', lang)}
               </p>
               <p className="text-xs text-white/45">
                 {cs
@@ -300,15 +301,15 @@ export default function NabukanoPage() {
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-14">
           <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': RC } as React.CSSProperties}>
             <div className="relative z-10">
-              <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2">{Copy.boardTitle[cs ? 'cs' : 'en']}</h2>
-              <p className="text-sm text-sky-200/70 mb-5">{Copy.boardSubtitle[cs ? 'cs' : 'en']}</p>
+              <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2">{tx5(Copy.boardTitle, lang)}</h2>
+              <p className="text-sm text-sky-200/70 mb-5">{tx5(Copy.boardSubtitle, lang)}</p>
 
               <a href="/images/nabukano/concept-board.webp" target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-2xl border border-white/10 bg-black/30">
                 <img
                   src="/images/nabukano/concept-board.webp"
                   srcSet="/images/nabukano/concept-board-m.webp 900w, /images/nabukano/concept-board.webp 1536w"
                   sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
-                  alt={cs ? 'Nabukano — studie 02: dok se třemi kotvišti, podélný řez, půdorys, knihovna, zahrada, ordinace a lucerna' : 'Nabukano — study 02: the three-berth dock, longitudinal section, plan, library, garden, sick bay and lantern'}
+                  alt={cs ? 'Nabukano — studie 02: dok se třemi kotvišti, podélný řez, půdorys, knihovna, zahrada, ordinace a lucerna' : t5('Nabukano — study 02: the three-berth dock, longitudinal section, plan, library, garden, sick bay and lantern', lang)}
                   width={1536}
                   height={1024}
                   loading="lazy"
@@ -323,7 +324,7 @@ export default function NabukanoPage() {
                     src="/images/nabukano/cradle.webp"
                     srcSet="/images/nabukano/cradle-m.webp 900w, /images/nabukano/cradle.webp 1672w"
                     sizes="(max-width: 1320px) calc(100vw - 4rem), 1200px"
-                    alt={cs ? 'Nabukano — dokovací rám se třemi kotvišti pod trupem, lucerna na konci' : 'Nabukano — the docking cradle with three berths under the hull, lantern at its end'}
+                    alt={cs ? 'Nabukano — dokovací rám se třemi kotvišti pod trupem, lucerna na konci' : t5('Nabukano — the docking cradle with three berths under the hull, lantern at its end', lang)}
                     width={1672}
                     height={941}
                     loading="lazy"
@@ -331,10 +332,10 @@ export default function NabukanoPage() {
                     className="w-full object-cover"
                   />
                 </a>
-                <figcaption className="mt-2 text-xs text-white/45">{Copy.cradleCaption[cs ? 'cs' : 'en']}</figcaption>
+                <figcaption className="mt-2 text-xs text-white/45">{tx5(Copy.cradleCaption, lang)}</figcaption>
               </figure>
 
-              <h3 className="mt-6 mb-3 text-sm font-semibold uppercase tracking-widest text-sky-200/80">{Copy.boardSectionsTitle[cs ? 'cs' : 'en']}</h3>
+              <h3 className="mt-6 mb-3 text-sm font-semibold uppercase tracking-widest text-sky-200/80">{tx5(Copy.boardSectionsTitle, lang)}</h3>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 {[
                   { n: '01', cs: 'Můstek', en: 'Bridge' },
@@ -353,7 +354,7 @@ export default function NabukanoPage() {
                 ))}
               </div>
 
-              <h3 className="mt-6 mb-3 text-sm font-semibold uppercase tracking-widest text-sky-200/80">{Copy.boardCraftTitle[cs ? 'cs' : 'en']}</h3>
+              <h3 className="mt-6 mb-3 text-sm font-semibold uppercase tracking-widest text-sky-200/80">{tx5(Copy.boardCraftTitle, lang)}</h3>
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
                   { call: 'Santa María la Mayor', cs: 'Průzkumný člun', en: 'Survey craft', noteCs: 'blízká orbita', noteEn: 'near orbit' },
@@ -368,7 +369,7 @@ export default function NabukanoPage() {
                 ))}
               </div>
 
-              <p className="mt-5 text-xs text-white/45">{Copy.boardNote[cs ? 'cs' : 'en']}</p>
+              <p className="mt-5 text-xs text-white/45">{tx5(Copy.boardNote, lang)}</p>
             </div>
           </div>
         </motion.section>
@@ -377,8 +378,8 @@ export default function NabukanoPage() {
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-14">
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': RC } as React.CSSProperties}>
             <div className="relative z-10">
-              <h2 className="text-2xl md:text-3xl font-semibold text-white mb-4">{Copy.routesTitle[cs ? 'cs' : 'en']}</h2>
-              <p className="text-gray-300 leading-relaxed">{Copy.routesBody[cs ? 'cs' : 'en']}</p>
+              <h2 className="text-2xl md:text-3xl font-semibold text-white mb-4">{tx5(Copy.routesTitle, lang)}</h2>
+              <p className="text-gray-300 leading-relaxed">{tx5(Copy.routesBody, lang)}</p>
               <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-white/60">
                 <span className="rounded-full border border-sky-400/30 bg-sky-400/10 px-3 py-1">LUMI · Kostarika</span>
                 <ArrowRight className="h-4 w-4 text-sky-300/70" />
@@ -395,7 +396,7 @@ export default function NabukanoPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="zion-rainbow-card p-6" style={{ '--rc': RC } as React.CSSProperties}>
               <h3 className="relative z-10 mb-3 text-sm font-semibold uppercase tracking-widest text-sky-200/80">
-                {Copy.honestTitle[cs ? 'cs' : 'en']}
+                {tx5(Copy.honestTitle, lang)}
               </h3>
               <ul className="relative z-10 space-y-2 text-sm text-gray-300">
                 {(cs ? Copy.exists.cs : Copy.exists.en).map((item) => (
@@ -408,7 +409,7 @@ export default function NabukanoPage() {
             </div>
             <div className="zion-rainbow-card p-6" style={{ '--rc': '244, 63, 94' } as React.CSSProperties}>
               <h3 className="relative z-10 mb-3 text-sm font-semibold uppercase tracking-widest text-rose-200/80">
-                {cs ? 'Co neexistuje' : 'What does not exist'}
+                {cs ? 'Co neexistuje' : t5('What does not exist', lang)}
               </h3>
               <ul className="relative z-10 space-y-2 text-sm text-gray-300">
                 {(cs ? Copy.notExists.cs : Copy.notExists.en).map((item) => (
@@ -426,23 +427,23 @@ export default function NabukanoPage() {
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-14">
           <div className="zion-cta-banner flex flex-col items-center gap-4 p-8 text-center md:flex-row md:justify-between md:text-left">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.4em] text-white/50">{Copy.related[cs ? 'cs' : 'en']}</p>
+              <p className="text-[11px] uppercase tracking-[0.4em] text-white/50">{tx5(Copy.related, lang)}</p>
               <p className="mt-2 text-lg font-semibold text-white">
-                {cs ? 'Kniha, nebe a osa — tři místa, kde to celé drží.' : 'The book, the sky and the axis — three places where it all holds.'}
+                {cs ? 'Kniha, nebe a osa — tři místa, kde to celé drží.' : t5('The book, the sky and the axis — three places where it all holds.', lang)}
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-3">
               <Link href="/zion-archive/nabukano/cist" className="zion-rainbow-sub inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': RC } as React.CSSProperties}>
                 <BookOpen className="h-4 w-4" />
-                {Copy.ctaBook[cs ? 'cs' : 'en']}
+                {tx5(Copy.ctaBook, lang)}
               </Link>
               <a href="https://nirvana.zionterranova.com/#portal=fleet" target="_blank" rel="noopener noreferrer" className="zion-rainbow-sub inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': RC } as React.CSSProperties}>
                 <Orbit className="h-4 w-4" />
-                {Copy.ctaSpace[cs ? 'cs' : 'en']}
+                {tx5(Copy.ctaSpace, lang)}
               </a>
               <Link href="/l6-issobella" className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold/30 bg-zion-gold/5 px-5 py-3 text-sm font-semibold text-amber-200 hover:bg-zion-gold/10 transition-colors">
                 <Satellite className="h-4 w-4" />
-                {Copy.ctaIssobella[cs ? 'cs' : 'en']}
+                {tx5(Copy.ctaIssobella, lang)}
               </Link>
             </div>
           </div>

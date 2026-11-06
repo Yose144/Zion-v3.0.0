@@ -9,6 +9,19 @@ import newsfeedFr from './ui-strings/newsfeed.fr.json';
 import issobellaEs from './ui-strings/issobella.es.json';
 import issobellaPt from './ui-strings/issobella.pt.json';
 import issobellaFr from './ui-strings/issobella.fr.json';
+import treeoflifeEs from './ui-strings/treeoflife.es.json';
+import treeoflifePt from './ui-strings/treeoflife.pt.json';
+import treeoflifeFr from './ui-strings/treeoflife.fr.json';
+import mariaEs from './ui-strings/maria.es.json';
+import mariaPt from './ui-strings/maria.pt.json';
+import mariaFr from './ui-strings/maria.fr.json';
+import kralovstviEs from './ui-strings/kralovstvi.es.json';
+import kralovstviPt from './ui-strings/kralovstvi.pt.json';
+import kralovstviFr from './ui-strings/kralovstvi.fr.json';
+import nabukanoEs from './ui-strings/nabukano.es.json';
+import nabukanoPt from './ui-strings/nabukano.pt.json';
+import nabukanoFr from './ui-strings/nabukano.fr.json';
+
 
 /**
  * Překlady „page-local" textů (mimo `translations.ts`).
@@ -29,9 +42,9 @@ type Dict = Record<string, string>;
 const merge = (...parts: Dict[]): Dict => Object.assign({}, ...parts);
 
 const DICTS: Record<'es' | 'pt' | 'fr', Dict> = {
-  es: merge(avatarsEs, newsfeedEs, issobellaEs),
-  pt: merge(avatarsPt, newsfeedPt, issobellaPt),
-  fr: merge(avatarsFr, newsfeedFr, issobellaFr),
+  es: merge(avatarsEs, newsfeedEs, issobellaEs, treeoflifeEs, mariaEs, kralovstviEs, nabukanoEs),
+  pt: merge(avatarsPt, newsfeedPt, issobellaPt, treeoflifePt, mariaPt, kralovstviPt, nabukanoPt),
+  fr: merge(avatarsFr, newsfeedFr, issobellaFr, treeoflifeFr, mariaFr, kralovstviFr, nabukanoFr),
 };
 
 /** Přeloží lokalizovaný objekt pro daný jazyk (5 kódů). */
