@@ -12,8 +12,9 @@ osm dílů do jednoho meshe:
   - jeden draw call místo osmi,
   - materiál se zahazuje (hra si stejně nastavuje vlastní zlatý emissive).
 
-Zdroj zůstává v `heros/`; zapisuje se jen herní kopie
-`apps/nirvana/public/models/lampion.glb`.
+Zdroj zůstává v `heros/` (`heros/shop/Lumi/Lumi_2.glb` — nový Lumi 2, 214 440
+trojúhelníků); zapisuje se jen herní kopie `apps/nirvana/public/models/lampion.glb`
+(dnes 12 856 trojúhelníků / 0,21 MB).
 
 Použití:
     python3 scripts/ops/lumi-lantern-lod.py            # cíl 20 000
@@ -115,7 +116,9 @@ def cluster_simplify(mesh: trimesh.Trimesh, target_faces: int, max_rounds: int =
     return best if best is not None else cluster_with(diagonal / 40)
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-SOURCE = ROOT / "heros/shop/Lumi/Lampion_Kralovstvi_srdce_3D_v6/Lampion_Kralovstvi_srdce_v6.glb"
+# 2026-11-06: hra používá nový Lumi 2 (12,1 MB / 214 440 tris se třemi
+# materiály Překližka/Řez/Gravír) místo starého v6 (4,3 MB / 242 648).
+SOURCE = ROOT / "heros/shop/Lumi/Lumi_2.glb"
 TARGET = ROOT / "apps/nirvana/public/models/lampion.glb"
 
 

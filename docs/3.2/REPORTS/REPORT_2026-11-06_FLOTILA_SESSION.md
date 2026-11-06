@@ -171,6 +171,30 @@ Marketplace nasazen zvlášť (`star-008` → `/shop/models3d/falcon.glb`, DB z�
 
 ---
 
+## 4c. Herní LOD lucerny — Lumi 2 (2026-11-06)
+
+Hra `/lumi` ještě načítala **v6** lucernu (`Lampion_Kralovstvi_srdce_v6.glb`, 4,3 MB,
+242 648 tris, jeden krémový materiál) — model, který v marketu mezitím nahradil nový
+**Lumi 2** s vyřezávanými vzory a třemi materiály (Překližka / Řez / Gravír).
+
+Přegenerováno `scripts/ops/lumi-lantern-lod.py` s novým zdrojem
+(`heros/shop/Lumi/Lumi_2.glb`, 22 dílů / 214 440 tris):
+
+| | zdroj (Lumi 2) | herní LOD |
+|---|---|---|
+| trojúhelníky | 214 440 | **12 856** |
+| velikost | 12,1 MB | **0,21 MB** |
+| dílů / draw calls | 22 | 1 |
+| redukce | — | **94 %** |
+
+Clustering (mřížka) je u tenkých vyřezávaných panelů jediná rozumná cesta — quadrická
+dekurace na nich končí na 65 % a vrací nekonzistentní indexy. Ověřeno **celým Lumi auditem**
+(`.artifacts/probe/lumi-audit.mjs`, proti lokální instanci na `:3013`) — **LUMI AUDIT OK**,
+včetně „model lucerny se načetl" a „scéna se vykreslila"; snímek letu potvrzuje, že lucerna
+je v ruce a scéna jede.
+
+---
+
 ## 5. Otevřené (mimo autonomní dosah)
 
 * **Živý dvouklientový test místnosti** — potřebuje platný ZAP pas (cizí kódy se nepoužívají).
