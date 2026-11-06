@@ -710,6 +710,7 @@ html body textarea:focus {
 
 .floating-menu-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.4rem;
 }
 
@@ -756,7 +757,9 @@ html body textarea:focus {
 }
 
 .floating-menu-row .floating-menu-option {
-  flex: 1 1 0;
+  flex: 1 1 44px;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 /* Center line in the top nav (use-middle from main.js) */
@@ -859,8 +862,8 @@ html body textarea:focus {
   }
 
   .floating-menu-toggle {
-    width: 2.85rem;
-    height: 2.85rem;
+    width: 44px;
+    height: 44px;
   }
 
   .floating-menu-panel {
@@ -924,8 +927,10 @@ footer .lite-footer .quick-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.65rem;
-  height: 2.65rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(252, 209, 22, 0.18);

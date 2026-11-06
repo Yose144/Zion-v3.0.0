@@ -230,7 +230,7 @@ test.describe('home shell performance & resilience', () => {
   });
 
   test('j: no horizontal overflow + headings/CTAs at key widths, CZ+EN', async ({ browser }) => {
-    for (const w of [320, 390, 768, 1440]) {
+    for (const w of [320, 390, 768, 1280, 1440]) {
       const ctx = await browser.newContext({ viewport: { width: w, height: 900 } });
       await stubApis(ctx);
       const page = await ctx.newPage();

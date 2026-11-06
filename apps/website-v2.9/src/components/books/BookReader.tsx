@@ -614,7 +614,7 @@ export default function BookReader({ book }: { book: BookDef }) {
               {book.description[l]}
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mb-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">
               {book.facts.map((fact, i) => (
                 <div key={i} className="rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm px-3 py-3">
                   <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{fact.label[l]}</p>

@@ -416,7 +416,7 @@ export default function Navigation() {
                     style={{ color: isActive ? `rgb(${ml.color})` : `rgba(${ml.color}, 0.8)` }}
                   />
                   <span
-                    className="hidden 2xl:inline text-[10px] font-bold uppercase tracking-wider transition-all duration-300"
+                    className="nav-touch-label hidden 2xl:inline text-[10px] font-bold uppercase tracking-wider transition-all duration-300"
                     style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.7)' }}
                   >
                     {ml.label}

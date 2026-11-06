@@ -16,7 +16,7 @@ export default function FruitCounter() {
   const isComplete = count >= fruitThreshold;
 
   return (
-    <div className="pointer-events-none fixed bottom-4 left-4 z-30 hidden select-none md:block sm:bottom-5">
+    <div className="pointer-events-none fixed left-4 z-30 hidden select-none bottom-28 md:block lg:bottom-4">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}

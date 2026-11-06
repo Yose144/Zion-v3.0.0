@@ -85,8 +85,11 @@ export default function PilgrimShip({ speed = 0 }: PilgrimShipProps) {
       const engineColor = new THREE.Color(color);
       const intensity = 0.8 + Math.min(speed / 8, 1) * (1 + boostLevel * 0.6);
       const material = engineRef.current.material as THREE.MeshStandardMaterial;
-      material.emissive.copy(engineColor);
-      material.emissiveIntensity = intensity;
+      // Procedural engine ring is MeshBasicMaterial — it has no emissive map.
+      if (material?.emissive) {
+        material.emissive.copy(engineColor);
+        material.emissiveIntensity = intensity;
+      }
     }
   });
 

@@ -84,6 +84,7 @@
   /* Standard page shell — consistent top/bottom padding + overflow guard */
   .zion-page {
     min-height: 100vh;
+    min-height: 100dvh;
     position: relative;
     padding-top: 7rem;      /* pt-28 */
     padding-bottom: 6rem;   /* pb-24 */
@@ -98,6 +99,7 @@
 
   .zion-shell {
     min-height: 100vh;
+    min-height: 100dvh;
     position: relative;
     background: transparent;
     isolation: isolate;
@@ -885,12 +887,13 @@ body.menu-open {
 
 /* ── Tables — Glass design ── */
 .zion-docs-prose table {
-  width: 100%;
-  margin: 2.5rem auto;
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
   border-collapse: separate;
   border-spacing: 0;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(0, 0, 0, 0.3);
   text-align: left;
@@ -981,6 +984,9 @@ body.menu-open {
   }
   .zion-docs-prose table {
     font-size: 0.85rem;
+  }
+  .zion-docs-prose thead th {
+    white-space: normal;
   }
   .zion-docs-prose thead th,
   .zion-docs-prose tbody td {
@@ -1259,6 +1265,13 @@ html {
 
 
 /* ── Zion Archive — print / PDF (W4) ── */
+/* Hero icon labels stay visible on touch, where hover tooltips never appear. */
+@media (hover: none) {
+  .nav-touch-label {
+    display: inline !important;
+  }
+}
+
 @media print {
   header,
   footer,

@@ -171,7 +171,7 @@ function ControlHud({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 24 }}
       transition={{ duration: 0.5, delay: 0.3 }}
-      className="pointer-events-auto absolute bottom-4 left-1/2 z-40 flex -translate-x-1/2 flex-col items-center"
+      className={`pointer-events-auto absolute left-1/2 z-40 flex -translate-x-1/2 flex-col items-center ${flightMode ? 'bottom-16 lg:bottom-4' : 'bottom-4'}`}
     >
       <div className="flex items-end gap-2">
         {/* ── Left wing: Ship status ── */}
@@ -179,8 +179,8 @@ function ControlHud({
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.5 }}
-          className="zion-hud-panel !relative hidden flex-col gap-2 p-2.5 sm:flex"
-          style={{ width: mode === 'expanded' ? '12rem' : '9rem' }}
+          className="zion-hud-panel !relative hidden w-32 flex-col gap-1.5 p-2 sm:flex lg:w-36 lg:gap-2 lg:p-2.5"
+          style={mode === 'expanded' ? { width: '12rem' } : undefined}
         >
           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-oasis-cyan">
             <Rocket className="h-3 w-3" />
@@ -414,8 +414,8 @@ function ControlHud({
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.5 }}
-          className="zion-hud-panel !relative hidden flex-col gap-2 p-2.5 sm:flex"
-          style={{ width: mode === 'expanded' ? '12rem' : '9rem' }}
+          className="zion-hud-panel !relative hidden w-32 flex-col gap-1.5 p-2 sm:flex lg:w-36 lg:gap-2 lg:p-2.5"
+          style={mode === 'expanded' ? { width: '12rem' } : undefined}
         >
           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-oasis-gold">
             <Orbit className="h-3 w-3" />

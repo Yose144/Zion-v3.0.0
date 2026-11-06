@@ -128,7 +128,7 @@ export default function ConfigCards({
                 {copied === c.label ? t('zkopírováno', 'copied') : t('kopírovat', 'copy')}
               </button>
             </div>
-            <code className="block break-all rounded-md bg-black/50 px-2.5 py-2 font-mono text-[0.68rem] leading-relaxed text-rasta-green/90">
+            <code className="block overflow-x-auto whitespace-nowrap rounded-md bg-black/50 px-2.5 py-2 font-mono text-[0.75rem] leading-relaxed text-rasta-green/90">
               {c.label}
             </code>
           </div>

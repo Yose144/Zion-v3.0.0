@@ -174,7 +174,7 @@ a:hover { text-decoration: underline; }
 
 /* right side — lang switch + hamburger */
 .fw-nav-right { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
-.fw-lang { display: flex; gap: 0.4rem; }
+.fw-lang { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .fw-lang button {
   display: inline-flex; align-items: center;
   padding: 0.4rem 0.8rem; border-radius: 9999px; cursor: pointer;
@@ -194,7 +194,7 @@ a:hover { text-decoration: underline; }
 .fw-burger {
   display: none;
   flex-direction: column; justify-content: center; align-items: center; gap: 5px;
-  width: 40px; height: 40px; cursor: pointer;
+  width: 44px; height: 44px; cursor: pointer;
   border: 1px solid rgba(255,255,255,0.15); border-radius: 12px;
   background: rgba(255,255,255,0.05);
   transition: all 0.2s ease;
@@ -237,7 +237,13 @@ body.fw-menu-open { overflow: hidden; }
   .fw-nav-menu, .fw-nav-right > .fw-lang { display: none; }
   .fw-burger { display: flex; }
   .fw-nav-mobile .fw-lang { display: flex; }
-  .fw-nav-logo { width: 34px; height: 34px; }
+  .fw-nav-mobile .fw-nav-link,
+  .fw-lang button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .fw-nav-brand { min-height: 44px; min-width: 44px; }
+  .fw-nav-logo { width: 44px; height: 44px; }
   .fw-nav-brandtext small { display: none; }
 }
 
