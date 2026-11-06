@@ -2308,6 +2308,24 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Deploy:** `PROTO_VERSION` 32 → **net první, pak appka** (starý net nový `handoff`
   odmítne jako `unknown_type`).
 
+## Lumi — koop odměna (L-11, 2026-11-06)
+
+- **Je to PPLNS bez hashů.** Ve hře nejsou shares, ale je tu přínos: kolik
+  světel kdo přinesl. `core/lumi/coop.ts` dělí pool (`COOP_POOL = 300`) podle
+  podílu, s podlahou `COOP_FLOOR = 0,1` pro každého, kdo doletěl (čisté PPLNS
+  by „nosiči" dalo nulu, což je u hry o darování špatný vzkaz).
+- **Podíl se počítá při doletu, ne po zápase.** Panel se pak nemění, když
+  kamarád doletí později; součet odměn se proto v krajním případě může mírně
+  rozejít s poolem (dva hráči počítají v jiném okamžiku). U hry bez soupeření
+  je to přijatelné — kdyby se to někdy měřilo, patří to na server.
+- **Příspěvky se nasčítávají do mapy (`Map<id, max>`).** Kdo doletí, odejde
+  z místnosti a 3 s je jen duch; kdyby se seznam přepisoval posledním
+  snapshitem, poslední doletěvší by viděl `others: []`, vyšel by mu sólo
+  a odměna by byla nula. Přesně to se stalo při prvním běhu E2E.
+- **Sólo = 0.** Odměna je za společný let; bez druhého hráče není co rozdělovat.
+- **Debug:** `?lumiDebug=1` vystaví i `window.__lumiCoop()` (`mine`, `others`,
+  `bonus`) — bez toho se rozdíl mezi „nula" a „špatný podíl" nedá rozeznat.
+
 ## Jazyky a i18n (L-10, 2026-11-05)
 
 - **Tři jazyky, jeden typ.** `Lang = 'cs' | 'en' | 'es'` v `core/i18n`; `LANGS`

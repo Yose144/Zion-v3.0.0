@@ -140,6 +140,21 @@ try {
   const shared = await a.waitFor((m) => m.t === 'snapshot' && (m.lumi?.lights ?? []).includes(1), 5000);
   check('světlo je společné pro místnost', shared.lumi.lights.includes(1), JSON.stringify(shared.lumi.lights));
 
+  // ── L-11: kolik kdo sám sebral (podklad pro podíl na koop odměně) ──
+  const bSelf = await b
+    .waitFor((m) => m.t === 'snapshot' && (m.lumi?.you?.collected ?? 0) >= 1, 4000)
+    .catch(() => null);
+  check('vlastní počet sebraných světel je ve snapshotu', Boolean(bSelf), JSON.stringify(bSelf?.lumi?.you));
+  const aSeesCount = await a
+    .waitFor(
+      (m) =>
+        m.t === 'snapshot' &&
+        (m.lumi?.flyers ?? []).some((f) => f.id === roomB.youPlayerId && (f.collected ?? 0) >= 1),
+      4000,
+    )
+    .catch(() => null);
+  check('ostatní vidí, kdo kolik sebral', Boolean(aSeesCount), JSON.stringify(aSeesCount?.lumi?.flyers));
+
   // ── L-6: předání světla spolulentci ────────────────────────────────
   b.send({ t: 'handoff', light: 1 });
   const gift = await a

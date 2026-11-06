@@ -443,7 +443,7 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
 | **L-8** | Kapitoly příběhu mezi cestami (text po každé cestě) | po `calm` a `wind` se odemkne jiný úvodní text, ne jen cesta | nízké | ✅ 2026-11-05 |
 | **L-9** | Přístupnost: `prefers-reduced-motion` vypne vítr a částice | s preferencí se nehýbe pozadí, hra zůstane hratelná | nízké | ✅ 2026-11-05 |
 | **L-10** | Lokalizace do třetího jazyka (**ES** — trh + kánon) | všechny texty z `world.ts` mají klíč, žádný hardcoded string v `page.tsx` | nízké | ✅ hotovo — všech 10 herních povrchů, chrome i data (ES fallback už nikde nemusí nastoupit) |
-| **L-11** | Odměna za darování v kooperaci (společná svatyně = +body všem) | dva hráči doletí → oba dostanou bonus, ne jen ten, kdo doletěl první | střední | ⬜ |
+| **L-11** | Koop odměna podílem (PPLNS): pool 300 se dělí podle sebraných světel | dva hráči doletí → oba dostanou podíl; kdo nese víc, dostane víc | střední | ✅ 2026-11-06 |
 | **L-12** | Výkon: instancované částice na mobilu | 390×844 ≥ 30 fps (měřeno `.artifacts/probe/lumi-perf.mjs` — rAF 2 s + `__lumiDebug()`), draw calls < 60 | střední | ✅ 2026-11-05 |
 
 **Implementační poznámky k backlogu** (kde přesně sáhnout — ověřeno v kódu, ne odhad):
@@ -492,6 +492,14 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
   stejná obloha, zítra jiná, meze mapy, žádné světlo ve svatyni). Pozor: testy musí
   číst `pathData(...).lights`, ne `LUMI_LIGHTS`, jinak běží proti jiné obloze, než
   jakou hra kreslí.
+- **L-11 (koop odměna) — ✅ hotovo, PPLNS podílem.** `core/lumi/coop.ts`:
+  `COOP_POOL = 300`, `COOP_FLOOR = 0,1` (každý, kdo doletí, dostane aspoň 10 %),
+  zbytek podílem na sebraných světlech. Server posílá `flyers[].collected`
+  a `lumi.you.collected` (additivní pole, proto 32 stačí). Klient počítá podíl
+  při doletu a připočte ho k `baseScore`; panel ukáže „koop podíl +N".
+  **Past, která to odhalila:** kdo doletí, odejde z místnosti (a je 3 s duch) —
+  seznam příspěvků se proto **nasčítává do mapy** (`max`), ne přepisuje
+  posledním snapshotem; jinak poslední doletěvší viděl `others: []` a dostal 0.
 - **L-10 (jazyky) — ⚠️ infrastruktura + Lumi hotové.** `Lang = 'cs' | 'en' | 'es'`,
   `LANGS`/`nextLang`/`langLabel`/`LANG_NAMES`, `tx()` s fallbackem (`es` chybí → `en`),
   persistence `nirvana.lang.v1` + `?lang=es` override + detekce z prohlížeče.
@@ -565,3 +573,4 @@ co pokazit; jakákoli „výzva" by rozbila její smysl.
 | 2026-11-06 | **L-10 pokračování 2:** Merkur (`app/mercury/copy.ts`, 39) a Venuše (`app/venus/copy.ts`, 23) ve slovnících, včetně jmen soupeřů (`nameEs`) a tabulek (`GameBoard`); opraveno lepení odkazů „← Mars arénaVenuše závod →" (`.duel-links` s `gap`). Dočištěny **víceřádkové** ternárky v pouti/Marsu/Lumi, které `grep "cs ?"` nenašel. `mobile-audit` PASSED, build čistý |
 | 2026-11-06 | **L-10 dokončeno:** První svět (`app/earth/copy.ts`, 78 textů — HUD, obchod, inventář, minimapa, konec zápasu), flotila (`app/fleet/copy.ts`, 31) a avatary (`app/avatars/copy.ts`, 20) v ES; `TeamBoard` bere `lang` místo `cs`, emote kolečko má ES. Všechny herní povrchy 0× `cs ?` i `{cs`. ES render ověřen, 0 přesahu, build čistý |
 | 2026-11-06 | **L-4 VR let pohledem:** `FlightInput.aim/gaze`, `isGaze()`, ve VR `camera.getWorldDirection` → 2D směr, měkká gravitace 0,35 g při pohledu vpřed; 11 nových testů simulace (lumi-flight **64/64**), audit 54/54. Headset netestován |
+| 2026-11-06 | **L-11 koop odměna (PPLNS):** `coop.ts` (pool 300, podlaha 10 %, podíl podle sebraných světel), server posílá `collected` + `you.collected`, klient přičítá podíl k doletu. Testy: `lumi-coop` **17/17**, net `lumi` **25/25**; E2E dvou prohlížečů: A 5 světel → **+201**, B 2 → **+99** (součet = pool) |

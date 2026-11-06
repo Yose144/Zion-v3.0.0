@@ -100,7 +100,15 @@ export default function LumiPage() {
   const [coop, setCoop] = useState(false);
   /** Kolik světel jsem sebral já a kolik ostatní (L-11, PPLNS podíl). */
   const myCollected = useRef(0);
-  const othersCollected = useRef<number[]>([]);
+  /**
+   * Příspěvek ostatních **nasčítaný po letcích**, ne „poslední snapshot".
+   *
+   * Kdo doletí, odejde z místnosti (a chvíli je jen duch) — kdyby se seznam
+   * pokaždé přepsal, poslední doletěvší by viděl `others: []`, vyšel by mu
+   * sólo a koop odměna by byla nula. Mapa si drží maximum, takže odchod
+   * kamaráda podíl nesmaže.
+   */
+  const contributions = useRef(new Map<string, number>());
   const [coopBonus, setCoopBonus] = useState(0);
   /** Ostatní letci a sdílená světla — refy, protože chodí 15×/s. */
   const remotes = useRef<LumiRemote[]>([]);
@@ -162,7 +170,7 @@ export default function LumiPage() {
     const bag = window as unknown as Record<string, unknown>;
     bag.__lumiCoop = () => ({
       mine: myCollected.current,
-      others: [...othersCollected.current],
+      others: [...contributions.current.values()],
       bonus: coopBonus,
       players: peers + 1,
     });
@@ -202,9 +210,10 @@ export default function LumiPage() {
       }));
       sharedLights.current = message.lumi.lights;
       myCollected.current = message.lumi.you?.collected ?? myCollected.current;
-      othersCollected.current = message.lumi.flyers
-        .filter((flyer) => !flyer.ghost)
-        .map((flyer) => flyer.collected ?? 0);
+      for (const flyer of message.lumi.flyers) {
+        const known = contributions.current.get(flyer.id) ?? 0;
+        contributions.current.set(flyer.id, Math.max(known, flyer.collected ?? 0));
+      }
       // Duch se do „letí s tebou" nepočítá — hráč už v místnosti není,
       // jen se 3 s rozpouští na obloze.
       const live = message.lumi.flyers.filter((flyer) => !flyer.ghost);
@@ -298,7 +307,7 @@ export default function LumiPage() {
     setBaseScore(0);
     setCoopBonus(0);
     myCollected.current = 0;
-    othersCollected.current = [];
+    contributions.current = new Map();
     setRun((value) => value + 1);
     setPhase('flying');
     play('lanternIgnite');
@@ -308,7 +317,7 @@ export default function LumiPage() {
   const finish = useCallback((score: number) => {
     // Koop odměna (L-11): pool se dělí podílem na sebraných světlech (PPLNS),
     // jen když letím s někým. Sólo si nechá jen své skóre.
-    const split = coopSplit({ mine: myCollected.current, others: othersCollected.current });
+    const split = coopSplit({ mine: myCollected.current, others: [...contributions.current.values()] });
     setCoopBonus(split.bonus);
     setBaseScore(score + split.bonus);
     setPhase('done');

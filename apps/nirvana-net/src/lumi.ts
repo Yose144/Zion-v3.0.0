@@ -173,7 +173,7 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
           // vlastní stav klient nepotřebuje — predikuje si ho sám
           flyers: [...flyers.values()]
             .filter((flyer) => flyer.id !== id)
-            .map(({ id: flyerId, name, avatarId, x, y, vx, vy, energy, finished, ghostUntil, gifts }) => ({
+            .map(({ id: flyerId, name, avatarId, x, y, vx, vy, energy, finished, ghostUntil, gifts, lights: held }) => ({
               id: flyerId,
               name,
               avatarId,
@@ -187,7 +187,11 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
               ...(ghostUntil ? { ghost: true as const } : {}),
               // darovaná světla jsou vidět i u ostatních (L-6)
               ...(gifts > 0 ? { gifts } : {}),
+              // kolik světel sám sebral (L-11) — podklad pro podíl na odměně
+              collected: held.size,
             })),
+          // vlastní souhrn: snapshot sebe neposílá, ale podíl potřebuje i já
+          you: { collected: me.lights.size },
         },
       };
     },
