@@ -2230,8 +2230,18 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   zevnitř hlavy.
 - **Vstup přes `VrInputs` → syntetické klávesy** (`ArrowUp/Left/Down/Right`, spoušť
   `Space`). Stejná pravidla jako dotyk: hra má jednu vstupní větev.
-- **Co VR ještě neumí:** letět směrem pohledu (dnes joystick) a není ověřené na
-  headsetu. Audit kontroluje jen to, že klik na `VR` bez WebXR scénu nerozbije.
+- **Let pohledem je v simulaci, ne ve scéně.** `FlightInput` má volitelné
+  `aim` (jednotkový 2D vektor) a `gaze` (0–1); `isGaze()` rozhoduje na jednom
+  místě. Když je `aim` zadaný, **čtyři booleany se ignorují** — jinak by se
+  sčítaly dva názory na směr (klávesy + hlava).
+- **Ve VR se čte `camera.getWorldDirection`** každý frame a promítá do roviny
+  hry (`z` je v Lumi kulisa); XR kamera **je** hlava. Když se hráč dívá kolmo
+  dolů, vodorovná složka zmizí — normalizuje se s minimem, jinak by vznikl NaN.
+- **Pohled vpřed = měkký pád (0,35 g).** Ve VR není klávesa „stoupat", takže by
+  hráč při každém pohledu dopředu spadl jako kámen; kdo chce klesat rychle,
+  podívá se dolů. Nahoru táhne lucerna (a bere energii).
+- **Co VR ještě neumí:** není ověřené na headsetu (jen kód + syntetické
+  klávesy). Audit kontroluje, že klik na `VR` bez WebXR scénu nerozbije.
 
 ## Mobil a výkon napříč Nirvanou (2026-11-05)
 

@@ -436,7 +436,7 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
 | **L-1** | Nasadit proto 30 (net → app) | `/net/health` hlásí 30; `smoke`+`lumi` projdou na novém buildu; živý co-op ve dvou oknech se vidí | nízké, ale **musí být první** | ⏳ čeká na 👤 |
 | **L-2** | Duchové: doletět místnost i po odpojení (poslední známá pozice 3 s) | odpojený hráč mizí z oblohy až po 3 s, ne okamžitě | nízké | ✅ 2026-11-05 |
 | **L-3** | Světelná stopa za lucernou (trail), jen `detail` | na M1 ≥ 50 fps, na mobilu vypnuto | nízké | ✅ 2026-11-05 |
-| **L-4** | VR let (`core/xr` už existuje pro Merkur/Venuši/Saturn) | v headsetu jde letět pohledem, lucerna na spoušti; bez headsetu se jen nesmí rozbít 2D | střední | ⚠️ částečně 2026-11-05 |
+| **L-4** | VR let (`core/xr` už existuje pro Merkur/Venuši/Saturn) | v headsetu jde letět pohledem, lucerna na spoušti; bez headsetu se jen nesmí rozbít 2D | střední | ✅ 2026-11-06 (headset netestován) |
 | **L-5** | Foto mód (skrýt HUD, volná kamera) | tlačítko skryje veškerý chrome, `Esc` vrátí | nízké | ✅ 2026-11-05 |
 | **L-6** | Druhá ruka: lucerna jde „předat" spoluletci (co-op emote) | druhý hráč dostane světlo do HUD, server to vidí ve `flyers` | střední (protokol) | ✅ 2026-11-05 |
 | **L-7** | Denní světlo: jedenkrát denně jiná pozice sedmi světel (seed z datumu) | stejný den = stejná obloha pro všechny, zítra jiná; test determinismu | nízké | ✅ 2026-11-05 |
@@ -471,7 +471,15 @@ Seřazeno podle poměru přínos / riziko. Každá položka má **akceptační k
   pro **jiný úvod vracejícímu se hráči** — splňuje akceptaci „odemkne se jiný úvodní text,
   ne jen cesta". Nic se neukládá: kapitola plyne z `journal.paths`, takže není potřeba
   měnit schéma `nirvana.lumi.v1` (starý deník funguje dál).
-- **L-4 (VR) — ⚠️ částečně.** `LumiCanvas` bere `xrStore` a obalí scénu `<XR>` (stejný
+- **L-4 (VR) — ✅ hotovo (headset netestován).** Let pohledem je v simulaci:
+  `FlightInput.aim` + `gaze` (jednotkový vektor hlavy), `isGaze()` na jednom místě.
+  Ve VR se bere `camera.getWorldDirection` každý frame, promítne do roviny hry
+  a posílá do `stepFlight`; klávesy se v tu chvíli ignorují (jinak by se sčítaly
+  dva názory na směr). Pohled vzhůru = lucerna (i spotřeba energie), dolů =
+  řízené klesání, vpřed = **měkký** pád (0,35 g), protože ve VR není klávesa
+  „stoupat". Spoušť ovladače drží lucernu. Ověřeno 11 testy simulace; 2D audit
+  54/54. **Netestováno na headsetu** — jen kód + syntetické klávesy.
+- **Původní stav L-4 (2026-11-05):** `LumiCanvas` bere `xrStore` a obalí scénu `<XR>` (stejný
   vzor jako Saturn/MOBA); v XR se **nepoužívá `CameraRig`** (kamera patří headsetu), místo
   toho `XROrigin` letí kousek za Lumi, aby ji člověk viděl a neseděl v její hlavě. Vstup jde
   přes `VrInputs` → **syntetické klávesy** (`ArrowUp/Left/Down/Right`, spoušť = `Space`),
@@ -556,3 +564,4 @@ co pokazit; jakákoli „výzva" by rozbila její smysl.
 | 2026-11-05 | **L-10 pokračování:** pouť (`app/park/copy.ts`, 24 textů), lobby (`app/multiplayer/copy.ts`, 17) a Mars (`app/mars/copy.ts`, 17) ve slovnících a v ES; `ParkScene` dostal `tx()` a `Lang` s `es`. `mobile-audit` PASSED, `tsc` + `next build` čisté |
 | 2026-11-06 | **L-10 pokračování 2:** Merkur (`app/mercury/copy.ts`, 39) a Venuše (`app/venus/copy.ts`, 23) ve slovnících, včetně jmen soupeřů (`nameEs`) a tabulek (`GameBoard`); opraveno lepení odkazů „← Mars arénaVenuše závod →" (`.duel-links` s `gap`). Dočištěny **víceřádkové** ternárky v pouti/Marsu/Lumi, které `grep "cs ?"` nenašel. `mobile-audit` PASSED, build čistý |
 | 2026-11-06 | **L-10 dokončeno:** První svět (`app/earth/copy.ts`, 78 textů — HUD, obchod, inventář, minimapa, konec zápasu), flotila (`app/fleet/copy.ts`, 31) a avatary (`app/avatars/copy.ts`, 20) v ES; `TeamBoard` bere `lang` místo `cs`, emote kolečko má ES. Všechny herní povrchy 0× `cs ?` i `{cs`. ES render ověřen, 0 přesahu, build čistý |
+| 2026-11-06 | **L-4 VR let pohledem:** `FlightInput.aim/gaze`, `isGaze()`, ve VR `camera.getWorldDirection` → 2D směr, měkká gravitace 0,35 g při pohledu vpřed; 11 nových testů simulace (lumi-flight **64/64**), audit 54/54. Headset netestován |
