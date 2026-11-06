@@ -25,6 +25,9 @@ export interface ShopNewsProduct {
   name: ShopNewsText;
   priceCzk: number;
   href: string;
+  /** Obrázek produktu — stejný, jaký má karta v e-shopu (ne ilustrace „od oka“). */
+  image: string;
+  imageAlt: ShopNewsText;
   /** false = produkt ještě není v prodeji (tlačítko/odkaz se neaktivuje) */
   buyable: boolean;
   note?: ShopNewsText;
@@ -43,6 +46,8 @@ export const CHRISTMAS_EDITION_PRODUCTS: ShopNewsProduct[] = [
     name: { cs: 'ZION Pass', en: 'ZION Pass' },
     priceCzk: 108,
     href: '/vanoce/zion-pass',
+    image: '/shop/img/products/zion-pass-001_zion-pass.webp',
+    imageAlt: { cs: 'ZION Pass — zlatá karta do Nirvany a Archivu', en: 'ZION Pass — the golden card into Nirvana and the Archive' },
     buyable: true,
   },
   {
@@ -50,6 +55,8 @@ export const CHRISTMAS_EDITION_PRODUCTS: ShopNewsProduct[] = [
     name: { cs: 'Království srdce — kniha', en: 'Kingdom of Hearts — book' },
     priceCzk: 216,
     href: '/vanoce/kniha-kralovstvi-srdce',
+    image: '/shop/img/products/book-001_kralovstvi-srdce.webp',
+    imageAlt: { cs: 'Kniha Království srdce — obálka s lodí', en: 'Kingdom of Hearts book — cover with the ship' },
     buyable: true,
   },
   {
@@ -57,10 +64,30 @@ export const CHRISTMAS_EDITION_PRODUCTS: ShopNewsProduct[] = [
     name: { cs: 'Lampion Lumi 2', en: 'Lumi 2 lantern' },
     priceCzk: 432,
     href: '/vanoce/lampion',
+    image: '/shop/img/products/lamp-001_lumi-2.webp',
+    imageAlt: { cs: 'Lampion Lumi 2 — vyřezávaný z 3mm překližky, rozsvícený', en: 'Lumi 2 lantern — cut from 3 mm plywood, lit' },
     buyable: false,
     note: { cs: 'Připravujeme', en: 'Coming soon' },
   },
 ];
+
+/** Obrázky doprovodných karet — skutečné assety z e-shopu, ne ilustrace. */
+export const SHOP_NEWS_IMAGES = {
+  market: {
+    src: '/hero-kolekce-2027.webp',
+    alt: {
+      cs: 'Zimní trh Království srdce — archa, strom a lucerny',
+      en: 'The Kingdom of Hearts winter market — the ark, the tree and lanterns',
+    },
+  },
+  campaign: {
+    src: '/vanoce/hero/lampion-wide.webp',
+    alt: {
+      cs: 'Lampion Lumi 2 na tesařském stole s knihou a ZION Passem',
+      en: 'The Lumi 2 lantern on the carpenter’s table with the book and the ZION Pass',
+    },
+  },
+} as const;
 
 export const SHOP_NEWS = {
   kicker: { cs: 'Novinky', en: 'What’s new' },
@@ -90,7 +117,8 @@ export const SHOP_NEWS = {
     cs: 'Bonus se připíše na ZION peněženku, kterou dostanete k objednávce — použijete ji v celém ekosystému ZION.',
     en: 'The bonus lands in the ZION wallet that comes with your order — usable across the whole ZION ecosystem.',
   },
-  campaignCta: { cs: 'Vánoční edice', en: 'Christmas edition' },
+  editionCta: { cs: 'Celá edice', en: 'The whole edition' },
+  shopCta: { cs: 'Nakoupit s bonusem', en: 'Shop with the bonus' },
 } as const;
 
 /** Bonus v ZIONech pro danou cenu (zaokrouhleno na celé ZIONy). */
