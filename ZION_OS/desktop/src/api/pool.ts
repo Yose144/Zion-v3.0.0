@@ -1,7 +1,7 @@
 // Direct ZION mining pool HTTP API client (:8455).
 
-import { httpGet } from '../lib/client';
-import { POOL, endpointUrl, type ServiceEndpoint } from '../config/services';
+import { httpGet, shareLatest, type SharedSlot } from '../lib/client';
+import { POOL, PUBLIC_POOL_STATS, endpointUrl, type ServiceEndpoint } from '../config/services';
 
 export interface PoolMiner {
   miner_id: string;
@@ -218,8 +218,102 @@ function poolUrl(path: string, ep: ServiceEndpoint = POOL): string {
   return endpointUrl(ep, path);
 }
 
-export async function fetchPoolStats(ep: ServiceEndpoint = POOL): Promise<PoolStats | null> {
-  return httpGet<PoolStats>(poolUrl('/stats', ep), 4000);
+interface PublicZionStats {
+  ok?: boolean;
+  active_miners?: number;
+  miners_online?: number;
+  accepted_total?: number;
+  served_difficulty?: number;
+  hashrate?: { live?: number; '1h'?: number };
+  blocks?: { found?: number };
+  shares?: { accepted?: number; rejected?: number };
+}
+
+const poolSlot: SharedSlot<PoolStats | null> = { inflight: null, cached: null };
+
+/** Local pool API first. The public stats page is the fallback on a machine without :8455. */
+export function fetchPoolStats(ep: ServiceEndpoint = POOL): Promise<PoolStats | null> {
+  if (ep !== POOL) return readPoolStats(ep);
+  return shareLatest(poolSlot, () => readPoolStats(POOL));
+}
+
+async function readPoolStats(ep: ServiceEndpoint): Promise<PoolStats | null> {
+  const local = await httpGet<PoolStats>(poolUrl('/stats', ep), ep === POOL ? 1500 : 4000);
+  if (local && local.ok !== false && (local.active_sessions != null || local.blocks_found != null)) return local;
+  if (ep !== POOL) return local;
+  return fetchPublicPoolStats();
+}
+
+async function fetchPublicPoolStats(): Promise<PoolStats | null> {
+  const raw = await httpGet<PublicZionStats>(PUBLIC_POOL_STATS, 5000);
+  if (!raw?.ok) return null;
+  const accepted = raw.shares?.accepted ?? 0;
+  const rejected = raw.shares?.rejected ?? 0;
+  return {
+    ok: true,
+    active_sessions: raw.active_miners ?? raw.miners_online ?? 0,
+    blocks_found: raw.blocks?.found ?? 0,
+    shares_accepted: accepted,
+    shares_rejected: rejected,
+    hashrate_live: raw.hashrate?.live ?? 0,
+    hashrate_1h: raw.hashrate?.['1h'] ?? 0,
+    hashrate_24h: 0,
+    network_hashrate: 0,
+    difficulty: raw.served_difficulty ?? 0,
+    pool_wallet: '',
+    payout_enabled: true,
+    pool_wallet_balance_zion: 0,
+    fee_split: '—',
+    auxpow: {
+      enabled: true,
+      current_algorithm: 'ekam_deeksha',
+      current_coin: 'ZION',
+      current_pool: 'pool.zionterranova.com',
+      revenue_usd: 0,
+      circuit_open: false,
+      consecutive_failures: 0,
+      coin_switches: 0,
+      last_switch_ts: '',
+      uptime_secs: 0,
+      shares_submitted: raw.accepted_total ?? accepted,
+      shares_accepted: accepted,
+      shares_rejected: rejected,
+    },
+    revenue: {
+      enabled: false,
+      status: 'public',
+      strategy: '—',
+      total_usd: 0,
+      daily_estimate_usd: 0,
+      miner_share_pct: 0,
+      dao_share_pct: 0,
+      humanitarian_share_pct: 0,
+      pool_fee_pct: 0,
+      active_coins: ['ZION'],
+      accumulated_usd: 0,
+      distribution_cycle: '—',
+      stream_profit_enabled: false,
+      stream_profit_provider: '—',
+    },
+    pplns: {
+      payout_rounds: 0,
+      registered_miners: raw.active_miners ?? 0,
+      total_paid_zion: 0,
+      total_pending_zion: 0,
+      window_size: 0,
+      window_used: 0,
+      window_utilization_pct: 0,
+    },
+    routing: {
+      submits: accepted + rejected,
+      accepted,
+      rejected,
+      stale: 0,
+      accept_rate_pct: accepted + rejected > 0 ? (accepted / (accepted + rejected)) * 100 : 100,
+    },
+    connection_history: [],
+    totals: { pending_zion: 0, paid_zion: 0, on_chain_zion: 0 },
+  };
 }
 
 export async function fetchPoolMiners(limit = 200, ep: ServiceEndpoint = POOL): Promise<MinersPayload | null> {

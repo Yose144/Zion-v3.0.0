@@ -8,18 +8,25 @@ import LucideIcon from "../components/LucideIcon";
 import ImageSlider from "../components/ImageSlider";
 import data from "../data/camp-data.json";
 
+function pick<T>(block: { cs: T; en: T; es?: T; pt?: T; fr?: T }, lang: string): T {
+  if (lang === "es" && block.es) return block.es;
+  if (lang === "pt" && block.pt) return block.pt;
+  if (lang === "fr" && block.fr) return block.fr;
+  if (lang === "cs") return block.cs;
+  return block.en;
+}
+
 export default function CampPage() {
   const [lang, setLang] = useState<"cs" | "en" | "es" | "pt" | "fr">("cs");
-  const copy = lang === "cs" ? "cs" : "en";
 
   const t = {
-    hero: data.hero[copy],
-    about: data.about[copy],
-    featuresTitle: data.featuresTitle[copy],
-    features: data.features[copy],
-    gallery: { title: data.gallery[copy].title, slides: data.gallery.slides },
-    vision: data.vision[copy],
-    footer: data.footer[copy],
+    hero: pick(data.hero, lang),
+    about: pick(data.about, lang),
+    featuresTitle: pick(data.featuresTitle, lang),
+    features: pick(data.features, lang),
+    gallery: { title: pick(data.gallery, lang).title, slides: data.gallery.slides },
+    vision: pick(data.vision, lang),
+    footer: pick(data.footer, lang),
     socials: data.socials,
     visionImage: data.vision.image,
     visionImageAlt: data.vision.imageAlt,
@@ -92,8 +99,8 @@ export default function CampPage() {
           <ImageSlider
             slides={t.gallery.slides.map((s: any) => ({
               src: s.src,
-              alt: s.caption[copy],
-              caption: s.caption[copy],
+              alt: pick(s.caption, lang),
+              caption: pick(s.caption, lang),
             }))}
           />
         </section>

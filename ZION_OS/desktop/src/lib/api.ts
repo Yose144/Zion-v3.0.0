@@ -2,7 +2,7 @@
 // Replaces the old Python dashboard proxy (http://127.0.0.1:8766) with direct
 // calls to node RPC, pool API, DAO, WARP, OASIS, bridge, swap and AI services.
 
-import { tailLogFile } from './fs';
+import { fetchLogFiles, tailLogFile } from './fs';
 import {
   startLocalBackup,
   stopStack,
@@ -916,24 +916,25 @@ export async function fetchPayoutStatus(): Promise<PayoutStatus | null> {
 // ║  Checklist
 // ╚═══════════════════════════════════════════════════════════════════════════════
 
-export async function fetchChecklist(): Promise<Checklist | null> {
-  const { status, services, readiness } = await fetchFullStatus();
-  const checks: ChecklistItem[] = [];
-
-  const nodeRunning = status && (status.node1.running || status.node2.running || status.edge_node.running);
-  checks.push({ id: 'node-running', label: 'L1 node reachable', ok: !!nodeRunning });
-  checks.push({ id: 'pool-running', label: 'Pool metrics reachable', ok: !!(status?.pool.running || status?.pool_edge.running) });
-  checks.push({ id: 'chain-height', label: 'Chain height > 0', ok: (status?.node1.chain_height ?? 0) > 0 || (status?.edge_node.chain_height ?? 0) > 0 });
-  checks.push({ id: 'peers', label: 'Node has peers', ok: (status?.node1.known_peers ?? 0) > 0 || (status?.edge_node.known_peers ?? 0) > 0 });
-  checks.push({ id: 'dao', label: 'DAO daemon reachable', ok: services.some((s) => s.id === 'dao' && s.alive) });
-  checks.push({ id: 'warp', label: 'WARP relay reachable', ok: services.some((s) => s.id === 'warp' && s.alive) });
-  checks.push({ id: 'oasis', label: 'OASIS reachable', ok: services.some((s) => s.id === 'oasis' && s.alive) });
-  checks.push({ id: 'bridge', label: 'Bridge reachable', ok: services.some((s) => s.id === 'bridge' && s.alive) });
-  checks.push({ id: 'swap', label: 'Atomic swap reachable', ok: services.some((s) => s.id === 'atomic-swap' && s.alive) });
-  checks.push({ id: 'hiran', label: 'Hiran orchestrator reachable', ok: services.some((s) => s.id === 'hiranyagarbha' && s.alive) });
-
+export function checklistFrom(status: V3Status | null, services: ServiceHealth[]): Checklist {
+  const alive = (id: string) => services.some((s) => s.id === id && s.alive);
+  const checks: ChecklistItem[] = [
+    { id: 'chain-height', label: 'Chain height > 0', ok: (status?.edge_node.chain_height ?? 0) > 0 || (status?.node1.chain_height ?? 0) > 0 },
+    { id: 'pool-running', label: 'Pool metrics reachable', ok: !!(status?.pool.running || status?.pool_edge.running) },
+    { id: 'peers', label: 'Node has peers', ok: (status?.node1.known_peers ?? 0) > 0 || (status?.edge_node.known_peers ?? 0) > 0 || (status?.node2.known_peers ?? 0) > 0 },
+    { id: 'oasis', label: 'OASIS health', ok: alive('oasis') },
+    { id: 'free-world', label: 'Free World health', ok: alive('free-world') },
+    { id: 'issobella', label: 'Issobella health', ok: alive('issobella') },
+    { id: 'web', label: 'Web health', ok: alive('web') },
+    { id: 'local-backup', label: 'Local backup node', ok: !!status?.node1.running },
+  ];
   const passed = checks.filter((c) => c.ok).length;
   return { checks, total: checks.length, passed, pct: Math.round((passed / checks.length) * 100) };
+}
+
+export async function fetchChecklist(): Promise<Checklist | null> {
+  const { status, services } = await fetchFullStatus();
+  return checklistFrom(status, services);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -942,8 +943,8 @@ export async function fetchChecklist(): Promise<Checklist | null> {
 
 import {
   queryAllNodes,
-  getChainInfo,
-  getPeerInfo,
+  getBlockByHeight,
+  getLocalOrEdgeChainInfo,
   type ChainInfo,
   type NodeInfo,
 } from '../api/node';
@@ -955,13 +956,15 @@ export async function fetchEdgeOverview(): Promise<EdgeOverview | null> {
   ]);
   const edge1 = nodes.find((n) => n.endpoint.id === 'edge-node1');
   const local = nodes.find((n) => n.endpoint.id === 'local-backup');
-  const chainInfo = local?.chainInfo ?? edge1?.chainInfo ?? null;
-  const nodeInfo = local?.nodeInfo ?? edge1?.nodeInfo ?? null;
+  const publicRpc = nodes.find((n) => n.endpoint.id === 'public-rpc');
+  const edge = edge1?.alive ? edge1 : publicRpc;
+  const chainInfo = edge?.chainInfo ?? local?.chainInfo ?? null;
+  const nodeInfo = edge?.nodeInfo ?? local?.nodeInfo ?? null;
 
   return {
-    reachable: !!edge1?.alive,
-    edge_host: '127.0.0.1',
-    topology: 'local-dev',
+    reachable: !!edge?.alive,
+    edge_host: edge?.endpoint.host ?? '127.0.0.1',
+    topology: local?.alive ? 'local-dev' : 'edge-primary',
     chain_height: chainInfo?.chain_height ?? 0,
     pool_running: !!poolStats,
     active_miners: poolStats?.active_sessions ?? 0,
@@ -1013,7 +1016,8 @@ export async function fetchTopology(): Promise<TopologyResponse | null> {
   const edge2 = nodes.find((n) => n.endpoint.id === 'edge-node2');
   const local = nodes.find((n) => n.endpoint.id === 'local-backup');
 
-  const heights = [edge1, edge2, local].map((n) => n?.chainInfo?.chain_height).filter((h): h is number => typeof h === 'number');
+  const publicRpc = nodes.find((n) => n.endpoint.id === 'public-rpc');
+  const heights = [edge1, edge2, local, publicRpc].map((n) => n?.chainInfo?.chain_height).filter((h): h is number => typeof h === 'number');
   const maxHeight = heights.length ? Math.max(...heights) : 0;
   const minHeight = heights.length ? Math.min(...heights) : 0;
 
@@ -1038,17 +1042,19 @@ export async function fetchTopology(): Promise<TopologyResponse | null> {
 // ║  Blocks / explorer
 // ╚═══════════════════════════════════════════════════════════════════════════════
 
-import { getBlockByHeight, getLocalOrEdgeChainInfo } from '../api/node';
-
 export async function fetchBlocks(limit = 20): Promise<BlockSummary[] | null> {
-  const info = await getLocalOrEdgeChainInfo().catch(() => null);
-  if (!info) return null;
+  const nodes = await queryAllNodes().catch(() => []);
+  const source = ['local-backup', 'edge-node1', 'edge-node2', 'public-rpc']
+    .map((id) => nodes.find((n) => n.endpoint.id === id))
+    .find((n) => n?.chainInfo);
+  const info = source?.chainInfo;
+  if (!source || !info) return null;
   const top = Math.max(0, info.chain_height - limit + 1);
   const heights: number[] = [];
   for (let h = info.chain_height; h >= top; h--) heights.push(h);
   const blocks = await Promise.all(
     heights.map(async (height) => {
-      const b = await getBlockByHeight(LOCAL_BACKUP_NODE, height).catch(() => null);
+      const b = await getBlockByHeight(source.endpoint, height).catch(() => null);
       if (!b) return null;
       const txns = (b.transactions?.length || 0) + (b.utxo_transactions?.length || 0);
       const size = JSON.stringify(b).length;
@@ -1116,18 +1122,26 @@ export {
 } from '../api/hiran';
 
 export async function fetchLayerStatus(): Promise<LayerStatus | null> {
-  const { services } = await fetchFullStatus();
+  const { services, status } = await fetchFullStatus();
+  const layerOf = (id: string): 'up' | 'down' | 'degraded' => {
+    const s = services.find((x) => x.id === id);
+    if (s?.alive) return 'up';
+    if (s?.status === 'local') return 'degraded';
+    return 'down';
+  };
+  const l1Up = !!(status?.edge_node.running || status?.pool.running);
   const layers: LayerStatus['layers'] = [
-    { id: 'l1', name: 'L1 Core', status: 'up', detail: 'Node + Pool' },
-    { id: 'l2', name: 'L2 DeFi', status: services.some((s) => s.id === 'dao' && s.alive) ? 'up' : 'down' },
-    { id: 'l3', name: 'L3 WARP', status: services.some((s) => s.id === 'warp' && s.alive) ? 'up' : 'down' },
-    { id: 'l4', name: 'L4 OASIS', status: services.some((s) => s.id === 'oasis' && s.alive) ? 'up' : 'down' },
-    { id: 'l5', name: 'L5 Free World', status: services.some((s) => s.id === 'free-world' && s.alive) ? 'up' : 'down' },
-    { id: 'l6', name: 'L6 Issobella', status: services.some((s) => s.id === 'issobella' && s.alive) ? 'up' : 'down' },
+    { id: 'l1', name: 'L1 Core', status: l1Up ? 'up' : 'down', detail: 'Node + Pool' },
+    { id: 'l2', name: 'L2 DeFi', status: layerOf('dao') },
+    { id: 'l3', name: 'L3 WARP', status: layerOf('warp') },
+    { id: 'l4', name: 'L4 OASIS', status: layerOf('oasis') },
+    { id: 'l5', name: 'L5 Free World', status: layerOf('free-world') },
+    { id: 'l6', name: 'L6 Issobella', status: layerOf('issobella') },
   ];
   const up = layers.filter((l) => l.status === 'up').length;
   const down = layers.filter((l) => l.status === 'down').length;
-  return { layers, summary: { up, down, degraded: 0, total: layers.length } };
+  const degraded = layers.filter((l) => l.status === 'degraded').length;
+  return { layers, summary: { up, down, degraded, total: layers.length } };
 }
 
 export async function fetchLayerStatusLayer(layer = 'l1'): Promise<LayerStatusResponse | null> {
@@ -1199,7 +1213,7 @@ export function streamLog(svcId: string, lines: number, onLine: (line: string) =
 export { fetchWallets } from '../api/wallets';
 
 export async function fetchMainnetStatus(): Promise<Record<string, unknown> | null> {
-  const info = await getChainInfo(LOCAL_BACKUP_NODE).catch(() => null);
+  const info = await getLocalOrEdgeChainInfo().catch(() => null);
   if (!info) return null;
   return {
     ok: true,
@@ -1289,7 +1303,7 @@ export async function fetchEdgeAgentStatus(): Promise<Record<string, unknown> | 
 
 export async function fetchMonitoringStatus(): Promise<MonitoringStatus | null> {
   return {
-    prometheus: { url: 'http://127.0.0.1:8455/metrics', alive: true, version: null, targets_up: 0, targets_total: 0 },
+    prometheus: { url: 'http://127.0.0.1:8455/metrics', alive: false, version: null, targets_up: 0, targets_total: 0 },
     grafana: { url: '', alive: false, version: null, database: null },
     timestamp: Date.now(),
   };
@@ -1305,40 +1319,44 @@ export async function fetchMonitoringStatus(): Promise<MonitoringStatus | null> 
  */
 export async function apiFetch<T = unknown>(path: string, _opts?: { timeout?: number }): Promise<T | null> {
   try {
-    if (path === '/api/status' || path === '/api/v2/status') {
+    const queryAt = path.indexOf('?');
+    const pathname = queryAt === -1 ? path : path.slice(0, queryAt);
+    const params = new URLSearchParams(queryAt === -1 ? '' : path.slice(queryAt + 1));
+    if (pathname === '/api/status' || pathname === '/api/v2/status') {
       const fs = await fetchFullStatus();
       return fs.status as T;
     }
-    if (path === '/api/services') {
+    if (pathname === '/api/services') {
       const fs = await fetchFullStatus();
       return { services: fs.services } as T;
     }
-    if (path === '/api/alerts') {
+    if (pathname === '/api/alerts') {
       const fs = await fetchFullStatus();
       return { alerts: fs.alerts } as T;
     }
-    if (path === '/api/readiness') {
+    if (pathname === '/api/readiness') {
       const fs = await fetchFullStatus();
       return fs.readiness as T;
     }
-    if (path === '/api/pool/miners-dashboard') return (await fetchPoolMinersDashboard()) as T;
-    if (path === '/api/revenue') return (await fetchRevenueDashboard()) as T;
-    if (path === '/api/revenue/streams') return (await fetchRevenueStreams()) as T;
-    if (path === '/api/checklist') return (await fetchChecklist()) as T;
-    if (path === '/api/edge/overview') return (await fetchEdgeOverview()) as T;
-    if (path === '/api/wallets') return (await fetchWallets()) as T;
-    if (path === '/api/blocks' || path.startsWith('/api/blocks?')) return (await fetchBlocks()) as T;
-    if (path === '/api/events') return (await fetchEvents()) as T;
-    if (path === '/api/alerts/history') return (await fetchAlertsHistory()) as T;
-    if (path === '/api/controls') return (await fetchControls()) as T;
-    if (path === '/api/topology') return (await fetchTopology()) as T;
-    if (path === '/api/mempool') return (await fetchMempool()) as T;
-    if (path === '/api/history') return (await fetchHistory()) as T;
-    if (path === '/api/security') return (await fetchSecurityStatus()) as T;
-    if (path === '/api/backup/status') return (await fetchBackupStatus()) as T;
-    if (path === '/api/payout') return (await fetchPayoutStatus()) as T;
-    if (path === '/api/miner/live') return (await fetchMinerLive()) as T;
-    if (path === '/api/layer-status') return (await fetchLayerStatus()) as T;
+    if (pathname === '/api/pool/miners-dashboard') return (await fetchPoolMinersDashboard()) as T;
+    if (pathname === '/api/revenue') return (await fetchRevenueDashboard()) as T;
+    if (pathname === '/api/revenue/streams') return (await fetchRevenueStreams()) as T;
+    if (pathname === '/api/checklist') return (await fetchChecklist()) as T;
+    if (pathname === '/api/edge/overview') return (await fetchEdgeOverview()) as T;
+    if (pathname === '/api/wallets') return (await fetchWallets()) as T;
+    if (pathname === '/api/blocks') return (await fetchBlocks(Number(params.get('limit')) || 20)) as T;
+    if (pathname === '/api/events') return (await fetchEvents()) as T;
+    if (pathname === '/api/alerts/history') return (await fetchAlertsHistory()) as T;
+    if (pathname === '/api/controls') return (await fetchControls()) as T;
+    if (pathname === '/api/topology' || pathname === '/api/nodes') return (await fetchTopology()) as T;
+    if (pathname === '/api/mempool') return (await fetchMempool()) as T;
+    if (pathname === '/api/history') return (await fetchHistory()) as T;
+    if (pathname === '/api/security') return (await fetchSecurityStatus()) as T;
+    if (pathname === '/api/backup/status') return (await fetchBackupStatus()) as T;
+    if (pathname === '/api/payout') return (await fetchPayoutStatus()) as T;
+    if (pathname === '/api/miner/live') return (await fetchMinerLive()) as T;
+    if (pathname === '/api/layer-status') return (await fetchLayerStatusLayer(params.get('layer') || 'l1')) as T;
+    if (pathname === '/api/log-files') return (await fetchLogFiles()) as T;
     console.warn('[apiFetch] no direct API mapping for', path);
     return null;
   } catch (e) {

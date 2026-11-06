@@ -1,7 +1,7 @@
 // Direct ZION L1 node JSON-RPC client.
 
-import { jsonRpc, httpGet } from '../lib/client';
-import { EDGE_NODE1, EDGE_NODE2, LOCAL_BACKUP_NODE, NODES, rpcUrl, healthUrl, type ServiceEndpoint } from '../config/services';
+import { jsonRpc, httpGet, shareLatest, type SharedSlot } from '../lib/client';
+import { NODES, PUBLIC_RPC, rpcUrl, healthUrl, type ServiceEndpoint } from '../config/services';
 
 export interface ChainInfo {
   network: string;
@@ -141,8 +141,26 @@ export async function getNodeInfo(endpoint: ServiceEndpoint): Promise<NodeInfo |
   return jsonRpc<NodeInfo>(rpcUrl(endpoint), 'getNodeInfo', {}, 2500);
 }
 
+function normalizePeers(raw: unknown): { peers: PeerInfo[]; count: number } {
+  if (Array.isArray(raw)) return { peers: raw as PeerInfo[], count: raw.length };
+  if (raw && typeof raw === 'object') {
+    const body = raw as { peers?: unknown; known_count?: number; active_count?: number; count?: number };
+    const peers = Array.isArray(body.peers) ? (body.peers as PeerInfo[]) : [];
+    const count = Number(body.known_count ?? body.count ?? body.active_count ?? peers.length) || 0;
+    return { peers, count };
+  }
+  return { peers: [], count: 0 };
+}
+
+async function readPeerInfo(endpoint: ServiceEndpoint): Promise<{ peers: PeerInfo[]; count: number } | null> {
+  const raw = await jsonRpc<unknown>(rpcUrl(endpoint), 'getPeerInfo', {}, 2500);
+  if (raw == null) return null;
+  return normalizePeers(raw);
+}
+
 export async function getPeerInfo(endpoint: ServiceEndpoint): Promise<PeerInfo[] | null> {
-  return jsonRpc<PeerInfo[]>(rpcUrl(endpoint), 'getPeerInfo', {}, 2500);
+  const read = await readPeerInfo(endpoint);
+  return read?.peers ?? null;
 }
 
 export async function getBlockByHeight(endpoint: ServiceEndpoint, height: number): Promise<Block | null> {
@@ -201,28 +219,38 @@ export async function checkNodeHealth(endpoint: ServiceEndpoint): Promise<boolea
 
 // ── High-level helpers ────────────────────────────────────────────────────
 
-export async function queryAllNodes(): Promise<NodeStatus[]> {
+const nodesSlot: SharedSlot<NodeStatus[]> = { inflight: null, cached: null };
+
+async function probeNodes(): Promise<NodeStatus[]> {
   return Promise.all(
-    NODES.map(async (endpoint) => {
+    [...NODES, PUBLIC_RPC].map(async (endpoint) => {
       try {
-        const [alive, chainInfo, nodeInfo, peers] = await Promise.all([
-          checkNodeHealth(endpoint),
+        const [alive, chainInfo, nodeInfo, peerInfo] = await Promise.all([
+          endpoint.url ? Promise.resolve(false) : checkNodeHealth(endpoint),
           getChainInfo(endpoint),
           getNodeInfo(endpoint),
-          getPeerInfo(endpoint),
+          readPeerInfo(endpoint),
         ]);
+        const peerCount = peerInfo?.count ?? 0;
+        const info = nodeInfo && peerCount > (nodeInfo.known_peers || 0)
+          ? { ...nodeInfo, known_peers: peerCount }
+          : nodeInfo;
         return {
           endpoint,
           alive: alive || !!(chainInfo || nodeInfo),
           chainInfo,
-          nodeInfo,
-          peers: peers ?? [],
+          nodeInfo: info,
+          peers: peerInfo?.peers ?? [],
         };
       } catch (e) {
         return { endpoint, alive: false, chainInfo: null, nodeInfo: null, peers: [], error: String(e) };
       }
     }),
   );
+}
+
+export function queryAllNodes(): Promise<NodeStatus[]> {
+  return shareLatest(nodesSlot, probeNodes);
 }
 
 export async function getHighestNode(): Promise<{ endpoint: ServiceEndpoint; chainInfo: ChainInfo } | null> {
@@ -234,18 +262,19 @@ export async function getHighestNode(): Promise<{ endpoint: ServiceEndpoint; cha
 }
 
 export async function getLocalOrEdgeChainInfo(): Promise<ChainInfo | null> {
-  // Prefer local backup node.
-  const local = await getChainInfo(LOCAL_BACKUP_NODE);
-  if (local) return local;
-  const edge = await getChainInfo(EDGE_NODE1);
-  if (edge) return edge;
-  return getChainInfo(EDGE_NODE2);
+  const nodes = await queryAllNodes();
+  for (const id of ['local-backup', 'edge-node1', 'edge-node2', 'public-rpc']) {
+    const info = nodes.find((n) => n.endpoint.id === id)?.chainInfo;
+    if (info) return info;
+  }
+  return null;
 }
 
 export async function getLocalOrEdgeNodeInfo(): Promise<NodeInfo | null> {
-  const local = await getNodeInfo(LOCAL_BACKUP_NODE);
-  if (local) return local;
-  const edge = await getNodeInfo(EDGE_NODE1);
-  if (edge) return edge;
-  return getNodeInfo(EDGE_NODE2);
+  const nodes = await queryAllNodes();
+  for (const id of ['local-backup', 'edge-node1', 'edge-node2', 'public-rpc']) {
+    const info = nodes.find((n) => n.endpoint.id === id)?.nodeInfo;
+    if (info) return info;
+  }
+  return null;
 }

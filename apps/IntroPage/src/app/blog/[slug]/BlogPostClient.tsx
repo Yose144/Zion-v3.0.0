@@ -10,15 +10,32 @@ import blogData from "../../data/blog-posts.json";
 
 const { posts, categories } = blogData;
 
-const monthNames = {
+const monthNames: Record<string, string[]> = {
   cs: ["leden", "únor", "březen", "duben", "květen", "červen", "červenec", "srpen", "září", "říjen", "listopad", "prosinec"],
   en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+  es: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+  pt: ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"],
+  fr: ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"],
 };
 
 function formatDate(dateStr: string, lang: string) {
-  const copy = lang === "cs" ? "cs" : "en";
+  const names = monthNames[lang] ?? monthNames.en;
   const d = new Date(dateStr);
-  return `${d.getDate()}. ${monthNames[copy][d.getMonth()]} ${d.getFullYear()}`;
+  return `${d.getDate()}. ${names[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function say(lang: string, row: { cs: string; en: string; es: string; pt: string; fr: string }) {
+  if (lang === "cs") return row.cs;
+  return row[lang as "en"] ?? row.en;
+}
+
+function catLabel(cat: { label?: string; labelEn?: string; labelEs?: string; labelPt?: string; labelFr?: string } | undefined, lang: string) {
+  if (!cat) return "";
+  if (lang === "cs") return cat.label || "";
+  if (lang === "es") return cat.labelEs || cat.labelEn || "";
+  if (lang === "pt") return cat.labelPt || cat.labelEn || "";
+  if (lang === "fr") return cat.labelFr || cat.labelEn || "";
+  return cat.labelEn || "";
 }
 
 type BlogPostClientProps = {
@@ -38,12 +55,12 @@ export default function BlogPostClient({
   if (!post) return null;
 
   const category = categories[post.category as keyof typeof categories] as any;
-  const title = lang === "en" ? post.titleEn || post.title : post.title;
-  const excerpt = lang === "en" ? post.excerptEn || post.excerpt : post.excerpt;
+  const title = lang === "cs" ? post.title : post.titleEn || post.title;
+  const excerpt = lang === "cs" ? post.excerpt : post.excerptEn || post.excerpt;
   const content =
-    lang === "en"
-      ? post.contentEn || fullContent || post.content
-      : fullContent || post.content;
+    lang === "cs"
+      ? fullContent || post.content
+      : post.contentEn || fullContent || post.content;
 
   const fixImage = (src?: string) => {
     if (!src) return "";
@@ -53,7 +70,7 @@ export default function BlogPostClient({
   const prev = index < posts.length - 1 ? posts[index + 1] : null;
   const next = index > 0 ? posts[index - 1] : null;
 
-  const postTitle = (p: typeof posts[0]) => (lang === "en" ? p.titleEn || p.title : p.title);
+  const postTitle = (p: typeof posts[0]) => (lang === "cs" ? p.title : p.titleEn || p.title);
 
   const handleHref = (p: typeof posts[0]) => (p.content ? `/blog/${p.slug}` : `/legacy/${p.file}`);
 
@@ -68,7 +85,7 @@ export default function BlogPostClient({
           className="rounded-full border px-4 py-1 text-sm font-semibold text-black"
           style={{ backgroundColor: category?.color || "#fcd116" }}
         >
-          {lang === "cs" ? category?.label : category?.labelEn}
+          {catLabel(category, lang)}
         </span>
         <h1 className="max-w-3xl text-3xl font-extrabold text-white md:text-5xl">
           {title}
@@ -117,21 +134,25 @@ export default function BlogPostClient({
             <div className="my-10 rounded-xl border border-[#fcd116]/20 bg-white/[0.03] p-8 text-center">
               <LucideIcon name="fa-file-lines" size={48} className="mb-3 text-[#fcd116]" />
               <p className="mb-4">
-                {lang === "cs"
-                  ? "Tento příspěvek je dostupný v plné HTML verzi v archivu."
-                  : "This post is available as a full HTML version in the archive."}
+                {say(lang, {
+                  cs: "Tento příspěvek je dostupný v plné HTML verzi v archivu.",
+                  en: "This post is available as a full HTML version in the archive.",
+                  es: "Esta entrada está disponible como HTML completo en el archivo.",
+                  pt: "Esta publicação está disponível como HTML completo no arquivo.",
+                  fr: "Cet article est disponible en HTML complet dans l’archive.",
+                })}
               </p>
               <a
                 href={`/legacy/${post.file}`}
                 className="button primary small rasta-gold"
               >
                 <LucideIcon name="fa-arrow-up-right-from-square" size={16} className="mr-2" />
-                {lang === "cs" ? "Zobrazit plnou verzi" : "View full version"}
+                {say(lang, { cs: "Zobrazit plnou verzi", en: "View full version", es: "Ver la versión completa", pt: "Ver a versão completa", fr: "Voir la version complète" })}
               </a>
             </div>
           ) : (
             <p className="text-center text-white/50">
-              {lang === "cs" ? "Obsah brzy doplníme." : "Content will be added soon."}
+              {say(lang, { cs: "Obsah brzy doplníme.", en: "Content will be added soon.", es: "El contenido llegará pronto.", pt: "O conteúdo chega em breve.", fr: "Le contenu arrive bientôt." })}
             </p>
           )}
         </section>
@@ -155,7 +176,7 @@ export default function BlogPostClient({
               href="/blog"
               className="button primary small rasta-green"
             >
-              <LucideIcon name="fa-list" size={16} className="mr-2" /> {lang === "cs" ? "Zpět do archivu" : "Back to archive"}
+              <LucideIcon name="fa-list" size={16} className="mr-2" /> {say(lang, { cs: "Zpět do archivu", en: "Back to archive", es: "Volver al archivo", pt: "Voltar ao arquivo", fr: "Retour à l’archive" })}
             </Link>
             {next ? (
               <Link

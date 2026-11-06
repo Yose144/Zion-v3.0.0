@@ -4,6 +4,7 @@ import { useDashboard } from './context/DashboardContext';
 import Shell from './components/layout/Shell';
 import WarpStarfield from './components/layout/WarpStarfield';
 import type { TabId } from './types';
+import { useLang } from './i18n';
 
 const Overview = lazy(() => import('./views/Overview'));
 const Mining = lazy(() => import('./views/Mining'));
@@ -14,58 +15,9 @@ const Placeholder = lazy(() => import('./views/Placeholder'));
 
 const CORE_TABS: TabId[] = ['overview', 'mining', 'network', 'ecosystem', 'ops'];
 
-const TAB_LABELS: Record<TabId, string> = {
-  overview: 'Overview',
-  mining: 'Mining',
-  network: 'Network',
-  ecosystem: 'Ecosystem',
-  ops: 'Ops',
-  nodes: 'Nodes',
-  topology: 'Topology',
-  orchestrator: 'Orchestrator',
-  'pool-miners': 'Miners',
-  payout: 'Payouts',
-  revenue: 'Revenue',
-  'miner-live': 'Live Miner',
-  l1: 'L1',
-  l2: 'L2',
-  l3: 'L3',
-  l4: 'L4',
-  l5: 'L5',
-  l6: 'L6',
-  warp: 'WARP',
-  hiran: 'Hiran AI',
-  'ai-agents': 'AI Agents',
-  'ncl-jobs': 'NCL Jobs',
-  'poc-lab': 'PoC Lab',
-  services: 'Services',
-  alerts: 'Alerts',
-  logs: 'Logs',
-  backups: 'Backups',
-  fleet: 'Fleet',
-  settings: 'Settings',
-  explorer: 'Explorer',
-  wallets: 'Wallets',
-  dao: 'DAO',
-  bridge: 'Bridge',
-  'bridge-validators': 'Validators',
-  'warp-swap': 'Swap',
-  cex: 'CEX',
-  charts: 'Charts',
-  events: 'Events',
-  metrics: 'Metrics',
-  database: 'DB',
-  env: 'Env',
-  genesis: 'Genesis',
-  blockers: 'Blockers',
-  'servers-setup': 'Servers',
-  'launch-day': 'Launch',
-  wizard: 'Wizard',
-  agent: 'Agent',
-};
-
 export default function Dashboard() {
   const { alerts, lastError } = useDashboard();
+  const { t } = useLang();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
 
   useEffect(() => {
@@ -86,14 +38,43 @@ export default function Dashboard() {
   const renderTab = () => {
     switch (activeTab) {
       case 'overview':
+      case 'services':
+      case 'alerts':
         return <Overview />;
       case 'mining':
+      case 'pool-miners':
+      case 'payout':
+      case 'revenue':
+      case 'miner-live':
+      case 'charts':
+      case 'events':
         return <Mining />;
       case 'network':
+      case 'nodes':
+      case 'topology':
+      case 'explorer':
+      case 'wallets':
+      case 'agent':
         return <Network />;
       case 'ecosystem':
+      case 'l1':
+      case 'l2':
+      case 'l3':
+      case 'l4':
+      case 'l5':
+      case 'l6':
+      case 'warp':
+      case 'hiran':
+      case 'dao':
+      case 'bridge':
+      case 'cex':
+      case 'warp-swap':
         return <Ecosystem />;
       case 'ops':
+      case 'logs':
+      case 'backups':
+      case 'settings':
+      case 'fleet':
         return <Ops />;
       default:
         return <Placeholder tab={activeTab} />;
@@ -106,7 +87,7 @@ export default function Dashboard() {
       <Shell activeTab={activeTab} onTabChange={setActiveTab}>
         {lastError && (
           <div className="px-3 py-2 rounded bg-amber-900/30 border border-amber-500/20 text-amber-200 text-xs mb-4">
-            {lastError} — Spusť Python dashboard: <code>python ZION_OS/dashboard/app.py</code>
+            {lastError}
           </div>
         )}
         <div
@@ -115,7 +96,7 @@ export default function Dashboard() {
           style={{ '--rc': '255 215 0' } as React.CSSProperties}
         >
           <div className="flex items-center gap-2 mb-2">
-            <h2 className="text-lg font-extrabold text-gradient">{TAB_LABELS[activeTab]}</h2>
+            <h2 className="text-lg font-extrabold text-gradient">{t(activeTab)}</h2>
             <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
           </div>
           <Suspense

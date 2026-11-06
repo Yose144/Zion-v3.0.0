@@ -1,6 +1,43 @@
 // Generic HTTP + JSON-RPC clients used by all direct API modules.
 
 const DEFAULT_TIMEOUT_MS = 3000;
+const LOCAL_TIMEOUT_MS = 400;
+const LOCAL_MISS_MS = 60_000;
+const SHARE_MS = 2000;
+
+const localMissUntil = new Map<string, number>();
+
+/** Explicit loopback URL. Relative dev-proxy paths are not loopback. */
+function loopbackKey(url: string): string | null {
+  if (!/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?(\/|$)/i.test(url)) return null;
+  const u = new URL(url);
+  return `${u.hostname}:${u.port || (u.protocol === 'https:' ? '443' : '80')}`;
+}
+
+export interface SharedSlot<T> {
+  inflight: Promise<T> | null;
+  cached: { at: number; value: T } | null;
+}
+
+/** One in-flight call, then a short reuse so a single refresh does not probe twice. */
+export function shareLatest<T>(slot: SharedSlot<T>, run: () => Promise<T>, ttlMs = SHARE_MS): Promise<T> {
+  const now = Date.now();
+  if (slot.cached && now - slot.cached.at < ttlMs) return Promise.resolve(slot.cached.value);
+  if (slot.inflight) return slot.inflight;
+  const pending = run().then(
+    (value) => {
+      slot.cached = { at: Date.now(), value };
+      slot.inflight = null;
+      return value;
+    },
+    (err: unknown) => {
+      slot.inflight = null;
+      throw err;
+    },
+  );
+  slot.inflight = pending;
+  return pending;
+}
 
 export interface FetchOptions {
   timeout?: number;
@@ -38,7 +75,13 @@ export class ApiError extends Error {
 }
 
 export async function httpFetch<T = unknown>(url: string, opts: FetchOptions = {}): Promise<T | null> {
-  const { timeout = DEFAULT_TIMEOUT_MS, method = 'GET', headers = {}, body, tolerateError = true } = opts;
+  const { method = 'GET', headers = {}, body, tolerateError = true } = opts;
+  const key = loopbackKey(url);
+  if (key) {
+    const until = localMissUntil.get(key) ?? 0;
+    if (until > Date.now()) return null;
+  }
+  const timeout = key ? Math.min(opts.timeout ?? LOCAL_TIMEOUT_MS, LOCAL_TIMEOUT_MS) : (opts.timeout ?? DEFAULT_TIMEOUT_MS);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
 
@@ -76,8 +119,9 @@ export async function httpFetch<T = unknown>(url: string, opts: FetchOptions = {
   } catch (e) {
     clearTimeout(timer);
     if (e instanceof ApiError) throw e;
+    if (key) localMissUntil.set(key, Date.now() + LOCAL_MISS_MS);
     if (tolerateError) {
-      console.warn(`[api] ${method} ${url} unreachable`, e);
+      if (!key) console.warn(`[api] ${method} ${url} unreachable`, e);
       return null;
     }
     throw e;

@@ -13,6 +13,27 @@
       "subtitle": "Terra Nova ® Portugal",
       "desc": "Sustainable living | Glamping | Surf school",
       "cta": "Explore the camp"
+    },
+    "es": {
+      "badge": "🏕️ PROYECTO DE ECOGRANJA",
+      "title": "Base Camp",
+      "subtitle": "Terra Nova ® Portugal",
+      "desc": "Vida sostenible | Glamping | Escuela de surf",
+      "cta": "Explorar el camp"
+    },
+    "pt": {
+      "badge": "🏕️ PROJETO DE ECOFAZENDA",
+      "title": "Base Camp",
+      "subtitle": "Terra Nova ® Portugal",
+      "desc": "Vida sustentável | Glamping | Escola de surf",
+      "cta": "Explorar o camp"
+    },
+    "fr": {
+      "badge": "🏕️ PROJET D’ÉCOFERME",
+      "title": "Base Camp",
+      "subtitle": "Terra Nova ® Portugal",
+      "desc": "Vie durable | Glamping | École de surf",
+      "cta": "Explorer le camp"
     }
   },
   "about": {
@@ -25,37 +46,290 @@
       "title": "Welcome to the Base Camp",
       "p1": "Welcome to our Base Camp in Portugal, where we are building a new eco-farm that embodies our commitment to sustainability, innovation and community living.",
       "quote": "One love, one heart. Together we grow a future where humans and Earth are in harmony again."
+    },
+    "es": {
+      "title": "Bienvenido al Base Camp",
+      "p1": "En nuestro Base Camp en Portugal construimos una ecogranja que encarna el compromiso con la sostenibilidad, la innovación y la vida en comunidad.",
+      "quote": "One love, one heart. Juntos creamos un futuro en el que el ser humano y la Tierra vuelven a estar en armonía."
+    },
+    "pt": {
+      "title": "Bem-vindo ao Base Camp",
+      "p1": "No nosso Base Camp em Portugal construímos uma ecofazenda que encarna o compromisso com a sustentabilidade, a inovação e a vida em comunidade.",
+      "quote": "One love, one heart. Juntos criamos um futuro em que o ser humano e a Terra voltam a estar em harmonia."
+    },
+    "fr": {
+      "title": "Bienvenue au Base Camp",
+      "p1": "Dans notre Base Camp au Portugal, nous construisons une écoferme qui incarne l’engagement pour la durabilité, l’innovation et la vie en communauté.",
+      "quote": "One love, one heart. Ensemble nous créons un avenir où l’humain et la Terre sont de nouveau en harmonie."
     }
   },
-  "featuresTitle": { "cs": "Co v campu najdeš", "en": "What you can experience" },
+  "featuresTitle": {
+    "cs": "Co v campu najdeš",
+    "en": "What you can experience",
+    "es": "Qué encuentras en el camp",
+    "pt": "O que encontras no camp",
+    "fr": "Ce que tu trouves au camp"
+  },
   "features": {
     "cs": [
-      { "icon": "fa-campground", "title": "Glamping ubytování", "desc": "Pohodlné a útulné stany uprostřed přírody. Komfort bez kompromisů, v hlubokém spojení se Zemí.", "status": "Otevřeno" },
-      { "icon": "fa-seedling", "title": "Organické farmaření", "desc": "Pěstujeme organické plodiny, pečujeme o půdu a rozšiřujeme biodiverzitu regionu.", "status": "Rosteme" },
-      { "icon": "fa-tree", "title": "Sázení stromů", "desc": "Aktivně vysazujeme nové stromy a obnovujeme ekosystém. Každý návštěvník může zasadit svůj strom.", "status": "Aktivní" },
-      { "icon": "fa-water", "title": "Surf škola", "desc": "Plánujeme surfovou školu, která propojí lásku k oceánu, pohyb a vědomý životní styl.", "status": "Brzy" },
-      { "icon": "fa-solar-panel", "title": "Off-grid život", "desc": "Solární energie, sběr dešťové vody, kompostování. Učíme se žít v souladu s planetou.", "status": "Eko" },
-      { "icon": "fa-users", "title": "Komunitní setkání", "desc": "Workshopy, retreaty, ceremonie a malé festivaly. Společně tvoříme pole podpory a spolupráce.", "status": "Přidej se" }
+      {
+        "icon": "fa-campground",
+        "title": "Glamping ubytování",
+        "desc": "Pohodlné a útulné stany uprostřed přírody. Komfort bez kompromisů, v hlubokém spojení se Zemí.",
+        "status": "Otevřeno"
+      },
+      {
+        "icon": "fa-seedling",
+        "title": "Organické farmaření",
+        "desc": "Pěstujeme organické plodiny, pečujeme o půdu a rozšiřujeme biodiverzitu regionu.",
+        "status": "Rosteme"
+      },
+      {
+        "icon": "fa-tree",
+        "title": "Sázení stromů",
+        "desc": "Aktivně vysazujeme nové stromy a obnovujeme ekosystém. Každý návštěvník může zasadit svůj strom.",
+        "status": "Aktivní"
+      },
+      {
+        "icon": "fa-water",
+        "title": "Surf škola",
+        "desc": "Plánujeme surfovou školu, která propojí lásku k oceánu, pohyb a vědomý životní styl.",
+        "status": "Brzy"
+      },
+      {
+        "icon": "fa-solar-panel",
+        "title": "Off-grid život",
+        "desc": "Solární energie, sběr dešťové vody, kompostování. Učíme se žít v souladu s planetou.",
+        "status": "Eko"
+      },
+      {
+        "icon": "fa-users",
+        "title": "Komunitní setkání",
+        "desc": "Workshopy, retreaty, ceremonie a malé festivaly. Společně tvoříme pole podpory a spolupráce.",
+        "status": "Přidej se"
+      }
     ],
     "en": [
-      { "icon": "fa-campground", "title": "Glamping accommodation", "desc": "Comfortable and cozy tents in the heart of nature. Comfort without compromise, deeply connected to the land.", "status": "Open" },
-      { "icon": "fa-seedling", "title": "Organic farming", "desc": "We grow organic crops, care for the soil and expand the biodiversity of the region.", "status": "Growing" },
-      { "icon": "fa-tree", "title": "Tree planting", "desc": "We actively plant new trees and help regenerate the ecosystem. Every visitor can plant their own tree.", "status": "Active" },
-      { "icon": "fa-water", "title": "Surf school", "desc": "Planned surf school connecting love for the ocean, movement and a conscious lifestyle.", "status": "Coming soon" },
-      { "icon": "fa-solar-panel", "title": "Off-grid living", "desc": "Solar power, rainwater collection, composting. Learning to live in balance with the planet.", "status": "Eco" },
-      { "icon": "fa-users", "title": "Community gatherings", "desc": "Workshops, retreats, ceremonies and small festivals. Co-creating a field of support and collaboration.", "status": "Join us" }
+      {
+        "icon": "fa-campground",
+        "title": "Glamping accommodation",
+        "desc": "Comfortable and cozy tents in the heart of nature. Comfort without compromise, deeply connected to the land.",
+        "status": "Open"
+      },
+      {
+        "icon": "fa-seedling",
+        "title": "Organic farming",
+        "desc": "We grow organic crops, care for the soil and expand the biodiversity of the region.",
+        "status": "Growing"
+      },
+      {
+        "icon": "fa-tree",
+        "title": "Tree planting",
+        "desc": "We actively plant new trees and help regenerate the ecosystem. Every visitor can plant their own tree.",
+        "status": "Active"
+      },
+      {
+        "icon": "fa-water",
+        "title": "Surf school",
+        "desc": "Planned surf school connecting love for the ocean, movement and a conscious lifestyle.",
+        "status": "Coming soon"
+      },
+      {
+        "icon": "fa-solar-panel",
+        "title": "Off-grid living",
+        "desc": "Solar power, rainwater collection, composting. Learning to live in balance with the planet.",
+        "status": "Eco"
+      },
+      {
+        "icon": "fa-users",
+        "title": "Community gatherings",
+        "desc": "Workshops, retreats, ceremonies and small festivals. Co-creating a field of support and collaboration.",
+        "status": "Join us"
+      }
+    ],
+    "es": [
+      {
+        "icon": "fa-campground",
+        "title": "Glamping",
+        "desc": "Tiendas cómodas en plena naturaleza. Confort sin renunciar al vínculo con la Tierra.",
+        "status": "Abierto"
+      },
+      {
+        "icon": "fa-seedling",
+        "title": "Agricultura orgánica",
+        "desc": "Cultivamos cosechas orgánicas, cuidamos el suelo y ampliamos la biodiversidad.",
+        "status": "Creciendo"
+      },
+      {
+        "icon": "fa-tree",
+        "title": "Plantar árboles",
+        "desc": "Plantamos árboles nuevos y regeneramos el ecosistema. Cada visitante puede plantar el suyo.",
+        "status": "Activo"
+      },
+      {
+        "icon": "fa-water",
+        "title": "Escuela de surf",
+        "desc": "Preparamos una escuela de surf que une el océano, el movimiento y un estilo de vida consciente.",
+        "status": "Pronto"
+      },
+      {
+        "icon": "fa-solar-panel",
+        "title": "Vida off-grid",
+        "desc": "Energía solar, agua de lluvia, compost. Aprendemos a vivir en equilibrio con el planeta.",
+        "status": "Eco"
+      },
+      {
+        "icon": "fa-users",
+        "title": "Encuentros",
+        "desc": "Talleres, retiros, ceremonias y pequeños festivales. Un campo de apoyo y colaboración.",
+        "status": "Únete"
+      }
+    ],
+    "pt": [
+      {
+        "icon": "fa-campground",
+        "title": "Glamping",
+        "desc": "Tendas confortáveis no meio da natureza. Conforto sem perder o vínculo com a Terra.",
+        "status": "Aberto"
+      },
+      {
+        "icon": "fa-seedling",
+        "title": "Agricultura orgânica",
+        "desc": "Cultivamos colheitas orgânicas, cuidamos do solo e alargamos a biodiversidade.",
+        "status": "A crescer"
+      },
+      {
+        "icon": "fa-tree",
+        "title": "Plantar árvores",
+        "desc": "Plantamos árvores novas e regeneramos o ecossistema. Cada visitante pode plantar a sua.",
+        "status": "Ativo"
+      },
+      {
+        "icon": "fa-water",
+        "title": "Escola de surf",
+        "desc": "Preparamos uma escola de surf que liga o oceano, o movimento e um estilo de vida consciente.",
+        "status": "Em breve"
+      },
+      {
+        "icon": "fa-solar-panel",
+        "title": "Vida off-grid",
+        "desc": "Energia solar, água da chuva, compostagem. Aprendemos a viver em equilíbrio com o planeta.",
+        "status": "Eco"
+      },
+      {
+        "icon": "fa-users",
+        "title": "Encontros",
+        "desc": "Oficinas, retiros, cerimónias e pequenos festivais. Um campo de apoio e colaboração.",
+        "status": "Junta-te"
+      }
+    ],
+    "fr": [
+      {
+        "icon": "fa-campground",
+        "title": "Glamping",
+        "desc": "Des tentes confortables au cœur de la nature. Le confort sans perdre le lien avec la Terre.",
+        "status": "Ouvert"
+      },
+      {
+        "icon": "fa-seedling",
+        "title": "Agriculture biologique",
+        "desc": "Nous cultivons des récoltes biologiques, soignons le sol et élargissons la biodiversité.",
+        "status": "En croissance"
+      },
+      {
+        "icon": "fa-tree",
+        "title": "Planter des arbres",
+        "desc": "Nous plantons de nouveaux arbres et régénérons l’écosystème. Chaque visiteur peut planter le sien.",
+        "status": "Actif"
+      },
+      {
+        "icon": "fa-water",
+        "title": "École de surf",
+        "desc": "Une école de surf qui relie l’océan, le mouvement et un mode de vie conscient.",
+        "status": "Bientôt"
+      },
+      {
+        "icon": "fa-solar-panel",
+        "title": "Vie hors réseau",
+        "desc": "Solaire, eau de pluie, compost. Apprendre à vivre en équilibre avec la planète.",
+        "status": "Éco"
+      },
+      {
+        "icon": "fa-users",
+        "title": "Rencontres",
+        "desc": "Ateliers, retraites, cérémonies et petits festivals. Un champ de soutien et de collaboration.",
+        "status": "Rejoins-nous"
+      }
     ]
   },
   "gallery": {
-    "cs": { "title": "Galerie z campu" },
-    "en": { "title": "Camp Gallery" },
+    "cs": {
+      "title": "Galerie z campu"
+    },
+    "en": {
+      "title": "Camp Gallery"
+    },
     "slides": [
-      { "src": "/legacy/gal/4.jpeg", "caption": { "cs": "Terra Nova eko farma", "en": "Terra Nova eco farm" } },
-      { "src": "/legacy/gal/1.jpeg", "caption": { "cs": "Glamping v přírodě", "en": "Glamping in nature" } },
-      { "src": "/legacy/gal/3.jpeg", "caption": { "cs": "Propojení s přírodou", "en": "Connection with nature" } },
-      { "src": "/legacy/gal/2.jpeg", "caption": { "cs": "Organické zahrady", "en": "Organic gardens" } },
-      { "src": "/legacy/gal/5.jpeg", "caption": { "cs": "Komunitní život", "en": "Community living" } }
-    ]
+      {
+        "src": "/legacy/gal/4.jpeg",
+        "caption": {
+          "cs": "Terra Nova eko farma",
+          "en": "Terra Nova eco farm",
+          "es": "Ecofinca Terra Nova",
+          "pt": "Ecofazenda Terra Nova",
+          "fr": "Écoferme Terra Nova"
+        }
+      },
+      {
+        "src": "/legacy/gal/1.jpeg",
+        "caption": {
+          "cs": "Glamping v přírodě",
+          "en": "Glamping in nature",
+          "es": "Glamping en la naturaleza",
+          "pt": "Glamping na natureza",
+          "fr": "Glamping dans la nature"
+        }
+      },
+      {
+        "src": "/legacy/gal/3.jpeg",
+        "caption": {
+          "cs": "Propojení s přírodou",
+          "en": "Connection with nature",
+          "es": "Vínculo con la naturaleza",
+          "pt": "Ligação com a natureza",
+          "fr": "Lien avec la nature"
+        }
+      },
+      {
+        "src": "/legacy/gal/2.jpeg",
+        "caption": {
+          "cs": "Organické zahrady",
+          "en": "Organic gardens",
+          "es": "Huertos orgánicos",
+          "pt": "Hortas orgânicas",
+          "fr": "Jardins biologiques"
+        }
+      },
+      {
+        "src": "/legacy/gal/5.jpeg",
+        "caption": {
+          "cs": "Komunitní život",
+          "en": "Community living",
+          "es": "Vida en comunidad",
+          "pt": "Vida em comunidade",
+          "fr": "Vie en communauté"
+        }
+      }
+    ],
+    "es": {
+      "title": "Galería del camp"
+    },
+    "pt": {
+      "title": "Galeria do camp"
+    },
+    "fr": {
+      "title": "Galerie du camp"
+    }
   },
   "vision": {
     "cs": {
@@ -75,17 +349,64 @@
       "shopCta": "Visit shop"
     },
     "image": "/legacy/img/tibet.jpg",
-    "imageAlt": "Vision"
+    "imageAlt": "Vision",
+    "es": {
+      "title": "Nuestra visión",
+      "p1": "Ahora mismo plantamos árboles nuevos y ampliamos la tierra para crear una finca viva y sostenible. El objetivo es cultivar una variedad de cosechas orgánicas y sostener la biodiversidad del lugar.",
+      "p2": "Más adelante abriremos una escuela de surf que una el amor por la naturaleza, el océano y el movimiento. Queremos un espacio para vivir en activo y sentir el planeta que nos sostiene.",
+      "quote": "Únete a Terra Nova y forma parte del camino hacia un futuro más sostenible y aventurero.",
+      "homeCta": "Volver al inicio",
+      "shopCta": "Visitar la tienda"
+    },
+    "pt": {
+      "title": "A nossa visão",
+      "p1": "Agora plantamos árvores novas e alargamos a terra para criar uma fazenda viva e sustentável. O objetivo é cultivar uma variedade de colheitas orgânicas e sustentar a biodiversidade do lugar.",
+      "p2": "Mais à frente abriremos uma escola de surf que una o amor pela natureza, pelo oceano e pelo movimento. Queremos um espaço para viver em atividade e sentir o planeta que nos sustenta.",
+      "quote": "Junta-te à Terra Nova e faz parte do caminho para um futuro mais sustentável e aventureiro.",
+      "homeCta": "Voltar ao início",
+      "shopCta": "Visitar a loja"
+    },
+    "fr": {
+      "title": "Notre vision",
+      "p1": "En ce moment nous plantons de nouveaux arbres et étendons la terre pour créer une ferme vivante et durable. Le but est de cultiver des récoltes biologiques variées et de soutenir la biodiversité du lieu.",
+      "p2": "Ensuite nous ouvrirons une école de surf qui relie l’amour de la nature, de l’océan et du mouvement. Un espace pour vivre activement et sentir la planète qui nous porte.",
+      "quote": "Rejoins Terra Nova et prends part au chemin vers un avenir plus durable et plus aventureux.",
+      "homeCta": "Retour à l’accueil",
+      "shopCta": "Visiter la boutique"
+    }
   },
   "footer": {
     "cs": "Největší sláva nespočívá v tom, že nikdy nepadneme, ale v tom, že pokaždé, když padneme, opět vstaneme.",
-    "en": "The greatest glory in living lies not in never falling, but in rising every time we fall."
+    "en": "The greatest glory in living lies not in never falling, but in rising every time we fall.",
+    "es": "La mayor gloria no está en no caer nunca, sino en levantarse cada vez que caemos.",
+    "pt": "A maior glória não está em nunca cair, mas em levantar-se cada vez que caímos.",
+    "fr": "La plus grande gloire n’est pas de ne jamais tomber, mais de se relever chaque fois que l’on tombe."
   },
   "socials": [
-    { "icon": "fa-facebook", "url": "https://www.facebook.com/ZionTerraNova/", "color": "text-[#078930]" },
-    { "icon": "fa-twitter", "url": "https://x.com/ZionTerraNova", "color": "text-[#fcd116]" },
-    { "icon": "fa-instagram", "url": "https://www.instagram.com/terranova_project/", "color": "text-[#e41e2b]" },
-    { "icon": "fa-github", "url": "https://github.com/Zion-TerraNova", "color": "text-white" },
-    { "icon": "fa-discord", "url": "https://discord.gg/wvxJ7DhZ8", "color": "text-[#7289da]" }
+    {
+      "icon": "fa-facebook",
+      "url": "https://www.facebook.com/ZionTerraNova/",
+      "color": "text-[#078930]"
+    },
+    {
+      "icon": "fa-twitter",
+      "url": "https://x.com/ZionTerraNova",
+      "color": "text-[#fcd116]"
+    },
+    {
+      "icon": "fa-instagram",
+      "url": "https://www.instagram.com/terranova_project/",
+      "color": "text-[#e41e2b]"
+    },
+    {
+      "icon": "fa-github",
+      "url": "https://github.com/Zion-TerraNova",
+      "color": "text-white"
+    },
+    {
+      "icon": "fa-discord",
+      "url": "https://discord.gg/wvxJ7DhZ8",
+      "color": "text-[#7289da]"
+    }
   ]
 }

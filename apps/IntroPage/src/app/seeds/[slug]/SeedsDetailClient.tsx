@@ -10,7 +10,7 @@ import data from "../../data/seeds-data.json";
 
 export default function SeedsDetailClient({ slug }: { slug: string }) {
   const [lang, setLang] = useState<"cs" | "en" | "es" | "pt" | "fr">("cs");
-  const copy = lang === "cs" ? "cs" : "en";
+  const footer = lang === "cs" ? data.footer.cs : data.footer[lang] || data.footer.en;
   const strain = data.strains.find((s: any) => s.slug === slug) || data.strains[0];
 
   const colors: Record<string, string> = {
@@ -248,7 +248,7 @@ export default function SeedsDetailClient({ slug }: { slug: string }) {
             <span className="text-2xl">🌿</span>
             <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[#078930]"></div>
           </div>
-          <p className="italic text-[#078930]">{data.footer[copy]}</p>
+          <p className="italic text-[#078930]">{footer}</p>
           <div className="mt-6 flex justify-center gap-6 text-2xl">
             {data.socials.map((s: any, i: number) => (
               <a

@@ -23,6 +23,8 @@ export default function Overview() {
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />Live</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" />Degraded</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" />Down</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-500" />Local</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-500" />Local</span>
           </div>
         </div>
         <ServiceGrid services={services} />

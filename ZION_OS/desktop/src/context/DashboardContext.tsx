@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import {
   fetchFullStatus,
-  fetchChecklist,
+  checklistFrom,
   fetchEdgeOverview,
   fetchRevenueDashboard,
   fetchPoolMinersDashboard,
@@ -88,7 +88,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     try {
       const [
         full,
-        chk,
         edge,
         rev,
         pool,
@@ -103,7 +102,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         lf,
       ] = await Promise.all([
         fetchFullStatus(),
-        fetchChecklist(),
         fetchEdgeOverview(),
         fetchRevenueDashboard(),
         fetchPoolMinersDashboard(),
@@ -123,7 +121,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       setAlerts(full.alerts);
       setReadiness(full.readiness);
       setMonitoring(full.monitoring);
-      setChecklist(chk);
+      setChecklist(checklistFrom(full.status, full.services));
       setEdgeOverview(edge);
       setRevenue(rev);
       setPoolDashboard(pool);
@@ -137,9 +135,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       setLayerStatus(ls);
       setLogFiles(lf);
 
-      setLastError(full.status ? null : 'Python dashboard (localhost:8766) není dostupný');
+      const height = full.status?.edge_node?.chain_height ?? full.status?.node1?.chain_height ?? 0;
+      const poolUp = !!(full.status?.pool.running || full.status?.pool_edge.running);
+      setLastError(height > 0 || poolUp ? null : 'Lokální uzel, veřejné RPC ani pool neodpovídají.');
     } catch (e) {
-      setLastError('Backend unreachable');
+      setLastError('Lokální uzel, veřejné RPC ani pool neodpovídají.');
     }
   }, []);
 

@@ -50,6 +50,7 @@ import { useDashboard } from '../../context/DashboardContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Kicker } from '../ui/Kicker';
 import type { TabId } from '../../types';
+import { DESK_LANGS, DESK_SHORT, useLang } from '../../i18n';
 
 interface ShellProps {
   activeTab: TabId;
@@ -62,6 +63,7 @@ const fmt = (n: number | null | undefined) => (n == null ? '—' : n.toLocaleStr
 export default function Shell({ activeTab, onTabChange, children }: ShellProps) {
   const { status, alerts, lastError, autoRefresh, setAutoRefresh, refresh } = useDashboard();
   const { theme, toggle: toggleTheme } = useTheme();
+  const { lang, setLang, t } = useLang();
 
   const topology = status?.topology === 'edge-primary' ? 'Edge-Primary' : 'Local-Dev';
   const connected = !lastError;
@@ -91,7 +93,7 @@ export default function Shell({ activeTab, onTabChange, children }: ShellProps) 
             Z
           </div>
           <div>
-            <Kicker className="mb-1">Mainnet Launch · Command Center</Kicker>
+            <Kicker className="mb-1">{t('kicker')}</Kicker>
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-none">
               <span className="text-gradient">ZION TerraNova</span>
             </h1>
@@ -108,32 +110,47 @@ export default function Shell({ activeTab, onTabChange, children }: ShellProps) 
                 : 'bg-red-700/50 text-red-300'
             }`}
           >
-            {connected ? '● Connected' : '● Disconnected'}
+            {connected ? t('connected') : t('disconnected')}
           </span>
           {criticalAlerts > 0 && (
             <span className="px-3 py-1.5 bg-red-600 rounded-full text-xs font-bold animate-pulse">
-              {criticalAlerts} alerts
+              {criticalAlerts} {t('alertCount')}
             </span>
           )}
+          <div className="flex gap-1" role="group" aria-label={t('language')}>
+            {DESK_LANGS.map((code) => (
+              <button
+                key={code}
+                type="button"
+                onClick={() => setLang(code)}
+                aria-pressed={lang === code}
+                className={`text-[10px] px-1.5 py-1 rounded font-bold ${
+                  lang === code ? 'bg-amber-400 text-black' : 'bg-white/10 text-white/70'
+                }`}
+              >
+                {DESK_SHORT[code]}
+              </button>
+            ))}
+          </div>
           <div className="zion-action-bar">
             <button
               onClick={toggleTheme}
               className="zion-action-btn"
-              title="Toggle theme"
+              title={t('theme')}
             >
               {theme === 'dark' ? <Moon size={14} /> : <Sun size={14} />}
             </button>
-            <button onClick={refresh} className="zion-action-btn" title="Refresh">
+            <button onClick={refresh} className="zion-action-btn" title={t('refresh')}>
               <RefreshCw size={14} />
             </button>
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
               className={`zion-action-btn ${autoRefresh ? 'text-emerald-400' : ''}`}
-              title="Auto refresh"
+              title={t('auto')}
             >
               {autoRefresh ? <Pause size={14} /> : <Play size={14} />}
             </button>
-            <button className="zion-action-btn" title="Settings">
+            <button className="zion-action-btn" title={t('settings')} onClick={() => onTabChange('settings')}>
               <Settings size={14} />
             </button>
           </div>
@@ -144,71 +161,71 @@ export default function Shell({ activeTab, onTabChange, children }: ShellProps) 
       <nav className="zion-nav-shell mb-6">
         <div className="zion-nav-floor">
           <div className="zion-nav-brand hidden md:flex">
-            <span className="logo-mark">Z</span> Command Center
+            <span className="logo-mark">Z</span> {t('command')}
           </div>
 
-          <NavButton id="overview" icon={Gauge} label="Overview" active={activeTab} onClick={onTabChange} />
+          <NavButton id="overview" icon={Gauge} label={t('overview')} active={activeTab} onClick={onTabChange} />
 
-          <NavGroup label="Network" icon={Globe}>
-            <NavButton id="nodes" icon={Network} label="Nodes" active={activeTab} onClick={onTabChange} />
-            <NavButton id="topology" icon={GitBranch} label="Topology" active={activeTab} onClick={onTabChange} />
-            <NavButton id="orchestrator" icon={Server} label="Orchestrator" active={activeTab} onClick={onTabChange} />
+          <NavGroup label={t('group-network')} icon={Globe}>
+            <NavButton id="nodes" icon={Network} label={t('nodes')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="topology" icon={GitBranch} label={t('topology')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="orchestrator" icon={Server} label={t('orchestrator')} active={activeTab} onClick={onTabChange} />
           </NavGroup>
 
-          <NavGroup label="Pool" icon={Users}>
-            <NavButton id="pool-miners" icon={Users} label="Miners" active={activeTab} onClick={onTabChange} />
-            <NavButton id="payout" icon={Banknote} label="Payouts" active={activeTab} onClick={onTabChange} />
-            <NavButton id="revenue" icon={TrendingUp} label="Revenue" active={activeTab} onClick={onTabChange} />
-            <NavButton id="miner-live" icon={TowerControl} label="Live Miner" active={activeTab} onClick={onTabChange} />
+          <NavGroup label={t('group-pool')} icon={Users}>
+            <NavButton id="pool-miners" icon={Users} label={t('pool-miners')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="payout" icon={Banknote} label={t('payout')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="revenue" icon={TrendingUp} label={t('revenue')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="miner-live" icon={TowerControl} label={t('miner-live')} active={activeTab} onClick={onTabChange} />
           </NavGroup>
 
-          <NavGroup label="Layers" icon={Layers}>
-            <NavButton id="l1" icon={Box} label="L1 Consensus" active={activeTab} onClick={onTabChange} />
-            <NavButton id="l2" icon={ArrowRightLeft} label="L2 Bridge / DAO" active={activeTab} onClick={onTabChange} />
-            <NavButton id="l3" icon={Box} label="L3 Advanced" active={activeTab} onClick={onTabChange} />
-            <NavButton id="warp" icon={Zap} label="WARP Bridge" active={activeTab} onClick={onTabChange} />
-            <NavButton id="l4" icon={Leaf} label="L4 OASIS" active={activeTab} onClick={onTabChange} />
-            <NavButton id="l5" icon={Heart} label="L5 Humanitarian" active={activeTab} onClick={onTabChange} />
-            <NavButton id="l6" icon={Rocket} label="L6 Space" active={activeTab} onClick={onTabChange} />
+          <NavGroup label={t('group-layers')} icon={Layers}>
+            <NavButton id="l1" icon={Box} label={t('l1')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="l2" icon={ArrowRightLeft} label={t('l2')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="l3" icon={Box} label={t('l3')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="warp" icon={Zap} label={t('warp')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="l4" icon={Leaf} label={t('l4')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="l5" icon={Heart} label={t('l5')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="l6" icon={Rocket} label={t('l6')} active={activeTab} onClick={onTabChange} />
           </NavGroup>
 
-          <NavGroup label="AI" icon={Brain}>
-            <NavButton id="hiran" icon={Brain} label="Hiran AI" active={activeTab} onClick={onTabChange} />
-            <NavButton id="ai-agents" icon={Bot} label="AI Agents" active={activeTab} onClick={onTabChange} />
-            <NavButton id="ncl-jobs" icon={Briefcase} label="NCL Jobs" active={activeTab} onClick={onTabChange} />
-            <NavButton id="poc-lab" icon={FlaskConical} label="PoC Lab" active={activeTab} onClick={onTabChange} />
+          <NavGroup label={t('group-ai')} icon={Brain}>
+            <NavButton id="hiran" icon={Brain} label={t('hiran')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="ai-agents" icon={Bot} label={t('ai-agents')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="ncl-jobs" icon={Briefcase} label={t('ncl-jobs')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="poc-lab" icon={FlaskConical} label={t('poc-lab')} active={activeTab} onClick={onTabChange} />
           </NavGroup>
 
-          <NavGroup label="Ops" icon={Settings}>
-            <NavButton id="services" icon={HeartPulse} label="Services Health" active={activeTab} onClick={onTabChange} />
-            <NavButton id="alerts" icon={Bell} label="Alerts" active={activeTab} onClick={onTabChange} />
-            <NavButton id="logs" icon={FileText} label="Logs" active={activeTab} onClick={onTabChange} />
-            <NavButton id="backups" icon={Database} label="Backups" active={activeTab} onClick={onTabChange} />
-            <NavButton id="fleet" icon={Network} label="Fleet" active={activeTab} onClick={onTabChange} />
-            <NavButton id="settings" icon={Settings} label="Settings" active={activeTab} onClick={onTabChange} />
+          <NavGroup label={t('group-ops')} icon={Settings}>
+            <NavButton id="services" icon={HeartPulse} label={t('services')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="alerts" icon={Bell} label={t('alerts')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="logs" icon={FileText} label={t('logs')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="backups" icon={Database} label={t('backups')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="fleet" icon={Network} label={t('fleet')} active={activeTab} onClick={onTabChange} />
+            <NavButton id="settings" icon={Settings} label={t('settings')} active={activeTab} onClick={onTabChange} />
           </NavGroup>
         </div>
 
         <div className="zion-nav-floor">
-          <QuickLink id="explorer" icon={Search} label="Explorer" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="wallets" icon={Wallet} label="Wallets" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="dao" icon={Landmark} label="DAO" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="bridge" icon={ArrowRightLeft} label="Bridge" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="bridge-validators" icon={User} label="Validators" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="warp-swap" icon={ArrowRightLeft} label="Swap" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="cex" icon={Building2} label="CEX" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="charts" icon={LineChart} label="Charts" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="events" icon={Calendar} label="Events" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="metrics" icon={BarChart3} label="Metrics" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="database" icon={Database} label="DB" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="env" icon={FileCode} label="Env" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="genesis" icon={Bolt} label="Genesis" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="blockers" icon={TriangleAlert} label="Blockers" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="ops" icon={Wrench} label="Ops" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="servers-setup" icon={Radio} label="Servers" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="launch-day" icon={RocketIcon} label="Launch" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="wizard" icon={Wand2} label="Wizard" active={activeTab} onClick={onTabChange} />
-          <QuickLink id="agent" icon={User} label="Agent" active={activeTab} onClick={onTabChange} />
+          <QuickLink id="explorer" icon={Search} label={t('explorer')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="wallets" icon={Wallet} label={t('wallets')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="dao" icon={Landmark} label={t('dao')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="bridge" icon={ArrowRightLeft} label={t('bridge')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="bridge-validators" icon={User} label={t('bridge-validators')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="warp-swap" icon={ArrowRightLeft} label={t('warp-swap')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="cex" icon={Building2} label={t('cex')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="charts" icon={LineChart} label={t('charts')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="events" icon={Calendar} label={t('events')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="metrics" icon={BarChart3} label={t('metrics')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="database" icon={Database} label={t('database')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="env" icon={FileCode} label={t('env')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="genesis" icon={Bolt} label={t('genesis')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="blockers" icon={TriangleAlert} label={t('blockers')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="ops" icon={Wrench} label={t('ops')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="servers-setup" icon={Radio} label={t('servers-setup')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="launch-day" icon={RocketIcon} label={t('launch-day')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="wizard" icon={Wand2} label={t('wizard')} active={activeTab} onClick={onTabChange} />
+          <QuickLink id="agent" icon={User} label={t('agent')} active={activeTab} onClick={onTabChange} />
         </div>
       </nav>
 
@@ -216,30 +233,30 @@ export default function Shell({ activeTab, onTabChange, children }: ShellProps) 
       <section className="zion-hero-grid mb-6">
         <HeroCard
           icon="🌐"
-          title="Network Status"
-          value={connected ? 'Live' : 'Down'}
-          sub={`v3.0.5 · ${fmt(status?.edge_node?.known_peers ?? status?.node1?.known_peers ?? 0)} peers`}
+          title={t('hero-network')}
+          value={connected ? t('live') : t('down')}
+          sub={`v3.0.5 · ${fmt(status?.edge_node?.known_peers ?? status?.node1?.known_peers ?? 0)} ${t('peers')}`}
           rc="6 182 212"
         />
         <HeroCard
           icon="⛏"
-          title="Pool"
+          title={t('hero-pool')}
           value={fmt(activeMiners)}
-          sub="active sessions"
+          sub={t('sessions')}
           rc="147 51 234"
         />
         <HeroCard
           icon="🔗"
-          title="Latest Block"
+          title={t('hero-block')}
           value={fmt(heroHeight)}
-          sub="chain height"
+          sub={t('height')}
           rc="251 191 36"
         />
         <HeroCard
           icon="⚡"
-          title="Active Miners"
+          title={t('hero-miners')}
           value={fmt(activeMiners)}
-          sub="connected workers"
+          sub={t('workers')}
           rc="16 185 129"
         />
       </section>

@@ -13,8 +13,24 @@ import {
 } from '../lib/api';
 import { useGameStore } from '../store/gameStore';
 import { useToastStore, type Toast } from '../store/toastStore';
+import { usePublicLang } from '../../../shared/ui/usePublicLang';
 
 type ToastFn = (message: string, type?: Toast['type'], duration?: number) => void;
+
+function pilgrimNote(lang: string, kind: 'guild' | 'quest') {
+  if (kind === 'guild') {
+    if (lang === 'cs') return 'Nejdřív nastav adresu poutníka v záložce Identita.';
+    if (lang === 'es') return 'Primero define la dirección del peregrino en Identidad.';
+    if (lang === 'pt') return 'Primeiro define o endereço do peregrino em Identidade.';
+    if (lang === 'fr') return 'Définis d’abord l’adresse du pèlerin dans Identité.';
+    return 'Set your pilgrim address in Identity tab first.';
+  }
+  if (lang === 'cs') return 'Nastav adresu poutníka v záložce Identita, ať jde sledovat postup úkolů.';
+  if (lang === 'es') return 'Define la dirección del peregrino en Identidad para seguir las misiones.';
+  if (lang === 'pt') return 'Define o endereço do peregrino em Identidade para seguir as missões.';
+  if (lang === 'fr') return 'Définis l’adresse du pèlerin dans Identité pour suivre les quêtes.';
+  return 'Set your pilgrim address in Identity tab to track quest progress.';
+}
 
 type Tab = 'leaderboard' | 'guilds' | 'quests';
 
@@ -173,6 +189,7 @@ function LeaderboardTab() {
 
 /* ── Guilds Tab ── */
 function GuildsTab({ address, addToast, onSync }: { address: string | null; addToast: ToastFn; onSync: () => void }) {
+  const [lang] = usePublicLang('cs');
   const [guilds, setGuilds] = useState<Guild[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -259,7 +276,7 @@ function GuildsTab({ address, addToast, onSync }: { address: string | null; addT
           >
             Create Guild
           </button>
-          {!address && <p className="text-[10px] text-white/60">Set your pilgrim address in Identity tab first.</p>}
+          {!address && <p className="text-[10px] text-white/60">{pilgrimNote(lang, 'guild')}</p>}
         </motion.div>
       )}
 
@@ -370,6 +387,7 @@ function GuildsTab({ address, addToast, onSync }: { address: string | null; addT
 
 /* ── Quests Tab ── */
 function QuestsTab({ address, addToast, addXp, onSync }: { address: string | null; addToast: ToastFn; addXp: (n: number) => void; onSync: () => void }) {
+  const [lang] = usePublicLang('cs');
   const [quests, setQuests] = useState<QuestDef[]>([]);
   const [progress, setProgress] = useState<QuestProgress[]>([]);
   const [loading, setLoading] = useState(true);
@@ -438,7 +456,7 @@ function QuestsTab({ address, addToast, addXp, onSync }: { address: string | nul
 
       {!address && (
         <p className="mb-3 rounded-lg border border-oasis-gold/20 bg-oasis-gold/5 p-2 text-[11px] text-oasis-gold">
-          Set your pilgrim address in Identity tab to track quest progress.
+          {pilgrimNote(lang, 'quest')}
         </p>
       )}
 

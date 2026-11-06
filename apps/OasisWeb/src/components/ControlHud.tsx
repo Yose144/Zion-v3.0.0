@@ -11,6 +11,36 @@ import type { CompassData } from './Compass';
 import type { World } from '../domain/types/world';
 import { useGameStore, type ShipLoadout } from '../store/gameStore';
 import { useToastStore } from '../store/toastStore';
+import { usePublicLang } from '../../../shared/ui/usePublicLang';
+
+const HUD = {
+  ship: { cs: 'Stav lodi', en: 'Ship Status', es: 'Estado de la nave', pt: 'Estado da nave', fr: 'État du vaisseau' },
+  boost: { cs: 'Zrychlení', en: 'Boost', es: 'Impulso', pt: 'Impulso', fr: 'Boost' },
+  cargo: { cs: 'Náklad', en: 'Cargo', es: 'Carga', pt: 'Carga', fr: 'Cargaison' },
+  scanner: { cs: 'Skener', en: 'Scanner', es: 'Escáner', pt: 'Scanner', fr: 'Scanner' },
+  nav: { cs: 'Navigace', en: 'Navigation', es: 'Navegación', pt: 'Navegação', fr: 'Navigation' },
+  scan: { cs: 'Sken', en: 'Scan', es: 'Escaneo', pt: 'Varredura', fr: 'Scan' },
+  idle: { cs: 'Klid', en: 'Idle', es: 'En espera', pt: 'Em espera', fr: 'Attente' },
+  throttle: { cs: 'Plyn', en: 'Throttle', es: 'Acelerador', pt: 'Acelerador', fr: 'Gaz' },
+  warpTo: { cs: 'Warp k cíli', en: 'Warp to target', es: 'Warp al objetivo', pt: 'Warp ao alvo', fr: 'Warp vers la cible' },
+  warpNo: { cs: 'Warp není dostupný', en: 'Warp unavailable', es: 'Warp no disponible', pt: 'Warp indisponível', fr: 'Warp indisponible' },
+  land: { cs: 'Přistát', en: 'Land', es: 'Aterrizar', pt: 'Aterrar', fr: 'Atterrir' },
+  fly: { cs: 'Let', en: 'Fly', es: 'Volar', pt: 'Voar', fr: 'Voler' },
+  collapse: { cs: 'Sbalit', en: 'Collapse', es: 'Contraer', pt: 'Recolher', fr: 'Réduire' },
+  expand: { cs: 'Rozbalit', en: 'Expand', es: 'Expandir', pt: 'Expandir', fr: 'Déplier' },
+  warpEngaged: { cs: 'Warp zapnut', en: 'Warp drive engaged', es: 'Warp activado', pt: 'Warp ativado', fr: 'Warp enclenché' },
+  move: { cs: 'pohyb', en: 'move', es: 'mover', pt: 'mover', fr: 'bouger' },
+  updown: { cs: 'nahoru/dolů', en: 'up/down', es: 'arriba/abajo', pt: 'cima/baixo', fr: 'haut/bas' },
+  stop: { cs: 'zastavit', en: 'stop', es: 'parar', pt: 'parar', fr: 'arrêter' },
+  half: { cs: 'polovina', en: 'half', es: 'mitad', pt: 'metade', fr: 'moitié' },
+  full: { cs: 'plný', en: 'full', es: 'lleno', pt: 'cheio', fr: 'plein' },
+} as const;
+
+function hudText(key: keyof typeof HUD, lang: string) {
+  const row = HUD[key];
+  if (lang === 'cs') return row.cs;
+  return row[lang as 'en'] ?? row.en;
+}
 
 const ZION_CYAN = '#078930';
 const ZION_PURPLE = '#e41e2b';
@@ -73,6 +103,7 @@ function ControlHud({
 }: ControlHudProps) {
   const { shipLoadout, credits } = useGameStore();
   const addToast = useToastStore((s) => s.add);
+  const [lang] = usePublicLang('cs');
   const [heading, setHeading] = useState(0);
   const [bearing, setBearing] = useState(0);
   const [distance, setDistance] = useState(0);
@@ -162,8 +193,8 @@ function ControlHud({
   const handleWarp = useCallback(() => {
     if (!canWarp) return;
     onWarp?.();
-    addToast('Warp drive engaged', 'info', 2000);
-  }, [canWarp, onWarp, addToast]);
+    addToast(hudText('warpEngaged', lang), 'info', 2000);
+  }, [canWarp, onWarp, addToast, lang]);
 
   return (
     <motion.div
@@ -184,20 +215,20 @@ function ControlHud({
         >
           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-oasis-cyan">
             <Rocket className="h-3 w-3" />
-            <span>Ship Status</span>
+            <span>{hudText('ship', lang)}</span>
           </div>
 
           {/* Ship modules mini-grid */}
           <div className="grid grid-cols-3 gap-1">
-            <div className="rounded-lg border border-oasis-cyan/20 bg-oasis-cyan/5 p-1 text-center" title="Boost">
+            <div className="rounded-lg border border-oasis-cyan/20 bg-oasis-cyan/5 p-1 text-center" title={hudText('boost', lang)}>
               <Zap className="mx-auto h-3 w-3 text-oasis-cyan" />
               <p className="text-[10px] font-bold text-white">{shipLoadout.boost}</p>
             </div>
-            <div className="rounded-lg border border-oasis-gold/20 bg-oasis-gold/5 p-1 text-center" title="Cargo">
+            <div className="rounded-lg border border-oasis-gold/20 bg-oasis-gold/5 p-1 text-center" title={hudText('cargo', lang)}>
               <Package className="mx-auto h-3 w-3 text-oasis-gold" />
               <p className="text-[10px] font-bold text-white">{shipLoadout.cargo}</p>
             </div>
-            <div className="rounded-lg border border-oasis-purple/20 bg-oasis-purple/5 p-1 text-center" title="Scanner">
+            <div className="rounded-lg border border-oasis-purple/20 bg-oasis-purple/5 p-1 text-center" title={hudText('scanner', lang)}>
               <ScanLine className="mx-auto h-3 w-3 text-oasis-purple" />
               <p className="text-[10px] font-bold text-white">{shipLoadout.scanner}</p>
             </div>
@@ -419,7 +450,7 @@ function ControlHud({
         >
           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-oasis-gold">
             <Orbit className="h-3 w-3" />
-            <span>Navigation</span>
+            <span>{hudText('nav', lang)}</span>
           </div>
 
           {/* Speed gauge (flight mode) */}
@@ -441,9 +472,9 @@ function ControlHud({
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1 text-[10px] text-white/70">
                   <Radar className="h-3 w-3 text-oasis-purple" />
-                  Scan
+                  {hudText('scan', lang)}
                 </span>
-                <span className="text-[10px] text-white/60">Idle</span>
+                <span className="text-[10px] text-white/60">{hudText('idle', lang)}</span>
               </div>
             </div>
           )}
@@ -453,7 +484,7 @@ function ControlHud({
             <div>
               <div className="mb-1 flex items-center justify-between text-[10px] text-white/70">
                 <span className="flex items-center gap-1">
-                  <Rocket className="h-2.5 w-2.5" /> Throttle
+                  <Rocket className="h-2.5 w-2.5" /> {hudText('throttle', lang)}
                 </span>
                 <span className="font-mono">{Math.round(throttle * 100)}%</span>
               </div>
@@ -464,9 +495,9 @@ function ControlHud({
                 className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-oasis-cyan"
               />
               <div className="mt-1 grid grid-cols-3 gap-1">
-                <button onClick={() => onThrottleChange(0)} className="zion-button-ghost !py-1 text-[10px]" title="Stop (1)">STOP</button>
-                <button onClick={() => onThrottleChange(0.5)} className="zion-button-ghost !py-1 text-[10px]" title="Half (2)">½</button>
-                <button onClick={() => onThrottleChange(1)} className="zion-button-ghost !py-1 text-[10px] text-oasis-cyan" title="Full (3)">FULL</button>
+                <button onClick={() => onThrottleChange(0)} className="zion-button-ghost !py-1 text-[10px]" title={`${hudText('stop', lang)} (1)`}>STOP</button>
+                <button onClick={() => onThrottleChange(0.5)} className="zion-button-ghost !py-1 text-[10px]" title={`${hudText('half', lang)} (2)`}>½</button>
+                <button onClick={() => onThrottleChange(1)} className="zion-button-ghost !py-1 text-[10px] text-oasis-cyan" title={`${hudText('full', lang)} (3)`}>FULL</button>
               </div>
             </div>
           )}
@@ -482,7 +513,7 @@ function ControlHud({
                 ? 'border-oasis-gold/30 bg-oasis-gold/10 text-oasis-gold hover:bg-oasis-gold/20'
                 : 'border-white/10 bg-black/40 text-white/50'
             }`}
-            title={canWarp ? 'Warp to target' : 'Warp unavailable'}
+            title={canWarp ? hudText('warpTo', lang) : hudText('warpNo', lang)}
           >
             {warping ? (
               <>
@@ -503,10 +534,10 @@ function ControlHud({
               <button
                 onClick={() => landTarget && onApproach(landTarget)}
                 className="flex items-center justify-center gap-1.5 rounded-lg border border-oasis-emerald/30 bg-oasis-emerald/10 px-2 py-1.5 text-[10px] font-bold text-oasis-emerald transition hover:bg-oasis-emerald/20"
-                title="Approach target (L)"
+                title={`${hudText('land', lang)} (L)`}
               >
                 <Target className="h-3 w-3" />
-                LAND
+                {hudText('land', lang)}
               </button>
             ) : (
               <button
@@ -514,17 +545,17 @@ function ControlHud({
                 className="flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-[10px] font-bold text-white/50"
               >
                 <Navigation className="h-3 w-3" />
-                LAND
+                {hudText('land', lang)}
               </button>
             )
           ) : onEnterFlight ? (
             <button
               onClick={onEnterFlight}
               className="flex items-center justify-center gap-1.5 rounded-lg border border-oasis-cyan/30 bg-oasis-cyan/10 px-2 py-1.5 text-[10px] font-bold text-oasis-cyan transition hover:bg-oasis-cyan/20"
-              title="Enter flight mode (F)"
+              title={`${hudText('fly', lang)} (F)`}
             >
               <Rocket className="h-3 w-3" />
-              FLY
+              {hudText('fly', lang)}
             </button>
           ) : null}
 
@@ -535,8 +566,8 @@ function ControlHud({
               animate={{ opacity: 1 }}
               className="space-y-0.5 border-t border-white/5 pt-1.5 text-[10px] text-white/60"
             >
-              <div className="flex justify-between"><span>WASD</span><span>move</span></div>
-              <div className="flex justify-between"><span>Q/E</span><span>up/down</span></div>
+              <div className="flex justify-between"><span>WASD</span><span>{hudText('move', lang)}</span></div>
+              <div className="flex justify-between"><span>Q/E</span><span>{hudText('updown', lang)}</span></div>
               <div className="flex justify-between"><span>Space</span><span>boost</span></div>
               <div className="flex justify-between"><span>1/2/3</span><span>throttle</span></div>
               <div className="flex justify-between"><span>L</span><span>land</span></div>
@@ -552,7 +583,7 @@ function ControlHud({
         className="mt-2 flex items-center gap-1 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[10px] font-semibold text-white/70 backdrop-blur-md transition hover:bg-white/10 hover:text-white"
       >
         <Settings className="h-3 w-3" />
-        {mode === 'expanded' ? 'Collapse' : 'Expand'}
+        {mode === 'expanded' ? hudText('collapse', lang) : hudText('expand', lang)}
         {mode === 'expanded' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
       </button>
     </motion.div>

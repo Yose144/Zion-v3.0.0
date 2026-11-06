@@ -2544,7 +2544,7 @@ function renderLotteryDrawer() {
         + `<td>${esc(x.worker_id)}</td>`
         + `<td>${fmtNum(x.tested || 0)}</td>`
         + `<td>${x.hits ? '🎯 ' + x.hits : '0'}</td></tr>`).join('')
-        : '<tr><td colspan="5">no units yet</td></tr>';
+        : '<tr><td colspan="5">' + ((window.zionChrome && window.zionChrome.t('empty.units')) || 'no units yet') + '</td></tr>';
     }).catch(() => {});
   }
 }
@@ -2557,20 +2557,21 @@ function updateControlButtons() {
   stopBtn.disabled = !(isRunning || isStarting);
 }
 
+function chromeStatus(code, fallback) {
+  if (window.zionChrome && window.zionChrome.t) {
+    const text = window.zionChrome.t('status.' + code);
+    if (text) return text;
+  }
+  return fallback;
+}
+
 function updateStatusBadge(status) {
   const badge = document.getElementById('status-badge');
   if (!badge) return;
-
-  if (status === 'mining') {
-    badge.className = 'status-badge mining';
-    badge.textContent = 'MINING';
-  } else if (status === 'starting') {
-    badge.className = 'status-badge stopped';
-    badge.textContent = 'STARTING';
-  } else {
-    badge.className = 'status-badge stopped';
-    badge.textContent = 'STOPPED';
-  }
+  const code = status === 'mining' ? 'mining' : status === 'starting' ? 'starting' : 'stopped';
+  badge.setAttribute('data-code', code);
+  badge.className = 'status-badge ' + (code === 'mining' ? 'mining' : 'stopped') + ' web29-badge';
+  badge.textContent = chromeStatus(code, code === 'mining' ? 'MINING' : code === 'starting' ? 'STARTING' : 'STOPPED');
 }
 
 // Stats update

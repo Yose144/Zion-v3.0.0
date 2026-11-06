@@ -10,15 +10,31 @@ import blogData from "../data/blog-posts.json";
 
 const { posts, categories } = blogData;
 
-const monthNames = {
+const monthNames: Record<string, string[]> = {
   cs: ["leden", "únor", "březen", "duben", "květen", "červen", "červenec", "srpen", "září", "říjen", "listopad", "prosinec"],
   en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+  es: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+  pt: ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"],
+  fr: ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"],
 };
 
 function formatDate(dateStr: string, lang: string) {
-  const copy = lang === "cs" ? "cs" : "en";
+  const names = monthNames[lang] ?? monthNames.en;
   const d = new Date(dateStr);
-  return `${d.getDate()}. ${monthNames[copy][d.getMonth()]} ${d.getFullYear()}`;
+  return `${d.getDate()}. ${names[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function say(lang: string, row: { cs: string; en: string; es: string; pt: string; fr: string }) {
+  if (lang === "cs") return row.cs;
+  return row[lang as "en"] ?? row.en;
+}
+
+function catLabel(cat: { label: string; labelEn: string; labelEs?: string; labelPt?: string; labelFr?: string }, lang: string) {
+  if (lang === "cs") return cat.label;
+  if (lang === "es") return cat.labelEs || cat.labelEn;
+  if (lang === "pt") return cat.labelPt || cat.labelEn;
+  if (lang === "fr") return cat.labelFr || cat.labelEn;
+  return cat.labelEn;
 }
 
 export default function BlogPage() {
@@ -50,12 +66,12 @@ export default function BlogPage() {
   const categoryLabel = (key: string) => {
     const cat = categories[key as keyof typeof categories];
     if (!cat) return key;
-    return lang === "cs" ? (cat as any).label : (cat as any).labelEn;
+    return catLabel(cat as any, lang);
   };
 
   const stats = [
-    { num: posts.length, label: lang === "cs" ? "Příspěvků" : "Posts" },
-    { num: Object.keys(years).length, label: lang === "cs" ? "Roků" : "Years" },
+    { num: posts.length, label: say(lang, { cs: "Příspěvků", en: "Posts", es: "Entradas", pt: "Publicações", fr: "Articles" }) },
+    { num: Object.keys(years).length, label: say(lang, { cs: "Roků", en: "Years", es: "Años", pt: "Anos", fr: "Années" }) },
     { num: posts.filter((p) => p.category === "tech").length, label: categoryLabel("tech") },
     { num: posts.filter((p) => p.category === "journey").length, label: categoryLabel("journey") },
   ];
@@ -76,15 +92,19 @@ export default function BlogPage() {
           <LucideIcon name="fa-file-lines" size={14} className="mr-1" /> ®Genesis Blog
         </span>
         <h1 className="text-5xl font-extrabold text-white md:text-6xl">
-          {lang === "cs" ? "Kronika" : "Chronicle"}
+          {say(lang, { cs: "Kronika", en: "Chronicle", es: "Crónica", pt: "Crónica", fr: "Chronique" })}
         </h1>
         <h2 className="text-xl text-[#fcd116] md:text-2xl">
-          {lang === "cs" ? "Nové Země" : "New Earth"}
+          {say(lang, { cs: "Nové Země", en: "New Earth", es: "Nueva Tierra", pt: "Nova Terra", fr: "Nouvelle Terre" })}
         </h2>
         <p className="max-w-xl text-white/70">
-          {lang === "cs"
-            ? "Od prvního dne cesty — po probuzení ZION sítě"
-            : "From the first day of the journey — to the awakening of the ZION network"}
+          {say(lang, {
+            cs: "Od prvního dne cesty — po probuzení ZION sítě",
+            en: "From the first day of the journey — to the awakening of the ZION network",
+            es: "Desde el primer día del camino — hasta el despertar de la red ZION",
+            pt: "Desde o primeiro dia da viagem — até ao despertar da rede ZION",
+            fr: "Du premier jour du chemin — jusqu’à l’éveil du réseau ZION",
+          })}
         </p>
       </HeroImage>
 
@@ -103,19 +123,23 @@ export default function BlogPage() {
         <section>
           <div className="text-center">
             <h2 className="major">
-              {lang === "cs" ? "Archiv příspěvků" : "Archive posts"}
+              {say(lang, { cs: "Archiv příspěvků", en: "Archive posts", es: "Archivo de entradas", pt: "Arquivo de publicações", fr: "Archive des articles" })}
             </h2>
           </div>
           <p className="text-center text-white/70">
-            {lang === "cs"
-              ? "Kompletní kronika projektu — od prvního dne cesty v roce 2023 po ZION MAINNET BETA 2026."
-              : "The complete chronicle of the project — from the first day of the journey in 2023 to ZION MAINNET BETA 2026."}
+            {say(lang, {
+              cs: "Kompletní kronika projektu — od prvního dne cesty v roce 2023 po ZION MAINNET BETA 2026.",
+              en: "The complete chronicle of the project — from the first day of the journey in 2023 to ZION MAINNET BETA 2026.",
+              es: "La crónica completa del proyecto — del primer día del camino en 2023 a ZION MAINNET BETA 2026.",
+              pt: "A crónica completa do projeto — do primeiro dia da viagem em 2023 ao ZION MAINNET BETA 2026.",
+              fr: "La chronique complète du projet — du premier jour du chemin en 2023 à ZION MAINNET BETA 2026.",
+            })}
           </p>
 
           <div className="my-6 flex flex-wrap justify-center gap-2">
             {Object.keys(categories).map((key) => {
               const cat = categories[key as keyof typeof categories] as any;
-              const label = lang === "cs" ? cat.label : cat.labelEn;
+              const label = catLabel(cat, lang);
               const active = filter === key;
               return (
                 <button
@@ -136,7 +160,7 @@ export default function BlogPage() {
           {sortedYears.length === 0 && (
             <div className="py-12 text-center text-white/40">
               <LucideIcon name="fa-search" size={32} className="mb-2 opacity-30" />
-              <p>{lang === "cs" ? "Žádné příspěvky v této kategorii." : "No posts in this category."}</p>
+              <p>{say(lang, { cs: "Žádné příspěvky v této kategorii.", en: "No posts in this category.", es: "No hay entradas en esta categoría.", pt: "Não há publicações nesta categoria.", fr: "Aucun article dans cette catégorie." })}</p>
             </div>
           )}
 
@@ -156,14 +180,14 @@ export default function BlogPage() {
                   </span>
                   <div className="h-0.5 flex-1 bg-gradient-to-r from-[#fcd116] to-transparent"></div>
                   <span className="text-xs text-white/50">
-                    {years[year].length} {lang === "cs" ? "příspěvků" : "posts"}
+                    {years[year].length} {say(lang, { cs: "příspěvků", en: "posts", es: "entradas", pt: "publicações", fr: "articles" })}
                   </span>
                 </div>
                 <div className="space-y-4">
                   {years[year].map((post) => {
                     const cat = categories[post.category as keyof typeof categories] as any;
-                    const title = lang === "en" ? post.titleEn || post.title : post.title;
-                    const excerpt = lang === "en" ? post.excerptEn || post.excerpt : post.excerpt;
+                    const title = lang === "cs" ? post.title : post.titleEn || post.title;
+                    const excerpt = lang === "cs" ? post.excerpt : post.excerptEn || post.excerpt;
                     return (
                       <Link
                         key={post.slug}
@@ -191,7 +215,7 @@ export default function BlogPage() {
                               className="rounded-full px-2 py-0.5 font-semibold"
                               style={{ backgroundColor: `${cat?.color}1A`, color: cat?.color }}
                             >
-                              {lang === "cs" ? cat?.label : cat?.labelEn}
+                              {cat ? catLabel(cat, lang) : ""}
                             </span>
                           </div>
                           <h3 className="!my-1 flex items-center gap-2 text-lg font-bold text-white group-hover:text-[#fcd116]">
@@ -211,9 +235,13 @@ export default function BlogPage() {
           <div className="mt-10 rounded-xl border border-[#fcd116]/10 bg-[rgba(252,209,22,0.03)] p-6 text-center text-[#fcd116]">
             <LucideIcon name="fa-om" size={32} className="mb-2" />
             <p>
-              {lang === "cs"
-                ? "V jednotě je síla. Ve vědomí je pravda. V lásce je vše."
-                : "In unity there is strength. In consciousness there is truth. In love there is everything."}
+              {say(lang, {
+                cs: "V jednotě je síla. Ve vědomí je pravda. V lásce je vše.",
+                en: "In unity there is strength. In consciousness there is truth. In love there is everything.",
+                es: "En la unidad está la fuerza. En la conciencia está la verdad. En el amor está todo.",
+                pt: "Na unidade está a força. Na consciência está a verdade. No amor está tudo.",
+                fr: "Dans l’unité est la force. Dans la conscience est la vérité. Dans l’amour est tout.",
+              })}
             </p>
           </div>
         </section>

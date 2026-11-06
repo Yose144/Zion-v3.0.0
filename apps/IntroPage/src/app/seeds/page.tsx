@@ -8,10 +8,17 @@ import HeroImage from "../components/HeroImage";
 import LucideIcon from "../components/LucideIcon";
 import data from "../data/seeds-data.json";
 
+function pick<T>(block: { cs: T; en: T; es?: T; pt?: T; fr?: T }, lang: string): T {
+  if (lang === "es" && block.es) return block.es;
+  if (lang === "pt" && block.pt) return block.pt;
+  if (lang === "fr" && block.fr) return block.fr;
+  if (lang === "cs") return block.cs;
+  return block.en;
+}
+
 export default function SeedsIndexPage() {
   const [lang, setLang] = useState<"cs" | "en" | "es" | "pt" | "fr">("cs");
-  const copy = lang === "cs" ? "cs" : "en";
-  const t = data.index[copy];
+  const t = pick(data.index, lang);
 
   return (
     <PageLayout lang={lang} setLang={setLang}>
@@ -83,7 +90,7 @@ export default function SeedsIndexPage() {
             <LucideIcon name="fa-leaf" size={24} />
             <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[#fcd116]"></div>
           </div>
-          <p className="italic text-[#078930]">{data.footer[copy]}</p>
+          <p className="italic text-[#078930]">{pick(data.footer, lang)}</p>
           <div className="mt-6 flex justify-center gap-6 text-2xl">
             {data.socials.map((s: any, i: number) => (
               <a

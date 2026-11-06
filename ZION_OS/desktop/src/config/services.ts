@@ -15,6 +15,8 @@ export interface ServiceEndpoint {
   apiBase?: string;
   /** Optional metrics path for Prometheus exposition. */
   metricsPath?: string;
+  /** Full base URL. When set, RPC and health use it instead of host:port. */
+  url?: string;
 }
 
 function envOr(key: string, fallback: string): string {
@@ -64,6 +66,43 @@ export const PREFERRED_NODE: ServiceEndpoint = LOCAL_BACKUP_NODE;
 export const FALLBACK_NODE: ServiceEndpoint = EDGE_NODE1;
 
 export const NODES = [EDGE_NODE1, EDGE_NODE2, LOCAL_BACKUP_NODE];
+
+/** Public mainnet RPC. Used when the operator machine has no local node. */
+export const PUBLIC_RPC: ServiceEndpoint = {
+  id: 'public-rpc',
+  label: 'Public RPC',
+  host: 'rpc.zionterranova.com',
+  port: 443,
+  url: 'https://rpc.zionterranova.com',
+  jsonrpc: true,
+};
+
+/** Dev uses the Vite proxy so the browser is not blocked by the pool's missing CORS header. */
+export const PUBLIC_POOL_STATS = import.meta.env.DEV
+  ? '/live/pool/public/v1/coins/zion/stats'
+  : 'https://pool.zionterranova.com/public/v1/coins/zion/stats';
+
+/** Public health that does not need a login. Dev goes through the same Vite proxy as the pool. */
+export const PUBLIC_OASIS_HEALTH = import.meta.env.DEV
+  ? '/live/oasis/health'
+  : 'https://oasis.zionterranova.com/health';
+export const PUBLIC_WEB_HEALTH = import.meta.env.DEV
+  ? '/live/app/api/health'
+  : 'https://app.zionterranova.com/api/health';
+export const PUBLIC_FREE_WORLD_HEALTH = import.meta.env.DEV
+  ? '/live/app/api/free-world/health'
+  : 'https://app.zionterranova.com/api/free-world/health';
+export const PUBLIC_ISSOBELLA_HEALTH = import.meta.env.DEV
+  ? '/live/app/api/issobella/health'
+  : 'https://app.zionterranova.com/api/issobella/health';
+
+export const WEB: ServiceEndpoint = {
+  id: 'web',
+  label: 'Web',
+  host: 'app.zionterranova.com',
+  port: 443,
+  url: 'https://app.zionterranova.com',
+};
 
 // ── L1 services ──────────────────────────────────────────────────────────
 export const POOL: ServiceEndpoint = {
@@ -174,12 +213,13 @@ export const EDGE_WEB = envOr('VITE_EDGE_WEB', 'https://zionterranova.com');
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 export function endpointUrl(ep: ServiceEndpoint, path: string): string {
-  const base = `http://${ep.host}:${ep.port}${ep.apiBase ?? ''}`;
+  const base = ep.url ? ep.url.replace(/\/$/, '') : `http://${ep.host}:${ep.port}${ep.apiBase ?? ''}`;
   const p = path.startsWith('/') ? path : `/${path}`;
   return `${base}${p}`;
 }
 
 export function rpcUrl(ep: ServiceEndpoint): string {
+  if (ep.url) return ep.url.replace(/\/$/, '');
   return `http://${ep.host}:${ep.port}/jsonrpc`;
 }
 

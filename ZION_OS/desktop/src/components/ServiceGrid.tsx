@@ -9,6 +9,7 @@ interface Props {
 function statusClass(s: ServiceHealth): string {
   const st = s.status || (s.alive ? 'running' : 'down');
   if (st === 'running' || st === 'online') return 'status-live';
+  if (st === 'local') return 'status-local';
   if (s.derived === 'degraded') return 'status-degraded';
   return 'status-down';
 }
@@ -16,6 +17,7 @@ function statusClass(s: ServiceHealth): string {
 function statusText(s: ServiceHealth): string {
   const st = s.status || (s.alive ? 'running' : 'down');
   if (st === 'running' || st === 'online') return 'LIVE';
+  if (st === 'local') return 'LOCAL';
   if (s.derived === 'degraded') return 'DEGRADED';
   return 'DOWN';
 }
@@ -23,6 +25,7 @@ function statusText(s: ServiceHealth): string {
 function statusBadgeClass(s: ServiceHealth): string {
   const st = s.status || (s.alive ? 'running' : 'down');
   if (st === 'running' || st === 'online') return 'zion-badge-green';
+  if (st === 'local') return '';
   if (s.derived === 'degraded') return 'zion-badge-amber';
   return 'zion-badge-red';
 }

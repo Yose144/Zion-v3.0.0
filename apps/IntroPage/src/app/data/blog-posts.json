@@ -441,37 +441,55 @@
       "label": "Vše",
       "labelEn": "All",
       "color": "#fff",
-      "icon": "fa-solid fa-border-all"
+      "icon": "fa-solid fa-border-all",
+      "labelEs": "Todo",
+      "labelPt": "Tudo",
+      "labelFr": "Tout"
     },
     "tech": {
       "label": "⛓️ ZION Tech",
       "labelEn": "⛓️ ZION Tech",
       "color": "#00d4ff",
-      "icon": "fa-solid fa-microchip"
+      "icon": "fa-solid fa-microchip",
+      "labelEs": "⛓️ ZION Tech",
+      "labelPt": "⛓️ ZION Tech",
+      "labelFr": "⛓️ ZION Tech"
     },
     "journey": {
       "label": "🌍 Cesta",
       "labelEn": "🌍 Journey",
       "color": "#4CAF50",
-      "icon": "fa-solid fa-route"
+      "icon": "fa-solid fa-route",
+      "labelEs": "🌍 Camino",
+      "labelPt": "🌍 Caminho",
+      "labelFr": "🌍 Chemin"
     },
     "story": {
       "label": "📖 Příběhy",
       "labelEn": "📖 Stories",
       "color": "#FF9800",
-      "icon": "fa-solid fa-book"
+      "icon": "fa-solid fa-book",
+      "labelEs": "📖 Historias",
+      "labelPt": "📖 Histórias",
+      "labelFr": "📖 Récits"
     },
     "spiritual": {
       "label": "🕉️ Duchovní",
       "labelEn": "🕉️ Spiritual",
       "color": "#E040FB",
-      "icon": "fa-solid fa-spa"
+      "icon": "fa-solid fa-spa",
+      "labelEs": "🕉️ Espiritual",
+      "labelPt": "🕉️ Espiritual",
+      "labelFr": "🕉️ Spirituel"
     },
     "announcement": {
       "label": "📢 Oznámení",
       "labelEn": "📢 News",
       "color": "#FFD700",
-      "icon": "fa-solid fa-bullhorn"
+      "icon": "fa-solid fa-bullhorn",
+      "labelEs": "📢 Avisos",
+      "labelPt": "📢 Avisos",
+      "labelFr": "📢 Annonces"
     }
   }
 }

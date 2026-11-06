@@ -1,16 +1,15 @@
 // Aggregate direct API calls into the dashboard data model.
 // This replaces the old Python dashboard /api/status, /api/services, /api/alerts etc.
 
-import { LOCAL_BACKUP_NODE, EDGE_NODE1, EDGE_NODE2, POOL, DAO, WARP, OASIS, BRIDGE, ATOMIC_SWAP, SWAP_AGGREGATOR, HIRANYAGARBHA, HIRAN_INFERENCE, FREE_WORLD, ISSOBELLA, type ServiceEndpoint } from '../config/services';
-import { queryAllNodes, getLocalOrEdgeChainInfo, getLocalOrEdgeNodeInfo, getMempoolInfo, type ChainInfo, type NodeInfo, type NodeStatus } from './node';
+import {
+  LOCAL_BACKUP_NODE, EDGE_NODE1, EDGE_NODE2, PUBLIC_RPC, POOL, DAO, WARP, OASIS, BRIDGE,
+  ATOMIC_SWAP, SWAP_AGGREGATOR, HIRANYAGARBHA, HIRAN_INFERENCE, FREE_WORLD, ISSOBELLA, WEB,
+  PUBLIC_OASIS_HEALTH, PUBLIC_WEB_HEALTH, PUBLIC_FREE_WORLD_HEALTH, PUBLIC_ISSOBELLA_HEALTH,
+  type ServiceEndpoint,
+} from '../config/services';
+import { queryAllNodes, getMempoolInfo, type ChainInfo, type NodeStatus } from './node';
 import { fetchPoolStats, type PoolStats } from './pool';
-import { checkDaoHealth } from './dao';
-import { checkWarpHealth } from './warp';
-import { checkOasisHealth } from './oasis';
-import { checkBridgeHealth } from './bridge';
-import { checkSwapHealth, checkSwapAggregatorHealth } from './swap';
-import { checkOrchestratorHealth, checkHiranInferenceHealth } from './hiran';
-import { fetchFreeWorldStats, fetchIssobellaStats } from './auxiliary';
+import { httpGet, shareLatest, type SharedSlot } from '../lib/client';
 import type { ServiceHealth, V3Status, AlertItem, ReadinessScore, LayerStatusResponse } from '../lib/api';
 
 export interface DirectStatus {
@@ -43,27 +42,35 @@ function svcHealth(ep: ServiceEndpoint, alive: boolean, meta?: Record<string, un
   };
 }
 
-export async function fetchDirectFullStatus(): Promise<DirectStatus> {
+const fullSlot: SharedSlot<DirectStatus> = { inflight: null, cached: null };
+
+export function fetchDirectFullStatus(): Promise<DirectStatus> {
+  return shareLatest(fullSlot, loadDirectFullStatus);
+}
+
+async function loadDirectFullStatus(): Promise<DirectStatus> {
   const now = new Date().toISOString();
 
-  const [nodes, chainInfo, nodeInfo, mempool, poolStats] = await Promise.all([
+  const [nodes, poolStats] = await Promise.all([
     queryAllNodes(),
-    getLocalOrEdgeChainInfo(),
-    getLocalOrEdgeNodeInfo(),
-    getMempoolInfo(LOCAL_BACKUP_NODE).catch(() => null),
     fetchPoolStats().catch(() => null),
   ]);
 
   const edge1 = nodes.find((n) => n.endpoint.id === 'edge-node1');
   const edge2 = nodes.find((n) => n.endpoint.id === 'edge-node2');
   const local = nodes.find((n) => n.endpoint.id === 'local-backup');
+  const publicRpc = nodes.find((n) => n.endpoint.id === 'public-rpc');
+  const edgeShown = edge1?.alive ? edge1 : publicRpc;
+  const chainInfo =
+    local?.chainInfo ?? edge1?.chainInfo ?? edge2?.chainInfo ?? publicRpc?.chainInfo ?? null;
+  const mempool = local?.alive ? await getMempoolInfo(LOCAL_BACKUP_NODE).catch(() => null) : null;
 
   const status: V3Status = {
     timestamp: now,
-    topology: 'local-dev',
-    node1: nodeStatus(edge1),
+    topology: local?.alive ? 'local-dev' : 'edge-primary',
+    node1: nodeStatus(local),
     node2: nodeStatus(edge2),
-    edge_node: nodeStatus(edge1),
+    edge_node: nodeStatus(edgeShown),
     pool: {
       running: !!poolStats,
       active_sessions: poolStats?.active_sessions ?? 0,
@@ -96,16 +103,16 @@ export async function fetchDirectFullStatus(): Promise<DirectStatus> {
     },
   };
 
-  const services = await buildServicesHealth(poolStats);
+  const services = await buildServicesHealth(nodes, poolStats);
 
   const alerts: AlertItem[] = buildAlerts(nodes, poolStats, chainInfo, mempool);
 
   const readiness: ReadinessScore = {
     score: 0,
     checks: [
-      { id: 'node_sync', ok: !!local?.chainInfo || !!edge1?.chainInfo },
+      { id: 'node_sync', ok: !!local?.chainInfo || !!edge1?.chainInfo || !!publicRpc?.chainInfo },
       { id: 'pool_online', ok: !!poolStats },
-      { id: 'peers', ok: (local?.nodeInfo?.known_peers ?? 0) > 0 || (edge1?.nodeInfo?.known_peers ?? 0) > 0 },
+      { id: 'peers', ok: (local?.nodeInfo?.known_peers ?? 0) > 0 || (edge1?.nodeInfo?.known_peers ?? 0) > 0 || (publicRpc?.nodeInfo?.known_peers ?? 0) > 0 },
       { id: 'chain_height', ok: (chainInfo?.chain_height ?? 0) > 0 },
     ],
   };
@@ -148,50 +155,58 @@ function nodeStatus(n?: NodeStatus): V3Status['node1'] {
   };
 }
 
-async function buildServicesHealth(poolStats: PoolStats | null): Promise<ServiceHealth[]> {
-  const [
-    daoAlive,
-    warpAlive,
-    oasisAlive,
-    bridgeAlive,
-    swapAlive,
-    swapAggAlive,
-    orchAlive,
-    hiranAlive,
-    freeWorldStats,
-    issobellaStats,
-  ] = await Promise.all([
-    checkDaoHealth().catch(() => false),
-    checkWarpHealth().catch(() => false),
-    checkOasisHealth().catch(() => false),
-    checkBridgeHealth().catch(() => false),
-    checkSwapHealth().catch(() => false),
-    checkSwapAggregatorHealth().catch(() => false),
-    checkOrchestratorHealth().catch(() => false),
-    checkHiranInferenceHealth().catch(() => false),
-    fetchFreeWorldStats().catch(() => null),
-    fetchIssobellaStats().catch(() => null),
+function asRecord(data: unknown): Record<string, unknown> | null {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
+  return data as Record<string, unknown>;
+}
+
+async function publicAlive(url: string, pred: (d: Record<string, unknown>) => boolean): Promise<boolean> {
+  const rec = asRecord(await httpGet<unknown>(url, 4000));
+  return !!rec && pred(rec);
+}
+
+function card(ep: ServiceEndpoint, alive: boolean, level: string, miss: 'local' | 'offline', meta?: Record<string, unknown>): ServiceHealth {
+  return {
+    ...svcHealth(ep, alive, meta),
+    level,
+    status: alive ? 'online' : miss,
+    alive,
+  };
+}
+
+async function buildServicesHealth(nodes: NodeStatus[], poolStats: PoolStats | null): Promise<ServiceHealth[]> {
+  const [oasisAlive, webAlive, freeWorldAlive, issobellaAlive] = await Promise.all([
+    publicAlive(PUBLIC_OASIS_HEALTH, (d) => {
+      const inner = asRecord(d.data);
+      return d.success === true && inner?.status === 'ok';
+    }),
+    publicAlive(PUBLIC_WEB_HEALTH, (d) => d.status === 'ok'),
+    publicAlive(PUBLIC_FREE_WORLD_HEALTH, (d) => d.success === true && d.data === 'ok'),
+    publicAlive(PUBLIC_ISSOBELLA_HEALTH, (d) => d.success === true && d.data === 'ok'),
   ]);
 
+  const up = (id: string) => nodes.find((n) => n.endpoint.id === id)?.alive ?? false;
   return [
-    svcHealth(LOCAL_BACKUP_NODE, true),
-    svcHealth(EDGE_NODE1, true, { level: 'L1' }),
-    svcHealth(EDGE_NODE2, true, { level: 'L1' }),
-    svcHealth(POOL, !!poolStats, {
+    card(LOCAL_BACKUP_NODE, up('local-backup'), 'L1', 'local'),
+    card(EDGE_NODE1, up('edge-node1'), 'L1', 'local'),
+    card(EDGE_NODE2, up('edge-node2'), 'L1', 'local'),
+    card(PUBLIC_RPC, up('public-rpc'), 'L1', 'offline'),
+    card(POOL, !!poolStats, 'L1', 'offline', {
       sessions: poolStats?.active_sessions ?? 0,
       blocks: poolStats?.blocks_found ?? 0,
       hashrate: poolStats?.hashrate_live ?? 0,
     }),
-    svcHealth(DAO, daoAlive, { level: 'L2' }),
-    svcHealth(BRIDGE, bridgeAlive, { level: 'L2' }),
-    svcHealth(ATOMIC_SWAP, swapAlive, { level: 'L2' }),
-    svcHealth(SWAP_AGGREGATOR, swapAggAlive, { level: 'L2' }),
-    svcHealth(WARP, warpAlive, { level: 'L3' }),
-    svcHealth(OASIS, oasisAlive, { level: 'L4' }),
-    svcHealth(FREE_WORLD, !!freeWorldStats, { level: 'L5' }),
-    svcHealth(ISSOBELLA, !!issobellaStats, { level: 'L6' }),
-    svcHealth(HIRANYAGARBHA, orchAlive, { level: 'AI' }),
-    svcHealth(HIRAN_INFERENCE, hiranAlive, { level: 'AI' }),
+    card(DAO, false, 'L2', 'local'),
+    card(BRIDGE, false, 'L2', 'local'),
+    card(ATOMIC_SWAP, false, 'L2', 'local'),
+    card(SWAP_AGGREGATOR, false, 'L2', 'local'),
+    card(WARP, false, 'L3', 'local'),
+    card(OASIS, oasisAlive, 'L4', 'local'),
+    card(FREE_WORLD, freeWorldAlive, 'L5', 'local'),
+    card(ISSOBELLA, issobellaAlive, 'L6', 'local'),
+    card(HIRANYAGARBHA, false, 'AI', 'local'),
+    card(HIRAN_INFERENCE, false, 'AI', 'local'),
+    card(WEB, webAlive, 'Infra', 'local'),
   ];
 }
 
@@ -199,9 +214,12 @@ function buildAlerts(nodes: NodeStatus[], poolStats: PoolStats | null, chainInfo
   const alerts: AlertItem[] = [];
   const local = nodes.find((n) => n.endpoint.id === 'local-backup');
   const edge1 = nodes.find((n) => n.endpoint.id === 'edge-node1');
+  const publicRpc = nodes.find((n) => n.endpoint.id === 'public-rpc');
 
-  if (!local?.alive && !edge1?.alive) {
-    alerts.push({ severity: 'critical', title: 'No node reachable', detail: 'Neither local backup nor Edge RPC responded.' });
+  if (!local?.alive && !edge1?.alive && !publicRpc?.alive && !chainInfo) {
+    alerts.push({ severity: 'critical', title: 'No node reachable', detail: 'Local backup, Edge RPC and the public RPC did not respond.' });
+  } else if (!local?.alive && !edge1?.alive && (publicRpc?.alive || chainInfo)) {
+    alerts.push({ severity: 'info', title: 'Public RPC', detail: 'Local nodes are offline. Chain height is from rpc.zionterranova.com.' });
   }
   if (local?.alive && edge1?.alive && local.chainInfo && edge1.chainInfo) {
     const gap = Math.abs(local.chainInfo.chain_height - edge1.chainInfo.chain_height);

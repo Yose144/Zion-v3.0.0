@@ -199,6 +199,16 @@ body {
     border-color: rgba(239, 68, 68, 0.35);
   }
 
+  .status-local {
+    border-color: rgba(156, 163, 175, 0.28);
+    opacity: 0.72;
+  }
+
+  .status-local {
+    border-color: rgba(156, 163, 175, 0.28);
+    opacity: 0.72;
+  }
+
   /* macOS-style bottom dock like the legacy desktop-agent */
   .zion-dock {
     display: flex;

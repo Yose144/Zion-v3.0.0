@@ -13,6 +13,27 @@
       "heroSubtitle": "Choose from the premium ZION TerraNova strain collection.",
       "cta": "Explore strains",
       "title": "Seeds"
+    },
+    "es": {
+      "heroBadge": "🌿 ZION Seeds",
+      "heroTitle": "Nuestras semillas",
+      "heroSubtitle": "Elige entre la colección premium de variedades ZION TerraNova.",
+      "cta": "Explorar variedades",
+      "title": "Semillas"
+    },
+    "pt": {
+      "heroBadge": "🌿 ZION Seeds",
+      "heroTitle": "As nossas sementes",
+      "heroSubtitle": "Escolhe na coleção premium de variedades ZION TerraNova.",
+      "cta": "Explorar variedades",
+      "title": "Sementes"
+    },
+    "fr": {
+      "heroBadge": "🌿 ZION Seeds",
+      "heroTitle": "Nos graines",
+      "heroSubtitle": "Choisis dans la collection premium de variétés ZION TerraNova.",
+      "cta": "Explorer les variétés",
+      "title": "Graines"
     }
   },
   "strains": [
@@ -25,50 +46,153 @@
       "heroBg": "/legacy/img/seeds/emc2.jpg",
       "subtitle": "„Energie rovná se hmotnost krát rychlost světla na druhou\"",
       "stats": [
-        { "icon": "fa-leaf", "value": "30/70", "label": "Indica/Sativa" },
-        { "icon": "fa-flask", "value": "18-22%", "label": "THC" },
-        { "icon": "fa-heart-pulse", "value": "3-5%", "label": "CBD" },
-        { "icon": "fa-clock", "value": "8-9", "label": "Týdnů květu" }
+        {
+          "icon": "fa-leaf",
+          "value": "30/70",
+          "label": "Indica/Sativa"
+        },
+        {
+          "icon": "fa-flask",
+          "value": "18-22%",
+          "label": "THC"
+        },
+        {
+          "icon": "fa-heart-pulse",
+          "value": "3-5%",
+          "label": "CBD"
+        },
+        {
+          "icon": "fa-clock",
+          "value": "8-9",
+          "label": "Týdnů květu"
+        }
       ],
       "description": {
         "intro": "<p><strong>E = MC²</strong> – Einsteinova rovnice převedená do botanické formy. Tento sativa-dominantní hybrid je výsledkem spojení mocného <em>Elephanta</em> (Ganesh Spirit lineage) s robustní <em>Gaiou</em>. Výsledkem je strain plný čisté mentální energie a kreativity.</p>",
         "body": "<p>Ideální pro ranní rituály, brainstorming a kreativní projekty. E = MC² vás katapultuje do stavu hyperkoncentrace, kdy se myšlenky spojují rychlostí světla. Perfektní pro umělce, programátory a všechny, kdo potřebují mentální boost.</p>"
       },
       "genetics": [
-        { "label": "THC obsah", "value": "18-22%", "width": 80, "key": "thc" },
-        { "label": "CBD obsah", "value": "3-5%", "width": 30, "key": "cbd" },
-        { "label": "Indica", "value": "30%", "width": 30, "key": "indica" },
-        { "label": "Sativa", "value": "70%", "width": 70, "key": "sativa" }
+        {
+          "label": "THC obsah",
+          "value": "18-22%",
+          "width": 80,
+          "key": "thc"
+        },
+        {
+          "label": "CBD obsah",
+          "value": "3-5%",
+          "width": 30,
+          "key": "cbd"
+        },
+        {
+          "label": "Indica",
+          "value": "30%",
+          "width": 30,
+          "key": "indica"
+        },
+        {
+          "label": "Sativa",
+          "value": "70%",
+          "width": 70,
+          "key": "sativa"
+        }
       ],
       "effects": {
         "positive": [
-          { "icon": "fa-bolt", "label": "Energizující" },
-          { "icon": "fa-brain", "label": "Mentální fokus" },
-          { "icon": "fa-lightbulb", "label": "Kreativní" },
-          { "icon": "fa-face-grin-stars", "label": "Euforický" },
-          { "icon": "fa-rocket", "label": "Motivační" },
-          { "icon": "fa-comments", "label": "Konverzační" }
+          {
+            "icon": "fa-bolt",
+            "label": "Energizující"
+          },
+          {
+            "icon": "fa-brain",
+            "label": "Mentální fokus"
+          },
+          {
+            "icon": "fa-lightbulb",
+            "label": "Kreativní"
+          },
+          {
+            "icon": "fa-face-grin-stars",
+            "label": "Euforický"
+          },
+          {
+            "icon": "fa-rocket",
+            "label": "Motivační"
+          },
+          {
+            "icon": "fa-comments",
+            "label": "Konverzační"
+          }
         ],
         "negative": [
-          { "icon": "fa-droplet", "label": "Sucho v ústech" },
-          { "icon": "fa-heart-pulse", "label": "Zrychlený tep (vysoké dávky)" },
-          { "icon": "fa-head-side-virus", "label": "Úzkost u citlivých" }
+          {
+            "icon": "fa-droplet",
+            "label": "Sucho v ústech"
+          },
+          {
+            "icon": "fa-heart-pulse",
+            "label": "Zrychlený tep (vysoké dávky)"
+          },
+          {
+            "icon": "fa-head-side-virus",
+            "label": "Úzkost u citlivých"
+          }
         ],
         "negativeTitle": "Možné vedlejší účinky"
       },
       "terpenes": [
-        { "name": "Terpinolen", "width": 80, "aroma": "🌲 Jehličí, citrus" },
-        { "name": "Pinen", "width": 70, "aroma": "🌿 Borovice, svěží" },
-        { "name": "Limonen", "width": 65, "aroma": "🍋 Citrón, grapefruit" },
-        { "name": "Ocimen", "width": 45, "aroma": "🌸 Sladký, tropický" }
+        {
+          "name": "Terpinolen",
+          "width": 80,
+          "aroma": "🌲 Jehličí, citrus"
+        },
+        {
+          "name": "Pinen",
+          "width": 70,
+          "aroma": "🌿 Borovice, svěží"
+        },
+        {
+          "name": "Limonen",
+          "width": 65,
+          "aroma": "🍋 Citrón, grapefruit"
+        },
+        {
+          "name": "Ocimen",
+          "width": 45,
+          "aroma": "🌸 Sladký, tropický"
+        }
       ],
       "growInfo": [
-        { "icon": "fa-calendar", "title": "Doba květu", "value": "8-9 týdnů" },
-        { "icon": "fa-ruler-vertical", "title": "Výška", "value": "150-200 cm" },
-        { "icon": "fa-weight-hanging", "title": "Výnos Indoor", "value": "550-650 g/m²" },
-        { "icon": "fa-sun", "title": "Sklizeň Outdoor", "value": "Polovina září" },
-        { "icon": "fa-temperature-half", "title": "Klima", "value": "Teplé/Suché" },
-        { "icon": "fa-star", "title": "Obtížnost", "value": "Pokročilý" }
+        {
+          "icon": "fa-calendar",
+          "title": "Doba květu",
+          "value": "8-9 týdnů"
+        },
+        {
+          "icon": "fa-ruler-vertical",
+          "title": "Výška",
+          "value": "150-200 cm"
+        },
+        {
+          "icon": "fa-weight-hanging",
+          "title": "Výnos Indoor",
+          "value": "550-650 g/m²"
+        },
+        {
+          "icon": "fa-sun",
+          "title": "Sklizeň Outdoor",
+          "value": "Polovina září"
+        },
+        {
+          "icon": "fa-temperature-half",
+          "title": "Klima",
+          "value": "Teplé/Suché"
+        },
+        {
+          "icon": "fa-star",
+          "title": "Obtížnost",
+          "value": "Pokročilý"
+        }
       ],
       "lineage": {
         "mother": "ELEPHANT",
@@ -84,23 +208,47 @@
         "buy": "Koupit v eShopu"
       },
       "nav": {
-        "prev": { "slug": "ramayana", "label": "Ramayana" },
-        "next": { "slug": "genesis", "label": "Genesis (Father Strain)" }
+        "prev": {
+          "slug": "ramayana",
+          "label": "Ramayana"
+        },
+        "next": {
+          "slug": "genesis",
+          "label": "Genesis (Father Strain)"
+        }
       }
     },
     {
       "slug": "genesis",
       "name": "GENESIS",
       "badge": "Originál 2014",
-      "badgeStyle": { "background": "linear-gradient(90deg, #ffd700, #ff8c00)" },
+      "badgeStyle": {
+        "background": "linear-gradient(90deg, #ffd700, #ff8c00)"
+      },
       "image": "/legacy/img/kalacakra1.png",
       "heroBg": "/legacy/img/kalacakra1.png",
       "subtitle": "„The Father Strain – Počátek všeho\"",
       "stats": [
-        { "icon": "fa-leaf", "value": "60/40", "label": "Indica/Sativa" },
-        { "icon": "fa-flask", "value": "14-18%", "label": "THC" },
-        { "icon": "fa-heart-pulse", "value": "6-9%", "label": "CBD" },
-        { "icon": "fa-clock", "value": "9-10", "label": "Týdnů květu" }
+        {
+          "icon": "fa-leaf",
+          "value": "60/40",
+          "label": "Indica/Sativa"
+        },
+        {
+          "icon": "fa-flask",
+          "value": "14-18%",
+          "label": "THC"
+        },
+        {
+          "icon": "fa-heart-pulse",
+          "value": "6-9%",
+          "label": "CBD"
+        },
+        {
+          "icon": "fa-clock",
+          "value": "9-10",
+          "label": "Týdnů květu"
+        }
       ],
       "description": {
         "intro": "<p><strong>GENESIS</strong> – otcovský strain, ze kterého vše začalo. Vyšlechtěn v roce 2014 jako základ pro celý šlechtitelský program ZION Seeds. Spojuje legendární genetiku <em>Medicinmana</em> od Mr. Nice s osvědčeným <em>Fenixem</em>, přičemž v linii nese geny Early Pearl, Magic Krystal a Afghanis Special.</p>",
@@ -112,39 +260,123 @@
         }
       },
       "genetics": [
-        { "label": "THC obsah", "value": "14-18%", "width": 62, "key": "thc" },
-        { "label": "CBD obsah", "value": "6-9%", "width": 58, "key": "cbd" },
-        { "label": "Indica", "value": "60%", "width": 60, "key": "indica" },
-        { "label": "Sativa", "value": "40%", "width": 40, "key": "sativa" }
+        {
+          "label": "THC obsah",
+          "value": "14-18%",
+          "width": 62,
+          "key": "thc"
+        },
+        {
+          "label": "CBD obsah",
+          "value": "6-9%",
+          "width": 58,
+          "key": "cbd"
+        },
+        {
+          "label": "Indica",
+          "value": "60%",
+          "width": 60,
+          "key": "indica"
+        },
+        {
+          "label": "Sativa",
+          "value": "40%",
+          "width": 40,
+          "key": "sativa"
+        }
       ],
       "effects": {
         "positive": [
-          { "icon": "fa-balance-scale", "label": "Vyvážený" },
-          { "icon": "fa-spa", "label": "Relaxační" },
-          { "icon": "fa-heart", "label": "Euforický" },
-          { "icon": "fa-shield-halved", "label": "Analgetický" },
-          { "icon": "fa-brain", "label": "Clarity" },
-          { "icon": "fa-utensils", "label": "Zvýšená chuť" }
+          {
+            "icon": "fa-balance-scale",
+            "label": "Vyvážený"
+          },
+          {
+            "icon": "fa-spa",
+            "label": "Relaxační"
+          },
+          {
+            "icon": "fa-heart",
+            "label": "Euforický"
+          },
+          {
+            "icon": "fa-shield-halved",
+            "label": "Analgetický"
+          },
+          {
+            "icon": "fa-brain",
+            "label": "Clarity"
+          },
+          {
+            "icon": "fa-utensils",
+            "label": "Zvýšená chuť"
+          }
         ],
         "negative": [
-          { "icon": "fa-droplet", "label": "Sucho v ústech" },
-          { "icon": "fa-eye", "label": "Suché oči" }
+          {
+            "icon": "fa-droplet",
+            "label": "Sucho v ústech"
+          },
+          {
+            "icon": "fa-eye",
+            "label": "Suché oči"
+          }
         ],
         "negativeTitle": "Možné vedlejší účinky"
       },
       "terpenes": [
-        { "name": "Myrcen", "width": 80, "aroma": "🌿 Zemitý, bylinky" },
-        { "name": "Caryophyllen", "width": 65, "aroma": "🌶️ Pepř, koření" },
-        { "name": "Pinen", "width": 55, "aroma": "🌲 Borovice, svěží" },
-        { "name": "Humulen", "width": 40, "aroma": "🍺 Chmel, dřevo" }
+        {
+          "name": "Myrcen",
+          "width": 80,
+          "aroma": "🌿 Zemitý, bylinky"
+        },
+        {
+          "name": "Caryophyllen",
+          "width": 65,
+          "aroma": "🌶️ Pepř, koření"
+        },
+        {
+          "name": "Pinen",
+          "width": 55,
+          "aroma": "🌲 Borovice, svěží"
+        },
+        {
+          "name": "Humulen",
+          "width": 40,
+          "aroma": "🍺 Chmel, dřevo"
+        }
       ],
       "growInfo": [
-        { "icon": "fa-calendar", "title": "Doba květu", "value": "9-10 týdnů" },
-        { "icon": "fa-ruler-vertical", "title": "Výška", "value": "120-180 cm" },
-        { "icon": "fa-weight-hanging", "title": "Výnos Indoor", "value": "500-600 g/m²" },
-        { "icon": "fa-sun", "title": "Sklizeň Outdoor", "value": "Konec září" },
-        { "icon": "fa-temperature-half", "title": "Klima", "value": "Střední Evropa" },
-        { "icon": "fa-star", "title": "Obtížnost", "value": "Střední" }
+        {
+          "icon": "fa-calendar",
+          "title": "Doba květu",
+          "value": "9-10 týdnů"
+        },
+        {
+          "icon": "fa-ruler-vertical",
+          "title": "Výška",
+          "value": "120-180 cm"
+        },
+        {
+          "icon": "fa-weight-hanging",
+          "title": "Výnos Indoor",
+          "value": "500-600 g/m²"
+        },
+        {
+          "icon": "fa-sun",
+          "title": "Sklizeň Outdoor",
+          "value": "Konec září"
+        },
+        {
+          "icon": "fa-temperature-half",
+          "title": "Klima",
+          "value": "Střední Evropa"
+        },
+        {
+          "icon": "fa-star",
+          "title": "Obtížnost",
+          "value": "Střední"
+        }
       ],
       "lineage": {
         "mother": "FENIX",
@@ -160,8 +392,14 @@
         "buy": "Koupit v eShopu"
       },
       "nav": {
-        "prev": { "slug": "emc2", "label": "E = MC²" },
-        "next": { "slug": "jaganath", "label": "Jaganath Krishna" }
+        "prev": {
+          "slug": "emc2",
+          "label": "E = MC²"
+        },
+        "next": {
+          "slug": "jaganath",
+          "label": "Jaganath Krishna"
+        }
       }
     },
     {
@@ -173,49 +411,149 @@
       "heroBg": "/legacy/img/seeds/jaganath.jpg",
       "subtitle": "„Pán světa, modrý avatar\"",
       "stats": [
-        { "icon": "fa-leaf", "value": "50/50", "label": "Indica/Sativa" },
-        { "icon": "fa-flask", "value": "15-19%", "label": "THC" },
-        { "icon": "fa-heart-pulse", "value": "5-8%", "label": "CBD" },
-        { "icon": "fa-clock", "value": "8-9", "label": "Týdnů květu" }
+        {
+          "icon": "fa-leaf",
+          "value": "50/50",
+          "label": "Indica/Sativa"
+        },
+        {
+          "icon": "fa-flask",
+          "value": "15-19%",
+          "label": "THC"
+        },
+        {
+          "icon": "fa-heart-pulse",
+          "value": "5-8%",
+          "label": "CBD"
+        },
+        {
+          "icon": "fa-clock",
+          "value": "8-9",
+          "label": "Týdnů květu"
+        }
       ],
       "description": {
         "intro": "<p><strong>Jaganath Krishna</strong> je dokonale vyvážený hybrid pojmenovaný po védském božstvu Krišnovi – ochránci vesmíru a ztělesnění lásky. Tento strain spojuje energii <em>Hariho</em> (Jack Herer lineage) s ukotveností <em>Gaie</em>, čímž vytváří harmonickou rovnováhu těla a mysli.</p>",
         "body": "<p>Perfektní volba pro celodenní použití. Ráno vás jemně probudí a dodá energii, večer pomůže s relaxací bez přílišné ospalosti. Skvělý pro sociální situace, kreativní projekty i meditativní praxi.</p>"
       },
       "genetics": [
-        { "label": "THC obsah", "value": "15-19%", "width": 68, "key": "thc" },
-        { "label": "CBD obsah", "value": "5-8%", "width": 50, "key": "cbd" },
-        { "label": "Indica", "value": "50%", "width": 50, "key": "indica" },
-        { "label": "Sativa", "value": "50%", "width": 50, "key": "sativa" }
+        {
+          "label": "THC obsah",
+          "value": "15-19%",
+          "width": 68,
+          "key": "thc"
+        },
+        {
+          "label": "CBD obsah",
+          "value": "5-8%",
+          "width": 50,
+          "key": "cbd"
+        },
+        {
+          "label": "Indica",
+          "value": "50%",
+          "width": 50,
+          "key": "indica"
+        },
+        {
+          "label": "Sativa",
+          "value": "50%",
+          "width": 50,
+          "key": "sativa"
+        }
       ],
       "effects": {
         "positive": [
-          { "icon": "fa-balance-scale", "label": "Vyvážený" },
-          { "icon": "fa-bolt", "label": "Energizující" },
-          { "icon": "fa-comments", "label": "Sociální" },
-          { "icon": "fa-face-smile", "label": "Povznášející" },
-          { "icon": "fa-paintbrush", "label": "Kreativní" },
-          { "icon": "fa-hand-holding-heart", "label": "Uvolňující" }
+          {
+            "icon": "fa-balance-scale",
+            "label": "Vyvážený"
+          },
+          {
+            "icon": "fa-bolt",
+            "label": "Energizující"
+          },
+          {
+            "icon": "fa-comments",
+            "label": "Sociální"
+          },
+          {
+            "icon": "fa-face-smile",
+            "label": "Povznášející"
+          },
+          {
+            "icon": "fa-paintbrush",
+            "label": "Kreativní"
+          },
+          {
+            "icon": "fa-hand-holding-heart",
+            "label": "Uvolňující"
+          }
         ],
         "negative": [
-          { "icon": "fa-droplet", "label": "Sucho v ústech" },
-          { "icon": "fa-head-side-virus", "label": "Mírná paranoia (vysoké dávky)" }
+          {
+            "icon": "fa-droplet",
+            "label": "Sucho v ústech"
+          },
+          {
+            "icon": "fa-head-side-virus",
+            "label": "Mírná paranoia (vysoké dávky)"
+          }
         ],
         "negativeTitle": "Možné vedlejší účinky"
       },
       "terpenes": [
-        { "name": "Terpinolen", "width": 75, "aroma": "🌲 Borovice, bylinky" },
-        { "name": "Pinen", "width": 65, "aroma": "🌿 Jehličí, rozmarýn" },
-        { "name": "Limonen", "width": 55, "aroma": "🍊 Pomeranč, citrus" },
-        { "name": "Humulen", "width": 35, "aroma": "🍺 Chmel, dřevo" }
+        {
+          "name": "Terpinolen",
+          "width": 75,
+          "aroma": "🌲 Borovice, bylinky"
+        },
+        {
+          "name": "Pinen",
+          "width": 65,
+          "aroma": "🌿 Jehličí, rozmarýn"
+        },
+        {
+          "name": "Limonen",
+          "width": 55,
+          "aroma": "🍊 Pomeranč, citrus"
+        },
+        {
+          "name": "Humulen",
+          "width": 35,
+          "aroma": "🍺 Chmel, dřevo"
+        }
       ],
       "growInfo": [
-        { "icon": "fa-calendar", "title": "Doba květu", "value": "8-9 týdnů" },
-        { "icon": "fa-ruler-vertical", "title": "Výška", "value": "100-160 cm" },
-        { "icon": "fa-weight-hanging", "title": "Výnos Indoor", "value": "500-600 g/m²" },
-        { "icon": "fa-sun", "title": "Sklizeň Outdoor", "value": "Polovina září" },
-        { "icon": "fa-temperature-half", "title": "Klima", "value": "Univerzální" },
-        { "icon": "fa-star", "title": "Obtížnost", "value": "Začátečník" }
+        {
+          "icon": "fa-calendar",
+          "title": "Doba květu",
+          "value": "8-9 týdnů"
+        },
+        {
+          "icon": "fa-ruler-vertical",
+          "title": "Výška",
+          "value": "100-160 cm"
+        },
+        {
+          "icon": "fa-weight-hanging",
+          "title": "Výnos Indoor",
+          "value": "500-600 g/m²"
+        },
+        {
+          "icon": "fa-sun",
+          "title": "Sklizeň Outdoor",
+          "value": "Polovina září"
+        },
+        {
+          "icon": "fa-temperature-half",
+          "title": "Klima",
+          "value": "Univerzální"
+        },
+        {
+          "icon": "fa-star",
+          "title": "Obtížnost",
+          "value": "Začátečník"
+        }
       ],
       "lineage": {
         "mother": "HARI",
@@ -231,8 +569,14 @@
         "buy": "Koupit v eShopu"
       },
       "nav": {
-        "prev": { "slug": "paramajoti", "label": "Paramajoti" },
-        "next": { "slug": "ramayana", "label": "Ramayana" }
+        "prev": {
+          "slug": "paramajoti",
+          "label": "Paramajoti"
+        },
+        "next": {
+          "slug": "ramayana",
+          "label": "Ramayana"
+        }
       }
     },
     {
@@ -244,49 +588,149 @@
       "heroBg": "/legacy/img/seeds/paramjoti.jpg",
       "subtitle": "„Zlaté kosmické vejce světla\"",
       "stats": [
-        { "icon": "fa-leaf", "value": "65/35", "label": "Indica/Sativa" },
-        { "icon": "fa-flask", "value": "12-16%", "label": "THC" },
-        { "icon": "fa-heart-pulse", "value": "8-12%", "label": "CBD" },
-        { "icon": "fa-clock", "value": "9-10", "label": "Týdnů květu" }
+        {
+          "icon": "fa-leaf",
+          "value": "65/35",
+          "label": "Indica/Sativa"
+        },
+        {
+          "icon": "fa-flask",
+          "value": "12-16%",
+          "label": "THC"
+        },
+        {
+          "icon": "fa-heart-pulse",
+          "value": "8-12%",
+          "label": "CBD"
+        },
+        {
+          "icon": "fa-clock",
+          "value": "9-10",
+          "label": "Týdnů květu"
+        }
       ],
       "description": {
         "intro": "<p><strong>Paramajoti Hiranyagarbha</strong> představuje vrchol našeho šlechtitelského programu. Název odkazuje na védský koncept „zlatého kosmického vejce\" – zdroje veškerého stvoření. Tento strain kombinuje nejlepší vlastnosti svých rodičů – meditační hloubku <em>Orionu</em> s robustností a výnosností <em>Gaie</em>.</p>",
         "body": "<p>Díky vysokému obsahu CBD je ideální pro léčebné využití. Poskytuje hlubokou relaxaci bez přílišné sedace, což umožňuje zachovat jasnou mysl. Vhodný pro meditaci, kreativní práci i zvládání chronické bolesti.</p>"
       },
       "genetics": [
-        { "label": "THC obsah", "value": "12-16%", "width": 55, "key": "thc" },
-        { "label": "CBD obsah", "value": "8-12%", "width": 70, "key": "cbd" },
-        { "label": "Indica", "value": "65%", "width": 65, "key": "indica" },
-        { "label": "Sativa", "value": "35%", "width": 35, "key": "sativa" }
+        {
+          "label": "THC obsah",
+          "value": "12-16%",
+          "width": 55,
+          "key": "thc"
+        },
+        {
+          "label": "CBD obsah",
+          "value": "8-12%",
+          "width": 70,
+          "key": "cbd"
+        },
+        {
+          "label": "Indica",
+          "value": "65%",
+          "width": 65,
+          "key": "indica"
+        },
+        {
+          "label": "Sativa",
+          "value": "35%",
+          "width": 35,
+          "key": "sativa"
+        }
       ],
       "effects": {
         "positive": [
-          { "icon": "fa-om", "label": "Meditativní" },
-          { "icon": "fa-spa", "label": "Relaxační" },
-          { "icon": "fa-lightbulb", "label": "Kreativní" },
-          { "icon": "fa-heart", "label": "Euforický" },
-          { "icon": "fa-shield-halved", "label": "Analgetický" },
-          { "icon": "fa-moon", "label": "Uklidňující" }
+          {
+            "icon": "fa-om",
+            "label": "Meditativní"
+          },
+          {
+            "icon": "fa-spa",
+            "label": "Relaxační"
+          },
+          {
+            "icon": "fa-lightbulb",
+            "label": "Kreativní"
+          },
+          {
+            "icon": "fa-heart",
+            "label": "Euforický"
+          },
+          {
+            "icon": "fa-shield-halved",
+            "label": "Analgetický"
+          },
+          {
+            "icon": "fa-moon",
+            "label": "Uklidňující"
+          }
         ],
         "negative": [
-          { "icon": "fa-droplet", "label": "Sucho v ústech" },
-          { "icon": "fa-eye", "label": "Suché oči" }
+          {
+            "icon": "fa-droplet",
+            "label": "Sucho v ústech"
+          },
+          {
+            "icon": "fa-eye",
+            "label": "Suché oči"
+          }
         ],
         "negativeTitle": "Možné vedlejší účinky"
       },
       "terpenes": [
-        { "name": "Myrcen", "width": 85, "aroma": "🌿 Zemitý, hřebíček" },
-        { "name": "Limonen", "width": 60, "aroma": "🍋 Citrus, svěží" },
-        { "name": "Linalool", "width": 45, "aroma": "💜 Levandule, květy" },
-        { "name": "Caryophyllen", "width": 40, "aroma": "🌶️ Pepř, koření" }
+        {
+          "name": "Myrcen",
+          "width": 85,
+          "aroma": "🌿 Zemitý, hřebíček"
+        },
+        {
+          "name": "Limonen",
+          "width": 60,
+          "aroma": "🍋 Citrus, svěží"
+        },
+        {
+          "name": "Linalool",
+          "width": 45,
+          "aroma": "💜 Levandule, květy"
+        },
+        {
+          "name": "Caryophyllen",
+          "width": 40,
+          "aroma": "🌶️ Pepř, koření"
+        }
       ],
       "growInfo": [
-        { "icon": "fa-calendar", "title": "Doba květu", "value": "9-10 týdnů" },
-        { "icon": "fa-ruler-vertical", "title": "Výška", "value": "120-180 cm" },
-        { "icon": "fa-weight-hanging", "title": "Výnos Indoor", "value": "450-550 g/m²" },
-        { "icon": "fa-sun", "title": "Sklizeň Outdoor", "value": "Konec září" },
-        { "icon": "fa-temperature-half", "title": "Klima", "value": "Mírné/Teplé" },
-        { "icon": "fa-star", "title": "Obtížnost", "value": "Střední" }
+        {
+          "icon": "fa-calendar",
+          "title": "Doba květu",
+          "value": "9-10 týdnů"
+        },
+        {
+          "icon": "fa-ruler-vertical",
+          "title": "Výška",
+          "value": "120-180 cm"
+        },
+        {
+          "icon": "fa-weight-hanging",
+          "title": "Výnos Indoor",
+          "value": "450-550 g/m²"
+        },
+        {
+          "icon": "fa-sun",
+          "title": "Sklizeň Outdoor",
+          "value": "Konec září"
+        },
+        {
+          "icon": "fa-temperature-half",
+          "title": "Klima",
+          "value": "Mírné/Teplé"
+        },
+        {
+          "icon": "fa-star",
+          "title": "Obtížnost",
+          "value": "Střední"
+        }
       ],
       "lineage": {
         "mother": "ORION",
@@ -302,8 +746,14 @@
         "buy": "Koupit v eShopu"
       },
       "nav": {
-        "prev": { "slug": "genesis", "label": "Genesis (Father Strain)" },
-        "next": { "slug": "jaganath", "label": "Jaganath Krishna" }
+        "prev": {
+          "slug": "genesis",
+          "label": "Genesis (Father Strain)"
+        },
+        "next": {
+          "slug": "jaganath",
+          "label": "Jaganath Krishna"
+        }
       }
     },
     {
@@ -315,49 +765,149 @@
       "heroBg": "/legacy/img/seeds/ramayana.jpg",
       "subtitle": "„Cesta Rámy – epos o dharma\"",
       "stats": [
-        { "icon": "fa-leaf", "value": "75/25", "label": "Indica/Sativa" },
-        { "icon": "fa-flask", "value": "10-14%", "label": "THC" },
-        { "icon": "fa-heart-pulse", "value": "10-15%", "label": "CBD" },
-        { "icon": "fa-clock", "value": "9-11", "label": "Týdnů květu" }
+        {
+          "icon": "fa-leaf",
+          "value": "75/25",
+          "label": "Indica/Sativa"
+        },
+        {
+          "icon": "fa-flask",
+          "value": "10-14%",
+          "label": "THC"
+        },
+        {
+          "icon": "fa-heart-pulse",
+          "value": "10-15%",
+          "label": "CBD"
+        },
+        {
+          "icon": "fa-clock",
+          "value": "9-11",
+          "label": "Týdnů květu"
+        }
       ],
       "description": {
         "intro": "<p><strong>Ramayana</strong> je pojmenována po starověkém indickém eposu vyprávějícím o cestě prince Rámy. Stejně jako tato duchovní pouť, i tento strain vás provede hlubokou relaxací až k vnitřnímu klidu. Kombinace <em>Višnu</em> a <em>Gaie</em> vytváří ideální léčebný strain s vysokým poměrem CBD:THC.</p>",
         "body": "<p>Perfektní pro večerní meditaci a hlubokou relaxaci. Ramayana pomáhá s úzkostí, nespavostí a chronickou bolestí bez výrazného psychoaktivního efektu. Ideální volba pro ty, kteří hledají léčebné benefity bez intenzivního „high\".</p>"
       },
       "genetics": [
-        { "label": "THC obsah", "value": "10-14%", "width": 45, "key": "thc" },
-        { "label": "CBD obsah", "value": "10-15%", "width": 85, "key": "cbd" },
-        { "label": "Indica", "value": "75%", "width": 75, "key": "indica" },
-        { "label": "Sativa", "value": "25%", "width": 25, "key": "sativa" }
+        {
+          "label": "THC obsah",
+          "value": "10-14%",
+          "width": 45,
+          "key": "thc"
+        },
+        {
+          "label": "CBD obsah",
+          "value": "10-15%",
+          "width": 85,
+          "key": "cbd"
+        },
+        {
+          "label": "Indica",
+          "value": "75%",
+          "width": 75,
+          "key": "indica"
+        },
+        {
+          "label": "Sativa",
+          "value": "25%",
+          "width": 25,
+          "key": "sativa"
+        }
       ],
       "effects": {
         "positive": [
-          { "icon": "fa-bed", "label": "Sedativní" },
-          { "icon": "fa-spa", "label": "Hluboce relaxační" },
-          { "icon": "fa-pills", "label": "Analgetický" },
-          { "icon": "fa-brain", "label": "Anxiolytický" },
-          { "icon": "fa-moon", "label": "Pro spaní" },
-          { "icon": "fa-shield-heart", "label": "Protizánětlivý" }
+          {
+            "icon": "fa-bed",
+            "label": "Sedativní"
+          },
+          {
+            "icon": "fa-spa",
+            "label": "Hluboce relaxační"
+          },
+          {
+            "icon": "fa-pills",
+            "label": "Analgetický"
+          },
+          {
+            "icon": "fa-brain",
+            "label": "Anxiolytický"
+          },
+          {
+            "icon": "fa-moon",
+            "label": "Pro spaní"
+          },
+          {
+            "icon": "fa-shield-heart",
+            "label": "Protizánětlivý"
+          }
         ],
         "negative": [
-          { "icon": "fa-droplet", "label": "Sucho v ústech" },
-          { "icon": "fa-couch", "label": "Těžké nohy (vysoké dávky)" }
+          {
+            "icon": "fa-droplet",
+            "label": "Sucho v ústech"
+          },
+          {
+            "icon": "fa-couch",
+            "label": "Těžké nohy (vysoké dávky)"
+          }
         ],
         "negativeTitle": "Možné vedlejší účinky"
       },
       "terpenes": [
-        { "name": "Myrcen", "width": 90, "aroma": "🥭 Mango, zemitý" },
-        { "name": "Linalool", "width": 70, "aroma": "💜 Levandule, květinový" },
-        { "name": "Bisabolol", "width": 50, "aroma": "🌼 Heřmánek, sladký" },
-        { "name": "Caryophyllen", "width": 40, "aroma": "🌶️ Pepř, hřebíček" }
+        {
+          "name": "Myrcen",
+          "width": 90,
+          "aroma": "🥭 Mango, zemitý"
+        },
+        {
+          "name": "Linalool",
+          "width": 70,
+          "aroma": "💜 Levandule, květinový"
+        },
+        {
+          "name": "Bisabolol",
+          "width": 50,
+          "aroma": "🌼 Heřmánek, sladký"
+        },
+        {
+          "name": "Caryophyllen",
+          "width": 40,
+          "aroma": "🌶️ Pepř, hřebíček"
+        }
       ],
       "growInfo": [
-        { "icon": "fa-calendar", "title": "Doba květu", "value": "9-11 týdnů" },
-        { "icon": "fa-ruler-vertical", "title": "Výška", "value": "80-120 cm" },
-        { "icon": "fa-weight-hanging", "title": "Výnos Indoor", "value": "400-500 g/m²" },
-        { "icon": "fa-sun", "title": "Sklizeň Outdoor", "value": "Začátek října" },
-        { "icon": "fa-temperature-half", "title": "Klima", "value": "Mírné" },
-        { "icon": "fa-star", "title": "Obtížnost", "value": "Snadná" }
+        {
+          "icon": "fa-calendar",
+          "title": "Doba květu",
+          "value": "9-11 týdnů"
+        },
+        {
+          "icon": "fa-ruler-vertical",
+          "title": "Výška",
+          "value": "80-120 cm"
+        },
+        {
+          "icon": "fa-weight-hanging",
+          "title": "Výnos Indoor",
+          "value": "400-500 g/m²"
+        },
+        {
+          "icon": "fa-sun",
+          "title": "Sklizeň Outdoor",
+          "value": "Začátek října"
+        },
+        {
+          "icon": "fa-temperature-half",
+          "title": "Klima",
+          "value": "Mírné"
+        },
+        {
+          "icon": "fa-star",
+          "title": "Obtížnost",
+          "value": "Snadná"
+        }
       ],
       "lineage": {
         "mother": "VIŠNU",
@@ -373,8 +923,14 @@
         "buy": "Koupit v eShopu"
       },
       "nav": {
-        "prev": { "slug": "jaganath", "label": "Jaganath Krishna" },
-        "next": { "slug": "emc2", "label": "E = MC²" }
+        "prev": {
+          "slug": "jaganath",
+          "label": "Jaganath Krishna"
+        },
+        "next": {
+          "slug": "emc2",
+          "label": "E = MC²"
+        }
       }
     }
   ],
@@ -403,6 +959,9 @@
   ],
   "footer": {
     "cs": "Příroda je největší učitel. One Love, One Seed.",
-    "en": "Nature is the greatest teacher. One Love, One Seed."
+    "en": "Nature is the greatest teacher. One Love, One Seed.",
+    "es": "La naturaleza es la maestra más grande. One Love, One Seed.",
+    "pt": "A natureza é a maior mestra. One Love, One Seed.",
+    "fr": "La nature est la plus grande enseignante. One Love, One Seed."
   }
 }
