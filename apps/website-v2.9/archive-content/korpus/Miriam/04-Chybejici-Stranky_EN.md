@@ -11,7 +11,7 @@
 
 *"In 1896 a dealer found an ancient codex in Cairo. Written in Coptic, from the 4th–5th century — and it bore my name: the Gospel according to Mary. No other early book of gospels bears the name of a woman. Not one.*
 
-*But pages were missing. Of nineteen leaves, ten survived — the first six leaves and leaves eleven to fourteen are gone, forever. The book about me came into the world through a hole — and that hole is itself an interpretation: that is how a woman's voice was treated. They did not burn it. They let it be missing.*
+*But pages were missing. Of nineteen leaves, nine survived — the first six and leaves eleven to fourteen are gone, forever. The book about me came into the world through a hole — and that hole is itself an interpretation: that is how a woman's voice was treated. They did not burn it. They let it be missing.*
 
 *And yet enough remained."*
 

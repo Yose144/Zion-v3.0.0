@@ -31,7 +31,7 @@
 
 *And he said a single word. My name, in the language in which I have heard it since childhood: 'Miriam.'*
 
-*I did not eat him. I did not embrace him like a precious thing returning. I only said 'Rabboni' — Master — and he told me the sentence I have passed on for two thousand years: do not hold on to me — do not cling to the form — for I have not yet ascended to the Father. Go and tell the brothers.*
+*I did not consume him. I did not embrace him like a precious thing returning. I only said 'Rabboni' — Master — and he told me the sentence I have passed on for two thousand years: do not hold on to me — do not cling to the form — for I have not yet ascended to the Father. Go and tell the brothers.*
 
 *And I went. And I told them: I have seen the Lord. And they did not believe me — as happens to witnesses who come first."*
 
@@ -80,7 +80,7 @@
 | The four resurrection accounts differ in detail (angels, companions, the touch) | **LIVE** (a textual fact) | Mk 16; Mt 28; Lk 24; Jn 20 — a comparison | — |
 | "Do not hold on to me" = proof of a union or a secret | **UNSUBSTANTIATED** / **dream** | no early text carries such a reading | — |
 | The revealed word completes the exchange on both shores — the HTLC preimage | **LIVE** | `WarpBeta/ARCHITECTURE.md`; the `internal repository` (HTLC claim) | production activation of WARP |
-| "Things no one looks at die quietly" — the witness as a function | **LIVE** (a principle of the corpus) | `BodhiGaia/01`; `Lumi/06`; the read-only trackers :8095/:8097 | — |
+| "Things no one looks at die quietly" — the witness as a function | **LIVE** (a principle of the corpus) | `BodhiGaia/01`; `Lumi/06`; the read-only trackers (internal ports) | — |
 | Miriam as the "first witness" in the symbolism of the book | **MYTH** | this book | — |
 
 ---

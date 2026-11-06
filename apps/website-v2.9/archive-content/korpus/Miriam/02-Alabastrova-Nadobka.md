@@ -61,7 +61,7 @@ Sára se podívala na nádobu v její ruce. *„A ty? Ty jsi tam byla?"*
 || Pomazující žena = Miriam z Magdaly | **NEDOLOŽENO** / **MÝTUS** | žádné evangelium ji tak nejmenuje; přisouzení až pozdní tradicí | raná evidence — neexistuje |
 || Věta „chudé máte vždycky s sebou" = alibi nechat chudé | **NEPLATNÝ NÁROK** (zneužití textu) | Dt 15,11 — původní příkaz velí otevírat ruku; kontext gesta, ne odpověď rozpočtu | — |
 || 5 % + 5 % z každého bloku se oddělí při vzniku, dřív než se „rozhoduje" | **ŽIVÉ** | `interní repozitář`, `v3_template.rs`; `BodhiGaia/01` | — |
-|| „Ten, kdo počítá, nemá klíč" — read-only evidence fondů | **ŽIVÉ** | `free-world tracker` :8095, `issobella tracker` :8097 (G10); `Lumi/06` | veřejný portál |
+|| „Ten, kdo počítá, nemá klíč" — read-only evidence fondů | **ŽIVÉ** | `free-world tracker` a `issobella tracker` (interní porty, G10); `Lumi/06` | veřejný portál |
 || Miriamina prázdná nádobka, rozbité hrdlo jako záměr | **MÝTUS** | obraz této knihy; starodávné nádoby se skutečně utahovaly | — |
 
 ---

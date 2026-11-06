@@ -80,7 +80,7 @@
 || Čtyři verze vzkříšení se v detailech liší (andělé, doprovod, dotyk) | **ŽIVÉ** (textová skutečnost) | Mk 16; Mt 28; Lk 24; Jan 20 — srovnání | — |
 || „Nedrž se mě" = důkaz svazku nebo tajemství | **NEDOLOŽENO** / **sen** | žádný raný text takový výklad nenese | — |
 || Odhalené slovo dokončuje výměnu na obou březích — preimage HTLC | **ŽIVÉ** | `WarpBeta/ARCHITECTURE.md`; `interní repozitář` (HTLC claim) | produkční aktivace WARP |
-|| „Věci, na které se nikdo nedívá, umírají potichu" — svědek jako funkce | **ŽIVÉ** (princip korpusu) | `BodhiGaia/01`; `Lumi/06`; read-only trackery :8095/:8097 | — |
+|| „Věci, na které se nikdo nedívá, umírají potichu" — svědek jako funkce | **ŽIVÉ** (princip korpusu) | `BodhiGaia/01`; `Lumi/06`; read-only trackery (interní porty) | — |
 || Miriam jako „první svědek" v symbolice knihy | **MÝTUS** | tato kniha | — |
 
 ---

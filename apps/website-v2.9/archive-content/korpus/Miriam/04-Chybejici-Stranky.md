@@ -11,7 +11,7 @@
 
 *„V roce 1896 našel v Káhiře kupec starodávný kodex. Psaný koptsky, ze 4.–5. století — a nesl moje jméno: Evangelium podle Marie. Žádná jiná raná kniha evangelií nenese jméno ženy. Ani jedna.*
 
-*Ale chyběly jí stránky. Z devatenácti listů se dochovalo deset — první šest listů a listy jedenáct až čtrnáct jsou pryč, navždy. Kniha o mně přišla do světa dírou — a ta díra je sama o sobě výklad: takto se zacházelo s hlasem ženy. Nepálili ho. Nechali ho chybět.*
+*Ale chyběly jí stránky. Z devatenácti listů se dochovalo devět — první šest a listy jedenáct až čtrnáct jsou pryč, navždy. Kniha o mně přišla do světa dírou — a ta díra je sama o sobě výklad: takto se zacházelo s hlasem ženy. Nepálili ho. Nechali ho chybět.*
 
 *A přece zbylo dost."*
 

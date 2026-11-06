@@ -41,7 +41,7 @@
 
 ## What it means
 
-**The merging of three women into one is a story about what a label does — and about the fact that an institution able to correct itself is more alive than one that corrects only others.**
+**The merging of three women into one is a story about what a label does — and about how an institution able to correct itself is more alive than one that corrects only others.**
 
 1. **A label is not evidence.** "Sinful" held for fourteen centuries because a title wrote it — not because the text carried it. The corpus holds exactly this instrument: `UNSUBSTANTIATED` means "so far it is claimed, not established" and `INVALID CLAIM` means "the record runs against the facts". A register that distinguishes the two is a brake against Gregory's error.
 2. **A name was confused — and therefore lives were confused.** When three different women merged under one name, a story arose that punished thousands of women for "her" sin. Registers exist so that things are not confused — `L2contracts.md` keeps active contracts separate from deprecated ones precisely because confusing old with new is how both trust and funds are lost. *Names that hold things correctly are a small mechanism of great honesty.*
