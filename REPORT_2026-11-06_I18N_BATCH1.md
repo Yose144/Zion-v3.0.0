@@ -448,3 +448,38 @@ Past: `/explorer/address` v es jednou vrátil 0 shod (stránka se ještě načí
 je 0 shod i správně přeložený.
 
 Commit: `af666ad75`.
+
+---
+
+## 27. Dávka 17 — pět uzlů Terra Nova (238 řetězců)
+
+`ekam` (49), `kailash` (54), `uluru` (46), `boaesperanca` (46), `novaamerika` (43).
+
+**Dvě úrovně textu:** krátké labely (statusy, fáze, navigace) přes standardní
+codemod; **8 dlouhých literárních odstavců** (popisy uzlů — Chrám Jednoty,
+Gang Rinpoche, Aṉangu, mys Dobré naděje) překládáno jako **plynulá próza**:
+zachován rytmus odstavce, nic nepřidáno ani nevynecháno. Sanskritské, tibetské,
+portugalské a domorodé termíny (`kora`, `dohas`, `ekam_deeksha`, `Tjukurpa`,
+`Aṉangu`, `Cabo das Tormentas`) zůstaly v původním přepisu, stejně jako
+`Om Namo Hiranyagarbha & Ekam Deeksha!`.
+
+Ověřeno živě: **0 pageerror ve všech 20 kombinacích (5 uzlů × 4 jazyky)**,
+kailash „kora · circuito/circuit", uluru „Tjukurpa · monolito/monolítо/monolithe",
+boa-esperanca „cabo/cap", ekam es „arquitectura como tecnología".
+
+## 28. Stav po dávce 17
+
+| | hodnota |
+|---|---:|
+| přeložených řetězců (es = pt = fr) | **4 796** |
+| stránek/komponent s vlastním slovníkem | **53** |
+| zbývá | **2 478 klíčů / 149 souborů** |
+
+**Největší zbývající:** `DashboardClient` (64), `wallet/multichain` (52),
+`dashboard/ch3` (48), `FarmingPanel` (44), `explorer/block` (43), `g8` (42),
+`explorer/tx` (42), `api-reference` (42), `StakingPanel` (41), `PoolPrlClient` (39),
+`DownloadToolBrowser` (39), `MonitoringClient` (39).
+
+Vzorec zbytku je jasný: **explorer detaily** (blok, tx, adresa), **DeFi panely**
+(Farming, Staking), **dashboard** a **monitoring** — dohromady ~2,5 tisíce řetězců
+v 149 souborech, žádný monolit.
