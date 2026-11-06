@@ -40,7 +40,11 @@ angličtina než prázdné bloky nebo strojový překlad bez korektury.
 
 ## 3. Doporučené fáze
 
-**F2 — Web UI (1–2 dávky).** Přeložit `translations.ts` do es/pt/fr. Priorita: navigace, homepage,
+**F2 — Web UI (1–2 dávky).** ~~Dávka 1 hotová (2026-11-06): `nav`, `footer`, `notFound`,
+`docs`, `globalRouteError`, `countdown` — 76 klíčů × 3 jazyky v `translations-langs.ts`,
+nasazeno a ověřeno živě.~~ Zbývá: `hero` (44), `goldenEgg` (56), `ekamPage` (81), `features` (31),
+`docsRail` (17), `chv4` (15), `onboard` (12), `whitepapers` (9) = **265 klíčů × 3**.
+Přeložit `translations.ts` do es/pt/fr. Priorita: navigace, homepage,
 `/l4-oasis`, `/l4-oasis/avatars`, `/market`, `/pool`, `/docs` (kde lidé přistanou). Postup: přeložit
 po sekcích, `tr()` fallback nechá zbytek v EN, `tsc` + build po každé dávce.
 
