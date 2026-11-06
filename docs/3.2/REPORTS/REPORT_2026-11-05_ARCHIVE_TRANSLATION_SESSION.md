@@ -1,7 +1,7 @@
-# REPORT — ZION Archive: překladová session T1–T11 (94 kapitol)
+# REPORT — ZION Archive: překladová session T1–T12 (111 kapitol)
 
 > **Datum:** 2026-11-05 (aktualizováno 2026-11-06) · **Vlastník:** 👤 · **Plán:** [`TRANSLATION-PLAN.md`](../../../TRANSLATION-PLAN.md)
-> **Kód:** `apps/website-v2.9` · **Stav po session:** **159 / 189 kapitol (84,1 %)**, zbývá **30**
+> **Kód:** `apps/website-v2.9` · **Stav po session:** **176 / 189 kapitol (93,1 %)**, zbývá **13**
 
 ---
 
@@ -23,15 +23,16 @@ přes standalone → commit **jen vlastních souborů** → push.
 | **T9** | Quantum Revolution | 1 (single-doc) | `34e3e804b` | náhrada 396B stubu |
 | **T10** | Miriam | 13 | `8824241ea`, `81e889ece`, `920a54d89`, `0bda808fe`, `505195f79` | tři vrstvy Stone/Clay/Dream |
 | **T11** | Lumi | 13 | `bac3a798e`, `bde928d3f`, `f38555204`, `7ac9e4fc9` | svislá osa světla, Jen-že → Only-that |
+| **T12** | Kruh Bohyní | 17 | `3d0f362cb`, `5c2ef1f60`, `e1079c272`, `b6d164978`, `7e5ec4c51`, `6b5bb6e7b` | sedm sedadel L5 + L6, ZÁMĚR → INTENT, tři `00-*` jako kapitoly |
 
-**Celkem tato session: 94 kapitol** (z 65 na 159).
+**Celkem tato session: 111 kapitol** (z 65 na 176).
 
 ## 2. Ověření (poslední běh)
 
 Audit `GET /api/archive/audit` na standalone (`PORT=3124`, `ARCHIVE_ADMIN_TOKEN`):
 
 ```
-TOTALS: {books: 18, declaredChapters: 204, missingCs: 1, missingEn: 30,
+TOTALS: {books: 18, declaredChapters: 204, missingCs: 1, missingEn: 13,
          frontMatter: 15, duplicates: 0, missingParts: 0}
 surta-srdce 100 % · nabukano 100 % · miseamenti 100 % · ruze 100 %
 issobella 100 % · naceste 100 % · mariacaminho 100 % · ekam 100 %
@@ -63,11 +64,10 @@ lumi 100 % · miriam 100 % · quantum-revolution: singleDoc. cs 10 / en 10 kapit
 - **Neměnné:** čísla, adresy, env klíče, id a data (`zion1z4s3a5…`, `zion1f5h5k6t8…`, 300M ZION, 2,5 mld, lock 144 000, `ISSOBELLA_PCT = 5`, 89/5/5/1 %, `node_reward_activation_height = u64::MAX`, 0,38 g / 200 m / ~2 RPM, LEO 400–550 km, `48dcc0b2-…`, 1984/1994/2003/2008/2018, 1917, 352, 1676, 1488).
 - **Kód:** placeholdery (`issobella tracker`, `zion-*-service`, `interní port` → `internal port`), `interní repozitář` → `internal repository` (odkaz `../../../interní%20repozitář`), code blocky Cosmic Harmony v3 **doslova**.
 
-## 5. Co zbývá (30 kapitol, ~0,36 MB)
+## 5. Co zbývá (13 kapitol, ~0,18 MB)
 
 | Milník | Kniha | Kapitol | Odhad dávek |
 |---|---|---:|---:|
-| **T12** | Kruh Bohyní | 17 | 5 |
 | **T13** | BodhiGaia | 13 | 5 |
 
 ## 6. Meze
@@ -77,3 +77,11 @@ lumi 100 % · miriam 100 % · quantum-revolution: singleDoc. cs 10 / en 10 kapit
 - `missingCs: 1` u `miseamenti/README` je **flaky** (souběžný `npm run build` paralelní session přepisuje `.next/standalone` pod běžícím auditem); soubor na disku i v manifestu existuje.
 - Deploy na EDGE2 nebyl proveden — live build by kolidoval s běžící paralelní session (nirvana/OASIS).
 - **`npx tsc --noEmit` v `apps/website-v2.9` hlásí ~32 chyb, které nejsou z překladu:** paralelní session rozpracovala `apps/MarketPlace/src/lib/translations.ts` (`Lang` rozšířen na `cs/en/es/fr/pt`), zatímco `whitepapers`, `roadmap`, `ai-native`, `NavAuthButton` a `translations.ts` drží dvoujazyčné slovníky. Po `git stash` mých dvou TS úprav počet chyb naopak vzroste (33) → chyby jsou cizí a neopravovaly se. `npm run build` je zelený (EXIT 0).
+
+## 7. Co odhalila kniha Kruh Bohyní (T12) — a jedno provozní pravidlo
+
+- **Tři `00-*` soubory jsou kapitoly.** `00-LODE-A-LUCERNA` (meta-analýza), `00-OUTLINE` a `00-PROLOG` kniha deklaruje jako kapitoly a audit je počítá do coverage (17 = 3 + 14). U jiných korpusových knih je `00-*` **front matter** a do coverage nevstupuje — zde ne.
+- **Dvě vrstvy, které se nesmí slévat:** zjevená budoucnost (MYTH/HORIZON) a pasáž *„Lucerna ukázala dnešek"* (LIVE stav). Každá kapitola má obojí; překlad musel držet obojí oddělené.
+- **Nová statusová slova:** `ZÁMĚR → INTENT` a `NÁVRH / FÁZE 0 → DRAFT / PHASE 0`. Zapsáno do plánu i AGENTS.
+- **Pozor na dvě čísla v CZ:** kap. 8 má „bloky po 144 mil. ZION" (kanonicky 144 **mld** — v EN použito 144 bn) a kap. 10/12 mají překlepy `Zlata republika`, `Dvanáct ohněd`, `Pupnek` — přeloženo podle významu, čísla nezměněna.
+- **⚠️ Provozní incident (`e1079c272`):** commit spuštěný jako `git add … && git commit` **strhl do mého commitu i soubory paralelní session**, které byly už nastagedované (`apps/nirvana/**` — 13 souborů + `NIRVANA-LUMI-PLAN.md`). Historie se nepřepisuje (force-push na `main` je zakázán), takže obsah zůstal, ale publikoval se dřív, než jeho autor zamýšlel. **Pravidlo odteď:** `git diff --cached --name-status` **samostatně před** commitem a commit výhradně přes pathspec (`git commit -m … -- <cesty>`). Zapsáno do `apps/website-v2.9/AGENTS.md`.
