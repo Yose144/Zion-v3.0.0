@@ -48,10 +48,11 @@ Přeložit `translations.ts` do es/pt/fr. Priorita: navigace, homepage,
 `/l4-oasis`, `/l4-oasis/avatars`, `/market`, `/pool`, `/docs` (kde lidé přistanou). Postup: přeložit
 po sekcích, `tr()` fallback nechá zbytek v EN, `tsc` + build po každé dávce.
 
-**F3 — OASIS avataři (10–14 dávek).** Karty (overlay) → profily → questy. Karty první: jsou na
-kartách a v seznamech, profily jsou lazy. Formát: `i18n/<id>.es.md` atd. (generátor je bere bez
-změny kódu), overlay `{cs,en}` rozšířit na `{cs,en,es,pt,fr}` (potřeba upravit `gen-oasis-avatars`
-na `loc()` — dnes vrací jen cs/en).
+**F3 — OASIS avataři (10–14 dávek).** ~~Dávka 1 hotová (2026-11-06): `subtitle` + `role` ve všech
+5 jazycích pro 202 avatarů (1 212 polí) — `scripts/oasis-avatar-copy/i18n-cards/{es,pt,fr}.json`,
+`loc()` propouští jazyky, `LocalizedText` má volitelné `es/pt/fr`, stránka používá `tx(field, lang)`
+s fallbackem `lang → en → cs`. Nasazeno a ověřeno.~~ Zbývá: `location`, `questLine`, `teaching`,
+`ability`, `quote`, `essence` (202 × 6 × 3), questy (714 × 3) a profily (202 dokumentů × 3).
 
 **F4 — Nirvana UI.** `useI18n` v `apps/nirvana` na 5 kódů + texty her (HUD, hangár, arény).
 

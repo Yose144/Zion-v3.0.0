@@ -1,4 +1,4 @@
-# REPORT 2026-11-06 — 5 jazyků: dávka 1 (navigace, patička, 404, docs, chyby)
+# REPORT 2026-11-06 — 5 jazyků: F2 hotová (269 klíčů) + F3 dávka 1 (karty avatarů)
 
 > **Zadání 👤 (2026-11-05):** „cely ecosystem by mel podporovat nativne prepinani 5 jazyku,
 > cz, en, sp, ptg, fr" + „jasny cestni cista ale preklady pak do jinych jazyku take".
@@ -81,3 +81,33 @@ F6 hreflang/sitemap.
 52c5ebe98 feat(i18n): 5 jazyků v celém webu (cs/en/es/pt/fr) + přepínač v navigaci
 00596703b     feat(i18n): první dávka překladů es/pt/fr (navigace, patička, 404, docs, chyby)
 ```
+
+---
+
+## 6. Navazující dávky (stejný den)
+
+### F2 — dávka 2: zbytek `translations.ts` (193 klíčů × 3)
+
+`hero` (42), `goldenEgg` (41), `ekamPage` (72), `features` (19), `chv4` (13), `docsRail` (9),
+`onboard` (6), `whitepapers` (5). Překlady vloženy jako JSON spread do `translations-langs.ts`
+(escaping bezpečně přes `JSON.stringify`). **Tím je `translations.ts` pokrytý celý: 269 klíčů ×
+3 jazyky.** Ověřeno živě: homepage tagline i `/ekam` h1 v es/pt/fr přeložené, 11 stránek 200.
+
+### F3 — dávka 1: karty avatarů (1 212 polí)
+
+`subtitle` + `role` pro **všech 202 avatarů** v es/pt/fr (`scripts/oasis-avatar-copy/i18n-cards/`).
+Generátor propouští jazyky, `LocalizedText` má volitelné `es/pt/fr`, stránka používá
+`tx(field, lang)` s fallbackem `lang → en → cs`.
+
+Ověřeno živě (deploy `20261106T111123Z`): 202 karet ve všech jazycích, subtitle karty i modalu
+přeložený — Krishna „Integración Cósmica" / „Integração Cósmica" / „Intégration cosmique",
+203 „Trinidad de la Madre Divina" / „Trindade da Mãe Divina" / „Trinité de la Mère divine".
+
+### Co zůstává
+
+- **F2b — page-local copy**: každá stránka má vlastní `{cs,en}` objekt (tree-of-life 127 klíčů,
+  l6-issobella 76, avataři 63, maria-del-camino 58, kralovstvi-srdce 45, nabukano 44…). Není to
+  součást `translations.ts`; chce samostatnou dávku.
+- **F3 zbytek**: `location`, `questLine`, `teaching`, `ability`, `quote`, `essence` (202 × 6 × 3),
+  714 questů, 202 profilů.
+- F4 Nirvana UI, F5 Archiv, F6 hreflang/sitemap.
