@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Newspaper, ArrowRight, Calendar, Sparkles } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import DogeVsZionBanner from '@/components/DogeVsZionBanner';
 
 const NewsFeedCopy = {
@@ -675,19 +676,19 @@ export default function NewsFeed() {
           <div className="flex items-center gap-3 mb-2">
             <Newspaper className="w-4 h-4 text-zion-gold" />
             <span className="text-xs uppercase tracking-[0.3em] text-gray-400">
-              {NewsFeedCopy.newsUpdates[cs ? 'cs' : 'en']}
+              {tx5(NewsFeedCopy.newsUpdates, lang)}
             </span>
             <span className="ml-auto text-[10px] uppercase tracking-wider text-zion-gold/60 bg-zion-gold/10 border border-zion-gold/20 px-2 py-0.5 rounded-full">
-              {cs ? `${NEWS_ARTICLES.length} článků` : `${NEWS_ARTICLES.length} articles`}
+              {cs ? `${NEWS_ARTICLES.length} článků` : t5(`${NEWS_ARTICLES.length} articles`, lang)}
             </span>
           </div>
           <h2 className="text-2xl md:text-3xl font-bold text-white inline-block">
             <span className="text-gradient border-b-2 border-zion-gold/30 pb-1">
-              {NewsFeedCopy.news[cs ? 'cs' : 'en']}
+              {tx5(NewsFeedCopy.news, lang)}
             </span>
           </h2>
           <p className="text-sm text-gray-400 mt-1 max-w-2xl">
-            {NewsFeedCopy.latestUpdatesFromTheZionEcosys[cs ? 'cs' : 'en']}
+            {tx5(NewsFeedCopy.latestUpdatesFromTheZionEcosys, lang)}
           </p>
         </div>
 
@@ -759,7 +760,7 @@ export default function NewsFeed() {
 
                     {/* Read more */}
                     <div className="flex items-center gap-1.5 text-xs text-zion-gold/60 group-hover:text-zion-gold transition-colors">
-                      <span>{NewsFeedCopy.readMore[cs ? 'cs' : 'en']}</span>
+                      <span>{tx5(NewsFeedCopy.readMore, lang)}</span>
                       <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                     </div>
                 </Link>
@@ -781,7 +782,7 @@ export default function NewsFeed() {
               href="/news"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-zion-gold/30 bg-zion-gold/5 hover:bg-zion-gold/10 text-zion-gold/80 hover:text-zion-gold transition-all text-sm"
             >
-              {cs ? `Všechny novinky (${NEWS_ARTICLES.length})` : `All news (${NEWS_ARTICLES.length})`}
+              {cs ? `Všechny novinky (${NEWS_ARTICLES.length})` : t5(`All news (${NEWS_ARTICLES.length})`, lang)}
               <ArrowRight className="w-4 h-4" />
             </Link>
           </motion.div>

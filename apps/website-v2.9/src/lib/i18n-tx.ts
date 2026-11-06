@@ -3,6 +3,12 @@ import type { Lang } from '@/contexts/LanguageContext';
 import avatarsEs from './ui-strings/avatars.es.json';
 import avatarsPt from './ui-strings/avatars.pt.json';
 import avatarsFr from './ui-strings/avatars.fr.json';
+import newsfeedEs from './ui-strings/newsfeed.es.json';
+import newsfeedPt from './ui-strings/newsfeed.pt.json';
+import newsfeedFr from './ui-strings/newsfeed.fr.json';
+import issobellaEs from './ui-strings/issobella.es.json';
+import issobellaPt from './ui-strings/issobella.pt.json';
+import issobellaFr from './ui-strings/issobella.fr.json';
 
 /**
  * Překlady „page-local" textů (mimo `translations.ts`).
@@ -14,13 +20,18 @@ import avatarsFr from './ui-strings/avatars.fr.json';
  * (pro UI labely to nevadí).
  *
  * Pořadí fallbacku: `entry[lang]` → slovník pro EN řetězec → `entry.en` → `entry.cs`.
+ * Přidání další stránky = jeden JSON na jazyk (`ui-strings/<page>.<lang>.json`)
+ * a jeden import tady.
  */
 type Entry = unknown;
+type Dict = Record<string, string>;
 
-const DICTS: Record<'es' | 'pt' | 'fr', Record<string, string>> = {
-  es: avatarsEs as Record<string, string>,
-  pt: avatarsPt as Record<string, string>,
-  fr: avatarsFr as Record<string, string>,
+const merge = (...parts: Dict[]): Dict => Object.assign({}, ...parts);
+
+const DICTS: Record<'es' | 'pt' | 'fr', Dict> = {
+  es: merge(avatarsEs, newsfeedEs, issobellaEs),
+  pt: merge(avatarsPt, newsfeedPt, issobellaPt),
+  fr: merge(avatarsFr, newsfeedFr, issobellaFr),
 };
 
 /** Přeloží lokalizovaný objekt pro daný jazyk (5 kódů). */
