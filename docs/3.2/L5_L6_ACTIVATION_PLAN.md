@@ -136,14 +136,13 @@ Source: `V31/L5/free-world/src/config.rs`, `V31/L6/issobella/src/config.rs`.
 | `db_path` | `./free_world.db` | `./issobella.db` |
 | `l1_rpc_url` | `http://127.0.0.1:9445/jsonrpc` | `http://127.0.0.1:9445/jsonrpc` |
 | `scan_interval_secs` | `60` | `60` |
-| `fund_address` (placeholder) | `zion1humanitarian0000000000000000000000` | `zion1issobella000000000000000000000000` |
-| `min_*_amount_zion` | 1 000 | 10 000 |
-| `max_*_amount_zion` | 10 000 000 | 100 000 000 |
+| `humanitarian_fund_address` / `issobella_fund_address` | `zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8` (kanonická, konstanta `DEFAULT_HUMANITARIAN_FUND_ADDRESS`) | `zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0` (konstanta `DEFAULT_ISSOBELLA_FUND_ADDRESS`) |
+| `min_*_amount_zion` / `max_*_amount_zion` | — (L5 config tyto meze nemá) | 10 000 / 100 000 000 |
 | `hiran_endpoint` | `http://localhost:8002` | `http://localhost:8002` |
 | `hiran_enabled` | `false` | `false` |
 
-Environment overrides already supported: `*_PORT`, `*_BIND`, `*_DB`, `*_L1_RPC`, `*_API_KEY`, `*_HIRAN_URL`, `*_HIRAN_ENABLED`.  
-**Missing env overrides:** `FREE_WORLD_HUMANITARIAN_ADDRESS`, `ISSOBELLA_FUND_ADDRESS`, `*_MIN_*`, `*_MAX_*`.
+Environment overrides actually supported (`config.rs::load`, ověřeno 2026-11-06): `*_PORT`, `*_BIND`, `*_DB`, `*_L1_RPC`, `*_API_KEY`, `FREE_WORLD_HUMANITARIAN_ADDRESS` / `ISSOBELLA_FUND_ADDRESS`, `*_HIRAN_URL`, `*_HIRAN_ENABLED`, `ZION_DAO_API_ADDR`, `ZION_DAO_API_KEY`, `ZION_DAO_PROPOSER`, `ZION_DAO_PROPOSER_BALANCE`, `ZION_DAO_SNAPSHOT_BLOCK`.
+**Chybí:** env override pro `ISSOBELLA_MIN_MISSION_BUDGET` / `ISSOBELLA_MAX_MISSION_BUDGET` (v `config.rs` nejsou; mění se jen v TOML).
 
 ### 4.3 API Endpoints
 
@@ -236,21 +235,23 @@ Source: `V31/cli/src/commands/free_world.rs`, `V31/cli/src/commands/issobella.rs
 
 ## 5. Gaps, Blockers and Risk Items
 
-| # | Gap / Blocker | Severity | Evidence |
-|---|---------------|----------|----------|
-| 1 | **Wrong L1 RPC port/URL** — default `9443`/`8443` instead of V31 `9445`. | Critical for function | `V31/L5/free-world/src/config.rs:28`, `V31/L6/issobella/src/config.rs:28` |
-| 2 | **Wrong block field name** — scanner expects `utxo_transactions`; V31 returns `transactions`. | Critical for function | `V31/L5/free-world/src/l1_scanner.rs:98`, `V31/L1/core/src/rpc.rs:679` |
-| 3 | **Scanner only checks first tx** — misses separate `coinbase_humanitarian` / `coinbase_issobella` txs. | Critical for function | `V31/L5/free-world/src/l1_scanner.rs:98`, `V31/L1/core/src/v3_template.rs:139-155` |
-| 4 | **Placeholder fund addresses in config** — not linked to canonical V31 addresses. | Critical for function | `V31/L5/free-world/src/config.rs:31`, `V31/L6/issobella/src/config.rs:31` |
-| 5 | **Env overrides for fund addresses / bind / port / RPC / DAO** are now supported in both crates. | Medium | `V31/L5/free-world/src/config.rs`, `V31/L6/issobella/src/config.rs` |
-| 6 | **DAO client** now uses `ZION_DAO_API_ADDR`, `X-DAO-Key` header and `/v1/proposals` path. | Critical for governance integration | `V31/L5/free-world/src/dao_client.rs`, `V31/L6/issobella/src/dao_client.rs` |
-| 7 | **No DAO UI** for creating/voting/executing L5/L6 proposals. | Blocker on disbursement | `V31/L2/dao` has HTTP API but no front-end; dashboard `J4` not started in `ROADMAP.md` |
-| 8 | **DAO execution is summary-only** — it does not build or broadcast a payout transaction. | Critical for disbursement | `V31/L2/dao/src/runtime.rs:294-364` |
-| 9 | **Systemd / env / nginx / backup config prepared** for L5/L6; Edge start complete. | Production deployment complete | `V31/deploy/systemd/`, `V31/deploy/config/edge-environment.sh`, `V31/deploy/nginx/zion-nginx.conf` |
-| 10 | **CLI subcommands** `zion free-world` and `zion issobella` are wired for `start/status/stop` (systemd passthrough). | Medium | `V31/cli/src/commands/free_world.rs`, `issobella.rs` |
-| 11 | **Public website pages** `l5-free-world` and `l6-issobella` updated to canonical V31 fund addresses. | Medium | `apps/website-v2.9/src/app/l5-free-world/page.tsx`, `l6-issobella/page.tsx` |
-| 12 | **No Hiran service** — AI bridge endpoints would fail if enabled. | Low | `hiran` not in Edge service list |
-| 13 | **Resonance / consciousness / L5 physical community features** are vision-only and not implemented. | Out of 3.2.0 scope | `archive/V3/L5/docs/PROTOCOLS/resonance-protocol.md` |
+> **Stav ověřen 2026-11-06 proti kódu.** Řádky 1–4 jsou **uzavřené** — doc je roky ukazoval jako kritické, ale `config.rs` i `l1_scanner.rs` byly mezitím opravené (a živý tracker to dokazuje: `fund/balance` hlásí `last_block_height 112 326`, `total_accumulated 30 305 717 ZION`).
+
+| # | Gap / Blocker | Severity | Stav / Evidence |
+|---|---------------|----------|-----------------|
+| 1 | ~~Wrong L1 RPC port/URL — default `9443`/`8443` instead of V31 `9445`~~ | ~~Critical~~ | ✅ **vyřešeno** — oba `Default` mají `http://127.0.0.1:9445/jsonrpc` |
+| 2 | ~~Wrong block field name — scanner expects `utxo_transactions`; V31 returns `transactions`~~ | ~~Critical~~ | ✅ **vyřešeno** — `block.transactions` s `#[serde(default, alias = "utxo_transactions")]` (`l1_scanner.rs`) |
+| 3 | ~~Scanner only checks first tx — misses separate `coinbase_humanitarian` / `coinbase_issobella` txs~~ | ~~Critical~~ | ✅ **vyřešeno** — iteruje **všechny** transakce a **všechny** outputs (`l1_scanner.rs`) |
+| 4 | ~~Placeholder fund addresses in config~~ | ~~Critical~~ | ✅ **vyřešeno** — `DEFAULT_HUMANITARIAN_FUND_ADDRESS` / `DEFAULT_ISSOBELLA_FUND_ADDRESS` = kanonické adresy |
+| 5 | Env overrides for fund addresses / bind / port / RPC / DAO | Medium | ✅ podporováno v obou crates (seznam v §4.2) |
+| 6 | DAO client uses `ZION_DAO_API_ADDR`, `X-DAO-Key` header and `/v1/proposals` | Critical pro governance | ✅ implementováno (`dao_client.rs`) |
+| 7 | **Žádné DAO UI** pro vytváření/hlasování/vykonání L5/L6 proposals | **Blocker výplat** | otevřené — `V31/L2/dao` má HTTP API, ale žádný front-end; `J4` v `ROADMAP.md` nezačato |
+| 8 | **DAO execution je summary-only** — nesestaví ani nebroadcastuje payout tx | **Blocker výplat** | otevřené — `runtime.rs::execute_proposal` u `ProposalType::Treasury` jen vygeneruje text `"Treasury: N flowers to X"`; pipeline pro tx existuje (`treasury_tx.rs`), chybí napojení |
+| 9 | Systemd / env / nginx / backup config prepared; Edge start complete | Production deployment complete | ✅ |
+| 10 | CLI subcommands `zion free-world` / `zion issobella` (`start/status/stop`) | Medium | ✅ |
+| 11 | Public pages `l5-free-world` a `l6-issobella` s kanonickými fondovými adresami | Medium | ✅ |
+| 12 | **Žádná Hiran služba** — AI bridge endpointy by selhaly, kdyby se zapnuly | Low | otevřené (`hiran_enabled = false` v obou daemonech) |
+| 13 | Resonance / consciousness / fyzické L5 komunity jsou vision-only | Mimo rozsah 3.2.0 | otevřené (záměr, ne dluh) |
 
 ---
 

@@ -47,9 +47,9 @@ ZION 3.3 přetavuje abstraktní krypto-ekonomiku v **konkrétní hmatatelný dop
 |---|---|
 | **Pramen pomoci (Fond)** | Kanonická adresa `zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8` je zakódována v jádře L1 konsensu. |
 | **Běžící služba trackeru** | `zion-v31-free-world.service` je aktivní na portu `8095` a eviduje každou přijatou platbu z coinbase. |
-| **Dedikované Web UI** | Stránka `/l5-free-world` na `app.zionterranova.com` s živým grafem zůstatku a projektových toků. |
+| **Dedikované Web UI** | Stránka `/l5-free-world` na `app.zionterranova.com` s živým zůstatkem fondu (čte se z L5 trackeru). |
 | **Transparentní účetnictví** | Žádný centrální správce nemůže fond svévolně vytunelovat — výběry podléhají multisig konsensu a DAO hlasování. |
-| **Přímá vazba na těžbu** | Každých ~60 sekund přibývá do fondu podíl z nového bloku; přes 23 600 plateb již úspěšně proběhlo. |
+| **Přímá vazba na těžbu** | Každých ~60 sekund přibývá do fondu podíl z nového bloku. K výšce 112 326 (snímek 2026-11-06) je nasčítáno **30 305 717 ZION** a `total_disbursed` je **0** — fond dosud nevyplatil žádný grant. |
 
 ---
 

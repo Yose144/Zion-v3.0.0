@@ -27,7 +27,7 @@ Když se večer sešli u stolu a rozdělili si čerstvě upečený chléb, tesa�
 
 V technologické realitě to znamená prostředí, kde uživatel není produktem centralizovaných korporací, ale **plnoprávným suverénním občanem**:
 
-1. **ZIS (ZION Identity Service):** Jednotný, bezpečný přístup k celému světu ZION bez prodeje osobních údajů. Žádné heslo, které by mohl někdo ukrást z centrální databáze — přihlašování funguje na bázi moderních Passkeys, kryptografických podpisů Ed25519 a WebAuthn biometriky.
+1. **ZIS (ZION Identity Service):** Jednotný, bezpečný přístup k celému světu ZION bez prodeje osobních údajů. Účty dnes stojí na e-mailu, ZIS session s Ed25519 podpisy a volitelném propojení Google účtu. **Passkeys a WebAuthn biometrika jsou navržené a čekají na nasazení** (`STAVBA`) — dokud nejsou webauthn endpointy v produkci, kniha je nesmí vydávat za dnešní přihlašování.
 2. **Otevřené dveře pro každého:** Každý si může zdarma stáhnout peněženku, připojit se k těžebnímu poolu, spustit vlastní node nebo vstoupit do OASIS. Neexistuje žádný kádrový posudek, KYC diskriminace ani geografická blokace.
 3. **Sdílený stůl a spravedlivé odměny:** Každý těžař na poolu dostává odměnu vypočtenou matematicky exaktním systémem PPLNS (Pay Per Last N Shares) s minimálním poplatkem a okamžitým on-chain potvrzením.
 

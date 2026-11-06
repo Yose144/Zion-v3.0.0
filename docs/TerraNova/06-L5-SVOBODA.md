@@ -17,22 +17,21 @@ Zatímco L1–L4 operují v síti (blockchain, DeFi, AI, hra) — L5 operuje na 
 
 ---
 
-## 6.2 Humanitární mise — 10% odměny v akci
+## 6.2 Humanitární mise — 5 % odměny v akci
 
-Každý nalezený blok (každých ~60 sekund) posílá 10% do Humanitarian fondu.
+Každý nalezený blok (každých ~60 sekund) posílá **5 %** do humanitárního fondu L5 (`coinbase_humanitarian`) a dalších **5 %** do vědeckého fondu L6 Issobella; 1 % jde do node-reward poolu, dokud není aktivace — jinak se pálí. Rozdělení **89 / 5 / 5 / 1** je v konsensu L1, takže ho nikdo nemůže potichu změnit.
 
-V roce 2030, při milionech Guardians a plném mainnetu, to znamená:
+Kolik to je, se **nepočítá z ceny** — tato kniha žádnou cenu ZIONu neodhaduje ani neslibuje. Počítá se jen z protokolu:
 
 ```
-Příklad (konzervativní odhad):
-├── Průměrná cena ZION: $1 (konzervativní)
-├── Blok reward: 5 400 ZION
-├── 10% = 540 ZION/blok
-├── Bloků/den: 1 440
-└── = 777 600 ZION/den = $777 600/den do humanitárního fondu
-
-Ročně: ~$280 milionů automaticky, decentralizovaně, transparentně.
+Příklad (protokol, ne cena):
+├── Blok reward: 5 400,067 ZION
+├── 5 % humanitární fond = 270,003 ZION/blok
+├── Bloků/den: ~1 440 (60s block time)
+└── = ~388 800 ZION/den do humanitárního fondu
 ```
+
+Roční přírůstek fondu je tedy řádově **~142 milionů ZION** — nominálně, bez ohledu na to, jakou hodnotu tomu trh jednou přisoudí. Co se z fondu skutečně **vyplatilo**, udává tracker na `/l5-free-world` (`total_disbursed`), ne tento text.
 
 *Toto není charita. Je to ekonomický zákon sítě.*
 

@@ -41,7 +41,7 @@ V architektuře ZION to není prázdný marketingový slogan ani spekulativní p
 
 | Prvek příběhu | Co je na síti ZION ověřitelné |
 |---|---|
-| **Archa přežila potopu** | L1 Mainnet běží stabilně bez výpadku; produkční výška řetězce překročila **23 600+ bloků** na nezávislé P2P síti. |
+| **Archa přežila potopu** | L1 Mainnet běží stabilně bez výpadku; produkční výška řetězce přesáhla **112 000 bloků** na nezávislé P2P síti (snímek 2026-11-06; živou výšku udává `StatusV3.md` a explorer). |
 | **Paprsek světla (Lumi)** | Konsensus algoritmus **Ekam Deeksha v3.2** (512 KiB scratchpad, 2 AES passy, Keccak256 finální hash) aktivní na L1. |
 | **Spravedlivé dělení chleba** | Bloková odměna **5400.067 ZION** se dělí v poměru: **89 % těžař, 5 % humanitární fond L5 Free World, 5 % vědecký fond L6 Issobella, 1 % Node Reward pool**. |
 | **Otevřené okno archy** | Veřejné RPC (`rpc.zionterranova.com:8443`), Stratum pool port `8444`, monitorovací dashboard na `dashboard.zionterranova.com`. |

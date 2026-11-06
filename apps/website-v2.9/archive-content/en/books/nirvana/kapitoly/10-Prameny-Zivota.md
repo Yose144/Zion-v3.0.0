@@ -47,9 +47,9 @@ ZION 3.3 transmutes abstract crypto-economics into a **concrete, tangible impact
 |---|---|
 | **The spring of aid (Fund)** | The canonical address `zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8` is hard-coded in the L1 consensus core. |
 | **Running tracker service** | `zion-v31-free-world.service` is active on port `8095` and records every payment received from coinbase. |
-| **Dedicated Web UI** | The `/l5-free-world` page on `app.zionterranova.com` with a live chart of the balance and project flows. |
+| **Dedicated Web UI** | The `/l5-free-world` page on `app.zionterranova.com` with the live fund balance (read from the L5 tracker). |
 | **Transparent accounting** | No central administrator can arbitrarily drain the fund — withdrawals are subject to multisig consensus and DAO voting. |
-| **A direct link to mining** | Every ~60 seconds a share of a new block is added to the fund; over 23,600 payments have already been made. |
+| **A direct link to mining** | Every ~60 seconds a share of a new block is added to the fund. Up to height 112,326 (snapshot 2026-11-06) the fund has accumulated **30,305,717 ZION**, and `total_disbursed` is **0** — the fund has not yet paid out a single grant. |
 
 ---
 

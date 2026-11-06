@@ -27,7 +27,7 @@ When they gathered at the table that evening and shared out freshly baked bread,
 
 In technological reality it means an environment where the user is not the product of centralized corporations, but a **fully sovereign citizen**:
 
-1. **ZIS (ZION Identity Service):** A single, secure access to the whole world of ZION without selling personal data. No password that could be stolen from a central database — sign-in is based on modern Passkeys, Ed25519 cryptographic signatures and WebAuthn biometrics.
+1. **ZIS (ZION Identity Service):** A single, secure access to the whole world of ZION without selling personal data. Accounts today rest on e-mail, a ZIS session with Ed25519 signatures and an optional Google account link. **Passkeys and WebAuthn biometrics are designed and awaiting deployment** (`BUILDING`) — until the webauthn endpoints are in production, the book must not present them as today's sign-in.
 2. **Open doors for everyone:** Anyone can download a wallet for free, connect to the mining pool, run their own node or enter OASIS. There is no vetting board, no KYC discrimination and no geographical blocking.
 3. **A shared table and fair rewards:** Every miner in the pool receives a reward calculated by the mathematically exact PPLNS (Pay Per Last N Shares) system with a minimal fee and instant on-chain confirmation.
 

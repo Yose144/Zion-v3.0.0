@@ -41,7 +41,7 @@ In the architecture of ZION it is not an empty marketing slogan or a speculative
 
 | Story element | What is verifiable on the ZION network |
 |---|---|
-| **The ark survived the flood** | The L1 Mainnet runs stably without downtime; production chain height has surpassed **23,600+ blocks** on an independent P2P network. |
+| **The ark survived the flood** | The L1 Mainnet runs stably without downtime; production chain height has surpassed **112,000 blocks** on an independent P2P network (snapshot 2026-11-06; the live height is reported by `StatusV3.md` and the explorer). |
 | **The ray of light (Lumi)** | The consensus algorithm **Ekam Deeksha v3.2** (512 KiB scratchpad, 2 AES passes, final Keccak256 hash) is active on L1. |
 | **Fair sharing of bread** | The block reward of **5,400.067 ZION** is split in the ratio: **89% miner, 5% humanitarian fund L5 Free World, 5% science fund L6 Issobella, 1% Node Reward pool**. |
 | **The open window of the ark** | Public RPC (`rpc.zionterranova.com:8443`), Stratum pool port `8444`, monitoring dashboard at `dashboard.zionterranova.com`. |
