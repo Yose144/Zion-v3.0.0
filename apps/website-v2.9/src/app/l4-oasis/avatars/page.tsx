@@ -8,6 +8,7 @@ import {
   KeyRound, MapPin, Search, Shield, Sparkles, Star, Swords, Users, X, Zap,
 } from 'lucide-react';
 import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import MarkdownDoc from '@/components/docs/MarkdownDoc';
 import {
   AVATAR_CIRCLES, OASIS_AVATARS,
@@ -198,7 +199,7 @@ function AvatarCard({ a, lang, onOpen }: { a: OasisAvatar; lang: Lang; onOpen: (
   const rarity = RARITY_META[a.rarity] ?? RARITY_META.Rare;
   const src = portraitOf(a) ?? a.art.card;
   const initial = (a.name.trim()[0] ?? '?').toUpperCase();
-  const detail = Copy.detailLabel[cs ? 'cs' : 'en'];
+  const detail = tx5(Copy.detailLabel, lang);
   return (
     <button
       type="button"
@@ -225,7 +226,7 @@ function AvatarCard({ a, lang, onOpen }: { a: OasisAvatar; lang: Lang; onOpen: (
 
         <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2.5">
           <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold backdrop-blur ${rarity.badge}`}>
-            <Gem className="h-2.5 w-2.5" /> {rarity[cs ? 'cs' : 'en']}
+            <Gem className="h-2.5 w-2.5" /> {tx5(rarity, lang)}
           </span>
           <span className="rounded-full border border-zion-gold/40 bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-zion-gold backdrop-blur">
             CL{a.cl}
@@ -242,11 +243,11 @@ function AvatarCard({ a, lang, onOpen }: { a: OasisAvatar; lang: Lang; onOpen: (
         <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-gray-400">
           <span className="inline-flex items-center gap-1">
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: ray.hex }} />
-            {ray[cs ? 'cs' : 'en']}
+            {tx5(ray, lang)}
           </span>
           {a.quests.length > 0 && (
             <span className="inline-flex items-center gap-1">
-              <Swords className="h-2.5 w-2.5" /> {a.quests.length} {Copy.quests[cs ? 'cs' : 'en']}
+              <Swords className="h-2.5 w-2.5" /> {a.quests.length} {tx5(Copy.quests, lang)}
             </span>
           )}
           {a.key && (
@@ -257,7 +258,7 @@ function AvatarCard({ a, lang, onOpen }: { a: OasisAvatar; lang: Lang; onOpen: (
         </div>
         {(a.essence.cs || a.essence.en) && (
           <p className="line-clamp-2 text-[11px] leading-relaxed text-gray-300">
-            {a.essence[cs ? 'cs' : 'en'] || a.essence.en}
+            {tx5(a.essence, lang) || a.essence.en}
           </p>
         )}
         <p className="mt-auto flex items-center justify-between gap-2 pt-1 text-[10px] uppercase tracking-wider text-gray-500">
@@ -334,13 +335,14 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
     if (!a.hasProfile) return;
     let dead = false;
     // Profil je dvojjazyčný: <id>.<lang>.md; když překlad chybí, spadne na druhý jazyk.
-    const lang = cs ? 'cs' : 'en';
-    const other = cs ? 'en' : 'cs';
+    // Profily existují jen cs/en — es/pt/fr čtou angličtinu.
+    const profileLang = lang === 'cs' ? 'cs' : 'en';
+    const other = profileLang === 'cs' ? 'en' : 'cs';
     const load = (l: string) =>
       fetch(`/data/oasis/profiles/${a.id}.${l}.md`).then((r) =>
         r.ok ? r.text() : Promise.reject(new Error(String(r.status))),
       );
-    load(lang)
+    load(profileLang)
       .catch(() => load(other))
       .then((t) => { if (!dead) setProfile(t); })
       .catch(() => { if (!dead) setProfileFailed(true); });
@@ -348,12 +350,12 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
   }, [a.id, a.hasProfile, cs]);
 
   const circle = AVATAR_CIRCLES.find((c) => c.key === a.circle);
-  const circleLabel = circle ? `${circle.emoji} ${circle[cs ? 'cs' : 'en']}` : a.circle;
+  const circleLabel = circle ? `${circle.emoji} ${tx5(circle, lang)}` : a.circle;
   const infoRows: { icon: typeof Star; label: string; value: string }[] = [
-    { icon: Shield, label: Copy.roleLabel[cs ? 'cs' : 'en'], value: tx(a.role, lang) },
-    { icon: MapPin, label: Copy.locationLabel[cs ? 'cs' : 'en'], value: tx(a.location, lang) },
-    { icon: KeyRound, label: Copy.keyLabel[cs ? 'cs' : 'en'], value: a.key },
-    { icon: Swords, label: Copy.questLineLabel[cs ? 'cs' : 'en'], value: tx(a.questLine, lang) },
+    { icon: Shield, label: tx5(Copy.roleLabel, lang), value: tx(a.role, lang) },
+    { icon: MapPin, label: tx5(Copy.locationLabel, lang), value: tx(a.location, lang) },
+    { icon: KeyRound, label: tx5(Copy.keyLabel, lang), value: a.key },
+    { icon: Swords, label: tx5(Copy.questLineLabel, lang), value: tx(a.questLine, lang) },
   ].filter((r) => r.value);
   return (
     <div
@@ -375,7 +377,7 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
           onClick={onClose}
           autoFocus
           className="absolute right-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/60 text-gray-300 backdrop-blur transition-colors hover:bg-white/15 hover:text-white"
-          aria-label={Copy.close[cs ? 'cs' : 'en']}
+          aria-label={tx5(Copy.close, lang)}
         >
           <X className="h-4 w-4" />
         </button>
@@ -386,7 +388,7 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
           <AvatarVisual a={a} size="modal" lang={lang} />
           <div className="min-w-0 pr-10">
             <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-              {Copy.idLabel[cs ? 'cs' : 'en']} {a.id} · {circleLabel}
+              {tx5(Copy.idLabel, lang)} {a.id} · {circleLabel}
             </p>
             <h3 className="mt-1 text-2xl font-semibold text-white">{a.name}</h3>
             <p className="text-sm text-zion-gold/90">{tx(a.subtitle, lang)}</p>
@@ -395,9 +397,7 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
             )}
             {a.art.card && (
               <span className="mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] uppercase tracking-wider text-gray-400">
-                {(portraitOf(a) ? Copy.artGame : a.art.final ? Copy.artFinal : Copy.artConcept)[
-                  cs ? 'cs' : 'en'
-                ]}
+                {tx5(portraitOf(a) ? Copy.artGame : a.art.final ? Copy.artFinal : Copy.artConcept, lang)}
               </span>
             )}
           </div>
@@ -405,17 +405,17 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
 
         <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px]">
           <span className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 font-semibold ${rarity.badge}`}>
-            <Gem className="h-3 w-3" /> {rarity[cs ? 'cs' : 'en']}
+            <Gem className="h-3 w-3" /> {tx5(rarity, lang)}
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-gray-200">
             <span className="h-2 w-2 rounded-full" style={{ background: ray.hex }} />
-            {ray[cs ? 'cs' : 'en']}
+            {tx5(ray, lang)}
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-3 py-1 text-zion-gold">
-            {Copy.clLabel[cs ? 'cs' : 'en']} CL{a.cl}{tx(a.clName, lang) ? ` · ${tx(a.clName, lang)}` : ''}
+            {tx5(Copy.clLabel, lang)} CL{a.cl}{tx(a.clName, lang) ? ` · ${tx(a.clName, lang)}` : ''}
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-gray-400">
-            {Copy.nftLabel[cs ? 'cs' : 'en']}: {a.rarity}
+            {tx5(Copy.nftLabel, lang)}: {a.rarity}
           </span>
         </div>
 
@@ -429,7 +429,7 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
               className="w-full"
             />
             <figcaption className="border-t border-white/10 px-3 py-2 text-[10px] uppercase tracking-wider text-gray-500">
-              {Copy.sheetLabel[cs ? 'cs' : 'en']}
+              {tx5(Copy.sheetLabel, lang)}
             </figcaption>
           </figure>
         )}
@@ -437,7 +437,7 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
         {spec && (spec.symbols.length > 0 || spec.palette.length > 0) && (
           <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px]">
             <span className="text-[10px] uppercase tracking-wider text-gray-500">
-              {Copy.symbolsLabel[cs ? 'cs' : 'en']}
+              {tx5(Copy.symbolsLabel, lang)}
             </span>
             {spec.symbols.map((symbol) => (
               <span key={symbol} className="rounded-full border border-zion-cyan/25 bg-zion-cyan/10 px-2 py-0.5 text-cyan-200">
@@ -459,7 +459,7 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
           <div className="mt-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-zion-gold">
-                <Sparkles className="h-3.5 w-3.5" /> {Copy.promptLabel[cs ? 'cs' : 'en']}
+                <Sparkles className="h-3.5 w-3.5" /> {tx5(Copy.promptLabel, lang)}
               </p>
               <button
                 type="button"
@@ -475,10 +475,10 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
                 }}
                 className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] text-gray-200 transition-colors hover:bg-white/10"
               >
-                {copied ? Copy.copied[cs ? 'cs' : 'en'] : Copy.copyPrompt[cs ? 'cs' : 'en']}
+                {copied ? tx5(Copy.copied, lang) : tx5(Copy.copyPrompt, lang)}
               </button>
             </div>
-            <p className="mt-1 text-[11px] text-gray-500">{Copy.promptHint[cs ? 'cs' : 'en']}</p>
+            <p className="mt-1 text-[11px] text-gray-500">{tx5(Copy.promptHint, lang)}</p>
             <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-black/40 p-3 text-[11px] leading-relaxed text-gray-300">
               {spec.prompt}
             </pre>
@@ -502,7 +502,7 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
         {tx(a.ability, lang) && (
           <div className="mt-5">
             <p className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-zion-gold">
-              <Zap className="h-3.5 w-3.5" /> {Copy.abilityLabel[cs ? 'cs' : 'en']}
+              <Zap className="h-3.5 w-3.5" /> {tx5(Copy.abilityLabel, lang)}
             </p>
             <p className="text-sm leading-relaxed text-gray-300">{tx(a.ability, lang)}</p>
           </div>
@@ -511,7 +511,7 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
         {tx(a.teaching, lang) && (
           <div className="mt-5">
             <p className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-zion-purple">
-              <BookOpen className="h-3.5 w-3.5" /> {Copy.teachingLabel[cs ? 'cs' : 'en']}
+              <BookOpen className="h-3.5 w-3.5" /> {tx5(Copy.teachingLabel, lang)}
             </p>
             <p className="border-l-2 border-zion-purple/40 pl-3 text-sm italic leading-relaxed text-gray-300">
               {tx(a.teaching, lang)}
@@ -522,7 +522,7 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
         {a.quests.length > 0 && (
           <div className="mt-5">
             <p className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-zion-cyan">
-              <Swords className="h-3.5 w-3.5" /> {Copy.questLineLabel[cs ? 'cs' : 'en']} · {a.quests.length} {Copy.quests[cs ? 'cs' : 'en']}
+              <Swords className="h-3.5 w-3.5" /> {tx5(Copy.questLineLabel, lang)} · {a.quests.length} {tx5(Copy.quests, lang)}
             </p>
             <ol className="space-y-2">
               {a.quests.map((q, i) => (
@@ -543,14 +543,14 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
         {a.hasProfile && (
           <div className="mt-6 border-t border-white/10 pt-5">
             <p className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-zion-cyan">
-              <BookOpen className="h-3.5 w-3.5" /> {Copy.profileLabel[cs ? 'cs' : 'en']}
+              <BookOpen className="h-3.5 w-3.5" /> {tx5(Copy.profileLabel, lang)}
             </p>
             {profile ? (
               <div className="zion-docs-prose text-sm leading-relaxed text-gray-300">
                 <MarkdownDoc content={profile} />
               </div>
             ) : (
-              <p className="text-xs text-gray-500">{profileFailed ? '—' : Copy.profileLoading[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs text-gray-500">{profileFailed ? '—' : tx5(Copy.profileLoading, lang)}</p>
             )}
           </div>
         )}
@@ -651,44 +651,44 @@ export default function OasisAvatarsPage() {
                 href="/l4-oasis"
                 className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300 hover:bg-white/10 transition-colors"
               >
-                <ArrowLeft className="h-3 w-3" /> {Copy.backToOasis[cs ? 'cs' : 'en']}
+                <ArrowLeft className="h-3 w-3" /> {tx5(Copy.backToOasis, lang)}
               </Link>
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
                 <Users className="h-4 w-4" />
-                {Copy.badge[cs ? 'cs' : 'en']}
+                {tx5(Copy.badge, lang)}
               </div>
             </div>
             <div className="max-w-3xl">
               <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
-                {Copy.title[cs ? 'cs' : 'en']}
+                {tx5(Copy.title, lang)}
               </h1>
               <p className="mt-2 text-lg font-medium text-zion-gold/90">
-                {Copy.tagline[cs ? 'cs' : 'en']}
+                {tx5(Copy.tagline, lang)}
               </p>
             </div>
             <p className="text-base text-gray-300 max-w-3xl">
-              {Copy.desc[cs ? 'cs' : 'en']}
+              {tx5(Copy.desc, lang)}
             </p>
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-orange-200">
-                <Star className="h-3 w-3" /> {OASIS_AVATARS.length} {Copy.avatarsCount[cs ? 'cs' : 'en']}
+                <Star className="h-3 w-3" /> {OASIS_AVATARS.length} {tx5(Copy.avatarsCount, lang)}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-cyan-200">
-                <Users className="h-3 w-3" /> {AVATAR_CIRCLES.length} {Copy.circlesCount[cs ? 'cs' : 'en']}
+                <Users className="h-3 w-3" /> {AVATAR_CIRCLES.length} {tx5(Copy.circlesCount, lang)}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-zion-purple/30 bg-zion-purple/10 px-4 py-2 text-purple-200">
-                <Sparkles className="h-3 w-3" /> {rayCounts.size} {Copy.raysCount[cs ? 'cs' : 'en']}
+                <Sparkles className="h-3 w-3" /> {rayCounts.size} {tx5(Copy.raysCount, lang)}
               </span>
               {RARITY_ORDER.map((r) => (
                 <span key={r} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 ${RARITY_META[r].badge}`}>
-                  <Gem className="h-3 w-3" /> {RARITY_META[r][cs ? 'cs' : 'en']} {rarityCounts.get(r) ?? 0}
+                  <Gem className="h-3 w-3" /> {tx5(RARITY_META[r], lang)} {rarityCounts.get(r) ?? 0}
                 </span>
               ))}
             </div>
             <div className="overflow-hidden rounded-2xl border border-white/10">
               <img
                 src="/oasis-assets/oasis-gateway-1920x1080.webp"
-                alt={Copy.heroAlt[cs ? 'cs' : 'en']}
+                alt={tx5(Copy.heroAlt, lang)}
                 width={1920}
                 height={1080}
                 className="w-full object-cover"
@@ -713,13 +713,13 @@ export default function OasisAvatarsPage() {
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder={Copy.searchPlaceholder[cs ? 'cs' : 'en']}
+                  placeholder={tx5(Copy.searchPlaceholder, lang)}
                   className="w-full rounded-xl border border-white/10 bg-black/40 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-gray-500 focus:border-zion-gold/40 focus:outline-none"
                 />
               </div>
               <span className="text-xs text-gray-400">
                 <Filter className="mr-1 inline h-3 w-3" />
-                {filtered.length} {Copy.shownOf[cs ? 'cs' : 'en']} {Copy.of[cs ? 'cs' : 'en']} {OASIS_AVATARS.length}
+                {filtered.length} {tx5(Copy.shownOf, lang)} {tx5(Copy.of, lang)} {OASIS_AVATARS.length}
               </span>
               {filtering && (
                 <button
@@ -727,28 +727,28 @@ export default function OasisAvatarsPage() {
                   onClick={() => { setQuery(''); setRayFilter('all'); setRarityFilter('all'); }}
                   className="rounded-full border border-zion-purple/40 bg-zion-purple/10 px-3 py-1.5 text-xs font-semibold text-zion-purple hover:bg-zion-purple/15 transition-colors"
                 >
-                  {Copy.resetFilters[cs ? 'cs' : 'en']}
+                  {tx5(Copy.resetFilters, lang)}
                 </button>
               )}
             </div>
             <div className="flex flex-wrap gap-1.5">
               <button type="button" onClick={() => setRayFilter('all')} className={pill(rayFilter === 'all')}>
-                {Copy.allRays[cs ? 'cs' : 'en']}
+                {tx5(Copy.allRays, lang)}
               </button>
               {RAY_ORDER.filter((r) => rayCounts.has(r)).map((r) => (
                 <button key={r} type="button" onClick={() => setRayFilter(rayFilter === r ? 'all' : r)} className={pill(rayFilter === r)}>
                   <span className="h-2 w-2 rounded-full" style={{ background: RAY_META[r].hex }} />
-                  {RAY_META[r][cs ? 'cs' : 'en']} <span className="text-gray-500">{rayCounts.get(r)}</span>
+                  {tx5(RAY_META[r], lang)} <span className="text-gray-500">{rayCounts.get(r)}</span>
                 </button>
               ))}
             </div>
             <div className="flex flex-wrap gap-1.5">
               <button type="button" onClick={() => setRarityFilter('all')} className={pill(rarityFilter === 'all')}>
-                {Copy.allRarity[cs ? 'cs' : 'en']}
+                {tx5(Copy.allRarity, lang)}
               </button>
               {RARITY_ORDER.map((r) => (
                 <button key={r} type="button" onClick={() => setRarityFilter(rarityFilter === r ? 'all' : r)} className={pill(rarityFilter === r)}>
-                  {RARITY_META[r][cs ? 'cs' : 'en']} <span className="text-gray-500">{rarityCounts.get(r)}</span>
+                  {tx5(RARITY_META[r], lang)} <span className="text-gray-500">{rarityCounts.get(r)}</span>
                 </button>
               ))}
             </div>
@@ -758,16 +758,16 @@ export default function OasisAvatarsPage() {
         {/* ── KRUHY ── */}
         <section className="space-y-10">
           <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.roster[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Copy.roster, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <BookOpen className="h-7 w-7 text-zion-gold" />
-              {Copy.circlesTitle[cs ? 'cs' : 'en']}
+              {tx5(Copy.circlesTitle, lang)}
             </h2>
           </div>
 
           {filtered.length === 0 && (
             <div className="zion-rainbow-card p-10 text-center text-gray-400" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              {Copy.noResults[cs ? 'cs' : 'en']}
+              {tx5(Copy.noResults, lang)}
             </div>
           )}
 
@@ -787,12 +787,12 @@ export default function OasisAvatarsPage() {
                 <div className="mb-4 flex flex-wrap items-baseline gap-3">
                   <h3 className="text-xl font-semibold text-white">
                     <span className="mr-2" aria-hidden>{circle.emoji}</span>
-                    {circle[cs ? 'cs' : 'en']}
+                    {tx5(circle, lang)}
                   </h3>
                   <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs text-gray-400">
                     {list.length}
                   </span>
-                  {note && <span className="text-xs italic text-gray-500">{note[cs ? 'cs' : 'en']}</span>}
+                  {note && <span className="text-xs italic text-gray-500">{tx5(note, lang)}</span>}
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {list.map((a) => <AvatarCard key={a.id} a={a} lang={lang} onOpen={() => {
@@ -820,10 +820,10 @@ export default function OasisAvatarsPage() {
               className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
               style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
             >
-              <Gamepad2 className="h-4 w-4" /> {Copy.enterOasis[cs ? 'cs' : 'en']}
+              <Gamepad2 className="h-4 w-4" /> {tx5(Copy.enterOasis, lang)}
             </a>
             <Link href="/l4-oasis" className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold/30 bg-zion-gold/5 px-6 py-3 text-sm font-semibold text-amber-200 hover:bg-zion-gold/10 transition-colors">
-              {Copy.moreAbout[cs ? 'cs' : 'en']} <ArrowRight className="h-4 w-4" />
+              {tx5(Copy.moreAbout, lang)} <ArrowRight className="h-4 w-4" />
             </Link>
             <Link href="/terranova" className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/30 bg-zion-cyan/5 px-6 py-3 text-sm font-semibold text-cyan-200 hover:bg-zion-cyan/10 transition-colors">
               <BookOpen className="h-4 w-4" /> TerraNova Book
