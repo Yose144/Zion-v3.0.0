@@ -187,9 +187,11 @@ export function ZionPassSection() {
 
 export function LampionSection() {
   const { t, lang } = useLangT();
-  const bonus = (43200).toLocaleString(lang === 'cs' ? 'cs-CZ' : 'en-US');
-  const price = t('common.price', { price: 432, symbol: t('common.kcSymbol') });
   const product = getXmasProduct('lampion');
+  // Cena i bonus se berou z dat produktu — dřív tu byly natvrdo (432 / 43 200)
+  // a při každé změně ceny zůstala homepage se starým číslem.
+  const bonus = (product?.bonus ?? 0).toLocaleString(lang === 'cs' ? 'cs-CZ' : 'en-US');
+  const price = t('common.price', { price: product?.priceCzk ?? 0, symbol: t('common.kcSymbol') });
   const pick = (x?: XmasText) => (x ? (lang === 'cs' ? x.cs : x.en) : undefined);
 
   return (
@@ -210,7 +212,6 @@ export function LampionSection() {
         { icon: BookOpen, label: t('xmas.lampionChipBook') },
       ]}
       ctaLabel={`${t('xmas.lampionCta')} · ${price}`}
-      ctaDisabled
       detailHref="/vanoce/lampion"
       detailLabel={t('xmasPage.moreInfo')}
       reverse

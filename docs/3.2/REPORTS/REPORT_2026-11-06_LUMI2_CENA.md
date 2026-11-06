@@ -164,3 +164,44 @@ zdražení násobí závazek, který jednou může mít reálnou hodnotu.
 **Poznámka k metodě:** ceny konkurence jsou včetně DPH, u ciziny přepočteno kurzem ~25 Kč/€.
 Marže jsou modelové (netto po DPH a platební bráně), bez režie — slouží k rozhodnutí o ceně,
 ne jako účetní výkaz.
+
+---
+
+## 9) Fyzický výpal proběhl: 5W laser = **4 hodiny na kus**
+
+👤 2026-11-06: „výpal proběhl, na 5W laseru 4h.“ To mění nákladový model — model výše počítal
+s 17,4 min (CO2, 20 mm/s). Skutečnost je **14× delší**, protože 5W dioda řeže 3 mm překližku
+řádově pomaleji a na 20,9 m drah to jinak vyjít nemůže.
+
+| | model (CO2) | skutečnost (5W dioda) |
+|---|---:|---:|
+| čas laseru na kus | 17,4 min | **240 min** |
+| strojní čas @ 600 Kč/h (kdyby se platil) | 174 Kč | **2 400 Kč** |
+| elektřina (0,1 kW) | ~1 Kč | ~24 Kč |
+| obsluha / dohled (nelze nechat bez dozoru) | 17 min | **4 h** |
+
+**Co to znamená pro cenu 590 Kč:**
+- přímé hotovostní náklady (materiál 35 + elektřina 24 + montáž 100 + balení 75) ≈ **250 Kč**,
+- z 590 Kč (netto 488 Kč) zbyde ≈ **240 Kč** — to je 50 %, ale **za 4 hodiny stroje**:
+  **~147 Kč/hod** a kapacita **2–3 kusy denně** (i s dohledem).
+- Kdyby se řezalo externě, 4 h × 600 Kč/h = 2 400 Kč → cena 590 Kč je nemyslitelná.
+
+**Rozhodnutí 👤:** cena **590 Kč** (vánoční edice), bonus **150 ZION / 1 Kč**.
+Prodej aktivován 2026-11-06 (sklad 5 ks, číslovaná edice).
+
+**Doporučení k výrobě (ne k ceně):** 5W dioda je úzké hrdlo — 20W dioda nebo CO2 by stejnou
+práci udělaly za 30–60 min, tedy 4–8× víc kusů za stejný čas. Do té doby platí: 590 Kč je
+udržitelné jen jako doplňkový prodej k dílně, ne jako hlavní zdroj příjmů.
+
+### Co bylo změněno v ekosystému (2026-11-06)
+- **Market:** `lamp-001` 432 → **590 Kč**, tokens 43 200 → **88 500**, `active: true`, `stock: 5`;
+  produktová stránka `/vanoce/lampion` (cena, bonus, „Připravujeme“ → prodej, FAQ, kroky, fakta
+  „20,9 m řezu / 614 obrysů / 4 h laseru“), homepage novinky, `LampionSection` (cena a bonus
+  už z dat, ne natvrdo).
+- **Bonusy:** vánoční sazba 100 → **150 ZION/Kč** u všech tří produktů
+  (Pass 16 200, kniha 32 400, lampion 88 500) — seed, DB i `ShopSetting campaign:*` (do 24. 12. 2026).
+- **Website v2.9:** karty vánoční edice (`ChristmasShopCards`) + článek `/news/christmas-2026`
+  (cena, bonusy, „Připravujeme“ → „Koupit v eShopu“, 20,9 m / 4 h).
+- **Ověřeno na produkci:** objednávka bez prohlášení → `400 fire_consent_required`;
+  s podpisem → objednávka 88 500 ZION + podpis v DB (`Test Lumi · fire-2026-11-06 · čas serveru`);
+  sklad 5 → 4 → 5 po zrušení.

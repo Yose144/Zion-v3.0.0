@@ -33,8 +33,8 @@ export interface ShopNewsProduct {
   note?: ShopNewsText;
 }
 
-/** 1 Kč = 100 ZION — stejná sazba jako `ShopSetting campaign:*`. */
-export const ZION_PER_CZK = 100;
+/** 1 Kč = 150 ZION — vánoční kampaň (běžné zboží má 10 ZION/Kč). */
+export const ZION_PER_CZK = 150;
 
 /** Konec vánoční kampaně (shoduje se s `endsAt` v DB). */
 export const CAMPAIGN_ENDS_AT = '2026-12-24T23:59:59+01:00';
@@ -62,12 +62,11 @@ export const CHRISTMAS_EDITION_PRODUCTS: ShopNewsProduct[] = [
   {
     externalId: 'lamp-001',
     name: { cs: 'Lampion Lumi 2', en: 'Lumi 2 lantern' },
-    priceCzk: 432,
+    priceCzk: 590,
     href: '/vanoce/lampion',
     image: '/shop/img/products/lamp-001_lumi-2.webp',
     imageAlt: { cs: 'Lampion Lumi 2 — vyřezávaný z 3mm překližky, rozsvícený', en: 'Lumi 2 lantern — cut from 3 mm plywood, lit' },
-    buyable: false,
-    note: { cs: 'Připravujeme', en: 'Coming soon' },
+    buyable: true,
   },
 ];
 

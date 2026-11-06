@@ -54,7 +54,7 @@ export const shopProducts: ShopProductSeed[] = [
     inStock: true,
     size: 'PDF + EPUB · 40 knih, 5 jazyků',
     stock: 999,
-    tokens: 21600,
+    tokens: 32400,
     digital: true,
     // Kompletní ediční sada: 8 edic × 5 jazyků, PDF i EPUB (65 MB).
     // ZIP se staví skriptem scripts/ops/build-kralovstvi-bundle.py a leží
@@ -76,7 +76,7 @@ export const shopProducts: ShopProductSeed[] = [
     inStock: true,
     size: 'ZAP kód · okamžité doručení',
     stock: 999,
-    tokens: 10800,
+    tokens: 16200,
     digital: true,
     active: true,
   },
@@ -85,18 +85,18 @@ export const shopProducts: ShopProductSeed[] = [
     name: 'Lampion Království srdce — Lumi 2',
     category: 'woodart',
     description:
-      'Lampion Lumi 2 — šestihranná lucerna vyřezávaná laserem z 3mm březové překližky: šest stěn s mandalami z knihy (lotos, strom života, srdcová mandala, loď Království srdce), zdobený vršek s otvorem Ø 90 mm a dno. Rozměry 140 × 126 × 121 mm. Skládá se ze šesti dílů bez nářadí, svítí se čajovou svíčkou ve sklenici. Vánoční edice: ke každému lampionu digitální kniha Království srdce a ZION Pass v ceně. 🛡️ BONUS: 43 200 ZION. U zboží s otevřeným plamenem se při objednávce podepisuje bezpečnostní prohlášení. Připravujeme — prodej zahájíme, jakmile bude výrobek hotový.',
-    priceCzk: 432,
+      'Lampion Lumi 2 — šestihranná lucerna vyřezávaná laserem z 3mm březové překližky: šest stěn s mandalami z knihy (lotos, strom života, srdcová mandala, loď Království srdce), zdobený vršek s otvorem Ø 90 mm a dno. Rozměry 140 × 126 × 121 mm. Skládá se ze šesti dílů bez nářadí, svítí se čajovou svíčkou ve sklenici. Vánoční edice: ke každému lampionu digitální kniha Království srdce a ZION Pass v ceně. 🛡️ BONUS: 88 500 ZION. U zboží s otevřeným plamenem se při objednávce podepisuje bezpečnostní prohlášení. Ruční práce: 20,9 m řezných drah, 614 obrysů, čtyři hodiny laseru na jeden kus — edice je proto číslovaná a omezená.',
+    priceCzk: 590,
     oldPriceCzk: undefined,
     image: '/shop/img/products/lamp-001_lumi-2.webp',
     badge: '🎄 Vánoční edice',
-    inStock: false,
+    inStock: true,
     size: 'Překližka 3 mm · 140 × 126 × 121 mm',
-    stock: 0,
-    tokens: 43200,
+    stock: 5,
+    tokens: 88500,
     modelUrl: '/models/lumi-2.glb',
     digital: false,
-    active: false,
+    active: true,
   },
   // WoodArt
   {

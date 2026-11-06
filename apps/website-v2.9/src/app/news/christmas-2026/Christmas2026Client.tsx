@@ -34,7 +34,7 @@ const Article = {
         title: 'Lampion Království srdce — světlo z příběhu',
         image: '/images/news/christmas-2026/lampion-wide.webp?v=7',
         imageAlt: 'Tesař s dětmi u hořícího lampionu, na stole kniha Království srdce a ZION Pass',
-        text: 'Ručně gravírovaný lampion se vzorem Srdce Království vychází ze scény, kde Lumi nese lampu k bráně. Vzory na těle nejsou dekorace — jsou to mandaly z knihy. Vánoční edice za 432 Kč obsahuje digitální knihu v plné sadě, ZION Pass a bonus 43 200 ZION; digitální část dorazí hned, fyzický lampion odejde ze dílny, až bude hotový, proto je prodej zatím označený jako připravujeme. Geometrii výrobku určuje samostatná technická dokumentace, ne ilustrace.',
+        text: 'Lampion Lumi 2 — šestihranná lucerna vyřezávaná laserem — vychází ze scény, kde Lumi nese lampu k bráně. Vzory na těle nejsou dekorace: je to šest mandal z knihy. Jeden kus znamená 20,9 metru řezných drah, 614 obrysů a čtyři hodiny laseru, proto je edice číslovaná a vyrábí se v malých dávkách. Vánoční edice za 590 Kč obsahuje digitální knihu v plné sadě, ZION Pass a bonus 88 500 ZION; digitální část dorazí hned, fyzický lampion odejde ze dílny do dvou týdnů. Geometrii výrobku určuje samostatná technická dokumentace, ne ilustrace.',
       },
       {
         icon: Gamepad2,

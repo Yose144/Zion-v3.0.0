@@ -155,15 +155,15 @@ const t = {
       en: 'Light of the heart for a new land',
     },
     lampionDescription: {
-      cs: 'Lampion Lumi 2 — šestihranná lucerna vyřezávaná a gravírovaná laserem z 3mm březové překližky, se vzorem Srdce Království. Vánoční edice: ke každému lampionu digitální kniha Království srdce a ZION Pass v ceně a 43 200 ZION bonusů. Připravujeme — prodej zahájíme, jakmile bude výrobek hotový.',
-      en: 'The Lumi 2 lantern — a hexagonal lamp laser-cut and engraved from 3 mm birch plywood, bearing the Heart of the Kingdom pattern. Christmas edition: every lantern includes the digital Kingdom of Hearts book and a ZION Pass, plus a 43,200 ZION bonus. Coming soon — sales open once the craft is ready.',
+      cs: 'Lampion Lumi 2 — šestihranná lucerna vyřezávaná a gravírovaná laserem z 3mm březové překližky, se vzorem Srdce Království. Vánoční edice: ke každému lampionu digitální kniha Království srdce a ZION Pass v ceně a 88 500 ZION bonusů. Číslovaná série — jeden kus znamená 20,9 m řezných drah a čtyři hodiny laseru.',
+      en: 'The Lumi 2 lantern — a hexagonal lamp laser-cut and engraved from 3 mm birch plywood, bearing the Heart of the Kingdom pattern. Christmas edition: every lantern includes the digital Kingdom of Hearts book and a ZION Pass, plus an 88,500 ZION bonus. A numbered run — one piece means 20.9 m of cutting paths and four hours of laser time.',
     },
     lampionChipEngraved: { cs: 'Laserové vyřezávání', en: 'Laser-cut' },
     lampionChipBook: {
       cs: '+ kniha a ZION Pass v ceně',
       en: '+ book and ZION Pass included',
     },
-    lampionCta: { cs: 'Připravujeme', en: 'Coming soon' },
+    lampionCta: { cs: 'Koupit lampion', en: 'Buy the lantern' },
     lampionImageAlt: {
       cs: 'Lampion Království srdce — gravírovaný vánoční výrobek z dílny tesaře',
       en: 'Kingdom of Hearts lantern — engraved Christmas craft from the carpenter\'s workshop',

@@ -680,9 +680,9 @@ export const christmasProducts: XmasProduct[] = [
       cs: 'Lampion Království srdce — gravírovaný výrobek z dílny tesaře',
       en: 'Kingdom of Hearts lantern — engraved craft from the carpenter\u2019s workshop',
     },
-    priceCzk: 432,
-    bonus: 43200,
-    buyable: false,
+    priceCzk: 590,
+    bonus: 88500,
+    buyable: true,
     kicker: { cs: 'Vánoční edice 2026 · Ruční výroba', en: 'Christmas Edition 2026 · Handmade' },
     title: { cs: 'Lampion – Království srdce', en: 'Lantern – Kingdom of Hearts' },
     subtitle: {
@@ -699,12 +699,12 @@ export const christmasProducts: XmasProduct[] = [
         en: 'Christmas edition: every lantern includes the **digital Kingdom of Hearts book** and a **ZION Pass** — the whole story and entry into the world the lantern comes from.',
       },
       {
-        cs: 'Bonus **43 200 ZION** na vaši peněženku — sto ZION za každou korunu.',
-        en: 'A **43,200 ZION** bonus to your wallet — a hundred ZION for every crown.',
+        cs: 'Bonus **88 500 ZION** na vaši peněženku — sto padesát ZION za každou korunu.',
+        en: 'An **88,500 ZION** bonus to your wallet — a hundred and fifty ZION for every crown.',
       },
       {
-        cs: 'Každý kus sestavujeme ručně — prodej zahájíme, jakmile bude výrobek hotový. Číslo vánoční edice bude omezené.',
-        en: 'Each piece is assembled by hand — sales open once the craft is ready. The Christmas edition run will be limited.',
+        cs: 'Každý kus sestavujeme ručně. Vánoční edice je číslovaná a omezená — jeden kus znamená 20,9 m řezných drah a čtyři hodiny laseru, proto vyrábíme v malých dávkách.',
+        en: 'Each piece is assembled by hand. The Christmas edition is numbered and limited — one piece means 20.9 m of cutting paths and four hours of laser time, which is why we build in small batches.',
       },
       {
         cs: '**Co dostanete hned:** digitální knihu v plné sadě (40 knih, 5 jazyků) a ZION Pass. Na ty se nečeká — přijdou e-mailem. Fyzický lampion jde ze dílny samostatně, proto má vlastní termín.',
@@ -720,13 +720,13 @@ export const christmasProducts: XmasProduct[] = [
         'Lampion Lumi 2 z 3mm překližky — vzor Srdce Království',
         'Digitální kniha Království srdce (40 knih, 5 jazyků)',
         'ZION Pass — Nirvana + Archiv',
-        'Bonus 43 200 ZION na peněženku',
+        'Bonus 88 500 ZION na peněženku',
       ],
       en: [
         'Lumi 2 lantern in 3 mm plywood — Heart of the Kingdom pattern',
         'Digital Kingdom of Hearts book (40 books, 5 languages)',
         'ZION Pass — Nirvana + Archive',
-        '43,200 ZION bonus to your wallet',
+        '88,500 ZION bonus to your wallet',
       ],
     },
     features: [
@@ -736,42 +736,42 @@ export const christmasProducts: XmasProduct[] = [
     ],
     steps: {
       cs: [
-        '**Teď:** produkt se připravuje — prodej spustíme, jakmile bude výrobek hotový.',
+        '**Teď:** edice je v prodeji — první kusy jsou hotové, očíslované a připravené k odeslání.',
         'Digitální část přijde **e-mailem hned po objednávce**: kniha (40 knih, 5 jazyků) + ZION Pass kód.',
-        'Zároveň ti dorazí **ZION peněženka** (adresa + seed phrase) s bonusem **43 200 ZION**.',
-        'Lampion mezitím vzniká v dílně — vyřezávání a gravírování vzoru Srdce Království.',
+        'Zároveň ti dorazí **ZION peněženka** (adresa + seed phrase) s bonusem **88 500 ZION**.',
+        'Lampion mezitím vzniká v dílně — čtyři hodiny laseru a ruční sestavení vzoru Srdce Království.',
         'Hotový výrobek pošleme **Zásilkovnou** — dorazí zabalený jako dárek.',
         'Peněženku **naimportuješ do ZIS** a dalších ZION aplikací — bonus použiješ v ekosystému.',
       ],
       en: [
-        '**Now:** the product is in preparation — sales open once the craft is ready.',
+        '**Now:** the edition is on sale — the first pieces are finished, numbered and ready to ship.',
         'The digital part arrives **by e-mail right after ordering**: the book (40 books, 5 languages) + ZION Pass code.',
-        'Your **ZION wallet** (address + seed phrase) also arrives carrying the **43,200 ZION** bonus.',
-        'Meanwhile the lantern is made in the workshop — the Heart of the Kingdom pattern cut and engraved.',
+        'Your **ZION wallet** (address + seed phrase) also arrives carrying the **88,500 ZION** bonus.',
+        'Meanwhile the lantern is made in the workshop — four hours of laser time and hand assembly of the Heart of the Kingdom pattern.',
         'The finished craft ships by **Zásilkovna** — arriving wrapped like a gift.',
         '**Import the wallet into ZIS** and other ZION apps — and use the bonus across the ecosystem.',
       ],
     },
     faq: [
       {
-        q: { cs: 'Kdy bude lampion k prodeji?', en: 'When will the lantern be on sale?' },
+        q: { cs: 'Jak je to s dostupností?', en: 'How does availability work?' },
         a: {
-          cs: 'Jakmile bude výrobek hotový — jde o malou sérii, ne skladový kus. Sledujte stránku; vánoční série bude číselně omezená.',
-          en: 'Once the craft is ready — this is a small run, not a stocked item. Watch this page; the Christmas run will be numerically limited.',
+          cs: 'Vyrábíme v malých dávkách: jeden lampion znamená čtyři hodiny laseru a ruční sestavení. Edice je číslovaná a omezená — když se dávka vyprodá, další jde do výroby po Vánocích.',
+          en: 'We build in small batches: one lantern means four hours of laser time and hand assembly. The edition is numbered and limited — when a batch sells out, the next one is made after Christmas.',
         },
       },
       {
-        q: { cs: 'Co přesně je v ceně 432 Kč?', en: 'What exactly does the 432 CZK include?' },
+        q: { cs: 'Co přesně je v ceně 590 Kč?', en: 'What exactly does the 590 CZK include?' },
         a: {
-          cs: 'Tři věci: lampion Lumi 2 (fyzický výrobek), digitální knihu Království srdce v plné sadě a ZION Pass do Nirvany i Archivu. Plus bonus 43 200 ZION na peněženku.',
-          en: 'Three things: the Lumi 2 lantern (a physical craft), the full digital Kingdom of Hearts book set, and a ZION Pass for Nirvana and the Archive. Plus a 43,200 ZION bonus to your wallet.',
+          cs: 'Tři věci: lampion Lumi 2 (fyzický výrobek), digitální knihu Království srdce v plné sadě a ZION Pass do Nirvany i Archivu. Plus bonus 88 500 ZION na peněženku.',
+          en: 'Three things: the Lumi 2 lantern (a physical craft), the full digital Kingdom of Hearts book set, and a ZION Pass for Nirvana and the Archive. Plus an 88,500 ZION bonus to your wallet.',
         },
       },
       {
         q: { cs: 'Jak dostanu peněženku s bonusem?', en: 'How do I get the bonus wallet?' },
         a: {
-          cs: 'E-mailem po dokončení objednávky — adresa, seed phrase a privátní klíč, s připsaných 43 200 ZION. Seed ulož offline. Pak ji jedním importem přeneseš do ZIS a ZION aplikací.',
-          en: 'By e-mail once the order completes — address, seed phrase and private key, carrying 43,200 ZION. Store the seed offline. Then import it into ZIS and the ZION apps in one step.',
+          cs: 'E-mailem po dokončení objednávky — adresa, seed phrase a privátní klíč, s připsaných 88 500 ZION. Seed ulož offline. Pak ji jedním importem přeneseš do ZIS a ZION aplikací.',
+          en: 'By e-mail once the order completes — address, seed phrase and private key, carrying 88,500 ZION. Store the seed offline. Then import it into ZIS and the ZION apps in one step.',
         },
       },
       {
@@ -795,8 +795,8 @@ export const christmasProducts: XmasProduct[] = [
     },
     home: {
       lead: {
-        cs: 'Ručně gravírovaný lampion se vzorem Srdce Království — světlo, které v příběhu nesla Lumi u brány a které viselo nad tesařovým hoblíkem v Nazaretě. K lampionu patří celá digitální kniha (40 knih, 5 jazyků), ZION Pass a bonus 43 200 ZION.',
-        en: 'A hand-engraved lantern bearing the Heart of the Kingdom pattern — the light Lumi carried at the gate, the one that hung above the carpenter’s plane in Nazareth. The lantern comes with the complete digital book (40 books, 5 languages), a ZION Pass and a 43,200 ZION bonus.',
+        cs: 'Lampion Lumi 2 — šestihranná lucerna vyřezávaná laserem, světlo, které v příběhu nesla Lumi u brány a které viselo nad tesařovým hoblíkem v Nazaretě. K lampionu patří celá digitální kniha (40 knih, 5 jazyků), ZION Pass a bonus 88 500 ZION.',
+        en: 'The Lumi 2 lantern — a hexagonal, laser-cut light, the one Lumi carried at the gate and that hung above the carpenter’s plane in Nazareth. It comes with the complete digital book (40 books, 5 languages), a ZION Pass and an 88,500 ZION bonus.',
       },
       bullets: [
         {
@@ -808,20 +808,20 @@ export const christmasProducts: XmasProduct[] = [
           en: 'The full digital book set and a ZION Pass included',
         },
         {
-          cs: 'Bonus 43 200 ZION na peněženku',
-          en: 'A 43,200 ZION bonus to your wallet',
+          cs: 'Bonus 88 500 ZION na peněženku',
+          en: 'An 88,500 ZION bonus to your wallet',
         },
         {
-          cs: 'Prodej zahájíme, jakmile bude výrobek hotový',
-          en: 'Sales open once the craft is ready',
+          cs: 'Číslovaná edice, malé dávky',
+          en: 'A numbered edition in small batches',
         },
       ],
     },
     facts: [
       {
         label: { cs: 'Výroba', en: 'Craft' },
-        value: { cs: 'ruční sestavení', en: 'assembled by hand' },
-        hint: { cs: 'vyřezávané a gravírované laserem', en: 'cut and engraved by laser' },
+        value: { cs: '20,9 m řezu', en: '20.9 m of cuts' },
+        hint: { cs: 'šest mandal, 614 obrysů, 4 h laseru', en: 'six mandalas, 614 paths, 4 h of laser time' },
       },
       {
         label: { cs: 'Série', en: 'Run' },
@@ -835,8 +835,8 @@ export const christmasProducts: XmasProduct[] = [
       },
       {
         label: { cs: 'Bonus', en: 'Bonus' },
-        value: { cs: '43 200 ZION', en: '43,200 ZION' },
-        hint: { cs: 'sto ZION za každou korunu', en: 'a hundred ZION for every crown' },
+        value: { cs: '88 500 ZION', en: '88,500 ZION' },
+        hint: { cs: 'sto padesát ZION za každou korunu', en: 'a hundred and fifty ZION for every crown' },
       },
     ],
   },
