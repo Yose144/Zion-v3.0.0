@@ -137,6 +137,7 @@ button {
   width: min(24rem, calc(100% - 2rem));
   max-height: calc(100% - 6rem - env(safe-area-inset-bottom, 0px));
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 1rem 1.1rem;
   border-radius: 1.2rem;
   background: rgba(7, 10, 20, 0.88);
@@ -485,7 +486,7 @@ button {
 .holo-drawer-scrim {
   position: fixed;
   inset: 0;
-  z-index: 7;
+  z-index: 71;
   border: 0;
   padding: 0;
   background: rgba(2, 3, 10, 0.45);
@@ -497,12 +498,16 @@ button {
   top: 0;
   left: 0;
   bottom: 0;
-  z-index: 8;
+  z-index: 72;
   width: min(19rem, 84vw);
   display: flex;
   flex-direction: column;
   transform: translateX(-105%);
-  transition: transform 0.28s ease;
+  /* Zavřený drawer nesmí být v tab order ani pro čtečku — `aria-hidden`
+     sám o sobě focus na children neodebere. `visibility` se zapne/až
+     vypne se zpožděním, aby slide-out animace doběhla. */
+  visibility: hidden;
+  transition: transform 0.28s ease, visibility 0s linear 0.28s;
   background: rgba(4, 14, 32, 0.92);
   border-right: 1px solid rgba(126, 200, 255, 0.4);
   box-shadow: 20px 0 60px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(126, 200, 255, 0.15);
@@ -511,6 +516,8 @@ button {
 
 .holo-drawer.open {
   transform: translateX(0);
+  visibility: visible;
+  transition: transform 0.28s ease, visibility 0s;
 }
 
 .holo-drawer-head {
@@ -524,6 +531,7 @@ button {
 .holo-drawer-tiles {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0.7rem 0.8rem;
   display: flex;
   flex-direction: column;
@@ -3206,6 +3214,18 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   max-width: min(58rem, calc(100vw - 2rem));
 }
 
+/* Na úzkém displeji by centrovaná lišta přetékala pod chat-dock-btn
+   (ten je fixed vpravo dole, z-60 > hud z-55) a zakrývala žetony.
+   Lišta se roztáhne do volného prostoru vlevo od chat tlačítka. */
+@media (max-width: 760px) {
+  .game-hud.is-dock {
+    left: calc(0.8rem + env(safe-area-inset-left, 0px));
+    right: calc(7.4rem + env(safe-area-inset-right, 0px));
+    transform: none;
+    max-width: none;
+  }
+}
+
 .game-hud.is-compact {
   left: calc(0.8rem + env(safe-area-inset-left, 0px));
   bottom: calc(0.9rem + env(safe-area-inset-bottom, 0px));
@@ -4529,12 +4549,11 @@ button.game-hud-chip.is-sound.is-off em {
   }
 }
 
-/* Během hry na mobilu schovej navigaci a chat — celá obrazovka patří hře. */
-@media (hover: none) and (pointer: coarse) {
-  body[data-playing='1'] .game-hud,
-  body[data-playing='1'] .chat-dock-btn {
-    display: none;
-  }
+/* Během hry schovej globální dok a chat. Příznak `data-playing` nastavují
+   herní stránky po celou dobu zápasu, na myši i na dotyku. */
+body[data-playing='1'] .game-hud,
+body[data-playing='1'] .chat-dock-btn {
+  display: none;
 }
 
 /* Na šířku sedí lišta dole u okraje (na výšku je zvednutá nad chat), takže
@@ -6081,7 +6100,7 @@ button.game-hud-chip.is-sound.is-off em {
   position: fixed;
   width: 0;
   height: 0;
-  z-index: 30;
+  z-index: 70;
   pointer-events: auto;
 }
 

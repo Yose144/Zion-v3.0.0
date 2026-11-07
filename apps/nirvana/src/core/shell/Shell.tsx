@@ -161,10 +161,16 @@ export function Shell() {
   const [xrSupported, setXrSupported] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const hashInit = useRef(false);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
 
   const openPortal = useCallback((id: string) => {
     const next = PANELS.has(id) ? id : null;
     setPortal(next);
+    // Portál a planetární/mission panel sdílí stejnou plochu vpravo nahoře —
+    // bez vyčištění by se vykreslily přes sebe.
+    setPlanet(null);
+    setMissionKey(null);
     // Jediná cesta: nastav fokus, přelet spustí `LinkEngine` přes `focus` prop.
     // Portál → cílový bod scény (kanonická mapa, ne sedm if-větví s flyTo).
     setFocus(PORTAL_FOCUS[next ?? ''] ?? 'earth');
@@ -178,6 +184,8 @@ export function Shell() {
 
   const selectWorld = useCallback((id: string) => {
     setSelectedWorld(id);
+    setPlanet(null);
+    setMissionKey(null);
     setPortal('world');
     setFocus(`world:${id}`);
     setMenuOpen(false);
@@ -302,6 +310,33 @@ export function Shell() {
     setFocus('earth');
   }, []);
 
+  // Esc zavírá **horní** vrstvu: drawer → portál → planetární/mission panel.
+  // Na `/` neběží hra, takže Esc tu nemůže ukrást pointer lock.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (menuOpen) {
+        setMenuOpen(false);
+        menuBtnRef.current?.focus();
+      } else if (portal) {
+        closePortal();
+      } else if (planet || missionKey) {
+        backToEarth();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [menuOpen, portal, planet, missionKey, closePortal, backToEarth]);
+
+  // Otevřený drawer převezme fokus na první položku — zavřený je
+  // `visibility:hidden`, takže Tab do něj neuteče (opravuje a11y díru,
+  // kterou `aria-hidden` sám nevyřeší: children zůstávají focusable).
+  useEffect(() => {
+    if (!menuOpen) return;
+    const first = drawerRef.current?.querySelector<HTMLElement>('a[href], button:not([disabled])');
+    first?.focus();
+  }, [menuOpen]);
+
   const toggleLang = useCallback(() => {
     cycleLang();
   }, [cycleLang]);
@@ -347,10 +382,12 @@ export function Shell() {
       </header>
       {/* hamburger — navigace vysunutá z levého okraje */}
       <button
+        ref={menuBtnRef}
         type="button"
         className="holo-menu-btn"
         aria-label="navigace"
         aria-expanded={menuOpen}
+        aria-controls="holo-drawer"
         onClick={() => setMenuOpen((o) => !o)}
       >
         ☰
@@ -360,13 +397,28 @@ export function Shell() {
           type="button"
           className="holo-drawer-scrim"
           aria-label="zavřít navigaci"
-          onClick={() => setMenuOpen(false)}
+          onClick={() => {
+            setMenuOpen(false);
+            menuBtnRef.current?.focus();
+          }}
         />
       )}
-      <nav className={`holo-drawer${menuOpen ? ' open' : ''}`} aria-hidden={!menuOpen}>
+      <nav
+        id="holo-drawer"
+        ref={drawerRef}
+        className={`holo-drawer${menuOpen ? ' open' : ''}`}
+        aria-hidden={!menuOpen}
+      >
         <header className="holo-drawer-head">
           <span className="holo-title">◈ KINGDOM CONSOLE</span>
-          <button type="button" className="holo-btn" onClick={() => setMenuOpen(false)}>
+          <button
+            type="button"
+            className="holo-btn"
+            onClick={() => {
+              setMenuOpen(false);
+              menuBtnRef.current?.focus();
+            }}
+          >
             ×
           </button>
         </header>
@@ -484,6 +536,24 @@ export function Shell() {
             <button type="button" className="arena-link" onClick={backToEarth}>
               ← zpět k Zemi
             </button>
+          </div>
+        </section>
+      )}
+
+      {focus === 'earth' && !planet && !missionKey && !portal && (
+        <section className="planet-panel" aria-label="earth">
+          <header>
+            <strong>{lang === 'cs' ? 'PRVNÍ SVĚT' : 'FIRST WORLD'}</strong>
+          </header>
+          <p>
+            {lang === 'cs'
+              ? 'MOBA na Nové Zemi — tři linky, pět na pět, uzly L5.'
+              : 'MOBA on New Earth — three lanes, five versus five, L5 nodes.'}
+          </p>
+          <div className="planet-panel-actions">
+            <Link href="/earth" className="park-btn">
+              {lang === 'cs' ? 'Hrát' : 'Play'}
+            </Link>
           </div>
         </section>
       )}
