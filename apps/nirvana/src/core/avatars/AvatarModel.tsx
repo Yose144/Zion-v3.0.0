@@ -1,20 +1,21 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
-import { buildAvatarMesh } from './body';
+import { Suspense } from 'react';
+import { ProceduralAvatar } from './ProceduralAvatar';
+import { RiggedAvatar } from './RiggedAvatar';
+import { avatarModelUrl } from './models';
 import type { AvatarLook } from './kit';
 
 /**
- * Procedurální avatar — postava z primitiv, zapečená do 1–3 draw callů.
+ * AVATAR — vybere, co se má kreslit.
  *
- * Nic se nenačítá (v repu nejsou modely); všechno plyne z `avatarLook()`.
- * Geometrii skládá `body.ts` (viz komentář tam: proč merged a ne 40 meshů).
- * Stejné id = stejná postava u tebe, u ostatních hráčů i na webu.
+ * 1. Má avatar schválený GLB (`models.ts`)? → `RiggedAvatar` (kostra + idle).
+ * 2. Jinak, nebo dokud se model načítá / když selže → `ProceduralAvatar`.
  *
- * Měřítko: postava stojí nohama na y = 0, referenční výška 1,75 m;
- * `look.height` ji škáluje.
+ * Procedurální cesta je **výchozí**: chybějící soubor nikdy nesmí rozbít výběr
+ * avatara ani multiplayer. Obě větve stojí nohama na `y = 0` a škálují se
+ * stejným `look.height`, takže se za běhu nedá poznat, která se kreslí
+ * (kromě detailů).
  */
 export function AvatarModel({
   look,
@@ -25,61 +26,15 @@ export function AvatarModel({
   animate?: boolean;
   opacity?: number;
 }) {
-  const group = useRef<THREE.Group>(null);
-  const scale = look.height / 1.75;
-  const mesh = useMemo(() => buildAvatarMesh(look), [look]);
-  const transparent = opacity < 1;
+  const url = avatarModelUrl(look.id);
 
-  // Geometrie je reálná GPU paměť — po změně avatara ji musíme uvolnit.
-  useEffect(
-    () => () => {
-      mesh.solid.dispose();
-      mesh.metal?.dispose();
-      mesh.glow?.dispose();
-    },
-    [mesh],
-  );
-
-  useFrame((_, delta) => {
-    if (!animate || !group.current) return;
-    group.current.rotation.y += delta * 0.35;
-    group.current.position.y = Math.sin(performance.now() / 900) * 0.02;
-  });
+  if (!url) {
+    return <ProceduralAvatar look={look} animate={animate} opacity={opacity} />;
+  }
 
   return (
-    <group ref={group} scale={[scale, scale, scale]}>
-      <mesh geometry={mesh.solid}>
-        <meshStandardMaterial
-          vertexColors
-          roughness={0.74}
-          metalness={0.08}
-          transparent={transparent}
-          opacity={opacity}
-        />
-      </mesh>
-
-      {mesh.metal && (
-        <mesh geometry={mesh.metal}>
-          <meshStandardMaterial
-            vertexColors
-            metalness={0.74}
-            roughness={0.3}
-            transparent={transparent}
-            opacity={opacity}
-          />
-        </mesh>
-      )}
-
-      {mesh.glow && (
-        <mesh geometry={mesh.glow}>
-          <meshBasicMaterial
-            vertexColors
-            toneMapped={false}
-            transparent
-            opacity={0.85 * opacity}
-          />
-        </mesh>
-      )}
-    </group>
+    <Suspense fallback={<ProceduralAvatar look={look} animate={animate} opacity={opacity} />}>
+      <RiggedAvatar look={look} url={url} animate={animate} opacity={opacity} />
+    </Suspense>
   );
 }
