@@ -391,7 +391,7 @@ zion-hiran`}</pre>
           </div>
         </section>
 
-        <DownloadFaq cs={cs} />
+        <DownloadFaq cs={cs} lang={lang} />
 
         {/* ─── CTA ─── */}
         <section className="zion-cta-banner">

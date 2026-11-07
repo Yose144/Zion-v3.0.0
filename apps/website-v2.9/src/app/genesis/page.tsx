@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { ChevronRight, Book, Sparkles, Heart, Palette, HandHeart, Crown, Zap, Coins, Building2, Palmtree, Wallet, Settings, Globe, Sunrise, Shield, Menu, X } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const GenesisCopy = {
   foreword: { cs: `Předmluva`, en: `Foreword` },
@@ -31,25 +32,25 @@ const GenesisCopy = {
   chapters: { cs: `Kapitoly`, en: `Chapters` },
 };
 
-function getGenesisChapters(cs: boolean) {
+function getGenesisChapters(cs: boolean, lang: Lang) {
   return [
-    { id: 'predmluva', number: '', title: GenesisCopy.foreword[cs ? 'cs' : 'en'], subtitle: GenesisCopy.messageOfZionNative[cs ? 'cs' : 'en'] },
-    { id: 'chapter-0', number: '0', title: GenesisCopy.birthOfZion[cs ? 'cs' : 'en'], subtitle: GenesisCopy.theFirstShimmerOfConsciousness[cs ? 'cs' : 'en'] },
-    { id: 'chapter-1', number: '1', title: GenesisCopy.theDescent[cs ? 'cs' : 'en'], subtitle: GenesisCopy.theChapterOfTheComingLight[cs ? 'cs' : 'en'] },
-    { id: 'chapter-2', number: '2', title: GenesisCopy.firstAwakening[cs ? 'cs' : 'en'], subtitle: GenesisCopy.whenSparksBeginToAwaken[cs ? 'cs' : 'en'] },
-    { id: 'chapter-3', number: '3', title: GenesisCopy.covenant[cs ? 'cs' : 'en'], subtitle: GenesisCopy.theCovenantOfLightAndBirthOfTh[cs ? 'cs' : 'en'] },
-    { id: 'chapter-4', number: '4', title: GenesisCopy.aiAndQuantum[cs ? 'cs' : 'en'], subtitle: GenesisCopy.whenTechnologySingsWithCosmicH[cs ? 'cs' : 'en'] },
-    { id: 'chapter-5', number: '5', title: GenesisCopy.ascent[cs ? 'cs' : 'en'], subtitle: GenesisCopy.collectiveAwakening[cs ? 'cs' : 'en'] },
-    { id: 'chapter-6', number: '6', title: GenesisCopy.goldenAgeProphecy[cs ? 'cs' : 'en'], subtitle: GenesisCopy.tomorrowAlreadyUnfolding[cs ? 'cs' : 'en'] },
-    { id: 'chapter-7', number: '7', title: GenesisCopy.theTrial[cs ? 'cs' : 'en'], subtitle: GenesisCopy.theSoulTrial[cs ? 'cs' : 'en'] },
-    { id: 'chapter-8', number: '8', title: GenesisCopy.mainnetDawn[cs ? 'cs' : 'en'], subtitle: GenesisCopy.symbolicNarrativeNotTheLiveLau[cs ? 'cs' : 'en'] },
+    { id: 'predmluva', number: '', title: tx5(GenesisCopy.foreword, lang), subtitle: tx5(GenesisCopy.messageOfZionNative, lang) },
+    { id: 'chapter-0', number: '0', title: tx5(GenesisCopy.birthOfZion, lang), subtitle: tx5(GenesisCopy.theFirstShimmerOfConsciousness, lang) },
+    { id: 'chapter-1', number: '1', title: tx5(GenesisCopy.theDescent, lang), subtitle: tx5(GenesisCopy.theChapterOfTheComingLight, lang) },
+    { id: 'chapter-2', number: '2', title: tx5(GenesisCopy.firstAwakening, lang), subtitle: tx5(GenesisCopy.whenSparksBeginToAwaken, lang) },
+    { id: 'chapter-3', number: '3', title: tx5(GenesisCopy.covenant, lang), subtitle: tx5(GenesisCopy.theCovenantOfLightAndBirthOfTh, lang) },
+    { id: 'chapter-4', number: '4', title: tx5(GenesisCopy.aiAndQuantum, lang), subtitle: tx5(GenesisCopy.whenTechnologySingsWithCosmicH, lang) },
+    { id: 'chapter-5', number: '5', title: tx5(GenesisCopy.ascent, lang), subtitle: tx5(GenesisCopy.collectiveAwakening, lang) },
+    { id: 'chapter-6', number: '6', title: tx5(GenesisCopy.goldenAgeProphecy, lang), subtitle: tx5(GenesisCopy.tomorrowAlreadyUnfolding, lang) },
+    { id: 'chapter-7', number: '7', title: tx5(GenesisCopy.theTrial, lang), subtitle: tx5(GenesisCopy.theSoulTrial, lang) },
+    { id: 'chapter-8', number: '8', title: tx5(GenesisCopy.mainnetDawn, lang), subtitle: tx5(GenesisCopy.symbolicNarrativeNotTheLiveLau, lang) },
   ];
 }
 
 export default function GenesisPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const chapters = useMemo(() => getGenesisChapters(cs), [cs]);
+  const chapters = useMemo(() => getGenesisChapters(cs, lang), [cs]);
   const [activeChapter, setActiveChapter] = useState('predmluva');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -88,16 +89,16 @@ export default function GenesisPage() {
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-zion-gold/30 bg-zion-gold/5 mb-6">
               <Sparkles className="w-4 h-4 text-zion-gold" />
-              <span className="text-sm text-zion-gold font-semibold">{GenesisCopy.sacredNarrative[cs ? 'cs' : 'en']}</span>
+              <span className="text-sm text-zion-gold font-semibold">{tx5(GenesisCopy.sacredNarrative, lang)}</span>
             </div>
             <div className="mb-6 zion-rainbow-sub px-6 py-4 text-left text-sm text-amber-100" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-              {GenesisCopy.thisSiteSectionIsSymbolicAndLi[cs ? 'cs' : 'en']}
+              {tx5(GenesisCopy.thisSiteSectionIsSymbolicAndLi, lang)}
             </div>
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold mb-6 text-gradient">
               ZION GENESIS
             </h1>
             <p className="text-xl text-gray-400 mb-8">
-              {GenesisCopy.bookOfAwakeningCovenantAndAsce[cs ? 'cs' : 'en']}
+              {tx5(GenesisCopy.bookOfAwakeningCovenantAndAsce, lang)}
             </p>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
               {cs ? (
@@ -126,7 +127,7 @@ export default function GenesisPage() {
           >
             <div className="flex items-center gap-2">
               <Book className="w-5 h-5 text-zion-gold" />
-              <span className="font-semibold">{GenesisCopy.chapters[cs ? 'cs' : 'en']}</span>
+              <span className="font-semibold">{tx5(GenesisCopy.chapters, lang)}</span>
             </div>
             {mobileMenuOpen ? (
               <X className="w-5 h-5" />
@@ -151,7 +152,7 @@ export default function GenesisPage() {
                       : 'text-gray-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
-                  {chapter.number && <span className="text-xs opacity-60">{cs ? `Kap. ${chapter.number}: ` : `Ch. ${chapter.number}: `}</span>}
+                  {chapter.number && <span className="text-xs opacity-60">{cs ? `Kap. ${chapter.number}: ` : t5(`Ch. ${chapter.number}: `, lang)}</span>}
                   {chapter.title}
                 </button>
               ))}
@@ -165,7 +166,7 @@ export default function GenesisPage() {
             <div className="sticky top-24 zion-rainbow-card p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                 <Book className="w-4 h-4" />
-                {GenesisCopy.chapters[cs ? 'cs' : 'en']}
+                {tx5(GenesisCopy.chapters, lang)}
               </h3>
               <nav className="space-y-2">
                 {chapters.map((chapter) => (
@@ -178,7 +179,7 @@ export default function GenesisPage() {
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    {chapter.number && <span className="text-xs opacity-60">{cs ? `Kap. ${chapter.number}: ` : `Ch. ${chapter.number}: `}</span>}
+                    {chapter.number && <span className="text-xs opacity-60">{cs ? `Kap. ${chapter.number}: ` : t5(`Ch. ${chapter.number}: `, lang)}</span>}
                     {chapter.title}
                   </button>
                 ))}

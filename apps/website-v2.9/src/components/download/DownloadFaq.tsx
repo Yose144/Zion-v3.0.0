@@ -1,5 +1,8 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
+
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
@@ -36,67 +39,67 @@ type FaqItem = {
   a: string;
 };
 
-function getFaqItems(cs: boolean): FaqItem[] {
+function getFaqItems(cs: boolean, lang: Lang): FaqItem[] {
   return [
     {
-      q: DownloadFaqCopy.doINeedANodeToMine[cs ? 'cs' : 'en'],
-      a: DownloadFaqCopy.noConnectToThePublicPoolZionte[cs ? 'cs' : 'en'],
+      q: tx5(DownloadFaqCopy.doINeedANodeToMine, lang),
+      a: tx5(DownloadFaqCopy.noConnectToThePublicPoolZionte, lang),
     },
     {
-      q: DownloadFaqCopy.howDoICreateAWallet[cs ? 'cs' : 'en'],
-      a: DownloadFaqCopy.downloadZionCliAndRunZionWalle[cs ? 'cs' : 'en'],
+      q: tx5(DownloadFaqCopy.howDoICreateAWallet, lang),
+      a: tx5(DownloadFaqCopy.downloadZionCliAndRunZionWalle, lang),
     },
     {
-      q: DownloadFaqCopy.howDoIStartMining[cs ? 'cs' : 'en'],
-      a: DownloadFaqCopy.extractArchiveAndRunZionMinerNoArgs[cs ? 'cs' : 'en'],
+      q: tx5(DownloadFaqCopy.howDoIStartMining, lang),
+      a: tx5(DownloadFaqCopy.extractArchiveAndRunZionMinerNoArgs, lang),
     },
     {
-      q: DownloadFaqCopy.whatIsTheInteractiveMenu[cs ? 'cs' : 'en'],
-      a: DownloadFaqCopy.theMenuCollectsPoolWalletWorkerGpuThreadsAlgoProfile[cs ? 'cs' : 'en'],
+      q: tx5(DownloadFaqCopy.whatIsTheInteractiveMenu, lang),
+      a: tx5(DownloadFaqCopy.theMenuCollectsPoolWalletWorkerGpuThreadsAlgoProfile, lang),
     },
     {
-      q: DownloadFaqCopy.whichGpuBackendShouldIUse[cs ? 'cs' : 'en'],
-      a: DownloadFaqCopy.chooseBackendBasedOnGpuAndOs[cs ? 'cs' : 'en'],
+      q: tx5(DownloadFaqCopy.whichGpuBackendShouldIUse, lang),
+      a: tx5(DownloadFaqCopy.chooseBackendBasedOnGpuAndOs, lang),
     },
     {
-      q: DownloadFaqCopy.canIMineOnRaspberryPi[cs ? 'cs' : 'en'],
-      a: DownloadFaqCopy.theLinuxArm64BuildSupportsRpi4And5[cs ? 'cs' : 'en'],
+      q: tx5(DownloadFaqCopy.canIMineOnRaspberryPi, lang),
+      a: tx5(DownloadFaqCopy.theLinuxArm64BuildSupportsRpi4And5, lang),
     },
     {
-      q: DownloadFaqCopy.windowsDefenderBlocksTheBinary[cs ? 'cs' : 'en'],
-      a: DownloadFaqCopy.clickMoreInfoRunAnywayTheBinar[cs ? 'cs' : 'en'],
+      q: tx5(DownloadFaqCopy.windowsDefenderBlocksTheBinary, lang),
+      a: tx5(DownloadFaqCopy.clickMoreInfoRunAnywayTheBinar, lang),
     },
     {
-      q: DownloadFaqCopy.macosSaysCannotBeOpened[cs ? 'cs' : 'en'],
-      a: DownloadFaqCopy.runXattrDComAppleQuarantineZio[cs ? 'cs' : 'en'],
+      q: tx5(DownloadFaqCopy.macosSaysCannotBeOpened, lang),
+      a: tx5(DownloadFaqCopy.runXattrDComAppleQuarantineZio, lang),
     },
     {
-      q: DownloadFaqCopy.whyAreMySharesNotPaidImmediately[cs ? 'cs' : 'en'],
-      a: DownloadFaqCopy.poolCollectsSharesAndDistributesWhenBlockFound[cs ? 'cs' : 'en'],
+      q: tx5(DownloadFaqCopy.whyAreMySharesNotPaidImmediately, lang),
+      a: tx5(DownloadFaqCopy.poolCollectsSharesAndDistributesWhenBlockFound, lang),
     },
     {
-      q: DownloadFaqCopy.canIMineSolo[cs ? 'cs' : 'en'],
-      a: DownloadFaqCopy.yesButPoolRecommendedForRegularPayouts[cs ? 'cs' : 'en'],
+      q: tx5(DownloadFaqCopy.canIMineSolo, lang),
+      a: tx5(DownloadFaqCopy.yesButPoolRecommendedForRegularPayouts, lang),
     },
     {
-      q: DownloadFaqCopy.smosHiveosSupport[cs ? 'cs' : 'en'],
-      a: DownloadFaqCopy.useLinuxX8664TarballWithZionInteractive0[cs ? 'cs' : 'en'],
+      q: tx5(DownloadFaqCopy.smosHiveosSupport, lang),
+      a: tx5(DownloadFaqCopy.useLinuxX8664TarballWithZionInteractive0, lang),
     },
     {
-      q: DownloadFaqCopy.whatIsConsciousnessMining[cs ? 'cs' : 'en'],
-      a: DownloadFaqCopy.yourConsciousnessLevelPhysical[cs ? 'cs' : 'en'],
+      q: tx5(DownloadFaqCopy.whatIsConsciousnessMining, lang),
+      a: tx5(DownloadFaqCopy.yourConsciousnessLevelPhysical, lang),
     },
   ];
 }
 
-export default function DownloadFaq({ cs }: { cs: boolean }) {
+export default function DownloadFaq({ cs, lang }: { cs: boolean; lang: Lang }) {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
-  const faqItems = getFaqItems(cs);
+  const faqItems = getFaqItems(cs, lang);
 
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DownloadFaqCopy.support[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(DownloadFaqCopy.support, lang)}</p>
         <h2 className="text-3xl font-semibold text-white">FAQ</h2>
       </div>
       <div className="space-y-3">

@@ -12,7 +12,8 @@ import {
   Activity,
 } from 'lucide-react';
 import { usePolling } from '@/hooks/usePolling';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const NetworkConsensusMetricsCopy = {
   waitingForBlocks: { cs: `Čekání na bloky…`, en: `Waiting for blocks…` },
@@ -138,10 +139,12 @@ function BlockTimeline({
   currentHeight,
   finalityBlocks,
   cs,
+  lang,
 }: {
   currentHeight: number;
   finalityBlocks: number;
   cs: boolean;
+  lang: Lang;
 }) {
   const W = 480;
   const H = 60;
@@ -162,7 +165,7 @@ function BlockTimeline({
   if (blocks.length === 0) {
     return (
       <div className="flex items-center justify-center h-16 text-xs text-gray-500">
-        {NetworkConsensusMetricsCopy.waitingForBlocks[cs ? 'cs' : 'en']}
+        {tx5(NetworkConsensusMetricsCopy.waitingForBlocks, lang)}
       </div>
     );
   }
@@ -186,7 +189,7 @@ function BlockTimeline({
             opacity="0.6"
           />
           <text x={finalityX} y={H - 4} textAnchor="middle" fill="#22c55e" fontSize="7" fontFamily="monospace">
-            {NetworkConsensusMetricsCopy.finality[cs ? 'cs' : 'en']}
+            {tx5(NetworkConsensusMetricsCopy.finality, lang)}
           </text>
         </>
       )}
@@ -334,10 +337,10 @@ export default function NetworkConsensusMetrics() {
     return (
       <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
         <div className="flex flex-col gap-2 mb-6">
-          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkConsensusMetricsCopy.consensus[cs ? 'cs' : 'en']}</p>
+          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkConsensusMetricsCopy.consensus, lang)}</p>
           <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
             <GitBranch className="h-7 w-7 text-zion-cyan" />
-            {NetworkConsensusMetricsCopy.consensusHealth[cs ? 'cs' : 'en']}
+            {tx5(NetworkConsensusMetricsCopy.consensusHealth, lang)}
           </h2>
         </div>
         <div className="flex items-center justify-center h-40">
@@ -350,13 +353,13 @@ export default function NetworkConsensusMetrics() {
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkConsensusMetricsCopy.consensus[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkConsensusMetricsCopy.consensus, lang)}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
           <GitBranch className="h-7 w-7 text-zion-cyan" />
-          {NetworkConsensusMetricsCopy.consensusHealth[cs ? 'cs' : 'en']}
+          {tx5(NetworkConsensusMetricsCopy.consensusHealth, lang)}
         </h2>
         <p className="text-sm text-gray-400">
-          {NetworkConsensusMetricsCopy.liveConsensusMetricsFinalityRe[cs ? 'cs' : 'en']}
+          {tx5(NetworkConsensusMetricsCopy.liveConsensusMetricsFinalityRe, lang)}
         </p>
       </div>
 
@@ -365,9 +368,9 @@ export default function NetworkConsensusMetrics() {
         {/* Finality Status */}
         <StatCard
           icon={<ShieldCheck className="h-4 w-4" />}
-          label={NetworkConsensusMetricsCopy.finality_2[cs ? 'cs' : 'en']}
+          label={tx5(NetworkConsensusMetricsCopy.finality_2, lang)}
           value={`${metrics.pctToFinality.toFixed(0)}%`}
-          sub={cs ? `Soft ${SOFT_FINALITY_BLOCKS} bloků` : `Soft ${SOFT_FINALITY_BLOCKS} blocks`}
+          sub={cs ? `Soft ${SOFT_FINALITY_BLOCKS} bloků` : t5(`Soft ${SOFT_FINALITY_BLOCKS} blocks`, lang)}
           color="text-zion-cyan"
           cs={cs}
         />
@@ -375,9 +378,9 @@ export default function NetworkConsensusMetrics() {
         {/* Reorg Detection */}
         <StatCard
           icon={<GitBranch className="h-4 w-4" />}
-          label={NetworkConsensusMetricsCopy.reorgs1h[cs ? 'cs' : 'en']}
+          label={tx5(NetworkConsensusMetricsCopy.reorgs1h, lang)}
           value={`${reorgCount}`}
-          sub={reorgCount === 0 ? (NetworkConsensusMetricsCopy.noReorgs[cs ? 'cs' : 'en']) : (NetworkConsensusMetricsCopy.detected[cs ? 'cs' : 'en'])}
+          sub={reorgCount === 0 ? (tx5(NetworkConsensusMetricsCopy.noReorgs, lang)) : (tx5(NetworkConsensusMetricsCopy.detected, lang))}
           color={reorgCount > 0 ? 'text-zion-gold' : 'text-zion-cyan'}
           cs={cs}
         />
@@ -385,9 +388,9 @@ export default function NetworkConsensusMetrics() {
         {/* Fork Indicator */}
         <StatCard
           icon={<AlertTriangle className="h-4 w-4" />}
-          label={NetworkConsensusMetricsCopy.fork[cs ? 'cs' : 'en']}
-          value={metrics.forkDetected ? (NetworkConsensusMetricsCopy.yes[cs ? 'cs' : 'en']) : (NetworkConsensusMetricsCopy.no[cs ? 'cs' : 'en'])}
-          sub={`${metrics.altBlocks} ${NetworkConsensusMetricsCopy.altBlocks[cs ? 'cs' : 'en']}`}
+          label={tx5(NetworkConsensusMetricsCopy.fork, lang)}
+          value={metrics.forkDetected ? (tx5(NetworkConsensusMetricsCopy.yes, lang)) : (tx5(NetworkConsensusMetricsCopy.no, lang))}
+          sub={`${metrics.altBlocks} ${tx5(NetworkConsensusMetricsCopy.altBlocks, lang)}`}
           color={metrics.forkDetected ? 'text-zion-gold' : 'text-zion-cyan'}
           cs={cs}
         />
@@ -395,9 +398,9 @@ export default function NetworkConsensusMetrics() {
         {/* Orphan Rate */}
         <StatCard
           icon={<Zap className="h-4 w-4" />}
-          label={NetworkConsensusMetricsCopy.orphanRate[cs ? 'cs' : 'en']}
+          label={tx5(NetworkConsensusMetricsCopy.orphanRate, lang)}
           value={`${metrics.orphanRate.toFixed(2)}%`}
-          sub={NetworkConsensusMetricsCopy.altTotalBlocks[cs ? 'cs' : 'en']}
+          sub={tx5(NetworkConsensusMetricsCopy.altTotalBlocks, lang)}
           color={metrics.orphanRate > 1 ? 'text-zion-gold' : 'text-zion-cyan'}
           cs={cs}
         />
@@ -405,9 +408,9 @@ export default function NetworkConsensusMetrics() {
         {/* Difficulty Adjustment */}
         <StatCard
           icon={<Gauge className="h-4 w-4" />}
-          label={NetworkConsensusMetricsCopy.diffAdj[cs ? 'cs' : 'en']}
+          label={tx5(NetworkConsensusMetricsCopy.diffAdj, lang)}
           value={`${metrics.estNextChangePct > 0 ? '+' : ''}${metrics.estNextChangePct.toFixed(1)}%`}
-          sub={NetworkConsensusMetricsCopy.nextBlockEst[cs ? 'cs' : 'en']}
+          sub={tx5(NetworkConsensusMetricsCopy.nextBlockEst, lang)}
           color={Math.abs(metrics.estNextChangePct) > 10 ? 'text-zion-gold' : 'text-zion-purple'}
           cs={cs}
         />
@@ -415,9 +418,9 @@ export default function NetworkConsensusMetrics() {
         {/* Block Propagation */}
         <StatCard
           icon={<Clock className="h-4 w-4" />}
-          label={NetworkConsensusMetricsCopy.lastBlock[cs ? 'cs' : 'en']}
+          label={tx5(NetworkConsensusMetricsCopy.lastBlock, lang)}
           value={lastBlockAge != null ? fmtAgo(lastBlockAge) : '—'}
-          sub={`${NetworkConsensusMetricsCopy.avg[cs ? 'cs' : 'en']}: ${metrics.avgBt.toFixed(0)}s ±${metrics.stdDev.toFixed(0)}s`}
+          sub={`${tx5(NetworkConsensusMetricsCopy.avg, lang)}: ${metrics.avgBt.toFixed(0)}s ±${metrics.stdDev.toFixed(0)}s`}
           color={lastBlockAge != null && lastBlockAge > 180 ? 'text-zion-gold' : 'text-zion-cyan'}
           cs={cs}
         />
@@ -429,17 +432,17 @@ export default function NetworkConsensusMetrics() {
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-zion-cyan" />
             <span className="text-xs uppercase tracking-wider text-gray-500">
-              {NetworkConsensusMetricsCopy.blockTimeline[cs ? 'cs' : 'en']}
+              {tx5(NetworkConsensusMetricsCopy.blockTimeline, lang)}
             </span>
           </div>
           <div className="flex items-center gap-3 text-[10px]">
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-zion-cyan rounded-sm" />
-              <span className="text-gray-500">{NetworkConsensusMetricsCopy.finalized[cs ? 'cs' : 'en']}</span>
+              <span className="text-gray-500">{tx5(NetworkConsensusMetricsCopy.finalized, lang)}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-zion-purple rounded-sm" />
-              <span className="text-gray-500">{NetworkConsensusMetricsCopy.pending[cs ? 'cs' : 'en']}</span>
+              <span className="text-gray-500">{tx5(NetworkConsensusMetricsCopy.pending, lang)}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-zion-gold rounded-sm" />
@@ -451,22 +454,23 @@ export default function NetworkConsensusMetrics() {
           currentHeight={metrics.height}
           finalityBlocks={SOFT_FINALITY_BLOCKS}
           cs={cs}
+          lang={lang}
         />
         <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
           <div>
-            <span className="text-gray-500">{NetworkConsensusMetricsCopy.height[cs ? 'cs' : 'en']}: </span>
+            <span className="text-gray-500">{tx5(NetworkConsensusMetricsCopy.height, lang)}: </span>
             <span className="font-mono text-white">{fmtNum(metrics.height)}</span>
           </div>
           <div>
-            <span className="text-gray-500">{NetworkConsensusMetricsCopy.finalityFrom[cs ? 'cs' : 'en']}: </span>
+            <span className="text-gray-500">{tx5(NetworkConsensusMetricsCopy.finalityFrom, lang)}: </span>
             <span className="font-mono text-zion-cyan">#{fmtNum(metrics.finalityHeight)}</span>
           </div>
           <div>
-            <span className="text-gray-500">{NetworkConsensusMetricsCopy.difficulty[cs ? 'cs' : 'en']}: </span>
+            <span className="text-gray-500">{tx5(NetworkConsensusMetricsCopy.difficulty, lang)}: </span>
             <span className="font-mono text-zion-purple">{fmtLarge(stats.difficulty)}</span>
           </div>
           <div>
-            <span className="text-gray-500">{NetworkConsensusMetricsCopy.blockTarget[cs ? 'cs' : 'en']}: </span>
+            <span className="text-gray-500">{tx5(NetworkConsensusMetricsCopy.blockTarget, lang)}: </span>
             <span className="font-mono text-zion-cyan">{stats.target_block_time ?? 60}s</span>
           </div>
         </div>

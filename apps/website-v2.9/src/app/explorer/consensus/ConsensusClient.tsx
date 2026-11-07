@@ -15,7 +15,8 @@ import {
   Wallet,
   Zap,
 } from "lucide-react";
-import { useLang } from "@/contexts/LanguageContext";
+import { useLang, type Lang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 import { apiClient } from "@/lib/api";
 
@@ -55,10 +56,12 @@ function DifficultyChart({
   chart,
   cs,
   loading,
+  lang,
 }: {
   chart: { labels: string[]; values: number[] } | null;
   cs: boolean;
   loading: boolean;
+  lang: Lang;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
 
@@ -77,7 +80,7 @@ function DifficultyChart({
     return (
       <div className="flex flex-col items-center justify-center h-48 text-white/20 gap-2">
         <Gauge className="h-8 w-8" />
-        <p className="text-sm">{ExplorerConsensusConsensusClientCopy.noDataAvailable[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm">{tx5(ExplorerConsensusConsensusClientCopy.noDataAvailable, lang)}</p>
       </div>
     );
   }
@@ -192,7 +195,7 @@ function DifficultyChart({
             fontSize="7"
             fontFamily="monospace"
           >
-            {labels[idx] ? new Date(labels[idx]).toLocaleDateString(ExplorerConsensusConsensusClientCopy.enUs[cs ? 'cs' : 'en'], { month: "short", day: "numeric" }) : ""}
+            {labels[idx] ? new Date(labels[idx]).toLocaleDateString(tx5(ExplorerConsensusConsensusClientCopy.enUs, lang), { month: "short", day: "numeric" }) : ""}
           </text>
         ))}
     </svg>
@@ -225,33 +228,33 @@ export default function ConsensusClient() {
   const sections = [
     {
       icon: Clock,
-      title: ExplorerConsensusConsensusClientCopy.lwmaDaa[cs ? 'cs' : 'en'],
+      title: tx5(ExplorerConsensusConsensusClientCopy.lwmaDaa, lang),
       color: "text-zion-cyan",
-      content: ExplorerConsensusConsensusClientCopy.zionUsesTheLinearlyWeightedMov[cs ? 'cs' : 'en'],
+      content: tx5(ExplorerConsensusConsensusClientCopy.zionUsesTheLinearlyWeightedMov, lang),
     },
     {
       icon: TrendingDown,
-      title: ExplorerConsensusConsensusClientCopy.decadeDecay[cs ? 'cs' : 'en'],
+      title: tx5(ExplorerConsensusConsensusClientCopy.decadeDecay, lang),
       color: "text-zion-gold",
-      content: ExplorerConsensusConsensusClientCopy.zionEmissionIsNotAHalvingItSDe[cs ? 'cs' : 'en'],
+      content: tx5(ExplorerConsensusConsensusClientCopy.zionEmissionIsNotAHalvingItSDe, lang),
     },
     {
       icon: Pickaxe,
-      title: ExplorerConsensusConsensusClientCopy.powAlgorithms[cs ? 'cs' : 'en'],
+      title: tx5(ExplorerConsensusConsensusClientCopy.powAlgorithms, lang),
       color: "text-zion-cyan",
-      content: ExplorerConsensusConsensusClientCopy.zionSupportsThreeAlgorithmsDee[cs ? 'cs' : 'en'],
+      content: tx5(ExplorerConsensusConsensusClientCopy.zionSupportsThreeAlgorithmsDee, lang),
     },
     {
       icon: Heart,
-      title: ExplorerConsensusConsensusClientCopy.k89551RewardSplit[cs ? 'cs' : 'en'],
+      title: tx5(ExplorerConsensusConsensusClientCopy.k89551RewardSplit, lang),
       color: "text-zion-purple",
-      content: ExplorerConsensusConsensusClientCopy.everyCoinbaseBlockSplitsTheRew[cs ? 'cs' : 'en'],
+      content: tx5(ExplorerConsensusConsensusClientCopy.everyCoinbaseBlockSplitsTheRew, lang),
     },
     {
       icon: Shield,
-      title: ExplorerConsensusConsensusClientCopy.securityValidation[cs ? 'cs' : 'en'],
+      title: tx5(ExplorerConsensusConsensusClientCopy.securityValidation, lang),
       color: "text-zion-purple",
-      content: ExplorerConsensusConsensusClientCopy.utxoModelWithRingSignaturesEve[cs ? 'cs' : 'en'],
+      content: tx5(ExplorerConsensusConsensusClientCopy.utxoModelWithRingSignaturesEve, lang),
     },
   ];
 
@@ -283,34 +286,34 @@ export default function ConsensusClient() {
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple uppercase">
               <Cpu className="h-4 w-4" />
-              {ExplorerConsensusConsensusClientCopy.protocol[cs ? 'cs' : 'en']}
+              {tx5(ExplorerConsensusConsensusClientCopy.protocol, lang)}
             </div>
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{ExplorerConsensusConsensusClientCopy.terranovaConsensus[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{tx5(ExplorerConsensusConsensusClientCopy.terranovaConsensus, lang)}</p>
               <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                {ExplorerConsensusConsensusClientCopy.consensusEconomics[cs ? 'cs' : 'en']}
+                {tx5(ExplorerConsensusConsensusClientCopy.consensusEconomics, lang)}
               </h1>
             </div>
             <p className="text-lg text-gray-300 max-w-2xl">
-              {ExplorerConsensusConsensusClientCopy.overviewOfAlgorithmsEmissionAn[cs ? 'cs' : 'en']}
+              {tx5(ExplorerConsensusConsensusClientCopy.overviewOfAlgorithmsEmissionAn, lang)}
             </p>
 
             {consensus?.network && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
                 <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Výška' : 'Height'}</p>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Výška' : t5('Height', lang)}</p>
                   <p className="text-lg font-semibold text-white tabular-nums">{formatNumber(consensus.network.chain_height)}</p>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Obtížnost' : 'Difficulty'}</p>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Obtížnost' : t5('Difficulty', lang)}</p>
                   <p className="text-lg font-semibold text-zion-gold tabular-nums">{formatNumber(consensus.network.current_difficulty)}</p>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Cíl bloku' : 'Target block'}</p>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Cíl bloku' : t5('Target block', lang)}</p>
                   <p className="text-lg font-semibold text-zion-cyan tabular-nums">{consensus.consensus?.target_block_time ?? 60}s</p>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Max supply' : 'Max supply'}</p>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Max supply' : t5('Max supply', lang)}</p>
                   <p className="text-lg font-semibold text-white tabular-nums">{formatNumber(consensus.consensus?.max_supply ?? 144_000_000_000)}</p>
                 </div>
               </div>
@@ -322,22 +325,22 @@ export default function ConsensusClient() {
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
           className="zion-section p-6 md:p-10">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Graf' : 'Chart'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Graf' : t5('Chart', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Gauge className="h-7 w-7 text-zion-purple" />
-              {cs ? 'Obtížnost (7 dní)' : 'Difficulty (7 days)'}
+              {cs ? 'Obtížnost (7 dní)' : t5('Difficulty (7 days)', lang)}
             </h2>
           </div>
-          <DifficultyChart chart={consensus?.difficulty_chart ?? null} cs={cs} loading={loading} />
+          <DifficultyChart chart={consensus?.difficulty_chart ?? null} cs={cs} loading={loading} lang={lang} />
         </motion.section>
 
         {/* INFO CARDS */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerConsensusConsensusClientCopy.details[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(ExplorerConsensusConsensusClientCopy.details, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Shield className="h-7 w-7 text-zion-purple" />
-              {ExplorerConsensusConsensusClientCopy.protocolParameters[cs ? 'cs' : 'en']}
+              {tx5(ExplorerConsensusConsensusClientCopy.protocolParameters, lang)}
             </h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -357,20 +360,20 @@ export default function ConsensusClient() {
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="zion-section p-6 md:p-10">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerConsensusConsensusClientCopy.emission[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(ExplorerConsensusConsensusClientCopy.emission, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Flame className="h-7 w-7 text-zion-gold" />
-              {ExplorerConsensusConsensusClientCopy.decadeDecaySchedule[cs ? 'cs' : 'en']}
+              {tx5(ExplorerConsensusConsensusClientCopy.decadeDecaySchedule, lang)}
             </h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/6">
-                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{ExplorerConsensusConsensusClientCopy.decade[cs ? 'cs' : 'en']}</th>
-                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">{ExplorerConsensusConsensusClientCopy.rewardBlock[cs ? 'cs' : 'en']}</th>
-                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">{ExplorerConsensusConsensusClientCopy.blocks[cs ? 'cs' : 'en']}</th>
-                  <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{ExplorerConsensusConsensusClientCopy.share[cs ? 'cs' : 'en']}</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{tx5(ExplorerConsensusConsensusClientCopy.decade, lang)}</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">{tx5(ExplorerConsensusConsensusClientCopy.rewardBlock, lang)}</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">{tx5(ExplorerConsensusConsensusClientCopy.blocks, lang)}</th>
+                  <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{tx5(ExplorerConsensusConsensusClientCopy.share, lang)}</th>
                 </tr>
               </thead>
               <tbody>
@@ -378,7 +381,7 @@ export default function ConsensusClient() {
                   <tr key={d.index} className="border-b border-white/3 hover:bg-white/3 transition-colors">
                     <td className="px-6 py-3 text-white font-semibold">{d.index === 10 ? "Tail ∞" : `Decade ${d.index}`}</td>
                     <td className="px-3 py-3 text-zion-gold font-mono">{d.reward.toFixed(3)} ZION</td>
-                    <td className="px-3 py-3 text-gray-400 font-mono">{d.blocks > 0 ? d.blocks.toLocaleString() : "∞"}</td>
+                    <td className="px-3 py-3 text-gray-400 font-mono">{d.blocks > 0 ? d.blocks.toLocaleString('en-US') : "∞"}</td>
                     <td className="px-6 py-3 text-right text-gray-400">{d.share}</td>
                   </tr>
                 ))}
@@ -388,7 +391,7 @@ export default function ConsensusClient() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          {ExplorerConsensusConsensusClientCopy.zionTerranovaConsensusProtocol[cs ? 'cs' : 'en']}
+          {tx5(ExplorerConsensusConsensusClientCopy.zionTerranovaConsensusProtocol, lang)}
         </p>
       </div>
     </div>

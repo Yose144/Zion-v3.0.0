@@ -12,6 +12,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 import { apiClient } from "@/lib/api";
 
@@ -110,8 +111,8 @@ export default function FeeEstimatorClient() {
   const tiers = fees ? [
     {
       key: "low",
-      label: ExplorerFeeEstimatorFeeEstimatorClientCopy.low[cs ? 'cs' : 'en'],
-      sub: ExplorerFeeEstimatorFeeEstimatorClientCopy.k10Min[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.low, lang),
+      sub: tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.k10Min, lang),
       fee: fees.low,
       icon: Turtle,
       color: "text-zion-cyan",
@@ -120,8 +121,8 @@ export default function FeeEstimatorClient() {
     },
     {
       key: "medium",
-      label: ExplorerFeeEstimatorFeeEstimatorClientCopy.medium[cs ? 'cs' : 'en'],
-      sub: ExplorerFeeEstimatorFeeEstimatorClientCopy.k5Min[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.medium, lang),
+      sub: tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.k5Min, lang),
       fee: fees.medium,
       icon: Timer,
       color: "text-zion-cyan",
@@ -130,8 +131,8 @@ export default function FeeEstimatorClient() {
     },
     {
       key: "high",
-      label: ExplorerFeeEstimatorFeeEstimatorClientCopy.high[cs ? 'cs' : 'en'],
-      sub: ExplorerFeeEstimatorFeeEstimatorClientCopy.k2Min[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.high, lang),
+      sub: tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.k2Min, lang),
       fee: fees.high,
       icon: Rabbit,
       color: "text-zion-gold",
@@ -140,8 +141,8 @@ export default function FeeEstimatorClient() {
     },
     {
       key: "urgent",
-      label: ExplorerFeeEstimatorFeeEstimatorClientCopy.urgent[cs ? 'cs' : 'en'],
-      sub: ExplorerFeeEstimatorFeeEstimatorClientCopy.k1Min[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.urgent, lang),
+      sub: tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.k1Min, lang),
       fee: fees.urgent,
       icon: Zap,
       color: "text-zion-purple",
@@ -165,16 +166,16 @@ export default function FeeEstimatorClient() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <Gauge className="h-4 w-4" />
-                {ExplorerFeeEstimatorFeeEstimatorClientCopy.live[cs ? 'cs' : 'en']}
+                {tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.live, lang)}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{ExplorerFeeEstimatorFeeEstimatorClientCopy.mempoolAnalysis[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.mempoolAnalysis, lang)}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {ExplorerFeeEstimatorFeeEstimatorClientCopy.feeEstimator[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.feeEstimator, lang)}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {ExplorerFeeEstimatorFeeEstimatorClientCopy.recommendedFeesBasedOnTheCurre[cs ? 'cs' : 'en']}
+                {tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.recommendedFeesBasedOnTheCurre, lang)}
               </p>
             </div>
           </div>
@@ -183,10 +184,10 @@ export default function FeeEstimatorClient() {
         {/* TIER CARDS */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerFeeEstimatorFeeEstimatorClientCopy.recommendations[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.recommendations, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <DollarSign className="h-7 w-7 text-zion-cyan" />
-              {ExplorerFeeEstimatorFeeEstimatorClientCopy.feeTiers[cs ? 'cs' : 'en']}
+              {tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.feeTiers, lang)}
             </h2>
           </div>
 
@@ -216,7 +217,7 @@ export default function FeeEstimatorClient() {
           {!loading && !fees && (
             <div className="zion-section p-10 text-center">
               <Flame className="h-10 w-10 text-white/10 mx-auto mb-3" />
-              <p className="text-white/30 text-sm">{ExplorerFeeEstimatorFeeEstimatorClientCopy.mempoolIsEmptyNoFeeNeeded[cs ? 'cs' : 'en']}</p>
+              <p className="text-white/30 text-sm">{tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.mempoolIsEmptyNoFeeNeeded, lang)}</p>
             </div>
           )}
         </motion.section>
@@ -225,22 +226,22 @@ export default function FeeEstimatorClient() {
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="zion-section p-6 md:p-10">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerFeeEstimatorFeeEstimatorClientCopy.statistics[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.statistics, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Gauge className="h-7 w-7 text-zion-cyan" />
-              {ExplorerFeeEstimatorFeeEstimatorClientCopy.mempoolStats[cs ? 'cs' : 'en']}
+              {tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.mempoolStats, lang)}
             </h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.pendingTx[cs ? 'cs' : 'en'], value: fees?.count ?? 0, color: "text-white" },
-              { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.minFee[cs ? 'cs' : 'en'], value: formatFee(fees?.min ?? 0) + " ZION", color: "text-zion-cyan" },
-              { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.average[cs ? 'cs' : 'en'], value: formatFee(fees?.avg ?? 0) + " ZION", color: "text-zion-cyan" },
-              { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.median[cs ? 'cs' : 'en'], value: formatFee(fees?.median ?? 0) + " ZION", color: "text-zion-gold" },
-              { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.maxFee[cs ? 'cs' : 'en'], value: formatFee(fees?.max ?? 0) + " ZION", color: "text-zion-gold" },
-              { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.k25thIle[cs ? 'cs' : 'en'], value: formatFee(fees?.low ?? 0) + " ZION", color: "text-zion-purple" },
-              { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.k50thIle[cs ? 'cs' : 'en'], value: formatFee(fees?.medium ?? 0) + " ZION", color: "text-zion-purple" },
-              { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.k90thIle[cs ? 'cs' : 'en'], value: formatFee(fees?.urgent ?? 0) + " ZION", color: "text-zion-purple" },
+              { label: tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.pendingTx, lang), value: fees?.count ?? 0, color: "text-white" },
+              { label: tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.minFee, lang), value: formatFee(fees?.min ?? 0) + " ZION", color: "text-zion-cyan" },
+              { label: tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.average, lang), value: formatFee(fees?.avg ?? 0) + " ZION", color: "text-zion-cyan" },
+              { label: tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.median, lang), value: formatFee(fees?.median ?? 0) + " ZION", color: "text-zion-gold" },
+              { label: tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.maxFee, lang), value: formatFee(fees?.max ?? 0) + " ZION", color: "text-zion-gold" },
+              { label: tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.k25thIle, lang), value: formatFee(fees?.low ?? 0) + " ZION", color: "text-zion-purple" },
+              { label: tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.k50thIle, lang), value: formatFee(fees?.medium ?? 0) + " ZION", color: "text-zion-purple" },
+              { label: tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.k90thIle, lang), value: formatFee(fees?.urgent ?? 0) + " ZION", color: "text-zion-purple" },
             ].map((s) => (
               <div key={s.label} className="zion-tile p-4">
                 <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500 mb-1">{s.label}</p>
@@ -251,7 +252,7 @@ export default function FeeEstimatorClient() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          {ExplorerFeeEstimatorFeeEstimatorClientCopy.zionTerranovaFeeEstimatorMempo[cs ? 'cs' : 'en']}
+          {tx5(ExplorerFeeEstimatorFeeEstimatorClientCopy.zionTerranovaFeeEstimatorMempo, lang)}
         </p>
       </div>
     </div>

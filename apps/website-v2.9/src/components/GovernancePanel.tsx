@@ -12,7 +12,8 @@ import {
   Users,
   Vote,
 } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { CONTRACTS, GOVERNANCE_DEPLOYED } from '@/lib/defi-contracts';
 import { getGovernanceProposals, type GovernanceProposal } from '@/lib/dao-api';
 import { useEffect, useState } from 'react';
@@ -90,30 +91,30 @@ function mapProposal(p: GovernanceProposal): Proposal {
   };
 }
 
-function statusBadge(status: Proposal['status'], cs: boolean) {
+function statusBadge(status: Proposal['status'], cs: boolean, lang: Lang) {
   switch (status) {
     case 'active':
       return (
         <span className="inline-flex items-center gap-1 rounded-full bg-zion-cyan/10 border border-zion-cyan/30 px-2 py-0.5 text-[10px] text-zion-cyan uppercase tracking-wider">
-          <Vote className="h-3 w-3" /> {GovernancePanelCopy.active[cs ? 'cs' : 'en']}
+          <Vote className="h-3 w-3" /> {tx5(GovernancePanelCopy.active, lang)}
         </span>
       );
     case 'passed':
       return (
         <span className="inline-flex items-center gap-1 rounded-full bg-zion-gold/10 border border-zion-gold/30 px-2 py-0.5 text-[10px] text-zion-gold uppercase tracking-wider">
-          <CheckCircle2 className="h-3 w-3" /> {GovernancePanelCopy.passed[cs ? 'cs' : 'en']}
+          <CheckCircle2 className="h-3 w-3" /> {tx5(GovernancePanelCopy.passed, lang)}
         </span>
       );
     case 'rejected':
       return (
         <span className="inline-flex items-center gap-1 rounded-full bg-zion-purple/10 border border-zion-purple/30 px-2 py-0.5 text-[10px] text-zion-purple uppercase tracking-wider">
-          <Flame className="h-3 w-3" /> {GovernancePanelCopy.rejected[cs ? 'cs' : 'en']}
+          <Flame className="h-3 w-3" /> {tx5(GovernancePanelCopy.rejected, lang)}
         </span>
       );
     default:
       return (
         <span className="inline-flex items-center gap-1 rounded-full bg-gray-500/10 border border-gray-500/30 px-2 py-0.5 text-[10px] text-gray-400 uppercase tracking-wider">
-          <Clock className="h-3 w-3" /> {GovernancePanelCopy.pending[cs ? 'cs' : 'en']}
+          <Clock className="h-3 w-3" /> {tx5(GovernancePanelCopy.pending, lang)}
         </span>
       );
   }
@@ -160,13 +161,13 @@ export default function GovernancePanel() {
       >
         <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple uppercase mb-4">
           <Scale className="h-4 w-4" />
-          {GovernancePanelCopy.governance[cs ? 'cs' : 'en']}
+          {tx5(GovernancePanelCopy.governance, lang)}
         </div>
         <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
-          {GovernancePanelCopy.zionDao[cs ? 'cs' : 'en']}
+          {tx5(GovernancePanelCopy.zionDao, lang)}
         </h1>
         <p className="mt-4 text-lg text-gray-300 max-w-2xl">
-          {GovernancePanelCopy.onChainTokenWeightedVotingProp[cs ? 'cs' : 'en']}
+          {tx5(GovernancePanelCopy.onChainTokenWeightedVotingProp, lang)}
         </p>
 
         {/* Link to full DAO page */}
@@ -174,23 +175,23 @@ export default function GovernancePanel() {
           <Vote className="h-5 w-5 text-zion-gold shrink-0" />
           <div className="flex-1">
             <p className="text-sm text-gray-300">
-              {GovernancePanelCopy.theFullDaoPageWithTreasuryProp[cs ? 'cs' : 'en']}
+              {tx5(GovernancePanelCopy.theFullDaoPageWithTreasuryProp, lang)}
             </p>
           </div>
           <Link href="/dao" className="text-zion-gold hover:underline text-sm whitespace-nowrap">
-            {GovernancePanelCopy.openDao[cs ? 'cs' : 'en']}
+            {tx5(GovernancePanelCopy.openDao, lang)}
           </Link>
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3 text-xs">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-            <Vote className="h-3 w-3 text-zion-cyan" /> {GovernancePanelCopy.k1Token1Vote[cs ? 'cs' : 'en']}
+            <Vote className="h-3 w-3 text-zion-cyan" /> {tx5(GovernancePanelCopy.k1Token1Vote, lang)}
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-            <Shield className="h-3 w-3 text-zion-cyan" /> {GovernancePanelCopy.quorumBased[cs ? 'cs' : 'en']}
+            <Shield className="h-3 w-3 text-zion-cyan" /> {tx5(GovernancePanelCopy.quorumBased, lang)}
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-            <Clock className="h-3 w-3 text-zion-gold" /> {GovernancePanelCopy.timelockExecution[cs ? 'cs' : 'en']}
+            <Clock className="h-3 w-3 text-zion-gold" /> {tx5(GovernancePanelCopy.timelockExecution, lang)}
           </span>
         </div>
 
@@ -198,7 +199,7 @@ export default function GovernancePanel() {
           <div className="mt-6 rounded-2xl border border-zion-gold/20 bg-zion-gold/5 p-4 flex items-center gap-3">
             <Clock className="h-5 w-5 text-zion-gold shrink-0" />
             <p className="text-sm text-gray-300">
-              {GovernancePanelCopy.governanceContractAwaitingDepl[cs ? 'cs' : 'en']}
+              {tx5(GovernancePanelCopy.governanceContractAwaitingDepl, lang)}
             </p>
           </div>
         )}
@@ -212,10 +213,10 @@ export default function GovernancePanel() {
       >
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: GovernancePanelCopy.totalProposals[cs ? 'cs' : 'en'], value: totalProposals.toString(), icon: Layers, color: 'text-zion-cyan' },
-            { label: GovernancePanelCopy.active[cs ? 'cs' : 'en'], value: activeCount.toString(), icon: Vote, color: 'text-zion-cyan' },
-            { label: GovernancePanelCopy.passed[cs ? 'cs' : 'en'], value: passedCount.toString(), icon: CheckCircle2, color: 'text-zion-gold' },
-            { label: GovernancePanelCopy.quorum[cs ? 'cs' : 'en'], value: '2B', icon: Users, color: 'text-zion-purple' },
+            { label: tx5(GovernancePanelCopy.totalProposals, lang), value: totalProposals.toString(), icon: Layers, color: 'text-zion-cyan' },
+            { label: tx5(GovernancePanelCopy.active, lang), value: activeCount.toString(), icon: Vote, color: 'text-zion-cyan' },
+            { label: tx5(GovernancePanelCopy.passed, lang), value: passedCount.toString(), icon: CheckCircle2, color: 'text-zion-gold' },
+            { label: tx5(GovernancePanelCopy.quorum, lang), value: '2B', icon: Users, color: 'text-zion-purple' },
           ].map((card) => (
             <div key={card.label} className="zion-rainbow-sub p-5" style={purpleRc}>
               <div className="flex items-center gap-2 mb-2">
@@ -236,12 +237,12 @@ export default function GovernancePanel() {
       >
         <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
           <Vote className="h-6 w-6 text-zion-cyan" />
-          {GovernancePanelCopy.proposals[cs ? 'cs' : 'en']}
+          {tx5(GovernancePanelCopy.proposals, lang)}
         </h2>
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-zion-gold border-r-transparent" />
-            <p className="mt-4 text-gray-400">{GovernancePanelCopy.loadingProposals[cs ? 'cs' : 'en']}</p>
+            <p className="mt-4 text-gray-400">{tx5(GovernancePanelCopy.loadingProposals, lang)}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -255,14 +256,14 @@ export default function GovernancePanel() {
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4">
                     <span className="text-xs font-mono text-gray-500">#{p.id}</span>
                     <h3 className="text-sm font-medium text-white flex-1">{cs ? p.titleCs : p.title}</h3>
-                    {statusBadge(p.status, cs)}
+                    {statusBadge(p.status, cs, lang)}
                   </div>
 
                   <div className="space-y-3">
                     {/* For / Against bars */}
                     <div>
                       <div className="flex justify-between text-[10px] mb-1">
-                        <span className="text-zion-cyan">{GovernancePanelCopy.for[cs ? 'cs' : 'en']}</span>
+                        <span className="text-zion-cyan">{tx5(GovernancePanelCopy.for, lang)}</span>
                         <span className="text-gray-400">{forPct.toFixed(1)}%</span>
                       </div>
                       <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
@@ -271,7 +272,7 @@ export default function GovernancePanel() {
                     </div>
                     <div>
                       <div className="flex justify-between text-[10px] mb-1">
-                        <span className="text-zion-purple">{GovernancePanelCopy.against[cs ? 'cs' : 'en']}</span>
+                        <span className="text-zion-purple">{tx5(GovernancePanelCopy.against, lang)}</span>
                         <span className="text-gray-400">{againstPct.toFixed(1)}%</span>
                       </div>
                       <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
@@ -281,7 +282,7 @@ export default function GovernancePanel() {
 
                     {/* Quorum */}
                     <div className="flex items-center gap-2 pt-1">
-                      <span className="text-[10px] text-gray-500">{GovernancePanelCopy.quorum[cs ? 'cs' : 'en']}:</span>
+                      <span className="text-[10px] text-gray-500">{tx5(GovernancePanelCopy.quorum, lang)}:</span>
                       <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
                         <div className="h-full bg-zion-gold rounded-full" style={{ width: `${quorumPct}%` }} />
                       </div>
@@ -290,8 +291,8 @@ export default function GovernancePanel() {
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-3 text-[10px] text-gray-500">
-                    <span>{GovernancePanelCopy.proposer[cs ? 'cs' : 'en']}: {p.proposer}</span>
-                    <span>{GovernancePanelCopy.ends[cs ? 'cs' : 'en']}: {p.endDate}</span>
+                    <span>{tx5(GovernancePanelCopy.proposer, lang)}: {p.proposer}</span>
+                    <span>{tx5(GovernancePanelCopy.ends, lang)}: {p.endDate}</span>
                   </div>
                 </div>
               );
@@ -309,10 +310,10 @@ export default function GovernancePanel() {
       >
         <div className="flex items-center gap-2 mb-2">
           <Layers className="h-4 w-4 text-gray-400" />
-          <span className="text-xs text-gray-400 uppercase tracking-wider">{GovernancePanelCopy.contract[cs ? 'cs' : 'en']}</span>
+          <span className="text-xs text-gray-400 uppercase tracking-wider">{tx5(GovernancePanelCopy.contract, lang)}</span>
         </div>
         <p className="font-mono text-sm text-gray-300 break-all">
-          {GOVERNANCE_DEPLOYED ? CONTRACTS.ZIONGovernance : (GovernancePanelCopy.awaitingDeployment[cs ? 'cs' : 'en'])}
+          {GOVERNANCE_DEPLOYED ? CONTRACTS.ZIONGovernance : (tx5(GovernancePanelCopy.awaitingDeployment, lang))}
         </p>
         <p className="text-[10px] text-gray-500 mt-1">Base Mainnet · ZIONGovernance.sol</p>
       </motion.div>

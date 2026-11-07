@@ -14,6 +14,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 import { CONTRACTS, ACTIVE_CHAIN, SEED_PRICE_USD, PANCAKE_V3 } from "@/lib/defi-contracts";
 import { type DexMarketData, type DexPairDetail } from "@/lib/market";
@@ -388,7 +389,7 @@ function VolumeByPairChart({
 export default function TokensPageClient() {
   const { lang } = useLang();
   const cs = lang === "cs";
-  const locale = cs ? "cs-CZ" : "en-US";
+  const locale = cs ? "cs-CZ" : t5("en-US", lang);
 
   const [cex, setCex] = useState<CexApiResponse | null>(null);
   const [emission, setEmission] = useState<EmissionData | null>(null);
@@ -415,12 +416,12 @@ export default function TokensPageClient() {
       if (defiJson?.ok) setDefi(defiJson);
 
       if (!cexJson?.ok && !emissionJson && !defiJson?.ok) {
-        setError(cs ? "Nepodařilo se načíst data tokenů" : "Failed to load token data");
+        setError(cs ? "Nepodařilo se načíst data tokenů" : t5("Failed to load token data", lang));
       } else {
         setError(null);
       }
     } catch {
-      setError(cs ? "Nepodařilo se načíst data tokenů" : "Failed to load token data");
+      setError(cs ? "Nepodařilo se načíst data tokenů" : t5("Failed to load token data", lang));
     } finally {
       setLoading(false);
     }

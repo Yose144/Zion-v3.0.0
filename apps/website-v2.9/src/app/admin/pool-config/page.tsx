@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const AdminPoolConfigCopy = {
   routing: { cs: `Routing`, en: `Routing` },
@@ -171,10 +172,10 @@ export default function PoolConfigPage() {
         <div className="zion-rainbow-card p-5 sm:p-8 md:p-10" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{AdminPoolConfigCopy.routing[lang === 'cs' ? 'cs' : 'en']}</p>
-              <h1 className="text-5xl md:text-6xl font-semibold text-gradient">{AdminPoolConfigCopy.poolConfiguration[lang === 'cs' ? 'cs' : 'en']}</h1>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(AdminPoolConfigCopy.routing, lang)}</p>
+              <h1 className="text-5xl md:text-6xl font-semibold text-gradient">{tx5(AdminPoolConfigCopy.poolConfiguration, lang)}</h1>
               <p className="mt-4 text-lg text-gray-300 max-w-2xl">
-                {AdminPoolConfigCopy.poolEndpointWalletAndWorkerPre[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(AdminPoolConfigCopy.poolEndpointWalletAndWorkerPre, lang)}
               </p>
             </div>
 
@@ -183,19 +184,19 @@ export default function PoolConfigPage() {
                 onClick={testAllConnections}
                 className="zion-button-secondary"
               >
-                {AdminPoolConfigCopy.testConnections[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(AdminPoolConfigCopy.testConnections, lang)}
               </button>
               <button
                 onClick={saveConfiguration}
                 className="zion-button-primary"
               >
-                {saved ? (AdminPoolConfigCopy.saved[lang === 'cs' ? 'cs' : 'en']) : (AdminPoolConfigCopy.save[lang === 'cs' ? 'cs' : 'en'])}
+                {saved ? (tx5(AdminPoolConfigCopy.saved, lang)) : (tx5(AdminPoolConfigCopy.save, lang))}
               </button>
               <Link
                 href="/admin"
                 className="zion-button-secondary"
               >
-                {AdminPoolConfigCopy.back[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(AdminPoolConfigCopy.back, lang)}
               </Link>
             </div>
           </div>
@@ -203,8 +204,8 @@ export default function PoolConfigPage() {
 
         <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">GPU</p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">{AdminPoolConfigCopy.gpuMiningRoutes[lang === 'cs' ? 'cs' : 'en']}</h2>
-          <p className="mt-2 text-sm text-gray-300">{AdminPoolConfigCopy.multiAlgoListMockData[lang === 'cs' ? 'cs' : 'en']}</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">{tx5(AdminPoolConfigCopy.gpuMiningRoutes, lang)}</h2>
+          <p className="mt-2 text-sm text-gray-300">{tx5(AdminPoolConfigCopy.multiAlgoListMockData, lang)}</p>
 
           <div className="mt-6 space-y-4">
             {gpuConfigs.map((config) => (
@@ -233,7 +234,7 @@ export default function PoolConfigPage() {
                   </label>
 
                   <div className="flex items-center gap-3">
-                    <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminPoolConfigCopy.priority[lang === 'cs' ? 'cs' : 'en']}</p>
+                    <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tx5(AdminPoolConfigCopy.priority, lang)}</p>
                     <select
                       value={config.priority}
                       onChange={(e) => updateConfig(config.algo, 'priority', parseInt(e.target.value))}
@@ -241,9 +242,9 @@ export default function PoolConfigPage() {
                       style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
                       disabled={!config.enabled}
                     >
-                      <option value={1}>{AdminPoolConfigCopy.high[lang === 'cs' ? 'cs' : 'en']}</option>
-                      <option value={2}>{AdminPoolConfigCopy.medium[lang === 'cs' ? 'cs' : 'en']}</option>
-                      <option value={3}>{AdminPoolConfigCopy.low[lang === 'cs' ? 'cs' : 'en']}</option>
+                      <option value={1}>{tx5(AdminPoolConfigCopy.high, lang)}</option>
+                      <option value={2}>{tx5(AdminPoolConfigCopy.medium, lang)}</option>
+                      <option value={3}>{tx5(AdminPoolConfigCopy.low, lang)}</option>
                     </select>
                   </div>
                 </div>
@@ -270,12 +271,12 @@ export default function PoolConfigPage() {
                       disabled={!config.enabled}
                       className="zion-rainbow-sub mt-2 w-full px-4 py-3 text-sm text-white disabled:opacity-50"
                       style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
-                      placeholder={AdminPoolConfigCopy.walletAddress[lang === 'cs' ? 'cs' : 'en']}
+                      placeholder={tx5(AdminPoolConfigCopy.walletAddress, lang)}
                     />
                   </div>
                   <div className="flex items-end gap-3">
                     <div className="flex-1">
-                      <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminPoolConfigCopy.workerPrefix[lang === 'cs' ? 'cs' : 'en']}</p>
+                      <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tx5(AdminPoolConfigCopy.workerPrefix, lang)}</p>
                       <input
                         type="text"
                         value={config.workerPrefix}
@@ -291,7 +292,7 @@ export default function PoolConfigPage() {
                       disabled={!config.enabled || testing === config.algo}
                       className="zion-button-secondary disabled:opacity-50"
                     >
-                      {testing === config.algo ? '…' : (AdminPoolConfigCopy.test[lang === 'cs' ? 'cs' : 'en'])}
+                      {testing === config.algo ? '…' : (tx5(AdminPoolConfigCopy.test, lang))}
                     </button>
                   </div>
                 </div>
@@ -302,8 +303,8 @@ export default function PoolConfigPage() {
 
         <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">CPU</p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">{AdminPoolConfigCopy.cpuMiningRoutes[lang === 'cs' ? 'cs' : 'en']}</h2>
-          <p className="mt-2 text-sm text-gray-300">{AdminPoolConfigCopy.randomxCpuMinersMockData[lang === 'cs' ? 'cs' : 'en']}</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">{tx5(AdminPoolConfigCopy.cpuMiningRoutes, lang)}</h2>
+          <p className="mt-2 text-sm text-gray-300">{tx5(AdminPoolConfigCopy.randomxCpuMinersMockData, lang)}</p>
 
           <div className="mt-6 space-y-4">
             {cpuConfigs.map((config) => (
@@ -357,7 +358,7 @@ export default function PoolConfigPage() {
                   </div>
                   <div className="flex items-end gap-3">
                     <div className="flex-1">
-                      <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminPoolConfigCopy.workerPrefix[lang === 'cs' ? 'cs' : 'en']}</p>
+                      <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tx5(AdminPoolConfigCopy.workerPrefix, lang)}</p>
                       <input
                         type="text"
                         value={config.workerPrefix}
@@ -372,7 +373,7 @@ export default function PoolConfigPage() {
                       disabled={!config.enabled || testing === config.algo}
                       className="zion-button-secondary disabled:opacity-50"
                     >
-                      {testing === config.algo ? '…' : (AdminPoolConfigCopy.test[lang === 'cs' ? 'cs' : 'en'])}
+                      {testing === config.algo ? '…' : (tx5(AdminPoolConfigCopy.test, lang))}
                     </button>
                   </div>
                 </div>
@@ -382,13 +383,13 @@ export default function PoolConfigPage() {
         </div>
 
         <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminPoolConfigCopy.notes[lang === 'cs' ? 'cs' : 'en']}</p>
-          <h3 className="mt-2 text-2xl font-semibold text-white">{AdminPoolConfigCopy.configurationNotes[lang === 'cs' ? 'cs' : 'en']}</h3>
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tx5(AdminPoolConfigCopy.notes, lang)}</p>
+          <h3 className="mt-2 text-2xl font-semibold text-white">{tx5(AdminPoolConfigCopy.configurationNotes, lang)}</h3>
           <ul className="mt-4 space-y-2 text-sm text-gray-300">
-            <li>• {AdminPoolConfigCopy.changesTakeEffectAfterSavingAn[lang === 'cs' ? 'cs' : 'en']}</li>
-            <li>• {AdminPoolConfigCopy.walletAddressesMustMatchTheNet[lang === 'cs' ? 'cs' : 'en']}</li>
-            <li>• {AdminPoolConfigCopy.workerPrefixHelpsIdentifyZionW[lang === 'cs' ? 'cs' : 'en']}</li>
-            <li>• {AdminPoolConfigCopy.alwaysTestConnectivityBeforePr[lang === 'cs' ? 'cs' : 'en']}</li>
+            <li>• {tx5(AdminPoolConfigCopy.changesTakeEffectAfterSavingAn, lang)}</li>
+            <li>• {tx5(AdminPoolConfigCopy.walletAddressesMustMatchTheNet, lang)}</li>
+            <li>• {tx5(AdminPoolConfigCopy.workerPrefixHelpsIdentifyZionW, lang)}</li>
+            <li>• {tx5(AdminPoolConfigCopy.alwaysTestConnectivityBeforePr, lang)}</li>
           </ul>
         </div>
 
@@ -397,13 +398,13 @@ export default function PoolConfigPage() {
             href="/admin/algo-manager"
             className="zion-button-secondary"
           >
-            {AdminPoolConfigCopy.algorithmManager[lang === 'cs' ? 'cs' : 'en']}
+            {tx5(AdminPoolConfigCopy.algorithmManager, lang)}
           </Link>
           <Link
             href="/admin"
             className="zion-button-secondary"
           >
-            ← {AdminPoolConfigCopy.admin[lang === 'cs' ? 'cs' : 'en']}
+            ← {tx5(AdminPoolConfigCopy.admin, lang)}
           </Link>
         </div>
       </div>

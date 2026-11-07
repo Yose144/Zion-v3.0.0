@@ -3,6 +3,7 @@
 import { ArrowRight, CalendarDays, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 const RoadmapPulseCopy = {
@@ -71,12 +72,12 @@ export default function RoadmapPulse() {
       <div className="zion-container space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center gap-4">
           <div className="flex-1 space-y-2">
-            <p className="text-xs uppercase tracking-[0.3em] text-zion-gold">{RoadmapPulseCopy.roadmap[cs ? 'cs' : 'en']}</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-zion-gold">{tx5(RoadmapPulseCopy.roadmap, lang)}</p>
             <h2 className="text-2xl md:text-3xl font-bold text-white">
-              {SITE_RELEASE_LABEL} <span className="text-gradient">{RoadmapPulseCopy.currentStatus[cs ? 'cs' : 'en']}</span>
+              {SITE_RELEASE_LABEL} <span className="text-gradient">{tx5(RoadmapPulseCopy.currentStatus, lang)}</span>
             </h2>
             <p className="text-sm text-gray-300 max-w-2xl">
-              {RoadmapPulseCopy.v31CutoverComplete[cs ? 'cs' : 'en']}
+              {tx5(RoadmapPulseCopy.v31CutoverComplete, lang)}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
@@ -84,7 +85,7 @@ export default function RoadmapPulse() {
               href="/roadmap"
               className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan text-sm font-semibold"
             >
-              {RoadmapPulseCopy.fullRoadmap[cs ? 'cs' : 'en']}
+              {tx5(RoadmapPulseCopy.fullRoadmap, lang)}
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
@@ -93,7 +94,7 @@ export default function RoadmapPulse() {
               style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
             >
               <CalendarDays className="w-4 h-4 text-zion-cyan" />
-              {RoadmapPulseCopy.blockExplorer[cs ? 'cs' : 'en']}
+              {tx5(RoadmapPulseCopy.blockExplorer, lang)}
             </Link>
           </div>
         </div>
@@ -101,14 +102,14 @@ export default function RoadmapPulse() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {phaseCards.map((phase) => (
             <div
-              key={phase.name[cs ? 'cs' : 'en']}
+              key={tx5(phase.name, lang)}
               className="zion-rainbow-card p-4 space-y-3 backdrop-blur"
               style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">{phase.window[cs ? 'cs' : 'en']}</p>
-                  <h3 className="text-base font-semibold text-white">{phase.name[cs ? 'cs' : 'en']}</h3>
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">{tx5(phase.window, lang)}</p>
+                  <h3 className="text-base font-semibold text-white">{tx5(phase.name, lang)}</h3>
                 </div>
                 <div className="px-2 py-0.5 text-[10px] font-semibold text-zion-gold bg-zion-gold/10 rounded-full">
                   {phase.progress}%
@@ -122,9 +123,9 @@ export default function RoadmapPulse() {
               </div>
               <ul className="space-y-1.5 text-xs text-gray-300">
                 {phase.highlights.map((item) => (
-                  <li key={item[cs ? 'cs' : 'en']} className="flex items-start gap-2">
+                  <li key={tx5(item, lang)} className="flex items-start gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-zion-cyan mt-0.5" />
-                    <span>{item[cs ? 'cs' : 'en']}</span>
+                    <span>{tx5(item, lang)}</span>
                   </li>
                 ))}
               </ul>

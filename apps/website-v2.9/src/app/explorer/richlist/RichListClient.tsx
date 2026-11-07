@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import ZisAvatar from '@/components/ZisAvatar';
 import {
   Award,
@@ -97,7 +98,7 @@ const rankIcons = [
   { icon: Award, color: "text-zion-gold" },
 ];
 
-const getTypeConfig = (cs: boolean) => ({
+const getTypeConfig = (cs: boolean, lang: Lang) => ({
   premine: {
     bg: "bg-zion-purple/10",
     border: "border-zion-purple/20",
@@ -144,7 +145,7 @@ const getTypeConfig = (cs: boolean) => ({
     bg: "bg-white/5",
     border: "border-white/10",
     text: "text-white/60",
-    label: ExplorerRichlistRichListClientCopy.holder[cs ? 'cs' : 'en'],
+    label: tx5(ExplorerRichlistRichListClientCopy.holder, lang),
     icon: Wallet,
   },
 });
@@ -159,8 +160,8 @@ interface RichListClientProps {
 export default function RichListClient({ embedded = false }: RichListClientProps) {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = ExplorerRichlistRichListClientCopy.enUs[cs ? 'cs' : 'en'];
-  const typeConfig = getTypeConfig(cs);
+  const locale = tx5(ExplorerRichlistRichListClientCopy.enUs, lang);
+  const typeConfig = getTypeConfig(cs, lang);
   const [data, setData] = useState<RichListData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -212,25 +213,25 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           >
             {[
               {
-                label: ExplorerRichlistRichListClientCopy.totalAddresses[cs ? 'cs' : 'en'],
+                label: tx5(ExplorerRichlistRichListClientCopy.totalAddresses, lang),
                 value: data.stats.total_addresses.toLocaleString(locale),
                 icon: Users,
                 accent: "text-zion-cyan",
               },
               {
-                label: ExplorerRichlistRichListClientCopy.top10Ownership[cs ? 'cs' : 'en'],
+                label: tx5(ExplorerRichlistRichListClientCopy.top10Ownership, lang),
                 value: `${data.stats.top_10_percentage.toFixed(1)}%`,
                 icon: BarChart3,
                 accent: "text-zion-gold",
               },
               {
-                label: ExplorerRichlistRichListClientCopy.giniCoefficient[cs ? 'cs' : 'en'],
+                label: tx5(ExplorerRichlistRichListClientCopy.giniCoefficient, lang),
                 value: data.stats.gini_coefficient.toFixed(4),
                 icon: Scale,
                 accent: "text-zion-purple",
               },
               {
-                label: ExplorerRichlistRichListClientCopy.activeMiners[cs ? 'cs' : 'en'],
+                label: tx5(ExplorerRichlistRichListClientCopy.activeMiners, lang),
                 value: data.stats.miner_addresses.toLocaleString(locale),
                 icon: Pickaxe,
                 accent: "text-zion-cyan",
@@ -265,7 +266,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           >
             <h2 className="text-sm font-medium text-white/60 mb-4 flex items-center gap-2">
               <Gem className="w-4 h-4 text-zion-gold" />
-              {ExplorerRichlistRichListClientCopy.supplyDistribution[cs ? 'cs' : 'en']}
+              {tx5(ExplorerRichlistRichListClientCopy.supplyDistribution, lang)}
             </h2>
             <div className="flex h-6 rounded-full overflow-hidden border border-white/10">
               {(() => {
@@ -286,12 +287,12 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                     <div
                       className="bg-linear-to-r from-zion-cyan to-zion-purple transition-all"
                       style={{ width: `${minerPerc}%` }}
-                      title={`${ExplorerRichlistRichListClientCopy.miners[cs ? 'cs' : 'en']}: ${minerPerc.toFixed(1)}%`}
+                      title={`${tx5(ExplorerRichlistRichListClientCopy.miners, lang)}: ${minerPerc.toFixed(1)}%`}
                     />
                     <div
                       className="bg-white/5 transition-all"
                       style={{ width: `${otherPerc}%` }}
-                      title={`${ExplorerRichlistRichListClientCopy.unmapped[cs ? 'cs' : 'en']}: ${otherPerc.toFixed(1)}%`}
+                      title={`${tx5(ExplorerRichlistRichListClientCopy.unmapped, lang)}: ${otherPerc.toFixed(1)}%`}
                     />
                   </>
                 );
@@ -304,11 +305,11 @@ export default function RichListClient({ embedded = false }: RichListClientProps
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-zion-cyan" />
-                {ExplorerRichlistRichListClientCopy.miningRewards[cs ? 'cs' : 'en']}
+                {tx5(ExplorerRichlistRichListClientCopy.miningRewards, lang)}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-white/10" />
-                {ExplorerRichlistRichListClientCopy.unmapped[cs ? 'cs' : 'en']}
+                {tx5(ExplorerRichlistRichListClientCopy.unmapped, lang)}
               </span>
             </div>
           </motion.div>
@@ -316,7 +317,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
 
         {/* ═══════ LIMIT SELECTOR ═══════ */}
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-sm text-white/40">{ExplorerRichlistRichListClientCopy.show[cs ? 'cs' : 'en']}</span>
+          <span className="text-sm text-white/40">{tx5(ExplorerRichlistRichListClientCopy.show, lang)}</span>
           {[25, 50, 100, 200].map((n) => (
             <button
               key={n}
@@ -336,7 +337,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
             className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             <Download className="w-3.5 h-3.5" />
-            {ExplorerRichlistRichListClientCopy.exportCsv[cs ? 'cs' : 'en']}
+            {tx5(ExplorerRichlistRichListClientCopy.exportCsv, lang)}
           </button>
         </div>
 
@@ -350,19 +351,19 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           {/* Table header */}
           <div className="grid grid-cols-[60px_1fr_1fr_120px_100px] min-w-[420px] md:grid-cols-[60px_2fr_1fr_160px_120px] gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02]">
             <span className="text-[11px] text-white/30 uppercase tracking-wider">
-              {ExplorerRichlistRichListClientCopy.rank[cs ? 'cs' : 'en']}
+              {tx5(ExplorerRichlistRichListClientCopy.rank, lang)}
             </span>
             <span className="text-[11px] text-white/30 uppercase tracking-wider">
-              {ExplorerRichlistRichListClientCopy.address[cs ? 'cs' : 'en']}
+              {tx5(ExplorerRichlistRichListClientCopy.address, lang)}
             </span>
             <span className="text-[11px] text-white/30 uppercase tracking-wider text-right">
-              {ExplorerRichlistRichListClientCopy.balanceZion[cs ? 'cs' : 'en']}
+              {tx5(ExplorerRichlistRichListClientCopy.balanceZion, lang)}
             </span>
             <span className="text-[11px] text-white/30 uppercase tracking-wider text-right hidden md:block">
-              {ExplorerRichlistRichListClientCopy.percentSupply[cs ? 'cs' : 'en']}
+              {tx5(ExplorerRichlistRichListClientCopy.percentSupply, lang)}
             </span>
             <span className="text-[11px] text-white/30 uppercase tracking-wider text-right">
-              {ExplorerRichlistRichListClientCopy.type[cs ? 'cs' : 'en']}
+              {tx5(ExplorerRichlistRichListClientCopy.type, lang)}
             </span>
           </div>
 
@@ -370,7 +371,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           {loading && (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-6 h-6 text-zion-gold animate-spin" />
-              <span className="ml-3 text-white/40 text-sm">{ExplorerRichlistRichListClientCopy.loading[cs ? 'cs' : 'en']}</span>
+              <span className="ml-3 text-white/40 text-sm">{tx5(ExplorerRichlistRichListClientCopy.loading, lang)}</span>
             </div>
           )}
 
@@ -382,7 +383,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                 onClick={fetchRichList}
                 className="mt-4 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 text-sm transition-all"
               >
-                {ExplorerRichlistRichListClientCopy.retry[cs ? 'cs' : 'en']}
+                {tx5(ExplorerRichlistRichListClientCopy.retry, lang)}
               </button>
             </div>
           )}
@@ -471,19 +472,19 @@ export default function RichListClient({ embedded = false }: RichListClientProps
         {data && (
           <div className="text-center text-xs text-white/30 space-y-1">
             <p>
-              {ExplorerRichlistRichListClientCopy.dataRefreshed[cs ? 'cs' : 'en']}{' '}
-              {new Date(data.timestamp).toLocaleString(locale)} · {ExplorerRichlistRichListClientCopy.showing[cs ? 'cs' : 'en']}{' '}
-              {data.rich_list.length} {ExplorerRichlistRichListClientCopy.addresses[cs ? 'cs' : 'en']}
+              {tx5(ExplorerRichlistRichListClientCopy.dataRefreshed, lang)}{' '}
+              {new Date(data.timestamp).toLocaleString(locale)} · {tx5(ExplorerRichlistRichListClientCopy.showing, lang)}{' '}
+              {data.rich_list.length} {tx5(ExplorerRichlistRichListClientCopy.addresses, lang)}
             </p>
             <p>
-              {ExplorerRichlistRichListClientCopy.premineAllocationAsDefinedIn[cs ? 'cs' : 'en']}{' '}
+              {tx5(ExplorerRichlistRichListClientCopy.premineAllocationAsDefinedIn, lang)}{' '}
               <Link
                 href="/genesis"
                 className="text-zion-gold/60 hover:text-zion-gold transition-colors underline"
               >
-                {ExplorerRichlistRichListClientCopy.genesisBlock[cs ? 'cs' : 'en']}
+                {tx5(ExplorerRichlistRichListClientCopy.genesisBlock, lang)}
               </Link>
-              {ExplorerRichlistRichListClientCopy.minerBalancesFromPoolRewardHis[cs ? 'cs' : 'en']}
+              {tx5(ExplorerRichlistRichListClientCopy.minerBalancesFromPoolRewardHis, lang)}
             </p>
           </div>
         )}

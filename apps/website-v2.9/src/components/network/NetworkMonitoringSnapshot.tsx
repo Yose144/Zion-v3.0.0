@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Activity, Cpu, Database, ExternalLink, HardDrive, Radio, RefreshCw, Server, Sparkles } from 'lucide-react';
 import { usePolling } from '@/hooks/usePolling';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const NetworkMonitoringSnapshotCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -224,7 +225,7 @@ function MetricPanel({
 export default function NetworkMonitoringSnapshot() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = NetworkMonitoringSnapshotCopy.enUs[cs ? 'cs' : 'en'];
+  const locale = tx5(NetworkMonitoringSnapshotCopy.enUs, lang);
   const [monitoring, setMonitoring] = useState<MonitoringSnapshot | null>(null);
   const [monitoringUpdatedAt, setMonitoringUpdatedAt] = useState<Date | null>(null);
 
@@ -239,73 +240,73 @@ export default function NetworkMonitoringSnapshot() {
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-8">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkMonitoringSnapshotCopy.observability[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkMonitoringSnapshotCopy.observability, lang)}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
           <Database className="h-7 w-7 text-zion-gold" />
-          {NetworkMonitoringSnapshotCopy.monitoringSnapshot[cs ? 'cs' : 'en']}
+          {tx5(NetworkMonitoringSnapshotCopy.monitoringSnapshot, lang)}
         </h2>
-        <p className="text-sm text-gray-400">{NetworkMonitoringSnapshotCopy.fastOperationalSignalsMirrored[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm text-gray-400">{tx5(NetworkMonitoringSnapshotCopy.fastOperationalSignalsMirrored, lang)}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricPanel
-          label={NetworkMonitoringSnapshotCopy.coreTarget[cs ? 'cs' : 'en']}
-          value={monitoring?.coreUp === 1 ? (NetworkMonitoringSnapshotCopy.up[cs ? 'cs' : 'en']) : monitoring?.coreUp === 0 ? (NetworkMonitoringSnapshotCopy.down[cs ? 'cs' : 'en']) : '—'}
-          detail={`${NetworkMonitoringSnapshotCopy.height[cs ? 'cs' : 'en']} ${fmtMetric(monitoring?.chainHeight, 0, locale)}`}
+          label={tx5(NetworkMonitoringSnapshotCopy.coreTarget, lang)}
+          value={monitoring?.coreUp === 1 ? (tx5(NetworkMonitoringSnapshotCopy.up, lang)) : monitoring?.coreUp === 0 ? (tx5(NetworkMonitoringSnapshotCopy.down, lang)) : '—'}
+          detail={`${tx5(NetworkMonitoringSnapshotCopy.height, lang)} ${fmtMetric(monitoring?.chainHeight, 0, locale)}`}
           accent={monitoring?.coreUp === 1 ? 'text-zion-cyan' : 'text-zion-purple'}
           icon={<Server className="h-5 w-5" />}
         />
         <MetricPanel
-          label={NetworkMonitoringSnapshotCopy.poolTarget[cs ? 'cs' : 'en']}
-          value={monitoring?.poolUp === 1 ? (NetworkMonitoringSnapshotCopy.up[cs ? 'cs' : 'en']) : monitoring?.poolUp === 0 ? (NetworkMonitoringSnapshotCopy.down[cs ? 'cs' : 'en']) : '—'}
-          detail={`${fmtMetric(monitoring?.poolSessions, 0, locale)} ${NetworkMonitoringSnapshotCopy.activeSessions[cs ? 'cs' : 'en']}`}
+          label={tx5(NetworkMonitoringSnapshotCopy.poolTarget, lang)}
+          value={monitoring?.poolUp === 1 ? (tx5(NetworkMonitoringSnapshotCopy.up, lang)) : monitoring?.poolUp === 0 ? (tx5(NetworkMonitoringSnapshotCopy.down, lang)) : '—'}
+          detail={`${fmtMetric(monitoring?.poolSessions, 0, locale)} ${tx5(NetworkMonitoringSnapshotCopy.activeSessions, lang)}`}
           accent={monitoring?.poolUp === 1 ? 'text-zion-cyan' : 'text-zion-purple'}
           icon={<Radio className="h-5 w-5" />}
         />
         <MetricPanel
-          label={NetworkMonitoringSnapshotCopy.acceptRate[cs ? 'cs' : 'en']}
+          label={tx5(NetworkMonitoringSnapshotCopy.acceptRate, lang)}
           value={fmtPct(monitoring?.poolAcceptRate)}
-          detail={`${NetworkMonitoringSnapshotCopy.uptime[cs ? 'cs' : 'en']} ${fmtUptime(monitoring?.poolUptime)}`}
+          detail={`${tx5(NetworkMonitoringSnapshotCopy.uptime, lang)} ${fmtUptime(monitoring?.poolUptime)}`}
           accent="text-zion-cyan"
           icon={<Activity className="h-5 w-5" />}
         />
         <MetricPanel
-          label={NetworkMonitoringSnapshotCopy.templateFees[cs ? 'cs' : 'en']}
+          label={tx5(NetworkMonitoringSnapshotCopy.templateFees, lang)}
           value={monitoring?.templateFees != null ? `${monitoring.templateFees.toFixed(4)} ZION` : '—'}
-          detail={NetworkMonitoringSnapshotCopy.currentFeeEnvelopeFromTheActiv[cs ? 'cs' : 'en']}
+          detail={tx5(NetworkMonitoringSnapshotCopy.currentFeeEnvelopeFromTheActiv, lang)}
           accent="text-zion-gold"
           icon={<Sparkles className="h-5 w-5" />}
         />
         <MetricPanel
-          label={NetworkMonitoringSnapshotCopy.loadAvg1m[cs ? 'cs' : 'en']}
+          label={tx5(NetworkMonitoringSnapshotCopy.loadAvg1m, lang)}
           value={fmtMetric(monitoring?.load1, 2, locale)}
-          detail={NetworkMonitoringSnapshotCopy.primaryHostPressure[cs ? 'cs' : 'en']}
+          detail={tx5(NetworkMonitoringSnapshotCopy.primaryHostPressure, lang)}
           accent="text-zion-purple"
           icon={<Cpu className="h-5 w-5" />}
         />
         <MetricPanel
-          label={NetworkMonitoringSnapshotCopy.memoryFree[cs ? 'cs' : 'en']}
+          label={tx5(NetworkMonitoringSnapshotCopy.memoryFree, lang)}
           value={fmtBytes(monitoring?.memAvailable)}
-          detail={monitoring?.memTotal != null ? `${fmtBytes(monitoring?.memTotal)} ${NetworkMonitoringSnapshotCopy.total[cs ? 'cs' : 'en']}` : NetworkMonitoringSnapshotCopy.nodeExporterMemory[cs ? 'cs' : 'en']}
+          detail={monitoring?.memTotal != null ? `${fmtBytes(monitoring?.memTotal)} ${tx5(NetworkMonitoringSnapshotCopy.total, lang)}` : tx5(NetworkMonitoringSnapshotCopy.nodeExporterMemory, lang)}
           accent="text-zion-cyan"
           icon={<Database className="h-5 w-5" />}
         />
         <MetricPanel
-          label={NetworkMonitoringSnapshotCopy.diskFree[cs ? 'cs' : 'en']}
+          label={tx5(NetworkMonitoringSnapshotCopy.diskFree, lang)}
           value={fmtBytes(monitoring?.diskAvailable)}
-          detail={monitoring?.diskTotal != null ? `${fmtBytes(monitoring?.diskTotal)} ${NetworkMonitoringSnapshotCopy.total[cs ? 'cs' : 'en']}` : NetworkMonitoringSnapshotCopy.rootFilesystem[cs ? 'cs' : 'en']}
+          detail={monitoring?.diskTotal != null ? `${fmtBytes(monitoring?.diskTotal)} ${tx5(NetworkMonitoringSnapshotCopy.total, lang)}` : tx5(NetworkMonitoringSnapshotCopy.rootFilesystem, lang)}
           accent="text-zion-purple"
           icon={<HardDrive className="h-5 w-5" />}
         />
         <div className="zion-rainbow-sub p-6 flex flex-col justify-between" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-2">{NetworkMonitoringSnapshotCopy.deepDrilldown[cs ? 'cs' : 'en']}</p>
-            <p className="text-sm text-gray-300">{NetworkMonitoringSnapshotCopy.forSparklinesRawPrometheusBack[cs ? 'cs' : 'en']}</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-2">{tx5(NetworkMonitoringSnapshotCopy.deepDrilldown, lang)}</p>
+            <p className="text-sm text-gray-300">{tx5(NetworkMonitoringSnapshotCopy.forSparklinesRawPrometheusBack, lang)}</p>
           </div>
           <div className="mt-5 flex items-center justify-between text-xs text-gray-500 gap-3">
-            <span className="inline-flex items-center gap-2"><RefreshCw className="h-3.5 w-3.5 text-zion-cyan" /> {monitoringUpdatedAt ? `${NetworkMonitoringSnapshotCopy.updated[cs ? 'cs' : 'en']} ${monitoringUpdatedAt.toLocaleTimeString(locale)}` : NetworkMonitoringSnapshotCopy.loadingLiveData[cs ? 'cs' : 'en']}</span>
+            <span className="inline-flex items-center gap-2"><RefreshCw className="h-3.5 w-3.5 text-zion-cyan" /> {monitoringUpdatedAt ? `${tx5(NetworkMonitoringSnapshotCopy.updated, lang)} ${monitoringUpdatedAt.toLocaleTimeString(locale)}` : tx5(NetworkMonitoringSnapshotCopy.loadingLiveData, lang)}</span>
             <Link href="/monitoring" className="text-zion-cyan hover:text-white transition-colors inline-flex items-center gap-1.5 shrink-0">
-              {NetworkMonitoringSnapshotCopy.fullMonitoring[cs ? 'cs' : 'en']} <ExternalLink className="h-3.5 w-3.5" />
+              {tx5(NetworkMonitoringSnapshotCopy.fullMonitoring, lang)} <ExternalLink className="h-3.5 w-3.5" />
             </Link>
           </div>
         </div>
