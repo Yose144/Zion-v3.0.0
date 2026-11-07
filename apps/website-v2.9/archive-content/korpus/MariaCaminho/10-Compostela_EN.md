@@ -19,7 +19,7 @@ He took the credencial out of his pocket. The stamps gleamed: Caminha, Pontevedr
 
 And the last page was blank — as last pages tend to be, so that what has not yet happened can fit into them.
 
-*"The compostela,"* said an old pilgrim who had stood there for a long time — a man who carried so many stamps on his back that his credencial resembled a map. *"You will receive it — but not because you arrived. Because you **returned** — and brought with you what the way wanted to go onward."*
+*"The compostela,"* said an old pilgrim who had stood there for a long time — a man who carried so many stamps on his back that his credencial resembled a map. *"You will receive it — but not because you arrived. Because you **returned** — and brought with you what the way wanted to carry onward."*
 
 *"What?"* asked the Pilgrim.
 
@@ -51,7 +51,7 @@ And the Pilgrim laid the credencial on the table — not as proof that he had be
 
 ## What it means
 
-**The compostela is not a summit — it is proof of return.** A way is completed not by reaching the goal, but by bringing home what the way taught — and then reaching for the hand to ordinary work: chopping wood, carrying water, keeping a garden.
+**The compostela is not a summit — it is proof of return.** A way is completed not by reaching the goal, but by bringing home what the way taught — and then putting one's hand to ordinary work: chopping wood, carrying water, keeping a garden.
 
 1. **Finisterre = an end that changes clothes.** There where the land ends (*finis terrae*), the way ends — and the sea begins. Pilgrims burned their clothes there (LIVE as a tradition); this book lights a lamp there — an image that is not a literary invention but a metaphor: *"where the old world ended, the new one begins"* ([`L5MariaDelCamino.md`](../../3.2/L5MariaDelCamino.md) §1).
 2. **The compostela = a completed credencial.** The Camino document is issued after completing the route — and in this book it is completed with a stamp that was not on any map: *"the garden you plant yourself."* The corpus translates this as an on-chain "compostela" ([`L5MariaDelCamino.md`](../../3.2/L5MariaDelCamino.md) §2.3): those who complete the whole circuit receive a document — and the book says the document is carried into construction.

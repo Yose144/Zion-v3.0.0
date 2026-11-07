@@ -21,7 +21,7 @@ He sat down under an old fig tree at the edge of the market, where those whom no
 
 "Try your bread without it," the carpenter answered.
 
-The men laughed, but one of them, an old soldier with a scarred hand, took a piece of flatbread he carried at his belt and dipped it into the fingers of salt. He bit into it. He stood silent for a moment.
+The men laughed, but one of them, an old soldier with a scarred hand, took a piece of flatbread he carried at his belt and dipped it into the salt in his fingers. He bit into it. He stood silent for a moment.
 
 "It tastes different," he said at last. Not more. Not less. Different. As if he had remembered a taste he had lost without noticing when.
 

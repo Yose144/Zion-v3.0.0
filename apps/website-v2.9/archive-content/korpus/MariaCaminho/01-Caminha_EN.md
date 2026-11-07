@@ -25,7 +25,7 @@ On the quay stood an old man, looking at the water. At his feet lay a bundle of 
 
 ---
 
-The ferry was small — a plank between two banks, only as much room as pilgrims gather in an hour. The craft walked over the water so slowly that the Pilgrim had time to watch the light change on the other shore — Galicia approached like a page turning itself.
+The ferry was small — a plank between two banks, with only as much room as the pilgrims who gather in an hour need. The craft walked over the water so slowly that the Pilgrim had time to watch the light change on the other shore — Galicia approached like a page turning itself.
 
 In the middle of the river he turned around. Behind him lay Portugal — the whole way, every step, every stamp. Before him Galicia — a new land, the old end of the world.
 

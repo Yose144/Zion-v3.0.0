@@ -116,7 +116,7 @@ That is the complete map of the path for every newcomer:
 |---|---|---|
 | **The Goddess Radha** | An archetype of unconditional love, joy (Rasa) and aesthetic harmony in the Vedic tradition. In ZION she represents the ethical and human friendliness of the interface. | **LITERARY ARCHETYPE** |
 | **Avatars in Oasis** | The L4 interface plans profile avatars (Neo, Trinity, Morpheus, Sadhu...) with qualities tied to the type of community activity. | **BUILDING / L4 OASIS** |
-| **9 levels of consciousness (Consciousness Levels)** | From Dormant to Cosmic, defined in `docs/ai-native/oasis.md` and on the website in the Oasis section. | **L4 DOCK** |
+| **9 levels of consciousness (Consciousness Levels)** | From Dormant to Cosmic, defined in `docs/ai-native/oasis.md` and on the website in the Oasis section. | **SPECIAL L4 DOCK** |
 | **XP for real actions** | A reputation system in L4 Oasis for helping the community, PRs, reported bugs and mining uptime. | **IN DEVELOPMENT (L4)** |
 | **Golden Egg (108 clues)** | A gamified treasure hunt with 4.95 billion ZION from the genesis reserve. | **HORIZON (2027)** |
 

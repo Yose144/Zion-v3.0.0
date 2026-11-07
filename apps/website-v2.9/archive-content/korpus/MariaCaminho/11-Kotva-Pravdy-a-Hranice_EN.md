@@ -7,7 +7,7 @@
 
 ## The Story
 
-In the last tent — there where the way is written down — the Pilgrim laid the credencial on the table beside a table above which was written: *"This is where we come when the story collides with a fact."*
+In the last tent — there where the way is written down — the Pilgrim laid the credencial on the table beside another table above which was written: *"This is where we come when the story collides with a fact."*
 
 Only-that did not raise his head. He only pointed at the rows.
 

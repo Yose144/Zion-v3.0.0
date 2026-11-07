@@ -40,7 +40,7 @@ The navigator laughed, because it was the only question that could be answered w
 
 *"Because buying a place is not the same as having a station."* He pointed at the ring. *"Someone will carry you up and someone will carry you down again. But no one will lend you a home. What you see here is not a rocket. It is **a place to which one can return** — and a place like that cannot be bought for a single use."*
 
-In the evening, when they ate in the ring, the child sat by the wall where pictures of old stations hung: a small tin one with a single window, a larger one with great wings, a long one assembled from two hostile countries that outlasted their quarrel. And beneath them, newly hung, hung an empty frame.
+In the evening, when they ate in the ring, the child sat by the wall where pictures of old stations hung: a small tin one with a single window, a larger one with great wings, a long one put together by two hostile countries and outlasting their quarrel. And beneath them, newly hung, hung an empty frame.
 
 *"What will be there?"*
 

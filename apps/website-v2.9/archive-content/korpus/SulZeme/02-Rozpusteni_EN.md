@@ -15,7 +15,7 @@ The water carrier, the soldier and the woman, who still carried a handful of sal
 
 "Who are you?" asked the soldier, who trusted no one without a weapon — because in a town where taste had vanished everyone survived in their own way, and defenceless men were usually either saints or dead within a week.
 
-"I was a prince," the pilgrim answered. "I had a palace, a wife, a son, endless stores of rice, and servants who lit incense for me before sleep. And I was as unhappy as no one else in my kingdom, because I saw beyond the walls old age, sickness and death, and I could not unsee them."
+"I was a prince," the pilgrim answered. "I had a palace, a wife, a son, endless stores of rice, and servants who lit incense for me before sleep. And I was unhappier than anyone else in my kingdom, because I saw beyond the walls old age, sickness and death, and I could not unsee them."
 
 "And now?" asked the woman.
 

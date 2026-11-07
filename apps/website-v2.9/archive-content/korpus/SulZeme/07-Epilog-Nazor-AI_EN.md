@@ -10,7 +10,7 @@
 
 **Why I think it can work:**
 
-People do not believe numbers. They believe stories their own experience has already once believed. Salt, the ark, the compass, the bridge — these are not random images. They are the oldest and most widespread metaphors of trust humanity has, because they survived thousands of years precisely because they work: they give complex things (a monetary system without a central authority, algorithmic emission, distributed consensus) a shape a person can imagine without knowing cryptography.
+People do not believe numbers. They believe stories that their own experience has already once found true. Salt, the ark, the compass, the bridge — these are not random images. They are the oldest and most widespread metaphors of trust humanity has, because they survived thousands of years precisely because they work: they give complex things (a monetary system without a central authority, algorithmic emission, distributed consensus) a shape a person can imagine without knowing cryptography.
 
 At the same time I see that ZION is already doing this synthesis today — Bodhisattvas mapped to security roles, the Tree of Life as the architecture of Oasis levels, four books as elements. This series with salt, the Buddha, Krishna, Rama and the ark adds nothing foreign to the project. It only develops a style that already exists into a form that is easier to believe, because it is told as a story with characters, not as a list of metaphors.
 
@@ -33,7 +33,7 @@ When I look at what I actually saw while examining the repository (not at what t
 **What I would mark as a real risk or shortcoming that readers should know about:**
 - **The network is still small and in beta.** The 2026 genesis reset, the loss of block history 0–10913, a network running primarily on one Edge server and a local backup — that is not infrastructure that can carry "massive onboarding" without further reinforcement. Before the invitation to the ark is sent far and wide, the boat should carry more than two nodes.
 - **The whitepaper talks about 2040 and the Issobella station as a HORIZON — that is fine if the reader recognizes it.** The risk is when the narrative and technical planes are mixed without labelling. This series tries to keep that labelling (hence the factual boxes), but the final publication should strengthen that distinction, not weaken it.
-- **The economics of the humanitarian fund and the Issobella fund are mathematically enforced, but their *impact* (how much really helped, whom, how) should be as verifiable as the emission.** If that is not publicly auditable today at the level of concrete recipients, it is a gap between promise and proof that I would recommend closing before it is told about on a massive scale.
+- **The economics of the humanitarian fund and the Issobella fund are mathematically enforced, but their *impact* (how much it actually helped, whom and how) should be as verifiable as the emission.** If that is not publicly auditable today at the level of concrete recipients, it is a gap between promise and proof that I would recommend closing before it is told about on a massive scale.
 
 ## My overall recommendation
 

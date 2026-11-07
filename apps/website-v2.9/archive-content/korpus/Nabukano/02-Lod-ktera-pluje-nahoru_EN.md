@@ -20,7 +20,7 @@ The lower end of the Ladder stands where there is solid ground and an antenna: a
 
 *"So one goes up from LUMI?"* asked the child.
 
-*"One goes up **through** LUMI,"* said the navigator. *"LUMI is not a station building. LUMI is a name that holds a garden below and the sky above. If it were a station, someone could close it. You cannot close a name."*
+*"One goes up **through** LUMI,"* said the navigator. *"LUMI is not a railway station. LUMI is a name that holds a garden below and the sky above. If it were a station, someone could close it. You cannot close a name."*
 
 The child was silent for a while and then asked about the one thing on which the whole fleet stands:
 

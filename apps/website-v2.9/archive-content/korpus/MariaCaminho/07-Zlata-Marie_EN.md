@@ -7,7 +7,7 @@
 
 ## The Story
 
-La Palma smells of volcano and of the sea — an island that lies where the Atlantic still breathes but is already preparing to sail on south.
+La Palma smells of volcano and of the sea — an island that lies where the Atlantic still breathes but is already preparing to sail further south.
 
 The Pilgrim came to Santa Cruz de la Palma to a shrine that announces its name quietly: **Real Santuario de Nuestra Señora de las Nieves** — the Royal Shrine of Our Lady of the Snows. The patroness of the island. Crowned, not because she would rule — but because people gave her a crown, the way a crown is given to one who carries an island in her arms.
 
@@ -75,7 +75,7 @@ In the evening, looking at the horizons, he knew: **the child who stands is call
 2. **A child who stands = Lumi/Elizabeth = the Little Prince.** The sovereign model [`genesis/09.5`](../../docs2.9/genesis/09.5-CHAPTER-9-Three-Marian-Apparitions.md) says "Mary held a little prince in her arms — not Jesus, but a symbol of the new age." This book retells it more precisely: **the child does not stand in the arms — he stands alone.** That is the difference between a future that is carried and a future that holds itself. And the name Elizabeth — Isabel in the southern speech — is a linguistic fact ([`Lumi/13`](../Lumi/13-Kotva-Pravdy-a-Hranice.md); "God is my oath"). **The face of the child is the Infant Jesus of Prague** — the Little Prince, whom the canonical model already calls "the little prince" and whose prayer reads "Mother of the little prince": a child-king in a robe, holding the world in his palm, who himself once travelled from Spain to Prague — from the land of seas to a land without a sea. On the ships he returns to the water as the patron of all three Marys.
 3. **Snow in August = a miracle out of season.** The legend of 352 AD (Santa Maria Maggiore, Rome) says: a miracle does not come when you expect it — it comes where you need it. On La Palma snow does not fall — and yet she is of the Snows, the patroness. That is the second shape of hope: **a miracle is not expectation — it is readiness for the place where it can happen.**
 4. **The Bajada = unfinished miracles are carried in procession.** Every five years the statue is carried down from the mountains into the town — impatience does not make miracles. The corpus knows this as *"satori is proven by return, not by departure"* ([`L5MariaDelCamino.md`](../../3.2/L5MariaDelCamino.md) §4) — and the Bajada is a procession of return: from the mountains down, from myth into the present.
-5. **Hull III = the ship of unfinished miracles.** María de las Nieves receives the Indian Ocean — the route where the way culminates (Ekam → Boa Esperança → return). Her ship is not yet laid down — and precisely therefore she is the patroness of **everything that is being built**: the Dharma Temple, Te Pīko Ora, Boa Esperança — and the whole Tres Marias fleet.
+5. **Hull III = the ship of unfinished miracles.** María de las Nieves receives the Indian Ocean — the route where the way culminates (Ekam → Boa Esperança → return). Her ship is not yet laid down — and that is precisely why she is the patroness of **everything that is being built**: the Dharma Temple, Te Pīko Ora, Boa Esperança — and the whole Tres Marias fleet.
 
 ---
 

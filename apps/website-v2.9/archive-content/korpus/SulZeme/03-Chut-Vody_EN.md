@@ -64,4 +64,4 @@ Krishna's message to builders is direct: **act without clinging to the fruits of
 
 ---
 
-*→ Continue: [Episode 4 — The Unwalked Road](./04-Cesta-Nevyslapana.md)*
+*→ Continue: [Episode 4 — The Unbeaten Path](./04-Cesta-Nevyslapana.md)*

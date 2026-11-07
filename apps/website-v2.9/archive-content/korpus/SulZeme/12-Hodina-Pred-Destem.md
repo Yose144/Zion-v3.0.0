@@ -70,7 +70,7 @@ Sůl, která ví, že je sůl, řekne nahlas i tohle:
 
 - **Nikdo neslibuje, že ZION bude mít jednou hodnotu bitcoinu, jeho zlomek, nebo jakoukoliv hodnotu vůbec.** Bitcoin Pizza Day je historický fakt o jiné síti, ne předpověď o téhle. Devět z deseti kamenů, kterým se lidé smáli v hospodách posledních patnáct let, zůstalo kameny.
 - **Těžba stojí reálné peníze už dnes** — elektřinu, hardware, čas — bez ohledu na to, jakou hodnotu bude mít ZION zítra, za rok nebo nikdy. Nepočítej s odměnou, kterou si nemůžeš dovolit nedostat.
-- **ZION je Mainnet Alpha/Beta.** Mladá síť, malý počet uzlů, otevřený vývoj — chyby se stávají a opravují se veřejně, ne skrytě, ale stávají se. Kdo vstupuje první, nese i první riziko, ne jen první příležitost.
+- **ZION je Mainnet Beta.** Mladá síť, malý počet uzlů, otevřený vývoj — chyby se stávají a opravují se veřejně, ne skrytě, ale stávají se. Kdo vstupuje první, nese i první riziko, ne jen první příležitost.
 - **Tohle není investiční doporučení.** Je to popis toho, jak funguje matematika emise a obtížnosti u otevřené sítě, kterou si můžeš ověřit sám v kódu, ne důvod k rozhodnutí, které by sis neměl promyslet vlastní hlavou.
 
 Kompas ukazuje sever. Neukazuje, jestli prší už teď, nebo za rok. To je otázka, na kterou musí každý stavitel odpovědět sám — stejně jako kovář, kterému nikdo nezaručil, že archa jednou popluje.
@@ -85,7 +85,7 @@ Kompas ukazuje sever. Neukazuje, jestli prší už teď, nebo za rok. To je otá
 | „Odměna, kterou už protokol nikdy nepřekoná." | ZION je v dekádě 1 (2026–2036) s odměnou **5 400,067 ZION/blok** — nejvyšší v celém emisním plánu. Decade Decay: −20 % každou dekádu (5 256 000 bloků), tail 724,784723 ZION/blok navěky od ~2126. Zdroj: technický whitepaper 3.1, kap. 5.2. |
 | „Náročnost reaguje na dnešek, ne na zítřek." | Difficulty adjustment: LWMA za posledních 60 bloků, ±25 % clamp, cíl 30–120 s na blok. Algoritmus je veřejný a auditovatelný v kódu L1 core. |
 | „Nikdo nedostal VIP vstup." | Fair launch: žádný `mint()` pro tým, žádné ICO ani předprodej. Premine 16,78 mld. ZION (11,65 %) je veřejně vypsaný v genesis bloku, ne skrytý. |
-| „Síť je pořád malá." | ZION běží v Mainnet Alpha/Beta na malém počtu uzlů (Edge + lokální backup) — otevřeně dokumentováno, ne skrýváno. To je současně důvod k opatrnosti i k tomu, proč je dnešní vstup jiný než vstup za rok. |
+| „Síť je pořád malá." | ZION běží v Mainnet Beta na malém počtu uzlů (Edge + lokální backup) — otevřeně dokumentováno, ne skrýváno. To je současně důvod k opatrnosti i k tomu, proč je dnešní vstup jiný než vstup za rok. |
 | „Tohle není slib zisku." | Žádná epizoda této knihy, včetně této, neobsahuje výzvu ke koupi ani příslib výnosu — v souladu s pravidlem celé série (viz epizoda 8, část VII). |
 
 ---

@@ -59,7 +59,7 @@ The board [`Nabukano_ Three-Berth Docking Study.png`](./Nabukano_%20Three-Berth%
 | 05 | Isolation cabin | one door that closes from the outside and from the inside |
 | 06 | Docking frame | **three berths** beneath the hull — the three Marys settle in from below |
 | 07 | Lantern | a real lantern at the end of the frame; it shines for those who come from below |
-| 08 | Technical background | a workshop, stores, the things that must work when nothing is happening |
+| 08 | Technical facilities | a workshop, stores, the things that must work when nothing is happening |
 
 **Companion ships** (names from the book, orbits from the board):
 

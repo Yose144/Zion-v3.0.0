@@ -71,7 +71,7 @@ This document is one entry point. The detailed truth lives in these sources:
 
 > **Story**
 >
-> **ZION is a blockchain that can be verified, not just promised.** It has been running since 4 December 2025, a new block every 60 seconds, open-source code that anyone can read.
+> **ZION is a blockchain that can be verified, not just promised.** It has been running since 1 January 2026, a new block every 60 seconds, open-source code that anyone can read.
 >
 > **Every block automatically splits the reward: 89 % to miners, 5 % to the humanitarian fund, 5 % to the future fund, 1 % is burned.** It is not a company promise — it is math written into the network rules that nobody can silently change.
 >
@@ -273,7 +273,7 @@ The full circle consists of seventeen circles: the Holy Trinity and its circle, 
 | Path | Essence | First task |
 |---|---|---|
 | 1. Path of knowledge | Sarasvati and Vishwakarma — code, nodes, mathematics | "What actually confirms a signature?" |
-| 2. Path of service | Hanumana — help newcomers, distribute tithe, build public goods | Find out what can be verified about one aid area |
+| 2. Path of service | Hanuman — help newcomers, distribute tithe, build public goods | Find out what can be verified about one aid area |
 | 3. Path of courage | Rama and Issobella — run nodes, protect the system | Recognize a security warning and verify the software source |
 | 4. Path of the heart | Radha and Sita — create safe social space, welcome, heal conflicts | Write something that makes entry easier for a newcomer, without promising yield |
 | 5. Path of stillness | Sadhu — meditation, attention, rhythm | Complete a short meditation or refuse a quick reward |
@@ -348,7 +348,7 @@ You earn them for completing quests, helping newcomers, contributing to docs and
 | 1 | [Sůl země (Salt of the Earth)](./01-Sul-Zeme.md) | Jesus — parable of salt | Genesis |
 | 2 | [Rozpuštění (Dissolution)](./02-Rozpusteni.md) | Buddha — middle way | Quantum Revolution |
 | 3 | [Chuť vody (Taste of Water)](./03-Chut-Vody.md) | Krishna — Vishvarupa, karma yoga | Ekam Deeksha |
-| 4 | [Cesta nevyšlapaná (Untrodden Path)](./04-Cesta-Nevyslapana.md) | Rama, Sita, Hanuman | Terra Nova |
+| 4 | [Cesta nevyšlapaná (The Unbeaten Path)](./04-Cesta-Nevyslapana.md) | Rama, Sita, Hanuman | Terra Nova |
 | 5 | [Archa (Ark)](./05-Archa.md) | Noah — ark before the flood | Terra Nova / Genesis |
 | 6 | [Kompas a pozvánka do Oasis (Compass and Invitation to Oasis)](./06-Kompas-a-Pozvanka-do-Oasis.md) | Synthesis of all characters, entry to L4 Oasis | All four |
 | 7 | [Epilog — Názor AI (Epilogue — AI Opinion)](./07-Epilog-Nazor-AI.md) | Devin (AI), open assessment | — |
@@ -488,7 +488,7 @@ cargo build --release -p zion-core --bin node
 export ZION_NODE_ID="my-node-01"
 export ZION_NODE_STATE_PATH="/var/lib/zion/state.db"
 export ZION_P2P_BIND="0.0.0.0:8333"
-export ZION_RPC_BIND="interní port"
+export ZION_RPC_BIND="internal port"
 export ZION_METRICS_BIND="0.0.0.0:9115"
 export ZION_SEED_PEERS="zionterranova.com:8333,zionterranova.com:8334"
 export ZION_BLOCK_RETENTION=0
@@ -592,7 +592,7 @@ rpcCall('getChainInfo').then(console.log);
 |---|---|---|
 | **Network status** | Mainnet Beta; official public launch postponed (TBD) | [`StatusV3.md`](../../3.2/StatusV3.md), lines 7–8 |
 | **Genesis hash** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` | [`StatusV3.md`](../../3.2/StatusV3.md), line 6; [`AGENTS.md`](../../../AGENTS.md) |
-| **Genesis story / code reality** | 4 December 2025 (story) / hard genesis reset 2026-07-20 (after block retention fix) | [`StatusV3.md`](../../3.2/StatusV3.md), line 9; [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX |
+| **Genesis story / code reality** | 1 January 2026 (story) / hard genesis reset 2026-08-06 (after the block retention fix of 2026-07-20) | [`StatusV3.md`](../../3.2/StatusV3.md), line 9; [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX |
 | **Block time** | 60 s; DAA LWMA 60 blocks; ±25 % clamp; solve time 30–120 s | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5 |
 | **First-decade reward** | 5,400.067 ZION/block (2026–2036) | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.2 |
 | **Decade Decay** | Factor 0.8 (−20 %) every ~10 years (5,256,000 blocks) | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.2 |
@@ -601,7 +601,7 @@ rpcCall('getChainInfo').then(console.log);
 | **Hard cap** | 144,000,000,000 ZION | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5 |
 | **PoW algorithm** | Ekam Deeksha / CosmicHarmony; 6 phases; LWMA 60 | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Verifiable facts; [`V3/README.md`](../../../README.md) |
 | **Public pool** | `pool.zionterranova.com:8444` (Stratum) | [`StatusV3.md`](../../3.2/StatusV3.md), line 114; [`AGENTS.md`](../../../AGENTS.md) |
-| **Public RPC** | `http://rpc.zionterranova.com:8443` (nginx TCP/HTTP proxy → `interní port` on Edge) | [`StatusV3.md`](../../3.2/StatusV3.md), line 112 |
+| **Public RPC** | `http://rpc.zionterranova.com:8443` (nginx TCP/HTTP proxy → `internal port` on Edge) | [`StatusV3.md`](../../3.2/StatusV3.md), line 112 |
 | **Edge P2P** | `zionterranova.com:8333`, `8334`, V31 `8335` | [`StatusV3.md`](../../3.2/StatusV3.md), service table; [`AGENTS.md`](../../../AGENTS.md) |
 | **Edge RPC** | `9443` (node1), `8448` (node2), `9445` (V31) | [`StatusV3.md`](../../3.2/StatusV3.md), service table; [`AGENTS.md`](../../../AGENTS.md) |
 | **GitHub** | `https://github.com/Zion-TerraNova/v3-Mainnet` (public, MIT) | [`AGENTS.md`](../../../AGENTS.md), `public/` section |

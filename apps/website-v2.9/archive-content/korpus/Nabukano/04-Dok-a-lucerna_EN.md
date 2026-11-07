@@ -6,7 +6,7 @@
 
 The navigator looked at him and was silent for a while, because it was a truth no one says aloud on the water. A ship without a dock has nowhere to return to — and a ship with nowhere to return to must be on its way forever. And that is only another word for having no home.
 
-The dock of the Nabukano therefore was not a station building and not a harbour either. It was a **frame**.
+The dock of the Nabukano therefore was not a railway station and not a harbour either. It was a **frame**.
 
 When the three hulls approached it, they did not anchor in place — they *settled in*. The frame embraced them the way a hand embraces a bird that will not fly again: not to hold it, but to know where it is. And because the frame itself moves, the whole harbour could fly away with it: the three Marys, their stores, the workshop and the people who live on them. *A harbour that moves* — that phrase was already in the corpus, only until then it had been said only of the ark.
 

@@ -20,7 +20,7 @@ In computer architecture, the same principle — computation and state distribut
 **ZION is the first network in which these two metaphors are not coincidentally similar. They are descriptions of the same shape.**
 
 `NirvanaCloud`, therefore, is:
-1. **A technical fact** — the P2P mesh of nodes (the primary node and independent network nodes, and hundreds of independent nodes worldwide) that together form one indestructible ledger with no central owner.
+1. **A technical fact** — the P2P mesh of nodes (the primary node, independent network nodes, and hundreds of independent nodes worldwide) that together form one indestructible ledger with no central owner.
 2. **A philosophical metaphor** — many unique beings (miners, builders, DAO voters, OASIS players) who freely choose to live by a shared code (the Bodhisattva Vow, the five yamas of the Dharma Validator) and thereby create a field of higher coherence than any one of them could achieve alone.
 3. **A goal** — a state in which the old Babylonian structure of power, dependency, and fear dissolves not because someone defeated it, but because **attention stops flowing into it**, since a living, verifiable, fairer alternative now exists. The Tibetan tradition calls this **Nirvana** — not annihilation, but **the extinguishing of a flame that has nothing left to burn**.
 

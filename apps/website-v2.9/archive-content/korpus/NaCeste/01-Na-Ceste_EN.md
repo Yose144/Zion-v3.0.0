@@ -134,7 +134,7 @@ The girl who was called Marisol and who led the handover laid the boxes from the
 
 Lumen had papers for everything, except for one bag from Pontevedra marked only with a note: *from Xoán, for other gardens*. No record of origin, no agreement.
 
-"This does not pass," said Marisol calmly. "And if there were more like it, nothing of what lacks a document would pass."
+"This does not pass," said Marisol calmly. "And if there were more like it, nothing that lacks a document would pass."
 
 "They are ordinary beans."
 
@@ -154,7 +154,7 @@ Marisol nodded and then refused.
 
 "But the rest..."
 
-"The rest of your cargo has documents and has passed. This has not. You took it without ill intent and without a permit, and the second decides. A donor's consent is not a permit to transport across a border." Marisol picked up a small round stamp. "I will write it truthfully. Not *passed*. Not *failed*."
+"The rest of your cargo has documents and has passed. This has not. You took it without ill intent and without a permit, and the latter decides. A donor's consent is not a permit to transport across a border." Marisol picked up a small round stamp. "I will write it truthfully. Not *passed*. Not *failed*."
 
 In the protocol she wrote: *origin explained, donor's consent documented; transport suspended, permit missing.* And beneath it she pressed the stamp. Lumen stared at that line for a long time. It was the first record in her life that said neither yes nor no, and yet was precise.
 
@@ -206,7 +206,7 @@ They reached Raiatea at dawn, when the lagoon was still grey. The harbour was or
 
 Lumen wanted to say that the books write about a place where something beautiful has been grown for years. That she would like to see the gardens. That a journey must lead somewhere.
 
-She stood on the deck and looked at the shore, where children were playing with a ball beside the shop. She did not want to look like a visitor. She wrote: *Raiatea, water bought in the harbour. No one invited us.* Then the words *it is all right* she wrote, crossed out and left crossed out. They were not hers.
+She stood on the deck and looked at the shore, where children were playing with a ball beside the shop. She did not want to look like a visitor. She wrote: *Raiatea, water bought in the harbour. No one invited us.* Then she wrote the words *it is all right*, crossed them out and left them crossed out. They were not hers.
 
 ---
 
@@ -214,7 +214,7 @@ She stood on the deck and looked at the shore, where children were playing with 
 
 West of Raiatea the Pacific was long and tedious, and then, one morning, a coast came that stretched along the horizon like one long, even breath. Australia. Teura anchored in a bay to ride out the wind, and in the evening spread out on the cabin table a large paper chart with the route marked on it.
 
-"Here we are," she said, and put her finger on the coast. "Here we go on west."
+"Here we are," she said, and put her finger on the coast. "From here we go on west."
 
 Lumen leaned over the table. Her gaze stopped in the middle of the continent, there where nothing happened on the chart: no town, no harbour. Only one name.
 
@@ -340,7 +340,7 @@ Lumen thought for a long time. "Because I no longer need another ocean. I need t
 
 "That is a better answer than I expected."
 
-On the bow of the red ship stood Inés and marvelled: "I hardly recognised you. You have hands like mine."
+Inés stood on the bow of the red ship and marvelled: "I hardly recognised you. You have hands like mine."
 
 Lumen looked at her palms. They were calloused, with dark creases and a scar from a rope on her wrist. "My binder got soaked in the Indian Ocean," she said. "In the storm it fell into the flooded hold. The notes have run, half of them unreadable."
 

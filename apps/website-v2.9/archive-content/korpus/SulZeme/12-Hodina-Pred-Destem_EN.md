@@ -16,7 +16,7 @@ The blacksmith, who had lost his workshop in a fire years before, came every mor
 
 The rest of the town laughed at them.
 
-"Carpenters of the rain," the tavern keeper in the market called them, and the laughter carried across the whole square. "Hauling wood for a flood that may never come. That plank would earn you more as a sack of flour than that madman's boat ever will."
+"Carpenters of the rain," the tavern keeper in the market called them, and the laughter carried across the whole square. "Hauling wood for a flood that may never come. That plank would get you more in exchange for a sack of flour than that madman's boat of yours ever will."
 
 At night the blacksmith woke with a doubt he never admitted aloud: *What if the tavern keeper is right? What if I am forging hinges for something that will rot on the shore before a single drop falls?* His hands ached from the hammer and he had no certainty at all — only the builder's word and a compass with north carved into it.
 
@@ -70,7 +70,7 @@ Salt that knows it is salt says this out loud too:
 
 - **No one promises that ZION will one day have the value of bitcoin, a fraction of it, or any value at all.** Bitcoin Pizza Day is a historical fact about another network, not a prediction about this one. Nine out of ten stones that people laughed at in taverns over the past fifteen years remained stones.
 - **Mining costs real money already today** — electricity, hardware, time — regardless of what value ZION will have tomorrow, in a year, or never. Do not count on a reward you cannot afford not to receive.
-- **ZION is Mainnet Alpha/Beta.** A young network, a small number of nodes, open development — mistakes happen and are fixed publicly, not hidden, but they do happen. Whoever enters first also carries the first risk, not only the first opportunity.
+- **ZION is Mainnet Beta.** A young network, a small number of nodes, open development — mistakes happen and are fixed publicly, not hidden, but they do happen. Whoever enters first also carries the first risk, not only the first opportunity.
 - **This is not investment advice.** It is a description of how the mathematics of emission and difficulty works on an open network you can verify yourself in the code, not a reason for a decision you should not think through with your own head.
 
 The compass shows north. It does not show whether it is raining now, or will rain in a year. That is a question every builder must answer themselves — like the blacksmith whom no one guaranteed that the ark would one day sail.
@@ -85,7 +85,7 @@ The compass shows north. It does not show whether it is raining now, or will rai
 | "The reward the protocol will never surpass." | ZION is in decade 1 (2026–2036) with a reward of **5,400.067 ZION/block** — the highest in the entire emission plan. Decade Decay: −20% each decade (5,256,000 blocks), tail 724.784723 ZION/block forever from ~2126. Source: technical whitepaper 3.1, ch. 5.2. |
 | "Difficulty responds to today, not tomorrow." | Difficulty adjustment: LWMA over the last 60 blocks, ±25% clamp, target 30–120 s per block. The algorithm is public and auditable in the L1 core code. |
 | "No one got VIP entry." | Fair launch: no `mint()` for the team, no ICO or presale. The premine of 16.78 billion ZION (11.65%) is publicly listed in the genesis block, not hidden. |
-| "The network is still small." | ZION runs as Mainnet Alpha/Beta on a small number of nodes (Edge + local backup) — openly documented, not hidden. That is at once a reason for caution and the reason today's entry differs from entry in a year. |
+| "The network is still small." | ZION runs as Mainnet Beta on a small number of nodes (Edge + local backup) — openly documented, not hidden. That is at once a reason for caution and the reason today's entry differs from entry in a year. |
 | "This is not a promise of profit." | No episode of this book, including this one, contains an invitation to buy or a promise of yield — in keeping with the rule of the whole series (see episode 8, part VII). |
 
 ---

@@ -57,7 +57,7 @@ And in the evening, when the two crews met on the beach — Atlantic and Pacific
 
 ## What it means
 
-**The Lumi bridge is not an obstacle — it is the way two worlds are married without having to meet on the water.** The isthmus of the Americas is the narrowest place on the planet between two oceans — and precisely therefore it is the only place where crews, cargo and stories can flow across land as though they were carried on water.
+**The Lumi bridge is not an obstacle — it is the way two worlds are married without having to meet on the water.** The isthmus of the Americas is the narrowest place on the planet between two oceans — and that is precisely why it is the only place where crews, cargo and stories can flow across land as though they were carried on water.
 
 1. **The Camino de Cruces = a documented precedent.** For three hundred years gold and people were carried across the Panamanian isthmus — the corpus knows it as a historical anchor ([`L5MariaDelCamino.md`](../../3.2/L5MariaDelCamino.md) §4): *"across the Panamanian isthmus ran the Camino de Cruces — for 300 years it carried Peruvian gold from the Pacific to the Caribbean; in the 1850s Vanderbilt's Accessory Transit carried thousands of people."* The pilgrims of this book do literally the same — only they carry light, not gold.
 2. **"Ships are married across dry land."** The fleet does not meet in the middle of the sea — worlds touch at the isthmus. That is the protocol of the concept and the principle of the book: **exchange is a relationship, not a transaction.** Crew hands over to crew, cargo crosses through people, letters are carried by hands — and the ship waiting on the far bank bears the name of a bride who took the way as her spouse.

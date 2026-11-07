@@ -58,7 +58,7 @@
 
 > **The Story**
 >
-> **1. ZION is a Rust blockchain you can verify and run today.** No whitepaper promises — the network is live, blocks are produced every 60 seconds, and the codebase is open under the MIT license.
+> **1. ZION is a Rust blockchain you can verify and run today.** No promises on paper — the network is live, blocks are produced every 60 seconds, and the codebase is open under the MIT license.
 >
 > **2. Every block automatically splits rewards: 89% to miners, 5% to the humanitarian fund, 5% to the Issobella science & community fund, and 1% burned.** This is not optional corporate charity; it is consensus-enforced mathematical logic built into every node.
 >
@@ -69,12 +69,12 @@
 | Claim | Code / Network Reality | Source of Truth |
 |---|---|---|
 | Open source code | Fully open source under MIT license | `https://github.com/Zion-TerraNova/v3-Mainnet` |
-| 60s block time | Target block time 60s, DAA LWMA-60, ±25% clamp | `` `interní repozitář` `` |
+| 60s block time | Target block time 60s, DAA LWMA-60, ±25% clamp | `` `internal repository` `` |
 | Genesis reset (2026-08-06) | New canonical genesis hashes: V3 compat `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`, V31 native `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` | `HARD_RESET_PLAYBOOK.md`, `StatusV3.md` |
-| Block reward | 5,400.067 ZION/block in Decade 1 (2026–2036); Decade Decay −20% every 10 years; perpetual tail emission 724.784723 ZION from ~2126 | `` `interní repozitář` `` |
-| Fee split 89/5/5/1 | `MINER_SHARE_PERCENT = 0.89`, 5% humanitarian, 5% Issobella, 1% burn / pool fee slot | `` `interní repozitář` ``, `` `interní repozitář` `` |
-| 144B Hard Cap | `max_supply = 144,000,000,000 ZION`; premine 16.78B (11.65%) for core dev, escrow, DAO, and validators | `` `interní repozitář` `` |
-| Ekam Deeksha v3.2 consensus | Memory-hard PoW: 512 KiB scratchpad, 2 AES passes, 128 random reads, Keccak-256 final hash | `` `interní repozitář` `` |
+| Block reward | 5,400.067 ZION/block in Decade 1 (2026–2036); Decade Decay −20% every 10 years; perpetual tail emission 724.784723 ZION from ~2126 | `` `internal repository` `` |
+| Fee split 89/5/5/1 | `MINER_SHARE_PERCENT = 0.89`, 5% humanitarian, 5% Issobella, 1% burn / pool fee slot | `` `internal repository` ``, `` `internal repository` `` |
+| 144B Hard Cap | `max_supply = 144,000,000,000 ZION`; premine 16.78B (11.65%) for core dev, escrow, DAO, and validators | `` `internal repository` `` |
+| Ekam Deeksha v3.2 consensus | Memory-hard PoW: 512 KiB scratchpad, 2 AES passes, 128 random reads, Keccak-256 final hash | `` `internal repository` `` |
 | Wrapped wZION on Base | Verified ERC-20 smart contract on Basescan | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` |
 
 ---
@@ -125,12 +125,12 @@ The book *Salt of the Earth* guides the pilgrim through twelve archetypal stages
 
 | Layer | Name | Function | Implementation |
 |---|---|---|---|
-| **L1** | Hull | Terra Nova L1 Rust blockchain, Ekam Deeksha PoW | `` `interní repozitář` ``, `cosmic-harmony`, `miner`, `pool` |
-| **L2** | Sails & Rigging | wZION Bridge, DeFi, DAO governance, Atomic Swaps | `` `interní repozitář` ``, `` `interní repozitář` `` |
-| **L3** | Navigation | WARP multichain, ZionDex router, Solver Network, NCL AI | `` `interní repozitář` ``, `` `interní repozitář` `` |
-| **L4** | Deck Garden | OASIS metaverse, avatars, quests, ERC-1155 MarketPlace | `` `interní repozitář` ``, `apps/MarketPlace` |
-| **L5** | Cargo & Care | Free World, humanitarian tithe, community grants | `` `interní repozitář` `` (ready) |
-| **L6** | Crown & Outlook | Issobella, space research, science, earth view | `` `interní repozitář` `` (ready) |
+| **L1** | Hull | Terra Nova L1 Rust blockchain, Ekam Deeksha PoW | `` `internal repository` ``, `cosmic-harmony`, `miner`, `pool` |
+| **L2** | Sails & Rigging | wZION Bridge, DeFi, DAO governance, Atomic Swaps | `` `internal repository` ``, `` `internal repository` `` |
+| **L3** | Navigation | WARP multichain, ZionDex router, Solver Network, NCL AI | `` `internal repository` ``, `` `internal repository` `` |
+| **L4** | Deck Garden | OASIS metaverse, avatars, quests, ERC-1155 MarketPlace | `` `internal repository` ``, `apps/MarketPlace` |
+| **L5** | Cargo & Care | Free World, humanitarian tithe, community grants | `` `internal repository` `` (ready) |
+| **L6** | Crown & Outlook | Issobella, space research, science, earth view | `` `internal repository` `` (ready) |
 
 ---
 

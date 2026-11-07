@@ -89,7 +89,7 @@ How does life work in the First World of Oasis?
 | **5 Reward Pools (4.95B ZION)** | A genesis allocation of 4,950,000,000 ZION (3 slots × 1.65 billion; slots 4 and 5 — 3.3 billion — repurposed to L5 Free World Projects) reserved for OASIS + Golden Egg / XP. | **ON-CHAIN GENESIS ALLOCATION** |
 | **9 Levels of Consciousness** | The `ConsciousnessLevel` enum in L3/L4 (Physical, Emotional, Mental, Awakened, Cosmic...) with multipliers and XP thresholds. | **CODE IN L3/L4 (`oasis_bridge.rs`)** |
 | **Guild system (max 100 members)** | The `Guild` class in `zion-oasis` supports creating guilds, founders, officers and members. | **CODE IN `zion-oasis` (40 tests)** |
-| **REST API for Oasis** | Port `8094` with endpoints `/api/v1/oasis/player`, `/leaderboard`, `/guild`, `/map`, `/rewards/pools`. | **FUNCTIONAL SKELETON (port 8094)** |
+| **REST API for Oasis** | An internal port with endpoints `/api/v1/oasis/player`, `/leaderboard`, `/guild`, `/map`, `/rewards/pools`. | **FUNCTIONAL SKELETON (port 8094)** |
 
 ---
 

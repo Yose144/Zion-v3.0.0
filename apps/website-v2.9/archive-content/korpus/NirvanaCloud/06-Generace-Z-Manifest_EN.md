@@ -76,7 +76,7 @@ The wheel turns whether you believe in it or not. The question is not whether it
 | Demographic imbalance and the burden on younger generations | Kotlikoff et al., *The Global Transition — The Impact of Demographics and AI on Economic Power* (2026) |
 | Existential risks require international cooperation that geopolitics currently obstructs | The Millennium Project, *State of the Future 20.0* |
 | ZION has no KYC barrier for basic participation | Public onboarding documentation, `08-ZION-Nova-Civilizace.md` §VI |
-| Automatic 5% + 5% coinbase stream | L1 consensus coinbase structure, `interní repozitář` |
+| Automatic 5% + 5% coinbase stream | L1 consensus coinbase structure, the internal repository |
 | No guaranteed profit, no investment advice | `08-Kotva-Pravdy-Eticke-Hranice.md`, §Financial Boundaries |
 
 ---

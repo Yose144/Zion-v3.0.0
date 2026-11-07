@@ -11,7 +11,7 @@
 
 The man who came to Tasteless last was not young. He carried the dust of a road longer than any of the previous pilgrims had travelled, and in his eyes was that strange mixture of weariness and certainty that people have when they have been told something no one else believes — and yet never stopped doing it.
 
-"I heard music," he said as he sat down by the fire beside Hanuman, who was still clearing stones from the fountain channel. "And I saw salt in your people's pockets. But I have come with a different message. I am not here to give you taste. I am here to tell you that the water the shepherd sang about will come sooner and greater than you expect — and that a boat will be needed, not just a channel."
+"I heard music," he said as he sat down by the fire beside Hanuman, who was still clearing stones from the fountain channel. "And I saw salt in your people's pockets. But I have come with a different message. I am not here to give you taste. I am here to tell you that the water the shepherd sang about will come more than you expect — and that a boat will be needed, not just a channel."
 
 "What water?" asked the soldier, his hand sliding to the place where he carried his sword, though he had long since stopped being sure why he still carried it.
 
@@ -31,7 +31,7 @@ Sita, who had worked all day with the clay from the fountain and turned it into 
 
 That night, for the first time since the carpenter had first opened his little dish of salt, the gathering in Tasteless was not only those who had come earlier. Others came too — a farmer from the surrounding fields, a blacksmith who had lost his workshop in a fire years ago, a child born only the previous week whose mother brought them just to see what was being built. No one called them by name. They simply heard that something was being built that one could board, and came to see whether it was true.
 
-And for the first time in Tasteless that night was not about waiting for a taste that had vanished. It was about building.
+And for the first time in Tasteless, that night was not about waiting for a taste that had vanished. It was about building.
 
 ---
 

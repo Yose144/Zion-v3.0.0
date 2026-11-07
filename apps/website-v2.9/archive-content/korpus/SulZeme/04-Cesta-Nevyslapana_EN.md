@@ -1,4 +1,4 @@
-# Episode 4 — The Unwalked Road
+# Episode 4 — The Unbeaten Path
 
 *Where the map ends, the compass begins — and so does the bridge no one will build unless they start before anyone asks them to.*
 
@@ -13,7 +13,7 @@ On the morning after the shepherd's song, three more came to Tasteless — and f
 
 **Rama** had a bow slung across his back, but he was not going to war. He was a king who had willingly left his own realm — fourteen years of exile, not as a punishment but as a test of whether he could keep his shape even where no throne enforced it.
 
-**Sita** did not follow him as a husband's shadow. She went because the forest was as much hers as the palace — she was *Bhumija*, daughter of the earth itself, lifted from the furrow of the plough. Where else would she belong but to the land that gave her birth?
+**Sita** did not follow him as a husband's shadow. She went because the forest was as much hers as the palace — she was *Bhūmija*, daughter of the earth itself, lifted from the furrow of the plough. Where else would she belong but to the land that gave her birth?
 
 And **Hanuman**, who was neither king nor queen, only a servant with such strength that he could leap across an ocean in a single bound, came last. Not because he was the least — because his task always comes last: to build the bridge others will cross.
 
