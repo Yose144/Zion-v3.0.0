@@ -1,18 +1,45 @@
-# Host metrics for EDGE1 and EDGE2. One job, explicit instance labels, so the
-# two machines do not collapse into a single unlabeled localhost:9100 target.
-# Merge this job into the live Prometheus config. Do not start the exporter
-# from this change.
+# Host metrics for EDGE1 and EDGE2 — what is actually deployed on EDGE1
+# Prometheus (`/etc/prometheus/prometheus.yml`, 2026-11-07).
 #
-# EDGE1: prometheus-node-exporter is enabled and inactive. Turn it on later
-# with `systemctl start prometheus-node-exporter` on EDGE1. That does not
-# restart the pool or the chain nodes.
+# Two jobs, not one. EDGE2's node-exporter also serves the `zion_writepath`
+# textfile series, and `zion_writepath.rules.yml` keys its alerts on
+# `job="edge2"`. Renaming that job would unhook those alerts silently, so the
+# split stays; what makes the hosts distinguishable is the `instance` label.
+#
+# The duplicated target is gone: `node_exporter` / 127.0.0.1:9100 was a second
+# job scraping the same EDGE1 exporter as `node` / localhost:9100. Two `up`
+# series for one exporter made "is EDGE1 measured?" ambiguous.
 scrape_configs:
   - job_name: node
     scrape_interval: 15s
     static_configs:
-      - targets: ["127.0.0.1:9100"]
+      - targets: ["localhost:9100"]
         labels:
           instance: edge1
+          host: edge1
+
+  - job_name: edge2
+    scrape_interval: 30s
+    static_configs:
       - targets: ["207.180.217.100:9100"]
         labels:
           instance: edge2
+          host: edge2
+
+# rule_files must also list the host rules — a file copied into
+# /etc/prometheus/rules/ is inert until it is referenced here:
+#
+#   rule_files:
+#     ...
+#     - "rules/zion-host.rules.yml"
+#
+# Verify after editing:
+#   promtool check config /etc/prometheus/prometheus.yml
+#   promtool test rules test_zion_host_rules.yml        # from this directory
+#   systemctl reload prometheus
+#   curl -s localhost:9090/api/v1/query?query=up{job="node"} \
+#        -G --data-urlencode 'query=up{job=~"node|edge2"}'
+#
+# The exporter unit needs prometheus-node-exporter.zz-restart-always.conf
+# (same directory). The packaged ExecReload sends SIGHUP, which node_exporter
+# treats as exit; that is how EDGE1 lost host metrics for a week.

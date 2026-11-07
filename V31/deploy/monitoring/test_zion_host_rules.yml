@@ -1,0 +1,97 @@
+# promtool unit tests for zion-host.rules.yml.
+#
+#   promtool test rules test_zion_host_rules.yml
+#
+# Covers the three ways host monitoring goes quiet: exporter up=0, host series
+# absent from the scrape config, and low available memory. The "absent" case is
+# the one that used to pass unnoticed — no series meant no alert.
+rule_files:
+  - zion-host.rules.yml
+
+evaluation_interval: 1m
+
+tests:
+  # EDGE1 exporter returns, EDGE2 stays up: only EDGE1 may page.
+  - interval: 1m
+    input_series:
+      - series: 'up{job="node",instance="edge1",host="edge1"}'
+        values: '1 1 0 0 0 0 0 0'
+      - series: 'up{job="edge2",instance="edge2",host="edge2"}'
+        values: '1 1 1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: ZionHostExporterDown
+        exp_alerts: []
+      - eval_time: 8m
+        alertname: ZionHostExporterDown
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: node
+              instance: edge1
+              host: edge1
+            exp_annotations:
+              summary: "edge1 node-exporter is not scrapable"
+              description: "up=0 for the host exporter. Host CPU/RAM/disk series are blind until it is scraped again."
+
+  # EDGE2 target dropped from the scrape config entirely: absent() must fire.
+  - interval: 1m
+    input_series:
+      - series: 'up{job="node",instance="edge1",host="edge1"}'
+        values: '1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: ZionHostMetricsMissing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: edge2
+              instance: edge2
+            exp_annotations:
+              summary: "host metrics series missing for edge2"
+              description: "No up series for this host. The target was removed from the scrape config, or Prometheus never saw it. A quiet host is not a healthy host."
+
+  # Both hosts visible and healthy: nothing fires.
+  - interval: 1m
+    input_series:
+      - series: 'up{job="node",instance="edge1",host="edge1"}'
+        values: '1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1'
+      - series: 'up{job="edge2",instance="edge2",host="edge2"}'
+        values: '1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1'
+      - series: 'node_memory_MemAvailable_bytes{instance="edge1",job="node"}'
+        values: '4000000000 4000000000 4000000000 4000000000 4000000000 4000000000 4000000000 4000000000 4000000000 4000000000 4000000000 4000000000 4000000000 4000000000 4000000000 4000000000 4000000000 4000000000'
+      - series: 'node_memory_MemTotal_bytes{instance="edge1",job="node"}'
+        values: '8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ZionHostMemoryLow
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: ZionHostMetricsMissing
+        exp_alerts: []
+
+  # EDGE1 memory squeezed below 10%: only the memory alert fires.
+  - interval: 1m
+    input_series:
+      - series: 'up{job="node",instance="edge1",host="edge1"}'
+        values: '1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1'
+      - series: 'up{job="edge2",instance="edge2",host="edge2"}'
+        values: '1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1'
+      - series: 'node_memory_MemAvailable_bytes{instance="edge1",job="node"}'
+        values: '500000000 500000000 500000000 500000000 500000000 500000000 500000000 500000000 500000000 500000000 500000000 500000000 500000000 500000000 500000000 500000000 500000000 500000000'
+      - series: 'node_memory_MemTotal_bytes{instance="edge1",job="node"}'
+        values: '8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000 8000000000'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: ZionHostMemoryLow
+        exp_alerts: []
+      - eval_time: 12m
+        alertname: ZionHostMemoryLow
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              instance: edge1
+              job: node
+            exp_annotations:
+              summary: "edge1 has less than 10% available RAM"
+              description: "MemAvailable / MemTotal stayed below 10% for 10 minutes."

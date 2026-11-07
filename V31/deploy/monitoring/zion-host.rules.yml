@@ -1,18 +1,35 @@
-# EDGE1 exporter stays stopped until an operator starts it. This rule only
-# notices that the series is down or absent. Starting it is
-# `systemctl start prometheus-node-exporter` on EDGE1, without a pool or
-# node restart.
+# Host metrics alerting for EDGE1 (job `node`) and EDGE2 (job `edge2`).
+#
+# Why two jobs and not one: EDGE2's node-exporter also carries the
+# `zion_writepath` textfile series, and `zion_writepath.rules.yml` keys the
+# payout/scanner alerts on `job="edge2"`. Renaming that job would silently
+# unhook those alerts, so the host jobs stay separate and explicit instead.
+# What matters for this file is the `instance` label: edge1 / edge2.
+#
+# An absent series is not a healthy host. `absent()` fires when the target
+# disappears from the scrape config, which `up == 0` alone would never show.
+
 groups:
   - name: zion_host
     rules:
-      - alert: ZionHostMetricsMissing
-        expr: up{job="node"} == 0 or absent(up{job="node",instance="edge1"})
+      - alert: ZionHostExporterDown
+        expr: up{job="node"} == 0 or up{job="edge2"} == 0
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "EDGE host metrics missing"
-          description: "node job is down, or EDGE1 has no up series. The exporter is not started by this rules file."
+          summary: "{{ $labels.instance }} node-exporter is not scrapable"
+          description: "up=0 for the host exporter. Host CPU/RAM/disk series are blind until it is scraped again."
+
+      - alert: ZionHostMetricsMissing
+        expr: absent(up{job="node",instance="edge1"}) or absent(up{job="edge2",instance="edge2"})
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "host metrics series missing for {{ $labels.instance }}"
+          description: "No up series for this host. The target was removed from the scrape config, or Prometheus never saw it. A quiet host is not a healthy host."
+
       - alert: ZionHostMemoryLow
         expr: node_memory_MemAvailable_bytes{instance=~"edge1|edge2"} / node_memory_MemTotal_bytes{instance=~"edge1|edge2"} < 0.10
         for: 10m
@@ -20,3 +37,4 @@ groups:
           severity: warning
         annotations:
           summary: "{{ $labels.instance }} has less than 10% available RAM"
+          description: "MemAvailable / MemTotal stayed below 10% for 10 minutes."
