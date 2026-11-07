@@ -4,6 +4,7 @@ import { type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import {
   Activity,
   ArrowLeftRight,
@@ -97,7 +98,7 @@ export default function ExplorerV4Layout({ children, showTicker = true }: Explor
         <div className="zion-rainbow-card p-4 md:p-6" style={{ "--rc": "6, 105, 40" } as React.CSSProperties}>
           <div className="flex flex-wrap items-center gap-2 md:gap-3">
             <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
-              {ExplorerV4layoutCopy.explorerSections[cs ? 'cs' : 'en']}
+              {tx5(ExplorerV4layoutCopy.explorerSections, lang)}
             </span>
             {navItems.map((item, idx) => {
               const isActive =

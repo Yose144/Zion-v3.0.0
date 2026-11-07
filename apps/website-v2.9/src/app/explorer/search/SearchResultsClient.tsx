@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { apiClient } from "@/lib/api";
 import { SITE_RELEASE_LABEL } from "@/lib/site";
 
@@ -67,7 +68,7 @@ export default function SearchResultsClient() {
       setResults(res?.results ?? []);
       setHint(res?.hint ?? null);
     } catch (e) {
-      setError(ExplorerSearchSearchResultsClientCopy.searchError[cs ? 'cs' : 'en']);
+      setError(tx5(ExplorerSearchSearchResultsClientCopy.searchError, lang));
     } finally {
       setLoading(false);
     }
@@ -116,10 +117,10 @@ export default function SearchResultsClient() {
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-rainbow-card rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase mb-4">
             <Search className="h-4 w-4" />
-            {SITE_RELEASE_LABEL} · {ExplorerSearchSearchResultsClientCopy.search[cs ? 'cs' : 'en']}
+            {SITE_RELEASE_LABEL} · {tx5(ExplorerSearchSearchResultsClientCopy.search, lang)}
           </div>
           <h1 className="text-3xl sm:text-4xl font-semibold text-gradient">
-            {ExplorerSearchSearchResultsClientCopy.searchResults[cs ? 'cs' : 'en']}
+            {tx5(ExplorerSearchSearchResultsClientCopy.searchResults, lang)}
           </h1>
           <div className="mt-4 flex items-center gap-3">
             <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5">
@@ -133,10 +134,10 @@ export default function SearchResultsClient() {
           <div className="mt-5 flex flex-wrap items-center gap-2">
             {(['all', 'block', 'transaction', 'address'] as const).map((f) => {
               const active = filter === f;
-              const label = f === 'all' ? ExplorerSearchSearchResultsClientCopy.all[cs ? 'cs' : 'en']
-                : f === 'block' ? ExplorerSearchSearchResultsClientCopy.blocks[cs ? 'cs' : 'en']
-                : f === 'transaction' ? ExplorerSearchSearchResultsClientCopy.transactions[cs ? 'cs' : 'en']
-                : ExplorerSearchSearchResultsClientCopy.addresses[cs ? 'cs' : 'en'];
+              const label = f === 'all' ? tx5(ExplorerSearchSearchResultsClientCopy.all, lang)
+                : f === 'block' ? tx5(ExplorerSearchSearchResultsClientCopy.blocks, lang)
+                : f === 'transaction' ? tx5(ExplorerSearchSearchResultsClientCopy.transactions, lang)
+                : tx5(ExplorerSearchSearchResultsClientCopy.addresses, lang);
               const count = counts[f] ?? 0;
               return (
                 <button
@@ -167,7 +168,7 @@ export default function SearchResultsClient() {
           {loading && results.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <Loader2 className="h-8 w-8 text-zion-cyan animate-spin" />
-              <p className="text-sm text-gray-400">{ExplorerSearchSearchResultsClientCopy.searching[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm text-gray-400">{tx5(ExplorerSearchSearchResultsClientCopy.searching, lang)}</p>
             </div>
           )}
 
@@ -181,9 +182,9 @@ export default function SearchResultsClient() {
           {!loading && !error && results.length === 0 && query && (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <Search className="h-10 w-10 text-gray-600" />
-              <p className="text-gray-400">{ExplorerSearchSearchResultsClientCopy.nothingFound[cs ? 'cs' : 'en']}</p>
+              <p className="text-gray-400">{tx5(ExplorerSearchSearchResultsClientCopy.nothingFound, lang)}</p>
               <p className="text-xs text-gray-600 max-w-md text-center">
-                {hint || ExplorerSearchSearchResultsClientCopy.trySearchingByBlockHeightTrans[cs ? 'cs' : 'en']}
+                {hint || tx5(ExplorerSearchSearchResultsClientCopy.trySearchingByBlockHeightTrans, lang)}
               </p>
             </div>
           )}
@@ -204,9 +205,9 @@ export default function SearchResultsClient() {
                   <div className="flex items-center gap-2 mb-3">
                     <Icon className={`h-4 w-4 ${col.text}`} />
                     <h2 className="text-sm font-semibold text-white uppercase tracking-wider">
-                      {type === "block" ? (ExplorerSearchSearchResultsClientCopy.blocks[cs ? 'cs' : 'en'])
-                        : type === "transaction" ? (ExplorerSearchSearchResultsClientCopy.transactions[cs ? 'cs' : 'en'])
-                        : (ExplorerSearchSearchResultsClientCopy.addresses[cs ? 'cs' : 'en'])}
+                      {type === "block" ? (tx5(ExplorerSearchSearchResultsClientCopy.blocks, lang))
+                        : type === "transaction" ? (tx5(ExplorerSearchSearchResultsClientCopy.transactions, lang))
+                        : (tx5(ExplorerSearchSearchResultsClientCopy.addresses, lang))}
                     </h2>
                     <span className="text-[11px] text-gray-500 ml-2">{items.length}</span>
                   </div>
@@ -235,7 +236,7 @@ export default function SearchResultsClient() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          {cs ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Search` : `ZION TerraNova ${SITE_RELEASE_LABEL} — Search`}
+          {cs ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Search` : t5(`ZION TerraNova ${SITE_RELEASE_LABEL} — Search`, lang)}
         </p>
       </div>
     </div>

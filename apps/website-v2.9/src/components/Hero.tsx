@@ -18,6 +18,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { tr } from '@/lib/translations';
 import NirvanaUniverseSection from './NirvanaUniverseSection';
 import ChristmasShopCards from './ChristmasShopCards';
@@ -70,7 +71,7 @@ export default function Hero() {
             className="zion-kicker border-zion-gold/40 bg-zion-gold/10 text-zion-gold group"
           >
             <Github className="h-4 w-4 transition-transform group-hover:rotate-12" />
-            {HeroCopy.mainnetBetaGithub[cs ? 'cs' : 'en']}
+            {tx5(HeroCopy.mainnetBetaGithub, lang)}
             <ExternalLink className="h-3 w-3 opacity-50 transition-opacity group-hover:opacity-100" />
           </a>
         </motion.div>

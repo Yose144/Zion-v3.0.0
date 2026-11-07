@@ -1,5 +1,8 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
+
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ExternalLink, Volume2 } from 'lucide-react';
@@ -18,6 +21,7 @@ interface SpotifyBannerProps {
   /** Zobrazený název */
   title?: { cs: string; en: string };
   cs: boolean;
+  lang: Lang;
 }
 
 function SpotifyIcon({ className = '' }: { className?: string }) {
@@ -36,6 +40,7 @@ export default function SpotifyBanner({
   playlistId = '4HvwefPlEhGlLM1LOpKlnV',
   title,
   cs,
+  lang,
 }: SpotifyBannerProps) {
   const [open, setOpen] = useState(false);
   const t = title ?? { cs: 'ZION Arcade Radio', en: 'ZION Arcade Radio' };
@@ -66,19 +71,19 @@ export default function SpotifyBanner({
           </div>
           <div className="text-left">
             <p className="text-sm font-bold text-white flex items-center gap-2">
-              {t[cs ? 'cs' : 'en']}
+              {tx5(t, lang)}
               <span className="inline-flex items-center gap-1 rounded-full bg-[#1DB954]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#1DB954]">
                 <Volume2 className="h-2.5 w-2.5" /> Live
               </span>
             </p>
             <p className="text-[10px] text-gray-500">
-              {SpotifyBannerCopy.playMusicWhileYouPlay[cs ? 'cs' : 'en']}
+              {tx5(SpotifyBannerCopy.playMusicWhileYouPlay, lang)}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <span className="hidden sm:inline text-[10px] text-[#1DB954]/70 uppercase tracking-wider">
-            {open ? (SpotifyBannerCopy.hide[cs ? 'cs' : 'en']) : (SpotifyBannerCopy.open[cs ? 'cs' : 'en'])}
+            {open ? (tx5(SpotifyBannerCopy.hide, lang)) : (tx5(SpotifyBannerCopy.open, lang))}
           </span>
           <motion.div
             animate={{ rotate: open ? 180 : 0 }}
@@ -112,7 +117,7 @@ export default function SpotifyBanner({
               />
               <div className="mt-3 flex items-center justify-between px-1">
                 <p className="text-[10px] text-gray-600">
-                  {SpotifyBannerCopy.requiresSpotifyAccountForFullP[cs ? 'cs' : 'en']}
+                  {tx5(SpotifyBannerCopy.requiresSpotifyAccountForFullP, lang)}
                 </p>
                 <a
                   href={`https://open.spotify.com/playlist/${playlistId}`}
@@ -120,7 +125,7 @@ export default function SpotifyBanner({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-lg border border-[#1DB954]/20 px-2.5 py-1 text-[10px] text-[#1DB954] hover:bg-[#1DB954]/10 transition-colors"
                 >
-                  {SpotifyBannerCopy.openInSpotify[cs ? 'cs' : 'en']}
+                  {tx5(SpotifyBannerCopy.openInSpotify, lang)}
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </div>

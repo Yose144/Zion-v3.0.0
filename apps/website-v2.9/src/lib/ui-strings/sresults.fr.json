@@ -1,0 +1,13 @@
+{
+ "Addresses": "Adresses",
+ "All": "Tout",
+ "Blocks": "Blocs",
+ "Filter by type": "Filtrer par type",
+ "Nothing found": "Aucun résultat",
+ "Search": "Rechercher",
+ "Search Results": "Résultats de recherche",
+ "Search error": "Erreur de recherche",
+ "Searching…": "Recherche…",
+ "Transactions": "Transactions",
+ "Try searching by block height, transaction hash, or ZION address.": "Essayez une hauteur de bloc, un hash de transaction ou une adresse ZION."
+}

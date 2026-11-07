@@ -1,0 +1,10 @@
+{
+ "Awaiting finality": "En attente de finalité",
+ "Failed to load bridge transactions.": "Échec du chargement des transactions du bridge.",
+ "Finalized": "Finalisé",
+ "No bridge transactions in recent blocks.": "Aucune transaction de bridge dans les blocs récents.",
+ "Recent bridge transactions": "Transactions de bridge récentes",
+ "Relay offline": "Relais hors ligne",
+ "Relay online": "Relais en ligne",
+ "confirmations": "confirmations"
+}

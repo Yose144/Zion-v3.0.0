@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { usePolling } from '@/hooks/usePolling';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const NetworkHistoricalChartsCopy = {
   trends: { cs: `Trendy`, en: `Trends` },
@@ -333,21 +334,21 @@ export default function NetworkHistoricalCharts() {
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkHistoricalChartsCopy.trends[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkHistoricalChartsCopy.trends, lang)}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
           <Activity className="h-7 w-7 text-zion-cyan" />
-          {NetworkHistoricalChartsCopy.historicalTrends[cs ? 'cs' : 'en']}
+          {tx5(NetworkHistoricalChartsCopy.historicalTrends, lang)}
         </h2>
         <p className="text-sm text-gray-400">
-          {NetworkHistoricalChartsCopy.hashrateDifficultyBlockTimePee[cs ? 'cs' : 'en']}
+          {tx5(NetworkHistoricalChartsCopy.hashrateDifficultyBlockTimePee, lang)}
         </p>
       </div>
 
       {/* Live data badge — only 24h real data is available */}
       <div className="flex flex-wrap items-center gap-2 mb-6">
-        <span className="text-xs text-gray-500 mr-2">{NetworkHistoricalChartsCopy.range[cs ? 'cs' : 'en']}</span>
+        <span className="text-xs text-gray-500 mr-2">{tx5(NetworkHistoricalChartsCopy.range, lang)}</span>
         <span className="zion-badge-gold">24h</span>
-        <span className="text-[10px] text-zion-cyan ml-2">● {NetworkHistoricalChartsCopy.liveData[cs ? 'cs' : 'en']}</span>
+        <span className="text-[10px] text-zion-cyan ml-2">● {tx5(NetworkHistoricalChartsCopy.liveData, lang)}</span>
       </div>
 
       {/* Charts grid */}
@@ -371,7 +372,7 @@ export default function NetworkHistoricalCharts() {
               <button
                 onClick={() => exportCSV(chart.key, chart.series, chart.label)}
                 className="text-gray-500 hover:text-zion-purple transition-colors"
-                title={NetworkHistoricalChartsCopy.exportCsv[cs ? 'cs' : 'en']}
+                title={tx5(NetworkHistoricalChartsCopy.exportCsv, lang)}
               >
                 <Download className="h-3.5 w-3.5" />
               </button>
@@ -381,10 +382,10 @@ export default function NetworkHistoricalCharts() {
               {chart.series.length < 2 ? (
                 <div className="flex flex-col items-center justify-center gap-2 h-full text-center">
                   <p className="text-sm text-gray-400">
-                    {NetworkHistoricalChartsCopy.insufficientDataToRenderChart[cs ? 'cs' : 'en']}
+                    {tx5(NetworkHistoricalChartsCopy.insufficientDataToRenderChart, lang)}
                   </p>
                   <p className="text-xs text-gray-600">
-                    {NetworkHistoricalChartsCopy.chartWillPopulateAsLiveDataAcc[cs ? 'cs' : 'en']}
+                    {tx5(NetworkHistoricalChartsCopy.chartWillPopulateAsLiveDataAcc, lang)}
                   </p>
                 </div>
               ) : (
@@ -398,12 +399,12 @@ export default function NetworkHistoricalCharts() {
             {chart.series.length > 0 && (
               <div className="mt-2 flex items-center justify-between text-[10px] text-gray-500">
                 <span>
-                  {NetworkHistoricalChartsCopy.current[cs ? 'cs' : 'en']}: <span className="font-mono text-gray-300">
+                  {tx5(NetworkHistoricalChartsCopy.current, lang)}: <span className="font-mono text-gray-300">
                     {fmtSI(chart.series[chart.series.length - 1].value)}{chart.unit ? ` ${chart.unit}` : ''}
                   </span>
                 </span>
                 <span>
-                  {NetworkHistoricalChartsCopy.avg[cs ? 'cs' : 'en']}: <span className="font-mono text-gray-400">
+                  {tx5(NetworkHistoricalChartsCopy.avg, lang)}: <span className="font-mono text-gray-400">
                     {fmtSI(chart.series.reduce((a, p) => a + p.value, 0) / chart.series.length)}
                   </span>
                 </span>

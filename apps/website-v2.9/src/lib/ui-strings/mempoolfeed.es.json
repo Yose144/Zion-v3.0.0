@@ -1,0 +1,9 @@
+{
+ "15s refresh": "Actualización cada 15s",
+ "Fees": "Comisiones",
+ "Live": "En vivo",
+ "Mempool is empty — all transactions confirmed ✓": "El mempool está vacío — todas las transacciones confirmadas ✓",
+ "Mempool unavailable": "Mempool no disponible",
+ "Pending": "Pendiente",
+ "Pool Size": "Tamaño del pool"
+}

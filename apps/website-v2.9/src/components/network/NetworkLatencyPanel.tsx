@@ -2,6 +2,7 @@
 
 import { Activity, Server, Zap } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const NetworkLatencyPanelCopy = {
   latency: { cs: `Latence`, en: `Latency` },
@@ -43,20 +44,20 @@ export default function NetworkLatencyPanel({ nodes }: Props) {
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkLatencyPanelCopy.latency[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkLatencyPanelCopy.latency, lang)}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
           <Zap className="h-7 w-7 text-zion-gold" />
-          {NetworkLatencyPanelCopy.networkLatency[cs ? 'cs' : 'en']}
+          {tx5(NetworkLatencyPanelCopy.networkLatency, lang)}
         </h2>
         <p className="text-sm text-gray-400">
-          {NetworkLatencyPanelCopy.rpcAndPoolLatenciesPerNodeToge[cs ? 'cs' : 'en']}
+          {tx5(NetworkLatencyPanelCopy.rpcAndPoolLatenciesPerNodeToge, lang)}
         </p>
       </div>
 
       <div className="grid gap-3">
         {onlineNodes.length === 0 && (
           <div className="zion-tile p-6 text-sm text-gray-500 text-center">
-            {NetworkLatencyPanelCopy.noNodesAreCurrentlyOnline[cs ? 'cs' : 'en']}
+            {tx5(NetworkLatencyPanelCopy.noNodesAreCurrentlyOnline, lang)}
           </div>
         )}
         {onlineNodes.map((node) => (
@@ -90,7 +91,7 @@ export default function NetworkLatencyPanel({ nodes }: Props) {
                 </div>
               </div>
               <div className="flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-1">
-                <span className="text-[10px] uppercase tracking-wider text-gray-500 w-12 sm:w-auto">{NetworkLatencyPanelCopy.lag[cs ? 'cs' : 'en']}</span>
+                <span className="text-[10px] uppercase tracking-wider text-gray-500 w-12 sm:w-auto">{tx5(NetworkLatencyPanelCopy.lag, lang)}</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-mono text-white w-12">
                     {node.blockLag != null ? `${node.blockLag}` : '—'}

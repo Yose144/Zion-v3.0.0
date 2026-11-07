@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { hasArchiveAccess } from '@/lib/archive-access';
 import { recordAccess, recordDownload } from '@/lib/archive-metrics';
 import { BOOKS } from '@/lib/books/registry';
+import { archiveContentRoot } from '@/lib/archive-content-root';
 import { createZipStore, type ZipEntry } from '@/lib/zip-store';
 
 // Per-book offline bundle (Markdown, ZIP) built on demand from the gated
@@ -18,11 +19,6 @@ function findRoot(candidates: string[]): string {
   return candidates.find((p) => existsSync(p)) ?? candidates[0];
 }
 
-const ARCHIVE_ROOT = findRoot([
-  resolve(process.cwd(), 'archive-content'),
-  resolve(process.cwd(), '.next/standalone/archive-content'),
-  resolve(process.cwd(), '../../archive-content'),
-]);
 const PUBLIC_DOCS = join(
   findRoot([
     resolve(process.cwd(), 'public'),
@@ -35,7 +31,7 @@ const PUBLIC_DOCS = join(
 function readDoc(docPath: string): Buffer | null {
   let abs: string | null = null;
   if (docPath.startsWith('/api/archive/docs/')) {
-    abs = join(ARCHIVE_ROOT, docPath.slice('/api/archive/docs/'.length));
+    abs = join(archiveContentRoot(), docPath.slice('/api/archive/docs/'.length));
   } else if (docPath.startsWith('/docs/')) {
     abs = join(PUBLIC_DOCS, docPath.slice('/docs/'.length));
   }

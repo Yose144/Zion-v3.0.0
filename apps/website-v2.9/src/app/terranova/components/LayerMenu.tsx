@@ -1,5 +1,8 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
+
 import { motion } from 'framer-motion';
 import {
   Globe2,
@@ -43,7 +46,7 @@ const LAYERS: Layer[] = [
   },
 ];
 
-export default function LayerMenu({ cs }: { cs: boolean }) {
+export default function LayerMenu({ cs, lang }: { cs: boolean; lang: Lang }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -53,7 +56,7 @@ export default function LayerMenu({ cs }: { cs: boolean }) {
     >
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-[11px] uppercase tracking-[0.3em] text-zion-gold/65">
-          {TerranovaComponentsLayerMenuCopy.ecosystemLayers[cs ? 'cs' : 'en']}
+          {tx5(TerranovaComponentsLayerMenuCopy.ecosystemLayers, lang)}
         </p>
       </div>
       <div className="grid grid-cols-2 gap-3">

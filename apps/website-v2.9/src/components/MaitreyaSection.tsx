@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Egg, Gamepad2, Sparkles, Sun, Wind } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const MaitreyaSectionCopy = {
   kicker: { cs: 'Zion Archive · Nirvana Hub · CZ + EN', en: 'Zion Archive · Nirvana Hub · CZ + EN' },
@@ -54,7 +55,7 @@ export default function MaitreyaSection() {
                 src="/images/zion-archive/hero.webp"
                 srcSet="/images/zion-archive/hero-m.webp 960w, /images/zion-archive/hero.webp 1536w"
                 sizes="(max-width: 1024px) calc(100vw - 3rem), 620px"
-                alt={cs ? 'Oasis — jedna rodina pod Stromem života, vizuál Nirvana Hubu' : 'Oasis — one family under the Tree of Life, Nirvana Hub artwork'}
+                alt={cs ? 'Oasis — jedna rodina pod Stromem života, vizuál Nirvana Hubu' : t5('Oasis — one family under the Tree of Life, Nirvana Hub artwork', lang)}
                 loading="lazy"
                 decoding="async"
                 width={1536} height={1024} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover/img:scale-[1.04]"
@@ -62,7 +63,7 @@ export default function MaitreyaSection() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-100 backdrop-blur-sm">
                 <Sparkles className="h-3 w-3 text-zion-gold" />
-                {cs ? 'Vstup přes ZION Pass' : 'Access with a ZION Pass'}
+                {cs ? 'Vstup přes ZION Pass' : t5('Access with a ZION Pass', lang)}
               </div>
             </Link>
 
@@ -71,41 +72,41 @@ export default function MaitreyaSection() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="zion-kicker border-zion-purple/30 bg-zion-purple/10 text-zion-purple">
                   <Egg className="h-3.5 w-3.5" />
-                  {MaitreyaSectionCopy.kicker[cs ? 'cs' : 'en']}
+                  {tx5(MaitreyaSectionCopy.kicker, lang)}
                 </span>
                 <span className="zion-kicker border-zion-cyan/25 bg-zion-cyan/10 text-zion-cyan">
                   <Wind className="h-3.5 w-3.5" />
-                  {cs ? 'Element vzduchu' : 'The element of air'}
+                  {cs ? 'Element vzduchu' : t5('The element of air', lang)}
                 </span>
                 <Link
                   href="/zion-archive/nirvana/cist"
                   className="zion-kicker border-amber-400/25 bg-amber-400/10 text-amber-300 transition-colors hover:border-amber-400/50"
                 >
                   <Sun className="h-3.5 w-3.5" />
-                  {MaitreyaSectionCopy.nirvanaBadge[cs ? 'cs' : 'en']}
+                  {tx5(MaitreyaSectionCopy.nirvanaBadge, lang)}
                 </Link>
               </div>
 
               <div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-                  <span className="text-gradient">{MaitreyaSectionCopy.title[cs ? 'cs' : 'en']}</span>
+                  <span className="text-gradient">{tx5(MaitreyaSectionCopy.title, lang)}</span>
                 </h2>
                 <p className="mt-1.5 text-sm font-semibold text-zion-gold/90 sm:text-base">
-                  {MaitreyaSectionCopy.subtitle[cs ? 'cs' : 'en']}
+                  {tx5(MaitreyaSectionCopy.subtitle, lang)}
                 </p>
               </div>
 
               <p className="max-w-xl text-xs leading-relaxed text-gray-300 sm:text-sm">
-                {MaitreyaSectionCopy.body[cs ? 'cs' : 'en']}
+                {tx5(MaitreyaSectionCopy.body, lang)}
               </p>
 
               <p className="text-xs italic text-zion-purple/90 sm:text-sm">
-                {MaitreyaSectionCopy.quote[cs ? 'cs' : 'en']}
+                {tx5(MaitreyaSectionCopy.quote, lang)}
               </p>
 
               <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
                 <Link href="/zion-archive#cesta" prefetch={false} className="zion-button-primary group">
-                  {MaitreyaSectionCopy.ctaHub[cs ? 'cs' : 'en']}
+                  {tx5(MaitreyaSectionCopy.ctaHub, lang)}
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
                 <Link
@@ -113,14 +114,14 @@ export default function MaitreyaSection() {
                   prefetch={false}
                   className="zion-button-secondary border-white/15 hover:border-zion-purple/40 hover:text-zion-purple"
                 >
-                  {MaitreyaSectionCopy.cta[cs ? 'cs' : 'en']}
+                  {tx5(MaitreyaSectionCopy.cta, lang)}
                 </Link>
                 <Link
                   href="/zion-archive#plan-v33"
                   prefetch={false}
                   className="zion-button-secondary border-white/15 hover:border-zion-gold/40 hover:text-zion-gold"
                 >
-                  {MaitreyaSectionCopy.ctaPlan[cs ? 'cs' : 'en']}
+                  {tx5(MaitreyaSectionCopy.ctaPlan, lang)}
                 </Link>
                 <a
                   href="https://oasis.zionterranova.com"
@@ -129,7 +130,7 @@ export default function MaitreyaSection() {
                   className="zion-button-secondary border-white/15 hover:border-zion-cyan/50 hover:text-zion-cyan"
                 >
                   <Gamepad2 className="h-4 w-4" />
-                  {MaitreyaSectionCopy.ctaGame[cs ? 'cs' : 'en']}
+                  {tx5(MaitreyaSectionCopy.ctaGame, lang)}
                 </a>
               </div>
             </div>

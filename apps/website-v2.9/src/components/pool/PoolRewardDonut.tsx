@@ -1,5 +1,8 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
+
 import { Pickaxe, Heart, Building2, Droplets } from 'lucide-react';
 
 const PoolRewardDonutCopy = {
@@ -16,8 +19,8 @@ interface RewardSlice {
   icon: React.ReactNode;
 }
 
-export default function PoolRewardDonut({ cs, minerShare, humanitarianTithe, issobellaFund, poolFee }: {
-  cs: boolean;
+export default function PoolRewardDonut({ cs, lang, minerShare, humanitarianTithe, issobellaFund, poolFee }: {
+  cs: boolean; lang: Lang;
   minerShare: number;
   humanitarianTithe: number;
   issobellaFund: number;
@@ -81,15 +84,13 @@ export default function PoolRewardDonut({ cs, minerShare, humanitarianTithe, iss
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolRewardDonutCopy.economics[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(PoolRewardDonutCopy.economics, lang)}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
           <Heart className="h-7 w-7 text-zion-gold" />
-          {PoolRewardDonutCopy.blockRewardDistribution[cs ? 'cs' : 'en']}
+          {tx5(PoolRewardDonutCopy.blockRewardDistribution, lang)}
         </h2>
         <p className="text-sm text-gray-400">
-          {cs
-            ? `Každý vytěžený blok rozděluje odměnu ${minerShare}% minerovi, ${humanitarianTithe}% humanitárnímu fondu, ${issobellaFund}% Issobella fondu a ${poolFee}% provoznímu poplatku poolu.`
-            : `Every mined block distributes ${minerShare}% to the miner, ${humanitarianTithe}% to the humanitarian fund, ${issobellaFund}% to the Issobella fund, and ${poolFee}% as the pool operational fee.`}
+          {cs ? `Každý vytěžený blok rozděluje odměnu ${minerShare}% minerovi, ${humanitarianTithe}% humanitárnímu fondu, ${issobellaFund}% Issobella fondu a ${poolFee}% provoznímu poplatku poolu.` : t5(`Every mined block distributes ${minerShare}% to the miner, ${humanitarianTithe}% to the humanitarian fund, ${issobellaFund}% to the Issobella fund, and ${poolFee}% as the pool operational fee.`, lang)}
         </p>
       </div>
 
@@ -111,7 +112,7 @@ export default function PoolRewardDonut({ cs, minerShare, humanitarianTithe, iss
               100%
             </text>
             <text x={CX} y={CY + 8} textAnchor="middle" fill="#9ca3af" fontSize="6" fontFamily="monospace">
-              {PoolRewardDonutCopy.split[cs ? 'cs' : 'en']}
+              {tx5(PoolRewardDonutCopy.split, lang)}
             </text>
           </svg>
         </div>

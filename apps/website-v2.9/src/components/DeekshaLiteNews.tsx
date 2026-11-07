@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight, Calendar, Newspaper } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { NEWS_ARTICLES } from './NewsFeed';
 
 const DeekshaLiteNewsCopy = {
@@ -26,14 +27,14 @@ export default function DeekshaLiteNews() {
           <div className="flex items-center gap-3 mb-2">
             <Newspaper className="w-4 h-4 text-zion-gold" />
             <span className="text-xs uppercase tracking-[0.4em] text-gray-400">
-              {DeekshaLiteNewsCopy.deekshaLiteNews[cs ? 'cs' : 'en']}
+              {tx5(DeekshaLiteNewsCopy.deekshaLiteNews, lang)}
             </span>
           </div>
           <h2 className="text-2xl font-bold text-white">
-            {DeekshaLiteNewsCopy.newsLite[cs ? 'cs' : 'en']}
+            {tx5(DeekshaLiteNewsCopy.newsLite, lang)}
           </h2>
           <p className="text-sm text-gray-400 mt-1">
-            {DeekshaLiteNewsCopy.quickOverviewWithoutAnimations[cs ? 'cs' : 'en']}
+            {tx5(DeekshaLiteNewsCopy.quickOverviewWithoutAnimations, lang)}
           </p>
         </div>
 
@@ -80,7 +81,7 @@ export default function DeekshaLiteNews() {
             href="/news"
             className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
           >
-            {cs ? `Všechny novinky (${NEWS_ARTICLES.length})` : `All news (${NEWS_ARTICLES.length})`}
+            {cs ? `Všechny novinky (${NEWS_ARTICLES.length})` : t5(`All news (${NEWS_ARTICLES.length})`, lang)}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

@@ -1,5 +1,8 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
+
 import { Coins, Pickaxe, Heart, Building2, Droplets } from 'lucide-react';
 
 const NetworkRewardDistributionCopy = {
@@ -16,7 +19,7 @@ interface RewardSlice {
   icon: React.ReactNode;
 }
 
-export default function NetworkRewardDistribution({ cs }: { cs: boolean }) {
+export default function NetworkRewardDistribution({ cs, lang }: { cs: boolean; lang: Lang }) {
   const slices: RewardSlice[] = [
     {
       label: 'Miner',
@@ -75,15 +78,13 @@ export default function NetworkRewardDistribution({ cs }: { cs: boolean }) {
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkRewardDistributionCopy.emission[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkRewardDistributionCopy.emission, lang)}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
           <Coins className="h-7 w-7 text-zion-gold" />
-          {NetworkRewardDistributionCopy.blockRewardDistribution[cs ? 'cs' : 'en']}
+          {tx5(NetworkRewardDistributionCopy.blockRewardDistribution, lang)}
         </h2>
         <p className="text-sm text-gray-400">
-          {cs
-            ? `Každý vytěžený blok rozděluje odměnu ${(89).toFixed(0)} % minerovi, 5 % humanitárnímu fondu, 5 % Issobella fondu a 1 % provoznímu poplatku poolu.`
-            : `Every mined block distributes ${(89).toFixed(0)} % to the miner, 5 % to the humanitarian fund, 5 % to the Issobella fund, and 1 % as the pool operational fee.`}
+          {cs ? `Každý vytěžený blok rozděluje odměnu ${(89).toFixed(0)} % minerovi, 5 % humanitárnímu fondu, 5 % Issobella fondu a 1 % provoznímu poplatku poolu.` : t5(`Every mined block distributes ${(89).toFixed(0)} % to the miner, 5 % to the humanitarian fund, 5 % to the Issobella fund, and 1 % as the pool operational fee.`, lang)}
         </p>
       </div>
 
@@ -106,7 +107,7 @@ export default function NetworkRewardDistribution({ cs }: { cs: boolean }) {
               100%
             </text>
             <text x={CX} y={CY + 8} textAnchor="middle" fill="#9ca3af" fontSize="6" fontFamily="monospace">
-              {NetworkRewardDistributionCopy.split[cs ? 'cs' : 'en']}
+              {tx5(NetworkRewardDistributionCopy.split, lang)}
             </text>
           </svg>
         </div>

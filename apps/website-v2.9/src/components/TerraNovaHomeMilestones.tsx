@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowDownToLine, ArrowRight } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const TerraNovaHomeMilestonesCopy = {
   terraNovaGoldenCompassOfTheNew: { cs: `Terra Nova · Zlatý Kompas Nové Země`, en: `Terra Nova · Golden Compass of the New Earth` },
@@ -61,13 +62,13 @@ export default function TerraNovaHomeMilestones() {
         {/* Header */}
         <div className="mb-10 flex flex-col items-start gap-3 max-w-3xl">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-            {TerraNovaHomeMilestonesCopy.terraNovaGoldenCompassOfTheNew[cs ? 'cs' : 'en']}
+            {tx5(TerraNovaHomeMilestonesCopy.terraNovaGoldenCompassOfTheNew, lang)}
           </p>
           <h2 className="text-4xl md:text-5xl font-bold">
             <span className="text-gradient">Terra Nova</span>
           </h2>
           <p className="text-lg text-gray-300 max-w-2xl">
-            {TerraNovaHomeMilestonesCopy.theFourthBookOfZionAndThePubli[cs ? 'cs' : 'en']}
+            {tx5(TerraNovaHomeMilestonesCopy.theFourthBookOfZionAndThePubli, lang)}
           </p>
         </div>
 
@@ -96,8 +97,8 @@ export default function TerraNovaHomeMilestones() {
               <pre className="text-zion-gold leading-tight select-none mt-2 whitespace-pre">{ZION_ASCII}</pre>
               <div className="mt-3 space-y-1">
                 <p><span className="text-gray-500">[genesis]</span> <span className="text-zion-cyan">Mainnet Launch v3</span> <span className="text-gray-600">✓ block #1</span></p>
-                <p><span className="text-white font-bold">&gt;</span> <span className="text-white">{TerraNovaHomeMilestonesCopy.zionIsYours[cs ? 'cs' : 'en']}</span></p>
-                <p><span className="text-white font-bold">&gt;</span> <span className="text-zion-gold">{TerraNovaHomeMilestonesCopy.theGoldenAgeBegins[cs ? 'cs' : 'en']}</span></p>
+                <p><span className="text-white font-bold">&gt;</span> <span className="text-white">{tx5(TerraNovaHomeMilestonesCopy.zionIsYours, lang)}</span></p>
+                <p><span className="text-white font-bold">&gt;</span> <span className="text-zion-gold">{tx5(TerraNovaHomeMilestonesCopy.theGoldenAgeBegins, lang)}</span></p>
                 <p className="text-gray-600 italic text-[10px]">Gate, Gate, Paragate, Parasamgate, Bodhi Swaha</p>
                 <p className="text-gray-700 text-[10px]">— Yeshuae Ben Yose / Zion Creator · Om Namo Hiranyagarbha!</p>
               </div>
@@ -116,10 +117,10 @@ export default function TerraNovaHomeMilestones() {
               className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/30 bg-zion-cyan/10 px-5 py-3 text-sm font-semibold text-zion-cyan hover:bg-zion-cyan/20 transition-all duration-300"
             >
               <ArrowDownToLine className="w-4 h-4" />
-              {TerraNovaHomeMilestonesCopy.downloadZionCli[cs ? 'cs' : 'en']}
+              {tx5(TerraNovaHomeMilestonesCopy.downloadZionCli, lang)}
             </Link>
             <p className="text-sm text-gray-400">
-              {TerraNovaHomeMilestonesCopy.publicWindowsLinuxAndMacosBina[cs ? 'cs' : 'en']}
+              {tx5(TerraNovaHomeMilestonesCopy.publicWindowsLinuxAndMacosBina, lang)}
             </p>
           </div>
         </div>
@@ -130,7 +131,7 @@ export default function TerraNovaHomeMilestones() {
             href="/terranova"
             className="inline-flex items-center gap-2.5 rounded-2xl border border-zion-gold/30 bg-zion-gold/10 px-8 py-3.5 text-sm font-semibold text-zion-gold hover:bg-zion-gold/20 transition-all duration-300"
           >
-            {TerraNovaHomeMilestonesCopy.openTheTerraNovaSection[cs ? 'cs' : 'en']}
+            {tx5(TerraNovaHomeMilestonesCopy.openTheTerraNovaSection, lang)}
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
@@ -138,7 +139,7 @@ export default function TerraNovaHomeMilestones() {
             className="zion-rainbow-sub inline-flex items-center gap-2.5 px-8 py-3.5 text-sm font-semibold text-white hover:bg-white/10 transition-all duration-300"
             style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
           >
-            {TerraNovaHomeMilestonesCopy.goToDownload[cs ? 'cs' : 'en']}
+            {tx5(TerraNovaHomeMilestonesCopy.goToDownload, lang)}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

@@ -20,6 +20,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { getBridgeStatus, formatUptime, type BridgeStatus } from '@/lib/bridge-api';
 import { usePolling } from '@/hooks/usePolling';
 
@@ -98,19 +99,19 @@ export default function BridgeTracker() {
           </div>
           <div>
             <h3 className="text-lg font-semibold text-white">
-              {BridgeTrackerCopy.bridgePipeline[cs ? 'cs' : 'en']}
+              {tx5(BridgeTrackerCopy.bridgePipeline, lang)}
             </h3>
             <p className="text-xs text-gray-500">
               {online
-                ? `${BridgeTrackerCopy.online[cs ? 'cs' : 'en']} · ${formatUptime(s.uptime_seconds ?? 0)}`
-                : BridgeTrackerCopy.offline[cs ? 'cs' : 'en']}
+                ? `${tx5(BridgeTrackerCopy.online, lang)} · ${formatUptime(s.uptime_seconds ?? 0)}`
+                : tx5(BridgeTrackerCopy.offline, lang)}
             </p>
           </div>
         </div>
         <button
           onClick={() => void fetchStatus()}
           className="rounded-xl border border-white/10 bg-white/5 p-2 text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-          title={BridgeTrackerCopy.refresh[cs ? 'cs' : 'en']}
+          title={tx5(BridgeTrackerCopy.refresh, lang)}
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
@@ -120,7 +121,7 @@ export default function BridgeTracker() {
       <div>
         <h4 className="text-xs uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
           <Lock className="h-3 w-3 text-zion-cyan" />
-          {BridgeTrackerCopy.l1L2LockMint[cs ? 'cs' : 'en']}
+          {tx5(BridgeTrackerCopy.l1L2LockMint, lang)}
         </h4>
         <div className="grid grid-cols-3 gap-3">
           {l1ToL2Steps.map((step, i) => (
@@ -155,7 +156,7 @@ export default function BridgeTracker() {
       <div>
         <h4 className="text-xs uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
           <Flame className="h-3 w-3 text-zion-gold" />
-          {BridgeTrackerCopy.l2L1BurnUnlock[cs ? 'cs' : 'en']}
+          {tx5(BridgeTrackerCopy.l2L1BurnUnlock, lang)}
         </h4>
         <div className="grid grid-cols-3 gap-3">
           {l2ToL1Steps.map((step, i) => (
@@ -188,22 +189,22 @@ export default function BridgeTracker() {
       {/* Footer stats */}
       <div className="flex flex-wrap gap-4 pt-2 border-t border-white/5 text-xs">
         <div className="flex items-center gap-2">
-          <span className="text-gray-500">{BridgeTrackerCopy.l1Height[cs ? 'cs' : 'en']}:</span>
+          <span className="text-gray-500">{tx5(BridgeTrackerCopy.l1Height, lang)}:</span>
           <span className="font-mono text-gray-300">{(s.last_l1_height ?? 0).toLocaleString()}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-gray-500">{BridgeTrackerCopy.evmBlock[cs ? 'cs' : 'en']}:</span>
+          <span className="text-gray-500">{tx5(BridgeTrackerCopy.evmBlock, lang)}:</span>
           <span className="font-mono text-gray-300">{(s.last_evm_block ?? 0).toLocaleString()}</span>
         </div>
         {(s.errors_total ?? 0) > 0 && (
           <div className="flex items-center gap-2 text-zion-purple">
             <AlertCircle className="h-3 w-3" />
-            <span>{s.errors_total} {BridgeTrackerCopy.errors[cs ? 'cs' : 'en']}</span>
+            <span>{s.errors_total} {tx5(BridgeTrackerCopy.errors, lang)}</span>
           </div>
         )}
         {lastUpdated && (
           <div className="ml-auto text-gray-600">
-            {BridgeTrackerCopy.updated[cs ? 'cs' : 'en']}: {new Date(lastUpdated).toLocaleTimeString()}
+            {tx5(BridgeTrackerCopy.updated, lang)}: {new Date(lastUpdated).toLocaleTimeString()}
           </div>
         )}
       </div>

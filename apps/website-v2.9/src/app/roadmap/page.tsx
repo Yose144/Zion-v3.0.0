@@ -23,6 +23,7 @@ import {
 import { SITE_RELEASE_LABEL } from '@/lib/site';
 import { NIRVANA_PUBLIC_TITLE, NIRVANA_WORKSTREAMS } from '@/lib/nirvana-roadmap';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { tr } from '@/lib/translations';
 
 const t = {
@@ -238,7 +239,7 @@ export default function RoadmapPage() {
     { name: 'ncl + ai-native/ (L3 AI)', loc: '~6.6k', tests: 119, status: '✅', readiness: 75 },
     { name: 'oasis/ (L4 game)', loc: '~3.5k', tests: 49, status: '✅', readiness: 70 },
     { name: 'desktop-agent/', loc: '~3k', tests: 0, status: '✅', readiness: 80 },
-    { name: cs ? 'website-v2.9/ (DeFi live)' : 'website-v2.9/ (DeFi live)', loc: '~6k', tests: 0, status: '✅', readiness: 85 },
+    { name: cs ? 'website-v2.9/ (DeFi live)' : t5('website-v2.9/ (DeFi live)', lang), loc: '~6k', tests: 0, status: '✅', readiness: 85 },
   ];
 
   const phases: PhaseData[] = [
@@ -251,20 +252,20 @@ export default function RoadmapPage() {
       status: 'done',
       description: copy.phase0Desc,
       sprints: [
-        { id: '0.0', title: cs ? 'Migrace repozitáře — čistý repo, workspace, Docker, CI/CD' : 'Repo Migration — clean repo, workspace, Docker, CI/CD', done: true },
-        { id: '0.1', title: cs ? 'Emise & Genesis — 5 400 ZION/blok, 16,78B reserve' : 'Emission & Genesis — 5,400 ZION/block, 16.78B reserve', done: true },
-        { id: '0.2', title: cs ? 'DAA & Konsensus — LWMA 60-blok, ±25 %, fork-choice' : 'DAA & Consensus — LWMA 60-block, ±25%, fork-choice', done: true },
-        { id: '0.3', title: cs ? 'Fee Market & Mempool — spalování, double-spend, eviction' : 'Fee Market & Mempool — fee burning, double-spend, eviction', done: true },
-        { id: '0.4', title: cs ? 'Peněženka & TX — UTXO select, Ed25519, broadcast, E2E' : 'Wallet & TX — UTXO select, Ed25519, broadcast, E2E', done: true },
-        { id: '0.5', title: cs ? 'Hardening konsensu — maturity=100, reorg=10, finalita=60' : 'Consensus Hardening — maturity=100, reorg=10, finality=60', done: true },
+        { id: '0.0', title: cs ? 'Migrace repozitáře — čistý repo, workspace, Docker, CI/CD' : t5('Repo Migration — clean repo, workspace, Docker, CI/CD', lang), done: true },
+        { id: '0.1', title: cs ? 'Emise & Genesis — 5 400 ZION/blok, 16,78B reserve' : t5('Emission & Genesis — 5,400 ZION/block, 16.78B reserve', lang), done: true },
+        { id: '0.2', title: cs ? 'DAA & Konsensus — LWMA 60-blok, ±25 %, fork-choice' : t5('DAA & Consensus — LWMA 60-block, ±25%, fork-choice', lang), done: true },
+        { id: '0.3', title: cs ? 'Fee Market & Mempool — spalování, double-spend, eviction' : t5('Fee Market & Mempool — fee burning, double-spend, eviction', lang), done: true },
+        { id: '0.4', title: cs ? 'Peněženka & TX — UTXO select, Ed25519, broadcast, E2E' : t5('Wallet & TX — UTXO select, Ed25519, broadcast, E2E', lang), done: true },
+        { id: '0.5', title: cs ? 'Hardening konsensu — maturity=100, reorg=10, finalita=60' : t5('Consensus Hardening — maturity=100, reorg=10, finality=60', lang), done: true },
       ],
       exitCriteria: [
-        { text: cs ? 'Unit testy pro nový model odměn' : 'Unit tests for new reward model', done: true },
-        { text: cs ? 'Genesis produkuje 16,78B reserve' : 'Genesis produces 16.78B reserve', done: true },
-        { text: cs ? 'LWMA DAA deterministické' : 'LWMA DAA deterministic', done: true },
-        { text: cs ? 'Max reorg hloubka = 10 vynucena' : 'Max reorg depth = 10 enforced', done: true },
-        { text: cs ? 'Coinbase maturity = 100 vynucena' : 'Coinbase maturity = 100 enforced', done: true },
-        { text: cs ? 'Wallet send E2E funkční' : 'Wallet send E2E working', done: true },
+        { text: cs ? 'Unit testy pro nový model odměn' : t5('Unit tests for new reward model', lang), done: true },
+        { text: cs ? 'Genesis produkuje 16,78B reserve' : t5('Genesis produces 16.78B reserve', lang), done: true },
+        { text: cs ? 'LWMA DAA deterministické' : t5('LWMA DAA deterministic', lang), done: true },
+        { text: cs ? 'Max reorg hloubka = 10 vynucena' : t5('Max reorg depth = 10 enforced', lang), done: true },
+        { text: cs ? 'Coinbase maturity = 100 vynucena' : t5('Coinbase maturity = 100 enforced', lang), done: true },
+        { text: cs ? 'Wallet send E2E funkční' : t5('Wallet send E2E working', lang), done: true },
       ],
     },
     {
@@ -276,19 +277,19 @@ export default function RoadmapPage() {
       status: 'done',
       description: copy.phase1Desc,
       sprints: [
-        { id: '1.0', title: cs ? 'Identita sítě & Deploy — chain reset, Docker, 3 servery' : 'Network Identity & Deploy — chain reset, Docker, 3-server', done: true },
-        { id: '1.1', title: cs ? 'Validace konfigurace — TOML parsing, hraniční kontroly' : 'Config Validation — TOML parsing, boundary checks', tests: 70, done: true },
-        { id: '1.2', title: cs ? 'Bezpečnost & Edge-Case — reorg, double-spend, fork-choice' : 'Security & Edge-Case — reorg, double-spend, fork-choice', tests: 29, done: true },
-        { id: '1.3', title: cs ? 'IBD Hardening — timeouty, detekce stall, peer scoring' : 'IBD Hardening — timeouts, stall detection, peer scoring', tests: 42, done: true },
-        { id: '1.4', title: cs ? 'Pool Payout — batch TX, PoolWallet, JSON-RPC' : 'Pool Payout Integration — batch TX, PoolWallet, JSON-RPC', tests: 23, done: true },
-        { id: '1.5', title: cs ? 'Buyback + DAO Treasury — 100 % DAO revenue, burn adresa' : 'Buyback + DAO Treasury — 100% DAO revenue, burn address', tests: 28, done: true },
-        { id: '1.6', title: cs ? 'Supply + Buyback API — getSupplyInfo, getNetworkInfo' : 'Supply + Buyback API — getSupplyInfo, getNetworkInfo', tests: 15, done: true },
-        { id: '1.7', title: cs ? 'P2P Rate-Limiting — 200 zpráv/peer/60s, eskalující bany' : 'P2P Rate-Limiting — 200 msgs/peer/60s, escalating bans', tests: 13, done: true },
-        { id: '1.8', title: cs ? 'Health Check & Metriky — getHealthCheck, getMetrics' : 'Health Check & Metrics — getHealthCheck, getMetrics', tests: 8, done: true },
-        { id: '1.9', title: cs ? 'Stress Test Suite — vysoký TX, rychlé bloky, partition' : 'Stress Test Suite — high TX, rapid blocks, partition', tests: 21, done: true },
-        { id: '1.10', title: cs ? '168h stabilita — archivovaný multi-host run, žádný kritický incident' : '168h Stability Run — archived multi-host validation, no critical incident', done: true },
-        { id: '1.11', title: cs ? 'Live Partition Test — izolace nodu 30 min, reconnect' : 'Live Partition Test — node isolation 30 min, reconnect', done: false },
-        { id: '1.12', title: cs ? '100 minerů stres — simulace 100 Stratum klientů' : '100 Miners Stress — simulate 100 Stratum clients', done: false },
+        { id: '1.0', title: cs ? 'Identita sítě & Deploy — chain reset, Docker, 3 servery' : t5('Network Identity & Deploy — chain reset, Docker, 3-server', lang), done: true },
+        { id: '1.1', title: cs ? 'Validace konfigurace — TOML parsing, hraniční kontroly' : t5('Config Validation — TOML parsing, boundary checks', lang), tests: 70, done: true },
+        { id: '1.2', title: cs ? 'Bezpečnost & Edge-Case — reorg, double-spend, fork-choice' : t5('Security & Edge-Case — reorg, double-spend, fork-choice', lang), tests: 29, done: true },
+        { id: '1.3', title: cs ? 'IBD Hardening — timeouty, detekce stall, peer scoring' : t5('IBD Hardening — timeouts, stall detection, peer scoring', lang), tests: 42, done: true },
+        { id: '1.4', title: cs ? 'Pool Payout — batch TX, PoolWallet, JSON-RPC' : t5('Pool Payout Integration — batch TX, PoolWallet, JSON-RPC', lang), tests: 23, done: true },
+        { id: '1.5', title: cs ? 'Buyback + DAO Treasury — 100 % DAO revenue, burn adresa' : t5('Buyback + DAO Treasury — 100% DAO revenue, burn address', lang), tests: 28, done: true },
+        { id: '1.6', title: cs ? 'Supply + Buyback API — getSupplyInfo, getNetworkInfo' : t5('Supply + Buyback API — getSupplyInfo, getNetworkInfo', lang), tests: 15, done: true },
+        { id: '1.7', title: cs ? 'P2P Rate-Limiting — 200 zpráv/peer/60s, eskalující bany' : t5('P2P Rate-Limiting — 200 msgs/peer/60s, escalating bans', lang), tests: 13, done: true },
+        { id: '1.8', title: cs ? 'Health Check & Metriky — getHealthCheck, getMetrics' : t5('Health Check & Metrics — getHealthCheck, getMetrics', lang), tests: 8, done: true },
+        { id: '1.9', title: cs ? 'Stress Test Suite — vysoký TX, rychlé bloky, partition' : t5('Stress Test Suite — high TX, rapid blocks, partition', lang), tests: 21, done: true },
+        { id: '1.10', title: cs ? '168h stabilita — archivovaný multi-host run, žádný kritický incident' : t5('168h Stability Run — archived multi-host validation, no critical incident', lang), done: true },
+        { id: '1.11', title: cs ? 'Live Partition Test — izolace nodu 30 min, reconnect' : t5('Live Partition Test — node isolation 30 min, reconnect', lang), done: false },
+        { id: '1.12', title: cs ? '100 minerů stres — simulace 100 Stratum klientů' : t5('100 Miners Stress — simulate 100 Stratum clients', lang), done: false },
         { id: '1.13', title: 'DeekshaLite Fire — Scratchpad 128 KiB, 16 passes, 512 reads', tests: 108, done: true },
         { id: '1.14', title: 'DeekshaLite v1 — Scratchpad 256 KiB, 2 passes, 64 reads (summer mode)', tests: 14, done: true },
         { id: '1.15', title: 'Fee Split 89/5/5/1 — canonical addresses, Genesis premine', done: true },
@@ -298,19 +299,19 @@ export default function RoadmapPage() {
         { id: '1.19', title: 'Edge auto-backup systemd timer active', done: true },
       ],
       exitCriteria: [
-        { text: cs ? 'Controlled V3 Edge server mainnet deployed on 2 nodes' : 'Controlled V3 Edge server mainnet deployed on 2 nodes', done: true },
-        { text: cs ? 'Reorg/double-spend/fork tests (29 testů)' : 'Reorg/double-spend/fork tests (29 tests)', done: true },
-        { text: cs ? 'IBD hardening (42 testy)' : 'IBD hardening (42 tests)', done: true },
-        { text: cs ? 'Pool payout batch TX (23 testy)' : 'Pool payout batch TX (23 tests)', done: true },
-        { text: cs ? 'Buyback + DAO Treasury (28 testů)' : 'Buyback + DAO Treasury (28 tests)', done: true },
-        { text: cs ? 'RPC API complete (36 testů)' : 'RPC API complete (36 tests)', done: true },
-        { text: cs ? 'DoS protection (MessageRateLimiter)' : 'DoS protection (MessageRateLimiter)', done: true },
-        { text: cs ? 'Stress test suite (21 testů)' : 'Stress test suite (21 tests)', done: true },
-        { text: cs ? '168h stability run without critical incident' : '168h stability run without critical incident', done: true },
-        { text: cs ? 'Edge server topology operational via private network' : 'Edge server topology operational via private network', done: true },
-        { text: cs ? 'Fee split 89/5/5/1 enforced on-chain' : 'Fee split 89/5/5/1 enforced on-chain', done: true },
-        { text: cs ? 'Ekam Deeksha Tier 1+2 canary deploy — pool accept 100 %' : 'Ekam Deeksha Tier 1+2 canary deploy — pool accept 100%', done: true },
-        { text: cs ? 'Block retention fix deployed (set_block_retention always called)' : 'Block retention fix deployed (set_block_retention always called)', done: true },
+        { text: cs ? 'Controlled V3 Edge server mainnet deployed on 2 nodes' : t5('Controlled V3 Edge server mainnet deployed on 2 nodes', lang), done: true },
+        { text: cs ? 'Reorg/double-spend/fork tests (29 testů)' : t5('Reorg/double-spend/fork tests (29 tests)', lang), done: true },
+        { text: cs ? 'IBD hardening (42 testy)' : t5('IBD hardening (42 tests)', lang), done: true },
+        { text: cs ? 'Pool payout batch TX (23 testy)' : t5('Pool payout batch TX (23 tests)', lang), done: true },
+        { text: cs ? 'Buyback + DAO Treasury (28 testů)' : t5('Buyback + DAO Treasury (28 tests)', lang), done: true },
+        { text: cs ? 'RPC API complete (36 testů)' : t5('RPC API complete (36 tests)', lang), done: true },
+        { text: cs ? 'DoS protection (MessageRateLimiter)' : t5('DoS protection (MessageRateLimiter)', lang), done: true },
+        { text: cs ? 'Stress test suite (21 testů)' : t5('Stress test suite (21 tests)', lang), done: true },
+        { text: cs ? '168h stability run without critical incident' : t5('168h stability run without critical incident', lang), done: true },
+        { text: cs ? 'Edge server topology operational via private network' : t5('Edge server topology operational via private network', lang), done: true },
+        { text: cs ? 'Fee split 89/5/5/1 enforced on-chain' : t5('Fee split 89/5/5/1 enforced on-chain', lang), done: true },
+        { text: cs ? 'Ekam Deeksha Tier 1+2 canary deploy — pool accept 100 %' : t5('Ekam Deeksha Tier 1+2 canary deploy — pool accept 100%', lang), done: true },
+        { text: cs ? 'Block retention fix deployed (set_block_retention always called)' : t5('Block retention fix deployed (set_block_retention always called)', lang), done: true },
       ],
     },
     {
@@ -322,20 +323,20 @@ export default function RoadmapPage() {
       status: 'done',
       description: copy.phase2Desc,
       sprints: [
-        { id: '2.1', title: cs ? 'Node UX — README, config.toml, strukturované logy, CLI' : 'Node UX — README, config.toml, structured logging, CLI', done: true },
-        { id: '2.2', title: cs ? 'Mining Polish — CPU baseline, GPU produkce, pool failover' : 'Mining Polish — CPU baseline, GPU production, pool failover', done: true },
-        { id: '2.3', title: cs ? 'Block Explorer — indexer, web UI, supply API, rich list' : 'Block Explorer — indexer, web UI, supply API, rich list', done: true },
-        { id: '2.4', title: cs ? 'Mining Guide — GPU/CPU, pool, dual-mining ZION+VRSC' : 'Mining Guide — GPU/CPU, pool, dual-mining ZION+VRSC', done: true },
-        { id: '2.5', title: cs ? 'CLI Reference — 17 JSON-RPC metod + operator commands' : 'CLI Reference — 17 JSON-RPC methods + operator commands', done: true },
-        { id: '2.6', title: cs ? 'Seasonal Fire ↔ Lite — auto-switch, thermal management' : 'Seasonal Fire ↔ Lite — auto-switch, thermal management', done: true },
+        { id: '2.1', title: cs ? 'Node UX — README, config.toml, strukturované logy, CLI' : t5('Node UX — README, config.toml, structured logging, CLI', lang), done: true },
+        { id: '2.2', title: cs ? 'Mining Polish — CPU baseline, GPU produkce, pool failover' : t5('Mining Polish — CPU baseline, GPU production, pool failover', lang), done: true },
+        { id: '2.3', title: cs ? 'Block Explorer — indexer, web UI, supply API, rich list' : t5('Block Explorer — indexer, web UI, supply API, rich list', lang), done: true },
+        { id: '2.4', title: cs ? 'Mining Guide — GPU/CPU, pool, dual-mining ZION+VRSC' : t5('Mining Guide — GPU/CPU, pool, dual-mining ZION+VRSC', lang), done: true },
+        { id: '2.5', title: cs ? 'CLI Reference — 17 JSON-RPC metod + operator commands' : t5('CLI Reference — 17 JSON-RPC methods + operator commands', lang), done: true },
+        { id: '2.6', title: cs ? 'Seasonal Fire ↔ Lite — auto-switch, thermal management' : t5('Seasonal Fire ↔ Lite — auto-switch, thermal management', lang), done: true },
       ],
       exitCriteria: [
-        { text: cs ? 'Node spustitelný za 10 min dle README' : 'Node bootable in 10 min per README', done: true },
-        { text: cs ? 'Block explorer běží a indexuje' : 'Block explorer running and indexing', done: true },
-        { text: cs ? 'Mining guides kompletní' : 'Mining guides complete', done: true },
-        { text: cs ? 'RPC API zdokumentováno' : 'RPC API documented', done: true },
-        { text: cs ? 'Pool failover + algorithm-aware share validace' : 'Pool failover + algorithm-aware share validation', done: true },
-        { text: cs ? 'Sezónní Fire/Lite přepínání' : 'Seasonal Fire/Lite switching', done: true },
+        { text: cs ? 'Node spustitelný za 10 min dle README' : t5('Node bootable in 10 min per README', lang), done: true },
+        { text: cs ? 'Block explorer běží a indexuje' : t5('Block explorer running and indexing', lang), done: true },
+        { text: cs ? 'Mining guides kompletní' : t5('Mining guides complete', lang), done: true },
+        { text: cs ? 'RPC API zdokumentováno' : t5('RPC API documented', lang), done: true },
+        { text: cs ? 'Pool failover + algorithm-aware share validace' : t5('Pool failover + algorithm-aware share validation', lang), done: true },
+        { text: cs ? 'Sezónní Fire/Lite přepínání' : t5('Seasonal Fire/Lite switching', lang), done: true },
       ],
     },
     {
@@ -347,21 +348,21 @@ export default function RoadmapPage() {
       status: 'done',
       description: copy.phase3Desc,
       sprints: [
-        { id: '3.1', title: cs ? 'Veřejný host & Monitoring — Zion2 live, Prometheus + Grafana' : 'Public Host & Monitoring — Zion2 live, Prometheus + Grafana', done: true },
-        { id: '3.2', title: cs ? 'Docker & Deploy — runbook + compose + live web deploy flow' : 'Docker & Deploy — runbook + compose + live web deploy flow', done: true },
-        { id: '3.3', title: cs ? 'Legal & Compliance — disclaimery, token-not-security, rizika' : 'Legal & Compliance — disclaimers, token-not-security, risk', done: true },
+        { id: '3.1', title: cs ? 'Veřejný host & Monitoring — Zion2 live, Prometheus + Grafana' : t5('Public Host & Monitoring — Zion2 live, Prometheus + Grafana', lang), done: true },
+        { id: '3.2', title: cs ? 'Docker & Deploy — runbook + compose + live web deploy flow' : t5('Docker & Deploy — runbook + compose + live web deploy flow', lang), done: true },
+        { id: '3.3', title: cs ? 'Legal & Compliance — disclaimery, token-not-security, rizika' : t5('Legal & Compliance — disclaimers, token-not-security, risk', lang), done: true },
         { id: '3.4', title: 'wZION + Bridge deployed on Base Mainnet', done: true },
         { id: '3.5', title: 'Uniswap V3 pool wZION/WETH (0.3%) seeded on Base Mainnet', done: true },
         { id: '3.6', title: 'DeFi UI — functional swap/bridge/portfolio on website', done: true },
         { id: '3.7', title: 'DeFi L2 pages cleanup — bridge/dao/warp bilingual mainnet', done: true },
       ],
       exitCriteria: [
-        { text: cs ? '1 public host + internal validator lanes stable online' : '1 public host + internal validator lanes stable online', done: true },
-        { text: cs ? 'Monitoring + alerting active' : 'Monitoring + alerting active', done: true },
-        { text: cs ? 'Legal docs complete' : 'Legal docs complete', done: true },
-        { text: cs ? 'wZION + Bridge deployed on Base Mainnet' : 'wZION + Bridge deployed on Base Mainnet', done: true },
-        { text: cs ? 'L2 contracts deployed (Staking, Governance, Farm, AtomicSwap)' : 'L2 contracts deployed (Staking, Governance, Farm, AtomicSwap)', done: true },
-        { text: cs ? 'multichain /health OK' : 'multichain /health OK', done: true },
+        { text: cs ? '1 public host + internal validator lanes stable online' : t5('1 public host + internal validator lanes stable online', lang), done: true },
+        { text: cs ? 'Monitoring + alerting active' : t5('Monitoring + alerting active', lang), done: true },
+        { text: cs ? 'Legal docs complete' : t5('Legal docs complete', lang), done: true },
+        { text: cs ? 'wZION + Bridge deployed on Base Mainnet' : t5('wZION + Bridge deployed on Base Mainnet', lang), done: true },
+        { text: cs ? 'L2 contracts deployed (Staking, Governance, Farm, AtomicSwap)' : t5('L2 contracts deployed (Staking, Governance, Farm, AtomicSwap)', lang), done: true },
+        { text: cs ? 'multichain /health OK' : t5('multichain /health OK', lang), done: true },
       ],
     },
     {
@@ -373,33 +374,33 @@ export default function RoadmapPage() {
       status: 'active',
       description: copy.phase4Desc,
       sprints: [
-        { id: 'G8', title: cs ? '30denní kontinuální run #2 — nesplnil gate (kritické výpadky); run #3 po zajištění spolehlivé těžby (stav na /g8)' : '30-day continuous run #2 — gate failed (critical outages); run #3 after reliable mining is secured (status on /g8)', done: false },
-        { id: 'IA', title: cs ? 'Interní bezpečnostní revize celého projektu (5. 10.) — nálezy opraveny nebo v řešení' : 'Internal whole-project security review (Oct 5) — findings fixed or in progress', done: true },
-        { id: 'G8a', title: cs ? 'Evidence pipeline — 60s sampling, perzistentní alerty, retence 40 dní' : 'Evidence pipeline — 60s sampling, persistent alerts, 40-day retention', done: true },
-        { id: 'G8b', title: cs ? 'Rychlý restart nodu — perzistentní stavová cache ověřena v produkci' : 'Node fast-restart — persistent state cache verified in production', done: true },
-        { id: 'B-1', title: cs ? 'Finální payout verifikace — PPLNS window validace' : 'Final payout verification — PPLNS window validation', done: false },
-        { id: 'B-2', title: cs ? 'Bezpečnostní audit — scope připraven, externí firma zatím neobjednána' : 'Security audit — scope prepared, external firm not yet engaged', done: false },
-        { id: 'B-3', title: cs ? 'Bridge validator provisioning — 3/5 threshold produkce' : 'Bridge validator key provisioning — 3/5 threshold production', done: false },
-        { id: 'B-4', title: cs ? 'Komunitní příprava — dokumentace, tutoriály' : 'Community preparation — documentation, tutorials', done: false },
-        { id: 'DR', title: cs ? 'Disaster-recovery drill — plná obnova mimo produkci s RTO/RPO' : 'Disaster-recovery drill — full off-site restore with RTO/RPO', done: false },
-        { id: 'REL', title: cs ? 'Release artefakty — sjednocení verzí, checksumy, podepsaný tag' : 'Release artifacts — version unification, checksums, signed tag', done: false },
-        { id: 'T-14', title: cs ? 'Genesis freeze — všechny parametry zmrazeny' : 'Genesis freeze — all parameters frozen', done: false },
-        { id: 'T-7', title: cs ? 'Community oznámení + wallety ke stažení' : 'Community announcement + wallets available', done: false },
-        { id: 'T-2', title: cs ? 'Finální release node software' : 'Final node software release', done: false },
-        { id: 'T-0', title: cs ? '🚀 Veřejný genesis — GO rozhodnutí' : '🚀 Public genesis — GO decision', done: false },
+        { id: 'G8', title: cs ? '30denní kontinuální run #2 — nesplnil gate (kritické výpadky); run #3 po zajištění spolehlivé těžby (stav na /g8)' : t5('30-day continuous run #2 — gate failed (critical outages); run #3 after reliable mining is secured (status on /g8)', lang), done: false },
+        { id: 'IA', title: cs ? 'Interní bezpečnostní revize celého projektu (5. 10.) — nálezy opraveny nebo v řešení' : t5('Internal whole-project security review (Oct 5) — findings fixed or in progress', lang), done: true },
+        { id: 'G8a', title: cs ? 'Evidence pipeline — 60s sampling, perzistentní alerty, retence 40 dní' : t5('Evidence pipeline — 60s sampling, persistent alerts, 40-day retention', lang), done: true },
+        { id: 'G8b', title: cs ? 'Rychlý restart nodu — perzistentní stavová cache ověřena v produkci' : t5('Node fast-restart — persistent state cache verified in production', lang), done: true },
+        { id: 'B-1', title: cs ? 'Finální payout verifikace — PPLNS window validace' : t5('Final payout verification — PPLNS window validation', lang), done: false },
+        { id: 'B-2', title: cs ? 'Bezpečnostní audit — scope připraven, externí firma zatím neobjednána' : t5('Security audit — scope prepared, external firm not yet engaged', lang), done: false },
+        { id: 'B-3', title: cs ? 'Bridge validator provisioning — 3/5 threshold produkce' : t5('Bridge validator key provisioning — 3/5 threshold production', lang), done: false },
+        { id: 'B-4', title: cs ? 'Komunitní příprava — dokumentace, tutoriály' : t5('Community preparation — documentation, tutorials', lang), done: false },
+        { id: 'DR', title: cs ? 'Disaster-recovery drill — plná obnova mimo produkci s RTO/RPO' : t5('Disaster-recovery drill — full off-site restore with RTO/RPO', lang), done: false },
+        { id: 'REL', title: cs ? 'Release artefakty — sjednocení verzí, checksumy, podepsaný tag' : t5('Release artifacts — version unification, checksums, signed tag', lang), done: false },
+        { id: 'T-14', title: cs ? 'Genesis freeze — všechny parametry zmrazeny' : t5('Genesis freeze — all parameters frozen', lang), done: false },
+        { id: 'T-7', title: cs ? 'Community oznámení + wallety ke stažení' : t5('Community announcement + wallets available', lang), done: false },
+        { id: 'T-2', title: cs ? 'Finální release node software' : t5('Final node software release', lang), done: false },
+        { id: 'T-0', title: cs ? '🚀 Veřejný genesis — GO rozhodnutí' : t5('🚀 Public genesis — GO decision', lang), done: false },
       ],
       exitCriteria: [
-        { text: cs ? 'Phase 1 Foundation kompletní' : 'Phase 1 Foundation complete', done: true },
-        { text: cs ? '30denní kontinuální run ≥ 99,9 % uptime bez kritického incidentu (run #2 nesplnil — G8)' : '30-day continuous run ≥99.9% uptime with no critical incident (run #2 failed — G8)', done: false },
-        { text: cs ? 'Finální payout verifikace' : 'Final payout verification', done: false },
-        { text: cs ? 'Bezpečnostní audit — žádné critical/high nálezy' : 'Security audit — no critical/high findings', done: false },
-        { text: cs ? 'DR drill — ověřená obnova s RTO/RPO' : 'DR drill — verified restore with RTO/RPO', done: false },
-        { text: cs ? 'Bridge validator provisioning — 3/5 threshold' : 'Bridge validator provisioning — 3/5 threshold', done: false },
-        { text: cs ? 'Genesis block hash publikován' : 'Genesis block hash published', done: true },
-        { text: cs ? 'Bootstrap hosty online (veřejný + interní quorum)' : 'Bootstrap hosts online (public + internal quorum)', done: true },
-        { text: cs ? 'Pool + solo mining otevřen' : 'Pool + solo mining open', done: true },
-        { text: cs ? 'Block explorer živě' : 'Block explorer live', done: true },
-        { text: cs ? 'Supply API živě' : 'Supply API live', done: true },
+        { text: cs ? 'Phase 1 Foundation kompletní' : t5('Phase 1 Foundation complete', lang), done: true },
+        { text: cs ? '30denní kontinuální run ≥ 99,9 % uptime bez kritického incidentu (run #2 nesplnil — G8)' : t5('30-day continuous run ≥99.9% uptime with no critical incident (run #2 failed — G8)', lang), done: false },
+        { text: cs ? 'Finální payout verifikace' : t5('Final payout verification', lang), done: false },
+        { text: cs ? 'Bezpečnostní audit — žádné critical/high nálezy' : t5('Security audit — no critical/high findings', lang), done: false },
+        { text: cs ? 'DR drill — ověřená obnova s RTO/RPO' : t5('DR drill — verified restore with RTO/RPO', lang), done: false },
+        { text: cs ? 'Bridge validator provisioning — 3/5 threshold' : t5('Bridge validator provisioning — 3/5 threshold', lang), done: false },
+        { text: cs ? 'Genesis block hash publikován' : t5('Genesis block hash published', lang), done: true },
+        { text: cs ? 'Bootstrap hosty online (veřejný + interní quorum)' : t5('Bootstrap hosts online (public + internal quorum)', lang), done: true },
+        { text: cs ? 'Pool + solo mining otevřen' : t5('Pool + solo mining open', lang), done: true },
+        { text: cs ? 'Block explorer živě' : t5('Block explorer live', lang), done: true },
+        { text: cs ? 'Supply API živě' : t5('Supply API live', lang), done: true },
       ],
     },
   ];
@@ -412,31 +413,31 @@ export default function RoadmapPage() {
 
   const postLaunch = [
     {
-      title: cs ? '6A: Tichý Mainnet' : '6A: Silent Mainnet',
-      sub: cs ? 'Dny 1–30' : 'Days 1–30',
+      title: cs ? '6A: Tichý Mainnet' : t5('6A: Silent Mainnet', lang),
+      sub: cs ? 'Dny 1–30' : t5('Days 1–30', lang),
       items: cs
         ? ['Monitor orphan rate < 2 %', 'Difficulty stabilita 60s ± 10 %', 'Explorer + Supply API veřejný', 'Hotfix releases pokud potřeba']
         : ['Monitor orphan rate < 2%', 'Difficulty stability 60s ± 10%', 'Explorer + Supply API public', 'Hotfix releases if needed'],
     },
     {
-      title: cs ? '6B: DEX & Listingy' : '6B: DEX & Listings',
-      sub: cs ? 'Dny 14–45' : 'Days 14–45',
+      title: cs ? '6B: DEX & Listingy' : t5('6B: DEX & Listings', lang),
+      sub: cs ? 'Dny 14–45' : t5('Days 14–45', lang),
       items: [
         'wZION ERC-20 deployed on Base Mainnet ✅',
         'Uniswap V3 pool wZION/WETH live ✅',
         'Multichain Hub UI on app.zionterranova.com/multichain ✅',
-        cs ? 'Prohloubit likviditu + price discovery' : 'Deepen liquidity + price discovery',
+        cs ? 'Prohloubit likviditu + price discovery' : t5('Deepen liquidity + price discovery', lang),
         'CoinGecko / DexScreener listing',
       ],
     },
     {
       title: '6C: CMC & CoinGecko',
-      sub: cs ? 'Dny 30–60' : 'Days 30–60',
+      sub: cs ? 'Dny 30–60' : t5('Days 30–60', lang),
       items: ['CoinGecko application', 'CoinMarketCap application', 'Supply data feed'],
     },
     {
-      title: cs ? '6D: CEX Outreach' : '6D: CEX Outreach',
-      sub: cs ? 'Dny 45–120' : 'Days 45–120',
+      title: cs ? '6D: CEX Outreach' : t5('6D: CEX Outreach', lang),
+      sub: cs ? 'Dny 45–120' : t5('Days 45–120', lang),
       items: cs
         ? ['Tier-3: MEXC, XT, CoinEx', 'Tier-2: Gate.io, KuCoin (po volume)', 'Binance / Coinbase — NE jako první krok']
         : ['Tier-3: MEXC, XT, CoinEx', 'Tier-2: Gate.io, KuCoin (after volume)', 'Binance / Coinbase — NOT a first step'],
@@ -444,18 +445,18 @@ export default function RoadmapPage() {
   ];
 
   const securityChecklist = [
-    { text: cs ? 'Ed25519 ověření podpisů' : 'Ed25519 signature verification', done: true },
-    { text: cs ? 'Double-spend ochrana (mempool + UTXO)' : 'Double-spend protection (mempool + UTXO)', done: true },
-    { text: cs ? 'Overflow ochrana (checked_add)' : 'Overflow protection (checked_add)', done: true },
+    { text: cs ? 'Ed25519 ověření podpisů' : t5('Ed25519 signature verification', lang), done: true },
+    { text: cs ? 'Double-spend ochrana (mempool + UTXO)' : t5('Double-spend protection (mempool + UTXO)', lang), done: true },
+    { text: cs ? 'Overflow ochrana (checked_add)' : t5('Overflow protection (checked_add)', lang), done: true },
     { text: 'P2P rate limiting', done: true },
-    { text: cs ? 'Coinbase maturity 100 bloků' : 'Coinbase maturity 100 blocks', done: true },
-    { text: cs ? 'Reorg limit 10 bloků' : 'Reorg limit 10 blocks', done: true },
-    { text: cs ? 'Timestamp validace ±120s' : 'Timestamp validation ±120s', done: true },
-    { text: cs ? 'Mempool limity (50k TX, min fee)' : 'Mempool limits (50k TX, min fee)', done: true },
-    { text: cs ? 'RPC autentizace (API key)' : 'RPC authentication (API key)', done: false },
-    { text: cs ? 'Block size limit (max 1 MB)' : 'Block size limit (max 1 MB)', done: false },
-    { text: cs ? 'TX size limit (max 100 KB)' : 'TX size limit (max 100 KB)', done: false },
-    { text: cs ? 'Externí audit' : 'External audit', done: false },
+    { text: cs ? 'Coinbase maturity 100 bloků' : t5('Coinbase maturity 100 blocks', lang), done: true },
+    { text: cs ? 'Reorg limit 10 bloků' : t5('Reorg limit 10 blocks', lang), done: true },
+    { text: cs ? 'Timestamp validace ±120s' : t5('Timestamp validation ±120s', lang), done: true },
+    { text: cs ? 'Mempool limity (50k TX, min fee)' : t5('Mempool limits (50k TX, min fee)', lang), done: true },
+    { text: cs ? 'RPC autentizace (API key)' : t5('RPC authentication (API key)', lang), done: false },
+    { text: cs ? 'Block size limit (max 1 MB)' : t5('Block size limit (max 1 MB)', lang), done: false },
+    { text: cs ? 'TX size limit (max 100 KB)' : t5('TX size limit (max 100 KB)', lang), done: false },
+    { text: cs ? 'Externí audit' : t5('External audit', lang), done: false },
   ];
 
   const secDone = securityChecklist.filter((i) => i.done).length;
@@ -521,25 +522,25 @@ export default function RoadmapPage() {
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Aktuální fáze' : 'Current stage'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Aktuální fáze' : t5('Current stage', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Rocket className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Cesta 3.2 „One Love“: Alpha → Beta → RC → Stable' : 'The 3.2 "One Love" path: Alpha → Beta → RC → Stable'}
+              {cs ? 'Cesta 3.2 „One Love“: Alpha → Beta → RC → Stable' : t5('The 3.2 "One Love" path: Alpha → Beta → RC → Stable', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Aktuální stupeň: Beta. Seznamy popisují zbývající práce a vstupní požadavky — ne tvrzení, že všechny kontroly prošly.' : 'Current stage: Beta. Lists describe remaining work and entry requirements — not a claim that all checks passed.'}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Aktuální stupeň: Beta. Seznamy popisují zbývající práce a vstupní požadavky — ne tvrzení, že všechny kontroly prošly.' : t5('Current stage: Beta. Lists describe remaining work and entry requirements — not a claim that all checks passed.', lang)}</p>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-lg font-semibold text-white">Alpha</p>
-                <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-3 py-1 text-xs font-semibold text-zion-cyan uppercase">{cs ? 'Dokončeno' : 'Completed'}</span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-3 py-1 text-xs font-semibold text-zion-cyan uppercase">{cs ? 'Dokončeno' : t5('Completed', lang)}</span>
               </div>
-              <p className="text-sm text-gray-300">{cs ? 'Node, pool, multichain, DAO a OASIS běží v produkci na mainnetu.' : 'Node, pool, multichain, DAO and OASIS run in production on mainnet.'}</p>
+              <p className="text-sm text-gray-300">{cs ? 'Node, pool, multichain, DAO a OASIS běží v produkci na mainnetu.' : t5('Node, pool, multichain, DAO and OASIS run in production on mainnet.', lang)}</p>
             </div>
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-lg font-semibold text-white">Beta</p>
-                <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-3 py-1 text-xs font-semibold text-zion-gold uppercase">{cs ? 'Aktuální' : 'Current'}</span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-3 py-1 text-xs font-semibold text-zion-gold uppercase">{cs ? 'Aktuální' : t5('Current', lang)}</span>
               </div>
               <ul className="text-sm text-gray-300 space-y-1.5 list-disc pl-4">
                 {(cs
@@ -551,7 +552,7 @@ export default function RoadmapPage() {
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-lg font-semibold text-white">RC</p>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs font-semibold text-gray-300 uppercase">{cs ? 'Čeká' : 'Pending'}</span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs font-semibold text-gray-300 uppercase">{cs ? 'Čeká' : t5('Pending', lang)}</span>
               </div>
               <ul className="text-sm text-gray-300 space-y-1.5 list-disc pl-4">
                 {(cs
@@ -563,7 +564,7 @@ export default function RoadmapPage() {
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-lg font-semibold text-white">Stable</p>
-                <span className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-3 py-1 text-xs font-semibold text-zion-purple uppercase">{cs ? 'Gated' : 'Gated'}</span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-3 py-1 text-xs font-semibold text-zion-purple uppercase">{cs ? 'Gated' : t5('Gated', lang)}</span>
               </div>
               <ul className="text-sm text-gray-300 space-y-1.5 list-disc pl-4">
                 {(cs
@@ -787,7 +788,7 @@ export default function RoadmapPage() {
                 { n: '2️⃣', label: 'BNB Chain (PancakeSwap)', cls: 'text-zion-gold' },
                 { n: '3️⃣', label: 'CoinGecko + CMC', cls: 'text-zion-purple' },
                 { n: '4️⃣', label: 'Tier-3 CEX (MEXC, XT)', cls: 'text-zion-purple' },
-                { n: '5️⃣', label: cs ? 'Tier-2 CEX (po volume)' : 'Tier-2 CEX (after volume)', cls: 'text-gray-400' },
+                { n: '5️⃣', label: cs ? 'Tier-2 CEX (po volume)' : t5('Tier-2 CEX (after volume)', lang), cls: 'text-gray-400' },
               ].map((step) => (
                 <span key={step.n} className={`inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 ${step.cls}`}>
                   {step.n} {step.label}

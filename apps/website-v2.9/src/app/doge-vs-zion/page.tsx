@@ -635,7 +635,7 @@ export default function DogeVsZionPage() {
         </motion.section>
 
         {/* ─── Spotify music banner ─── */}
-        <SpotifyBanner cs={cs} />
+        <SpotifyBanner cs={cs} lang={lang} />
 
         {/* ─── Doge vs ZION Comparison ─── */}
         <motion.section

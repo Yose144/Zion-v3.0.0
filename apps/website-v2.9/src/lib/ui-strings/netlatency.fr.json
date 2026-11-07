@@ -1,0 +1,7 @@
+{
+ "Lag": "Décalage",
+ "Latency": "Latence",
+ "Network Latency": "Latence du réseau",
+ "No nodes are currently online.": "Aucun nœud n'est en ligne actuellement.",
+ "RPC and pool latencies per node together with block propagation lag.": "Latences RPC et pool par nœud, avec le décalage de propagation des blocs."
+}

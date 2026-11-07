@@ -1,5 +1,7 @@
-import type { Lang } from '@/contexts/LanguageContext';
 'use client';
+
+import type { Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Brain, User, Loader2, Sparkles, MessageCircle } from 'lucide-react';
@@ -77,7 +79,7 @@ export default function HiranMiniChat({ lang: rawLang = 'cs', defaultOpen = fals
         {
           role: 'assistant',
           content:
-            HiranMiniChatCopy.failedToConnectToAiPleaseTryAg[lang === 'cs' ? 'cs' : 'en'],
+            tx5(HiranMiniChatCopy.failedToConnectToAiPleaseTryAg, lang),
         },
       ]);
     } finally {
@@ -103,7 +105,7 @@ export default function HiranMiniChat({ lang: rawLang = 'cs', defaultOpen = fals
         <div className="flex-1 text-left">
           <span className="text-sm font-bold text-zion-purple tracking-wide">Hiranyagarbha</span>
           <p className="text-[11px] text-gray-400 group-hover:text-gray-300 transition-colors">
-            {HiranMiniChatCopy.askAiAnythingAboutZion[lang === 'cs' ? 'cs' : 'en']}
+            {tx5(HiranMiniChatCopy.askAiAnythingAboutZion, lang)}
           </p>
         </div>
         <MessageCircle className="h-4 w-4 text-gray-500 transition-colors group-hover:text-zion-purple" />
@@ -121,7 +123,7 @@ export default function HiranMiniChat({ lang: rawLang = 'cs', defaultOpen = fals
         <div className="flex-1 min-w-0">
           <h3 className="text-white font-semibold text-sm">Hiranyagarbha</h3>
           <p className="text-gray-400 text-[10px]">
-            {HiranMiniChatCopy.zionAiNativeZionExpertModel[lang === 'cs' ? 'cs' : 'en']}
+            {tx5(HiranMiniChatCopy.zionAiNativeZionExpertModel, lang)}
           </p>
         </div>
         <div className="flex items-center gap-1.5">
@@ -142,7 +144,7 @@ export default function HiranMiniChat({ lang: rawLang = 'cs', defaultOpen = fals
           <div className="text-center py-4">
             <Sparkles className="w-8 h-8 text-zion-gold mx-auto mb-3 opacity-60" />
             <p className="text-gray-400 text-xs mb-4">
-              {HiranMiniChatCopy.askHiranyagarbhaAnythingAboutZ[lang === 'cs' ? 'cs' : 'en']}
+              {tx5(HiranMiniChatCopy.askHiranyagarbhaAnythingAboutZ, lang)}
             </p>
             <div className="flex flex-wrap justify-center gap-1.5">
               {SUGGESTED_QUESTIONS.map((q, i) => (
@@ -202,7 +204,7 @@ export default function HiranMiniChat({ lang: rawLang = 'cs', defaultOpen = fals
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={HiranMiniChatCopy.typeAMessage[lang === 'cs' ? 'cs' : 'en']}
+            placeholder={tx5(HiranMiniChatCopy.typeAMessage, lang)}
             disabled={loading}
             maxLength={2000}
             className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-zion-cyan/50 disabled:opacity-50 transition-colors"

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const BetaWarningBannerCopy = {
   dismissWarning: { cs: `Zavřit varování`, en: `Dismiss warning` },
@@ -54,7 +55,7 @@ export default function BetaWarningBanner() {
         <button
           onClick={dismiss}
           className="flex-shrink-0 text-zion-gold/60 hover:text-zion-gold transition mt-0.5"
-          aria-label={BetaWarningBannerCopy.dismissWarning[cs ? 'cs' : 'en']}
+          aria-label={tx5(BetaWarningBannerCopy.dismissWarning, lang)}
         >
           <X className="h-4 w-4" />
         </button>

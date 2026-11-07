@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { ArrowRight, CheckCircle2, Clock, RefreshCw, Radio } from 'lucide-react';
 
 const FINALITY_BLOCKS = 60;
@@ -85,7 +86,7 @@ export default function BridgeRecentTransfers() {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold flex items-center gap-2">
           <ArrowRight className="h-5 w-5 text-zion-cyan" />
-          {COPY.recent[cs ? 'cs' : 'en']}
+          {tx5(COPY.recent, lang)}
         </h2>
         <div className="flex items-center gap-3">
           {relayOnline !== null && (
@@ -95,7 +96,7 @@ export default function BridgeRecentTransfers() {
                 : 'border-amber-400/40 bg-amber-400/10 text-amber-300'
             }`}>
               <Radio className="h-3 w-3" />
-              {relayOnline ? COPY.relayOnline[cs ? 'cs' : 'en'] : COPY.relayOffline[cs ? 'cs' : 'en']}
+              {relayOnline ? tx5(COPY.relayOnline, lang) : tx5(COPY.relayOffline, lang)}
             </span>
           )}
           <button
@@ -109,11 +110,11 @@ export default function BridgeRecentTransfers() {
       </div>
 
       {failed && (
-        <p className="text-sm text-red-400">{COPY.error[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm text-red-400">{tx5(COPY.error, lang)}</p>
       )}
 
       {!failed && !loading && txs.length === 0 && (
-        <p className="text-sm text-gray-500">{COPY.empty[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm text-gray-500">{tx5(COPY.empty, lang)}</p>
       )}
 
       {loading && txs.length === 0 && !failed && (
@@ -146,7 +147,7 @@ export default function BridgeRecentTransfers() {
                     : 'bg-amber-400/10 border border-amber-400/40 text-amber-300'
                 }`}>
                   {tx.finalized ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                  {tx.finalized ? COPY.finalized[cs ? 'cs' : 'en'] : `${tx.confirmations}/${FINALITY_BLOCKS} ${COPY.confs[cs ? 'cs' : 'en']}`}
+                  {tx.finalized ? tx5(COPY.finalized, lang) : `${tx.confirmations}/${FINALITY_BLOCKS} ${tx5(COPY.confs, lang)}`}
                 </span>
               </div>
               {!tx.finalized && (

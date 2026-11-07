@@ -2,6 +2,7 @@
 
 import { AlertTriangle } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import type { CSSProperties } from 'react';
 
 interface TestingPhaseBannerProps {

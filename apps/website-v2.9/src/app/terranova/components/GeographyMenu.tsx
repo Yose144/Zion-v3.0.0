@@ -1,5 +1,8 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
+
 import { motion } from 'framer-motion';
 import {
   Globe,
@@ -72,7 +75,7 @@ const REGIONS: Region[] = [
   },
 ];
 
-export default function GeographyMenu({ cs }: { cs: boolean }) {
+export default function GeographyMenu({ cs, lang }: { cs: boolean; lang: Lang }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -82,7 +85,7 @@ export default function GeographyMenu({ cs }: { cs: boolean }) {
     >
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-[11px] uppercase tracking-[0.3em] text-zion-gold/65">
-          {TerranovaComponentsGeographyMenuCopy.culturalInsertsByGeography[cs ? 'cs' : 'en']}
+          {tx5(TerranovaComponentsGeographyMenuCopy.culturalInsertsByGeography, lang)}
         </p>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">

@@ -1,0 +1,10 @@
+{
+ "Active": "Actif",
+ "Active PoW Algorithm": "Algorithme PoW actif",
+ "Algorithm": "Algorithme",
+ "How does seasonal algorithm switching work?": "Comment fonctionne le changement saisonnier d'algorithme ?",
+ "Scratchpad": "Scratchpad",
+ "Seasonal": "Saisonnier",
+ "Thermal": "Thermique",
+ "ZION uses the Cosmic Harmony algorithm family with dynamic switching based on season and hardware.": "ZION utilise la famille d'algorithmes Cosmic Harmony avec bascule dynamique selon la saison et le matériel."
+}

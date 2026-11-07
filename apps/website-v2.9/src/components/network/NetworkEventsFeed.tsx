@@ -1,5 +1,8 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
+
 import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -143,33 +146,33 @@ const typeIcons: Record<string, React.ReactNode> = {
   miner: <Users className="h-4 w-4 text-zion-purple" />,
 };
 
-function timeAgo(ts: number, cs: boolean): string {
-  const s = Math.floor((Date.now() - ts) / 1000);
-  if (s < 60) return NetworkEventsFeedCopy.justNow[cs ? 'cs' : 'en'];
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ${NetworkEventsFeedCopy.ago[cs ? 'cs' : 'en']}`;
-  const h = Math.floor(m / 60);
-  return `${h}h ${NetworkEventsFeedCopy.ago[cs ? 'cs' : 'en']}`;
+function timeAgo(ts: number, lang: Lang): string {
+  const s = Math.floor(Date.now() / 1000) - ts;
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'always', style: 'narrow' });
+  if (s < 60) return rtf.format(-s, 'second');
+  if (s < 3600) return rtf.format(-Math.floor(s / 60), 'minute');
+  if (s < 86400) return rtf.format(-Math.floor(s / 3600), 'hour');
+  return rtf.format(-Math.floor(s / 86400), 'day');
 }
 
-export default function NetworkEventsFeed({ cs }: { cs: boolean }) {
+export default function NetworkEventsFeed({ cs, lang }: { cs: boolean; lang: Lang }) {
   const { events, refresh } = useNetworkEvents();
 
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex items-center justify-between mb-6">
         <div className="flex flex-col gap-2">
-          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkEventsFeedCopy.events[cs ? 'cs' : 'en']}</p>
+          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkEventsFeedCopy.events, lang)}</p>
           <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
             <Clock className="h-7 w-7 text-zion-cyan" />
-            {NetworkEventsFeedCopy.liveNetworkFeed[cs ? 'cs' : 'en']}
+            {tx5(NetworkEventsFeedCopy.liveNetworkFeed, lang)}
           </h2>
         </div>
         <button
           onClick={refresh}
           className="zion-button-secondary text-xs py-2 px-3"
         >
-          <RefreshCw className="h-3.5 w-3.5" /> {NetworkEventsFeedCopy.refresh[cs ? 'cs' : 'en']}
+          <RefreshCw className="h-3.5 w-3.5" /> {tx5(NetworkEventsFeedCopy.refresh, lang)}
         </button>
       </div>
 
@@ -198,7 +201,7 @@ export default function NetworkEventsFeed({ cs }: { cs: boolean }) {
                   ) : (
                     <span className="text-sm font-medium text-white truncate">{cs ? event.titleCs : event.title}</span>
                   )}
-                  <span className="text-[10px] text-gray-500 shrink-0">{timeAgo(event.time, cs)}</span>
+                  <span className="text-[10px] text-gray-500 shrink-0">{timeAgo(event.time, lang)}</span>
                 </div>
                 {(cs ? event.detailCs : event.detail) && (
                   <p className="text-xs text-gray-400 mt-0.5 truncate">
@@ -211,7 +214,7 @@ export default function NetworkEventsFeed({ cs }: { cs: boolean }) {
         </AnimatePresence>
         {events.length === 0 && (
           <div className="text-center text-sm text-gray-500 py-8">
-            {NetworkEventsFeedCopy.noEventsToDisplayWaitingForLiv[cs ? 'cs' : 'en']}
+            {tx5(NetworkEventsFeedCopy.noEventsToDisplayWaitingForLiv, lang)}
           </div>
         )}
       </div>

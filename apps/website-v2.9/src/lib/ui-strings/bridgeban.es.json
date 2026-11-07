@@ -1,0 +1,12 @@
+{
+ "Bridge Status": "Estado del bridge",
+ "Connecting…": "Conectando…",
+ "Locked": "Bloqueado",
+ "Locks/Mints": "Bloqueos/Acuñaciones",
+ "Network": "Red",
+ "Offline · Relay restarting?": "Fuera de línea · ¿Relay reiniciándose?",
+ "Online · Relay active": "En línea · Relay activo",
+ "Open Bridge": "Abrir bridge",
+ "Uptime": "Tiempo activo",
+ "Validators": "Validadores"
+}

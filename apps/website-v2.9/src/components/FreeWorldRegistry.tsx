@@ -148,10 +148,10 @@ export default function FreeWorldRegistry() {
                   <div className="mt-auto">
                     <div className="flex justify-between text-xs text-gray-500 mb-1">
                       <span>
-                        {tx5(copy.spent, lang)}: {formatZion(p.spent_zion, cs)} ZION
+                        {tx5(copy.spent, lang)}: {formatZion(p.spent_zion, lang)} ZION
                       </span>
                       <span>
-                        {tx5(copy.budget, lang)}: {formatZion(p.budget_zion, cs)} ZION
+                        {tx5(copy.budget, lang)}: {formatZion(p.budget_zion, lang)} ZION
                       </span>
                     </div>
                     <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
@@ -199,7 +199,7 @@ export default function FreeWorldRegistry() {
                   </Link>
                 )}
                 <span className="text-sm font-semibold text-zion-gold whitespace-nowrap">
-                  {formatZion(g.amount_zion, cs)} ZION
+                  {formatZion(g.amount_zion, lang)} ZION
                 </span>
                 <Badge status={g.status} table={GRANT_STATUS} />
               </div>

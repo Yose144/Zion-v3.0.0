@@ -1619,12 +1619,12 @@ export default function TerraNovaBookClient() {
               </div>
 
               <div className="mt-8 zion-rainbow-sub p-6 md:p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                <PioneerProjectCards cs={cs} />
+                <PioneerProjectCards cs={cs} lang={lang} />
                 <div className="mt-8 pt-6 border-t border-white/5">
-                  <GeographyMenu cs={cs} />
+                  <GeographyMenu cs={cs} lang={lang} />
                 </div>
                 <div className="mt-6 pt-6 border-t border-white/5">
-                  <LayerMenu cs={cs} />
+                  <LayerMenu cs={cs} lang={lang} />
                 </div>
               </div>
 

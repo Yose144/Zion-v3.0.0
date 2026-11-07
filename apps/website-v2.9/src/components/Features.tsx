@@ -2,6 +2,7 @@
 
 import { Brain, Cpu, Landmark, Rocket, Shield, Sparkles, Zap } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const FeaturesCopy = {
   cs: {
@@ -69,7 +70,7 @@ export default function Features() {
                     <span
                       className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full ${accent.badge}`}
                     >
-                      {statusLabel.active[cs ? 'cs' : 'en']}
+                      {tx5(statusLabel.active, lang)}
                     </span>
                   </div>
                   <p className={`mt-2 text-xs font-mono ${accent.id}`}>{track.id}</p>

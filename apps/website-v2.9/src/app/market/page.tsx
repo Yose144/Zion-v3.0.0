@@ -1545,6 +1545,7 @@ export default function DefiPage() {
                   threshold={bridgeStatus.validator_threshold}
                   count={bridgeStatus.validator_count}
                   cs={cs}
+                  lang={lang}
                 />
               </div>
             )}

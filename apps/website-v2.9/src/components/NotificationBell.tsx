@@ -12,7 +12,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, CheckCheck, Sparkles, Pickaxe, ShoppingBag, Scale, ArrowLeftRight, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import {
   getNotifications,
   getUnreadNotificationCount,
@@ -41,14 +42,15 @@ const COPY = {
   showAll: { cs: 'Zobrazit vše', en: 'View all' },
 };
 
-function timeAgo(iso: string, cs: boolean): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60_000);
-  if (m < 1) return cs ? 'právě teď' : 'just now';
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
+function timeAgo(iso: string, lang: Lang): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'always', style: 'narrow' });
+  if (s < 60) return rtf.format(-Math.max(0, s), 'second');
+  if (s < 3600) return rtf.format(-Math.floor(s / 60), 'minute');
+  if (s < 86400) return rtf.format(-Math.floor(s / 3600), 'hour');
+  return rtf.format(-Math.floor(s / 86400), 'day');
 }
 
 export default function NotificationBell() {
@@ -141,8 +143,8 @@ export default function NotificationBell() {
     <div ref={rootRef} className="relative" data-notif-bell>
       <button
         onClick={toggle}
-        title={COPY.notifications[cs ? 'cs' : 'en']}
-        aria-label={COPY.notifications[cs ? 'cs' : 'en']}
+        title={tx5(COPY.notifications, lang)}
+        aria-label={tx5(COPY.notifications, lang)}
         aria-expanded={open}
         className="relative inline-flex rounded-lg border border-white/15 bg-black/85 p-1.5 items-center justify-center shadow-[0_10px_28px_rgba(0,0,0,0.25)] transition-transform hover:-translate-y-0.5 hover:border-zion-gold/50"
       >
@@ -159,7 +161,7 @@ export default function NotificationBell() {
           <div className="h-0.5 w-full bg-linear-to-r from-zion-cyan/50 via-zion-gold/60 to-zion-purple/40" />
           <div className="flex items-center justify-between px-4 pt-3 pb-2">
             <p className="text-[10px] uppercase tracking-[0.35em] text-zion-gold/70">
-              {COPY.notifications[cs ? 'cs' : 'en']}
+              {tx5(COPY.notifications, lang)}
             </p>
             {unread > 0 && (
               <button
@@ -167,7 +169,7 @@ export default function NotificationBell() {
                 className="inline-flex items-center gap-1 text-[10px] text-zion-cyan/80 hover:text-zion-cyan transition-colors"
               >
                 <CheckCheck className="w-3 h-3" />
-                {COPY.markAllRead[cs ? 'cs' : 'en']}
+                {tx5(COPY.markAllRead, lang)}
               </button>
             )}
           </div>
@@ -178,7 +180,7 @@ export default function NotificationBell() {
             )}
             {!loadingList && items.length === 0 && (
               <div className="px-4 py-6 text-center text-xs text-gray-500">
-                {COPY.empty[cs ? 'cs' : 'en']}
+                {tx5(COPY.empty, lang)}
               </div>
             )}
             {items.map((n) => {
@@ -205,7 +207,7 @@ export default function NotificationBell() {
                       {n.body}
                     </span>
                     <span className="block text-[10px] text-gray-600 mt-1">
-                      {timeAgo(n.createdAt, cs)}
+                      {timeAgo(n.createdAt, lang)}
                     </span>
                   </span>
                 </button>

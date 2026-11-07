@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Newspaper, ArrowRight, Calendar, ArrowLeft } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { NEWS_ARTICLES } from './NewsFeed';
 
 const NewsArchiveCopy = {
@@ -27,22 +28,22 @@ export default function NewsArchive() {
             className="inline-flex items-center gap-1.5 text-sm text-white/40 hover:text-white/70 transition-colors mb-6"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            {NewsArchiveCopy.backToHomepage[cs ? 'cs' : 'en']}
+            {tx5(NewsArchiveCopy.backToHomepage, lang)}
           </Link>
 
           <div className="flex items-center gap-3 mb-3">
             <Newspaper className="w-5 h-5 text-zion-gold" />
             <span className="text-sm uppercase tracking-[0.4em] text-gray-400">
-              {NewsArchiveCopy.newsArchive[cs ? 'cs' : 'en']}
+              {tx5(NewsArchiveCopy.newsArchive, lang)}
             </span>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
             <span className="text-gradient">
-              {NewsArchiveCopy.news[cs ? 'cs' : 'en']}
+              {tx5(NewsArchiveCopy.news, lang)}
             </span>
           </h1>
           <p className="text-lg text-gray-400 max-w-2xl">
-            {NewsArchiveCopy.allUpdatesFromTheZionEcosystem[cs ? 'cs' : 'en']}
+            {tx5(NewsArchiveCopy.allUpdatesFromTheZionEcosystem, lang)}
           </p>
         </div>
 
@@ -102,7 +103,7 @@ export default function NewsArchive() {
 
                   {/* Read more */}
                   <div className="flex items-center gap-1.5 text-xs text-zion-gold/60 group-hover:text-zion-gold transition-colors">
-                    <span>{NewsArchiveCopy.readMore[cs ? 'cs' : 'en']}</span>
+                    <span>{tx5(NewsArchiveCopy.readMore, lang)}</span>
                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>

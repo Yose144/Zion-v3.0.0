@@ -960,6 +960,7 @@ export default function PoolDashboard() {
         {/* ═══════ 24-HOUR POOL TRENDS ═══════ */}
         <Pool24hCharts
           cs={cs}
+          lang={lang}
           hashrateData={hashrateHistoryRef.current.map((p) => p.value)}
           acceptRateData={acceptRateHistoryRef.current.map((p) => p.value)}
           activeMinersData={activeMinersHistoryRef.current.map((p) => p.value)}
@@ -1268,7 +1269,7 @@ export default function PoolDashboard() {
           humanitarianTithe={data?.fee.humanitarian_tithe ?? 5}
           issobellaFund={data?.fee.issobella_fund ?? 5}
           poolFee={data?.fee.pool_fee ?? 1}
-        />
+         lang={lang}/>
 
         {/* ═══════ MINERS TABLE ═══════ */}
         <motion.section
@@ -1434,7 +1435,7 @@ export default function PoolDashboard() {
         </motion.section>
 
         {/* ═══════ LIVE POOL FEED ═══════ */}
-        <PoolEventsFeed cs={cs} />
+        <PoolEventsFeed cs={cs}  lang={lang}/>
 
         {/* ═══════ START MINING GUIDE ═══════ */}
         <motion.section

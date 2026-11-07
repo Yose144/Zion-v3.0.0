@@ -807,6 +807,7 @@ export default function NetworkPage() {
         {/* ═══════ 24-HOUR TRENDS ═══════ */}
         <Network24hCharts
           cs={cs}
+          lang={lang}
           hashrateData={hashrateHistory.map((p) => p.value)}
           difficultyData={difficultyHistory.map((p) => p.value)}
           blockTimeData={blockTimeHistory.map((p) => p.value)}
@@ -1023,10 +1024,10 @@ export default function NetworkPage() {
         </section>
 
         {/* ═══════ ACTIVE ALGORITHM ═══════ */}
-        <NetworkAlgorithmPanel cs={cs} />
+        <NetworkAlgorithmPanel cs={cs}  lang={lang}/>
 
         {/* ═══════ BLOCK REWARD DISTRIBUTION ═══════ */}
-        <NetworkRewardDistribution cs={cs} />
+        <NetworkRewardDistribution cs={cs}  lang={lang}/>
 
         {/* ═══════ LIVE TELEMETRY ═══════ */}
         <section className="zion-section">
@@ -1045,7 +1046,7 @@ export default function NetworkPage() {
         <NetworkMonitoringSnapshot />
 
         {/* ═══════ LIVE NETWORK FEED ═══════ */}
-        <NetworkEventsFeed cs={cs} />
+        <NetworkEventsFeed cs={cs}  lang={lang}/>
 
         {/* ═══════ NETWORK MAP + POOL FINDER ═══════ */}
         <section className="zion-section">

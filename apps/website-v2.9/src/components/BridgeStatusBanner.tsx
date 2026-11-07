@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Lock, Shield, Activity, Zap, RefreshCw } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const BridgeStatusBannerCopy = {
   bridgeStatus: { cs: `Bridge Status`, en: `Bridge Status` },
@@ -107,14 +108,14 @@ export default function BridgeStatusBanner() {
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-                  {BridgeStatusBannerCopy.bridgeStatus[cs ? 'cs' : 'en']}
+                  {tx5(BridgeStatusBannerCopy.bridgeStatus, lang)}
                 </p>
                 <p className={`text-sm font-bold ${online ? 'text-zion-cyan' : 'text-gray-400'}`}>
                   {loading
-                    ? (BridgeStatusBannerCopy.connecting[cs ? 'cs' : 'en'])
+                    ? (tx5(BridgeStatusBannerCopy.connecting, lang))
                     : online
-                      ? (BridgeStatusBannerCopy.onlineRelayActive[cs ? 'cs' : 'en'])
-                      : (BridgeStatusBannerCopy.offlineRelayRestarting[cs ? 'cs' : 'en'])}
+                      ? (tx5(BridgeStatusBannerCopy.onlineRelayActive, lang))
+                      : (tx5(BridgeStatusBannerCopy.offlineRelayRestarting, lang))}
                 </p>
               </div>
             </div>
@@ -124,14 +125,14 @@ export default function BridgeStatusBanner() {
               <div className="flex items-center gap-2">
                 <Lock className="h-4 w-4 text-zion-gold shrink-0" />
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{BridgeStatusBannerCopy.locked[cs ? 'cs' : 'en']}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{tx5(BridgeStatusBannerCopy.locked, lang)}</p>
                   <p className="text-sm font-bold text-white tabular-nums">{locked} ZION</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Shield className="h-4 w-4 text-zion-cyan shrink-0" />
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{BridgeStatusBannerCopy.validators[cs ? 'cs' : 'en']}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{tx5(BridgeStatusBannerCopy.validators, lang)}</p>
                   <p className="text-sm font-bold text-white tabular-nums">{threshold}</p>
                 </div>
               </div>
@@ -140,14 +141,14 @@ export default function BridgeStatusBanner() {
                   <div className="flex items-center gap-2">
                     <Activity className="h-4 w-4 text-zion-cyan shrink-0" />
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-500">{BridgeStatusBannerCopy.locksMints[cs ? 'cs' : 'en']}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500">{tx5(BridgeStatusBannerCopy.locksMints, lang)}</p>
                       <p className="text-sm font-bold text-white tabular-nums">{locks} / {mints}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Zap className="h-4 w-4 text-zion-cyan shrink-0" />
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-500">{BridgeStatusBannerCopy.uptime[cs ? 'cs' : 'en']}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500">{tx5(BridgeStatusBannerCopy.uptime, lang)}</p>
                       <p className="text-sm font-bold text-white tabular-nums">{formatUptime(uptime)}</p>
                     </div>
                   </div>
@@ -156,7 +157,7 @@ export default function BridgeStatusBanner() {
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-zion-cyan shrink-0" />
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{BridgeStatusBannerCopy.network[cs ? 'cs' : 'en']}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{tx5(BridgeStatusBannerCopy.network, lang)}</p>
                   <p className="text-sm font-bold text-white">6 chains · Base</p>
                 </div>
               </div>
@@ -165,7 +166,7 @@ export default function BridgeStatusBanner() {
             {/* CTA */}
             <div className="flex items-center gap-2 text-zion-cyan group-hover:gap-3 transition-all shrink-0">
               <span className="text-sm font-semibold">
-                {BridgeStatusBannerCopy.openBridge[cs ? 'cs' : 'en']}
+                {tx5(BridgeStatusBannerCopy.openBridge, lang)}
               </span>
               <ArrowRight className="h-4 w-4" />
             </div>

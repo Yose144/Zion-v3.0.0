@@ -1,5 +1,8 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
+
 import { useState } from 'react';
 import { Cpu, Flame, Snowflake, Info, ChevronDown } from 'lucide-react';
 
@@ -28,7 +31,7 @@ interface AlgorithmInfo {
   active?: boolean;
 }
 
-export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
+export default function NetworkAlgorithmPanel({ cs, lang }: { cs: boolean; lang: Lang }) {
   const [open, setOpen] = useState(false);
 
   const algorithms: AlgorithmInfo[] = [
@@ -73,13 +76,13 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkAlgorithmPanelCopy.algorithm[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkAlgorithmPanelCopy.algorithm, lang)}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
           <Cpu className="h-7 w-7 text-zion-cyan" />
-          {NetworkAlgorithmPanelCopy.activePowAlgorithm[cs ? 'cs' : 'en']}
+          {tx5(NetworkAlgorithmPanelCopy.activePowAlgorithm, lang)}
         </h2>
         <p className="text-sm text-gray-400">
-          {NetworkAlgorithmPanelCopy.zionUsesTheCosmicHarmonyAlgori[cs ? 'cs' : 'en']}
+          {tx5(NetworkAlgorithmPanelCopy.zionUsesTheCosmicHarmonyAlgori, lang)}
         </p>
       </div>
 
@@ -98,12 +101,12 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
                 <p className="text-sm font-semibold text-white">{cs ? algo.nameCs : algo.name}</p>
                 {algo.active && (
                   <span className="text-[10px] uppercase tracking-wider text-zion-cyan font-semibold">
-                    {NetworkAlgorithmPanelCopy.active[cs ? 'cs' : 'en']}
+                    {tx5(NetworkAlgorithmPanelCopy.active, lang)}
                   </span>
                 )}
                 {algo.seasonal && !algo.active && (
                   <span className="text-[10px] uppercase tracking-wider text-gray-500">
-                    {NetworkAlgorithmPanelCopy.seasonal[cs ? 'cs' : 'en']}
+                    {tx5(NetworkAlgorithmPanelCopy.seasonal, lang)}
                   </span>
                 )}
               </div>
@@ -111,7 +114,7 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
             <p className="text-sm text-gray-400 mb-4">{cs ? algo.descCs : algo.desc}</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
               <div className="zion-tile px-3 py-2 text-center">
-                <p className="text-gray-500 mb-0.5">{NetworkAlgorithmPanelCopy.scratchpad[cs ? 'cs' : 'en']}</p>
+                <p className="text-gray-500 mb-0.5">{tx5(NetworkAlgorithmPanelCopy.scratchpad, lang)}</p>
                 <p className="text-white font-mono">{algo.scratchpad}</p>
               </div>
               <div className="zion-tile px-3 py-2 text-center">
@@ -119,7 +122,7 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
                 <p className="text-white font-mono">{algo.aesRounds}</p>
               </div>
               <div className="zion-tile px-3 py-2 text-center">
-                <p className="text-gray-500 mb-0.5">{NetworkAlgorithmPanelCopy.thermal[cs ? 'cs' : 'en']}</p>
+                <p className="text-gray-500 mb-0.5">{tx5(NetworkAlgorithmPanelCopy.thermal, lang)}</p>
                 <p className={`font-mono ${algo.thermal === 'High' ? 'text-zion-gold' : algo.thermal === 'Low' ? 'text-zion-cyan' : 'text-zion-gold'}`}>
                   {algo.thermal}
                 </p>
@@ -136,7 +139,7 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
         >
           <Info className="h-4 w-4 text-zion-gold" />
           <span className="flex-1 text-left">
-            {NetworkAlgorithmPanelCopy.howDoesSeasonalAlgorithmSwitch[cs ? 'cs' : 'en']}
+            {tx5(NetworkAlgorithmPanelCopy.howDoesSeasonalAlgorithmSwitch, lang)}
           </span>
           <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>

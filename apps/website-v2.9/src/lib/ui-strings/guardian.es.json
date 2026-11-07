@@ -1,0 +1,10 @@
+{
+ "64 hex characters…": "64 caracteres hex…",
+ "A guardian candidate registers directly on L1: send yourself a self-transfer with a memo containing your Ed25519 public key (64 hex chars). The DAO scanner verifies the key belongs to the sender and lists the candidate in the registry — the community can then vote on admission.": "Un candidato a guardian se registra directamente en L1: envíate una autotransferencia con un memo que contenga tu clave pública Ed25519 (64 caracteres hex). El escáner del DAO verifica que la clave pertenece al remitente e inscribe al candidato en el registro — la comunidad puede entonces votar su admisión.",
+ "Candidate registration (memo)": "Registro de candidato (memo)",
+ "Copied": "Copiado",
+ "Copy": "Copiar",
+ "Key must be 64 hex chars (32 bytes)": "La clave debe tener 64 caracteres hex (32 bytes)",
+ "Memo to attach to the transaction": "Memo que se adjuntará a la transacción",
+ "Your public key (hex)": "Tu clave pública (hex)"
+}

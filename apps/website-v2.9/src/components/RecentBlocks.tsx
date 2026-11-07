@@ -6,6 +6,7 @@ import { Blocks, Clock, Hash, User } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from '@/hooks/usePolling';
 
 const RecentBlocksCopy = {
@@ -54,11 +55,11 @@ export default function RecentBlocks() {
     const diff = now - date.getTime();
     const minutes = Math.floor(diff / 60000);
     
-    if (minutes < 1) return RecentBlocksCopy.justNow[cs ? 'cs' : 'en'];
-    if (minutes < 60) return cs ? `před ${minutes} min` : `${minutes}m ago`;
+    if (minutes < 1) return tx5(RecentBlocksCopy.justNow, lang);
+    if (minutes < 60) return cs ? `před ${minutes} min` : t5(`${minutes}m ago`, lang);
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return cs ? `před ${hours} h` : `${hours}h ago`;
-    return date.toLocaleDateString(RecentBlocksCopy.enUs[cs ? 'cs' : 'en']);
+    if (hours < 24) return cs ? `před ${hours} h` : t5(`${hours}h ago`, lang);
+    return date.toLocaleDateString(tx5(RecentBlocksCopy.enUs, lang));
   };
 
   const truncateHash = (hash: string) => {
@@ -68,7 +69,7 @@ export default function RecentBlocks() {
   if (loading) {
     return (
       <section className="mt-12">
-        <div className="animate-pulse text-gray-400">{RecentBlocksCopy.loadingRecentBlocks[cs ? 'cs' : 'en']}</div>
+        <div className="animate-pulse text-gray-400">{tx5(RecentBlocksCopy.loadingRecentBlocks, lang)}</div>
       </section>
     );
   }
@@ -83,13 +84,13 @@ export default function RecentBlocks() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Blocks className="w-6 h-6 text-zion-gold" />
-            <h2 className="text-3xl font-bold">{RecentBlocksCopy.recentBlocks[cs ? 'cs' : 'en']}</h2>
+            <h2 className="text-3xl font-bold">{tx5(RecentBlocksCopy.recentBlocks, lang)}</h2>
           </div>
           <Link 
             href="/explorer/blocks"
             className="text-sm text-zion-cyan hover:text-zion-gold transition-colors"
           >
-            {RecentBlocksCopy.viewAll[cs ? 'cs' : 'en']}
+            {tx5(RecentBlocksCopy.viewAll, lang)}
           </Link>
         </div>
 
@@ -106,7 +107,7 @@ export default function RecentBlocks() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Blocks className="w-4 h-4 text-zion-purple" />
-                    <span className="text-sm text-gray-400">{RecentBlocksCopy.height[cs ? 'cs' : 'en']}</span>
+                    <span className="text-sm text-gray-400">{tx5(RecentBlocksCopy.height, lang)}</span>
                   </div>
                   <div className="text-lg font-semibold text-zion-purple">
                     #{block.height}
@@ -126,7 +127,7 @@ export default function RecentBlocks() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Clock className="w-4 h-4 text-zion-gold" />
-                    <span className="text-sm text-gray-400">{RecentBlocksCopy.time[cs ? 'cs' : 'en']}</span>
+                    <span className="text-sm text-gray-400">{tx5(RecentBlocksCopy.time, lang)}</span>
                   </div>
                   <div className="text-sm text-zion-gold">
                     {formatTimestamp(block.timestamp)}
@@ -136,7 +137,7 @@ export default function RecentBlocks() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <User className="w-4 h-4 text-zion-cyan" />
-                    <span className="text-sm text-gray-400">{RecentBlocksCopy.transactions[cs ? 'cs' : 'en']}</span>
+                    <span className="text-sm text-gray-400">{tx5(RecentBlocksCopy.transactions, lang)}</span>
                   </div>
                   <div className="text-sm text-zion-cyan">
                     {block.transactions} tx
@@ -146,7 +147,7 @@ export default function RecentBlocks() {
 
               {block.consciousness_level && (
                 <div className="mt-3 pt-3 border-t border-white/10">
-                  <span className="text-xs text-gray-500">{RecentBlocksCopy.consciousness[cs ? 'cs' : 'en']}</span>
+                  <span className="text-xs text-gray-500">{tx5(RecentBlocksCopy.consciousness, lang)}</span>
                   <span className="text-xs text-zion-purple font-semibold">
                     {block.consciousness_level}
                   </span>

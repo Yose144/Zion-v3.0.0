@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { BookOpen, ChevronRight, FileText, Library, ExternalLink } from 'lucide-react';
 import MarkdownDoc from '@/components/docs/MarkdownDoc';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { DOC_PATH_ALIASES } from '@/lib/docLinks';
 import { DOC_FILE_TO_ID } from '@/lib/docs-manifest';
 

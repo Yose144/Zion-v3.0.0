@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Box, Cpu, Globe, Hash, TrendingUp, Users, Zap } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { useBlockchainStats } from "@/hooks/useBlockchainStats";
 import { formatHashrate, formatNumber, formatAge } from "@/lib/explorer/format";
 import LiveBadge from "./LiveBadge";
@@ -30,43 +31,43 @@ export default function ExplorerTicker() {
   const items = [
     {
       icon: Box,
-      label: ExplorerTickerCopy.height[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerTickerCopy.height, lang),
       value: stats ? formatNumber(stats.block_height) : "—",
       accent: "text-zion-gold",
     },
     {
       icon: Zap,
-      label: ExplorerTickerCopy.hashrate[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerTickerCopy.hashrate, lang),
       value: stats ? formatHashrate(stats.network_hashrate || stats.pool_hashrate || 0) : "—",
       accent: "text-zion-cyan",
     },
     {
       icon: TrendingUp,
-      label: ExplorerTickerCopy.difficulty[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerTickerCopy.difficulty, lang),
       value: stats ? formatNumber(stats.difficulty) : "—",
       accent: "text-zion-purple",
     },
     {
       icon: Hash,
-      label: ExplorerTickerCopy.mempool[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerTickerCopy.mempool, lang),
       value: stats ? String(stats.tx_pool_size || 0) : "—",
       accent: "text-zion-gold",
     },
     {
       icon: Globe,
-      label: ExplorerTickerCopy.peers[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerTickerCopy.peers, lang),
       value: stats ? String(stats.total_connections || 0) : "—",
       accent: "text-zion-cyan",
     },
     {
       icon: Cpu,
-      label: ExplorerTickerCopy.blockTime[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerTickerCopy.blockTime, lang),
       value: stats ? `${(stats.avg_block_time || 60).toFixed(1)}s` : "—",
       accent: "text-zion-blue",
     },
     {
       icon: Users,
-      label: ExplorerTickerCopy.miners[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerTickerCopy.miners, lang),
       value: stats ? String(stats.active_miners || 0) : "—",
       accent: "text-zion-purple",
     },

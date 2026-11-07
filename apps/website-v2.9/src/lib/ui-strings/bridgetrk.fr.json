@@ -1,0 +1,12 @@
+{
+ "Bridge Pipeline": "Pipeline du bridge",
+ "EVM block": "Bloc EVM",
+ "L1 height": "Hauteur L1",
+ "L1 → L2 (Lock → Mint)": "L1 → L2 (Lock → Mint)",
+ "L2 → L1 (Burn → Unlock)": "L2 → L1 (Burn → Unlock)",
+ "Offline": "Hors ligne",
+ "Online": "En ligne",
+ "Refresh": "Actualiser",
+ "Updated": "Mis à jour",
+ "errors": "erreurs"
+}

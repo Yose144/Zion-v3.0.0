@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowLeft, BookOpen, Calendar, Map, Pickaxe, Rocket } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const Article = {
   cs: {

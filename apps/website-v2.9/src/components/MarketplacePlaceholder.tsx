@@ -1,5 +1,7 @@
-import type { Lang } from '@/contexts/LanguageContext';
 'use client';
+
+import type { Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 import { Store, Cpu, Database, Server, Clock } from 'lucide-react';
 
@@ -45,14 +47,14 @@ export default function MarketplacePlaceholder({ lang: rawLang = 'cs' }: { lang?
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zion-gold/10 border border-zion-gold/30 mb-4">
           <Store className="w-4 h-4 text-zion-gold" />
           <span className="text-sm font-medium text-zion-gold">
-            {MarketplacePlaceholderCopy.comingSoon[lang === 'cs' ? 'cs' : 'en']}
+            {tx5(MarketplacePlaceholderCopy.comingSoon, lang)}
           </span>
         </div>
         <h2 className="text-3xl font-bold bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan bg-clip-text text-transparent mb-3">
           AI Native Marketplace
         </h2>
         <p className="text-gray-400 max-w-xl mx-auto">
-          {MarketplacePlaceholderCopy.decentralizedMarketplaceForAiM[lang === 'cs' ? 'cs' : 'en']}
+          {tx5(MarketplacePlaceholderCopy.decentralizedMarketplaceForAiM, lang)}
         </p>
       </div>
 
@@ -81,7 +83,7 @@ export default function MarketplacePlaceholder({ lang: rawLang = 'cs' }: { lang?
       <div className="text-center">
         <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/10 bg-white/5 text-gray-400 text-sm">
           <Clock className="w-4 h-4" />
-          {MarketplacePlaceholderCopy.launchQ32026[lang === 'cs' ? 'cs' : 'en']}
+          {tx5(MarketplacePlaceholderCopy.launchQ32026, lang)}
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Rocket, ExternalLink } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import Link from 'next/link';
 
 const OnboardBannerCopy = {
@@ -34,10 +35,10 @@ export default function OnboardBanner() {
             </div>
             <div className="min-w-0">
               <p className="text-sm sm:text-base font-semibold text-emerald-100 leading-snug">
-                {OnboardBannerCopy.title[cs ? 'cs' : 'en']}
+                {tx5(OnboardBannerCopy.title, lang)}
               </p>
               <p className="text-xs sm:text-sm text-emerald-200/80 leading-relaxed mt-0.5">
-                {OnboardBannerCopy.body[cs ? 'cs' : 'en']}
+                {tx5(OnboardBannerCopy.body, lang)}
               </p>
             </div>
           </div>
@@ -46,7 +47,7 @@ export default function OnboardBanner() {
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-zion-cyan/20 hover:bg-zion-cyan/30 border border-zion-cyan/40 px-4 py-2 text-sm font-semibold text-emerald-100 transition-colors shrink-0"
           >
             <Rocket className="h-4 w-4" />
-            {OnboardBannerCopy.cta[cs ? 'cs' : 'en']}
+            {tx5(OnboardBannerCopy.cta, lang)}
             <ExternalLink className="h-3 w-3 opacity-60" />
           </Link>
         </div>

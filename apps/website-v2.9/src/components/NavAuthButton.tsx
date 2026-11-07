@@ -10,6 +10,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { LogIn, LogOut, LayoutDashboard, User, ChevronDown, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import ZisAvatar from '@/components/ZisAvatar';
 
 const LoginModal = dynamic(() => import('./LoginModal'), { ssr: false });

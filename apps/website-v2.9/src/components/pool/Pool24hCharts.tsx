@@ -1,5 +1,8 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
+
 import { useMemo } from 'react';
 import { TrendingUp, Activity, Users } from 'lucide-react';
 
@@ -83,12 +86,12 @@ interface ChartData {
 }
 
 export default function Pool24hCharts({
-  cs,
+  cs, lang,
   hashrateData,
   acceptRateData,
   activeMinersData,
 }: {
-  cs: boolean;
+  cs: boolean; lang: Lang;
   hashrateData: number[];
   acceptRateData: number[];
   activeMinersData: number[];
@@ -130,13 +133,13 @@ export default function Pool24hCharts({
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Pool24hChartsCopy.history[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(Pool24hChartsCopy.history, lang)}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
           <Activity className="h-7 w-7 text-zion-cyan" />
-          {Pool24hChartsCopy.k24HourPoolTrends[cs ? 'cs' : 'en']}
+          {tx5(Pool24hChartsCopy.k24HourPoolTrends, lang)}
         </h2>
         <p className="text-sm text-gray-400">
-          {Pool24hChartsCopy.fullDayHistoryOfHashrateAccept[cs ? 'cs' : 'en']}
+          {tx5(Pool24hChartsCopy.fullDayHistoryOfHashrateAccept, lang)}
         </p>
       </div>
 

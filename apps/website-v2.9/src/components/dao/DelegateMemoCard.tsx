@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Check, Copy, Users } from 'lucide-react';
 import QRCode from '@/components/explorer/QRCode';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const C = {
   title: { cs: 'Delegace hlasu (memo)', en: 'Vote delegation (memo)' },
@@ -52,25 +53,25 @@ export default function DelegateMemoCard() {
     <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
       <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
         <Users className="h-4 w-4 text-zion-purple" />
-        {C.title[cs ? 'cs' : 'en']}
+        {tx5(C.title, lang)}
       </h3>
       <p className="text-[11px] text-gray-500 mb-3 leading-relaxed max-w-2xl">
-        {C.explainer[cs ? 'cs' : 'en']}
+        {tx5(C.explainer, lang)}
       </p>
-      <p className="text-[10px] text-gray-500 mb-1">{C.addrLabel[cs ? 'cs' : 'en']}</p>
+      <p className="text-[10px] text-gray-500 mb-1">{tx5(C.addrLabel, lang)}</p>
       <input
         type="text"
         value={addr}
         onChange={(e) => setAddr(e.target.value)}
         onBlur={() => setTouched(true)}
-        placeholder={C.addrPlaceholder[cs ? 'cs' : 'en']}
+        placeholder={tx5(C.addrPlaceholder, lang)}
         spellCheck={false}
         className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-mono text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none mb-3"
       />
       {touched && !valid && clean.length > 0 && (
-        <p className="text-[11px] text-zion-purple mb-2">{C.invalidAddr[cs ? 'cs' : 'en']}</p>
+        <p className="text-[11px] text-zion-purple mb-2">{tx5(C.invalidAddr, lang)}</p>
       )}
-      <p className="text-[10px] text-gray-500 mb-1">{C.memoLabel[cs ? 'cs' : 'en']}</p>
+      <p className="text-[10px] text-gray-500 mb-1">{tx5(C.memoLabel, lang)}</p>
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex-1 min-w-[220px] space-y-2">
           <div className="flex items-center gap-2">
@@ -88,7 +89,7 @@ export default function DelegateMemoCard() {
               ) : (
                 <Copy className="h-3.5 w-3.5" />
               )}
-              {copied === 'set' ? C.copied[cs ? 'cs' : 'en'] : C.copy[cs ? 'cs' : 'en']}
+              {copied === 'set' ? tx5(C.copied, lang) : tx5(C.copy, lang)}
             </button>
           </div>
           <div className="flex items-center gap-2">
@@ -105,7 +106,7 @@ export default function DelegateMemoCard() {
               ) : (
                 <Copy className="h-3.5 w-3.5" />
               )}
-              {copied === 'revoke' ? C.copied[cs ? 'cs' : 'en'] : C.revokeLabel[cs ? 'cs' : 'en']}
+              {copied === 'revoke' ? tx5(C.copied, lang) : tx5(C.revokeLabel, lang)}
             </button>
           </div>
         </div>

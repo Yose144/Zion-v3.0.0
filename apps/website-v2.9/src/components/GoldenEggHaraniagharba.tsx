@@ -4,6 +4,7 @@ import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, Orbit, Sparkles, Stars } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { tr } from '@/lib/translations';
 import HiranOrbLazy from './HiranOrbLazy';
 import HiranMiniChat from './HiranMiniChat';
@@ -44,10 +45,10 @@ export default function GoldenEggHaraniagharba() {
                 <div>
                   <div className="inline-flex items-center gap-1.5 rounded-full border border-zion-gold/20 bg-amber-200/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-amber-200">
                     <Orbit className="h-3 w-3" />
-                    {GoldenEggHaraniagharbaCopy.hiranHiranyagarbha[cs ? 'cs' : 'en']}
+                    {tx5(GoldenEggHaraniagharbaCopy.hiranHiranyagarbha, lang)}
                   </div>
                   <h2 className="mt-2 text-xl font-bold leading-tight text-white sm:text-2xl">
-                    {GoldenEggHaraniagharbaCopy.hiranAsTheAiGatewayIntoTerraNo[cs ? 'cs' : 'en']}
+                    {tx5(GoldenEggHaraniagharbaCopy.hiranAsTheAiGatewayIntoTerraNo, lang)}
                   </h2>
                   <p className="mt-1 text-sm text-amber-100/80 max-w-2xl line-clamp-3">
                     {tr('goldenEgg', 'featured_body', lang)}

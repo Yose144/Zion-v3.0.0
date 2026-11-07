@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react';
 import dynamic from 'next/dynamic';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const WebTerminal = dynamic(() => import('@/components/WebTerminal'), { ssr: false });
 const LiveDashboard = dynamic(() => import('@/components/LiveDashboard'), { ssr: false });
@@ -77,7 +78,7 @@ export default function HomeInteractiveSection({ kind }: { kind: Kind }) {
               </h3>
               <noscript>
                 <p className="text-xs text-gray-500">
-                  {cs ? 'Interaktivní widget vyžaduje JavaScript.' : 'The interactive widget requires JavaScript.'}
+                  {cs ? 'Interaktivní widget vyžaduje JavaScript.' : t5('The interactive widget requires JavaScript.', lang)}
                 </p>
               </noscript>
               <button
@@ -85,7 +86,7 @@ export default function HomeInteractiveSection({ kind }: { kind: Kind }) {
                 onClick={() => setNear(true)}
                 className="rounded-full border border-white/15 px-4 py-1.5 text-xs font-semibold text-gray-400 transition-colors hover:border-zion-gold/30 hover:text-zion-gold"
               >
-                {Copy.load[cs ? 'cs' : 'en']}
+                {tx5(Copy.load, lang)}
               </button>
             </div>
           </div>

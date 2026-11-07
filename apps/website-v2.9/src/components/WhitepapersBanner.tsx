@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { BookOpen, FileText, Sparkles, ExternalLink, Scroll, Globe } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import Link from 'next/link';
 
 const WhitepapersBannerCopy = {
@@ -31,10 +32,10 @@ export default function WhitepapersBanner() {
             </div>
             <div className="min-w-0">
               <p className="text-sm sm:text-base font-semibold text-violet-100 leading-snug">
-                {WhitepapersBannerCopy.officialZionWhitepapers[cs ? 'cs' : 'en']}
+                {tx5(WhitepapersBannerCopy.officialZionWhitepapers, lang)}
               </p>
               <p className="text-xs sm:text-sm text-violet-200/80 leading-relaxed mt-0.5">
-                {WhitepapersBannerCopy.masterWhitepaperTechnicalWhite[cs ? 'cs' : 'en']}
+                {tx5(WhitepapersBannerCopy.masterWhitepaperTechnicalWhite, lang)}
               </p>
             </div>
           </div>
@@ -43,7 +44,7 @@ export default function WhitepapersBanner() {
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-zion-purple/20 hover:bg-zion-purple/30 border border-zion-purple/40 px-4 py-2 text-sm font-semibold text-violet-100 transition-colors shrink-0"
           >
             <BookOpen className="h-4 w-4" />
-            {WhitepapersBannerCopy.exploreWhitepapers[cs ? 'cs' : 'en']}
+            {tx5(WhitepapersBannerCopy.exploreWhitepapers, lang)}
             <ExternalLink className="h-3 w-3 opacity-60" />
           </Link>
         </div>

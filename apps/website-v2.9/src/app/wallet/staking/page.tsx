@@ -5,6 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import type { CSSProperties } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { ArrowLeft, Lock, TrendingUp } from 'lucide-react';
 
 // StakingPanel uses browser-only hooks (ethers, WalletContext) — disable SSR.

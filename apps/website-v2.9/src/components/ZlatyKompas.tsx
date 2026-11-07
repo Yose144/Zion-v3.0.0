@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const ZlatyKompasCopy = {
   goldenCompassSevenDirectionsOf: { cs: `Zlatý Kompas — sedm směrů TerraNova`, en: `Golden Compass — seven directions of TerraNova` },
@@ -161,7 +162,7 @@ export default function ZlatyKompas({ selected, onSelect }: ZlatyKompasProps) {
       viewBox="0 0 700 700"
       className="w-full h-auto select-none"
       role="img"
-      aria-label={ZlatyKompasCopy.goldenCompassSevenDirectionsOf[cs ? 'cs' : 'en']}
+      aria-label={tx5(ZlatyKompasCopy.goldenCompassSevenDirectionsOf, lang)}
     >
       <defs>
         {/* Central radial glow */}

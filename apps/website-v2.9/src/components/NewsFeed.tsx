@@ -726,7 +726,7 @@ export default function NewsFeed() {
                     {/* Special banner */}
                     {article.banner === 'doge-vs-zion' && (
                       <div className="mb-4">
-                        <DogeVsZionBanner cs={cs} />
+                        <DogeVsZionBanner cs={cs} lang={lang} />
                       </div>
                     )}
 

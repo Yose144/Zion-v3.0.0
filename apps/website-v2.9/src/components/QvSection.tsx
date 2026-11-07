@@ -216,7 +216,7 @@ export default function QvSection() {
                   {r.credits_per_voter.toLocaleString(cs ? 'cs-CZ' : t5('en-US', lang))} {tx5(copy.credits, lang)}
                 </span>
                 <span>
-                  {formatZion(r.matching_pool_zion, cs)} ZION {tx5(copy.pool, lang)}
+                  {formatZion(r.matching_pool_zion, lang)} ZION {tx5(copy.pool, lang)}
                 </span>
                 <span>
                   {r.ballot_count} {tx5(copy.ballots, lang)}
@@ -252,7 +252,7 @@ export default function QvSection() {
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-white truncate">{g.title}</p>
                         <p className="text-xs text-gray-500">
-                          {g.category} · {formatZion(g.amount_zion, cs)} ZION {tx5(copy.requested, lang)}
+                          {g.category} · {formatZion(g.amount_zion, lang)} ZION {tx5(copy.requested, lang)}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -356,7 +356,7 @@ export default function QvSection() {
                   {tx5(copy.results, lang)}: {results.ballots} {tx5(copy.ballots, lang)} · {results.total_votes} {tx5(copy.votes, lang)}
                 </span>
                 <span>
-                  {tx5(copy.allocated, lang)}: {formatZion(results.allocated_zion, cs)} ZION · {tx5(copy.unallocated, lang)}: {formatZion(results.unallocated_zion, cs)} ZION
+                  {tx5(copy.allocated, lang)}: {formatZion(results.allocated_zion, lang)} ZION · {tx5(copy.unallocated, lang)}: {formatZion(results.unallocated_zion, lang)} ZION
                 </span>
               </div>
               {results.grants.map((g) => {
@@ -369,7 +369,7 @@ export default function QvSection() {
                       <span className="text-white truncate">{title}</span>
                       <span className="text-xs text-gray-400 whitespace-nowrap">
                         {g.votes} {tx5(copy.votes, lang)} · {g.voters} {tx5(copy.voters, lang)} ·{' '}
-                        {formatZion(g.allocated_zion, cs)} ZION
+                        {formatZion(g.allocated_zion, lang)} ZION
                         {g.capped ? ` (${tx5(copy.capped, lang)})` : ''}
                       </span>
                     </div>

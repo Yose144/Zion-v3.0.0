@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Rocket, Download, ExternalLink } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const ReleaseBannerCopy = {
   zionV310TerminalMinerIsLive: { cs: `ZION v3.2.0 "One Love" — Mainnet Beta je live`, en: `ZION v3.2.0 "One Love" — Mainnet Beta is live` },
@@ -33,10 +34,10 @@ export default function ReleaseBanner() {
             </div>
             <div className="min-w-0">
               <p className="text-sm sm:text-base font-semibold text-zion-gold leading-snug">
-                {ReleaseBannerCopy.zionV310TerminalMinerIsLive[cs ? 'cs' : 'en']}
+                {tx5(ReleaseBannerCopy.zionV310TerminalMinerIsLive, lang)}
               </p>
               <p className="text-xs sm:text-sm text-zion-gold/70 leading-relaxed mt-0.5">
-                {ReleaseBannerCopy.fourPlatformsAutoGpu[cs ? 'cs' : 'en']}
+                {tx5(ReleaseBannerCopy.fourPlatformsAutoGpu, lang)}
               </p>
             </div>
           </div>
@@ -47,7 +48,7 @@ export default function ReleaseBanner() {
             className="zion-button-primary gap-2 text-sm shrink-0"
           >
             <Download className="h-4 w-4" />
-            {ReleaseBannerCopy.downloadFromGithub[cs ? 'cs' : 'en']}
+            {tx5(ReleaseBannerCopy.downloadFromGithub, lang)}
             <ExternalLink className="h-3 w-3 opacity-70" />
           </a>
         </div>

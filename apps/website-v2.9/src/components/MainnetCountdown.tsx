@@ -10,6 +10,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const MainnetCountdownCopy = {
   title: { cs: `Stav launchu`, en: `Launch status` },
@@ -74,10 +75,10 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
   const cs = lang === 'cs';
 
   const conditions = [
-    { icon: Users, label: MainnetCountdownCopy.conditions.team[cs ? 'cs' : 'en'] },
-    { icon: ShieldCheck, label: MainnetCountdownCopy.conditions.maturity[cs ? 'cs' : 'en'] },
-    { icon: Coins, label: MainnetCountdownCopy.conditions.liquidity[cs ? 'cs' : 'en'] },
-    { icon: Construction, label: MainnetCountdownCopy.conditions.listing[cs ? 'cs' : 'en'] },
+    { icon: Users, label: tx5(MainnetCountdownCopy.conditions.team, lang) },
+    { icon: ShieldCheck, label: tx5(MainnetCountdownCopy.conditions.maturity, lang) },
+    { icon: Coins, label: tx5(MainnetCountdownCopy.conditions.liquidity, lang) },
+    { icon: Construction, label: tx5(MainnetCountdownCopy.conditions.listing, lang) },
   ];
 
   return (
@@ -99,7 +100,7 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
             style={{ boxShadow: '0 0 12px rgba(252, 209, 22, 0.12)' }}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-zion-gold animate-pulse" />
-            {MainnetCountdownCopy.badge[cs ? 'cs' : 'en']}
+            {tx5(MainnetCountdownCopy.badge, lang)}
           </div>
 
           {/* Title */}
@@ -108,12 +109,12 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
               <AlertTriangle className="h-4 w-4 text-zion-purple" />
             </div>
             <h2 className="text-sm font-bold text-white leading-tight">
-              {MainnetCountdownCopy.title[cs ? 'cs' : 'en']}
+              {tx5(MainnetCountdownCopy.title, lang)}
             </h2>
           </div>
 
           <p className="text-xs text-gray-400 leading-relaxed">
-            {MainnetCountdownCopy.body[cs ? 'cs' : 'en']}
+            {tx5(MainnetCountdownCopy.body, lang)}
           </p>
 
           {/* Conditions list */}
@@ -125,14 +126,14 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
 
           <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1.5">
             <Clock className="h-3 w-3" />
-            {MainnetCountdownCopy.note[cs ? 'cs' : 'en']}
+            {tx5(MainnetCountdownCopy.note, lang)}
           </p>
 
           <a
             href="/news/launch-postponed"
             className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl border border-zion-cyan/30 bg-zion-cyan/10 px-3 py-2 text-xs font-medium text-zion-cyan hover:bg-zion-cyan/20 transition"
           >
-            {MainnetCountdownCopy.cta[cs ? 'cs' : 'en']}
+            {tx5(MainnetCountdownCopy.cta, lang)}
           </a>
         </div>
       </motion.div>

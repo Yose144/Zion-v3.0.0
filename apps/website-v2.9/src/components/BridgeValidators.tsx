@@ -1,5 +1,8 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
+
 import { useState } from 'react';
 import { ShieldCheck, ExternalLink, Copy, CheckCircle2 } from 'lucide-react';
 
@@ -19,9 +22,10 @@ export interface BridgeValidatorsProps {
   threshold?: string;
   count?: number;
   cs: boolean;
+  lang: Lang;
 }
 
-export default function BridgeValidators({ validators, threshold, count, cs }: BridgeValidatorsProps) {
+export default function BridgeValidators({ validators, threshold, count, cs, lang }: BridgeValidatorsProps) {
   const [copied, setCopied] = useState<string | null>(null);
 
   const list = validators ?? [];
@@ -40,10 +44,10 @@ export default function BridgeValidators({ validators, threshold, count, cs }: B
       <div className="flex items-center gap-2 mb-4">
         <ShieldCheck className="h-5 w-5 text-zion-purple" />
         <h3 className="font-semibold text-white text-sm">
-          {BridgeValidatorsCopy.title[cs ? 'cs' : 'en']}
+          {tx5(BridgeValidatorsCopy.title, lang)}
         </h3>
         <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-zion-purple/10 border border-zion-purple/20 px-3 py-1 text-[10px] font-semibold text-zion-purple">
-          {quorum} {BridgeValidatorsCopy.quorum[cs ? 'cs' : 'en']}
+          {quorum} {tx5(BridgeValidatorsCopy.quorum, lang)}
         </span>
       </div>
 
@@ -75,13 +79,13 @@ export default function BridgeValidators({ validators, threshold, count, cs }: B
                 type="button"
                 onClick={() => copy(addr)}
                 className="shrink-0 inline-flex items-center gap-1 text-[10px] text-gray-500 hover:text-zion-cyan transition-colors"
-                title={copied === addr ? BridgeValidatorsCopy.copied[cs ? 'cs' : 'en'] : 'Copy'}
+                title={copied === addr ? tx5(BridgeValidatorsCopy.copied, lang) : 'Copy'}
               >
                 {copied === addr ? (
                   <>
                     <CheckCircle2 className="h-3 w-3 text-zion-cyan" />
                     <span className="text-zion-cyan hidden sm:inline">
-                      {BridgeValidatorsCopy.copied[cs ? 'cs' : 'en']}
+                      {tx5(BridgeValidatorsCopy.copied, lang)}
                     </span>
                   </>
                 ) : (

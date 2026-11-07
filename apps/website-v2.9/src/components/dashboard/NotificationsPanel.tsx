@@ -14,7 +14,8 @@ import {
   Bell, CheckCheck, Trash2, Sparkles, Pickaxe, ShoppingBag,
   Scale, ArrowLeftRight, Info, Loader2,
 } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import {
   getNotifications,
   markNotificationRead,
@@ -45,10 +46,10 @@ const COPY = {
   loading: { cs: 'Načítám…', en: 'Loading…' },
 };
 
-function fmtDate(iso: string, cs: boolean): string {
-  return new Date(iso).toLocaleString(cs ? 'cs-CZ' : 'en-US', {
-    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-  });
+function fmtDate(iso: string, lang: Lang): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString(lang, { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 export default function NotificationsPanel() {
@@ -114,10 +115,10 @@ export default function NotificationsPanel() {
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Bell className="h-5 w-5 text-zion-gold" />
-          <h2 className="text-lg font-bold text-white">{COPY.notifications[cs ? 'cs' : 'en']}</h2>
+          <h2 className="text-lg font-bold text-white">{tx5(COPY.notifications, lang)}</h2>
           {unread > 0 && (
             <span className="rounded-full bg-zion-gold/15 border border-zion-gold/40 px-2 py-0.5 text-[10px] font-semibold text-zion-gold">
-              {unread} {COPY.unread[cs ? 'cs' : 'en']}
+              {unread} {tx5(COPY.unread, lang)}
             </span>
           )}
         </div>
@@ -127,7 +128,7 @@ export default function NotificationsPanel() {
             className="inline-flex items-center gap-1.5 rounded-lg border border-zion-cyan/30 bg-zion-cyan/10 px-3 py-1.5 text-xs text-zion-cyan hover:bg-zion-cyan/20 transition-colors"
           >
             <CheckCheck className="h-3.5 w-3.5" />
-            {COPY.markAllRead[cs ? 'cs' : 'en']}
+            {tx5(COPY.markAllRead, lang)}
           </button>
         )}
       </div>
@@ -135,14 +136,14 @@ export default function NotificationsPanel() {
       {loading && (
         <div className="flex items-center justify-center py-10 text-gray-500">
           <Loader2 className="h-5 w-5 animate-spin mr-2" />
-          <span className="text-sm">{COPY.loading[cs ? 'cs' : 'en']}</span>
+          <span className="text-sm">{tx5(COPY.loading, lang)}</span>
         </div>
       )}
 
       {!loading && items.length === 0 && (
         <div className="rounded-xl border border-white/10 bg-white/[0.02] px-6 py-10 text-center">
           <Bell className="h-8 w-8 text-gray-600 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">{COPY.empty[cs ? 'cs' : 'en']}</p>
+          <p className="text-sm text-gray-500">{tx5(COPY.empty, lang)}</p>
         </div>
       )}
 
@@ -172,7 +173,7 @@ export default function NotificationsPanel() {
                   {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-zion-gold shrink-0" />}
                 </div>
                 <p className="text-xs text-gray-400 mt-1 leading-relaxed">{n.body}</p>
-                <p className="text-[10px] text-gray-600 mt-1.5 font-mono">{fmtDate(n.createdAt, cs)}</p>
+                <p className="text-[10px] text-gray-600 mt-1.5 font-mono">{fmtDate(n.createdAt, lang)}</p>
               </div>
               <button
                 onClick={(e) => { e.stopPropagation(); void remove(n.id); }}
@@ -194,7 +195,7 @@ export default function NotificationsPanel() {
             className="zion-button-secondary px-4 py-2 text-xs inline-flex items-center gap-2"
           >
             {loadingMore && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            {COPY.loadMore[cs ? 'cs' : 'en']} ({items.length}/{total})
+            {tx5(COPY.loadMore, lang)} ({items.length}/{total})
           </button>
         </div>
       )}

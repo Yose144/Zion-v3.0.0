@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft, FolderOpen } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const TerranovaGeographyComponentsGeographyRegionPageCopy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
@@ -51,7 +52,7 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
             className="inline-flex items-center gap-2 text-sm text-zion-gold/65 hover:text-zion-gold transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {TerranovaGeographyComponentsGeographyRegionPageCopy.backToTerraNova[cs ? 'cs' : 'en']}
+            {tx5(TerranovaGeographyComponentsGeographyRegionPageCopy.backToTerraNova, lang)}
           </Link>
         </motion.div>
 
@@ -64,7 +65,7 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
           <div className="zion-rainbow-card p-8 md:p-12" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 space-y-3">
               <span className="zion-badge-gold">
-                {TerranovaGeographyComponentsGeographyRegionPageCopy.culturalInserts[cs ? 'cs' : 'en']}
+                {tx5(TerranovaGeographyComponentsGeographyRegionPageCopy.culturalInserts, lang)}
               </span>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
                 {cs ? data.titleCs : data.titleEn}
@@ -84,10 +85,10 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
         >
           <div className="text-center mb-8">
             <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
-              {TerranovaGeographyComponentsGeographyRegionPageCopy.availableInserts[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGeographyComponentsGeographyRegionPageCopy.availableInserts, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {TerranovaGeographyComponentsGeographyRegionPageCopy.regionalCollection[cs ? 'cs' : 'en']}
+              {tx5(TerranovaGeographyComponentsGeographyRegionPageCopy.regionalCollection, lang)}
             </h2>
           </div>
 

@@ -1,0 +1,11 @@
+{
+ "Address must start with zion1": "La dirección debe empezar por zion1",
+ "Copied": "Copiado",
+ "Copy": "Copiar",
+ "Delegate address": "Dirección del delegado",
+ "Memo to attach to the transaction": "Memo que se adjuntará a la transacción",
+ "Revoke delegation": "Revocar delegación",
+ "Vote delegation (memo)": "Delegación de voto (memo)",
+ "You can delegate your voting weight to another address: send yourself a self-transfer with the memo below. When your delegate votes, your balance is added to their vote — unless you already voted on that proposal yourself. Delegation is non-transitive and can be revoked anytime with the `DAO:delegate:none` memo.": "Puedes delegar tu peso de voto a otra dirección: envíate una autotransferencia con el memo de abajo. Cuando tu delegado vote, tu saldo se suma a su voto — salvo que ya hayas votado tú mismo en esa propuesta. La delegación no es transitiva y puede revocarse en cualquier momento con el memo `DAO:delegate:none`.",
+ "zion1…": "zion1…"
+}

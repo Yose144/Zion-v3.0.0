@@ -1,5 +1,8 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
+
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -365,7 +368,7 @@ const PROJECTS: ProjectCardData[] = [
   },
 ];
 
-export default function PioneerProjectCards({ cs }: { cs: boolean }) {
+export default function PioneerProjectCards({ cs, lang }: { cs: boolean; lang: Lang }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -374,10 +377,10 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
         </div>
         <div>
           <h2 className="text-lg font-semibold text-white">
-            {TerranovaComponentsPioneerProjectCardsCopy.l5PioneerProjects[cs ? 'cs' : 'en']}
+            {tx5(TerranovaComponentsPioneerProjectCardsCopy.l5PioneerProjects, lang)}
           </h2>
           <p className="text-xs text-zion-gold/65">
-            {TerranovaComponentsPioneerProjectCardsCopy.liveTerraNovaNodesAroundTheWor[cs ? 'cs' : 'en']}
+            {tx5(TerranovaComponentsPioneerProjectCardsCopy.liveTerraNovaNodesAroundTheWor, lang)}
           </p>
         </div>
       </div>
@@ -439,7 +442,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
               </div>
 
               <div className="zion-button-secondary">
-                <span>{TerranovaComponentsPioneerProjectCardsCopy.openProjectDetail[cs ? 'cs' : 'en']}</span>
+                <span>{tx5(TerranovaComponentsPioneerProjectCardsCopy.openProjectDetail, lang)}</span>
                 <ArrowRight className="h-4 w-4" />
               </div>
             </div>

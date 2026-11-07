@@ -1,0 +1,12 @@
+{
+ "Avg": "Moy.",
+ "Chart will populate as live data accumulates (every 15s).": "Le graphique se remplira à mesure que les données arrivent (toutes les 15s).",
+ "Current": "Actuel",
+ "Export CSV": "Exporter CSV",
+ "Hashrate, difficulty, block time, peer count, and mempool — live data for the last 24 hours with CSV export.": "Hashrate, difficulté, temps de bloc, nombre de pairs et mempool — données live des dernières 24 heures avec export CSV.",
+ "Historical Trends": "Tendances historiques",
+ "Insufficient data to render chart": "Données insuffisantes pour afficher le graphique",
+ "Live data": "Données live",
+ "Range:": "Plage :",
+ "Trends": "Tendances"
+}

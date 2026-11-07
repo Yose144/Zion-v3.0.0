@@ -5,7 +5,8 @@ import { motion } from "framer-motion";
 import { ActivitySquare, Flame, Hash, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
-import { useLang } from "@/contexts/LanguageContext";
+import { useLang, type Lang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 
 const MempoolFeedCopy = {
@@ -40,11 +41,11 @@ interface MempoolResponse {
   transactions: MempoolTx[];
 }
 
-const formatTime = (seconds: number, cs: boolean) => {
-  if (seconds < 60) return cs ? `před ${seconds} s` : `${seconds}s ago`;
-  if (seconds < 3600) return cs ? `před ${Math.floor(seconds / 60)} min` : `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return cs ? `před ${Math.floor(seconds / 3600)} h` : `${Math.floor(seconds / 3600)}h ago`;
-  return cs ? `před ${Math.floor(seconds / 86400)} d` : `${Math.floor(seconds / 86400)}d ago`;
+const formatTime = (seconds: number, lang: Lang) => {
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'always', style: 'narrow' });
+  if (seconds < 60) return rtf.format(-Math.max(0, Math.floor(seconds)), 'second');
+  if (seconds < 3600) return rtf.format(-Math.floor(seconds / 60), 'minute');
+  return rtf.format(-Math.floor(seconds / 3600), 'hour');
 };
 
 const truncate = (value: string, lead = 8, tail = 6) => {
@@ -76,7 +77,7 @@ export default function MempoolFeed() {
       setError(null);
     } catch (err) {
       console.error("Failed to fetch mempool:", err);
-      setError(MempoolFeedCopy.mempoolUnavailable[cs ? 'cs' : 'en']);
+      setError(tx5(MempoolFeedCopy.mempoolUnavailable, lang));
     } finally {
       setLoading(false);
     }
@@ -99,7 +100,7 @@ export default function MempoolFeed() {
         >
           <Flame className="h-5 w-5 text-zion-gold group-hover:text-zion-gold transition-colors" />
           <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{MempoolFeedCopy.live[cs ? 'cs' : 'en']}</p>
+            <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{tx5(MempoolFeedCopy.live, lang)}</p>
             <h3 className="text-lg font-semibold text-white group-hover:text-zion-gold transition-colors">Mempool →</h3>
           </div>
         </Link>
@@ -109,24 +110,24 @@ export default function MempoolFeed() {
             transition={{ duration: 2, repeat: Infinity }}
             className="inline-flex h-2 w-2 rounded-full bg-zion-cyan"
           />
-          <span className="text-xs text-gray-500">{MempoolFeedCopy.k15sRefresh[cs ? 'cs' : 'en']}</span>
+          <span className="text-xs text-gray-500">{tx5(MempoolFeedCopy.k15sRefresh, lang)}</span>
         </div>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-          <p className="text-xs text-gray-400">{MempoolFeedCopy.pending[cs ? 'cs' : 'en']}</p>
+          <p className="text-xs text-gray-400">{tx5(MempoolFeedCopy.pending, lang)}</p>
           <p className="text-xl font-bold text-white">{data?.count ?? 0}</p>
         </div>
         <div className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-          <p className="text-xs text-gray-400">{MempoolFeedCopy.poolSize[cs ? 'cs' : 'en']}</p>
+          <p className="text-xs text-gray-400">{tx5(MempoolFeedCopy.poolSize, lang)}</p>
           <p className="text-xl font-bold text-zion-cyan">
             {formatBytes(data?.pool_size_bytes ?? 0)}
           </p>
         </div>
         <div className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-          <p className="text-xs text-gray-400">{MempoolFeedCopy.fees[cs ? 'cs' : 'en']}</p>
+          <p className="text-xs text-gray-400">{tx5(MempoolFeedCopy.fees, lang)}</p>
           <p className="text-xl font-bold text-zion-gold">
             {(data?.total_fees ?? 0).toFixed(4)}
           </p>
@@ -145,7 +146,7 @@ export default function MempoolFeed() {
         )}
         {data && data.transactions.length === 0 && (
           <p className="text-center text-sm text-gray-500 py-4">
-            {MempoolFeedCopy.mempoolIsEmptyAllTransactionsC[cs ? 'cs' : 'en']}
+            {tx5(MempoolFeedCopy.mempoolIsEmptyAllTransactionsC, lang)}
           </p>
         )}
         {data?.transactions.slice(0, 12).map((tx, i) => (
@@ -166,7 +167,7 @@ export default function MempoolFeed() {
               </Link>
               <span className="flex items-center gap-1 text-xs text-gray-500">
                 <ActivitySquare className="h-3 w-3" />
-                {formatTime(tx.age_seconds, cs)}
+                {formatTime(tx.age_seconds, lang)}
               </span>
             </div>
             <div className="flex items-center justify-between text-xs">

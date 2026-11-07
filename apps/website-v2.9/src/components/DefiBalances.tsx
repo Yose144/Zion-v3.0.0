@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { Wallet, RefreshCw, ExternalLink, Copy, CheckCircle2 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { useWallet } from '@/contexts/WalletContext';
 import { CONTRACTS, WZION_ABI, SEED_PRICE_USD, SEED_TICK } from '@/lib/defi-contracts';
 
@@ -121,7 +122,7 @@ export default function DefiBalances() {
     <div className="zion-rainbow-card backdrop-blur-xl p-6 space-y-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-white">
-          {DefiBalancesCopy.portfolio[cs ? 'cs' : 'en']}
+          {tx5(DefiBalancesCopy.portfolio, lang)}
         </h3>
         {connected && (
           <button
@@ -137,7 +138,7 @@ export default function DefiBalances() {
       {/* Pool price (always visible) */}
       {poolInfo && (
         <div className="rounded-xl border border-zion-gold/20 bg-zion-gold/5 p-4">
-          <div className="text-xs text-gray-400 mb-1">{DefiBalancesCopy.currentWzionPrice[cs ? 'cs' : 'en']}</div>
+          <div className="text-xs text-gray-400 mb-1">{tx5(DefiBalancesCopy.currentWzionPrice, lang)}</div>
           <div className="flex items-baseline gap-3">
             <span className="text-2xl font-bold font-mono text-zion-gold">${poolInfo.priceWzionInUsd}</span>
             <span className="text-sm text-gray-400">USDT / wZION</span>
@@ -162,14 +163,14 @@ export default function DefiBalances() {
         <div className="text-center py-4">
           <Wallet className="h-8 w-8 text-gray-600 mx-auto mb-3" />
           <p className="text-sm text-gray-400 mb-4">
-            {DefiBalancesCopy.connectWalletToViewBalances[cs ? 'cs' : 'en']}
+            {tx5(DefiBalancesCopy.connectWalletToViewBalances, lang)}
           </p>
           <button
             onClick={connect}
             className="inline-flex items-center gap-2 rounded-xl bg-white/10 border border-white/20 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/15 transition-colors"
           >
             <Wallet className="h-4 w-4" />
-            {DefiBalancesCopy.connectMetamask[cs ? 'cs' : 'en']}
+            {tx5(DefiBalancesCopy.connectMetamask, lang)}
           </button>
         </div>
       )}

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowLeft, Calendar, AlertTriangle, Users, Coins, ShieldCheck, Clock, Github, Mail } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const Article = {
   cs: {

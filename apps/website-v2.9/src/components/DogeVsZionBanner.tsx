@@ -1,5 +1,8 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
+
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -14,9 +17,10 @@ const DogeVsZionBannerCopy = {
 
 interface DogeVsZionBannerProps {
   cs?: boolean;
+  lang: Lang;
 }
 
-function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
+function DogeVsZionBanner({ cs = true, lang }: DogeVsZionBannerProps) {
   const [hover, setHover] = useState(false);
 
   return (
@@ -88,10 +92,10 @@ function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
             </span>
           </div>
           <h3 className="text-sm font-bold text-gradient md:text-base">
-            {DogeVsZionBannerCopy.dogeVsZionWhoLocks100mZionFirs[cs ? 'cs' : 'en']}
+            {tx5(DogeVsZionBannerCopy.dogeVsZionWhoLocks100mZionFirs, lang)}
           </h3>
           <p className="mt-1 text-[10px] text-zion-gold/60">
-            {DogeVsZionBannerCopy.clickAndPlayTheClickBattle[cs ? 'cs' : 'en']}
+            {tx5(DogeVsZionBannerCopy.clickAndPlayTheClickBattle, lang)}
           </p>
         </div>
 

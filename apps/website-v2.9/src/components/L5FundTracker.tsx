@@ -11,7 +11,8 @@
 
 import { useCallback, useState } from 'react';
 import { Activity, Coins, Layers, Send } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from '@/hooks/usePolling';
 import { fwApi, type FwFundBalance } from '@/lib/freeworld-api';
 
@@ -27,9 +28,9 @@ const copy = {
 
 const FLOWERS_PER_ZION = 1_000_000;
 
-export function formatZion(flowers: number, cs: boolean, digits = 0) {
+export function formatZion(flowers: number, lang: Lang, digits = 0) {
   const zion = flowers / FLOWERS_PER_ZION;
-  return new Intl.NumberFormat(cs ? 'cs-CZ' : 'en-US', {
+  return new Intl.NumberFormat(lang, {
     maximumFractionDigits: digits,
     minimumFractionDigits: 0,
   }).format(zion);
@@ -53,7 +54,7 @@ export default function L5FundTracker() {
   usePolling(poll, 30_000);
 
   const updatedAt = data?.updated_at
-    ? new Date(data.updated_at).toLocaleTimeString(cs ? 'cs-CZ' : 'en-US')
+    ? new Date(data.updated_at).toLocaleTimeString(cs ? 'cs-CZ' : t5('en-US', lang))
     : null;
 
   return (
@@ -71,7 +72,7 @@ export default function L5FundTracker() {
             }`}
           >
             <span className={`h-1.5 w-1.5 rounded-full ${online ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
-            {online ? copy.online[cs ? 'cs' : 'en'] : copy.offline[cs ? 'cs' : 'en']}
+            {online ? tx5(copy.online, lang) : tx5(copy.offline, lang)}
           </span>
         )}
       </div>
@@ -79,36 +80,36 @@ export default function L5FundTracker() {
         <div>
           <p className="text-xs uppercase tracking-wider text-gray-500 mb-1 flex items-center gap-1.5">
             <Coins className="h-3.5 w-3.5 text-zion-gold" />
-            {copy.accumulated[cs ? 'cs' : 'en']}
+            {tx5(copy.accumulated, lang)}
           </p>
           <p className="text-2xl font-bold text-zion-gold">
-            {data ? `${formatZion(data.total_accumulated, cs)} ZION` : '—'}
+            {data ? `${formatZion(data.total_accumulated, lang)} ZION` : '—'}
           </p>
           <p className="text-[11px] text-gray-500 mt-1">
-            {copy.perDay[cs ? 'cs' : 'en']}: ~{(270 * 1440).toLocaleString(cs ? 'cs-CZ' : 'en-US')} ZION
+            {tx5(copy.perDay, lang)}: ~{(270 * 1440).toLocaleString(cs ? 'cs-CZ' : t5('en-US', lang))} ZION
           </p>
         </div>
         <div>
           <p className="text-xs uppercase tracking-wider text-gray-500 mb-1 flex items-center gap-1.5">
             <Send className="h-3.5 w-3.5 text-zion-cyan" />
-            {copy.disbursed[cs ? 'cs' : 'en']}
+            {tx5(copy.disbursed, lang)}
           </p>
           <p className="text-2xl font-bold text-white">
-            {data ? `${formatZion(data.total_disbursed, cs)} ZION` : '—'}
+            {data ? `${formatZion(data.total_disbursed, lang)} ZION` : '—'}
           </p>
           <p className="text-[11px] text-gray-500 mt-1">DAO · timelock · guardian multisig</p>
         </div>
         <div>
           <p className="text-xs uppercase tracking-wider text-gray-500 mb-1 flex items-center gap-1.5">
             <Layers className="h-3.5 w-3.5 text-zion-purple" />
-            {copy.lastBlock[cs ? 'cs' : 'en']}
+            {tx5(copy.lastBlock, lang)}
           </p>
           <p className="text-2xl font-bold text-white font-mono">
-            {data ? data.last_block_height.toLocaleString(cs ? 'cs-CZ' : 'en-US') : '—'}
+            {data ? data.last_block_height.toLocaleString(cs ? 'cs-CZ' : t5('en-US', lang)) : '—'}
           </p>
           {updatedAt && (
             <p className="text-[11px] text-gray-500 mt-1 flex items-center gap-1">
-              <Activity className="h-3 w-3" /> {copy.updated[cs ? 'cs' : 'en']} {updatedAt}
+              <Activity className="h-3 w-3" /> {tx5(copy.updated, lang)} {updatedAt}
             </p>
           )}
         </div>

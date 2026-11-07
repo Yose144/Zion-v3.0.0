@@ -3,6 +3,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { resolve, join } from 'node:path';
 import { NextResponse, type NextRequest } from 'next/server';
 import { BOOKS } from '@/lib/books/registry';
+import { archiveContentRoot } from '@/lib/archive-content-root';
 
 // Archive content audit (W1) — does every chapter declared in the registry
 // resolve to a real file, and what is the honest EN coverage?
@@ -32,11 +33,6 @@ function findRoot(candidates: string[]): string {
   return candidates.find((p) => existsSync(p)) ?? candidates[0];
 }
 
-const ARCHIVE_ROOT = findRoot([
-  resolve(process.cwd(), 'archive-content'),
-  resolve(process.cwd(), '.next/standalone/archive-content'),
-  resolve(process.cwd(), '../../archive-content'),
-]);
 const PUBLIC_ROOT = findRoot([
   resolve(process.cwd(), 'public'),
   resolve(process.cwd(), '.next/standalone/public'),
@@ -48,7 +44,7 @@ const PUBLIC_DOCS = join(PUBLIC_ROOT, 'docs');
 /** Map a reader doc path onto the filesystem (archive-content or public). */
 function resolveDoc(docPath: string): { abs: string; kind: 'archive' | 'public' } | null {
   if (docPath.startsWith('/api/archive/docs/')) {
-    return { abs: join(ARCHIVE_ROOT, docPath.slice('/api/archive/docs/'.length)), kind: 'archive' };
+    return { abs: join(archiveContentRoot(), docPath.slice('/api/archive/docs/'.length)), kind: 'archive' };
   }
   if (docPath.startsWith('/docs/')) {
     return { abs: join(PUBLIC_DOCS, docPath.slice('/docs/'.length)), kind: 'public' };
@@ -179,7 +175,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     ok: totals.missingCs === 0 && totals.duplicates === 0 && totals.missingParts === 0,
     generatedAt: new Date().toISOString(),
-    roots: { archive: ARCHIVE_ROOT, public: PUBLIC_ROOT },
+    roots: { archive: archiveContentRoot(), public: PUBLIC_ROOT },
     totals,
     books,
   });
