@@ -864,3 +864,74 @@ má teď i es/pt/fr.** Zbývají už jen dvě věci, obě mimo F2b:
   do canvasu a byly záměrně ponechány cs/en.
 - **F6** — 125× `toLocaleString()` bez locale (latentní hydration #418),
   hreflang a sitemap.
+
+---
+
+## 44. F4 — 3D náhledy a scény (kompletní)
+
+### 44.1 HTML texty v náhledech
+
+| text | řešení |
+|---|---|
+| „Načítání 3D preview / Loading 3D preview…" | skeleton je v `dynamic({ loading })` na úrovni modulu, kde `lang` **není v scope** → zůstal jen spinner + `3D` (jazyk nepotřebuje) |
+| „Táhni pro otočení · kolečko pro přiblížení" | `t5('Drag to rotate · scroll to zoom', lang)` + nový slovník `preview3d.{es,pt,fr}.json` (13 souborů) |
+
+### 44.2 50 popisků ve 3D scénách
+
+Nový modul **`apps/shared/scenes/scene-i18n.ts`** — 44 anglických řetězců × es/pt/fr
++ funkce `tScene(en, lang)` s fallbackem na angličtinu. **Záměrně bez Reactu a bez
+`@/lib/i18n-tx`**, protože `apps/shared/scenes/` importuje web **i Nirvana**.
+`cs` zůstal v komponentách jako literál (české texty jsou psané ručně).
+Nahrazeno 44× `cs ? 'česky' : tScene('english', lang)`.
+
+### 44.3 🔴 Kořen problému, který to celé blokoval
+
+Všech **18 stránek** posílalo do náhledu `lang={cs ? 'cs' : 'en'}` — takže
+es/pt/fr dostávaly **angličtinu i po přeložení**. Po opravě na `lang={lang}`
+funguje drag hint i popisky ve scéně ve všech pěti jazycích.
+
+## 45. F6 — `toLocaleString`, hreflang, sitemap
+
+### 45.1 `toLocaleString()` sweep — 152 nálezů
+
+`toLocaleString()` → `('en-US')` (129×), `toLocaleDateString()` (2×),
+`toLocaleString(undefined, …)` (18×), `toLocaleTimeString()` (3×).
+Důvod: server (Node) a prohlížeč mají jiné locale → jiné oddělovače tisíců →
+React zahodí serverové HTML (**#418**). Už dvakrát reálně udeřilo
+(`/explorer/supply`, `/explorer/consensus`); teď je to plošně pryč.
+Zbývají 3 výskyty — jsou uvnitř **klíčů slovníku** (`${BLOCKS_PER_DECADE.toLocaleString()}`),
+kde musí zůstat bajt na bajt.
+
+**Ověřeno:** 8 dřív problémových stránek (`/explorer/supply`, `/consensus`,
+`/blocks`, `/transactions`, `/txs`, `/richlist`, `/dashboard`, `/pool`)
+→ **0 pageerror**.
+
+### 45.2 `?lang=` v URL + hreflang
+
+- `LanguageContext` čte `?lang=` **s nejvyšší prioritou** (před cookie/localStorage)
+  a volbu si uloží → odkaz z hreflang skutečně přepne jazyk a `<html lang>`.
+- **hreflang v `<head>`:** `metadata.alternates.languages` **nefungovalo** — každá
+  z 52 stránek s vlastním `alternates.canonical` ho přepíše (Next mergeuje
+  metadata po klíčích, ne hloubkově). Řešení: explicitní
+  `<link rel="alternate" hreflang=… href=…>` v `<head>` layoutu, malá písmena
+  (prop `hrefLang` propadne do HTML jako camelCase).
+- **Ověřeno živě:** 6 hreflang tagů v HTML, `?lang=es` → `document.documentElement.lang === 'es'`
+  a obsah španělsky.
+
+### 45.3 Sitemap
+
+Každá routa v `sitemap.xml` má `alternates.languages` (cs/en/es/pt/fr + x-default).
+Ověřeno: `<xhtml:link rel="alternate" hreflang="es" href="…?lang=es"/>` je v XML.
+
+## 46. ⚠️ Kolize: moje F4/F6 práci commitla paralelní session
+
+`git status` po práci ukázal **0 mých necommitnutých souborů** — paralelní session
+spustila široký `git add` a moje F4/F6 změny (scene-i18n.ts, layout, sitemap,
+preview3d, LanguageContext, 18 previews) skončily v jejich commitu
+**`b17b870b5`** („fix: close the 7 Nov audit gaps…", 571 souborů).
+**Nic se neztratilo** — ověřeno, že všechny klíčové soubory jsou v `HEAD` a živý
+build je z nich. Je to už třetí výskyt téhož vzorce v této session.
+
+**Pravidlo:** po každé dávce zkontrolovat `git status` **před** i **po** commitu;
+když soubory zmizí z working tree bez mého commitu, ověřit `git log -- <soubor>`,
+že jsou v `HEAD` — a teprve pak pokračovat.
