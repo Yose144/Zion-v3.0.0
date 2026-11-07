@@ -92,7 +92,16 @@ Proč absolutní URL v rosteru: roster čtou tři různé domény. Relativní `/
   **Kāne (65)** – antropomorfní varianta abstraktního principu.
 - **Kontrola odlišnosti tváří** u **Parvati (83)**, **Lakshmi (85)**, **Durga (86)**.
 - Obrázky jsou **640²** (karta ~500 px @2×, modal 176 px) — originály 1254² nejsou v repu.
-- Marketplace potřebuje po nasazení API spustit sync; OASIS daemon je nutné **rebuildu** (Rust pole).
+- **Hotovo při nasazení:** OASIS daemon rebuildu (Rust pole) i Marketplace sync
+  (`{"synced":{"avatars":202}}`).
+
+### Vedlejší nález (nesouvisí s avatary)
+
+`/network` sype do konzole `Error: <polyline> attribute points: Expected number, "NaN,78"` —
+`NetSparkline` v `apps/website-v2.9/src/app/network/page.tsx` dělí `i / (data.length - 1)`;
+při **jediném** vzorku je to `0/0 = NaN`. Projevuje se jen chvíli po načtení, než se historie
+naplní. Oprava je jednořádková (`Math.max(1, data.length - 1)`), ale patří autorovi i18n dávky —
+netýká se avatarů, proto se needitovalo.
 
 ## 7. Reprodukce
 
