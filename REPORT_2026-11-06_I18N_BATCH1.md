@@ -702,3 +702,42 @@ despertar · Capítulos", fr „Livre de l… · Chapitres"; `/explorer/tokens` 
 `MojePanel` (21), `NetworkTopology` (20).
 
 Zbytek je **~10 řetězců na soubor** — poslední desítky malých komponent.
+
+---
+
+## 39. Dávka 23 — free-world mapa, explorer, hry, archivní panely, /world (405 řetězců)
+
+`fwmap` (23), `topology` (20), `netstatus` (17), `broadcast` (22), `minerslb` (20),
+`mempool` (19), `prostats` (21), `expcharts` (21), `expdash` (20), `ziondef` (25),
+`xmas` (15), `proposal` (25), `revv3` (22), `mojepanel` (21), `planpanel` (20),
+`nirvanapanel` (18), `cestapanel` (18), `papers` (18), `world` (18), `quicklinks` (19).
+
+**Čtyři různé vzory v jedné dávce:**
+1. `Copy.x[l]` (čtyři archivní panely ZION Archivu) → `tx5(Copy.x, lang)`.
+2. Komponenty s `cs` prop (`LevelSelect`, `TowerShop`, `UpgradePanel`, `NodeCard`,
+   `FeeHistogram`) dostaly `lang` — u `ZionDefense` to znamenalo upravit
+   **destructuring i typ** (codemod poprvé trefil jen typ, ne destructuring).
+3. `formatAge()` v mempoolu byl **šestá varianta** ručního skloňování času →
+   `Intl.RelativeTimeFormat`.
+4. `getChartConfig`, `getTimeRanges`, `getRegionLabels` — modulové helpery s `lang`.
+
+Ověřeno živě: `/world` es „IA nativa · Pregunta a Hiranyagarbha", pt „Pergunta ao
+Hiranyagarbha"; `/explorer/broadcast` es „Modelo de cuenta", pt „Modelo de conta",
+fr „Modèle de compte"; `/explorer/miners` „Dirección · Saldo / Endereço · Saldo /
+Adresse · Solde"; homepage (ChristmasShopCards) es „ZION de bonificación",
+pt „bónus", fr „bonus"; `/explorer/mempool` „Mempool"; **0 pageerror**.
+
+## 40. Stav po dávce 23
+
+| | hodnota |
+|---|---:|
+| přeložených řetězců (es = pt = fr) | **6 569** |
+| stránek/komponent s vlastním slovníkem | **114** |
+| souborů slovníků | **342** (114 × 3) |
+| zbývá | **707 klíčů / 88 souborů** |
+| `tsc` / `next build` | 0 / zelený |
+
+**Zbývá ~8 řetězců na soubor** — poslední zbytek: `wallet/bridge`, `MiningSnake`,
+`explorer/transactions`, `explorer/blocks`, `dashboard/dao-tree`,
+`ProSearchBar`, `ProRecentTransactions`, `BackgroundToggle`,
+`ExplorerCommandPalette` a další malé komponenty.
