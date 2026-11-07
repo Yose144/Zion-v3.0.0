@@ -252,6 +252,10 @@ Překlady jsou **EN drafty psané z češtiny**; riziko není gramatika, ale **s
 
 **Měření (2026-11-06, 134 korpusových EN souborů / 205 091 slov):** 0 tvrdých kalků; měkké zvyky `already` 131×, `so that` 110×, `precisely` 58× (report, ne chyba — v moderaci jsou v pořádku); 10 vět nad 80 slov v próze, většina z nich je výčet rizik v závorkách, kde je dlouhý dech záměrný.
 
+**Redakční kampaň dokončena 2026-11-07 (všech 14 korpusových knih + 2 dedikované readery):** prošlo se **všech 189 EN kapitol** — nejdřív ručně (BodhiGaia, Surta Srdce, Mise Amenti, Miriam, Lumi, Kruh Bohyní, Růže), zbytek (MariaCaminho, NirvanaCloud, Na Cestě, Nabukano, Sůl země) ve třech paralelních editačních dávkách se stejnou sadou pravidel. **29 souborů opraveno.** Co se našlo a není styl: rozbité věty (`On the bow of the red ship stood Inés and marvelled`), zdvojená slova, chybějící sloveso (`only as much room as pilgrims gather`), kalky (`precisely therefore` → `that is precisely why`), **nepřeložené `` `interní repozitář` `` / `interní port` uvnitř EN** (14× v `ZION_ONBOARDING_3.2_ONE_LOVE_EN`), **faktické vady**: `Mainnet Alpha/Beta` → **`Mainnet Beta`** (CZ+EN), hard genesis reset **2026-07-20 → 2026-08-06** (EN měl špatné datum, CZ správné), `genesis 4 December 2025 → 1 January 2026`, hlavička tabulky Sedmi pánů (`Lord/Virtue` → `# | Lord / Virtue (Sanskrit)`), `tůj → tvůj`. **Ověření po každé dávce:** `check:archive-parity` EXIT 0 (187 dvojic, 0 drift), kanonické labely, 0 kalků; navíc nové kontroly: **0 souborů useknutých uprostřed věty**, **0 záměn čísel kapitol CZ↔EN**, **jen 3 kanonické `zion1…` adresy bez překlepu**.
+
+**Co záměrně zůstalo (rozhodnutí autora, ne oprava):** `SulZeme/10` gloss `anattā (non-clinging)` (doslova „ne-já"), `Nabukano/06` CZ „trus pod středem" (patrně „trup/hub"), `NaCeste/01` trasa „Pontevedra – Lisbon (Sabacheira)" (Sabacheira je u Tomaru), `NirvanaCloud/05` „not built on a surface that could sink, but on a principle that can be rewritten" (logicky obrácené i v CZ), a básnické „precisely therefore" v Issobella/Růže epilogu, kde je to záměrný obrat.
+
 ### 5.6 Glosář (základ, rozšiřovat)
 
 | CZ | EN |
