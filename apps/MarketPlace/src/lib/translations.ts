@@ -138,8 +138,8 @@ const t = {
       en: 'The card that opens the gate to the Kingdom',
     },
     passDescription: {
-      cs: 'Vánoční ZION Pass je vstupenka do světa OASIS a ZION Archivu — dárek, který otevírá novou zemi. Za 108 Kč navíc 10 800 ZION bonusů: sto ZION za každou korunu.',
-      en: 'The Christmas ZION Pass is your ticket into the OASIS world and the ZION Archive — a gift that opens a new land. For 108 CZK it also carries a 10,800 ZION bonus: a hundred ZION for every crown.',
+      cs: 'Vánoční ZION Pass je vstupenka do světa OASIS a ZION Archivu — dárek, který otevírá novou zemi. Za 108 Kč navíc 15 552 ZION bonusů: sto čtyřicet čtyři ZION za každou korunu.',
+      en: 'The Christmas ZION Pass is your ticket into the OASIS world and the ZION Archive — a gift that opens a new land. For 108 CZK it also carries a 15,552 ZION bonus: a hundred and forty-four ZION for every crown.',
     },
     passChipAccess: { cs: 'Vstup do ZION Archivu', en: 'ZION Archive access' },
     passChipGift: { cs: 'Dárek, který otevírá světy', en: 'A gift that opens worlds' },
@@ -155,8 +155,8 @@ const t = {
       en: 'Light of the heart for a new land',
     },
     lampionDescription: {
-      cs: 'Lampion Lumi 2 — šestihranná lucerna vyřezávaná a gravírovaná laserem z 3mm březové překližky, se vzorem Srdce Království. Vánoční edice: ke každému lampionu digitální kniha Království srdce a ZION Pass v ceně a 88 500 ZION bonusů. Číslovaná série — jeden kus znamená 20,9 m řezných drah a čtyři hodiny laseru.',
-      en: 'The Lumi 2 lantern — a hexagonal lamp laser-cut and engraved from 3 mm birch plywood, bearing the Heart of the Kingdom pattern. Christmas edition: every lantern includes the digital Kingdom of Hearts book and a ZION Pass, plus an 88,500 ZION bonus. A numbered run — one piece means 20.9 m of cutting paths and four hours of laser time.',
+      cs: 'Lampion Lumi 2 — šestihranná lucerna vyřezávaná a gravírovaná laserem z 3mm březové překližky, se vzorem Srdce Království. Vánoční edice: ke každému lampionu digitální kniha Království srdce a ZION Pass v ceně a 70 560 ZION bonusů. Číslovaná série — jeden kus znamená 20,9 m řezných drah a čtyři hodiny laseru.',
+      en: 'The Lumi 2 lantern — a hexagonal lamp laser-cut and engraved from 3 mm birch plywood, bearing the Heart of the Kingdom pattern. Christmas edition: every lantern includes the digital Kingdom of Hearts book and a ZION Pass, plus a 70,560 ZION bonus. A numbered run — one piece means 20.9 m of cutting paths and four hours of laser time.',
     },
     lampionChipEngraved: { cs: 'Laserové vyřezávání', en: 'Laser-cut' },
     lampionChipBook: {

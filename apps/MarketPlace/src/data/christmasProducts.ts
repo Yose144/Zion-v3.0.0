@@ -116,7 +116,7 @@ export const christmasProducts: XmasProduct[] = [
       en: 'ZION Pass — golden gate into the Kingdom of Hearts',
     },
     priceCzk: 108,
-    bonus: 10800,
+    bonus: 15552,
     buyable: true,
     kicker: { cs: 'Vánoční edice 2026 · Digitální průkaz', en: 'Christmas Edition 2026 · Digital pass' },
     title: { cs: 'ZION Pass', en: 'ZION Pass' },
@@ -138,8 +138,8 @@ export const christmasProducts: XmasProduct[] = [
         en: 'After payment, a unique code arrives by e-mail. Redeem it on nirvana.zionterranova.com and in the ZION Archive — no waiting, no shipping, delivery is instant.',
       },
       {
-        cs: 'Vánoční edice navíc nese bonus: **10 800 ZION** na vaši ZION peněženku — sto ZION za každou korunu.',
-        en: 'The Christmas edition carries a bonus: **10,800 ZION** sent to your ZION wallet — a hundred ZION for every crown.',
+        cs: 'Vánoční edice navíc nese bonus: **15 552 ZION** na vaši ZION peněženku — sto čtyřicet čtyři ZION za každou korunu.',
+        en: 'The Christmas edition carries a bonus: **15,552 ZION** sent to your ZION wallet — a hundred and forty-four ZION for every crown.',
       },
       {
         cs: '**Co je uvnitř:** v Nirvaně pět herních světů — aréna na Marsu, závod na Venuši, souboj na Merkuru, pouť u Jupitera a MOBA o Zemi — k tomu 200 avatarů a společný chat. V Archivu na vás čekají kanonické texty, Kroniky a edice, ze kterých ty světy vycházejí.',
@@ -155,13 +155,13 @@ export const christmasProducts: XmasProduct[] = [
         'Jedinečný kód ZAP-… doručený e-mailem',
         'Vstup do Nirvany — hry, světy, chat',
         'Vstup do ZION Archivu — Kroniky a edice',
-        'Bonus 10 800 ZION na peněženku',
+        'Bonus 15 552 ZION na peněženku',
       ],
       en: [
         'Unique ZAP-… code delivered by e-mail',
         'Nirvana access — games, worlds, chat',
         'ZION Archive access — Chronicles & editions',
-        '10,800 ZION bonus to your wallet',
+        '15,552 ZION bonus to your wallet',
       ],
     },
     features: [
@@ -175,7 +175,7 @@ export const christmasProducts: XmasProduct[] = [
         'Na e-mail ti okamžitě přijde jedinečný kód **ZAP-…** — tvůj průkaz.',
         'Kód uplatníš na **nirvana.zionterranova.com** → otevřou se hry, světy a chat Království srdce.',
         'Týž kód odemkne **ZION Archiv** — kanonické texty, Kroniky a edice.',
-        'E-mailem ti dorazí i **ZION peněženka** (adresa + seed phrase) s bonusem **10 800 ZION**.',
+        'E-mailem ti dorazí i **ZION peněženka** (adresa + seed phrase) s bonusem **15 552 ZION**.',
         'Peněženku pak jednoduše **naimportuješ do ZIS** a dalších ZION aplikací.',
       ],
       en: [
@@ -183,7 +183,7 @@ export const christmasProducts: XmasProduct[] = [
         'A unique **ZAP-…** code — your credential — arrives by e-mail instantly.',
         'Redeem it on **nirvana.zionterranova.com** → the games, worlds and chat of the Kingdom of Hearts open.',
         'The same code unlocks the **ZION Archive** — canonical texts, Chronicles and editions.',
-        'Your **ZION wallet** (address + seed phrase) also arrives by e-mail carrying the **10,800 ZION** bonus.',
+        'Your **ZION wallet** (address + seed phrase) also arrives by e-mail carrying the **15,552 ZION** bonus.',
         'Then simply **import the wallet into ZIS** and other ZION apps.',
       ],
     },
@@ -226,8 +226,8 @@ export const christmasProducts: XmasProduct[] = [
     ],
     home: {
       lead: {
-        cs: 'Jeden kód otevírá dva světy: **Nirvanu** — 3D svět Království srdce s pěti herními planetami a dvěma sty avatary — a **ZION Archiv** s kanonickými texty a Kronikami. Vánoční edice k tomu přidává 10 800 ZION.',
-        en: 'One code opens two worlds: **Nirvana** — the 3D Kingdom of Hearts world with five game planets and two hundred avatars — and the **ZION Archive** with canonical texts and Chronicles. The Christmas edition adds 10,800 ZION on top.',
+        cs: 'Jeden kód otevírá dva světy: **Nirvanu** — 3D svět Království srdce s pěti herními planetami a dvěma sty avatary — a **ZION Archiv** s kanonickými texty a Kronikami. Vánoční edice k tomu přidává 15 552 ZION.',
+        en: 'One code opens two worlds: **Nirvana** — the 3D Kingdom of Hearts world with five game planets and two hundred avatars — and the **ZION Archive** with canonical texts and Chronicles. The Christmas edition adds 15,552 ZION on top.',
       },
       bullets: [
         {
@@ -243,8 +243,8 @@ export const christmasProducts: XmasProduct[] = [
           en: 'ZION Archive: canonical texts, Chronicles and editions',
         },
         {
-          cs: 'Bonus 10 800 ZION a peněženka e-mailem',
-          en: '10,800 ZION bonus and a wallet by e-mail',
+          cs: 'Bonus 15 552 ZION a peněženka e-mailem',
+          en: '15,552 ZION bonus and a wallet by e-mail',
         },
       ],
     },
@@ -266,8 +266,8 @@ export const christmasProducts: XmasProduct[] = [
       },
       {
         label: { cs: 'Bonus', en: 'Bonus' },
-        value: { cs: '10 800 ZION', en: '10,800 ZION' },
-        hint: { cs: 'sto ZION za každou korunu', en: 'a hundred ZION for every crown' },
+        value: { cs: '15 552 ZION', en: '15,552 ZION' },
+        hint: { cs: 'sto čtyřicet čtyři ZION za každou korunu', en: 'a hundred and forty-four ZION for every crown' },
       },
     ],
   },
@@ -292,7 +292,7 @@ export const christmasProducts: XmasProduct[] = [
       en: 'Kingdom of Hearts book — illustrated edition cover',
     },
     priceCzk: 216,
-    bonus: 21600,
+    bonus: 31104,
     buyable: true,
     kicker: { cs: 'Vánoční edice 2026 · Digitální kniha', en: 'Christmas Edition 2026 · Digital book' },
     title: { cs: 'Království srdce', en: 'Kingdom of Hearts' },
@@ -314,8 +314,8 @@ export const christmasProducts: XmasProduct[] = [
         en: 'Every edition carries a **“Truth Anchor”** table by its chapters — honestly distinguishing what is Scripture, tradition, history, legend, and what is literary image. The story claims no facts; it promises honesty.',
       },
       {
-        cs: 'Ke knize dostanete **ZION Archive Pass** — vstup do ZION Archivu. A ve vánoční edici bonus **21 600 ZION** na vaši peněženku (Genesis vstup pro Guardians ekosystému ZION).',
-        en: 'The book includes a **ZION Archive Pass** — entry into the ZION Archive. And in the Christmas edition, a **21,600 ZION** bonus to your wallet (Genesis entry for the ZION Guardians).',
+        cs: 'Ke knize dostanete **ZION Archive Pass** — vstup do ZION Archivu. A ve vánoční edici bonus **31 104 ZION** na vaši peněženku (Genesis vstup pro Guardians ekosystému ZION).',
+        en: 'The book includes a **ZION Archive Pass** — entry into the ZION Archive. And in the Christmas edition, a **31,104 ZION** bonus to your wallet (Genesis entry for the ZION Guardians).',
       },
       {
         cs: '**Jak číst:** EPUB je pro čtečky a telefony — velikost písma si řídíte sami. PDF je pro tablet a počítač, kde drží sazbu i ilustrace. V sadě máte obě verze u každé z osmi edic, takže si vyberete podle zařízení, ne podle obsahu.',
@@ -332,14 +332,14 @@ export const christmasProducts: XmasProduct[] = [
         'Ilustrovaná vlajková edice',
         'Tabulky „Kotva pravdy" u kapitol',
         'ZION Archive Pass v ceně',
-        'Bonus 21 600 ZION na peněženku',
+        'Bonus 31 104 ZION na peněženku',
       ],
       en: [
         '40 books — 8 editions × 5 languages (PDF & EPUB)',
         'Illustrated flagship edition',
         '“Truth Anchor” tables by chapter',
         'ZION Archive Pass included',
-        '21,600 ZION bonus to your wallet',
+        '31,104 ZION bonus to your wallet',
       ],
     },
     features: [
@@ -353,7 +353,7 @@ export const christmasProducts: XmasProduct[] = [
         'Na e-mail ti přijde potvrzení s **odkazem ke stažení** — ZIP balíček kompletní sady.',
         'Rozbalíš ho a vybereš edici i jazyk — **40 knih** (8 edic × 5 jazyků) ve formátech PDF i EPUB.',
         'Čteš v čtečce, tabletu nebo počítači — EPUB na čtečky, PDF všude.',
-        'E-mailem ti dorazí i **ZION peněženka** (adresa + seed phrase) s bonusem **21 600 ZION**.',
+        'E-mailem ti dorazí i **ZION peněženka** (adresa + seed phrase) s bonusem **31 104 ZION**.',
         'Peněženku **naimportuješ do ZIS** a dalších ZION aplikací — a **ZION Archive Pass** ti otevře Archiv.',
       ],
       en: [
@@ -361,7 +361,7 @@ export const christmasProducts: XmasProduct[] = [
         'An order confirmation e-mail arrives with the **download link** — a ZIP of the complete set.',
         'Unpack it and pick your edition and language — **40 books** (8 editions × 5 languages) in PDF and EPUB.',
         'Read on an e-reader, tablet or computer — EPUB for readers, PDF everywhere.',
-        'Your **ZION wallet** (address + seed phrase) also arrives by e-mail carrying the **21,600 ZION** bonus.',
+        'Your **ZION wallet** (address + seed phrase) also arrives by e-mail carrying the **31,104 ZION** bonus.',
         '**Import the wallet into ZIS** and other ZION apps — and your **ZION Archive Pass** opens the Archive.',
       ],
     },
@@ -369,8 +369,8 @@ export const christmasProducts: XmasProduct[] = [
       {
         q: { cs: 'Co přesně dostanu za 216 Kč?', en: 'What exactly do I get for 216 CZK?' },
         a: {
-          cs: 'Kompletní ediční sadu: 8 samostatných edic příběhu Království srdce, každou v 5 jazycích — 40 souborů (PDF i EPUB), 3 252 stran a 619 498 slov. Plus ZION Archive Pass a bonus 21 600 ZION.',
-          en: 'The complete edition set: 8 distinct editions of the Kingdom of Hearts story, each in 5 languages — 40 files (PDF & EPUB), 3,252 pages and 619,498 words. Plus a ZION Archive Pass and a 21,600 ZION bonus.',
+          cs: 'Kompletní ediční sadu: 8 samostatných edic příběhu Království srdce, každou v 5 jazycích — 40 souborů (PDF i EPUB), 3 252 stran a 619 498 slov. Plus ZION Archive Pass a bonus 31 104 ZION.',
+          en: 'The complete edition set: 8 distinct editions of the Kingdom of Hearts story, each in 5 languages — 40 files (PDF & EPUB), 3,252 pages and 619,498 words. Plus a ZION Archive Pass and a 31,104 ZION bonus.',
         },
       },
       {
@@ -390,8 +390,8 @@ export const christmasProducts: XmasProduct[] = [
       {
         q: { cs: 'Jak a kdy dostanu peněženku s bonusem?', en: 'How and when do I get the bonus wallet?' },
         a: {
-          cs: 'Po dokončení objednávky ti na e-mail dorazí ZION peněženka — adresa, seed phrase a privátní klíč, s připsaných 21 600 ZION. Seed ulož offline. Pak ji jedním importem přeneseš do ZIS a ZION aplikací.',
-          en: 'After the order completes, your ZION wallet arrives by e-mail — address, seed phrase and private key, carrying 21,600 ZION. Store the seed offline. Then import it into ZIS and the ZION apps in one step.',
+          cs: 'Po dokončení objednávky ti na e-mail dorazí ZION peněženka — adresa, seed phrase a privátní klíč, s připsaných 31 104 ZION. Seed ulož offline. Pak ji jedním importem přeneseš do ZIS a ZION aplikací.',
+          en: 'After the order completes, your ZION wallet arrives by e-mail — address, seed phrase and private key, carrying 31,104 ZION. Store the seed offline. Then import it into ZIS and the ZION apps in one step.',
         },
       },
       {
@@ -447,8 +447,8 @@ export const christmasProducts: XmasProduct[] = [
           en: 'Read the samples right here — Prologue, Chapter 7, Epilogue',
         },
         {
-          cs: 'ZION Archive Pass a bonus 21 600 ZION',
-          en: 'ZION Archive Pass and a 21,600 ZION bonus',
+          cs: 'ZION Archive Pass a bonus 31 104 ZION',
+          en: 'ZION Archive Pass and a 31,104 ZION bonus',
         },
       ],
     },
@@ -680,8 +680,8 @@ export const christmasProducts: XmasProduct[] = [
       cs: 'Lampion Království srdce — gravírovaný výrobek z dílny tesaře',
       en: 'Kingdom of Hearts lantern — engraved craft from the carpenter\u2019s workshop',
     },
-    priceCzk: 590,
-    bonus: 88500,
+    priceCzk: 490,
+    bonus: 70560,
     buyable: true,
     kicker: { cs: 'Vánoční edice 2026 · Ruční výroba', en: 'Christmas Edition 2026 · Handmade' },
     title: { cs: 'Lampion – Království srdce', en: 'Lantern – Kingdom of Hearts' },
@@ -699,8 +699,8 @@ export const christmasProducts: XmasProduct[] = [
         en: 'Christmas edition: every lantern includes the **digital Kingdom of Hearts book** and a **ZION Pass** — the whole story and entry into the world the lantern comes from.',
       },
       {
-        cs: 'Bonus **88 500 ZION** na vaši peněženku — sto padesát ZION za každou korunu.',
-        en: 'An **88,500 ZION** bonus to your wallet — a hundred and fifty ZION for every crown.',
+        cs: 'Bonus **70 560 ZION** na vaši peněženku — sto čtyřicet čtyři ZION za každou korunu.',
+        en: 'A **70,560 ZION** bonus to your wallet — a hundred and forty-four ZION for every crown.',
       },
       {
         cs: 'Každý kus sestavujeme ručně. Vánoční edice je číslovaná a omezená — jeden kus znamená 20,9 m řezných drah a čtyři hodiny laseru, proto vyrábíme v malých dávkách.',
@@ -720,13 +720,13 @@ export const christmasProducts: XmasProduct[] = [
         'Lampion Lumi 2 z 3mm překližky — vzor Srdce Království',
         'Digitální kniha Království srdce (40 knih, 5 jazyků)',
         'ZION Pass — Nirvana + Archiv',
-        'Bonus 88 500 ZION na peněženku',
+        'Bonus 70 560 ZION na peněženku',
       ],
       en: [
         'Lumi 2 lantern in 3 mm plywood — Heart of the Kingdom pattern',
         'Digital Kingdom of Hearts book (40 books, 5 languages)',
         'ZION Pass — Nirvana + Archive',
-        '88,500 ZION bonus to your wallet',
+        '70,560 ZION bonus to your wallet',
       ],
     },
     features: [
@@ -738,7 +738,7 @@ export const christmasProducts: XmasProduct[] = [
       cs: [
         '**Teď:** edice je v prodeji — první kusy jsou hotové, očíslované a připravené k odeslání.',
         'Digitální část přijde **e-mailem hned po objednávce**: kniha (40 knih, 5 jazyků) + ZION Pass kód.',
-        'Zároveň ti dorazí **ZION peněženka** (adresa + seed phrase) s bonusem **88 500 ZION**.',
+        'Zároveň ti dorazí **ZION peněženka** (adresa + seed phrase) s bonusem **70 560 ZION**.',
         'Lampion mezitím vzniká v dílně — čtyři hodiny laseru a ruční sestavení vzoru Srdce Království.',
         'Hotový výrobek pošleme **Zásilkovnou** — dorazí zabalený jako dárek.',
         'Peněženku **naimportuješ do ZIS** a dalších ZION aplikací — bonus použiješ v ekosystému.',
@@ -746,7 +746,7 @@ export const christmasProducts: XmasProduct[] = [
       en: [
         '**Now:** the edition is on sale — the first pieces are finished, numbered and ready to ship.',
         'The digital part arrives **by e-mail right after ordering**: the book (40 books, 5 languages) + ZION Pass code.',
-        'Your **ZION wallet** (address + seed phrase) also arrives carrying the **88,500 ZION** bonus.',
+        'Your **ZION wallet** (address + seed phrase) also arrives carrying the **70,560 ZION** bonus.',
         'Meanwhile the lantern is made in the workshop — four hours of laser time and hand assembly of the Heart of the Kingdom pattern.',
         'The finished craft ships by **Zásilkovna** — arriving wrapped like a gift.',
         '**Import the wallet into ZIS** and other ZION apps — and use the bonus across the ecosystem.',
@@ -761,17 +761,17 @@ export const christmasProducts: XmasProduct[] = [
         },
       },
       {
-        q: { cs: 'Co přesně je v ceně 590 Kč?', en: 'What exactly does the 590 CZK include?' },
+        q: { cs: 'Co přesně je v ceně 490 Kč?', en: 'What exactly does the 490 CZK include?' },
         a: {
-          cs: 'Tři věci: lampion Lumi 2 (fyzický výrobek), digitální knihu Království srdce v plné sadě a ZION Pass do Nirvany i Archivu. Plus bonus 88 500 ZION na peněženku.',
-          en: 'Three things: the Lumi 2 lantern (a physical craft), the full digital Kingdom of Hearts book set, and a ZION Pass for Nirvana and the Archive. Plus an 88,500 ZION bonus to your wallet.',
+          cs: 'Tři věci: lampion Lumi 2 (fyzický výrobek), digitální knihu Království srdce v plné sadě a ZION Pass do Nirvany i Archivu. Plus bonus 70 560 ZION na peněženku.',
+          en: 'Three things: the Lumi 2 lantern (a physical craft), the full digital Kingdom of Hearts book set, and a ZION Pass for Nirvana and the Archive. Plus a 70,560 ZION bonus to your wallet.',
         },
       },
       {
         q: { cs: 'Jak dostanu peněženku s bonusem?', en: 'How do I get the bonus wallet?' },
         a: {
-          cs: 'E-mailem po dokončení objednávky — adresa, seed phrase a privátní klíč, s připsaných 88 500 ZION. Seed ulož offline. Pak ji jedním importem přeneseš do ZIS a ZION aplikací.',
-          en: 'By e-mail once the order completes — address, seed phrase and private key, carrying 88,500 ZION. Store the seed offline. Then import it into ZIS and the ZION apps in one step.',
+          cs: 'E-mailem po dokončení objednávky — adresa, seed phrase a privátní klíč, s připsaných 70 560 ZION. Seed ulož offline. Pak ji jedním importem přeneseš do ZIS a ZION aplikací.',
+          en: 'By e-mail once the order completes — address, seed phrase and private key, carrying 70,560 ZION. Store the seed offline. Then import it into ZIS and the ZION apps in one step.',
         },
       },
       {
@@ -795,8 +795,8 @@ export const christmasProducts: XmasProduct[] = [
     },
     home: {
       lead: {
-        cs: 'Lampion Lumi 2 — šestihranná lucerna vyřezávaná laserem, světlo, které v příběhu nesla Lumi u brány a které viselo nad tesařovým hoblíkem v Nazaretě. K lampionu patří celá digitální kniha (40 knih, 5 jazyků), ZION Pass a bonus 88 500 ZION.',
-        en: 'The Lumi 2 lantern — a hexagonal, laser-cut light, the one Lumi carried at the gate and that hung above the carpenter’s plane in Nazareth. It comes with the complete digital book (40 books, 5 languages), a ZION Pass and an 88,500 ZION bonus.',
+        cs: 'Lampion Lumi 2 — šestihranná lucerna vyřezávaná laserem, světlo, které v příběhu nesla Lumi u brány a které viselo nad tesařovým hoblíkem v Nazaretě. K lampionu patří celá digitální kniha (40 knih, 5 jazyků), ZION Pass a bonus 70 560 ZION.',
+        en: 'The Lumi 2 lantern — a hexagonal, laser-cut light, the one Lumi carried at the gate and that hung above the carpenter’s plane in Nazareth. It comes with the complete digital book (40 books, 5 languages), a ZION Pass and a 70,560 ZION bonus.',
       },
       bullets: [
         {
@@ -808,8 +808,8 @@ export const christmasProducts: XmasProduct[] = [
           en: 'The full digital book set and a ZION Pass included',
         },
         {
-          cs: 'Bonus 88 500 ZION na peněženku',
-          en: 'An 88,500 ZION bonus to your wallet',
+          cs: 'Bonus 70 560 ZION na peněženku',
+          en: 'A 70,560 ZION bonus to your wallet',
         },
         {
           cs: 'Číslovaná edice, malé dávky',
@@ -835,8 +835,8 @@ export const christmasProducts: XmasProduct[] = [
       },
       {
         label: { cs: 'Bonus', en: 'Bonus' },
-        value: { cs: '88 500 ZION', en: '88,500 ZION' },
-        hint: { cs: 'sto padesát ZION za každou korunu', en: 'a hundred and fifty ZION for every crown' },
+        value: { cs: '70 560 ZION', en: '70,560 ZION' },
+        hint: { cs: 'sto čtyřicet čtyři ZION za každou korunu', en: 'a hundred and forty-four ZION for every crown' },
       },
     ],
   },

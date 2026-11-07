@@ -156,9 +156,11 @@ function ChristmasCard({
 
 export function ZionPassSection() {
   const { t, lang } = useLangT();
-  const bonus = (10800).toLocaleString(lang === 'cs' ? 'cs-CZ' : 'en-US');
-  const price = t('common.price', { price: 108, symbol: t('common.kcSymbol') });
   const product = getXmasProduct('zion-pass');
+  // Bonus i cena se berou z dat produktu — dřív tu bylo natvrdo (10 800)
+  // a při každé změně sazby zůstala homepage se starým číslem.
+  const bonus = (product?.bonus ?? 0).toLocaleString(lang === 'cs' ? 'cs-CZ' : 'en-US');
+  const price = t('common.price', { price: product?.priceCzk ?? 0, symbol: t('common.kcSymbol') });
   const pick = (x?: XmasText) => (x ? (lang === 'cs' ? x.cs : x.en) : undefined);
 
   return (
