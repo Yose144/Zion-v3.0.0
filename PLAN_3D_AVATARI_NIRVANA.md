@@ -2,6 +2,8 @@
 
 **Stav 2026-11-07: první experimentální busta Krishny, 0/202 schválených herních modelů.** Cílem je 202 individuálních, rozpoznatelných a herně použitelných postav podle oficiálních portrétů OASIS. Procedurální avatáři zůstávají náhradou, dokud není konkrétní model schválený. Nezaměňovat 2D portrét, generovaný návrh, statickou síť a hotový animovaný herní asset.
 
+**Reprodukovatelný postup výroby:** [`docs/3.2/AVATAR-3D-PIPELINE.md`](docs/3.2/AVATAR-3D-PIPELINE.md) — instalace, čtyři systémové opravy, příkazy, kvalitativní brána, rozpočet pro hru, zapojení do Nirvany a dávkový plán pro všech 202.
+
 ## 1. Výchozí stav a omezení
 
 - Roster `V31/L4/oasis/data/avatars.json`: 202 postav, ID nejsou souvislá. Katalog Nirvany vzniká `scripts/ops/gen-avatar-catalog.mjs`; mapovat podle ID z rosteru, nikoli pořadí či názvu souboru archivu.
@@ -75,3 +77,11 @@ Finální deploy je samostatné rozhodnutí: build z izolovaného čistého arte
 - `torchmcubes` se v izolovaném prostředí sice sestavil, ale načetl nekompatibilní systémový PyTorch dylib; pro experiment nahrazen CPU `skimage.measure.marching_cubes` s převodem os. Tato změna není dosud řádně regresně ověřena na referenční geometrii.
 - Lokální experimentální výstupy `.artifacts/krishna-triposr-pilot/mesh.glb` a `input.png` nejsou finální asset. Automatická maska **odstranila korunu, pero a květ**, které splývají s pozadím. Geometrie nebyla vizuálně ověřena z několika stran, není rigovaná ani připojená ke hře. G1 i G2 zůstávají otevřené.
 - Další krok: opravit masku podle originálu, ověřit licence segmentačních vah a osovou konvenci extrakce na známém tělese, zkusit vyšší rozlišení s měřením paměti; poté vyrenderovat více pohledů a teprve hodnotit podobnost. K dispozici je alternativně GTX 1070 Ti, zatím žádný vzdálený výpočet nespouštět.
++
++### 6b. Druhé kolo (2026-11-07, dávka 01 z GPT)
++
++- Převzata dávka `heros/Avatars/ZION_OASIS_3D_PODKLADY_25_DAVKA_01.zip` (25 výtvarných listů, přední/boční/zadní pohled). Ověřeno: všech 25 přiložených portrétů odpovídá rost eru podle SHA-256 a ID; namátkou vizuálně zkontrolováni Krišna, Hanumán a Vadžrasattva.
++- Opraveny čtyři systémové chyby pipeline (MPS se tiše shazoval na CPU, nefunkční `torchmcubes`, Z-up vs Y-up export, bake textury na MPS + ztmavený `baseColorFactor`). Postup a přesné záplaty jsou v `docs/3.2/AVATAR-3D-PIPELINE.md`.
++- Výsledek Krišny: 47 452 trojúhelníků, 1024² textura, 2,8 MB GLB, správně svislá orientace, 1 draw call. **Výtvarně neprošlo** — obličej, koruna, pero a flétna jsou rozmělněné. Do hry se nezapojuje.
++- Závěr: TripoSR na 8 GB je použitelný jako hrubý základ, ne jako finální hrdina. Pro produkci je potřeba silnější generátor (≥24 GB), nebo ruční dočištění/rig v Blenderu, nebo kombinace obojího.
+*** End Patch
