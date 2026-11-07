@@ -606,3 +606,45 @@ pt „Gráficos 24h · Blocos alternativos · Tempo de bloco", fr „Graphiques 
 
 Zbytek je **~13 řetězců na soubor** — poslední vlna jsou admin panely, herní
 obrazovky a jednotlivé archivní panely. Fallback na angličtinu funguje všude.
+
+---
+
+## 35. Dávka 21 — admin, DAO parlament, hry, explorer, účet (343 řetězců)
+
+`ncl` (33), `algomgr` (33), `dogezion` (31), `starminer` (27), `parliament` (30),
+`registry` (24), `benchmark` (27), `livedash` (26), `souvislosti` (28),
+`txs` (28), `charts` (27), `account` (29) + 5 tabů DAO.
+
+### Dva nálezy, které codemod nechytil
+
+1. **`ParliamentVision` dostával jen `'cs' | 'en'`** — rodič posílal
+   `lang={cs ? 'cs' : 'en'}`, takže es/pt/fr viděly angličtinu **i po přeložení
+   slovníku**. Opraveno na `lang={lang}`. Stejný vzorec zůstává u **18 3D náhledů**
+   `*PreviewLazy` (`OasisPreviewLazy`, `EkamPreviewLazy`, …) — ty jsou záměrně
+   dvojjazyčné scény, patří do F4.
+2. **Taby DAO byly natvrdo anglicky** (`{ key: 'proposals', labelCs: 'Návrhy',
+   labelEn: 'Proposals' }` → `{cs ? t.labelCs : t.labelEn}`), takže
+   „Proposals · Treasury · Parliament · Guardians · Roadmap" zely angličtinou
+   ve všech jazycích. Převedeno na `t5(t.labelEn, lang)` + 5 klíčů.
+
+Ověřeno živě: DAO taby „Propuestas · Tesorería · Parlamento · Guardianes ·
+Hoja de ruta" / „Propostas · Tesouraria · Parlamento · Guardantes · Roteiro" /
+„Propositions · Trésorerie · Parlement · Gardiens · Feuille de route";
+po kliknutí na Parlament es „Un círculo alrededor de la Tierra", pt „Um círculo
+em torno da Terra", fr „Un cercle autour de la Terre"; `/explorer/txs`
+„Transacciones / Transações / Transactions"; `/explorer/charts`
+„Gráficos / Graphiques"; **0 pageerror**.
+
+## 36. Stav po dávce 21
+
+| | hodnota |
+|---|---:|
+| přeložených řetězců (es = pt = fr) | **5 859** |
+| stránek/komponent s vlastním slovníkem | **82** |
+| zbývá | **1 420 klíčů / 120 souborů** |
+| `tsc` / `next build` | 0 / zelený |
+
+**Zbývá ~12 řetězců na soubor** — poslední zbytek jsou admin panely, explorer
+podstránky (`tokens`, `fee-estimator`, `richlist`, `consensus`) a network
+komponenty. Po nich přichází na řadu **F4** (18 dvojjazyčných 3D náhledů +
+Nirvana UI) a **F6** (hreflang, sitemap).
