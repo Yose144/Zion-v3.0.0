@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION, SITE_VERSION } from '@/lib/site';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from '@/hooks/usePolling';
 
 const MonitoringMonitoringClientCopy = {
@@ -370,7 +371,7 @@ function GroupRow({ name, submits, accepted, color }: {
 export default function MonitoringClient() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = MonitoringMonitoringClientCopy.enUs[cs ? 'cs' : 'en'];
+  const locale = tx5(MonitoringMonitoringClientCopy.enUs, lang);
   const [data, setData] = useState<MonitoringData | null>(null);
   const [sparklines, setSparklines] = useState<SparklineData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -423,13 +424,13 @@ export default function MonitoringClient() {
             <div className="space-y-4">
               <div className="zion-badge zion-badge-green">
                 <Monitor className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {MonitoringMonitoringClientCopy.monitoring[cs ? 'cs' : 'en']}
+                {SITE_RELEASE_LABEL} · {tx5(MonitoringMonitoringClientCopy.monitoring, lang)}
               </div>
               <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-white via-emerald-200 to-zion-cyan bg-clip-text text-transparent">
-                {MonitoringMonitoringClientCopy.networkMonitoring[cs ? 'cs' : 'en']}
+                {tx5(MonitoringMonitoringClientCopy.networkMonitoring, lang)}
               </h1>
               <p className="text-gray-400 max-w-2xl text-sm md:text-base">
-                {MonitoringMonitoringClientCopy.livePrometheusMetricsFromTheV3[cs ? 'cs' : 'en']}
+                {tx5(MonitoringMonitoringClientCopy.livePrometheusMetricsFromTheV3, lang)}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -440,7 +441,7 @@ export default function MonitoringClient() {
                 className="zion-button-primary"
               >
                 <BarChart3 className="h-4 w-4" />
-                {MonitoringMonitoringClientCopy.openGrafanaDashboard[cs ? 'cs' : 'en']}
+                {tx5(MonitoringMonitoringClientCopy.openGrafanaDashboard, lang)}
                 <ExternalLink className="h-3.5 w-3.5 opacity-60" />
               </a>
               <a
@@ -448,7 +449,7 @@ export default function MonitoringClient() {
                 className="zion-button-secondary"
               >
                 <HeartPulse className="h-4 w-4" />
-                {MonitoringMonitoringClientCopy.stabilityRun30Day[cs ? 'cs' : 'en']}
+                {tx5(MonitoringMonitoringClientCopy.stabilityRun30Day, lang)}
               </a>
               <button
                 onClick={refresh}
@@ -456,13 +457,13 @@ export default function MonitoringClient() {
                 className="zion-button-secondary"
               >
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                {MonitoringMonitoringClientCopy.refresh[cs ? 'cs' : 'en']}
+                {tx5(MonitoringMonitoringClientCopy.refresh, lang)}
               </button>
             </div>
           </div>
           {lastUpdate && (
             <div className="mt-4 text-xs text-gray-500">
-              {MonitoringMonitoringClientCopy.lastUpdate[cs ? 'cs' : 'en']}: {lastUpdate.toLocaleTimeString(locale)} · {MonitoringMonitoringClientCopy.nextIn15s[cs ? 'cs' : 'en']}
+              {tx5(MonitoringMonitoringClientCopy.lastUpdate, lang)}: {lastUpdate.toLocaleTimeString(locale)} · {tx5(MonitoringMonitoringClientCopy.nextIn15s, lang)}
             </div>
           )}
         </motion.section>
@@ -476,18 +477,18 @@ export default function MonitoringClient() {
         >
           <div className="flex items-center gap-2 text-sm">
             <StatusDot up={data?.coreUp ?? null} />
-            <span className="text-gray-300">{MonitoringMonitoringClientCopy.coreNode[cs ? 'cs' : 'en']}</span>
+            <span className="text-gray-300">{tx5(MonitoringMonitoringClientCopy.coreNode, lang)}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <StatusDot up={data?.poolUp ?? null} />
-            <span className="text-gray-300">{MonitoringMonitoringClientCopy.miningPool[cs ? 'cs' : 'en']}</span>
+            <span className="text-gray-300">{tx5(MonitoringMonitoringClientCopy.miningPool, lang)}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <StatusDot up={data?.serverLoad1 != null ? 1 : null} />
             <span className="text-gray-300">Node Exporter</span>
           </div>
           <div className="ml-auto text-xs text-gray-500 font-mono">
-            {data?.chainHeight != null ? `${MonitoringMonitoringClientCopy.block[cs ? 'cs' : 'en']} #${data.chainHeight.toLocaleString(locale)}` : ''}
+            {data?.chainHeight != null ? `${tx5(MonitoringMonitoringClientCopy.block, lang)} #${data.chainHeight.toLocaleString(locale)}` : ''}
           </div>
         </motion.section>
 
@@ -500,7 +501,7 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Server className="h-5 w-5 text-zion-cyan" />
-            {MonitoringMonitoringClientCopy.coreNode[cs ? 'cs' : 'en']}
+            {tx5(MonitoringMonitoringClientCopy.coreNode, lang)}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             <StatCard icon={Layers}   label="Chain Height"    value={fmt(data?.chainHeight)} accent="text-zion-gold" />
@@ -514,7 +515,7 @@ export default function MonitoringClient() {
           {/* Sparkline */}
           {sparklines && sparklines.chainHeight.length > 1 && (
             <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="mt-3 zion-rainbow-sub p-4">
-              <div className="text-xs text-gray-400 mb-2">{MonitoringMonitoringClientCopy.chainHeightLast1Hour[cs ? 'cs' : 'en']}</div>
+              <div className="text-xs text-gray-400 mb-2">{tx5(MonitoringMonitoringClientCopy.chainHeightLast1Hour, lang)}</div>
               <Sparkline data={sparklines.chainHeight} color="#fcd116" height={40} />
             </div>
           )}
@@ -529,7 +530,7 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Cpu className="h-5 w-5 text-zion-gold" />
-            {MonitoringMonitoringClientCopy.miningPool[cs ? 'cs' : 'en']}
+            {tx5(MonitoringMonitoringClientCopy.miningPool, lang)}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             <StatCard icon={Users}    label="Active Miners"    value={fmt(data?.poolActiveSessions)} accent="text-zion-gold" rc="6, 105, 40" />
@@ -545,13 +546,13 @@ export default function MonitoringClient() {
             <div className="mt-3 grid md:grid-cols-2 gap-3">
               {sparklines.poolSessions.length > 1 && (
                 <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4">
-                  <div className="text-xs text-gray-400 mb-2">{MonitoringMonitoringClientCopy.activeMinersLast1Hour[cs ? 'cs' : 'en']}</div>
+                  <div className="text-xs text-gray-400 mb-2">{tx5(MonitoringMonitoringClientCopy.activeMinersLast1Hour, lang)}</div>
                   <Sparkline data={sparklines.poolSessions} color="#fcd116" height={36} />
                 </div>
               )}
               {sparklines.shares.length > 1 && (
                 <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4">
-                  <div className="text-xs text-gray-400 mb-2">{MonitoringMonitoringClientCopy.acceptedSharesLast1Hour[cs ? 'cs' : 'en']}</div>
+                  <div className="text-xs text-gray-400 mb-2">{tx5(MonitoringMonitoringClientCopy.acceptedSharesLast1Hour, lang)}</div>
                   <Sparkline data={sparklines.shares} color="#10b981" height={36} />
                 </div>
               )}
@@ -569,7 +570,7 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Network className="h-5 w-5 text-zion-cyan" />
-            {MonitoringMonitoringClientCopy.poolGroups[cs ? 'cs' : 'en']}
+            {tx5(MonitoringMonitoringClientCopy.poolGroups, lang)}
           </h2>
           <div className="grid md:grid-cols-2 gap-3">
             <GroupRow name="zion (Main)" submits={data?.groupZionSubmits} accepted={data?.groupZionAccepted} color="bg-zion-cyan" />
@@ -589,7 +590,7 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <CircleDollarSign className="h-5 w-5 text-zion-purple" />
-            {MonitoringMonitoringClientCopy.pplnsRewardEngine[cs ? 'cs' : 'en']}
+            {tx5(MonitoringMonitoringClientCopy.pplnsRewardEngine, lang)}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
@@ -603,7 +604,7 @@ export default function MonitoringClient() {
               {pplnsWindowPct != null && (
                 <ProgressBar value={data?.pplnsWindowUsed ?? 0} max={data?.pplnsWindowSize ?? 1} color="bg-zion-purple" />
               )}
-              <div className="text-xs text-gray-500">{pplnsWindowPct != null ? (cs ? `${pplnsWindowPct.toFixed(1)} % zaplneno` : `${pplnsWindowPct.toFixed(1)}% full`) : ''}</div>
+              <div className="text-xs text-gray-500">{pplnsWindowPct != null ? (cs ? `${pplnsWindowPct.toFixed(1)} % zaplneno` : t5(`${pplnsWindowPct.toFixed(1)}% full`, lang)) : ''}</div>
             </div>
             <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Registered Miners</div>
@@ -637,19 +638,19 @@ export default function MonitoringClient() {
             {/* CPU Load */}
             <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                <Flame className="h-3 w-3" /> {MonitoringMonitoringClientCopy.cpuLoad[cs ? 'cs' : 'en']}
+                <Flame className="h-3 w-3" /> {tx5(MonitoringMonitoringClientCopy.cpuLoad, lang)}
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-xl font-mono font-bold text-zion-cyan">{fmtDec(data?.serverLoad1)}</span>
                 <span className="text-xs text-gray-500">{fmtDec(data?.serverLoad5)} / {fmtDec(data?.serverLoad15)}</span>
               </div>
-              <div className="text-xs text-gray-500">{MonitoringMonitoringClientCopy.k1m5m15mAverage[cs ? 'cs' : 'en']}</div>
+              <div className="text-xs text-gray-500">{tx5(MonitoringMonitoringClientCopy.k1m5m15mAverage, lang)}</div>
             </div>
 
             {/* Memory */}
             <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                <Cpu className="h-3 w-3" /> {MonitoringMonitoringClientCopy.memory[cs ? 'cs' : 'en']}
+                <Cpu className="h-3 w-3" /> {tx5(MonitoringMonitoringClientCopy.memory, lang)}
               </div>
               <div className="text-xl font-mono font-bold text-zion-purple">
                 {memUsedPct != null ? `${memUsedPct.toFixed(1)}%` : '—'}
@@ -662,7 +663,7 @@ export default function MonitoringClient() {
                 />
               )}
               <div className="text-xs text-gray-500">
-                {cs ? `${fmtBytes(data?.memAvailable)} volne z ${fmtBytes(data?.memTotal)}` : `${fmtBytes(data?.memAvailable)} free of ${fmtBytes(data?.memTotal)}`}
+                {cs ? `${fmtBytes(data?.memAvailable)} volne z ${fmtBytes(data?.memTotal)}` : t5(`${fmtBytes(data?.memAvailable)} free of ${fmtBytes(data?.memTotal)}`, lang)}
               </div>
             </div>
 
@@ -682,20 +683,20 @@ export default function MonitoringClient() {
                 />
               )}
               <div className="text-xs text-gray-500">
-                {cs ? `${fmtBytes(data?.diskAvailable)} volne z ${fmtBytes(data?.diskTotal)}` : `${fmtBytes(data?.diskAvailable)} free of ${fmtBytes(data?.diskTotal)}`}
+                {cs ? `${fmtBytes(data?.diskAvailable)} volne z ${fmtBytes(data?.diskTotal)}` : t5(`${fmtBytes(data?.diskAvailable)} free of ${fmtBytes(data?.diskTotal)}`, lang)}
               </div>
             </div>
 
             {/* Server Uptime */}
             <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                <Clock className="h-3 w-3" /> {MonitoringMonitoringClientCopy.serverUptime[cs ? 'cs' : 'en']}
+                <Clock className="h-3 w-3" /> {tx5(MonitoringMonitoringClientCopy.serverUptime, lang)}
               </div>
               <div className="text-xl font-mono font-bold text-zion-cyan">
                 {fmtUptime(serverUptime)}
               </div>
               <div className="text-xs text-gray-500">
-                {MonitoringMonitoringClientCopy.since[cs ? 'cs' : 'en']} {data?.bootTime ? new Date(data.bootTime * 1000).toLocaleDateString(locale) : '—'}
+                {tx5(MonitoringMonitoringClientCopy.since, lang)} {data?.bootTime ? new Date(data.bootTime * 1000).toLocaleDateString(locale) : '—'}
               </div>
             </div>
           </div>
@@ -711,19 +712,19 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5 text-zion-cyan" />
-            {MonitoringMonitoringClientCopy.monitoringStack[cs ? 'cs' : 'en']}
+            {tx5(MonitoringMonitoringClientCopy.monitoringStack, lang)}
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             {[
-              { name: 'Prometheus', ver: 'v2.53.0', desc: MonitoringMonitoringClientCopy.metricsCollectionAlerting[cs ? 'cs' : 'en'], color: 'text-zion-gold' },
-              { name: 'Grafana', ver: 'v11.1.0', desc: MonitoringMonitoringClientCopy.k22PanelV3Dashboard[cs ? 'cs' : 'en'], color: 'text-zion-gold' },
-              { name: 'Node Exporter', ver: 'v1.8.1', desc: MonitoringMonitoringClientCopy.hostCpuRamDiskNetwork[cs ? 'cs' : 'en'], color: 'text-zion-cyan' },
-              { name: 'Redis Exporter', ver: 'v1.61.0', desc: MonitoringMonitoringClientCopy.redisPersistenceMetrics[cs ? 'cs' : 'en'], color: 'text-zion-purple' },
-              { name: 'Alertmanager', ver: 'v0.27.0', desc: MonitoringMonitoringClientCopy.alertRoutingNotifications[cs ? 'cs' : 'en'], color: 'text-zion-purple' },
-              { name: MonitoringMonitoringClientCopy.coreMetrics[cs ? 'cs' : 'en'], ver: ':9115', desc: MonitoringMonitoringClientCopy.v3NodePrometheusEndpoint7Gauge[cs ? 'cs' : 'en'], color: 'text-zion-cyan' },
-              { name: MonitoringMonitoringClientCopy.poolMetrics[cs ? 'cs' : 'en'], ver: ':8080', desc: MonitoringMonitoringClientCopy.miningPoolMetrics20CountersGau[cs ? 'cs' : 'en'], color: 'text-zion-gold' },
-              { name: 'API Proxy', ver: '/api/metrics', desc: MonitoringMonitoringClientCopy.secureAllowlistedQueryProxy[cs ? 'cs' : 'en'], color: 'text-zion-cyan' },
-              { name: MonitoringMonitoringClientCopy.website[cs ? 'cs' : 'en'], ver: SITE_VERSION, desc: `Next.js 16 + Tailwind CSS 4 · runtime ${SITE_RUNTIME_VERSION}`, color: 'text-zion-purple' },
+              { name: 'Prometheus', ver: 'v2.53.0', desc: tx5(MonitoringMonitoringClientCopy.metricsCollectionAlerting, lang), color: 'text-zion-gold' },
+              { name: 'Grafana', ver: 'v11.1.0', desc: tx5(MonitoringMonitoringClientCopy.k22PanelV3Dashboard, lang), color: 'text-zion-gold' },
+              { name: 'Node Exporter', ver: 'v1.8.1', desc: tx5(MonitoringMonitoringClientCopy.hostCpuRamDiskNetwork, lang), color: 'text-zion-cyan' },
+              { name: 'Redis Exporter', ver: 'v1.61.0', desc: tx5(MonitoringMonitoringClientCopy.redisPersistenceMetrics, lang), color: 'text-zion-purple' },
+              { name: 'Alertmanager', ver: 'v0.27.0', desc: tx5(MonitoringMonitoringClientCopy.alertRoutingNotifications, lang), color: 'text-zion-purple' },
+              { name: tx5(MonitoringMonitoringClientCopy.coreMetrics, lang), ver: ':9115', desc: tx5(MonitoringMonitoringClientCopy.v3NodePrometheusEndpoint7Gauge, lang), color: 'text-zion-cyan' },
+              { name: tx5(MonitoringMonitoringClientCopy.poolMetrics, lang), ver: ':8080', desc: tx5(MonitoringMonitoringClientCopy.miningPoolMetrics20CountersGau, lang), color: 'text-zion-gold' },
+              { name: 'API Proxy', ver: '/api/metrics', desc: tx5(MonitoringMonitoringClientCopy.secureAllowlistedQueryProxy, lang), color: 'text-zion-cyan' },
+              { name: tx5(MonitoringMonitoringClientCopy.website, lang), ver: SITE_VERSION, desc: `Next.js 16 + Tailwind CSS 4 · runtime ${SITE_RUNTIME_VERSION}`, color: 'text-zion-purple' },
             ].map((s) => (
               <div key={s.name} style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-3 flex items-start gap-3">
                 <div className={`mt-0.5 h-2 w-2 rounded-full ${s.color.replace('text-', 'bg-')}`} />
@@ -739,11 +740,11 @@ export default function MonitoringClient() {
 
           {/* Legend */}
           <div className="mt-6 pt-4 border-t border-white/10 text-xs text-gray-500 flex flex-wrap gap-x-6 gap-y-2">
-            <span>{MonitoringMonitoringClientCopy.k30LivePrometheusMetrics[cs ? 'cs' : 'en']}</span>
-            <span>{MonitoringMonitoringClientCopy.instantRangeQueries[cs ? 'cs' : 'en']}</span>
-            <span>{MonitoringMonitoringClientCopy.allowlistedProxyZionNode[cs ? 'cs' : 'en']}</span>
-            <span>{MonitoringMonitoringClientCopy.k15sAutoRefresh[cs ? 'cs' : 'en']}</span>
-            <span>{MonitoringMonitoringClientCopy.svgSparklines1hHistory[cs ? 'cs' : 'en']}</span>
+            <span>{tx5(MonitoringMonitoringClientCopy.k30LivePrometheusMetrics, lang)}</span>
+            <span>{tx5(MonitoringMonitoringClientCopy.instantRangeQueries, lang)}</span>
+            <span>{tx5(MonitoringMonitoringClientCopy.allowlistedProxyZionNode, lang)}</span>
+            <span>{tx5(MonitoringMonitoringClientCopy.k15sAutoRefresh, lang)}</span>
+            <span>{tx5(MonitoringMonitoringClientCopy.svgSparklines1hHistory, lang)}</span>
           </div>
         </motion.section>
 

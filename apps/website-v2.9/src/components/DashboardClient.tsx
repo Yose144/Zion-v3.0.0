@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import {
   Activity,
   ArrowRight,
@@ -97,7 +98,7 @@ interface DashboardClientProps {
   poolStats: any;
 }
 
-const getMissionMetrics = (cs: boolean) => [
+const getMissionMetrics = (cs: boolean, lang: Lang) => [
   {
     label: 'Mainnet Status',
     value: 'ACTIVE',
@@ -105,36 +106,36 @@ const getMissionMetrics = (cs: boolean) => [
     icon: Zap
   },
   {
-    label: DashboardCopy.poolHealth[cs ? 'cs' : 'en'],
+    label: tx5(DashboardCopy.poolHealth, lang),
     value: '100%',
     description: 'Edge server pool + Edge server consensus node',
     icon: ShieldCheck
   },
   {
-    label: DashboardCopy.version[cs ? 'cs' : 'en'],
+    label: tx5(DashboardCopy.version, lang),
     value: SITE_VERSION,
-    description: cs ? `Verejna linie ${SITE_RELEASE_LABEL} · runtime v${SITE_RUNTIME_VERSION.replace('v', '')}` : `Public line ${SITE_RELEASE_LABEL} · runtime v${SITE_RUNTIME_VERSION.replace('v', '')}`,
+    description: cs ? `Verejna linie ${SITE_RELEASE_LABEL} · runtime v${SITE_RUNTIME_VERSION.replace('v', '')}` : t5(`Public line ${SITE_RELEASE_LABEL} · runtime v${SITE_RUNTIME_VERSION.replace('v', '')}`, lang),
     icon: Gauge
   },
   {
-    label: DashboardCopy.launchGate[cs ? 'cs' : 'en'],
+    label: tx5(DashboardCopy.launchGate, lang),
     value: 'NO-GO',
-    description: DashboardCopy.publicLaunchDecisionOnlyAfterC[cs ? 'cs' : 'en'],
+    description: tx5(DashboardCopy.publicLaunchDecisionOnlyAfterC, lang),
     icon: SignalHigh
   }
 ];
 
-const getRoadmapSlices = (cs: boolean) => [
+const getRoadmapSlices = (cs: boolean, lang: Lang) => [
   {
     title: 'Mainnet · 2026',
     bullets: ['Native Rust blockchain + pool infrastructure', 'Edge server topology: Edge server consensus + Edge server pool/relay', 'Real mining rewards · 5% humanitarian · 5% Issobella fund']
   },
   {
-    title: DashboardCopy.q1Q22026Hardening[cs ? 'cs' : 'en'],
+    title: tx5(DashboardCopy.q1Q22026Hardening, lang),
     bullets: cs ? ['Bezpecnostni audit (Trail of Bits)', 'Nativni penezenka + podpora Ledger/Trezor', 'Zapojeni komunitnich tezebnich poolu'] : ['Security audit (Trail of Bits)', 'Native wallet + Ledger/Trezor support', 'Community mining pools onboarding']
   },
   {
-    title: DashboardCopy.launchWindowEnd2026Gated[cs ? 'cs' : 'en'],
+    title: tx5(DashboardCopy.launchWindowEnd2026Gated, lang),
     bullets: cs ? ['Verejny launch jen po closure reportu', 'Mosty a listing readiness az po GO rozhodnuti', 'Governance aktivace az po schvalenem launch baliku'] : ['Public launch only after closure reporting', 'Bridge and listing readiness only after a GO decision', 'Governance activation only after the approved launch package']
   }
 ];
@@ -142,34 +143,34 @@ const getRoadmapSlices = (cs: boolean) => [
 const GRAFANA_BASE_URL = (process.env.NEXT_PUBLIC_GRAFANA_BASE_URL || 'https://app.zionterranova.com/grafana').replace(/\/$/, '');
 const PROMETHEUS_BASE_URL = (process.env.NEXT_PUBLIC_PROMETHEUS_BASE_URL || 'https://app.zionterranova.com/prometheus').replace(/\/$/, '');
 
-const getGrafanaDashboards = (cs: boolean) => [
+const getGrafanaDashboards = (cs: boolean, lang: Lang) => [
   {
-    title: DashboardCopy.daoTreeOfLife[cs ? 'cs' : 'en'],
-    description: DashboardCopy.treeOfLifeLedgerForDaoGuardian[cs ? 'cs' : 'en'],
+    title: tx5(DashboardCopy.daoTreeOfLife, lang),
+    description: tx5(DashboardCopy.treeOfLifeLedgerForDaoGuardian, lang),
     href: '/dashboard/dao-tree',
     icon: TreeDeciduous,
     accent: 'text-zion-cyan',
-    pill: DashboardCopy.daoPrototype[cs ? 'cs' : 'en']
+    pill: tx5(DashboardCopy.daoPrototype, lang)
   },
   {
-    title: DashboardCopy.poolMetricsDashboard[cs ? 'cs' : 'en'],
-    description: DashboardCopy.hashrateWorkersSharesBlockDisc[cs ? 'cs' : 'en'],
+    title: tx5(DashboardCopy.poolMetricsDashboard, lang),
+    description: tx5(DashboardCopy.hashrateWorkersSharesBlockDisc, lang),
     href: '/dashboard/pool-metrics',
     icon: BarChart3,
     accent: 'text-zion-cyan',
-    pill: DashboardCopy.autoRefresh10s[cs ? 'cs' : 'en']
+    pill: tx5(DashboardCopy.autoRefresh10s, lang)
   },
   {
-    title: DashboardCopy.fullSystemDashboard[cs ? 'cs' : 'en'],
-    description: DashboardCopy.cpuRamRpcLatencyApiHealthUptim[cs ? 'cs' : 'en'],
+    title: tx5(DashboardCopy.fullSystemDashboard, lang),
+    description: tx5(DashboardCopy.cpuRamRpcLatencyApiHealthUptim, lang),
     href: '/dashboard/system-metrics',
     icon: LineChart,
     accent: 'text-zion-purple',
-    pill: DashboardCopy.stackWideTelemetry[cs ? 'cs' : 'en']
+    pill: tx5(DashboardCopy.stackWideTelemetry, lang)
   },
   {
-    title: DashboardCopy.advancedPoolDashboardPrometheu[cs ? 'cs' : 'en'],
-    description: DashboardCopy.rawPromqlExplorerAdHocQueriesC[cs ? 'cs' : 'en'],
+    title: tx5(DashboardCopy.advancedPoolDashboardPrometheu, lang),
+    description: tx5(DashboardCopy.rawPromqlExplorerAdHocQueriesC, lang),
     href: '/dashboard/advanced-pool',
     icon: Activity,
     accent: 'text-zion-gold',
@@ -191,9 +192,9 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
   const { lang } = useLang();
   const cs = lang === 'cs';
   const [activeTab, setActiveTab] = useState<TabId>('overview');
-  const missionMetrics = getMissionMetrics(cs);
-  const roadmapSlices = getRoadmapSlices(cs);
-  const grafanaDashboards = getGrafanaDashboards(cs);
+  const missionMetrics = getMissionMetrics(cs, lang);
+  const roadmapSlices = getRoadmapSlices(cs, lang);
+  const grafanaDashboards = getGrafanaDashboards(cs, lang);
   const computedUptime = health?.uptime ? `${Math.floor(health.uptime / 3600)}h` : '—';
   const totalSupply = stats?.total_supply ?? stats?.max_supply;
 
@@ -357,10 +358,10 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                 </div>
                 {stats.latest_block && (
                   <div style={{ '--rc': '228, 30, 43' } as React.CSSProperties} className="zion-rainbow-sub p-4">
-                    <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{DashboardCopy.latestBlock[cs ? 'cs' : 'en']}</p>
+                    <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tx5(DashboardCopy.latestBlock, lang)}</p>
                     <div className="mt-3 grid gap-3 text-sm">
                       <div className="flex justify-between text-gray-300">
-                        <span>{DashboardCopy.height[cs ? 'cs' : 'en']}</span>
+                        <span>{tx5(DashboardCopy.height, lang)}</span>
                         <span className="font-mono">{stats.latest_block.height}</span>
                       </div>
                       <div className="flex justify-between text-gray-300">
@@ -372,15 +373,15 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                         </span>
                       </div>
                       <div className="flex justify-between text-gray-300">
-                        <span>{DashboardCopy.timestamp[cs ? 'cs' : 'en']}</span>
-                        <span>{stats.latest_block?.timestamp ? new Date(stats.latest_block.timestamp * 1000).toLocaleString(DashboardCopy.enUs[cs ? 'cs' : 'en']) : '—'}</span>
+                        <span>{tx5(DashboardCopy.timestamp, lang)}</span>
+                        <span>{stats.latest_block?.timestamp ? new Date(stats.latest_block.timestamp * 1000).toLocaleString(tx5(DashboardCopy.enUs, lang)) : '—'}</span>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="text-gray-400 text-center py-12">{DashboardCopy.awaitingBlockchainMetrics[cs ? 'cs' : 'en']}</div>
+              <div className="text-gray-400 text-center py-12">{tx5(DashboardCopy.awaitingBlockchainMetrics, lang)}</div>
             )}
           </motion.div>
           )}
@@ -397,7 +398,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               </div>
             </div>
             <Link href="/api/pool/stats" target="_blank" rel="noreferrer" className="text-xs uppercase tracking-[0.3em] text-zion-cyan inline-flex items-center gap-1">
-              {DashboardCopy.poolStats[cs ? 'cs' : 'en']}
+              {tx5(DashboardCopy.poolStats, lang)}
               <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
@@ -405,63 +406,63 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
             <div className="mt-6 space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <MetricCard 
-                  label={DashboardCopy.activeMiners[cs ? 'cs' : 'en']} 
+                  label={tx5(DashboardCopy.activeMiners, lang)} 
                   value={poolStats.active_miners?.toString() || '0'} 
                 />
                 <MetricCard 
-                  label={DashboardCopy.poolHashrate[cs ? 'cs' : 'en']} 
+                  label={tx5(DashboardCopy.poolHashrate, lang)} 
                   value={formatHashrate(poolStats.pool_hashrate || 0)} 
                 />
                 <MetricCard 
-                  label={DashboardCopy.blocksFound[cs ? 'cs' : 'en']} 
+                  label={tx5(DashboardCopy.blocksFound, lang)} 
                   value={poolStats.blocks_found ? poolStats.blocks_found.toLocaleString() : '0'} 
                 />
                 <MetricCard 
-                  label={DashboardCopy.totalPaid[cs ? 'cs' : 'en']} 
+                  label={tx5(DashboardCopy.totalPaid, lang)} 
                   value={poolStats.total_paid ? `${(poolStats.total_paid / 1e9).toFixed(2)}B` : '0'} 
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div style={{ '--rc': '228, 30, 43' } as React.CSSProperties} className="zion-rainbow-sub p-4">
-                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{DashboardCopy.poolConfiguration[cs ? 'cs' : 'en']}</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tx5(DashboardCopy.poolConfiguration, lang)}</p>
                   <div className="mt-3 space-y-2 text-sm text-gray-300">
                     <div className="flex justify-between">
-                      <span>{DashboardCopy.poolFee[cs ? 'cs' : 'en']}</span>
+                      <span>{tx5(DashboardCopy.poolFee, lang)}</span>
                       <span className="font-mono">{poolStats?.pool_fee ?? '—'}%</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>{DashboardCopy.minPayout[cs ? 'cs' : 'en']}</span>
+                      <span>{tx5(DashboardCopy.minPayout, lang)}</span>
                       <span className="font-mono">{poolStats?.min_payout ?? '—'} ZION</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>{DashboardCopy.payoutInterval[cs ? 'cs' : 'en']}</span>
+                      <span>{tx5(DashboardCopy.payoutInterval, lang)}</span>
                       <span className="font-mono">{poolStats?.payment_interval ?? '—'}s</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>{DashboardCopy.totalMiners[cs ? 'cs' : 'en']}</span>
+                      <span>{tx5(DashboardCopy.totalMiners, lang)}</span>
                       <span className="font-mono">{poolStats?.total_miners ?? 0}</span>
                     </div>
                   </div>
                 </div>
                 <div style={{ '--rc': '228, 30, 43' } as React.CSSProperties} className="zion-rainbow-sub p-4">
-                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{DashboardCopy.networkStats[cs ? 'cs' : 'en']}</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tx5(DashboardCopy.networkStats, lang)}</p>
                   <div className="mt-3 space-y-2 text-sm text-gray-300">
                     <div className="flex justify-between">
-                      <span>{DashboardCopy.networkHashrate[cs ? 'cs' : 'en']}</span>
+                      <span>{tx5(DashboardCopy.networkHashrate, lang)}</span>
                       <span className="font-mono">{formatHashrate(poolStats?.network_hashrate ?? 0)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>{DashboardCopy.difficulty[cs ? 'cs' : 'en']}</span>
+                      <span>{tx5(DashboardCopy.difficulty, lang)}</span>
                       <span className="font-mono">{poolStats?.network_difficulty ? poolStats.network_difficulty.toLocaleString() : '—'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>{DashboardCopy.pendingPayouts[cs ? 'cs' : 'en']}</span>
+                      <span>{tx5(DashboardCopy.pendingPayouts, lang)}</span>
                       <span className="font-mono">{(poolStats?.pending_payouts ?? 0).toFixed(2)} ZION</span>
                     </div>
                     {poolStats?.last_block_time && (
                       <div className="flex justify-between">
-                        <span>{DashboardCopy.lastBlock[cs ? 'cs' : 'en']}</span>
-                        <span className="text-xs">{new Date(poolStats.last_block_time * 1000).toLocaleTimeString(DashboardCopy.enUs[cs ? 'cs' : 'en'])}</span>
+                        <span>{tx5(DashboardCopy.lastBlock, lang)}</span>
+                        <span className="text-xs">{new Date(poolStats.last_block_time * 1000).toLocaleTimeString(tx5(DashboardCopy.enUs, lang))}</span>
                       </div>
                     )}
                   </div>
@@ -469,7 +470,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               </div>
             </div>
           ) : (
-            <div className="text-gray-400 text-center py-12">{DashboardCopy.poolMetricsUnavailable[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-400 text-center py-12">{tx5(DashboardCopy.poolMetricsUnavailable, lang)}</div>
           )}
         </motion.div>
         )}
@@ -486,8 +487,8 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
             <div className="flex items-center gap-3">
               <TrendingUp className="w-6 h-6 text-zion-cyan" />
               <div>
-                <h2 className="text-2xl font-semibold text-white">{DashboardCopy.liveGrafanaMetrics[cs ? 'cs' : 'en']}</h2>
-                <p className="text-sm text-gray-400">{DashboardCopy.realTimeDashboardsEmbeddedDire[cs ? 'cs' : 'en']}</p>
+                <h2 className="text-2xl font-semibold text-white">{tx5(DashboardCopy.liveGrafanaMetrics, lang)}</h2>
+                <p className="text-sm text-gray-400">{tx5(DashboardCopy.realTimeDashboardsEmbeddedDire, lang)}</p>
               </div>
             </div>
             <Link
@@ -496,7 +497,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               rel="noreferrer"
               className="text-xs uppercase tracking-[0.3em] text-zion-cyan inline-flex items-center gap-1"
             >
-              {DashboardCopy.openGrafana[cs ? 'cs' : 'en']}
+              {tx5(DashboardCopy.openGrafana, lang)}
               <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
@@ -516,7 +517,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                 <h3 className="mt-4 text-lg font-semibold text-white group-hover:text-zion-cyan transition-colors">{card.title}</h3>
                 <p className="mt-2 text-sm text-gray-400">{card.description}</p>
                 <div className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-zion-cyan">
-                  {DashboardCopy.viewLiveData[cs ? 'cs' : 'en']}
+                  {tx5(DashboardCopy.viewLiveData, lang)}
                   <ArrowRight className="h-3 w-3" />
                 </div>
               </Link>
@@ -524,42 +525,42 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
           </div>
 
           <div className="mt-6 zion-section p-4">
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-2">{DashboardCopy.availableMetrics[cs ? 'cs' : 'en']}</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-2">{tx5(DashboardCopy.availableMetrics, lang)}</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <p className="text-zion-purple font-semibold">{DashboardCopy.poolMetrics[cs ? 'cs' : 'en']}</p>
+                <p className="text-zion-purple font-semibold">{tx5(DashboardCopy.poolMetrics, lang)}</p>
                 <ul className="mt-2 space-y-1 text-gray-400">
-                  <li>• {DashboardCopy.activeMiners[cs ? 'cs' : 'en']}</li>
-                  <li>• {DashboardCopy.poolHashrate[cs ? 'cs' : 'en']}</li>
+                  <li>• {tx5(DashboardCopy.activeMiners, lang)}</li>
+                  <li>• {tx5(DashboardCopy.poolHashrate, lang)}</li>
                   <li>• Shares accepted/rejected</li>
-                  <li>• {DashboardCopy.blocksFound[cs ? 'cs' : 'en']}</li>
+                  <li>• {tx5(DashboardCopy.blocksFound, lang)}</li>
                 </ul>
               </div>
               <div>
                 <p className="text-zion-gold font-semibold">Blockchain</p>
                 <ul className="mt-2 space-y-1 text-gray-400">
-                  <li>• {DashboardCopy.blockHeight[cs ? 'cs' : 'en']}</li>
-                  <li>• {DashboardCopy.transactionRate[cs ? 'cs' : 'en']}</li>
-                  <li>• {DashboardCopy.connectedPeers[cs ? 'cs' : 'en']}</li>
-                  <li>• {DashboardCopy.mempoolSize[cs ? 'cs' : 'en']}</li>
+                  <li>• {tx5(DashboardCopy.blockHeight, lang)}</li>
+                  <li>• {tx5(DashboardCopy.transactionRate, lang)}</li>
+                  <li>• {tx5(DashboardCopy.connectedPeers, lang)}</li>
+                  <li>• {tx5(DashboardCopy.mempoolSize, lang)}</li>
                 </ul>
               </div>
               <div>
-                <p className="text-zion-cyan font-semibold">{DashboardCopy.apiPerformance[cs ? 'cs' : 'en']}</p>
+                <p className="text-zion-cyan font-semibold">{tx5(DashboardCopy.apiPerformance, lang)}</p>
                 <ul className="mt-2 space-y-1 text-gray-400">
                   <li>• Request rate</li>
-                  <li>• {DashboardCopy.latencyP95P99[cs ? 'cs' : 'en']}</li>
-                  <li>• {DashboardCopy.errorRate[cs ? 'cs' : 'en']}</li>
-                  <li>• {DashboardCopy.activeConnections[cs ? 'cs' : 'en']}</li>
+                  <li>• {tx5(DashboardCopy.latencyP95P99, lang)}</li>
+                  <li>• {tx5(DashboardCopy.errorRate, lang)}</li>
+                  <li>• {tx5(DashboardCopy.activeConnections, lang)}</li>
                 </ul>
               </div>
               <div>
-                <p className="text-zion-cyan font-semibold">{DashboardCopy.systemResources[cs ? 'cs' : 'en']}</p>
+                <p className="text-zion-cyan font-semibold">{tx5(DashboardCopy.systemResources, lang)}</p>
                 <ul className="mt-2 space-y-1 text-gray-400">
-                  <li>• {DashboardCopy.cpuUsage[cs ? 'cs' : 'en']}</li>
-                  <li>• {DashboardCopy.memoryUsage[cs ? 'cs' : 'en']}</li>
-                  <li>• {DashboardCopy.diskIO[cs ? 'cs' : 'en']}</li>
-                  <li>• {DashboardCopy.networkTraffic[cs ? 'cs' : 'en']}</li>
+                  <li>• {tx5(DashboardCopy.cpuUsage, lang)}</li>
+                  <li>• {tx5(DashboardCopy.memoryUsage, lang)}</li>
+                  <li>• {tx5(DashboardCopy.diskIO, lang)}</li>
+                  <li>• {tx5(DashboardCopy.networkTraffic, lang)}</li>
                 </ul>
               </div>
             </div>
@@ -571,7 +572,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ '--rc': '228, 30, 43' } as React.CSSProperties} className="zion-rainbow-card rounded-[28px] p-6">
           <div className="flex items-center gap-3 mb-4">
             <Cpu className="w-6 h-6 text-zion-gold" />
-            <h2 className="text-2xl font-semibold text-white">{DashboardCopy.recentBlocks[cs ? 'cs' : 'en']}</h2>
+            <h2 className="text-2xl font-semibold text-white">{tx5(DashboardCopy.recentBlocks, lang)}</h2>
           </div>
           {blocks && blocks.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
@@ -582,17 +583,17 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                       <p className="text-xs uppercase tracking-[0.3em] text-gray-400">#{block.height}</p>
                       <p className="font-mono text-xs text-zion-cyan">{block.hash?.substring(0, 16)}...</p>
                     </div>
-                    <span className="text-xs text-gray-400">{new Date(block.timestamp * 1000).toLocaleTimeString(DashboardCopy.enUs[cs ? 'cs' : 'en'])}</span>
+                    <span className="text-xs text-gray-400">{new Date(block.timestamp * 1000).toLocaleTimeString(tx5(DashboardCopy.enUs, lang))}</span>
                   </div>
                   <div className="mt-3 flex justify-between text-xs text-gray-400">
-                    <span>{DashboardCopy.txs[cs ? 'cs' : 'en']} {block.transactions || 0}</span>
+                    <span>{tx5(DashboardCopy.txs, lang)} {block.transactions || 0}</span>
                     {block.consciousness_level && <span>{block.consciousness_level}</span>}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center text-gray-400 py-12">{DashboardCopy.noBlockFeedDetectedFromApi[cs ? 'cs' : 'en']}</div>
+            <div className="text-center text-gray-400 py-12">{tx5(DashboardCopy.noBlockFeedDetectedFromApi, lang)}</div>
           )}
         </motion.div>
         )}
@@ -601,12 +602,12 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ '--rc': '228, 30, 43' } as React.CSSProperties} className="zion-rainbow-card rounded-4xl border-zion-gold/30 bg-linear-to-r from-zion-purple/20 via-zion-gold/10 to-zion-cyan/20 p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.4em] text-gray-200">{DashboardCopy.whatSNext[cs ? 'cs' : 'en']}</p>
-              <h2 className="text-3xl font-semibold text-white">{DashboardCopy.operationalRoadmap[cs ? 'cs' : 'en']}</h2>
-              <p className="text-sm text-gray-100 max-w-xl mt-2">{DashboardCopy.pulledFromTheCurrentPublicLaun[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs uppercase tracking-[0.4em] text-gray-200">{tx5(DashboardCopy.whatSNext, lang)}</p>
+              <h2 className="text-3xl font-semibold text-white">{tx5(DashboardCopy.operationalRoadmap, lang)}</h2>
+              <p className="text-sm text-gray-100 max-w-xl mt-2">{tx5(DashboardCopy.pulledFromTheCurrentPublicLaun, lang)}</p>
             </div>
             <Link href="/roadmap" className="inline-flex items-center gap-2 rounded-2xl bg-black/60 px-5 py-2 text-sm font-semibold text-white">
-              {DashboardCopy.openRoadmap[cs ? 'cs' : 'en']}
+              {tx5(DashboardCopy.openRoadmap, lang)}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type CSSProperties } from "react";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const DashboardCh3Copy = {
   loadingChV3Settings: { cs: `Načítání CH v3 nastavení...`, en: `Loading CH v3 Settings...` },
@@ -280,7 +281,7 @@ export default function CH3SettingsPage() {
   if (loading || !settings) {
     return (
       <div className="flex items-center justify-center">
-        <div className="text-zion-gold text-2xl animate-pulse">{DashboardCh3Copy.loadingChV3Settings[lang === 'cs' ? 'cs' : 'en']}</div>
+        <div className="text-zion-gold text-2xl animate-pulse">{tx5(DashboardCh3Copy.loadingChV3Settings, lang)}</div>
       </div>
     );
   }
@@ -294,9 +295,9 @@ export default function CH3SettingsPage() {
             <span className="text-xl">⚡</span>
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-zion-gold">{DashboardCh3Copy.chV3RevenueStreams[lang === 'cs' ? 'cs' : 'en']}</h1>
+            <h1 className="text-3xl font-bold text-zion-gold">{tx5(DashboardCh3Copy.chV3RevenueStreams, lang)}</h1>
             <p className="text-sm text-gray-400">
-              {DashboardCh3Copy.configureAll5RevenueStreamsFor[lang === 'cs' ? 'cs' : 'en']}
+              {tx5(DashboardCh3Copy.configureAll5RevenueStreamsFor, lang)}
             </p>
           </div>
         </div>
@@ -358,11 +359,11 @@ export default function CH3SettingsPage() {
             }`}
             style={activeTab === tab ? zionStyle("252, 209, 22") : undefined}
           >
-            {tab === "overview" && (DashboardCh3Copy.overview[lang === 'cs' ? 'cs' : 'en'])}
-            {tab === "merged" && (DashboardCh3Copy.mergedMining[lang === 'cs' ? 'cs' : 'en'])}
-            {tab === "dynamic" && (DashboardCh3Copy.dynamicGpu[lang === 'cs' ? 'cs' : 'en'])}
-            {tab === "ncl" && (DashboardCh3Copy.nclAi[lang === 'cs' ? 'cs' : 'en'])}
-            {tab === "pearl" && (DashboardCh3Copy.pearlPrl[lang === 'cs' ? 'cs' : 'en'])}
+            {tab === "overview" && (tx5(DashboardCh3Copy.overview, lang))}
+            {tab === "merged" && (tx5(DashboardCh3Copy.mergedMining, lang))}
+            {tab === "dynamic" && (tx5(DashboardCh3Copy.dynamicGpu, lang))}
+            {tab === "ncl" && (tx5(DashboardCh3Copy.nclAi, lang))}
+            {tab === "pearl" && (tx5(DashboardCh3Copy.pearlPrl, lang))}
           </button>
         ))}
       </div>
@@ -372,7 +373,7 @@ export default function CH3SettingsPage() {
         {/* Overview Tab */}
         {activeTab === "overview" && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">{DashboardCh3Copy.revenueDistribution[lang === 'cs' ? 'cs' : 'en']}</h2>
+            <h2 className="text-2xl font-bold mb-6">{tx5(DashboardCh3Copy.revenueDistribution, lang)}</h2>
             
             {/* Visual bar */}
             <div className="h-12 rounded-lg overflow-hidden flex mb-6">
@@ -397,12 +398,12 @@ export default function CH3SettingsPage() {
                     <span className="text-2xl">{STREAM_ICONS[key]}</span>
                     <div>
                       <div className="font-bold">{stream.name}</div>
-                      <div className="text-gray-400 text-sm">{stream.algorithm || stream.mode || (DashboardCh3Copy.aiTasks[lang === 'cs' ? 'cs' : 'en'])}</div>
+                      <div className="text-gray-400 text-sm">{stream.algorithm || stream.mode || (tx5(DashboardCh3Copy.aiTasks, lang))}</div>
                     </div>
                   </div>
                   <div className="text-sm text-gray-500">{stream.description}</div>
                   <div className={`mt-2 text-sm ${stream.enabled ? "text-zion-cyan" : "text-zion-purple"}`}>
-                    {stream.enabled ? (DashboardCh3Copy.active[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.disabled[lang === 'cs' ? 'cs' : 'en'])}
+                    {stream.enabled ? (tx5(DashboardCh3Copy.active, lang)) : (tx5(DashboardCh3Copy.disabled, lang))}
                   </div>
                 </div>
               ))}
@@ -413,9 +414,9 @@ export default function CH3SettingsPage() {
         {/* Merged Mining Tab */}
         {activeTab === "merged" && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">{DashboardCh3Copy.mergedMiningConfiguration[lang === 'cs' ? 'cs' : 'en']}</h2>
+            <h2 className="text-2xl font-bold mb-6">{tx5(DashboardCh3Copy.mergedMiningConfiguration, lang)}</h2>
             <p className="text-gray-400 mb-6">
-              {DashboardCh3Copy.intermediateHashesFromCosmicHa[lang === 'cs' ? 'cs' : 'en']}
+              {tx5(DashboardCh3Copy.intermediateHashesFromCosmicHa, lang)}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -438,13 +439,13 @@ export default function CH3SettingsPage() {
                     }`}
                     style={settings.streams.etc.enabled ? zionStyle("252, 209, 22") : undefined}
                   >
-                    {settings.streams.etc.enabled ? (DashboardCh3Copy.enabled[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.disabled_2[lang === 'cs' ? 'cs' : 'en'])}
+                    {settings.streams.etc.enabled ? (tx5(DashboardCh3Copy.enabled, lang)) : (tx5(DashboardCh3Copy.disabled_2, lang))}
                   </button>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-gray-400 text-sm">{DashboardCh3Copy.poolStratum[lang === 'cs' ? 'cs' : 'en']}</label>
+                    <label className="text-gray-400 text-sm">{tx5(DashboardCh3Copy.poolStratum, lang)}</label>
                     <input
                       type="text"
                       defaultValue={settings.streams.etc.pool?.stratum}
@@ -453,7 +454,7 @@ export default function CH3SettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-gray-400 text-sm">{DashboardCh3Copy.poolWallet[lang === 'cs' ? 'cs' : 'en']}</label>
+                    <label className="text-gray-400 text-sm">{tx5(DashboardCh3Copy.poolWallet, lang)}</label>
                     <input
                       type="text"
                       defaultValue={settings.streams.etc.pool?.wallet}
@@ -463,7 +464,7 @@ export default function CH3SettingsPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <input type="checkbox" defaultChecked className="w-4 h-4" />
-                    {DashboardCh3Copy.autoConvertToZion[lang === 'cs' ? 'cs' : 'en']}
+                    {tx5(DashboardCh3Copy.autoConvertToZion, lang)}
                   </div>
                 </div>
               </div>
@@ -487,13 +488,13 @@ export default function CH3SettingsPage() {
                     }`}
                     style={settings.streams.nxs.enabled ? zionStyle("252, 209, 22") : undefined}
                   >
-                    {settings.streams.nxs.enabled ? (DashboardCh3Copy.enabled[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.disabled_2[lang === 'cs' ? 'cs' : 'en'])}
+                    {settings.streams.nxs.enabled ? (tx5(DashboardCh3Copy.enabled, lang)) : (tx5(DashboardCh3Copy.disabled_2, lang))}
                   </button>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-gray-400 text-sm">{DashboardCh3Copy.poolStratum[lang === 'cs' ? 'cs' : 'en']}</label>
+                    <label className="text-gray-400 text-sm">{tx5(DashboardCh3Copy.poolStratum, lang)}</label>
                     <input
                       type="text"
                       defaultValue={settings.streams.nxs.pool?.stratum}
@@ -502,7 +503,7 @@ export default function CH3SettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-gray-400 text-sm">{DashboardCh3Copy.poolWallet[lang === 'cs' ? 'cs' : 'en']}</label>
+                    <label className="text-gray-400 text-sm">{tx5(DashboardCh3Copy.poolWallet, lang)}</label>
                     <input
                       type="text"
                       defaultValue={settings.streams.nxs.pool?.wallet}
@@ -512,7 +513,7 @@ export default function CH3SettingsPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <input type="checkbox" defaultChecked className="w-4 h-4" />
-                    {DashboardCh3Copy.autoConvertToZion[lang === 'cs' ? 'cs' : 'en']}
+                    {tx5(DashboardCh3Copy.autoConvertToZion, lang)}
                   </div>
                 </div>
               </div>
@@ -523,14 +524,14 @@ export default function CH3SettingsPage() {
         {/* Dynamic GPU Tab */}
         {activeTab === "dynamic" && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">{DashboardCh3Copy.dynamicGpuMining[lang === 'cs' ? 'cs' : 'en']}</h2>
+            <h2 className="text-2xl font-bold mb-6">{tx5(DashboardCh3Copy.dynamicGpuMining, lang)}</h2>
             <p className="text-gray-400 mb-6">
-              {DashboardCh3Copy.automaticallySwitchBetweenGpuA[lang === 'cs' ? 'cs' : 'en']}
+              {tx5(DashboardCh3Copy.automaticallySwitchBetweenGpuA, lang)}
             </p>
 
             {/* Mode Selection */}
             <div className="mb-6">
-              <label className="text-gray-400 text-sm block mb-2">{DashboardCh3Copy.switchingMode[lang === 'cs' ? 'cs' : 'en']}</label>
+              <label className="text-gray-400 text-sm block mb-2">{tx5(DashboardCh3Copy.switchingMode, lang)}</label>
               <div className="flex gap-4">
                 {["auto", "manual", "hybrid"].map((mode) => (
                   <button
@@ -546,7 +547,7 @@ export default function CH3SettingsPage() {
                     {mode === "auto" && "🤖 "}
                     {mode === "manual" && "👆 "}
                     {mode === "hybrid" && "🔀 "}
-                    {mode === "auto" ? (DashboardCh3Copy.auto[lang === 'cs' ? 'cs' : 'en']) : mode === "manual" ? (DashboardCh3Copy.manual[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.hybrid[lang === 'cs' ? 'cs' : 'en'])}
+                    {mode === "auto" ? (tx5(DashboardCh3Copy.auto, lang)) : mode === "manual" ? (tx5(DashboardCh3Copy.manual, lang)) : (tx5(DashboardCh3Copy.hybrid, lang))}
                   </button>
                 ))}
               </div>
@@ -555,7 +556,7 @@ export default function CH3SettingsPage() {
             {/* Coin Selection */}
             <div className="mb-6">
               <label className="text-gray-400 text-sm block mb-2">
-                {settings.streams.dynamic_gpu.mode === "manual" ? (DashboardCh3Copy.selectCoin[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.preferredCoins[lang === 'cs' ? 'cs' : 'en'])}
+                {settings.streams.dynamic_gpu.mode === "manual" ? (tx5(DashboardCh3Copy.selectCoin, lang)) : (tx5(DashboardCh3Copy.preferredCoins, lang))}
               </label>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 {GPU_COINS.map((coin) => {
@@ -589,7 +590,7 @@ export default function CH3SettingsPage() {
                       <div className="text-gray-400 text-sm">{coin.name}</div>
                       <div className="text-gray-500 text-xs mt-1">{coin.algo}</div>
                       {isCurrent && (
-                        <div className="text-zion-gold text-xs mt-2">⚡ {DashboardCh3Copy.miningNow[lang === 'cs' ? 'cs' : 'en']}</div>
+                        <div className="text-zion-gold text-xs mt-2">⚡ {tx5(DashboardCh3Copy.miningNow, lang)}</div>
                       )}
                     </button>
                   );
@@ -601,7 +602,7 @@ export default function CH3SettingsPage() {
             {settings.streams.dynamic_gpu.mode === "auto" && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-gray-400 text-sm">{DashboardCh3Copy.minProfitUsdDay[lang === 'cs' ? 'cs' : 'en']}</label>
+                  <label className="text-gray-400 text-sm">{tx5(DashboardCh3Copy.minProfitUsdDay, lang)}</label>
                   <input
                     type="number"
                     defaultValue="0.10"
@@ -610,7 +611,7 @@ export default function CH3SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm">{DashboardCh3Copy.switchIntervalMin[lang === 'cs' ? 'cs' : 'en']}</label>
+                  <label className="text-gray-400 text-sm">{tx5(DashboardCh3Copy.switchIntervalMin, lang)}</label>
                   <input
                     type="number"
                     defaultValue="15"
@@ -618,7 +619,7 @@ export default function CH3SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm">{DashboardCh3Copy.hysteresis[lang === 'cs' ? 'cs' : 'en']}</label>
+                  <label className="text-gray-400 text-sm">{tx5(DashboardCh3Copy.hysteresis, lang)}</label>
                   <input
                     type="number"
                     defaultValue="5"
@@ -633,18 +634,18 @@ export default function CH3SettingsPage() {
         {/* NCL Tab */}
         {activeTab === "ncl" && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">{DashboardCh3Copy.nclAiBonusConfiguration[lang === 'cs' ? 'cs' : 'en']}</h2>
+            <h2 className="text-2xl font-bold mb-6">{tx5(DashboardCh3Copy.nclAiBonusConfiguration, lang)}</h2>
             <p className="text-gray-400 mb-6">
-              {DashboardCh3Copy.allocateComputeTimeForAiInfere[lang === 'cs' ? 'cs' : 'en']}
+              {tx5(DashboardCh3Copy.allocateComputeTimeForAiInfere, lang)}
             </p>
 
             {/* Allocation Slider */}
             <div className="mb-8">
               <div className="flex justify-between text-sm text-gray-400 mb-2">
-                <span>{DashboardCh3Copy.computeAllocation[lang === 'cs' ? 'cs' : 'en']}</span>
+                <span>{tx5(DashboardCh3Copy.computeAllocation, lang)}</span>
                 <span>
                   {((settings.streams.ncl.npu_allocation || 0) * 100).toFixed(0)}% AI / 
-                  {((settings.streams.ncl.mining_allocation || 0) * 100).toFixed(0)}% {DashboardCh3Copy.mining[lang === 'cs' ? 'cs' : 'en']}
+                  {((settings.streams.ncl.mining_allocation || 0) * 100).toFixed(0)}% {tx5(DashboardCh3Copy.mining, lang)}
                 </span>
               </div>
               
@@ -665,8 +666,8 @@ export default function CH3SettingsPage() {
                   }}
                 />
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>0% ({DashboardCh3Copy.miningOnly[lang === 'cs' ? 'cs' : 'en']})</span>
-                  <span>50% ({DashboardCh3Copy.maxAi[lang === 'cs' ? 'cs' : 'en']})</span>
+                  <span>0% ({tx5(DashboardCh3Copy.miningOnly, lang)})</span>
+                  <span>50% ({tx5(DashboardCh3Copy.maxAi, lang)})</span>
                 </div>
               </div>
 
@@ -676,7 +677,7 @@ export default function CH3SettingsPage() {
                   className="bg-gradient-to-r from-zion-gold to-zion-gold flex items-center justify-center"
                   style={{ width: `${(settings.streams.ncl.mining_allocation || 0) * 100}%` }}
                 >
-                  <span className="font-bold">⛏️ {DashboardCh3Copy.mining[lang === 'cs' ? 'cs' : 'en']}</span>
+                  <span className="font-bold">⛏️ {tx5(DashboardCh3Copy.mining, lang)}</span>
                 </div>
                 <div 
                   className="bg-gradient-to-r from-zion-purple to-zion-purple flex items-center justify-center"
@@ -689,7 +690,7 @@ export default function CH3SettingsPage() {
 
             {/* Task Types */}
             <div>
-              <label className="text-gray-400 text-sm block mb-2">{DashboardCh3Copy.supportedAiTasks[lang === 'cs' ? 'cs' : 'en']}</label>
+              <label className="text-gray-400 text-sm block mb-2">{tx5(DashboardCh3Copy.supportedAiTasks, lang)}</label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                   { id: "embeddings", name: "Embeddings", reward: "0.001" },
@@ -703,7 +704,7 @@ export default function CH3SettingsPage() {
                       <span className="font-medium">{task.name}</span>
                     </div>
                     <div className="text-gray-500 text-sm">
-                      {DashboardCh3Copy.base[lang === 'cs' ? 'cs' : 'en']}: {task.reward} ZION
+                      {tx5(DashboardCh3Copy.base, lang)}: {task.reward} ZION
                     </div>
                   </div>
                 ))}
@@ -715,9 +716,9 @@ export default function CH3SettingsPage() {
         {/* Pearl Tab */}
         {activeTab === "pearl" && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">{DashboardCh3Copy.pearlPrlPouwMining[lang === 'cs' ? 'cs' : 'en']}</h2>
+            <h2 className="text-2xl font-bold mb-6">{tx5(DashboardCh3Copy.pearlPrlPouwMining, lang)}</h2>
             <p className="text-gray-400 mb-6">
-              {DashboardCh3Copy.pearlCoinPrlUsesProofOfUsefulW[lang === 'cs' ? 'cs' : 'en']}
+              {tx5(DashboardCh3Copy.pearlCoinPrlUsesProofOfUsefulW, lang)}
             </p>
 
             <div className="zion-rainbow-card p-6 mb-6" style={zionStyle("252, 209, 22")}>
@@ -738,13 +739,13 @@ export default function CH3SettingsPage() {
                   }`}
                   style={settings.streams.pearl.enabled ? zionStyle("252, 209, 22") : undefined}
                 >
-                  {settings.streams.pearl.enabled ? (DashboardCh3Copy.enabled[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.disabled_2[lang === 'cs' ? 'cs' : 'en'])}
+                  {settings.streams.pearl.enabled ? (tx5(DashboardCh3Copy.enabled, lang)) : (tx5(DashboardCh3Copy.disabled_2, lang))}
                 </button>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-gray-400 text-sm">{DashboardCh3Copy.poolStratum[lang === 'cs' ? 'cs' : 'en']}</label>
+                  <label className="text-gray-400 text-sm">{tx5(DashboardCh3Copy.poolStratum, lang)}</label>
                   <input
                     type="text"
                     defaultValue={settings.streams.pearl.pool?.stratum}
@@ -753,7 +754,7 @@ export default function CH3SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm">{DashboardCh3Copy.poolWallet[lang === 'cs' ? 'cs' : 'en']}</label>
+                  <label className="text-gray-400 text-sm">{tx5(DashboardCh3Copy.poolWallet, lang)}</label>
                   <input
                     type="text"
                     defaultValue={settings.streams.pearl.pool?.wallet}
@@ -762,7 +763,7 @@ export default function CH3SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm">{DashboardCh3Copy.targetShare[lang === 'cs' ? 'cs' : 'en']}</label>
+                  <label className="text-gray-400 text-sm">{tx5(DashboardCh3Copy.targetShare, lang)}</label>
                   <input
                     type="number"
                     step="0.01"
@@ -774,7 +775,7 @@ export default function CH3SettingsPage() {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-400">
                   <input type="checkbox" defaultChecked className="w-4 h-4" />
-                  {DashboardCh3Copy.autoConvertToZion[lang === 'cs' ? 'cs' : 'en']}
+                  {tx5(DashboardCh3Copy.autoConvertToZion, lang)}
                 </div>
               </div>
             </div>
@@ -782,17 +783,17 @@ export default function CH3SettingsPage() {
             {/* GPU Performance Info */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="zion-rainbow-sub p-4" style={zionStyle("252, 209, 22")}>
-                <div className="text-gray-400 text-sm">{DashboardCh3Copy.gpuSpeed[lang === 'cs' ? 'cs' : 'en']}</div>
+                <div className="text-gray-400 text-sm">{tx5(DashboardCh3Copy.gpuSpeed, lang)}</div>
                 <div className="font-bold text-2xl text-zion-cyan">657.6</div>
                 <div className="text-gray-500 text-xs">nonces/s (batch=16)</div>
               </div>
               <div className="zion-rainbow-sub p-4" style={zionStyle("252, 209, 22")}>
-                <div className="text-gray-400 text-sm">{DashboardCh3Copy.vsCpu[lang === 'cs' ? 'cs' : 'en']}</div>
+                <div className="text-gray-400 text-sm">{tx5(DashboardCh3Copy.vsCpu, lang)}</div>
                 <div className="font-bold text-2xl text-zion-cyan">14.2x</div>
-                <div className="text-gray-500 text-xs">{DashboardCh3Copy.speedup[lang === 'cs' ? 'cs' : 'en']}</div>
+                <div className="text-gray-500 text-xs">{tx5(DashboardCh3Copy.speedup, lang)}</div>
               </div>
               <div className="zion-rainbow-sub p-4" style={zionStyle("252, 209, 22")}>
-                <div className="text-gray-400 text-sm">{DashboardCh3Copy.algorithm[lang === 'cs' ? 'cs' : 'en']}</div>
+                <div className="text-gray-400 text-sm">{tx5(DashboardCh3Copy.algorithm, lang)}</div>
                 <div className="font-bold text-lg text-zion-cyan">PearlHash</div>
                 <div className="text-gray-500 text-xs">PoUW — INT8 MatMul + ZK</div>
               </div>

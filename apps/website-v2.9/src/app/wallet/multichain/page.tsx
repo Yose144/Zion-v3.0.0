@@ -4,7 +4,8 @@ import { useState, useCallback, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import {
   useMultichainWallet,
   formatMultichainAmount,
@@ -112,14 +113,14 @@ const TABS: { key: Tab; labelCs: string; labelEn: string; icon: typeof Activity 
 
 /** Native (non-custodial) multichain panel — derives keys locally from the
  *  user's ZION mnemonic. The phrase lives only in React state. */
-function NativeSection({ cs }: { cs: boolean }) {
+function NativeSection({ cs, lang }: { cs: boolean; lang: Lang }) {
   const [mnemonic, setMnemonic] = useState('');
   const [bundle, setBundle] = useState<NativeBundle | null>(null);
   const [balances, setBalances] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [linkResults, setLinkResults] = useState<Record<string, { ok: boolean; error?: string; conflict?: boolean }> | null>(null);
   const [status, setStatus] = useState('');
-  const t = (k: keyof typeof CopyText) => (cs ? CopyText[k].cs : CopyText[k].en);
+  const t = (k: keyof typeof CopyText) => tx5(CopyText[k], lang);
 
   const rows: { key: string; label: string; entry: { address: string; standard: string } | null }[] = bundle
     ? [
@@ -323,7 +324,7 @@ export default function MultichainWalletPage() {
   const [withdrawLoading, setWithdrawLoading] = useState(false);
   const [withdrawMessage, setWithdrawMessage] = useState<{ text: string; success: boolean } | null>(null);
 
-  const t = (key: keyof typeof CopyText) => CopyText[key][cs ? 'cs' : 'en'];
+  const t = (key: keyof typeof CopyText) => tx5(CopyText[key], lang);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -601,7 +602,7 @@ export default function MultichainWalletPage() {
                 }`}
               >
                 <t.icon className="h-4 w-4" />
-                {cs ? t.labelCs : t.labelEn}
+                {cs ? t.labelCs : t5(t.labelEn, lang)}
               </button>
             ))}
           </div>
@@ -757,7 +758,7 @@ export default function MultichainWalletPage() {
               </>
             )}
 
-            {tab === 'native' && <NativeSection cs={cs} />}
+            {tab === 'native' && <NativeSection cs={cs} lang={lang} />}
 
             {tab === 'orders' && (
               <>

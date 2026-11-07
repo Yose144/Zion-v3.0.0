@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from '@/hooks/usePolling';
 import {
   Activity, AlertTriangle, CheckCircle2, Clock, Globe, HeartPulse,
@@ -101,9 +102,9 @@ function fmtDuration(seconds: number | null, lang: string): string {
   const d = Math.floor(s / 86400);
   const h = Math.floor((s % 86400) / 3600);
   const m = Math.floor((s % 3600) / 60);
-  if (d > 0) return lang === 'cs' ? `${d} d ${h} h ${m} min` : `${d}d ${h}h ${m}m`;
-  if (h > 0) return lang === 'cs' ? `${h} h ${m} min` : `${h}h ${m}m`;
-  return lang === 'cs' ? `${m} min` : `${m}m`;
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
 }
 
 function fmtPct(v: number | null): string {
@@ -119,7 +120,7 @@ function fmtTime(iso: string | null): string {
 
 export default function G8Client() {
   const { lang } = useLang();
-  const t = (k: keyof typeof G8Copy) => G8Copy[k][lang as 'cs' | 'en'] || G8Copy[k].en;
+  const t = (k: keyof typeof G8Copy) => tx5(G8Copy[k], lang);
   const [data, setData] = useState<G8Status | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
