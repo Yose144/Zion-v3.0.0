@@ -1,10 +1,12 @@
 # ZION v3.3 „NIRVANA" — KRÁLOVSTVÍ SRDCE
 ## Kanonický plán postupu
 
-> **Verze dokumentu:** 1.13 · **Datum:** 2026-11-01 · **HEAD při sepsání:** `fdeda709a` (4.B1) — aktualizováno průběžně, viz §7
+> **Verze dokumentu:** 1.14 · **Datum:** 2026-11-07 · **HEAD při původním sepsání:** `fdeda709a` (4.B1) — aktualizováno průběžně, viz §7
 > **Role:** **jediný vstupní bod** pro plánování v3.3. Není to 14. plán, který si každý vykládá jinak — je to router: říká, co platí, v jakém pořadí, s jakým důkazem a kdo to vlastní. Ostatní dokumenty zůstávají v platnosti, tento je **cituje a opravuje, neduplikuje**.
 > **Hierarchie pravdy:** živý kód/sonda → [`canon/books/MiseAmenti/07-Registr-Dukazu.md`](../../canon/books/MiseAmenti/07-Registr-Dukazu.md) → [`docs/3.2/StatusV3.md`](../3.2/StatusV3.md) → tento plán → [`NIRVANA-V3.3-MAP.md`](NIRVANA-V3.3-MAP.md) / [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) / [`NIRVANA-V3.3-UNIFICATION.md`](NIRVANA-V3.3-UNIFICATION.md) → [`docs/3.2/V33_NIRVANA_MASTER_PLAN.md`](../3.2/V33_NIRVANA_MASTER_PLAN.md) (vision).
 > **Značky vlastníka:** 🤖 autonomní (kód/testy/dokumenty end-to-end) · 🔀 autonomní příprava + operátorské schválení · 👤 operátor (rozhodnutí, peníze, klíče, fyzický svět)
+
+> **Aktuální korekce 2026-11-07 — přednost před staršími snapshoty níže:** G8 **run #7** `g8-20261106T145125Z`, cíl **2026-12-06T14:51:25Z**, živě 531/531 good/covered, 100 %, 0 incidentů, **pending**. Run #6 byl 6. 11. zastaven a archivován jako `evidence_incomplete`, ne PASS; [důvod a nasazená oprava](../3.2/REPORTS/REPORT_2026-11-06_G8_POOLFIX_RUN7.md). Kalendář 28. 11. už není cílem G8; premine zůstává samostatnou výškovou podmínkou. Next major upgrade je hotový (šest app manifestů 16.4.3, živý web/market/Nirvana 16.4.3), repo/app/net Nirvany mají proto 32. QTC payout je v běžícím warpd **OFF**, PRL dry-run, BTC swap OFF. Před novými funkcemi řešit **PII při duplicitním orderId, monitoring EDGE1 (node-exporter down), payout freshness (`ts:null`), atomický sklad a release verifier/provenance**. Přesné důkazy, testovací podmínky a hranice 🤖/👤: [audit + autonomní fronta 7. 11.](../3.2/REPORTS/REPORT_2026-11-07_EDGE_AUDIT_AUTONOMOUS.md). Aktivní run ani produkce se tímto auditem neměnily; G9/sign-off dál blokují Stable.
 
 ---
 
@@ -105,7 +107,7 @@
 
 | # | Dokument | Tvrdí | Realita 31. 10. | Řešení | Kdo | Stav |
 |---|---|---|---|---|---|---|
-| 1 | `NIRVANA-V3.3-CHECKLIST.md`, `MAP §6` | G8 run **#5**, 99,733 %, konec 24. 11. | run **#6** `g8-20261029T234617Z`, 99,7976 %, konec 28. 11. 23:46Z, 1 incident 240 s | přepsat všechny 4 výskyty | 🤖 | ✅ |
+| 1 | G8 plánové snapshoty | run #5/#6, konec 24./28. 11. | **7. 11. ověřeno:** run #7 `g8-20261106T145125Z`, cíl **6. 12. 14:51:25Z**, pending; #6 archivován evidence_incomplete | Aktuální StatusV3, ROADMAP a tento router srovnány; starší snapshoty nejsou dnešní gate evidence | 🤖 | ✅ aktuální vstupy |
 | 2 | `AGENTS.md`, `StatusV3.md` | mlčí o minerálních zátěži na EDGE | 8 mining threadů na 4 jádrech, ~230 % CPU | zdokumentovat **proč** je to záměr (pool liveness / block production) | 🤖 | ✅ |
 | 3 | `systemd` EDGE2 | node = primary, ale `disabled` | implicitní `WantedBy=zion-v31-multichain` + `zion-v31-pool` (pool na EDGE2 disabled) → křehké po rebootu | `systemctl enable` + explicitní `WantedBy=multi-user.target` | 🔀 | ✅ |
 | 4 | `CHECKLIST` N0, `MAP §7` | HA stratum „nerozhodnuto" (2.S5) | EDGE2 **má** `zion-pool-standby` + 3 timery (30 s / 60 s / 60 min), inactive (static), nedokumentované; watchdog = **alert-only** (anti split-brain, nikdy auto-promote); fencing (W2.2/G11) **otevřené**; paritní gate PASS 0 fail/5 warn (B4/B5 procesní kroky promotu). **Armed mód neexistuje v kódu** — pouze manuální promote. | zdokumentovat (hotovo: DR-BRINGUP-RUNBOOK.md) + fencing analýza (otevřené) + 👤 flip na armed (neexistuje — promote je manuální) | 🤖→🔀 | ✅/🔄 |
@@ -114,7 +116,7 @@
 | 7 | root `ROADMAP.md` | „Chain height 23 640+ (2026-08-31)" | 103 595 | nahradit odkazem na `StatusV3.md`, žádné číslo v ROADMAP | 🤖 | ✅ |
 | 8 | provozní realita | `/opt/zion/backups` nedokumentováno | retenční politika **hotová**: `RETENTION_DAILY=42`, `RETENTION_WEEKLY=4`, orphan sweep `-mmin +1440`; backups 7,8 G, disk EDGE 44 % (ověřeno 1. 11.). `beta-build-20261026` (1,4 G) + `canonical-main` (2,6 G) kandidáti na úklid — **neověřeno** zda smazáno. | retenční politika ✅ aplikována; úklid kandidátů (beta-build, canonical-main) = 👤 schválení | 🤖 návrh → 👤 apply | ✅/🔄 |
 | 9 | repo hygiena | `apps/` obsahuje artefakty | `website-v2.9-backup-*.tar.gz` 30 MB, `public_html`, untracked `desktop-agent/resources/node` | přesun do `archive/`, `.gitignore` | 🤖 | ✅ |
-| 10 | `apps/*/package.json` | jedna generace Next | **ověřeno 1. 11.:** Next 14 — IntroPage `^14.2.30`, MarketPlace `^14.2.5`, pool-ui `^14.2.30`; Next 16 — nirvana `^16.2.9`, OasisWeb `^16.2.9`, website-v2.9 `^16.4.3`. React 18 vs 19. | K3 ve W4 (jen design v tomto okně, security gate 1b — MarketPlace `next` critical). Migrační plán: [`docs/3.2/NEXT14_TO_16_UNIFICATION_PLAN.md`](../3.2/NEXT14_TO_16_UNIFICATION_PLAN.md) | 🤖 | ⬜ |
+| 10 | `apps/*/package.json` | Next 14 vs 16 / React 18 vs 19 | **7. 11. ověřeno:** IntroPage, MarketPlace, pool-ui, OasisWeb, website-v2.9, nirvana mají Next `^16.4.3` + React `19.2.0`; živý web/market standalone a Nirvana Next 16.4.3 | Major upgrade již nezadávat; staré top-level node_modules nejsou standalone runtime. Nový vulnerability audit tím nenahrazen | 🤖 | ✅ major upgrade |
 | 11 | `docs/3.2/ROADMAP.md` | G8 „run #2 not started" | runy #2–#5 uzavřené, #6 běží | opravit | 🤖 | ✅ |
 | 12 | `REPO-MAP.md`, `AGENTS.md` | `public/` = git subtree | tracked `public/` přesunut do `archive/PUBLIC/` | přepsat G4/E7 workflow | 🤖 | ✅ |
 | 13 | `apps/website-v2.9/src/components/dex/*` | DEX UI je živé | `RecentSwaps.tsx` volá `${ROUTER_URL}/swaps?limit=10`, `TransactionStatus.tsx` `/swaps/:id` — **v `warpd` tyto routy neexistují** (legacy ZionDex Router surface). `ZionDexDashboard` (jejich jediný konzument) se v `app/` **nikde nerenderuje** → mrtvý kód. Živý povrch je jen `PriceChart` (`/market` ř. 1637). | W4 K3: buď routy doplnit, nebo komponenty smazat při unifikaci DEX UI | 🤖 | ✅ smazáno 1. 11. — trio `ZionDexDashboard`/`RecentSwaps`/`TransactionStatus` odstraněno (žádný import mimo sebe); `/swaps` routy v `warpd` se nedoplňují — legacy Router surface, reálné swapy pojedou přes V3 on-chain (`tx_hash`) po K2 |
@@ -141,7 +143,7 @@ Cíl: aby dokumenty nelhaly a repo bylo čisté. Gate: `git diff --check` čist�
 
 ---
 
-### W1 — RC kvalita 3.2 · 🤖 · do 28. 11. · **primární priorita**
+### W1 — RC kvalita 3.2 · 🤖 · G8 #7 nejdříve 6. 12. · **primární priorita**
 
 Cíl: až G8 doběhne, být připraven na RC sign-off. Nezávislé na unifikaci.
 
@@ -155,7 +157,7 @@ Cíl: až G8 doběhne, být připraven na RC sign-off. Nezávislé na unifikaci.
 | W1.6 | cert `auth.` — **aktualizace 31. 10.: už proběhlo.** Cert má `notAfter` **24. 1. 2027** (EDGE2) / 25. 1. 2027 (EDGE), SAN `auth.zionterranova.com`, `certbot.timer` běží 2×/den na obou boxech. Kotva „25. 11. expirace" v `AGENTS.md` je **stale** — renewal proběhl ~26. 10. Zbývá jen kontrola jednou za 2 týdny (`openssl x509 -enddate`) | `openssl x509 -enddate`, certbot log |
 | W1.7 | premine 144k checklist pro 👤 (27.–28. 11., 3-of-3 admin unlock + DAO) | checklist v `docs/3.2/ops/` |
 
-**Gate W1:** G8 run #6 `gate_status=pass` 28. 11. → V33-1 splněno; žádná otevřená 🤖 položka v RC checklistu.
+**Gate W1:** G8 run #7 `gate_status=passed` nejdříve 6. 12. 14:51:25 UTC → V33-1; žádná otevřená 🤖 položka v RC checklistu. Aktuální `pending` není PASS; G9 a operátorský sign-off jsou další samostatné podmínky.
 
 ---
 
@@ -233,7 +235,9 @@ Zadání 👤 (31. 10.): stack existuje, tak ať je podporovaný a zdokumentovan
 
 ---
 
-## 4. Kritická cesta
+## 4. Kritická cesta — historický snapshot 31. 10.
+
+> **Korekce 7. 11.:** termíny G8 a navázané RC rezervy v diagramu níže byly nahrazeny runem #7 do **6. 12. 14:51:25 UTC** (viz aktuální korekce nahoře a W1). Starý kalendář není příslib dokončení. Premine je nezávislý výškový gate; nové datum unlocku se z G8 neodvozuje.
 
 ```
 31.10 ─► W0 truth-sync + DNS příprava (1–2 dny)                       🤖
@@ -268,7 +272,7 @@ Zadání 👤 (31. 10.): stack existuje, tak ať je podporovaný a zdokumentovan
 
 | ID | Kritérium | Důkaz |
 |---|---|---|
-| **KS-1** | G8 run #6 ≥ 99,9 % do 28. 11. | `g8_run.json` → `gate_status=pass` |
+| **KS-1** | G8 run #7 ≥ 99,9 %, bez kritického incidentu, celé okno do 6. 12. 14:51:25 UTC | `g8_run.json` → `gate_status=passed`; nyní pending |
 | **KS-2** | Žádný rozpor dokumentů vs. sonda | §2 tabulka bez řádku `⬜` |
 | **KS-3** | Prokazatelná provenance všech běžících binárek | `deploy-provenance.jsonl` refresh |
 | **KS-4** | Release artefakty pro 3 platformy z RC commitu | `SHA256SUMS` + `BUILD-INFO.txt` |
@@ -300,6 +304,7 @@ Zadání 👤 (31. 10.): stack existuje, tak ať je podporovaný a zdokumentovan
 
 | Datum | Změna |
 |---|---|
+| 2026-11-07 | v1.14 — read-only EDGE audit: G8 #7 do 6. 12. (run #6 stopped/evidence_incomplete), Next major upgrade hotový, proto 32 v repo/app/net ve shodě. Doplněna přednost aktuálního snapshotu a fronta bezpečnost/observability/release: orderId PII, EDGE1 exporter down, payout queued ts:null, sklad, verifier/provenance. Žádné produkční akce, aktivní run nezměněn. Detailní důkazy a hranice v REPORT_2026-11-07_EDGE_AUDIT_AUTONOMOUS.md. |
 | 2026-10-31 | v1.0 — vytvořeno po hloubkové revizi (plánové docs v3.3 + živé sondy EDGE i EDGE2). Zamčena 3 rozhodnutí 👤: RC kvalita first; HA dokumentovat + aktivovat. W0 truth-sync proveden. |
 | 2026-10-31 | v1.1 — **revize rozhodnutí o mrtvých površích po živých sondách**: `api.` a `dex.` nejsou mrtvé — obě služby běží na EDGE2 (`zion-hiran-gateway` :8007, warpd :8454) a DNS míří chybně na EDGE. 👤 rozhodl: `api.` **publikovat**, `dex.` **doplnit `/prices/:token/history`** + publikovat, `updates.` DNS smazat. Opraveno §1.4, §1.5, §2 #5, §3 T0.8, §4 řádek 6. |
 | 2026-10-31 | v1.2 — T0.8 implementace: `/prices/:token/history` napsán (`V31/L2/multichain/src/pricing.rs`, 14 testů, `db/service/server` rozšířeny), vhost `dex.` staged na EDGE2 (úzký povrch), `api.` vhost staged. Nový rozpor **#13** — `RecentSwaps`/`TransactionStatus` volají neexistující `/swaps` routy (mrtvý kód, konzument se nerenderuje). |
