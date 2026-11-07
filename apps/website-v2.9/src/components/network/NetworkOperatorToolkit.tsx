@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Copy, Download, ExternalLink, Terminal } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const NetworkOperatorToolkitCopy = {
   operatorToolkit: { cs: `Operator toolkit`, en: `Operator Toolkit` },
@@ -38,38 +39,38 @@ export default function NetworkOperatorToolkit({ primaryPool }: { primaryPool: s
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-8">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkOperatorToolkitCopy.operatorToolkit[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkOperatorToolkitCopy.operatorToolkit, lang)}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
           <Terminal className="h-7 w-7 text-zion-cyan" />
-          {NetworkOperatorToolkitCopy.networkOpsPro[cs ? 'cs' : 'en']}
+          {tx5(NetworkOperatorToolkitCopy.networkOpsPro, lang)}
         </h2>
-        <p className="text-sm text-gray-400">{NetworkOperatorToolkitCopy.failoverTemplatesHealthProbesA[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm text-gray-400">{tx5(NetworkOperatorToolkitCopy.failoverTemplatesHealthProbesA, lang)}</p>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-          <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{NetworkOperatorToolkitCopy.primaryMining[cs ? 'cs' : 'en']}</p>
-          <p className="text-sm text-gray-300 mb-3">{NetworkOperatorToolkitCopy.currentPublicStratumEndpointOn[cs ? 'cs' : 'en']}</p>
+          <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{tx5(NetworkOperatorToolkitCopy.primaryMining, lang)}</p>
+          <p className="text-sm text-gray-300 mb-3">{tx5(NetworkOperatorToolkitCopy.currentPublicStratumEndpointOn, lang)}</p>
           <code className="block zion-rainbow-sub p-3 text-xs text-zion-gold break-all" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>{xmrigConnect}</code>
           <button onClick={() => copyText('xmrig-connect', xmrigConnect)} className="mt-3 inline-flex items-center gap-2 text-xs text-zion-cyan hover:text-white transition">
-            <Copy className="h-3.5 w-3.5" /> {copied === 'xmrig-connect' ? (NetworkOperatorToolkitCopy.copied[cs ? 'cs' : 'en']) : NetworkOperatorToolkitCopy.copyCommand[cs ? 'cs' : 'en']}
+            <Copy className="h-3.5 w-3.5" /> {copied === 'xmrig-connect' ? (tx5(NetworkOperatorToolkitCopy.copied, lang)) : tx5(NetworkOperatorToolkitCopy.copyCommand, lang)}
           </button>
         </div>
 
         <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-          <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{NetworkOperatorToolkitCopy.healthProbes[cs ? 'cs' : 'en']}</p>
+          <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{tx5(NetworkOperatorToolkitCopy.healthProbes, lang)}</p>
           <div className="space-y-2">
             <code className="block zion-rainbow-sub p-3 text-xs text-zion-gold break-all" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>{healthCurl}</code>
             <code className="block zion-rainbow-sub p-3 text-xs text-zion-gold break-all" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>{networkCurl}</code>
           </div>
           <div className="mt-3 flex gap-2">
-            <button onClick={() => copyText('health-curl', healthCurl)} className="inline-flex items-center gap-1.5 text-xs text-zion-cyan hover:text-white transition"><Copy className="h-3.5 w-3.5" />{copied === 'health-curl' ? (NetworkOperatorToolkitCopy.copied[cs ? 'cs' : 'en']) : NetworkOperatorToolkitCopy.copyHealth[cs ? 'cs' : 'en']}</button>
-            <button onClick={() => copyText('network-curl', networkCurl)} className="inline-flex items-center gap-1.5 text-xs text-zion-cyan hover:text-white transition"><Copy className="h-3.5 w-3.5" />{copied === 'network-curl' ? (NetworkOperatorToolkitCopy.copied[cs ? 'cs' : 'en']) : NetworkOperatorToolkitCopy.copyNetwork[cs ? 'cs' : 'en']}</button>
+            <button onClick={() => copyText('health-curl', healthCurl)} className="inline-flex items-center gap-1.5 text-xs text-zion-cyan hover:text-white transition"><Copy className="h-3.5 w-3.5" />{copied === 'health-curl' ? (tx5(NetworkOperatorToolkitCopy.copied, lang)) : tx5(NetworkOperatorToolkitCopy.copyHealth, lang)}</button>
+            <button onClick={() => copyText('network-curl', networkCurl)} className="inline-flex items-center gap-1.5 text-xs text-zion-cyan hover:text-white transition"><Copy className="h-3.5 w-3.5" />{copied === 'network-curl' ? (tx5(NetworkOperatorToolkitCopy.copied, lang)) : tx5(NetworkOperatorToolkitCopy.copyNetwork, lang)}</button>
           </div>
         </div>
 
         <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-          <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{NetworkOperatorToolkitCopy.exportDocs[cs ? 'cs' : 'en']}</p>
+          <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{tx5(NetworkOperatorToolkitCopy.exportDocs, lang)}</p>
           <div className="space-y-2.5 text-sm">
             <a href="/api/network" target="_blank" rel="noreferrer" className="zion-rainbow-sub p-3 flex items-center justify-between" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <span className="font-mono text-xs text-gray-200">/api/network</span>
@@ -80,11 +81,11 @@ export default function NetworkOperatorToolkit({ primaryPool }: { primaryPool: s
               <Download className="h-3.5 w-3.5 text-zion-gold" />
             </a>
             <Link href="/monitoring" className="zion-rainbow-sub p-3 flex items-center justify-between" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              <span className="text-gray-200">{NetworkOperatorToolkitCopy.monitoringDashboard[cs ? 'cs' : 'en']}</span>
+              <span className="text-gray-200">{tx5(NetworkOperatorToolkitCopy.monitoringDashboard, lang)}</span>
               <ExternalLink className="h-3.5 w-3.5 text-zion-gold" />
             </Link>
             <Link href="/docs#live-index" className="zion-rainbow-sub p-3 flex items-center justify-between" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              <span className="text-gray-200">{NetworkOperatorToolkitCopy.docsHub[cs ? 'cs' : 'en']}</span>
+              <span className="text-gray-200">{tx5(NetworkOperatorToolkitCopy.docsHub, lang)}</span>
               <ExternalLink className="h-3.5 w-3.5 text-zion-gold" />
             </Link>
           </div>

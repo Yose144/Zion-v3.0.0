@@ -1,0 +1,15 @@
+{
+ "120 requests per IP per 60s sliding window. 429 with Retry-After when exceeded.": "120 peticiones por IP en ventana deslizante de 60s. 429 con Retry-After al superarse.",
+ "API Docs": "Documentación de la API",
+ "Base URL": "URL base",
+ "Copy": "Copiar",
+ "Description": "Descripción",
+ "Example Request": "Petición de ejemplo",
+ "Example Response": "Respuesta de ejemplo",
+ "JSON endpoints for integration and monitoring": "Endpoints JSON para integración y monitorización",
+ "Parameters": "Parámetros",
+ "Rate Limiting:": "Límite de peticiones:",
+ "Try it": "Probar",
+ "ZION Blockchain API": "API de la blockchain ZION",
+ "ZION TerraNova v3.2.0 · API Documentation · All endpoints return JSON": "ZION TerraNova v3.2.0 · Documentación de la API · Todos los endpoints devuelven JSON"
+}

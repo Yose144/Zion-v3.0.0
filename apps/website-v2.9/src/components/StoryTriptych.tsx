@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, Sparkles, Globe2 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const StoryTriptychCopy = {
   goldenCompassOfTheNewEarth: { cs: `Zlatý Kompas Nové Země`, en: `Golden Compass of the New Earth` },
@@ -30,37 +31,37 @@ export default function StoryTriptych() {
       href: '/terranova',
       icon: Globe2,
       title: 'Terra Nova',
-      subtitle: StoryTriptychCopy.goldenCompassOfTheNewEarth[cs ? 'cs' : 'en'],
-      desc: StoryTriptychCopy.theFourthBookOfZionPublicEntry[cs ? 'cs' : 'en'],
+      subtitle: tx5(StoryTriptychCopy.goldenCompassOfTheNewEarth, lang),
+      desc: tx5(StoryTriptychCopy.theFourthBookOfZionPublicEntry, lang),
       rc: '228, 30, 43', // rasta red
       iconColor: 'text-zion-purple',
       titleClass:
         'text-xl font-bold text-gradient transition-colors group-hover:text-zion-gold',
-      chapters: StoryTriptychCopy.bookCompassCli[cs ? 'cs' : 'en'],
+      chapters: tx5(StoryTriptychCopy.bookCompassCli, lang),
     },
     {
       href: '/quantum-revolution',
       icon: Sparkles,
-      title: StoryTriptychCopy.quantumRevolution[cs ? 'cs' : 'en'],
-      subtitle: StoryTriptychCopy.theBookThatStartedItAll[cs ? 'cs' : 'en'],
-      desc: StoryTriptychCopy.aFiresideStoryOfANewEarthWhere[cs ? 'cs' : 'en'],
+      title: tx5(StoryTriptychCopy.quantumRevolution, lang),
+      subtitle: tx5(StoryTriptychCopy.theBookThatStartedItAll, lang),
+      desc: tx5(StoryTriptychCopy.aFiresideStoryOfANewEarthWhere, lang),
       rc: '252, 209, 22', // rasta gold
       iconColor: 'text-zion-gold',
       titleClass:
         'text-xl font-bold text-zion-gold transition-colors group-hover:text-zion-cyan',
-      chapters: StoryTriptychCopy.k10Chapters11Languages[cs ? 'cs' : 'en'],
+      chapters: tx5(StoryTriptychCopy.k10Chapters11Languages, lang),
     },
     {
       href: '/genesis',
       icon: BookOpen,
       title: 'ZION Genesis',
-      subtitle: StoryTriptychCopy.sacredStoryOfTheSameWorld[cs ? 'cs' : 'en'],
-      desc: StoryTriptychCopy.aMemoryOfTheFutureTheStoryOf14[cs ? 'cs' : 'en'],
+      subtitle: tx5(StoryTriptychCopy.sacredStoryOfTheSameWorld, lang),
+      desc: tx5(StoryTriptychCopy.aMemoryOfTheFutureTheStoryOf14, lang),
       rc: '6, 105, 40', // rasta green
       iconColor: 'text-zion-cyan',
       titleClass:
         'text-xl font-bold text-zion-cyan transition-colors group-hover:text-zion-gold',
-      chapters: StoryTriptychCopy.k9ChaptersOfAwakening[cs ? 'cs' : 'en'],
+      chapters: tx5(StoryTriptychCopy.k9ChaptersOfAwakening, lang),
     },
   ];
 
@@ -70,10 +71,10 @@ export default function StoryTriptych() {
         {/* Header */}
         <div className="text-center space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-gold">
-            {StoryTriptychCopy.threeStoriesOfOneWorld[cs ? 'cs' : 'en']}
+            {tx5(StoryTriptychCopy.threeStoriesOfOneWorld, lang)}
           </p>
           <h2 className="text-3xl font-bold leading-tight text-white sm:text-4xl">
-            {StoryTriptychCopy.storyPhilosophyAndMyth[cs ? 'cs' : 'en']}
+            {tx5(StoryTriptychCopy.storyPhilosophyAndMyth, lang)}
           </h2>
         </div>
 
@@ -120,7 +121,7 @@ export default function StoryTriptych() {
                   <div className="flex items-center justify-between pt-2 border-t border-white/5">
                     <span className="text-[10px] uppercase tracking-wider text-gray-600">{card.chapters}</span>
                     <span className="inline-flex items-center gap-1 text-sm font-semibold transition-all group-hover:gap-2" style={{ color: `rgb(${card.rc})` }}>
-                      {StoryTriptychCopy.open[cs ? 'cs' : 'en']}
+                      {tx5(StoryTriptychCopy.open, lang)}
                       <ArrowRight className="h-4 w-4" />
                     </span>
                   </div>

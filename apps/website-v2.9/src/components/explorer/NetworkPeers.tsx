@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Globe, Link2, Power, SatelliteDish, ArrowUpRight, ArrowDownLeft, Wifi, WifiOff, Clock, TrendingUp } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 
 const NetworkPeersCopy = {
@@ -65,7 +66,7 @@ const formatLastSeen = (timestamp: number, locale: string) => {
 export default function NetworkPeers() {
   const { lang } = useLang();
   const cs = lang === "cs";
-  const locale = NetworkPeersCopy.enUs[cs ? 'cs' : 'en'];
+  const locale = tx5(NetworkPeersCopy.enUs, lang);
   const [data, setData] = useState<PeersPayload | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -89,9 +90,9 @@ export default function NetworkPeers() {
   const knownCount = data?.known_peers ?? data?.peer_count ?? 0;
 
   const stats = [
-    { label: NetworkPeersCopy.knownPeers[cs ? 'cs' : 'en'], value: knownCount, icon: Globe },
-    { label: NetworkPeersCopy.connected[cs ? 'cs' : 'en'], value: connectedCount, icon: SatelliteDish },
-    { label: NetworkPeersCopy.activeLinks[cs ? 'cs' : 'en'], value: connectedCount, icon: Link2 },
+    { label: tx5(NetworkPeersCopy.knownPeers, lang), value: knownCount, icon: Globe },
+    { label: tx5(NetworkPeersCopy.connected, lang), value: connectedCount, icon: SatelliteDish },
+    { label: tx5(NetworkPeersCopy.activeLinks, lang), value: connectedCount, icon: Link2 },
   ];
 
   return (
@@ -105,18 +106,18 @@ export default function NetworkPeers() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.35em] text-gray-400 flex items-center gap-2">
-            {NetworkPeersCopy.peerTelemetry[cs ? 'cs' : 'en']}
+            {tx5(NetworkPeersCopy.peerTelemetry, lang)}
             <motion.span
               animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 3, repeat: Infinity }}
               className="inline-flex h-2 w-2 rounded-full bg-zion-cyan"
             />
           </p>
-          <h2 className="text-xl font-semibold text-white">{NetworkPeersCopy.networkPeers[cs ? 'cs' : 'en']}</h2>
+          <h2 className="text-xl font-semibold text-white">{tx5(NetworkPeersCopy.networkPeers, lang)}</h2>
         </div>
         <div className="rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-[0.35em] text-gray-300 flex items-center gap-2">
           <Power className="w-3 h-3 text-zion-cyan animate-pulse" />
-          {NetworkPeersCopy.refresh15s[cs ? 'cs' : 'en']}
+          {tx5(NetworkPeersCopy.refresh15s, lang)}
         </div>
       </div>
 
@@ -138,12 +139,12 @@ export default function NetworkPeers() {
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-gray-300">
             <Power className="h-4 w-4 text-zion-cyan" />
-            <span>{NetworkPeersCopy.peerDirectory[cs ? 'cs' : 'en']}</span>
-            {loading && <span className="text-xs text-gray-500">{cs ? 'Načítám...' : 'Loading...'}</span>}
+            <span>{tx5(NetworkPeersCopy.peerDirectory, lang)}</span>
+            {loading && <span className="text-xs text-gray-500">{cs ? 'Načítám...' : t5('Loading...', lang)}</span>}
           </div>
           {data && data.chain_height > 0 && (
             <span className="text-xs text-gray-500">
-              {NetworkPeersCopy.chainHeight[cs ? 'cs' : 'en']}: <span className="text-zion-cyan font-mono">{data.chain_height?.toLocaleString(locale)}</span>
+              {tx5(NetworkPeersCopy.chainHeight, lang)}: <span className="text-zion-cyan font-mono">{data.chain_height?.toLocaleString(locale)}</span>
             </span>
           )}
         </div>
@@ -164,8 +165,8 @@ export default function NetworkPeers() {
           {!loading && (!data?.peers || data.peers.length === 0) && (
             <div className="text-center py-8">
               <WifiOff className="h-8 w-8 text-gray-600 mx-auto mb-3" />
-              <p className="text-sm text-gray-500">{NetworkPeersCopy.noKnownPeers[cs ? 'cs' : 'en']}</p>
-              <p className="text-xs text-gray-600 mt-1">{NetworkPeersCopy.daemonHasNotRegisteredAnyP2pCo[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm text-gray-500">{tx5(NetworkPeersCopy.noKnownPeers, lang)}</p>
+              <p className="text-xs text-gray-600 mt-1">{tx5(NetworkPeersCopy.daemonHasNotRegisteredAnyP2pCo, lang)}</p>
             </div>
           )}
 
@@ -195,11 +196,11 @@ export default function NetworkPeers() {
                       <div className="flex items-center gap-2 mt-0.5">
                         {peer.connected ? (
                           <span className="text-[10px] uppercase tracking-wider text-zion-cyan flex items-center gap-1">
-                            <Wifi className="h-3 w-3" /> {NetworkPeersCopy.connected_2[cs ? 'cs' : 'en']}
+                            <Wifi className="h-3 w-3" /> {tx5(NetworkPeersCopy.connected_2, lang)}
                           </span>
                         ) : (
                           <span className="text-[10px] uppercase tracking-wider text-gray-500 flex items-center gap-1">
-                            <WifiOff className="h-3 w-3" /> {NetworkPeersCopy.known[cs ? 'cs' : 'en']}
+                            <WifiOff className="h-3 w-3" /> {tx5(NetworkPeersCopy.known, lang)}
                           </span>
                         )}
                         {peer.incoming ? (
@@ -225,7 +226,7 @@ export default function NetworkPeers() {
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
                   <span className="flex items-center gap-1">
                     <TrendingUp className="h-3 w-3" />
-                    {NetworkPeersCopy.height[cs ? 'cs' : 'en']}: <span className={`font-mono ${isSynced ? 'text-zion-cyan' : 'text-zion-gold'}`}>
+                    {tx5(NetworkPeersCopy.height, lang)}: <span className={`font-mono ${isSynced ? 'text-zion-cyan' : 'text-zion-gold'}`}>
                       {peer.height.toLocaleString(locale)}
                     </span>
                     {!isSynced && data.chain_height > 0 && (
@@ -234,16 +235,16 @@ export default function NetworkPeers() {
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
-                    {NetworkPeersCopy.idle[cs ? 'cs' : 'en']}: {formatIdleTime(peer.idle_seconds)}
+                    {tx5(NetworkPeersCopy.idle, lang)}: {formatIdleTime(peer.idle_seconds)}
                   </span>
                   {peer.sub_version && (
                     <span className="text-gray-500">v{peer.sub_version}</span>
                   )}
                   {peer.failed_attempts > 0 && (
-                    <span className="text-zion-purple">⚠ {peer.failed_attempts} {NetworkPeersCopy.failures[cs ? 'cs' : 'en']}</span>
+                    <span className="text-zion-purple">⚠ {peer.failed_attempts} {tx5(NetworkPeersCopy.failures, lang)}</span>
                   )}
                   <span className="text-gray-600">
-                    {NetworkPeersCopy.last[cs ? 'cs' : 'en']}: {formatLastSeen(peer.last_seen, locale)}
+                    {tx5(NetworkPeersCopy.last, lang)}: {formatLastSeen(peer.last_seen, locale)}
                   </span>
                 </div>
               </motion.div>

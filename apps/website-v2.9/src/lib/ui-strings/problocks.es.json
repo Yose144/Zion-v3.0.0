@@ -1,0 +1,14 @@
+{
+ "Age": "Antigüedad",
+ "Copy hash": "Copiar hash",
+ "Difficulty": "Dificultad",
+ "Full Block Archive": "Archivo completo de bloques",
+ "Height": "Altura",
+ "Latest Blocks": "Últimos bloques",
+ "Real-time block feed": "Feed de bloques en tiempo real",
+ "Reward": "Recompensa",
+ "Size": "Tamaño",
+ "View All": "Ver todo",
+ "just now": "ahora mismo",
+ "Showing ${Math.min(15, blocks.length)} latest blocks · Auto-refresh 15s": "Mostrando los ${Math.min(15, blocks.length)} bloques más recientes · Actualización automática 15 s"
+}

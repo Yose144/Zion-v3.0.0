@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Leaf, LoaderCircle, Sparkles } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const HomeTreePortalCopy = {
   kabbalah10Sephirot22Paths: { cs: `Kabala · 10 Sephirot · 22 cest`, en: `Kabbalah · 10 Sephirot · 22 paths` },
@@ -73,13 +74,13 @@ export default function HomeTreePortal() {
         {/* Header */}
         <div className="text-center space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zion-cyan">
-            {HomeTreePortalCopy.kabbalah10Sephirot22Paths[cs ? 'cs' : 'en']}
+            {tx5(HomeTreePortalCopy.kabbalah10Sephirot22Paths, lang)}
           </p>
           <h2 className="text-2xl font-bold leading-tight text-white sm:text-3xl">
-            {HomeTreePortalCopy.treeOfLife[cs ? 'cs' : 'en']}
+            {tx5(HomeTreePortalCopy.treeOfLife, lang)}
           </h2>
           <p className="mx-auto max-w-2xl text-sm leading-relaxed text-gray-400">
-            {HomeTreePortalCopy.tenSpheresThroughWhichLightFlo[cs ? 'cs' : 'en']}
+            {tx5(HomeTreePortalCopy.tenSpheresThroughWhichLightFlo, lang)}
           </p>
         </div>
 
@@ -96,25 +97,25 @@ export default function HomeTreePortal() {
                 <div className="space-y-3">
                   <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-zion-cyan">
                     <Sparkles className="h-4 w-4" />
-                    {HomeTreePortalCopy.quickPreview[cs ? 'cs' : 'en']}
+                    {tx5(HomeTreePortalCopy.quickPreview, lang)}
                   </div>
                   <p className="text-base leading-relaxed text-gray-300">
-                    {HomeTreePortalCopy.theKabbalisticTreeOfLifeMapsTe[cs ? 'cs' : 'en']}
+                    {tx5(HomeTreePortalCopy.theKabbalisticTreeOfLifeMapsTe, lang)}
                   </p>
                   <p className="text-sm leading-relaxed text-gray-400">
-                    {HomeTreePortalCopy.theSameStructureRepeatsIn14400[cs ? 'cs' : 'en']}
+                    {tx5(HomeTreePortalCopy.theSameStructureRepeatsIn14400, lang)}
                   </p>
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="zion-rainbow-sub p-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{HomeTreePortalCopy.spheres[cs ? 'cs' : 'en']}</p>
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{tx5(HomeTreePortalCopy.spheres, lang)}</p>
                       <p className="mt-1 text-lg font-bold text-white">10</p>
                     </div>
                     <div className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{HomeTreePortalCopy.paths[cs ? 'cs' : 'en']}</p>
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{tx5(HomeTreePortalCopy.paths, lang)}</p>
                       <p className="mt-1 text-lg font-bold text-white">22</p>
                     </div>
                     <div className="zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{HomeTreePortalCopy.pillars[cs ? 'cs' : 'en']}</p>
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{tx5(HomeTreePortalCopy.pillars, lang)}</p>
                       <p className="mt-1 text-lg font-bold text-white">3</p>
                     </div>
                   </div>
@@ -124,7 +125,7 @@ export default function HomeTreePortal() {
                     className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-purple via-zion-gold to-zion-cyan px-6 py-3 text-sm font-semibold text-white shadow-[0_0_40px_rgba(252,209,22,0.25)] transition-all hover:shadow-[0_0_60px_rgba(252,209,22,0.4)]"
                   >
                     <Leaf className="h-4 w-4" />
-                    {HomeTreePortalCopy.loadInteractiveScene[cs ? 'cs' : 'en']}
+                    {tx5(HomeTreePortalCopy.loadInteractiveScene, lang)}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                   <Link
@@ -132,7 +133,7 @@ export default function HomeTreePortal() {
                     className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold/40 bg-zion-gold/5 px-5 py-3 text-sm font-semibold text-zion-gold transition-all hover:bg-zion-gold/10 hover:border-zion-gold/60"
                   >
                     <Sparkles className="h-4 w-4" />
-                    {HomeTreePortalCopy.openTreeOfLifeOfZion[cs ? 'cs' : 'en']}
+                    {tx5(HomeTreePortalCopy.openTreeOfLifeOfZion, lang)}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>

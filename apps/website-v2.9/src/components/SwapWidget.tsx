@@ -10,6 +10,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { ArrowDownUp, Loader2, ExternalLink, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { useWallet } from '@/contexts/WalletContext';
 import { CONTRACTS, WZION_ABI, SWAP_ROUTER02_ABI, QUOTER_V2_ABI, ERC20_ABI } from '@/lib/defi-contracts';
 import TokenIcon from '@/components/dex/TokenIcon';
@@ -195,20 +196,20 @@ export default function SwapWidget() {
   return (
     <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <h3 className="text-lg font-semibold text-white">
-        {SwapWidgetCopy.swap[cs ? 'cs' : 'en']}
+        {tx5(SwapWidgetCopy.swap, lang)}
       </h3>
 
       {/* Not connected */}
       {!connected && (
         <div className="text-center py-6">
           <p className="text-sm text-gray-400 mb-4">
-            {SwapWidgetCopy.connectMetamaskToSwap[cs ? 'cs' : 'en']}
+            {tx5(SwapWidgetCopy.connectMetamaskToSwap, lang)}
           </p>
           <button
             onClick={connect}
             className="inline-flex items-center gap-2 rounded-xl bg-zion-gold/20 border border-zion-gold/30 px-5 py-2.5 text-sm font-semibold text-zion-gold hover:bg-zion-gold/30 transition-colors"
           >
-            {SwapWidgetCopy.connectWallet[cs ? 'cs' : 'en']}
+            {tx5(SwapWidgetCopy.connectWallet, lang)}
           </button>
         </div>
       )}
@@ -217,13 +218,13 @@ export default function SwapWidget() {
       {connected && !isBaseMainnet && (
         <div className="text-center py-6">
           <p className="text-sm text-zion-purple mb-4">
-            {SwapWidgetCopy.switchToBaseMainnet[cs ? 'cs' : 'en']}
+            {tx5(SwapWidgetCopy.switchToBaseMainnet, lang)}
           </p>
           <button
             onClick={switchToBase}
             className="inline-flex items-center gap-2 rounded-xl bg-zion-gold/20 border border-zion-gold/30 px-5 py-2.5 text-sm font-semibold text-zion-gold hover:bg-zion-gold/30 transition-colors"
           >
-            {SwapWidgetCopy.switchNetwork[cs ? 'cs' : 'en']}
+            {tx5(SwapWidgetCopy.switchNetwork, lang)}
           </button>
         </div>
       )}
@@ -234,13 +235,13 @@ export default function SwapWidget() {
           {/* Input */}
           <div className="rounded-xl border border-white/10 bg-white/5 p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-400">{SwapWidgetCopy.youSell[cs ? 'cs' : 'en']}</span>
+              <span className="text-xs text-gray-400">{tx5(SwapWidgetCopy.youSell, lang)}</span>
               {inputBal && (
                 <button
                   onClick={() => setInputAmount(inputBal)}
                   className="text-xs text-gray-500 hover:text-white transition-colors"
                 >
-                  {SwapWidgetCopy.max[cs ? 'cs' : 'en']}: {inputBal}
+                  {tx5(SwapWidgetCopy.max, lang)}: {inputBal}
                 </button>
               )}
             </div>
@@ -274,7 +275,7 @@ export default function SwapWidget() {
           {/* Output */}
           <div className="rounded-xl border border-white/10 bg-white/5 p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-400">{SwapWidgetCopy.youGet[cs ? 'cs' : 'en']}</span>
+              <span className="text-xs text-gray-400">{tx5(SwapWidgetCopy.youGet, lang)}</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex-1 text-2xl font-mono text-white">
@@ -299,7 +300,7 @@ export default function SwapWidget() {
               1 wZION ≈ {direction === 'usdt-to-wzion'
                 ? (parseFloat(inputAmount) / parseFloat(quote)).toFixed(6)
                 : (parseFloat(quote) / parseFloat(inputAmount)).toFixed(6)
-              } USDT · {SwapWidgetCopy.fee[cs ? 'cs' : 'en']} 0.3% · slippage 1%
+              } USDT · {tx5(SwapWidgetCopy.fee, lang)} 0.3% · slippage 1%
             </div>
           )}
 
@@ -316,7 +317,7 @@ export default function SwapWidget() {
             <div className="flex items-start gap-2 rounded-xl border border-zion-cyan/30 bg-zion-cyan/10 p-3">
               <CheckCircle2 className="h-4 w-4 text-zion-cyan shrink-0 mt-0.5" />
               <div className="text-xs text-zion-cyan">
-                <p className="font-semibold mb-1">{SwapWidgetCopy.swapSuccessful[cs ? 'cs' : 'en']}</p>
+                <p className="font-semibold mb-1">{tx5(SwapWidgetCopy.swapSuccessful, lang)}</p>
                 <a
                   href={`https://basescan.org/tx/${txHash}`}
                   target="_blank"
@@ -337,11 +338,11 @@ export default function SwapWidget() {
             style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
           >
             {phase === 'approving' ? (
-              <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> {SwapWidgetCopy.approving[cs ? 'cs' : 'en']}</span>
+              <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> {tx5(SwapWidgetCopy.approving, lang)}</span>
             ) : phase === 'swapping' ? (
-              <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> {SwapWidgetCopy.swapping[cs ? 'cs' : 'en']}</span>
+              <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> {tx5(SwapWidgetCopy.swapping, lang)}</span>
             ) : (
-              cs ? `Swapovat ${inputToken} → ${outputToken}` : `Swap ${inputToken} → ${outputToken}`
+              cs ? `Swapovat ${inputToken} → ${outputToken}` : t5(`Swap ${inputToken} → ${outputToken}`, lang)
             )}
           </button>
 

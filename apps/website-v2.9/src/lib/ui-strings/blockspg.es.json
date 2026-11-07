@@ -1,0 +1,21 @@
+{
+ "Age": "Antigüedad",
+ "Block Archive": "Archivo de bloques",
+ "Blocks": "Bloques",
+ "Complete history of ZION blockchain blocks": "Historial completo de los bloques de la blockchain ZION",
+ "Difficulty": "Dificultad",
+ "Export CSV": "Exportar CSV",
+ "Failed to load": "No se pudo cargar",
+ "Height": "Altura",
+ "Live": "En vivo",
+ "Load More": "Cargar más",
+ "Miner": "Minero",
+ "Offline": "Sin conexión",
+ "Open pool": "Abrir pool",
+ "Retry": "Reintentar",
+ "Reward": "Recompensa",
+ "Size": "Tamaño",
+ "ZION Pool": "Pool ZION",
+ "Showing ${blocks.length} blocks": "Mostrando ${blocks.length} bloques",
+ "+${sse.blockCount} new": "+${sse.blockCount} nuevos"
+}

@@ -1,0 +1,14 @@
+{
+ "Dependencies": "Dependências",
+ "Loading system health...": "A carregar o estado do sistema...",
+ "Mining Pool": "Pool de mineração",
+ "RPC Node": "Nó RPC",
+ "Status": "Estado",
+ "System Health": "Saúde do sistema",
+ "Uptime": "Tempo de atividade",
+ "Version": "Versão",
+ "degraded": "degradado",
+ "healthy": "saudável",
+ "unknown": "desconhecido",
+ "${hours}h ${minutes}m": "${hours} h ${minutes} min"
+}

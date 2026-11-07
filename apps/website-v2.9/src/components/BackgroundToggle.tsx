@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check, Globe, Orbit, Radio, Sparkles, Palette } from 'lucide-react';
 import { useObservatory, type ObservatoryMode } from '@/contexts/ObservatoryContext';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const backgroundConfig: Record<ObservatoryMode, { icon: typeof Sparkles; label: { cs: string; en: string }; description: { cs: string; en: string }; color: string }> = {
   'maintenance': { icon: Sparkles, label: { cs: 'Hvězdné pole', en: 'Starfield' }, description: { cs: 'Čisté a rychlé zlaté hvězdné pole', en: 'Clean and fast gold starfield' }, color: '252, 209, 22' },

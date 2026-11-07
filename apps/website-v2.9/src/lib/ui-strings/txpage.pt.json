@@ -1,0 +1,19 @@
+{
+ "Address filter:": "Filtro de endereço:",
+ "Age": "Idade",
+ "Amount": "Montante",
+ "Block": "Bloco",
+ "Clear filter": "Limpar filtro",
+ "Export CSV": "Exportar CSV",
+ "Failed to load transactions": "Falha ao carregar transações",
+ "Load More Transactions": "Carregar mais transações",
+ "Loading…": "A carregar…",
+ "No transactions found": "Nenhuma transação encontrada",
+ "Retry": "Tentar de novo",
+ "Transactions": "Transações",
+ "Type": "Tipo",
+ "loaded": "carregadas",
+ "payout": "pagamento",
+ "pending": "pendente",
+ "transfer": "transferência"
+}

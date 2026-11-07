@@ -1,5 +1,7 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+
 import Link from 'next/link';
 import { ArrowRight, BookOpen } from 'lucide-react';
 import { MAITREYA_CHAPTERS, MAITREYA_PARTS } from '@/lib/books/maitreya';

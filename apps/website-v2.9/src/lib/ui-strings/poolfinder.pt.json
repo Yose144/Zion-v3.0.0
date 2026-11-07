@@ -1,0 +1,14 @@
+{
+ "All Pools": "Todos os pools",
+ "Detecting...": "A detetar...",
+ "Distance": "Distância",
+ "Enter Manually": "Introduzir manualmente",
+ "Find Best Mining Pool": "Encontrar o melhor pool",
+ "Get the optimal mining pool based on your location for lowest latency.": "Obtém o pool ideal com base na tua localização para a menor latência.",
+ "Latitude (e.g. 50.08)": "Latitude (ex. 50.08)",
+ "Longitude (e.g. 14.42)": "Longitude (ex. 14.42)",
+ "No recommended pool available. Try detecting your location.": "Nenhum pool recomendado disponível. Tenta detetar a tua localização.",
+ "Recommended": "Recomendado",
+ "Search": "Pesquisar",
+ "Use My Location": "Usar a minha localização"
+}

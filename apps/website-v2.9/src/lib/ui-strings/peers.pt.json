@@ -1,0 +1,18 @@
+{
+ "Active links": "Ligações ativas",
+ "Chain height": "Altura da cadeia",
+ "Connected": "Ligado",
+ "Daemon has not registered any P2P connections yet.": "O daemon ainda não registou nenhuma ligação P2P.",
+ "Height": "Altura",
+ "Idle": "Inativo",
+ "Known": "Conhecidos",
+ "Known peers": "Peers conhecidos",
+ "Last": "Último",
+ "Loading...": "A carregar...",
+ "Network peers": "Peers da rede",
+ "No known peers.": "Nenhum peer conhecido.",
+ "Peer directory": "Diretório de peers",
+ "Peer telemetry": "Telemetria de peers",
+ "failures": "falhas",
+ "refresh 15s": "atualizar 15s"
+}

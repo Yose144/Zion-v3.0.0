@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { Send, Brain, User, Loader2, Sparkles, MessageCircle, X } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const Copy = {
   title: { cs: 'Hiranyagarbha', en: 'Hiranyagarbha' },

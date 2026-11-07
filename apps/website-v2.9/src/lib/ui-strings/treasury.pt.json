@@ -1,0 +1,15 @@
+{
+ "Attach signature": "Anexar assinatura",
+ "Broadcast TX": "Transmitir TX",
+ "DAO API key": "Chave API DAO",
+ "Ed25519 signature (hex)": "Assinatura Ed25519 (hex)",
+ "Guardian address": "Endereço Guardian",
+ "Hide": "Ocultar",
+ "Sign": "Assinar",
+ "Signature accepted.": "Assinatura aceite.",
+ "Signatures": "Assinaturas",
+ "Signing payload (hash)": "Payload a assinar (hash)",
+ "Submitting…": "A submeter…",
+ "signatures": "assinaturas",
+ "verified": "verificado"
+}

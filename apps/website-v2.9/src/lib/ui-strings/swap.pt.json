@@ -1,0 +1,15 @@
+{
+ "Approving…": "A aprovar…",
+ "Connect MetaMask to swap": "Liga a MetaMask para trocar",
+ "Connect Wallet": "Ligar carteira",
+ "Max": "Máx.",
+ "Swap": "Swap",
+ "Swap successful!": "Swap concluído!",
+ "Swapping…": "A trocar…",
+ "Switch Network": "Mudar de rede",
+ "Switch to Base Mainnet": "Mudar para Base Mainnet",
+ "You get": "Recebes",
+ "You sell": "Vendes",
+ "fee": "taxa",
+ "Swap ${inputToken} → ${outputToken}": "Trocar ${inputToken} → ${outputToken}"
+}

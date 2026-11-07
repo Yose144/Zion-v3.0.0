@@ -5,7 +5,8 @@ import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { motion } from "framer-motion";
 import { Box, ChevronRight, Copy, Check } from "lucide-react";
-import { useLang } from "@/contexts/LanguageContext";
+import { useLang, type Lang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 
 const ProRecentBlocksCopy = {
@@ -36,13 +37,13 @@ interface Block {
   orphan_status: boolean;
 }
 
-const fmtAge = (ts: number, cs: boolean): string => {
+const fmtAge = (ts: number, lang: Lang): string => {
   const s = Math.floor(Date.now() / 1000) - ts;
-  if (s < 5) return ProRecentBlocksCopy.justNow[cs ? 'cs' : 'en'];
-  if (s < 60) return cs ? `pred ${s}s` : `${s}s ago`;
-  if (s < 3600) return cs ? `pred ${Math.floor(s / 60)}m ${s % 60}s` : `${Math.floor(s / 60)}m ${s % 60}s ago`;
-  if (s < 86400) return cs ? `pred ${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m` : `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m ago`;
-  return cs ? `pred ${Math.floor(s / 86400)}d` : `${Math.floor(s / 86400)}d ago`;
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'always', style: 'narrow' });
+  if (s < 60) return rtf.format(-s, 'second');
+  if (s < 3600) return rtf.format(-Math.floor(s / 60), 'minute');
+  if (s < 86400) return rtf.format(-Math.floor(s / 3600), 'hour');
+  return rtf.format(-Math.floor(s / 86400), 'day');
 };
 
 const fmtSize = (b: number): string => {
@@ -76,7 +77,7 @@ function CopyBtn({ text, label }: { text: string; label: string }) {
 export default function ProRecentBlocks() {
   const { lang } = useLang();
   const cs = lang === "cs";
-  const locale = ProRecentBlocksCopy.enUs[cs ? 'cs' : 'en'];
+  const locale = tx5(ProRecentBlocksCopy.enUs, lang);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [, setTick] = useState(0);
@@ -111,15 +112,15 @@ export default function ProRecentBlocks() {
             <Box className="h-4.5 w-4.5 text-zion-gold" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-white">{ProRecentBlocksCopy.latestBlocks[cs ? 'cs' : 'en']}</h3>
-            <p className="text-[11px] text-gray-500">{ProRecentBlocksCopy.realTimeBlockFeed[cs ? 'cs' : 'en']}</p>
+            <h3 className="text-base font-semibold text-white">{tx5(ProRecentBlocksCopy.latestBlocks, lang)}</h3>
+            <p className="text-[11px] text-gray-500">{tx5(ProRecentBlocksCopy.realTimeBlockFeed, lang)}</p>
           </div>
         </div>
         <Link
           href="/explorer/blocks"
           className="flex items-center gap-1 text-xs text-gray-400 hover:text-zion-cyan transition-colors font-medium"
         >
-          {ProRecentBlocksCopy.viewAll[cs ? 'cs' : 'en']} <ChevronRight className="h-3.5 w-3.5" />
+          {tx5(ProRecentBlocksCopy.viewAll, lang)} <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
@@ -128,13 +129,13 @@ export default function ProRecentBlocks() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/4">
-              <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{ProRecentBlocksCopy.height[cs ? 'cs' : 'en']}</th>
-              <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">{ProRecentBlocksCopy.age[cs ? 'cs' : 'en']}</th>
+              <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{tx5(ProRecentBlocksCopy.height, lang)}</th>
+              <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">{tx5(ProRecentBlocksCopy.age, lang)}</th>
               <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden md:table-cell">Hash</th>
               <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">Txs</th>
-              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">{ProRecentBlocksCopy.size[cs ? 'cs' : 'en']}</th>
-              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden lg:table-cell">{ProRecentBlocksCopy.difficulty[cs ? 'cs' : 'en']}</th>
-              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{ProRecentBlocksCopy.reward[cs ? 'cs' : 'en']}</th>
+              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">{tx5(ProRecentBlocksCopy.size, lang)}</th>
+              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden lg:table-cell">{tx5(ProRecentBlocksCopy.difficulty, lang)}</th>
+              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{tx5(ProRecentBlocksCopy.reward, lang)}</th>
             </tr>
           </thead>
           <tbody>
@@ -166,7 +167,7 @@ export default function ProRecentBlocks() {
                     </td>
                     <td className="px-3 py-3">
                       <span className="text-gray-400 text-xs tabular-nums whitespace-nowrap">
-                        {fmtAge(block.timestamp, cs)}
+                        {fmtAge(block.timestamp, lang)}
                       </span>
                     </td>
                     <td className="px-3 py-3 hidden md:table-cell">
@@ -177,7 +178,7 @@ export default function ProRecentBlocks() {
                         >
                           {truncHash(block.hash, 10)}
                         </Link>
-                        <CopyBtn text={block.hash} label={ProRecentBlocksCopy.copyHash[cs ? 'cs' : 'en']} />
+                        <CopyBtn text={block.hash} label={tx5(ProRecentBlocksCopy.copyHash, lang)} />
                       </div>
                     </td>
                     <td className="px-3 py-3 text-right">
@@ -215,15 +216,13 @@ export default function ProRecentBlocks() {
       {!loading && blocks.length > 0 && (
         <div className="px-6 py-3 border-t border-white/4 flex items-center justify-between">
           <p className="text-[11px] text-gray-600">
-            {cs
-                ? `Zobrazeno ${Math.min(15, blocks.length)} poslednich bloku · Auto-refresh 15 s`
-              : `Showing ${Math.min(15, blocks.length)} latest blocks · Auto-refresh 15s`}
+            {cs ? `Zobrazeno ${Math.min(15, blocks.length)} poslednich bloku · Auto-refresh 15 s` : t5(`Showing ${Math.min(15, blocks.length)} latest blocks · Auto-refresh 15s`, lang)}
           </p>
           <Link
             href="/explorer/blocks"
             className="text-[11px] text-zion-cyan hover:text-white transition font-medium"
           >
-            {ProRecentBlocksCopy.fullBlockArchive[cs ? 'cs' : 'en']} →
+            {tx5(ProRecentBlocksCopy.fullBlockArchive, lang)} →
           </Link>
         </div>
       )}

@@ -1,0 +1,18 @@
+{
+ "Address": "Adresse",
+ "Address is truncated — we explain what to paste": "L'adresse est tronquée — nous expliquons quoi coller",
+ "Block": "Bloc",
+ "Clear": "Effacer",
+ "Enter ↵": "Entrée ↵",
+ "Hash": "Hash",
+ "Search": "Rechercher",
+ "Search ZION address": "Rechercher une adresse ZION",
+ "Search as block hash": "Rechercher comme hash de bloc",
+ "Search as transaction hash": "Rechercher comme hash de transaction",
+ "Search by block height": "Rechercher par hauteur de bloc",
+ "Search by block height, tx hash, or address…": "Rechercher par hauteur de bloc, hash de tx ou adresse…",
+ "Search by hash": "Rechercher par hash",
+ "Try searching as block/tx": "Essayez de rechercher comme bloc/tx",
+ "addr:<address>": "addr:<address>",
+ "tx:<hash>": "tx:<hash>"
+}

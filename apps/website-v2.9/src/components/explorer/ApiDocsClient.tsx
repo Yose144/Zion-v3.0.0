@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useLang } from "@/contexts/LanguageContext";
+import { useLang, type Lang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import {
   Check,
   ChevronDown,
@@ -458,7 +459,7 @@ function PathDisplay({ path }: { path: string }) {
   );
 }
 
-function EndpointAccordion({ ep, cs }: { ep: Endpoint; cs: boolean }) {
+function EndpointAccordion({ ep, cs, lang }: { ep: Endpoint; cs: boolean; lang: Lang }) {
   const [open, setOpen] = useState(false);
   const curl = `curl -s "${BASE_URL.replace("/api/blockchain", "")}${ep.path}${ep.params.length ? "?" + ep.params.filter(p => p.required).map(p => `${p.name}=${p.default || "VALUE"}`).join("&") : ""}"`;
   const tryUrl = `${BASE_URL.replace("/api/blockchain", "")}${ep.path}${ep.params.length ? "?" + ep.params.filter(p => p.required).map(p => `${p.name}=${p.default || "1"}`).join("&") : ""}`;
@@ -490,7 +491,7 @@ function EndpointAccordion({ ep, cs }: { ep: Endpoint; cs: boolean }) {
           {/* parameters */}
           {ep.params.length > 0 && (
             <div>
-              <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium mb-2">{ApiDocsCopy.parameters[cs ? 'cs' : 'en']}</p>
+              <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium mb-2">{tx5(ApiDocsCopy.parameters, lang)}</p>
               <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
                 <table className="w-full text-[12px]">
                   <thead>
@@ -498,7 +499,7 @@ function EndpointAccordion({ ep, cs }: { ep: Endpoint; cs: boolean }) {
                       <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/40 font-medium">Name</th>
                       <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/40 font-medium">Type</th>
                       <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/40 font-medium">Required</th>
-                      <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/40 font-medium">{ApiDocsCopy.description[cs ? 'cs' : 'en']}</th>
+                      <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-white/40 font-medium">{tx5(ApiDocsCopy.description, lang)}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -523,7 +524,7 @@ function EndpointAccordion({ ep, cs }: { ep: Endpoint; cs: boolean }) {
           {/* example request */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ApiDocsCopy.exampleRequest[cs ? 'cs' : 'en']}</p>
+              <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{tx5(ApiDocsCopy.exampleRequest, lang)}</p>
               <CopyButton text={curl} />
             </div>
             <pre className="rounded-xl bg-black/60 border border-white/[0.06] p-3.5 overflow-x-auto text-[12px] font-mono text-zion-cyan/90 leading-relaxed">
@@ -534,7 +535,7 @@ function EndpointAccordion({ ep, cs }: { ep: Endpoint; cs: boolean }) {
           {/* example response */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ApiDocsCopy.exampleResponse[cs ? 'cs' : 'en']}</p>
+              <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{tx5(ApiDocsCopy.exampleResponse, lang)}</p>
               <CopyButton text={ep.exampleResponse} />
             </div>
             <pre className="rounded-xl bg-black/60 border border-white/[0.06] p-3.5 overflow-x-auto text-[12px] font-mono text-cyan-200/80 leading-relaxed">
@@ -550,7 +551,7 @@ function EndpointAccordion({ ep, cs }: { ep: Endpoint; cs: boolean }) {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zion-purple/15 border border-zion-purple/30 text-[12px] font-semibold text-zion-purple hover:bg-zion-purple/25 transition-colors"
           >
             <ExternalLink className="w-3.5 h-3.5" />
-            {ApiDocsCopy.tryIt[cs ? 'cs' : 'en']}
+            {tx5(ApiDocsCopy.tryIt, lang)}
           </a>
         </div>
       )}
@@ -577,7 +578,7 @@ export default function ApiDocsClient() {
         <nav className="flex items-center gap-1.5 text-[11px] text-white/40">
           <Link href="/explorer" className="hover:text-white/70 transition-colors">Explorer</Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-white/70">{ApiDocsCopy.apiDocs[cs ? 'cs' : 'en']}</span>
+          <span className="text-white/70">{tx5(ApiDocsCopy.apiDocs, lang)}</span>
         </nav>
 
         {/* header */}
@@ -588,28 +589,28 @@ export default function ApiDocsClient() {
             </div>
             <div>
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{ApiDocsCopy.zionBlockchainApi[cs ? 'cs' : 'en']}</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{tx5(ApiDocsCopy.zionBlockchainApi, lang)}</h1>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-zion-purple/15 text-zion-purple border border-zion-purple/30">
                   v3.2.0
                 </span>
               </div>
-              <p className="text-sm text-white/40 mt-1">{ApiDocsCopy.jsonEndpointsForIntegrationAnd[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm text-white/40 mt-1">{tx5(ApiDocsCopy.jsonEndpointsForIntegrationAnd, lang)}</p>
             </div>
           </div>
 
           {/* base url */}
           <div className="flex items-center gap-3 flex-wrap mt-6">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ApiDocsCopy.baseUrl[cs ? 'cs' : 'en']}</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{tx5(ApiDocsCopy.baseUrl, lang)}</span>
             <code className="px-3 py-1.5 rounded-lg bg-black/50 border border-white/[0.08] text-[13px] font-mono text-zion-purple">{BASE_URL}</code>
-            <CopyButton text={BASE_URL} label={ApiDocsCopy.copy[cs ? 'cs' : 'en']} />
+            <CopyButton text={BASE_URL} label={tx5(ApiDocsCopy.copy, lang)} />
           </div>
 
           {/* rate limit banner */}
           <div className="mt-5 flex items-center gap-3 rounded-xl bg-zion-cyan/[0.07] border border-zion-cyan/20 px-4 py-3">
             <span className="w-2 h-2 rounded-full bg-zion-cyan animate-pulse flex-shrink-0" />
             <p className="text-[13px] text-zion-cyan/90">
-              <span className="font-semibold">{ApiDocsCopy.rateLimiting[cs ? 'cs' : 'en']}</span>{" "}
-              {ApiDocsCopy.rateLimitValue[cs ? 'cs' : 'en']}
+              <span className="font-semibold">{tx5(ApiDocsCopy.rateLimiting, lang)}</span>{" "}
+              {tx5(ApiDocsCopy.rateLimitValue, lang)}
             </p>
           </div>
         </div>
@@ -626,7 +627,7 @@ export default function ApiDocsClient() {
               </div>
               <div className="space-y-2.5">
                 {eps.map((ep) => (
-                  <EndpointAccordion key={ep.path} ep={ep} cs={cs} />
+                  <EndpointAccordion key={ep.path} ep={ep} cs={cs} lang={lang} />
                 ))}
               </div>
             </section>
@@ -635,7 +636,7 @@ export default function ApiDocsClient() {
 
         {/* footer */}
         <p className="text-center text-xs text-white/30 pt-4">
-          {ApiDocsCopy.zionTerranovaV306ApiDocumentat[cs ? 'cs' : 'en']}
+          {tx5(ApiDocsCopy.zionTerranovaV306ApiDocumentat, lang)}
         </p>
       </div>
     </div>

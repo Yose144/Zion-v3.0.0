@@ -1,5 +1,8 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
+
 import { useState } from 'react';
 import { Check, Copy, Server, Terminal } from 'lucide-react';
 
@@ -28,11 +31,11 @@ type OnboardingStep = {
   detail: string;
 };
 
-function getCodeSamples(cs: boolean): CodeSample[] {
+function getCodeSamples(cs: boolean, lang: Lang): CodeSample[] {
   return [
     {
       id: 'curl',
-      label: ApiQuickstartPanelsCopy.curlQuickPing[cs ? 'cs' : 'en'],
+      label: tx5(ApiQuickstartPanelsCopy.curlQuickPing, lang),
       snippet: `curl -X GET \\
   https://app.zionterranova.com/api/blockchain/stats \\
   -H 'Accept: application/json'`,
@@ -50,27 +53,27 @@ const data = await res.json();`,
   ];
 }
 
-function getOnboardingSteps(cs: boolean): OnboardingStep[] {
+function getOnboardingSteps(cs: boolean, lang: Lang): OnboardingStep[] {
   return [
     {
-      title: ApiQuickstartPanelsCopy.k1Authenticate[cs ? 'cs' : 'en'],
-      detail: ApiQuickstartPanelsCopy.getRoutesAreOpenForPostPutIncl[cs ? 'cs' : 'en'],
+      title: tx5(ApiQuickstartPanelsCopy.k1Authenticate, lang),
+      detail: tx5(ApiQuickstartPanelsCopy.getRoutesAreOpenForPostPutIncl, lang),
     },
     {
-      title: ApiQuickstartPanelsCopy.k2ChooseTransport[cs ? 'cs' : 'en'],
-      detail: ApiQuickstartPanelsCopy.httpsForRpcRestWebsocketsForSt[cs ? 'cs' : 'en'],
+      title: tx5(ApiQuickstartPanelsCopy.k2ChooseTransport, lang),
+      detail: tx5(ApiQuickstartPanelsCopy.httpsForRpcRestWebsocketsForSt, lang),
     },
     {
-      title: ApiQuickstartPanelsCopy.k3PinEnvironment[cs ? 'cs' : 'en'],
-      detail: ApiQuickstartPanelsCopy.sandboxMirrorsProductionAtHttp[cs ? 'cs' : 'en'],
+      title: tx5(ApiQuickstartPanelsCopy.k3PinEnvironment, lang),
+      detail: tx5(ApiQuickstartPanelsCopy.sandboxMirrorsProductionAtHttp, lang),
     },
   ];
 }
 
-export default function ApiQuickstartPanels({ cs }: { cs: boolean }) {
+export default function ApiQuickstartPanels({ cs, lang }: { cs: boolean; lang: Lang }) {
   const [copied, setCopied] = useState<string | null>(null);
-  const codeSamples = getCodeSamples(cs);
-  const onboardingSteps = getOnboardingSteps(cs);
+  const codeSamples = getCodeSamples(cs, lang);
+  const onboardingSteps = getOnboardingSteps(cs, lang);
 
   const handleCopy = async (id: string, value: string) => {
     await navigator.clipboard.writeText(value);
@@ -82,7 +85,7 @@ export default function ApiQuickstartPanels({ cs }: { cs: boolean }) {
     <section className="grid gap-6 lg:grid-cols-2">
       <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
         <h3 className="text-2xl font-semibold text-white flex items-center gap-3">
-          <Terminal className="h-6 w-6 text-zion-gold" /> {ApiQuickstartPanelsCopy.quickstartSnippets[cs ? 'cs' : 'en']}
+          <Terminal className="h-6 w-6 text-zion-gold" /> {tx5(ApiQuickstartPanelsCopy.quickstartSnippets, lang)}
         </h3>
         <div className="mt-4 space-y-4">
           {codeSamples.map((sample) => (
@@ -95,11 +98,11 @@ export default function ApiQuickstartPanels({ cs }: { cs: boolean }) {
                 >
                   {copied === sample.id ? (
                     <>
-                      <Check className="h-3 w-3" /> {ApiQuickstartPanelsCopy.copied[cs ? 'cs' : 'en']}
+                      <Check className="h-3 w-3" /> {tx5(ApiQuickstartPanelsCopy.copied, lang)}
                     </>
                   ) : (
                     <>
-                      <Copy className="h-3 w-3" /> {ApiQuickstartPanelsCopy.copy[cs ? 'cs' : 'en']}
+                      <Copy className="h-3 w-3" /> {tx5(ApiQuickstartPanelsCopy.copy, lang)}
                     </>
                   )}
                 </button>
@@ -114,7 +117,7 @@ export default function ApiQuickstartPanels({ cs }: { cs: boolean }) {
 
       <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
         <h3 className="text-2xl font-semibold text-white flex items-center gap-3">
-          <Server className="h-6 w-6 text-zion-gold" /> {ApiQuickstartPanelsCopy.onboardingChecklist[cs ? 'cs' : 'en']}
+          <Server className="h-6 w-6 text-zion-gold" /> {tx5(ApiQuickstartPanelsCopy.onboardingChecklist, lang)}
         </h3>
         <div className="mt-4 space-y-4">
           {onboardingSteps.map((step) => (

@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Box, ChevronDown, Download, AlertCircle, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 import { exportToCsv } from "@/lib/csv-export";
 import { useExplorerSSE } from "@/components/explorer/v4/hooks/useExplorerSSE";
@@ -44,12 +45,13 @@ interface Block {
   miner?: string;
 }
 
-const fmtAge = (ts: number, cs: boolean): string => {
+const fmtAge = (ts: number, lang: Lang): string => {
   const s = Math.floor(Date.now() / 1000) - ts;
-  if (s < 60) return cs ? `před ${s} s` : `${s}s ago`;
-  if (s < 3600) return cs ? `před ${Math.floor(s / 60)} min ${s % 60} s` : `${Math.floor(s / 60)}m ${s % 60}s ago`;
-  if (s < 86400) return cs ? `před ${Math.floor(s / 3600)} h ${Math.floor((s % 3600) / 60)} min` : `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m ago`;
-  return cs ? `před ${Math.floor(s / 86400)} d` : `${Math.floor(s / 86400)}d ago`;
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'always', style: 'narrow' });
+  if (s < 60) return rtf.format(-s, 'second');
+  if (s < 3600) return rtf.format(-Math.floor(s / 60), 'minute');
+  if (s < 86400) return rtf.format(-Math.floor(s / 3600), 'hour');
+  return rtf.format(-Math.floor(s / 86400), 'day');
 };
 const fmtSize = (b: number): string => {
   if (b >= 1e6) return `${(b / 1e6).toFixed(1)} MB`;
@@ -67,7 +69,7 @@ const fmtDiff = (d: number): string => {
 export default function BlocksPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = ExplorerBlocksCopy.enUs[cs ? 'cs' : 'en'];
+  const locale = tx5(ExplorerBlocksCopy.enUs, lang);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -171,7 +173,7 @@ export default function BlocksPage() {
         <nav className="flex items-center gap-2 text-sm">
           <Link href="/explorer" className="text-gray-500 hover:text-white transition">Explorer</Link>
           <span className="text-gray-700">/</span>
-          <span className="text-white font-medium">{ExplorerBlocksCopy.blocks[cs ? 'cs' : 'en']}</span>
+          <span className="text-white font-medium">{tx5(ExplorerBlocksCopy.blocks, lang)}</span>
         </nav>
 
         {/* Header */}
@@ -180,23 +182,23 @@ export default function BlocksPage() {
             <Box className="h-6 w-6 text-zion-gold" />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl md:text-3xl font-bold text-white">{ExplorerBlocksCopy.blockArchive[cs ? 'cs' : 'en']}</h1>
-            <p className="text-sm text-gray-500">{ExplorerBlocksCopy.completeHistoryOfZionBlockchai[cs ? 'cs' : 'en']}</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">{tx5(ExplorerBlocksCopy.blockArchive, lang)}</h1>
+            <p className="text-sm text-gray-500">{tx5(ExplorerBlocksCopy.completeHistoryOfZionBlockchai, lang)}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {sse.connected ? (
-              <LiveBadge label={ExplorerBlocksCopy.live[cs ? 'cs' : 'en']} />
+              <LiveBadge label={tx5(ExplorerBlocksCopy.live, lang)} />
             ) : (
               <span className="inline-flex items-center gap-1.5">
                 <span className="relative flex h-2 w-2">
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-gray-500" />
                 </span>
-                <span className="text-xs font-bold text-gray-500 tracking-wider">{ExplorerBlocksCopy.offline[cs ? 'cs' : 'en']}</span>
+                <span className="text-xs font-bold text-gray-500 tracking-wider">{tx5(ExplorerBlocksCopy.offline, lang)}</span>
               </span>
             )}
             {sse.blockCount > 0 && (
               <span className="text-[11px] text-zion-cyan tabular-nums">
-                {cs ? `+${sse.blockCount} nové` : `+${sse.blockCount} new`}
+                {cs ? `+${sse.blockCount} nové` : t5(`+${sse.blockCount} new`, lang)}
               </span>
             )}
           </div>
@@ -207,14 +209,14 @@ export default function BlocksPage() {
           <div className="zion-rainbow-sub px-4 py-3 flex items-center gap-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <AlertCircle className="h-5 w-5 text-zion-purple shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-zion-purple font-medium">{ExplorerBlocksCopy.failedToLoad[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm text-zion-purple font-medium">{tx5(ExplorerBlocksCopy.failedToLoad, lang)}</p>
               <p className="text-xs text-gray-500 font-mono break-all">{error}</p>
             </div>
             <button
               onClick={() => { setError(null); setLoading(true); loadBlocks(1, false); }}
               className="zion-button-secondary text-xs py-1.5 px-3 shrink-0"
             >
-              {ExplorerBlocksCopy.retry[cs ? 'cs' : 'en']}
+              {tx5(ExplorerBlocksCopy.retry, lang)}
             </button>
           </div>
         )}
@@ -225,14 +227,14 @@ export default function BlocksPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/6">
-                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{ExplorerBlocksCopy.height[cs ? 'cs' : 'en']}</th>
-                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">{ExplorerBlocksCopy.age[cs ? 'cs' : 'en']}</th>
-                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{ExplorerBlocksCopy.miner[cs ? 'cs' : 'en']}</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{tx5(ExplorerBlocksCopy.height, lang)}</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">{tx5(ExplorerBlocksCopy.age, lang)}</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{tx5(ExplorerBlocksCopy.miner, lang)}</th>
                   <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden md:table-cell">Hash</th>
                   <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">Txs</th>
-                  <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden sm:table-cell">{ExplorerBlocksCopy.size[cs ? 'cs' : 'en']}</th>
-                  <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{ExplorerBlocksCopy.difficulty[cs ? 'cs' : 'en']}</th>
-                  <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{ExplorerBlocksCopy.reward[cs ? 'cs' : 'en']}</th>
+                  <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden sm:table-cell">{tx5(ExplorerBlocksCopy.size, lang)}</th>
+                  <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{tx5(ExplorerBlocksCopy.difficulty, lang)}</th>
+                  <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{tx5(ExplorerBlocksCopy.reward, lang)}</th>
                 </tr>
               </thead>
               <tbody>
@@ -255,7 +257,7 @@ export default function BlocksPage() {
                           </Link>
                         </td>
                         <td className="px-3 py-3">
-                          <span className="text-gray-400 text-xs tabular-nums whitespace-nowrap">{fmtAge(block.timestamp, cs)}</span>
+                          <span className="text-gray-400 text-xs tabular-nums whitespace-nowrap">{fmtAge(block.timestamp, lang)}</span>
                         </td>
                         <td className="px-3 py-3 hidden lg:table-cell">
                           {(() => {
@@ -279,7 +281,7 @@ export default function BlocksPage() {
                                     href="https://pool.zionterranova.com"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    title={cs ? 'Otevřít pool' : 'Open pool'}
+                                    title={cs ? 'Otevřít pool' : t5('Open pool', lang)}
                                     className="text-zion-gold/60 transition hover:text-zion-gold"
                                   >
                                     <ExternalLink size={12} />
@@ -324,7 +326,7 @@ export default function BlocksPage() {
           {/* Footer / Load More */}
           <div className="px-6 py-4 border-t border-white/4 flex items-center justify-between flex-wrap gap-3">
             <p className="text-[11px] text-gray-600">
-              {cs ? `Zobrazeno ${blocks.length} bloků` : `Showing ${blocks.length} blocks`}
+              {cs ? `Zobrazeno ${blocks.length} bloků` : t5(`Showing ${blocks.length} blocks`, lang)}
             </p>
             <div className="flex items-center gap-2">
               <button
@@ -333,7 +335,7 @@ export default function BlocksPage() {
                 className="zion-button-secondary text-xs py-2 px-4"
               >
                 <Download className="h-3.5 w-3.5" />
-                {ExplorerBlocksCopy.exportCsv[cs ? 'cs' : 'en']}
+                {tx5(ExplorerBlocksCopy.exportCsv, lang)}
               </button>
               {hasMore && (
                 <button
@@ -346,7 +348,7 @@ export default function BlocksPage() {
                   ) : (
                     <ChevronDown className="h-3.5 w-3.5" />
                   )}
-                  {ExplorerBlocksCopy.loadMore[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerBlocksCopy.loadMore, lang)}
                 </button>
               )}
             </div>

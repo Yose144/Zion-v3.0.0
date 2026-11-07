@@ -5,6 +5,7 @@ import { Rocket, ArrowDownToLine, ArrowRight, ExternalLink, X, Cpu, Wallet, Zap,
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const ReleaseHighlightBannerCopy = {
   dismiss: { cs: `Zavřít`, en: `Dismiss` },
@@ -70,7 +71,7 @@ export default function ReleaseHighlightBanner() {
           <button
             onClick={dismiss}
             className="absolute top-4 right-4 text-zion-gold/60 hover:text-zion-gold transition"
-            aria-label={ReleaseHighlightBannerCopy.dismiss[cs ? 'cs' : 'en']}
+            aria-label={tx5(ReleaseHighlightBannerCopy.dismiss, lang)}
           >
             <X className="h-4 w-4" />
           </button>
@@ -79,7 +80,7 @@ export default function ReleaseHighlightBanner() {
           <div className="flex items-center gap-3 mb-4 flex-wrap">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-zion-purple/30 bg-zion-purple/10 px-3 py-1 text-[10px] font-semibold text-zion-purple uppercase tracking-wider">
               <Rocket className="h-3 w-3" />
-              {ReleaseHighlightBannerCopy.newRelease[cs ? 'cs' : 'en']}
+              {tx5(ReleaseHighlightBannerCopy.newRelease, lang)}
             </span>
             <span className="text-xs font-mono text-zion-gold/80">{RELEASE_TAG}</span>
             <span className="text-xs text-zion-gold/50">· {RELEASE_DATE}</span>
@@ -88,7 +89,7 @@ export default function ReleaseHighlightBanner() {
           {/* Headline */}
           <h2 className="text-2xl sm:text-3xl font-bold leading-tight mb-3 text-zion-gold">
             <span className="text-gradient">
-              {ReleaseHighlightBannerCopy.zionV310ReleaseHub[cs ? 'cs' : 'en']}
+              {tx5(ReleaseHighlightBannerCopy.zionV310ReleaseHub, lang)}
             </span>
           </h2>
 
@@ -109,27 +110,27 @@ export default function ReleaseHighlightBanner() {
           <div className="flex flex-wrap gap-2 mb-6">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-zion-purple/20 bg-zion-purple/10 px-3 py-1 text-xs text-zion-purple">
               <Zap className="h-3 w-3 text-zion-purple" />
-              {ReleaseHighlightBannerCopy.boostStreams[cs ? 'cs' : 'en']}
+              {tx5(ReleaseHighlightBannerCopy.boostStreams, lang)}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-zion-cyan/20 bg-zion-cyan/10 px-3 py-1 text-xs text-zion-cyan">
               <Monitor className="h-3 w-3 text-zion-cyan" />
-              {ReleaseHighlightBannerCopy.oneClickGuiMining[cs ? 'cs' : 'en']}
+              {tx5(ReleaseHighlightBannerCopy.oneClickGuiMining, lang)}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-zion-gold/20 bg-zion-gold/10 px-3 py-1 text-xs text-zion-gold">
               <Wallet className="h-3 w-3 text-zion-gold" />
-              {ReleaseHighlightBannerCopy.builtInWalletDashboard[cs ? 'cs' : 'en']}
+              {tx5(ReleaseHighlightBannerCopy.builtInWalletDashboard, lang)}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-zion-purple/20 bg-zion-purple/10 px-3 py-1 text-xs text-zion-purple">
               <Cpu className="h-3 w-3 text-zion-purple" />
-              {ReleaseHighlightBannerCopy.autoGpuBackend[cs ? 'cs' : 'en']}
+              {tx5(ReleaseHighlightBannerCopy.autoGpuBackend, lang)}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-zion-cyan/20 bg-zion-cyan/10 px-3 py-1 text-xs text-zion-cyan">
               <Cpu className="h-3 w-3 text-zion-cyan" />
-              {ReleaseHighlightBannerCopy.fourPlatforms[cs ? 'cs' : 'en']}
+              {tx5(ReleaseHighlightBannerCopy.fourPlatforms, lang)}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-zion-gold/20 bg-zion-gold/10 px-3 py-1 text-xs text-zion-gold">
               <Monitor className="h-3 w-3 text-zion-gold" />
-              {ReleaseHighlightBannerCopy.allPlatformsAvailable[cs ? 'cs' : 'en']}
+              {tx5(ReleaseHighlightBannerCopy.allPlatformsAvailable, lang)}
             </span>
           </div>
 
@@ -140,7 +141,7 @@ export default function ReleaseHighlightBanner() {
               className="group zion-button-primary gap-2 text-sm"
             >
               <ArrowDownToLine className="h-4 w-4 transition-transform group-hover:translate-y-0.5" />
-              {ReleaseHighlightBannerCopy.downloadDesktopApp[cs ? 'cs' : 'en']}
+              {tx5(ReleaseHighlightBannerCopy.downloadDesktopApp, lang)}
             </Link>
             <Link
               href={GITHUB_DESKTOP_URL}
@@ -149,7 +150,7 @@ export default function ReleaseHighlightBanner() {
               className="group inline-flex items-center gap-2 rounded-xl border border-zion-purple/30 bg-zion-purple/5 px-5 py-2.5 text-sm font-medium text-zion-purple/90 transition-all duration-200 hover:bg-zion-purple/10 hover:border-zion-purple/60 hover:text-zion-purple hover:shadow-[0_0_20px_rgba(228,30,43,0.25)]"
             >
               <ExternalLink className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-              {ReleaseHighlightBannerCopy.githubDesktopApp[cs ? 'cs' : 'en']}
+              {tx5(ReleaseHighlightBannerCopy.githubDesktopApp, lang)}
             </Link>
             <Link
               href={GITHUB_BOOST_URL}
@@ -158,13 +159,13 @@ export default function ReleaseHighlightBanner() {
               className="group inline-flex items-center gap-2 rounded-xl border border-zion-cyan/30 bg-zion-cyan/5 px-5 py-2.5 text-sm font-medium text-zion-cyan/90 transition-all duration-200 hover:bg-zion-cyan/10 hover:border-zion-cyan/60 hover:text-zion-cyan hover:shadow-[0_0_20px_rgba(6,105,40,0.25)]"
             >
               <ExternalLink className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-              {ReleaseHighlightBannerCopy.githubTerminalMiner[cs ? 'cs' : 'en']}
+              {tx5(ReleaseHighlightBannerCopy.githubTerminalMiner, lang)}
             </Link>
             <Link
               href="/news"
               className="group inline-flex items-center gap-2 rounded-xl border border-zion-gold/30 bg-zion-gold/5 px-5 py-2.5 text-sm font-medium text-zion-gold/90 transition-all duration-200 hover:bg-zion-gold/10 hover:border-zion-gold/60 hover:text-zion-gold hover:shadow-[0_0_20px_rgba(252,209,22,0.25)]"
             >
-              {ReleaseHighlightBannerCopy.allNews[cs ? 'cs' : 'en']}
+              {tx5(ReleaseHighlightBannerCopy.allNews, lang)}
               <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>

@@ -1,0 +1,18 @@
+{
+ "Age": "Idade",
+ "Amount": "Montante",
+ "Block": "Bloco",
+ "Confirmed": "Confirmado",
+ "Copy hash": "Copiar hash",
+ "Full Transaction Feed": "Feed completo de transações",
+ "Latest Transactions": "Transações recentes",
+ "Payout": "Pagamento",
+ "Pending": "Pendente",
+ "Real-time transaction feed": "Feed de transações em tempo real",
+ "Type": "Tipo",
+ "View All": "Ver tudo",
+ "just now": "agora mesmo",
+ "↔ Transfer": "↔ Transferência",
+ "⛏ Coinbase": "⛏ Coinbase",
+ "Showing ${Math.min(15, txs.length)} latest transactions · Auto-refresh 15s": "A mostrar as ${Math.min(15, txs.length)} transações mais recentes · Atualização automática 15 s"
+}

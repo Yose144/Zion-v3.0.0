@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Globe, Wifi, WifiOff, ZoomIn, ZoomOut } from 'lucide-react';
 import { usePolling } from '@/hooks/usePolling';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const NetworkMapCopy = {
   zionNetwork: { cs: `Síť ZION`, en: `ZION Network` },
@@ -177,9 +178,9 @@ export default function NetworkMap({ variant = 'card', className }: NetworkMapPr
       {!isHero && (
         <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-black/70 backdrop-blur px-3 py-2 rounded-2xl border border-zion-purple/20">
           <Globe className="w-5 h-5 text-zion-purple" />
-          <span className="text-white font-semibold">{NetworkMapCopy.zionNetwork[cs ? 'cs' : 'en']}</span>
+          <span className="text-white font-semibold">{tx5(NetworkMapCopy.zionNetwork, lang)}</span>
           <span className={`text-sm ${status.summary.inSync ? 'text-zion-cyan' : 'text-zion-gold'}`}>
-            {status.summary.online}/{status.summary.total} {NetworkMapCopy.nodes[cs ? 'cs' : 'en']}
+            {status.summary.online}/{status.summary.total} {tx5(NetworkMapCopy.nodes, lang)}
           </span>
         </div>
       )}
@@ -190,21 +191,21 @@ export default function NetworkMap({ variant = 'card', className }: NetworkMapPr
           <button
             onClick={() => handleZoomBtn(1.2)}
             className="w-8 h-8 flex items-center justify-center rounded-lg bg-black/60 border border-white/10 text-white hover:bg-zion-purple/30 transition-colors"
-            title={NetworkMapCopy.zoomIn[cs ? 'cs' : 'en']}
+            title={tx5(NetworkMapCopy.zoomIn, lang)}
           >
             <ZoomIn className="w-4 h-4" />
           </button>
           <button
             onClick={() => handleZoomBtn(0.83)}
             className="w-8 h-8 flex items-center justify-center rounded-lg bg-black/60 border border-white/10 text-white hover:bg-zion-purple/30 transition-colors"
-            title={NetworkMapCopy.zoomOut[cs ? 'cs' : 'en']}
+            title={tx5(NetworkMapCopy.zoomOut, lang)}
           >
             <ZoomOut className="w-4 h-4" />
           </button>
           <button
             onClick={handleReset}
             className="w-8 h-8 flex items-center justify-center rounded-lg bg-black/60 border border-white/10 text-white hover:bg-zion-purple/30 transition-colors text-xs"
-            title={NetworkMapCopy.reset[cs ? 'cs' : 'en']}
+            title={tx5(NetworkMapCopy.reset, lang)}
           >
             ⟲
           </button>
@@ -359,16 +360,16 @@ export default function NetworkMap({ variant = 'card', className }: NetworkMapPr
                       {node.name}
                     </text>
                     <text x={pos.x + 25} y={pos.y - 18} fill="#9CA3AF" fontSize="9">
-                      {NetworkMapCopy.height[cs ? 'cs' : 'en']}: {node.height ? node.height.toLocaleString() : '—'}
+                      {tx5(NetworkMapCopy.height, lang)}: {node.height ? node.height.toLocaleString() : '—'}
                     </text>
                     <text x={pos.x + 25} y={pos.y - 6} fill="#9CA3AF" fontSize="9">
-                      {NetworkMapCopy.miners[cs ? 'cs' : 'en']}: {node.miners}
+                      {tx5(NetworkMapCopy.miners, lang)}: {node.miners}
                     </text>
                     <text x={pos.x + 25} y={pos.y + 6} fill="#9CA3AF" fontSize="9">
-                      {NetworkMapCopy.latency[cs ? 'cs' : 'en']}: {node.rpcLatencyMs != null ? `${node.rpcLatencyMs}ms` : '—'}
+                      {tx5(NetworkMapCopy.latency, lang)}: {node.rpcLatencyMs != null ? `${node.rpcLatencyMs}ms` : '—'}
                     </text>
                     <text x={pos.x + 25} y={pos.y + 20} fill={node.online ? '#22C55E' : '#EF4444'} fontSize="9">
-                      {node.online ? (NetworkMapCopy.online[cs ? 'cs' : 'en']) : (NetworkMapCopy.offline[cs ? 'cs' : 'en'])}
+                      {node.online ? (tx5(NetworkMapCopy.online, lang)) : (tx5(NetworkMapCopy.offline, lang))}
                     </text>
                   </g>
                 )}
@@ -382,11 +383,11 @@ export default function NetworkMap({ variant = 'card', className }: NetworkMapPr
         <div className="absolute bottom-4 right-4 flex items-center gap-4 bg-black/70 backdrop-blur px-3 py-2 rounded-2xl border border-zion-purple/20 text-sm">
           <div className="flex items-center gap-2">
             <Wifi className="w-4 h-4 text-zion-cyan" />
-            <span className="text-gray-400">{NetworkMapCopy.online_2[cs ? 'cs' : 'en']}</span>
+            <span className="text-gray-400">{tx5(NetworkMapCopy.online_2, lang)}</span>
           </div>
           <div className="flex items-center gap-2">
             <WifiOff className="w-4 h-4 text-zion-purple" />
-            <span className="text-gray-400">{NetworkMapCopy.offline_2[cs ? 'cs' : 'en']}</span>
+            <span className="text-gray-400">{tx5(NetworkMapCopy.offline_2, lang)}</span>
           </div>
           <div className="flex items-center gap-2 border-l border-white/10 pl-3">
             <div className="w-3 h-0.5 bg-zion-cyan" />

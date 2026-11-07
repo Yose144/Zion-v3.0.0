@@ -5,7 +5,8 @@ import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { motion } from "framer-motion";
 import { ArrowRightLeft, ChevronRight, Copy, Check, Clock } from "lucide-react";
-import { useLang } from "@/contexts/LanguageContext";
+import { useLang, type Lang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 
 const ProRecentTransactionsCopy = {
@@ -41,13 +42,13 @@ interface Transaction {
   transaction_model?: string;
 }
 
-const fmtAge = (ts: number, cs: boolean): string => {
+const fmtAge = (ts: number, lang: Lang): string => {
   const s = Math.floor(Date.now() / 1000) - ts;
-  if (s < 5) return ProRecentTransactionsCopy.justNow[cs ? 'cs' : 'en'];
-  if (s < 60) return cs ? `pred ${s}s` : `${s}s ago`;
-  if (s < 3600) return cs ? `pred ${Math.floor(s / 60)}m ${s % 60}s` : `${Math.floor(s / 60)}m ${s % 60}s ago`;
-  if (s < 86400) return cs ? `pred ${Math.floor(s / 3600)}h` : `${Math.floor(s / 3600)}h ago`;
-  return cs ? `pred ${Math.floor(s / 86400)}d` : `${Math.floor(s / 86400)}d ago`;
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'always', style: 'narrow' });
+  if (s < 60) return rtf.format(-s, 'second');
+  if (s < 3600) return rtf.format(-Math.floor(s / 60), 'minute');
+  if (s < 86400) return rtf.format(-Math.floor(s / 3600), 'hour');
+  return rtf.format(-Math.floor(s / 86400), 'day');
 };
 
 const truncHash = (h: string, len = 8): string =>
@@ -72,7 +73,7 @@ function CopyBtn({ text, label }: { text: string; label: string }) {
   );
 }
 
-function TypeBadge({ type, cs }: { type: string; cs: boolean }) {
+function TypeBadge({ type, cs, lang }: { type: string; cs: boolean; lang: Lang }) {
   const styles: Record<string, string> = {
     coinbase: "bg-zion-gold/15 text-zion-gold border-zion-gold/30",
     transfer: "bg-zion-cyan/15 text-zion-cyan border-zion-cyan/30",
@@ -81,22 +82,22 @@ function TypeBadge({ type, cs }: { type: string; cs: boolean }) {
   const s = styles[type] || "bg-gray-500/15 text-gray-400 border-gray-500/30";
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border ${s}`}>
-      {type === "coinbase" ? (ProRecentTransactionsCopy.coinbase[cs ? 'cs' : 'en']) : type === "transfer" ? (ProRecentTransactionsCopy.transfer[cs ? 'cs' : 'en']) : type === "payout" ? (ProRecentTransactionsCopy.payout[cs ? 'cs' : 'en']) : type}
+      {type === "coinbase" ? (tx5(ProRecentTransactionsCopy.coinbase, lang)) : type === "transfer" ? (tx5(ProRecentTransactionsCopy.transfer, lang)) : type === "payout" ? (tx5(ProRecentTransactionsCopy.payout, lang)) : type}
     </span>
   );
 }
 
-function StatusDot({ status, cs }: { status: string; cs: boolean }) {
+function StatusDot({ status, cs, lang }: { status: string; cs: boolean; lang: Lang }) {
   if (status === "pending") {
-    return <span className="inline-block h-1.5 w-1.5 rounded-full bg-zion-gold animate-pulse" title={ProRecentTransactionsCopy.pending[cs ? 'cs' : 'en']} />;
+    return <span className="inline-block h-1.5 w-1.5 rounded-full bg-zion-gold animate-pulse" title={tx5(ProRecentTransactionsCopy.pending, lang)} />;
   }
-  return <span className="inline-block h-1.5 w-1.5 rounded-full bg-zion-cyan" title={ProRecentTransactionsCopy.confirmed[cs ? 'cs' : 'en']} />;
+  return <span className="inline-block h-1.5 w-1.5 rounded-full bg-zion-cyan" title={tx5(ProRecentTransactionsCopy.confirmed, lang)} />;
 }
 
 export default function ProRecentTransactions() {
   const { lang } = useLang();
   const cs = lang === "cs";
-  const locale = ProRecentTransactionsCopy.enUs[cs ? 'cs' : 'en'];
+  const locale = tx5(ProRecentTransactionsCopy.enUs, lang);
   const [txs, setTxs] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [, setTick] = useState(0);
@@ -131,15 +132,15 @@ export default function ProRecentTransactions() {
             <ArrowRightLeft className="h-4.5 w-4.5 text-zion-cyan" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-white">{ProRecentTransactionsCopy.latestTransactions[cs ? 'cs' : 'en']}</h3>
-            <p className="text-[11px] text-gray-500">{ProRecentTransactionsCopy.realTimeTransactionFeed[cs ? 'cs' : 'en']}</p>
+            <h3 className="text-base font-semibold text-white">{tx5(ProRecentTransactionsCopy.latestTransactions, lang)}</h3>
+            <p className="text-[11px] text-gray-500">{tx5(ProRecentTransactionsCopy.realTimeTransactionFeed, lang)}</p>
           </div>
         </div>
         <Link
           href="/explorer/transactions"
           className="flex items-center gap-1 text-xs text-gray-400 hover:text-zion-cyan transition-colors font-medium"
         >
-          {ProRecentTransactionsCopy.viewAll[cs ? 'cs' : 'en']} <ChevronRight className="h-3.5 w-3.5" />
+          {tx5(ProRecentTransactionsCopy.viewAll, lang)} <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
@@ -150,11 +151,11 @@ export default function ProRecentTransactions() {
             <tr className="border-b border-white/4">
               <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3 w-5" />
               <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">Hash</th>
-              <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">{ProRecentTransactionsCopy.type[cs ? 'cs' : 'en']}</th>
-              <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">{ProRecentTransactionsCopy.age[cs ? 'cs' : 'en']}</th>
-              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden md:table-cell">{ProRecentTransactionsCopy.block[cs ? 'cs' : 'en']}</th>
+              <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">{tx5(ProRecentTransactionsCopy.type, lang)}</th>
+              <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">{tx5(ProRecentTransactionsCopy.age, lang)}</th>
+              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden md:table-cell">{tx5(ProRecentTransactionsCopy.block, lang)}</th>
               <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3 hidden lg:table-cell">Fee</th>
-              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{ProRecentTransactionsCopy.amount[cs ? 'cs' : 'en']}</th>
+              <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{tx5(ProRecentTransactionsCopy.amount, lang)}</th>
             </tr>
           </thead>
           <tbody>
@@ -174,7 +175,7 @@ export default function ProRecentTransactions() {
                     className="border-b border-white/3 hover:bg-white/3 transition-colors group"
                   >
                     <td className="px-6 py-3">
-                      <StatusDot status={tx.status} cs={cs} />
+                      <StatusDot status={tx.status} cs={cs} lang={lang} />
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center">
@@ -191,16 +192,16 @@ export default function ProRecentTransactions() {
                           </Link>
                         )}
                         {tx.tx_hash && !tx.tx_hash.startsWith("coinbase_") && (
-                          <CopyBtn text={tx.tx_hash} label={ProRecentTransactionsCopy.copyHash[cs ? 'cs' : 'en']} />
+                          <CopyBtn text={tx.tx_hash} label={tx5(ProRecentTransactionsCopy.copyHash, lang)} />
                         )}
                       </div>
                     </td>
                     <td className="px-3 py-3 hidden sm:table-cell">
-                      <TypeBadge type={tx.type} cs={cs} />
+                      <TypeBadge type={tx.type} cs={cs} lang={lang} />
                     </td>
                     <td className="px-3 py-3">
                       <span className="text-gray-400 text-xs tabular-nums whitespace-nowrap">
-                        {fmtAge(tx.timestamp, cs)}
+                        {fmtAge(tx.timestamp, lang)}
                       </span>
                     </td>
                     <td className="px-3 py-3 text-right hidden md:table-cell">
@@ -236,15 +237,13 @@ export default function ProRecentTransactions() {
       {!loading && txs.length > 0 && (
         <div className="px-6 py-3 border-t border-white/4 flex items-center justify-between">
           <p className="text-[11px] text-gray-600">
-            {cs
-                ? `Zobrazeno ${Math.min(15, txs.length)} poslednich transakci · Auto-refresh 15 s`
-              : `Showing ${Math.min(15, txs.length)} latest transactions · Auto-refresh 15s`}
+            {cs ? `Zobrazeno ${Math.min(15, txs.length)} poslednich transakci · Auto-refresh 15 s` : t5(`Showing ${Math.min(15, txs.length)} latest transactions · Auto-refresh 15s`, lang)}
           </p>
           <Link
             href="/explorer/transactions"
             className="text-[11px] text-zion-cyan hover:text-white transition font-medium"
           >
-            {ProRecentTransactionsCopy.fullTransactionFeed[cs ? 'cs' : 'en']} →
+            {tx5(ProRecentTransactionsCopy.fullTransactionFeed, lang)} →
           </Link>
         </div>
       )}

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { type LucideIcon, Search, Box, ArrowRightLeft, Wallet, Hash, X, Loader2 } from "lucide-react";
-import { useLang } from "@/contexts/LanguageContext";
+import { useLang, type Lang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const ProSearchBarCopy = {
   block: { cs: `Blok`, en: `Block` },
@@ -82,7 +83,7 @@ function looksTruncatedAddress(q: string): boolean {
   return s.includes("…") || /\.{2,}/.test(s) || s.includes(".");
 }
 
-function buildPreviews(query: string, cs: boolean): SearchPreview[] {
+function buildPreviews(query: string, cs: boolean, lang: Lang): SearchPreview[] {
   const parsed = parseQuery(query);
   const s = parsed.value;
   if (!s) return [];
@@ -94,10 +95,10 @@ function buildPreviews(query: string, cs: boolean): SearchPreview[] {
     case "block_height":
       previews.push({
         type: "block_height",
-        label: `${ProSearchBarCopy.block[cs ? 'cs' : 'en']} #${parseInt(s).toLocaleString(ProSearchBarCopy.enUs[cs ? 'cs' : 'en'])}`,
+        label: `${tx5(ProSearchBarCopy.block, lang)} #${parseInt(s).toLocaleString(tx5(ProSearchBarCopy.enUs, lang))}`,
         icon: Box,
         href: `/explorer/block?id=${s}`,
-        meta: ProSearchBarCopy.searchByBlockHeight[cs ? 'cs' : 'en'],
+        meta: tx5(ProSearchBarCopy.searchByBlockHeight, lang),
       });
       break;
     case "tx_hash":
@@ -106,34 +107,34 @@ function buildPreviews(query: string, cs: boolean): SearchPreview[] {
         label: `TX ${s.slice(0, 12)}…${s.slice(-8)}`,
         icon: ArrowRightLeft,
         href: `/explorer/tx?hash=${s}`,
-        meta: ProSearchBarCopy.searchAsTransactionHash[cs ? 'cs' : 'en'],
+        meta: tx5(ProSearchBarCopy.searchAsTransactionHash, lang),
       });
       if (!parsed.forcedType || parsed.forcedType === "block_hash") {
         previews.push({
           type: "block_hash",
-          label: `${ProSearchBarCopy.block[cs ? 'cs' : 'en']} ${s.slice(0, 12)}…${s.slice(-8)}`,
+          label: `${tx5(ProSearchBarCopy.block, lang)} ${s.slice(0, 12)}…${s.slice(-8)}`,
           icon: Box,
           href: `/explorer/block?id=${s}`,
-          meta: ProSearchBarCopy.searchAsBlockHash[cs ? 'cs' : 'en'],
+          meta: tx5(ProSearchBarCopy.searchAsBlockHash, lang),
         });
       }
       break;
     case "address":
       previews.push({
         type: "address",
-        label: `${ProSearchBarCopy.address[cs ? 'cs' : 'en']} ${s.slice(0, 12)}…${s.slice(-8)}`,
+        label: `${tx5(ProSearchBarCopy.address, lang)} ${s.slice(0, 12)}…${s.slice(-8)}`,
         icon: Wallet,
         href: `/explorer/address?addr=${s}`,
-        meta: ProSearchBarCopy.searchZionAddress[cs ? 'cs' : 'en'],
+        meta: tx5(ProSearchBarCopy.searchZionAddress, lang),
       });
       break;
     case "block_hash":
       previews.push({
         type: "block_hash",
-        label: `${ProSearchBarCopy.hash[cs ? 'cs' : 'en']} ${s.slice(0, 12)}…`,
+        label: `${tx5(ProSearchBarCopy.hash, lang)} ${s.slice(0, 12)}…`,
         icon: Hash,
         href: `/explorer/block?id=${s}`,
-        meta: ProSearchBarCopy.searchByHash[cs ? 'cs' : 'en'],
+        meta: tx5(ProSearchBarCopy.searchByHash, lang),
       });
       break;
     default:
@@ -142,13 +143,13 @@ function buildPreviews(query: string, cs: boolean): SearchPreview[] {
         previews.push({
           type: "unknown",
           label: truncatedAddress
-            ? `${ProSearchBarCopy.search[cs ? 'cs' : 'en']} "${s.length > 20 ? s.slice(0, 20) + "…" : s}"`
-            : `${ProSearchBarCopy.search[cs ? 'cs' : 'en']} "${s.length > 20 ? s.slice(0, 20) + "…" : s}"`,
+            ? `${tx5(ProSearchBarCopy.search, lang)} "${s.length > 20 ? s.slice(0, 20) + "…" : s}"`
+            : `${tx5(ProSearchBarCopy.search, lang)} "${s.length > 20 ? s.slice(0, 20) + "…" : s}"`,
           icon: Search,
           href: `/explorer/search?q=${encodeURIComponent(s)}`,
           meta: truncatedAddress
-            ? (cs ? "Adresa je zkrácená — vysvětlíme co doplnit" : "Address is truncated — we explain what to paste")
-            : ProSearchBarCopy.trySearchingAsBlockTx[cs ? 'cs' : 'en'],
+            ? (cs ? "Adresa je zkrácená — vysvětlíme co doplnit" : t5("Address is truncated — we explain what to paste", lang))
+            : tx5(ProSearchBarCopy.trySearchingAsBlockTx, lang),
         });
       }
   }
@@ -195,7 +196,7 @@ export default function ProSearchBar() {
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const previews = buildPreviews(query, cs);
+  const previews = buildPreviews(query, cs, lang);
 
   const handleSubmit = useCallback(
     async (href?: string) => {
@@ -278,8 +279,8 @@ export default function ProSearchBar() {
           }}
           onFocus={() => setFocused(true)}
           onKeyDown={handleKeyDown}
-          placeholder={ProSearchBarCopy.searchByBlockHeightTxHashOrAdd[cs ? 'cs' : 'en']}
-          aria-label={ProSearchBarCopy.searchByBlockHeightTxHashOrAdd[cs ? 'cs' : 'en']}
+          placeholder={tx5(ProSearchBarCopy.searchByBlockHeightTxHashOrAdd, lang)}
+          aria-label={tx5(ProSearchBarCopy.searchByBlockHeightTxHashOrAdd, lang)}
           className="w-full bg-transparent px-3 py-3.5 text-sm text-white placeholder:text-gray-500 
             focus:outline-none font-mono"
           autoComplete="off"
@@ -293,7 +294,7 @@ export default function ProSearchBar() {
               inputRef.current?.focus();
             }}
             className="pr-3 text-gray-500 hover:text-white transition"
-            aria-label={ProSearchBarCopy.clear[cs ? 'cs' : 'en']}
+            aria-label={tx5(ProSearchBarCopy.clear, lang)}
           >
             <X className="h-4 w-4" />
           </button>
@@ -336,7 +337,7 @@ export default function ProSearchBar() {
                   <p className="text-[11px] text-gray-500">{p.meta}</p>
                 </div>
                 <span className="text-[10px] text-gray-600 uppercase tracking-wider shrink-0">
-                  {i === selected ? (ProSearchBarCopy.enter[cs ? 'cs' : 'en']) : ""}
+                  {i === selected ? (tx5(ProSearchBarCopy.enter, lang)) : ""}
                 </span>
               </button>
             ))}
@@ -347,8 +348,8 @@ export default function ProSearchBar() {
       <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-gray-500">
         {[
           { label: "block:123456", value: "block:123456" },
-          { label: ProSearchBarCopy.txHash[cs ? 'cs' : 'en'], value: "tx:" },
-          { label: ProSearchBarCopy.addrAddress[cs ? 'cs' : 'en'], value: "addr:" },
+          { label: tx5(ProSearchBarCopy.txHash, lang), value: "tx:" },
+          { label: tx5(ProSearchBarCopy.addrAddress, lang), value: "addr:" },
         ].map((hint) => (
           <button
             key={hint.label}

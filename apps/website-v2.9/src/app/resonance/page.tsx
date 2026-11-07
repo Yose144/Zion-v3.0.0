@@ -20,6 +20,7 @@ import {
   LucideIcon,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const ResonanceCopy = {
   resonanceProtocol: { cs: `Protokol Rezonance`, en: `Resonance Protocol` },
@@ -214,13 +215,13 @@ export default function ResonancePage() {
 
           <FadeIn delay={0.1}>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-gradient-soft">
-              {ResonanceCopy.resonanceProtocol[lang === 'cs' ? 'cs' : 'en']}
+              {tx5(ResonanceCopy.resonanceProtocol, lang)}
             </h1>
           </FadeIn>
 
           <FadeIn delay={0.15}>
             <p className="mt-6 max-w-3xl text-lg md:text-xl text-gray-300 leading-relaxed">
-              {ResonanceCopy.soundTimeAndTheIntergeneration[lang === 'cs' ? 'cs' : 'en']}
+              {tx5(ResonanceCopy.soundTimeAndTheIntergeneration, lang)}
             </p>
           </FadeIn>
 
@@ -228,7 +229,7 @@ export default function ResonancePage() {
             <div className="mt-10 flex flex-wrap gap-4">
               <Link href="/docs" className="zion-button-primary group">
                 <BookOpen className="h-4 w-4" />
-                {ResonanceCopy.documentation[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(ResonanceCopy.documentation, lang)}
                 <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
               </Link>
               <Link href="/terranova" className="zion-button-secondary group">
@@ -248,10 +249,10 @@ export default function ResonancePage() {
           <FadeIn>
             <div className="mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-gradient-soft">
-                {ResonanceCopy.sevenFrequencies[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(ResonanceCopy.sevenFrequencies, lang)}
               </h2>
               <p className="mt-3 text-gray-400 max-w-2xl">
-                {ResonanceCopy.eachLayerOfTheZionStackResonat[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(ResonanceCopy.eachLayerOfTheZionStackResonat, lang)}
               </p>
             </div>
           </FadeIn>
@@ -286,10 +287,10 @@ export default function ResonancePage() {
                 </span>
                 <h3 className="text-lg font-bold text-white mb-1">108 Hz</h3>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-                  {ResonanceCopy.universalCarrier[lang === 'cs' ? 'cs' : 'en']}
+                  {tx5(ResonanceCopy.universalCarrier, lang)}
                 </p>
                 <p className="text-sm text-gray-300">
-                  {ResonanceCopy.temporalAnchorMantraMultiplier[lang === 'cs' ? 'cs' : 'en']}
+                  {tx5(ResonanceCopy.temporalAnchorMantraMultiplier, lang)}
                 </p>
               </div>
             </FadeIn>
@@ -327,10 +328,10 @@ export default function ResonancePage() {
         <div className="zion-container relative">
           <FadeIn>
             <h2 className="text-3xl md:text-4xl font-bold text-gradient-soft mb-3">
-              {ResonanceCopy.threeGatesOfAttunement[lang === 'cs' ? 'cs' : 'en']}
+              {tx5(ResonanceCopy.threeGatesOfAttunement, lang)}
             </h2>
             <p className="text-gray-400 max-w-2xl mb-12">
-              {ResonanceCopy.beforeAProposalReachesDaoVotin[lang === 'cs' ? 'cs' : 'en']}
+              {tx5(ResonanceCopy.beforeAProposalReachesDaoVotin, lang)}
             </p>
           </FadeIn>
 
@@ -400,15 +401,15 @@ export default function ResonancePage() {
             <div className="zion-cta-banner">
               <Flower2 className="h-10 w-10 text-zion-gold mx-auto mb-6" />
               <h2 className="text-3xl md:text-4xl font-bold text-gradient-soft mb-4">
-                {ResonanceCopy.everyContractIsAPrayer[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(ResonanceCopy.everyContractIsAPrayer, lang)}
               </h2>
               <p className="text-gray-400 max-w-2xl mx-auto mb-8">
-                {ResonanceCopy.theResonanceProtocolDoesNotVot[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(ResonanceCopy.theResonanceProtocolDoesNotVot, lang)}
               </p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Link href="/docs" className="zion-button-primary group">
                   <BookOpen className="h-4 w-4" />
-                  {ResonanceCopy.openDocumentation[lang === 'cs' ? 'cs' : 'en']}
+                  {tx5(ResonanceCopy.openDocumentation, lang)}
                   <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
                 </Link>
               </div>

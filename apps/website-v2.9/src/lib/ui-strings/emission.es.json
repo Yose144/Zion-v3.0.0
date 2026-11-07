@@ -1,0 +1,14 @@
+{
+ "Block": "Bloque",
+ "Cumulative network fees": "Comisiones acumuladas de la red",
+ "Daily Emission": "Emisión diaria",
+ "Emission Monitor": "Monitor de emisión",
+ "Full": "Completo",
+ "Humanitarian Tithe": "Diezmo humanitario",
+ "Mined": "Minado",
+ "Mining Duration": "Duración de la minería",
+ "Total Fees": "Comisiones totales",
+ "blocks": "bloques",
+ "emitted": "emitido",
+ "${(data.humanitarian.rate * 100).toFixed(0)}% of all rewards": "${(data.humanitarian.rate * 100).toFixed(0)} % de todas las recompensas"
+}

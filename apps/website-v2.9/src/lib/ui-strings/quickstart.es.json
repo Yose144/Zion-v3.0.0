@@ -1,0 +1,13 @@
+{
+ "1 · Authenticate": "1 · Autenticación",
+ "2 · Choose transport": "2 · Elige transporte",
+ "3 · Pin environment": "3 · Fija el entorno",
+ "Copied": "Copiado",
+ "Copy": "Copiar",
+ "HTTPS for RPC/REST, WebSockets for stratum + metrics. All servers support HTTP/2.": "HTTPS para RPC/REST, WebSockets para stratum y métricas. Todos los servidores soportan HTTP/2.",
+ "Onboarding checklist": "Lista de inicio",
+ "Quickstart snippets": "Fragmentos de inicio rápido",
+ "Sandbox mirrors production at https://api-sandbox.zionterranova.com with testnet data.": "El sandbox replica producción en https://api-sandbox.zionterranova.com con datos de testnet.",
+ "cURL quick ping": "Ping rápido con cURL",
+ "GET routes are open. For POST/PUT include x-zion-key in headers; rotate keys every quarter.": "Las rutas GET son abiertas. Para POST/PUT incluye x-zion-key en las cabeceras; rota las claves cada trimestre."
+}

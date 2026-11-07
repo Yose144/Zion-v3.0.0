@@ -1,5 +1,7 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+
 import { useState } from 'react';
 import type { CSSProperties } from 'react';
 import Link from 'next/link';

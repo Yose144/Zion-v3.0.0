@@ -1,0 +1,15 @@
+{
+ "Attach signature": "Adjuntar firma",
+ "Broadcast TX": "Emitir TX",
+ "DAO API key": "Clave API del DAO",
+ "Ed25519 signature (hex)": "Firma Ed25519 (hex)",
+ "Guardian address": "Dirección del Guardián",
+ "Hide": "Ocultar",
+ "Sign": "Firmar",
+ "Signature accepted.": "Firma aceptada.",
+ "Signatures": "Firmas",
+ "Signing payload (hash)": "Payload a firmar (hash)",
+ "Submitting…": "Enviando…",
+ "signatures": "firmas",
+ "verified": "verificadas"
+}

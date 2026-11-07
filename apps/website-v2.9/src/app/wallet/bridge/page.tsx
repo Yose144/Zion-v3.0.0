@@ -6,6 +6,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import type { CSSProperties } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { ArrowLeft, ArrowRightLeft, Lock, Shield, ExternalLink, Copy, Flame, CheckCircle2 } from 'lucide-react';
 import { BRIDGE_CONTRACTS } from '@/lib/bridge-api';
 import { CONTRACTS } from '@/lib/defi-contracts';
@@ -195,7 +196,7 @@ export default function BridgePage() {
         <section>
           <div className="zion-rainbow-card p-6" style={{ '--rc': '100, 100, 100' } as CSSProperties}>
             <h3 className="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wider">
-              {cs ? 'Kontrakty' : 'Contracts'}
+              {cs ? 'Kontrakty' : t5('Contracts', lang)}
             </h3>
             <div className="grid gap-3 md:grid-cols-2">
               <div>

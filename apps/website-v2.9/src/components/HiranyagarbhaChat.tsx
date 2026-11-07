@@ -1,5 +1,7 @@
-import type { Lang } from '@/contexts/LanguageContext';
 'use client';
+
+import { tx5, t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Brain, User, Loader2, Sparkles } from 'lucide-react';
@@ -90,7 +92,7 @@ export default function HiranyagarbhaChat({ lang: rawLang = 'cs' }: { lang?: Lan
         {
           role: 'assistant',
           content:
-            HiranyagarbhaChatCopy.failedToConnectToAiPleaseTryAg[lang === 'cs' ? 'cs' : 'en'],
+            tx5(HiranyagarbhaChatCopy.failedToConnectToAiPleaseTryAg, lang),
         },
       ]);
     } finally {
@@ -114,13 +116,13 @@ export default function HiranyagarbhaChat({ lang: rawLang = 'cs' }: { lang?: Lan
         <div>
           <h3 className="text-white font-semibold text-sm">Hiranyagarbha</h3>
           <p className="text-gray-400 text-xs">
-            {HiranyagarbhaChatCopy.zionAiNativeZionExpertModel[lang === 'cs' ? 'cs' : 'en']}
+            {tx5(HiranyagarbhaChatCopy.zionAiNativeZionExpertModel, lang)}
           </p>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
           <span className={`w-2 h-2 rounded-full ${online === false ? 'bg-zion-purple' : 'bg-zion-cyan animate-pulse'}`} />
           <span className={`text-xs ${online === false ? 'text-zion-purple' : 'text-zion-cyan'}`}>
-            {online === null ? '…' : online ? HiranyagarbhaChatCopy.online[lang === 'cs' ? 'cs' : 'en'] : HiranyagarbhaChatCopy.offline[lang === 'cs' ? 'cs' : 'en']}
+            {online === null ? '…' : online ? tx5(HiranyagarbhaChatCopy.online, lang) : tx5(HiranyagarbhaChatCopy.offline, lang)}
           </span>
         </div>
       </div>
@@ -131,7 +133,7 @@ export default function HiranyagarbhaChat({ lang: rawLang = 'cs' }: { lang?: Lan
           <div className="text-center py-8">
             <Sparkles className="w-10 h-10 text-zion-gold mx-auto mb-4 opacity-60" />
             <p className="text-gray-400 text-sm mb-6">
-              {HiranyagarbhaChatCopy.askHiranyagarbhaAnythingAboutZ[lang === 'cs' ? 'cs' : 'en']}
+              {tx5(HiranyagarbhaChatCopy.askHiranyagarbhaAnythingAboutZ, lang)}
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               {SUGGESTED_QUESTIONS.map((q, i) => (
@@ -146,7 +148,7 @@ export default function HiranyagarbhaChat({ lang: rawLang = 'cs' }: { lang?: Lan
             </div>
             {online === false && (
               <p className="mt-4 text-xs text-zion-purple/80">
-                {HiranyagarbhaChatCopy.offlineHint[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(HiranyagarbhaChatCopy.offlineHint, lang)}
               </p>
             )}
           </div>
@@ -196,7 +198,7 @@ export default function HiranyagarbhaChat({ lang: rawLang = 'cs' }: { lang?: Lan
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={HiranyagarbhaChatCopy.typeAMessage[lang === 'cs' ? 'cs' : 'en']}
+            placeholder={tx5(HiranyagarbhaChatCopy.typeAMessage, lang)}
             disabled={loading}
             maxLength={2000}
             className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-zion-cyan/50 disabled:opacity-50 transition-colors"

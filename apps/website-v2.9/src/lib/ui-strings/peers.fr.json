@@ -1,0 +1,18 @@
+{
+ "Active links": "Liens actifs",
+ "Chain height": "Hauteur de chaîne",
+ "Connected": "Connecté",
+ "Daemon has not registered any P2P connections yet.": "Le daemon n'a encore enregistré aucune connexion P2P.",
+ "Height": "Hauteur",
+ "Idle": "Inactif",
+ "Known": "Connus",
+ "Known peers": "Pairs connus",
+ "Last": "Dernier",
+ "Loading...": "Chargement...",
+ "Network peers": "Pairs du réseau",
+ "No known peers.": "Aucun pair connu.",
+ "Peer directory": "Annuaire des pairs",
+ "Peer telemetry": "Télémétrie des pairs",
+ "failures": "échecs",
+ "refresh 15s": "actualisation 15s"
+}

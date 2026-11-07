@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Coins, TrendingUp, Flame, Heart, Timer } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 
 const EmissionMonitorCopy = {
@@ -46,7 +47,7 @@ interface EmissionData {
 export default function EmissionMonitor() {
   const { lang } = useLang();
   const cs = lang === "cs";
-  const locale = EmissionMonitorCopy.enUs[cs ? 'cs' : 'en'];
+  const locale = tx5(EmissionMonitorCopy.enUs, lang);
   const [data, setData] = useState<EmissionData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -86,8 +87,8 @@ export default function EmissionMonitor() {
           <Coins className="w-4.5 h-4.5 text-zion-gold" />
         </div>
         <div>
-          <h2 className="text-base font-semibold text-white">{EmissionMonitorCopy.emissionMonitor[cs ? 'cs' : 'en']}</h2>
-          <p className="text-[11px] text-white/30">{EmissionMonitorCopy.block[cs ? 'cs' : 'en']} #{data.block_height?.toLocaleString(locale)}</p>
+          <h2 className="text-base font-semibold text-white">{tx5(EmissionMonitorCopy.emissionMonitor, lang)}</h2>
+          <p className="text-[11px] text-white/30">{tx5(EmissionMonitorCopy.block, lang)} #{data.block_height?.toLocaleString(locale)}</p>
         </div>
       </div>
 
@@ -95,7 +96,7 @@ export default function EmissionMonitor() {
         {/* Progress bar */}
         <div>
           <div className="flex justify-between text-[11px] mb-2">
-            <span className="text-white/40">{EmissionMonitorCopy.mined[cs ? 'cs' : 'en']}</span>
+            <span className="text-white/40">{tx5(EmissionMonitorCopy.mined, lang)}</span>
             <span className="text-zion-gold font-mono tabular-nums">
               {fmt(data.circulating_supply)} / {fmt(data.max_supply)} ZION
             </span>
@@ -107,17 +108,17 @@ export default function EmissionMonitor() {
             />
           </div>
           <div className="text-right text-[10px] text-white/20 mt-1 tabular-nums">
-            {data.emission_pct.toFixed(6)}% {EmissionMonitorCopy.emitted[cs ? 'cs' : 'en']}
+            {data.emission_pct.toFixed(6)}% {tx5(EmissionMonitorCopy.emitted, lang)}
           </div>
         </div>
 
         {/* 2×2 metric cards */}
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: EmissionMonitorCopy.dailyEmission[cs ? 'cs' : 'en'], icon: TrendingUp, color: "text-zion-cyan", value: `${fmt(data.daily_emission)} ZION`, sub: `${data.base_reward_per_block} ZION × ${data.blocks_per_day.toLocaleString(locale)} ${EmissionMonitorCopy.blocks[cs ? 'cs' : 'en']}` },
-            { label: EmissionMonitorCopy.miningDuration[cs ? 'cs' : 'en'], icon: Timer, color: "text-zion-cyan", value: data.mining_horizon_label ?? (cs ? `~${Math.round(data.estimated_years_remaining)} let` : `~${Math.round(data.estimated_years_remaining)} years`), sub: `${EmissionMonitorCopy.full[cs ? 'cs' : 'en']}: ${data.estimated_full_emission_date}` },
-            { label: EmissionMonitorCopy.totalFees[cs ? 'cs' : 'en'], icon: Flame, color: "text-zion-gold", value: `${fmt(data.total_fees)} ZION`, sub: EmissionMonitorCopy.cumulativeNetworkFees[cs ? 'cs' : 'en'] },
-            { label: EmissionMonitorCopy.humanitarianTithe[cs ? 'cs' : 'en'], icon: Heart, color: "text-zion-purple", value: `${fmt(data.humanitarian.estimated_total)} ZION`, sub: cs ? `${(data.humanitarian.rate * 100).toFixed(0)}% všech odměn` : `${(data.humanitarian.rate * 100).toFixed(0)}% of all rewards` },
+            { label: tx5(EmissionMonitorCopy.dailyEmission, lang), icon: TrendingUp, color: "text-zion-cyan", value: `${fmt(data.daily_emission)} ZION`, sub: `${data.base_reward_per_block} ZION × ${data.blocks_per_day.toLocaleString(locale)} ${tx5(EmissionMonitorCopy.blocks, lang)}` },
+            { label: tx5(EmissionMonitorCopy.miningDuration, lang), icon: Timer, color: "text-zion-cyan", value: data.mining_horizon_label ?? (cs ? `~${Math.round(data.estimated_years_remaining)} let` : t5(`~${Math.round(data.estimated_years_remaining)} years`, lang)), sub: `${tx5(EmissionMonitorCopy.full, lang)}: ${data.estimated_full_emission_date}` },
+            { label: tx5(EmissionMonitorCopy.totalFees, lang), icon: Flame, color: "text-zion-gold", value: `${fmt(data.total_fees)} ZION`, sub: tx5(EmissionMonitorCopy.cumulativeNetworkFees, lang) },
+            { label: tx5(EmissionMonitorCopy.humanitarianTithe, lang), icon: Heart, color: "text-zion-purple", value: `${fmt(data.humanitarian.estimated_total)} ZION`, sub: cs ? `${(data.humanitarian.rate * 100).toFixed(0)}% všech odměn` : t5(`${(data.humanitarian.rate * 100).toFixed(0)}% of all rewards`, lang) },
           ].map((m) => (
             <div key={m.label} className="rounded-2xl bg-white/3 border border-white/6 p-4">
               <div className="flex items-center gap-2 mb-2">

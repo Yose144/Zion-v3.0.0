@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Activity } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from '@/hooks/usePolling';
 
 const SystemHealthCopy = {
@@ -63,18 +64,18 @@ export default function SystemHealth() {
   const formatUptime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    return cs ? `${hours} h ${minutes} min` : `${hours}h ${minutes}m`;
+    return cs ? `${hours} h ${minutes} min` : t5(`${hours}h ${minutes}m`, lang);
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'ok':
       case 'healthy':
-        return SystemHealthCopy.healthy[cs ? 'cs' : 'en'];
+        return tx5(SystemHealthCopy.healthy, lang);
       case 'degraded':
-        return SystemHealthCopy.degraded[cs ? 'cs' : 'en'];
+        return tx5(SystemHealthCopy.degraded, lang);
       case 'unknown':
-        return SystemHealthCopy.unknown[cs ? 'cs' : 'en'];
+        return tx5(SystemHealthCopy.unknown, lang);
       default:
         return status;
     }
@@ -83,7 +84,7 @@ export default function SystemHealth() {
   if (loading) {
     return (
       <section className="mt-12">
-        <div className="animate-pulse text-gray-400">{SystemHealthCopy.loadingSystemHealth[cs ? 'cs' : 'en']}</div>
+        <div className="animate-pulse text-gray-400">{tx5(SystemHealthCopy.loadingSystemHealth, lang)}</div>
       </section>
     );
   }
@@ -100,12 +101,12 @@ export default function SystemHealth() {
       >
         <div className="flex items-center gap-2 mb-6">
           <Activity className="w-6 h-6 text-zion-cyan" />
-          <h2 className="text-3xl font-bold">{SystemHealthCopy.systemHealth[cs ? 'cs' : 'en']}</h2>
+          <h2 className="text-3xl font-bold">{tx5(SystemHealthCopy.systemHealth, lang)}</h2>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
           <div className="bg-black/30 rounded-lg p-4">
-            <div className="text-sm text-gray-400 mb-1">{SystemHealthCopy.status[cs ? 'cs' : 'en']}</div>
+            <div className="text-sm text-gray-400 mb-1">{tx5(SystemHealthCopy.status, lang)}</div>
             <div className="flex items-center gap-2">
               {health.status === 'ok' || health.status === 'healthy' ? (
                 <CheckCircle className="w-5 h-5 text-zion-cyan" />
@@ -119,12 +120,12 @@ export default function SystemHealth() {
           </div>
 
           <div className="bg-black/30 rounded-lg p-4">
-            <div className="text-sm text-gray-400 mb-1">{SystemHealthCopy.version[cs ? 'cs' : 'en']}</div>
+            <div className="text-sm text-gray-400 mb-1">{tx5(SystemHealthCopy.version, lang)}</div>
             <div className="text-lg font-semibold text-zion-purple">{health.version}</div>
           </div>
 
           <div className="bg-black/30 rounded-lg p-4">
-            <div className="text-sm text-gray-400 mb-1">{SystemHealthCopy.uptime[cs ? 'cs' : 'en']}</div>
+            <div className="text-sm text-gray-400 mb-1">{tx5(SystemHealthCopy.uptime, lang)}</div>
             <div className="text-lg font-semibold text-zion-cyan">
               {formatUptime(health.uptime_seconds)}
             </div>
@@ -133,12 +134,12 @@ export default function SystemHealth() {
 
         {health.dependencies && (
           <div className="mt-6">
-            <h3 className="text-xl font-semibold mb-4">{SystemHealthCopy.dependencies[cs ? 'cs' : 'en']}</h3>
+            <h3 className="text-xl font-semibold mb-4">{tx5(SystemHealthCopy.dependencies, lang)}</h3>
             <div className="grid md:grid-cols-2 gap-4">
               {health.dependencies.rpc && (
                 <div className="bg-black/30 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold">{SystemHealthCopy.rpcNode[cs ? 'cs' : 'en']}</span>
+                    <span className="font-semibold">{tx5(SystemHealthCopy.rpcNode, lang)}</span>
                     {health.dependencies.rpc.healthy ? (
                       <CheckCircle className="w-5 h-5 text-zion-cyan" />
                     ) : (
@@ -154,7 +155,7 @@ export default function SystemHealth() {
               {health.dependencies.mining_pool && (
                 <div className="bg-black/30 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold">{SystemHealthCopy.miningPool[cs ? 'cs' : 'en']}</span>
+                    <span className="font-semibold">{tx5(SystemHealthCopy.miningPool, lang)}</span>
                     {health.dependencies.mining_pool.healthy ? (
                       <CheckCircle className="w-5 h-5 text-zion-cyan" />
                     ) : (

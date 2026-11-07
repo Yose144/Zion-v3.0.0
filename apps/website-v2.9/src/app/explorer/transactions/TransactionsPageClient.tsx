@@ -5,7 +5,8 @@ import { ArrowRightLeft, ChevronRight, Loader2, X, Download, AlertTriangle } fro
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { apiClient } from "@/lib/api";
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 import { exportToCsv } from "@/lib/csv-export";
 import ExplorerCopyButton from "@/components/explorer/v4/shared/ExplorerCopyButton";
@@ -37,20 +38,21 @@ function StatusDot({ status }: { status: string }) {
   return <span className="inline-flex h-2.5 w-2.5 rounded-full bg-zion-cyan" />;
 }
 
-function TypeBadge({ type, cs }: { type: string; cs: boolean }) {
+function TypeBadge({ type, cs, lang }: { type: string; cs: boolean; lang: Lang }) {
   const map: Record<string, string> = { coinbase: "bg-zion-gold/15 text-zion-gold", payout: "bg-zion-cyan/15 text-zion-cyan", transfer: "bg-zion-cyan/15 text-zion-cyan" };
   const cls = map[type] || "bg-white/10 text-white/60";
-  const label = type === 'coinbase' ? 'coinbase' : type === 'payout' ? (ExplorerTransactionsTransactionsPageClientCopy.payout[cs ? 'cs' : 'en']) : type === 'transfer' ? (ExplorerTransactionsTransactionsPageClientCopy.transfer[cs ? 'cs' : 'en']) : type;
+  const label = type === 'coinbase' ? 'coinbase' : type === 'payout' ? (tx5(ExplorerTransactionsTransactionsPageClientCopy.payout, lang)) : type === 'transfer' ? (tx5(ExplorerTransactionsTransactionsPageClientCopy.transfer, lang)) : type;
   return <span className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider ${cls}`}>{label}</span>;
 }
 
-function timeAgo(ts: number, cs: boolean) {
+function timeAgo(ts: number, lang: Lang) {
   if (!ts) return "—";
   const s = Math.max(0, Math.floor(Date.now() / 1000 - ts));
-  if (s < 60) return cs ? `před ${s} s` : `${s}s ago`;
-  if (s < 3600) return cs ? `před ${Math.floor(s / 60)} min` : `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return cs ? `před ${Math.floor(s / 3600)} h` : `${Math.floor(s / 3600)}h ago`;
-  return cs ? `před ${Math.floor(s / 86400)} d` : `${Math.floor(s / 86400)}d ago`;
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'always', style: 'narrow' });
+  if (s < 60) return rtf.format(-s, 'second');
+  if (s < 3600) return rtf.format(-Math.floor(s / 60), 'minute');
+  if (s < 86400) return rtf.format(-Math.floor(s / 3600), 'hour');
+  return rtf.format(-Math.floor(s / 86400), 'day');
 }
 
 /* ── types ───────────────────────────────────────────────────── */
@@ -160,7 +162,7 @@ export default function TransactionsPageClient() {
         <nav className="flex items-center gap-1.5 text-[11px] text-white/40 mb-6">
           <Link href="/explorer" className="hover:text-white/70 transition-colors">Explorer</Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-white/70">{ExplorerTransactionsTransactionsPageClientCopy.transactions[cs ? 'cs' : 'en']}</span>
+          <span className="text-white/70">{tx5(ExplorerTransactionsTransactionsPageClientCopy.transactions, lang)}</span>
           {addressFilter && <>
             <ChevronRight className="w-3 h-3" />
             <span className="text-white/70 font-mono">{addressFilter.slice(0, 12)}…</span>
@@ -172,21 +174,21 @@ export default function TransactionsPageClient() {
           <div className="w-9 h-9 rounded-xl bg-zion-cyan/10 border border-zion-cyan/20 flex items-center justify-center">
             <ArrowRightLeft className="w-4.5 h-4.5 text-zion-cyan" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">{ExplorerTransactionsTransactionsPageClientCopy.transactions[cs ? 'cs' : 'en']}</h1>
-          <span className="text-[11px] text-white/30 font-mono tabular-nums ml-1">{transactions.length} {ExplorerTransactionsTransactionsPageClientCopy.loaded[cs ? 'cs' : 'en']}</span>
+          <h1 className="text-2xl font-bold text-white tracking-tight">{tx5(ExplorerTransactionsTransactionsPageClientCopy.transactions, lang)}</h1>
+          <span className="text-[11px] text-white/30 font-mono tabular-nums ml-1">{transactions.length} {tx5(ExplorerTransactionsTransactionsPageClientCopy.loaded, lang)}</span>
           <button
             onClick={handleExportCsv}
             disabled={transactions.length === 0}
             className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             <Download className="w-3.5 h-3.5" />
-            {ExplorerTransactionsTransactionsPageClientCopy.exportCsv[cs ? 'cs' : 'en']}
+            {tx5(ExplorerTransactionsTransactionsPageClientCopy.exportCsv, lang)}
           </button>
         </div>
 
         {addressFilter && (
           <div className="flex items-center gap-2 mt-2 mb-4 px-3 py-2 rounded-xl bg-zion-cyan/5 border border-zion-cyan/10 w-fit">
-            <span className="text-[11px] text-white/40">{ExplorerTransactionsTransactionsPageClientCopy.addressFilter[cs ? 'cs' : 'en']}</span>
+            <span className="text-[11px] text-white/40">{tx5(ExplorerTransactionsTransactionsPageClientCopy.addressFilter, lang)}</span>
             <span className="text-[11px] text-zion-cyan font-mono">{addressFilter}</span>
             <Link href="/explorer/transactions" className="text-white/30 hover:text-white/60"><X className="w-3 h-3" /></Link>
           </div>
@@ -197,14 +199,14 @@ export default function TransactionsPageClient() {
           <div className="mt-4 px-4 py-3 rounded-2xl bg-zion-purple/10 border border-zion-purple/20 flex items-center gap-3">
             <AlertTriangle className="w-5 h-5 text-zion-purple shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-zion-purple font-medium">{ExplorerTransactionsTransactionsPageClientCopy.failedToLoadTransactions[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm text-zion-purple font-medium">{tx5(ExplorerTransactionsTransactionsPageClientCopy.failedToLoadTransactions, lang)}</p>
               <p className="text-xs text-white/40 font-mono break-all">{error}</p>
             </div>
             <button
               onClick={() => { setError(null); setLoading(true); setPage(1); loadTransactions(1, false); }}
               className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white/70 hover:bg-white/10 hover:text-white transition shrink-0"
             >
-              {ExplorerTransactionsTransactionsPageClientCopy.retry[cs ? 'cs' : 'en']}
+              {tx5(ExplorerTransactionsTransactionsPageClientCopy.retry, lang)}
             </button>
           </div>
         )}
@@ -215,11 +217,11 @@ export default function TransactionsPageClient() {
           <div className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] min-w-[520px] md:grid-cols-[32px_1fr_90px_80px_100px_80px_110px] min-w-[520px] gap-3 px-5 py-3 border-b border-white/6">
             <span />
             <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
-            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTransactionsTransactionsPageClientCopy.type[cs ? 'cs' : 'en']}</span>
-            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTransactionsTransactionsPageClientCopy.age[cs ? 'cs' : 'en']}</span>
-            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTransactionsTransactionsPageClientCopy.block[cs ? 'cs' : 'en']}</span>
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{tx5(ExplorerTransactionsTransactionsPageClientCopy.type, lang)}</span>
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{tx5(ExplorerTransactionsTransactionsPageClientCopy.age, lang)}</span>
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{tx5(ExplorerTransactionsTransactionsPageClientCopy.block, lang)}</span>
             <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">Fee</span>
-            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerTransactionsTransactionsPageClientCopy.amount[cs ? 'cs' : 'en']}</span>
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{tx5(ExplorerTransactionsTransactionsPageClientCopy.amount, lang)}</span>
           </div>
 
           {/* loading skeleton */}
@@ -239,8 +241,8 @@ export default function TransactionsPageClient() {
           {!loading && transactions.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <ArrowRightLeft className="w-10 h-10 text-white/10" />
-              <p className="text-white/30 text-sm">{ExplorerTransactionsTransactionsPageClientCopy.noTransactionsFound[cs ? 'cs' : 'en']}</p>
-              {addressFilter && <Link href="/explorer/transactions" className="text-zion-cyan text-xs hover:underline">{ExplorerTransactionsTransactionsPageClientCopy.clearFilter[cs ? 'cs' : 'en']}</Link>}
+              <p className="text-white/30 text-sm">{tx5(ExplorerTransactionsTransactionsPageClientCopy.noTransactionsFound, lang)}</p>
+              {addressFilter && <Link href="/explorer/transactions" className="text-zion-cyan text-xs hover:underline">{tx5(ExplorerTransactionsTransactionsPageClientCopy.clearFilter, lang)}</Link>}
             </div>
           )}
 
@@ -263,10 +265,10 @@ export default function TransactionsPageClient() {
               </div>
 
               {/* type */}
-              <div className="flex items-center"><TypeBadge type={tx.type || "transfer"} cs={cs} /></div>
+              <div className="flex items-center"><TypeBadge type={tx.type || "transfer"} cs={cs} lang={lang} /></div>
 
               {/* age */}
-              <div className="flex items-center text-[12px] text-white/40 tabular-nums">{timeAgo(tx.timestamp, cs)}</div>
+              <div className="flex items-center text-[12px] text-white/40 tabular-nums">{timeAgo(tx.timestamp, lang)}</div>
 
               {/* block */}
               <div className="flex items-center">
@@ -279,7 +281,7 @@ export default function TransactionsPageClient() {
                     #{tx.block_height?.toLocaleString()}
                   </Link>
                 ) : (
-                  <span className="text-[12px] text-zion-gold/60 italic">{ExplorerTransactionsTransactionsPageClientCopy.pending[cs ? 'cs' : 'en']}</span>
+                  <span className="text-[12px] text-zion-gold/60 italic">{tx5(ExplorerTransactionsTransactionsPageClientCopy.pending, lang)}</span>
                 )}
               </div>
 
@@ -307,7 +309,7 @@ export default function TransactionsPageClient() {
                 disabled={loadingMore}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/4 border border-white/8 hover:bg-white/8 transition-colors text-sm text-white/60 hover:text-white/90 disabled:opacity-50"
               >
-                {loadingMore ? <><Loader2 className="w-4 h-4 animate-spin" /> {ExplorerTransactionsTransactionsPageClientCopy.loading[cs ? 'cs' : 'en']}</> : ExplorerTransactionsTransactionsPageClientCopy.loadMoreTransactions[cs ? 'cs' : 'en']}
+                {loadingMore ? <><Loader2 className="w-4 h-4 animate-spin" /> {tx5(ExplorerTransactionsTransactionsPageClientCopy.loading, lang)}</> : tx5(ExplorerTransactionsTransactionsPageClientCopy.loadMoreTransactions, lang)}
               </button>
             </div>
           )}

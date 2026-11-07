@@ -26,7 +26,8 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { useLang } from "@/contexts/LanguageContext";
+import { useLang, type Lang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { apiClient } from "@/lib/api";
 import { SITE_RELEASE_LABEL } from "@/lib/site";
 
@@ -71,21 +72,21 @@ const ExplorerCommandPaletteCopy = {
   press: { cs: `pro vyhledávání`, en: `to search` },
 };
 
-const quickLinks = (cs: boolean): PaletteItem[] => {
+const quickLinks = (cs: boolean, lang: Lang): PaletteItem[] => {
   const group = ExplorerCommandPaletteCopy.quickLinks[cs ? "cs" : "en"];
   return [
-    { id: "q-explorer", kind: "quick", href: "/explorer", label: cs ? "Přehled" : "Dashboard", icon: Compass, group },
-    { id: "q-blocks", kind: "quick", href: "/explorer/blocks", label: cs ? "Bloky" : "Blocks", icon: Layers, group },
-    { id: "q-txs", kind: "quick", href: "/explorer/txs", label: cs ? "TX Seznam" : "TX List", icon: Activity, group },
+    { id: "q-explorer", kind: "quick", href: "/explorer", label: cs ? "Přehled" : t5("Dashboard", lang), icon: Compass, group },
+    { id: "q-blocks", kind: "quick", href: "/explorer/blocks", label: cs ? "Bloky" : t5("Blocks", lang), icon: Layers, group },
+    { id: "q-txs", kind: "quick", href: "/explorer/txs", label: cs ? "TX Seznam" : t5("TX List", lang), icon: Activity, group },
     { id: "q-mempool", kind: "quick", href: "/explorer/mempool", label: "Mempool", icon: Boxes, group },
-    { id: "q-tokens", kind: "quick", href: "/explorer/tokens", label: cs ? "Tokeny" : "Tokens", icon: Coins, group },
+    { id: "q-tokens", kind: "quick", href: "/explorer/tokens", label: cs ? "Tokeny" : t5("Tokens", lang), icon: Coins, group },
     { id: "q-richlist", kind: "quick", href: "/explorer/richlist", label: "Rich List", icon: TrendingUp, group },
-    { id: "q-supply", kind: "quick", href: "/explorer/supply", label: cs ? "Emise" : "Supply", icon: BarChart3, group },
-    { id: "q-charts", kind: "quick", href: "/explorer/charts", label: cs ? "Grafy" : "Charts", icon: BarChart3, group },
-    { id: "q-miners", kind: "quick", href: "/explorer/miners", label: cs ? "Mineři" : "Miners", icon: ShieldCheck, group },
+    { id: "q-supply", kind: "quick", href: "/explorer/supply", label: cs ? "Emise" : t5("Supply", lang), icon: BarChart3, group },
+    { id: "q-charts", kind: "quick", href: "/explorer/charts", label: cs ? "Grafy" : t5("Charts", lang), icon: BarChart3, group },
+    { id: "q-miners", kind: "quick", href: "/explorer/miners", label: cs ? "Mineři" : t5("Miners", lang), icon: ShieldCheck, group },
     { id: "q-status", kind: "quick", href: "/explorer/status", label: "Status", icon: Signal, group },
-    { id: "q-network", kind: "quick", href: "/explorer/network-stats", label: cs ? "Síť" : "Network", icon: Globe, group },
-    { id: "q-contracts", kind: "quick", href: "/explorer/contracts", label: cs ? "Kontrakty" : "Contracts", icon: FileCode, group },
+    { id: "q-network", kind: "quick", href: "/explorer/network-stats", label: cs ? "Síť" : t5("Network", lang), icon: Globe, group },
+    { id: "q-contracts", kind: "quick", href: "/explorer/contracts", label: cs ? "Kontrakty" : t5("Contracts", lang), icon: FileCode, group },
     { id: "q-broadcast", kind: "quick", href: "/explorer/broadcast", label: "Broadcast", icon: Radio, group },
     { id: "q-api", kind: "quick", href: "/explorer/api-docs", label: "API", icon: Code, group },
   ];
@@ -103,7 +104,7 @@ const typeColors: Record<string, { text: string; border: string; bg: string; gro
   address: { text: "text-zion-purple", border: "border-zion-purple/20", bg: "bg-zion-purple/10", group: "addresses" },
 };
 
-function labelForType(type: string, cs: boolean): string {
+function labelForType(type: string, cs: boolean, lang: Lang): string {
   if (type === "block") return ExplorerCommandPaletteCopy.blocks[cs ? "cs" : "en"];
   if (type === "transaction") return ExplorerCommandPaletteCopy.transactions[cs ? "cs" : "en"];
   if (type === "address") return ExplorerCommandPaletteCopy.addresses[cs ? "cs" : "en"];
@@ -225,7 +226,7 @@ export default function ExplorerCommandPalette() {
   const items: PaletteItem[] = useMemo(() => {
     const list: PaletteItem[] = [];
     if (!query.trim()) {
-      list.push(...quickLinks(cs));
+      list.push(...quickLinks(cs, lang));
       recent.forEach((r, i) => {
         list.push({
           id: `recent-${i}-${r}`,
@@ -254,7 +255,7 @@ export default function ExplorerCommandPalette() {
           label: r.title,
           meta: r.meta,
           icon: Icon,
-          group: labelForType(r.type, cs),
+          group: labelForType(r.type, cs, lang),
         });
       });
     }
@@ -485,9 +486,9 @@ export default function ExplorerCommandPalette() {
               {/* Footer */}
               <div className="flex items-center justify-between border-t border-white/10 bg-white/3 px-4 py-2.5 text-[10px] text-gray-500">
                 <div className="hidden sm:flex items-center gap-3">
-                  <span className="inline-flex items-center gap-1"><kbd className="rounded border border-white/10 bg-white/5 px-1">↑</kbd> <kbd className="rounded border border-white/10 bg-white/5 px-1">↓</kbd> {cs ? "navigace" : "navigate"}</span>
-                  <span className="inline-flex items-center gap-1"><kbd className="rounded border border-white/10 bg-white/5 px-1">↵</kbd> {cs ? "otevřít" : "open"}</span>
-                  <span className="inline-flex items-center gap-1"><kbd className="rounded border border-white/10 bg-white/5 px-1">esc</kbd> {cs ? "zavřít" : "close"}</span>
+                  <span className="inline-flex items-center gap-1"><kbd className="rounded border border-white/10 bg-white/5 px-1">↑</kbd> <kbd className="rounded border border-white/10 bg-white/5 px-1">↓</kbd> {cs ? "navigace" : t5("navigate", lang)}</span>
+                  <span className="inline-flex items-center gap-1"><kbd className="rounded border border-white/10 bg-white/5 px-1">↵</kbd> {cs ? "otevřít" : t5("open", lang)}</span>
+                  <span className="inline-flex items-center gap-1"><kbd className="rounded border border-white/10 bg-white/5 px-1">esc</kbd> {cs ? "zavřít" : t5("close", lang)}</span>
                 </div>
                 <div className="ml-auto">
                   ZION TerraNova {SITE_RELEASE_LABEL} — {ExplorerCommandPaletteCopy.search[cs ? "cs" : "en"]}

@@ -11,6 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import LifeTreeVisualization from "./LifeTreeVisualization";
 import GuardiansTreeClient from "@/components/GuardiansTreeClient";
 
@@ -176,12 +177,12 @@ export default function DaoDashboardPage() {
     <div className="zion-page text-white">
       <div className="zion-container max-w-6xl space-y-12">
         <header className="zion-rainbow-card p-5 sm:p-8 md:p-10" style={emeraldVar}>
-          <p className="text-xs uppercase tracking-[0.4em] text-gray-300">{DashboardDaoTreeCopy.daoLedger[lang === 'cs' ? 'cs' : 'en']}</p>
+          <p className="text-xs uppercase tracking-[0.4em] text-gray-300">{tx5(DashboardDaoTreeCopy.daoLedger, lang)}</p>
           <h1 className="mt-3 text-4xl md:text-5xl font-semibold text-gradient">
-            {DashboardDaoTreeCopy.treeOfLifeDaoGuardians[lang === 'cs' ? 'cs' : 'en']}
+            {tx5(DashboardDaoTreeCopy.treeOfLifeDaoGuardians, lang)}
           </h1>
           <p className="mt-4 text-gray-200 max-w-3xl">
-            {DashboardDaoTreeCopy.treeOfLifeServesAsALiveDaoLedg[lang === 'cs' ? 'cs' : 'en']}
+            {tx5(DashboardDaoTreeCopy.treeOfLifeServesAsALiveDaoLedg, lang)}
           </p>
         </header>
 
@@ -203,15 +204,15 @@ export default function DaoDashboardPage() {
         <section className="zion-rainbow-card p-8" style={emeraldVar}>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{DashboardDaoTreeCopy.treeOfLife[lang === 'cs' ? 'cs' : 'en']}</p>
-              <h2 className="text-3xl font-semibold text-white">{DashboardDaoTreeCopy.liveDaoTopology[lang === 'cs' ? 'cs' : 'en']}</h2>
+              <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{tx5(DashboardDaoTreeCopy.treeOfLife, lang)}</p>
+              <h2 className="text-3xl font-semibold text-white">{tx5(DashboardDaoTreeCopy.liveDaoTopology, lang)}</h2>
               <p className="text-gray-300 max-w-2xl">
-                {DashboardDaoTreeCopy.levelsConnectTheEnergyMapWithD[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(DashboardDaoTreeCopy.levelsConnectTheEnergyMapWithD, lang)}
               </p>
             </div>
             <div className="zion-rainbow-sub flex items-center gap-3 px-4 py-2 text-sm" style={emeraldVar}>
               <TreeDeciduous className="h-5 w-5 text-zion-cyan" />
-              <span>{DashboardDaoTreeCopy.autoRefreshEvery60sTodo[lang === 'cs' ? 'cs' : 'en']}</span>
+              <span>{tx5(DashboardDaoTreeCopy.autoRefreshEvery60sTodo, lang)}</span>
             </div>
           </div>
           <div className="mt-8 grid gap-6 lg:grid-cols-3">
@@ -253,15 +254,15 @@ export default function DaoDashboardPage() {
         <section className="zion-rainbow-card p-8" style={emeraldVar}>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
             <div>
-              <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{DashboardDaoTreeCopy.consciousnessMining[lang === 'cs' ? 'cs' : 'en']}</p>
-              <h2 className="text-3xl font-semibold text-white">{DashboardDaoTreeCopy.kabbalahTreeOfLife144kGuardian[lang === 'cs' ? 'cs' : 'en']}</h2>
+              <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{tx5(DashboardDaoTreeCopy.consciousnessMining, lang)}</p>
+              <h2 className="text-3xl font-semibold text-white">{tx5(DashboardDaoTreeCopy.kabbalahTreeOfLife144kGuardian, lang)}</h2>
               <p className="text-gray-300 max-w-2xl">
-                {DashboardDaoTreeCopy.k9ConsciousnessLevelsMappedTo10[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(DashboardDaoTreeCopy.k9ConsciousnessLevelsMappedTo10, lang)}
               </p>
             </div>
             <div className="zion-rainbow-sub flex items-center gap-3 px-4 py-2 text-sm" style={goldVar}>
               <Star className="h-5 w-5 text-zion-gold" />
-              <span className="text-white">{DashboardDaoTreeCopy.realTimeDaoTracking[lang === 'cs' ? 'cs' : 'en']}</span>
+              <span className="text-white">{tx5(DashboardDaoTreeCopy.realTimeDaoTracking, lang)}</span>
             </div>
           </div>
           <GuardiansTreeClient />
@@ -270,7 +271,7 @@ export default function DaoDashboardPage() {
         <section className="zion-rainbow-card p-8" style={emeraldVar}>
           <div className="flex items-center gap-3 mb-6">
             <Star className="h-6 w-6 text-zion-gold" />
-            <h2 className="text-3xl font-semibold">{DashboardDaoTreeCopy.hallOfGuardians[lang === 'cs' ? 'cs' : 'en']}</h2>
+            <h2 className="text-3xl font-semibold">{tx5(DashboardDaoTreeCopy.hallOfGuardians, lang)}</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {guardianHall.map((guardian) => (
@@ -287,10 +288,10 @@ export default function DaoDashboardPage() {
                   <ShieldCheck className="h-6 w-6 text-zion-cyan" />
                 </div>
                 <div className="mt-4 space-y-1 text-sm text-gray-300">
-                  <p>{DashboardDaoTreeCopy.role[lang === 'cs' ? 'cs' : 'en']}: <span className="font-semibold text-white">{guardian.role}</span></p>
-                  <p>{DashboardDaoTreeCopy.allocation[lang === 'cs' ? 'cs' : 'en']}: <span className="font-mono text-zion-gold">{guardian.allocation}</span></p>
+                  <p>{tx5(DashboardDaoTreeCopy.role, lang)}: <span className="font-semibold text-white">{guardian.role}</span></p>
+                  <p>{tx5(DashboardDaoTreeCopy.allocation, lang)}: <span className="font-mono text-zion-gold">{guardian.allocation}</span></p>
                   <p>Wallet: <span className="font-mono">{guardian.wallet}</span></p>
-                  <p>{DashboardDaoTreeCopy.date[lang === 'cs' ? 'cs' : 'en']}: <span>{guardian.joined}</span></p>
+                  <p>{tx5(DashboardDaoTreeCopy.date, lang)}: <span>{guardian.joined}</span></p>
                 </div>
               </div>
             ))}
@@ -301,7 +302,7 @@ export default function DaoDashboardPage() {
           <div className="zion-rainbow-card p-6" style={emeraldVar}>
             <div className="flex items-center gap-3 mb-4">
               <Gem className="h-5 w-5 text-pink-200" />
-              <h3 className="text-2xl font-semibold">{DashboardDaoTreeCopy.perksMechanics[lang === 'cs' ? 'cs' : 'en']}</h3>
+              <h3 className="text-2xl font-semibold">{tx5(DashboardDaoTreeCopy.perksMechanics, lang)}</h3>
             </div>
             <ul className="space-y-4 text-sm text-gray-200">
               {perks.map((perk) => (
@@ -315,7 +316,7 @@ export default function DaoDashboardPage() {
           <div className="zion-rainbow-card p-6" style={emeraldVar}>
             <div className="flex items-center gap-3 mb-4">
               <Sparkles className="h-5 w-5 text-emerald-200" />
-              <h3 className="text-2xl font-semibold">{DashboardDaoTreeCopy.comingSoon[lang === 'cs' ? 'cs' : 'en']}</h3>
+              <h3 className="text-2xl font-semibold">{tx5(DashboardDaoTreeCopy.comingSoon, lang)}</h3>
             </div>
             <ul className="space-y-4 text-sm text-gray-200">
               {upcoming.map((item) => (

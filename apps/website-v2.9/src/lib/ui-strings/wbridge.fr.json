@@ -1,0 +1,21 @@
+{
+ "5/5 Guardian validators": "5/5 validateurs Guardian",
+ "Back to wallet": "Retour au portefeuille",
+ "Bridge": "Bridge",
+ "Bridge Vault (L1)": "Bridge Vault (L1)",
+ "Bridge contract (Base)": "Contrat bridge (Base)",
+ "Burn (wZION → ZION)": "Brûler (wZION → ZION)",
+ "Contracts": "Contrats",
+ "Copied!": "Copié !",
+ "Copy": "Copier",
+ "L1 finality: 60 blocks": "Finalité L1 : 60 blocs",
+ "Lock (ZION → wZION)": "Verrouiller (ZION → wZION)",
+ "Memo format": "Format du mémo",
+ "Open full bridge page": "Ouvrir la page bridge complète",
+ "Send ZION to the bridge vault address on L1 with memo format BRIDGE:base:<your_evm_address>. Validators mint wZION to your EVM address after finality (60 blocks).": "Envoyez du ZION à l'adresse du bridge vault sur L1 avec le mémo au format BRIDGE:base:<your_evm_address>. Les validateurs créent des wZION sur votre adresse EVM après la finalité (60 blocs).",
+ "Staking": "Staking",
+ "Timelock for large amounts (≥1M wZION): 24h": "Timelock pour les gros montants (≥1M wZION) : 24h",
+ "Transfer ZION ↔ wZION between L1 and Base. Lock ZION on L1 → mint wZION on Base. Burn wZION → unlock ZION on L1.": "Transférez ZION ↔ wZION entre L1 et Base. Verrouillez ZION sur L1 → création de wZION sur Base. Brûlez wZION → déblocage de ZION sur L1.",
+ "wZION contract (Base)": "Contrat wZION (Base)",
+ "your EVM address": "votre adresse EVM"
+}

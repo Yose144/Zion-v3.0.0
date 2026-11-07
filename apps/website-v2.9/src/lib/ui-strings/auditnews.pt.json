@@ -1,0 +1,15 @@
+{
+ "Activation plan": "Plano de ativação",
+ "Audit · 2026-05-04": "Auditoria · 2026-05-04",
+ "Back to news": "Voltar às notícias",
+ "Closed findings": "Constatações encerradas",
+ "Critical fixes are implemented and verified by tests (F1, F3, F4, F5, F6 + more).": "As correções críticas estão implementadas e verificadas por testes (F1, F3, F4, F5, F6 e mais).",
+ "Docs": "Documentação",
+ "Hard fork: activate tx-hash v2 and Merkle F2 as a coordinated upgrade.": "Hard fork: ativar tx-hash v2 e Merkle F2 como atualização coordenada.",
+ "Network snapshot": "Instantâneo da rede",
+ "Operational hygiene: rotate compromised keys, scrub history, fix CI billing, and coordinate the fork window.": "Higiene operacional: rodar chaves comprometidas, limpar o histórico, corrigir a faturação de CI e coordenar a janela do fork.",
+ "Repo / audit files": "Repositório / ficheiros da auditoria",
+ "We consolidated the V3 internal security audit into a single readable snapshot: what is mainnet-ready, what is a dormant fix waiting for a coordinated hard fork, and which operational steps are required before Genesis.": "Consolidámos a auditoria de segurança interna da V3 num único instantâneo legível: o que está pronto para mainnet, que correção está dormente à espera de um hard fork coordenado e que passos operacionais são necessários antes do Genesis.",
+ "What still blocks": "O que ainda bloqueia",
+ "ZION V3 internal audit completed": "Auditoria interna da ZION V3 concluída"
+}

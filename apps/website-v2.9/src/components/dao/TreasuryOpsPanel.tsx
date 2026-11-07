@@ -4,6 +4,7 @@ import { useState, type CSSProperties } from 'react';
 import { CheckCircle2, ChevronDown, ChevronUp, ExternalLink, KeyRound, ShieldCheck, XCircle } from 'lucide-react';
 import { signTreasuryOperation, type TreasuryOp } from '@/lib/dao-api';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const C = {
   signatures: { cs: 'podpisů', en: 'signatures' },
@@ -66,7 +67,7 @@ function OpRow({ op, onChanged }: { op: TreasuryOp; onChanged: () => void }) {
         guardian: guardian.trim(),
         signature: signature.trim(),
       });
-      setMsg(C.signedOk[cs ? 'cs' : 'en']);
+      setMsg(tx5(C.signedOk, lang));
       setSignature('');
       onChanged();
     } catch (e) {
@@ -90,13 +91,13 @@ function OpRow({ op, onChanged }: { op: TreasuryOp; onChanged: () => void }) {
         <div className="flex items-center gap-3 text-xs">
           <span className={`zion-badge ${badge.cls}`}>{badge.label}</span>
           <span className="font-mono text-gray-300">
-            {verified}/{op.threshold} {C.signatures[cs ? 'cs' : 'en']}
+            {verified}/{op.threshold} {tx5(C.signatures, lang)}
           </span>
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
             className="text-gray-400 hover:text-white transition-colors"
-            aria-label={C.expandSigs[cs ? 'cs' : 'en']}
+            aria-label={tx5(C.expandSigs, lang)}
           >
             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
@@ -117,7 +118,7 @@ function OpRow({ op, onChanged }: { op: TreasuryOp; onChanged: () => void }) {
           className="mt-2 inline-flex items-center gap-1 text-xs text-zion-cyan hover:underline font-mono"
         >
           <ExternalLink className="h-3 w-3" />
-          {C.broadcastTx[cs ? 'cs' : 'en']}: {op.tx_id.slice(0, 18)}…
+          {tx5(C.broadcastTx, lang)}: {op.tx_id.slice(0, 18)}…
         </a>
       )}
 
@@ -125,7 +126,7 @@ function OpRow({ op, onChanged }: { op: TreasuryOp; onChanged: () => void }) {
         <div className="mt-3 space-y-1.5">
           {op.signing_hash && (
             <p className="text-[10px] text-gray-500 font-mono break-all">
-              {C.signingHash[cs ? 'cs' : 'en']}: {op.signing_hash}
+              {tx5(C.signingHash, lang)}: {op.signing_hash}
             </p>
           )}
           {op.signatures.map((s) => (
@@ -133,7 +134,7 @@ function OpRow({ op, onChanged }: { op: TreasuryOp; onChanged: () => void }) {
               <span className="font-mono text-gray-300 truncate">{s.guardian}</span>
               {s.verified ? (
                 <span className="inline-flex items-center gap-1 text-emerald-400">
-                  <CheckCircle2 className="h-3 w-3" /> {C.verifiedOnly[cs ? 'cs' : 'en']}
+                  <CheckCircle2 className="h-3 w-3" /> {tx5(C.verifiedOnly, lang)}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 text-amber-400">
@@ -152,7 +153,7 @@ function OpRow({ op, onChanged }: { op: TreasuryOp; onChanged: () => void }) {
           className="mt-3 inline-flex items-center gap-1.5 text-xs text-zion-gold hover:text-white transition-colors"
         >
           <KeyRound className="h-3.5 w-3.5" />
-          {C.showSignForm[cs ? 'cs' : 'en']}
+          {tx5(C.showSignForm, lang)}
         </button>
       )}
 
@@ -161,20 +162,20 @@ function OpRow({ op, onChanged }: { op: TreasuryOp; onChanged: () => void }) {
           <input
             value={guardian}
             onChange={(e) => setGuardian(e.target.value)}
-            placeholder={C.guardian[cs ? 'cs' : 'en']}
+            placeholder={tx5(C.guardian, lang)}
             className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-xs font-mono text-white"
           />
           <input
             value={signature}
             onChange={(e) => setSignature(e.target.value)}
-            placeholder={C.signatureHex[cs ? 'cs' : 'en']}
+            placeholder={tx5(C.signatureHex, lang)}
             className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-xs font-mono text-white"
           />
           <input
             type="password"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            placeholder={C.daoKey[cs ? 'cs' : 'en']}
+            placeholder={tx5(C.daoKey, lang)}
             className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-xs font-mono text-white"
           />
           <div className="flex items-center gap-3">
@@ -184,14 +185,14 @@ function OpRow({ op, onChanged }: { op: TreasuryOp; onChanged: () => void }) {
               onClick={submitSignature}
               className="zion-button-secondary px-4 py-1.5 text-xs disabled:opacity-40"
             >
-              {busy ? C.signing[cs ? 'cs' : 'en'] : C.sign[cs ? 'cs' : 'en']}
+              {busy ? tx5(C.signing, lang) : tx5(C.sign, lang)}
             </button>
             <button
               type="button"
               onClick={() => setShowSign(false)}
               className="text-xs text-gray-500 hover:text-gray-300"
             >
-              {C.hideSignForm[cs ? 'cs' : 'en']}
+              {tx5(C.hideSignForm, lang)}
             </button>
           </div>
           {msg && <p className="text-xs text-emerald-400">{msg}</p>}
