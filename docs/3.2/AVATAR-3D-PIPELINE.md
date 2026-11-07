@@ -342,6 +342,7 @@ Autonomní dávku řeší tři skripty v `scripts/ops/avatar-3d/`:
 | `rig.py` | Blender headless: kostra, skin váhy, idle animace, export GLB (§8b) |
 | `qa.mjs` | Vykreslí kontrolní list: portrét + čtyři pohledy pro každé ID, do jednoho PNG |
 | `similarity.py` | Měří IoU siluety a ΔE palety proti výtvarnému listu — **diagnostika, ne schvalovací filtr** (viz §9) |
+| `clip_score.py` | Sémantické skóre (CLIP) proti výtvarnému listu — **řazení k revizi, ne schvalovací brána** (viz §9b) |
 
 ### Spuštění celé dávky
 
@@ -396,6 +397,26 @@ a `puppeteer-core` s nainstalovaným Chrome.
   jako filtr.** Známý vadný model dostal IoU 0,456 / hlava 0,248, dobré modely
   0,508–0,578 / hlava 0,208–0,477. Rozpětí se překrývá, takže metrika nerozliší
   použitelný model od nepoužitelného a **nesmí** sama schvalovat dávku.
+
+### 9b. CLIP skóre — naměřeno
+
+`clip_score.py` používá `openai/clip-vit-base-patch32` (MIT, ~600 MB) k embeddings
+a kosinové podobnosti mezi renderem a výtvarným listem.
+
+| Dvojice | Skóre |
+|---|---|
+| dobrý model vs výtvarný list | **0,549** |
+| vadný model (rozbité orámování) vs list | **0,499** |
+| dobrý model vs oficiální portrét | 0,438 |
+| vadný model vs portrét | 0,424 |
+
+CLIP tedy **lépe rozlišuje proti celopostavovému listu** než geometrické metriky
+(rozdíl 0,05 vs 0,05 u IoU, ale konzistentnější), zatímco proti portrétu je rozdíl
+0,014 — nepoužitelné, protože portrét je jen poprsí.
+
+**Verdikt:** skóre se hodí k seřazení k lidské kontrole a k výběru nejlepší
+varianty z několika generací. Jako automatická brána „prošlo/neprošlo" nestačí,
+protože i lidsky slabý model může mít vysoké skóre jen díky správné paletě.
 
 **Důsledek pro autonomii:** bez spolehlivého hodnocení musí dávku projít člověk,
 nebo se musí použít sémantické embeddingy (CLIP) místo geometrických metrik.
