@@ -569,3 +569,40 @@ pt „Alertas ativos · Decorrido", fr „Alertes actives · Écoulé",
 
 Zbytek je **~15 řetězců na soubor** — jde o hry (`doge-vs-zion`), admin nástroje
 a jednotlivé explorer podstránky. Fallback na angličtinu funguje všude.
+
+---
+
+## 33. Dávka 20 — Pearl pool, download, network stats, burn, hra, Quantum Revolution, verifier (256 řetězců)
+
+`poolprl` (38), `dlbrowser` (38), `netstats` (37), `burn` (38), `breaker` (43),
+`quantum` (31), `verify` (31).
+
+**Nová past: komponenta bez `lang` v celém řetězci.** `DownloadToolBrowser`
+neměl import z `LanguageContext` vůbec (jen `i18n-tx`), takže chyběl i typ `Lang`;
+`ReleaseCard` a dva modulové `get*Features` musely dostat `lang`, a nakonec
+i volající stránka `/download` (`<DownloadToolBrowser cs={cs} lang={lang} />`).
+Hra `BlockBreaker` potřebovala `lang` až ve `renderCanvas()` — text se kreslí
+na plátno, ne do JSX, takže ho codemod v JSX vůbec neviděl.
+
+Ověřeno živě: `/download` es „Descargar · Minería", fr „Télécharger · Minage",
+`/explorer/network-stats` es „Gráficas 24h · Bloques alternativos · Tiempo de bloque",
+pt „Gráficos 24h · Blocos alternativos · Tempo de bloco", fr „Graphiques 24h · Temps de bloc",
+`/quantum-revolution` es „capítulos de la historia · Análisis: libro vs. realidad",
+`/explorer/verify-message` „Ověřit / Verificar / Vérifier", **0 pageerror**.
+
+## 34. Stav po dávce 20
+
+| | hodnota |
+|---|---:|
+| přeložených řetězců (es = pt = fr) | **5 514** |
+| stránek/komponent s vlastním slovníkem | **70** |
+| zbývá | **1 774 klíčů / 132 souborů** |
+| `tsc` / `next build` | 0 / zelený |
+
+**Největší zbývající:** `dashboard/ncl` (33), `admin/algo-manager` (33),
+`doge-vs-zion` (31), `dao/ParliamentVision` (30), `FreeWorldRegistry` (30),
+`BenchmarkMatrix` (30), `LiveDashboard` (28), `SouvislostiPanel` (28),
+`explorer/txs` (28), `StarMiner` (28), `account` (28), `explorer/charts` (27).
+
+Zbytek je **~13 řetězců na soubor** — poslední vlna jsou admin panely, herní
+obrazovky a jednotlivé archivní panely. Fallback na angličtinu funguje všude.
