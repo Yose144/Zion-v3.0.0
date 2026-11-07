@@ -1,6 +1,6 @@
 # Nirvana — skuteční 3D avatáři podle portrétů
 
-**Stav 2026-11-07: průzkum a zadání pilotu; 0/202 nových modelů.** Cílem je 202 individuálních, rozpoznatelných a herně použitelných postav podle oficiálních portrétů OASIS. Procedurální avatáři zůstávají náhradou, dokud není konkrétní model schválený. Nezaměňovat 2D portrét, generovaný návrh, statickou síť a hotový animovaný herní asset.
+**Stav 2026-11-07: první experimentální busta Krishny, 0/202 schválených herních modelů.** Cílem je 202 individuálních, rozpoznatelných a herně použitelných postav podle oficiálních portrétů OASIS. Procedurální avatáři zůstávají náhradou, dokud není konkrétní model schválený. Nezaměňovat 2D portrét, generovaný návrh, statickou síť a hotový animovaný herní asset.
 
 ## 1. Výchozí stav a omezení
 
@@ -68,6 +68,10 @@
 
 Finální deploy je samostatné rozhodnutí: build z izolovaného čistého artefaktu, kontrola změn paralelních session, protokolu a rollbacku; bez výslovného schválení produkci neměnit. Čas a počet dávek odhadnout až z naměřeného pilotu, ne z rychlosti samotné AI inference.
 
-## 6. Nejbližší krok
+## 6. První experiment na M1
 
-Zajistit místo a izolované prostředí, ověřit PyTorch MPS a licence konkrétních vah, připravit masku Krishny a spustit **jeden** experiment TripoSR. Dnešní výstup je tento plán a rozbor reference, nikoliv vyrobený model. Zapsat výsledek a screenshoty i v případě neúspěchu.
+- PyTorch 2.15.0, Python 3.11, MPS dostupné a ověřené výpočtem; GPU inference s explicitním `--device mps` po opravě CPU fallbacku v izolované kopii TripoSR.
+- TripoSR váhy 1,68 GB; `--chunk-size 1024 --mc-resolution 64`, automatické odstranění pozadí U²-Net. Dopředný výpočet 6,0 s, extrakce 6,3 s (nezahrnuje inicializaci a stahování). Export: 1 mesh, 4 115 vrcholů, 8 218 trojúhelníků, 162 KiB. Špička RAM zatím nezměřena.
+- `torchmcubes` se v izolovaném prostředí sice sestavil, ale načetl nekompatibilní systémový PyTorch dylib; pro experiment nahrazen CPU `skimage.measure.marching_cubes` s převodem os. Tato změna není dosud řádně regresně ověřena na referenční geometrii.
+- Lokální experimentální výstupy `.artifacts/krishna-triposr-pilot/mesh.glb` a `input.png` nejsou finální asset. Automatická maska **odstranila korunu, pero a květ**, které splývají s pozadím. Geometrie nebyla vizuálně ověřena z několika stran, není rigovaná ani připojená ke hře. G1 i G2 zůstávají otevřené.
+- Další krok: opravit masku podle originálu, ověřit licence segmentačních vah a osovou konvenci extrakce na známém tělese, zkusit vyšší rozlišení s měřením paměti; poté vyrenderovat více pohledů a teprve hodnotit podobnost. K dispozici je alternativně GTX 1070 Ti, zatím žádný vzdálený výpočet nespouštět.
