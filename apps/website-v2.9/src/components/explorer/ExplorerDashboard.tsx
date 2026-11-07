@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Activity, Globe, TrendingUp, Users, Zap } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { useBlockchainStats } from "@/hooks/useBlockchainStats";
 
 const ExplorerDashboardCopy = {
@@ -63,11 +64,11 @@ export default function ExplorerDashboard() {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "healthy":
-        return ExplorerDashboardCopy.healthy[cs ? 'cs' : 'en'];
+        return tx5(ExplorerDashboardCopy.healthy, lang);
       case "warning":
-        return ExplorerDashboardCopy.warning[cs ? 'cs' : 'en'];
+        return tx5(ExplorerDashboardCopy.warning, lang);
       default:
-        return ExplorerDashboardCopy.offline[cs ? 'cs' : 'en'];
+        return tx5(ExplorerDashboardCopy.offline, lang);
     }
   };
 
@@ -94,9 +95,9 @@ export default function ExplorerDashboard() {
       <div className="zion-rainbow-card rounded-[28px] border-zion-purple/20 bg-black/60 p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
         <div className="flex items-center gap-2 text-zion-purple mb-2">
           <Activity className="w-5 h-5" />
-          <span className="font-semibold">{ExplorerDashboardCopy.networkDashboard[cs ? 'cs' : 'en']}</span>
+          <span className="font-semibold">{tx5(ExplorerDashboardCopy.networkDashboard, lang)}</span>
         </div>
-        <p className="text-gray-500 text-sm">{ExplorerDashboardCopy.unableToConnectToDaemonService[cs ? 'cs' : 'en']}</p>
+        <p className="text-gray-500 text-sm">{tx5(ExplorerDashboardCopy.unableToConnectToDaemonService, lang)}</p>
       </div>
     );
   }
@@ -123,38 +124,38 @@ export default function ExplorerDashboard() {
 
   const metrics = [
     {
-      label: ExplorerDashboardCopy.network[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerDashboardCopy.network, lang),
       value: getStatusLabel(data.network_status),
       color: getStatusColor(data.network_status),
       icon: Globe,
       dot: getStatusDot(data.network_status),
     },
     {
-      label: ExplorerDashboardCopy.miners[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerDashboardCopy.miners, lang),
       value: data.active_miners.toString(),
       color: "text-zion-purple",
       icon: Users,
     },
     {
-      label: ExplorerDashboardCopy.poolHash[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerDashboardCopy.poolHash, lang),
       value: data.pool_hashrate,
       color: "text-zion-cyan",
       icon: TrendingUp,
     },
     {
-      label: ExplorerDashboardCopy.blockTime[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerDashboardCopy.blockTime, lang),
       value: `${data.block_time_avg}s`,
       color: "text-zion-cyan",
       icon: Activity,
     },
     {
-      label: ExplorerDashboardCopy.mempool[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerDashboardCopy.mempool, lang),
       value: data.tx_pool_size.toString(),
       color: "text-zion-gold",
       icon: Zap,
     },
     {
-      label: ExplorerDashboardCopy.peers[cs ? 'cs' : 'en'],
+      label: tx5(ExplorerDashboardCopy.peers, lang),
       value: data.connections.toString(),
       color: "text-zion-purple",
       icon: Globe,
@@ -170,8 +171,8 @@ export default function ExplorerDashboard() {
       <div className="flex items-center gap-3 mb-5">
         <Activity className="h-5 w-5 text-zion-purple" />
         <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{ExplorerDashboardCopy.live[cs ? 'cs' : 'en']}</p>
-          <h3 className="text-lg font-semibold text-white">{ExplorerDashboardCopy.networkDashboard[cs ? 'cs' : 'en']}</h3>
+          <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{tx5(ExplorerDashboardCopy.live, lang)}</p>
+          <h3 className="text-lg font-semibold text-white">{tx5(ExplorerDashboardCopy.networkDashboard, lang)}</h3>
         </div>
       </div>
 
@@ -200,16 +201,16 @@ export default function ExplorerDashboard() {
       {/* Block reward info */}
       <div className="mt-4 zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
         <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-2">
-          {ExplorerDashboardCopy.rewardDistribution[cs ? 'cs' : 'en']}
+          {tx5(ExplorerDashboardCopy.rewardDistribution, lang)}
         </p>
         <div className="grid grid-cols-2 gap-2 text-xs">
           {[
-            { label: ExplorerDashboardCopy.reward[cs ? 'cs' : 'en'], value: "5,400 ZION", color: "text-zion-gold" },
-            { label: ExplorerDashboardCopy.emission[cs ? 'cs' : 'en'], value: ExplorerDashboardCopy.decadeDecay[cs ? 'cs' : 'en'], color: "text-gray-300" },
-            { label: ExplorerDashboardCopy.miner89[cs ? 'cs' : 'en'], value: "4,806 ZION", color: "text-zion-cyan" },
-            { label: ExplorerDashboardCopy.humanitarian[cs ? 'cs' : 'en'], value: "5% (270)", color: "text-zion-purple" },
-            { label: ExplorerDashboardCopy.issobella[cs ? 'cs' : 'en'], value: "5% (270)", color: "text-zion-purple" },
-            { label: ExplorerDashboardCopy.poolFee[cs ? 'cs' : 'en'], value: "1% (54)", color: "text-zion-gold" },
+            { label: tx5(ExplorerDashboardCopy.reward, lang), value: "5,400 ZION", color: "text-zion-gold" },
+            { label: tx5(ExplorerDashboardCopy.emission, lang), value: tx5(ExplorerDashboardCopy.decadeDecay, lang), color: "text-gray-300" },
+            { label: tx5(ExplorerDashboardCopy.miner89, lang), value: "4,806 ZION", color: "text-zion-cyan" },
+            { label: tx5(ExplorerDashboardCopy.humanitarian, lang), value: "5% (270)", color: "text-zion-purple" },
+            { label: tx5(ExplorerDashboardCopy.issobella, lang), value: "5% (270)", color: "text-zion-purple" },
+            { label: tx5(ExplorerDashboardCopy.poolFee, lang), value: "1% (54)", color: "text-zion-gold" },
           ].map((c) => (
             <div key={c.label} className="flex items-center justify-between">
               <span className="text-gray-500">{c.label}</span>

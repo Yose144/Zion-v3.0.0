@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { useAuth } from '@/contexts/AuthContext';
 import QuorumProgress from '@/components/dao/QuorumProgress';
 import VoteMemoCard from '@/components/dao/VoteMemoCard';
@@ -125,13 +126,13 @@ export default function ProposalDetailPage() {
     setVoteMsg(null);
     setVoteErr(null);
     if (!authenticated) {
-      setVoteErr(C.signInRequired[cs ? 'cs' : 'en']);
+      setVoteErr(tx5(C.signInRequired, lang));
       return;
     }
     setIsVoting(true);
     try {
       await castGovernanceVote(id, zionAddress, voteType);
-      setVoteMsg(C.voteRecorded[cs ? 'cs' : 'en']);
+      setVoteMsg(tx5(C.voteRecorded, lang));
       await load();
     } catch (err) {
       setVoteErr(err instanceof Error ? err.message : 'Vote failed');
@@ -168,17 +169,17 @@ export default function ProposalDetailPage() {
           className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          {C.backToDao[cs ? 'cs' : 'en']}
+          {tx5(C.backToDao, lang)}
         </Link>
 
         {loading ? (
           <div className="zion-rainbow-card p-10 text-center text-gray-400">
-            {C.loading[cs ? 'cs' : 'en']}
+            {tx5(C.loading, lang)}
           </div>
         ) : !proposal ? (
           <div className="zion-rainbow-card p-10 text-center" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
             <AlertTriangle className="h-8 w-8 text-zion-purple mx-auto mb-3" />
-            <p className="text-gray-300">{C.notFound[cs ? 'cs' : 'en']}</p>
+            <p className="text-gray-300">{tx5(C.notFound, lang)}</p>
           </div>
         ) : (
           <motion.div
@@ -190,11 +191,11 @@ export default function ProposalDetailPage() {
             {/* Header */}
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <span className="text-xs font-mono text-gray-500">
-                {C.proposal[cs ? 'cs' : 'en']} #{proposal.id}
+                {tx5(C.proposal, lang)} #{proposal.id}
               </span>
               <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] uppercase tracking-wider ${statusClass}`}>
                 <Clock className="h-3 w-3" />
-                {awaitingTally ? (cs ? 'Awaiting tally' : 'Awaiting tally') : proposal.state}
+                {awaitingTally ? (cs ? 'Awaiting tally' : t5('Awaiting tally', lang)) : proposal.state}
               </span>
               {proposal.proposal_type && (
                 <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] uppercase tracking-wider text-gray-400">
@@ -204,7 +205,7 @@ export default function ProposalDetailPage() {
               {proposal.has_passed && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-2.5 py-0.5 text-[11px] uppercase tracking-wider text-zion-gold">
                   <CheckCircle2 className="h-3 w-3" />
-                  {cs ? 'Schváleno hlasy' : 'Passed by votes'}
+                  {cs ? 'Schváleno hlasy' : t5('Passed by votes', lang)}
                 </span>
               )}
             </div>
@@ -218,9 +219,9 @@ export default function ProposalDetailPage() {
             <div className="space-y-3 mb-6">
               {(
                 [
-                  [C.forLabel[cs ? 'cs' : 'en'], votesFor, 'bg-zion-cyan', 'text-zion-cyan'],
-                  [C.againstLabel[cs ? 'cs' : 'en'], votesAgainst, 'bg-zion-purple', 'text-zion-purple'],
-                  [C.abstainLabel[cs ? 'cs' : 'en'], votesAbstain, 'bg-gray-500', 'text-gray-400'],
+                  [tx5(C.forLabel, lang), votesFor, 'bg-zion-cyan', 'text-zion-cyan'],
+                  [tx5(C.againstLabel, lang), votesAgainst, 'bg-zion-purple', 'text-zion-purple'],
+                  [tx5(C.abstainLabel, lang), votesAbstain, 'bg-gray-500', 'text-gray-400'],
                 ] as const
               ).map(([label, value, bar, text]) => (
                 <div key={label}>
@@ -245,7 +246,7 @@ export default function ProposalDetailPage() {
                 {!authenticated && (
                   <p className="text-xs text-zion-gold/90 mb-3 flex items-center gap-1.5">
                     <Users className="h-3.5 w-3.5" />
-                    {C.signInToVote[cs ? 'cs' : 'en']}
+                    {tx5(C.signInToVote, lang)}
                   </p>
                 )}
                 <div className="flex flex-wrap gap-2">
@@ -255,7 +256,7 @@ export default function ProposalDetailPage() {
                     className="zion-button-primary flex-1 min-w-[120px] !px-4 !py-2.5 !text-sm disabled:opacity-50"
                   >
                     <ThumbsUp className="h-4 w-4" />
-                    {C.forLabel[cs ? 'cs' : 'en']}
+                    {tx5(C.forLabel, lang)}
                   </button>
                   <button
                     onClick={() => handleVote('against')}
@@ -263,7 +264,7 @@ export default function ProposalDetailPage() {
                     className="zion-button-secondary flex-1 min-w-[120px] !px-4 !py-2.5 !text-sm disabled:opacity-50"
                   >
                     <ThumbsDown className="h-4 w-4" />
-                    {C.againstLabel[cs ? 'cs' : 'en']}
+                    {tx5(C.againstLabel, lang)}
                   </button>
                   <button
                     onClick={() => handleVote('abstain')}
@@ -271,7 +272,7 @@ export default function ProposalDetailPage() {
                     className="zion-button-secondary !px-4 !py-2.5 !text-sm disabled:opacity-50"
                   >
                     <Minus className="h-4 w-4" />
-                    {C.abstainLabel[cs ? 'cs' : 'en']}
+                    {tx5(C.abstainLabel, lang)}
                   </button>
                 </div>
                 {/* D8: on-chain vote via L1 self-transfer memo + QR */}
@@ -281,7 +282,7 @@ export default function ProposalDetailPage() {
             {awaitingTally && (
               <p className="text-sm text-zion-gold/80 mb-6 flex items-center gap-1.5">
                 <Clock className="h-4 w-4" />
-                {C.awaitingTally[cs ? 'cs' : 'en']}
+                {tx5(C.awaitingTally, lang)}
               </p>
             )}
             {voteMsg && <p className="text-sm text-zion-cyan mb-4">{voteMsg}</p>}
@@ -291,7 +292,7 @@ export default function ProposalDetailPage() {
             <div className="mb-8">
               <h2 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                {C.voters[cs ? 'cs' : 'en']} ({votes.length})
+                {tx5(C.voters, lang)} ({votes.length})
               </h2>
               {votes.length === 0 ? (
                 <p className="text-xs text-gray-500">—</p>
@@ -338,7 +339,7 @@ export default function ProposalDetailPage() {
                               .map((d) => `${d.delegator}: ${formatZion(flowersToZion(d.weight))} ZION`)
                               .join('\n')}
                           >
-                            ↳ +{delegated.length} {C.delegated[cs ? 'cs' : 'en']} (
+                            ↳ +{delegated.length} {tx5(C.delegated, lang)} (
                             {formatZion(flowersToZion(delegatedTotal))} ZION)
                           </div>
                         )}
@@ -354,7 +355,7 @@ export default function ProposalDetailPage() {
               <div className="mb-8">
                 <h2 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  {C.history[cs ? 'cs' : 'en']}
+                  {tx5(C.history, lang)}
                 </h2>
                 <div className="space-y-1.5">
                   {events.map((e) => (
@@ -380,42 +381,42 @@ export default function ProposalDetailPage() {
             <div className="border-t border-white/10 pt-5">
               <h2 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
                 <Landmark className="h-4 w-4" />
-                {C.timeline[cs ? 'cs' : 'en']}
+                {tx5(C.timeline, lang)}
               </h2>
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs">
                 <div className="flex justify-between gap-4">
-                  <dt className="text-gray-500">{C.created[cs ? 'cs' : 'en']}</dt>
+                  <dt className="text-gray-500">{tx5(C.created, lang)}</dt>
                   <dd className="text-gray-300 font-mono">{fmtDate(proposal.created_at)}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-gray-500">{C.votingEnds[cs ? 'cs' : 'en']}</dt>
+                  <dt className="text-gray-500">{tx5(C.votingEnds, lang)}</dt>
                   <dd className="text-gray-300 font-mono">{fmtDate(proposal.voting_ends_at)}</dd>
                 </div>
                 {proposal.timelock_ends_at && (
                   <div className="flex justify-between gap-4">
-                    <dt className="text-gray-500">{C.timelockEnds[cs ? 'cs' : 'en']}</dt>
+                    <dt className="text-gray-500">{tx5(C.timelockEnds, lang)}</dt>
                     <dd className="text-gray-300 font-mono">{fmtDate(proposal.timelock_ends_at)}</dd>
                   </div>
                 )}
                 {proposal.executed_at && (
                   <div className="flex justify-between gap-4">
-                    <dt className="text-gray-500">{C.executedAt[cs ? 'cs' : 'en']}</dt>
+                    <dt className="text-gray-500">{tx5(C.executedAt, lang)}</dt>
                     <dd className="text-gray-300 font-mono">{fmtDate(proposal.executed_at)}</dd>
                   </div>
                 )}
                 <div className="flex justify-between gap-4">
-                  <dt className="text-gray-500">{C.snapshotBlock[cs ? 'cs' : 'en']}</dt>
+                  <dt className="text-gray-500">{tx5(C.snapshotBlock, lang)}</dt>
                   <dd className="text-gray-300 font-mono">{proposal.snapshot_block ?? '—'}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-gray-500">{C.proposer[cs ? 'cs' : 'en']}</dt>
+                  <dt className="text-gray-500">{tx5(C.proposer, lang)}</dt>
                   <dd className="text-gray-300 font-mono truncate max-w-[60%] flex items-center gap-1.5">
                     <ZisAvatar seed={proposal.proposer} size={18} className="rounded shrink-0" />
                     <span className="truncate">{proposal.proposer}</span>
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-gray-500">{C.voterCount[cs ? 'cs' : 'en']}</dt>
+                  <dt className="text-gray-500">{tx5(C.voterCount, lang)}</dt>
                   <dd className="text-gray-300 font-mono">{proposal.voter_count}</dd>
                 </div>
               </dl>

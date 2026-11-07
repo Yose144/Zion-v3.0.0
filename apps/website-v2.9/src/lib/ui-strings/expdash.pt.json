@@ -1,0 +1,22 @@
+{
+ "Block Time": "Tempo de bloco",
+ "Decade Decay": "Decaimento por década",
+ "Emission": "Emissão",
+ "Humanitarian": "Humanitário",
+ "Issobella": "Issobella",
+ "Live": "Ao vivo",
+ "Mempool": "Mempool",
+ "Miner (89%)": "Mineiro (89%)",
+ "Miners": "Mineiros",
+ "Network": "Rede",
+ "Network Dashboard": "Painel da rede",
+ "Peers": "Peers",
+ "Pool Fee": "Taxa da pool",
+ "Pool Hash": "Hash da pool",
+ "Reward": "Recompensa",
+ "Reward Distribution": "Distribuição da recompensa",
+ "Unable to connect to daemon. Services may be starting...": "Não foi possível ligar ao daemon. Os serviços podem estar a arrancar...",
+ "healthy": "saudável",
+ "offline": "offline",
+ "warning": "aviso"
+}

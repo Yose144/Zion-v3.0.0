@@ -1,0 +1,21 @@
+{
+ "Age": "Idade",
+ "Average": "Média",
+ "Avg fee": "Taxa média",
+ "Fee Distribution": "Distribuição de taxas",
+ "Fee statistics": "Estatísticas de taxas",
+ "Mempool is empty — all confirmed ✓": "A mempool está vazia — tudo confirmado ✓",
+ "Mempool unavailable": "Mempool indisponível",
+ "No TX matches your search.": "Nenhuma TX corresponde à tua pesquisa.",
+ "Pending TX": "TX pendentes",
+ "Pool size": "Tamanho da pool",
+ "Search TX hash…": "Pesquisar hash de TX…",
+ "Size": "Tamanho",
+ "Status": "Estado",
+ "Total fees": "Total de taxas",
+ "Transactions waiting to be confirmed in the next block. Live updates via WebSocket + HTTP polling.": "Transações à espera de confirmação no próximo bloco. Atualizações ao vivo via WebSocket + HTTP polling.",
+ "WS live": "WS ao vivo",
+ "flowers / byte": "flowers / byte",
+ "pending": "pendente",
+ "polling 5s": "polling 5s"
+}

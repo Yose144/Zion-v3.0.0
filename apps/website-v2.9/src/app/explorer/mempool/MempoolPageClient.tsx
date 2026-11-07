@@ -22,7 +22,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { apiClient } from "@/lib/api";
-import { useLang } from "@/contexts/LanguageContext";
+import { useLang, type Lang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 import { usePendingTransactions } from "@/hooks/useWebSocketSubscription";
 import ExplorerCopyButton from "@/components/explorer/v4/shared/ExplorerCopyButton";
@@ -90,17 +91,17 @@ function formatBytes(bytes: number) {
   return `${bytes} B`;
 }
 
-function formatAge(seconds: number, cs: boolean) {
-  if (seconds < 60) return cs ? `${seconds} s` : `${seconds}s`;
-  if (seconds < 3600) return cs ? `${Math.floor(seconds / 60)} min` : `${Math.floor(seconds / 60)}m`;
-  if (seconds < 86400) return cs ? `${Math.floor(seconds / 3600)} h` : `${Math.floor(seconds / 3600)}h`;
-  return cs ? `${Math.floor(seconds / 86400)} d` : `${Math.floor(seconds / 86400)}d`;
+function formatAge(seconds: number, lang: Lang) {
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'always', style: 'narrow' });
+  if (seconds < 60) return rtf.format(-Math.max(0, Math.floor(seconds)), 'second');
+  if (seconds < 3600) return rtf.format(-Math.floor(seconds / 60), 'minute');
+  return rtf.format(-Math.floor(seconds / 3600), 'hour');
 }
 
 /* ─────────────────────────────────────────────────────────────────
    Fee histogram — SVG bar chart, fee rate in flowers/byte
    ───────────────────────────────────────────────────────────────── */
-function FeeHistogram({ txs, cs }: { txs: MempoolTx[]; cs: boolean }) {
+function FeeHistogram({ txs, cs, lang }: { txs: MempoolTx[]; cs: boolean; lang: Lang }) {
   const [hovered, setHovered] = useState<number | null>(null);
 
   const buckets = useMemo(() => {
@@ -140,9 +141,9 @@ function FeeHistogram({ txs, cs }: { txs: MempoolTx[]; cs: boolean }) {
     <div className="zion-rainbow-sub p-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
       <div className="flex items-center justify-between mb-3">
         <p className="text-[11px] uppercase tracking-[0.3em] text-white/40">
-          {ExplorerMempoolMempoolPageClientCopy.feeDistribution[cs ? 'cs' : 'en']}
+          {tx5(ExplorerMempoolMempoolPageClientCopy.feeDistribution, lang)}
         </p>
-        <span className="text-[11px] text-white/30">{ExplorerMempoolMempoolPageClientCopy.flowersByte[cs ? 'cs' : 'en']}</span>
+        <span className="text-[11px] text-white/30">{tx5(ExplorerMempoolMempoolPageClientCopy.flowersByte, lang)}</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-32" preserveAspectRatio="none">
         <defs>
@@ -234,7 +235,7 @@ export default function MempoolPageClient() {
       setError(null);
     } catch (err) {
       console.error("Failed to fetch mempool:", err);
-      setError(ExplorerMempoolMempoolPageClientCopy.mempoolUnavailable[cs ? 'cs' : 'en']);
+      setError(tx5(ExplorerMempoolMempoolPageClientCopy.mempoolUnavailable, lang));
     } finally {
       setLoading(false);
     }
@@ -296,7 +297,7 @@ export default function MempoolPageClient() {
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Mempool</h1>
           <span className="text-[11px] text-white/30 font-mono tabular-nums ml-1">
-            {data?.count ?? 0} {ExplorerMempoolMempoolPageClientCopy.pending[cs ? 'cs' : 'en']}
+            {data?.count ?? 0} {tx5(ExplorerMempoolMempoolPageClientCopy.pending, lang)}
           </span>
           <div className="flex items-center gap-1.5 ml-3 px-2.5 py-1 rounded-full bg-white/5 border border-white/10">
             <motion.span
@@ -305,37 +306,37 @@ export default function MempoolPageClient() {
               className={`h-2 w-2 rounded-full ${wsConnected ? "bg-zion-cyan" : "bg-zion-gold"}`}
             />
             <span className="text-[11px] text-white/50">
-              {wsConnected ? (ExplorerMempoolMempoolPageClientCopy.wsLive[cs ? 'cs' : 'en']) : (ExplorerMempoolMempoolPageClientCopy.polling5s[cs ? 'cs' : 'en'])}
+              {wsConnected ? (tx5(ExplorerMempoolMempoolPageClientCopy.wsLive, lang)) : (tx5(ExplorerMempoolMempoolPageClientCopy.polling5s, lang))}
             </span>
           </div>
         </div>
 
         <p className="text-sm text-white/40 max-w-3xl mb-8">
-          {ExplorerMempoolMempoolPageClientCopy.transactionsWaitingToBeConfirm[cs ? 'cs' : 'en']}
+          {tx5(ExplorerMempoolMempoolPageClientCopy.transactionsWaitingToBeConfirm, lang)}
         </p>
 
         {/* stats grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <StatCard
-            label={ExplorerMempoolMempoolPageClientCopy.pendingTx[cs ? 'cs' : 'en']}
+            label={tx5(ExplorerMempoolMempoolPageClientCopy.pendingTx, lang)}
             value={String(data?.count ?? 0)}
             icon={<Activity className="w-4 h-4 text-zion-cyan" />}
             accent="cyan"
           />
           <StatCard
-            label={ExplorerMempoolMempoolPageClientCopy.poolSize[cs ? 'cs' : 'en']}
+            label={tx5(ExplorerMempoolMempoolPageClientCopy.poolSize, lang)}
             value={formatBytes(data?.pool_size_bytes ?? 0)}
             icon={<Hash className="w-4 h-4 text-zion-purple" />}
             accent="purple"
           />
           <StatCard
-            label={ExplorerMempoolMempoolPageClientCopy.totalFees[cs ? 'cs' : 'en']}
+            label={tx5(ExplorerMempoolMempoolPageClientCopy.totalFees, lang)}
             value={`${(data?.total_fees ?? 0).toFixed(4)} ZION`}
             icon={<Flame className="w-4 h-4 text-zion-gold" />}
             accent="amber"
           />
           <StatCard
-            label={ExplorerMempoolMempoolPageClientCopy.avgFee[cs ? 'cs' : 'en']}
+            label={tx5(ExplorerMempoolMempoolPageClientCopy.avgFee, lang)}
             value={`${(data?.fee_stats.avg ?? 0).toFixed(6)} ZION`}
             icon={<TrendingUp className="w-4 h-4 text-zion-cyan" />}
             accent="emerald"
@@ -344,15 +345,15 @@ export default function MempoolPageClient() {
 
         {/* histogram + fee stats */}
         <div className="grid md:grid-cols-2 gap-4 mb-6">
-          <FeeHistogram txs={data?.transactions ?? []} cs={cs} />
+          <FeeHistogram txs={data?.transactions ?? []} cs={cs} lang={lang} />
           <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <p className="text-[11px] uppercase tracking-[0.3em] text-white/40 mb-3">
-              {ExplorerMempoolMempoolPageClientCopy.feeStatistics[cs ? 'cs' : 'en']}
+              {tx5(ExplorerMempoolMempoolPageClientCopy.feeStatistics, lang)}
             </p>
             <div className="grid grid-cols-2 gap-3">
               <FeeStat label="Min" value={data?.fee_stats.min ?? 0} />
               <FeeStat label="Max" value={data?.fee_stats.max ?? 0} />
-              <FeeStat label={ExplorerMempoolMempoolPageClientCopy.average[cs ? 'cs' : 'en']} value={data?.fee_stats.avg ?? 0} />
+              <FeeStat label={tx5(ExplorerMempoolMempoolPageClientCopy.average, lang)} value={data?.fee_stats.avg ?? 0} />
               <FeeStat label="Median" value={data?.fee_stats.median ?? 0} />
             </div>
           </div>
@@ -368,7 +369,7 @@ export default function MempoolPageClient() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder={ExplorerMempoolMempoolPageClientCopy.searchTxHash[cs ? 'cs' : 'en']}
+                placeholder={tx5(ExplorerMempoolMempoolPageClientCopy.searchTxHash, lang)}
                 className="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-zion-gold/50"
               />
             </div>
@@ -384,13 +385,13 @@ export default function MempoolPageClient() {
               TX Hash
             </span>
             <SortHeader
-              label={ExplorerMempoolMempoolPageClientCopy.age[cs ? 'cs' : 'en']}
+              label={tx5(ExplorerMempoolMempoolPageClientCopy.age, lang)}
               active={sortKey === "age"}
               dir={sortDir}
               onClick={() => toggleSort("age")}
             />
             <SortHeader
-              label={ExplorerMempoolMempoolPageClientCopy.size[cs ? 'cs' : 'en']}
+              label={tx5(ExplorerMempoolMempoolPageClientCopy.size, lang)}
               active={sortKey === "size"}
               dir={sortDir}
               onClick={() => toggleSort("size")}
@@ -403,7 +404,7 @@ export default function MempoolPageClient() {
               onClick={() => toggleSort("fee")}
             />
             <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">
-              {ExplorerMempoolMempoolPageClientCopy.status[cs ? 'cs' : 'en']}
+              {tx5(ExplorerMempoolMempoolPageClientCopy.status, lang)}
             </span>
           </div>
 
@@ -421,8 +422,8 @@ export default function MempoolPageClient() {
               <Flame className="w-10 h-10 text-white/10" />
               <p className="text-white/30 text-sm">
                 {search
-                  ? ExplorerMempoolMempoolPageClientCopy.noTxMatchesYourSearch[cs ? 'cs' : 'en']
-                  : ExplorerMempoolMempoolPageClientCopy.mempoolIsEmptyAllConfirmed[cs ? 'cs' : 'en']}
+                  ? tx5(ExplorerMempoolMempoolPageClientCopy.noTxMatchesYourSearch, lang)
+                  : tx5(ExplorerMempoolMempoolPageClientCopy.mempoolIsEmptyAllConfirmed, lang)}
               </p>
             </div>
           )}
@@ -461,7 +462,7 @@ export default function MempoolPageClient() {
 
                 {/* age */}
                 <div className="flex items-center text-[12px] text-white/50 tabular-nums">
-                  {formatAge(ageNow, cs)}
+                  {formatAge(ageNow, lang)}
                 </div>
 
                 {/* size */}

@@ -1,5 +1,7 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Atom, BookOpen, Compass, Egg, Flag, Flame, Globe, MapPin, Mountain, Ship, Sun } from 'lucide-react';
@@ -58,9 +60,9 @@ export default function CestaPanel({ lang }: { lang: Lang }) {
         <PanelHeader
           id="cesta"
           rc="6, 182, 212"
-          kicker={Copy.kicker[l]}
-          title={Copy.title[l]}
-          sub={Copy.sub[l]}
+          kicker={tx5(Copy.kicker, lang)}
+          title={tx5(Copy.title, lang)}
+          sub={tx5(Copy.sub, lang)}
         />
 
         {/* ordered spine */}
@@ -97,13 +99,13 @@ export default function CestaPanel({ lang }: { lang: Lang }) {
                     {b.marker === 'here' && (
                       <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-zion-gold">
                         <MapPin className="h-3 w-3" />
-                        {Copy.here[l]}
+                        {tx5(Copy.here, lang)}
                       </span>
                     )}
                     {b.marker === 'goal' && (
                       <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-300">
                         <Flag className="h-3 w-3" />
-                        {Copy.goal[l]}
+                        {tx5(Copy.goal, lang)}
                       </span>
                     )}
                   </div>
@@ -120,7 +122,7 @@ export default function CestaPanel({ lang }: { lang: Lang }) {
                       }}
                     >
                       <BookOpen className="h-3.5 w-3.5" />
-                      {b.id === 'terranova' ? Copy.open[l] : Copy.read[l]}
+                      {b.id === 'terranova' ? tx5(Copy.open, lang) : tx5(Copy.read, lang)}
                       <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                     </Link>
                     {b.aboutHref && (
@@ -128,7 +130,7 @@ export default function CestaPanel({ lang }: { lang: Lang }) {
                         href={b.aboutHref}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-gray-400 transition-colors hover:border-white/25 hover:text-gray-200"
                       >
-                        {Copy.about[l]}
+                        {tx5(Copy.about, lang)}
                       </Link>
                     )}
                   </div>
@@ -137,7 +139,7 @@ export default function CestaPanel({ lang }: { lang: Lang }) {
             </li>
           ))}
         </ol>
-        <p className="text-xs italic leading-relaxed text-gray-500">{Copy.mantraNote[l]}</p>
+        <p className="text-xs italic leading-relaxed text-gray-500">{tx5(Copy.mantraNote, lang)}</p>
 
         {/* compact compass */}
         <div
@@ -147,10 +149,10 @@ export default function CestaPanel({ lang }: { lang: Lang }) {
           <div className="space-y-1.5">
             <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-zion-cyan">
               <Compass className="h-3.5 w-3.5" />
-              {Copy.compassKicker[l]}
+              {tx5(Copy.compassKicker, lang)}
             </p>
-            <h3 className="text-lg font-bold text-white">{Copy.compassTitle[l]}</h3>
-            <p className="text-sm leading-relaxed text-gray-400">{Copy.compassSub[l]}</p>
+            <h3 className="text-lg font-bold text-white">{tx5(Copy.compassTitle, lang)}</h3>
+            <p className="text-sm leading-relaxed text-gray-400">{tx5(Copy.compassSub, lang)}</p>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
             {COMPASS.map((c) => {
@@ -177,7 +179,7 @@ export default function CestaPanel({ lang }: { lang: Lang }) {
             className="group flex items-center gap-3 rounded-xl border border-zion-gold/30 bg-zion-gold/[0.05] p-3.5 transition-colors hover:border-zion-gold/50"
           >
             <Ship className="h-5 w-5 shrink-0 text-zion-gold" />
-            <p className="flex-1 text-sm font-semibold text-white">{Copy.ship[l]}</p>
+            <p className="flex-1 text-sm font-semibold text-white">{tx5(Copy.ship, lang)}</p>
             <ArrowRight className="h-4 w-4 text-zion-gold transition-transform group-hover:translate-x-1" />
           </a>
         </div>

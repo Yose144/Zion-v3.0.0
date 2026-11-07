@@ -1,0 +1,23 @@
+{
+ "Active Miners": "Mineros activos",
+ "Avg Block Time": "Tiempo medio por bloque",
+ "Block Height": "Altura de bloque",
+ "Block Size": "Tamaño de bloque",
+ "Circulating Supply": "Oferta circulante",
+ "Connections": "Conexiones",
+ "Database": "Base de datos",
+ "Difficulty": "Dificultad",
+ "Known Peers": "Peers conocidos",
+ "Last": "Último",
+ "Median": "Mediana",
+ "Network Hashrate": "Hashrate de la red",
+ "Pool": "Pool",
+ "Pool Payouts": "Pagos del pool",
+ "Target": "Objetivo",
+ "Total Transactions": "Total de transacciones",
+ "Unable to connect to ZION network": "No se puede conectar a la red ZION",
+ "alt blocks": "bloques alternativos",
+ "blocks found": "bloques encontrados",
+ "miners pending": "mineros pendientes",
+ "${stats.emission_pct}% of max": "${stats.emission_pct} % del máximo"
+}

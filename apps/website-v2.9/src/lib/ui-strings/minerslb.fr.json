@@ -1,0 +1,22 @@
+{
+ "Address": "Adresse",
+ "Balance": "Solde",
+ "Blocks": "Blocs",
+ "Blocks Found": "Blocs trouvés",
+ "Hashrate": "Hashrate",
+ "Leaderboard": "Classement",
+ "Live": "En direct",
+ "Mining": "Minage",
+ "Mining Leaderboard": "Classement du minage",
+ "Most active miners and pools on the ZION network. Sorted by hashrate, shares and blocks found.": "Les mineurs et pools les plus actifs du réseau ZION. Triés par hashrate, shares et blocs trouvés.",
+ "No miners found": "Aucun mineur trouvé",
+ "Pool": "Pool",
+ "Shares": "Shares",
+ "Solo": "Solo",
+ "Top Miners": "Meilleurs mineurs",
+ "Total Hashrate": "Hashrate total",
+ "Total Miners": "Mineurs au total",
+ "Total Shares": "Shares au total",
+ "Type": "Type",
+ "ZION TerraNova — Top Miners · Live pool data · Updates every 30s": "ZION TerraNova — Meilleurs mineurs · Données de pool en direct · Mise à jour toutes les 30 s"
+}

@@ -13,6 +13,7 @@ import {
   Swords,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const HomeQuickLinksCopy = {
   explorer: { cs: `Explorer`, en: `Explorer` },
@@ -43,50 +44,50 @@ export default function HomeQuickLinks() {
   const links = [
     {
       href: '/explorer',
-      label: HomeQuickLinksCopy.explorer[cs ? 'cs' : 'en'],
-      desc: HomeQuickLinksCopy.blocksTxAddresses[cs ? 'cs' : 'en'],
+      label: tx5(HomeQuickLinksCopy.explorer, lang),
+      desc: tx5(HomeQuickLinksCopy.blocksTxAddresses, lang),
       icon: Blocks,
       rc: '228, 30, 43', // rasta red
     },
     {
       href: '/network',
-      label: HomeQuickLinksCopy.network[cs ? 'cs' : 'en'],
-      desc: HomeQuickLinksCopy.nodesLatency[cs ? 'cs' : 'en'],
+      label: tx5(HomeQuickLinksCopy.network, lang),
+      desc: tx5(HomeQuickLinksCopy.nodesLatency, lang),
       icon: Globe,
       rc: '252, 209, 22', // rasta gold
     },
     {
       href: '/pool',
-      label: HomeQuickLinksCopy.pool[cs ? 'cs' : 'en'],
-      desc: HomeQuickLinksCopy.hashrateMiners[cs ? 'cs' : 'en'],
+      label: tx5(HomeQuickLinksCopy.pool, lang),
+      desc: tx5(HomeQuickLinksCopy.hashrateMiners, lang),
       icon: HardHat,
       rc: '6, 105, 40', // rasta green
     },
     {
       href: '/docs',
-      label: HomeQuickLinksCopy.docs[cs ? 'cs' : 'en'],
-      desc: HomeQuickLinksCopy.guidesApi[cs ? 'cs' : 'en'],
+      label: tx5(HomeQuickLinksCopy.docs, lang),
+      desc: tx5(HomeQuickLinksCopy.guidesApi, lang),
       icon: ScrollText,
       rc: '228, 30, 43', // rasta red
     },
     {
       href: '/market',
-      label: HomeQuickLinksCopy.multichain[cs ? 'cs' : 'en'],
-      desc: HomeQuickLinksCopy.bridgeWarpSwap[cs ? 'cs' : 'en'],
+      label: tx5(HomeQuickLinksCopy.multichain, lang),
+      desc: tx5(HomeQuickLinksCopy.bridgeWarpSwap, lang),
       icon: Globe,
       rc: '252, 209, 22', // rasta gold
     },
     {
       href: '/roadmap',
-      label: HomeQuickLinksCopy.roadmap[cs ? 'cs' : 'en'],
-      desc: HomeQuickLinksCopy.l1L6Vision[cs ? 'cs' : 'en'],
+      label: tx5(HomeQuickLinksCopy.roadmap, lang),
+      desc: tx5(HomeQuickLinksCopy.l1L6Vision, lang),
       icon: LayoutDashboard,
       rc: '6, 105, 40', // rasta green
     },
     {
       href: '/terranova',
-      label: HomeQuickLinksCopy.terraNova[cs ? 'cs' : 'en'],
-      desc: HomeQuickLinksCopy.bookStory[cs ? 'cs' : 'en'],
+      label: tx5(HomeQuickLinksCopy.terraNova, lang),
+      desc: tx5(HomeQuickLinksCopy.bookStory, lang),
       icon: Sparkles,
       rc: '228, 30, 43', // rasta red
     },
@@ -98,10 +99,10 @@ export default function HomeQuickLinks() {
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">
-              {HomeQuickLinksCopy.sixGateways[cs ? 'cs' : 'en']}
+              {tx5(HomeQuickLinksCopy.sixGateways, lang)}
             </p>
             <h2 className="max-w-2xl text-2xl font-bold leading-tight text-white sm:text-3xl">
-              {HomeQuickLinksCopy.homepageAsACleanControlPanel[cs ? 'cs' : 'en']}
+              {tx5(HomeQuickLinksCopy.homepageAsACleanControlPanel, lang)}
             </h2>
             <div
               className="mt-2 h-1 w-24 rounded-full bg-gradient-to-r from-[#e41e2b] via-[#fcd116] to-[#066928]"
@@ -109,7 +110,7 @@ export default function HomeQuickLinks() {
             />
           </div>
           <p className="max-w-xl text-sm leading-relaxed text-gray-400">
-            {HomeQuickLinksCopy.lessNoiseClearerDirectionNetwo[cs ? 'cs' : 'en']}
+            {tx5(HomeQuickLinksCopy.lessNoiseClearerDirectionNetwo, lang)}
           </p>
         </div>
 
@@ -171,11 +172,11 @@ export default function HomeQuickLinks() {
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-white">Doge vs ZION</h3>
                 <span className="rounded-full border border-zion-gold/30 bg-zion-gold/10 px-2 py-0.5 text-[10px] font-bold text-zion-gold">
-                  {HomeQuickLinksCopy.arcade[cs ? 'cs' : 'en']}
+                  {tx5(HomeQuickLinksCopy.arcade, lang)}
                 </span>
               </div>
               <p className="text-[11px] leading-tight text-gray-400">
-                {HomeQuickLinksCopy.whenDogecoinWas000025GamesShow[cs ? 'cs' : 'en']}
+                {tx5(HomeQuickLinksCopy.whenDogecoinWas000025GamesShow, lang)}
               </p>
             </div>
             <ArrowRight className="h-4 w-4 shrink-0 text-white/30 transition-all group-hover:translate-x-1 group-hover:text-white/70" />

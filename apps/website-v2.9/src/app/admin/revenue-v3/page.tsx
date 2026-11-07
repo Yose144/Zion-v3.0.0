@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const AdminRevenueV3Copy = {
   saving: { cs: `Ukládání...`, en: `Saving...` },
@@ -106,25 +107,25 @@ export default function RevenueSettings() {
       });
   };
 
-  if (loading) return <div className="flex items-center justify-center"><div className="text-zion-gold text-2xl animate-pulse">{AdminRevenueV3Copy.loadingSettings[lang === 'cs' ? 'cs' : 'en']}</div></div>;
-  if (!config) return <div className="flex items-center justify-center"><div className="text-zion-purple text-xl">{AdminRevenueV3Copy.failedToLoadConfiguration[lang === 'cs' ? 'cs' : 'en']}</div></div>;
+  if (loading) return <div className="flex items-center justify-center"><div className="text-zion-gold text-2xl animate-pulse">{tx5(AdminRevenueV3Copy.loadingSettings, lang)}</div></div>;
+  if (!config) return <div className="flex items-center justify-center"><div className="text-zion-purple text-xl">{tx5(AdminRevenueV3Copy.failedToLoadConfiguration, lang)}</div></div>;
 
   return (
     <div className="pt-28 md:pt-32 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-4xl space-y-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-zion-purple to-zion-purple">
-          {AdminRevenueV3Copy.cosmicHarmonyV3RevenueSettings[lang === 'cs' ? 'cs' : 'en']}
+          {tx5(AdminRevenueV3Copy.cosmicHarmonyV3RevenueSettings, lang)}
         </h1>
         <div className="flex gap-4">
             <span className="text-sm text-gray-400 self-center">
-                {AdminRevenueV3Copy.readOnlyNotice[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(AdminRevenueV3Copy.readOnlyNotice, lang)}
             </span>
             <button
                 onClick={fetchConfig}
                 className="zion-button-secondary"
             >
-                {AdminRevenueV3Copy.refresh[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(AdminRevenueV3Copy.refresh, lang)}
             </button>
         </div>
       </div>
@@ -132,7 +133,7 @@ export default function RevenueSettings() {
       {status && (
         <div
           className="zion-rainbow-card p-4"
-          style={{ '--rc': status.includes(AdminRevenueV3Copy.error[lang === 'cs' ? 'cs' : 'en']) ? '228, 30, 43' : '6, 105, 40' } as React.CSSProperties}
+          style={{ '--rc': status.includes(tx5(AdminRevenueV3Copy.error, lang)) ? '228, 30, 43' : '6, 105, 40' } as React.CSSProperties}
         >
           {status}
         </div>
@@ -143,9 +144,9 @@ export default function RevenueSettings() {
         {/* NCL AI Section */}
         <section className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-zion-purple">🤖 {AdminRevenueV3Copy.nclArtificialIntelligence[lang === 'cs' ? 'cs' : 'en']}</h2>
+                <h2 className="text-xl font-bold text-zion-purple">🤖 {tx5(AdminRevenueV3Copy.nclArtificialIntelligence, lang)}</h2>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">{AdminRevenueV3Copy.enabled[lang === 'cs' ? 'cs' : 'en']}</span>
+                    <span className="text-sm text-gray-400">{tx5(AdminRevenueV3Copy.enabled, lang)}</span>
                     <input
                         type="checkbox"
                         checked={config.streams.ncl.enabled}
@@ -156,7 +157,7 @@ export default function RevenueSettings() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                    <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.npuAllocation0010[lang === 'cs' ? 'cs' : 'en']}</label>
+                    <label className="block text-sm font-medium mb-1">{tx5(AdminRevenueV3Copy.npuAllocation0010, lang)}</label>
                     <input
                         type="number"
                         step="0.05"
@@ -166,10 +167,10 @@ export default function RevenueSettings() {
                         onChange={(e) => updateStream('ncl', 'npu_allocation', parseFloat(e.target.value))}
                         className="w-full bg-black/40 border border-white/10 rounded p-2 text-white"
                     />
-                    <p className="text-xs text-gray-400 mt-1">{AdminRevenueV3Copy.percentageOfNpuResourcesDedica[lang === 'cs' ? 'cs' : 'en']}</p>
+                    <p className="text-xs text-gray-400 mt-1">{tx5(AdminRevenueV3Copy.percentageOfNpuResourcesDedica, lang)}</p>
                 </div>
                 <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                    <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.revenueTargetShare[lang === 'cs' ? 'cs' : 'en']}</label>
+                    <label className="block text-sm font-medium mb-1">{tx5(AdminRevenueV3Copy.revenueTargetShare, lang)}</label>
                     <input
                         type="number"
                         step="0.01"
@@ -184,13 +185,13 @@ export default function RevenueSettings() {
         {/* ZION Native Section */}
         <section className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-zion-purple">🌌 {AdminRevenueV3Copy.zionNativeChain[lang === 'cs' ? 'cs' : 'en']}</h2>
+                <h2 className="text-xl font-bold text-zion-purple">🌌 {tx5(AdminRevenueV3Copy.zionNativeChain, lang)}</h2>
                 <div className="flex items-center gap-2">
-                   <span className="zion-badge zion-badge-green">{AdminRevenueV3Copy.alwaysEnabled[lang === 'cs' ? 'cs' : 'en']}</span>
+                   <span className="zion-badge zion-badge-green">{tx5(AdminRevenueV3Copy.alwaysEnabled, lang)}</span>
                 </div>
             </div>
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                 <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.targetShare[lang === 'cs' ? 'cs' : 'en']}</label>
+                 <label className="block text-sm font-medium mb-1">{tx5(AdminRevenueV3Copy.targetShare, lang)}</label>
                  <input
                      type="number"
                      step="0.01"
@@ -204,9 +205,9 @@ export default function RevenueSettings() {
         {/* ETC Stream */}
         <section className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-zion-cyan">⛏️ {AdminRevenueV3Copy.etcExternal[lang === 'cs' ? 'cs' : 'en']}</h2>
+                <h2 className="text-xl font-bold text-zion-cyan">⛏️ {tx5(AdminRevenueV3Copy.etcExternal, lang)}</h2>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">{AdminRevenueV3Copy.enabled[lang === 'cs' ? 'cs' : 'en']}</span>
+                    <span className="text-sm text-gray-400">{tx5(AdminRevenueV3Copy.enabled, lang)}</span>
                     <input
                         type="checkbox"
                         checked={config.streams.etc.enabled}
@@ -218,7 +219,7 @@ export default function RevenueSettings() {
             <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                        <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.poolStratumUrl[lang === 'cs' ? 'cs' : 'en']}</label>
+                        <label className="block text-sm font-medium mb-1">{tx5(AdminRevenueV3Copy.poolStratumUrl, lang)}</label>
                         <input
                             type="text"
                             value={config.streams.etc.pool.stratum}
@@ -227,7 +228,7 @@ export default function RevenueSettings() {
                         />
                      </div>
                      <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                        <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.walletAddress[lang === 'cs' ? 'cs' : 'en']}</label>
+                        <label className="block text-sm font-medium mb-1">{tx5(AdminRevenueV3Copy.walletAddress, lang)}</label>
                         <input
                             type="text"
                             value={config.streams.etc.pool.wallet}
@@ -242,9 +243,9 @@ export default function RevenueSettings() {
          {/* NXS Stream */}
          <section className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-zion-gold">💎 {AdminRevenueV3Copy.nxsExternal[lang === 'cs' ? 'cs' : 'en']}</h2>
+                <h2 className="text-xl font-bold text-zion-gold">💎 {tx5(AdminRevenueV3Copy.nxsExternal, lang)}</h2>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">{AdminRevenueV3Copy.enabled[lang === 'cs' ? 'cs' : 'en']}</span>
+                    <span className="text-sm text-gray-400">{tx5(AdminRevenueV3Copy.enabled, lang)}</span>
                     <input
                         type="checkbox"
                         checked={config.streams.nxs.enabled}
@@ -256,7 +257,7 @@ export default function RevenueSettings() {
             <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                        <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.poolStratumUrl[lang === 'cs' ? 'cs' : 'en']}</label>
+                        <label className="block text-sm font-medium mb-1">{tx5(AdminRevenueV3Copy.poolStratumUrl, lang)}</label>
                         <input
                             type="text"
                             value={config.streams.nxs.pool.stratum}
@@ -265,7 +266,7 @@ export default function RevenueSettings() {
                         />
                      </div>
                      <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                        <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.walletAddress[lang === 'cs' ? 'cs' : 'en']}</label>
+                        <label className="block text-sm font-medium mb-1">{tx5(AdminRevenueV3Copy.walletAddress, lang)}</label>
                         <input
                             type="text"
                             value={config.streams.nxs.pool.wallet}
@@ -280,9 +281,9 @@ export default function RevenueSettings() {
         {/* Pearl (PRL) Stream */}
         <section className="zion-rainbow-card p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-zion-cyan">🐚 {AdminRevenueV3Copy.pearlPrlPouwGpu[lang === 'cs' ? 'cs' : 'en']}</h2>
+                <h2 className="text-xl font-bold text-zion-cyan">🐚 {tx5(AdminRevenueV3Copy.pearlPrlPouwGpu, lang)}</h2>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">{AdminRevenueV3Copy.enabled[lang === 'cs' ? 'cs' : 'en']}</span>
+                    <span className="text-sm text-gray-400">{tx5(AdminRevenueV3Copy.enabled, lang)}</span>
                     <input
                         type="checkbox"
                         checked={config.streams.pearl?.enabled ?? false}
@@ -294,7 +295,7 @@ export default function RevenueSettings() {
             <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                        <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.poolStratumUrl[lang === 'cs' ? 'cs' : 'en']}</label>
+                        <label className="block text-sm font-medium mb-1">{tx5(AdminRevenueV3Copy.poolStratumUrl, lang)}</label>
                         <input
                             type="text"
                             value={config.streams.pearl?.pool?.stratum ?? ''}
@@ -304,7 +305,7 @@ export default function RevenueSettings() {
                         />
                      </div>
                      <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                        <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.walletAddress[lang === 'cs' ? 'cs' : 'en']}</label>
+                        <label className="block text-sm font-medium mb-1">{tx5(AdminRevenueV3Copy.walletAddress, lang)}</label>
                         <input
                             type="text"
                             value={config.streams.pearl?.pool?.wallet ?? ''}
@@ -315,7 +316,7 @@ export default function RevenueSettings() {
                      </div>
                 </div>
                 <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                    <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.revenueTargetShare[lang === 'cs' ? 'cs' : 'en']}</label>
+                    <label className="block text-sm font-medium mb-1">{tx5(AdminRevenueV3Copy.revenueTargetShare, lang)}</label>
                     <input
                         type="number"
                         step="0.01"
@@ -324,7 +325,7 @@ export default function RevenueSettings() {
                         className="w-full bg-black/40 border border-white/10 rounded p-2 text-white"
                     />
                     <p className="text-xs text-gray-400 mt-1">
-                        {AdminRevenueV3Copy.pearlhashPouwInt8MatmulBlake3P[lang === 'cs' ? 'cs' : 'en']}
+                        {tx5(AdminRevenueV3Copy.pearlhashPouwInt8MatmulBlake3P, lang)}
                     </p>
                 </div>
             </div>

@@ -2,6 +2,7 @@
 
 import { BookOpen, Coins, Ticket, Flame, ShoppingCart, Lock } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 // Karty míří na detail produktu (vysvětlí, co v ceně je, jak to funguje,
 // má FAQ), ne na obecný výpis obchodu — tam se člověk musí proklikat znovu.
@@ -78,7 +79,7 @@ export default function ChristmasShopCards() {
     <div className="mt-10">
       <div className="mb-4 flex items-center gap-3">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-zion-gold/80">
-          {cs ? 'Vánoční edice v eShopu' : 'Christmas edition in the shop'}
+          {cs ? 'Vánoční edice v eShopu' : t5('Christmas edition in the shop', lang)}
         </p>
         <span className="h-px flex-1 bg-gradient-to-r from-zion-gold/40 to-transparent" />
       </div>
@@ -90,7 +91,7 @@ export default function ChristmasShopCards() {
               <div className="relative aspect-[16/8] w-full overflow-hidden">
                 <img
                   src={card.image}
-                  alt={card.title[cs ? 'cs' : 'en']}
+                  alt={tx5(card.title, lang)}
                   loading="lazy"
                   decoding="async"
                   className={`h-full w-full object-cover transition-transform duration-500 ${
@@ -101,27 +102,27 @@ export default function ChristmasShopCards() {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#070a12] via-transparent to-transparent" />
                 <span className="zion-kicker absolute left-3 top-3 border-zion-gold/25 bg-black/55 text-zion-gold backdrop-blur-sm">
                   <Icon className="h-3.5 w-3.5" />
-                  {card.kicker[cs ? 'cs' : 'en']}
+                  {tx5(card.kicker, lang)}
                 </span>
                 {card.soon && (
                   // Dole, ne nahoře vpravo: kicker nalevo je dlouhý a štítek se s ním
                   // na třetí kartě překrýval („VÁNOČNÍ EDICE · RUČNÍ VÝR…").
                   <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/60 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/80 backdrop-blur-sm">
                     <Lock className="h-3 w-3" />
-                    {cs ? 'Připravujeme' : 'Coming soon'}
+                    {cs ? 'Připravujeme' : t5('Coming soon', lang)}
                   </span>
                 )}
               </div>
               <div className="flex flex-1 flex-col p-4 sm:p-5">
                 <div className="flex items-baseline justify-between gap-3">
-                  <h3 className="text-lg font-bold text-white">{card.title[cs ? 'cs' : 'en']}</h3>
+                  <h3 className="text-lg font-bold text-white">{tx5(card.title, lang)}</h3>
                   <span className="shrink-0 text-lg font-extrabold text-zion-gold">{card.price}</span>
                 </div>
-                <p className="mt-2 text-sm leading-relaxed text-gray-400">{card.desc[cs ? 'cs' : 'en']}</p>
+                <p className="mt-2 text-sm leading-relaxed text-gray-400">{tx5(card.desc, lang)}</p>
                 <div className="mt-auto flex items-center justify-between gap-3 pt-4">
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-zion-gold/25 bg-zion-gold/10 px-2.5 py-1 text-[11px] font-semibold text-zion-gold">
                     <Coins className="h-3.5 w-3.5" />
-                    {card.bonus[cs ? 'cs' : 'en']}
+                    {tx5(card.bonus, lang)}
                   </span>
                   <span
                     className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
@@ -129,11 +130,11 @@ export default function ChristmasShopCards() {
                     } transition-transform`}
                   >
                     {card.soon ? (
-                      card.cta[cs ? 'cs' : 'en']
+                      tx5(card.cta, lang)
                     ) : (
                       <>
                         <ShoppingCart className="h-3.5 w-3.5" />
-                        {card.cta[cs ? 'cs' : 'en']}
+                        {tx5(card.cta, lang)}
                       </>
                     )}
                   </span>

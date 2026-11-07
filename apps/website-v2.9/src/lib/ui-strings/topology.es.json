@@ -1,0 +1,22 @@
+{
+ "Connections": "Conexiones",
+ "Height": "Altura",
+ "Host": "Host",
+ "Interactive force-directed graph of P2P mesh connections. Circles = peers (sized by connection count), lines = links (colored by latency).": "Gráfico interactivo de fuerzas de las conexiones de la malla P2P. Círculos = peers (tamaño según número de conexiones), líneas = enlaces (color según latencia).",
+ "Latency": "Latencia",
+ "Latency:": "Latencia:",
+ "No peers connected — showing seed nodes only.": "Ningún peer conectado — se muestran solo los nodos semilla.",
+ "No peers connected.": "Ningún peer conectado.",
+ "P2P Mesh Topology": "Topología de malla P2P",
+ "Peer": "Peer",
+ "Peer data unavailable — showing seed nodes only.": "Datos de peers no disponibles — se muestran solo los nodos semilla.",
+ "Port": "Puerto",
+ "Reset": "Restablecer",
+ "Retry": "Reintentar",
+ "Seed node": "Nodo semilla",
+ "Topology": "Topología",
+ "Version": "Versión",
+ "Zoom in": "Acercar",
+ "Zoom out": "Alejar",
+ "unknown": "desconocido"
+}

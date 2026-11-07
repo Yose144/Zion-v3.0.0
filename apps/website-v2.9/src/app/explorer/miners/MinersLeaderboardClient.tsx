@@ -12,6 +12,7 @@ import {
   Activity,
 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 import ZisAvatar from "@/components/ZisAvatar";
 import { apiClient } from "@/lib/api";
@@ -75,16 +76,16 @@ export default function MinersLeaderboardClient() {
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
               <Pickaxe className="h-4 w-4" />
-              {ExplorerMinersMinersLeaderboardClientCopy.live[cs ? 'cs' : 'en']}
+              {tx5(ExplorerMinersMinersLeaderboardClientCopy.live, lang)}
             </div>
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{ExplorerMinersMinersLeaderboardClientCopy.mining[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{tx5(ExplorerMinersMinersLeaderboardClientCopy.mining, lang)}</p>
               <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                {ExplorerMinersMinersLeaderboardClientCopy.topMiners[cs ? 'cs' : 'en']}
+                {tx5(ExplorerMinersMinersLeaderboardClientCopy.topMiners, lang)}
               </h1>
             </div>
             <p className="text-lg text-gray-300 max-w-2xl">
-              {ExplorerMinersMinersLeaderboardClientCopy.mostActiveMinersAndPoolsOnTheZ[cs ? 'cs' : 'en']}
+              {tx5(ExplorerMinersMinersLeaderboardClientCopy.mostActiveMinersAndPoolsOnTheZ, lang)}
             </p>
           </div>
         </motion.section>
@@ -93,10 +94,10 @@ export default function MinersLeaderboardClient() {
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: ExplorerMinersMinersLeaderboardClientCopy.totalMiners[cs ? 'cs' : 'en'], value: data?.active_miners ?? 0, icon: Users, color: "text-zion-cyan" },
-              { label: ExplorerMinersMinersLeaderboardClientCopy.totalHashrate[cs ? 'cs' : 'en'], value: data?.total_hashrate_formatted ?? formatHashrate(0), icon: Zap, color: "text-zion-gold" },
-              { label: ExplorerMinersMinersLeaderboardClientCopy.blocksFound[cs ? 'cs' : 'en'], value: data?.blocks_found ?? 0, icon: Crown, color: "text-zion-gold" },
-              { label: ExplorerMinersMinersLeaderboardClientCopy.totalShares[cs ? 'cs' : 'en'], value: formatNumber(data?.total_shares ?? 0), icon: Activity, color: "text-zion-cyan" },
+              { label: tx5(ExplorerMinersMinersLeaderboardClientCopy.totalMiners, lang), value: data?.active_miners ?? 0, icon: Users, color: "text-zion-cyan" },
+              { label: tx5(ExplorerMinersMinersLeaderboardClientCopy.totalHashrate, lang), value: data?.total_hashrate_formatted ?? formatHashrate(0), icon: Zap, color: "text-zion-gold" },
+              { label: tx5(ExplorerMinersMinersLeaderboardClientCopy.blocksFound, lang), value: data?.blocks_found ?? 0, icon: Crown, color: "text-zion-gold" },
+              { label: tx5(ExplorerMinersMinersLeaderboardClientCopy.totalShares, lang), value: formatNumber(data?.total_shares ?? 0), icon: Activity, color: "text-zion-cyan" },
             ].map((s) => (
               <div key={s.label} className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-3">
@@ -112,10 +113,10 @@ export default function MinersLeaderboardClient() {
         {/* TABLE */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerMinersMinersLeaderboardClientCopy.leaderboard[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(ExplorerMinersMinersLeaderboardClientCopy.leaderboard, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Trophy className="h-7 w-7 text-zion-gold" />
-              {ExplorerMinersMinersLeaderboardClientCopy.miningLeaderboard[cs ? 'cs' : 'en']}
+              {tx5(ExplorerMinersMinersLeaderboardClientCopy.miningLeaderboard, lang)}
             </h2>
           </div>
 
@@ -124,13 +125,13 @@ export default function MinersLeaderboardClient() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/6">
-                    <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-4 py-3.5">{ExplorerMinersMinersLeaderboardClientCopy.rank[cs ? 'cs' : 'en']}</th>
-                    <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">{ExplorerMinersMinersLeaderboardClientCopy.address[cs ? 'cs' : 'en']}</th>
-                    <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden md:table-cell">{ExplorerMinersMinersLeaderboardClientCopy.type[cs ? 'cs' : 'en']}</th>
-                    <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden sm:table-cell">{ExplorerMinersMinersLeaderboardClientCopy.hashrate[cs ? 'cs' : 'en']}</th>
-                    <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{ExplorerMinersMinersLeaderboardClientCopy.shares[cs ? 'cs' : 'en']}</th>
-                    <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{ExplorerMinersMinersLeaderboardClientCopy.blocks[cs ? 'cs' : 'en']}</th>
-                    <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-4 py-3.5">{ExplorerMinersMinersLeaderboardClientCopy.balance[cs ? 'cs' : 'en']}</th>
+                    <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-4 py-3.5">{tx5(ExplorerMinersMinersLeaderboardClientCopy.rank, lang)}</th>
+                    <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">{tx5(ExplorerMinersMinersLeaderboardClientCopy.address, lang)}</th>
+                    <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden md:table-cell">{tx5(ExplorerMinersMinersLeaderboardClientCopy.type, lang)}</th>
+                    <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden sm:table-cell">{tx5(ExplorerMinersMinersLeaderboardClientCopy.hashrate, lang)}</th>
+                    <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{tx5(ExplorerMinersMinersLeaderboardClientCopy.shares, lang)}</th>
+                    <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{tx5(ExplorerMinersMinersLeaderboardClientCopy.blocks, lang)}</th>
+                    <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-4 py-3.5">{tx5(ExplorerMinersMinersLeaderboardClientCopy.balance, lang)}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -166,7 +167,7 @@ export default function MinersLeaderboardClient() {
                                 ? "bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20"
                                 : "bg-zion-purple/10 text-zion-purple border-zion-purple/20"
                             }`}>
-                              {m.type === "pool" ? (ExplorerMinersMinersLeaderboardClientCopy.pool[cs ? 'cs' : 'en']) : (ExplorerMinersMinersLeaderboardClientCopy.solo[cs ? 'cs' : 'en'])}
+                              {m.type === "pool" ? (tx5(ExplorerMinersMinersLeaderboardClientCopy.pool, lang)) : (tx5(ExplorerMinersMinersLeaderboardClientCopy.solo, lang))}
                             </span>
                           </td>
                           <td className="px-3 py-3 text-right hidden sm:table-cell">
@@ -180,7 +181,7 @@ export default function MinersLeaderboardClient() {
                           </td>
                           <td className="px-4 py-3 text-right">
                             <span className="text-white text-xs font-semibold tabular-nums">
-                              {(m.balance).toLocaleString(cs ? 'cs-CZ' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                              {(m.balance).toLocaleString(cs ? 'cs-CZ' : t5('en-US', lang), { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
                             </span>
                             <span className="text-gray-600 text-[11px] ml-1">ZION</span>
                           </td>
@@ -192,14 +193,14 @@ export default function MinersLeaderboardClient() {
             {miners.length === 0 && !loading && (
               <div className="flex flex-col items-center justify-center py-16 gap-2">
                 <Pickaxe className="h-10 w-10 text-white/10" />
-                <p className="text-white/30 text-sm">{ExplorerMinersMinersLeaderboardClientCopy.noMinersFound[cs ? 'cs' : 'en']}</p>
+                <p className="text-white/30 text-sm">{tx5(ExplorerMinersMinersLeaderboardClientCopy.noMinersFound, lang)}</p>
               </div>
             )}
           </div>
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          {ExplorerMinersMinersLeaderboardClientCopy.zionTerranovaTopMinersLiveData[cs ? 'cs' : 'en']}
+          {tx5(ExplorerMinersMinersLeaderboardClientCopy.zionTerranovaTopMinersLiveData, lang)}
         </p>
       </div>
     </div>

@@ -12,6 +12,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 const WorldCopy = {
@@ -103,13 +104,13 @@ export default function WorldPage() {
   return (
     <div className="zion-page text-white">
       <section className="zion-container relative z-10 pt-14 pb-6 text-center">
-        <p className="zion-kicker">{WorldCopy.kicker[cs ? 'cs' : 'en']}</p>
+        <p className="zion-kicker">{tx5(WorldCopy.kicker, lang)}</p>
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-          {WorldCopy.title[cs ? 'cs' : 'en']}
+          {tx5(WorldCopy.title, lang)}
           <span className="sr-only">{` · ZION ${SITE_RELEASE_LABEL}`}</span>
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-white/60">
-          {WorldCopy.lead[cs ? 'cs' : 'en']}
+          {tx5(WorldCopy.lead, lang)}
         </p>
       </section>
 
@@ -128,13 +129,13 @@ export default function WorldPage() {
                 <span className="rounded-xl border border-white/10 bg-white/5 p-2">
                   <Icon className="h-5 w-5 text-white/80" />
                 </span>
-                <h2 className="text-lg font-semibold">{d.title[cs ? 'cs' : 'en']}</h2>
+                <h2 className="text-lg font-semibold">{tx5(d.title, lang)}</h2>
               </div>
               <p className="text-sm leading-relaxed text-white/55">
-                {d.desc[cs ? 'cs' : 'en']}
+                {tx5(d.desc, lang)}
               </p>
               <span className="mt-auto inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zion-gold/80 group-hover:text-zion-gold">
-                {WorldCopy.enter[cs ? 'cs' : 'en']}
+                {tx5(WorldCopy.enter, lang)}
                 <ArrowRight className="h-3.5 w-3.5" />
               </span>
             </Link>

@@ -1,5 +1,7 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, Sailboat, Sun } from 'lucide-react';
@@ -69,13 +71,13 @@ export default function NirvanaPanel({ lang }: { lang: Lang }) {
         <PanelHeader
           id="nirvana"
           rc="251, 146, 60"
-          kicker={Copy.kicker[l]}
-          title={Copy.title[l]}
-          sub={Copy.sub[l]}
+          kicker={tx5(Copy.kicker, lang)}
+          title={tx5(Copy.title, lang)}
+          sub={tx5(Copy.sub, lang)}
         />
 
         <p className="rounded-xl border border-amber-400/25 bg-amber-400/[0.06] px-4 py-3 text-sm leading-relaxed text-amber-100/90">
-          {Copy.disclaimer[l]}
+          {tx5(Copy.disclaimer, lang)}
         </p>
 
         <div className="space-y-6">
@@ -121,19 +123,19 @@ export default function NirvanaPanel({ lang }: { lang: Lang }) {
               </span>
               <div className="space-y-1">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-zion-cyan">
-                  {Copy.bridgeKicker[l]}
+                  {tx5(Copy.bridgeKicker, lang)}
                 </p>
-                <h3 className="text-base font-bold text-white sm:text-lg">{Copy.bridgeTitle[l]}</h3>
+                <h3 className="text-base font-bold text-white sm:text-lg">{tx5(Copy.bridgeTitle, lang)}</h3>
               </div>
             </div>
-            <p className="text-sm leading-relaxed text-gray-300">{Copy.bridgeBody[l]}</p>
+            <p className="text-sm leading-relaxed text-gray-300">{tx5(Copy.bridgeBody, lang)}</p>
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 href={`/zion-archive/nirvana/cist#${BRIDGE.slug}`}
                 className="group inline-flex items-center gap-1.5 rounded-lg border border-zion-cyan/40 bg-zion-cyan/10 px-3 py-1.5 text-xs font-semibold text-zion-cyan transition-colors hover:bg-zion-cyan/15"
               >
                 <BookOpen className="h-3.5 w-3.5" />
-                {Copy.readBridge[l]}
+                {tx5(Copy.readBridge, lang)}
               </Link>
               <Link
                 href="/zion-archive/bodhigaia/cist"
@@ -153,7 +155,7 @@ export default function NirvanaPanel({ lang }: { lang: Lang }) {
                 href="/terranova/maria-del-camino"
                 className="inline-flex items-center rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-gray-300 transition-colors hover:border-white/25 hover:text-white"
               >
-                {Copy.project[l]}
+                {tx5(Copy.project, lang)}
               </Link>
             </div>
           </div>
@@ -162,14 +164,14 @@ export default function NirvanaPanel({ lang }: { lang: Lang }) {
         <div className="flex flex-wrap items-center gap-3">
           <Link href="/zion-archive/nirvana/cist" className="zion-button-primary group">
             <Sun className="h-5 w-5" />
-            {Copy.readBook[l]}
+            {tx5(Copy.readBook, lang)}
             <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
           </Link>
           <a
             href="#plan-v33"
             className="zion-button-secondary border-amber-400/25 hover:border-amber-400/50 hover:text-amber-300"
           >
-            {Copy.planCta[l]}
+            {tx5(Copy.planCta, lang)}
           </a>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Network, Globe, RefreshCw, ZoomIn, ZoomOut } from 'lucide-react';
 import { usePolling } from '@/hooks/usePolling';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const NetworkTopologyCopy = {
   topology: { cs: `Topologie`, en: `Topology` },
@@ -509,10 +510,10 @@ export default function NetworkTopology() {
     return (
       <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
         <div className="flex flex-col gap-2 mb-6">
-          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkTopologyCopy.topology[cs ? 'cs' : 'en']}</p>
+          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkTopologyCopy.topology, lang)}</p>
           <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
             <Network className="h-7 w-7 text-zion-cyan" />
-            {NetworkTopologyCopy.p2pMeshTopology[cs ? 'cs' : 'en']}
+            {tx5(NetworkTopologyCopy.p2pMeshTopology, lang)}
           </h2>
         </div>
         <div className="flex items-center justify-center h-64">
@@ -527,20 +528,20 @@ export default function NetworkTopology() {
     return (
       <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
         <div className="flex flex-col gap-2 mb-6">
-          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkTopologyCopy.topology[cs ? 'cs' : 'en']}</p>
+          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkTopologyCopy.topology, lang)}</p>
           <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
             <Network className="h-7 w-7 text-zion-cyan" />
-            {NetworkTopologyCopy.p2pMeshTopology[cs ? 'cs' : 'en']}
+            {tx5(NetworkTopologyCopy.p2pMeshTopology, lang)}
           </h2>
         </div>
         <div className="flex flex-col items-center justify-center gap-4 h-64">
-          <p className="text-gray-400">{NetworkTopologyCopy.noPeersConnected[cs ? 'cs' : 'en']}</p>
+          <p className="text-gray-400">{tx5(NetworkTopologyCopy.noPeersConnected, lang)}</p>
           <button
             onClick={fetchStatus}
             className="zion-button-secondary"
           >
             <RefreshCw className="h-4 w-4" />
-            {NetworkTopologyCopy.retry[cs ? 'cs' : 'en']}
+            {tx5(NetworkTopologyCopy.retry, lang)}
           </button>
         </div>
       </section>
@@ -550,24 +551,24 @@ export default function NetworkTopology() {
   return (
     <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkTopologyCopy.topology[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(NetworkTopologyCopy.topology, lang)}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
           <Network className="h-7 w-7 text-zion-cyan" />
-          {NetworkTopologyCopy.p2pMeshTopology[cs ? 'cs' : 'en']}
+          {tx5(NetworkTopologyCopy.p2pMeshTopology, lang)}
         </h2>
         <p className="text-sm text-gray-400">
-          {NetworkTopologyCopy.interactiveForceDirectedGraphO[cs ? 'cs' : 'en']}
+          {tx5(NetworkTopologyCopy.interactiveForceDirectedGraphO, lang)}
         </p>
         {peers.length === 0 && !peersError && (
           <p className="text-xs text-zion-gold/80 inline-flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-zion-gold" />
-            {NetworkTopologyCopy.noPeersConnectedShowingSeedNod[cs ? 'cs' : 'en']}
+            {tx5(NetworkTopologyCopy.noPeersConnectedShowingSeedNod, lang)}
           </p>
         )}
         {peersError && (
           <p className="text-xs text-zion-purple/80 inline-flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-zion-purple" />
-            {NetworkTopologyCopy.peerDataUnavailableShowingSeed[cs ? 'cs' : 'en']}
+            {tx5(NetworkTopologyCopy.peerDataUnavailableShowingSeed, lang)}
           </p>
         )}
       </div>
@@ -579,21 +580,21 @@ export default function NetworkTopology() {
             <button
               onClick={() => handleZoomBtn(1.2)}
               className="zion-button-secondary w-8 h-8 p-0 flex items-center justify-center"
-              title={NetworkTopologyCopy.zoomIn[cs ? 'cs' : 'en']}
+              title={tx5(NetworkTopologyCopy.zoomIn, lang)}
             >
               <ZoomIn className="w-4 h-4" />
             </button>
             <button
               onClick={() => handleZoomBtn(0.83)}
               className="zion-button-secondary w-8 h-8 p-0 flex items-center justify-center"
-              title={NetworkTopologyCopy.zoomOut[cs ? 'cs' : 'en']}
+              title={tx5(NetworkTopologyCopy.zoomOut, lang)}
             >
               <ZoomOut className="w-4 h-4" />
             </button>
             <button
               onClick={handleReset}
               className="zion-button-secondary w-8 h-8 p-0 flex items-center justify-center text-xs"
-              title={NetworkTopologyCopy.reset[cs ? 'cs' : 'en']}
+              title={tx5(NetworkTopologyCopy.reset, lang)}
             >
               ⟲
             </button>
@@ -726,17 +727,17 @@ export default function NetworkTopology() {
               <p className="text-white font-semibold text-sm">{hovered.label}</p>
               <p className="text-gray-400 font-mono">{hovered.shortAddr}</p>
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 pt-1">
-                <span className="text-gray-500">{NetworkTopologyCopy.host[cs ? 'cs' : 'en']}</span>
+                <span className="text-gray-500">{tx5(NetworkTopologyCopy.host, lang)}</span>
                 <span className="text-gray-300 font-mono text-right">{hovered.host}</span>
-                <span className="text-gray-500">{NetworkTopologyCopy.port[cs ? 'cs' : 'en']}</span>
+                <span className="text-gray-500">{tx5(NetworkTopologyCopy.port, lang)}</span>
                 <span className="text-gray-300 font-mono text-right">{hovered.port}</span>
-                <span className="text-gray-500">{NetworkTopologyCopy.version[cs ? 'cs' : 'en']}</span>
+                <span className="text-gray-500">{tx5(NetworkTopologyCopy.version, lang)}</span>
                 <span className="text-gray-300 font-mono text-right">{hovered.version ? `v${hovered.version}` : '—'}</span>
-                <span className="text-gray-500">{NetworkTopologyCopy.latency[cs ? 'cs' : 'en']}</span>
+                <span className="text-gray-500">{tx5(NetworkTopologyCopy.latency, lang)}</span>
                 <span className="font-mono text-right" style={{ color: latencyColor(hovered.latency) }}>{hovered.latency > 0 ? `${hovered.latency}ms` : '—'}</span>
-                <span className="text-gray-500">{NetworkTopologyCopy.height[cs ? 'cs' : 'en']}</span>
+                <span className="text-gray-500">{tx5(NetworkTopologyCopy.height, lang)}</span>
                 <span className="text-gray-300 font-mono text-right">{hovered.height > 0 ? hovered.height.toLocaleString() : '—'}</span>
-                <span className="text-gray-500">{NetworkTopologyCopy.connections[cs ? 'cs' : 'en']}</span>
+                <span className="text-gray-500">{tx5(NetworkTopologyCopy.connections, lang)}</span>
                 <span className="text-gray-300 font-mono text-right">{hovered.connectionCount}</span>
               </div>
             </div>
@@ -744,7 +745,7 @@ export default function NetworkTopology() {
 
           {/* Legend */}
           <div className="flex flex-wrap items-center gap-4 mt-3 text-xs">
-            <span className="text-gray-500">{NetworkTopologyCopy.latency_2[cs ? 'cs' : 'en']}</span>
+            <span className="text-gray-500">{tx5(NetworkTopologyCopy.latency_2, lang)}</span>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-0.5 bg-zion-cyan" />
               <span className="text-gray-400">&lt;50ms</span>
@@ -759,15 +760,15 @@ export default function NetworkTopology() {
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-0.5 bg-slate-500" />
-              <span className="text-gray-400">{NetworkTopologyCopy.unknown[cs ? 'cs' : 'en']}</span>
+              <span className="text-gray-400">{tx5(NetworkTopologyCopy.unknown, lang)}</span>
             </div>
             <div className="flex items-center gap-1.5 ml-4">
               <div className="w-3 h-3 rounded-full bg-zion-gold" />
-              <span className="text-gray-400">{NetworkTopologyCopy.seedNode[cs ? 'cs' : 'en']}</span>
+              <span className="text-gray-400">{tx5(NetworkTopologyCopy.seedNode, lang)}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full bg-zion-purple" />
-              <span className="text-gray-400">{NetworkTopologyCopy.peer[cs ? 'cs' : 'en']}</span>
+              <span className="text-gray-400">{tx5(NetworkTopologyCopy.peer, lang)}</span>
             </div>
           </div>
         </div>

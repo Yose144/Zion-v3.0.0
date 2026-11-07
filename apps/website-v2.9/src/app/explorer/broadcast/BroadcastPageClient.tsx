@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { SITE_RELEASE_LABEL } from "@/lib/site";
 import { broadcastTransaction, broadcastRaw } from "@/lib/explorer/api";
 import type { BroadcastResult } from "@/lib/explorer/types";
@@ -66,7 +67,7 @@ export default function BroadcastPageClient() {
     setResult(null);
 
     if (!payload.trim()) {
-      setError(ExplorerBroadcastBroadcastPageClientCopy.emptyPayload[cs ? 'cs' : 'en']);
+      setError(tx5(ExplorerBroadcastBroadcastPageClientCopy.emptyPayload, lang));
       return;
     }
 
@@ -81,7 +82,7 @@ export default function BroadcastPageClient() {
         try {
           parsed = JSON.parse(payload);
         } catch {
-          setError(ExplorerBroadcastBroadcastPageClientCopy.invalidJson[cs ? 'cs' : 'en']);
+          setError(tx5(ExplorerBroadcastBroadcastPageClientCopy.invalidJson, lang));
           setLoading(false);
           return;
         }
@@ -172,24 +173,24 @@ export default function BroadcastPageClient() {
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple uppercase">
               <Radio className="h-4 w-4" />
-              {SITE_RELEASE_LABEL} · {ExplorerBroadcastBroadcastPageClientCopy.broadcast[cs ? 'cs' : 'en']}
+              {SITE_RELEASE_LABEL} · {tx5(ExplorerBroadcastBroadcastPageClientCopy.broadcast, lang)}
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                {ExplorerBroadcastBroadcastPageClientCopy.submit[cs ? 'cs' : 'en']}
+                {tx5(ExplorerBroadcastBroadcastPageClientCopy.submit, lang)}
               </p>
               <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                {ExplorerBroadcastBroadcastPageClientCopy.broadcastTransaction[cs ? 'cs' : 'en']}
+                {tx5(ExplorerBroadcastBroadcastPageClientCopy.broadcastTransaction, lang)}
               </h1>
             </div>
             <p className="text-lg text-gray-300 max-w-2xl">
-              {ExplorerBroadcastBroadcastPageClientCopy.submitASignedTransactionToTheZ[cs ? 'cs' : 'en']}
+              {tx5(ExplorerBroadcastBroadcastPageClientCopy.submitASignedTransactionToTheZ, lang)}
             </p>
             {/* Warning */}
             <div className="flex items-start gap-3 p-4 rounded-xl bg-zion-gold/5 border border-zion-gold/20">
               <AlertCircle className="w-5 h-5 text-zion-gold flex-shrink-0 mt-0.5" />
               <p className="text-sm text-amber-200/80">
-                {ExplorerBroadcastBroadcastPageClientCopy.transactionsMustBeSignedBefore[cs ? 'cs' : 'en']}
+                {tx5(ExplorerBroadcastBroadcastPageClientCopy.transactionsMustBeSignedBefore, lang)}
               </p>
             </div>
           </div>
@@ -205,7 +206,7 @@ export default function BroadcastPageClient() {
             {/* Mode selector */}
             <div className="flex flex-wrap items-center gap-4 mb-6">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">{ExplorerBroadcastBroadcastPageClientCopy.format[cs ? 'cs' : 'en']}</span>
+                <span className="text-sm text-gray-400">{tx5(ExplorerBroadcastBroadcastPageClientCopy.format, lang)}</span>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setMode("json")}
@@ -235,7 +236,7 @@ export default function BroadcastPageClient() {
               {/* TX model selector (only for JSON mode) */}
               {mode === "json" && (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-400">{ExplorerBroadcastBroadcastPageClientCopy.model[cs ? 'cs' : 'en']}</span>
+                  <span className="text-sm text-gray-400">{tx5(ExplorerBroadcastBroadcastPageClientCopy.model, lang)}</span>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setTxModel("account")}
@@ -266,7 +267,7 @@ export default function BroadcastPageClient() {
                 className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white/60 hover:bg-white/10 hover:text-white transition"
               >
                 <Code className="w-3.5 h-3.5" />
-                {ExplorerBroadcastBroadcastPageClientCopy.loadExample[cs ? 'cs' : 'en']}
+                {tx5(ExplorerBroadcastBroadcastPageClientCopy.loadExample, lang)}
               </button>
             </div>
 
@@ -298,12 +299,12 @@ export default function BroadcastPageClient() {
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    {ExplorerBroadcastBroadcastPageClientCopy.broadcasting[cs ? 'cs' : 'en']}
+                    {tx5(ExplorerBroadcastBroadcastPageClientCopy.broadcasting, lang)}
                   </>
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    {ExplorerBroadcastBroadcastPageClientCopy.broadcastTransaction_2[cs ? 'cs' : 'en']}
+                    {tx5(ExplorerBroadcastBroadcastPageClientCopy.broadcastTransaction_2, lang)}
                   </>
                 )}
               </button>
@@ -315,7 +316,7 @@ export default function BroadcastPageClient() {
                 }}
                 className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-sm text-white/60 hover:bg-white/10 hover:text-white transition"
               >
-                {ExplorerBroadcastBroadcastPageClientCopy.clear[cs ? 'cs' : 'en']}
+                {tx5(ExplorerBroadcastBroadcastPageClientCopy.clear, lang)}
               </button>
             </div>
           </div>
@@ -344,8 +345,8 @@ export default function BroadcastPageClient() {
                 <div>
                   <h2 className={`text-2xl font-bold ${result.accepted ? "text-zion-cyan" : "text-zion-purple"}`}>
                     {result.accepted
-                      ? ExplorerBroadcastBroadcastPageClientCopy.transactionAccepted[cs ? 'cs' : 'en']
-                      : ExplorerBroadcastBroadcastPageClientCopy.transactionRejected[cs ? 'cs' : 'en']}
+                      ? tx5(ExplorerBroadcastBroadcastPageClientCopy.transactionAccepted, lang)
+                      : tx5(ExplorerBroadcastBroadcastPageClientCopy.transactionRejected, lang)}
                   </h2>
                   <p className="text-sm text-gray-400">
                     {(result.method || result.model) && (
@@ -361,7 +362,7 @@ export default function BroadcastPageClient() {
               {result.tx_id && (
                 <div className="space-y-2">
                   <div className="text-xs text-gray-400 uppercase tracking-wider">
-                    {ExplorerBroadcastBroadcastPageClientCopy.transactionId[cs ? 'cs' : 'en']}
+                    {tx5(ExplorerBroadcastBroadcastPageClientCopy.transactionId, lang)}
                   </div>
                   <div className="flex items-center gap-3">
                     <code className="text-sm font-mono text-zion-cyan break-all">
@@ -371,7 +372,7 @@ export default function BroadcastPageClient() {
                       href={`/explorer/tx?hash=${result.tx_id}`}
                       className="flex-shrink-0 px-3 py-1.5 rounded-xl bg-zion-cyan/10 border border-zion-cyan/20 text-xs text-zion-cyan hover:bg-zion-cyan/20 transition"
                     >
-                      {ExplorerBroadcastBroadcastPageClientCopy.view[cs ? 'cs' : 'en']}
+                      {tx5(ExplorerBroadcastBroadcastPageClientCopy.view, lang)}
                     </Link>
                   </div>
                 </div>
@@ -380,7 +381,7 @@ export default function BroadcastPageClient() {
               {result.error && (
                 <div className="mt-4 p-4 rounded-xl bg-zion-purple/5 border border-zion-purple/20">
                   <div className="text-xs text-zion-purple uppercase tracking-wider mb-1">
-                    {ExplorerBroadcastBroadcastPageClientCopy.error[cs ? 'cs' : 'en']}
+                    {tx5(ExplorerBroadcastBroadcastPageClientCopy.error, lang)}
                   </div>
                   <code className="text-sm font-mono text-zion-purple break-all">
                     {result.error}
@@ -402,7 +403,7 @@ export default function BroadcastPageClient() {
                 <AlertCircle className="w-6 h-6 text-zion-purple" />
                 <div>
                   <h3 className="text-lg font-bold text-zion-purple">
-                    {ExplorerBroadcastBroadcastPageClientCopy.error[cs ? 'cs' : 'en']}
+                    {tx5(ExplorerBroadcastBroadcastPageClientCopy.error, lang)}
                   </h3>
                   <code className="text-sm font-mono text-zion-purple break-all">
                     {error}
@@ -426,20 +427,20 @@ export default function BroadcastPageClient() {
               </div>
               <div className="space-y-2">
                 <h3 className="text-base font-semibold text-white">
-                  {ExplorerBroadcastBroadcastPageClientCopy.howToBroadcast[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerBroadcastBroadcastPageClientCopy.howToBroadcast, lang)}
                 </h3>
                 <ul className="text-sm text-gray-400 space-y-1 list-disc list-inside">
                   <li>
-                    {ExplorerBroadcastBroadcastPageClientCopy.accountModelSignTheTransaction[cs ? 'cs' : 'en']}
+                    {tx5(ExplorerBroadcastBroadcastPageClientCopy.accountModelSignTheTransaction, lang)}
                   </li>
                   <li>
-                    {ExplorerBroadcastBroadcastPageClientCopy.utxoModelUseTheSubmittransacti[cs ? 'cs' : 'en']}
+                    {tx5(ExplorerBroadcastBroadcastPageClientCopy.utxoModelUseTheSubmittransacti, lang)}
                   </li>
                   <li>
-                    {ExplorerBroadcastBroadcastPageClientCopy.rawHexForPreSignedBinaryTransa[cs ? 'cs' : 'en']}
+                    {tx5(ExplorerBroadcastBroadcastPageClientCopy.rawHexForPreSignedBinaryTransa, lang)}
                   </li>
                   <li>
-                    {ExplorerBroadcastBroadcastPageClientCopy.afterSuccessfulBroadcastYouRec[cs ? 'cs' : 'en']}
+                    {tx5(ExplorerBroadcastBroadcastPageClientCopy.afterSuccessfulBroadcastYouRec, lang)}
                   </li>
                 </ul>
               </div>

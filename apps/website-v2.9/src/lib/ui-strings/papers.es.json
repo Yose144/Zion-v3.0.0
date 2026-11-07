@@ -1,0 +1,20 @@
+{
+ "Anchored at block": "Anclado en el bloque",
+ "Authors": "Autores",
+ "Awaiting L1 anchor": "Esperando anclaje L1",
+ "Back to Issobella": "Volver a Issobella",
+ "Every published output carries a cryptographic proof of existence and integrity on ZION L1 — the content hash is timestamp-anchored in a transaction memo. Published content cannot be altered retroactively without detection.": "Cada publicación lleva una prueba criptográfica de existencia e integridad en ZION L1 — el hash del contenido queda anclado con marca de tiempo en el memo de una transacción. El contenido publicado no puede alterarse retroactivamente sin que se detecte.",
+ "How to verify": "Cómo verificar",
+ "L6 · Issobella · DeSci": "L6 · Issobella · DeSci",
+ "Loading repository…": "Cargando repositorio…",
+ "No published papers yet. The first papers arrive after L6 Council approval.": "Aún no hay papers publicados. Los primeros llegarán tras la aprobación del Consejo L6.",
+ "Research Papers": "Papers de investigación",
+ "Submitted": "Enviado",
+ "The repository is temporarily unavailable.": "El repositorio no está disponible temporalmente.",
+ "Verify proof": "Verificar prueba",
+ "View tx": "Ver tx",
+ "content blake3": "blake3 del contenido",
+ "direct anchor": "anclaje directo",
+ "merkle batch": "lote merkle",
+ "with L1 anchor": "con anclaje L1"
+}

@@ -1,0 +1,18 @@
+{
+ "Active Miners": "Mineros activos",
+ "Block Height": "Altura de bloque",
+ "Error": "Error",
+ "Height": "Altura",
+ "Height Gap": "Diferencia de altura",
+ "Hosts Online": "Hosts en línea",
+ "Lag": "Retraso",
+ "Network Hosts": "Hosts de la red",
+ "Network Synchronized": "Red sincronizada",
+ "Network quorum": "Quórum de la red",
+ "Node Latency": "Latencia de nodos",
+ "Primary host": "Host primario",
+ "Synchronizing...": "Sincronizando...",
+ "Updated": "Actualizado",
+ "in sync": "sincronizado",
+ "syncing": "sincronizando"
+}

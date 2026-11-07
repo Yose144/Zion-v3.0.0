@@ -17,6 +17,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type * as Leaflet from 'leaflet';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { EARTH_FREE_WORLD_SITES, SITE_STATUS_COLOR, type FreeWorldSite } from '@/lib/freeworld-sites';
 
 const copy = {
@@ -108,7 +109,7 @@ export default function FreeWorldMap() {
               `<strong>${site.name}</strong>` +
               `<span class="fw-popup-loc">${loc}</span>` +
               `<span class="fw-popup-status" style="color:${color}">● ${statusLabel}</span>` +
-              `<a href="${site.href}">${copy.detail[cs ? 'cs' : 'en']}</a>` +
+              `<a href="${site.href}">${tx5(copy.detail, lang)}</a>` +
               `</div>`,
             { closeButton: false },
           );
@@ -207,35 +208,35 @@ export default function FreeWorldMap() {
     <div className="relative">
       {state === 'loading' && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/40 text-sm text-gray-400">
-          {copy.loading[cs ? 'cs' : 'en']}
+          {tx5(copy.loading, lang)}
         </div>
       )}
       {state === 'error' && (
         <div className="flex h-96 items-center justify-center rounded-2xl border border-white/10 bg-black/30 text-sm text-gray-400">
-          {copy.offline[cs ? 'cs' : 'en']}
+          {tx5(copy.offline, lang)}
         </div>
       )}
       <div
         ref={containerRef}
         className="fw-map h-96 w-full rounded-2xl border border-white/10 md:h-[28rem]"
         role="application"
-        aria-label={cs ? 'Mapa komunit L5' : 'Map of the L5 communities'}
+        aria-label={cs ? 'Mapa komunit L5' : t5('Map of the L5 communities', lang)}
       />
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-gray-400">
-        <span className="uppercase tracking-widest text-gray-500">{copy.legendTitle[cs ? 'cs' : 'en']}</span>
+        <span className="uppercase tracking-widest text-gray-500">{tx5(copy.legendTitle, lang)}</span>
         <span className="inline-flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: SITE_STATUS_COLOR.preparation }} />
-          {copy.legendPrep[cs ? 'cs' : 'en']}
+          {tx5(copy.legendPrep, lang)}
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: SITE_STATUS_COLOR.vision }} />
-          {copy.legendVision[cs ? 'cs' : 'en']}
+          {tx5(copy.legendVision, lang)}
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: SITE_STATUS_COLOR.built }} />
-          {copy.legendBuilt[cs ? 'cs' : 'en']}
+          {tx5(copy.legendBuilt, lang)}
         </span>
-        <span className="ml-auto text-gray-500">{copy.communityCount[cs ? 'cs' : 'en']}</span>
+        <span className="ml-auto text-gray-500">{tx5(copy.communityCount, lang)}</span>
       </div>
     </div>
   );

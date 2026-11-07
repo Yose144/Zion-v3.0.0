@@ -1,0 +1,22 @@
+{
+ "Connections": "Connexions",
+ "Height": "Hauteur",
+ "Host": "Hôte",
+ "Interactive force-directed graph of P2P mesh connections. Circles = peers (sized by connection count), lines = links (colored by latency).": "Graphe interactif de forces des connexions maillées P2P. Cercles = pairs (taille selon le nombre de connexions), lignes = liens (couleur selon la latence).",
+ "Latency": "Latence",
+ "Latency:": "Latence :",
+ "No peers connected — showing seed nodes only.": "Aucun pair connecté — affichage des nœuds de départ uniquement.",
+ "No peers connected.": "Aucun pair connecté.",
+ "P2P Mesh Topology": "Topologie maillée P2P",
+ "Peer": "Pair",
+ "Peer data unavailable — showing seed nodes only.": "Données des pairs indisponibles — affichage des nœuds de départ uniquement.",
+ "Port": "Port",
+ "Reset": "Réinitialiser",
+ "Retry": "Réessayer",
+ "Seed node": "Nœud de départ",
+ "Topology": "Topologie",
+ "Version": "Version",
+ "Zoom in": "Zoom avant",
+ "Zoom out": "Zoom arrière",
+ "unknown": "inconnu"
+}

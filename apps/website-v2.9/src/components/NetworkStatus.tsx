@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from '@/hooks/usePolling';
 import { 
   type LucideIcon,
@@ -83,19 +84,19 @@ const regionFlags: Record<string, string> = {
   'ASIA-SE': '🔹',
 };
 
-const getRegionLabels = (cs: boolean): Record<string, string> => ({
-  'PRIMARY': NetworkStatusCopy.primaryHost[cs ? 'cs' : 'en'],
-  'INTERNAL': NetworkStatusCopy.internalQuorum[cs ? 'cs' : 'en'],
-  'EU-NORTH': NetworkStatusCopy.primaryHost[cs ? 'cs' : 'en'],
-  'US-EAST': NetworkStatusCopy.internalQuorum[cs ? 'cs' : 'en'],
-  'ASIA-SE': NetworkStatusCopy.internalQuorum[cs ? 'cs' : 'en'],
+const getRegionLabels = (cs: boolean, lang: Lang): Record<string, string> => ({
+  'PRIMARY': tx5(NetworkStatusCopy.primaryHost, lang),
+  'INTERNAL': tx5(NetworkStatusCopy.internalQuorum, lang),
+  'EU-NORTH': tx5(NetworkStatusCopy.primaryHost, lang),
+  'US-EAST': tx5(NetworkStatusCopy.internalQuorum, lang),
+  'ASIA-SE': tx5(NetworkStatusCopy.internalQuorum, lang),
 });
 
 export default function NetworkStatus({ className }: { className?: string }) {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = NetworkStatusCopy.enUs[cs ? 'cs' : 'en'];
-  const regionLabels = getRegionLabels(cs);
+  const locale = tx5(NetworkStatusCopy.enUs, lang);
+  const regionLabels = getRegionLabels(cs, lang);
   const [status, setStatus] = useState<NetworkStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -142,27 +143,27 @@ export default function NetworkStatus({ className }: { className?: string }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <SummaryCard
           icon={Server}
-          label={NetworkStatusCopy.hostsOnline[cs ? 'cs' : 'en']}
+          label={tx5(NetworkStatusCopy.hostsOnline, lang)}
           value={`${status.summary.online}/${status.summary.total}`}
           accent={status.summary.online === status.summary.total ? 'green' : 'yellow'}
           sub={status.summary.onlinePct != null ? `${status.summary.onlinePct}%` : undefined}
         />
         <SummaryCard
           icon={Activity}
-          label={NetworkStatusCopy.blockHeight[cs ? 'cs' : 'en']}
+          label={tx5(NetworkStatusCopy.blockHeight, lang)}
           value={status.summary.maxHeight ? status.summary.maxHeight.toLocaleString(locale) : '—'}
           accent="blue"
         />
         <SummaryCard
           icon={Gauge}
-          label={NetworkStatusCopy.heightGap[cs ? 'cs' : 'en']}
+          label={tx5(NetworkStatusCopy.heightGap, lang)}
           value={`${status.summary.heightGap ?? 0}`}
           accent="purple"
-          sub={status.summary.inSync ? (NetworkStatusCopy.inSync[cs ? 'cs' : 'en']) : (NetworkStatusCopy.syncing[cs ? 'cs' : 'en'])}
+          sub={status.summary.inSync ? (tx5(NetworkStatusCopy.inSync, lang)) : (tx5(NetworkStatusCopy.syncing, lang))}
         />
         <SummaryCard
           icon={Users}
-          label={NetworkStatusCopy.activeMiners[cs ? 'cs' : 'en']}
+          label={tx5(NetworkStatusCopy.activeMiners, lang)}
           value={status.summary.totalMiners.toString()}
           accent="gold"
         />
@@ -180,7 +181,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
             <XCircle className="w-5 h-5 text-zion-gold" />
           )}
           <span className={status.summary.inSync ? 'text-zion-cyan' : 'text-zion-gold'}>
-            {status.summary.inSync ? (NetworkStatusCopy.networkSynchronized[cs ? 'cs' : 'en']) : (NetworkStatusCopy.synchronizing[cs ? 'cs' : 'en'])}
+            {status.summary.inSync ? (tx5(NetworkStatusCopy.networkSynchronized, lang)) : (tx5(NetworkStatusCopy.synchronizing, lang))}
           </span>
         </div>
       </div>
@@ -189,7 +190,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
       <div className="space-y-3">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
           <Globe className="w-5 h-5 text-zion-gold" />
-          {NetworkStatusCopy.networkHosts[cs ? 'cs' : 'en']}
+          {tx5(NetworkStatusCopy.networkHosts, lang)}
         </h3>
         
         <div className="grid gap-3">
@@ -202,7 +203,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <NodeCard node={node} cs={cs} locale={locale} regionLabels={regionLabels} />
+                <NodeCard node={node} cs={cs} lang={lang} locale={locale} regionLabels={regionLabels} />
               </motion.div>
             ))}
           </AnimatePresence>
@@ -214,7 +215,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
         <div className="zion-rainbow-card p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
           <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
             <Zap className="w-4 h-4 text-zion-gold" />
-            {NetworkStatusCopy.nodeLatency[cs ? 'cs' : 'en']}
+            {tx5(NetworkStatusCopy.nodeLatency, lang)}
           </h3>
           <div className="grid gap-3">
             {status.nodes.filter((n) => n.online).map((node) => (
@@ -233,7 +234,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
                     <span className="text-white font-mono">{node.poolLatencyMs != null ? `${node.poolLatencyMs}ms` : '—'}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500 block mb-0.5">{NetworkStatusCopy.lag[cs ? 'cs' : 'en']}</span>
+                    <span className="text-gray-500 block mb-0.5">{tx5(NetworkStatusCopy.lag, lang)}</span>
                     <span className="text-white font-mono">{node.blockLag != null ? `${node.blockLag}` : '—'}</span>
                   </div>
                 </div>
@@ -247,7 +248,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
       {lastUpdate && (
         <div className="text-xs uppercase tracking-[0.3em] text-gray-500 flex items-center gap-2">
           <RefreshCw className="w-4 h-4 text-zion-gold" />
-          {NetworkStatusCopy.updated[cs ? 'cs' : 'en']} {lastUpdate.toLocaleTimeString(locale)}
+          {tx5(NetworkStatusCopy.updated, lang)} {lastUpdate.toLocaleTimeString(locale)}
         </div>
       )}
     </div>
@@ -289,7 +290,7 @@ function SummaryCard({
   );
 }
 
-function NodeCard({ node, cs, locale, regionLabels }: { node: NodeStatus; cs: boolean; locale: string; regionLabels: Record<string, string> }) {
+function NodeCard({ node, cs, lang, locale, regionLabels }: { node: NodeStatus; cs: boolean; lang: Lang; locale: string; regionLabels: Record<string, string> }) {
   return (
     <div
       className="zion-rainbow-sub p-4 transition-all"
@@ -316,8 +317,8 @@ function NodeCard({ node, cs, locale, regionLabels }: { node: NodeStatus; cs: bo
               </span>
               {node.online && (
                 <>
-                  <span>{NetworkStatusCopy.height[cs ? 'cs' : 'en']}: {node.height ? node.height.toLocaleString(locale) : '—'}</span>
-                  {node.blockLag != null && <span>{NetworkStatusCopy.lag_2[cs ? 'cs' : 'en']}: {node.blockLag}</span>}
+                  <span>{tx5(NetworkStatusCopy.height, lang)}: {node.height ? node.height.toLocaleString(locale) : '—'}</span>
+                  {node.blockLag != null && <span>{tx5(NetworkStatusCopy.lag_2, lang)}: {node.blockLag}</span>}
                   {node.rpcLatencyMs != null && <span>RPC: {node.rpcLatencyMs} ms</span>}
                   {node.poolLatencyMs != null && <span>Pool: {node.poolLatencyMs} ms</span>}
                   {node.miners > 0 && (
@@ -343,7 +344,7 @@ function NodeCard({ node, cs, locale, regionLabels }: { node: NodeStatus; cs: bo
 
       {node.error && !node.online && (
         <div className="mt-2 text-xs text-zion-purple">
-          {NetworkStatusCopy.error[cs ? 'cs' : 'en']}: {node.error}
+          {tx5(NetworkStatusCopy.error, lang)}: {node.error}
         </div>
       )}
     </div>

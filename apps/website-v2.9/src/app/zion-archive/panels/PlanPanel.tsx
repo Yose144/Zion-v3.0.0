@@ -1,5 +1,7 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+
 import Link from 'next/link';
 import { ArrowRight, BookOpen, ExternalLink, ShieldCheck } from 'lucide-react';
 import { NIRVANA_PUBLIC_TITLE, NIRVANA_WORKSTREAMS, type NirvanaWorkstream } from '@/lib/nirvana-roadmap';
@@ -62,26 +64,26 @@ function WorkstreamCard({ w, lang }: { w: NirvanaWorkstream; lang: Lang }) {
           {w.layer}
         </span>
         <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">
-          {Copy.legendGoal[l]}
+          {tx5(Copy.legendGoal, lang)}
         </span>
       </div>
       <h3 className="text-base font-bold leading-snug text-white">{w.title[l]}</h3>
       <dl className="space-y-2 text-sm leading-relaxed">
         <div>
           <dt className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">
-            {Copy.goalLabel[l]}
+            {tx5(Copy.goalLabel, lang)}
           </dt>
           <dd className="text-gray-300">{w.goal[l]}</dd>
         </div>
         <div>
           <dt className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">
-            {Copy.acceptLabel[l]}
+            {tx5(Copy.acceptLabel, lang)}
           </dt>
           <dd className="text-gray-400">{w.acceptance[l]}</dd>
         </div>
         <div>
           <dt className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">
-            {Copy.prereqLabel[l]}
+            {tx5(Copy.prereqLabel, lang)}
           </dt>
           <dd className="text-gray-400">{w.prerequisite[l]}</dd>
         </div>
@@ -92,14 +94,14 @@ function WorkstreamCard({ w, lang }: { w: NirvanaWorkstream; lang: Lang }) {
           className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-gray-300 transition-colors hover:border-white/25 hover:text-white"
         >
           <ExternalLink className="h-3.5 w-3.5" />
-          {Copy.layerLink[l]}
+          {tx5(Copy.layerLink, lang)}
         </Link>
         <Link
           href={`/zion-archive/nirvana/cist#${w.chapterSlug}`}
           className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/25 px-3 py-1.5 text-xs font-semibold text-amber-300/90 transition-colors hover:border-amber-400/50"
         >
           <BookOpen className="h-3.5 w-3.5" />
-          {Copy.episodeLink[l]}
+          {tx5(Copy.episodeLink, lang)}
         </Link>
       </div>
     </article>
@@ -117,45 +119,45 @@ export default function PlanPanel({ lang }: { lang: Lang }) {
         <PanelHeader
           id="plan-v33"
           rc="168, 85, 247"
-          kicker={Copy.kicker[l]}
-          title={Copy.title[l]}
-          sub={Copy.sub[l]}
+          kicker={tx5(Copy.kicker, lang)}
+          title={tx5(Copy.title, lang)}
+          sub={tx5(Copy.sub, lang)}
         />
 
         {/* prerequisite strip — stacked on narrow screens, split at xl */}
         <div className="grid gap-3 rounded-xl border border-zion-cyan/25 bg-zion-cyan/[0.06] px-4 py-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
-          <p className="text-sm leading-relaxed text-gray-200">{Copy.prereq[l]}</p>
+          <p className="text-sm leading-relaxed text-gray-200">{tx5(Copy.prereq, lang)}</p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/roadmap#nirvana"
               className="inline-flex items-center gap-1.5 rounded-lg border border-zion-cyan/30 px-3 py-1.5 text-xs font-semibold text-zion-cyan transition-colors hover:bg-zion-cyan/10"
             >
-              {Copy.prereqRoadmap[l]}
+              {tx5(Copy.prereqRoadmap, lang)}
             </Link>
             <Link
               href="/g8"
               className="inline-flex items-center gap-1.5 rounded-lg border border-zion-cyan/30 px-3 py-1.5 text-xs font-semibold text-zion-cyan transition-colors hover:bg-zion-cyan/10"
             >
-              {Copy.prereqG8[l]}
+              {tx5(Copy.prereqG8, lang)}
             </Link>
           </div>
         </div>
 
         {/* baseline gate — required before the six tracks */}
         <p className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-relaxed text-gray-300">
-          {Copy.baseline[l]}
+          {tx5(Copy.baseline, lang)}
         </p>
 
         {/* status legend */}
         <ul className="flex flex-wrap gap-2" aria-label={l === 'cs' ? 'Legenda stavů' : 'Status legend'}>
           <li className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
-            {Copy.legendReading[l]}
+            {tx5(Copy.legendReading, lang)}
           </li>
           <li className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300">
-            {Copy.legendGoal[l]}
+            {tx5(Copy.legendGoal, lang)}
           </li>
           <li className="rounded-full border border-zion-purple/30 bg-zion-purple/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-zion-purple">
-            {Copy.legendHypo[l]}
+            {tx5(Copy.legendHypo, lang)}
           </li>
         </ul>
 
@@ -163,9 +165,9 @@ export default function PlanPanel({ lang }: { lang: Lang }) {
         <div className="space-y-3">
           <div>
             <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-gray-200">
-              {Copy.chainTitle[l]}
+              {tx5(Copy.chainTitle, lang)}
             </h3>
-            <p className="text-xs text-gray-500">{Copy.chainSub[l]}</p>
+            <p className="text-xs text-gray-500">{tx5(Copy.chainSub, lang)}</p>
           </div>
           <ul className="grid gap-3 lg:grid-cols-3">
             {chain.map((w, i) => (
@@ -186,9 +188,9 @@ export default function PlanPanel({ lang }: { lang: Lang }) {
         <div className="space-y-3">
           <div>
             <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-gray-200">
-              {Copy.parallelTitle[l]}
+              {tx5(Copy.parallelTitle, lang)}
             </h3>
-            <p className="text-xs text-gray-500">{Copy.parallelSub[l]}</p>
+            <p className="text-xs text-gray-500">{tx5(Copy.parallelSub, lang)}</p>
           </div>
           <ul className="grid gap-3 lg:grid-cols-3">
             {parallel.map((w) => (
@@ -205,8 +207,8 @@ export default function PlanPanel({ lang }: { lang: Lang }) {
             <ShieldCheck className="h-5 w-5 text-zion-purple" />
           </span>
           <div className="space-y-1.5">
-            <h3 className="text-base font-bold text-white">{Copy.gateTitle[l]}</h3>
-            <p className="text-sm leading-relaxed text-gray-300">{Copy.gateBody[l]}</p>
+            <h3 className="text-base font-bold text-white">{tx5(Copy.gateTitle, lang)}</h3>
+            <p className="text-sm leading-relaxed text-gray-300">{tx5(Copy.gateBody, lang)}</p>
           </div>
         </div>
       </div>
