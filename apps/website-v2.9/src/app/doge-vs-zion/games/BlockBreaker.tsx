@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, Volume2, VolumeX, RefreshCw, Trophy } from 'lucide-react';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const DogeVsZionGamesBlockBreakerCopy = {
   clickOrPressSpaceToLaunch: { cs: `Klepni nebo stiskni MEZERNÍK pro start`, en: `Click or press Space to launch` },
@@ -391,7 +392,7 @@ function updateGame(s: GameState, dt: number): void {
 
 // ─── Render ───────────────────────────────────────────────────────────────────
 
-function renderCanvas(s: GameState, canvasRef: React.RefObject<HTMLCanvasElement | null>, cs: boolean): void {
+function renderCanvas(s: GameState, canvasRef: React.RefObject<HTMLCanvasElement | null>, cs: boolean, lang: Lang): void {
   const canvas = canvasRef.current;
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -487,7 +488,7 @@ function renderCanvas(s: GameState, canvasRef: React.RefObject<HTMLCanvasElement
     ctx.font = '12px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(DogeVsZionGamesBlockBreakerCopy.clickOrPressSpaceToLaunch[cs ? 'cs' : 'en'], CANVAS_W / 2, CANVAS_H - 50);
+    ctx.fillText(tx5(DogeVsZionGamesBlockBreakerCopy.clickOrPressSpaceToLaunch, lang), CANVAS_W / 2, CANVAS_H - 50);
   }
 }
 
@@ -585,7 +586,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
       }
       updateParticles(s.particles, dt);
 
-      renderCanvas(s, canvasRef, cs);
+      renderCanvas(s, canvasRef, cs, lang);
 
       // Sync UI when status changes
       if (s.status !== 'playing') {
@@ -717,7 +718,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
           {/* Header */}
           <div className="flex w-full items-center justify-between">
             <button onClick={onBack} className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-              <ArrowLeft className="h-4 w-4" /> {DogeVsZionGamesBlockBreakerCopy.back[cs ? 'cs' : 'en']}
+              <ArrowLeft className="h-4 w-4" /> {tx5(DogeVsZionGamesBlockBreakerCopy.back, lang)}
             </button>
             <button onClick={() => { sfx.init(); setMuted((m) => !m); }} className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors">
               {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
@@ -726,38 +727,38 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
 
           {/* Title */}
           <div className="text-center">
-            <h1 className="text-3xl md:text-5xl font-bold text-gradient">{DogeVsZionGamesBlockBreakerCopy.blockBreaker[cs ? 'cs' : 'en']}</h1>
-            <p className="mt-2 text-sm text-gray-500">{DogeVsZionGamesBlockBreakerCopy.breakThroughTheFirewallsFreeTh[cs ? 'cs' : 'en']}</p>
+            <h1 className="text-3xl md:text-5xl font-bold text-gradient">{tx5(DogeVsZionGamesBlockBreakerCopy.blockBreaker, lang)}</h1>
+            <p className="mt-2 text-sm text-gray-500">{tx5(DogeVsZionGamesBlockBreakerCopy.breakThroughTheFirewallsFreeTh, lang)}</p>
           </div>
 
           {/* High score */}
           {highScore > 0 && (
             <div className="flex items-center gap-2 rounded-xl border border-zion-gold/20 bg-zion-gold/5 px-4 py-2">
               <Trophy className="h-4 w-4 text-zion-gold" />
-              <span className="text-sm font-bold text-zion-gold">{DogeVsZionGamesBlockBreakerCopy.highScore[cs ? 'cs' : 'en']}: {highScore}</span>
+              <span className="text-sm font-bold text-zion-gold">{tx5(DogeVsZionGamesBlockBreakerCopy.highScore, lang)}: {highScore}</span>
             </div>
           )}
 
           {/* Start button */}
           <button onClick={startGame} className="rounded-xl bg-zion-gold/20 border border-zion-gold/30 px-8 py-3 text-lg font-bold text-zion-gold hover:bg-zion-gold/30 transition-colors">
-            {DogeVsZionGamesBlockBreakerCopy.startGame[cs ? 'cs' : 'en']}
+            {tx5(DogeVsZionGamesBlockBreakerCopy.startGame, lang)}
           </button>
 
           {/* Instructions */}
           <div className="max-w-md zion-rainbow-card p-5 text-center" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-            <h3 className="mb-3 text-sm font-bold text-white">{DogeVsZionGamesBlockBreakerCopy.howToPlay[cs ? 'cs' : 'en']}</h3>
+            <h3 className="mb-3 text-sm font-bold text-white">{tx5(DogeVsZionGamesBlockBreakerCopy.howToPlay, lang)}</h3>
             <div className="space-y-2 text-xs text-gray-400">
-              <p>{DogeVsZionGamesBlockBreakerCopy.moveThe[cs ? 'cs' : 'en']}<span className="text-zion-gold font-bold">{DogeVsZionGamesBlockBreakerCopy.firewall[cs ? 'cs' : 'en']}</span>{DogeVsZionGamesBlockBreakerCopy.paddleWithMouseOrArrowKeys[cs ? 'cs' : 'en']}</p>
-              <p>{DogeVsZionGamesBlockBreakerCopy.launchThe[cs ? 'cs' : 'en']}<span className="text-zion-purple font-bold">{DogeVsZionGamesBlockBreakerCopy.validatorNode[cs ? 'cs' : 'en']}</span>{DogeVsZionGamesBlockBreakerCopy.withClickOrSpace[cs ? 'cs' : 'en']}</p>
-              <p>{DogeVsZionGamesBlockBreakerCopy.breakThrough[cs ? 'cs' : 'en']}<span className="text-zion-purple font-bold">{DogeVsZionGamesBlockBreakerCopy.firewallSegments[cs ? 'cs' : 'en']}</span>{DogeVsZionGamesBlockBreakerCopy.toScorePoints[cs ? 'cs' : 'en']}</p>
-              <p>{DogeVsZionGamesBlockBreakerCopy.donu2019tLetTheNodeFallYouHave[cs ? 'cs' : 'en']}<span className="text-zion-purple font-bold">{DogeVsZionGamesBlockBreakerCopy.k3Lives[cs ? 'cs' : 'en']}</span></p>
-              <p>{DogeVsZionGamesBlockBreakerCopy.clearAllBlocksToAdvanceToTheNe[cs ? 'cs' : 'en']}</p>
+              <p>{tx5(DogeVsZionGamesBlockBreakerCopy.moveThe, lang)}<span className="text-zion-gold font-bold">{tx5(DogeVsZionGamesBlockBreakerCopy.firewall, lang)}</span>{tx5(DogeVsZionGamesBlockBreakerCopy.paddleWithMouseOrArrowKeys, lang)}</p>
+              <p>{tx5(DogeVsZionGamesBlockBreakerCopy.launchThe, lang)}<span className="text-zion-purple font-bold">{tx5(DogeVsZionGamesBlockBreakerCopy.validatorNode, lang)}</span>{tx5(DogeVsZionGamesBlockBreakerCopy.withClickOrSpace, lang)}</p>
+              <p>{tx5(DogeVsZionGamesBlockBreakerCopy.breakThrough, lang)}<span className="text-zion-purple font-bold">{tx5(DogeVsZionGamesBlockBreakerCopy.firewallSegments, lang)}</span>{tx5(DogeVsZionGamesBlockBreakerCopy.toScorePoints, lang)}</p>
+              <p>{tx5(DogeVsZionGamesBlockBreakerCopy.donu2019tLetTheNodeFallYouHave, lang)}<span className="text-zion-purple font-bold">{tx5(DogeVsZionGamesBlockBreakerCopy.k3Lives, lang)}</span></p>
+              <p>{tx5(DogeVsZionGamesBlockBreakerCopy.clearAllBlocksToAdvanceToTheNe, lang)}</p>
             </div>
           </div>
 
           {/* Layer legend */}
           <div className="max-w-md zion-rainbow-card p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-            <h3 className="mb-3 text-sm font-bold text-white">{DogeVsZionGamesBlockBreakerCopy.firewallLayers[cs ? 'cs' : 'en']}</h3>
+            <h3 className="mb-3 text-sm font-bold text-white">{tx5(DogeVsZionGamesBlockBreakerCopy.firewallLayers, lang)}</h3>
             <div className="space-y-2">
               {ROW_DEFS.map((row, i) => (
                 <div key={i} className="flex items-center justify-between text-xs">
@@ -765,7 +766,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
                     <div className="h-4 w-8 rounded" style={{ backgroundColor: row.color, border: `1px solid ${row.borderColor}` }} />
                     <span className="text-gray-300">{row.label}</span>
                   </div>
-                  <span className="text-gray-500">{row.points} {DogeVsZionGamesBlockBreakerCopy.pts[cs ? 'cs' : 'en']}</span>
+                  <span className="text-gray-500">{row.points} {tx5(DogeVsZionGamesBlockBreakerCopy.pts, lang)}</span>
                 </div>
               ))}
             </div>
@@ -786,7 +787,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
         {/* Header */}
         <div className="flex items-center justify-between">
           <button onClick={onBack} className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft className="h-4 w-4" /> {DogeVsZionGamesBlockBreakerCopy.back[cs ? 'cs' : 'en']}
+            <ArrowLeft className="h-4 w-4" /> {tx5(DogeVsZionGamesBlockBreakerCopy.back, lang)}
           </button>
           <div className="flex items-center gap-2">
             <button onClick={togglePause} disabled={s.status !== 'playing' && s.status !== 'paused'} className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors disabled:opacity-30">
@@ -803,25 +804,25 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
 
         {/* Title */}
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gradient">{DogeVsZionGamesBlockBreakerCopy.blockBreaker[cs ? 'cs' : 'en']}</h1>
-          <p className="text-[10px] text-gray-500">{DogeVsZionGamesBlockBreakerCopy.breakThroughTheFirewallsFreeTh[cs ? 'cs' : 'en']}</p>
+          <h1 className="text-2xl font-bold text-gradient">{tx5(DogeVsZionGamesBlockBreakerCopy.blockBreaker, lang)}</h1>
+          <p className="text-[10px] text-gray-500">{tx5(DogeVsZionGamesBlockBreakerCopy.breakThroughTheFirewallsFreeTh, lang)}</p>
         </div>
 
         {/* Info bar */}
         <div style={{ '--rc': '252, 209, 22' } as React.CSSProperties} className="zion-rainbow-card p-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div>
-              <p className="text-[10px] text-gray-500">{DogeVsZionGamesBlockBreakerCopy.score[cs ? 'cs' : 'en']}</p>
+              <p className="text-[10px] text-gray-500">{tx5(DogeVsZionGamesBlockBreakerCopy.score, lang)}</p>
               <p className="text-sm font-bold tabular-nums text-white">{s.score}</p>
             </div>
             <div>
-              <p className="text-[10px] text-gray-500">{DogeVsZionGamesBlockBreakerCopy.level[cs ? 'cs' : 'en']}</p>
+              <p className="text-[10px] text-gray-500">{tx5(DogeVsZionGamesBlockBreakerCopy.level, lang)}</p>
               <p className="text-sm font-bold tabular-nums text-zion-gold">{s.level}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div>
-              <p className="text-[10px] text-gray-500">{DogeVsZionGamesBlockBreakerCopy.lives[cs ? 'cs' : 'en']}</p>
+              <p className="text-[10px] text-gray-500">{tx5(DogeVsZionGamesBlockBreakerCopy.lives, lang)}</p>
               <div className="flex gap-1">
                 {Array.from({ length: LIVES }).map((_, i) => (
                   <span key={i} className={i < s.lives ? 'text-zion-purple' : 'text-gray-700'}>❤</span>
@@ -829,7 +830,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
               </div>
             </div>
             <div>
-              <p className="text-[10px] text-gray-500">{DogeVsZionGamesBlockBreakerCopy.high[cs ? 'cs' : 'en']}</p>
+              <p className="text-[10px] text-gray-500">{tx5(DogeVsZionGamesBlockBreakerCopy.high, lang)}</p>
               <p className="text-sm font-bold tabular-nums text-zion-gold">{Math.max(highScore, s.score)}</p>
             </div>
           </div>
@@ -855,11 +856,11 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
             <div className="rounded-2xl border border-zion-gold/30 bg-gradient-to-br from-black/90 to-zion-gold/10 p-6 text-center max-w-sm">
               <p className="text-3xl mb-2">⏸</p>
-              <p className="text-lg font-bold text-zion-gold mb-4">{DogeVsZionGamesBlockBreakerCopy.paused[cs ? 'cs' : 'en']}</p>
+              <p className="text-lg font-bold text-zion-gold mb-4">{tx5(DogeVsZionGamesBlockBreakerCopy.paused, lang)}</p>
               <button onClick={togglePause} className="w-full rounded-xl bg-zion-gold/20 border border-zion-gold/30 px-4 py-2.5 text-sm font-bold text-zion-gold hover:bg-zion-gold/30 transition-colors">
-                {DogeVsZionGamesBlockBreakerCopy.resume[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionGamesBlockBreakerCopy.resume, lang)}
               </button>
-              <p className="mt-3 text-[11px] text-gray-500">{DogeVsZionGamesBlockBreakerCopy.pressPToResume[cs ? 'cs' : 'en']}</p>
+              <p className="mt-3 text-[11px] text-gray-500">{tx5(DogeVsZionGamesBlockBreakerCopy.pressPToResume, lang)}</p>
             </div>
           </div>
         )}
@@ -869,11 +870,11 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
             <div className="rounded-2xl border border-zion-cyan/30 bg-gradient-to-br from-black/90 to-zion-cyan/10 p-6 text-center max-w-sm">
               <p className="text-3xl mb-2">🔓</p>
-              <p className="text-lg font-bold text-zion-cyan mb-2">{cs ? `Vrstva ${s.level} proražena!` : `Layer ${s.level} Breached!`}</p>
-              <p className="text-xs text-gray-400 mb-1">{DogeVsZionGamesBlockBreakerCopy.score[cs ? 'cs' : 'en']}: {s.score}</p>
-              <p className="text-xs text-gray-500 mb-4">{DogeVsZionGamesBlockBreakerCopy.nextLayerFasterNodeMoreFirewal[cs ? 'cs' : 'en']}</p>
+              <p className="text-lg font-bold text-zion-cyan mb-2">{cs ? `Vrstva ${s.level} proražena!` : t5(`Layer ${s.level} Breached!`, lang)}</p>
+              <p className="text-xs text-gray-400 mb-1">{tx5(DogeVsZionGamesBlockBreakerCopy.score, lang)}: {s.score}</p>
+              <p className="text-xs text-gray-500 mb-4">{tx5(DogeVsZionGamesBlockBreakerCopy.nextLayerFasterNodeMoreFirewal, lang)}</p>
               <button onClick={nextLevel} className="w-full rounded-xl bg-zion-cyan/20 border border-zion-cyan/30 px-4 py-2.5 text-sm font-bold text-zion-cyan hover:bg-zion-cyan/30 transition-colors">
-                {cs ? `Postup na vrstvu ${s.level + 1} →` : `Advance to Layer ${s.level + 1} →`}
+                {cs ? `Postup na vrstvu ${s.level + 1} →` : t5(`Advance to Layer ${s.level + 1} →`, lang)}
               </button>
             </div>
           </div>
@@ -884,23 +885,23 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
             <div className="rounded-2xl border border-zion-purple/30 bg-gradient-to-br from-black/90 to-zion-purple/10 p-6 text-center max-w-sm">
               <p className="text-3xl mb-2">🔥</p>
-              <p className="text-lg font-bold text-zion-purple mb-2">{DogeVsZionGamesBlockBreakerCopy.firewallCompromised[cs ? 'cs' : 'en']}</p>
-              <p className="text-xs text-gray-400 mb-1">{DogeVsZionGamesBlockBreakerCopy.finalScore[cs ? 'cs' : 'en']}: {s.score}</p>
-              <p className="text-xs text-gray-400 mb-1">{DogeVsZionGamesBlockBreakerCopy.layersBreached[cs ? 'cs' : 'en']}: {s.level - 1}</p>
+              <p className="text-lg font-bold text-zion-purple mb-2">{tx5(DogeVsZionGamesBlockBreakerCopy.firewallCompromised, lang)}</p>
+              <p className="text-xs text-gray-400 mb-1">{tx5(DogeVsZionGamesBlockBreakerCopy.finalScore, lang)}: {s.score}</p>
+              <p className="text-xs text-gray-400 mb-1">{tx5(DogeVsZionGamesBlockBreakerCopy.layersBreached, lang)}: {s.level - 1}</p>
               {s.score >= highScore && s.score > 0 && (
                 <p className="text-xs font-bold text-zion-gold mb-4 flex items-center justify-center gap-1">
-                  <Trophy className="h-3 w-3" /> {DogeVsZionGamesBlockBreakerCopy.newHighScore[cs ? 'cs' : 'en']}
+                  <Trophy className="h-3 w-3" /> {tx5(DogeVsZionGamesBlockBreakerCopy.newHighScore, lang)}
                 </p>
               )}
               {s.score < highScore && (
-                <p className="text-xs text-gray-500 mb-4">{DogeVsZionGamesBlockBreakerCopy.highScore[cs ? 'cs' : 'en']}: {highScore}</p>
+                <p className="text-xs text-gray-500 mb-4">{tx5(DogeVsZionGamesBlockBreakerCopy.highScore, lang)}: {highScore}</p>
               )}
               <div className="flex gap-2">
                 <button onClick={onBack} className="flex-1 rounded-xl bg-white/10 border border-white/20 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/20 transition-colors">
-                  {DogeVsZionGamesBlockBreakerCopy.back[cs ? 'cs' : 'en']}
+                  {tx5(DogeVsZionGamesBlockBreakerCopy.back, lang)}
                 </button>
                 <button onClick={restartGame} className="flex-1 rounded-xl bg-zion-purple/20 border border-zion-purple/30 px-4 py-2.5 text-sm font-bold text-zion-purple hover:bg-zion-purple/30 transition-colors">
-                  {DogeVsZionGamesBlockBreakerCopy.retry[cs ? 'cs' : 'en']}
+                  {tx5(DogeVsZionGamesBlockBreakerCopy.retry, lang)}
                 </button>
               </div>
             </div>

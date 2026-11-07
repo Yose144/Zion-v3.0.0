@@ -14,6 +14,7 @@ import {
   Server,
 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 import { SITE_POOL_PRIMARY } from "@/lib/site";
 
@@ -191,16 +192,16 @@ export default function PoolPrlClient({ embedded = false }: { embedded?: boolean
           <div>
             <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3">
               <Gem className="h-7 w-7 text-pink-400" />
-              {C.title[cs ? 'cs' : 'en']}
+              {tx5(C.title, lang)}
             </h2>
-            <p className="text-sm text-gray-400 mt-1">{C.sub[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm text-gray-400 mt-1">{tx5(C.sub, lang)}</p>
           </div>
           <button
             onClick={() => void fetchData()}
             className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm border border-white/10 bg-white/5 text-gray-300 hover:border-white/25 hover:text-white transition"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-            {C.refresh[cs ? 'cs' : 'en']}
+            {tx5(C.refresh, lang)}
           </button>
         </div>
       </motion.section>
@@ -208,24 +209,24 @@ export default function PoolPrlClient({ embedded = false }: { embedded?: boolean
       {/* KPI strip */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         {kpi(n?.ok === true ? true : n == null ? null : false,
-          C.title[cs ? 'cs' : 'en'].split(' ')[0],
-          C.live[cs ? 'cs' : 'en'],
-          C.down[cs ? 'cs' : 'en'])}
+          tx5(C.title, lang).split(' ')[0],
+          tx5(C.live, lang),
+          tx5(C.down, lang))}
         <div className="bg-black/25 rounded-xl p-3 text-center border border-white/5">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{C.height[cs ? 'cs' : 'en']}</div>
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{tx5(C.height, lang)}</div>
           <div className="text-lg font-bold text-cyan-400">{n?.height != null ? n.height.toLocaleString() : '—'}</div>
         </div>
         <div className="bg-black/25 rounded-xl p-3 text-center border border-white/5">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{C.peers[cs ? 'cs' : 'en']}</div>
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{tx5(C.peers, lang)}</div>
           <div className="text-lg font-bold">{n?.connections != null ? n.connections : '—'}</div>
         </div>
         <div className="bg-black/25 rounded-xl p-3 text-center border border-white/5">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{C.netHash[cs ? 'cs' : 'en']}</div>
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{tx5(C.netHash, lang)}</div>
           <div className="text-lg font-bold text-pink-400">{fmtHashps(n?.network_hashps)}</div>
         </div>
-        {kpi(nv?.enabled, C.nativeLeg[cs ? 'cs' : 'en'], 'ON', 'OFF')}
+        {kpi(nv?.enabled, tx5(C.nativeLeg, lang), 'ON', 'OFF')}
         <div className="bg-black/25 rounded-xl p-3 text-center border border-white/5">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{C.shareSplit[cs ? 'cs' : 'en']}</div>
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{tx5(C.shareSplit, lang)}</div>
           <div className="text-lg font-bold text-amber-400">{nv?.share_pct != null ? `${nv.share_pct} %` : '—'}</div>
         </div>
       </div>
@@ -241,23 +242,23 @@ export default function PoolPrlClient({ embedded = false }: { embedded?: boolean
         >
           <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
             <Server className="h-5 w-5 text-cyan-400" />
-            {C.nodeTitle[cs ? 'cs' : 'en']}
+            {tx5(C.nodeTitle, lang)}
             <span className="text-xs text-gray-500 font-normal">mainnet</span>
           </h3>
           <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
-            <div className="text-gray-500">{C.chainLabel[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.chainLabel, lang)}</div>
             <div className="font-mono text-gray-200">{n?.chain || '—'}</div>
-            <div className="text-gray-500">{C.version[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.version, lang)}</div>
             <div className="font-mono text-gray-200 truncate">{n?.version || '—'}</div>
-            <div className="text-gray-500">{C.difficulty[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.difficulty, lang)}</div>
             <div className="font-mono text-gray-200">{fmtDiff(n?.difficulty)}</div>
-            <div className="text-gray-500">{C.bestBlock[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.bestBlock, lang)}</div>
             <div className="font-mono text-gray-200 truncate" title={n?.best_block || ''}>{short(n?.best_block)}</div>
-            <div className="text-gray-500">{C.mediantime[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.mediantime, lang)}</div>
             <div className="font-mono text-gray-200">
               {n?.mediantime ? new Date(n.mediantime * 1000).toLocaleString() : '—'}
             </div>
-            <div className="text-gray-500">{C.mempool[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.mempool, lang)}</div>
             <div className="font-mono text-gray-200">{n?.mempool_tx ?? '—'}</div>
           </div>
         </motion.section>
@@ -272,24 +273,24 @@ export default function PoolPrlClient({ embedded = false }: { embedded?: boolean
         >
           <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-1">
             <Pickaxe className="h-5 w-5 text-amber-400" />
-            {C.poolTitle[cs ? 'cs' : 'en']}
+            {tx5(C.poolTitle, lang)}
           </h3>
-          <p className="text-xs text-gray-500 mb-4">{C.poolSub[cs ? 'cs' : 'en']}</p>
+          <p className="text-xs text-gray-500 mb-4">{tx5(C.poolSub, lang)}</p>
           <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
-            <div className="text-gray-500">{C.nativeLeg[cs ? 'cs' : 'en']}</div>
-            <div className="font-mono text-gray-200">{nv?.enabled == null ? '—' : nv.enabled ? C.yes[cs ? 'cs' : 'en'] : C.no[cs ? 'cs' : 'en']}</div>
-            <div className="text-gray-500">{C.currentJob[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.nativeLeg, lang)}</div>
+            <div className="font-mono text-gray-200">{nv?.enabled == null ? '—' : nv.enabled ? tx5(C.yes, lang) : tx5(C.no, lang)}</div>
+            <div className="text-gray-500">{tx5(C.currentJob, lang)}</div>
             <div className="font-mono text-gray-200">
               {nv?.job_id || '—'}
               <span className={nv?.job_age_ms != null && nv.job_age_ms < 120_000 ? 'text-emerald-400' : 'text-red-400'}> · {fmtAge(nv?.job_age_ms)}</span>
             </div>
-            <div className="text-gray-500">{C.upstreamTitle[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.upstreamTitle, lang)}</div>
             <div className={`font-mono ${up?.connected ? 'text-emerald-400' : 'text-gray-400'}`}>
-              {up?.enabled == null ? '—' : !up.enabled ? C.no[cs ? 'cs' : 'en'] : up.connected ? '● connected' : '● disconnected'}
+              {up?.enabled == null ? '—' : !up.enabled ? tx5(C.no, lang) : up.connected ? '● connected' : '● disconnected'}
             </div>
-            <div className="text-gray-500">{C.pendingSubmits[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.pendingSubmits, lang)}</div>
             <div className="font-mono text-gray-200">{up?.pending_submits ?? '—'}</div>
-            <div className="text-gray-500">{C.pendingPayouts[cs ? 'cs' : 'en']}</div>
+            <div className="text-gray-500">{tx5(C.pendingPayouts, lang)}</div>
             <div className="font-mono text-gray-200">{p?.pending_payouts != null ? p.pending_payouts : '—'}</div>
           </div>
         </motion.section>
@@ -306,23 +307,23 @@ export default function PoolPrlClient({ embedded = false }: { embedded?: boolean
         <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
             <Gauge className="h-5 w-5 text-pink-400" />
-            {C.srbTitle[cs ? 'cs' : 'en']}
+            {tx5(C.srbTitle, lang)}
           </h3>
           <a href="https://github.com/doktor83/SRBMiner-Multi/releases" target="_blank" rel="noreferrer"
              className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs border border-pink-500/30 bg-pink-500/10 text-pink-300 hover:border-pink-400/60 transition">
-            {C.srbDownload[cs ? 'cs' : 'en']} <ExternalLink className="h-3 w-3" />
+            {tx5(C.srbDownload, lang)} <ExternalLink className="h-3 w-3" />
           </a>
         </div>
-        <p className="text-xs text-gray-500 mb-4">{C.srbSub[cs ? 'cs' : 'en']}</p>
-        <div className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{C.srbCmd[cs ? 'cs' : 'en']}</div>
+        <p className="text-xs text-gray-500 mb-4">{tx5(C.srbSub, lang)}</p>
+        <div className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{tx5(C.srbCmd, lang)}</div>
         <pre className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-pink-200/90 overflow-x-auto mb-4">{`SRBMiner-MULTI --algorithm pearlhash \\
   --pool stratum+tcp://${SITE_POOL_PRIMARY} \\
   --wallet prl1YourAddress.yourWorker \\
   --password x --disable-cpu`}</pre>
         <ul className="space-y-1.5 text-xs text-gray-400 list-disc list-inside">
-          <li>{C.srbWalletNote[cs ? 'cs' : 'en']}</li>
-          <li>{C.srbGpuNote[cs ? 'cs' : 'en']}</li>
-          <li>{C.srbPplnsNote[cs ? 'cs' : 'en']}</li>
+          <li>{tx5(C.srbWalletNote, lang)}</li>
+          <li>{tx5(C.srbGpuNote, lang)}</li>
+          <li>{tx5(C.srbPplnsNote, lang)}</li>
         </ul>
       </motion.section>
 
@@ -336,28 +337,28 @@ export default function PoolPrlClient({ embedded = false }: { embedded?: boolean
       >
         <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-1">
           <Activity className="h-5 w-5 text-cyan-400" />
-          {C.netTitle[cs ? 'cs' : 'en']}
-          <span className="text-xs text-gray-500 font-normal">{C.netSub[cs ? 'cs' : 'en']}</span>
+          {tx5(C.netTitle, lang)}
+          <span className="text-xs text-gray-500 font-normal">{tx5(C.netSub, lang)}</span>
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
           <div className="bg-black/25 rounded-xl p-4 border border-white/5">
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{C.netHash[cs ? 'cs' : 'en']}</div>
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{tx5(C.netHash, lang)}</div>
             <div className="text-xl font-bold text-pink-400 flex items-center gap-2">
               <Blocks className="h-4 w-4" /> {fmtHashps(n?.network_hashps)}
             </div>
           </div>
           <div className="bg-black/25 rounded-xl p-4 border border-white/5">
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{C.difficulty[cs ? 'cs' : 'en']}</div>
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{tx5(C.difficulty, lang)}</div>
             <div className="text-xl font-bold text-cyan-300 flex items-center gap-2">
               <Gauge className="h-4 w-4" /> {fmtDiff(n?.difficulty)}
             </div>
           </div>
           <div className="bg-black/25 rounded-xl p-4 border border-white/5">
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{C.mempool[cs ? 'cs' : 'en']}</div>
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{tx5(C.mempool, lang)}</div>
             <div className="text-xl font-bold text-gray-200">{n?.mempool_tx ?? '—'}</div>
           </div>
           <div className="bg-black/25 rounded-xl p-4 border border-white/5">
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{C.blockTx[cs ? 'cs' : 'en']}</div>
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{tx5(C.blockTx, lang)}</div>
             <div className="text-xl font-bold text-gray-200">{n?.block_tx ?? '—'}</div>
           </div>
         </div>

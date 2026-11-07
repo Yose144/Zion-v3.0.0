@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { Flame, Wallet, RefreshCw, ExternalLink, CheckCircle2, AlertCircle, Copy } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { useWallet } from '@/contexts/WalletContext';
 import { BRIDGE_CONTRACTS, WZION_ABI } from '@/lib/bridge-api';
 
@@ -96,7 +97,7 @@ export default function BridgeBurnWidget() {
       const contract = new ethers.Contract(BRIDGE_CONTRACTS.wzion_address, WZION_ABI, readProvider);
       const raw: ethers.BigNumber = await contract.balanceOf(account);
       const formatted = ethers.utils.formatUnits(raw, WZION_DECIMALS);
-      setBalance(parseFloat(formatted).toLocaleString(BridgeBurnWidgetCopy.enUs[cs ? 'cs' : 'en'], { maximumFractionDigits: 8 }));
+      setBalance(parseFloat(formatted).toLocaleString(tx5(BridgeBurnWidgetCopy.enUs, lang), { maximumFractionDigits: 8 }));
       setPhase('ready');
     } catch (e) {
       setBalance('—');
@@ -156,11 +157,11 @@ export default function BridgeBurnWidget() {
 
     const amountFloat = parseFloat(amount);
     if (isNaN(amountFloat) || amountFloat <= 0) {
-      setError(BridgeBurnWidgetCopy.enterAValidWzionAmount[cs ? 'cs' : 'en']);
+      setError(tx5(BridgeBurnWidgetCopy.enterAValidWzionAmount, lang));
       return;
     }
     if (!l1Address.trim().startsWith('zion1') && !l1Address.trim().startsWith('Zo')) {
-      setError(BridgeBurnWidgetCopy.l1AddressMustStartWithZion1OrZ[cs ? 'cs' : 'en']);
+      setError(tx5(BridgeBurnWidgetCopy.l1AddressMustStartWithZion1OrZ, lang));
       return;
     }
 
@@ -203,22 +204,22 @@ export default function BridgeBurnWidget() {
       <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
         <div className="flex items-center gap-2">
           <Flame className="h-5 w-5 text-zion-gold" />
-          <h3 className="font-semibold text-white text-sm">{BridgeBurnWidgetCopy.burnWzionReceiveZionOnL1[cs ? 'cs' : 'en']}</h3>
+          <h3 className="font-semibold text-white text-sm">{tx5(BridgeBurnWidgetCopy.burnWzionReceiveZionOnL1, lang)}</h3>
         </div>
 
         <p className="text-xs text-gray-400 leading-relaxed">
-          {BridgeBurnWidgetCopy.connectMetamaskOnBaseToBurnYou[cs ? 'cs' : 'en']}
+          {tx5(BridgeBurnWidgetCopy.connectMetamaskOnBaseToBurnYou, lang)}
         </p>
 
         {!hasWallet && (
           <div className="flex items-start gap-2 rounded-xl border border-zion-gold/30 bg-zion-gold/10 p-3">
             <AlertCircle className="h-4 w-4 text-zion-gold shrink-0 mt-0.5" />
             <p className="text-xs text-zion-gold">
-              {BridgeBurnWidgetCopy.metamaskNotDetectedInstall[cs ? 'cs' : 'en']}
+              {tx5(BridgeBurnWidgetCopy.metamaskNotDetectedInstall, lang)}
               <a href="https://metamask.io" target="_blank" rel="noreferrer" className="underline">
                 metamask.io
               </a>{' '}
-              {BridgeBurnWidgetCopy.toUseThisWidget[cs ? 'cs' : 'en']}
+              {tx5(BridgeBurnWidgetCopy.toUseThisWidget, lang)}
             </p>
           </div>
         )}
@@ -238,7 +239,7 @@ export default function BridgeBurnWidget() {
           {phase === 'connecting' && <RefreshCw className="h-4 w-4 animate-spin" />}
           {phase === 'switching-chain' && <RefreshCw className="h-4 w-4 animate-spin" />}
           {phase === 'idle' && <Wallet className="h-4 w-4" />}
-          {phase === 'connecting' ? (BridgeBurnWidgetCopy.requestingAccount[cs ? 'cs' : 'en']) : phase === 'switching-chain' ? (BridgeBurnWidgetCopy.switchingToBase[cs ? 'cs' : 'en']) : (BridgeBurnWidgetCopy.connectMetamask[cs ? 'cs' : 'en'])}
+          {phase === 'connecting' ? (tx5(BridgeBurnWidgetCopy.requestingAccount, lang)) : phase === 'switching-chain' ? (tx5(BridgeBurnWidgetCopy.switchingToBase, lang)) : (tx5(BridgeBurnWidgetCopy.connectMetamask, lang))}
         </button>
       </div>
     );
@@ -250,16 +251,16 @@ export default function BridgeBurnWidget() {
       <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-zion-cyan" />
-          <h3 className="font-semibold text-white text-sm">{BridgeBurnWidgetCopy.burnSubmitted[cs ? 'cs' : 'en']}</h3>
+          <h3 className="font-semibold text-white text-sm">{tx5(BridgeBurnWidgetCopy.burnSubmitted, lang)}</h3>
         </div>
 
         <div className="space-y-2 text-xs text-gray-300">
           <div className="flex justify-between">
-            <span className="text-gray-500">{BridgeBurnWidgetCopy.amountBurned[cs ? 'cs' : 'en']}</span>
+            <span className="text-gray-500">{tx5(BridgeBurnWidgetCopy.amountBurned, lang)}</span>
             <span className="font-semibold text-white">{txInfo.amount} wZION</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">{BridgeBurnWidgetCopy.l1Recipient[cs ? 'cs' : 'en']}</span>
+            <span className="text-gray-500">{tx5(BridgeBurnWidgetCopy.l1Recipient, lang)}</span>
             <span className="font-mono text-white break-all">{txInfo.l1Recipient}</span>
           </div>
           <div>
@@ -278,12 +279,12 @@ export default function BridgeBurnWidget() {
                 <ExternalLink className="h-3 w-3 text-gray-400" />
               </a>
             </div>
-            {copied && <p className="text-xs text-zion-cyan mt-1">✓ {BridgeBurnWidgetCopy.copied[cs ? 'cs' : 'en']}</p>}
+            {copied && <p className="text-xs text-zion-cyan mt-1">✓ {tx5(BridgeBurnWidgetCopy.copied, lang)}</p>}
           </div>
         </div>
 
         <p className="text-xs text-gray-400 leading-relaxed">
-          {BridgeBurnWidgetCopy.theRelayWillDetectThe[cs ? 'cs' : 'en']}<code className="text-zion-gold">BurnForBridge</code>{BridgeBurnWidgetCopy.eventAfter64EvmBlockConfirmati[cs ? 'cs' : 'en']}
+          {tx5(BridgeBurnWidgetCopy.theRelayWillDetectThe, lang)}<code className="text-zion-gold">BurnForBridge</code>{tx5(BridgeBurnWidgetCopy.eventAfter64EvmBlockConfirmati, lang)}
         </p>
 
         <button
@@ -297,7 +298,7 @@ export default function BridgeBurnWidget() {
           className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
         >
           <RefreshCw className="h-4 w-4" />
-          {BridgeBurnWidgetCopy.burnMore[cs ? 'cs' : 'en']}
+          {tx5(BridgeBurnWidgetCopy.burnMore, lang)}
         </button>
       </div>
     );
@@ -313,13 +314,13 @@ export default function BridgeBurnWidget() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Flame className="h-5 w-5 text-zion-gold" />
-          <h3 className="font-semibold text-white text-sm">{BridgeBurnWidgetCopy.burnWzionZionOnL1[cs ? 'cs' : 'en']}</h3>
+          <h3 className="font-semibold text-white text-sm">{tx5(BridgeBurnWidgetCopy.burnWzionZionOnL1, lang)}</h3>
         </div>
         <button
           onClick={refreshBalance}
           disabled={isBusy}
           className="rounded-xl border border-white/10 bg-white/5 p-1.5 hover:bg-white/10 disabled:opacity-50 transition-colors"
-          title={BridgeBurnWidgetCopy.refreshBalance[cs ? 'cs' : 'en']}
+          title={tx5(BridgeBurnWidgetCopy.refreshBalance, lang)}
         >
           <RefreshCw className={`h-3 w-3 text-gray-400 ${phase === 'loading-balance' ? 'animate-spin' : ''}`} />
         </button>
@@ -328,13 +329,13 @@ export default function BridgeBurnWidget() {
       {/* Wallet info */}
       <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2">
         <div>
-          <p className="text-xs text-gray-500">{BridgeBurnWidgetCopy.connectedWallet[cs ? 'cs' : 'en']}</p>
+          <p className="text-xs text-gray-500">{tx5(BridgeBurnWidgetCopy.connectedWallet, lang)}</p>
           <p className="font-mono text-xs text-white">
             {account ? `${account.slice(0, 6)}…${account.slice(-4)}` : '—'}
           </p>
         </div>
         <div className="text-right">
-          <p className="text-xs text-gray-500">{BridgeBurnWidgetCopy.wzionBalance[cs ? 'cs' : 'en']}</p>
+          <p className="text-xs text-gray-500">{tx5(BridgeBurnWidgetCopy.wzionBalance, lang)}</p>
           <p className="font-mono text-sm font-semibold text-zion-gold">
             {phase === 'loading-balance' ? '…' : balance}
           </p>
@@ -344,19 +345,19 @@ export default function BridgeBurnWidget() {
       {/* Amount input */}
       <div className="space-y-1.5">
         <label className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-          {BridgeBurnWidgetCopy.amountWzion[cs ? 'cs' : 'en']}
+          {tx5(BridgeBurnWidgetCopy.amountWzion, lang)}
         </label>
         <input
           type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          placeholder={BridgeBurnWidgetCopy.eG100[cs ? 'cs' : 'en']}
+          placeholder={tx5(BridgeBurnWidgetCopy.eG100, lang)}
           disabled={isBusy}
           className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 font-mono text-sm text-white placeholder:text-gray-600 disabled:opacity-50"
         />
         {amountFloat > 0 && (
           <p className="text-xs text-gray-500">
-            = <span className="text-white font-mono">{amountAtomicDisplay}</span> {BridgeBurnWidgetCopy.wei[cs ? 'cs' : 'en']} (×10<sup>18</sup>)
+            = <span className="text-white font-mono">{amountAtomicDisplay}</span> {tx5(BridgeBurnWidgetCopy.wei, lang)} (×10<sup>18</sup>)
           </p>
         )}
       </div>
@@ -364,7 +365,7 @@ export default function BridgeBurnWidget() {
       {/* L1 recipient */}
       <div className="space-y-1.5">
         <label className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-          {BridgeBurnWidgetCopy.zionL1RecipientAddress[cs ? 'cs' : 'en']}
+          {tx5(BridgeBurnWidgetCopy.zionL1RecipientAddress, lang)}
         </label>
         <input
           type="text"
@@ -386,7 +387,7 @@ export default function BridgeBurnWidget() {
       {/* Contract details */}
       <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 space-y-1">
         <p className="text-xs text-gray-500">
-          {BridgeBurnWidgetCopy.wzionContract[cs ? 'cs' : 'en']}{' '}
+          {tx5(BridgeBurnWidgetCopy.wzionContract, lang)}{' '}
           <code className="text-gray-300 font-mono text-[11px]">
             {BRIDGE_CONTRACTS.wzion_address.slice(0, 10)}…{BRIDGE_CONTRACTS.wzion_address.slice(-6)}
           </code>
@@ -400,7 +401,7 @@ export default function BridgeBurnWidget() {
             BaseScan <ExternalLink className="h-3 w-3" />
           </a>
         </p>
-        <p className="text-xs text-gray-500">{BridgeBurnWidgetCopy.network[cs ? 'cs' : 'en']}: Base Mainnet (chain 8453) · 18 {BridgeBurnWidgetCopy.decimals[cs ? 'cs' : 'en']} · {BridgeBurnWidgetCopy.noProtocolFee[cs ? 'cs' : 'en']}</p>
+        <p className="text-xs text-gray-500">{tx5(BridgeBurnWidgetCopy.network, lang)}: Base Mainnet (chain 8453) · 18 {tx5(BridgeBurnWidgetCopy.decimals, lang)} · {tx5(BridgeBurnWidgetCopy.noProtocolFee, lang)}</p>
       </div>
 
       <button
@@ -411,18 +412,18 @@ export default function BridgeBurnWidget() {
         {isBusy ? (
           <>
             <RefreshCw className="h-4 w-4 animate-spin" />
-            {phase === 'confirming' ? (BridgeBurnWidgetCopy.confirmInMetamask[cs ? 'cs' : 'en']) : phase === 'loading-balance' ? (BridgeBurnWidgetCopy.loading[cs ? 'cs' : 'en']) : (BridgeBurnWidgetCopy.broadcastingTx[cs ? 'cs' : 'en'])}
+            {phase === 'confirming' ? (tx5(BridgeBurnWidgetCopy.confirmInMetamask, lang)) : phase === 'loading-balance' ? (tx5(BridgeBurnWidgetCopy.loading, lang)) : (tx5(BridgeBurnWidgetCopy.broadcastingTx, lang))}
           </>
         ) : (
           <>
             <Flame className="h-4 w-4" />
-            {BridgeBurnWidgetCopy.burn[cs ? 'cs' : 'en']}{amountFloat > 0 ? amountFloat.toFixed(4) : ''} wZION
+            {tx5(BridgeBurnWidgetCopy.burn, lang)}{amountFloat > 0 ? amountFloat.toFixed(4) : ''} wZION
           </>
         )}
       </button>
 
       <p className="text-[10px] text-gray-500 leading-relaxed">
-        {BridgeBurnWidgetCopy.zionArrivesOnL1Within5MinAfter[cs ? 'cs' : 'en']}
+        {tx5(BridgeBurnWidgetCopy.zionArrivesOnL1Within5MinAfter, lang)}
       </p>
     </div>
   );

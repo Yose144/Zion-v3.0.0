@@ -337,7 +337,7 @@ zion-hiran`}</pre>
         </section>
 
         <section id="downloads">
-          <DownloadToolBrowser cs={cs} />
+          <DownloadToolBrowser cs={cs} lang={lang} />
         </section>
 
         {/* ─── 3-step onboarding ─── */}

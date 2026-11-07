@@ -16,6 +16,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { SITE_RELEASE_LABEL } from "@/lib/site";
 import { verifyMessage } from "@/lib/explorer/api";
 import type { VerifyMessageResult } from "@/lib/explorer/types";
@@ -73,7 +74,7 @@ export default function VerifyMessagePageClient() {
     setResult(null);
 
     if (!publicKey.trim() || !message.trim() || !signature.trim()) {
-      setError(ExplorerVerifyMessageVerifyMessagePageClientCopy.fillInPublicKeyMessageAndSigna[cs ? 'cs' : 'en']);
+      setError(tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.fillInPublicKeyMessageAndSigna, lang));
       return;
     }
 
@@ -127,25 +128,25 @@ export default function VerifyMessagePageClient() {
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
               <ShieldCheck className="h-4 w-4" />
-              {SITE_RELEASE_LABEL} · {ExplorerVerifyMessageVerifyMessagePageClientCopy.verify[cs ? 'cs' : 'en']}
+              {SITE_RELEASE_LABEL} · {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.verify, lang)}
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                {ExplorerVerifyMessageVerifyMessagePageClientCopy.cryptography[cs ? 'cs' : 'en']}
+                {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.cryptography, lang)}
               </p>
               <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                {ExplorerVerifyMessageVerifyMessagePageClientCopy.verifyMessage[cs ? 'cs' : 'en']}
+                {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.verifyMessage, lang)}
               </h1>
             </div>
             <p className="text-lg text-gray-300 max-w-2xl">
-              {ExplorerVerifyMessageVerifyMessagePageClientCopy.verifyAnEd25519MessageSignatur[cs ? 'cs' : 'en']}
+              {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.verifyAnEd25519MessageSignatur, lang)}
             </p>
             <div className="flex flex-wrap gap-3 text-xs">
               <span className="zion-badge zion-badge-green">
                 <Shield className="h-3 w-3" /> Ed25519
               </span>
               <span className="zion-badge text-zion-cyan border-zion-cyan/40 bg-zion-cyan/10">
-                <Key className="h-3 w-3" /> {ExplorerVerifyMessageVerifyMessagePageClientCopy.clientSideVerify[cs ? 'cs' : 'en']}
+                <Key className="h-3 w-3" /> {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.clientSideVerify, lang)}
               </span>
               <span className="zion-badge zion-badge-gold">
                 <Signature className="h-3 w-3" /> @noble/ed25519
@@ -166,7 +167,7 @@ export default function VerifyMessagePageClient() {
               <div>
                 <label className="flex items-center gap-2 text-sm text-gray-300 mb-2">
                   <Key className="w-4 h-4 text-zion-cyan" />
-                  {ExplorerVerifyMessageVerifyMessagePageClientCopy.publicKeyHex[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.publicKeyHex, lang)}
                   <span className="text-zion-purple">*</span>
                 </label>
                 <input
@@ -183,7 +184,7 @@ export default function VerifyMessagePageClient() {
               <div>
                 <label className="flex items-center gap-2 text-sm text-gray-300 mb-2">
                   <MessageSquare className="w-4 h-4 text-zion-cyan" />
-                  {ExplorerVerifyMessageVerifyMessagePageClientCopy.message[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.message, lang)}
                   <span className="text-zion-purple">*</span>
                 </label>
                 <textarea
@@ -200,7 +201,7 @@ export default function VerifyMessagePageClient() {
               <div>
                 <label className="flex items-center gap-2 text-sm text-gray-300 mb-2">
                   <Signature className="w-4 h-4 text-zion-gold" />
-                  {ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureHex[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureHex, lang)}
                   <span className="text-zion-purple">*</span>
                 </label>
                 <input
@@ -217,7 +218,7 @@ export default function VerifyMessagePageClient() {
               <div>
                 <label className="flex items-center gap-2 text-sm text-gray-300 mb-2">
                   <Shield className="w-4 h-4 text-zion-purple" />
-                  {ExplorerVerifyMessageVerifyMessagePageClientCopy.zionAddressOptional[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.zionAddressOptional, lang)}
                 </label>
                 <input
                   type="text"
@@ -228,7 +229,7 @@ export default function VerifyMessagePageClient() {
                   spellCheck={false}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {ExplorerVerifyMessageVerifyMessagePageClientCopy.ifProvidedVerifiesThatThePubli[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.ifProvidedVerifiesThatThePubli, lang)}
                 </p>
               </div>
 
@@ -242,12 +243,12 @@ export default function VerifyMessagePageClient() {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      {ExplorerVerifyMessageVerifyMessagePageClientCopy.verifying[cs ? 'cs' : 'en']}
+                      {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.verifying, lang)}
                     </>
                   ) : (
                     <>
                       <ShieldCheck className="w-4 h-4" />
-                      {ExplorerVerifyMessageVerifyMessagePageClientCopy.verifySignature[cs ? 'cs' : 'en']}
+                      {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.verifySignature, lang)}
                     </>
                   )}
                 </button>
@@ -255,7 +256,7 @@ export default function VerifyMessagePageClient() {
                   onClick={handleClear}
                   className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-sm text-white/60 hover:bg-white/10 hover:text-white transition"
                 >
-                  {ExplorerVerifyMessageVerifyMessagePageClientCopy.clear[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.clear, lang)}
                 </button>
               </div>
             </div>
@@ -290,8 +291,8 @@ export default function VerifyMessagePageClient() {
                 <div>
                   <h2 className={`text-3xl font-bold ${result.valid ? "text-zion-cyan" : "text-zion-purple"}`}>
                     {result.valid
-                      ? ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureValid[cs ? 'cs' : 'en']
-                      : ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureInvalid[cs ? 'cs' : 'en']}
+                      ? tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureValid, lang)
+                      : tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureInvalid, lang)}
                   </h2>
                   <p className="text-sm text-gray-400">
                     {result.algorithm && (
@@ -312,13 +313,13 @@ export default function VerifyMessagePageClient() {
                       <XCircle className="w-4 h-4 text-zion-purple" />
                     )}
                     <span className="text-xs text-gray-400 uppercase tracking-wider">
-                      {ExplorerVerifyMessageVerifyMessagePageClientCopy.ed25519Signature[cs ? 'cs' : 'en']}
+                      {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.ed25519Signature, lang)}
                     </span>
                   </div>
                   <div className={`text-sm font-bold ${result.valid ? "text-zion-cyan" : "text-zion-purple"}`}>
                     {result.valid
-                      ? ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureMatchesPublicKey[cs ? 'cs' : 'en']
-                      : ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureDoesNotMatchPublicKey[cs ? 'cs' : 'en']}
+                      ? tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureMatchesPublicKey, lang)
+                      : tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureDoesNotMatchPublicKey, lang)}
                   </div>
                 </div>
 
@@ -332,13 +333,13 @@ export default function VerifyMessagePageClient() {
                         <XCircle className="w-4 h-4 text-zion-purple" />
                       )}
                       <span className="text-xs text-gray-400 uppercase tracking-wider">
-                        {ExplorerVerifyMessageVerifyMessagePageClientCopy.addressMatch[cs ? 'cs' : 'en']}
+                        {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.addressMatch, lang)}
                       </span>
                     </div>
                     <div className={`text-sm font-bold ${result.addressMatch ? "text-zion-cyan" : "text-zion-purple"}`}>
                       {result.addressMatch
-                        ? ExplorerVerifyMessageVerifyMessagePageClientCopy.publicKeyAddressOk[cs ? 'cs' : 'en']
-                        : ExplorerVerifyMessageVerifyMessagePageClientCopy.publicKeyDoesNotMatchAddress[cs ? 'cs' : 'en']}
+                        ? tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.publicKeyAddressOk, lang)
+                        : tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.publicKeyDoesNotMatchAddress, lang)}
                     </div>
                   </div>
                 )}
@@ -347,7 +348,7 @@ export default function VerifyMessagePageClient() {
                 {result.address && (
                   <div className="zion-rainbow-sub p-4 rounded-xl" style={{ "--rc": "6, 105, 40" } as React.CSSProperties}>
                     <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">
-                      {ExplorerVerifyMessageVerifyMessagePageClientCopy.derivedAddress[cs ? 'cs' : 'en']}
+                      {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.derivedAddress, lang)}
                     </div>
                     <code className="text-sm font-mono text-zion-cyan break-all">
                       {result.address}
@@ -359,7 +360,7 @@ export default function VerifyMessagePageClient() {
                 {result.providedAddress && (
                   <div className="zion-rainbow-sub p-4 rounded-xl" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
                     <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">
-                      {ExplorerVerifyMessageVerifyMessagePageClientCopy.providedAddress[cs ? 'cs' : 'en']}
+                      {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.providedAddress, lang)}
                     </div>
                     <code className="text-sm font-mono text-zion-purple break-all">
                       {result.providedAddress}
@@ -372,7 +373,7 @@ export default function VerifyMessagePageClient() {
               {result.error && !result.valid && (
                 <div className="mt-4 p-4 rounded-xl bg-zion-purple/5 border border-zion-purple/20">
                   <div className="text-xs text-zion-purple uppercase tracking-wider mb-1">
-                    {ExplorerVerifyMessageVerifyMessagePageClientCopy.errorDetail[cs ? 'cs' : 'en']}
+                    {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.errorDetail, lang)}
                   </div>
                   <code className="text-sm font-mono text-zion-purple break-all">
                     {result.error}
@@ -394,7 +395,7 @@ export default function VerifyMessagePageClient() {
                 <AlertCircle className="w-6 h-6 text-zion-purple" />
                 <div>
                   <h3 className="text-lg font-bold text-zion-purple">
-                    {ExplorerVerifyMessageVerifyMessagePageClientCopy.error[cs ? 'cs' : 'en']}
+                    {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.error, lang)}
                   </h3>
                   <code className="text-sm font-mono text-zion-purple break-all">
                     {error}
@@ -418,20 +419,20 @@ export default function VerifyMessagePageClient() {
               </div>
               <div className="space-y-2">
                 <h3 className="text-base font-semibold text-white">
-                  {ExplorerVerifyMessageVerifyMessagePageClientCopy.howVerificationWorks[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.howVerificationWorks, lang)}
                 </h3>
                 <ul className="text-sm text-gray-400 space-y-1 list-disc list-inside">
                   <li>
-                    {ExplorerVerifyMessageVerifyMessagePageClientCopy.ed25519SignatureIsVerifiedAgai[cs ? 'cs' : 'en']}
+                    {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.ed25519SignatureIsVerifiedAgai, lang)}
                   </li>
                   <li>
-                    {ExplorerVerifyMessageVerifyMessagePageClientCopy.zionAddressSha256PubkeyRipemd1[cs ? 'cs' : 'en']}
+                    {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.zionAddressSha256PubkeyRipemd1, lang)}
                   </li>
                   <li>
-                    {ExplorerVerifyMessageVerifyMessagePageClientCopy.publicKeyCannotBeExtractedFrom[cs ? 'cs' : 'en']}
+                    {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.publicKeyCannotBeExtractedFrom, lang)}
                   </li>
                   <li>
-                    {ExplorerVerifyMessageVerifyMessagePageClientCopy.algorithmEd25519EdwardsCurveDi[cs ? 'cs' : 'en']}
+                    {tx5(ExplorerVerifyMessageVerifyMessagePageClientCopy.algorithmEd25519EdwardsCurveDi, lang)}
                   </li>
                 </ul>
               </div>

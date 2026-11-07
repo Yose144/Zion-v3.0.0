@@ -25,6 +25,7 @@ import {
   Rocket,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const QuantumRevolutionQuantumRevolutionClientCopy = {
   theBookThatStartedItAll: { cs: `Kniha, která to celé odstartovala`, en: `The book that started it all` },
@@ -146,38 +147,38 @@ export default function QuantumRevolutionClient() {
                 <Atom className="h-6 w-6" style={{ color: `rgb(${GOLD})` }} />
               </div>
               <p className="text-xs font-semibold uppercase tracking-[0.36em]" style={{ color: `rgba(${GOLD}, 0.8)` }}>
-                {QuantumRevolutionQuantumRevolutionClientCopy.theBookThatStartedItAll[cs ? 'cs' : 'en']}
+                {tx5(QuantumRevolutionQuantumRevolutionClientCopy.theBookThatStartedItAll, lang)}
               </p>
             </div>
 
             {/* Title */}
             <h1 className="text-4xl font-bold leading-tight text-white sm:text-5xl md:text-6xl">
-              {QuantumRevolutionQuantumRevolutionClientCopy.quantum[cs ? 'cs' : 'en']}{' '}
-              <span className="text-gradient">{QuantumRevolutionQuantumRevolutionClientCopy.revolution[cs ? 'cs' : 'en']}</span>
+              {tx5(QuantumRevolutionQuantumRevolutionClientCopy.quantum, lang)}{' '}
+              <span className="text-gradient">{tx5(QuantumRevolutionQuantumRevolutionClientCopy.revolution, lang)}</span>
             </h1>
 
             {/* Lead */}
             <p className="max-w-3xl text-base leading-relaxed text-gray-300 md:text-lg">
-              {QuantumRevolutionQuantumRevolutionClientCopy.aFiresideStoryOfANewEarthWhere[cs ? 'cs' : 'en']}
+              {tx5(QuantumRevolutionQuantumRevolutionClientCopy.aFiresideStoryOfANewEarthWhere, lang)}
             </p>
 
             {/* Stats row */}
             <div className="flex flex-wrap gap-3 pt-2">
               <span className="zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': GOLD } as React.CSSProperties}>
                 <strong className="text-white">10</strong>{' '}
-                <span className="text-gray-400">{QuantumRevolutionQuantumRevolutionClientCopy.chapters[cs ? 'cs' : 'en']}</span>
+                <span className="text-gray-400">{tx5(QuantumRevolutionQuantumRevolutionClientCopy.chapters, lang)}</span>
               </span>
               <span className="zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': GOLD } as React.CSSProperties}>
                 <strong className="text-white">11</strong>{' '}
-                <span className="text-gray-400">{QuantumRevolutionQuantumRevolutionClientCopy.languages[cs ? 'cs' : 'en']}</span>
+                <span className="text-gray-400">{tx5(QuantumRevolutionQuantumRevolutionClientCopy.languages, lang)}</span>
               </span>
               <span className="zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': GOLD } as React.CSSProperties}>
                 <strong className="text-white">180</strong>{' '}
-                <span className="text-gray-400">{QuantumRevolutionQuantumRevolutionClientCopy.pages[cs ? 'cs' : 'en']}</span>
+                <span className="text-gray-400">{tx5(QuantumRevolutionQuantumRevolutionClientCopy.pages, lang)}</span>
               </span>
               <span className="zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': GOLD } as React.CSSProperties}>
                 <strong className="text-white">2026</strong>{' '}
-                <span className="text-gray-400">{QuantumRevolutionQuantumRevolutionClientCopy.edition[cs ? 'cs' : 'en']}</span>
+                <span className="text-gray-400">{tx5(QuantumRevolutionQuantumRevolutionClientCopy.edition, lang)}</span>
               </span>
             </div>
           </motion.div>
@@ -189,10 +190,10 @@ export default function QuantumRevolutionClient() {
         <div className="zion-container space-y-6">
           <div className="text-center space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.36em]" style={{ color: `rgba(${GOLD}, 0.8)` }}>
-              {QuantumRevolutionQuantumRevolutionClientCopy.fourPillarsOfTheBook[cs ? 'cs' : 'en']}
+              {tx5(QuantumRevolutionQuantumRevolutionClientCopy.fourPillarsOfTheBook, lang)}
             </p>
             <h2 className="text-2xl font-bold text-white sm:text-3xl">
-              {QuantumRevolutionQuantumRevolutionClientCopy.quantumPhysicsMeetsTheSoul[cs ? 'cs' : 'en']}
+              {tx5(QuantumRevolutionQuantumRevolutionClientCopy.quantumPhysicsMeetsTheSoul, lang)}
             </h2>
           </div>
 
@@ -230,11 +231,11 @@ export default function QuantumRevolutionClient() {
             <div className="flex items-center gap-3">
               <BookOpen className="h-5 w-5" style={{ color: `rgb(${GOLD})` }} />
               <h2 className="text-xl font-semibold text-white">
-                {QuantumRevolutionQuantumRevolutionClientCopy.k10ChaptersOfTheFiresideStory[cs ? 'cs' : 'en']}
+                {tx5(QuantumRevolutionQuantumRevolutionClientCopy.k10ChaptersOfTheFiresideStory, lang)}
               </h2>
             </div>
             <span className="text-xs text-gray-500 uppercase tracking-wider hidden sm:block">
-              {QuantumRevolutionQuantumRevolutionClientCopy.k12PagesNarrativeEdition2026[cs ? 'cs' : 'en']}
+              {tx5(QuantumRevolutionQuantumRevolutionClientCopy.k12PagesNarrativeEdition2026, lang)}
             </span>
           </div>
 
@@ -256,7 +257,7 @@ export default function QuantumRevolutionClient() {
                   <div className="flex items-center gap-2 mb-2">
                     <Icon className="h-4 w-4" style={{ color: `rgba(${GOLD}, 0.8)` }} />
                     <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
-                      {QuantumRevolutionQuantumRevolutionClientCopy.ch[cs ? 'cs' : 'en']} {ch.num}
+                      {tx5(QuantumRevolutionQuantumRevolutionClientCopy.ch, lang)} {ch.num}
                     </span>
                   </div>
                   <p className="text-xs font-semibold text-gray-200 leading-tight mb-1">
@@ -282,7 +283,7 @@ export default function QuantumRevolutionClient() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-white">
-                    {cs ? `Kapitola ${activeChapter}` : `Chapter ${activeChapter}`}
+                    {cs ? `Kapitola ${activeChapter}` : t5(`Chapter ${activeChapter}`, lang)}
                   </h3>
                   <button
                     onClick={() => setActiveChapter(null)}
@@ -293,7 +294,7 @@ export default function QuantumRevolutionClient() {
                 </div>
                 <div className="space-y-3 text-sm text-gray-400 leading-relaxed">
                   <p className="text-center py-8 italic">
-                    {QuantumRevolutionQuantumRevolutionClientCopy.chapterContentWillBeAddedMockP[cs ? 'cs' : 'en']}
+                    {tx5(QuantumRevolutionQuantumRevolutionClientCopy.chapterContentWillBeAddedMockP, lang)}
                   </p>
                 </div>
               </div>
@@ -315,20 +316,20 @@ export default function QuantumRevolutionClient() {
           >
             <div className="space-y-4">
               <p className="text-xs font-semibold uppercase tracking-[0.36em]" style={{ color: `rgba(${GOLD}, 0.8)` }}>
-                {QuantumRevolutionQuantumRevolutionClientCopy.whereTheStoryHappens[cs ? 'cs' : 'en']}
+                {tx5(QuantumRevolutionQuantumRevolutionClientCopy.whereTheStoryHappens, lang)}
               </p>
               <h2 className="text-xl font-bold text-white sm:text-2xl">
-                {QuantumRevolutionQuantumRevolutionClientCopy.theCircleAtTheEternalFire[cs ? 'cs' : 'en']}
+                {tx5(QuantumRevolutionQuantumRevolutionClientCopy.theCircleAtTheEternalFire, lang)}
               </h2>
               <p className="text-sm text-gray-400 leading-relaxed max-w-3xl">
-                {QuantumRevolutionQuantumRevolutionClientCopy.frameStoryBody[cs ? 'cs' : 'en']}
+                {tx5(QuantumRevolutionQuantumRevolutionClientCopy.frameStoryBody, lang)}
               </p>
               <p className="text-sm italic text-gray-300 leading-relaxed max-w-3xl border-l-2 pl-4" style={{ borderColor: `rgba(${GOLD}, 0.4)` }}>
-                {QuantumRevolutionQuantumRevolutionClientCopy.eleventhLogNote[cs ? 'cs' : 'en']}
+                {tx5(QuantumRevolutionQuantumRevolutionClientCopy.eleventhLogNote, lang)}
               </p>
               <div>
                 <Link href="/terranova/kailash" className="zion-button-secondary">
-                  {QuantumRevolutionQuantumRevolutionClientCopy.theEleventhNode[cs ? 'cs' : 'en']}
+                  {tx5(QuantumRevolutionQuantumRevolutionClientCopy.theEleventhNode, lang)}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
@@ -354,7 +355,7 @@ export default function QuantumRevolutionClient() {
               >
                 <Image
                   src="https://zionterranova.com/images/Zion.jpg"
-                  alt={QuantumRevolutionQuantumRevolutionClientCopy.quantumRevolutionBookCover[cs ? 'cs' : 'en']}
+                  alt={tx5(QuantumRevolutionQuantumRevolutionClientCopy.quantumRevolutionBookCover, lang)}
                   width={220}
                   height={310}
                   sizes="220px"
@@ -367,13 +368,13 @@ export default function QuantumRevolutionClient() {
               {/* Amenti info */}
               <div className="space-y-4 text-center lg:text-left">
                 <div className="zion-badge zion-badge-amber">
-                  ⚛️ {QuantumRevolutionQuantumRevolutionClientCopy.freeDownload[cs ? 'cs' : 'en']}
+                  ⚛️ {tx5(QuantumRevolutionQuantumRevolutionClientCopy.freeDownload, lang)}
                 </div>
                 <h3 className="text-xl font-bold text-white">
-                  {QuantumRevolutionQuantumRevolutionClientCopy.hallsOfAmentiDigitalLibrary[cs ? 'cs' : 'en']}
+                  {tx5(QuantumRevolutionQuantumRevolutionClientCopy.hallsOfAmentiDigitalLibrary, lang)}
                 </h3>
                 <p className="text-sm text-gray-400 leading-relaxed">
-                  {QuantumRevolutionQuantumRevolutionClientCopy.k180PagesOnZionPhilosophyConsci[cs ? 'cs' : 'en']}
+                  {tx5(QuantumRevolutionQuantumRevolutionClientCopy.k180PagesOnZionPhilosophyConsci, lang)}
                 </p>
                 <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
                   <a
@@ -383,7 +384,7 @@ export default function QuantumRevolutionClient() {
                     className="zion-button-primary"
                   >
                     <BookOpen className="h-4 w-4" />
-                    {QuantumRevolutionQuantumRevolutionClientCopy.enterAmentiLibrary[cs ? 'cs' : 'en']}
+                    {tx5(QuantumRevolutionQuantumRevolutionClientCopy.enterAmentiLibrary, lang)}
                   </a>
                   <a
                     href="https://zionterranova.com/legacy/books/QuantumRevolution.zip"
@@ -392,7 +393,7 @@ export default function QuantumRevolutionClient() {
                     className="zion-button-secondary"
                   >
                     <Download className="h-4 w-4" />
-                    {QuantumRevolutionQuantumRevolutionClientCopy.downloadAllZip[cs ? 'cs' : 'en']}
+                    {tx5(QuantumRevolutionQuantumRevolutionClientCopy.downloadAllZip, lang)}
                   </a>
                 </div>
               </div>
@@ -413,11 +414,11 @@ export default function QuantumRevolutionClient() {
               <div className="flex items-center gap-2 mb-1">
                 <Sparkles className="h-4 w-4" style={{ color: `rgb(${GOLD})` }} />
                 <span className="text-sm font-semibold text-white">
-                  {QuantumRevolutionQuantumRevolutionClientCopy.bookVsReality98Match[cs ? 'cs' : 'en']}
+                  {tx5(QuantumRevolutionQuantumRevolutionClientCopy.bookVsReality98Match, lang)}
                 </span>
               </div>
               <p className="text-xs text-gray-400 leading-relaxed">
-                {QuantumRevolutionQuantumRevolutionClientCopy.everySpiritualConceptFromTheBo[cs ? 'cs' : 'en']}
+                {tx5(QuantumRevolutionQuantumRevolutionClientCopy.everySpiritualConceptFromTheBo, lang)}
               </p>
               <div className="flex flex-wrap gap-2">
                 {(cs
@@ -439,10 +440,10 @@ export default function QuantumRevolutionClient() {
             <div className="zion-cta-banner flex flex-col justify-between space-y-4">
               <blockquote className="text-center space-y-2">
                 <p className="text-base italic text-gray-300 leading-relaxed">
-                  {QuantumRevolutionQuantumRevolutionClientCopy.bdquoWhereTheRoadmapSaysAposPo[cs ? 'cs' : 'en']}
+                  {tx5(QuantumRevolutionQuantumRevolutionClientCopy.bdquoWhereTheRoadmapSaysAposPo, lang)}
                 </p>
                 <p className="text-xs text-gray-500">
-                  — {QuantumRevolutionQuantumRevolutionClientCopy.analysisBookVsReality[cs ? 'cs' : 'en']}
+                  — {tx5(QuantumRevolutionQuantumRevolutionClientCopy.analysisBookVsReality, lang)}
                 </p>
               </blockquote>
               <div className="flex flex-wrap gap-3 justify-center">
@@ -451,13 +452,13 @@ export default function QuantumRevolutionClient() {
                   className="zion-button-primary"
                 >
                   <Sparkles className="h-4 w-4" />
-                  {QuantumRevolutionQuantumRevolutionClientCopy.genesisAiAndQuantum[cs ? 'cs' : 'en']}
+                  {tx5(QuantumRevolutionQuantumRevolutionClientCopy.genesisAiAndQuantum, lang)}
                 </Link>
                 <Link
                   href="/terranova"
                   className="zion-button-secondary"
                 >
-                  {QuantumRevolutionQuantumRevolutionClientCopy.terraNova[cs ? 'cs' : 'en']}
+                  {tx5(QuantumRevolutionQuantumRevolutionClientCopy.terraNova, lang)}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
@@ -471,7 +472,7 @@ export default function QuantumRevolutionClient() {
         <div className="zion-container">
           <div className="flex flex-wrap items-center justify-center gap-2">
             <span className="text-[11px] uppercase tracking-wider text-gray-600 mr-2">
-              {QuantumRevolutionQuantumRevolutionClientCopy.availableIn[cs ? 'cs' : 'en']}
+              {tx5(QuantumRevolutionQuantumRevolutionClientCopy.availableIn, lang)}
             </span>
             {editions.map((ed) => (
               <span

@@ -18,6 +18,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 import { apiClient } from "@/lib/api";
 import { SITE_RELEASE_LABEL } from "@/lib/site";
@@ -213,21 +214,21 @@ export default function NetworkStatsClient() {
   const txData = charts.txcount?.data.values ?? [];
 
   const statCards = [
-    { label: ExplorerNetworkStatsNetworkStatsClientCopy.hashrate[cs ? 'cs' : 'en'], value: stats?.network_hashrate_formatted ?? "—", sub: fmtHashrate(stats?.network_hashrate ?? 0), icon: Zap, color: "text-zion-cyan", spark: hrData, sparkColor: "rgb(34,211,238)" },
-    { label: ExplorerNetworkStatsNetworkStatsClientCopy.difficulty[cs ? 'cs' : 'en'], value: fmtSI(stats?.difficulty ?? 0), sub: ExplorerNetworkStatsNetworkStatsClientCopy.lwmaDaa[cs ? 'cs' : 'en'], icon: TrendingUp, color: "text-zion-cyan", spark: diffData, sparkColor: "rgb(52,211,153)" },
-    { label: ExplorerNetworkStatsNetworkStatsClientCopy.blockTime[cs ? 'cs' : 'en'], value: stats?.avg_block_time ? `${stats.avg_block_time.toFixed(1)}s` : "—", sub: `${stats?.target_block_time ?? 60}s ${ExplorerNetworkStatsNetworkStatsClientCopy.target[cs ? 'cs' : 'en']}`, icon: Clock, color: "text-zion-gold", spark: btData, sparkColor: "rgb(234,179,8)" },
-    { label: ExplorerNetworkStatsNetworkStatsClientCopy.height[cs ? 'cs' : 'en'], value: (stats?.block_height ?? 0).toLocaleString(), sub: ExplorerNetworkStatsNetworkStatsClientCopy.currentBlock[cs ? 'cs' : 'en'], icon: Blocks, color: "text-zion-purple", spark: [], sparkColor: "rgb(228, 30, 43)" },
-    { label: ExplorerNetworkStatsNetworkStatsClientCopy.totalTx[cs ? 'cs' : 'en'], value: (stats?.tx_count ?? 0).toLocaleString(), sub: `${stats?.tx_pool_size ?? 0} ${ExplorerNetworkStatsNetworkStatsClientCopy.inMempool[cs ? 'cs' : 'en']}`, icon: Layers, color: "text-zion-cyan", spark: txData, sparkColor: "rgb(6,105,40)" },
-    { label: ExplorerNetworkStatsNetworkStatsClientCopy.peers[cs ? 'cs' : 'en'], value: (stats?.total_connections ?? 0).toLocaleString(), sub: `${stats?.incoming_connections ?? 0} ${ExplorerNetworkStatsNetworkStatsClientCopy.in[cs ? 'cs' : 'en']} / ${stats?.outgoing_connections ?? 0} ${ExplorerNetworkStatsNetworkStatsClientCopy.out[cs ? 'cs' : 'en']}`, icon: Network, color: "text-zion-purple", spark: [], sparkColor: "rgb(251,113,133)" },
-    { label: ExplorerNetworkStatsNetworkStatsClientCopy.poolHashrate[cs ? 'cs' : 'en'], value: stats?.pool_hashrate_formatted ?? "—", sub: `${stats?.active_miners ?? 0} ${ExplorerNetworkStatsNetworkStatsClientCopy.miners[cs ? 'cs' : 'en']}`, icon: Pickaxe, color: "text-zion-gold", spark: [], sparkColor: "rgb(252, 209, 22)" },
-    { label: ExplorerNetworkStatsNetworkStatsClientCopy.altBlocks[cs ? 'cs' : 'en'], value: (stats?.alt_blocks_count ?? 0).toLocaleString(), sub: ExplorerNetworkStatsNetworkStatsClientCopy.potentialForks[cs ? 'cs' : 'en'], icon: BarChart3, color: "text-slate-400", spark: [], sparkColor: "rgb(148,163,184)" },
+    { label: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.hashrate, lang), value: stats?.network_hashrate_formatted ?? "—", sub: fmtHashrate(stats?.network_hashrate ?? 0), icon: Zap, color: "text-zion-cyan", spark: hrData, sparkColor: "rgb(34,211,238)" },
+    { label: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.difficulty, lang), value: fmtSI(stats?.difficulty ?? 0), sub: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.lwmaDaa, lang), icon: TrendingUp, color: "text-zion-cyan", spark: diffData, sparkColor: "rgb(52,211,153)" },
+    { label: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.blockTime, lang), value: stats?.avg_block_time ? `${stats.avg_block_time.toFixed(1)}s` : "—", sub: `${stats?.target_block_time ?? 60}s ${tx5(ExplorerNetworkStatsNetworkStatsClientCopy.target, lang)}`, icon: Clock, color: "text-zion-gold", spark: btData, sparkColor: "rgb(234,179,8)" },
+    { label: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.height, lang), value: (stats?.block_height ?? 0).toLocaleString(), sub: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.currentBlock, lang), icon: Blocks, color: "text-zion-purple", spark: [], sparkColor: "rgb(228, 30, 43)" },
+    { label: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.totalTx, lang), value: (stats?.tx_count ?? 0).toLocaleString(), sub: `${stats?.tx_pool_size ?? 0} ${tx5(ExplorerNetworkStatsNetworkStatsClientCopy.inMempool, lang)}`, icon: Layers, color: "text-zion-cyan", spark: txData, sparkColor: "rgb(6,105,40)" },
+    { label: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.peers, lang), value: (stats?.total_connections ?? 0).toLocaleString(), sub: `${stats?.incoming_connections ?? 0} ${tx5(ExplorerNetworkStatsNetworkStatsClientCopy.in, lang)} / ${stats?.outgoing_connections ?? 0} ${tx5(ExplorerNetworkStatsNetworkStatsClientCopy.out, lang)}`, icon: Network, color: "text-zion-purple", spark: [], sparkColor: "rgb(251,113,133)" },
+    { label: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.poolHashrate, lang), value: stats?.pool_hashrate_formatted ?? "—", sub: `${stats?.active_miners ?? 0} ${tx5(ExplorerNetworkStatsNetworkStatsClientCopy.miners, lang)}`, icon: Pickaxe, color: "text-zion-gold", spark: [], sparkColor: "rgb(252, 209, 22)" },
+    { label: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.altBlocks, lang), value: (stats?.alt_blocks_count ?? 0).toLocaleString(), sub: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.potentialForks, lang), icon: BarChart3, color: "text-slate-400", spark: [], sparkColor: "rgb(148,163,184)" },
   ];
 
   const chartCards = [
-    { key: "hashrate", title: ExplorerNetworkStatsNetworkStatsClientCopy.hashrate24h[cs ? 'cs' : 'en'], icon: Zap, color: "#22d3ee", data: hrData },
-    { key: "difficulty", title: ExplorerNetworkStatsNetworkStatsClientCopy.difficulty24h[cs ? 'cs' : 'en'], icon: TrendingUp, color: "#34d399", data: diffData },
-    { key: "blocktime", title: ExplorerNetworkStatsNetworkStatsClientCopy.blockTime24h[cs ? 'cs' : 'en'], icon: Clock, color: "#eab308", data: btData },
-    { key: "txcount", title: ExplorerNetworkStatsNetworkStatsClientCopy.txBlock24h[cs ? 'cs' : 'en'], icon: Layers, color: "#066928", data: txData },
+    { key: "hashrate", title: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.hashrate24h, lang), icon: Zap, color: "#22d3ee", data: hrData },
+    { key: "difficulty", title: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.difficulty24h, lang), icon: TrendingUp, color: "#34d399", data: diffData },
+    { key: "blocktime", title: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.blockTime24h, lang), icon: Clock, color: "#eab308", data: btData },
+    { key: "txcount", title: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.txBlock24h, lang), icon: Layers, color: "#066928", data: txData },
   ];
 
   return (
@@ -245,20 +246,20 @@ export default function NetworkStatsClient() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple uppercase">
                 <Network className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {ExplorerNetworkStatsNetworkStatsClientCopy.network[cs ? 'cs' : 'en']}
+                {SITE_RELEASE_LABEL} · {tx5(ExplorerNetworkStatsNetworkStatsClientCopy.network, lang)}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{ExplorerNetworkStatsNetworkStatsClientCopy.liveMetrics[cs ? 'cs' : 'en']}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{tx5(ExplorerNetworkStatsNetworkStatsClientCopy.liveMetrics, lang)}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {ExplorerNetworkStatsNetworkStatsClientCopy.networkStats[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerNetworkStatsNetworkStatsClientCopy.networkStats, lang)}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {ExplorerNetworkStatsNetworkStatsClientCopy.hashrateDifficultyBlockTimeAnd[cs ? 'cs' : 'en']}
+                {tx5(ExplorerNetworkStatsNetworkStatsClientCopy.hashrateDifficultyBlockTimeAnd, lang)}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Globe className="h-3 w-3 text-zion-cyan" /> {stats?.connected ? (ExplorerNetworkStatsNetworkStatsClientCopy.online[cs ? 'cs' : 'en']) : (ExplorerNetworkStatsNetworkStatsClientCopy.offline[cs ? 'cs' : 'en'])}
+                  <Globe className="h-3 w-3 text-zion-cyan" /> {stats?.connected ? (tx5(ExplorerNetworkStatsNetworkStatsClientCopy.online, lang)) : (tx5(ExplorerNetworkStatsNetworkStatsClientCopy.offline, lang))}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Hash className="h-3 w-3 text-zion-gold" /> {stats?.version || "v3.2.0"}
@@ -271,10 +272,10 @@ export default function NetworkStatsClient() {
         {/* ═══════ STATS GRID ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerNetworkStatsNetworkStatsClientCopy.current[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(ExplorerNetworkStatsNetworkStatsClientCopy.current, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-zion-cyan" />
-              {ExplorerNetworkStatsNetworkStatsClientCopy.networkStatistics[cs ? 'cs' : 'en']}
+              {tx5(ExplorerNetworkStatsNetworkStatsClientCopy.networkStatistics, lang)}
             </h2>
           </div>
 
@@ -310,10 +311,10 @@ export default function NetworkStatsClient() {
         {/* ═══════ CHARTS ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerNetworkStatsNetworkStatsClientCopy.trends[cs ? 'cs' : 'en']}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(ExplorerNetworkStatsNetworkStatsClientCopy.trends, lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <BarChart3 className="h-7 w-7 text-zion-purple" />
-              {ExplorerNetworkStatsNetworkStatsClientCopy.k24hCharts[cs ? 'cs' : 'en']}
+              {tx5(ExplorerNetworkStatsNetworkStatsClientCopy.k24hCharts, lang)}
             </h2>
           </div>
 
@@ -345,14 +346,14 @@ export default function NetworkStatsClient() {
                     {c.data.length > 0 ? (
                       <AreaChart values={c.data} color={c.color} height={160} />
                     ) : (
-                      <div className="h-full flex items-center justify-center text-xs text-gray-600">{ExplorerNetworkStatsNetworkStatsClientCopy.noData[cs ? 'cs' : 'en']}</div>
+                      <div className="h-full flex items-center justify-center text-xs text-gray-600">{tx5(ExplorerNetworkStatsNetworkStatsClientCopy.noData, lang)}</div>
                     )}
                   </div>
                   <div className="grid grid-cols-3 border-t border-white/6 mt-4 pt-3">
                     {[
-                      { label: ExplorerNetworkStatsNetworkStatsClientCopy.min[cs ? 'cs' : 'en'], value: min },
-                      { label: ExplorerNetworkStatsNetworkStatsClientCopy.avg[cs ? 'cs' : 'en'], value: avg },
-                      { label: ExplorerNetworkStatsNetworkStatsClientCopy.max[cs ? 'cs' : 'en'], value: max },
+                      { label: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.min, lang), value: min },
+                      { label: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.avg, lang), value: avg },
+                      { label: tx5(ExplorerNetworkStatsNetworkStatsClientCopy.max, lang), value: max },
                     ].map((s, i) => (
                       <div key={s.label} className={`text-center ${i < 2 ? "border-r border-white/6" : ""}`}>
                         <p className="text-[11px] uppercase tracking-wider text-gray-500">{s.label}</p>
@@ -371,22 +372,20 @@ export default function NetworkStatsClient() {
           <Network className="mx-auto h-12 w-12 text-zion-cyan" />
           <h2 className="mt-6 text-3xl font-semibold text-white">ZION Network</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            {ExplorerNetworkStatsNetworkStatsClientCopy.nativeRustP2pNetworkWithLwmaDa[cs ? 'cs' : 'en']}
+            {tx5(ExplorerNetworkStatsNetworkStatsClientCopy.nativeRustP2pNetworkWithLwmaDa, lang)}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link href="/network" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
-              <Globe className="h-4 w-4" /> {ExplorerNetworkStatsNetworkStatsClientCopy.networkStatus[cs ? 'cs' : 'en']}
+              <Globe className="h-4 w-4" /> {tx5(ExplorerNetworkStatsNetworkStatsClientCopy.networkStatus, lang)}
             </Link>
             <Link href="/explorer/supply" className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-6 py-3 text-sm font-semibold text-white border border-white/10">
-              <BarChart3 className="h-4 w-4" /> {ExplorerNetworkStatsNetworkStatsClientCopy.supply[cs ? 'cs' : 'en']}
+              <BarChart3 className="h-4 w-4" /> {tx5(ExplorerNetworkStatsNetworkStatsClientCopy.supply, lang)}
             </Link>
           </div>
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          {cs
-            ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Network Stats · Data v reálném čase · Aktualizace každých 30 s`
-            : `ZION TerraNova ${SITE_RELEASE_LABEL} — Network Stats · Real-time data · Updates every 30s`}
+          {cs ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Network Stats · Data v reálném čase · Aktualizace každých 30 s` : t5(`ZION TerraNova ${SITE_RELEASE_LABEL} — Network Stats · Real-time data · Updates every 30s`, lang)}
         </p>
       </div>
     </div>

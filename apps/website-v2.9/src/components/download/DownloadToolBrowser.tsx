@@ -1,5 +1,8 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
+
 import Link from 'next/link';
 import {
   ArrowDownToLine,
@@ -101,60 +104,60 @@ type Feature = {
   desc: string;
 };
 
-function getBoostMinerFeatures(cs: boolean): Feature[] {
+function getBoostMinerFeatures(cs: boolean, lang: Lang): Feature[] {
   return [
     {
       id: 'boost-miner',
       icon: <Zap className="h-5 w-5" />,
-      label: DownloadToolBrowserCopy.boostMiner[cs ? 'cs' : 'en'],
-      desc: DownloadToolBrowserCopy.threeStreamsZionPrimaryGpuCpu[cs ? 'cs' : 'en'],
+      label: tx5(DownloadToolBrowserCopy.boostMiner, lang),
+      desc: tx5(DownloadToolBrowserCopy.threeStreamsZionPrimaryGpuCpu, lang),
     },
     {
       id: 'zion-liquidity',
       icon: <Droplets className="h-5 w-5" />,
-      label: DownloadToolBrowserCopy.zionLiquidity[cs ? 'cs' : 'en'],
-      desc: DownloadToolBrowserCopy.poolHandlesConversionsNoExchan[cs ? 'cs' : 'en'],
+      label: tx5(DownloadToolBrowserCopy.zionLiquidity, lang),
+      desc: tx5(DownloadToolBrowserCopy.poolHandlesConversionsNoExchan, lang),
     },
     {
       id: 'auto-gpu-backend',
       icon: <Cpu className="h-5 w-5" />,
-      label: DownloadToolBrowserCopy.autoGpuBackend[cs ? 'cs' : 'en'],
-      desc: DownloadToolBrowserCopy.autoGpuBackendDesc[cs ? 'cs' : 'en'],
+      label: tx5(DownloadToolBrowserCopy.autoGpuBackend, lang),
+      desc: tx5(DownloadToolBrowserCopy.autoGpuBackendDesc, lang),
     },
     {
       id: 'tui-dashboard',
       icon: <Terminal className="h-5 w-5" />,
-      label: DownloadToolBrowserCopy.tuiDashboard[cs ? 'cs' : 'en'],
-      desc: DownloadToolBrowserCopy.tuiDashboardDesc[cs ? 'cs' : 'en'],
+      label: tx5(DownloadToolBrowserCopy.tuiDashboard, lang),
+      desc: tx5(DownloadToolBrowserCopy.tuiDashboardDesc, lang),
     },
   ];
 }
 
-function getCliFeatures(cs: boolean): Feature[] {
+function getCliFeatures(cs: boolean, lang: Lang): Feature[] {
   return [
     {
       id: 'wallet',
       icon: <ShieldCheck className="h-5 w-5" />,
-      label: DownloadToolBrowserCopy.wallet[cs ? 'cs' : 'en'],
-      desc: DownloadToolBrowserCopy.ed25519Bip39MnemonicBalanceSen[cs ? 'cs' : 'en'],
+      label: tx5(DownloadToolBrowserCopy.wallet, lang),
+      desc: tx5(DownloadToolBrowserCopy.ed25519Bip39MnemonicBalanceSen, lang),
     },
     {
       id: 'node',
       icon: <Terminal className="h-5 w-5" />,
-      label: DownloadToolBrowserCopy.node[cs ? 'cs' : 'en'],
-      desc: DownloadToolBrowserCopy.fullL1NodeBlocksTransactionsMe[cs ? 'cs' : 'en'],
+      label: tx5(DownloadToolBrowserCopy.node, lang),
+      desc: tx5(DownloadToolBrowserCopy.fullL1NodeBlocksTransactionsMe, lang),
     },
     {
       id: 'mine',
       icon: <ArrowDownToLine className="h-5 w-5" />,
-      label: DownloadToolBrowserCopy.miner[cs ? 'cs' : 'en'],
-      desc: DownloadToolBrowserCopy.cpuGpuMiningWithEkamDeekshaDua[cs ? 'cs' : 'en'],
+      label: tx5(DownloadToolBrowserCopy.miner, lang),
+      desc: tx5(DownloadToolBrowserCopy.cpuGpuMiningWithEkamDeekshaDua, lang),
     },
     {
       id: 'pool',
       icon: <MenuIcon className="h-5 w-5" />,
-      label: DownloadToolBrowserCopy.pool[cs ? 'cs' : 'en'],
-      desc: DownloadToolBrowserCopy.stratumPoolMonitoringStats[cs ? 'cs' : 'en'],
+      label: tx5(DownloadToolBrowserCopy.pool, lang),
+      desc: tx5(DownloadToolBrowserCopy.stratumPoolMonitoringStats, lang),
     },
   ];
 }
@@ -165,14 +168,16 @@ function ReleaseCard({
   release,
   variant,
   cs,
+  lang,
 }: {
   release: typeof LATEST_RELEASE;
   variant: 'boost' | 'cli';
   cs: boolean;
+  lang: Lang;
 }) {
   const binaries = release.assets.filter((a) => a.platform !== 'checksum');
   const checksum = release.assets.find((a) => a.platform === 'checksum');
-  const features = variant === 'boost' ? getBoostMinerFeatures(cs) : getCliFeatures(cs);
+  const features = variant === 'boost' ? getBoostMinerFeatures(cs, lang) : getCliFeatures(cs, lang);
   const accent = '6, 105, 40';
   const primary = variant === 'boost';
 
@@ -193,18 +198,18 @@ function ReleaseCard({
                 <h2 className="text-xl sm:text-2xl font-semibold text-white">{release.tag}</h2>
                 {release.prerelease && (
                   <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-2.5 py-0.5 text-[10px] font-semibold text-zion-gold uppercase tracking-wider">
-                    {DownloadToolBrowserCopy.preRelease[cs ? 'cs' : 'en']}
+                    {tx5(DownloadToolBrowserCopy.preRelease, lang)}
                   </span>
                 )}
                 {primary && (
                   <span className="inline-flex items-center gap-1 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-2.5 py-0.5 text-[10px] font-semibold text-zion-cyan uppercase tracking-wider">
-                    {DownloadToolBrowserCopy.latest[cs ? 'cs' : 'en']}
+                    {tx5(DownloadToolBrowserCopy.latest, lang)}
                   </span>
                 )}
               </div>
               <p className="text-sm text-gray-400 mt-0.5">{release.name}</p>
               <p className="text-xs text-gray-500 mt-1">
-                {DownloadToolBrowserCopy.published[cs ? 'cs' : 'en']} {release.publishedAt}
+                {tx5(DownloadToolBrowserCopy.published, lang)} {release.publishedAt}
               </p>
             </div>
           </div>
@@ -215,7 +220,7 @@ function ReleaseCard({
             className="zion-button-secondary text-sm"
           >
             <ExternalLink className="h-4 w-4" />
-            {DownloadToolBrowserCopy.githubRelease[cs ? 'cs' : 'en']}
+            {tx5(DownloadToolBrowserCopy.githubRelease, lang)}
           </Link>
         </div>
       </div>
@@ -224,8 +229,8 @@ function ReleaseCard({
       <div className="space-y-3">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
           {variant === 'boost'
-            ? (DownloadToolBrowserCopy.boostMinerEverythingYouNeed[cs ? 'cs' : 'en'])
-            : (DownloadToolBrowserCopy.oneBinaryEverythingYouNeed[cs ? 'cs' : 'en'])}
+            ? (tx5(DownloadToolBrowserCopy.boostMinerEverythingYouNeed, lang))
+            : (tx5(DownloadToolBrowserCopy.oneBinaryEverythingYouNeed, lang))}
         </p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((feat) => (
@@ -244,11 +249,11 @@ function ReleaseCard({
         </div>
         {variant === 'boost' ? (
           <p className="text-xs text-gray-500">
-            {DownloadToolBrowserCopy.theBoostMinerMinesZionWithThree[cs ? 'cs' : 'en']}
+            {tx5(DownloadToolBrowserCopy.theBoostMinerMinesZionWithThree, lang)}
           </p>
         ) : (
           <p className="text-xs text-gray-500">
-            {DownloadToolBrowserCopy.runZionWithNoArgumentsForAnInt[cs ? 'cs' : 'en']}
+            {tx5(DownloadToolBrowserCopy.runZionWithNoArgumentsForAnInt, lang)}
           </p>
         )}
       </div>
@@ -257,10 +262,10 @@ function ReleaseCard({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-            {DownloadToolBrowserCopy.downloads[cs ? 'cs' : 'en']}
+            {tx5(DownloadToolBrowserCopy.downloads, lang)}
           </p>
           <span className="text-xs text-gray-500">
-            {binaries.length} {DownloadToolBrowserCopy.packages[cs ? 'cs' : 'en']}
+            {binaries.length} {tx5(DownloadToolBrowserCopy.packages, lang)}
           </span>
         </div>
 
@@ -300,7 +305,7 @@ function ReleaseCard({
                     className="zion-button-secondary text-sm"
                   >
                     <ArrowDownToLine className="h-4 w-4" />
-                    {DownloadToolBrowserCopy.download[cs ? 'cs' : 'en']}
+                    {tx5(DownloadToolBrowserCopy.download, lang)}
                   </Link>
                 </div>
               </div>
@@ -319,10 +324,10 @@ function ReleaseCard({
             <ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-zion-cyan" />
             <div>
               <h3 className="text-sm font-semibold text-white">
-                {DownloadToolBrowserCopy.sha256Verification[cs ? 'cs' : 'en']}
+                {tx5(DownloadToolBrowserCopy.sha256Verification, lang)}
               </h3>
               <p className="text-xs text-gray-400 mt-1">
-                {DownloadToolBrowserCopy.downloadSha256sumsTxtAndVerify[cs ? 'cs' : 'en']}
+                {tx5(DownloadToolBrowserCopy.downloadSha256sumsTxtAndVerify, lang)}
               </p>
               <div className="mt-2 rounded-lg bg-black/60 p-2 font-mono text-[10px] text-gray-300 overflow-x-auto">
                 <span className="text-gray-500">$</span> sha256sum -c SHA256SUMS.txt
@@ -352,7 +357,7 @@ function ReleaseCard({
           <div className="flex items-center gap-3 mb-3">
             <Terminal className="h-5 w-5 text-zion-cyan" />
             <h3 className="text-sm font-semibold text-white">
-              {DownloadToolBrowserCopy.quickStartBoostMiner[cs ? 'cs' : 'en']}
+              {tx5(DownloadToolBrowserCopy.quickStartBoostMiner, lang)}
             </h3>
           </div>
           <div className="rounded-lg bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto space-y-1">
@@ -361,7 +366,7 @@ function ReleaseCard({
             <div><span className="text-gray-500">$</span> ./zion-miner</div>
           </div>
           <p className="text-xs text-gray-400 mt-3">
-            {DownloadToolBrowserCopy.theMinerConnectsToTheOfficialP[cs ? 'cs' : 'en']}
+            {tx5(DownloadToolBrowserCopy.theMinerConnectsToTheOfficialP, lang)}
           </p>
         </div>
       ) : (
@@ -372,7 +377,7 @@ function ReleaseCard({
           <div className="flex items-center gap-3 mb-3">
             <Terminal className="h-5 w-5 text-zion-cyan" />
             <h3 className="text-sm font-semibold text-white">
-              {DownloadToolBrowserCopy.quickStartCommunityCli[cs ? 'cs' : 'en']}
+              {tx5(DownloadToolBrowserCopy.quickStartCommunityCli, lang)}
             </h3>
           </div>
           <div className="rounded-lg bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto space-y-1">
@@ -381,7 +386,7 @@ function ReleaseCard({
             <div><span className="text-gray-500">$</span> ./zion</div>
           </div>
           <p className="text-xs text-gray-400 mt-3">
-            {DownloadToolBrowserCopy.theInteractiveMenuGuidesYouWal[cs ? 'cs' : 'en']}
+            {tx5(DownloadToolBrowserCopy.theInteractiveMenuGuidesYouWal, lang)}
           </p>
           <div className="mt-3 rounded-lg bg-black/40 p-2 font-mono text-[10px] text-gray-400 overflow-x-auto">
             <span className="text-gray-500">$</span> ./zion wallet new --mnemonic --out my-wallet.json
@@ -394,29 +399,29 @@ function ReleaseCard({
 
 /* ── component ── */
 
-export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
+export default function DownloadToolBrowser({ cs, lang }: { cs: boolean; lang: Lang }) {
   return (
     <section className="space-y-12">
       {/* ─── v3.2.0 — Terminal Miner (primary) ─── */}
       <div className="space-y-3">
         <p className="text-sm uppercase tracking-[0.4em] text-zion-cyan">
-          {DownloadToolBrowserCopy.latestReleaseBoostMiner[cs ? 'cs' : 'en']}
+          {tx5(DownloadToolBrowserCopy.latestReleaseBoostMiner, lang)}
         </p>
-        <ReleaseCard release={LATEST_RELEASE} variant="boost" cs={cs} />
+        <ReleaseCard release={LATEST_RELEASE} variant="boost" cs={cs} lang={lang} />
       </div>
 
       {/* ─── v3.2.0 — Community CLI (secondary) ─── */}
       <div className="space-y-3 pt-6 border-t border-white/5">
         <p className="text-sm uppercase tracking-[0.4em] text-zion-cyan">
-          {DownloadToolBrowserCopy.communityCliWalletNodePoolBasi[cs ? 'cs' : 'en']}
+          {tx5(DownloadToolBrowserCopy.communityCliWalletNodePoolBasi, lang)}
         </p>
-        <ReleaseCard release={COMMUNITY_CLI_RELEASE} variant="cli" cs={cs} />
+        <ReleaseCard release={COMMUNITY_CLI_RELEASE} variant="cli" cs={cs} lang={lang} />
       </div>
 
       {/* ─── Network parameters ─── */}
       <div className="space-y-3 pt-6 border-t border-white/5">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-          {DownloadToolBrowserCopy.networkParameters[cs ? 'cs' : 'en']}
+          {tx5(DownloadToolBrowserCopy.networkParameters, lang)}
         </p>
         <div
           className="zion-rainbow-sub p-5 overflow-x-auto"
@@ -447,11 +452,11 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
         <div className="flex items-center gap-3 mb-3">
           <Cpu className="h-5 w-5 text-zion-cyan" />
           <h3 className="text-sm font-semibold text-white">
-            {DownloadToolBrowserCopy.buildFromSource[cs ? 'cs' : 'en']}
+            {tx5(DownloadToolBrowserCopy.buildFromSource, lang)}
           </h3>
         </div>
         <p className="text-xs text-gray-400 mb-3">
-          {DownloadToolBrowserCopy.forArm64RaspberryPiAwsGraviton[cs ? 'cs' : 'en']}
+          {tx5(DownloadToolBrowserCopy.forArm64RaspberryPiAwsGraviton, lang)}
         </p>
         <div className="rounded-lg bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto space-y-1">
           <div><span className="text-gray-500">$</span> git clone {GITHUB_REPO_URL}.git</div>
