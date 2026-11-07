@@ -148,6 +148,24 @@ open(path, 'wb').write(struct.pack('<III', magic, ver, 12 + 8 + len(js) + len(ta
 
 `metallicFactor = 0` je důležitý: kov bez `scene.environment` je ve three.js černý.
 
+### 3.5 Špatné orámování vstupu nafoukne model
+
+TripoSR očekává **postavu vyplňující ~85 % plátna**. Když se jen zmenší celé
+čtvercové plátno i s prázdným okolím, dostane model malý objekt a vygeneruje
+nafouklý blob — naměřeno `extents ≈ [0.44, 1.01, 0.99]`, tedy hloubka jako výška,
+a v náhledu to vypadá jako placatá deska.
+
+Správně se postupuje jako v originálním `run.py`: odebrat pozadí, oříznout na
+ohraničující box postavy a teprve pak škálovat na 0.85.
+
+```python
+from tsr.utils import remove_background, resize_foreground
+image = resize_foreground(remove_background(Image.open(path), rembg.new_session()), 0.85)
+```
+
+Kontrola: `extents` musí mít výšku (osa Y) výrazně větší než hloubku (osa Z),
+např. `[0.268, 0.957, 0.397]`.
+
 ---
 
 ## 4. Generování jedné postavy
@@ -271,9 +289,69 @@ kompresi textury.
 
 ## 9. Dávkové zpracování 202 postav
 
+Autonomní dávku řeší tři skripty v `scripts/ops/avatar-3d/`:
+
+| Skript | Co dělá |
+|---|---|
+| `crop-sheet.py` | Rozdělí dodaný výtvarný list na `front / side / back / detail`; hranice hledá jako svislé pruhy pozadí, jinak použije proporcionální fallback |
+| `generate.py` | Načte TripoSR **jednou** a v cyklu generuje všechny postavy; je opakovatelný (hotové přeskočí), chybu jedné postavy zapíše a pokračuje |
+| `qa.mjs` | Vykreslí kontrolní list: portrét + čtyři pohledy pro každé ID, do jednoho PNG |
+
+### Spuštění celé dávky
+
+```bash
+export TRIPOSR_SRC=$WORK/triposr-source
+export HF_HOME=$WORK/krishna-hf U2NET_HOME=$WORK/krishna-u2net
+VPY=$WORK/krishna-triposr/bin/python
+
+# 1) Rozbalit dávku a rozdělit listy na pohledy
+mkdir -p "$WORK/in"
+unzip -q heros/Avatars/ZION_OASIS_3D_PODKLADY_25_DAVKA_01.zip -d "$WORK/raw"
+for sheet in "$WORK"/raw/*/avatari/*/*-sheet.png; do
+  id=$(basename "$(dirname "$sheet")")
+  "$VPY" scripts/ops/avatar-3d/crop-sheet.py "$sheet" "$WORK/in" --id "$id"
+done
+
+# 2) Vygenerovat (lze pustit na noc; report je append-only JSONL)
+"$VPY" scripts/ops/avatar-3d/generate.py \
+  --input "$WORK/in" --out .artifacts/avatar-3d/stage \
+  --device mps --mc 192 --resolution 1024
+
+# 3) Zkontrolovat
+node scripts/ops/avatar-3d/qa.mjs --ids 000,003,051 --out .artifacts/avatar-3d/qa
+```
+
+`qa.mjs` potřebuje statický server nad repem (`python3 -m http.server 8769`)
+a `puppeteer-core` s nainstalovaným Chrome.
+
+### Naměřená propustnost (M1, 8 GB, mc 192, textura 1024)
+
+| | Čas |
+|---|---|
+| První postava (včetně načtení modelu) | 60 s |
+| Další postavy (model v paměti) | **35–43 s** |
+| Celá dávka 202 postav | **~2–2,5 h** bez obsluhy |
+| Disk (staging) | ~2,5 MB / postava → ~500 MB |
+
+**Model se načítá jednou.** Kdyby se pouštěl `run.py` per postava, připlatilo by se
+6–13 s na každé — u 202 postav téměř hodina navíc.
+
+### Co dávka ještě neumí (otevřené)
+
+- **Decimace na herní rozpočet.** Modely mají 25–35 tis. trojúhelníků a 2–2,6 MB;
+  decimace s UV by rozbila texturu, takže by se musela znovu zapéct. Zatím neřešeno.
+- **Rig a animace.** Není součástí image-to-3D. Samostatný krok v Blenderu
+  (headless + auto-rig), pro blobovitou síť nespolehlivý.
+- **Automatické hodnocení podoby.** `qa.mjs` dělá podklad pro lidské oko; žádné
+  měření podobnosti tváře není. Bez něj nejde dávka schválit bez dohledu.
+
+
+
 Pořadí je dané a nedoporučuji ho přeskakovat:
 
-1. **Pilot** (1 postava) → schválit kvalitu a rozpočet. Hotovo pro Krišnu, **neprošlo**.
+1. **Pilot** (1 postava) → schválit kvalitu a rozpočet. Hotovo pro Krišnu: technicky
+   prošel (stojí, má texturu, správné proporce), **výtvarně je na hraně** — tvář je
+   měkká a detaily nečitelné.
 2. **Reprezentativní sada 6–8 postav** s odlišnou anatomií: Hanumán (ocas, zvířecí hlava),
    Ganéša (sloní hlava), Maitréja (dítě), Dalaí Lama (stařec, brýle), Vadžrasattva
    (atributy), Panna Maria (závoj), bojovník se zbrojí.
@@ -315,6 +393,8 @@ podle rychlosti GPU.
 | Chybí koruna / pero | segmentace odstranila světlé partie | ruční maska + `--no-remove-bg` |
 | Vyšlo jen torzo | vstup byl portrét, ne celá postava | použít výtvarný list |
 | `No such file or directory ... mesh.glb` | TripoSR nevytvoří cílový adresář | `mkdir -p <out>/0` |
+| Model je placatá deska / nafouklý | vstup nemá postavu na 85 % plátna | oprava 3.5 |
+| V QA listu sedí pohledy k jiné postavě | WebGL má počátek vlevo dole | flip `y` podle počtu řádků |
 
 ---
 
@@ -322,5 +402,9 @@ podle rychlosti GPU.
 
 - 2026-11-07: první pokus (portrét) → busta, rozbitá orientace a povrch.
 - 2026-11-07: oprava os, materiálu a bake textury; vstup z výtvarného listu (dávka 01).
-  Výsledek technicky správný, výtvarně nedostatečný → **do hry nezapojeno**.
-- Artefakty: `.artifacts/krishna-triposr-pilot/` (náhled `preview.html`, GLB, snímky).
+- 2026-11-07: autonomní dávka (`crop-sheet.py`, `generate.py`, `qa.mjs`) a pátá oprava
+  orámování. Tři postavy (Krišna, Hanumán, Dalaí Lama) prošly technicky: 25–35 tis.
+  trojúhelníků, 2–2,6 MB, 35–60 s na postavu, správné proporce, čitelné barvy.
+  **Do hry nezapojeno** — chybí decimace, rig a schválení podoby.
+- Artefakty: `.artifacts/avatar-3d/stage/` (modely), `.artifacts/avatar-3d/qa/`
+  (kontrolní listy), `.artifacts/krishna-triposr-pilot/` (první pokusy).
