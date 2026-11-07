@@ -74,6 +74,8 @@ export interface AvatarDef {
   consciousness_level_name: string;
   key: string;
   rarity: string;
+  /** Veřejná URL portrétu (finální art ?? herní 3D náhled). */
+  image_url?: string;
 }
 
 export interface QuestDef {

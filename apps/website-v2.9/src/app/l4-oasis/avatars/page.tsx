@@ -166,8 +166,10 @@ function loadSpecs(): Promise<SheetSpec[]> {
 function AvatarVisual({ a, size, lang }: { a: OasisAvatar; size: 'card' | 'modal'; lang: Lang }) {
   const cs = lang === 'cs';
   const ray = RAY_META[a.ray] ?? RAY_META.Blue;
-  const portrait = portraitOf(a);
-  // Herní 3D náhled má přednost; koncept z OASIS Collection je fallback.
+  // Finální portrét (dávka 2026-11) má přednost před procedurálním 3D náhledem —
+  // ten zůstává pro postavy, které samostatný render zatím nemají (011–020, 052).
+  const finalArt = a.art.final ? a.art.full || a.art.card : '';
+  const portrait = finalArt || portraitOf(a);
   const src = portrait ?? (size === 'modal' ? (a.art.full || a.art.card) : a.art.card);
   const initial = (a.name.trim()[0] ?? '?').toUpperCase();
   const box = size === 'modal' ? 'h-56 w-44 text-3xl md:h-64 md:w-52' : 'h-16 w-16 text-xl';
@@ -197,7 +199,7 @@ function AvatarCard({ a, lang, onOpen }: { a: OasisAvatar; lang: Lang; onOpen: (
   const cs = lang === 'cs';
   const ray = RAY_META[a.ray] ?? RAY_META.Blue;
   const rarity = RARITY_META[a.rarity] ?? RARITY_META.Rare;
-  const src = portraitOf(a) ?? a.art.card;
+  const src = (a.art.final ? a.art.card : '') || portraitOf(a) || a.art.card;
   const initial = (a.name.trim()[0] ?? '?').toUpperCase();
   const detail = tx5(Copy.detailLabel, lang);
   return (
@@ -385,7 +387,7 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
         <div className="nav-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 md:p-8">
 
         <div className="flex items-start gap-4">
-          <AvatarVisual a={a} size="modal" lang={lang} />
+          {!a.art.final && <AvatarVisual a={a} size="modal" lang={lang} />}
           <div className="min-w-0 pr-10">
             <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
               {tx5(Copy.idLabel, lang)} {a.id} · {circleLabel}
@@ -395,9 +397,9 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
             {tx(a.quote, lang) && (
               <p className="mt-2 text-xs italic leading-relaxed text-gray-400">„{tx(a.quote, lang)}“</p>
             )}
-            {a.art.card && (
+            {!a.art.final && a.art.card && (
               <span className="mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] uppercase tracking-wider text-gray-400">
-                {tx5(portraitOf(a) ? Copy.artGame : a.art.final ? Copy.artFinal : Copy.artConcept, lang)}
+                {tx5(portraitOf(a) ? Copy.artGame : Copy.artConcept, lang)}
               </span>
             )}
           </div>
@@ -418,6 +420,21 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
             {tx5(Copy.nftLabel, lang)}: {a.rarity}
           </span>
         </div>
+
+        {a.art.final && (
+          <figure className="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+            <img
+              src={a.art.full || a.art.card}
+              alt={cs ? `Finální portrét avatara: ${a.name}` : `Final avatar portrait: ${a.name}`}
+              loading="lazy"
+              decoding="async"
+              className="w-full"
+            />
+            <figcaption className="border-t border-white/10 px-3 py-2 text-[10px] uppercase tracking-wider text-gray-500">
+              {tx5(Copy.artFinal, lang)}
+            </figcaption>
+          </figure>
+        )}
 
         {sheetOf(a) && (
           <figure className="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-black/40">

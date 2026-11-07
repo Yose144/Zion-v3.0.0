@@ -140,6 +140,16 @@ export default function AvatarsPanel() {
                 <X className="h-5 w-5" />
               </button>
 
+              {selected.image_url && (
+                <img
+                  src={selected.image_url}
+                  alt={`${selected.name} — portrait`}
+                  loading="lazy"
+                  decoding="async"
+                  className="mx-auto mb-5 aspect-square w-full max-w-xs rounded-2xl border border-white/10 object-cover"
+                />
+              )}
+
               <h2 className="mb-1 text-2xl font-bold text-oasis-cyan">{selected.name}</h2>
               <p className="mb-4 text-oasis-gold">{selected.subtitle}</p>
 
@@ -189,18 +199,29 @@ const AvatarCard = memo(function AvatarCard({
       onClick={() => onSelect(avatar)}
       whileHover={{ y: -4, scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
-      className="rounded-2xl border border-white/10 bg-white/5 p-5 text-left transition-colors hover:border-oasis-cyan/40"
+      className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 text-left transition-colors hover:border-oasis-cyan/40"
     >
-      <div className="mb-2 flex items-start justify-between">
-        <h3 className="text-lg font-bold text-oasis-cyan">{avatar.name}</h3>
-        <span className="rounded-full bg-oasis-gold/10 px-2 py-0.5 text-xs font-medium text-oasis-gold">
-          {avatar.rarity}
-        </span>
-      </div>
-      <p className="mb-4 text-sm text-white/70">{avatar.subtitle}</p>
-      <div className="flex flex-wrap gap-2 text-xs">
-        <Badge icon={Sparkles} text={avatar.ray} color="text-oasis-purple" />
-        <Badge icon={Star} text={`CL ${avatar.consciousness_level_required}`} color="text-oasis-emerald" />
+      {avatar.image_url ? (
+        <img
+          src={avatar.image_url}
+          alt={`${avatar.name} — portrait`}
+          loading="lazy"
+          decoding="async"
+          className="aspect-square w-full object-cover"
+        />
+      ) : null}
+      <div className="p-5">
+        <div className="mb-2 flex items-start justify-between">
+          <h3 className="text-lg font-bold text-oasis-cyan">{avatar.name}</h3>
+          <span className="rounded-full bg-oasis-gold/10 px-2 py-0.5 text-xs font-medium text-oasis-gold">
+            {avatar.rarity}
+          </span>
+        </div>
+        <p className="mb-4 text-sm text-white/70">{avatar.subtitle}</p>
+        <div className="flex flex-wrap gap-2 text-xs">
+          <Badge icon={Sparkles} text={avatar.ray} color="text-oasis-purple" />
+          <Badge icon={Star} text={`CL ${avatar.consciousness_level_required}`} color="text-oasis-emerald" />
+        </div>
       </div>
     </motion.button>
   );

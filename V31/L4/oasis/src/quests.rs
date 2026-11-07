@@ -24,6 +24,10 @@ pub struct AvatarDef {
     pub consciousness_level_name: String,
     pub key: String,
     pub rarity: String,
+    /// Veřejná URL portrétu (finální art ?? herní 3D náhled). Klienti
+    /// (OasisWeb, Marketplace) ho používají místo odvozování cesty z ID.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub image_url: Option<String>,
 }
 
 impl AvatarDef {
@@ -86,6 +90,11 @@ impl AvatarDef {
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string(),
+            image_url: val
+                .get("image_url")
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string()),
         })
     }
 }
@@ -363,10 +372,17 @@ mod tests {
             reg.all_avatars().len() >= 49,
             "expected at least 49 core avatars"
         );
-        // Verify Krishna-Maitreya exists
+        // Verify the merged Krishna–Maitreya avatar is present (web roster name: „Krishna")
         let km = reg.get_avatar(0).expect("Krishna-Maitreya should exist");
-        assert_eq!(km.name, "Krishna-Maitreya");
+        assert_eq!(km.name, "Krishna");
         assert_eq!(km.consciousness_level_required, 9);
+        // Portrét pro klienty (OasisWeb, Marketplace) — absolutní URL z rosteru.
+        assert!(
+            km.image_url
+                .as_deref()
+                .is_some_and(|u| u.starts_with("https://") && u.ends_with(".webp")),
+            "avatar 0 should carry an absolute portrait URL"
+        );
         // Verify all core avatars have quests
         let core_with_quests: Vec<_> = reg
             .all_avatars()

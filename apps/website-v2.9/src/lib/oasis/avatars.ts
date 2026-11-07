@@ -297,9 +297,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/001-krishna-maitreya.webp",
-      "full": "/oasis-assets/concept_svg/001-krishna-maitreya.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/000-krishna-maitreya.webp",
+      "full": "/oasis-assets/final_portraits/000-krishna-maitreya.webp",
+      "final": true
     },
     "circle": "hindu"
   },
@@ -406,8 +406,8 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/002-rama.webp",
-      "full": "/oasis-assets/final_portraits/002-rama.webp",
+      "card": "/oasis-assets/final_portraits/001-rama.webp",
+      "full": "/oasis-assets/final_portraits/001-rama.webp",
       "final": true
     },
     "circle": "hindu"
@@ -515,8 +515,8 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/003-sita.webp",
-      "full": "/oasis-assets/final_portraits/003-sita.webp",
+      "card": "/oasis-assets/final_portraits/002-sita.webp",
+      "full": "/oasis-assets/final_portraits/002-sita.webp",
       "final": true
     },
     "circle": "hindu"
@@ -624,8 +624,8 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/004-hanuman.webp",
-      "full": "/oasis-assets/final_portraits/004-hanuman.webp",
+      "card": "/oasis-assets/final_portraits/003-hanuman.webp",
+      "full": "/oasis-assets/final_portraits/003-hanuman.webp",
       "final": true
     },
     "circle": "hindu"
@@ -733,8 +733,8 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/005-maitreya.webp",
-      "full": "/oasis-assets/final_portraits/005-maitreya.webp",
+      "card": "/oasis-assets/final_portraits/004-maitreya.webp",
+      "full": "/oasis-assets/final_portraits/004-maitreya.webp",
       "final": true
     },
     "circle": "hindu"
@@ -842,9 +842,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/006-saraswati.webp",
-      "full": "/oasis-assets/concept_svg/006-saraswati.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/005-saraswati.webp",
+      "full": "/oasis-assets/final_portraits/005-saraswati.webp",
+      "final": true
     },
     "circle": "hindu"
   },
@@ -951,9 +951,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/007-isis-enamataru.webp",
-      "full": "/oasis-assets/concept_svg/007-isis-enamataru.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/006-isis-enamataru.webp",
+      "full": "/oasis-assets/final_portraits/006-isis-enamataru.webp",
+      "final": true
     },
     "circle": "hindu"
   },
@@ -1060,9 +1060,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/008-issobela-guardian.webp",
-      "full": "/oasis-assets/concept_svg/008-issobela-guardian.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/008-issobela-guardian.webp",
+      "full": "/oasis-assets/final_portraits/008-issobela-guardian.webp",
+      "final": true
     },
     "circle": "hindu"
   },
@@ -1169,9 +1169,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/009-shanti.webp",
-      "full": "/oasis-assets/concept_svg/009-shanti.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/009-shanti.webp",
+      "full": "/oasis-assets/final_portraits/009-shanti.webp",
+      "final": true
     },
     "circle": "hindu"
   },
@@ -1278,9 +1278,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/010-bronu-christ.webp",
-      "full": "/oasis-assets/concept_svg/010-bronu-christ.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/010-bronu-christ.webp",
+      "full": "/oasis-assets/final_portraits/010-bronu-christ.webp",
+      "final": true
     },
     "circle": "hindu"
   },
@@ -2477,9 +2477,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/021-tara.webp",
-      "full": "/oasis-assets/concept_svg/021-tara.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/020-tara.webp",
+      "full": "/oasis-assets/final_portraits/020-tara.webp",
+      "final": true
     },
     "circle": "buddhist"
   },
@@ -2586,9 +2586,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/022-avalokiteshvara.webp",
-      "full": "/oasis-assets/concept_svg/022-avalokiteshvara.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/021-avalokiteshvara.webp",
+      "full": "/oasis-assets/final_portraits/021-avalokiteshvara.webp",
+      "final": true
     },
     "circle": "buddhist"
   },
@@ -2695,9 +2695,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/023-vajrasattva.webp",
-      "full": "/oasis-assets/concept_svg/023-vajrasattva.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/022-vajrasattva.webp",
+      "full": "/oasis-assets/final_portraits/022-vajrasattva.webp",
+      "final": true
     },
     "circle": "buddhist"
   },
@@ -2804,9 +2804,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/024-dalai-lama-xiv.webp",
-      "full": "/oasis-assets/concept_svg/024-dalai-lama-xiv.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/051-dalai-lama-xiv.webp",
+      "full": "/oasis-assets/final_portraits/051-dalai-lama-xiv.webp",
+      "final": true
     },
     "circle": "buddhist"
   },
@@ -2913,9 +2913,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/025-el-morya.webp",
-      "full": "/oasis-assets/concept_svg/025-el-morya.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/029-el-morya.webp",
+      "full": "/oasis-assets/final_portraits/029-el-morya.webp",
+      "final": true
     },
     "circle": "ascended"
   },
@@ -3022,9 +3022,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/026-lanto.webp",
-      "full": "/oasis-assets/concept_svg/026-lanto.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/030-lanto.webp",
+      "full": "/oasis-assets/final_portraits/030-lanto.webp",
+      "final": true
     },
     "circle": "ascended"
   },
@@ -3131,9 +3131,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/027-paul-the-venetian.webp",
-      "full": "/oasis-assets/concept_svg/027-paul-the-venetian.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/031-paul-the-venetian.webp",
+      "full": "/oasis-assets/final_portraits/031-paul-the-venetian.webp",
+      "final": true
     },
     "circle": "ascended"
   },
@@ -3240,9 +3240,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/028-serapis-bey.webp",
-      "full": "/oasis-assets/concept_svg/028-serapis-bey.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/027-serapis-bey.webp",
+      "full": "/oasis-assets/final_portraits/027-serapis-bey.webp",
+      "final": true
     },
     "circle": "ascended"
   },
@@ -3349,9 +3349,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/029-hilarion.webp",
-      "full": "/oasis-assets/concept_svg/029-hilarion.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/032-hilarion.webp",
+      "full": "/oasis-assets/final_portraits/032-hilarion.webp",
+      "final": true
     },
     "circle": "ascended"
   },
@@ -3458,9 +3458,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/030-lady-nada.webp",
-      "full": "/oasis-assets/concept_svg/030-lady-nada.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/033-lady-nada.webp",
+      "full": "/oasis-assets/final_portraits/033-lady-nada.webp",
+      "final": true
     },
     "circle": "ascended"
   },
@@ -3567,9 +3567,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/031-saint-germain.webp",
-      "full": "/oasis-assets/concept_svg/031-saint-germain.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/026-saint-germain.webp",
+      "full": "/oasis-assets/final_portraits/026-saint-germain.webp",
+      "final": true
     },
     "circle": "ascended"
   },
@@ -3676,9 +3676,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/032-sanat-kumara.webp",
-      "full": "/oasis-assets/concept_svg/032-sanat-kumara.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/028-sanat-kumara.webp",
+      "full": "/oasis-assets/final_portraits/028-sanat-kumara.webp",
+      "final": true
     },
     "circle": "ascended"
   },
@@ -3785,9 +3785,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/033-mahavatar-babaji.webp",
-      "full": "/oasis-assets/concept_svg/033-mahavatar-babaji.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/024-mahavatar-babaji.webp",
+      "full": "/oasis-assets/final_portraits/024-mahavatar-babaji.webp",
+      "final": true
     },
     "circle": "ascended"
   },
@@ -3894,9 +3894,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/034-lady-gaia-vywamus.webp",
-      "full": "/oasis-assets/concept_svg/034-lady-gaia-vywamus.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/025-lady-gaia-vywamus.webp",
+      "full": "/oasis-assets/final_portraits/025-lady-gaia-vywamus.webp",
+      "final": true
     },
     "circle": "ascended"
   },
@@ -4003,9 +4003,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/035-king-arthur.webp",
-      "full": "/oasis-assets/concept_svg/035-king-arthur.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/023-king-arthur.webp",
+      "full": "/oasis-assets/final_portraits/023-king-arthur.webp",
+      "final": true
     },
     "circle": "historical"
   },
@@ -4112,9 +4112,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/036-karel-iv.webp",
-      "full": "/oasis-assets/concept_svg/036-karel-iv.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/035-karel-iv.webp",
+      "full": "/oasis-assets/final_portraits/035-karel-iv.webp",
+      "final": true
     },
     "circle": "historical"
   },
@@ -4221,9 +4221,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/037-albert-einstein.webp",
-      "full": "/oasis-assets/concept_svg/037-albert-einstein.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/036-albert-einstein.webp",
+      "full": "/oasis-assets/final_portraits/036-albert-einstein.webp",
+      "final": true
     },
     "circle": "historical"
   },
@@ -4330,9 +4330,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/038-mahatma-gandhi.webp",
-      "full": "/oasis-assets/concept_svg/038-mahatma-gandhi.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/037-mahatma-gandhi.webp",
+      "full": "/oasis-assets/final_portraits/037-mahatma-gandhi.webp",
+      "final": true
     },
     "circle": "historical"
   },
@@ -4439,9 +4439,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/039-subhadra.webp",
-      "full": "/oasis-assets/concept_svg/039-subhadra.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/039-subhadra.webp",
+      "full": "/oasis-assets/final_portraits/039-subhadra.webp",
+      "final": true
     },
     "circle": "historical"
   },
@@ -4548,9 +4548,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/040-vasudeva.webp",
-      "full": "/oasis-assets/concept_svg/040-vasudeva.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/041-vasudeva.webp",
+      "full": "/oasis-assets/final_portraits/041-vasudeva.webp",
+      "final": true
     },
     "circle": "historical"
   },
@@ -4657,9 +4657,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/041-neo.webp",
-      "full": "/oasis-assets/concept_svg/041-neo.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/046-neo.webp",
+      "full": "/oasis-assets/final_portraits/046-neo.webp",
+      "final": true
     },
     "circle": "matrix"
   },
@@ -4766,9 +4766,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/042-trinity.webp",
-      "full": "/oasis-assets/concept_svg/042-trinity.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/047-trinity.webp",
+      "full": "/oasis-assets/final_portraits/047-trinity.webp",
+      "final": true
     },
     "circle": "matrix"
   },
@@ -4875,9 +4875,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/043-morpheus.webp",
-      "full": "/oasis-assets/concept_svg/043-morpheus.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/048-morpheus.webp",
+      "full": "/oasis-assets/final_portraits/048-morpheus.webp",
+      "final": true
     },
     "circle": "matrix"
   },
@@ -4984,9 +4984,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/044-zion-the-last-city.webp",
-      "full": "/oasis-assets/concept_svg/044-zion-the-last-city.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/050-zion-the-last-city.webp",
+      "full": "/oasis-assets/final_portraits/050-zion-the-last-city.webp",
+      "final": true
     },
     "circle": "matrix"
   },
@@ -5093,9 +5093,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/045-sri-dattatreya.webp",
-      "full": "/oasis-assets/concept_svg/045-sri-dattatreya.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/042-sri-dattatreya.webp",
+      "full": "/oasis-assets/final_portraits/042-sri-dattatreya.webp",
+      "final": true
     },
     "circle": "zion"
   },
@@ -5202,9 +5202,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/046-maly-princ.webp",
-      "full": "/oasis-assets/concept_svg/046-maly-princ.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/043-maly-princ.webp",
+      "full": "/oasis-assets/final_portraits/043-maly-princ.webp",
+      "final": true
     },
     "circle": "zion"
   },
@@ -5311,9 +5311,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/047-hiranyagarbha.webp",
-      "full": "/oasis-assets/concept_svg/047-hiranyagarbha.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/044-hiranyagarbha.webp",
+      "full": "/oasis-assets/final_portraits/044-hiranyagarbha.webp",
+      "final": true
     },
     "circle": "zion"
   },
@@ -5420,9 +5420,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/048-sri-kalki-avatar.webp",
-      "full": "/oasis-assets/concept_svg/048-sri-kalki-avatar.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/045-sri-kalki-avatar.webp",
+      "full": "/oasis-assets/final_portraits/045-sri-kalki-avatar.webp",
+      "final": true
     },
     "circle": "zion"
   },
@@ -5529,9 +5529,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/049-elizabet.webp",
-      "full": "/oasis-assets/concept_svg/049-elizabet.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/040-elizabet.webp",
+      "full": "/oasis-assets/final_portraits/040-elizabet.webp",
+      "final": true
     },
     "circle": "zion"
   },
@@ -5618,9 +5618,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/050-hehaka-sapa-black-elk.webp",
-      "full": "/oasis-assets/concept_svg/050-hehaka-sapa-black-elk.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/052-hehaka-sapa-black-elk.webp",
+      "full": "/oasis-assets/final_portraits/052-hehaka-sapa-black-elk.webp",
+      "final": true
     },
     "circle": "first-nations"
   },
@@ -5707,9 +5707,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/051-ptesa-wi-white-buffalo-calf-woman.webp",
-      "full": "/oasis-assets/concept_svg/051-ptesa-wi-white-buffalo-calf-woman.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/053-ptesa-wi-white-buffalo-calf-woman.webp",
+      "full": "/oasis-assets/final_portraits/053-ptesa-wi-white-buffalo-calf-woman.webp",
+      "final": true
     },
     "circle": "first-nations"
   },
@@ -5885,9 +5885,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/053-hunahpu-xbalanque-hero-twins.webp",
-      "full": "/oasis-assets/concept_svg/053-hunahpu-xbalanque-hero-twins.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/055-hunahpu-xbalanque-hero-twins.webp",
+      "full": "/oasis-assets/final_portraits/055-hunahpu-xbalanque-hero-twins.webp",
+      "final": true
     },
     "circle": "first-nations"
   },
@@ -5974,9 +5974,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/054-don-mariano.webp",
-      "full": "/oasis-assets/concept_svg/054-don-mariano.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/056-don-mariano.webp",
+      "full": "/oasis-assets/final_portraits/056-don-mariano.webp",
+      "final": true
     },
     "circle": "first-nations"
   },
@@ -6063,9 +6063,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/055-dona-rosalia-ixmukane.webp",
-      "full": "/oasis-assets/concept_svg/055-dona-rosalia-ixmukane.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/057-dona-rosalia-ixmukane.webp",
+      "full": "/oasis-assets/final_portraits/057-dona-rosalia-ixmukane.webp",
+      "final": true
     },
     "circle": "first-nations"
   },
@@ -6152,9 +6152,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/056-bile-pero-white-feather.webp",
-      "full": "/oasis-assets/concept_svg/056-bile-pero-white-feather.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/058-bile-pero-white-feather.webp",
+      "full": "/oasis-assets/final_portraits/058-bile-pero-white-feather.webp",
+      "final": true
     },
     "circle": "first-nations"
   },
@@ -6241,9 +6241,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/057-ohniva-oka-fire-eyes.webp",
-      "full": "/oasis-assets/concept_svg/057-ohniva-oka-fire-eyes.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/059-ohniva-oka-fire-eyes.webp",
+      "full": "/oasis-assets/final_portraits/059-ohniva-oka-fire-eyes.webp",
+      "final": true
     },
     "circle": "first-nations"
   },
@@ -6330,9 +6330,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/058-davi-kopenawa.webp",
-      "full": "/oasis-assets/concept_svg/058-davi-kopenawa.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/060-davi-kopenawa.webp",
+      "full": "/oasis-assets/final_portraits/060-davi-kopenawa.webp",
+      "final": true
     },
     "circle": "first-nations"
   },
@@ -6419,9 +6419,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/059-heyokha-sacred-clown.webp",
-      "full": "/oasis-assets/concept_svg/059-heyokha-sacred-clown.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/061-heyokha-sacred-clown.webp",
+      "full": "/oasis-assets/final_portraits/061-heyokha-sacred-clown.webp",
+      "final": true
     },
     "circle": "first-nations"
   },
@@ -6508,9 +6508,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/060-la-ila-i.webp",
-      "full": "/oasis-assets/concept_svg/060-la-ila-i.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/062-la-ila-i.webp",
+      "full": "/oasis-assets/final_portraits/062-la-ila-i.webp",
+      "final": true
     },
     "circle": "pacific"
   },
@@ -6597,9 +6597,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/061-pele.webp",
-      "full": "/oasis-assets/concept_svg/061-pele.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/063-pele.webp",
+      "full": "/oasis-assets/final_portraits/063-pele.webp",
+      "final": true
     },
     "circle": "pacific"
   },
@@ -6686,9 +6686,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/062-hiiaka.webp",
-      "full": "/oasis-assets/concept_svg/062-hiiaka.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/064-hi-iaka.webp",
+      "full": "/oasis-assets/final_portraits/064-hi-iaka.webp",
+      "final": true
     },
     "circle": "pacific"
   },
@@ -6775,9 +6775,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/063-kane.webp",
-      "full": "/oasis-assets/concept_svg/063-kane.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/065-kane.webp",
+      "full": "/oasis-assets/final_portraits/065-kane.webp",
+      "final": true
     },
     "circle": "pacific"
   },
@@ -6864,9 +6864,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/064-kanaloa.webp",
-      "full": "/oasis-assets/concept_svg/064-kanaloa.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/066-kanaloa.webp",
+      "full": "/oasis-assets/final_portraits/066-kanaloa.webp",
+      "final": true
     },
     "circle": "pacific"
   },
@@ -6953,9 +6953,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/065-ku.webp",
-      "full": "/oasis-assets/concept_svg/065-ku.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/067-ku.webp",
+      "full": "/oasis-assets/final_portraits/067-ku.webp",
+      "final": true
     },
     "circle": "pacific"
   },
@@ -7042,9 +7042,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/066-lono.webp",
-      "full": "/oasis-assets/concept_svg/066-lono.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/068-lono.webp",
+      "full": "/oasis-assets/final_portraits/068-lono.webp",
+      "final": true
     },
     "circle": "pacific"
   },
@@ -7131,9 +7131,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/067-stara-kumu-lehua.webp",
-      "full": "/oasis-assets/concept_svg/067-stara-kumu-lehua.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/069-stara-kumu-lehua.webp",
+      "full": "/oasis-assets/final_portraits/069-stara-kumu-lehua.webp",
+      "final": true
     },
     "circle": "pacific"
   },
@@ -7220,9 +7220,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/068-hina.webp",
-      "full": "/oasis-assets/concept_svg/068-hina.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/070-hina.webp",
+      "full": "/oasis-assets/final_portraits/070-hina.webp",
+      "final": true
     },
     "circle": "pacific"
   },
@@ -7309,9 +7309,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/069-maui.webp",
-      "full": "/oasis-assets/concept_svg/069-maui.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/071-maui.webp",
+      "full": "/oasis-assets/final_portraits/071-maui.webp",
+      "final": true
     },
     "circle": "pacific"
   },
@@ -7398,9 +7398,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/070-padmasambhava.webp",
-      "full": "/oasis-assets/concept_svg/070-padmasambhava.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/072-padmasambhava.webp",
+      "full": "/oasis-assets/final_portraits/072-padmasambhava.webp",
+      "final": true
     },
     "circle": "tibet"
   },
@@ -7487,9 +7487,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/071-milarepa.webp",
-      "full": "/oasis-assets/concept_svg/071-milarepa.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/073-milarepa.webp",
+      "full": "/oasis-assets/final_portraits/073-milarepa.webp",
+      "final": true
     },
     "circle": "tibet"
   },
@@ -7576,9 +7576,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/072-tsongkhapa.webp",
-      "full": "/oasis-assets/concept_svg/072-tsongkhapa.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/074-tsongkhapa.webp",
+      "full": "/oasis-assets/final_portraits/074-tsongkhapa.webp",
+      "final": true
     },
     "circle": "tibet"
   },
@@ -7665,9 +7665,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/073-atisa.webp",
-      "full": "/oasis-assets/concept_svg/073-atisa.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/075-atisa.webp",
+      "full": "/oasis-assets/final_portraits/075-atisa.webp",
+      "final": true
     },
     "circle": "tibet"
   },
@@ -7754,9 +7754,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/074-marpa-lotsawa.webp",
-      "full": "/oasis-assets/concept_svg/074-marpa-lotsawa.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/076-marpa-lotsawa.webp",
+      "full": "/oasis-assets/final_portraits/076-marpa-lotsawa.webp",
+      "final": true
     },
     "circle": "tibet"
   },
@@ -7843,9 +7843,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/075-machik-labdron.webp",
-      "full": "/oasis-assets/concept_svg/075-machik-labdron.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/077-machik-labdron.webp",
+      "full": "/oasis-assets/final_portraits/077-machik-labdron.webp",
+      "final": true
     },
     "circle": "tibet"
   },
@@ -7932,9 +7932,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/076-manjusri.webp",
-      "full": "/oasis-assets/concept_svg/076-manjusri.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/078-manjusri.webp",
+      "full": "/oasis-assets/final_portraits/078-manjusri.webp",
+      "final": true
     },
     "circle": "tibet"
   },
@@ -8021,9 +8021,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/077-samantabhadra.webp",
-      "full": "/oasis-assets/concept_svg/077-samantabhadra.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/079-samantabhadra.webp",
+      "full": "/oasis-assets/final_portraits/079-samantabhadra.webp",
+      "final": true
     },
     "circle": "tibet"
   },
@@ -8110,9 +8110,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/078-medicine-buddha.webp",
-      "full": "/oasis-assets/concept_svg/078-medicine-buddha.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/080-medicine-buddha.webp",
+      "full": "/oasis-assets/final_portraits/080-medicine-buddha.webp",
+      "final": true
     },
     "circle": "tibet"
   },
@@ -8199,9 +8199,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/079-longchen-rabjam.webp",
-      "full": "/oasis-assets/concept_svg/079-longchen-rabjam.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/081-longchen-rabjam.webp",
+      "full": "/oasis-assets/final_portraits/081-longchen-rabjam.webp",
+      "final": true
     },
     "circle": "tibet"
   },
@@ -8288,9 +8288,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/080-shiva.webp",
-      "full": "/oasis-assets/concept_svg/080-shiva.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/082-shiva.webp",
+      "full": "/oasis-assets/final_portraits/082-shiva.webp",
+      "final": true
     },
     "circle": "india"
   },
@@ -8377,9 +8377,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/081-parvati.webp",
-      "full": "/oasis-assets/concept_svg/081-parvati.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/083-parvati.webp",
+      "full": "/oasis-assets/final_portraits/083-parvati.webp",
+      "final": true
     },
     "circle": "india"
   },
@@ -8466,9 +8466,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/082-ganesha.webp",
-      "full": "/oasis-assets/concept_svg/082-ganesha.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/084-ganesha.webp",
+      "full": "/oasis-assets/final_portraits/084-ganesha.webp",
+      "final": true
     },
     "circle": "india"
   },
@@ -8555,9 +8555,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/083-lakshmi.webp",
-      "full": "/oasis-assets/concept_svg/083-lakshmi.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/085-lakshmi.webp",
+      "full": "/oasis-assets/final_portraits/085-lakshmi.webp",
+      "final": true
     },
     "circle": "india"
   },
@@ -8644,9 +8644,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/084-durga.webp",
-      "full": "/oasis-assets/concept_svg/084-durga.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/086-durga.webp",
+      "full": "/oasis-assets/final_portraits/086-durga.webp",
+      "final": true
     },
     "circle": "india"
   },
@@ -8733,9 +8733,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/085-kali.webp",
-      "full": "/oasis-assets/concept_svg/085-kali.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/087-kali.webp",
+      "full": "/oasis-assets/final_portraits/087-kali.webp",
+      "final": true
     },
     "circle": "india"
   },
@@ -8822,9 +8822,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/086-kartikeya.webp",
-      "full": "/oasis-assets/concept_svg/086-kartikeya.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/088-kartikeya.webp",
+      "full": "/oasis-assets/final_portraits/088-kartikeya.webp",
+      "final": true
     },
     "circle": "india"
   },
@@ -8911,9 +8911,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/087-surya.webp",
-      "full": "/oasis-assets/concept_svg/087-surya.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/089-surya.webp",
+      "full": "/oasis-assets/final_portraits/089-surya.webp",
+      "final": true
     },
     "circle": "india"
   },
@@ -9000,9 +9000,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/088-indra.webp",
-      "full": "/oasis-assets/concept_svg/088-indra.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/090-indra.webp",
+      "full": "/oasis-assets/final_portraits/090-indra.webp",
+      "final": true
     },
     "circle": "india"
   },
@@ -9089,9 +9089,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/089-ganga.webp",
-      "full": "/oasis-assets/concept_svg/089-ganga.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/091-ganga.webp",
+      "full": "/oasis-assets/final_portraits/091-ganga.webp",
+      "final": true
     },
     "circle": "india"
   },
@@ -9178,9 +9178,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/090-amaterasu.webp",
-      "full": "/oasis-assets/concept_svg/090-amaterasu.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/092-amaterasu.webp",
+      "full": "/oasis-assets/final_portraits/092-amaterasu.webp",
+      "final": true
     },
     "circle": "japan"
   },
@@ -9267,9 +9267,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/091-susanoo.webp",
-      "full": "/oasis-assets/concept_svg/091-susanoo.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/093-susanoo.webp",
+      "full": "/oasis-assets/final_portraits/093-susanoo.webp",
+      "final": true
     },
     "circle": "japan"
   },
@@ -9356,9 +9356,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/092-tsukuyomi.webp",
-      "full": "/oasis-assets/concept_svg/092-tsukuyomi.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/094-tsukuyomi.webp",
+      "full": "/oasis-assets/final_portraits/094-tsukuyomi.webp",
+      "final": true
     },
     "circle": "japan"
   },
@@ -9445,9 +9445,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/093-inari.webp",
-      "full": "/oasis-assets/concept_svg/093-inari.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/095-inari.webp",
+      "full": "/oasis-assets/final_portraits/095-inari.webp",
+      "final": true
     },
     "circle": "japan"
   },
@@ -9534,9 +9534,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/094-okuninushi.webp",
-      "full": "/oasis-assets/concept_svg/094-okuninushi.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/096-okuninushi.webp",
+      "full": "/oasis-assets/final_portraits/096-okuninushi.webp",
+      "final": true
     },
     "circle": "japan"
   },
@@ -9623,9 +9623,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/095-izanami.webp",
-      "full": "/oasis-assets/concept_svg/095-izanami.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/097-izanami.webp",
+      "full": "/oasis-assets/final_portraits/097-izanami.webp",
+      "final": true
     },
     "circle": "japan"
   },
@@ -9712,9 +9712,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/096-hachiman.webp",
-      "full": "/oasis-assets/concept_svg/096-hachiman.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/098-hachiman.webp",
+      "full": "/oasis-assets/final_portraits/098-hachiman.webp",
+      "final": true
     },
     "circle": "japan"
   },
@@ -9801,9 +9801,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/097-benzaiten.webp",
-      "full": "/oasis-assets/concept_svg/097-benzaiten.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/099-benzaiten.webp",
+      "full": "/oasis-assets/final_portraits/099-benzaiten.webp",
+      "final": true
     },
     "circle": "japan"
   },
@@ -9890,9 +9890,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/098-kukai.webp",
-      "full": "/oasis-assets/concept_svg/098-kukai.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/100-kukai.webp",
+      "full": "/oasis-assets/final_portraits/100-kukai.webp",
+      "final": true
     },
     "circle": "japan"
   },
@@ -9979,9 +9979,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/099-nichiren.webp",
-      "full": "/oasis-assets/concept_svg/099-nichiren.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/101-nichiren.webp",
+      "full": "/oasis-assets/final_portraits/101-nichiren.webp",
+      "final": true
     },
     "circle": "japan"
   },
@@ -10068,9 +10068,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/100-xuanyuan-huangdi.webp",
-      "full": "/oasis-assets/concept_svg/100-xuanyuan-huangdi.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/102-xuanyuan-huangdi.webp",
+      "full": "/oasis-assets/final_portraits/102-xuanyuan-huangdi.webp",
+      "final": true
     },
     "circle": "china"
   },
@@ -10157,9 +10157,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/101-xiwangmu.webp",
-      "full": "/oasis-assets/concept_svg/101-xiwangmu.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/103-xiwangmu.webp",
+      "full": "/oasis-assets/final_portraits/103-xiwangmu.webp",
+      "final": true
     },
     "circle": "china"
   },
@@ -10246,9 +10246,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/102-laozi.webp",
-      "full": "/oasis-assets/concept_svg/102-laozi.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/104-laozi.webp",
+      "full": "/oasis-assets/final_portraits/104-laozi.webp",
+      "final": true
     },
     "circle": "china"
   },
@@ -10335,9 +10335,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/103-kongzi-confucius.webp",
-      "full": "/oasis-assets/concept_svg/103-kongzi-confucius.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/105-kongzi-confucius.webp",
+      "full": "/oasis-assets/final_portraits/105-kongzi-confucius.webp",
+      "final": true
     },
     "circle": "china"
   },
@@ -10424,9 +10424,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/104-guan-yu-guandi.webp",
-      "full": "/oasis-assets/concept_svg/104-guan-yu-guandi.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/106-guan-yu-guandi.webp",
+      "full": "/oasis-assets/final_portraits/106-guan-yu-guandi.webp",
+      "final": true
     },
     "circle": "china"
   },
@@ -10513,9 +10513,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/105-mazu.webp",
-      "full": "/oasis-assets/concept_svg/105-mazu.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/107-mazu.webp",
+      "full": "/oasis-assets/final_portraits/107-mazu.webp",
+      "final": true
     },
     "circle": "china"
   },
@@ -10602,9 +10602,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/106-nezha.webp",
-      "full": "/oasis-assets/concept_svg/106-nezha.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/108-nezha.webp",
+      "full": "/oasis-assets/final_portraits/108-nezha.webp",
+      "final": true
     },
     "circle": "china"
   },
@@ -10691,9 +10691,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/107-sun-wukong.webp",
-      "full": "/oasis-assets/concept_svg/107-sun-wukong.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/109-sun-wukong.webp",
+      "full": "/oasis-assets/final_portraits/109-sun-wukong.webp",
+      "final": true
     },
     "circle": "china"
   },
@@ -10780,9 +10780,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/108-yu-the-great.webp",
-      "full": "/oasis-assets/concept_svg/108-yu-the-great.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/110-yu-the-great.webp",
+      "full": "/oasis-assets/final_portraits/110-yu-the-great.webp",
+      "final": true
     },
     "circle": "china"
   },
@@ -10869,9 +10869,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/109-lei-gong.webp",
-      "full": "/oasis-assets/concept_svg/109-lei-gong.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/111-lei-gong.webp",
+      "full": "/oasis-assets/final_portraits/111-lei-gong.webp",
+      "final": true
     },
     "circle": "china"
   },
@@ -10958,9 +10958,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/110-dewi-sri.webp",
-      "full": "/oasis-assets/concept_svg/110-dewi-sri.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/112-dewi-sri.webp",
+      "full": "/oasis-assets/final_portraits/112-dewi-sri.webp",
+      "final": true
     },
     "circle": "indonesia"
   },
@@ -11047,9 +11047,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/111-nyai-roro-kidul.webp",
-      "full": "/oasis-assets/concept_svg/111-nyai-roro-kidul.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/113-nyai-roro-kidul.webp",
+      "full": "/oasis-assets/final_portraits/113-nyai-roro-kidul.webp",
+      "final": true
     },
     "circle": "indonesia"
   },
@@ -11136,9 +11136,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/112-semar.webp",
-      "full": "/oasis-assets/concept_svg/112-semar.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/114-semar.webp",
+      "full": "/oasis-assets/final_portraits/114-semar.webp",
+      "final": true
     },
     "circle": "indonesia"
   },
@@ -11225,9 +11225,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/113-batara-guru.webp",
-      "full": "/oasis-assets/concept_svg/113-batara-guru.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/115-batara-guru.webp",
+      "full": "/oasis-assets/final_portraits/115-batara-guru.webp",
+      "final": true
     },
     "circle": "indonesia"
   },
@@ -11314,9 +11314,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/114-barong-ket.webp",
-      "full": "/oasis-assets/concept_svg/114-barong-ket.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/116-barong-ket.webp",
+      "full": "/oasis-assets/final_portraits/116-barong-ket.webp",
+      "final": true
     },
     "circle": "indonesia"
   },
@@ -11403,9 +11403,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/115-garuda.webp",
-      "full": "/oasis-assets/concept_svg/115-garuda.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/117-garuda.webp",
+      "full": "/oasis-assets/final_portraits/117-garuda.webp",
+      "final": true
     },
     "circle": "indonesia"
   },
@@ -11492,9 +11492,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/116-gatotkaca.webp",
-      "full": "/oasis-assets/concept_svg/116-gatotkaca.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/118-gatotkaca.webp",
+      "full": "/oasis-assets/final_portraits/118-gatotkaca.webp",
+      "final": true
     },
     "circle": "indonesia"
   },
@@ -11581,9 +11581,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/117-prince-panji.webp",
-      "full": "/oasis-assets/concept_svg/117-prince-panji.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/119-prince-panji.webp",
+      "full": "/oasis-assets/final_portraits/119-prince-panji.webp",
+      "final": true
     },
     "circle": "indonesia"
   },
@@ -11670,9 +11670,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/118-roro-jonggrang.webp",
-      "full": "/oasis-assets/concept_svg/118-roro-jonggrang.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/120-roro-jonggrang.webp",
+      "full": "/oasis-assets/final_portraits/120-roro-jonggrang.webp",
+      "final": true
     },
     "circle": "indonesia"
   },
@@ -11759,9 +11759,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/119-dewi-nawang-wulan.webp",
-      "full": "/oasis-assets/concept_svg/119-dewi-nawang-wulan.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/121-dewi-nawang-wulan.webp",
+      "full": "/oasis-assets/final_portraits/121-dewi-nawang-wulan.webp",
+      "final": true
     },
     "circle": "indonesia"
   },
@@ -11848,9 +11848,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/120-seven-sisters-songline-steward.webp",
-      "full": "/oasis-assets/concept_svg/120-seven-sisters-songline-steward.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/122-seven-sisters-songline-steward.webp",
+      "full": "/oasis-assets/final_portraits/122-seven-sisters-songline-steward.webp",
+      "final": true
     },
     "circle": "australia"
   },
@@ -11937,9 +11937,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/121-rainbow-serpent-country-law.webp",
-      "full": "/oasis-assets/concept_svg/121-rainbow-serpent-country-law.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/123-rainbow-serpent-country-law.webp",
+      "full": "/oasis-assets/final_portraits/123-rainbow-serpent-country-law.webp",
+      "final": true
     },
     "circle": "australia"
   },
@@ -12026,9 +12026,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/122-bunjil.webp",
-      "full": "/oasis-assets/concept_svg/122-bunjil.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/124-bunjil.webp",
+      "full": "/oasis-assets/final_portraits/124-bunjil.webp",
+      "final": true
     },
     "circle": "australia"
   },
@@ -12115,9 +12115,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/123-baiame.webp",
-      "full": "/oasis-assets/concept_svg/123-baiame.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/125-baiame.webp",
+      "full": "/oasis-assets/final_portraits/125-baiame.webp",
+      "final": true
     },
     "circle": "australia"
   },
@@ -12204,9 +12204,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/124-tagai-navigator.webp",
-      "full": "/oasis-assets/concept_svg/124-tagai-navigator.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/126-tagai-navigator.webp",
+      "full": "/oasis-assets/final_portraits/126-tagai-navigator.webp",
+      "final": true
     },
     "circle": "australia"
   },
@@ -12293,9 +12293,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/125-celestial-emu-dreaming-steward.webp",
-      "full": "/oasis-assets/concept_svg/125-celestial-emu-dreaming-steward.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/127-celestial-emu-dreaming-steward.webp",
+      "full": "/oasis-assets/final_portraits/127-celestial-emu-dreaming-steward.webp",
+      "final": true
     },
     "circle": "australia"
   },
@@ -12382,9 +12382,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/126-djang-kawu-creator-voyagers.webp",
-      "full": "/oasis-assets/concept_svg/126-djang-kawu-creator-voyagers.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/128-djang-kawu-creator-voyagers.webp",
+      "full": "/oasis-assets/final_portraits/128-djang-kawu-creator-voyagers.webp",
+      "final": true
     },
     "circle": "australia"
   },
@@ -12471,9 +12471,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/127-namarrkon.webp",
-      "full": "/oasis-assets/concept_svg/127-namarrkon.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/129-namarrkon.webp",
+      "full": "/oasis-assets/final_portraits/129-namarrkon.webp",
+      "final": true
     },
     "circle": "australia"
   },
@@ -12560,9 +12560,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/128-country-knowledge-walk-tjukurpa-education-frame.webp",
-      "full": "/oasis-assets/concept_svg/128-country-knowledge-walk-tjukurpa-education-frame.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/130-country-knowledge-walk-tjukurpa-education-frame.webp",
+      "full": "/oasis-assets/final_portraits/130-country-knowledge-walk-tjukurpa-education-frame.webp",
+      "final": true
     },
     "circle": "australia"
   },
@@ -12649,9 +12649,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/129-makarrata-treaty-bridge.webp",
-      "full": "/oasis-assets/concept_svg/129-makarrata-treaty-bridge.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/131-makarrata-treaty-bridge.webp",
+      "full": "/oasis-assets/final_portraits/131-makarrata-treaty-bridge.webp",
+      "final": true
     },
     "circle": "australia"
   },
@@ -12738,9 +12738,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/130-papatuanuku.webp",
-      "full": "/oasis-assets/concept_svg/130-papatuanuku.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/132-papatuanuku.webp",
+      "full": "/oasis-assets/final_portraits/132-papatuanuku.webp",
+      "final": true
     },
     "circle": "aotearoa"
   },
@@ -12827,9 +12827,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/131-ranginui.webp",
-      "full": "/oasis-assets/concept_svg/131-ranginui.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/133-ranginui.webp",
+      "full": "/oasis-assets/final_portraits/133-ranginui.webp",
+      "final": true
     },
     "circle": "aotearoa"
   },
@@ -12916,9 +12916,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/132-tane-mahuta.webp",
-      "full": "/oasis-assets/concept_svg/132-tane-mahuta.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/134-tane-mahuta.webp",
+      "full": "/oasis-assets/final_portraits/134-tane-mahuta.webp",
+      "final": true
     },
     "circle": "aotearoa"
   },
@@ -13005,9 +13005,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/133-tangaroa-maori-strand.webp",
-      "full": "/oasis-assets/concept_svg/133-tangaroa-maori-strand.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/135-tangaroa-maori-strand.webp",
+      "full": "/oasis-assets/final_portraits/135-tangaroa-maori-strand.webp",
+      "final": true
     },
     "circle": "aotearoa"
   },
@@ -13094,9 +13094,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/134-rongo.webp",
-      "full": "/oasis-assets/concept_svg/134-rongo.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/136-rongo.webp",
+      "full": "/oasis-assets/final_portraits/136-rongo.webp",
+      "final": true
     },
     "circle": "aotearoa"
   },
@@ -13183,9 +13183,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/135-tumatauenga.webp",
-      "full": "/oasis-assets/concept_svg/135-tumatauenga.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/137-tumatauenga.webp",
+      "full": "/oasis-assets/final_portraits/137-tumatauenga.webp",
+      "final": true
     },
     "circle": "aotearoa"
   },
@@ -13272,9 +13272,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/136-tawhirimatea.webp",
-      "full": "/oasis-assets/concept_svg/136-tawhirimatea.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/138-tawhirimatea.webp",
+      "full": "/oasis-assets/final_portraits/138-tawhirimatea.webp",
+      "final": true
     },
     "circle": "aotearoa"
   },
@@ -13361,9 +13361,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/137-haumiatiketike.webp",
-      "full": "/oasis-assets/concept_svg/137-haumiatiketike.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/139-haumiatiketike.webp",
+      "full": "/oasis-assets/final_portraits/139-haumiatiketike.webp",
+      "final": true
     },
     "circle": "aotearoa"
   },
@@ -13450,9 +13450,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/138-hine-nui-te-po.webp",
-      "full": "/oasis-assets/concept_svg/138-hine-nui-te-po.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/140-hine-nui-te-po.webp",
+      "full": "/oasis-assets/final_portraits/140-hine-nui-te-po.webp",
+      "final": true
     },
     "circle": "aotearoa"
   },
@@ -13539,9 +13539,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/139-kupe-navigator.webp",
-      "full": "/oasis-assets/concept_svg/139-kupe-navigator.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/141-kupe-navigator.webp",
+      "full": "/oasis-assets/final_portraits/141-kupe-navigator.webp",
+      "final": true
     },
     "circle": "aotearoa"
   },
@@ -13628,9 +13628,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/140-osun.webp",
-      "full": "/oasis-assets/concept_svg/140-osun.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/142-osun.webp",
+      "full": "/oasis-assets/final_portraits/142-osun.webp",
+      "final": true
     },
     "circle": "africa"
   },
@@ -13717,9 +13717,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/141-sango.webp",
-      "full": "/oasis-assets/concept_svg/141-sango.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/143-sango.webp",
+      "full": "/oasis-assets/final_portraits/143-sango.webp",
+      "final": true
     },
     "circle": "africa"
   },
@@ -13806,9 +13806,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/142-obatala.webp",
-      "full": "/oasis-assets/concept_svg/142-obatala.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/144-obatala.webp",
+      "full": "/oasis-assets/final_portraits/144-obatala.webp",
+      "final": true
     },
     "circle": "africa"
   },
@@ -13895,9 +13895,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/143-oya.webp",
-      "full": "/oasis-assets/concept_svg/143-oya.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/145-oya.webp",
+      "full": "/oasis-assets/final_portraits/145-oya.webp",
+      "final": true
     },
     "circle": "africa"
   },
@@ -13984,9 +13984,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/144-mawu-lisa.webp",
-      "full": "/oasis-assets/concept_svg/144-mawu-lisa.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/146-mawu-lisa.webp",
+      "full": "/oasis-assets/final_portraits/146-mawu-lisa.webp",
+      "final": true
     },
     "circle": "africa"
   },
@@ -14073,9 +14073,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/145-nyame-nyankopon.webp",
-      "full": "/oasis-assets/concept_svg/145-nyame-nyankopon.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/147-nyame-nyankopon.webp",
+      "full": "/oasis-assets/final_portraits/147-nyame-nyankopon.webp",
+      "final": true
     },
     "circle": "africa"
   },
@@ -14162,9 +14162,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/146-kwaku-ananse.webp",
-      "full": "/oasis-assets/concept_svg/146-kwaku-ananse.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/148-kwaku-ananse.webp",
+      "full": "/oasis-assets/final_portraits/148-kwaku-ananse.webp",
+      "final": true
     },
     "circle": "africa"
   },
@@ -14251,9 +14251,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/147-ausar-osiris.webp",
-      "full": "/oasis-assets/concept_svg/147-ausar-osiris.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/149-ausar-osiris.webp",
+      "full": "/oasis-assets/final_portraits/149-ausar-osiris.webp",
+      "final": true
     },
     "circle": "africa"
   },
@@ -14340,9 +14340,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/148-maat.webp",
-      "full": "/oasis-assets/concept_svg/148-maat.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/150-ma-at.webp",
+      "full": "/oasis-assets/final_portraits/150-ma-at.webp",
+      "final": true
     },
     "circle": "africa"
   },
@@ -14429,9 +14429,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/149-anna-njinga.webp",
-      "full": "/oasis-assets/concept_svg/149-anna-njinga.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/151-anna-njinga.webp",
+      "full": "/oasis-assets/final_portraits/151-anna-njinga.webp",
+      "final": true
     },
     "circle": "africa"
   },
@@ -14518,9 +14518,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/150-atlas.webp",
-      "full": "/oasis-assets/concept_svg/150-atlas.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/152-atlas.webp",
+      "full": "/oasis-assets/final_portraits/152-atlas.webp",
+      "final": true
     },
     "circle": "atlantis"
   },
@@ -14607,9 +14607,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/151-cleito.webp",
-      "full": "/oasis-assets/concept_svg/151-cleito.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/153-cleito.webp",
+      "full": "/oasis-assets/final_portraits/153-cleito.webp",
+      "final": true
     },
     "circle": "atlantis"
   },
@@ -14696,9 +14696,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/152-gadeirus.webp",
-      "full": "/oasis-assets/concept_svg/152-gadeirus.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/154-gadeirus.webp",
+      "full": "/oasis-assets/final_portraits/154-gadeirus.webp",
+      "final": true
     },
     "circle": "atlantis"
   },
@@ -14785,9 +14785,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/153-ampheres.webp",
-      "full": "/oasis-assets/concept_svg/153-ampheres.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/155-ampheres.webp",
+      "full": "/oasis-assets/final_portraits/155-ampheres.webp",
+      "final": true
     },
     "circle": "atlantis"
   },
@@ -14874,9 +14874,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/154-evaemon.webp",
-      "full": "/oasis-assets/concept_svg/154-evaemon.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/156-evaemon.webp",
+      "full": "/oasis-assets/final_portraits/156-evaemon.webp",
+      "final": true
     },
     "circle": "atlantis"
   },
@@ -14963,9 +14963,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/155-mneseus.webp",
-      "full": "/oasis-assets/concept_svg/155-mneseus.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/157-mneseus.webp",
+      "full": "/oasis-assets/final_portraits/157-mneseus.webp",
+      "final": true
     },
     "circle": "atlantis"
   },
@@ -15052,9 +15052,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/156-autochthon.webp",
-      "full": "/oasis-assets/concept_svg/156-autochthon.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/158-autochthon.webp",
+      "full": "/oasis-assets/final_portraits/158-autochthon.webp",
+      "final": true
     },
     "circle": "atlantis"
   },
@@ -15141,9 +15141,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/157-elasippus.webp",
-      "full": "/oasis-assets/concept_svg/157-elasippus.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/159-elasippus.webp",
+      "full": "/oasis-assets/final_portraits/159-elasippus.webp",
+      "final": true
     },
     "circle": "atlantis"
   },
@@ -15230,9 +15230,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/158-mestor.webp",
-      "full": "/oasis-assets/concept_svg/158-mestor.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/160-mestor.webp",
+      "full": "/oasis-assets/final_portraits/160-mestor.webp",
+      "final": true
     },
     "circle": "atlantis"
   },
@@ -15319,9 +15319,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/159-azaes.webp",
-      "full": "/oasis-assets/concept_svg/159-azaes.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/161-azaes.webp",
+      "full": "/oasis-assets/final_portraits/161-azaes.webp",
+      "final": true
     },
     "circle": "atlantis"
   },
@@ -15408,9 +15408,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/160-lemur-steward.webp",
-      "full": "/oasis-assets/concept_svg/160-lemur-steward.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/162-lemur-steward.webp",
+      "full": "/oasis-assets/final_portraits/162-lemur-steward.webp",
+      "final": true
     },
     "circle": "lemuria"
   },
@@ -15497,9 +15497,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/161-sclater-bridge.webp",
-      "full": "/oasis-assets/concept_svg/161-sclater-bridge.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/163-sclater-bridge.webp",
+      "full": "/oasis-assets/final_portraits/163-sclater-bridge.webp",
+      "final": true
     },
     "circle": "lemuria"
   },
@@ -15586,9 +15586,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/162-coral-notary.webp",
-      "full": "/oasis-assets/concept_svg/162-coral-notary.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/164-coral-notary.webp",
+      "full": "/oasis-assets/final_portraits/164-coral-notary.webp",
+      "final": true
     },
     "circle": "lemuria"
   },
@@ -15675,9 +15675,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/163-tide-column.webp",
-      "full": "/oasis-assets/concept_svg/163-tide-column.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/165-tide-column.webp",
+      "full": "/oasis-assets/final_portraits/165-tide-column.webp",
+      "final": true
     },
     "circle": "lemuria"
   },
@@ -15764,9 +15764,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/164-basalt-chronicle.webp",
-      "full": "/oasis-assets/concept_svg/164-basalt-chronicle.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/166-basalt-chronicle.webp",
+      "full": "/oasis-assets/final_portraits/166-basalt-chronicle.webp",
+      "final": true
     },
     "circle": "lemuria"
   },
@@ -15853,9 +15853,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/165-foam-seed.webp",
-      "full": "/oasis-assets/concept_svg/165-foam-seed.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/167-foam-seed.webp",
+      "full": "/oasis-assets/final_portraits/167-foam-seed.webp",
+      "final": true
     },
     "circle": "lemuria"
   },
@@ -15942,9 +15942,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/166-oceanic-bridge.webp",
-      "full": "/oasis-assets/concept_svg/166-oceanic-bridge.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/168-oceanic-bridge.webp",
+      "full": "/oasis-assets/final_portraits/168-oceanic-bridge.webp",
+      "final": true
     },
     "circle": "lemuria"
   },
@@ -16031,9 +16031,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/167-shelf-whisper.webp",
-      "full": "/oasis-assets/concept_svg/167-shelf-whisper.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/169-shelf-whisper.webp",
+      "full": "/oasis-assets/final_portraits/169-shelf-whisper.webp",
+      "final": true
     },
     "circle": "lemuria"
   },
@@ -16120,9 +16120,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/168-equinox-lull.webp",
-      "full": "/oasis-assets/concept_svg/168-equinox-lull.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/170-equinox-lull.webp",
+      "full": "/oasis-assets/final_portraits/170-equinox-lull.webp",
+      "final": true
     },
     "circle": "lemuria"
   },
@@ -16209,9 +16209,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/169-circle-closure.webp",
-      "full": "/oasis-assets/concept_svg/169-circle-closure.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/171-circle-closure.webp",
+      "full": "/oasis-assets/final_portraits/171-circle-closure.webp",
+      "final": true
     },
     "circle": "lemuria"
   },
@@ -16298,9 +16298,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/170-great-central-sun-steward.webp",
-      "full": "/oasis-assets/concept_svg/170-great-central-sun-steward.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/172-great-central-sun-steward.webp",
+      "full": "/oasis-assets/final_portraits/172-great-central-sun-steward.webp",
+      "final": true
     },
     "circle": "cosmic"
   },
@@ -16387,9 +16387,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/171-photon-cadence.webp",
-      "full": "/oasis-assets/concept_svg/171-photon-cadence.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/173-photon-cadence.webp",
+      "full": "/oasis-assets/final_portraits/173-photon-cadence.webp",
+      "final": true
     },
     "circle": "cosmic"
   },
@@ -16476,9 +16476,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/172-solar-logos-dual.webp",
-      "full": "/oasis-assets/concept_svg/172-solar-logos-dual.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/174-solar-logos-dual.webp",
+      "full": "/oasis-assets/final_portraits/174-solar-logos-dual.webp",
+      "final": true
     },
     "circle": "cosmic"
   },
@@ -16565,9 +16565,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/173-telluric-soul-bridge.webp",
-      "full": "/oasis-assets/concept_svg/173-telluric-soul-bridge.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/175-telluric-soul-bridge.webp",
+      "full": "/oasis-assets/final_portraits/175-telluric-soul-bridge.webp",
+      "final": true
     },
     "circle": "cosmic"
   },
@@ -16654,9 +16654,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/174-tube-of-light-sentinel.webp",
-      "full": "/oasis-assets/concept_svg/174-tube-of-light-sentinel.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/176-tube-of-light-sentinel.webp",
+      "full": "/oasis-assets/final_portraits/176-tube-of-light-sentinel.webp",
+      "final": true
     },
     "circle": "cosmic"
   },
@@ -16743,9 +16743,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/175-radiant-spiral.webp",
-      "full": "/oasis-assets/concept_svg/175-radiant-spiral.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/177-radiant-spiral.webp",
+      "full": "/oasis-assets/final_portraits/177-radiant-spiral.webp",
+      "final": true
     },
     "circle": "cosmic"
   },
@@ -16832,9 +16832,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/176-seventh-ray-adjunct.webp",
-      "full": "/oasis-assets/concept_svg/176-seventh-ray-adjunct.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/178-seventh-ray-adjunct.webp",
+      "full": "/oasis-assets/final_portraits/178-seventh-ray-adjunct.webp",
+      "final": true
     },
     "circle": "cosmic"
   },
@@ -16921,9 +16921,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/177-galactic-convenor.webp",
-      "full": "/oasis-assets/concept_svg/177-galactic-convenor.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/179-galactic-convenor.webp",
+      "full": "/oasis-assets/final_portraits/179-galactic-convenor.webp",
+      "final": true
     },
     "circle": "cosmic"
   },
@@ -17010,9 +17010,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/178-lightbody-scribe.webp",
-      "full": "/oasis-assets/concept_svg/178-lightbody-scribe.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/180-lightbody-scribe.webp",
+      "full": "/oasis-assets/final_portraits/180-lightbody-scribe.webp",
+      "final": true
     },
     "circle": "cosmic"
   },
@@ -17099,9 +17099,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/179-vzestup-capstone.webp",
-      "full": "/oasis-assets/concept_svg/179-vzestup-capstone.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/181-vzestup-capstone.webp",
+      "full": "/oasis-assets/final_portraits/181-vzestup-capstone.webp",
+      "final": true
     },
     "circle": "cosmic"
   },
@@ -17188,9 +17188,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/180-valhalla-hall-steward.webp",
-      "full": "/oasis-assets/concept_svg/180-valhalla-hall-steward.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/182-valhalla-hall-steward.webp",
+      "full": "/oasis-assets/final_portraits/182-valhalla-hall-steward.webp",
+      "final": true
     },
     "circle": "norse-celtic"
   },
@@ -17277,9 +17277,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/181-oinn-wayfarer.webp",
-      "full": "/oasis-assets/concept_svg/181-oinn-wayfarer.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/183-o-inn-wayfarer.webp",
+      "full": "/oasis-assets/final_portraits/183-o-inn-wayfarer.webp",
+      "final": true
     },
     "circle": "norse-celtic"
   },
@@ -17366,9 +17366,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/182-orr-storm-host.webp",
-      "full": "/oasis-assets/concept_svg/182-orr-storm-host.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/184-orr-storm-host.webp",
+      "full": "/oasis-assets/final_portraits/184-orr-storm-host.webp",
+      "final": true
     },
     "circle": "norse-celtic"
   },
@@ -17455,9 +17455,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/183-freyja-van-ruler.webp",
-      "full": "/oasis-assets/concept_svg/183-freyja-van-ruler.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/185-freyja-van-ruler.webp",
+      "full": "/oasis-assets/final_portraits/185-freyja-van-ruler.webp",
+      "final": true
     },
     "circle": "norse-celtic"
   },
@@ -17544,9 +17544,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/184-tyr-oath-fire.webp",
-      "full": "/oasis-assets/concept_svg/184-tyr-oath-fire.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/186-tyr-oath-fire.webp",
+      "full": "/oasis-assets/final_portraits/186-tyr-oath-fire.webp",
+      "final": true
     },
     "circle": "norse-celtic"
   },
@@ -17633,9 +17633,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/185-brigid-triple-flame.webp",
-      "full": "/oasis-assets/concept_svg/185-brigid-triple-flame.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/187-brigid-triple-flame.webp",
+      "full": "/oasis-assets/final_portraits/187-brigid-triple-flame.webp",
+      "final": true
     },
     "circle": "norse-celtic"
   },
@@ -17722,9 +17722,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/186-dagda-peace-harp.webp",
-      "full": "/oasis-assets/concept_svg/186-dagda-peace-harp.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/188-dagda-peace-harp.webp",
+      "full": "/oasis-assets/final_portraits/188-dagda-peace-harp.webp",
+      "final": true
     },
     "circle": "norse-celtic"
   },
@@ -17811,9 +17811,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/187-morrigan-sovereignty-raven.webp",
-      "full": "/oasis-assets/concept_svg/187-morrigan-sovereignty-raven.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/189-morrigan-sovereignty-raven.webp",
+      "full": "/oasis-assets/final_portraits/189-morrigan-sovereignty-raven.webp",
+      "final": true
     },
     "circle": "norse-celtic"
   },
@@ -17900,9 +17900,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/188-lugh-samildanach.webp",
-      "full": "/oasis-assets/concept_svg/188-lugh-samildanach.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/190-lugh-samildanach.webp",
+      "full": "/oasis-assets/final_portraits/190-lugh-samildanach.webp",
+      "final": true
     },
     "circle": "norse-celtic"
   },
@@ -17989,9 +17989,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/189-manannan-mac-lir.webp",
-      "full": "/oasis-assets/concept_svg/189-manannan-mac-lir.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/191-manannan-mac-lir.webp",
+      "full": "/oasis-assets/final_portraits/191-manannan-mac-lir.webp",
+      "final": true
     },
     "circle": "norse-celtic"
   },
@@ -18078,9 +18078,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/190-re-solar-barque.webp",
-      "full": "/oasis-assets/concept_svg/190-re-solar-barque.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/192-re-solar-barque.webp",
+      "full": "/oasis-assets/final_portraits/192-re-solar-barque.webp",
+      "final": true
     },
     "circle": "egypt"
   },
@@ -18167,9 +18167,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/191-hor-unifier.webp",
-      "full": "/oasis-assets/concept_svg/191-hor-unifier.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/193-hor-unifier.webp",
+      "full": "/oasis-assets/final_portraits/193-hor-unifier.webp",
+      "final": true
     },
     "circle": "egypt"
   },
@@ -18256,9 +18256,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/192-thoth-scribe.webp",
-      "full": "/oasis-assets/concept_svg/192-thoth-scribe.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/194-thoth-scribe.webp",
+      "full": "/oasis-assets/final_portraits/194-thoth-scribe.webp",
+      "final": true
     },
     "circle": "egypt"
   },
@@ -18345,9 +18345,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/193-hathor-jubilee.webp",
-      "full": "/oasis-assets/concept_svg/193-hathor-jubilee.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/195-hathor-jubilee.webp",
+      "full": "/oasis-assets/final_portraits/195-hathor-jubilee.webp",
+      "final": true
     },
     "circle": "egypt"
   },
@@ -18434,9 +18434,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/194-sekhmet-audit-flame.webp",
-      "full": "/oasis-assets/concept_svg/194-sekhmet-audit-flame.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/196-sekhmet-audit-flame.webp",
+      "full": "/oasis-assets/final_portraits/196-sekhmet-audit-flame.webp",
+      "final": true
     },
     "circle": "egypt"
   },
@@ -18523,9 +18523,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/195-ptah-mason.webp",
-      "full": "/oasis-assets/concept_svg/195-ptah-mason.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/197-ptah-mason.webp",
+      "full": "/oasis-assets/final_portraits/197-ptah-mason.webp",
+      "final": true
     },
     "circle": "egypt"
   },
@@ -18612,9 +18612,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/196-anubis-threshold.webp",
-      "full": "/oasis-assets/concept_svg/196-anubis-threshold.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/198-anubis-threshold.webp",
+      "full": "/oasis-assets/final_portraits/198-anubis-threshold.webp",
+      "final": true
     },
     "circle": "egypt"
   },
@@ -18701,9 +18701,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/197-amun-hidden-field.webp",
-      "full": "/oasis-assets/concept_svg/197-amun-hidden-field.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/199-amun-hidden-field.webp",
+      "full": "/oasis-assets/final_portraits/199-amun-hidden-field.webp",
+      "final": true
     },
     "circle": "egypt"
   },
@@ -18790,9 +18790,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/198-geb-foundation.webp",
-      "full": "/oasis-assets/concept_svg/198-geb-foundation.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/200-geb-foundation.webp",
+      "full": "/oasis-assets/final_portraits/200-geb-foundation.webp",
+      "final": true
     },
     "circle": "egypt"
   },
@@ -18879,9 +18879,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/199-nut-stellar-vault.webp",
-      "full": "/oasis-assets/concept_svg/199-nut-stellar-vault.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/201-nut-stellar-vault.webp",
+      "full": "/oasis-assets/final_portraits/201-nut-stellar-vault.webp",
+      "final": true
     },
     "circle": "egypt"
   },
@@ -19028,9 +19028,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/200-bolon-yokte-k-uh.webp",
-      "full": "/oasis-assets/concept_svg/200-bolon-yokte-k-uh.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/202-bolon-yokte-k-uh.webp",
+      "full": "/oasis-assets/final_portraits/202-bolon-yokte-k-uh.webp",
+      "final": true
     },
     "circle": "maya"
   },
@@ -19137,9 +19137,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "",
-      "full": "",
-      "final": false
+      "card": "/oasis-assets/final_portraits/203-sri-anagha-lakshmi.webp",
+      "full": "/oasis-assets/final_portraits/203-sri-anagha-lakshmi.webp",
+      "final": true
     },
     "circle": "zion"
   },
@@ -19246,9 +19246,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "",
-      "full": "",
-      "final": false
+      "card": "/oasis-assets/final_portraits/204-sri-chaitanya-mahaprabhu.webp",
+      "full": "/oasis-assets/final_portraits/204-sri-chaitanya-mahaprabhu.webp",
+      "final": true
     },
     "circle": "hindu"
   }

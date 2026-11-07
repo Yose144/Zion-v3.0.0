@@ -11,8 +11,9 @@
  *     public/data/oasis/profiles/<id>.md (modal ho tahá lazy fetchí)
  *   - scripts/oasis-essence-i18n.json — cs/en essence na kartách
  *   - scripts/oasis-art-manifest.json — OASIS Avatar Collection (manifest kopie):
- *     poziční mapa manifest[i] ↔ avatars[i] (ověřeno jmény), card = concept webp,
- *     full = finalPortrait webp ?? concept svg (vektor pro velký modal)
+ *     poziční mapa manifest[i] ↔ avatars[i] (ověřeno jmény), card = finální
+ *     portrét (`finalPortrait`, dávka 2026-11) ?? concept webp,
+ *     full = finální portrét ?? concept svg (vektor pro velký modal)
  *
  * Kruhy v JSON nejsou — parsují se z md. Pozor na dvě zvláštnosti md:
  *   - `---## 🇯🇵 JAPAN CIRCLE` má hlavičku slepenou s `---` (regex níže to kryje)
@@ -322,6 +323,7 @@ function resolveProfile(id, name) {
 }
 /** webp concept cesta → svg vektorová cesta (existuje-li soubor). */
 function conceptSvgPath(webpPath) {
+  if (!webpPath) return '';
   const svg = webpPath
     .replace('/concept_portraits/', '/concept_svg/')
     .replace(/\.webp$/, '.svg');
@@ -333,9 +335,14 @@ function artFor(index, name) {
     if (m) console.warn(`[gen-oasis-avatars] VAROVÁNÍ: art manifest[${index}] '${m.name}' ≠ '${name}' — přeskočeno`);
     return { card: '', full: '', final: false };
   }
-  const card = m.art ?? '';
-  const full = m.finalPortrait ?? conceptSvgPath(card) ?? card;
-  return { card, full: full || card, final: Boolean(m.finalPortrait) };
+  // Finální portrét (dávka 2026-11) je nejlepší art, jaký k avatarovi je —
+  // používá se na kartu i do modalu. Koncept/vektor zůstává fallback pro
+  // postavy, které samostatný render zatím nemají (011–020, 052).
+  const final = m.finalPortrait || '';
+  const concept = m.art ?? '';
+  const card = final || concept;
+  const full = final || conceptSvgPath(concept) || card;
+  return { card, full: full || card, final: Boolean(final) };
 }
 
 /** Velmi hrubý odhad jazyka dokumentu: převaha diakritiky = čeština.

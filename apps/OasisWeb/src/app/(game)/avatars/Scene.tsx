@@ -115,6 +115,15 @@ const AvatarNode = memo(function AvatarNode({
 function AvatarDetail({ avatar, onClose }: { avatar: AvatarDef; onClose: () => void }) {
   return (
     <div className="space-y-2 text-sm">
+      {avatar.image_url && (
+        <img
+          src={avatar.image_url}
+          alt={`${avatar.name} — portrait`}
+          loading="lazy"
+          decoding="async"
+          className="aspect-square w-full rounded-xl border border-white/10 object-cover"
+        />
+      )}
       <h3 className="text-lg font-bold text-oasis-cyan">{avatar.name}</h3>
       <p className="text-oasis-gold">{avatar.subtitle}</p>
       <p className="text-white/80">{avatar.ability}</p>
