@@ -161,10 +161,21 @@ cd apps/website-v2.9 && npm run build
 ### 8b) Doplnění 11 portrétů (stejný den, večer)
 
 - Archiv sloučen skriptem `oasis-archive-merge-supplement.mjs` (11 PNG + CSV/manifest/INDEX),
-  import + generátor přegenerovaly **202** souborů, `image_url` přepsán na finální u všech.
-- **Web**: nový artefaktový deploy z čistého worktree; live `/l4-oasis/avatars` →
-  **202× `final_portraits`, 0× `game-portraits`**.
-- **OASIS API**: měnila se jen data — rsync obou `avatars.json` + `systemctl restart zion-v31-oasis`,
-  **žádný rebuild** Rustu. Live API vrací 202× `image_url` na `final_portraits`.
-- **OasisWeb**: bez rebuildu (čte API za běhu), po restartu API zobrazuje nové portréty.
-- **MarketPlace**: znovu `GET /api/oasis/sync?type=avatars` → 202 artefaktů, všechny s finálním artem.
+  import + generátor přegenerovaly **202** souborů, `image_url` přepsán na finální u všech
+  (commit `e609fefc1`).
+- **Výpadek sítě:** první dva pokusy o vlastní artefaktový deploy spadly na timeouty ssh/rsync
+  (z tohoto stroje nešel ani GitHub, ani EDGE2) — **nedošlo k žádnému swapu**, produkce celou dobu
+  běžela na předchozí verzi.
+- **Web**: změnu přivezl **artefaktový deploy paralelní session** (dávka 24, build `dgn0T80sVGJVFk9TlpXAW`
+  z HEAD, který už commit `e609fefc1` obsahoval) — potvrzeno živě:
+  `/l4-oasis/avatars` → **202× `final_portraits`, 0× `game-portraits`**, 11 nových obrázků 200.
+  Ověřeno headless v cs i en: **205 `<img>`, 202 finálních, 0 rozbitých, 0 chyb**.
+- **OASIS API**: měnila se jen data — rsync obou `avatars.json` (zálohy `*.bak-oasis-11-20261107T154948Z`)
+  + `systemctl restart zion-v31-oasis`, **žádný rebuild** Rustu. Live API: 202/202 `image_url`
+  na `final_portraits` (kontrola i na id 11, 38, 54).
+- **OasisWeb**: bez rebuildu (čte API za běhu) — headless **202 `<img>`, 202 portrétů, 0 rozbitých**
+  (jediná 401 = pre-existing `/api/auth/me`).
+- **MarketPlace**: znovu `GET /api/oasis/sync?type=avatars` → `{"synced":{"avatars":202}}`;
+  v DB **202 řádků, 202× `final_portraits`, 0× `game-portraits`**.
+- **Úklid**: na EDGE2 smazáno 466 MB osiřelých `.stage-*` adresářů z přerušených deployů
+  (nedokončené rsync pokusy i starší zbytky); `/` 60 % → 59 %.
