@@ -183,7 +183,13 @@ export default function AvatarsPage() {
                     setSaved(false);
                   }}
                 >
-                  <i style={{ background: RAY_COLOR[avatar.ray] }} />
+                  <span className="avatars-item-portrait" style={{ borderColor: RAY_COLOR[avatar.ray] }}>
+                    {avatar.portrait ? (
+                      <img src={avatar.portrait} alt="" loading="lazy" decoding="async" />
+                    ) : (
+                      <i style={{ background: RAY_COLOR[avatar.ray] }} />
+                    )}
+                  </span>
                   <span className="avatars-item-name">{avatar.name}</span>
                   <span className="avatars-item-meta" style={{ color: RARITY_COLOR[avatar.rarity] }}>
                     {avatar.rarity === 'OneOfOne' ? '1/1' : avatar.rarity}
@@ -211,18 +217,32 @@ export default function AvatarsPage() {
               <directionalLight position={[-3, 2, -2]} intensity={0.8} color="#7fe3d4" />
               <AvatarModel look={look} animate />
             </Canvas>
+            <span className="avatars-stage-label">{l('stageLabel')}</span>
           </div>
 
-          <div className="avatars-meta">
-            <h2>{entry.name}</h2>
-            <p className="avatars-sub">{entry.subtitle}</p>
-            <p className="avatars-tags">
-              <span style={{ color: RAY_COLOR[entry.ray] }}>{entry.ray}</span>
-              <span style={{ color: RARITY_COLOR[entry.rarity] }}>
-                {entry.rarity === 'OneOfOne' ? '1/1' : entry.rarity}
-              </span>
-              <span>CL {entry.cl}</span>
-            </p>
+          <div className="avatars-identity">
+            {entry.portrait ? (
+              <figure className="avatars-portrait">
+                <img
+                  src={entry.portrait}
+                  alt={`${entry.name} — ${l('portraitLabel')}`}
+                  loading="eager"
+                  decoding="async"
+                />
+                <figcaption>{l('portraitLabel')}</figcaption>
+              </figure>
+            ) : null}
+            <div className="avatars-meta">
+              <h2>{entry.name}</h2>
+              <p className="avatars-sub">{entry.subtitle}</p>
+              <p className="avatars-tags">
+                <span style={{ color: RAY_COLOR[entry.ray] }}>{entry.ray}</span>
+                <span style={{ color: RARITY_COLOR[entry.rarity] }}>
+                  {entry.rarity === 'OneOfOne' ? '1/1' : entry.rarity}
+                </span>
+                <span>CL {entry.cl}</span>
+              </p>
+            </div>
           </div>
 
           <div className="avatars-form">

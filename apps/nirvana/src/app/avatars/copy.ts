@@ -31,6 +31,16 @@ export const AVATARS_COPY = {
   savedShort: { cs: 'Uloženo ✓', en: 'Saved ✓', es: 'Guardado ✓' },
   saved: { cs: 'Uloženo — ostatní tě uvidí takhle.', en: 'Saved — this is what others will see.', es: 'Guardado: así te verán los demás.' },
   save: { cs: 'Uložit avatara', en: 'Save avatar', es: 'Guardar avatar' },
+  portraitLabel: {
+    cs: 'portrét · OASIS',
+    en: 'portrait · OASIS',
+    es: 'retrato · OASIS',
+  },
+  stageLabel: {
+    cs: 'herní 3D model',
+    en: 'in-game 3D model',
+    es: 'modelo 3D del juego',
+  },
   guestNote: {
     cs: 'Host si může všechno prohlédnout, ale uložit avatara jde jen přihlášenému (ZIS).',
     en: 'Guests can browse everything, but saving an avatar needs a signed-in ZIS account.',

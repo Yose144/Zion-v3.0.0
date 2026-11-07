@@ -179,3 +179,29 @@ cd apps/website-v2.9 && npm run build
   v DB **202 řádků, 202× `final_portraits`, 0× `game-portraits`**.
 - **Úklid**: na EDGE2 smazáno 466 MB osiřelých `.stage-*` adresářů z přerušených deployů
   (nedokončené rsync pokusy i starší zbytky); `/` 60 % → 59 %.
+
+## 9. Nirvana (2026-11-07, navazující dávka)
+
+Nirvana měla vlastní portréty hrdinů renderované z **procedurálního 3D modelu**
+(`game-portraits`). Ty se nahradily oficiálním 2D artem:
+
+- **`scripts/ops/gen-moba-portraits.mjs`** přepsán: bere `final_portraits` z webu a dělá
+  z nich lokální sadu `apps/nirvana/public/portraits/<id>.webp` — **256×256 webp q80,
+  ≈21 kB/ks, 202 ks / 4,2 MB** (dřív 448×560 z 3D modelu, 1,8 MB). HUD potřebuje max 54 px,
+  takže 256 stačí; zůstává to lokální (žádná závislost na `app.zionterranova.com` v herním HUD).
+- **`scripts/ops/gen-avatar-catalog.mjs`** přidává `portrait: '/portraits/<id>.webp'`
+  (prázdné = chybí, UI kreslí iniciálu) → katalog má 202 záznamů s portrétem.
+- **`/avatars`**: v seznamu je thumbnail s rámečkem v barvě paprsku, vpravo **velký portrét
+  v identitě** vedle 3D modelu — popisky „portrét · OASIS“ a „herní 3D model“ (copy `cs/en/es`).
+- **`/earth` (MOBA)**: pick karty, scoreboard, řádek „tvůj hrdina“ i MVP **automaticky**
+  ukazují nové portréty přes `portraitUrl()` — žádná změna kódu, jen nová sada obrázků.
+- **`/present/issobella`**: panel šatníku má portrét vybraného avatara + podtitul.
+- **Chat** (`ChatPanel`): když hráč nemá ZIS sigil, ukáže se jeho **zvolený OASIS avatar**
+  (`member.avatarId` → `avatarById().portrait`).
+
+**Ověřeno:** `tsc` 0, `next build` EXIT 0, lokální headless (render-audit) —
+`/avatars` **203 portrétů / 202 položek / 0 rozbitých**, `/earth` **12 pick karet s portréty**,
+`/present/issobella` portrét v panelu, 0 chyb v konzoli. Deploy `deploy-nirvana.sh`
+(`20261107T165228Z`) — proto check 32/32, smoke 7/7, live `/portraits/38.webp` 26 kB
+a nové CSS třídy v chunk `01dbwin2ooi5n.css`.
+

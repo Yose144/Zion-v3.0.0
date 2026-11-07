@@ -2454,3 +2454,24 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   zkus build z worktree.
 - **Test čte `PROTO_VERSION` z distu**, ne z literálu: paralelní session protokol zvedla
   (31 → 32) a test s natvrdo zapsaným číslem padal na `proto_mismatch`.
+
+## Oficiální OASIS portréty (2026-11-07)
+
+- **Zdroj je jediný:** `scripts/ops/gen-moba-portraits.mjs` už nekopíruje 3D náhledy
+  (`game-portraits`), ale bere **finální 2D art** z
+  `apps/website-v2.9/public/oasis-assets/final_portraits/<id>-<slug>.webp` a dělá
+  z něj lokální sadu `apps/nirvana/public/portraits/<id>.webp` — **256×256, webp q80,
+  ≈21 kB/ks (202 ks, 4,2 MB)**. Důvod: HUD v MOBA potřebuje max 54 px, tahat 114kB
+  originály z cizí domény by bylo plýtvání a závislost na `app.zionterranova.com`.
+- **Katalog nese cestu k portrétu:** `gen-avatar-catalog.mjs` přidává
+  `portrait: '/portraits/<id>.webp'` (nebo `''`, když soubor chybí), takže klient
+  nikdy needituje mapu ručně. Oba generátory se pouští v tomto pořadí:
+  `gen-moba-portraits` → `gen-avatar-catalog`.
+- **Kde se portrét ukazuje:** `/avatars` (thumbnail v seznamu + velký portrét
+  v identitě vedle 3D modelu, s popiskem „portrét · OASIS“ vs. „herní 3D model“),
+  `/earth` MOBA (pick karty + scoreboard + MVP přes `portraitUrl`),
+  `/present/issobella` (portrét v panelu šatníku) a **chat** (`ChatPanel` bere
+  `member.avatarId` jako fallback, když hráč nemá ZIS sigil).
+- **Pozor na `portraitUrl`:** vrací `null` pro id bez souboru a UI kreslí iniciálu —
+  nikdy nespadej na 404. Nová id (203 Anagha, 204 Chaitanya) vznikají jen
+  regenerací, ne ručním přidáním souboru.

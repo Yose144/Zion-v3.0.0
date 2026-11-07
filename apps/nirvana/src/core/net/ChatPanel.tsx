@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useI18n } from '@/core/i18n';
+import { avatarById } from '@/core/avatars/catalog';
 import { CHAT_MAX_LEN } from './protocol';
 import { useNet, type NetLine } from './useNet';
 import { InviteButton } from './InviteButton';
@@ -89,17 +90,22 @@ export function ChatPanel({
 
       {members.length > 0 && (
         <ul className="chat-members" title={members.map((member) => member.name).join(', ')}>
-          {members.slice(0, 8).map((member) => (
-            <li key={member.id} className={`chat-member${member.role === 'zis' ? ' is-zis' : ''}`}>
-              {member.avatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={member.avatar} alt="" loading="lazy" />
-              ) : (
-                <span aria-hidden>{member.name.slice(0, 1).toUpperCase()}</span>
-              )}
-              <em>{member.name}</em>
-            </li>
-          ))}
+          {members.slice(0, 8).map((member) => {
+            // ZIS sigil má přednost; bez něj se ukáže zvolený OASIS avatar,
+            // takže člověk vidí v chatu stejnou tvář jako ve hře.
+            const sigil = member.avatar ?? avatarById(member.avatarId)?.portrait ?? null;
+            return (
+              <li key={member.id} className={`chat-member${member.role === 'zis' ? ' is-zis' : ''}`}>
+                {sigil ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={sigil} alt="" loading="lazy" />
+                ) : (
+                  <span aria-hidden>{member.name.slice(0, 1).toUpperCase()}</span>
+                )}
+                <em>{member.name}</em>
+              </li>
+            );
+          })}
           {members.length > 8 && <li className="chat-more">+{members.length - 8}</li>}
         </ul>
       )}

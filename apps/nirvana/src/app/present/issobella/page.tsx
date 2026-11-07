@@ -87,6 +87,12 @@ export default function IssobellaPresentPage() {
               {entry.name} · {entry.ray}
             </span>
           </header>
+          {entry.portrait ? (
+            <figure className="isso-identity">
+              <img src={entry.portrait} alt={`${entry.name} — ${cs ? 'portrét' : 'portrait'}`} />
+              <figcaption>{entry.subtitle}</figcaption>
+            </figure>
+          ) : null}
           <p>
             {cs
               ? 'Klikni na kouli u výklenku. Uloží se to do ZIS a ve hře tě tak uvidí ostatní.'

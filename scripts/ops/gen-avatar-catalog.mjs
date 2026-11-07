@@ -2,7 +2,7 @@
 /**
  * Generuje katalog avatarů pro Nirvanu z kanonických dat OASIS.
  *
- * Zdroj: `V31/L4/oasis/data/avatars.json` (200 záznamů z AVATAR_ROSTER.md).
+ * Zdroj: `V31/L4/oasis/data/avatars.json` (202 záznamů z AVATAR_ROSTER.md).
  * Výstup: `apps/nirvana/src/core/avatars/catalog.ts` — jen to, co klient
  * potřebuje k výběru a kreslení (id, jméno, paprsek, vzácnost, CL, podtitul).
  *
@@ -13,13 +13,14 @@
  * Použití: node scripts/ops/gen-avatar-catalog.mjs
  */
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const source = join(root, 'V31', 'L4', 'oasis', 'data', 'avatars.json');
 const target = join(root, 'apps', 'nirvana', 'src', 'core', 'avatars', 'catalog.ts');
+const portraits = join(root, 'apps', 'nirvana', 'public', 'portraits');
 
 const raw = JSON.parse(readFileSync(source, 'utf8'));
 const avatars = Array.isArray(raw) ? raw : raw.avatars;
@@ -37,6 +38,8 @@ const rows = avatars
     ray: pick(avatar.ray, ['Blue', 'Pink', 'Yellow', 'Violet', 'AllRays', 'White', 'Green', 'RubyGold', 'Obsidian'], 'Blue'),
     rarity: pick(avatar.rarity, ['Rare', 'Epic', 'Legendary', 'OneOfOne'], 'Rare'),
     cl: Math.max(1, Math.min(9, Number(avatar.consciousness_level_required) || 1)),
+    /** Lokální portrét (`gen-moba-portraits.mjs` z finálního OASIS artu); '' = chybí. */
+    portrait: existsSync(join(portraits, `${Number(avatar.id)}.webp`)) ? `/portraits/${Number(avatar.id)}.webp` : '',
   }))
   .filter((row) => row.name.length > 0)
   .sort((a, b) => a.id - b.id);
@@ -46,18 +49,19 @@ const escape = (value) => value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 const body = rows
   .map(
     (row) =>
-      `  { id: ${row.id}, name: '${escape(row.name)}', subtitle: '${escape(row.subtitle)}', ray: '${row.ray}', rarity: '${row.rarity}', cl: ${row.cl} },`,
+      `  { id: ${row.id}, name: '${escape(row.name)}', subtitle: '${escape(row.subtitle)}', ray: '${row.ray}', rarity: '${row.rarity}', cl: ${row.cl}, portrait: '${row.portrait}' },`,
   )
   .join('\n');
 
 const output = `/**
  * KATALOG AVATARŮ — generované, needituj ručně.
  *
- * Zdroj: \`V31/L4/oasis/data/avatars.json\` (200 záznamů z AVATAR_ROSTER.md).
+ * Zdroj: \`V31/L4/oasis/data/avatars.json\` (202 záznamů z AVATAR_ROSTER.md).
  * Generátor: \`node scripts/ops/gen-avatar-catalog.mjs\`.
  *
  * Drží se tady jen to, co klient potřebuje k výběru a ke kreslení:
- * id, jméno, podtitul, paprsek, vzácnost a požadovaná úroveň vědomí.
+ * id, jméno, podtitul, paprsek, vzácnost, požadovaná úroveň vědomí a cesta
+ * k lokálnímu portrétu (256×256 z finálního OASIS artu).
  * Kreslení je odvozené **jen z těchto polí** (viz \`kit.ts\`), takže cizí hráč
  * jde vykreslit i bez toho, aby klient znal celý roster.
  */
@@ -83,6 +87,8 @@ export interface AvatarEntry {
   rarity: AvatarRarity;
   /** Požadovaná úroveň vědomí 1–9. */
   cl: number;
+  /** Cesta k portrétu (\`/portraits/<id>.webp\`, 256×256); prázdné = chybí. */
+  portrait: string;
 }
 
 export const AVATARS: AvatarEntry[] = [
