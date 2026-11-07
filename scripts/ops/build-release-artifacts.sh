@@ -10,6 +10,9 @@
 #       --from-commit <sha> --target x86_64-unknown-linux-gnu
 #   scripts/ops/build-release-artifacts.sh --all --container rust:1.95-slim-bullseye
 #   scripts/ops/build-release-artifacts.sh --verify dist/v3.2.0-rc1
+#   scripts/ops/build-release-artifacts.sh --from-commit <sha> --isolate --linux
+# --isolate-dir <new-dir> retains the extracted source for inspection.
+# --stop-before-build prepares that source without invoking Cargo (no release).
 #
 # Targets (linker requirements):
 #   x86_64-unknown-linux-gnu   — glibc; build in a container to pin the
@@ -36,6 +39,7 @@ cd "$REPO_ROOT"
 
 VERSION="${VERSION:-v3.2.0-beta}"
 FROM_COMMIT="HEAD"
+FROM_COMMIT_SET=0
 OUT=""
 TARGETS=()
 VARIANTS=("default:")
@@ -46,6 +50,9 @@ ALLOW_DIRTY=0
 VERIFY_DIR=""
 KEEP_STAGE=0
 LOCKED=1
+ISOLATE=0
+ISOLATE_DIR=""
+STOP_BEFORE_BUILD=0
 
 # package → binaries it produces (hyphens make `BINS_FOR_<pkg>` invalid shell
 # variable names, so this is a case function, not a variable table)
@@ -56,7 +63,7 @@ bins_for_pkg() {
     zion-cli)        echo "zion" ;;
     zion-pool)       echo "zion-pool" ;;
     zion-dao)        echo "zion-dao" ;;
-    zion-multichain) echo "zion-multichain" ;;
+    zion-multichain) echo "warpd" ;;
     *)               echo "" ;;
   esac
 }
@@ -67,7 +74,7 @@ usage() { sed -n '2,40p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-2}"; }
 while [ $# -gt 0 ]; do
   case "$1" in
     --version)      VERSION="$2"; shift 2 ;;
-    --from-commit)  FROM_COMMIT="$2"; shift 2 ;;
+    --from-commit)  FROM_COMMIT="$2"; FROM_COMMIT_SET=1; shift 2 ;;
     --target)       TARGETS+=("$2"); shift 2 ;;
     --all)          TARGETS=(x86_64-unknown-linux-gnu x86_64-pc-windows-gnu aarch64-apple-darwin x86_64-apple-darwin); shift ;;
     --linux)        TARGETS+=(x86_64-unknown-linux-gnu); shift ;;
@@ -77,6 +84,9 @@ while [ $# -gt 0 ]; do
     --jobs)         JOBS="$2"; shift 2 ;;
     --container)    CONTAINER="$2"; shift 2 ;;
     --allow-dirty)  ALLOW_DIRTY=1; shift ;;
+    --isolate)      ISOLATE=1; shift ;;
+    --isolate-dir)  ISOLATE_DIR="$2"; shift 2 ;;
+    --stop-before-build) STOP_BEFORE_BUILD=1; shift ;;
     --unlocked)     LOCKED=0; shift ;;
     --keep-stage)   KEEP_STAGE=1; shift ;;
     --verify)       VERIFY_DIR="$2"; shift 2 ;;
@@ -92,32 +102,13 @@ sha256_of() { # portable: GNU coreutils or BSD shasum
 
 # ---------------------------------------------------------------- verify mode
 verify_dist() {
-  local dir="$1" fail=0 n=0
-  [ -d "$dir" ] || { echo "verify: no such directory: $dir" >&2; exit 2; }
-  [ -f "$dir/SHA256SUMS" ] || { echo "verify: missing $dir/SHA256SUMS" >&2; exit 2; }
-  while read -r sum name; do
-    [ -n "${name:-}" ] || continue
-    n=$((n+1))
-    if [ ! -f "$dir/$name" ]; then echo "  FAIL missing $name"; fail=$((fail+1)); continue; fi
-    local got; got="$(sha256_of "$dir/$name")"
-    if [ "$got" = "$sum" ]; then echo "  PASS sha256 $name"
-    else echo "  FAIL sha256 $name"; echo "         want $sum"; echo "         got  $got"; fail=$((fail+1)); fi
-    # every artifact must carry BUILD-INFO.txt with a full commit + target.
-    # Member may appear as "BUILD-INFO.txt" or "./BUILD-INFO.txt" depending on
-    # how tar was invoked — accept both.
-    local member; member="$(tar tzf "$dir/$name" 2>/dev/null | grep -E '^\.?/?BUILD-INFO\.txt$' | head -1 || true)"
-    if [ -n "$member" ]; then
-      local info; info="$(tar xzOf "$dir/$name" "$member" 2>/dev/null || true)"
-      if printf '%s' "$info" | grep -q '^commit: [0-9a-f]\{40\}$'; then echo "         BUILD-INFO.txt present (full commit pinned)"
-      else echo "         FAIL BUILD-INFO.txt lacks full 40-char commit"; fail=$((fail+1)); fi
-    else
-      echo "         FAIL BUILD-INFO.txt missing in $name"; fail=$((fail+1))
-    fi
-  done < "$dir/SHA256SUMS"
-  if [ "$fail" -eq 0 ]; then echo "RESULT: PASS ($n artifacts verified)"; exit 0
-  else echo "RESULT: FAIL ($fail problems)"; exit 1; fi
+  local args=("$1")
+  if [ "$FROM_COMMIT_SET" = 1 ]; then
+    args+=(--commit "$(git rev-parse --verify "$FROM_COMMIT^{commit}")")
+  fi
+  python3 "$REPO_ROOT/scripts/ops/verify-release-artifacts.py" "${args[@]}"
 }
-if [ -n "$VERIFY_DIR" ]; then verify_dist "$VERIFY_DIR"; fi
+if [ -n "$VERIFY_DIR" ]; then verify_dist "$VERIFY_DIR"; exit $?; fi
 
 # ------------------------------------------------------------------- pin commit
 [ ${#TARGETS[@]} -gt 0 ] || { echo "specify --target/--linux/--all (or --verify <dir>)" >&2; exit 2; }
@@ -128,7 +119,7 @@ SHORT_SHA="$(git rev-parse --short=9 "$FULL_SHA")"
 COMMIT_DATE="$(git show -s --format=%cI "$FULL_SHA")"
 DESCRIBE="$(git describe --tags --always --dirty 2>/dev/null || echo "$SHORT_SHA")"
 HEAD_SHA="$(git rev-parse HEAD)"
-DIRTY="$(git status --porcelain --untracked-files=no | wc -l | tr -d ' ')"
+DIRTY="$(git status --porcelain --untracked-files=normal | wc -l | tr -d ' ')"
 
 echo "=== ZION release artifacts"
 echo "    version : $VERSION"
@@ -138,14 +129,47 @@ echo "    targets : ${TARGETS[*]}"
 echo "    variants: ${VARIANTS[*]}"
 [ -n "$CONTAINER" ] && echo "    builder : docker $CONTAINER"
 
-if [ "$DIRTY" != "0" ] && [ "$ALLOW_DIRTY" = 0 ]; then
+if [ "$FULL_SHA" != "$HEAD_SHA" ] && [ "$ISOLATE" != 1 ]; then
   echo "" >&2
-  echo "ERROR: working tree has $DIRTY modified tracked file(s) — a release artifact" >&2
+  echo "ERROR: --from-commit $SHORT_SHA is not HEAD ($(git rev-parse --short=9 "$HEAD_SHA"))." >&2
+  echo "       Refusing to build the working tree and label it as $SHORT_SHA." >&2
+  echo "       Pass --isolate to build a git archive of that commit, or check it out." >&2
+  exit 3
+fi
+
+if [ "$ISOLATE" = 1 ]; then
+  source_root="$REPO_ROOT"
+  # Artifacts must survive cleanup of the temporary source checkout.
+  OUT="${OUT:-$source_root/dist/$VERSION}"
+  case "$OUT" in /*) ;; *) OUT="$source_root/$OUT" ;; esac
+  if [ -n "$ISOLATE_DIR" ]; then
+    mkdir "$ISOLATE_DIR" || { echo "ERROR: --isolate-dir must be a new directory" >&2; exit 3; }
+    isolate_stage="$(cd "$ISOLATE_DIR" && pwd)"
+  else
+    isolate_stage="$(mktemp -d "${TMPDIR:-/tmp}/zion-release-isolate.XXXXXX")"
+    trap 'rm -rf "$isolate_stage"' EXIT
+  fi
+  git -C "$source_root" archive "$FULL_SHA" | tar -x -C "$isolate_stage"
+  REPO_ROOT="$isolate_stage"
+  V31="$isolate_stage/V31"
+  cd "$REPO_ROOT"
+  DIRTY=0
+  DESCRIBE="$(git -C "$source_root" describe --tags --always "$FULL_SHA" 2>/dev/null || echo "$SHORT_SHA")"
+  echo "    isolate : $isolate_stage"
+fi
+
+if [ "$STOP_BEFORE_BUILD" = 1 ]; then
+  echo "prepared $REPO_ROOT"
+  exit 0
+fi
+
+if [ "$DIRTY" != "0" ] && [ "$ALLOW_DIRTY" = 0 ] && [ "$ISOLATE" != 1 ]; then
+  echo "" >&2
+  echo "ERROR: working tree has $DIRTY tracked/untracked change(s) — a release artifact" >&2
   echo "       must come from a clean tree, otherwise BUILD-INFO.txt provenance is a lie." >&2
   echo "       Commit/stash first, or pass --allow-dirty (recorded as tree_state: dirty)." >&2
   exit 3
 fi
-[ "$FULL_SHA" = "$HEAD_SHA" ] || echo "    NOTE    : building $SHORT_SHA, HEAD is $(git rev-parse --short=9 HEAD)"
 
 OUT="${OUT:-$REPO_ROOT/dist/$VERSION}"
 mkdir -p "$OUT"
@@ -161,6 +185,22 @@ for p in $PKGS; do
   BINS="$BINS $b"
 done
 echo "    packages: $PKGS → binaries:$BINS"
+
+# Record the entire requested matrix BEFORE building: removing a failed target
+# from SHA256SUMS must never turn a partial release into a green verification.
+python3 - "$OUT/RELEASE-MATRIX.json" "$FULL_SHA" "$VERSION" "$PKGS" "${TARGETS[*]}" "${VARIANTS[*]}" <<'PY'
+import json, sys
+path, commit, version, packages, targets, variants = sys.argv[1:]
+artifacts = []
+for target in targets.split():
+    for spec in variants.split():
+        variant, _, features = spec.partition(':')
+        tag = target + ('+' + variant if variant != 'default' else '')
+        artifacts.append({'file': f'zion-{version}-{tag}.tar.gz', 'target': target, 'variant': variant, 'features': features})
+with open(path, 'w') as f:
+    json.dump({'version': version, 'commit': commit, 'packages': packages.split(), 'artifacts': artifacts}, f, indent=2)
+    f.write('\n')
+PY
 
 # ---------------------------------------------------------------- build runner
 # Cargo applies --features to *every* selected package, so a feature that only
@@ -198,6 +238,7 @@ build_one() { # build_one <target> <features> <bindir-out> <logfile> <variant>
     docker run --rm \
       -v "$REPO_ROOT":/src \
       -v "$OUT/cargo-target":/target \
+      -v "$bindir":/stage \
       -v "$cargo_home":/cargo-home \
       -e CARGO_HOME=/cargo-home \
       -e CARGO_TARGET_DIR=/target \
@@ -215,20 +256,19 @@ build_one() { # build_one <target> <features> <bindir-out> <logfile> <variant>
         case '$features' in *gpu-opencl*) [ -f /usr/include/CL/cl.h ] || { apt-get update -qq && apt-get install -y -qq ocl-icd-opencl-dev >/dev/null; } ;; esac
         rustup target add '$target' >/dev/null 2>&1 || true
         cargo build --release --target '$target' ${lockflag[*]+"${lockflag[*]}"} ${jobs_flag[*]+"${jobs_flag[*]}"} ${pkg_flags[*]+"${pkg_flags[*]}"} ${feat_flags[*]+"${feat_flags[*]}"} 2>&1
-        mkdir -p '$bindir'
         for b in $BINS; do
           for f in /target/'$target'/release/\$b /target/'$target'/release/\$b.exe; do
-            if [ -f \"\$f\" ]; then cp \"\$f\" '$bindir/'; fi
+            if [ -f \"\$f\" ]; then cp \"\$f\" /stage/; fi
           done
         done
-        chown -R \$HOST_UID:\$HOST_GID '$bindir' /target 2>/dev/null || true
-      " > "$logf" 2>&1
+        chown -R \$HOST_UID:\$HOST_GID /stage /target 2>/dev/null || true
+      " > "$logf" 2>&1 || return $?
   else
     # macOS bash 3.2 + `set -u`: expanding an EMPTY array with "${a[@]}" is
     # "unbound variable". The +"${a[@]}" idiom keeps it safe.
     ( cd "$V31" && ZION_GIT_SHA="$SHORT_SHA" cargo build --release --target "$target" \
         ${lockflag[@]+"${lockflag[@]}"} ${jobs_flag[@]+"${jobs_flag[@]}"} \
-        ${pkg_flags[@]+"${pkg_flags[@]}"} ${feat_flags[@]+"${feat_flags[@]}"} ) > "$logf" 2>&1
+        ${pkg_flags[@]+"${pkg_flags[@]}"} ${feat_flags[@]+"${feat_flags[@]}"} ) > "$logf" 2>&1 || return $?
     mkdir -p "$bindir"
     # CARGO_TARGET_DIR lets a clean worktree reuse the main checkout's build
     # cache instead of duplicating ~11 GB of target/ (disk on the dev Mac is
@@ -246,7 +286,7 @@ build_one() { # build_one <target> <features> <bindir-out> <logfile> <variant>
 
 write_build_info() { # write_build_info <stage> <target> <variant> <features>
   local stage="$1" target="$2" variant="$3" features="$4" tree="clean"
-  [ "$DIRTY" != "0" ] && tree="dirty ($DIRTY modified tracked files)"
+  [ "$DIRTY" != "0" ] && tree="dirty ($DIRTY tracked/untracked changes)"
   local toolchain rustc_line cargo_line
   if [ -n "$CONTAINER" ]; then
     rustc_line="$(docker run --rm "$CONTAINER" sh -c 'rustc -vV | tr "\n" " "' 2>/dev/null || echo "unknown")"
@@ -279,6 +319,7 @@ write_build_info() { # write_build_info <stage> <target> <variant> <features>
     echo "binaries:"
     for f in "$stage"/*; do
       [ -f "$f" ] || continue
+      [ "$(basename "$f")" != BUILD-INFO.txt ] || continue
       printf '  %s  %s  %s B\n' "$(sha256_of "$f")" "$(basename "$f")" "$(stat -c %s "$f" 2>/dev/null || stat -f %z "$f")"
     done
   } > "$stage/BUILD-INFO.txt"
@@ -301,13 +342,20 @@ for t in "${TARGETS[@]}"; do
       FAILED+=("$tag"); rm -rf "$stage"; continue
     fi
     count=$(find "$stage" -maxdepth 1 -type f | wc -l | tr -d ' ')
-    if [ "$count" = "0" ]; then
-      echo "  no binaries for $tag — log: $logf"
+    expected=0
+    complete=1
+    for b in $BINS; do
+      expected=$((expected+1))
+      suffix=""; case "$t" in *windows*) suffix=".exe" ;; esac
+      [ -s "$stage/$b$suffix" ] || complete=0
+    done
+    if [ "$complete" != "1" ] || [ "$count" != "$expected" ]; then
+      echo "  incomplete binary set for $tag ($count/$expected) — log: $logf"
       FAILED+=("$tag"); rm -rf "$stage"; continue
     fi
     write_build_info "$stage" "$t" "$variant" "$features"
     tarfile="zion-$VERSION-$tag.tar.gz"
-    tar czf "$OUT/$tarfile" -C "$stage" .
+    COPYFILE_DISABLE=1 tar czf "$OUT/$tarfile" -C "$stage" .
     rm -rf "$stage" 2>/dev/null || true
     ( cd "$OUT" && echo "$(sha256_of "$tarfile")  $tarfile" >> "$SUMS" )
     echo "  + $tarfile ($count binaries, $(stat -c %s "$OUT/$tarfile" 2>/dev/null || stat -f %z "$OUT/$tarfile") B)"
