@@ -768,7 +768,23 @@ pt „bónus", fr „bonus"; `/explorer/mempool` „Mempool"; **0 pageerror**.
    `labelForType`, `EndpointAccordion`, `TypeBadge`, `StatusDot`,
    `ApiQuickstartPanels`) dostaly `lang`.
 
-### ⚠️ Deploy dávky 24 neproběhl — síť
+### ✅ Deploy dávky 24 — až na pátý pokus (síť)
+
+Nakonec proběhl: `Deployed 20261107T132055Z`, živý `BUILD_ID dgn0T80sVGJVFk9TlpXAW`
+(shodný s lokálním), 7 stránek 200, 0 pageerror.
+
+Předtím ale selhal 4×: `rsync: write error: Broken pipe (32)`,
+`client_loop: send disconnect`, a pak i `ssh: … Operation timed out`.
+Příčina nebyla na serveru — v době výpadku byly nedostupné i `github.com`
+a `google.com` (lokální síť). Když se síť vrátila, začal timeoutovat SSH na EDGE2
+(fail2ban/MaxStartups po sérii přerušených rsynců — past z `AGENTS.md`).
+**Co pomohlo:** persistentní SSH master
+(`-o ControlMaster=auto -o ControlPath=/tmp/ssh-edge2-%r@%h:%p -o ControlPersist=15m`)
+exportovaný do `RSYNC_RSH`, takže rsync i navazující ssh příkazy jely jedním
+spojením. **Pravidlo pro příště:** u 200MB+ artefaktů nasazovat s ControlMaster,
+ne s holým `ssh`/`rsync`.
+
+### Původní záznam o selhání
 
 `tsc` 0 i `next build` zelený, commit i push proběhly
 (`6644e58cd` + docs `a2c28f680`), ale **nasazení selhalo 4×** na přerušeném
