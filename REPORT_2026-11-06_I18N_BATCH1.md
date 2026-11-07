@@ -802,3 +802,65 @@ disk 60 %. **Nic není rozbité** — dávka 24 jen čeká na přenos.
 **Postup při obnově sítě:** `bash scripts/ops/deploy-next-artifact.sh <artefakt>
 zion-edge2 …` — artefakt je v `…/opencode/web-artZ` (215 MB, ověřený: `server.js`,
 `.next/BUILD_ID`, `node_modules/next`, `.next/static`).
+
+---
+
+## 42. ✅ F2b DOKONČENA — dávka 25 (388 řetězců, 58 souborů)
+
+Explorer search, network chart panely, bridge tracker/banner/validators, DAO
+delegate a vote memo, countdown, milestones, mini chaty, pool/network event feeds,
+ticker, mempool feed, bannery, news stránky, menu.
+
+### Tři pasti (vše chyceno buildem nebo `tsc`)
+
+1. **`'use client'` podruhé** — codemod vložil import před direktivu u
+   `HiranMiniChat.tsx` a `MarketplacePlaceholder.tsx`. **`tsc` to nechytí**
+   (direktiva není typ), spadl až `next build`. Dořešeno skriptem, který
+   direktivu přesune na první řádek.
+2. **Hromadné doplnění `lang` propu rozbilo JSX** — regex `<Comp([^>]*?)>`
+   ukončil match na `=>` v `hashrateHistory.map((p) => p.value)` a vyrobil
+   `map((p) = lang={lang}> p.value)`. Chyceno `tsc`, opraveno (2 soubory).
+   **Pravidlo:** při vkládání atributů nikdy nematchovat `[^>]*` přes `=>`.
+3. **Sdílené helpery s `cs` parametrem** — `formatZion(flowers, cs, digits)`
+   (`L5FundTracker`, exportovaný!) a `QvSection` → `lang: Lang` +
+   `Intl.NumberFormat(lang, …)`. Dále `timeAgo`/`fmtDate`/`formatTime`
+   v `NotificationBell`, `NotificationsPanel`, `MempoolFeed`,
+   `NetworkEventsFeed`, `PoolEventsFeed` (devátá až třináctá varianta) →
+   `Intl.RelativeTimeFormat`.
+
+Ověřeno živě (deploy 20261107T161508Z): `/docs` „Dokumentace / Documentación /
+Documentação / Documentation", `/roadmap` „Hoja de ruta / Roteiro / Feuille de
+route", `/explorer/search` „Hledat / Buscar / Pesquisar / Rechercher",
+`/wallet/staking`, `/terranova`; 7 stránek 200, 0 pageerror, `tsc` 0.
+
+### ⚠️ Kolize: commit strhl tři soubory paralelní session
+
+`git add apps/website-v2.9/src/app apps/website-v2.9/src/components` (široká
+cesta kvůli 58 souborům) přitáhl i tři API routy archivu, které patří
+paralelní session:
+`api/archive/audit/route.ts`, `api/archive/docs/[...path]/route.ts`,
+`api/archive/downloads/book/[bookId]/route.ts` (refaktor `archiveContentRoot()`).
+**Ověřeno, že to není rozbité:** `tsc` 0, `next build` zelený, `/api/archive/audit`
+→ 401 (admin gate), `/api/archive/docs/…` → 403 (pass gate) — tedy správné
+odpovědi, žádný pád. Zůstává v commitu; paralelní session to jen uvidí jako
+už commitnuté. **Pravidlo pro příště:** u velkých dávek vypisovat cesty
+explicitně, ne `git add <adresář>`.
+
+## 43. 🎯 Stav po F2b
+
+| | hodnota |
+|---|---:|
+| přeložených řetězců (es = pt = fr) | **7 380** |
+| stránek/komponent s vlastním slovníkem | **199** |
+| souborů slovníků | **597** (199 × 3) |
+| **zbývající soubory s `{cs,en}` copy** | **0** |
+| `tsc` / `next build` | 0 / zelený |
+| živý web | 200 |
+
+**F2b je hotová: každá stránka a komponenta webu, která měla dvojici `{cs, en}`,
+má teď i es/pt/fr.** Zbývají už jen dvě věci, obě mimo F2b:
+
+- **F4** — 18 dvojjazyčných 3D náhledů (`*PreviewLazy`), které kreslí popisky
+  do canvasu a byly záměrně ponechány cs/en.
+- **F6** — 125× `toLocaleString()` bez locale (latentní hydration #418),
+  hreflang a sitemap.
