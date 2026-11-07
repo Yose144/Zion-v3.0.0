@@ -287,14 +287,59 @@ kompresi textury.
 
 ---
 
-## 9. Dávkové zpracování 202 postav
+## 8b. Rig a animace (Blender headless)
 
+Blender se instaluje **portable** do uživatelského prostoru, bez adminu a bez
+zásahu do `/Applications`:
+
+```bash
+cd "$WORK"
+curl -fL -O https://download.blender.org/release/Blender5.2/blender-5.2.3-macos-arm64.dmg
+curl -fsL -o blender.sha256 https://download.blender.org/release/Blender5.2/blender-5.2.3.sha256
+shasum -a 256 blender-5.2.3-macos-arm64.dmg   # musí sedět s řádkem v .sha256
+hdiutil attach -nobrowse -readonly -mountpoint bmnt blender-5.2.3-macos-arm64.dmg
+mkdir -p "$HOME/Tools/blender-5.2.3"
+cp -R bmnt/Blender.app "$HOME/Tools/blender-5.2.3/"
+hdiutil detach bmnt
+xattr -dr com.apple.quarantine "$HOME/Tools/blender-5.2.3/Blender.app"
+```
+
+Ověřená verze: **Blender 5.2.3 LTS** (`acc0537…`), Python 3.13, glTF import
+i export dostupné. Velikost ~1,2 GB.
+
+### Rig jedné postavy
+
+```bash
+BLENDER="$HOME/Tools/blender-5.2.3/Blender.app/Contents/MacOS/Blender"
+"$BLENDER" -b --factory-startup --python scripts/ops/avatar-3d/rig.py -- \
+  --input .artifacts/avatar-3d/stage/000/000.glb \
+  --output .artifacts/avatar-3d/stage/000/000-rigged.glb --height 1.75
+```
+
+`rig.py` dělá: srovnání do metrů (chodidla na 0, střed v X/Y), kostru humanoida
+z proporcí modelu, **vzdálenostní skin váhy**, idle animaci (dýchání) a export GLB.
+
+**Proč ne automatické váhy Blenderu (`ARMATURE_AUTO` / bone heat):** síť
+z image-to-3D bývá neuzavřená a bone heat na ní selže („failed to find solution").
+Vzdálenostní váhy k úsečkám kostí (2 nejbližší, pád `1/d³`) fungují vždy a u
+stylizované postavy vypadají dobře.
+
+**Ověřeno na Krišnovi:** 17 kloubů, klip `idle`, atributy `JOINTS_0`/`WEIGHTS_0`,
+síť se nedeformuje do rozsypání, export **1,75 MB** (neorigo 1,65 MB).
+
+**Meze:** jedna společná kostra pro všechny humanoidy (Hanumánův ocas, Ganéšova
+hlava, křídla a plovoucí atributy nejsou řešené), chybí chůze/útok, prsty nejsou
+rigované. Animace se v exportu jmenuje `idle` a v Nirvaně se má přehrávat
+`AnimationMixer`em na klonu skeletu (`SkeletonUtils.clone`).
+
+## 9. Dávkové zpracování 202 postav
 Autonomní dávku řeší tři skripty v `scripts/ops/avatar-3d/`:
 
 | Skript | Co dělá |
 |---|---|
 | `crop-sheet.py` | Rozdělí dodaný výtvarný list na `front / side / back / detail`; hranice hledá jako svislé pruhy pozadí, jinak použije proporcionální fallback |
 | `generate.py` | Načte TripoSR **jednou** a v cyklu generuje všechny postavy; je opakovatelný (hotové přeskočí), chybu jedné postavy zapíše a pokračuje |
+| `rig.py` | Blender headless: kostra, skin váhy, idle animace, export GLB (§8b) |
 | `qa.mjs` | Vykreslí kontrolní list: portrét + čtyři pohledy pro každé ID, do jednoho PNG |
 | `similarity.py` | Měří IoU siluety a ΔE palety proti výtvarnému listu — **diagnostika, ne schvalovací filtr** (viz §9) |
 
@@ -344,8 +389,8 @@ a `puppeteer-core` s nainstalovaným Chrome.
 - **Decimace na herní rozpočet.** Řešeno přepínačem `--max-tris`: decimuje se
   **před** zapékáním textury, takže UV i barvy zůstanou správné. Ověřeno na Krišnovi:
   24 856 → **15 000 trojúhelníků**, 2,07 → **1,65 MB**, vzhled beze změny.
-- **Rig a animace.** Není součástí image-to-3D. Samostatný krok v Blenderu
-  (headless + auto-rig), pro blobovitou síť nespolehlivý.
+- **Rig a animace.** Vyřešeno v §8b (Blender headless + vzdálenostní váhy).
+  Otevřené zůstávají: chůze a útok, prsty, výjimky s nestandardní anatomií.
 - **Automatické hodnocení podoby.** `similarity.py` měří IoU siluety a ΔE palety
   proti **výtvarnému listu** (ne portrétu — ten je jen poprsí). **Změřeno: nefunguje
   jako filtr.** Známý vadný model dostal IoU 0,456 / hlava 0,248, dobré modely
@@ -416,6 +461,7 @@ podle rychlosti GPU.
 - 2026-11-07: autonomní dávka (`crop-sheet.py`, `generate.py`, `qa.mjs`) a pátá oprava
   orámování. Tři postavy (Krišna, Hanumán, Dalaí Lama) prošly technicky: 25–35 tis.
   trojúhelníků, 2–2,6 MB, 35–60 s na postavu, správné proporce, čitelné barvy.
-  **Do hry nezapojeno** — chybí decimace, rig a schválení podoby.
+  Decimace i rig jsou hotové (`--max-tris`, `rig.py`); **do hry nezapojeno**,
+  protože chybí schválení podoby a animace chůze/útoku.
 - Artefakty: `.artifacts/avatar-3d/stage/` (modely), `.artifacts/avatar-3d/qa/`
   (kontrolní listy), `.artifacts/krishna-triposr-pilot/` (první pokusy).
