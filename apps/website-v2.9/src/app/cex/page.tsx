@@ -349,7 +349,7 @@ export default function CexPage() {
             </div>
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <p className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(CexCopy.txns24h, lang)}</p>
-              <p className="text-lg font-bold text-white mt-1">{(dex?.total_txns_24h ?? 0).toLocaleString()}</p>
+              <p className="text-lg font-bold text-white mt-1">{(dex?.total_txns_24h ?? 0).toLocaleString('en-US')}</p>
               <p className="text-[11px] text-gray-500">
                 <span className="text-zion-cyan">{dex?.total_buys_24h ?? 0} buys</span>
                 {' · '}

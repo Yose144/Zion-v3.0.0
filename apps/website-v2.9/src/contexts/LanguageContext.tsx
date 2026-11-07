@@ -47,6 +47,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>('cs');
 
   useEffect(() => {
+    // Priority: `?lang=` v URL (odkaz z hreflang / sdílená stránka) → cookie /
+    // localStorage → výchozí `cs`. URL se ukládá, aby volba držela i po navigaci.
+    const fromUrl = new URLSearchParams(window.location.search).get('lang');
+    if (isLang(fromUrl)) {
+      setLangState(fromUrl);
+      writePublicLang(fromUrl);
+      return;
+    }
     const stored = readPublicLang();
     if (isLang(stored)) setLangState(stored);
   }, []);

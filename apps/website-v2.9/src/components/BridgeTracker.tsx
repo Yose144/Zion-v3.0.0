@@ -135,7 +135,7 @@ export default function BridgeTracker() {
               <div className="zion-rainbow-sub p-4" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                 <step.icon className={`h-5 w-5 ${step.color} mb-2`} />
                 <p className="text-2xl font-bold tabular-nums text-white">
-                  {step.count.toLocaleString()}
+                  {step.count.toLocaleString('en-US')}
                 </p>
                 <p className="text-[10px] text-gray-500 mt-1 leading-tight">
                   {cs ? step.labelCs : step.label}
@@ -170,7 +170,7 @@ export default function BridgeTracker() {
               <div className="zion-rainbow-sub p-4" style={{ '--rc': '59, 130, 246' } as React.CSSProperties}>
                 <step.icon className={`h-5 w-5 ${step.color} mb-2`} />
                 <p className="text-2xl font-bold tabular-nums text-white">
-                  {step.count.toLocaleString()}
+                  {step.count.toLocaleString('en-US')}
                 </p>
                 <p className="text-[10px] text-gray-500 mt-1 leading-tight">
                   {cs ? step.labelCs : step.label}
@@ -190,11 +190,11 @@ export default function BridgeTracker() {
       <div className="flex flex-wrap gap-4 pt-2 border-t border-white/5 text-xs">
         <div className="flex items-center gap-2">
           <span className="text-gray-500">{tx5(BridgeTrackerCopy.l1Height, lang)}:</span>
-          <span className="font-mono text-gray-300">{(s.last_l1_height ?? 0).toLocaleString()}</span>
+          <span className="font-mono text-gray-300">{(s.last_l1_height ?? 0).toLocaleString('en-US')}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-gray-500">{tx5(BridgeTrackerCopy.evmBlock, lang)}:</span>
-          <span className="font-mono text-gray-300">{(s.last_evm_block ?? 0).toLocaleString()}</span>
+          <span className="font-mono text-gray-300">{(s.last_evm_block ?? 0).toLocaleString('en-US')}</span>
         </div>
         {(s.errors_total ?? 0) > 0 && (
           <div className="flex items-center gap-2 text-zion-purple">
@@ -204,7 +204,7 @@ export default function BridgeTracker() {
         )}
         {lastUpdated && (
           <div className="ml-auto text-gray-600">
-            {tx5(BridgeTrackerCopy.updated, lang)}: {new Date(lastUpdated).toLocaleTimeString()}
+            {tx5(BridgeTrackerCopy.updated, lang)}: {new Date(lastUpdated).toLocaleTimeString('en-US')}
           </div>
         )}
       </div>

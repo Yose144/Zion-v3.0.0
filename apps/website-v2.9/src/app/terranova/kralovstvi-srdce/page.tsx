@@ -572,7 +572,7 @@ export default function KralovstviSrdcePage() {
                 {tx5(Copy.threeDSubtitle, lang)}
               </h2>
             </div>
-            <KralovstviSrdcePreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
+            <KralovstviSrdcePreviewLazy lang={lang} className="w-full" />
           </div>
         </motion.section>
 

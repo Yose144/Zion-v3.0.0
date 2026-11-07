@@ -312,7 +312,7 @@ export async function GET() {
 
   const nowSec = Math.floor(Date.now() / 1000);
   const mainnetStabilityRun = buildMainnetStabilityRun({ primary, usa, singapore }, collectorState, nowSec);
-  const samplesLabel = mainnetStabilityRun.collector.samples_collected.toLocaleString();
+  const samplesLabel = mainnetStabilityRun.collector.samples_collected.toLocaleString('en-US');
   const lastSampleLabel = mainnetStabilityRun.collector.last_sample_at
     ? new Date(mainnetStabilityRun.collector.last_sample_at).toLocaleString('cs-CZ')
     : 'zatím bez persisted vzorku';

@@ -250,15 +250,15 @@ export default function StatusPageClient() {
   ];
 
   const networkMetrics = [
-    { label: tx5(ExplorerStatusStatusPageClientCopy.blockHeight, lang), value: stats ? `#${stats.block_height.toLocaleString()}` : "—", icon: Boxes, color: "text-zion-gold" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.blockHeight, lang), value: stats ? `#${stats.block_height.toLocaleString('en-US')}` : "—", icon: Boxes, color: "text-zion-gold" },
     { label: tx5(ExplorerStatusStatusPageClientCopy.tipHash, lang), value: stats?.top_block_hash ? `${stats.top_block_hash.slice(0, 12)}…` : "—", icon: Hash, color: "text-zion-cyan" },
     { label: tx5(ExplorerStatusStatusPageClientCopy.hashrate, lang), value: stats?.network_hashrate_formatted ?? "—", icon: Zap, color: "text-zion-cyan" },
     { label: tx5(ExplorerStatusStatusPageClientCopy.difficulty, lang), value: stats ? formatNumber(stats.difficulty) : "—", icon: Activity, color: "text-zion-cyan" },
     { label: tx5(ExplorerStatusStatusPageClientCopy.cumulativeDifficulty, lang), value: stats ? formatNumber(stats.cumulative_difficulty) : "—", icon: TrendingUp, color: "text-zion-cyan" },
     { label: tx5(ExplorerStatusStatusPageClientCopy.targetBlockTime, lang), value: stats ? `${stats.target_block_time}s` : "—", icon: Clock, color: "text-zion-gold" },
     { label: tx5(ExplorerStatusStatusPageClientCopy.avgBlockTime, lang), value: stats ? `${stats.avg_block_time.toFixed(1)}s` : "—", icon: Clock, color: "text-zion-gold" },
-    { label: tx5(ExplorerStatusStatusPageClientCopy.totalBlocks, lang), value: stats ? stats.total_blocks.toLocaleString() : "—", icon: Boxes, color: "text-zion-gold" },
-    { label: tx5(ExplorerStatusStatusPageClientCopy.totalTransactions, lang), value: stats ? stats.total_transactions.toLocaleString() : "—", icon: Activity, color: "text-zion-cyan" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.totalBlocks, lang), value: stats ? stats.total_blocks.toLocaleString('en-US') : "—", icon: Boxes, color: "text-zion-gold" },
+    { label: tx5(ExplorerStatusStatusPageClientCopy.totalTransactions, lang), value: stats ? stats.total_transactions.toLocaleString('en-US') : "—", icon: Activity, color: "text-zion-cyan" },
     { label: tx5(ExplorerStatusStatusPageClientCopy.mempoolTx, lang), value: stats ? String(stats.tx_pool_size) : "—", icon: Signal, color: "text-zion-purple" },
   ];
 
@@ -338,7 +338,7 @@ export default function StatusPageClient() {
                   {tx5(ExplorerStatusStatusPageClientCopy.currentHeightSse, lang)}
                 </div>
                 <div className="text-4xl font-bold text-zion-cyan tabular-nums">
-                  #{sse.stats.height.toLocaleString()}
+                  #{sse.stats.height.toLocaleString('en-US')}
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
                   <div>
@@ -539,7 +539,7 @@ export default function StatusPageClient() {
                     {peer.incoming ? (tx5(ExplorerStatusStatusPageClientCopy.incoming_2, lang)) : (tx5(ExplorerStatusStatusPageClientCopy.outgoing_2, lang))}
                   </span>
                   <span className="text-[12px] text-zion-gold tabular-nums">
-                    {peer.height > 0 ? `#${peer.height.toLocaleString()}` : "—"}
+                    {peer.height > 0 ? `#${peer.height.toLocaleString('en-US')}` : "—"}
                   </span>
                   <span className="text-[12px] text-white/50 font-mono truncate">
                     {peer.sub_version || "—"}
@@ -616,7 +616,7 @@ export default function StatusPageClient() {
                 <div>
                   <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{tx5(ExplorerStatusStatusPageClientCopy.height, lang)}</div>
                   <Link href={`/explorer/block?height=${stats.last_block.height}`} className="text-xl font-bold text-zion-gold hover:text-zion-gold tabular-nums">
-                    #{stats.last_block.height.toLocaleString()}
+                    #{stats.last_block.height.toLocaleString('en-US')}
                   </Link>
                 </div>
                 <div>

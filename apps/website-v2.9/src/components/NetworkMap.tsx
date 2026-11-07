@@ -360,7 +360,7 @@ export default function NetworkMap({ variant = 'card', className }: NetworkMapPr
                       {node.name}
                     </text>
                     <text x={pos.x + 25} y={pos.y - 18} fill="#9CA3AF" fontSize="9">
-                      {tx5(NetworkMapCopy.height, lang)}: {node.height ? node.height.toLocaleString() : '—'}
+                      {tx5(NetworkMapCopy.height, lang)}: {node.height ? node.height.toLocaleString('en-US') : '—'}
                     </text>
                     <text x={pos.x + 25} y={pos.y - 6} fill="#9CA3AF" fontSize="9">
                       {tx5(NetworkMapCopy.miners, lang)}: {node.miners}

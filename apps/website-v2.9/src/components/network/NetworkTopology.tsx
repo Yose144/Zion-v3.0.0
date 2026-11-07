@@ -736,7 +736,7 @@ export default function NetworkTopology() {
                 <span className="text-gray-500">{tx5(NetworkTopologyCopy.latency, lang)}</span>
                 <span className="font-mono text-right" style={{ color: latencyColor(hovered.latency) }}>{hovered.latency > 0 ? `${hovered.latency}ms` : '—'}</span>
                 <span className="text-gray-500">{tx5(NetworkTopologyCopy.height, lang)}</span>
-                <span className="text-gray-300 font-mono text-right">{hovered.height > 0 ? hovered.height.toLocaleString() : '—'}</span>
+                <span className="text-gray-300 font-mono text-right">{hovered.height > 0 ? hovered.height.toLocaleString('en-US') : '—'}</span>
                 <span className="text-gray-500">{tx5(NetworkTopologyCopy.connections, lang)}</span>
                 <span className="text-gray-300 font-mono text-right">{hovered.connectionCount}</span>
               </div>

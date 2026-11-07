@@ -559,7 +559,7 @@ export default function L6IssobellaPage() {
             </div>
 
             <div className="space-y-6">
-              <L6StationPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full rounded-2xl" />
+              <L6StationPreviewLazy lang={lang} className="w-full rounded-2xl" />
               <figure className="group space-y-2">
                 <Image
                   src="/docs/l6/img/1stMock.png"

@@ -197,7 +197,7 @@ function fmtUptime(s: number) {
 }
 
 function fmtNum(n: number) {
-  return n.toLocaleString();
+  return n.toLocaleString('en-US');
 }
 
 function PipelineStep({
@@ -635,7 +635,7 @@ export default function BridgeTrackerClient() {
                               href={`/explorer/block?id=${tx.block_height}`}
                               className="font-mono text-xs text-gray-300 hover:text-white transition-colors tabular-nums"
                             >
-                              {tx.block_height.toLocaleString()}
+                              {tx.block_height.toLocaleString('en-US')}
                             </Link>
                           </td>
                           {/* Sender */}

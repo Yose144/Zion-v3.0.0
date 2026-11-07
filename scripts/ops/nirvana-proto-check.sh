@@ -18,24 +18,45 @@ SITE="${NIRVANA_SITE:-https://nirvana.zionterranova.com}"
 PROTOCOL_FILE="$ROOT_DIR/apps/nirvana/src/core/net/protocol.ts"
 HEALTH_URL="${SITE%/}/net/health"
 QUIET=0
-[[ "${1:-}" == "--quiet" ]] && QUIET=1
+STAMP=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --quiet) QUIET=1; shift ;;
+    --stamp) STAMP="${2:-}"; shift 2 ;;
+    *) echo "[proto] CHYBA: neznámý argument $1" >&2; exit 2 ;;
+  esac
+done
 
 say() { [[ "$QUIET" -eq 1 ]] || echo "$@"; }
 
-if [[ ! -f "$PROTOCOL_FILE" ]]; then
-  say "[proto] CHYBA: nenalezen $PROTOCOL_FILE" >&2
-  exit 2
+if [[ -n "$STAMP" ]]; then
+  if [[ ! -f "$STAMP" ]]; then
+    say "[proto] CHYBA: artefakt nemá razítko PROTO_VERSION ($STAMP)." >&2
+    say "[proto]        Pracovní strom se nečte." >&2
+    exit 2
+  fi
+  client_proto="$(grep -oE '[0-9]+' "$STAMP" | head -1)"
+  if [[ -z "${client_proto:-}" ]]; then
+    say "[proto] CHYBA: razítko $STAMP neobsahuje číselný PROTO_VERSION" >&2
+    exit 2
+  fi
+else
+  if [[ ! -f "$PROTOCOL_FILE" ]]; then
+    say "[proto] CHYBA: nenalezen $PROTOCOL_FILE" >&2
+    exit 2
+  fi
+  # `export const PROTO_VERSION = 5;`
+  client_proto="$(grep -m1 -E 'export const PROTO_VERSION[[:space:]]*=' "$PROTOCOL_FILE" \
+    | grep -oE '[0-9]+' | head -1)"
+  if [[ -z "${client_proto:-}" ]]; then
+    say "[proto] CHYBA: v protocol.ts není číselný PROTO_VERSION" >&2
+    exit 2
+  fi
 fi
 
-# `export const PROTO_VERSION = 5;`
-client_proto="$(grep -m1 -E 'export const PROTO_VERSION[[:space:]]*=' "$PROTOCOL_FILE" \
-  | grep -oE '[0-9]+' | head -1)"
-if [[ -z "${client_proto:-}" ]]; then
-  say "[proto] CHYBA: v protocol.ts není číselný PROTO_VERSION" >&2
-  exit 2
-fi
-
-if ! health="$(curl -fsS --max-time 10 "$HEALTH_URL" 2>/dev/null)"; then
+if [[ -n "${NIRVANA_HEALTH_FILE:-}" ]]; then
+  health="$(cat "$NIRVANA_HEALTH_FILE")"
+elif ! health="$(curl -fsS --max-time 10 "$HEALTH_URL" 2>/dev/null)"; then
   say "[proto] CHYBA: $HEALTH_URL neodpovídá — nedá se ověřit verze serveru." >&2
   exit 2
 fi

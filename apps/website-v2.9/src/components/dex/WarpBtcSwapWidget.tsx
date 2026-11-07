@@ -152,11 +152,11 @@ function phaseLabel(phase: string, cs: boolean, lang: Lang): { text: string; cls
 }
 
 function fmtSats(sats: number): string {
-  return `${sats.toLocaleString()} sats (${(sats / 1e8).toFixed(8)} BTC)`;
+  return `${sats.toLocaleString('en-US')} sats (${(sats / 1e8).toFixed(8)} BTC)`;
 }
 
 function fmtZion(flowers: number): string {
-  return `${(flowers / 1e6).toLocaleString(undefined, { maximumFractionDigits: 6 })} ZION`;
+  return `${(flowers / 1e6).toLocaleString('en-US', { maximumFractionDigits: 6 })} ZION`;
 }
 
 function CopyBtn({ value }: { value: string }) {

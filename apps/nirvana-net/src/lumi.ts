@@ -156,21 +156,23 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
 
     state,
 
+    /**
+     * `id` nemusí být letec — divák (`spectate`) sedlo nemá a přesto musí
+     * dostat cestu, světla a ostatní. Do `flyers` se nezapisuje a `you`
+     * zůstane vynechané, takže klient nemá co řídit.
+     */
     snapshot(id: string): ServerMessage | null {
       const me = flyers.get(id);
-      if (!me) return null;
       return {
         t: 'snapshot',
         game: 'lumi',
         seq: lights.size,
         time: Math.max(0, Date.now() - startedAt),
-        // prázdná pole: Lumi neposílá arénové hráče ani projektily
         players: [],
         lumi: {
           path,
           lights: [...lights].sort((a, b) => a - b),
           open: lights.size >= TOTAL_LIGHTS,
-          // vlastní stav klient nepotřebuje — predikuje si ho sám
           flyers: [...flyers.values()]
             .filter((flyer) => flyer.id !== id)
             .map(({ id: flyerId, name, avatarId, x, y, vx, vy, energy, finished, ghostUntil, gifts, lights: held }) => ({
@@ -183,15 +185,11 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
               vy,
               energy,
               finished,
-              // duch = hráč odešel; klient ho dokresluje s klesající průhledností
               ...(ghostUntil ? { ghost: true as const } : {}),
-              // darovaná světla jsou vidět i u ostatních (L-6)
               ...(gifts > 0 ? { gifts } : {}),
-              // kolik světel sám sebral (L-11) — podklad pro podíl na odměně
               collected: held.size,
             })),
-          // vlastní souhrn: snapshot sebe neposílá, ale podíl potřebuje i já
-          you: { collected: me.lights.size },
+          ...(me ? { you: { collected: me.lights.size } } : {}),
         },
       };
     },

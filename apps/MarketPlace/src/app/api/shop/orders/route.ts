@@ -13,6 +13,13 @@ import { encryptSecret } from '@/lib/crypto';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 import { FIRE_CONSENT_VERSION, checkFireConsent } from '@/lib/fire-safety';
 import {
+  StockConflictError,
+  aggregateOrderQuantities,
+  duplicateOrderDecision,
+  reserveProductStock,
+  variableSymbol,
+} from '@/lib/shop-order-guard';
+import {
   SHOP_VAULT,
   shopPayMemo,
   zionPayUri,
@@ -35,6 +42,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  let claimedOrderId = '';
+  let claimedEmail = '';
   try {
     const body = (await req.json()) as ShopOrderInput;
 
@@ -117,22 +126,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ── Idempotency: same orderId → return existing order ───────────
+    // Opakované orderId smí pokračovat jen se stejným e-mailem a jen
+    // veřejným stavem. Cizí požadavek nedostane jméno, adresu ani peněženku.
+    claimedOrderId = body.orderId;
+    claimedEmail = body.customer.email;
+    const bankPublic = {
+      account: '2901809148 / 2010',
+      iban: 'CZ63 2010 0000 0029 0180 9148',
+      bic: BANK_BIC,
+    };
     const existing = await prisma.shopOrder.findUnique({ where: { orderId: body.orderId } });
     if (existing) {
-      const { customerWalletSeed, customerWalletSecretKey, ...safeExisting } = existing;
-      void customerWalletSeed;
-      void customerWalletSecretKey;
-      const vs = existing.orderId.match(/(\d{10})/)?.[1] ?? existing.orderId.replace(/\D/g, '').slice(0, 10);
-      return NextResponse.json({
-        success: true,
-        data: {
-          order: safeExisting,
-          invoice: null,
-          bank: { account: '2901809148 / 2010', iban: 'CZ63 2010 0000 0029 0180 9148', bic: BANK_BIC, vs, amount: existing.totalCzk, qrCode: null },
-          duplicate: true,
-        },
-      });
+      const decision = duplicateOrderDecision(existing, body.customer.email, bankPublic);
+      return NextResponse.json(decision.body, { status: decision.status });
     }
 
     // ── Server-side pricing: recompute total + tokens from catalog ──
@@ -168,9 +174,6 @@ export async function POST(req: NextRequest) {
       if (!Number.isInteger(qty) || qty < 1 || qty > 99) {
         return NextResponse.json({ success: false, error: `Invalid quantity for ${product.name}` }, { status: 400 });
       }
-      if (!product.inStock || product.stock < qty) {
-        return NextResponse.json({ success: false, error: `${product.name} is out of stock` }, { status: 409 });
-      }
       // V2 parity: active campaign overrides catalog tokens,
       // else 1 Kč = 1 ZION loyalty unit
       const baseTokens =
@@ -189,6 +192,19 @@ export async function POST(req: NextRequest) {
         instructionsUrl: product.instructionsUrl ?? undefined,
         modelUrl: product.modelUrl ?? undefined,
       });
+    }
+
+    // Dva řádky téhož produktu jsou jeden nárok. Kontrola po řádku by
+    // poslední kus prodala dvakrát.
+    const reserved = aggregateOrderQuantities(lineItems);
+    for (const [externalId, qty] of reserved) {
+      const product = byId.get(externalId);
+      if (!product || !product.inStock || product.stock < qty) {
+        return NextResponse.json(
+          { success: false, error: `${product?.name ?? externalId} is out of stock` },
+          { status: 409 },
+        );
+      }
     }
 
     const shippingCzk = SHIPPING_PRICES[shippingMethod];
@@ -221,8 +237,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const [order] = await prisma.$transaction([
-      prisma.shopOrder.create({
+    const order = await prisma.$transaction(async (tx) => {
+      await reserveProductStock(tx, reserved);
+      return tx.shopOrder.create({
         data: {
           orderId: body.orderId,
           status: 'pending',
@@ -255,24 +272,10 @@ export async function POST(req: NextRequest) {
           fireConsentAt: fireCheck?.ok ? new Date() : null,
           fireConsentVersion: fireCheck?.ok ? fireCheck.version : null,
         },
-      }),
-      ...lineItems.map((li) =>
-        prisma.shopProduct.update({
-          where: { externalId: li.externalId },
-          data: { stock: { decrement: li.quantity } },
-        }),
-      ),
-    ]);
+      });
+    });
 
-    // Fix inStock flags for depleted products (outside txn, best-effort)
-    for (const li of lineItems) {
-      prisma.shopProduct.updateMany({
-        where: { externalId: li.externalId, stock: { lte: 0 } },
-        data: { inStock: false },
-      }).catch(() => {});
-    }
-
-    const vs = body.orderId.match(/(\d{10})/)?.[1] ?? body.orderId.replace(/\D/g, '').slice(0, 10);
+    const vs = variableSymbol(body.orderId);
     const qrData = `SPD*1.0*ACC:${BANK_ACCOUNT}*AM:${totalCzk}.00*CC:CZK*MSG:Objednavka ${body.orderId}*X-VS:${vs}`;
     const qrSvg = await QRCode.toString(qrData, { type: 'svg', margin: 2, width: 280 });
     const qrCode = `data:image/svg+xml;base64,${Buffer.from(qrSvg).toString('base64')}`;
@@ -391,9 +394,31 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    // Unique constraint on orderId → concurrent duplicate submit
+    if (error instanceof StockConflictError) {
+      return NextResponse.json({ success: false, error: 'Item is out of stock' }, { status: 409 });
+    }
+    // Souběh dvou nových požadavků se stejným orderId: sklad se vrátil
+    // s transakcí, odpověď je stejná jako u vědomého opakování.
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return NextResponse.json({ success: false, error: 'Order already exists' }, { status: 409 });
+      try {
+        const raced = claimedOrderId
+          ? await prisma.shopOrder.findUnique({ where: { orderId: claimedOrderId } })
+          : null;
+        if (raced) {
+          const decision = duplicateOrderDecision(raced, claimedEmail, {
+            account: '2901809148 / 2010',
+            iban: 'CZ63 2010 0000 0029 0180 9148',
+            bic: BANK_BIC,
+          });
+          return NextResponse.json(decision.body, { status: decision.status });
+        }
+      } catch (lookupErr) {
+        console.error('Duplicate order lookup failed:', lookupErr);
+      }
+      return NextResponse.json(
+        { success: false, duplicate: true, error: 'Order already exists' },
+        { status: 409 },
+      );
     }
     console.error('Failed to create shop order:', error);
     return NextResponse.json(

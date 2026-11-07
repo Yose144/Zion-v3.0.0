@@ -136,14 +136,33 @@ def state_lock(state_file: str):
             os.close(fd)
 
 
+class StateReadError(Exception):
+    """Permission failure or JSON that is not a run file.
+
+    A missing file is not this error: the timer has nothing to update.
+    """
+
+
 def read_state(path: str):
-    """Read a state file; returns None when absent or unparseable."""
+    """Read a state file. Missing file returns None.
+
+    Permission errors and JSON that does not parse as an object raise
+    StateReadError. Callers that would otherwise exit 0 must surface that.
+    """
     try:
         with open(path, "r", encoding="utf-8") as f:
-            state = json.load(f)
-        return state if isinstance(state, dict) else None
-    except (OSError, ValueError):
+            raw = f.read()
+    except FileNotFoundError:
         return None
+    except OSError as exc:
+        raise StateReadError(f"cannot read {path}: {exc}") from exc
+    try:
+        state = json.loads(raw)
+    except ValueError as exc:
+        raise StateReadError(f"invalid JSON in {path}: {exc}") from exc
+    if not isinstance(state, dict):
+        raise StateReadError(f"invalid JSON in {path}: expected an object")
+    return state
 
 
 def atomic_write(path: str, state: dict) -> None:
@@ -410,7 +429,11 @@ def cmd_start(state_file: str, started: datetime = None, duration_days: float = 
         print(f"g8_evidence: {e}", file=sys.stderr)
         return 2
     with state_lock(state_file):
-        existing = read_state(state_file)
+        try:
+            existing = read_state(state_file)
+        except StateReadError as exc:
+            print(f"g8_evidence: {exc}", file=sys.stderr)
+            return 2
         if (isinstance(existing, dict) and existing.get("schema_version") == 2
                 and existing.get("status") == "running"):
             print("g8_evidence: a v2 run is already running — refusing to overwrite",
@@ -428,7 +451,11 @@ def cmd_update(state_file: str, prom_url: str, now: datetime = None,
                query_fn=query_range) -> int:
     now = now or utcnow()
     with state_lock(state_file):
-        state = read_state(state_file)
+        try:
+            state = read_state(state_file)
+        except StateReadError as exc:
+            print(f"g8_evidence: {exc}", file=sys.stderr)
+            return 2
         if state is None:
             return 0
         if state.get("schema_version") != 2 or state.get("status") != "running":
@@ -465,7 +492,11 @@ def cmd_update(state_file: str, prom_url: str, now: datetime = None,
 
 
 def cmd_status(state_file: str) -> int:
-    state = read_state(state_file)
+    try:
+        state = read_state(state_file)
+    except StateReadError as exc:
+        print(f"g8_evidence: {exc}", file=sys.stderr)
+        return 2
     if state is None:
         print(f"g8_evidence: no readable state at {state_file}", file=sys.stderr)
         return 1
@@ -493,7 +524,11 @@ def _downtime_budget(state: dict) -> float:
 def cmd_stop(state_file: str, now: datetime = None) -> int:
     now = now or utcnow()
     with state_lock(state_file):
-        state = read_state(state_file)
+        try:
+            state = read_state(state_file)
+        except StateReadError as exc:
+            print(f"g8_evidence: {exc}", file=sys.stderr)
+            return 2
         if state is None or not state.get("started"):
             print(f"g8_evidence: no run to stop at {state_file}", file=sys.stderr)
             return 1

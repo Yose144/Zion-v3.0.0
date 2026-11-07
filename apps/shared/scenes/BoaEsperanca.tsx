@@ -2,6 +2,7 @@
 'use client';
 
 import { React, useFrame, THREE } from '@genesis/runtime';
+import { tScene } from './scene-i18n';
 import { SceneLabel } from './SceneLabel';
 import { AtlanticOcean } from './CoastalLandscape';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
@@ -298,11 +299,11 @@ export function BoaEsperancaScene({ lang }: { lang: Lang }) {
       <Seabirds />
 
       {/* labely */}
-      <SceneLabel position={[-10, 26.5, -16]} text={cs ? 'Maják Cape Point' : 'Cape Point lighthouse'} scale={2.6} />
-      <SceneLabel position={[-24, 16.5, -14]} text={cs ? 'Kruh kamenů — Khoisan' : 'Stone circle — Khoisan'} scale={1.9} />
-      <SceneLabel position={[30, 14, -46]} text={cs ? 'Útesy mysu' : 'Cliffs of the cape'} scale={2.4} />
-      <SceneLabel position={[2, 2.5, 26]} text={cs ? 'Šev dvou oceánů' : 'Seam of two oceans'} scale={2} />
-      <SceneLabel position={[-38, 15.5, -13]} text={cs ? 'Fynbos' : 'Fynbos'} scale={1.7} />
+      <SceneLabel position={[-10, 26.5, -16]} text={cs ? 'Maják Cape Point' : tScene('Cape Point lighthouse', lang)} scale={2.6} />
+      <SceneLabel position={[-24, 16.5, -14]} text={cs ? 'Kruh kamenů — Khoisan' : tScene('Stone circle — Khoisan', lang)} scale={1.9} />
+      <SceneLabel position={[30, 14, -46]} text={cs ? 'Útesy mysu' : tScene('Cliffs of the cape', lang)} scale={2.4} />
+      <SceneLabel position={[2, 2.5, 26]} text={cs ? 'Šev dvou oceánů' : tScene('Seam of two oceans', lang)} scale={2} />
+      <SceneLabel position={[-38, 15.5, -13]} text={cs ? 'Fynbos' : tScene('Fynbos', lang)} scale={1.7} />
     </>
   );
 }

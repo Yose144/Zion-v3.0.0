@@ -162,7 +162,7 @@ export default function ProRecentBlocks() {
                         href={`/explorer/block?id=${block.height}`}
                         className="text-zion-cyan hover:text-white transition-colors font-mono font-semibold text-sm"
                       >
-                        {block.height.toLocaleString()}
+                        {block.height.toLocaleString('en-US')}
                       </Link>
                     </td>
                     <td className="px-3 py-3">

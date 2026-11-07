@@ -541,7 +541,7 @@ export default function L4OasisPage() {
             </h2>
           </div>
           <div className="mb-6">
-            <OasisPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
+            <OasisPreviewLazy lang={lang} className="w-full" />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>

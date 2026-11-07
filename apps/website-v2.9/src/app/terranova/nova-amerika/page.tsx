@@ -488,7 +488,7 @@ export default function NovaAmerikaPage() {
                 {tx5(Copy.threeDPreviewSubtitle, lang)}
               </h2>
             </div>
-            <LumiStationPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
+            <LumiStationPreviewLazy lang={lang} className="w-full" />
           </div>
         </motion.section>
 

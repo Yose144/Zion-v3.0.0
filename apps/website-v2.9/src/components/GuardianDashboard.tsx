@@ -263,7 +263,7 @@ function MonitoringTab({ metrics }: { metrics: V3Metrics | null }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Stat label="Block Height" value={m?.chain?.height?.toLocaleString() ?? '—'} icon={Server} color="#fcd116" />
+        <Stat label="Block Height" value={m?.chain?.height?.toLocaleString('en-US') ?? '—'} icon={Server} color="#fcd116" />
         <Stat label="Peers" value={m?.chain?.peers ?? '—'} icon={Globe} color="#066928" />
         <Stat label="Pool Sessions" value={m?.pool?.sessions ?? '—'} icon={Layers} color="#e41e2b" />
         <Stat label="Pool Hashrate" value={fmtHashrate(m?.pool?.hashrate_hps)} icon={Pickaxe} color="#22C55E" />
@@ -340,7 +340,7 @@ function TreasuryTab() {
       <Card className="flex items-center justify-between">
         <div>
           <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Total Treasury</p>
-          <p className="text-3xl font-bold font-mono text-zion-gold mt-1">{total.toLocaleString(undefined, { maximumFractionDigits: 4 })} <span className="text-base text-gray-400">ZION</span></p>
+          <p className="text-3xl font-bold font-mono text-zion-gold mt-1">{total.toLocaleString('en-US', { maximumFractionDigits: 4 })} <span className="text-base text-gray-400">ZION</span></p>
         </div>
         <button
           onClick={fetchBalances}
@@ -366,7 +366,7 @@ function TreasuryTab() {
                 <p className="text-xs text-gray-400 mt-0.5">{item.role}</p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-lg font-mono font-bold text-white">{bal.toLocaleString(undefined, { maximumFractionDigits: 4 })}</p>
+                <p className="text-lg font-mono font-bold text-white">{bal.toLocaleString('en-US', { maximumFractionDigits: 4 })}</p>
                 <div className="mt-1 flex items-center gap-2">
                   <div className="w-24 h-1.5 rounded-full bg-white/10 overflow-hidden">
                     <div className="h-full bg-zion-gold rounded-full" style={{ width: `${pct}%` }} />
@@ -446,18 +446,18 @@ function DaoTab() {
                       }`}>
                         {p.status}
                       </span>
-                      <span className="text-xs text-gray-500">Deadline: {new Date(p.deadline).toLocaleDateString()}</span>
+                      <span className="text-xs text-gray-500">Deadline: {new Date(p.deadline).toLocaleDateString('en-US')}</span>
                     </div>
                   </div>
                 </div>
                 <div className="mt-4 flex items-center gap-6 text-xs">
                   <div>
                     <span className="text-gray-500">Yes: </span>
-                    <span className="font-mono text-zion-cyan">{p.yes_votes.toLocaleString()}</span>
+                    <span className="font-mono text-zion-cyan">{p.yes_votes.toLocaleString('en-US')}</span>
                   </div>
                   <div>
                     <span className="text-gray-500">No: </span>
-                    <span className="font-mono text-zion-purple">{p.no_votes.toLocaleString()}</span>
+                    <span className="font-mono text-zion-purple">{p.no_votes.toLocaleString('en-US')}</span>
                   </div>
                 </div>
                 <div className="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
@@ -548,7 +548,7 @@ function AlertsTab() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-white">{a.title}</p>
                 <p className="text-xs text-gray-400 mt-0.5">{a.detail}</p>
-                <p className="text-[10px] text-gray-500 mt-1">{new Date(a.ts).toLocaleString()}</p>
+                <p className="text-[10px] text-gray-500 mt-1">{new Date(a.ts).toLocaleString('en-US')}</p>
               </div>
               <button
                 onClick={() => dismiss(a.id)}
@@ -630,10 +630,10 @@ function NclTab() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-white truncate">{entry.name ?? entry.worker_id}</p>
-                <p className="text-xs text-gray-500 font-mono">{entry.tasks?.toLocaleString()} tasks</p>
+                <p className="text-xs text-gray-500 font-mono">{entry.tasks?.toLocaleString('en-US')} tasks</p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-lg font-mono font-bold text-white">{entry.score?.toLocaleString()}</p>
+                <p className="text-lg font-mono font-bold text-white">{entry.score?.toLocaleString('en-US')}</p>
                 <p className="text-[10px] text-gray-500">score</p>
               </div>
             </Card>
@@ -660,7 +660,7 @@ function NclTab() {
                 <span className="text-gray-400 capitalize">{w.status}</span>
               </div>
               <div className="flex justify-between text-xs text-gray-500">
-                <span>Tasks: <span className="text-gray-300 font-mono">{w.tasks_completed?.toLocaleString()}</span></span>
+                <span>Tasks: <span className="text-gray-300 font-mono">{w.tasks_completed?.toLocaleString('en-US')}</span></span>
                 <span>Uptime: <span className="text-gray-300 font-mono">{w.uptime_hours}h</span></span>
               </div>
             </Card>

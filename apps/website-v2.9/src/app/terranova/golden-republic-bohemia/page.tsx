@@ -482,7 +482,7 @@ export default function GoldenRepublicBohemiaPage() {
                 {tx5(TerranovaGoldenRepublicBohemiaCopy.threeDPreviewSubtitle, lang)}
               </h2>
             </div>
-            <GoldenRepublicBohemiaPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
+            <GoldenRepublicBohemiaPreviewLazy lang={lang} className="w-full" />
           </div>
         </motion.section>
 

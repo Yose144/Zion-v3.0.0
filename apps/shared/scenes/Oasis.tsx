@@ -2,6 +2,7 @@
 'use client';
 
 import { React, useFrame, useThree, THREE } from '@genesis/runtime';
+import { tScene } from './scene-i18n';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime } from './ScenePresentation';
 import {
@@ -496,8 +497,8 @@ export function OasisScene({ lang }: { lang: Lang }) {
         seed={7}
       />
 
-      <SceneLabel position={[0, EGG_Y + 4.6, 0]} text={cs ? 'ZLATÉ VEJCE' : 'GOLDEN EGG'} scale={2.2} />
-      <SceneLabel position={[0, LOTUS_Y - 1.7, 0]} text={cs ? 'srdce spirální galaxie OASIS' : 'heart of the OASIS spiral galaxy'} scale={0.95} />
+      <SceneLabel position={[0, EGG_Y + 4.6, 0]} text={cs ? 'ZLATÉ VEJCE' : tScene('GOLDEN EGG', lang)} scale={2.2} />
+      <SceneLabel position={[0, LOTUS_Y - 1.7, 0]} text={cs ? 'srdce spirální galaxie OASIS' : tScene('heart of the OASIS spiral galaxy', lang)} scale={0.95} />
     </>
   );
 }

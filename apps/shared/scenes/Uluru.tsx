@@ -2,6 +2,7 @@
 'use client';
 
 import { React, useFrame, THREE } from '@genesis/runtime';
+import { tScene } from './scene-i18n';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, SceneMotes, SceneTerrain, SkyFill } from './kit';
@@ -456,11 +457,11 @@ export function UluruScene({ lang }: { lang: Lang }) {
 
       {/* labely */}
       <SceneLabel position={[6, 22, -95]} text="Uluru · Tjukurpa" scale={4.2} />
-      <SceneLabel position={[0, 4.6, 6]} text={cs ? 'Oheň v kruhu — shromáždění' : 'Fire circle — gathering'} scale={1.8} />
-      <SceneLabel position={[polar(115, 24)[0], 9.6, polar(115, 24)[1]]} text={cs ? 'Socha listu' : 'Leaf sculpture'} scale={1.8} />
-      <SceneLabel position={[19, 5, 12]} text={cs ? 'Solární pavilon' : 'Solar pavilion'} scale={1.7} />
-      <SceneLabel position={[-9, 4.4, 2]} text={cs ? 'Festivalová osada' : 'Festival settlement'} scale={1.8} />
-      <SceneLabel position={[-24, 1.6, 14]} text={cs ? 'Songlines — písněné stezky' : 'Songlines — sung paths'} scale={1.9} />
+      <SceneLabel position={[0, 4.6, 6]} text={cs ? 'Oheň v kruhu — shromáždění' : tScene('Fire circle — gathering', lang)} scale={1.8} />
+      <SceneLabel position={[polar(115, 24)[0], 9.6, polar(115, 24)[1]]} text={cs ? 'Socha listu' : tScene('Leaf sculpture', lang)} scale={1.8} />
+      <SceneLabel position={[19, 5, 12]} text={cs ? 'Solární pavilon' : tScene('Solar pavilion', lang)} scale={1.7} />
+      <SceneLabel position={[-9, 4.4, 2]} text={cs ? 'Festivalová osada' : tScene('Festival settlement', lang)} scale={1.8} />
+      <SceneLabel position={[-24, 1.6, 14]} text={cs ? 'Songlines — písněné stezky' : tScene('Songlines — sung paths', lang)} scale={1.9} />
     </>
   );
 }

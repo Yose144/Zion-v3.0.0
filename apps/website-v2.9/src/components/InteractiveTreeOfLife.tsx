@@ -739,7 +739,7 @@ export default function InteractiveTreeOfLife() {
     mouseX.set(0); mouseY.set(0);
   }, [mouseX, mouseY]);
 
-  const heightText = blockHeight ? 'Block #' + blockHeight.toLocaleString() : '';
+  const heightText = blockHeight ? 'Block #' + blockHeight.toLocaleString('en-US') : '';
 
   return (
     <section className="relative py-10 md:py-16 px-4 overflow-hidden">

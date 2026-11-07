@@ -1025,7 +1025,7 @@ export default function DefiPage() {
                 <p className="text-gray-500 mb-0.5">{tx5(DefiCopy.liquidity, lang)}</p>
                 <p className="text-white font-mono">
                   {(poolStats?.total_wzion_liquidity ?? 0) > 0
-                    ? `${(poolStats!.total_wzion_liquidity).toLocaleString(undefined, { maximumFractionDigits: 0 })} wZION`
+                    ? `${(poolStats!.total_wzion_liquidity).toLocaleString('en-US', { maximumFractionDigits: 0 })} wZION`
                     : '—'}
                 </p>
               </div>
@@ -1033,7 +1033,7 @@ export default function DefiPage() {
                 <p className="text-gray-500 mb-0.5">USDT</p>
                 <p className="text-white font-mono">
                   {(Number(poolStats?.pools?.wzion_usdt?.balances?.usdt ?? 0)) > 0
-                    ? (Number(poolStats!.pools.wzion_usdt.balances.usdt)).toLocaleString(undefined, { maximumFractionDigits: 2 })
+                    ? (Number(poolStats!.pools.wzion_usdt.balances.usdt)).toLocaleString('en-US', { maximumFractionDigits: 2 })
                     : '—'}
                 </p>
               </div>
@@ -1732,7 +1732,7 @@ export default function DefiPage() {
                   <p className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(DefiCopy.usdcRaised, lang)}</p>
                 </div>
                 <p className="text-lg font-bold text-white font-mono">
-                  ${(auctionData?.currencyRaised ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  ${(auctionData?.currencyRaised ?? 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}
                 </p>
                 <p className="text-[11px] text-gray-500">{tx5(DefiCopy.total, lang)}</p>
               </div>
@@ -1744,10 +1744,10 @@ export default function DefiPage() {
                   <p className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(DefiCopy.wzionSold, lang)}</p>
                 </div>
                 <p className="text-lg font-bold text-white font-mono">
-                  {(auctionData?.totalCleared ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  {(auctionData?.totalCleared ?? 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}
                 </p>
                 <p className="text-[11px] text-gray-500">
-                  {tx5(DefiCopy.of, lang)} {CCA_AUCTION_PARAMS.totalSupply.toLocaleString()} ({(auctionData?.pctSold ?? 0).toFixed(4)}%)
+                  {tx5(DefiCopy.of, lang)} {CCA_AUCTION_PARAMS.totalSupply.toLocaleString('en-US')} ({(auctionData?.pctSold ?? 0).toFixed(4)}%)
                 </p>
               </div>
 
@@ -1767,9 +1767,9 @@ export default function DefiPage() {
             {/* Progress bar */}
             <div className="mb-4">
               <div className="flex justify-between text-[11px] text-gray-500 mb-1">
-                <span>{tx5(DefiCopy.block_2, lang)} {auctionData?.currentBlock?.toLocaleString() ?? '…'}</span>
+                <span>{tx5(DefiCopy.block_2, lang)} {auctionData?.currentBlock?.toLocaleString('en-US') ?? '…'}</span>
                 <span>{(auctionData?.progressPct ?? 0).toFixed(3)}%</span>
-                <span>{tx5(DefiCopy.end, lang)} {CCA_AUCTION_PARAMS.endBlock.toLocaleString()}</span>
+                <span>{tx5(DefiCopy.end, lang)} {CCA_AUCTION_PARAMS.endBlock.toLocaleString('en-US')}</span>
               </div>
               <div className="h-2 bg-black/40 rounded-full overflow-hidden">
                 <div
@@ -1831,11 +1831,11 @@ export default function DefiPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">{tx5(DefiCopy.startBlock, lang)}</span>
-                  <span className="font-mono text-gray-300">{CCA_AUCTION_PARAMS.startBlock.toLocaleString()}</span>
+                  <span className="font-mono text-gray-300">{CCA_AUCTION_PARAMS.startBlock.toLocaleString('en-US')}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">{tx5(DefiCopy.endBlock, lang)}</span>
-                  <span className="font-mono text-gray-300">{CCA_AUCTION_PARAMS.endBlock.toLocaleString()}</span>
+                  <span className="font-mono text-gray-300">{CCA_AUCTION_PARAMS.endBlock.toLocaleString('en-US')}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">{tx5(DefiCopy.floorPrice, lang)}</span>

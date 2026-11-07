@@ -483,7 +483,7 @@ export default function BodhiLankaPage() {
                 {tx5(TerranovaBodhiLankaCopy.threeDPreviewSubtitle, lang)}
               </h2>
             </div>
-            <BodhiLankaPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
+            <BodhiLankaPreviewLazy lang={lang} className="w-full" />
           </div>
         </motion.section>
 

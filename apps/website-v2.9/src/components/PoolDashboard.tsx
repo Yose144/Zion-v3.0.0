@@ -1122,7 +1122,7 @@ export default function PoolDashboard() {
             <RefreshCw className="h-3 w-3" />
             {tx5(PoolDashboardCopy.lastCheck, lang)}
             {data.profit_switcher.last_check_unix > 0
-              ? new Date(data.profit_switcher.last_check_unix * 1000).toLocaleTimeString()
+              ? new Date(data.profit_switcher.last_check_unix * 1000).toLocaleTimeString('en-US')
               : (tx5(PoolDashboardCopy.in5Min, lang))}
           </div>
 

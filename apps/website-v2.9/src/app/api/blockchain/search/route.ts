@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
         results.push({
           type: 'block',
           href: `/explorer/block?id=${height}`,
-          title: `Block #${height.toLocaleString()}`,
+          title: `Block #${height.toLocaleString('en-US')}`,
           meta: `Hash: ${block.hash.slice(0, 20)}…`,
           data: { hash: block.hash, height, timestamp: block.timestamp, num_txes: block.tx_hashes.length },
         });
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
         type: 'address',
         href: `/explorer/address?addr=${encodeURIComponent(q)}`,
         title: `Address ${q.slice(0, 12)}…${q.slice(-8)}`,
-        meta: `Balance: ${balance.balance_zion.toLocaleString(undefined, { maximumFractionDigits: 6 })} ZION`,
+        meta: `Balance: ${balance.balance_zion.toLocaleString('en-US', { maximumFractionDigits: 6 })} ZION`,
         data: { address: q, balance: balance.balance_zion, tx_count: balance.utxo_count },
       });
     } catch { /* not found */ }

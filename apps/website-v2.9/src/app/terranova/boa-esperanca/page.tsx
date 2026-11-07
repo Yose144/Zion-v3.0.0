@@ -397,7 +397,7 @@ export default function BoaEsperancaPage() {
                 {tx5(Copy.threeDPreviewSubtitle, lang)}
               </h2>
             </div>
-            <BoaEsperancaPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
+            <BoaEsperancaPreviewLazy lang={lang} className="w-full" />
           </div>
         </motion.section>
 

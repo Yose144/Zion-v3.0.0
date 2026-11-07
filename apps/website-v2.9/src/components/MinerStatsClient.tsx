@@ -94,7 +94,7 @@ export default function MinerStatsClient() {
   };
 
   const formatTimestamp = (timestamp: number) => {
-    return timestamp ? new Date(timestamp * 1000).toLocaleString() : '—';
+    return timestamp ? new Date(timestamp * 1000).toLocaleString('en-US') : '—';
   };
 
   const formatDuration = (seconds: number) => {
@@ -230,10 +230,10 @@ export default function MinerStatsClient() {
                   <h3 className="text-xl font-semibold">Shares</h3>
                 </div>
                 <div className="text-3xl font-bold text-zion-purple">
-                  {stats.stats?.total_shares ? stats.stats.total_shares.toLocaleString() : '0'}
+                  {stats.stats?.total_shares ? stats.stats.total_shares.toLocaleString('en-US') : '0'}
                 </div>
                 <p className="text-gray-400 text-sm mt-2">
-                  {stats.stats?.accepted_shares ? stats.stats.accepted_shares.toLocaleString() : '0'} accepted · {stats.stats?.rejected_shares ? stats.stats.rejected_shares.toLocaleString() : '0'} rejected
+                  {stats.stats?.accepted_shares ? stats.stats.accepted_shares.toLocaleString('en-US') : '0'} accepted · {stats.stats?.rejected_shares ? stats.stats.rejected_shares.toLocaleString('en-US') : '0'} rejected
                 </p>
               </motion.div>
 
@@ -266,7 +266,7 @@ export default function MinerStatsClient() {
                   <h3 className="text-xl font-semibold">Blocks</h3>
                 </div>
                 <div className="text-3xl font-bold text-zion-gold">
-                  {stats.stats?.blocks_found ? stats.stats.blocks_found.toLocaleString() : '0'}
+                  {stats.stats?.blocks_found ? stats.stats.blocks_found.toLocaleString('en-US') : '0'}
                 </div>
                 <p className="text-gray-400 text-sm mt-2">Blocks found</p>
               </motion.div>

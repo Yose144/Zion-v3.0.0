@@ -1256,7 +1256,7 @@ function NetFAQSection({ cs, lang }: { cs: boolean; lang: Lang }) {
   const faqs = useMemo(() => [
     { q: tx5(NetworkCopy.whatConsensusDoesZionUse, lang), a: tx5(NetworkCopy.cosmicHarmonyProofOfWorkACusto, lang) },
     { q: tx5(NetworkCopy.whatIsTheTargetBlockTime, lang), a: tx5(NetworkCopy.k60SecondsDifficultyAdjustsDyna, lang) },
-    { q: tx5(NetworkCopy.howManyZionAreMinedPerBlock, lang), a: cs ? `V první dekádě je odměna ${BLOCK_REWARD_ZION.toFixed(3)} ZION/blok. Každých 10 let (${BLOCKS_PER_DECADE.toLocaleString()} bloků) se odměna sníží o 20 % (Decade Decay).` : t5(`In the first decade the reward is ${BLOCK_REWARD_ZION.toFixed(3)} ZION/block. Every 10 years (${BLOCKS_PER_DECADE.toLocaleString()} blocks) the reward decreases by 20% (Decade Decay).`, lang) },
+    { q: tx5(NetworkCopy.howManyZionAreMinedPerBlock, lang), a: cs ? `V první dekádě je odměna ${BLOCK_REWARD_ZION.toFixed(3)} ZION/blok. Každých 10 let (${BLOCKS_PER_DECADE.toLocaleString('en-US')} bloků) se odměna sníží o 20 % (Decade Decay).` : t5(`In the first decade the reward is ${BLOCK_REWARD_ZION.toFixed(3)} ZION/block. Every 10 years (${BLOCKS_PER_DECADE.toLocaleString('en-US')} blocks) the reward decreases by 20% (Decade Decay).`, lang) },
     { q: tx5(NetworkCopy.whatIsTheMaximumSupply, lang), a: cs ? `Maximální supply je ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} miliard ZION včetně genesis premine ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)} mld ZION.` : t5(`Maximum supply is ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} billion ZION including genesis premine of ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)}B ZION.`, lang) },
     { q: tx5(NetworkCopy.howToConnectAsAMiner, lang), a: cs ? `Stáhněte si XMRig nebo Desktop App a použijte stratum+tcp://${SITE_POOL_PRIMARY} jako pool adresu. Detaily najdete v Connection Guides výše.` : t5(`Download XMRig or the Desktop App and use stratum+tcp://${SITE_POOL_PRIMARY} as the pool address. See the Connection Guides section above for details.`, lang) },
     { q: tx5(NetworkCopy.howToRunYourOwnFullNode, lang), a: cs ? `Klonujte repo, sestavte zion-node pomocí cargo build --release a spusťte ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333. Kontejnerové nastavení je k dispozici v repozitáři.` : t5(`Clone the repo, build zion-node with cargo build --release, then run ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333. Container setup is available in the repo.`, lang) },
@@ -1285,5 +1285,5 @@ function fmtLargeNum(n: number | undefined): string {
   if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
   if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
   if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
-  return n.toLocaleString();
+  return n.toLocaleString('en-US');
 }

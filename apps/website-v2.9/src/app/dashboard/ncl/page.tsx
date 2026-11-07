@@ -225,7 +225,7 @@ export default function NCLDashboard() {
             <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{tx5(DashboardNclCopy.tasksCompleted, lang)}</span>
           </div>
           <div className="text-3xl font-bold font-mono text-white">
-            {(status?.tasks.completed ?? 0).toLocaleString()}
+            {(status?.tasks.completed ?? 0).toLocaleString('en-US')}
           </div>
           <div className="text-xs text-gray-500 mt-2">
             {status?.tasks.pending ?? 0} {tx5(DashboardNclCopy.pending, lang)} &bull; {status?.tasks.active ?? 0} {tx5(DashboardNclCopy.active, lang)}

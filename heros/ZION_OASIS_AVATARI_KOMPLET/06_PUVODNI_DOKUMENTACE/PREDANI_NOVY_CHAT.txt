@@ -1,0 +1,54 @@
+ZION TERRA NOVA · L4 OASIS — PŘEDÁNÍ DO NOVÉHO CHATU
+Datum: 4. listopadu 2026
+Oficiální roster: https://app.zionterranova.com/l4-oasis/avatars
+
+JSEM UŽIVATEL A CHCI POKRAČOVAT NA 200 AVATARECH. PŘILOŽENÝ ZIP JE NÁŠ AKTUÁLNÍ PODKLAD. NEZAČÍNEJ ZNOVU OD JEDNIČKY.
+
+CO BYLO ZKONTROLOVÁNO
+- Oficiální roster má 200 avatarů, 23 kruhů.
+- Výchozí číslování je 001–200, NIKOLI čísla odkazů nebo obrázků na stránce (ta bývají o dvě vyšší).
+- Poslední vytvořený individuální render: 086 Kartikeya.
+- Bezprostředně další: 087 Surya (sluneční božstvo), poté 088 Indra, 089 Ganga a 090 Amaterasu.
+- V archivu máme 75 samostatných kandidátů převedených z originálních PNG do velmi kvalitního WEBP; každý je v 01_SAMOSTATNE_PORTRETY_HQ_WEBP.
+- Portréty 011–020 jsou jen výřezy ze staré koláže, NE FINÁLNÍ; jsou oddělené v 02_POUZE_NAHLEDY_NE_FINALNI.
+- 052 Kókyangwúti (Spider Grandmother) se nepodařilo vytvořit individuálně, má jen koncept.
+- Všechny ostatní sloty 001–086 mají individuální WEBP kandidát, ale žádný automaticky neoznačuj jako schválený.
+- Všechny 200 avatarů mají samostatný koncept WEBP v 03_KONCEPTY_200_AVATARU.
+- 04_SPOLECNY_HERO obsahuje společný starší hero ZION OASIS.
+
+PRAVIDLA PRO NOVÝ CHAT (JSME NA TOM DOMLUVENÍ)
+1. Před každým novým portrétem si ověř přesné číslo, jméno a kanonickou roli na oficiálním webu. Nezaměňovat pořadí avatarů s indexy odkazů v HTML.
+2. Generuj VŽDY JEN JEDEN avatar v JEDNOM obrazu (výjimkou je kanonická dvojice Hero Twins v jediném slotu). Nikdy nedělej triptych, koláž, grid ani 10-portrétní sadu.
+3. Každá postava musí mít JINOU TVÁŘ, jinou kostru obličeje, věk, nos, čelist, oči, účes a siluetu. Sdílený je pouze kvalitní filmový fantasy sci-fi styl a promyšlená symbolika.
+4. Portrét 1:1; bez textů, číslic, log, rámečků a watermarků; neplést předměty z jiných postav.
+5. Přihlížej ke kulturním zdrojům a kanonické ZION podobě postav; zejména Maitreya, Sita, LUMI/Elizabet a Malý princ nesmějí přijít o předchozí identitu.
+6. Pokud generátor vrátí nesprávnou postavu nebo koláž, NEPOČÍTEJ výstup jako dokončený. Oprav jej nebo přiznej chybějící render.
+7. Nebal po každém obrázku ZIP. Uživateli stačí samotný portrét v chatu. Souhrnný ZIP až na výslovné přání.
+8. Po hotovém 086 KARTIKEYA nyní začni 087 SURYA, a dále striktně po jednom. STARÉ MISTRY NEREGENERUJ BEZ ZADÁNÍ.
+
+NEJBLÍŽŠÍ ČTYŘI PROMPTY
+087 SURYA: Surya, noble solar deity with deep brown skin and markedly different older face than Kartikeya, gold-white ray, sun disc and seven horses drawing a celestial chariot at sunrise. A SINGLE original character portrait in cinematic fantasy-photorealistic style for ZION TerraNova OASIS; square 1:1 composition, clean subject, exquisite face anatomy and materials, sophisticated volumetric light, natural environment with story-specific symbolism, respectful mythology, subtle sacred geometry, UNIQUE facial identity and silhouette compared to all prior avatars, no text, no labels, no watermark, no collage, no frame. Avoid cloned faces, repeated hairstyles, identical nose/jaw structure, copied costumes and film actor likenesses. 
+088 INDRA: Indra, mature powerful storm sovereign with strong broad face and trimmed beard, electric Vajra lightning bolt, monsoon sky and clouds, distinct from Shiva trident. A SINGLE original character portrait in cinematic fantasy-photorealistic style for ZION TerraNova OASIS; square 1:1 composition, clean subject, exquisite face anatomy and materials, sophisticated volumetric light, natural environment with story-specific symbolism, respectful mythology, subtle sacred geometry, UNIQUE facial identity and silhouette compared to all prior avatars, no text, no labels, no watermark, no collage, no frame. Avoid cloned faces, repeated hairstyles, identical nose/jaw structure, copied costumes and film actor likenesses. 
+089 GANGA: Ganga, elegant Indian river goddess with aquamarine flowing sari and long river-like hair, riding makara and cradling purifying water at sacred Ganga river, distinct from Lakshmi. A SINGLE original character portrait in cinematic fantasy-photorealistic style for ZION TerraNova OASIS; square 1:1 composition, clean subject, exquisite face anatomy and materials, sophisticated volumetric light, natural environment with story-specific symbolism, respectful mythology, subtle sacred geometry, UNIQUE facial identity and silhouette compared to all prior avatars, no text, no labels, no watermark, no collage, no frame. Avoid cloned faces, repeated hairstyles, identical nose/jaw structure, copied costumes and film actor likenesses. 
+090 AMATERASU: Amaterasu, Japanese solar kami as distinct middle-aged elegant woman in white and gold Heian robes, luminous circular sun mirror, heavenly torii and blossoming trees. A SINGLE original character portrait in cinematic fantasy-photorealistic style for ZION TerraNova OASIS; square 1:1 composition, clean subject, exquisite face anatomy and materials, sophisticated volumetric light, natural environment with story-specific symbolism, respectful mythology, subtle sacred geometry, UNIQUE facial identity and silhouette compared to all prior avatars, no text, no labels, no watermark, no collage, no frame. Avoid cloned faces, repeated hairstyles, identical nose/jaw structure, copied costumes and film actor likenesses. 
+
+STRUKTURA A KVALITA
+01_SAMOSTATNE_PORTRETY_HQ_WEBP: skutečně samostatně vytvořené vysoce kvalitní WEBP obrazy převedené z původních PNG, 75 kusů; status KANDIDÁT, NE AUTORIZOVANÝ FINÁL.
+02_POUZE_NAHLEDY_NE_FINALNI: 10 výřezů 011–020 z historické koláže.
+03_KONCEPTY_200_AVATARU: všechny starší stylizované koncepty WEBP, nikoli finální portréty.
+SOUPIS_001_200.csv: oficiální pořadí, typ dostupného souboru, SHA256, kritické poznámky.
+PROMPTY_001_200.txt: rekonstruovaná textová zadání pro pokračování vč. původních koncepčních promptů.
+manifest.json: strojově čitelné mapování a stav.
+
+CO JE JEŠTĚ NUTNÉ UDĚLAT
+A) Doplnit 011–020 na 10 opravdových samostatných portrétů.
+B) Doplnit 052 Kókyangwúti.
+C) Zkontrolovat vhodnost 044 ZION The Last City — kolektivní avatar má představovat spíš MĚSTO, ne osobu.
+D) Zkontrolovat odlišnost 081 Párvatí, 083 Lakšmí a 084 Durgá a citlivost podání prvních národů.
+E) Pokračovat 087–200 jeden po druhém.
+
+JAK ZAHÁJIT NOVÝ CHAT
+"Navazujeme na ZION OASIS avatar collection z přiloženého ZIPu. Pročti PREDANI_NOVY_CHAT.txt a SOUPIS_001_200.csv. Proveď portrét 087 Surya podle oficiálního rosteru. Jedna postava, jeden čtvercový originální render, nový obličej, bez koláže a bez nápisů."
+
+POZNÁMKA KE KOMPAKTNÍMU ZIPU
+75 detailních portrétů bylo pro jednorázové předání konvertováno z původních velkých PNG do WEBP ve vysoké kvalitě (93/100); jde o totožné kompozice a identity, ale NE bezeztrátové originální PNG bajty.

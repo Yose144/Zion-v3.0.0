@@ -358,7 +358,7 @@ export default function ChartsPageClient() {
     () => [
       {
         label: tx5(ExplorerChartsChartsPageClientCopy.height, lang),
-        value: stats ? `#${stats.block_height.toLocaleString()}` : "—",
+        value: stats ? `#${stats.block_height.toLocaleString('en-US')}` : "—",
         icon: Blocks,
         color: "text-zion-gold",
       },
@@ -382,7 +382,7 @@ export default function ChartsPageClient() {
       },
       {
         label: tx5(ExplorerChartsChartsPageClientCopy.totalTx, lang),
-        value: stats ? stats.total_transactions.toLocaleString() : "—",
+        value: stats ? stats.total_transactions.toLocaleString('en-US') : "—",
         icon: Layers,
         color: "text-zion-purple",
       },

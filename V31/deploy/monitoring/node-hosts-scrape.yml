@@ -1,0 +1,18 @@
+# Host metrics for EDGE1 and EDGE2. One job, explicit instance labels, so the
+# two machines do not collapse into a single unlabeled localhost:9100 target.
+# Merge this job into the live Prometheus config. Do not start the exporter
+# from this change.
+#
+# EDGE1: prometheus-node-exporter is enabled and inactive. Turn it on later
+# with `systemctl start prometheus-node-exporter` on EDGE1. That does not
+# restart the pool or the chain nodes.
+scrape_configs:
+  - job_name: node
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["127.0.0.1:9100"]
+        labels:
+          instance: edge1
+      - targets: ["207.180.217.100:9100"]
+        labels:
+          instance: edge2

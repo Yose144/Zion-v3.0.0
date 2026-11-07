@@ -365,7 +365,7 @@ export default function FarmingPanel() {
   const fmt = (v: string, decimals = 4) => {
     const n = parseFloat(v);
     if (isNaN(n)) return '0';
-    return n.toLocaleString(undefined, { maximumFractionDigits: decimals });
+    return n.toLocaleString('en-US', { maximumFractionDigits: decimals });
   };
 
   return (
@@ -441,7 +441,7 @@ export default function FarmingPanel() {
           {[
             { label: tx5(FarmingPanelCopy.rewardS, lang), value: `${fmt(rewardPerSecond, 4)} wZION`, icon: Zap, color: 'text-zion-cyan' },
             { label: tx5(FarmingPanelCopy.pools, lang), value: String(poolLength), icon: Layers, color: 'text-zion-cyan' },
-            { label: tx5(FarmingPanelCopy.totalAlloc, lang), value: totalAllocPoint.toLocaleString(), icon: TrendingUp, color: 'text-zion-gold' },
+            { label: tx5(FarmingPanelCopy.totalAlloc, lang), value: totalAllocPoint.toLocaleString('en-US'), icon: TrendingUp, color: 'text-zion-gold' },
             { label: tx5(FarmingPanelCopy.contract, lang), value: paused ? (tx5(FarmingPanelCopy.paused, lang)) : (tx5(FarmingPanelCopy.active, lang)), icon: Shield, color: paused ? 'text-zion-purple' : 'text-zion-cyan' },
           ].map((card) => (
             <div key={card.label} className="zion-tile">
@@ -524,7 +524,7 @@ export default function FarmingPanel() {
                       </div>
                       <div className="text-right">
                         <p className="text-[10px] text-gray-500 uppercase">Alloc</p>
-                        <p className="font-bold text-zion-gold">{p.allocPoints.toLocaleString()}</p>
+                        <p className="font-bold text-zion-gold">{p.allocPoints.toLocaleString('en-US')}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-[10px] text-gray-500 uppercase">{tx5(FarmingPanelCopy.pending, lang)}</p>

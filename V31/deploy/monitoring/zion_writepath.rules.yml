@@ -89,6 +89,27 @@ groups:
           summary: "no pool payout recorded for {{ $value }}s"
           description: "Newest payout ledger row is over 1h old — payout submit or confirmation sweep likely stalled (pool keeps finding blocks but stops recording/paying). Check pool journal payout lines and store.db write health."
 
+      # HTTP can succeed while the ledger clock is missing (queued ts:null,
+      # old pool without latest_recorded_ts). That must page on its own.
+      # Ship this probe together with the pool that emits the field.
+      - alert: ZionPoolPayoutMeasurementMissing
+        expr: zion_pool_payout_measurement_ok == 0 or absent(zion_pool_payout_measurement_ok)
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "pool payout measurement missing"
+          description: "The write-path probe did not read latest_recorded_ts. A missing field is not a healthy ledger; do not substitute now() or the queued row."
+
+      - alert: ZionWritepathProbeStale
+        expr: (time() - zion_writepath_probe_success_timestamp_seconds{job="edge2"} > 180) or absent(zion_writepath_probe_success_timestamp_seconds{job="edge2"})
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "write-path textfile is stale or missing"
+          description: "node_exporter can keep serving an old green textfile after the probe dies. No complete collection for over 3 minutes, or the completion metric is missing."
+
       # W1.2 (2026-10-31): pool-side block production freshness. G8ChainStale
       # watches the chain tip, which keeps advancing from EDGE fallback miners
       # and peers even when no pool session is producing — so a dead pool

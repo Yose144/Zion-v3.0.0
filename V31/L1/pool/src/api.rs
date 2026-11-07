@@ -61,8 +61,7 @@ static API_EXPENSIVE_IN_FLIGHT: std::sync::atomic::AtomicUsize =
 /// the single store mutex for the whole snapshot, so overlapping exports
 /// must never stack vacuums (the hourly standby sync is the only client).
 const DB_EXPORT_MIN_INTERVAL_S: u64 = 120;
-static LAST_DB_EXPORT_UNIX: std::sync::atomic::AtomicU64 =
-    std::sync::atomic::AtomicU64::new(0);
+static LAST_DB_EXPORT_UNIX: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
 /// RAII decrement for `API_IN_FLIGHT` — released when the handler thread
 /// exits, on success or panic alike.
@@ -1001,37 +1000,59 @@ impl PoolApi {
                 }
             }
             "/public/v1/payouts" => {
-                let coin =
-                    internal_coin_key(&parse_query_param(raw_path, "coin").unwrap_or_default());
-                let limit = parse_query_limit(raw_path, 50);
-                match &self.share_store {
-                    Some(store) => {
-                        let payouts: Vec<_> = store
-                            .query_all_payouts(limit * 4)
-                            .unwrap_or_default()
-                            .into_iter()
-                            .filter(|r| coin.is_empty() || internal_coin_key(&r.coin) == coin)
-                            .take(limit as usize)
-                            .collect();
-                        let mut rows = queued_payouts_snapshot(&self.pool, &coin, None);
-                        if let serde_json::Value::Array(db) =
-                            serialize_public_payouts_json(&payouts)
-                        {
-                            rows.extend(db);
-                        }
-                        rows.truncate(limit as usize);
-                        let body = json!({
-                            "ok": true,
-                            "payouts": rows,
-                        })
-                        .to_string();
-                        ("200 OK", "application/json", body)
-                    }
-                    None => (
-                        "503 Service Unavailable",
+                // Monitoring needs the last durable ledger write, not the
+                // in-memory queue (whose entries intentionally have no ts).
+                let source = parse_query_param(raw_path, "source").unwrap_or_default();
+                if !source.is_empty() && source != "recorded" {
+                    (
+                        "400 Bad Request",
                         "application/json",
-                        "{\"ok\":false,\"error\":\"database not configured\"}".to_string(),
-                    ),
+                        "{\"ok\":false,\"error\":\"invalid payout source\"}".to_string(),
+                    )
+                } else {
+                    let recorded_only = source == "recorded";
+                    let coin =
+                        internal_coin_key(&parse_query_param(raw_path, "coin").unwrap_or_default());
+                    let limit = parse_query_limit(raw_path, 50);
+                    match &self.share_store {
+                        Some(store) => {
+                            let payouts: Vec<_> = store
+                                .query_all_payouts(limit * 4)
+                                .unwrap_or_default()
+                                .into_iter()
+                                .filter(|r| coin.is_empty() || internal_coin_key(&r.coin) == coin)
+                                .take(limit as usize)
+                                .collect();
+                            // Clock of the ledger, taken before the in-memory
+                            // queue is prepended. Queued rows stay `"ts": null`
+                            // and must not become this value, zero, or now().
+                            let latest_recorded_ts = payouts.iter().map(|r| r.ts).max();
+                            let mut rows = if recorded_only {
+                                Vec::new()
+                            } else {
+                                queued_payouts_snapshot(&self.pool, &coin, None)
+                            };
+                            if let serde_json::Value::Array(db) =
+                                serialize_public_payouts_json(&payouts)
+                            {
+                                rows.extend(db);
+                            }
+                            rows.truncate(limit as usize);
+                            let body = json!({
+                                "ok": true,
+                                "source": if recorded_only { "recorded" } else { "all" },
+                                "latest_recorded_ts": latest_recorded_ts,
+                                "payouts": rows,
+                            })
+                            .to_string();
+                            ("200 OK", "application/json", body)
+                        }
+                        None => (
+                            "503 Service Unavailable",
+                            "application/json",
+                            "{\"ok\":false,\"error\":\"database not configured\"}".to_string(),
+                        ),
+                    }
                 }
             }
             "/api/v1/blocks" => {
@@ -4195,8 +4216,29 @@ mod tests {
             .expect("queued row present");
         assert_eq!(queued["status"], "queued");
         assert!(queued["tx_id"].is_null());
+        assert!(queued["ts"].is_null(), "queued payout must not invent a clock");
         assert_eq!(queued["coin"], "zion");
         assert_eq!(queued["height"], 97_500);
+        let recorded_max = rows
+            .iter()
+            .filter_map(|r| r["ts"].as_i64())
+            .max()
+            .expect("db rows have timestamps");
+        assert_eq!(body["latest_recorded_ts"].as_i64().unwrap(), recorded_max);
+
+        let mixed = request(&api, "GET", "/public/v1/payouts?limit=1", "");
+        assert!(mixed.starts_with("HTTP/1.1 200 OK"), "{mixed}");
+        let mixed_body: serde_json::Value =
+            serde_json::from_str(mixed.split("\r\n\r\n").nth(1).unwrap()).unwrap();
+        assert!(
+            mixed_body["payouts"][0]["ts"].is_null(),
+            "limit=1 still shows the queued row first"
+        );
+        assert_eq!(
+            mixed_body["latest_recorded_ts"].as_i64().unwrap(),
+            recorded_max,
+            "ledger clock survives a queue that fills the limit"
+        );
 
         let sent = rows
             .iter()
@@ -4211,6 +4253,47 @@ mod tests {
             .expect("confirmed row present");
         assert_eq!(conf["status"], "confirmed");
         assert_eq!(conf["confirmed"], true);
+
+        // Regression: limit=1 used to expose only the queued ts:null row,
+        // hiding real ledger writes from the write-path freshness probe.
+        let resp = request(
+            &api,
+            "GET",
+            "/public/v1/payouts?limit=1&source=recorded&coin=zion",
+            "",
+        );
+        assert!(resp.starts_with("HTTP/1.1 200 OK"), "{resp}");
+        let body: serde_json::Value =
+            serde_json::from_str(resp.split("\r\n\r\n").nth(1).unwrap()).unwrap();
+        assert_eq!(body["source"], "recorded");
+        let rows = body["payouts"].as_array().unwrap();
+        assert_eq!(rows.len(), 1);
+        assert!(rows[0]["ts"].as_i64().unwrap() > 0);
+        assert_eq!(body["latest_recorded_ts"], rows[0]["ts"]);
+        assert_ne!(rows[0]["status"], "queued");
+
+        let resp = request(&api, "GET", "/public/v1/payouts?source=unknown", "");
+        assert!(resp.starts_with("HTTP/1.1 400 Bad Request"), "{resp}");
+    }
+
+    #[test]
+    fn public_recorded_payouts_do_not_fabricate_a_queue_timestamp() {
+        let api = PoolApi::new(
+            test_pool(),
+            Some(Arc::new(ShareStore::open_in_memory().unwrap())),
+            None,
+        );
+        let resp = request(
+            &api,
+            "GET",
+            "/public/v1/payouts?source=recorded&limit=1",
+            "",
+        );
+        let body: serde_json::Value =
+            serde_json::from_str(resp.split("\r\n\r\n").nth(1).unwrap()).unwrap();
+        assert_eq!(body["source"], "recorded");
+        assert!(body["payouts"].as_array().unwrap().is_empty());
+        assert!(body["latest_recorded_ts"].is_null());
     }
 
     #[test]

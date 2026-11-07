@@ -463,7 +463,7 @@ export default function ZahradaGenesisPage() {
                 {tx5(TerranovaGenesisCopy.conceptOnlyLabel, lang)}
               </span>
             </div>
-            <GenesisGardenPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
+            <GenesisGardenPreviewLazy lang={lang} className="w-full" />
           </div>
         </motion.section>
 
@@ -874,7 +874,7 @@ export default function ZahradaGenesisPage() {
                 {tx5(TerranovaGenesisCopy.caminoLead, lang)}
               </p>
               <div className="mb-6">
-                <CaminhoDoJardimMap lang={cs ? 'cs' : 'en'} />
+                <CaminhoDoJardimMap lang={lang} />
                 <p className="mt-2 text-[11px] uppercase tracking-widest text-white/40">
                   {cs ? 'Koncept — schematické vedení, trasa není vyznačená ani proměřená (GPX pending)' : t5('Concept — schematic alignment, not waymarked or surveyed (GPX pending)', lang)}
                 </p>

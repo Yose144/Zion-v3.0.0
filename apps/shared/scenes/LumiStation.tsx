@@ -2,6 +2,7 @@
 'use client';
 
 import { React, useFrame, THREE } from '@genesis/runtime';
+import { tScene } from './scene-i18n';
 import { SceneLabel } from './SceneLabel';
 import { MountainTerrain } from './MountainTerrain';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
@@ -589,13 +590,13 @@ export function LumiStationScene({ lang }: { lang: Lang }) {
       <Jungle />
 
       {/* labely */}
-      <SceneLabel position={[0, 12.4, 0]} text={cs ? 'Issobella L6 — výzkumné jádro' : 'Issobella L6 — research core'} scale={2.4} />
-      <SceneLabel position={[polar(58, 22)[0], 20.6, polar(58, 22)[1]]} text={cs ? 'Komunikační věž' : 'Comms tower'} scale={1.9} />
-      <SceneLabel position={[polar(270, 29)[0], 6.4, polar(270, 29)[1]]} text={cs ? 'Radioteleskopy' : 'Radio telescopes'} scale={1.9} />
-      <SceneLabel position={[polar(140, 24)[0], 6.6, polar(140, 24)[1]]} text={cs ? 'Biodomy · genetická laboratoř' : 'Biodomes · genetics lab'} scale={1.8} />
-      <SceneLabel position={[polar(215, 30)[0], 4.6, polar(215, 30)[1]]} text={cs ? 'Přistávací plocha' : 'Landing pad'} scale={1.9} />
-      <SceneLabel position={[polar(315, 34)[0], 22.6, polar(315, 34)[1]]} text={cs ? 'Startovací věž' : 'Launch spire'} scale={1.9} />
-      <SceneLabel position={[0, 4.4, 26]} text={cs ? 'Kaskáda & jezírko' : 'Cascade & pond'} scale={1.8} />
+      <SceneLabel position={[0, 12.4, 0]} text={cs ? 'Issobella L6 — výzkumné jádro' : tScene('Issobella L6 — research core', lang)} scale={2.4} />
+      <SceneLabel position={[polar(58, 22)[0], 20.6, polar(58, 22)[1]]} text={cs ? 'Komunikační věž' : tScene('Comms tower', lang)} scale={1.9} />
+      <SceneLabel position={[polar(270, 29)[0], 6.4, polar(270, 29)[1]]} text={cs ? 'Radioteleskopy' : tScene('Radio telescopes', lang)} scale={1.9} />
+      <SceneLabel position={[polar(140, 24)[0], 6.6, polar(140, 24)[1]]} text={cs ? 'Biodomy · genetická laboratoř' : tScene('Biodomes · genetics lab', lang)} scale={1.8} />
+      <SceneLabel position={[polar(215, 30)[0], 4.6, polar(215, 30)[1]]} text={cs ? 'Přistávací plocha' : tScene('Landing pad', lang)} scale={1.9} />
+      <SceneLabel position={[polar(315, 34)[0], 22.6, polar(315, 34)[1]]} text={cs ? 'Startovací věž' : tScene('Launch spire', lang)} scale={1.9} />
+      <SceneLabel position={[0, 4.4, 26]} text={cs ? 'Kaskáda & jezírko' : tScene('Cascade & pond', lang)} scale={1.8} />
     </>
   );
 }

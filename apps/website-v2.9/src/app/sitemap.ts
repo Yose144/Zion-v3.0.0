@@ -114,10 +114,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     r('/tree-of-life', 0.6, 'monthly'),
   ];
 
+  // Každá stránka má 5 jazykových variant přes `?lang=` (viz LanguageContext) —
+  // sitemap je vypisuje jako `alternates.languages`, aby je Google indexoval
+  // jako překlady téhož dokumentu, ne jako duplicity.
   return routes.map((route) => ({
     url: `${BASE}${route.path}`,
     lastModified: now,
     changeFrequency: route.changeFrequency,
     priority: route.priority,
+    alternates: {
+      languages: {
+        cs: `${BASE}${route.path}?lang=cs`,
+        en: `${BASE}${route.path}?lang=en`,
+        es: `${BASE}${route.path}?lang=es`,
+        pt: `${BASE}${route.path}?lang=pt`,
+        fr: `${BASE}${route.path}?lang=fr`,
+        'x-default': `${BASE}${route.path}`,
+      },
+    },
   }));
 }

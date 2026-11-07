@@ -84,7 +84,7 @@ function OpRow({ op, onChanged }: { op: TreasuryOp; onChanged: () => void }) {
           <p className="font-mono text-sm text-white truncate">{op.op_id}</p>
           <p className="text-xs text-gray-500 mt-0.5">
             {opKind}
-            {op.amount_zion > 0 ? ` · ${op.amount_zion.toLocaleString()} ZION` : ''}
+            {op.amount_zion > 0 ? ` · ${op.amount_zion.toLocaleString('en-US')} ZION` : ''}
             {op.proposal_id ? ` · proposal #${op.proposal_id}` : ''}
           </p>
         </div>

@@ -287,7 +287,7 @@ export default function NabukanoPage() {
               </p>
             </div>
             <div className="block w-full" style={{ height: 460 }}>
-              <NebeskaFlotilaPreviewLazy lang={cs ? 'cs' : 'en'} className="h-full" />
+              <NebeskaFlotilaPreviewLazy lang={lang} className="h-full" />
             </div>
             <p className="relative z-10 mt-3 text-center text-xs text-white/35">
               {cs

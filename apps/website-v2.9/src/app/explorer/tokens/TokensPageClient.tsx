@@ -116,7 +116,7 @@ function fmtSupply(n: number, digits = 2): string {
   if (abs >= 1e9) return `${(n / 1e9).toFixed(digits)}B`;
   if (abs >= 1e6) return `${(n / 1e6).toFixed(digits)}M`;
   if (abs >= 1e3) return `${(n / 1e3).toFixed(digits)}K`;
-  return n.toLocaleString(undefined, { maximumFractionDigits: digits });
+  return n.toLocaleString('en-US', { maximumFractionDigits: digits });
 }
 
 function fmtPct(n: number): string {

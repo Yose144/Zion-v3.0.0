@@ -276,7 +276,7 @@ export default function TxsPageClient() {
                 )}
                 {total !== null && (
                   <span className="zion-badge text-zion-gold border-zion-gold/40 bg-zion-gold/10">
-                    {total.toLocaleString()} {tx5(ExplorerTxsTxsPageClientCopy.totalTx, lang)}
+                    {total.toLocaleString('en-US')} {tx5(ExplorerTxsTxsPageClientCopy.totalTx, lang)}
                   </span>
                 )}
               </div>
@@ -287,7 +287,7 @@ export default function TxsPageClient() {
                 <div className="zion-rainbow-sub p-4 rounded-2xl" style={{ "--rc": "6, 105, 40" } as React.CSSProperties}>
                   <div className="text-xs text-gray-400 mb-1">{tx5(ExplorerTxsTxsPageClientCopy.currentHeight, lang)}</div>
                   <div className="text-2xl font-bold text-zion-cyan tabular-nums">
-                    #{sse.stats.height.toLocaleString()}
+                    #{sse.stats.height.toLocaleString('en-US')}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
                     {tx5(ExplorerTxsTxsPageClientCopy.mempool, lang)}: {sse.stats.mempool_size} TX
@@ -462,7 +462,7 @@ export default function TxsPageClient() {
                         onClick={(e) => e.stopPropagation()}
                         className="text-[13px] text-zion-gold/80 hover:text-zion-gold tabular-nums transition-colors"
                       >
-                        #{tx.block_height?.toLocaleString()}
+                        #{tx.block_height?.toLocaleString('en-US')}
                       </Link>
                     ) : (
                       <span className="text-[12px] text-zion-gold/60 italic">

@@ -45,13 +45,13 @@ function formatZion(n: number): string {
   if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
   if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
   if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
-  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return '—';
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString();
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString('en-US');
 }
 
 const C = {

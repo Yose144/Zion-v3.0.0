@@ -2,6 +2,7 @@
 'use client';
 
 import { React, useFrame, useMemo, THREE } from '@genesis/runtime';
+import { tScene } from './scene-i18n';
 
 import { Antenna, EarthBall, Footprints, LunarGround, Radiators, Rocks, Rover, Starfield, SunGlow, useHullTexture, useSolarTexture, UtilityBox } from './MatrixDetail';
 import { SceneLabel } from './SceneLabel';
@@ -286,12 +287,12 @@ export function MatrixScene({ lang, onEnterHall }: { lang: Lang; onEnterHall?: (
       <SceneLabel
         position={[0.1, 4.1, 0.1]}
         scale={1.2}
-        text={cs ? 'MATRIX · lunární základna' : 'MATRIX · lunar base'}
+        text={cs ? 'MATRIX · lunární základna' : tScene('MATRIX · lunar base', lang)}
       />
-      <SceneLabel position={[0.15, 2.55, 2.15]} text={cs ? 'hala · vstoupit' : 'hall · enter'} />
-      <SceneLabel position={[3.8, 2.7, 0.2]} text={cs ? 'skleník' : 'greenhouse'} />
-      <SceneLabel position={[0.4, 2.15, 6.2]} text={cs ? 'přistávací plocha' : 'landing pad'} />
-      <SceneLabel position={[-60, 11.4, -80]} scale={1.4} text={cs ? 'Země' : 'Earth'} />
+      <SceneLabel position={[0.15, 2.55, 2.15]} text={cs ? 'hala · vstoupit' : tScene('hall · enter', lang)} />
+      <SceneLabel position={[3.8, 2.7, 0.2]} text={cs ? 'skleník' : tScene('greenhouse', lang)} />
+      <SceneLabel position={[0.4, 2.15, 6.2]} text={cs ? 'přistávací plocha' : tScene('landing pad', lang)} />
+      <SceneLabel position={[-60, 11.4, -80]} scale={1.4} text={cs ? 'Země' : tScene('Earth', lang)} />
     </>
   );
 }

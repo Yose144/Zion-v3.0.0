@@ -330,7 +330,7 @@ export default function BlockDetailClient() {
               <h2 className="text-lg font-semibold text-white">{tx5(ExplorerBlockBlockDetailClientCopy.miningDetails, lang)}</h2>
             </div>
             <InfoRow label={tx5(ExplorerBlockBlockDetailClientCopy.difficulty, lang)} value={block.difficulty.toLocaleString(locale)} />
-            <InfoRow label="Nonce" value={block.nonce.toLocaleString()} />
+            <InfoRow label="Nonce" value={block.nonce.toLocaleString('en-US')} />
             <InfoRow label={tx5(ExplorerBlockBlockDetailClientCopy.blockReward, lang)} value={`${block.reward.toFixed(6)} ZION`} color="text-zion-gold" />
             <InfoRow label={tx5(ExplorerBlockBlockDetailClientCopy.totalFees, lang)} value={`${block.total_fees.toFixed(6)} ZION`} color="text-zion-gold" />
             <InfoRow label={tx5(ExplorerBlockBlockDetailClientCopy.transactions, lang)} value={`${block.tx_count} (${block.num_txes} ${tx5(ExplorerBlockBlockDetailClientCopy.user, lang)} + 1 coinbase)`} />

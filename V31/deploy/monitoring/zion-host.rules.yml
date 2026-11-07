@@ -1,0 +1,22 @@
+# EDGE1 exporter stays stopped until an operator starts it. This rule only
+# notices that the series is down or absent. Starting it is
+# `systemctl start prometheus-node-exporter` on EDGE1, without a pool or
+# node restart.
+groups:
+  - name: zion_host
+    rules:
+      - alert: ZionHostMetricsMissing
+        expr: up{job="node"} == 0 or absent(up{job="node",instance="edge1"})
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "EDGE host metrics missing"
+          description: "node job is down, or EDGE1 has no up series. The exporter is not started by this rules file."
+      - alert: ZionHostMemoryLow
+        expr: node_memory_MemAvailable_bytes{instance=~"edge1|edge2"} / node_memory_MemTotal_bytes{instance=~"edge1|edge2"} < 0.10
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.instance }} has less than 10% available RAM"

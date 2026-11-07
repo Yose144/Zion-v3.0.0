@@ -154,7 +154,7 @@ export default function DaoDashboardPage() {
   const daoMetrics = [
     {
       label: "DAO Treasury",
-      value: treasuryBalance != null ? `${treasuryBalance.toLocaleString()} ZION` : "—",
+      value: treasuryBalance != null ? `${treasuryBalance.toLocaleString('en-US')} ZION` : "—",
       note: lang === 'cs' ? "Live on-chain · 3 sloty · time-lock 144,000" : "Live on-chain · 3 slots · time-lock 144,000",
     },
     {

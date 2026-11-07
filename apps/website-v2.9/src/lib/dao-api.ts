@@ -343,10 +343,10 @@ export async function getDAOStats(): Promise<DAOStats> {
       governance: {
         total_proposals: d.total_proposals ?? 0,
         active_voters: d.unique_voters ?? 0,
-        treasury_balance: `${(d.treasury_total_zion ?? 1_500_000_000).toLocaleString()} ZION`,
+        treasury_balance: `${(d.treasury_total_zion ?? 1_500_000_000).toLocaleString('en-US')} ZION`,
         grants_funded: d.executed ?? 0,
         total_spent: 0,
-        dao_reserve: `${(d.treasury_total_zion ?? 1_500_000_000).toLocaleString()} ZION`,
+        dao_reserve: `${(d.treasury_total_zion ?? 1_500_000_000).toLocaleString('en-US')} ZION`,
       },
       humanitarian: {
         total_proposals: 0,

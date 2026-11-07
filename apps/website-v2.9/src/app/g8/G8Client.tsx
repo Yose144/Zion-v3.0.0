@@ -115,7 +115,7 @@ function fmtPct(v: number | null): string {
 function fmtTime(iso: string | null): string {
   if (!iso) return '—';
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString();
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString('en-US');
 }
 
 export default function G8Client() {

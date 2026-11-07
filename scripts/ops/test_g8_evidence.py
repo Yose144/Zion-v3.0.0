@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Tests for g8_evidence — pure/synthetic, no Prometheus or network needed."""
 
+import contextlib
+import io
 import json
 import os
 import sys
@@ -443,6 +445,32 @@ class StateFileTests(unittest.TestCase):
         self.assertEqual(
             g8e.cmd_stop(self.path, now=START + timedelta(minutes=3)), 0)
         self.assertEqual(g8e.read_state(self.path)["status"], "stopped")
+
+    def test_update_permission_error_exits_2_without_writing(self):
+        g8e.atomic_write(self.path, make_state())
+        before = open(self.path, "rb").read()
+        os.chmod(self.path, 0)
+        err = io.StringIO()
+        try:
+            with contextlib.redirect_stderr(err):
+                rc = g8e.cmd_update(self.path, "http://x", now=START)
+        finally:
+            os.chmod(self.path, 0o644)
+        self.assertEqual(rc, 2)
+        self.assertIn("cannot read", err.getvalue())
+        self.assertEqual(open(self.path, "rb").read(), before)
+
+    def test_update_invalid_json_exits_2_without_writing(self):
+        with open(self.path, "w", encoding="utf-8") as handle:
+            handle.write("{not-json\n")
+        before = open(self.path, "rb").read()
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            rc = g8e.cmd_update(self.path, "http://x", now=START)
+        self.assertEqual(rc, 2)
+        self.assertIn("invalid JSON", err.getvalue())
+        self.assertEqual(open(self.path, "rb").read(), before)
+        self.assertFalse(os.path.exists(self.path + ".tmp"))
 
 
 if __name__ == "__main__":

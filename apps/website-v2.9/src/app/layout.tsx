@@ -36,6 +36,17 @@ export const viewport = {
   themeColor: '#000000',
 };
 
+// hreflang: jazyk je volba v cookie/localStorage, ale `?lang=` ji umí předat
+// v URL — takže každá jazyková verze má vlastní odkaz a vyhledávač ji najde.
+const LANG_ALTERNATES = {
+  cs: `${SITE_APP_URL}?lang=cs`,
+  en: `${SITE_APP_URL}?lang=en`,
+  es: `${SITE_APP_URL}?lang=es`,
+  pt: `${SITE_APP_URL}?lang=pt`,
+  fr: `${SITE_APP_URL}?lang=fr`,
+  'x-default': SITE_APP_URL,
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_APP_URL),
   title: {
@@ -67,6 +78,14 @@ export default function RootLayout({
   return (
     <html lang="cs" className="dark" style={{ maxWidth: '100%', overflowX: 'clip' }}>
       <head>
+        {/* hreflang: každá jazyková varianta má vlastní URL (`?lang=`), takže ji
+            vyhledávač najde. Explicitní <link> schválně — `metadata.alternates`
+            zahodí každá stránka, která má vlastní `canonical` (52 z nich). */}
+        {Object.entries(LANG_ALTERNATES).map(([code, href]) => (
+          // malá písmena schválně: `hrefLang` prop propadne do HTML jako
+          // camelCase, kdežto `hreflang` je kanonický atribut
+          <link key={code} {...{ rel: 'alternate', hreflang: code, href }} />
+        ))}
         <link rel="preconnect" href="https://prod.spline.design" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://widget.li.fi" />
         <link rel="dns-prefetch" href="https://open.spotify.com" />

@@ -476,7 +476,7 @@ interface StackSummary {
 }
 
 /* ═══════════════════════ HELPERS ═══════════════════════ */
-function fmt(n?: number | null) { return n != null ? n.toLocaleString() : '—'; }
+function fmt(n?: number | null) { return n != null ? n.toLocaleString('en-US') : '—'; }
 function fmtTime(s?: number | null) {
   if (s == null) return '—';
   const h = Math.floor(s / 3600);
@@ -494,7 +494,7 @@ function fmtHash(h?: number | null) {
 }
 function fmtZion(value?: number | null) {
   if (value == null) return '—';
-  return `${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 6 })} ZION`;
+  return `${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 6 })} ZION`;
 }
 function fmtUptime(secs?: number | null) {
   if (!secs) return '—';
@@ -935,8 +935,8 @@ function BigProgress({ run }: { run?: StabilityRun }) {
   return (
     <div className="mb-4">
       <div className="flex flex-col sm:flex-row sm:justify-between text-[10px] sm:text-xs text-gray-500 mb-2 gap-0.5">
-        <span>Start: {run?.start ? new Date(run.start).toLocaleString() : '—'}</span>
-        <span>End: {run?.start && run?.duration_secs ? new Date(new Date(run.start).getTime() + run.duration_secs * 1000).toLocaleString() : '—'}</span>
+        <span>Start: {run?.start ? new Date(run.start).toLocaleString('en-US') : '—'}</span>
+        <span>End: {run?.start && run?.duration_secs ? new Date(new Date(run.start).getTime() + run.duration_secs * 1000).toLocaleString('en-US') : '—'}</span>
       </div>
       <div className="relative h-9 zion-section overflow-hidden">
         <motion.div
@@ -1060,11 +1060,11 @@ function G8RunCard({ run }: { run: G8Run | null }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <div>
           <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Start' : t5('Started', lang)}</p>
-          <p className="text-xs font-mono text-white">{new Date(run.started).toLocaleString()}</p>
+          <p className="text-xs font-mono text-white">{new Date(run.started).toLocaleString('en-US')}</p>
         </div>
         <div>
           <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Cílový konec' : t5('Target end', lang)}</p>
-          <p className="text-xs font-mono text-white">{run.target_end ? new Date(run.target_end).toLocaleString() : '—'}</p>
+          <p className="text-xs font-mono text-white">{run.target_end ? new Date(run.target_end).toLocaleString('en-US') : '—'}</p>
         </div>
         <div>
           <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Uběhlo' : t5('Elapsed', lang)}</p>
@@ -1168,7 +1168,7 @@ function G8RunCard({ run }: { run: G8Run | null }) {
               {(run.incident_summary?.recent ?? []).map((inc, i) => (
                 <div key={i} className="zion-tile px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
                   <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${inc.critical ? 'bg-red-400' : 'bg-amber-400'}`} />
-                  <span className="font-mono text-gray-400">{inc.started ? new Date(inc.started).toLocaleString() : '—'}</span>
+                  <span className="font-mono text-gray-400">{inc.started ? new Date(inc.started).toLocaleString('en-US') : '—'}</span>
                   <span className="font-mono text-gray-300">{inc.duration_seconds != null ? fmtG8Downtime(inc.duration_seconds, cs) : '—'}</span>
                   <span className="text-gray-400">{inc.signals.join(', ')}</span>
                   {inc.critical && <span className="text-[10px] font-semibold uppercase tracking-wider text-red-300">{cs ? 'kritický' : t5('critical', lang)}</span>}
@@ -1187,7 +1187,7 @@ function G8RunCard({ run }: { run: G8Run | null }) {
         <span className="font-mono truncate">
           {run.run_id ?? 'g8'}
           {sc?.covered != null && sc?.expected != null ? ` · ${sc.covered}/${sc.expected} samples` : ''}
-          {run.last_evidence_update ? ` · evidence ${new Date(run.last_evidence_update).toLocaleTimeString()}` : ''}
+          {run.last_evidence_update ? ` · evidence ${new Date(run.last_evidence_update).toLocaleTimeString('en-US')}` : ''}
         </span>
         <NextLink href="/g8" className="text-zion-cyan hover:text-white transition-colors font-semibold uppercase tracking-wider">
           {cs ? 'Živé detaily →' : t5('Live details →', lang)}
@@ -2187,7 +2187,7 @@ export default function MissionControlDashboard() {
   const collectorIssues = stabilityRun?.collector?.issue_count ?? 0;
   const collectorEnabled = stabilityRun?.collector?.enabled ?? false;
   const lastSampleAt = stabilityRun?.collector?.last_sample_at
-    ? new Date(stabilityRun.collector.last_sample_at).toLocaleString()
+    ? new Date(stabilityRun.collector.last_sample_at).toLocaleString('en-US')
     : 'No persisted samples yet';
   const poolAcceptRate = stabilityRun?.pool?.accept_rate_pct;
   const visibleServices = (serviceGroup === 'all' ? services : services.filter(service => getServiceGroup(service) === serviceGroup))
@@ -3843,7 +3843,7 @@ export default function MissionControlDashboard() {
         <div className="text-center text-xs text-gray-600 pt-8 border-t border-white/10">
           ZION TerraNova {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · One Love Mainnet · public launch postponed (TBD)<br />
           <em>6-layer architecture · operations-first web shell</em><br /><br />
-          Last update: {data?.timestamp ? new Date(data.timestamp).toLocaleString() : '—'} · Auto-refresh: 30s
+          Last update: {data?.timestamp ? new Date(data.timestamp).toLocaleString('en-US') : '—'} · Auto-refresh: 30s
         </div>
       </div>
     </div>

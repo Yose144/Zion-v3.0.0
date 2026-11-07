@@ -1,6 +1,8 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
 import { useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
@@ -31,7 +33,7 @@ export default function KralovstviSrdcePreviewLazy({
   lang = 'cs',
   className = '',
 }: {
-  lang?: 'cs' | 'en';
+  lang?: Lang;
   className?: string;
 }) {
   const [mounted, setMounted] = useState(false);

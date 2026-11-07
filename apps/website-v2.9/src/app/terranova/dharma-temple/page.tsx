@@ -331,7 +331,7 @@ export default function DharmaTemplePage() {
                 {tx5(TerranovaDharmaTempleCopy.threeDPreviewSubtitle, lang)}
               </h2>
             </div>
-            <DharmaTemplePreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
+            <DharmaTemplePreviewLazy lang={lang} className="w-full" />
           </div>
         </motion.section>
 

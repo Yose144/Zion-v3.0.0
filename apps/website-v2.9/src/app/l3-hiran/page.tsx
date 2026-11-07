@@ -624,7 +624,7 @@ export default function L3HiranPage() {
               <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
-          <HiranPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
+          <HiranPreviewLazy lang={lang} className="w-full" />
         </motion.section>
 
         {/* ── THREE PILLARS ── */}

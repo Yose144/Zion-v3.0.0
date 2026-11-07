@@ -174,7 +174,7 @@ export default function MiningStats({ address }: MiningStatsProps) {
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-500">Last Share</span>
                 <span className="text-gray-300">
-                  {new Date(miner.last_share_time * 1000).toLocaleString()}
+                  {new Date(miner.last_share_time * 1000).toLocaleString('en-US')}
                 </span>
               </div>
             )}

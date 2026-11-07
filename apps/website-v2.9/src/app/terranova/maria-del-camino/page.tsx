@@ -620,7 +620,7 @@ export default function MariaDelCaminoPage() {
                 {tx5(Copy.threeDPreviewSubtitle, lang)}
               </h2>
             </div>
-            <MariaDelCaminoPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
+            <MariaDelCaminoPreviewLazy lang={lang} className="w-full" />
           </div>
         </motion.section>
 

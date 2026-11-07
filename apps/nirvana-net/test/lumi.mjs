@@ -135,6 +135,42 @@ try {
   );
   check('druhý vidí prvního', Boolean(bSeesA.lumi.flyers.find((flyer) => flyer.id === roomA.youPlayerId)));
 
+  const watcher = client();
+  await watcher.opened;
+  watcher.send({ t: 'hello', proto: PROTO });
+  await watcher.waitFor((m) => m.t === 'welcome');
+  watcher.send({ t: 'join', game: 'lumi', room: roomA.room.id, spectate: true });
+  const watchRoom = await watcher.waitFor((m) => m.t === 'room');
+  check(
+    'divák je v hledišti a nebere sedlo',
+    watchRoom.spectator === true && watchRoom.room.players === 2,
+    JSON.stringify(watchRoom.room),
+  );
+  const watchShot = await watcher.waitFor((m) => m.t === 'snapshot' && m.game === 'lumi');
+  check(
+    'divák vidí cestu, světla a letce',
+    watchShot.lumi?.path === 'wind' &&
+      Array.isArray(watchShot.lumi?.lights) &&
+      (watchShot.lumi?.flyers ?? []).some((flyer) => flyer.id === roomA.youPlayerId),
+    JSON.stringify(watchShot.lumi),
+  );
+  check('divák nemá vlastní sedlo', watchShot.lumi?.you == null, JSON.stringify(watchShot.lumi?.you));
+  const giftsBefore = a.inbox.filter((m) => m.t === 'event' && m.event?.kind === 'gift').length;
+  watcher.send(state(9, 9));
+  watcher.send({ t: 'handoff', light: 1 });
+  await sleep(500);
+  const afterWatch = await a.waitFor((m) => m.t === 'snapshot' && m.game === 'lumi', 4000);
+  check(
+    'řízení diváka se do letu nezapíše',
+    !(afterWatch.lumi?.flyers ?? []).some((flyer) => flyer.id === watchRoom.youPlayerId),
+    JSON.stringify(afterWatch.lumi?.flyers),
+  );
+  check(
+    'předání od diváka se odmítne',
+    a.inbox.filter((m) => m.t === 'event' && m.event?.kind === 'gift').length === giftsBefore,
+  );
+  watcher.close();
+
   // sdílená světla
   b.send(state(44, 55, { collect: 1 }));
   const shared = await a.waitFor((m) => m.t === 'snapshot' && (m.lumi?.lights ?? []).includes(1), 5000);

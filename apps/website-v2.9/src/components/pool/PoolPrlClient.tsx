@@ -214,7 +214,7 @@ export default function PoolPrlClient({ embedded = false }: { embedded?: boolean
           tx5(C.down, lang))}
         <div className="bg-black/25 rounded-xl p-3 text-center border border-white/5">
           <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{tx5(C.height, lang)}</div>
-          <div className="text-lg font-bold text-cyan-400">{n?.height != null ? n.height.toLocaleString() : '—'}</div>
+          <div className="text-lg font-bold text-cyan-400">{n?.height != null ? n.height.toLocaleString('en-US') : '—'}</div>
         </div>
         <div className="bg-black/25 rounded-xl p-3 text-center border border-white/5">
           <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{tx5(C.peers, lang)}</div>
@@ -256,7 +256,7 @@ export default function PoolPrlClient({ embedded = false }: { embedded?: boolean
             <div className="font-mono text-gray-200 truncate" title={n?.best_block || ''}>{short(n?.best_block)}</div>
             <div className="text-gray-500">{tx5(C.mediantime, lang)}</div>
             <div className="font-mono text-gray-200">
-              {n?.mediantime ? new Date(n.mediantime * 1000).toLocaleString() : '—'}
+              {n?.mediantime ? new Date(n.mediantime * 1000).toLocaleString('en-US') : '—'}
             </div>
             <div className="text-gray-500">{tx5(C.mempool, lang)}</div>
             <div className="font-mono text-gray-200">{n?.mempool_tx ?? '—'}</div>

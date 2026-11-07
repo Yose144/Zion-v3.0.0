@@ -606,21 +606,21 @@ export default function DaoPage() {
                       <Landmark className="h-4 w-4 text-zion-gold" />
                       {tx5(DaoCopy.treasury, lang)}
                     </div>
-                    <span className="font-mono text-white">{(treasury?.total_zion ?? 0).toLocaleString()} ZION</span>
+                    <span className="font-mono text-white">{(treasury?.total_zion ?? 0).toLocaleString('en-US')} ZION</span>
                   </div>
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Wallet className="h-4 w-4 text-zion-cyan" />
                       {tx5(DaoCopy.spendableNow, lang)}
                     </div>
-                    <span className="font-mono text-white">{spendableZion.toLocaleString()} ZION</span>
+                    <span className="font-mono text-white">{spendableZion.toLocaleString('en-US')} ZION</span>
                   </div>
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Gavel className="h-4 w-4 text-zion-cyan" />
                       {tx5(DaoCopy.proposals, lang)}
                     </div>
-                    <span className="font-mono text-white">{totalProposals.toLocaleString()}</span>
+                    <span className="font-mono text-white">{totalProposals.toLocaleString('en-US')}</span>
                   </div>
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
@@ -691,7 +691,7 @@ export default function DaoPage() {
                   bgClass="bg-zion-gold/10"
                   rc="252, 209, 22"
                   label={tx5(DaoCopy.treasury, lang)}
-                  value={`${(treasury?.total_zion ?? 0).toLocaleString()} ZION`}
+                  value={`${(treasury?.total_zion ?? 0).toLocaleString('en-US')} ZION`}
                   sub={tx5(DaoCopy.totalBalance, lang)}
                   tip={tx5(DaoCopy.totalTreasuryBalanceIncludingA, lang)}
                 />
@@ -701,7 +701,7 @@ export default function DaoPage() {
                   bgClass="bg-zion-cyan/10"
                   rc="6, 105, 40"
                   label={tx5(DaoCopy.spendableNow, lang)}
-                  value={`${spendableZion.toLocaleString()} ZION`}
+                  value={`${spendableZion.toLocaleString('en-US')} ZION`}
                   sub={tx5(DaoCopy.immediatelyUsable, lang)}
                   tip={tx5(DaoCopy.balanceAvailableForGovernanceS, lang)}
                 />
@@ -711,7 +711,7 @@ export default function DaoPage() {
                   bgClass="bg-zion-cyan/10"
                   rc="6, 105, 40"
                   label={tx5(DaoCopy.proposals, lang)}
-                  value={totalProposals.toLocaleString()}
+                  value={totalProposals.toLocaleString('en-US')}
                   sub={tx5(DaoCopy.createdTotal, lang)}
                 />
                 <StatCard
@@ -720,7 +720,7 @@ export default function DaoPage() {
                   bgClass="bg-zion-cyan/10"
                   rc="6, 105, 40"
                   label={tx5(DaoCopy.active, lang)}
-                  value={activeProposals.toLocaleString()}
+                  value={activeProposals.toLocaleString('en-US')}
                   sub={(stats?.awaiting_tally ?? 0) > 0 ? `${stats?.awaiting_tally} ${tx5(DaoCopy.votingClosedAwaitingTally, lang)}` : tx5(DaoCopy.ongoingVotes, lang)}
                 />
                 <StatCard
@@ -729,7 +729,7 @@ export default function DaoPage() {
                   bgClass="bg-zion-gold/10"
                   rc="252, 209, 22"
                   label={tx5(DaoCopy.passed, lang)}
-                  value={(stats?.passed ?? 0).toLocaleString()}
+                  value={(stats?.passed ?? 0).toLocaleString('en-US')}
                   sub={tx5(DaoCopy.successfulProposals, lang)}
                 />
                 <StatCard
@@ -738,7 +738,7 @@ export default function DaoPage() {
                   bgClass="bg-zion-gold/10"
                   rc="252, 209, 22"
                   label={tx5(DaoCopy.voters, lang)}
-                  value={(stats?.unique_voters ?? 0).toLocaleString()}
+                  value={(stats?.unique_voters ?? 0).toLocaleString('en-US')}
                   sub={`${stats?.total_votes_cast ?? 0} ${cs ? 'hlasů celkem' : t5('votes cast', lang)}`}
                 />
                 <StatCard
@@ -757,7 +757,7 @@ export default function DaoPage() {
                   bgClass="bg-zion-gold/10"
                   rc="252, 209, 22"
                   label="wZION Mints"
-                  value={bridgeStatus?.evm_mints_confirmed?.toLocaleString() ?? '—'}
+                  value={bridgeStatus?.evm_mints_confirmed?.toLocaleString('en-US') ?? '—'}
                   sub={tx5(DaoCopy.confirmedOnBase, lang)}
                   tip={tx5(DaoCopy.numberOfWzionMintedOnBaseAfter, lang)}
                 />
@@ -911,7 +911,7 @@ export default function DaoPage() {
                     </div>
                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                       <p className="text-xs uppercase tracking-wider text-gray-400">{tx5(DaoCopy.spendableNow, lang)}</p>
-                      <p className="text-lg font-semibold text-white mt-1">{spendableZion.toLocaleString()} ZION</p>
+                      <p className="text-lg font-semibold text-white mt-1">{spendableZion.toLocaleString('en-US')} ZION</p>
                     </div>
                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                       <p className="text-xs uppercase tracking-wider text-gray-400">{tx5(DaoCopy.pendingOps, lang)}</p>
@@ -919,7 +919,7 @@ export default function DaoPage() {
                     </div>
                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                       <p className="text-xs uppercase tracking-wider text-gray-400">{tx5(DaoCopy.dailyLimit, lang)}</p>
-                      <p className="text-lg font-semibold text-white mt-1">{treasury.daily_spend_limit_zion.toLocaleString()} ZION</p>
+                      <p className="text-lg font-semibold text-white mt-1">{treasury.daily_spend_limit_zion.toLocaleString('en-US')} ZION</p>
                     </div>
                   </div>
                 )}
@@ -928,11 +928,11 @@ export default function DaoPage() {
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 text-sm">
                     <div>
                       <p className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(DaoCopy.currentBlock, lang)}</p>
-                      <p className="font-mono text-white mt-0.5">{treasury?.chain_height != null ? treasury.chain_height.toLocaleString() : '—'}</p>
+                      <p className="font-mono text-white mt-0.5">{treasury?.chain_height != null ? treasury.chain_height.toLocaleString('en-US') : '—'}</p>
                     </div>
                     <div>
                       <p className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(DaoCopy.unlockBlock, lang)}</p>
-                      <p className="font-mono text-white mt-0.5">{treasury?.unlock_height != null ? treasury.unlock_height.toLocaleString() : '—'}</p>
+                      <p className="font-mono text-white mt-0.5">{treasury?.unlock_height != null ? treasury.unlock_height.toLocaleString('en-US') : '—'}</p>
                     </div>
                     <div>
                       <p className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(DaoCopy.timeLockLabel, lang)}</p>
@@ -956,7 +956,7 @@ export default function DaoPage() {
                     </div>
                     <div>
                       <p className="text-[11px] uppercase tracking-wider text-gray-500">{tx5(DaoCopy.spendableNow, lang)}</p>
-                      <p className="font-mono text-white mt-0.5">{spendableZion.toLocaleString()} ZION</p>
+                      <p className="font-mono text-white mt-0.5">{spendableZion.toLocaleString('en-US')} ZION</p>
                     </div>
                   </div>
                 </div>
@@ -1068,8 +1068,8 @@ export default function DaoPage() {
                     {[
                       { label: tx5(DaoCopy.totalProjects, lang), value: stats.humanitarian.total_proposals },
                       { label: tx5(DaoCopy.activeFunding, lang), value: stats.humanitarian.active_proposals },
-                      { label: tx5(DaoCopy.beneficiaries, lang), value: stats.humanitarian.total_beneficiaries.toLocaleString() },
-                      { label: tx5(DaoCopy.fundedAmount, lang), value: stats.humanitarian.total_funded.toLocaleString() },
+                      { label: tx5(DaoCopy.beneficiaries, lang), value: stats.humanitarian.total_beneficiaries.toLocaleString('en-US') },
+                      { label: tx5(DaoCopy.fundedAmount, lang), value: stats.humanitarian.total_funded.toLocaleString('en-US') },
                     ].map((s) => (
                       <div key={s.label} className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                         <p className="text-xs uppercase tracking-wider text-gray-400">{s.label}</p>
@@ -1566,7 +1566,7 @@ export default function DaoPage() {
 
                 <div className="zion-rainbow-sub p-3 text-[11px] text-gray-400" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                   {tx5(DaoCopy.proposalThresholdNote, lang)}{' '}
-                  <span className="font-mono text-zion-gold">{((stats?.proposal_threshold ?? 0) / 1_000_000).toLocaleString()} ZION</span>
+                  <span className="font-mono text-zion-gold">{((stats?.proposal_threshold ?? 0) / 1_000_000).toLocaleString('en-US')} ZION</span>
                   {' · '}{tx5(DaoCopy.votesAreWeightedByZionBalance, lang)}
                 </div>
 

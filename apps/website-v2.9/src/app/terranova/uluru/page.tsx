@@ -398,7 +398,7 @@ export default function UluruPage() {
                 {tx5(Copy.threeDPreviewSubtitle, lang)}
               </h2>
             </div>
-            <UluruPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
+            <UluruPreviewLazy lang={lang} className="w-full" />
           </div>
         </motion.section>
 

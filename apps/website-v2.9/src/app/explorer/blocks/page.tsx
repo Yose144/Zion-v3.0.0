@@ -63,7 +63,7 @@ const fmtDiff = (d: number): string => {
   if (d >= 1e9) return `${(d / 1e9).toFixed(2)}G`;
   if (d >= 1e6) return `${(d / 1e6).toFixed(2)}M`;
   if (d >= 1e3) return `${(d / 1e3).toFixed(1)}k`;
-  return d.toLocaleString();
+  return d.toLocaleString('en-US');
 };
 
 export default function BlocksPage() {
@@ -253,7 +253,7 @@ export default function BlocksPage() {
                         <td className="px-6 py-3">
                           <Link href={`/explorer/block?id=${block.height}`}
                             className="text-zion-cyan hover:text-white transition font-mono font-semibold text-sm">
-                            {block.height.toLocaleString()}
+                            {block.height.toLocaleString('en-US')}
                           </Link>
                         </td>
                         <td className="px-3 py-3">

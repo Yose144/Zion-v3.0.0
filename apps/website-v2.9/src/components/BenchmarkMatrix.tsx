@@ -158,7 +158,7 @@ export default function BenchmarkMatrix() {
                     <td className="px-4 py-3 font-medium text-white whitespace-nowrap">{g.gpu}</td>
                     <td className="px-4 py-3 text-white/50 whitespace-nowrap">{g.arch}</td>
                     <td className="px-4 py-3 text-white/50 whitespace-nowrap">{g.vram}</td>
-                    <td className="px-4 py-3 text-white/50">{g.bw.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-white/50">{g.bw.toLocaleString('en-US')}</td>
                     <td className="px-4 py-3 text-right font-bold text-zion-gold text-base">{g.khs} <span className="text-xs text-zion-gold/60 font-normal">KH/s</span></td>
                     <td className="px-4 py-3 font-mono text-white/60">{g.tpb}</td>
                     <td className="px-4 py-3 font-mono text-white/60">{g.wc}</td>

@@ -351,9 +351,9 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
             {stats ? (
               <div className="space-y-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <MetricCard label="Blocks" value={stats.total_blocks ? stats.total_blocks.toLocaleString() : '—'} />
+                  <MetricCard label="Blocks" value={stats.total_blocks ? stats.total_blocks.toLocaleString('en-US') : '—'} />
                   <MetricCard label="Total supply" value={totalSupply ? `${(totalSupply / 1e9).toFixed(2)}B` : '—'} />
-                  <MetricCard label="Transactions" value={stats.total_transactions ? stats.total_transactions.toLocaleString() : '—'} />
+                  <MetricCard label="Transactions" value={stats.total_transactions ? stats.total_transactions.toLocaleString('en-US') : '—'} />
                   <MetricCard label="Difficulty" value={stats.difficulty || '—'} />
                 </div>
                 {stats.latest_block && (
@@ -415,7 +415,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                 />
                 <MetricCard 
                   label={tx5(DashboardCopy.blocksFound, lang)} 
-                  value={poolStats.blocks_found ? poolStats.blocks_found.toLocaleString() : '0'} 
+                  value={poolStats.blocks_found ? poolStats.blocks_found.toLocaleString('en-US') : '0'} 
                 />
                 <MetricCard 
                   label={tx5(DashboardCopy.totalPaid, lang)} 
@@ -453,7 +453,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                     </div>
                     <div className="flex justify-between">
                       <span>{tx5(DashboardCopy.difficulty, lang)}</span>
-                      <span className="font-mono">{poolStats?.network_difficulty ? poolStats.network_difficulty.toLocaleString() : '—'}</span>
+                      <span className="font-mono">{poolStats?.network_difficulty ? poolStats.network_difficulty.toLocaleString('en-US') : '—'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>{tx5(DashboardCopy.pendingPayouts, lang)}</span>

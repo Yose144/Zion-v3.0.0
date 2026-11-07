@@ -2,6 +2,7 @@
 'use client';
 
 import { React, useFrame, THREE } from '@genesis/runtime';
+import { tScene } from './scene-i18n';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, SceneMotes, SceneTerrain, SceneWater, SkyFill, gold as goldMaterial, stoneWarm } from './kit';
@@ -508,13 +509,13 @@ export function AmentiScene({ lang }: { lang: Lang }) {
       <SeaAndSails />
 
       {/* labely */}
-      <SceneLabel position={[0, 15.5, -10]} text={cs ? 'Síň Amenti — záznam civilizace' : 'Hall of Amenti — record of civilisation'} scale={2.6} />
-      <SceneLabel position={[0, 53, -26]} text={cs ? 'Hiranyagarbha — zlaté vejce' : 'Hiranyagarbha — golden egg'} scale={2.4} />
-      <SceneLabel position={[-38, 46, -52]} text={cs ? 'Hvězdná tvář' : 'Star face'} scale={2} />
-      <SceneLabel position={[42, 48.5, -56]} text={cs ? 'Země + orbitální stanice' : 'Earth + orbital station'} scale={2} />
-      <SceneLabel position={[-48, 12, -68]} text={cs ? 'Pyramidy Gízy' : 'Giza pyramids'} scale={2.2} />
-      <SceneLabel position={[14, 3.5, 12]} text={cs ? 'Oáza' : 'Oasis'} scale={1.8} />
-      <SceneLabel position={[66, 5, -58]} text={cs ? 'Plachetnice na moři' : 'Sailboats at sea'} scale={1.9} />
+      <SceneLabel position={[0, 15.5, -10]} text={cs ? 'Síň Amenti — záznam civilizace' : tScene('Hall of Amenti — record of civilisation', lang)} scale={2.6} />
+      <SceneLabel position={[0, 53, -26]} text={cs ? 'Hiranyagarbha — zlaté vejce' : tScene('Hiranyagarbha — golden egg', lang)} scale={2.4} />
+      <SceneLabel position={[-38, 46, -52]} text={cs ? 'Hvězdná tvář' : tScene('Star face', lang)} scale={2} />
+      <SceneLabel position={[42, 48.5, -56]} text={cs ? 'Země + orbitální stanice' : tScene('Earth + orbital station', lang)} scale={2} />
+      <SceneLabel position={[-48, 12, -68]} text={cs ? 'Pyramidy Gízy' : tScene('Giza pyramids', lang)} scale={2.2} />
+      <SceneLabel position={[14, 3.5, 12]} text={cs ? 'Oáza' : tScene('Oasis', lang)} scale={1.8} />
+      <SceneLabel position={[66, 5, -58]} text={cs ? 'Plachetnice na moři' : tScene('Sailboats at sea', lang)} scale={1.9} />
     </>
   );
 }

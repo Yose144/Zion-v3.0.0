@@ -180,7 +180,7 @@ function fmtAge(ms: number | null | undefined): string {
 
 function fmtTs(s: string | null | undefined): string {
   if (!s) return "—";
-  try { return new Date(s).toLocaleString(); } catch { return String(s); }
+  try { return new Date(s).toLocaleString('en-US'); } catch { return String(s); }
 }
 
 function short(a: string | null | undefined, n = 14): string {
@@ -262,7 +262,7 @@ export default function PoolQtcClient({ embedded = false }: { embedded?: boolean
           n?.ok ? tx5(C.syncing, lang) : tx5(C.down, lang))}
         <div className="bg-black/25 rounded-xl p-3 text-center border border-white/5">
           <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{tx5(C.height, lang)}</div>
-          <div className="text-lg font-bold text-cyan-400">{n?.height != null ? n.height.toLocaleString() : '—'}</div>
+          <div className="text-lg font-bold text-cyan-400">{n?.height != null ? n.height.toLocaleString('en-US') : '—'}</div>
         </div>
         <div className="bg-black/25 rounded-xl p-3 text-center border border-white/5">
           <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{tx5(C.peers, lang)}</div>

@@ -204,7 +204,7 @@ function formatHashrate(h: number): string {
 
 function formatNum(n: number | undefined | null, digits = 2): string {
   if (n == null || isNaN(n)) return '—';
-  return n.toLocaleString(undefined, { maximumFractionDigits: digits });
+  return n.toLocaleString('en-US', { maximumFractionDigits: digits });
 }
 
 function formatTimeAgo(unixSeconds: number): string {
@@ -248,9 +248,9 @@ async function handleVersion(): Promise<CliResponse> {
       `  runtime version:     ${SITE_RUNTIME_VERSION}`,
       `  node protocol:       ${nodeProtocol}`,
       `  environment:         ${SITE_ENVIRONMENT_LABEL}`,
-      `  flowers_per_zion:    ${FLOWERS_PER_ZION.toLocaleString()} (1 ZION = 1,000,000 flowers)`,
-      `  total supply cap:    ${TOTAL_SUPPLY_ZION.toLocaleString()} ZION`,
-      `  genesis premine:     ${GENESIS_PREMINE_ZION.toLocaleString()} ZION`,
+      `  flowers_per_zion:    ${FLOWERS_PER_ZION.toLocaleString('en-US')} (1 ZION = 1,000,000 flowers)`,
+      `  total supply cap:    ${TOTAL_SUPPLY_ZION.toLocaleString('en-US')} ZION`,
+      `  genesis premine:     ${GENESIS_PREMINE_ZION.toLocaleString('en-US')} ZION`,
       `  block reward:        ${BLOCK_REWARD_ZION} ZION (Decade 1)`,
       '',
       'Type "help" for all commands.',
@@ -1128,9 +1128,9 @@ function formatAbout(): string {
     '  by 20% per decade. Tail emission ~724.785 ZION/block after decade 10.',
     '',
     'Supply:',
-    `  Total supply cap:   ${TOTAL_SUPPLY_ZION.toLocaleString()} ZION`,
-    `  Genesis premine:    ${GENESIS_PREMINE_ZION.toLocaleString()} ZION`,
-    `  Sub-unit:           1 ZION = ${FLOWERS_PER_ZION.toLocaleString()} flowers (6 decimals)`,
+    `  Total supply cap:   ${TOTAL_SUPPLY_ZION.toLocaleString('en-US')} ZION`,
+    `  Genesis premine:    ${GENESIS_PREMINE_ZION.toLocaleString('en-US')} ZION`,
+    `  Sub-unit:           1 ZION = ${FLOWERS_PER_ZION.toLocaleString('en-US')} flowers (6 decimals)`,
     '',
     'Launch:',
     `  Site version:       ${SITE_VERSION}`,
@@ -1205,8 +1205,8 @@ function formatNodeInfo(info: any): string {
     `  Alt blocks:             ${info.alt_blocks_count ?? '—'}`,
     `  Block size median:      ${info.block_size_median ?? '—'}`,
     `  Status:                 ${info.status ?? 'OK'}`,
-    `  FLOWERS_PER_ZION:       ${FLOWERS_PER_ZION.toLocaleString()}`,
-    `  ATOMIC_UNITS_PER_ZION:  ${ATOMIC_UNITS_PER_ZION.toLocaleString()}`,
+    `  FLOWERS_PER_ZION:       ${FLOWERS_PER_ZION.toLocaleString('en-US')}`,
+    `  ATOMIC_UNITS_PER_ZION:  ${ATOMIC_UNITS_PER_ZION.toLocaleString('en-US')}`,
   ].join('\n');
 }
 
@@ -1244,8 +1244,8 @@ function formatSupply(info: any, summary: any): string {
     `  Total emission:   ${typeof emission === 'number' ? emission.toFixed(2) : emission} ZION`,
     `  Block reward:     ${blockReward} ZION (Decade 1)`,
     `  Mempool txs:      ${info?.tx_pool_size ?? '—'}`,
-    `  Total supply cap: ${TOTAL_SUPPLY_ZION.toLocaleString()} ZION`,
-    `  Genesis premine:  ${GENESIS_PREMINE_ZION.toLocaleString()} ZION`,
+    `  Total supply cap: ${TOTAL_SUPPLY_ZION.toLocaleString('en-US')} ZION`,
+    `  Genesis premine:  ${GENESIS_PREMINE_ZION.toLocaleString('en-US')} ZION`,
   ].join('\n');
 }
 

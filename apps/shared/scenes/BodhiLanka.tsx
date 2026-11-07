@@ -2,6 +2,7 @@
 'use client';
 
 import { React, useFrame, THREE } from '@genesis/runtime';
+import { tScene } from './scene-i18n';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, SceneInstances, ScenePalms, SceneTerrain, SceneWater, SkyFill, mergeParts, type MergedPart } from './kit';
@@ -679,14 +680,14 @@ export function BodhiLankaScene({ lang }: { lang: Lang }) {
 
       {/* labely — větší měřítko scény = větší sprity */}
       <SceneLabel position={[0, 17.6, 0]} text="Sri Maha Bodhi" scale={2.4} />
-      <SceneLabel position={[0, 5.6, 3.4]} text={cs ? 'Buddha · meditace' : 'Buddha · meditation'} scale={1.8} />
+      <SceneLabel position={[0, 5.6, 3.4]} text={cs ? 'Buddha · meditace' : tScene('Buddha · meditation', lang)} scale={1.8} />
       {PAVILIONS.filter((p) => p.az === 0 || p.az === 72 || p.az === 288).map((p) => {
         const [x, z] = polar(p.az, PAV_DIST);
         return <SceneLabel key={p.az} position={[x, 7.6 * (p.big ? 1.22 : 1), z]} text={cs ? p.name.cs : p.name.en} scale={1.8} />;
       })}
-      <SceneLabel position={[polar(150, 17)[0], 2.4, polar(150, 17)[1]]} text={cs ? 'Lotosové jezírko' : 'Lotus Pond'} scale={1.8} />
-      <SceneLabel position={[polar(36, 19)[0], 3.0, polar(36, 19)[1]]} text={cs ? 'Rama Setu · most srdcí' : 'Rama Setu · bridge of hearts'} scale={1.8} />
-      <SceneLabel position={[-16, 19, -86]} text={cs ? 'Anuradhapura — posvátná osa' : 'Anuradhapura — sacred axis'} scale={2.6} />
+      <SceneLabel position={[polar(150, 17)[0], 2.4, polar(150, 17)[1]]} text={cs ? 'Lotosové jezírko' : tScene('Lotus Pond', lang)} scale={1.8} />
+      <SceneLabel position={[polar(36, 19)[0], 3.0, polar(36, 19)[1]]} text={cs ? 'Rama Setu · most srdcí' : tScene('Rama Setu · bridge of hearts', lang)} scale={1.8} />
+      <SceneLabel position={[-16, 19, -86]} text={cs ? 'Anuradhapura — posvátná osa' : tScene('Anuradhapura — sacred axis', lang)} scale={2.6} />
     </>
   );
 }

@@ -1,0 +1,36 @@
+ZION OASIS — DOPLNĚNÍ 11 CHYBĚJÍCÍCH PORTRÉTŮ
+
+Tento balíček doplňuje 191 portrétů z archivu ZION_OASIS_AVATARI_KOMPLET.zip na 202 postav včetně dvou přidaných avatarů.
+Jedenáct PNG je uloženo jen jednou, v hlavním `../01_PORTRETY/`, pod stejnými názvy. `SHA256SUMS.txt` ukazuje na tu kopii.
+Čísla v názvech souborů jsou ARCHIVNÍ čísla. Rozhoduje jméno postavy, ne pořadí souboru.
+
+ID v přiloženém CSV byla převzata výslovně ze seznamu uživatele, nikoli z pozice karty na webu:
+011 Arjuna → 11
+012 Bhima → 12
+013 Yudhishthira → 13
+014 Jašóda → 14
+015 Vishwakarma → 15
+016 Radha → 16
+017 Vyasa → 17
+018 Maria Magdalena → 18
+019 Ježíš → 19
+020 Panna Maria → 38
+052 Kókyangwúti → 54
+
+IMPORT
+1. Přidat nové PNG do 01_PORTRETY hlavního archivu.
+2. Podle jména a archivního čísla aktualizovat odpovídajících 11 řádků v soupisu. CSV v tomto balíčku obsahuje jen aktualizované řádky, nikoli celý roster.
+3. Nezaměňovat databázové roster_id s pořadím zobrazení na stránce. Před úpravou kanonu ověřit, že ID ukazuje na stejné jméno.
+4. Při nasazení aktualizovat image_url v kanonu i související marketplace artefakt. U nových renderů odstranit štítek procedurálního 3D náhledu; ponechat odpovídající informaci o AI ilustraci podle konvence webu.
+5. Staré výřezy a koncepty uchovat jako historii, nenastavovat je jako primární obrázky.
+
+Web ani marketplace nebyly tímto balíčkem změněny. Konkrétní importní příkaz nebyl v uživatelské zprávě dokončen, proto zde není vymyšlen ani spuštěn.
+
+Generování: vestavěný obrazový generátor. Přesná zadání: PROMPTY.json.
+Základ kulturních atributů:
+https://www.metmuseum.org/art/collection/search/37939
+https://www.metmuseum.org/art/collection/search/39131
+https://searchcollection.asianart.org/objects/15368/the-hindu-god-krishna-converses-with-the-pandava-brother-yud
+https://www.nationalgallery.org.uk/paintings/master-of-the-palazzo-venezia-madonna-saint-mary-magdalene
+https://www.native-languages.org/spider-grandmother.htm
+Podoby jsou tvůrčí interpretace pro ZION OASIS, nikoli historicky doložené portréty.

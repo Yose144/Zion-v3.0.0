@@ -1,6 +1,8 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
 import { useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
@@ -14,7 +16,7 @@ function PreviewSkeleton() {
     <div className="flex h-[420px] md:h-[520px] w-full items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-black/40">
       <div className="flex flex-col items-center gap-3 text-white/60">
         <Loader2 className="h-6 w-6 animate-spin text-zion-gold" />
-        <span className="text-xs uppercase tracking-widest">Načítání 3D preview / Loading 3D preview…</span>
+        <span className="text-xs uppercase tracking-widest">3D</span>
       </div>
     </div>
   );
@@ -24,7 +26,7 @@ export default function KailashPreviewLazy({
   lang = 'cs',
   className = '',
 }: {
-  lang?: 'cs' | 'en';
+  lang?: Lang;
   className?: string;
 }) {
   const [mounted, setMounted] = useState(false);

@@ -436,7 +436,7 @@ export default function TePikoOraPage() {
                 {tx5(TerranovaTePikoOraCopy.threeDPreviewSubtitle, lang)}
               </h2>
             </div>
-            <TePikoOraPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
+            <TePikoOraPreviewLazy lang={lang} className="w-full" />
           </div>
         </motion.section>
 

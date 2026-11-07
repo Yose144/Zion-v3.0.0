@@ -1,6 +1,7 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
+import { t5 } from '@/lib/i18n-tx';
 import { OrbitControls } from '@react-three/drei';
 import { usePreviewVisibility } from './usePreviewVisibility';
 import { useEffect, useState } from 'react';
@@ -59,7 +60,7 @@ export default function EkamPreview({
         <OrbitControls makeDefault {...EKAM_CONTROLS} />
       </Canvas>
       <div className="pointer-events-none absolute bottom-3 left-4 rounded border border-white/10 bg-black/60 px-2.5 py-1 text-[10px] text-white/60">
-        {lang === 'cs' ? 'Táhni pro otočení · kolečko pro přiblížení' : 'Drag to rotate · scroll to zoom'}
+        {lang === 'cs' ? 'Táhni pro otočení · kolečko pro přiblížení' : t5('Drag to rotate · scroll to zoom', lang)}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@
 'use client';
 
 import { React, THREE } from '@genesis/runtime';
+import { tScene } from './scene-i18n';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation } from './ScenePresentation';
 import {
@@ -487,9 +488,9 @@ export function EkamScene({ lang }: { lang: Lang }) {
       <SceneMotes count={170} area={[90, 90]} height={18} speed={0.2} size={2.2} color="#ffe8c0" opacity={0.35} sway={1.6} seed={3} />
 
       <SceneLabel position={[0, ROOF_Y + 7.5, 0]} text="Ekam · The Oneness Temple" scale={2.4} />
-      <SceneLabel position={[0, ROOF_Y + 2.6, 0]} text={cs ? 'Dharma Moksha — zlatá koule' : 'Dharma Moksha — the golden orb'} scale={1.8} />
-      <SceneLabel position={[0, TIER_Y[0] + TIER[0].h * 0.5, TIER[0].d / 2 + 1.2]} text={cs ? 'Artha Kama — sál přání' : 'Artha Kama — hall of desires'} scale={1.7} />
-      <SceneLabel position={[-PLATFORM.w / 2 + 7, PLATFORM.h + 2.2, PLATFORM.d / 2 - 6]} text={cs ? 'Vodní plochy v rozích' : 'Corner water bodies'} scale={1.5} />
+      <SceneLabel position={[0, ROOF_Y + 2.6, 0]} text={cs ? 'Dharma Moksha — zlatá koule' : tScene('Dharma Moksha — the golden orb', lang)} scale={1.8} />
+      <SceneLabel position={[0, TIER_Y[0] + TIER[0].h * 0.5, TIER[0].d / 2 + 1.2]} text={cs ? 'Artha Kama — sál přání' : tScene('Artha Kama — hall of desires', lang)} scale={1.7} />
+      <SceneLabel position={[-PLATFORM.w / 2 + 7, PLATFORM.h + 2.2, PLATFORM.d / 2 - 6]} text={cs ? 'Vodní plochy v rozích' : tScene('Corner water bodies', lang)} scale={1.5} />
     </>
   );
 }

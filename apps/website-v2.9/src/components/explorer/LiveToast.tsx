@@ -49,7 +49,7 @@ export default function LiveToast({ currentHeight }: { currentHeight: number }) 
               href={`/explorer/block?id=${t.height}`}
               className="text-sm font-semibold text-white hover:text-zion-cyan transition"
             >
-              New Block #{t.height.toLocaleString()}
+              New Block #{t.height.toLocaleString('en-US')}
             </Link>
             <button onClick={() => remove(t.id)} className="text-gray-500 hover:text-white transition">
               <X className="h-3.5 w-3.5" />

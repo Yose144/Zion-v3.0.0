@@ -120,7 +120,7 @@ interface SparklineData {
 
 /* ═══════════════════════ HELPERS ═══════════════════════ */
 function fmt(n: number | null | undefined) {
-  return n != null ? n.toLocaleString() : '—';
+  return n != null ? n.toLocaleString('en-US') : '—';
 }
 
 function fmtDec(n: number | null | undefined, decimals = 1) {

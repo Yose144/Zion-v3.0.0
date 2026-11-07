@@ -2,6 +2,7 @@
 'use client';
 
 import { React, useFrame, THREE } from '@genesis/runtime';
+import { tScene } from './scene-i18n';
 import { SceneLabel } from './SceneLabel';
 import { MountainTerrain } from './MountainTerrain';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
@@ -346,12 +347,12 @@ export function KailashScene({ lang }: { lang: Lang }) {
       <Pilgrims path={koraPath} />
 
       {/* labely */}
-      <SceneLabel position={[26, 41, -88]} text={cs ? 'Kailash — posvátná hora' : 'Kailash — sacred mountain'} scale={3.6} />
-      <SceneLabel position={[-6, 10.5, -16]} text={cs ? 'Klášter' : 'Monastery'} scale={1.9} />
-      <SceneLabel position={[-14, 3, -24]} text={cs ? 'Ledasovcová jezera' : 'Glacial lakes'} scale={1.9} />
-      <SceneLabel position={[18, 10, -8]} text={cs ? 'Zlatý chorten' : 'Golden chorten'} scale={1.9} />
-      <SceneLabel position={[-24, 9, 30]} text={cs ? 'Modlitební vlajky' : 'Prayer flags'} scale={1.8} />
-      <SceneLabel position={[-18, 2.5, 18]} text={cs ? 'Kora — stezka poutníků' : 'Kora — pilgrims\' path'} scale={1.9} />
+      <SceneLabel position={[26, 41, -88]} text={cs ? 'Kailash — posvátná hora' : tScene('Kailash — sacred mountain', lang)} scale={3.6} />
+      <SceneLabel position={[-6, 10.5, -16]} text={cs ? 'Klášter' : tScene('Monastery', lang)} scale={1.9} />
+      <SceneLabel position={[-14, 3, -24]} text={cs ? 'Ledasovcová jezera' : tScene('Glacial lakes', lang)} scale={1.9} />
+      <SceneLabel position={[18, 10, -8]} text={cs ? 'Zlatý chorten' : tScene('Golden chorten', lang)} scale={1.9} />
+      <SceneLabel position={[-24, 9, 30]} text={cs ? 'Modlitební vlajky' : tScene('Prayer flags', lang)} scale={1.8} />
+      <SceneLabel position={[-18, 2.5, 18]} text={cs ? 'Kora — stezka poutníků' : tScene('Kora — pilgrims\' path', lang)} scale={1.9} />
     </>
   );
 }

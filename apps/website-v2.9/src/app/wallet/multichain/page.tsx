@@ -291,7 +291,7 @@ function StatCard({
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleString();
+    return new Date(iso).toLocaleString('en-US');
   } catch {
     return iso;
   }

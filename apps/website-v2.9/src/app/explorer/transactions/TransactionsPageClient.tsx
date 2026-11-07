@@ -278,7 +278,7 @@ export default function TransactionsPageClient() {
                     onClick={(e) => e.stopPropagation()}
                     className="text-[13px] text-zion-gold/80 hover:text-zion-gold tabular-nums transition-colors"
                   >
-                    #{tx.block_height?.toLocaleString()}
+                    #{tx.block_height?.toLocaleString('en-US')}
                   </Link>
                 ) : (
                   <span className="text-[12px] text-zion-gold/60 italic">{tx5(ExplorerTransactionsTransactionsPageClientCopy.pending, lang)}</span>

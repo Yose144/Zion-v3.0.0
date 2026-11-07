@@ -470,7 +470,7 @@ export default function KailashPage() {
                 {tx5(Copy.threeDPreviewSubtitle, lang)}
               </h2>
             </div>
-            <KailashPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
+            <KailashPreviewLazy lang={lang} className="w-full" />
           </div>
         </motion.section>
 

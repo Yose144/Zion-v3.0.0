@@ -123,8 +123,8 @@ export default function StakingPanel() {
         staking.cooldownSeconds(),
         staking.paused(),
       ]);
-      setTotalStaked(parseFloat(ethers.utils.formatEther(ts)).toLocaleString());
-      setRewardPool(parseFloat(ethers.utils.formatEther(rp)).toLocaleString());
+      setTotalStaked(parseFloat(ethers.utils.formatEther(ts)).toLocaleString('en-US'));
+      setRewardPool(parseFloat(ethers.utils.formatEther(rp)).toLocaleString('en-US'));
       setAprBps(Number(apr));
       setCooldownSecs(Number(cd));
       setPaused(ps);

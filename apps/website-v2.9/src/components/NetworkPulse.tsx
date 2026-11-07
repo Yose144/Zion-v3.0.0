@@ -106,7 +106,7 @@ export default function NetworkPulse() {
         <div className="text-center">
           <p className="text-xs text-gray-400">Blocks</p>
           <p className="text-sm font-semibold text-white">
-            {latestMetric?.blockHeight ? latestMetric.blockHeight.toLocaleString() : '—'}
+            {latestMetric?.blockHeight ? latestMetric.blockHeight.toLocaleString('en-US') : '—'}
           </p>
         </div>
         <div className="text-center">
