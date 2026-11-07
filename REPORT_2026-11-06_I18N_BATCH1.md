@@ -519,3 +519,53 @@ Documentação completa / Documentation complète", `/wallet/staking` pt
 
 Zbytek se dál drobí — průměr je teď **~16 řetězců na soubor**, takže každá další
 dávka pokryje 15–20 souborů. Fallback na angličtinu funguje všude.
+
+---
+
+## 31. Dávka 19 — dashboard, multichain peněženka, G8, monitoring (245 řetězců)
+
+`dash` (64), `multichain` (50), `ch3` (48), `g8` (42), `monitoring` (41).
+
+**Tři různé vzory čtení copy, každý v jiném souboru:**
+1. `CopyText[k][cs ? 'cs' : 'en']` a `cs ? CopyText[k].cs : CopyText[k].en`
+   (`/wallet/multichain`) → `tx5(CopyText[k], lang)`; `NativeSection` dostal `lang`.
+2. `G8Copy[k][lang as 'cs' | 'en'] || G8Copy[k].en` (`/g8`) → `tx5(G8Copy[k], lang)`.
+3. `getMissionMetrics` / `getQuickActions` / `getLiveStrip` (`DashboardClient`) → `lang`.
+
+`fmtDuration` v G8 skládal `5 d 3 h 12 min` vs `5d 3h 12m` — obojí je jen jiný
+zápis téhož, takže `t5()` tam byl zbytečný a vrátil se plain template.
+
+### ⚠️ Operační poznámka: deploy na tři pokusy
+
+První pokus spadl na `Connection reset by 207.180.217.100 port 22` uprostřed
+rsyncu, druhý na `Network is unreachable`. Artefakt se přitom smazal ve fázi
+kopírování, takže třetí pokus narazil na `incomplete standalone artifact`.
+Pomohlo artefakt postavit znovu a chvíli počkat — jde o stejnou past jako
+fail2ban/MaxStartups rate-limit popsaný v `AGENTS.md` (rychlý sled rsync+ssh+
+restart). **Pravidlo pro příště:** po každém pádu deploye zkontrolovat, že
+artefakt má `server.js`, `.next/BUILD_ID`, `node_modules/next` a `.next/static`,
+než se pustí znovu.
+
+Ověřeno živě: `/dashboard` „Přehled / Panel / Painel / Tableau",
+`/g8` es „Prueba de estabilidad de 30 días · Alertas activas · Transcurrido",
+pt „Alertas ativos · Decorrido", fr „Alertes actives · Écoulé",
+`/monitoring` „Monitorización · Memoria / Monitorização · Memória",
+`/wallet/multichain` „Cartera / Carteira / Portefeuille", **0 pageerror**.
+
+## 32. Stav po dávce 19
+
+| | hodnota |
+|---|---:|
+| přeložených řetězců (es = pt = fr) | **5 258** |
+| stránek/komponent s vlastním slovníkem | **63** |
+| zbývá | **2 021 klíčů / 139 souborů** |
+| `tsc` / `next build` | 0 / zelený |
+
+**Největší zbývající:** `PoolPrlClient` (39), `DownloadToolBrowser` (39),
+`explorer/network-stats` (37), `BridgeBurnWidget` (35),
+`doge-vs-zion/games/BlockBreaker` (34), `dashboard/ncl` (33),
+`admin/algo-manager` (33), `quantum-revolution` (32),
+`explorer/verify-message` (31), `doge-vs-zion` (31).
+
+Zbytek je **~15 řetězců na soubor** — jde o hry (`doge-vs-zion`), admin nástroje
+a jednotlivé explorer podstránky. Fallback na angličtinu funguje všude.
