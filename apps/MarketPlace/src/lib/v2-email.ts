@@ -2,6 +2,7 @@ import type { OrderEmailData } from './email';
 import type { ShopTheme } from './settings';
 import { emailLocale, resolveEmailLang, tl, type EmailLang } from './email-lang';
 import { COMPANY as COMPANY_BASE, companySupportEmail } from './company';
+import { FIRE_SAFETY, requiresFireConsent } from './fire-safety';
 
 const COMPANY = {
   ...COMPANY_BASE,
@@ -260,14 +261,19 @@ export function formatDigitalDownloadsText(order: OrderEmailData, lang: EmailLan
   const digi = items.filter((it) => {
     if (it.digital === true) return true;
     /**
-     * **Fyzické zboží sem nepatří.** Dřevěné stíhačky jsou vypalované kity —
-     * `digital: false` — ale mají `modelUrl` (3D náhled) a `instructionsUrl`
-     * (plány u autora), takže se dřív objevily v sekci „Digitální stažení"
-     * a zákazník si mohl myslet, že si koupil soubory. `false` je rozhodnutí,
-     * ne „nevím" — respektuje se.
+     * **Fyzické zboží sem nepatří — dokud nemá skutečný soubor.**
+     * Dřevěné stíhačky jsou vypalované kity (`digital: false`) a mají jen
+     * `modelUrl` (3D náhled) a `instructionsUrl` (plány u autora), takže se
+     * dřív objevily v sekci „Digitální stažení" a zákazník si mohl myslet,
+     * že si koupil soubory. `false` se proto respektuje.
+     *
+     * Výjimka je `filesUrl`: lampion Lumi 2 je fyzický, ale v ceně je
+     * **digitální kniha**, kterou zákazník dostane hned e-mailem. Bez tohohle
+     * pravidla by mu nepřišel odkaz, i když ho má zaplacený.
      */
+    if (typeof it.filesUrl === 'string' && it.filesUrl) return true;
     if (it.digital === false) return false;
-    return Boolean(it.filesUrl || it.instructionsUrl || it.modelUrl);
+    return Boolean(it.instructionsUrl || it.modelUrl);
   });
   if (digi.length === 0) return '';
 
@@ -294,9 +300,11 @@ export function formatDigitalDownloadsHtml(order: OrderEmailData, lang: EmailLan
   const items = Array.isArray(order.items) ? (order.items as Record<string, unknown>[]) : [];
   const digi = items.filter((it) => {
     if (it.digital === true) return true;
-    // fyzické zboží (vypalované kity) nemá digitální dodávku — viz text varianta
+    // fyzické zboží (vypalované kity) nemá digitální dodávku — viz text varianta;
+    // výjimka je skutečný soubor (`filesUrl`), např. kniha k lampionu
+    if (typeof it.filesUrl === 'string' && it.filesUrl) return true;
     if (it.digital === false) return false;
-    return Boolean(it.filesUrl || it.instructionsUrl || it.modelUrl);
+    return Boolean(it.instructionsUrl || it.modelUrl);
   });
   if (digi.length === 0) return '';
 
@@ -311,7 +319,7 @@ export function formatDigitalDownloadsHtml(order: OrderEmailData, lang: EmailLan
       }
       if (typeof it.instructionsUrl === 'string' && it.instructionsUrl) {
         links.push(
-          `<a href="${escapeHtml(it.instructionsUrl)}" style="color:#9af59a;">${t('Instrukce (PDF)', 'Instructions (PDF)')}</a>`,
+          `<a href="${escapeHtml(it.instructionsUrl)}" style="color:#9af59a;">${t('Návod', 'Instructions')}</a>`,
         );
       }
       if (typeof it.modelUrl === 'string' && it.modelUrl) {
@@ -477,6 +485,109 @@ function formatQrCodeSectionHtml(order: OrderEmailData, lang: EmailLang = 'cs'):
   `;
 }
 
+/**
+ * Společná patička transakčních e-mailů.
+ *
+ * Dřív měl každý template vlastní kopii patičky a odkazy vedly jen na e-shop.
+ * Teď je jedna funkce se čtveřicí odkazů (hlavní web, e-shop, novinky, archiv)
+ * a rokem, který se bere z data — kopie se nemůžou rozejít ani zestárnout.
+ */
+function rastaFooter(lang: EmailLang): string {
+  const t = (cs: string, en: string) => tl(lang, cs, en);
+  const links: Array<[string, string]> = [
+    ['https://zionterranova.com', t('Hlavní web', 'Main site')],
+    [COMPANY.shopUrl, t('E-shop', 'Shop')],
+    ['https://zionterranova.com/news', t('Novinky', 'News')],
+    ['https://app.zionterranova.com/zion-archive', t('ZION Archiv', 'ZION Archive')],
+  ];
+  const year = new Date().getFullYear();
+  const linkHtml = links
+    .map(
+      ([href, label]) =>
+        `<a href="${escapeHtml(href)}" style="color:#9af59a;text-decoration:none;font-weight:600;padding:4px 8px;">${label}</a>`,
+    )
+    .join('<span style="color:#333;">·</span>');
+
+  return `
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #1c7b1c 0%, #FFD700 50%, #c01026 100%); padding: 3px;">
+                            <div style="background: #0a0a0a; padding: 32px; text-align: center;">
+                                <p style="color: #9af59a; font-size: 16px; margin: 0 0 12px 0; font-weight: 600; letter-spacing: 0.5px;">
+                                    ☮️ Peace &amp; One Love ☮️
+                                </p>
+                                <p style="color: #999; font-size: 13px; margin: 0 0 8px 0; line-height: 1.6;">
+                                    ${t('Tento email byl odeslán z', 'This e-mail was sent from')} <strong style="color: #FFD700;">ZION eShop</strong><br>
+                                    ZION TerraNova ® | <strong style="color:#fff;">${escapeHtml(COMPANY.name)}</strong><br>
+                                    ${t('IČO', 'Company ID')} ${escapeHtml(COMPANY.ico)} · ${t('DIČ', 'VAT')} ${escapeHtml(COMPANY.dic)} · ${escapeHtml(COMPANY.address)}, ${escapeHtml(COMPANY.city)}
+                                </p>
+                                <div style="margin: 14px 0 6px;">${linkHtml}</div>
+                                <div style="margin: 16px 0;">
+                                    <a href="${escapeHtml(COMPANY.shopUrl)}" style="display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #1f9b1f, #00ff7f); color: #000; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 15px; box-shadow: 0 6px 20px rgba(0,255,0,0.3); border: 2px solid rgba(255,215,0,0.4); letter-spacing: 0.5px;">
+                                        🛒 ${t('Přejít do eshopu', 'Go to the e-shop')}
+                                    </a>
+                                </div>
+                                <p style="color: #666; font-size: 12px; margin: 16px 0 0 0;">
+                                    © ${year} ZION Terra Nova • All Rights Reserved<br>
+                                    ${t('Podpora', 'Support')}: <a href="mailto:${escapeHtml(COMPANY.supportEmail)}" style="color:#9af59a;">${escapeHtml(COMPANY.supportEmail)}</a>
+                                </p>
+                            </div>
+                        </td>
+                    </tr>`;
+}
+
+/**
+ * Bezpečnostní blok pro zboží s otevřeným plamenem.
+ *
+ * E-mail je poslední místo, kde zákazník uvidí, že lampion je dřevo a svíčka
+ * patří do sklenice — kdyby si ho otevřel dřív než krabici, má pokyny dřív.
+ * Text se bere z `lib/fire-safety.ts`, takže je stejný jako v pokladně
+ * a na detailu produktu.
+ */
+export function formatFireSafetyHtml(order: OrderEmailData, lang: EmailLang = 'cs'): string {
+  const items = Array.isArray(order.items)
+    ? (order.items as Array<{ externalId?: string }>)
+    : [];
+  if (!requiresFireConsent(items.map((item) => ({ externalId: String(item?.externalId ?? '') })))) {
+    return '';
+  }
+  const pick = (text: { cs: string; en: string }) => (lang === 'cs' ? text.cs : text.en);
+  const points = FIRE_SAFETY.points
+    .map(
+      (point) =>
+        `<li style="margin-bottom:8px;">${escapeHtml(pick(point)).replace(/\*\*/g, '')}</li>`,
+    )
+    .join('');
+
+  return `
+                            <div style="background: linear-gradient(145deg, rgba(192,16,38,0.16), rgba(0,0,0,0.3)); border: 2px solid rgba(192,16,38,0.45); border-radius: 18px; padding: 28px; margin-bottom: 24px;">
+                                <h3 style="color: #FFD700; margin: 0 0 12px 0; font-size: 19px; text-align: center; letter-spacing: 0.6px; font-weight: 700;">
+                                    🔥 ${escapeHtml(pick(FIRE_SAFETY.title))}
+                                </h3>
+                                <p style="color:#e8dcc8;font-size:14px;line-height:1.7;margin:0 0 12px;">${escapeHtml(pick(FIRE_SAFETY.lead))}</p>
+                                <ol style="color:#e8dcc8;font-size:14px;line-height:1.7;margin:0 0 14px;padding-left:20px;">${points}</ol>
+                                <p style="color:#b9a894;font-size:12px;line-height:1.6;margin:0 0 14px;">${escapeHtml(pick(FIRE_SAFETY.disclaimer))}</p>
+                                <p style="margin:0;text-align:center;">
+                                    <a href="${escapeHtml(COMPANY.shopUrl)}/vanoce/lampion#slozeni" style="display:inline-block;background:#c01026;color:#fff;font-weight:700;padding:11px 24px;border-radius:999px;text-decoration:none;font-size:14px;">🪵 ${escapeHtml(lang === 'cs' ? 'Složení a bezpečnost' : 'Assembly and safety')}</a>
+                                </p>
+                            </div>`;
+}
+
+/** Textová varianta bezpečnostního bloku do plain-text e-mailu. */
+export function formatFireSafetyText(order: OrderEmailData, lang: EmailLang = 'cs'): string {
+  const items = Array.isArray(order.items)
+    ? (order.items as Array<{ externalId?: string }>)
+    : [];
+  if (!requiresFireConsent(items.map((item) => ({ externalId: String(item?.externalId ?? '') })))) {
+    return '';
+  }
+  const pick = (text: { cs: string; en: string }) => (lang === 'cs' ? text.cs : text.en);
+  const lines = FIRE_SAFETY.points.map((point, index) => {
+    const text = pick(point).replace(/\*\*/g, '');
+    return `  ${index + 1}. ${text}`;
+  });
+  return `${pick(FIRE_SAFETY.title)}\n${pick(FIRE_SAFETY.lead)}\n${lines.join('\n')}\n${pick(FIRE_SAFETY.disclaimer)}\n`;
+}
+
 export async function buildV2OrderConfirmationHtml(
   order: OrderEmailData,
   _theme: ShopTheme = 'rasta'
@@ -501,6 +612,9 @@ export async function buildV2OrderConfirmationEmail(
   const qrSection = formatQrCodeSectionHtml(order, lang);
   const zionTokenSection = formatZionTokenSectionHtml(order, lang);
   const digitalDownloads = formatDigitalDownloadsHtml(order, lang);
+  // U zboží s otevřeným plamenem posíláme bezpečnostní blok do e-mailu
+  // (stejný text jako v pokladně a na detailu).
+  const fireSafety = formatFireSafetyHtml(order, lang);
   const isPaid = order.paymentStatus.toLowerCase() === 'paid';
   const processingInfo = isPaid
     ? t('Vaši objednávku nyní zpracováváme a připravujeme k odeslání', 'We are processing your order and preparing it for dispatch')
@@ -653,6 +767,8 @@ export async function buildV2OrderConfirmationEmail(
                                 </div>
                             </div>
 
+                            ${fireSafety}
+
                             <div style="background: linear-gradient(145deg, rgba(34,139,34,0.15), rgba(0,0,0,0.3)); border: 2px solid rgba(0,255,0,0.25); border-radius: 18px; padding: 28px; margin-bottom: 24px;">
                                 <h3 style="color: #FFD700; margin: 0 0 18px 0; font-size: 20px; text-align: center; letter-spacing: 0.8px; font-weight: 700;">
                                     ⚡ ${t('Co bude dál?', 'What happens next?')}
@@ -668,29 +784,7 @@ export async function buildV2OrderConfirmationEmail(
                         </td>
                     </tr>
 
-                    <tr>
-                        <td style="background: linear-gradient(135deg, #1c7b1c 0%, #FFD700 50%, #c01026 100%); padding: 3px;">
-                            <div style="background: #0a0a0a; padding: 32px; text-align: center;">
-                                <p style="color: #9af59a; font-size: 16px; margin: 0 0 12px 0; font-weight: 600; letter-spacing: 0.5px;">
-                                    ☮️ Peace & One Love ☮️
-                                </p>
-                                <p style="color: #999; font-size: 13px; margin: 0 0 8px 0; line-height: 1.6;">
-                                    ${t('Tento email byl odeslán z', 'This e-mail was sent from')} <strong style="color: #FFD700;">ZION eShop</strong><br>
-                                    ZION TerraNova ® | <strong style="color:#fff;">${escapeHtml(COMPANY.name)}</strong><br>
-                                    ${t('IČO', 'Company ID')} ${escapeHtml(COMPANY.ico)} · ${t('DIČ', 'VAT')} ${escapeHtml(COMPANY.dic)} · ${escapeHtml(COMPANY.address)}, ${escapeHtml(COMPANY.city)}
-                                </p>
-                                <div style="margin: 16px 0;">
-                                    <a href="${escapeHtml(COMPANY.shopUrl)}" style="display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #1f9b1f, #00ff7f); color: #000; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 15px; box-shadow: 0 6px 20px rgba(0,255,0,0.3); border: 2px solid rgba(255,215,0,0.4); letter-spacing: 0.5px;">
-                                        🛒 ${t('Přejít do eshopu', 'Go to the e-shop')}
-                                    </a>
-                                </div>
-                                <p style="color: #666; font-size: 12px; margin: 16px 0 0 0;">
-                                    © 2026 ZION Terra Nova • All Rights Reserved<br>
-                                    ${t('Podpora', 'Support')}: <a href="mailto:${escapeHtml(COMPANY.supportEmail)}" style="color:#9af59a;">${escapeHtml(COMPANY.supportEmail)}</a>
-                                </p>
-                            </div>
-                        </td>
-                    </tr>
+                    ${rastaFooter(lang)}
 
                 </table>
             </td>
@@ -721,7 +815,7 @@ ${t('Detaily objednávky', 'Order details')}:
 ${t('Položky', 'Items')}:
 ${formatItemsText(order, lang)}
 
-${digitalText ? digitalText + '\n' : ''}${zionText}
+${digitalText ? digitalText + '\n' : ''}${formatFireSafetyText(order, lang)}${zionText}
 
 ${shippingText}
 
@@ -862,29 +956,7 @@ export function buildRastaEmail(opts: RastaEmailOpts): string {
                             ${opts.content}
                         </td>
                     </tr>
-                    <tr>
-                        <td style="background: linear-gradient(135deg, #1c7b1c 0%, #FFD700 50%, #c01026 100%); padding: 3px;">
-                            <div style="background: #0a0a0a; padding: 32px; text-align: center;">
-                                <p style="color: #9af59a; font-size: 16px; margin: 0 0 12px 0; font-weight: 600; letter-spacing: 0.5px;">
-                                    ☮️ Peace &amp; One Love ☮️
-                                </p>
-                                <p style="color: #999; font-size: 13px; margin: 0 0 8px 0; line-height: 1.6;">
-                                    ${t('Tento email byl odeslán z', 'This e-mail was sent from')} <strong style="color: #FFD700;">ZION eShop</strong><br>
-                                    ZION TerraNova ® | <strong style="color:#fff;">${escapeHtml(COMPANY.name)}</strong><br>
-                                    ${t('IČO', 'Company ID')} ${escapeHtml(COMPANY.ico)} · ${t('DIČ', 'VAT')} ${escapeHtml(COMPANY.dic)} · ${escapeHtml(COMPANY.address)}, ${escapeHtml(COMPANY.city)}
-                                </p>
-                                <div style="margin: 16px 0;">
-                                    <a href="${escapeHtml(COMPANY.shopUrl)}" style="display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #1f9b1f, #00ff7f); color: #000; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 15px; box-shadow: 0 6px 20px rgba(0,255,0,0.3); border: 2px solid rgba(255,215,0,0.4); letter-spacing: 0.5px;">
-                                        🛒 ${t('Přejít do eshopu', 'Go to the e-shop')}
-                                    </a>
-                                </div>
-                                <p style="color: #666; font-size: 12px; margin: 16px 0 0 0;">
-                                    © 2026 ZION Terra Nova • All Rights Reserved<br>
-                                    ${t('Podpora', 'Support')}: <a href="mailto:${escapeHtml(COMPANY.supportEmail)}" style="color:#9af59a;">${escapeHtml(COMPANY.supportEmail)}</a>
-                                </p>
-                            </div>
-                        </td>
-                    </tr>
+                    ${rastaFooter(lang)}
                 </table>
             </td>
         </tr>

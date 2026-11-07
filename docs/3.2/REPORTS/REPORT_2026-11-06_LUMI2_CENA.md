@@ -205,3 +205,52 @@ udržitelné jen jako doplňkový prodej k dílně, ne jako hlavní zdroj příj
 - **Ověřeno na produkci:** objednávka bez prohlášení → `400 fire_consent_required`;
   s podpisem → objednávka 88 500 ZION + podpis v DB (`Test Lumi · fire-2026-11-06 · čas serveru`);
   sklad 5 → 4 → 5 po zrušení.
+
+---
+
+## 10) E-maily — modernizace a digitální dodávka k lampionu (2026-11-07)
+
+👤: „aktualizuj i email templates … s odkazem na zionterranova.com … hlavně ať k lampionu dorazí i kniha a pass
+a ať to všechno funguje … ty rasta email templaty můžeme upgradovat, jsou už rok starý."
+
+### Co bylo špatně
+1. **Lampion neposílal knihu.** Zboží s `digital: false` se v e-mailu zařadilo mezi „fyzické" a jeho
+   `filesUrl` se ignorovalo — ačkoli v ceně lampionu kniha je. Zákazník by dostal jen kus dřeva.
+2. **Lampion nezakládal ZION Archive Pass.** Grant se vydává podle `ShopSetting archive-pass:<externalId>`;
+   pro `lamp-001` neexistoval, takže zaplacený lampion nedal vstup do Archivu.
+3. **Patička e-mailů** měla jen odkaz na e-shop, dvě kopie (V2 potvrzení + sdílený rasta shell) se mohly rozejít.
+
+### Co je hotové
+- **`filesUrl` + `instructionsUrl` na `lamp-001`** (kniha = stejný ZIP jako `book-001`, návod = `/vanoce/lampion#slozeni`),
+  v seedu i v produkční DB.
+- **`ShopSetting archive-pass:lamp-001`** s `endsAt 2026-12-24` → kupující lampionu dostane ZAP kód,
+  zrušení objednávky ho revokuje (ověřeno).
+- **Pravidlo digitální dodávky opraveno:** fyzické zboží se souborem (`filesUrl`) se v e-mailu vypíše
+  i při `digital: false`; kity bez souboru (stíhačky) zůstávají mimo sekci „Digitální stažení".
+- **Společná patička** `rastaFooter()` pro oba templaty: odkazy **Hlavní web (zionterranova.com) · E-shop ·
+  Novinky · ZION Archiv**, rok z data (2026), podpora. Nahradila dvě ručně udržované kopie.
+- **Bezpečnostní blok do e-mailu** (`formatFireSafetyHtml/Text`) pro zboží s otevřeným plamenem —
+  stejné body jako v pokladně (sklenice, nehořlavý podklad, dozor, děti, LED) + odkaz na návod.
+  Je v potvrzení objednávky i v potvrzení platby.
+- Popisek odkazu `Instrukce (PDF)` → `Návod` (může to být HTML stránka, ne jen PDF).
+
+### Ověřeno na produkci (testovací objednávka, poté zrušena)
+```
+objednávka: ok | TEST-LAMP-PAID-1794030358
+mark paid:  ok
+order:      paid | paid | tokens=88500 | wallet=zion1a6u728m4r425j33894t8c296h045q602n6fg7u7
+faktura:    FV2026-000006:paid
+PASS:       ZAP-E433D000D833556B | product=lamp-001 | rev=False
+journal:    [archive-pass] issued … · Payment confirmation sent … · Token bonus email sent …
+```
+Po zrušení: `stock 4 → 5`, pass `revoked`, faktura `cancelled`.
+
+### Náhled e-mailu
+`.artifacts/probe/emails/order-confirmation-lamp.html` (+ `.txt`) — render z `buildV2OrderConfirmationEmail`
+se vzorovou objednávkou lampionu; screenshoty `email-top.png`, `email-digital.png`.
+Kontrola: `linksOk: true`, `fireBlock: true`, `bookLink: true`, `guideLink: true`, `year 2026`.
+
+### Meze
+- E-mailová adresa podpory zůstává `shop@newearth.cz` (funguje, je v env) — kdyby měla být
+  `@zionterranova.com`, je to změna pošty + SPF/DKIM, ne šablony.
+- Náhled je statický render; reálné doručení ověřeno jen logem odeslání (schránka je 👤).

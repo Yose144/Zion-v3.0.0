@@ -95,6 +95,12 @@ export const shopProducts: ShopProductSeed[] = [
     stock: 5,
     tokens: 88500,
     modelUrl: '/models/lumi-2.glb',
+    // K lampionu patří digitální kniha (stejný ZIP jako book-001) a návod
+    // na složení — e-mail je vypíše jako „digitální dodávku“ hned po zaplacení,
+    // aby zákazník nečekal na fyzický kus, aby si mohl číst.
+    filesUrl:
+      'https://market.zionterranova.com/shop/downloads/Kralovstvi_srdce_kompletni_edice_5_jazyku.zip',
+    instructionsUrl: 'https://market.zionterranova.com/vanoce/lampion#slozeni',
     digital: false,
     active: true,
   },

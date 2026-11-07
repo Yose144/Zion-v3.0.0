@@ -9,6 +9,7 @@ import {
   rastaRow,
   rastaMonoBox,
   rastaWarning,
+  formatFireSafetyHtml,
 } from './v2-email';
 import { getActiveTheme } from './settings';
 import { generateInvoicePdf } from './invoice-pdf';
@@ -438,7 +439,8 @@ export async function sendPaymentConfirmation(order: OrderEmailData): Promise<vo
             <p style="margin:0;text-align:center;"><a href="${escapeHtml(order.archivePass.url)}" style="display:inline-block;background:#1c7b1c;color:#fff;font-weight:700;padding:12px 28px;border-radius:999px;text-decoration:none;">📖 ${t('Otevřít ZION Archiv', 'Open the ZION Archive')}</a></p>`,
           })
         : '') +
-      formatDigitalDownloadsHtml(order, lang),
+      formatDigitalDownloadsHtml(order, lang) +
+      formatFireSafetyHtml(order, lang),
   });
   const body = t(
     `Dobrý den, ${order.customerName},
