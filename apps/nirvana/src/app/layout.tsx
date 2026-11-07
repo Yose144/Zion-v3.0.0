@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             <NetProvider>
               {/* ZAP pas odemyká **celou** Nirvanu, ne jen vesmír: dřív šlo
-                  z menu přepnout do hry i bez něj. Middleware navíc redirectuje
+                  z menu přepnout do hry i bez něj. Proxy navíc redirectuje
                   bez cookie rovnou na bránu, takže se sem nedostane ani HTML. */}
               {/* HUD i chat patří **za** bránu: jinak je na zamčené stránce
                   vidět lišta s přepínáním her a chat (a to je přesně to,

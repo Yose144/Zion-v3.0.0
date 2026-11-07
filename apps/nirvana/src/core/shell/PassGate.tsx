@@ -16,7 +16,7 @@ export function PassGate({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
 
   const [state, setState] = useState<GateState>('loading');
-  /** Kam se vrátit po odemčení (middleware sem poslal `?next=`). */
+  /** Kam se vrátit po odemčení (proxy sem poslal `?next=`). */
   const [next, setNext] = useState<string | null>(null);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
@@ -64,7 +64,7 @@ export function PassGate({ children }: { children: React.ReactNode }) {
    * ztratila (Shell na `/` měl vlastní hash-sync a URL zůstala na bráně),
    * takže člověk zadal kód správně a stejně skončil ve vesmíru. Plná
    * navigace je po odemčení bezpečná — cookie už je nastavená, takže
-   * middleware pustí dál, a stav se načte znovu (žádný napůl odemčený strom).
+   * proxy pustí dál, a stav se načte znovu (žádný napůl odemčený strom).
    */
   useEffect(() => {
     if (state !== 'open' || !next) return;
