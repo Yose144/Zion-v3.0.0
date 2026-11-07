@@ -1,8 +1,10 @@
-# OASIS avatáři — nová řada portrétů 2026-11 (191 obrázků) napříč ekosystémem
+# OASIS avatáři — nová řada portrétů 2026-11 (202 portrétů) napříč ekosystémem
 
 **Datum:** 2026-11-07
 **Zadání 👤:** „`heros/ZION_OASIS_AVATARI_KOMPLET` máme konečně nové avatary, aktualizuj celý ekosystém."
-**Rozhodnutí 👤:** publikovat **všech 191** portrétů (i těch s redakční poznámkou) a nasadit **celý ekosystém**.
+**Rozhodnutí 👤:** publikovat **všech 191** portrétů z prvního balíčku (i těch s redakční poznámkou),
+později doplněno balíčkem `ZION_OASIS_DOPLNENI_11` na **202/202** — každý avatar má finální portrét.
+Nasadit **celý ekosystém**.
 
 ---
 
@@ -17,9 +19,11 @@
 | `03_NEFINALNI_VYREZY_011-020/` | 10 výřezů z koláže — **nepoužito** |
 | `04_KONCEPTY_001-200/`, `06_*`, `07_ODLOZENE_VARIANTY/` | starší koncepty / dokumentace / odložená varianta — **nepoužito** |
 | `SOUPIS_A_MAPOVANI_NA_WEB.csv`, `MANIFEST.json` | autoritativní mapování (202 řádků) |
+| `ZION_OASIS_DOPLNENI_11/` | dodatečný balíček **11 chybějících samostatných renderů** (011–020, 052), 1254×1254 PNG + vlastní CSV/manifest/PROMPTY |
 
 Archiv sám říká, že jde o kandidáty schválení, ne o automaticky finální art — proto se z něj **nepoužily**
-výřezy (011–020) ani koncepty a 11 postav zůstalo na dosavadním náhledu.
+výřezy (011–020) ani koncepty. Balíček `ZION_OASIS_DOPLNENI_11` je nahradil samostatnými rendery;
+staré výřezy a koncepty zůstávají v `03_*`/`04_*` jen jako historie.
 
 ## 2. Mapování: jen podle jména, nikdy podle pořadí
 
@@ -28,8 +32,8 @@ Produkční čísla 001–200 **neodpovídají** ID na webu (web má 202 polože
 **normalizovaným jménem** (`web_name` → `avatars.json.name`):
 
 - 202/202 jmen se spárovalo 1:1, žádná duplicita,
-- nezávislá kontrola: u 191 portrétů se výsledný slug porovnal se slugem **herního portrétu**
-  téhož avatara → 188× přesně, 3× jen jiný přepis (`Hiʻiaka`, `Maʿăt`, `Óðinn Wayfarer`),
+- nezávislá kontrola: u portrétů se výsledný slug porovnal se slugem **herního portrétu**
+  téhož avatara → 199× přesně, 3× jen jiný přepis (`Hiʻiaka`, `Maʿăt`, `Óðinn Wayfarer`),
   u nich vyhrál slug z `game-portraits.json`, aby finální art a 3D náhled seděly na stejný soubor.
 
 Příklady posunu (produkční → web id): `029 Hilarion → 32`, `031 Saint Germain → 26`,
@@ -45,8 +49,17 @@ Nový skript **`apps/website-v2.9/scripts/import-oasis-final-portraits.mjs`** (i
    aby poziční mapa `manifest[i] ↔ avatars[i]` držela i pro nové postavy),
 4. smazání osiřelých souborů (stará čtyřka `002-rama`…`005-maitreya` pojmenovaná produkčními čísly).
 
-Výsledek: **191 souborů, 21,3 MB** (≈ 114 kB/kus). Originály 1254² zůstávají jen v `heros/`
+Výsledek: **202 souborů, 22,6 MB** (≈ 114 kB/kus). Originály 1254² zůstávají jen v `heros/`
 (untracked archiv), do repa jde webová velikost.
+
+### 3b) Doplnění 11 chybějících renderů
+
+Balíček `ZION_OASIS_DOPLNENI_11` se do archivu vložil skriptem
+**`scripts/ops/oasis-archive-merge-supplement.mjs`** (idempotentní, `--dry-run`): zkopíruje PNG do
+`01_PORTRETY/`, ověří sha256, přepne v hlavním CSV i `MANIFEST.json` dané **archivní číslo** na
+`SAMOSTATNY_RENDER` (roster ID se jen kontroluje), doplní `SHA256SUMS.txt` a v `INDEX.html` nahradí
+dlaždice „Chybí samostatný portrét" obrázky. Archiv tak má **200/200** produkčních portrétů
+(+2 přidané postavy = 202). Následně stačilo znovu pustit import + generátor.
 
 `gen-oasis-avatars.mjs` se změnil tak, že **finální portrét je nejlepší dostupný art** — používá se
 na kartu i do modalu; koncept/vektor je fallback pro postavy bez samostatného renderu.
@@ -56,8 +69,8 @@ Regenerace: `node scripts/gen-oasis-avatars.mjs`.
 
 | povrch | změna |
 |---|---|
-| **`app.zionterranova.com/l4-oasis/avatars`** | karty i modal mají nový portrét; v modalu je navíc velký „Detailní portrét · OASIS Collection" (character sheet zůstává pod ním); pro 11 postav bez renderu se dál ukazuje **herní 3D náhled** s původním štítkem |
-| **`V31/L4/oasis/data/avatars.json`** (kanon roster) | nové pole **`image_url`** u všech 202 avatarů (absolutní URL: finální portrét, jinak herní 3D náhled) |
+| **`app.zionterranova.com/l4-oasis/avatars`** | karty i modal mají nový portrét; v modalu je navíc velký „Detailní portrét · OASIS Collection" (character sheet zůstává pod ním); **202/202** avatarů má finální art |
+| **`V31/L4/oasis/data/avatars.json`** (kanon roster) | nové pole **`image_url`** u všech 202 avatarů (absolutní URL finálního portrétu) |
 | **OASIS API** (`/api/v1/oasis/avatars`) | `AvatarDef.image_url` v Rustu (`quests.rs`, `Option<String>`, `skip_serializing_if`) → klienti dostanou URL z API místo odvozování cesty |
 | **`oasis.zionterranova.com` (OasisWeb)** | karty v Avatar Codexu mají náhled, detailní panel i 3D scéna velký portrét |
 | **`market.zionterranova.com` (MarketPlace)** | beze změny kódu — sync už čte `image_url`; po nasazení API stačí `GET /api/oasis/sync?type=avatars` a artefakty dostanou nové `imageUri` |
@@ -77,15 +90,14 @@ Proč absolutní URL v rosteru: roster čtou tři různé domény. Relativní `/
   (`doge-vs-zion/games/ZionDefense.tsx`, `components/NetworkStatus.tsx` — nedokončená migrace
   na 5 jazyků). `l4-oasis/avatars/page.tsx` je čistý.
 - Headless Chromium proti lokálnímu standalone buildu (`?lang=cs`, 1440×1100):
-  **205 `<img>`, z toho 191× `final_portraits`, 11× `game-portraits`, 0 konceptů, 0 rozbitých
+  **205 `<img>`, z toho 202× `final_portraits`, 0× `game-portraits`, 0 konceptů, 0 rozbitých
   obrázků, 0 chyb v konzoli**; screenshoty karty + modalu v `.artifacts/probe/`.
 
 ## 6. Co zůstalo (poctivě)
 
-- **11 postav bez samostatného portrétu** → dál herní 3D náhled:
-  Arjuna (11), Bhima (12), Yudhishthira (13), Jašóda (14), Vishwakarma (15), Radha (16),
-  Vyasa (17), Maria Magdalena (18), Ježíš (19), Panna Maria (38), Kókyangwúti (54).
-  Archiv k nim má jen výřezy z koláže (`03_NEFINALNI_VYREZY_011-020`) — záměrně nepoužity.
+- **Žádný avatar už není bez portrétu.** Balíček `ZION_OASIS_DOPLNENI_11` dodal samostatné rendery pro
+  11 dřív chybějících (Arjuna, Bhima, Yudhishthira, Jašóda, Vishwakarma, Radha, Vyasa,
+  Maria Magdalena, Ježíš, Panna Maria, Kókyangwúti) → **202/202 finálních**, 0× herní 3D náhled.
 - **Redakční poznámky z CSV** (publikováno, ale hodné revize):
   **ZION The Last City (50)** – render je hlavně muž, ne město;
   **Ohnivá Oka (59)**, **Davi Kopenawa (60)**, **Heyókȟa (61)** – kulturní symbolika;
@@ -93,7 +105,7 @@ Proč absolutní URL v rosteru: roster čtou tři různé domény. Relativní `/
 - **Kontrola odlišnosti tváří** u **Parvati (83)**, **Lakshmi (85)**, **Durga (86)**.
 - Obrázky jsou **640²** (karta ~500 px @2×, modal 176 px) — originály 1254² nejsou v repu.
 - **Hotovo při nasazení:** OASIS daemon rebuildu (Rust pole) i Marketplace sync
-  (`{"synced":{"avatars":202}}`).
+  (`{"synced":{"avatars":202}}`); po doplnění 11 portrétů stačilo jen data + restart (Rust se neměnil).
 
 ### Vedlejší nález (nesouvisí s avatary)
 
@@ -106,6 +118,9 @@ netýká se avatarů, proto se needitovalo.
 ## 7. Reprodukce
 
 ```bash
+# 0) sloučení doplňkových balíčků (ZION_OASIS_DOPLNENI_*) do archivu
+node scripts/ops/oasis-archive-merge-supplement.mjs   # --dry-run
+
 # 1) import portrétů + manifest (vyžaduje archiv v heros/)
 cd apps/website-v2.9
 node scripts/import-oasis-final-portraits.mjs      # --dry-run = jen plán
@@ -142,3 +157,14 @@ cd apps/website-v2.9 && npm run build
   - **Nález:** `ADMIN_API_KEY` v `/opt/zion/APP&WEB/MarketPlace/.env` (20 znaků) **nesedí**
     s klíčem, se kterým běží služba (18 znaků v `/proc/<pid>/environ`) — `.env` je po startu
     ignorován, dokud se služba nerestartuje. Sync se proto volal klíčem z procesu.
+
+### 8b) Doplnění 11 portrétů (stejný den, večer)
+
+- Archiv sloučen skriptem `oasis-archive-merge-supplement.mjs` (11 PNG + CSV/manifest/INDEX),
+  import + generátor přegenerovaly **202** souborů, `image_url` přepsán na finální u všech.
+- **Web**: nový artefaktový deploy z čistého worktree; live `/l4-oasis/avatars` →
+  **202× `final_portraits`, 0× `game-portraits`**.
+- **OASIS API**: měnila se jen data — rsync obou `avatars.json` + `systemctl restart zion-v31-oasis`,
+  **žádný rebuild** Rustu. Live API vrací 202× `image_url` na `final_portraits`.
+- **OasisWeb**: bez rebuildu (čte API za běhu), po restartu API zobrazuje nové portréty.
+- **MarketPlace**: znovu `GET /api/oasis/sync?type=avatars` → 202 artefaktů, všechny s finálním artem.

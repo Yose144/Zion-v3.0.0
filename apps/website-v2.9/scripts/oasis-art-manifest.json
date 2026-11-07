@@ -74,70 +74,70 @@
     "name": "Arjuna",
     "circle": "Hinduistická božstva",
     "art": "/oasis-assets/concept_portraits/011-arjuna.webp",
-    "finalPortrait": null
+    "finalPortrait": "/oasis-assets/final_portraits/011-arjuna.webp"
   },
   {
     "id": "OASIS-012",
     "name": "Bhima",
     "circle": "Hinduistická božstva",
     "art": "/oasis-assets/concept_portraits/012-milan-bhima.webp",
-    "finalPortrait": null
+    "finalPortrait": "/oasis-assets/final_portraits/012-milan-bhima.webp"
   },
   {
     "id": "OASIS-013",
     "name": "Yudhishthira",
     "circle": "Hinduistická božstva",
     "art": "/oasis-assets/concept_portraits/013-artem-vudce.webp",
-    "finalPortrait": null
+    "finalPortrait": "/oasis-assets/final_portraits/013-artem-vudce.webp"
   },
   {
     "id": "OASIS-014",
     "name": "Jašóda",
     "circle": "Hinduistická božstva",
     "art": "/oasis-assets/concept_portraits/014-mama-yashoda.webp",
-    "finalPortrait": null
+    "finalPortrait": "/oasis-assets/final_portraits/014-mama-yashoda.webp"
   },
   {
     "id": "OASIS-015",
     "name": "Vishwakarma",
     "circle": "Hinduistická božstva",
     "art": "/oasis-assets/concept_portraits/015-vishwakarma.webp",
-    "finalPortrait": null
+    "finalPortrait": "/oasis-assets/final_portraits/015-vishwakarma.webp"
   },
   {
     "id": "OASIS-016",
     "name": "Radha",
     "circle": "Hinduistická božstva",
     "art": "/oasis-assets/concept_portraits/016-radha.webp",
-    "finalPortrait": null
+    "finalPortrait": "/oasis-assets/final_portraits/016-radha.webp"
   },
   {
     "id": "OASIS-017",
     "name": "Vyasa",
     "circle": "Hinduistická božstva",
     "art": "/oasis-assets/concept_portraits/017-vyasa-kamil.webp",
-    "finalPortrait": null
+    "finalPortrait": "/oasis-assets/final_portraits/017-vyasa-kamil.webp"
   },
   {
     "id": "OASIS-018",
     "name": "Maria Magdalena",
     "circle": "Křesťanští svatí",
     "art": "/oasis-assets/concept_portraits/018-meriam-rose.webp",
-    "finalPortrait": null
+    "finalPortrait": "/oasis-assets/final_portraits/018-meriam-rose.webp"
   },
   {
     "id": "OASIS-019",
     "name": "Ježíš",
     "circle": "Křesťanští svatí",
     "art": "/oasis-assets/concept_portraits/019-yeshua-sananda.webp",
-    "finalPortrait": null
+    "finalPortrait": "/oasis-assets/final_portraits/019-yeshua-sananda.webp"
   },
   {
     "id": "OASIS-020",
     "name": "Panna Maria",
     "circle": "Křesťanští svatí",
     "art": "/oasis-assets/concept_portraits/020-panna-maria.webp",
-    "finalPortrait": null
+    "finalPortrait": "/oasis-assets/final_portraits/038-panna-maria.webp"
   },
   {
     "id": "OASIS-021",
@@ -361,7 +361,7 @@
     "name": "Kókyangwúti (Spider Grandmother)",
     "circle": "Kruh prvních národů",
     "art": "/oasis-assets/concept_portraits/052-kokyangwuti-spider-grandmother.webp",
-    "finalPortrait": null
+    "finalPortrait": "/oasis-assets/final_portraits/054-kokyangwuti-spider-grandmother.webp"
   },
   {
     "id": "OASIS-053",

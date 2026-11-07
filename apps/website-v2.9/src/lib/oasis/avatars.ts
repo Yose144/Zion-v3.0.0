@@ -1387,9 +1387,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/011-arjuna.webp",
-      "full": "/oasis-assets/concept_svg/011-arjuna.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/011-arjuna.webp",
+      "full": "/oasis-assets/final_portraits/011-arjuna.webp",
+      "final": true
     },
     "circle": "hindu"
   },
@@ -1496,9 +1496,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/012-milan-bhima.webp",
-      "full": "/oasis-assets/concept_svg/012-milan-bhima.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/012-milan-bhima.webp",
+      "full": "/oasis-assets/final_portraits/012-milan-bhima.webp",
+      "final": true
     },
     "circle": "hindu"
   },
@@ -1605,9 +1605,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/013-artem-vudce.webp",
-      "full": "/oasis-assets/concept_svg/013-artem-vudce.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/013-artem-vudce.webp",
+      "full": "/oasis-assets/final_portraits/013-artem-vudce.webp",
+      "final": true
     },
     "circle": "hindu"
   },
@@ -1714,9 +1714,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/014-mama-yashoda.webp",
-      "full": "/oasis-assets/concept_svg/014-mama-yashoda.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/014-mama-yashoda.webp",
+      "full": "/oasis-assets/final_portraits/014-mama-yashoda.webp",
+      "final": true
     },
     "circle": "hindu"
   },
@@ -1823,9 +1823,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/015-vishwakarma.webp",
-      "full": "/oasis-assets/concept_svg/015-vishwakarma.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/015-vishwakarma.webp",
+      "full": "/oasis-assets/final_portraits/015-vishwakarma.webp",
+      "final": true
     },
     "circle": "hindu"
   },
@@ -1932,9 +1932,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/016-radha.webp",
-      "full": "/oasis-assets/concept_svg/016-radha.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/016-radha.webp",
+      "full": "/oasis-assets/final_portraits/016-radha.webp",
+      "final": true
     },
     "circle": "hindu"
   },
@@ -2041,9 +2041,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/017-vyasa-kamil.webp",
-      "full": "/oasis-assets/concept_svg/017-vyasa-kamil.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/017-vyasa-kamil.webp",
+      "full": "/oasis-assets/final_portraits/017-vyasa-kamil.webp",
+      "final": true
     },
     "circle": "hindu"
   },
@@ -2150,9 +2150,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/018-meriam-rose.webp",
-      "full": "/oasis-assets/concept_svg/018-meriam-rose.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/018-meriam-rose.webp",
+      "full": "/oasis-assets/final_portraits/018-meriam-rose.webp",
+      "final": true
     },
     "circle": "christian"
   },
@@ -2259,9 +2259,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/019-yeshua-sananda.webp",
-      "full": "/oasis-assets/concept_svg/019-yeshua-sananda.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/019-yeshua-sananda.webp",
+      "full": "/oasis-assets/final_portraits/019-yeshua-sananda.webp",
+      "final": true
     },
     "circle": "christian"
   },
@@ -2368,9 +2368,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/020-panna-maria.webp",
-      "full": "/oasis-assets/concept_svg/020-panna-maria.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/038-panna-maria.webp",
+      "full": "/oasis-assets/final_portraits/038-panna-maria.webp",
+      "final": true
     },
     "circle": "christian"
   },
@@ -5796,9 +5796,9 @@ export const OASIS_AVATARS: OasisAvatar[] = [
     },
     "hasProfile": true,
     "art": {
-      "card": "/oasis-assets/concept_portraits/052-kokyangwuti-spider-grandmother.webp",
-      "full": "/oasis-assets/concept_svg/052-kokyangwuti-spider-grandmother.svg",
-      "final": false
+      "card": "/oasis-assets/final_portraits/054-kokyangwuti-spider-grandmother.webp",
+      "full": "/oasis-assets/final_portraits/054-kokyangwuti-spider-grandmother.webp",
+      "final": true
     },
     "circle": "first-nations"
   },
