@@ -10,7 +10,7 @@ import { PASS_COOKIE } from '@/lib/pass';
  * a stačilo se do hry přepnout z menu. To je chyba: pas má odemykat
  * **celou** Nirvanu.
  *
- * Middleware kontroluje jen **přítomnost cookie** (je to Edge, nesmí na
+ * Proxy kontroluje jen **přítomnost cookie** (nesmí na
  * každý request volat orákulum). Že je kód opravdu platný, ověřuje
  * `/api/pass` při mountu (klientský `PassGate`) a serverová brána
  * v `/present/*`. Zfalšovaná cookie tedy UI neodemkne.
@@ -37,7 +37,7 @@ const PUBLIC_PREFIXES = [
   '/manifest',
 ];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   // `/` JE brána — bez téhle výjimky by redirect skončil sám na sobě.
