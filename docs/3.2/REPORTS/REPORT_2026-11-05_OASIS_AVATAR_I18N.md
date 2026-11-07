@@ -4,7 +4,7 @@
 > generátor, kontrola a nasazení na `app.zionterranova.com/l4-oasis/avatars`.
 > **Navazuje na:** `REPORT_2026-11-04_OASIS_AVATAR_I18N.md` (první dávka) a
 > `REPORT_2026-11-04_AVATARI_WEB.md` (karty + questy).
-> **Plán:** [`PLAN_OASIS_AVATAR_I18N.md`](../../PLAN_OASIS_AVATAR_I18N.md) — uzavřený.
+> **Plán:** [`PLAN_OASIS_AVATAR_I18N.md`](../../../PLAN_OASIS_AVATAR_I18N.md) — uzavřený.
 
 ---
 

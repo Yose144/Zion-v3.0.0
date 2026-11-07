@@ -53,7 +53,7 @@ V dálce se zvedl vítr. Šimon se ohlédl po Tesaři.
 
 - **Sk 2** vypráví o Letnicích a vzniku společenství; **Žid 6,19** přirovnává naději ke kotvě.
 - *Navicella* — církev jako loď — je starý křesťanský obraz; není to důkaz existence nazaretské lodi.
-- Epizoda a opravené veslo jsou **MÝTUS**. Zápis chyby bez jejího smazání odpovídá redakčnímu principu v [`MiseAmenti/08-Protokol-Zmen.md`](../../MiseAmenti/08-Protokol-Zmen.md).
+- Epizoda a opravené veslo jsou **MÝTUS**. Zápis chyby bez jejího smazání odpovídá redakčnímu principu v [`MiseAmenti/08-Protokol-Zmen.md`](../../../../books/MiseAmenti/08-Protokol-Zmen.md).
 
 ### Kotva pravdy
 
@@ -152,7 +152,7 @@ Kolem ohně se nevyhlásila nová pravda, která měla nahradit všechny ostatn�
 
 - Kapitola používá archetypy Buddhy, Krišny, Rámy, Sítá a Hanumana ze `SulZeme/02–04`.
 - Setkání těchto postav s Tesařem je **MÝTUS**, nikoli tvrzení o skutečné události nebo teologické shodě.
-- Korpus Mise Amenti vyžaduje respekt k tradicím a odmítá vydávat mýtus za duchovní autoritu: [`MiseAmenti/01-Kanon-a-Ustava.md`](../../MiseAmenti/01-Kanon-a-Ustava.md).
+- Korpus Mise Amenti vyžaduje respekt k tradicím a odmítá vydávat mýtus za duchovní autoritu: [`MiseAmenti/01-Kanon-a-Ustava.md`](../../../../books/MiseAmenti/01-Kanon-a-Ustava.md).
 
 ### Kotva pravdy
 
@@ -205,7 +205,7 @@ Za soumraku se na kýlu objevila dvě slova, vyrytá zevnitř, aby je nikdo nemo
 
 - Archa, gófer, smola a dveře vycházejí z **Gn 6,14–22**; spojení archy a záchrany skrze vodu se objevuje v **1 Pt 3,20–21**.
 - Bezechuti, Tesařův cedrový kýl a společná stavba jsou **MÝTUS**. Kniha netvrdí, že biblický Noe nebo Ježíš stavěli tento trup.
-- Dlouhodobá studie čtvrtého plavidla je **STUDIE / HORIZONT**, nikoli stavba: viz [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md).
+- Dlouhodobá studie čtvrtého plavidla je **STUDIE / HORIZONT**, nikoli stavba: viz [`nirvana/14-Archa.md`](../../../../books/nirvana/14-Archa.md).
 
 ### Kotva pravdy
 
@@ -265,7 +265,7 @@ Společně ji nastavili k paprsku. Sklo jej rozdělilo, cedr jej udržel a svět
 ### Z Písma, tradice a korpusu ZION
 
 - Příběh vychází z **Gn 8,4** (archa spočine na pohoří Ararat) a z motivu světla v hodině před úsvitem; průnik Tesaře, Lumi a lucerny je **MÝTUS**.
-- Metoda lucerny — oddělit dnešní stav od horizontu — je motivem [`Lumi/01`](../../Lumi/01-Dite-na-Pridi.md) a `Lumi/11`.
+- Metoda lucerny — oddělit dnešní stav od horizontu — je motivem [`Lumi/01`](../../../../books/Lumi/01-Dite-na-Pridi.md) a `Lumi/11`.
 - Tesařův postup při zatékající spáře je literární rozhodnutí, nikoli technický návrh plavidla.
 
 ### Kotva pravdy
@@ -534,7 +534,7 @@ Lumi se zeptala, zda mohou vyplout. Tesař ukázal na lucernu. „Nejdřív zjis
 ### Z Písma, tradice a korpusu ZION
 
 - **Lk 14,28** připomíná, aby stavitel nejprve spočítal náklady.
-- Pět stavů tvrzení a přednost evidence jsou stanoveny v [`MiseAmenti/01`](../../MiseAmenti/01-Kanon-a-Ustava.md) a [`MiseAmenti/07`](../../MiseAmenti/07-Registr-Dukazu.md).
+- Pět stavů tvrzení a přednost evidence jsou stanoveny v [`MiseAmenti/01`](../../../../books/MiseAmenti/01-Kanon-a-Ustava.md) a [`MiseAmenti/07`](../../../../books/MiseAmenti/07-Registr-Dukazu.md).
 - Konkrétní čísla, názvy služeb a live status se vždy ověřují v `StatusV3.md`, `V31/STATUS.md`, kódu a živém provozu; tato kapitola neudává jejich časově proměnlivé hodnoty.
 
 ### Kotva pravdy

@@ -88,6 +88,6 @@ Odešli, odešli, na druhý břeh, docela na druhý břeh. Probuzení. Ať se st
 
 *→ [Doslov: prameny, meze a co tato kniha neví](./14-DOSLOV.md)*
 *→ [Zpět na rejstřík edice](./00-README.md)*
-*→ [Mantra, kterou kniha rozšiřuje — Maitreya](../Maitreya/EPILOG.md)*
-*→ [Loď, která čeká — Surta Srdce](../SurtaSrdce/00-README.md)*
-*→ [Flotila — Nirvana 13: Tres Marías](../nirvana/13-Tres-Marias.md)*
+*→ [Mantra, kterou kniha rozšiřuje — Maitreya](../../Maitreya/EPILOG.md)*
+*→ [Loď, která čeká — Surta Srdce](../../SurtaSrdce/00-README.md)*
+*→ [Flotila — Nirvana 13: Tres Marías](../../nirvana/13-Tres-Marias.md)*

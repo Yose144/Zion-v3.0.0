@@ -75,5 +75,5 @@ Příval), ne z konstanty 6,2 — jinak by se postava se serverem rozejela.
 
 ---
 
-**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../3.3/MOBA-PRVNI-SVET-PLAN.md) § 2b ·
+**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../../3.3/MOBA-PRVNI-SVET-PLAN.md) § 2b ·
 `apps/nirvana/AGENTS.md` § PRVNÍ SVĚT — aktivní itemy · commit `7544ad541` (F7)

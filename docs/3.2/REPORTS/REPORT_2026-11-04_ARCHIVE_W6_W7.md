@@ -1,7 +1,7 @@
 # REPORT — Zion Archive W6 (stav passu) + W7 (e2e hubu)
 
 **Datum:** 2026-11-04
-**Kód:** `apps/website-v2.9` · **Plán:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](../plans/ZION-ARCHIVE-COMPLETION.md)
+**Kód:** `apps/website-v2.9` · **Plán:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](../../plans/ZION-ARCHIVE-COMPLETION.md)
 
 ---
 

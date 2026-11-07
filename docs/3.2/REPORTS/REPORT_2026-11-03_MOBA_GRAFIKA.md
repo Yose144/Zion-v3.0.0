@@ -185,6 +185,6 @@ Portréty jsou v HUD, na pick screenu a ve scoreboardu. **Naměřeno:** 60 fps,
 
 ---
 
-**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../3.3/MOBA-PRVNI-SVET-PLAN.md) § 2g ·
+**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../../3.3/MOBA-PRVNI-SVET-PLAN.md) § 2g ·
 `apps/nirvana/AGENTS.md` § PRVNÍ SVĚT — terén a grafika · commity `f9863fb65`,
 `d15056ccd`

@@ -3,7 +3,7 @@
 > **Zadání:** „rozšíření hry, aby byla úplná — koukni i po online zdrojích;
 > zatím jsme úplně na začátku."
 > **Kde:** `apps/nirvana` (`core/moba/`) + `apps/nirvana-net`
-> **Plán celku:** [`docs/3.3/MOBA-PRVNI-SVET-PLAN.md`](../3.3/MOBA-PRVNI-SVET-PLAN.md)
+> **Plán celku:** [`docs/3.3/MOBA-PRVNI-SVET-PLAN.md`](../../3.3/MOBA-PRVNI-SVET-PLAN.md)
 > **Deployed:** net `20261103T005220Z` (proto 8) · app `20261103T005505Z`
 
 ---
@@ -87,5 +87,5 @@ Plán má šest fází; F1 je hotová, následuje:
 ---
 
 **Souvisí:** `apps/nirvana/AGENTS.md` § PRVNÍ SVĚT — ekonomika a postup ·
-`UCETNICTVI`-style plán [`MOBA-PRVNI-SVET-PLAN.md`](../3.3/MOBA-PRVNI-SVET-PLAN.md) ·
+`UCETNICTVI`-style plán [`MOBA-PRVNI-SVET-PLAN.md`](../../3.3/MOBA-PRVNI-SVET-PLAN.md) ·
 commity `f044f6f08` (F1) + `11e95ffc4` (boti)

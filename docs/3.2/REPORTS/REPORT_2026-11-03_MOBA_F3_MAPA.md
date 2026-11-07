@@ -101,5 +101,5 @@ po něm typecheck znovu prošel. Poznámka je v `apps/nirvana/AGENTS.md` —
 
 ---
 
-**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../3.3/MOBA-PRVNI-SVET-PLAN.md) ·
+**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../../3.3/MOBA-PRVNI-SVET-PLAN.md) ·
 `apps/nirvana/AGENTS.md` § PRVNÍ SVĚT — mapa · commit `fbacde700` (F3)

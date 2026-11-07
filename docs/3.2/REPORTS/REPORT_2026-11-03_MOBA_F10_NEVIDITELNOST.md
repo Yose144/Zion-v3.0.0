@@ -63,5 +63,5 @@ sehrávkou** (čísla jsou odhad a chtějí sehrát).
 
 ---
 
-**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../3.3/MOBA-PRVNI-SVET-PLAN.md) § 2e ·
+**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../../3.3/MOBA-PRVNI-SVET-PLAN.md) § 2e ·
 `apps/nirvana/AGENTS.md` § PRVNÍ SVĚT — neviditelnost · commit `f2d2911a1`

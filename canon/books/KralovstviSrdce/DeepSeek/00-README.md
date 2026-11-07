@@ -4,7 +4,7 @@
 ### Příběh lodi, kterou postavil tesař — vyprávěný dřevem, které to přežilo
 
 > *„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce."*
-> — mantra z knihy [`Maitreya`](../Maitreya/EPILOG.md). Verš korpusu, ne historický zápis.
+> — mantra z knihy [`Maitreya`](../../Maitreya/EPILOG.md). Verš korpusu, ne historický zápis.
 
 > *„Naději máme jako kotvu duše, jistou a pevnou, která sahá až dovnitř za oponu."*
 > — List Židům 6,19
@@ -64,7 +64,7 @@ To je celá kniha. Dřevo, které to zažilo, to vypráví zevnitř trupu: od le
 
 **1. Letokruh.** Každé zastavení začíná letokruhem — jedním rokem z biografie stromu. Prolog je jádro (dřeň). Kapitoly I–XII jsou letokruhy, které přirůstaly zevnitř ven. Epilog je třináctý letokruh: ten, který ještě nenarostl.
 
-**2. Kotva pravdy.** Tabulka na konci každého zastavení. Stavy jsou ty, které drží korpus — **PÍSMO · TRADICE · HISTORIE · ŽIVÉ · STAVBA · HORIZONT · HYPOTÉZA · MÝTUS · NEDOLOŽENO** podle [`MiseAmenti/01-Kanon-a-Ustava.md`](../MiseAmenti/01-Kanon-a-Ustava.md).
+**2. Kotva pravdy.** Tabulka na konci každého zastavení. Stavy jsou ty, které drží korpus — **PÍSMO · TRADICE · HISTORIE · ŽIVÉ · STAVBA · HORIZONT · HYPOTÉZA · MÝTUS · NEDOLOŽENO** podle [`MiseAmenti/01-Kanon-a-Ustava.md`](../../MiseAmenti/01-Kanon-a-Ustava.md).
 
 **3. Míra.** Každé zastavení měří. Ne metaforicky: číslo, rozměr, počet. Kniha o trupaři, která nemá v ruce loket, je jen básní. Tato kniha má loket.
 
@@ -115,7 +115,7 @@ To je celá kniha. Dřevo, které to zažilo, to vypráví zevnitř trupu: od le
 4. **Entos hymón** v Lk 17,21 znamená „uvnitř vás" i „mezi vámi". Jméno lodi stojí na jednom čtení a druhé zůstává otevřené. Kniha to nevyřeší za překladatele.
 5. **144 000 ve Zjevení není výška bloku** a není strop držitelů. Stejné číslice, jiná řeč. Kdo je slepí, udělá z vidění tabulku.
 6. **Flotila, archa, stanice a nebeský uzel jsou MÝTUS, STAVBA nebo HORIZONT** — ne hotová věc. U archy platí věta studie: **kýl položen není.** Žádný trup neexistuje.
-7. **Síť v kapitole XII není loď.** Je to čtení vrstev. Výška řetězce se hýbe a kniha, která ji zmrazí, začne lhát den po napsání. Aktuální čísla patří do [`StatusV3.md`](../../../docs/3.2/StatusV3.md) a do [`Registru důkazů`](../MiseAmenti/07-Registr-Dukazu.md).
+7. **Síť v kapitole XII není loď.** Je to čtení vrstev. Výška řetězce se hýbe a kniha, která ji zmrazí, začne lhát den po napsání. Aktuální čísla patří do [`StatusV3.md`](../../../../docs/3.2/StatusV3.md) a do [`Registru důkazů`](../../MiseAmenti/07-Registr-Dukazu.md).
 8. **Poutník není zakladatel ani král.** Ústava korpusu nedovoluje kult osoby. Kde se v knize objeví někdo, kdo „nese světlo", smí říct *nevím* a nesmí držet klíč.
 9. **Kniha nic neprodává.** Držení čehokoli není spása. Odejít je dovoleno — a to je poslední věta, kterou kýl řekne.
 
@@ -133,7 +133,7 @@ To je celá kniha. Dřevo, které to zažilo, to vypráví zevnitř trupu: od le
 
 ## Kompas — kam kniha patří
 
-Stojí mezi **[Maitreyou](../Maitreya/00-README.md)** (mantra tří vtělení — tato kniha je její třetí verš, ale vyprávěný nikoli tím, kdo ho vyslovil, nýbrž tím, co ho poslouchalo zespodu), **[Surta Srdce](../SurtaSrdce/00-README.md)** (loď, která jednou popluje vedle Santa María la Mayor) a **[Nirvanou](../nirvana/00-README.md)** (flotila Tres Marías, do které loď nakonec vplouvá).
+Stojí mezi **[Maitreyou](../../Maitreya/00-README.md)** (mantra tří vtělení — tato kniha je její třetí verš, ale vyprávěný nikoli tím, kdo ho vyslovil, nýbrž tím, co ho poslouchalo zespodu), **[Surta Srdce](../../SurtaSrdce/00-README.md)** (loď, která jednou popluje vedle Santa María la Mayor) a **[Nirvanou](../../nirvana/00-README.md)** (flotila Tres Marías, do které loď nakonec vplouvá).
 
 Její jediná nová větev vede do země, kde se nic nemyslí v metaforách: do **[Bahna](./11-Bahno.md)** — do archeologie.
 

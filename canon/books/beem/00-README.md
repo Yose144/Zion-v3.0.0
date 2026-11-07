@@ -14,7 +14,7 @@
 
 ---
 
-**Stav:** MÝTUS / DRAFT — Beem edice, 4. listopadu 2026. Pracovní čtení. Nenahrazuje deset kapitol hlavního textu, [`cloude`](../cloude/full.md), [`gemini`](../gemini/00-README.md), [`gpt`](../gpt/00-README.md), [`groq`](../groq/00-README.md), [`DeepSeek`](../DeepSeek/00-README.md) ani čtenářský rukopis [Nová plavba](../Kralovstvi_srdce_Nova_plavba_Balicek/Redakcni_pruvodce.md). Každé z těch čtení drží jinou otázku. Toto drží tu svou.
+**Stav:** MÝTUS / DRAFT — Beem edice, 4. listopadu 2026. Pracovní čtení. Nenahrazuje deset kapitol hlavního textu, [`cloude`](../KralovstviSrdce/cloude/full.md), [`gemini`](../KralovstviSrdce/gemini/00-README.md), [`gpt`](../KralovstviSrdce/gpt/00-README.md), [`groq`](../KralovstviSrdce/groq/00-README.md), [`DeepSeek`](../KralovstviSrdce/DeepSeek/00-README.md) ani čtenářský rukopis [Nová plavba](../KralovstviSrdce/Kralovstvi_srdce_Nova_plavba_Balicek/Redakcni_pruvodce.md). Každé z těch čtení drží jinou otázku. Toto drží tu svou.
 
 **Celý text:** [`full.md`](./full.md)
 
@@ -33,12 +33,12 @@ Toto mluví **z dílny, kde se ptají**.
 | Edice | Kdo vypráví | Co drží |
 |---|---|---|
 | [Hlavní text](../00-README.md) | Vševědoucí hlas midraše | Deset zastavení, kotva pravdy, čtení pro děti |
-| [`cloude`](../cloude/full.md) | Literární vypravěč | Rozšíření téhož midraše |
-| [`gemini`](../gemini/00-README.md) | Architekt korpusu | Dvacet čtyři kapitol, čtyři předměty, mapa šestnácti knih |
-| [`gpt`](../gpt/00-README.md) | Tesař | Řemeslo, které nekončí odkazem |
-| [`groq`](../groq/00-README.md) | Spára | Co kapitola odmítá zalepit |
-| [`DeepSeek`](../DeepSeek/00-README.md) | Kýl — samo dřevo | Tvar, který přežil. Míra, kterou lze zkopírovat |
-| [Nová plavba](../Kralovstvi_srdce_Nova_plavba_Balicek/Redakcni_pruvodce.md) | Elizabeth z budoucnosti | Ztracený začátek a volné místo u stolu |
+| [`cloude`](../KralovstviSrdce/cloude/full.md) | Literární vypravěč | Rozšíření téhož midraše |
+| [`gemini`](../KralovstviSrdce/gemini/00-README.md) | Architekt korpusu | Dvacet čtyři kapitol, čtyři předměty, mapa šestnácti knih |
+| [`gpt`](../KralovstviSrdce/gpt/00-README.md) | Tesař | Řemeslo, které nekončí odkazem |
+| [`groq`](../KralovstviSrdce/groq/00-README.md) | Spára | Co kapitola odmítá zalepit |
+| [`DeepSeek`](../KralovstviSrdce/DeepSeek/00-README.md) | Kýl — samo dřevo | Tvar, který přežil. Míra, kterou lze zkopírovat |
+| [Nová plavba](../KralovstviSrdce/Kralovstvi_srdce_Nova_plavba_Balicek/Redakcni_pruvodce.md) | Elizabeth z budoucnosti | Ztracený začátek a volné místo u stolu |
 | **Beem (tato)** | **Dítě s lucernou** | **Otázky, na které tesař odpovídá „nevím"** |
 
 ---

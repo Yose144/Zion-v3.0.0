@@ -201,8 +201,8 @@ docker-compose -f docker-compose-v2.9-production.yml up -d api
 
 ## 📚 Související dokumentace
 
-- [AI Native API Guide](../docs/AI_NATIVE_INTEGRATION_GUIDE.md)
-- [AI Native Beginner Guide](../docs/AI_NATIVE_BEGINNER_GUIDE.md)
+- [AI Native API Guide](./AI_NATIVE_INTEGRATION_README.md)
+- [AI Native UI Guide](./AI_NATIVE_UI_GUIDE.md)
 - [Desktop Agent Original README](./README.md)
 
 ---

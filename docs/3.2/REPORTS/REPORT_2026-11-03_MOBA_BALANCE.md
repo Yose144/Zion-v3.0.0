@@ -83,5 +83,5 @@ npx tsx test/moba-sim.mjs             # regresní pravidla (177 kontrol)
 
 ---
 
-**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../3.3/MOBA-PRVNI-SVET-PLAN.md) § 5 ·
+**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../../3.3/MOBA-PRVNI-SVET-PLAN.md) § 5 ·
 `apps/nirvana/AGENTS.md` § PRVNÍ SVĚT — balance · commit `13645e451`

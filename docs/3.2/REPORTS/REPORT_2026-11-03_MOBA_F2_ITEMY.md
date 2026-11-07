@@ -89,6 +89,6 @@ speed), **Koruna** (1400, +30 % dmg, +300 HP).
 
 ---
 
-**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../3.3/MOBA-PRVNI-SVET-PLAN.md) ·
+**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../../3.3/MOBA-PRVNI-SVET-PLAN.md) ·
 `apps/nirvana/AGENTS.md` § PRVNÍ SVĚT — itemy a obchod ·
 commity `25199fa50` (F2)

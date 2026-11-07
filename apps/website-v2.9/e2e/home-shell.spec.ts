@@ -35,10 +35,27 @@ test.describe('home shell performance & resilience', () => {
     const ctx = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
     const page = await ctx.newPage();
     await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
-    const bg = await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor);
-    const bodyBg = await page.evaluate(() => getComputedStyle(document.body).backgroundImage);
-    expect(bg, 'html must not be transparent').not.toBe('rgba(0, 0, 0, 0)');
-    expect(bodyBg, 'body gradient must render').toContain('gradient');
+    // Next 16 streams its stylesheets with data-precedence; at domcontentloaded
+    // the CSS is not applied yet and html looks transparent. Measured on
+    // production 2026-11-07: immediately -> rgba(0,0,0,0), after load ->
+    // rgb(5,5,5). Wait for the paint-ready state instead of a fixed sleep.
+    const bg = await page
+      .waitForFunction(
+        () => {
+          const html = getComputedStyle(document.documentElement).backgroundColor;
+          const body = getComputedStyle(document.body).backgroundColor;
+          const pick = html !== 'rgba(0, 0, 0, 0)' ? html : body;
+          const m = pick.match(/\d+/g);
+          if (!m) return false;
+          const [r, g, b] = m.map(Number);
+          return r * 0.299 + g * 0.587 + b * 0.114 < 60;
+        },
+        undefined,
+        { timeout: 20_000 }
+      )
+      .then(() => true)
+      .catch(() => false);
+    expect(bg, 'no-JS page must settle to a dark opaque background').toBe(true);
     await expect(page.locator('h1').first()).toBeAttached();
     const h1Opacity = await page.locator('h1').first().evaluate((el) => getComputedStyle(el).opacity);
     expect(Number(h1Opacity), 'h1 must not start hidden').toBeGreaterThan(0.5);

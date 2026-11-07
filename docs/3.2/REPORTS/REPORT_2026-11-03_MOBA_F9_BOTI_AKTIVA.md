@@ -71,5 +71,5 @@ bariérou přežít burst a skokem utéct; bot ne.
 
 ---
 
-**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../3.3/MOBA-PRVNI-SVET-PLAN.md) § 2d ·
+**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../../3.3/MOBA-PRVNI-SVET-PLAN.md) § 2d ·
 `apps/nirvana/AGENTS.md` § PRVNÍ SVĚT — boti a aktivní itemy · commit `7d6b5ebb3`

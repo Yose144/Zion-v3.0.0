@@ -8,7 +8,7 @@
 > `https://rpc.zionterranova.com`. Aktuální AI vrstva = `zion-v31-ai-native`
 > (`V31/L3/ai-native`) + `V31/L3/hiran-gateway`, viz
 > [`docs/3.2/StatusV3.md`](../../docs/3.2/StatusV3.md) a
-> [`docs/3.2/ops/STALE-HOST-REFS-2026-10-31.md`](../../docs/3.2/ops/STALE-HOST-REFS-2026-10-31.md).
+> `docs/3.2/ops/STALE-HOST-REFS-2026-10-31.md` (soubor nebyl nikdy založen — odkaz na něj byl slepý).
 > Text níže je ponechán jako záznam stavu 2.9.6.
 
 Desktop Agent je nyní plně integrován s **AI Native Server** běžícím na aktuálním primárním hostu Zion2 (91.98.122.165:8001).

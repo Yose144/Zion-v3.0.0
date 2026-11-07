@@ -2,7 +2,7 @@
 
 > **Rozsah:** překlad profilů v `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/` mezi CS a EN.
 > **Navazuje na:** `REPORT_2026-11-04_AVATARI_WEB.md` (overlay karet + questy, hotovo dříve).
-> **Plán pro pokračování:** [`PLAN_OASIS_AVATAR_I18N.md`](../../PLAN_OASIS_AVATAR_I18N.md) v rootu.
+> **Plán pro pokračování:** [`PLAN_OASIS_AVATAR_I18N.md`](../../../PLAN_OASIS_AVATAR_I18N.md) v rootu.
 
 ---
 
@@ -123,7 +123,7 @@ a0481e76e feat(oasis): překlady 47 Trinity, 48 Morpheus, 49 Matrix (EN→CS)
 
 ## 6. Další krok
 
-Viz [`PLAN_OASIS_AVATAR_I18N.md`](../../PLAN_OASIS_AVATAR_I18N.md) §4:
+Viz [`PLAN_OASIS_AVATAR_I18N.md`](../../../PLAN_OASIS_AVATAR_I18N.md) §4:
 zbývá **16 souborů** → `52`, `08`, `40`, `51`, `63`, `64`, `62`, `65`, `67`, `66`, `68`, `69`, `70`, `41`, `42`, `43` (v tomto pořadí, od nejkratšího).
 Po dokončení: build → **jeden** deploy → live kontrola CS i EN v modalu.
 

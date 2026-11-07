@@ -709,5 +709,5 @@ Kdo nechce psát, ať nechá čáru prázdnou. Prázdná čára je taky odpově�
 
 - [Rejstřík edice](./00-README.md)
 - [Hlavní kniha](../00-README.md)
-- [Ústava: příběh krásný, důkaz přesný](../../MiseAmenti/01-Kanon-a-Ustava.md)
-- [Paluba, která není specifikace](../../../../docs/3.3/NIRVANA-V3.3-KAPITOLA.md)
+- [Ústava: příběh krásný, důkaz přesný](../../../../books/MiseAmenti/01-Kanon-a-Ustava.md)
+- [Paluba, která není specifikace](../../../../../docs/3.3/NIRVANA-V3.3-KAPITOLA.md)

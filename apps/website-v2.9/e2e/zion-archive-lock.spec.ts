@@ -72,9 +72,19 @@ test.describe('Zion Archive — lock gate', () => {
     await page.goto('/zion-archive', { waitUntil: 'domcontentloaded' });
     const input = page.locator('#archive-code');
     await expect(input).toBeVisible();
-    await input.fill('definitely-not-a-real-code');
-    await page.getByRole('button', { name: /Odemknout|Unlock/i }).click();
-    await expect(page.getByRole('alert')).toBeVisible();
+    const unlock = page.getByRole('button', { name: /Odemknout|Unlock/i });
+    // Hydration race: filling before React hydrates leaves the controlled input
+    // empty and the submit button disabled for good (measured on production
+    // 2026-11-07: immediate fill -> value '' and disabled=true). Wait until the
+    // typed value sticks instead of sleeping a fixed time.
+    await expect(async () => {
+      await input.fill('definitely-not-a-real-code');
+      await expect(input).toHaveValue('definitely-not-a-real-code');
+      await expect(unlock).toBeEnabled();
+    }).toPass({ timeout: 20_000 });
+    await unlock.click();
+    // Next.js route announcer is also role=alert; scope to the unlock card.
+    await expect(page.locator('#archive-unlock [role="alert"]')).toBeVisible();
     // still locked — the archive tree did not unlock for a bad code
     await expect(page.getByRole('heading', { name: /Zion Archive/i }).first()).toBeVisible();
   });

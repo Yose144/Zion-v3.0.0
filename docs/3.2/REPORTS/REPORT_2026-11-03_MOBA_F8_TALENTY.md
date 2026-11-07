@@ -58,5 +58,5 @@ Level 10 a 15 daly jen +55 HP a +18 many.
 
 ---
 
-**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../3.3/MOBA-PRVNI-SVET-PLAN.md) § 2c ·
+**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../../3.3/MOBA-PRVNI-SVET-PLAN.md) § 2c ·
 `apps/nirvana/AGENTS.md` § PRVNÍ SVĚT — talent strom · commit `f70a0edc7` (F8)

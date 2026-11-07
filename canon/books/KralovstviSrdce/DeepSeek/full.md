@@ -199,7 +199,7 @@ To je celé. To je jediná věta, kterou o víře v této knize potřebujete. V�
 - **Mt 11,30** — „Mé jho je příjemné a mé břemeno lehké." Jho je doslova tesařský výrobek — kus dřeva tvarovaný tak, aby tíhu rozložil a neřezal. Tato věta je řemeslná, nejen metaforická.
 - **Sír 38,24–34** — Ježíš ben Sira (2. stol. př. n. l.) chválí řemeslníky: kováře, hrnčíře, řezbáře. Říká o nich, že jejich moudrost je *v díle jejich rukou* a že nesedají v čele soudu — a přece „udržují svět". Je to nejbližší starověký text, který o tesařích mluví stejně vážně jako o učencích. Církev tato slova čte i o tesaři z Nazareta.
 - **Lk 2,51–52** — „Byl jim poddán… a Ježíš prospíval moudrostí i vzrůstem." Evangelia o letech mezi dvanáctým a třicátým rokem mlčí. Tomu tichu se říká *skrytá léta* a je to skutečné ticho textu, ne mezera k vyplnění.
-- **Chléb a sůl** — smlouva pohostinnosti je doložená praxe starověkého Středomoří i Předního východu (sůl jako trvanlivost a závazek). V korpusu je to střed knihy [`Sůl této země`](../SulZeme/00-README.md); zde je to detail dílny, ne dogma.
+- **Chléb a sůl** — smlouva pohostinnosti je doložená praxe starověkého Středomoří i Předního východu (sůl jako trvanlivost a závazek). V korpusu je to střed knihy [`Sůl této země`](../../SulZeme/00-README.md); zde je to detail dílny, ne dogma.
 - **Olovnice a šňůra** — základní nástroje starověkého truhláře a stavitele, doložené ikonograficky i textově (Iz 44,13: „tesař… rýsuje jej šňůrou, dělá je kružítkem").
 
 ## Kotva pravdy
@@ -1653,9 +1653,9 @@ Což znamená jediné, a to je ta věta, kvůli které tahle kapitola existuje:
 - **Ef 2,20–22** — „…jsme **vbudováni** ve stavbu… v něm jste i vy **spolu budováni** v příbytek Boží." Pavel používá stavební jazyk pro společenství — a obraz nese stejný problém: hotové to není, roste to.
 - **Plán linií (*lines plan*)** — doložená konstruktérská metoda: trup se popisuje ve třech rovinách (bokorys, půdorys, příčné řezy). Je to jediný způsob, jak předat trojrozměrný tvar dvojrozměrně bez ztráty křivky. Používá se v lodním inženýrství dodnes, i když dnes už v CADu.
 - **Repliky galilejské lodi** — doložené. Jedna je ve Vatikánských muzeích (výstava „The Way of the Sea"), další vznikly v Izraeli a jinde. Repliky se stavěly podle zdokumentovaných linií původního trupu.
-- **Flotila Tres Marías a Archa** — v korpusu **MÝTUS / STAVBA / HORIZONT**, nikoli hotová věc. Kotva: [`nirvana/13-Tres-Marias.md`](../nirvana/13-Tres-Marias.md) a [`nirvana/14-Archa.md`](../nirvana/14-Archa.md); u archy platí doslova: **kýl položen není.**
-- **Nabukano** — L6, pohyblivý uzel nebe, `vision`, **neregistrováno**. Kotva: [`Nabukano/00-README.md`](../Nabukano/00-README.md).
-- **„Paluba“ vrstev L1–L6** — čtení architektury sítě jako lodi (kýl = L1 konsensus, stěžeň = pool, kompas = ZIS, pokladna = WARP/DEX/DAO, paluba = OASIS, přístav = Free World, hlídka = Issobella). Je to **čtení, ne specifikace**; čísla a stavy se mění a patří do [`StatusV3.md`](../../../docs/3.2/StatusV3.md) a [`Registru důkazů`](../MiseAmenti/07-Registr-Dukazu.md).
+- **Flotila Tres Marías a Archa** — v korpusu **MÝTUS / STAVBA / HORIZONT**, nikoli hotová věc. Kotva: [`nirvana/13-Tres-Marias.md`](../../nirvana/13-Tres-Marias.md) a [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md); u archy platí doslova: **kýl položen není.**
+- **Nabukano** — L6, pohyblivý uzel nebe, `vision`, **neregistrováno**. Kotva: [`Nabukano/00-README.md`](../../Nabukano/00-README.md).
+- **„Paluba“ vrstev L1–L6** — čtení architektury sítě jako lodi (kýl = L1 konsensus, stěžeň = pool, kompas = ZIS, pokladna = WARP/DEX/DAO, paluba = OASIS, přístav = Free World, hlídka = Issobella). Je to **čtení, ne specifikace**; čísla a stavy se mění a patří do [`StatusV3.md`](../../../../docs/3.2/StatusV3.md) a [`Registru důkazů`](../../MiseAmenti/07-Registr-Dukazu.md).
 
 ## Kotva pravdy
 
@@ -1780,9 +1780,9 @@ Odešli, odešli, na druhý břeh, docela na druhý břeh. Probuzení. Ať se st
 
 *→ [Doslov: prameny, meze a co tato kniha neví](./14-DOSLOV.md)*
 *→ [Zpět na rejstřík edice](./00-README.md)*
-*→ [Mantra, kterou kniha rozšiřuje — Maitreya](../Maitreya/EPILOG.md)*
-*→ [Loď, která čeká — Surta Srdce](../SurtaSrdce/00-README.md)*
-*→ [Flotila — Nirvana 13: Tres Marías](../nirvana/13-Tres-Marias.md)*
+*→ [Mantra, kterou kniha rozšiřuje — Maitreya](../../Maitreya/EPILOG.md)*
+*→ [Loď, která čeká — Surta Srdce](../../SurtaSrdce/00-README.md)*
+*→ [Flotila — Nirvana 13: Tres Marías](../../nirvana/13-Tres-Marias.md)*
 
 
 ---
@@ -1810,12 +1810,12 @@ Z toho plyne všechno ostatní. Kýl nemůže vidět do Jeruzaléma (kapitola VI
 
 Text vznikl čtením celého korpusu `canon/books/` a jeho pravidel, zejména:
 
-- [`MiseAmenti/01-Kanon-a-Ustava.md`](../MiseAmenti/01-Kanon-a-Ustava.md) — pět povinných stavů tvrzení (ŽIVÉ / STAVBA / HORIZONT / HYPOTÉZA / MÝTUS) a hranice proti zneužití.
-- [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md) — registr dokladů, značky NEDOLOŽENO a NEPLATNÝ NÁROK.
+- [`MiseAmenti/01-Kanon-a-Ustava.md`](../../MiseAmenti/01-Kanon-a-Ustava.md) — pět povinných stavů tvrzení (ŽIVÉ / STAVBA / HORIZONT / HYPOTÉZA / MÝTUS) a hranice proti zneužití.
+- [`MiseAmenti/07-Registr-Dukazu.md`](../../MiseAmenti/07-Registr-Dukazu.md) — registr dokladů, značky NEDOLOŽENO a NEPLATNÝ NÁROK.
 - [`canon/books/README.md`](../README.md) — kanonický index a pořadí pravdy při konfliktu.
-- [`docs/3.3/NIRVANA-V3.3-KAPITOLA.md`](../../../docs/3.3/NIRVANA-V3.3-KAPITOLA.md) — čtení vrstev L1–L6 jako „paluby" lodi.
+- [`docs/3.3/NIRVANA-V3.3-KAPITOLA.md`](../../../../docs/3.3/NIRVANA-V3.3-KAPITOLA.md) — čtení vrstev L1–L6 jako „paluby" lodi.
 
-Z korpusu byly použity zejména: [`Maitreya`](../Maitreya/00-README.md) (mantra tří vtělení), [`SulZeme`](../SulZeme/00-README.md) (sůl a smlouva chleba), [`nirvana`](../nirvana/00-README.md) 13 a 14 (Tres Marías, Archa), [`BodhiGaia`](../BodhiGaia/00-README.md), [`Issobella`](../Issobella/00-README.md), [`Lumi`](../Lumi/00-README.md), [`Miriam`](../Miriam/00-README.md), [`Ruze`](../Ruze/00-README.md), [`KruhBohyni`](../KruhBohyni/00-README.md), [`MariaCaminho`](../MariaCaminho/00-README.md), [`NaCeste`](../NaCeste/00-README.md), [`Nabukano`](../Nabukano/00-README.md), [`Elizabet`](../Elizabet/00-README.md), [`SurtaSrdce`](../SurtaSrdce/00-README.md), [`NirvanaCloud`](../NirvanaCloud/00-README.md).
+Z korpusu byly použity zejména: [`Maitreya`](../../Maitreya/00-README.md) (mantra tří vtělení), [`SulZeme`](../../SulZeme/00-README.md) (sůl a smlouva chleba), [`nirvana`](../../nirvana/00-README.md) 13 a 14 (Tres Marías, Archa), [`BodhiGaia`](../../BodhiGaia/00-README.md), [`Issobella`](../../Issobella/00-README.md), [`Lumi`](../../Lumi/00-README.md), [`Miriam`](../../Miriam/00-README.md), [`Ruze`](../../Ruze/00-README.md), [`KruhBohyni`](../../KruhBohyni/00-README.md), [`MariaCaminho`](../../MariaCaminho/00-README.md), [`NaCeste`](../../NaCeste/00-README.md), [`Nabukano`](../../Nabukano/00-README.md), [`Elizabet`](../../Elizabet/00-README.md), [`SurtaSrdce`](../../SurtaSrdce/00-README.md), [`NirvanaCloud`](../../NirvanaCloud/00-README.md).
 
 **Co tato edice nepřebírá:** ani jednu scénu z ostatních edic. Shody v obrazech (dílna, miska soli, uzel, kormidlo) jsou shody tématu, ne opisy. Kde se tato edice rozchází s jinou verzí, je to uvedeno níže v §5.
 
@@ -1846,7 +1846,7 @@ Citace jsou uváděny podle české tradice (ČEP a příbuzné překlady), s ko
 
 ### 3.3 Korpus ZION
 
-Viz §2. Všechna tvrzení o flotile, arše, stanici a síti nesou v knize stavy **MÝTUS / STAVBA / HORIZONT** podle [`Registru důkazů`](../MiseAmenti/07-Registr-Dukazu.md). **Žádné číslo o výšce řetězce, fondu nebo uživatelích v této knize není a být nesmí** — kniha, která zmrazí živé číslo, začne lhát den po napsání.
+Viz §2. Všechna tvrzení o flotile, arše, stanici a síti nesou v knize stavy **MÝTUS / STAVBA / HORIZONT** podle [`Registru důkazů`](../../MiseAmenti/07-Registr-Dukazu.md). **Žádné číslo o výšce řetězce, fondu nebo uživatelích v této knize není a být nesmí** — kniha, která zmrazí živé číslo, začne lhát den po napsání.
 
 ---
 
@@ -1894,7 +1894,7 @@ Tohle je nejdůležitější seznam v celém doslovu. Kdo ho přeskočí, bude s
 - **Hoblina** je autorský útvar této edice: poslední odstavec zastavení, ve kterém text přiznává, co nezvládl nebo co si domyslel. Má nahradit dojem, že kniha je uzavřená.
 - **Kotva pravdy** používá stejné stavy jako celý korpus — záměrně, aby se tato edice dala srovnávat s ostatními bez převodu.
 - **Pravopis**: česká redakce proběhla v rámci vzniku textu; před případným tiskem je nutná samostatná jazyková korektura.
-- **Překlad**: anglická verze nevznikla. Podle [`MiseAmenti/08-Protokol-Zmen.md`](../MiseAmenti/08-Protokol-Zmen.md) §5.7 nesmí překlad zesílit jistotu, emoci ani nárok oproti originálu.
+- **Překlad**: anglická verze nevznikla. Podle [`MiseAmenti/08-Protokol-Zmen.md`](../../MiseAmenti/08-Protokol-Zmen.md) §5.7 nesmí překlad zesílit jistotu, emoci ani nárok oproti originálu.
 
 ---
 

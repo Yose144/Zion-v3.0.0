@@ -85,9 +85,9 @@ Což znamená jediné, a to je ta věta, kvůli které tahle kapitola existuje:
 - **Ef 2,20–22** — „…jsme **vbudováni** ve stavbu… v něm jste i vy **spolu budováni** v příbytek Boží." Pavel používá stavební jazyk pro společenství — a obraz nese stejný problém: hotové to není, roste to.
 - **Plán linií (*lines plan*)** — doložená konstruktérská metoda: trup se popisuje ve třech rovinách (bokorys, půdorys, příčné řezy). Je to jediný způsob, jak předat trojrozměrný tvar dvojrozměrně bez ztráty křivky. Používá se v lodním inženýrství dodnes, i když dnes už v CADu.
 - **Repliky galilejské lodi** — doložené. Jedna je ve Vatikánských muzeích (výstava „The Way of the Sea"), další vznikly v Izraeli a jinde. Repliky se stavěly podle zdokumentovaných linií původního trupu.
-- **Flotila Tres Marías a Archa** — v korpusu **MÝTUS / STAVBA / HORIZONT**, nikoli hotová věc. Kotva: [`nirvana/13-Tres-Marias.md`](../nirvana/13-Tres-Marias.md) a [`nirvana/14-Archa.md`](../nirvana/14-Archa.md); u archy platí doslova: **kýl položen není.**
-- **Nabukano** — L6, pohyblivý uzel nebe, `vision`, **neregistrováno**. Kotva: [`Nabukano/00-README.md`](../Nabukano/00-README.md).
-- **„Paluba“ vrstev L1–L6** — čtení architektury sítě jako lodi (kýl = L1 konsensus, stěžeň = pool, kompas = ZIS, pokladna = WARP/DEX/DAO, paluba = OASIS, přístav = Free World, hlídka = Issobella). Je to **čtení, ne specifikace**; čísla a stavy se mění a patří do [`StatusV3.md`](../../../docs/3.2/StatusV3.md) a [`Registru důkazů`](../MiseAmenti/07-Registr-Dukazu.md).
+- **Flotila Tres Marías a Archa** — v korpusu **MÝTUS / STAVBA / HORIZONT**, nikoli hotová věc. Kotva: [`nirvana/13-Tres-Marias.md`](../../nirvana/13-Tres-Marias.md) a [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md); u archy platí doslova: **kýl položen není.**
+- **Nabukano** — L6, pohyblivý uzel nebe, `vision`, **neregistrováno**. Kotva: [`Nabukano/00-README.md`](../../Nabukano/00-README.md).
+- **„Paluba“ vrstev L1–L6** — čtení architektury sítě jako lodi (kýl = L1 konsensus, stěžeň = pool, kompas = ZIS, pokladna = WARP/DEX/DAO, paluba = OASIS, přístav = Free World, hlídka = Issobella). Je to **čtení, ne specifikace**; čísla a stavy se mění a patří do [`StatusV3.md`](../../../../docs/3.2/StatusV3.md) a [`Registru důkazů`](../../MiseAmenti/07-Registr-Dukazu.md).
 
 ## Kotva pravdy
 

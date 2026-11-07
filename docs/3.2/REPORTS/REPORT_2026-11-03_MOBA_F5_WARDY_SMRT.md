@@ -84,5 +84,5 @@ Poznámka do budoucna: `deploy-nirvana.sh` má default `EDGE_HOST=zion-new`
 
 ---
 
-**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../3.3/MOBA-PRVNI-SVET-PLAN.md) ·
+**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../../3.3/MOBA-PRVNI-SVET-PLAN.md) ·
 `apps/nirvana/AGENTS.md` § PRVNÍ SVĚT — vidění a smrt · commit `ffcef05e7` (F5)

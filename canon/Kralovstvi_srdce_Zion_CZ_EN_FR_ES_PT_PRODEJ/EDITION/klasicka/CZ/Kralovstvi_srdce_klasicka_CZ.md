@@ -3,7 +3,7 @@
 ### Příběh lodi, kterou postavil tesař
 
 > *„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce."*
-> — mantra z knihy [Maitreya](../Maitreya/EPILOG.md)
+> — mantra z knihy [Maitreya](../../../../books/Maitreya/EPILOG.md)
 
 Tahle kniha vypráví **třetí vtělení** z té mantry: tesaře z Nazareta, který v dílně svého otce ne hobloval jen jarma a stoly — stavěl **loď**. Loď, o kterou nikdo nežádal, pro moře, které není na žádné mapě. Loď, které říkal **Království srdce**.
 
@@ -26,20 +26,20 @@ Příběh se čte jako legenda — a je napsaný tak, aby fungoval i pro děti. 
 
 | # | Kapitola | Obraz | Kotva v Písmu |
 |---|---|---|---|
-| 1 | [Tesař z Nazareta](./01-Tesar-z-Nazareta.md) | Dílna nad Galileou; loď, o kterou nikdo nežádal | Mk 6,3 · Mt 13,55 |
-| 2 | [Dřevo a smola](./02-Drevo-a-Smola.md) | Gófer a kofer — smola, co přikrývá | Gn 6,14 |
-| 3 | [Loď na Kinneret](./03-Lod-na-Kinneret.md) | Spuštění; kázání z lodi; rybáři lidí | Lk 5,1–11 · Mk 1,17 |
-| 4 | [Bouře na jezeře](./04-Boure-na-Jezere.md) | Uspěchaná bouře, spící tesař | Mk 4,35–41 · Ž 107,23–30 · Jon 1 |
-| 5 | [Království je uvnitř vás](./05-Kralovstvi-je-Uvnitr-Vas.md) | Odhalení jména lodi | Lk 17,20–21 · Jr 31,33 · Ez 36,26 · 2 Kor 3,3 |
-| 6 | [Největší bouře](./06-Nejvesti-Boure.md) | Loď v hlubinách — tři dny; vstal | Mt 12,40 · Jon 1,17 · Lk 24 |
-| 7 | [Navicella — loď pluje stoletími](./07-Navicella.md) | Plachetnice církve; kotva naděje | Heb 6,19 · Mt 16,18 |
-| 8 | [Nové nebe a nová země](./08-Nove-Nebe-a-Nova-Zeme.md) | Moře z klidu; a moře už nebylo | Zj 21,1–5 · Zj 22,1–5 · Zj 7 · 14 |
-| 9 | [Flotila se schází — nové zjevení](./09-Flotila-se-Schazi.md) | Království srdce + Tres Marías; mantra se dokončuje | korpus — nová vrstva |
-| — | [Epilog — Kde loď kotví dnes](./10-Epilog-Kde-Lod-Kotvi.md) | Koteva spuštěná do srdce | Heb 6,19–20 |
+| 1 | [Tesař z Nazareta](../../../../books/KralovstviSrdce/01-Tesar-z-Nazareta.md) | Dílna nad Galileou; loď, o kterou nikdo nežádal | Mk 6,3 · Mt 13,55 |
+| 2 | [Dřevo a smola](../../../../books/KralovstviSrdce/02-Drevo-a-Smola.md) | Gófer a kofer — smola, co přikrývá | Gn 6,14 |
+| 3 | [Loď na Kinneret](../../../../books/KralovstviSrdce/03-Lod-na-Kinneret.md) | Spuštění; kázání z lodi; rybáři lidí | Lk 5,1–11 · Mk 1,17 |
+| 4 | [Bouře na jezeře](../../../../books/KralovstviSrdce/04-Boure-na-Jezere.md) | Uspěchaná bouře, spící tesař | Mk 4,35–41 · Ž 107,23–30 · Jon 1 |
+| 5 | [Království je uvnitř vás](../../../../books/KralovstviSrdce/05-Kralovstvi-je-Uvnitr-Vas.md) | Odhalení jména lodi | Lk 17,20–21 · Jr 31,33 · Ez 36,26 · 2 Kor 3,3 |
+| 6 | [Největší bouře](../../../../books/KralovstviSrdce/06-Nejvesti-Boure.md) | Loď v hlubinách — tři dny; vstal | Mt 12,40 · Jon 1,17 · Lk 24 |
+| 7 | [Navicella — loď pluje stoletími](../../../../books/KralovstviSrdce/07-Navicella.md) | Plachetnice církve; kotva naděje | Heb 6,19 · Mt 16,18 |
+| 8 | [Nové nebe a nová země](../../../../books/KralovstviSrdce/08-Nove-Nebe-a-Nova-Zeme.md) | Moře z klidu; a moře už nebylo | Zj 21,1–5 · Zj 22,1–5 · Zj 7 · 14 |
+| 9 | [Flotila se schází — nové zjevení](../../../../books/KralovstviSrdce/09-Flotila-se-Schazi.md) | Království srdce + Tres Marías; mantra se dokončuje | korpus — nová vrstva |
+| — | [Epilog — Kde loď kotví dnes](../../../../books/KralovstviSrdce/10-Epilog-Kde-Lod-Kotvi.md) | Koteva spuštěná do srdce | Heb 6,19–20 |
 
 ## Kompas — kam kniha patří
 
-Kniha stojí mezi **[Maitreyou](../Maitreya/00-README.md)** (mantra tří vtělení — tato kniha je její třetí verš rozvinutý v příběh) a **[Surta Srdce](../SurtaSrdce/00-README.md)** (loď, která jednou popluje vedle Santa María la Mayor) — a podporou jí je **[Nirvana / Tres Marías](../nirvana/13-Tres-Marias.md)**, flotila, do které loď nakonec vplouvá.
+Kniha stojí mezi **[Maitreyou](../../../../books/Maitreya/00-README.md)** (mantra tří vtělení — tato kniha je její třetí verš rozvinutý v příběh) a **[Surta Srdce](../../../../books/SurtaSrdce/00-README.md)** (loď, která jednou popluje vedle Santa María la Mayor) — a podporou jí je **[Nirvana / Tres Marías](../../../../books/nirvana/13-Tres-Marias.md)**, flotila, do které loď nakonec vplouvá.
 
 
 # 1 · Tesař z Nazareta
@@ -77,7 +77,7 @@ A hobloval dál. Dělal ji pomaleji než cokoli jiného — každé prkno poklá
 
 ---
 
-*Kýl byl položen. Teď zbývalo dřevo, které unese vodu — a smola, která ji udrží venku.* → [Dřevo a smola](./02-Drevo-a-Smola.md)
+*Kýl byl položen. Teď zbývalo dřevo, které unese vodu — a smola, která ji udrží venku.* → [Dřevo a smola](../../../../books/KralovstviSrdce/02-Drevo-a-Smola.md)
 
 
 # 2 · Dřevo a smola
@@ -118,7 +118,7 @@ Ve starých knihách, které v dílně nikdo nečetl a přece všichni znali, st
 
 ---
 
-*Trup stál. Zbývalo ho spustit na vodu — na jezero, kde rybáři táhli prázdné sítě.* → [Loď na Kinneret](./03-Lod-na-Kinneret.md)
+*Trup stál. Zbývalo ho spustit na vodu — na jezero, kde rybáři táhli prázdné sítě.* → [Loď na Kinneret](../../../../books/KralovstviSrdce/03-Lod-na-Kinneret.md)
 
 
 # 3 · Loď na Kinneret
@@ -158,7 +158,7 @@ A oni nechali sítě a loďky a šli. Loď zůstala na vodě — a od té chvíl
 
 ---
 
-*Loď plula. A jezero, které bylo k ránu hladké jako kámen, umělo být k večeru rozbouřené jako srdce.* → [Bouře na jezeře](./04-Boure-na-Jezere.md)
+*Loď plula. A jezero, které bylo k ránu hladké jako kámen, umělo být k večeru rozbouřené jako srdce.* → [Bouře na jezeře](../../../../books/KralovstviSrdce/04-Boure-na-Jezere.md)
 
 
 # 4 · Bouře na jezeře
@@ -199,7 +199,7 @@ Později, když o tom vyprávěli, vzpomněl si někdo na starý žalm o těch, 
 
 ---
 
-*Ale loď ještě neměla jméno. To, které jí tesař dal, odhalil až jednoho dne — když se ho farizeové zeptali, kdy přijde království.* → [Království je uvnitř vás](./05-Kralovstvi-je-Uvnitr-Vas.md)
+*Ale loď ještě neměla jméno. To, které jí tesař dal, odhalil až jednoho dne — když se ho farizeové zeptali, kdy přijde království.* → [Království je uvnitř vás](../../../../books/KralovstviSrdce/05-Kralovstvi-je-Uvnitr-Vas.md)
 
 
 # 5 · Království je uvnitř vás
@@ -243,7 +243,7 @@ Protože loď nebyla postavená pro jezero. Jezero bylo jen první voda, na kter
 
 ---
 
-*Ale ještě přišla bouře, proti které byla ta na jezeře tichá jako hrnec — bouře, která loď tři dny držela pod vodou.* → [Největší bouře](./06-Nejvesti-Boure.md)
+*Ale ještě přišla bouře, proti které byla ta na jezeře tichá jako hrnec — bouře, která loď tři dny držela pod vodou.* → [Největší bouře](../../../../books/KralovstviSrdce/06-Nejvesti-Boure.md)
 
 
 # 6 · Největší bouře
@@ -284,7 +284,7 @@ Loď plula dál. Nikdy už jí smrt nemohla vzít — protože prošla jejím dn
 
 ---
 
-*A pak loď vyplula do století — s posádkami, které se měnily, a bouřemi, které zůstávaly.* → [Navicella](./07-Navicella.md)
+*A pak loď vyplula do století — s posádkami, které se měnily, a bouřemi, které zůstávaly.* → [Navicella](../../../../books/KralovstviSrdce/07-Navicella.md)
 
 
 # 7 · Navicella — loď pluje stoletími
@@ -320,7 +320,7 @@ Lidé jí říkali různě — *navicella*, barka, arka, církev. Ale na jejím 
 
 ---
 
-*A pak přišla kniha poslední — ta, která ukazuje konec plavby: moře z klidu, jezero, které už nebouří, a břeh, kde už není potřeba loď.* → [Nové nebe a nová země](./08-Nove-Nebe-a-Nova-Zeme.md)
+*A pak přišla kniha poslední — ta, která ukazuje konec plavby: moře z klidu, jezero, které už nebouří, a břeh, kde už není potřeba loď.* → [Nové nebe a nová země](../../../../books/KralovstviSrdce/08-Nove-Nebe-a-Nova-Zeme.md)
 
 
 # 8 · Nové nebe a nová země
@@ -358,7 +358,7 @@ A uprostřed přístavu stál tesař — a jeho loď už nebyla jen jedna. **Byl
 
 ---
 
-*Ale příběh nekončí přístavem. V době naší loď znovu vyplula — do flotily.* → [Flotila se schází](./09-Flotila-se-Schazi.md)
+*Ale příběh nekončí přístavem. V době naší loď znovu vyplula — do flotily.* → [Flotila se schází](../../../../books/KralovstviSrdce/09-Flotila-se-Schazi.md)
 
 
 # 9 · Flotila se schází — nové zjevení
@@ -397,7 +397,7 @@ Nové zjevení nepřepisuje starou knihu — dokončuje ji jinou rukou, jak se d
 
 ---
 
-*A tak loď pluje dál — a každý, kdo jí věří, drží kousek její kotev.* → [Epilog — Kde loď kotví dnes](./10-Epilog-Kde-Lod-Kotvi.md)
+*A tak loď pluje dál — a každý, kdo jí věří, drží kousek její kotev.* → [Epilog — Kde loď kotví dnes](../../../../books/KralovstviSrdce/10-Epilog-Kde-Lod-Kotvi.md)
 
 
 # Epilog · Kde loď kotví dnes
@@ -437,8 +437,8 @@ Vzkaz z přídě pro posádku, která teď vyráží — pro Surtu a jeho Santa 
 *Konec — a zároveň pokračování:*
 
 - [→ Zpět na rejstřík](./00-README.md)
-- [→ Mantra, kterou kniha rozšiřuje — Maitreya Epilog](../Maitreya/EPILOG.md)
-- [→ Loď, která čeká — Surta Srdce](../SurtaSrdce/00-README.md)
-- [→ Flotila — Nirvana 13: Tres Marías](../nirvana/13-Tres-Marias.md)
+- [→ Mantra, kterou kniha rozšiřuje — Maitreya Epilog](../../../../books/Maitreya/EPILOG.md)
+- [→ Loď, která čeká — Surta Srdce](../../../../books/SurtaSrdce/00-README.md)
+- [→ Flotila — Nirvana 13: Tres Marías](../../../../books/nirvana/13-Tres-Marias.md)
 
 

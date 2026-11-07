@@ -3,14 +3,14 @@
 ## Quen edice · Účetnice: loď, která nemá uzavřený účet
 
 > *„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce."*
-> — mantra z knihy [`Maitreya`](../../Maitreya/EPILOG.md). Verš korpusu, ne historický zápis.
+> — mantra z knihy [`Maitreya`](../../../../books/Maitreya/EPILOG.md). Verš korpusu, ne historický zápis.
 
 > *„Naději máme jako kotvu duše, jistou a pevnou, která sahá až dovnitř za oponu."*
 > — List Židům 6,19
 
 > **Příběh smí být krásný. Důkaz musí být přesný.**
 > **Když se vize střetne s faktem, opravíme vizi — nikdy fakt.**
-> — [`MiseAmenti/01-Kanon-a-Ustava.md`](../../MiseAmenti/01-Kanon-a-Ustava.md)
+> — [`MiseAmenti/01-Kanon-a-Ustava.md`](../../../../books/MiseAmenti/01-Kanon-a-Ustava.md)
 
 *Toto je pracovní čtení — MÝTUS / DRAFT. Nenahrazuje deset kapitol hlavního textu ani žádnou z edic; nic v nich nemění. Rejstřík edice: [`00-README.md`](./00-README.md).*
 
@@ -45,7 +45,7 @@ Příběh smí být krásný. Účet musí být rovný. A když rovný není, p�
 - **Ab 2,2** — „Napiš, co vidíš, a vyjasni to na tabulkách, aby mohl běžet ten, kdo čte."
 - **Lk 17,20–21** — království „nepřichází tak, aby bylo možno pozorovat" — účet neměří to, co se nedá observovat; to je jeho první položka.
 - **Heb 6,19** — kotva, která jde nahoru: jediné účetní zařízení, které tahle kniha uznává jako záruku.
-- **[`MiseAmenti/01-Kanon-a-Ustava.md`](../../MiseAmenti/01-Kanon-a-Ustava.md)** — pět povinných stavů tvrzení; Quen přidává sloupec **NENÍ NA VÁZE**.
+- **[`MiseAmenti/01-Kanon-a-Ustava.md`](../../../../books/MiseAmenti/01-Kanon-a-Ustava.md)** — pět povinných stavů tvrzení; Quen přidává sloupec **NENÍ NA VÁZE**.
 
 ## Kotva pravdy
 
@@ -104,7 +104,7 @@ Nevím ho. Příběh ho taky neví, jen se nerad přiznává. Já se nerad přiz
 - **Skrytá léta** — Písmo mlčí; loď v dílně je obraz této knihy (viz [`full.md`](../full.md), kap. 1), ne zpráva.
 - **Gn 6,14** — stavební řeč archy; tady jako ozvěna, ne citace děje.
 - **Galilejská loď z Ginosaru (1986)** — HISTORIE: trup 8,27 × 2,3 m, cedr a dub, 12–15 osob. Není to loď z evangelia; muzeum nic takového netvrdí. Přezdívka „Ježíšova loď" je trh, ne archeologie.
-- **Korpus:** cedrový kýl jako putující předmět — [`cloude`](../cloude/full.md), [`gemini`](../gemini/00-README.md);[`DeepSeek`](../DeepSeek/00-README.md) jej měří z vnitřku dřeva.
+- **Korpus:** cedrový kýl jako putující předmět — [`cloude`](../../../../books/KralovstviSrdce/cloude/full.md), [`gemini`](../../../../books/KralovstviSrdce/gemini/00-README.md);[`DeepSeek`](../../../../books/KralovstviSrdce/DeepSeek/00-README.md) jej měří z vnitřku dřeva.
 
 ## Kotva pravdy
 
@@ -155,7 +155,7 @@ A přesto — nebo právě proto — se bez toho neobejde ani jedna strana té l
 - **Gn 6,14** — gófer a kofer, zevnitř i zvenčí.
 - **Lv 16,30–34** — den smíření; **Ž 32,1** — „štěstí, jemuž je přestoupenost odpuštěna, hřích přikryt"; **Př 10,12** — „láska přikrývá všechna přečinění"; **1 Pt 4,8**. Rabínská i křesťanská výkladová tradice čte smolu archy jako obraz přikrytí.
 - **Etymologie kofer/kipur** — LINGVISTIKA + TRADICE výkladu; ne mechanická identity slova a svátosti.
-- **Korpus:** [`SulZeme/01`](../../SulZeme/01-Sul-Zeme.md) (sůl smlouvy), hliněný kalíšek se solí u [`gemini`](../gemini/00-README.md).
+- **Korpus:** [`SulZeme/01`](../../../../books/SulZeme/01-Sul-Zeme.md) (sůl smlouvy), hliněný kalíšek se solí u [`gemini`](../../../../books/KralovstviSrdce/gemini/00-README.md).
 
 ## Kotva pravdy
 
@@ -199,7 +199,7 @@ Prorok říkal: *jsme jako lehký prášek, dílo tvé z hlíny* (Iz 64,7); Job:
 
 - **Iz 64,7 · Jb 10,9 · 2 Kor 4,7 · Ž 31,16** — hlína, nádoba, poklad v křehkém.
 - **Řemeslná tradice** — výběr a „čestné zaznamenání vad" je reálný postup lojzního stavby i pozdějších lodních inventářů (TRADICE; do 1. století Galileje ho přenáší MÝTUS).
-- **Korpus:** [`KruhBohyni`](../../KruhBohyni/00-README.md) — správa bez vlastnění; [`MiseAmenti`](../../MiseAmenti/README.md) — záznam a odolnost jako péče.
+- **Korpus:** [`KruhBohyni`](../../../../books/KruhBohyni/00-README.md) — správa bez vlastnění; [`MiseAmenti`](../../../../books/MiseAmenti/README.md) — záznam a odolnost jako péče.
 
 ## Kotva pravdy
 
@@ -243,7 +243,7 @@ Existuje jeden denní účet, který se nikdy neuzavírá ziskem, a přesto se j
 
 - **Lk 5,1–11** — učení z lodi, zázračný lov, povolání. **Mk 1,16–20 · Mt 4,19** — rybáři lidí. **Jn 21** — totéž po zmrtvýchvstání; tam, kde se účet uzavřel smrtí, se otevírá snídani.
 - **Kinneret** — „harfa"; jezero i moře těch, kdo po něm žili (geografie).
-- **Korpus:** [`SulZeme/09`](../../SulZeme/09-Bohyne-Radha-a-Avatari-Oasis.md) a [`Lumi`](../../Lumi/00-README.md) — povolání jako děj, ne jako statut.
+- **Korpus:** [`SulZeme/09`](../../../../books/SulZeme/09-Bohyne-Radha-a-Avatari-Oasis.md) a [`Lumi`](../../../../books/Lumi/00-README.md) — povolání jako děj, ne jako statut.
 
 ## Kotva pravdy
 
@@ -288,7 +288,7 @@ Starý žalm to zkusil přede mnou, poťouře: *sjíždějí na moře v lodích�
 - **Mk 4,35–41** (par. Mt 8,23–27; Lk 8,22–25) — spící Ježíš, polštář na zádi, *siōpa, pephimōsō*, veliké ticho.
 - **Ž 107,23–30** — námořní žalm; **Jon 1** — spící Jonáš.
 - **Lk 6,45?** — ne; tam patří strach a víra, zmiňuje se Mk 4,40: „Proč jste tak bázliví?"
-- **Korpus:** bouřlivé ztichávání jako motiv uzlů — [`Elizabet`](../../Elizabet/00-README.md) (žádní zprostředkovatelé).
+- **Korpus:** bouřlivé ztichávání jako motiv uzlů — [`Elizabet`](../../../../books/Elizabet/00-README.md) (žádní zprostředkovatelé).
 
 ## Kotva pravdy
 
@@ -335,7 +335,7 @@ Jediná uzávěrka, kterou tahle kniha uznává, je ráno po nulové knize.
 - **Mt 12,39–40 · Jon 1,17** — Jonášovo znamení.
 - **Mk 15–16 · Lk 24 · Jan 20 · 1 Kor 15,3–8** — umučení, prázdný hrob, nejstarší vyznání.
 - **Gal 3,13 / Dt 21,23** — dřevo prokleté; tradice čte kříž jako strom/arku/loď v jednom obraze (TRADICE).
-- **Korpus:** [`Elizabet`](../../Elizabet/00-README.md) — prázdná stránka, která zůstává; [`nirvana/03`](../../nirvana/) — hora Ararat, „po vodě".
+- **Korpus:** [`Elizabet`](../../../../books/Elizabet/00-README.md) — prázdná stránka, která zůstává; [`nirvana/03`](../../nirvana/) — hora Ararat, „po vodě".
 
 ## Kotva pravdy
 
@@ -381,7 +381,7 @@ Pokaždé, když se účet stal nesnesitelným, přišel někdo zezadu: muž, kt
 - **Žid 6,19–20 · Mt 16,18 · Sk 2** — kotva za oponou; skála a brány pekla; letnice.
 - **Lk 17,20–21** — jméno lodi; *entos hymōn* dvojí překlad (GRAMATIKA; nevyřešeno záměrem).
 - **Navicella** — iconografická tradice 3.–4. stol. (Laterán); *navis* → *nave*. **TRADICE + HISTORIE**.
-- **Korpus:** [`nirvana`](../../nirvana/00-README.md) — loď jako mapa vrstev; [`MiseAmenti/04`](../../MiseAmenti/) — co je aktivní práce; [`KralovstviSrdce`](../00-README.md) — hlavní text.
+- **Korpus:** [`nirvana`](../../../../books/nirvana/00-README.md) — loď jako mapa vrstev; [`MiseAmenti/04`](../../../../books/MiseAmenti) — co je aktivní práce; [`KralovstviSrdce`](../00-README.md) — hlavní text.
 
 ## Kotva pravdy
 
@@ -390,7 +390,7 @@ Pokaždé, když se účet stal nesnesitelným, přišel někdo zezadu: muž, kt
 | Církev jako loď | TRADICE + HISTORIE | navicella, iconografie; „mimo arkou…" je výrok tradice, ne verš |
 | Kotva spuštěná „nahoru" | PÍSMO | Žid 6,19–20 |
 | Dvě knihy (deník × účet) | MÝTUS/obraz | zařízení edice |
-| Živá čísla (počty, výška řetězce, částky) | **NE (v této knize)** | patří do [`StatusV3.md`](../../../../docs/3.2/StatusV3.md) + registr důkazů |
+| Živá čísla (počty, výška řetězce, částky) | **NE (v této knize)** | patří do [`StatusV3.md`](../../../../../docs/3.2/StatusV3.md) + registr důkazů |
 
 **Přenos:** *Století nepřešla do zisku ani do ztráty. Šla dál. Až sem.*
 
@@ -410,9 +410,9 @@ Ve Starém zákoně mají na paměť tvrdé, dobré zařízení: *Smlouva soli j
 
 Nehemiáš vrací z vyhnanství lid a vede **seznamy** (Neh 7; Ezdr 2) — rody, města, počty. Když se jim zmazou, nezbude než přezdívka „synové Adoni-kena…". Účetní poučení: **seznam je úmluva s budoucností**, a kdo ji neudrží, má jen jméno bez čísla.
 
-Poslední loď, kterou vidím, je proto archa: **ne obchod, nýbrž archiv.** Trup s dvojitým dnem, tři paluby, semenný archiv u −18 °C, vody osm metrů krychlových denně, autonomie sto osmdesát dní, lidí nanejvýš sto, plachty jako střecha a jako stroj, plavba za keporkaky třicet tisíc námořních mil. (Dispozice B3, studie — parametry k ověření, **kýl položen není**: [`terranova/kralovstvi-srdce`](../../../../apps/website-v2.9/src/app/terranova/kralovstvi-srdce/page.tsx), [`nirvana/14`](../../nirvana/), [`BodhiGaia/03`](../../BodhiGaia/).)
+Poslední loď, kterou vidím, je proto archa: **ne obchod, nýbrž archiv.** Trup s dvojitým dnem, tři paluby, semenný archiv u −18 °C, vody osm metrů krychlových denně, autonomie sto osmdesát dní, lidí nanejvýš sto, plachty jako střecha a jako stroj, plavba za keporkaky třicet tisíc námořních mil. (Dispozice B3, studie — parametry k ověření, **kýl položen není**: [`terranova/kralovstvi-srdce`](../../../../../apps/website-v2.9/src/app/terranova/kralovstvi-srdce/page.tsx), [`nirvana/14`](../../nirvana/), [`BodhiGaia/03`](../../../../books/BodhiGaia).)
 
-A kolem ní dvanáct ohňů, které [`KruhBohyni`](../../KruhBohyni/00-README.md) pojmenovává — zahrada, which udržíheš bez vlastnění; **sůl, kterou nedáš, když ji máš jen pro sebe**; osivo, které se poč tím, že ho necháš rozbít.
+A kolem ní dvanáct ohňů, které [`KruhBohyni`](../../../../books/KruhBohyni/00-README.md) pojmenovává — zahrada, which udržíheš bez vlastnění; **sůl, kterou nedáš, když ji máš jen pro sebe**; osivo, které se poč tím, že ho necháš rozbít.
 
 Moje inventářská kniha má proto sloupec, který nikdo z mých cechu nemá: **vydat, a tím zachovat.** Semeno se do něj zapisuje celé, protože se ztratí jen to, co se nenechá zakopat.
 
@@ -429,7 +429,7 @@ Moje inventářská kniha má proto sloupec, který nikdo z mých cechu nemá: *
 
 - **Gn 9,13–16** — duha jako smlovní paměť. **Lv 2,13 · 2 Pa 13,5** — smlouva soli. **Neh 7 · Ezdr 2** — seznamy návratu. **Jan 12,24** — *jestliže zrno pšenice nemre…*.
 - **Archa B3** — STUDIE/HORIZONT: parametry na webu, ne záväzek; kýl položen není.
-- **Korpus:** [`KruhBohyni/12`](../../KruhBohyni/12-Dvanact-Ohnu.md), [`BodhiGaia`](../../BodhiGaia/00-README.md) — Protokoly Země; [`SulZeme/05`](../../SulZeme/05-Archa.md) — Noe; [`Nabukano`](../../Nabukano/00-README.md) — nebeský protějšek archy.
+- **Korpus:** [`KruhBohyni/12`](../../../../books/KruhBohyni/12-Dvanact-Ohnu.md), [`BodhiGaia`](../../../../books/BodhiGaia/00-README.md) — Protokoly Země; [`SulZeme/05`](../../../../books/SulZeme/05-Archa.md) — Noe; [`Nabukano`](../../../../books/Nabukano/00-README.md) — nebeský protějšek archy.
 
 ## Kotva pravdy
 
@@ -460,7 +460,7 @@ Uzavřela jsem smluvní tichou dohodu: **budu počítat ryby; nebudu počítat s
 
 Proto musí tahle stránka nést varování, jaké nemá žádná jiná:
 
-> **Sto čtyřicet čtyři tisíce ve Zjevení není výška bloku, není cena, není strop a není seznam vyvolených k vlastnění.** Neslučuj číslice vidění s technickými konstantami sítě. Kdo je slepí, udělá z vidění tabulku — a z tabulky nárok. (`144 000` jako `DAO_TREASURY_LOCK_HEIGHT` je v kódu řetězce [`V31/L1/core/src/v3_compat.rs`](../../../../V31/L1/core/src/v3_compat.rs); v Zjevení je to jméno zástupu. Stejné číslice. Jiná řeč. Mezi tím není účetní vztah — a tato kniha ho zakazuje tvořit.)
+> **Sto čtyřicet čtyři tisíce ve Zjevení není výška bloku, není cena, není strop a není seznam vyvolených k vlastnění.** Neslučuj číslice vidění s technickými konstantami sítě. Kdo je slepí, udělá z vidění tabulku — a z tabulky nárok. (`144 000` jako `DAO_TREASURY_LOCK_HEIGHT` je v kódu řetězce [`V31/L1/core/src/v3_compat.rs`](../../../../../V31/L1/core/src/v3_compat.rs); v Zjevení je to jméno zástupu. Stejné číslice. Jiná řeč. Mezi tím není účetní vztah — a tato kniha ho zakazuje tvořit.)
 
 To, co po táhnutí sítě zůstalo v účtu, bylo jiné než úlovek: *napas ovce… pas beránky…* (Jan 21,15–17), třikrát otázka, která se nedá zapsat do majetku: **máš mě rád?** Láska, pro kterou se počítá, je správa; **správa, která počítá vlastnictví, je past, ne pastva.**
 
@@ -478,7 +478,7 @@ To, co po táhnutí sítě zůstalo v účtu, bylo jiné než úlovek: *napas ov
 - **Jan 21,1–17** — noční lov, 153, „máš mě rád?", pase ovce.
 - **Zj 7,4–9 · Zj 14,1** — 144 000 pečetovaných + nespočitatelný zástup; **Zj 13,18** — jiné číslo, jiný kontext (a i to se nesmí zneužít k počtu spasených).
 - **Výklad 153** — TRADICE (Řehoř Veliký a ad.), Hypothesis, ne fact.
-- **Korpus:** [`SulZeme/10`](../../SulZeme/10-Prvni-Svet-Oasis-a-Best-of-Avatari.md) — katalog 200 avatů (počet jako inventář, ne jako tržiště); [`Oasis`](../../) — avatů se nedotýká „vlastnictví srdce".
+- **Korpus:** [`SulZeme/10`](../../../../books/SulZeme/10-Prvni-Svet-Oasis-a-Best-of-Avatari.md) — katalog 200 avatů (počet jako inventář, ne jako tržiště); [`Oasis`](../../) — avatů se nedotýká „vlastnictví srdce".
 
 ## Kotva pravdy
 
@@ -500,7 +500,7 @@ To, co po táhnutí sítě zůstalo v účtu, bylo jiné než úlovek: *napas ov
 
 Když se posádky vracely z budoucnosti a z jiných břehů, viděla jsem na molu věc, kterou jsi mohl změřit metrem, když sis troufl:
 
-Tři trupy不同 barvy — **Tres Marías**: Santa María la Mayor, de la Esperanza, del Camino (tmavá, vínová, plachty ze světlého plátna se světelnými vlákny), a za nimi čtvrtá, plující: archa, třináctý uzel země, a nahoře, kam se bez smlouvy nedostaneš — stanice. A na kýlu každé lodi, **jinou rukou a jiným písmem, totéž jméno: Království srdce.** (Korpus: [`nirvana/13`](../../nirvana/), [`SurtaSrdce`](../../SurtaSrdce/00-README.md), [`Nabukano`](../../Nabukano/00-README.md) — MÝTUS/STAVBA/HORIZONT, ne hotová věc; [`Maitreya`](../../Maitreya/00-README.md) — mantra tří vtělení, ne tvrzení o znovuzrození.)
+Tři trupy不同 barvy — **Tres Marías**: Santa María la Mayor, de la Esperanza, del Camino (tmavá, vínová, plachty ze světlého plátna se světelnými vlákny), a za nimi čtvrtá, plující: archa, třináctý uzel země, a nahoře, kam se bez smlouvy nedostaneš — stanice. A na kýlu každé lodi, **jinou rukou a jiným písmem, totéž jméno: Království srdce.** (Korpus: [`nirvana/13`](../../nirvana/), [`SurtaSrdce`](../../../../books/SurtaSrdce/00-README.md), [`Nabukano`](../../../../books/Nabukano/00-README.md) — MÝTUS/STAVBA/HORIZONT, ne hotová věc; [`Maitreya`](../../../../books/Maitreya/00-README.md) — mantra tří vtělení, ne tvrzení o znovuzrození.)
 
 Jako účetní mám pro flotilu jedinou poznámku, která má smysl: **nejde o konsolidaci.**
 
@@ -518,7 +518,7 @@ A pak jsem udělala nejradikálnější věc, jakou mohu učinit: **neuzavřela 
 
 - **Ef 1,10** — *plnost časů, obnovit/doplnit všechno v Kristu* (překladová volba; GRAMATIKA).
 - **Zj 21,1–2** — přístav, který sestupuje (viz kap. 11).
-- **Mantra tří vtělení** — [`Maitreya/EPILOG`](../../Maitreya/EPILOG.md); **KORPUS / MÝTUS**, nikoli dogma ani historie.
+- **Mantra tří vtělení** — [`Maitreya/EPILOG`](../../../../books/Maitreya/EPILOG.md); **KORPUS / MÝTUS**, nikoli dogma ani historie.
 - **Archa (13. uzel L5)** — STUDIE → HORIZONT; **kýl položen není.** Nebeská flotila Nabukano — MÝTUS; registry `nabukano` stav *vision*, 0 ZION.
 - **Síťové konstanty** — mimo knihu; viz hranice.
 
@@ -608,6 +608,6 @@ Kýl položen je. Účet zůstává otevřený.
 
 ---
 
-*Poznámka k úplnosti: edice navazuje na hlavní text [`../full.md`](../full.md) a na [`../00-README.md`](../00-README.md) (rejstřík deseti kapitol). Sesterská čtení: [`cloude`](../cloude/full.md) · [`gemini`](../gemini/00-README.md) · [`gpt`](../gpt/00-README.md) · [`groq`](../groq/00-README.md) · [`DeepSeek`](../DeepSeek/00-README.md) · [Nová plavba](../Kralovstvi_srdce_Nova_plavba_Balicek/Redakcni_pruvodce.md). Nic z toho tato složka nemění.*
+*Poznámka k úplnosti: edice navazuje na hlavní text [`../full.md`](../full.md) a na [`../00-README.md`](../00-README.md) (rejstřík deseti kapitol). Sesterská čtení: [`cloude`](../../../../books/KralovstviSrdce/cloude/full.md) · [`gemini`](../../../../books/KralovstviSrdce/gemini/00-README.md) · [`gpt`](../../../../books/KralovstviSrdce/gpt/00-README.md) · [`groq`](../../../../books/KralovstviSrdce/groq/00-README.md) · [`DeepSeek`](../../../../books/KralovstviSrdce/DeepSeek/00-README.md) · [Nová plavba](../../../../books/KralovstviSrdce/Kralovstvi_srdce_Nova_plavba_Balicek/Redakcni_pruvodce.md). Nic z toho tato složka nemění.*
 
 *Gate, gate, pāragate, pārasaṃgate, bodhi svāhā.*

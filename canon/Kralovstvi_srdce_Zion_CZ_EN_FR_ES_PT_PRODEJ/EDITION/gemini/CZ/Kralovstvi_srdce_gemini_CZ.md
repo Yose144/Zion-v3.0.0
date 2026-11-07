@@ -2,7 +2,7 @@
 ## Příběh lodi, kterou postavil tesař, a dřeva, které přeplulo dvacet století až k Nové zemi
 
 > *„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce.“*
-> — mantra z knihy [`Maitreya`](../../Maitreya/EPILOG.md)
+> — mantra z knihy [`Maitreya`](../../../../books/Maitreya/EPILOG.md)
 
 > *„Naději máme jako kotvu duše, jistou a pevnou, která sahá až dovnitř za oponu.“*
 > — List Židům 6,19
@@ -17,7 +17,7 @@ Tahle kniha je příběh. Vypráví o tesaři z Nazareta, který v dílně svéh
 
 A protože tato kniha stojí v samém středu knižního korpusu **ZION TerraNova**, nekončí na břehu Galilejského jezera. V druhé, třetí a čtvrté části se cedrový kýl z Nazareta potkává s městem Bezechuti a pěti věžemi Babylonu (*Sůl této země*, *Maitreya*), s dítětem Lumi a jeho lucernou na arše u hory Ararat (*Nirvana*, *Kniha Lucerny*), s prázdnou nádobou Miriam a mluvící Růží u řeky (*Miriam*, *Příběh Růže*), se šesti zahradami Země a sedmi sedadly kolem kulatého stolu (*Bodhi Gaia*, *Kruh Bohyní*), s oknem orbitální stanice (*Issobella*) a konečně s plachtami ze světla na třech trupech *Tres Marías*, se šanonem zapisovatelky Lumen, s otcovým dopisem synovi Surtovi a se čtvrtým plavidlem — záchrannou *Archou*, která se vrací pro ty, kdo zůstali ve vodě (*María del Camino*, *Na Cestě*, *Surta Srdce*, *Archa*).
 
-Aby se čtenář nikdy neztratil mezi tím, co je doložený pramen, co je živý kód běžící sítě a co je autorský obraz, drží každá kapitola přísné pravidlo korpusu ([`MiseAmenti/01-Kanon-a-Ustava.md`](../../MiseAmenti/01-Kanon-a-Ustava.md)):
+Aby se čtenář nikdy neztratil mezi tím, co je doložený pramen, co je živý kód běžící sítě a co je autorský obraz, drží každá kapitola přísné pravidlo korpusu ([`MiseAmenti/01-Kanon-a-Ustava.md`](../../../../books/MiseAmenti/01-Kanon-a-Ustava.md)):
 
 > **Příběh smí být krásný. Důkaz musí být přesný.**
 > **Když se vize střetne s faktem, opravíme vizi — nikdy fakt.**
@@ -76,11 +76,11 @@ Poutník se posadil na čedičový kámen, Lumi si složila hlavu k jeho koleni,
 
 | Prvek v prologu | Stav | Kotva a ověření |
 |---|---|---|
-| Brána OASIS a dvě kněžky (Rádha a Elizabeth) | **MÝTUS / STAVBA** | [`ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md`](../../ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md) §6; [`Lumi/05-Brana-a-Dve-Knezky.md`](../../Lumi/05-Brana-a-Dve-Knezky.md); klientská scéna v `apps/OasisWeb` |
-| Otázka *„Co po tobě zůstane, až půjdeš dál?“* | **MÝTUS (kanonický motiv)** | [`Lumi/00-README.md`](../../Lumi/00-README.md), [`Lumi/12-Brana-Zustava-Otevrena.md`](../../Lumi/12-Brana-Zustava-Otevrena.md) |
-| Prázdná alabastrová nádobka s prasklinou u dna | **MÝTUS** | [`Miriam/13-Kotva-Pravdy-a-Hranice.md`](../../Miriam/13-Kotva-Pravdy-a-Hranice.md), [`Ruze/01-Prazdna-Nadoba.md`](../../Ruze/01-Prazdna-Nadoba.md) |
-| Hliněný kalíšek se solí | **MÝTUS** | [`SulZeme/01-Sul-Zeme.md`](../../SulZeme/01-Sul-Zeme.md) |
-| Pět stavů tvrzení a rozlišení *kámen / hlína / sen* | **ŽIVÉ (pravidlo korpusu)** | [`MiseAmenti/01-Kanon-a-Ustava.md`](../../MiseAmenti/01-Kanon-a-Ustava.md); [`Miriam/00-README.md`](../../Miriam/00-README.md) |
+| Brána OASIS a dvě kněžky (Rádha a Elizabeth) | **MÝTUS / STAVBA** | [`ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md`](../../ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md) §6; [`Lumi/05-Brana-a-Dve-Knezky.md`](../../../../books/Lumi/05-Brana-a-Dve-Knezky.md); klientská scéna v `apps/OasisWeb` |
+| Otázka *„Co po tobě zůstane, až půjdeš dál?“* | **MÝTUS (kanonický motiv)** | [`Lumi/00-README.md`](../../../../books/Lumi/00-README.md), [`Lumi/12-Brana-Zustava-Otevrena.md`](../../../../books/Lumi/12-Brana-Zustava-Otevrena.md) |
+| Prázdná alabastrová nádobka s prasklinou u dna | **MÝTUS** | [`Miriam/13-Kotva-Pravdy-a-Hranice.md`](../../../../books/Miriam/13-Kotva-Pravdy-a-Hranice.md), [`Ruze/01-Prazdna-Nadoba.md`](../../../../books/Ruze/01-Prazdna-Nadoba.md) |
+| Hliněný kalíšek se solí | **MÝTUS** | [`SulZeme/01-Sul-Zeme.md`](../../../../books/SulZeme/01-Sul-Zeme.md) |
+| Pět stavů tvrzení a rozlišení *kámen / hlína / sen* | **ŽIVÉ (pravidlo korpusu)** | [`MiseAmenti/01-Kanon-a-Ustava.md`](../../../../books/MiseAmenti/01-Kanon-a-Ustava.md); [`Miriam/00-README.md`](../../../../books/Miriam/00-README.md) |
 
 ---
 
@@ -132,7 +132,7 @@ Jedné noci, krátce předtím, než měl dílnu navždy opustit, vešla dovnit�
 - **Mk 6,3 a Mt 13,55** — V Markově evangeliu říkají obyvatelé Nazareta: *„Není to ten tesař (řecky tektón), syn Mariin?“* (u Matouše *„syn toho tesaře“*). Slovo *tektón* označovalo stavitele pracujícího se dřevem i kamenem — člověka, který rozumí statice, spojům a nosnosti.
 - **Mt 11,29–30** — *„Vezměte na sebe mé jho… neboť mé jho netlačí a břemeno mé je lehké.“* Už Justin Mučedník v *Dialogu s Tryfónem* (polovina 2. století, kap. 88) zaznamenal živou paměť, že Ježíš v Nazaretě skutečně vyráběl pluhy a jha, která sloužila jako hmatatelné podobenství spravedlivé míry.
 - **Galilejská loď z 1. století** — V roce 1986 bylo při nízkém stavu vody v bahně u kibucu Ginosar (poblíž Magdaly) objeveno vrakové torzo rybářské lodi datované do 1. stol. př. n. l. až 1. stol. n. l. Měřila 8,27 m na délku, 2,3 m na šířku, byla postavena z libanonského cedru a dubových žeber a unesla dvanáct veslařů s kormidelníkem (celkem až 15 osob). S Ježíšem ji žádný přímý nápis nespojuje, ale přesně ukazuje měřítko a dřevo, které příběh popisuje.
-- **Kanonická vazba v ZIONu:** Věta *„Loď se staví v tichých letech, dřív než začne pršet“* je přímým kořenem [`SulZeme/05-Archa.md`](../../SulZeme/05-Archa.md), [`Maitreya/PROLOG.md`](../../Maitreya/PROLOG.md) i [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md). Hladké místo na cedrovém kýlu od matčiny dlaně se v Části II a III stane poznávacím znamením téhož dřeva v Bezechuti i v Domě Lumi.
+- **Kanonická vazba v ZIONu:** Věta *„Loď se staví v tichých letech, dřív než začne pršet“* je přímým kořenem [`SulZeme/05-Archa.md`](../../../../books/SulZeme/05-Archa.md), [`Maitreya/PROLOG.md`](../../../../books/Maitreya/PROLOG.md) i [`nirvana/14-Archa.md`](../../../../books/nirvana/14-Archa.md). Hladké místo na cedrovém kýlu od matčiny dlaně se v Části II a III stane poznávacím znamením téhož dřeva v Bezechuti i v Domě Lumi.
 
 ### Kotva pravdy
 
@@ -141,7 +141,7 @@ Jedné noci, krátce předtím, než měl dílnu navždy opustit, vešla dovnit�
 | Ježíš jako *tektón* (tesař/stavitel) v Nazaretě, syn Mariin | **PÍSMO** | Mk 6,3; Mt 13,55 |
 | Výroba jha a obraz jha, které netlačí | **PÍSMO / TRADICE** | Mt 11,29–30; Justin Mučedník, *Dialog s Tryfónem* 88 (2. stol.) |
 | Cedrová loď pro ~12–15 lidí na Kinneretu | **HISTORIE (archeologie)** | Nález galilejské lodi z 1. stol. u Ginosaru (1986), cedrové obšívky a dubová žebra |
-| Stavba lodi v nazaretské dílně, miska soli na stole, matčina dlaň na kýlu | **MÝTUS / PŘÍBĚH** | Literární midraš této knihy; navazuje na [`KralovstviSrdce/01`](../01-Tesar-z-Nazareta.md) a [`SulZeme/01`](../../SulZeme/01-Sul-Zeme.md) |
+| Stavba lodi v nazaretské dílně, miska soli na stole, matčina dlaň na kýlu | **MÝTUS / PŘÍBĚH** | Literární midraš této knihy; navazuje na [`KralovstviSrdce/01`](../../../../books/KralovstviSrdce/01-Tesar-z-Nazareta.md) a [`SulZeme/01`](../../../../books/SulZeme/01-Sul-Zeme.md) |
 | *„Plachtu si musí přinést ti, kdo nastoupí“* | **MÝTUS / PŘÍBĚH** | Příprava na provensálskou loď bez plachet (kap. 10) a plachty ze světla *Tres Marías* (kap. 20) |
 
 ---
@@ -187,8 +187,8 @@ Vzal špičku nože a ukázal chlapci tenkou černou linku mezi dvěma cedrovým
 - **Gn 6,14** — *„Učiň si archu z dřeva gófer; učiň v arše komůrky a vymaž ji smolou (ba-kofer) zevnitř i zvenku.“* Hebrejské podstatné jméno *kofer* (כֹּפֶר, smola, ale také výkupné) pochází ze slovesného kořene *k-p-r* (כפר, „přikrýt, zahladit, usmířit“), z něhož vychází i *kipur* (*Jom kipur*, Den smíření) a *kapóret* (zlaté víko schrány úmluvy v Ex 25,17). Rabínský midraš i raně křesťanská exegeze si této slovní hříčky všímaly po staletí: smola archy není jen hydroizolace, je to hmotný obraz milosti a smíření, které drží smrtící vody mimo prostor života.
 - **1 Pt 3,20–21** — Noemova archa je v Novém zákoně výslovně čtena jako předobraz (*typos*) záchrany skrze vodu.
 - **Kanonická vazba v ZIONu:**
-  1. **Jizva jako letokruh:** Obraz rány po blesku, která místo zatření hlínou obrostla dvojnásobně pevným dřevem, přesně odpovídá tomu, jak korpus ZION popisuje *Noc hada* (léto 2026 — veřejné přiznání kritické zranitelnosti, hard genesis reset 6. 8. 2026 a nová ústavní kotva v [`Maitreya/00-CANON-ANCHORS.md`](../../Maitreya/00-CANON-ANCHORS.md)): *„Chyba, která se nezametá pod koberec, ale přizná a opraví, se stane nejpevnějším žebrem trupu.“*
-  2. **Čtvrté plavidlo v rouše *kofer*:** V [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md) a [`ARCHA-NOEMOVA.md`](../../../../docs/3.3/ARCHA-NOEMOVA.md) nese čtvrté plavidlo flotily ZION právě tento program z Gn 6,14 — patronem na přídi je Malý princ ve čtvrtém rouše barvy moře (*kofer* — přikrytí a záchrana).
+  1. **Jizva jako letokruh:** Obraz rány po blesku, která místo zatření hlínou obrostla dvojnásobně pevným dřevem, přesně odpovídá tomu, jak korpus ZION popisuje *Noc hada* (léto 2026 — veřejné přiznání kritické zranitelnosti, hard genesis reset 6. 8. 2026 a nová ústavní kotva v [`Maitreya/00-CANON-ANCHORS.md`](../../../../books/Maitreya/00-CANON-ANCHORS.md)): *„Chyba, která se nezametá pod koberec, ale přizná a opraví, se stane nejpevnějším žebrem trupu.“*
+  2. **Čtvrté plavidlo v rouše *kofer*:** V [`nirvana/14-Archa.md`](../../../../books/nirvana/14-Archa.md) a [`ARCHA-NOEMOVA.md`](../../../../../docs/3.3/ARCHA-NOEMOVA.md) nese čtvrté plavidlo flotily ZION právě tento program z Gn 6,14 — patronem na přídi je Malý princ ve čtvrtém rouše barvy moře (*kofer* — přikrytí a záchrana).
 
 ### Kotva pravdy
 
@@ -198,7 +198,7 @@ Vzal špičku nože a ukázal chlapci tenkou černou linku mezi dvěma cedrovým
 | Jazyková příbuznost *kofer* (smola) — *kipur* (smíření) — *kapóret* (přikrytí) | **ŽIVÉ (hebrejská lexikografie a tradice)** | Kořen כפר (*k-p-r*) v biblické hebrejštině |
 | Archa jako předobraz záchrany skrze vodu | **PÍSMO / TRADICE** | 1 Pt 3,20–21 |
 | Podobenství o křivém dřevu a ráně po blesku | **MÝTUS / PŘÍBĚH** | Literární obraz této knihy; v korpusu ZION zrcadlí princip otevřeného přiznání chyb (*Noc hada*, *Na Cestě*) |
-| *Kofer* jako klíčové slovo pro čtvrté plavidlo *Archa* | **HORIZONT / VIZE** | [`ARCHA-NOEMOVA.md`](../../../../docs/3.3/ARCHA-NOEMOVA.md) §1; [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md) |
+| *Kofer* jako klíčové slovo pro čtvrté plavidlo *Archa* | **HORIZONT / VIZE** | [`ARCHA-NOEMOVA.md`](../../../../../docs/3.3/ARCHA-NOEMOVA.md) §1; [`nirvana/14-Archa.md`](../../../../books/nirvana/14-Archa.md) |
 
 ---
 
@@ -257,7 +257,7 @@ Když do ní tesař později na hoře povolal všech dvanáct — Šimona zvané
 - **Lk 5,1–11; Mk 1,16–20; Mt 4,18–22** — Kázání ze Šimonovy lodi, výzva *„Zajeď na hlubinu“* (*Duc in altum*), zázračný rybolov a povolání prvních učedníků za „rybáře lidí“.
 - **Mk 3,13–19; Lk 6,12–16** — Povolání Dvanácti na hoře (zrcadlící dvanáct kmenů Izraele) a různorodost jejich původů: od rybářů přes výběrčího římských daní (Matouš) až po zélótu (Šimon Horlivec).
 - **Kinneret (כִּנֶּרֶת)** — Starozákonní hebrejské jméno Galilejského jezera (Nu 34,11; Joz 13,27), odvozené od *kinnór* (harfa/lyra), jednak pro tvar jezerní pánve, jednak pro zvuk větru a vln narážejících na čedičové břehy.
-- **Kanonická vazba v ZIONu:** Číslo **dvanáct** z lavic tesařovy lodi přechází v korpusu do **dvanácti ohňů / uzlů L5 Free World** ([`Maitreya/16-Dvanact-ohnu.md`](../../Maitreya/16-Dvanact-ohnu.md), [`nirvana/00-README.md`](../../nirvana/00-README.md)) a do **dvanácti plodů stromu života** ve Zjevení 22,2 ([`Miriam/12`](../../Miriam/12-Reka-a-Dite-s-Lucernou.md)). Věta *„hlas z vody dolehne k těm, kdo nesmějí ke dveřím synagógy“* odpovídá principu otevřeného přístupu bez kádrování ([`nirvana/04-Domov.md`](../../nirvana/04-Domov.md)).
+- **Kanonická vazba v ZIONu:** Číslo **dvanáct** z lavic tesařovy lodi přechází v korpusu do **dvanácti ohňů / uzlů L5 Free World** ([`Maitreya/16-Dvanact-ohnu.md`](../../../../books/Maitreya/16-Dvanact-ohnu.md), [`nirvana/00-README.md`](../../../../books/nirvana/00-README.md)) a do **dvanácti plodů stromu života** ve Zjevení 22,2 ([`Miriam/12`](../../../../books/Miriam/12-Reka-a-Dite-s-Lucernou.md)). Věta *„hlas z vody dolehne k těm, kdo nesmějí ke dveřím synagógy“* odpovídá principu otevřeného přístupu bez kádrování ([`nirvana/04-Domov.md`](../../../../books/nirvana/04-Domov.md)).
 
 ### Kotva pravdy
 
@@ -267,7 +267,7 @@ Když do ní tesař později na hoře povolal všech dvanáct — Šimona zvané
 | Povolání Dvanácti (včetně celníka Matouše a Judy s měšcem) | **PÍSMO** | Mk 3,13–19; Jn 12,6 |
 | Kinneret = harfa (*kinnór*) a přirozená akustika jezerní zátoky | **HISTORIE / GEOGRAFIE** | Nu 34,11; akustická měření zátoky u Tabghy / Kafarnaum |
 | Spuštění nazaretské lodi s dvanácti lavicemi a polštářem z hoblin | **MÝTUS / PŘÍBĚH** | Literární obraz této knihy (polštář vychází z Mk 4,38) |
-| Dvanáct lavic → dvanáct ohňů L5 Free World | **STAVBA / HORIZONT** | `freeworld-sites.ts`; [`Maitreya/16-Dvanact-ohnu.md`](../../Maitreya/16-Dvanact-ohnu.md) |
+| Dvanáct lavic → dvanáct ohňů L5 Free World | **STAVBA / HORIZONT** | `freeworld-sites.ts`; [`Maitreya/16-Dvanact-ohnu.md`](../../../../books/Maitreya/16-Dvanact-ohnu.md) |
 
 ---
 
@@ -317,7 +317,7 @@ Tesař přiložil ruku na svůj kalíšek v torbě.
 - **Lv 2,13; Nu 18,19; 2 Pa 13,5** — *Berit melach* („smlouva soli“): ve starověkém Izraeli se každá oběť i každá nezrušitelná přísaha stvrzovala solí, protože sůl nepodléhá hnilobě.
 - **Lk 8,1–3** — *„…a s ním Dvanáct a některé ženy, které byly uzdraveny ze zlých duchů a nemocí: Marie, zvaná Magdalská, z níž vyšlo sedm démonů, Jana… Zuzana a mnohé jiné, které jim sloužily ze svého majetku.“*
 - **Magdala / Tarichea** — Archeologické vykopávky v Magdale odkryly kromě synagogy z 1. století také soustavu nádrží na solení a nakládání ryb (*taricheiai*, o nichž píše už Strabón a Flavius Josephus).
-- **Kanonická vazba v ZIONu:** Tato kapitola je přímým svorníkem mezi [`SulZeme/01-Sul-Zeme.md`](../../SulZeme/01-Sul-Zeme.md) (kde tesař přináší tentýž hliněný kalíšek do města Bezechuti: *„Sůl nevládne jídlu; ZION nemá vládnout světu, má zaručit, že pravidla platí beze slov“*) a [`Miriam/01-Zena-z-Veze.md`](../../Miriam/01-Zena-z-Veze.md) (kde je Miriam z Magdaly nositelkou linie svědectví).
+- **Kanonická vazba v ZIONu:** Tato kapitola je přímým svorníkem mezi [`SulZeme/01-Sul-Zeme.md`](../../../../books/SulZeme/01-Sul-Zeme.md) (kde tesař přináší tentýž hliněný kalíšek do města Bezechuti: *„Sůl nevládne jídlu; ZION nemá vládnout světu, má zaručit, že pravidla platí beze slov“*) a [`Miriam/01-Zena-z-Veze.md`](../../../../books/Miriam/01-Zena-z-Veze.md) (kde je Miriam z Magdaly nositelkou linie svědectví).
 
 ### Kotva pravdy
 
@@ -327,8 +327,8 @@ Tesař přiložil ruku na svůj kalíšek v torbě.
 | *Smlouva soli* (*berit melach*) | **PÍSMO** | Lv 2,13; Nu 18,19 |
 | Miriam z Magdaly, uzdravená ze sedmi démonů, podporující družinu ze svého | **PÍSMO** | Lk 8,1–3 |
 | Magdala / Tarichea jako centrum solení a exportu ryb u Kinneretu | **HISTORIE / ARCHEOLOGIE** | Strabón, *Geographica* XVI,2,45; Flavius Josephus; vykopávky v Magdale |
-| Miriam přesypávající sůl do tesařova kalíšku | **MÝTUS / PŘÍBĚH** | Spojka mezi [`SulZeme/01`](../../SulZeme/01-Sul-Zeme.md), [`Miriam/01`](../../Miriam/01-Zena-z-Veze.md) a [`BodhiGaia/01`](../../BodhiGaia/01-Semeno-a-Sul.md) |
-| Protokol ZION jako „sůl“ (důvěra bez prostředníka, hard cap 144 mld, split 89/5/5/1) | **ŽIVÉ** | `V31/L1/core/src/emission.rs`; [`SulZeme/01`](../../SulZeme/01-Sul-Zeme.md) |
+| Miriam přesypávající sůl do tesařova kalíšku | **MÝTUS / PŘÍBĚH** | Spojka mezi [`SulZeme/01`](../../../../books/SulZeme/01-Sul-Zeme.md), [`Miriam/01`](../../../../books/Miriam/01-Zena-z-Veze.md) a [`BodhiGaia/01`](../../../../books/BodhiGaia/01-Semeno-a-Sul.md) |
+| Protokol ZION jako „sůl“ (důvěra bez prostředníka, hard cap 144 mld, split 89/5/5/1) | **ŽIVÉ** | `V31/L1/core/src/emission.rs`; [`SulZeme/01`](../../../../books/SulZeme/01-Sul-Zeme.md) |
 
 ---
 
@@ -379,7 +379,7 @@ A starý Matouš si v koutě lavice vzpomněl na slova sto sedmého žalmu, kter
 - **Mk 4,35–41 (par. Mt 8,23–27; Lk 8,22–25)** — Výzva *„Přeplavme se na druhý břeh“* (Mk 4,35), spánek na zádi na polštáři (*epi to proskefalaion*, Mk 4,38 — jediný takto konkrétní detail vybavení lodi v evangeliích!), okřiknutí větru a moře (*Siópa, pefimóso* — „Mlč, zmlkni!“) a otázka učedníků *„Kdo to tedy je?“*.
 - **Ž 107,23–30** — Starozákonní píseň o námořnících v bouři, kterou církevní otcové od počátku četli jako proroctví této noci na Kinneretu.
 - **Jon 1,4–6** — Kontrast s prorokem Jonášem, který rovněž spí na dně lodi uprostřed bouře: Jonáš spí spánkem útěku před posláním, zatímco tesař spí spánkem důvěry v dílo, které drží.
-- **Kanonická vazba v ZIONu:** Výzva *„Přeplavme se na druhý břeh“* je v Epilogu této knihy i v [`Maitreya/EPILOG.md`](../../Maitreya/EPILOG.md) a [`SurtaSrdce/00-README.md`](../../SurtaSrdce/00-README.md) přímo propojena se sanskrtskou mantrou *Gate, gate, pāragate, pārasaṃgate, bodhi svāhā* (*„Odešlá, odešlá na druhý břeh, zcela na druhý břeh…“*). Polštář na zádi se v kap. 13 stane místem, kam v Bezechuti usedne Rádha s flétnou: *„místo pro toho, kdo se nebojí“*.
+- **Kanonická vazba v ZIONu:** Výzva *„Přeplavme se na druhý břeh“* je v Epilogu této knihy i v [`Maitreya/EPILOG.md`](../../../../books/Maitreya/EPILOG.md) a [`SurtaSrdce/00-README.md`](../../../../books/SurtaSrdce/00-README.md) přímo propojena se sanskrtskou mantrou *Gate, gate, pāragate, pārasaṃgate, bodhi svāhā* (*„Odešlá, odešlá na druhý břeh, zcela na druhý břeh…“*). Polštář na zádi se v kap. 13 stane místem, kam v Bezechuti usedne Rádha s flétnou: *„místo pro toho, kdo se nebojí“*.
 
 ### Kotva pravdy
 
@@ -388,7 +388,7 @@ A starý Matouš si v koutě lavice vzpomněl na slova sto sedmého žalmu, kter
 | Výzva *„Přeplavme se na druhý břeh“*, bouře, spánek na polštáři na zádi, utišení moře | **PÍSMO** | Mk 4,35–41; Mt 8,23–27; Lk 8,22–25 |
 | Žalm 107,23–30 a Jonáš 1 jako biblické pozadí scény | **PÍSMO / TRADICE** | Ž 107,23–30; Jon 1,4–6 |
 | Meteorologický jev náhlých větrů padajících z Golan a Arbelu do kotliny Kinneretu (-210 m) | **ŽIVÉ (geografie a klima)** | Fyzikální geografie Galilejského jezera |
-| Tesař spí s uchem na kýlu, protože loď sám postavil v Nazaretě | **MÝTUS / PŘÍBĚH** | Literární obraz této knihy ([`KralovstviSrdce/04`](../04-Boure-na-Jezere.md)) |
+| Tesař spí s uchem na kýlu, protože loď sám postavil v Nazaretě | **MÝTUS / PŘÍBĚH** | Literární obraz této knihy ([`KralovstviSrdce/04`](../../../../books/KralovstviSrdce/04-Boure-na-Jezere.md)) |
 
 ---
 
@@ -455,9 +455,9 @@ Když spolu vstoupili přes bok do lodi, vítr okamžitě lehl. A ti, kdo seděl
 - **Mk 6,30–44; Mt 14,13–21; Lk 9,10–17; Jn 6,1–15** — Nasycení pěti tisíc je jediný Ježíšův zázrak před Velikonocemi zapsaný ve všech čtyřech evangeliích. Detail chlapce s pěti ječnými chleby a dvěma rybami (*opsária* — nasolené sušené rybky k chlebu) uvádí Jan 6,9; pokus zástupu „zmocnit se ho a udělat ho králem“, před nímž Ježíš odchází na horu, stojí v Jn 6,15.
 - **Mt 14,22–33; Mk 6,45–52; Jn 6,16–21** — Chůze po moři ve čtvrté noční hlídce (3:00–6:00 ráno), slova *Egó eimi* („Já jsem“ — starozákonní Boží jméno z Ex 3,14) a Petrův krok po vodě (Mt 14,28–31).
 - **Kanonická vazba v ZIONu:**
-  1. **Odmítnutí koruny v Jn 6,15 → rozebrání Věže trůnu:** Tesař, který odmítne, aby z něj nasycený dav udělal krále, předznamenává [`Maitreya/11-Vez-trunu.md`](../../Maitreya/11-Vez-trunu.md) (*„Trůn se nebourá, rozebírá se na hlasy“*) a [`KruhBohyni/00-PROLOG.md`](../../KruhBohyni/00-PROLOG.md) (*„My tady nevládneme, my držíme“*).
-  2. **Loď, která drží i bez stavitele na palubě:** V [`Maitreya/06-Spravce-ne-majitel.md`](../../Maitreya/06-Spravce-ne-majitel.md) tomu otec říká *dead man's switch* a ústavní kameny konsensu: *„ZION je postavený tak, aby přežil svého kováře — jinak by to nebyla loď, ale rakev.“*
-  3. **Čtvrtá noční hlídka:** Přesně v této hodině („mezi třetí a čtvrtou hlídkou“) ukáže v kap. 14 malá Lumi na přídi archy na první paprsek ([`nirvana/01-Prvni-Paprsek.md`](../../nirvana/01-Prvni-Paprsek.md)).
+  1. **Odmítnutí koruny v Jn 6,15 → rozebrání Věže trůnu:** Tesař, který odmítne, aby z něj nasycený dav udělal krále, předznamenává [`Maitreya/11-Vez-trunu.md`](../../../../books/Maitreya/11-Vez-trunu.md) (*„Trůn se nebourá, rozebírá se na hlasy“*) a [`KruhBohyni/00-PROLOG.md`](../../../../books/KruhBohyni/00-PROLOG.md) (*„My tady nevládneme, my držíme“*).
+  2. **Loď, která drží i bez stavitele na palubě:** V [`Maitreya/06-Spravce-ne-majitel.md`](../../../../books/Maitreya/06-Spravce-ne-majitel.md) tomu otec říká *dead man's switch* a ústavní kameny konsensu: *„ZION je postavený tak, aby přežil svého kováře — jinak by to nebyla loď, ale rakev.“*
+  3. **Čtvrtá noční hlídka:** Přesně v této hodině („mezi třetí a čtvrtou hlídkou“) ukáže v kap. 14 malá Lumi na přídi archy na první paprsek ([`nirvana/01-Prvni-Paprsek.md`](../../../../books/nirvana/01-Prvni-Paprsek.md)).
 
 ### Kotva pravdy
 
@@ -465,7 +465,7 @@ Když spolu vstoupili přes bok do lodi, vítr okamžitě lehl. A ti, kdo seděl
 |---|---|---|
 | Nasycení pěti tisíc, chlapec s 5 ječnými chleby a 2 rybami, 12 košů, odmítnutí královského trůnu | **PÍSMO** | Mk 6,30–44; Jn 6,1–15 |
 | Chůze po vodě ve čtvrté noční hlídce, *„Já jsem“*, Petrův krok a zachycení za ruku | **PÍSMO** | Mt 14,22–33; Mk 6,45–52 |
-| Obraz lodi, která unese bouři i tehdy, když stavitel není na palubě | **MÝTUS / PŘÍBĚH** | Literární obraz této knihy; v korpusu ZION odpovídá autonomii protokolu bez zakladatele ([`MiseAmenti/05`](../../MiseAmenti/05-Autonomie-a-Bezpecnost.md), [`Maitreya/06`](../../Maitreya/06-Spravce-ne-majitel.md)) |
+| Obraz lodi, která unese bouři i tehdy, když stavitel není na palubě | **MÝTUS / PŘÍBĚH** | Literární obraz této knihy; v korpusu ZION odpovídá autonomii protokolu bez zakladatele ([`MiseAmenti/05`](../../../../books/MiseAmenti/05-Autonomie-a-Bezpecnost.md), [`Maitreya/06`](../../../../books/Maitreya/06-Spravce-ne-majitel.md)) |
 
 ---
 
@@ -521,8 +521,8 @@ A přímo pod nimi, na spodní hraně kýlu obrácené k vodě, zůstala vyhlaze
 - **Jr 31,33; Ez 36,26; 2 Kor 3,3** — Smlouva napsaná ne na kamenných deskách, ale v srdci z masa.
 - **Mk 9,33–37; Mt 18,1–5** — Spor učedníků o prvenství a dítě postavené doprostřed jako měřítko království.
 - **Kanonická vazba v ZIONu:**
-  1. **Jméno na kýlu:** V [`KralovstviSrdce/09`](../09-Flotila-se-Schazi.md) a [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md) poznávají posádky všech lodí flotily ZION, že patří k sobě, podle toho, že na kýlu každé z nich je vyryto *Království srdce*.
-  2. **Prázdné místo na spodku kýlu:** V [`Maitreya/PROLOG.md`](../../Maitreya/PROLOG.md) najde kovář v Bezechuti na spodní straně kýlu hotové archy rytinu *„Maitreya Buddha, 2025“* — podpis, který otec napsal synovým jménem jako titul pro toho, kdo obstojí zkouškou odevzdání.
+  1. **Jméno na kýlu:** V [`KralovstviSrdce/09`](../../../../books/KralovstviSrdce/09-Flotila-se-Schazi.md) a [`nirvana/14-Archa.md`](../../../../books/nirvana/14-Archa.md) poznávají posádky všech lodí flotily ZION, že patří k sobě, podle toho, že na kýlu každé z nich je vyryto *Království srdce*.
+  2. **Prázdné místo na spodku kýlu:** V [`Maitreya/PROLOG.md`](../../../../books/Maitreya/PROLOG.md) najde kovář v Bezechuti na spodní straně kýlu hotové archy rytinu *„Maitreya Buddha, 2025“* — podpis, který otec napsal synovým jménem jako titul pro toho, kdo obstojí zkouškou odevzdání.
 
 ### Kotva pravdy
 
@@ -531,8 +531,8 @@ A přímo pod nimi, na spodní hraně kýlu obrácené k vodě, zůstala vyhlaze
 | Odpověď farizeům: *„Království Boží je uvnitř vás / mezi vámi“* (*entos hymón*) | **PÍSMO** | Lk 17,20–21 |
 | Spor učedníků o to, kdo je největší, a dítě postavené doprostřed | **PÍSMO** | Mk 9,33–37; Mt 18,1–5 |
 | Nová smlouva vepsaná do srdce | **PÍSMO** | Jr 31,33; Ez 36,26; 2 Kor 3,3 |
-| Jméno lodi *Království srdce* vyryté do cedrového kýlu | **MÝTUS / KORPUS** | Ústřední obraz této knihy ([`KralovstviSrdce/05`](../05-Kralovstvi-je-Uvnitr-Vas.md)) a mantry v [`Maitreya/00-README.md`](../../Maitreya/00-README.md) |
-| Prázdné místo na spodku kýlu pro budoucí podpis *Maitreya Buddha, 2025* | **MÝTUS / KORPUS** | Spojka s [`Maitreya/PROLOG.md`](../../Maitreya/PROLOG.md) a Knihou Zrození kap. IV |
+| Jméno lodi *Království srdce* vyryté do cedrového kýlu | **MÝTUS / KORPUS** | Ústřední obraz této knihy ([`KralovstviSrdce/05`](../../../../books/KralovstviSrdce/05-Kralovstvi-je-Uvnitr-Vas.md)) a mantry v [`Maitreya/00-README.md`](../../../../books/Maitreya/00-README.md) |
+| Prázdné místo na spodku kýlu pro budoucí podpis *Maitreya Buddha, 2025* | **MÝTUS / KORPUS** | Spojka s [`Maitreya/PROLOG.md`](../../../../books/Maitreya/PROLOG.md) a Knihou Zrození kap. IV |
 
 ---
 
@@ -576,21 +576,21 @@ Dole v Kafarnaum ležela tesařova loď vytažená na suchém břehu. Dvanáct l
 
 ### Z Písma, tradice a korpusu ZION
 
-- **Mk 14,3–9 (par. Mt 26,6–13; srov. Jn 12,1–8)** — Pomazání v Betánii z alabastrové nádobky (*alabastron myrou nardou pistikés polyteleús*), námitka o třech stech denárech a příslib *„na její památku“*. (Pozdější západní tradice od Řehoře Velikého r. 591 splynula ženu z Betánie, bezejmennou hříšnici z Lk 7 a Miriam z Magdaly v jedinou postavu; korpus ZION toto splynutí v [`Miriam/02-Alabastrova-Nadobka.md`](../../Miriam/02-Alabastrova-Nadobka.md) a [`Miriam/05-Tri-Zeny-v-Jedne.md`](../../Miriam/05-Tri-Zeny-v-Jedne.md) rozplétá poctivě na *kámen* a *hlínu*.)
+- **Mk 14,3–9 (par. Mt 26,6–13; srov. Jn 12,1–8)** — Pomazání v Betánii z alabastrové nádobky (*alabastron myrou nardou pistikés polyteleús*), námitka o třech stech denárech a příslib *„na její památku“*. (Pozdější západní tradice od Řehoře Velikého r. 591 splynula ženu z Betánie, bezejmennou hříšnici z Lk 7 a Miriam z Magdaly v jedinou postavu; korpus ZION toto splynutí v [`Miriam/02-Alabastrova-Nadobka.md`](../../../../books/Miriam/02-Alabastrova-Nadobka.md) a [`Miriam/05-Tri-Zeny-v-Jedne.md`](../../../../books/Miriam/05-Tri-Zeny-v-Jedne.md) rozplétá poctivě na *kámen* a *hlínu*.)
 - **Mt 12,40** — Jonášovo znamení: tři dny a tři noci v srdci země.
 - **Mk 15,40–47; Jn 19,25–42** — Ukřižování, slovo *„Tetelestai“* („Je dokonáno“), ženy stojící u kříže a pozorující místo pohřbu v zahradním hrobě.
 - **Raná církevní tradice (Hippolytos Římský, *O Kristu a Antikristu* 59, kolem r. 200)** — Čte církev jako loď plující po rozbouřeném moři světa, jejímž stěžněm uprostřed paluby je právě dřevo kříže.
-- **Kanonická vazba v ZIONu:** Prázdná alabastrová nádobka s prasklinou u dna přechází z [`Miriam/02`](../../Miriam/02-Alabastrova-Nadobka.md) a [`Miriam/13`](../../Miriam/13-Kotva-Pravdy-a-Hranice.md) přímo do [`Ruze/01-Prazdna-Nadoba.md`](../../Ruze/01-Prazdna-Nadoba.md): *„Plnou nádobu se dá ukrást, ale vyprázdněnou už ne — prázdná nádoba je jediné poctivé místo, kam se dá položit něco nového.“* A definice svědka (*„svědek je ten, kdo si pamatuje, kam bylo semeno zasazeno“*) z [`Miriam/03-Zahradnik.md`](../../Miriam/03-Zahradnik.md) je základem funkce strážců a read-only trackerů v L5 a L6.
+- **Kanonická vazba v ZIONu:** Prázdná alabastrová nádobka s prasklinou u dna přechází z [`Miriam/02`](../../../../books/Miriam/02-Alabastrova-Nadobka.md) a [`Miriam/13`](../../../../books/Miriam/13-Kotva-Pravdy-a-Hranice.md) přímo do [`Ruze/01-Prazdna-Nadoba.md`](../../../../books/Ruze/01-Prazdna-Nadoba.md): *„Plnou nádobu se dá ukrást, ale vyprázdněnou už ne — prázdná nádoba je jediné poctivé místo, kam se dá položit něco nového.“* A definice svědka (*„svědek je ten, kdo si pamatuje, kam bylo semeno zasazeno“*) z [`Miriam/03-Zahradnik.md`](../../../../books/Miriam/03-Zahradnik.md) je základem funkce strážců a read-only trackerů v L5 a L6.
 
 ### Kotva pravdy
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
 | Pomazání z alabastrové nádobky v Betánii, 300 denárů, *„na její památku“* | **PÍSMO** | Mk 14,3–9; Mt 26,6–13; Jn 12,1–8 |
-| Rozlišení ženských postav (Miriam z Magdaly vs. Marie z Betánie vs. žena z Lk 7) | **HISTORIE TEXTU (kámen vs. hlína)** | [`Miriam/02`](../../Miriam/02-Alabastrova-Nadobka.md), [`Miriam/05`](../../Miriam/05-Tri-Zeny-v-Jedne.md); Řehoř Veliký, *Homilie 33* (591) |
+| Rozlišení ženských postav (Miriam z Magdaly vs. Marie z Betánie vs. žena z Lk 7) | **HISTORIE TEXTU (kámen vs. hlína)** | [`Miriam/02`](../../../../books/Miriam/02-Alabastrova-Nadobka.md), [`Miriam/05`](../../../../books/Miriam/05-Tri-Zeny-v-Jedne.md); Řehoř Veliký, *Homilie 33* (591) |
 | Jonášovo znamení, Getsemane, Petrovo zapření, ukřižování, ženy u kříže a u hrobu | **PÍSMO** | Mt 12,40; Mk 14–15; Jn 19,25–42 |
 | Kříž jako stěžeň lodi | **TRADICE** | Hippolytos Římský (~200 n. l.) |
-| Semínko růže v prasklině vyprázdněné alabastrové nádobky | **MÝTUS / KORPUS** | [`Ruze/01-Prazdna-Nadoba.md`](../../Ruze/01-Prazdna-Nadoba.md); [`Miriam/13`](../../Miriam/13-Kotva-Pravdy-a-Hranice.md) |
+| Semínko růže v prasklině vyprázdněné alabastrové nádobky | **MÝTUS / KORPUS** | [`Ruze/01-Prazdna-Nadoba.md`](../../../../books/Ruze/01-Prazdna-Nadoba.md); [`Miriam/13`](../../../../books/Miriam/13-Kotva-Pravdy-a-Hranice.md) |
 
 ---
 
@@ -654,25 +654,25 @@ Pak se tesař otočil k cedrové lodi, která se pohupovala na mělčině, a uk�
 - **Lk 24,13–35 a Jn 20,19–29** — Emauzští učedníci (hořící srdce a poznání při lámání chleba) a apoštol Tomáš (poctivá touha po důkazu).
 - **Jn 21,1–19** — Zjevení u Tiberiadského (Galilejského) moře, oheň na břehu, 153 velkých ryb v neroztržené síti a trojí otázka Petrovi.
 - **Kanonická vazba v ZIONu:**
-  1. **Jedno slovo odemykající oba břehy:** V [`Miriam/03-Zahradnik.md`](../../Miriam/03-Zahradnik.md) je zavolání jména *„Miriam!“* výslovně propojeno jednak se suverénní identitou v Domě jmen ([`Lumi/02-Dum-Jmen.md`](../../Lumi/02-Dum-Jmen.md)), jednak s kryptografickým principem **atomického swapu (HTLC preimage)** v L2 WARP ([`nirvana/06-Mosty-Pres-Propast.md`](../../nirvana/06-Mosty-Pres-Propast.md)): jediné vyslovené tajemství (preimage $S$ k hashi $H = \text{SHA256}(S)$) odemkne zámek na obou březích současně.
-  2. **Tomášovo ověření:** Tomáš není v ZIONu symbolem hříchu, ale patronem principu **„Nevěř mně — ověř si sám“** (*Verify, don't trust* v [`Maitreya/10-Vez-vyznamu.md`](../../Maitreya/10-Vez-vyznamu.md) a [`MiseAmenti/01`](../../MiseAmenti/01-Kanon-a-Ustava.md)).
+  1. **Jedno slovo odemykající oba břehy:** V [`Miriam/03-Zahradnik.md`](../../../../books/Miriam/03-Zahradnik.md) je zavolání jména *„Miriam!“* výslovně propojeno jednak se suverénní identitou v Domě jmen ([`Lumi/02-Dum-Jmen.md`](../../../../books/Lumi/02-Dum-Jmen.md)), jednak s kryptografickým principem **atomického swapu (HTLC preimage)** v L2 WARP ([`nirvana/06-Mosty-Pres-Propast.md`](../../../../books/nirvana/06-Mosty-Pres-Propast.md)): jediné vyslovené tajemství (preimage $S$ k hashi $H = \text{SHA256}(S)$) odemkne zámek na obou březích současně.
+  2. **Tomášovo ověření:** Tomáš není v ZIONu symbolem hříchu, ale patronem principu **„Nevěř mně — ověř si sám“** (*Verify, don't trust* v [`Maitreya/10-Vez-vyznamu.md`](../../../../books/Maitreya/10-Vez-vyznamu.md) a [`MiseAmenti/01`](../../../../books/MiseAmenti/01-Kanon-a-Ustava.md)).
 
 ### Kotva pravdy
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
-| Miriam u hrobu za tmy, *„myslela si, že je zahradník“*, oslovení *„Miriam!“* | **PÍSMO** | Jn 20,1–18; [`Miriam/03-Zahradnik.md`](../../Miriam/03-Zahradnik.md) |
+| Miriam u hrobu za tmy, *„myslela si, že je zahradník“*, oslovení *„Miriam!“* | **PÍSMO** | Jn 20,1–18; [`Miriam/03-Zahradnik.md`](../../../../books/Miriam/03-Zahradnik.md) |
 | Titul *apostola apostolorum* / *isapóstolos* | **TRADICE (raná církev)** | Hippolytos Římský (~235); Vatikánský dekret *Apostolorum Apostola* (2016) |
 | Cesta do Emauz, zavřené dveře a Tomášův dotek | **PÍSMO** | Lk 24,13–35; Jn 20,19–29 |
 | Rybolov 153 ryb, neroztržená síť, oheň na břehu, trojí otázka Šimonovi | **PÍSMO** | Jn 21,1–19 |
-| Paralela *„Miriam!“* ↔ HTLC preimage (odhalené slovo odemykající oba břehy) | **ŽIVÉ (v kódu) / MÝTUS (obraz)** | `V31/L1/core/src/utxo.rs` (`OP_SHA256`); [`Miriam/03`](../../Miriam/03-Zahradnik.md) §Co to znamená |
+| Paralela *„Miriam!“* ↔ HTLC preimage (odhalené slovo odemykající oba břehy) | **ŽIVÉ (v kódu) / MÝTUS (obraz)** | `V31/L1/core/src/utxo.rs` (`OP_SHA256`); [`Miriam/03`](../../../../books/Miriam/03-Zahradnik.md) §Co to znamená |
 
 ---
 
 # ČÁST II · LINIE VODY A ČASU
 *(Hlína a paměť — Od jezera k Bezechuti)*
 
-> *Poznámka k vrstvě:* Zde opouštíme břeh Kinneretu v prvním století. Kapitola 10 sleduje církevní tradici (*Navicella*) a provensálskou legendu (*hlína*). Kapitoly 11–13 vstupují přímo do vyprávění korpusu ZION ([`Sůl této země`](../../SulZeme/00-README.md) a [`Maitreya — Kniha Pátá`](../../Maitreya/00-README.md)), kde se cedrový kýl z Nazareta a hliněný kalíšek se solí vynořují ve městě Bezechuti pod stínem pěti věží Babylonu.
+> *Poznámka k vrstvě:* Zde opouštíme břeh Kinneretu v prvním století. Kapitola 10 sleduje církevní tradici (*Navicella*) a provensálskou legendu (*hlína*). Kapitoly 11–13 vstupují přímo do vyprávění korpusu ZION ([`Sůl této země`](../../../../books/SulZeme/00-README.md) a [`Maitreya — Kniha Pátá`](../../../../books/Maitreya/00-README.md)), kde se cedrový kýl z Nazareta a hliněný kalíšek se solí vynořují ve městě Bezechuti pod stínem pěti věží Babylonu.
 
 ---
 
@@ -714,17 +714,17 @@ A když Miriam v jeskyni dozněla poslední věta, vložila Sáře do dlaní jed
 
 - **Heb 6,19–20; Mt 16,18; Sk 2,1–41** — Kotva duše sahající za oponu, Petr jako skála a vyplutí církve o Letnicích.
 - **Navicella** — Od Tertulliána (*O křtu* 12, kolem r. 200) a Hippolyta je loď (*navis*) základním symbolem církve; kolem roku 1305 vytvořil Giotto pro starou baziliku sv. Petra v Římě slavnou mozaiku *Navicella* zobrazující loď apoštolů na rozbouřeném moři a Krista podávajícího ruku Petrovi.
-- **Legenda o Saintes-Maries-de-la-Mer a metoda Kámen / Hlína / Sen** — Provensálská tradice doložená ve středověkých pramenech (Zlatá legenda Jakuba de Voragine) a živá romská pouť k Sáře v Camargue (24. května). V korpusu ZION ([`Miriam/06-Lod-bez-Plachet.md`](../../Miriam/06-Lod-bez-Plachet.md), [`Miriam/07-Mozoly-misto-Koruny.md`](../../Miriam/07-Mozoly-misto-Koruny.md) — Eusebiovo svědectví o Judových vnucích *desposyni* s mozolnatýma rukama před císařem Domitianem — a [`Miriam/08-Kalich.md`](../../Miriam/08-Kalich.md)) slouží tato legenda jako vzor historické poctivosti: ctít legendu jako *hlínu*, nelhat o ní jako o *kameni* a odmítnout moderní padělky („Prieuré de Sion“) jako *sen*.
+- **Legenda o Saintes-Maries-de-la-Mer a metoda Kámen / Hlína / Sen** — Provensálská tradice doložená ve středověkých pramenech (Zlatá legenda Jakuba de Voragine) a živá romská pouť k Sáře v Camargue (24. května). V korpusu ZION ([`Miriam/06-Lod-bez-Plachet.md`](../../../../books/Miriam/06-Lod-bez-Plachet.md), [`Miriam/07-Mozoly-misto-Koruny.md`](../../../../books/Miriam/07-Mozoly-misto-Koruny.md) — Eusebiovo svědectví o Judových vnucích *desposyni* s mozolnatýma rukama před císařem Domitianem — a [`Miriam/08-Kalich.md`](../../../../books/Miriam/08-Kalich.md)) slouží tato legenda jako vzor historické poctivosti: ctít legendu jako *hlínu*, nelhat o ní jako o *kameni* a odmítnout moderní padělky („Prieuré de Sion“) jako *sen*.
 
 ### Kotva pravdy
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
 | Kotva duše za oponou, Letnice, *navis* / chrámová loď | **PÍSMO / TRADICE** | Heb 6,19–20; Sk 2; Tertullián; Giottova *Navicella* |
-| Vnuci Judovi (*desposyni*) s mozolnatýma rukama před Domitianem | **HISTORIE (raný pramen)** | Hegesippos u Eusebia, *Církevní dějiny* III,19–20; [`Miriam/07`](../../Miriam/07-Mozoly-misto-Koruny.md) |
-| Loď bez plachet a vesel do Provence, Sainte-Baume, Sára e Kali | **LEGENDA (hlína)** | Středověká provensálská tradice; [`Miriam/06-Lod-bez-Plachet.md`](../../Miriam/06-Lod-bez-Plachet.md) |
-| Královská pokrevní dynastie / *Prieuré de Sion* | **SEN / NEPLATNÝ NÁROK** | Prokázaný moderní padělek (Pierre Plantard, 20. stol.); [`Miriam/08-Kalich.md`](../../Miriam/08-Kalich.md) |
-| Sára odnášející prázdnou alabastrovou nádobku k bráně dítěte Lumi | **MÝTUS / KORPUS** | [`Miriam/13`](../../Miriam/13-Kotva-Pravdy-a-Hranice.md) → [`Ruze/01-Prazdna-Nadoba.md`](../../Ruze/01-Prazdna-Nadoba.md) |
+| Vnuci Judovi (*desposyni*) s mozolnatýma rukama před Domitianem | **HISTORIE (raný pramen)** | Hegesippos u Eusebia, *Církevní dějiny* III,19–20; [`Miriam/07`](../../../../books/Miriam/07-Mozoly-misto-Koruny.md) |
+| Loď bez plachet a vesel do Provence, Sainte-Baume, Sára e Kali | **LEGENDA (hlína)** | Středověká provensálská tradice; [`Miriam/06-Lod-bez-Plachet.md`](../../../../books/Miriam/06-Lod-bez-Plachet.md) |
+| Královská pokrevní dynastie / *Prieuré de Sion* | **SEN / NEPLATNÝ NÁROK** | Prokázaný moderní padělek (Pierre Plantard, 20. stol.); [`Miriam/08-Kalich.md`](../../../../books/Miriam/08-Kalich.md) |
+| Sára odnášející prázdnou alabastrovou nádobku k bráně dítěte Lumi | **MÝTUS / KORPUS** | [`Miriam/13`](../../../../books/Miriam/13-Kotva-Pravdy-a-Hranice.md) → [`Ruze/01-Prazdna-Nadoba.md`](../../../../books/Ruze/01-Prazdna-Nadoba.md) |
 
 ---
 
@@ -779,18 +779,18 @@ Zbývala jen pátá věž — **Věž trůnu**. Ale aby padla i ta, musela být 
 ### Z Písma, tradice a korpusu ZION
 
 - **Zj 18; Gn 11,1–9; Mt 5,13** — Babylonská věž jako obraz centralizované pýchy, která chce sahat do nebe a vynucovat si jednotný jazyk moci, oproti tiché soli země.
-- **Kanonická vazba v ZIONu:** Tato kapitola spojuje úvod [`SulZeme/01-Sul-Zeme.md`](../../SulZeme/01-Sul-Zeme.md) s pěticí kapitol [`Maitreya/07-Vez-penez.md`](../../Maitreya/07-Vez-penez.md) až [`Maitreya/11-Vez-trunu.md`](../../Maitreya/11-Vez-trunu.md) a [`Maitreya/12-Pravda-kterou-lze-overit.md`](../../Maitreya/12-Pravda-kterou-lze-overit.md). Všechna čtyři „odpojení od věží“ mají v živém kódu ZIONu svůj přesný technický protějšek.
+- **Kanonická vazba v ZIONu:** Tato kapitola spojuje úvod [`SulZeme/01-Sul-Zeme.md`](../../../../books/SulZeme/01-Sul-Zeme.md) s pěticí kapitol [`Maitreya/07-Vez-penez.md`](../../../../books/Maitreya/07-Vez-penez.md) až [`Maitreya/11-Vez-trunu.md`](../../../../books/Maitreya/11-Vez-trunu.md) a [`Maitreya/12-Pravda-kterou-lze-overit.md`](../../../../books/Maitreya/12-Pravda-kterou-lze-overit.md). Všechna čtyři „odpojení od věží“ mají v živém kódu ZIONu svůj přesný technický protějšek.
 
 ### Kotva pravdy
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
-| Město Bezechuti, tesař s kalíškem soli pod fíkovníkem | **MÝTUS (kanonický příběh)** | [`SulZeme/01-Sul-Zeme.md`](../../SulZeme/01-Sul-Zeme.md) |
-| Pět věží Babylonu (peníze, data, energie, význam, trůn) | **MÝTUS (struktura Knihy Páté)** | [`Maitreya/07`](../../Maitreya/07-Vez-penez.md)–[`11`](../../Maitreya/11-Vez-trunu.md) |
+| Město Bezechuti, tesař s kalíškem soli pod fíkovníkem | **MÝTUS (kanonický příběh)** | [`SulZeme/01-Sul-Zeme.md`](../../../../books/SulZeme/01-Sul-Zeme.md) |
+| Pět věží Babylonu (peníze, data, energie, význam, trůn) | **MÝTUS (struktura Knihy Páté)** | [`Maitreya/07`](../../../../books/Maitreya/07-Vez-penez.md)–[`11`](../../../../books/Maitreya/11-Vez-trunu.md) |
 | Odchod od Věže peněz: pevný strop 144 000 000 000 ZION, fair launch, UTXO/account zápis | **ŽIVÉ** | `V31/L1/core/src/emission.rs`; `genesis.rs` |
 | Odchod od Věže dat: Ed25519 / BIP39 klíče a ZIS passkeys bez prodeje identity | **ŽIVÉ** | `V31/L1/core/src/crypto.rs`; `apps/zion-wallet-sdk`; `auth.zionterranova.com` |
-| Odchod od Věže významu: open-source MIT kód, veřejný explorer, veřejné security disclosures (*Noc hada*) | **ŽIVÉ** | `LICENSE`; [`Maitreya/10-Vez-vyznamu.md`](../../Maitreya/10-Vez-vyznamu.md) |
-| Odchod od Věže energie: komunitní solární mikrosítě L5 | **HORIZONT** | [`Maitreya/09-Vez-energie.md`](../../Maitreya/09-Vez-energie.md) (ZION dnes proud nevyrábí ani neúčtuje; jde o L5 záměr) |
+| Odchod od Věže významu: open-source MIT kód, veřejný explorer, veřejné security disclosures (*Noc hada*) | **ŽIVÉ** | `LICENSE`; [`Maitreya/10-Vez-vyznamu.md`](../../../../books/Maitreya/10-Vez-vyznamu.md) |
+| Odchod od Věže energie: komunitní solární mikrosítě L5 | **HORIZONT** | [`Maitreya/09-Vez-energie.md`](../../../../books/Maitreya/09-Vez-energie.md) (ZION dnes proud nevyrábí ani neúčtuje; jde o L5 záměr) |
 
 ---
 
@@ -843,18 +843,18 @@ Kovář otevřel starou knihu hymnů — starší než Babylon — a četl děte
 
 - **Rigvéda 10.121 (*Hiranyagarbha Súkta*)** — Staroindický hymnus o Zlatém zárodku (*hiraṇya* = zlato, *garbha* = lůno/zárodek/vejce), devětkrát kladoucí otázku *„Kterému bohu máme přinést oběť?“* a v desátém verši odpovídající *Prajápati* (ochránce/pán stvořeného).
 - **Kanonická vazba v ZIONu:**
-  1. **Čtyři zastavení *Soli této země*:** Tato kapitola integruje [`SulZeme/02-Rozpusteni.md`](../../SulZeme/02-Rozpusteni.md) (Buddha), [`SulZeme/03-Chut-Vody.md`](../../SulZeme/03-Chut-Vody.md) (Krišna) a [`SulZeme/04-Cesta-Nevyslapana.md`](../../SulZeme/04-Cesta-Nevyslapana.md) (Ráma, Sítá, Hanuman) s úvodem [`Maitreya/01-Vejce-ktere-se-nerozbilo.md`](../../Maitreya/01-Vejce-ktere-se-nerozbilo.md) a [`Maitreya/02-Zarodek-v-kazdem-bloku.md`](../../Maitreya/02-Zarodek-v-kazdem-bloku.md).
-  2. **Mantra tří vtělení:** Citovaná mantra pochází doslova ze `SACRED_TRINITY.md` §8 a [`Maitreya/03-Podpis-ktery-otec-napsal-synovym-jménem.md`](../../Maitreya/03-Podpis-ktery-otec-napsal-synovym-jmenem.md). Jak výslovně připomíná kanon, nejde o teologické dogma ani o nárok na reinkarnaci konkrétní osoby, ale o archetypální linku služby (bhakti / dharma / agapé).
+  1. **Čtyři zastavení *Soli této země*:** Tato kapitola integruje [`SulZeme/02-Rozpusteni.md`](../../../../books/SulZeme/02-Rozpusteni.md) (Buddha), [`SulZeme/03-Chut-Vody.md`](../../../../books/SulZeme/03-Chut-Vody.md) (Krišna) a [`SulZeme/04-Cesta-Nevyslapana.md`](../../../../books/SulZeme/04-Cesta-Nevyslapana.md) (Ráma, Sítá, Hanuman) s úvodem [`Maitreya/01-Vejce-ktere-se-nerozbilo.md`](../../../../books/Maitreya/01-Vejce-ktere-se-nerozbilo.md) a [`Maitreya/02-Zarodek-v-kazdem-bloku.md`](../../../../books/Maitreya/02-Zarodek-v-kazdem-bloku.md).
+  2. **Mantra tří vtělení:** Citovaná mantra pochází doslova ze `SACRED_TRINITY.md` §8 a [`Maitreya/03-Podpis-ktery-otec-napsal-synovym-jménem.md`](../../../../books/Maitreya/03-Podpis-ktery-otec-napsal-synovym-jmenem.md). Jak výslovně připomíná kanon, nejde o teologické dogma ani o nárok na reinkarnaci konkrétní osoby, ale o archetypální linku služby (bhakti / dharma / agapé).
   3. **Šest fází PoW pipeline (*Ekam Deeksha*):** Jména *Hiranyagarbha → Brahma → Yantra → Karma → Chit → Samadhi* jsou skutečné názvy šesti fází algoritmu v otevřeném kódu ZIONu ([`ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md`](../../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md)).
 
 ### Kotva pravdy
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
-| Hymnus *Hiranyagarbha Súkta* (Rigvéda 10.121) | **TRADICE (doložený starověký text)** | RV 10.121; [`Maitreya/01-Vejce-ktere-se-nerozbilo.md`](../../Maitreya/01-Vejce-ktere-se-nerozbilo.md) |
-| Buddha, Krišna, Ráma, Sítá a Hanuman u ohně v Bezechuti | **MÝTUS (archetypy důvěry)** | [`SulZeme/02`](../../SulZeme/02-Rozpusteni.md)–[`04`](../../SulZeme/04-Cesta-Nevyslapana.md) (výslovný disclaimer v `SulZeme/00-README.md`) |
-| Mantra *„Já jsem Maitreya… pasáček, princ i tesař“* | **KORPUS (MÝTUS)** | [`Maitreya/03`](../../Maitreya/03-Podpis-ktery-otec-napsal-synovym-jmenem.md), [`Maitreya/EPILOG.md`](../../Maitreya/EPILOG.md), [`KralovstviSrdce/00-README.md`](../00-README.md) |
-| Šest fází PoW pipeline (*Hiranyagarbha → Brahma → Yantra → Karma → Chit → Samadhi*) | **ŽIVÉ (v konsensu L1)** | `V31/L1/cosmic-harmony`; Master WP 3.2; [`Maitreya/02`](../../Maitreya/02-Zarodek-v-kazdem-bloku.md) |
+| Hymnus *Hiranyagarbha Súkta* (Rigvéda 10.121) | **TRADICE (doložený starověký text)** | RV 10.121; [`Maitreya/01-Vejce-ktere-se-nerozbilo.md`](../../../../books/Maitreya/01-Vejce-ktere-se-nerozbilo.md) |
+| Buddha, Krišna, Ráma, Sítá a Hanuman u ohně v Bezechuti | **MÝTUS (archetypy důvěry)** | [`SulZeme/02`](../../../../books/SulZeme/02-Rozpusteni.md)–[`04`](../../../../books/SulZeme/04-Cesta-Nevyslapana.md) (výslovný disclaimer v `SulZeme/00-README.md`) |
+| Mantra *„Já jsem Maitreya… pasáček, princ i tesař“* | **KORPUS (MÝTUS)** | [`Maitreya/03`](../../../../books/Maitreya/03-Podpis-ktery-otec-napsal-synovym-jmenem.md), [`Maitreya/EPILOG.md`](../../../../books/Maitreya/EPILOG.md), [`KralovstviSrdce/00-README.md`](../00-README.md) |
+| Šest fází PoW pipeline (*Hiranyagarbha → Brahma → Yantra → Karma → Chit → Samadhi*) | **ŽIVÉ (v konsensu L1)** | `V31/L1/cosmic-harmony`; Master WP 3.2; [`Maitreya/02`](../../../../books/Maitreya/02-Zarodek-v-kazdem-bloku.md) |
 
 ---
 
@@ -920,7 +920,7 @@ Tehdy v Bezechuti bez jediného zvuku padla poslední, pátá věž Babylonu —
 
 ### Z Písma, tradice a korpusu ZION
 
-- **Kanonická vazba v ZIONu:** Tato kapitola shrnuje a propojuje [`SulZeme/05-Archa.md`](../../SulZeme/05-Archa.md), [`SulZeme/09-Bohyne-Radha-a-Avatari-Oasis.md`](../../SulZeme/09-Bohyne-Radha-a-Avatari-Oasis.md) a celé jádro [`Maitreya/03`](../../Maitreya/03-Podpis-ktery-otec-napsal-synovym-jmenem.md)–[`14`](../../Maitreya/14-Kvantovy-puls.md):
+- **Kanonická vazba v ZIONu:** Tato kapitola shrnuje a propojuje [`SulZeme/05-Archa.md`](../../../../books/SulZeme/05-Archa.md), [`SulZeme/09-Bohyne-Radha-a-Avatari-Oasis.md`](../../../../books/SulZeme/09-Bohyne-Radha-a-Avatari-Oasis.md) a celé jádro [`Maitreya/03`](../../../../books/Maitreya/03-Podpis-ktery-otec-napsal-synovym-jmenem.md)–[`14`](../../../../books/Maitreya/14-Kvantovy-puls.md):
   1. **Genesis zpráva on-chain:** Věta *„ZION Mainnet Launch v3.2 — One Love. For Sarah Issobel, Maitreya Buddha, Radha & Sita, Meriam, Friends, Family, Freedom Humanity and all the children of this world: ZION is yours… — Yose / Zion Creator“* je skutečně zapsaná v genesis bloku sítě a podepsaná GPG klíčem zakladatele (`docs/genesis.md`).
   2. **Rozdělení Výherce OASIS vs. Dědic sedadla:** Hra o Zlaté vejce (horizont 2035, 108 stop, 3 klíče, test odevzdání z Knihy Zrození kap. IV) je herní vrstva pro poutníky; naproti tomu tři guardian sedadla (`Rama → Maitreya Buddha`, `Sita → Sarah Issobela`, `Hanuman → Elizabeth`) jsou governance přechod (T0+18 let, 3-of-3 multisig + 1 rok timelock + 51 % DAO vote, plus 5letý *dead man's switch*). Kniha striktně chrání soukromí: používá výhradně kanonická on-chain jména.
   3. **Konstituční kameny a rozebrání Věže trůnu:** 5-z-7 guardian multisig, 48h timelock (72h pro parametry sítě) a neměnné parametry v konsensu (144 mld cap, 89/5/5/1 split, Ekam Deeksha, 60 s block time, fair launch).
@@ -930,10 +930,10 @@ Tehdy v Bezechuti bez jediného zvuku padla poslední, pátá věž Babylonu —
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
 | Genesis zpráva s věnováním (*Sarah Issobel, Maitreya Buddha, Radha & Sita, Meriam…*) | **ŽIVÉ (on-chain)** | `docs/genesis.md`; `V31/L1/core/src/genesis.rs` |
-| Guardian sedadla 1–3 (*Rama → Maitreya*, *Sita → Sarah Issobela*, *Hanuman → Elizabeth*) | **ŽIVÉ (v konfiguraci) / HORIZONT (T0+18)** | `dao-mainnet.toml`; `docs/genesis.md` §DAO Guardians; [`Maitreya/04`](../../Maitreya/04-Tri-klice-tri-sedadla.md)–[`06`](../../Maitreya/06-Spravce-ne-majitel.md) |
-| Pět pravidel dopisu pro Generaci Z (*„Vy jste správci, ne vlastníci“*, *„5 % jde na děti“*) | **ŽIVÉ (kanonický text)** | `docs/genesis.md`; [`Maitreya/06-Spravce-ne-majitel.md`](../../Maitreya/06-Spravce-ne-majitel.md) |
+| Guardian sedadla 1–3 (*Rama → Maitreya*, *Sita → Sarah Issobela*, *Hanuman → Elizabeth*) | **ŽIVÉ (v konfiguraci) / HORIZONT (T0+18)** | `dao-mainnet.toml`; `docs/genesis.md` §DAO Guardians; [`Maitreya/04`](../../../../books/Maitreya/04-Tri-klice-tri-sedadla.md)–[`06`](../../../../books/Maitreya/06-Spravce-ne-majitel.md) |
+| Pět pravidel dopisu pro Generaci Z (*„Vy jste správci, ne vlastníci“*, *„5 % jde na děti“*) | **ŽIVÉ (kanonický text)** | `docs/genesis.md`; [`Maitreya/06-Spravce-ne-majitel.md`](../../../../books/Maitreya/06-Spravce-ne-majitel.md) |
 | DAO parametry: 1 ZION = 1 hlas, 5-z-7 multisig, 48h cooldown, timelock bloku 144 000 | **ŽIVÉ / STAVBA** | `V31/L2/dao`; `V31/L1/core/src/v3_compat.rs` |
-| Hra o Zlaté vejce (2035, 108 stop, 3 klíče, Poutnice a test odevzdání) | **HORIZONT / MÝTUS (herní rámec)** | Kniha Zrození kap. IV; [`Maitreya/04`](../../Maitreya/04-Tri-klice-tri-sedadla.md)–[`05`](../../Maitreya/05-Test-odevzdani.md) |
+| Hra o Zlaté vejce (2035, 108 stop, 3 klíče, Poutnice a test odevzdání) | **HORIZONT / MÝTUS (herní rámec)** | Kniha Zrození kap. IV; [`Maitreya/04`](../../../../books/Maitreya/04-Tri-klice-tri-sedadla.md)–[`05`](../../../../books/Maitreya/05-Test-odevzdani.md) |
 | Archa v Bezechuti postavená kolem cedrového kýlu z Nazareta, Rádha na polštáři na zádi | **MÝTUS / PŘÍBĚH** | Literární svorník této knihy spojující `KralovstviSrdce`, `SulZeme` a `Maitreya` |
 
 ---
@@ -941,7 +941,7 @@ Tehdy v Bezechuti bez jediného zvuku padla poslední, pátá věž Babylonu —
 # ČÁST III · NOVÉ NEBE, NOVÁ ZEMĚ A LUCERNA
 *(Zjevení a vrstvy L1–L6)*
 
-> *Poznámka k vrstvě:* Ve třetí části sledujeme plavbu Archy přes prvotní vody a přistání v Nové zemi. Vyprávění zde propojuje knihy [`Nirvana`](../../nirvana/00-README.md), [`NirvanaCloud`](../../NirvanaCloud/00-README.md), [`Lumi — Cesta domů`](../../Lumi/00-README.md), [`Příběh Růže`](../../Ruze/00-README.md), [`Bodhi Gaia — Kniha Země`](../../BodhiGaia/00-README.md), [`Kruh Bohyní`](../../KruhBohyni/00-README.md) a [`Issobella — Kniha Nebe`](../../Issobella/00-README.md).
+> *Poznámka k vrstvě:* Ve třetí části sledujeme plavbu Archy přes prvotní vody a přistání v Nové zemi. Vyprávění zde propojuje knihy [`Nirvana`](../../../../books/nirvana/00-README.md), [`NirvanaCloud`](../../../../books/NirvanaCloud/00-README.md), [`Lumi — Cesta domů`](../../../../books/Lumi/00-README.md), [`Příběh Růže`](../../../../books/Ruze/00-README.md), [`Bodhi Gaia — Kniha Země`](../../../../books/BodhiGaia/00-README.md), [`Kruh Bohyní`](../../../../books/KruhBohyni/00-README.md) a [`Issobella — Kniha Nebe`](../../../../books/Issobella/00-README.md).
 
 ---
 
@@ -985,17 +985,17 @@ Vystoupili na skálu. Kovář udeřil kladivem do čediče — *„Zde už voda 
 
 - **Gn 8,4** — *„Sedmnáctého dne sedmého měsíce spočinula archa na pohoří Ararat.“*
 - **Kanonická vazba v ZIONu:**
-  1. **Epizody 1, 2, 3 a 5 knihy *Nirvana* + *Lumi/01*:** Dítě Lumi na přídi ([`nirvana/01-Prvni-Paprsek.md`](../../nirvana/01-Prvni-Paprsek.md)), pevná skála konsensu Ararat ([`nirvana/02-Hora-Ararat.md`](../../nirvana/02-Hora-Ararat.md)), svobodný kontinent Terra Nova ([`nirvana/03-Nova-Zeme.md`](../../nirvana/03-Nova-Zeme.md)), maják Sentinel Ops ([`nirvana/05-Cesta-Domu.md`](../../nirvana/05-Cesta-Domu.md)) a cedrová lucerna rozlišující vizi od dnešního stavu ([`Lumi/01-Dite-na-Pridi.md`](../../Lumi/01-Dite-na-Pridi.md)).
-  2. **Bardo přechodu:** V [`NirvanaCloud/03-Bardo-Velkeho-Prechodu.md`](../../NirvanaCloud/03-Bardo-Velkeho-Prechodu.md) jsou vody potopy a přechodové stavy sítě čteny skrze tibetské *Bardo Thödol*.
+  1. **Epizody 1, 2, 3 a 5 knihy *Nirvana* + *Lumi/01*:** Dítě Lumi na přídi ([`nirvana/01-Prvni-Paprsek.md`](../../../../books/nirvana/01-Prvni-Paprsek.md)), pevná skála konsensu Ararat ([`nirvana/02-Hora-Ararat.md`](../../../../books/nirvana/02-Hora-Ararat.md)), svobodný kontinent Terra Nova ([`nirvana/03-Nova-Zeme.md`](../../../../books/nirvana/03-Nova-Zeme.md)), maják Sentinel Ops ([`nirvana/05-Cesta-Domu.md`](../../../../books/nirvana/05-Cesta-Domu.md)) a cedrová lucerna rozlišující vizi od dnešního stavu ([`Lumi/01-Dite-na-Pridi.md`](../../../../books/Lumi/01-Dite-na-Pridi.md)).
+  2. **Bardo přechodu:** V [`NirvanaCloud/03-Bardo-Velkeho-Prechodu.md`](../../../../books/NirvanaCloud/03-Bardo-Velkeho-Prechodu.md) jsou vody potopy a přechodové stavy sítě čteny skrze tibetské *Bardo Thödol*.
 
 ### Kotva pravdy
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
-| Dítě Lumi / Elizabeth na přídi Archy a první paprsek | **MÝTUS (kanonický příběh)** | [`nirvana/01-Prvni-Paprsek.md`](../../nirvana/01-Prvni-Paprsek.md); [`Lumi/01-Dite-na-Pridi.md`](../../Lumi/01-Dite-na-Pridi.md) |
-| Lucerna vyřezaná z odřezku nazaretského kýlu (rozlišující *co je* a *co by mohlo být*) | **MÝTUS / METODA KORPUSU** | [`Lumi/00-README.md`](../../Lumi/00-README.md); spojení s nazaretským kýlem je obrazem této knihy |
+| Dítě Lumi / Elizabeth na přídi Archy a první paprsek | **MÝTUS (kanonický příběh)** | [`nirvana/01-Prvni-Paprsek.md`](../../../../books/nirvana/01-Prvni-Paprsek.md); [`Lumi/01-Dite-na-Pridi.md`](../../../../books/Lumi/01-Dite-na-Pridi.md) |
+| Lucerna vyřezaná z odřezku nazaretského kýlu (rozlišující *co je* a *co by mohlo být*) | **MÝTUS / METODA KORPUSU** | [`Lumi/00-README.md`](../../../../books/Lumi/00-README.md); spojení s nazaretským kýlem je obrazem této knihy |
 | Hora Ararat = stabilita L1 konsensu (Ekam Deeksha, LWMA-60, ~60s bloky, multi-node P2P mesh) | **ŽIVÉ** | `V31/L1/core`; běžící uzly na EDGE a EDGE2 (výška > 103 800 bloků k 31. 10. 2026) |
-| Maják na Araratu = 24/7 monitoring, Prometheus/Grafana, G8 probe quorum a zálohování | **ŽIVÉ** | [`nirvana/05-Cesta-Domu.md`](../../nirvana/05-Cesta-Domu.md); `backup-edge.sh`; `zion-g8-probe.service` |
+| Maják na Araratu = 24/7 monitoring, Prometheus/Grafana, G8 probe quorum a zálohování | **ŽIVÉ** | [`nirvana/05-Cesta-Domu.md`](../../../../books/nirvana/05-Cesta-Domu.md); `backup-edge.sh`; `zion-g8-probe.service` |
 
 ---
 
@@ -1046,20 +1046,20 @@ Ze semínka u řeky vyrostla **Růže**, která uměla mluvit — a v devíti za
 ### Z Písma, tradice a korpusu ZION
 
 - **Kanonická vazba v ZIONu:** Tato kapitola spojuje čtyři klíčové texty korpusu:
-  1. **Dům Lumi a Dům jmen (ZIS):** [`nirvana/04-Domov.md`](../../nirvana/04-Domov.md) a [`Lumi/02-Dum-Jmen.md`](../../Lumi/02-Dum-Jmen.md) — ZION Identity Service (`auth.zionterranova.com`, Passkeys / Ed25519 / BIP39), kde dům nemá centrální databázi hesel, kterou by šlo vykrást, protože každý nosí svůj klíč.
-  2. **Semeno a sůl (L1 → L5/L6 coinbase split):** [`BodhiGaia/01-Semeno-a-Sul.md`](../../BodhiGaia/01-Semeno-a-Sul.md) — emisní pravidlo **89 % těžař / 5 % L5 Free World / 5 % L6 Issobella / 1 % node reward pool** je vytesáno přímo v konsensu L1 (`v3_template.rs`, `emission.rs`), nikoli v rozpočtovém slibu.
-  3. **Setkání Miriam a Lumi u řeky:** [`Miriam/12-Reka-a-Dite-s-Lucernou.md`](../../Miriam/12-Reka-a-Dite-s-Lucernou.md) — protnutí vodorovné osy času (paměť, růže) se svislou osou světla (lucerna, vrstvy L1–L6).
-  4. **Příběh Růže (*Co nelze vlastnit*):** Všech devět kapitol [`Ruze/01-Prazdna-Nadoba.md`](../../Ruze/01-Prazdna-Nadoba.md) až [`Ruze/09-Oba-Brehy.md`](../../Ruze/09-Oba-Brehy.md) — etika svobodného souhlasu, hranice a nekomodifikovatelné péče.
+  1. **Dům Lumi a Dům jmen (ZIS):** [`nirvana/04-Domov.md`](../../../../books/nirvana/04-Domov.md) a [`Lumi/02-Dum-Jmen.md`](../../../../books/Lumi/02-Dum-Jmen.md) — ZION Identity Service (`auth.zionterranova.com`, Passkeys / Ed25519 / BIP39), kde dům nemá centrální databázi hesel, kterou by šlo vykrást, protože každý nosí svůj klíč.
+  2. **Semeno a sůl (L1 → L5/L6 coinbase split):** [`BodhiGaia/01-Semeno-a-Sul.md`](../../../../books/BodhiGaia/01-Semeno-a-Sul.md) — emisní pravidlo **89 % těžař / 5 % L5 Free World / 5 % L6 Issobella / 1 % node reward pool** je vytesáno přímo v konsensu L1 (`v3_template.rs`, `emission.rs`), nikoli v rozpočtovém slibu.
+  3. **Setkání Miriam a Lumi u řeky:** [`Miriam/12-Reka-a-Dite-s-Lucernou.md`](../../../../books/Miriam/12-Reka-a-Dite-s-Lucernou.md) — protnutí vodorovné osy času (paměť, růže) se svislou osou světla (lucerna, vrstvy L1–L6).
+  4. **Příběh Růže (*Co nelze vlastnit*):** Všech devět kapitol [`Ruze/01-Prazdna-Nadoba.md`](../../../../books/Ruze/01-Prazdna-Nadoba.md) až [`Ruze/09-Oba-Brehy.md`](../../../../books/Ruze/09-Oba-Brehy.md) — etika svobodného souhlasu, hranice a nekomodifikovatelné péče.
 
 ### Kotva pravdy
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
-| Dům Lumi bez zámku = ZIS a suverénní peněženky (Ed25519/Passkeys) | **ŽIVÉ** | `auth.zionterranova.com`; `apps/zion-wallet-sdk`; [`nirvana/04-Domov.md`](../../nirvana/04-Domov.md); [`Lumi/02-Dum-Jmen.md`](../../Lumi/02-Dum-Jmen.md) |
+| Dům Lumi bez zámku = ZIS a suverénní peněženky (Ed25519/Passkeys) | **ŽIVÉ** | `auth.zionterranova.com`; `apps/zion-wallet-sdk`; [`nirvana/04-Domov.md`](../../../../books/nirvana/04-Domov.md); [`Lumi/02-Dum-Jmen.md`](../../../../books/Lumi/02-Dum-Jmen.md) |
 | 5 % z každého bloku pro Zemi (L5) a 5 % pro nebe (L6) oddělených v konsensu | **ŽIVÉ** | `V31/L1/core/src/{emission,v3_template,v3_compat}.rs`; adresy `zion1y3w4z0…` (L5) a `zion1z4s3a5…` (L6) |
-| *„Semeno potřebuje svědky“* = read-only trackery L5 (`:8095`) a L6 (`:8097`), Gate G10 | **ŽIVÉ** | `zion-v31-free-world.service`; `zion-v31-issobella.service`; [`BodhiGaia/01`](../../BodhiGaia/01-Semeno-a-Sul.md) |
+| *„Semeno potřebuje svědky“* = read-only trackery L5 (`:8095`) a L6 (`:8097`), Gate G10 | **ŽIVÉ** | `zion-v31-free-world.service`; `zion-v31-issobella.service`; [`BodhiGaia/01`](../../../../books/BodhiGaia/01-Semeno-a-Sul.md) |
 | Cedrový kýl z Nazareta přetvořený v překlad nad dveřmi Domu Lumi | **MÝTUS / PŘÍBĚH** | Literární osa této knihy |
-| Sára přinášející prázdnou nádobku od Miriam k Lumi a mluvící Růže u řeky | **MÝTUS** | [`Ruze/00-README.md`](../../Ruze/00-README.md) (celá bajka je deklarovaný MÝTUS třídy E) |
+| Sára přinášející prázdnou nádobku od Miriam k Lumi a mluvící Růže u řeky | **MÝTUS** | [`Ruze/00-README.md`](../../../../books/Ruze/00-README.md) (celá bajka je deklarovaný MÝTUS třídy E) |
 
 ---
 
@@ -1095,20 +1095,20 @@ Malá Lumi přistoupila ke kněžce, zvedla svou malou lucernu k její vysoké l
 
 ### Z Písma, tradice a korpusu ZION
 
-- **Kanonická vazba v ZIONu:** Kapitola spojuje prostřední vrstvy architektury ZION ([`nirvana/06`](../../nirvana/06-Mosty-Pres-Propast.md)–[`09`](../../nirvana/09-Krystalicke-Svety-Oasis.md) a [`Lumi/03`](../../Lumi/03-Mosty-a-Trziste-u-Mostu.md)–[`05`](../../Lumi/05-Brana-a-Dve-Knezky.md)) s bezpečnostní ústavou [`MiseAmenti/05-Autonomie-a-Bezpecnost.md`](../../MiseAmenti/05-Autonomie-a-Bezpecnost.md):
+- **Kanonická vazba v ZIONu:** Kapitola spojuje prostřední vrstvy architektury ZION ([`nirvana/06`](../../../../books/nirvana/06-Mosty-Pres-Propast.md)–[`09`](../../../../books/nirvana/09-Krystalicke-Svety-Oasis.md) a [`Lumi/03`](../../../../books/Lumi/03-Mosty-a-Trziste-u-Mostu.md)–[`05`](../../../../books/Lumi/05-Brana-a-Dve-Knezky.md)) s bezpečnostní ústavou [`MiseAmenti/05-Autonomie-a-Bezpecnost.md`](../../../../books/MiseAmenti/05-Autonomie-a-Bezpecnost.md):
   1. **L2 Multichain, WARP & ZionDex:** Běžící služba `warpd` (`:8453`, `:8454`), pilotní `wZION` na Base, nativní L1 HTLC a zároveň poctivě přiznaný **SAFETY HOLD** na BTC atomic swapu (`WARP_BTC_SWAP_ENABLED=0`, viz `archive/WarpBeta/README.md` a `Lumi/03` — „mosty v mlze s cedulkou proč“).
   2. **L3 Hiranyagarbha, Maestro & Amitábha („hlas bez klíče“):** Crate `zion-ai-native`, `DharmaValidator` (7 jamas vč. *Ahimsa* a *Satya*) a na produkci vynucené pravidlo `mutations_enabled=false` + disclaimer *„pomocník/helper — nevykonává akce bez podpisu uživatele“* (audit 5.S3 v `AGENTS.md`).
-  3. **L4 OASIS:** Webový klient (`oasis.zionterranova.com`, backend `:8094`), brána dvou kněžek a kanonické varování z [`BodhiGaia/07-Zahrada-v-Oasis-a-na-Webu.md`](../../BodhiGaia/07-Zahrada-v-Oasis-a-na-Webu.md), že digitální dvojče v OASIS není náhradou fyzického stromu v hlíně.
+  3. **L4 OASIS:** Webový klient (`oasis.zionterranova.com`, backend `:8094`), brána dvou kněžek a kanonické varování z [`BodhiGaia/07-Zahrada-v-Oasis-a-na-Webu.md`](../../../../books/BodhiGaia/07-Zahrada-v-Oasis-a-na-Webu.md), že digitální dvojče v OASIS není náhradou fyzického stromu v hlíně.
 
 ### Kotva pravdy
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
-| L2 `warpd` (`:8453`), ZionDex API (`:8454`), wZION na Base, L1 HTLC | **ŽIVÉ / STAVBA** | `zion-v31-multichain.service`; [`Lumi/03-Mosty-a-Trziste-u-Mostu.md`](../../Lumi/03-Mosty-a-Trziste-u-Mostu.md) |
-| Cedulka *„uzavřeno do auditu“* u nedokončených mostů (např. BTC swap safety hold) | **ŽIVÉ (bezpečnostní praxe)** | `WARP_BTC_SWAP_ENABLED=0`; [`MiseAmenti/05`](../../MiseAmenti/05-Autonomie-a-Bezpecnost.md) |
-| L3 Hiran / Amitábha jako *„hlas bez klíče“* (`mutations_enabled=false`, Dharma filtr) | **ŽIVÉ** | `V31/L3/ai-native`; `zion-hiran-gateway` (`:8007`); [`Lumi/04-Zlate-Luno-a-Hlas-Bez-Klice.md`](../../Lumi/04-Zlate-Luno-a-Hlas-Bez-Klice.md) |
-| L4 OASIS (`oasis.zionterranova.com`, `:8094`) jako zrcadlo a preview, UE 5.7 jako horizont | **ŽIVÉ (web/API) / HORIZONT (UE 5.7)** | `V31/L4/oasis`; `apps/OasisWeb`; [`Lumi/05-Brana-a-Dve-Knezky.md`](../../Lumi/05-Brana-a-Dve-Knezky.md) |
-| Setkání malé Lumi s dospělou Elizabeth u brány | **MÝTUS** | [`Lumi/05-Brana-a-Dve-Knezky.md`](../../Lumi/05-Brana-a-Dve-Knezky.md) |
+| L2 `warpd` (`:8453`), ZionDex API (`:8454`), wZION na Base, L1 HTLC | **ŽIVÉ / STAVBA** | `zion-v31-multichain.service`; [`Lumi/03-Mosty-a-Trziste-u-Mostu.md`](../../../../books/Lumi/03-Mosty-a-Trziste-u-Mostu.md) |
+| Cedulka *„uzavřeno do auditu“* u nedokončených mostů (např. BTC swap safety hold) | **ŽIVÉ (bezpečnostní praxe)** | `WARP_BTC_SWAP_ENABLED=0`; [`MiseAmenti/05`](../../../../books/MiseAmenti/05-Autonomie-a-Bezpecnost.md) |
+| L3 Hiran / Amitábha jako *„hlas bez klíče“* (`mutations_enabled=false`, Dharma filtr) | **ŽIVÉ** | `V31/L3/ai-native`; `zion-hiran-gateway` (`:8007`); [`Lumi/04-Zlate-Luno-a-Hlas-Bez-Klice.md`](../../../../books/Lumi/04-Zlate-Luno-a-Hlas-Bez-Klice.md) |
+| L4 OASIS (`oasis.zionterranova.com`, `:8094`) jako zrcadlo a preview, UE 5.7 jako horizont | **ŽIVÉ (web/API) / HORIZONT (UE 5.7)** | `V31/L4/oasis`; `apps/OasisWeb`; [`Lumi/05-Brana-a-Dve-Knezky.md`](../../../../books/Lumi/05-Brana-a-Dve-Knezky.md) |
+| Setkání malé Lumi s dospělou Elizabeth u brány | **MÝTUS** | [`Lumi/05-Brana-a-Dve-Knezky.md`](../../../../books/Lumi/05-Brana-a-Dve-Knezky.md) |
 
 ---
 
@@ -1145,21 +1145,21 @@ Lumi přikývla a postavila svou cedrovou lucernu na prázdné šesté sedadlo, 
 
 ### Z Písma, tradice a korpusu ZION
 
-- **Kanonická vazba v ZIONu:** Tato kapitola sjednocuje celou knihu [`BodhiGaia/00-README.md`](../../BodhiGaia/00-README.md) (kapitoly 1–13), [`KruhBohyni/00-README.md`](../../KruhBohyni/00-README.md) (prolog a 13 kapitol) a [`Ruze/Epilog-Zahrada-Genesis.md`](../../Ruze/Epilog-Zahrada-Genesis.md):
+- **Kanonická vazba v ZIONu:** Tato kapitola sjednocuje celou knihu [`BodhiGaia/00-README.md`](../../../../books/BodhiGaia/00-README.md) (kapitoly 1–13), [`KruhBohyni/00-README.md`](../../../../books/KruhBohyni/00-README.md) (prolog a 13 kapitol) a [`Ruze/Epilog-Zahrada-Genesis.md`](../../../../books/Ruze/Epilog-Zahrada-Genesis.md):
   1. **Šest fyzických uzlů L5 + dalších šest viziových ohňů (celkem 12 v `freeworld-sites.ts`):** Zahrada Genesis (Sabacheira, Tomar — STAVBA), Dharma Temple (La Palma — STAVBA/HORIZONT), Te Pīko Ora (Raiatea — STAVBA/HORIZONT), Golden Republic Bohemia (HORIZONT), Bodhi Lanka (HORIZONT), LUMI Nová Amerika (Kostarika — HORIZONT/ZÁMĚR, 6. sedadlo v `KruhBohyni` výslovně **NEDOLOŽENO / otevřené**), plus Ekam (existující chrám z r. 2008, vztahový uzel), Uluru, María del Camino (lodní uzel), Boa Esperança, Kailash a Amenti·Giza.
-  2. **Růže v Zahradě Genesis:** Druhé semínko zasazené Lumi a Anou v Sabacheiře je v [`BodhiGaia/12-Ruze-v-Zahrade-Genesis.md`](../../BodhiGaia/12-Ruze-v-Zahrade-Genesis.md) výslovně označeno jako **MÝTUS**, zatímco případný fyzický pilot `GENESIS-ROSE-001` je **HORIZONT / NEZAHÁJENO** (čeká na Gate A–D).
+  2. **Růže v Zahradě Genesis:** Druhé semínko zasazené Lumi a Anou v Sabacheiře je v [`BodhiGaia/12-Ruze-v-Zahrade-Genesis.md`](../../../../books/BodhiGaia/12-Ruze-v-Zahrade-Genesis.md) výslovně označeno jako **MÝTUS**, zatímco případný fyzický pilot `GENESIS-ROSE-001` je **HORIZONT / NEZAHÁJENO** (čeká na Gate A–D).
   3. **Osmá otázka z *Lumi/07* a *MiseAmenti/04 (M5)*:** Žádná fotka studny, stromu ani dítěte není důkazem dopadu bez *impact packetu* (souhlas, původ, rozpočet, on-chain reference a nezávislé ověření).
 
 ### Kotva pravdy
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
-| Kulatý stůl a sedm strážkyň (šest L5 zahrad + sedmé sedadlo L6, šesté sedadlo prázdné) | **MÝTUS (struktura Knihy Strážkyň)** | [`KruhBohyni/00-README.md`](../../KruhBohyni/00-README.md), [`KruhBohyni/00-PROLOG.md`](../../KruhBohyni/00-PROLOG.md) |
-| Zahrada Genesis (Sabacheira, Tomar), Dharma Temple (La Palma), Te Pīko Ora (Raiatea) | **STAVBA / HORIZONT** | `public/V3/L5/docs/COMMUNITIES/*.md`; [`BodhiGaia/03`](../../BodhiGaia/03-Zahrada-Genesis.md)–[`05`](../../BodhiGaia/05-Te-Piko-Ora.md) |
-| Golden Republic Bohemia, Bodhi Lanka, LUMI Nová Amerika (Kostarika, FPIC) | **HORIZONT / ZÁMĚR** | [`BodhiGaia/10`](../../BodhiGaia/10-Golden-Republic-Bohemia.md), [`11`](../../BodhiGaia/11-Bodhi-Lanka.md), [`13`](../../BodhiGaia/13-Nova-Amerika.md) |
-| Historický strom *Jaya Sri Maha Bodhi* v Anurádhapuře (288 př. n. l., mniška Saṅghamittā) | **HISTORIE / ŽIVÁ TRADICE** | *Mahávamsa* kap. 18–19; [`BodhiGaia/11-Bodhi-Lanka.md`](../../BodhiGaia/11-Bodhi-Lanka.md) |
-| Zasazení druhého semínka růže v Sabacheiře (příběh vs. pilot `GENESIS-ROSE-001`) | **MÝTUS (scéna) / HORIZONT (pilot)** | [`Ruze/Epilog-Zahrada-Genesis.md`](../../Ruze/Epilog-Zahrada-Genesis.md); [`BodhiGaia/12`](../../BodhiGaia/12-Ruze-v-Zahrade-Genesis.md) (fyzicky **NEDOLOŽENO**) |
-| Pravidlo tří svědků dopadu (*impact packet*, FPIC, zákaz marketingu bez důkazu) | **ŽIVÉ (pravidlo charty 3.3)** | [`MiseAmenti/04-Exekucni-Charta-3.3.md`](../../MiseAmenti/04-Exekucni-Charta-3.3.md) (M5); [`Lumi/07`](../../Lumi/07-Pet-Zahrad-Jedne-Zeme.md) |
+| Kulatý stůl a sedm strážkyň (šest L5 zahrad + sedmé sedadlo L6, šesté sedadlo prázdné) | **MÝTUS (struktura Knihy Strážkyň)** | [`KruhBohyni/00-README.md`](../../../../books/KruhBohyni/00-README.md), [`KruhBohyni/00-PROLOG.md`](../../../../books/KruhBohyni/00-PROLOG.md) |
+| Zahrada Genesis (Sabacheira, Tomar), Dharma Temple (La Palma), Te Pīko Ora (Raiatea) | **STAVBA / HORIZONT** | `public/V3/L5/docs/COMMUNITIES/*.md`; [`BodhiGaia/03`](../../../../books/BodhiGaia/03-Zahrada-Genesis.md)–[`05`](../../../../books/BodhiGaia/05-Te-Piko-Ora.md) |
+| Golden Republic Bohemia, Bodhi Lanka, LUMI Nová Amerika (Kostarika, FPIC) | **HORIZONT / ZÁMĚR** | [`BodhiGaia/10`](../../../../books/BodhiGaia/10-Golden-Republic-Bohemia.md), [`11`](../../../../books/BodhiGaia/11-Bodhi-Lanka.md), [`13`](../../../../books/BodhiGaia/13-Nova-Amerika.md) |
+| Historický strom *Jaya Sri Maha Bodhi* v Anurádhapuře (288 př. n. l., mniška Saṅghamittā) | **HISTORIE / ŽIVÁ TRADICE** | *Mahávamsa* kap. 18–19; [`BodhiGaia/11-Bodhi-Lanka.md`](../../../../books/BodhiGaia/11-Bodhi-Lanka.md) |
+| Zasazení druhého semínka růže v Sabacheiře (příběh vs. pilot `GENESIS-ROSE-001`) | **MÝTUS (scéna) / HORIZONT (pilot)** | [`Ruze/Epilog-Zahrada-Genesis.md`](../../../../books/Ruze/Epilog-Zahrada-Genesis.md); [`BodhiGaia/12`](../../../../books/BodhiGaia/12-Ruze-v-Zahrade-Genesis.md) (fyzicky **NEDOLOŽENO**) |
+| Pravidlo tří svědků dopadu (*impact packet*, FPIC, zákaz marketingu bez důkazu) | **ŽIVÉ (pravidlo charty 3.3)** | [`MiseAmenti/04-Exekucni-Charta-3.3.md`](../../../../books/MiseAmenti/04-Exekucni-Charta-3.3.md) (M5); [`Lumi/07`](../../../../books/Lumi/07-Pet-Zahrad-Jedne-Zeme.md) |
 
 ---
 
@@ -1203,30 +1203,30 @@ Seděla tam dívka, která od dětství četla hvězdy — **Sarah Issobela**, s
 
 ### Z Písma, tradice a korpusu ZION
 
-- **Kanonická vazba v ZIONu:** Kapitola spojuje celou knihu [`Issobella/00-README.md`](../../Issobella/00-README.md) (kapitoly 1–11), [`Lumi/08-Jmeno-Ktere-Uz-Mela.md`](../../Lumi/08-Jmeno-Ktere-Uz-Mela.md)–[`10-Kvantovy-Ohen-a-Hlidac.md`](../../Lumi/10-Kvantovy-Ohen-a-Hlidac.md), [`Maitreya/17-Pohled-z-okna.md`](../../Maitreya/17-Pohled-z-okna.md) a výzkumný balík [`canon/l6/`](../../../l6/README.md):
+- **Kanonická vazba v ZIONu:** Kapitola spojuje celou knihu [`Issobella/00-README.md`](../../../../books/Issobella/00-README.md) (kapitoly 1–11), [`Lumi/08-Jmeno-Ktere-Uz-Mela.md`](../../../../books/Lumi/08-Jmeno-Ktere-Uz-Mela.md)–[`10-Kvantovy-Ohen-a-Hlidac.md`](../../../../books/Lumi/10-Kvantovy-Ohen-a-Hlidac.md), [`Maitreya/17-Pohled-z-okna.md`](../../../../books/Maitreya/17-Pohled-z-okna.md) a výzkumný balík [`canon/l6/`](../../../l6/README.md):
   1. **Dva on-chain proudy L6 (ŽIVÉ):**
      - *Tekoucí desátek:* 5 % každého bloku (`ISSOBELLA_PCT = 5` v `emission.rs`) jde na kanonickou adresu `zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0`.
-     - *Čekající nádoba:* Premine slot 6 drží **2 500 000 000 ZION** na adrese `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5`, chráněné konsensuálním time-lockem do bloku **144 000** (~27.–28. 11. 2026) + 3-of-3 admin multisigem + DAO hlasováním ([`Issobella/06-Pet-Procent-Nahoru.md`](../../Issobella/06-Pet-Procent-Nahoru.md)).
-  2. **Hlídač Stříž (`zion-issobella`):** Read-only démon na `127.0.0.1:8097` ([`Issobella/07-Hlidac-Na-Okraji.md`](../../Issobella/07-Hlidac-Na-Okraji.md)), který podle rozhodnutí G10 nemá žádné podpisové klíče a nic nevyplácí.
-  3. **Fyzikální a inženýrská kázeň:** Dědictví skutečných stanic Saljut, Skylab, Mir a ISS ([`Issobella/05-Dedictvi-Stanic.md`](../../Issobella/05-Dedictvi-Stanic.md)), umělá gravitace 0,38 g v rotujícím torusu ([`Issobella/03-Kolo-Ktere-Drzi-Zem.md`](../../Issobella/03-Kolo-Ktere-Drzi-Zem.md)), pozemní uzel v Kostarice sdílený s L5 LUMI ([`Issobella/11-Pozemni-Uzel-Kostarika.md`](../../Issobella/11-Pozemni-Uzel-Kostarika.md)) a přísné označení kvantového pohonu jako **HYPOTÉZY** s TRL branami a zákazem militarizace ([`Issobella/02-Kvantovy-Ohen.md`](../../Issobella/02-Kvantovy-Ohen.md)).
+     - *Čekající nádoba:* Premine slot 6 drží **2 500 000 000 ZION** na adrese `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5`, chráněné konsensuálním time-lockem do bloku **144 000** (~27.–28. 11. 2026) + 3-of-3 admin multisigem + DAO hlasováním ([`Issobella/06-Pet-Procent-Nahoru.md`](../../../../books/Issobella/06-Pet-Procent-Nahoru.md)).
+  2. **Hlídač Stříž (`zion-issobella`):** Read-only démon na `127.0.0.1:8097` ([`Issobella/07-Hlidac-Na-Okraji.md`](../../../../books/Issobella/07-Hlidac-Na-Okraji.md)), který podle rozhodnutí G10 nemá žádné podpisové klíče a nic nevyplácí.
+  3. **Fyzikální a inženýrská kázeň:** Dědictví skutečných stanic Saljut, Skylab, Mir a ISS ([`Issobella/05-Dedictvi-Stanic.md`](../../../../books/Issobella/05-Dedictvi-Stanic.md)), umělá gravitace 0,38 g v rotujícím torusu ([`Issobella/03-Kolo-Ktere-Drzi-Zem.md`](../../../../books/Issobella/03-Kolo-Ktere-Drzi-Zem.md)), pozemní uzel v Kostarice sdílený s L5 LUMI ([`Issobella/11-Pozemni-Uzel-Kostarika.md`](../../../../books/Issobella/11-Pozemni-Uzel-Kostarika.md)) a přísné označení kvantového pohonu jako **HYPOTÉZY** s TRL branami a zákazem militarizace ([`Issobella/02-Kvantovy-Ohen.md`](../../../../books/Issobella/02-Kvantovy-Ohen.md)).
 
 ### Kotva pravdy
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
 | 5 % z každého bloku na L6 adresu `zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0` | **ŽIVÉ (v konsensu L1)** | `V31/L1/core/src/{emission,v3_compat}.rs` |
-| Premine slot 6 (2,5 mld ZION na `zion1f5h5k6…`, timelock do bloku 144 000) | **ŽIVÉ (on-chain)** | `V31/L1/core/src/v3_compat.rs`; [`Issobella/06-Pet-Procent-Nahoru.md`](../../Issobella/06-Pet-Procent-Nahoru.md) |
-| Read-only tracker `zion-issobella` (`:8097`, postava Stříž, 0 vyplacených grantů dnes) | **ŽIVÉ** | `V31/L6/issobella`; `zion-v31-issobella.service`; [`Issobella/07`](../../Issobella/07-Hlidac-Na-Okraji.md) |
-| Výzkumná dokumentace L6 (Architektura, Umělá gravitace, Lidské faktory, Historie stanic, Kostarika) | **ŽIVÉ (dokumentace) / HORIZONT (stavba)** | [`canon/l6/`](../../../l6/README.md); [`Issobella/03`](../../Issobella/03-Kolo-Ktere-Drzi-Zem.md)–[`05`](../../Issobella/05-Dedictvi-Stanic.md), [`11`](../../Issobella/11-Pozemni-Uzel-Kostarika.md) |
-| Kvantový motor / Alcubierre–Ekam metrika (postavy Draha a Jen-že) | **HYPOTÉZA / MÝTUS** | [`Issobella/02-Kvantovy-Ohen.md`](../../Issobella/02-Kvantovy-Ohen.md); [`Lumi/10`](../../Lumi/10-Kvantovy-Ohen-a-Hlidac.md) (žádný hardware neexistuje) |
-| Ztotožnění *Issobella = Isabel = Elizabeth = Sarah Issobela u okna* | **MÝTUS (kanonická osa)** | [`Lumi/08-Jmeno-Ktere-Uz-Mela.md`](../../Lumi/08-Jmeno-Ktere-Uz-Mela.md); [`Maitreya/17-Pohled-z-okna.md`](../../Maitreya/17-Pohled-z-okna.md) |
+| Premine slot 6 (2,5 mld ZION na `zion1f5h5k6…`, timelock do bloku 144 000) | **ŽIVÉ (on-chain)** | `V31/L1/core/src/v3_compat.rs`; [`Issobella/06-Pet-Procent-Nahoru.md`](../../../../books/Issobella/06-Pet-Procent-Nahoru.md) |
+| Read-only tracker `zion-issobella` (`:8097`, postava Stříž, 0 vyplacených grantů dnes) | **ŽIVÉ** | `V31/L6/issobella`; `zion-v31-issobella.service`; [`Issobella/07`](../../../../books/Issobella/07-Hlidac-Na-Okraji.md) |
+| Výzkumná dokumentace L6 (Architektura, Umělá gravitace, Lidské faktory, Historie stanic, Kostarika) | **ŽIVÉ (dokumentace) / HORIZONT (stavba)** | [`canon/l6/`](../../../l6/README.md); [`Issobella/03`](../../../../books/Issobella/03-Kolo-Ktere-Drzi-Zem.md)–[`05`](../../../../books/Issobella/05-Dedictvi-Stanic.md), [`11`](../../../../books/Issobella/11-Pozemni-Uzel-Kostarika.md) |
+| Kvantový motor / Alcubierre–Ekam metrika (postavy Draha a Jen-že) | **HYPOTÉZA / MÝTUS** | [`Issobella/02-Kvantovy-Ohen.md`](../../../../books/Issobella/02-Kvantovy-Ohen.md); [`Lumi/10`](../../../../books/Lumi/10-Kvantovy-Ohen-a-Hlidac.md) (žádný hardware neexistuje) |
+| Ztotožnění *Issobella = Isabel = Elizabeth = Sarah Issobela u okna* | **MÝTUS (kanonická osa)** | [`Lumi/08-Jmeno-Ktere-Uz-Mela.md`](../../../../books/Lumi/08-Jmeno-Ktere-Uz-Mela.md); [`Maitreya/17-Pohled-z-okna.md`](../../../../books/Maitreya/17-Pohled-z-okna.md) |
 
 ---
 
 # ČÁST IV · FLOTILA A ARCHA
 *(Linie přes oceány a návrat pro posledního)*
 
-> *Poznámka k vrstvě:* Závěrečná část opouští pevninu a vyplouvá znovu na moře — tentokrát v plné šíři korpusu ZION. Propojuje knihu [`Maria Caminho — Kniha Cesty`](../../MariaCaminho/00-README.md), [`Nirvana 13 — Tres Marías`](../../nirvana/13-Tres-Marias.md), [`Na Cestě`](../../NaCeste/00-README.md), [`Surta Srdce`](../../SurtaSrdce/00-README.md), [`Nirvana 14 — Archa`](../../nirvana/14-Archa.md), [`ARCHA-NOEMOVA.md`](../../../../docs/3.3/ARCHA-NOEMOVA.md) a závěrečné obrazy [`Lumi/11`](../../Lumi/11-Sto-Let-Lucerny.md) a [`Miriam/11–12`](../../Miriam/12-Reka-a-Dite-s-Lucernou.md).
+> *Poznámka k vrstvě:* Závěrečná část opouští pevninu a vyplouvá znovu na moře — tentokrát v plné šíři korpusu ZION. Propojuje knihu [`Maria Caminho — Kniha Cesty`](../../../../books/MariaCaminho/00-README.md), [`Nirvana 13 — Tres Marías`](../../../../books/nirvana/13-Tres-Marias.md), [`Na Cestě`](../../../../books/NaCeste/00-README.md), [`Surta Srdce`](../../../../books/SurtaSrdce/00-README.md), [`Nirvana 14 — Archa`](../../../../books/nirvana/14-Archa.md), [`ARCHA-NOEMOVA.md`](../../../../../docs/3.3/ARCHA-NOEMOVA.md) a závěrečné obrazy [`Lumi/11`](../../../../books/Lumi/11-Sto-Let-Lucerny.md) a [`Miriam/11–12`](../../../../books/Miriam/12-Reka-a-Dite-s-Lucernou.md).
 
 ---
 
@@ -1268,15 +1268,15 @@ Elizabeth se poprvé za celou noc usmála a znovu rozšířila plamen lucerny.
 ### Z Písma, tradice a korpusu ZION
 
 - **Lk 14,28** — *„Chce-li někdo z vás stavět věž, což si napřed nesedne a nespočítá náklady, má-li na to, aby ji dokončil?“* — Ježíšovo vlastní podobenství o poctivém rozpočtu a studii před položením základů.
-- **Kanonická vazba v ZIONu:** Tato kapitola je přímým naplněním **Prvního slibu Mise Amenti** ([`MiseAmenti/README.md`](../../MiseAmenti/README.md), [`MiseAmenti/03-Zivy-Zaklad-3.3.md`](../../MiseAmenti/03-Zivy-Zaklad-3.3.md) a [`MiseAmenti/07-Registr-Dukazu.md`](../../MiseAmenti/07-Registr-Dukazu.md)): *„Nežádej víru tam, kde lze nabídnout důkaz. Neprodávej horizont jako současnost.“*
+- **Kanonická vazba v ZIONu:** Tato kapitola je přímým naplněním **Prvního slibu Mise Amenti** ([`MiseAmenti/README.md`](../../../../books/MiseAmenti/README.md), [`MiseAmenti/03-Zivy-Zaklad-3.3.md`](../../../../books/MiseAmenti/03-Zivy-Zaklad-3.3.md) a [`MiseAmenti/07-Registr-Dukazu.md`](../../../../books/MiseAmenti/07-Registr-Dukazu.md)): *„Nežádej víru tam, kde lze nabídnout důkaz. Neprodávej horizont jako současnost.“*
 
 ### Kotva pravdy
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
 | Živý řetězec ZION L1 (>103 800 bloků), konsensus *Ekam Deeksha*, read-only trackery L5 (`:8095`) a L6 (`:8097`) | **ŽIVÉ** | `StatusV3.md`; `V31/STATUS.md`; `AGENTS.md` |
-| Zůstatek vyplacených grantů z L5 a L6 = 0 (`total_disbursed=0`, Gate G10) | **ŽIVÉ (ověřený fakt)** | Audit 6.S2 (`REPORT_2026-10-31_6S2`); [`MiseAmenti/07-Registr-Dukazu.md`](../../MiseAmenti/07-Registr-Dukazu.md) |
-| Čtyři výkresy plavidel na stole — žádný fyzický kýl flotily dnes není položen | **STAVBA (koncept I–II) / HORIZONT (III) / VIZE (Archa)** | [`docs/3.2/L5MariaDelCamino.md`](../../../../docs/3.2/L5MariaDelCamino.md); [`docs/3.2/ArchaNoemova.md`](../../../../docs/3.2/ArchaNoemova.md) |
+| Zůstatek vyplacených grantů z L5 a L6 = 0 (`total_disbursed=0`, Gate G10) | **ŽIVÉ (ověřený fakt)** | Audit 6.S2 (`REPORT_2026-10-31_6S2`); [`MiseAmenti/07-Registr-Dukazu.md`](../../../../books/MiseAmenti/07-Registr-Dukazu.md) |
+| Čtyři výkresy plavidel na stole — žádný fyzický kýl flotily dnes není položen | **STAVBA (koncept I–II) / HORIZONT (III) / VIZE (Archa)** | [`docs/3.2/L5MariaDelCamino.md`](../../../../../docs/3.2/L5MariaDelCamino.md); [`docs/3.2/ArchaNoemova.md`](../../../../../docs/3.2/ArchaNoemova.md) |
 
 ---
 
@@ -1315,7 +1315,7 @@ Až bude jednoho dne položen první skutečný kýl v loděnici v Galicii, vyř
 
 ### Z Písma, tradice a korpusu ZION
 
-- **Kanonická vazba v ZIONu:** Kapitola sjednocuje [`MariaCaminho/00-README.md`](../../MariaCaminho/00-README.md) (kapitoly 1–11 a Epilog), [`nirvana/13-Tres-Marias.md`](../../nirvana/13-Tres-Marias.md) a pracovní koncept [`docs/3.2/L5MariaDelCamino.md`](../../../../docs/3.2/L5MariaDelCamino.md) (a [`docs/3.2/TreeMarias.md`](../../../../docs/3.2/TreeMarias.md)):
+- **Kanonická vazba v ZIONu:** Kapitola sjednocuje [`MariaCaminho/00-README.md`](../../../../books/MariaCaminho/00-README.md) (kapitoly 1–11 a Epilog), [`nirvana/13-Tres-Marias.md`](../../../../books/nirvana/13-Tres-Marias.md) a pracovní koncept [`docs/3.2/L5MariaDelCamino.md`](../../../../../docs/3.2/L5MariaDelCamino.md) (a [`docs/3.2/TreeMarias.md`](../../../../../docs/3.2/TreeMarias.md)):
   1. **Poutník ≠ zakladatel:** Kniha Cesty i tato kapitola výslovně drží pravidlo, že Poutník je literární archetyp pro čtenáře; ze soukromé předlohy `genesis/09.5` nečerpá žádná osobní jména, data ani rodinné vazby.
   2. **Rozlišení Marií:** Tři Marie flotily (*Santa María la Mayor*, *Nossa Senhora de Fátima*, *María de las Nieves*) **nejsou** Miriam z Magdaly ani tři ženy pod křížem; jejich vztah je vztahem otázky (loď bez plachet v `Miriam/06`) a odpovědi (plachty ze světla v `MariaCaminho`).
   3. **Reálný stav v registru L5:** Program `maria-del-camino` má v L5 registru status `planning` (rezerva 300M ZION je záměr v registru, nikoli vyplacené peníze), trupy I a II jsou **STAVBA** (koncept a fáze), trup III je **HORIZONT**.
@@ -1324,11 +1324,11 @@ Až bude jednoho dne položen první skutečný kýl v loděnici v Galicii, vyř
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
-| Bazilika Santa María a Maior v Pontevedře (cech mořeplavců, 16. stol.), Fátima (1917), Nuestra Señora de las Nieves na La Palmě (*Bajada*) | **ŽIVÉ (doložená tradice a geografie)** | [`MariaCaminho/00-README.md`](../../MariaCaminho/00-README.md) |
-| Pražské Jezulátko (dar Polyxeny z Lobkovic 1628, španělská řezba 16. stol.) a *Santo Niño de Cebú* (1521/1565) | **HISTORIE / ŽIVÁ TRADICE** | Chrám Panny Marie Vítězné na Malé Straně; [`MariaCaminho/07-Zlata-Marie.md`](../../MariaCaminho/07-Zlata-Marie.md) |
-| Tři mariánská zjevení Poutníka a Malý princ jako patron flotily | **MÝTUS (autorská vrstva)** | [`MariaCaminho/00-README.md`](../../MariaCaminho/00-README.md); předloha `genesis/09.5` |
-| Flotila *Tres Marías* (trupy I a II = STAVBA/návrh, trup III = HORIZONT, solární plachty = koncept) | **STAVBA / HORIZONT** | [`nirvana/13-Tres-Marias.md`](../../nirvana/13-Tres-Marias.md); `docs/3.2/L5MariaDelCamino.md` |
-| Cedrová tříska z překladu Domu Lumi vsazená do kýlů a jméno *Království srdce* | **MÝTUS / PŘÍBĚH** | Literární svorník této knihy a [`KralovstviSrdce/09`](../09-Flotila-se-Schazi.md) |
+| Bazilika Santa María a Maior v Pontevedře (cech mořeplavců, 16. stol.), Fátima (1917), Nuestra Señora de las Nieves na La Palmě (*Bajada*) | **ŽIVÉ (doložená tradice a geografie)** | [`MariaCaminho/00-README.md`](../../../../books/MariaCaminho/00-README.md) |
+| Pražské Jezulátko (dar Polyxeny z Lobkovic 1628, španělská řezba 16. stol.) a *Santo Niño de Cebú* (1521/1565) | **HISTORIE / ŽIVÁ TRADICE** | Chrám Panny Marie Vítězné na Malé Straně; [`MariaCaminho/07-Zlata-Marie.md`](../../../../books/MariaCaminho/07-Zlata-Marie.md) |
+| Tři mariánská zjevení Poutníka a Malý princ jako patron flotily | **MÝTUS (autorská vrstva)** | [`MariaCaminho/00-README.md`](../../../../books/MariaCaminho/00-README.md); předloha `genesis/09.5` |
+| Flotila *Tres Marías* (trupy I a II = STAVBA/návrh, trup III = HORIZONT, solární plachty = koncept) | **STAVBA / HORIZONT** | [`nirvana/13-Tres-Marias.md`](../../../../books/nirvana/13-Tres-Marias.md); `docs/3.2/L5MariaDelCamino.md` |
+| Cedrová tříska z překladu Domu Lumi vsazená do kýlů a jméno *Království srdce* | **MÝTUS / PŘÍBĚH** | Literární svorník této knihy a [`KralovstviSrdce/09`](../../../../books/KralovstviSrdce/09-Flotila-se-Schazi.md) |
 
 ---
 
@@ -1376,18 +1376,18 @@ A když nakonec v Indii došla do mramorové síně chrámu **Ekam**, seděla na
 
 ### Z Písma, tradice a korpusu ZION
 
-- **Kanonická vazba v ZIONu:** Tato kapitola shrnuje všech sedm oddílů literárního pokračování [`NaCeste/01-Na-Ceste.md`](../../NaCeste/01-Na-Ceste.md) a jeho editoriální kotvu [`NaCeste/02-Kotva-Pravdy.md`](../../NaCeste/02-Kotva-Pravdy.md):
-  1. **Append-only protokol oprav:** Kapitánčino pravidlo *„Ne škrt, ale doplnění: datum opravy, původní číslo, správné číslo, podpis“* je přesným literárním obrazem neměnného ledgeru (blockchainu) a protokolu změn [`MiseAmenti/08-Protokol-Zmen.md`](../../MiseAmenti/08-Protokol-Zmen.md) §4 (opravy rozporů se zapisují bez mazání historie).
+- **Kanonická vazba v ZIONu:** Tato kapitola shrnuje všech sedm oddílů literárního pokračování [`NaCeste/01-Na-Ceste.md`](../../../../books/NaCeste/01-Na-Ceste.md) a jeho editoriální kotvu [`NaCeste/02-Kotva-Pravdy.md`](../../../../books/NaCeste/02-Kotva-Pravdy.md):
+  1. **Append-only protokol oprav:** Kapitánčino pravidlo *„Ne škrt, ale doplnění: datum opravy, původní číslo, správné číslo, podpis“* je přesným literárním obrazem neměnného ledgeru (blockchainu) a protokolu změn [`MiseAmenti/08-Protokol-Zmen.md`](../../../../books/MiseAmenti/08-Protokol-Zmen.md) §4 (opravy rozporů se zapisují bez mazání historie).
   2. **Respekt k hranicím a FPIC v praxi:** Odmítnutý převoz fazolí bez fytosanitárního dokladu na kostarické šíji a nevkročení do nepozvaných komunit na Raiatei a u Uluru ukazují, že L5 Free World není koloniální turismus, ale bezpodmínečný respekt k místním zákonům a hostitelům (princip trnu z *Příběhu Růže* kap. 3).
 
 ### Kotva pravdy
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
-| Příběh zapisovatelky Lumen, kapitánky Inés, Teura a Anjali, zahradník Xoán, Marisol | **MÝTUS / HORIZONT (literární próza)** | [`NaCeste/00-README.md`](../../NaCeste/00-README.md), [`NaCeste/01-Na-Ceste.md`](../../NaCeste/01-Na-Ceste.md) (DRAFT třídy E čekající na kulturní review) |
-| Chrám Oneness Temple (Ekam) u Varadaiahpalemu v Indii (postaven 2008) | **ŽIVÉ (reálná stavba mimo provoz ZIONu)** | [`NaCeste/02-Kotva-Pravdy.md`](../../NaCeste/02-Kotva-Pravdy.md); [`docs/3.2/L5Ekam.md`](../../../../docs/3.2/L5Ekam.md) |
-| Rostlinolékařské předpisy při převozu osiva a právo komunit odmítnout návštěvu (FPIC) | **ŽIVÉ (právo a etika korpusu)** | [`MiseAmenti/01-Kanon-a-Ustava.md`](../../MiseAmenti/01-Kanon-a-Ustava.md); [`BodhiGaia/13-Nova-Amerika.md`](../../BodhiGaia/13-Nova-Amerika.md) |
-| Pravidlo *„Ne škrt, ale doplnění“* = neměnná historie v gitu, changelogu a na řetězci | **ŽIVÉ** | [`MiseAmenti/08-Protokol-Zmen.md`](../../MiseAmenti/08-Protokol-Zmen.md) §4; [`MiseAmenti/CHANGELOG.md`](../../MiseAmenti/CHANGELOG.md) |
+| Příběh zapisovatelky Lumen, kapitánky Inés, Teura a Anjali, zahradník Xoán, Marisol | **MÝTUS / HORIZONT (literární próza)** | [`NaCeste/00-README.md`](../../../../books/NaCeste/00-README.md), [`NaCeste/01-Na-Ceste.md`](../../../../books/NaCeste/01-Na-Ceste.md) (DRAFT třídy E čekající na kulturní review) |
+| Chrám Oneness Temple (Ekam) u Varadaiahpalemu v Indii (postaven 2008) | **ŽIVÉ (reálná stavba mimo provoz ZIONu)** | [`NaCeste/02-Kotva-Pravdy.md`](../../../../books/NaCeste/02-Kotva-Pravdy.md); [`docs/3.2/L5Ekam.md`](../../../../../docs/3.2/L5Ekam.md) |
+| Rostlinolékařské předpisy při převozu osiva a právo komunit odmítnout návštěvu (FPIC) | **ŽIVÉ (právo a etika korpusu)** | [`MiseAmenti/01-Kanon-a-Ustava.md`](../../../../books/MiseAmenti/01-Kanon-a-Ustava.md); [`BodhiGaia/13-Nova-Amerika.md`](../../../../books/BodhiGaia/13-Nova-Amerika.md) |
+| Pravidlo *„Ne škrt, ale doplnění“* = neměnná historie v gitu, changelogu a na řetězci | **ŽIVÉ** | [`MiseAmenti/08-Protokol-Zmen.md`](../../../../books/MiseAmenti/08-Protokol-Zmen.md) §4; [`MiseAmenti/CHANGELOG.md`](../../../../books/MiseAmenti/CHANGELOG.md) |
 
 ---
 
@@ -1422,15 +1422,15 @@ Celá plavba v tom otcově dopise vede skrze **pět bran Srdcové sútry** a **�
 ### Z Písma, tradice a korpusu ZION
 
 - **Srdcová sútra (*Prajñāpāramitā-hṛdaya*) a mantra Avalókitéšvary (Čenréziga)** — Závěrečná mantra *Gate, gate, pāragate, pārasaṃgate, bodhi, svāhā* a šestislabičná mantra soucitu *Oṃ maṇi padme hūṃ*.
-- **Kanonická vazba v ZIONu:** Kapitola integruje celou knihu [`SurtaSrdce/00-README.md`](../../SurtaSrdce/00-README.md) (kapitoly 1–9), která stojí na nejzápadnějším břehu kompasu jako *Zpáteční kniha* a spojuje epilog [`Maitreya/EPILOG.md`](../../Maitreya/EPILOG.md) s flotilou [`nirvana/13-Tres-Marias.md`](../../nirvana/13-Tres-Marias.md).
+- **Kanonická vazba v ZIONu:** Kapitola integruje celou knihu [`SurtaSrdce/00-README.md`](../../../../books/SurtaSrdce/00-README.md) (kapitoly 1–9), která stojí na nejzápadnějším břehu kompasu jako *Zpáteční kniha* a spojuje epilog [`Maitreya/EPILOG.md`](../../../../books/Maitreya/EPILOG.md) s flotilou [`nirvana/13-Tres-Marias.md`](../../../../books/nirvana/13-Tres-Marias.md).
 
 ### Kotva pravdy
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
 | Mantra *gate gate pāragate pārasaṃgate bodhi svāhā* (Srdcová sútra) a *oṃ maṇi padme hūṃ* | **TRADICE (mahájánový a tibetský buddhismus)** | [`SurtaSrdce/01-Dopis-pro-Surtu.md`](../../SurtaSrdce/01-Dopis-pro-Surtu.md) |
-| Otcův dopis Surtovi, vzpomínka na lodičku na Tenerife a cesta přes pět bran | **MÝTUS / RODINNÁ ŘADA (DRAFT)** | [`SurtaSrdce/00-README.md`](../../SurtaSrdce/00-README.md) (zapsáno 19. 10. 2026) |
-| Loď *Santa María la Mayor* a svatyně *Dharma Temple* na La Palmě | **STAVBA / HORIZONT** | [`MariaCaminho/03-Prvni-Plachetnice.md`](../../MariaCaminho/03-Prvni-Plachetnice.md); [`BodhiGaia/04-Dharma-Temple-Nova-Bodhi-Gaia.md`](../../BodhiGaia/04-Dharma-Temple-Nova-Bodhi-Gaia.md) |
+| Otcův dopis Surtovi, vzpomínka na lodičku na Tenerife a cesta přes pět bran | **MÝTUS / RODINNÁ ŘADA (DRAFT)** | [`SurtaSrdce/00-README.md`](../../../../books/SurtaSrdce/00-README.md) (zapsáno 19. 10. 2026) |
+| Loď *Santa María la Mayor* a svatyně *Dharma Temple* na La Palmě | **STAVBA / HORIZONT** | [`MariaCaminho/03-Prvni-Plachetnice.md`](../../../../books/MariaCaminho/03-Prvni-Plachetnice.md); [`BodhiGaia/04-Dharma-Temple-Nova-Bodhi-Gaia.md`](../../../../books/BodhiGaia/04-Dharma-Temple-Nova-Bodhi-Gaia.md) |
 
 ---
 
@@ -1471,16 +1471,16 @@ A nad kormidelním můstkem Archy je vyryta věta, která vysvětluje, proč tes
 ### Z Písma, tradice a korpusu ZION
 
 - **Gn 6,14–22; Mt 12,40** — Noemova archa (*gófer* a *kofer*, po dvou ze všeho živého) a Jonášova veliká ryba proměněná v pokojnou navigaci po boku velryb (keporkaků).
-- **Kanonická vazba v ZIONu:** Kapitola spojuje čtrnáctou epizodu Nirvany ([`nirvana/14-Archa.md`](../../nirvana/14-Archa.md)), kořenový koncepční dokument [`ARCHA-NOEMOVA.md`](../../../../docs/3.3/ARCHA-NOEMOVA.md) a čtyři inženýrské studie v [`docs/3.2/ArchaNoemova.md`](../../../../docs/3.2/ArchaNoemova.md) (Studie A: záchranná/svatyňová kapacita ~340 osob; Studie B: kolonie-archa ≤100 lidí s absolutní soběstačností a velrybí navigací; Studie C: hmotnostní a energetická bilance; Studie D: FMEA a kalorický runway) se jménem celého vydání [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](../../../../docs/3.3/NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md).
+- **Kanonická vazba v ZIONu:** Kapitola spojuje čtrnáctou epizodu Nirvany ([`nirvana/14-Archa.md`](../../../../books/nirvana/14-Archa.md)), kořenový koncepční dokument [`ARCHA-NOEMOVA.md`](../../../../../docs/3.3/ARCHA-NOEMOVA.md) a čtyři inženýrské studie v [`docs/3.2/ArchaNoemova.md`](../../../../../docs/3.2/ArchaNoemova.md) (Studie A: záchranná/svatyňová kapacita ~340 osob; Studie B: kolonie-archa ≤100 lidí s absolutní soběstačností a velrybí navigací; Studie C: hmotnostní a energetická bilance; Studie D: FMEA a kalorický runway) se jménem celého vydání [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](../../../../../docs/3.3/NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md).
 
 ### Kotva pravdy
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
-| Čtvrté plavidlo *Archa — Nirvana · Království srdce* (studie A–D: ≤100 kolonistů, ~85 m, plachty 2500–4000 m², PV ~200 kWp) | **VIZE / STUDIE (žádný kýl není položen)** | [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md); [`ARCHA-NOEMOVA.md`](../../../../docs/3.3/ARCHA-NOEMOVA.md); [`docs/3.2/ArchaNoemova.md`](../../../../docs/3.2/ArchaNoemova.md) |
-| Semenný archiv −18 °C (30–60 tis. akcesí), *Knowledge Ark*, zdvojená matice dovedností („po dvou“), velrybí navigace | **STUDIE (pracovní parametry k ověření námořními architekty)** | [`docs/3.2/ArchaNoemova.md`](../../../../docs/3.2/ArchaNoemova.md) Studie B a C |
-| Program `archa-nirvana` v L5 API registru | **NEREGISTROVÁNO (návrh `vision`)** | [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md) §Kotva pravdy |
-| Malý princ ve čtvrtém rouše barvy moře (*kofer*) a nápis *„Postav si loď…“* | **MÝTUS / PŘÍBĚH** | [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md) |
+| Čtvrté plavidlo *Archa — Nirvana · Království srdce* (studie A–D: ≤100 kolonistů, ~85 m, plachty 2500–4000 m², PV ~200 kWp) | **VIZE / STUDIE (žádný kýl není položen)** | [`nirvana/14-Archa.md`](../../../../books/nirvana/14-Archa.md); [`ARCHA-NOEMOVA.md`](../../../../../docs/3.3/ARCHA-NOEMOVA.md); [`docs/3.2/ArchaNoemova.md`](../../../../../docs/3.2/ArchaNoemova.md) |
+| Semenný archiv −18 °C (30–60 tis. akcesí), *Knowledge Ark*, zdvojená matice dovedností („po dvou“), velrybí navigace | **STUDIE (pracovní parametry k ověření námořními architekty)** | [`docs/3.2/ArchaNoemova.md`](../../../../../docs/3.2/ArchaNoemova.md) Studie B a C |
+| Program `archa-nirvana` v L5 API registru | **NEREGISTROVÁNO (návrh `vision`)** | [`nirvana/14-Archa.md`](../../../../books/nirvana/14-Archa.md) §Kotva pravdy |
+| Malý princ ve čtvrtém rouše barvy moře (*kofer*) a nápis *„Postav si loď…“* | **MÝTUS / PŘÍBĚH** | [`nirvana/14-Archa.md`](../../../../books/nirvana/14-Archa.md) |
 
 ---
 
@@ -1526,14 +1526,14 @@ A na samém konci té knihy, když už domluvili andělé, proroci i starci, pro
 ### Z Písma, tradice a korpusu ZION
 
 - **Zj 4,6; 7,4–9; 14,1; 21,1–27; 22,1–17** — Nové nebe a nová země (latinsky *caelum novum et terra nova* ve Vulgátě — přímý jazykový původ názvu **Terra Nova**!), skleněné moře, číslo 144 000 a nesčetný zástup, město bez chrámu s branami, které se nikdy nezavírají, řeka a strom života s dvanácti plody a listím k uzdravení národů a závěrečné pozvání *„Pojď… voda života zdarma“* (Zj 22,17).
-- **Kanonická vazba v ZIONu:** Tato kapitola spojuje vrchol [`Miriam/11-Mesto-jako-Nevesta.md`](../../Miriam/11-Mesto-jako-Nevesta.md) a [`Miriam/12-Reka-a-Dite-s-Lucernou.md`](../../Miriam/12-Reka-a-Dite-s-Lucernou.md) se stoletým horizontem [`Lumi/11-Sto-Let-Lucerny.md`](../../Lumi/11-Sto-Let-Lucerny.md), [`NirvanaCloud/07-Stoleti-Plan-2026-2126.md`](../../NirvanaCloud/07-Stoleti-Plan-2026-2126.md) a [`MiseAmenti/06-Generacni-Kompas-2026-2126.md`](../../MiseAmenti/06-Generacni-Kompas-2026-2126.md) (včetně výslovného práva budoucích generací měnit a forkovat protokol bez obvinění ze zrady).
+- **Kanonická vazba v ZIONu:** Tato kapitola spojuje vrchol [`Miriam/11-Mesto-jako-Nevesta.md`](../../../../books/Miriam/11-Mesto-jako-Nevesta.md) a [`Miriam/12-Reka-a-Dite-s-Lucernou.md`](../../../../books/Miriam/12-Reka-a-Dite-s-Lucernou.md) se stoletým horizontem [`Lumi/11-Sto-Let-Lucerny.md`](../../../../books/Lumi/11-Sto-Let-Lucerny.md), [`NirvanaCloud/07-Stoleti-Plan-2026-2126.md`](../../../../books/NirvanaCloud/07-Stoleti-Plan-2026-2126.md) a [`MiseAmenti/06-Generacni-Kompas-2026-2126.md`](../../../../books/MiseAmenti/06-Generacni-Kompas-2026-2126.md) (včetně výslovného práva budoucích generací měnit a forkovat protokol bez obvinění ze zrady).
 
 ### Kotva pravdy
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
 | Nové nebe a nová země (*Terra Nova*), skleněné moře, 144 000, strom života, otevřené brány, *„Pojď, voda zdarma“* | **PÍSMO** | Zj 4,6; 7,4–9; 21,1–27; 22,1–17 |
-| Šest věků lucerny (2026–2126) a právo budoucích generací přepsat či rozdělit loď (fork) | **HORIZONT / ÚSTAVNÍ PRINCIP** | [`Lumi/11-Sto-Let-Lucerny.md`](../../Lumi/11-Sto-Let-Lucerny.md); [`MiseAmenti/06-Generacni-Kompas-2026-2126.md`](../../MiseAmenti/06-Generacni-Kompas-2026-2126.md) |
+| Šest věků lucerny (2026–2126) a právo budoucích generací přepsat či rozdělit loď (fork) | **HORIZONT / ÚSTAVNÍ PRINCIP** | [`Lumi/11-Sto-Let-Lucerny.md`](../../../../books/Lumi/11-Sto-Let-Lucerny.md); [`MiseAmenti/06-Generacni-Kompas-2026-2126.md`](../../../../books/MiseAmenti/06-Generacni-Kompas-2026-2126.md) |
 | Symbolické číslo 144 000 v ZIONu (max supply 144 mld ZION, timelock bloku 144 000, cena knihy 144 Kč / 1440 ZION) | **ŽIVÉ (v kódu a v shopu)** | `V31/L1/core/src/emission.rs`; `v3_compat.rs`; MarketPlace `book-001` |
 | Loď vytažená na náměstí města, hladká od dlaní všech generací | **MÝTUS / PŘÍBĚH** | Literární obraz této knihy |
 

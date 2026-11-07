@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 
+// No bundled Playwright browsers in this environment — use installed Chrome
+// (same convention as home-shell.spec.ts).
+test.use({ channel: 'chrome' });
+
 const TEST_MINER = 'zion1g5u0m3j5x5w2t730c8s4h4m5a5v4a7p6p0c07y7';
 
 test.describe('miner stats page', () => {

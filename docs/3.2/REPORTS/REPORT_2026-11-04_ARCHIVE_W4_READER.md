@@ -2,7 +2,7 @@
 
 **Datum:** 2026-11-04
 **Workstream:** W4 (čtení), doplněk W3 (metadata stažení)
-**Kód:** `apps/website-v2.9` · **Plán:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](../plans/ZION-ARCHIVE-COMPLETION.md)
+**Kód:** `apps/website-v2.9` · **Plán:** [`docs/plans/ZION-ARCHIVE-COMPLETION.md`](../../plans/ZION-ARCHIVE-COMPLETION.md)
 
 ---
 

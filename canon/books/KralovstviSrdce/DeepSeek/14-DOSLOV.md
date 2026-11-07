@@ -21,12 +21,12 @@ Z toho plyne všechno ostatní. Kýl nemůže vidět do Jeruzaléma (kapitola VI
 
 Text vznikl čtením celého korpusu `canon/books/` a jeho pravidel, zejména:
 
-- [`MiseAmenti/01-Kanon-a-Ustava.md`](../MiseAmenti/01-Kanon-a-Ustava.md) — pět povinných stavů tvrzení (ŽIVÉ / STAVBA / HORIZONT / HYPOTÉZA / MÝTUS) a hranice proti zneužití.
-- [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md) — registr dokladů, značky NEDOLOŽENO a NEPLATNÝ NÁROK.
+- [`MiseAmenti/01-Kanon-a-Ustava.md`](../../MiseAmenti/01-Kanon-a-Ustava.md) — pět povinných stavů tvrzení (ŽIVÉ / STAVBA / HORIZONT / HYPOTÉZA / MÝTUS) a hranice proti zneužití.
+- [`MiseAmenti/07-Registr-Dukazu.md`](../../MiseAmenti/07-Registr-Dukazu.md) — registr dokladů, značky NEDOLOŽENO a NEPLATNÝ NÁROK.
 - [`canon/books/README.md`](../README.md) — kanonický index a pořadí pravdy při konfliktu.
-- [`docs/3.3/NIRVANA-V3.3-KAPITOLA.md`](../../../docs/3.3/NIRVANA-V3.3-KAPITOLA.md) — čtení vrstev L1–L6 jako „paluby" lodi.
+- [`docs/3.3/NIRVANA-V3.3-KAPITOLA.md`](../../../../docs/3.3/NIRVANA-V3.3-KAPITOLA.md) — čtení vrstev L1–L6 jako „paluby" lodi.
 
-Z korpusu byly použity zejména: [`Maitreya`](../Maitreya/00-README.md) (mantra tří vtělení), [`SulZeme`](../SulZeme/00-README.md) (sůl a smlouva chleba), [`nirvana`](../nirvana/00-README.md) 13 a 14 (Tres Marías, Archa), [`BodhiGaia`](../BodhiGaia/00-README.md), [`Issobella`](../Issobella/00-README.md), [`Lumi`](../Lumi/00-README.md), [`Miriam`](../Miriam/00-README.md), [`Ruze`](../Ruze/00-README.md), [`KruhBohyni`](../KruhBohyni/00-README.md), [`MariaCaminho`](../MariaCaminho/00-README.md), [`NaCeste`](../NaCeste/00-README.md), [`Nabukano`](../Nabukano/00-README.md), [`Elizabet`](../Elizabet/00-README.md), [`SurtaSrdce`](../SurtaSrdce/00-README.md), [`NirvanaCloud`](../NirvanaCloud/00-README.md).
+Z korpusu byly použity zejména: [`Maitreya`](../../Maitreya/00-README.md) (mantra tří vtělení), [`SulZeme`](../../SulZeme/00-README.md) (sůl a smlouva chleba), [`nirvana`](../../nirvana/00-README.md) 13 a 14 (Tres Marías, Archa), [`BodhiGaia`](../../BodhiGaia/00-README.md), [`Issobella`](../../Issobella/00-README.md), [`Lumi`](../../Lumi/00-README.md), [`Miriam`](../../Miriam/00-README.md), [`Ruze`](../../Ruze/00-README.md), [`KruhBohyni`](../../KruhBohyni/00-README.md), [`MariaCaminho`](../../MariaCaminho/00-README.md), [`NaCeste`](../../NaCeste/00-README.md), [`Nabukano`](../../Nabukano/00-README.md), [`Elizabet`](../../Elizabet/00-README.md), [`SurtaSrdce`](../../SurtaSrdce/00-README.md), [`NirvanaCloud`](../../NirvanaCloud/00-README.md).
 
 **Co tato edice nepřebírá:** ani jednu scénu z ostatních edic. Shody v obrazech (dílna, miska soli, uzel, kormidlo) jsou shody tématu, ne opisy. Kde se tato edice rozchází s jinou verzí, je to uvedeno níže v §5.
 
@@ -57,7 +57,7 @@ Citace jsou uváděny podle české tradice (ČEP a příbuzné překlady), s ko
 
 ### 3.3 Korpus ZION
 
-Viz §2. Všechna tvrzení o flotile, arše, stanici a síti nesou v knize stavy **MÝTUS / STAVBA / HORIZONT** podle [`Registru důkazů`](../MiseAmenti/07-Registr-Dukazu.md). **Žádné číslo o výšce řetězce, fondu nebo uživatelích v této knize není a být nesmí** — kniha, která zmrazí živé číslo, začne lhát den po napsání.
+Viz §2. Všechna tvrzení o flotile, arše, stanici a síti nesou v knize stavy **MÝTUS / STAVBA / HORIZONT** podle [`Registru důkazů`](../../MiseAmenti/07-Registr-Dukazu.md). **Žádné číslo o výšce řetězce, fondu nebo uživatelích v této knize není a být nesmí** — kniha, která zmrazí živé číslo, začne lhát den po napsání.
 
 ---
 
@@ -105,7 +105,7 @@ Tohle je nejdůležitější seznam v celém doslovu. Kdo ho přeskočí, bude s
 - **Hoblina** je autorský útvar této edice: poslední odstavec zastavení, ve kterém text přiznává, co nezvládl nebo co si domyslel. Má nahradit dojem, že kniha je uzavřená.
 - **Kotva pravdy** používá stejné stavy jako celý korpus — záměrně, aby se tato edice dala srovnávat s ostatními bez převodu.
 - **Pravopis**: česká redakce proběhla v rámci vzniku textu; před případným tiskem je nutná samostatná jazyková korektura.
-- **Překlad**: anglická verze nevznikla. Podle [`MiseAmenti/08-Protokol-Zmen.md`](../MiseAmenti/08-Protokol-Zmen.md) §5.7 nesmí překlad zesílit jistotu, emoci ani nárok oproti originálu.
+- **Překlad**: anglická verze nevznikla. Podle [`MiseAmenti/08-Protokol-Zmen.md`](../../MiseAmenti/08-Protokol-Zmen.md) §5.7 nesmí překlad zesílit jistotu, emoci ani nárok oproti originálu.
 
 ---
 

@@ -82,7 +82,7 @@ To je celé. To je jediná věta, kterou o víře v této knize potřebujete. V�
 - **Mt 11,30** — „Mé jho je příjemné a mé břemeno lehké." Jho je doslova tesařský výrobek — kus dřeva tvarovaný tak, aby tíhu rozložil a neřezal. Tato věta je řemeslná, nejen metaforická.
 - **Sír 38,24–34** — Ježíš ben Sira (2. stol. př. n. l.) chválí řemeslníky: kováře, hrnčíře, řezbáře. Říká o nich, že jejich moudrost je *v díle jejich rukou* a že nesedají v čele soudu — a přece „udržují svět". Je to nejbližší starověký text, který o tesařích mluví stejně vážně jako o učencích. Církev tato slova čte i o tesaři z Nazareta.
 - **Lk 2,51–52** — „Byl jim poddán… a Ježíš prospíval moudrostí i vzrůstem." Evangelia o letech mezi dvanáctým a třicátým rokem mlčí. Tomu tichu se říká *skrytá léta* a je to skutečné ticho textu, ne mezera k vyplnění.
-- **Chléb a sůl** — smlouva pohostinnosti je doložená praxe starověkého Středomoří i Předního východu (sůl jako trvanlivost a závazek). V korpusu je to střed knihy [`Sůl této země`](../SulZeme/00-README.md); zde je to detail dílny, ne dogma.
+- **Chléb a sůl** — smlouva pohostinnosti je doložená praxe starověkého Středomoří i Předního východu (sůl jako trvanlivost a závazek). V korpusu je to střed knihy [`Sůl této země`](../../SulZeme/00-README.md); zde je to detail dílny, ne dogma.
 - **Olovnice a šňůra** — základní nástroje starověkého truhláře a stavitele, doložené ikonograficky i textově (Iz 44,13: „tesař… rýsuje jej šňůrou, dělá je kružítkem").
 
 ## Kotva pravdy

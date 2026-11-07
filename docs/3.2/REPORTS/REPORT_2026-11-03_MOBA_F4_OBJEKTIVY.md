@@ -99,6 +99,6 @@ správné chování, jen to test musí říct nahlas.
 
 ---
 
-**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../3.3/MOBA-PRVNI-SVET-PLAN.md) ·
+**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../../3.3/MOBA-PRVNI-SVET-PLAN.md) ·
 `apps/nirvana/AGENTS.md` § PRVNÍ SVĚT — objektivy · commity `736b97e22` (F4),
 `c7cc754fc` (prázdný snapshot)

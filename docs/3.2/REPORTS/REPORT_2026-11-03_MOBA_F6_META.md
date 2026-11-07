@@ -89,5 +89,5 @@ neviditelnost a sentry, replay, den-noc cyklus).
 
 ---
 
-**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../3.3/MOBA-PRVNI-SVET-PLAN.md) ·
+**Souvisí:** [`MOBA-PRVNI-SVET-PLAN.md`](../../3.3/MOBA-PRVNI-SVET-PLAN.md) ·
 `apps/nirvana/AGENTS.md` § PRVNÍ SVĚT — meta · commit `fbd820e8b` (F6)
