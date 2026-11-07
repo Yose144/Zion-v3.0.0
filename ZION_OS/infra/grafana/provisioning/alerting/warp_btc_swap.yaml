@@ -1,0 +1,170 @@
+# WARP BTC-swap alerting, provisioned as files (Grafana 11).
+#
+# 2026-11-07: the first two rules used `noDataState: NoData`, so with
+# `WARP_BTC_SWAP_ENABLED=0` the series `warp_btc_swap_stale` /
+# `warp_btc_swap_near_deadline` do not exist and both rules sat in
+# `DatasourceNoData` since 2026-09-20 — permanently "firing", every
+# notification failing on unconfigured SMTP. An alert that can never be
+# satisfied is noise that teaches people to ignore alerts.
+#
+# No data is the expected state while the swap is off, so it now evaluates OK.
+# Endpoint death is still covered separately: `warp_btc_swap_metrics_down` uses
+# `up{job="warp_btc_swap"} == 0` and it has data, so it stays `Alerting`.
+# Re-enable path: flip WARP_BTC_SWAP_ENABLED, confirm the two swap series are
+# back, and only then consider restoring `noDataState: NoData`.
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: warp_btc_swap
+    folder: WARP
+    interval: 60s
+    rules:
+      - uid: warp_btc_swap_stuck
+        title: WARP BTC swap stuck
+        condition: C
+        for: 10m
+        noDataState: OK
+        execErrState: Error
+        labels:
+          severity: warning
+          service: warpd
+        annotations:
+          summary: BTC swap idle longer than offer_ttl
+          description: Check /v1/multichain/swaps/btc on the multichain API.
+        isPaused: false
+        data:
+          - refId: A
+            datasourceUid: ffu4cnic1hq80e
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              expr: warp_btc_swap_stale
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            datasourceUid: __expr__
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { params: [], type: last }
+                  type: query
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: B
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+      - uid: warp_btc_swap_near_deadline
+        title: WARP BTC swap near ZION refund deadline
+        condition: C
+        for: 5m
+        noDataState: OK
+        execErrState: Error
+        labels:
+          severity: critical
+          service: warpd
+        annotations:
+          summary: Swap within 1h of zion_timeout_ts
+        isPaused: false
+        data:
+          - refId: A
+            datasourceUid: ffu4cnic1hq80e
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              expr: warp_btc_swap_near_deadline
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            datasourceUid: __expr__
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { params: [], type: last }
+                  type: query
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: B
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+      - uid: warp_btc_swap_metrics_down
+        title: warpd BTC-swap metrics endpoint down
+        condition: C
+        for: 5m
+        noDataState: Alerting
+        execErrState: Alerting
+        labels:
+          severity: warning
+          service: warpd
+        annotations:
+          summary: Prometheus cannot scrape warpd btc-swap metrics
+        isPaused: false
+        data:
+          - refId: A
+            datasourceUid: ffu4cnic1hq80e
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              expr: 'up{job="warp_btc_swap"}'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            datasourceUid: __expr__
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              conditions:
+                - evaluator: { params: [1], type: lt }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { params: [], type: last }
+                  type: query
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: B
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold

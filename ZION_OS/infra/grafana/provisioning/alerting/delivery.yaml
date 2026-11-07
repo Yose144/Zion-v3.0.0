@@ -1,0 +1,43 @@
+# Grafana alert delivery for ZION ops.
+#
+# 2026-11-07: the only contact point was the stock "email receiver" with
+# <example@email.com>, and [smtp] is not configured — every Grafana notification
+# failed with "notify retry canceled due to unrecoverable error … SMTP not
+# configured", once per evaluation, visible only in the journal.
+#
+# Grafana now hands its alerts to the same Alertmanager that Prometheus already
+# uses (127.0.0.1:9093). Alertmanager routes to the G8 webhook sink
+# (127.0.0.1:9094/alerts → /opt/zion/data/g8_alert_events.jsonl), so Grafana and
+# Prometheus alerts land in one evidence trail instead of two dead ends.
+#
+# Verify:
+#   curl -s localhost:3001/api/v1/provisioning/contact-points | jq
+#   curl -s localhost:3001/api/v1/provisioning/policies | jq
+#   journalctl -u zion-g8-alert-sink -n 20   # delivery evidence
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: zion-alertmanager
+    receivers:
+      - uid: zion-alertmanager-local
+        # Supported notifier id in this build is `prometheus-alertmanager`;
+        # `alertmanager` is not a registered type and provisioning it fails
+        # Grafana startup (see 2026-11-07 incident note below).
+        type: prometheus-alertmanager
+        disableResolveMessage: false
+        settings:
+          url: http://127.0.0.1:9093
+          # Alertmanager v1 endpoint (/api/v1/alerts); matches the Prometheus
+          # pipeline that already feeds the G8 sink.
+          implementation: prometheus
+
+policies:
+  - orgId: 1
+    receiver: zion-alertmanager
+    group_by:
+      - grafana_folder
+      - alertname
+    group_wait: 10s
+    group_interval: 30s
+    repeat_interval: 4h
