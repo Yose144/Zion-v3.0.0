@@ -741,3 +741,48 @@ pt „bónus", fr „bonus"; `/explorer/mempool` „Mempool"; **0 pageerror**.
 `explorer/transactions`, `explorer/blocks`, `dashboard/dao-tree`,
 `ProSearchBar`, `ProRecentTransactions`, `BackgroundToggle`,
 `ExplorerCommandPalette` a další malé komponenty.
+
+---
+
+## 41. Dávka 24 — bridge, hry, explorer, archiv, chat widgety (432 řetězců, 30 souborů)
+
+`wbridge` (18), `snake` (19), `flappy` (16), `peers` (18), `txpage` (22),
+`blockspg` (23), `prosearch` (20), `prorecent` (21), `problocks` (17),
+`emission` (14), `apidoсs` (13), `daotree` (17), `treasury` (13), `palette` (12),
+`knihapanel` (14), `stazenipanel` (13), `triptych` (13), `releasebanner` (13),
+`hiranchat` (13), `hiranyachat` (11), `treeporтаl` (11), `toolkit` (15),
+`swap` (13), `poolfinder` (12), `netmap` (12), `resonance` (12), `syshealth` (12),
+`quickstart` (12), `auditnews` (13), `bgtoggle` (15).
+
+### Tři nálezy
+
+1. **`'use client'` musí být první řádek.** Codemod přidal import **před**
+   direktivu u `HiranyagarbhaChat.tsx` → `next build` spadl na
+   „The `use client` directive must be placed before other expressions".
+   Opraveno ručně (direktiva nahoru, importy za ni). Do budoucna: codemod musí
+   direktivu detekovat a vkládat až za ni.
+2. **Sedmá a osmá varianta `fmtAge`/`timeAgo`** (`explorer/blocks`,
+   `ProRecentBlocks`, `ProRecentTransactions`, `TransactionsPageClient`) →
+   `Intl.RelativeTimeFormat`.
+3. Modulové helpery a komponenty s `cs` prop (`buildPreviews`, `quickLinks`,
+   `labelForType`, `EndpointAccordion`, `TypeBadge`, `StatusDot`,
+   `ApiQuickstartPanels`) dostaly `lang`.
+
+### ⚠️ Deploy dávky 24 neproběhl — síť
+
+`tsc` 0 i `next build` zelený, commit i push proběhly
+(`6644e58cd` + docs `a2c28f680`), ale **nasazení selhalo 4×** na přerušeném
+přenosu: `rsync: write error: Broken pipe (32)`, `client_loop: send disconnect`,
+a nakonec i `ssh: connect to host 207.180.217.100 port 22: Operation timed out`.
+Příčina není na serveru — v době výpadku byly nedostupné i `github.com` a
+`google.com` (lokální síť), a když se síť vrátila, začal timeoutovat SSH na EDGE2
+(pravděpodobně fail2ban/MaxStartups po sérii přerušených rsynců — přesně past
+popsaná v `AGENTS.md`).
+
+**Stav produkce v době psaní:** web **200**, běží build `W9zhK45wVAmz8L8cobpSY`
+z čistého worktree paralelní session (obsahuje i18n dávky 1–23), `local 200`,
+disk 60 %. **Nic není rozbité** — dávka 24 jen čeká na přenos.
+
+**Postup při obnově sítě:** `bash scripts/ops/deploy-next-artifact.sh <artefakt>
+zion-edge2 …` — artefakt je v `…/opencode/web-artZ` (215 MB, ověřený: `server.js`,
+`.next/BUILD_ID`, `node_modules/next`, `.next/static`).
