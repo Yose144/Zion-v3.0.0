@@ -648,3 +648,57 @@ em torno da Terra", fr „Un cercle autour de la Terre"; `/explorer/txs`
 podstránky (`tokens`, `fee-estimator`, `richlist`, `consensus`) a network
 komponenty. Po nich přichází na řadu **F4** (18 dvojjazyčných 3D náhledů +
 Nirvana UI) a **F6** (hreflang, sitemap).
+
+---
+
+## 37. Dávka 22 — admin, network widgety, explorer, genesis, governance (307 řetězců)
+
+`admin` (27), `poolcfg` (26), `netmon` (25), `netcons` (27), `dlfaq` (25),
+`tokens` (27), `feeest` (26), `richlist` (24), `consensus` (30), `roadmap` (24),
+`genesispg` (25), `govpanel` (23).
+
+**Šest modulových celků muselo dostat `lang`:** `getGenesisChapters`, `getFaqItems`,
+`getTypeConfig` (richlist), `statusBadge` (governance), `BlockTimeline`
+(network consensus) a `DifficultyChart`; `DownloadFaq` pak i volající `/download`.
+
+### 🔴 Druhá instance hydration mismatch (#418)
+
+`/explorer/consensus` mělo `d.blocks.toLocaleString()` **bez locale** → server
+(Node, `en-US`) vs. prohlížeč (locale uživatele) = jiné oddělovače tisíců =
+React zahodí serverové HTML. 1× v cs, 2× v es/pt/fr. Opraveno na
+`toLocaleString('en-US')` → **0 pageerror ve všech čtyřech jazycích**.
+
+### ⚠️ Systémový nález pro F6
+
+`toLocaleString()` bez locale je v projektu **125×**:
+
+```
+grep -rn "toLocaleString()" apps/website-v2.9/src/app apps/website-v2.9/src/components | wc -l
+→ 125
+```
+
+Každý výskyt, který se vykresluje na serveru, je latentní #418 — neprojeví se
+jako chyba překladu, ale jako chyba v konzoli ve **všech** jazycích. Doposud
+opraveny dva (supply, consensus); zbytek patří do F6 sweepu (mechanická náhrada
+`toLocaleString('en-US')` nebo společný `fmtInt()` helper).
+
+Ověřeno živě: `/genesis` es „Libro del despertar · Capítulos", pt „Livro do
+despertar · Capítulos", fr „Livre de l… · Chapitres"; `/explorer/tokens` „Tokens";
+`/explorer/fee-estimator` fr „Estimateur de frais"; `/explorer/consensus`
+„Consenso / Consensus" s 0 pageerror.
+
+## 38. Stav po dávce 22
+
+| | hodnota |
+|---|---:|
+| přeložených řetězců (es = pt = fr) | **6 168** |
+| stránek/komponent s vlastním slovníkem | **94** |
+| zbývá | **1 115 klíčů / 108 souborů** |
+| `tsc` / `next build` | 0 / zelený |
+
+**Největší zbývající:** `FreeWorldMap` (23), `explorer/broadcast` (23),
+`ZionDefense` (23), `dao/proposals/[id]` (23), `explorer/miners` (22),
+`admin/revenue-v3` (22), `ProExplorerStats` (21), `ExplorerCharts` (21),
+`MojePanel` (21), `NetworkTopology` (20).
+
+Zbytek je **~10 řetězců na soubor** — poslední desítky malých komponent.
