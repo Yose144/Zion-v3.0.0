@@ -296,6 +296,7 @@ Autonomní dávku řeší tři skripty v `scripts/ops/avatar-3d/`:
 | `crop-sheet.py` | Rozdělí dodaný výtvarný list na `front / side / back / detail`; hranice hledá jako svislé pruhy pozadí, jinak použije proporcionální fallback |
 | `generate.py` | Načte TripoSR **jednou** a v cyklu generuje všechny postavy; je opakovatelný (hotové přeskočí), chybu jedné postavy zapíše a pokračuje |
 | `qa.mjs` | Vykreslí kontrolní list: portrét + čtyři pohledy pro každé ID, do jednoho PNG |
+| `similarity.py` | Měří IoU siluety a ΔE palety proti výtvarnému listu — **diagnostika, ne schvalovací filtr** (viz §9) |
 
 ### Spuštění celé dávky
 
@@ -315,10 +316,12 @@ done
 # 2) Vygenerovat (lze pustit na noc; report je append-only JSONL)
 "$VPY" scripts/ops/avatar-3d/generate.py \
   --input "$WORK/in" --out .artifacts/avatar-3d/stage \
-  --device mps --mc 192 --resolution 1024
+  --device mps --mc 192 --resolution 1024 --max-tris 15000
 
 # 3) Zkontrolovat
 node scripts/ops/avatar-3d/qa.mjs --ids 000,003,051 --out .artifacts/avatar-3d/qa
+"$VPY" scripts/ops/avatar-3d/similarity.py \
+  --qa .artifacts/avatar-3d/qa/<stamp>.png --refs "$WORK/in"
 ```
 
 `qa.mjs` potřebuje statický server nad repem (`python3 -m http.server 8769`)
@@ -338,12 +341,20 @@ a `puppeteer-core` s nainstalovaným Chrome.
 
 ### Co dávka ještě neumí (otevřené)
 
-- **Decimace na herní rozpočet.** Modely mají 25–35 tis. trojúhelníků a 2–2,6 MB;
-  decimace s UV by rozbila texturu, takže by se musela znovu zapéct. Zatím neřešeno.
+- **Decimace na herní rozpočet.** Řešeno přepínačem `--max-tris`: decimuje se
+  **před** zapékáním textury, takže UV i barvy zůstanou správné. Ověřeno na Krišnovi:
+  24 856 → **15 000 trojúhelníků**, 2,07 → **1,65 MB**, vzhled beze změny.
 - **Rig a animace.** Není součástí image-to-3D. Samostatný krok v Blenderu
   (headless + auto-rig), pro blobovitou síť nespolehlivý.
-- **Automatické hodnocení podoby.** `qa.mjs` dělá podklad pro lidské oko; žádné
-  měření podobnosti tváře není. Bez něj nejde dávka schválit bez dohledu.
+- **Automatické hodnocení podoby.** `similarity.py` měří IoU siluety a ΔE palety
+  proti **výtvarnému listu** (ne portrétu — ten je jen poprsí). **Změřeno: nefunguje
+  jako filtr.** Známý vadný model dostal IoU 0,456 / hlava 0,248, dobré modely
+  0,508–0,578 / hlava 0,208–0,477. Rozpětí se překrývá, takže metrika nerozliší
+  použitelný model od nepoužitelného a **nesmí** sama schvalovat dávku.
+
+**Důsledek pro autonomii:** bez spolehlivého hodnocení musí dávku projít člověk,
+nebo se musí použít sémantické embeddingy (CLIP) místo geometrických metrik.
+Do té doby je bezpečný režim „vygenerovat dávku + kontrolní listy + rozhodnout“.
 
 
 

@@ -119,6 +119,12 @@ def main() -> int:
     parser.add_argument("--device", default=os.environ.get("TRIPOSR_DEVICE", "mps"))
     parser.add_argument("--mc", type=int, default=192, help="rozlišení marching cubes")
     parser.add_argument("--resolution", type=int, default=1024, help="rozlišení textury")
+    parser.add_argument(
+        "--max-tris",
+        type=int,
+        default=0,
+        help="cíl pro decimaci před zapékáním textury (0 = bez decimace)",
+    )
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
 
@@ -167,14 +173,28 @@ def main() -> int:
             meshes = model.extract_mesh(scene_codes, False, resolution=args.mc)
             t_mesh = time.time() - t0
 
+            # Decimace PŘED zapékáním: textura se pak počítá na finální síti,
+            # takže UV i barvy zůstanou správně (decimovat až hotový GLB by UV rozbilo).
+            source_mesh = meshes[0]
+            if args.max_tris and len(source_mesh.faces) > args.max_tris:
+                import fast_simplification
+
+                reduction = 1 - (args.max_tris / len(source_mesh.faces))
+                vertices, faces = fast_simplification.simplify(
+                    source_mesh.vertices.astype(np.float32),
+                    source_mesh.faces.astype(np.int32),
+                    target_reduction=float(min(0.95, max(0.0, reduction))),
+                )
+                source_mesh = trimesh.Trimesh(vertices=vertices, faces=faces, process=False)
+
             t0 = time.time()
-            baked = bake_texture(meshes[0], model, scene_codes[0], args.resolution)
+            baked = bake_texture(source_mesh, model, scene_codes[0], args.resolution)
             t_bake = time.time() - t0
 
             mesh = trimesh.Trimesh(
-                vertices=meshes[0].vertices[baked["vmapping"]],
+                vertices=source_mesh.vertices[baked["vmapping"]],
                 faces=baked["indices"],
-                vertex_normals=meshes[0].vertex_normals[baked["vmapping"]],
+                vertex_normals=source_mesh.vertex_normals[baked["vmapping"]],
                 process=False,
             )
             mesh.visual = trimesh.visual.TextureVisuals(
