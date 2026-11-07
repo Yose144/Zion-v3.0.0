@@ -1,0 +1,154 @@
+# Offline synthetic metrics only: promtool test rules edge-audit.rules.test.yml
+rule_files:
+  - zion-host.rules.yml
+  - zion_writepath.rules.yml
+evaluation_interval: 1m
+tests:
+  - name: exporter-down-is-not-healthy
+    interval: 1m
+    input_series:
+      - series: 'up{job="node",instance="edge1"}'
+        values: '0+0x6'
+      - series: 'up{job="node",instance="edge2"}'
+        values: '1+0x6'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: ZionHostMetricsMissing
+        exp_alerts:
+          - exp_labels: {job: node, instance: edge1, severity: warning}
+            exp_annotations: &host_annotations
+              summary: EDGE host metrics missing
+              description: An expected EDGE1/EDGE2 node target is down or absent. The exporter is not started by this rules file.
+
+  - name: each-absent-host-alerts-independently
+    interval: 1m
+    input_series: []
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: ZionHostMetricsMissing
+        exp_alerts:
+          - exp_labels: {job: node, instance: edge1, severity: warning}
+            exp_annotations: *host_annotations
+          - exp_labels: {job: node, instance: edge2, severity: warning}
+            exp_annotations: *host_annotations
+
+  - name: missing-edge2-is-not-masked-by-healthy-edge1
+    interval: 1m
+    input_series:
+      - series: 'up{job="node",instance="edge1"}'
+        values: '1+0x6'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: ZionHostMetricsMissing
+        exp_alerts:
+          - exp_labels: {job: node, instance: edge2, severity: warning}
+            exp_annotations: *host_annotations
+
+  - name: low-memory-is-host-specific
+    interval: 1m
+    input_series:
+      - series: 'node_memory_MemAvailable_bytes{job="node",instance="edge1"}'
+        values: '99+0x11'
+      - series: 'node_memory_MemTotal_bytes{job="node",instance="edge1"}'
+        values: '1000+0x11'
+      - series: 'node_memory_MemAvailable_bytes{job="node",instance="edge2"}'
+        values: '100+0x11'
+      - series: 'node_memory_MemTotal_bytes{job="node",instance="edge2"}'
+        values: '1000+0x11'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ZionHostMemoryLow
+        exp_alerts:
+          - exp_labels: {job: node, instance: edge1, severity: warning}
+            exp_annotations:
+              summary: edge1 has less than 10% available RAM
+
+  - name: null-or-invalid-ledger-clock-alerts-even-with-http-success
+    interval: 1m
+    input_series:
+      - series: 'zion_pool_payouts_api_ok{job="node",instance="edge2"}'
+        values: '1+0x11'
+      - series: 'zion_pool_payout_measurement_ok{job="node",instance="edge2"}'
+        values: '0+0x11'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ZionPoolPayoutMeasurementMissing
+        exp_alerts:
+          - exp_labels: {job: node, instance: edge2, severity: warning}
+            exp_annotations: &payout_annotations
+              summary: pool payout measurement missing
+              description: The write-path probe did not read latest_recorded_ts. A missing field is not a healthy ledger; do not substitute now() or the queued row.
+
+  - name: absent-measurement-on-http-failure-or-old-probe-alerts
+    interval: 1m
+    input_series: []
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ZionPoolPayoutMeasurementMissing
+        exp_alerts:
+          - exp_labels: {job: node, instance: edge2, severity: warning}
+            exp_annotations: *payout_annotations
+
+  - name: stale-green-textfile-is-not-a-live-probe
+    interval: 1m
+    input_series:
+      - series: 'zion_writepath_probe_success_timestamp_seconds{job="node",instance="edge2"}'
+        values: '0+0x10'
+      - series: 'zion_chain_tip_ok{job="node",instance="edge2"}'
+        values: '1+0x10'
+    alert_rule_test:
+      - eval_time: 8m
+        alertname: ZionWritepathProbeStale
+        exp_alerts: []
+      - eval_time: 9m
+        alertname: ZionWritepathProbeStale
+        exp_alerts:
+          - exp_labels: {job: node, instance: edge2, severity: warning}
+            exp_annotations: &probe_annotations
+              summary: write-path textfile is stale or missing
+              description: node_exporter can keep serving an old green textfile after the probe dies. No complete collection for over 3 minutes, or the completion metric is missing.
+
+  - name: absent-probe-completion-alerts
+    interval: 1m
+    input_series: []
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: ZionWritepathProbeStale
+        exp_alerts:
+          - exp_labels: {job: node, instance: edge2, severity: warning}
+            exp_annotations: *probe_annotations
+
+  - name: real-but-old-ledger-clock-stays-stale
+    interval: 1m
+    input_series:
+      - series: 'zion_pool_last_payout_age_seconds{job="node",instance="edge2"}'
+        values: '3700+0x16'
+      - series: 'zion_pool_payout_measurement_ok{job="node",instance="edge2"}'
+        values: '1+0x16'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: ZionPoolPayoutStale
+        exp_alerts:
+          - exp_labels: {job: node, instance: edge2, severity: warning}
+            exp_annotations:
+              summary: no pool payout recorded for 3700s
+              description: Newest payout ledger row is over 1h old — payout submit or confirmation sweep likely stalled (pool keeps finding blocks but stops recording/paying). Check pool journal payout lines and store.db write health.
+
+  - name: healthy-hosts-valid-measurement-and-live-probe-do-not-page
+    interval: 1m
+    input_series:
+      - series: 'up{job="node",instance="edge1"}'
+        values: '1+0x30'
+      - series: 'up{job="node",instance="edge2"}'
+        values: '1+0x30'
+      - series: 'zion_pool_payout_measurement_ok{job="node",instance="edge2"}'
+        values: '1+0x30'
+      - series: 'zion_pool_last_payout_age_seconds{job="node",instance="edge2"}'
+        values: '100+0x30'
+      - series: 'zion_writepath_probe_success_timestamp_seconds{job="node",instance="edge2"}'
+        values: '0+60x30'
+    alert_rule_test:
+      - {eval_time: 30m, alertname: ZionHostMetricsMissing, exp_alerts: []}
+      - {eval_time: 30m, alertname: ZionPoolPayoutMeasurementMissing, exp_alerts: []}
+      - {eval_time: 30m, alertname: ZionPoolPayoutStale, exp_alerts: []}
+      - {eval_time: 30m, alertname: ZionWritepathProbeStale, exp_alerts: []}

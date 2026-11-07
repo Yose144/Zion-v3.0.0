@@ -1291,12 +1291,27 @@ impl ShareStore {
 
     /// Query recent payouts for all miners (F7.1 — for REST API endpoint).
     pub fn query_all_payouts(&self, limit: u32) -> Result<Vec<PayoutRow>> {
+        self.query_payouts_for_coin("", limit)
+    }
+
+    /// Filter by the internal coin tag BEFORE limiting. Uses (coin, ts) index;
+    /// newer rows for a busy coin cannot hide the last write for another coin.
+    /// An empty selector keeps the all-coins feed. Errors remain errors.
+    pub fn query_payouts_for_coin(&self, coin: &str, limit: u32) -> Result<Vec<PayoutRow>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
-        let mut stmt = conn.prepare(
+        let sql = if coin.is_empty() {
             "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id, inclusion_height
-             FROM payouts ORDER BY ts DESC LIMIT ?1",
-        )?;
-        let rows = stmt.query_map(params![limit as i64], |row| {
+             FROM payouts ORDER BY ts DESC LIMIT :limit"
+        } else {
+            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id, inclusion_height
+             FROM payouts WHERE coin = :coin ORDER BY ts DESC LIMIT :limit"
+        };
+        let mut stmt = conn.prepare(sql)?;
+        stmt.raw_bind_parameter(stmt.parameter_index(":limit")?.unwrap(), limit as i64)?;
+        if !coin.is_empty() {
+            stmt.raw_bind_parameter(stmt.parameter_index(":coin")?.unwrap(), coin)?;
+        }
+        let rows = stmt.raw_query().mapped(|row| {
             Ok(PayoutRow {
                 ts: row.get(0)?,
                 miner_id: row.get(1)?,
@@ -1311,7 +1326,7 @@ impl ShareStore {
                 superseded_tx_id: row.get(10)?,
                 inclusion_height: row.get::<_, Option<i64>>(11)?.map(|v| v as u64),
             })
-        })?;
+        });
         let mut out = Vec::new();
         for r in rows {
             out.push(r?);
@@ -2364,6 +2379,44 @@ mod tests {
 
         let stats = store.get_miner_stats("m1").unwrap().unwrap();
         assert_eq!(stats.total_paid_flowers, 1_000_000);
+    }
+
+    #[test]
+    fn payout_coin_filter_precedes_limit_and_preserves_query_errors() {
+        let store = ShareStore::open_in_memory().unwrap();
+        {
+            let conn = store.conn.lock().unwrap();
+            for (coin, ts) in [
+                ("zion", 100),
+                ("prl", 200),
+                ("prl", 201),
+                ("prl", 202),
+                ("prl", 203),
+                ("prl", 204),
+            ] {
+                conn.execute(
+                    "INSERT INTO payouts (ts, miner_id, address, amount_flowers, tx_id, height, block_hash, coin)
+                     VALUES (?1, 'fixture', 'fixture', 1, ?2, 1, '', ?3)",
+                    params![ts, format!("tx{ts}"), coin],
+                ).unwrap();
+            }
+        }
+        let rows = store.query_payouts_for_coin("zion", 1).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].ts, 100);
+        assert_eq!(store.query_all_payouts(1).unwrap()[0].ts, 204);
+        assert!(store
+            .query_payouts_for_coin("missing", 1)
+            .unwrap()
+            .is_empty());
+        store
+            .conn
+            .lock()
+            .unwrap()
+            .execute_batch("DROP TABLE payouts")
+            .unwrap();
+        assert!(store.query_payouts_for_coin("zion", 1).is_err());
+        assert!(store.query_all_payouts(1).is_err());
     }
 
     #[test]
