@@ -4,6 +4,7 @@ import { useState } from "react";
 import { usePolling } from "@/hooks/usePolling";
 import { Brain, Activity, Layers, AlertTriangle } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const DashboardNclCopy = {
   loadingNclDashboard: { cs: `Načítání NCL Dashboardu...`, en: `Loading NCL Dashboard...` },
@@ -174,7 +175,7 @@ export default function NCLDashboard() {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="text-zion-gold text-xl animate-pulse flex items-center gap-3">
-          <Brain className="h-6 w-6" /> {DashboardNclCopy.loadingNclDashboard[lang === 'cs' ? 'cs' : 'en']}
+          <Brain className="h-6 w-6" /> {tx5(DashboardNclCopy.loadingNclDashboard, lang)}
         </div>
       </div>
     );
@@ -191,13 +192,13 @@ export default function NCLDashboard() {
           <div>
             <h1 className="text-3xl font-bold text-white">NCL Dashboard</h1>
             <p className="text-sm text-gray-400">
-              {DashboardNclCopy.neuralComputeLayerAiBonusManag[lang === 'cs' ? 'cs' : 'en']}
+              {tx5(DashboardNclCopy.neuralComputeLayerAiBonusManag, lang)}
             </p>
           </div>
         </div>
         {source === 'fallback' && (
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-1.5 text-xs text-zion-gold">
-            <AlertTriangle className="h-3 w-3" /> {DashboardNclCopy.hiranyagarbhaOfflineShowingCac[lang === 'cs' ? 'cs' : 'en']}
+            <AlertTriangle className="h-3 w-3" /> {tx5(DashboardNclCopy.hiranyagarbhaOfflineShowingCac, lang)}
           </div>
         )}
       </div>
@@ -207,49 +208,49 @@ export default function NCLDashboard() {
         <Card style={rc('cyan')}>
           <div className="flex items-center gap-2 mb-3">
             <Activity size={14} className="text-zion-cyan" />
-            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{DashboardNclCopy.activeWorkers[lang === 'cs' ? 'cs' : 'en']}</span>
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{tx5(DashboardNclCopy.activeWorkers, lang)}</span>
           </div>
           <div className="text-3xl font-bold font-mono text-white">
             {status?.workers.active ?? 0}
             <span className="text-lg text-gray-500 font-normal">/{status?.workers.total ?? 0}</span>
           </div>
           <div className="text-xs text-gray-500 mt-2">
-            {((status?.workers.active || 0) / (status?.workers.total || 1) * 100).toFixed(0)}% {DashboardNclCopy.online[lang === 'cs' ? 'cs' : 'en']}
+            {((status?.workers.active || 0) / (status?.workers.total || 1) * 100).toFixed(0)}% {tx5(DashboardNclCopy.online, lang)}
           </div>
         </Card>
 
         <Card style={rc('cyan')}>
           <div className="flex items-center gap-2 mb-3">
             <Layers size={14} className="text-zion-cyan" />
-            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{DashboardNclCopy.tasksCompleted[lang === 'cs' ? 'cs' : 'en']}</span>
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{tx5(DashboardNclCopy.tasksCompleted, lang)}</span>
           </div>
           <div className="text-3xl font-bold font-mono text-white">
             {(status?.tasks.completed ?? 0).toLocaleString()}
           </div>
           <div className="text-xs text-gray-500 mt-2">
-            {status?.tasks.pending ?? 0} {DashboardNclCopy.pending[lang === 'cs' ? 'cs' : 'en']} &bull; {status?.tasks.active ?? 0} {DashboardNclCopy.active[lang === 'cs' ? 'cs' : 'en']}
+            {status?.tasks.pending ?? 0} {tx5(DashboardNclCopy.pending, lang)} &bull; {status?.tasks.active ?? 0} {tx5(DashboardNclCopy.active, lang)}
           </div>
         </Card>
 
         <Card style={rc('cyan')}>
           <div className="flex items-center gap-2 mb-3">
             <Brain size={14} className="text-zion-gold" />
-            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{DashboardNclCopy.totalNclRewards[lang === 'cs' ? 'cs' : 'en']}</span>
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{tx5(DashboardNclCopy.totalNclRewards, lang)}</span>
           </div>
           <div className="text-3xl font-bold font-mono text-zion-gold">
             {(status?.rewards.total_paid ?? 0).toFixed(2)} <span className="text-lg text-gray-500 font-normal">ZION</span>
           </div>
           <div className="text-xs text-gray-500 mt-2">
-            {DashboardNclCopy.avg[lang === 'cs' ? 'cs' : 'en']}: {(status?.rewards.avg_per_task || 0).toFixed(4)} ZION/{DashboardNclCopy.task[lang === 'cs' ? 'cs' : 'en']}
+            {tx5(DashboardNclCopy.avg, lang)}: {(status?.rewards.avg_per_task || 0).toFixed(4)} ZION/{tx5(DashboardNclCopy.task, lang)}
           </div>
         </Card>
 
         <Card style={rc('purple')}>
           <div className="absolute top-0 right-0 w-32 h-32 bg-zion-gold/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="text-xs text-zion-cyan font-medium uppercase tracking-wider mb-2">{DashboardNclCopy.revenueStream5[lang === 'cs' ? 'cs' : 'en']}</div>
+          <div className="text-xs text-zion-cyan font-medium uppercase tracking-wider mb-2">{tx5(DashboardNclCopy.revenueStream5, lang)}</div>
           <div className="text-2xl font-bold text-white">NCL AI Bonus</div>
           <div className="text-sm text-zion-cyan mt-2">
-            {DashboardNclCopy.k5OfTotalMinerRevenue[lang === 'cs' ? 'cs' : 'en']}
+            {tx5(DashboardNclCopy.k5OfTotalMinerRevenue, lang)}
           </div>
         </Card>
       </div>
@@ -260,12 +261,12 @@ export default function NCLDashboard() {
         <div className="lg:col-span-2 space-y-4">
           <Card style={rc('cyan')}>
             <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <Layers size={14} className="text-zion-cyan" /> {DashboardNclCopy.yourWorkers[lang === 'cs' ? 'cs' : 'en']}
+              <Layers size={14} className="text-zion-cyan" /> {tx5(DashboardNclCopy.yourWorkers, lang)}
             </h2>
 
             {workers.length === 0 ? (
               <div className="text-gray-500 text-center py-8 text-sm">
-                {DashboardNclCopy.noNclWorkersRegisteredConnectA[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(DashboardNclCopy.noNclWorkersRegisteredConnectA, lang)}
               </div>
             ) : (
               <div className="space-y-3">
@@ -289,7 +290,7 @@ export default function NCLDashboard() {
                           {worker.total_earnings.toFixed(4)} ZION
                         </div>
                         <div className="text-gray-500 text-sm">
-                          {worker.tasks_completed} {DashboardNclCopy.tasks[lang === 'cs' ? 'cs' : 'en']}
+                          {worker.tasks_completed} {tx5(DashboardNclCopy.tasks, lang)}
                         </div>
                       </div>
                     </div>
@@ -297,8 +298,8 @@ export default function NCLDashboard() {
                     {/* NPU Allocation Slider */}
                     <div className="mt-4">
                       <div className="flex justify-between text-sm text-gray-400 mb-2">
-                        <span>{DashboardNclCopy.npuAllocation[lang === 'cs' ? 'cs' : 'en']}</span>
-                        <span>{(worker.npu_allocation * 100).toFixed(0)}% AI / {((1 - worker.npu_allocation) * 100).toFixed(0)}% {DashboardNclCopy.mining[lang === 'cs' ? 'cs' : 'en']}</span>
+                        <span>{tx5(DashboardNclCopy.npuAllocation, lang)}</span>
+                        <span>{(worker.npu_allocation * 100).toFixed(0)}% AI / {((1 - worker.npu_allocation) * 100).toFixed(0)}% {tx5(DashboardNclCopy.mining, lang)}</span>
                       </div>
                       <input
                         type="range"
@@ -309,8 +310,8 @@ export default function NCLDashboard() {
                         className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-zion-gold"
                       />
                       <div className="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>0% ({DashboardNclCopy.miningOnly[lang === 'cs' ? 'cs' : 'en']})</span>
-                        <span>50% ({DashboardNclCopy.maxAi[lang === 'cs' ? 'cs' : 'en']})</span>
+                        <span>0% ({tx5(DashboardNclCopy.miningOnly, lang)})</span>
+                        <span>50% ({tx5(DashboardNclCopy.maxAi, lang)})</span>
                       </div>
                     </div>
                   </div>
@@ -323,12 +324,12 @@ export default function NCLDashboard() {
         {/* Leaderboard */}
         <Card style={rc('purple')}>
           <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-            <Brain size={14} className="text-zion-gold" /> {DashboardNclCopy.nclLeaderboard[lang === 'cs' ? 'cs' : 'en']}
+            <Brain size={14} className="text-zion-gold" /> {tx5(DashboardNclCopy.nclLeaderboard, lang)}
           </h2>
 
           <div className="space-y-2">
             {leaderboard.length === 0 ? (
-              <div className="text-gray-500 text-center py-8 text-sm">{DashboardNclCopy.noLeaderboardData[lang === 'cs' ? 'cs' : 'en']}</div>
+              <div className="text-gray-500 text-center py-8 text-sm">{tx5(DashboardNclCopy.noLeaderboardData, lang)}</div>
             ) : (
               leaderboard.map((entry) => (
                 <div
@@ -371,16 +372,16 @@ export default function NCLDashboard() {
       <Card style={rc('cyan')} className="mt-4">
         <div className="absolute top-0 right-0 w-40 h-40 bg-zion-gold/5 rounded-full blur-3xl pointer-events-none" />
         <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-          <Activity size={14} className="text-zion-cyan" /> {DashboardNclCopy.chV3RevenueStreams[lang === 'cs' ? 'cs' : 'en']}
+          <Activity size={14} className="text-zion-cyan" /> {tx5(DashboardNclCopy.chV3RevenueStreams, lang)}
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           {[
-            { name: "ZION", desc: DashboardNclCopy.cosmicFusion[lang === 'cs' ? 'cs' : 'en'], percent: 50, color: "zion-gold" },
-            { name: "ETC", desc: DashboardNclCopy.keccakMerged[lang === 'cs' ? 'cs' : 'en'], percent: 20, color: "emerald-400" },
-            { name: "NXS", desc: DashboardNclCopy.sha3Merged[lang === 'cs' ? 'cs' : 'en'], percent: 5, color: "zion-cyan" },
-            { name: "Dynamic", desc: DashboardNclCopy.ergRvnKas[lang === 'cs' ? 'cs' : 'en'], percent: 20, color: "purple-400" },
-            { name: "NCL", desc: DashboardNclCopy.aiBonus[lang === 'cs' ? 'cs' : 'en'], percent: 5, color: "pink-400", highlight: true },
+            { name: "ZION", desc: tx5(DashboardNclCopy.cosmicFusion, lang), percent: 50, color: "zion-gold" },
+            { name: "ETC", desc: tx5(DashboardNclCopy.keccakMerged, lang), percent: 20, color: "emerald-400" },
+            { name: "NXS", desc: tx5(DashboardNclCopy.sha3Merged, lang), percent: 5, color: "zion-cyan" },
+            { name: "Dynamic", desc: tx5(DashboardNclCopy.ergRvnKas, lang), percent: 20, color: "purple-400" },
+            { name: "NCL", desc: tx5(DashboardNclCopy.aiBonus, lang), percent: 5, color: "pink-400", highlight: true },
           ].map((stream, i) => (
             <div
               key={i}
@@ -408,12 +409,12 @@ export default function NCLDashboard() {
       {/* Setup Instructions */}
       <Card style={rc('purple')} className="mt-4">
         <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-          <Brain size={14} className="text-zion-gold" /> {DashboardNclCopy.enableNclOnYourMiner[lang === 'cs' ? 'cs' : 'en']}
+          <Brain size={14} className="text-zion-gold" /> {tx5(DashboardNclCopy.enableNclOnYourMiner, lang)}
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h3 className="text-xs text-zion-gold font-medium uppercase tracking-wider mb-2">{DashboardNclCopy.option1MinerFlag[lang === 'cs' ? 'cs' : 'en']}</h3>
+            <h3 className="text-xs text-zion-gold font-medium uppercase tracking-wider mb-2">{tx5(DashboardNclCopy.option1MinerFlag, lang)}</h3>
             <pre style={rc('purple')} className="zion-rainbow-sub p-4 text-sm overflow-x-auto">
               <code className="text-zion-cyan">
 {`./zion_miner \
@@ -426,7 +427,7 @@ export default function NCLDashboard() {
           </div>
 
           <div>
-            <h3 className="text-xs text-zion-cyan font-medium uppercase tracking-wider mb-2">{DashboardNclCopy.option2ConfigFile[lang === 'cs' ? 'cs' : 'en']}</h3>
+            <h3 className="text-xs text-zion-cyan font-medium uppercase tracking-wider mb-2">{tx5(DashboardNclCopy.option2ConfigFile, lang)}</h3>
             <pre style={rc('purple')} className="zion-rainbow-sub p-4 text-sm overflow-x-auto">
               <code className="text-zion-cyan">
 {`# miner_config.json
@@ -443,7 +444,7 @@ export default function NCLDashboard() {
         </div>
 
         <div style={rc('cyan')} className="zion-rainbow-sub mt-4 p-3 text-gray-400 text-sm">
-          <span className="text-zion-gold">{DashboardNclCopy.tip[lang === 'cs' ? 'cs' : 'en']}</span> {DashboardNclCopy.higherConsciousnessLevelsEarnM[lang === 'cs' ? 'cs' : 'en']}
+          <span className="text-zion-gold">{tx5(DashboardNclCopy.tip, lang)}</span> {tx5(DashboardNclCopy.higherConsciousnessLevelsEarnM, lang)}
         </div>
       </Card>
     </div>

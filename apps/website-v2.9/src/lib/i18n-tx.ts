@@ -207,6 +207,42 @@ import quantumFr from './ui-strings/quantum.fr.json';
 import verifyEs from './ui-strings/verify.es.json';
 import verifyPt from './ui-strings/verify.pt.json';
 import verifyFr from './ui-strings/verify.fr.json';
+import nclEs from './ui-strings/ncl.es.json';
+import nclPt from './ui-strings/ncl.pt.json';
+import nclFr from './ui-strings/ncl.fr.json';
+import algomgrEs from './ui-strings/algomgr.es.json';
+import algomgrPt from './ui-strings/algomgr.pt.json';
+import algomgrFr from './ui-strings/algomgr.fr.json';
+import dogezionEs from './ui-strings/dogezion.es.json';
+import dogezionPt from './ui-strings/dogezion.pt.json';
+import dogezionFr from './ui-strings/dogezion.fr.json';
+import parliamentEs from './ui-strings/parliament.es.json';
+import parliamentPt from './ui-strings/parliament.pt.json';
+import parliamentFr from './ui-strings/parliament.fr.json';
+import registryEs from './ui-strings/registry.es.json';
+import registryPt from './ui-strings/registry.pt.json';
+import registryFr from './ui-strings/registry.fr.json';
+import benchmarkEs from './ui-strings/benchmark.es.json';
+import benchmarkPt from './ui-strings/benchmark.pt.json';
+import benchmarkFr from './ui-strings/benchmark.fr.json';
+import livedashEs from './ui-strings/livedash.es.json';
+import livedashPt from './ui-strings/livedash.pt.json';
+import livedashFr from './ui-strings/livedash.fr.json';
+import souvislostiEs from './ui-strings/souvislosti.es.json';
+import souvislostiPt from './ui-strings/souvislosti.pt.json';
+import souvislostiFr from './ui-strings/souvislosti.fr.json';
+import txsEs from './ui-strings/txs.es.json';
+import txsPt from './ui-strings/txs.pt.json';
+import txsFr from './ui-strings/txs.fr.json';
+import starminerEs from './ui-strings/starminer.es.json';
+import starminerPt from './ui-strings/starminer.pt.json';
+import starminerFr from './ui-strings/starminer.fr.json';
+import accountEs from './ui-strings/account.es.json';
+import accountPt from './ui-strings/account.pt.json';
+import accountFr from './ui-strings/account.fr.json';
+import chartsEs from './ui-strings/charts.es.json';
+import chartsPt from './ui-strings/charts.pt.json';
+import chartsFr from './ui-strings/charts.fr.json';
 import homeEs from './ui-strings/home.es.json';
 import homePt from './ui-strings/home.pt.json';
 import homeFr from './ui-strings/home.fr.json';
@@ -231,9 +267,9 @@ type Dict = Record<string, string>;
 const merge = (...parts: Dict[]): Dict => Object.assign({}, ...parts);
 
 const DICTS: Record<'es' | 'pt' | 'fr', Dict> = {
-  es: merge(avatarsEs, newsfeedEs, issobellaEs, treeoflifeEs, mariaEs, kralovstviEs, nabukanoEs, archivelockEs, zionarchiveEs, whitepapersEs, tepikooraEs, contractsEs, knihovnaEs, qvEs, teamEs, l4hubEs, bohemiaEs, marketEs, networkEs, freeworldEs, daoEs, hiranEs, deekshaEs, ainativeEs, genesisEs, walletEs, bodhilankaEs, downloadEs, pooldashEs, poolbenchEs, poolqtcEs, explorerEs, expstatusEs, expbridgeEs, amentiEs, tnbookEs, poolminersEs, poolcalcEs, poolblocksEs, miningEs, expsupplyEs, expaddrEs, cexEs, dharmaEs, warpbtcEs, missionEs, minerdashEs, ekamEs, kailashEs, uluruEs, boaesperancaEs, novaamerikaEs, farmingEs, stakingEs, expblockEs, exptxEs, apirefEs, dashEs, multichainEs, ch3Es, g8Es, monitoringEs, poolprlEs, dlbrowserEs, netstatsEs, burnEs, breakerEs, quantumEs, verifyEs, homeEs),
-  pt: merge(avatarsPt, newsfeedPt, issobellaPt, treeoflifePt, mariaPt, kralovstviPt, nabukanoPt, archivelockPt, zionarchivePt, whitepapersPt, tepikooraPt, contractsPt, knihovnaPt, qvPt, teamPt, l4hubPt, bohemiaPt, marketPt, networkPt, freeworldPt, daoPt, hiranPt, deekshaPt, ainativePt, genesisPt, walletPt, bodhilankaPt, downloadPt, pooldashPt, poolbenchPt, poolqtcPt, explorerPt, expstatusPt, expbridgePt, amentiPt, tnbookPt, poolminersPt, poolcalcPt, poolblocksPt, miningPt, expsupplyPt, expaddrPt, cexPt, dharmaPt, warpbtcPt, missionPt, minerdashPt, ekamPt, kailashPt, uluruPt, boaesperancaPt, novaamerikaPt, farmingPt, stakingPt, expblockPt, exptxPt, apirefPt, dashPt, multichainPt, ch3Pt, g8Pt, monitoringPt, poolprlPt, dlbrowserPt, netstatsPt, burnPt, breakerPt, quantumPt, verifyPt, homePt),
-  fr: merge(avatarsFr, newsfeedFr, issobellaFr, treeoflifeFr, mariaFr, kralovstviFr, nabukanoFr, archivelockFr, zionarchiveFr, whitepapersFr, tepikooraFr, contractsFr, knihovnaFr, qvFr, teamFr, l4hubFr, bohemiaFr, marketFr, networkFr, freeworldFr, daoFr, hiranFr, deekshaFr, ainativeFr, genesisFr, walletFr, bodhilankaFr, downloadFr, pooldashFr, poolbenchFr, poolqtcFr, explorerFr, expstatusFr, expbridgeFr, amentiFr, tnbookFr, poolminersFr, poolcalcFr, poolblocksFr, miningFr, expsupplyFr, expaddrFr, cexFr, dharmaFr, warpbtcFr, missionFr, minerdashFr, ekamFr, kailashFr, uluruFr, boaesperancaFr, novaamerikaFr, farmingFr, stakingFr, expblockFr, exptxFr, apirefFr, dashFr, multichainFr, ch3Fr, g8Fr, monitoringFr, poolprlFr, dlbrowserFr, netstatsFr, burnFr, breakerFr, quantumFr, verifyFr, homeFr),
+  es: merge(avatarsEs, newsfeedEs, issobellaEs, treeoflifeEs, mariaEs, kralovstviEs, nabukanoEs, archivelockEs, zionarchiveEs, whitepapersEs, tepikooraEs, contractsEs, knihovnaEs, qvEs, teamEs, l4hubEs, bohemiaEs, marketEs, networkEs, freeworldEs, daoEs, hiranEs, deekshaEs, ainativeEs, genesisEs, walletEs, bodhilankaEs, downloadEs, pooldashEs, poolbenchEs, poolqtcEs, explorerEs, expstatusEs, expbridgeEs, amentiEs, tnbookEs, poolminersEs, poolcalcEs, poolblocksEs, miningEs, expsupplyEs, expaddrEs, cexEs, dharmaEs, warpbtcEs, missionEs, minerdashEs, ekamEs, kailashEs, uluruEs, boaesperancaEs, novaamerikaEs, farmingEs, stakingEs, expblockEs, exptxEs, apirefEs, dashEs, multichainEs, ch3Es, g8Es, monitoringEs, poolprlEs, dlbrowserEs, netstatsEs, burnEs, breakerEs, quantumEs, verifyEs, nclEs, algomgrEs, dogezionEs, parliamentEs, registryEs, benchmarkEs, livedashEs, souvislostiEs, txsEs, starminerEs, accountEs, chartsEs, homeEs),
+  pt: merge(avatarsPt, newsfeedPt, issobellaPt, treeoflifePt, mariaPt, kralovstviPt, nabukanoPt, archivelockPt, zionarchivePt, whitepapersPt, tepikooraPt, contractsPt, knihovnaPt, qvPt, teamPt, l4hubPt, bohemiaPt, marketPt, networkPt, freeworldPt, daoPt, hiranPt, deekshaPt, ainativePt, genesisPt, walletPt, bodhilankaPt, downloadPt, pooldashPt, poolbenchPt, poolqtcPt, explorerPt, expstatusPt, expbridgePt, amentiPt, tnbookPt, poolminersPt, poolcalcPt, poolblocksPt, miningPt, expsupplyPt, expaddrPt, cexPt, dharmaPt, warpbtcPt, missionPt, minerdashPt, ekamPt, kailashPt, uluruPt, boaesperancaPt, novaamerikaPt, farmingPt, stakingPt, expblockPt, exptxPt, apirefPt, dashPt, multichainPt, ch3Pt, g8Pt, monitoringPt, poolprlPt, dlbrowserPt, netstatsPt, burnPt, breakerPt, quantumPt, verifyPt, nclPt, algomgrPt, dogezionPt, parliamentPt, registryPt, benchmarkPt, livedashPt, souvislostiPt, txsPt, starminerPt, accountPt, chartsPt, homePt),
+  fr: merge(avatarsFr, newsfeedFr, issobellaFr, treeoflifeFr, mariaFr, kralovstviFr, nabukanoFr, archivelockFr, zionarchiveFr, whitepapersFr, tepikooraFr, contractsFr, knihovnaFr, qvFr, teamFr, l4hubFr, bohemiaFr, marketFr, networkFr, freeworldFr, daoFr, hiranFr, deekshaFr, ainativeFr, genesisFr, walletFr, bodhilankaFr, downloadFr, pooldashFr, poolbenchFr, poolqtcFr, explorerFr, expstatusFr, expbridgeFr, amentiFr, tnbookFr, poolminersFr, poolcalcFr, poolblocksFr, miningFr, expsupplyFr, expaddrFr, cexFr, dharmaFr, warpbtcFr, missionFr, minerdashFr, ekamFr, kailashFr, uluruFr, boaesperancaFr, novaamerikaFr, farmingFr, stakingFr, expblockFr, exptxFr, apirefFr, dashFr, multichainFr, ch3Fr, g8Fr, monitoringFr, poolprlFr, dlbrowserFr, netstatsFr, burnFr, breakerFr, quantumFr, verifyFr, nclFr, algomgrFr, dogezionFr, parliamentFr, registryFr, benchmarkFr, livedashFr, souvislostiFr, txsFr, starminerFr, accountFr, chartsFr, homeFr),
 };
 
 /** Přeloží lokalizovaný objekt pro daný jazyk (5 kódů). */

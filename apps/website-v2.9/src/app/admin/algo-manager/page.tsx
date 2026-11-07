@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 
 const AdminAlgoManagerCopy = {
   miningRouting: { cs: `Mining routing`, en: `Mining routing` },
@@ -139,16 +140,16 @@ export default function AlgoManagerPage() {
         <div className="zion-rainbow-card p-5 sm:p-8 md:p-10" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{AdminAlgoManagerCopy.miningRouting[lang === 'cs' ? 'cs' : 'en']}</p>
-              <h1 className="text-5xl md:text-6xl font-semibold text-gradient">{AdminAlgoManagerCopy.algorithmManager[lang === 'cs' ? 'cs' : 'en']}</h1>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(AdminAlgoManagerCopy.miningRouting, lang)}</p>
+              <h1 className="text-5xl md:text-6xl font-semibold text-gradient">{tx5(AdminAlgoManagerCopy.algorithmManager, lang)}</h1>
               <p className="mt-4 text-lg text-gray-300 max-w-2xl">
-                {AdminAlgoManagerCopy.algorithmSwitchingAndAutoManua[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(AdminAlgoManagerCopy.algorithmSwitchingAndAutoManua, lang)}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
               <div className="zion-rainbow-sub px-4 py-3 text-sm text-gray-300" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                {AdminAlgoManagerCopy.autoSwitch[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(AdminAlgoManagerCopy.autoSwitch, lang)}
               </div>
               <button
                 onClick={handleModeToggle}
@@ -160,40 +161,40 @@ export default function AlgoManagerPage() {
                 href="/admin"
                 className="zion-button-secondary"
               >
-                {AdminAlgoManagerCopy.back[lang === 'cs' ? 'cs' : 'en']}
+                {tx5(AdminAlgoManagerCopy.back, lang)}
               </Link>
             </div>
           </div>
 
           <div className="mt-10 grid gap-4 md:grid-cols-4">
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.mode[lang === 'cs' ? 'cs' : 'en']}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tx5(AdminAlgoManagerCopy.mode, lang)}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{status.mode.toUpperCase()}</p>
-              <p className="text-sm text-gray-300">{status.mode === 'auto' ? (AdminAlgoManagerCopy.profitabilityBased[lang === 'cs' ? 'cs' : 'en']) : (AdminAlgoManagerCopy.operatorControlled[lang === 'cs' ? 'cs' : 'en'])}</p>
+              <p className="text-sm text-gray-300">{status.mode === 'auto' ? (tx5(AdminAlgoManagerCopy.profitabilityBased, lang)) : (tx5(AdminAlgoManagerCopy.operatorControlled, lang))}</p>
             </div>
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.active[lang === 'cs' ? 'cs' : 'en']}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tx5(AdminAlgoManagerCopy.active, lang)}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{status.activeAlgo.toUpperCase()}</p>
               <p className="text-sm text-gray-300">{status.activeCoin}</p>
             </div>
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.profitDay[lang === 'cs' ? 'cs' : 'en']}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tx5(AdminAlgoManagerCopy.profitDay, lang)}</p>
               <p className="mt-2 text-3xl font-semibold text-white">${status.profitPerDay.toFixed(2)}</p>
-              <p className="text-sm text-gray-300">{AdminAlgoManagerCopy.perGpuBaseline[lang === 'cs' ? 'cs' : 'en']}</p>
+              <p className="text-sm text-gray-300">{tx5(AdminAlgoManagerCopy.perGpuBaseline, lang)}</p>
             </div>
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.nextCheck[lang === 'cs' ? 'cs' : 'en']}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tx5(AdminAlgoManagerCopy.nextCheck, lang)}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{formatTime(countdown)}</p>
-              <p className="text-sm text-gray-300">{AdminAlgoManagerCopy.schedulerTick[lang === 'cs' ? 'cs' : 'en']}</p>
+              <p className="text-sm text-gray-300">{tx5(AdminAlgoManagerCopy.schedulerTick, lang)}</p>
             </div>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-4 text-sm text-gray-300">
             <div className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              {AdminAlgoManagerCopy.connectedMiners[lang === 'cs' ? 'cs' : 'en']}: <span className="text-white font-semibold">{status.connectedMiners}</span>
+              {tx5(AdminAlgoManagerCopy.connectedMiners, lang)}: <span className="text-white font-semibold">{status.connectedMiners}</span>
             </div>
             <div className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              {AdminAlgoManagerCopy.totalHashrate[lang === 'cs' ? 'cs' : 'en']}: <span className="text-white font-semibold">{status.totalHashrate}</span>
+              {tx5(AdminAlgoManagerCopy.totalHashrate, lang)}: <span className="text-white font-semibold">{status.totalHashrate}</span>
             </div>
           </div>
         </div>
@@ -201,15 +202,15 @@ export default function AlgoManagerPage() {
         <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.profitability[lang === 'cs' ? 'cs' : 'en']}</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">{AdminAlgoManagerCopy.liveTable[lang === 'cs' ? 'cs' : 'en']}</h2>
-              <p className="mt-2 text-sm text-gray-300">{AdminAlgoManagerCopy.mockDataRtx4090Baseline[lang === 'cs' ? 'cs' : 'en']}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tx5(AdminAlgoManagerCopy.profitability, lang)}</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">{tx5(AdminAlgoManagerCopy.liveTable, lang)}</h2>
+              <p className="mt-2 text-sm text-gray-300">{tx5(AdminAlgoManagerCopy.mockDataRtx4090Baseline, lang)}</p>
             </div>
             <Link
               href="/admin/pool-config"
               className="zion-button-secondary"
             >
-              {AdminAlgoManagerCopy.poolConfiguration[lang === 'cs' ? 'cs' : 'en']}
+              {tx5(AdminAlgoManagerCopy.poolConfiguration, lang)}
             </Link>
           </div>
 
@@ -217,12 +218,12 @@ export default function AlgoManagerPage() {
             <table className="w-full text-sm">
               <thead className="bg-white/5">
                 <tr className="text-left text-gray-300">
-                  <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">{AdminAlgoManagerCopy.algorithm[lang === 'cs' ? 'cs' : 'en']}</th>
+                  <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">{tx5(AdminAlgoManagerCopy.algorithm, lang)}</th>
                   <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">Coin</th>
                   <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">$/den</th>
                   <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">24h</th>
-                  <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">{AdminAlgoManagerCopy.status[lang === 'cs' ? 'cs' : 'en']}</th>
-                  <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">{AdminAlgoManagerCopy.action[lang === 'cs' ? 'cs' : 'en']}</th>
+                  <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">{tx5(AdminAlgoManagerCopy.status, lang)}</th>
+                  <th className="px-4 py-3 text-xs uppercase tracking-[0.3em] font-semibold">{tx5(AdminAlgoManagerCopy.action, lang)}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
@@ -245,9 +246,9 @@ export default function AlgoManagerPage() {
                       </td>
                       <td className="px-4 py-4">
                         {algo.isActive ? (
-                          <span className="zion-badge zion-badge-green">{AdminAlgoManagerCopy.active_2[lang === 'cs' ? 'cs' : 'en']}</span>
+                          <span className="zion-badge zion-badge-green">{tx5(AdminAlgoManagerCopy.active_2, lang)}</span>
                         ) : (
-                          <span className="zion-badge">{AdminAlgoManagerCopy.standby[lang === 'cs' ? 'cs' : 'en']}</span>
+                          <span className="zion-badge">{tx5(AdminAlgoManagerCopy.standby, lang)}</span>
                         )}
                       </td>
                       <td className="px-4 py-4">
@@ -258,7 +259,7 @@ export default function AlgoManagerPage() {
                             onClick={() => handleSwitch(algo.algo)}
                             className="zion-button-secondary text-xs px-4 py-2"
                           >
-                            {AdminAlgoManagerCopy.switch[lang === 'cs' ? 'cs' : 'en']}
+                            {tx5(AdminAlgoManagerCopy.switch, lang)}
                           </button>
                         )}
                       </td>
@@ -270,12 +271,12 @@ export default function AlgoManagerPage() {
         </div>
 
         <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.tuning[lang === 'cs' ? 'cs' : 'en']}</p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">{AdminAlgoManagerCopy.settings[lang === 'cs' ? 'cs' : 'en']}</h2>
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tx5(AdminAlgoManagerCopy.tuning, lang)}</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">{tx5(AdminAlgoManagerCopy.settings, lang)}</h2>
 
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.switchThreshold[lang === 'cs' ? 'cs' : 'en']}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tx5(AdminAlgoManagerCopy.switchThreshold, lang)}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{settings.switchThreshold}%</p>
               <input
                 type="range"
@@ -285,11 +286,11 @@ export default function AlgoManagerPage() {
                 onChange={(e) => setSettings({ ...settings, switchThreshold: parseInt(e.target.value) })}
                 className="mt-4 w-full"
               />
-              <p className="mt-2 text-sm text-gray-300">{AdminAlgoManagerCopy.minProfitDiffForSwitch[lang === 'cs' ? 'cs' : 'en']}</p>
+              <p className="mt-2 text-sm text-gray-300">{tx5(AdminAlgoManagerCopy.minProfitDiffForSwitch, lang)}</p>
             </div>
 
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.checkInterval[lang === 'cs' ? 'cs' : 'en']}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tx5(AdminAlgoManagerCopy.checkInterval, lang)}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{settings.checkInterval} min</p>
               <input
                 type="range"
@@ -299,11 +300,11 @@ export default function AlgoManagerPage() {
                 onChange={(e) => setSettings({ ...settings, checkInterval: parseInt(e.target.value) })}
                 className="mt-4 w-full"
               />
-              <p className="mt-2 text-sm text-gray-300">{AdminAlgoManagerCopy.recalcPeriod[lang === 'cs' ? 'cs' : 'en']}</p>
+              <p className="mt-2 text-sm text-gray-300">{tx5(AdminAlgoManagerCopy.recalcPeriod, lang)}</p>
             </div>
 
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminAlgoManagerCopy.minTimeOnAlgo[lang === 'cs' ? 'cs' : 'en']}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tx5(AdminAlgoManagerCopy.minTimeOnAlgo, lang)}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{settings.minTimeOnAlgo} min</p>
               <input
                 type="range"
@@ -313,7 +314,7 @@ export default function AlgoManagerPage() {
                 onChange={(e) => setSettings({ ...settings, minTimeOnAlgo: parseInt(e.target.value) })}
                 className="mt-4 w-full"
               />
-              <p className="mt-2 text-sm text-gray-300">{AdminAlgoManagerCopy.antiFlapGuard[lang === 'cs' ? 'cs' : 'en']}</p>
+              <p className="mt-2 text-sm text-gray-300">{tx5(AdminAlgoManagerCopy.antiFlapGuard, lang)}</p>
             </div>
           </div>
         </div>

@@ -160,7 +160,7 @@
  "Top DAO governance layer — treasury oversight, security reviews, and long-term vision.": "Couche supérieure de gouvernance du DAO — supervision du trésor, revues de sécurité et vision à long terme.",
  "Total Projects": "Total des projets",
  "Total treasury balance including allocated funds.": "Solde total du trésor, fonds alloués compris.",
- "Treasury": "Trésor",
+ "Treasury": "Trésorerie",
  "Treasury approval records": "Enregistrements d'approbation du trésor",
  "Treasury dashboard": "Tableau de bord du trésor",
  "Treasury lock state": "État du verrouillage du trésor",
@@ -195,5 +195,7 @@
  "unknown": "inconnu",
  "voters": "votants",
  "votes cast": "votes exprimés",
- "wZION mints": "frappes de wZION"
+ "wZION mints": "frappes de wZION",
+ "Parliament": "Parlement",
+ "Roadmap": "Feuille de route"
 }

@@ -21,6 +21,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from '@/hooks/usePolling';
 import dynamic from 'next/dynamic';
 
@@ -507,7 +508,7 @@ export default function DogeVsZionPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft className="h-4 w-4" /> {DogeVsZionCopy.back[cs ? 'cs' : 'en']}
+            <ArrowLeft className="h-4 w-4" /> {tx5(DogeVsZionCopy.back, lang)}
           </Link>
           <button
             onClick={() => setMuted((m) => !m)}
@@ -537,7 +538,7 @@ export default function DogeVsZionPage() {
               transition={{ duration: 0.6 }}
               className="mb-8 text-sm font-bold uppercase tracking-[0.3em] text-zion-cyan/80"
             >
-              {DogeVsZionCopy.zionStargatePortalToOasis[cs ? 'cs' : 'en']}
+              {tx5(DogeVsZionCopy.zionStargatePortalToOasis, lang)}
             </motion.p>
 
             {/* Stargate — plný originál, úplně nahoře */}
@@ -563,14 +564,14 @@ export default function DogeVsZionPage() {
                 rel="noopener noreferrer"
                 className="zion-button-primary group"
               >
-                {DogeVsZionCopy.enterToOasis[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionCopy.enterToOasis, lang)}
                 <span className="transition-transform group-hover:translate-x-1">→</span>
               </a>
               <Link
                 href="/l4-oasis"
                 className="zion-button-secondary group"
               >
-                {DogeVsZionCopy.learnMoreOasis[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionCopy.learnMoreOasis, lang)}
                 <span className="transition-transform group-hover:translate-x-1">→</span>
               </Link>
             </motion.div>
@@ -583,7 +584,7 @@ export default function DogeVsZionPage() {
               className="relative z-20 text-2xl md:text-3xl font-bold tracking-tight"
             >
               <span className="bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan bg-clip-text text-transparent">
-                {DogeVsZionCopy.showdownArcade[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionCopy.showdownArcade, lang)}
               </span>
             </motion.h2>
 
@@ -605,7 +606,7 @@ export default function DogeVsZionPage() {
               transition={{ delay: 0.6 }}
               className="mt-3 text-sm md:text-base text-gray-400 max-w-2xl leading-relaxed"
             >
-              {DogeVsZionCopy.zionIsAt00002ExactlyWhereDogeW[cs ? 'cs' : 'en']}
+              {tx5(DogeVsZionCopy.zionIsAt00002ExactlyWhereDogeW, lang)}
             </motion.p>
 
             {/* Statistiky */}
@@ -617,17 +618,17 @@ export default function DogeVsZionPage() {
             >
               <div className="zion-badge">
                 <Gamepad2 className="h-3.5 w-3.5 text-zion-cyan" />
-                <span>{GAMES.length} {DogeVsZionCopy.games[cs ? 'cs' : 'en']}</span>
+                <span>{GAMES.length} {tx5(DogeVsZionCopy.games, lang)}</span>
               </div>
               <div className="zion-badge-gold">
                 <Trophy className="h-3.5 w-3.5 text-zion-gold" />
                 <span>
-                  {Object.values(highScores).reduce((a, b) => a + b, 0)} {DogeVsZionCopy.pts[cs ? 'cs' : 'en']}
+                  {Object.values(highScores).reduce((a, b) => a + b, 0)} {tx5(DogeVsZionCopy.pts, lang)}
                 </span>
               </div>
               <div className={`zion-badge ${zion.connected ? 'zion-badge-green' : ''}`}>
                 <span className={`h-2 w-2 rounded-full ${zion.connected ? 'bg-zion-cyan animate-pulse' : 'bg-gray-500'}`} />
-                <span>{zion.connected ? (DogeVsZionCopy.zionLive[cs ? 'cs' : 'en']) : (DogeVsZionCopy.zionOffline[cs ? 'cs' : 'en'])}</span>
+                <span>{zion.connected ? (tx5(DogeVsZionCopy.zionLive, lang)) : (tx5(DogeVsZionCopy.zionOffline, lang))}</span>
               </div>
             </motion.div>
           </div>
@@ -648,10 +649,10 @@ export default function DogeVsZionPage() {
             <Swords className="h-6 w-6 text-zion-purple" />
             <div>
               <h2 className="text-2xl font-bold text-white tracking-tight">
-                {DogeVsZionCopy.dogeVsZionComparison[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionCopy.dogeVsZionComparison, lang)}
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                {DogeVsZionCopy.liveZionDataFromApiDogeApproxi[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionCopy.liveZionDataFromApiDogeApproxi, lang)}
               </p>
             </div>
           </div>
@@ -759,7 +760,7 @@ export default function DogeVsZionPage() {
                   →
                 </motion.div>
                 <p className="text-xs font-bold text-zion-cyan mt-1">600x</p>
-                <p className="text-[10px] text-gray-500">{DogeVsZionCopy.in13Years[cs ? 'cs' : 'en']}</p>
+                <p className="text-[10px] text-gray-500">{tx5(DogeVsZionCopy.in13Years, lang)}</p>
               </div>
 
               {/* Right: Doge now */}
@@ -789,7 +790,7 @@ export default function DogeVsZionPage() {
             </div>
 
             <p className="mt-4 text-center text-xs text-gray-400 leading-relaxed">
-              {DogeVsZionCopy.zionTodayIsExactlyWhereDogeWas[cs ? 'cs' : 'en']}
+              {tx5(DogeVsZionCopy.zionTodayIsExactlyWhereDogeWas, lang)}
             </p>
           </motion.div>
 
@@ -804,7 +805,7 @@ export default function DogeVsZionPage() {
           >
             <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
               <Trophy className="h-4 w-4 text-zion-gold" />
-              {DogeVsZionCopy.zionAdvantages[cs ? 'cs' : 'en']}
+              {tx5(DogeVsZionCopy.zionAdvantages, lang)}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {ZION_ADVANTAGES.map((adv) => {
@@ -835,10 +836,10 @@ export default function DogeVsZionPage() {
             <Trophy className="h-6 w-6 text-zion-gold" />
             <div>
               <h2 className="text-2xl font-bold text-white tracking-tight">
-                {DogeVsZionCopy.battleStats[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionCopy.battleStats, lang)}
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                {DogeVsZionCopy.aPlayfulShowdownWhoWins[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionCopy.aPlayfulShowdownWhoWins, lang)}
               </p>
             </div>
           </div>
@@ -891,10 +892,10 @@ export default function DogeVsZionPage() {
             <Sparkles className="h-6 w-6 text-zion-gold" />
             <div>
               <h2 className="text-2xl font-bold text-white tracking-tight">
-                {DogeVsZionCopy.theOriginal[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionCopy.theOriginal, lang)}
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                {DogeVsZionCopy.whereItAllBeganAndTheZionAnswe[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionCopy.whereItAllBeganAndTheZionAnswe, lang)}
               </p>
             </div>
           </div>
@@ -931,15 +932,15 @@ export default function DogeVsZionPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-zion-gold">Doge Miner 2</h3>
-                  <p className="text-[10px] uppercase tracking-widest text-gray-500">{DogeVsZionCopy.legendaryClicker[cs ? 'cs' : 'en']}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500">{tx5(DogeVsZionCopy.legendaryClicker, lang)}</p>
                 </div>
               </div>
               <p className="text-xs text-gray-400 leading-relaxed mb-4">
-                {DogeVsZionCopy.theLegendaryClickerThatStarted[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionCopy.theLegendaryClickerThatStarted, lang)}
               </p>
               <div className="zion-button-secondary group-hover:gap-3 text-xs !px-4 !py-2">
                 <ExternalLink className="h-3.5 w-3.5" />
-                {DogeVsZionCopy.playExternal[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionCopy.playExternal, lang)}
               </div>
             </motion.a>
 
@@ -959,15 +960,15 @@ export default function DogeVsZionPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-zion-gold">Star Miner</h3>
-                  <p className="text-[10px] uppercase tracking-widest text-gray-500">{DogeVsZionCopy.zionAnswer[cs ? 'cs' : 'en']}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500">{tx5(DogeVsZionCopy.zionAnswer, lang)}</p>
                 </div>
               </div>
               <p className="text-xs text-gray-400 leading-relaxed mb-4">
-                {DogeVsZionCopy.zionSAnswerToDogeMiner2MineOnT[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionCopy.zionSAnswerToDogeMiner2MineOnT, lang)}
               </p>
               <div className="zion-button-primary group-hover:gap-3 text-xs !px-4 !py-2">
                 <Play className="h-3.5 w-3.5" />
-                {DogeVsZionCopy.play[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionCopy.play, lang)}
               </div>
             </motion.button>
           </div>
@@ -981,11 +982,11 @@ export default function DogeVsZionPage() {
               <div className="flex items-center gap-2">
                 <Gamepad2 className="h-5 w-5 text-zion-purple" />
                 <h2 className="text-lg font-bold text-white tracking-wide">
-                  {DogeVsZionCopy.zionArcade[cs ? 'cs' : 'en']}
+                  {tx5(DogeVsZionCopy.zionArcade, lang)}
                 </h2>
               </div>
               <p className="text-[11px] text-gray-500 mt-0.5">
-                {DogeVsZionCopy.playGamesEarnGloryDefendTheNet[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionCopy.playGamesEarnGloryDefendTheNet, lang)}
               </p>
             </div>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-zion-purple/40 to-transparent" />
@@ -1069,13 +1070,13 @@ export default function DogeVsZionPage() {
                         <Trophy className="h-3.5 w-3.5 text-gray-600" />
                         <span className="text-xs text-gray-500">
                           {score > 0
-                            ? <span style={{ color: game.color }}>{score} {DogeVsZionCopy.pts[cs ? 'cs' : 'en']}</span>
-                            : (DogeVsZionCopy.notPlayedYet[cs ? 'cs' : 'en'])}
+                            ? <span style={{ color: game.color }}>{score} {tx5(DogeVsZionCopy.pts, lang)}</span>
+                            : (tx5(DogeVsZionCopy.notPlayedYet, lang))}
                         </span>
                       </div>
                       <div className="zion-button-primary group-hover:gap-3 text-xs !px-4 !py-2">
                         <Play className="h-3.5 w-3.5" />
-                        {DogeVsZionCopy.play[cs ? 'cs' : 'en']}
+                        {tx5(DogeVsZionCopy.play, lang)}
                       </div>
                     </div>
                   </div>
@@ -1121,10 +1122,10 @@ export default function DogeVsZionPage() {
             <Lock className="h-5 w-5 text-gray-500" />
             <div>
               <h2 className="text-lg font-bold text-white tracking-wide">
-                {DogeVsZionCopy.comingSoon[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionCopy.comingSoon, lang)}
               </h2>
               <p className="text-[11px] text-gray-500 mt-0.5">
-                {DogeVsZionCopy.moreGamesOnTheHorizon[cs ? 'cs' : 'en']}
+                {tx5(DogeVsZionCopy.moreGamesOnTheHorizon, lang)}
               </p>
             </div>
           </div>
@@ -1159,7 +1160,7 @@ export default function DogeVsZionPage() {
                 </div>
                 <p className="relative text-xs text-gray-500 leading-relaxed">{cs ? game.descriptionCs : game.description}</p>
                 <p className="relative mt-3 text-[10px] uppercase tracking-widest text-gray-600 font-semibold">
-                  {DogeVsZionCopy.lockedSoon[cs ? 'cs' : 'en']}
+                  {tx5(DogeVsZionCopy.lockedSoon, lang)}
                 </p>
               </motion.div>
             ))}

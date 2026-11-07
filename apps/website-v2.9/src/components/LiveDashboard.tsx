@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { Activity, Atom, Braces, Database, Gauge, HelpCircle, Shield, TrendingUp } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { apiClient } from '@/lib/api';
 import { usePolling } from '@/hooks/usePolling';
 
@@ -80,7 +81,7 @@ const placeholderStats: BlockchainStats = {
 export default function LiveDashboard() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = LiveDashboardCopy.enUs[cs ? 'cs' : 'en'];
+  const locale = tx5(LiveDashboardCopy.enUs, lang);
   const [stats, setStats] = useState<BlockchainStats>(placeholderStats);
   const [defiPrice, setDefiPrice] = useState<DefiPrice | null>(null);
   const [loadedAtLeastOnce, setLoadedAtLeastOnce] = useState(false);
@@ -125,11 +126,11 @@ export default function LiveDashboard() {
   const staleTelemetry = loadedAtLeastOnce && !!error;
 
   const metrics = [
-    { icon: Database, label: LiveDashboardCopy.totalBlocks[cs ? 'cs' : 'en'], value: (stats.total_blocks ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.totalNumberOfMinedBlocksSinceM[cs ? 'cs' : 'en'], color: 'text-zion-gold', rc: '252, 209, 22' },
-    { icon: Gauge, label: LiveDashboardCopy.totalSupply[cs ? 'cs' : 'en'], value: formattedSupply, tip: LiveDashboardCopy.maximumZionSupplyIs144BillionI[cs ? 'cs' : 'en'], color: 'text-zion-purple', rc: '228, 30, 43' },
-    { icon: Atom, label: LiveDashboardCopy.transactions[cs ? 'cs' : 'en'], value: (stats.total_transactions ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.totalNumberOfTransactionsRecor[cs ? 'cs' : 'en'], color: 'text-zion-cyan', rc: '6, 105, 40' },
-    { icon: Shield, label: LiveDashboardCopy.difficulty[cs ? 'cs' : 'en'], value: (stats.difficulty ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.currentMiningDifficultySetByLw[cs ? 'cs' : 'en'], color: 'text-zion-cyan', rc: '6, 105, 40' },
-    { icon: Braces, label: LiveDashboardCopy.mempoolSize[cs ? 'cs' : 'en'], value: (stats.mempool_size ?? stats.tx_pool_size ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.transactionsWaitingForConfirma[cs ? 'cs' : 'en'], color: 'text-zion-gold', rc: '252, 209, 22' },
+    { icon: Database, label: tx5(LiveDashboardCopy.totalBlocks, lang), value: (stats.total_blocks ?? 0).toLocaleString(locale), tip: tx5(LiveDashboardCopy.totalNumberOfMinedBlocksSinceM, lang), color: 'text-zion-gold', rc: '252, 209, 22' },
+    { icon: Gauge, label: tx5(LiveDashboardCopy.totalSupply, lang), value: formattedSupply, tip: tx5(LiveDashboardCopy.maximumZionSupplyIs144BillionI, lang), color: 'text-zion-purple', rc: '228, 30, 43' },
+    { icon: Atom, label: tx5(LiveDashboardCopy.transactions, lang), value: (stats.total_transactions ?? 0).toLocaleString(locale), tip: tx5(LiveDashboardCopy.totalNumberOfTransactionsRecor, lang), color: 'text-zion-cyan', rc: '6, 105, 40' },
+    { icon: Shield, label: tx5(LiveDashboardCopy.difficulty, lang), value: (stats.difficulty ?? 0).toLocaleString(locale), tip: tx5(LiveDashboardCopy.currentMiningDifficultySetByLw, lang), color: 'text-zion-cyan', rc: '6, 105, 40' },
+    { icon: Braces, label: tx5(LiveDashboardCopy.mempoolSize, lang), value: (stats.mempool_size ?? stats.tx_pool_size ?? 0).toLocaleString(locale), tip: tx5(LiveDashboardCopy.transactionsWaitingForConfirma, lang), color: 'text-zion-gold', rc: '252, 209, 22' },
   ];
 
   return (
@@ -137,12 +138,12 @@ export default function LiveDashboard() {
       <div className="zion-container space-y-4">
         <div className="flex items-center gap-3">
           <Activity className="w-4 h-4 text-zion-gold" />
-          <h2 className="text-lg font-semibold text-white">{LiveDashboardCopy.missionConsole[cs ? 'cs' : 'en']}</h2>
+          <h2 className="text-lg font-semibold text-white">{tx5(LiveDashboardCopy.missionConsole, lang)}</h2>
           <span className={`ml-auto inline-flex h-2 w-2 rounded-full ${staleTelemetry ? 'bg-zion-gold' : 'bg-zion-cyan'} animate-pulse`} />
           <span className="text-xs text-gray-400">
             {staleTelemetry
-              ? (LiveDashboardCopy.snapshotActive[cs ? 'cs' : 'en'])
-              : (loadedAtLeastOnce ? LiveDashboardCopy.live[cs ? 'cs' : 'en'] : LiveDashboardCopy.initializing[cs ? 'cs' : 'en'])}
+              ? (tx5(LiveDashboardCopy.snapshotActive, lang))
+              : (loadedAtLeastOnce ? tx5(LiveDashboardCopy.live, lang) : tx5(LiveDashboardCopy.initializing, lang))}
           </span>
         </div>
 
@@ -166,26 +167,26 @@ export default function LiveDashboard() {
 
         <div className="grid gap-2 md:grid-cols-2">
           <div className="zion-rainbow-card p-3" style={{ '--rc': '107, 114, 128' } as React.CSSProperties}>
-            <p className="text-[10px] text-gray-400 uppercase tracking-wide">{LiveDashboardCopy.latestBlock[cs ? 'cs' : 'en']}</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wide">{tx5(LiveDashboardCopy.latestBlock, lang)}</p>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-lg font-bold text-white">#{latestBlock?.height ?? stats.block_height ?? '—'}</span>
               <span className="text-xs text-gray-400">{formattedTimestamp}</span>
             </div>
-            <p className="font-mono text-[10px] text-zion-cyan break-all mt-1">{latestBlock?.hash ?? (LiveDashboardCopy.waitingForSignal[cs ? 'cs' : 'en'])}</p>
+            <p className="font-mono text-[10px] text-zion-cyan break-all mt-1">{latestBlock?.hash ?? (tx5(LiveDashboardCopy.waitingForSignal, lang))}</p>
           </div>
 
           <div className="zion-rainbow-card p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <div className="flex items-center justify-between">
-              <p className="text-[10px] text-gray-400 uppercase tracking-wide">{LiveDashboardCopy.defiPool[cs ? 'cs' : 'en']}</p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide">{tx5(LiveDashboardCopy.defiPool, lang)}</p>
               <TrendingUp className="w-4 h-4 text-zion-cyan" />
             </div>
             <div className="grid grid-cols-2 gap-2 mt-1">
               <div>
-                <p className="text-xs text-gray-400">{LiveDashboardCopy.zionPrice[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs text-gray-400">{tx5(LiveDashboardCopy.zionPrice, lang)}</p>
                 <p className="text-base font-bold text-white">${defiPrice?.price?.usd_per_wzion?.toFixed(6) ?? '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400">{LiveDashboardCopy.tvlUsd[cs ? 'cs' : 'en']}</p>
+                <p className="text-xs text-gray-400">{tx5(LiveDashboardCopy.tvlUsd, lang)}</p>
                 <p className="text-base font-bold text-white">${(defiPrice?.tvl?.usd ?? 0).toFixed(2)}</p>
               </div>
             </div>

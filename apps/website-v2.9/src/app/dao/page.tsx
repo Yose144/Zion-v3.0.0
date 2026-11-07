@@ -794,7 +794,7 @@ export default function DaoPage() {
                     style={isActive ? { '--rc': '252, 209, 22' } as CSSProperties : undefined}
                   >
                     <Icon className="h-3.5 w-3.5" />
-                    {cs ? t.labelCs : t.labelEn}
+                    {cs ? t.labelCs : t5(t.labelEn, lang)}
                   </button>
                 );
               })}
@@ -1084,7 +1084,7 @@ export default function DaoPage() {
 
           {activeTab === 'parliament' && (
             <ParliamentVision
-              lang={cs ? 'cs' : 'en'}
+              lang={lang}
               treasuryGuardians={guardiansCount}
               multisig={multisigLabel}
             />

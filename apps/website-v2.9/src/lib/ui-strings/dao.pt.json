@@ -76,7 +76,7 @@
  "Guardian admission": "Admissão de Guardian",
  "Guardian expulsion": "Expulsão de Guardian",
  "Guardian · Bridge · L2": "Guardian · Bridge · L2",
- "Guardians": "Guardians",
+ "Guardians": "Guardantes",
  "Guardians Council": "Conselho de Guardians",
  "Heart": "Coração",
  "Heart · Community · L5": "Coração · Comunidade · L5",
@@ -160,7 +160,7 @@
  "Top DAO governance layer — treasury oversight, security reviews, and long-term vision.": "Camada superior de governança do DAO — supervisão do tesouro, revisões de segurança e visão de longo prazo.",
  "Total Projects": "Total de projetos",
  "Total treasury balance including allocated funds.": "Saldo total do tesouro, incluindo fundos alocados.",
- "Treasury": "Tesouro",
+ "Treasury": "Tesouraria",
  "Treasury approval records": "Registos de aprovação do tesouro",
  "Treasury dashboard": "Painel do tesouro",
  "Treasury lock state": "Estado de bloqueio do tesouro",
@@ -195,5 +195,7 @@
  "unknown": "desconhecido",
  "voters": "votantes",
  "votes cast": "votos expressos",
- "wZION mints": "cunhagens de wZION"
+ "wZION mints": "cunhagens de wZION",
+ "Parliament": "Parlamento",
+ "Roadmap": "Roteiro"
 }

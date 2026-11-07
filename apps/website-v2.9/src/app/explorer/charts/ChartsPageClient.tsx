@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 import { apiClient } from "@/lib/api";
 import { exportToCsv } from "@/lib/csv-export";
@@ -356,37 +357,37 @@ export default function ChartsPageClient() {
   const statCards = useMemo(
     () => [
       {
-        label: ExplorerChartsChartsPageClientCopy.height[cs ? 'cs' : 'en'],
+        label: tx5(ExplorerChartsChartsPageClientCopy.height, lang),
         value: stats ? `#${stats.block_height.toLocaleString()}` : "—",
         icon: Blocks,
         color: "text-zion-gold",
       },
       {
-        label: ExplorerChartsChartsPageClientCopy.hashrate[cs ? 'cs' : 'en'],
+        label: tx5(ExplorerChartsChartsPageClientCopy.hashrate, lang),
         value: stats?.network_hashrate_formatted ?? "—",
         icon: Zap,
         color: "text-zion-cyan",
       },
       {
-        label: ExplorerChartsChartsPageClientCopy.difficulty[cs ? 'cs' : 'en'],
+        label: tx5(ExplorerChartsChartsPageClientCopy.difficulty, lang),
         value: stats ? fmtSI(stats.difficulty) : "—",
         icon: TrendingUp,
         color: "text-zion-cyan",
       },
       {
-        label: ExplorerChartsChartsPageClientCopy.blockTime[cs ? 'cs' : 'en'],
+        label: tx5(ExplorerChartsChartsPageClientCopy.blockTime, lang),
         value: stats ? `${stats.avg_block_time.toFixed(1)}s` : "—",
         icon: Clock,
         color: "text-zion-gold",
       },
       {
-        label: ExplorerChartsChartsPageClientCopy.totalTx[cs ? 'cs' : 'en'],
+        label: tx5(ExplorerChartsChartsPageClientCopy.totalTx, lang),
         value: stats ? stats.total_transactions.toLocaleString() : "—",
         icon: Layers,
         color: "text-zion-purple",
       },
       {
-        label: ExplorerChartsChartsPageClientCopy.mempool[cs ? 'cs' : 'en'],
+        label: tx5(ExplorerChartsChartsPageClientCopy.mempool, lang),
         value: stats ? String(stats.tx_pool_size) : "—",
         icon: Activity,
         color: "text-zion-purple",
@@ -418,31 +419,31 @@ export default function ChartsPageClient() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple uppercase">
                 <BarChart3 className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {ExplorerChartsChartsPageClientCopy.analytics[cs ? 'cs' : 'en']}
+                {SITE_RELEASE_LABEL} · {tx5(ExplorerChartsChartsPageClientCopy.analytics, lang)}
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                  {ExplorerChartsChartsPageClientCopy.historicalData[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerChartsChartsPageClientCopy.historicalData, lang)}
                 </p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {ExplorerChartsChartsPageClientCopy.chartsAnalytics[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerChartsChartsPageClientCopy.chartsAnalytics, lang)}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {ExplorerChartsChartsPageClientCopy.historicalTrendsForHashrateDif[cs ? 'cs' : 'en']}
+                {tx5(ExplorerChartsChartsPageClientCopy.historicalTrendsForHashrateDif, lang)}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="zion-badge zion-badge-green">
-                  <Activity className="h-3 w-3" /> {ExplorerChartsChartsPageClientCopy.autoRefresh30s[cs ? 'cs' : 'en']}
+                  <Activity className="h-3 w-3" /> {tx5(ExplorerChartsChartsPageClientCopy.autoRefresh30s, lang)}
                 </span>
-                <LiveBadge label={ExplorerChartsChartsPageClientCopy.live[cs ? 'cs' : 'en']} />
+                <LiveBadge label={tx5(ExplorerChartsChartsPageClientCopy.live, lang)} />
               </div>
             </div>
 
             {/* Range selector */}
             <div className="flex flex-col gap-3">
               <span className="text-xs text-gray-400 uppercase tracking-wider">
-                {ExplorerChartsChartsPageClientCopy.timeRange[cs ? 'cs' : 'en']}
+                {tx5(ExplorerChartsChartsPageClientCopy.timeRange, lang)}
               </span>
               <div className="flex items-center gap-2">
                 {ranges.map((r) => (
@@ -504,11 +505,11 @@ export default function ChartsPageClient() {
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-              {ExplorerChartsChartsPageClientCopy.trends[cs ? 'cs' : 'en']}
+              {tx5(ExplorerChartsChartsPageClientCopy.trends, lang)}
             </p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <BarChart3 className="h-7 w-7 text-zion-purple" />
-              {ExplorerChartsChartsPageClientCopy.networkCharts[cs ? 'cs' : 'en']}
+              {tx5(ExplorerChartsChartsPageClientCopy.networkCharts, lang)}
             </h2>
           </div>
 
@@ -544,7 +545,7 @@ export default function ChartsPageClient() {
                           {cs ? ct.labelCs : ct.label}
                         </h3>
                         <p className="text-[11px] text-gray-500">
-                          {range.toUpperCase()} · {values.length} {ExplorerChartsChartsPageClientCopy.points[cs ? 'cs' : 'en']}
+                          {range.toUpperCase()} · {values.length} {tx5(ExplorerChartsChartsPageClientCopy.points, lang)}
                         </p>
                       </div>
                     </div>
@@ -570,7 +571,7 @@ export default function ChartsPageClient() {
                         onClick={() => handleExportChart(ct.key)}
                         disabled={!cd}
                         className="p-2 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/10 disabled:opacity-30 transition"
-                        title={ExplorerChartsChartsPageClientCopy.exportCsv[cs ? 'cs' : 'en']}
+                        title={tx5(ExplorerChartsChartsPageClientCopy.exportCsv, lang)}
                       >
                         <Download className="w-3.5 h-3.5" />
                       </button>
@@ -607,14 +608,14 @@ export default function ChartsPageClient() {
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-              {ExplorerChartsChartsPageClientCopy.market[cs ? 'cs' : 'en']}
+              {tx5(ExplorerChartsChartsPageClientCopy.market, lang)}
             </p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Coins className="h-7 w-7 text-zion-gold" />
-              {ExplorerChartsChartsPageClientCopy.market[cs ? 'cs' : 'en']}
+              {tx5(ExplorerChartsChartsPageClientCopy.market, lang)}
             </h2>
             <p className="text-sm text-gray-400">
-              {ExplorerChartsChartsPageClientCopy.liveDexData[cs ? 'cs' : 'en']}
+              {tx5(ExplorerChartsChartsPageClientCopy.liveDexData, lang)}
             </p>
           </div>
 
@@ -636,7 +637,7 @@ export default function ChartsPageClient() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="zion-rainbow-sub p-4" style={{ "--rc": "252, 209, 22" } as React.CSSProperties}>
                     <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">
-                      {ExplorerChartsChartsPageClientCopy.price[cs ? 'cs' : 'en']}
+                      {tx5(ExplorerChartsChartsPageClientCopy.price, lang)}
                     </div>
                     <div className="text-lg font-bold text-zion-gold tabular-nums">
                       {market.best_price_usd.toFixed(6)} USD
@@ -644,7 +645,7 @@ export default function ChartsPageClient() {
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ "--rc": "252, 209, 22" } as React.CSSProperties}>
                     <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">
-                      {ExplorerChartsChartsPageClientCopy.change24h[cs ? 'cs' : 'en']}
+                      {tx5(ExplorerChartsChartsPageClientCopy.change24h, lang)}
                     </div>
                     <div className={`text-lg font-bold tabular-nums ${market.price_change_24h >= 0 ? 'text-zion-cyan' : 'text-zion-purple'}`}>
                       {market.price_change_24h >= 0 ? '▲' : '▼'} {Math.abs(market.price_change_24h).toFixed(2)}%
@@ -652,7 +653,7 @@ export default function ChartsPageClient() {
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ "--rc": "252, 209, 22" } as React.CSSProperties}>
                     <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">
-                      {ExplorerChartsChartsPageClientCopy.volume24h[cs ? 'cs' : 'en']}
+                      {tx5(ExplorerChartsChartsPageClientCopy.volume24h, lang)}
                     </div>
                     <div className="text-lg font-bold text-white tabular-nums">
                       {fmtUsd(market.total_volume_24h)}
@@ -660,7 +661,7 @@ export default function ChartsPageClient() {
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ "--rc": "252, 209, 22" } as React.CSSProperties}>
                     <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">
-                      {ExplorerChartsChartsPageClientCopy.liquidity[cs ? 'cs' : 'en']}
+                      {tx5(ExplorerChartsChartsPageClientCopy.liquidity, lang)}
                     </div>
                     <div className="text-lg font-bold text-white tabular-nums">
                       {fmtUsd(market.total_liquidity_usd)}
@@ -671,10 +672,10 @@ export default function ChartsPageClient() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-base font-semibold text-white">
-                      {ExplorerChartsChartsPageClientCopy.volumeByPair[cs ? 'cs' : 'en']}
+                      {tx5(ExplorerChartsChartsPageClientCopy.volumeByPair, lang)}
                     </h3>
                     <span className="text-[11px] text-gray-500">
-                      {market.pairs} {ExplorerChartsChartsPageClientCopy.pairs[cs ? 'cs' : 'en']}
+                      {market.pairs} {tx5(ExplorerChartsChartsPageClientCopy.pairs, lang)}
                     </span>
                   </div>
                   <div className="h-[160px]">
@@ -699,10 +700,10 @@ export default function ChartsPageClient() {
               </div>
               <div>
                 <h3 className="text-base font-semibold text-white mb-1">
-                  {ExplorerChartsChartsPageClientCopy.aboutTheCharts[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerChartsChartsPageClientCopy.aboutTheCharts, lang)}
                 </h3>
                 <p className="text-sm text-gray-400">
-                  {ExplorerChartsChartsPageClientCopy.dataComesFromTheLiveZionNodeRp[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerChartsChartsPageClientCopy.dataComesFromTheLiveZionNodeRp, lang)}
                 </p>
               </div>
             </div>

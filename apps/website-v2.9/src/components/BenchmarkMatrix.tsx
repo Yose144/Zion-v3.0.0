@@ -2,6 +2,7 @@
 
 import { Cpu, Zap, DollarSign, BarChart3, ArrowRight, ExternalLink } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import Link from 'next/link';
 
 const BenchmarkMatrixCopy = {
@@ -119,7 +120,7 @@ export default function BenchmarkMatrix() {
             <span className="text-gradient">GPU Benchmarks</span>
           </h1>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            {BenchmarkMatrixCopy.k8GpusFromGtx1060ToH100SxmPureB[cs ? 'cs' : 'en']}
+            {tx5(BenchmarkMatrixCopy.k8GpusFromGtx1060ToH100SxmPureB, lang)}
           </p>
         </div>
 
@@ -128,7 +129,7 @@ export default function BenchmarkMatrix() {
           <div className="p-4 border-b border-white/10">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <Cpu className="w-5 h-5 text-zion-gold" />
-              {BenchmarkMatrixCopy.resultsSortedByPerformance[cs ? 'cs' : 'en']}
+              {tx5(BenchmarkMatrixCopy.resultsSortedByPerformance, lang)}
             </h2>
           </div>
           <div className="overflow-x-auto">
@@ -136,12 +137,12 @@ export default function BenchmarkMatrix() {
               <thead>
                 <tr className="border-b border-white/10 text-left text-white/50 text-xs uppercase tracking-wider">
                   <th className="px-4 py-3">GPU</th>
-                  <th className="px-4 py-3">{BenchmarkMatrixCopy.architecture[cs ? 'cs' : 'en']}</th>
+                  <th className="px-4 py-3">{tx5(BenchmarkMatrixCopy.architecture, lang)}</th>
                   <th className="px-4 py-3">VRAM</th>
                   <th className="px-4 py-3">BW (GB/s)</th>
                   <th className="px-4 py-3 text-right font-bold text-zion-gold/80">KH/s</th>
-                  <th className="px-4 py-3">{BenchmarkMatrixCopy.optTpb[cs ? 'cs' : 'en']}</th>
-                  <th className="px-4 py-3">{BenchmarkMatrixCopy.optWc[cs ? 'cs' : 'en']}</th>
+                  <th className="px-4 py-3">{tx5(BenchmarkMatrixCopy.optTpb, lang)}</th>
+                  <th className="px-4 py-3">{tx5(BenchmarkMatrixCopy.optWc, lang)}</th>
                   <th className="px-4 py-3">$/hr</th>
                   <th className="px-4 py-3 text-right">KH/$</th>
                 </tr>
@@ -169,14 +170,14 @@ export default function BenchmarkMatrix() {
             </table>
           </div>
           <div className="px-4 py-3 border-t border-white/5 text-xs text-white/30">
-            {BenchmarkMatrixCopy.rtx2060sBenchmarkedWithPoolOve[cs ? 'cs' : 'en']}
+            {tx5(BenchmarkMatrixCopy.rtx2060sBenchmarkedWithPoolOve, lang)}
           </div>
         </div>
 
         {/* ── Key findings cards ─────────────────────────────── */}
         <div className="mb-16">
           <h2 className="text-2xl font-bold text-white mb-8">
-            {BenchmarkMatrixCopy.keyFindings[cs ? 'cs' : 'en']}
+            {tx5(BenchmarkMatrixCopy.keyFindings, lang)}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {FINDINGS.map((f, i) => {
@@ -204,17 +205,17 @@ export default function BenchmarkMatrix() {
           <div className="p-4 border-b border-white/10">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <Zap className="w-5 h-5 text-zion-gold" />
-              {BenchmarkMatrixCopy.recommendedTuningDefaults[cs ? 'cs' : 'en']}
+              {tx5(BenchmarkMatrixCopy.recommendedTuningDefaults, lang)}
             </h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left text-white/50 text-xs uppercase tracking-wider">
-                  <th className="px-4 py-3">{BenchmarkMatrixCopy.gpuClass[cs ? 'cs' : 'en']}</th>
+                  <th className="px-4 py-3">{tx5(BenchmarkMatrixCopy.gpuClass, lang)}</th>
                   <th className="px-4 py-3">ZION_CUDA_TPB</th>
                   <th className="px-4 py-3">ZION_GPU_WORK_SIZE</th>
-                  <th className="px-4 py-3">{BenchmarkMatrixCopy.notes[cs ? 'cs' : 'en']}</th>
+                  <th className="px-4 py-3">{tx5(BenchmarkMatrixCopy.notes, lang)}</th>
                 </tr>
               </thead>
               <tbody>
@@ -235,7 +236,7 @@ export default function BenchmarkMatrix() {
         <div className="zion-rainbow-card p-6 mb-16" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-zion-gold" />
-            {BenchmarkMatrixCopy.bandwidthEfficiency[cs ? 'cs' : 'en']}
+            {tx5(BenchmarkMatrixCopy.bandwidthEfficiency, lang)}
           </h2>
           <div className="space-y-3">
             {[
@@ -264,20 +265,20 @@ export default function BenchmarkMatrix() {
             })}
           </div>
           <p className="text-xs text-white/30 mt-4">
-            {BenchmarkMatrixCopy.lowerGpusHaveBetterKhSPerGbSEk[cs ? 'cs' : 'en']}
+            {tx5(BenchmarkMatrixCopy.lowerGpusHaveBetterKhSPerGbSEk, lang)}
           </p>
         </div>
 
         {/* ── CTA ────────────────────────────────────────────── */}
         <div className="text-center">
           <p className="text-white/40 text-sm mb-4">
-            {BenchmarkMatrixCopy.benchmarksRunWithEkamBenchMode[cs ? 'cs' : 'en']}
+            {tx5(BenchmarkMatrixCopy.benchmarksRunWithEkamBenchMode, lang)}
           </p>
           <Link
             href="/mining"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-zion-gold/30 bg-zion-gold/5 text-zion-gold hover:bg-zion-gold/10 transition-colors"
           >
-            {BenchmarkMatrixCopy.miningGuide[cs ? 'cs' : 'en']}
+            {tx5(BenchmarkMatrixCopy.miningGuide, lang)}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { useRouter } from 'next/navigation';
 import WalletOverview from '@/components/dashboard/WalletOverview';
 import MiningStats from '@/components/dashboard/MiningStats';
@@ -263,10 +264,10 @@ export default function AccountPage() {
   };
 
   const formattedCreated = user.createdAt
-    ? new Date(user.createdAt).toLocaleDateString(AccountCopy.enUs[cs ? 'cs' : 'en'])
+    ? new Date(user.createdAt).toLocaleDateString(tx5(AccountCopy.enUs, lang))
     : '—';
   const formattedLastLogin = user.lastLogin
-    ? new Date(user.lastLogin).toLocaleDateString(AccountCopy.enUs[cs ? 'cs' : 'en'])
+    ? new Date(user.lastLogin).toLocaleDateString(tx5(AccountCopy.enUs, lang))
     : '—';
 
   return (
@@ -303,16 +304,16 @@ export default function AccountPage() {
                   />
                   <div className="zion-badge-gold">
                     <User className="h-4 w-4" />
-                    {AccountCopy.myAccount[cs ? 'cs' : 'en']}
+                    {tx5(AccountCopy.myAccount, lang)}
                   </div>
                 </div>
 
                 <div>
                   <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                    {AccountCopy.zionL1Dashboard[cs ? 'cs' : 'en']}
+                    {tx5(AccountCopy.zionL1Dashboard, lang)}
                   </p>
                   <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                    {user.displayName || user.email || (AccountCopy.myAccount[cs ? 'cs' : 'en'])}
+                    {user.displayName || user.email || (tx5(AccountCopy.myAccount, lang))}
                   </h1>
                 </div>
 
@@ -326,21 +327,19 @@ export default function AccountPage() {
                   </button>
                 ) : (
                   <p className="text-xs text-gray-500">
-                    {cs
-                      ? 'Žádná ZION L1 adresa — propoj peněženku v záložce Bezpečnost.'
-                      : 'No ZION L1 address — link a wallet in the Security tab.'}
+                    {cs ? 'Žádná ZION L1 adresa — propoj peněženku v záložce Bezpečnost.' : t5('No ZION L1 address — link a wallet in the Security tab.', lang)}
                   </p>
                 )}
 
                 <div className="flex flex-wrap gap-3 text-xs">
                   <span className="zion-badge-green">
-                    <Shield className="h-3 w-3" /> {AccountCopy.authenticated[cs ? 'cs' : 'en']}
+                    <Shield className="h-3 w-3" /> {tx5(AccountCopy.authenticated, lang)}
                   </span>
                   <span className="zion-badge-cyan">
                     <Zap className="h-3 w-3" /> ZION L1
                   </span>
                   <span className="zion-badge">
-                    <Globe2 className="h-3 w-3" /> {AccountCopy.onChain[cs ? 'cs' : 'en']}
+                    <Globe2 className="h-3 w-3" /> {tx5(AccountCopy.onChain, lang)}
                   </span>
                 </div>
               </div>
@@ -349,20 +348,20 @@ export default function AccountPage() {
               <div className="w-full lg:max-w-md space-y-3">
                 <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
                   <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">
-                    {AccountCopy.accountOverview[cs ? 'cs' : 'en']}
+                    {tx5(AccountCopy.accountOverview, lang)}
                   </p>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Activity className="h-4 w-4 text-zion-gold" />
-                        {AccountCopy.logins[cs ? 'cs' : 'en']}
+                        {tx5(AccountCopy.logins, lang)}
                       </div>
                       <span className="font-mono text-white">{user.loginCount ?? 0}</span>
                     </div>
                     <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Wallet className="h-4 w-4 text-zion-cyan" />
-                        {AccountCopy.address[cs ? 'cs' : 'en']}
+                        {tx5(AccountCopy.address, lang)}
                       </div>
                       <span className="font-mono text-white text-xs">
                         {zionAddress ? `${zionAddress.slice(0, 10)}…${zionAddress.slice(-6)}` : '—'}
@@ -371,14 +370,14 @@ export default function AccountPage() {
                     <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <TrendingUp className="h-4 w-4 text-zion-cyan" />
-                        {AccountCopy.created[cs ? 'cs' : 'en']}
+                        {tx5(AccountCopy.created, lang)}
                       </div>
                       <span className="font-mono text-white">{formattedCreated}</span>
                     </div>
                     <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Sparkles className="h-4 w-4 text-zion-cyan" />
-                        {AccountCopy.lastLogin[cs ? 'cs' : 'en']}
+                        {tx5(AccountCopy.lastLogin, lang)}
                       </div>
                       <span className="font-mono text-white">{formattedLastLogin}</span>
                     </div>
@@ -392,7 +391,7 @@ export default function AccountPage() {
                   }}
                   className="zion-button-secondary w-full items-center justify-center gap-2 text-zion-purple hover:text-zion-purple"
                 >
-                  <LogOut className="h-3.5 w-3.5" /> {AccountCopy.logout[cs ? 'cs' : 'en']}
+                  <LogOut className="h-3.5 w-3.5" /> {tx5(AccountCopy.logout, lang)}
                 </button>
               </div>
             </div>
@@ -407,10 +406,10 @@ export default function AccountPage() {
             transition={{ delay: 0.04 }}
           >
             <div className="flex flex-col gap-2 mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{AccountCopy.telemetry[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(AccountCopy.telemetry, lang)}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                 <Activity className="h-7 w-7 text-zion-cyan" />
-                {AccountCopy.accountStatistics[cs ? 'cs' : 'en']}
+                {tx5(AccountCopy.accountStatistics, lang)}
               </h2>
             </div>
 
@@ -420,9 +419,9 @@ export default function AccountPage() {
                 colorClass="text-zion-cyan"
                 bgClass="bg-zion-cyan/10"
                 rc="6, 105, 40"
-                label={AccountCopy.balance[cs ? 'cs' : 'en']}
+                label={tx5(AccountCopy.balance, lang)}
                 value={stats.balance !== null ? `${stats.balance.toFixed(8)} ZION` : '—'}
-                sub={AccountCopy.onChain_2[cs ? 'cs' : 'en']}
+                sub={tx5(AccountCopy.onChain_2, lang)}
                 loading={stats.balanceLoading}
               />
               <StatCard
@@ -430,9 +429,9 @@ export default function AccountPage() {
                 colorClass="text-zion-gold"
                 bgClass="bg-zion-gold/10"
                 rc="252, 209, 22"
-                label={AccountCopy.miningRewards[cs ? 'cs' : 'en']}
+                label={tx5(AccountCopy.miningRewards, lang)}
                 value={stats.miningRewards !== null ? `${stats.miningRewards.toFixed(8)} ZION` : '—'}
-                sub={AccountCopy.totalEarned[cs ? 'cs' : 'en']}
+                sub={tx5(AccountCopy.totalEarned, lang)}
                 loading={stats.miningLoading}
               />
               <StatCard
@@ -440,9 +439,9 @@ export default function AccountPage() {
                 colorClass="text-zion-cyan"
                 bgClass="bg-zion-cyan/10"
                 rc="6, 105, 40"
-                label={AccountCopy.transactions[cs ? 'cs' : 'en']}
+                label={tx5(AccountCopy.transactions, lang)}
                 value={stats.txCount !== null ? String(stats.txCount) : '—'}
-                sub={AccountCopy.last50[cs ? 'cs' : 'en']}
+                sub={tx5(AccountCopy.last50, lang)}
                 loading={stats.txLoading}
               />
               <StatCard
@@ -450,9 +449,9 @@ export default function AccountPage() {
                 colorClass="text-zion-cyan"
                 bgClass="bg-zion-cyan/10"
                 rc="6, 105, 40"
-                label={AccountCopy.aiSessions[cs ? 'cs' : 'en']}
+                label={tx5(AccountCopy.aiSessions, lang)}
                 value={stats.aiSessions !== null ? String(stats.aiSessions) : '—'}
-                sub={AccountCopy.hiranyagarbha[cs ? 'cs' : 'en']}
+                sub={tx5(AccountCopy.hiranyagarbha, lang)}
                 loading={stats.aiLoading}
               />
             </div>
@@ -470,7 +469,7 @@ export default function AccountPage() {
           >
             <div className="flex flex-wrap items-center gap-2 md:gap-3">
               <span className="text-[11px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
-                {AccountCopy.sections[cs ? 'cs' : 'en']}
+                {tx5(AccountCopy.sections, lang)}
               </span>
               {TABS.map((t) => {
                 const Icon = t.icon;
@@ -510,15 +509,13 @@ export default function AccountPage() {
                 <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                   <div className="flex items-center gap-2 mb-6">
                     <Wallet className="h-5 w-5 text-zion-cyan" />
-                    <h2 className="text-lg font-bold text-white">{AccountCopy.walletOverview[cs ? 'cs' : 'en']}</h2>
+                    <h2 className="text-lg font-bold text-white">{tx5(AccountCopy.walletOverview, lang)}</h2>
                   </div>
                   {zionAddress ? (
                     <WalletOverview address={zionAddress} />
                   ) : (
                     <p className="text-sm text-gray-400">
-                      {cs
-                        ? 'Nejdřív propoj ZION peněženku v záložce Bezpečnost.'
-                        : 'Link a ZION wallet in the Security tab first.'}
+                      {cs ? 'Nejdřív propoj ZION peněženku v záložce Bezpečnost.' : t5('Link a ZION wallet in the Security tab first.', lang)}
                     </p>
                   )}
                 </div>
@@ -527,15 +524,13 @@ export default function AccountPage() {
                 <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
                   <div className="flex items-center gap-2 mb-6">
                     <Pickaxe className="h-5 w-5 text-zion-purple" />
-                    <h2 className="text-lg font-bold text-white">{AccountCopy.miningStats[cs ? 'cs' : 'en']}</h2>
+                    <h2 className="text-lg font-bold text-white">{tx5(AccountCopy.miningStats, lang)}</h2>
                   </div>
                   {zionAddress ? (
                     <MiningStats address={zionAddress} />
                   ) : (
                     <p className="text-sm text-gray-400">
-                      {cs
-                        ? 'Nejdřív propoj ZION peněženku v záložce Bezpečnost.'
-                        : 'Link a ZION wallet in the Security tab first.'}
+                      {cs ? 'Nejdřív propoj ZION peněženku v záložce Bezpečnost.' : t5('Link a ZION wallet in the Security tab first.', lang)}
                     </p>
                   )}
                 </div>
@@ -544,15 +539,13 @@ export default function AccountPage() {
                 <div className="zion-rainbow-card p-6" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                   <div className="flex items-center gap-2 mb-6">
                     <ArrowLeftRight className="h-5 w-5 text-zion-gold" />
-                    <h2 className="text-lg font-bold text-white">{AccountCopy.transactionHistory[cs ? 'cs' : 'en']}</h2>
+                    <h2 className="text-lg font-bold text-white">{tx5(AccountCopy.transactionHistory, lang)}</h2>
                   </div>
                   {zionAddress ? (
                     <TransactionHistory address={zionAddress} />
                   ) : (
                     <p className="text-sm text-gray-400">
-                      {cs
-                        ? 'Nejdřív propoj ZION peněženku v záložce Bezpečnost.'
-                        : 'Link a ZION wallet in the Security tab first.'}
+                      {cs ? 'Nejdřív propoj ZION peněženku v záložce Bezpečnost.' : t5('Link a ZION wallet in the Security tab first.', lang)}
                     </p>
                   )}
                 </div>
@@ -561,7 +554,7 @@ export default function AccountPage() {
                 <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                   <div className="flex items-center gap-2 mb-6">
                     <Sparkles className="h-5 w-5 text-zion-cyan" />
-                    <h2 className="text-lg font-bold text-white">{AccountCopy.hiranyagarbhaAi[cs ? 'cs' : 'en']}</h2>
+                    <h2 className="text-lg font-bold text-white">{tx5(AccountCopy.hiranyagarbhaAi, lang)}</h2>
                   </div>
                   <DashboardAIChat />
                 </div>
@@ -585,11 +578,11 @@ export default function AccountPage() {
             className="zion-cta-banner"
           >
             <h2 className="text-2xl font-semibold text-white text-center mb-6">
-              {AccountCopy.continueInTheZionEcosystem[cs ? 'cs' : 'en']}
+              {tx5(AccountCopy.continueInTheZionEcosystem, lang)}
             </h2>
             <div className="flex flex-wrap justify-center gap-4">
               <Link href="/wallet" className="zion-button-primary">
-                <Wallet className="h-4 w-4" /> {AccountCopy.wallet[cs ? 'cs' : 'en']}
+                <Wallet className="h-4 w-4" /> {tx5(AccountCopy.wallet, lang)}
               </Link>
               <Link href="/explorer" className="zion-button-secondary">
                 <Globe2 className="h-4 w-4" /> Explorer

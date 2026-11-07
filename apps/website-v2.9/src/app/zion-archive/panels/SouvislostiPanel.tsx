@@ -1,5 +1,7 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+
 import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
 import { ChevronDown, Feather, Globe2, Heart, Hourglass, KeyRound, Landmark, ScrollText, Sunrise, Wind } from 'lucide-react';
@@ -135,29 +137,29 @@ export default function SouvislostiPanel({ lang }: { lang: Lang }) {
         <PanelHeader
           id="souvislosti"
           rc="6, 182, 212"
-          kicker={Copy.kicker[l]}
-          title={Copy.title[l]}
-          sub={Copy.sub[l]}
+          kicker={tx5(Copy.kicker, lang)}
+          title={tx5(Copy.title, lang)}
+          sub={tx5(Copy.sub, lang)}
         />
 
         <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
-          {Copy.label[l]}
+          {tx5(Copy.label, lang)}
         </p>
 
-        <Detail title={Copy.d1Title[l]} rc="252, 209, 22" defaultOpen>
+        <Detail title={tx5(Copy.d1Title, lang)} rc="252, 209, 22" defaultOpen>
           <div className="flex items-start gap-3">
             <ScrollText className="mt-1 h-5 w-5 shrink-0 text-zion-gold" />
             <div className="space-y-2">
               <blockquote className="text-sm leading-relaxed text-gray-200 sm:text-base">
-                {Copy.genesisQuote[l]}
+                {tx5(Copy.genesisQuote, lang)}
               </blockquote>
-              <p className="text-xs text-gray-500">{Copy.genesisSign[l]}</p>
+              <p className="text-xs text-gray-500">{tx5(Copy.genesisSign, lang)}</p>
             </div>
           </div>
         </Detail>
 
-        <Detail title={Copy.d2Title[l]} rc="168, 85, 247">
-          <p className="text-sm text-gray-400">{Copy.d2Sub[l]}</p>
+        <Detail title={tx5(Copy.d2Title, lang)} rc="168, 85, 247">
+          <p className="text-sm text-gray-400">{tx5(Copy.d2Sub, lang)}</p>
           <div className="grid gap-3 sm:grid-cols-3">
             {anchors.map((a) => {
               const Icon = a.icon;
@@ -180,22 +182,22 @@ export default function SouvislostiPanel({ lang }: { lang: Lang }) {
           </div>
         </Detail>
 
-        <Detail title={Copy.d3Title[l]} rc="6, 182, 212">
+        <Detail title={tx5(Copy.d3Title, lang)} rc="6, 182, 212">
           <div className="space-y-4 text-sm leading-relaxed text-gray-300 sm:text-base">
             <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-zion-cyan">
               <Globe2 className="h-3.5 w-3.5" />
               {l === 'cs' ? 'Z tradice' : 'From tradition'}
             </p>
-            <p>{Copy.tradP1[l]}</p>
-            <p className="text-gray-400">{Copy.tradP2[l]}</p>
-            <p className="text-sm italic text-gray-300">{Copy.tradBridge[l]}</p>
+            <p>{tx5(Copy.tradP1, lang)}</p>
+            <p className="text-gray-400">{tx5(Copy.tradP2, lang)}</p>
+            <p className="text-sm italic text-gray-300">{tx5(Copy.tradBridge, lang)}</p>
             <p className="flex items-center gap-2 pt-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-zion-gold">
               <Sunrise className="h-3.5 w-3.5" />
               {l === 'cs' ? 'Předání pochodně' : 'The passing of the torch'}
             </p>
-            <p>{Copy.eraP1[l]}</p>
-            <p className="text-gray-400">{Copy.eraP2[l]}</p>
-            <p>{Copy.eraP3[l]}</p>
+            <p>{tx5(Copy.eraP1, lang)}</p>
+            <p className="text-gray-400">{tx5(Copy.eraP2, lang)}</p>
+            <p>{tx5(Copy.eraP3, lang)}</p>
             <div className="flex flex-wrap gap-2 pt-1">
               {Copy.eraLinks.map((link) => (
                 <Link
@@ -212,13 +214,13 @@ export default function SouvislostiPanel({ lang }: { lang: Lang }) {
 
         <div className="space-y-2 border-t border-white/8 pt-6 text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.36em] text-zion-purple">
-            {Copy.mantraTitle[l]}
+            {tx5(Copy.mantraTitle, lang)}
           </p>
           <p className="mx-auto max-w-2xl text-xl font-bold leading-snug text-white sm:text-2xl">
-            {Copy.mantraLine[l]}
+            {tx5(Copy.mantraLine, lang)}
           </p>
           <p className="mx-auto max-w-xl text-xs leading-relaxed text-gray-400 sm:text-sm">
-            {Copy.mantraSub[l]}
+            {tx5(Copy.mantraSub, lang)}
           </p>
           <div className="flex items-center justify-center gap-2 pt-1 text-gray-600">
             <Heart className="h-3.5 w-3.5" />

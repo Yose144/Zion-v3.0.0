@@ -14,7 +14,8 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { useLang } from "@/contexts/LanguageContext";
+import { useLang, type Lang } from "@/contexts/LanguageContext";
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from "@/hooks/usePolling";
 import { apiClient } from "@/lib/api";
 import { exportToCsv } from "@/lib/csv-export";
@@ -68,7 +69,7 @@ function StatusDot({ status }: { status: string }) {
   return <span className="inline-flex h-2.5 w-2.5 rounded-full bg-zion-cyan" />;
 }
 
-function TypeBadge({ type, cs }: { type: string; cs: boolean }) {
+function TypeBadge({ type, cs, lang }: { type: string; cs: boolean; lang: Lang }) {
   const map: Record<string, string> = {
     coinbase: "bg-zion-gold/15 text-zion-gold",
     payout: "bg-zion-cyan/15 text-zion-cyan",
@@ -79,9 +80,9 @@ function TypeBadge({ type, cs }: { type: string; cs: boolean }) {
     type === "coinbase"
       ? "coinbase"
       : type === "payout"
-        ? ExplorerTxsTxsPageClientCopy.payout[cs ? 'cs' : 'en']
+        ? tx5(ExplorerTxsTxsPageClientCopy.payout, lang)
         : type === "transfer"
-          ? ExplorerTxsTxsPageClientCopy.transfer[cs ? 'cs' : 'en']
+          ? tx5(ExplorerTxsTxsPageClientCopy.transfer, lang)
           : type;
   return (
     <span className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider ${cls}`}>
@@ -216,10 +217,10 @@ export default function TxsPageClient() {
   };
 
   const typeFilters = [
-    { key: "", label: ExplorerTxsTxsPageClientCopy.all[cs ? 'cs' : 'en'] },
+    { key: "", label: tx5(ExplorerTxsTxsPageClientCopy.all, lang) },
     { key: "coinbase", label: "coinbase" },
-    { key: "transfer", label: ExplorerTxsTxsPageClientCopy.transfer[cs ? 'cs' : 'en'] },
-    { key: "payout", label: ExplorerTxsTxsPageClientCopy.payout[cs ? 'cs' : 'en'] },
+    { key: "transfer", label: tx5(ExplorerTxsTxsPageClientCopy.transfer, lang) },
+    { key: "payout", label: tx5(ExplorerTxsTxsPageClientCopy.payout, lang) },
   ];
 
   const filteredCount = useMemo(() => transactions.length, [transactions]);
@@ -247,49 +248,49 @@ export default function TxsPageClient() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <ArrowRightLeft className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {ExplorerTxsTxsPageClientCopy.transactions[cs ? 'cs' : 'en']}
+                {SITE_RELEASE_LABEL} · {tx5(ExplorerTxsTxsPageClientCopy.transactions, lang)}
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                  {ExplorerTxsTxsPageClientCopy.liveFeed[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerTxsTxsPageClientCopy.liveFeed, lang)}
                 </p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {ExplorerTxsTxsPageClientCopy.transactionList[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerTxsTxsPageClientCopy.transactionList, lang)}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                {ExplorerTxsTxsPageClientCopy.completeTransactionListOnTheZi[cs ? 'cs' : 'en']}
+                {tx5(ExplorerTxsTxsPageClientCopy.completeTransactionListOnTheZi, lang)}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="zion-badge zion-badge-green">
-                  <Activity className="h-3 w-3" /> {ExplorerTxsTxsPageClientCopy.autoRefresh15s[cs ? 'cs' : 'en']}
+                  <Activity className="h-3 w-3" /> {tx5(ExplorerTxsTxsPageClientCopy.autoRefresh15s, lang)}
                 </span>
                 {sse.connected ? (
                   <span className="zion-badge zion-badge-green">
-                    <Zap className="h-3 w-3" /> SSE {ExplorerTxsTxsPageClientCopy.connected[cs ? 'cs' : 'en']}
+                    <Zap className="h-3 w-3" /> SSE {tx5(ExplorerTxsTxsPageClientCopy.connected, lang)}
                   </span>
                 ) : (
                   <span className="zion-badge text-zion-gold border-zion-gold/40 bg-zion-gold/10">
-                    SSE {ExplorerTxsTxsPageClientCopy.connecting[cs ? 'cs' : 'en']}
+                    SSE {tx5(ExplorerTxsTxsPageClientCopy.connecting, lang)}
                   </span>
                 )}
                 {total !== null && (
                   <span className="zion-badge text-zion-gold border-zion-gold/40 bg-zion-gold/10">
-                    {total.toLocaleString()} {ExplorerTxsTxsPageClientCopy.totalTx[cs ? 'cs' : 'en']}
+                    {total.toLocaleString()} {tx5(ExplorerTxsTxsPageClientCopy.totalTx, lang)}
                   </span>
                 )}
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <LiveBadge label={ExplorerTxsTxsPageClientCopy.live[cs ? 'cs' : 'en']} />
+              <LiveBadge label={tx5(ExplorerTxsTxsPageClientCopy.live, lang)} />
               {sse.stats && (
                 <div className="zion-rainbow-sub p-4 rounded-2xl" style={{ "--rc": "6, 105, 40" } as React.CSSProperties}>
-                  <div className="text-xs text-gray-400 mb-1">{ExplorerTxsTxsPageClientCopy.currentHeight[cs ? 'cs' : 'en']}</div>
+                  <div className="text-xs text-gray-400 mb-1">{tx5(ExplorerTxsTxsPageClientCopy.currentHeight, lang)}</div>
                   <div className="text-2xl font-bold text-zion-cyan tabular-nums">
                     #{sse.stats.height.toLocaleString()}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    {ExplorerTxsTxsPageClientCopy.mempool[cs ? 'cs' : 'en']}: {sse.stats.mempool_size} TX
+                    {tx5(ExplorerTxsTxsPageClientCopy.mempool, lang)}: {sse.stats.mempool_size} TX
                   </div>
                 </div>
               )}
@@ -306,7 +307,7 @@ export default function TxsPageClient() {
           <div className="zion-rainbow-card rounded-2xl bg-black/60 p-4 flex flex-wrap items-center gap-3" style={{ "--rc": "6, 105, 40" } as React.CSSProperties}>
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <Filter className="h-4 w-4" />
-              {ExplorerTxsTxsPageClientCopy.filter[cs ? 'cs' : 'en']}
+              {tx5(ExplorerTxsTxsPageClientCopy.filter, lang)}
             </div>
             {/* Type filter chips */}
             <div className="flex items-center gap-2">
@@ -333,7 +334,7 @@ export default function TxsPageClient() {
             {/* Address filter display */}
             {addressFilter && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zion-cyan/5 border border-zion-cyan/10">
-                <span className="text-[11px] text-white/40">{ExplorerTxsTxsPageClientCopy.address[cs ? 'cs' : 'en']}</span>
+                <span className="text-[11px] text-white/40">{tx5(ExplorerTxsTxsPageClientCopy.address, lang)}</span>
                 <span className="text-[11px] text-zion-cyan font-mono">{truncateHash(addressFilter, 14, 6)}</span>
                 <Link
                   href={typeFilter ? `/explorer/txs?type=${typeFilter}` : "/explorer/txs"}
@@ -350,7 +351,7 @@ export default function TxsPageClient() {
               className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               <Download className="w-3.5 h-3.5" />
-              {ExplorerTxsTxsPageClientCopy.exportCsv[cs ? 'cs' : 'en']}
+              {tx5(ExplorerTxsTxsPageClientCopy.exportCsv, lang)}
             </button>
           </div>
         </motion.section>
@@ -365,11 +366,11 @@ export default function TxsPageClient() {
             <div className="flex items-center gap-2">
               <ArrowRightLeft className="h-6 w-6 text-zion-cyan" />
               <h2 className="text-2xl font-semibold text-white">
-                {ExplorerTxsTxsPageClientCopy.transactions[cs ? 'cs' : 'en']}
+                {tx5(ExplorerTxsTxsPageClientCopy.transactions, lang)}
               </h2>
             </div>
             <span className="text-[11px] text-white/30 font-mono tabular-nums">
-              {filteredCount} {ExplorerTxsTxsPageClientCopy.loaded[cs ? 'cs' : 'en']}
+              {filteredCount} {tx5(ExplorerTxsTxsPageClientCopy.loaded, lang)}
             </span>
           </div>
 
@@ -378,11 +379,11 @@ export default function TxsPageClient() {
             <div className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] min-w-[520px] gap-3 px-5 py-3 border-b border-white/6">
               <span />
               <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
-              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTxsTxsPageClientCopy.type[cs ? 'cs' : 'en']}</span>
-              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTxsTxsPageClientCopy.age[cs ? 'cs' : 'en']}</span>
-              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTxsTxsPageClientCopy.block[cs ? 'cs' : 'en']}</span>
+              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{tx5(ExplorerTxsTxsPageClientCopy.type, lang)}</span>
+              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{tx5(ExplorerTxsTxsPageClientCopy.age, lang)}</span>
+              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{tx5(ExplorerTxsTxsPageClientCopy.block, lang)}</span>
               <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">Fee</span>
-              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerTxsTxsPageClientCopy.amount[cs ? 'cs' : 'en']}</span>
+              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{tx5(ExplorerTxsTxsPageClientCopy.amount, lang)}</span>
             </div>
 
             {/* loading skeleton */}
@@ -409,14 +410,14 @@ export default function TxsPageClient() {
               <div className="flex flex-col items-center justify-center py-20 gap-3">
                 <ArrowRightLeft className="w-10 h-10 text-white/10" />
                 <p className="text-white/30 text-sm">
-                  {ExplorerTxsTxsPageClientCopy.noTransactionsFound[cs ? 'cs' : 'en']}
+                  {tx5(ExplorerTxsTxsPageClientCopy.noTransactionsFound, lang)}
                 </p>
                 {(addressFilter || typeFilter) && (
                   <Link
                     href="/explorer/txs"
                     className="text-zion-cyan text-xs hover:underline"
                   >
-                    {ExplorerTxsTxsPageClientCopy.clearFilter[cs ? 'cs' : 'en']}
+                    {tx5(ExplorerTxsTxsPageClientCopy.clearFilter, lang)}
                   </Link>
                 )}
               </div>
@@ -445,7 +446,7 @@ export default function TxsPageClient() {
 
                   {/* type */}
                   <div className="flex items-center">
-                    <TypeBadge type={tx.type || "transfer"} cs={cs} />
+                    <TypeBadge type={tx.type || "transfer"} cs={cs} lang={lang} />
                   </div>
 
                   {/* age */}
@@ -465,7 +466,7 @@ export default function TxsPageClient() {
                       </Link>
                     ) : (
                       <span className="text-[12px] text-zion-gold/60 italic">
-                        {ExplorerTxsTxsPageClientCopy.pending[cs ? 'cs' : 'en']}
+                        {tx5(ExplorerTxsTxsPageClientCopy.pending, lang)}
                       </span>
                     )}
                   </div>
@@ -496,10 +497,10 @@ export default function TxsPageClient() {
                 >
                   {loadingMore ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> {ExplorerTxsTxsPageClientCopy.loading[cs ? 'cs' : 'en']}
+                      <Loader2 className="w-4 h-4 animate-spin" /> {tx5(ExplorerTxsTxsPageClientCopy.loading, lang)}
                     </>
                   ) : (
-                    ExplorerTxsTxsPageClientCopy.loadMore[cs ? 'cs' : 'en']
+                    tx5(ExplorerTxsTxsPageClientCopy.loadMore, lang)
                   )}
                 </button>
               </div>
@@ -513,11 +514,11 @@ export default function TxsPageClient() {
             Explorer
           </Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-white/70">{ExplorerTxsTxsPageClientCopy.transactions[cs ? 'cs' : 'en']}</span>
+          <span className="text-white/70">{tx5(ExplorerTxsTxsPageClientCopy.transactions, lang)}</span>
           {(addressFilter || typeFilter) && (
             <>
               <ChevronRight className="w-3 h-3" />
-              <span className="text-zion-cyan">{ExplorerTxsTxsPageClientCopy.filtered[cs ? 'cs' : 'en']}</span>
+              <span className="text-zion-cyan">{tx5(ExplorerTxsTxsPageClientCopy.filtered, lang)}</span>
             </>
           )}
         </nav>

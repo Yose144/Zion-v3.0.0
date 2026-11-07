@@ -1,5 +1,8 @@
 'use client';
 
+import { tx5, t5 } from '@/lib/i18n-tx';
+import type { Lang } from '@/contexts/LanguageContext';
+
 import {
   ArrowRight,
   BookOpen,
@@ -17,7 +20,7 @@ import {
 import type { CSSProperties } from 'react';
 
 type ParliamentVisionProps = {
-  lang: 'cs' | 'en';
+  lang: Lang;
   treasuryGuardians: number;
   multisig: string;
 };
@@ -86,32 +89,32 @@ export default function ParliamentVision({ lang, treasuryGuardians, multisig }: 
 
   const truthCards = [
     {
-      title: Copy.treasuryGuardiansTitle[lang],
+      title: tx5(Copy.treasuryGuardiansTitle, lang),
       badge: signerConfigKnown ? 'LIVE CONFIG' : 'STATUS UNKNOWN',
       badgeClass: signerConfigKnown
         ? 'zion-badge-green'
         : 'border-gray-500/40 bg-gray-500/10 text-gray-400',
       icon: <ShieldCheck className="h-5 w-5 text-zion-cyan" />,
       value: signerConfigKnown ? `${treasuryGuardians} · ${multisig}` : '—',
-      body: Copy.treasuryGuardiansBody[lang],
+      body: tx5(Copy.treasuryGuardiansBody, lang),
       rc: '6, 105, 40',
     },
     {
-      title: Copy.earthGuardiansTitle[lang],
+      title: tx5(Copy.earthGuardiansTitle, lang),
       badge: 'VISION',
       badgeClass: 'border-zion-purple/40 bg-zion-purple/10 text-zion-purple',
       icon: <Globe2 className="h-5 w-5 text-zion-purple" />,
-      value: Copy.earthGuardiansGoal[lang],
-      body: Copy.earthGuardiansBody[lang],
+      value: tx5(Copy.earthGuardiansGoal, lang),
+      body: tx5(Copy.earthGuardiansBody, lang),
       rc: '147, 51, 234',
     },
     {
-      title: Copy.hiranTitle[lang],
+      title: tx5(Copy.hiranTitle, lang),
       badge: 'PROTOTYPE · OFFLINE',
       badgeClass: 'border-zion-gold/40 bg-zion-gold/10 text-zion-gold',
       icon: <Bot className="h-5 w-5 text-zion-gold" />,
-      value: Copy.hiranRole[lang],
-      body: Copy.hiranBody[lang],
+      value: tx5(Copy.hiranRole, lang),
+      body: tx5(Copy.hiranBody, lang),
       rc: '252, 209, 22',
     },
   ];
@@ -126,14 +129,14 @@ export default function ParliamentVision({ lang, treasuryGuardians, multisig }: 
       >
         <div className="flex flex-col gap-2 mb-6">
           <span className="zion-badge w-fit border-zion-purple/40 bg-zion-purple/10 text-zion-purple">
-            {Copy.visionBadge[lang]}
+            {tx5(Copy.visionBadge, lang)}
           </span>
           <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
             <Globe2 className="h-7 w-7 text-zion-purple" />
-            {Copy.title[lang]}
+            {tx5(Copy.title, lang)}
           </h2>
-          <p className="text-lg text-gray-300">{Copy.subtitle[lang]}</p>
-          <p className="text-sm text-gray-400 max-w-2xl">{Copy.intro[lang]}</p>
+          <p className="text-lg text-gray-300">{tx5(Copy.subtitle, lang)}</p>
+          <p className="text-sm text-gray-400 max-w-2xl">{tx5(Copy.intro, lang)}</p>
         </div>
 
         <div className="relative mx-auto aspect-square w-full max-w-md">
@@ -153,7 +156,7 @@ export default function ParliamentVision({ lang, treasuryGuardians, multisig }: 
               <Bot className="h-7 w-7 text-zion-gold" />
             </div>
             <span className="text-[10px] uppercase tracking-widest text-gray-400 whitespace-nowrap">
-              {Copy.hiranCenter[lang]}
+              {tx5(Copy.hiranCenter, lang)}
             </span>
           </div>
 
@@ -171,13 +174,13 @@ export default function ParliamentVision({ lang, treasuryGuardians, multisig }: 
                   <Icon className="h-5 w-5 text-zion-cyan" />
                 </div>
                 <span className="rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-medium text-white whitespace-nowrap">
-                  {chamber[lang]}
+                  {tx5(chamber, lang)}
                 </span>
               </div>
             );
           })}
         </div>
-        <p className="mt-4 text-center text-xs text-gray-500">{Copy.orbitNote[lang]}</p>
+        <p className="mt-4 text-center text-xs text-gray-500">{tx5(Copy.orbitNote, lang)}</p>
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
@@ -197,7 +200,7 @@ export default function ParliamentVision({ lang, treasuryGuardians, multisig }: 
       </section>
 
       <section className="zion-rainbow-card p-6" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
-        <p className="text-xs uppercase tracking-wider text-gray-400 mb-4">{Copy.flowTitle[lang]}</p>
+        <p className="text-xs uppercase tracking-wider text-gray-400 mb-4">{tx5(Copy.flowTitle, lang)}</p>
         <div className="flex flex-wrap items-center gap-2">
           {Copy.flowSteps.map((step, i) => {
             const Icon = flowIcons[i];
@@ -205,7 +208,7 @@ export default function ParliamentVision({ lang, treasuryGuardians, multisig }: 
               <div key={step.en} className="flex items-center gap-2">
                 <span className="zion-rainbow-sub inline-flex items-center gap-2 px-3 py-2 text-xs text-white" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                   <Icon className="h-3.5 w-3.5 text-zion-cyan" />
-                  {step[lang]}
+                  {tx5(step, lang)}
                 </span>
                 {i < Copy.flowSteps.length - 1 && <ArrowRight className="h-3.5 w-3.5 text-gray-500" />}
               </div>
@@ -217,16 +220,16 @@ export default function ParliamentVision({ lang, treasuryGuardians, multisig }: 
       <section className="zion-rainbow-card p-6" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
         <div className="flex items-center gap-2 mb-3">
           <ShieldCheck className="h-5 w-5 text-zion-gold" />
-          <h3 className="font-semibold text-white">{Copy.hiranBoundaryTitle[lang]}</h3>
+          <h3 className="font-semibold text-white">{tx5(Copy.hiranBoundaryTitle, lang)}</h3>
         </div>
-        <p className="text-sm text-gray-300 max-w-3xl">{Copy.hiranBoundary[lang]}</p>
+        <p className="text-sm text-gray-300 max-w-3xl">{tx5(Copy.hiranBoundary, lang)}</p>
       </section>
 
       <section className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
-        <span className="uppercase tracking-wider">{Copy.legend[lang]}:</span>
-        <span className="zion-badge zion-badge-green">{Copy.legendLive[lang]}</span>
-        <span className="zion-badge border-zion-gold/40 bg-zion-gold/10 text-zion-gold">{Copy.legendPrototype[lang]}</span>
-        <span className="zion-badge border-zion-purple/40 bg-zion-purple/10 text-zion-purple">{Copy.legendVision[lang]}</span>
+        <span className="uppercase tracking-wider">{tx5(Copy.legend, lang)}:</span>
+        <span className="zion-badge zion-badge-green">{tx5(Copy.legendLive, lang)}</span>
+        <span className="zion-badge border-zion-gold/40 bg-zion-gold/10 text-zion-gold">{tx5(Copy.legendPrototype, lang)}</span>
+        <span className="zion-badge border-zion-purple/40 bg-zion-purple/10 text-zion-purple">{tx5(Copy.legendVision, lang)}</span>
       </section>
     </div>
   );

@@ -12,6 +12,7 @@ import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { Briefcase, FileCheck2, MapPin, Tag } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
 import { usePolling } from '@/hooks/usePolling';
 import { fwApi, type FwGrant, type FwProject } from '@/lib/freeworld-api';
 import { formatZion } from './L5FundTracker';
@@ -69,7 +70,7 @@ function Badge({ status, table }: { status: string; table: Record<string, { cs: 
   const s = table[status] ?? { cs: status, en: status, cls: 'border-white/20 bg-white/5 text-gray-300' };
   return (
     <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-semibold border ${s.cls}`}>
-      {s[cs ? 'cs' : 'en']}
+      {tx5(s, lang)}
     </span>
   );
 }
@@ -97,7 +98,7 @@ export default function FreeWorldRegistry() {
   if (!online) {
     return (
       <div className="zion-rainbow-sub p-5 text-sm text-gray-400" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-        {copy.offline[cs ? 'cs' : 'en']}
+        {tx5(copy.offline, lang)}
       </div>
     );
   }
@@ -108,9 +109,9 @@ export default function FreeWorldRegistry() {
       <div>
         <div className="flex items-center gap-2 mb-1">
           <Briefcase className="h-5 w-5 text-zion-gold" />
-          <h3 className="text-xl font-semibold text-white">{copy.projectsTitle[cs ? 'cs' : 'en']}</h3>
+          <h3 className="text-xl font-semibold text-white">{tx5(copy.projectsTitle, lang)}</h3>
         </div>
-        <p className="text-sm text-gray-500 mb-4">{copy.projectsDesc[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm text-gray-500 mb-4">{tx5(copy.projectsDesc, lang)}</p>
         {!projects ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[0, 1, 2].map((i) => (
@@ -119,7 +120,7 @@ export default function FreeWorldRegistry() {
           </div>
         ) : projects.length === 0 ? (
           <p className="zion-rainbow-sub p-4 text-sm text-gray-500" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-            {copy.empty[cs ? 'cs' : 'en']}
+            {tx5(copy.empty, lang)}
           </p>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -147,10 +148,10 @@ export default function FreeWorldRegistry() {
                   <div className="mt-auto">
                     <div className="flex justify-between text-xs text-gray-500 mb-1">
                       <span>
-                        {copy.spent[cs ? 'cs' : 'en']}: {formatZion(p.spent_zion, cs)} ZION
+                        {tx5(copy.spent, lang)}: {formatZion(p.spent_zion, cs)} ZION
                       </span>
                       <span>
-                        {copy.budget[cs ? 'cs' : 'en']}: {formatZion(p.budget_zion, cs)} ZION
+                        {tx5(copy.budget, lang)}: {formatZion(p.budget_zion, cs)} ZION
                       </span>
                     </div>
                     <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
@@ -168,9 +169,9 @@ export default function FreeWorldRegistry() {
       <div>
         <div className="flex items-center gap-2 mb-1">
           <FileCheck2 className="h-5 w-5 text-zion-cyan" />
-          <h3 className="text-xl font-semibold text-white">{copy.grantsTitle[cs ? 'cs' : 'en']}</h3>
+          <h3 className="text-xl font-semibold text-white">{tx5(copy.grantsTitle, lang)}</h3>
         </div>
-        <p className="text-sm text-gray-500 mb-4">{copy.grantsDesc[cs ? 'cs' : 'en']}</p>
+        <p className="text-sm text-gray-500 mb-4">{tx5(copy.grantsDesc, lang)}</p>
         {!grants ? (
           <div className="space-y-2">
             {[0, 1].map((i) => (
@@ -179,7 +180,7 @@ export default function FreeWorldRegistry() {
           </div>
         ) : grants.length === 0 ? (
           <p className="zion-rainbow-sub p-4 text-sm text-gray-500" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-            {copy.empty[cs ? 'cs' : 'en']}
+            {tx5(copy.empty, lang)}
           </p>
         ) : (
           <div className="space-y-2">
@@ -189,12 +190,12 @@ export default function FreeWorldRegistry() {
                   <p className="font-semibold text-white text-sm truncate">{g.title}</p>
                   <p className="text-xs text-gray-500">
                     {g.category}
-                    {g.applicant_name ? ` · ${copy.applicant[cs ? 'cs' : 'en']}: ${g.applicant_name}` : ''}
+                    {g.applicant_name ? ` · ${tx5(copy.applicant, lang)}: ${g.applicant_name}` : ''}
                   </p>
                 </div>
                 {g.dao_proposal_id != null && (
                   <Link href="/dao" className="text-xs text-zion-purple/80 hover:text-zion-purple">
-                    {copy.daoProposal[cs ? 'cs' : 'en']} #{g.dao_proposal_id}
+                    {tx5(copy.daoProposal, lang)} #{g.dao_proposal_id}
                   </Link>
                 )}
                 <span className="text-sm font-semibold text-zion-gold whitespace-nowrap">
