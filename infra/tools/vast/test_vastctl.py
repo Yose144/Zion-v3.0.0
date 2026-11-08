@@ -324,5 +324,36 @@ class AgentRegistryTests(unittest.TestCase):
         self.assertNotIn("alerted_offline", rig)
 
 
+class LaunchDutyTests(unittest.TestCase):
+    """/api/launch duty params → cmd_launch tuple shapes."""
+
+    @staticmethod
+    def q(**kw):
+        return {k: [str(v)] for k, v in kw.items()}
+
+    def test_no_params_means_mode_default(self):
+        self.assertIsNone(vastctl._launch_duty({}))
+        self.assertIsNone(vastctl._launch_duty(self.q(id=1, m="zion")))
+
+    def test_prl_qtu_pair_keeps_mode_zion_duty(self):
+        # (prl,qtu) 2-tuple — cmd_launch fills stream-1 from the mode
+        self.assertEqual(vastctl._launch_duty(self.q(prl=50, qtu=50)), (50, 50))
+        self.assertEqual(vastctl._launch_duty(self.q(prl=30)), (30, 0))
+        self.assertEqual(vastctl._launch_duty(self.q(qtu=40)), (0, 40))
+
+    def test_z_param_produces_full_triple(self):
+        self.assertEqual(
+            vastctl._launch_duty(self.q(z=80, prl=10, qtu=20)), (80, 10, 20))
+        # missing ext fields default to 0
+        self.assertEqual(vastctl._launch_duty(self.q(z=28)), (28, 0, 0))
+        self.assertEqual(vastctl._launch_duty(self.q(z=60, qtu=40)), (60, 0, 40))
+
+    def test_values_clamped_and_invalid_dropped(self):
+        self.assertEqual(vastctl._launch_duty(self.q(prl=250)), (100, 0))
+        self.assertEqual(vastctl._launch_duty(self.q(prl=-5)), (0, 0))
+        self.assertEqual(vastctl._launch_duty(self.q(z="abc")), None)
+        self.assertEqual(vastctl._launch_duty(self.q(prl="x", qtu="y")), None)
+
+
 if __name__ == "__main__":
     unittest.main()

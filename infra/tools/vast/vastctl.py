@@ -1137,8 +1137,8 @@ def _launch_group(mn):
         return "srb"
     if mn == "xmr":
         return "xmr"
-    if mn in ("zion", "zionqtc", "zion50", "zionmax", "prl", "qtu",
-              "qtc", "quantus"):
+    if mn in ("zion", "zionqtc", "zionqtu", "zion50", "zionmax", "prl",
+              "qtu", "qtc", "quantus"):
         return "zion"
     return None
 
@@ -1267,11 +1267,12 @@ def cmd_daemon(args):
                     cmds = " ".join(m.get("cmd") or "" for m in r["miners"])
                     sess = set(r.get("sessions") or [])
                     # session-level expectation per mode (dual srb = 2 panes)
-                    _SESS_WANT = {"srb": {"srb-qtu", "srb-prl"},
+                    _SESS_WANT = {"srb": {"srb-qtu"},
                                   "srbpool": {"srb-qtu"},
                                   "srb-prl": {"srb-prl"},
                                   "srb-qtu": {"srb-qtu"},
                                   "zion": {"zion"}, "zionqtc": {"zion"},
+                                  "zionqtu": {"zion"},
                                   "zion50": {"zion"},
                                   "zionmax": {"zion"}, "prl": {"zion"},
                                   "qtu": {"zion"}}
@@ -1568,6 +1569,7 @@ def cmd_launch(args):
         miners = ["zion", "srbpool", "xmr"]
     # mode → (zion_pct, prl_pct, qtu_pct); zion_pct = stream-1 GPU duty %
     ZION_DUTY = {"zion": (5, 0, 0), "zionqtc": (60, 0, 40),
+                 "zionqtu": (60, 0, 40),
                  "zion50": (50, 0, 50), "zionmax": (100, 0, 0),
                  "qtu": (0, 0, 100), "prl": (0, 100, 0)}
     duty = getattr(args, "duty", None)
@@ -1576,13 +1578,13 @@ def cmd_launch(args):
             duty = tuple(int(x) for x in duty.split(","))
         except ValueError:
             duty = None
-    if duty and len(duty) >= 3:
+    if duty and miners[0] in ZION_DUTY and len(duty) >= 3:
         ZION_DUTY[miners[0]] = tuple(duty[:3])
-    elif duty and len(duty) == 2:
+    elif duty and miners[0] in ZION_DUTY and len(duty) == 2:
         # (prl,qtu) pair from the UI — keep the mode's stream-1 duty
         z, _, _ = ZION_DUTY[miners[0]]
         ZION_DUTY[miners[0]] = (z, *duty)
-    elif duty and len(duty) == 1:
+    elif duty and miners[0] in ZION_DUTY and len(duty) == 1:
         # bare stream-1 duty (--duty 30) — keep the mode's ext streams
         _, p, q = ZION_DUTY[miners[0]]
         ZION_DUTY[miners[0]] = (*duty, p, q)
@@ -1629,7 +1631,8 @@ def cmd_launch(args):
             script = launch_srb(inst, args.id, ("qtu",))
         else:
             print(f"  unknown miner '{mn}' "
-                  f"(full|zion|zionqtc|zion50|zionmax|qtu|prl|srb|srb-qtu|srb-prl|xmr|all)")
+                  f"(full|zion|zionqtc|zionqtu|zion50|zionmax|qtu|prl|"
+                  f"srb|srbpool|srb-qtu|srb-prl|xmr|all)")
             continue
         rc, out, err = ssh(inst, script, timeout=180)
         print((out + err).strip() or f"(exit {rc})")
@@ -1700,17 +1703,19 @@ def render_dashboard(rigs, ts):
   <div class=btns>
     <span class=lbl>zion</span>
     <button onclick="launch({r['id']},'zion')">z·5%</button>
-    <button onclick="launch({r['id']},'zionqtc')">z+qtc</button>
+    <button onclick="launch({r['id']},'zionqtu')">z+qtu</button>
     <button onclick="launch({r['id']},'zion50')">50/50</button>
-    <button onclick="launch({r['id']},'zionmax')">zion</button>
-    <button onclick="launch({r['id']},'qtu')">qtc</button>
+    <button onclick="launch({r['id']},'zionmax')">z·100%</button>
+    <button onclick="launch({r['id']},'qtu')">qtu</button>
+    <button onclick="launch({r['id']},'prl')">prl</button>
     <button onclick="stop({r['id']},'zion')" class=red>■</button>
     <button onclick="logs({r['id']},'zion')">log</button>
   </div>
   <div class=btns>
     <span class=lbl>srb</span>
-    <button onclick="launch({r['id']},'srbpool')">qtc·pool</button>
-    <button onclick="launch({r['id']},'srb')">qtc·lpr</button>
+    <button onclick="launch({r['id']},'srbpool')">qtu·pool</button>
+    <button onclick="launch({r['id']},'srb')">qtu·lpr</button>
+    <button onclick="launch({r['id']},'srb-prl')">prl·pool</button>
     <button onclick="stop({r['id']},'srb')" class=red>■</button>
     <button onclick="logs({r['id']},'srb')">log</button>
   </div>
@@ -2742,6 +2747,30 @@ def same_origin_request(origin, host):
     )
 
 
+def _launch_duty(q):
+    """Build the zion-miner duty tuple from /api/launch query params.
+
+    Tuple shapes consumed by cmd_launch: ``(z,)`` stream-1 duty only,
+    ``(prl, qtu)`` ext split that keeps the mode's stream-1 duty, and
+    ``(z, prl, qtu)`` full custom. Missing ext fields default to 0 — an
+    empty input means "off", matching every preset mode.
+    """
+    def _pct(name):
+        raw = (q.get(name) or [None])[0]
+        if raw is None:
+            return None
+        try:
+            return max(0, min(100, int(raw)))
+        except ValueError:
+            return None
+    z, p, t = _pct("z"), _pct("prl"), _pct("qtu")
+    if z is not None:
+        return (z, p or 0, t or 0)
+    if p is not None or t is not None:
+        return (p or 0, t or 0)
+    return None
+
+
 def inference_action(action, query):
     import io
     import vast_inference
@@ -3239,13 +3268,7 @@ for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -
                 self._send("readonly mode", 403, "text/plain")
                 return
             iid, mn = q.get("id", [""])[0], q.get("m", [""])[0]
-            duty = None
-            p_, q_ = q.get("prl", [None])[0], q.get("qtu", [None])[0]
-            if p_ is not None and q_ is not None:
-                try:
-                    duty = (max(0, min(100, int(p_))), max(0, min(100, int(q_))))
-                except ValueError:
-                    duty = None
+            duty = _launch_duty(q)
             try:
                 ns = argparse.Namespace(id=iid, miners=[mn], duty=duty,
                                         config=self.cfg_path)

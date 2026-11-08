@@ -1897,7 +1897,7 @@ export default function Dashboard() {
                 const srbM = r.miners.filter((m) => (m.cmd || "").includes("SRBMiner"));
                 const xmrM = r.miners.filter((m) => (m.cmd || "").toLowerCase().includes("xmrig"));
                 const otherM = r.miners.filter((m) => !zionM.includes(m) && !srbM.includes(m) && !xmrM.includes(m));
-                const isB = (k: string) => busy === k;
+                const isB = (k: string) => k !== "" && busy === k;
                 const launch = (m: string, ask?: string) => () => {
                   if (!ask || confirm(ask)) ops(`launch?id=${r.id}&m=${m}`, "POST");
                 };
@@ -1992,17 +1992,17 @@ export default function Dashboard() {
                     </div>
                     <button
                       disabled={!!busy}
-                      onClick={() => confirm(`full deploy on ${r.id}?\n\n• SRBMiner → PRL+QTU dual → upstream pools (max hashrate)\n• xmrig → CPU rx/0\n• zion-miner → binary installed (standby)`) && ops(`launch?id=${r.id}&m=full`, "POST")}
+                      onClick={() => confirm(`full deploy on ${r.id}?\n\n• zion-miner → ZION native @5% GPU (coexists with SRBMiner)\n• SRBMiner → QTU via own pool :8444 (ZION wallet)\n• xmrig → CPU rx/0`) && ops(`launch?id=${r.id}&m=full`, "POST")}
                       className="h-auto w-full whitespace-normal rounded-xl border border-[#fcd116]/40 bg-gradient-to-r from-[#fcd116]/[0.14] to-transparent px-4 py-2 text-left leading-snug transition hover:border-[#fcd116]/70 hover:from-[#fcd116]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40"
                     >
                       <div className="text-sm font-bold text-[#fcd116]">{isB(`launch?id=${r.id}&m=full`) ? "Deploying…" : "▸ Full deploy"}</div>
-                      <div className="mt-0.5 text-[10px] leading-normal text-white/40">SRBMiner PRL+QTU dual → upstream pools · XMRig CPU · zion standby</div>
+                      <div className="mt-0.5 text-[10px] leading-normal text-white/40">zion-miner ZION@5% · SRBMiner QTU→:8444 · XMRig CPU rx/0</div>
                     </button>
                     <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-3">
-                      <Engine title="SRBMiner · PRL+QTU upstream" accent="#34d399" ms={srbM}>
-                        <Pill k={`launch?id=${r.id}&m=srb`} onClick={launch("srb", `launch SRB dual on ${r.id}?`)}>▸ dual</Pill>
-                        <Pill k={`launch?id=${r.id}&m=srb-prl`} onClick={launch("srb-prl", `launch SRB PRL on ${r.id}?`)}>▸ prl</Pill>
-                        <Pill k={`launch?id=${r.id}&m=srb-qtu`} onClick={launch("srb-qtu", `launch SRB QTU on ${r.id}?`)}>▸ qtu</Pill>
+                      <Engine title="SRBMiner-MULTI · ext pools" accent="#34d399" ms={srbM}>
+                        <Pill k={`launch?id=${r.id}&m=srbpool`} onClick={launch("srbpool", `launch SRBMiner QTU via own pool on ${r.id}?\n\nQTU → pool :8444 credits the ZION wallet (production leg).\nAny running SRBMiner is replaced — one SRB launch at a time.`)}>▸ qtu·pool</Pill>
+                        <Pill k={`launch?id=${r.id}&m=srb`} onClick={launch("srb", `launch SRBMiner QTU via lproute on ${r.id}?\n\nUpstream pool — does NOT credit the ZION wallet.\nAny running SRBMiner is replaced — one SRB launch at a time.`)}>▸ qtu·lpr</Pill>
+                        <Pill k={`launch?id=${r.id}&m=srb-prl`} onClick={launch("srb-prl", `launch SRBMiner PRL on ${r.id}?\n\nPRL → configured pool (own :8444, relayed upstream) — credits the PRL wallet, not ZION.\nAny running SRBMiner is replaced — one SRB launch at a time.`)}>▸ prl·pool</Pill>
                         <span className="flex-1" />
                         <Pill k={`stop?id=${r.id}&m=srb`} tone="danger" onClick={stopFn("srb")}>■ stop</Pill>
                         <Lg src="srb" />
@@ -2014,28 +2014,45 @@ export default function Dashboard() {
                         <Lg src="xmr" />
                       </Engine>
                       <Engine title="zion-miner · pool (dev)" accent="#fcd116" ms={zionM}>
-                        <Pill k={`launch?id=${r.id}&m=zion`} onClick={launch("zion", `launch zion 50/50 on ${r.id}?\n\nNOTE: kills SRBMiner sessions for exclusive GPU`)}>▸ 50/50</Pill>
-                        <Pill k={`launch?id=${r.id}&m=zionmax`} onClick={launch("zionmax", `launch zion 100/40 on ${r.id}?`)}>▸ 100/40</Pill>
-                        <Pill k={`launch?id=${r.id}&m=prl`} onClick={launch("prl", `launch PRL-only on ${r.id}?`)}>▸ PRL</Pill>
-                        <Pill k={`launch?id=${r.id}&m=qtu`} onClick={launch("qtu", `launch QTU-only on ${r.id}?`)}>▸ QTU</Pill>
+                        <Pill k={`launch?id=${r.id}&m=zion`} onClick={launch("zion", `launch zion-miner on ${r.id}?\n\nZION native @5% GPU — coexists with SRBMiner, which keeps ~95% of the card.`)}>▸ z·5%</Pill>
+                        <Pill k={`launch?id=${r.id}&m=zion50`} onClick={launch("zion50", `launch zion 50/50 on ${r.id}?\n\nZION@50% + QTU ext@50% — GPU is shared with any running SRBMiner.`)}>▸ 50/50</Pill>
+                        <Pill k={`launch?id=${r.id}&m=zionqtu`} onClick={launch("zionqtu", `launch zion+qtu on ${r.id}?\n\nZION@60% + QTU ext@40% — GPU is shared with any running SRBMiner.`)}>▸ z+qtu</Pill>
+                        <Pill k={`launch?id=${r.id}&m=zionmax`} onClick={launch("zionmax", `launch zion-max on ${r.id}?\n\nZION@100% GPU — a running SRBMiner will starve while this is up.`)}>▸ max</Pill>
+                        <Pill k={`launch?id=${r.id}&m=prl`} onClick={launch("prl", `launch PRL-only on ${r.id}?\n\nPRL ext@100% GPU, native ZION stream off — contends with SRBMiner for the card.`)}>▸ PRL</Pill>
+                        <Pill k={`launch?id=${r.id}&m=qtu`} onClick={launch("qtu", `launch QTU-only on ${r.id}?\n\nQTU ext@100% GPU, native ZION stream off — contends with SRBMiner for the card.`)}>▸ QTU</Pill>
+                        <input
+                          id={`dz-${r.id}`}
+                          inputMode="numeric"
+                          placeholder="Z%"
+                          aria-label="ZION stream duty percent"
+                          title="ZION native stream GPU duty % (empty = keep mode default)"
+                          className="min-h-7 w-11 rounded-md border border-white/10 bg-black/40 px-1.5 py-0.5 text-center text-[11px] text-white placeholder-white/25 focus:border-[#fcd116]/40 focus:outline-none"
+                        />
                         <input
                           id={`dprl-${r.id}`}
                           inputMode="numeric"
                           placeholder="PRL%"
-                          aria-label="PRL duty percent"
+                          aria-label="PRL ext duty percent"
                           className="min-h-7 w-12 rounded-md border border-white/10 bg-black/40 px-1.5 py-0.5 text-center text-[11px] text-white placeholder-white/25 focus:border-[#fcd116]/40 focus:outline-none"
                         />
                         <input
                           id={`dqtu-${r.id}`}
                           inputMode="numeric"
                           placeholder="QTU%"
-                          aria-label="QTU duty percent"
+                          aria-label="QTU ext duty percent"
                           className="min-h-7 w-12 rounded-md border border-white/10 bg-black/40 px-1.5 py-0.5 text-center text-[11px] text-white placeholder-white/25 focus:border-[#fcd116]/40 focus:outline-none"
                         />
                         <Pill k="" tone="ghost" onClick={() => {
-                          const p = (document.getElementById(`dprl-${r.id}`) as HTMLInputElement)?.value || "50";
-                          const q = (document.getElementById(`dqtu-${r.id}`) as HTMLInputElement)?.value || "50";
-                          if (confirm(`launch zion ${p}/${q} on ${r.id}?`)) ops(`launch?id=${r.id}&m=zion&prl=${encodeURIComponent(p)}&qtu=${encodeURIComponent(q)}`, "POST");
+                          const val = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value.trim() || "";
+                          const z = val(`dz-${r.id}`), p = val(`dprl-${r.id}`), q = val(`dqtu-${r.id}`);
+                          const dutyTxt = [z && `Z${z}`, p && `PRL${p}`, q && `QTU${q}`].filter(Boolean).join(" ") || "mode defaults";
+                          if (confirm(`launch custom duty on ${r.id}?\n\n${dutyTxt} — empty fields keep the mode defaults.`)) {
+                            const qs = new URLSearchParams({ id: String(r.id), m: "zion" });
+                            if (z) qs.set("z", z);
+                            if (p) qs.set("prl", p);
+                            if (q) qs.set("qtu", q);
+                            ops(`launch?${qs.toString()}`, "POST");
+                          }
                         }}>▸ custom</Pill>
                         <span className="flex-1" />
                         <Pill k={`stop?id=${r.id}&m=zion`} tone="danger" onClick={stopFn("zion")}>■ stop</Pill>
@@ -2387,7 +2404,7 @@ export default function Dashboard() {
           {snap?.ext && (
           <div className="mb-5 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
             {([
-              ["qtu", "QTC · Quantus", "#fcd116", "luckypool"],
+              ["qtu", "QTU · Quantus", "#fcd116", "luckypool"],
               ["prl", "PRL · Pearl", "#34d399", "luckypool"],
               ["nock", "NOCK · Nockchain", "#a78bfa", "luckypool"],
               ["xmr", "XMR · Monero", "#fb923c", "nanopool"],

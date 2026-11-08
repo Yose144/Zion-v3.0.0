@@ -83,7 +83,8 @@ ExecStart=/usr/bin/python3 ${REMOTE_DIR}/vastctl.py \\
     --interval 60 \\
     --json-out ${PUSH_TARGET} \\
     --push root@207.180.217.100:${PUSH_TARGET} \\
-    --autodeploy-xmrig
+    --autodeploy-xmrig \\
+    --watchdog
 Restart=always
 RestartSec=15
 StandardOutput=journal
