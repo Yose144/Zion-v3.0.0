@@ -37,6 +37,9 @@ const IDS = (value('ids', '') || '')
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean);
+const RUN_ID = Date.now();
+// Kde leží GLB vzhledem ke statickému serveru (výchozí = dávkový staging).
+const MODEL_DIR = value('model-dir', '.artifacts/avatar-3d/stage');
 
 if (IDS.length === 0) {
   console.error('chybí --ids 000,003,051');
@@ -59,7 +62,7 @@ const cells = IDS.map((id, row) => {
     id,
     row,
     name: avatar?.name ?? '?',
-    model: `${BASE}/.artifacts/avatar-3d/stage/${id}/${id}.glb`,
+    model: `${BASE}/${MODEL_DIR}/${id}/${id}.glb?v=${RUN_ID}`,
     portrait: `${BASE}/apps/website-v2.9/public/oasis-assets/final_portraits/${portraitFile}`,
   };
 });

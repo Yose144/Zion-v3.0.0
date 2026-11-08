@@ -343,6 +343,7 @@ Autonomní dávku řeší tři skripty v `scripts/ops/avatar-3d/`:
 | `qa.mjs` | Vykreslí kontrolní list: portrét + čtyři pohledy pro každé ID, do jednoho PNG |
 | `similarity.py` | Měří IoU siluety a ΔE palety proti výtvarnému listu — **diagnostika, ne schvalovací filtr** (viz §9) |
 | `clip_score.py` | Sémantické skóre (CLIP) proti výtvarnému listu — **řazení k revizi, ne schvalovací brána** (viz §9b) |
+| `compare_variants.py` | Srovná mosaiky více variant: CLIP proti předlohám (front/side/back) a jedna společná mosaika s popisky (viz §9c) |
 
 ### Spuštění celé dávky
 
@@ -421,6 +422,40 @@ protože i lidsky slabý model může mít vysoké skóre jen díky správné pa
 **Důsledek pro autonomii:** bez spolehlivého hodnocení musí dávku projít člověk,
 nebo se musí použít sémantické embeddingy (CLIP) místo geometrických metrik.
 Do té doby je bezpečný režim „vygenerovat dávku + kontrolní listy + rozhodnout“.
+
+### 9c. Doladění Krišny — co šlo naměřit (2026-11-08)
+
+Sweep nastavení `generate.py` proti původnímu pilotu (MC 192, textura 1024).
+Všechny varianty ze stejného vstupu (000-front), CLIP proti buňkám výtvarného
+listu (front/side/back):
+
+| Varianta | MC | Textura | Tris | Čas | Front | Side | Back | Průměr |
+|---|---|---|---|---|---|---|---|---|
+| old (pilot) | 192 | 1024 | 15k | ~60 s | 0,536 | 0,554 | 0,532 | 0,548 |
+| a | 256 | 1024 | 15k | 80 s | 0,537 | 0,534 | 0,562 | 0,553 |
+| **b — vítěz** | **320** | **2048** | **15k** | **292 s** | **0,597** | 0,541 | 0,583 | **0,569** |
+| c | 384 | 2048 | 15k | 287 s | 0,573 | 0,502 | 0,598 | 0,563 |
+| d | 384 | 2048 | 24k | 18 min | 0,553 | 0,521 | 0,579 | 0,555 |
+| e | 320 | 2048 | 24k | 20 min | 0,557 | 0,538 | 0,537 | 0,553 |
+
+Zjištění:
+
+- **MC 320 + textura 2048** je sladké místo: front +0,06 a back +0,05 proti
+  pilotu, na srovnávací mosaice je hlava a obrys čitelnější — pořád ale měkké.
+- **Více polygonů nepomáhá** (varianta d/e horší než b): decimace obličeje
+  a rozmlžených partií nezachránila; čas se 4–5× prodlouží (mesh extraction na
+  MC 384 + bake na 24k sítí stojí 12–18 min) a GLB naroste na 3,6–3,8 MB.
+- Vítězná varianta b je rignutá a nasazená v Nirvaně (`0.glb`, 3,4 MB).
+  To je **strop single-view TripoSR**: bez informace z vedlejších pohledů se
+  mléčná tvář a slabé atributy (flétna, peříčko) nedodraví ani decimací, ani
+  texturou.
+- Pozn.: výchozí `--mc 192` v `generate.py` navíc vedlo k měkkým výsledkům —
+  pro dávku budeme používat explicitně MC 320 + textura 2048.
+
+Technická poznámka ke kontrolním mosaikám: `qa.mjs` dokázal renderovat stejný
+obsah (identické MD5) nezávisle na variantě; fix byl cache-buster `?v=` v URL
+modelu a ruční renderový harness (`puppeteer-core`, `waitUntil:"networkidle2"`)
+pro ověření. Výstupy experimentu jsou v `.artifacts/avatar-3d/krishna-v2/`.
 
 
 
