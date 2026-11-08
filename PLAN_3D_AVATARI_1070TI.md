@@ -22,7 +22,9 @@ Automat nespouští žádný krok mimo brány uvedené níže.
 ## 0b. Stav pilotu (2026-11-08)
 
 - **M1 dávka 01:** 25/25 modelů vygenerováno (MC 320 + textura 2048) a 25/25
-  rignuto (`rig.py`, 17 kloubů + idle). Čeká QA a schválení; do hry zatím nic.
+  rignuto (`rig.py`, 17 kloubů + idle). QA hotová: CLIP průměr **0,600**,
+  medián 0,614; nejlepší Issobela 0,678, nejslabší Panna Maria 0,449.
+  Kontrolní listy: `.artifacts/avatar-3d/batch-01/qa-{1,2,3}/`. Do hry zatím nic.
 - **TRELLIS.2 pilot (Krišna):** ověřen přes oficiální HF Space — kvalitativně
   jasně lepší (CLIP průměr **0,688** vs 0,569 M1; anatomicky správná postava).
   Detail v `docs/3.2/AVATAR-3D-PIPELINE.md` §9d.
