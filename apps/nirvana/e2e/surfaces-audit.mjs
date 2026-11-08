@@ -2,10 +2,19 @@
 // přítomnost Herního HUD, viditelnost hlavního CTA na telefonu.
 // Spustit: NIRVANA_BASE=http://127.0.0.1:3000 node e2e/surfaces-audit.mjs
 import { launch, PHONE } from './_browser.mjs';
+import { ensureApp } from './_app.mjs';
 
 const BASE = process.env.NIRVANA_BASE ?? 'http://127.0.0.1:3010';
 const LANDSCAPE = process.env.MOBILE_LANDSCAPE === '1';
-const VIEWPORT = LANDSCAPE ? { width: 844, height: 390 } : PHONE.viewport;
+// `NIRVANA_VIEWPORT=768x1024` přebije výchozí telefon/na šířku — pro tablety.
+const VIEWPORT = process.env.NIRVANA_VIEWPORT
+  ? (() => {
+      const [w, h] = process.env.NIRVANA_VIEWPORT.split('x').map(Number);
+      return { width: w, height: h };
+    })()
+  : LANDSCAPE
+    ? { width: 844, height: 390 }
+    : PHONE.viewport;
 
 /** path → co má být vidět po načtení (volitelné selectory). */
 const PAGES = [
@@ -27,6 +36,7 @@ if (process.env.NIRVANA_PASS_COOKIE) {
   auditHeaders.cookie = `zion_nirvana_pass=${process.env.NIRVANA_PASS_COOKIE}`;
 }
 
+const app = await ensureApp({ base: BASE });
 const browser = await launch();
 let problems = 0;
 const fail = (name, msg) => {
@@ -96,5 +106,6 @@ for (const spec of PAGES) {
 }
 
 await browser.close();
+app.stop();
 console.log(problems === 0 ? '\nPASSED' : `\n${problems} problem(ů)`);
 process.exit(problems === 0 ? 0 : 1);

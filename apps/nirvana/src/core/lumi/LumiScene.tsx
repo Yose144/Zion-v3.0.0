@@ -847,7 +847,6 @@ function RemoteFlyers({ remotes }: { remotes: React.MutableRefObject<LumiRemote[
   useFrame((state) => {
     const list = remotes.current ?? [];
     const now = state.clock.elapsedTime;
-    const seen = new Set<string>();
 
     for (let index = 0; index < MAX; index += 1) {
       const group = groups.current[index];
@@ -855,7 +854,6 @@ function RemoteFlyers({ remotes }: { remotes: React.MutableRefObject<LumiRemote[
       if (!group) continue;
       group.visible = Boolean(remote);
       if (!remote) continue;
-      seen.add(remote.id);
 
       let fade = 1;
       if (remote.ghost) {
@@ -889,8 +887,13 @@ function RemoteFlyers({ remotes }: { remotes: React.MutableRefObject<LumiRemote[
     }
 
     // Úklid: id, které už server neposílá, nemá co držet razítko.
-    for (const id of [...ghostSince.current.keys()]) {
-      if (!seen.has(id)) ghostSince.current.delete(id);
+    // `new Set` + `[...keys()]` alokovaly každý frame — `.some` je tu
+    // levnější (remote max 4, klíčů v mapě taky pár) a běží jen když
+    // vůbec něco duchuje.
+    if (ghostSince.current.size > 0) {
+      for (const id of ghostSince.current.keys()) {
+        if (!list.some((remote) => remote.id === id)) ghostSince.current.delete(id);
+      }
     }
   });
 
@@ -984,6 +987,9 @@ function LumiXr({
   const keys = useVrKeys();
   const { camera } = useThree();
   const forward = useMemo(() => new THREE.Vector3(), []);
+  // `stepFlight` čte aim synchronně ve stejném frame — objekt může být
+  // sdílený, nemusí se alokovat `{x,y}` každý snímek.
+  const gazeVec = useMemo(() => ({ x: 0, y: 0 }), []);
 
   useFrame(() => {
     const flight = state.current;
@@ -1007,7 +1013,9 @@ function LumiXr({
       gaze.current = null;
       return;
     }
-    gaze.current = { x: forward.x / flat, y: forward.y / flat };
+    gazeVec.x = forward.x / flat;
+    gazeVec.y = forward.y / flat;
+    gaze.current = gazeVec;
   });
 
   return (

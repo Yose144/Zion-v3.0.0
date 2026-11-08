@@ -284,6 +284,15 @@ function RemoteFleet({ remotes }: { remotes: React.MutableRefObject<RemotePilot[
     if (next !== signature.current) {
       signature.current = next;
       setSlots(list.map((pilot) => ({ id: pilot.id, shipId: pilot.shipId })));
+      // Úklid jen při změně состава — `new Set` + mazání nepatří do
+      // každého frame (15×/s jezdí stav, ne členství).
+      const alive = new Set(list.map((pilot) => pilot.id));
+      for (const id of groups.current.keys()) {
+        if (!alive.has(id)) {
+          groups.current.delete(id);
+          ghosts.current.delete(id);
+        }
+      }
     }
 
     const now = clock.elapsedTime;
@@ -315,10 +324,6 @@ function RemoteFleet({ remotes }: { remotes: React.MutableRefObject<RemotePilot[
         });
       }
     }
-
-    // úklid: kdo v seznamu není, tomu skupinu zapomeneme
-    const alive = new Set(list.map((pilot) => pilot.id));
-    for (const id of groups.current.keys()) if (!alive.has(id)) groups.current.delete(id);
   });
 
   return (

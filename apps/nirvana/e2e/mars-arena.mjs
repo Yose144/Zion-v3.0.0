@@ -8,6 +8,7 @@
 // Spustit:  node apps/nirvana/e2e/mars-arena.mjs
 
 import { resolveExecutable } from './_browser.mjs';
+import { ensureApp, grantPass } from './_app.mjs';
 
 let chromium;
 try {
@@ -60,9 +61,13 @@ function watch(page, tag) {
   });
 }
 
+// ZAP brána (proxy.ts) + `ensureApp` postará o `next start` a oracle stub.
+const app = await ensureApp({ base: BASE });
+
 try {
   const a = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   watch(a, 'A');
+  await grantPass(a, new URL(app.base).hostname);
 
   await a.goto(`${BASE}/mars?arenaDebug=1`, { waitUntil: 'networkidle' });
   check('stránka /mars se načte', true);
@@ -71,18 +76,25 @@ try {
 
   // swiftshader žere minuty — R3F mountuje až po GL init
   const state = await poll(a, (s) => s.connected && (s.players?.length ?? 0) >= 4, 150_000);
+  // Ghost z předchozího běhu dožívá v místnosti RESUME_GRACE_MS (45 s,
+  // aby se dalo navázat) — "člověk je jeden" proto nejdřív musíme
+  // vyčkat, až ho server uklidí, ne měřit okamžitý snapshot.
+  const settled = await poll(a, (s) => (s.players ?? []).filter((p) => !p.isBot).length === 1, 60_000);
+  const players = settled?.players ?? state?.players ?? [];
+  const bots = players.filter((p) => p.isBot);
+  const humans = players.filter((p) => !p.isBot);
   check('MP připojen (proto 4 handshake)', Boolean(state?.connected), JSON.stringify(state?.you ?? null));
-
-  const bots = (state?.players ?? []).filter((p) => p.isBot);
-  const humans = (state?.players ?? []).filter((p) => !p.isBot);
-  check('klient vidí 3 boty', bots.length === 3, `boti=${bots.length} celkem=${state?.players?.length}`);
+  check('klient vidí 3 boty', bots.length === 3, `boti=${bots.length} celkem=${players.length}`);
   check('klient ví, kdo je bot', bots.every((p) => typeof p.isBot === 'boolean'), JSON.stringify(bots.map((p) => p.id)));
-  check('člověk je jeden', humans.length === 1 && humans[0].id === state.you, JSON.stringify(humans.map((p) => p.id)));
+  check('člověk je jeden', humans.length === 1 && humans[0].id === settled?.you, JSON.stringify(humans.map((p) => p.id)));
   check('boti mají jména', bots.every((p) => p.name && p.name !== '…'), JSON.stringify(bots.map((p) => p.name)));
 
   // ── boti se hýbou i v klientovi (přes snapshoty) ──────────────────
+  // `poll(a, () => true)` by vrátil okamžitě — mezi start a later musí
+  // reálně uplynout čas, jinak je rozdíl pozic ~0 (flaky test).
   const start = bots.map((p) => ({ id: p.id, x: p.x, z: p.z }));
-  const later = await poll(a, () => true, 4000);
+  await sleep(4000);
+  const later = await debug(a);
   const moved = start.map((s) => {
     const now = (later?.players ?? []).find((p) => p.id === s.id);
     return now ? Math.hypot(now.x - s.x, now.z - s.z) : 0;
@@ -104,6 +116,7 @@ try {
   console.log(errors.join('\n'));
 } finally {
   await browser.close();
+  app.stop();
 }
 
 console.log(`\nmars-e2e: ${failures === 0 ? 'PASSED' : `${failures} FAILED`}`);

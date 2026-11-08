@@ -4,6 +4,7 @@
 //
 // Spustit:  node apps/nirvana/e2e/mercury-duel.mjs
 import { resolveExecutable } from './_browser.mjs';
+import { ensureApp, grantPass } from './_app.mjs';
 
 let chromium;
 try {
@@ -59,7 +60,12 @@ function watch(page, tag) {
   });
 }
 
+// ZAP brána (proxy.ts) + `ensureApp` postará o `next start` a oracle stub.
+const app = await ensureApp({ base: BASE });
+const host = new URL(app.base).hostname;
+
 async function openDuel(page) {
+  await grantPass(page, host);
   await page.goto(`${BASE}/mercury?duelDebug=1`, { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: /Online duel/i }).click();
   // první paint WebGL na swiftshaderu = ~1 min (R3F mount až po GL init); na reálném GPU vteřiny
@@ -71,6 +77,7 @@ try {
   console.log('\n== sólový trénink ==');
   const solo = await browser.newPage({ viewport: { width: 390, height: 844 } });
   watch(solo, 'solo');
+  await grantPass(solo, host);
   await solo.goto(`${BASE}/mercury`, { waitUntil: 'networkidle' });
   await solo.getByRole('button', { name: /Champion|Mistr/i }).click();
   check(
@@ -143,15 +150,18 @@ try {
 
   check('bez JS chyb ve dvou klientech', errors.length === 0, errors.join(' | '));
 
-  // odpojení B → A musí dostat meta-bota, duel nesmí zamrznout
+  // odpojení B → A musí dostat meta-bota, duel nesmí zamrznout.
+  // Pozor: server drží odpojenému hráči sedlo RESUME_GRACE_MS (45 s,
+  // reconnect grace) — bot nastoupí až po jeho vypršení, ne hned.
   await b.close();
-  const botBack = await poll(a, (s) => s.foe.id.startsWith('bot-'), 15_000);
+  const botBack = await poll(a, (s) => s.foe.id.startsWith('bot-'), 55_000);
   check('po odpojení soupeře doplní server bota', Boolean(botBack), botBack?.foe.id);
 } catch (error) {
   check('E2E nespadlo', false, String(error));
   console.log(errors.join('\n'));
 } finally {
   await browser.close();
+  app.stop();
 }
 
 console.log(`\nmercury-e2e: ${failures === 0 ? 'PASSED' : `${failures} FAILED`}`);

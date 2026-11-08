@@ -23,7 +23,6 @@ import {
   TANK_W,
   TERRAIN_COLS,
   WORLD_W,
-  tankCenter,
   terrainAt,
   type TanksState,
 } from './tanks';
@@ -226,27 +225,26 @@ function Blasts({ state }: { state: React.MutableRefObject<TanksState> }) {
 function CameraRig({ state }: { state: React.MutableRefObject<TanksState> }) {
   const { camera } = useThree();
   const target = useRef(new THREE.Vector3(WORLD_W / 2, 140, 0));
+  // dočasné vektory — `new Vector3` ve `useFrame` alokoval 2–3 objekty
+  // každý frame; `tankCenter` se tu nevyžadoval (potřebujeme jen `.x`).
+  const focus = useRef(new THREE.Vector3());
+  const desired = useRef(new THREE.Vector3());
 
   useFrame((_, delta) => {
     const current = state.current;
-    const focus = current.shot
-      ? new THREE.Vector3(current.shot.x, current.shot.y, 0)
-      : new THREE.Vector3(
-          (tankCenter(current.terrain, current.player).x + tankCenter(current.terrain, current.bot).x) / 2,
-          140,
-          0,
-        );
+    if (current.shot) focus.current.set(current.shot.x, current.shot.y, 0);
+    else focus.current.set((current.player.x + current.bot.x) / 2, 140, 0);
     const damp = 1 - Math.exp(-3.2 * Math.min(delta, 0.05));
-    target.current.lerp(focus, damp);
+    target.current.lerp(focus.current, damp);
     // overview musí pojmout celé hřiště (1000 jednotek na šířku),
     // při letu se kamera přiblíží, aby byla střela vidět
     const close = Boolean(current.shot);
-    const desired = new THREE.Vector3(
+    desired.current.set(
       target.current.x,
       target.current.y + (close ? 230 : 640),
       target.current.z + (close ? 480 : 980),
     );
-    camera.position.lerp(desired, damp);
+    camera.position.lerp(desired.current, damp);
     camera.lookAt(target.current);
   });
 

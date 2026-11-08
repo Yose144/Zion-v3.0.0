@@ -14,6 +14,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { resolveExecutable } from './_browser.mjs';
+import { ensureApp, grantPass } from './_app.mjs';
 
 let chromium;
 try {
@@ -135,6 +136,9 @@ console.log('\n== Asteroidy (logika bez prohlížeče) ==');
 }
 
 // ── 2) prohlížeč ────────────────────────────────────────────────────
+// ZAP brána (proxy.ts) propustí jen s cookie — `grantPass` ji nastaví.
+// `ensureApp` postará o `next start` + oracle stub, když :3010 nejede.
+const app = await ensureApp({ base: BASE });
 const browser = await chromium.launch({
   executablePath: EXE,
   headless: true,
@@ -159,6 +163,7 @@ try {
   console.log('\n== pouť v prohlížeči ==');
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   watch(page, 'park');
+  await grantPass(page, new URL(app.base).hostname);
   await page.addInitScript(
     ([key, value]) => window.localStorage.setItem(key, JSON.stringify(value)),
     ['nirvana.park.v1', SEED],
@@ -166,7 +171,8 @@ try {
   await page.goto(`${BASE}/park`, { waitUntil: 'networkidle' });
 
   const cabinets = await page.locator('.park-games button').allTextContents();
-  check('skříně: pět her včetně Asteroid', cabinets.length === 5 && cabinets.some((t) => /Asteroid/i.test(t)),
+  // Šest skříní: Pong, Breakout, Tetris, Snake, Věž, Asteroidy.
+  check('skříně: šest her včetně Asteroid', cabinets.length === 6 && cabinets.some((t) => /Asteroid/i.test(t)),
     cabinets.join(' | '));
   const boardCols = await page.locator('.park-board-col em').allTextContents();
   check('tabule má sloupec Merkur souboj', boardCols.some((t) => /Merkur/i.test(t)), boardCols.join(', '));
@@ -206,13 +212,15 @@ try {
   await page.locator('.park-panel').waitFor({ timeout: 5000 });
 
   // c) tabule přijme skóre z Merkura (servisní stránka, žádný prohlížeč navíc)
+  // Proxy vyžaduje pass cookie i na /api/* — jinak POST skončí 307→405.
+  const apiHeaders = { 'Content-Type': 'application/json', cookie: 'zion_nirvana_pass=ZAP-AUDIT0000000' };
   const post = await fetch(`${BASE}/api/park/scores`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: apiHeaders,
     body: JSON.stringify({ game: 'fight', score: 170, name: 'e2e-park' }),
   });
   check('API přijme skóre Merkura', post.status === 200, String(post.status));
-  const board = await (await fetch(`${BASE}/api/park/scores`)).json();
+  const board = await (await fetch(`${BASE}/api/park/scores`, { headers: apiHeaders })).json();
   check('tabule Merkura má záznam', (board?.scores?.fight ?? []).some((row) => row.name === 'e2e-park'),
     JSON.stringify(board?.scores?.fight ?? []).slice(0, 120));
 
@@ -233,6 +241,7 @@ try {
   console.log(errors.join('\n'));
 } finally {
   await browser.close();
+  app.stop();
 }
 
 console.log(`\npark-e2e: ${failures === 0 ? 'PASSED' : `${failures} FAILED`}`);
