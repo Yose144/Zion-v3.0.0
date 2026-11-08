@@ -156,6 +156,19 @@ export default function VenusPage() {
               {mpStats?.connected ? `${mpStats?.ping ?? 0} ms` : l('offline')}
             </span>
             <VrButton xr={{ store: xrStore, presenting }} className="arena-vr" />
+            {!watch && (
+              <button
+                type="button"
+                className="game-exit"
+                onClick={() => {
+                  setMp(false);
+                  setMpStats(null);
+                  setPhase('idle');
+                }}
+              >
+                {l('menu')}
+              </button>
+            )}
           </div>
           {mpStats && mpStats.standings.length > 0 && (
             <ol className="race-board">
@@ -198,6 +211,13 @@ export default function VenusPage() {
           </span>
           {stats.offTrack && <span className="race-off">{l('offTrack')}</span>}
           <VrButton xr={{ store: xrStore, presenting }} className="arena-vr" />
+          <button
+            type="button"
+            className="game-exit"
+            onClick={() => setPhase('idle')}
+          >
+            {l('menu')}
+          </button>
         </div>
       )}
 

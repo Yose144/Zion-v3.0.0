@@ -20,6 +20,7 @@ export const LUMI_COPY = {
   backToPlanet: { cs: 'Uran', en: 'Uranus', es: 'Urano' },
 
   // ── HUD ─────────────────────────────────────────────────────────────
+  menu: { cs: 'Menu', en: 'Menu', es: 'Menú' },
   lightsAria: { cs: 'Sebraná světla', en: 'Lights gathered', es: 'Luces recogidas' },
   energyTitle: { cs: 'světlo lucerny', en: 'lantern light', es: 'luz de la linterna' },
   toShrine: { cs: 'Do svatyně zbývá {n} světel', en: '{n} lights to the shrine', es: 'Faltan {n} luces para el santuario' },

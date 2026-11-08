@@ -482,6 +482,19 @@ export default function LumiPage() {
             </button>
 
             <VrButton xr={xr} className="lumi-vr" />
+
+            {!watch && (
+              <button
+                type="button"
+                className="game-exit"
+                onClick={() => {
+                  if (document.pointerLockElement) void document.exitPointerLock();
+                  setPhase('intro');
+                }}
+              >
+                {l('menu')}
+              </button>
+            )}
           </div>
 
           <p className="lumi-hint">

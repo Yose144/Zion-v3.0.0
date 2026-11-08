@@ -174,6 +174,18 @@ export function GameHud() {
   return (
     <nav className={`game-hud${dock ? ' is-dock' : ' is-compact'}`} aria-label={hud(lang, 'Hry a účet', 'Games and account', 'Juegos y cuenta', 'Jogos e conta', 'Jeux et compte')}>
       <div className="game-hud-tabs">
+        {/* Domovská záložka — z každé hry i povrchu cesta do vesmíru.
+            Bez ní na /mars, /venus, /earth… nevedla do `/` žádná cesta
+            (jen browser back); zpět na Zemi je workflow, ne detail. */}
+        <Link
+          href="/"
+          className={`game-hud-tab is-home${pathname === '/' ? ' is-active' : ''}`}
+          style={{ ['--game-tone' as string]: '#fcd116' }}
+          aria-current={pathname === '/' ? 'page' : undefined}
+        >
+          <span aria-hidden>◈</span>
+          <span className="game-hud-tab-text">{hud(lang, 'Nirvana', 'Nirvana', 'Nirvana', 'Nirvana', 'Nirvana')}</span>
+        </Link>
         {GAME_LINKS.map((game) => (
           <Link
             key={game.id}

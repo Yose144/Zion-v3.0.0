@@ -28,6 +28,7 @@ export const ARENA_COPY = {
   enter: { cs: 'Vstoupit do arény', en: 'Enter the arena', es: 'Entrar en la arena' },
   multiplayer: { cs: 'Multiplayer — proti lidem', en: 'Multiplayer — against people', es: 'Multijugador — contra personas' },
   backToFair: { cs: '← zpět na pouť', en: '← back to the fair', es: '← volver a la feria' },
+  menu: { cs: 'Menu', en: 'Menu', es: 'Menú' },
   rematch: { cs: 'Odveta', en: 'Rematch', es: 'Revancha' },
   intro: {
     cs: 'Rail a rakety, tři boti, frag limit 10 nebo tři minuty. Mapa je z krabic — žádné modely, jen fyzika a světlo.',

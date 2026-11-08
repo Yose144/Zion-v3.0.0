@@ -24,6 +24,7 @@ export const RACE_COPY = {
   toGrid: { cs: 'Na start', en: 'To the grid', es: 'A la parrilla' },
   multiplayer: { cs: 'Multiplayer — proti lidem', en: 'Multiplayer — against people', es: 'Multijugador — contra personas' },
   backToFair: { cs: '← zpět na pouť', en: '← back to the fair', es: '← volver a la feria' },
+  menu: { cs: 'Menu', en: 'Menu', es: 'Menú' },
   total: { cs: 'celkem', en: 'total', es: 'total' },
   bestLap: { cs: 'nejlepší kolo', en: 'best lap', es: 'mejor vuelta' },
   score: { cs: 'skóre', en: 'score', es: 'puntos' },

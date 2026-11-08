@@ -164,6 +164,19 @@ export default function MarsPage() {
             <span className={`arena-weapon${mpStats?.connected ? '' : ' is-offline'}`}>
               {mpStats?.connected ? `${mpStats?.ping ?? 0} ms` : l('offline')}
             </span>
+            {!watch && (
+              <button
+                type="button"
+                className="game-exit"
+                onClick={() => {
+                  setMp(false);
+                  setMpStats(null);
+                  setPhase('idle');
+                }}
+              >
+                {l('menu')}
+              </button>
+            )}
           </div>
           {mpStats && mpStats.players.length > 1 && (
             <ol className="arena-board">
@@ -222,6 +235,16 @@ export default function MarsPage() {
                 VR
               </button>
             )}
+            <button
+              type="button"
+              className="game-exit"
+              onClick={() => {
+                if (document.pointerLockElement) void document.exitPointerLock();
+                setPhase('idle');
+              }}
+            >
+              {l('menu')}
+            </button>
           </div>
           <div className="arena-tip">
             {coarse
