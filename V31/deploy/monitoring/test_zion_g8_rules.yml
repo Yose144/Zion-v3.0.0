@@ -1,0 +1,126 @@
+# Firing tests for g8.rules.yml (G8 evidence gate).
+#
+#   promtool test rules test_zion_g8_rules.yml
+#
+# Each alert gets one case that must fire and one that must stay quiet — a
+# threshold test alone would pass even if the expression never matched.
+rule_files:
+  - g8.rules.yml
+
+evaluation_interval: 1m
+
+tests:
+  # ── G8ExporterDown: probe exporter unscrapeable for 2m ──────────────────
+  - interval: 1m
+    input_series:
+      - series: 'up{job="zion_g8"}'
+        values: '1 1 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: G8ExporterDown
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: G8ExporterDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: zion_g8
+            exp_annotations:
+              summary: "G8 probe exporter is down"
+              description: "Prometheus cannot scrape the zion_g8 probe exporter on 127.0.0.1:9105 for over 2 minutes; G8 evidence collection is blind."
+
+  # ── G8ChainStale: tip older than 15 min ────────────────────────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_g8_chain_tip_age_seconds'
+        values: '100 100 1000 1000 1000 1000'
+      - series: 'zion_g8_chain_live'
+        values: '1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: G8ChainStale
+        exp_alerts: []
+      - eval_time: 4m
+        alertname: G8ChainStale
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: "G8 chain tip is stale or unreachable"
+              description: "The V31 chain tip is older than 15 minutes or no node probe reports a reachable tip (zion_g8_chain_live == 0)."
+
+  # ── G8ChainStale: no node probe reports a reachable tip ────────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_g8_chain_tip_age_seconds'
+        values: '100 100 100 100'
+      - series: 'zion_g8_chain_live'
+        values: '1 0 0 0'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: G8ChainStale
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: "G8 chain tip is stale or unreachable"
+              description: "The V31 chain tip is older than 15 minutes or no node probe reports a reachable tip (zion_g8_chain_live == 0)."
+
+  # ── G8RequiredServiceDown: pooled service probe failing 2m ─────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_g8_probe_success{service="pool_http"}'
+        values: '1 1 0 0 0 0 0 0'
+      # a follower probe failing must NOT page (not in the required set)
+      - series: 'zion_g8_probe_success{service="node2"}'
+        values: '1 1 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: G8RequiredServiceDown
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: G8RequiredServiceDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              service: pool_http
+            exp_annotations:
+              summary: "G8 required service down: pool_http"
+              description: "Required service pool_http has been failing its G8 probe for over 2 minutes."
+
+  # ── G8PrimaryNodeDown: node_primary RPC probe failing 2m ───────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_g8_probe_success{service="node_primary"}'
+        values: '1 1 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: G8PrimaryNodeDown
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: G8PrimaryNodeDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              service: node_primary
+            exp_annotations:
+              summary: "G8 primary node RPC down"
+              description: "The primary V31 node JSON-RPC probe (node_primary) has been failing for over 2 minutes."
+
+  # ── G8NodeQuorumLow: fewer than 2 of 3 node RPCs for 5m ────────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_g8_node_quorum'
+        values: '3 2 1 1 1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: G8NodeQuorumLow
+        exp_alerts: []
+      - eval_time: 8m
+        alertname: G8NodeQuorumLow
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "G8 node quorum degraded"
+              description: "Fewer than 2 of 3 node RPC ports are answering for over 5 minutes (zion_g8_node_quorum < 2)."

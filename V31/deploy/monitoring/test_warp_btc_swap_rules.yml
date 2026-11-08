@@ -1,0 +1,70 @@
+# Firing tests for warp_btc_swap.yml.
+#
+#   promtool test rules test_warp_btc_swap_rules.yml
+#
+# WARP BTC swap is OFF (WARP_BTC_SWAP_ENABLED=0) and the swap series do not
+# exist, so the rules are silent by design: they use plain thresholds instead of
+# absent()/no-data handling. A Grafana copy of these rules did the opposite and
+# sat in DatasourceNoData since 2026-09-20 — see REPORT_2026-11-07_GRAFANA.md.
+rule_files:
+  - warp_btc_swap.yml
+
+evaluation_interval: 1m
+
+tests:
+  # ── WarpBtcSwapStuck: a swap idles past offer_ttl for 10m ──────────────
+  - interval: 1m
+    input_series:
+      - series: 'warp_btc_swap_stale'
+        values: '0 0 2 2 2 2 2 2 2 2 2 2 2 2 2 2'
+    alert_rule_test:
+      - eval_time: 8m
+        alertname: WarpBtcSwapStuck
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: WarpBtcSwapStuck
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              service: warpd
+            exp_annotations:
+              summary: "WARP BTC swap stuck (2 stale)"
+              description: "One or more BTC swaps idle longer than offer_ttl. Check /v1/multichain/swaps/btc on :8454."
+
+  # ── WarpBtcSwapNearDeadline: refund window closes within 1h ────────────
+  - interval: 1m
+    input_series:
+      - series: 'warp_btc_swap_near_deadline'
+        values: '0 0 1 1 1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: WarpBtcSwapNearDeadline
+        exp_alerts: []
+      - eval_time: 8m
+        alertname: WarpBtcSwapNearDeadline
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              service: warpd
+            exp_annotations:
+              summary: "WARP BTC swap near ZION refund deadline (1)"
+              description: "Swap within 1h of zion_timeout_ts — after it passes the coordinator may need manual refund handling."
+
+  # ── WarpBtcSwapMetricsDown: the swap exporter itself is unscrapeable ───
+  - interval: 1m
+    input_series:
+      - series: 'up{job="warp_btc_swap"}'
+        values: '1 1 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: WarpBtcSwapMetricsDown
+        exp_alerts: []
+      - eval_time: 8m
+        alertname: WarpBtcSwapMetricsDown
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              service: warpd
+              job: warp_btc_swap
+            exp_annotations:
+              summary: "warpd BTC-swap metrics endpoint unreachable"

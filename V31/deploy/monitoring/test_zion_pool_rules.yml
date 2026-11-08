@@ -1,0 +1,184 @@
+# Firing tests for zion-pool.rules.yml.
+#
+#   promtool test rules test_zion_pool_rules.yml
+#
+# Two lessons are encoded here:
+#  - /metrics can stay scrapeable while /stats is wedged (2026-10-26), so
+#    ApiDown and StatsApiUnresponsive are separate alerts;
+#  - share reject bursts must not page: the ratio needs 15m of sustained signal.
+rule_files:
+  - zion-pool.rules.yml
+
+evaluation_interval: 1m
+
+tests:
+  # ── ZionPoolApiDown: /metrics unscrapeable for 5m ───────────────────────
+  - interval: 1m
+    input_series:
+      - series: 'up{job="zion_v31_pool"}'
+        values: '1 1 1 1 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: ZionPoolApiDown
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: ZionPoolApiDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: zion_v31_pool
+            exp_annotations:
+              summary: "zion-v31-pool API not scrapeable"
+              description: "Prometheus cannot reach 127.0.0.1:8080/metrics for 5m — pool process down or HTTP API hung. Stratum ports 8444/8445 likely down too; miners reconnect-loop."
+
+  # ── ZionPoolNoMiners: zero sessions for 15m ────────────────────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_pool_active_sessions'
+        values: '2 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ZionPoolNoMiners
+        exp_alerts: []
+      - eval_time: 22m
+        alertname: ZionPoolNoMiners
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "Zero stratum sessions for 15m"
+              description: "No miner sessions on the pool — stratum may be unreachable (firewall/nginx) or miners are misconfigured."
+
+  # ── ZionPoolAcceptRateDrop: >15 % rejects sustained 15m ────────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_pool_coin_shares_accepted'
+        values: '0+60x40'
+      - series: 'zion_pool_coin_shares_rejected'
+        values: '0+20x40'
+    alert_rule_test:
+      # rate() is defined after two samples, so the ratio is already >15 % at
+      # t=1m; `for: 15m` is what keeps it quiet before ~16m.
+      - eval_time: 5m
+        alertname: ZionPoolAcceptRateDrop
+        exp_alerts: []
+      - eval_time: 30m
+        alertname: ZionPoolAcceptRateDrop
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "Share reject ratio >15% over 15m"
+              description: "Elevated reject rate — check reject_reasons buckets on /miners (duplicate/low_difficulty/stale/malformed). Previous regression pattern: wrong validation target after vardiff retarget."
+
+  # quiet case: 1.6 % rejects is normal, must never page
+  - interval: 1m
+    input_series:
+      - series: 'zion_pool_coin_shares_accepted'
+        values: '0+60x40'
+      - series: 'zion_pool_coin_shares_rejected'
+        values: '0+1x40'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: ZionPoolAcceptRateDrop
+        exp_alerts: []
+
+  # ── ZionPoolLegDisconnected: enabled leg without upstream for 10m ──────
+  - interval: 1m
+    input_series:
+      - series: 'zion_pool_leg_enabled{leg="qtu",coin="QTU"}'
+        values: '1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1'
+      - series: 'zion_pool_leg_connected{leg="qtu",coin="QTU"}'
+        values: '1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: ZionPoolLegDisconnected
+        exp_alerts: []
+      - eval_time: 16m
+        alertname: ZionPoolLegDisconnected
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              leg: qtu
+              coin: QTU
+            exp_annotations:
+              summary: "Aux leg enabled but disconnected: qtu"
+              description: "Upstream leg qtu (coin QTU) lost connection >10m — shares for this coin get no upstream credit."
+
+  # quiet case: a deliberately disabled leg may be disconnected forever
+  - interval: 1m
+    input_series:
+      - series: 'zion_pool_leg_enabled{leg="prl",coin="PRL"}'
+        values: '0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0'
+      - series: 'zion_pool_leg_connected{leg="prl",coin="PRL"}'
+        values: '0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: ZionPoolLegDisconnected
+        exp_alerts: []
+
+  # ── ZionPoolJobStale: no fresh upstream job for 3 min, sustained 10m ───
+  - interval: 1m
+    input_series:
+      - series: 'zion_pool_leg_job_age_ms{leg="qtu",coin="QTU"}'
+        values: '1000 1000 200000 200000 200000 200000 200000 200000 200000 200000 200000 200000 200000 200000 200000 200000 200000 200000'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: ZionPoolJobStale
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: ZionPoolJobStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              leg: qtu
+              coin: QTU
+            exp_annotations:
+              summary: "Stale job on leg qtu (>3min)"
+              description: "No fresh job from upstream for 3min+ on qtu — miners may be hashing an outdated template (stale submits expected)."
+
+  # ── ZionPoolPPLNSPersistFailing: any failed persist write ──────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_pool_pplns_persist_failures_total'
+        values: '0 0 1 2 3 4 5 6'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: ZionPoolPPLNSPersistFailing
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: ZionPoolPPLNSPersistFailing
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: "PPLNS persist failures occurring"
+              description: "pool-pplns.json writes failing — on restart the PPLNS window/state may roll back (miner unpaid balances affected)."
+
+  # quiet case: counter present but flat
+  - interval: 1m
+    input_series:
+      - series: 'zion_pool_pplns_persist_failures_total'
+        values: '7 7 7 7 7 7 7 7'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: ZionPoolPPLNSPersistFailing
+        exp_alerts: []
+
+  # ── ZionPoolPPLNSPersistStale: no successful snapshot for 30 min ───────
+  - interval: 1m
+    input_series:
+      - series: 'zion_pool_pplns_persist_success_timestamp_seconds'
+        values: '0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ZionPoolPPLNSPersistStale
+        exp_alerts: []
+      - eval_time: 38m
+        alertname: ZionPoolPPLNSPersistStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "No successful PPLNS persist for >30min"
+              description: "Persistence is configured but no successful snapshot in 30m — state loss risk on restart."

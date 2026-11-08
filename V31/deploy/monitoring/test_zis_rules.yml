@@ -1,0 +1,98 @@
+# Firing tests for zis.rules.yml (ZION Identity Service).
+#
+#   promtool test rules test_zis_rules.yml
+#
+# ZIS is behind SSO for the whole ecosystem, so ZisDown is the one alert that
+# must never be silent. The rules lived only on the host until 2026-11-08;
+# they are versioned now.
+rule_files:
+  - zis.rules.yml
+
+evaluation_interval: 1m
+
+tests:
+  # ── ZisDown: scrape target down for 2m ─────────────────────────────────
+  - interval: 1m
+    input_series:
+      - series: 'up{job="zis"}'
+        values: '1 1 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: ZisDown
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: ZisDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              service: zis
+              job: zis
+            exp_annotations:
+              summary: "ZIS (auth.zionterranova.com) is down"
+              description: "ZION Identity Service not reachable — SSO login/session verification broken ecosystem-wide."
+
+  # ── ZisHighErrorRate: more than 0.5 5xx/s for 5m ───────────────────────
+  - interval: 1m
+    input_series:
+      - series: 'zis_http_requests_total{status="500"}'
+        values: '0+60x20'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ZisHighErrorRate
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              service: zis
+              status: "500"
+            exp_annotations:
+              summary: "ZIS 5xx error rate elevated (1/s)"
+
+  # quiet case: 0.1 5xx/s is noise, not an incident
+  - interval: 1m
+    input_series:
+      - series: 'zis_http_requests_total{status="500"}'
+        values: '0+6x20'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: ZisHighErrorRate
+        exp_alerts: []
+
+  # ── ZisPendingChallengesHigh: >500 pending for 15m ─────────────────────
+  - interval: 1m
+    input_series:
+      - series: 'zis_pending_challenges'
+        values: '10 10 800 800 800 800 800 800 800 800 800 800 800 800 800 800 800 800 800 800 800'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ZisPendingChallengesHigh
+        exp_alerts: []
+      - eval_time: 19m
+        alertname: ZisPendingChallengesHigh
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              service: zis
+            exp_annotations:
+              summary: "ZIS pending challenges accumulating (800)"
+              description: "DB challenge prune may be failing, or a challenge flood is in progress."
+
+  # ── ZisAuthFailureSpike: >1 failed verify/s for 10m ────────────────────
+  - interval: 1m
+    input_series:
+      - series: 'zis_http_requests_total{route="/api/auth/verify",status="401"}'
+        values: '0+120x30'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: ZisAuthFailureSpike
+        exp_alerts: []
+      - eval_time: 14m
+        alertname: ZisAuthFailureSpike
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              service: zis
+              route: /api/auth/verify
+              status: "401"
+            exp_annotations:
+              summary: "ZIS auth verification failures spiking (2/s)"
+              description: "Possible brute-force or broken client integration."

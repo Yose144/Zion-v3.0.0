@@ -1,0 +1,33 @@
+# WARP BTC-swap rules — verbatim copy of EDGE1 /etc/prometheus/rules/warp_btc_swap.yml
+# (2026-11-08). They lived only on the host until now, so a rebuild of the box
+# would have silently lost BTC-swap alerting.
+groups:
+- name: warp_btc_swap
+  interval: 60s
+  rules:
+  - alert: WarpBtcSwapStuck
+    expr: warp_btc_swap_stale > 0
+    for: 10m
+    labels:
+      severity: warning
+      service: warpd
+    annotations:
+      summary: 'WARP BTC swap stuck ({{ $value }} stale)'
+      description: 'One or more BTC swaps idle longer than offer_ttl. Check /v1/multichain/swaps/btc on :8454.'
+  - alert: WarpBtcSwapNearDeadline
+    expr: warp_btc_swap_near_deadline > 0
+    for: 5m
+    labels:
+      severity: critical
+      service: warpd
+    annotations:
+      summary: 'WARP BTC swap near ZION refund deadline ({{ $value }})'
+      description: 'Swap within 1h of zion_timeout_ts — after it passes the coordinator may need manual refund handling.'
+  - alert: WarpBtcSwapMetricsDown
+    expr: up{job="warp_btc_swap"} == 0
+    for: 5m
+    labels:
+      severity: warning
+      service: warpd
+    annotations:
+      summary: 'warpd BTC-swap metrics endpoint unreachable'

@@ -1,0 +1,41 @@
+# ZIS rules — verbatim copy of EDGE1 /etc/prometheus/rules/zis.rules.yml
+# (2026-11-08). Host-only until now.
+groups:
+- name: zis
+  interval: 60s
+  rules:
+  - alert: ZisDown
+    expr: up{job="zis"} == 0
+    for: 2m
+    labels:
+      severity: critical
+      service: zis
+    annotations:
+      summary: 'ZIS (auth.zionterranova.com) is down'
+      description: 'ZION Identity Service not reachable — SSO login/session verification broken ecosystem-wide.'
+  - alert: ZisHighErrorRate
+    expr: rate(zis_http_requests_total{status=~"5.."}[5m]) > 0.5
+    for: 5m
+    labels:
+      severity: warning
+      service: zis
+    annotations:
+      summary: 'ZIS 5xx error rate elevated ({{ $value }}/s)'
+  - alert: ZisPendingChallengesHigh
+    expr: zis_pending_challenges > 500
+    for: 15m
+    labels:
+      severity: warning
+      service: zis
+    annotations:
+      summary: 'ZIS pending challenges accumulating ({{ $value }})'
+      description: 'DB challenge prune may be failing, or a challenge flood is in progress.'
+  - alert: ZisAuthFailureSpike
+    expr: rate(zis_http_requests_total{route=~"/api/auth/verify.*",status="401"}[5m]) > 1
+    for: 10m
+    labels:
+      severity: warning
+      service: zis
+    annotations:
+      summary: 'ZIS auth verification failures spiking ({{ $value }}/s)'
+      description: 'Possible brute-force or broken client integration.'

@@ -1,0 +1,300 @@
+# Firing tests for zion_writepath.rules.yml.
+#
+#   promtool test rules test_zion_writepath_rules.yml
+#
+# These alerts exist because two services were systemd-active while their write
+# path was dead (L5 scanner 5 days, db-sync PG auth 5 days). The tests below
+# pin the write-path signals, not `is-active`.
+#
+# NOTE: ZionPoolPayoutMeasurementMissing and ZionWritepathProbeStale live in the
+# repo but are NOT deployed on EDGE1 yet — both use absent()/==0 on fields the
+# running probe does not emit, so deploying them alone would page immediately.
+# They ship together with the probe + pool release.
+rule_files:
+  - zion_writepath.rules.yml
+
+evaluation_interval: 1m
+
+tests:
+  # ── ZionScannerApiDown ─────────────────────────────────────────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_scanner_api_ok{layer="l5"}'
+        values: '1 1 1 1 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: ZionScannerApiDown
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: ZionScannerApiDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              layer: l5
+            exp_annotations:
+              summary: "l5 scanner API down on EDGE2"
+              description: "The l5 (free-world/issobella) fund-balance API has been unreachable for over 5 minutes — scanner is wedged or service down."
+
+  # ── ZionScannerLag: >30 blocks for 15m ─────────────────────────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_scanner_lag_blocks{layer="l5"}'
+        values: '7 7 45 45 45 45 45 45 45 45 45 45 45 45 45 45 45 45 45 45 45'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ZionScannerLag
+        exp_alerts: []
+      - eval_time: 19m
+        alertname: ZionScannerLag
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              layer: l5
+            exp_annotations:
+              summary: "l5 scanner lagging 45 blocks"
+              description: "l5 scanner last_block_height trails chain tip by over 30 blocks for 15+ minutes (normal ~7). Likely stalled write path — check service journal, DB inode/link health."
+
+  # quiet case: a lag of 7 blocks is normal operation
+  - interval: 1m
+    input_series:
+      - series: 'zion_scanner_lag_blocks{layer="l6"}'
+        values: '7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7 7'
+    alert_rule_test:
+      - eval_time: 19m
+        alertname: ZionScannerLag
+        exp_alerts: []
+
+  # ── ZionDbSyncAuthFailed: PG credentials rejected for 5m ───────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_dbsync_pg_ok'
+        values: '1 1 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: ZionDbSyncAuthFailed
+        exp_alerts: []
+      - eval_time: 8m
+        alertname: ZionDbSyncAuthFailed
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: "db-sync cannot authenticate to PostgreSQL"
+              description: "The zion-db-sync DATABASE_URL credentials fail auth against localhost:5432 for 5+ minutes — J6/J8 sync is dead (P0-2 recurrence)."
+
+  # ── ZionDbSyncStale: no MiningWorker write for 4h+30m ──────────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_dbsync_worker_last_share_age_seconds'
+        values: '20000+10x50'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: ZionDbSyncStale
+        exp_alerts: []
+      - eval_time: 35m
+        alertname: ZionDbSyncStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "db-sync MiningWorker data stale 20350s"
+              description: "No MiningWorker.lastShareAt write for over 4h — db-sync upserts may be silently failing (or all workers idle)."
+
+  # ── ZionWritepathServiceDown ───────────────────────────────────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_service_active{service="zion-v31-free-world"}'
+        values: '1 1 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: ZionWritepathServiceDown
+        exp_alerts: []
+      - eval_time: 8m
+        alertname: ZionWritepathServiceDown
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              service: zion-v31-free-world
+            exp_annotations:
+              summary: "zion-v31-free-world service not active on EDGE2"
+              description: "systemd reports zion-v31-free-world (l5/l6/dbsync) not active for 5+ minutes."
+
+  # ── ZionWritepathProbeMissing: textfile metrics gone for 10m ───────────
+  - interval: 1m
+    input_series:
+      - series: 'unrelated_probe_heartbeat'
+        values: '1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: ZionWritepathProbeMissing
+        exp_alerts: []
+      - eval_time: 14m
+        alertname: ZionWritepathProbeMissing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "write-path probe metrics missing"
+              description: "zion_writepath textfile metrics absent for 10+ minutes — the probe timer on EDGE2 is not running."
+
+  # ── ZionPoolStatsApiUnresponsive: /stats hung while /metrics is fine ───
+  - interval: 1m
+    input_series:
+      - series: 'up{job="zion_v31_pool"}'
+        values: '1 1 1 1 1 1 1 1 1 1 1 1 1 1 1'
+      - series: 'zion_pool_stats_api_ok'
+        values: '1 1 0 0 0 0 0 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 8m
+        alertname: ZionPoolStatsApiUnresponsive
+        exp_alerts: []
+      - eval_time: 14m
+        alertname: ZionPoolStatsApiUnresponsive
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "pool /stats endpoint not responding"
+              description: "Pool API /stats has timed out (>8s) for 10+ minutes — likely a pool.lock() critical-section stall. /metrics and stratum may still look healthy; check pool journal and consider restart."
+
+  # ── ZionPoolStatsApiSlow: latency above 3s for 15m ─────────────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_pool_stats_api_latency_seconds'
+        values: '0.01 0.01 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ZionPoolStatsApiSlow
+        exp_alerts: []
+      - eval_time: 19m
+        alertname: ZionPoolStatsApiSlow
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "pool /stats latency 5s"
+              description: "Pool /stats responding but slower than 3s for 15+ minutes — early sign of lock contention."
+
+  # ── ZionPoolPayoutStale: ledger row older than 1h for 15m ──────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_pool_last_payout_age_seconds'
+        values: '60 60 4000 4000 4000 4000 4000 4000 4000 4000 4000 4000 4000 4000 4000 4000 4000 4000 4000 4000 4000'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ZionPoolPayoutStale
+        exp_alerts: []
+      - eval_time: 19m
+        alertname: ZionPoolPayoutStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "no pool payout recorded for 4000s"
+              description: "Newest payout ledger row is over 1h old — payout submit or confirmation sweep likely stalled (pool keeps finding blocks but stops recording/paying). Check pool journal payout lines and store.db write health."
+
+  # ── ZionPoolBlockProductionStale: no pool block for 15m+10m ────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_pool_last_block_age_seconds'
+        values: '44 44 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000 1000'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: ZionPoolBlockProductionStale
+        exp_alerts: []
+      - eval_time: 18m
+        alertname: ZionPoolBlockProductionStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "no block found by pool for 1000s"
+              description: "Newest pool block is over 15min old (median cadence 44s, p99 269s) — pool hashrate collapsed or all sessions are submitting stale work. Stratum/API can still look healthy; check active sessions, vardiff and share reject buckets."
+
+  # ── ZionPoolBlockProductionHalted: 30 min without a pool block ─────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_pool_last_block_age_seconds'
+        values: '44 44 2000 2000 2000 2000 2000 2000 2000 2000 2000'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: ZionPoolBlockProductionHalted
+        exp_alerts: []
+      - eval_time: 9m
+        alertname: ZionPoolBlockProductionHalted
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: "pool block production halted 2000s"
+              description: "No pool block for 30+ minutes (~40x median cadence). Chain liveness still relies on EDGE fallback miners, but pool PPLNS/payout rounds stop accruing. Check pool journal for template fetch errors and node RPC reachability."
+
+  # ── ZionPoolBlocksApiDown ─────────────────────────────────────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_pool_blocks_api_ok'
+        values: '1 1 0 0 0 0 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 8m
+        alertname: ZionPoolBlocksApiDown
+        exp_alerts: []
+      - eval_time: 13m
+        alertname: ZionPoolBlocksApiDown
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "pool public blocks endpoint returns no rows"
+              description: "/public/v1/blocks returned no rows for 10+ minutes — either block-production metrics are blind (the probe cannot compute zion_pool_last_block_age_seconds) or the pool store/API is broken. Verify GET /public/v1/blocks and the pool store.db."
+
+  # ── ZionPoolPayoutMeasurementMissing (repo only, ships with probe) ─────
+  - interval: 1m
+    input_series:
+      - series: 'zion_pool_payout_measurement_ok'
+        values: '1 1 0 0 0 0 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 8m
+        alertname: ZionPoolPayoutMeasurementMissing
+        exp_alerts: []
+      - eval_time: 13m
+        alertname: ZionPoolPayoutMeasurementMissing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "pool payout measurement missing"
+              description: "The write-path probe did not read latest_recorded_ts. A missing field is not a healthy ledger; do not substitute now() or the queued row."
+
+  # the field can also disappear entirely — absent() must still page
+  - interval: 1m
+    input_series:
+      - series: 'unrelated_probe_heartbeat'
+        values: '1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 13m
+        alertname: ZionPoolPayoutMeasurementMissing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "pool payout measurement missing"
+              description: "The write-path probe did not read latest_recorded_ts. A missing field is not a healthy ledger; do not substitute now() or the queued row."
+
+  # ── ZionWritepathProbeStale (repo only, ships with probe) ─────────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_writepath_probe_success_timestamp_seconds{job="edge2"}'
+        values: '0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: ZionWritepathProbeStale
+        exp_alerts: []
+      - eval_time: 12m
+        alertname: ZionWritepathProbeStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: edge2
+            exp_annotations:
+              summary: "write-path textfile is stale or missing"
+              description: "node_exporter can keep serving an old green textfile after the probe dies. No complete collection for over 3 minutes, or the completion metric is missing."
