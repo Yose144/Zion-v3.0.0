@@ -186,6 +186,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Žetony čte `loadProfile()` až po mountu (SSR by měl jiné číslo) a obnovuje je
   při `window.focus`.
 - Na mobilu se tabům skrývá text (`game-hud-tab-text`) a lišta scrolluje.
+- **První záložka je `◈ Nirvana` (`/`)** — cesta do vesmíru z každé hry.
+  Hry samy o sobě do `/` často neodkazují (`backToFair` jde na `/park`),
+  takže tahle záložka je jediná konzistentní cesta domů.
+- **Během hry je `data-playing` → HUD i chat mizí.** Proto má každá aktivní
+  hra vlastní exit: `.game-exit` pill v herním HUD (Mars, Venuše, Lumi),
+  `duel-exit` (Merkur), `moba-link`→pick (Země), `fleet-exit` (Flotila),
+  quit (Pouť), `onExit` (Saturn). **Nová hra bez exit tlačítka = uzavřená
+  smyčka** — přidat `.game-exit` do HUD baru.
 
 ### Planety jako vstupy do her (F1, 2026-11-01)
 
