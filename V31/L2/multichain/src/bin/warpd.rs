@@ -35,7 +35,16 @@ use zion_multichain::warp::config::WarpConfig;
 use zion_multichain::warp::runtime::WarpRuntime;
 
 #[derive(Parser, Debug)]
-#[command(name = "warpd", version, about = "WARP cross-chain bridge daemon")]
+#[command(
+    name = "warpd",
+    version,
+    long_version = concat!(
+        env!("CARGO_PKG_VERSION"),
+        " build ",
+        env!("ZION_BUILD_ID")
+    ),
+    about = "WARP cross-chain bridge daemon"
+)]
 struct Cli {
     /// Path to TOML config file.
     #[arg(short, long, default_value = "warp.toml")]

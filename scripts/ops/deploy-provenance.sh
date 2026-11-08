@@ -15,7 +15,7 @@ SSH_OPTS=(-o ConnectTimeout=15 -o BatchMode=yes)
 
 # units whose ExecStart binary we fingerprint
 EDGE_UNITS="zion-v31-pool zion-v31-node2 zion-v31-node3 zion-v31-miner zion-fallback-miner"
-EDGE2_UNITS="zion-v31-node zion-v31-multichain zion-v31-dao zion-v31-ncl zion-v31-free-world zion-v31-issobella zion-v31-oasis zion-v31-ai-native"
+EDGE2_UNITS="zion-v31-node zion-v31-multichain zion-v31-dao zion-v31-ncl zion-v31-free-world zion-v31-issobella zion-v31-oasis zion-v31-ai-native zion-hiran-gateway"
 
 REMOTE=$(cat <<'EOS'
 units="$1"
@@ -37,9 +37,17 @@ for u in $units; do
       ver=$(timeout 3 "$exec_path" --version 2>/dev/null | head -1 | sed 's/\x1b\[[0-9;]*m//g')
     fi
   fi
+  # build id: contiguous literal baked by build.rs (8.S2), else "build <id>" from --version
+  bid=""
+  if [ -f "$exec_path" ]; then
+    bid=$(grep -ao "zion-build-id:[^[:space:]]*" "$exec_path" 2>/dev/null | head -1 | sed "s/^zion-build-id://")
+  fi
+  if [ -z "$bid" ] && [ -n "$ver" ]; then
+    bid=$(echo "$ver" | sed -n "s/.* build \\([^ ]*\\).*/\\1/p")
+  fi
   [ $first -eq 0 ] && out="$out,"
   first=0
-  out="$out{\"unit\":\"$u\",\"state\":\"$state\",\"exec\":\"$exec_path\",\"sha256\":\"$sha\",\"mtime\":\"$mtime\",\"version\":\"$ver\",\"since\":\"$active\"}"
+  out="$out{\"unit\":\"$u\",\"state\":\"$state\",\"exec\":\"$exec_path\",\"sha256\":\"$sha\",\"mtime\":\"$mtime\",\"version\":\"$ver\",\"build_id\":\"$bid\",\"since\":\"$active\"}"
 done
 out="$out]"
 echo "$out"
@@ -61,5 +69,14 @@ collect() { # $1=host label, $2=unit list, rest=ssh target
 }
 
 scope="${1:-all}"
+want=""
+if [ "$scope" = "--verify" ]; then
+  shift || true
+  {
+    [ "${1:-}" != "--edge2-only" ] && collect edge "$EDGE_UNITS" "${EDGE_SSH[@]}"
+    [ "${1:-}" != "--edge-only" ] && collect edge2 "$EDGE2_UNITS" "${EDGE2_SSH[@]}"
+  } | python3 "$(dirname "$0")/verify-provenance.py" "$@"
+  exit $?
+fi
 [ "$scope" != "--edge2-only" ] && collect edge "$EDGE_UNITS" "${EDGE_SSH[@]}"
 [ "$scope" != "--edge-only" ] && collect edge2 "$EDGE2_UNITS" "${EDGE2_SSH[@]}"

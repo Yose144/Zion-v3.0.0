@@ -1400,3 +1400,10 @@ fn handle_service_command(svc: ServiceArgs) -> anyhow::Result<()> {
         ServiceCommand::Logs { service, lines } => service_logs(&service, lines),
     }
 }
+
+/// Build provenance marker (8.S2). One contiguous literal on purpose: ops
+/// tooling reads it from the binary with `grep -ao 'zion-build-id:[^[:space:]]*'`
+/// instead of running the daemon or trusting mtime. Value comes from build.rs.
+#[used]
+#[allow(dead_code)]
+static ZION_BUILD_ID_MARKER: &str = concat!("zion-build-id:", env!("ZION_BUILD_ID"));

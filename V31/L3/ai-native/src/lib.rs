@@ -79,3 +79,10 @@ pub use tool_registry::{
 };
 pub use types::{Agent, AgentCapability, AgentMessage, AgentStatus};
 pub use warp_agent::{FieldTopology, WarpField, WarpMode, WarpOptimizer, WarpStats};
+
+/// Build provenance marker (8.S2). One contiguous literal on purpose: ops
+/// tooling reads it from the binary with `grep -ao 'zion-build-id:[^[:space:]]*'`
+/// instead of running the daemon or trusting mtime. Value comes from build.rs.
+#[used]
+#[allow(dead_code)]
+static ZION_BUILD_ID_MARKER: &str = concat!("zion-build-id:", env!("ZION_BUILD_ID"));

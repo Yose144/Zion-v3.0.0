@@ -147,3 +147,76 @@ Otevřené po deployi:
 - `/public/v1/coins/*/stats` burst 504 — odloženo (cache jako u `/stats` snapshotu).
 - EDGE disk 70 % / RAM pressure — odloženo (cleanup).
 - `build.rs` chybí v `zion-multichain` → warpd hlásí `unknown` (viz bod 2 výše).
+
+## 2026-11-08 — marker ve všech produkčních cratech + `--verify` (8.S2)
+
+Do 2026-11-08 nesly build id **jen** `zion-pool`, `zion-node` a `zion-cli`
+(`--version`), takže u 10 z 14 produkčních binárek nešlo dohledat commit vůbec —
+provenance se odhadovala z `mtime`.
+
+**Nově:** každý produkční crate má vlastní `build.rs` se stejnou resolucí jako
+pool (`ZION_GIT_SHA` → `.git-archive-sha` → `git rev-parse` + `-dirty` → `unknown`)
+a v `lib.rs`/`main.rs` statický marker:
+
+```rust
+#[used]
+static ZION_BUILD_ID_MARKER: &str = concat!("zion-build-id:", env!("ZION_BUILD_ID"));
+```
+
+Jeden souvislý literál v `.rodata`, takže ho jde přečíst **bez spuštění daemona**:
+
+```bash
+grep -ao "zion-build-id:[^[:space:]]*" /opt/zion/V31/target/release/zion-dao
+```
+
+Cratey: `L1/{core,pool,miner}`, `cli`, `L2/{dao,multichain}`, `L3/{ai-native,ncl,hiran-gateway}`,
+`L4/oasis`, `L5/free-world`, `L6/issobella`. `warpd` navíc `long_version`, takže
+`warpd --version` vypíše `3.2.0 build <sha>`. Šablona: `V31/deploy/build-id.build.rs`.
+
+**Ověřeno:** `cargo check --workspace` zelené (jen pre-existující warning v `zion-cli`),
+`cargo build -p zion-ncl` → v binárce je `zion-build-id:f07b4d583024-dirty`
+(`-dirty` správně, protože strom byl v tu chvíli necommitnutý).
+
+### `--verify` režim
+
+```bash
+bash scripts/ops/deploy-provenance.sh --verify            # tabulka + exit 1 při díře
+bash scripts/ops/deploy-provenance.sh --verify --strict   # DIRTY/TAGGED je také chyba
+bash scripts/ops/deploy-provenance.sh --verify --expect=<sha>  # RC commit
+```
+
+Stavy: `PROVEN` (holý sha) · `TAGGED` (sha + suffix, např. `-g8fix`) ·
+`DIRTY` (postaveno z necommitnutého stromu) · `UNKNOWN` (žádný build id) ·
+`WRONG-COMMIT` (nesedí na `--expect`). Exit 1 na `UNKNOWN`/`WRONG-COMMIT`,
+se `--strict` i na `DIRTY`/`TAGGED`. Klasifikátor: `scripts/ops/verify-provenance.py`.
+
+### Stav 2026-11-08 (baseline: `DEPLOY-PROVENANCE-2026-11-08.jsonl`)
+
+```
+host    unit                         state         detail
+edge    zion-fallback-miner          UNKNOWN       bez build id
+edge    zion-v31-miner               UNKNOWN       bez build id
+edge    zion-v31-node2               PROVEN        fdeda709a
+edge    zion-v31-node3               PROVEN        fdeda709a
+edge    zion-v31-pool                TAGGED        d786449b0-g8fix
+edge2   zion-hiran-gateway           UNKNOWN       bez build id
+edge2   zion-v31-ai-native           UNKNOWN       bez build id
+edge2   zion-v31-dao                 UNKNOWN       bez build id
+edge2   zion-v31-free-world          UNKNOWN       bez build id
+edge2   zion-v31-issobella           UNKNOWN       bez build id
+edge2   zion-v31-multichain          UNKNOWN       bez build id
+edge2   zion-v31-ncl                  UNKNOWN       bez build id
+edge2   zion-v31-node                 PROVEN        fdeda709a
+edge2   zion-v31-oasis                UNKNOWN       bez build id
+souhrn: PROVEN=3, TAGGED=1, UNKNOWN=10   → exit 1
+```
+
+**Co to znamená:** marker je hotový **v kódu**, ale běžící binárky jsou starší
+než tato změna — provenance se zavře až **příštím buildem a deployem**
+(`ZION_GIT_SHA=<rc sha>` nebo čistý strom, aby nevznikl `-dirty`). Do té doby
+`--verify` správně vrací exit 1 a nesmí se vydávat za PASS.
+
+Známý dluh zůstává u EDGE2: **nemá žádný git checkout** (`checkout:"none"`),
+binárky se buildí na EDGE a rsyncují, takže commit EDGE2 binárky je jen tak
+přesný, jaký byl `ZION_GIT_SHA` v okamžiku buildu. Marker to poprvé umožní
+ověřit per-binárka místo odhadu.
