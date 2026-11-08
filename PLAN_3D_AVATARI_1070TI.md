@@ -18,6 +18,21 @@ Automat nespouští žádný krok mimo brány uvedené níže.
 - **Cíl:** generovat na PC v dávkách po 25 (podle dodaných ZIPů listů), na Macu
   QA a rig, do hry jen po lidském schválení.
 
+
+## 0b. Stav pilotu (2026-11-08)
+
+- **M1 dávka 01:** 25/25 modelů vygenerováno (MC 320 + textura 2048) a 25/25
+  rignuto (`rig.py`, 17 kloubů + idle). Čeká QA a schválení; do hry zatím nic.
+- **TRELLIS.2 pilot (Krišna):** ověřen přes oficiální HF Space — kvalitativně
+  jasně lepší (CLIP průměr **0,688** vs 0,569 M1; anatomicky správná postava).
+  Detail v `docs/3.2/AVATAR-3D-PIPELINE.md` §9d.
+- **Blokátor:** TRELLIS.2 táhne gated `facebook/dinov3-vitl16`; účet má žádost
+  odeslanou, čeká na schválení. Bez ní nejde vlastní GPU běh (Space má denní
+  kvótu 1 běh).
+- **Po schválení:** pronajmout 4090, spustit `scripts/ops/avatar-3d/vast/trellis-setup.sh`,
+  projet 003 a 051 + export 30k/2048 (Space má minimum decimace 100k).
+- Náklady pilotu: ~0,15 USD (vast.ai instance zrušena, 0 běžících instancí).
+
 ## 1. Výchozí fakta (naměřená, ne odvozená)
 
 | Co | Hodnota |
@@ -192,5 +207,6 @@ skutečných hodnot.
 
 ## 10. Změnový log
 
+- 2026-11-08: TRELLIS.2 pilot ověřen (Space), gated DINOv3 blokuje vlastní GPU běh.
 - 2026-11-08: plán vznikl; vychází z naměřeného M1 sweepu (runbook §9c) a z
   odhadů trasy A/B. P0 je povinná před dávkovým během.

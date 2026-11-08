@@ -355,6 +355,9 @@ Autonomní dávku řeší tři skripty v `scripts/ops/avatar-3d/`:
 | `similarity.py` | Měří IoU siluety a ΔE palety proti výtvarnému listu — **diagnostika, ne schvalovací filtr** (viz §9) |
 | `clip_score.py` | Sémantické skóre (CLIP) proti výtvarnému listu — **řazení k revizi, ne schvalovací brána** (viz §9b) |
 | `compare_variants.py` | Srovná mosaiky více variant: CLIP proti předlohám (front/side/back) a jedna společná mosaika s popisky (viz §9c) |
+| `game-ready.py` | GLB → herní podoba: 1,75 m, chodidla na 0, volitelné otočení, metal=0; JSON-only, textura zůstává (viz §9d) |
+| `space-pilot.py` | Pilot TRELLIS.2 přes oficiální HF Space (`gradio_client`) — zdarma, bez vlastní GPU (viz §9d) |
+| `vast/` | Skripty pro vlastní GPU: `trellis-setup.sh`, `trellis-weights.sh`, `trellis-run.py` (viz §9d) |
 
 ### Spuštění celé dávky
 
@@ -533,6 +536,48 @@ podle rychlosti GPU.
 | V QA listu sedí pohledy k jiné postavě | WebGL má počátek vlevo dole | flip `y` podle počtu řádků |
 
 ---
+
+### 9d. TRELLIS.2 pilot — jiná liga (2026-11-08)
+
+TRELLIS.2 (Microsoft, 4B, MIT kód i váhy) je vícepohledový? Ne — oficiálně bere
+jeden obrázek, ale generuje PBR tělo s rozlišením 512³–1536³. Pilot na Krišnovi
+přes oficiální HF Space (`microsoft/TRELLIS.2`, ZeroGPU) dal jasný výsledek:
+
+| Varianta | Front | Side | Back | Průměr CLIP |
+|---|---|---|---|---|
+| M1 TripoSR (MC 320, 15k tris) | 0,597 | 0,541 | 0,583 | **0,569** |
+| TRELLIS.2 raw (100k tris, 2048²) | 0,713 | 0,668 | 0,683 | **0,688** |
+| TRELLIS.2 herní (1,75 m, metal 0) | 0,717 | 0,634 | 0,629 | **0,672** |
+
+Vizuálně: anatomicky správná postava, čitelné paže/látka/šperky, věrohodná záda;
+M1 model je „rozteklý plášť“. Cena: Space zdarma (kvóta), inference 54 s.
+
+**Praktické nálezy:**
+
+- Space API (přes `gradio_client`): `start_session` → `preprocess_image` →
+  `image_to_3d(resolution="512|1024|1536", ...)` → `extract_glb(decimation_target,
+  texture_size)`. Slider decimace má **minimum 100 000** tris; nižší LOD se musí
+  dořezat lokálně.
+- **DINOv3 gate:** pipeline táhne `facebook/dinov3-vitl16-pretrain-lvd1689m`
+  (Meta), který je **gated** — bez HF tokenu a odkliknuté licence pipeline spadne.
+  Žádost o přístup se posílá na stránce modelu (formulář + Submit) a čeká na
+  schválení; pro komerční nasazení je potřeba projít i licenci DINOv3 (TRELLIS.2
+  MIT se na dependenci nevztahuje).
+- **ZeroGPU kvóta:** free účet má jen ~1 běh/den (po vyčerpání „0s left“);
+  s tokenem se kvóta počítá na účet. PRO rozšiřuje na ~40 min/den.
+- **Herní úprava GLB** (`scripts/ops/avatar-3d/game-ready.py`): normalizace na
+  1,75 m, chodidla na 0, střed X/Z, volitelné otočení, `metallicFactor = 0`
+  (bez environment mapy kov zčerná). Dělá se **jen JSON chunkem GLB**, takže
+  textura zůstává a velikost se nemění (TRELLIS 4,8 MB, trimesh export by dal 12 MB).
+- **Oprava `qa.mjs`:** skript psal HTML do `--out`, ale prohlížeč otevíral
+  pevnou cestu `.artifacts/avatar-3d/qa/_qa.html` — všechny mosaiky proto
+  renderovaly první (starý) model a měly identické MD5. Teď se otevírá právě
+  vygenerovaný soubor.
+
+**Další krok:** po schválení DINOv3 pronajmout 1× RTX 4090 (24 GB) na vast.ai
+(`vastctl offers --gpu RTX_4090 --max-dph 0.5`), nainstalovat TRELLIS.2
+(`scripts/ops/avatar-3d/vast/trellis-setup.sh`) a projet 3 piloty s exportem
+30k/2048 přímo (bez Space limitu 100k).
 
 ## 11. Stav a historie
 

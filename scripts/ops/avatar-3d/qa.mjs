@@ -16,7 +16,7 @@
 
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 
@@ -150,6 +150,10 @@ window.qaDone=true;
 await mkdir(OUT, { recursive: true });
 const htmlPath = join(OUT, '_qa.html');
 await writeFile(htmlPath, html);
+// Prohlížeč musí otevřít PRÁVĚ vygenerovaný HTML. Dřív tu byla pevná cesta
+// `.artifacts/avatar-3d/qa/_qa.html`, takže všechny mosaiky renderovaly starý
+// model z prvního běhu (proto identické MD5 i po změně --out).
+const htmlUrl = `${BASE}/${relative(repo, htmlPath).split('\\').join('/')}`;
 
 const browser = await puppeteer.launch({
   executablePath: existsSync(CHROME) ? CHROME : undefined,
@@ -159,7 +163,7 @@ const browser = await puppeteer.launch({
 const tab = await browser.newPage();
 await tab.setViewport({ width: pageWidth, height: Math.min(pageHeight, 2000) });
 tab.on('pageerror', (error) => console.error('pageerror', error.message));
-await tab.goto(`${BASE}/.artifacts/avatar-3d/qa/_qa.html`, { waitUntil: 'networkidle2' });
+await tab.goto(htmlUrl, { waitUntil: 'networkidle2' });
 await tab.waitForFunction('window.qaDone === true', { timeout: 180000 });
 // Jedno překreslení navíc: bez prodlevy se stávalo, že screenshot zachytil
 // prázdné plátno a všechny varianty měly identický PNG (2026-11-07).
