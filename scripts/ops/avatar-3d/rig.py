@@ -196,6 +196,11 @@ def main() -> int:
     if not args.no_anim:
         add_idle(arm, height)
 
+    # Model z image-to-3D je otočený zády ke kameře (glTF `-Z`).
+    # Otočení nese armature, na které je síť zavěšená, takže se otočí obojí.
+    arm.rotation_euler[2] = math.pi
+    bpy.context.view_layer.update()
+
     bpy.ops.object.select_all(action="DESELECT")
     mesh.select_set(True)
     arm.select_set(True)
