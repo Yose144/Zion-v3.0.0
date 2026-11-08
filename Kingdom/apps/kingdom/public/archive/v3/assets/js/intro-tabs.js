@@ -80,6 +80,7 @@
       'social.instagram': `Instagram`,
 
       'nav.market': `Market`,
+      'nav.nirvana': `Nirvana`,
       'nav.onboard': `Onboard`,
       'nav.about': `O nás`,
       'nav.docs': `Docs`,
@@ -206,6 +207,7 @@
       'social.instagram': `Instagram`,
 
       'nav.market': `Market`,
+      'nav.nirvana': `Nirvana`,
       'nav.onboard': `Onboard`,
       'nav.about': `About`,
       'nav.docs': `Docs`,
@@ -268,33 +270,101 @@
   }
 
   // --- i18n ---
+  const LANG_OK = { cs: 1, en: 1, es: 1, pt: 1, fr: 1 };
+  const extra = {
+    es: {
+      'menu.sections': 'Menú', 'menu.language': 'Idioma', 'menu.background': 'Fondo',
+      'menu.intro': 'Intro', 'menu.support': 'Apoyo', 'menu.contact': 'Contacto', 'menu.paths': 'Caminos',
+      'menu.toggle.open': 'Abrir menú', 'menu.toggle.close': 'Cerrar menú',
+      'hero.subtitle': 'Ecosistema Multichain Dharma',
+      'nav.about': 'Nosotros', 'nav.mine': 'Minería', 'nav.docs': 'Docs',
+      'intro.title': 'Intro', 'about.title': 'Sobre ZION', 'mine.title': 'Minería',
+      'mine.button': 'Descargar el minero', 'amenti.title': 'Amenti',
+      'amenti.subtitle': 'Salas de Amenti · archivo de conciencia on-chain',
+      'amenti.allBooksCta': 'Todos los libros', 'amenti.enterCta': 'Entrar en Amenti',
+      'freeworld.title': 'Free World', 'freeworld.subtitle': 'L5 · Fondo humanitario y comunidades físicas',
+      'freeworld.cta': 'Abrir Free World', 'support.title': 'Apoya el proyecto',
+      'contact.title': 'Contacto y formulario', 'paths.title': 'Tres caminos a bordo',
+      'zion.launch.button': 'Abrir la dApp',
+      'form.name.label': 'Nombre', 'form.email.label': 'Correo', 'form.message.label': 'Mensaje',
+      'form.send': 'Enviar', 'form.reset': 'Restablecer',
+    },
+    pt: {
+      'menu.sections': 'Menu', 'menu.language': 'Idioma', 'menu.background': 'Fundo',
+      'menu.intro': 'Intro', 'menu.support': 'Apoio', 'menu.contact': 'Contacto', 'menu.paths': 'Caminhos',
+      'menu.toggle.open': 'Abrir menu', 'menu.toggle.close': 'Fechar menu',
+      'hero.subtitle': 'Ecossistema Multichain Dharma',
+      'nav.about': 'Sobre nós', 'nav.mine': 'Mineração', 'nav.docs': 'Docs',
+      'intro.title': 'Intro', 'about.title': 'Sobre o ZION', 'mine.title': 'Mineração',
+      'mine.button': 'Descarregar o miner', 'amenti.title': 'Amenti',
+      'amenti.subtitle': 'Salas de Amenti · arquivo de consciência on-chain',
+      'amenti.allBooksCta': 'Todos os livros', 'amenti.enterCta': 'Entrar em Amenti',
+      'freeworld.title': 'Free World', 'freeworld.subtitle': 'L5 · Fundo humanitário e comunidades físicas',
+      'freeworld.cta': 'Abrir o Free World', 'support.title': 'Apoia o projeto',
+      'contact.title': 'Contacto e formulário', 'paths.title': 'Três caminhos a bordo',
+      'zion.launch.button': 'Abrir a dApp',
+      'form.name.label': 'Nome', 'form.email.label': 'E-mail', 'form.message.label': 'Mensagem',
+      'form.send': 'Enviar', 'form.reset': 'Repor',
+    },
+    fr: {
+      'menu.sections': 'Menu', 'menu.language': 'Langue', 'menu.background': 'Fond',
+      'menu.intro': 'Intro', 'menu.support': 'Soutien', 'menu.contact': 'Contact', 'menu.paths': 'Chemins',
+      'menu.toggle.open': 'Ouvrir le menu', 'menu.toggle.close': 'Fermer le menu',
+      'hero.subtitle': 'Écosystème Multichain Dharma',
+      'nav.about': 'À propos', 'nav.mine': 'Minage', 'nav.docs': 'Docs',
+      'intro.title': 'Intro', 'about.title': 'À propos de ZION', 'mine.title': 'Minage',
+      'mine.button': 'Télécharger le mineur', 'amenti.title': 'Amenti',
+      'amenti.subtitle': 'Salles d’Amenti · archive de conscience on-chain',
+      'amenti.allBooksCta': 'Tous les livres', 'amenti.enterCta': 'Entrer dans Amenti',
+      'freeworld.title': 'Free World', 'freeworld.subtitle': 'L5 · Fonds humanitaire et communautés physiques',
+      'freeworld.cta': 'Ouvrir Free World', 'support.title': 'Soutenir le projet',
+      'contact.title': 'Contact et formulaire', 'paths.title': 'Trois chemins à bord',
+      'zion.launch.button': 'Ouvrir la dApp',
+      'form.name.label': 'Nom', 'form.email.label': 'E-mail', 'form.message.label': 'Message',
+      'form.send': 'Envoyer', 'form.reset': 'Réinitialiser',
+    },
+  };
+
+  function textFor(lang, key) {
+    if (lang === 'cs') return i18n.cs[key];
+    if (extra[lang] && extra[lang][key] !== undefined) return extra[lang][key];
+    return i18n.en[key];
+  }
+
+  function writeLang(lang) {
+    try { localStorage.setItem('zion_lang', lang); localStorage.setItem('zion-lang', lang); } catch (e) {}
+    var host = location.hostname;
+    var domain = (host === 'zionterranova.com' || host.endsWith('.zionterranova.com')) ? '; domain=.zionterranova.com' : '';
+    document.cookie = 'zion_locale=' + lang + '; path=/; max-age=31536000; samesite=lax' + domain;
+  }
+
   function applyLang(lang) {
-    if (!i18n[lang]) lang = 'cs';
+    if (!LANG_OK[lang]) lang = 'cs';
     document.documentElement.lang = lang;
-    try { localStorage.setItem('zion_lang', lang); } catch (e) {}
+    writeLang(lang);
 
     $$('[data-i18n]').forEach(function (el) {
       const key = el.getAttribute('data-i18n');
-      if (i18n[lang][key] === undefined) return;
+      if (textFor(lang, key) === undefined) return;
 
       const tag = el.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') {
         const type = (el.type || '').toLowerCase();
         if (type === 'submit' || type === 'reset' || type === 'button') {
-          el.value = i18n[lang][key];
+          el.value = textFor(lang, key);
         } else {
-          el.placeholder = i18n[lang][key];
+          el.placeholder = textFor(lang, key);
         }
       } else if (tag === 'BUTTON') {
-        el.textContent = i18n[lang][key];
+        el.textContent = textFor(lang, key);
       } else {
-        el.textContent = i18n[lang][key];
+        el.textContent = textFor(lang, key);
       }
     });
 
     $$('[data-i18n-html]').forEach(function (el) {
       const key = el.getAttribute('data-i18n-html');
-      if (i18n[lang][key] !== undefined) el.innerHTML = i18n[lang][key];
+      if (textFor(lang, key) !== undefined) el.innerHTML = textFor(lang, key);
     });
 
     // Active language button
@@ -306,7 +376,7 @@
     const t = $('.floating-menu-toggle');
     if (t) {
       const isOpen = t.getAttribute('aria-expanded') === 'true';
-      t.setAttribute('aria-label', i18n[lang][isOpen ? 'menu.toggle.close' : 'menu.toggle.open']);
+      t.setAttribute('aria-label', textFor(lang, isOpen ? 'menu.toggle.close' : 'menu.toggle.open'));
     }
   }
 
@@ -407,7 +477,11 @@
   });
 
   // --- Init from localStorage or defaults ---
-  const savedLang = (function () { try { return localStorage.getItem('zion_lang'); } catch (e) { return null; } })();
+  const savedLang = (function () {
+    var cookie = document.cookie.match(/(?:^|; )zion_locale=([^;]+)/);
+    if (cookie && LANG_OK[decodeURIComponent(cookie[1])]) return decodeURIComponent(cookie[1]);
+    try { return localStorage.getItem('zion-lang') || localStorage.getItem('zion_lang'); } catch (e) { return null; }
+  })();
   const savedBg = (function () { try { return localStorage.getItem('zion_bg'); } catch (e) { return null; } })();
 
   if (savedLang) applyLang(savedLang);

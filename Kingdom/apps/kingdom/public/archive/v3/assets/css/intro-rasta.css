@@ -202,8 +202,56 @@ h3.major {
 }
 
 /* ── Hero text in the Stargate header ────────────────────────────────────── */
+/* .content shrink-wraps to its widest child — give .inner an explicit width
+   so the bordered strip (and the Nirvana window) is wide, not text-wide. */
+#header {
+  width: 100%;
+}
+
+#header .content {
+  max-width: 100%;
+}
+
 #header .content .inner {
   padding: 2.5rem 1.5rem;
+  width: min(94vw, 1150px);
+  box-sizing: border-box;
+}
+
+/* Nirvana preview: break out of .inner horizontal padding so the window
+   spans the full .inner width (padding is 1.5rem on desktop, 0 on mobile). */
+#nirvana-embed {
+  width: calc(100% + 3rem);
+  margin: 2rem 0 0 -1.5rem;
+}
+
+@media screen and (max-width: 736px) {
+  /* main.css keeps '4rem 2rem' padding at all widths (a '0 auro' typo in its
+     media queries) — slim it down so the centered column can use the viewport */
+  #wrapper {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  #header .content .inner {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  #nirvana-embed {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+#nirvana-embed .nirvana-poster {
+  height: 480px;
+}
+
+@media screen and (max-width: 736px) {
+  #nirvana-embed .nirvana-poster {
+    height: 320px;
+  }
 }
 
 #header .content .inner h1 {
@@ -662,6 +710,7 @@ html body textarea:focus {
 
 .floating-menu-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.4rem;
 }
 
@@ -708,7 +757,9 @@ html body textarea:focus {
 }
 
 .floating-menu-row .floating-menu-option {
-  flex: 1 1 0;
+  flex: 1 1 44px;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 /* Center line in the top nav (use-middle from main.js) */
@@ -770,6 +821,39 @@ html body textarea:focus {
   }
 }
 
+/* Pozvánka do Marketu — pod navigací. Na desktopu poloviční šířka
+   (575px = 50 % z původních 1150px), na telefonu zůstává skoro celá
+   obrazovka, jinak by text v banneru nebyl čitelný. */
+.hero-christmas {
+  display: block;
+  width: min(94vw, 575px);
+  margin: 1.5rem auto 2.5rem;
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(252, 209, 22, 0.35);
+  box-shadow: 0 16px 52px rgba(0, 0, 0, 0.55);
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hero-christmas img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.hero-christmas:hover {
+  transform: translateY(-3px);
+  border-color: rgba(252, 209, 22, 0.75);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.55);
+}
+
+@media screen and (max-width: 736px) {
+  .hero-christmas {
+    width: 88vw;
+    margin: 1.25rem auto 2rem;
+  }
+}
+
 /* Mobile: keep the button small and panel compact */
 @media screen and (max-width: 736px) {
   .floating-menu {
@@ -778,8 +862,8 @@ html body textarea:focus {
   }
 
   .floating-menu-toggle {
-    width: 2.85rem;
-    height: 2.85rem;
+    width: 44px;
+    height: 44px;
   }
 
   .floating-menu-panel {
@@ -843,8 +927,10 @@ footer .lite-footer .quick-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.65rem;
-  height: 2.65rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(252, 209, 22, 0.18);

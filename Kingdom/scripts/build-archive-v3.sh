@@ -45,20 +45,51 @@ import os, re, sys
 root, base = sys.argv[1], sys.argv[2]
 
 # Atributy a CSS url(), které začínají na "/" a nejsou "//" ani už prefixované.
-ATTR = re.compile(r'(?P<pre>\b(?:href|src|action|poster|data-src)=")(?P<url>/[^/"][^"]*)')
-CSS_URL = re.compile(r'(?P<pre>url\((?P<q>[\'"]?))(?P<url>/[^/"][^)]*)')
+# Cesta může být i holé "/" (např. logo/Home odkaz) — bez toho zůstane escape
+# do živého webu místo archivu.
+ATTR = re.compile(r'(?P<pre>\b(?:href|src|action|poster|data-src)=")(?P<url>/(?:[^/"\s][^"\s]*)?)"')
+CSS_URL = re.compile(r'(?P<pre>url\((?P<q>[\'"]?))(?P<url>/[^/)][^)]*)')
 # Meta refresh: `<meta http-equiv="refresh" content="0; url=/">`. Bez přepisu
 # by archivní stránka poslala prohlížeč na `/` — tedy na Bránu, ne do archivu.
 # Pozor: cíl může být i samotné "/" (stará homepage) — tehdy se má stát
 # "/archive/v3/", ne "/archive/v3" (bez lomítka by to bylo 404).
 META_REFRESH = re.compile(r'(?P<pre>content="\d+;\s*url=)(?P<url>/[^"]*)')
+# __next_f flight data escapuje URL jako \"…\" uvnitř JS stringů. Tam jsou
+# chunk URL, které hydratace reálně loaduje — bez prefixu se React nenahydratuje
+# (SSR HTML zůstane, ale stránka je mrtvá). Strážce `[:\[(]` před escapovaným
+# stringem = JSON hodnota, ne textový výskyt `"/foo"` uprostřed věty.
+FLIGHT = re.compile(r'(?P<pre>[:\[(]\\")(?:/)?(?P<url>/(?!/)[^"\\\s]*)\\"')
+# __next.*.txt / index.txt jsou surové RSC payloady pro client-side navigaci —
+# tam jsou URL neescapované `"/…"` jako JSON string hodnota (za `:`, `[`, `(`, `,`).
+# Bez prefixu by `<Link>` navigace tahala chunky z rootu a hydratační data
+# pro další stránky byla тоже mrtvá.
+TXT = re.compile(r'(?P<pre>[:\[(,]")(?P<url>/(?!/)[^"\s]*)"')
 
-def fix(html: str) -> str:
-    def attr(m):
-        if m.group('url').startswith(base + '/'):
-            return m.group(0)
-        return f"{m.group('pre')}{base}{m.group('url')}"
-    html = ATTR.sub(attr, html)
+def attr_repl(m):
+    url = m.group('url') or '/'
+    if url.startswith('//') or url.startswith(base + '/'):
+        return m.group(0)
+    if url == '/':
+        return f'{m.group("pre")}{base}/"'
+    return f"{m.group('pre')}{base}{url}\""
+
+def flight_repl(m):
+    url = m.group('url')
+    if url.startswith('//') or url.startswith(base + '/'):
+        return m.group(0)
+    return f"{m.group('pre')}{base}{url}\\\""
+
+def txt_repl(m):
+    url = m.group('url')
+    if url.startswith('//') or url.startswith(base + '/'):
+        return m.group(0)
+    return f'{m.group("pre")}{base}{url}"'
+
+def fix(html: str, is_txt: bool = False) -> str:
+    html = ATTR.sub(attr_repl, html)
+    html = FLIGHT.sub(flight_repl, html)
+    if is_txt:
+        html = TXT.sub(txt_repl, html)
 
     def meta(m):
         url = m.group('url')
@@ -79,18 +110,43 @@ def fix(html: str) -> str:
 changed = 0
 for dirpath, _dirnames, filenames in os.walk(root):
     for name in filenames:
-        if not name.endswith(('.html', '.css')):
+        if not name.endswith(('.html', '.css', '.txt')):
             continue
         path = os.path.join(dirpath, name)
         try:
             src = open(path, encoding='utf-8').read()
         except UnicodeDecodeError:
             continue
-        out = fix(src)
+        out = fix(src, is_txt=name.endswith('.txt'))
         if out != src:
             open(path, 'w', encoding='utf-8').write(out)
             changed += 1
 print(f'    přepsáno souborů: {changed}')
+
+# Turbopack runtime řeší chunk URL jako basePath + "static/chunks/…" a basePath
+# je fallback `"/_next/"` (TURBOPACK_CHUNK_BASE_PATH se bez assetPrefix
+# nedefinuje). Ve podsložce by dynamické importy šly na root → 404 →
+# hydratace by navždy stála (SSR HTML vidět, ale stránka mrtvá). Prepíšeme
+# jen tenhle fallback v chunku, který ho definuje — zbytek `/_next/` výskytů
+# v chunkách (image path, indexOf) je substring-safe a sahat na něj netřeba.
+js_changed = 0
+chunks_root = os.path.join(root, '_next')
+for dirpath, _dirnames, filenames in os.walk(chunks_root):
+    for name in filenames:
+        if not name.endswith('.js'):
+            continue
+        path = os.path.join(dirpath, name)
+        try:
+            src = open(path, encoding='utf-8').read()
+        except UnicodeDecodeError:
+            continue
+        if 'TURBOPACK_CHUNK_BASE_PATH' not in src:
+            continue
+        out = src.replace('"/_next/"', f'"{base}/_next/"')
+        if out != src:
+            open(path, 'w', encoding='utf-8').write(out)
+            js_changed += 1
+print(f'    chunk runtime base path: {js_changed} soubor(y)')
 PY
 
 echo "==> manifest"

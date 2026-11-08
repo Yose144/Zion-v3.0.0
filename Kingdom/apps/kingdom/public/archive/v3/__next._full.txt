@@ -1,21 +1,21 @@
 1:"$Sreact.fragment"
-3:"/_next/static/chunks/0umf92h1sb77c.js"
+3:"/archive/v3/_next/static/chunks/0umf92h1sb77c.js"
 4:I[39756,["$3"],"default"]
 5:I[37457,["$3"],"default"]
-9:"ViewportBoundary"
-a:I[97367,["$3"],"$9"]
-c:"MetadataBoundary"
-d:I[97367,["$3"],"$c"]
-e:"$Sreact.suspense"
-10:I[68027,["$3"],"default",1]
-:HL["/_next/static/chunks/2wmx262rgm7c8.css","style"]
-:HL["/_next/static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-:HL["/_next/static/media/9a321a2c78eff0b5-s.p.1bkzbscqrt8rl.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-:HL["/assets/css/main.css","style"]
-:HL["/stargate/stargate-theme.css","style"]
-:HL["/assets/css/intro-rasta.css","style"]
-2:["$","link",null,{"rel":"stylesheet","href":"/assets/css/noscript.css"}]
-7:T7b5a,<!-- Wrapper -->
+d:"ViewportBoundary"
+e:I[97367,["$3"],"$d"]
+10:"MetadataBoundary"
+11:I[97367,["$3"],"$10"]
+12:"$Sreact.suspense"
+14:I[68027,["$3"],"default",1]
+:HL["/archive/v3/_next/static/chunks/1wtznwrjwrw_a.css","style"]
+:HL["/archive/v3/_next/static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/archive/v3/_next/static/media/9a321a2c78eff0b5-s.p.1bkzbscqrt8rl.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/archive/v3/assets/css/main.css","style"]
+:HL["/archive/v3/stargate/stargate-theme.css","style"]
+:HL["/archive/v3/assets/css/intro-rasta.css","style"]
+2:["$","link",null,{"rel":"stylesheet","href":"/archive/v3/assets/css/noscript.css"}]
+7:T7fa3,<!-- Wrapper -->
 			<div id="wrapper">
 
 				<!-- Header -->
@@ -151,20 +151,20 @@ e:"$Sreact.suspense"
 								<a class="hero-logo" href="https://app.zionterranova.com" aria-label="ZION" target="_blank" rel="noopener">
 									<img src="symbol-200x200.png" alt="ZION" loading="eager" fetchpriority="high" decoding="async" width="200" height="200">
 								</a>
-								<br>
-								<br>
-								<a href="https://oasis.zionterranova.com" class="button primary small rasta-gold" target="_blank" rel="noopener">Preview OASIS</a>
-								<br>
-								<br>
-								<a href="https://app.zionterranova.com/explorer" class="button primary small rasta-red" target="_blank" rel="noopener">eXplorer</a>
-								<br>
-								<br>
+								<!-- Nirvana universe preview — React portal mounts here -->
+								<div id="nirvana-embed">
+									<div style="max-width:1100px;margin:1rem auto 2rem;">
+										<img class="nirvana-poster" src="images/nirvana-preview.webp" alt="Nirvana — první svět OASIS" width="1100" height="480" loading="lazy" decoding="async" style="width:100%;display:block;object-fit:cover;border-radius:1rem;border:1px solid rgba(252,209,22,0.3);box-shadow:0 12px 48px rgba(0,0,0,0.45);">
+									</div>
+								</div>
 								<img class="hero-glyph" src="glyph-transparent.png" alt="" loading="lazy" decoding="async">
 							</div>
 						</div>
+
 						<nav>
 							<ul>
 								<li><a href="https://market.zionterranova.com" target="_blank" rel="noopener" data-i18n="nav.market">Market</a></li>
+								<li><a href="https://nirvana.zionterranova.com" target="_blank" rel="noopener" data-i18n="nav.nirvana">Nirvana</a></li>
 								<li><a href="https://app.zionterranova.com/onboard" target="_blank" rel="noopener" data-i18n="nav.onboard">Onboard</a></li>
 								<li><a href="#about" data-i18n="nav.about">O nás</a></li>
 								<li><a href="https://app.zionterranova.com/docs" target="_blank" rel="noopener" data-i18n="nav.docs">Docs</a></li>
@@ -174,7 +174,14 @@ e:"$Sreact.suspense"
 								<li><a href="#freeworld" data-i18n="nav.freeworld">Free World</a></li>
 							</ul>
 						</nav>
-						
+
+						<!-- Pozvánka do Marketu — pod menu, ne v hero bloku:
+						     banner nese vlastní text („Market is open"), takže
+						     potřebuje plnou šířku pod navigací. -->
+						<a class="hero-christmas" href="https://market.zionterranova.com" target="_blank" rel="noopener" aria-label="Market is open — vánoční pozvánka do Marketu">
+							<img src="images/market-open.webp?v=7" alt="Market is open — vánoční pozvánka do ZION Marketu (PF 2027)" width="1672" height="941" loading="lazy" decoding="async">
+						</a>
+
 					</header>
 
 				<!-- Main -->
@@ -228,7 +235,7 @@ e:"$Sreact.suspense"
 
 								<h3 class="major" data-i18n="amenti.libraryTitle">Amenti Library</h3>
 								<p data-i18n="amenti.libraryDesc">Digitální archiv proroctví, smaragdových desek, bílé knihy, zdrojového kódu a DAO dokumentace. Vše je dostupné zdarma pro studium a sdílení.</p>
-								<a href="/amenti/" class="button primary small rasta-green" data-i18n="amenti.allBooksCta">Všechny knihy</a>
+								<a href="/archive/v3/amenti/" class="button primary small rasta-green" data-i18n="amenti.allBooksCta">Všechny knihy</a>
 
 								<h3 class="major" data-i18n="amenti.golokaTitle">Goloka Vrindávan</h3>
 								<p data-i18n="amenti.golokaDesc">Cesta k nekonečné Lásce. Studie bhakti, příběhy Sri Sri Radha Govindy, vibrační mantry. Inspirace pro každého, kdo chce žít dharmu s otevřeným srdcem.</p>
@@ -238,7 +245,7 @@ e:"$Sreact.suspense"
 								<p data-i18n="amenti.protectorsP1">Všichni bódhisattvové jsou přítomni a chrání novou linii mistrů Averil/Jedi. Vědomí Amenti prošlo 12letým cyklem (2012–2024) a 144k dětí Nové Země nyní působí na planetě Shan jako uzlová síť, těžaři a DAO strážci.</p>
 
 								<p style="text-align:center; margin-top:2rem;">
-									<a href="/amenti/" class="button primary small rasta-gold" data-i18n="amenti.enterCta">Vstoupit do Amenti</a>
+									<a href="/archive/v3/amenti/" class="button primary small rasta-gold" data-i18n="amenti.enterCta">Vstoupit do Amenti</a>
 								</p>
 							</article>
 
@@ -508,8 +515,11 @@ e:"$Sreact.suspense"
 						<div class="floating-menu-group">
 							<h3 class="floating-menu-group-title" data-i18n="menu.language">Jazyk</h3>
 							<div class="floating-menu-row">
-								<button class="floating-menu-option floating-menu-lang active" type="button" data-lang="cs" data-i18n="menu.cz">CZ</button>
-								<button class="floating-menu-option floating-menu-lang" type="button" data-lang="en" data-i18n="menu.en">EN</button>
+								<button class="floating-menu-option floating-menu-lang active" type="button" data-lang="cs">CZ</button>
+								<button class="floating-menu-option floating-menu-lang" type="button" data-lang="en">EN</button>
+								<button class="floating-menu-option floating-menu-lang" type="button" data-lang="es">ES</button>
+								<button class="floating-menu-option floating-menu-lang" type="button" data-lang="pt">PT</button>
+								<button class="floating-menu-option floating-menu-lang" type="button" data-lang="fr">FR</button>
 							</div>
 						</div>
 						<div class="floating-menu-group">
@@ -537,11 +547,19 @@ e:"$Sreact.suspense"
 			<script src="assets/js/util.js" defer></script>
 			<script src="assets/js/main.js" defer></script>
 			<script src="assets/js/starfield-bg.js" defer></script>
-			<script src="assets/js/intro-tabs.js" defer></script>6:[["children",{"s":"__PAGE__","h":512,"d":{"r":["$","$1","c",{"children":[["$","main",null,{"style":{"display":"contents"},"dangerouslySetInnerHTML":{"__html":"$7"},"suppressHydrationWarning":true}],null,"$L8"]}],"p":false,"v":null}}]]
-0:{"P":null,"c":["",""],"q":"","i":false,"t":{"t":{"s":"","h":528,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/2wmx262rgm7c8.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/0umf92h1sb77c.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"cs","children":[["$","head",null,{"children":[["$","link",null,{"rel":"stylesheet","href":"/assets/css/main.css","precedence":"default"}],["$","link",null,{"rel":"stylesheet","href":"/stargate/stargate-theme.css","precedence":"default"}],["$","link",null,{"rel":"stylesheet","href":"/assets/css/intro-rasta.css","precedence":"default"}],["$","noscript",null,{"children":"$2"}]]}],["$","body",null,{"className":"_0bjUvq_variable _9WhlVa_variable is-preload","children":["$","$L4",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],"p":false,"v":null},"c":"$Q6"},"h":{"r":["$","$1","h",{"children":[null,["$","$La",null,{"children":"$Lb"}],["$","$Ld",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$e",null,{"name":"Next.Metadata","children":"$Lf"}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":false,"v":null}},"m":"$undefined","G":["$10",[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/2wmx262rgm7c8.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]]],"S":true,"r":"$undefined","s":"$undefined","a":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"XWpe9tZC3nIzraxdyNNAI"}
-11:I[97367,["$3"],"OutletBoundary"]
-8:["$","$L11",null,{"children":["$","$e",null,{"name":"Next.MetadataOutlet","children":"$@12"}]}]
-b:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, maximum-scale=5"}]]
-13:I[27201,["$3"],"IconMark"]
-f:[["$","title","0",{"children":"ZION TerraNova — Native Rust Blockchain & OASIS Ecosystem"}],["$","meta","1",{"name":"description","content":"ZION TerraNova: native Rust Layer-1 blockchain — mining pool, explorer, wallet, multichain bridge, OASIS metaverse, humanitarian fee split. One Love · v3.2.0 Mainnet Beta (testing stage)."}],["$","meta","2",{"name":"keywords","content":"ZION TerraNova, ZION blockchain, ZION coin, zionterranova, native rust blockchain, OASIS metaverse, consciousness mining, humanitarian crypto"}],["$","link","3",{"rel":"canonical","href":"https://zionterranova.com/"}],["$","meta","4",{"name":"google-site-verification","content":"UwFu4TK29yFmUS28A2W-rDVZeu6YNHXaF-zqGIdAgAE"}],["$","meta","5",{"property":"og:title","content":"ZION TerraNova — Native Rust Blockchain & OASIS Ecosystem"}],["$","meta","6",{"property":"og:description","content":"ZION TerraNova: native Rust Layer-1 blockchain — mining pool, explorer, wallet, multichain bridge, OASIS metaverse, humanitarian fee split. One Love · v3.2.0 Mainnet Beta (testing stage)."}],["$","meta","7",{"property":"og:site_name","content":"ZION TerraNova"}],["$","meta","8",{"property":"og:locale","content":"cs_CZ"}],["$","meta","9",{"property":"og:image","content":"https://zionterranova.com/zion-social-banner.png"}],["$","meta","10",{"property":"og:image:width","content":"1200"}],["$","meta","11",{"property":"og:image:height","content":"630"}],["$","meta","12",{"property":"og:image:alt","content":"ZION TerraNova"}],["$","meta","13",{"property":"og:type","content":"website"}],["$","meta","14",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","15",{"name":"twitter:title","content":"ZION TerraNova — Native Rust Blockchain & OASIS Ecosystem"}],["$","meta","16",{"name":"twitter:description","content":"ZION TerraNova: native Rust Layer-1 blockchain — mining pool, explorer, wallet, multichain bridge, OASIS metaverse, humanitarian fee split. One Love · v3.2.0 Mainnet Beta (testing stage)."}],["$","meta","17",{"name":"twitter:image","content":"https://zionterranova.com/zion-social-banner.png"}],["$","meta","18",{"name":"twitter:image:alt","content":"ZION TerraNova"}],["$","meta","19",{"name":"twitter:image:width","content":"1200"}],["$","meta","20",{"name":"twitter:image:height","content":"630"}],["$","link","21",{"rel":"shortcut icon","href":"/favicon.png"}],["$","link","22",{"rel":"icon","href":"/favicon.png"}],["$","link","23",{"rel":"apple-touch-icon","href":"/apple-touch-icon.png"}],["$","$L13","24",{}]]
-12:null
+			<script src="assets/js/intro-tabs.js" defer></script>15:"/archive/v3/_next/static/chunks/15pqqz5ux6dor.js"
+16:"/archive/v3/_next/static/chunks/3drpt43nbob92.js"
+17:I[79520,["$3","$15","$16"],""]
+18:I[30176,["$3","$15","$16"],"default"]
+19:I[97367,["$3"],"OutletBoundary"]
+1b:I[27201,["$3"],"IconMark"]
+6:[["children",{"s":"__PAGE__","h":512,"d":{"r":["$","$1","c",{"children":[[["$","main",null,{"style":{"display":"contents"},"dangerouslySetInnerHTML":{"__html":"$7"},"suppressHydrationWarning":true}],"$L8","$L9"],["$La","$Lb"],"$Lc"]}],"p":false,"v":null}}]]
+0:{"P":null,"c":["",""],"q":"","i":false,"t":{"t":{"s":"","h":528,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/archive/v3/_next/static/chunks/1wtznwrjwrw_a.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/archive/v3/_next/static/chunks/0umf92h1sb77c.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"cs","children":[["$","head",null,{"children":[["$","link",null,{"rel":"stylesheet","href":"/archive/v3/assets/css/main.css","precedence":"default"}],["$","link",null,{"rel":"stylesheet","href":"/archive/v3/stargate/stargate-theme.css","precedence":"default"}],["$","link",null,{"rel":"stylesheet","href":"/archive/v3/assets/css/intro-rasta.css","precedence":"default"}],["$","noscript",null,{"children":"$2"}]]}],["$","body",null,{"className":"_0bjUvq_variable _9WhlVa_variable is-preload","suppressHydrationWarning":true,"children":["$","$L4",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]]}]]}],"p":false,"v":null},"c":"$Q6"},"h":{"r":["$","$1","h",{"children":[null,["$","$Le",null,{"children":"$Lf"}],["$","$L11",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$12",null,{"name":"Next.Metadata","children":"$L13"}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":false,"v":null}},"m":"$undefined","G":["$14",[["$","link","0",{"rel":"stylesheet","href":"/archive/v3/_next/static/chunks/1wtznwrjwrw_a.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]]],"S":true,"r":"$undefined","s":"$undefined","a":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"kt5wZjPNjCewTMAWN6yEX"}
+8:["$","$L17",null,{"src":"/archive/v3/assets/js/intro-tabs.js","strategy":"afterInteractive"}]
+9:["$","$L18",null,{}]
+a:["$","script","script-0",{"src":"/archive/v3/_next/static/chunks/15pqqz5ux6dor.js","async":true,"nonce":"$undefined"}]
+b:["$","script","script-1",{"src":"/archive/v3/_next/static/chunks/3drpt43nbob92.js","async":true,"nonce":"$undefined"}]
+c:["$","$L19",null,{"children":["$","$12",null,{"name":"Next.MetadataOutlet","children":"$@1a"}]}]
+f:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, maximum-scale=5"}]]
+13:[["$","title","0",{"children":"ZION TerraNova — Native Rust Blockchain & OASIS Ecosystem"}],["$","meta","1",{"name":"description","content":"ZION TerraNova: native Rust Layer-1 blockchain — mining pool, explorer, wallet, multichain bridge, OASIS metaverse, humanitarian fee split. One Love · v3.2.0 Mainnet Beta (testing stage)."}],["$","meta","2",{"name":"keywords","content":"ZION TerraNova, ZION blockchain, ZION coin, zionterranova, native rust blockchain, OASIS metaverse, consciousness mining, humanitarian crypto"}],["$","link","3",{"rel":"canonical","href":"https://zionterranova.com/"}],["$","meta","4",{"name":"google-site-verification","content":"UwFu4TK29yFmUS28A2W-rDVZeu6YNHXaF-zqGIdAgAE"}],["$","meta","5",{"property":"og:title","content":"ZION TerraNova — Native Rust Blockchain & OASIS Ecosystem"}],["$","meta","6",{"property":"og:description","content":"ZION TerraNova: native Rust Layer-1 blockchain — mining pool, explorer, wallet, multichain bridge, OASIS metaverse, humanitarian fee split. One Love · v3.2.0 Mainnet Beta (testing stage)."}],["$","meta","7",{"property":"og:site_name","content":"ZION TerraNova"}],["$","meta","8",{"property":"og:locale","content":"cs_CZ"}],["$","meta","9",{"property":"og:image","content":"https://zionterranova.com/zion-social-banner.png"}],["$","meta","10",{"property":"og:image:width","content":"1200"}],["$","meta","11",{"property":"og:image:height","content":"630"}],["$","meta","12",{"property":"og:image:alt","content":"ZION TerraNova"}],["$","meta","13",{"property":"og:type","content":"website"}],["$","meta","14",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","15",{"name":"twitter:title","content":"ZION TerraNova — Native Rust Blockchain & OASIS Ecosystem"}],["$","meta","16",{"name":"twitter:description","content":"ZION TerraNova: native Rust Layer-1 blockchain — mining pool, explorer, wallet, multichain bridge, OASIS metaverse, humanitarian fee split. One Love · v3.2.0 Mainnet Beta (testing stage)."}],["$","meta","17",{"name":"twitter:image","content":"https://zionterranova.com/zion-social-banner.png"}],["$","meta","18",{"name":"twitter:image:alt","content":"ZION TerraNova"}],["$","meta","19",{"name":"twitter:image:width","content":"1200"}],["$","meta","20",{"name":"twitter:image:height","content":"630"}],["$","link","21",{"rel":"shortcut icon","href":"/archive/v3/favicon.png"}],["$","link","22",{"rel":"icon","href":"/archive/v3/favicon.png"}],["$","link","23",{"rel":"apple-touch-icon","href":"/archive/v3/apple-touch-icon.png"}],["$","$L1b","24",{}]]
+1a:null
