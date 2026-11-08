@@ -66,7 +66,7 @@ def find_gutters(image: Image.Image, bg: tuple[int, int, int]) -> list[tuple[int
     return gutters
 
 
-def split_bounds(image: Image.Image) -> tuple[list[tuple[int, int]], str]:
+def split_bounds(image: Image.Image, force_ratio: bool = False) -> tuple[list[tuple[int, int]], str]:
     """Najde hranice čtyř panelů; vrací intervaly a použitou metodu."""
     width, _ = image.size
     bg = background_color(image)
@@ -74,7 +74,7 @@ def split_bounds(image: Image.Image) -> tuple[list[tuple[int, int]], str]:
 
     # Vnitřní guttery (bez okrajů) rozdělují panel na sloupce.
     inner = [g for g in gutters if g[0] > width * 0.02 and g[1] < width * 0.98]
-    if len(inner) >= 3:
+    if len(inner) >= 3 and not force_ratio:
         cuts = [0] + [int((a + b) / 2) for a, b in inner[:3]] + [width]
         method = "gutter"
     else:
@@ -118,6 +118,12 @@ def main() -> int:
     parser.add_argument("sheet", type=Path)
     parser.add_argument("out", type=Path)
     parser.add_argument("--id", default=None, help="ID postavy, jinak se vezme z názvu souboru")
+    parser.add_argument(
+        "--method",
+        choices=["auto", "ratio"],
+        default="auto",
+        help="auto = guttery (výchozí), ratio = vynutit proporcionální hranice",
+    )
     parser.add_argument("--size", type=int, default=1024)
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
@@ -129,7 +135,7 @@ def main() -> int:
     avatar_id = args.id or "".join(c for c in args.sheet.stem.split("-")[0] if c.isdigit()).zfill(3)
     image = Image.open(args.sheet).convert("RGB")
     bg = background_color(image)
-    bounds, method = split_bounds(image)
+    bounds, method = split_bounds(image, force_ratio=args.method == "ratio")
     names = ["front", "side", "back", "detail"]
 
     args.out.mkdir(parents=True, exist_ok=True)

@@ -40,17 +40,28 @@ PY
 Systémový Python 3.14 na tomto stroji nestačí (torch nemá kola). Používá se izolované
 prostředí s Pythonem 3.11 přes `uv`; nic se neinstaluje globálně.
 
-```bash
-WORK=/private/var/folders/_5/_7p3jjw926jbb74rbt7__4h80000gn/T/opencode
-uv venv --python 3.11 "$WORK/krishna-triposr"
-VPY="$WORK/krishna-triposr/bin/python"
+> **⚠️ Prostředí nepatří do `/private/var/folders/...`** — systém tuhle dočasnou
+> složku při restartu smaže (ověřeno 2026-11-08: zmizel venv, klon i HF cache).
+> Používej trvalé umístění; výchozí pro dávky je `~/.local/share/zion-avatar3d`
+> (`venv/`, `triposr/`, `hf/`, `u2net/`) a `run-batch.sh` ho čte z `AVATAR_ENV`.
 
-uv pip install --python "$VPY" torch torchvision
-uv pip install --python "$VPY" 'numpy<2' 'transformers==4.35.0' 'omegaconf==2.3.0' \
+```bash
+W=$HOME/.local/share/zion-avatar3d
+uv venv --python 3.11 "$W/venv"
+VP="$W/venv/bin/python"
+
+uv pip install --python "$VP" torch torchvision
+uv pip install --python "$VP" 'numpy<2' 'transformers==4.35.0' 'omegaconf==2.3.0' \
   'einops==0.7.0' 'trimesh==4.0.5' 'huggingface-hub<0.18' 'pillow==10.1.0' \
-  rembg onnxruntime xatlas imageio scipy scikit-image
-git clone https://github.com/VAST-AI-Research/TripoSR.git "$WORK/triposr-source"
+  rembg onnxruntime xatlas imageio scipy scikit-image fast_simplification moderngl
+git clone --depth 1 https://github.com/VAST-AI-Research/TripoSR.git "$W/triposr"
+
+# váhy (1,68 GB) + config do trvalé HF cache
+export HF_HOME="$W/hf" U2NET_HOME="$W/u2net"
+"$VP" -c "from huggingface_hub import hf_hub_download as d; print(d('stabilityai/TripoSR','model.ckpt')); print(d('stabilityai/TripoSR','config.yaml'))"
 ```
+
+`moderngl` je potřeba pro `tsr/bake_texture.py` (dřív v seznamu chyběl).
 
 Ověření GPU **skutečným výpočtem**, ne jen příznakem:
 
@@ -61,7 +72,7 @@ Ověření GPU **skutečným výpočtem**, ne jen příznakem:
 Modelové váhy a segmentační model se ukládají mimo repo:
 
 ```bash
-export HF_HOME=$WORK/krishna-hf U2NET_HOME=$WORK/krishna-u2net
+export HF_HOME=$W/hf U2NET_HOME=$W/u2net
 ```
 
 ### Licence — blokující kontrola
@@ -347,28 +358,41 @@ Autonomní dávku řeší tři skripty v `scripts/ops/avatar-3d/`:
 
 ### Spuštění celé dávky
 
+Nejjednodušší cesta (jedna dávka = jeden ZIP listů):
+
 ```bash
-export TRIPOSR_SRC=$WORK/triposr-source
-export HF_HOME=$WORK/krishna-hf U2NET_HOME=$WORK/krishna-u2net
-VPY=$WORK/krishna-triposr/bin/python
+# MC 320 + textura 2048 = změřené optimum (§9c); env je v ~/.local/share/zion-avatar3d
+RIG=1 bash scripts/ops/avatar-3d/run-batch.sh \
+  heros/Avatars/ZION_OASIS_3D_PODKLADY_25_DAVKA_02.zip davka-02
+# u listů, kde detekce gutteru selže (dvě postavy v jednom panelu), doplň:
+#   --force-ratio 001,007
+```
+
+Skript dělá kroky 1–3 sám (rozbalení, ořez, generování; s `RIG=1` i rig)
+a je bezpečné ho opakovat — hotové modely přeskočí. Ruční ekvivalent:
+
+```bash
+export TRIPOSR_SRC=$W/triposr
+export HF_HOME=$W/hf U2NET_HOME=$W/u2net
+VPY=$W/venv/bin/python
 
 # 1) Rozbalit dávku a rozdělit listy na pohledy
-mkdir -p "$WORK/in"
-unzip -q heros/Avatars/ZION_OASIS_3D_PODKLADY_25_DAVKA_01.zip -d "$WORK/raw"
-for sheet in "$WORK"/raw/*/avatari/*/*-sheet.png; do
+mkdir -p "$W/in"
+unzip -q heros/Avatars/ZION_OASIS_3D_PODKLADY_25_DAVKA_01.zip -d "$W/raw"
+for sheet in "$W"/raw/*/avatari/*/*-sheet.png; do
   id=$(basename "$(dirname "$sheet")")
-  "$VPY" scripts/ops/avatar-3d/crop-sheet.py "$sheet" "$WORK/in" --id "$id"
+  "$VPY" scripts/ops/avatar-3d/crop-sheet.py "$sheet" "$W/in" --id "$id"
 done
 
 # 2) Vygenerovat (lze pustit na noc; report je append-only JSONL)
 "$VPY" scripts/ops/avatar-3d/generate.py \
-  --input "$WORK/in" --out .artifacts/avatar-3d/stage \
-  --device mps --mc 192 --resolution 1024 --max-tris 15000
+  --input "$W/in" --out .artifacts/avatar-3d/stage \
+  --device mps --mc 320 --resolution 2048 --max-tris 15000
 
 # 3) Zkontrolovat
 node scripts/ops/avatar-3d/qa.mjs --ids 000,003,051 --out .artifacts/avatar-3d/qa
 "$VPY" scripts/ops/avatar-3d/similarity.py \
-  --qa .artifacts/avatar-3d/qa/<stamp>.png --refs "$WORK/in"
+  --qa .artifacts/avatar-3d/qa/<stamp>.png --refs "$W/in"
 ```
 
 `qa.mjs` potřebuje statický server nad repem (`python3 -m http.server 8769`)
