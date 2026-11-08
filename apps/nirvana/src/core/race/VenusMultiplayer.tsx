@@ -12,6 +12,21 @@ import { play, startEngineLoop, unlock, type LoopHandle } from '@/core/audio/eng
 import { RaceXr } from './RaceXr';
 import type { RacePlayerState, ServerMessage } from '@/core/net/protocol';
 
+/** Pořadí závodu: kdo dojel, pak vyšší kolo. Stejné pro kameru diváka i HUD. */
+function byRacePlace(
+  a: { finishedAtMs: number | null; lap: number },
+  b: { finishedAtMs: number | null; lap: number },
+): number {
+  if (a.finishedAtMs !== null && b.finishedAtMs !== null) return a.finishedAtMs - b.finishedAtMs;
+  if (a.finishedAtMs !== null) return -1;
+  if (b.finishedAtMs !== null) return 1;
+  return b.lap - a.lap;
+}
+
+function raceLeader(players: RacePlayerState[]): RacePlayerState | undefined {
+  return [...players].sort(byRacePlace)[0];
+}
+
 /**
  * VENUŠE — multiplayer závod.
  *
@@ -65,7 +80,7 @@ export function VenusMultiplayer({
   onStats: (stats: MpRaceStats) => void;
 }) {
   const { camera } = useThree();
-  const { subscribe, sendInput, joinGame, spectateRoom, leaveRoom, youPlayerId, connected, rtt } = useNet();
+  const { subscribe, sendInput, joinGame, spectateRoom, leaveRoom, youPlayerId, spectator, connected, rtt } = useNet();
 
   const track = useMemo(() => buildTrack(), []);
   const checkpoints = useMemo(() => checkpointIndices(), []);
@@ -166,17 +181,21 @@ export function VenusMultiplayer({
     const now = Date.now();
     const snapshot = latest.current;
 
-    const throttle =
-      (keys.current.has('KeyW') || keys.current.has('ArrowUp') ? 1 : 0) -
-      (keys.current.has('KeyS') || keys.current.has('ArrowDown') ? 1 : 0);
-    const steer =
-      (keys.current.has('KeyA') || keys.current.has('ArrowLeft') ? 1 : 0) -
-      (keys.current.has('KeyD') || keys.current.has('ArrowRight') ? 1 : 0);
+    const watching = Boolean(watch) || spectator;
+    const throttle = watching
+      ? 0
+      : (keys.current.has('KeyW') || keys.current.has('ArrowUp') ? 1 : 0) -
+        (keys.current.has('KeyS') || keys.current.has('ArrowDown') ? 1 : 0);
+    const steer = watching
+      ? 0
+      : (keys.current.has('KeyA') || keys.current.has('ArrowLeft') ? 1 : 0) -
+        (keys.current.has('KeyD') || keys.current.has('ArrowRight') ? 1 : 0);
 
-    const me = snapshot?.players.find((player) => player.id === youPlayerId);
-    const racing = snapshot?.state === 'running';
+    const me = watching ? undefined : snapshot?.players.find((player) => player.id === youPlayerId);
+    const lead = watching ? raceLeader(snapshot?.players ?? []) : undefined;
+    const racing = !watching && snapshot?.state === 'running';
 
-    // 1) predikce stejnou fyzikou (jen když se jede)
+    // 1) predikce stejnou fyzikou (jen když se jede). Divák jen sleduje snapshot.
     let hitWall = false;
     if (racing) {
       const step = stepCraft(craft.current, { throttle, steer }, track, dt, now);
@@ -222,23 +241,28 @@ export function VenusMultiplayer({
     }
 
     if (craftGroup.current) {
-      craftGroup.current.position.set(craft.current.x, 0.55 + Math.sin(now / 300) * 0.04, craft.current.z);
-      craftGroup.current.rotation.y = craft.current.heading;
-      craftGroup.current.rotation.z = -steer * 0.12 * Math.min(1, Math.abs(craft.current.speed) / MAX_SPEED);
+      craftGroup.current.visible = !watching;
+      if (!watching) {
+        craftGroup.current.position.set(craft.current.x, 0.55 + Math.sin(now / 300) * 0.04, craft.current.z);
+        craftGroup.current.rotation.y = craft.current.heading;
+        craftGroup.current.rotation.z = -steer * 0.12 * Math.min(1, Math.abs(craft.current.speed) / MAX_SPEED);
+      }
     }
 
-    // 3) kamera za vozítkem (ve VR ji drží headset a origin jede s lodí)
-    const forwardX = Math.sin(craft.current.heading);
-    const forwardZ = Math.cos(craft.current.heading);
-    const speedRatio = Math.abs(craft.current.speed) / MAX_SPEED;
+    // 3) kamera za vozítkem (ve VR ji drží headset a origin jede s lodí).
+    // Divák jede za vedoucím jezdcem, ne za prvním záznamem ve snapshotu.
+    const camCraft = lead ?? craft.current;
+    const forwardX = Math.sin(camCraft.heading);
+    const forwardZ = Math.cos(camCraft.heading);
+    const speedRatio = Math.abs(camCraft.speed) / MAX_SPEED;
     if (!xr) {
       camPos.set(
-        craft.current.x - forwardX * (9 + speedRatio * 3),
+        camCraft.x - forwardX * (9 + speedRatio * 3),
         4.2 + speedRatio * 0.8,
-        craft.current.z - forwardZ * (9 + speedRatio * 3),
+        camCraft.z - forwardZ * (9 + speedRatio * 3),
       );
       camera.position.lerp(camPos, dampFactor(dt));
-      camTarget.set(craft.current.x + forwardX * 6, 1.2, craft.current.z + forwardZ * 6);
+      camTarget.set(camCraft.x + forwardX * 6, 1.2, camCraft.z + forwardZ * 6);
       camera.lookAt(camTarget);
     }
 
@@ -269,16 +293,18 @@ export function VenusMultiplayer({
       if (group) group.visible = false;
     }
 
-    // 5) vstup na server
-    sendInput({
-      forward: throttle,
-      strafe: steer,
-      yaw: 0,
-      pitch: 0,
-      jump: false,
-      fire: false,
-      weapon: 0,
-    });
+    // 5) vstup na server. Divák ho neposílá — jinak by rozjel vlastní vozítko.
+    if (!watching) {
+      sendInput({
+        forward: throttle,
+        strafe: steer,
+        yaw: 0,
+        pitch: 0,
+        jump: false,
+        fire: false,
+        weapon: 0,
+      });
+    }
 
     // 6) HUD
     const rows: MpRaceRow[] = (snapshot?.players ?? [])
@@ -288,19 +314,16 @@ export function VenusMultiplayer({
         lap: player.lap,
         finishedAtMs: player.finishedAtMs,
       }))
-      .sort((a, b) => {
-        if (a.finishedAtMs !== null && b.finishedAtMs !== null) return a.finishedAtMs - b.finishedAtMs;
-        if (a.finishedAtMs !== null) return -1;
-        if (b.finishedAtMs !== null) return 1;
-        return b.lap - a.lap;
-      });
+      .sort(byRacePlace);
 
+    const leader = snapshot?.players.find((player) => player.id === rows[0]?.id);
+    const subject = watching ? leader : me;
     const stats: MpRaceStats = {
-      speed: Math.round(Math.abs(me?.speed ?? craft.current.speed) * 3.6),
-      lap: Math.min(LAPS, me?.lap ?? 1),
+      speed: Math.round(Math.abs(subject?.speed ?? (watching ? 0 : craft.current.speed)) * 3.6),
+      lap: Math.min(LAPS, subject?.lap ?? (watching ? 0 : 1)),
       laps: LAPS,
       elapsed: snapshot?.raceSeconds ?? 0,
-      position: Math.max(1, rows.findIndex((row) => row.id === youPlayerId) + 1),
+      position: watching ? (rows.length ? 1 : 0) : Math.max(1, rows.findIndex((row) => row.id === youPlayerId) + 1),
       total: rows.length,
       standings: rows,
       countdown: snapshot?.countdown ?? 0,

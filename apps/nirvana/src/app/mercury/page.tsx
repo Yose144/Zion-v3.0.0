@@ -113,27 +113,20 @@ export default function MercuryPage() {
   const [mpStats, setMpStats] = useState<DuelMpStats>(EMPTY_MP);
   const [notice, setNotice] = useState<string | null>(null);
   const recorded = useRef(false);
-  const [coarse, setCoarse] = useState(false);
+  /** `?watch=<room>` = hlediště. Čte se v efektu (SSR `window` nemá). */
+  const [watch, setWatch] = useState<string | null>(null);
 
+  // během duelu schovej globální dok a chat — na počítači i na mobilu
   useEffect(() => {
-    const query = window.matchMedia('(hover: none) and (pointer: coarse)');
-    setCoarse(query.matches);
-    const onChange = () => setCoarse(query.matches);
-    query.addEventListener('change', onChange);
-    return () => query.removeEventListener('change', onChange);
-  }, []);
-
-  // během duelu na mobilu schovej navigaci a chat (celá obrazovka pro hru)
-  useEffect(() => {
-    if (!coarse) return;
     document.body.dataset.playing = phase === 'playing' ? '1' : '';
     return () => {
       document.body.dataset.playing = '';
     };
-  }, [coarse, phase]);
+  }, [phase]);
 
   // výsledek online duelu — zapíše se NA JEDNOU po `duel_end`, příští zápas resetuje guard
   useEffect(() => {
+    if (watch) return;
     if (mode !== 'online' || phase !== 'playing') return;
     if (mpStats.matchWinner === null) {
       recorded.current = false;
@@ -160,7 +153,7 @@ export default function MercuryPage() {
       bonus: won ? 2 : 0,
     });
     setNotice(describeRun(result, cs, won ? [l('win')] : []));
-  }, [mode, phase, mpStats, cs, you?.name]);
+  }, [mode, phase, mpStats, cs, you?.name, watch]);
 
   const top = mode === 'online' ? mpStats : soloStats;
   const selfHp = mode === 'online' ? mpStats.selfHp : soloStats.selfHp;
@@ -171,11 +164,9 @@ export default function MercuryPage() {
   const countdown = mode === 'online' ? mpStats.countdown : soloStats.countdown;
   const secondsLeft = mode === 'online' ? mpStats.secondsLeft : soloStats.timer;
   const { store: xrStore, presenting } = useXr();
-  /** `?watch=<room>` = hlediště. Čte se v efektu (SSR `window` nemá). */
-  const [watch, setWatch] = useState<string | null>(null);
   useEffect(() => {
     const room = watchRoom();
-    if (!room) return;
+    if (!room?.startsWith('fight-')) return;
     setWatch(room);
     setMode('online');
     setPhase('playing');
@@ -281,7 +272,7 @@ export default function MercuryPage() {
               {mode === 'online' && mpStats.lastRoundReason === 'ko' ? 'K.O.' : l('round')}
             </div>
           )}
-          {mode === 'online' && mpStats.matchWinner !== null && (
+          {mode === 'online' && !watch && mpStats.matchWinner !== null && (
             <div className="arena-respawn">
               {duelScore(mpStats.selfWins, mpStats.foeWins) > 0 && mpStats.matchWinner === mpStats.selfId
                 ? l('youWon')
@@ -296,10 +287,13 @@ export default function MercuryPage() {
             </div>
           )}
 
+          {!watch && (
           <div className="arena-tip">
             {l('keysTip')}
           </div>
+          )}
 
+          {!watch && (
           <div className="duel-touch" aria-label="ovládání">
             <div className="duel-touch-row">
               <TouchButton code="KeyA" label="←" ariaLabel={l('left')} />
@@ -312,6 +306,7 @@ export default function MercuryPage() {
               <TouchButton code="Space" label={l('jumpShort')} ariaLabel={l('jump')} />
             </div>
           </div>
+          )}
         </>
       )}
 

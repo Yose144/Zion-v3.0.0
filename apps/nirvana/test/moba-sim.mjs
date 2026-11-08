@@ -9,7 +9,7 @@
  * Spuštění: npx tsx apps/nirvana/test/moba-sim.mjs
  */
 
-import { BASE_SPEED, BOT_SKILLS, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isHidden, isVisibleTo, ITEMS, ITEM_SLOTS, pendingTalent, pickTalent, placeSentry, placeWard, sellItem, snapAim, startRecall, stepMoba, mobaSnapshot, talentRole, talentsFor, talentTotals, totalXpAt, useBattleSpell, useItem, visionSources, BATTLE_SPELLS, RECALL_CHANNEL_MS, NO_INPUT, SENTRY_DURATION_MS, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
+import { BASE_SPEED, BOT_SKILLS, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isHidden, isVisibleTo, ITEMS, ITEM_SLOTS, pendingTalent, pickTalent, placeSentry, placeWard, sellItem, snapAim, speedFromSnapshot, startRecall, stepMoba, mobaSnapshot, talentRole, talentsFor, talentTotals, totalXpAt, useBattleSpell, useItem, visionSources, BATTLE_SPELLS, RECALL_CHANNEL_MS, NO_INPUT, SENTRY_DURATION_MS, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
 import { SCHOOL_TRAITS, spellCooldown, spellMana, spellRank, spellsForAvatar } from '../src/core/moba/spells.ts';
 import { recommendNextItem, standingFrom } from '../src/core/moba/build.ts';
 import { BUSHES, INHIBITOR_RESPAWN_MS, isStructureProtected, NEXUS_HP, VISION, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
@@ -1002,6 +1002,35 @@ check(
   );
   check('battle spell: z joinu do sedačky', match.heroes[0].battleSpell === 'purify');
   check('battle spell: bot má výchozí', match.heroes[1].battleSpell === 'flicker');
+}
+
+// ── predikce rychlosti musí sedět na sim (item + talent + buff + slow) ─
+{
+  console.log('\n-- predikce rychlosti --');
+  const pace = createMobaMatch(
+    [
+      { id: 'you', heroId: 0, team: 'blue', human: true },
+      { id: 'foe', heroId: 82, team: 'red', human: false },
+    ],
+    20_000_000,
+  );
+  const hero = pace.heroes[0];
+  hero.level = 10;
+  pickTalent(hero, 10, 1);
+  hero.items = ['boots'];
+  hero.buffs.push({ type: 'speed', until: pace.now + 4000, power: 0.35, source: 'test' });
+  hero.slowFactor = 0.4;
+  const wire = mobaSnapshot(pace).heroes.find((row) => row.id === 'you');
+  const simSpeed = heroSpeed(hero, pace.now);
+  const snapSpeed = wire ? speedFromSnapshot(wire, 'a', pace.now) : 0;
+  check('predikce: snapshot nese zpomalení', wire?.slowFactor === 0.4, String(wire?.slowFactor));
+  check(
+    'predikce: stejná rychlost jako sim',
+    Math.abs(simSpeed - snapSpeed) < 0.001,
+    `${simSpeed.toFixed(3)} vs ${snapSpeed.toFixed(3)}`,
+  );
+  const additive = BASE_SPEED * (1 + 0.12 + 0.35);
+  check('predikce: není to prostý součet', Math.abs(simSpeed - additive) > 0.05, simSpeed.toFixed(3));
 }
 
 // ── adaptivní doporučený build (F22) ───────────────────────────────

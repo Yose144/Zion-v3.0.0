@@ -195,6 +195,12 @@ export interface LumiPath {
   islands: LumiIsland[];
   shrine: { x: number; y: number; r: number };
   intro: LumiText;
+  /**
+   * Denní posun světel (L-7). Výchozí ±9/±9; spirála drží y na ±4,
+   * ať krok 12 mezi světly přežije každý den — jinak by se obloha
+   * každý pár dní „rozbila" a přestala stoupat.
+   */
+  dayRange?: { x: number; y: number };
 }
 
 /** Texty světel jsou společné oběma cestám — příběh se nemění podle obtížnosti. */
@@ -286,6 +292,8 @@ export const LUMI_PATHS: Record<LumiPathId, LumiPath> = {
     currents: LIGHT_CURRENTS,
     islands: LIGHT_ISLANDS,
     shrine: { x: 92, y: 92, r: 6 },
+    // spirála stoupá i po denním posunu: y švihá míň než polovina kroku
+    dayRange: { x: 9, y: 4 },
     intro: {
       cs: 'Cesta světla vede nahoru ve spirále. Proudy jsou vysoko a úzké, mezi nimi je prázdno, které musíš přečkat. Sem se nechodí pro rychlost — chodí se sem, když už víš, že lucerna vydrží.',
       en: 'The way of light climbs in a spiral. The currents sit high and narrow, with empty air between them you have to endure. You do not come here for speed — you come when you already know the lantern will last.',
@@ -348,9 +356,10 @@ export function lightsFor(pathId: LumiPathId, date: Date = new Date()): LumiLigh
 
   const seed = hashSeed(key);
   const shrine = path.shrine;
+  const range = path.dayRange ?? { x: DAY_RANGE, y: DAY_RANGE };
   const shifted = path.lights.map((light) => {
-    const dx = (unit(seed, light.id * 2) - 0.5) * 2 * DAY_RANGE;
-    const dy = (unit(seed, light.id * 2 + 1) - 0.5) * 2 * DAY_RANGE;
+    const dx = (unit(seed, light.id * 2) - 0.5) * 2 * range.x;
+    const dy = (unit(seed, light.id * 2 + 1) - 0.5) * 2 * range.y;
     let x = Math.min(LUMI_WIDTH - 10, Math.max(10, light.x + dx));
     let y = Math.min(LUMI_HEIGHT - 10, Math.max(10, light.y + dy));
 

@@ -47,6 +47,7 @@ import { portraitUrl } from '@/core/moba/portraits';
 import { recommendNextItem, standingFrom } from '@/core/moba/build';
 import { talentsFor } from '@/core/moba/sim';
 import { SPELL_LABEL } from '@/core/moba/keys';
+import { loadMobaLoadout, saveMobaLoadout } from '@/core/moba/loadout';
 import { MobaTouch } from '@/core/moba/MobaTouch';
 import { EARTH_COPY, type EarthCopyKey } from './copy';
 
@@ -174,7 +175,7 @@ export default function EarthPage() {
   const [watch, setWatch] = useState<string | null>(null);
   useEffect(() => {
     const room = watchRoom();
-    if (!room) return;
+    if (!room?.startsWith('moba-')) return;
     setWatch(room);
     setMode('online');
     setPhase('playing');
@@ -189,6 +190,7 @@ export default function EarthPage() {
   );
   const cs = lang === 'cs';
   const [heroId, setHeroId] = useState(0);
+  const [loadoutReady, setLoadoutReady] = useState(false);
   const [foeId, setFoeId] = useState(82);
   const [phase, setPhase] = useState<Phase>('pick');
   const [mode, setMode] = useState<Mode>('solo');
@@ -196,6 +198,17 @@ export default function EarthPage() {
   const [battleSpell, setBattleSpell] = useState<BattleSpellId>('flicker');
   /** Aspekt kouzel — volba před zápasem (dvě varianty stejné školy). */
   const [aspect, setAspect] = useState<AspectId>('a');
+  useEffect(() => {
+    const pick = loadMobaLoadout();
+    setHeroId(pick.heroId);
+    setAspect(pick.aspect);
+    setBattleSpell(pick.battleSpell);
+    setLoadoutReady(true);
+  }, []);
+  useEffect(() => {
+    if (!loadoutReady) return;
+    saveMobaLoadout({ heroId, aspect, battleSpell });
+  }, [loadoutReady, heroId, aspect, battleSpell]);
   const [emoteWheel, setEmoteWheel] = useState<{ x: number; y: number } | null>(null);
   const [scoreboard, setScoreboard] = useState(false);
   const [onlinePhase, setOnlinePhase] = useState<OnlinePhase>('connecting');
@@ -220,19 +233,19 @@ export default function EarthPage() {
     setMastery(loadMastery());
   }, [phase]);
 
-  /** Dotykové ovládání — na mobilu joystick + kouzla místo WASD a QWER. */
+  /** Dotykové ovládání — na mobilu joystick + kouzla místo WASD a Q/F/E/R. */
   const [coarse, setCoarse] = useState(false);
 
   // X = radiální emote menu (jen multiplayer; sólo nemá komu posílat)
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
-      if (event.code !== 'KeyX' || mode !== 'online' || phase !== 'playing') return;
+      if (watch || event.code !== 'KeyX' || mode !== 'online' || phase !== 'playing') return;
       event.preventDefault();
       setEmoteWheel((open) => open ?? { x: window.innerWidth / 2, y: window.innerHeight / 2 });
     };
     window.addEventListener('keydown', down);
     return () => window.removeEventListener('keydown', down);
-  }, [mode, phase]);
+  }, [mode, phase, watch]);
 
   // Tab = scoreboard (drží se jen během hry, aby nekradl fokus jinde)
   useEffect(() => {
@@ -254,14 +267,13 @@ export default function EarthPage() {
     return () => query.removeEventListener('change', onChange);
   }, []);
 
-  // během hry na mobilu schovej navigaci a chat (celá obrazovka pro hru)
+  // během hry schovej globální dok a chat — na počítači i na mobilu
   useEffect(() => {
-    if (!coarse) return;
     document.body.dataset.playing = phase === 'playing' ? '1' : '';
     return () => {
       document.body.dataset.playing = '';
     };
-  }, [coarse, phase]);
+  }, [phase]);
 
   const hero = useMemo(() => AVATARS.find((entry) => entry.id === heroId) ?? AVATARS[0]!, [heroId]);
   const foe = useMemo(() => AVATARS.find((entry) => entry.id === foeId) ?? AVATARS[0]!, [foeId]);
@@ -289,6 +301,7 @@ export default function EarthPage() {
    * nejvíc, pak zabití, level a zlato — aby se nedalo „vyhrát" jen útěkem.
    */
   useEffect(() => {
+    if (watch) return;
     if (!winner || !stats || recorded.current) return;
     recorded.current = true;
     const won = winner === 'blue';
@@ -328,7 +341,7 @@ export default function EarthPage() {
         `+${gain.xp} ${l('mastery')}`,
       ]),
     );
-  }, [winner, stats, cs, heroId, mode, star]);
+  }, [winner, stats, cs, heroId, mode, star, watch]);
 
   const nexusBlue = stats?.snapshot.towers.find((tower) => tower.id === 'blue-nexus');
   const nexusRed = stats?.snapshot.towers.find((tower) => tower.id === 'red-nexus');
@@ -570,7 +583,7 @@ export default function EarthPage() {
             />
           )}
 
-          {coarse && <MobaTouch spells={spells} />}
+          {coarse && !watch && <MobaTouch spells={spells} />}
 
           {mode === 'online' && (onlinePhase === 'connecting' || onlinePhase === 'waiting' || onlinePhase === 'countdown' || onlinePhase === 'offline') && (
             <div className="moba-status" role="status" aria-live="polite">
@@ -625,17 +638,18 @@ export default function EarthPage() {
           </div>
 
           <div className="moba-hud-bottom">
-            {(stats?.recallIn ?? 0) > 0 && (
+            {!watch && (stats?.recallIn ?? 0) > 0 && (
               <div className="moba-recall-progress" role="status" aria-live="polite">
                 <i style={{ width: `${100 - ((stats?.recallIn ?? 0) / 4000) * 100}%` }} />
                 <span>{l('recalling')}</span>
               </div>
             )}
-            {stats?.invisible && (
+            {!watch && stats?.invisible && (
               <div className="moba-invisible" role="status">
                 {l('invisible')}
               </div>
             )}
+            {!watch && (
             <div className="moba-vitals">
               <div className="moba-bar is-hp">
                 <i style={{ width: `${((stats?.playerHp ?? 0) / (stats?.playerMaxHp ?? 1)) * 100}%` }} />
@@ -691,7 +705,9 @@ export default function EarthPage() {
                 </span>
               </div>
             </div>
+            )}
 
+            {!watch && (
             <div className="moba-spellbar">
               {(stats?.spells ?? spells.map((spell) => ({ slot: spell.slot, name: spell.name, school: spell.school, cooldown: 0, cooldownMs: spell.cooldownMs, mana: spell.mana, color: spell.color, rank: 1 }))).map((spell) => {
                 const cooldownPct = spell.cooldownMs ? Math.min(100, (spell.cooldown / spell.cooldownMs) * 100) : 0;
@@ -712,7 +728,9 @@ export default function EarthPage() {
                 );
               })}
             </div>
+            )}
 
+            {!watch && (
             <div className="moba-shop" aria-label={l('shop')}>
               <span className="moba-shop-gold" title={l('goldLower')}>
                 ◈ {stats?.gold ?? 0}
@@ -808,8 +826,9 @@ export default function EarthPage() {
                 {shopOpen ? '×' : l('shop')}
               </button>
             </div>
+            )}
 
-            {shopOpen && (
+            {!watch && shopOpen && (
               <div className="moba-shop-panel">
                 {(() => {
                   const items = stats?.items ?? [];
@@ -905,7 +924,7 @@ export default function EarthPage() {
               </div>
             )}
 
-            {mode === 'online' && (
+            {mode === 'online' && !watch && (
               <div className="moba-emotes">
                 <button
                   type="button"
@@ -938,11 +957,13 @@ export default function EarthPage() {
               </div>
             )}
 
+            {!watch && (
             <div className="moba-tips">
               {coarse
                 ? l('touchHint')
                 : l('keysHint')}
             </div>
+            )}
           </div>
 
           <MobaMinimap
@@ -1007,7 +1028,7 @@ export default function EarthPage() {
             </div>
           )}
 
-          {(stats?.respawnIn ?? 0) > 0 && (
+          {!watch && (stats?.respawnIn ?? 0) > 0 && (
             <div className="moba-respawn">
               <span>
                 {l('respawnIn')} {stats?.respawnIn}s

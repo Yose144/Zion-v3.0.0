@@ -37,6 +37,8 @@ import { EMPTY_JOURNAL, isPathUnlocked, loadJournal, recordJourney, type LumiJou
 import { play, startWindLoop, type LoopHandle } from '@/core/audio/engine';
 import { useNet } from '@/core/net/useNet';
 import { InviteButton } from '@/core/net/InviteButton';
+import { SpectatorBar } from '@/core/net/SpectatorBar';
+import { watchRoom } from '@/core/net/watch';
 import type { LumiRemote } from '@/core/lumi/LumiScene';
 import { unlock } from '@/core/audio/engine';
 import { TouchButton } from '@/core/games/TouchPad';
@@ -95,9 +97,11 @@ export default function LumiPage() {
   const wind = useRef<LoopHandle | null>(null);
 
   // ── společné létání ────────────────────────────────────────────────
-  const { subscribe, joinLumi, leaveRoom, sendFly, sendHandoff, connected, roomId, youPlayerId } = useNet();
+  const { subscribe, joinLumi, spectateRoom, leaveRoom, sendFly, sendHandoff, connected, roomId, youPlayerId, lastError } = useNet();
   /** `true` = letí se s ostatními; sólo zůstává výchozí. */
   const [coop, setCoop] = useState(false);
+  /** `?watch=lumi-N` = hlediště. Sedlo se nebere a vlastní let se neposílá. */
+  const [watch, setWatch] = useState<string | null>(null);
   /** Kolik světel jsem sebral já a kolik ostatní (L-11, PPLNS podíl). */
   const myCollected = useRef(0);
   /**
@@ -163,6 +167,14 @@ export default function LumiPage() {
     setJournal(loadJournal());
   }, []);
 
+  useEffect(() => {
+    const room = watchRoom();
+    if (!room?.startsWith('lumi-')) return;
+    setWatch(room);
+    setCoop(true);
+    setPhase('flying');
+  }, []);
+
   // Debug pro E2E (`?lumiDebug=1`): co klient ví o koop odměně (L-11).
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -197,6 +209,7 @@ export default function LumiPage() {
         return;
       }
       if (message.t !== 'snapshot' || message.game !== 'lumi' || !message.lumi) return;
+      if (watch && message.lumi.path !== pathId) setPathId(message.lumi.path);
       remotes.current = message.lumi.flyers.map((flyer) => ({
         id: flyer.id,
         name: flyer.name,
@@ -220,11 +233,11 @@ export default function LumiPage() {
       setPeers(live.length);
       setPeerNames(live.map((flyer) => flyer.name).filter(Boolean).slice(0, 3));
     });
-  }, [coop, subscribe, youPlayerId, cs]);
+  }, [coop, subscribe, youPlayerId, cs, watch, pathId]);
 
   // připojení / odpojení podle fáze
   useEffect(() => {
-    if (!coop || phase !== 'flying' || !connected) return;
+    if (watch || !coop || phase !== 'flying' || !connected) return;
     joinLumi(pathId);
     return () => {
       leaveRoom();
@@ -233,7 +246,15 @@ export default function LumiPage() {
       setPeers(0);
       setPeerNames([]);
     };
-  }, [coop, phase, connected, joinLumi, leaveRoom, pathId]);
+  }, [coop, phase, connected, joinLumi, leaveRoom, pathId, watch]);
+
+  useEffect(() => {
+    if (!watch || !connected) return;
+    spectateRoom('lumi', watch);
+    return () => {
+      leaveRoom();
+    };
+  }, [watch, connected, spectateRoom, leaveRoom]);
 
   // vítr: start s letem, stop při doletu i při odchodu ze stránky
   useEffect(() => {
@@ -315,13 +336,14 @@ export default function LumiPage() {
 
   /** Scéna jen oznámí dolet — zapisuje se až po volbě (nechat / darovat). */
   const finish = useCallback((score: number) => {
+    if (watch) return;
     // Koop odměna (L-11): pool se dělí podílem na sebraných světlech (PPLNS),
     // jen když letím s někým. Sólo si nechá jen své skóre.
     const split = coopSplit({ mine: myCollected.current, others: [...contributions.current.values()] });
     setCoopBonus(split.bonus);
     setBaseScore(score + split.bonus);
     setPhase('done');
-  }, []);
+  }, [watch]);
 
   const chooseGift = useCallback(
     (kind: Gift) => {
@@ -355,8 +377,9 @@ export default function LumiPage() {
           detail={!coarse}
           remotes={coop ? remotes : undefined}
           sharedLights={coop ? sharedLights : undefined}
+          watch={Boolean(watch)}
           onFly={
-            coop
+            coop && !watch
               ? (state) => {
                   sendFly(state);
                 }
@@ -366,6 +389,8 @@ export default function LumiPage() {
           xr={xr.presenting}
         />
       </div>
+
+      {watch && <SpectatorBar room={watch} className="lumi-spectator" />}
 
       <header className="lumi-chrome">
         <div>
@@ -421,7 +446,7 @@ export default function LumiPage() {
               </span>
             )}
 
-            {coop && peers > 0 && stats.lights > 0 && (
+            {coop && !watch && peers > 0 && stats.lights > 0 && (
               <button
                 type="button"
                 className="lumi-handoff"
@@ -460,13 +485,15 @@ export default function LumiPage() {
           </div>
 
           <p className="lumi-hint">
-            {coarse
-              ? cs
-                ? 'joystick = směr · ŠIPKA NAHORU = lucerna'
-                : 'stick = direction · UP = lantern'
-              : cs
-                ? 'šipky / WASD = směr · mezerník nebo ↑ = lucerna · proudy vzduchu tě nesou'
-                : 'arrows / WASD = direction · space or ↑ = lantern · air currents carry you'}
+            {watch
+              ? l('watchingHint')
+              : coarse
+                ? cs
+                  ? 'joystick = směr · ŠIPKA NAHORU = lucerna'
+                  : 'stick = direction · UP = lantern'
+                : cs
+                  ? 'šipky / WASD = směr · mezerník nebo ↑ = lucerna · proudy vzduchu tě nesou'
+                  : 'arrows / WASD = direction · space or ↑ = lantern · air currents carry you'}
           </p>
 
           {missing > 0 ? (
@@ -487,15 +514,23 @@ export default function LumiPage() {
             <div className="lumi-peers" role="status">
               <span>
                 🌐{' '}
-                {peers > 0
-                  ? cs
-                    ? `s tebou letí ${peers}${peerNames.length ? ` — ${peerNames.join(', ')}` : ''}`
-                    : `${peers} flying with you${peerNames.length ? ` — ${peerNames.join(', ')}` : ''}`
-                  : cs
-                    ? 'hledám další…'
-                    : 'looking for others…'}
+                {watch
+                  ? lastError
+                    ? lastError
+                    : peers > 0
+                      ? `${l('watchingSky', { n: peers })}${peerNames.length ? ` — ${peerNames.join(', ')}` : ''}`
+                      : l('watchingEmpty')
+                  : peers > 0
+                    ? cs
+                      ? `s tebou letí ${peers}${peerNames.length ? ` — ${peerNames.join(', ')}` : ''}`
+                      : `${peers} flying with you${peerNames.length ? ` — ${peerNames.join(', ')}` : ''}`
+                    : cs
+                      ? 'hledám další…'
+                      : 'looking for others…'}
               </span>
-              <InviteButton roomId={roomId} className="lumi-invite" label={{ cs: 'pozvat', en: 'invite' }} />
+              {!watch && (
+                <InviteButton roomId={roomId} className="lumi-invite" label={{ cs: 'pozvat', en: 'invite' }} />
+              )}
             </div>
           )}
 
@@ -505,7 +540,7 @@ export default function LumiPage() {
             </p>
           )}
 
-          {coarse && (
+          {coarse && !watch && (
             <div className="lumi-touch">
               <TouchButton code="ArrowUp" className="is-up">
                 {l('touchUp')}

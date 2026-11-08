@@ -68,7 +68,11 @@ export interface NetApi {
     aspect?: 'a' | 'b',
   ) => void;
   /** Připojení do konkrétní místnosti z lobby (když je otevřených víc). */
-  joinRoom: (game: GameId, roomId: string) => void;
+  joinRoom: (
+    game: GameId,
+    roomId: string,
+    seat?: { heroId?: number; battleSpell?: BattleSpellId; aspect?: 'a' | 'b' },
+  ) => void;
   /**
    * Dívat se na rozehranou místnost. Divák nedostane sedlo, jen snapshoty —
    * vstup se na serveru zahazuje, takže se nedá „připojit do hry" omylem.
@@ -313,6 +317,11 @@ export function NetProvider({ children }: { children: ReactNode }) {
             setRtt(Math.max(0, Date.now() - message.at));
             return;
           case 'error': {
+            // Neúspěšný vstup sedlo nedostal. Kdyby `spectator` zůstalo
+            // z optimistického sledování, další hra by odmítala posílat tahy.
+            if (message.code === 'room_missing' || message.code === 'room_full' || message.code === 'pass_required') {
+              setSpectator(false);
+            }
             const text = errorText(message.code);
             setLastError(text);
             append({ kind: 'system', text, at: Date.now() });
@@ -390,20 +399,27 @@ export function NetProvider({ children }: { children: ReactNode }) {
       mode?: RoomMode,
       aspect?: 'a' | 'b',
     ) => {
+      setSpectator(false);
       send({ t: 'join', game, heroId, battleSpell, mode, aspect });
     },
     [send],
   );
 
   const joinRoom = useCallback(
-    (game: GameId, roomId: string) => {
-      send({ t: 'join', game, room: roomId });
+    (
+      game: GameId,
+      roomId: string,
+      seat?: { heroId?: number; battleSpell?: BattleSpellId; aspect?: 'a' | 'b' },
+    ) => {
+      setSpectator(false);
+      send({ t: 'join', game, room: roomId, heroId: seat?.heroId, battleSpell: seat?.battleSpell, aspect: seat?.aspect });
     },
     [send],
   );
 
   const spectateRoom = useCallback(
     (game: GameId, roomId: string) => {
+      setSpectator(true);
       send({ t: 'join', game, room: roomId, spectate: true });
     },
     [send],
@@ -415,6 +431,9 @@ export function NetProvider({ children }: { children: ReactNode }) {
     send({ t: 'leave' });
     setRoomId(null);
     setYouPlayerId(null);
+    // Jinak by další vstup (nebo neúspěšný join) zůstal v hledišti
+    // a hra by dál odmítala posílat tahy.
+    setSpectator(false);
   }, [send]);
 
   const sendInput = useCallback(
@@ -488,6 +507,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
   const lastDockSent = useRef<boolean | null>(null);
   const joinLumi = useCallback<NetApi['joinLumi']>(
     (path) => {
+      setSpectator(false);
       send({ t: 'join', game: 'lumi', path });
     },
     [send],
@@ -542,6 +562,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
   const joinFleet = useCallback<NetApi['joinFleet']>(
     (shipId) => {
       lastDockSent.current = null;
+      setSpectator(false);
       send({ t: 'join', game: 'fleet', shipId });
     },
     [send],

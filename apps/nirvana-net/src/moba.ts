@@ -1,5 +1,5 @@
 /**
- * MOBA „PRVNÍ SVĚT" — serverová místnost (2v2).
+ * MOBA „PRVNÍ SVĚT" — serverová místnost (5 na 5).
  *
  * Server drží **jednu simulaci** (`core/moba/sim.ts`, stejný modul jako sólo)
  * a jen do ní pumpuje vstupy hráčů. Volná sedla doplní boti, aby se na hru
@@ -210,7 +210,7 @@ export function setMobaInput(room: MobaRoomSim, connId: string, input: MobaInput
   room.inputs.set(connId, input);
 }
 
-/** Doplní boty tak, aby každá strana měla dva hráče. */
+/** Doplní boty tak, aby každá strana měla `TEAM_SIZE` hrdinů. */
 function fillBots(room: MobaRoomSim): void {
   let index = 0;
   for (const team of ['blue', 'red'] as const) {

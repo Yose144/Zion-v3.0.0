@@ -165,6 +165,29 @@ try {
   check('dívat se na neexistující místnost nejde', missing?.code === 'room_missing', String(missing?.code));
   ghost.close();
 
+  // Poslední hráč odešel, divák zůstal. Boti musí dál běhat a snímky chodit,
+  // jinak hlediště ztuhne v okamžiku odchodu.
+  const stay = client();
+  await stay.opened;
+  stay.send({ t: 'hello', proto: PROTO });
+  await stay.waitFor((m) => m.t === 'welcome');
+  stay.send({ t: 'join', game: 'arena', room: roomId, spectate: true });
+  await stay.waitFor((m) => m.t === 'room' && m.spectator === true);
+  const beforeLeave = await stay.waitFor((m) => m.t === 'snapshot' && m.game === 'arena');
+  const mark = stay.inbox.length;
+  player.send({ t: 'leave' });
+  await sleep(900);
+  const fresh = stay.inbox.slice(mark).filter((m) => m.t === 'snapshot' && m.game === 'arena');
+  check('po odchodu hráče divák dál dostává snímky', fresh.length >= 3, `snímků ${fresh.length}`);
+  const botBefore = beforeLeave.players.find((entry) => entry.isBot);
+  const moved = fresh.some((shot) => {
+    const bot = shot.players.find((entry) => entry.id === botBefore?.id);
+    if (!bot || !botBefore) return false;
+    return Math.hypot(bot.x - botBefore.x, bot.z - botBefore.z) > 0.4;
+  });
+  check('boti po odchodu hráče pořád hrají', Boolean(botBefore) && moved, botBefore ? 'stojí' : 'žádný bot');
+  stay.close();
+
   watcher.close();
   player.close();
 } catch (error) {

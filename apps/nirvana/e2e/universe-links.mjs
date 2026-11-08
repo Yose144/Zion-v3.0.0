@@ -13,6 +13,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveExecutable } from './_browser.mjs';
 
 let chromium;
 try {
@@ -32,9 +33,9 @@ const NEXT_BIN = join(APP_DIR, '..', '..', 'node_modules', 'next', 'dist', 'bin'
 /** Vlastní port — 3010/3011 může držet paralelní session, ta se nesmí zabít. */
 const PORT = process.env.UNIVERSE_LINKS_PORT ?? '3012';
 const BASE = `http://127.0.0.1:${PORT}`;
-const EXE =
-  process.env.CHROME_PATH ??
-  '/Users/yeshuae/.cache/puppeteer/chrome-headless-shell/mac_arm-156.0.8078.47/chrome-headless-shell-mac-arm64/chrome-headless-shell';
+// Prohlížeč řeší `_browser.mjs` (CHROME_PATH → puppeteer cache → systémový) —
+// dřív tu byla natvrdo macOS cesta, takže test jinde nesel.
+const EXE = resolveExecutable();
 const SHOTS = join(APP_DIR, '.artifacts', 'render', 'universe-20261102');
 const PASS_VALUE = 'local-audit-code-2026'; // délka > 8, jinak verifyPassCode odmítne
 
@@ -139,11 +140,15 @@ try {
   await sleep(5000); // přelet kamery (1,8 s) + rezerva na billboard brány a textury
   await page.screenshot({ path: join(SHOTS, 'links-jupiter.png'), timeout: 60_000 });
   check('screenshot: fokus na Jupiter (brána u planety)', true);
-  const chipVisible = await page
-    .locator('span.planet-chip', { hasText: 'Jupiter' })
+  // Chipyplanet byly nahrazeny NavHalo — ověřujeme skutečný stav enginu:
+  // po přeletu musí být current focus 'jupiter' a HUD popisek „Jupiter Station“.
+  const focusNow = await page.evaluate(() => window.__nirvanaLink?.getCurrentFocus?.() ?? null);
+  check('po přeletu je fokus na Jupiteru', focusNow === 'jupiter', String(focusNow));
+  const hudLabel = await page
+    .locator('.link-nav-label', { hasText: 'Jupiter' })
     .isVisible()
     .catch(() => false);
-  check('po přeletu je Jupiter ve záběru (chip vidět)', chipVisible);
+  check('HUD ukazuje Jupiter Station', hudLabel);
 
   check('bez chyb v konzoli', errors.length === 0, errors.join(' | '));
 } catch (error) {

@@ -99,7 +99,7 @@ function arenaMatch(now: number, mode: RoomMode = 'bots'): Match {
         pitch: message.pitch,
         jump: message.jump,
         fire: message.fire,
-        weapon: message.weapon === 1 ? 'rocket' : 'rail',
+        weapon: message.weapon === 1 ? 'rocket' : message.weapon === 2 ? 'mg' : 'rail',
       });
       return true;
     },

@@ -134,6 +134,43 @@ try {
   check('zpráva z haly dojde do místnosti', Boolean(heard), JSON.stringify(heard?.event ?? null));
   hall.close();
 
+  // Divák po výpadku zůstane divákem — nesmí obsadit sedlo.
+  const watcher = client();
+  await watcher.opened;
+  watcher.send({ t: 'hello', proto: PROTO });
+  const watchHello = await watcher.waitFor((m) => m.t === 'welcome');
+  watcher.send({ t: 'join', game: 'tanks', room: room.room.id, spectate: true });
+  const watchSeat = await watcher.waitFor((m) => m.t === 'room' && m.spectator === true);
+  check('divák dostane hlediště', watchSeat.spectator === true && watchSeat.room.players === 1, JSON.stringify(watchSeat.room));
+  const playersBefore = watchSeat.room.players;
+  watcher.close();
+  await sleep(250);
+  const watcherBack = client();
+  await watcherBack.opened;
+  watcherBack.send({ t: 'hello', proto: PROTO, resume: watchHello.resume });
+  const watchWelcome = await watcherBack.waitFor((m) => m.t === 'welcome');
+  check('divák se obnoví', watchWelcome.resumed === true, String(watchWelcome.resumed));
+  const watchRoom = await watcherBack.waitFor((m) => m.t === 'room');
+  check(
+    'divák po resume není hráč',
+    watchRoom.spectator === true && watchRoom.room.players === playersBefore && watchRoom.room.spectators === 1,
+    JSON.stringify(watchRoom.room),
+  );
+  watcherBack.send({ t: 'input', seq: 1, mx: 1, mz: 1, yaw: 0, pitch: 0, jump: true, fire: true, weapon: 2 });
+  await sleep(400);
+  const probe = client();
+  await probe.opened;
+  probe.send({ t: 'hello', proto: PROTO });
+  const probeHello = await probe.waitFor((m) => m.t === 'welcome');
+  const listed = probeHello.rooms.find((entry) => entry.id === room.room.id);
+  check(
+    'vstup diváka po resume hru nezmění',
+    listed?.players === 1 && (listed?.spectators ?? 0) === 1,
+    JSON.stringify(listed),
+  );
+  probe.close();
+  watcherBack.close();
+
   // po vypršení grace se sedlo uvolní
   back.close();
   await sleep(2000);

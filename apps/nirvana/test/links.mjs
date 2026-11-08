@@ -16,7 +16,7 @@ import {
   frameFor,
   DEFAULT_LINK_EDGES,
 } from '../src/core/scene/universe/LinkEngine.ts';
-import { arkPosition, ARK_TILT, ARK_ORBIT_R, ARK_ANGLE0 } from '../src/core/scene/universe/positions.ts';
+import { arkPosition, ARK_TILT, ARK_ORBIT_R, ARK_ANGLE0, ringStationPosition, ringPosition, worldAnchor, RING_R, RING_TILT, ringSpinAngle, orbitPosition, orbitBeltAngle } from '../src/core/scene/universe/positions.ts';
 
 let pass = 0;
 let fail = 0;
@@ -158,6 +158,40 @@ console.log('=== cíl: L5 misie a světy jako navigační cíle ===');
   registerWorldTargets(engine, [{ id: 'w-new', name: 'New', layer: 4 }]);
   ok('stale world cíl zmizel', !engine.getTarget('world:w-ring'));
   ok('nový world cíl existuje', !!engine.getTarget('world:w-new'));
+}
+
+console.log('=== cíl: kamera na L6 svět sedí na stanici (off-by-one regrese) ===');
+{
+  // Původní bug: scéna kreslila stanice s offsetem (i+1, N+1), engine mířil
+  // na (i, N) → kamera letěla o jeden slot vedle. Teď obě strany volají
+  // `ringStationPosition` — tenhle test hlídá, že `worldAnchor` pro ring
+  // slot dává přesně `ringStationPosition` pootočené rotací prstence.
+  const worlds = [
+    { id: 'r-a', name: 'A', layer: 6 },
+    { id: 'r-b', name: 'B', layer: 6 },
+    { id: 'r-c', name: 'C', layer: 6 },
+  ];
+  const t = 37.5; // libovolný čas — rotace prstence i Země
+  const euler = new THREE.Euler(RING_TILT[0], ringSpinAngle(t), RING_TILT[2]);
+  worlds.forEach((w, i) => {
+    const expected = new THREE.Vector3(...ringStationPosition(w, i, worlds.length)).applyEuler(euler);
+    const got = new THREE.Vector3(...worldAnchor(w, i, worlds.length, 'ring', t, ctx.earthPos));
+    // worldAnchor vrací world-space (zemská soustava sedí na earthPos)
+    expected.add(ctx.earthPos);
+    const d = got.distanceTo(expected);
+    ok(`worldAnchor ring ${w.id} = stanice scény`, d < 1e-6, `d=${d.toExponential(2)}`);
+  });
+  // Slot na úhlu 0 patří vlajkové IssobellaStation — žádný svět tam nesmí.
+  const reserved = ringPosition(worlds[0], 0, worlds.length + 1, RING_R);
+  const first = ringStationPosition(worlds[0], 0, worlds.length);
+  ok('první svět není na rezervovaném slotu', Math.hypot(first[0] - reserved[0], first[2] - reserved[2]) > 1e-3);
+  // Orbit slot zůstává na svém vzorci.
+  const ow2 = { id: 'o-x', name: 'X', layer: 4 };
+  const eo = new THREE.Euler(0, orbitBeltAngle(t), 0);
+  const expO = new THREE.Vector3(...orbitPosition(ow2, 0, 1)).applyEuler(eo);
+  expO.add(ctx.earthPos);
+  const gotO = new THREE.Vector3(...worldAnchor(ow2, 0, 1, 'orbit', t, ctx.earthPos));
+  ok('worldAnchor orbit = orbitPosition scény', gotO.distanceTo(expO) < 1e-6, gotO.distanceTo(expO).toExponential(2));
 }
 
 console.log('=== cíl: motion tokeny ===');

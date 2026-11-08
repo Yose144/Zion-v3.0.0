@@ -597,6 +597,34 @@ export function heroSpeed(
   return speed;
 }
 
+/**
+ * Rychlost ze snapshotu. Stejný vzorec jako `heroSpeed` — predikce si
+ * nesmí skládat itemy, talenty, buffy a zpomalení po svém.
+ */
+export function speedFromSnapshot(
+  hero: {
+    heroId: number;
+    items: ItemId[];
+    talents?: { tier: number; pick: number }[];
+    buffs?: Buff[];
+    slowFactor?: number;
+  },
+  aspect: AspectId = 'a',
+  now = 0,
+): number {
+  const talentPicks: Record<number, number> = {};
+  for (const talent of hero.talents ?? []) talentPicks[talent.tier] = talent.pick;
+  const school = spellsFor(hero.heroId, '', aspect)[0]?.school;
+  const shaped = {
+    items: hero.items,
+    slowFactor: hero.slowFactor ?? 0,
+    buffs: hero.buffs,
+    talentPicks,
+    spells: school ? [{ school }] : [],
+  };
+  return heroSpeed(shaped, now);
+}
+
 export interface Hero {
   id: string;
   team: Team;
@@ -955,7 +983,7 @@ function makeRunes(cycle: number, wave: number): Rune[] {
 }
 
 /**
- * Zápas z rozpisu sedaček — používá server pro 2v2 i sólo (sólo je jen
+ * Zápas z rozpisu sedaček — používá server pro 5 na 5 i sólo (sólo je jen
  * rozpis se dvěma sedačkami). Počet hrdinů není pevný, sim se přizpůsobí.
  */
 export function createMobaMatch(seats: MobaSeat[], now: number, botSkill: BotSkill = 'normal'): MobaState {
@@ -2543,6 +2571,8 @@ export interface MobaSnapshot {
     recallIn: number;
     /** Vybraný battle spell. */
     battleSpell: BattleSpellId;
+    /** Zpomalení 0–1. Bez něj by klient při slow kouzlu běžel rychleji než server. */
+    slowFactor?: number;
     /** Cena buybacku; 0 = nedostupný (živý nebo na cooldownu). */
     buybackCost: number;
     buffs: Buff[];
@@ -2713,6 +2743,7 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
         recallIn: hero.recallAt > 0 ? Math.max(0, RECALL_CHANNEL_MS - (state.now - hero.recallAt)) : 0,
         battleSpell: hero.battleSpell,
         buybackCost: !hero.alive && state.now >= hero.buybackAt ? buybackCost(hero) : 0,
+        slowFactor: Math.round(hero.slowFactor * 100) / 100,
         buffs: hero.buffs,
     })),
     minions: state.minions

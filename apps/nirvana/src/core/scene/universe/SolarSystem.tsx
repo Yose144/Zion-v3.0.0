@@ -300,7 +300,11 @@ function JupiterStation({ onOpen, index, def }: { onOpen: () => void; index: num
   useFrame(({ clock }) => {
     if (!ring.current) return;
     const [x, y, z] = planetPosition(def.id, index, orbitRadius(def.au), def.speed, clock.elapsedTime);
-    ring.current.position.set(x, y + def.size + 1.6, z);
+    // Stanice musí být CELÁ mimo hit-sféru planety (`size*2.6`) — jinak ji
+    // neviditelná koule vždy přebije a klik na stanici otevře panel planety.
+    // 4,2× = sféra (2,6) + prstenec stanice (~1,2) + rezerva; stejný princip
+    // jako `GATE_JUPITER_OFFSET` u brány.
+    ring.current.position.set(x, y + def.size * 4.2, z);
     ring.current.rotation.y = clock.elapsedTime * 0.25;
   });
 

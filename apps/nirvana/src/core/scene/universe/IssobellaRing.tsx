@@ -3,7 +3,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { RING_R, RING_R2, ringPosition, ringSpinAngle } from './positions';
+import { RING_R, RING_R2, ringStationPosition, ringSpinAngle } from './positions';
 import { IssobellaStation } from './IssobellaStation';
 import type { Portal } from '@/core/portals/manifest';
 import type { WorldPoint } from '@/lib/worlds';
@@ -31,7 +31,7 @@ export function IssobellaRing({
     () =>
       worlds.map((w, i) => ({
         id: w.id,
-        pos: ringPosition(w, i + 1, worlds.length + 1),
+        pos: ringStationPosition(w, i, worlds.length),
         color: new THREE.Color(layerColor(w.layer)),
       })),
     [worlds],

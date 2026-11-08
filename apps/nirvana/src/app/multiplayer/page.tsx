@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { useI18n, tx } from '@/core/i18n';
 import { LOBBY_COPY, type LobbyCopyKey } from './copy';
 import { useNet } from '@/core/net/useNet';
+import { loadMobaLoadout } from '@/core/moba/loadout';
 import { watchHref } from '@/core/net/watch';
 import { ChatPanel } from '@/core/net/ChatPanel';
 import { InviteButton } from '@/core/net/InviteButton';
@@ -319,7 +320,14 @@ export default function MultiplayerPage() {
                         type="button"
                         className="lobby-join"
                         disabled={room.players >= room.maxPlayers}
-                        onClick={() => joinRoom(game.id, room.id)}
+                        onClick={() => {
+                          if (game.id !== 'moba') {
+                            joinRoom(game.id, room.id);
+                            return;
+                          }
+                          const pick = loadMobaLoadout();
+                          joinRoom('moba', room.id, pick);
+                        }}
                       >
                         {l('join')}
                       </button>
@@ -336,7 +344,14 @@ export default function MultiplayerPage() {
                 <button
                   type="button"
                   className="lobby-btn is-primary"
-                  onClick={() => joinGame(game.id, undefined, undefined, mode)}
+                  onClick={() => {
+                    if (game.id !== 'moba') {
+                      joinGame(game.id, undefined, undefined, mode);
+                      return;
+                    }
+                    const pick = loadMobaLoadout();
+                    joinGame('moba', pick.heroId, pick.battleSpell, mode, pick.aspect);
+                  }}
                 >
                   {busiest && busiest.players < busiest.maxPlayers
                     ? cs

@@ -187,7 +187,8 @@ export function MobaStage({
     }
 
     // ── kamera drží tvého hrdinu na středu ──────────────────────────
-    const you = snapshot.heroes.find((hero) => hero.id === youId) ?? snapshot.heroes[0];
+    // Prázdné id = divák. `?? heroes[0]` by kameru posadilo do cizího hrdiny.
+    const you = youId ? snapshot.heroes.find((hero) => hero.id === youId) ?? snapshot.heroes[0] : undefined;
     if (you && !xr) {
       const predictedNow = selfPose?.current?.active ? selfPose.current : null;
       const targetX = THREE.MathUtils.clamp(predictedNow?.x ?? you.x, -38, 38);
@@ -546,7 +547,7 @@ export function MobaStage({
         </group>
       ))}
 
-      {/* hrdinové — pool čtyř (2v2), pohled z `heroId` */}
+      {/* hrdinové — pohled z `heroId`, počet sedaček drží zápas */}
       {slots.map((slot, index) => {
         const look = looks.current.get(slot.heroId);
         return (

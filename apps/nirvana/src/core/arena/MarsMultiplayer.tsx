@@ -288,23 +288,30 @@ export function MarsMultiplayer({
     const now = Date.now();
 
     // dotyk (mobil): pohled se aplikuje tady, pohyb jde do stejných čísel
-    const touchInput = readTouch(touch, view, (next) => {
-      weapon.current = next;
-    });
+    const watching = Boolean(watch) || spectator;
+    const touchInput = watching
+      ? { forward: 0, strafe: 0, fire: false, jump: false }
+      : readTouch(touch, view, (next) => {
+          weapon.current = next;
+        });
+    const forward = watching
+      ? 0
+      : (keys.current.has('KeyW') ? 1 : 0) - (keys.current.has('KeyS') ? 1 : 0) + touchInput.forward;
+    const strafe = watching
+      ? 0
+      : (keys.current.has('KeyD') ? 1 : 0) - (keys.current.has('KeyA') ? 1 : 0) + touchInput.strafe;
+    const jump = !watching && (keys.current.has('Space') || touchInput.jump);
+    const fire = !watching && (firing.current || touchInput.fire);
 
-    const forward = (keys.current.has('KeyW') ? 1 : 0) - (keys.current.has('KeyS') ? 1 : 0) + touchInput.forward;
-    const strafe = (keys.current.has('KeyD') ? 1 : 0) - (keys.current.has('KeyA') ? 1 : 0) + touchInput.strafe;
-    const jump = keys.current.has('Space') || touchInput.jump;
-    const fire = firing.current || touchInput.fire;
-
-    // 1) predikce vlastního pohybu stejnou fyzikou jako server
-    if (alive.current) {
+    // 1) predikce vlastního pohybu stejnou fyzikou jako server.
+    // Divák ji nepočítá — jinak by jeho kamera i vstup hrály vlastní zápas.
+    if (!watching && alive.current) {
       stepBody(local.current, view.current.yaw, { forward, strafe, jump }, dt, solids);
     }
 
     // 2) srovnání se serverem
     const snapshot = latest.current;
-    const me = snapshot?.players.find((player) => player.id === youPlayerId);
+    const me = watching ? undefined : snapshot?.players.find((player) => player.id === youPlayerId);
     if (me) {
       // zásah poznáme podle poklesu HP ve snapshotu (server je autorita)
       if (me.hp < lastHp.current && me.alive) playHurt();
@@ -338,16 +345,24 @@ export function MarsMultiplayer({
       }
     }
 
-    // 3) kamera
-    camera.position.set(
-      local.current.x,
-      local.current.y + PLAYER.eye + Math.sin(now / 520) * 0.012,
-      local.current.z,
-    );
-    camera.rotation.order = 'YXZ';
-    camera.rotation.y = view.current.yaw;
-    camera.rotation.x = view.current.pitch;
-    camera.rotation.z = 0;
+    // 3) kamera — hráč z očí, divák z nadhledu na živého hráče ve snapshotu
+    const watchTarget = watching
+      ? snapshot?.players.find((player) => player.alive) ?? snapshot?.players[0]
+      : undefined;
+    if (watchTarget) {
+      camera.position.set(watchTarget.x + 7, watchTarget.y + 5.5, watchTarget.z + 7);
+      camera.lookAt(watchTarget.x, watchTarget.y + 1.2, watchTarget.z);
+    } else {
+      camera.position.set(
+        local.current.x,
+        local.current.y + PLAYER.eye + Math.sin(now / 520) * 0.012,
+        local.current.z,
+      );
+      camera.rotation.order = 'YXZ';
+      camera.rotation.y = view.current.yaw;
+      camera.rotation.x = view.current.pitch;
+      camera.rotation.z = 0;
+    }
 
     // 4) ostatní hráči — interpolace mezi dvěma snapshoty
     const blend = snapshot && previous.current
@@ -388,26 +403,28 @@ export function MarsMultiplayer({
       });
     }
 
-    // 6) vstup na server (20 Hz — `sendInput` to sám omezuje)
-    const frame: ArenaInputFrame = {
-      forward,
-      strafe,
-      yaw: view.current.yaw,
-      pitch: view.current.pitch,
-      jump,
-      fire,
-      weapon: weapon.current,
-    };
-    // zvuk výstřelu hraje klient lokálně (server je autorita zásahů, ne zvuku);
-    // cooldown zrcadlí `WEAPONS`, aby se dávka nesekala do sebe
-    if (fire && now > soundCooldown.current) {
-      const spec = weapon.current === 0 ? WEAPONS.rail : weapon.current === 1 ? WEAPONS.rocket : WEAPONS.mg;
-      soundCooldown.current = now + spec.cooldownMs;
-      if (weapon.current === 0) playRail();
-      else if (weapon.current === 1) playRocket();
-      else playMg();
+    // 6) vstup na server (20 Hz — `sendInput` to sám omezuje). Divák ho neposílá.
+    if (!watching) {
+      const frame: ArenaInputFrame = {
+        forward,
+        strafe,
+        yaw: view.current.yaw,
+        pitch: view.current.pitch,
+        jump,
+        fire,
+        weapon: weapon.current,
+      };
+      // zvuk výstřelu hraje klient lokálně (server je autorita zásahů, ne zvuku);
+      // cooldown zrcadlí `WEAPONS`, aby se dávka nesekala do sebe
+      if (fire && now > soundCooldown.current) {
+        const spec = weapon.current === 0 ? WEAPONS.rail : weapon.current === 1 ? WEAPONS.rocket : WEAPONS.mg;
+        soundCooldown.current = now + spec.cooldownMs;
+        if (weapon.current === 0) playRail();
+        else if (weapon.current === 1) playRocket();
+        else playMg();
+      }
+      sendInput(frame);
     }
-    sendInput(frame);
 
     // 7) HUD
     const rows: MpPlayerRow[] = (snapshot?.players ?? [])

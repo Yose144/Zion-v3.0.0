@@ -60,6 +60,9 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
   const { joinGame, spectateRoom, leaveRoom, subscribe, sendTanksAim, sendTanksShoot, roomId } = useNet();
   /** `?watch=` = hlediště: místnost se otevře sama a my jen sledujeme. */
   const [watch, setWatch] = useState<string | null>(null);
+  /** Smyčka i klávesy čtou ref — `watch` se nastaví až po mountu a efekt by jinak střílel. */
+  const watching = useRef(false);
+  watching.current = watch !== null;
   const [online, setOnline] = useState(false);
   const [peers, setPeers] = useState(0);
   /** Strana, kterou server přidělil (0 = vlevo, 1 = vpravo). */
@@ -86,6 +89,7 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
 
   /** Přepnutí online režimu: join/leave a čistý lokální stav. */
   const toggleOnline = useCallback(() => {
+    if (watching.current) return;
     setOnline((was) => {
       if (was) {
         leaveRoom();
@@ -192,7 +196,9 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
       const current = state.current;
       // v online režimu hraješ stranu, kterou přidělil server (0 = vlevo)
       const my: 'player' | 'bot' = online && side.current === 1 ? 'bot' : 'player';
-      if (current.phase === 'aim' && current.turn === my) {
+      // Divák nesedí v žádném sedle — míření by posouvalo hlaveň a server by
+      // vstupy stejně zahodil, ale lokální pohled by do dalšího snímku lhal.
+      if (!watching.current && current.phase === 'aim' && current.turn === my) {
         const held = keys.current;
         let dAngle = 0;
         let dPower = 0;
@@ -247,7 +253,7 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
       const over = current.over ?? '';
       if (over !== cues.over) {
         cues.over = over;
-        if (over) play(over === my ? 'victory' : 'defeat');
+        if (over && !watching.current) play(over === my ? 'victory' : 'defeat');
       }
 
       if (now - hudAt > 130) {
@@ -271,6 +277,7 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
       if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].includes(event.code)) {
         event.preventDefault();
       }
+      if (watching.current) return;
       if (event.code === 'Space') {
         if (state.current.over) restart();
         else if (online) sendTanksShoot();
@@ -299,6 +306,7 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
   // Pozor: `over` se při rematchi vrací na null, takže se guard musí resetovat
   // podle hodnoty, ne podle „už jednou zapsáno".
   useEffect(() => {
+    if (watching.current) return;
     if (info.phase !== 'over') {
       // rematch i odchod hru vracejí do hry — guard se musí uvolnit
       recordedOver.current = null;
@@ -328,6 +336,7 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
   const hpPlayer = Math.round((info.playerHp / TANK_HP) * 100);
   const hpBot = Math.round((info.botHp / TANK_HP) * 100);
   const press = (code: string, action: 'hold' | 'tap') => {
+    if (watch) return;
     unlock();
     if (action === 'tap') {
       if (code === 'Space') {
@@ -372,8 +381,9 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
           className={`tanks-online${online ? ' is-on' : ''}`}
           onClick={toggleOnline}
           aria-pressed={online}
+          disabled={watch !== null}
         >
-          {online ? 'Online 1v1' : 'Hrát online'}
+          {watch ? 'Díváš se' : online ? 'Online 1v1' : 'Hrát online'}
         </button>
         <button type="button" className="tanks-exit" onClick={onExit}>
           Zpět na Kroniky
@@ -414,13 +424,13 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
             VÍTR <b>{info.wind > 0 ? `→ ${info.wind}` : info.wind < 0 ? `← ${-info.wind}` : '—'}</b>
           </span>
           <span className="tanks-hp">
-            TY
+            {watch ? 'LEVÝ' : 'TY'}
             <i>
               <b style={{ width: `${hpPlayer}%` }} />
             </i>
           </span>
           <span className="tanks-hp is-bot">
-            BOT
+            {watch ? 'PRAVÝ' : 'BOT'}
             <i>
               <b style={{ width: `${hpBot}%` }} />
             </i>
@@ -433,15 +443,17 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
 
       <footer className="tanks-foot">
         <span>
-          {online
-            ? peers > 1
-              ? 'online · soupeř připojen'
-              : 'online · prázdné sedlo hraje bot (kdokoli se může připojit)'
-            : HINTS[mode].cs}
+          {watch
+            ? 'díváš se · míření a palba patří hráčům v sedlech'
+            : online
+              ? peers > 1
+                ? 'online · soupeř připojen'
+                : 'online · prázdné sedlo hraje bot (kdokoli se může připojit)'
+              : HINTS[mode].cs}
         </span>
         {notice && <span className="tanks-notice">{notice}</span>}
         <span className="tanks-foot-right">
-          {info.phase === 'over' ? (
+          {info.phase === 'over' && !watch ? (
             <button type="button" className="tanks-again" onClick={restart}>
               Nová hra (R)
             </button>
@@ -453,13 +465,13 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
         </span>
       </footer>
 
-      {coarse && info.phase === 'over' && (
+      {coarse && info.phase === 'over' && !watch && (
         <button type="button" className="tanks-touch-again" onClick={restart}>
           NOVÁ HRA
         </button>
       )}
 
-      {coarse && (
+      {coarse && !watch && (
         <div className="tanks-touch">
           <div className="tanks-touch-pad">
             <button type="button" onPointerDown={() => press('ArrowLeft', 'hold')} aria-label="úhel doleva">

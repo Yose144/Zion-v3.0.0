@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * MOBA „PRVNÍ SVĚT" — **online 2v2**.
+ * MOBA „PRVNÍ SVĚT" — **online 5 na 5**.
  *
  * Server (`apps/nirvana-net/src/moba.ts`) drží simulaci; klient posílá jen
  * vstup a kreslí snapshoty. Žádná predikce pohybu: u MOBA je důležitější
@@ -15,36 +15,20 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useNet } from '@/core/net/useNet';
+import { SPELL_BY_KEY } from './keys';
 import { spellsForAvatar, type AspectId } from './spells';
 import { MobaStage } from './MobaStage';
 import { MobaXr } from './MobaXr';
 import { XR } from '@react-three/xr';
 import type { XRStore } from '@react-three/xr';
 import { statsFromSnapshot, type MobaStats } from './MobaGame';
-import { itemTotals, snapAim, type BattleSpellId, type ItemId } from './sim';
+import { snapAim, speedFromSnapshot, type BattleSpellId, type ItemId } from './sim';
 import { MobaFxOverlay, pushEmote, type DamageFloater } from './MobaFxOverlay';
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import type { MobaSnapshot } from './sim';
 import { canvasDpr } from '@/core/design/dpr';
 
-/**
- * Rychlost predikce. Serverovej sim jede 6,2 m/s (viz `sim.ts`); když se
- * číslo změní tam, musí se změnit i tady — jinak se postava viditelně
- * rozjíždí a dorovnává.
- */
-const PREDICT_SPEED = 6.2;
-
-/**
- * Rychlost predikce ze snapshotu — boty, runy a Příval mění rychlost, takže
- * konstanta 6,2 by se se serverem rozešla (postava by cukala a dorovnávala).
- */
-function predictedSpeed(hero: { items: ItemId[]; buffs?: { type: string; power: number }[] }): number {
-  // Bonusy itemů bere `itemTotals` — žádná druhá tabulka čísel v klientovi.
-  const itemSpeed = itemTotals(hero.items).speed;
-  const buffSpeed = (hero.buffs ?? []).filter((buff) => buff.type === 'speed').reduce((sum, buff) => sum + buff.power, 0);
-  return PREDICT_SPEED * (1 + itemSpeed + buffSpeed);
-}
 /** Odchylka, od které se predikce „teleportuje" na server (m). */
 const PREDICT_SNAP = 1.6;
 
@@ -103,7 +87,8 @@ export function MobaOnline({
   const selfPose = useRef<{ x: number; z: number; active: boolean } | null>(null);
   const floaters = useRef<DamageFloater[]>([]);
   const cameraRef = useRef<THREE.Camera | null>(null);
-  const { youPlayerId } = useNet();
+  const { youPlayerId, spectator } = useNet();
+  const followId = watch || spectator ? '' : (youPlayerId ?? 'hero-you');
 
   const world = (
     <>
@@ -126,14 +111,14 @@ export function MobaOnline({
       />
       <MobaStage
         snapshotRef={snapshotRef}
-        youId={youPlayerId ?? 'hero-you'}
+        youId={followId}
         selfPose={selfPose}
         floaters={floaters}
         cameraRef={cameraRef}
         xr={xr}
       />
-      <OnlineAudioBridge snapshotRef={snapshotRef} youId={youPlayerId ?? null} />
-      {xr && <MobaXr snapshotRef={snapshotRef} youId={youPlayerId ?? 'hero-you'} active />}
+      <OnlineAudioBridge snapshotRef={snapshotRef} youId={followId || null} />
+      {xr && <MobaXr snapshotRef={snapshotRef} youId={followId} active />}
     </>
   );
 
@@ -202,7 +187,7 @@ function OnlineController({
   aspect?: AspectId;
 }) {
   const { camera, gl } = useThree();
-  const { subscribe, joinGame, spectateRoom, leaveRoom, sendMobaInput, sendBuy, sendSell, sendWard, sendSentry, sendBattleSpell, sendRecall, sendBuyback, sendUseItem, sendTalent, connected, youPlayerId } = useNet();
+  const { subscribe, joinGame, spectateRoom, leaveRoom, sendMobaInput, sendBuy, sendSell, sendWard, sendSentry, sendBattleSpell, sendRecall, sendBuyback, sendUseItem, sendTalent, connected, youPlayerId, spectator } = useNet();
   const keys = useRef(new Set<string>());
   const pointer = useRef({ x: 0, y: 0 });
   const attack = useRef(false);
@@ -268,10 +253,9 @@ function OnlineController({
     const down = (event: KeyboardEvent) => {
       unlockMobaAudio();
       keys.current.add(event.code);
-      if (event.code === 'KeyQ') queuedCast.current = { slot: 'Q', at: Date.now() };
-      if (event.code === 'KeyW') queuedCast.current = { slot: 'W', at: Date.now() };
-      if (event.code === 'KeyE') queuedCast.current = { slot: 'E', at: Date.now() };
-      if (event.code === 'KeyR') queuedCast.current = { slot: 'R', at: Date.now() };
+      // Stejná mapa jako sólo: slot W je klávesa F. KeyW je chůze vpřed.
+      const slot = SPELL_BY_KEY[event.code];
+      if (slot) queuedCast.current = { slot, at: Date.now() };
       // G = ward na zem (stejná klávesa jako v sólu)
       if (event.code === 'KeyG') queuedWard.current = true;
       if (event.code === 'KeyH') queuedSentry.current = true;
@@ -285,7 +269,7 @@ function OnlineController({
         const item = hero?.items[slotIndex];
         if (item) queuedItem.current = item;
       }
-      if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyR', 'KeyG'].includes(event.code)) event.preventDefault();
+      if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyR', 'KeyF', 'KeyG'].includes(event.code)) event.preventDefault();
     };
     const up = (event: KeyboardEvent) => keys.current.delete(event.code);
     const move = (event: PointerEvent) => {
@@ -321,8 +305,9 @@ function OnlineController({
   }, [gl]);
 
   useFrame(() => {
-    const forward = (keys.current.has('KeyW') ? 1 : 0) - (keys.current.has('KeyS') ? 1 : 0);
-    const strafe = (keys.current.has('KeyD') ? 1 : 0) - (keys.current.has('KeyA') ? 1 : 0);
+    const watching = Boolean(watch) || spectator;
+    const forward = watching ? 0 : (keys.current.has('KeyW') ? 1 : 0) - (keys.current.has('KeyS') ? 1 : 0);
+    const strafe = watching ? 0 : (keys.current.has('KeyD') ? 1 : 0) - (keys.current.has('KeyA') ? 1 : 0);
 
     raycaster.setFromCamera(new THREE.Vector2(pointer.current.x, pointer.current.y), camera);
     const hit = raycaster.ray.intersectPlane(groundPlane, castPoint);
@@ -338,57 +323,60 @@ function OnlineController({
         aimNow = null;
       }
     }
-    const cast = queuedCast.current && hit
+    const cast = !watching && queuedCast.current && hit
       ? { slot: queuedCast.current.slot, x: aimNow?.x ?? castPoint.x, z: aimNow?.z ?? castPoint.z }
       : null;
 
     // vstup na server (hook sám omezuje na 20 Hz). Kouzlo se maže jen když
     // se opravdu odeslalo — jinak by ho throttle tiše zahodil (reálná chyba).
-    if (cast) {
-      const spell = spells.find((candidate) => candidate.slot === cast.slot);
-      if (spell) mobaAudio.spell(spell.color);
-    }
-    const sent = sendMobaInput({ moveX: strafe, moveZ: -forward, attack: attack.current, cast });
-    if (sent && cast) queuedCast.current = null;
+    // Divák nic z toho neposílá: jinak by nakupoval a sesílal kouzla.
+    if (!watching) {
+      if (cast) {
+        const spell = spells.find((candidate) => candidate.slot === cast.slot);
+        if (spell) mobaAudio.spell(spell.color);
+      }
+      const sent = sendMobaInput({ moveX: strafe, moveZ: -forward, attack: attack.current, cast });
+      if (sent && cast) queuedCast.current = null;
 
-    // obchod: požadavek ze stránky pošli serveru (rozhodne o zlatě)
-    if (buyRequest?.current) {
-      sendBuy(buyRequest.current);
-      buyRequest.current = null;
-    }
-    if (sellRequest?.current) {
-      sendSell(sellRequest.current);
-      sellRequest.current = null;
-    }
-    if (queuedWard.current) {
-      if (hit) queuedWard.current = false;
-      if (hit) sendWard(castPoint.x, castPoint.z);
-    }
-    if (queuedRecall.current) {
-      queuedRecall.current = false;
-      sendRecall();
-    }
-    if (queuedBattleSpell.current) {
-      if (hit) queuedBattleSpell.current = false;
-      if (hit) sendBattleSpell(castPoint.x, castPoint.z);
-    }
-    if (queuedSentry.current) {
-      if (hit) queuedSentry.current = false;
-      if (hit) sendSentry(castPoint.x, castPoint.z);
-    }
-    if (queuedItem.current) {
-      const item = queuedItem.current;
-      if (hit) queuedItem.current = null;
-      if (hit) sendUseItem(item, castPoint.x, castPoint.z);
-    }
-    if (buybackRequest?.current) {
-      buybackRequest.current = false;
-      sendBuyback();
-    }
-    if (talentRequest?.current) {
-      const { tier, pick } = talentRequest.current;
-      talentRequest.current = null;
-      sendTalent(tier, pick);
+      // obchod: požadavek ze stránky pošli serveru (rozhodne o zlatě)
+      if (buyRequest?.current) {
+        sendBuy(buyRequest.current);
+        buyRequest.current = null;
+      }
+      if (sellRequest?.current) {
+        sendSell(sellRequest.current);
+        sellRequest.current = null;
+      }
+      if (queuedWard.current) {
+        if (hit) queuedWard.current = false;
+        if (hit) sendWard(castPoint.x, castPoint.z);
+      }
+      if (queuedRecall.current) {
+        queuedRecall.current = false;
+        sendRecall();
+      }
+      if (queuedBattleSpell.current) {
+        if (hit) queuedBattleSpell.current = false;
+        if (hit) sendBattleSpell(castPoint.x, castPoint.z);
+      }
+      if (queuedSentry.current) {
+        if (hit) queuedSentry.current = false;
+        if (hit) sendSentry(castPoint.x, castPoint.z);
+      }
+      if (queuedItem.current) {
+        const item = queuedItem.current;
+        if (hit) queuedItem.current = null;
+        if (hit) sendUseItem(item, castPoint.x, castPoint.z);
+      }
+      if (buybackRequest?.current) {
+        buybackRequest.current = false;
+        sendBuyback();
+      }
+      if (talentRequest?.current) {
+        const { tier, pick } = talentRequest.current;
+        talentRequest.current = null;
+        sendTalent(tier, pick);
+      }
     }
 
     const snapshot = snapshotRef.current;
@@ -405,7 +393,8 @@ function OnlineController({
       const pose = selfPose.current ?? { x: you.x, z: you.z, active: you.alive };
       const length = Math.hypot(strafe, -forward);
       if (you.alive && length > 0.05) {
-        const speed = predictedSpeed(you);
+        const serverTime = frameNow + serverNow.current.offset;
+        const speed = speedFromSnapshot(you, aspect, serverTime);
         pose.x += (strafe / length) * speed * frameDt;
         pose.z += (-forward / length) * speed * frameDt;
       }
@@ -429,7 +418,7 @@ function OnlineController({
       onStats(
         statsFromSnapshot(
           snapshot,
-          youPlayerId ?? snapshot.heroes[0]?.id ?? '',
+          watching ? '' : (youPlayerId ?? snapshot.heroes[0]?.id ?? ''),
           spells.map((spell) => ({
             slot: spell.slot,
             name: spell.name,
@@ -441,7 +430,7 @@ function OnlineController({
           serverTime,
         ),
       );
-      if (snapshot.ended && !endedSent.current) {
+      if (snapshot.ended && !endedSent.current && !watching) {
         endedSent.current = true;
         onEnd?.(snapshot.ended);
       }

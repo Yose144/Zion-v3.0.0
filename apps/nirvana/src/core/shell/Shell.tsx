@@ -160,26 +160,34 @@ export function Shell() {
   const [xrWanted, setXrWanted] = useState(false);
   const [xrSupported, setXrSupported] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const hashInit = useRef(false);
   const menuBtnRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
 
-  const openPortal = useCallback((id: string) => {
-    const next = PANELS.has(id) ? id : null;
-    setPortal(next);
-    // Portál a planetární/mission panel sdílí stejnou plochu vpravo nahoře —
-    // bez vyčištění by se vykreslily přes sebe.
-    setPlanet(null);
-    setMissionKey(null);
-    // Jediná cesta: nastav fokus, přelet spustí `LinkEngine` přes `focus` prop.
-    // Portál → cílový bod scény (kanonická mapa, ne sedm if-větví s flyTo).
-    setFocus(PORTAL_FOCUS[next ?? ''] ?? 'earth');
-    setMenuOpen(false);
-  }, []);
+  const openPortal = useCallback(
+    (id: string) => {
+      const next = PANELS.has(id) ? id : null;
+      setPortal(next);
+      // Portál a planetární/mission panel sdílí stejnou plochu vpravo nahoře —
+      // bez vyčištění by se vykreslily přes sebe.
+      setPlanet(null);
+      setMissionKey(null);
+      // Jediná cesta: nastav fokus, přelet spustí `LinkEngine` přes `focus` prop.
+      // Portál → cílový bod scény (kanonická mapa). World portál se vrací
+      // na poslední vybraný svět; portály bez scény bodu jedou na Zemi.
+      setFocus(
+        next === 'world' && selectedWorld
+          ? `world:${selectedWorld}`
+          : (PORTAL_FOCUS[next ?? ''] ?? 'earth'),
+      );
+      setMenuOpen(false);
+    },
+    [selectedWorld],
+  );
 
+  // × portálu zavírá jen panel — kamera zůstává tam, kde je. Návrat domů
+  // je explicitní navigace (← Země / Esc / linky), ne zavření okna.
   const closePortal = useCallback(() => {
     setPortal(null);
-    setFocus('earth');
   }, []);
 
   const selectWorld = useCallback((id: string) => {
@@ -189,6 +197,15 @@ export function Shell() {
     setPortal('world');
     setFocus(`world:${id}`);
     setMenuOpen(false);
+  }, []);
+
+  // Přelety z LinkNavHud opouštějí kontext panelu — ten popisuje objekt,
+  // u kterého kamera po přeletu už není. Bez zavření by visel nad cizím světem.
+  const navFocus = useCallback((id: string) => {
+    setFocus(id);
+    setPortal(null);
+    setPlanet(null);
+    setMissionKey(null);
   }, []);
 
   /** Klik na L5 misii: přiletět na bod a otevřít stejný panel jako planeta. */
@@ -201,32 +218,41 @@ export function Shell() {
   }, []);
 
   // deep-link: #portal=<id>&world=<id>
+  // `world` bez `portal` otevře world portál na daném světě — sdílený odkaz
+  // na svět je `#world=<id>`. `world` mimo world portál se ignoruje, ať
+  // v URL nezůstane „duch" výběru, který se na obrazovce neprojeví.
   useEffect(() => {
-    if (hashInit.current) return;
-    hashInit.current = true;
-    const { portal: p, world } = readHash();
-    if (p) {
-      setPortal(p);
-      setFocus(p === 'hiran' ? 'sun' : p === 'park' ? 'jupiter' : p === 'fleet' ? 'fleet' : p === 'matrix' ? 'moon' : 'earth');
-    }
-    if (world) setSelectedWorld(world);
-    const onHash = () => {
-      const next = readHash();
-      setPortal(next.portal);
-      setFocus(next.portal === 'hiran' ? 'sun' : next.portal === 'park' ? 'jupiter' : next.portal === 'fleet' ? 'fleet' : next.portal === 'matrix' ? 'moon' : 'earth');
-      if (next.world) setSelectedWorld(next.world);
+    const apply = () => {
+      const { portal: p, world } = readHash();
+      const nextPortal = p ?? (world ? 'world' : null);
+      if (nextPortal === 'world' && world) {
+        setPortal('world');
+        setSelectedWorld(world);
+        setFocus(`world:${world}`);
+      } else {
+        setPortal(nextPortal);
+        setSelectedWorld(null);
+        setFocus(PORTAL_FOCUS[nextPortal ?? ''] ?? 'earth');
+      }
+      // Hash zadává jen portál — planetární/mission panel se otevírá klikem.
+      setPlanet(null);
+      setMissionKey(null);
     };
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+    apply();
+    window.addEventListener('hashchange', apply);
+    return () => window.removeEventListener('hashchange', apply);
   }, []);
 
   useEffect(() => {
     const params = new URLSearchParams();
     if (portal) params.set('portal', portal);
-    if (selectedWorld) params.set('world', selectedWorld);
+    if (portal === 'world' && selectedWorld) params.set('world', selectedWorld);
     const hash = params.toString();
-    if (window.location.hash.replace(/^#/, '') !== hash) {
-      history.replaceState(null, '', hash ? `#${hash}` : window.location.pathname);
+    // Sync beze ztráty query (`?sceneAudit=1`, `?hiran=`…) — jen hash se mění.
+    const base = `${window.location.pathname}${window.location.search}`;
+    const next = hash ? `${base}#${hash}` : base;
+    if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== next) {
+      history.replaceState(null, '', next);
     }
   }, [portal, selectedWorld]);
 
@@ -365,7 +391,7 @@ export function Shell() {
       {/* Přechod scéna ↔ portál: krátký závoj, který při každé změně portálu
           (otevření, zavření, přepnutí) jednou proběhne. `key` ho remountuje,
           takže animace startuje znovu; pointer-events: none, aby nic neblokoval. */}
-      <LinkNavHud onFocus={setFocus} />
+      <LinkNavHud onFocus={navFocus} />
       <div key={portal ?? 'home'} className="portal-veil" aria-hidden />
       <header className="chrome">
         <div>
@@ -608,18 +634,18 @@ export function Shell() {
           selectedId={selectedWorld}
           failed={worldsFailed}
           onSelect={selectWorld}
-          onClose={() => setPortal(null)}
+          onClose={closePortal}
         />
       )}
-      {portal === 'pool' && <PoolPortal onClose={() => setPortal(null)} />}
-      {portal === 'chain' && <ChainPortal onClose={() => setPortal(null)} />}
-      {portal === 'harbor' && <HarborPortal onClose={() => setPortal(null)} />}
-      {portal === 'books' && <BooksPortal onClose={() => setPortal(null)} />}
-      {portal === 'market' && <MarketPortal onClose={() => setPortal(null)} />}
-      {portal === 'account' && <AccountPortal onClose={() => setPortal(null)} />}
-      {portal === 'gate' && <GatePortal onClose={() => setPortal(null)} />}
-      {portal === 'issobella' && <IssobellaPortal onClose={() => setPortal(null)} />}
-      {portal === 'compute' && <ComputePortal onClose={() => setPortal(null)} />}
+      {portal === 'pool' && <PoolPortal onClose={closePortal} />}
+      {portal === 'chain' && <ChainPortal onClose={closePortal} />}
+      {portal === 'harbor' && <HarborPortal onClose={closePortal} />}
+      {portal === 'books' && <BooksPortal onClose={closePortal} />}
+      {portal === 'market' && <MarketPortal onClose={closePortal} />}
+      {portal === 'account' && <AccountPortal onClose={closePortal} />}
+      {portal === 'gate' && <GatePortal onClose={closePortal} />}
+      {portal === 'issobella' && <IssobellaPortal onClose={closePortal} />}
+      {portal === 'compute' && <ComputePortal onClose={closePortal} />}
       {portal === 'park' && <ParkPortal onClose={closePortal} />}
       {portal === 'archa' && <ArchaPortal onClose={closePortal} />}
       {portal === 'matrix' && <MatrixPortal onClose={closePortal} />}

@@ -110,7 +110,9 @@ export function MobaXr({
 
   useFrame(() => {
     const snapshot = snapshotRef.current;
-    const hero = snapshot?.heroes.find((candidate) => candidate.id === youId) ?? snapshot?.heroes[0];
+    const hero = youId
+      ? snapshot?.heroes.find((candidate) => candidate.id === youId) ?? snapshot?.heroes[0]
+      : undefined;
     if (origin.current && hero) {
       // nadhled jako v běžné hře: hrdina je před tebou, ne v tobě
       origin.current.position.set(hero.x, 9.5, hero.z + 8.5);

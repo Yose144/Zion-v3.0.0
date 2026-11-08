@@ -69,14 +69,13 @@ export default function VenusPage() {
     return () => query.removeEventListener('change', onChange);
   }, []);
 
-  // během hry na mobilu schovej navigaci a chat (celá obrazovka pro hru)
+  // během hry schovej globální dok a chat — na počítači i na mobilu
   useEffect(() => {
-    if (!coarse) return;
     document.body.dataset.playing = phase === 'playing' ? '1' : '';
     return () => {
       document.body.dataset.playing = '';
     };
-  }, [coarse, phase]);
+  }, [phase]);
 
   const finish = useCallback(
     (outcome: RaceResult) => {
@@ -95,7 +94,7 @@ export default function VenusPage() {
   const [watch, setWatch] = useState<string | null>(null);
   useEffect(() => {
     const room = watchRoom();
-    if (!room) return;
+    if (!room?.startsWith('race-')) return;
     setWatch(room);
     setMp(true);
     setPhase('playing');
@@ -123,7 +122,7 @@ export default function VenusPage() {
 
       {watch && <SpectatorBar room={watch} />}
 
-      {phase === 'playing' && coarse && (
+      {phase === 'playing' && coarse && !watch && (
         <TouchPad>
           <TouchButton code="KeyW" className="is-up">
             {l('gas')}
@@ -143,9 +142,11 @@ export default function VenusPage() {
       {phase === 'playing' && mp && (
         <>
           <div className="race-hud">
-            <span className="race-speed">{mpStats?.speed ?? 0} km/h</span>
+            <span className="race-speed">
+              {watch && (mpStats?.total ?? 0) === 0 ? '—' : `${mpStats?.speed ?? 0} km/h`}
+            </span>
             <span className="race-pos">
-              {mpStats?.position ?? 1}/{mpStats?.total ?? 1}
+              {watch && (mpStats?.total ?? 0) === 0 ? '—' : `${mpStats?.position ?? 1}/${mpStats?.total ?? 1}`}
             </span>
             <span>
               {l('lap')} {mpStats?.lap ?? 1}/{mpStats?.laps ?? LAPS}

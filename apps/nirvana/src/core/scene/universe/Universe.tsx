@@ -102,6 +102,15 @@ export function Universe({
     registerWorldTargets(linkEngine, worlds);
   }, [worlds, linkEngine]);
 
+  // Hluboký odkaz / rychlý výběr může předběhnout katalog: `world:` cíl
+  // vznikne až s worlds — pak se focus doletí znovu (jinak by zůstal na Zemi).
+  useEffect(() => {
+    if (!focus.startsWith('world:')) return;
+    if (linkEngine.getCurrentFocus() === focus) return;
+    if (!linkEngine.getTarget(focus)) return;
+    linkEngine.flyTo(focus);
+  }, [worlds, focus, linkEngine]);
+
   const split = useMemo(() => {
     const ring: WorldPoint[] = [];
     const orbit: WorldPoint[] = [];

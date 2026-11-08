@@ -36,7 +36,8 @@ export default function SaturnPage() {
    * takže se musí otevřít samy — jinak by divák zůstal v kronikách.
    */
   useEffect(() => {
-    if (watchRoom()) setTanks(true);
+    const room = watchRoom();
+    if (room?.startsWith('tanks-')) setTanks(true);
   }, []);
   const chapter = selected == null ? null : SATURN_CHAPTERS[selected];
 

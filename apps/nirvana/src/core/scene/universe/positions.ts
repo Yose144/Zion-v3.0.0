@@ -47,6 +47,19 @@ export function ringPosition(world: WorldPoint, index: number, total: number, r 
   return [Math.cos(angle) * r, 0, Math.sin(angle) * r];
 }
 
+/**
+ * Pozice stanice světa na prstenci — scéna i kamera musí počítat totéž.
+ * Sloty jsou 1..N z N+1: na úhlu 0 stojí vlajková IssobellaStation,
+ * takže světy nesmí padnout na 0 ani na její sousední slot.
+ */
+export function ringStationPosition(
+  world: WorldPoint,
+  index: number,
+  total: number,
+): [number, number, number] {
+  return ringPosition(world, index + 1, total + 1, RING_R);
+}
+
 /** L4 (a nižší) svět → vnitřní oběžná dráha — krouží kolem planety pod prstencem. */
 export function orbitPosition(world: WorldPoint, index: number, total: number): [number, number, number] {
   const r = ORBIT_R + hash01(world.id, 11) * 0.7;
@@ -186,7 +199,7 @@ export function worldAnchor(
   earthPos: THREE.Vector3,
 ): [number, number, number] {
   const local =
-    slot === 'ring' ? ringPosition(world, index, total, RING_R) : orbitPosition(world, index, total);
+    slot === 'ring' ? ringStationPosition(world, index, total) : orbitPosition(world, index, total);
   _missionLocal.set(local[0], local[1], local[2]);
   if (slot === 'ring') {
     _spinEuler.set(RING_TILT[0], ringSpinAngle(t), RING_TILT[2]);

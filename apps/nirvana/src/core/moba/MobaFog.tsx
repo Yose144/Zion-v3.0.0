@@ -66,16 +66,17 @@ export function MobaFog({
 
     context.globalCompositeOperation = 'source-over';
     context.clearRect(0, 0, WIDTH, HEIGHT);
-    // tma nad neviděným územím
-    context.fillStyle = 'rgba(2, 9, 7, 0.66)';
-    context.fillRect(0, 0, WIDTH, HEIGHT);
 
     const me = snapshot?.heroes.find((hero) => hero.id === youId);
     const team = me?.team;
+    // Divák není v týmu. Server mu jednotky posílá; tmavý plán by je schoval.
     if (!snapshot || !team) {
       texture.needsUpdate = true;
       return;
     }
+
+    context.fillStyle = 'rgba(2, 9, 7, 0.66)';
+    context.fillRect(0, 0, WIDTH, HEIGHT);
 
     const sx = (x: number) => ((x + FOG_HALF_X) / (FOG_HALF_X * 2)) * WIDTH;
     // Plane je otočený o −90° kolem X, takže osa Z jde v textuře opačně.

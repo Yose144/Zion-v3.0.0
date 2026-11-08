@@ -106,7 +106,8 @@ export function statsFromSnapshot(
   spells: SpellMeta[],
   now: number,
 ): MobaStats {
-  const you = snapshot.heroes.find((hero) => hero.id === youId) ?? snapshot.heroes[0];
+  // Prázdné id = divák. Bez toho by `?? heroes[0]` namaloval cizí zlato a KDA.
+  const you = snapshot.heroes.find((hero) => hero.id === youId) ?? (youId ? snapshot.heroes[0] : undefined);
   return {
     snapshot,
     youId,

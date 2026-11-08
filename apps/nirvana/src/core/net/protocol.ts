@@ -750,7 +750,7 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         pitch: num(message.pitch, -Math.PI / 2, Math.PI / 2),
         jump: message.jump === true,
         fire: message.fire === true,
-        weapon: message.weapon === 1 ? 1 : 0,
+        weapon: message.weapon === 1 ? 1 : message.weapon === 2 ? 2 : 0,
         block: message.block === true,
         attack: message.attack === true,
         castSlot:

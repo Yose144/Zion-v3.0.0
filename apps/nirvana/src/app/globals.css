@@ -4989,7 +4989,7 @@ body[data-playing='1'] .chat-dock-btn {
 }
 
 /* ── MOBA (/earth) na dotyku ─────────────────────────────────────────
- * Hra čte WASD, pozici kurzoru a Q/W/E/R. Dotyk posílá tytéž události
+ * Hra čte WASD, pozici kurzoru a Q/F/E/R. Dotyk posílá tytéž události
  * (viz `core/moba/MobaTouch.tsx`), takže herní smyčka zůstala nedotčená.
  */
 .moba-touch {

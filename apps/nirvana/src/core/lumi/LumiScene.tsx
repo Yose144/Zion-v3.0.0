@@ -576,6 +576,7 @@ export function LumiScene({
   remotes,
   sharedLights,
   onFly,
+  watch = false,
   xr = false,
 }: {
   /** Kterou cestou se letí — data i simulace se berou odsud. */
@@ -599,6 +600,11 @@ export function LumiScene({
   onStats: (stats: LumiStats) => void;
   onFinish: (score: number) => void;
   paused?: boolean;
+  /**
+   * Hlediště: žádný vlastní let ani odeslání na server. Kamera sleduje
+   * prvního živého letce a světla bere ze snímku místnosti.
+   */
+  watch?: boolean;
   /** Běží immersive session? Kamera pak patří headsetu, ne `CameraRig`. */
   xr?: boolean;
 }) {
@@ -682,6 +688,37 @@ export function LumiScene({
   useFrame((_, delta) => {
     if (paused) return;
     const flight = state.current;
+    if (watch) {
+      const list = remotes?.current ?? [];
+      const lead = list.find((flyer) => !flyer.ghost) ?? list[0];
+      if (lead) {
+        flight.x = lead.x;
+        flight.y = lead.y;
+        flight.vx = lead.vx;
+        flight.vy = lead.vy;
+        flight.energy = lead.energy;
+      }
+      const shared = sharedLights?.current;
+      if (shared) flight.lights.splice(0, flight.lights.length, ...shared);
+      flight.time += Math.min(0.05, delta);
+      if (flight.time - lastReport.current > 0.16) {
+        lastReport.current = flight.time;
+        onStats({
+          lights: flight.lights.length,
+          speed: lead ? Math.hypot(lead.vx, lead.vy) : 0,
+          lightIds: [...flight.lights],
+          x: flight.x,
+          y: flight.y,
+          target: null,
+          total: flight.total,
+          energy: flight.energy,
+          time: flight.time,
+          finished: false,
+          lastLight: null,
+        });
+      }
+      return;
+    }
     // Ve VR letíš tam, kam se díváš (trigger drží lucernu); jinak klávesy.
     const input: FlightInput = gaze.current
       ? { ...keys.current, aim: gaze.current, gaze: 1 }
@@ -783,7 +820,7 @@ export function LumiScene({
         <Light key={light.id} light={light} taken={state.current.lights.includes(light.id)} />
       ))}
       <Shrine open={state.current.lights.length === path.lights.length} shrine={path.shrine} />
-      <Lumi state={state} detail={detail} />
+      {!watch && <Lumi state={state} detail={detail} />}
       {remotes && <RemoteFlyers remotes={remotes} />}
       {xr ? <LumiXr state={state} active={!paused} gaze={gaze} /> : <CameraRig state={state} />}
     </>
@@ -1009,6 +1046,8 @@ export function LumiCanvas(props: {
     collect?: number;
     finished?: boolean;
   }) => void;
+  /** Hlediště — scéna neletí a nic neposílá. */
+  watch?: boolean;
   /** XR store z `useXr()` — `<XR>` musí být uvnitř plátna, store patří ven. */
   xrStore?: XRStore;
   xr?: boolean;

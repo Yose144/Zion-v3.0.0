@@ -86,6 +86,13 @@ export const LUMI_COPY = {
   journal: { cs: 'Deník', en: 'Journal', es: 'Diario' },
   lookingForOthers: { cs: 'hledám další…', en: 'looking for others…', es: 'buscando a otros…' },
   flyingWith: { cs: 's tebou letí {n}', en: '{n} flying with you', es: 'vuelan contigo {n}' },
+  watchingHint: {
+    cs: 'díváš se · oblohu řídí hráči v místnosti',
+    en: 'watching · the sky belongs to the players in the room',
+    es: 'mirando · el cielo lo llevan los jugadores de la sala',
+  },
+  watchingSky: { cs: 'na obloze {n}', en: '{n} in the sky', es: '{n} en el cielo' },
+  watchingEmpty: { cs: 'obloha je prázdná', en: 'the sky is empty', es: 'el cielo está vacío' },
 
   // ── deník ───────────────────────────────────────────────────────────
   journalAria: { cs: 'Deník světel', en: 'Journal of lights', es: 'Diario de luces' },

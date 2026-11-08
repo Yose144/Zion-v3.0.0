@@ -164,6 +164,27 @@ try {
   check('snapshot: vlastní hráč', Boolean(meA && meB));
   check('start: 100 hp', meA.hp === 100 && meB.hp === 100);
 
+  // ── kulomet: zbraň 2 musí zůstat kulomet, ne rail ───────────────────
+  const mgBefore = meA.mgAmmo ?? 50;
+  for (let i = 0; i < 8; i++) {
+    a.send({
+      t: 'input', seq: 1000 + i, mx: 0, mz: 0, yaw: 0, pitch: 1.2,
+      jump: false, fire: i % 2 === 0, weapon: 2,
+    });
+    await sleep(50);
+  }
+  await sleep(250);
+  const mgSnap = a.last((m) => m.t === 'snapshot');
+  const mgMe = mgSnap.players.find((p) => p.id === roomA.youPlayerId);
+  check('kulomet: snapshot nese zbraň 2', mgMe.weapon === 2, String(mgMe.weapon));
+  check('kulomet: munice klesla (rána není rail)', mgMe.mgAmmo < mgBefore, String(mgMe.mgAmmo));
+  check(
+    'kulomet: žádný rail kill',
+    !a.inbox.some((m) => m.t === 'event' && m.event?.kind === 'kill' && m.event.weapon === 'rail'),
+  );
+  a.send({ t: 'input', seq: 1010, mx: 0, mz: 0, yaw: meA.yaw, pitch: 0, jump: false, fire: false, weapon: 0 });
+  await sleep(200);
+
   // ── pohyb ───────────────────────────────────────────────────────────
   const before = { x: meA.x, z: meA.z };
   for (let i = 0; i < 30; i++) {

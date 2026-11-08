@@ -32,7 +32,7 @@ export function useMobaAudio(
   useFrame(() => {
     const snapshot = snapshotRef.current;
     if (!snapshot) return;
-    const you = snapshot.heroes.find((hero) => hero.id === youId) ?? snapshot.heroes[0];
+    const you = youId ? snapshot.heroes.find((hero) => hero.id === youId) : undefined;
     const owners = snapshot.nodes.map((node) => node.owner ?? '-').join('');
     const current: AudioState = {
       hp: you?.hp ?? 0,
@@ -47,11 +47,11 @@ export function useMobaAudio(
     previous.current = current;
     if (!last) return;
 
-    if (current.hp < last.hp) mobaAudio.hit();
-    if (last.alive && !current.alive) mobaAudio.death();
+    if (you && current.hp < last.hp) mobaAudio.hit();
+    if (you && last.alive && !current.alive) mobaAudio.death();
     if (current.wave > last.wave) mobaAudio.wave();
     if (current.owners !== last.owners) mobaAudio.capture();
-    if (current.items > last.items) mobaAudio.buy();
-    if (!last.ended && current.ended) mobaAudio.end(current.ended === (you?.team ?? 'blue'));
+    if (you && current.items > last.items) mobaAudio.buy();
+    if (you && !last.ended && current.ended) mobaAudio.end(current.ended === you.team);
   });
 }

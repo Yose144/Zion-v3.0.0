@@ -620,6 +620,10 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
         resumes.delete(message.resume);
         if (old && old.room) {
           const room = old.room;
+          // Divák nemá sedlo. Kdybychom ho po výpadku dali do `players`,
+          // zabral by místo a klient by začal hrát, i když se jen díval.
+          const wasSpectator = room.spectators.has(old.id);
+          old.room = null;
           connections.delete(conn.id);
           conn.id = old.id;
           conn.room = room;
@@ -627,9 +631,10 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
           conn.chatTimes = old.chatTimes;
           conn.resumeToken = old.resumeToken;
           connections.set(conn.id, conn);
-          room.players.set(conn.id, conn);
+          if (wasSpectator) room.spectators.set(conn.id, conn);
+          else room.players.set(conn.id, conn);
           resumed = true;
-          log(`resume id=${conn.id} room=${room.id}`);
+          log(`resume id=${conn.id} room=${room.id} spectator=${wasSpectator}`);
         }
       }
 
@@ -656,6 +661,7 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
         send(conn, {
           t: 'room',
           room: roomInfo(room),
+          spectator: room.spectators.has(conn.id) ? true : undefined,
           occupants: [...room.players.values()].map((player) => summary(player.identity)),
           youPlayerId: conn.id,
           spawn: null,
@@ -701,6 +707,8 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
         sendError(conn, 'not_in_room');
         return;
       }
+      // Divák dostává snapshoty, ale vstup (střelba, nákup, let) hru nemění.
+      if (conn.room.spectators.has(conn.id)) return;
       if (conn.room.match.message(conn.id, message)) return;
       sendError(conn, 'not_available');
       return;
@@ -943,7 +951,9 @@ const gameLoop = setInterval(() => {
   const withSnapshot = tickCount % SNAPSHOT_EVERY === 0;
 
   for (const room of rooms.values()) {
-    if (room.players.size === 0) continue;
+    // Prázdná místnost se nemaže, dokud v ní sedí divák. Bez tohohle by
+    // odchod posledního hráče zmrazil boty a divák koukal na stojící zápas.
+    if (room.players.size === 0 && room.spectators.size === 0) continue;
 
     // 1) simulace + eventy (každá hra si je posílá sama přes `ctx.emit`)
     const channel = `arena:${room.id}`;

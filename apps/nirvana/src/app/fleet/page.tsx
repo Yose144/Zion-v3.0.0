@@ -101,7 +101,7 @@ export default function FleetPage() {
   /** Debug háček se čte při prvním renderu — efekt by ho nestihl (viz AGENTS). */
   useEffect(() => {
     const room = watchRoom();
-    if (!room) return;
+    if (!room?.startsWith('fleet-')) return;
     setWatchId(room);
     setCoop(true);
     setPhase('flying');
@@ -316,7 +316,7 @@ export default function FleetPage() {
             {coop && (
               <div className="fleet-peers">
                 <span>{connected ? (l('sharedFlight')) : l('offline')}</span>
-                <strong>{peers + 1}</strong>
+                <strong>{watchId ? peers : peers + 1}</strong>
                 {roomId && <em>{roomId}</em>}
                 {roomId && <InviteButton roomId={roomId} className="fleet-invite" />}
               </div>

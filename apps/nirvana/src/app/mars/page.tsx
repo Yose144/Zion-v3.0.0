@@ -67,14 +67,13 @@ export default function MarsPage() {
     return () => query.removeEventListener('change', onChange);
   }, []);
 
-  // během hry na mobilu schovej navigaci a chat (celá obrazovka pro hru)
+  // během hry schovej globální dok a chat — na počítači i na mobilu
   useEffect(() => {
-    if (!coarse) return;
     document.body.dataset.playing = phase === 'playing' ? '1' : '';
     return () => {
       document.body.dataset.playing = '';
     };
-  }, [coarse, phase]);
+  }, [phase]);
 
   useEffect(() => xrStore.subscribe((state) => setPresenting(Boolean(state.session))), [xrStore]);
 
@@ -87,7 +86,7 @@ export default function MarsPage() {
   const [watch, setWatch] = useState<string | null>(null);
   useEffect(() => {
     const room = watchRoom();
-    if (!room) return;
+    if (!room?.startsWith('arena-')) return;
     setWatch(room);
     setMp(true);
     setPhase('playing');
@@ -142,22 +141,26 @@ export default function MarsPage() {
         </Canvas>
       </div>
 
-      {phase === 'playing' && coarse && <ArenaTouchControls state={touch} />}
+      {phase === 'playing' && coarse && !watch && <ArenaTouchControls state={touch} />}
 
       {phase === 'playing' && mp && (
         <>
-          <div className="arena-crosshair" aria-hidden />
+          {!watch && <div className="arena-crosshair" aria-hidden />}
           {watch && <SpectatorBar room={watch} />}
           <div className="arena-hud">
-            <span className="arena-health" style={{ color: (mpStats?.health ?? 100) > 60 ? '#7fe3d4' : (mpStats?.health ?? 100) > 25 ? '#ffd166' : '#ff7a6b' }}>
-              ❤ {mpStats?.health ?? 100}
-            </span>
-            <span className="arena-armor">🛡 {mpStats?.armor ?? 0}</span>
-            <span className="arena-frags">
-              {l('frags')} {mpStats?.frags ?? 0}/{FRAG_LIMIT}
-            </span>
+            {!watch && (
+              <>
+                <span className="arena-health" style={{ color: (mpStats?.health ?? 100) > 60 ? '#7fe3d4' : (mpStats?.health ?? 100) > 25 ? '#ffd166' : '#ff7a6b' }}>
+                  ❤ {mpStats?.health ?? 100}
+                </span>
+                <span className="arena-armor">🛡 {mpStats?.armor ?? 0}</span>
+                <span className="arena-frags">
+                  {l('frags')} {mpStats?.frags ?? 0}/{FRAG_LIMIT}
+                </span>
+                <span className="arena-weapon">{mpStats?.weapon === 'rocket' ? `ROCKET ×${mpStats?.ammo ?? 0}` : mpStats?.weapon === 'mg' ? `MG ×${mpStats?.ammo ?? 0}` : 'RAIL'}</span>
+              </>
+            )}
             <span className="arena-time">{mpStats?.timeLeft ?? MATCH_SECONDS}s</span>
-            <span className="arena-weapon">{mpStats?.weapon === 'rocket' ? `ROCKET ×${mpStats?.ammo ?? 0}` : mpStats?.weapon === 'mg' ? `MG ×${mpStats?.ammo ?? 0}` : 'RAIL'}</span>
             <span className={`arena-weapon${mpStats?.connected ? '' : ' is-offline'}`}>
               {mpStats?.connected ? `${mpStats?.ping ?? 0} ms` : l('offline')}
             </span>
@@ -174,6 +177,7 @@ export default function MarsPage() {
               ))}
             </ol>
           )}
+          {!watch && (
           <div className="arena-tip">
             {coarse
               ? cs
@@ -183,6 +187,7 @@ export default function MarsPage() {
                 ? 'WASD pohyb · mezerník skok · 1/2/3 zbraň · klik střelba · Esc uvolní myš'
                 : 'WASD move · space jump · 1/2/3 weapon · click fire · Esc releases the mouse'}
           </div>
+          )}
           {mpStats?.matchState === 'ended' && (
             <div className="arena-respawn">
               {l('matchOver')}

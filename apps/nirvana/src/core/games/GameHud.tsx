@@ -41,7 +41,11 @@ function numLocale(lang: string) {
  * ZION zůstatek (z uzlu přes `/api/wallet/balance` — viz `useWallet`).
  */
 
-const SURFACES = ['/', '/park', '/mars', '/venus', '/avatars', '/mercury', '/saturn', '/earth', '/multiplayer', '/hiran', '/uranus', '/neptune', '/pluto', '/lumi'];
+// Vnější světy jsou v seznamu záměrně: `.outer-panel` v CSS počítá s lištou
+// (bottom: 3.8rem) — bez ní tam viselo prázdné místo a šla z nich pryč
+// navigace mezi hrami. `/hiran` a `/present/*` jsou prezentační plochy
+// s vlastní navigací, ty tu nepatří.
+const SURFACES = ['/', '/park', '/mars', '/venus', '/avatars', '/mercury', '/saturn', '/uranus', '/neptune', '/pluto', '/earth', '/multiplayer', '/lumi', '/fleet'];
 
 const CONTROLS: Record<string, { cs: string; en: string; es?: string; pt?: string; fr?: string }> = {
   '/': {
@@ -60,10 +64,10 @@ const CONTROLS: Record<string, { cs: string; en: string; es?: string; pt?: strin
   },
   '/mars': {
     cs: 'WASD · mezerník skok · 1/2/3 zbraň · klik střelba',
-    en: 'WASD · space jump · 1/2 weapon · click fire',
-    es: 'WASD · espacio saltar · 1/2 arma · clic disparar',
-    pt: 'WASD · espaço saltar · 1/2 arma · clique disparar',
-    fr: 'WASD · espace saut · 1/2 arme · clic tirer',
+    en: 'WASD · space jump · 1/2/3 weapon · click fire',
+    es: 'WASD · espacio saltar · 1/2/3 arma · clic disparar',
+    pt: 'WASD · espaço saltar · 1/2/3 arma · clique disparar',
+    fr: 'WASD · espace saut · 1/2/3 arme · clic tirer',
   },
   '/venus': {
     cs: 'W/S plyn a brzda · A/D zatáčení',
@@ -73,11 +77,11 @@ const CONTROLS: Record<string, { cs: string; en: string; es?: string; pt?: strin
     fr: 'W/S accélérer et freiner · A/D tourner',
   },
   '/mercury': {
-    cs: 'A/D pohyb · W skok · J pěst · K kop · L blok',
-    en: 'A/D move · W jump · J punch · K kick · L block',
-    es: 'A/D mover · W saltar · J puño · K patada · L bloqueo',
-    pt: 'A/D mover · W saltar · J soco · K pontapé · L bloqueio',
-    fr: 'A/D bouger · W saut · J poing · K pied · L parade',
+    cs: 'A/D pohyb · W skok · J pěst · K kop · S blok',
+    en: 'A/D move · W jump · J punch · K kick · S block',
+    es: 'A/D mover · W saltar · J puño · K patada · S bloqueo',
+    pt: 'A/D mover · W saltar · J soco · K pontapé · S bloqueio',
+    fr: 'A/D bouger · W saut · J poing · K pied · S parade',
   },
   '/saturn': {
     cs: '← → úhel · ↑ ↓ síla · mezerník palba',
@@ -87,11 +91,11 @@ const CONTROLS: Record<string, { cs: string; en: string; es?: string; pt?: strin
     fr: '← → angle · ↑ ↓ puissance · espace tire',
   },
   '/earth': {
-    cs: 'WASD pohyb · Q/W/E/R kouzla · G ward · 1–6 itemy',
-    en: 'WASD move · Q/W/E/R spells · G ward · 1–6 items',
-    es: 'WASD mover · Q/W/E/R hechizos · G barrera · 1–6 objetos',
-    pt: 'WASD mover · Q/W/E/R feitiços · G barreira · 1–6 itens',
-    fr: 'WASD bouger · Q/W/E/R sorts · G barrière · 1–6 objets',
+    cs: 'WASD pohyb · Q/F/E/R kouzla · G ward · 1–6 itemy',
+    en: 'WASD move · Q/F/E/R spells · G ward · 1–6 items',
+    es: 'WASD mover · Q/F/E/R hechizos · G barrera · 1–6 objetos',
+    pt: 'WASD mover · Q/F/E/R feitiços · G barreira · 1–6 itens',
+    fr: 'WASD bouger · Q/F/E/R sorts · G barrière · 1–6 objets',
   },
   '/multiplayer': {
     cs: 'vyber místnost nebo pozvi odkazem',
@@ -99,6 +103,13 @@ const CONTROLS: Record<string, { cs: string; en: string; es?: string; pt?: strin
     es: 'elige una sala o invita con un enlace',
     pt: 'escolhe uma sala ou convida por ligação',
     fr: 'choisis une salle ou invite par lien',
+  },
+  '/fleet': {
+    cs: 'W plyn · S brzda · A/D zatáčení · Q/E náklon · Shift boost',
+    en: 'W throttle · S brake · A/D turn · Q/E roll · Shift boost',
+    es: 'W acelerar · S frenar · A/D girar · Q/E alabear · Shift impulso',
+    pt: 'W acelerar · S travar · A/D virar · Q/E inclinar · Shift impulso',
+    fr: 'W gaz · S frein · A/D tourner · Q/E roulis · Shift boost',
   },
   '/avatars': {
     cs: 'klikni postavu · pak Uložit',

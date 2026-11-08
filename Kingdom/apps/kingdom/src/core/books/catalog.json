@@ -6,6 +6,12 @@
     "en": true
   },
   {
+    "id": "Elizabet",
+    "title": "ELIZABET — Kniha Orákula",
+    "tagline": "Kniha, ve které kámen odloží hlas a dítě ho nese dál — pokračování Království srdce",
+    "en": false
+  },
+  {
     "id": "Issobella",
     "title": "ISSOBELLA — Kniha Nebe",
     "tagline": "Orbitální stanice · Kvantový motor · Umělá gravitace · Posádka · Fond a slib — příběh a dokumentace vrstvy L6 pro 3.3 „Nirvana\"",
@@ -15,6 +21,12 @@
     "id": "KralovstviSrdce",
     "title": "KRÁLOVSTVÍ SRDCE",
     "tagline": "Co tato kniha je",
+    "en": false
+  },
+  {
+    "id": "beem",
+    "title": "KRÁLOVSTVÍ SRDCE — Beem edice",
+    "tagline": "Loď, která se ptá: „Co ještě?\"",
     "en": false
   },
   {

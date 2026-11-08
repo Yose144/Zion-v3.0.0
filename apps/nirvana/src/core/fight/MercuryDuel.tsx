@@ -60,7 +60,7 @@ export function MercuryDuel({
   watch?: string | null;
   onStats: (stats: DuelMpStats) => void;
 }) {
-  const { subscribe, sendInput, joinGame, spectateRoom, leaveRoom, youPlayerId, connected, rtt } = useNet();
+  const { subscribe, sendInput, joinGame, spectateRoom, leaveRoom, youPlayerId, spectator, connected, rtt } = useNet();
   const keys = useFightKeys(running);
 
   const self = useRef<Fighter>(emptyFighter());
@@ -139,10 +139,16 @@ export function MercuryDuel({
     return subscribe((message: ServerMessage) => {
       if (message.t === 'snapshot' && message.game === 'fight') {
         const players = message.players as unknown as FightPlayerState[];
-        const me = players.find((player) => player.id === youPlayerId);
-        const other = players.find((player) => player.id !== youPlayerId);
-        if (me) applyWire(me, true);
-        if (other) applyWire(other, false);
+        const watchingNow = Boolean(watch) || spectator;
+        if (watchingNow) {
+          if (players[0]) applyWire(players[0], true);
+          if (players[1]) applyWire(players[1], false);
+        } else {
+          const me = players.find((player) => player.id === youPlayerId);
+          const other = players.find((player) => player.id !== youPlayerId);
+          if (me) applyWire(me, true);
+          if (other) applyWire(other, false);
+        }
 
         const state = message.state ?? 'countdown';
         if (state === 'countdown' && hud.current.matchWinner !== null) {
@@ -171,7 +177,7 @@ export function MercuryDuel({
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subscribe, youPlayerId]);
+  }, [subscribe, youPlayerId, watch, spectator]);
 
   // ── debug háček pro headless testy (?duelDebug=1) ───────────────────
   useEffect(() => {
@@ -192,12 +198,19 @@ export function MercuryDuel({
     const dt = Math.min(0.05, delta);
     const now = Date.now();
 
-    // 1) vlastní predikce — týž krok co server, ale bez resolutních zásahů
-    stepFighter(self.current, foe.current, keys.current, dt);
+    const watching = Boolean(watch) || spectator;
+
+    // 1) vlastní predikce — týž krok co server, ale bez resolutních zásahů.
+    // Divák predikci nepočítá, bere polohy ze snapshotu.
+    if (!watching) stepFighter(self.current, foe.current, keys.current, dt);
 
     // 2) srovnání se serverem
     const anchor = serverSelf.current;
-    if (anchor) {
+    if (watching && anchor) {
+      self.current.x = anchor.x;
+      self.current.y = anchor.y;
+      self.current.vx = 0;
+    } else if (anchor) {
       const dx = anchor.x - self.current.x;
       const dy = anchor.y - self.current.y;
       if (Math.abs(dx) > SNAP_DISTANCE || Math.abs(dy) > 1) {
@@ -231,18 +244,20 @@ export function MercuryDuel({
       foeGroup.current.position.y += (foe.current.y - foeGroup.current.position.y) * k;
     }
 
-    // 5) vstup na server (20 Hz, `sendInput` omezuje sám)
-    const input: FightInput = keys.current;
-    sendInput({
-      forward: 0,
-      strafe: input.move,
-      yaw: 0,
-      pitch: 0,
-      jump: input.jump,
-      fire: input.punch || input.kick,
-      weapon: input.kick && !input.punch ? 1 : 0,
-      block: input.block,
-    });
+    // 5) vstup na server (20 Hz, `sendInput` omezuje sám). Divák ho neposílá.
+    if (!watching) {
+      const input: FightInput = keys.current;
+      sendInput({
+        forward: 0,
+        strafe: input.move,
+        yaw: 0,
+        pitch: 0,
+        jump: input.jump,
+        fire: input.punch || input.kick,
+        weapon: input.kick && !input.punch ? 1 : 0,
+        block: input.block,
+      });
+    }
 
     // 6) HUD — jedny čerstvá data pro `onStats` i pro debug háček
     const stats: DuelMpStats = {
