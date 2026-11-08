@@ -159,8 +159,11 @@ const browser = await puppeteer.launch({
 const tab = await browser.newPage();
 await tab.setViewport({ width: pageWidth, height: Math.min(pageHeight, 2000) });
 tab.on('pageerror', (error) => console.error('pageerror', error.message));
-await tab.goto(`${BASE}/.artifacts/avatar-3d/qa/_qa.html`);
+await tab.goto(`${BASE}/.artifacts/avatar-3d/qa/_qa.html`, { waitUntil: 'networkidle2' });
 await tab.waitForFunction('window.qaDone === true', { timeout: 180000 });
+// Jedno překreslení navíc: bez prodlevy se stávalo, že screenshot zachytil
+// prázdné plátno a všechny varianty měly identický PNG (2026-11-07).
+await new Promise((resolve) => setTimeout(resolve, 700));
 
 const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 const png = join(OUT, `${stamp}.png`);
