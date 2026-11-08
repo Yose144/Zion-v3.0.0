@@ -519,5 +519,9 @@ podle rychlosti GPU.
   trojúhelníků, 2–2,6 MB, 35–60 s na postavu, správné proporce, čitelné barvy.
   Decimace i rig jsou hotové (`--max-tris`, `rig.py`); **do hry nezapojeno**,
   protože chybí schválení podoby a animace chůze/útoku.
+- 2026-11-08: sweep šesti variant (§9c), vítěz MC 320 + textura 2048 → rignuto
+  a nasazeno v Nirvaně (`0.glb`). Přibyly `compare_variants.py` a balíček pro
+  PC — generace na GTX 1070 Ti má vlastní plán `PLAN_3D_AVATARI_1070TI.md`
+  (InstantMesh trasa A, TripoSR-CUDA trasa B, brány G0–G2).
 - Artefakty: `.artifacts/avatar-3d/stage/` (modely), `.artifacts/avatar-3d/qa/`
   (kontrolní listy), `.artifacts/krishna-triposr-pilot/` (první pokusy).
