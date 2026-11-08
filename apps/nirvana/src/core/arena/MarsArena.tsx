@@ -227,6 +227,9 @@ export function MarsArena({
   const pickupGroup = useRef<THREE.Group>(null);
 
   const lastStats = useRef('');
+  /** HUD stats stačí 10×/s — `timeLeft`/`respawnIn` jsou celé sekundy,
+   *  takže častější emit jen žere stringify a podněcuje zbytečné rendery. */
+  const statsClock = useRef(0);
   const xrHandle = useRef<XrHandle>({ firing: false, aim: null, forward: 0, strafe: 0 });
   const xrOrigin = useRef<THREE.Group>(null);
   const headDir = useMemo(() => new THREE.Vector3(), []);
@@ -778,22 +781,26 @@ export function MarsArena({
       });
     }
 
-    // ── HUD (posílat jen při změně) ──
-    const stats: ArenaStats = {
-      health: Math.max(0, Math.round(health.current)),
-      armor: Math.max(0, Math.round(armor.current)),
-      frags: frags.current,
-      deaths: deaths.current,
-      weapon: weapon.current,
-      ammo: weapon.current === 'mg' ? mgAmmo.current : weapon.current === 'rocket' ? ammo.current : 0,
-      botsAlive: bots.current.filter((bot) => bot.alive).length,
-      timeLeft: Math.ceil(timeLeft.current),
-      respawnIn: Math.max(0, Math.ceil((deadUntil.current - now) / 1000)),
-    };
-    const key = JSON.stringify(stats);
-    if (key !== lastStats.current) {
-      lastStats.current = key;
-      onStats(stats);
+    // ── HUD (posílat jen při změně, max 10×/s) ──
+    statsClock.current += delta;
+    if (statsClock.current >= 0.1) {
+      statsClock.current = 0;
+      const stats: ArenaStats = {
+        health: Math.max(0, Math.round(health.current)),
+        armor: Math.max(0, Math.round(armor.current)),
+        frags: frags.current,
+        deaths: deaths.current,
+        weapon: weapon.current,
+        ammo: weapon.current === 'mg' ? mgAmmo.current : weapon.current === 'rocket' ? ammo.current : 0,
+        botsAlive: bots.current.filter((bot) => bot.alive).length,
+        timeLeft: Math.ceil(timeLeft.current),
+        respawnIn: Math.max(0, Math.ceil((deadUntil.current - now) / 1000)),
+      };
+      const key = JSON.stringify(stats);
+      if (key !== lastStats.current) {
+        lastStats.current = key;
+        onStats(stats);
+      }
     }
   });
 

@@ -91,6 +91,9 @@ export function VenusMultiplayer({
   const previous = useRef<Snapshot | null>(null);
   const remoteRefs = useRef<(THREE.Group | null)[]>([]);
   const lastStats = useRef('');
+  /** HUD stats stačí 10×/s — snapshoty tečou 15×/s a `ping`/`speed`
+   *  semifluidní, takže bez throttlu by se stránka překreslovala každý frame. */
+  const statsClock = useRef(0);
   const camPos = useMemo(() => new THREE.Vector3(), []);
   const camTarget = useMemo(() => new THREE.Vector3(), []);
   const engine = useRef<LoopHandle | null>(null);
@@ -306,35 +309,39 @@ export function VenusMultiplayer({
       });
     }
 
-    // 6) HUD
-    const rows: MpRaceRow[] = (snapshot?.players ?? [])
-      .map((player) => ({
-        id: player.id,
-        name: player.name,
-        lap: player.lap,
-        finishedAtMs: player.finishedAtMs,
-      }))
-      .sort(byRacePlace);
+    // 6) HUD — stačí 10×/s, viz `statsClock`
+    statsClock.current += delta;
+    if (statsClock.current >= 0.1) {
+      statsClock.current = 0;
+      const rows: MpRaceRow[] = (snapshot?.players ?? [])
+        .map((player) => ({
+          id: player.id,
+          name: player.name,
+          lap: player.lap,
+          finishedAtMs: player.finishedAtMs,
+        }))
+        .sort(byRacePlace);
 
-    const leader = snapshot?.players.find((player) => player.id === rows[0]?.id);
-    const subject = watching ? leader : me;
-    const stats: MpRaceStats = {
-      speed: Math.round(Math.abs(subject?.speed ?? (watching ? 0 : craft.current.speed)) * 3.6),
-      lap: Math.min(LAPS, subject?.lap ?? (watching ? 0 : 1)),
-      laps: LAPS,
-      elapsed: snapshot?.raceSeconds ?? 0,
-      position: watching ? (rows.length ? 1 : 0) : Math.max(1, rows.findIndex((row) => row.id === youPlayerId) + 1),
-      total: rows.length,
-      standings: rows,
-      countdown: snapshot?.countdown ?? 0,
-      state: snapshot?.state ?? null,
-      connected,
-      ping: rtt,
-    };
-    const key = JSON.stringify(stats);
-    if (key !== lastStats.current) {
-      lastStats.current = key;
-      onStats(stats);
+      const leader = snapshot?.players.find((player) => player.id === rows[0]?.id);
+      const subject = watching ? leader : me;
+      const stats: MpRaceStats = {
+        speed: Math.round(Math.abs(subject?.speed ?? (watching ? 0 : craft.current.speed)) * 3.6),
+        lap: Math.min(LAPS, subject?.lap ?? (watching ? 0 : 1)),
+        laps: LAPS,
+        elapsed: snapshot?.raceSeconds ?? 0,
+        position: watching ? (rows.length ? 1 : 0) : Math.max(1, rows.findIndex((row) => row.id === youPlayerId) + 1),
+        total: rows.length,
+        standings: rows,
+        countdown: snapshot?.countdown ?? 0,
+        state: snapshot?.state ?? null,
+        connected,
+        ping: rtt,
+      };
+      const key = JSON.stringify(stats);
+      if (key !== lastStats.current) {
+        lastStats.current = key;
+        onStats(stats);
+      }
     }
   });
 

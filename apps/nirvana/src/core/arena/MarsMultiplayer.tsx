@@ -108,6 +108,8 @@ export function MarsMultiplayer({
   const rocketRefs = useRef<(THREE.Mesh | null)[]>([]);
   const pickupRefs = useRef<(THREE.Mesh | null)[]>([]);
   const lastStats = useRef('');
+  /** HUD stats stačí 10×/s — viz `VenusMultiplayer.statsClock`. */
+  const statsClock = useRef(0);
 
   const health = useRef(100);
   const armor = useRef(0);
@@ -426,36 +428,40 @@ export function MarsMultiplayer({
       sendInput(frame);
     }
 
-    // 7) HUD
-    const rows: MpPlayerRow[] = (snapshot?.players ?? [])
-      .map((player) => ({
-        id: player.id,
-        name: player.name || roster.current.get(player.id) || player.id.slice(0, 8),
-        frags: player.frags,
-        deaths: player.deaths,
-        alive: player.alive,
-      }))
-      .sort((a, b) => b.frags - a.frags || a.deaths - b.deaths);
+    // 7) HUD — stačí 10×/s, viz `statsClock`
+    statsClock.current += delta;
+    if (statsClock.current >= 0.1) {
+      statsClock.current = 0;
+      const rows: MpPlayerRow[] = (snapshot?.players ?? [])
+        .map((player) => ({
+          id: player.id,
+          name: player.name || roster.current.get(player.id) || player.id.slice(0, 8),
+          frags: player.frags,
+          deaths: player.deaths,
+          alive: player.alive,
+        }))
+        .sort((a, b) => b.frags - a.frags || a.deaths - b.deaths);
 
-    const stats: MpStats = {
-      health: Math.round(health.current),
-      armor: Math.round(armor.current),
-      frags: frags.current,
-      deaths: deaths.current,
-      weapon: weapon.current === 1 ? 'rocket' : weapon.current === 2 ? 'mg' : 'rail',
-      ammo: weapon.current === 1 || weapon.current === 2 ? ammo.current : 0,
-      botsAlive: rows.filter((row) => row.alive && row.id !== youPlayerId).length,
-      timeLeft: Math.round(timeLeft.current),
-      respawnIn: alive.current ? 0 : 1,
-      players: rows,
-      connected,
-      ping: rtt,
-      matchState: matchState.current,
-    };
-    const key = JSON.stringify(stats);
-    if (key !== lastStats.current) {
-      lastStats.current = key;
-      onStats(stats);
+      const stats: MpStats = {
+        health: Math.round(health.current),
+        armor: Math.round(armor.current),
+        frags: frags.current,
+        deaths: deaths.current,
+        weapon: weapon.current === 1 ? 'rocket' : weapon.current === 2 ? 'mg' : 'rail',
+        ammo: weapon.current === 1 || weapon.current === 2 ? ammo.current : 0,
+        botsAlive: rows.filter((row) => row.alive && row.id !== youPlayerId).length,
+        timeLeft: Math.round(timeLeft.current),
+        respawnIn: alive.current ? 0 : 1,
+        players: rows,
+        connected,
+        ping: rtt,
+        matchState: matchState.current,
+      };
+      const key = JSON.stringify(stats);
+      if (key !== lastStats.current) {
+        lastStats.current = key;
+        onStats(stats);
+      }
     }
   });
 

@@ -395,9 +395,12 @@ export default function FleetPage() {
             </div>
           )}
 
+          {/* V hledišti exit není — odchod řeší SpectatorBar. */}
+          {!watchId && (
           <button type="button" className="fleet-exit" onClick={leave}>
             ← {l('hangar')}
           </button>
+          )}
 
           {coarse && !watchId && (
             <>

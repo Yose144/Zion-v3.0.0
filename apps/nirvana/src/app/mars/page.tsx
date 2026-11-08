@@ -106,15 +106,6 @@ export default function MarsPage() {
     [cs],
   );
 
-  useEffect(() => {
-    if (phase !== 'playing') return;
-    const onEscape = () => {
-      // Esc jen uvolní myš; zápas běží dál, ať se dá vrátit
-    };
-    window.addEventListener('keydown', onEscape);
-    return () => window.removeEventListener('keydown', onEscape);
-  }, [phase]);
-
   const healthColor = stats.health > 60 ? '#7fe3d4' : stats.health > 25 ? '#ffd166' : '#ff7a6b';
 
   return (

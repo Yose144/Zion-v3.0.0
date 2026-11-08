@@ -7,6 +7,8 @@
 //
 // Spustit:  node apps/nirvana/e2e/mars-arena.mjs
 
+import { resolveExecutable } from './_browser.mjs';
+
 let chromium;
 try {
   ({ chromium } = await import('playwright'));
@@ -18,9 +20,10 @@ try {
 }
 
 const BASE = process.env.MARS_BASE ?? 'http://127.0.0.1:3010';
-const EXE =
-  process.env.CHROME_PATH ??
-  '/Users/yeshuae/.cache/puppeteer/chrome-headless-shell/mac_arm-156.0.8078.47/chrome-headless-shell-mac-arm64/chrome-headless-shell';
+// Spustitelný prohlížeč řeší sdílený resolver (CHROME_PATH → puppeteer
+// cache → systémový Chrome) — natvrdo macOS cesta se na jiném stroji
+// rozbije (stalo se 2026-11-08, cache se uklidila).
+const EXE = resolveExecutable();
 
 let failures = 0;
 const check = (name, ok, detail = '') => {

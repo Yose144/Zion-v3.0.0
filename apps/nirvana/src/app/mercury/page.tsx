@@ -205,6 +205,9 @@ export default function MercuryPage() {
 
       {phase === 'playing' && (
         <>
+          {/* V hledišti exit není — odchod řeší SpectatorBar (stejně jako
+              Mars/Venuše/Lumi). */}
+          {!watch && (
           <button
             type="button"
             className="duel-exit"
@@ -217,6 +220,7 @@ export default function MercuryPage() {
           >
             {l('menu')}
           </button>
+          )}
           <div className="duel-vr">
             <VrButton xr={{ store: xrStore, presenting }} className="arena-vr" />
           </div>

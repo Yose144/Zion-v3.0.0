@@ -72,6 +72,8 @@ export function MercurySolo({
   const clock = useRef(0);
   const restartAt = useRef<number | null>(null);
   const lastStats = useRef('');
+  /** HUD stats stačí 10×/s — viz `VenusMultiplayer.statsClock`. */
+  const statsClock = useRef(0);
   const selfGroup = useRef<Group>(null);
   const foeGroup = useRef<Group>(null);
   const sound = useRef(createDuelSound());
@@ -112,28 +114,32 @@ export function MercurySolo({
     if (selfGroup.current) selfGroup.current.position.set(active.a.x, active.a.y, 0);
     if (foeGroup.current) foeGroup.current.position.set(active.b.x, active.b.y, 0);
 
-    const winner =
-      active.phase === 'matchEnd'
-        ? active.a.wins > active.b.wins
-          ? 'self'
-          : 'foe'
-        : null;
+    statsClock.current += delta;
+    if (statsClock.current >= 0.1) {
+      statsClock.current = 0;
+      const winner =
+        active.phase === 'matchEnd'
+          ? active.a.wins > active.b.wins
+            ? 'self'
+            : 'foe'
+          : null;
 
-    const stats: DuelStats = {
-      round: active.round,
-      phase: active.phase,
-      timer: active.phase === 'fighting' ? Math.max(0, Math.ceil(active.timer)) : 0,
-      countdown: active.phase === 'countdown' ? Math.max(0, Math.ceil(active.timer)) : 0,
-      selfHp: active.a.hp,
-      foeHp: active.b.hp,
-      selfWins: active.a.wins,
-      foeWins: active.b.wins,
-      winner,
-    };
-    const key = JSON.stringify(stats);
-    if (key !== lastStats.current) {
-      lastStats.current = key;
-      onStats(stats);
+      const stats: DuelStats = {
+        round: active.round,
+        phase: active.phase,
+        timer: active.phase === 'fighting' ? Math.max(0, Math.ceil(active.timer)) : 0,
+        countdown: active.phase === 'countdown' ? Math.max(0, Math.ceil(active.timer)) : 0,
+        selfHp: active.a.hp,
+        foeHp: active.b.hp,
+        selfWins: active.a.wins,
+        foeWins: active.b.wins,
+        winner,
+      };
+      const key = JSON.stringify(stats);
+      if (key !== lastStats.current) {
+        lastStats.current = key;
+        onStats(stats);
+      }
     }
   });
 

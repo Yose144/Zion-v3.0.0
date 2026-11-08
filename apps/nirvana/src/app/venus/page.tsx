@@ -221,7 +221,9 @@ export default function VenusPage() {
         </div>
       )}
 
-      {phase === 'playing' && liveRows.length > 0 && (
+      {/* Sólo tabule jen bez MP — `stats.standings` zůstává z minulého
+          sólového závodu a v MP by se vykreslila druhá, překryvná tabule. */}
+      {phase === 'playing' && !mp && liveRows.length > 0 && (
         <ol className="race-board">
           {liveRows.map((row, index) => (
             <li key={row.id} className={row.isPlayer ? 'me' : undefined}>
@@ -269,6 +271,7 @@ export default function VenusPage() {
               <div className="arena-actions">
                 <button type="button" className="park-btn" onClick={() => {
                   unlock();
+                  setStats(EMPTY);
                   setPhase('playing');
                 }}>
                   {l('toGrid')}
@@ -279,6 +282,8 @@ export default function VenusPage() {
                   onClick={() => {
                     unlock();
                     setMp(true);
+                    setMpStats(null);
+                    setStats(EMPTY);
                     setPhase('playing');
                   }}
                 >
@@ -337,6 +342,7 @@ export default function VenusPage() {
               <div className="arena-actions">
                 <button type="button" className="park-btn" onClick={() => {
                   unlock();
+                  setStats(EMPTY);
                   setPhase('playing');
                 }}>
                   {l('again')}

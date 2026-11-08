@@ -194,6 +194,12 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   `duel-exit` (Merkur), `moba-link`→pick (Země), `fleet-exit` (Flotila),
   quit (Pouť), `onExit` (Saturn). **Nová hra bez exit tlačítka = uzavřená
   smyčka** — přidat `.game-exit` do HUD baru.
+- **`onStats` se emituje max 10×/s (`statsClock` + `delta`).** Scény počítají
+  stats v `useFrame` (60×/s); bez throttlu `JSON.stringify(stats)` + `setState`
+  překresloval celou stránku každý frame (Venuše: `gap` je float → lišty se
+  měnily pokaždé). V `?watch=` režimu exit tlačítka **nejsou** — jediný chrome
+  je `SpectatorBar`. Nová hra: wrapni emit do `statsClock.current += delta;
+  if (statsClock.current >= 0.1) { … }` a exit schovej za `!watch`.
 
 ### Planety jako vstupy do her (F1, 2026-11-01)
 

@@ -89,6 +89,9 @@ export function MercuryDuel({
   const selfGroup = useRef<Group>(null);
   const foeGroup = useRef<Group>(null);
   const lastStats = useRef('');
+  /** `onStats` stačí 10×/s — `hud.current` se plní každý frame (debug háček),
+   *  ale React state emituje zbytečně často, viz `VenusMultiplayer.statsClock`. */
+  const statsClock = useRef(0);
   const sound = useRef(createDuelSound());
 
   // avatary přijdou až se snapshotty — look se počítá při změně `avatarId`
@@ -274,10 +277,14 @@ export function MercuryDuel({
       foeIsBot: (foe.current.id ?? '').startsWith('bot-'),
     };
     hud.current = stats;
-    const key = JSON.stringify(stats);
-    if (key !== lastStats.current) {
-      lastStats.current = key;
-      onStats(stats);
+    statsClock.current += delta;
+    if (statsClock.current >= 0.1) {
+      statsClock.current = 0;
+      const key = JSON.stringify(stats);
+      if (key !== lastStats.current) {
+        lastStats.current = key;
+        onStats(stats);
+      }
     }
   });
 

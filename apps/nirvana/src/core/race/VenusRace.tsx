@@ -102,6 +102,9 @@ export function VenusRace({
   const clock = useRef(0);
   const keys = useRef(new Set<string>());
   const lastStats = useRef('');
+  /** Stats do HUD stačí 10×/s — tabule i pozice v `stats` semifluidní,
+   *  takže bez throttlu by se stránka překreslovala 60× za sekundu. */
+  const statsClock = useRef(0);
   const craftGroup = useRef<THREE.Group>(null);
   const rivalGroups = useRef<(THREE.Group | null)[]>([]);
   const camTarget = useMemo(() => new THREE.Vector3(), []);
@@ -272,24 +275,28 @@ export function VenusRace({
       group.rotation.y = rival.craft.heading;
     });
 
-    const rows = standings();
-    const position = Math.max(1, rows.findIndex((row) => row.id === PLAYER_ID) + 1);
-    const stats: RaceStats = {
-      speed: Math.round(Math.abs(car.speed) * 3.6),
-      lap: Math.min(LAPS, lap.lap),
-      laps: LAPS,
-      elapsed: state.started ? Math.round((now - state.startTime) / 100) / 10 : 0,
-      lastLap: lap.lastLap,
-      bestLap: lap.bestLap,
-      offTrack: state.offTrack,
-      started: state.started,
-      position,
-      standings: rows,
-    };
-    const key = JSON.stringify(stats);
-    if (key !== lastStats.current) {
-      lastStats.current = key;
-      onStats(stats);
+    statsClock.current += delta;
+    if (statsClock.current >= 0.1) {
+      statsClock.current = 0;
+      const rows = standings();
+      const position = Math.max(1, rows.findIndex((row) => row.id === PLAYER_ID) + 1);
+      const stats: RaceStats = {
+        speed: Math.round(Math.abs(car.speed) * 3.6),
+        lap: Math.min(LAPS, lap.lap),
+        laps: LAPS,
+        elapsed: state.started ? Math.round((now - state.startTime) / 100) / 10 : 0,
+        lastLap: lap.lastLap,
+        bestLap: lap.bestLap,
+        offTrack: state.offTrack,
+        started: state.started,
+        position,
+        standings: rows,
+      };
+      const key = JSON.stringify(stats);
+      if (key !== lastStats.current) {
+        lastStats.current = key;
+        onStats(stats);
+      }
     }
   });
 

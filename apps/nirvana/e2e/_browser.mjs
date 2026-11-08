@@ -33,6 +33,30 @@ export async function loadChromium() {
         return null;
       }
     }
+    // Globální instalace (nvm a pod.): `npm i -g playwright` — stejný fallback
+    // jako v mobile-audit.mjs, ať E2E běží i bez lokální závislosti.
+    const globalRoots = [];
+    try {
+      globalRoots.push(join(homedir(), '.nvm/versions/node'));
+    } catch {
+      /* ignore */
+    }
+    for (const root of globalRoots) {
+      try {
+        for (const ver of readdirSync(root)) {
+          const candidate = join(root, ver, 'lib/node_modules/playwright');
+          if (existsSync(candidate)) {
+            try {
+              return require(candidate).chromium;
+            } catch {
+              /* zkusíme další verzi */
+            }
+          }
+        }
+      } catch {
+        /* adresář neexistuje */
+      }
+    }
     return null;
   }
 }

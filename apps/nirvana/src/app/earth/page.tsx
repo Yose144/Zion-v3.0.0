@@ -363,7 +363,7 @@ export default function EarthPage() {
               {l('fullRoster')} ↗
             </Link>
           )}
-          {phase === 'playing' && (
+          {phase === 'playing' && !watch && (
             <button type="button" className="moba-link" onClick={() => setPhase('pick')}>
               {l('menu')}
             </button>

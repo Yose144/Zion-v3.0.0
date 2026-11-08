@@ -13,6 +13,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { resolveExecutable } from './_browser.mjs';
 
 let chromium;
 try {
@@ -27,9 +28,9 @@ try {
 }
 
 const BASE = process.env.PARK_BASE ?? 'http://127.0.0.1:3010';
-const EXE =
-  process.env.CHROME_PATH ??
-  '/Users/yeshuae/.cache/puppeteer/chrome-headless-shell/mac_arm-156.0.8078.47/chrome-headless-shell-mac-arm64/chrome-headless-shell';
+// Spustitelný prohlížeč řeší sdílený resolver — natvrdo macOS cesta
+// se na stroji bez puppeteer cache rozbije.
+const EXE = resolveExecutable();
 
 let failures = 0;
 const check = (name, ok, detail = '') => {

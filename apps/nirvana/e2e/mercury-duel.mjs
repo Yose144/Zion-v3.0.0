@@ -3,6 +3,8 @@
 // a appko `next start -p 3010` builduté s NEXT_PUBLIC_NIRVANA_NET_URL=ws://127.0.0.1:3011/net.
 //
 // Spustit:  node apps/nirvana/e2e/mercury-duel.mjs
+import { resolveExecutable } from './_browser.mjs';
+
 let chromium;
 try {
   ({ chromium } = await import('playwright'));
@@ -17,9 +19,9 @@ try {
 }
 
 const BASE = process.env.MERCURY_BASE ?? 'http://127.0.0.1:3010';
-const EXE =
-  process.env.CHROME_PATH ??
-  '/Users/yeshuae/.cache/puppeteer/chrome-headless-shell/mac_arm-156.0.8078.47/chrome-headless-shell-mac-arm64/chrome-headless-shell';
+// Spustitelný prohlížeč řeší sdílený resolver — natvrdo macOS cesta
+// se na stroji bez puppeteer cache rozbije.
+const EXE = resolveExecutable();
 
 let failures = 0;
 const check = (name, ok, detail = '') => {
