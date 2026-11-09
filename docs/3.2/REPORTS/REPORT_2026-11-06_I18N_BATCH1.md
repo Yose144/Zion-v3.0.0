@@ -2,7 +2,7 @@
 
 > **Zadání 👤 (2026-11-05):** „cely ecosystem by mel podporovat nativne prepinani 5 jazyku,
 > cz, en, sp, ptg, fr" + „jasny cestni cista ale preklady pak do jinych jazyku take".
-> **Plán:** [`docs/plans/I18N-5-LANGUAGES.md`](docs/plans/I18N-5-LANGUAGES.md).
+> **Plán:** [`docs/plans/I18N-5-LANGUAGES.md`](../../plans/I18N-5-LANGUAGES.md).
 > **Předchozí krok (infrastruktura):** `REPORT_2026-11-05_SESSION_2.md` §4.
 
 ---

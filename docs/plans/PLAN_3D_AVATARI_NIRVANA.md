@@ -2,7 +2,7 @@
 
 **Stav 2026-11-07: první experimentální busta Krishny, 0/202 schválených herních modelů.** Cílem je 202 individuálních, rozpoznatelných a herně použitelných postav podle oficiálních portrétů OASIS. Procedurální avatáři zůstávají náhradou, dokud není konkrétní model schválený. Nezaměňovat 2D portrét, generovaný návrh, statickou síť a hotový animovaný herní asset.
 
-**Reprodukovatelný postup výroby:** [`docs/3.2/AVATAR-3D-PIPELINE.md`](docs/3.2/AVATAR-3D-PIPELINE.md) — instalace, čtyři systémové opravy, příkazy, kvalitativní brána, rozpočet pro hru, zapojení do Nirvany a dávkový plán pro všech 202.
+**Reprodukovatelný postup výroby:** [`docs/3.2/AVATAR-3D-PIPELINE.md`](../3.2/AVATAR-3D-PIPELINE.md) — instalace, čtyři systémové opravy, příkazy, kvalitativní brána, rozpočet pro hru, zapojení do Nirvany a dávkový plán pro všech 202.
 
 **Plán pro GTX 1070 Ti (PC):** [`PLAN_3D_AVATARI_1070TI.md`](PLAN_3D_AVATARI_1070TI.md) — generace se přesouvá na CUDA (preferovaně InstantMesh = vícepohledová rekonstrukce), Mac zůstává na QA/rig/nasazení.
 

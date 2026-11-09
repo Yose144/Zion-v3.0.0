@@ -1,13 +1,13 @@
 # ZION TerraNova — Master Plan (v3.3 "Nirvana")
 
-> **Datum:** 2026-11-02
+> **Datum:** 2026-11-09
 > **Stupeň:** 3.2.0 Mainnet Beta → cíl 3.2.0 RC → 3.2.0 Mainnet Stable → 3.3.0 Nirvana
 > **Vstupní bod:** tento soubor je jediný aktivní plán v rootu. Detaily v `docs/3.2/`, `docs/3.3/`.
 > **Historie:** staré root MD plány přesunuty do `docs/3.3/`. Operativní pravidla v `AGENTS.md`.
 
 ---
 
-## 1. Aktuální stav (snapshot 2. 11. 2026)
+## 1. Aktuální stav (snapshot 9. 11. 2026)
 
 ### Infrastruktura
 - **EDGE2** (207.180.217.100) = primary node (9445) + web ingress + app stack (L2–L6)
@@ -23,11 +23,17 @@
 - **Clippy:** ~110 warnings (pool 32 test-only), fmt drift 25 souborů
 
 ### Dokumentace
-- Root MD: 18 souborů — 9 stálých (AGENTS, README, SECURITY, CODE_OF_CONDUCT, CONTRIBUTING, LICENSE, CHANGELOG, ROADMAP, REPO-MAP) + tento `PLAN.md` + 8 pracovních plánů/reportů, které sem nepatří (viz níže)
-- `docs/3.2/`: 316 souborů (status, plány, reporty — 178 v `REPORTS/`)
-- `docs/3.3/`: 26 souborů (přesunuté root plány + doc-vs-code analýza)
-- `docs/plans/`: 23 plánů (audit, infra, pool, Hiran, OASIS, ops console, vast)
-- **Nedokončený úklid rootu:** `NIRVANA-LUMI-PLAN.md`, `PLAN_3D_AVATARI_{1070TI,NIRVANA}.md`, `PLAN_OASIS_AVATAR_I18N.md`, `TRANSLATION-PLAN.md`, `UCETNICTVI-PLAN.md` jsou aktivní pracovní plány vedle tohoto souboru (mají jít do `docs/plans/`), `REPORT_2026-11-05_SESSION_2.md` + `REPORT_2026-11-06_I18N_BATCH1.md` patří do `docs/3.2/REPORTS/`, `qtcpool.md` je bez odkazu.
+- Root MD: **10 souborů** — 9 stálých (AGENTS, README, SECURITY, CODE_OF_CONDUCT, CONTRIBUTING, LICENSE, CHANGELOG, ROADMAP, REPO-MAP) + tento `PLAN.md`. **Úklid rootu dokončen 9. 11.** — 6 pracovních plánů → `docs/plans/` (`NIRVANA-LUMI-PLAN`, `PLAN_3D_AVATARI_{1070TI,NIRVANA}`, `PLAN_OASIS_AVATAR_I18N`, `TRANSLATION-PLAN`, `UCETNICTVI-PLAN`, `qtcpool`), 2 reporty → `docs/3.2/REPORTS/` (`REPORT_2026-11-05_SESSION_2`, `REPORT_2026-11-06_I18N_BATCH1`).
+- `docs/3.2/`: status, plány, reporty (kanonický stav `StatusV3.md`)
+- `docs/3.3/`: plány a mapy NIRVANY (rozcestník `README.md`)
+- `docs/plans/`: dílčí plány (audit, infra, pool, Hiran, OASIS, avatar 3D, účtovnictví, překlady, QTC)
+
+### Od snapshotu 2. 11. — dokončené
+- **OASIS avatáři:** 202/202 finálních portrétů, import + deploy web/OASIS API/OasisWeb/MarketPlace (11/9).
+- **ZION Archive EN:** 124 kapitol, 18/18 knih `enCoverage: 100` — pushnuto, **nedeployováno**.
+- **Lampion „Druhá lucerna":** flat-pack produkt + příběhová sekce na marketu i webu; cena 490 Kč / 70 560 ZION.
+- **Nirvana multiplayer:** `/fleet` (7 lodí z marketu) + `/lumi` coop; **opravena resume díra** v relay hrách (fleet/lumi entity po 12 s ticha už nemaže, jen uspí do ducha — `DORMANT_UNTIL`; `join()` na existujícím id oživí na místě). Deploy `zion-nirvana-net` release `20261109T144402Z`, health OK. Klientská část (FleetScene materiály, `bad_frame` na neznámou hru) jede s příštím deployem nirvana appky.
+- **i18n:** `Lang` = 5 jazyků napříč ekosystémem (F2 + dávky avatarů).
 
 ---
 

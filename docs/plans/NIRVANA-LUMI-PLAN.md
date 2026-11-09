@@ -4,9 +4,9 @@
 > Tento dokument je určený pro novou session jako **jediný vstupní bod**: co Lumi je, jak je
 > postavená, co je hotové a ověřené, co je dluh a jak se to měří.
 >
-> Sesterské dokumenty: [`apps/nirvana/AGENTS.md`](apps/nirvana/AGENTS.md) (pravidla a pasti),
-> [`docs/3.2/REPORTS/REPORT_2026-11-04_NIRVANA_SOUND_VR_PROGRESS.md`](docs/3.2/REPORTS/REPORT_2026-11-04_NIRVANA_SOUND_VR_PROGRESS.md)
-> (report, §8e–8f), [`NIRVANA-SHELL.md`](docs/3.2/NIRVANA-SHELL.md) (okna a portály).
+> Sesterské dokumenty: [`apps/nirvana/AGENTS.md`](../../apps/nirvana/AGENTS.md) (pravidla a pasti),
+> [`docs/3.2/REPORTS/REPORT_2026-11-04_NIRVANA_SOUND_VR_PROGRESS.md`](../3.2/REPORTS/REPORT_2026-11-04_NIRVANA_SOUND_VR_PROGRESS.md)
+> (report, §8e–8f), [`NIRVANA-SHELL.md`](../3.2/NIRVANA-SHELL.md) (okna a portály).
 
 ---
 
