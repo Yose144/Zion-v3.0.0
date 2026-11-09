@@ -89,7 +89,7 @@ def main() -> int:
         for name in SCRIPTS:
             add(REPO / "scripts/ops/avatar-3d" / name, f"scripts/{name}")
         add(REPO / "docs/3.2" / "AVATAR-3D-PIPELINE.md", "docs/AVATAR-3D-PIPELINE.md")
-        add(REPO / "PLAN_3D_AVATARI_1070TI.md", "PLAN_3D_AVATARI_1070TI.md")
+        add(REPO / "docs/plans" / "PLAN_3D_AVATARI_1070TI.md", "PLAN_3D_AVATARI_1070TI.md")
         add(REPO / INPUT_ZIP, "inputs/" + Path(INPUT_ZIP).name)
         add(REPO / ROSTER, "roster/avatars.json")
         add(REPO / "scripts/ops/avatar-3d" / README, "PC-README.md")

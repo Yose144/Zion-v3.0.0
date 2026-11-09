@@ -21,10 +21,14 @@ Automat nespouští žádný krok mimo brány uvedené níže.
 
 ## 0b. Stav pilotu (2026-11-08)
 
-- **M1 dávka 01:** 25/25 modelů vygenerováno (MC 320 + textura 2048) a 25/25
-  rignuto (`rig.py`, 17 kloubů + idle). QA hotová: CLIP průměr **0,600**,
-  medián 0,614; nejlepší Issobela 0,678, nejslabší Panna Maria 0,449.
-  Kontrolní listy: `.artifacts/avatar-3d/batch-01/qa-{1,2,3}/`. Do hry zatím nic.
+- **M1 série 01–03 (hotovo 2026-11-09):** tři dávky, **74 modelů** vygenerováno
+  a rignuto (MC 320 + textura 2048, 15k tris) s QA a CLIP:
+  dávka 01 **25/25** (CLIP 0,600), dávka 02 **24/24** (0,624), dávka 03 **25/25**
+  (0,627). Manifesty: `.artifacts/avatar-3d/batch-0{1,2,3}/manifest.json`,
+  kontrolní listy `qa-1..3/`. Do hry zatím nic — čeká na schválení podoby.
+- **Výjimky série:** 037 Gándhí nemá list (generátor odmítl; jen originál a
+  zadání), 055 Hunahpú & Xbalanqué jsou dvě postavy v jednom listu (bez rigu),
+  044 Hiranyagarbha je artefakt (bez rigu).
 - **TRELLIS.2 pilot (Krišna):** ověřen přes oficiální HF Space — kvalitativně
   jasně lepší (CLIP průměr **0,688** vs 0,569 M1; anatomicky správná postava).
   Detail v `docs/3.2/AVATAR-3D-PIPELINE.md` §9d.
