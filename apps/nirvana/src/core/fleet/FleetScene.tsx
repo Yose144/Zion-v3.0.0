@@ -310,8 +310,15 @@ function RemoteFleet({ remotes }: { remotes: React.MutableRefObject<RemotePilot[
           const mesh = child as THREE.Mesh;
           if (!mesh.isMesh) return;
           const material = mesh.material as THREE.MeshStandardMaterial;
+          // Původní opacity/transparent si zapamatujeme — motorové trysky
+          // mají vlastní hodnoty (0,5 / 0,95) a po oživení se nesmí
+          // překreslit na 1.
+          if (material.userData.fleetOpacity === undefined) {
+            material.userData.fleetOpacity = material.opacity;
+            material.userData.fleetTransparent = material.transparent;
+          }
           material.transparent = true;
-          material.opacity = fade;
+          material.opacity = (material.userData.fleetOpacity as number) * fade;
         });
       } else if (ghosts.current.delete(pilot.id)) {
         group.scale.setScalar(1);
@@ -319,8 +326,8 @@ function RemoteFleet({ remotes }: { remotes: React.MutableRefObject<RemotePilot[
           const mesh = child as THREE.Mesh;
           if (!mesh.isMesh) return;
           const material = mesh.material as THREE.MeshStandardMaterial;
-          material.transparent = false;
-          material.opacity = 1;
+          material.transparent = (material.userData.fleetTransparent as boolean) ?? false;
+          material.opacity = (material.userData.fleetOpacity as number) ?? 1;
         });
       }
     }

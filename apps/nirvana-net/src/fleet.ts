@@ -21,10 +21,18 @@ import { SHIPS } from '../../nirvana/src/core/fleet/ships.js';
 
 /** Hranice letového prostoru — stejné číslo jako `WORLD_RADIUS` v simulaci. */
 const WORLD_RADIUS = 34;
-/** Po jaké době bez zprávy pilota schováme (ms). */
-const IDLE_MS = 12_000;
+/** Po jaké době bez zprávy pilota usne do ducha (ms). */
+const IDLE_MS = Number(process.env.NIRVANA_NET_RELAY_IDLE_MS ?? 12_000);
 /** Jak dlouho po odchodu zůstane duch (ms). */
 const GHOST_MS = 3_000;
+/**
+ * Ticho (skrytá karta, výpadek sítě) **není odchod** — sedlo v místnosti
+ * pořád drží, ať už je socket otevřený, nebo běží resume grace. Proto
+ * entity po `IDLE_MS` jen „usne" do ducha na neurčito: `flight` ho zase
+ * oživí a `leave()` (skutečný odchod) mu `ghostUntil` zkrátí na `GHOST_MS`,
+ * takže `step` ho pak normálně smaže. `MAX_SAFE_INTEGER` = „do odchodu".
+ */
+const DORMANT_UNTIL = Number.MAX_SAFE_INTEGER;
 
 const SHIP_IDS = new Set(SHIPS.map((ship) => ship.id));
 /**
@@ -96,6 +104,22 @@ export function createFleetMatch(now: number): Match {
     join(id: string, seat: MatchSeat) {
       // Nejdřív loď: sedlo ji nese z `join`, `shipId` z `MatchSeat` rozšířením.
       const wanted = (seat as MatchSeat & { shipId?: string }).shipId;
+      const existing = pilots.get(id);
+      if (existing) {
+        /**
+         * Rejoin po resume (`joinRoom` dělá `leave` + `join` na stejném id):
+         * pilot už v místnosti je — většinou duch po výpadku. Oživíme ho
+         * **na místě**: pozice, natočení i dok zůstávají, obnoví se jen
+         * identita a loď (a jen když ji klient tentokrát poslal).
+         */
+        existing.name = seat.name;
+        existing.avatarId = seat.avatarId ?? null;
+        if (wanted && SHIP_IDS.has(wanted)) existing.shipId = wanted;
+        existing.ghostUntil = 0;
+        existing.dockConflict = undefined;
+        existing.seenAt = Date.now();
+        return;
+      }
       const shipId = wanted && SHIP_IDS.has(wanted) ? wanted : 'xwing';
       const offset = pilots.size * 1.4;
       pilots.set(id, {
@@ -132,7 +156,8 @@ export function createFleetMatch(now: number): Match {
           if (now > pilot.ghostUntil) pilots.delete(id);
           continue;
         }
-        if (now - pilot.seenAt > IDLE_MS) pilots.delete(id);
+        // Ticho ≠ odchod: sedlo pořád drží, takže entity jen usne do ducha.
+        if (now - pilot.seenAt > IDLE_MS) pilot.ghostUntil = DORMANT_UNTIL;
       }
     },
 
@@ -156,7 +181,12 @@ export function createFleetMatch(now: number): Match {
         fleet: {
           // Obsazená kotviště — klient je ukáže v HUD, aby člověk letěl
           // na volné a ne aby se dozvěděl až odmítnutím.
-          occupied: [...new Set([...pilots.values()].filter((p) => p.docked && p.dockId).map((p) => p.dockId!))],
+          occupied: [
+            ...new Set(
+              // Duch kotviště nedrží — stejně jako u kontroly konfliktu.
+              [...pilots.values()].filter((p) => !p.ghostUntil && p.docked && p.dockId).map((p) => p.dockId!),
+            ),
+          ],
           ...(me?.dockConflict ? { conflict: me.dockConflict } : {}),
           // Vlastní stav klient nepotřebuje — predikuje si ho sám.
           pilots: [...pilots.values()]

@@ -184,7 +184,6 @@ function log(line: string): void {
 function send(conn: Conn, message: ServerMessage): void {
   // hráč na reconnectu sedlo pořád drží, ale socket je pryč
   if (conn.socket.readyState !== WebSocket.OPEN) return;
-  if (conn.socket.readyState !== WebSocket.OPEN) return;
   conn.socket.send(encodeMessage(message));
   stats.messagesOut += 1;
 }

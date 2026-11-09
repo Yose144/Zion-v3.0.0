@@ -662,20 +662,23 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         resume: typeof message.resume === 'string' ? message.resume.slice(0, 64) : undefined,
       };
 
-    case 'join':
+    case 'join': {
+      // neznámá hra nesmí tiše skončit v aréně — buď je v seznamu, nebo join propadne
+      const game = message.game;
+      if (
+        game !== 'arena' &&
+        game !== 'race' &&
+        game !== 'fight' &&
+        game !== 'moba' &&
+        game !== 'tanks' &&
+        game !== 'lumi' &&
+        game !== 'fleet'
+      ) {
+        return null;
+      }
       return {
         t: 'join',
-        // neznámá hra nesmí tiše skončit v aréně — buď je v seznamu, nebo join propadne
-        game:
-          message.game === 'race' ||
-          message.game === 'fight' ||
-          message.game === 'moba' ||
-          message.game === 'tanks' ||
-          message.game === 'lumi' ||
-          message.game === 'fleet' ||
-          message.game === 'arena'
-            ? (message.game as GameId)
-            : 'arena',
+        game,
         room: typeof message.room === 'string' ? message.room.slice(0, 32) : undefined,
         mode: message.mode === 'humans' ? 'humans' : message.mode === 'bots' ? 'bots' : undefined,
         heroId: typeof message.heroId === 'number' ? num(message.heroId, 0, 202) : undefined,
@@ -693,6 +696,7 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         shipId: typeof message.shipId === 'string' ? message.shipId.slice(0, 24) : undefined,
         spectate: message.spectate === true ? true : undefined,
       };
+    }
 
     case 'leave':
       return { t: 'leave' };

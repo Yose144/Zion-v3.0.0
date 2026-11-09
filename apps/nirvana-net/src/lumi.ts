@@ -50,10 +50,19 @@ interface Flyer {
 }
 
 const SPAWN = { x: 10, y: 12 };
-/** Po jak dlouhé době bez zprávy letce schováme z obrazovky. */
-const IDLE_MS = 12_000;
+/** Po jak dlouhé době bez zprávy letce usne do ducha (ms). */
+const IDLE_MS = Number(process.env.NIRVANA_NET_RELAY_IDLE_MS ?? 12_000);
 /** Jak dlouho po odchodu zůstane na obloze duch (ms). */
 const GHOST_MS = 3_000;
+/**
+ * Ticho (skrytá karta, výpadek sítě) **není odchod** — sedlo v místnosti
+ * pořád drží, ať už je socket otevřený, nebo běží resume grace. Proto
+ * entity po `IDLE_MS` jen „usne" do ducha na neurčito: `fly`/`handoff` ho
+ * zase oživí a `leave()` (skutečný odchod) mu `ghostUntil` zkrátí na
+ * `GHOST_MS`, takže `step` ho pak normálně smaže. `MAX_SAFE_INTEGER` =
+ * „do odchodu".
+ */
+const DORMANT_UNTIL = Number.MAX_SAFE_INTEGER;
 /** Kolik světel má cesta (stejné číslo jako v klientovi). */
 const TOTAL_LIGHTS = 7;
 
@@ -82,6 +91,19 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
     path: () => path,
 
     join(id: string, seat: MatchSeat) {
+      const existing = flyers.get(id);
+      if (existing) {
+        /**
+         * Rejoin po resume (`joinRoom` dělá `leave` + `join` na stejném id):
+         * letec už v místnosti je — většinou duch po výpadku. Oživíme ho
+         * **na místě**: pozice, energie i sebraná světla zůstávají.
+         */
+        existing.name = seat.name;
+        existing.avatarId = seat.avatarId ?? null;
+        existing.ghostUntil = 0;
+        existing.seenAt = Date.now();
+        return;
+      }
       // Cestu určuje první, kdo místnost založí; pozdější se přidají.
       const wanted = (seat as MatchSeat & { path?: LumiPath }).path;
       if (wanted && flyers.size === 0) path = wanted;
@@ -120,7 +142,8 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
           if (now > flyer.ghostUntil) flyers.delete(id);
           continue;
         }
-        if (now - flyer.seenAt > IDLE_MS) flyers.delete(id);
+        // Ticho ≠ odchod: sedlo pořád drží, takže entity jen usne do ducha.
+        if (now - flyer.seenAt > IDLE_MS) flyer.ghostUntil = DORMANT_UNTIL;
       }
 
       // Předání světla: dárce musí světlo mít, cíl je **nejbližší jiný letec**.
@@ -198,6 +221,10 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
       const flyer = flyers.get(id);
       if (!flyer) return false;
 
+      // Vrátil se (reconnect, schovaná karta) — je zase živý, ať už píše
+      // `fly` nebo `handoff`.
+      if (flyer.ghostUntil) flyer.ghostUntil = 0;
+
       // Předání světla (L-6): jen když ho opravdu má; cíl vybere `step`.
       if (message.t === 'handoff') {
         const light = Math.round(message.light);
@@ -208,9 +235,6 @@ export function createLumiMatch(now: number): Match & { path: () => LumiPath } {
       }
 
       if (message.t !== 'fly') return false;
-
-      // Vrátil se dřív, než duch vypršel (reconnect) — je zase živý.
-      if (flyer.ghostUntil) flyer.ghostUntil = 0;
 
       flyer.x = message.x;
       flyer.y = message.y;
