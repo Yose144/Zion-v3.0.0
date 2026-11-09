@@ -51,6 +51,10 @@ def ensure_static(port: int = 8769) -> None:
     raise SystemExit("statický server na :8769 se nepodařilo spustit")
 
 
+# Postavy, u kterých rig nedává smysl (artefakt / dvě postavy v jednom listu).
+SPECIAL = {"044": "artefakt", "055": "dvě postavy v jednom listu"}
+
+
 def chunks(items: list[str], size: int) -> list[list[str]]:
     return [items[i : i + size] for i in range(0, len(items), size)]
 
@@ -61,6 +65,7 @@ def main() -> int:
     parser.add_argument("batches", nargs="+")
     parser.add_argument("--chunk", type=int, default=9)
     args = parser.parse_args()
+    args.root = args.root.resolve()
 
     roster = {
         str(a["id"]).zfill(3): a.get("name", "?")
@@ -86,7 +91,7 @@ def main() -> int:
         for avatar in ids:
             rigged = stage / avatar / f"{avatar}-rigged.glb"
             raw = stage / avatar / f"{avatar}.glb"
-            source = rigged if rigged.is_file() else raw
+            source = raw if avatar in SPECIAL else (rigged if rigged.is_file() else raw)
             if not source.is_file():
                 continue
             target = game / avatar
@@ -152,7 +157,7 @@ def main() -> int:
         for avatar in ids:
             rigged = stage / avatar / f"{avatar}-rigged.glb"
             raw = stage / avatar / f"{avatar}.glb"
-            source = rigged if rigged.is_file() else raw
+            source = raw if avatar in SPECIAL else (rigged if rigged.is_file() else raw)
             tris = None
             if source.is_file():
                 try:
@@ -167,7 +172,8 @@ def main() -> int:
                     "id": avatar,
                     "name": roster.get(avatar, "?"),
                     "model": str(source.relative_to(REPO)) if source.is_file() else None,
-                    "rigged": rigged.is_file(),
+                    "rigged": rigged.is_file() and avatar not in SPECIAL,
+                    "special": SPECIAL.get(avatar),
                     "tris": tris,
                     "bytes": source.stat().st_size if source.is_file() else None,
                     "clip": scores.get(avatar),
