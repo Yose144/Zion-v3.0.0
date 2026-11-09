@@ -579,6 +579,29 @@ M1 model je „rozteklý plášť“. Cena: Space zdarma (kvóta), inference 54 
 (`scripts/ops/avatar-3d/vast/trellis-setup.sh`) a projet 3 piloty s exportem
 30k/2048 přímo (bez Space limitu 100k).
 
+### 9e. Provozní poznatky vast.ai (2026-11-09)
+
+- **Kredit.** Při vyčerpání kreditu vast.ai instanci sám zruší (a API vrátí
+  `400 Your account lacks credit`). Exited instance už nejde nahodit, když host
+  nemá volnou GPU („Required resources are currently unavailable").
+- **Destroy vyžaduje potvrzení.** `vastai destroy instance <id>` se ptá
+  `[y/N]`; v automatizaci použít `yes y | vastai destroy instance <id>`.
+- **Cena a časy (4090 24 GB):** ~$0,39/h. TRELLIS.2 setup (CUDA rozšíření +
+  16 GB vah) ~25 min; Hunyuan3D-2.1 setup + 14 GB vah ~20 min.
+- **Hunyuan3D-2.1 na 4090:** shape **27–30 s** na postavu, PBR textura
+  **148–221 s**. Paint pipeline potřebuje ~21 GB VRAM, proto **jedna postava
+  na proces** (`hunyuan-paint-loop.sh`) — jinak hrozí OOM.
+- **Závislosti Hunyuanu, které v `requirements.txt` nefungují na py3.11:**
+  `bpy==4.0` (instalovat `4.2.0`), `basicsr` (patch
+  `functional_tensor` → `functional`), `pybind11` (pro `mesh_inpaint_processor`),
+  systémové `libsm6/libxext6/libxrender1/libxi6/libxkbcommon0` pro `bpy`,
+  a Real-ESRGAN checkpoint **do `ckpt/` i `hy3dpaint/ckpt/`**. Vše řeší
+  `scripts/ops/avatar-3d/vast/hunyuan-setup2.sh`.
+- **Pilot 2026-11-09:** 3 ze 4 Hunyuan modelů se vytexturovaly, ale instance
+  byla zrušena vyčerpáním kreditu dřív, než šly stáhnout — výstupy ztraceny.
+  Není to chyba modelu; po dobití kreditu opakovat s `hunyuan-setup2.sh`
+  a stahovat **průběžně** (ne až na konci).
+
 ## 11. Stav a historie
 
 - 2026-11-07: první pokus (portrét) → busta, rozbitá orientace a povrch.

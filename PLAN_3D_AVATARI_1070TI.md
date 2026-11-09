@@ -33,7 +33,12 @@ Automat nespouští žádný krok mimo brány uvedené níže.
   kvótu 1 běh).
 - **Po schválení:** pronajmout 4090, spustit `scripts/ops/avatar-3d/vast/trellis-setup.sh`,
   projet 003 a 051 + export 30k/2048 (Space má minimum decimace 100k).
-- Náklady pilotu: ~0,15 USD (vast.ai instance zrušena, 0 běžících instancí).
+- Náklady pilotu: **~4 USD** (dvě 4090 instance; druhá běžela omylem ~10 h —
+  vast ji zrušil až po vyčerpání kreditu). Nyní 0 instancí a **kredit vyčerpán**:
+  další GPU běh vyžaduje dobití (řádově $5–10 stačí na celou dávku 202).
+- **Hunyuan3D-2.1** odzkoušen funkčně (shape 27–30 s, textura 148–221 s), ale
+  výstupy se ztratily při zrušení instance; setup je hotový a opakovatelný
+  (`scripts/ops/avatar-3d/vast/hunyuan-setup2.sh`).
 
 ## 1. Výchozí fakta (naměřená, ne odvozená)
 
