@@ -4,7 +4,7 @@
 //! HTTP stack while covering the essential node operations.
 
 use std::collections::{HashMap, HashSet};
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -421,6 +421,7 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
         "getStatus" => get_chain_info(node).await,
         "getNodeInfo" => get_node_info(node).await,
         "getPeerInfo" => get_peer_info(node).await,
+        "unbanPeer" => unban_peer(node, &params).await,
         "getAdminUnlocks" => get_admin_unlocks(node).await,
         _ => Ok(error_response(
             id.clone(),
@@ -640,6 +641,29 @@ async fn get_peer_info(node: &Node) -> Result<Value, NodeError> {
         "active": connected.iter().map(|p| json!({ "address": p.to_string() })).collect::<Vec<_>>(),
         "active_count": connected.len(),
     }))
+}
+
+/// Parse an operator-supplied peer address (`192.0.2.1` or `192.0.2.1:8335`).
+fn parse_peer_ip(raw: &str) -> Result<IpAddr, NodeError> {
+    raw.parse()
+        .or_else(|_| raw.parse::<SocketAddr>().map(|addr| addr.ip()))
+        .map_err(|_| NodeError::Address(format!("invalid peer address: {raw}")))
+}
+
+/// Lift a P2P ban so an operator can recover a node without restarting it.
+///
+/// Bans are in-memory only, so before this existed the only way to clear one
+/// was a full node restart — which is exactly the wrong trade during an
+/// incident. Accepts `192.0.2.1` or `192.0.2.1:8335`.
+async fn unban_peer(node: &Node, params: &Value) -> Result<Value, NodeError> {
+    let raw = params
+        .get("address")
+        .or_else(|| params.get(0))
+        .and_then(Value::as_str)
+        .ok_or_else(|| NodeError::Address("address required".to_string()))?;
+    let ip = parse_peer_ip(raw)?;
+    let unbanned = node.peer_manager.unban(ip).await;
+    Ok(json!({ "address": ip.to_string(), "unbanned": unbanned }))
 }
 
 async fn get_utxos(node: &Node, params: &Value) -> Result<Value, NodeError> {
@@ -1236,6 +1260,7 @@ impl RpcRouter {
             "getBlockTemplate",
             "getMempoolInfo",
             "getPeerInfo",
+            "unbanPeer",
             "getChainInfo",
             "getNodeInfo",
             "submitBlock",
@@ -1342,6 +1367,20 @@ mod tests {
     use crate::v31_wallet::{build_send, SpendableUtxo};
 
     use super::dispatch_request;
+
+    /// `unbanPeer` accepts both `ip` and `ip:port`; anything else must be a
+    /// typed error rather than a panic or a silent no-op.
+    #[test]
+    fn parse_peer_ip_accepts_bare_and_socket_addresses() {
+        use super::parse_peer_ip;
+        use std::net::IpAddr;
+
+        let expected: IpAddr = "62.171.141.136".parse().unwrap();
+        assert_eq!(parse_peer_ip("62.171.141.136").unwrap(), expected);
+        assert_eq!(parse_peer_ip("62.171.141.136:8336").unwrap(), expected);
+        assert!(parse_peer_ip("not-an-address").is_err());
+        assert!(parse_peer_ip("").is_err());
+    }
 
     /// Mine a block, submit a spend transaction, and verify that
     /// `getMempoolTransactions` returns the pending transaction with fee,

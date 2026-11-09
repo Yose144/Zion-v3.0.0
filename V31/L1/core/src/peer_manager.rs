@@ -63,6 +63,11 @@ pub struct PeerManager {
     peers: Arc<Mutex<HashMap<SocketAddr, PeerInfo>>>,
     banned: Arc<Mutex<HashMap<IpAddr, BanInfo>>>,
     active: Arc<Mutex<HashSet<SocketAddr>>>,
+    /// Operator-configured peers (`--peer`). They are never banned: a seed that
+    /// stops answering is an operational problem, not an attack. Banning a seed
+    /// deadlocks the cluster — both sides ban each other's IP and `can_accept`
+    /// then rejects every inbound connection, with no unban path but a restart.
+    seed_ips: Arc<Mutex<HashSet<IpAddr>>>,
 }
 
 impl PeerManager {
@@ -76,6 +81,7 @@ impl PeerManager {
             peers: Arc::new(Mutex::new(HashMap::new())),
             banned: Arc::new(Mutex::new(HashMap::new())),
             active: Arc::new(Mutex::new(HashSet::new())),
+            seed_ips: Arc::new(Mutex::new(HashSet::new())),
         }
     }
 
@@ -90,10 +96,11 @@ impl PeerManager {
         *self.local_addr.lock().unwrap_or_else(|e| e.into_inner()) = Some(addr);
     }
 
-    /// Return true if the IP is currently banned (loopback is never banned).
+    /// Return true if the IP is currently banned (loopback and seed IPs are
+    /// never banned).
     pub async fn is_banned(&self, addr: SocketAddr) -> bool {
         let ip = addr.ip();
-        if ip.is_loopback() {
+        if ip.is_loopback() || self.is_seed_ip(ip) {
             return false;
         }
         let mut banned = self.banned.lock().unwrap_or_else(|e| e.into_inner());
@@ -104,6 +111,30 @@ impl PeerManager {
             banned.remove(&ip);
         }
         false
+    }
+
+    /// Register an operator-configured seed IP. Idempotent.
+    pub async fn add_seed_ip(&self, addr: SocketAddr) {
+        self.seed_ips
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(addr.ip());
+    }
+
+    fn is_seed_ip(&self, ip: IpAddr) -> bool {
+        self.seed_ips
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .contains(&ip)
+    }
+
+    /// Lift the ban for `ip`. Returns true when a ban was actually removed.
+    pub async fn unban(&self, ip: IpAddr) -> bool {
+        self.banned
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(&ip)
+            .is_some()
     }
 
     /// Check whether an inbound connection should be accepted.
@@ -142,52 +173,78 @@ impl PeerManager {
     }
 
     /// Record a successful interaction with a peer.
+    ///
+    /// Success also clears the accumulated bad score and lifts an active ban:
+    /// a peer that just answered is demonstrably reachable, so keeping it
+    /// banned would only keep the two nodes from ever reconnecting.
     pub async fn record_good(&self, addr: SocketAddr) {
-        let mut peers = self.peers.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(info) = peers.get_mut(&addr) {
-            info.good += 1;
-            info.last_seen = Instant::now();
+        {
+            let mut peers = self.peers.lock().unwrap_or_else(|e| e.into_inner());
+            if let Some(info) = peers.get_mut(&addr) {
+                info.good += 1;
+                info.bad = 0;
+                info.last_seen = Instant::now();
+            }
+        }
+        let ip = addr.ip();
+        if !ip.is_loopback() {
+            self.banned
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .remove(&ip);
         }
     }
 
-    /// Record a bad interaction. If the peer exceeds the ban threshold, it is
-    /// banned for the configured duration. Loopback is never banned.
+    /// Record a bad interaction. If the peer reaches the ban threshold, its IP
+    /// is banned for the configured duration. Loopback and seed IPs are never
+    /// banned.
+    ///
+    /// The score accumulates even for addresses that are not (yet) in the known
+    /// set. Banning an unknown address on a single failure used to be enough to
+    /// take a whole cluster down: the seed sync loop records one failure every
+    /// 30 s, and because a banned peer is never re-added, each attempt landed in
+    /// this branch and re-banned the operator's own peer for another hour.
     pub async fn record_bad(&self, addr: SocketAddr, score: u32) {
         let ip = addr.ip();
-        if ip.is_loopback() {
+        if ip.is_loopback() || self.is_seed_ip(ip) {
             return;
         }
         let mut peers = self.peers.lock().unwrap_or_else(|e| e.into_inner());
         let mut banned = self.banned.lock().unwrap_or_else(|e| e.into_inner());
 
-        if let Some(info) = peers.get_mut(&addr) {
-            info.bad += score;
-            if info.bad >= self.ban_threshold {
-                let until = Instant::now() + self.ban_duration;
-                warn!(%addr, %ip, until = ?self.ban_duration, "banning peer");
-                banned.insert(
-                    ip,
-                    BanInfo {
-                        until,
-                        score: info.bad,
-                    },
-                );
-                peers.remove(&addr);
-            }
-        } else {
-            // Peer not in known set but misbehaving; ban the IP quickly.
+        let ban_now = {
+            let info = peers.entry(addr).or_insert(PeerInfo {
+                source: PeerSource::Inbound,
+                last_seen: Instant::now(),
+                good: 0,
+                bad: 0,
+            });
+            info.bad = info.bad.saturating_add(score);
+            info.last_seen = Instant::now();
+            info.bad >= self.ban_threshold
+        };
+
+        if ban_now {
+            let bad = peers.get(&addr).map(|info| info.bad).unwrap_or(score);
+            warn!(%addr, %ip, until = ?self.ban_duration, "banning peer");
             banned.insert(
                 ip,
                 BanInfo {
                     until: Instant::now() + self.ban_duration,
-                    score,
+                    score: bad,
                 },
             );
+            peers.remove(&addr);
         }
     }
 
     /// Add a peer to the known set if it is not banned.
     pub async fn add_known(&self, addr: SocketAddr, source: PeerSource) {
+        // Register seeds before the ban check: a seed must stay a seed even if
+        // a stale ban for its IP is still in the map.
+        if source == PeerSource::Seed {
+            self.add_seed_ip(addr).await;
+        }
         if self.is_banned(addr).await {
             return;
         }
@@ -333,6 +390,70 @@ impl PeerManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Regression: a seed peer used to be banned after 10 failed sync attempts,
+    /// and because the ban is per-IP and `can_accept` honours it, both ends of a
+    /// two-node cluster could ban each other permanently. Seeds are operator
+    /// configuration, not attackers.
+    #[tokio::test]
+    async fn seed_peer_is_never_banned_and_never_rejected() {
+        let pm = PeerManager::new(4, 3, Duration::from_secs(60));
+        let seed: SocketAddr = "198.51.100.7:8336".parse().unwrap();
+
+        pm.add_known(seed, PeerSource::Seed).await;
+        for _ in 0..50 {
+            pm.record_bad(seed, 5).await;
+        }
+
+        assert!(!pm.is_banned(seed).await);
+        assert!(pm.can_accept(seed).await);
+        assert!(pm.acquire(seed).await.is_some());
+    }
+
+    /// Regression: `record_bad` on an address outside the known set used to ban
+    /// the IP on the very first failure, with no threshold and no log — which is
+    /// how the seed loop re-banned an already-banned peer every 30 s.
+    #[tokio::test]
+    async fn unknown_peer_bans_only_after_threshold() {
+        let pm = PeerManager::new(4, 3, Duration::from_secs(60));
+        let addr: SocketAddr = "192.0.2.44:1111".parse().unwrap();
+
+        pm.record_bad(addr, 1).await;
+        assert!(!pm.is_banned(addr).await, "one strike must not ban");
+
+        pm.record_bad(addr, 1).await;
+        pm.record_bad(addr, 1).await;
+        assert!(pm.is_banned(addr).await, "threshold reached");
+    }
+
+    #[tokio::test]
+    async fn record_good_resets_score_and_lifts_ban() {
+        let pm = PeerManager::new(4, 3, Duration::from_secs(3600));
+        let addr: SocketAddr = "192.0.2.55:1111".parse().unwrap();
+
+        pm.add_known(addr, PeerSource::Inbound).await;
+        pm.record_bad(addr, 3).await;
+        assert!(pm.is_banned(addr).await);
+
+        pm.record_good(addr).await;
+        assert!(
+            !pm.is_banned(addr).await,
+            "a peer that answers is not banned"
+        );
+        assert!(pm.can_accept(addr).await);
+    }
+
+    #[tokio::test]
+    async fn unban_lifts_ban_and_reports_whether_it_did() {
+        let pm = PeerManager::new(4, 3, Duration::from_secs(3600));
+        let addr: SocketAddr = "192.0.2.66:1111".parse().unwrap();
+
+        pm.add_known(addr, PeerSource::Inbound).await;
+        pm.record_bad(addr, 3).await;
+        assert!(pm.unban(addr.ip()).await, "existing ban removed");
+        assert!(!pm.is_banned(addr).await);
+        assert!(!pm.unban(addr.ip()).await, "second call is a no-op");
+    }
 
     #[tokio::test]
     async fn peer_manager_bans_bad_actor() {
