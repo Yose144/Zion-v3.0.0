@@ -23,10 +23,11 @@
 - **Clippy:** ~110 warnings (pool 32 test-only), fmt drift 25 souborů
 
 ### Dokumentace
-- Root MD: 8 souborů (AGENTS, README, SECURITY, CODE_OF_CONDUCT, CONTRIBUTING, LICENSE, CHANGELOG, ROADMAP, REPO-MAP)
-- `docs/3.2/`: 115+ souborů (status, plány, reporty)
-- `docs/3.3/`: 23 souborů (přesunuté root plány + doc-vs-code analýza)
-- `docs/plans/`: 19 plánů (audit, infra, pool, Hiran, OASIS, ops console, vast)
+- Root MD: 18 souborů — 9 stálých (AGENTS, README, SECURITY, CODE_OF_CONDUCT, CONTRIBUTING, LICENSE, CHANGELOG, ROADMAP, REPO-MAP) + tento `PLAN.md` + 8 pracovních plánů/reportů, které sem nepatří (viz níže)
+- `docs/3.2/`: 316 souborů (status, plány, reporty — 178 v `REPORTS/`)
+- `docs/3.3/`: 26 souborů (přesunuté root plány + doc-vs-code analýza)
+- `docs/plans/`: 23 plánů (audit, infra, pool, Hiran, OASIS, ops console, vast)
+- **Nedokončený úklid rootu:** `NIRVANA-LUMI-PLAN.md`, `PLAN_3D_AVATARI_{1070TI,NIRVANA}.md`, `PLAN_OASIS_AVATAR_I18N.md`, `TRANSLATION-PLAN.md`, `UCETNICTVI-PLAN.md` jsou aktivní pracovní plány vedle tohoto souboru (mají jít do `docs/plans/`), `REPORT_2026-11-05_SESSION_2.md` + `REPORT_2026-11-06_I18N_BATCH1.md` patří do `docs/3.2/REPORTS/`, `qtcpool.md` je bez odkazu.
 
 ---
 
