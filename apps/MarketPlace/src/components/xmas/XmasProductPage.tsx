@@ -135,6 +135,75 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
             ))}
           </div>
 
+          {/* Příběh k výrobku — proč je udělaný tak, jak je (ne prodejní text) */}
+          {product.story && (
+            <div id="pribeh" className="pt-6 space-y-4 scroll-mt-24">
+              <div className="space-y-1">
+                <div className="zion-kicker">{pick(product.story.kicker)}</div>
+                <h2 className="text-xl font-bold font-display flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-rasta-gold" />
+                  {pick(product.story.title)}
+                </h2>
+                {product.story.lead && (
+                  <p className="text-sm text-gray-400 leading-relaxed">{pick(product.story.lead)}</p>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-rasta-gold/25 bg-gradient-to-b from-rasta-gold/[0.07] to-transparent p-5 md:p-6 space-y-4">
+                {product.story.paragraphs.map((paragraph, i) => (
+                  <p key={i} className="font-serif text-[15px] md:text-base leading-[1.85] text-gray-200">
+                    {renderInline(pick(paragraph))}
+                  </p>
+                ))}
+              </div>
+
+              {product.story.message && product.story.message.length > 0 && (
+                <div className="space-y-3 border-l-2 border-rasta-gold/60 pl-4">
+                  {product.story.message.map((line, i) => (
+                    <figure key={i} className="space-y-1">
+                      <blockquote className="text-sm md:text-[15px] italic leading-relaxed text-gray-200">
+                        {pick(line.text)}
+                      </blockquote>
+                      <figcaption className="text-xs text-gray-500">
+                        — {pick(line.speaker)}
+                        {line.source ? ` · ${pick(line.source)}` : ''}
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+              )}
+
+              {product.story.closing && (
+                <p className="text-sm italic leading-relaxed text-gray-300">{pick(product.story.closing)}</p>
+              )}
+
+              {/* Šest stěn = šest krátkých kapitol, v pořadí cesty */}
+              {product.story.faces && product.story.faces.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-rasta-gold/90">
+                    {pick(product.story.facesTitle ?? { cs: 'Šest stěn, šest kapitol', en: 'Six walls, six chapters' })}
+                  </h3>
+                  <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {product.story.faces.map((face, i) => (
+                      <li
+                        key={i}
+                        className="space-y-1.5 rounded-xl border border-white/10 bg-white/[0.03] p-4"
+                      >
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                          <span className="font-mono text-[10px] uppercase tracking-widest text-rasta-gold/80">
+                            {pick(face.tag)}
+                          </span>
+                          <span className="text-sm font-semibold text-white">{pick(face.name)}</span>
+                        </div>
+                        <p className="text-[13px] leading-relaxed text-gray-300">{pick(face.line)}</p>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Jak výrobek složit + bezpečnost (jen fyzické zboží se svíčkou) */}
           {product.guide && (
             <div id="slozeni" className="pt-6 space-y-4 scroll-mt-24">

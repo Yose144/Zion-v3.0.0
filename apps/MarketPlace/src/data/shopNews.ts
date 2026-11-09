@@ -61,11 +61,11 @@ export const CHRISTMAS_EDITION_PRODUCTS: ShopNewsProduct[] = [
   },
   {
     externalId: 'lamp-001',
-    name: { cs: 'Lampion Lumi 2', en: 'Lumi 2 lantern' },
+    name: { cs: 'Druhá lucerna', en: 'Second lantern' },
     priceCzk: 490,
     href: '/vanoce/lampion',
     image: '/shop/img/products/lamp-001_lumi-2.webp',
-    imageAlt: { cs: 'Lampion Lumi 2 — vyřezávaný z 3mm překližky, rozsvícený', en: 'Lumi 2 lantern — cut from 3 mm plywood, lit' },
+    imageAlt: { cs: 'Druhá lucerna — Lumi 2 z 3mm překližky, rozsvícená', en: 'The second lantern — Lumi 2 in 3 mm plywood, lit' },
     buyable: true,
   },
 ];
@@ -102,8 +102,8 @@ export const SHOP_NEWS = {
 
   productsTitle: { cs: 'Tři vánoční kusy', en: 'Three Christmas pieces' },
   productsBody: {
-    cs: 'Každý nese stejnou myšlenku: světlo, knihu a vstup do světa, ze kterého pochází.',
-    en: 'Each carries the same idea: the light, the book, and entry into the world they come from.',
+    cs: 'Pass otevírá svět, kniha nese příběh, lampion přijde rozložený — světlo si zapálíš sám.',
+    en: 'The Pass opens a world, the book carries the story, the lantern arrives flat — you light it yourself.',
   },
 
   campaignTitle: { cs: 'Kampaň do Vánoc', en: 'Christmas campaign' },

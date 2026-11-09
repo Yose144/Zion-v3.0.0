@@ -85,7 +85,7 @@ export const shopProducts: ShopProductSeed[] = [
     name: 'Lampion Království srdce — Lumi 2',
     category: 'woodart',
     description:
-      'Lampion Lumi 2 — šestihranná lucerna vyřezávaná laserem z 3mm březové překližky: šest stěn s mandalami z knihy (lotos, strom života, srdcová mandala, loď Království srdce), zdobený vršek s otvorem Ø 90 mm a dno. Rozměry 140 × 126 × 121 mm. Skládá se ze šesti dílů bez nářadí, svítí se čajovou svíčkou ve sklenici. Vánoční edice: ke každému lampionu digitální kniha Království srdce a ZION Pass v ceně. 🛡️ BONUS: 70 560 ZION. U zboží s otevřeným plamenem se při objednávce podepisuje bezpečnostní prohlášení. Ruční práce: 20,9 m řezných drah, 614 obrysů, čtyři hodiny laseru na jeden kus — edice je proto číslovaná a omezená.',
+      'Druhá lucerna. Přijde rozložená: osm dílů z 3mm břízy, půl hodiny, dřevěné lepidlo. Svíčku zapálíš sám. 20,9 m řezu, čtyři hodiny laseru, číslovaná edice.',
     priceCzk: 490,
     oldPriceCzk: undefined,
     image: '/shop/img/products/lamp-001_lumi-2.webp',

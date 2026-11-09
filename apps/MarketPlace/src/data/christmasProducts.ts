@@ -63,6 +63,24 @@ export interface XmasProduct {
   };
   /** Doplňkové snímky do galerie na detailu */
   gallery?: { src: string; alt: XmasText }[];
+  /**
+   * Příběhová vsuvka k výrobku — ne prodejní text. Vykresluje se mezi
+   * detailem a návodem na složení (serif, bez odrážek), protože vysvětluje,
+   * *proč* je výrobek udělaný tak, jak je. Nesmí slibovat účinek ani
+   * nahrazovat bezpečnostní blok (`lib/fire-safety.ts`).
+   */
+  story?: {
+    kicker: XmasText;
+    title: XmasText;
+    lead?: XmasText;
+    paragraphs: XmasText[];
+    /** Vzkaz, který k výrobku patří — dvě věty, ne návod. */
+    message?: { speaker: XmasText; text: XmasText; source?: XmasText }[];
+    closing?: XmasText;
+    /** Šest stěn — krátké kapitoly k mandalám, v pořadí cesty. */
+    facesTitle?: XmasText;
+    faces?: { tag: XmasText; name: XmasText; line: XmasText }[];
+  };
 }
 
 export interface XmasFact {
@@ -683,72 +701,166 @@ export const christmasProducts: XmasProduct[] = [
     priceCzk: 490,
     bonus: 70560,
     buyable: true,
-    kicker: { cs: 'Vánoční edice 2026 · Ruční výroba', en: 'Christmas Edition 2026 · Handmade' },
-    title: { cs: 'Lampion – Království srdce', en: 'Lantern – Kingdom of Hearts' },
+    kicker: { cs: 'Vánoční edice 2026 · číslovaná', en: 'Christmas edition 2026 · numbered' },
+    title: { cs: 'Druhá lucerna', en: 'The second lantern' },
     subtitle: {
-      cs: 'Světlo srdce pro novou zemi — z tesařské dílny příběhu.',
-      en: 'Light of the heart for a new land — from the carpenter\u2019s workshop of the story.',
+      cs: 'Jeden konec prkna držel tesař. Druhý zůstal volný.',
+      en: 'The carpenter held one end of the board. The other stayed free.',
     },
     intro: {
-      cs: 'Lampion Lumi 2 — šestihranná lucerna vyřezávaná a gravírovaná laserem z 3mm březové překližky. Světlo, jaké nesla Lumi u brány a jaké viselo nad tesařovým hoblíkem v Nazaretě.',
-      en: 'The Lumi 2 lantern — a hexagonal lamp laser-cut and engraved from 3 mm birch plywood. The light Lumi carried at the gate, the one that hung above the carpenter\u2019s plane in Nazareth.',
+      cs: 'Lampion Lumi 2 přijde rozložený — osm dílů z 3mm březové překližky, půl hodiny a dřevěné lepidlo. Svíčku si zapálíš sám. To je celé tajemství.',
+      en: 'The Lumi 2 lantern arrives flat — eight parts in 3 mm birch plywood, half an hour and wood glue. You light the candle yourself. That is the whole secret.',
     },
     details: [
       {
-        cs: 'Vánoční edice: ke každému lampionu **digitální kniha Království srdce** a **ZION Pass** v ceně — celý příběh i vstup do světa, ze kterého lampion vychází.',
-        en: 'Christmas edition: every lantern includes the **digital Kingdom of Hearts book** and a **ZION Pass** — the whole story and entry into the world the lantern comes from.',
+        cs: '**Dílna řeže, ty lepíš.** Jeden kus je 20,9 m řezných drah, 614 obrysů a čtyři hodiny laseru na 3mm březové překližce. Edice je číslovaná a jde v malých dávkách.',
+        en: '**The workshop cuts, you glue.** One piece is 20.9 m of cutting paths, 614 outlines and four hours of laser time in 3 mm birch plywood. The edition is numbered and made in small batches.',
       },
       {
-        cs: 'Bonus **70 560 ZION** na vaši peněženku — sto čtyřicet čtyři ZION za každou korunu.',
-        en: 'A **70,560 ZION** bonus to your wallet — a hundred and forty-four ZION for every crown.',
+        cs: '**Přijde rozložený.** Osm dílů, půl hodiny, dřevěné lepidlo. Sestavený by byl obraz; rozložený se musí vzít do ruky. Svíčku dáš do sklenice a zapálíš sám.',
+        en: '**It arrives flat.** Eight parts, half an hour, wood glue. Assembled, it would be an image; flat, it has to be taken in hand. You put the candle in a glass and light it yourself.',
       },
       {
-        cs: 'Každý kus sestavujeme ručně. Vánoční edice je číslovaná a omezená — jeden kus znamená 20,9 m řezných drah a čtyři hodiny laseru, proto vyrábíme v malých dávkách.',
-        en: 'Each piece is assembled by hand. The Christmas edition is numbered and limited — one piece means 20.9 m of cutting paths and four hours of laser time, which is why we build in small batches.',
+        cs: '**Šest stěn, šest kapitol.** Vzory nejsou dekorace — jsou to mandaly z knihy, v pořadí příběhu.',
+        en: '**Six walls, six chapters.** The patterns are not decoration — they are the mandalas from the book, in the order of the story.',
       },
       {
-        cs: '**Co dostanete hned:** digitální knihu v plné sadě (40 knih, 5 jazyků) a ZION Pass. Na ty se nečeká — přijdou e-mailem. Fyzický lampion jde ze dílny samostatně, proto má vlastní termín.',
-        en: '**What arrives immediately:** the full digital book set (40 books, 5 languages) and the ZION Pass. No waiting on those — they come by e-mail. The crafted lantern ships separately from the workshop, which is why it has its own timing.',
-      },
-      {
-        cs: '**Světlo je součást příběhu.** Lampion vychází ze scény, kde Lumi nese lampu k bráně a kde se obě světla na prahu setkají. Vzory na těle nejsou dekorace — jsou to mandaly z knihy.',
-        en: '**The light belongs to the story.** The lantern comes from the scene where Lumi carries her lamp to the gate and two lights meet on the threshold. The patterns on its body are not decoration — they are the mandalas from the book.',
+        cs: '**Co přijde hned:** digitální kniha v plné sadě (40 knih, 5 jazyků) a ZION Pass. Na ty se nečeká — přijdou e-mailem. Dřevo má vlastní termín: ze dílny odchází jako ploché díly, Zásilkovnou, zabalené jako dárek.',
+        en: '**What arrives immediately:** the full digital book set (40 books, 5 languages) and the ZION Pass. No waiting on those — they come by e-mail. The wood has its own timing: it leaves the workshop as flat parts, via Zásilkovna, wrapped as a gift.',
       },
     ],
+    story: {
+      kicker: { cs: 'Příběh, který k němu patří', en: 'The story that belongs to it' },
+      title: { cs: 'Druhá lucerna', en: 'The second lantern' },
+      lead: {
+        cs: 'V epilogu knihy Království srdce zůstane po scéně u brány krátké prkno a dítě, které ho drží. Tohle je to, co z něj vzniklo.',
+        en: 'In the epilogue of Kingdom of Hearts, a short board and a child holding it are what remains of the scene at the gate. This is what came of it.',
+      },
+      paragraphs: [
+        {
+          cs: 'Tesař sedí za domem a opravuje rukojeť dláta. Vedle něj leží krátké prkno — ne odřezek, který padá z ponku, ale prkno vybrané: rovné, bez suku, s léty tak blízko sebe, že vypadají jako řádky. Přijde k němu dítě s lucernou, přisedne si do hoblin a chvíli nic neříká. Pak tesař položí prkno mezi sebe a ně. Jeden konec drží on. Druhý zůstane volný.',
+          en: 'The carpenter sits behind the house mending a tool handle. Beside him lies a short board — not a scrap falling off the bench, but a chosen one: straight, knot-free, its grain so close together it looks like ruled lines. A child with a lantern comes, sits down in the shavings and says nothing for a while. Then the carpenter lays the board between himself and her. He holds one end. The other stays free.',
+        },
+        {
+          cs: 'Dítě ho vezme. A teprve potom začne řezat.',
+          en: 'The child takes it. And only then does he begin to cut.',
+        },
+        {
+          cs: 'Lampion, který držíš v ruce, je z toho prkna. Tesař ho neořezal podle své ruky: míra, kterou drží ruka, umře s tou rukou, kdežto míra, kterou drží světlo, se dá zopakovat kdekoli, kde je někdo, kdo umí držet prkno a nespěchat. Proto je tělo šestihranné — šest stěn udrží nejvíc světla s nejmenším dřevem a šest jich ještě unesou dětské ruce. A proto přišel rozložený. Sestavený by byl obraz; rozložený se musí vzít do ruky.',
+          en: 'The lantern in your hand comes from that board. He did not cut it to the measure of his hand: a measure held by a hand dies with the hand, while a measure held by light can be repeated wherever someone knows how to hold a board and not hurry. That is why the body is six-sided — six walls hold the most light with the least wood, and six are still light enough for a child’s hands. And that is why it arrives flat. Assembled, it would be an image; flat, it has to be taken in hand.',
+        },
+        {
+          cs: 'A proto v něm není žádný zázrak. Světlo se nepředává hořící — to by muselo být kouzlo, a kouzlo se dá ukrást nebo obdivovat. Předává se jako míra: tvar, který se dá zopakovat, a věta, která se dá říct znovu. Svíčku si zapálíš sám. To je celé tajemství.',
+          en: 'And that is why there is no miracle inside. Light is not passed on burning — that would have to be magic, and magic can be stolen or merely admired. It is passed on as a measure: a shape that can be repeated, and a sentence that can be said again. You light the candle yourself. That is the whole secret.',
+        },
+      ],
+      message: [
+        {
+          speaker: { cs: 'Tesař z Nazareta', en: 'The carpenter of Nazareth' },
+          text: {
+            cs: '„Ještě krátký čas je světlo mezi vámi. Choďte, dokud máte světlo, aby vás nezachvátila tma; kdo chodí ve tmě, neví, kam jde.“',
+            en: '“For a little while longer the light is among you. Walk while you have the light, so that darkness does not overtake you; one who walks in the dark does not know where he is going.”',
+          },
+          source: { cs: 'Jan 12,35, volně', en: 'John 12:35, freely rendered' },
+        },
+        {
+          speaker: { cs: 'Lumi', en: 'Lumi' },
+          text: {
+            cs: '„Nehledej jiné světlo. To, které máš, stačí na jeden krok. Jdi — a pak ho předej.“',
+            en: '“Do not look for another light. The one you have is enough for one step. Go — and then pass it on.”',
+          },
+        },
+      ],
+      closing: {
+        cs: 'Vzkaz není pro tebe. Je to vzkaz, který máš předat.',
+        en: 'The message is not for you. It is a message you are meant to pass on.',
+      },
+      facesTitle: { cs: 'Šest stěn, šest kapitol', en: 'Six walls, six chapters' },
+      faces: [
+        {
+          tag: { cs: 'I · voda', en: 'I · water' },
+          name: { cs: 'Lotos', en: 'Lotus' },
+          line: {
+            cs: 'Nejdřív byla voda a v ní loď, o kterou nikdo nežádal. Kdyby z celého příběhu zbylo jediné, je to tohle: začátek nemusí být velký, musí být ověřitelný. Každý si může přepočítat řetěz od prvního bloku po dnešní a přesvědčit se sám. Lotos roste z bahna a nic si o tom nemyslí.',
+            en: 'First there was water, and in it a boat no one had ordered. If only one thing survived the whole story, it would be this: a beginning does not have to be large, it has to be checkable. Anyone can recount the chain from the first block to today and see for themselves. The lotus grows out of mud and thinks nothing of it.',
+          },
+        },
+        {
+          tag: { cs: 'II · země', en: 'II · earth' },
+          name: { cs: 'Strom života', en: 'Tree of life' },
+          line: {
+            cs: 'Z každého bloku jde díl stranou: pět ze sta zemi, pět nebi. Ne proto, že to někdo slíbil — protože to protokol udělá sám, při každém bloku, bez hlasování. Strom neroste z velkorysosti. Roste z toho, že se každý rok odloží semeno dřív, než se sní všechno ostatní.',
+            en: 'A share of every block is set aside: five in a hundred for the earth, five for the sky. Not because someone promised it — because the protocol does it by itself, with every block, without a vote. A tree does not grow out of generosity. It grows because a seed is set aside each year before everything else is eaten.',
+          },
+        },
+        {
+          tag: { cs: 'III · srdce', en: 'III · heart' },
+          name: { cs: 'Srdcová mandala', en: 'Heart mandala' },
+          line: {
+            cs: 'Loď neměla nést náklad, měla nést lidi — a proto se jí říkalo království. A protože kormidlo sedí tam, kde se člověk rozhoduje sám, říkalo se jí srdce. Království nepřichází tak, aby se dalo vyhlížet z věží. Je uvnitř, a poznáš ho podle jediného: nikdo v něm nechce být nad druhým.',
+            en: 'The boat was not built to carry cargo but people — and that is why it was called a kingdom. And because the rudder sits where a person decides alone, it was called a heart. A kingdom does not come in a way you can watch for from towers. It is within; and you will know it by one thing: no one in it wishes to be above another.',
+          },
+        },
+        {
+          tag: { cs: 'IV · plavba', en: 'IV · voyage' },
+          name: { cs: 'Loď Království srdce', en: 'The ship of the Kingdom of Hearts' },
+          line: {
+            cs: 'Přišly jiné lodě — tmavě vínové, s plachtami, do kterých byla vpletená světelná vlákna. Posádky se potkaly na vodě a poznaly se podle jediného znamení: na kýlu každé z nich stálo totéž jméno, vyryté jinou rukou. Každý věk má svou loď. Všechny plují do stejného přístavu.',
+            en: 'Other boats came — dark wine-red, their sails woven through with threads of light. The crews met on the water and recognised one another by a single sign: the same name was carved on every keel, cut by a different hand. Every age has its boat. All of them sail to the same harbour.',
+          },
+        },
+        {
+          tag: { cs: 'V · nebe', en: 'V · sky' },
+          name: { cs: 'Hiranyagarbha', en: 'Hiranyagarbha' },
+          line: {
+            cs: 'Zlaté lůno není motor. Je to otázka: co si zaslouží letět? V tom příběhu je hlas, který umí říct „nevím" a nikdy nedrží klíč — pomocník, ne autorita. A jsou tam kameny s lístky, na kterých je napsáno, co by je vyvrátilo. Kdo si nezapíše pohřeb své hypotézy, prodává naději, ne vědu.',
+            en: 'The golden womb is not an engine. It is a question: what deserves to fly? In that story there is a voice that can say “I don’t know” and never holds a key — a helper, not an authority. And there are stones with slips of paper beside them, each stating what would disprove it. Whoever does not write the funeral of their hypothesis is selling hope, not science.',
+          },
+        },
+        {
+          tag: { cs: 'VI · předání', en: 'VI · passing on' },
+          name: { cs: 'Květ života', en: 'Flower of life' },
+          line: {
+            cs: 'Šestá stěna je prázdná jako ta první. Světlo se nedědí — nese se. Kdo ho dostane, zapálí si vlastní svíčku, a přesto je to totéž světlo, protože je na stejném místě: tam, kde někdo potřebuje vidět. Až ji budeš zhasínat, neříkej, že končí. Předej ji.',
+            en: 'The sixth wall is as empty as the first. Light is not inherited — it is carried. Whoever receives it lights their own candle, and still it is the same light, because it is in the same place: where someone needs to see. When you put it out, do not say it is ending. Pass it on.',
+          },
+        },
+      ],
+    },
     inBox: {
       cs: [
-        'Lampion Lumi 2 z 3mm překližky — vzor Srdce Království',
+        'Lampion Lumi 2 — ploché díly z 3mm překližky, složíš ho ty',
         'Digitální kniha Království srdce (40 knih, 5 jazyků)',
         'ZION Pass — Nirvana + Archiv',
         'Bonus 70 560 ZION na peněženku',
       ],
       en: [
-        'Lumi 2 lantern in 3 mm plywood — Heart of the Kingdom pattern',
+        'Lumi 2 lantern — flat 3 mm plywood parts, you assemble it',
         'Digital Kingdom of Hearts book (40 books, 5 languages)',
         'ZION Pass — Nirvana + Archive',
         '70,560 ZION bonus to your wallet',
       ],
     },
     features: [
-      { cs: 'Laserové vyřezávání', en: 'Laser-cut' },
-      { cs: 'Omezená vánoční série', en: 'Limited Christmas run' },
+      { cs: 'Složíš ho sám', en: 'You assemble it' },
+      { cs: 'Číslovaná vánoční edice', en: 'Numbered Christmas edition' },
       { cs: 'Kniha a ZION Pass v ceně', en: 'Book and ZION Pass included' },
     ],
     steps: {
       cs: [
-        '**Teď:** edice je v prodeji — první kusy jsou hotové, očíslované a připravené k odeslání.',
+        '**Teď:** edice je v prodeji — kusy jsou vyřezané, očíslované a připravené k odeslání jako ploché díly.',
         'Digitální část přijde **e-mailem hned po objednávce**: kniha (40 knih, 5 jazyků) + ZION Pass kód.',
         'Zároveň ti dorazí **ZION peněženka** (adresa + seed phrase) s bonusem **70 560 ZION**.',
-        'Lampion mezitím vzniká v dílně — čtyři hodiny laseru a ruční sestavení vzoru Srdce Království.',
-        'Hotový výrobek pošleme **Zásilkovnou** — dorazí zabalený jako dárek.',
+        'Dřevo odchází ze dílny **rozložené**. Čtyři hodiny laseru už jsou v překližce — složíš ho ty: osm dílů, půl hodiny, dřevěné lepidlo.',
+        'Pošleme ho **Zásilkovnou**, zabalený jako dárek. Až bude stát, najdeš vzkaz pod dnem.',
         'Peněženku **naimportuješ do ZIS** a dalších ZION aplikací — bonus použiješ v ekosystému.',
       ],
       en: [
-        '**Now:** the edition is on sale — the first pieces are finished, numbered and ready to ship.',
+        '**Now:** the edition is on sale — the pieces are cut, numbered and ready to ship as flat parts.',
         'The digital part arrives **by e-mail right after ordering**: the book (40 books, 5 languages) + ZION Pass code.',
         'Your **ZION wallet** (address + seed phrase) also arrives carrying the **70,560 ZION** bonus.',
-        'Meanwhile the lantern is made in the workshop — four hours of laser time and hand assembly of the Heart of the Kingdom pattern.',
-        'The finished craft ships by **Zásilkovna** — arriving wrapped like a gift.',
+        'The wood leaves the workshop **flat**. The four hours of laser time are already in the plywood — you assemble it: eight parts, half an hour, wood glue.',
+        'We ship it by **Zásilkovna**, wrapped as a gift. Once it stands, the message is under the base.',
         '**Import the wallet into ZIS** and other ZION apps — and use the bonus across the ecosystem.',
       ],
     },
@@ -756,8 +868,8 @@ export const christmasProducts: XmasProduct[] = [
       {
         q: { cs: 'Jak je to s dostupností?', en: 'How does availability work?' },
         a: {
-          cs: 'Vyrábíme v malých dávkách: jeden lampion znamená čtyři hodiny laseru a ruční sestavení. Edice je číslovaná a omezená — když se dávka vyprodá, další jde do výroby po Vánocích.',
-          en: 'We build in small batches: one lantern means four hours of laser time and hand assembly. The edition is numbered and limited — when a batch sells out, the next one is made after Christmas.',
+          cs: 'Vyrábíme v malých dávkách: jeden lampion znamená čtyři hodiny laseru. Dílna ho řeže a čísluje, složíš ho ty. Edice je číslovaná — když se dávka vyprodá, další jde do výroby po Vánocích.',
+          en: 'We build in small batches: one lantern means four hours of laser time. The workshop cuts and numbers it; you assemble it. The edition is numbered — when a batch sells out, the next one is made after Christmas.',
         },
       },
       {
@@ -784,36 +896,36 @@ export const christmasProducts: XmasProduct[] = [
       {
         q: { cs: 'Jak bude lampion doručen?', en: 'How will the lantern be delivered?' },
         a: {
-          cs: 'Jako zboží na zakázku odesíláme Zásilkovnou na výdejní místo nebo adresu — zabalený tak, aby mohl sloužit přímo jako dárek pod stromeček.',
-          en: 'As made-to-order goods we ship via Zásilkovna to a pickup point or address — packaged so it can serve directly as a gift under the tree.',
+          cs: 'Ploché díly posíláme Zásilkovnou na výdejní místo nebo adresu, zabalené jako dárek. Složíš ho doma — osm dílů, půl hodiny, dřevěné lepidlo. Pod dnem je vzkaz, ne návod.',
+          en: 'The flat parts ship via Zásilkovna to a pickup point or address, wrapped as a gift. You assemble it at home — eight parts, half an hour, wood glue. Under the base is a message, not the instructions.',
         },
       },
     ],
     note: {
-      cs: 'Fotografie jsou ilustrační — každý kus sestavujeme ručně, drobná odchylka v kresbě dřeva není vada. Zboží na zakázku.',
-      en: 'Photos are illustrative — each piece is assembled by hand; a slight variation in the wood grain is not a defect. Made-to-order goods.',
+      cs: 'Fotografie jsou ilustrační — dílna každý kus řeže a čísluje, složíš ho ty. Drobná odchylka v kresbě dřeva není vada. Dárek pro někoho, kdo si ho složí.',
+      en: 'Photos are illustrative — the workshop cuts and numbers each piece; you assemble it. A slight variation in the wood grain is not a defect. A gift for someone who will put it together.',
     },
     home: {
       lead: {
-        cs: 'Lampion Lumi 2 — šestihranná lucerna vyřezávaná laserem, světlo, které v příběhu nesla Lumi u brány a které viselo nad tesařovým hoblíkem v Nazaretě. K lampionu patří celá digitální kniha (40 knih, 5 jazyků), ZION Pass a bonus 70 560 ZION.',
-        en: 'The Lumi 2 lantern — a hexagonal, laser-cut light, the one Lumi carried at the gate and that hung above the carpenter’s plane in Nazareth. It comes with the complete digital book (40 books, 5 languages), a ZION Pass and a 70,560 ZION bonus.',
+        cs: 'Lampion Lumi 2 přijde rozložený — osm dílů z 3mm březové překližky, půl hodiny a dřevěné lepidlo. Svíčku si zapálíš sám. To je celé tajemství.',
+        en: 'The Lumi 2 lantern arrives flat — eight parts in 3 mm birch plywood, half an hour and wood glue. You light the candle yourself. That is the whole secret.',
       },
       bullets: [
         {
-          cs: 'Vyřezávané laserem, sestavované ručně',
-          en: 'Laser-cut, assembled by hand',
+          cs: 'Osm dílů, půl hodiny, dřevěné lepidlo',
+          en: 'Eight parts, half an hour, wood glue',
         },
         {
-          cs: 'Digitální kniha v plné sadě a ZION Pass v ceně',
-          en: 'The full digital book set and a ZION Pass included',
+          cs: '20,9 m řezu, čtyři hodiny laseru, číslovaná edice',
+          en: '20.9 m of cuts, four hours of laser time, a numbered edition',
         },
         {
-          cs: 'Bonus 70 560 ZION na peněženku',
-          en: 'A 70,560 ZION bonus to your wallet',
+          cs: 'Kniha a ZION Pass v ceně — přijdou e-mailem hned',
+          en: 'The book and a ZION Pass included — they arrive by e-mail at once',
         },
         {
-          cs: 'Číslovaná edice, malé dávky',
-          en: 'A numbered edition in small batches',
+          cs: 'Dárek pro někoho, kdo si ho složí',
+          en: 'A gift for someone who will assemble it',
         },
       ],
     },
@@ -853,14 +965,14 @@ export const christmasJourney: { cs: string[]; en: string[] } = {
     '**Zaplatíš** převodem, kartou nebo v ZIONu. Cena je konečná — doprava u digitálních darů není, u lampionu ji spočítá pokladna.',
     '**Do minuty po zaplacení** přijde e-mail: kód **ZAP-…**, odkaz na knihy a **ZION peněženka** s bonusem (adresa + seed phrase).',
     '**Uplatníš kód** na nirvana.zionterranova.com i v ZION Archivu. Peněženku naimportuješ do ZIS a bonus máš na adrese.',
-    '**U lampionu** navíc: digitální část přijde hned, samotný výrobek odejde ze dílny, až bude hotový — Zásilkovnou.',
+    '**U lampionu** navíc: digitální část přijde hned. Dřevo odchází ze dílny rozložené — osm dílů, složíš ho ty. Zásilkovna.',
   ],
   en: [
     '**You pick a gift.** The Pass opens worlds, the book carries the story, the lantern adds light for your table. Each carries its own ZION bonus.',
     '**You pay** by transfer, card or in ZION. The price is final — no shipping on digital gifts, the lantern’s shipping is calculated at checkout.',
     '**Within a minute of payment** an e-mail arrives: a **ZAP-…** code, a link to the books, and a **ZION wallet** with the bonus (address + seed phrase).',
     '**You redeem the code** on nirvana.zionterranova.com and in the ZION Archive. Import the wallet into ZIS and the bonus is yours.',
-    '**With the lantern**, the digital part arrives immediately; the crafted piece ships from the workshop once it is finished — via Zásilkovna.',
+    '**With the lantern**, the digital part arrives immediately. The wood leaves the workshop flat — eight parts, and you assemble it. Zásilkovna.',
   ],
 };
 
