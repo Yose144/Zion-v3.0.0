@@ -7,8 +7,8 @@
  *  - sklad se kontroloval po řádcích a odečítal nepodmíněně, takže dva řádky
  *    po jednom kusu prošly proti poslednímu kusu a souběh ho prodal dvakrát.
  *
- * Shoda e-mailu je jediné oprávnění k pokračování. Neshoda nedostane ani
- * potvrzení, že e-mail seděl — jen 409 bez polí zákazníka.
+ * Shoda e-mailu pouze omezuje replay; neprokazuje vlastnictví schránky.
+ * Ani při shodě se nevrací soukromé údaje nebo přístupové kódy.
  */
 
 import { createHash, timingSafeEqual } from 'node:crypto';
@@ -19,11 +19,11 @@ export interface OrderQuantityLine {
 }
 
 export interface PublicOrderFields {
+  id: string;
   orderId: string;
   status: string;
-  paymentStatus: string;
   totalCzk: number;
-  payment: string;
+  createdAt: Date;
   customerEmail: string;
 }
 
@@ -41,12 +41,21 @@ export class StockConflictError extends Error {
   }
 }
 
+export class InvalidQuantityError extends Error {
+  constructor() {
+    super('Each product quantity must be an integer from 1 to 99');
+    this.name = 'InvalidQuantityError';
+  }
+}
+
 interface StockWrite {
   shopProduct: {
     updateMany: (args: {
       where: {
         externalId: string | { in: string[] };
         stock: { gte: number } | { lte: number };
+        active?: boolean;
+        inStock?: boolean;
       };
       data: {
         stock?: { decrement: number };
@@ -77,9 +86,27 @@ export function emailsMatch(stored: string, provided: string): boolean {
 export function aggregateOrderQuantities(lines: OrderQuantityLine[]): Map<string, number> {
   const totals = new Map<string, number>();
   for (const line of lines) {
-    totals.set(line.externalId, (totals.get(line.externalId) ?? 0) + line.quantity);
+    if (!line || typeof line.externalId !== 'string' || !line.externalId.trim()
+        || !Number.isSafeInteger(line.quantity) || line.quantity < 1 || line.quantity > 99) {
+      throw new InvalidQuantityError();
+    }
+    const total = (totals.get(line.externalId) ?? 0) + line.quantity;
+    if (total > 99) throw new InvalidQuantityError();
+    totals.set(line.externalId, total);
   }
-  return totals;
+  // All checkouts acquire product locks in the same order.
+  return new Map([...totals].sort(([a], [b]) => a.localeCompare(b)));
+}
+
+/** Explicit public acknowledgement. Never spread a Prisma order row. */
+export function orderAcknowledgement(order: Omit<PublicOrderFields, 'customerEmail'>) {
+  return {
+    id: order.id,
+    orderId: order.orderId,
+    status: order.status,
+    totalCzk: order.totalCzk,
+    createdAt: order.createdAt,
+  };
 }
 
 /**
@@ -104,13 +131,9 @@ export function duplicateOrderDecision(
       success: true,
       duplicate: true,
       data: {
-        order: {
-          orderId: order.orderId,
-          status: order.status,
-          paymentStatus: order.paymentStatus,
-          totalCzk: order.totalCzk,
-          payment: order.payment,
-        },
+        order: orderAcknowledgement(order),
+        invoice: null,
+        duplicate: true,
         bank: {
           account: bank.account,
           iban: bank.iban,
@@ -133,10 +156,10 @@ export async function reserveProductStock(
   tx: StockWrite,
   quantities: Iterable<[string, number]>,
 ): Promise<void> {
-  const entries = [...quantities];
+  const entries = [...quantities].sort(([a], [b]) => a.localeCompare(b));
   for (const [externalId, quantity] of entries) {
     const updated = await tx.shopProduct.updateMany({
-      where: { externalId, stock: { gte: quantity } },
+      where: { externalId, active: true, inStock: true, stock: { gte: quantity } },
       data: { stock: { decrement: quantity } },
     });
     if (updated.count !== 1) throw new StockConflictError(externalId);

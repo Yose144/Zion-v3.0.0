@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getArchivePassForOrder, ARCHIVE_REDEEM_URL } from '@/lib/archive-pass';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,9 +10,14 @@ interface RouteContext {
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const { orderId } = await context.params;
-    const order = await prisma.shopOrder.findFirst({
+    const order = await prisma.shopOrder.findUnique({
       where: { orderId },
-      include: { invoices: { select: { id: true, invoiceNumber: true, status: true, html: true } } },
+      // An order number is not authentication. Only public receipt/status data
+      // is available here; invoice and paid pass delivery stays in buyer email.
+      select: {
+        id: true, orderId: true, status: true, paymentStatus: true,
+        totalCzk: true, shippingCzk: true, payment: true, createdAt: true,
+      },
     });
 
     if (!order) {
@@ -22,16 +26,6 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         { status: 404 }
       );
     }
-
-    const items = Array.isArray(order.items) ? (order.items as unknown[]) : [];
-    const safeItems = items.map((it) => {
-      const raw = it as Record<string, unknown>;
-      return {
-        name: String(raw.name ?? 'Produkt'),
-        quantity: Math.max(1, Math.round((raw.quantity as number) || 1)),
-        priceCzk: Math.round((raw.priceCzk as number) || 0),
-      };
-    });
 
     return NextResponse.json({
       success: true,
@@ -42,32 +36,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         paymentStatus: order.paymentStatus,
         totalCzk: order.totalCzk,
         shippingCzk: order.shippingCzk,
-        customerName: order.customerName,
-        customerEmail: order.customerEmail,
-        shipping: order.shipping,
         payment: order.payment,
-        addressStreet: order.addressStreet,
-        addressCity: order.addressCity,
-        addressZip: order.addressZip,
-        pickupPoint: order.pickupPoint,
-        note: order.note,
-        trackingNumber: order.trackingNumber,
-        shippedAt: order.shippedAt,
-        paidAt: order.paidAt,
         createdAt: order.createdAt,
-        items: safeItems,
-        invoices: order.invoices,
-        // ZAP-… archive pass is delivered with the paid order — expose it
-        // only after paymentStatus=paid (issued at the paid transition).
-        archivePass:
-          order.paymentStatus === 'paid'
-            ? (() => {
-                const p = getArchivePassForOrder(order.orderId);
-                return p ? { code: p.code, url: ARCHIVE_REDEEM_URL } : null;
-              })()
-            : null,
       },
-    });
+    }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     console.error('Failed to get shop order:', error);
     return NextResponse.json(

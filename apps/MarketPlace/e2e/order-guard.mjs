@@ -45,6 +45,8 @@ const check = (name, condition) => {
 
 const BANK = { account: '1/0100', iban: 'CZ00', bic: 'TEST' };
 const stored = {
+  id: 'fixture-id',
+  createdAt: new Date('2026-11-07T00:00:00Z'),
   orderId: 'ORD-2026110701',
   status: 'pending',
   paymentStatus: 'pending',
@@ -64,7 +66,7 @@ const matchJson = JSON.stringify(match.body);
 check('shoda e-mailu vrací 200', match.status === 200 && match.body.success === true);
 check('shoda nese jen veřejný stav', match.body.data.order.orderId === 'ORD-2026110701'
   && match.body.data.order.totalCzk === 590
-  && match.body.data.order.payment === 'transfer'
+  && Object.keys(match.body.data.order).sort().join(',') === 'createdAt,id,orderId,status,totalCzk'
   && match.body.data.bank.amount === 590
   && match.body.data.bank.vs === '2026110701');
 check('shoda nevrací jméno, telefon, adresu, peněženku ani podpis',
@@ -115,6 +117,8 @@ function memoryStore(rows) {
           for (const id of ids) {
             const row = products.get(id);
             if (!row) continue;
+            if (where.active === true && row.active === false) continue;
+            if (where.inStock === true && row.inStock === false) continue;
             if (where.stock.gte != null && row.stock < where.stock.gte) continue;
             if (where.stock.lte != null && row.stock > where.stock.lte) continue;
             if (data.stock?.decrement != null) row.stock -= data.stock.decrement;

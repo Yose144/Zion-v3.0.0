@@ -137,22 +137,8 @@ export interface OrderStatusResult {
     paymentStatus: string;
     totalCzk: number;
     shippingCzk: number;
-    customerName: string;
-    customerEmail: string;
-    shipping: string;
     payment: string;
-    addressStreet: string | null;
-    addressCity: string | null;
-    addressZip: string | null;
-    pickupPoint: unknown;
-    note: string | null;
-    trackingNumber: string | null;
-    shippedAt: string | null;
-    paidAt: string | null;
     createdAt: string;
-    items: { name: string; quantity: number; priceCzk: number }[];
-    invoices: { id: string; invoiceNumber: string; status: string; html: string | null }[];
-    archivePass?: { code: string; url: string } | null;
   };
   error?: string;
 }
