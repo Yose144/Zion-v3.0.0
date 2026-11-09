@@ -17,6 +17,15 @@ PACKAGE_BINS = {
 }
 SHA = re.compile(r"[0-9a-f]{64}")
 COMMIT = re.compile(r"[0-9a-f]{40}")
+LABEL = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.-]*")
+
+
+def sha256_stream(stream):
+    """Bounded memory; also works with Python <3.11 on older build hosts."""
+    digest = hashlib.sha256()
+    for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+        digest.update(chunk)
+    return digest.hexdigest()
 
 
 def verify(directory, expected_commit=None):
@@ -30,9 +39,14 @@ def verify(directory, expected_commit=None):
     commit = matrix.get("commit", "")
     if not COMMIT.fullmatch(commit) or expected_commit and commit != expected_commit:
         raise ValueError("matrix commit missing or different from requested commit")
+    version = matrix.get("version", "")
+    if not LABEL.fullmatch(version):
+        raise ValueError("matrix version missing or invalid")
     packages = matrix.get("packages")
-    if not isinstance(packages, list) or not packages or any(p not in PACKAGE_BINS for p in packages):
+    if not isinstance(packages, list) or not packages or any(not isinstance(p, str) or p not in PACKAGE_BINS for p in packages):
         raise ValueError("matrix packages missing or unknown")
+    if len(set(packages)) != len(packages):
+        raise ValueError("duplicate matrix packages")
     artifacts = matrix.get("artifacts")
     if not isinstance(artifacts, list) or not artifacts:
         raise ValueError("empty release matrix")
@@ -41,8 +55,13 @@ def verify(directory, expected_commit=None):
         name = artifact.get("file", "")
         if not name or Path(name).name != name or name in planned or not name.endswith(".tar.gz"):
             raise ValueError("invalid/duplicate artifact name")
-        if not artifact.get("target") or not artifact.get("variant"):
-            raise ValueError("matrix target/variant missing")
+        if not LABEL.fullmatch(artifact.get("target", "")) or not LABEL.fullmatch(artifact.get("variant", "")):
+            raise ValueError("matrix target/variant missing or invalid")
+        if not isinstance(artifact.get("features"), str):
+            raise ValueError("matrix features missing")
+        tag = artifact["target"] + ("+" + artifact["variant"] if artifact["variant"] != "default" else "")
+        if name != f"zion-{version}-{tag}.tar.gz":
+            raise ValueError("artifact name disagrees with target/variant/version")
         planned[name] = artifact
 
     sums = {}
@@ -64,7 +83,7 @@ def verify(directory, expected_commit=None):
         if path.is_symlink() or not path.is_file():
             raise ValueError(f"missing/non-regular archive: {name}")
         with path.open("rb") as f:
-            actual = hashlib.file_digest(f, "sha256").hexdigest()
+            actual = sha256_stream(f)
         if actual != digest:
             raise ValueError(f"archive checksum mismatch: {name}")
         with tarfile.open(path, "r:gz") as archive:
@@ -73,18 +92,22 @@ def verify(directory, expected_commit=None):
                 rel = PurePosixPath(member.name)
                 if rel.is_absolute() or ".." in rel.parts or not (member.isdir() or member.isfile()):
                     raise ValueError(f"unsafe tar member in {name}")
-                if member.isdir():
+                if member.isdir() and str(rel) == ".":
                     continue
                 key = str(rel)
-                if "/" in key or key in members:
+                if member.isdir() or "/" in key or key in members:
                     raise ValueError(f"nested/duplicate tar member in {name}")
                 members[key] = member
             if "BUILD-INFO.txt" not in members or members["BUILD-INFO.txt"].size > 1_000_000:
                 raise ValueError(f"missing/oversized BUILD-INFO.txt: {name}")
             info = archive.extractfile(members["BUILD-INFO.txt"]).read().decode()
-            fields = dict(re.findall(r"^([a-z_]+): (.+)$", info, re.M))
+            metadata = re.findall(r"^([a-z_]+): (.+)$", info, re.M)
+            fields = dict(metadata)
+            if len(fields) != len(metadata):
+                raise ValueError(f"duplicate BUILD-INFO metadata: {name}")
             plan = planned[name]
-            for key, expected in [("commit", commit), ("target", plan["target"]), ("variant", plan["variant"])]:
+            for key, expected in [("commit", commit), ("version", version), ("target", plan["target"]),
+                                  ("variant", plan["variant"]), ("features", plan["features"] or "none")]:
                 if fields.get(key) != expected:
                     raise ValueError(f"BUILD-INFO {key} mismatch: {name}")
             if fields.get("tree_state") != "clean":
@@ -99,7 +122,9 @@ def verify(directory, expected_commit=None):
                 member = members[binary]
                 if member.size <= 0 or member.size != int(expected_size):
                     raise ValueError(f"empty/incorrect binary size: {name}/{binary}")
-                actual_hash = hashlib.file_digest(archive.extractfile(member), "sha256").hexdigest()
+                if "windows" not in plan["target"] and not member.mode & 0o111:
+                    raise ValueError(f"binary is not executable: {name}/{binary}")
+                actual_hash = sha256_stream(archive.extractfile(member))
                 if actual_hash != expected_hash:
                     raise ValueError(f"binary checksum mismatch: {name}/{binary}")
         print(f"  PASS {name} (commit, target, variant, {len(required)} binaries)")

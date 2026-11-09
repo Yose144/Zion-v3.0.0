@@ -10,6 +10,9 @@
 #       --from-commit <sha> --target x86_64-unknown-linux-gnu
 #   scripts/ops/build-release-artifacts.sh --all --container rust:1.95-slim-bullseye
 #   scripts/ops/build-release-artifacts.sh --verify dist/v3.2.0-rc1
+#   scripts/ops/build-release-artifacts.sh --from-commit <sha> --isolate --linux
+# --isolate-dir <new-dir> retains the extracted source for inspection.
+# --stop-before-build prepares that source without invoking Cargo (no release).
 #
 # Targets (linker requirements):
 #   x86_64-unknown-linux-gnu   — glibc; build in a container to pin the
@@ -136,9 +139,12 @@ fi
 
 if [ "$ISOLATE" = 1 ]; then
   source_root="$REPO_ROOT"
+  # Artifacts must survive cleanup of the temporary source checkout.
+  OUT="${OUT:-$source_root/dist/$VERSION}"
+  case "$OUT" in /*) ;; *) OUT="$source_root/$OUT" ;; esac
   if [ -n "$ISOLATE_DIR" ]; then
-    mkdir -p "$ISOLATE_DIR"
-    isolate_stage="$ISOLATE_DIR"
+    mkdir "$ISOLATE_DIR" || { echo "ERROR: --isolate-dir must be a new directory" >&2; exit 3; }
+    isolate_stage="$(cd "$ISOLATE_DIR" && pwd)"
   else
     isolate_stage="$(mktemp -d "${TMPDIR:-/tmp}/zion-release-isolate.XXXXXX")"
     trap 'rm -rf "$isolate_stage"' EXIT
@@ -147,6 +153,8 @@ if [ "$ISOLATE" = 1 ]; then
   REPO_ROOT="$isolate_stage"
   V31="$isolate_stage/V31"
   cd "$REPO_ROOT"
+  DIRTY=0
+  DESCRIBE="$(git -C "$source_root" describe --tags --always "$FULL_SHA" 2>/dev/null || echo "$SHORT_SHA")"
   echo "    isolate : $isolate_stage"
 fi
 
@@ -157,7 +165,7 @@ fi
 
 if [ "$DIRTY" != "0" ] && [ "$ALLOW_DIRTY" = 0 ] && [ "$ISOLATE" != 1 ]; then
   echo "" >&2
-  echo "ERROR: working tree has $DIRTY modified tracked file(s) — a release artifact" >&2
+  echo "ERROR: working tree has $DIRTY tracked/untracked change(s) — a release artifact" >&2
   echo "       must come from a clean tree, otherwise BUILD-INFO.txt provenance is a lie." >&2
   echo "       Commit/stash first, or pass --allow-dirty (recorded as tree_state: dirty)." >&2
   exit 3
@@ -190,7 +198,7 @@ for target in targets.split():
         tag = target + ('+' + variant if variant != 'default' else '')
         artifacts.append({'file': f'zion-{version}-{tag}.tar.gz', 'target': target, 'variant': variant, 'features': features})
 with open(path, 'w') as f:
-    json.dump({'commit': commit, 'packages': packages.split(), 'artifacts': artifacts}, f, indent=2)
+    json.dump({'version': version, 'commit': commit, 'packages': packages.split(), 'artifacts': artifacts}, f, indent=2)
     f.write('\n')
 PY
 
@@ -230,6 +238,7 @@ build_one() { # build_one <target> <features> <bindir-out> <logfile> <variant>
     docker run --rm \
       -v "$REPO_ROOT":/src \
       -v "$OUT/cargo-target":/target \
+      -v "$bindir":/stage \
       -v "$cargo_home":/cargo-home \
       -e CARGO_HOME=/cargo-home \
       -e CARGO_TARGET_DIR=/target \
@@ -247,20 +256,19 @@ build_one() { # build_one <target> <features> <bindir-out> <logfile> <variant>
         case '$features' in *gpu-opencl*) [ -f /usr/include/CL/cl.h ] || { apt-get update -qq && apt-get install -y -qq ocl-icd-opencl-dev >/dev/null; } ;; esac
         rustup target add '$target' >/dev/null 2>&1 || true
         cargo build --release --target '$target' ${lockflag[*]+"${lockflag[*]}"} ${jobs_flag[*]+"${jobs_flag[*]}"} ${pkg_flags[*]+"${pkg_flags[*]}"} ${feat_flags[*]+"${feat_flags[*]}"} 2>&1
-        mkdir -p '$bindir'
         for b in $BINS; do
           for f in /target/'$target'/release/\$b /target/'$target'/release/\$b.exe; do
-            if [ -f \"\$f\" ]; then cp \"\$f\" '$bindir/'; fi
+            if [ -f \"\$f\" ]; then cp \"\$f\" /stage/; fi
           done
         done
-        chown -R \$HOST_UID:\$HOST_GID '$bindir' /target 2>/dev/null || true
-      " > "$logf" 2>&1
+        chown -R \$HOST_UID:\$HOST_GID /stage /target 2>/dev/null || true
+      " > "$logf" 2>&1 || return $?
   else
     # macOS bash 3.2 + `set -u`: expanding an EMPTY array with "${a[@]}" is
     # "unbound variable". The +"${a[@]}" idiom keeps it safe.
     ( cd "$V31" && ZION_GIT_SHA="$SHORT_SHA" cargo build --release --target "$target" \
         ${lockflag[@]+"${lockflag[@]}"} ${jobs_flag[@]+"${jobs_flag[@]}"} \
-        ${pkg_flags[@]+"${pkg_flags[@]}"} ${feat_flags[@]+"${feat_flags[@]}"} ) > "$logf" 2>&1
+        ${pkg_flags[@]+"${pkg_flags[@]}"} ${feat_flags[@]+"${feat_flags[@]}"} ) > "$logf" 2>&1 || return $?
     mkdir -p "$bindir"
     # CARGO_TARGET_DIR lets a clean worktree reuse the main checkout's build
     # cache instead of duplicating ~11 GB of target/ (disk on the dev Mac is
@@ -278,7 +286,7 @@ build_one() { # build_one <target> <features> <bindir-out> <logfile> <variant>
 
 write_build_info() { # write_build_info <stage> <target> <variant> <features>
   local stage="$1" target="$2" variant="$3" features="$4" tree="clean"
-  [ "$DIRTY" != "0" ] && tree="dirty ($DIRTY modified tracked files)"
+  [ "$DIRTY" != "0" ] && tree="dirty ($DIRTY tracked/untracked changes)"
   local toolchain rustc_line cargo_line
   if [ -n "$CONTAINER" ]; then
     rustc_line="$(docker run --rm "$CONTAINER" sh -c 'rustc -vV | tr "\n" " "' 2>/dev/null || echo "unknown")"
@@ -311,6 +319,7 @@ write_build_info() { # write_build_info <stage> <target> <variant> <features>
     echo "binaries:"
     for f in "$stage"/*; do
       [ -f "$f" ] || continue
+      [ "$(basename "$f")" != BUILD-INFO.txt ] || continue
       printf '  %s  %s  %s B\n' "$(sha256_of "$f")" "$(basename "$f")" "$(stat -c %s "$f" 2>/dev/null || stat -f %z "$f")"
     done
   } > "$stage/BUILD-INFO.txt"
@@ -346,7 +355,7 @@ for t in "${TARGETS[@]}"; do
     fi
     write_build_info "$stage" "$t" "$variant" "$features"
     tarfile="zion-$VERSION-$tag.tar.gz"
-    tar czf "$OUT/$tarfile" -C "$stage" .
+    COPYFILE_DISABLE=1 tar czf "$OUT/$tarfile" -C "$stage" .
     rm -rf "$stage" 2>/dev/null || true
     ( cd "$OUT" && echo "$(sha256_of "$tarfile")  $tarfile" >> "$SUMS" )
     echo "  + $tarfile ($count binaries, $(stat -c %s "$OUT/$tarfile" 2>/dev/null || stat -f %z "$OUT/$tarfile") B)"
