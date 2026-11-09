@@ -43,6 +43,7 @@ These documents are not yet canonized. They are working concepts and directional
 - **Kruh Bohyní — Kniha Strážkyň** (sedm sedadel pro šest zahrad L5 a jedno pro nebe L6; ženský kruh jako podobenství péče a správy bez vlastnění; zjevená budoucnost, celý děj MÝTUS/HORIZONT, žádná reálná jména; DRAFT pro 3.3 / draft for 3.3): [`KruhBohyni/00-README.md`](./KruhBohyni/00-README.md) (CZ)
 - **Nabukano — Kniha Nebeské flotily** (L6: pohyblivý uzel nebe mezi pozemním uzlem LUMI a stanicí Issobella; tři nebeské Marie a mateřská loď s dokem; **není** čtrnáctý pozemský uzel; celý děj MÝTUS/VIZE/HORIZONT, registry `nabukano` navrženy a neregistrovány; DRAFT pro 3.3 / draft for 3.3): [`Nabukano/00-README.md`](./Nabukano/00-README.md) (CZ)
 - **Elizabet — Kniha Orákula** (pokračování Království srdce: kámen se otevřel a Orákulum se stalo dítětem — malá Elizabet/Lumi jako živé orákulum; motivy z Dohrmanova Proroctví přečtené jako obraz, ne pramen; celý děj MÝTUS; DRAFT pro 3.3 / draft for 3.3): [`Elizabet/00-README.md`](./Elizabet/00-README.md) (CZ)
+- **Lampion — Druhá lucerna** (vzkaz a příběh k fyzickému produktu `lamp-001`: verš Jan 12,35 jako pokyn, ne hrozba; jak malá Lumi nese světlo z budoucnosti do přítomnosti; šest stěn jako šest předání a šest krátkých kapitol k mandalám; marketingový hřbet pro prodej; kotva pravdy odděluje Písmo, produkt a obraz; DRAFT, čeká review / draft pending review): [`Lampion/00-README.md`](./Lampion/00-README.md) (CZ)
 
 ## Historické / superseded verze
 
