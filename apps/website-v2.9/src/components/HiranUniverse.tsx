@@ -2,6 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 import clsx from 'clsx';
+// Three.js se tahá dynamicky až po mountu (viz níže), takže v type pozicích
+// není namespace `THREE` k dispozici — typy bereme z type-only importu.
+import type * as THREE_NS from 'three';
 
 /**
  * HiranUniverse — živá 3D scéna „Hiranyagarbha ve vesmíru" pro homepage.
@@ -130,8 +133,8 @@ function mountScene(
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x040308);
 
-  const ownedTextures: THREE.Texture[] = [];
-  const track = <T extends THREE.Texture>(t: T): T => {
+  const ownedTextures: THREE_NS.Texture[] = [];
+  const track = <T extends THREE_NS.Texture>(t: T): T => {
     ownedTextures.push(t);
     return t;
   };
@@ -151,7 +154,7 @@ function mountScene(
       new THREE.SphereGeometry(90, 96, 48, -Math.PI, Math.PI, 0.556, 1.75),
       new THREE.MeshBasicMaterial({ map: t, side: THREE.BackSide, fog: false, depthWrite: false })
     );
-    (dome.material as THREE.MeshBasicMaterial).color.setScalar(0.72);
+    (dome.material as THREE_NS.MeshBasicMaterial).color.setScalar(0.72);
     dome.renderOrder = -1;
     dome.rotation.z = -0.3;
     scene.add(dome);
@@ -350,7 +353,7 @@ function mountScene(
     metalness: 0.35,
     side: THREE.DoubleSide,
   });
-  const petalRing = (count: number, radius: number, tilt: number, len: number, wid: number, mat: THREE.Material, y = 0) => {
+  const petalRing = (count: number, radius: number, tilt: number, len: number, wid: number, mat: THREE_NS.Material, y = 0) => {
     const geo = petalGeometry(len, wid);
     for (let i = 0; i < count; i++) {
       const a = (i / count) * Math.PI * 2;
@@ -601,7 +604,7 @@ function mountScene(
 
     lotus.scale.setScalar(1 + Math.sin(t * (Math.PI * 2) / 5 - 0.6) * 0.008);
 
-    const pos = dustGeo.attributes.position as THREE.BufferAttribute;
+    const pos = dustGeo.attributes.position as THREE_NS.BufferAttribute;
     for (let i = 0; i < DUST_N; i++) {
       let y = pos.getY(i) + dustSpd[i] * 0.016;
       if (y > 3.6) {
@@ -634,9 +637,9 @@ function mountScene(
     io.disconnect();
     box.removeEventListener('pointermove', onPointer);
     scene.traverse((obj) => {
-      const mesh = obj as THREE.Mesh;
+      const mesh = obj as THREE_NS.Mesh;
       if (mesh.geometry) mesh.geometry.dispose();
-      const mat = mesh.material as THREE.Material | THREE.Material[] | undefined;
+      const mat = mesh.material as THREE_NS.Material | THREE_NS.Material[] | undefined;
       if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
       else mat?.dispose();
     });
