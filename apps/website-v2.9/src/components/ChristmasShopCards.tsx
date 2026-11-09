@@ -58,15 +58,15 @@ const CARDS: CardDef[] = [
     // Původní scéna s lampionem (tesař s dětmi), ne vánoční trh.
     image: '/images/news/christmas-2026/card-lampion.webp?v=7',
     icon: Flame,
-    kicker: { cs: 'Vánoční edice · číslovaná série', en: 'Christmas edition · numbered run' },
-    title: { cs: 'Lampion Království srdce', en: 'Kingdom of the Heart lantern' },
+    kicker: { cs: 'Vánoční edice · číslovaná', en: 'Christmas edition · numbered' },
+    title: { cs: 'Druhá lucerna', en: 'The second lantern' },
     desc: {
-      cs: 'Lampion Lumi 2 — šestihranná lucerna vyřezávaná laserem, 20,9 m řezných drah a čtyři hodiny práce na kus. V ceně digitální kniha, ZION Pass a svíčka ve skle.',
-      en: 'The Lumi 2 lantern — a hexagonal, laser-cut light with 20.9 m of cutting paths and four hours of work per piece. Digital book, ZION Pass and a candle in glass included.',
+      cs: 'Přijde rozložená: osm dílů z 3mm břízy, půl hodiny, dřevěné lepidlo. Svíčku zapálíš sám. 20,9 m řezu, čtyři hodiny laseru. Kniha a ZION Pass v ceně.',
+      en: 'It arrives flat: eight parts in 3 mm birch, half an hour, wood glue. You light the candle yourself. 20.9 m of cuts, four hours of laser. Book and ZION Pass included.',
     },
     price: '490 Kč',
     bonus: { cs: '+70 560 ZION bonus', en: '+70,560 ZION bonus' },
-    cta: { cs: 'Koupit v eShopu', en: 'Buy in the shop' },
+    cta: { cs: 'Chci si ho složit', en: 'I want to assemble it' },
     href: LAMP_URL,
   },
 ];

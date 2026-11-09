@@ -12,7 +12,7 @@ const Article = {
     date: '4. listopadu 2026',
     title: 'Vánoce v ZION — tři dary, kniha v osmi edicích, klient Kingdom a první svět OASIS',
     intro:
-      'Tři dary, jedna cesta. Vánoční edice přidává k příběhu Království srdce dva další: ZION Pass, který otevírá Nirvanu i Archiv, a ručně gravírovaný lampion se světlem z téhož příběhu. Kniha mezitím dorostla do osmi edic v pěti jazycích. A ekosystém se rozšiřuje o herní klient Kingdom, který zůstává ve vývoji, a o Nirvanu — první svět OASIS, který už je živý.',
+      'Tři dary, jedna cesta. Vánoční edice přidává k příběhu Království srdce dva další: ZION Pass, který otevírá Nirvanu i Archiv, a druhou lucernu, která přijde rozložená. Kniha mezitím dorostla do osmi edic v pěti jazycích. A ekosystém se rozšiřuje o herní klient Kingdom, který zůstává ve vývoji, a o Nirvanu — první svět OASIS, který už je živý.',
     imageAlt:
       'Vánoce 2026 — tesař s knihou, archa na vodě, brána Kingdom a svět Nirvana v jednom obraze',
     sections: [
@@ -32,10 +32,10 @@ const Article = {
       },
       {
         icon: Lamp,
-        title: 'Lampion Království srdce — světlo z příběhu',
+        title: 'Druhá lucerna — světlo, které si zapálíš sám',
         image: '/images/news/christmas-2026/lampion-wide.webp?v=7',
         imageAlt: 'Tesař s dětmi u hořícího lampionu, na stole kniha Království srdce a ZION Pass',
-        text: 'Lampion Lumi 2 — šestihranná lucerna vyřezávaná laserem — vychází ze scény, kde Lumi nese lampu k bráně. Vzory na těle nejsou dekorace: je to šest mandal z knihy. Jeden kus znamená 20,9 metru řezných drah, 614 obrysů a čtyři hodiny laseru, proto je edice číslovaná a vyrábí se v malých dávkách. Vánoční edice za 490 Kč obsahuje digitální knihu v plné sadě, ZION Pass a bonus 70 560 ZION; digitální část dorazí hned, fyzický lampion odejde ze dílny do dvou týdnů. Geometrii výrobku určuje samostatná technická dokumentace, ne ilustrace.',
+        text: 'Druhá lucerna. Lampion Lumi 2 přijde rozložený — osm dílů z 3mm březové překližky, půl hodiny a dřevěné lepidlo. Svíčku zapálíš sám. Jeden kus je 20,9 m řezných drah, 614 obrysů a čtyři hodiny laseru, proto je edice číslovaná. Za 490 Kč je v krabici i digitální kniha a ZION Pass; ty přijdou e-mailem hned, dřevo jde Zásilkovnou jako ploché díly. K ceně patří bonus 70 560 ZION. Fotografie jsou ilustrační.',
       },
       {
         icon: Gamepad2,
@@ -58,7 +58,7 @@ const Article = {
       'Zaplatíte převodem, kartou nebo v ZIONu. U digitálních darů není doprava, u lampionu ji spočítá pokladna.',
       'Do minuty po zaplacení dorazí e-mail: kód ZAP-…, odkaz na knihy (40 souborů) a ZION peněženka s bonusem.',
       'Kód uplatníte na nirvana.zionterranova.com i v ZION Archivu. Peněženku naimportujete do ZIS a bonus máte na adrese.',
-      'U lampionu navíc: digitální část přichází hned, samotný výrobek odchází ze dílny, až bude hotový.',
+      'U lampionu navíc: digitální část přichází hned. Dřevo odchází ze dílny rozložené — osm dílů, složíte ho vy.',
     ],
     faqTitle: 'Časté otázky',
     faq: [
@@ -103,7 +103,7 @@ const Article = {
     date: '4 November 2026',
     title: 'Christmas at ZION — three gifts, a book in eight editions, the Kingdom client and the first OASIS world',
     intro:
-      'Three gifts, one road. The Christmas edition adds two more to the story of Kingdom of the Heart: the ZION Pass, which opens Nirvana and the Archive, and a hand-engraved lantern carrying light from the same story. Meanwhile the book has grown into eight editions across five languages. And the ecosystem expands with the Kingdom game client, still in development, and Nirvana — the first OASIS world, already live.',
+      'Three gifts, one road. The Christmas edition adds two more to the story of Kingdom of the Heart: the ZION Pass, which opens Nirvana and the Archive, and a second lantern that arrives flat. Meanwhile the book has grown into eight editions across five languages. And the ecosystem expands with the Kingdom game client, still in development, and Nirvana — the first OASIS world, already live.',
     imageAlt:
       'Christmas 2026 — the carpenter with the book, the ark at sea, the Kingdom gate and the world of Nirvana in one picture',
     sections: [
@@ -123,10 +123,10 @@ const Article = {
       },
       {
         icon: Lamp,
-        title: 'The Kingdom of the Heart lantern — light from the story',
+        title: 'The second lantern — the light you strike yourself',
         image: '/images/news/christmas-2026/lampion-wide.webp?v=7',
         imageAlt: 'The carpenter with children around the lit lantern, the Kingdom of the Heart book and ZION Pass on the table',
-        text: 'The Lumi 2 lantern — a hexagonal, laser-cut light with 20.9 m of cutting paths and four hours of work per piece, coming from the scene where Lumi carries her lamp to the gate. The patterns on its body are not decoration — they are the mandalas from the book, which is why the edition is numbered and built in small batches. The Christmas edition at 490 CZK includes the full digital book set, a ZION Pass and a 70,560 ZION bonus; the digital part arrives immediately, while the crafted lantern ships from the workshop within two weeks. The geometry of the piece is defined by its own technical documentation, not by an illustration.',
+        text: 'The second lantern. Lumi 2 arrives flat — eight parts in 3 mm birch plywood, half an hour and wood glue. You light the candle yourself. One piece is 20.9 m of cutting paths, 614 outlines and four hours of laser time, which is why the edition is numbered. At 490 CZK the box also holds the digital book and a ZION Pass; those arrive by e-mail at once, and the wood ships via Zásilkovna as flat parts. The price carries a 70,560 ZION bonus. The photographs are illustrative.',
       },
       {
         icon: Gamepad2,
@@ -149,7 +149,7 @@ const Article = {
       'You pay by transfer, card or in ZION. Digital gifts ship nothing; the lantern’s shipping is calculated at checkout.',
       'Within a minute of payment an e-mail arrives: a ZAP-… code, a link to the books (40 files) and a ZION wallet with the bonus.',
       'You redeem the code on nirvana.zionterranova.com and in the ZION Archive. Import the wallet into ZIS and the bonus is yours.',
-      'With the lantern: the digital part arrives immediately, the crafted piece ships from the workshop once finished.',
+      'With the lantern: the digital part arrives immediately. The wood leaves the workshop flat — eight parts, and you assemble it.',
     ],
     faqTitle: 'Frequently asked',
     faq: [
