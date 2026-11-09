@@ -1812,7 +1812,7 @@ Text vznikl čtením celého korpusu `canon/books/` a jeho pravidel, zejména:
 
 - [`MiseAmenti/01-Kanon-a-Ustava.md`](../../MiseAmenti/01-Kanon-a-Ustava.md) — pět povinných stavů tvrzení (ŽIVÉ / STAVBA / HORIZONT / HYPOTÉZA / MÝTUS) a hranice proti zneužití.
 - [`MiseAmenti/07-Registr-Dukazu.md`](../../MiseAmenti/07-Registr-Dukazu.md) — registr dokladů, značky NEDOLOŽENO a NEPLATNÝ NÁROK.
-- [`canon/books/README.md`](../README.md) — kanonický index a pořadí pravdy při konfliktu.
+- [`canon/books/README.md`](../../README.md) — kanonický index a pořadí pravdy při konfliktu.
 - [`docs/3.3/NIRVANA-V3.3-KAPITOLA.md`](../../../../docs/3.3/NIRVANA-V3.3-KAPITOLA.md) — čtení vrstev L1–L6 jako „paluby" lodi.
 
 Z korpusu byly použity zejména: [`Maitreya`](../../Maitreya/00-README.md) (mantra tří vtělení), [`SulZeme`](../../SulZeme/00-README.md) (sůl a smlouva chleba), [`nirvana`](../../nirvana/00-README.md) 13 a 14 (Tres Marías, Archa), [`BodhiGaia`](../../BodhiGaia/00-README.md), [`Issobella`](../../Issobella/00-README.md), [`Lumi`](../../Lumi/00-README.md), [`Miriam`](../../Miriam/00-README.md), [`Ruze`](../../Ruze/00-README.md), [`KruhBohyni`](../../KruhBohyni/00-README.md), [`MariaCaminho`](../../MariaCaminho/00-README.md), [`NaCeste`](../../NaCeste/00-README.md), [`Nabukano`](../../Nabukano/00-README.md), [`Elizabet`](../../Elizabet/00-README.md), [`SurtaSrdce`](../../SurtaSrdce/00-README.md), [`NirvanaCloud`](../../NirvanaCloud/00-README.md).

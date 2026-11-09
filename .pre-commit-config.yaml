@@ -83,3 +83,13 @@ repos:
         language: system
         entry: python3 -m py_compile
         files: ^apps/desktop-agent/.*\.py$
+
+      # Rozbité relativní odkazy v markdownu (docs/, canon/, V31/, ...).
+      # Chytá regresi, která vznikne přesunem dokumentu nebo novou knihou
+      # s odkazy na staré cesty. Běží jen když se mění .md, trvá ~1 s.
+      - id: doc-links
+        name: check-doc-links (rozbité relativní odkazy)
+        language: system
+        entry: python3 scripts/ops/check-doc-links.py --quiet
+        pass_filenames: false
+        files: \.md$

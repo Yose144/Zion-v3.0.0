@@ -1,6 +1,6 @@
 # Rollback produkčních služeb (8.S3)
 
-> **Platí od:** 2026-11-08. Nástroj: [`scripts/ops/service-snapshot.sh`](../../scripts/ops/service-snapshot.sh).
+> **Platí od:** 2026-11-08. Nástroj: [`scripts/ops/service-snapshot.sh`](../../../scripts/ops/service-snapshot.sh).
 > **Stav:** 16 služeb má ověřený rollback artefakt (14 binárek + 2 Next aplikace).
 > **Self-test:** `bash scripts/ops/test-service-snapshot.sh` (běží bez produkce, se fake `systemctl`).
 

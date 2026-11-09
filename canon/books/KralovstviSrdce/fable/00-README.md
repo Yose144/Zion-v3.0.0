@@ -9,7 +9,7 @@
 > **Místo v kompasu:** **osa světla — vyprávěná zjevem.** Kniha Lucerny ([`Lumi/`](../../Lumi/00-README.md)) je svislá osa L1–L6; tato edice je táž osa vyprávěná zjevem: malá Lumi s lucernou prochází dvaceti staletími lodi a ukazuje běh dějin — od hoblinů v Nazaretě po prstenec Issobelly a zpátky k prvnímu prknu.
 > **Navazuje na:** [`Kralovstvi_srdce_Nova_plavba.md`](../Kralovstvi_srdce_Nova_plavba_Balicek/Kralovstvi_srdce_Nova_plavba.md) (vlahková prodejní edice — stejný příběh v třetí osobě; tato edice ji nepřepisuje, vypráví jinak a jinde), [`Lumi/01`](../../Lumi/01-Dite-na-Pridi.md) (původ lucerny: cedr, střep lodní lampy, plamen Ekam), [`Lumi/11`](../../Lumi/11-Sto-Let-Lucerny.md) (sto let lucerny), [`Lumi/12`](../../Lumi/12-Brana-Zustava-Otevrena.md) (brána a prázdná stránka).
 > **Jazyk:** čeština (kanonická). Překlady vzniknou až po českém review.
-> **Pravidlo textu:** *Příběh → Lucerna sklopená → Kotva pravdy*. Kde text mluví o síti, fondu, bráně nebo kódu, vítězí [`MiseAmenti/07-Registr-Dukazu.md`](../../MiseAmenti/07-Registr-Dukazu.md), [`StatusV3.md`](../../../docs/3.2/StatusV3.md) a živý repozitář před příběhem.
+> **Pravidlo textu:** *Příběh → Lucerna sklopená → Kotva pravdy*. Kde text mluví o síti, fondu, bráně nebo kódu, vítězí [`MiseAmenti/07-Registr-Dukazu.md`](../../MiseAmenti/07-Registr-Dukazu.md), [`StatusV3.md`](../../../../docs/3.2/StatusV3.md) a živý repozitář před příběhem.
 
 ---
 

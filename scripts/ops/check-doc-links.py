@@ -42,6 +42,11 @@ LIVE_ROOT_FILES = [
 LIVE_EXCLUDE = {
     "V31/docs", "ZION_OS/docs", "canon/l6/proEricku",
     "apps/website-v2.9/archive-content",
+    # Distribuční balíček knih: markdown se sem kopíruje z canon/books/<edice>/
+    # a relativní odkazy uvnitř textu míří na repo layout, ne na balíček
+    # (build_edition.py je nepřepisuje). Není to dokumentace repa — je to
+    # export pro čtenáře, proto se stejným zacházením jako archive/.
+    "canon/Kralovstvi_srdce_Zion_CZ_EN_FR_ES_PT_PRODEJ",
 }
 SKIP_DIRNAMES = {".git", "node_modules", ".next", "target", ".artifacts",
                  "dist", "build", "Cache", "Autotune", "BACKUP", "__pycache__"}

@@ -32,7 +32,7 @@ Toto mluví **z dílny, kde se ptají**.
 
 | Edice | Kdo vypráví | Co drží |
 |---|---|---|
-| [Hlavní text](../00-README.md) | Vševědoucí hlas midraše | Deset zastavení, kotva pravdy, čtení pro děti |
+| [Hlavní text](../KralovstviSrdce/00-README.md) | Vševědoucí hlas midraše | Deset zastavení, kotva pravdy, čtení pro děti |
 | [`cloude`](../KralovstviSrdce/cloude/full.md) | Literární vypravěč | Rozšíření téhož midraše |
 | [`gemini`](../KralovstviSrdce/gemini/00-README.md) | Architekt korpusu | Dvacet čtyři kapitol, čtyři předměty, mapa šestnácti knih |
 | [`gpt`](../KralovstviSrdce/gpt/00-README.md) | Tesař | Řemeslo, které nekončí odkazem |
