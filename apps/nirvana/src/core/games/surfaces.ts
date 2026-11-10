@@ -22,6 +22,7 @@ export const SURFACES = [
   '/multiplayer',
   '/lumi',
   '/fleet',
+  '/piko',
 ];
 
 /** Nápověda k ovládání pro aktuální povrch (jedno místo pro lištu i menu). */
@@ -88,6 +89,13 @@ export const CONTROLS: Record<string, { cs: string; en: string; es?: string; pt?
     es: 'W acelerar · S frenar · A/D girar · Q/E alabear · Shift impulso',
     pt: 'W acelerar · S travar · A/D virar · Q/E inclinar · Shift impulso',
     fr: 'W gaz · S frein · A/D tourner · Q/E roulis · Shift boost',
+  },
+  '/piko': {
+    cs: 'W záběr · S brzda · A/D kormidlo (kánoe i surf)',
+    en: 'W stroke · S brace · A/D steer (canoe & surf)',
+    es: 'W remar · S frenar · A/D timón (canoa y surf)',
+    pt: 'W remar · S travar · A/D timão (canoa e surf)',
+    fr: 'W ramer · S freiner · A/D gouverner (canoë et surf)',
   },
   '/avatars': {
     cs: 'klikni postavu · pak Uložit',

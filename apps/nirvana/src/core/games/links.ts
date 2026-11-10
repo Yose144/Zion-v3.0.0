@@ -91,6 +91,14 @@ export const GAME_LINKS: GameLink[] = [
     tone: '#bfe6ea',
   },
   {
+    id: 'piko',
+    href: '/piko',
+    title: { cs: 'Te Pīko Ora', en: 'Te Pīko Ora' },
+    note: { cs: 'laguna · kánoe a surf', en: 'lagoon · canoe & surf' },
+    glyph: '🛶',
+    tone: '#2fb8ad',
+  },
+  {
     id: 'neptune',
     href: '/neptune',
     title: { cs: 'Neptun', en: 'Neptune' },

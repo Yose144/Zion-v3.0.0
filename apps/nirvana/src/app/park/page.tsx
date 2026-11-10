@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { isGamePaused } from '@/core/games/pause';
 import Link from 'next/link';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -27,6 +26,7 @@ import { emptyScores, type ParkScores } from '@/core/park/scores';
 import { GALLERY_SECONDS } from '@/core/scene/park/ShootingGallery';
 import { TouchButton } from '@/core/games/TouchPad';
 import { canvasDpr } from '@/core/design/dpr';
+import { isGamePaused } from '@/core/games/pause';
 
 /**
  * Jupiter Station — pouť.
@@ -50,6 +50,7 @@ const TITLES: { id: ParkGameId; title: { cs: string; en: string; es?: string } }
   { id: 'moba', title: { cs: 'První svět', en: 'First World', es: 'Primer Mundo' } },
   { id: 'tanks', title: { cs: 'Saturn tanky', en: 'Saturn tanks', es: 'Tanques de Saturno' } },
   { id: 'lumi', title: { cs: 'Lumi', en: 'Lumi' } },
+  { id: 'piko', title: { cs: 'Te Pīko Ora', en: 'Te Pīko Ora', es: 'Te Pīko Ora' } },
 ];
 
 const BOARD = TITLES;

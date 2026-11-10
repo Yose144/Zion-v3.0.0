@@ -31,6 +31,7 @@ const GAMES: ParkGameId[] = [
   'moba',
   'tanks',
   'lumi',
+  'piko',
 ];
 
 /** Cíle podle toho, kolik bodů hra reálně dává. */
@@ -48,6 +49,7 @@ const TARGETS: Record<ParkGameId, number> = {
   moba: 600, // vyhraný zápas na Prvním světě
   tanks: 300, // vyhrát tankový duel 2:0
   lumi: 900, // donést všech sedm světel (700 + časový bonus)
+  piko: 600, // laguna: šest bójí nebo tři vlny
 };
 
 export const CHALLENGE_REWARD = 5;

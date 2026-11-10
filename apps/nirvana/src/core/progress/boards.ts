@@ -99,6 +99,7 @@ export const GAME_TITLES: Record<ParkGameId, { cs: string; en: string; glyph: st
   moba: { cs: 'První svět', en: 'First world', glyph: '🌍' },
   tanks: { cs: 'Saturn tanky', en: 'Saturn tanks', glyph: '🛡' },
   lumi: { cs: 'Lumi', en: 'Lumi', glyph: '🏮' },
+  piko: { cs: 'Te Pīko Ora', en: 'Te Pīko Ora', glyph: '🛶' },
 };
 
 /** Pořadí, v jakém se hry ukazují v žebříčcích (od nejhranějších). */
@@ -109,6 +110,7 @@ export const GAME_ORDER: ParkGameId[] = [
   'fight',
   'tanks',
   'lumi',
+  'piko',
   'gallery',
   'pong',
   'breakout',

@@ -2534,6 +2534,47 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Protokol se nemění** (zůstává 32): prstence jsou deterministické z cesty,
   každý klient je vidí stejně a v koopu jsou osobní (nesdílí se jako světla).
 
+## Te Pīko Ora — laguna `/piko` (2026-11-10)
+
+- **Dvě hry, jeden svět.** `/piko` nabízí `Va'a` (kánoe mezi šesti bójemi)
+  a `Nalu` (tři vlny, kapsa, balanc). Sdílí scénu, tabuli i progresi —
+  nová hra se přidává do **pěti seznamů**: `ParkGameId`, `emptyScores`,
+  `GAMES` + `emptyBoard` v `/api/park/scores`, `GAMES`+`TARGETS`
+  v `challenge.ts` a `GAME_TITLES`/`GAME_ORDER` v `progress/boards.ts`.
+  Lišta a hamburger menu čtou `GAME_LINKS` + `core/games/surfaces.ts`
+  (`SURFACES` a `CONTROLS`) — nová routa musí být v obou, jinak se na ní
+  lišta nevykreslí. Když jeden seznam chybí, skóre se tiše ztratí nebo hra
+  zmizí ze žebříčků.
+- **Simulace je čistá a testovaná** (`core/piko/canoe.ts`, `surf.ts`,
+  `world.ts`): `npx tsx test/piko-sim.mjs` (53 kontrol). Držené pádlo není
+  plyn, ale **rytmus** (`strokePeriod`); bóje platí jen v pořadí; surf má
+  kapsu (`pocketTargetFor` — stejnou funkci čte scéna i HUD) a balanc.
+- **Skóre obou módů je kalibrované na stejný rozsah** (0–1200): kánoe
+  6 × 120 + časový bonus do 100 s, surf tři vlny × (vzdálenost + kapsa +
+  čistota). Cíl denní výzvy je 600.
+- **Vizuál se ladil podle snímků, ne podle kódu.** První verze měla hory
+  jako černé pyramidy přes celý obzor, molo v ose kamery a vlnu jako
+  175 × 13 desku — kód byl „správně“. Pomohlo: hory dál a níž (`z ≈ −330`),
+  doplňkové světlo z břehu, molo na `x = −18`, kamera kánoe 6,6 j. za lodí.
+- **Vlna je pěna, ne stěna.** Dlouhý pruh mezi kamerou a surfařem přerostl
+  záběr; teď jsou to tři měkké pěnové elipsy (`FoamPatch` + radiální
+  `CanvasTexture`) a kamera je **za surfařem** (dívá se na břeh) — vesnice
+  je čitelnější pozadí než prázdné moře. Kapsu ukazuje zlatý prstenec
+  ve scéně a šipka `◀/▶` v HUD (kapsa může být mimo zorné pole).
+- **Bóje jsou šest samostatných meshů, ne `instanceColor`.** Přes
+  instancované barvy se změna „projetá bóje“ neprojevila spolehlivě;
+  šest draw callů za funkční barvu je lepší obchod.
+- **Jediná herní textura je pěna** (canvas); voda i obloha jsou shadery,
+  palmy/chýše/molo/bóje instancované. Statistiky jdou do HUD 10×/s.
+  Naměřeno: **32 draw calls, 26,9 tis. trojúhelníků** (swiftshader, 1440×900).
+- **Koncept `/present/te-piko-ora` má CTA do hry** (`.present-game-cta`).
+- **Pauza:** scéna čte `isGamePaused()` (`core/games/pause`) a při otevřeném
+  hamburger menu `useFrame` přeskočí + vyčistí klávesy; jinak by kánoe
+  po zavření menu vyplula sama. `mobile-audit.mjs` má `/piko` v `PAGES`.
+- **Meze:** sólo (žádný multiplayer), VR jen kód (netestováno na headsetu),
+  mobil emulovaný (`e2e/piko-audit.mjs`), žádné lodě v pozadí ani zvuk
+  motoru — zvuky jsou syntéza (`stroke`, `gate`, `swell`, `wipeout`).
+
 ## Hamburger menu a pauza pro všechny hry (2026-11-10)
 
 - **Jedno menu, ne devět.** `core/games/GameMenu.tsx` se renderuje z `GameHud`
@@ -2555,7 +2596,7 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Pauza je modul, ne prop.** `core/games/pause.ts` (`isGamePaused`,
   `setGamePaused`) — menu ji zapíná, hlavní smyčky her ji čtou. Integrováno
   v aréně (sólo i MP), závodě, souboji, MOBĚ (sólo i online), Lumi, flotile,
-  tancích a pouti. Ambientní animace (mraky, jiskry) běží dál — pauza se
+  tancích, pouti a v laguně (`/piko`). Ambientní animace (mraky, jiskry) běží dál — pauza se
   týká **simulace**, ne dekorace.
 - **Formulářové prvky v menu musí klávesy dostat.** Capture listener na
   `window` zastaví propagaci do hry, ale `input/button/a/textarea/select`

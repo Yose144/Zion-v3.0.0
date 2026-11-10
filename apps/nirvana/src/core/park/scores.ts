@@ -24,6 +24,7 @@ export function emptyScores(): ParkScores {
     moba: [],
     tanks: [],
     lumi: [],
+    piko: [],
   };
 }
 

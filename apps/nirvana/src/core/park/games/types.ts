@@ -12,7 +12,7 @@
 
 export type CanvasGameId = 'pong' | 'breakout' | 'snake' | 'tetris' | 'asteroids' | 'tower';
 /** Cokoli, co jde hrát a zapsat do tabule. Střelnice je 3D, ne canvas. */
-export type ParkGameId = CanvasGameId | 'gallery' | 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi';
+export type ParkGameId = CanvasGameId | 'gallery' | 'arena' | 'race' | 'fight' | 'moba' | 'tanks' | 'lumi' | 'piko';
 
 export interface ParkGameHooks {
   /** Aktuální skóre (volá se při každé změně, ne každý frame). */

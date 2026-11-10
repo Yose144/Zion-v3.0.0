@@ -25,6 +25,7 @@ const GAMES = new Set([
   'moba',
   'tanks',
   'lumi',
+  'piko',
 ]);
 const TOP = 10;
 const MAX_SCORE = 100_000;
@@ -61,6 +62,7 @@ function emptyBoard(): Board {
     moba: [],
     tanks: [],
     lumi: [],
+    piko: [],
   };
 }
 

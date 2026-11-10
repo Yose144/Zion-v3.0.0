@@ -79,6 +79,13 @@ const PAGES = [
     cast: { bar: '.moba-bar.is-mana span', button: '.moba-touch-btn.is-spell' },
   },
   {
+    path: '/piko',
+    name: 'Te Pīko Ora',
+    start: /Vyplout|Paddle out/i,
+    control: '.touch-pad',
+    minControls: 4,
+  },
+  {
     path: '/saturn',
     name: 'Saturn tanky',
     start: /Tanky/i,
