@@ -2546,9 +2546,11 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   lišta nevykreslí. Když jeden seznam chybí, skóre se tiše ztratí nebo hra
   zmizí ze žebříčků.
 - **Simulace je čistá a testovaná** (`core/piko/canoe.ts`, `surf.ts`,
-  `world.ts`): `npx tsx test/piko-sim.mjs` (53 kontrol). Držené pádlo není
+  `world.ts`): `npx tsx test/piko-sim.mjs` (64 kontrol). Držené pádlo není
   plyn, ale **rytmus** (`strokePeriod`); bóje platí jen v pořadí; surf má
-  kapsu (`pocketTargetFor` — stejnou funkci čte scéna i HUD) a balanc.
+  kapsu (`pocketTargetFor` — stejnou funkci čte scéna i HUD), **flow**
+  (násobič 1→3), **vzdušné triky** a balanc. Kánoe má boční **vítr**,
+  který se v čase stáčí a unáší loď i bez záběru (HUD ukazuje směr vůči přídi).
 - **Skóre obou módů je kalibrované na stejný rozsah** (0–1200): kánoe
   6 × 120 + časový bonus do 100 s, surf tři vlny × (vzdálenost + kapsa +
   čistota). Cíl denní výzvy je 600.
@@ -2566,7 +2568,22 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   šest draw callů za funkční barvu je lepší obchod.
 - **Jediná herní textura je pěna** (canvas); voda i obloha jsou shadery,
   palmy/chýše/molo/bóje instancované. Statistiky jdou do HUD 10×/s.
-  Naměřeno: **32 draw calls, 26,9 tis. trojúhelníků** (swiftshader, 1440×900).
+  Naměřeno: **33 draw calls, 26,9 tis. trojúhelníků** (1440×900) — i s duchem,
+  minimapou a částicemi.
+- **Profi vrstva:** `passport.ts` (medaile, skiny, rekordy, `nirvana.piko.v1`),
+  `ghost.ts` (vzorkovaná nejlepší jízda, 0,2 s; ukládá se jen při rekordu),
+  `effects.ts` (pool 72 částic) a `PikoMinimap.tsx` (SVG). Testy:
+  `test/piko-sim.mjs` 64 + `test/piko-pro.mjs` 54 + `e2e/piko-audit.mjs` 48.
+  Medaile: kánoe 720/900/1050, surf 800/1100/1400 (surf výš kvůli trikům).
+  Skin se odemyká jen ve svém módu; medaile se nikdy nesnižuje.
+- **Částice chtějí vlastní shader.** `PointsMaterial` bez textury kreslí bílé
+  čtverečky; shader s `gl_PointCoord` + `discard` dá kapičky bez textury.
+- **Na mobilu schoval pro panel start pod lištu.** `.game-hud` má
+  `z-index: 55`, takže „Vyplout“ nešlo kliknout; `.piko-panel` má na
+  ≤760 px `padding-bottom: 6.5rem`, aby se akce odscrollovaly nad lištu.
+- **Duch se na startu překrývá s hráčem** (stejné startovní souřadnice) —
+  ukazuje se až po 0,4 s jízdy. Test flow musí kapsu každý krok dorovnávat,
+  jinak statické `x` po 3 s ujede a měří mimo kapsu.
 - **Koncept `/present/te-piko-ora` má CTA do hry** (`.present-game-cta`).
 - **Pauza:** scéna čte `isGamePaused()` (`core/games/pause`) a při otevřeném
   hamburger menu `useFrame` přeskočí + vyčistí klávesy; jinak by kánoe

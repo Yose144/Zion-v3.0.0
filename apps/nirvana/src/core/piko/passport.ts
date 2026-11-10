@@ -38,7 +38,7 @@ export function betterMedal(a: Medal, b: Medal): Medal {
  */
 export const PIKO_MEDALS: Record<PikoMode, { bronze: number; silver: number; gold: number }> = {
   canoe: { bronze: 720, silver: 900, gold: 1050 },
-  surf: { bronze: 600, silver: 820, gold: 1000 },
+  surf: { bronze: 800, silver: 1100, gold: 1400 },
 };
 
 export function medalFor(score: number, mode: PikoMode): Medal {

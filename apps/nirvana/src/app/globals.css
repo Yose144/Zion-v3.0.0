@@ -1773,56 +1773,6 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   }
 }
 
-/* Přesnost v HUD — profesionální metrika, ne dekorace. */
-.arena-hud .arena-acc {
-  color: rgba(255, 233, 168, 0.72);
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-}
-
-/* Kill feed (Q3): poslední fragy a smrti, 4,5 s. */
-.arena-killfeed {
-  position: absolute;
-  z-index: 13;
-  top: calc(1rem + env(safe-area-inset-top, 0px));
-  left: calc(1rem + env(safe-area-inset-left, 0px));
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  max-width: min(18rem, 42vw);
-  pointer-events: none;
-}
-
-.arena-killfeed span {
-  padding: 0.25rem 0.55rem;
-  border-radius: 0.45rem;
-  background: rgba(12, 6, 4, 0.72);
-  border: 1px solid rgba(255, 180, 106, 0.22);
-  font-size: 0.66rem;
-  letter-spacing: 0.06em;
-  color: rgba(255, 233, 168, 0.85);
-  backdrop-filter: blur(4px);
-}
-
-.arena-killfeed span.is-frag {
-  border-color: rgba(127, 227, 212, 0.4);
-  color: #7fe3d4;
-}
-
-.arena-killfeed span.is-death {
-  border-color: rgba(255, 92, 92, 0.45);
-  color: #ff8a7a;
-}
-
-@media (hover: none) and (pointer: coarse) {
-  /* Nad HUDem a tabulí, ale mimo dotykové zóny. */
-  .arena-killfeed {
-    top: calc(7rem + env(safe-area-inset-top, 0px));
-    left: 0.5rem;
-    max-width: 48vw;
-  }
-}
-
 /* Haste (Q3): tyrkysový chip vedle Quadu. */
 .arena-hud .arena-haste {
   color: #7fe3d4;
@@ -10096,5 +10046,345 @@ a.game-hud-chip.is-lumi em {
 @media (hover: none) and (pointer: coarse) {
   .present-game-cta {
     min-height: 2.5rem;
+  }
+}
+
+/* ── Te Pīko Ora · profi vrstva (minimapa, medaile, skiny) ───────────── */
+
+/* Minimapa: SVG vlevo nahoře, mimo HUD (ten je dole / na mobilu nahoře). */
+.piko-minimap {
+  position: absolute;
+  z-index: 13;
+  top: calc(0.8rem + env(safe-area-inset-top, 0px));
+  left: 0.8rem;
+  width: min(168px, 38vw);
+  pointer-events: none;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.35));
+}
+
+.piko-minimap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.piko-map-water {
+  fill: rgba(5, 38, 44, 0.78);
+  stroke: rgba(127, 227, 212, 0.35);
+}
+
+.piko-map-sand {
+  fill: rgba(232, 211, 164, 0.8);
+}
+
+.piko-map-label {
+  fill: rgba(191, 238, 230, 0.62);
+  font-size: 6px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.piko-map-reef {
+  stroke: rgba(191, 238, 230, 0.32);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.piko-map-course {
+  fill: none;
+  stroke: rgba(159, 232, 222, 0.24);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+
+.piko-map-gate {
+  fill: rgba(159, 232, 222, 0.45);
+  stroke: rgba(5, 38, 44, 0.85);
+  stroke-width: 1;
+}
+
+.piko-map-gate.is-passed {
+  fill: rgba(43, 111, 106, 0.55);
+}
+
+.piko-map-gate.is-next {
+  fill: #ffd166;
+}
+
+.piko-map-next-ring {
+  fill: none;
+  stroke: rgba(255, 209, 102, 0.55);
+  stroke-width: 1.2;
+}
+
+.piko-map-player {
+  fill: #ffd166;
+  stroke: rgba(4, 20, 22, 0.9);
+  stroke-width: 0.8;
+}
+
+.piko-map-ghost {
+  fill: rgba(127, 227, 212, 0.55);
+}
+
+.piko-map-wind {
+  fill: #bfeee6;
+}
+
+.piko-map-track {
+  fill: rgba(255, 255, 255, 0.14);
+}
+
+.piko-map-progress {
+  fill: #7fe3d4;
+}
+
+.piko-map-lane {
+  fill: rgba(255, 255, 255, 0.1);
+}
+
+.piko-map-pocket {
+  fill: #ffd166;
+}
+
+.piko-map-flow {
+  fill: #7fe3d4;
+}
+
+/* Na telefonu je HUD nahoře (koarse), tak minimapa jde pod něj. */
+@media (max-width: 760px) {
+  .piko-minimap {
+    width: 108px;
+    /* HUD se na mobilu zalamuje do 2–3 řádků, tak minimapa jde pod něj. */
+    top: calc(6.2rem + env(safe-area-inset-top, 0px));
+    left: 0.5rem;
+  }
+
+  /* Popisky jsou v 6px na 108px mapě nečitelné — mapa mluví barvami. */
+  .piko-minimap .piko-map-label {
+    display: none;
+  }
+}
+
+/* Pas: medaile, rekordy a skiny v menu. */
+.piko-pro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.2rem 0 1rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(127, 227, 212, 0.25);
+  background: rgba(6, 26, 28, 0.55);
+}
+
+.piko-pro-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(191, 238, 230, 0.65);
+}
+
+.piko-medals {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.piko-medal {
+  flex: 1 1 0;
+  min-width: 5.2rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.1rem 0.35rem;
+  padding: 0.3rem 0.45rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  opacity: 0.55;
+}
+
+.piko-medal.is-earned {
+  opacity: 1;
+  border-color: rgba(255, 209, 102, 0.5);
+  background: rgba(255, 209, 102, 0.1);
+}
+
+.piko-medal i {
+  grid-row: span 2;
+  font-size: 1rem;
+  font-style: normal;
+}
+
+.piko-medal strong {
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.piko-medal em {
+  font-style: normal;
+  font-size: 0.58rem;
+  color: rgba(246, 231, 216, 0.6);
+  font-variant-numeric: tabular-nums;
+}
+
+.piko-pro-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  font-size: 0.7rem;
+  color: rgba(246, 231, 216, 0.75);
+  font-variant-numeric: tabular-nums;
+}
+
+.piko-pro-stats strong {
+  color: #ffd166;
+}
+
+.piko-pro-title {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(191, 238, 230, 0.6);
+}
+
+.piko-skin-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.piko-skin {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 227, 212, 0.3);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(246, 231, 216, 0.82);
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.piko-skin i {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35) inset;
+}
+
+.piko-skin.is-active {
+  border-color: #ffd166;
+  color: #ffe9a8;
+  background: rgba(255, 209, 102, 0.14);
+}
+
+.piko-skin.is-locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.piko-skin em {
+  font-style: normal;
+  font-size: 0.6rem;
+}
+
+.piko-ghost-note {
+  margin: 0;
+  font-size: 0.62rem;
+  color: rgba(191, 238, 230, 0.55);
+}
+
+/* Výsledková karta: rekord, medaile, odemčené skiny. */
+.piko-pro-result {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.7rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.72rem;
+  color: #bfeee6;
+}
+
+.piko-pro-result .is-record {
+  color: #ffd166;
+  font-weight: 700;
+}
+
+/* HUD: série (flow), vzduch a vítr. */
+.piko-combo {
+  color: #7fe3d4;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.piko-combo.is-hot {
+  color: #ffd166;
+  text-shadow: 0 0 8px rgba(255, 209, 102, 0.5);
+}
+
+.piko-air {
+  color: #ffd166;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  animation: piko-air 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes piko-air {
+  from {
+    opacity: 0.65;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.piko-wind {
+  display: inline-flex;
+  align-items: center;
+}
+
+.piko-wind svg {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  fill: #bfeee6;
+  transition: transform 0.2s linear;
+}
+
+/* Trik na dotyku: páté tlačítko nad brzdou (jen surf). */
+.touch-key.piko-trick {
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  bottom: calc(9.6rem + env(safe-area-inset-bottom, 0px));
+  min-width: 3.8rem;
+  min-height: 3.8rem;
+  border-color: rgba(255, 209, 102, 0.6);
+  color: #ffe9a8;
+  font-size: 0.62rem;
+}
+
+@media (max-height: 480px) and (hover: none) and (pointer: coarse) {
+  .touch-key.piko-trick {
+    bottom: calc(7.4rem + env(safe-area-inset-bottom, 0px));
+    min-width: 3.2rem;
+    min-height: 3.2rem;
+  }
+}
+
+/* Na telefonu je panel delší než displej a spodní lišta (z-index 55) sedí
+ * nad ním — bez spodního insetu se „Vyplout“ schová pod lištu a nejde
+ * kliknout (odhalil to mobilní audit). */
+@media (max-width: 760px) {
+  .piko-panel {
+    padding-bottom: 6.5rem;
   }
 }

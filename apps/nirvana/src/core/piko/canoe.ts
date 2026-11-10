@@ -27,6 +27,13 @@ export const CANOE = {
   turnRate: 1.05,
   /** Pobřežní proud táhne ke břehu (m/s). */
   current: 0.12,
+  /** Boční vítr (m/s) — nutí kormidlovat i na rovině. */
+  windStrength: 0.5,
+  /** Základní směr větru (rad); kývá se podle času. */
+  windBase: 2.4,
+  /** Rychlost kývání větru (rad/s) a rozkmit. */
+  windTurn: 0.07,
+  windSwing: 0.8,
 } as const;
 
 export const GATE_POINTS = 120;
@@ -53,6 +60,8 @@ export interface CanoeState {
   score: number;
   /** Čas posledního nárazu do útesu (s) — brání trvalému brzdění. */
   hitAt: number;
+  /** Aktuální směr větru (rad) — pro HUD a testy. */
+  windAngle: number;
 }
 
 export interface CanoeInput {
@@ -98,6 +107,7 @@ export function createCanoe(): CanoeState {
     finished: false,
     score: 0,
     hitAt: -10,
+    windAngle: CANOE.windBase,
   };
 }
 
@@ -145,9 +155,13 @@ export function stepCanoe(state: CanoeState, input: CanoeInput, dt: number): Can
   const authority = 0.4 + 0.6 * Math.min(1, state.speed / 3.5);
   state.heading += steer * CANOE.turnRate * authority * step;
 
-  // proud táhne ke břehu — bez záběrů se loď pomalu vrací
+  // proud a vítr unášejí loď — bez kormidlování se kurz rozjede
+  const windAngle = CANOE.windBase + Math.sin(state.elapsed * CANOE.windTurn) * CANOE.windSwing;
+  state.windAngle = windAngle;
   state.x += Math.sin(state.heading) * state.speed * step;
   state.z += Math.cos(state.heading) * state.speed * step + CANOE.current * step;
+  state.x += Math.cos(windAngle) * CANOE.windStrength * step;
+  state.z += Math.sin(windAngle) * CANOE.windStrength * step;
 
   // hranice laguny: útes i břeh jsou zeď, ne pružina
   let hitReef = false;

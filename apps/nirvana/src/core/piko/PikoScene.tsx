@@ -26,6 +26,9 @@ import { isGamePaused } from '@/core/games/pause';
 import { PIKO_COLORS, PIKO_GATES, START, waveHeightAt, waveProgressZ, type PikoMode } from './world';
 import { CANOE, createCanoe, stepCanoe, type CanoeState } from './canoe';
 import { SURF, createSurf, pocketTargetFor, stepSurf, type SurfState } from './surf';
+import { pushGhost, sampleGhost, type GhostPoint, type GhostRun } from './ghost';
+import { SplashField, SPLASH_MAX } from './effects';
+import type { PikoSkin } from './passport';
 
 export interface PikoStats {
   mode: PikoMode;
@@ -43,8 +46,26 @@ export interface PikoStats {
   pocket: number;
   /** Poloha hráče a kapsy (m) — HUD z toho dělá šipku kapse. */
   x: number;
+  z: number;
   pocketX: number;
+  /** Natočení hráče (rad) — pro minimapu. */
+  heading: number;
+  /** Kánoe: index další bóje. */
+  nextGate: number;
+  /** Kánoe: směr větru (rad) a síla (m/s). */
+  windAngle: number;
+  windStrength: number;
+  /** Surf: flow 0..1, násobič, vzduch a triky. */
+  flow: number;
+  combo: number;
+  air: number;
+  tricks: number;
+  /** Ujeté metry na téhle vlně (surf) — pro minimapu. */
+  waveDistance: number;
   distance: number;
+  /** Poloha ducha v tomhle snímku (null = žádný/neaktivní). */
+  ghostX: number | null;
+  ghostZ: number | null;
   waveTimer: number;
   started: boolean;
   finished: boolean;
@@ -61,6 +82,9 @@ export interface PikoResult {
   waves: number;
   distance: number;
   wipes: number;
+  tricks: number;
+  /** Vzorky dráhy pro ghosta (nejlepší jízda). */
+  ghost: GhostPoint[];
 }
 
 /* ── voda a obloha ─────────────────────────────────────────────────── */
@@ -111,6 +135,24 @@ void main() {
   color += uSun * glint * 0.22;
 
   gl_FragColor = vec4(color, 1.0);
+}`;
+
+const SPLASH_VERTEX = `
+void main() {
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  // velikost podle vzdálenosti — bez textury, takže částice jsou vždy kulate
+  gl_PointSize = clamp(95.0 / max(1.0, -mv.z), 2.0, 18.0);
+  gl_Position = projectionMatrix * mv;
+}`;
+
+const SPLASH_FRAGMENT = `
+uniform vec3 uColor;
+void main() {
+  vec2 d = gl_PointCoord - 0.5;
+  float r = length(d);
+  if (r > 0.5) discard;
+  float a = smoothstep(0.5, 0.08, r);
+  gl_FragColor = vec4(uColor, a * 0.8);
 }`;
 
 const SKY_VERTEX = `
@@ -598,18 +640,20 @@ function CanoeModel({
   paddleRef,
   wakeRef,
   foam,
+  skin,
 }: {
   groupRef: React.RefObject<THREE.Group | null>;
   paddleRef: React.RefObject<THREE.Group | null>;
   wakeRef: React.RefObject<THREE.Mesh | null>;
   foam: THREE.Texture | null;
+  skin: PikoSkin;
 }) {
   return (
     <group ref={groupRef} position={[START.x, 0, START.z]} rotation={[0, Math.PI, 0]}>
       {/* trup a vnitřek */}
       <mesh position={[0, 0.16, 0]} scale={[0.46, 0.3, 2.5]}>
         <sphereGeometry args={[1, 16, 10]} />
-        <meshStandardMaterial color="#6b4a29" roughness={0.85} />
+        <meshStandardMaterial color={skin.hull ?? '#6b4a29'} roughness={0.85} />
       </mesh>
       <mesh position={[0, 0.32, 0]} scale={[0.3, 0.08, 1.9]}>
         <sphereGeometry args={[1, 12, 8]} />
@@ -618,7 +662,7 @@ function CanoeModel({
       {/* balancírka a boomy */}
       <mesh position={[1.05, 0.1, 0]} scale={[0.16, 0.14, 1.6]}>
         <sphereGeometry args={[1, 10, 8]} />
-        <meshStandardMaterial color="#6e5233" roughness={0.9} />
+        <meshStandardMaterial color={skin.hull ?? '#6e5233'} roughness={0.9} />
       </mesh>
       {[-0.9, 0.9].map((z) => (
         <mesh key={z} position={[0.55, 0.34, z]} rotation={[0, 0, Math.PI / 2]}>
@@ -643,7 +687,7 @@ function CanoeModel({
           </mesh>
           <mesh position={[-0.56, -0.86, 0.32]} rotation={[0.25, 0, 0.5]}>
             <boxGeometry args={[0.17, 0.5, 0.03]} />
-            <meshStandardMaterial color="#d9b46a" roughness={0.7} />
+            <meshStandardMaterial color={skin.trim ?? '#d9b46a'} roughness={0.7} />
           </mesh>
         </group>
       </group>
@@ -668,21 +712,23 @@ function SurferModel({
   groupRef,
   sprayRef,
   foam,
+  skin,
 }: {
   groupRef: React.RefObject<THREE.Group | null>;
   sprayRef: React.RefObject<THREE.Mesh | null>;
   foam: THREE.Texture | null;
+  skin: PikoSkin;
 }) {
   return (
     <group ref={groupRef} position={[0, 0.2, -42]}>
       {/* prkno */}
       <mesh position={[0, 0.06, 0]} scale={[0.44, 0.07, 1.35]}>
         <sphereGeometry args={[1, 16, 10]} />
-        <meshStandardMaterial color="#2fb8ad" roughness={0.35} metalness={0.15} />
+        <meshStandardMaterial color={skin.deck ?? '#2fb8ad'} roughness={0.35} metalness={0.15} />
       </mesh>
       <mesh position={[0, 0.12, 0]} scale={[0.09, 0.025, 1.2]}>
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="#ffd166" roughness={0.6} />
+        <meshStandardMaterial color={skin.stripe ?? '#ffd166'} roughness={0.6} />
       </mesh>
       {/* surfař */}
       <group position={[0, 0.2, -0.14]} rotation={[0.3, 0, 0]}>
@@ -714,6 +760,48 @@ function SurferModel({
           toneMapped={false}
         />
       </mesh>
+    </group>
+  );
+}
+
+/** Duch nejlepší jízdy — jen obrys, ať neruší a nesplete se s hráčem. */
+function GhostModel({
+  mode,
+  groupRef,
+}: {
+  mode: PikoMode;
+  groupRef: React.RefObject<THREE.Group | null>;
+}) {
+  const canoe = mode === 'canoe';
+  return (
+    <group ref={groupRef} visible={false}>
+      {canoe ? (
+        <>
+          <mesh position={[0, 0.16, 0]} scale={[0.46, 0.3, 2.5]}>
+            <sphereGeometry args={[1, 12, 8]} />
+            <meshBasicMaterial color="#7fe3d4" transparent opacity={0.2} depthWrite={false} toneMapped={false} />
+          </mesh>
+          <mesh position={[1.05, 0.1, 0]} scale={[0.16, 0.14, 1.6]}>
+            <sphereGeometry args={[1, 8, 6]} />
+            <meshBasicMaterial color="#7fe3d4" transparent opacity={0.16} depthWrite={false} toneMapped={false} />
+          </mesh>
+          <mesh position={[0, 0.72, 0.1]}>
+            <sphereGeometry args={[0.22, 8, 6]} />
+            <meshBasicMaterial color="#bfeee6" transparent opacity={0.22} depthWrite={false} toneMapped={false} />
+          </mesh>
+        </>
+      ) : (
+        <>
+          <mesh position={[0, 0.08, 0]} scale={[0.44, 0.07, 1.35]}>
+            <sphereGeometry args={[1, 12, 8]} />
+            <meshBasicMaterial color="#7fe3d4" transparent opacity={0.22} depthWrite={false} toneMapped={false} />
+          </mesh>
+          <mesh position={[0, 0.62, -0.1]}>
+            <sphereGeometry args={[0.3, 8, 6]} />
+            <meshBasicMaterial color="#bfeee6" transparent opacity={0.2} depthWrite={false} toneMapped={false} />
+          </mesh>
+        </>
+      )}
     </group>
   );
 }
@@ -786,16 +874,21 @@ export function PikoScene({
   mode,
   running,
   xr = false,
+  skin,
+  ghost,
   onStats,
   onFinish,
 }: {
   mode: PikoMode;
   running: boolean;
   xr?: boolean;
+  skin: PikoSkin;
+  ghost: GhostRun | null;
   onStats: (stats: PikoStats) => void;
   onFinish: (result: PikoResult) => void;
 }) {
   const { camera, gl } = useThree();
+  const cam = camera as THREE.PerspectiveCamera;
   const canoe = useRef<CanoeState>(createCanoe());
   const surf = useRef<SurfState>(createSurf());
   const keys = useRef(new Set<string>());
@@ -814,10 +907,25 @@ export function PikoScene({
   const spray = useRef<THREE.Mesh>(null);
   const waveGroup = useRef<THREE.Group>(null);
   const pocketMarker = useRef<THREE.Mesh>(null);
+  const ghostCanoeGroup = useRef<THREE.Group>(null);
+  const ghostSurferGroup = useRef<THREE.Group>(null);
+  const shake = useRef(0);
+  const ghostPoints = useRef<GhostPoint[]>([]);
+  const splashSeed = useRef(1);
 
   const camPos = useMemo(() => new THREE.Vector3(), []);
   const camTarget = useMemo(() => new THREE.Vector3(), []);
   const foam = useFoamTexture();
+  /** Stříkající voda — pool bez alokací ve smyčce. */
+  const splash = useMemo(() => new SplashField(), []);
+  const splashGeometry = useMemo(() => {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(SPLASH_MAX * 3);
+    for (let index = 0; index < SPLASH_MAX; index++) positions[index * 3 + 1] = -100;
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    return geometry;
+  }, []);
+  useEffect(() => () => splashGeometry.dispose(), [splashGeometry]);
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
@@ -852,6 +960,9 @@ export function PikoScene({
     eventRef.current = null;
     eventSeq.current = 0;
     pose.current = { x: START.x, y: 0.8, z: START.z, heading: Math.PI };
+    ghostPoints.current = [];
+    shake.current = 0;
+    splashSeed.current = 1;
   }, [running, mode]);
 
   // ladicí háček pro headless testy
@@ -888,7 +999,20 @@ export function PikoScene({
         distance: Math.round(state.distance),
         score: state.score,
         wipes: state.wipes,
+        flow: Math.round(state.flow * 100) / 100,
+        combo: Math.round(state.combo * 100) / 100,
+        air: Math.round(state.air * 100) / 100,
+        tricks: state.tricks,
+        bonus: state.bonus,
         finished: state.finished,
+      };
+    };
+    bag.__pikoGhost = () => {
+      const group = mode === 'canoe' ? ghostCanoeGroup.current : ghostSurferGroup.current;
+      if (!group || !group.visible) return null;
+      return {
+        x: Math.round(group.position.x * 10) / 10,
+        z: Math.round(group.position.z * 10) / 10,
       };
     };
     bag.__pikoTeleport = (x: number, z: number) => {
@@ -911,6 +1035,7 @@ export function PikoScene({
       delete bag.__pikoTeleport;
       delete bag.__pikoSurf;
       delete bag.__pikoRenderer;
+      delete bag.__pikoGhost;
     };
   }, [mode]);
 
@@ -931,12 +1056,16 @@ export function PikoScene({
       (pressed('KeyA') || pressed('ArrowLeft') ? 1 : 0) -
       (pressed('KeyD') || pressed('ArrowRight') ? 1 : 0);
 
+    splash.update(dt);
+
     let stats: PikoStats;
 
     if (mode === 'canoe') {
       const state = canoe.current;
       if (waveGroup.current) waveGroup.current.visible = false;
       if (pocketMarker.current) pocketMarker.current.visible = false;
+      if (ghostSurferGroup.current) ghostSurferGroup.current.visible = false;
+
       const step = stepCanoe(
         state,
         {
@@ -946,7 +1075,18 @@ export function PikoScene({
         },
         dt,
       );
-      if (step.stroke) play('stroke');
+      if (step.stroke) {
+        play('stroke');
+        splash.spawn(
+          state.x + Math.cos(state.heading) * 0.7,
+          0.3,
+          state.z - Math.sin(state.heading) * 0.7,
+          6,
+          0.7,
+          120,
+          splashSeed.current++,
+        );
+      }
       if (step.gate !== null) {
         play('gate');
         eventRef.current = 'gate';
@@ -970,6 +1110,26 @@ export function PikoScene({
         material.opacity = 0.12 + Math.min(1, state.speed / CANOE.maxSpeed) * 0.4;
       }
 
+      // duch nejlepší jízdy
+      const ghostSample =
+        ghost && ghost.mode === 'canoe'
+          ? sampleGhost(ghost.points, state.started ? state.elapsed : 0)
+          : null;
+      if (ghostCanoeGroup.current) {
+        ghostCanoeGroup.current.visible = Boolean(ghostSample) && state.elapsed > 0.4;
+        if (ghostSample) {
+          ghostCanoeGroup.current.position.set(
+            ghostSample.x,
+            waveHeightAt(ghostSample.x, ghostSample.z, now),
+            ghostSample.z,
+          );
+          ghostCanoeGroup.current.rotation.y = ghostSample.heading;
+        }
+      }
+      if (state.started && !state.finished) {
+        pushGhost(ghostPoints.current, state.elapsed, state.x, state.z, state.heading);
+      }
+
       pose.current = { x: state.x, y: height + 0.55, z: state.z, heading: state.heading };
 
       if (!xr) {
@@ -984,6 +1144,15 @@ export function PikoScene({
         camera.position.lerp(camPos, dampFactor(dt));
         camTarget.set(state.x + forwardX * 5, 0.9, state.z + forwardZ * 5);
         camera.lookAt(camTarget);
+        const targetFov = 58 + Math.min(1, speedRatio) * 10;
+        cam.fov += (targetFov - cam.fov) * dampFactor(dt, 4);
+        cam.updateProjectionMatrix();
+        if (shake.current > 0) {
+          shake.current = Math.max(0, shake.current - dt);
+          const k = shake.current / 0.7;
+          camera.position.x += Math.sin(now * 73) * 0.4 * k;
+          camera.position.y += Math.cos(now * 61) * 0.25 * k;
+        }
       }
 
       stats = {
@@ -999,8 +1168,20 @@ export function PikoScene({
         balance: 100,
         pocket: 0,
         x: Math.round(state.x * 10) / 10,
+        z: Math.round(state.z * 10) / 10,
         pocketX: 0,
+        heading: Math.round(state.heading * 100) / 100,
+        nextGate: state.nextGate,
+        windAngle: Math.round(state.windAngle * 100) / 100,
+        windStrength: CANOE.windStrength,
+        flow: 0,
+        combo: 1,
+        air: 0,
+        tricks: 0,
+        waveDistance: 0,
         distance: 0,
+        ghostX: ghostSample ? Math.round(ghostSample.x * 10) / 10 : null,
+        ghostZ: ghostSample ? Math.round(ghostSample.z * 10) / 10 : null,
         waveTimer: 0,
         started: state.started,
         finished: state.finished,
@@ -1018,18 +1199,51 @@ export function PikoScene({
           waves: 0,
           distance: 0,
           wipes: 0,
+          tricks: 0,
+          ghost: ghostPoints.current.slice(),
         });
       }
     } else {
       const state = surf.current;
+      if (ghostCanoeGroup.current) ghostCanoeGroup.current.visible = false;
+
       const step = stepSurf(
         state,
-        { steer, pump: pressed('KeyW') || pressed('ArrowUp') || pressed('Space') },
+        {
+          steer,
+          pump: pressed('KeyW') || pressed('ArrowUp'),
+          trick: pressed('Space') || pressed('KeyF'),
+        },
         dt,
       );
       if (step.event === 'takeoff') play('swell');
-      if (step.event === 'wipeout') play('wipeout');
+      if (step.event === 'wipeout') {
+        play('wipeout');
+        shake.current = 0.7;
+        splash.spawn(
+          state.x,
+          0.5,
+          waveProgressZ(state.distance / SURF.length),
+          22,
+          1,
+          360,
+          splashSeed.current++,
+        );
+      }
       if (step.event === 'wave') play('finish');
+      if (step.event === 'air') play('trick');
+      if (step.event === 'landing') {
+        play('splash');
+        splash.spawn(
+          state.x,
+          0.4,
+          waveProgressZ(state.distance / SURF.length),
+          10,
+          0.8,
+          360,
+          splashSeed.current++,
+        );
+      }
       if (step.event) {
         eventRef.current = step.event;
         eventSeq.current += 1;
@@ -1040,9 +1254,10 @@ export function PikoScene({
       const z = riding ? waveProgressZ(progress) : waveProgressZ(0.1);
       const x = state.x;
       const height = waveHeightAt(x, z, now);
+      const lift = state.air > 0 ? Math.sin((state.air / SURF.airTime) * Math.PI) * 2.6 : 0;
 
       if (surferGroup.current) {
-        surferGroup.current.position.set(x, height + 0.12, z);
+        surferGroup.current.position.set(x, height + 0.12 + lift, z);
         surferGroup.current.rotation.y = steer * 0.5;
         surferGroup.current.rotation.z = -steer * 0.28;
         surferGroup.current.rotation.x = riding ? -0.05 : 0.02;
@@ -1063,14 +1278,41 @@ export function PikoScene({
         }
       }
 
+      // duch nejlepší jízdy — jen když se jede na vlně
+      const ghostSample =
+        ghost && ghost.mode === 'surf' && riding ? sampleGhost(ghost.points, state.elapsed) : null;
+      if (ghostSurferGroup.current) {
+        ghostSurferGroup.current.visible = Boolean(ghostSample) && state.elapsed > 0.4;
+        if (ghostSample) {
+          ghostSurferGroup.current.position.set(
+            ghostSample.x,
+            waveHeightAt(ghostSample.x, ghostSample.z, now) + 0.08,
+            ghostSample.z,
+          );
+          ghostSurferGroup.current.rotation.y = 0;
+        }
+      }
+      if (riding && !state.finished) {
+        pushGhost(ghostPoints.current, state.elapsed, state.x, z, 0);
+      }
+
       const heading = Math.atan2(-x, 40);
-      pose.current = { x, y: height + 0.9, z, heading };
+      pose.current = { x, y: height + 0.9 + lift, z, heading };
 
       if (!xr) {
-        camPos.set(x * 0.5, 4.2 + Math.min(1, state.speed / SURF.maxSpeed) * 0.8, z - 7.5);
+        camPos.set(x * 0.5, 3.8 + Math.min(1, state.speed / SURF.maxSpeed) * 0.8, z - 6.5);
         camera.position.lerp(camPos, dampFactor(dt));
-        camTarget.set(x * 0.85, 1.0, z + 3.5);
+        camTarget.set(x * 0.85, 0.9, z + 3.2);
         camera.lookAt(camTarget);
+        const targetFov = 62 + Math.min(1, state.speed / SURF.maxSpeed) * 10;
+        cam.fov += (targetFov - cam.fov) * dampFactor(dt, 4);
+        cam.updateProjectionMatrix();
+        if (shake.current > 0) {
+          shake.current = Math.max(0, shake.current - dt);
+          const k = shake.current / 0.7;
+          camera.position.x += Math.sin(now * 73) * 0.4 * k;
+          camera.position.y += Math.cos(now * 61) * 0.25 * k;
+        }
       }
 
       stats = {
@@ -1086,8 +1328,20 @@ export function PikoScene({
         balance: Math.round(state.balance),
         pocket: state.pocket,
         x: Math.round(state.x * 10) / 10,
+        z: Math.round(z * 10) / 10,
         pocketX: Math.round(pocketTargetFor(state) * 10) / 10,
+        heading: 0,
+        nextGate: 0,
+        windAngle: 0,
+        windStrength: 0,
+        flow: Math.round(state.flow * 1000) / 1000,
+        combo: Math.round(state.combo * 100) / 100,
+        air: Math.round(state.air * 100) / 100,
+        tricks: state.tricks,
+        waveDistance: Math.round(state.distance),
         distance: Math.round(state.totalDistance),
+        ghostX: ghostSample ? Math.round(ghostSample.x * 10) / 10 : null,
+        ghostZ: ghostSample ? Math.round(ghostSample.z * 10) / 10 : null,
         waveTimer: Math.max(0, state.waveTimer),
         started: state.phase !== 'ready',
         finished: state.finished,
@@ -1105,9 +1359,20 @@ export function PikoScene({
           waves: state.wave,
           distance: Math.round(state.totalDistance),
           wipes: state.wipes,
+          tricks: state.tricks,
+          ghost: ghostPoints.current.slice(),
         });
       }
     }
+
+    // částice do GPU bufferu (72 bodů, žádná alokace)
+    const attribute = splashGeometry.getAttribute('position') as THREE.BufferAttribute;
+    for (let index = 0; index < SPLASH_MAX; index++) {
+      const particle = splash.particles[index]!;
+      if (particle.life > 0) attribute.setXYZ(index, particle.x, particle.y, particle.z);
+      else attribute.setXYZ(index, 0, -100, 0);
+    }
+    attribute.needsUpdate = true;
 
     statsClock.current += delta;
     if (statsClock.current >= 0.1) {
@@ -1152,11 +1417,27 @@ export function PikoScene({
       </mesh>
 
       <group visible={mode === 'canoe'}>
-        <CanoeModel groupRef={canoeGroup} paddleRef={paddle} wakeRef={wake} foam={foam} />
+        <CanoeModel groupRef={canoeGroup} paddleRef={paddle} wakeRef={wake} foam={foam} skin={skin} />
       </group>
       <group visible={mode === 'surf'}>
-        <SurferModel groupRef={surferGroup} sprayRef={spray} foam={foam} />
+        <SurferModel groupRef={surferGroup} sprayRef={spray} foam={foam} skin={skin} />
       </group>
+
+      {/* duch nejlepší jízdy (aktivní jen když je uložený záznam) */}
+      <GhostModel mode="canoe" groupRef={ghostCanoeGroup} />
+      <GhostModel mode="surf" groupRef={ghostSurferGroup} />
+
+      {/* stříkající voda — jeden draw call pro celý pool */}
+      <points geometry={splashGeometry} frustumCulled={false}>
+        {/* vlastní shader: PointsMaterial bez textury kreslí čtverečky */}
+        <shaderMaterial
+          transparent
+          depthWrite={false}
+          uniforms={{ uColor: { value: new THREE.Color(PIKO_COLORS.foam) } }}
+          vertexShader={SPLASH_VERTEX}
+          fragmentShader={SPLASH_FRAGMENT}
+        />
+      </points>
 
       {xr && <PikoXr pose={pose} active={running} />}
     </>

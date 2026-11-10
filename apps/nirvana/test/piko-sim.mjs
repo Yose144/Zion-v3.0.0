@@ -135,6 +135,17 @@ console.log('\nKánoe — tempo, kormidlo, bóje');
   runCanoe(braked, { paddle: false, steer: 0, brace: true }, 1.2);
   check('brzda zpomalí', braked.speed < fast * 0.6, `${fast.toFixed(2)} → ${braked.speed.toFixed(2)}`);
 
+  const wind = createCanoe();
+  const windX = wind.x;
+  const windZ = wind.z;
+  runCanoe(wind, { paddle: false, steer: 0, brace: false }, 2);
+  const drift = Math.hypot(wind.x - windX, wind.z - windZ);
+  check('vítr a proud unášejí loď i bez záběru', drift > 0.6, `drift=${drift.toFixed(2)}`);
+  check('směr větru je ve stavu', Number.isFinite(wind.windAngle));
+  const windy = createCanoe();
+  runCanoe(windy, { paddle: true, steer: 0, brace: false }, 30);
+  check('vítr se v čase stáčí', windy.windAngle !== CANOE.windBase, `${windy.windAngle}`);
+
   const reef = createCanoe();
   reef.x = LAGOON.maxX - 0.5;
   reef.heading = Math.PI / 2; // čelem ke kraji
@@ -290,7 +301,56 @@ console.log('\nSurf — kapsa, balanc, tři vlny');
   check('skóre je součet vln', set.score === set.waveScores.reduce((a, b) => a + b, 0));
   check('skóre je kladné', set.score > 0, String(set.score));
 
+  // flow a triky (profi vrstva)
+  const flowing = createSurf();
+  flowing.phase = 'riding';
+  flowing.speed = 8;
+  flowing.balance = 100;
+  flowing.x = pocketTargetFor(flowing);
+  // hráč kapsu sleduje (kapsa se posouvá, takže samotné „stůj na místě“ ji ztratí)
+  runSurf(flowing, { steer: 0, pump: false }, 3, () => {
+    flowing.x = pocketTargetFor(flowing);
+  });
+  check('flow roste v kapse', flowing.flow > 0.5, `flow=${flowing.flow.toFixed(2)}`);
+  check('combo je 1 + flow×2', Math.abs(flowing.combo - (1 + flowing.flow * 2)) < 1e-6, `${flowing.combo}`);
+  const beforeFlow = flowing.flow;
+  flowing.x = 68;
+  runSurf(flowing, { steer: 0, pump: false }, 1.2);
+  check('mimo kapsu flow klesá', flowing.flow < beforeFlow, `${beforeFlow.toFixed(2)} → ${flowing.flow.toFixed(2)}`);
+
+  const trick = createSurf();
+  trick.phase = 'riding';
+  trick.speed = 11;
+  trick.balance = 90;
+  trick.x = pocketTargetFor(trick);
+  const takeoff = stepSurf(trick, { steer: 0, pump: false, trick: true }, 1 / 60);
+  check('trik vzlétne', takeoff.event === 'air' && trick.air > 0, `air=${trick.air}`);
+  const balanceBeforeLanding = trick.balance;
+  let landing = null;
+  let landingBalance = null;
+  runSurf(trick, { steer: 0, pump: false }, 1.2, (step) => {
+    if (step.event === 'landing') {
+      landing = step;
+      landingBalance = trick.balance;
+    }
+  });
+  check('přistání dá bonus', landing !== null && trick.bonus > 0 && trick.tricks === 1, `bonus=${trick.bonus}`);
+  check(
+    'vzduch bere balanc',
+    landingBalance !== null && landingBalance < balanceBeforeLanding,
+    `${balanceBeforeLanding} → ${landingBalance}`,
+  );
+
+  const slowTrick = createSurf();
+  slowTrick.phase = 'riding';
+  slowTrick.speed = 5;
+  slowTrick.balance = 100;
+  slowTrick.x = pocketTargetFor(slowTrick);
+  const slowStep = stepSurf(slowTrick, { steer: 0, pump: false, trick: true }, 1 / 60);
+  check('trik nejde z pomalé jízdy', slowStep.event === null && slowTrick.air === 0);
+
   check('skóre vlny: vzdálenost + kapsa + čistota', waveScore(100, 10, true) === 220);
+  check('bonus triku se počítá do skóre', waveScore(100, 10, true, 120) === 340);
   check('pád nepřidá čistou jízdu', waveScore(100, 10, false) === waveScore(100, 10, true) - 60);
   check('skóre nikdy není záporné', waveScore(-5, -5, false) === 0);
   check(

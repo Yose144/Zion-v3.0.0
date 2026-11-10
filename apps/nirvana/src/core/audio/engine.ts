@@ -62,6 +62,9 @@ const MIN_GAP: Partial<Record<SoundName, number>> = {
   drift: 140,
   stroke: 80,
   gate: 60,
+  splash: 60,
+  trick: 200,
+  medal: 400,
 };
 
 const lastPlayed = new Map<SoundName, number>();
@@ -342,6 +345,9 @@ export type SoundName =
   | 'gate'
   | 'swell'
   | 'wipeout'
+  | 'splash'
+  | 'trick'
+  | 'medal'
   // rozhraní
   | 'click'
   | 'open'
@@ -512,6 +518,18 @@ const SOUNDS: Record<SoundName, Voice> = {
     boom(0.15, 0.45);
     noise({ duration: 0.5, gain: 0.09, cutoff: 1600, type: 'bandpass' });
   },
+  // Stříknutí od pádla / přistání: krátké, bez tónu.
+  splash: () => {
+    noise({ duration: 0.24, gain: 0.07, cutoff: 1800, type: 'bandpass' });
+    tone({ freq: 220, to: 90, duration: 0.18, type: 'sine', gain: 0.035 });
+  },
+  // Trik ve vzduchu: stoupající svist.
+  trick: () => {
+    tone({ freq: 520, to: 1100, duration: 0.22, type: 'triangle', gain: 0.07 });
+    noise({ duration: 0.2, gain: 0.05, cutoff: 2200, type: 'highpass' });
+  },
+  // Medaile: krátký fanfárový akord.
+  medal: () => chime([660, 880, 1320], 0.09, 0.1, 0.4),
 
   // ── rozhraní ─────────────────────────────────────────────────────────
   click: () => tone({ freq: 620, to: 820, duration: 0.045, type: 'sine', gain: 0.05 }),

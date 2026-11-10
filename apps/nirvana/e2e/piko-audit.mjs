@@ -177,11 +177,70 @@ async function main() {
   check('výsledek ukazuje skóre', Number(finished.score) > 0, finished.score);
   check('dohraná hra se zapsala do profilu', finished.profile.runs >= 1, JSON.stringify(finished.profile.runs));
   check('rekord hry Piko existuje', Number(finished.profile.best?.piko) > 0, JSON.stringify(finished.profile.best));
+  const resultPro = await page.evaluate(() => document.querySelector('.piko-pro-result')?.textContent ?? '');
+  check('výsledek hlásí rekord i medaili', /rekord|record/i.test(resultPro), resultPro);
+  check('výsledek hlásí zlato', /Zlato|Gold|Oro/i.test(resultPro), resultPro);
   await page.screenshot({ path: `${SHOTS}/result.png` });
 
-  console.log('\n▸ surf');
+  console.log('\n▸ pas a skiny');
   await page.click('.arena-actions .park-btn.park-btn-mp');
   await waitFor(page, () => Boolean(document.querySelector('.piko-modes')), 15000, 'menu po kurzu');
+  await page.click('.piko-mode:nth-of-type(1)');
+  await waitFor(page, () => Boolean(document.querySelector('.piko-medals')), 15000, 'pas');
+  const passportUi = await page.evaluate(() => ({
+    medals: document.querySelectorAll('.piko-medal').length,
+    gold: Boolean(document.querySelector('.piko-medal.is-gold.is-earned')),
+    skins: document.querySelectorAll('.piko-skin').length,
+    locked: document.querySelectorAll('.piko-skin.is-locked').length,
+    ghostNote: document.querySelector('.piko-ghost-note')?.textContent ?? '',
+  }));
+  check('pas má tři medaile', passportUi.medals === 3, String(passportUi.medals));
+  check('zlato z kurzu je zapsané', passportUi.gold);
+  check('pas má tři skiny', passportUi.skins === 3, String(passportUi.skins));
+  check('po zlatu je odemčený i třetí skin', passportUi.locked === 0, String(passportUi.locked));
+  check('pas hlásí uloženého ducha', /duch|ghost|fantasma/i.test(passportUi.ghostNote), passportUi.ghostNote);
+
+  await page.evaluate(() => {
+    const buttons = Array.from(document.querySelectorAll('.piko-skin'));
+    buttons[2]?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+  const storedSkin = await page.evaluate(
+    () => JSON.parse(localStorage.getItem('nirvana.piko.v1') ?? '{}').skins?.canoe ?? '',
+  );
+  check('výběr skinu se uloží', storedSkin === 'ahi', storedSkin);
+
+  console.log('\n▸ duch a minimapa');
+  await page.click('.arena-actions .park-btn');
+  await waitFor(page, () => window.__pikoDebug?.().mode === 'canoe', 20000, 'kánoe znovu');
+  // duch se ukáže až po rozjetí (na startu by se překrýval s hráčem)
+  await page.keyboard.down('w');
+  await sleep(800);
+  const ghostA = await page.evaluate(() => window.__pikoGhost?.() ?? null);
+  check('duch předchozí jízdy je na trati', ghostA !== null, JSON.stringify(ghostA));
+  await sleep(1400);
+  await page.keyboard.up('w');
+  const ghostB = await page.evaluate(() => window.__pikoGhost?.() ?? null);
+  check(
+    'duch jede s časem',
+    ghostB !== null && ghostA !== null && (ghostB.x !== ghostA.x || ghostB.z !== ghostA.z),
+    JSON.stringify({ ghostA, ghostB }),
+  );
+  const minimap = await page.evaluate(() => ({
+    map: Boolean(document.querySelector('.piko-minimap')),
+    gates: document.querySelectorAll('.piko-map-gate').length,
+    player: Boolean(document.querySelector('.piko-map-player')),
+  }));
+  check('minimapa je vidět', minimap.map && minimap.player, JSON.stringify(minimap));
+  check('minimapa má šest bójí', minimap.gates === 6, String(minimap.gates));
+  await page.screenshot({ path: `${SHOTS}/ghost.png` });
+
+  // zpět do menu
+  await page.evaluate(() => {
+    document.querySelector('.piko-hud .game-exit')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+  await waitFor(page, () => !document.querySelector('.piko-hud'), 15000, 'menu po duchovi');
+
+  console.log('\n▸ surf');
   await page.click('.piko-mode:nth-of-type(2)');
   await page.click('.arena-actions .park-btn');
   await waitFor(page, () => window.__pikoDebug?.().mode === 'surf', 20000, 'surf běh');
@@ -222,16 +281,21 @@ async function main() {
   check('sada tří vln se dojela', surfResult.text.length > 3, surfResult.text);
   check('výsledek surfu ukazuje tři vlny', surfResult.waves.includes('/3'), surfResult.waves);
   check('surf zapsal skóre', Number(surfResult.score) > 0, surfResult.score);
+  const surfPro = await page.evaluate(() => document.querySelector('.piko-pro-result')?.textContent ?? '');
+  check('surf udělil medaili', /Bronz|Stříbro|Zlato|Bronze|Silver|Gold|Bronce|Plata|Oro/i.test(surfPro), surfPro);
 
   console.log('\n▸ dotyk');
   const phone = await browser.newPage({ ...PHONE });
   await grantPass(phone, host);
   await phone.goto(`${BASE}/piko`, { waitUntil: 'networkidle' });
   await waitFor(phone, () => document.querySelectorAll('.piko-mode').length === 2, 30000, 'menu na telefonu');
+  await phone.click('.piko-mode:nth-of-type(2)');
   await phone.click('.arena-actions .park-btn');
   await waitFor(phone, () => Boolean(document.querySelector('.touch-pad')), 20000, 'dotykový pad');
   const keys = await phone.evaluate(() => document.querySelectorAll('.touch-key').length);
-  check('na dotyku jsou čtyři tlačítka', keys === 4, String(keys));
+  check('na dotyku je pět tlačítek (4 směry + trik)', keys === 5, String(keys));
+  const trickButton = await phone.evaluate(() => Boolean(document.querySelector('.piko-trick')));
+  check('na dotyku je tlačítko triku', trickButton);
 
   const overflow = await phone.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
