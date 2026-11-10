@@ -21,6 +21,10 @@ export const RACE_COPY = {
   throttle: { cs: 'plyn', en: 'throttle', es: 'acelerar' },
   brakeLower: { cs: 'brzda', en: 'brake', es: 'frenar' },
   steer: { cs: 'zatáčení', en: 'steer', es: 'girar' },
+  handbrake: { cs: 'ruční brzda → drift', en: 'handbrake → drift', es: 'freno de mano → derrape' },
+  nitroKey: { cs: 'nitro', en: 'nitro', es: 'nitro' },
+  nitro: { cs: 'NITRO', en: 'NITRO', es: 'NITRO' },
+  drift: { cs: 'DRIFT', en: 'DRIFT', es: 'DERRAPE' },
   toGrid: { cs: 'Na start', en: 'To the grid', es: 'A la parrilla' },
   multiplayer: { cs: 'Multiplayer — proti lidem', en: 'Multiplayer — against people', es: 'Multijugador — contra personas' },
   backToFair: { cs: '← zpět na pouť', en: '← back to the fair', es: '← volver a la feria' },
@@ -31,9 +35,9 @@ export const RACE_COPY = {
   again: { cs: 'Znovu', en: 'Again', es: 'Otra vez' },
   title: { cs: 'VENUŠE', en: 'VENUS', es: 'VENUS' },
   intro: {
-    cs: 'Hovercraft, tři kola a tři soupeři na stejných strojích. Rozhoduje brzdný bod a stopa — kdo jede čistěji, vyhraje. Mimo pás tě to zpomalí a přitáhne zpět.',
-    en: 'A hovercraft, three laps and three rivals on identical machines. Braking points and the racing line decide it — the cleaner driver wins. Off the strip you slow down and get pulled back.',
-    es: 'Un aerodeslizador, tres vueltas y tres rivales con máquinas idénticas. Deciden los puntos de frenada y la trazada: gana quien conduce más limpio. Fuera de la pista te frenan y te devuelven.',
+    cs: 'Supersport na Venuši, tři kola a tři soupeři. Space = drift (nabíjí nitro), Shift = nitro. Rozhoduje brzdný bod a stopa — kdo jede čistěji, vyhraje. Mimo pás tě to zpomalí a přitáhne zpět.',
+    en: 'A supercar on Venus, three laps and three rivals. Space = drift (charges nitro), Shift = nitro. Braking points and the racing line decide it — the cleaner driver wins. Off the strip you slow down and get pulled back.',
+    es: 'Un superdeportivo en Venus, tres vueltas y tres rivales. Espacio = derrape (carga nitro), Mayús = nitro. Deciden los puntos de frenada y la trazada: gana quien conduce más limpio. Fuera de la pista te frenan y te devuelven.',
   },
 } as const satisfies Record<string, Localized>;
 

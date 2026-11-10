@@ -217,6 +217,10 @@ export interface RacePlayerState {
   checkpoint: number;
   offTrack: boolean;
   finishedAtMs: number | null;
+  /** Nádrž nitra 0..1 (jen novější server — může chybět). */
+  nitro?: number;
+  /** Právě táhne nitro — pro plameny na vzdálených vozidlech. */
+  boost?: boolean;
 }
 
 /** Stav bojovníka na Merkuru (x = pozice v kleci, y = skok). */
@@ -317,7 +321,7 @@ export type EventPayload =
     }
   | { kind: 'kill'; killer: string; victim: string; weapon: WeaponName; at: number }
   | { kind: 'respawn'; id: string }
-  | { kind: 'pickup'; id: string; item: 'health' | 'armor' | 'ammo' }
+  | { kind: 'pickup'; id: string; item: 'health' | 'armor' | 'ammo' | 'powerup' | 'mega' }
   | { kind: 'system'; text: string; at: number }
   | { kind: 'emote'; playerId: string; emote: number; at: number }
   /**
@@ -482,6 +486,9 @@ export type ClientMessage =
       castSlot?: 'Q' | 'W' | 'E' | 'R';
       castX?: number;
       castZ?: number;
+      /** Jen závod (Venuše): ruční brzda do driftu a nitro. Ostatní hry ignorují. */
+      handbrake?: boolean;
+      boost?: boolean;
     }
   | { t: 'chat'; text: string }
   | { t: 'ping'; at: number };
@@ -770,6 +777,8 @@ export function parseClientMessage(raw: string): ClientMessage | null {
             : undefined,
         castX: num(message.castX, -60, 60),
         castZ: num(message.castZ, -60, 60),
+        handbrake: message.handbrake === true,
+        boost: message.boost === true,
       };
 
     case 'buy': {

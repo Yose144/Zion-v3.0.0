@@ -195,17 +195,26 @@ export function rivalInput(rival: Rival, track: TrackPoint[]): CraftInput {
   const kL = 0.16 + skill * 0.12;
   const steer = clamp(kH * headingError - kL * (targetLateral - lateral), -1, 1);
 
-  // kolik z maxima tratě využije: lepší jezdec méně liftuje
-  const vCap = 18.0 - (1 - skill) * 5.0;
-  const throttle = clamp((vCap - speed) * 1.6, -1, 1);
+  // kolik z maxima tratě využije: lepší jezdec méně liftuje.
+  // Strop je v nové fyzice ~52 (nitro až 76) — bot jezdí ~35–43 a šikovní
+  // přitápí nitro na přímé, jako člověk.
+  const vCap = 34 + skill * 10;
+  // nitro jen pro šikovné (Fosfor občas, Vega nikdy) a jen když je nádrž
+  // aspoň z poloviny — jinak by boty čerpaly do prázdna na každém úseku
+  const boosting = skill > 0.72 && craft.nitro > 0.55 && speed > vCap * 0.7;
+  const cap = boosting ? vCap * 1.4 : vCap;
+  const throttle = clamp((cap - speed) * 1.6, -1, 1);
 
-  return { throttle, steer };
+  return { throttle, steer, boost: boosting ? 1 : 0 };
 }
 
 export interface RivalStep extends LapStep {
   index: number;
   lateral: number;
   offTrack: boolean;
+  /** Pro vizuální šťávu (plameny nitra, kouř) — fyzika je stejná jako u hráče. */
+  drifting: boolean;
+  boosting: boolean;
 }
 
 export function stepRival(
@@ -218,7 +227,14 @@ export function stepRival(
   const input = rivalInput(rival, track);
   const step = stepCraft(rival.craft, input, track, dt, now);
   const lap = advanceLap(rival.lap, step.index, checkpoints, now);
-  return { ...lap, index: step.index, lateral: step.lateral, offTrack: step.offTrack };
+  return {
+    ...lap,
+    index: step.index,
+    lateral: step.lateral,
+    offTrack: step.offTrack,
+    drifting: step.drifting,
+    boosting: step.boosting,
+  };
 }
 
 /**

@@ -35,6 +35,9 @@ const EMPTY: RaceStats = {
   started: false,
   position: 1,
   standings: [],
+  nitro: 1,
+  drifting: false,
+  boosting: false,
 };
 
 /** Žetony za pódium — jediná odměna, která závisí na soupeřích, ne na čase. */
@@ -136,6 +139,12 @@ export default function VenusPage() {
           <TouchButton code="KeyD" className="is-right">
             →
           </TouchButton>
+          <TouchButton code="Space" className="is-drift">
+            {l('drift')}
+          </TouchButton>
+          <TouchButton code="ShiftLeft" className="is-nitro">
+            {l('nitro')}
+          </TouchButton>
         </TouchPad>
       )}
 
@@ -152,6 +161,13 @@ export default function VenusPage() {
               {l('lap')} {mpStats?.lap ?? 1}/{mpStats?.laps ?? LAPS}
             </span>
             <span>{format(mpStats?.elapsed ?? 0)}</span>
+            <span
+              className={`race-nitro${mpStats?.boosting ? ' is-boost' : ''}${(mpStats?.nitro ?? 0) >= 0.98 ? ' is-full' : ''}`}
+              title={l('nitro')}
+            >
+              <i style={{ width: `${Math.round((mpStats?.nitro ?? 0) * 100)}%` }} />
+            </span>
+            {mpStats?.drifting && <span className="race-drift">{l('drift')}</span>}
             <span className={`race-best${mpStats?.connected ? '' : ' is-offline'}`}>
               {mpStats?.connected ? `${mpStats?.ping ?? 0} ms` : l('offline')}
             </span>
@@ -209,6 +225,13 @@ export default function VenusPage() {
           <span className="race-best">
             {l('best')} {format(stats.bestLap)}
           </span>
+          <span
+            className={`race-nitro${stats.boosting ? ' is-boost' : ''}${stats.nitro >= 0.98 ? ' is-full' : ''}`}
+            title={l('nitro')}
+          >
+            <i style={{ width: `${Math.round(stats.nitro * 100)}%` }} />
+          </span>
+          {stats.drifting && <span className="race-drift">{l('drift')}</span>}
           {stats.offTrack && <span className="race-off">{l('offTrack')}</span>}
           <VrButton xr={{ store: xrStore, presenting }} className="arena-vr" />
           <button
@@ -266,6 +289,12 @@ export default function VenusPage() {
                 </li>
                 <li>
                   <kbd>A</kbd>/<kbd>D</kbd> {l('steer')}
+                </li>
+                <li>
+                  <kbd>Space</kbd> {l('handbrake')}
+                </li>
+                <li>
+                  <kbd>Shift</kbd> {l('nitroKey')}
                 </li>
               </ul>
               <div className="arena-actions">

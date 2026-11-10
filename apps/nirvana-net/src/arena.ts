@@ -102,7 +102,7 @@ export interface Rocket {
 export type ArenaEvent =
   | { kind: 'kill'; killer: string; victim: string; weapon: WeaponId; at: number }
   | { kind: 'respawn'; id: string }
-  | { kind: 'pickup'; id: string; item: 'health' | 'armor' | 'ammo' }
+  | { kind: 'pickup'; id: string; item: 'health' | 'armor' | 'ammo' | 'powerup' | 'mega' }
   | { kind: 'match_start'; at: number }
   | { kind: 'match_end'; scoreboard: { id: string; name: string; frags: number; deaths: number }[] };
 

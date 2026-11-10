@@ -1723,6 +1723,56 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   text-shadow: 0 0 10px rgba(255, 92, 92, 0.65);
 }
 
+/* Přesnost v HUD — profesionální metrika, ne dekorace. */
+.arena-hud .arena-acc {
+  color: rgba(255, 233, 168, 0.72);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+}
+
+/* Kill feed (Q3): poslední fragy a smrti, 4,5 s. */
+.arena-killfeed {
+  position: absolute;
+  z-index: 13;
+  top: calc(1rem + env(safe-area-inset-top, 0px));
+  left: calc(1rem + env(safe-area-inset-left, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: min(18rem, 42vw);
+  pointer-events: none;
+}
+
+.arena-killfeed span {
+  padding: 0.25rem 0.55rem;
+  border-radius: 0.45rem;
+  background: rgba(12, 6, 4, 0.72);
+  border: 1px solid rgba(255, 180, 106, 0.22);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  color: rgba(255, 233, 168, 0.85);
+  backdrop-filter: blur(4px);
+}
+
+.arena-killfeed span.is-frag {
+  border-color: rgba(127, 227, 212, 0.4);
+  color: #7fe3d4;
+}
+
+.arena-killfeed span.is-death {
+  border-color: rgba(255, 92, 92, 0.45);
+  color: #ff8a7a;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  /* Nad HUDem a tabulí, ale mimo dotykové zóny. */
+  .arena-killfeed {
+    top: calc(7rem + env(safe-area-inset-top, 0px));
+    left: 0.5rem;
+    max-width: 48vw;
+  }
+}
+
 /* Haste (Q3): tyrkysový chip vedle Quadu. */
 .arena-hud .arena-haste {
   color: #7fe3d4;
@@ -2049,6 +2099,53 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   color: #ffb46a;
   font-weight: 700;
   letter-spacing: 0.06em;
+}
+
+/* nitro — malá lišta v HUD; plná sviští do modra, za jízdy pulzuje */
+.race-nitro {
+  display: inline-block;
+  width: 3.4rem;
+  height: 0.42rem;
+  border-radius: 99px;
+  border: 1px solid rgba(140, 200, 255, 0.4);
+  background: rgba(10, 14, 26, 0.8);
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+.race-nitro i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #2e7fd4, #57c8ff);
+  transition: width 0.12s linear;
+}
+
+.race-nitro.is-full i {
+  background: linear-gradient(90deg, #57c8ff, #b8ecff);
+  box-shadow: 0 0 6px rgba(120, 210, 255, 0.9);
+}
+
+.race-nitro.is-boost {
+  border-color: rgba(160, 225, 255, 0.9);
+  animation: race-nitro-pulse 0.45s ease-in-out infinite alternate;
+}
+
+@keyframes race-nitro-pulse {
+  from {
+    box-shadow: 0 0 2px rgba(120, 210, 255, 0.4);
+  }
+  to {
+    box-shadow: 0 0 10px rgba(120, 210, 255, 0.95);
+  }
+}
+
+.race-hud .race-drift {
+  color: #ff9a3c;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  font-size: 0.78rem;
+  text-shadow: 0 0 8px rgba(255, 154, 60, 0.55);
 }
 
 /* pořadí za jízdy — vpravo nahoře, aby nepřekáželo v cestě */
@@ -4828,6 +4925,19 @@ body[data-playing='1'] .chat-dock-btn {
 .touch-key.is-down {
   right: calc(1rem + env(safe-area-inset-right, 0px));
   bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Venuše: drift (Space) a nitro (Shift) — řada nad hlavními tlačítky */
+.touch-key.is-drift {
+  left: calc(1rem + env(safe-area-inset-left, 0px));
+  bottom: calc(6.1rem + env(safe-area-inset-bottom, 0px));
+  border-color: rgba(255, 154, 60, 0.55);
+}
+
+.touch-key.is-nitro {
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  bottom: calc(6.1rem + env(safe-area-inset-bottom, 0px));
+  border-color: rgba(120, 210, 255, 0.55);
 }
 
 @media (max-height: 480px) and (hover: none) and (pointer: coarse) {
@@ -9693,4 +9803,174 @@ a.game-hud-chip.is-lumi em {
   font-style: normal;
   color: #ff9f43;
   letter-spacing: 0.02em;
+}
+
+/* ── Te Pīko Ora — laguna: kánoe a surf ───────────────────────────────
+ * Dvě hry nad jedním světem. Panel i HUD jsou jen variantou společných
+ * herních tříd (`.arena-panel`, `.race-hud`), takže se nemusí opisovat
+ * responzivní pravidla — jen se přebarví do tyrkysu a zlata laguny.
+ */
+.piko .arena-stage canvas {
+  cursor: default;
+}
+
+.piko-panel {
+  border-color: rgba(47, 184, 173, 0.4);
+  background: rgba(5, 20, 20, 0.92);
+}
+
+.piko-panel header strong {
+  color: #7fe3d4;
+}
+
+.piko-hud {
+  border-color: rgba(47, 184, 173, 0.45);
+  background: rgba(4, 18, 20, 0.84);
+}
+
+.piko-hud .race-speed {
+  color: #7fe3d4;
+}
+
+.piko-hud .race-best {
+  color: #ffd166;
+}
+
+/* Kapsa vlny — jediný signál, jestli hráč jede na síle, nebo na okraji. */
+.piko-pocket {
+  color: rgba(246, 231, 216, 0.55);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.piko-pocket.is-in {
+  color: #ffd166;
+  font-weight: 700;
+}
+
+/* Balanc: pruh, ne číslo — hráč musí vidět, že mu to utíká, dřív než spadne. */
+.piko-balance {
+  display: inline-block;
+  width: 4.5rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+.piko-balance i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2fb8ad, #7fe3d4);
+  transition: width 0.12s linear;
+}
+
+.piko-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin: 0.2rem 0 1rem;
+}
+
+.piko-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  text-align: left;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(127, 227, 212, 0.28);
+  background: rgba(9, 26, 28, 0.72);
+  color: inherit;
+  cursor: pointer;
+}
+
+.piko-mode:hover {
+  border-color: rgba(127, 227, 212, 0.62);
+}
+
+.piko-mode.is-active {
+  border-color: rgba(255, 209, 102, 0.72);
+  background: rgba(255, 209, 102, 0.12);
+}
+
+.piko-mode em {
+  font-style: normal;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.piko-mode strong {
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7fe3d4;
+}
+
+.piko-mode.is-active strong {
+  color: #ffd166;
+}
+
+.piko-mode span {
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: rgba(246, 231, 216, 0.66);
+}
+
+.piko-toast {
+  top: 22%;
+}
+
+.piko-countdown {
+  top: 30%;
+}
+
+/* Na úzkém displeji se dvě karty vedle sebe nevejdou (text se zlomí
+   do tří řádků a tlačítko startu odjede pod okraj). */
+@media (max-width: 560px) {
+  .piko-modes {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dotykové cíle drží minimum 40 px i pro přepínač her. */
+@media (hover: none) and (pointer: coarse) {
+  .piko-mode {
+    min-height: 3.4rem;
+  }
+}
+
+/* CTA z konceptu Te Pīko Ora do hratelné laguny (`/piko`). */
+.present-game-cta {
+  position: fixed;
+  z-index: 16;
+  left: 50%;
+  bottom: calc(1.4rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 227, 212, 0.55);
+  background: rgba(4, 20, 22, 0.82);
+  color: #bfeee6;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  backdrop-filter: blur(6px);
+}
+
+.present-game-cta:hover {
+  border-color: rgba(255, 209, 102, 0.75);
+  color: #ffe9a8;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .present-game-cta {
+    min-height: 2.5rem;
+  }
 }

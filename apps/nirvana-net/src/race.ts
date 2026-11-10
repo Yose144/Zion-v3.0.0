@@ -25,6 +25,10 @@ export interface RaceInput {
   throttle: number;
   /** −1..1 (kladné = doleva, stejná konvence jako sólo). */
   steer: number;
+  /** 0..1 — ruční brzda do driftu (Space). */
+  handbrake: number;
+  /** 0..1 — nitro (Shift). */
+  boost: number;
 }
 
 export interface RacePlayer {
@@ -108,7 +112,7 @@ export function addRacePlayer(
     avatarId,
     craft,
     lap,
-    input: { throttle: 0, steer: 0 },
+    input: { throttle: 0, steer: 0, handbrake: 0, boost: 0 },
     offTrack: false,
   };
   sim.players.set(id, player);
@@ -141,6 +145,12 @@ export function setRaceInput(sim: RaceSim, id: string, input: Partial<RaceInput>
   if (typeof input.steer === 'number' && Number.isFinite(input.steer)) {
     player.input.steer = Math.max(-1, Math.min(1, input.steer));
   }
+  if (typeof input.handbrake === 'number' && Number.isFinite(input.handbrake)) {
+    player.input.handbrake = Math.max(0, Math.min(1, input.handbrake));
+  }
+  if (typeof input.boost === 'number' && Number.isFinite(input.boost)) {
+    player.input.boost = Math.max(0, Math.min(1, input.boost));
+  }
 }
 
 function standings(sim: RaceSim) {
@@ -172,6 +182,8 @@ export function stepRace(sim: RaceSim, dt: number, now: number): RaceEvent[] {
         player.lap.lapStart = now;
         player.input.throttle = 0;
         player.input.steer = 0;
+        player.input.handbrake = 0;
+        player.input.boost = 0;
       }
       sim.events.push({ kind: 'race_start', at: now });
     }
@@ -188,7 +200,7 @@ export function stepRace(sim: RaceSim, dt: number, now: number): RaceEvent[] {
         const slot = GRID[index % GRID.length]!;
         player.craft = spawnCraft(sim.track, slot.sample, slot.lateral);
         player.lap = newLapState(slot.sample);
-        player.input = { throttle: 0, steer: 0 };
+        player.input = { throttle: 0, steer: 0, handbrake: 0, boost: 0 };
         player.offTrack = false;
       }
     }
@@ -259,6 +271,10 @@ export interface RaceSnapshotPlayer {
   checkpoint: number;
   offTrack: boolean;
   finishedAtMs: number | null;
+  /** Nádrž nitra 0..1 — pro HUD a plameny. */
+  nitro: number;
+  /** Právě táhne nitro (tlačítko + nádrž > 0) — pro plameny na klientech. */
+  boost: boolean;
 }
 
 export function raceSnapshot(sim: RaceSim, now: number) {
@@ -275,6 +291,8 @@ export function raceSnapshot(sim: RaceSim, now: number) {
     offTrack: player.offTrack,
     finishedAtMs:
       player.lap.finishedAt === null ? null : Math.round(player.lap.finishedAt - sim.startedAt),
+    nitro: Math.round(player.craft.nitro * 100) / 100,
+    boost: player.input.boost > 0 && player.craft.nitro > 0.02,
   }));
 
   return {

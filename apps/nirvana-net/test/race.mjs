@@ -51,7 +51,12 @@ const check = (name, ok, detail = '') => {
         { spec: { id: player.id, nameCs: '', nameEn: '', color: '#fff', skill: 0.85 }, craft: player.craft, lap: player.lap },
         track,
       );
-      race.setRaceInput(sim, player.id, { throttle: input.throttle, steer: input.steer });
+      race.setRaceInput(sim, player.id, {
+        throttle: input.throttle,
+        steer: input.steer,
+        handbrake: input.handbrake ?? 0,
+        boost: input.boost ?? 0,
+      });
     }
     events.push(...race.stepRace(sim, dt, now));
     if (sim.phase === 'ended') break;
@@ -65,7 +70,8 @@ const check = (name, ok, detail = '') => {
   check('oba dojeli', finishes.length === 2, String(finishes.length));
   check('pořadí je 1 a 2', finishes.map((f) => f.position).sort().join(',') === '1,2',
     finishes.map((f) => f.position).join(','));
-  check('časy jsou rozumné (60–200 s)', finishes.every((f) => f.totalSeconds > 60 && f.totalSeconds < 200),
+  // nová fyzika: ~40–50 u/s průměr (nitro na přímých) → 3 kola ~50–90 s
+  check('časy jsou rozumné (40–200 s)', finishes.every((f) => f.totalSeconds > 40 && f.totalSeconds < 200),
     finishes.map((f) => f.totalSeconds).join(', '));
   check('závod skončil', sim.phase === 'ended');
   check('pořadí v race_end', Boolean(endEvent) && endEvent.standings.length === 2 &&
@@ -160,6 +166,9 @@ try {
   check('snapshot: odpočet', snapshot.state === 'countdown' && snapshot.countdown > 0,
     JSON.stringify({ state: snapshot.state, countdown: snapshot.countdown }));
   check('snapshot: tři kola', snapshot.laps === 3, String(snapshot.laps));
+  check('snapshot: nitro + boost pole',
+    snapshot.players.every((p) => typeof p.nitro === 'number' && typeof p.boost === 'boolean'),
+    JSON.stringify(snapshot.players.map((p) => ({ nitro: p.nitro, boost: p.boost }))));
 
   // počkat na start závodu
   const started = await a.waitFor((m) => m.t === 'event' && m.event.kind === 'race_start', 8000);
@@ -174,6 +183,9 @@ try {
     a.send({
       t: 'input', seq: index, mx: 0, mz: 1, yaw: 0, pitch: 0,
       jump: false, fire: false, weapon: 0,
+      // nitro + ručka musí projít protokolem až do simulace
+      handbrake: index % 20 === 0,
+      boost: index % 15 === 0,
     });
     await sleep(40);
   }
@@ -182,6 +194,8 @@ try {
   const moved = Math.hypot(after.x - before.x, after.z - before.z);
   check('plyn hýbe vozítkem', moved > 2, `${moved.toFixed(2)} m`);
   check('rychlost roste', after.speed > 3, String(after.speed));
+  check('nitro ve snapshotu hráče', typeof after.nitro === 'number' && after.nitro >= 0 && after.nitro <= 1,
+    `nitro=${after.nitro}`);
 
   b.close();
   await sleep(500);

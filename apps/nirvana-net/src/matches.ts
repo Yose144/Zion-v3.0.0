@@ -134,8 +134,14 @@ function raceMatch(now: number): Match {
     },
     message(id, message) {
       if (message.t !== 'input') return false;
-      // u závodu je `mz` plyn a `mx` zatáčení (stejná konvence jako sólo)
-      setRaceInput(sim, id, { throttle: message.mz, steer: message.mx });
+      // u závodu je `mz` plyn a `mx` zatáčení (stejná konvence jako sólo);
+      // ručka a nitro jedou jako boolean flagy
+      setRaceInput(sim, id, {
+        throttle: message.mz,
+        steer: message.mx,
+        handbrake: message.handbrake === true ? 1 : 0,
+        boost: message.boost === true ? 1 : 0,
+      });
       return true;
     },
     size: () => sim.players.size,

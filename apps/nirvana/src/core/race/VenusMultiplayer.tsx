@@ -1,17 +1,18 @@
 'use client';
 
 import { useEffect, useMemo, useRef } from 'react';
-import { isGamePaused } from '@/core/games/pause';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { dampFactor } from '@/core/design/motion';
 import { LAPS, buildTrack, checkpointIndices } from './track';
 import { MAX_SPEED, type Craft, spawnCraft, stepCraft } from './physics';
 import { TrackStage } from './TrackStage';
+import { CraftMesh, CraftSmoke, emptyCraftFx, type CraftFx } from './CraftMesh';
 import { useNet } from '@/core/net/useNet';
 import { play, startEngineLoop, unlock, type LoopHandle } from '@/core/audio/engine';
 import { RaceXr } from './RaceXr';
 import type { RacePlayerState, ServerMessage } from '@/core/net/protocol';
+import { isGamePaused } from '@/core/games/pause';
 
 /** Pořadí závodu: kdo dojel, pak vyšší kolo. Stejné pro kameru diváka i HUD. */
 function byRacePlace(
@@ -32,8 +33,9 @@ function raceLeader(players: RacePlayerState[]): RacePlayerState | undefined {
  * VENUŠE — multiplayer závod.
  *
  * Server simuluje vozítka stejnou fyzikou (`race/physics.ts`) a stejnou tratí;
- * klient posílá jen plyn a zatáčení. Vlastní pohyb se predikuje, ostatní se
- * interpolují. Odpočet, kola i cílovka jsou serverové — klient je jen kreslí.
+ * klient posílá jen plyn, zatáčení, ruční brzdu a nitro. Vlastní pohyb se
+ * predikuje, ostatní se interpolují. Odpočet, kola i cílovka jsou serverové —
+ * klient je jen kreslí.
  */
 
 export interface MpRaceRow {
@@ -55,6 +57,10 @@ export interface MpRaceStats {
   state: 'countdown' | 'running' | 'ended' | null;
   connected: boolean;
   ping: number | null;
+  /** Nádrž nitra 0..1 pro HUD. */
+  nitro: number;
+  drifting: boolean;
+  boosting: boolean;
 }
 
 const MAX_REMOTE = 7;
@@ -102,6 +108,15 @@ export function VenusMultiplayer({
   const lastTick = useRef(-1);
   const finished = useRef(false);
 
+  // ── vizuální šťáva: fx vozidla, kouř, shake, FOV ──
+  const fx = useRef<CraftFx>(emptyCraftFx());
+  const smokeLevel = useRef(0);
+  const shake = useRef(0);
+  const boostFx = useRef(0);
+  const wasBoosting = useRef(false);
+  /** Efekty vzdálených vozidel — plameny z `RacePlayerState.boost`. */
+  const remoteFx = useRef<CraftFx[]>([]);
+
   // ── připojení ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!running || !connected) return;
@@ -117,6 +132,10 @@ export function VenusMultiplayer({
     lastLap.current = 1;
     lastTick.current = -1;
     finished.current = false;
+    shake.current = 0;
+    boostFx.current = 0;
+    wasBoosting.current = false;
+    smokeLevel.current = 0;
     engine.current = startEngineLoop();
     return () => {
       engine.current?.stop();
@@ -155,6 +174,8 @@ export function VenusMultiplayer({
         x: Math.round(player.x * 100) / 100,
         z: Math.round(player.z * 100) / 100,
         speed: Math.round(player.speed * 100) / 100,
+        nitro: player.nitro ?? null,
+        boost: player.boost === true,
         lap: player.lap,
         finishedAtMs: player.finishedAtMs,
       })),
@@ -165,7 +186,7 @@ export function VenusMultiplayer({
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
       keys.current.add(event.code);
-      if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
+      if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(event.code)) {
         event.preventDefault();
       }
     };
@@ -180,9 +201,15 @@ export function VenusMultiplayer({
 
   // ── smyčka ───────────────────────────────────────────────────────────
   useFrame((_, delta) => {
-    if (!running) return;
+    if (!running) {
+      smokeLevel.current = 0;
+      return;
+    }
     // Hamburger menu (2026-11-10) — pauza patří do modulu, ne do každé hry.
-    if (isGamePaused()) return;
+    if (isGamePaused()) {
+      smokeLevel.current = 0;
+      return;
+    }
     const dt = Math.min(0.05, delta);
     const now = Date.now();
     const snapshot = latest.current;
@@ -196,6 +223,8 @@ export function VenusMultiplayer({
       ? 0
       : (keys.current.has('KeyA') || keys.current.has('ArrowLeft') ? 1 : 0) -
         (keys.current.has('KeyD') || keys.current.has('ArrowRight') ? 1 : 0);
+    const handbrake = !watching && keys.current.has('Space') ? 1 : 0;
+    const boost = !watching && (keys.current.has('ShiftLeft') || keys.current.has('ShiftRight')) ? 1 : 0;
 
     const me = watching ? undefined : snapshot?.players.find((player) => player.id === youPlayerId);
     const lead = watching ? raceLeader(snapshot?.players ?? []) : undefined;
@@ -203,12 +232,32 @@ export function VenusMultiplayer({
 
     // 1) predikce stejnou fyzikou (jen když se jede). Divák jen sleduje snapshot.
     let hitWall = false;
+    let stepBoosting = false;
+    let stepDrifting = false;
+    let stepSlide = 0;
+    let stepOffTrack = false;
     if (racing) {
-      const step = stepCraft(craft.current, { throttle, steer }, track, dt, now);
+      const step = stepCraft(craft.current, { throttle, steer, handbrake, boost }, track, dt, now);
       hitWall = step.hitWall;
+      stepBoosting = step.boosting;
+      stepDrifting = step.drifting;
+      stepSlide = step.slide;
+      stepOffTrack = step.offTrack;
     }
-    if (hitWall) play('wall');
-    engine.current?.setIntensity(Math.abs(craft.current.speed) / MAX_SPEED);
+    if (hitWall) {
+      play('wall');
+      shake.current = Math.min(1, shake.current + 0.75);
+    }
+    if (stepBoosting && !wasBoosting.current) play('boost');
+    wasBoosting.current = stepBoosting;
+    if (stepDrifting && Math.abs(craft.current.speed) > 9) play('drift');
+    engine.current?.setIntensity(Math.min(1, Math.abs(craft.current.speed) / MAX_SPEED + (stepBoosting ? 0.12 : 0)));
+
+    boostFx.current += ((stepBoosting ? 1 : 0) - boostFx.current) * Math.min(1, dt * 7);
+    smokeLevel.current = Math.min(
+      1,
+      (stepDrifting ? Math.abs(stepSlide) / 5 : 0) + (stepOffTrack && Math.abs(craft.current.speed) > 10 ? 0.35 : 0),
+    );
 
     // odpočet: každé celé číslo jednou pípne, start gongem
     if (snapshot?.state === 'countdown') {
@@ -240,18 +289,43 @@ export function VenusMultiplayer({
         craft.current.z = me.z;
         craft.current.heading = me.heading;
         craft.current.speed = me.speed;
+        // vektor rychlosti aproximujeme jako sesouosý — drift se na snapu ztratí,
+        // ale aspoň nesmie zůstat starý smyk z minuléPozice
+        craft.current.vx = Math.sin(me.heading) * me.speed;
+        craft.current.vz = Math.cos(me.heading) * me.speed;
+        if (typeof me.nitro === 'number') craft.current.nitro = me.nitro;
       } else if (distance > 0.2) {
         craft.current.x += (me.x - craft.current.x) * 0.25;
         craft.current.z += (me.z - craft.current.z) * 0.25;
       }
     }
 
+    // ── vizuální šťáva vlastního vozu ──
+    const ownFx = fx.current;
+    if (ownFx.brake) {
+      const braking = throttle < 0 && craft.current.speed > 2;
+      const target = braking ? 1 : 0.4;
+      ownFx.brake.opacity += (target - ownFx.brake.opacity) * Math.min(1, dt * 12);
+    }
+    if (ownFx.flames) {
+      ownFx.flames.visible = stepBoosting;
+      if (stepBoosting) ownFx.flames.scale.setScalar(0.8 + Math.random() * 0.35);
+    }
+    if (ownFx.glow) {
+      const target = stepBoosting ? 6 : 1.6;
+      ownFx.glow.intensity += (target - ownFx.glow.intensity) * Math.min(1, dt * 8);
+    }
+
     if (craftGroup.current) {
       craftGroup.current.visible = !watching;
       if (!watching) {
-        craftGroup.current.position.set(craft.current.x, 0.55 + Math.sin(now / 300) * 0.04, craft.current.z);
-        craftGroup.current.rotation.y = craft.current.heading;
-        craftGroup.current.rotation.z = -steer * 0.12 * Math.min(1, Math.abs(craft.current.speed) / MAX_SPEED);
+        const speedAbs = Math.abs(craft.current.speed);
+        const speedRatio = Math.min(1.2, speedAbs / MAX_SPEED);
+        const bob = Math.sin(now / 300) * 0.04 + Math.sin(now / 47) * 0.012 * speedRatio;
+        craftGroup.current.position.set(craft.current.x, 0.55 + bob, craft.current.z);
+        const roll = -steer * 0.09 * Math.min(1, speedRatio) - Math.max(-10, Math.min(10, stepSlide)) * 0.013;
+        const pitch = -throttle * 0.05 * Math.min(1, speedAbs / 28);
+        craftGroup.current.rotation.set(pitch, craft.current.heading, roll);
       }
     }
 
@@ -260,16 +334,29 @@ export function VenusMultiplayer({
     const camCraft = lead ?? craft.current;
     const forwardX = Math.sin(camCraft.heading);
     const forwardZ = Math.cos(camCraft.heading);
-    const speedRatio = Math.abs(camCraft.speed) / MAX_SPEED;
+    const speedRatio = Math.min(1.2, Math.abs(camCraft.speed) / MAX_SPEED);
     if (!xr) {
       camPos.set(
-        camCraft.x - forwardX * (9 + speedRatio * 3),
-        4.2 + speedRatio * 0.8,
-        camCraft.z - forwardZ * (9 + speedRatio * 3),
+        camCraft.x - forwardX * (9 + speedRatio * 3.2),
+        4.2 + speedRatio * 0.9,
+        camCraft.z - forwardZ * (9 + speedRatio * 3.2),
       );
+      const sh = shake.current;
+      shake.current *= Math.exp(-dt * 4.5);
+      const vibe = speedRatio > 0.9 ? 0.05 : 0;
+      camPos.x += (Math.random() - 0.5) * (sh * 0.7 + vibe);
+      camPos.y += (Math.random() - 0.5) * (sh * 0.5 + vibe * 0.5);
+      camPos.z += (Math.random() - 0.5) * (sh * 0.7 + vibe);
       camera.position.lerp(camPos, dampFactor(dt));
       camTarget.set(camCraft.x + forwardX * 6, 1.2, camCraft.z + forwardZ * 6);
       camera.lookAt(camTarget);
+      const persp = camera as THREE.PerspectiveCamera;
+      const targetFov = 66 + speedRatio * 10 + boostFx.current * 9;
+      persp.fov += (targetFov - persp.fov) * Math.min(1, dt * 5);
+      if (Math.abs(targetFov - persp.fov) > 0.05) camera.updateProjectionMatrix();
+      camera.rotateZ(
+        -steer * 0.02 * speedRatio - Math.max(-10, Math.min(10, stepSlide)) * 0.0035 - (Math.random() - 0.5) * shake.current * 0.02,
+      );
     }
 
     // 4) ostatní jezdci
@@ -282,6 +369,7 @@ export function VenusMultiplayer({
       for (const player of snapshot.players) {
         if (player.id === youPlayerId) continue;
         const group = remoteRefs.current[slot];
+        const rfx = (remoteFx.current[slot] ??= emptyCraftFx());
         slot += 1;
         if (!group) continue;
         const before = previous.current?.players.find((p) => p.id === player.id);
@@ -292,11 +380,19 @@ export function VenusMultiplayer({
         );
         group.rotation.y = before ? before.heading + (player.heading - before.heading) * blend : player.heading;
         group.visible = true;
+        // plameny nitra na vzdáleném vozidle — `boost` ze snapshotu
+        if (rfx.flames) {
+          const on = player.boost === true;
+          rfx.flames.visible = on;
+          if (on) rfx.flames.scale.setScalar(0.8 + Math.random() * 0.35);
+        }
       }
     }
     for (; slot < MAX_REMOTE; slot++) {
       const group = remoteRefs.current[slot];
       if (group) group.visible = false;
+      const rfx = remoteFx.current[slot];
+      if (rfx?.flames) rfx.flames.visible = false;
     }
 
     // 5) vstup na server. Divák ho neposílá — jinak by rozjel vlastní vozítko.
@@ -309,6 +405,8 @@ export function VenusMultiplayer({
         jump: false,
         fire: false,
         weapon: 0,
+        handbrake: handbrake > 0,
+        boost: boost > 0,
       });
     }
 
@@ -339,6 +437,9 @@ export function VenusMultiplayer({
         state: snapshot?.state ?? null,
         connected,
         ping: rtt,
+        nitro: Math.round((subject?.nitro ?? (watching ? 0 : craft.current.nitro)) * 100) / 100,
+        drifting: !watching && racing && stepDrifting,
+        boosting: !watching && racing && stepBoosting,
       };
       const key = JSON.stringify(stats);
       if (key !== lastStats.current) {
@@ -364,46 +465,27 @@ export function VenusMultiplayer({
 
       <TrackStage track={track} checkpoints={checkpoints} />
       {xr && <RaceXr craft={craft} active={running} />}
+      <CraftSmoke craft={craft} level={smokeLevel} active={running && !watch} />
 
       {/* ostatní jezdci */}
-      {Array.from({ length: MAX_REMOTE }, (_, index) => (
-        <group
-          key={`remote-${index}`}
-          visible={false}
-          ref={(node) => {
-            remoteRefs.current[index] = node;
-          }}
-        >
-          <mesh position={[0, 0.1, 0]}>
-            <boxGeometry args={[1.5, 0.32, 3]} />
-            <meshStandardMaterial color="#7fe3d4" metalness={0.6} roughness={0.35} />
-          </mesh>
-          <mesh position={[0, 0.42, -0.2]}>
-            <boxGeometry args={[0.9, 0.34, 1.3]} />
-            <meshStandardMaterial color="#2b2233" metalness={0.4} roughness={0.5} />
-          </mesh>
-          <mesh position={[0, 0.78, 0.1]}>
-            <sphereGeometry args={[0.28, 12, 10]} />
-            <meshBasicMaterial color="#ffd166" toneMapped={false} />
-          </mesh>
-        </group>
-      ))}
+      {Array.from({ length: MAX_REMOTE }, (_, index) => {
+        const rfx = (remoteFx.current[index] ??= emptyCraftFx());
+        return (
+          <group
+            key={`remote-${index}`}
+            visible={false}
+            ref={(node) => {
+              remoteRefs.current[index] = node;
+            }}
+          >
+            <CraftMesh body="#7fe3d4" accent="#ffd166" canopy="#0d0a16" fx={rfx} />
+          </group>
+        );
+      })}
 
-      {/* vlastní hovercraft */}
+      {/* vlastní vozidlo */}
       <group ref={craftGroup}>
-        <mesh position={[0, 0.1, 0]}>
-          <boxGeometry args={[1.5, 0.32, 3]} />
-          <meshStandardMaterial color="#ffd166" metalness={0.6} roughness={0.35} />
-        </mesh>
-        <mesh position={[0, 0.42, -0.2]}>
-          <boxGeometry args={[0.9, 0.34, 1.3]} />
-          <meshStandardMaterial color="#2b2233" metalness={0.4} roughness={0.5} />
-        </mesh>
-        <mesh position={[0, 0.78, 0.1]}>
-          <sphereGeometry args={[0.28, 12, 10]} />
-          <meshBasicMaterial color="#7fe3d4" toneMapped={false} />
-        </mesh>
-        <pointLight position={[0, 0.3, -2]} intensity={4} color="#7fe3d4" distance={8} decay={2} />
+        <CraftMesh body="#ffd166" accent="#7fe3d4" canopy="#7fe3d4" fx={fx.current} />
       </group>
     </>
   );

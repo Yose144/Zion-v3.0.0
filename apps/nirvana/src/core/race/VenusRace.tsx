@@ -1,20 +1,19 @@
 'use client';
 
 import { useEffect, useMemo, useRef } from 'react';
-import { isGamePaused } from '@/core/games/pause';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { dampFactor } from '@/core/design/motion';
 import {
   LAPS,
   SAMPLES,
-  TRACK_WIDTH,
   buildTrack,
   checkpointIndices,
   nearestSample,
 } from '@/core/race/track';
 import { MAX_SPEED, type Craft, spawnCraft, stepCraft } from '@/core/race/physics';
 import { TrackStage } from '@/core/race/TrackStage';
+import { CraftMesh, CraftSmoke, emptyCraftFx, type CraftFx } from '@/core/race/CraftMesh';
 import { play, startEngineLoop, unlock, type LoopHandle } from '@/core/audio/engine';
 import { RaceXr } from './RaceXr';
 import {
@@ -29,13 +28,15 @@ import {
   type Rival,
   type StandingRow,
 } from '@/core/race/rivals';
+import { isGamePaused } from '@/core/games/pause';
 
 /**
  * VENUŠE — tři kola proti třem soupeřům.
  *
- * Arkádová fyzika, ne simulace: plyn/brzda, zatáčení úměrné rychlosti a trať,
- * která tě sama drží na silnici. Hráč i boti jedou **stejný** `stepCraft`;
- * boti se liší jen rozhodováním (brzdný bod, stopa) — viz `rivals.ts`.
+ * Arkádová fyzika, ne simulace: plyn/brzda, ruční brzda do driftu, nitro
+ * na přímé a trať, která tě sama drží na silnici. Hráč i boti jedou **stejný**
+ * `stepCraft`; boti se liší jen rozhodováním (brzdný bod, stopa, kdy
+ * přitápí nitro) — viz `rivals.ts`.
  */
 
 export interface RaceStats {
@@ -49,6 +50,12 @@ export interface RaceStats {
   started: boolean;
   position: number;
   standings: StandingRow[];
+  /** Nádrž nitra 0..1 pro HUD. */
+  nitro: number;
+  /** Právě driftuje (pro HUD a brush). */
+  drifting: boolean;
+  /** Nitro táhne (pro HUD). */
+  boosting: boolean;
 }
 
 export interface RaceResult {
@@ -113,6 +120,21 @@ export function VenusRace({
   /** Motor hučí po celý závod; `null` = WebAudio není (hra jede dál). */
   const engine = useRef<LoopHandle | null>(null);
 
+  // ── vizuální šťáva: fx vozidla, kouř, shake, FOV ──
+  /** Materiály/skupiny vlastního vozu — plameny, brzdové světlo, glow. */
+  const fx = useRef<CraftFx>(emptyCraftFx());
+  /** Kouř 0..1 pro `CraftSmoke` — naplňuje se z `step.slide`. */
+  const smokeLevel = useRef(0);
+  /** Nárazy do zdi — decaying amplituda pro kameru. */
+  const shake = useRef(0);
+  /** Zeslabený boost pro FOV — plynule se otevírá/uzavírá. */
+  const boostFx = useRef(0);
+  /** Naposledy hraný `boosting` — pro náběh whooshe. */
+  const wasBoosting = useRef(false);
+  /** Efekty rivalů (plameny) + jejich boost flag z `stepRival`. */
+  const rivalFx = useRef<CraftFx[]>([]);
+  const rivalBoost = useRef<boolean[]>([]);
+
   const standings = () =>
     buildStandings({
       playerLap: playerLap.current,
@@ -137,6 +159,7 @@ export function VenusRace({
         lateral: Math.round(((car.x - point.x) * point.nx + (car.z - point.z) * point.nz) * 100) / 100,
         heading: Math.round(car.heading * 100) / 100,
         speed: Math.round(car.speed * 10) / 10,
+        nitro: Math.round(car.nitro * 100) / 100,
         trackX: Math.round(point.x * 10) / 10,
         trackZ: Math.round(point.z * 10) / 10,
         offTrack: race.current.offTrack,
@@ -152,6 +175,7 @@ export function VenusRace({
         rivals: rivals.current.map((rival) => ({
           id: rival.spec.id,
           speed: Math.round(rival.craft.speed * 10) / 10,
+          nitro: Math.round(rival.craft.nitro * 100) / 100,
           sample: rival.craft.sample,
           lap: rival.lap.lap,
           done: rival.lap.finishedAt !== null,
@@ -183,6 +207,10 @@ export function VenusRace({
     rivals.current = createRivals(track);
     race.current = { started: false, startTime: 0, finished: false, offTrack: false };
     lastStats.current = '';
+    shake.current = 0;
+    boostFx.current = 0;
+    wasBoosting.current = false;
+    smokeLevel.current = 0;
     // motor startuje se závodem a zmlkne při odchodu (i při předčasném Menu)
     unlock();
     engine.current = startEngineLoop();
@@ -193,9 +221,15 @@ export function VenusRace({
   }, [running, track]);
 
   useFrame((_, delta) => {
-    if (!running) return;
+    if (!running) {
+      smokeLevel.current = 0;
+      return;
+    }
     // Hamburger menu (2026-11-10) — pauza patří do modulu, ne do každé hry.
-    if (isGamePaused()) return;
+    if (isGamePaused()) {
+      smokeLevel.current = 0;
+      return;
+    }
     const dt = Math.min(0.05, delta);
     clock.current += dt * 1000;
     const now = clock.current;
@@ -209,6 +243,8 @@ export function VenusRace({
     const steer =
       (keys.current.has('KeyA') || keys.current.has('ArrowLeft') ? 1 : 0) -
       (keys.current.has('KeyD') || keys.current.has('ArrowRight') ? 1 : 0);
+    const handbrake = keys.current.has('Space') ? 1 : 0;
+    const boost = keys.current.has('ShiftLeft') || keys.current.has('ShiftRight') ? 1 : 0;
 
     if (!state.started && throttle !== 0) {
       state.started = true;
@@ -217,12 +253,29 @@ export function VenusRace({
       for (const rival of rivals.current) rival.lap.lapStart = now;
     }
 
-    const step = stepCraft(car, { throttle, steer }, track, dt, now);
+    const step = stepCraft(car, { throttle, steer, handbrake, boost }, track, dt, now);
     state.offTrack = step.offTrack;
-    if (step.hitWall) play('wall');
+    if (step.hitWall) {
+      play('wall');
+      shake.current = Math.min(1, shake.current + 0.75);
+    }
+    // zvuky: whoosh na náběh nitra, skřípání pneu při driftu (MIN_GAP řídí)
+    if (step.boosting && !wasBoosting.current) play('boost');
+    wasBoosting.current = step.boosting;
+    if (step.drifting && Math.abs(car.speed) > 9) play('drift');
 
     // motor: výška a jas podle rychlosti — hráč slyší zrychlení bez pohledu na HUD
-    engine.current?.setIntensity(Math.abs(car.speed) / MAX_SPEED);
+    engine.current?.setIntensity(Math.min(1, Math.abs(car.speed) / MAX_SPEED + (step.boosting ? 0.12 : 0)));
+
+    // FOV se s rychlostí a nitrem otevírá — pocit větru
+    boostFx.current += ((step.boosting ? 1 : 0) - boostFx.current) * Math.min(1, dt * 7);
+
+    // kouř: drift + ocas off-track prachu
+    const slideAbs = Math.abs(step.slide);
+    smokeLevel.current = Math.min(
+      1,
+      (step.drifting ? slideAbs / 5 : 0) + (step.offTrack && Math.abs(car.speed) > 10 ? 0.35 : 0),
+    );
 
     if (state.started && !state.finished) {
       const lapStep = advanceLap(lap, step.index, checkpoints, now);
@@ -246,29 +299,77 @@ export function VenusRace({
 
     // soupeři jedou, jen když závod začal (do té doby stojí na roštu)
     if (state.started) {
-      for (const rival of rivals.current) stepRival(rival, track, checkpoints, dt, now);
+      rivals.current.forEach((rival, index) => {
+        const rstep = stepRival(rival, track, checkpoints, dt, now);
+        rivalBoost.current[index] = rstep.boosting;
+      });
     }
+
+    // ── vizuální šťáva vlastního vozu ──
+    const ownFx = fx.current;
+    if (ownFx.brake) {
+      const braking = throttle < 0 && car.speed > 2;
+      const target = braking ? 1 : 0.4;
+      ownFx.brake.opacity += (target - ownFx.brake.opacity) * Math.min(1, dt * 12);
+    }
+    if (ownFx.flames) {
+      ownFx.flames.visible = step.boosting;
+      if (step.boosting) ownFx.flames.scale.setScalar(0.8 + Math.random() * 0.35);
+    }
+    if (ownFx.glow) {
+      const target = step.boosting ? 6 : 1.6;
+      ownFx.glow.intensity += (target - ownFx.glow.intensity) * Math.min(1, dt * 8);
+    }
+    rivals.current.forEach((_, index) => {
+      const rfx = rivalFx.current[index];
+      if (!rfx?.flames) return;
+      const on = rivalBoost.current[index] === true;
+      rfx.flames.visible = on;
+      if (on) rfx.flames.scale.setScalar(0.8 + Math.random() * 0.35);
+    });
 
     // kamera za vozítkem — ve VR kameru drží headset, origin jede s vozítkem (RaceXr)
     const forwardX = Math.sin(car.heading);
     const forwardZ = Math.cos(car.heading);
-    const speedRatio = Math.abs(car.speed) / MAX_SPEED;
+    const speedRatio = Math.min(1.2, Math.abs(car.speed) / MAX_SPEED);
+    const speedAbs = Math.abs(car.speed);
     if (!xr) {
       camPos.set(
-        car.x - forwardX * (9 + speedRatio * 3),
-        4.2 + speedRatio * 0.8,
-        car.z - forwardZ * (9 + speedRatio * 3),
+        car.x - forwardX * (9 + speedRatio * 3.2),
+        4.2 + speedRatio * 0.9,
+        car.z - forwardZ * (9 + speedRatio * 3.2),
       );
+      // otřes od zdi + jemné chvění na rychlosti
+      const sh = shake.current;
+      shake.current *= Math.exp(-dt * 4.5);
+      const vibe = speedRatio > 0.9 ? 0.05 : 0;
+      camPos.x += (Math.random() - 0.5) * (sh * 0.7 + vibe);
+      camPos.y += (Math.random() - 0.5) * (sh * 0.5 + vibe * 0.5);
+      camPos.z += (Math.random() - 0.5) * (sh * 0.7 + vibe);
       camera.position.lerp(camPos, dampFactor(dt));
       camTarget.set(car.x + forwardX * 6, 1.2, car.z + forwardZ * 6);
       camera.lookAt(camTarget);
+      // FOV: základ + rychlost + nitro (perspektivní kamera — canvas default)
+      const persp = camera as THREE.PerspectiveCamera;
+      const targetFov = 66 + speedRatio * 10 + boostFx.current * 9;
+      persp.fov += (targetFov - persp.fov) * Math.min(1, dt * 5);
+      if (Math.abs(targetFov - persp.fov) > 0.05) camera.updateProjectionMatrix();
+      // náklon horizontu do zatáčky a driftu + otřes
+      camera.rotateZ(
+        -steer * 0.02 * speedRatio -
+          Math.max(-10, Math.min(10, step.slide)) * 0.0035 -
+          (Math.random() - 0.5) * shake.current * 0.02,
+      );
     }
 
-    const bob = Math.sin(now * 0.003) * 0.04;
+    const bob = Math.sin(now * 0.003) * 0.04 + Math.sin(now * 0.047) * 0.012 * speedRatio;
     if (craftGroup.current) {
       craftGroup.current.position.set(car.x, 0.55 + bob, car.z);
-      craftGroup.current.rotation.y = car.heading;
-      craftGroup.current.rotation.z = -steer * 0.12 * speedRatio;
+      // roll do zatáčky + drift, pitch pod plynem/brzdou
+      const roll =
+        -steer * 0.09 * Math.min(1, speedRatio) - Math.max(-10, Math.min(10, step.slide)) * 0.013;
+      const pitch = -throttle * 0.05 * Math.min(1, speedAbs / 28);
+      craftGroup.current.rotation.set(pitch, car.heading, roll);
     }
 
     rivals.current.forEach((rival, index) => {
@@ -294,6 +395,9 @@ export function VenusRace({
         started: state.started,
         position,
         standings: rows,
+        nitro: Math.round(car.nitro * 100) / 100,
+        drifting: step.drifting,
+        boosting: step.boosting,
       };
       const key = JSON.stringify(stats);
       if (key !== lastStats.current) {
@@ -319,46 +423,30 @@ export function VenusRace({
 
       <TrackStage track={track} checkpoints={checkpoints} />
       {xr && <RaceXr craft={player} active={running} />}
+      {/* driftový kouř — světový particle systém, ne child vozu */}
+      <CraftSmoke craft={player} level={smokeLevel} active={running} />
 
       {/* soupeři */}
-      {rivals.current.map((rival, index) => (
-        <group
-          key={rival.spec.id}
-          ref={(node) => {
-            rivalGroups.current[index] = node;
-          }}
-          position={[rival.craft.x, 0.55, rival.craft.z]}
-          rotation={[0, rival.craft.heading, 0]}
-        >
-          <CraftMesh body={rival.spec.color} canopy="#141020" />
-        </group>
-      ))}
+      {rivals.current.map((rival, index) => {
+        const rfx = (rivalFx.current[index] ??= emptyCraftFx());
+        return (
+          <group
+            key={rival.spec.id}
+            ref={(node) => {
+              rivalGroups.current[index] = node;
+            }}
+            position={[rival.craft.x, 0.55, rival.craft.z]}
+            rotation={[0, rival.craft.heading, 0]}
+          >
+            <CraftMesh body={rival.spec.color} accent={rival.spec.color} canopy="#141020" fx={rfx} />
+          </group>
+        );
+      })}
 
-      {/* hovercraft hráče */}
+      {/* vozidlo hráče */}
       <group ref={craftGroup} position={[track[0]!.x + track[0]!.nx * PLAYER_LATERAL, 0.55, track[0]!.z + track[0]!.nz * PLAYER_LATERAL]}>
-        <CraftMesh body="#ffd166" canopy="#7fe3d4" />
-        <pointLight position={[0, 0.3, -2]} intensity={4} color="#7fe3d4" distance={8} decay={2} />
+        <CraftMesh body="#ffd166" accent="#7fe3d4" canopy="#7fe3d4" fx={fx.current} />
       </group>
-    </>
-  );
-}
-
-/** Stejný trup pro hráče i soupeře — liší se jen barvou. */
-function CraftMesh({ body, canopy }: { body: string; canopy: string }) {
-  return (
-    <>
-      <mesh position={[0, 0.1, 0]}>
-        <boxGeometry args={[1.5, 0.32, 3]} />
-        <meshStandardMaterial color={body} metalness={0.6} roughness={0.35} />
-      </mesh>
-      <mesh position={[0, 0.42, -0.2]}>
-        <boxGeometry args={[0.9, 0.34, 1.3]} />
-        <meshStandardMaterial color="#2b2233" metalness={0.4} roughness={0.5} />
-      </mesh>
-      <mesh position={[0, 0.78, 0.1]}>
-        <sphereGeometry args={[0.28, 12, 10]} />
-        <meshBasicMaterial color={canopy} toneMapped={false} />
-      </mesh>
     </>
   );
 }

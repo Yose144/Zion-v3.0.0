@@ -58,6 +58,10 @@ const MIN_GAP: Partial<Record<SoundName, number>> = {
   impact: 80,
   brick: 35,
   eat: 40,
+  boost: 400,
+  drift: 140,
+  stroke: 80,
+  gate: 60,
 };
 
 const lastPlayed = new Map<SoundName, number>();
@@ -311,6 +315,8 @@ export type SoundName =
   | 'wall'
   | 'finish'
   | 'countdown'
+  | 'boost'
+  | 'drift'
   // tanky (Saturn)
   | 'cannon'
   | 'impact'
@@ -331,6 +337,11 @@ export type SoundName =
   | 'gust'
   | 'shrineOpen'
   | 'gift'
+  // voda (Te Pīko Ora)
+  | 'stroke'
+  | 'gate'
+  | 'swell'
+  | 'wipeout'
   // rozhraní
   | 'click'
   | 'open'
@@ -432,6 +443,16 @@ const SOUNDS: Record<SoundName, Voice> = {
   },
   finish: () => scale([659, 784, 988, 1318], 0.09, 0.12, 0.5),
   countdown: () => tone({ freq: 660, duration: 0.12, type: 'square', gain: 0.08 }),
+  // Nitro: stoupající whoosh — šumový sweep + tón nahoru.
+  boost: () => {
+    noise({ duration: 0.55, gain: 0.08, cutoff: 2600, type: 'bandpass' });
+    tone({ freq: 160, to: 780, duration: 0.5, type: 'sawtooth', gain: 0.045 });
+  },
+  // Drift: skřípání pneu — pásmový šum, MIN_GAP dělá z něj série.
+  drift: () => {
+    noise({ duration: 0.2, gain: 0.05, cutoff: 950, type: 'bandpass' });
+    noise({ duration: 0.14, gain: 0.03, cutoff: 2400, type: 'highpass', delay: 0.03 });
+  },
 
   // ── tanky (Saturn) ───────────────────────────────────────────────────
   cannon: () => {
@@ -471,6 +492,25 @@ const SOUNDS: Record<SoundName, Voice> = {
   gift: () => {
     chime([659, 880, 1318], 0.075, 0.1, 0.8);
     noise({ duration: 0.6, gain: 0.03, cutoff: 700 });
+  },
+
+  // ── voda (Te Pīko Ora) ──────────────────────────────────────────────
+  // Záběr pádlem: krátké šplouchnutí, ne tón. Voda nemá noty.
+  stroke: () => {
+    noise({ duration: 0.16, gain: 0.055, cutoff: 1500, type: 'bandpass' });
+    tone({ freq: 190, to: 120, duration: 0.1, type: 'sine', gain: 0.03 });
+  },
+  // Projektá bóje: jasný zvon, aby hráč poznal zásah bez pohledu na HUD.
+  gate: () => chime([880, 1320], 0.09, 0.07, 0.22),
+  // Vlna se zvedá: dlouhý teplý šum.
+  swell: () => {
+    noise({ duration: 1.1, gain: 0.07, cutoff: 780, type: 'lowpass' });
+    tone({ freq: 140, to: 96, duration: 0.9, type: 'sine', gain: 0.04 });
+  },
+  // Pád z vlny: tupý dopad a voda.
+  wipeout: () => {
+    boom(0.15, 0.45);
+    noise({ duration: 0.5, gain: 0.09, cutoff: 1600, type: 'bandpass' });
   },
 
   // ── rozhraní ─────────────────────────────────────────────────────────

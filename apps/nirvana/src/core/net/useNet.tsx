@@ -150,6 +150,9 @@ export interface ArenaInputFrame {
   weapon: 0 | 1 | 2;
   /** Jen duel (Merkur): držený blok. Ostatní hry ignorují. */
   block?: boolean;
+  /** Jen závod (Venuše): ruční brzda a nitro. Ostatní hry ignorují. */
+  handbrake?: boolean;
+  boost?: boolean;
 }
 
 const MAX_LINES = 200;
@@ -453,6 +456,8 @@ export function NetProvider({ children }: { children: ReactNode }) {
         fire: input.fire,
         weapon: input.weapon,
         block: input.block === true,
+        handbrake: input.handbrake === true,
+        boost: input.boost === true,
       });
     },
     [send],
