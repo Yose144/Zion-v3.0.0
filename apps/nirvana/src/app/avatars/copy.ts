@@ -8,9 +8,14 @@ import type { Localized } from '@/core/i18n';
 
 export const AVATARS_COPY = {
   roster: {
-    cs: '· {n} postav z OASIS rosteru',
-    en: '· {n} figures from the OASIS roster',
-    es: '· {n} figuras del roster de OASIS',
+    cs: '· {n} postav s 3D modelem z {total}',
+    en: '· {n} figures with a 3D model of {total}',
+    es: '· {n} figuras con modelo 3D de {total}',
+  },
+  modelsNote: {
+    cs: 'Zatím je hotových {n} modelů z {total}. Ostatní postavy čekají na 3D model — staré procedurální figury jsou v archivu.',
+    en: 'So far {n} of {total} models are finished. The rest await a 3D model — the old procedural figures are archived.',
+    es: 'Por ahora hay {n} de {total} modelos terminados. El resto espera su modelo 3D: las figuras procedurales antiguas están archivadas.',
   },
   title: { cs: 'VYBER SI AVATARA', en: 'CHOOSE YOUR AVATAR', es: 'ELIGE TU AVATAR' },
   signIn: { cs: 'Přihlásit', en: 'Sign in', es: 'Entrar' },

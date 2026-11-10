@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { AVATARS } from '@/core/avatars/catalog';
+import { AVATAR_MODELS } from '@/core/avatars/models';
 import { fill, tx, useI18n, type Lang } from '@/core/i18n';
 import { MobaGame, type MobaStats } from '@/core/moba/MobaGame';
 import { MobaOnline } from '@/core/moba/MobaOnline';
@@ -53,6 +54,9 @@ import { EARTH_COPY, type EarthCopyKey } from './copy';
 
 /** Dvanáct startovních hrdinů — zbytek rosteru jde vybrat na `/avatars`. */
 const STARTERS = [0, 1, 2, 3, 4, 5, 82, 84, 85, 86, 19, 20];
+/** Nabízejí se jen hrdinové s reálným 3D modelem (staré procedurální figury jsou archiv). */
+const PLAYABLE = new Set(Object.keys(AVATAR_MODELS).map(Number));
+const STARTERS_PLAYABLE = STARTERS.filter((id) => PLAYABLE.has(id));
 
 /** Ikony buffů — jen to, co hráč opravdu může mít. */
 const BUFF_ICON: Record<string, string> = {
@@ -189,9 +193,9 @@ export default function EarthPage() {
     [lang],
   );
   const cs = lang === 'cs';
-  const [heroId, setHeroId] = useState(0);
+  const [heroId, setHeroId] = useState<number>(() => STARTERS_PLAYABLE[0] ?? 0);
   const [loadoutReady, setLoadoutReady] = useState(false);
-  const [foeId, setFoeId] = useState(82);
+  const [foeId, setFoeId] = useState<number>(() => STARTERS_PLAYABLE[1] ?? STARTERS_PLAYABLE[0] ?? 0);
   const [phase, setPhase] = useState<Phase>('pick');
   const [mode, setMode] = useState<Mode>('solo');
   const [botSkill, setBotSkill] = useState<BotSkill>('normal');
@@ -200,7 +204,7 @@ export default function EarthPage() {
   const [aspect, setAspect] = useState<AspectId>('a');
   useEffect(() => {
     const pick = loadMobaLoadout();
-    setHeroId(pick.heroId);
+    if (PLAYABLE.has(pick.heroId)) setHeroId(pick.heroId);
     setAspect(pick.aspect);
     setBattleSpell(pick.battleSpell);
     setLoadoutReady(true);
@@ -227,7 +231,7 @@ export default function EarthPage() {
   /** Mistrovství se čte až po mountu (localStorage není na serveru). */
   const [mastery, setMastery] = useState<MasteryBook>({});
   const [masteryGain, setMasteryGain] = useState<{ hero: number; xp: number; level: number; title: string } | null>(null);
-  const star = useMemo(() => heroOfDay(STARTERS), []);
+  const star = useMemo(() => heroOfDay(STARTERS_PLAYABLE), []);
 
   useEffect(() => {
     setMastery(loadMastery());
@@ -412,7 +416,7 @@ export default function EarthPage() {
               );
             })()}
             <div className="moba-pick-grid">
-              {STARTERS.map((id) => {
+              {STARTERS_PLAYABLE.map((id) => {
                 const entry = AVATARS.find((candidate) => candidate.id === id);
                 if (!entry) return null;
                 return (
@@ -422,7 +426,8 @@ export default function EarthPage() {
                     className={`moba-pick-card${id === heroId ? ' is-active' : ''}`}
                     onClick={() => {
                       setHeroId(id);
-                      setFoeId(id === 82 ? 85 : 82);
+                      const other = STARTERS_PLAYABLE.find((candidate) => candidate !== id);
+                      setFoeId(other ?? id);
                     }}
                   >
                     {star === id && (

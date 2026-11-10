@@ -6,6 +6,7 @@ import { Canvas } from '@react-three/fiber';
 import { useAuth } from '@/core/session/AuthProvider';
 import { fill, tx, useI18n } from '@/core/i18n';
 import { AVATARS, RAY_COLOR, RARITY_COLOR, type AvatarRay } from '@/core/avatars/catalog';
+import { AVATAR_MODELS } from '@/core/avatars/models';
 import { avatarLook, type BodyType } from '@/core/avatars/kit';
 import { AvatarModel } from '@/core/avatars/AvatarModel';
 import { canvasDpr } from '@/core/design/dpr';
@@ -52,7 +53,10 @@ export default function AvatarsPage() {
   );
   const cs = lang === 'cs';
 
-  const [selected, setSelected] = useState<number>(1);
+  // Nabízejí se jen postavy s reálným GLB; zbytek čeká na model (procedurální
+  // figura zůstává pouze jako technický fallback, ne jako volba v UI).
+  const playable = useMemo(() => new Set(Object.keys(AVATAR_MODELS).map(Number)), []);
+  const [selected, setSelected] = useState<number>(() => AVATARS.find((a) => playable.has(a.id))?.id ?? AVATARS[0]!.id);
   const [callsign, setCallsign] = useState('');
   const [body, setBody] = useState<BodyType>('standard');
   const [neon, setNeon] = useState<string>('');
@@ -66,7 +70,8 @@ export default function AvatarsPage() {
   useEffect(() => {
     const stored = user?.avatar3d;
     if (!stored) return;
-    if (typeof stored.avatarId === 'number') setSelected(stored.avatarId);
+    if (typeof stored.avatarId === 'number' && playable.has(stored.avatarId))
+      setSelected(stored.avatarId);
     if (stored.callsign) setCallsign(stored.callsign);
     if (stored.bodyType) setBody(stored.bodyType);
     if (stored.neonColor) setNeon(stored.neonColor);
@@ -75,6 +80,7 @@ export default function AvatarsPage() {
   const list = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return AVATARS.filter((avatar) => {
+      if (!playable.has(avatar.id)) return false;
       if (ray !== 'all' && avatar.ray !== ray) return false;
       if (!needle) return true;
       return (
@@ -82,9 +88,12 @@ export default function AvatarsPage() {
         avatar.subtitle.toLowerCase().includes(needle)
       );
     });
-  }, [ray, query]);
+  }, [ray, query, playable]);
 
-  const entry = AVATARS.find((avatar) => avatar.id === selected) ?? AVATARS[0]!;
+  const entry =
+    AVATARS.find((avatar) => avatar.id === selected && playable.has(avatar.id)) ??
+    AVATARS.find((avatar) => playable.has(avatar.id)) ??
+    AVATARS[0]!;
   const look = useMemo(
     () => avatarLook(selected, { bodyType: body, neonColor: neon || undefined }),
     [selected, body, neon],
@@ -128,9 +137,10 @@ export default function AvatarsPage() {
         <div>
           <strong>{l('title')}</strong>
           <span>
-            {l('roster', { n: AVATARS.length })}
+            {l('roster', { n: playable.size, total: AVATARS.length })}
           </span>
         </div>
+        <p className="avatars-note">{l('modelsNote', { n: playable.size, total: AVATARS.length })}</p>
         <div className="avatars-head-actions">
           {user ? (
             <span className="avatars-who">

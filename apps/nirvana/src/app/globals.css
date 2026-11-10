@@ -2522,6 +2522,16 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   font-size: 0.82rem;
 }
 
+/* Vysvětlení, proč se nabízí jen postavy s hotovým 3D modelem. */
+.avatars-note {
+  order: 3;
+  flex: 1 1 100%;
+  margin: 0;
+  color: rgba(246, 231, 216, 0.45);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 .avatars-who {
   color: #7fe3d4;
 }

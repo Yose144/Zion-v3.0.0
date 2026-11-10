@@ -14,23 +14,14 @@ import {
   AVATAR_CIRCLES, OASIS_AVATARS,
   type LocalizedText, type OasisAvatar, type OasisAvatarCircle, type OasisAvatarRay, type OasisAvatarRarity,
 } from '@/lib/oasis/avatars';
-import GAME_PORTRAITS from '@/lib/oasis/game-portraits.json';
 import AVATAR_MODELS from '@/lib/oasis/avatar-models.json';
 import AvatarModel3DLazy from '@/components/AvatarModel3DLazy';
-import CHARACTER_SHEET_IMAGES from '@/lib/oasis/character-sheet-images.json';
 
 /**
- * Herní náhled: postava vyrenderovaná z **téhož modelu, jaký běží ve hře**
- * (`apps/nirvana/src/core/avatars`). Generuje `scripts/ops/oasis-avatar-render`.
- * Turnaround (`character-sheet-images.json`) je tentýž model ze čtyř pohledů —
- * podklad pro modeláře i pro generování finálních portrétů.
+ * Postavy s reálným herním GLB (dávky 01–03). Staré procedurální rendery
+ * (`game-portraits`, `character-sheets`) jsou archivované mimo aktivní web.
  */
-const PORTRAITS = GAME_PORTRAITS as Record<string, string>;
-const SHEETS = CHARACTER_SHEET_IMAGES as Record<string, string>;
-const portraitOf = (a: OasisAvatar): string | null => PORTRAITS[String(a.id)] ?? null;
-/** Postavy, ke kterým existuje skutečný herní GLB (dávky 01–03). */
 const MODEL_IDS = new Set<number>((AVATAR_MODELS as { ids: number[] }).ids);
-const sheetOf = (a: OasisAvatar): string | null => SHEETS[String(a.id)] ?? null;
 
 const OASIS_URL = 'https://oasis.zionterranova.com';
 
@@ -141,40 +132,12 @@ const CIRCLE_NOTES: Partial<Record<OasisAvatarCircle, { cs: string; en: string }
 const RAY_ORDER: OasisAvatarRay[] = ['AllRays', 'Blue', 'Pink', 'Yellow', 'Violet', 'White', 'Green', 'RubyGold', 'Obsidian'];
 const RARITY_ORDER: OasisAvatarRarity[] = ['Rare', 'Epic', 'Legendary', 'OneOfOne'];
 
-/** Kanonický spec (atributy, paleta, prompt) — tahá se lazy, jen když je detail otevřený. */
-interface SheetSpec {
-  id: number;
-  symbols: string[];
-  palette: string[];
-  skin: string | null;
-  headwear: string | null;
-  companions: string[];
-  culture: string;
-  prompt: string;
-}
-
-let specsPromise: Promise<SheetSpec[]> | null = null;
-function loadSpecs(): Promise<SheetSpec[]> {
-  if (!specsPromise) {
-    specsPromise = fetch('/oasis-assets/character-sheets/specs.json')
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
-      .then((data: { entries: SheetSpec[] }) => data.entries)
-      .catch(() => {
-        specsPromise = null;
-        return [];
-      });
-  }
-  return specsPromise;
-}
-
 function AvatarVisual({ a, size, lang }: { a: OasisAvatar; size: 'card' | 'modal'; lang: Lang }) {
   const cs = lang === 'cs';
   const ray = RAY_META[a.ray] ?? RAY_META.Blue;
-  // Finální portrét (dávka 2026-11) má přednost před procedurálním 3D náhledem —
-  // ten zůstává pro postavy, které samostatný render zatím nemají (011–020, 052).
+  // Pouze finální OASIS art; staré procedurální rendery jsou v archive/.
   const finalArt = a.art.final ? a.art.full || a.art.card : '';
-  const portrait = finalArt || portraitOf(a);
-  const src = portrait ?? (size === 'modal' ? (a.art.full || a.art.card) : a.art.card);
+  const src = finalArt || (size === 'modal' ? (a.art.full || a.art.card) : a.art.card);
   const initial = (a.name.trim()[0] ?? '?').toUpperCase();
   const box = size === 'modal' ? 'h-56 w-44 text-3xl md:h-64 md:w-52' : 'h-16 w-16 text-xl';
   if (src) {
@@ -203,7 +166,7 @@ function AvatarCard({ a, lang, onOpen }: { a: OasisAvatar; lang: Lang; onOpen: (
   const cs = lang === 'cs';
   const ray = RAY_META[a.ray] ?? RAY_META.Blue;
   const rarity = RARITY_META[a.rarity] ?? RARITY_META.Rare;
-  const src = (a.art.final ? a.art.card : '') || portraitOf(a) || a.art.card;
+  const src = a.art.card;
   const initial = (a.name.trim()[0] ?? '?').toUpperCase();
   const detail = tx5(Copy.detailLabel, lang);
   return (
@@ -324,18 +287,6 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
   }, []);
   const [profile, setProfile] = useState<string | null>(null);
   const [profileFailed, setProfileFailed] = useState(false);
-  const [spec, setSpec] = useState<SheetSpec | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    let dead = false;
-    void loadSpecs().then((entries) => {
-      if (!dead) setSpec(entries.find((entry) => entry.id === a.id) ?? null);
-    });
-    return () => {
-      dead = true;
-    };
-  }, [a.id]);
 
   useEffect(() => {
     if (!a.hasProfile) return;
@@ -403,7 +354,7 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
             )}
             {!a.art.final && a.art.card && (
               <span className="mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] uppercase tracking-wider text-gray-400">
-                {tx5(portraitOf(a) ? Copy.artGame : Copy.artConcept, lang)}
+                {tx5(Copy.artConcept, lang)}
               </span>
             )}
           </div>
@@ -447,72 +398,6 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
               {tx5(Copy.artFinal, lang)}
             </figcaption>
           </figure>
-        )}
-
-        {sheetOf(a) && (
-          <figure className="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-black/40">
-            <img
-              src={sheetOf(a)!}
-              alt={cs ? `${a.name} — character sheet` : `${a.name} — character sheet`}
-              loading="lazy"
-              decoding="async"
-              className="w-full"
-            />
-            <figcaption className="border-t border-white/10 px-3 py-2 text-[10px] uppercase tracking-wider text-gray-500">
-              {tx5(Copy.sheetLabel, lang)}
-            </figcaption>
-          </figure>
-        )}
-
-        {spec && (spec.symbols.length > 0 || spec.palette.length > 0) && (
-          <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px]">
-            <span className="text-[10px] uppercase tracking-wider text-gray-500">
-              {tx5(Copy.symbolsLabel, lang)}
-            </span>
-            {spec.symbols.map((symbol) => (
-              <span key={symbol} className="rounded-full border border-zion-cyan/25 bg-zion-cyan/10 px-2 py-0.5 text-cyan-200">
-                {symbol}
-              </span>
-            ))}
-            {spec.palette.map((hex) => (
-              <span
-                key={hex}
-                title={hex}
-                className="inline-block h-4 w-4 rounded-full border border-white/25"
-                style={{ background: hex }}
-              />
-            ))}
-          </div>
-        )}
-
-        {spec?.prompt && (
-          <div className="mt-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-zion-gold">
-                <Sparkles className="h-3.5 w-3.5" /> {tx5(Copy.promptLabel, lang)}
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  const text = spec.prompt;
-                  void navigator.clipboard?.writeText(text).then(
-                    () => {
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
-                    },
-                    () => setCopied(false),
-                  );
-                }}
-                className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] text-gray-200 transition-colors hover:bg-white/10"
-              >
-                {copied ? tx5(Copy.copied, lang) : tx5(Copy.copyPrompt, lang)}
-              </button>
-            </div>
-            <p className="mt-1 text-[11px] text-gray-500">{tx5(Copy.promptHint, lang)}</p>
-            <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-black/40 p-3 text-[11px] leading-relaxed text-gray-300">
-              {spec.prompt}
-            </pre>
-          </div>
         )}
 
         {infoRows.length > 0 && (
