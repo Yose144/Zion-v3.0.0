@@ -29,6 +29,10 @@ Automat nespouští žádný krok mimo brány uvedené níže.
 - **Výjimky série:** 037 Gándhí nemá list (generátor odmítl; jen originál a
   zadání), 055 Hunahpú & Xbalanqué jsou dvě postavy v jednom listu (bez rigu),
   044 Hiranyagarbha je artefakt (bez rigu).
+- **Nasaženo 2026-11-10** do Nirvany: commit `df9e77870` (74 GLB +
+  `models.ts`), deploy `20261110T090830Z` z čistého worktree na HEAD
+  (proto 32 = živý net), smoke OK; produkce servíruje
+  `/models/avatars/<id>.glb` (ověřeno 206 na 0/23/44/55/74/77).
 - **TRELLIS.2 pilot (Krišna):** ověřen přes oficiální HF Space — kvalitativně
   jasně lepší (CLIP průměr **0,688** vs 0,569 M1; anatomicky správná postava).
   Detail v `docs/3.2/AVATAR-3D-PIPELINE.md` §9d.
