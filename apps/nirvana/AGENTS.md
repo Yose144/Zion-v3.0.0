@@ -2784,3 +2784,24 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   cyklí 7; multiplayer si bere první tři (`% 3`).
 - **Test:** `test/arena-weapons.mjs` ověřuje čísla pěsti a že ji boti
   nepoužívají.
+
+### Aréna — obtížnost botů a armor shardy (2026-11-10)
+
+- **Čtyři obtížnosti** (`easy | normal | hard | nightmare`) v `BOT_SKILLS`.
+  Nightmare mění jen přesnost, kadenci a rychlost — **nikdy damage**;
+  obtížnost nesmí být jiná hra, jen lepší soupeř. Volba se ukládá do
+  `nirvana.arena.skill` (`core/arena/settings.ts`) a je v úvodu arény.
+  Jeden profil platí pro všechny boty (jako Q3), ne per-index.
+- **Armor shardy** (`kind: 'shard'`) dávají +5 armoru, strop zůstává 100,
+  respawn 12 s a jsou jen v sólu (`ARENA_SOLO_PICKUPS`) — MP mapa se
+  nemění. Jsou na plošině a bočních lištách.
+- **Pozor na umístění pickupů:** první verze dala shardy na `(±8, 2, ±8)`,
+  což je **uvnitř sloupů** — nedosažitelné. Odhalil to až headless test
+  (hráč stál na místě a armor zůstal 0). Data pickupů musí ležet mimo
+  kolizní krabice.
+- **Debug stav** nově nese `armor` a `pickups` (pozice + `until`) — bez
+  toho se „pickup nefunguje" nedá odlišit od „hráč ho sebral a hned
+  o něj přišel" (armor pohlcuje 66 % zásahů).
+- **Test:** `test/arena-weapons.mjs` ověřuje čtyři obtížnosti (nightmare
+  přesnější/rychlejší než hard, damage beze změny), čtyři shardy v sólu,
+  žádný v MP a krátký respawn.

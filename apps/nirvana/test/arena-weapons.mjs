@@ -16,6 +16,7 @@ const { WEAPONS, applyDamage, spreadVector, aimVector, ARMOR_ABSORB, botWeaponFo
   '../src/core/arena/weapons.ts'
 );
 const { ARENA_PICKUPS, ARENA_SOLO_PICKUPS } = await import('../src/core/arena/map.ts');
+const { BOT_SKILLS, skillOptions } = await import('../src/core/arena/bot.ts');
 
 let failures = 0;
 const check = (name, ok, detail = '') => {
@@ -146,6 +147,33 @@ check('plazma: má TTL', WEAPONS.plasma.ttlMs > 0, String(WEAPONS.plasma.ttlMs))
   check('MG dávka je 4 rány', BOT_FIRE.mgBurst === 4, String(BOT_FIRE.mgBurst));
   check('brokovnice bota je 6 broků', BOT_FIRE.shotgunPellets === 6, String(BOT_FIRE.shotgunPellets));
   check('raketa není pokaždé', BOT_FIRE.rocketChance > 0 && BOT_FIRE.rocketChance < 1, String(BOT_FIRE.rocketChance));
+}
+
+// ── 10) obtížnosti a armor shardy (2026-11-10) ─────────────────────
+{
+  const nightmare = skillOptions('nightmare');
+  const hard = skillOptions('hard');
+  const easy = skillOptions('easy');
+  check('nightmare existuje', BOT_SKILLS.nightmare !== undefined);
+  check(
+    'nightmare je přesnější a rychlejší než hard',
+    nightmare.aimError < hard.aimError && nightmare.speed > hard.speed,
+    `${nightmare.aimError}/${hard.aimError} · ${nightmare.speed}/${hard.speed}`,
+  );
+  check(
+    'obtížnost nikdy nemění damage',
+    !('damage' in nightmare) && !('damage' in easy),
+    JSON.stringify(Object.keys(nightmare)),
+  );
+  check('easy je pomalejší než hard', easy.speed < hard.speed);
+
+  const shards = ARENA_SOLO_PICKUPS.filter((pickup) => pickup.kind === 'shard');
+  check('sólo má čtyři armor shardy', shards.length === 4, String(shards.length));
+  check('shardy mají krátký respawn', shards.every((pickup) => pickup.respawn <= 15));
+  check(
+    'multiplayer shardy nemá',
+    !ARENA_PICKUPS.some((pickup) => pickup.kind === 'shard'),
+  );
 }
 
 console.log('');

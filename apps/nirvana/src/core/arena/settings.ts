@@ -9,7 +9,10 @@
  * jde o volbu zařízení, ne účtu.
  */
 
+import type { BotSkill } from './bot';
+
 const LOOK_KEY = 'nirvana.arena.look';
+const SKILL_KEY = 'nirvana.arena.skill';
 /** Rozsah, který dává smysl: 0,4× (přesné míření) až 2,5× (rychlé otáčení). */
 export const LOOK_MIN = 0.4;
 export const LOOK_MAX = 2.5;
@@ -35,6 +38,36 @@ export function getLookSensitivity(): number {
     cached = LOOK_DEFAULT;
   }
   return cached;
+}
+
+/** Obtížnost botů v sólu — volba zařízení, ne účtu. */
+export const BOT_SKILL_ORDER: BotSkill[] = ['easy', 'normal', 'hard', 'nightmare'];
+
+let skillCache: BotSkill | null = null;
+
+export function getBotSkill(): BotSkill {
+  if (skillCache) return skillCache;
+  if (typeof window === 'undefined') return 'normal';
+  try {
+    const raw = window.localStorage.getItem(SKILL_KEY);
+    skillCache = BOT_SKILL_ORDER.includes(raw as BotSkill) ? (raw as BotSkill) : 'normal';
+  } catch {
+    skillCache = 'normal';
+  }
+  return skillCache ?? 'normal';
+}
+
+export function setBotSkill(value: BotSkill): BotSkill {
+  const next = BOT_SKILL_ORDER.includes(value) ? value : 'normal';
+  skillCache = next;
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.setItem(SKILL_KEY, next);
+    } catch {
+      /* volba se neuloží, ale platí pro tuhle hru */
+    }
+  }
+  return next;
 }
 
 export function setLookSensitivity(value: number): number {

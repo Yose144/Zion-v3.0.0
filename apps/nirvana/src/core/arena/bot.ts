@@ -89,7 +89,7 @@ export const DEFAULT_BOT_OPTIONS: Required<BotOptions> = {
  * **ne** damage — protože damage drží sdílená `WEAPONS` a nesmí se
  * rozjet podle obtížnosti (jinak „trefil jsem ho a nic").
  */
-export type BotSkill = 'easy' | 'normal' | 'hard';
+export type BotSkill = 'easy' | 'normal' | 'hard' | 'nightmare';
 
 export const BOT_SKILLS: Record<BotSkill, Required<BotOptions>> = {
   easy: {
@@ -104,6 +104,17 @@ export const BOT_SKILLS: Record<BotSkill, Required<BotOptions>> = {
     aimError: 0.018,
     fireDelayMs: 620,
     speed: 0.78,
+  },
+  /**
+   * Nightmare (Q3 „nightmare"): rychlý, přesný, ale **stejné poškození**.
+   * Obtížnost nikdy nesmí měnit damage — jinak by to byla jiná hra, ne lepší
+   * soupeř.
+   */
+  nightmare: {
+    ...DEFAULT_BOT_OPTIONS,
+    aimError: 0.01,
+    fireDelayMs: 460,
+    speed: 0.9,
   },
 };
 

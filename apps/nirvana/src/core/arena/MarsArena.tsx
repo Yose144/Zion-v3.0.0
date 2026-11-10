@@ -210,6 +210,7 @@ export function MarsArena({
   onEnd,
   touch,
   weaponRequest,
+  botSkill = 'normal',
 }: {
   running: boolean;
   xr?: boolean;
@@ -219,6 +220,8 @@ export function MarsArena({
   touch?: MutableRefObject<ArenaTouchState>;
   /** Klik na zbraň v HUD (Q3 lišta) — request, aplikuje se v herní smyčce. */
   weaponRequest?: MutableRefObject<WeaponId | null>;
+  /** Obtížnost botů (sólo) — jeden profil pro všechny, jako v Q3. */
+  botSkill?: BotSkill;
 }) {
   const { camera, gl } = useThree();
   const solids = useMemo<Box4[]>(() => makeSolids(ARENA_BOXES), []);
@@ -319,6 +322,8 @@ export function MarsArena({
         player: { ...player.current },
         frags: frags.current,
         health: health.current,
+        armor: armor.current,
+        pickups: pickups.current.map((pickup) => ({ id: pickup.id, kind: pickup.kind, x: pickup.x, y: pickup.y, z: pickup.z, until: pickup.until })),
         weapon: weapon.current,
         quadUntil: quadUntil.current,
         hasteUntil: hasteUntil.current,
@@ -789,7 +794,7 @@ export function MarsArena({
         continue;
       }
 
-      const options = skillOptions(bot.skill);
+      const options = skillOptions(botSkill);
       const intent = stepBot(bot.memory, bot.body, [playerTarget], nav, solids, now, dt, options);
       bot.yaw = intent.yaw;
       driveBot(bot.memory, bot.body, intent, dt, solids, BOT_BODY.radius, BOT_BODY.height, options.speed);
@@ -999,6 +1004,11 @@ export function MarsArena({
         } else {
           continue;
         }
+      } else if (pickup.kind === 'shard') {
+        // Armor shard (Q3 +5), strop zůstává 100.
+        if (armor.current >= 100) continue;
+        armor.current = Math.min(100, armor.current + 5);
+        playPickup();
       } else if (pickup.kind === 'mega') {
         // Mega Health: doplní do 200; nad 100 se pak 1 HP/s vytrácí.
         if (health.current >= 200) continue;
@@ -1224,6 +1234,8 @@ export function MarsArena({
               color={
                 pickup.kind === 'health' || pickup.kind === 'mega'
                   ? '#9cff8a'
+                  : pickup.kind === 'shard'
+                    ? '#bfe6ea'
                   : pickup.kind === 'ammo'
                     ? '#ffb46a'
                     : pickup.kind === 'powerup'

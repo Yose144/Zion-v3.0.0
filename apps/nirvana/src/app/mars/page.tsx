@@ -9,7 +9,16 @@ import { ARENA_COPY, type ArenaCopyKey } from './copy';
 import { MarsArena, type ArenaResult, type ArenaStats } from '@/core/arena/MarsArena';
 import { MarsMultiplayer, type MpStats } from '@/core/arena/MarsMultiplayer';
 import { ArenaTouchControls, createTouchState } from '@/core/arena/ArenaTouch';
-import { LOOK_MAX, LOOK_MIN, getLookSensitivity, setLookSensitivity } from '@/core/arena/settings';
+import {
+  BOT_SKILL_ORDER,
+  LOOK_MAX,
+  LOOK_MIN,
+  getBotSkill,
+  getLookSensitivity,
+  setBotSkill,
+  setLookSensitivity,
+} from '@/core/arena/settings';
+import type { BotSkill } from '@/core/arena/bot';
 import { FRAG_LIMIT, MATCH_SECONDS } from '@/core/arena/map';
 import type { WeaponId } from '@/core/arena/weapons';
 import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
@@ -74,6 +83,9 @@ export default function MarsPage() {
   const [presenting, setPresenting] = useState(false);
   const [xrStore] = useState(() => createXRStore({ foveation: 0.5 }));
   const [stats, setStats] = useState<ArenaStats>(EMPTY_STATS);
+  /** Obtížnost botů — čte se až po mountu (localStorage). */
+  const [botSkill, setBotSkillState] = useState<BotSkill>('normal');
+  useEffect(() => setBotSkillState(getBotSkill()), []);
   /** Klik na zbraň v liště — request, který sim aplikuje v příštím snímku. */
   const weaponRequest = useRef<WeaponId | null>(null);
   /** `mp` = online aréna (server-authoritative), jinak sólo proti botům. */
@@ -156,6 +168,7 @@ export default function MarsPage() {
                 onEnd={endMatch}
                 touch={touch}
                 weaponRequest={weaponRequest}
+                botSkill={botSkill}
               />
             </XR>
           )}
@@ -379,6 +392,23 @@ export default function MarsPage() {
                   <b>{look.toFixed(1)}×</b>
                 </label>
               )}
+              <div className="arena-skill" role="radiogroup" aria-label={cs ? 'Obtížnost botů' : 'Bot difficulty'}>
+                <span>{cs ? 'Obtížnost' : 'Difficulty'}</span>
+                <div>
+                  {BOT_SKILL_ORDER.map((skill) => (
+                    <button
+                      key={skill}
+                      type="button"
+                      role="radio"
+                      aria-checked={botSkill === skill}
+                      className={`arena-skill-btn${botSkill === skill ? ' is-active' : ''}`}
+                      onClick={() => setBotSkillState(setBotSkill(skill))}
+                    >
+                      {skill}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="arena-actions">
                 <button type="button" className="park-btn" onClick={() => setPhase('playing')}>
                   {l('enter')}

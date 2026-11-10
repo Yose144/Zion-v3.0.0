@@ -5330,6 +5330,51 @@ body[data-playing='1'] .chat-dock-btn {
   color: rgba(246, 231, 216, 0.75);
 }
 
+/* Obtížnost botů — čtyři volby, stejná šířka, žádné překvapení. */
+.arena-skill {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.55rem 0 0.2rem;
+  font-size: 0.72rem;
+  color: rgba(246, 231, 216, 0.75);
+}
+
+.arena-skill > div {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.arena-skill-btn {
+  padding: 0.22rem 0.5rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(255, 180, 106, 0.25);
+  background: transparent;
+  color: rgba(255, 233, 168, 0.65);
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.arena-skill-btn.is-active {
+  border-color: rgba(255, 209, 102, 0.7);
+  background: rgba(255, 209, 102, 0.14);
+  color: #ffe9a8;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .arena-skill {
+    flex-wrap: wrap;
+  }
+
+  .arena-skill-btn {
+    min-height: 2.4rem;
+    min-width: 3.6rem;
+  }
+}
+
 .arena-slider input[type='range'] {
   flex: 1;
   min-width: 6rem;

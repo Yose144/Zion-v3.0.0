@@ -80,7 +80,7 @@ export const BOT_SPAWNS: ArenaSpawn[] = [
 
 export interface ArenaPickup {
   id: string;
-  kind: 'health' | 'armor' | 'ammo' | 'powerup' | 'mega';
+  kind: 'health' | 'armor' | 'ammo' | 'powerup' | 'mega' | 'shard';
   /** U `powerup`: který bonus to je (`quad` ×3 dmg, `haste` +30 % rychlosti). */
   powerup?: 'quad' | 'haste';
   x: number;
@@ -110,6 +110,12 @@ export const ARENA_SOLO_PICKUPS: ArenaPickup[] = [
   { id: 'ha1', kind: 'powerup', powerup: 'haste', x: -14, y: 3.2, z: 0, respawn: 45 },
   // Mega Health (Q3): doplní do 200 a nad 100 se pomalu vytrácí.
   { id: 'mh1', kind: 'mega', x: 0, y: 2, z: 4, respawn: 35 },
+  // Armor shardy (Q3 +5): čtyři místa, aby se dalo „doarmorovat" cestou.
+  // Na plošině a na bočních lištách — ne uvnitř sloupů (tam by byly nedosažitelné).
+  { id: 's1', kind: 'shard', x: -4, y: 2, z: -4, respawn: 12 },
+  { id: 's2', kind: 'shard', x: 4, y: 2, z: -4, respawn: 12 },
+  { id: 's3', kind: 'shard', x: -14, y: 3.2, z: -4, respawn: 12 },
+  { id: 's4', kind: 'shard', x: 14, y: 3.2, z: 4, respawn: 12 },
 ];
 
 /** Stěny jako data pro raycast (jen to, co blokuje střelu). */
