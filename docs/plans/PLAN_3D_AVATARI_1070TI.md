@@ -29,6 +29,14 @@ Automat nespouští žádný krok mimo brány uvedené níže.
 - **Výjimky série:** 037 Gándhí nemá list (generátor odmítl; jen originál a
   zadání), 055 Hunahpú & Xbalanqué jsou dvě postavy v jednom listu (bez rigu),
   044 Hiranyagarbha je artefakt (bez rigu).
+- **Retirement starých 3D postav (2026-11-10, commit `2caa9f648`):** `nebaví mě
+  procedurální figury` → skryto z aktivního UI. `/avatars` v Nirvaně i pick
+  hrdinů v MOBĚ nabízejí jen **74 postav s reálným GLB** (74/202), zbytek čeká
+  na model; procedurální renderer zůstává pouze jako technický fallback pro
+  uložené avatarId a boty. Web už nepoužívá staré rendery: `game-portraits`
+  (200 karet) a `character-sheets` (turnaroundy + specs.json) přesunuty do
+  `archive/oasis-legacy-portraits/` (9,6 MB), produkce je servíruje 404.
+  Deploye: Nirvana `20261110T114620Z`, web `20261110T120025Z` (z čistého HEAD).
 - **Nasaženo 2026-11-10** do Nirvany: commit `df9e77870` (74 GLB +
   `models.ts`), deploy `20261110T090830Z` z čistého worktree na HEAD
   (proto 32 = živý net), smoke OK; produkce servíruje
