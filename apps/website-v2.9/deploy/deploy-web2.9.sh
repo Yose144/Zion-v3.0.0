@@ -54,6 +54,16 @@ else
   mkdir -p "${APP_DIR}/.next/static"
   rsync -a --delete "${ROOT_DIR}/.next/static/" "${APP_DIR}/.next/static/"
   rsync -a --delete "${ROOT_DIR}/public/" "${APP_DIR}/public/"
+  # Herní 3D modely avatarů mají jediný zdroj v gitu: `apps/nirvana/public/models/avatars/`.
+  # Do `public/` webu se nepřidávají duplicitně, deploy je sem dokopíruje.
+  NIRVANA_AVATARS="${ROOT_DIR}/../nirvana/public/models/avatars"
+  if [[ -d "$NIRVANA_AVATARS" ]]; then
+    mkdir -p "${APP_DIR}/public/models/avatars"
+    rsync -a "$NIRVANA_AVATARS/" "${APP_DIR}/public/models/avatars/"
+    echo "[deploy-web2.9] avatar GLB: $(find "${APP_DIR}/public/models/avatars" -name '*.glb' | wc -l | tr -d ' ')"
+  else
+    echo "[deploy-web2.9] WARN: ${NIRVANA_AVATARS} chybí — 3D náhledy avatarů nebudou fungovat" >&2
+  fi
   if [[ -d "${ROOT_DIR}/archive-content" ]]; then
     rsync -a --delete "${ROOT_DIR}/archive-content/" "${APP_DIR}/archive-content/"
   fi

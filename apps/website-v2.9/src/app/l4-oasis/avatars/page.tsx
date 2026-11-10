@@ -15,6 +15,8 @@ import {
   type LocalizedText, type OasisAvatar, type OasisAvatarCircle, type OasisAvatarRay, type OasisAvatarRarity,
 } from '@/lib/oasis/avatars';
 import GAME_PORTRAITS from '@/lib/oasis/game-portraits.json';
+import AVATAR_MODELS from '@/lib/oasis/avatar-models.json';
+import AvatarModel3DLazy from '@/components/AvatarModel3DLazy';
 import CHARACTER_SHEET_IMAGES from '@/lib/oasis/character-sheet-images.json';
 
 /**
@@ -26,6 +28,8 @@ import CHARACTER_SHEET_IMAGES from '@/lib/oasis/character-sheet-images.json';
 const PORTRAITS = GAME_PORTRAITS as Record<string, string>;
 const SHEETS = CHARACTER_SHEET_IMAGES as Record<string, string>;
 const portraitOf = (a: OasisAvatar): string | null => PORTRAITS[String(a.id)] ?? null;
+/** Postavy, ke kterým existuje skutečný herní GLB (dávky 01–03). */
+const MODEL_IDS = new Set<number>((AVATAR_MODELS as { ids: number[] }).ids);
 const sheetOf = (a: OasisAvatar): string | null => SHEETS[String(a.id)] ?? null;
 
 const OASIS_URL = 'https://oasis.zionterranova.com';
@@ -420,6 +424,15 @@ function AvatarModal({ a, lang, onClose }: { a: OasisAvatar; lang: Lang; onClose
             {tx5(Copy.nftLabel, lang)}: {a.rarity}
           </span>
         </div>
+
+        {MODEL_IDS.has(a.id) && (
+          <div className="mt-5">
+            <AvatarModel3DLazy id={a.id} className="h-[380px] w-full" />
+            <p className="mt-2 text-[10px] uppercase tracking-wider text-gray-500">
+              {cs ? 'Herní 3D model · OASIS' : 'Game 3D model · OASIS'}
+            </p>
+          </div>
+        )}
 
         {a.art.final && (
           <figure className="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-black/40">
