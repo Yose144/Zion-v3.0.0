@@ -232,12 +232,6 @@ export function MercuryDuel({
         if (event.kind === 'duel_end') {
           hud.current.matchWinner = event.winner;
           sound.current.event('match_end', event.winner === youPlayerId);
-        } else if (event.kind === 'duel_ko') {
-          const loser = event.loser === self.current.id ? self.current : foe.current;
-          if (floaters) {
-            const center = bodyCenterOf(loser);
-            pushTextFx(floaters.current, center.x, center.y + 0.95, 'K.O.', 'ko', performance.now());
-          }
         } else if (event.kind === 'round_start') {
           hud.current.lastRoundReason = null;
           sound.current.event('fight_start');
