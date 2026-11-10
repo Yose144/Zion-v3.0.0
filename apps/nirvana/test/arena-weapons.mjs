@@ -124,7 +124,16 @@ check('plazma: má TTL', WEAPONS.plasma.ttlMs > 0, String(WEAPONS.plasma.ttlMs))
   );
 }
 
-// ── 8) botí volba zbraně (2026-11-10) ──────────────────────────────
+// ── 8) pěst (gauntlet) ─────────────────────────────────────────────
+{
+  check('pěst: 50 dmg', WEAPONS.gauntlet.damage === 50, String(WEAPONS.gauntlet.damage));
+  check('pěst: dostřel 2,2 m', WEAPONS.gauntlet.range === 2.2, String(WEAPONS.gauntlet.range));
+  check('pěst: 400 ms kadence', WEAPONS.gauntlet.cooldownMs === 400, String(WEAPONS.gauntlet.cooldownMs));
+  check('pěst: nikdy nedojde munice', WEAPONS.gauntlet.ammo === Number.POSITIVE_INFINITY);
+  check('boti pěst nepoužívají', botWeaponFor(0) === 'shotgun', botWeaponFor(0));
+}
+
+// ── 9) botí volba zbraně (2026-11-10) ──────────────────────────────
 {
   check('bot zblízka bere brokovnici', botWeaponFor(2) === 'shotgun', botWeaponFor(2));
   check('bot na střední bere raketu', botWeaponFor(10) === 'rocket', botWeaponFor(10));

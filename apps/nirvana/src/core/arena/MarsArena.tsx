@@ -10,6 +10,7 @@ import {
   playHit,
   playHurt,
   playMatchEnd,
+  playGauntlet,
   playLightning,
   playMg,
   playPickup,
@@ -46,6 +47,7 @@ import { createBotMemory, stepBot, driveBot, skillOptions, type BotMemory, type 
 import { readTouch, type ArenaTouchState } from '@/core/arena/ArenaTouch';
 import type { MutableRefObject } from 'react';
 import { isGamePaused } from '@/core/games/pause';
+import { WeaponView } from './WeaponView';
 
 /**
  * MARS ARENA — deathmatch v stylu Quake 3, celý procedurální.
@@ -62,7 +64,7 @@ export interface ArenaStats {
   armor: number;
   frags: number;
   deaths: number;
-  weapon: 'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma';
+  weapon: 'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma' | 'gauntlet';
   ammo: number;
   botsAlive: number;
   timeLeft: number;
@@ -236,7 +238,7 @@ export function MarsArena({
   const armor = useRef(0);
   const frags = useRef(0);
   const deaths = useRef(0);
-  const weapon = useRef<'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma'>('rail');
+  const weapon = useRef<'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma' | 'gauntlet'>('rail');
   const ammo = useRef<number>(WEAPONS.rocket.ammo);
   const mgAmmo = useRef<number>(WEAPONS.mg.ammo);
   const shotgunAmmo = useRef<number>(WEAPONS.shotgun.ammo);
@@ -247,7 +249,7 @@ export function MarsArena({
   /** Haste (Q3): do kdy platí +30 % rychlosti (ms). */
   const hasteUntil = useRef(0);
   /** Munice podle id — jedno místo, ze kterého čte HUD i střelba. */
-  const ammoOf = (id: 'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma'): number =>
+  const ammoOf = (id: 'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma' | 'gauntlet'): number =>
     id === 'rocket'
       ? ammo.current
       : id === 'mg'
@@ -259,7 +261,7 @@ export function MarsArena({
             : id === 'plasma'
               ? plasmaAmmo.current
               : Number.POSITIVE_INFINITY;
-  const spendAmmo = (id: 'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma'): void => {
+  const spendAmmo = (id: 'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma' | 'gauntlet'): void => {
     if (id === 'rocket') ammo.current = Math.max(0, ammo.current - 1);
     else if (id === 'mg') mgAmmo.current = Math.max(0, mgAmmo.current - 1);
     else if (id === 'shotgun') shotgunAmmo.current = Math.max(0, shotgunAmmo.current - 1);
@@ -291,6 +293,9 @@ export function MarsArena({
   const hits = useRef(0);
   /** Poslední botí výstřel — pro debug/test, že boti střídají zbraně. */
   const lastBotAttack = useRef<{ name: string; weapon: WeaponId } | null>(null);
+  /** Zpětný ráz a záblesk pro model zbraně (ms). */
+  const kick = useRef(0);
+  const muzzleUntil = useRef(0);
 
   const botGroup = useRef<THREE.Group>(null);
   const rocketGroup = useRef<THREE.Group>(null);
@@ -343,7 +348,7 @@ export function MarsArena({
         view.current.pitch = Math.atan2(dy, Math.hypot(dx, dz));
       },
       fire: () => fire(performance.now()),
-      weapon: (next: 'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma') => {
+      weapon: (next: 'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma' | 'gauntlet') => {
         weapon.current = next;
       },
       teleport: (x: number, z: number, y?: number) => {
@@ -380,6 +385,7 @@ export function MarsArena({
       if (event.code === 'Digit4' && shotgunAmmo.current > 0) weapon.current = 'shotgun';
       if (event.code === 'Digit5' && lightningAmmo.current > 0) weapon.current = 'lightning';
       if (event.code === 'Digit6' && plasmaAmmo.current > 0) weapon.current = 'plasma';
+      if (event.code === 'KeyQ') weapon.current = 'gauntlet';
     };
     const onKeyUp = (event: KeyboardEvent) => keys.current.delete(event.code);
 
@@ -387,7 +393,7 @@ export function MarsArena({
     const onWheel = (event: WheelEvent) => {
       if (!locked.current) return;
       event.preventDefault();
-      const order = ['rail', 'rocket', 'mg', 'shotgun', 'lightning', 'plasma'] as const;
+      const order = ['rail', 'rocket', 'mg', 'shotgun', 'lightning', 'plasma', 'gauntlet'] as const;
       const available = order.filter((id) => id === 'rail' || ammoOf(id) > 0);
       if (available.length === 0) return;
       const index = available.indexOf(weapon.current);
@@ -497,8 +503,8 @@ export function MarsArena({
     const id = weapon.current;
     const quad = now < quadUntil.current ? 3 : 1;
 
-    // ── paprskové zbraně: rail / MG / brokovnice / blesk ────────────
-    if (id === 'rail' || id === 'mg' || id === 'shotgun' || id === 'lightning') {
+    // ── paprskové zbraně: rail / MG / brokovnice / blesk / pěst ────
+    if (id === 'rail' || id === 'mg' || id === 'shotgun' || id === 'lightning' || id === 'gauntlet') {
       const spec =
         id === 'rail'
           ? WEAPONS.rail
@@ -506,13 +512,17 @@ export function MarsArena({
             ? WEAPONS.mg
             : id === 'shotgun'
               ? WEAPONS.shotgun
-              : WEAPONS.lightning;
-      if (id !== 'rail' && ammoOf(id) <= 0) {
+              : id === 'lightning'
+                ? WEAPONS.lightning
+                : WEAPONS.gauntlet;
+      if (id !== 'rail' && id !== 'gauntlet' && ammoOf(id) <= 0) {
         weapon.current = 'rail';
         return;
       }
       cooldown.current = now + spec.cooldownMs / 1000;
-      if (id !== 'rail') spendAmmo(id);
+      kick.current = now;
+      muzzleUntil.current = now + 60;
+      if (id !== 'rail' && id !== 'gauntlet') spendAmmo(id);
 
       const pellets = id === 'shotgun' ? WEAPONS.shotgun.pellets : 1;
       const spread = id === 'shotgun' ? WEAPONS.shotgun.spread : id === 'mg' ? WEAPONS.mg.spread : 0;
@@ -553,13 +563,16 @@ export function MarsArena({
           origin[1] + shotDir.y * bestT,
           origin[2] + shotDir.z * bestT,
         ];
-        tracers.current.push({
-          id: nextId.current++,
-          from: origin,
-          to: end,
-          ttl: now + (id === 'lightning' ? 60 : 140),
-          kind: id,
-        });
+        // Pěst je kontaktní — kreslit paprsek by bylo směšné.
+        if (id !== 'gauntlet') {
+          tracers.current.push({
+            id: nextId.current++,
+            from: origin,
+            to: end,
+            ttl: now + (id === 'lightning' ? 60 : 140),
+            kind: id,
+          });
+        }
 
         if (bestBot) {
           hitAny = true;
@@ -575,9 +588,10 @@ export function MarsArena({
       if (id === 'rail') playRail();
       else if (id === 'mg') playMg();
       else if (id === 'shotgun') playShotgun();
+      else if (id === 'gauntlet') playGauntlet();
       else playLightning();
 
-      if (id !== 'rail' && ammoOf(id) <= 0) weapon.current = 'rail';
+      if (id !== 'rail' && id !== 'gauntlet' && ammoOf(id) <= 0) weapon.current = 'rail';
       return;
     }
 
@@ -589,6 +603,8 @@ export function MarsArena({
     }
     spendAmmo(id);
     cooldown.current = now + projectile.cooldownMs / 1000;
+    kick.current = now;
+    muzzleUntil.current = now + 70;
     if (id === 'plasma') playPlasma();
     else playRocket();
     rockets.current.push({
@@ -690,7 +706,7 @@ export function MarsArena({
     if (!dead) {
       // dotyk (mobil) — pohled se aplikuje tady, pohyb jde do stejných čísel
       // Dotykové ZB cyklí všech šest zbraní; na prázdnou se nepřepíná.
-      const TOUCH_WEAPONS: WeaponId[] = ['rail', 'rocket', 'mg', 'shotgun', 'lightning', 'plasma'];
+      const TOUCH_WEAPONS: WeaponId[] = ['rail', 'rocket', 'mg', 'shotgun', 'lightning', 'plasma', 'gauntlet'];
       const touchInput = readTouch(touch, view, (next) => {
         const id = TOUCH_WEAPONS[next] ?? 'rail';
         if (id === 'rail' || ammoOf(id) > 0) weapon.current = id;
@@ -1096,6 +1112,7 @@ export function MarsArena({
           shotgun: shotgunAmmo.current,
           lightning: lightningAmmo.current,
           plasma: plasmaAmmo.current,
+          gauntlet: -1,
         },
       };
       const key = JSON.stringify(stats);
@@ -1186,6 +1203,17 @@ export function MarsArena({
           </mesh>
         ))}
       </group>
+
+      {/* zbraň v ruce (pro pocit z FPS) */}
+      <WeaponView
+        weapon={weapon}
+        player={player}
+        view={view}
+        kick={kick}
+        muzzleUntil={muzzleUntil}
+        deadUntil={deadUntil}
+        xr={xr}
+      />
 
       {/* pickupy */}
       <group ref={pickupGroup}>

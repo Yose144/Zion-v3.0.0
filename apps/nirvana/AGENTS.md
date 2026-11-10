@@ -2764,3 +2764,23 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   ověří, že boti používají víc zbraní a že feed i přesnost reagují.
 - **Test:** `test/arena-weapons.mjs` ověřuje hranice `botWeaponFor`
   a rozumnost `BOT_FIRE` (žádná zbraň nesmí být „vždycky nejlepší").
+
+### Aréna — pěst a zbraň v ruce (2026-11-10)
+
+- **Pěst (gauntlet)** doplňuje Q3 sadu: 50 dmg, dostřel 2,2 m, 400 ms,
+  nekonečná munice, klávesa **Q**. Nedělá tracer (kontaktní zásah) a boti
+  ji nepoužívají — je to hráčova poslední pojistka.
+- **`WeaponView.tsx`** je první model zbraně v ruce: sedm siluet
+  z primitiv, houpání podle rychlosti, zpětný ráz (`kick`), záblesk
+  a bodové světlo na 60 ms. Čte **hráče + pohled**, ne kameru — `useFrame`
+  pořadí mezi komponentami není zaručené a v XR se model schová úplně.
+- **Materiál bez env mapy je černý.** `GunMetal` proto používá nižší
+  metalness + emissive a zbraň má vlastní `pointLight`; bez toho byl model
+  na screenshotu jen černá trubka (reálně se to stalo).
+- **Měřítko a offset se ladily podle screenshotů**, ne od stolu: první
+  verze byla obrovská a zakrývala HUD. `scale 0.62`, offset
+  `(0.34, −0.26, −0.7)`.
+- **Lišta zbraní má 7 slotů** (klíč je teď string kvůli `Q`), dotykové ZB
+  cyklí 7; multiplayer si bere první tři (`% 3`).
+- **Test:** `test/arena-weapons.mjs` ověřuje čísla pěsti a že ji boti
+  nepoužívají.

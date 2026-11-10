@@ -39,17 +39,18 @@ const EMPTY_STATS: ArenaStats = {
   respawnIn: 0,
   quadIn: 0,
   hasteIn: 0,
-  ammoByWeapon: { rail: -1, rocket: 12, mg: 50, shotgun: 0, lightning: 0, plasma: 0 },
+  ammoByWeapon: { rail: -1, rocket: 12, mg: 50, shotgun: 0, lightning: 0, plasma: 0, gauntlet: -1 },
 };
 
 /** Lišta zbraní (Q3): číslo klávesy, zkratka a munice. */
-const WEAPON_BAR: { id: WeaponId; key: number; label: string }[] = [
-  { id: 'rail', key: 1, label: 'RAIL' },
-  { id: 'rocket', key: 2, label: 'ROCKET' },
-  { id: 'mg', key: 3, label: 'MG' },
-  { id: 'shotgun', key: 4, label: 'SHOTGUN' },
-  { id: 'lightning', key: 5, label: 'LIGHTNING' },
-  { id: 'plasma', key: 6, label: 'PLASMA' },
+const WEAPON_BAR: { id: WeaponId; key: string; label: string }[] = [
+  { id: 'rail', key: '1', label: 'RAIL' },
+  { id: 'rocket', key: '2', label: 'ROCKET' },
+  { id: 'mg', key: '3', label: 'MG' },
+  { id: 'shotgun', key: '4', label: 'SHOTGUN' },
+  { id: 'lightning', key: '5', label: 'LIGHTNING' },
+  { id: 'plasma', key: '6', label: 'PLASMA' },
+  { id: 'gauntlet', key: 'Q', label: 'PĚST' },
 ];
 
 /** Název zbraně do HUD — jedno místo pro sólo (MP má vlastní 3 zbraně). */
@@ -60,6 +61,7 @@ function weaponLabel(weapon: string, ammo: number): string {
   if (weapon === 'shotgun') return `SHOTGUN ×${ammo}`;
   if (weapon === 'lightning') return `LIGHTNING ×${ammo}`;
   if (weapon === 'plasma') return `PLASMA ×${ammo}`;
+  if (weapon === 'gauntlet') return 'PĚST';
   return 'RAIL';
 }
 
@@ -281,7 +283,7 @@ export default function MarsPage() {
           <div className="arena-weaponbar" role="group" aria-label={l('weapons')}>
             {WEAPON_BAR.map((slot) => {
               const ammo = stats.ammoByWeapon?.[slot.id];
-              const infinite = slot.id === 'rail';
+              const infinite = slot.id === 'rail' || slot.id === 'gauntlet';
               const empty = !infinite && (ammo ?? 0) <= 0;
               return (
                 <button

@@ -56,6 +56,12 @@ export function playPlasma(): void {
   playTone({ freq: 520, to: 880, duration: 0.09, type: 'sine', gain: 0.06 });
 }
 
+/** Pěst: tupý náraz, žádný výstřel. */
+export function playGauntlet(): void {
+  playTone({ freq: 120, to: 70, duration: 0.12, type: 'triangle', gain: 0.12 });
+  playNoise({ duration: 0.1, gain: 0.06, cutoff: 900 });
+}
+
 /** Quad Damage: zvonivý vzestup, který nejde přeslechnout. */
 export function playQuad(): void {
   play('bell');

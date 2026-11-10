@@ -19,7 +19,7 @@
 
 import { raySolids, raySphere, type Box4 } from './physics';
 
-export type WeaponId = 'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma';
+export type WeaponId = 'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma' | 'gauntlet';
 
 export const WEAPONS = {
   rail: {
@@ -73,6 +73,16 @@ export const WEAPONS = {
     ammo: 100,
     pickup: 40,
     automatic: true,
+  },
+  /**
+   * Pěst (Q3 gauntlet): 50 dmg na 2,2 m, 400 ms. Dohrává souboje zblízka
+   * a nikdy nedojde munice — poslední pojistka, když všechno ostatní selže.
+   */
+  gauntlet: {
+    damage: 50,
+    cooldownMs: 400,
+    ammo: Number.POSITIVE_INFINITY,
+    range: 2.2,
   },
   /**
    * Plazma (Q3 `g_missile.c`): přímý zásah 20 + splash 15, pomalý projektil,

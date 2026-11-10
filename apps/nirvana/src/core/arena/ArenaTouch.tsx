@@ -163,7 +163,7 @@ export function ArenaTouchControls({ state }: { state: MutableRefObject<ArenaTou
             event.stopPropagation();
             // Cyklus přes všechny zbraně hry (sólo má šest; multiplayer si
             // z toho vezme první tři). Prazdná zbraň se přeskočí až v simu.
-            weaponIndex.current = (weaponIndex.current + 1) % 6;
+            weaponIndex.current = (weaponIndex.current + 1) % 7;
             state.current.weapon = weaponIndex.current;
           }}
         >
