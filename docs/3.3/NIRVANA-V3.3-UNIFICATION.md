@@ -227,7 +227,7 @@ stroj těžaře (ne server, ne node):
 | **K3 — Writes + World** | write intents kde model existuje; OASIS world canvas jako plná scéna (OasisWeb kód → portal world = descend úroveň); pool miner-control (read+ops view); **WebXR režim**; živá data pulzují ve scéně | write gate per modul |
 | **K4 — Sjednocení povrchů** | staré appky zhasínají povrch po povrchu (redirecty); DNS rozhodnutí 👤 (apex na Království = Brána jako veřejný vstup?); desktop-agent jako native host shellu | exit kritéria per appka |
 
-Paralelní stopy (nezávislé, platí dál): **N0** (G8 run #6 do ~28. 11., operátorská fronta), **zion-compute** vlny 1–4, **N3/N5/N6** dle checklistu.
+Paralelní stopy (nezávislé, platí dál): **N0** (G8 run #7 do 6. 12. 14:51Z — run #6 zastaven 6. 11. jako `evidence_incomplete`, operátorská fronta), **zion-compute** vlny 1–4, **N3/N5/N6** dle checklistu.
 
 ---
 

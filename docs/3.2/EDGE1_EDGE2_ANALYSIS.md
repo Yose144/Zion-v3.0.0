@@ -217,7 +217,7 @@ TUNELY:
 2. **Opravit V31 deploy skript:** Aktualizovat `V31/deploy/deploy-edge.sh` — odstranit reference na neexistující binárky (`zion-bridge`) a služby (`zion-edge-dashboard`, `zion-edge-dex`). Použít manuální workaround jako základ.
 3. **Standardizovat build cestu:** Používat čistý worktree `/opt/zion-rel/build` místo dirty `/opt/zion/V31` (pattern z 2026-10-29).
 4. **HA pool:** Otestovat promote guard na stagingu před aktivací (armed mode).
-5. **Monitoring:** Dokončit G8 30-day run gate (aktuálně run #6, gate pending, cíl 28.11).
+5. **Monitoring:** Dokončit G8 30-day run gate (aktuálně run #7 `g8-20261106T145125Z`, gate pending, cíl 6. 12. 14:51Z; run #6 zastaven 6. 11. jako `evidence_incomplete`).
 6. **Disk:** Nastavit automatický orphan sweep + retenci na obou boxech.
 7. **SSH:** Používat IPv6 alias `zion-v6` s ControlMaster pro batch operace.
 

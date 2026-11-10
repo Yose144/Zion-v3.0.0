@@ -1,6 +1,7 @@
 # ZION V3.3 „NIRVANA" — Execution Checklist
 
 > **Datum:** 2026-10-29 (snapshot položek níže je z 26. 10.; posun je v rámečku) · **Doplněk k:** [`NIRVANA-V3.3-PLAN.md`](NIRVANA-V3.3-PLAN.md) · **Vstupní bod plánování:** [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md)
+> **⚠️ 2026-11-10 (EDGE1/EDGE2 verifikace + docs truth-sync):** G8 **run #7** `g8-20261106T145125Z` živě — **99,916 %**, evidence 100 %, **5× `chain_live` incident 60 s** (8.–9. 11.; `G8ChainStale` firing→resolved; block-timestamp sampling nevyloučil ani nepotvrdil >900 s gap → trigger pravděpodobně probe-side RPC stall, **RCA otevřená**), cíl **6. 12. 14:51:25Z**. Run #6 archivován `stopped`/`evidence_incomplete` (99,7629 %, 12 incidentů). Nirvana **proto 34** repo=live (net build `20261110T181100Z` + app `proto_match:true`). Release artifacts: `dist/v3.2.0-rc-w1.4/` 5 tarballů z `aa6599cce`; **x86_64-apple-darwin** cross-toolchain na Macu funguje, ale **disk 100 %** blokuje build. Viz [`StatusV3.md`](../3.2/StatusV3.md) update 10. 11. a [`DOC_VS_CODE_ANALYSIS_2026-11-10.md`](DOC_VS_CODE_ANALYSIS_2026-11-10.md).
 > **⚠️ 2026-11-01:** tento checklist neobsahuje položky vlny 1. 11. (NIRVANA multiplayer M0–M2, avatary A1–A4, ops konzole F1–F2.3, 6.B4 DeSci, Kingdom, maintenance 503) — aktuální stav je v plánu **§7 změnovej log v1.6–v1.13** a v [`docs/3.2/REPORTS/REPORT_2026-11-01_NIRVANA_DEN.md`](../3.2/REPORTS/REPORT_2026-11-01_NIRVANA_DEN.md); code-vs-doc kanonizace 1. 11. viz [`AGENTS.md`](../../AGENTS.md) entry TRUTH-SYNC.
 > **⚠️ 2026-11-02 (autonomní session):** HA fencing analýza ✅ (`docs/3.2/ops/POOL-HA-RUNBOOK.md`), DR drill dry-run ✅ (`docs/3.2/REPORTS/REPORT_2026-11-02_DR_DRILL_DRY_RUN.md`), NCL V33-5 ✅ (2 integrační testy, 44/44), DeSci 6.B4 ✅ (23/23 testů, backend+web+proxy), OASIS V33-10 axe scan ✅ (`docs/3.2/REPORTS/REPORT_2026-11-02_OASIS_A11Y_PRIVACY.md`). Root kanonizace: staré plány → `docs/3.3/`, nový master plán `PLAN.md`. Souhrn: [`REPORT_2026-11-02_SESSION_SUMMARY.md`](../3.2/REPORTS/REPORT_2026-11-02_SESSION_SUMMARY.md).
 > **Paluba:** [`NIRVANA-V3.3-KAPITOLA.md`](NIRVANA-V3.3-KAPITOLA.md) · **Strojovna:** [`docs/3.3/ENGINE-SRDCE.md`](ENGINE-SRDCE.md)
@@ -29,7 +30,7 @@ Checklistové checkboxy pod tímhle rámečkem se hromadně nepřepisovaly. DoD 
 | Oblast | Stav |
 |---|---|
 | Stupeň | **3.2.0 Mainnet Beta** (`V31/Cargo.toml` = `3.2.0`, node hlásí `3.2.0`; wire ID `zion-v3-node/3.1.0-alpha` zůstává záměrně) → další brána RC |
-| G8 | run **#6** `g8-20261029T234617Z` — **99.7976 %**, 0 kritických, **1 incident 240 s** (30. 10. 21:00–21:04Z, `pool_http`+`pool_stratum`), evidence 100 %, konec **28. 11. 23:46Z** |
+| G8 | run **#7** `g8-20261106T145125Z` — **99,916 %**, evidence 100 %, **5 incidentů `chain_live` × 60 s** (8.–9. 11., RCA otevřená), `gate_status=pending`, konec **6. 12. 14:51Z**. Run #6 archivován `stopped`/`evidence_incomplete` (99,7629 %, 12 incidentů) |
 | G9 | ⏸️ **posunuto rozhodnutím 👤 26. 10.** — audit package + scope připravené k odeslání; Stable bez data |
 | Interní audit | vlny 1–7 nasazené a živě ověřené (warpd = audit build, holdy aktivní, payouty potvrzené on-chain) |
 | Code gates (pin `ad8ab5895`) | `cargo test --workspace` **2 839 / 0 fail**, check OK, Foundry 48/48, ZIS 46/46 · ⚠️ clippy ~110 warnings, fmt drift 25 souborů · 🔄 audit triage 28.10 (`docs/3.2/AUDIT-TRIAGE.md`): cargo 9 vuln = 0 in-range fix (multichain/k256 only, pool/node čisté), npm 9 app kritik `next` majors — upgrade = deliberate, neblokuje Beta |
@@ -53,8 +54,9 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md). Zde
   - [x] 🤖 RCA run #3 (SPOF tunelu v sondě) → probe na lokální followery + vlastní probe na EDGE2
   - [x] 👤 Start run #5 (25. 10.) — uzavřen 29. 10., navázán run #6
   - [x] 🤖 Alert sink firing test + 40d retence doložit (8.B9) — `REPORT_2026-10-28_G8_ALERT_SINK.md`: firing+resolved přes reálný Alertmanager 28.10., append-only jsonl 29d+ bez rotace, 40d span doběhne ~8.11.
-  - [x] 👤 Start run #6 `g8-20261029T234617Z` (29. 10. 23:46Z), cíl **28. 11. 23:46Z**, evidence step 60 s, coverage 100 %
-  - [ ] 🤖 Run #6 PASS (1.S1) — nic nesmí zasáhnout required služby bez rollbacku do 15 min. Stav 31. 10.: **99.7976 %**, 0 kritických, 1 incident 240 s (`pool_http`+`pool_stratum`, 30. 10. 21:00–21:04Z)
+  - [x] 👤 Start run #6 `g8-20261029T234617Z` (29. 10. 23:46Z) — **zastaven 6. 11. před koncem okna** → archivován `stopped`/`evidence_incomplete` (99,7629 %, 12 incidentů), nenahrazuje PASS
+  - [x] 👤 Start run #7 `g8-20261106T145125Z` (6. 11. 14:51Z), cíl **6. 12. 14:51Z**, evidence step 60 s, coverage 100 %
+  - [ ] 🤖 Run #7 PASS (1.S1) — nic nesmí zasáhnout required služby bez rollbacku do 15 min. Stav 10. 11.: **99,916 %**, 0 kritických, **5 incidentů `chain_live` × 60 s** (8.–9. 11., RCA otevřená)
 - [~] **G9 — externí audit** ⏸️ **posunuto rozhodnutím 👤 26. 10.** (v aktuálním okně se neobjednává)
   - [x] 🤖 Audit package (pin `4108a52d0`, reprodukovatelný build) + scope v2.2 — připraveno k odeslání
   - [ ] 🤖 Přepinovat na RC commit (wave 7 + W1 posunuly pool scope) (7.B1)
@@ -196,7 +198,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md). Zde
 
 | Gate | Měření | Stav 31. 10. |
 |---|---|---|
-| V33-1 Stabilita | G8 ≥99.9 % (`g8_run.json` + Prometheus) | 🔄 run **#6** 99.7976 %, do **28. 11. 23:46Z**, 1 incident 240 s (`pool_http`+`pool_stratum`) |
+| V33-1 Stabilita | G8 ≥99.9 % (`g8_run.json` + Prometheus) | 🔄 run **#7** 99,916 %, do **6. 12. 14:51Z**, 5 incidentů `chain_live` × 60 s (8.–9. 11.) |
 | V33-2 Externí audit | report + mitigace | ⏸️ posunuto 👤 26. 10. |
 | V33-3 Value transfer | BTC swap lock→claim + refund on-chain; ZionDex deposit→swap→withdraw | ❌ holdy / settlement nehotový |
 | V33-4 Identita | passkey E2E na ≥3 produkčních webech | 🔄 routes + mocked E2E |

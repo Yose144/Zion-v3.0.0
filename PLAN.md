@@ -1,20 +1,22 @@
 # ZION TerraNova — Master Plan (v3.3 "Nirvana")
 
-> **Datum:** 2026-11-09
+> **Datum:** 2026-11-10
 > **Stupeň:** 3.2.0 Mainnet Beta → cíl 3.2.0 RC → 3.2.0 Mainnet Stable → 3.3.0 Nirvana
 > **Vstupní bod:** tento soubor je jediný aktivní plán v rootu. Detaily v `docs/3.2/`, `docs/3.3/`.
 > **Historie:** staré root MD plány přesunuty do `docs/3.3/`. Operativní pravidla v `AGENTS.md`.
 
 ---
 
-## 1. Aktuální stav (snapshot 9. 11. 2026)
+## 1. Aktuální stav (snapshot 10. 11. 2026)
 
 ### Infrastruktura
 - **EDGE2** (207.180.217.100) = primary node (9445) + web ingress + app stack (L2–L6)
 - **EDGE** (62.171.141.136) = pool stratum (8444) + follower nodes (9446/9447) + ops/monitoring
-- **G8 run #6** = 99.7976 %, 1 incident 240 s, konec **28. 11. 23:46Z**
+- **G8 run #7** `g8-20261106T145125Z` = **99,916 %**, 5× `chain_live` incident 60 s (8.–9. 11., RCA otevřená), evidence 100 %, konec **6. 12. 14:51Z**. Run #6 archivován `stopped`/`evidence_incomplete` (99,76 %, 12 incidentů).
 - **G9 externí audit** = posunut (Stable bez data)
 - **Deploy projekty:** `V31/deploy/` (aktivní, opraveno 2.11.), `infra/edge-deploy/` (deprecated, guard přidán)
+- **Nirvana proto 34** = repo i live ve shodě (net build `20261110T181100Z` + app `proto_match`) — client a net deployovat vždy spolu
+- **⚠️ Mac disk 100 %** — release buildy lokálně nemožné (volno ~115 MB); x86_64-apple-darwin cross-toolchain ověřen funkční, chybí místo
 
 ### Kód
 - **V31 workspace:** 18 crates, verze 3.2.0, protocol handshake `3.1.0-alpha` (záměrně)
@@ -37,12 +39,12 @@
 
 ---
 
-## 2. Kritická cesta (do 28. 11.)
+## 2. Kritická cesta (do 6. 12.)
 
 ```
-G8 run #6 (do 28. 11. 23:46Z) ──► V33-1 Stabilita
+G8 run #7 (do 6. 12. 14:51Z) ──► V33-1 Stabilita
          │
-         ├── RC práce (do 24. 11.): provenance, alerty, DR runbook, artefakty, audit package
+         ├── RC práce (do ~2. 12.): provenance, alerty, DR runbook, artefakty, audit package
          │
          └── 👤 sign-off (poslední 4 dny okna)
          
@@ -58,7 +60,7 @@ G9 externí audit (posunut, Stable bez data — neblokuje RC kvalitu)
 ### Priorita 1 (blokuje další práci)
 1. ✅ **HA stratum fencing analýza** — `pool-promote-guard.sh` implementován (G1-G6), runbook vytvořen (`docs/3.2/ops/POOL-HA-RUNBOOK.md`), 7 gaps identifikováno, staged activation pending 👤
 2. ✅ **DR drill dry-run (varianta A)** — 23/23 DBs PASS, config 0 placeholderů, 5 gaps identifikováno, 3 opraveny (binárky optional, GPG encryption optional, offsite timer ověřen). Report: `docs/3.2/REPORTS/REPORT_2026-11-02_DR_DRILL_DRY_RUN.md`
-3. **Release artefakty (9.B4)** — Linux default ✅ + gpu-opencl ✅ (binárky buildnuty, `--version` ověřen). aarch64-apple-darwin + x86_64-apple-darwin = potřebuje Mac. x86_64-pc-windows-gnu = potřebuje mingw-w64 (není nainstalován, sudo nedostupné). Builder `scripts/ops/build-release-artifacts.sh` hotový.
+3. **Release artefakty (9.B4)** — Linux default ✅ + gpu-opencl ✅ + aarch64-apple-darwin ✅ + gpu-metal ✅ + windows-gnu ✅ (`dist/v3.2.0-rc-w1.4/`, commit `aa6599cce`, draft-grade). **Zbývá:** x86_64-apple-darwin (cross-toolchain na Macu funguje, ale **disk 100 %** — blokuje nedostatek místa, ne technika) + rebuild všech z RC commitu (tag `v3.2.0` = 👤 gate 9.S1). Builder `scripts/ops/build-release-artifacts.sh` hotový.
 
 ### Priorita 2 (V33 gates)
 4. ✅ **NCL 1 worker + 1 job typ** — V33-5 gate, 2 integrační testy, 44/44 pass

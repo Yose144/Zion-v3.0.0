@@ -215,12 +215,15 @@ Detail bran: [`3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md) §2 (Beta exit 
 | 29. 10. 23:46Z | start G8 **run #6** `g8-20261029T234617Z` | nahrazuje run #5 |
 | 30. 10. 21:00Z | incident 240 s (`pool_http`+`pool_stratum`) v run #6 | 99,7976 % — pod 99,9 % branou, dokud nedoběhne okno |
 | 31. 10. | hloubková revize + [kanonický plán](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) v1.0; 3 rozhodnutí 👤 (RC first · HA aktivovat · DNS úklid) | start W0 |
-| 25. 11. | expirace certu `auth.` | renew musí proběhnout dřív (8.B6) |
-| **28. 11. 23:46Z** | **konec G8 run #6** | **V33-1 / KS-1** — hlavní kotva RC |
+| 6. 11. 14:51Z | run #6 **zastaven před koncem okna** → archivován `stopped`/`evidence_incomplete` (99,7629 %, 12 incidentů); start G8 **run #7** `g8-20261106T145125Z` | nová 30denní brána |
+| 8.–9. 11. | 5 incidentů `chain_live` × 60 s v run #7 (`G8ChainStale` firing→resolved) | 99,916 % k 10. 11.; trigger pravděpodobně probe-side RPC stall, RCA otevřená |
+| 10. 11. | Nirvana **proto 34** nasazena (net build `20261110T181100Z` + app `proto_match`) | repo = live = 34 |
+| 25. 11. | expirace certu `auth.` | renew musí proběhnout dřív (8.B6) — ⚠️ renewal už proběhl ~26. 10., cert do 24./25. 1. 2027 (ověřeno 31. 10.) |
+| **6. 12. 14:51Z** | **konec G8 run #7** | **V33-1 / KS-1** — hlavní kotva RC |
 | ~27.–28. 11. | výška 144 000 — time-lock premine slotů 6–8 vyprší | utratitelnost dál jen 3-of-3 admin unlock + DAO (1.S3) |
 | ⏸️ | G9 posunut 👤 26. 10. | Stable = pozdější z (G8 PASS, G9 uzavření) → bez data, dokud se audit nepřeplánuje |
 
-**Kritická cesta (revize 31. 10.):** G8 run #6 čistě do **28. 11. 23:46Z** + autonomní RC práce (provenance, alerty, DR runbook, artefakty, audit package) hotová **do 24. 11.** — poslední čtyři dny okna jsou rezerva na 👤 sign-off. G9 zůstává posunuté na neurčito; Stable nemá datum, ale nic nebrání dodělat RC kvalitu a audit package držet připravený k odeslání. Detail: [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) §4.
+**Kritická cesta (revize 10. 11.):** G8 run #7 čistě do **6. 12. 14:51Z** + autonomní RC práce (provenance, alerty, DR runbook, artefakty, audit package) hotová **do ~2. 12.** — poslední čtyři dny okna jsou rezerva na 👤 sign-off. G9 zůstává posunuté na neurčito; Stable nemá datum, ale nic nebrání dodělat RC kvalitu a audit package držet připravený k odeslání. Detail: [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) §4.
 
 ---
 
