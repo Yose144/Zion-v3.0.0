@@ -2635,16 +2635,27 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Test:** `npx tsx test/arena-weapons.mjs` (26 kontrol: čísla Q3, spread
   s deterministickým RNG, armor, DPS blesku, poměr plazmy a rakety).
 
-## Merkur — ragdoll souboj a čtyři módy (2026-11-10, proto 33)
+## Merkur — ragdoll pro: kombo, kryt a pět módů (2026-11-10, proto 34)
 
-- **Jeden engine, čtyři pravidla.** `core/fight/ragdoll.ts` je fyzikální
+- **Jeden engine, pět pravidel.** `core/fight/ragdoll.ts` je fyzikální
   loutka (11 bodů, 10 jointů, PBD) a zároveň pravidla pro `duel`, `ball`,
-  `survival` a `practice`. Klient i server (`apps/nirvana-net/src/fight.ts`)
-  importují **tentýž soubor** — žádná druhá fyzika. Starý `duel.ts` a
-  `Fighter3D.tsx` jsou smazané.
+  `survival`, `practice` a `koth`. Klient i server
+  (`apps/nirvana-net/src/fight.ts`) importují **tentýž soubor** — žádná
+  druhá fyzika. Starý `duel.ts` a `Fighter3D.tsx` jsou smazané.
 - **Zásah = rychlost končetiny, ne tlačítko.** `hitDamage(speed, power, guard)`
   rozhoduje o poškození; `resolveCombat` hledá kontakt hand/foot/knee/head
   s tělem (head/chest/pelvis). Držený J/K jen opakuje švih v ochlazení.
+- **Kombo** (`COMBO_WINDOW` 2,6 s): `comboMultiplier(combo)` = 1 + min(0,5;
+  combo × 0,1). Série se počítá po zásahu, inkasovaný úder ji vynuluje.
+  HUD ukazuje `×N` od 2; od 3 se nad loutkou objeví i plovoucí text.
+- **Výdrž krytu** (`GUARD_DRAIN` 0,3/s, `GUARD_REGEN` 0,28/s): kryt už není
+  nekonečný. Při nule se zlomí (`breakGuard` — stun 0,85 s) a odemkne se až
+  po dobití na 0,4. Každý pohlcený zásah bere dalších 0,12. **Pozor:** práh
+  `guardMeter > 0.02` v `wantsGuard` způsobil, že se výdrž zastavila na 0,022
+  a nikdy se nezlomila — práh je pryč, láme se až na nule.
+- **Král kopce** (`koth`): zóna `|x| ≤ HILL_HALF` (2,6 m), drží ji jen ten,
+  kdo tam stojí **sám** (souboj uvnitř zóny držení zastaví). Cíl 12 s,
+  zápas 99 s. KO dá vítězi +2,5 s a poražený se po 2,5 s vrátí.
 - **Postura drží loutku na nohou.** `applyPosture` zapíná pánev/hrudník/hlavu
   a nohy; vypíná se při KO/stunu/knockbacku. Bez toho se loutka složila
   (hrudník 1,55 → 0,27 m) a nešlo nic zasáhnout.
@@ -2655,16 +2666,26 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   přes míč, když je na špatné straně — bez toho jeden bot vyhrával 14:0.
 - **Sólo i online:** sólo stepuje pevně 1/60 s (`MercurySolo`), online server
   1/30 s a klient pózy jen interpoluje (`MercuryDuel`, `SNAP_DISTANCE = 3`).
-  Vlastní pohyb se nepredikuje — ragdoll je chaotický.
-- **Protokol 33:** `FightPlayerState.pose` = 22 čísel. Deploy **net první,
-  pak appka** (`deploy-nirvana.sh` to kontroluje sám).
+  Vlastní pohyb se nepredikuje — ragdoll je chaotický. Sólo po KO na 0,85 s
+  zpomalí na 0,34× (drama), online ne (server je autorita).
+- **Plovoucí čísla** (`DuelFx`): v sólu z přesných `hit` eventů, v online
+  z **rozdílu HP mezi snapshoty** (jako MOBA) — bez změny přenosu zásahů.
+  Kreslí se do 2D canvasu nad plátnem (`cameraRef` z `DuelCamera`), ne do DOM.
+- **Protokol 34:** `FightPlayerState` nese `pose` (22 čísel, od 33),
+  `guard` a `combo`. Deploy **net první, pak appka**
+  (`deploy-nirvana.sh` to kontroluje sám).
 - **Módy:** duel (best of 3), ball (90 s), survival (vlny, od 5. obtížnost
-  champion), practice (figurína s regenerací). Online je jen duel.
-- **Testy:** `npx tsx apps/nirvana/test/ragdoll.mjs` (35 kontrol) a
-  `apps/nirvana-net/test/fight.mjs` (simulace + síť, PASSED).
+  champion), practice (figurína s regenerací), koth (držení kopce). Online
+  je jen duel.
+- **HUD:** HP + tenká výdrž krytu (cyan, při zlomu červená), u kothu navíc
+  zelený pruh držení; kombo `×N`; hlášky `K.O.` / `GUARD BREAK`.
+- **Testy:** `npx tsx apps/nirvana/test/ragdoll.mjs` (postoj, zásah, kombo,
+  kryt a jeho zlom, koth včetně KO bonusu/respawnu, fotbal, trénink, póza,
+  bot) a `apps/nirvana-net/test/fight.mjs` (simulace + síť včetně `guard`
+  a `combo` ve snapshotu). PASSED.
 - **Vizuál:** `RagdollBody` kreslí válce mezi body + kontaktní stín;
-  `DuelStage` má `goals` a `wide` kameru (fotbal je 20 m široký, s úzkou
-  kamerou nebyly vidět branky).
+  `DuelStage` má `goals`, `hill` zónu a `wide` kameru (fotbal je 20 m široký,
+  s úzkou kamerou nebyly vidět branky).
 
 ### Aréna — Quad Damage, lišta zbraní a dotykové cyklení (2026-11-10)
 

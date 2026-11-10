@@ -2,15 +2,18 @@
 
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
+import type * as THREE from 'three';
 import { DuelCamera, DuelStage } from './DuelStage';
 import { RagdollBody } from './RagdollBody';
 import {
+  P,
   applyPose,
   bodyCenterOf,
   makeRagdollFighter,
   type FightInput,
   type RagdollFighter,
 } from './ragdoll';
+import { clearFx, pushHitFx, pushTextFx, type DuelFloater } from './DuelFx';
 import { useFightKeys } from './useFightKeys';
 import { createDuelSound } from './audio';
 import { DuelXr } from './FightXr';
@@ -50,6 +53,12 @@ export interface DuelMpStats {
   matchWinner: string | null;
   /** Poslední kolo: 'ko' | 'time' | null. */
   lastRoundReason: 'ko' | 'time' | null;
+  /** Výdrž krytu 0..1. */
+  selfGuard: number;
+  foeGuard: number;
+  /** Série zásahů. */
+  selfCombo: number;
+  foeCombo: number;
 }
 
 /** Vzdálenost bodu, od které se póza „teleportuje“ (respawn), ne interpoluje. */
@@ -85,12 +94,17 @@ export function MercuryDuel({
   xr = false,
   watch = null,
   onStats,
+  floaters,
+  cameraRef,
 }: {
   running: boolean;
   xr?: boolean;
   /** Id místnosti, na kterou se jen díváme (`?watch=`); `null` = hrajeme. */
   watch?: string | null;
   onStats: (stats: DuelMpStats) => void;
+  /** Plovoucí čísla — v online se odvozují z poklesu HP mezi snapshoty. */
+  floaters?: MutableRefObject<DuelFloater[]>;
+  cameraRef?: MutableRefObject<THREE.Camera | null>;
 }) {
   const { subscribe, sendInput, joinGame, spectateRoom, leaveRoom, youPlayerId, spectator, connected, rtt } = useNet();
   const keys = useFightKeys(running);
@@ -118,6 +132,10 @@ export function MercuryDuel({
     foeIsBot: true,
     matchWinner: null,
     lastRoundReason: null,
+    selfGuard: 1,
+    foeGuard: 1,
+    selfCombo: 0,
+    foeCombo: 0,
   });
 
   const lastStats = useRef('');
@@ -142,6 +160,8 @@ export function MercuryDuel({
   const applyWire = (wire: FightPlayerState, mine: boolean) => {
     const target = mine ? self.current : foe.current;
     const poseTarget = mine ? selfTarget.current : foeTarget.current;
+    const beforeHp = target.hp;
+    const wasKo = target.ko;
     target.id = wire.id;
     target.name = wire.name;
     target.avatarId = wire.avatarId;
@@ -151,10 +171,24 @@ export function MercuryDuel({
     target.stun = wire.stun;
     target.guard = wire.blocking;
     target.facing = wire.facing;
+    target.guardMeter = typeof wire.guard === 'number' ? wire.guard : 1;
+    target.combo = typeof wire.combo === 'number' ? wire.combo : 0;
     poseTarget.pose = Array.isArray(wire.pose) ? wire.pose : null;
     if (mine && !selfSnapped.current && poseTarget.pose) {
       applyPose(self.current, poseTarget.pose);
       selfSnapped.current = true;
+    }
+
+    // online nemá damage eventy — čísla vznikají rozdílem HP mezi snapshoty
+    if (floaters) {
+      const center = bodyCenterOf(target);
+      const now = performance.now();
+      if (beforeHp - wire.hp >= 1) {
+        pushHitFx(floaters.current, center.x, center.y + 0.15, beforeHp - wire.hp, mine ? 'in' : 'out', now);
+      }
+      if (wire.ko && !wasKo) {
+        pushTextFx(floaters.current, center.x, center.y + 0.95, 'K.O.', 'ko', now);
+      }
     }
 
     if (lookIds.current[mine ? 'self' : 'foe'] !== wire.avatarId) {
@@ -184,6 +218,7 @@ export function MercuryDuel({
           hud.current.matchWinner = null;
           sound.current.reset();
           selfSnapped.current = false;
+          if (floaters) clearFx(floaters.current);
         }
         hud.current.state = state as DuelMpStats['state'];
         hud.current.round = message.round ?? 1;
@@ -197,6 +232,12 @@ export function MercuryDuel({
         if (event.kind === 'duel_end') {
           hud.current.matchWinner = event.winner;
           sound.current.event('match_end', event.winner === youPlayerId);
+        } else if (event.kind === 'duel_ko') {
+          const loser = event.loser === self.current.id ? self.current : foe.current;
+          if (floaters) {
+            const center = bodyCenterOf(loser);
+            pushTextFx(floaters.current, center.x, center.y + 0.95, 'K.O.', 'ko', performance.now());
+          }
         } else if (event.kind === 'round_start') {
           hud.current.lastRoundReason = null;
           sound.current.event('fight_start');
@@ -288,6 +329,10 @@ export function MercuryDuel({
       selfWins: self.current.wins,
       foeWins: foe.current.wins,
       foeIsBot: (foe.current.id ?? '').startsWith('bot-'),
+      selfGuard: Math.round(self.current.guardMeter * 100) / 100,
+      foeGuard: Math.round(foe.current.guardMeter * 100) / 100,
+      selfCombo: self.current.combo,
+      foeCombo: foe.current.combo,
     };
     hud.current = stats;
     statsClock.current += delta;
@@ -304,7 +349,12 @@ export function MercuryDuel({
   return (
     <>
       <DuelStage />
-      <DuelCamera a={self as MutableRefObject<RagdollFighter>} b={foe as MutableRefObject<RagdollFighter>} xr={xr} />
+      <DuelCamera
+        a={self as MutableRefObject<RagdollFighter>}
+        b={foe as MutableRefObject<RagdollFighter>}
+        xr={xr}
+        cameraRef={cameraRef ?? null}
+      />
       {xr && <DuelXr active={running} />}
       <RagdollBody state={self} look={looks.self} />
       <RagdollBody state={foe} look={looks.foe} />

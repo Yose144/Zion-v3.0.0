@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Canvas } from '@react-three/fiber';
+import type * as THREE from 'three';
 import { useI18n, tx } from '@/core/i18n';
 import { MercurySolo, type DuelStats, type SoloFinish } from '@/core/fight/MercurySolo';
 import { MercuryDuel, type DuelMpStats } from '@/core/fight/MercuryDuel';
-import { MAX_HP, type BotDifficulty, type FightMode } from '@/core/fight/ragdoll';
+import { MAX_HP, HILL_TARGET, type BotDifficulty, type FightMode } from '@/core/fight/ragdoll';
+import { DuelFxOverlay, clearFx, type DuelFloater } from '@/core/fight/DuelFx';
 import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
 import { GameBoard } from '@/core/games/GameBoard';
 import { watchRoom } from '@/core/net/watch';
@@ -35,6 +37,7 @@ const MODES: { id: FightMode; title: DuelCopyKey; desc: DuelCopyKey }[] = [
   { id: 'ball', title: 'modeBall', desc: 'modeBallDesc' },
   { id: 'survival', title: 'modeSurvival', desc: 'modeSurvivalDesc' },
   { id: 'practice', title: 'modePractice', desc: 'modePracticeDesc' },
+  { id: 'koth', title: 'modeKoth', desc: 'modeKothDesc' },
 ];
 
 const EMPTY_SOLO: DuelStats = {
@@ -53,6 +56,12 @@ const EMPTY_SOLO: DuelStats = {
   wave: 1,
   hits: 0,
   bestHit: 0,
+  selfGuard: 1,
+  foeGuard: 1,
+  selfCombo: 0,
+  foeCombo: 0,
+  selfHill: 0,
+  foeHill: 0,
 };
 
 const EMPTY_MP: DuelMpStats = {
@@ -72,6 +81,10 @@ const EMPTY_MP: DuelMpStats = {
   foeIsBot: true,
   matchWinner: null,
   lastRoundReason: null,
+  selfGuard: 1,
+  foeGuard: 1,
+  selfCombo: 0,
+  foeCombo: 0,
 };
 
 /** Body za výhru: 2:0 = 200, 2:1 = 170; prohra počítá taky (100×kola − 30×soupeřova). */
@@ -130,6 +143,9 @@ export default function MercuryPage() {
   const [mpStats, setMpStats] = useState<DuelMpStats>(EMPTY_MP);
   const [notice, setNotice] = useState<string | null>(null);
   const recorded = useRef(false);
+  /** Plovoucí čísla a kamera pro 2D overlay nad plátnem. */
+  const fx = useRef<DuelFloater[]>([]);
+  const cameraRef = useRef<THREE.Camera | null>(null);
   /** `?watch=<room>` = hlediště. Čte se v efektu (SSR `window` nemá). */
   const [watch, setWatch] = useState<string | null>(null);
 
@@ -141,14 +157,19 @@ export default function MercuryPage() {
     };
   }, [phase]);
 
-  // sólo výsledek (survival / ball) — jednou za zápas
+  // sólo výsledek (survival / ball / koth) — jednou za zápas
   const handleSoloFinish = useCallback(
     (result: SoloFinish) => {
       if (result.mode === 'duel' || result.mode === 'practice') return;
       const score =
         result.mode === 'survival'
           ? Math.max(0, (result.wave - 1) * 150 + result.hits * 4)
-          : Math.max(0, result.scoreSelf * 120 - result.scoreFoe * 40);
+          : result.mode === 'koth'
+            ? Math.max(
+                0,
+                Math.round(result.selfHill * 40 + result.hits * 3 + (result.winner === 'self' ? 150 : 0)),
+              )
+            : Math.max(0, result.scoreSelf * 120 - result.scoreFoe * 40);
       if (score <= 0) {
         setNotice(l('noPoints'));
         return;
@@ -205,6 +226,7 @@ export default function MercuryPage() {
   const isBall = mode === 'ball';
   const isSurvival = mode === 'survival';
   const isPractice = mode === 'practice';
+  const isKoth = mode === 'koth';
   const solo = source !== 'online';
   const state = solo ? soloStats.phase : mpStats.state;
   const countdown = solo ? soloStats.countdown : mpStats.countdown;
@@ -213,6 +235,12 @@ export default function MercuryPage() {
   const foeHp = solo ? soloStats.foeHp : mpStats.foeHp;
   const selfWins = solo ? soloStats.selfWins : mpStats.selfWins;
   const foeWins = solo ? soloStats.foeWins : mpStats.foeWins;
+  const selfGuard = solo ? soloStats.selfGuard : mpStats.selfGuard;
+  const foeGuard = solo ? soloStats.foeGuard : mpStats.foeGuard;
+  const selfCombo = solo ? soloStats.selfCombo : mpStats.selfCombo;
+  const foeCombo = solo ? soloStats.foeCombo : mpStats.foeCombo;
+  const selfHill = solo ? soloStats.selfHill : 0;
+  const foeHill = solo ? soloStats.foeHill : 0;
   const selfName = solo ? l('you') : mpStats.selfName;
   const foeName = solo ? (isPractice ? l('practiceShadow') : l('opponent')) : mpStats.foeName;
   const round = solo ? soloStats.round : mpStats.round;
@@ -227,7 +255,14 @@ export default function MercuryPage() {
         >
           <XR store={xrStore}>
             {phase === 'playing' && source === 'online' ? (
-              <MercuryDuel running xr={presenting} watch={watch} onStats={setMpStats} />
+              <MercuryDuel
+                running
+                xr={presenting}
+                watch={watch}
+                onStats={setMpStats}
+                floaters={fx}
+                cameraRef={cameraRef}
+              />
             ) : (
               <MercurySolo
                 key={`${selectedMode}-${phase}`}
@@ -239,10 +274,13 @@ export default function MercuryPage() {
                 botDifficulty={difficulty}
                 onStats={setSoloStats}
                 onFinish={handleSoloFinish}
+                floaters={fx}
+                cameraRef={cameraRef}
               />
             )}
           </XR>
         </Canvas>
+        <DuelFxOverlay floaters={fx} cameraRef={cameraRef} />
       </div>
 
       {watch && <SpectatorBar room={watch} />}
@@ -259,6 +297,7 @@ export default function MercuryPage() {
                 setPhase('idle');
                 setMpStats(EMPTY_MP);
                 setSoloStats(EMPTY_SOLO);
+                clearFx(fx.current);
                 setNotice(null);
               }}
             >
@@ -273,6 +312,7 @@ export default function MercuryPage() {
             <div className="duel-top" aria-hidden>
               <div className="duel-fighter is-self">
                 <div className="duel-name">{selfName}</div>
+                {selfCombo >= 2 ? <span className="duel-combo">×{selfCombo}</span> : null}
                 {isBall ? (
                   <div className="duel-score-big">{soloStats.scoreSelf}</div>
                 ) : (
@@ -280,6 +320,14 @@ export default function MercuryPage() {
                     <div className="duel-bar">
                       <i style={{ width: `${(selfHp / MAX_HP) * 100}%` }} className={selfHp <= 30 ? 'is-low' : undefined} />
                     </div>
+                    <div className={`duel-guard${selfGuard <= 0.02 ? ' is-broken' : selfGuard < 0.3 ? ' is-low' : ''}`}>
+                      <i style={{ width: `${Math.max(0, selfGuard) * 100}%` }} />
+                    </div>
+                    {isKoth && (
+                      <div className="duel-hill-bar">
+                        <i style={{ width: `${(selfHill / HILL_TARGET) * 100}%` }} />
+                      </div>
+                    )}
                     <div className="duel-pips">
                       {Array.from({ length: 2 }, (_, index) => (
                         <span key={index} className={index < selfWins ? 'is-on' : undefined} />
@@ -296,12 +344,14 @@ export default function MercuryPage() {
                       ? `${l('wave')} ${soloStats.wave}`
                       : isPractice
                         ? l('modePractice')
-                        : `${l('round')} ${round}`}
+                        : isKoth
+                          ? l('hill')
+                          : `${l('round')} ${round}`}
                 </div>
                 <strong>
                   {state === 'countdown'
                     ? `…${countdown}`
-                    : isBall || isSurvival || isPractice
+                    : isBall || isSurvival || isPractice || isKoth
                       ? `${secondsLeft}s`
                       : `${secondsLeft}s`}
                 </strong>
@@ -318,11 +368,14 @@ export default function MercuryPage() {
                         ? `${l('hits')}: ${soloStats.hits}`
                         : isPractice
                           ? `${l('bestHit')}: ${Math.round(soloStats.bestHit)} m/s`
-                          : l('vsBot')}
+                          : isKoth
+                            ? `${selfHill.toFixed(1)} : ${foeHill.toFixed(1)} · ${l('hillHold')}`
+                            : l('vsBot')}
                 </div>
               </div>
               <div className="duel-fighter is-foe">
                 <div className="duel-name">{foeName}</div>
+                {foeCombo >= 2 ? <span className="duel-combo">×{foeCombo}</span> : null}
                 {isBall ? (
                   <div className="duel-score-big">{soloStats.scoreFoe}</div>
                 ) : (
@@ -330,6 +383,14 @@ export default function MercuryPage() {
                     <div className="duel-bar">
                       <i style={{ width: `${(foeHp / MAX_HP) * 100}%` }} className={foeHp <= 30 ? 'is-low' : undefined} />
                     </div>
+                    <div className={`duel-guard${foeGuard <= 0.02 ? ' is-broken' : foeGuard < 0.3 ? ' is-low' : ''}`}>
+                      <i style={{ width: `${Math.max(0, foeGuard) * 100}%` }} />
+                    </div>
+                    {isKoth && (
+                      <div className="duel-hill-bar">
+                        <i style={{ width: `${(foeHill / HILL_TARGET) * 100}%` }} />
+                      </div>
+                    )}
                     <div className="duel-pips">
                       {Array.from({ length: 2 }, (_, index) => (
                         <span key={index} className={index < foeWins ? 'is-on' : undefined} />
@@ -371,11 +432,13 @@ export default function MercuryPage() {
                   ? `${l('survivalOver')} · ${l('wave')} ${soloStats.wave}`
                   : isBall
                     ? `${l('ballOver')} · ${soloStats.scoreSelf}:${soloStats.scoreFoe}`
-                    : soloStats.winner === 'self'
-                      ? l('victory')
-                      : l('defeat')}
+                    : isKoth
+                      ? `${l('hillWin')} · ${soloStats.selfHill.toFixed(1)}:${soloStats.foeHill.toFixed(1)}`
+                      : soloStats.winner === 'self'
+                        ? l('victory')
+                        : l('defeat')}
               </strong>
-              <span>{isBall || isSurvival ? l('resultSaved') : l('practiceResets')}</span>
+              <span>{isBall || isSurvival || isKoth ? l('resultSaved') : l('practiceResets')}</span>
               {notice ? <span>{notice}</span> : null}
             </div>
           )}
@@ -458,6 +521,8 @@ export default function MercuryPage() {
               onClick={() => {
                 unlock();
                 setSource('solo');
+                setSoloStats(EMPTY_SOLO);
+                clearFx(fx.current);
                 setNotice(null);
                 setPhase('playing');
               }}
@@ -473,6 +538,7 @@ export default function MercuryPage() {
                 setSelectedMode('duel');
                 setMpStats(EMPTY_MP);
                 setSoloStats(EMPTY_SOLO);
+                clearFx(fx.current);
                 setNotice(null);
                 setPhase('playing');
               }}

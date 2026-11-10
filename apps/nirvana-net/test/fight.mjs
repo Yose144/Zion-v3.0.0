@@ -253,6 +253,8 @@ try {
   check('snapshot: jména i id', snapshot.players.every((p) => p.name && p.id), JSON.stringify(snapshot.players.map((p) => p.name)));
   check('snapshot: póza ragdoll (22 čísel)', snapshot.players.every((p) => Array.isArray(p.pose) && p.pose.length === 22),
     JSON.stringify(snapshot.players.map((p) => p.pose?.length)));
+  check('snapshot: výdrž krytu a kombo', snapshot.players.every((p) => typeof p.guard === 'number' && typeof p.combo === 'number'),
+    JSON.stringify(snapshot.players.map((p) => ({ guard: p.guard, combo: p.combo }))));
   check('snapshot: odpočet', snapshot.state === 'countdown' && snapshot.countdown > 0, JSON.stringify({ state: snapshot.state }));
 
   // třetí klient = nová místnost

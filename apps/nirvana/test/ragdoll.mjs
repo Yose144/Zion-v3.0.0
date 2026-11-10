@@ -12,6 +12,9 @@
 import {
   ARENA_HALF,
   BALL_SECONDS,
+  HILL_TARGET,
+  KOTH_KO_BONUS,
+  KOTH_SECONDS,
   MAX_HP,
   NO_INPUT,
   P,
@@ -20,6 +23,7 @@ import {
   applyPose,
   bodyCenterOf,
   botInput,
+  comboMultiplier,
   createRagdollMatch,
   damageFighter,
   hitDamage,
@@ -226,6 +230,78 @@ console.log('\n== póza a bot ==');
   resetRagdollMatch(match);
   check('reset vrátí zápas na začátek', match.phase === 'countdown' && match.a.wins === 0 && match.round === 1);
   check('reset zachová objekty (refy rendereru)', match.a === aRef && match.b === bRef);
+}
+
+// ── kombo a výdrž krytu ───────────────────────────────────────────────
+console.log('\n== kombo a kryt ==');
+{
+  check('kombo začíná na 1,0', comboMultiplier(0) === 1, String(comboMultiplier(0)));
+  check('kombo roste', comboMultiplier(3) > comboMultiplier(1), `${comboMultiplier(1)} < ${comboMultiplier(3)}`);
+  check('kombo má strop', comboMultiplier(99) === 1.5, String(comboMultiplier(99)));
+
+  const match = createRagdollMatch('duel', identity('a'), identity('b'));
+  match.phase = 'playing';
+  match.timer = 60;
+  for (let i = 0; i < POINT_COUNT; i++) match.a.x[i] += 4.2;
+  let maxCombo = 0;
+  let now = 0;
+  for (let tick = 0; tick < 30 * 10; tick++) {
+    now += DT * 1000;
+    stepRagdoll(match, { ...NO_INPUT, move: 1, punch: true }, NO_INPUT, DT, now);
+    maxCombo = Math.max(maxCombo, match.a.combo);
+  }
+  check('série zásahů zvedne kombo', maxCombo >= 2, `maxCombo=${maxCombo} hits=${match.a.hits}`);
+}
+{
+  const match = createRagdollMatch('duel', identity('a'), identity('b'));
+  match.phase = 'playing';
+  match.timer = 60;
+  const events = [];
+  events.push(...play(match, 30 * 1, () => ({ ...NO_INPUT, block: true })));
+  events.push(...play(match, 30 * 3, () => ({ ...NO_INPUT, block: true })));
+  check('kryt ubírá výdrž', match.a.guardMeter < 0.9, String(match.a.guardMeter));
+  check('kryt se po vyčerpání zlomí', events.some((e) => e.kind === 'guard_break'), JSON.stringify(events.filter((e) => e.kind === 'guard_break')));
+  play(match, 30 * 2, () => NO_INPUT);
+  check('výdrž se regeneruje', match.a.guardMeter > 0.2, String(match.a.guardMeter));
+}
+
+// ── král kopce ────────────────────────────────────────────────────────
+console.log('\n== král kopce ==');
+{
+  const match = createRagdollMatch('koth', identity('a'), identity('b'));
+  match.phase = 'playing';
+  match.timer = KOTH_SECONDS;
+  // A do zóny, B daleko
+  for (let i = 0; i < POINT_COUNT; i++) match.a.x[i] += 3.4;
+  play(match, 30 * 2);
+  check('držení kopce roste', match.hill.a > 1.4, String(match.hill.a));
+  check('soupeř mimo zónu nedrží', match.hill.b === 0, String(match.hill.b));
+
+  // B dovnitř → souboj v zóně držení zastaví
+  const before = match.hill.a;
+  for (let i = 0; i < POINT_COUNT; i++) match.a.x[i] -= 1.2;
+  for (let i = 0; i < POINT_COUNT; i++) match.b.x[i] -= 2.2;
+  play(match, 30 * 1);
+  check('souboj v zóně držení zastaví', match.hill.a - before < 0.2, `${before}→${match.hill.a}`);
+}
+{
+  const match = createRagdollMatch('koth', identity('a'), identity('b'));
+  match.phase = 'playing';
+  match.timer = KOTH_SECONDS;
+  for (let i = 0; i < POINT_COUNT; i++) match.a.x[i] += 3.4;
+  match.hill.a = HILL_TARGET - 0.05;
+  const events = play(match, 6);
+  check('12 s držení vyhraje zápas', match.phase === 'matchEnd' && match.hill.a >= HILL_TARGET, match.phase);
+  check('hill_win event', events.some((e) => e.kind === 'hill_win'));
+}
+{
+  const match = createRagdollMatch('koth', identity('a'), identity('b'));
+  match.phase = 'playing';
+  match.timer = KOTH_SECONDS;
+  damageFighter(match, match.b, 999, match.a, 0, []);
+  check('KO dá vítězi kus kopce', match.hill.a >= KOTH_KO_BONUS, String(match.hill.a));
+  play(match, 30 * 3);
+  check('poražený se v kothu vrátí', !match.b.ko && match.b.hp === MAX_HP, `ko=${match.b.ko} hp=${match.b.hp}`);
 }
 
 console.log(`\nragdoll: ${failures === 0 ? 'PASSED' : `${failures} FAILED`}`);

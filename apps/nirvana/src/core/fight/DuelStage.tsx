@@ -7,6 +7,7 @@ import { dampFactor } from '@/core/design/motion';
 import {
   ARENA_HALF,
   GOAL_HEIGHT,
+  HILL_HALF,
   P,
   bodyCenterOf,
   type RagdollBall,
@@ -19,7 +20,7 @@ import {
  * Scéna je jedna pro sólo i multiplayer (lekce z Venuše: vizuál tratě je
  * jeden soubor). `goals` přidá branky pro ragdoll fotbal.
  */
-export function DuelStage({ goals = false }: { goals?: boolean }) {
+export function DuelStage({ goals = false, hill = false }: { goals?: boolean; hill?: boolean }) {
   const sunGeo = useMemo(() => new THREE.CircleGeometry(11, 40), []);
   const haloGeo = useMemo(() => new THREE.RingGeometry(11.3, 15.2, 40), []);
   return (
@@ -37,6 +38,9 @@ export function DuelStage({ goals = false }: { goals?: boolean }) {
         <boxGeometry args={[ARENA_HALF * 2 + 6, 0.5, 40]} />
         <meshStandardMaterial color="#89765f" roughness={0.92} />
       </mesh>
+      {/* King of the Hill — zóna uprostřed */}
+      {hill && <HillZone />}
+
       {/* středová linka */}
       <mesh position={[0, 0.011, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[0.12, 8]} />
@@ -114,6 +118,49 @@ export function DuelStage({ goals = false }: { goals?: boolean }) {
 }
 
 /**
+ * King of the Hill zóna — světelný pás a prstenec. Drží se jen v rozsahu
+ * `HILL_HALF`; kdo tam stojí sám, bere si čas.
+ */
+function HillZone() {
+  const ringMaterial = useRef<THREE.MeshBasicMaterial>(null);
+  useFrame((frame) => {
+    if (!ringMaterial.current) return;
+    const pulse = 0.5 + 0.5 * Math.sin(frame.clock.elapsedTime * 2.2);
+    ringMaterial.current.opacity = 0.16 + pulse * 0.16;
+  });
+  return (
+    <group>
+      <mesh position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[HILL_HALF * 2, 5]} />
+        <meshBasicMaterial color="#c8f56a" transparent opacity={0.09} toneMapped={false} depthWrite={false} />
+      </mesh>
+      {[-HILL_HALF, HILL_HALF].map((x) => (
+        <mesh key={x} position={[x, 0.014, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.08, 5]} />
+          <meshBasicMaterial color="#c8f56a" transparent opacity={0.55} toneMapped={false} depthWrite={false} />
+        </mesh>
+      ))}
+      <mesh position={[0, 0.016, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[HILL_HALF * 0.7, HILL_HALF * 0.76, 40]} />
+        <meshBasicMaterial
+          ref={ringMaterial}
+          color="#c8f56a"
+          transparent
+          opacity={0.2}
+          toneMapped={false}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+      <mesh position={[0, 1.1, 0]}>
+        <cylinderGeometry args={[HILL_HALF, HILL_HALF, 2.2, 32, 1, true]} />
+        <meshBasicMaterial color="#c8f56a" transparent opacity={0.03} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
+
+/**
  * Kamera bokem jako u klasického beating baru. Střed záběru sleduje střed
  * mezi loutkami (a v ragdoll fotbale i míč, aby neutekl ze záběru).
  */
@@ -123,6 +170,7 @@ export function DuelCamera({
   ball = null,
   wide = false,
   xr = false,
+  cameraRef = null,
 }: {
   a: MutableRefObject<RagdollFighter>;
   b: MutableRefObject<RagdollFighter>;
@@ -131,6 +179,8 @@ export function DuelCamera({
   wide?: boolean;
   /** Ve VR kameru řídí headset — nesaháme na ni. */
   xr?: boolean;
+  /** Pro plovoucí čísla (2D canvas nad scénou) — kamera z r3f. */
+  cameraRef?: MutableRefObject<THREE.Camera | null> | null;
 }) {
   const { camera } = useThree();
   const target = useMemo(() => new THREE.Vector3(0, 1.2, 0), []);
@@ -139,6 +189,7 @@ export function DuelCamera({
   const hitShake = useRef(0);
 
   useFrame((frame, delta) => {
+    if (cameraRef) cameraRef.current = camera;
     if (xr) return;
     const centerA = bodyCenterOf(a.current);
     const centerB = bodyCenterOf(b.current);

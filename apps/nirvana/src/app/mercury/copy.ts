@@ -63,7 +63,7 @@ export const DUEL_COPY = {
   jump: { cs: 'Skočit', en: 'Jump', es: 'Saltar' },
   jumpShort: { cs: 'skok', en: 'jump', es: 'salto' },
   title: { cs: 'Merkur — ragdoll souboj', en: 'Mercury — ragdoll brawl', es: 'Mercurio — combate ragdoll' },
-  subtitle: { cs: 'fyzika · 4 módy · best of 3', en: 'physics · 4 modes · best of 3', es: 'física · 4 modos · al mejor de 3' },
+  subtitle: { cs: 'fyzika · 5 módů · best of 3', en: 'physics · 5 modes · best of 3', es: 'física · 5 modos · al mejor de 3' },
   mode: { cs: 'Režim', en: 'Mode', es: 'Modo' },
   modeDuel: { cs: 'Souboj', en: 'Duel', es: 'Duelo' },
   modeDuelDesc: { cs: '1v1, best of 3, 60 s na kolo. Roztoč tělo a zasáhni.', en: '1v1, best of 3, 60 s rounds. Spin the body and land a hit.', es: '1v1, al mejor de 3, asaltos de 60 s. Gira el cuerpo y golpea.' },
@@ -73,6 +73,11 @@ export const DUEL_COPY = {
   modeSurvivalDesc: { cs: 'Nekonečné vlny soupeřů. Každá další je těžší. HP přežívá mezi vlnami.', en: 'Endless waves of opponents. Each one is tougher. HP carries between waves.', es: 'Olas infinitas de rivales. Cada una es más dura. La vida se mantiene entre olas.' },
   modePractice: { cs: 'Trénink', en: 'Practice', es: 'Práctica' },
   modePracticeDesc: { cs: 'Nemrtvá figurína, HP se regeneruje. Změř nejtvrdší zásah.', en: 'A respawning dummy with regenerating HP. Measure your hardest hit.', es: 'Un muñeco que revive con vida regenerable. Mide tu golpe más fuerte.' },
+  modeKoth: { cs: 'Král kopce', en: 'King of the Hill', es: 'Rey de la colina' },
+  modeKothDesc: { cs: 'Drž střed klece 12 s. Soupeř tě vytlačí, KO ti sebere 2,5 s. Kontrola zóny vyhrává.', en: 'Hold the centre for 12 s. The opponent shoves you out, a KO steals 2.5 s. Zone control wins.', es: 'Mantén el centro 12 s. El rival te empuja, un K.O. te quita 2,5 s. Quien controla la zona gana.' },
+  hill: { cs: 'Kopec', en: 'Hill', es: 'Colina' },
+  hillHold: { cs: 'držení', en: 'held', es: 'control' },
+  hillWin: { cs: 'Král kopce', en: 'King of the Hill', es: 'Rey de la colina' },
   startMode: { cs: 'Spustit zápas', en: 'Start match', es: 'Empezar combate' },
   ballHint: { cs: 'míč do branky', en: 'ball into the goal', es: 'balón a la portería' },
   vsBot: { cs: 'proti botovi', en: 'vs bot', es: 'contra el bot' },
@@ -86,9 +91,9 @@ export const DUEL_COPY = {
   backToMars: { cs: '← Mars aréna', en: '← Mars arena', es: '← Arena de Marte' },
   toVenus: { cs: 'Venuše závod →', en: 'Venus race →', es: 'Carrera de Venus →' },
   intro: {
-    cs: 'Loutka z masa a kostí, klec na Merkuru a fyzika místo tlačítek. Pěst i kop vznikají švihem těla — čím rychlejší končetina, tím větší rána. Čtyři módy, sólo i online duel.',
-    en: 'A ragdoll of flesh and bone, a Mercury cage, and physics instead of button combos. Punches and kicks come from the swing of the body — the faster the limb, the harder the hit. Four modes, solo and online duel.',
-    es: 'Un muñeco de carne y hueso, una jaula en Mercurio y física en lugar de combinaciones. Puños y patadas nacen del giro del cuerpo: cuanto más rápida la extremidad, más fuerte el golpe. Cuatro modos, solo y duelo en línea.',
+    cs: 'Loutka z masa a kostí, klec na Merkuru a fyzika místo tlačítek. Pěst i kop vznikají švihem těla — čím rychlejší končetina, tím větší rána. Pět módů, sólo i online duel.',
+    en: 'A ragdoll of flesh and bone, a Mercury cage, and physics instead of button combos. Punches and kicks come from the swing of the body — the faster the limb, the harder the hit. Five modes, solo and online duel.',
+    es: 'Un muñeco de carne y hueso, una jaula en Mercurio y física en lugar de combinaciones. Puños y patadas nacen del giro del cuerpo: cuanto más rápida la extremidad, más fuerte el golpe. Cinco modos, solo y duelo en línea.',
   },
   keysTip: {
     cs: 'A/D pohyb · W skok · J švih rukou · K kop · S kryt',
@@ -96,9 +101,9 @@ export const DUEL_COPY = {
     es: 'A/D movimiento · W salto · J golpe de brazo · K patada · S guardia',
   },
   coachTip: {
-    cs: 'Pěst je krátká — musíš se přiblížit. Kop zasáhne dál. Kryt (S) zpevní tělo a sníží poškození, ale zpomalí pohyb. Do zásahu se počítá rychlost končetiny, ne držení tlačítka.',
-    en: 'Punches are short — close the distance. Kicks reach farther. Guard (S) braces the body and cuts damage, but slows you down. Damage comes from limb speed, not from holding the button.',
-    es: 'El puñetazo es corto: acércate. La patada llega más lejos. La guardia (S) tensa el cuerpo y reduce el daño, pero te frena. El daño depende de la velocidad de la extremidad, no de mantener pulsado.',
+    cs: 'Pěst je krátká — musíš se přiblížit. Kop zasáhne dál. Kryt (S) zpevní tělo a sníží poškození, ale má výdrž: když se vyčerpá, kryt se zlomí. Série zásahů zvyšuje poškození; inkasovaný úder ji přeruší.',
+    en: 'Punches are short — close the distance. Kicks reach farther. Guard (S) braces the body and cuts damage, but it has stamina: when it runs out, the guard breaks. A combo raises damage; taking a hit breaks it.',
+    es: 'El puñetazo es corto: acércate. La patada llega más lejos. La guardia (S) tensa el cuerpo y reduce el daño, pero tiene aguante: si se agota, se rompe. Una serie sube el daño; recibir un golpe la corta.',
   },
 } as const satisfies Record<string, Localized>;
 

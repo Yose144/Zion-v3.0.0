@@ -80,8 +80,10 @@ const asItemId = (value: unknown): ItemId | null =>
  *      do hry přes vlastní WebSocket klient.
  *  33 — **ragdoll Merkur**: `FightPlayerState` nese `pose` (22 čísel = 11 bodů
  *      loutky). Starý klient by kreslil loutku bez pózy. Verze se musí potkat.
+ *  34 — **ragdoll pro**: snapshot nese `guard` (výdrž krytu) a `combo`
+ *      (série zásahů). Starý klient by neviděl výdrž krytu ani kombo.
  */
-export const PROTO_VERSION = 33;
+export const PROTO_VERSION = 34;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -244,6 +246,10 @@ export interface FightPlayerState {
    * Server je autorita, klient pózy jen interpoluje.
    */
   pose?: number[];
+  /** Výdrž krytu 0..1 — při nule se kryt zlomí a hráč dostane stun. */
+  guard?: number;
+  /** Aktuální série zásahů (0 = žádná). */
+  combo?: number;
 }
 
 /** Saturn — tanky: strana 0 = levý hráč, 1 = pravý (dřív bot). */

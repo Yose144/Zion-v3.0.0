@@ -4104,6 +4104,80 @@ button.game-hud-chip.is-sound.is-off em {
   text-align: right;
 }
 
+/* výdrž krytu — tenká lišta pod HP; při nule se kryt zlomí */
+.duel-guard {
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(20, 10, 6, 0.5);
+  border: 1px solid rgba(127, 209, 227, 0.25);
+  overflow: hidden;
+}
+
+.duel-guard i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #6ec6d8, #aef3ff);
+  transition: width 0.12s linear;
+}
+
+.duel-guard.is-low i {
+  background: linear-gradient(90deg, #ffb46a, #ffd166);
+}
+
+.duel-guard.is-broken {
+  border-color: rgba(255, 122, 107, 0.7);
+  background: rgba(255, 60, 40, 0.18);
+}
+
+/* King of the Hill — postup držení kopce */
+.duel-hill-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(20, 10, 6, 0.5);
+  border: 1px solid rgba(200, 245, 106, 0.28);
+  overflow: hidden;
+}
+
+.duel-hill-bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #8fce5a, #c8f56a);
+  transition: width 0.12s linear;
+}
+
+.duel-combo {
+  align-self: flex-start;
+  display: inline-block;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 180, 106, 0.6);
+  background: rgba(255, 180, 106, 0.16);
+  color: #ffd166;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+}
+
+.duel-fighter.is-foe .duel-combo {
+  align-self: flex-end;
+}
+
+/* 2D vrstva nad plátnem: čísla poškození, jiskry, K.O. */
+.duel-fx {
+  position: absolute;
+  inset: 0;
+  z-index: 13;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* pátý mód zabere celý řádek, aby nezůstala díra */
+.duel-mode:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
 .duel-difficulty > strong {
   display: block;
   margin-bottom: 0.45rem;

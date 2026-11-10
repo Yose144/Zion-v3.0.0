@@ -1,11 +1,13 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, type MutableRefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
+import type * as THREE from 'three';
 import { DuelCamera, DuelStage, RagdollBall3D } from './DuelStage';
 import { RagdollBody } from './RagdollBody';
 import {
   BALL_SECONDS,
+  P,
   botInput,
   createRagdollMatch,
   makeBotMemory,
@@ -19,13 +21,14 @@ import {
   type RagdollMatch,
   type RagdollPhase,
 } from './ragdoll';
+import { clearFx, pushHitFx, pushTextFx, type DuelFloater } from './DuelFx';
 import { createDuelSound } from './audio';
 import { useFightKeys } from './useFightKeys';
 import { DuelXr } from './FightXr';
 import { avatarLook } from '../avatars/kit';
 
 /**
- * MERKUR — sólo ragdoll (duel / ball / survival / practice).
+ * MERKUR — sólo ragdoll (duel / ball / survival / practice / koth).
  *
  * Simulace je **týž modul** co server (`ragdoll.ts`); liší se jen zdroj
  * vstupu soupeře (`botInput`). Krokujeme pevně 1/60 s, aby se chování
@@ -36,7 +39,7 @@ export interface DuelStats {
   mode: FightMode;
   round: number;
   phase: RagdollPhase;
-  /** Zbývající čas kola / zápasu; u survivalu odehraný čas. */
+  /** Zbývající čas kola / zápasu; u survivalu a tréninku odehraný čas. */
   timer: number;
   countdown: number;
   selfHp: number;
@@ -49,6 +52,15 @@ export interface DuelStats {
   wave: number;
   hits: number;
   bestHit: number;
+  /** Výdrž krytu 0..1 (1 = plný). */
+  selfGuard: number;
+  foeGuard: number;
+  /** Aktuální série zásahů. */
+  selfCombo: number;
+  foeCombo: number;
+  /** King of the Hill — o kolik sekund kdo držel kopec. */
+  selfHill: number;
+  foeHill: number;
 }
 
 export interface SoloFinish {
@@ -61,11 +73,16 @@ export interface SoloFinish {
   wave: number;
   hits: number;
   bestHit: number;
+  selfHill: number;
+  foeHill: number;
   seconds: number;
 }
 
 const STEP = 1 / 60;
 const RESTART_AFTER = 6;
+/** Zpomalení po KO — jen v sólu (server v online jede dál). */
+const KO_SLOW_SCALE = 0.34;
+const KO_SLOW_SECONDS = 0.85;
 
 /** Přežití ztěžuje soupeře s každou vlnou — obtížnost se posouvá vzhůru. */
 function scaleDifficulty(base: BotDifficulty, wave: number): BotDifficulty {
@@ -81,6 +98,11 @@ function winnerOf(match: RagdollMatch): 'self' | 'foe' | null {
   if (match.mode === 'ball') {
     if (match.a.score > match.b.score) return 'self';
     if (match.b.score > match.a.score) return 'foe';
+    return null;
+  }
+  if (match.mode === 'koth') {
+    if (match.hill.a > match.hill.b) return 'self';
+    if (match.hill.b > match.hill.a) return 'foe';
     return null;
   }
   if (match.mode === 'survival') {
@@ -102,6 +124,8 @@ export function MercurySolo({
   botDifficulty,
   onStats,
   onFinish,
+  floaters,
+  cameraRef,
 }: {
   running: boolean;
   xr?: boolean;
@@ -111,6 +135,9 @@ export function MercurySolo({
   botDifficulty: BotDifficulty;
   onStats: (stats: DuelStats) => void;
   onFinish?: (result: SoloFinish) => void;
+  /** Plovoucí čísla zásahů (kreslí se v `DuelFxOverlay` nad plátnem). */
+  floaters?: MutableRefObject<DuelFloater[]>;
+  cameraRef?: MutableRefObject<THREE.Camera | null>;
 }) {
   const keys = useFightKeys(running);
 
@@ -132,6 +159,7 @@ export function MercurySolo({
   const clock = useRef(0);
   const accumulator = useRef(0);
   const restartAt = useRef<number | null>(null);
+  const slowUntil = useRef(0);
   const finished = useRef(false);
   const lastStats = useRef('');
   const statsClock = useRef(0);
@@ -141,10 +169,29 @@ export function MercurySolo({
   const foeLook = useMemo(() => avatarLook(foeAvatarId), [foeAvatarId]);
 
   const handleEvents = (events: RagdollEvent[]) => {
+    const fx = floaters?.current;
+    const now = performance.now();
     for (const event of events) {
       if (event.kind === 'fight_start') sound.current.event('fight_start');
       else if (event.kind === 'round_end') sound.current.event('round_end');
-      else if (event.kind === 'match_end') {
+      else if (event.kind === 'hit') {
+        if (fx) pushHitFx(fx, event.x, event.y, event.damage, event.on === 'self' ? 'in' : 'out', now);
+      } else if (event.kind === 'combo') {
+        if (fx && event.combo >= 3) {
+          pushTextFx(fx, event.x, event.y + 0.7, `×${event.combo}`, 'combo', now);
+        }
+      } else if (event.kind === 'guard_break') {
+        const fighter = event.id === 'self' ? match.a : match.b;
+        if (fx) {
+          pushTextFx(fx, fighter.x[P.CHEST]!, fighter.y[P.CHEST]! + 0.8, 'GUARD BREAK', 'guard', now);
+        }
+      } else if (event.kind === 'ko') {
+        const loser = event.loser === 'self' ? match.a : match.b;
+        if (fx) pushTextFx(fx, loser.x[P.CHEST]!, loser.y[P.CHEST]! + 0.9, 'K.O.', 'ko', now);
+        slowUntil.current = clock.current + KO_SLOW_SECONDS;
+      } else if (event.kind === 'hill_win') {
+        if (fx) pushTextFx(fx, 0, 2.4, 'HILL', 'hill', now);
+      } else if (event.kind === 'match_end') {
         const winner = winnerOf(match);
         sound.current.event('match_end', winner === 'self');
         if (!finished.current && onFinish) {
@@ -159,6 +206,8 @@ export function MercurySolo({
             wave: match.wave,
             hits: match.a.hits,
             bestHit: match.a.bestHit,
+            selfHill: match.hill.a,
+            foeHill: match.hill.b,
             seconds: match.elapsed,
           });
         }
@@ -170,7 +219,8 @@ export function MercurySolo({
     if (!running) return;
     const dt = Math.min(0.05, delta);
     clock.current += dt;
-    accumulator.current = Math.min(accumulator.current + dt, STEP * 5);
+    const slow = clock.current < slowUntil.current;
+    accumulator.current = Math.min(accumulator.current + dt * (slow ? KO_SLOW_SCALE : 1), STEP * 5);
     match.a.avatarId = selfAvatarId;
     match.b.avatarId = foeAvatarId;
     ballRef.current = match.ball;
@@ -195,9 +245,11 @@ export function MercurySolo({
       if (restartAt.current === null) restartAt.current = clock.current + RESTART_AFTER;
       if (clock.current >= restartAt.current) {
         resetRagdollMatch(match);
+        if (floaters) clearFx(floaters.current);
         ballRef.current = match.ball;
         sound.current.reset();
         restartAt.current = null;
+        slowUntil.current = 0;
         finished.current = false;
       }
     }
@@ -229,6 +281,12 @@ export function MercurySolo({
         wave: match.wave,
         hits: match.a.hits,
         bestHit: match.a.bestHit,
+        selfGuard: Math.round(match.a.guardMeter * 100) / 100,
+        foeGuard: Math.round(match.b.guardMeter * 100) / 100,
+        selfCombo: match.a.combo,
+        foeCombo: match.b.combo,
+        selfHill: Math.round(match.hill.a * 10) / 10,
+        foeHill: Math.round(match.hill.b * 10) / 10,
       };
       const key = JSON.stringify(stats);
       if (key !== lastStats.current) {
@@ -240,8 +298,15 @@ export function MercurySolo({
 
   return (
     <>
-      <DuelStage goals={mode === 'ball'} />
-      <DuelCamera a={aRef} b={bRef} ball={ballRef} wide={mode === 'ball'} xr={xr} />
+      <DuelStage goals={mode === 'ball'} hill={mode === 'koth'} />
+      <DuelCamera
+        a={aRef}
+        b={bRef}
+        ball={ballRef}
+        wide={mode === 'ball'}
+        xr={xr}
+        cameraRef={cameraRef ?? null}
+      />
       {xr && <DuelXr active={running} />}
       <RagdollBody state={aRef} look={selfLook} />
       <RagdollBody state={bRef} look={foeLook} />

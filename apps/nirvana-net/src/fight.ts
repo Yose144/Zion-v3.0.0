@@ -205,6 +205,8 @@ function toState(fighter: RagdollFighter): FightPlayerState {
     blocking: fighter.guard,
     attack: null,
     pose: poseOf(fighter),
+    guard: round2(fighter.guardMeter),
+    combo: fighter.combo,
   };
 }
 

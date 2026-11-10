@@ -94,3 +94,63 @@ loutkou** (Ragdoll Masters) a přidat módy, které z jedné arény udělají v�
   `core/net/protocol.ts` (proto 33)
 - smazané: `core/fight/duel.ts`, `core/fight/Fighter3D.tsx` (nahrazeno
   ragdollem)
+
+---
+
+# Pro vrstva (2026-11-10, druhá dávka)
+
+Zadání: „rozšiřuj kód na profi." Cílem bylo dostat Merkur z funkčního základu
+na úroveň, která má hloubku, čitelné HUD a dramaturgii.
+
+## 1. Kombo
+
+- `COMBO_WINDOW` = 2,6 s; `comboMultiplier(combo)` = 1 + min(0,5; combo × 0,1).
+- Série se počítá po zásahu, inkasovaný úder ji vynuluje. HUD ukazuje `×N`
+  od 2; od 3 se nad loutkou objeví plovoucí text.
+- Ochrana proti „drženému tlačítku": stále platí `strikeCooldown`, takže
+  kombo nejde nafouknout držením J/K.
+
+## 2. Výdrž krytu a zlomení
+
+- `GUARD_DRAIN` 0,3/s, `GUARD_REGEN` 0,28/s, `GUARD_HIT_COST` 0,12.
+- Při nule `breakGuard`: stun 0,85 s, kryt se odemkne až po dobití na 0,4.
+- **Chyba, kterou odhalil test:** `wantsGuard` měl podmínku
+  `guardMeter > 0.02`, takže se výdrž zastavila na ~0,022 a nikdy se
+  nezlomila. Práh je pryč; láme se až na nule.
+- HUD: tenká cyan lišta pod HP; při zlomu červená.
+
+## 3. Král kopce (`koth`)
+
+- Zóna `|x| ≤ HILL_HALF` (2,6 m); drží ji jen ten, kdo tam stojí sám.
+- Cíl 12 s, zápas 99 s. KO dá vítězi +2,5 s a poražený se po 2,5 s vrátí.
+- Bot: mimo zónu jde k ní, uvnitř brání střed a útočí na vetřelce.
+- Scéna kreslí světelnou zónu + prstenec; HUD má zelený pruh držení.
+
+## 4. Dramaturgie a čísla zásahů
+
+- `DuelFxOverlay` (2D canvas nad plátnem): čísla poškození, jiskry, `K.O.`,
+  `GUARD BREAK`, `×N` kombo.
+- Sólo bere přesné `hit` eventy; online odvozuje čísla z poklesu HP mezi
+  snapshoty (stejný trik jako MOBA) — beze změny přenosu zásahů.
+- Sólo po KO zpomalí na 0,34× na 0,85 s. Online ne (server je autorita).
+
+## 5. Protokol 34
+
+`FightPlayerState` nově nese `guard` (0..1) a `combo`. Starý klient by
+neviděl výdrž ani sérii. Deploy **net první, pak appka**.
+
+## 6. Ověření
+
+- `npx tsx apps/nirvana/test/ragdoll.mjs` — **PASSED** (postoj, pohyb, skok,
+  zásah, kryt, kombo, zlom krytu, koth včetně KO bonusu/respawnu, fotbal,
+  trénink, póza, bot).
+- `apps/nirvana-net/test/fight.mjs` — **PASSED** (simulace + síť, snapshot
+  nese `pose`, `guard`, `combo`).
+- `smoke`, `rooms`, `spectate`, `humans` — **PASSED** (proto 34).
+- Mercury-specific `tsc` — **0 chyb**.
+- Dev probe `/mercury`: 5 módů, výběr kothu, dvě výdrže krytu, dva pruhy
+  kopce, HUD `Kopec 95s · 0.0 : 3.9`, **0 JS chyb**. Screenshot:
+  `.artifacts/render/mercury-ragdoll/koth.png`.
+- **Plný `next build` je blokovaný prací paralelní session** (`piko/page.tsx`
+  je rozpracovaný a typecheck tam padá); kompilace samotná proběhla
+  (`Compiled successfully`), chyby jsou výhradně v piku, ne v Merkuru.

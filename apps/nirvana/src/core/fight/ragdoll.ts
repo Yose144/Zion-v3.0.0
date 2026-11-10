@@ -34,6 +34,28 @@ export const BALL_RADIUS = 0.42;
 export const GOAL_HEIGHT = 2.8;
 export const GRAVITY = 22;
 
+/** Kombo: okno, do kterého se další zásah počítá do série. */
+export const COMBO_WINDOW = 2.6;
+/** Strop násobitele komba (+50 % při 5+ zásazích). */
+export const COMBO_MAX_BONUS = 0.5;
+export const COMBO_STEP = 0.1;
+
+/** Výdrž krytu: souvislé držení bloku ji vyčerpá a kryt se zlomí. */
+export const GUARD_DRAIN = 0.3;
+export const GUARD_REGEN = 0.28;
+/** Po zlomu se kryt odemkne, až se výdrž dobije na tuhle hodnotu. */
+export const GUARD_BREAK_RECOVER = 0.4;
+/** Kolik výdrže se odečte za jeden pohlcený zásah. */
+export const GUARD_HIT_COST = 0.12;
+
+/** King of the Hill — zóna, cíl a respawn. */
+export const HILL_HALF = 2.6;
+export const HILL_TARGET = 12;
+export const KOTH_SECONDS = 99;
+export const KOTH_RESPAWN = 2.5;
+export const KOTH_KO_BONUS = 2.5;
+export const HILL_MAX_HEIGHT = 3.1;
+
 /** Indexy bodů loutky. Pořadí je součást drátu (`pose`), neměnit. */
 export const P = {
   HEAD: 0,
@@ -134,7 +156,7 @@ const GUARD_DRAG = 2.6;
 
 // ── typy ───────────────────────────────────────────────────────────────────
 
-export type FightMode = 'duel' | 'ball' | 'survival' | 'practice';
+export type FightMode = 'duel' | 'ball' | 'survival' | 'practice' | 'koth';
 export type RagdollPhase = 'countdown' | 'playing' | 'roundEnd' | 'matchEnd';
 export type BotDifficulty = 'gentle' | 'standard' | 'champion';
 
@@ -186,6 +208,17 @@ export interface RagdollFighter {
   hits: number;
   bestHit: number;
   prevJump: boolean;
+  /** Výdrž krytu 0..1. */
+  guardMeter: number;
+  /** Kryt se právě zlomil — držení bloku se odemkne až po dobití. */
+  guardBroken: boolean;
+  /** Jednorázový příznak pro event `guard_break` (fyzika eventy neposílá). */
+  guardBreakPending: boolean;
+  /** Počet zásahů v sérii a čas do vypršení. */
+  combo: number;
+  comboTimer: number;
+  /** King of the Hill: čas, kdy se má loutka vrátit (`0` = nečeká). */
+  respawnAt: number;
 }
 
 export interface RagdollBall {
@@ -200,10 +233,14 @@ export type RagdollEvent =
   | { kind: 'ko'; at: number; winner: string; loser: string }
   | { kind: 'round_end'; at: number; winner: string | null; reason: 'ko' | 'time' }
   | { kind: 'match_end'; at: number; winner: string | null }
-  | { kind: 'hit'; at: number; by: string; on: string; damage: number; speed: number; x: number; y: number }
+  | { kind: 'hit'; at: number; by: string; on: string; damage: number; speed: number; x: number; y: number; combo?: number }
   | { kind: 'goal'; at: number; side: 'a' | 'b'; scoreA: number; scoreB: number }
   | { kind: 'wave_start'; at: number; wave: number }
-  | { kind: 'wave_end'; at: number; wave: number };
+  | { kind: 'wave_end'; at: number; wave: number }
+  | { kind: 'guard_break'; at: number; id: string }
+  | { kind: 'respawn'; at: number; id: string }
+  | { kind: 'combo'; at: number; id: string; combo: number; x: number; y: number }
+  | { kind: 'hill_win'; at: number; winner: string; progress: number };
 
 export interface RagdollMatch {
   mode: FightMode;
@@ -221,6 +258,8 @@ export interface RagdollMatch {
   lastScorer: 'a' | 'b' | null;
   /** Střídání pořadí srážek s míčem — jinak poslední v cyklu vždy vyhrává. */
   ballSeq: number;
+  /** King of the Hill: kolik sekund kdo držel kopec. */
+  hill: { a: number; b: number };
 }
 
 export interface RagdollIdentity {
@@ -280,6 +319,12 @@ export function makeRagdollFighter(source: RagdollIdentity | IdentityLike, x: nu
     hits: 0,
     bestHit: 0,
     prevJump: false,
+    guardMeter: 1,
+    guardBroken: false,
+    guardBreakPending: false,
+    combo: 0,
+    comboTimer: 0,
+    respawnAt: 0,
   };
 }
 
@@ -301,6 +346,12 @@ function placeFighter(f: RagdollFighter, x: number, facing: 1 | -1): void {
   f.hitCooldown = 0;
   f.strikeCooldown = 0;
   f.prevJump = false;
+  f.guardMeter = 1;
+  f.guardBroken = false;
+  f.guardBreakPending = false;
+  f.combo = 0;
+  f.comboTimer = 0;
+  f.respawnAt = 0;
 }
 
 export function createRagdollMatch(
@@ -322,6 +373,7 @@ export function createRagdollMatch(
     elapsed: 0,
     lastScorer: null,
     ballSeq: 0,
+    hill: { a: 0, b: 0 },
   };
   if (mode === 'survival') {
     b.hp = 60;
@@ -374,6 +426,7 @@ export function resetRagdollMatch(match: RagdollMatch): void {
   match.wave = 1;
   match.elapsed = 0;
   match.lastScorer = null;
+  match.hill = { a: 0, b: 0 };
   match.phase = 'countdown';
   match.timer = match.mode === 'survival' ? 2 : COUNTDOWN_SECONDS;
   placeFighter(match.a, -3.4, 1);
@@ -550,9 +603,24 @@ function stepFighter(
   f.strikeCooldown = Math.max(0, f.strikeCooldown - sub);
   f.hitFlash = Math.max(0, f.hitFlash - sub);
 
+  // kombo vyprší, když se dlouho nic netrefí
+  if (f.comboTimer > 0) {
+    f.comboTimer = Math.max(0, f.comboTimer - sub);
+    if (f.comboTimer <= 0) f.combo = 0;
+  }
+
   const alive = !f.ko;
-  const guarding = alive && input.block && f.stun <= 0;
+  // kryt nejde držet věčně — výdrž se vyčerpá a kryt se zlomí
+  const wantsGuard = alive && input.block && f.stun <= 0 && !f.guardBroken;
+  const guarding = wantsGuard;
   f.guard = guarding;
+  if (guarding) {
+    f.guardMeter = Math.max(0, f.guardMeter - GUARD_DRAIN * sub);
+    if (f.guardMeter <= 0) breakGuard(f);
+  } else if (alive) {
+    f.guardMeter = Math.min(1, f.guardMeter + GUARD_REGEN * sub);
+    if (f.guardBroken && f.guardMeter >= GUARD_BREAK_RECOVER) f.guardBroken = false;
+  }
 
   if (alive && !guarding && f.stun <= 0) {
     if (input.punch && f.strikeCooldown <= 0) {
@@ -726,6 +794,21 @@ function syncFacing(match: RagdollMatch): void {
 
 // ── zásahy ─────────────────────────────────────────────────────────────────
 
+/** Násobitel komba: první zásah 1,0, druhý 1,1 … strop 1,5. */
+export function comboMultiplier(combo: number): number {
+  return 1 + Math.min(COMBO_MAX_BONUS, Math.max(0, combo) * COMBO_STEP);
+}
+
+/** Zlomí kryt — stun, odemčení bloku a jednorázový event. */
+function breakGuard(f: RagdollFighter): void {
+  f.guardMeter = 0;
+  f.guardBroken = true;
+  f.guard = false;
+  f.guardBreakPending = true;
+  f.stun = Math.max(f.stun, 0.85);
+  f.knock = Math.max(f.knock, 0.18);
+}
+
 export function hitDamage(speed: number, power: number, guard: boolean): number {
   if (speed <= HIT_MIN_SPEED) return 0;
   const raw = (speed - HIT_MIN_SPEED) * HIT_DAMAGE * power * (guard ? 0.35 : 1);
@@ -754,6 +837,14 @@ export function damageFighter(
   target.guard = false;
   target.stun = 0;
   target.knock = 0;
+  target.combo = 0;
+  target.comboTimer = 0;
+  if (match.mode === 'koth') {
+    // King of the Hill: KO nekončí zápas, jen dá vítězi kus kopce a poražený se vrátí
+    target.respawnAt = Math.max(match.elapsed + KOTH_RESPAWN, 0.01);
+    const side = target === match.a ? 'b' : 'a';
+    match.hill[side] = Math.min(HILL_TARGET, match.hill[side] + KOTH_KO_BONUS);
+  }
   events.push({ kind: 'ko', at: now, winner: attacker.id, loser: target.id });
 }
 
@@ -781,12 +872,19 @@ function resolveCombat(match: RagdollMatch, now: number, events: RagdollEvent[])
         const nx = dx / distance;
         const ny = dy / distance;
         const closing = (svx - defender.ivx[di]!) * nx + (svy - defender.ivy[di]!) * ny;
-        const damage = hitDamage(closing, striker.power, defender.guard);
-        if (damage <= 0) continue;
+        const base = hitDamage(closing, striker.power, defender.guard);
+        if (base <= 0) continue;
+        const damage = Math.max(1, Math.round(base * comboMultiplier(attacker.combo)));
 
         attacker.hitCooldown = 0.22;
         attacker.hits += 1;
         attacker.bestHit = Math.max(attacker.bestHit, closing);
+        // série se počítá až po zásahu; soupeřův úder jeho sérii přeruší
+        attacker.combo += 1;
+        attacker.comboTimer = COMBO_WINDOW;
+        defender.combo = 0;
+        defender.comboTimer = 0;
+
         defender.stun = Math.max(defender.stun, Math.min(0.42, 0.1 + damage * 0.012));
         defender.knock = Math.max(defender.knock, 0.2 + damage * 0.008);
         const push = closing * (defender.guard ? 0.45 : 0.8);
@@ -794,6 +892,11 @@ function resolveCombat(match: RagdollMatch, now: number, events: RagdollEvent[])
         defender.vy[di] = defender.vy[di]! + ny * push;
         attacker.vx[si] = attacker.vx[si]! - nx * closing * 0.12;
         attacker.vy[si] = attacker.vy[si]! - ny * closing * 0.12;
+
+        if (defender.guard) {
+          defender.guardMeter = Math.max(0, defender.guardMeter - GUARD_HIT_COST);
+          if (defender.guardMeter <= 0) breakGuard(defender);
+        }
 
         events.push({
           kind: 'hit',
@@ -804,7 +907,18 @@ function resolveCombat(match: RagdollMatch, now: number, events: RagdollEvent[])
           speed: closing,
           x: sx,
           y: sy,
+          combo: attacker.combo,
         });
+        if (attacker.combo >= 2) {
+          events.push({
+            kind: 'combo',
+            at: now,
+            id: attacker.id,
+            combo: attacker.combo,
+            x: sx,
+            y: sy,
+          });
+        }
         damageFighter(match, defender, damage, attacker, now, events);
         landed = true;
         break;
@@ -935,6 +1049,71 @@ function startSurvivalWave(match: RagdollMatch, now: number, events: RagdollEven
   events.push({ kind: 'wave_start', at: now, wave: match.wave });
 }
 
+/** Fyzika eventy neposílá, takže zlomený kryt vytáhneme až tady. */
+function drainGuardEvents(match: RagdollMatch, now: number, events: RagdollEvent[]): void {
+  for (const fighter of [match.a, match.b]) {
+    if (!fighter.guardBreakPending) continue;
+    fighter.guardBreakPending = false;
+    events.push({ kind: 'guard_break', at: now, id: fighter.id });
+  }
+}
+
+function onHill(f: RagdollFighter): boolean {
+  if (f.ko) return false;
+  const center = bodyCenterOf(f);
+  return Math.abs(center.x) <= HILL_HALF && center.y <= HILL_MAX_HEIGHT;
+}
+
+function stepKoth(match: RagdollMatch, step: number, now: number, events: RagdollEvent[]): void {
+  match.elapsed += step;
+
+  // KO: poražený se po chvíli vrátí, vítěz dostane bonus k držení kopce
+  for (const side of ['a', 'b'] as const) {
+    const fighter = match[side];
+    if (!fighter.ko) {
+      fighter.respawnAt = 0;
+      continue;
+    }
+    if (fighter.respawnAt === 0) fighter.respawnAt = match.elapsed + KOTH_RESPAWN;
+    if (match.elapsed < fighter.respawnAt) continue;
+    placeFighter(fighter, side === 'a' ? -3.4 : 3.4, side === 'a' ? 1 : -1);
+    fighter.hp = MAX_HP;
+    fighter.ko = false;
+    fighter.respawnAt = 0;
+    events.push({ kind: 'respawn', at: now, id: fighter.id });
+  }
+
+  const aOn = onHill(match.a);
+  const bOn = onHill(match.b);
+  // kopec drží jen ten, kdo tam stojí sám; souboj uvnitř zóny držení zastaví
+  if (aOn && !bOn) match.hill.a = Math.min(HILL_TARGET, match.hill.a + step);
+  else if (bOn && !aOn) match.hill.b = Math.min(HILL_TARGET, match.hill.b + step);
+
+  if (match.hill.a >= HILL_TARGET) {
+    match.phase = 'matchEnd';
+    match.timer = Infinity;
+    events.push({ kind: 'hill_win', at: now, winner: match.a.id, progress: match.hill.a });
+    events.push({ kind: 'match_end', at: now, winner: match.a.id });
+    return;
+  }
+  if (match.hill.b >= HILL_TARGET) {
+    match.phase = 'matchEnd';
+    match.timer = Infinity;
+    events.push({ kind: 'hill_win', at: now, winner: match.b.id, progress: match.hill.b });
+    events.push({ kind: 'match_end', at: now, winner: match.b.id });
+    return;
+  }
+
+  match.timer -= step;
+  if (match.timer <= 0) {
+    match.timer = 0;
+    match.phase = 'matchEnd';
+    const winner =
+      match.hill.a > match.hill.b ? match.a : match.hill.b > match.hill.a ? match.b : null;
+    events.push({ kind: 'match_end', at: now, winner: winner?.id ?? null });
+  }
+}
+
 // ── hlavní krok ────────────────────────────────────────────────────────────
 
 export function stepRagdoll(
@@ -952,7 +1131,8 @@ export function stepRagdoll(
     match.timer -= step;
     if (match.timer <= 0) {
       match.phase = 'playing';
-      match.timer = match.mode === 'duel' ? ROUND_SECONDS : 0;
+      match.timer =
+        match.mode === 'duel' ? ROUND_SECONDS : match.mode === 'koth' ? KOTH_SECONDS : 0;
       if (match.mode === 'survival') {
         events.push({ kind: 'wave_start', at: now, wave: match.wave });
       }
@@ -1017,6 +1197,7 @@ export function stepRagdoll(
   // ── playing ──────────────────────────────────────────────────────────────
   simulate(match, inputA, inputB, step);
   resolveCombat(match, now, events);
+  drainGuardEvents(match, now, events);
 
   if (match.mode === 'ball') {
     stepBall(match, step, now, events);
@@ -1049,6 +1230,11 @@ export function stepRagdoll(
       match.timer = Infinity;
       events.push({ kind: 'match_end', at: now, winner: match.b.id });
     }
+    return events;
+  }
+
+  if (match.mode === 'koth') {
+    stepKoth(match, step, now, events);
     return events;
   }
 
@@ -1127,7 +1313,7 @@ export function botInput(
   if (clock >= memory.nextThink) {
     memory.nextThink = clock + tuning.think + rand(memory) * tuning.jitter;
     memory.pick = rand(memory) < tuning.kickChance ? 'kick' : 'punch';
-    if (limbSpeed(foe) > 4.2 && rand(memory) < tuning.guardChance) {
+    if (self.guardMeter > 0.28 && !self.guardBroken && limbSpeed(foe) > 4.2 && rand(memory) < tuning.guardChance) {
       memory.guardUntil = clock + (difficulty === 'champion' ? 0.5 : 0.34);
     }
   }
@@ -1155,6 +1341,31 @@ export function botInput(
     return { move, jump, punch, kick, block: false };
   }
 
+  if (match.mode === 'koth') {
+    // Drž kopec: mimo zónu jdi k ní, uvnitř braň střed a bojuj s vetřelcem.
+    const dx = foeCenter.x - selfCenter.x;
+    const distance = Math.abs(dx);
+    let move = 0;
+    if (Math.abs(selfCenter.x) > HILL_HALF - 0.45) {
+      move = selfCenter.x > 0 ? -1 : 1;
+    } else if (distance > KICK_REACH - 0.15) {
+      move = Math.sign(dx);
+    } else if (distance < 0.65) {
+      move = -Math.sign(dx);
+    }
+    const reach = memory.pick === 'kick' ? KICK_REACH : PUNCH_REACH;
+    const aligned = Math.abs(foeCenter.y - selfCenter.y) < 1.4;
+    const inRange = distance < reach && aligned;
+    const guard = clock < memory.guardUntil && self.guardMeter > 0.08 && !self.guardBroken;
+    return {
+      move,
+      jump: false,
+      punch: inRange && memory.pick === 'punch' && !guard,
+      kick: inRange && memory.pick === 'kick' && !guard,
+      block: guard,
+    };
+  }
+
   const dx = foeCenter.x - selfCenter.x;
   const distance = Math.abs(dx);
   // pěst je krátká, kop delší — bot podle toho drží odstup
@@ -1166,7 +1377,7 @@ export function botInput(
   const reach = memory.pick === 'kick' ? KICK_REACH : PUNCH_REACH;
   const aligned = Math.abs(foeCenter.y - selfCenter.y) < 1.4;
   const inRange = distance < reach && aligned;
-  const guard = clock < memory.guardUntil;
+  const guard = clock < memory.guardUntil && self.guardMeter > 0.08 && !self.guardBroken;
   const punch = inRange && memory.pick === 'punch' && !guard;
   const kick = inRange && memory.pick === 'kick' && !guard;
   const jump = false;
