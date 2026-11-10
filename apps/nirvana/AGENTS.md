@@ -2703,3 +2703,26 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   může ukázat 199 (barva se řídí prahy, ne maximem).
 - **Test:** `test/arena-weapons.mjs` ověřuje, že MP mapa powerupy nemá,
   sólo ano, a že respawny dávají smysl (powerup ≥ 45 s).
+
+### Aréna — profi AI, kill feed a přesnost (2026-11-10)
+
+- **Boti střídají zbraně podle vzdálenosti** (`botWeaponFor` ve `weapons.ts`):
+  do 5 m brokovnice, do 14 m raketa (jen z `BOT_FIRE.rocketChance`),
+  do 24 m MG dávka (`BOT_FIRE.mgBurst`), dál rail. Čísla poškození jdou
+  z `WEAPONS`; `BOT_FIRE` jen určuje, kolik broků/dávek AI simuluje.
+- **Projektil má vlastníka** (`owner: 'player' | 'bot'`, `ownerName`).
+  Hráčova raketa hledá boty a zraňuje i hráče (self-splash), botova hledá
+  hráče a boty nechává být — jinak by se tři boti vybili raketami a hráč
+  by se jen díval.
+- **Botí zvuk je podle zbraně** (shotgun/MG/rail/rocket), stopa má barvu
+  podle zbraně (`TRACER_COLOR`) — z obrazovky je poznat, čím tě trefili.
+- **Kill feed** (`feed` v `ArenaStats`, `.arena-killfeed`): „You fragged X"
+  a „X fragged you", 4,5 s, max 5 řádků. `damagePlayer` bere `source`,
+  takže smrt má jméno; self-splash zůstává „You died".
+- **Přesnost** (`accuracy`): počítá se jen hitscan (rail/MG/brokovnice/
+  blesk), jeden výstřel = jedna položka; projektily se do jmenovatele
+  nepletou, jinak by číslo nic neříkalo.
+- **Debug stav** nese `shots/hits/accuracy/feed/lastBotAttack` — E2E
+  ověří, že boti používají víc zbraní a že feed i přesnost reagují.
+- **Test:** `test/arena-weapons.mjs` ověřuje hranice `botWeaponFor`
+  a rozumnost `BOT_FIRE` (žádná zbraň nesmí být „vždycky nejlepší").

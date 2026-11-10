@@ -41,7 +41,7 @@ import {
   type Body,
   type Box4,
 } from '@/core/arena/physics';
-import { WEAPONS, ARMOR_ABSORB, MG_AMMO_PICKUP, spreadVector, TARGET_RADIUS, TARGET_EYE_RATIO, pickTarget, aimVector, type WeaponId } from '@/core/arena/weapons';
+import { WEAPONS, ARMOR_ABSORB, MG_AMMO_PICKUP, BOT_FIRE, botWeaponFor, spreadVector, TARGET_RADIUS, TARGET_EYE_RATIO, pickTarget, aimVector, type WeaponId } from '@/core/arena/weapons';
 import { createBotMemory, stepBot, driveBot, skillOptions, type BotMemory, type BotSkill, type BotTarget } from '@/core/arena/bot';
 import { readTouch, type ArenaTouchState } from '@/core/arena/ArenaTouch';
 import type { MutableRefObject } from 'react';
@@ -73,6 +73,10 @@ export interface ArenaStats {
   hasteIn?: number;
   /** Munice všech zbraní pro HUD (`rail` je −1 = nekonečno). */
   ammoByWeapon?: Partial<Record<WeaponId, number>>;
+  /** Přesnost v procentech (zásahy / výstřely, jen hitscan). */
+  accuracy?: number;
+  /** Kill feed — poslední zásahy a smrti. */
+  feed?: { id: number; text: string; kind: 'frag' | 'death' }[];
 }
 
 interface XrHandle {
@@ -117,6 +121,9 @@ interface Rocket {
   /** Poškození v době výstřelu (už vynásobené Quadem). */
   damage: number;
   splash: number;
+  /** Kdo vystřelil — rozhoduje, koho splash smí zasáhnout. */
+  owner: 'player' | 'bot';
+  ownerName: string;
   x: number;
   y: number;
   z: number;
@@ -131,7 +138,18 @@ interface Tracer {
   from: [number, number, number];
   to: [number, number, number];
   ttl: number;
+  /** Podle zbraně se barví stopa (rail modře, MG zlatě, brokovnice oranžově). */
+  kind: WeaponId;
 }
+
+/** Barvy stop — jedna tabulka, ne `if` v renderu. */
+const TRACER_COLOR: Partial<Record<WeaponId, string>> = {
+  rail: '#9fe4ea',
+  mg: '#ffe9a8',
+  shotgun: '#ffb46a',
+  lightning: '#7fe3ff',
+  plasma: '#7fe3ff',
+};
 
 const BOT_NAMES = ['VALLIS', 'NOCTIS', 'ARES'];
 /** Každý bot má jinou úroveň (Q3 styl) — jen těžko je zaměnit. */
@@ -266,6 +284,13 @@ export function MarsArena({
   const tracers = useRef<Tracer[]>([]);
   const pickups = useRef(ARENA_SOLO_PICKUPS.map((pickup) => ({ ...pickup, until: 0 })));
   const nextId = useRef(1);
+  /** Kill feed (Q3): poslední zásahy, 4,5 s viditelné. */
+  const feed = useRef<{ id: number; text: string; kind: 'frag' | 'death'; until: number }[]>([]);
+  /** Přesnost: zásahy / výstřely (počítá se jen hitscan, ne projektily). */
+  const shots = useRef(0);
+  const hits = useRef(0);
+  /** Poslední botí výstřel — pro debug/test, že boti střídají zbraně. */
+  const lastBotAttack = useRef<{ name: string; weapon: WeaponId } | null>(null);
 
   const botGroup = useRef<THREE.Group>(null);
   const rocketGroup = useRef<THREE.Group>(null);
@@ -297,6 +322,11 @@ export function MarsArena({
         shotgunAmmo: shotgunAmmo.current,
         lightningAmmo: lightningAmmo.current,
         plasmaAmmo: plasmaAmmo.current,
+        accuracy: shots.current > 0 ? Math.round((hits.current / shots.current) * 100) : 0,
+        shots: shots.current,
+        hits: hits.current,
+        feed: feed.current.map((entry) => entry.text),
+        lastBotAttack: lastBotAttack.current,
         bots: bots.current.map((bot) => ({
           x: bot.body.x,
           y: bot.body.y,
@@ -436,6 +466,10 @@ export function MarsArena({
     rockets.current = [];
     tracers.current = [];
     pickups.current = ARENA_SOLO_PICKUPS.map((pickup) => ({ ...pickup, until: 0 }));
+    feed.current = [];
+    shots.current = 0;
+    hits.current = 0;
+    lastBotAttack.current = null;
     quadUntil.current = 0;
     hasteUntil.current = 0;
     bots.current = BOT_SPAWNS.map((spawn, index) => makeBot(spawn, index));
@@ -484,6 +518,7 @@ export function MarsArena({
       const spread = id === 'shotgun' ? WEAPONS.shotgun.spread : id === 'mg' ? WEAPONS.mg.spread : 0;
       const range = 'range' in spec ? spec.range : 120;
       let hitAny = false;
+      shots.current += 1;
 
       for (let pellet = 0; pellet < pellets; pellet += 1) {
         // Brokovnice rozhazuje každý brok zvlášť, MG lehce, ostatní přesně.
@@ -523,6 +558,7 @@ export function MarsArena({
           from: origin,
           to: end,
           ttl: now + (id === 'lightning' ? 60 : 140),
+          kind: id,
         });
 
         if (bestBot) {
@@ -532,7 +568,10 @@ export function MarsArena({
         }
       }
 
-      if (hitAny) playHit();
+      if (hitAny) {
+        hits.current += 1;
+        playHit();
+      }
       if (id === 'rail') playRail();
       else if (id === 'mg') playMg();
       else if (id === 'shotgun') playShotgun();
@@ -560,6 +599,8 @@ export function MarsArena({
       z: origin[2] + dir.z * 0.6,
       damage: projectile.damage * quad,
       splash: projectile.splash * quad,
+      owner: 'player',
+      ownerName: '',
       vx: dir.x * projectile.speed,
       vy: dir.y * projectile.speed,
       vz: dir.z * projectile.speed,
@@ -567,16 +608,23 @@ export function MarsArena({
     });
   }
 
+  function pushFeed(kind: 'frag' | 'death', text: string, now: number) {
+    feed.current.push({ id: nextId.current++, text, kind, until: now + 4500 });
+    // Strop 5 řádků — delší feed by zakryl obraz a nikdo ho nečte.
+    if (feed.current.length > 5) feed.current.shift();
+  }
+
   function killBot(bot: BotState, now: number) {
     bot.alive = false;
     bot.health = 0;
     bot.respawnAt = now + BOT_RESPAWN * 1000;
     frags.current += 1;
+    pushFeed('frag', `You fragged ${bot.name}`, now);
     playFrag();
     if (frags.current >= FRAG_LIMIT && !finished.current) endMatch('frags');
   }
 
-  function damagePlayer(amount: number, now: number) {
+  function damagePlayer(amount: number, now: number, source?: string) {
     if (now < deadUntil.current) return;
     const absorbed = Math.min(armor.current, Math.round(amount * ARMOR_ABSORB));
     armor.current -= absorbed;
@@ -586,6 +634,7 @@ export function MarsArena({
       health.current = 0;
       deaths.current += 1;
       deadUntil.current = now + RESPAWN_TIME * 1000;
+      pushFeed('death', source ? `${source} fragged you` : 'You died', now);
       playDeath();
       window.setTimeout(() => {
         health.current = 100;
@@ -742,17 +791,67 @@ export function MarsArena({
           z: player.current.z,
           radius: TARGET_RADIUS,
         };
-        const hit = pickTarget(origin, dir, solids, [target]);
-        // paprsek může skončit o zeď před cílem — pak nedává ani zásah
-        const end = hit?.point ?? { x: origin.x + dir.x * 40, y: origin.y + dir.y * 40, z: origin.z + dir.z * 40 };
-        tracers.current.push({
-          id: nextId.current++,
-          from: [origin.x, origin.y, origin.z],
-          to: [end.x, end.y, end.z],
-          ttl: now + 90,
-        });
-        playRail();
-        if (hit?.id === 'player') damagePlayer(WEAPONS.rail.damage, now);
+        const distance = Math.hypot(player.current.x - bot.body.x, player.current.z - bot.body.z);
+        // Bot volí zbraň podle vzdálenosti; raketu ne pokaždé (aby souboj
+        // nebyl jen o výbuších a dal se číst).
+        let weaponId = botWeaponFor(distance);
+        if (weaponId === 'rocket' && Math.random() > BOT_FIRE.rocketChance) weaponId = 'mg';
+
+        lastBotAttack.current = { name: bot.name, weapon: weaponId };
+        if (weaponId === 'rocket') {
+          playRocket();
+          rockets.current.push({
+            id: nextId.current++,
+            kind: 'rocket',
+            damage: WEAPONS.rocket.damage,
+            splash: WEAPONS.rocket.splash,
+            owner: 'bot',
+            ownerName: bot.name,
+            x: origin.x + dir.x * 0.8,
+            y: origin.y + dir.y * 0.8,
+            z: origin.z + dir.z * 0.8,
+            vx: dir.x * WEAPONS.rocket.speed,
+            vy: dir.y * WEAPONS.rocket.speed,
+            vz: dir.z * WEAPONS.rocket.speed,
+            ttl: now + WEAPONS.rocket.ttlMs,
+          });
+        } else {
+          // Hitscan: rail přesně, MG dávkou, brokovnice kuželem. Počty jsou
+          // v `BOT_FIRE` — AI nemá simulovat plnou kadenci ani 11 broků.
+          const pelletCount =
+            weaponId === 'shotgun' ? BOT_FIRE.shotgunPellets : weaponId === 'mg' ? BOT_FIRE.mgBurst : 1;
+          const spread =
+            weaponId === 'shotgun' ? WEAPONS.shotgun.spread : weaponId === 'mg' ? WEAPONS.mg.spread : 0;
+          const damage =
+            weaponId === 'shotgun'
+              ? WEAPONS.shotgun.damage
+              : weaponId === 'mg'
+                ? WEAPONS.mg.damage
+                : WEAPONS.rail.damage;
+          const range =
+            weaponId === 'shotgun' ? WEAPONS.shotgun.range : weaponId === 'mg' ? WEAPONS.mg.range : 120;
+
+          for (let pellet = 0; pellet < pelletCount; pellet += 1) {
+            const shotDir = spread > 0 ? spreadVector(dir, spread) : dir;
+            const shot = pickTarget(origin, shotDir, solids, [target], range);
+            const end = shot?.point ?? {
+              x: origin.x + shotDir.x * range,
+              y: origin.y + shotDir.y * range,
+              z: origin.z + shotDir.z * range,
+            };
+            tracers.current.push({
+              id: nextId.current++,
+              from: [origin.x, origin.y, origin.z],
+              to: [end.x, end.y, end.z],
+              ttl: now + 90,
+              kind: weaponId,
+            });
+            if (shot?.id === 'player') damagePlayer(damage, now, bot.name);
+          }
+          if (weaponId === 'shotgun') playShotgun();
+          else if (weaponId === 'mg') playMg();
+          else playRail();
+        }
       }
     }
 
@@ -772,19 +871,32 @@ export function MarsArena({
 
         let exploded = now > rocket.ttl;
 
-        // zásah botů
-        for (const bot of bots.current) {
-          if (!bot.alive) continue;
+        // Přímý zásah: hráčova raketa hledá boty, botova hráče. Bez ohledu na
+        // vlastníka by si bot hned na startu trefil vlastní projektil.
+        if (rocket.owner === 'player') {
+          for (const bot of bots.current) {
+            if (!bot.alive) continue;
+            const d = Math.hypot(
+              rocket.x - bot.body.x,
+              rocket.y - (bot.body.y + BOT_BODY.height * 0.5),
+              rocket.z - bot.body.z,
+            );
+            if (d < 1.1) {
+              bot.health -= rocket.damage;
+              if (bot.health <= 0) killBot(bot, now);
+              exploded = true;
+              break;
+            }
+          }
+        } else {
           const d = Math.hypot(
-            rocket.x - bot.body.x,
-            rocket.y - (bot.body.y + BOT_BODY.height * 0.5),
-            rocket.z - bot.body.z,
+            rocket.x - player.current.x,
+            rocket.y - (player.current.y + PLAYER.height * 0.5),
+            rocket.z - player.current.z,
           );
           if (d < 1.1) {
-            bot.health -= rocket.damage;
-            if (bot.health <= 0) killBot(bot, now);
+            damagePlayer(rocket.damage, now, rocket.ownerName);
             exploded = true;
-            break;
           }
         }
 
@@ -807,25 +919,37 @@ export function MarsArena({
 
         if (exploded) {
           playExplosion();
-          for (const bot of bots.current) {
-            if (!bot.alive) continue;
+          if (rocket.owner === 'player') {
+            for (const bot of bots.current) {
+              if (!bot.alive) continue;
+              const d = Math.hypot(
+                rocket.x - bot.body.x,
+                rocket.y - (bot.body.y + BOT_BODY.height * 0.5),
+                rocket.z - bot.body.z,
+              );
+              if (d < spec.radius) {
+                bot.health -= Math.round(rocket.splash * (1 - d / spec.radius));
+                if (bot.health <= 0) killBot(bot, now);
+              }
+            }
+            // Vlastní raketa bolí i tebe (Q3) — nutí to nestřílet na blízko.
+            const selfDist = Math.hypot(
+              rocket.x - player.current.x,
+              rocket.y - (player.current.y + 1),
+              rocket.z - player.current.z,
+            );
+            if (selfDist < spec.radius * 0.8) {
+              damagePlayer(Math.round(rocket.splash * (1 - selfDist / (spec.radius * 0.8))), now);
+            }
+          } else {
             const d = Math.hypot(
-              rocket.x - bot.body.x,
-              rocket.y - (bot.body.y + BOT_BODY.height * 0.5),
-              rocket.z - bot.body.z,
+              rocket.x - player.current.x,
+              rocket.y - (player.current.y + 1),
+              rocket.z - player.current.z,
             );
             if (d < spec.radius) {
-              bot.health -= Math.round(rocket.splash * (1 - d / spec.radius));
-              if (bot.health <= 0) killBot(bot, now);
+              damagePlayer(Math.round(rocket.splash * (1 - d / spec.radius)), now, rocket.ownerName);
             }
-          }
-          const selfDist = Math.hypot(
-            rocket.x - player.current.x,
-            rocket.y - (player.current.y + 1),
-            rocket.z - player.current.z,
-          );
-          if (selfDist < spec.radius * 0.8) {
-            damagePlayer(Math.round(rocket.splash * (1 - selfDist / (spec.radius * 0.8))), now);
           }
           continue;
         }
@@ -920,6 +1044,8 @@ export function MarsArena({
         child.visible = Boolean(tracer);
         if (!tracer) return;
         const mesh = child as THREE.Mesh;
+        const material = mesh.material as THREE.MeshBasicMaterial;
+        material.color.set(TRACER_COLOR[tracer.kind] ?? '#ffe9a8');
         const from = new THREE.Vector3(...tracer.from);
         const to = new THREE.Vector3(...tracer.to);
         const mid = from.clone().add(to).multiplyScalar(0.5);
@@ -959,6 +1085,10 @@ export function MarsArena({
         respawnIn: Math.max(0, Math.ceil((deadUntil.current - now) / 1000)),
         quadIn: Math.max(0, Math.ceil((quadUntil.current - now) / 1000)),
         hasteIn: Math.max(0, Math.ceil((hasteUntil.current - now) / 1000)),
+        accuracy: shots.current > 0 ? Math.round((hits.current / shots.current) * 100) : 0,
+        feed: feed.current
+          .filter((entry) => entry.until > now)
+          .map((entry) => ({ id: entry.id, text: entry.text, kind: entry.kind })),
         ammoByWeapon: {
           rail: -1,
           rocket: ammo.current,

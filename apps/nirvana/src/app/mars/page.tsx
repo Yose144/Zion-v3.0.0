@@ -236,6 +236,9 @@ export default function MarsPage() {
               ❤ {stats.health}
             </span>
             <span className="arena-armor">🛡 {stats.armor}</span>
+            <span className="arena-acc" title={cs ? 'přesnost' : 'accuracy'}>
+              ACC {stats.accuracy ?? 0}%
+            </span>
             <span className="arena-frags">
               {l('frags')} {stats.frags}/{FRAG_LIMIT}
             </span>
@@ -299,6 +302,24 @@ export default function MarsPage() {
               );
             })}
           </div>
+          {(stats.feed?.length ?? 0) > 0 && (
+            <div className="arena-killfeed" role="status" aria-live="polite">
+              {stats.feed!.map((entry) => (
+                <span key={entry.id} className={entry.kind === 'frag' ? 'is-frag' : 'is-death'}>
+                  {entry.text}
+                </span>
+              ))}
+            </div>
+          )}
+          {(stats.feed?.length ?? 0) > 0 && (
+            <div className="arena-killfeed" role="status" aria-live="polite">
+              {stats.feed!.map((entry) => (
+                <span key={entry.id} className={entry.kind === 'frag' ? 'is-frag' : 'is-death'}>
+                  {entry.text}
+                </span>
+              ))}
+            </div>
+          )}
           <div className="arena-tip">
             {coarse
               ? cs
@@ -398,6 +419,10 @@ export default function MarsPage() {
                 <div>
                   <em>{l('score')}</em>
                   <strong>{result.score}</strong>
+                </div>
+                <div>
+                  <em>{cs ? 'přesnost' : 'accuracy'}</em>
+                  <strong>{stats.accuracy ?? 0}%</strong>
                 </div>
               </div>
               {notice && <p className="arena-notice">{notice}</p>}

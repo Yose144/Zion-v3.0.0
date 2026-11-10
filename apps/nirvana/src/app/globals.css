@@ -1773,6 +1773,56 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   }
 }
 
+/* Přesnost v HUD — profesionální metrika, ne dekorace. */
+.arena-hud .arena-acc {
+  color: rgba(255, 233, 168, 0.72);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+}
+
+/* Kill feed (Q3): poslední fragy a smrti, 4,5 s. */
+.arena-killfeed {
+  position: absolute;
+  z-index: 13;
+  top: calc(1rem + env(safe-area-inset-top, 0px));
+  left: calc(1rem + env(safe-area-inset-left, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: min(18rem, 42vw);
+  pointer-events: none;
+}
+
+.arena-killfeed span {
+  padding: 0.25rem 0.55rem;
+  border-radius: 0.45rem;
+  background: rgba(12, 6, 4, 0.72);
+  border: 1px solid rgba(255, 180, 106, 0.22);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  color: rgba(255, 233, 168, 0.85);
+  backdrop-filter: blur(4px);
+}
+
+.arena-killfeed span.is-frag {
+  border-color: rgba(127, 227, 212, 0.4);
+  color: #7fe3d4;
+}
+
+.arena-killfeed span.is-death {
+  border-color: rgba(255, 92, 92, 0.45);
+  color: #ff8a7a;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  /* Nad HUDem a tabulí, ale mimo dotykové zóny. */
+  .arena-killfeed {
+    top: calc(7rem + env(safe-area-inset-top, 0px));
+    left: 0.5rem;
+    max-width: 48vw;
+  }
+}
+
 /* Haste (Q3): tyrkysový chip vedle Quadu. */
 .arena-hud .arena-haste {
   color: #7fe3d4;

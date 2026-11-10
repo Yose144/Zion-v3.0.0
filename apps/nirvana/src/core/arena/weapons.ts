@@ -92,6 +92,32 @@ export const WEAPONS = {
 
 /** Podíl poškození, který spolkne armor (Q3 `ARMOR_PROTECTION` = 0,66). */
 export const ARMOR_ABSORB = 0.66;
+
+/**
+ * Zbraň, kterou bot zvolí podle vzdálenosti.
+ *
+ * Q3 boti přepínají podle situace — brokovnice zblízka, raketa na střední,
+ * MG na dálku a rail na dlouhou. Do 10. 11. 2026 měli všichni jen rail,
+ * takže souboj byl vždy stejný bez ohledu na to, kde jsi stál.
+ */
+export function botWeaponFor(distance: number): WeaponId {
+  if (!Number.isFinite(distance) || distance < 0) return 'rail';
+  if (distance <= 5) return 'shotgun';
+  if (distance <= 14) return 'rocket';
+  if (distance <= 24) return 'mg';
+  return 'rail';
+}
+
+/**
+ * Dávky botů. AI nemá simulovat plnou kadenci ani 11 broků — hráč by proti
+ * ní neměl šanci. Čísla jsou zlomek hráčových, ale pořád z `WEAPONS`.
+ */
+export const BOT_FIRE = {
+  mgBurst: 4,
+  shotgunPellets: 6,
+  /** Pravděpodobnost, že bot na střední vzdálenost opravdu vystřelí raketu. */
+  rocketChance: 0.45,
+} as const;
 /** Kolik nábojů na MG dá jeden pickup (Q3 ammo boxy dávají plný zásobník). */
 export const MG_AMMO_PICKUP = 25;
 /** Jak dlouho leží mrtvý hráč, než se vrátí na spawn (ms). */

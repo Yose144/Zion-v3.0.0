@@ -12,7 +12,7 @@
  * Spuštění: cd apps/nirvana && npx tsx test/arena-weapons.mjs
  */
 
-const { WEAPONS, applyDamage, spreadVector, aimVector, ARMOR_ABSORB } = await import(
+const { WEAPONS, applyDamage, spreadVector, aimVector, ARMOR_ABSORB, botWeaponFor, BOT_FIRE } = await import(
   '../src/core/arena/weapons.ts'
 );
 const { ARENA_PICKUPS, ARENA_SOLO_PICKUPS } = await import('../src/core/arena/map.ts');
@@ -122,6 +122,21 @@ check('plazma: má TTL', WEAPONS.plasma.ttlMs > 0, String(WEAPONS.plasma.ttlMs))
     ),
     JSON.stringify(ARENA_SOLO_PICKUPS.map((p) => [p.x, p.y, p.z])),
   );
+}
+
+// ── 8) botí volba zbraně (2026-11-10) ──────────────────────────────
+{
+  check('bot zblízka bere brokovnici', botWeaponFor(2) === 'shotgun', botWeaponFor(2));
+  check('bot na střední bere raketu', botWeaponFor(10) === 'rocket', botWeaponFor(10));
+  check('bot na dálku bere MG', botWeaponFor(20) === 'mg', botWeaponFor(20));
+  check('bot na dlouhou bere rail', botWeaponFor(30) === 'rail', botWeaponFor(30));
+  check('hranice 5 m = brokovnice', botWeaponFor(5) === 'shotgun');
+  check('hranice 14 m = raketa', botWeaponFor(14) === 'rocket');
+  check('hranice 24 m = MG', botWeaponFor(24) === 'mg');
+  check('rozbitá vzdálenost nespadne', botWeaponFor(Number.NaN) === 'rail');
+  check('MG dávka je 4 rány', BOT_FIRE.mgBurst === 4, String(BOT_FIRE.mgBurst));
+  check('brokovnice bota je 6 broků', BOT_FIRE.shotgunPellets === 6, String(BOT_FIRE.shotgunPellets));
+  check('raketa není pokaždé', BOT_FIRE.rocketChance > 0 && BOT_FIRE.rocketChance < 1, String(BOT_FIRE.rocketChance));
 }
 
 console.log('');
