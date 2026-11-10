@@ -2,23 +2,31 @@
 
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
-import type { Group } from 'three';
 import { DuelCamera, DuelStage } from './DuelStage';
-import { Fighter3D } from './Fighter3D';
-import { makeFighter, stepFighter, type Fighter, type FightInput } from './duel';
+import { RagdollBody } from './RagdollBody';
+import {
+  applyPose,
+  bodyCenterOf,
+  makeRagdollFighter,
+  type FightInput,
+  type RagdollFighter,
+} from './ragdoll';
 import { useFightKeys } from './useFightKeys';
 import { createDuelSound } from './audio';
 import { DuelXr } from './FightXr';
 import { useNet } from '@/core/net/useNet';
 import type { FightPlayerState, ServerMessage } from '@/core/net/protocol';
 import { avatarLook, type AvatarLook } from '../avatars/kit';
-import { isGamePaused } from '@/core/games/pause';
+import { dampFactor } from '@/core/design/motion';
 
 /**
- * MERKUR — online duel. Server je autorita zásahů i kol; klient predikuje
- * **vlastní pohyb** stejnou funkcí `stepFighter` a zbytek zrcadlí ze
- * snapshotů (15 Hz). Zásahy se na klientu nepočítají — ty velí server,
- * jinak by se „trefil jsem ho a nic" vracelo oknem zpátky.
+ * MERKUR — online ragdoll duel. Server je autorita fyziky i zásahů; klient
+ * posílá jen vstup (20 Hz) a **interpoluje pózy** ze snapshotů (15 Hz).
+ *
+ * Vlastní pohyb se nepredikuje schválně: ragdoll je chaotický, takže
+ * predikce by se do 200 ms rozešla a loutka by poskakovala. Místo toho
+ * klient plynule dohání serverovou pózu — u pomalého fyzikálního souboje
+ * je 70 ms latence nevidět.
  */
 
 export interface DuelMpStats {
@@ -44,10 +52,33 @@ export interface DuelMpStats {
   lastRoundReason: 'ko' | 'time' | null;
 }
 
-/** Vzdálenost, od které se predikce srovná na server. */
-const SNAP_DISTANCE = 0.8;
+/** Vzdálenost bodu, od které se póza „teleportuje“ (respawn), ne interpoluje. */
+const SNAP_DISTANCE = 3;
 
-const emptyFighter = (): Fighter => makeFighter({ id: 'pending', name: '…', avatarId: null }, -4, 1);
+const emptyFighter = (): RagdollFighter =>
+  makeRagdollFighter({ id: 'pending', name: '…', avatarId: null }, -3.4, 1);
+
+type PoseTarget = { pose: number[] | null };
+
+function smoothPose(fighter: RagdollFighter, target: PoseTarget, k: number): void {
+  const pose = target.pose;
+  if (!pose || pose.length < 22) return;
+  for (let i = 0; i < 11; i++) {
+    const tx = pose[i * 2]!;
+    const ty = pose[i * 2 + 1]!;
+    const dx = tx - fighter.x[i]!;
+    const dy = ty - fighter.y[i]!;
+    if (Math.abs(dx) > SNAP_DISTANCE || Math.abs(dy) > SNAP_DISTANCE) {
+      fighter.x[i] = tx;
+      fighter.y[i] = ty;
+    } else {
+      fighter.x[i] = fighter.x[i]! + dx * k;
+      fighter.y[i] = fighter.y[i]! + dy * k;
+    }
+    fighter.vx[i] = 0;
+    fighter.vy[i] = 0;
+  }
+}
 
 export function MercuryDuel({
   running,
@@ -64,9 +95,11 @@ export function MercuryDuel({
   const { subscribe, sendInput, joinGame, spectateRoom, leaveRoom, youPlayerId, spectator, connected, rtt } = useNet();
   const keys = useFightKeys(running);
 
-  const self = useRef<Fighter>(emptyFighter());
-  const foe = useRef<Fighter>(emptyFighter());
-  const serverSelf = useRef<{ x: number; y: number; at: number } | null>(null);
+  const self = useRef<RagdollFighter>(emptyFighter());
+  const foe = useRef<RagdollFighter>(emptyFighter());
+  const selfTarget = useRef<PoseTarget>({ pose: null });
+  const foeTarget = useRef<PoseTarget>({ pose: null });
+  const selfSnapped = useRef(false);
 
   const hud = useRef<DuelMpStats>({
     connected: false,
@@ -87,15 +120,10 @@ export function MercuryDuel({
     lastRoundReason: null,
   });
 
-  const selfGroup = useRef<Group>(null);
-  const foeGroup = useRef<Group>(null);
   const lastStats = useRef('');
-  /** `onStats` stačí 10×/s — `hud.current` se plní každý frame (debug háček),
-   *  ale React state emituje zbytečně často, viz `VenusMultiplayer.statsClock`. */
   const statsClock = useRef(0);
   const sound = useRef(createDuelSound());
 
-  // avatary přijdou až se snapshotty — look se počítá při změně `avatarId`
   const [looks, setLooks] = useState<{ self: AvatarLook; foe: AvatarLook }>(() => ({
     self: avatarLook(null),
     foe: avatarLook(null),
@@ -113,6 +141,7 @@ export function MercuryDuel({
   // ── data ze serveru ─────────────────────────────────────────────────
   const applyWire = (wire: FightPlayerState, mine: boolean) => {
     const target = mine ? self.current : foe.current;
+    const poseTarget = mine ? selfTarget.current : foeTarget.current;
     target.id = wire.id;
     target.name = wire.name;
     target.avatarId = wire.avatarId;
@@ -120,22 +149,18 @@ export function MercuryDuel({
     target.wins = wire.wins;
     target.ko = wire.ko;
     target.stun = wire.stun;
-    target.blocking = wire.blocking;
+    target.guard = wire.blocking;
     target.facing = wire.facing;
-    target.attack = wire.attack ? { kind: wire.attack.kind, elapsed: wire.attack.elapsed, hit: true } : null;
+    poseTarget.pose = Array.isArray(wire.pose) ? wire.pose : null;
+    if (mine && !selfSnapped.current && poseTarget.pose) {
+      applyPose(self.current, poseTarget.pose);
+      selfSnapped.current = true;
+    }
 
     if (lookIds.current[mine ? 'self' : 'foe'] !== wire.avatarId) {
       lookIds.current[mine ? 'self' : 'foe'] = wire.avatarId;
       const nextLook = avatarLook(wire.avatarId);
       setLooks((previous) => (mine ? { ...previous, self: nextLook } : { ...previous, foe: nextLook }));
-    }
-
-    if (mine) {
-      serverSelf.current = { x: wire.x, y: wire.y, at: Date.now() };
-    } else {
-      // soupeřovu polohu nenecháme predikovat — jen cíl, ke kterému kloužeme
-      target.x = wire.x;
-      target.y = wire.y;
     }
   };
 
@@ -156,8 +181,9 @@ export function MercuryDuel({
 
         const state = message.state ?? 'countdown';
         if (state === 'countdown' && hud.current.matchWinner !== null) {
-          hud.current.matchWinner = null; // nový zápas od serveru běží
+          hud.current.matchWinner = null;
           sound.current.reset();
+          selfSnapped.current = false;
         }
         hud.current.state = state as DuelMpStats['state'];
         hud.current.round = message.round ?? 1;
@@ -187,70 +213,55 @@ export function MercuryDuel({
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (new URLSearchParams(window.location.search).get('duelDebug') !== '1') return;
-    (window as unknown as Record<string, unknown>).__duelDebug = () => ({
-      you: youPlayerId,
-      connected,
-      self: { ...self.current },
-      foe: { ...foe.current },
-      hud: { ...hud.current },
-    });
+    (window as unknown as Record<string, unknown>).__duelDebug = () => {
+      const selfCenter = bodyCenterOf(self.current);
+      const foeCenter = bodyCenterOf(foe.current);
+      return {
+        you: youPlayerId,
+        connected,
+        self: {
+          id: self.current.id,
+          name: self.current.name,
+          x: selfCenter.x,
+          y: selfCenter.y,
+          hp: self.current.hp,
+          ko: self.current.ko,
+          facing: self.current.facing,
+          guard: self.current.guard,
+        },
+        foe: {
+          id: foe.current.id,
+          name: foe.current.name,
+          x: foeCenter.x,
+          y: foeCenter.y,
+          hp: foe.current.hp,
+          ko: foe.current.ko,
+          facing: foe.current.facing,
+          guard: foe.current.guard,
+        },
+        hud: { ...hud.current },
+      };
+    };
   }, [youPlayerId, connected]);
 
   // ── smyčka ──────────────────────────────────────────────────────────
   useFrame((_, delta) => {
     if (!running) return;
-    // Hamburger menu (2026-11-10) — pauza patří do modulu, ne do každé hry.
-    if (isGamePaused()) return;
     const dt = Math.min(0.05, delta);
-    const now = Date.now();
-
     const watching = Boolean(watch) || spectator;
 
-    // 1) vlastní predikce — týž krok co server, ale bez resolutních zásahů.
-    // Divák predikci nepočítá, bere polohy ze snapshotu.
-    if (!watching) stepFighter(self.current, foe.current, keys.current, dt);
-
-    // 2) srovnání se serverem
-    const anchor = serverSelf.current;
-    if (watching && anchor) {
-      self.current.x = anchor.x;
-      self.current.y = anchor.y;
-      self.current.vx = 0;
-    } else if (anchor) {
-      const dx = anchor.x - self.current.x;
-      const dy = anchor.y - self.current.y;
-      if (Math.abs(dx) > SNAP_DISTANCE || Math.abs(dy) > 1) {
-        self.current.x = anchor.x;
-        self.current.y = anchor.y;
-        self.current.vx = 0;
-      } else {
-        self.current.x += dx * 0.15;
-      }
-    }
-
-    // 3) animace soupeře pokračuje i mezi snapshoty (elapsed dopocítáme lokálně)
-    if (foe.current.attack) {
-      foe.current.attack.elapsed += dt;
-    }
+    const k = watching ? 0.5 : dampFactor(dt);
+    smoothPose(self.current, selfTarget.current, k);
+    smoothPose(foe.current, foeTarget.current, k);
 
     sound.current.step({
       self: self.current.hp,
       foe: foe.current.hp,
-      selfBlocking: self.current.blocking,
-      foeBlocking: foe.current.blocking,
+      selfBlocking: self.current.guard,
+      foeBlocking: foe.current.guard,
     });
 
-    // 4) pozice meshů — soupeř klouže za cílem (exponenciální vyhlazení)
-    if (selfGroup.current) {
-      selfGroup.current.position.set(self.current.x, self.current.y, 0);
-    }
-    if (foeGroup.current) {
-      const k = Math.min(1, dt * 12);
-      foeGroup.current.position.x += (foe.current.x - foeGroup.current.position.x) * k;
-      foeGroup.current.position.y += (foe.current.y - foeGroup.current.position.y) * k;
-    }
-
-    // 5) vstup na server (20 Hz, `sendInput` omezuje sám). Divák ho neposílá.
+    // vstup na server (20 Hz, `sendInput` omezuje sám); divák neposílá
     if (!watching) {
       const input: FightInput = keys.current;
       sendInput({
@@ -265,7 +276,6 @@ export function MercuryDuel({
       });
     }
 
-    // 6) HUD — jedny čerstvá data pro `onStats` i pro debug háček
     const stats: DuelMpStats = {
       ...hud.current,
       connected,
@@ -273,8 +283,8 @@ export function MercuryDuel({
       selfId: self.current.id,
       selfName: self.current.name,
       foeName: foe.current.name,
-      selfHp: self.current.hp,
-      foeHp: foe.current.hp,
+      selfHp: Math.round(self.current.hp),
+      foeHp: Math.round(foe.current.hp),
       selfWins: self.current.wins,
       foeWins: foe.current.wins,
       foeIsBot: (foe.current.id ?? '').startsWith('bot-'),
@@ -294,14 +304,10 @@ export function MercuryDuel({
   return (
     <>
       <DuelStage />
-      <DuelCamera a={self as MutableRefObject<Fighter>} b={foe as MutableRefObject<Fighter>} xr={xr} />
+      <DuelCamera a={self as MutableRefObject<RagdollFighter>} b={foe as MutableRefObject<RagdollFighter>} xr={xr} />
       {xr && <DuelXr active={running} />}
-      <group ref={selfGroup}>
-        <Fighter3D state={self} look={looks.self} />
-      </group>
-      <group ref={foeGroup}>
-        <Fighter3D state={foe} look={looks.foe} />
-      </group>
+      <RagdollBody state={self} look={looks.self} />
+      <RagdollBody state={foe} look={looks.foe} />
     </>
   );
 }

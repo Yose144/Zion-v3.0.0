@@ -4,9 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Canvas } from '@react-three/fiber';
 import { useI18n, tx } from '@/core/i18n';
-import { MercurySolo, type DuelStats } from '@/core/fight/MercurySolo';
+import { MercurySolo, type DuelStats, type SoloFinish } from '@/core/fight/MercurySolo';
 import { MercuryDuel, type DuelMpStats } from '@/core/fight/MercuryDuel';
-import { MAX_HP, type BotDifficulty } from '@/core/fight/duel';
+import { MAX_HP, type BotDifficulty, type FightMode } from '@/core/fight/ragdoll';
 import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
 import { GameBoard } from '@/core/games/GameBoard';
 import { watchRoom } from '@/core/net/watch';
@@ -20,14 +20,25 @@ import { canvasDpr } from '@/core/design/dpr';
 import { DUEL_COPY, type DuelCopyKey } from './copy';
 
 /**
- * MERKUR — souboj bok po boku. Sólo cvičení proti botovi i online duel
- * (best of 3). Skóre z online zápasu jde do stejné tabule jako aréna/závod.
+ * MERKUR — ragdoll souboj ve čtyřech módech.
+ *
+ * `duel` (1v1 best of 3), `ball` (ragdoll fotbal), `survival` (vlny botů)
+ * a `practice` (trénink proti figuríně). Všechny jedou na stejném enginu
+ * `core/fight/ragdoll.ts`; solo proti botovi, duel navíc online.
  */
 
 type Phase = 'idle' | 'playing';
-type Mode = 'solo' | 'online';
+type Source = 'solo' | 'online';
+
+const MODES: { id: FightMode; title: DuelCopyKey; desc: DuelCopyKey }[] = [
+  { id: 'duel', title: 'modeDuel', desc: 'modeDuelDesc' },
+  { id: 'ball', title: 'modeBall', desc: 'modeBallDesc' },
+  { id: 'survival', title: 'modeSurvival', desc: 'modeSurvivalDesc' },
+  { id: 'practice', title: 'modePractice', desc: 'modePracticeDesc' },
+];
 
 const EMPTY_SOLO: DuelStats = {
+  mode: 'duel',
   round: 1,
   phase: 'countdown',
   timer: 60,
@@ -37,6 +48,11 @@ const EMPTY_SOLO: DuelStats = {
   selfWins: 0,
   foeWins: 0,
   winner: null,
+  scoreSelf: 0,
+  scoreFoe: 0,
+  wave: 1,
+  hits: 0,
+  bestHit: 0,
 };
 
 const EMPTY_MP: DuelMpStats = {
@@ -58,7 +74,7 @@ const EMPTY_MP: DuelMpStats = {
   lastRoundReason: null,
 };
 
-/** Body za výhru: 2:0 = 200, 2:1 = 170; prohra počítá body taky (100×vyhraná_kola − 30×soupeřova). */
+/** Body za výhru: 2:0 = 200, 2:1 = 170; prohra počítá taky (100×kola − 30×soupeřova). */
 function duelScore(selfWins: number, foeWins: number): number {
   return selfWins * 100 - foeWins * 30;
 }
@@ -107,7 +123,8 @@ export default function MercuryPage() {
   const cs = lang === 'cs';
   const { you } = useNet();
   const [phase, setPhase] = useState<Phase>('idle');
-  const [mode, setMode] = useState<Mode>('solo');
+  const [source, setSource] = useState<Source>('solo');
+  const [selectedMode, setSelectedMode] = useState<FightMode>('duel');
   const [difficulty, setDifficulty] = useState<BotDifficulty>('standard');
   const [soloStats, setSoloStats] = useState<DuelStats>(EMPTY_SOLO);
   const [mpStats, setMpStats] = useState<DuelMpStats>(EMPTY_MP);
@@ -116,7 +133,7 @@ export default function MercuryPage() {
   /** `?watch=<room>` = hlediště. Čte se v efektu (SSR `window` nemá). */
   const [watch, setWatch] = useState<string | null>(null);
 
-  // během duelu schovej globální dok a chat — na počítači i na mobilu
+  // během zápasu schovej globální dok a chat — na počítači i na mobilu
   useEffect(() => {
     document.body.dataset.playing = phase === 'playing' ? '1' : '';
     return () => {
@@ -124,10 +141,33 @@ export default function MercuryPage() {
     };
   }, [phase]);
 
-  // výsledek online duelu — zapíše se NA JEDNOU po `duel_end`, příští zápas resetuje guard
+  // sólo výsledek (survival / ball) — jednou za zápas
+  const handleSoloFinish = useCallback(
+    (result: SoloFinish) => {
+      if (result.mode === 'duel' || result.mode === 'practice') return;
+      const score =
+        result.mode === 'survival'
+          ? Math.max(0, (result.wave - 1) * 150 + result.hits * 4)
+          : Math.max(0, result.scoreSelf * 120 - result.scoreFoe * 40);
+      if (score <= 0) {
+        setNotice(l('noPoints'));
+        return;
+      }
+      const outcome = recordRun({
+        game: 'fight',
+        score,
+        nickname: pickNickname(you?.name || 'hrac'),
+        bonus: result.winner === 'self' ? 2 : 0,
+      });
+      setNotice(describeRun(outcome, cs, result.winner === 'self' ? [l('win')] : []));
+    },
+    [cs, l, you?.name],
+  );
+
+  // výsledek online duelu — zapíše se NA JEDNOU po `duel_end`
   useEffect(() => {
     if (watch) return;
-    if (mode !== 'online' || phase !== 'playing') return;
+    if (source !== 'online' || phase !== 'playing') return;
     if (mpStats.matchWinner === null) {
       recorded.current = false;
       return;
@@ -138,11 +178,7 @@ export default function MercuryPage() {
     const won = mpStats.matchWinner === mpStats.selfId;
     const score = duelScore(mpStats.selfWins, mpStats.foeWins);
     if (score <= 0 || mpStats.foeIsBot) {
-      setNotice(
-        mpStats.foeIsBot
-          ? l('botOpponent')
-          : l('noPoints'),
-      );
+      setNotice(mpStats.foeIsBot ? l('botOpponent') : l('noPoints'));
       return;
     }
 
@@ -153,27 +189,33 @@ export default function MercuryPage() {
       bonus: won ? 2 : 0,
     });
     setNotice(describeRun(result, cs, won ? [l('win')] : []));
-  }, [mode, phase, mpStats, cs, you?.name, watch]);
+  }, [source, phase, mpStats, cs, you?.name, watch, l]);
 
-  const top = mode === 'online' ? mpStats : soloStats;
-  const selfHp = mode === 'online' ? mpStats.selfHp : soloStats.selfHp;
-  const foeHp = mode === 'online' ? mpStats.foeHp : soloStats.foeHp;
-  const selfName = mode === 'online' ? mpStats.selfName : l('you');
-  const foeName = mode === 'online' ? mpStats.foeName : l('practiceShadow');
-  const round = mode === 'online' ? mpStats.round : soloStats.round;
-  const countdown = mode === 'online' ? mpStats.countdown : soloStats.countdown;
-  const secondsLeft = mode === 'online' ? mpStats.secondsLeft : soloStats.timer;
   const { store: xrStore, presenting } = useXr();
   useEffect(() => {
     const room = watchRoom();
     if (!room?.startsWith('fight-')) return;
     setWatch(room);
-    setMode('online');
+    setSource('online');
+    setSelectedMode('duel');
     setPhase('playing');
   }, []);
-  const state = mode === 'online' ? mpStats.state : soloStats.phase;
-  const selfWins = mode === 'online' ? mpStats.selfWins : soloStats.selfWins;
-  const foeWins = mode === 'online' ? mpStats.foeWins : soloStats.foeWins;
+
+  const mode: FightMode = source === 'online' ? 'duel' : selectedMode;
+  const isBall = mode === 'ball';
+  const isSurvival = mode === 'survival';
+  const isPractice = mode === 'practice';
+  const solo = source !== 'online';
+  const state = solo ? soloStats.phase : mpStats.state;
+  const countdown = solo ? soloStats.countdown : mpStats.countdown;
+  const secondsLeft = solo ? soloStats.timer : mpStats.secondsLeft;
+  const selfHp = solo ? soloStats.selfHp : mpStats.selfHp;
+  const foeHp = solo ? soloStats.foeHp : mpStats.foeHp;
+  const selfWins = solo ? soloStats.selfWins : mpStats.selfWins;
+  const foeWins = solo ? soloStats.foeWins : mpStats.foeWins;
+  const selfName = solo ? l('you') : mpStats.selfName;
+  const foeName = solo ? (isPractice ? l('practiceShadow') : l('opponent')) : mpStats.foeName;
+  const round = solo ? soloStats.round : mpStats.round;
 
   return (
     <main className="arena is-mercury">
@@ -184,17 +226,19 @@ export default function MercuryPage() {
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
         >
           <XR store={xrStore}>
-            {phase === 'playing' && mode === 'online' ? (
+            {phase === 'playing' && source === 'online' ? (
               <MercuryDuel running xr={presenting} watch={watch} onStats={setMpStats} />
             ) : (
               <MercurySolo
-                key={phase}
+                key={`${selectedMode}-${phase}`}
                 running={phase === 'playing'}
                 xr={presenting}
+                mode={selectedMode}
                 selfAvatarId={you?.avatarId ?? null}
-                foeAvatarId={mode === 'solo' ? 42 : null}
+                foeAvatarId={42}
                 botDifficulty={difficulty}
                 onStats={setSoloStats}
+                onFinish={handleSoloFinish}
               />
             )}
           </XR>
@@ -205,78 +249,113 @@ export default function MercuryPage() {
 
       {phase === 'playing' && (
         <>
-          {/* V hledišti exit není — odchod řeší SpectatorBar (stejně jako
-              Mars/Venuše/Lumi). */}
+          {/* V hledišti exit není — odchod řeší SpectatorBar. */}
           {!watch && (
-          <button
-            type="button"
-            className="duel-exit"
-            aria-label={l('leaveDuel')}
-            onClick={() => {
-              setPhase('idle');
-              setMpStats(EMPTY_MP);
-              setNotice(null);
-            }}
-          >
-            {l('menu')}
-          </button>
+            <button
+              type="button"
+              className="duel-exit"
+              aria-label={l('leaveDuel')}
+              onClick={() => {
+                setPhase('idle');
+                setMpStats(EMPTY_MP);
+                setSoloStats(EMPTY_SOLO);
+                setNotice(null);
+              }}
+            >
+              {l('menu')}
+            </button>
           )}
           <div className="duel-vr">
             <VrButton xr={{ store: xrStore, presenting }} className="arena-vr" />
           </div>
 
-          {!(mode === 'online' && (!mpStats.connected || mpStats.state === null)) && <div className="duel-top" aria-hidden>
-            <div className="duel-fighter is-self">
-              <div className="duel-name">{selfName}</div>
-              <div className="duel-bar">
-                <i style={{ width: `${(selfHp / MAX_HP) * 100}%` }} className={selfHp <= 30 ? 'is-low' : undefined} />
+          {!(source === 'online' && (!mpStats.connected || mpStats.state === null)) && (
+            <div className="duel-top" aria-hidden>
+              <div className="duel-fighter is-self">
+                <div className="duel-name">{selfName}</div>
+                {isBall ? (
+                  <div className="duel-score-big">{soloStats.scoreSelf}</div>
+                ) : (
+                  <>
+                    <div className="duel-bar">
+                      <i style={{ width: `${(selfHp / MAX_HP) * 100}%` }} className={selfHp <= 30 ? 'is-low' : undefined} />
+                    </div>
+                    <div className="duel-pips">
+                      {Array.from({ length: 2 }, (_, index) => (
+                        <span key={index} className={index < selfWins ? 'is-on' : undefined} />
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="duel-pips">
-                {Array.from({ length: 2 }, (_, index) => (
-                  <span key={index} className={index < selfWins ? 'is-on' : undefined} />
-                ))}
+              <div className="duel-clock">
+                <div>
+                  {isBall
+                    ? l('modeBall')
+                    : isSurvival
+                      ? `${l('wave')} ${soloStats.wave}`
+                      : isPractice
+                        ? l('modePractice')
+                        : `${l('round')} ${round}`}
+                </div>
+                <strong>
+                  {state === 'countdown'
+                    ? `…${countdown}`
+                    : isBall || isSurvival || isPractice
+                      ? `${secondsLeft}s`
+                      : `${secondsLeft}s`}
+                </strong>
+                <div className="duel-clock-sub">
+                  {source === 'online'
+                    ? mpStats.foeIsBot
+                      ? l('waiting')
+                      : mpStats.connected
+                        ? `${mpStats.ping ?? 0} ms`
+                        : l('offline')
+                    : isBall
+                      ? l('ballHint')
+                      : isSurvival
+                        ? `${l('hits')}: ${soloStats.hits}`
+                        : isPractice
+                          ? `${l('bestHit')}: ${Math.round(soloStats.bestHit)} m/s`
+                          : l('vsBot')}
+                </div>
+              </div>
+              <div className="duel-fighter is-foe">
+                <div className="duel-name">{foeName}</div>
+                {isBall ? (
+                  <div className="duel-score-big">{soloStats.scoreFoe}</div>
+                ) : (
+                  <>
+                    <div className="duel-bar">
+                      <i style={{ width: `${(foeHp / MAX_HP) * 100}%` }} className={foeHp <= 30 ? 'is-low' : undefined} />
+                    </div>
+                    <div className="duel-pips">
+                      {Array.from({ length: 2 }, (_, index) => (
+                        <span key={index} className={index < foeWins ? 'is-on' : undefined} />
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
-            <div className="duel-clock">
-              <div>{l('round')} {round}</div>
-              <strong>{state === 'countdown' ? `…${countdown}` : `${secondsLeft}s`}</strong>
-              <div className="duel-clock-sub">
-                {mode === 'online'
-                  ? mpStats.foeIsBot
-                    ? l('waiting')
-                    : mpStats.connected
-                      ? `${mpStats.ping ?? 0} ms`
-                      : l('offline')
-                  : l('practice')}
-              </div>
-            </div>
-            <div className="duel-fighter is-foe">
-              <div className="duel-name">{foeName}</div>
-              <div className="duel-bar">
-                <i style={{ width: `${(foeHp / MAX_HP) * 100}%` }} className={foeHp <= 30 ? 'is-low' : undefined} />
-              </div>
-              <div className="duel-pips">
-                {Array.from({ length: 2 }, (_, index) => (
-                  <span key={index} className={index < foeWins ? 'is-on' : undefined} />
-                ))}
-              </div>
-            </div>
-          </div>}
+          )}
 
-          {mode === 'online' && (!mpStats.connected || mpStats.state === null) && (
+          {source === 'online' && (!mpStats.connected || mpStats.state === null) && (
             <div className="duel-status" role="status" aria-live="polite">
               <strong>{l('connecting')}</strong>
-              <span>{mpStats.connected ? (l('findingRing')) : (l('reconnecting'))}</span>
+              <span>{mpStats.connected ? l('findingRing') : l('reconnecting')}</span>
             </div>
           )}
 
           {state === 'countdown' && <div className="duel-flash is-count">{countdown > 0 ? countdown : '…'}</div>}
-          {top && state === 'roundEnd' && (
+          {state === 'roundEnd' && (
             <div className="duel-flash is-round">
-              {mode === 'online' && mpStats.lastRoundReason === 'ko' ? 'K.O.' : l('round')}
+              {source === 'online' && mpStats.lastRoundReason === 'ko' ? 'K.O.' : l('round')}
             </div>
           )}
-          {mode === 'online' && !watch && mpStats.matchWinner !== null && (
+
+          {source === 'online' && !watch && mpStats.matchWinner !== null && (
             <div className="arena-respawn">
               {duelScore(mpStats.selfWins, mpStats.foeWins) > 0 && mpStats.matchWinner === mpStats.selfId
                 ? l('youWon')
@@ -284,32 +363,38 @@ export default function MercuryPage() {
               {notice ? ` · ${notice}` : ''}
             </div>
           )}
-          {mode === 'solo' && soloStats.phase === 'matchEnd' && (
+
+          {solo && soloStats.phase === 'matchEnd' && (
             <div className="duel-result" role="status" aria-live="polite">
-              <strong>{soloStats.winner === 'self' ? (l('victory')) : (l('defeat'))}</strong>
-              <span>{l('practiceResets')}</span>
+              <strong>
+                {isSurvival
+                  ? `${l('survivalOver')} · ${l('wave')} ${soloStats.wave}`
+                  : isBall
+                    ? `${l('ballOver')} · ${soloStats.scoreSelf}:${soloStats.scoreFoe}`
+                    : soloStats.winner === 'self'
+                      ? l('victory')
+                      : l('defeat')}
+              </strong>
+              <span>{isBall || isSurvival ? l('resultSaved') : l('practiceResets')}</span>
+              {notice ? <span>{notice}</span> : null}
             </div>
           )}
 
-          {!watch && (
-          <div className="arena-tip">
-            {l('keysTip')}
-          </div>
-          )}
+          {!watch && <div className="arena-tip">{l('keysTip')}</div>}
 
           {!watch && (
-          <div className="duel-touch" aria-label="ovládání">
-            <div className="duel-touch-row">
-              <TouchButton code="KeyA" label="←" ariaLabel={l('left')} />
-              <TouchButton code="KeyD" label="→" ariaLabel={l('right')} />
+            <div className="duel-touch" aria-label="ovládání">
+              <div className="duel-touch-row">
+                <TouchButton code="KeyA" label="←" ariaLabel={l('left')} />
+                <TouchButton code="KeyD" label="→" ariaLabel={l('right')} />
+              </div>
+              <div className="duel-touch-row">
+                <TouchButton code="KeyJ" label="J" ariaLabel={l('punch')} />
+                <TouchButton code="KeyK" label="K" ariaLabel={l('kick')} />
+                <TouchButton code="KeyS" label={l('blockShort')} ariaLabel={l('block')} />
+                <TouchButton code="Space" label={l('jumpShort')} ariaLabel={l('jump')} />
+              </div>
             </div>
-            <div className="duel-touch-row">
-              <TouchButton code="KeyJ" label="J" ariaLabel={l('punch')} />
-              <TouchButton code="KeyK" label="K" ariaLabel={l('kick')} />
-              <TouchButton code="KeyS" label={l('blockShort')} ariaLabel={l('block')} />
-              <TouchButton code="Space" label={l('jumpShort')} ariaLabel={l('jump')} />
-            </div>
-          </div>
           )}
         </>
       )}
@@ -318,22 +403,37 @@ export default function MercuryPage() {
         <section className="arena-panel" aria-label="Merkur">
           <header>
             <strong>{l('title')}</strong>
-            <span>best of 3 · 60 s</span>
+            <span>{l('subtitle')}</span>
           </header>
-          <p>
-            {l('intro')}
-          </p>
+          <p>{l('intro')}</p>
+
+          <section className="duel-modes" aria-label={l('mode')}>
+            {MODES.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className="duel-mode"
+                aria-pressed={selectedMode === option.id}
+                onClick={() => setSelectedMode(option.id)}
+              >
+                <strong>{l(option.title)}</strong>
+                <span>{l(option.desc)}</span>
+              </button>
+            ))}
+          </section>
+
           <div className="arena-keys">
             <kbd>A/D</kbd> {l('moveShort')} · <kbd>W</kbd> {l('jumpShort')} · <kbd>J</kbd>{' '}
             {l('punchShort')} · <kbd>K</kbd> {l('kickShort')} · <kbd>S</kbd> {l('blockShort')}
           </div>
+
           <section className="duel-difficulty" aria-label={l('difficulty')}>
             <strong>{l('shadowSkill')}</strong>
             <div className="duel-difficulty-options">
               {([
-                { id: 'gentle' as const, name: { cs: 'Klidný', en: 'Gentle', es: 'Tranquilo' }, note: { cs: 'pomalejší reakce', en: 'slower reactions', es: 'reacciones más lentas' } },
-                { id: 'standard' as const, name: { cs: 'Vyrovnaný', en: 'Balanced', es: 'Equilibrado' }, note: { cs: 'doporučeno', en: 'recommended', es: 'recomendado' } },
-                { id: 'champion' as const, name: { cs: 'Mistr', en: 'Champion', es: 'Maestro' }, note: { cs: 'rychlý blok a kop', en: 'quick guards & kicks', es: 'bloqueo y patada rápidos' } },
+                { id: 'gentle' as const, name: { cs: 'Klidný', en: 'Gentle', es: 'Tranquilo', pt: 'Tranquilo', fr: 'Calme' }, note: { cs: 'pomalejší reakce', en: 'slower reactions', es: 'reacciones más lentas', pt: 'reações mais lentas', fr: 'réactions lentes' } },
+                { id: 'standard' as const, name: { cs: 'Vyrovnaný', en: 'Balanced', es: 'Equilibrado', pt: 'Equilibrado', fr: 'Équilibré' }, note: { cs: 'doporučeno', en: 'recommended', es: 'recomendado', pt: 'recomendado', fr: 'recommandé' } },
+                { id: 'champion' as const, name: { cs: 'Mistr', en: 'Champion', es: 'Maestro', pt: 'Mestre', fr: 'Maître' }, note: { cs: 'rychlý blok a kop', en: 'quick guards & kicks', es: 'bloqueo y patada rápidos', pt: 'defesa e chutes rápidos', fr: 'gardes et coups rapides' } },
               ]).map((option) => (
                 <button
                   key={option.id}
@@ -348,29 +448,31 @@ export default function MercuryPage() {
               ))}
             </div>
           </section>
-          <p className="duel-coach-tip">
-            {l('coachTip')}
-          </p>
+
+          <p className="duel-coach-tip">{l('coachTip')}</p>
+
           <div className="arena-actions">
             <button
               type="button"
               className="park-btn"
               onClick={() => {
                 unlock();
-                setMode('solo');
+                setSource('solo');
                 setNotice(null);
                 setPhase('playing');
               }}
             >
-              {l('practiceVsBot')}
+              {l('startMode')}
             </button>
             <button
               type="button"
               className="park-btn park-btn-mp"
               onClick={() => {
                 unlock();
-                setMode('online');
+                setSource('online');
+                setSelectedMode('duel');
                 setMpStats(EMPTY_MP);
+                setSoloStats(EMPTY_SOLO);
                 setNotice(null);
                 setPhase('playing');
               }}

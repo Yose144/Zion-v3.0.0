@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { NO_INPUT, type FightInput } from './duel';
+import { NO_INPUT, type FightInput } from './ragdoll';
 
 const LEFT = ['KeyA', 'ArrowLeft'];
 const RIGHT = ['KeyD', 'ArrowRight'];

@@ -3814,6 +3814,60 @@ button.game-hud-chip.is-sound.is-off em {
   margin: 0.2rem 0 1rem;
 }
 
+/* ── výběr módu (ragdoll éra) ─────────────────────────────────────── */
+.duel-modes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0.2rem 0 1rem;
+}
+
+.duel-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.24rem;
+  min-width: 0;
+  padding: 0.6rem 0.7rem;
+  border-radius: 0.75rem;
+  text-align: left;
+  border-color: rgba(255, 230, 180, 0.22);
+  background: rgba(20, 12, 7, 0.35);
+}
+
+.duel-mode strong {
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+}
+
+.duel-mode span {
+  color: rgba(246, 231, 216, 0.58);
+  font-size: 0.66rem;
+  line-height: 1.35;
+}
+
+.duel-mode[aria-pressed='true'] {
+  border-color: rgba(255, 209, 102, 0.78);
+  background: rgba(255, 180, 106, 0.18);
+  color: #ffe9a8;
+}
+
+.duel-mode[aria-pressed='true'] span {
+  color: rgba(255, 233, 168, 0.72);
+}
+
+.duel-score-big {
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 800;
+  line-height: 1;
+  color: #ffe9a8;
+  text-shadow: 0 0 14px rgba(255, 180, 106, 0.25);
+}
+
+.duel-fighter.is-foe .duel-score-big {
+  text-align: right;
+}
+
 .duel-difficulty > strong {
   display: block;
   margin-bottom: 0.45rem;

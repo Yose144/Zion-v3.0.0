@@ -11,7 +11,7 @@
  */
 
 import { play, unlock } from '@/core/audio/engine';
-import { KICK, MAX_HP } from './duel';
+import { MAX_HP } from './ragdoll';
 
 export interface DuelSound {
   unlock: () => void;
@@ -25,8 +25,8 @@ export interface DuelSound {
   reset: () => void;
 }
 
-/** Hranice mezi pěstí a kopem: kop bere 13, pěst 7. */
-const KICK_THRESHOLD = (KICK.damage + 7) / 2;
+/** Hranice mezi pěstí a kopem — kop je fyzikálně těžší a bere víc. */
+const KICK_THRESHOLD = 13;
 
 export function createDuelSound(): DuelSound {
   let selfHp = MAX_HP;

@@ -78,8 +78,10 @@ const asItemId = (value: unknown): ItemId | null =>
  * 26 — **pas i na multiplayeru**: bez cookie `zion_nirvana_pass` server
  *      odmítne `join` (`pass_required`). Klient bez pasu by se jinak dostal
  *      do hry přes vlastní WebSocket klient.
+ *  33 — **ragdoll Merkur**: `FightPlayerState` nese `pose` (22 čísel = 11 bodů
+ *      loutky). Starý klient by kreslil loutku bez pózy. Verze se musí potkat.
  */
-export const PROTO_VERSION = 32;
+export const PROTO_VERSION = 33;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -233,6 +235,11 @@ export interface FightPlayerState {
   blocking: boolean;
   /** Právě probíhající úder (pro animaci), nebo null. */
   attack: { kind: 'punch' | 'kick'; elapsed: number } | null;
+  /**
+   * Póza ragdoll loutky: ploché `[x0,y0,x1,y1,…]`, 11 bodů (22 čísel).
+   * Server je autorita, klient pózy jen interpoluje.
+   */
+  pose?: number[];
 }
 
 /** Saturn — tanky: strana 0 = levý hráč, 1 = pravý (dřív bot). */

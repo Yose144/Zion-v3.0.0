@@ -1,26 +1,28 @@
 /**
- * MERKUR — serverová simulace souboje.
+ * MERKUR — serverová ragdoll simulace souboje.
  *
- * Používá **přesně týž modul** co klient (`core/fight/duel.ts`), takže se
- * nikdy nemůže rozejít „trefil jsem ho a nic". Prázdné sedlo ve výchozí
- * pozici drží bot (stejný `botInput` jako sólo cvičení) — ať online duel
- * není utkání s pametným stropem, když druhý hráč teprve dorazí.
+ * Používá **přesně týž modul** co klient (`core/fight/ragdoll.ts`), takže se
+ * nikdy nemůže rozejít „trefil jsem ho a nic". Prázdné sedlo drží bot
+ * (stejný `botInput` jako sólo cvičení) — online duel tak není utkání
+ * s prázdným stropem, když druhý hráč teprve dorazí.
  *
  * Zápas: best of 3, 60 s na kolo. Po konci zápasu se po 6 s tvoří nový.
  */
 
 import {
+  bodyCenterOf,
   botInput,
-  createDuel,
+  createRagdollMatch,
   makeBotMemory,
   NO_INPUT,
-  stepDuel,
+  poseOf,
+  resetRagdollMatch,
+  stepRagdoll,
   type BotMemory,
-  type Duel,
-  type DuelEvent,
   type FightInput,
-  type Fighter,
-} from '../../nirvana/src/core/fight/duel.js';
+  type RagdollFighter,
+  type RagdollMatch,
+} from '../../nirvana/src/core/fight/ragdoll.js';
 import type { EventPayload, FightPlayerState } from '../../nirvana/src/core/net/protocol.js';
 
 export interface FightSeat {
@@ -31,7 +33,7 @@ export interface FightSeat {
 }
 
 export interface FightRoomSim {
-  duel: Duel;
+  match: RagdollMatch;
   seats: { a: FightSeat; b: FightSeat };
   inputs: { a: FightInput; b: FightInput };
   bots: { a: BotMemory; b: BotMemory };
@@ -46,44 +48,18 @@ export interface FightRoomSim {
 
 const RESTART_MS = 6000;
 
-function seatFighter(seat: FightSeat, x: number, facing: 1 | -1): Fighter {
-  return {
-    id: seat.id ?? `bot-${x > 0 ? 'b' : 'a'}`,
-    name: seat.name,
-    avatarId: seat.avatarId,
-    x,
-    y: 0,
-    vx: 0,
-    vy: 0,
-    onGround: true,
-    hp: 100,
-    facing,
-    attack: null,
-    blocking: false,
-    stun: 0,
-    wins: 0,
-    ko: false,
-  };
-}
-
-function freshDuel(seats: { a: FightSeat; b: FightSeat }): Duel {
-  return {
-    a: seatFighter(seats.a, -4, 1),
-    b: seatFighter(seats.b, 4, -1),
-    phase: 'countdown',
-    timer: 3,
-    round: 1,
-    events: [],
-  };
-}
-
 export function createFight(now: number, options: { bots?: boolean } = {}): FightRoomSim {
   const seats = {
     a: { id: null, name: 'Stín', avatarId: null },
     b: { id: null, name: 'Stín', avatarId: null },
   };
+  const match = createRagdollMatch(
+    'duel',
+    { id: 'bot-a', name: 'Stín', avatarId: null },
+    { id: 'bot-b', name: 'Stín', avatarId: null },
+  );
   return {
-    duel: freshDuel(seats),
+    match,
     seats,
     inputs: { a: { ...NO_INPUT }, b: { ...NO_INPUT } },
     bots: { a: makeBotMemory(), b: makeBotMemory() },
@@ -94,7 +70,7 @@ export function createFight(now: number, options: { bots?: boolean } = {}): Figh
   };
 }
 
-/** Obsadí první volné sedlo. Vrací false, když je zápas plný (index to řeší novou místností). */
+/** Obsadí první volné sedlo. Vrací false, když je zápas plný. */
 export function addFightPlayer(
   sim: FightRoomSim,
   id: string,
@@ -105,9 +81,10 @@ export function addFightPlayer(
   for (const side of ['a', 'b'] as const) {
     if (sim.seats[side].id === null) {
       sim.seats[side] = { id, name, avatarId };
-      sim.duel[side].id = id;
-      sim.duel[side].name = name;
-      sim.duel[side].avatarId = avatarId;
+      const fighter = sim.match[side];
+      fighter.id = id;
+      fighter.name = name;
+      fighter.avatarId = avatarId;
       return true;
     }
   }
@@ -119,9 +96,10 @@ export function removeFightPlayer(sim: FightRoomSim, id: string): void {
     if (sim.seats[side].id === id) {
       sim.seats[side] = { id: null, name: 'Stín', avatarId: null };
       sim.inputs[side] = { ...NO_INPUT };
-      sim.duel[side].id = `bot-${side}`;
-      sim.duel[side].name = 'Stín';
-      sim.duel[side].avatarId = null;
+      const fighter = sim.match[side];
+      fighter.id = `bot-${side}`;
+      fighter.name = 'Stín';
+      fighter.avatarId = null;
     }
   }
 }
@@ -140,33 +118,8 @@ export function setFightInput(sim: FightRoomSim, id: string, input: Partial<Figh
   }
 }
 
-/** Jméno pro tabuli/hud — identitu zná jen server, nikdy klient. */
-function eventsToWire(sim: FightRoomSim, events: DuelEvent[]): EventPayload[] {
-  return events.map((event) => {
-    if (event.kind === 'ko') {
-      return { kind: 'duel_ko', winner: event.winner!, loser: event.loser!, round: sim.duel.round, at: event.at };
-    }
-    if (event.kind === 'round_end') {
-      return {
-        kind: 'round_end',
-        round: sim.duel.round,
-        winner: event.winner ?? null,
-        reason: event.reason ?? 'ko',
-        at: event.at,
-      } as EventPayload;
-    }
-    if (event.kind === 'fight_start') {
-      return { kind: 'round_start', round: sim.duel.round, at: event.at };
-    }
-    // match_end
-    return {
-      kind: 'duel_end',
-      winner: event.winner!,
-      aWins: sim.duel.a.wins,
-      bWins: sim.duel.b.wins,
-      at: event.at,
-    };
-  });
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 export function stepFight(sim: FightRoomSim, dt: number, now: number): EventPayload[] {
@@ -178,20 +131,56 @@ export function stepFight(sim: FightRoomSim, dt: number, now: number): EventPayl
 
   sim.clock += dt;
 
-  // volná sedla hraje bot; lidský input platí jen pro obsazené
+  // volná sedla hraje bot; lidský input platí jen pro obsazená
   const inputA =
-    sim.seats.a.id !== null ? sim.inputs.a : botInput(sim.duel, sim.bots.a, sim.duel.a, sim.duel.b, sim.clock);
+    sim.seats.a.id !== null
+      ? sim.inputs.a
+      : botInput(sim.match, 'a', sim.bots.a, 'standard', sim.clock);
   const inputB =
-    sim.seats.b.id !== null ? sim.inputs.b : botInput(sim.duel, sim.bots.b, sim.duel.b, sim.duel.a, sim.clock);
+    sim.seats.b.id !== null
+      ? sim.inputs.b
+      : botInput(sim.match, 'b', sim.bots.b, 'standard', sim.clock);
 
-  const events = stepDuel(sim.duel, inputA, inputB, dt, now);
-  if (sim.duel.phase !== 'matchEnd') sim.restartAt = 0;
-  if (sim.duel.phase === 'matchEnd' && sim.restartAt === 0) sim.restartAt = now + RESTART_MS;
+  const raw = stepRagdoll(sim.match, inputA, inputB, dt, now);
 
-  const wire = eventsToWire(sim, events);
+  if (sim.match.phase === 'matchEnd' && sim.restartAt === 0) {
+    sim.restartAt = now + RESTART_MS;
+  }
+  if (sim.match.phase !== 'matchEnd') sim.restartAt = 0;
+
+  const wire: EventPayload[] = [];
+  for (const event of raw) {
+    if (event.kind === 'ko') {
+      wire.push({
+        kind: 'duel_ko',
+        winner: event.winner,
+        loser: event.loser,
+        round: sim.match.round,
+        at: event.at,
+      });
+    } else if (event.kind === 'round_end') {
+      wire.push({
+        kind: 'round_end',
+        round: sim.match.round,
+        winner: event.winner,
+        reason: event.reason,
+        at: event.at,
+      });
+    } else if (event.kind === 'fight_start') {
+      wire.push({ kind: 'round_start', round: sim.match.round, at: event.at });
+    } else if (event.kind === 'match_end' && event.winner) {
+      wire.push({
+        kind: 'duel_end',
+        winner: event.winner,
+        aWins: sim.match.a.wins,
+        bWins: sim.match.b.wins,
+        at: event.at,
+      });
+    }
+  }
 
   if (sim.restartAt !== 0 && now >= sim.restartAt) {
-    sim.duel = freshDuel(sim.seats);
+    resetRagdollMatch(sim.match);
     sim.inputs = { a: { ...NO_INPUT }, b: { ...NO_INPUT } };
     sim.restartAt = 0;
   }
@@ -200,40 +189,39 @@ export function stepFight(sim: FightRoomSim, dt: number, now: number): EventPayl
   return wire;
 }
 
-function toState(fighter: Fighter): FightPlayerState {
+function toState(fighter: RagdollFighter): FightPlayerState {
+  const center = bodyCenterOf(fighter);
   return {
     id: fighter.id,
     name: fighter.name,
     avatarId: fighter.avatarId,
-    x: Math.round(fighter.x * 100) / 100,
-    y: Math.round(fighter.y * 100) / 100,
+    x: round2(center.x),
+    y: round2(center.y),
     facing: fighter.facing,
-    hp: fighter.hp,
+    hp: Math.round(fighter.hp),
     wins: fighter.wins,
     ko: fighter.ko,
-    stun: Math.round(fighter.stun * 100) / 100,
-    blocking: fighter.blocking,
-    attack: fighter.attack
-      ? { kind: fighter.attack.kind, elapsed: Math.round(fighter.attack.elapsed * 100) / 100 }
-      : null,
+    stun: round2(fighter.stun),
+    blocking: fighter.guard,
+    attack: null,
+    pose: poseOf(fighter),
   };
 }
 
 export function fightSnapshot(sim: FightRoomSim, now: number) {
   const state: 'countdown' | 'running' | 'roundEnd' | 'matchEnd' =
-    sim.duel.phase === 'countdown'
+    sim.match.phase === 'countdown'
       ? 'countdown'
-      : sim.duel.phase === 'fighting'
+      : sim.match.phase === 'playing'
         ? 'running'
-        : sim.duel.phase === 'roundEnd'
+        : sim.match.phase === 'roundEnd'
           ? 'roundEnd'
           : 'matchEnd';
   return {
-    players: [toState(sim.duel.a), toState(sim.duel.b)] as FightPlayerState[],
+    players: [toState(sim.match.a), toState(sim.match.b)] as FightPlayerState[],
     state,
-    round: sim.duel.round,
-    countdown:
-      sim.duel.phase === 'countdown' ? Math.max(0, Math.ceil(sim.duel.timer)) : 0,
-    secondsLeft: sim.duel.phase === 'fighting' ? Math.max(0, Math.ceil(sim.duel.timer)) : 0,
+    round: sim.match.round,
+    countdown: sim.match.phase === 'countdown' ? Math.max(0, Math.ceil(sim.match.timer)) : 0,
+    secondsLeft: sim.match.phase === 'playing' ? Math.max(0, Math.ceil(sim.match.timer)) : 0,
   };
 }

@@ -102,7 +102,7 @@ const PLANET_PANELS: Record<PlanetGameId, {
   },
   mercury: {
     title: 'MERKUR',
-    note: 'Klec na Merkuru — pěst, kop, blok. Best of 3. Cvičení proti stínu i online duel.',
+    note: 'Ragdoll klec — fyzika místo kombinací. Souboj, fotbal, přežití, trénink. Sólo i online duel.',
     href: '/mercury',
     cta: 'Do klece',
   },

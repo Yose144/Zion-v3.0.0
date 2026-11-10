@@ -127,7 +127,8 @@ try {
     const s = await debug(a);
     if (s) {
       const gap = s.foe.x - s.self.x;
-      if (Math.abs(gap) > 1.8 && !s.foe.ko) {
+      // ragdoll pěst dosáhne ~1,3 m mezi středy těl, ne 2,15 m jako dřív
+      if (Math.abs(gap) > 1.2 && !s.foe.ko) {
         await a.keyboard.down(gap > 0 ? 'd' : 'a');
         await a.keyboard.up(gap > 0 ? 'a' : 'd');
         await a.keyboard.up('j');

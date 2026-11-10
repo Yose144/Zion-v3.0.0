@@ -2586,9 +2586,41 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   něj — žádná druhá fyzika. Barva projektilu se mění v renderu.
 - **Skóre/HUD:** `ArenaStats.weapon` je rozšířený union, `ammo` se počítá
   z `ammoOf()`; HUD v `app/mars/page.tsx` má `weaponLabel()`.
-- **Multiplayer zůstává na třech zbraních** (protokol se nemění, zůstává 32).
+- **Multiplayer zůstává na třech zbraních** (protokol se nemění; aktuálně 33
+  kvůli ragdollu Merkuru).
   Server `arena.ts` importuje `WEAPONS` a nové položky ignoruje; `ammoOf`
   v serveru vrací pro neznámou zbraň raketovou munici, ale ta se tam nikdy
   nepošle. Až se sada rozšíří do MP, je potřeba inventář do protokolu.
 - **Test:** `npx tsx test/arena-weapons.mjs` (26 kontrol: čísla Q3, spread
   s deterministickým RNG, armor, DPS blesku, poměr plazmy a rakety).
+
+## Merkur — ragdoll souboj a čtyři módy (2026-11-10, proto 33)
+
+- **Jeden engine, čtyři pravidla.** `core/fight/ragdoll.ts` je fyzikální
+  loutka (11 bodů, 10 jointů, PBD) a zároveň pravidla pro `duel`, `ball`,
+  `survival` a `practice`. Klient i server (`apps/nirvana-net/src/fight.ts`)
+  importují **tentýž soubor** — žádná druhá fyzika. Starý `duel.ts` a
+  `Fighter3D.tsx` jsou smazané.
+- **Zásah = rychlost končetiny, ne tlačítko.** `hitDamage(speed, power, guard)`
+  rozhoduje o poškození; `resolveCombat` hledá kontakt hand/foot/knee/head
+  s tělem (head/chest/pelvis). Držený J/K jen opakuje švih v ochlazení.
+- **Postura drží loutku na nohou.** `applyPosture` zapíná pánev/hrudník/hlavu
+  a nohy; vypíná se při KO/stunu/knockbacku. Bez toho se loutka složila
+  (hrudník 1,55 → 0,27 m) a nešlo nic zasáhnout.
+- **Nárazová rychlost před posturou.** `ivx`/`ivy` se počítají před
+  `applyPosture`; jinak by zvednutí loutky vyrobilo falešný zásah 20 m/s.
+- **Fotbal:** míč má vlastní fyziku; branky na koncích klece; po gólu výkop
+  pro inkasujícího. Pořadí srážek s míčem se střídá (`ballSeq`) a bot skáče
+  přes míč, když je na špatné straně — bez toho jeden bot vyhrával 14:0.
+- **Sólo i online:** sólo stepuje pevně 1/60 s (`MercurySolo`), online server
+  1/30 s a klient pózy jen interpoluje (`MercuryDuel`, `SNAP_DISTANCE = 3`).
+  Vlastní pohyb se nepredikuje — ragdoll je chaotický.
+- **Protokol 33:** `FightPlayerState.pose` = 22 čísel. Deploy **net první,
+  pak appka** (`deploy-nirvana.sh` to kontroluje sám).
+- **Módy:** duel (best of 3), ball (90 s), survival (vlny, od 5. obtížnost
+  champion), practice (figurína s regenerací). Online je jen duel.
+- **Testy:** `npx tsx apps/nirvana/test/ragdoll.mjs` (35 kontrol) a
+  `apps/nirvana-net/test/fight.mjs` (simulace + síť, PASSED).
+- **Vizuál:** `RagdollBody` kreslí válce mezi body + kontaktní stín;
+  `DuelStage` má `goals` a `wide` kameru (fotbal je 20 m široký, s úzkou
+  kamerou nebyly vidět branky).

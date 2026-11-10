@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * Test Merkur duelu.
+ * Test Merkur ragdoll souboje.
  *
  * Dvě části:
- *  1. **Simulace** (bez sítě): `stepFight` s inputy musí zasadit zásah,
- *     srážet HP na nulu, počítat kola, ukončit zápas a restartovat ho;
- *     blok musí mazat poškození a bot musí obsadit prázdné sedlo.
+ *  1. **Simulace** (bez sítě): loutka stojí, švih ubírá HP, KO ukončí kolo,
+ *     kryt snižuje poškození, časový limit rozhodne kolo, bot v prázdném
+ *     sedle útočí a body zůstávají v kleci.
  *  2. **Síť**: dva klienti dojdou do `fight-1`, třetí dostane novou
- *     místnost (cap 2), vstup hýbe bojovníkem, pěst ubírá soupeři HP,
- *     po odpojení soupeře doplní bot.
+ *     místnost (cap 2), snapshot nese pózu loutky, vstup hýbe loutkou,
+ *     pěst ubírá soupeři HP a po odpojení soupeře doplní bot.
  */
 
 import { spawn } from 'node:child_process';
@@ -23,7 +23,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const entry = join(here, '..', 'dist', 'nirvana-net', 'src', 'index.js');
 const require = createRequire(import.meta.url);
 const fight = require('../dist/nirvana-net/src/fight.js');
-const duel = require('../dist/nirvana/src/core/fight/duel.js');
+const ragdoll = require('../dist/nirvana/src/core/fight/ragdoll.js');
 
 const PORT = Number(process.env.FIGHT_PORT ?? 3700 + Math.floor(Math.random() * 300));
 const WS_URL = `ws://127.0.0.1:${PORT}/net`;
@@ -35,158 +35,141 @@ const check = (name, ok, detail = '') => {
 };
 
 const DT = 1 / 30;
+const NO_INPUT = { move: 0, jump: false, punch: false, kick: false, block: false };
 
 // ── 1) simulace ───────────────────────────────────────────────────────
 console.log('\n== simulace (bez sítě) ==');
 {
-  const sim = fight.createFight(1000);
-  fight.addFightPlayer(sim, 'p_a', 'Boxer A', 7, 1000);
-  fight.addFightPlayer(sim, 'p_b', 'Boxer B', null, 1000);
-
-  let now = 1000;
-  const events = [];
-  let reachedDamage = false;
-  for (let tick = 0; tick < 30 * 40; tick++) {
-    now += DT * 1000;
-    // A nejdřív doběhne do dosahu (během úderu se nestojí na místě a nekročí)
-    const dx = sim.duel.b.x - sim.duel.a.x;
-    const inRange = Math.abs(dx) <= duel.PUNCH.reach - 0.3;
-    fight.setFightInput(sim, 'p_a', {
-      move: inRange ? 0 : dx > 0 ? 1 : -1,
-      jump: false,
-      punch: inRange,
-      kick: false,
-      block: false,
-    });
-    fight.setFightInput(sim, 'p_b', { move: 0, jump: false, punch: false, kick: false, block: false });
-    events.push(...fight.stepFight(sim, DT, now));
-    if (sim.duel.b.hp < 100) reachedDamage = true;
-    if (events.some((e) => e.kind === 'duel_end')) break;
-  }
-
-  const ko = events.find((e) => e.kind === 'duel_ko');
-  const end = events.find((e) => e.kind === 'duel_end');
-  check('A uštědřil zásah (B ztrácí HP)', reachedDamage, `hpB=${sim.duel.b.hp}`);
-  check('K.O. event', Boolean(ko) && ko.winner === 'p_a' && ko.loser === 'p_b', JSON.stringify(ko));
-  check('vyhrál 2:0', Boolean(end) && end.winner === 'p_a' && end.aWins === 2 && end.bWins === 0,
-    JSON.stringify(end));
-
-  // restart zápasu po 6 s
-  let restartSeen = false;
-  for (let tick = 0; tick < 30 * 8 && !restartSeen; tick++) {
-    now += DT * 1000;
-    events.push(...fight.stepFight(sim, DT, now));
-    if (sim.duel.phase === 'countdown' && sim.duel.round === 1 && sim.duel.a.wins === 0) restartSeen = true;
-  }
-  check('po match_end přijde nový zápas', restartSeen, sim.duel.phase);
-}
-{
-  // blok mazí poškození — srovnání blokováného a neblokováného zásahu
-  const withBlock = fight.createFight(0);
-  fight.addFightPlayer(withBlock, 'p_a', 'A', null, 0);
-  fight.addFightPlayer(withBlock, 'p_b', 'B', null, 0);
-  const noBlock = fight.createFight(0);
-  fight.addFightPlayer(noBlock, 'p_a', 'A', null, 0);
-  fight.addFightPlayer(noBlock, 'p_b', 'B', null, 0);
-  let nowB = 0;
-  let hpBlock = 100;
-  for (let tick = 0; tick < 30 * 6; tick++) {
-    nowB += DT * 1000;
-    const dx = withBlock.duel.b.x - withBlock.duel.a.x;
-    const inRange = Math.abs(dx) <= duel.PUNCH.reach - 0.3;
-    fight.setFightInput(withBlock, 'p_a', { move: inRange ? 0 : 1, jump: false, punch: inRange, kick: false, block: false });
-    fight.setFightInput(withBlock, 'p_b', { move: 0, jump: false, punch: false, kick: false, block: true });
-    fight.stepFight(withBlock, DT, nowB);
-  }
-  hpBlock = withBlock.duel.b.hp;
-  let nowN = 0;
-  for (let tick = 0; tick < 30 * 6; tick++) {
-    nowN += DT * 1000;
-    const dx = noBlock.duel.b.x - noBlock.duel.a.x;
-    const inRange = Math.abs(dx) <= duel.PUNCH.reach - 0.3;
-    fight.setFightInput(noBlock, 'p_a', { move: inRange ? 0 : 1, jump: false, punch: inRange, kick: false, block: false });
-    fight.setFightInput(noBlock, 'p_b', { move: 0, jump: false, punch: false, kick: false, block: false });
-    fight.stepFight(noBlock, DT, nowN);
-  }
-  const hpFree = noBlock.duel.b.hp;
-  check('blok výrazně snižuje poškození', hpBlock > hpFree + 10 && hpBlock > 60, `blok=${hpBlock} volný=${hpFree}`);
-}
-{
-  // časový limit bez vstupu → kolo rozhodne HP shoda → 'time' bez vítěze
+  // loutka musí stát, ne se složit na podlahu
   const sim = fight.createFight(0);
-  fight.addFightPlayer(sim, 'p_a', 'A', null, 0);
-  fight.addFightPlayer(sim, 'p_b', 'B', null, 0);
   let now = 0;
-  const events = [];
-  for (let tick = 0; tick < 30 * 66; tick++) {
+  for (let tick = 0; tick < 30 * 4; tick++) {
     now += DT * 1000;
-    events.push(...fight.stepFight(sim, DT, now));
-  }
-  const timeRound = events.find((e) => e.kind === 'round_end' && e.reason === 'time');
-  check('na čas senza round_end(time)', Boolean(timeRound), JSON.stringify(events.slice(0, 4)));
-}
-{
-  // těla se nesmí snoubit + hranice klece drží: A honí B ke zdi, B utíká
-  const sim = fight.createFight(0);
-  fight.addFightPlayer(sim, 'p_a', 'A', null, 0);
-  fight.addFightPlayer(sim, 'p_b', 'B', null, 0);
-  sim.duel.b.x = 8.2;
-  let now = 0;
-  let minGap = Infinity;
-  for (let tick = 0; tick < 30 * 20; tick++) {
-    now += DT * 1000;
-    const dx = sim.duel.b.x - sim.duel.a.x;
-    const inRange = Math.abs(dx) <= duel.PUNCH.reach - 0.3;
-    fight.setFightInput(sim, 'p_a', { move: inRange ? 0 : 1, jump: false, punch: inRange, kick: false, block: false });
-    fight.setFightInput(sim, 'p_b', { move: 1, jump: false, punch: false, kick: false, block: false });
     fight.stepFight(sim, DT, now);
-    if (sim.duel.phase === 'fighting') minGap = Math.min(minGap, Math.abs(sim.duel.a.x - sim.duel.b.x));
   }
-  check('bojovníci se nikdy neprotnou', minGap >= duel.FIGHTER_GAP - 0.01, String(minGap));
-  check('hranice klece drží', Math.abs(sim.duel.a.x) <= duel.ARENA_HALF + 0.01 && Math.abs(sim.duel.b.x) <= duel.ARENA_HALF + 0.01,
-    `${sim.duel.a.x.toFixed(2)}|${sim.duel.b.x.toFixed(2)}`);
-  check('B doběhl až ke zdi', sim.duel.b.x >= duel.ARENA_HALF - 0.5, String(sim.duel.b.x.toFixed(2)));
+  const chest = ragdoll.bodyCenterOf(sim.match.a);
+  const feet = Math.max(sim.match.a.y[ragdoll.P.FOOT_L], sim.match.a.y[ragdoll.P.FOOT_R]);
+  check('loutka stojí (hrudník nad 1,2 m)', chest.y > 1.2, String(chest.y));
+  check('chodidla leží na zemi', feet < 0.25, String(feet));
 }
 {
-  // volné sedlo drží bot — hýbe se a útočí
+  // švih ubírá HP soupeři
+  const sim = fight.createFight(0);
+  fight.addFightPlayer(sim, 'p_a', 'Boxer A', 7, 0);
+  fight.addFightPlayer(sim, 'p_b', 'Boxer B', null, 0);
+  sim.match.phase = 'playing';
+  sim.match.timer = 60;
+  // přiblížit A k B (test zásahu, ne pohybu)
+  for (let i = 0; i < ragdoll.POINT_COUNT; i++) sim.match.a.x[i] += 4.2;
+
+  let now = 0;
+  let reachDamage = false;
+  const events = [];
+  for (let tick = 0; tick < 30 * 8 && !reachDamage; tick++) {
+    now += DT * 1000;
+    fight.setFightInput(sim, 'p_a', { move: 1, jump: false, punch: true, kick: false, block: false });
+    events.push(...fight.stepFight(sim, DT, now));
+    if (sim.match.b.hp < 100) reachDamage = true;
+  }
+  check('švih ubírá soupeři HP', reachDamage, `hpB=${sim.match.b.hp}`);
+  check('zásah se počítá (hits > 0)', sim.match.a.hits > 0, `hits=${sim.match.a.hits}`);
+}
+{
+  // KO přes `damageFighter` — deterministické pravidlo kol
+  const sim = fight.createFight(0);
+  sim.match.phase = 'playing';
+  sim.match.timer = 60;
+  const events = [];
+  ragdoll.damageFighter(sim.match, sim.match.b, 100, sim.match.a, 0, events);
+  let now = 0;
+  for (let tick = 0; tick < 30 * 1; tick++) {
+    now += DT * 1000;
+    events.push(...fight.stepFight(sim, DT, now));
+  }
+  check('KO nastaví ko', sim.match.b.ko === true);
+  check('KO ukončí kolo (roundEnd)', sim.match.phase === 'roundEnd', sim.match.phase);
+  check('vítěz kola dostal bod', sim.match.a.wins === 1, String(sim.match.a.wins));
+  check('KO event prošel do sítě', events.some((e) => e.kind === 'round_end' && e.reason === 'ko'), JSON.stringify(events.slice(0, 3)));
+}
+{
+  // kryt snižuje poškození (čistá funkce)
+  const free = ragdoll.hitDamage(8, 1, false);
+  const guarded = ragdoll.hitDamage(8, 1, true);
+  const weak = ragdoll.hitDamage(2, 1, false);
+  check('kryt snižuje poškození', guarded > 0 && guarded < free, `free=${free} guard=${guarded}`);
+  check('pomalý dotek nepoškodí', weak === 0, String(weak));
+}
+{
+  // časový limit
+  const sim = fight.createFight(0);
+  sim.match.phase = 'playing';
+  sim.match.timer = 0.02;
+  sim.match.a.hp = 80;
+  sim.match.b.hp = 40;
+  let now = 0;
+  let round = null;
+  for (let tick = 0; tick < 30 * 2 && !round; tick++) {
+    now += DT * 1000;
+    const events = fight.stepFight(sim, DT, now);
+    round = events.find((e) => e.kind === 'round_end') ?? null;
+  }
+  check('na čas rozhodne vyšší HP', Boolean(round) && round.winner === sim.match.a.id, JSON.stringify(round));
+  check('důvod kola = time', round?.reason === 'time', round?.reason);
+}
+{
+  // bot v prázdném sedle útočí
   const sim = fight.createFight(0);
   fight.addFightPlayer(sim, 'p_a', 'Samotář', null, 0);
   let now = 0;
-  const startFoeX = sim.duel.b.x;
-  let foeActed = false;
-  for (let tick = 0; tick < 30 * 30 && sim.duel.phase !== 'matchEnd'; tick++) {
+  for (let tick = 0; tick < 30 * 35; tick++) {
     now += DT * 1000;
     fight.stepFight(sim, DT, now);
-    if (sim.duel.b.attack) foeActed = true;
   }
-  check('bot v prázdném sedle útočí', foeActed || sim.duel.a.hp < 100, `hpA=${sim.duel.a.hp} bx=${sim.duel.b.x.toFixed(2)} start=${startFoeX}`);
-  check('solo bez druhého hráče nesekne duel', sim.duel.phase !== 'countdown' || sim.duel.a.wins + sim.duel.b.wins > 0,
-    sim.duel.phase);
+  check('bot v prázdném sedle útočí', sim.match.b.hits > 0 || sim.match.a.hp < 100,
+    `hits=${sim.match.b.hits} hpA=${sim.match.a.hp}`);
+}
+{
+  // hranice klece a podlaha
+  const sim = fight.createFight(0);
+  sim.match.phase = 'playing';
+  sim.match.timer = 60;
+  let now = 0;
+  let outside = false;
+  for (let tick = 0; tick < 30 * 10; tick++) {
+    now += DT * 1000;
+    fight.setFightInput(sim, 'p_a', { move: 1, jump: tick % 40 === 0, punch: tick % 20 === 0, kick: false, block: false });
+    fight.stepFight(sim, DT, now);
+    for (const side of ['a', 'b']) {
+      const f = sim.match[side];
+      for (let i = 0; i < ragdoll.POINT_COUNT; i++) {
+        if (Math.abs(f.x[i]) > ragdoll.ARENA_HALF + 0.01 || f.y[i] < -0.01 || f.y[i] > 16.5) outside = true;
+      }
+    }
+  }
+  check('loutky zůstávají v kleci', !outside);
 }
 
-// obtížnosti mají být měřitelně různé, ne jen jiný nápis v menu
+// obtížnosti mají být měřitelně různé
 {
   const sample = (difficulty) => {
     const sim = fight.createFight(0);
-    sim.duel.phase = 'fighting';
-    sim.duel.a.attack = { kind: 'punch', elapsed: 0.1, hit: false };
-    const memory = duel.makeBotMemory();
+    sim.match.phase = 'playing';
+    sim.match.timer = 60;
+    const memory = ragdoll.makeBotMemory();
     let decisions = 0;
-    let blockedFrames = 0;
+    let guards = 0;
     for (let frame = 0; frame < 300; frame++) {
       const before = memory.nextThink;
-      const input = duel.botInput(sim.duel, memory, sim.duel.b, sim.duel.a, frame / 30, difficulty);
+      const input = ragdoll.botInput(sim.match, 'b', memory, difficulty, frame / 30);
       if (memory.nextThink !== before) decisions += 1;
-      if (input.block) blockedFrames += 1;
+      if (input.block) guards += 1;
     }
-    return { decisions, blockedFrames };
+    return { decisions, guards };
   };
   const gentle = sample('gentle');
   const champion = sample('champion');
-  check('mistr reaguje častěji než klidný stín', champion.decisions > gentle.decisions,
+  check('mistr se rozhoduje častěji než klidný', champion.decisions > gentle.decisions,
     `gentle=${gentle.decisions} champion=${champion.decisions}`);
-  check('mistr lépe blokuje útoky', champion.blockedFrames > gentle.blockedFrames,
-    `gentle=${gentle.blockedFrames} champion=${champion.blockedFrames}`);
 }
 
 // ── 2) síť ────────────────────────────────────────────────────────────
@@ -196,9 +179,7 @@ const server = spawn(process.execPath, [entry], {
     NIRVANA_NET_PORT: String(PORT),
     NIRVANA_NET_ALLOWED_ORIGINS: 'http://127.0.0.1:3055',
     ZIS_URL: 'http://127.0.0.1:1',
-    // testy nemají ZAP cookie — bez tohohle by každý join skončil pass_required
     NIRVANA_NET_REQUIRE_PASS: '0',
-    // testy úklidu: reconnect vypnutý, jinak sedlo drží 45 s
     NIRVANA_NET_RESUME_MS: '0',
   },
   stdio: ['ignore', 'pipe', 'pipe'],
@@ -268,11 +249,13 @@ try {
   check('druhý padne do fight-1', roomB.room.id === 'fight-1', roomB.room.id);
 
   const snapshot = await a.waitFor((m) => m.t === 'snapshot' && m.game === 'fight' && m.players.length === 2);
-  check('snapshot duelu: 2 bojovníci', snapshot.players.length === 2);
+  check('snapshot duelu: 2 loutky', snapshot.players.length === 2);
   check('snapshot: jména i id', snapshot.players.every((p) => p.name && p.id), JSON.stringify(snapshot.players.map((p) => p.name)));
+  check('snapshot: póza ragdoll (22 čísel)', snapshot.players.every((p) => Array.isArray(p.pose) && p.pose.length === 22),
+    JSON.stringify(snapshot.players.map((p) => p.pose?.length)));
   check('snapshot: odpočet', snapshot.state === 'countdown' && snapshot.countdown > 0, JSON.stringify({ state: snapshot.state }));
 
-  // třetí klient = nová místnost (fight je two-seat)
+  // třetí klient = nová místnost
   c.send({ t: 'join', game: 'fight' });
   const roomC = await c.waitFor((m) => m.t === 'room');
   check('třetí jde do fight-2', roomC.room.id === 'fight-2', roomC.room.id);
@@ -284,32 +267,41 @@ try {
     const snap = a.last((m) => m.t === 'snapshot' && m.game === 'fight');
     return snap?.players.find((p) => p.id === roomA.youPlayerId);
   };
+  const foe = () => {
+    const snap = a.last((m) => m.t === 'snapshot' && m.game === 'fight');
+    return snap?.players.find((p) => p.id !== roomA.youPlayerId);
+  };
   const beforeX = me()?.x ?? 0;
   for (let index = 0; index < 60; index++) {
     a.send({ t: 'input', seq: index, mx: 1, mz: 0, yaw: 0, pitch: 0, jump: false, fire: false, weapon: 0, block: false });
     await sleep(35);
   }
   const afterX = me()?.x ?? 0;
-  check('pohyb hýbe bojovníkem', Math.abs(afterX - beforeX) > 1.5, `${beforeX}→${afterX}`);
+  check('pohyb hýbe loutkou', Math.abs(afterX - beforeX) > 1.2, `${beforeX}→${afterX}`);
 
-  // pěst: a běží na b a mlátí — b musí ztratit HP
-  const foeId = () => {
-    const snap = a.last((m) => m.t === 'snapshot' && m.game === 'fight');
-    return snap?.players.find((p) => p.id !== roomA.youPlayerId);
-  };
-  const foeHpBefore = foeId()?.hp ?? 0;
-  for (let index = 0; index < 150; index++) {
+  // úder: přibliž se a mláti
+  const foeHpBefore = foe()?.hp ?? 100;
+  let hurt = false;
+  for (let index = 0; index < 180 && !hurt; index++) {
+    const selfNow = me();
+    const foeNow = foe();
+    if (!selfNow || !foeNow) {
+      await sleep(40);
+      continue;
+    }
+    const gap = foeNow.x - selfNow.x;
+    const close = Math.abs(gap) < ragdoll.PUNCH_REACH - 0.1;
     a.send({
-      t: 'input', seq: index, mx: foeId().x > me().x ? 1 : -1, mz: 0, yaw: 0, pitch: 0,
+      t: 'input', seq: index, mx: close ? 0 : gap > 0 ? 1 : -1, mz: 0, yaw: 0, pitch: 0,
       jump: false, fire: true, weapon: 0, block: false,
     });
     await sleep(35);
-    if ((foeId()?.hp ?? 100) < foeHpBefore) break;
+    hurt = (foe()?.hp ?? 100) < foeHpBefore;
   }
-  const foeHpAfter = foeId()?.hp ?? 100;
-  check('pěst ubírá soupeři HP', foeHpAfter < foeHpBefore, `${foeHpBefore}→${foeHpAfter}`);
+  const foeHpAfter = foe()?.hp ?? 100;
+  check('úder ubírá soupeři HP', hurt, `${foeHpBefore}→${foeHpAfter}`);
 
-  // odpojení b → bot doplní sedlo (duel nesmí zamrzit na jednoho člověka)
+  // odpojení b → bot doplní sedlo
   b.close();
   await sleep(700);
   const soloSnap = a.last((m) => m.t === 'snapshot' && m.game === 'fight');

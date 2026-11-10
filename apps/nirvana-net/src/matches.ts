@@ -158,7 +158,7 @@ function fightMatch(now: number, mode: RoomMode = 'bots'): Match {
       for (const event of stepFight(sim, dt, ctx.now)) ctx.emit(event);
     },
     state: () =>
-      sim.duel.phase === 'fighting' ? 'running' : sim.duel.phase === 'matchEnd' ? 'ended' : 'waiting',
+      sim.match.phase === 'playing' ? 'running' : sim.match.phase === 'matchEnd' ? 'ended' : 'waiting',
     snapshot(_id, timeMs) {
       return {
         t: 'snapshot',
