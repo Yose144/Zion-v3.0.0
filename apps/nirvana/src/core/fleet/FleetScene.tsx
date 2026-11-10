@@ -38,6 +38,7 @@ import {
   type ShipState,
 } from './flight';
 import { SHIPS, shipById, type ShipSpec } from './ships';
+import { isGamePaused } from '@/core/games/pause';
 
 /** Jeden vzdálený pilot (relay ze serveru; vlastní stav klient nepotřebuje). */
 export interface RemotePilot {
@@ -478,6 +479,7 @@ function Flight({
   }, [spec.id]);
 
   useFrame((_, delta) => {
+    if (isGamePaused()) return;
     const t = clock.elapsedTime;
     docks.current = dockTargets(t);
     if (!spectator) stepShip(state.current, input.current, spec, delta, docks.current, t);

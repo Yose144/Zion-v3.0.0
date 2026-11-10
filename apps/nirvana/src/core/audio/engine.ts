@@ -63,6 +63,13 @@ const MIN_GAP: Partial<Record<SoundName, number>> = {
 const lastPlayed = new Map<SoundName, number>();
 
 const STORAGE_KEY = 'nirvana.sound.v1';
+/** Hlasitost je samostatná volba (0–1); ztlumení zůstává přepínačem. */
+const VOLUME_KEY = 'nirvana.volume.v1';
+
+/** Základní zesílení sběrnice — hlasitost se násobí tímhle číslem. */
+const MASTER_GAIN = 0.3;
+
+let volume = 1;
 
 function readPrefs(): void {
   if (loaded || typeof window === 'undefined') return;
@@ -72,15 +79,30 @@ function readPrefs(): void {
   } catch {
     muted = false;
   }
+  try {
+    // Chybějící klíč NENÍ nula: `Number(null)` je 0, takže by se každému
+    // novému hráči hlasitost nastavila na ticho (přesně to se stalo).
+    const stored = window.localStorage.getItem(VOLUME_KEY);
+    const raw = stored === null ? 1 : Number(stored);
+    volume = Number.isFinite(raw) && raw >= 0 ? Math.min(1, raw) : 1;
+  } catch {
+    volume = 1;
+  }
 }
 
 function writePrefs(): void {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(STORAGE_KEY, muted ? 'off' : 'on');
+    window.localStorage.setItem(VOLUME_KEY, String(volume));
   } catch {
     /* soukromý režim — volba prostě nepřežije reload */
   }
+}
+
+/** Jediné místo, kde se hlasitost opravdu propíše do sběrnice. */
+function applyGain(): void {
+  if (master && context) master.gain.value = muted ? 0 : MASTER_GAIN * volume;
 }
 
 function ensure(): AudioContext | null {
@@ -94,7 +116,7 @@ function ensure(): AudioContext | null {
       if (!Ctor) return null;
       context = new Ctor();
       master = context.createGain();
-      master.gain.value = 0.3;
+      master.gain.value = muted ? 0 : MASTER_GAIN * volume;
       master.connect(context.destination);
     } catch {
       return null;
@@ -117,6 +139,7 @@ export function isReady(): boolean {
 // ── ztlumení ───────────────────────────────────────────────────────────────
 
 const muteListeners = new Set<(muted: boolean) => void>();
+const volumeListeners = new Set<(volume: number) => void>();
 
 export function isMuted(): boolean {
   readPrefs();
@@ -127,7 +150,7 @@ export function setMuted(next: boolean): void {
   readPrefs();
   muted = next;
   writePrefs();
-  if (master && context) master.gain.value = next ? 0 : 0.3;
+  applyGain();
   for (const listener of muteListeners) listener(muted);
 }
 
@@ -140,6 +163,34 @@ export function toggleMuted(): boolean {
 export function subscribeMuted(listener: (muted: boolean) => void): () => void {
   muteListeners.add(listener);
   return () => muteListeners.delete(listener);
+}
+
+// ── hlasitost ──────────────────────────────────────────────────────────────
+
+/** Hlasitost 0–1 (1 = plná, násobená základním zesílením sběrnice). */
+export function getVolume(): number {
+  readPrefs();
+  return volume;
+}
+
+export function setVolume(next: number): number {
+  readPrefs();
+  volume = Number.isFinite(next) ? Math.min(1, Math.max(0, next)) : 1;
+  // Posuvník na nule je stejně tichý jako ztlumení, ale NEpřepíná `muted` —
+  // po vrácení nahoru se zvuk vrátí tam, kde byl.
+  if (volume > 0 && muted) {
+    muted = false;
+  }
+  writePrefs();
+  applyGain();
+  for (const listener of volumeListeners) listener(volume);
+  if (muted === false) for (const listener of muteListeners) listener(muted);
+  return volume;
+}
+
+export function subscribeVolume(listener: (volume: number) => void): () => void {
+  volumeListeners.add(listener);
+  return () => volumeListeners.delete(listener);
 }
 
 // ── primitiva ──────────────────────────────────────────────────────────────

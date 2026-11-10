@@ -2533,3 +2533,62 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   energii vrátí a test měřil jinou věc. Stav se teď postaví pryč od světel.
 - **Protokol se nemění** (zůstává 32): prstence jsou deterministické z cesty,
   každý klient je vidí stejně a v koopu jsou osobní (nesdílí se jako světla).
+
+## Hamburger menu a pauza pro všechny hry (2026-11-10)
+
+- **Jedno menu, ne devět.** `core/games/GameMenu.tsx` se renderuje z `GameHud`
+  a je na všech herních površích (`SURFACES` v `core/games/surfaces.ts`).
+  Tlačítko ☰ je u pravého okraje uprostřed — tam nekoliduje s žádným HUD
+  (tabule jsou nahoře, ovládání dole) a zůstává vidět i během hry, kdy je
+  `.game-hud` schovaná přes `body[data-playing='1']`.
+- **Menu je sourozenec `<main>`, ne jeho potomek.** Je v layoutu, takže
+  `main.is-photo .game-menu-open` **nikdy nesedne** — foto mód v Lumi schová
+  tlačítko přes `body:has(main.is-photo) .game-menu-open`. Kdo přidá další
+  „skryj chrome" stav, musí počítat s tím, že menu není uvnitř stránky.
+- **Nastavení na jednom místě:** zvuk (ztlumit/zapnout), hlasitost 0–100 %
+  (`core/audio/engine.ts`, klíč `nirvana.volume.v1`), jazyk (5), citlivost
+  pohledu (jen `/mars`), nápověda k ovládání z `CONTROLS` a seznam her.
+- **Hlasitost není ztlumení.** `setVolume(0)` nechá `muted` být; `setMuted`
+  jen vypne sběrnici. Chybějící klíč v `localStorage` **není nula** —
+  `Number(null)` je 0, takže nový hráč by začínal v tichu (přesně to první
+  verze dělala; default je 100 %).
+- **Pauza je modul, ne prop.** `core/games/pause.ts` (`isGamePaused`,
+  `setGamePaused`) — menu ji zapíná, hlavní smyčky her ji čtou. Integrováno
+  v aréně (sólo i MP), závodě, souboji, MOBĚ (sólo i online), Lumi, flotile,
+  tancích a pouti. Ambientní animace (mraky, jiskry) běží dál — pauza se
+  týká **simulace**, ne dekorace.
+- **Formulářové prvky v menu musí klávesy dostat.** Capture listener na
+  `window` zastaví propagaci do hry, ale `input/button/a/textarea/select`
+  nechá projít (jinak by nešel posuvník ani Enter). `Space`/`Arrow` mimo
+  formulář dostanou `preventDefault` — hra se pod menu nehýbe.
+- **V multiplayeru se svět nezastaví.** Menu to říká nahlas; klient jen
+  přestane posílat vstup a kreslit snímky. Slibovat pauzu v online režimu by
+  bylo lhaní.
+- **CSS:** `.game-menu-open`, `.game-menu-backdrop`, `.game-menu*` blok je
+  před volbou cesty; dotykové cíle ≥ 2,5 rem a panel scrolluje na malé výšce.
+
+## Aréna — Q3 sada zbraní, první vlna (2026-11-10)
+
+- **Zdroj čísel je lokální klon Q3** (`id-Software/Quake-III-Arena`,
+  `code/game/g_weapon.c`, `g_missile.c`) — ne odhad. Konstanty zůstávají
+  v `core/arena/weapons.ts`, společném pro klienta i server.
+- **Nová sada:** brokovnice (11 broků × 10, spread 0,11, dostřel 30 m,
+  900 ms, 10 nábojů), blesk (8 dmg / 50 ms, 60 m, 100 munice, automat),
+  plazma (20 přímý + 15 splash, r 1,6 m, rychlost 38, 120 ms, 60 munice).
+  Staré tři (rail/rocket/MG) se nemění.
+- **Klávesy 1–6 + kolečko.** Kolečko přepíná jen zbraně, na které je munice;
+  rail je vždy. Dotykové arény mají dál tři tlačítka (rail/rocket/MG) —
+  rozšíření dotyku je samostatný krok.
+- **Ammo pickup dobije všechny typy**, ne jen MG (Q3 boxy jsou per typ;
+  tady je jeden box na mapě a nechceme hráče nutit hledat druhý). Když je
+  plno všude, pickup zůstane ležet.
+- **Projektil má `kind`** (`rocket`/`plasma`) a smyčka si bere spec podle
+  něj — žádná druhá fyzika. Barva projektilu se mění v renderu.
+- **Skóre/HUD:** `ArenaStats.weapon` je rozšířený union, `ammo` se počítá
+  z `ammoOf()`; HUD v `app/mars/page.tsx` má `weaponLabel()`.
+- **Multiplayer zůstává na třech zbraních** (protokol se nemění, zůstává 32).
+  Server `arena.ts` importuje `WEAPONS` a nové položky ignoruje; `ammoOf`
+  v serveru vrací pro neznámou zbraň raketovou munici, ale ta se tam nikdy
+  nepošle. Až se sada rozšíří do MP, je potřeba inventář do protokolu.
+- **Test:** `npx tsx test/arena-weapons.mjs` (26 kontrol: čísla Q3, spread
+  s deterministickým RNG, armor, DPS blesku, poměr plazmy a rakety).

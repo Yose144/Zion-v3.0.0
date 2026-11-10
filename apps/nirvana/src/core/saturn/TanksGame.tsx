@@ -31,6 +31,7 @@ import { SpectatorBar } from '@/core/net/SpectatorBar';
 import { useXr } from '@/core/xr';
 import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
 import { VrButton } from '@/core/xr/VrButton';
+import { isGamePaused } from '@/core/games/pause';
 
 type Mode = '2d' | '3d';
 
@@ -190,6 +191,11 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
     let last = performance.now();
     let hudAt = 0;
     const tick = (now: number) => {
+      if (isGamePaused()) {
+        last = now;
+        raf = requestAnimationFrame(tick);
+        return;
+      }
       const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
       last = now;
 

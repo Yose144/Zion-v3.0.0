@@ -12,6 +12,7 @@ import { DuelXr } from './FightXr';
 import { useNet } from '@/core/net/useNet';
 import type { FightPlayerState, ServerMessage } from '@/core/net/protocol';
 import { avatarLook, type AvatarLook } from '../avatars/kit';
+import { isGamePaused } from '@/core/games/pause';
 
 /**
  * MERKUR — online duel. Server je autorita zásahů i kol; klient predikuje
@@ -198,6 +199,8 @@ export function MercuryDuel({
   // ── smyčka ──────────────────────────────────────────────────────────
   useFrame((_, delta) => {
     if (!running) return;
+    // Hamburger menu (2026-11-10) — pauza patří do modulu, ne do každé hry.
+    if (isGamePaused()) return;
     const dt = Math.min(0.05, delta);
     const now = Date.now();
 

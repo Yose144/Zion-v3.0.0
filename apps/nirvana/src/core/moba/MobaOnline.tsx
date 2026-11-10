@@ -28,6 +28,7 @@ import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import type { MobaSnapshot } from './sim';
 import { canvasDpr } from '@/core/design/dpr';
+import { isGamePaused } from '@/core/games/pause';
 
 /** Odchylka, od které se predikce „teleportuje" na server (m). */
 const PREDICT_SNAP = 1.6;
@@ -305,6 +306,7 @@ function OnlineController({
   }, [gl]);
 
   useFrame(() => {
+    if (isGamePaused()) return;
     const watching = Boolean(watch) || spectator;
     const forward = watching ? 0 : (keys.current.has('KeyW') ? 1 : 0) - (keys.current.has('KeyS') ? 1 : 0);
     const strafe = watching ? 0 : (keys.current.has('KeyD') ? 1 : 0) - (keys.current.has('KeyA') ? 1 : 0);

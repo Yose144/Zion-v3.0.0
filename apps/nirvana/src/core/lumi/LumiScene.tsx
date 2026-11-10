@@ -36,6 +36,7 @@ import { advanceRings, comboAt, createRingRun, ringActive, type RingPass, type R
 import { createTrail, pruneTrail, pushTrail, trailFade, TRAIL_LEN, type TrailPoint } from './trail';
 import { play, playTone } from '@/core/audio/engine';
 import { canvasDpr } from '@/core/design/dpr';
+import { isGamePaused } from '@/core/games/pause';
 
 /** Jeden vzdálený letec (relay ze serveru). */export interface LumiRemote {
   id: string;
@@ -838,7 +839,7 @@ export function LumiScene({
   }, [path, gl]);
 
   useFrame((_, delta) => {
-    if (paused) return;
+    if (paused || isGamePaused()) return;
     const flight = state.current;
     if (watch) {
       const list = remotes?.current ?? [];

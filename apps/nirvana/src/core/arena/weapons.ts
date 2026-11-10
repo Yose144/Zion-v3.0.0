@@ -19,7 +19,7 @@
 
 import { raySolids, raySphere, type Box4 } from './physics';
 
-export type WeaponId = 'rail' | 'rocket' | 'mg';
+export type WeaponId = 'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma';
 
 export const WEAPONS = {
   rail: {
@@ -46,6 +46,47 @@ export const WEAPONS = {
     /** Rozptyl paprsku v radiánech (Q3 `MACHINEGUN_SPREAD` ≈ 0,035). */
     spread: 0.035,
     range: 120,
+  },
+  /**
+   * Brokovnice (Q3 `g_weapon.c`): 11 broků × 10 poškození, jeden náboj na
+   * výstřel, kužel 0,11 rad. Krátký dostřel — zblízka drtí, z dálky jen
+   * škrábe, přesně jak má.
+   */
+  shotgun: {
+    damage: 10,
+    pellets: 11,
+    spread: 0.11,
+    range: 30,
+    cooldownMs: 900,
+    ammo: 10,
+    /** Kolik nábojů vrátí ammo pickup (Q3 box dává víc, než je zásobník). */
+    pickup: 5,
+  },
+  /**
+   * Blesk (Q3 `g_weapon.c`): 8 poškození každých 50 ms, přesný paprsek,
+   * dolet 60 m. Drží se spoušť — zvuk i poškození jdou v dávkách.
+   */
+  lightning: {
+    damage: 8,
+    range: 60,
+    cooldownMs: 50,
+    ammo: 100,
+    pickup: 40,
+    automatic: true,
+  },
+  /**
+   * Plazma (Q3 `g_missile.c`): přímý zásah 20 + splash 15, pomalý projektil,
+   * rychlá kadence. Mezi raketou a MG — trestá přesné vedení, ne štěstí.
+   */
+  plasma: {
+    damage: 20,
+    splash: 15,
+    radius: 1.6,
+    speed: 38,
+    cooldownMs: 120,
+    ammo: 60,
+    pickup: 25,
+    ttlMs: 2500,
   },
 } as const;
 

@@ -29,6 +29,7 @@ import {
   playMatchEnd,
   unlockAudio,
 } from '@/core/arena/audio';
+import { isGamePaused } from '@/core/games/pause';
 
 /**
  * MARS ARENA — multiplayer.
@@ -286,6 +287,8 @@ export function MarsMultiplayer({
   // ── smyčka ──────────────────────────────────────────────────────────
   useFrame((_, delta) => {
     if (!running) return;
+    // Hamburger menu (2026-11-10) — pauza patří do modulu, ne do každé hry.
+    if (isGamePaused()) return;
     const dt = Math.min(0.05, delta);
     const now = Date.now();
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef } from 'react';
+import { isGamePaused } from '@/core/games/pause';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { dampFactor } from '@/core/design/motion';
@@ -193,6 +194,8 @@ export function VenusRace({
 
   useFrame((_, delta) => {
     if (!running) return;
+    // Hamburger menu (2026-11-10) — pauza patří do modulu, ne do každé hry.
+    if (isGamePaused()) return;
     const dt = Math.min(0.05, delta);
     clock.current += dt * 1000;
     const now = clock.current;

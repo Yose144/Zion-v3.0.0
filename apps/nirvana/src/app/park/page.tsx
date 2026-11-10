@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { isGamePaused } from '@/core/games/pause';
 import Link from 'next/link';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -185,6 +186,7 @@ export default function ParkPage() {
       const now = performance.now();
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
+      if (isGamePaused()) return;
 
       const canvas = canvasRef.current;
       if (!canvas) return;

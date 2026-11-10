@@ -19,6 +19,7 @@ import { useFightKeys } from './useFightKeys';
 import { DuelXr } from './FightXr';
 import { avatarLook } from '../avatars/kit';
 import type { Group } from 'three';
+import { isGamePaused } from '@/core/games/pause';
 
 /**
  * MERKUR — sólo cvičení proti botovi. Simuluje TENTÝŽ `stepDuel` co server;
@@ -83,6 +84,8 @@ export function MercurySolo({
 
   useFrame((_, delta) => {
     if (!running) return;
+    // Hamburger menu (2026-11-10) — pauza patří do modulu, ne do každé hry.
+    if (isGamePaused()) return;
     const dt = Math.min(0.05, delta);
     clock.current += dt;
     const active = duel;

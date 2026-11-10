@@ -8132,6 +8132,293 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   }
 }
 
+/* ── Hamburger menu (2026-11-10) ──────────────────────────────────────
+ * Jedno nastavení pro všechny hry. Tlačítko je u pravého okraje uprostřed,
+ * protože tam nekoliduje s žádným HUD (tabule jsou nahoře, ovládání dole)
+ * a zůstává vidět i během hry, kdy je `.game-hud` schovaná.
+ */
+.game-menu-open {
+  position: fixed;
+  z-index: 70;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.2rem;
+  height: 3.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(159, 228, 234, 0.26);
+  border-right: 0;
+  border-radius: 0.7rem 0 0 0.7rem;
+  background: rgba(5, 12, 22, 0.72);
+  backdrop-filter: blur(8px);
+  color: rgba(232, 244, 255, 0.8);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.game-menu-open:hover,
+.game-menu-open:focus-visible {
+  background: rgba(159, 228, 234, 0.2);
+  color: #eaf7ff;
+}
+
+.game-menu-open.is-on {
+  color: #ffe9b0;
+  border-color: rgba(255, 233, 176, 0.45);
+}
+
+/* Foto mód v Lumi: menu nesmí do snímku. Menu je sourozenec `<main>` (je
+   v layoutu), takže se hledá přes `:has` — `main.is-photo .game-menu-open`
+   by nikdy nesedlo. */
+body:has(main.is-photo) .game-menu-open {
+  display: none;
+}
+
+.game-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2rem;
+  background: rgba(2, 6, 12, 0.62);
+  backdrop-filter: blur(6px);
+  overflow-y: auto;
+}
+
+.game-menu {
+  width: min(30rem, 100%);
+  max-height: calc(100dvh - 2.4rem);
+  overflow-y: auto;
+  padding: 1rem 1.1rem 0.2rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(159, 228, 234, 0.26);
+  background: rgba(5, 11, 20, 0.95);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+.game-menu header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.game-menu header strong {
+  display: block;
+  font-size: 1rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #eaf7ff;
+}
+
+.game-menu header span {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: rgba(232, 244, 255, 0.55);
+}
+
+.game-menu-close {
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(159, 228, 234, 0.24);
+  background: transparent;
+  color: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.game-menu-section {
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(159, 228, 234, 0.12);
+}
+
+.game-menu-section h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(159, 228, 234, 0.75);
+}
+
+.game-menu-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.game-menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(159, 228, 234, 0.25);
+  background: rgba(159, 228, 234, 0.08);
+  color: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.game-menu-toggle.is-off {
+  color: #ffb46a;
+  border-color: rgba(255, 180, 106, 0.4);
+}
+
+.game-menu-slider {
+  display: block;
+  margin-top: 0.6rem;
+}
+
+.game-menu-slider span {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.3rem;
+  font-size: 0.72rem;
+  color: rgba(232, 244, 255, 0.7);
+}
+
+.game-menu-slider b {
+  color: #ffe9b0;
+  font-variant-numeric: tabular-nums;
+}
+
+.game-menu-slider input[type='range'] {
+  width: 100%;
+  accent-color: #7fe3d4;
+}
+
+.game-menu-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  color: rgba(232, 244, 255, 0.45);
+}
+
+.game-menu-langs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.game-menu-lang {
+  min-width: 2.6rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(159, 228, 234, 0.22);
+  background: transparent;
+  color: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.game-menu-lang.is-active {
+  border-color: rgba(255, 233, 176, 0.6);
+  background: rgba(255, 233, 176, 0.14);
+  color: #ffe9b0;
+}
+
+.game-menu-controls {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  color: rgba(232, 244, 255, 0.7);
+}
+
+.game-menu-games {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: 0.4rem;
+}
+
+.game-menu-game {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(159, 228, 234, 0.16);
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(232, 244, 255, 0.85);
+  font-size: 0.74rem;
+  text-decoration: none;
+}
+
+.game-menu-game > span {
+  color: var(--game-tone, #9fe4ea);
+}
+
+.game-menu-game:hover,
+.game-menu-game:focus-visible {
+  border-color: rgba(159, 228, 234, 0.5);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.game-menu-game.is-active {
+  border-color: rgba(255, 233, 176, 0.55);
+  color: #ffe9b0;
+}
+
+.game-menu-game.is-home {
+  border-color: rgba(252, 209, 22, 0.45);
+  color: #fcd116;
+}
+
+.game-menu footer {
+  position: sticky;
+  bottom: 0;
+  padding: 0.7rem 0 0.8rem;
+  background: linear-gradient(to top, rgba(5, 11, 20, 0.98), rgba(5, 11, 20, 0));
+}
+
+.game-menu-resume {
+  width: 100%;
+}
+
+@media (max-width: 560px) {
+  .game-menu-backdrop {
+    padding: 0.6rem;
+  }
+
+  .game-menu {
+    max-height: calc(100dvh - 1.2rem);
+    padding: 0.9rem 0.9rem 0.2rem;
+  }
+
+  .game-menu-games {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .game-menu-open {
+    width: 2.6rem;
+    height: 3.6rem;
+  }
+
+  .game-menu-toggle,
+  .game-menu-lang,
+  .game-menu-game {
+    min-height: 2.5rem;
+  }
+
+  .game-menu-slider input[type='range'] {
+    height: 2.2rem;
+  }
+}
+
+
 /* Volba cesty a darování světla — dvě karty, žádná hierarchie */
 .lumi-paths {
   display: grid;

@@ -26,6 +26,7 @@ import { spellCooldown, spellMana, spellRank } from './spells';
 import { MobaFxOverlay, type DamageFloater } from './MobaFxOverlay';
 import { SPELL_BY_KEY } from './keys';
 import { canvasDpr } from '@/core/design/dpr';
+import { isGamePaused } from '@/core/games/pause';
 
 const STEP = 1 / 30;
 
@@ -375,6 +376,7 @@ function SoloController({
 
   useFrame(() => {
     if (!running) return;
+    if (isGamePaused()) return;
     const now = performance.now();
     if (!state.current) {
       state.current = createMoba(

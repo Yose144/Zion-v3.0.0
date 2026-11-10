@@ -7,7 +7,7 @@
  * přidá ho do `engine.ts` (jedno místo, jeden kontext, jeden strop hlasů).
  */
 
-import { play, unlock } from '@/core/audio/engine';
+import { play, playNoise, playTone, unlock } from '@/core/audio/engine';
 
 /** Volat z gesta (klik / vstup do arény), aby prohlížeč dovolil zvuk. */
 export function unlockAudio(): void {
@@ -37,6 +37,23 @@ export function playHit(): void {
 /** Strojní puška: krátká dávka pod sebou. */
 export function playMg(): void {
   play('mg');
+}
+
+/** Brokovnice (Q3): tupý náraz a široký šum — žádný jasný tón. */
+export function playShotgun(): void {
+  playTone({ freq: 170, to: 80, duration: 0.2, type: 'square', gain: 0.14 });
+  playNoise({ duration: 0.26, gain: 0.1, cutoff: 1600 });
+}
+
+/** Blesk: krátký elektrický sykot, opakuje se s kadencí zbraně. */
+export function playLightning(): void {
+  playTone({ freq: 1600, to: 620, duration: 0.055, type: 'sawtooth', gain: 0.055 });
+  playNoise({ duration: 0.05, gain: 0.045, cutoff: 5200, type: 'highpass' });
+}
+
+/** Plazma: měkký rostoucí tón, mezi raketou a laserem. */
+export function playPlasma(): void {
+  playTone({ freq: 520, to: 880, duration: 0.09, type: 'sine', gain: 0.06 });
 }
 
 /** Zabití bota: dva tóny dolů. */

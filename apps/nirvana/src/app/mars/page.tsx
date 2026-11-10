@@ -38,6 +38,17 @@ const EMPTY_STATS: ArenaStats = {
   respawnIn: 0,
 };
 
+/** Název zbraně do HUD — jedno místo pro sólo (MP má vlastní 3 zbraně). */
+function weaponLabel(weapon: string, ammo: number): string {
+  if (weapon === 'rail') return 'RAIL';
+  if (weapon === 'mg') return `MG ×${ammo}`;
+  if (weapon === 'rocket') return `ROCKET ×${ammo}`;
+  if (weapon === 'shotgun') return `SHOTGUN ×${ammo}`;
+  if (weapon === 'lightning') return `LIGHTNING ×${ammo}`;
+  if (weapon === 'plasma') return `PLASMA ×${ammo}`;
+  return 'RAIL';
+}
+
 export default function MarsPage() {
   const { lang } = useI18n();
   /** Texty HUD jdou přes `app/mars/copy.ts` — žádné `cs ? :` v JSX. */
@@ -213,7 +224,7 @@ export default function MarsPage() {
             </span>
             <span className="arena-time">{stats.timeLeft}s</span>
             <span className="arena-weapon">
-              {stats.weapon === 'rail' ? 'RAIL' : stats.weapon === 'mg' ? `MG ×${stats.ammo}` : `ROCKET ×${stats.ammo}`}
+              {weaponLabel(stats.weapon, stats.ammo)}
             </span>
             {!presenting && (
               <button
@@ -274,7 +285,7 @@ export default function MarsPage() {
                   <kbd>mezerník</kbd> {l('jump')}
                 </li>
                 <li>
-                  <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> {l('weapons')}
+                  <kbd>1</kbd>–<kbd>6</kbd> {l('weapons')}
                 </li>
                 <li>
                   <kbd>klik</kbd> {l('fire')}
