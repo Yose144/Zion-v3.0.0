@@ -88,7 +88,7 @@ export default function AvatarModel3D({
       <Canvas
         dpr={[1, 1.6]}
         camera={{ position: [0.9, 1.5, 3.1], fov: 32, near: 0.01, far: 100 }}
-        gl={{ antialias: true, alpha: true }}
+        gl={{ antialias: true, alpha: true, preserveDrawingBuffer: true }}
         style={{ width: '100%', height: '100%' }}
       >
         <hemisphereLight args={[0xdfe8ff, 0x2a2438, 1.6]} />
