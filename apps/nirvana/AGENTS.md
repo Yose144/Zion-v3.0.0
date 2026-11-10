@@ -2489,3 +2489,47 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Pozor na `portraitUrl`:** vrací `null` pro id bez souboru a UI kreslí iniciálu —
   nikdy nespadej na 404. Nová id (203 Anagha, 204 Chaitanya) vznikají jen
   regenerací, ne ručním přidáním souboru.
+
+## Lumi — prstence světla (2026-11-10)
+
+- **Prstence nejsou brány ani past.** `core/lumi/rings.ts` je volitelná
+  obratnost: proletět otvorem vrátí lucerně energii (`RING_ENERGY`) a dá
+  body, proletět **středem** dá víc (`RING_PERFECT_*`). Nic neblokují —
+  kdo je ignoruje, doletí stejně. Kdyby z nich byla povinná brána, změnil
+  by se žánr (cesta → překážková dráha).
+- **Průlet se počítá úsečkou, ne bodem.** `advanceRings(run, from, to, …)`
+  bere polohu před a po kroku a měří vzdálenost k úsečce. Na 20 fps se hráč
+  posune o víc než jednotku; test na „stojím v kruhu“ by propadal. Stejná
+  funkce díky tomu zachytí i teleport v auditu.
+- **Řetěz (combo) je časové okno, ne pořadí.** `COMBO_WINDOW` (6 s) drží
+  sérii; delší pauza začne znovu od jedné, strop je `COMBO_MAX` (×2 body).
+  `comboAt(run, now)` je jediné místo, odkud HUD i testy čtou živý řetěz —
+  kdyby si HUD počítal vlastní časovač, číslo by viselo po přistání.
+- **Finální prstence (`afterAll`) čekají na všech sedm světel.** Data je mají
+  pořád, `ringActive()` rozhoduje; scéna je do té doby skryje a `advanceRings`
+  je odmítne. Cesta ke svatyni tím dostane finále, které dřív chybělo.
+- **Data patří do `world.ts`, ne do scény.** `LUMI_RINGS` / `WIND_RINGS` /
+  `LIGHT_RINGS` jsou statické (neposouvají se s denní oblohou jako světla).
+  Testy hlídají, že jsou v mapě, ne ve svatyni, nepřekrývají se a neleží
+  na světlech — nový prstenec se přidává tam, ne do JSX.
+- **Skóre má tři složky a jedno místo:** `lumiScore(flight)` (světla + čas)
+  + `run.score` (prstence, včetně `ALL_RINGS_BONUS`) sečte až `onFinish`
+  ve scéně. Kdo přidá čtvrtou složku, přičte ji tam; panel jen zobrazuje.
+- **Energie z prstence se aplicuje v simulaci letu** (`flight.energy`),
+  ne v HUD — jinak by hráč viděl jinou energii, než se kterou se počítá.
+- **Zvuk:** průlet hraje `playTone` s výškou podle řetězu (stupnice), střed
+  přidá kvintu. Žádný nový `SoundName` — je to variace, ne nový zvuk.
+- **HUD:** žeton `◎ 3/9` + `×N`, hláška `+body` na 1,6 s. Časovač hlášky je
+  v **refu**, protože efekt se spouští i při `lastRing → null`; cleanup by
+  ji zrušil hned po prvním telemetrickém vzorku (stejná past jako u karty
+  příběhu, ta je teď opravená taky).
+- **Debug:** `?lumiDebug=1` vystaví `__lumiRings` (polohy) a
+  `__lumiRingState()` (passed/combo/score). Audit teleportuje do středu
+  prstence a ověří, že HUD i hláška zareagovaly.
+- **Testy:** `test/lumi-rings.mjs` (49 kontrol: úsečka, perfektní střed,
+  řetěz a jeho strop, finále až po světlech, bonus za všechny, data cest).
+- **Oprava testu letu:** `lumi-flight.mjs` stavěl „došla energie“ na spawnu;
+  dnešní obloha (L-7) umí posunout světlo až na start, sebrané světlo pak
+  energii vrátí a test měřil jinou věc. Stav se teď postaví pryč od světel.
+- **Protokol se nemění** (zůstává 32): prstence jsou deterministické z cesty,
+  každý klient je vidí stejně a v koopu jsou osobní (nesdílí se jako světla).

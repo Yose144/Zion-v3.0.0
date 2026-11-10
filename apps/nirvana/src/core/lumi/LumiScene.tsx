@@ -25,12 +25,14 @@ import {
   ENERGY_MAX,
   createFlight,
   currentAt,
+  lumiScore,
   nextTarget,
   stepFlight,
   type FlightInput,
   type FlightState,
 } from './flight';
-import { LUMI_HEIGHT, LUMI_WIDTH, type LumiLight, type LumiPath } from './world';
+import { LUMI_HEIGHT, LUMI_WIDTH, type LumiLight, type LumiPath, type LumiRing } from './world';
+import { advanceRings, comboAt, createRingRun, ringActive, type RingPass, type RingRun } from './rings';
 import { createTrail, pruneTrail, pushTrail, trailFade, TRAIL_LEN, type TrailPoint } from './trail';
 import { play, playTone } from '@/core/audio/engine';
 import { canvasDpr } from '@/core/design/dpr';
@@ -64,6 +66,21 @@ export interface LumiStats {
   finished: boolean;
   /** Naposledy sebrané světlo (id) — stránka podle něj ukáže text. */
   lastLight: number | null;
+  // ── prstence světla (2026-11-10) ────────────────────────────────────
+  /** Kolik prstenců cesty je proletěných. */
+  rings: number;
+  /** Kolik jich cesta má (včetně finálních, které se odemknou po sedmi světlech). */
+  ringTotal: number;
+  /** Aktuální řetěz (0 = žádný, 1 = první prstenec…). */
+  combo: number;
+  /** Nejdelší řetěz této cesty — pro panel po doletu. */
+  bestCombo: number;
+  /** Naposledy proletěný prstenec; vyzvedne ho ten, kdo ho zobrazí. */
+  lastRing: (RingPass & { all?: boolean }) | null;
+  /** Proletěl hráč všechny prstence cesty? (jednorázový bonus) */
+  ringAll: boolean;
+  /** Body z prstenců — součást skóre cesty. */
+  ringScore: number;
 }
 
 const KEY_MAP: Record<string, 'up' | 'down' | 'left' | 'right'> = {
@@ -323,6 +340,121 @@ function Shrine({ open, shrine }: { open: boolean; shrine: LumiPath['shrine'] })
         />
       </mesh>
     </group>
+  );
+}
+
+/**
+ * Prstenec světla (2026-11-10) — volitelný oblouk, kterým se dá proletět.
+ *
+ * Vizuál je jeden torus + měkká záře. Prstenec **není kolizní**: kdo ho
+ * mine, jen přijde o body a energii. Proletěný zůstane na obloze jako
+ * ztlumený obrys — hráč tak vidí, kudy už letěl.
+ *
+ * Finální prstence (`afterAll`) se objeví, až když má hráč všechna světla;
+ * do té doby je skupina neviditelná (ale data i pravidlo existují pořád).
+ */
+function RingGate({
+  ring,
+  run,
+  state,
+  detail,
+}: {
+  ring: LumiRing;
+  run: React.MutableRefObject<RingRun>;
+  state: React.MutableRefObject<FlightState>;
+  detail: boolean;
+}) {
+  const group = useRef<THREE.Group>(null);
+  const ringMat = useRef<THREE.MeshBasicMaterial>(null);
+  const glowMat = useRef<THREE.SpriteMaterial>(null);
+  /** Kdy prstenec proletěl — od toho se počítá rozpad a rozšíření. */
+  const passedAt = useRef<number | null>(null);
+  const still = useMemo(prefersReducedMotion, []);
+  const texture = softSpriteTexture();
+  const live = useMemo(() => new THREE.Color(ring.afterAll ? '#ffe9b0' : '#9fe4ea'), [ring.afterAll]);
+  const spent = useMemo(() => new THREE.Color('#5d7f8f'), []);
+
+  useFrame(({ clock }) => {
+    const node = group.current;
+    if (!node) return;
+    const t = clock.elapsedTime;
+    // Aktivní je vždy kromě finálních, které čekají na všechna světla.
+    node.visible = ringActive(ring, state.current.lights.length, state.current.total);
+    if (!node.visible) return;
+
+    const passed = run.current.passed.includes(ring.id);
+    if (passed) {
+      if (passedAt.current === null) passedAt.current = t;
+      // 0,7 s „výdech": prstenec se rozšíří a ztlumí, ať je průlet vidět.
+      const k = Math.min(1, Math.max(0, (t - passedAt.current) / 0.7));
+      node.scale.setScalar(1 + k * 0.9);
+      if (ringMat.current) {
+        ringMat.current.color.copy(spent);
+        ringMat.current.opacity = 0.4 * (1 - k) + 0.12;
+      }
+      if (glowMat.current) glowMat.current.opacity = 0.35 * (1 - k);
+      return;
+    }
+
+    passedAt.current = null;
+    const pulse = still ? 0.5 : Math.sin(t * 1.5 + ring.id) * 0.5 + 0.5;
+    node.scale.setScalar(1 + pulse * 0.045);
+    if (ringMat.current) {
+      ringMat.current.color.copy(live);
+      ringMat.current.opacity = 0.55 + pulse * 0.35;
+    }
+    if (glowMat.current) glowMat.current.opacity = 0.16 + pulse * 0.14;
+  });
+
+  return (
+    <group ref={group} position={[ring.x, ring.y, ring.z]} visible={!ring.afterAll}>
+      <mesh>
+        <torusGeometry args={[ring.r, 0.16, 10, 44]} />
+        <meshBasicMaterial
+          ref={ringMat}
+          color={ring.afterAll ? '#ffe9b0' : '#9fe4ea'}
+          transparent
+          opacity={0.8}
+          toneMapped={false}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+      {detail && (
+        <sprite scale={[ring.r * 3.4, ring.r * 3.4, 1]}>
+          <spriteMaterial
+            ref={glowMat}
+            map={texture ?? undefined}
+            color={ring.afterAll ? '#ffe9b0' : '#a8f4e6'}
+            transparent
+            opacity={0.2}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </sprite>
+      )}
+    </group>
+  );
+}
+
+/** Všechny prstence cesty — jeden seznam, žádná druhá kopie dat ve scéně. */
+function RingField({
+  rings,
+  run,
+  state,
+  detail,
+}: {
+  rings: LumiRing[];
+  run: React.MutableRefObject<RingRun>;
+  state: React.MutableRefObject<FlightState>;
+  detail: boolean;
+}) {
+  return (
+    <>
+      {rings.map((ring) => (
+        <RingGate key={ring.id} ring={ring} run={run} state={state} detail={detail} />
+      ))}
+    </>
   );
 }
 
@@ -610,6 +742,14 @@ export function LumiScene({
 }) {
   const { gl } = useThree();
   const state = useRef<FlightState>(createFlight(path.id));
+  /**
+   * Prstence světla (2026-11-10): stav průletů drží `RingRun`. Je oddělený
+   * od letu, protože let nepotřebuje vědět, že existují — a testy díky tomu
+   * pokrývají pravidla bez simulace.
+   */
+  const rings = useRef<RingRun>(createRingRun());
+  /** Průlet, který se má poslat do telemetrie právě jednou. */
+  const pendingRing = useRef<(RingPass & { all?: boolean }) | null>(null);
   /** Klávesy (a dotyk) — čtyři směry, žádný „pohled". */
   const keys = useRef<{ up: boolean; down: boolean; left: boolean; right: boolean }>({
     up: false,
@@ -671,6 +811,16 @@ export function LumiScene({
     // polohy světel a svatyně pro test — jinak by E2E muselo znát data cesty
     bag.__lumiLights = path.lights.map((light) => ({ id: light.id, x: light.x, y: light.y }));
     bag.__lumiShrine = { x: path.shrine.x, y: path.shrine.y };
+    // prstence: E2E teleportuje do jejich středu a čte, co se stalo
+    bag.__lumiRings = path.rings.map((ring) => ({ id: ring.id, x: ring.x, y: ring.y, r: ring.r, afterAll: ring.afterAll === true }));
+    bag.__lumiRingState = () => ({
+      passed: [...rings.current.passed],
+      combo: comboAt(rings.current, state.current.time),
+      bestCombo: rings.current.bestCombo,
+      perfect: rings.current.perfect,
+      score: rings.current.score,
+      allDone: rings.current.allDone,
+    });
     bag.__lumiTeleport = (x: number, y: number) => {
       state.current.x = x;
       state.current.y = y;
@@ -682,6 +832,8 @@ export function LumiScene({
       delete bag.__lumiTeleport;
       delete bag.__lumiLights;
       delete bag.__lumiShrine;
+      delete bag.__lumiRings;
+      delete bag.__lumiRingState;
     };
   }, [path, gl]);
 
@@ -715,6 +867,13 @@ export function LumiScene({
           time: flight.time,
           finished: false,
           lastLight: null,
+          rings: 0,
+          ringTotal: path.rings.length,
+          combo: 0,
+          bestCombo: 0,
+          lastRing: null,
+          ringAll: false,
+          ringScore: 0,
         });
       }
       return;
@@ -723,11 +882,39 @@ export function LumiScene({
     const input: FlightInput = gaze.current
       ? { ...keys.current, aim: gaze.current, gaze: 1 }
       : { ...keys.current };
+    // Poloha před krokem — průlet prstencem se počítá jako úsečka, ne bod.
+    const fromX = flight.x;
+    const fromY = flight.y;
     stepFlight(flight, input, Math.min(0.05, delta));
+
+    // ── prstence světla (2026-11-10) ────────────────────────────────
+    // Volitelná obratnost: nic neblokují, ale proletět otvorem vrátí
+    // lucerně energii a dá body; střed = „perfektní“ a energie víc.
+    const pass = advanceRings(
+      rings.current,
+      { x: fromX, y: fromY },
+      { x: flight.x, y: flight.y },
+      flight.time,
+      path.rings,
+      flight.lights.length,
+      flight.total,
+    );
+    if (pass) {
+      flight.energy = Math.min(ENERGY_MAX, flight.energy + pass.energy);
+      const step = Math.max(0, pass.combo - 1);
+      // Řetěz zní jako stupnice: každý další prstenec o tón výš.
+      playTone({ freq: 659 * Math.pow(2, step / 12), duration: 0.3, type: 'sine', gain: 0.055 });
+      if (pass.perfect) {
+        playTone({ freq: 988 * Math.pow(2, step / 12), duration: 0.24, type: 'triangle', gain: 0.035, delay: 0.04 });
+      }
+      pendingRing.current = { ...pass, all: rings.current.allDone };
+    }
 
     if (finishedSent.current === false && flight.finished) {
       finishedSent.current = true;
-      onFinish(700 + Math.max(0, 600 - Math.floor(flight.time) * 2));
+      // Skóre = světla + čas (`lumiScore`) + prstence (`run.score`).
+      // Jedno místo pravdy pro všechny tři složky.
+      onFinish(lumiScore(flight) + rings.current.score);
     }
 
     // ── společný let ────────────────────────────────────────────────
@@ -796,7 +983,17 @@ export function LumiScene({
         time: flight.time,
         finished: flight.finished,
         lastLight,
+        rings: rings.current.passed.length,
+        ringTotal: path.rings.length,
+        // Řetěz se počítá z času letu; po 6 s bez průletu je nula.
+        combo: comboAt(rings.current, flight.time),
+        bestCombo: rings.current.bestCombo,
+        // Průlet se vyzvedne **jednou** — jinak by hláška visela 6×/s.
+        lastRing: pendingRing.current,
+        ringAll: rings.current.allDone,
+        ringScore: rings.current.score,
       });
+      pendingRing.current = null;
     }
   });
 
@@ -816,6 +1013,7 @@ export function LumiScene({
       {path.currents.map((current) => (
         <Current key={current.id} x={current.x} y={current.y} r={current.r} lift={current.lift} />
       ))}
+      <RingField rings={path.rings} run={rings} state={state} detail={detail} />
       {path.lights.map((light) => (
         <Light key={light.id} light={light} taken={state.current.lights.includes(light.id)} />
       ))}

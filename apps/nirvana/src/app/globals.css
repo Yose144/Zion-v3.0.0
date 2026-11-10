@@ -7833,6 +7833,76 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
   font-variant-numeric: tabular-nums;
 }
 
+/* Prstence světla (2026-11-10): počet proletěných a řetěz. */
+.lumi-rings {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.24rem;
+  padding-left: 0.5rem;
+  border-left: 1px solid rgba(159, 228, 234, 0.2);
+  color: rgba(159, 228, 234, 0.72);
+  font-variant-numeric: tabular-nums;
+}
+
+.lumi-rings i {
+  font-style: normal;
+  line-height: 1;
+  color: #9fe4ea;
+}
+
+.lumi-rings b {
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.lumi-rings em {
+  font-style: normal;
+  font-size: 0.66rem;
+  color: #ffe9b0;
+}
+
+.lumi-rings.is-combo {
+  color: #ffe9b0;
+}
+
+.lumi-rings.is-combo i {
+  color: #ffe9b0;
+}
+
+/* Hláška po průletu — krátká, protože prstence jdou za sebou. */
+.lumi-ring-toast {
+  position: absolute;
+  z-index: 14;
+  left: 50%;
+  bottom: calc(9.6rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(159, 228, 234, 0.32);
+  background: rgba(5, 12, 22, 0.72);
+  font-size: 0.76rem;
+  color: #bfe6ea;
+  font-variant-numeric: tabular-nums;
+  animation: lumi-fade 0.3s ease both;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.lumi-ring-toast em {
+  font-style: normal;
+  font-size: 0.68rem;
+  color: #ffe9b0;
+}
+
+.lumi-ring-toast.is-perfect {
+  border-color: rgba(255, 233, 176, 0.5);
+  color: #ffe9b0;
+}
+
 .lumi-compass {
   display: inline-flex;
   align-items: center;
@@ -8054,6 +8124,11 @@ button.game-hud-chip.is-boards[aria-expanded='true'] {
 
   .lumi-fragment {
     top: 34%;
+  }
+
+  /* HUD je na mobilu výš (nad dotykem), hláška musí zůstat nad ním. */
+  .lumi-ring-toast {
+    bottom: calc(15.4rem + env(safe-area-inset-bottom, 0px));
   }
 }
 

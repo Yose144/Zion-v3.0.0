@@ -68,6 +68,26 @@ export const LUMI_COPY = {
     en: 'The shrine opens only when you have all seven.',
     es: 'El santuario se abre solo cuando tienes las siete.',
   },
+  rules4: {
+    cs: 'Prstence světla nejsou povinné — proletět otvorem vrátí lucerně dech a dá body. Středem víc.',
+    en: 'The light rings are optional — flying through one gives the lantern breath and points. Through the centre gives more.',
+    es: 'Los anillos de luz son opcionales: atravesarlos le devuelve aliento a la linterna y da puntos. Por el centro, más.',
+  },
+
+  // ── prstence světla (2026-11-10) ─────────────────────────────────────
+  ringsAria: { cs: 'Prstence světla', en: 'Light rings', es: 'Anillos de luz' },
+  ringsTitle: {
+    cs: 'proletět otvorem · střed = perfektní',
+    en: 'fly through the opening · centre = perfect',
+    es: 'atravesar el hueco · el centro es perfecto',
+  },
+  ringPerfect: { cs: 'střed', en: 'centre', es: 'centro' },
+  ringAllShort: { cs: 'všechny', en: 'all', es: 'todos' },
+  ringAll: {
+    cs: 'Všechny prstence — čistý let',
+    en: 'All rings — a clean flight',
+    es: 'Todos los anillos — un vuelo limpio',
+  },
   pathsAria: { cs: 'Cesta', en: 'Path', es: 'Camino' },
   pathLockedTitle: {
     cs: 'Odemkne se po dohrání obou cest',
@@ -106,6 +126,8 @@ export const LUMI_COPY = {
   scoreLights: { cs: 'světla', en: 'lights', es: 'luces' },
   scoreTime: { cs: 'čas', en: 'time', es: 'tiempo' },
   scorePath: { cs: 'cesta', en: 'path', es: 'camino' },
+  scoreRings: { cs: 'prstence', en: 'rings', es: 'anillos' },
+  scoreCombo: { cs: 'nejlepší řetěz', en: 'best chain', es: 'mejor cadena' },
   compassShrineAria: { cs: 'kompas ke svatyni', en: 'compass to the shrine', es: 'brújula al santuario' },
   compassLightAria: {
     cs: 'kompas k nejbližšímu světlu',
@@ -126,9 +148,9 @@ export const LUMI_COPY = {
     es: '{found}/7 encontradas · {runs} viajes · regaladas {given}×',
   },
   journalNote: {
-    cs: 'Deník se ukládá v prohlížeči. Cesty jsou dvě a světla jsou v obou stejná — jde o to je donést.',
-    en: 'The journal lives in your browser. There are two paths and the lights are the same in both — carrying them is the point.',
-    es: 'El diario vive en tu navegador. Hay dos caminos y las luces son las mismas en ambos: llevarlas es lo importante.',
+    cs: 'Deník se ukládá v prohlížeči. Světla jsou ve všech cestách stejná — jde o to je donést. Prstence jsou nepovinné a nic se v nich neztrácí.',
+    en: 'The journal lives in your browser. The lights are the same in every path — carrying them is the point. The rings are optional and you lose nothing by skipping them.',
+    es: 'El diario vive en tu navegador. Las luces son las mismas en todos los caminos: llevarlas es lo importante. Los anillos son opcionales y no se pierde nada al saltárselos.',
   },
 } as const satisfies Record<string, Localized>;
 

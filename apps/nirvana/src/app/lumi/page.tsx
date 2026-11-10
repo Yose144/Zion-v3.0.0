@@ -7,8 +7,10 @@
  * který se odemyká po jednom. Žádní nepřátelé, žádný časový limit —
  * kdyby hra trestala pomalé kochání, byla by to jiná hra.
  *
- * Dvě cesty a jedna volba na konci:
- *  - `calm` / `wind` — stejný příběh, jiný rozptyl (data v `world.ts`),
+ * Tři cesty a jedna volba na konci:
+ *  - `calm` / `wind` / `light` — stejný příběh, jiný rozptyl (data v `world.ts`),
+ *  - **prstence světla** (2026-11-10) — nepovinné oblouky, které vrátí lucerně
+ *    dech a dají body; střed je „perfektní“,
  *  - **nechat si světlo, nebo darovat** — darování dá bonus a jiný text.
  *    Je to volba, ne vylepšení: nic z toho neposiluje hru.
  *
@@ -60,6 +62,13 @@ const EMPTY: LumiStats = {
   time: 0,
   finished: false,
   lastLight: null,
+  rings: 0,
+  ringTotal: 0,
+  combo: 0,
+  bestCombo: 0,
+  lastRing: null,
+  ringAll: false,
+  ringScore: 0,
 };
 
 export default function LumiPage() {
@@ -90,6 +99,8 @@ export default function LumiPage() {
   /** Klíč remountuje scénu — jinak by „Znovu" pokračovalo v doletěné cestě. */
   const [run, setRun] = useState(0);
   const recorded = useRef(false);
+  /** Časovač karty příběhu (8 s) — viz efekt u `stats.lastLight`. */
+  const fragmentTimer = useRef<number | null>(null);
   /** Deník: sebraná světla zůstávají, i když hra skončí. */
   const [journal, setJournal] = useState<LumiJournal>(EMPTY_JOURNAL);
   const [journalOpen, setJournalOpen] = useState(false);
@@ -122,6 +133,15 @@ export default function LumiPage() {
   /** Darovaná světla (L-6): kolik jich hráč dostal a co se právě stalo. */
   const [giftsGot, setGiftsGot] = useState(0);
   const [giftToast, setGiftToast] = useState<string | null>(null);
+  /**
+   * Prstence světla (2026-11-10): hláška „×2 · 100" po průletu. Chodí
+   * jednou za průlet (scéna ji vyzvedne z telemetrie), takže se neopakuje.
+   */
+  const [ringToast, setRingToast] = useState<{ points: number; combo: number; perfect: boolean; all: boolean } | null>(
+    null,
+  );
+  /** Časovač hlášky drží ref — efekt se spouští i při `lastRing = null`. */
+  const ringToastTimer = useRef<number | null>(null);
   /**
    * Foto mód (L-5): schová veškerý chrome, aby šel udělat snímek oblohy.
    * Vypíná se `Esc` nebo křížkem — na mobilu `Esc` není, takže křížek
@@ -293,6 +313,31 @@ export default function LumiPage() {
     return () => window.clearTimeout(timer);
   }, [giftToast]);
 
+  // hláška o prstenu (2026-11-10): krátká, protože jich může být za sebou víc.
+  // Časovač je v refu — efekt se spouští i tehdy, když `lastRing` přejde na
+  // `null`; kdyby ho cleanup rušil, hláška by na obrazovce zůstala viset.
+  useEffect(() => {
+    if (!stats.lastRing) return;
+    setRingToast({
+      points: stats.lastRing.points,
+      combo: stats.lastRing.combo,
+      perfect: stats.lastRing.perfect,
+      all: stats.lastRing.all === true,
+    });
+    if (ringToastTimer.current !== null) window.clearTimeout(ringToastTimer.current);
+    ringToastTimer.current = window.setTimeout(() => {
+      ringToastTimer.current = null;
+      setRingToast(null);
+    }, 1600);
+  }, [stats.lastRing]);
+
+  useEffect(
+    () => () => {
+      if (ringToastTimer.current !== null) window.clearTimeout(ringToastTimer.current);
+    },
+    [],
+  );
+
   // foto mód: `Esc` vrátí chrome zpět (na mobilu je křížek v rohu)
   useEffect(() => {
     if (!photo) return;
@@ -312,9 +357,21 @@ export default function LumiPage() {
     const light = path.lights.find((entry) => entry.id === stats.lastLight);
     if (!light) return;
     setFragment({ id: light.id, text: tx(light.fragment, lang) });
-    const timer = window.setTimeout(() => setFragment(null), 8000);
-    return () => window.clearTimeout(timer);
-  }, [stats.lastLight, cs, path]);
+    // Časovač v refu: `lastLight` se po telemetrii vynuluje a efekt se
+    // spustí znovu — cleanup by osmi sekundovou kartu zrušil hned.
+    if (fragmentTimer.current !== null) window.clearTimeout(fragmentTimer.current);
+    fragmentTimer.current = window.setTimeout(() => {
+      fragmentTimer.current = null;
+      setFragment(null);
+    }, 8000);
+  }, [stats.lastLight, cs, path, lang]);
+
+  useEffect(
+    () => () => {
+      if (fragmentTimer.current !== null) window.clearTimeout(fragmentTimer.current);
+    },
+    [],
+  );
 
   const start = useCallback(() => {
     if (!isPathUnlocked(pathId, journal)) return;
@@ -327,6 +384,7 @@ export default function LumiPage() {
     setGift(null);
     setBaseScore(0);
     setCoopBonus(0);
+    setRingToast(null);
     myCollected.current = 0;
     contributions.current = new Map();
     setRun((value) => value + 1);
@@ -420,6 +478,19 @@ export default function LumiPage() {
               <i style={{ width: `${Math.max(0, Math.min(100, stats.energy))}%` }} />
             </span>
             <span className="lumi-time">{stats.time.toFixed(0)} s</span>
+            {stats.ringTotal > 0 && (
+              <span
+                className={`lumi-rings${stats.combo >= 2 ? ' is-combo' : ''}`}
+                title={l('ringsTitle')}
+                aria-label={l('ringsAria')}
+              >
+                <i aria-hidden>◎</i>
+                <b>
+                  {stats.rings}/{stats.ringTotal}
+                </b>
+                {stats.combo >= 2 && <em>×{stats.combo}</em>}
+              </span>
+            )}
             {compass && (
               <span
                 className={`lumi-compass${compass.kind === 'shrine' ? ' is-shrine' : ''}`}
@@ -523,6 +594,19 @@ export default function LumiPage() {
             </figure>
           )}
 
+          {ringToast && (
+            <p
+              className={`lumi-ring-toast${ringToast.perfect ? ' is-perfect' : ''}`}
+              role="status"
+              key={`${ringToast.points}-${ringToast.combo}-${ringToast.all ? 1 : 0}`}
+            >
+              <span aria-hidden>◎</span>
+              {ringToast.combo >= 2 ? `×${ringToast.combo} · ` : ''}+{ringToast.points}
+              {ringToast.perfect && <em>{l('ringPerfect')}</em>}
+              {ringToast.all && <em>{l('ringAllShort')}</em>}
+            </p>
+          )}
+
           {coop && (
             <div className="lumi-peers" role="status">
               <span>
@@ -588,6 +672,7 @@ export default function LumiPage() {
             <li>{l('rules1')}</li>
             <li>{l('rules2')}</li>
             <li>{l('rules3')}</li>
+            <li>{l('rules4')}</li>
           </ul>
 
           <div className="lumi-paths" role="radiogroup" aria-label={l('pathsAria')}>
@@ -717,6 +802,21 @@ export default function LumiPage() {
               <dt>{l('scorePath')}</dt>
               <dd>{tx(path.name, lang)}</dd>
             </div>
+            {stats.ringTotal > 0 && (
+              <div>
+                <dt>{l('scoreRings')}</dt>
+                <dd>
+                  {stats.rings}/{stats.ringTotal}
+                  {stats.ringAll ? ' ★' : ''}
+                </dd>
+              </div>
+            )}
+            {stats.bestCombo >= 2 && (
+              <div>
+                <dt>{l('scoreCombo')}</dt>
+                <dd>×{stats.bestCombo}</dd>
+              </div>
+            )}
             {coopBonus > 0 && (
               <div>
                 <dt>{l('coopBonus')}</dt>

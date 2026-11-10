@@ -14,8 +14,13 @@
  * je jen hloubka kulis. Stejná čísla používá simulace i kamera.
  */
 
+import type { LumiRing } from './rings';
+
 export const LUMI_WIDTH = 100;
 export const LUMI_HEIGHT = 100;
+
+/** Typ prstence je v `rings.ts` (logika); svět drží jen jeho polohu. */
+export type { LumiRing } from './rings';
 
 export interface LumiIsland {
   id: string;
@@ -163,6 +168,29 @@ export const LUMI_ISLANDS: LumiIsland[] = [
   { id: 'shrine', x: 82, y: 86, r: 7, z: 0, tone: '#e8f6f4' },
 ];
 
+/**
+ * Prstence světla (2026-11-10).
+ *
+ * Jsou to **volitelné oblouky**, ne brány: nic neblokují a dají se ignorovat.
+ * Proletět otvorem vrátí lucerně energii a dá body; proletět středem dá víc.
+ * Tři poslední (`afterAll`) se objeví, až když má hráč všech sedm světel —
+ * cesta ke svatyni tak dostane finále.
+ *
+ * Data jsou statická (neposouvají se s denní oblohou jako světla): obloha
+ * má svou architekturu a ta se nemění; světla v ní jen poletují.
+ */
+export const LUMI_RINGS: LumiRing[] = [
+  { id: 1, x: 24, y: 34, z: 0.5, r: 4.2 },
+  { id: 2, x: 40, y: 52, z: -0.5, r: 4.2 },
+  { id: 3, x: 56, y: 46, z: 0.8, r: 4.2 },
+  { id: 4, x: 68, y: 54, z: -0.8, r: 4.2 },
+  { id: 5, x: 56, y: 74, z: 0.4, r: 4.2 },
+  { id: 6, x: 32, y: 66, z: -0.4, r: 4.2 },
+  { id: 7, x: 52, y: 82, z: 0, r: 4, afterAll: true },
+  { id: 8, x: 64, y: 88, z: 0.6, r: 4, afterAll: true },
+  { id: 9, x: 74, y: 90, z: -0.6, r: 4, afterAll: true },
+];
+
 /** Úvodní a závěrečný text — rámují cestu, ne každé světlo. */
 export const LUMI_INTRO = {
   cs: 'Lumi je děvčátko s lucernou. V ledové obloze Uranu zůstalo sedm světel a nikdo neříká, co udělat — jen lucerna ví cestu. Odnes je do svatyně na konci oblohy.',
@@ -193,6 +221,8 @@ export interface LumiPath {
   lights: LumiLight[];
   currents: LumiCurrent[];
   islands: LumiIsland[];
+  /** Volitelné prstence — oblouky, kterými se dá proletět (viz `rings.ts`). */
+  rings: LumiRing[];
   shrine: { x: number; y: number; r: number };
   intro: LumiText;
   /**
@@ -232,6 +262,23 @@ const WIND_ISLANDS: LumiIsland[] = [
 ];
 
 /**
+ * Větrná cesta: prstence sedí v delších prázdnech mezi proudy, takže je
+ * hráč bere cestou. Menší otvor než na klidné cestě = odměna za přesnost.
+ */
+const WIND_RINGS: LumiRing[] = [
+  { id: 1, x: 28, y: 48, z: 0.4, r: 3.8 },
+  { id: 2, x: 42, y: 58, z: -0.4, r: 3.8 },
+  { id: 3, x: 58, y: 64, z: 0.8, r: 3.8 },
+  { id: 4, x: 70, y: 74, z: -0.8, r: 3.8 },
+  { id: 5, x: 82, y: 78, z: 0.3, r: 3.8 },
+  { id: 6, x: 58, y: 86, z: -0.3, r: 3.8 },
+  { id: 7, x: 44, y: 86, z: 0, r: 3.8 },
+  { id: 8, x: 64, y: 93, z: 0.5, r: 3.6, afterAll: true },
+  { id: 9, x: 72, y: 93, z: -0.5, r: 3.6, afterAll: true },
+  { id: 10, x: 80, y: 94, z: 0, r: 3.6, afterAll: true },
+];
+
+/**
  * Třetí cesta — **Cesta světla**. Není to delší trasa, je to jiný tvar:
  * světla stoupají ve spirále vzhůru, proudy jsou vysoko a úzké, mezi nimi
  * dlouhé prázdno. Odemyká se až po dohrání obou předchozích cest, aby
@@ -259,6 +306,21 @@ const LIGHT_ISLANDS: LumiIsland[] = [
   { id: 'shrine', x: 92, y: 92, r: 6, z: 0, tone: '#e8f6f4' },
 ];
 
+/**
+ * Cesta světla: prstence leží přímo ve spirále, takže je hráč potkává, když
+ * letí nahoru. Nejmenší otvor ze všech cest — tady už jde o ruku, ne o cestu.
+ */
+const LIGHT_RINGS: LumiRing[] = [
+  { id: 1, x: 20, y: 18, z: 0.5, r: 3.4 },
+  { id: 2, x: 31, y: 30, z: -0.5, r: 3.4 },
+  { id: 3, x: 42, y: 42, z: 0.8, r: 3.4 },
+  { id: 4, x: 53, y: 54, z: -0.8, r: 3.4 },
+  { id: 5, x: 64, y: 66, z: 0.4, r: 3.4 },
+  { id: 6, x: 75, y: 78, z: -0.4, r: 3.4 },
+  { id: 7, x: 82, y: 80, z: 0, r: 3.2, afterAll: true },
+  { id: 8, x: 88, y: 86, z: 0.5, r: 3.2, afterAll: true },
+];
+
 export const LUMI_PATHS: Record<LumiPathId, LumiPath> = {
   calm: {
     id: 'calm',
@@ -267,6 +329,7 @@ export const LUMI_PATHS: Record<LumiPathId, LumiPath> = {
     lights: LUMI_LIGHTS,
     currents: CALM_CURRENTS,
     islands: CALM_ISLANDS,
+    rings: LUMI_RINGS,
     shrine: LUMI_SHRINE,
     intro: LUMI_INTRO,
   },
@@ -277,6 +340,7 @@ export const LUMI_PATHS: Record<LumiPathId, LumiPath> = {
     lights: WIND_LIGHTS,
     currents: WIND_CURRENTS,
     islands: WIND_ISLANDS,
+    rings: WIND_RINGS,
     shrine: { x: 88, y: 90, r: 6 },
     intro: {
       cs: 'Větrná cesta vede výš, než kam dohlédneš ze startu. Proudy jsou užší a mezi nimi je delší prázdno — lucerna tu není na ozdobu.',
@@ -291,6 +355,7 @@ export const LUMI_PATHS: Record<LumiPathId, LumiPath> = {
     lights: LIGHT_LIGHTS,
     currents: LIGHT_CURRENTS,
     islands: LIGHT_ISLANDS,
+    rings: LIGHT_RINGS,
     shrine: { x: 92, y: 92, r: 6 },
     // spirála stoupá i po denním posunu: y švihá míň než polovina kroku
     dayRange: { x: 9, y: 4 },

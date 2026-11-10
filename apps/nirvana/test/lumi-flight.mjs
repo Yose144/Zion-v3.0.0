@@ -62,6 +62,10 @@ check('klouzání energii dobíjí', drop.energy >= ENERGY_MAX - 0.01);
 // dojde energie → padáš i se stisknutým tlačítkem
 const spent = createFlight();
 spent.energy = 0;
+// pryč od všech světel: dnešní obloha (L-7) umí posunout světlo až na start,
+// a sebrané světlo by energii vrátilo — test by pak měřil jinou věc
+spent.x = 95;
+spent.y = 5;
 const spentY = spent.y;
 fly(spent, 0.8, { ...NO, up: true });
 check('bez energie tlačítko nepomůže', spent.y < spentY, `${spentY} → ${spent.y.toFixed(1)}`);
