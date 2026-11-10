@@ -33,6 +33,15 @@ Automat nespouští žádný krok mimo brány uvedené níže.
   `models.ts`), deploy `20261110T090830Z` z čistého worktree na HEAD
   (proto 32 = živý net), smoke OK; produkce servíruje
   `/models/avatars/<id>.glb` (ověřeno 206 na 0/23/44/55/74/77).
+- **Nasaženo 2026-11-10 i na app web**: modal avatara v
+  `/l4-oasis/avatars` má 3D náhled (`AvatarModel3D` + lazy wrapper), GLB se
+  do `public/` webu kopírují v `deploy-web2.9.sh` z `apps/nirvana/public/models/avatars`
+  (jeden zdroj v gitu, žádná duplikace). Deploy `20261110T100938Z` z čistého
+  worktree. Pasti: chyběl `node_modules` balíčku `zion-wallet-sdk` (build padal
+  na `@noble/ed25519`/`ethers`), CSP musela dostat `blob:` v `connect-src`
+  (GLTFLoader načítá zabudované textury přes blob) a plátno potřebuje
+  `preserveDrawingBuffer` pro spolehlivé screenshoty. Ověřeno: canvas 700×378,
+  model se vykreslí, `/models/avatars/*.glb` na app webu 206.
 - **TRELLIS.2 pilot (Krišna):** ověřen přes oficiální HF Space — kvalitativně
   jasně lepší (CLIP průměr **0,688** vs 0,569 M1; anatomicky správná postava).
   Detail v `docs/3.2/AVATAR-3D-PIPELINE.md` §9d.
