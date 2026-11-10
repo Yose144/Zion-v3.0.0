@@ -2624,3 +2624,24 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Vizuál:** `RagdollBody` kreslí válce mezi body + kontaktní stín;
   `DuelStage` má `goals` a `wide` kameru (fotbal je 20 m široký, s úzkou
   kamerou nebyly vidět branky).
+
+### Aréna — Quad Damage, lišta zbraní a dotykové cyklení (2026-11-10)
+
+- **Quad je sólo.** `ARENA_SOLO_PICKUPS` = `ARENA_PICKUPS` + `quad` na pravé
+  liště (respawn 60 s, ×3 poškození na 30 s). Multiplayer mapa ho nemá —
+  buff by musel být v protokolu a snapshotu, to je samostatný krok.
+- **Projektil si nese poškození z doby výstřelu** (`Rocket.damage/splash`),
+  takže Quad platí konzistentně i pro raketu a plazmu; smyčka bere rádius
+  ze `spec` (kind) a čísla z projektilu.
+- **Q3 lišta zbraní** je v HUD pod health/armor: klávesa, zkratka a munice,
+  aktivní slot zvýrazněný, prázdný ztlumený. Klik posílá `weaponRequest`
+  (ref), sim ho aplikuje v příštím snímku — stejný vzor jako ostatní
+  request refy, jen tady nesmí React sahat na herní ref.
+- **Dotykové ZB cyklí všech šest zbraní.** Původní tlačítko mělo reálnou
+  chybu: `readTouch` stav nuluje, takže `(null ?? 0) + 1` vždy vybralo
+  druhou zbraň a dál se necyklilo. Index se teď drží v `weaponIndex` refu.
+  Multiplayer si z cyklu vezme první tři (`next % 3`).
+- **Debug `?arenaDebug=1`** umí `teleport(x, z, y?)` a `state()` nese
+  munici všech zbraní + `quadUntil` — E2E tak ověří pickup i HUD bez hraní.
+- **Test:** `test/arena-weapons.mjs` rozšířen o Quad (sólo ano, MP ne,
+  nadmnožina pickupů, meze mapy).

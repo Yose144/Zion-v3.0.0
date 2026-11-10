@@ -15,6 +15,7 @@
 const { WEAPONS, applyDamage, spreadVector, aimVector, ARMOR_ABSORB } = await import(
   '../src/core/arena/weapons.ts'
 );
+const { ARENA_PICKUPS, ARENA_SOLO_PICKUPS } = await import('../src/core/arena/map.ts');
 
 let failures = 0;
 const check = (name, ok, detail = '') => {
@@ -90,6 +91,28 @@ check('plazma: má TTL', WEAPONS.plasma.ttlMs > 0, String(WEAPONS.plasma.ttlMs))
   );
   const plasma = applyDamage(100, 0, WEAPONS.plasma.damage + WEAPONS.plasma.splash);
   check('plazma: 35 dmg bez armoru', plasma.hp === 65, String(plasma.hp));
+}
+
+// ── 7) pickupy a Quad (2026-11-10) ──────────────────────────────────
+{
+  const quad = ARENA_SOLO_PICKUPS.find((pickup) => pickup.powerup === 'quad');
+  check('sólo má Quad pickup', Boolean(quad), JSON.stringify(ARENA_SOLO_PICKUPS.map((p) => p.id)));
+  check('Quad má respawn 60 s', quad?.respawn === 60, String(quad?.respawn));
+  check(
+    'multiplayer mapu Quad neobsahuje',
+    !ARENA_PICKUPS.some((pickup) => pickup.kind === 'powerup'),
+  );
+  check(
+    'sólová mapa je nadmnožinou MP',
+    ARENA_PICKUPS.every((pickup) => ARENA_SOLO_PICKUPS.some((entry) => entry.id === pickup.id)),
+  );
+  check(
+    'pickupy jsou v aréně (±20)',
+    ARENA_SOLO_PICKUPS.every(
+      (pickup) => Math.abs(pickup.x) <= 20 && Math.abs(pickup.z) <= 20 && pickup.y >= 0 && pickup.y <= 4,
+    ),
+    JSON.stringify(ARENA_SOLO_PICKUPS.map((p) => [p.x, p.y, p.z])),
+  );
 }
 
 console.log('');

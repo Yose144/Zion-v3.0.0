@@ -14,6 +14,7 @@ import {
   playMg,
   playPickup,
   playPlasma,
+  playQuad,
   playRail,
   playRocket,
   playShotgun,
@@ -22,7 +23,7 @@ import {
 import * as THREE from 'three';
 import {
   ARENA_BOXES,
-  ARENA_PICKUPS,
+  ARENA_SOLO_PICKUPS,
   BOT_SPAWNS,
   FRAG_LIMIT,
   MATCH_SECONDS,
@@ -40,7 +41,7 @@ import {
   type Body,
   type Box4,
 } from '@/core/arena/physics';
-import { WEAPONS, ARMOR_ABSORB, MG_AMMO_PICKUP, spreadVector, TARGET_RADIUS, TARGET_EYE_RATIO, pickTarget, aimVector } from '@/core/arena/weapons';
+import { WEAPONS, ARMOR_ABSORB, MG_AMMO_PICKUP, spreadVector, TARGET_RADIUS, TARGET_EYE_RATIO, pickTarget, aimVector, type WeaponId } from '@/core/arena/weapons';
 import { createBotMemory, stepBot, driveBot, skillOptions, type BotMemory, type BotSkill, type BotTarget } from '@/core/arena/bot';
 import { readTouch, type ArenaTouchState } from '@/core/arena/ArenaTouch';
 import type { MutableRefObject } from 'react';
@@ -66,6 +67,10 @@ export interface ArenaStats {
   botsAlive: number;
   timeLeft: number;
   respawnIn: number;
+  /** Kolik sekund zbývá do konce Quad Damage (0 = neaktivní). */
+  quadIn?: number;
+  /** Munice všech zbraní pro HUD (`rail` je −1 = nekonečno). */
+  ammoByWeapon?: Partial<Record<WeaponId, number>>;
 }
 
 interface XrHandle {
@@ -107,6 +112,9 @@ interface Rocket {
   id: number;
   /** `plasma` letí stejnou fyzikou jako raketa, jen slabší a rychlejší. */
   kind: 'rocket' | 'plasma';
+  /** Poškození v době výstřelu (už vynásobené Quadem). */
+  damage: number;
+  splash: number;
   x: number;
   y: number;
   z: number;
@@ -179,6 +187,7 @@ export function MarsArena({
   onStats,
   onEnd,
   touch,
+  weaponRequest,
 }: {
   running: boolean;
   xr?: boolean;
@@ -186,6 +195,8 @@ export function MarsArena({
   onEnd: (result: ArenaResult) => void;
   /** Dotykové ovládání (mobil) — stejné refy jako klávesnice. */
   touch?: MutableRefObject<ArenaTouchState>;
+  /** Klik na zbraň v HUD (Q3 lišta) — request, aplikuje se v herní smyčce. */
+  weaponRequest?: MutableRefObject<WeaponId | null>;
 }) {
   const { camera, gl } = useThree();
   const solids = useMemo<Box4[]>(() => makeSolids(ARENA_BOXES), []);
@@ -211,6 +222,8 @@ export function MarsArena({
   const shotgunAmmo = useRef<number>(WEAPONS.shotgun.ammo);
   const lightningAmmo = useRef<number>(WEAPONS.lightning.ammo);
   const plasmaAmmo = useRef<number>(WEAPONS.plasma.ammo);
+  /** Quad Damage (Q3): do kdy platí ×3 poškození (ms). */
+  const quadUntil = useRef(0);
   /** Munice podle id — jedno místo, ze kterého čte HUD i střelba. */
   const ammoOf = (id: 'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma'): number =>
     id === 'rocket'
@@ -247,7 +260,7 @@ export function MarsArena({
   );
   const rockets = useRef<Rocket[]>([]);
   const tracers = useRef<Tracer[]>([]);
-  const pickups = useRef(ARENA_PICKUPS.map((pickup) => ({ ...pickup, until: 0 })));
+  const pickups = useRef(ARENA_SOLO_PICKUPS.map((pickup) => ({ ...pickup, until: 0 })));
   const nextId = useRef(1);
 
   const botGroup = useRef<THREE.Group>(null);
@@ -272,6 +285,13 @@ export function MarsArena({
         player: { ...player.current },
         frags: frags.current,
         health: health.current,
+        weapon: weapon.current,
+        quadUntil: quadUntil.current,
+        ammo: ammo.current,
+        mgAmmo: mgAmmo.current,
+        shotgunAmmo: shotgunAmmo.current,
+        lightningAmmo: lightningAmmo.current,
+        plasmaAmmo: plasmaAmmo.current,
         bots: bots.current.map((bot) => ({
           x: bot.body.x,
           y: bot.body.y,
@@ -290,6 +310,17 @@ export function MarsArena({
       fire: () => fire(performance.now()),
       weapon: (next: 'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma') => {
         weapon.current = next;
+      },
+      teleport: (x: number, z: number, y?: number) => {
+        player.current.x = x;
+        player.current.z = z;
+        if (typeof y === 'number') {
+          player.current.y = y;
+          player.current.vy = 0;
+          player.current.onGround = false;
+        }
+        player.current.vx = 0;
+        player.current.vz = 0;
       },
     };
     (window as unknown as Record<string, unknown>).__arenaDebug = api;
@@ -399,7 +430,8 @@ export function MarsArena({
     view.current = { yaw: PLAYER_SPAWN.yaw, pitch: -0.05 };
     rockets.current = [];
     tracers.current = [];
-    pickups.current = ARENA_PICKUPS.map((pickup) => ({ ...pickup, until: 0 }));
+    pickups.current = ARENA_SOLO_PICKUPS.map((pickup) => ({ ...pickup, until: 0 }));
+    quadUntil.current = 0;
     bots.current = BOT_SPAWNS.map((spawn, index) => makeBot(spawn, index));
   }, [running]);
 
@@ -423,6 +455,7 @@ export function MarsArena({
     }
 
     const id = weapon.current;
+    const quad = now < quadUntil.current ? 3 : 1;
 
     // ── paprskové zbraně: rail / MG / brokovnice / blesk ────────────
     if (id === 'rail' || id === 'mg' || id === 'shotgun' || id === 'lightning') {
@@ -488,7 +521,7 @@ export function MarsArena({
 
         if (bestBot) {
           hitAny = true;
-          bestBot.health -= spec.damage;
+          bestBot.health -= spec.damage * quad;
           if (bestBot.health <= 0) killBot(bestBot, now);
         }
       }
@@ -519,6 +552,8 @@ export function MarsArena({
       x: origin[0] + dir.x * 0.6,
       y: origin[1] + dir.y * 0.6,
       z: origin[2] + dir.z * 0.6,
+      damage: projectile.damage * quad,
+      splash: projectile.splash * quad,
       vx: dir.x * projectile.speed,
       vy: dir.y * projectile.speed,
       vz: dir.z * projectile.speed,
@@ -584,6 +619,13 @@ export function MarsArena({
     const now = performance.now();
     const dt = Math.min(0.05, delta);
 
+    // Klik na zbraň v HUD (Q3 lišta) — request z Reactu, aplikace v simu.
+    const requested = weaponRequest?.current;
+    if (requested) {
+      weaponRequest!.current = null;
+      if (requested === 'rail' || ammoOf(requested) > 0) weapon.current = requested;
+    }
+
     timeLeft.current = Math.max(0, MATCH_SECONDS - (now - startedAt.current) / 1000);
     if (timeLeft.current <= 0 && !finished.current) endMatch('time');
 
@@ -592,10 +634,11 @@ export function MarsArena({
     // hráč
     if (!dead) {
       // dotyk (mobil) — pohled se aplikuje tady, pohyb jde do stejných čísel
+      // Dotykové ZB cyklí všech šest zbraní; na prázdnou se nepřepíná.
+      const TOUCH_WEAPONS: WeaponId[] = ['rail', 'rocket', 'mg', 'shotgun', 'lightning', 'plasma'];
       const touchInput = readTouch(touch, view, (next) => {
-        if (next === 0) weapon.current = 'rail';
-        else if (next === 1) weapon.current = 'rocket';
-        else if (mgAmmo.current > 0) weapon.current = 'mg';
+        const id = TOUCH_WEAPONS[next] ?? 'rail';
+        if (id === 'rail' || ammoOf(id) > 0) weapon.current = id;
       });
 
       const forward = xr
@@ -730,7 +773,7 @@ export function MarsArena({
             rocket.z - bot.body.z,
           );
           if (d < 1.1) {
-            bot.health -= spec.damage;
+            bot.health -= rocket.damage;
             if (bot.health <= 0) killBot(bot, now);
             exploded = true;
             break;
@@ -764,7 +807,7 @@ export function MarsArena({
               rocket.z - bot.body.z,
             );
             if (d < spec.radius) {
-              bot.health -= Math.round(spec.splash * (1 - d / spec.radius));
+              bot.health -= Math.round(rocket.splash * (1 - d / spec.radius));
               if (bot.health <= 0) killBot(bot, now);
             }
           }
@@ -774,7 +817,7 @@ export function MarsArena({
             rocket.z - player.current.z,
           );
           if (selfDist < spec.radius * 0.8) {
-            damagePlayer(Math.round(spec.splash * (1 - selfDist / (spec.radius * 0.8))), now);
+            damagePlayer(Math.round(rocket.splash * (1 - selfDist / (spec.radius * 0.8))), now);
           }
           continue;
         }
@@ -795,6 +838,11 @@ export function MarsArena({
       if (pickup.kind === 'health') {
         if (health.current >= 100) continue;
         health.current = Math.min(100, health.current + 25);
+      } else if (pickup.kind === 'powerup') {
+        // Quad Damage: 30 s ×3 poškození, respawn 60 s (Q3 rytmus).
+        if (pickup.powerup !== 'quad' || now < quadUntil.current) continue;
+        quadUntil.current = now + 30_000;
+        playQuad();
       } else if (pickup.kind === 'ammo') {
         // Q3 ammo box dobije všechny typy, které nejsou plné. Když je plno
         // všude, pickup zůstane ležet — jinak by mizel bez užitku.
@@ -885,6 +933,15 @@ export function MarsArena({
         botsAlive: bots.current.filter((bot) => bot.alive).length,
         timeLeft: Math.ceil(timeLeft.current),
         respawnIn: Math.max(0, Math.ceil((deadUntil.current - now) / 1000)),
+        quadIn: Math.max(0, Math.ceil((quadUntil.current - now) / 1000)),
+        ammoByWeapon: {
+          rail: -1,
+          rocket: ammo.current,
+          mg: mgAmmo.current,
+          shotgun: shotgunAmmo.current,
+          lightning: lightningAmmo.current,
+          plasma: plasmaAmmo.current,
+        },
       };
       const key = JSON.stringify(stats);
       if (key !== lastStats.current) {
@@ -977,11 +1034,19 @@ export function MarsArena({
 
       {/* pickupy */}
       <group ref={pickupGroup}>
-        {ARENA_PICKUPS.map((pickup) => (
+        {ARENA_SOLO_PICKUPS.map((pickup) => (
           <mesh key={pickup.id} visible={false}>
             <octahedronGeometry args={[0.42, 0]} />
             <meshBasicMaterial
-              color={pickup.kind === 'health' ? '#7fe3d4' : pickup.kind === 'ammo' ? '#ffb46a' : '#c8a2ff'}
+              color={
+                pickup.kind === 'health'
+                  ? '#7fe3d4'
+                  : pickup.kind === 'ammo'
+                    ? '#ffb46a'
+                    : pickup.kind === 'powerup'
+                      ? '#ff5c5c'
+                      : '#c8a2ff'
+              }
               toneMapped={false}
             />
           </mesh>

@@ -56,6 +56,12 @@ export function playPlasma(): void {
   playTone({ freq: 520, to: 880, duration: 0.09, type: 'sine', gain: 0.06 });
 }
 
+/** Quad Damage: zvonivý vzestup, který nejde přeslechnout. */
+export function playQuad(): void {
+  play('bell');
+  playTone({ freq: 300, to: 900, duration: 0.55, type: 'sawtooth', gain: 0.055 });
+}
+
 /** Zabití bota: dva tóny dolů. */
 export function playFrag(): void {
   play('frag');

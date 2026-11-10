@@ -297,7 +297,8 @@ export function MarsMultiplayer({
     const touchInput = watching
       ? { forward: 0, strafe: 0, fire: false, jump: false }
       : readTouch(touch, view, (next) => {
-          weapon.current = next;
+          // MP zná tři zbraně; dotykové kolečko jich cyklí šest.
+          weapon.current = (next % 3) as 0 | 1 | 2;
         });
     const forward = watching
       ? 0

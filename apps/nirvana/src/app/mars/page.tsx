@@ -11,6 +11,7 @@ import { MarsMultiplayer, type MpStats } from '@/core/arena/MarsMultiplayer';
 import { ArenaTouchControls, createTouchState } from '@/core/arena/ArenaTouch';
 import { LOOK_MAX, LOOK_MIN, getLookSensitivity, setLookSensitivity } from '@/core/arena/settings';
 import { FRAG_LIMIT, MATCH_SECONDS } from '@/core/arena/map';
+import type { WeaponId } from '@/core/arena/weapons';
 import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
 import { watchRoom } from '@/core/net/watch';
 import { SpectatorBar } from '@/core/net/SpectatorBar';
@@ -36,7 +37,19 @@ const EMPTY_STATS: ArenaStats = {
   botsAlive: 3,
   timeLeft: MATCH_SECONDS,
   respawnIn: 0,
+  quadIn: 0,
+  ammoByWeapon: { rail: -1, rocket: 12, mg: 50, shotgun: 0, lightning: 0, plasma: 0 },
 };
+
+/** Lišta zbraní (Q3): číslo klávesy, zkratka a munice. */
+const WEAPON_BAR: { id: WeaponId; key: number; label: string }[] = [
+  { id: 'rail', key: 1, label: 'RAIL' },
+  { id: 'rocket', key: 2, label: 'ROCKET' },
+  { id: 'mg', key: 3, label: 'MG' },
+  { id: 'shotgun', key: 4, label: 'SHOTGUN' },
+  { id: 'lightning', key: 5, label: 'LIGHTNING' },
+  { id: 'plasma', key: 6, label: 'PLASMA' },
+];
 
 /** Název zbraně do HUD — jedno místo pro sólo (MP má vlastní 3 zbraně). */
 function weaponLabel(weapon: string, ammo: number): string {
@@ -58,6 +71,8 @@ export default function MarsPage() {
   const [presenting, setPresenting] = useState(false);
   const [xrStore] = useState(() => createXRStore({ foveation: 0.5 }));
   const [stats, setStats] = useState<ArenaStats>(EMPTY_STATS);
+  /** Klik na zbraň v liště — request, který sim aplikuje v příštím snímku. */
+  const weaponRequest = useRef<WeaponId | null>(null);
   /** `mp` = online aréna (server-authoritative), jinak sólo proti botům. */
   const [mp, setMp] = useState(false);
   const [mpStats, setMpStats] = useState<MpStats | null>(null);
@@ -137,6 +152,7 @@ export default function MarsPage() {
                 onStats={setStats}
                 onEnd={endMatch}
                 touch={touch}
+                weaponRequest={weaponRequest}
               />
             </XR>
           )}
@@ -223,6 +239,11 @@ export default function MarsPage() {
               {l('frags')} {stats.frags}/{FRAG_LIMIT}
             </span>
             <span className="arena-time">{stats.timeLeft}s</span>
+            {(stats.quadIn ?? 0) > 0 && (
+              <span className="arena-quad" title={cs ? 'Quad Damage ×3' : 'Quad Damage ×3'}>
+                QUAD ×3 · {stats.quadIn}s
+              </span>
+            )}
             <span className="arena-weapon">
               {weaponLabel(stats.weapon, stats.ammo)}
             </span>
@@ -248,14 +269,38 @@ export default function MarsPage() {
               {l('menu')}
             </button>
           </div>
+          <div className="arena-weaponbar" role="group" aria-label={l('weapons')}>
+            {WEAPON_BAR.map((slot) => {
+              const ammo = stats.ammoByWeapon?.[slot.id];
+              const infinite = slot.id === 'rail';
+              const empty = !infinite && (ammo ?? 0) <= 0;
+              return (
+                <button
+                  key={slot.id}
+                  type="button"
+                  className={`arena-weaponbar-slot${stats.weapon === slot.id ? ' is-active' : ''}${empty ? ' is-empty' : ''}`}
+                  aria-pressed={stats.weapon === slot.id}
+                  disabled={empty}
+                  title={`${slot.key} · ${slot.label}`}
+                  onClick={() => {
+                    weaponRequest.current = slot.id;
+                  }}
+                >
+                  <kbd>{slot.key}</kbd>
+                  <span>{slot.label}</span>
+                  <b>{infinite ? '∞' : (ammo ?? 0)}</b>
+                </button>
+              );
+            })}
+          </div>
           <div className="arena-tip">
             {coarse
               ? cs
                 ? 'joystick = pohyb · tažení vpravo = rozhlížení · PALBA / SKOK / ZB'
                 : 'stick = move · drag right = look · FIRE / JUMP / WP'
               : cs
-                ? 'WASD pohyb · mezerník skok · 1/2/3 zbraň · klik střelba · Esc uvolní myš'
-                : 'WASD move · space jump · 1/2/3 weapon · click fire · Esc releases the mouse'}
+                ? 'WASD pohyb · mezerník skok · 1–6 nebo kolečko zbraň · klik střelba · Esc uvolní myš'
+                : 'WASD move · space jump · 1–6 or wheel weapon · click fire · Esc releases the mouse'}
           </div>
           {stats.respawnIn > 0 && (
             <div className="arena-respawn">

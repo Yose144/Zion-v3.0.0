@@ -1714,6 +1714,86 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   letter-spacing: 0.14em;
 }
 
+/* Quad Damage (Q3): červený chip, který musí být vidět na první pohled. */
+.arena-hud .arena-quad {
+  color: #ff8a7a;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 10px rgba(255, 92, 92, 0.65);
+}
+
+/* Q3 lišta zbraní — jedno místo, kde je vidět, co máš a kolik. */
+.arena-weaponbar {
+  position: absolute;
+  z-index: 13;
+  left: 50%;
+  bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.25rem;
+  max-width: calc(100vw - 2rem);
+  overflow-x: auto;
+  padding: 0.25rem;
+  border-radius: 0.7rem;
+  background: rgba(12, 6, 4, 0.62);
+  border: 1px solid rgba(255, 180, 106, 0.18);
+  backdrop-filter: blur(4px);
+  scrollbar-width: none;
+}
+
+.arena-weaponbar::-webkit-scrollbar {
+  display: none;
+}
+
+.arena-weaponbar-slot {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.45rem;
+  border-radius: 0.45rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(255, 233, 168, 0.6);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.arena-weaponbar-slot kbd {
+  font-size: 0.58rem;
+  opacity: 0.7;
+}
+
+.arena-weaponbar-slot b {
+  color: #ffe9a8;
+  font-weight: 600;
+}
+
+.arena-weaponbar-slot.is-active {
+  border-color: rgba(255, 209, 102, 0.55);
+  background: rgba(255, 209, 102, 0.14);
+  color: #ffe9a8;
+}
+
+.arena-weaponbar-slot.is-empty {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.arena-weaponbar-slot:not(:disabled):hover {
+  border-color: rgba(255, 209, 102, 0.4);
+}
+
+/* Na dotyku lištu nepotřebujeme — zbraně cyklí tlačítko ZB. */
+@media (hover: none) and (pointer: coarse) {
+  .arena-weaponbar {
+    display: none;
+  }
+}
+
 .arena-tip {
   position: absolute;
   z-index: 12;

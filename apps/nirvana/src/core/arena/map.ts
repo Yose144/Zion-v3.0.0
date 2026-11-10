@@ -80,7 +80,9 @@ export const BOT_SPAWNS: ArenaSpawn[] = [
 
 export interface ArenaPickup {
   id: string;
-  kind: 'health' | 'armor' | 'ammo';
+  kind: 'health' | 'armor' | 'ammo' | 'powerup';
+  /** U `powerup`: který bonus to je (Q3 `quad` = ×3 poškození). */
+  powerup?: 'quad';
   x: number;
   y: number;
   z: number;
@@ -95,6 +97,16 @@ export const ARENA_PICKUPS: ArenaPickup[] = [
   // náboje na MG (Q3 má ammo boxy; tady jsou dvě, aby obě strany měly šanci)
   { id: 'm1', kind: 'ammo', x: -16, y: 0, z: -12, respawn: 22 },
   { id: 'm2', kind: 'ammo', x: 16, y: 0, z: 12, respawn: 22 },
+];
+
+/**
+ * Sólová aréna má navíc **Quad Damage** (Q3 ikona): na 30 s ×3 poškození,
+ * respawn 60 s. V multiplayeru zatím není — server by musel znát buff
+ * a posílat ho ve snapshotu, což je samostatný krok (protokol).
+ */
+export const ARENA_SOLO_PICKUPS: ArenaPickup[] = [
+  ...ARENA_PICKUPS,
+  { id: 'q1', kind: 'powerup', powerup: 'quad', x: 14, y: 3.2, z: 0, respawn: 60 },
 ];
 
 /** Stěny jako data pro raycast (jen to, co blokuje střelu). */

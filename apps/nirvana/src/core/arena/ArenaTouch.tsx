@@ -30,8 +30,8 @@ export interface ArenaTouchState {
   lookY: number;
   fire: boolean;
   jump: boolean;
-  /** Jednorázový požadavek na přepnutí zbraně (0/1/2), jinak null. */
-  weapon: 0 | 1 | 2 | null;
+  /** Jednorázový požadavek na přepnutí zbraně (index 0–5), jinak null. */
+  weapon: number | null;
 }
 
 export function createTouchState(): ArenaTouchState {
@@ -49,6 +49,12 @@ export function ArenaTouchControls({ state }: { state: MutableRefObject<ArenaTou
   const stickPointer = useRef<number | null>(null);
   const lookPointer = useRef<number | null>(null);
   const lookLast = useRef({ x: 0, y: 0 });
+  /**
+   * Poslední zvolený index zbraně. Drží se **tady**, protože `readTouch`
+   * stav po přečtení nuluje — dřív se tlačítko ZB `(null ?? 0) + 1` vždy
+   * přepnulo na druhou zbraň a dál už nikdy necinklo.
+   */
+  const weaponIndex = useRef(0);
 
   const updateStick = useCallback(
     (clientX: number, clientY: number) => {
@@ -155,7 +161,10 @@ export function ArenaTouchControls({ state }: { state: MutableRefObject<ArenaTou
           className="arena-touch-btn is-small"
           onPointerDown={(event) => {
             event.stopPropagation();
-            state.current.weapon = ((state.current.weapon ?? 0) + 1) % 3 as 0 | 1 | 2;
+            // Cyklus přes všechny zbraně hry (sólo má šest; multiplayer si
+            // z toho vezme první tři). Prazdná zbraň se přeskočí až v simu.
+            weaponIndex.current = (weaponIndex.current + 1) % 6;
+            state.current.weapon = weaponIndex.current;
           }}
         >
           ZB
@@ -201,7 +210,7 @@ export function ArenaTouchControls({ state }: { state: MutableRefObject<ArenaTou
 export function readTouch(
   touch: MutableRefObject<ArenaTouchState> | undefined,
   view: MutableRefObject<{ yaw: number; pitch: number }>,
-  onWeapon: (weapon: 0 | 1 | 2) => void,
+  onWeapon: (weapon: number) => void,
 ): { forward: number; strafe: number; fire: boolean; jump: boolean } {
   if (!touch) return { forward: 0, strafe: 0, fire: false, jump: false };
   const t = touch.current;
