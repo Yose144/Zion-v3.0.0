@@ -69,6 +69,8 @@ export interface ArenaStats {
   respawnIn: number;
   /** Kolik sekund zbývá do konce Quad Damage (0 = neaktivní). */
   quadIn?: number;
+  /** Kolik sekund zbývá do konce Haste (0 = neaktivní). */
+  hasteIn?: number;
   /** Munice všech zbraní pro HUD (`rail` je −1 = nekonečno). */
   ammoByWeapon?: Partial<Record<WeaponId, number>>;
 }
@@ -224,6 +226,8 @@ export function MarsArena({
   const plasmaAmmo = useRef<number>(WEAPONS.plasma.ammo);
   /** Quad Damage (Q3): do kdy platí ×3 poškození (ms). */
   const quadUntil = useRef(0);
+  /** Haste (Q3): do kdy platí +30 % rychlosti (ms). */
+  const hasteUntil = useRef(0);
   /** Munice podle id — jedno místo, ze kterého čte HUD i střelba. */
   const ammoOf = (id: 'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma'): number =>
     id === 'rocket'
@@ -287,6 +291,7 @@ export function MarsArena({
         health: health.current,
         weapon: weapon.current,
         quadUntil: quadUntil.current,
+        hasteUntil: hasteUntil.current,
         ammo: ammo.current,
         mgAmmo: mgAmmo.current,
         shotgunAmmo: shotgunAmmo.current,
@@ -432,6 +437,7 @@ export function MarsArena({
     tracers.current = [];
     pickups.current = ARENA_SOLO_PICKUPS.map((pickup) => ({ ...pickup, until: 0 }));
     quadUntil.current = 0;
+    hasteUntil.current = 0;
     bots.current = BOT_SPAWNS.map((spawn, index) => makeBot(spawn, index));
   }, [running]);
 
@@ -666,6 +672,8 @@ export function MarsArena({
           forward,
           strafe,
           jump: jumpQueued.current || (xr && keys.current.has('Space')) || touchInput.jump,
+          // Haste (Q3): +30 % k maximální rychlosti, dokud běží.
+          speed: now < hasteUntil.current ? 1.3 : 1,
         },
         dt,
         solids,
@@ -839,10 +847,23 @@ export function MarsArena({
         if (health.current >= 100) continue;
         health.current = Math.min(100, health.current + 25);
       } else if (pickup.kind === 'powerup') {
-        // Quad Damage: 30 s ×3 poškození, respawn 60 s (Q3 rytmus).
-        if (pickup.powerup !== 'quad' || now < quadUntil.current) continue;
-        quadUntil.current = now + 30_000;
-        playQuad();
+        // Powerupy (Q3): Quad ×3 dmg / Haste +30 % rychlosti, 30 s.
+        if (pickup.powerup === 'quad') {
+          if (now < quadUntil.current) continue;
+          quadUntil.current = now + 30_000;
+          playQuad();
+        } else if (pickup.powerup === 'haste') {
+          if (now < hasteUntil.current) continue;
+          hasteUntil.current = now + 30_000;
+          playQuad();
+        } else {
+          continue;
+        }
+      } else if (pickup.kind === 'mega') {
+        // Mega Health: doplní do 200; nad 100 se pak 1 HP/s vytrácí.
+        if (health.current >= 200) continue;
+        health.current = Math.min(200, Math.max(health.current, 100) + 100);
+        playPickup();
       } else if (pickup.kind === 'ammo') {
         // Q3 ammo box dobije všechny typy, které nejsou plné. Když je plno
         // všude, pickup zůstane ležet — jinak by mizel bez užitku.
@@ -863,6 +884,9 @@ export function MarsArena({
       pickup.until = now + pickup.respawn * 1000;
       playPickup();
     }
+
+    // Mega Health: nad 100 se zdraví vytrácí (Q3 ~1 HP/s).
+    if (health.current > 100) health.current = Math.max(100, health.current - dt);
 
     tracers.current = tracers.current.filter((tracer) => tracer.ttl > now);
 
@@ -934,6 +958,7 @@ export function MarsArena({
         timeLeft: Math.ceil(timeLeft.current),
         respawnIn: Math.max(0, Math.ceil((deadUntil.current - now) / 1000)),
         quadIn: Math.max(0, Math.ceil((quadUntil.current - now) / 1000)),
+        hasteIn: Math.max(0, Math.ceil((hasteUntil.current - now) / 1000)),
         ammoByWeapon: {
           rail: -1,
           rocket: ammo.current,
@@ -1039,12 +1064,14 @@ export function MarsArena({
             <octahedronGeometry args={[0.42, 0]} />
             <meshBasicMaterial
               color={
-                pickup.kind === 'health'
-                  ? '#7fe3d4'
+                pickup.kind === 'health' || pickup.kind === 'mega'
+                  ? '#9cff8a'
                   : pickup.kind === 'ammo'
                     ? '#ffb46a'
                     : pickup.kind === 'powerup'
-                      ? '#ff5c5c'
+                      ? pickup.powerup === 'haste'
+                        ? '#7fe3d4'
+                        : '#ff5c5c'
                       : '#c8a2ff'
               }
               toneMapped={false}

@@ -106,6 +106,15 @@ check('plazma: má TTL', WEAPONS.plasma.ttlMs > 0, String(WEAPONS.plasma.ttlMs))
     'sólová mapa je nadmnožinou MP',
     ARENA_PICKUPS.every((pickup) => ARENA_SOLO_PICKUPS.some((entry) => entry.id === pickup.id)),
   );
+  const haste = ARENA_SOLO_PICKUPS.find((pickup) => pickup.powerup === 'haste');
+  const mega = ARENA_SOLO_PICKUPS.find((pickup) => pickup.kind === 'mega');
+  check('sólo má Haste pickup', Boolean(haste), JSON.stringify(haste));
+  check('sólo má Mega Health', Boolean(mega) && mega.respawn === 35, JSON.stringify(mega));
+  check(
+    'multiplayer nemá Haste ani Mega',
+    !ARENA_PICKUPS.some((pickup) => pickup.powerup === 'haste' || pickup.kind === 'mega'),
+  );
+  check('powerupy mají respawn delší než běžné itemy', (haste?.respawn ?? 0) >= 45 && (quad?.respawn ?? 0) >= 60);
   check(
     'pickupy jsou v aréně (±20)',
     ARENA_SOLO_PICKUPS.every(

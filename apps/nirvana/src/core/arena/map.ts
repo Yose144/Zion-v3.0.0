@@ -80,9 +80,9 @@ export const BOT_SPAWNS: ArenaSpawn[] = [
 
 export interface ArenaPickup {
   id: string;
-  kind: 'health' | 'armor' | 'ammo' | 'powerup';
-  /** U `powerup`: který bonus to je (Q3 `quad` = ×3 poškození). */
-  powerup?: 'quad';
+  kind: 'health' | 'armor' | 'ammo' | 'powerup' | 'mega';
+  /** U `powerup`: který bonus to je (`quad` ×3 dmg, `haste` +30 % rychlosti). */
+  powerup?: 'quad' | 'haste';
   x: number;
   y: number;
   z: number;
@@ -107,6 +107,9 @@ export const ARENA_PICKUPS: ArenaPickup[] = [
 export const ARENA_SOLO_PICKUPS: ArenaPickup[] = [
   ...ARENA_PICKUPS,
   { id: 'q1', kind: 'powerup', powerup: 'quad', x: 14, y: 3.2, z: 0, respawn: 60 },
+  { id: 'ha1', kind: 'powerup', powerup: 'haste', x: -14, y: 3.2, z: 0, respawn: 45 },
+  // Mega Health (Q3): doplní do 200 a nad 100 se pomalu vytrácí.
+  { id: 'mh1', kind: 'mega', x: 0, y: 2, z: 4, respawn: 35 },
 ];
 
 /** Stěny jako data pro raycast (jen to, co blokuje střelu). */

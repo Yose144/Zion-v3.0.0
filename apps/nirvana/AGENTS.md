@@ -2645,3 +2645,20 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   munici všech zbraní + `quadUntil` — E2E tak ověří pickup i HUD bez hraní.
 - **Test:** `test/arena-weapons.mjs` rozšířen o Quad (sólo ano, MP ne,
   nadmnožina pickupů, meze mapy).
+
+### Aréna — Haste a Mega Health (2026-11-10)
+
+- **Powerupy jsou data, ne buff v Reactu.** `ARENA_SOLO_PICKUPS` nese
+  `quad` (×3 dmg, 30 s, respawn 60), `haste` (+30 % rychlosti, 30 s,
+  respawn 45) a `mega` (doplní do 200, respawn 35). Všechno jen v sólu —
+  multiplayer by potřeboval buff v protokolu a snapshotu.
+- **Haste se propisuje do `stepBody` jako `speed` násobek** (1,3), ne
+  úpravou pozice. Kdyby se přičítalo k rychlosti ručně, rozešlo by se
+  tření a strafe jump.
+- **Mega Health dovolí víc než 100** a nad 100 se každou sekundu 1 HP
+  vytrácí (`health = max(100, health - dt)`). Respawn/`damagePlayer` dál
+  nastavuje 100 — léčba nesmí přežít smrt.
+- **HUD má tři stavy:** červený `QUAD ×3`, tyrkysový `HASTE` a zdraví
+  může ukázat 199 (barva se řídí prahy, ne maximem).
+- **Test:** `test/arena-weapons.mjs` ověřuje, že MP mapa powerupy nemá,
+  sólo ano, a že respawny dávají smysl (powerup ≥ 45 s).

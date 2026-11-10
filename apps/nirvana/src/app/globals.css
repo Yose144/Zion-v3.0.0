@@ -1723,6 +1723,15 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   text-shadow: 0 0 10px rgba(255, 92, 92, 0.65);
 }
 
+/* Haste (Q3): tyrkysový chip vedle Quadu. */
+.arena-hud .arena-haste {
+  color: #7fe3d4;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 10px rgba(127, 227, 212, 0.6);
+}
+
 /* Q3 lišta zbraní — jedno místo, kde je vidět, co máš a kolik. */
 .arena-weaponbar {
   position: absolute;

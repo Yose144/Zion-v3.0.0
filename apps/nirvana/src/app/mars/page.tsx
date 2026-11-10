@@ -38,6 +38,7 @@ const EMPTY_STATS: ArenaStats = {
   timeLeft: MATCH_SECONDS,
   respawnIn: 0,
   quadIn: 0,
+  hasteIn: 0,
   ammoByWeapon: { rail: -1, rocket: 12, mg: 50, shotgun: 0, lightning: 0, plasma: 0 },
 };
 
@@ -242,6 +243,11 @@ export default function MarsPage() {
             {(stats.quadIn ?? 0) > 0 && (
               <span className="arena-quad" title={cs ? 'Quad Damage ×3' : 'Quad Damage ×3'}>
                 QUAD ×3 · {stats.quadIn}s
+              </span>
+            )}
+            {(stats.hasteIn ?? 0) > 0 && (
+              <span className="arena-haste" title={cs ? 'Haste +30 % rychlosti' : 'Haste +30% speed'}>
+                HASTE · {stats.hasteIn}s
               </span>
             )}
             <span className="arena-weapon">
