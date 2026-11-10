@@ -265,7 +265,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://*.zionterranova.com wss://*.zionterranova.com https://prod.spline.design https://*.spline.design https://sepolia.base.org https://mainnet.base.org https://base-rpc.publicnode.com https://open.spotify.com https://api.spotify.com https://*.li.fi https://li.fi",
+              "connect-src 'self' blob: https://*.zionterranova.com wss://*.zionterranova.com https://prod.spline.design https://*.spline.design https://sepolia.base.org https://mainnet.base.org https://base-rpc.publicnode.com https://open.spotify.com https://api.spotify.com https://*.li.fi https://li.fi",
               "frame-src 'self' https://widget.li.fi https://li.fi https://*.li.fi https://open.spotify.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",
