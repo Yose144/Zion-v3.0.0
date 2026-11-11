@@ -48,6 +48,7 @@ function BonusBadge({ bonus }: { bonus: AdminGiftListItem['bonus'] }) {
 export default function AdminGiftsPage() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [amount, setAmount] = useState('1000000');
   const [withPass, setWithPass] = useState(true);
   const [withBook, setWithBook] = useState(true);
@@ -87,6 +88,7 @@ export default function AdminGiftsPage() {
     const res = await sendAdminGift({
       email: email.trim(),
       name: name.trim() || undefined,
+      phone: phone.trim() || undefined,
       amountZion,
       withPass,
       withBook,
@@ -97,6 +99,7 @@ export default function AdminGiftsPage() {
     if (res?.success) {
       setEmail('');
       setName('');
+      setPhone('');
       setNote('');
       reload();
     }
@@ -135,6 +138,16 @@ export default function AdminGiftsPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Jméno příjemce"
+              className="mt-1 w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-rasta-gold"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs text-white/60">Telefon pro WhatsApp (nepovinné)</span>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+420 123 456 789"
               className="mt-1 w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-rasta-gold"
             />
           </label>
@@ -192,6 +205,7 @@ export default function AdminGiftsPage() {
         <p className="text-[11px] text-white/40">
           ⚠️ Payout jde okamžitě z pool walletu on-chain — příjemce dostane email se seed
           slovy peněženky, bonus emailem s txHash a potvrzení s pass kódem a odkazem na ZIP knihy.
+          S telefonem se navíc objeví tlačítko WhatsApp s kompletní zprávou (včetně seede).
         </p>
       </form>
 
@@ -230,6 +244,19 @@ export default function AdminGiftsPage() {
                 </span>
                 {result.data.bonus.txHash && <CopyBtn value={result.data.bonus.txHash} />}
               </p>
+              {result.data.whatsapp?.url && (
+                <p className="pt-2">
+                  <a
+                    href={result.data.whatsapp.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-sm text-black bg-gradient-to-r from-emerald-400 to-green-500 hover:opacity-90 transition-opacity"
+                  >
+                    📱 Poslat přes WhatsApp{result.data.phone ? ` na ${result.data.phone}` : ''}
+                  </a>
+                  <span className="ml-2 text-[11px] text-white/40">(otevře se WhatsApp s předvyplněnou zprávou)</span>
+                </p>
+              )}
             </div>
           ) : (
             <p className="text-red-300">❌ {result.error}</p>
@@ -265,6 +292,17 @@ export default function AdminGiftsPage() {
                   <td className="px-4 py-2.5">
                     <div className="text-white/90">{g.customerEmail}</div>
                     <div className="text-[11px] text-white/40">{g.customerName}</div>
+                    {g.whatsapp?.url && (
+                      <a
+                        href={g.whatsapp.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1 inline-block px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold hover:bg-emerald-500/30 transition-colors"
+                        title="Poslat dárek přes WhatsApp"
+                      >
+                        📱 WA
+                      </a>
+                    )}
                   </td>
                   <td className="px-4 py-2.5 font-bold text-rasta-gold">
                     {g.zionTokens.toLocaleString('cs-CZ')}

@@ -6,6 +6,7 @@ import { markShopOrderPaid } from '@/lib/shop-zionpay';
 import { distributeOrderBonus } from '@/lib/bonus-payout';
 import { getTokenDistribution } from '@/lib/tokens';
 import { getArchivePassForOrder } from '@/lib/archive-pass';
+import { giftWhatsappPayload } from '@/lib/gift-whatsapp';
 import { randomBytes } from 'crypto';
 import { shopProducts } from '@/data/shopProducts';
 
@@ -162,18 +163,30 @@ export async function POST(request: NextRequest) {
 
     const order = await prisma.shopOrder.findUnique({ where: { orderId } });
     const pass = withPass ? getArchivePassForOrder(orderId) : null;
+    const whatsapp = giftWhatsappPayload(order?.customerPhone, {
+      orderId,
+      customerName: order?.customerName,
+      amountZion,
+      walletAddress: order?.customerWalletAddress,
+      walletSeedEnc: order?.customerWalletSeed,
+      passCode: pass?.code ?? null,
+      bookUrl: withBook ? BOOK_ZIP : null,
+      bonusTxHash: bonus.txHash ?? null,
+    });
 
     return NextResponse.json({
       success: true,
       data: {
         orderId,
         email,
+        phone: order?.customerPhone ?? null,
         amountZion,
         paymentStatus: order?.paymentStatus ?? 'paid',
         wallet: order?.customerWalletAddress ?? null,
         pass: pass ? { code: pass.code } : null,
         book: withBook ? { filesUrl: BOOK_ZIP } : null,
         bonus,
+        whatsapp,
       },
     });
   } catch (error) {
@@ -197,10 +210,12 @@ export async function GET(request: NextRequest) {
       orderId: true,
       customerEmail: true,
       customerName: true,
+      customerPhone: true,
       zionTokens: true,
       status: true,
       paymentStatus: true,
       customerWalletAddress: true,
+      customerWalletSeed: true,
       note: true,
       items: true,
       createdAt: true,
@@ -220,9 +235,20 @@ export async function GET(request: NextRequest) {
           (item as { externalId?: string }).externalId === BOOK_PRODUCT_ID ||
           (item as { externalId?: string }).externalId === 'gift-book',
       ) as { filesUrl?: string } | undefined;
-      const { items: _items, ...rest } = o;
+      const { items: _items, customerWalletSeed, ...rest } = o;
+      const whatsapp = giftWhatsappPayload(o.customerPhone, {
+        orderId: o.orderId,
+        customerName: o.customerName,
+        amountZion: o.zionTokens,
+        walletAddress: o.customerWalletAddress,
+        walletSeedEnc: customerWalletSeed,
+        passCode: pass?.code ?? null,
+        bookUrl: bookLine?.filesUrl ?? null,
+        bonusTxHash: dist?.txHash ?? null,
+      });
       return {
         ...rest,
+        whatsapp: whatsapp ? { url: whatsapp.url } : null,
         pass: pass ? { code: pass.code } : null,
         book: bookLine?.filesUrl ? { filesUrl: bookLine.filesUrl } : null,
         bonus: dist

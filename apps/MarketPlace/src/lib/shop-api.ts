@@ -565,12 +565,14 @@ export interface AdminGiftResult {
   data?: {
     orderId: string;
     email: string;
+    phone?: string | null;
     amountZion: number;
     paymentStatus: string;
     wallet: string | null;
     pass: { code: string } | null;
     book: { filesUrl: string } | null;
     bonus: { txHash?: string; tokens?: number; status: string };
+    whatsapp?: { url: string; text: string } | null;
   };
   error?: string;
 }
@@ -578,6 +580,7 @@ export interface AdminGiftResult {
 export async function sendAdminGift(input: {
   email: string;
   name?: string;
+  phone?: string;
   amountZion: number;
   withPass?: boolean;
   withBook?: boolean;
@@ -601,6 +604,7 @@ export interface AdminGiftListItem {
   orderId: string;
   customerEmail: string;
   customerName: string;
+  customerPhone?: string | null;
   zionTokens: number;
   status: string;
   paymentStatus: string;
@@ -611,6 +615,7 @@ export interface AdminGiftListItem {
   pass: { code: string } | null;
   book: { filesUrl: string } | null;
   bonus: { status: string; txHash?: string; distributedAt?: string } | null;
+  whatsapp?: { url: string } | null;
 }
 
 export async function listAdminGifts(): Promise<{
