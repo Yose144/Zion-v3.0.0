@@ -57,7 +57,7 @@ def read_image(path: Path, resolution: int) -> Image.Image:
     """
     from tsr.utils import remove_background, resize_foreground
 
-    session = rembg.new_session()
+    session = rembg.new_session("u2net")
     image = remove_background(Image.open(path), session)
     image = resize_foreground(image, 0.85)
     array = np.array(image).astype(np.float32) / 255.0
