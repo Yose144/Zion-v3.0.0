@@ -64,7 +64,7 @@ const PAGES = [
   {
     path: '/mercury',
     name: 'Merkur',
-    start: /Cvičit proti botovi|Practice vs bot/i,
+    start: /Spustit zápas|Start match|Cvičit proti botovi|Practice vs bot/i,
     control: '.duel-touch',
     minControls: 4,
   },

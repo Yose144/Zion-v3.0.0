@@ -2969,3 +2969,32 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Deploy pořadí:** net první, pak appka (37). Testy: `arena-bots`
   ověřuje Quad (rail 3× zabije), Haste (>15 % rychlosti) a Mega
   (HP nad 100 + úbytek).
+
+## Tuning všech her (2026-11-11)
+
+- **Mobilní herní panely potřebují spodní inset.** `.game-hud` má
+  `z-index: 55` a poslední akce panelu („Na start“, „Spustit zápas“,
+  „Vyplout“) pod ní zmizely — na telefonu se hra vůbec nespustila.
+  `.arena-panel` má proto na ≤760 px `padding-bottom: 6.5rem`; inset je
+  uvnitř scrollu, takže se akce dají odscrollovat nad lištu. Platí pro
+  všechny hry (Piko mělo vlastní kopii, ta je teď zobecněná).
+- **MOBA pick musí mít 12 hrdinů s modelem.** Startovní ID 82/84/85/86
+  nemají GLB a filtr `PLAYABLE` je vyhodil (zůstalo 8 karet). Nahrazeny
+  Vyásou (17), Saint Germainem (26), Lumi (40) a Kanaloou (66); test
+  `first-world` na tom trvá.
+- **Pauza patří i do souboje.** `MercurySolo`/`MercuryDuel` jako jediné
+  nečetly `isGamePaused()`; přidáno do obou `useFrame` (online pauzuje
+  klienta, server běží dál). `lastRoundReason` musí znát `'ringout'`,
+  jinak build spadne na typu.
+- **Testovací prohlížeč není jeden.** `_browser.mjs` normalizuje
+  `evaluateOnNewDocument` → `addInitScript` a
+  `emulateMediaFeatures` → `emulateMedia({reducedMotion})`; bez toho se
+  pod Playwrightem mediální emulace tiše neprovedla a flotila padala.
+- **Testy driftly od UI:** obchod v MOBĚ se otevírá tlačítkem, mana se
+  měří jako dip (fontána ji doplní), Merkur má max HP 150 (ne 100) a
+  `moba-online` čeká na snapshot s vlastním hrdinou. Opraveno v E2E.
+- **Známé flaky:** `e2e/moba-online.mjs` občas ztratí B (reconnect s novým
+  `conn.id`, `resume expired` po 45 s) — resume logika netu, práce paralelní
+  session; při opakování projde.
+- **Deploy pozastaven:** HEAD je proto 36, live net 34; app+net se musí
+  nasadit spolu a net 36 ještě není stabilní.

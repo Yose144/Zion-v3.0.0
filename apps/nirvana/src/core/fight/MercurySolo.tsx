@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, type MutableRefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { isGamePaused } from '@/core/games/pause';
 import type * as THREE from 'three';
 import { DuelCamera, DuelStage, RagdollBall3D } from './DuelStage';
 import { RagdollBody } from './RagdollBody';
@@ -244,6 +245,8 @@ export function MercurySolo({
 
   useFrame((_, delta) => {
     if (!running) return;
+    // hamburger menu pauzuje simulaci (server v online režimu běží dál)
+    if (isGamePaused()) return;
     const dt = Math.min(0.05, delta);
     clock.current += dt;
     const slow = clock.current < slowUntil.current;

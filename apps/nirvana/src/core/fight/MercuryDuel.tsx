@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { isGamePaused } from '@/core/games/pause';
 import type * as THREE from 'three';
 import { DuelCamera, DuelStage } from './DuelStage';
 import { RagdollBody } from './RagdollBody';
@@ -288,6 +289,8 @@ export function MercuryDuel({
   // ── smyčka ──────────────────────────────────────────────────────────
   useFrame((_, delta) => {
     if (!running) return;
+    // hamburger menu pauzuje simulaci (server v online režimu běží dál)
+    if (isGamePaused()) return;
     const dt = Math.min(0.05, delta);
     const watching = Boolean(watch) || spectator;
 

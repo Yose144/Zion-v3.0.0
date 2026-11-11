@@ -122,6 +122,10 @@ try {
 
   // honení: A musí být v dosahu (2,15 m), jinak pěst zasáhne vzduch —
   // podobně jako test v fight.mjs, ale přes reálné klávesy prohlížeče
+  // Zdraví B před prvním úderem — ragdoll balance se může měnit, takže
+  // test nesmí tvrdit „< 100“, ale „kleslo proti startu“.
+  const bStart = await poll(b, (s) => s.hud && s.hud.selfHp > 0, 10_000);
+  const bHp0 = bStart?.hud?.selfHp ?? 150;
   let hurtOnA = null;
   for (let index = 0; index < 130 && !hurtOnA; index++) {
     const s = await debug(a);
@@ -142,7 +146,7 @@ try {
     await sleep(120);
   }
   check('pěst A ubírá B HP (pohled A)', Boolean(hurtOnA), `foeHp=${hurtOnA?.hud?.foeHp ?? '—'}`);
-  const hurtOnB = await poll(b, (s) => s.hud.selfHp < 100, 15_000);
+  const hurtOnB = await poll(b, (s) => s.hud.selfHp < bHp0, 15_000);
   check('zásah vidí i B (server je autorita)', Boolean(hurtOnB), JSON.stringify(hurtOnB?.self?.hp ?? null));
   await a.keyboard.up('j');
 
