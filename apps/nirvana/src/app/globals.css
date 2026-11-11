@@ -11572,3 +11572,204 @@ a.game-hud-chip.is-lumi em {
     font-size: 1.5rem;
   }
 }
+
+/* ── CESTA: CL, NCL kurikulum, denní cíl, questy ───────────────────── */
+.path-cl-note {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: rgba(255, 233, 168, 0.9);
+}
+
+.path-ncl,
+.path-quests {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.8rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(255, 209, 102, 0.18);
+  background: rgba(255, 209, 102, 0.04);
+}
+
+.path-ncl > header,
+.path-quests > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.path-ncl > header strong,
+.path-quests > header strong {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  color: #ffd166;
+}
+
+.path-ncl > header span,
+.path-quests > header span {
+  font-size: 0.64rem;
+  color: rgba(246, 231, 216, 0.55);
+  font-variant-numeric: tabular-nums;
+}
+
+.path-ncl-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.path-ncl-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.3rem 0.45rem;
+  border-radius: 0.5rem;
+  background: rgba(6, 8, 14, 0.45);
+  border: 1px solid transparent;
+}
+
+.path-ncl-list li.is-done {
+  border-color: rgba(159, 240, 226, 0.22);
+  opacity: 0.78;
+}
+
+.path-ncl-list li.is-next {
+  border-color: rgba(255, 209, 102, 0.45);
+  background: rgba(255, 209, 102, 0.08);
+}
+
+.path-ncl-list em {
+  font-style: normal;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  color: rgba(255, 209, 102, 0.9);
+  flex: 0 0 auto;
+}
+
+.path-ncl-list li.is-done em {
+  color: #9df0e2;
+}
+
+.path-ncl-list li > div {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.path-ncl-list strong {
+  font-size: 0.72rem;
+  color: rgba(246, 231, 216, 0.92);
+}
+
+.path-ncl-list span {
+  font-size: 0.62rem;
+  line-height: 1.4;
+  color: rgba(246, 231, 216, 0.5);
+}
+
+.path-ncl-list small {
+  flex: 0 0 auto;
+  font-size: 0.6rem;
+  color: rgba(246, 231, 216, 0.45);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.path-ncl-list li.is-next small {
+  color: rgba(255, 233, 168, 0.9);
+}
+
+.path-ncl-bar {
+  display: block;
+  height: 3px;
+  margin-top: 0.2rem;
+  border-radius: 999px;
+  background: rgba(159, 240, 226, 0.18);
+  overflow: hidden;
+}
+
+.path-ncl-bar b {
+  display: block;
+  height: 100%;
+  background: #9df0e2;
+}
+
+.path-goal {
+  margin: 0;
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-start;
+  font-size: 0.7rem;
+  line-height: 1.45;
+  color: rgba(255, 233, 168, 0.88);
+}
+
+.path-goal.is-done {
+  color: #9df0e2;
+}
+
+.path-quests ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.path-quests li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.3rem 0.45rem;
+  border-radius: 0.5rem;
+  background: rgba(6, 8, 14, 0.45);
+}
+
+.path-quests li.is-locked {
+  opacity: 0.5;
+}
+
+.path-quests li > div {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.path-quests strong {
+  font-size: 0.72rem;
+  color: rgba(246, 231, 216, 0.92);
+}
+
+.path-quests span {
+  font-size: 0.62rem;
+  line-height: 1.4;
+  color: rgba(246, 231, 216, 0.5);
+}
+
+.path-quests small {
+  flex: 0 0 auto;
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  color: rgba(255, 209, 102, 0.8);
+}
+
+/* Druhá denní polovina: dharma cíl chce pečeť, ne skóre. */
+.park-challenge-dharma {
+  border-color: rgba(159, 240, 226, 0.3);
+}
+
+.park-challenge-dharma strong {
+  color: #9df0e2;
+}

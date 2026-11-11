@@ -1,18 +1,23 @@
 'use client';
 
 /**
- * CESTA — XP a dharma na jednom místě.
+ * CESTA — XP, Consciousness Level, NCL kurikulum a dharma na jednom místě.
  *
- * Otevírá se klikem na ★ v herní liště. Proč samostatné okno a ne další
- * číslo v liště: hráč má vidět **jak roste** (XP k dalšímu levelu) a **proč**
- * (pět pilířů posledního běhu). Kdyby to byla jen ikona, zůstalo by
- * z progrese číslo bez vysvětlení.
+ * Otevírá se klikem na ★ v herní liště. Pořadí bloků je záměrné: **kde jsi**
+ * (CL), **co jsi prošel** (NCL úlohy), **jak hraješ** (dharma pilíře)
+ * a **co je připravené** (questy pro OASIS). Kdyby to byla jen ikona,
+ * zůstalo by z progrese číslo bez vysvětlení.
  */
 
 import { useEffect } from 'react';
 import { useI18n, tx } from '@/core/i18n';
 import type { ParkProfile } from '@/core/park/profile';
+import { dailyDharmaGoal } from '@/core/park/challenge';
+import { GAME_TITLES } from './boards';
 import { DHARMA_PILLARS } from './dharma';
+import { clProgress } from './consciousness';
+import { nclState } from './ncl';
+import { preparedQuests } from './quests';
 import { xpProgress } from './xp';
 
 const GRADE_LABEL: Record<string, { cs: string; en: string; es: string }> = {
@@ -26,10 +31,14 @@ export function DharmaPanel({ profile, onClose }: { profile: ParkProfile | null;
   const { lang } = useI18n();
   const cs = lang === 'cs';
   const xp = profile?.xp ?? 0;
-  const progress = xpProgress(xp);
+  const level = xpProgress(xp);
+  const cl = clProgress(xp);
   const seals = profile?.dharma.seals ?? 0;
   const validations = profile?.dharma.validations ?? 0;
   const last = profile?.dharma.last ?? null;
+  const goal = dailyDharmaGoal();
+  const goalDone = profile?.dharmaGoalDay === goal.day;
+  const goalGame = tx(GAME_TITLES[goal.game], lang);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -44,6 +53,9 @@ export function DharmaPanel({ profile, onClose }: { profile: ParkProfile | null;
     };
   }, [onClose]);
 
+  // NCL potřebuje profil; prázdný profil znamená „nic splněno"
+  const ncl = nclState(profile ?? EMPTY_PROFILE);
+
   return (
     <div
       className="boards-backdrop"
@@ -56,7 +68,7 @@ export function DharmaPanel({ profile, onClose }: { profile: ParkProfile | null;
         <header className="boards-head">
           <div>
             <strong>{cs ? 'Cesta' : 'The Path'}</strong>
-            <span>{cs ? 'zkušenosti a dharma' : 'experience and dharma'}</span>
+            <span>{cs ? 'zkušenosti · vědomí · dharma' : 'experience · consciousness · dharma'}</span>
           </div>
           <div className="boards-actions">
             <button type="button" className="boards-close" onClick={onClose} aria-label={cs ? 'Zavřít' : 'Close'}>
@@ -65,33 +77,81 @@ export function DharmaPanel({ profile, onClose }: { profile: ParkProfile | null;
           </div>
         </header>
 
+        {/* ── CL: kanonická škála z consciousness.rs ─────────────────── */}
         <section className="path-level">
           <div className="path-level-badge">
-            <em aria-hidden>★</em>
-            <strong>{progress.level}</strong>
-            <span>{cs ? 'level' : 'level'}</span>
+            <em aria-hidden>◎</em>
+            <strong>L{cl.level}</strong>
+            <span>{cl.name}</span>
           </div>
           <div className="path-level-body">
+            <p className="path-cl-note">{tx(cl.note, lang)}</p>
             <div className="path-bar" aria-hidden>
-              <i style={{ width: `${Math.round(progress.ratio * 100)}%` }} />
+              <i style={{ width: `${Math.round(cl.ratio * 100)}%` }} />
             </div>
             <p>
               <strong>{xp}</strong> XP
               <span>
                 {' · '}
-                {cs
-                  ? `do dalšího ${progress.remaining}`
-                  : `${progress.remaining} to next`}
+                {cl.level >= 6
+                  ? cs
+                    ? 'nejvyšší stupeň'
+                    : 'the highest level'
+                  : cs
+                    ? `do dalšího stupně ${cl.remaining}`
+                    : `${cl.remaining} to the next level`}
               </span>
             </p>
             <p className="path-level-note">
               {cs
-                ? 'XP roste z výkonu (skóre proti cíli světa), z dokončení, z rekordu a z dharma pečeti.'
-                : 'XP grows from performance (score against the world target), completion, records and the dharma seal.'}
+                ? `Stupně vědomí L0–L6 jsou z kódu (ConsciousnessLevel). Každý stupeň násobí XP o ${Math.round(
+                    cl.bonus * 100,
+                  )} % · úroveň ${level.level}.`
+                : `Consciousness levels L0–L6 come from the code (ConsciousnessLevel). Each level multiplies XP by ${Math.round(
+                    cl.bonus * 100,
+                  )} % · level ${level.level}.`}
             </p>
           </div>
         </section>
 
+        {/* ── NCL kurikulum ─────────────────────────────────────────── */}
+        <section className="path-ncl">
+          <header>
+            <strong>{cs ? 'NCL úlohy' : 'NCL tasks'}</strong>
+            <span>
+              {ncl.done.length}/{ncl.tasks.length} · {cs ? 'skóre' : 'score'} {ncl.score}
+            </span>
+          </header>
+          <ol className="path-ncl-list">
+            {ncl.tasks.map((entry) => (
+              <li
+                key={entry.task.id}
+                className={entry.done ? 'is-done' : entry.task.id === ncl.next?.id ? 'is-next' : 'is-open'}
+              >
+                <em aria-hidden>{entry.done ? '✓' : entry.task.type === 'custom' ? '◇' : '◈'}</em>
+                <div>
+                  <strong>{tx(entry.task.title, lang)}</strong>
+                  <span>{tx(entry.task.detail, lang)}</span>
+                  {!entry.done && entry.progress > 0 && (
+                    <i className="path-ncl-bar" aria-hidden>
+                      <b style={{ width: `${Math.round(entry.progress * 100)}%` }} />
+                    </i>
+                  )}
+                </div>
+                <small>
+                  {entry.done ? `+${entry.task.xp} XP` : `${Math.min(entry.current, entry.target)}/${entry.target}`}
+                </small>
+              </li>
+            ))}
+          </ol>
+          <p className="path-note">
+            {cs
+              ? 'Typy úloh (llm_inference, embeddings, code_analysis…) jsou taxonomie NCL z kódu; tady je to kurikulum, ne výpočet.'
+              : 'Task types (llm_inference, embeddings, code_analysis…) are the NCL taxonomy from the code; here it is a curriculum, not compute.'}
+          </p>
+        </section>
+
+        {/* ── dharma ────────────────────────────────────────────────── */}
         <section className="path-dharma">
           <header>
             <strong>{cs ? 'Dharma validátor' : 'Dharma validator'}</strong>
@@ -99,6 +159,17 @@ export function DharmaPanel({ profile, onClose }: { profile: ParkProfile | null;
               {seals} {cs ? 'pečetí' : 'seals'} · {validations} {cs ? 'validací' : 'validations'}
             </span>
           </header>
+
+          <p className={`path-goal${goalDone ? ' is-done' : ''}`}>
+            <span aria-hidden>{goalDone ? '✓' : '☸'}</span>
+            {goalDone
+              ? cs
+                ? `Dnešní dharma cíl splněn — pečeť v ${goalGame}.`
+                : `Today's dharma goal is done — a seal in ${goalGame}.`
+              : cs
+                ? `Dnešní cíl: pečeť v ${goalGame} (+${goal.reward} žetony).`
+                : `Today's goal: a seal in ${goalGame} (+${goal.reward} tokens).`}
+          </p>
 
           {last ? (
             <p className={`path-verdict is-${last.grade}`}>
@@ -138,7 +209,50 @@ export function DharmaPanel({ profile, onClose }: { profile: ParkProfile | null;
               : 'The pillars never subtract — they only multiply XP (0–50 %) and grant a seal. Score and tokens stay untouched.'}
           </p>
         </section>
+
+        {/* ── questy: připravené pro OASIS ──────────────────────────── */}
+        <section className="path-quests">
+          <header>
+            <strong>{cs ? 'Questy' : 'Quests'}</strong>
+            <span>{cs ? 'připraveno pro OASIS' : 'prepared for OASIS'}</span>
+          </header>
+          <ul>
+            {preparedQuests().map((quest) => (
+              <li key={quest.id} className={cl.level >= quest.cl ? 'is-open' : 'is-locked'}>
+                <span aria-hidden>{cl.level >= quest.cl ? '◇' : '🔒'}</span>
+                <div>
+                  <strong>{tx(quest.title, lang)}</strong>
+                  <span>{tx(quest.note, lang)}</span>
+                </div>
+                <small>L{quest.cl}</small>
+              </li>
+            ))}
+          </ul>
+          <p className="path-note">
+            {cs
+              ? 'Kroky questů jsou stejná data jako NCL úlohy — až se OASIS otevře, nemusí se nic přepisovat.'
+              : 'Quest steps are the same data as NCL tasks — when OASIS opens, nothing has to be rewritten.'}
+          </p>
+        </section>
       </div>
     </div>
   );
 }
+
+/** Prázdný profil pro výpočet NCL, když se ještě nic nenačetlo. */
+const EMPTY_PROFILE = {
+  tokens: 0,
+  best: {},
+  runs: 0,
+  day: null,
+  tickets: 0,
+  challengeDay: null,
+  rideDay: null,
+  xp: 0,
+  dharma: { seals: 0, validations: 0, last: null },
+  plays: {},
+  completions: 0,
+  gifts: 0,
+  nclDone: [],
+  dharmaGoalDay: null,
+} as unknown as ParkProfile;

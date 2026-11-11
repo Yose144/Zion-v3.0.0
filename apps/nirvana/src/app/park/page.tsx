@@ -20,7 +20,7 @@ import {
   spendTokens,
   type ParkProfile,
 } from '@/core/park/profile';
-import { dailyChallenge, type DailyChallenge } from '@/core/park/challenge';
+import { dailyChallenge, dailyDharmaGoal, type DailyChallenge } from '@/core/park/challenge';
 import { describeRun, recordRun as recordGameRun } from '@/core/progress/run';
 import { emptyScores, type ParkScores } from '@/core/park/scores';
 import { GALLERY_SECONDS } from '@/core/scene/park/ShootingGallery';
@@ -410,6 +410,8 @@ export default function ParkPage() {
     setChallenge(dailyChallenge());
   }, []);
   const challengeDone = Boolean(challenge) && profile?.challengeDay === challenge!.day;
+  const dharmaGoal = dailyDharmaGoal();
+  const dharmaGoalDone = profile?.dharmaGoalDay === dharmaGoal.day;
 
   const canvasNode = useMemo(
     () => <canvas ref={attachCanvas} className="park-screen" aria-label="herní obrazovka" />,
@@ -629,6 +631,22 @@ export default function ParkPage() {
               </small>
             </div>
           )}
+
+          <div className={`park-challenge park-challenge-dharma${dharmaGoalDone ? ' is-done' : ''}`}>
+            <strong>{cs ? 'dharma cíl' : 'dharma goal'}</strong>
+            <span>
+              {titleOf(dharmaGoal.game, lang)} · {cs ? 'pečeť' : 'seal'}
+            </span>
+            <small>
+              {dharmaGoalDone
+                ? cs
+                  ? 'splněno · dnes už nic nečeká'
+                  : 'done · nothing left today'
+                : cs
+                  ? `+${dharmaGoal.reward} žetony · pečeť znamená čistý běh`
+                  : `+${dharmaGoal.reward} tokens · a seal means a clean run`}
+            </small>
+          </div>
 
           <header className="park-board-head">
             <strong>{l('board')}</strong>

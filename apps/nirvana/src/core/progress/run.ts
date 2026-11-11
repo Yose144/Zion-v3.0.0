@@ -28,11 +28,13 @@ import {
   type ParkProfile,
   type RunResult,
 } from '@/core/park/profile';
-import { CHALLENGE_REWARD, claimChallenge } from '@/core/park/challenge';
+import { CHALLENGE_REWARD, DHARMA_GOAL_REWARD, claimChallenge, claimDharmaGoal } from '@/core/park/challenge';
 import type { ParkGameId } from '@/core/park/games';
 import { invalidateScores } from './boards';
 import { applyVerdict, validateRun, type DharmaVerdict, type RunMetrics } from './dharma';
 import { levelFromXp, xpForRun } from './xp';
+import { clBonus, clFromXp } from './consciousness';
+import { newlyCompleted, type NclTask } from './ncl';
 
 export interface RunInput {
   game: ParkGameId;
@@ -60,6 +62,13 @@ export interface RunOutcome {
   xpGained: number;
   /** Dharma verdikt (null = hra se nepočítala). */
   dharma: DharmaVerdict | null;
+  /** Consciousness Level po zápisu a jestli se právě zvedl. */
+  cl: number;
+  clUp: boolean;
+  /** NCL úlohy splněné tímhle během. */
+  nclTasks: NclTask[];
+  /** Splnil se dnešní dharma cíl (pečeť ve správné hře)? */
+  dharmaGoalClaimed: boolean;
   /** Dokončení odeslání na tabuli (null = neposílalo se). */
   posted: Promise<void> | null;
 }
@@ -85,12 +94,19 @@ export function recordRun(input: RunInput): RunOutcome {
       xp: profile.xp,
       xpGained: 0,
       dharma: null,
+      cl: clFromXp(profile.xp),
+      clUp: false,
+      nclTasks: [],
+      dharmaGoalClaimed: false,
       posted: null,
     };
   }
 
   const score = Math.max(0, Math.round(input.score));
   const before = levelFromXp(profile.xp);
+  // CL se bere **před** během — jinak by se běh, který tě na nový stupeň
+  // dostane, sám sobě připočítal vyšší bonus (a pořadí by rozhodovalo).
+  const clBefore = clFromXp(profile.xp);
   let posted: Promise<void> | null = null;
 
   // dharma validace běží před zápisem — její násobek patří do XP
@@ -102,21 +118,40 @@ export function recordRun(input: RunInput): RunOutcome {
   next = challenge.profile;
   if (input.bonus && input.bonus > 0) next = grantTokens(next, input.bonus);
 
-  const xpGained = xpForRun({
-    game: input.game,
-    score,
-    completed: input.metrics?.completed === true,
-    best: awarded.personalBest,
-    dharmaBonus: verdict.bonus,
-  });
+  // ── statistiky pro NCL kurikulum ──────────────────────────────────
   next = {
     ...next,
-    xp: next.xp + xpGained,
+    plays: { ...next.plays, [input.game]: (next.plays[input.game] ?? 0) + 1 },
+    completions: next.completions + (input.metrics?.completed === true ? 1 : 0),
+    gifts: next.gifts + Math.max(0, Math.floor(input.metrics?.given ?? 0)),
     dharma: applyVerdict(next.dharma, verdict),
   };
+
+  // ── NCL úlohy splněné právě tímhle během ──────────────────────────
+  const fresh = newlyCompleted(next).filter((task) => !next.nclDone.includes(task.id));
+  if (fresh.length > 0) {
+    next = { ...next, nclDone: [...next.nclDone, ...fresh.map((task) => task.id)] };
+  }
+  const taskXp = fresh.reduce((sum, task) => sum + task.xp, 0);
+
+  // ── denní dharma cíl (pečeť ve hře, kterou určil den) ──────────────
+  const dharmaGoal = claimDharmaGoal(next, input.game, verdict.grade);
+  next = dharmaGoal.profile;
+
+  const xpGained =
+    xpForRun({
+      game: input.game,
+      score,
+      completed: input.metrics?.completed === true,
+      best: awarded.personalBest,
+      dharmaBonus: verdict.bonus,
+      clBonus: clBonus(clBefore),
+    }) + taskXp;
+  next = { ...next, xp: next.xp + xpGained };
   saveProfile(next);
 
   const after = levelFromXp(next.xp);
+  const clAfter = clFromXp(next.xp);
 
   if (input.nickname) {
     posted = fetch('/api/park/scores', {
@@ -132,7 +167,11 @@ export function recordRun(input: RunInput): RunOutcome {
 
   return {
     profile: next,
-    tokensGained: awarded.tokensGained + (input.bonus ?? 0) + (challenge.claimed ? CHALLENGE_REWARD : 0),
+    tokensGained:
+      awarded.tokensGained +
+      (input.bonus ?? 0) +
+      (challenge.claimed ? CHALLENGE_REWARD : 0) +
+      (dharmaGoal.claimed ? DHARMA_GOAL_REWARD : 0),
     personalBest: awarded.personalBest,
     challengeClaimed: challenge.claimed,
     level: after,
@@ -140,6 +179,10 @@ export function recordRun(input: RunInput): RunOutcome {
     xp: next.xp,
     xpGained,
     dharma: verdict,
+    cl: clAfter,
+    clUp: clAfter > clBefore,
+    nclTasks: fresh,
+    dharmaGoalClaimed: dharmaGoal.claimed,
     posted,
   };
 }
@@ -174,8 +217,11 @@ export function describeRun(outcome: RunOutcome, cs: boolean, extra: string[] = 
   if (outcome.tokensGained > 0) bits.push(`+${outcome.tokensGained} ${cs ? 'žetonů' : 'tokens'}`);
   if (outcome.xpGained > 0) bits.push(`+${outcome.xpGained} XP`);
   if (outcome.dharma) bits.push(dharmaLabel(outcome.dharma, cs));
+  if (outcome.nclTasks.length > 0) bits.push(`+${outcome.nclTasks.length} NCL`);
   if (outcome.challengeClaimed) bits.push(cs ? `denní výzva +${CHALLENGE_REWARD}` : `daily +${CHALLENGE_REWARD}`);
+  if (outcome.dharmaGoalClaimed) bits.push(cs ? `dharma cíl +${DHARMA_GOAL_REWARD}` : `dharma goal +${DHARMA_GOAL_REWARD}`);
   if (outcome.levelUp) bits.push(cs ? `level ${outcome.level}` : `level ${outcome.level}`);
+  if (outcome.clUp) bits.push(cs ? `CL ${outcome.cl}` : `CL ${outcome.cl}`);
   if (bits.length === 0) bits.push(cs ? 'zapsáno' : 'recorded');
   return bits.join(' · ');
 }

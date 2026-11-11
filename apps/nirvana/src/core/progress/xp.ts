@@ -86,6 +86,8 @@ export interface XpInput {
   best?: boolean;
   /** Násobek z dharma validace (0 = nic, 0,5 = pečeť). */
   dharmaBonus?: number;
+  /** Násobek z Consciousness Level (`cl × 0,05`, max 0,30). */
+  clBonus?: number;
 }
 
 /**
@@ -95,9 +97,16 @@ export interface XpInput {
  *   lepší hra než „cíl" nedá neomezeně XP,
  * - dokončení +25 %, rekord +15 % (násobením, ne sčítáním — jinak by
  *   rekord z malé hry přebil dokončení velké),
- * - dharma násobek se přičte až nakonec (`1 + bonus`).
+ * - dharma násobek a CL bonus se přičtou až nakonec (`1 + bonus`).
  */
-export function xpForRun({ game, score, completed = false, best = false, dharmaBonus = 0 }: XpInput): number {
+export function xpForRun({
+  game,
+  score,
+  completed = false,
+  best = false,
+  dharmaBonus = 0,
+  clBonus = 0,
+}: XpInput): number {
   const base = GAME_XP[game] ?? 20;
   const reference = Math.max(1, CHALLENGE_TARGETS[game] ?? 500);
   const ratio = Math.max(0, Math.min(1.5, Math.max(0, score) / reference));
@@ -105,5 +114,6 @@ export function xpForRun({ game, score, completed = false, best = false, dharmaB
   const finish = completed ? 1.25 : 1;
   const record = best ? 1.15 : 1;
   const dharma = 1 + Math.max(0, Math.min(0.6, dharmaBonus));
-  return Math.max(1, Math.round(performance * finish * record * dharma));
+  const consciousness = 1 + Math.max(0, Math.min(0.3, clBonus));
+  return Math.max(1, Math.round(performance * finish * record * dharma * consciousness));
 }

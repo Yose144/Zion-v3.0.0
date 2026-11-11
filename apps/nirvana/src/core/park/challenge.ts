@@ -17,7 +17,7 @@ export interface DailyChallenge {
   reward: number;
 }
 
-const GAMES: ParkGameId[] = [
+export const CHALLENGE_GAMES: ParkGameId[] = [
   'pong',
   'breakout',
   'snake',
@@ -77,7 +77,7 @@ function hash(text: string): number {
 export function dailyChallenge(date = new Date()): DailyChallenge {
   const day = dayKey(date);
   const seed = hash(day);
-  const game = GAMES[seed % GAMES.length]!;
+  const game = CHALLENGE_GAMES[seed % CHALLENGE_GAMES.length]!;
   return { day, game, target: CHALLENGE_TARGETS[game], reward: CHALLENGE_REWARD };
 }
 
@@ -110,6 +110,51 @@ export function claimChallenge(
       challengeDay: challenge.day,
       tickets: profile.tickets + 1,
       tokens: profile.tokens + challenge.reward,
+    },
+    claimed: true,
+  };
+}
+
+/* ── denní dharma cíl ─────────────────────────────────────────────────
+ * Druhá polovinа dne: výzva chce **skóre**, dharma cíl chce **pečeť**
+ * (tedy čistý běh — čas, cíl, světla, žádné pády). Stejná hra jako výzva
+ * by oba cíle slila do jednoho, proto se losuje s jiným solí.
+ */
+
+export const DHARMA_GOAL_REWARD = 3;
+
+export interface DharmaGoal {
+  day: string;
+  game: ParkGameId;
+  reward: number;
+}
+
+export function dailyDharmaGoal(date = new Date()): DharmaGoal {
+  const day = dayKey(date);
+  const seed = hash(`dharma:${day}`);
+  const game = CHALLENGE_GAMES[seed % CHALLENGE_GAMES.length]!;
+  return { day, game, reward: DHARMA_GOAL_REWARD };
+}
+
+/**
+ * Splnění dharma cíle: jednou denně, jen když hra sedí a verdikt je pečeť.
+ * Volá se po každé dohrané hře (i nesplněné — pak jen nic neudělá).
+ */
+export function claimDharmaGoal(
+  profile: ParkProfile,
+  game: ParkGameId,
+  grade: string,
+  date = new Date(),
+): ChallengeResult {
+  const goal = dailyDharmaGoal(date);
+  if (profile.dharmaGoalDay === goal.day || game !== goal.game || grade !== 'seal') {
+    return { profile, claimed: false };
+  }
+  return {
+    profile: {
+      ...profile,
+      dharmaGoalDay: goal.day,
+      tokens: profile.tokens + goal.reward,
     },
     claimed: true,
   };

@@ -69,12 +69,23 @@ async function main() {
   const empty = await page.evaluate(() => ({
     pillars: document.querySelectorAll('.path-pillars li').length,
     level: document.querySelector('.path-level-badge strong')?.textContent ?? '',
+    clName: document.querySelector('.path-level-badge span')?.textContent ?? '',
     verdict: document.querySelector('.path-verdict')?.textContent ?? '',
     seals: document.querySelector('.path-dharma header span')?.textContent ?? '',
     bar: document.querySelector('.path-bar i')?.getBoundingClientRect().width ?? 0,
+    ncl: document.querySelectorAll('.path-ncl-list li').length,
+    nclNext: document.querySelector('.path-ncl-list li.is-next strong')?.textContent ?? '',
+    goal: document.querySelector('.path-goal')?.textContent ?? '',
+    quests: document.querySelectorAll('.path-quests li').length,
+    questsLocked: document.querySelectorAll('.path-quests li.is-locked').length,
   }));
   check('panel vypisuje pět pilířů', empty.pillars === 5, String(empty.pillars));
-  check('panel ukazuje level', Number(empty.level) >= 1, empty.level);
+  check('panel ukazuje stupeň vědomí', /^L\d$/.test(empty.level), empty.level);
+  check('stupeň má kanonické jméno', /Dormant|Aware|Sentient|Transcendent|Omniscient|Cosmic|Grok/.test(empty.clName), empty.clName);
+  check('panel vypisuje dvanáct NCL úloh', empty.ncl === 12, String(empty.ncl));
+  check('první NCL úloha je na řadě', /První světlo|First light/.test(empty.nclNext), empty.nclNext);
+  check('panel má dnešní dharma cíl', /Dnešní cíl|Today's goal|splněn|done/.test(empty.goal), empty.goal);
+  check('panel vypisuje připravené questy', empty.quests === 4 && empty.questsLocked === 4, `${empty.quests}/${empty.questsLocked}`);
   check('nový profil nemá verdikt', /dohraj|finish|žádn/i.test(empty.verdict), empty.verdict);
   check('nový profil nemá pečeti', /0/.test(empty.seals), empty.seals);
   check('bar XP je na místě', empty.bar >= 0, String(empty.bar));
@@ -98,9 +109,11 @@ async function main() {
   }));
   check('výsledek hlásí XP', /XP/.test(result.notice), result.notice);
   check('výsledek hlásí dharmu', /☸/.test(result.notice), result.notice);
+  check('výsledek hlásí NCL úlohu', /NCL/.test(result.notice), result.notice);
   check('profil má XP', Number(result.profile.xp) > 0, String(result.profile.xp));
   check('profil má validaci', result.profile.dharma?.validations >= 1, JSON.stringify(result.profile.dharma));
-  const expectedLevel = Math.floor(Math.sqrt(Math.max(0, Number(result.profile.xp)) / 120)) + 1;
+  const xpValue = Number(result.profile.xp);
+  const expectedCl = [0, 100, 600, 2000, 6000, 15000, 35000].filter((threshold) => xpValue >= threshold).length - 1;
   check('XP je dost na pořádný kus levelu', Number(result.profile.xp) > 90, String(result.profile.xp));
 
   console.log('\n▸ panel po hře');
@@ -112,9 +125,11 @@ async function main() {
     grade: document.querySelector('.path-verdict')?.className ?? '',
     passed: document.querySelectorAll('.path-pillars li.is-pass').length,
     xp: document.querySelector('.path-level-body p strong')?.textContent ?? '',
+    nclDone: document.querySelectorAll('.path-ncl-list li.is-done').length,
   }));
-  check('level v panelu sedí na XP', Number(after.level) === expectedLevel, `${after.level} vs ${expectedLevel}`);
+  check('stupeň v panelu sedí na XP', after.level === `L${expectedCl}`, `${after.level} vs L${expectedCl}`);
   check('panel ukazuje XP z profilu', Number(after.xp) === Number(result.profile.xp), `${after.xp} vs ${result.profile.xp}`);
+  check('NCL úloha se v panelu zaškrtla', after.nclDone >= 1, String(after.nclDone));
   check('panel ukazuje verdikt', after.verdict.length > 2, after.verdict);
   check('verdikt má stupeň', /is-(seal|pass|partial|thin)/.test(after.grade), after.grade);
   check('prošlé pilíře jsou vidět', after.passed >= 1, String(after.passed));

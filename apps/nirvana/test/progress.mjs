@@ -25,6 +25,7 @@ globalThis.fetch = async (url, init) => {
 
 const { recordRun, describeRun, dharmaLabel } = await import('../src/core/progress/run.ts');
 const { levelFromXp, xpForLevel, xpProgress, xpForRun } = await import('../src/core/progress/xp.ts');
+const { clFromXp } = await import('../src/core/progress/consciousness.ts');
 const { dailyChallenge } = await import('../src/core/park/challenge.ts');
 const { loadProfile } = await import('../src/core/park/profile.ts');
 
@@ -83,6 +84,12 @@ check('hra dala XP', first.xpGained > 0, String(first.xpGained));
 check('profil má XP', first.profile.xp === first.xpGained, String(first.profile.xp));
 check('dharma se zapsala', first.profile.dharma.validations === 1, JSON.stringify(first.profile.dharma));
 check('hláška nese XP i dharmu', /XP/.test(describeRun(first, true)) && /☸/.test(describeRun(first, true)), describeRun(first, true));
+check('první běh splní NCL úlohu', first.nclTasks.some((task) => task.id === 'first-light'), JSON.stringify(first.nclTasks.map((t) => t.id)));
+check('NCL úloha se zapíše', first.profile.nclDone.includes('first-light'), JSON.stringify(first.profile.nclDone));
+check('NCL úloha přidá XP', first.xpGained > 40, String(first.xpGained));
+check('CL sedí na XP', first.cl === clFromXp(first.profile.xp), `${first.cl} vs ${clFromXp(first.profile.xp)}`);
+check('první běh CL nezvedne', first.clUp === false && first.cl === 0, String(first.cl));
+check('profil počítá světy', first.profile.plays.arena === 1, JSON.stringify(first.profile.plays));
 
 // ── druhá hra se stejným / nižším skóre ──────────────────────────────
 const second = recordRun({ game: 'arena', score: 90, nickname: 'tester' });
@@ -90,6 +97,8 @@ check('horší hra = 1 žeton', second.tokensGained === 1, `tokens=${second.toke
 check('horší hra není rekord', second.personalBest === false);
 check('rekord zůstal', second.profile.best.arena === 120, `best=${second.profile.best.arena}`);
 check('XP roste i za horší hru', second.profile.xp > first.profile.xp, `${first.profile.xp} → ${second.profile.xp}`);
+check('stejná NCL úloha se nedá splnit dvakrát', second.nclTasks.every((task) => task.id !== 'first-light'), JSON.stringify(second.nclTasks.map((t) => t.id)));
+check('druhý běh ve stejném světě nepočítá nový svět', (second.profile.plays.arena ?? 0) === 1 || second.profile.plays.arena === 2);
 
 // ── nehodnocený běh ──────────────────────────────────────────────────
 store.clear();

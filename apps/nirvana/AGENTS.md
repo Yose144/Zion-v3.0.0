@@ -3270,3 +3270,46 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   migrace, dharma v `recordRun`).
 - **Meze:** XP i dharma jsou jen v prohlížeči (`localStorage`) — stejně
   jako žetony a rekordy. Nic z toho není on-chain a nedá se směnit.
+
+## CL, NCL kurikulum a questy (2026-11-11)
+
+- **Stupně vědomí jsou z kódu, ne vymyšlené.** `core/progress/consciousness.ts`
+  zrcadlí `V31/L3/ai-native/src/consciousness.rs` (a `PoC-lab/poc-core`):
+  `ConsciousnessLevel` L0 Dormant → L6 Grok a bonus `level × 0,05`
+  (stejný vzorec jako `ReputationRecord::score` v `V31/L3/ncl`). Hráč má
+  stejnou škálu; prahy jsou posunuté na lidské měřítko (100 / 600 / 2 000 /
+  6 000 / 15 000 / 35 000 XP) — tvar křivky zůstal.
+- **CL je násobek XP, ne gate.** `clBonus(cl)` = +5 % za stupeň (max +30 %).
+  Nic nezamyká — hra nemá slibovat schopnosti, které neumí. Kdyby se
+  z CL stal zámek, hráč by po aktualizaci přišel o obsah, který měl.
+- **Zvednutí CL se počítá z XP PŘED během.** Jinak by si běh, který tě na
+  nový stupeň dostane, připočetl vyšší bonus sám sobě (a pořadí by
+  rozhodovalo o výsledku).
+- **NCL úlohy = kurikulum, ne výpočet.** `core/progress/ncl.ts` má 12 úloh
+  s `NclGoal` (`runs`/`worlds`/`completions`/`seals`/`gifts`/`best`).
+  Typy (`llm_inference`, `embeddings`, `code_analysis`…) jsou **taxonomie
+  z `V31/L3/ncl/src/types.rs`** — v UI je to napsané, aby si nikdo nemyslel,
+  že hra počítá model. Skóre: `(splněné / všechny) × 100 × (1 + CL × 0,05)`,
+  clamp 0–100 (stejně jako `ReputationRecord::score`).
+- **XP za úlohu se nesmí připsat dvakrát.** `nclDone` v profilu je seznam
+  id; `newlyCompleted(profile)` vrací jen nové. Kdyby se počítalo
+  z `nclState()` bez seznamu, každý další běh by úlohu „splnil" znovu.
+- **Profil počítá i to, co úlohy potřebují:** `plays` (kolikrát který svět),
+  `completions`, `gifts`, `nclDone`, `dharmaGoalDay`. Migrace starého
+  profilu je nulová (vše chybí → 0), takže nikdo nepřijde o nic.
+- **Denní dharma cíl je druhá polovina dne.** Výzva chce **skóre**, dharma
+  cíl chce **pečeť** (čistý běh); losuje se s jinou solí, aby oba cíle
+  nepadly na stejnou hru. Odměna 3 žetony, jednou denně (`dharmaGoalDay`).
+  Karta je na `/park` vedle denní výzvy, stav je i v panelu Cesty.
+- **Questy jsou jen data** (`core/progress/quests.ts`, `ready: false`).
+  Zadání 👤: „příprava pro questy, ale to dáme až do OASIS … Nirvana má
+  obsahovat všechno, co půjde do OASIS." Proto kroky používají **stejný
+  `NclGoal`** jako NCL úlohy — při přesunu do OASIS se nic nepřepisuje,
+  jen se zapne `ready`.
+- **Panel Cesty má čtyři bloky** v tomhle pořadí: kde jsi (CL), co jsi
+  prošel (NCL), jak hraješ (dharma + dnešní cíl), co je připravené
+  (questy). Pořadí není kosmetika — hráč má vidět „kam" dřív než „jak".
+- **Testy:** `npx tsx test/consciousness.mjs` (66 kontrol: škála, bonus,
+  prahy, NCL cíle a skóre, questy, dharma cíl) a `test/progress.mjs`
+  (NCL úloha se zapíše jednou, CL sedí na XP). E2E `e2e/path-audit.mjs`
+  (26 kontrol, včetně dvanácti NCL úloh a čtyř questů v panelu).

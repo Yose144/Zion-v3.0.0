@@ -23,6 +23,16 @@ export interface ParkProfile {
   xp: number;
   /** Dharma validace — pečeti a poslední verdikt. */
   dharma: DharmaSealState;
+  /** Kolikrát jsi hrál který svět (NCL úloha „projdi N světů"). */
+  plays: Partial<Record<ParkGameId, number>>;
+  /** Dohrané běhy s koncem (dno, srdce, cíl, výhra). */
+  completions: number;
+  /** Kolikrát jsi něco dal druhým (Lumi darování). */
+  gifts: number;
+  /** Splněné NCL úlohy (id) — XP za úlohu se nesmí připsat dvakrát. */
+  nclDone: string[];
+  /** Den posledního splněného dharma cíle (YYYY-MM-DD). */
+  dharmaGoalDay: string | null;
 }
 
 export const WHEEL_COST = 1;
@@ -38,6 +48,11 @@ const EMPTY: ParkProfile = {
   rideDay: null,
   xp: 0,
   dharma: EMPTY_DHARMA,
+  plays: {},
+  completions: 0,
+  gifts: 0,
+  nclDone: [],
+  dharmaGoalDay: null,
 };
 
 /**
@@ -79,6 +94,20 @@ export function loadProfile(): ParkProfile {
               last: (parsed.dharma as DharmaSealState).last ?? null,
             }
           : EMPTY_DHARMA,
+      plays:
+        parsed.plays && typeof parsed.plays === 'object'
+          ? Object.fromEntries(
+              Object.entries(parsed.plays as Record<string, unknown>)
+                .map(([game, count]) => [game, Math.max(0, Math.floor(Number(count) || 0))] as const)
+                .filter(([, count]) => count > 0),
+            )
+          : {},
+      completions: Math.max(0, Math.floor(Number(parsed.completions) || 0)),
+      gifts: Math.max(0, Math.floor(Number(parsed.gifts) || 0)),
+      nclDone: Array.isArray(parsed.nclDone)
+        ? parsed.nclDone.filter((id): id is string => typeof id === 'string').slice(0, 64)
+        : [],
+      dharmaGoalDay: typeof parsed.dharmaGoalDay === 'string' ? parsed.dharmaGoalDay : null,
     };
     // denní vstupenka: první návštěva dne dostane žeton na kolo
     if (profile.day !== today()) {
