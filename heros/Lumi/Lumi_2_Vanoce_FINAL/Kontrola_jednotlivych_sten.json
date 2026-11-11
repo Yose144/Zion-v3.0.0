@@ -1,0 +1,32 @@
+[
+  {
+    "file": "01_Stromecek.svg",
+    "closed_valid_connected": true,
+    "svg_dxf_max_delta_mm": 7.105427357601002e-15
+  },
+  {
+    "file": "02_Betlem.svg",
+    "closed_valid_connected": true,
+    "svg_dxf_max_delta_mm": 7.105427357601002e-15
+  },
+  {
+    "file": "03_Zvonky.svg",
+    "closed_valid_connected": true,
+    "svg_dxf_max_delta_mm": 7.105427357601002e-15
+  },
+  {
+    "file": "04_Andel.svg",
+    "closed_valid_connected": true,
+    "svg_dxf_max_delta_mm": 7.105427357601002e-15
+  },
+  {
+    "file": "05_Vanocni_svicka.svg",
+    "closed_valid_connected": true,
+    "svg_dxf_max_delta_mm": 7.105427357601002e-15
+  },
+  {
+    "file": "06_Ozdoby.svg",
+    "closed_valid_connected": true,
+    "svg_dxf_max_delta_mm": 7.105427357601002e-15
+  }
+]

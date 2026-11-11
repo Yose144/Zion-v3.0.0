@@ -1,0 +1,33 @@
+{
+  "A3_mm": [
+    420,
+    297
+  ],
+  "lantern_parts": 8,
+  "extra_test_strip": 1,
+  "all_six_walls_identical_outer_shape": true,
+  "wall_mm": [
+    63.26795,
+    120
+  ],
+  "including_tabs_height_mm": 126,
+  "tab_centres_spacing_mm": 29,
+  "slot_mm": [
+    8.1,
+    3.1
+  ],
+  "tab_mm": [
+    8,
+    3
+  ],
+  "matched_tab_slot_pairs": 24,
+  "max_centre_mismatch_mm": 4.875401149462277e-05,
+  "minimum_nominal_clearance_per_side_mm": 0.04994144136798924,
+  "maximum_wall_overlap_area_mm2": 9.087677628146056e-28,
+  "minimum_sheet_part_spacing_mm": 5.732100000000003,
+  "top_hole_mm": 90,
+  "top_decoration_cutouts": 84,
+  "svg_dxf_max_coordinate_delta_mm": 2.842170943040401e-14,
+  "kerf_compensated": false,
+  "physical_cut_test": false
+}
