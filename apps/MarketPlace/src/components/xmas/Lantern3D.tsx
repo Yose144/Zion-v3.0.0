@@ -653,7 +653,7 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
             src={poster}
             alt={posterAlt ?? (cs ? 'Lampion Království srdce' : 'Kingdom of the Heart lantern')}
             loading="lazy"
-            className={`relative h-full w-full object-cover ${
+            className={`relative h-full w-full object-contain ${
               phase === 'missing' || phase === 'error' ? 'opacity-30' : 'opacity-70'
             }`}
           />
