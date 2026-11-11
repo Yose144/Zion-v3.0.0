@@ -11,17 +11,23 @@
 
 | Oblast | 10. 11. | 11. 11. (ověřeno) |
 |---|---|---|
-| Chain tip | 118 163 | **118 687** (~60 s/blok; 6/6 RPC portů shodná výška) |
-| G8 run #7 | 99,916 %, 5 incidentů | **99,9241 %**, evidence 100 %, `pending`, **stále 5× `chain_live` 60 s** (poslední 9. 11. 16:38Z — ~35 h čistě), cíl 6. 12. 14:51Z |
+| Chain tip | 118 163 | **118 687** → **119 483** (11. 11. 19:00; 3/3 RPC portů 9445/9446/9447 shodná výška, ~60 s/blok) |
+| G8 run #7 | 99,916 %, 5 incidentů | **99,918 %**, evidence 100 %, `pending`, **6× 60 s** (5× `chain_live` 8.–9. 11. + `pool_stratum` 11. 11. 14:27Z), cíl 6. 12. 14:51Z |
 | Disky | 62 % / 58 % | **62 %** (89/145 G) / **58 %** (112/193 G) |
 | apt upgradable | 70 / 13 | **72 / 13** |
 | EDGE1 node-exporter | M1 slepé (dead 31. 10.) | **active od 7. 11. 20:49**; `up{job="node",instance="edge1"}=1` — M1 ✅ |
 | Pool binárka | `d786449b0-g8fix` | **`ece8b6965`** (HEAD; rebuild přes docker `rust:1.97-bullseye`, `ZION_GIT_SHA` embed OK; restart ~10 s, **G8 0 incidentů**; RSS 3,6→0,91 GiB) |
 | Payout monitoring M2 | slepé (`payouts_api_ok=0`, age chybí) | **✅ LIVE:** probe+rules+pool API — `payouts_api_ok=1`, `measurement_ok=1`, `last_payout_age_seconds` reálná; `ZionPoolPayoutMeasurementMissing`+`ZionWritepathProbeStale` nahrány a jednou **firing→resolved** (end-to-end důkaz) |
 | Failed units | EDGE2 `networkd-wait-online` | beze změny (kosmetický) |
-| Public HTTPS | — | 10/10 endpointů 200; `/api/g8` = state file; nirvana proto 34 `proto_match:true` |
+| Public HTTPS | — | 9/10 endpointů 200 (`auth.` root = 404, `/health`+JWKS 200 = normální); `/api/g8` = state file; nirvana proto **38** `proto_match:true` |
 
 **Nové pravdy pro kanon:** ExecStart writepath probe = `/usr/local/sbin/zion-writepath-probe.py` (ne `/opt/zion/V31/deploy/monitoring/` — ta je jen repo kopie, synchronizována). G8 state file `/opt/zion/data/g8_run.json` žije na **EDGE1** (ne EDGE2). `latest_recorded_ts` vyžaduje pool ≥ `1ce5b5eb2` — starší pool = `measurement_ok 0` a alert **poctivě** hlásí. Docker build na EDGE1: cache mount na `/cargo`+`CARGO_HOME` (NE `/usr/local/cargo` — shadowne image cargo). Report: [`docs/3.2/REPORTS/REPORT_2026-11-11_PAYOUT_MONITORING.md`](../3.2/REPORTS/REPORT_2026-11-11_PAYOUT_MONITORING.md).
+
+### 0b. Git — sjednocení linií (11. 11. večer)
+
+`main` a `feat/engine-b-visual-upgrade` se rozešly (18 vs 21 commitů): větev nesla práci, která **už byla na produkci** (Engine B `3e82f7499`, aréna mapy proto 38, Lumi motiv), ale v `main` chyběla — přesně past popsaná v AGENTS.md („commit, který žije jen na vedlejší linii a přitom je na produkci"). **Sjednoceno:** merge `origin/main` do větve (`76c4a4aa1`, 8 konfliktů vyřešeno — `PROTO_VERSION` 38, výšky powerupů 3.1 z nav commitu, Engine B soubory z `main`, web hero z větve) → fast-forward `main` na tutéž hodnotu → push obou; **vzdálená větev fast-forwardnuta na `main`**, takže divergence znovu nevznikne. Návazně opraven flaky test arény (`ab9aca900`, botí navigace) — viz `apps/nirvana/AGENTS.md` §Navigace bota.
+
+Pravidlo pro další session: **před deployem zkontroluj `git merge-base --is-ancestor <prod-commit> HEAD`**; po každém mergi pushni i `main`, ne jen větev.
 
 ## 1. Verify matrix — doc claim vs. realita (ověřeno 10. 11.)
 
@@ -31,7 +37,7 @@
 | 2 | V31 crates | 18 workspace members | `V31/Cargo.toml` — L1×7, L2×2, L3×3, L4/L5/L6, smoke, sdk, cli | ✅ |
 | 3 | Pool schema | v13 (`height`=reward, `inclusion_height`=inclusion) | `V31/L1/pool/src/store.rs:41` `SCHEMA_VERSION: u32 = 13` | ✅ |
 | 4 | OASIS roster | 202 avatarů / 714 questů | `V31/L4/oasis/data/avatars.json` = **202** entries | ✅ |
-| 5 | Nirvana proto | `PROTO_VERSION` sdílený klient↔net | `apps/nirvana/src/core/net/protocol.ts:86` = **34**; live EDGE `/net/health` proto=**34** (build `20261110T181100Z`), app `/api/health` `proto_match:true` | ✅ (repo=live) |
+| 5 | Nirvana proto | `PROTO_VERSION` sdílený klient↔net | `apps/nirvana/src/core/net/protocol.ts` = **38** (mapy arény); live `/api/health` `proto:38` + `net.proto:38` + `proto_match:true` (11. 11. 19:00) | ✅ (repo=live) |
 | 6 | G8 aktivní run | run #7 `g8-20261106T145125Z`, cíl 6. 12. 14:51Z | `/data/zion/g8_run.json` na EDGE: `running`, uptime **99,916 %**, evidence 100 %, 5× `chain_live` 60 s | ✅ |
 | 7 | G8 run #6 | archivován `stopped`/`evidence_incomplete` | `g8_run.g8-20261029T234617Z.json`: `stopped`, `gate_reason=stopped_before_window_end`, 99,7629 %, 12 incidentů | ✅ |
 | 8 | Topologie | EDGE2 = primary+web, EDGE = pool+followeři+ops | Oba boxy SSH OK; EDGE1 10/10 `zion-*` active; EDGE2 všechny `zion-*` active; EDGE2 `systemd-networkd-wait-online` failed = kosmetický | ✅ |
@@ -81,7 +87,9 @@
 
 - **G8 okno (do 6. 12.):** nic nesmí zasáhnout required služby (`chain_live`, `pool_http`, `pool_stratum`, `multichain`, `dao`, `zis`) bez rollbacku do 15 min.
 - **Deployy Nirvany:** client+net spolu (sdílený `PROTO_VERSION`).
-- **Mac disk:** nekopírovat velké artefakty/buildy, dokud se neuvolní místo.
+- **Mac disk:** stav 11. 11. večer = **17 GB volných** (91 %); velké artefakty/buildy už jdou, ale držet pod 90 %.
 - **EDGE SSH:** ControlMaster/ControlPersist (fail2ban), `zion-v6` = IPv6 alias.
 - **`/proc/*/environ` čtení:** jen allowlist klíčů.
 - **`.bak` v `sites-enabled/`:** NIKDY — nginx include glob je načte.
+- **Aréna — testy musí být deterministické:** botí mozek bere náhodu z `BotOptions.rng` (default `Math.random`), test si předá konstantu. `npx tsx test/arena-maps.mjs` musí být 10/10 zelený; když padá „bot vyjde na vyvýšené místo", je to navigace, ne test (viz `apps/nirvana/AGENTS.md` §Navigace bota).
+- **Před deployem ověř, že commit je v `main`:** `git merge-base --is-ancestor <prod-commit> HEAD`; produkce běžící z větve, která není v `main`, je neviditelná past (stalo se 11. 11. s Engine B).

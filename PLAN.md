@@ -16,7 +16,7 @@
 - **Chain 118 687** (~60 s/blok), pool **`ece8b6965`** (11. 11. rebuild + payout monitoring M2), **74 072 accepted / 0 rejected**, disky 62 % / 58 %
 - **G9 externí audit** = posunut (Stable bez data)
 - **Deploy projekty:** `V31/deploy/` (aktivní, opraveno 2.11.), `infra/edge-deploy/` (deprecated, guard přidán)
-- **Nirvana proto 34** = repo i live ve shodě (net build `20261110T181100Z` + app `proto_match`) — client a net deployovat vždy spolu
+- **Nirvana proto 38** = repo i live ve shodě (`/api/health` `proto:38` + `net.proto:38` + `proto_match:true`, ověřeno 11. 11. 19:00) — client i net deployovat vždy spolu
 - **EDGE2 `networkd-wait-online`** vyřešen 11. 11. (netplan `accept-ra:false`+`dhcp6:false`); nginx `listen` options sjednoceny repo-only (`548a50235`, deploy ⏸️)
 - **⚠️ Release artefakty:** na disku jsou jen **2 linux tarbally** (`dist/v3.2.0-rc-w1.4/`); aarch64/gpu-metal/windows chybí. macOS buildy vyžadují Mac/Xcode (nebo osxcross), Windows mingw — tento PC (Linux) je neumí. Mac disk už není pracovní prostředí.
 
