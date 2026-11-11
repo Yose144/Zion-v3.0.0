@@ -1,6 +1,6 @@
 # Alert runbook — ZION ops
 
-> **Platí od:** 2026-11-08. Pokrývá **všech 36 alertů** v šesti rule souborech na EDGE1
+> **Platí od:** 2026-11-08. Pokrývá **všech 37 alertů** v šesti rule souborech na EDGE1
 > (`/etc/prometheus/rules/`). Repo kopie: `V31/deploy/monitoring/`.
 > **DoD 9 / 8.S1:** každý alert má **firing test** (`promtool`) i tento runbook.
 
@@ -63,7 +63,15 @@ nutně výpadek. Aktivní run: `g8-20261106T145125Z`, cíl `2026-12-06T14:51:25Z
 | `G8ChainStale` (critical, bez `for`) | tip je starší 15 min **nebo** žádný node nehlásí tip | `curl -s localhost:9090/api/v1/query?query=zion_g8_chain_tip_age_seconds`, výška na nodech (`:9445/:9446/:9447`) | nemazat state ani „opravovat" G8 skript, dokud nevíš, jestli je mrtvý chain nebo probe |
 | `G8RequiredServiceDown` (critical, 2 m) | jedna z required služeb (`pool_http`, `pool_stratum`, `multichain`, `dao`, `zis`) neprošla probem | `zion_g8_probe_success{service="<x>"}`, pak `systemctl status` příslušné služby + její port | nespouštět `reset-failed` bez pohledu do journalu — maskuje příčinu |
 | `G8PrimaryNodeDown` (critical, 2 m) | `node_primary` RPC neodpovídá (EDGE2 :9445) | `curl -s -m 3 http://207.180.217.100:9445 -X POST -d '{"jsonrpc":"2.0","id":1,"method":"getChainInfo"}'`, pak `systemctl status zion-v31-node` na EDGE2 | nepovyšovat followery na primary bez fencing procedury (`POOL-HA-RUNBOOK.md`) |
+| `G8PrimaryTipStale` (warning, 5 m) | primary **odpovídá**, ale jeho tip je starší 15 min; `chain_live` může být 1 přes followera | `zion_g8_node_tip_age_seconds{service="node_primary"}`, `zion_g8_node_chain_height{service="node_primary"}`, P2P logy `P2P sync from …:8336 failed`, `systemctl status zion-v31-node` | nerestartovat node „pro jistotu" — nejdřív zjisti, jestli je starý tip nebo jen chybí metrika (starý probe). Rule vyžaduje probe ≥ 2026-11-11 |
 | `G8NodeQuorumLow` (warning, 5 m) | méně než 2 ze 3 node RPC odpovídají | `zion_g8_node_quorum`, `ss -tlnp` na 9445/9446/9447 | neignorovat — s jedním nodem není fallback |
+
+**Watchdog stale-tip (od 2026-11-11):** `scripts/ops/node-tip-age.sh` čte
+`zion_g8_node_tip_age_seconds` z lokálního probe a je zapojený do `check_health`
+(mode `edge2`) **log-only** — chybějící metrika (starý probe) je no-op, ne falešný
+alarm. Restart na stale tip je opt-in `ZION_WATCHDOG_STALE_RESTART=1`; každý
+restart stojí jeden 60s G8 vzorek, takže se nezapíná paušálně. Test:
+`bash scripts/ops/test_node_tip_age.sh`.
 
 ## 3. Pool (`zion-pool.rules.yml`)
 

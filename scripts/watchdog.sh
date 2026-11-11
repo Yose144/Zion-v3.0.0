@@ -129,6 +129,26 @@ check_node_http() {
   [[ -n "$version" ]]
 }
 
+# Per-node tip freshness from the G8 probe metric (added 2026-11-11).
+# A missing metric means an older probe -> no-op, never a false alarm.
+# Log-only by default: a restart costs a 60 s G8 sample, so opt in explicitly
+# with ZION_WATCHDOG_STALE_RESTART=1 (RCA 2026-11-11: RPC reachable but tip
+# 1-4 h old and the old watchdog did not notice).
+TIP_AGE_HELPER="${ZION_TIP_AGE_HELPER:-/opt/zion/scripts/ops/node-tip-age.sh}"
+check_primary_tip_fresh() {
+  [[ -x "$TIP_AGE_HELPER" ]] || return 0
+  local age
+  if age=$("$TIP_AGE_HELPER" --service node_primary \
+      --max-age "${ZION_WATCHDOG_TIP_MAX_AGE:-900}" 2>/dev/null); then
+    return 0
+  fi
+  log "WARN: node_primary tip stale (age=${age:-unknown}s) — RPC answers but the node is not syncing"
+  if [[ "${ZION_WATCHDOG_STALE_RESTART:-0}" == "1" ]]; then
+    restart_service "$NODE_SERVICE" "primary tip stale (age=${age:-unknown}s)"
+  fi
+  return 0
+}
+
 check_pool_tcp() {
   [[ -n "$POOL_SERVICE" ]] || return 0
   timeout 3 bash -c "exec 3<>/dev/tcp/${POOL_HOST}/${POOL_PORT}" >/dev/null 2>&1
@@ -225,6 +245,8 @@ check_health() {
     restart_service "$NODE_SERVICE" "V31 RPC on ${NODE_RPC} not reachable"
     return
   fi
+
+  check_primary_tip_fresh
 
   if [[ -n "$POOL_SERVICE" ]] && ! check_pool_tcp; then
     restart_service "$POOL_SERVICE" "pool TCP ${POOL_HOST}:${POOL_PORT} not reachable"

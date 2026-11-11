@@ -156,7 +156,7 @@ Viz `docs/3.2/DEFERRED_3.2.md`:
 5. 🤖 **G8 `chain_live` RCA** — read-only analýza, bez deploye probe uprostřed runu.
 6. 🔀 **P0-3 env subsety + rotace** — audit hotový, rotace = 👤.
 
-**Dokončeno dříve (neopakovat):** HA fencing G1–G6 ✅ · DR drill dry-run ✅ · NCL V33-5 ✅ · DeSci 6.B4 ✅ · OASIS a11y V33-10 ✅ · PII orderId + atomický sklad + release verifier + proto preflight + archive content root ✅ (9. 11.) · M1 EDGE1 monitoring ✅ · M2 payout monitoring ✅ (11. 11.) · Charta R9 factual ✅.
+**Dokončeno dříve (neopakovat):** HA fencing G1–G6 ✅ · DR drill dry-run ✅ · NCL V33-5 ✅ · DeSci 6.B4 ✅ · OASIS a11y V33-10 ✅ · PII orderId + atomický sklad + release verifier + proto preflight + archive content root ✅ (9. 11.) · M1 EDGE1 monitoring ✅ · M2 payout monitoring ✅ (11. 11.) · Charta R9 factual ✅ · **G8 probe hardening** (stale-tip selection, future tolerance, per-node metriky) ✅ · **alert `G8PrimaryTipStale` + promtool** ✅ · **watchdog stale-tip helper** (log-only) ✅ · **listener inventura + `zz-primary` drop-in** ✅ · **stratum blip RCA** (pool restart) ✅.
 
 ---
 
