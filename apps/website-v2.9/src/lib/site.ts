@@ -33,7 +33,7 @@ export const SITE_POOL_PRIMARY = `${process.env.NEXT_PUBLIC_ZION_POOL_HOST || 's
 // Network topology descriptor (operational details are injected via environment variables only)
 export const SITE_NETWORK_TOPOLOGY = 'Mainnet Beta · primary + follower nodes';
 export const EKAM_GOLDEN_EGG_IMAGE = 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2147915250/settings_images/8802b3-c826-05c7-bcd2-12b608d18d1_ABOUT-ONENESS.webp';
-export const EKAM_HERO_IMAGE = '/images/ekam/hero.webp';
+export const EKAM_HERO_IMAGE = '/images/ekam/hero.webp?v=engine-v1';
 export const EKAM_BANNER_IMAGE = '/images/ekam/temple.webp';
 export const EKAM_FOUNDERS_BANNER_IMAGE = '/images/ekam/founders.webp';
 export const EKAM_SOURCE_URL = 'https://www.theonenessmovement.org/about-oneness';

@@ -24,6 +24,7 @@ import NirvanaUniverseSection from './NirvanaUniverseSection';
 import ChristmasShopCards from './ChristmasShopCards';
 import HeroSlider from './HeroSlider';
 import MainnetCountdown from './MainnetCountdown';
+import styles from './Hero.module.css';
 
 const HeroCopy = {
   mainnetBetaGithub: { cs: `Mainnet Beta · GitHub`, en: `Mainnet Beta · GitHub` },
@@ -76,25 +77,24 @@ export default function Hero() {
           </a>
         </motion.div>
 
-        {/* ─── headline — full width ─── */}
-        <motion.div
-          initial={false}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.85 }}
-          className="mb-8"
-        >
-          <p className="text-base md:text-lg text-zion-cyan font-semibold mb-3 tracking-wide flex items-center gap-2">
-            <span className="w-8 h-[2px] bg-gradient-to-r from-zion-purple via-zion-gold to-zion-cyan rounded-full" />
-            {tr('hero', 'tagline', lang)}
-          </p>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold leading-[1.05] tracking-tight">
-            <span className="text-gradient">ZION</span>
-            <span className="block text-white mt-2">Terra Nova</span>
-            <span className="block text-lg sm:text-xl md:text-2xl xl:text-3xl font-semibold text-zion-gold/90 mt-3 tracking-normal">
-              {tr('hero', 'title_sub', lang)}
-            </span>
-          </h1>
-        </motion.div>
+        <div className={styles.scene}>
+          <img
+            className={styles.art}
+            src="/images/design-v1/tree-of-life.webp?v=engine-v1"
+            srcSet="/images/design-v1/tree-of-life-m.webp?v=engine-v1 960w, /images/design-v1/tree-of-life.webp?v=engine-v1 1672w"
+            sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+            width={1672}
+            height={941}
+            alt=""
+            fetchPriority="high"
+            decoding="async"
+          />
+          <div className={styles.copy}>
+            <p className={styles.tagline}>{tr('hero', 'tagline', lang)}</p>
+            <h1 className={styles.title}>ZION Terra Nova</h1>
+            <p className={styles.status}>{tr('hero', 'title_sub', lang)}</p>
+          </div>
+        </div>
 
         {/* ─── Nirvana universe — first OASIS world, full width under the headline ─── */}
         <motion.div

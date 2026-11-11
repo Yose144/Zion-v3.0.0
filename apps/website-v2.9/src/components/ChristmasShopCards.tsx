@@ -27,7 +27,7 @@ interface CardDef {
 const CARDS: CardDef[] = [
   {
     // Původní obrázek produktu (brána se ZION Passem), ne obecná brána Kingdom.
-    image: '/images/news/christmas-2026/card-pass.webp',
+    image: '/images/news/christmas-2026/card-pass.webp?v=engine-v1',
     icon: Ticket,
     kicker: { cs: 'Vánoční edice · ZAP kód', en: 'Christmas edition · ZAP code' },
     title: { cs: 'ZION Pass', en: 'ZION Pass' },
@@ -41,7 +41,7 @@ const CARDS: CardDef[] = [
     href: PASS_URL,
   },
   {
-    image: '/images/news/christmas-2026/card-book.webp',
+    image: '/images/news/christmas-2026/card-book.webp?v=engine-v1',
     icon: BookOpen,
     kicker: { cs: 'Vánoční edice · digitální kniha', en: 'Christmas edition · digital book' },
     title: { cs: 'Království srdce', en: 'Kingdom of the Heart' },
@@ -56,7 +56,7 @@ const CARDS: CardDef[] = [
   },
   {
     // Původní scéna s lampionem (tesař s dětmi), ne vánoční trh.
-    image: '/images/news/christmas-2026/card-lampion.webp?v=7',
+    image: '/images/news/christmas-2026/card-lampion.webp?v=engine-v1',
     icon: Flame,
     kicker: { cs: 'Vánoční edice · číslovaná', en: 'Christmas edition · numbered' },
     title: { cs: 'Druhá lucerna', en: 'The second lantern' },

@@ -49,8 +49,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'The Christmas sale of the Kingdom of the Heart digital book has started: an illustrated edition in five languages (PDF + EPUB, 144 CZK), a ZION Archive Pass included and a 144,000 ZION Genesis bonus until 24 December. The ecosystem also gains a new game client — Kingdom, still in development, with portals into live services and a desktop wallet-and-mining build — and the first OASIS world: Nirvana is already live with seven games (online MOBA, arena, duels, racing), chat and multiplayer. Entry via ZAP code.',
     },
     href: '/news/christmas-2026',
-    image: '/images/news/christmas-2026/hero-960.webp',
-    imageSrcSet: '/images/news/christmas-2026/hero-960.webp 960w, /images/news/christmas-2026/hero-1600.webp 1600w',
+    image: '/images/news/christmas-2026/hero-960.webp?v=engine-v1',
+    imageSrcSet: '/images/news/christmas-2026/hero-960.webp?v=engine-v1 960w, /images/news/christmas-2026/hero-1600.webp?v=engine-v1 1600w',
     imageAlt: {
       cs: 'Vánoce 2026 — tesař s knihou, archa, brána Kingdom a svět Nirvana',
       en: 'Christmas 2026 — the carpenter with the book, the ark, the Kingdom gate and Nirvana',
@@ -70,8 +70,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'ZION 3.2.0 "One Love" enters Mainnet Beta — the whole ecosystem in one step: the multichain pool mines ZION, Quantus and Pearl natively with a single miner, the L5 Free World map is complete (twelve points), and the library gained its fifth book, Maitreya. Beta is a development and testing stage, not Stable — that requires a clean 30-day run (in progress, monitored on /g8), an external audit and a restore drill. Mining and transacting at your own risk.',
     },
     href: '/news/mainnet-beta',
-    image: '/images/news/beta-cosmic-utopia.webp',
-    imageSrcSet: '/images/news/beta-cosmic-utopia-m.webp 960w, /images/news/beta-cosmic-utopia.webp 1672w',
+    image: '/images/news/beta-cosmic-utopia.webp?v=engine-v1',
+    imageSrcSet: '/images/news/beta-cosmic-utopia-m.webp?v=engine-v1 960w, /images/news/beta-cosmic-utopia.webp?v=engine-v1 1672w',
     imageAlt: {
       cs: 'ZION Mainnet Beta — ekosystém L1–L6, Maitreya a multichain pool ZION / QTC / PEARL',
       en: 'ZION Mainnet Beta — L1–L6 ecosystem, Maitreya and the ZION / QTC / PEARL multichain pool',
@@ -113,8 +113,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'Amenti beneath the Giza pyramids became the twelfth and final point on the map — L5 Free World is complete. Twelve places, twelve worlds: Genesis Garden, Dharma Temple, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka, Ekam, LUMI Nová Amerika, Uluru, Boa Esperança, Kailash, Amenti… and María del Camino, where the story continues as the network’s first living node. Every point has its own page, artwork and place on the holographic planet. Explore the full twelve-point map.',
     },
     href: '/l5-free-world',
-    image: '/images/home/hero-l5-map.webp',
-    imageSrcSet: '/images/home/hero-l5-map-m.webp 960w, /images/home/hero-l5-map.webp 1672w',
+    image: '/images/home/hero-l5-map.webp?v=engine-v1',
+    imageSrcSet: '/images/home/hero-l5-map-m.webp?v=engine-v1 960w, /images/home/hero-l5-map.webp?v=engine-v1 1672w',
     imageAlt: {
       cs: 'Mapa L5 Free World — dvanáct bodů a vrstvy L1–L6',
       en: 'L5 Free World map — twelve points and layers L1–L6',

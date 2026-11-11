@@ -1,0 +1,63 @@
+.workshop {
+  position: relative;
+  max-width: 70rem;
+  margin-inline: auto;
+  overflow: hidden;
+  border: 2px solid #fcd116;
+  border-top-color: #ce242e;
+  border-bottom-color: #168141;
+  border-radius: 1.25rem;
+  background: #0b100d;
+  color: #f0e1be;
+}
+
+.art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.actions {
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  text-align: center;
+  background: linear-gradient(155deg, #34191c, #0b100d 45%, #123423);
+}
+
+.title {
+  margin-block: 0.5rem;
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+}
+
+.description {
+  max-width: 62ch;
+  margin: 0.75rem auto 1.25rem;
+  line-height: 1.6;
+}
+
+.signature {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 1.25rem auto 0;
+}
+
+.heritage, .whale {
+  display: block;
+  height: auto;
+  max-width: 100%;
+  border-radius: 0.5rem;
+}
+
+.heritage {
+  width: 12.5rem;
+}
+
+.whale {
+  width: 7rem;
+  background: #f0e1be;
+}

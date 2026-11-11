@@ -1,0 +1,1584 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════
+   ZION Theme Design System — OASIS MarketPlace
+   Aligned with website-v2.9 design tokens for unified ZION visual.
+   Core: Gold #fcd116 · Purple #e41e2b · Cyan #066928 · Blue #0d0d0d
+   ═══════════════════════════════════════════════════════════════ */
+
+@layer base {
+  :root {
+    --color-zion-gold: 252 209 22;
+    --color-zion-purple: 228 30 43;
+    --color-zion-cyan: 6 105 40;
+    --color-zion-blue: 13 13 13;
+
+    --zion-radius-sm: 0.85rem;
+    --zion-radius-md: 1.2rem;
+    --zion-radius-lg: 1.65rem;
+    --zion-radius-xl: 2rem;
+
+    --zion-border-subtle: rgba(255, 255, 255, 0.1);
+    --zion-border-strong: rgba(255, 255, 255, 0.18);
+    --zion-surface: rgba(7, 10, 20, 0.68);
+    --zion-surface-soft: rgba(255, 255, 255, 0.045);
+    --zion-surface-hover: rgba(255, 255, 255, 0.075);
+
+    --zion-shadow-panel: 0 24px 90px rgba(0, 0, 0, 0.42);
+    --zion-shadow-glow: 0 0 42px rgba(228, 30, 43, 0.28);
+  }
+
+  body {
+    /* Rasta background — red/green/gold glows over deep black */
+    background:
+      radial-gradient(circle at 18% -8%, rgba(228, 30, 43, 0.12), transparent 34rem),
+      radial-gradient(circle at 86% 8%, rgba(7, 137, 48, 0.09), transparent 30rem),
+      radial-gradient(ellipse at bottom, #0f0f0f 0%, #000 100%);
+    min-height: 100vh;
+    color: #fff;
+    overflow-x: hidden;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Subtle grid overlay (ZION shell pattern) */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.014) 1px, transparent 1px);
+    background-size: 96px 96px;
+    pointer-events: none;
+    z-index: 0;
+    mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+  }
+
+  main { position: relative; z-index: 2; }
+  nav { position: relative; z-index: 50; }
+  footer { position: relative; z-index: 2; }
+
+  ::selection {
+    background: rgba(var(--color-zion-gold), 0.28);
+    color: white;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgba(var(--color-zion-cyan), 0.85);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  /* ── Orbs — blurred color clouds (maintenance-page style) ── */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.5;
+  }
+  .orb-gold { top: -10%; left: -8%; width: 20rem; height: 20rem; background: rgba(252, 209, 22, 0.08); }
+  .orb-purple { top: 15%; right: -12%; width: 22rem; height: 22rem; background: rgba(228, 30, 43, 0.08); }
+  .orb-cyan { bottom: -15%; left: 30%; width: 20rem; height: 20rem; background: rgba(7, 137, 48, 0.07); }
+
+  /* ── Starfield canvas — gold warp stars (maintenance-page style) ── */
+  .starfield-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── GlassPanel — gradient border card with inner glow ── */
+  .glass-panel {
+    @apply rounded-2xl p-[1px] transition-all duration-300;
+    background: linear-gradient(135deg, rgba(228, 30, 43, 0.25), rgba(252, 209, 22, 0.25), rgba(7, 137, 48, 0.25));
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+  .glass-panel:hover {
+    background: linear-gradient(135deg, rgba(228, 30, 43, 0.4), rgba(252, 209, 22, 0.4), rgba(7, 137, 48, 0.25));
+    box-shadow: 0 12px 40px rgba(252, 209, 22, 0.15);
+    transform: translateY(-2px);
+  }
+  .glass-panel-inner {
+    @apply h-full w-full rounded-2xl p-5 backdrop-blur-xl;
+    background: rgba(7, 10, 20, 0.88);
+  }
+
+  /* ── ZION Section — standard dark panel (legacy .card alias) ── */
+  .zion-section,
+  .card {
+    @apply border border-zion-border rounded-2xl backdrop-blur-sm transition-all duration-300;
+    background: rgba(7, 10, 20, 0.82);
+    border-color: rgba(252, 209, 22, 0.08);
+  }
+  .zion-section:hover,
+  .card:hover {
+    @apply border-zion-border/80;
+    border-color: rgba(252, 209, 22, 0.25);
+    box-shadow: 0 4px 20px rgba(252, 209, 22, 0.08);
+  }
+
+  /* ── ZION Tile — soft inner tile for grids and sub-panels ── */
+  .zion-tile {
+    border-radius: var(--zion-radius-lg);
+    border: 1px solid var(--zion-border-subtle);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    backdrop-filter: blur(16px);
+    transition: border-color 180ms ease, background-color 180ms ease;
+  }
+  .zion-tile:hover {
+    border-color: rgba(252, 209, 22, 0.35);
+    background-color: rgba(255, 255, 255, 0.075);
+  }
+
+  /* ── Glow card — for featured/important items (legacy; use .zion-rainbow-sub for new code) ── */
+  .card-glow {
+    @apply card;
+    box-shadow:
+      0 0 0 1px rgba(252, 209, 22, 0.1),
+      0 4px 20px rgba(252, 209, 22, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+  .card-glow:hover {
+    box-shadow:
+      0 0 0 1px rgba(252, 209, 22, 0.2),
+      0 8px 30px rgba(252, 209, 22, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     ZION Rainbow Card — color-parameterized via --rc CSS variable
+     Pattern from docs/3.0.3/ZIONTHEME.md + maintenance.html .card
+     Usage: <div class="zion-rainbow-card" style="--rc: 7, 137, 48">
+     ═══════════════════════════════════════════════════════════════ */
+  .zion-rainbow-card {
+    --rc: 252, 209, 22; /* default rasta gold */
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(var(--rc), 0.2);
+    background:
+      radial-gradient(circle at top right, rgba(var(--rc), 0.09), transparent 24rem),
+      linear-gradient(135deg, rgba(var(--rc), 0.05), rgba(var(--rc), 0.015) 55%, transparent),
+      rgba(7, 10, 20, 0.82);
+    backdrop-filter: blur(6px) saturate(130%);
+    transition: border-color 250ms ease, box-shadow 250ms ease, transform 250ms ease;
+  }
+  .zion-rainbow-card > * { position: relative; z-index: 1; }
+
+  /* Top glow line */
+  .zion-rainbow-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(var(--rc), 0.4), transparent);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Corner glow accent */
+  .zion-rainbow-card::after {
+    content: '';
+    position: absolute;
+    top: -5rem; right: -5rem;
+    width: 12rem; height: 12rem;
+    border-radius: 50%;
+    background: rgba(var(--rc), 0.04);
+    filter: blur(70px);
+    pointer-events: none;
+    z-index: 0;
+    transition: background 250ms ease;
+  }
+
+  .zion-rainbow-card:hover {
+    border-color: rgba(var(--rc), 0.4);
+    box-shadow: 0 18px 60px rgba(var(--rc), 0.15);
+    transform: translateY(-2px);
+  }
+  .zion-rainbow-card:hover::after {
+    background: rgba(var(--rc), 0.12);
+  }
+
+  /* Inner sub-card variant — smaller, for grid items */
+  .zion-rainbow-sub {
+    --rc: 252, 209, 22;
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid rgba(var(--rc), 0.15);
+    background:
+      linear-gradient(135deg, rgba(var(--rc), 0.06), rgba(var(--rc), 0.02)),
+      rgba(7, 10, 20, 0.78);
+    transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+  }
+  .zion-rainbow-sub::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(var(--rc), 0.3), transparent);
+    pointer-events: none;
+  }
+  .zion-rainbow-sub:hover {
+    border-color: rgba(var(--rc), 0.35);
+    box-shadow: 0 8px 30px rgba(var(--rc), 0.12);
+    transform: translateY(-2px);
+  }
+
+  /* ── ZION panel — glass surface ── */
+  .zion-panel {
+    border-radius: clamp(1rem, 2.5vw, 1.5rem);
+    border: 1px solid var(--zion-border-subtle);
+    background:
+      radial-gradient(circle at top left, rgba(252, 209, 22, 0.1), transparent 28rem),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028)),
+      rgba(7, 10, 20, 0.88);
+    backdrop-filter: blur(22px) saturate(140%);
+    box-shadow: var(--zion-shadow-panel);
+  }
+
+  .zion-glass {
+    border: 1px solid var(--zion-border-subtle);
+    background:
+      radial-gradient(circle at top left, rgba(252, 209, 22, 0.14), transparent 28rem),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+      rgba(7, 10, 20, 0.85);
+    backdrop-filter: blur(24px) saturate(150%);
+  }
+
+  /* ── ZION gradient text ── */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(90deg, #e41e2b, #fcd116, #066928);
+    background-size: 200% auto;
+  }
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(90deg, #fcd116, #f7e47a, #fcd116);
+    background-size: 200% auto;
+  }
+  .text-gradient-cyan {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(90deg, #066928, #34d399);
+  }
+  .text-gradient-animated {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(90deg, #e41e2b, #fcd116, #066928, #e41e2b);
+    background-size: 300% auto;
+    animation: gradientX 6s ease infinite;
+  }
+
+  /* ── ZION Buttons (canonical) + legacy aliases ── */
+  .zion-button-primary,
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white transition-all duration-200 relative overflow-hidden;
+    background: linear-gradient(110deg, #e41e2b, #fcd116 48%, #066928);
+    background-size: 200% auto;
+    box-shadow: 0 18px 45px rgba(252, 209, 22, 0.34);
+  }
+  .zion-button-primary:hover,
+  .btn-primary:hover {
+    background-position: right center;
+    box-shadow: 0 24px 60px rgba(252, 209, 22, 0.44);
+    transform: translateY(-1px);
+    filter: saturate(1.08);
+  }
+  .zion-button-primary:active,
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+  .zion-button-primary:disabled,
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .zion-button-secondary,
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white bg-white/5 border border-white/10 transition-all duration-200;
+    border-color: rgba(252, 209, 22, 0.18);
+  }
+  .zion-button-secondary:hover,
+  .btn-secondary:hover {
+    @apply bg-white/10 border-white/20;
+    border-color: rgba(252, 209, 22, 0.4);
+    transform: translateY(-1px);
+  }
+  .zion-button-secondary:disabled,
+  .btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .zion-button-ghost,
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-gray-300 bg-white/5 border border-white/10 transition-all hover:bg-white/10;
+  }
+  .zion-button-ghost:hover,
+  .btn-ghost:hover {
+    border-color: rgba(252, 209, 22, 0.4);
+    color: #fff;
+  }
+  .zion-button-ghost:hover,
+  .btn-ghost:hover {
+    transform: translateY(-1px);
+  }
+
+  .zion-button-icon,
+  .btn-icon {
+    @apply p-2.5 w-11 h-11 flex items-center justify-center rounded-xl;
+  }
+
+  /* ── ZION kicker — small uppercase pill ── */
+  .zion-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(252, 209, 22, 0.25);
+    background: linear-gradient(90deg, rgba(228, 30, 43, 0.1), rgba(252, 209, 22, 0.08), rgba(7, 137, 48, 0.1));
+    padding: 0.3rem 0.8rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: rgb(252, 209, 22);
+  }
+  .zion-kicker::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--rasta-gold);
+    box-shadow: 0 0 6px var(--rasta-gold);
+  }
+
+  /* ── ZION badge — colored pill ── */
+  .zion-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.8);
+  }
+  .zion-badge-gold {
+    border-color: rgba(252, 209, 22, 0.35);
+    background: rgba(252, 209, 22, 0.1);
+    color: #fcd116;
+  }
+  .zion-badge-purple {
+    border-color: rgba(228, 30, 43, 0.35);
+    background: rgba(228, 30, 43, 0.1);
+    color: #f87171;
+  }
+  .zion-badge-cyan {
+    border-color: rgba(7, 137, 48, 0.35);
+    background: rgba(7, 137, 48, 0.1);
+    color: #34d399;
+  }
+
+  /* ── Rarity badges with glow ── */
+  .rarity-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border backdrop-blur-sm;
+  }
+  .rarity-common { color: #a1a1aa; border-color: rgba(161,161,170,0.5); background: rgba(161,161,170,0.1); }
+  .rarity-uncommon { color: #066928; border-color: rgba(7,137,48,0.5); background: rgba(7,137,48,0.1); box-shadow: 0 0 8px rgba(7,137,48,0.15); }
+  .rarity-rare { color: #fcd116; border-color: rgba(252,209,22,0.5); background: rgba(252,209,22,0.1); box-shadow: 0 0 8px rgba(252,209,22,0.15); }
+  .rarity-epic { color: #e41e2b; border-color: rgba(228,30,43,0.5); background: rgba(228,30,43,0.1); box-shadow: 0 0 10px rgba(228,30,43,0.2); }
+  .rarity-legendary { color: #fcd116; border-color: rgba(252,209,22,0.5); background: rgba(252,209,22,0.1); box-shadow: 0 0 10px rgba(252,209,22,0.2); }
+  .rarity-mythic { color: #e41e2b; border-color: rgba(228,30,43,0.5); background: rgba(228,30,43,0.1); box-shadow: 0 0 12px rgba(228,30,43,0.25); }
+  .rarity-unique { color: #066928; border-color: rgba(7,137,48,0.5); background: rgba(7,137,48,0.1); box-shadow: 0 0 12px rgba(7,137,48,0.25); }
+
+  /* ── Status dots ── */
+  .status-dot {
+    @apply inline-block w-2 h-2 rounded-full;
+  }
+  .status-active { background: #066928; box-shadow: 0 0 6px #066928, 0 0 12px rgba(7,137,48,0.3); }
+  .status-pending { background: #fcd116; box-shadow: 0 0 6px #fcd116, 0 0 12px rgba(252,209,22,0.3); }
+  .status-inactive { @apply bg-zinc-600; }
+
+  /* ── Shimmer loading ── */
+  .shimmer {
+    background: linear-gradient(90deg, transparent, rgba(252, 209, 22, 0.1), transparent);
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+
+  /* ── Artifact placeholder — animated OASIS orb ── */
+  .artifact-placeholder {
+    background:
+      radial-gradient(circle at 30% 30%, rgba(228, 30, 43, 0.12), transparent 50%),
+      radial-gradient(circle at 70% 70%, rgba(7, 137, 48, 0.12), transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(252, 209, 22, 0.08), transparent 60%),
+      #0a0c14;
+  }
+  .artifact-placeholder::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: conic-gradient(from 0deg, transparent, rgba(228,30,43,0.05), transparent, rgba(7,137,48,0.05), transparent, rgba(252,209,22,0.05), transparent);
+    animation: spin 15s linear infinite;
+    pointer-events: none;
+  }
+
+  /* ── Section divider ── */
+  .section-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(228,30,43,0.35), rgba(252,209,22,0.35), rgba(7,137,48,0.35), transparent);
+  }
+
+  /* ── ZION CTA banner ── */
+  .zion-cta-banner {
+    position: relative;
+    overflow: hidden;
+    border-radius: clamp(1.5rem, 3.5vw, 2rem);
+    border: 1px solid rgba(252, 209, 22, 0.32);
+    background:
+      linear-gradient(90deg,
+        rgba(228, 30, 43, 0.2),
+        rgba(252, 209, 22, 0.12) 50%,
+        rgba(7, 137, 48, 0.2)),
+      rgba(7, 10, 20, 0.85);
+    padding: clamp(1.5rem, 5vw, 2.5rem);
+    text-align: center;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 24px 80px rgba(252, 209, 22, 0.15);
+  }
+  .zion-cta-banner::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(252, 209, 22, 0.6), transparent);
+    pointer-events: none;
+  }
+
+  /* ── ZION Hero grid — dashboard-style status cards ── */
+  .zion-hero-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  @media (min-width: 640px) {
+    .zion-hero-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (min-width: 1024px) {
+    .zion-hero-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+
+  .zion-hero-card {
+    --rc: 252, 209, 22;
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--zion-radius-lg);
+    border: 1px solid rgba(var(--rc), 0.2);
+    background:
+      linear-gradient(135deg, rgba(var(--rc), 0.08), rgba(var(--rc), 0.03)),
+      rgba(7, 10, 20, 0.82);
+    padding: 1.25rem;
+    transition: border-color 250ms ease, box-shadow 250ms ease, transform 250ms ease;
+  }
+  .zion-hero-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(var(--rc), 0.5), transparent);
+    pointer-events: none;
+  }
+  .zion-hero-card:hover {
+    border-color: rgba(var(--rc), 0.4);
+    box-shadow: 0 12px 40px rgba(var(--rc), 0.15);
+    transform: translateY(-2px);
+  }
+
+  /* ── ZION Table ── */
+  .zion-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .zion-table th,
+  .zion-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .zion-table th {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .zion-table tbody tr {
+    transition: background-color 150ms ease;
+  }
+  .zion-table tbody tr:hover {
+    background-color: rgba(var(--rc, 252, 209, 22), 0.06);
+  }
+
+  /* ── Input styles ── */
+  .input-zion {
+    @apply w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm transition-all duration-200;
+  }
+  .input-zion:focus {
+    @apply outline-none;
+    box-shadow: 0 0 0 3px rgba(252, 209, 22, 0.1);
+    border-color: rgba(252, 209, 22, 0.5);
+  }
+  .input-zion::placeholder {
+    @apply text-gray-600;
+  }
+
+  /* ── Tab styles ── */
+  .tab-zion {
+    @apply px-5 py-2.5 text-sm font-semibold capitalize transition-all border-b-2;
+  }
+  .tab-zion-active {
+    @apply text-white;
+    border-color: #fcd116;
+  }
+  .tab-zion-inactive {
+    @apply text-gray-500 border-transparent hover:text-white;
+  }
+}
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #090A0F;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #2a2310, #3d3308);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #4a3e0a, #5c4f0a);
+}
+
+/* ── Line clamp utility ── */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ─── Responsive page shell / container from website-v2.9 ─── */
+@layer utilities {
+  .zion-page {
+    min-height: 100vh;
+    position: relative;
+    padding-top: 6rem;
+    padding-bottom: 4rem;
+    overflow-x: hidden;
+    isolation: isolate;
+  }
+  @media (min-width: 768px) {
+    .zion-page {
+      padding-top: 7.5rem;
+      padding-bottom: 5rem;
+    }
+  }
+
+  .zion-shell {
+    min-height: 100vh;
+    position: relative;
+    background: transparent;
+    isolation: isolate;
+  }
+
+  .zion-container {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: clamp(0.75rem, 3.5vw, 2rem);
+  }
+
+  .zion-section-title {
+    font-size: clamp(1.6rem, 4vw, 3rem);
+    line-height: 1.15;
+    font-weight: 700;
+    color: rgb(255 255 255);
+    letter-spacing: -0.02em;
+  }
+
+  .zion-section-sub {
+    margin-top: 0.75rem;
+    font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+    line-height: 1.75;
+    color: rgb(156 163 175);
+    max-width: 65ch;
+  }
+
+  .zion-page-heading {
+    font-size: clamp(2.2rem, 7vw, 5.5rem);
+    line-height: 1.05;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  .zion-stat-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  }
+}
+
+/* ─── Mobile safety — force single column for grids without responsive prefix ─── */
+@media (max-width: 639px) {
+  .grid.grid-cols-2:not(.grid-cols-1):not(.sm\:grid-cols-2):not(.sm\:grid-cols-1):not(.mobile-keep-cols),
+  .grid.grid-cols-3:not(.grid-cols-1):not(.sm\:grid-cols-3):not(.sm\:grid-cols-1):not(.mobile-keep-cols),
+  .grid.grid-cols-4:not(.grid-cols-1):not(.sm\:grid-cols-4):not(.sm\:grid-cols-1):not(.mobile-keep-cols),
+  .grid.grid-cols-5:not(.grid-cols-1):not(.sm\:grid-cols-5):not(.sm\:grid-cols-1):not(.mobile-keep-cols),
+  .grid.grid-cols-6:not(.grid-cols-1):not(.sm\:grid-cols-6):not(.sm\:grid-cols-1):not(.mobile-keep-cols) {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+/* ─── Horizontal scroll helpers (mobile filter chip rows) ─── */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Rasta Navbar — red/gold/green pill design from public_html/V2
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --rasta-red: #e41e2b;
+  --rasta-gold: #fcd116;
+  --rasta-green: #066928;
+  --rasta-black: #0d0d0d;
+  --rasta-dark: #1a1a1a;
+}
+
+.rasta-text-gradient {
+  background: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Cart */
+.rasta-cart {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 0.7rem;
+  border-radius: 9999px;
+  background:
+    radial-gradient(circle at 10% 0, rgba(255, 255, 255, 0.2), transparent 55%),
+    linear-gradient(135deg, rgba(8, 15, 30, 0.98), rgba(4, 10, 22, 0.95));
+  border: 1px solid rgba(210, 255, 244, 0.6);
+  box-shadow:
+    0 0 10px rgba(0, 0, 0, 0.65),
+    0 0 18px rgba(42, 245, 152, 0.45);
+  color: #e5fdf7;
+  transition: all 0.25s ease;
+}
+
+.rasta-cart:hover,
+.rasta-cart:focus-visible {
+  box-shadow:
+    0 0 18px rgba(42, 245, 152, 0.8),
+    0 0 26px rgba(8, 174, 234, 0.7);
+  transform: translateY(-1px);
+}
+
+.rasta-cart-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.rasta-cart-badge {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 30% 0, #ffffff, #066928);
+  color: #041016;
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 6px rgba(42, 245, 152, 0.8);
+}
+
+/* Language switcher */
+.rasta-lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(4, 6, 16, 0.65);
+  color: #f7f7f7;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.rasta-lang-switch:hover,
+.rasta-lang-switch:focus-visible {
+  background: rgba(252, 209, 22, 0.15);
+  border-color: var(--rasta-gold);
+  color: #fff;
+}
+
+.rasta-lang-switch svg {
+  width: 14px;
+  height: 14px;
+  color: var(--rasta-gold);
+}
+
+/* Wallet buttons */
+.rasta-wallet-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background: linear-gradient(120deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+  color: #0d0d0d;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 22px rgba(252, 209, 22, 0.25);
+}
+
+.rasta-wallet-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  box-shadow: 0 12px 28px rgba(252, 209, 22, 0.35);
+}
+
+.rasta-wallet-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rasta-wallet-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(4, 6, 16, 0.55);
+  color: #f7f7f7;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.rasta-wallet-ghost:hover:not(:disabled),
+.rasta-wallet-ghost:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.rasta-wallet-ghost .status-dot {
+  box-shadow: 0 0 6px rgba(42, 245, 152, 0.8);
+}
+
+.rasta-wallet-ghost .status-dot.status-inactive {
+  background: var(--rasta-red);
+  box-shadow: 0 0 6px rgba(228, 30, 43, 0.8);
+}
+
+.rasta-wallet-ghost[data-wrong='true'] {
+  border-color: rgba(228, 30, 43, 0.5);
+  color: #fda4af;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Rasta body + hero — lite red/gold/green accents from V2
+   ═══════════════════════════════════════════════════════════════ */
+
+body.zion-shell {
+  background:
+    radial-gradient(circle at 10% -5%, rgba(228, 30, 43, 0.07), transparent 28rem),
+    radial-gradient(circle at 90% -5%, rgba(7, 137, 48, 0.06), transparent 28rem),
+    radial-gradient(circle at 50% 110%, rgba(252, 209, 22, 0.05), transparent 32rem),
+    #000;
+}
+
+/* Rasta orbs (lite) */
+.orb-rasta-red {
+  top: -10%;
+  left: -8%;
+  width: 20rem;
+  height: 20rem;
+  background: rgba(228, 30, 43, 0.06);
+  opacity: 0.25;
+}
+
+.orb-rasta-gold {
+  top: 15%;
+  right: -12%;
+  width: 22rem;
+  height: 22rem;
+  background: rgba(252, 209, 22, 0.07);
+  opacity: 0.25;
+}
+
+.orb-rasta-green {
+  bottom: -15%;
+  left: 30%;
+  width: 20rem;
+  height: 20rem;
+  background: rgba(7, 137, 48, 0.06);
+  opacity: 0.25;
+}
+
+/* Rasta hero with the V2 tree image */
+.rasta-hero {
+  position: relative;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  min-height: clamp(260px, 45vh, 440px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: clamp(4.5rem, 12vw, 8rem) 1rem clamp(3.5rem, 8vw, 5rem);
+  margin-top: -1.5rem;
+  background-image: url('/rasta-hero.jpg');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-blend-mode: normal;
+  background-color: transparent;
+  border-bottom: 3px solid transparent;
+  border-image: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green)) 1;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.rasta-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.2) 40%, rgba(0, 0, 0, 0.65) 100%),
+    radial-gradient(circle at 20% 30%, rgba(228, 30, 43, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 80% 70%, rgba(7, 137, 48, 0.07) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(252, 209, 22, 0.05) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Vánoční banner hero — the art is a full illustrated scene
+   ("Merry Christmas & Happy New Year" — tesař u archy, děti s lucernou,
+   světelný strom a lucerna se srdcem) with its own decorative frame;
+   actions live in a strip below instead of an overlay. */
+.kralovstvi-hero {
+  position: relative;
+  z-index: 2;
+}
+
+.kralovstvi-hero-art {
+  width: min(60%, 52.8rem);
+  margin: clamp(0.5rem, 2vw, 1.5rem) auto 0;
+  aspect-ratio: 1672 / 941;
+  border-radius: 1rem;
+  background-image: url('/hero-kolekce-2027.webp?v=engine-v1');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow:
+    0 0 0 1px rgba(252, 209, 22, 0.25),
+    0 20px 60px -20px rgba(0, 0, 0, 0.8),
+    0 0 80px -30px rgba(252, 209, 22, 0.15);
+  overflow: hidden;
+}
+
+.kralovstvi-hero-actions {
+  position: relative;
+  width: 100%;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3vw, 2rem) 1rem clamp(1rem, 3vw, 1.75rem);
+  text-align: center;
+}
+
+.kralovstvi-hero-actions .rasta-hero-desc {
+  margin: 0.75rem auto 1.25rem;
+}
+
+/* Mobile: full aspect ratio would render the banner tiny — switch to a
+   fixed-height center crop that keeps the scene legible. */
+@media (max-width: 767px) {
+  .kralovstvi-hero-art {
+    width: 100%;
+    aspect-ratio: auto;
+    height: clamp(280px, 62vw, 360px);
+    max-height: none;
+    border-radius: 0.75rem;
+  }
+}
+
+/* HIRAN AI banner hero — same clean full-bleed pattern as kralovstvi;
+   the art carries its own title band ("HIRAN AI · AI pro vývojáře"),
+   actions live in a strip below. */
+.hiran-hero {
+  position: relative;
+  z-index: 2;
+}
+
+.hiran-hero-art {
+  width: min(100%, 88rem);
+  margin: clamp(0.5rem, 2vw, 1.5rem) auto 0;
+  aspect-ratio: 1916 / 821;
+  border-radius: 1rem;
+  background-image: url('/hiran-hero.webp?v=engine-v1');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow:
+    0 0 0 1px rgba(252, 209, 22, 0.25),
+    0 20px 60px -20px rgba(0, 0, 0, 0.8),
+    0 0 80px -30px rgba(252, 209, 22, 0.15);
+  overflow: hidden;
+}
+
+.hiran-hero-actions {
+  position: relative;
+  width: 100%;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3vw, 2rem) 1rem clamp(1rem, 3vw, 1.75rem);
+  text-align: center;
+}
+
+.hiran-hero-actions .rasta-hero-desc {
+  margin: 0.75rem auto 1.25rem;
+}
+
+@media (max-width: 767px) {
+  .hiran-hero-art {
+    aspect-ratio: auto;
+    height: clamp(280px, 62vw, 360px);
+    max-height: none;
+    border-radius: 0.75rem;
+    background-position: center 30%;
+  }
+}
+
+@media (min-width: 768px) {
+  .rasta-hero {
+    margin-top: -2rem;
+    background-position: center;
+  }
+}
+
+.rasta-hero-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding-inline: clamp(0.75rem, 3.5vw, 2rem);
+  text-align: center;
+}
+
+.rasta-hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(252, 209, 22, 0.35);
+  background: rgba(0, 0, 0, 0.45);
+  padding: 0.35rem 0.9rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--rasta-gold);
+  margin-bottom: 1rem;
+}
+
+.rasta-hero-kicker .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--rasta-green);
+  box-shadow: 0 0 8px var(--rasta-green);
+}
+
+.rasta-hero-title {
+  font-size: clamp(2rem, 6vw, 4rem);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: clamp(2px, 0.5vw, 6px);
+  text-transform: uppercase;
+  background: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55);
+}
+
+.rasta-hero-desc {
+  color: #f0f0f0;
+  font-size: clamp(0.95rem, 2vw, 1.15rem);
+  max-width: 680px;
+  margin: 0 auto 1.75rem;
+  line-height: 1.7;
+  opacity: 0.95;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+.rasta-hero-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.6rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: all 0.25s ease;
+}
+
+.rasta-hero-btn-primary {
+  background: linear-gradient(120deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+  color: #0d0d0d;
+  box-shadow: 0 10px 28px rgba(252, 209, 22, 0.28);
+}
+
+.rasta-hero-btn-primary:hover,
+.rasta-hero-btn-primary:focus-visible {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow: 0 14px 36px rgba(252, 209, 22, 0.38);
+}
+
+.rasta-hero-btn-ghost {
+  border: 1px solid var(--rasta-gold);
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--rasta-gold);
+}
+
+.rasta-hero-btn-ghost:hover,
+.rasta-hero-btn-ghost:focus-visible {
+  background: rgba(252, 209, 22, 0.15);
+  color: #fff;
+}
+
+/* Section heading accents — optional rasta title (lite) */
+.rasta-heading {
+  background: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Rasta CTA banner (lite) */
+.rasta-cta-banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: clamp(1.5rem, 3.5vw, 2rem);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(90deg, rgba(228, 30, 43, 0.18), rgba(252, 209, 22, 0.1) 50%, rgba(7, 137, 48, 0.18)),
+    rgba(4, 8, 18, 0.85);
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+  text-align: center;
+  backdrop-filter: blur(20px);
+}
+
+.rasta-cta-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--rasta-gold), transparent);
+  pointer-events: none;
+}
+
+
+/* ── Rasta footer ── */
+.rasta-footer {
+  border-top: 1px solid rgba(252, 209, 22, 0.12);
+  background: linear-gradient(180deg, rgba(7, 10, 20, 0.9), rgba(0, 0, 0, 0.95));
+}
+.rasta-footer-logo {
+  filter: drop-shadow(0 0 8px rgba(252, 209, 22, 0.35));
+  transition: filter 0.3s ease;
+}
+.rasta-footer-logo:hover {
+  filter: drop-shadow(0 0 12px rgba(252, 209, 22, 0.55));
+}
+
+/* ── Info / legal page typography ── */
+.info-content {
+  color: #e5e7eb;
+  line-height: 1.75;
+}
+.info-content h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fcd116;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  font-family: var(--font-display);
+}
+.info-content h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #066928;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.info-content h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.info-content p {
+  margin-bottom: 1rem;
+}
+.info-content ul {
+  list-style: disc;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+.info-content ol {
+  list-style: decimal;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+.info-content li {
+  margin-bottom: 0.5rem;
+}
+.info-content a {
+  color: #fcd116;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.info-content a:hover {
+  color: #fff;
+}
+.info-content .highlight-box {
+  background: linear-gradient(135deg, rgba(252, 209, 22, 0.08), rgba(7, 137, 48, 0.08));
+  border-left: 3px solid #fcd116;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  margin: 1.25rem 0;
+}
+.info-content .warning-box {
+  background: rgba(228, 30, 43, 0.08);
+  border-left: 3px solid #e41e2b;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  margin: 1.25rem 0;
+}
+.info-content .table-scroll,
+.rasta-info-content .table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  margin: 1.25rem 0;
+  -webkit-overflow-scrolling: touch;
+}
+.info-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  font-size: 0.9rem;
+}
+.info-content .table-scroll table,
+.rasta-info-content .table-scroll table {
+  margin: 0;
+  min-width: 36rem;
+}
+.info-content th,
+.info-content td {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+.info-content th {
+  background: rgba(252, 209, 22, 0.08);
+  color: #fcd116;
+  font-weight: 700;
+}
+.info-content tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+
+/* ── Rasta info page (legal/FAQ pages) ── */
+.rasta-info-page {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.rasta-info-hero {
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.85) 0%, rgba(10, 10, 10, 0.9) 100%);
+  border-radius: 1.65rem;
+  min-height: clamp(240px, 40vh, 400px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.rasta-info-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(228, 30, 43, 0.12), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(252, 209, 22, 0.08), transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(7, 137, 48, 0.06), transparent 50%);
+  pointer-events: none;
+}
+
+.rasta-info-hero-inner {
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  padding: 2rem 1rem;
+}
+
+.rasta-info-hero h1 {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: clamp(2px, 0.6vw, 6px);
+  background: linear-gradient(90deg, #e41e2b, #fcd116, #066928);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.rasta-info-version-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(90deg, rgba(7, 137, 48, 0.2), rgba(252, 209, 22, 0.15));
+  color: #fcd116;
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(252, 209, 22, 0.2);
+}
+
+.rasta-info-subtitle {
+  color: #9ca3af;
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  opacity: 0.9;
+}
+
+.rasta-info-section {
+  padding: clamp(1.5rem, 4vw, 3rem) 0;
+}
+
+.rasta-info-content {
+  color: #e5e7eb;
+  line-height: 1.75;
+}
+
+.rasta-info-content h2 {
+  font-size: clamp(1.4rem, 3.5vw, 2rem);
+  color: #fcd116;
+  text-align: center;
+  margin-top: 2.5rem;
+  margin-bottom: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 800;
+  font-family: var(--font-display);
+}
+
+.rasta-info-content h3 {
+  font-size: 1.15rem;
+  color: #066928;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+}
+
+.rasta-info-content h4 {
+  font-size: 1rem;
+  color: #e5e7eb;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.rasta-info-content p {
+  margin-bottom: 1rem;
+}
+
+.rasta-info-content ul {
+  list-style: disc;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.rasta-info-content ol {
+  list-style: decimal;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.rasta-info-content li {
+  margin-bottom: 0.5rem;
+}
+
+.rasta-info-content a {
+  color: #fcd116;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rasta-info-content a:hover {
+  color: #fff;
+}
+
+.rasta-info-content .seller-info {
+  background: linear-gradient(145deg, rgba(7, 137, 48, 0.08), rgba(252, 209, 22, 0.05));
+  border: 1px solid rgba(7, 137, 48, 0.3);
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+  margin: 1.25rem 0;
+}
+
+.rasta-info-content .seller-info p {
+  margin: 0.4rem 0;
+}
+
+.rasta-info-content .seller-info strong {
+  color: #fcd116;
+}
+
+.rasta-info-content .highlight-box {
+  background: rgba(7, 137, 48, 0.1);
+  border-left: 4px solid #066928;
+  padding: 1.25rem 1.5rem;
+  border-radius: 0 0.75rem 0.75rem 0;
+  margin: 1.25rem 0;
+}
+
+.rasta-info-content .warning-box {
+  background: rgba(252, 209, 22, 0.08);
+  border-left: 4px solid #fcd116;
+  padding: 1.25rem 1.5rem;
+  border-radius: 0 0.75rem 0.75rem 0;
+  margin: 1.25rem 0;
+}
+
+.rasta-info-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.rasta-info-content th,
+.rasta-info-content td {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.85rem 1rem;
+  text-align: left;
+}
+
+.rasta-info-content th {
+  background: linear-gradient(90deg, #e41e2b, #fcd116, #066928);
+  color: #000;
+  font-weight: 700;
+}
+
+.rasta-info-content tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.rasta-info-cta {
+  text-align: center;
+  margin-top: 3rem;
+  padding-top: 2rem;
+}
+
+.rasta-info-toc {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(252, 209, 22, 0.3);
+  border-radius: 1rem;
+  padding: 1.5rem 2rem;
+  margin: 1.5rem 0 2.5rem;
+  text-align: center;
+}
+
+.rasta-info-toc h3 {
+  color: #fcd116;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.rasta-info-toc ol {
+  margin: 0 auto;
+  padding-left: 0;
+  list-style-position: inside;
+  display: inline-block;
+  text-align: left;
+}
+
+.rasta-info-toc a {
+  color: #066928;
+  text-decoration: none;
+}
+
+.rasta-info-toc a:hover {
+  color: #fcd116;
+  text-decoration: underline;
+}
+
+.update-date {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Pillar cards (about page) ── */
+.pillar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 25px;
+  margin: 40px 0;
+}
+
+.pillar-card {
+  background: linear-gradient(145deg, rgba(252, 209, 22, 0.05) 0%, rgba(7, 137, 48, 0.05) 100%);
+  border: 1px solid rgba(252, 209, 22, 0.2);
+  border-radius: 15px;
+  padding: 30px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.pillar-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #e41e2b, #fcd116, #066928);
+}
+
+.pillar-card:hover {
+  transform: translateY(-8px);
+  border-color: #fcd116;
+  box-shadow: 0 20px 40px rgba(252, 209, 22, 0.12);
+}
+
+.pillar-card .icon {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  display: block;
+}
+
+.pillar-card h4 {
+  color: #fcd116;
+  font-size: 1.15rem;
+  margin-bottom: 15px;
+  font-weight: 700;
+}
+
+.pillar-card p {
+  color: #cfcfcf;
+  line-height: 1.6;
+  margin-bottom: 0.4rem;
+}
+
+@media (max-width: 768px) {
+  .pillar-grid {
+    grid-template-columns: 1fr;
+  }
+}

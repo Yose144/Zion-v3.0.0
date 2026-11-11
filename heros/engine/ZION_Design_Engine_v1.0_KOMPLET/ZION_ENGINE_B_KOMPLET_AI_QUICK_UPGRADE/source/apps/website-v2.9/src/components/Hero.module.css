@@ -1,0 +1,62 @@
+.scene {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 2rem;
+  border: 1px solid #e7aa4b4d;
+  border-radius: 1.25rem;
+  background: #101c2b;
+  color: #f0e1be;
+}
+
+.art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.copy {
+  position: relative;
+  padding: clamp(1rem, 4vw, 3.5rem);
+}
+
+.tagline, .status {
+  max-width: 33ch;
+  line-height: 1.5;
+  color: #f0e1be;
+}
+
+.title {
+  margin-block: 0.5rem 0.75rem;
+  font-size: clamp(2rem, 5vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  color: #f0e1be;
+}
+
+.status {
+  color: #e7aa4b;
+  font-weight: 600;
+}
+
+@media (min-width: 900px) {
+  .scene {
+    display: grid;
+    align-items: center;
+  }
+
+  .art, .copy {
+    grid-area: 1 / 1;
+  }
+
+  .scene::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, #101c2bf5 0%, #101c2bcc 32%, transparent 65%);
+  }
+
+  .copy {
+    max-width: 55%;
+  }
+}

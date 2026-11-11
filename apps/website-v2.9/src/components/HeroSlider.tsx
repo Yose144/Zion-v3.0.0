@@ -16,8 +16,8 @@ interface Slide {
 
 const SLIDES: Slide[] = [
   {
-    src: '/images/home/christmas-kingdom.webp?v=7',
-    srcM: '/images/home/christmas-kingdom-m.webp?v=7',
+    src: '/images/home/christmas-kingdom.webp?v=engine-v1',
+    srcM: '/images/home/christmas-kingdom-m.webp?v=engine-v1',
     alt: {
       cs: 'Veselé Vánoce a šťastný nový rok 2027 — Kingdom, archa a Strom života ve sněhu',
       en: 'Merry Christmas & Happy New Year 2027 — Kingdom, the ark and the Tree of Life in the snow',
@@ -26,8 +26,8 @@ const SLIDES: Slide[] = [
     href: '/news/christmas-2026',
   },
   {
-    src: '/images/home/hero.webp',
-    srcM: '/images/home/hero-m.webp',
+    src: '/images/home/hero.webp?v=engine-v1',
+    srcM: '/images/home/hero-m.webp?v=engine-v1',
     alt: {
       cs: 'Strom života, Maitreya a cesta, která pokračuje — One Love · One Human · One World',
       en: 'Tree of Life, Maitreya and the journey that continues — One Love · One Human · One World',
@@ -36,8 +36,8 @@ const SLIDES: Slide[] = [
     href: '/zion-archive#cesta',
   },
   {
-    src: '/images/zion-archive/hero.webp',
-    srcM: '/images/zion-archive/hero-m.webp',
+    src: '/images/zion-archive/hero.webp?v=engine-v1',
+    srcM: '/images/zion-archive/hero-m.webp?v=engine-v1',
     alt: {
       cs: 'Oasis — jedna rodina pod Stromem života: Maitreya, Krišna, tesař a děti nové země',
       en: 'Oasis — one family under the Tree of Life: Maitreya, Krishna, the carpenter and the children of the new earth',
@@ -46,8 +46,8 @@ const SLIDES: Slide[] = [
     href: '/l4-oasis',
   },
   {
-    src: '/images/l5-free-world/hero.webp',
-    srcM: '/images/l5-free-world/hero-m.webp',
+    src: '/images/l5-free-world/hero.webp?v=engine-v1',
+    srcM: '/images/l5-free-world/hero-m.webp?v=engine-v1',
     alt: {
       cs: 'Mapa L5 Free World — dvanáct ohňů rozesetých po planetě',
       en: 'L5 Free World map — twelve fires spread across the planet',
@@ -56,8 +56,8 @@ const SLIDES: Slide[] = [
     href: '/l5-free-world',
   },
   {
-    src: '/images/maria-del-camino/hero.webp',
-    srcM: '/images/maria-del-camino/hero-m.webp',
+    src: '/images/maria-del-camino/hero.webp?v=engine-v1',
+    srcM: '/images/maria-del-camino/hero-m.webp?v=engine-v1',
     alt: {
       cs: 'Flotila Tres Marías — tři lodě pro tři oceány',
       en: 'Tres Marías fleet — three ships for three oceans',
@@ -66,8 +66,8 @@ const SLIDES: Slide[] = [
     href: '/terranova/maria-del-camino',
   },
   {
-    src: '/images/kralovstvi-srdce/hero.webp',
-    srcM: '/images/kralovstvi-srdce/hero-m.webp',
+    src: '/images/kralovstvi-srdce/hero.webp?v=engine-v1',
+    srcM: '/images/kralovstvi-srdce/hero-m.webp?v=engine-v1',
     alt: {
       cs: 'Království srdce · Nirvana — archa a tři lodě flotily, keporkaci u břehu Nové země',
       en: 'Kingdom of the Heart · Nirvana — the ark and the fleet’s three ships, humpbacks off the shore of the new world',
@@ -76,8 +76,8 @@ const SLIDES: Slide[] = [
     href: '/terranova/kralovstvi-srdce',
   },
   {
-    src: '/images/ekam/hero.webp',
-    srcM: '/images/ekam/hero-m.webp',
+    src: '/images/ekam/hero.webp?v=engine-v1',
+    srcM: '/images/ekam/hero-m.webp?v=engine-v1',
     alt: {
       cs: 'Ekam Oneness Temple — uzel, který už stojí',
       en: 'Ekam Oneness Temple — the node that already stands',
@@ -86,8 +86,8 @@ const SLIDES: Slide[] = [
     href: '/terranova/ekam',
   },
   {
-    src: '/images/genesis-garden/hero.webp',
-    srcM: '/images/genesis-garden/hero-m.webp',
+    src: '/images/genesis-garden/hero.webp?v=engine-v1',
+    srcM: '/images/genesis-garden/hero-m.webp?v=engine-v1',
     alt: {
       cs: 'Genesis Garden — první zahrada nového světa',
       en: 'Genesis Garden — the first garden of the new world',
@@ -96,8 +96,8 @@ const SLIDES: Slide[] = [
     href: '/terranova/genesis',
   },
   {
-    src: '/images/amenti/hero.webp',
-    srcM: '/images/amenti/hero-m.webp',
+    src: '/images/amenti/hero.webp?v=engine-v1',
+    srcM: '/images/amenti/hero-m.webp?v=engine-v1',
     alt: {
       cs: 'Amenti · Gíza — zlaté vejce nad pyramidou, síň záznamů, dvanáctý uzel',
       en: 'Amenti · Giza — the golden egg above the pyramid, hall of records, twelfth node',

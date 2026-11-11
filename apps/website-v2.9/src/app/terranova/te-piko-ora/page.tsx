@@ -367,8 +367,8 @@ export default function TePikoOraPage() {
           </div>
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/te-piko-ora/hero.webp"
-                srcSet="/images/te-piko-ora/hero-m.webp 960w, /images/te-piko-ora/hero.webp 1400w"
+                src="/images/te-piko-ora/hero.webp?v=engine-v1"
+                srcSet="/images/te-piko-ora/hero-m.webp?v=engine-v1 960w, /images/te-piko-ora/hero.webp?v=engine-v1 1400w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt="Te Pīko Ora"
                 width={1536}

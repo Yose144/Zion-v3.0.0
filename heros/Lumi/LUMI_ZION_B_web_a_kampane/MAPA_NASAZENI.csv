@@ -1,0 +1,43 @@
+﻿Trasa;Pozice;Stávající URL;Cíl;Poznámka
+/;Hero / Rozsvícený dřevěný lampion Lumi na stole;/images/galerie/03-vecerni-svetlo.webp;/images/lumi-b/domu-hero-4x3.webp;Široká verze domu-hero.webp je pro panoramatický slot.
+/;Svatební stoly;/images/galerie/03-vecerni-svetlo.webp;/images/lumi-b/svatba-hero-4x3.webp;
+/;Firemní dárky;/images/galerie/02-konstrukce.webp;/images/lumi-b/firmy-4x3.webp;
+/;Večery doma;/images/produkt-lumi-2.webp;/images/lumi-b/domu-hero-4x3.webp;
+/;Pro hosty a penziony;/images/pribeh/misto-navic.webp;/images/lumi-b/penzion-4x3.webp;
+/;Dílna a příběh lampionu;/images/pribeh/svetla-u-brany.webp;/images/lumi-b/dilna-4x3.webp;
+/;Prohlédněte si ho zblízka / 3D fallback;/images/galerie/03-vecerni-svetlo.webp;/images/lumi-b/3d-poster.webp;
+/;Galerie / Večerní světlo;/images/galerie/03-vecerni-svetlo.webp;/images/lumi-b/domu-hero-4x3.webp;
+/;Galerie / Konstrukce;/images/galerie/02-konstrukce.webp;/images/lumi-b/3d-konstrukce.webp;
+/;Galerie / Co přijde v krabici;/images/rozlozeni-a3.png;/images/rozlozeni-a3.png;Alt změň na Rozložení dílů lampionu Lumi 2 na desce A3. Zobraz celý diagram pomocí contain.
+/;Galerie / Světlo u brány;/images/pribeh/svetla-u-brany.webp;/images/lumi-b/brana-4x3.webp;
+/;B2B CTA / Svatební stůl se lampiony;/images/galerie/03-vecerni-svetlo.webp;/images/lumi-b/svatba-hero.webp;Alt: Lumi 2 na svatebním stole.
+/kolekce;B2B CTA / Svatba, firma nebo hotel?;/images/galerie/02-konstrukce.webp;/images/lumi-b/firmy-4x3.webp;Dekorativní obraz má alt prázdný.
+/svatby;Hero;/images/galerie/03-vecerni-svetlo.webp;/images/lumi-b/svatba-hero-4x3.webp;Alt: Lumi 2 na svatebním stole.
+/firmy;Hero;/images/galerie/02-konstrukce.webp;/images/lumi-b/firmy-4x3.webp;Alt: Lumi 2 a kraftové dárkové krabice.
+/pribeh;Hero / Příběh lampionu a dílny;/images/pribeh/misto-navic.webp;/images/lumi-b/dilna-4x3.webp;Scénu uváděj jako ilustraci, ne fotografii dílny.
+/pribeh;Světlo u brány;/images/pribeh/svetla-u-brany.webp;/images/lumi-b/brana.webp;
+/pribeh;Konstrukce lampionu;/images/galerie/02-konstrukce.webp;/images/lumi-b/3d-konstrukce.webp;
+/pruvodce;Rozložení dílů na desce A3;/images/rozlozeni-a3.png;/images/rozlozeni-a3.png;Technický zdroj. Zobraz celý diagram, bez ořezu.
+/kolekce/lumi-2;3D fallback;/images/galerie/03-vecerni-svetlo.webp;/images/lumi-b/3d-poster.webp;
+*;Výchozí Open Graph a Twitter metadata;/images/og-lumi.jpg;/images/lumi-b/og-lumi.jpg;1200 × 630 px. Uprav metadata rozměrů a alt.
+/;Produktová karta / Lumi 2 — dřevěný lampion;/images/galerie/03-vecerni-svetlo.webp;/images/lumi-b/lumi-2-produkt.webp;Použij sdílený katalog podle slug.
+/;Produktová karta / Lumi Mini — dvě lucerny;/images/galerie/02-konstrukce.webp;/images/lumi-b/mini.webp;Použij sdílený katalog podle slug.
+/;Produktová karta / Lumi Kit — stavebnice;/images/rozlozeni-a3.png;/images/rozlozeni-a3.png;Použij sdílený katalog podle slug.
+/kolekce;Produktová karta / Lumi 2 — dřevěný lampion;/images/galerie/03-vecerni-svetlo.webp;/images/lumi-b/lumi-2-produkt.webp;Použij sdílený katalog podle slug.
+/kolekce/lumi-2;Titulní snímek, sdílená karta, hlavní náhled a produktové OG;/images/galerie/03-vecerni-svetlo.webp;/images/lumi-b/lumi-2-produkt.webp;Platí také pro všechny související karty a košík se zbožím.
+/kolekce/lumi-2;Galerie / celé nové pořadí;;/images/lumi-b/lumi-2-produkt.webp, /images/lumi-b/3d-konstrukce.webp, /images/lumi-b/domu-hero.webp, /images/sest-sten.png, /images/rozlozeni-a3.png;První položka je úvodní obraz. Diagramy zobraz celé. Alt podle skutečného obsahu.
+/kolekce;Produktová karta / Lumi Mini — dvě lucerny;/images/galerie/02-konstrukce.webp;/images/lumi-b/mini.webp;Použij sdílený katalog podle slug.
+/kolekce/lumi-mini;Titulní snímek, sdílená karta, hlavní náhled a produktové OG;/images/galerie/02-konstrukce.webp;/images/lumi-b/mini.webp;Platí také pro všechny související karty a košík se zbožím.
+/kolekce/lumi-mini;Galerie / celé nové pořadí;;/images/lumi-b/mini.webp;První položka je úvodní obraz. Diagramy zobraz celé. Alt podle skutečného obsahu.
+/kolekce;Produktová karta / Lumi Kit — stavebnice;/images/rozlozeni-a3.png;/images/rozlozeni-a3.png;Použij sdílený katalog podle slug.
+/kolekce/lumi-kit;Titulní snímek, sdílená karta, hlavní náhled a produktové OG;/images/rozlozeni-a3.png;/images/rozlozeni-a3.png;Platí také pro všechny související karty a košík se zbožím.
+/kolekce/lumi-kit;Galerie / celé nové pořadí;;/images/rozlozeni-a3.png, /images/sest-sten.png, /images/lumi-b/3d-konstrukce.webp;První položka je úvodní obraz. Diagramy zobraz celé. Alt podle skutečného obsahu.
+/kolekce;Produktová karta / Sada tří lampionů;/images/produkt-lumi-2.webp;/images/lumi-b/set-3.webp;Použij sdílený katalog podle slug.
+/kolekce/lumi-set-3;Titulní snímek, sdílená karta, hlavní náhled a produktové OG;/images/produkt-lumi-2.webp;/images/lumi-b/set-3.webp;Platí také pro všechny související karty a košík se zbožím.
+/kolekce/lumi-set-3;Galerie / celé nové pořadí;;/images/lumi-b/set-3.webp, /images/lumi-b/3d-konstrukce.webp, /images/sest-sten.png;První položka je úvodní obraz. Diagramy zobraz celé. Alt podle skutečného obsahu.
+/kolekce;Produktová karta / Personalizace — jména, datum, logo;/images/sest-sten.png;/images/lumi-b/personalizace.webp;Použij sdílený katalog podle slug.
+/kolekce/personalizace;Titulní snímek, sdílená karta, hlavní náhled a produktové OG;/images/sest-sten.png;/images/lumi-b/personalizace.webp;Platí také pro všechny související karty a košík se zbožím.
+/kolekce/personalizace;Galerie / celé nové pořadí;;/images/lumi-b/personalizace.webp, /images/sest-sten.png;První položka je úvodní obraz. Diagramy zobraz celé. Alt podle skutečného obsahu.
+/kolekce;Produktová karta / Dárkové balení;/images/galerie/03-vecerni-svetlo.webp;/images/lumi-b/darkove-baleni.webp;Použij sdílený katalog podle slug.
+/kolekce/darkove-baleni;Titulní snímek, sdílená karta, hlavní náhled a produktové OG;/images/galerie/03-vecerni-svetlo.webp;/images/lumi-b/darkove-baleni.webp;Platí také pro všechny související karty a košík se zbožím.
+/kolekce/darkove-baleni;Galerie / celé nové pořadí;;/images/lumi-b/darkove-baleni.webp;První položka je úvodní obraz. Diagramy zobraz celé. Alt podle skutečného obsahu.

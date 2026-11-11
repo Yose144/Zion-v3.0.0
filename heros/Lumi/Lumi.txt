@@ -1,0 +1,329 @@
+Aloha, mam projekt https://market.zionterranova.com/ a app.zionterranova.com ... potřebuji projekt nastartovat aby jsme konečně mely nějaké příjmy, pro lampiony sehnat zákazníky a staly odběr, porad me jak na fungcni buissnes
+Mrknu na oba weby a podívám se, co tam aktuálně je, ať ti poradím konkrétně.
+Aloha! Prošel jsem market i app. Nejdřív to nejdůležitější: příjmy teď přinese hmotný produkt (lampion, kniha, Pass), ne blockchain. Launch tokenu je odložený a CoinGecko listing neprošel, takže tahle část peníze zatím nevydělá.
+1. Oddělit prodej od kryptoměny
+Zákazník lampionu chce lampion a příběh, ne „70 560 ZION“. Bonus dej do patičky nebo FAQ, ne do hlavní nabídky. Kryptem odrazuješ běžné kupce a kolem „bonusu za každou korunu“ je i právní riziko (spotřebitelské právo, MiCA), takže to nech zkontrolovat právníkem.
+Bezpečnost: v procesu se posílá seed phrase e-mailem. To je velký rizikový bod. Lepší je poslat jen kód a odkaz na vytvoření peněženky.
+2. Ověřit marži
+Lampion má 490 Kč a uvádíš 4 h laseru. Spočítej po odečtení DPH, materiálu, hodiny stroje, balení a Zásilkovny (cca 70–100 Kč). Pokud ti zbývá méně než zhruba 50 % z čisté ceny, zvedni cenu na 790–990 Kč. U ručně dělané limitované edice to unese a působí to hodnotněji.
+3. Zákazníci do Vánoc (zbývá 6 týdnů)
+Firemní dárky (B2B): nejrychlejší velká objednávka. Oslov firmy, wellness a hotely s lampionem s logem, 20–100 ks, záloha 50 %. Vánoční rozpočty se rozhodují právě teď.
+Lokální prodej: vánoční trhy v Jablonném a Liberecku, čajovny, concept stores, Waldorfské školy a komunity. Dej jim pár kusů do komisního prodeje.
+Online: Fler.cz a Etsy. Lampion je vizuální produkt, takže krátká videa (laser řeže, lampion se rozsvítí) na Reels/TikTok fungují nejlépe.
+Omezená série: „objednávky do 10. 12. kvůli doručení před Vánoci“. Termín a číslování zvyšují konverzi.
+E-mailový seznam: každému kupci nabídni odběr novinek. Je to základ pro opakované prodeje.
+4. Stálý odběr
+Lampion není spotřební zboží, tak odběr postav na těchto věcech:
+Sezónní kolekce: nový lampion každé 3 měsíce (advent, jaro, léto…) jako sběratelská číslovaná řada, s kapitolou knihy navíc.
+B2B odběr: čajovny, restaurace a hotely si berou sezónní dekoraci pravidelně.
+Doplňky: svíčky, náhradní díly, nový design pro stávající zákazníky.
+Hiran AI pro vývojáře má jako jediné přirozený měsíční model. Zkoušej ho ale až po rozjetí lampionů, ať se nerozmělníš.
+Další krok
+Tento týden: spočítat marži, oslovit 20 firem s nabídkou a natočit 3 videa. Do měsíce pak uvidíš, co funguje.
+Kolik lampionů zvládneš vyrobit měsíčně a jaká je tvoje skutečná cena jednoho kusu? Podle toho ti navrhnu cenu a cíl pro firemní oslovení.
+udělej me průzkum trhu a jaky to ma potencionál
+Udělám průzkum v několika směrech: velikost trhu, konkurence a cenové hladiny, firemní dárky a poptávka po vánočním zboží.
+Poptávka po vánočním zboží je v Česku silná, ale tvůj výrobek vyděláš hlavně příběhem a omezenou sérií, ne cenou ani objemem. Nenašel jsem žádná data o velikosti české niky „duchovní laserové lampiony“, takže ji odhaduji z blízkých segmentů.
+Poptávka
+Průměrná česká domácnost plánuje za Vánoce utratit 12 600 Kč, podobně jako loni. Polovina lidí koupí dárky do 5 000 Kč celkem. Dárek za 500–800 Kč se do rozpočtu vejde. 
+newstream
+iprima
+74 % lidí kupuje většinu dárků v listopadu nebo začátkem prosince, takže okno se právě otevírá. 
+energozrouti
+Český e-commerce loni dosáhl 206 mld. Kč (+6 %) a v 1. pololetí 2026 vyrostl o 5,3 %. Průměrná objednávka je kolem 1 900 Kč. 
+České e-commerce se daří. Obraty e-shopů loni narostly o šest procent
+ +2
+Nejtěžší je výběr dárku pro kolegy a vzdálenější známé. To je přesně tvoje cena a velikost lampionu. 
+mam
+Konkurence a ceny
+Levný segment je obsazený: lucerny v Action stojí kolem 100 Kč, dřevěné lucerny na Kauflandu zhruba 360–1 400 Kč. Tam nesoutěž. 
+action
+kaufland
+Na Etsy jsou hotové dřevěné vánoční lucerny za zhruba 25–150 USD. Tvoje cena 490 Kč je spodní hranice. 
+etsy
+Digitální vzory lampionů se tam prodávají za pár dolarů. Samotný tvar tedy nic nechrání, odlišuje tě jen příběh, kniha a číslování. 
+etsy
+Laserové mandaly se na Etsy prodávají zhruba za 50–260 USD. To podporuje vyšší cenu u duchovního designu. 
+etsy
+Segmenty
+Segment	Signál	Potenciál
+Soukromí kupci (dárek)	silná sezónní poptávka	střední, ale potřebuješ publikum a recenze
+Firemní dárky	37 % firem dává zaměstnancům dárky nebo poukazy; trend jsou lokální výroba, dárky s příběhem a balíčky s logem	nejvyšší (větší objednávky, záloha)
+Duchovní/komunitní nika	indikuje ji cena mandal na Etsy	dobrá, ale musíš ji oslovit přímo
+Stálý odběr	novinka boxu vyvolá nadšení, ale i vysokou fluktuaci	nízký, ověřuj až po Vánocích
+Třináctý plat dá letos zaměstnancům třetina firem, ukázal průzkum
+ +2
+Firemní dárky mají i slabinu: zaměstnanci preferují praktické a finanční dárky. Nabízej je proto spíš jako dárek pro obchodní partnery a klienty. 
+upcz
+Úzké hrdlo: kapacita
+Pokud je 4 h laseru na jeden lampion, zvládneš do 24. 12. zhruba 60–100 kusů (můj odhad, jeden stroj). Poptávka tedy tvůj strop nepřekročí, proto dává smysl vyšší cena.
+Scénáře této sezóny (můj odhad, s DPH)
+Konzervativní: 20 ks × 790 Kč ≈ 16 000 Kč
+Realistický: 50 ks × 790 Kč ≈ 40 000 Kč plus kniha/Pass (stovky Kč za kus)
+Optimistický: 100 ks × 890 Kč ≈ 89 000 Kč (potřebuje jednu firemní zakázku 30–50 ks)
+Z toho odečti materiál, Zásilkovnu a DPH. První rok jsou tedy reálné desítky až nízké stovky tisíc Kč, ne miliony.
+Rizika
+Web míchá tři publika: lampiony/knihu, NFT tržiště a AI pro vývojáře. Pro zákazníka lampionu je to zmatek, proto dej do popředí jen vánoční edici.
+Na app webu je vidět „launch odložen“. Kupec s ním nemusí mít nic společného, ale oddělení značek by důvěru zvýšilo.
+Bez recenzí a fotek zákazníků konverze brzdí. Prvních 10 kusů proto dej s malou slevou výměnou za foto a hodnocení.
+Pošli mi výrobní náklad na kus a skutečnou dobu výroby a spočítám ti přesnou cenu a hranici zisku.
+mame špatný laser, pouze 5w, přemýšlím ze upgraduji na 30w ... pak by rez mohl trvat 30m ... náklady uz jsou pak pouze A3 březová překližka 10ks cca 350kc ... z 1 A3 uděláme jeden lampion. Pravé ze na tu velikost se me zda 790kc dost ... otázka je ale aby to nebyl jenom vánoční produkt, ale merit pak na keteringove firmy, svatby atd.
+Plánování ceny a výrobních nákladů svítidla
+Než odpovím k svatbám a cateringu, ověřím si velikost toho trhu.
+Searched the web
+Při 35 Kč materiálu na kus je 790 Kč dostatečná cena, marže je velká a limit tvoří spíš ruční práce a poptávka než náklady. A ano, z lampionu se dá udělat celoroční produkt.
+Rychlý rozbor nákladů (můj odhad)
+790 Kč s DPH je přibližně 650 Kč bez DPH, pokud jsi plátce.
+Materiál 35 Kč, LED svíčka asi 15–30 Kč, krabice asi 30–50 Kč. Dohromady zhruba 100–130 Kč.
+Zbývá přibližně 520–550 Kč na kus před odečtením tvé práce, stroje a dopravy.
+S 30 W laserem se úzké hrdlo přesune z řezání na ruční sestavení a začištění. Změř si, kolik minut ti zabere jeden kus, jinak kapacitu přeceníš.
+Než koupíš 30 W laser
+Ověř, jestli je to optický, nebo elektrický výkon. U diodových laserů se uvádí často elektrický a skutečný řezný výkon bývá několikrát nižší.
+30 minut na lampion je zatím tvůj odhad. Nech si na vzorku 3mm břízy ukázat řez na jeden průchod, nebo si nech vyřezat zkušební kus ve službě zakázkového řezání.
+Do Vánoc zbývá asi 6 týdnů a dodání plus ladění může trvat dlouho. Vánoční dávku proto zvaž nechat vyřezat externě a upgrade dělat souběžně.
+Aby to nebyl jen vánoční produkt
+Postav z toho platformu, ne jeden výrobek. Jedno tělo (šestihran) a výměnné panely podle příležitosti. Nový motiv je jen nový soubor, ne nový nástroj.
+Řada	Cena	Pro koho
+Mini (2 ks z A3)	290–390 Kč	svatební výslužka, stolní dekorace, catering
+Lumi (hlavní)	790 Kč	dárek, interiér
+Personalizace (jména, datum, logo)	+150–250 Kč	svatby, firmy
+Pro větší objednávky navrhuji slevu 10 % od 10 ks a 15–20 % od 30 ks, vždy se zálohou 50 %.
+Segmenty mimo Vánoce
+Svatby: průměrná česká svatba vyjde na 280 tisíc Kč a sejde se na ní bezmála 60 lidí. Podle ČSÚ je míry sňatečnosti 3,9 ‰, což odpovídá zhruba 42 tisícům svateb ročně (můj přepočet z krajských dat). Trh ale není růstový, svateb dlouhodobě ubývá a snoubenci šetří. Cílit proto spíš na dekoraci a výslužku než na drahé vybavení. 
+Cena svatby podle počtu hostů: Kolik je standard a kde ušetřit?
+ +2
+Kanál přes koordinátory: v Česku jich působí kolem tří set a ročně připraví zhruba čtyři tisíce svateb. To je asi 13 svateb na jednoho. Získat 5 koordinátorů znamená přístup k zhruba 65 svatbám ročně, jedna smlouva s nimi je cennější než 65 jednotlivých zákazníků. 
+cc
+Cateringy, statky, penziony, hotely: stálý odběr sezónních dekorací, často s opakovanou objednávkou.
+Firmy: večírky, dárky klientům, výročí, s logem.
+Půjčovna pro svatby: nápad k ověření na dvou místech. Lampion stojí do 150 Kč, takže pronájem se vrátí po několika akcích a opakovaně generuje příjem.
+Roční kalendář
+Zima: Valentýn, Velikonoce. Květen–září: svatby (nejžádanější termíny podle ČSÚ jsou 7. a 21. června a 6. září). Podzim: Dušičky, advent a firmy. Sezóny se doplňují, takže nejsi závislý na jednom měsíci. 
+csu
+Další kroky
+Do Vánoc: vánoční dávka a firemní zakázky, natočit fotky a video.
+Leden–únor: oslovit 30 koordinátorů a 30 míst (statky, zámky, penziony) se vzorkem a PDF katalogem.
+Únor: koupit laser, až si ověříš výkon a čas.
+Chceš, abych ti připravil oslovovací e-mail pro svatební koordinátory a cateringy a jednostránkový katalog řad Mini a Lumi?
+to muzes, ale zajímal me pak i mezynarodni trh, protože se nechci soustředit jen na cechy
+Plánování průzkumu zahraničních trhů a doprav
+Podívám se na největší trhy, kam se z Česka dá reálně prodávat, a na pravidla, která je třeba splnit.
+Searched the web
+Ano, mezinárodní trh dává smysl, ale po vrstvách. Vánoce 2026 jsou na export už krátké, takže ber letošek jako test a plný nástup naplánuj na jaro 2027.
+Německo je největší příležitost
+Německý svaz obchodu čeká v listopadu a prosinci online tržby 23,1 mld. €, o 4,1 % víc než loni. 
+etailment
+Průměrný rozpočet na dárky je 262 € na osobu a 74 % lidí nakupuje většinu dárků v listopadu a prosinci. Tvoje cena kolem 35–45 € se do toho vejde. 
+lebensmittelpraxis
+Pozor, nálada je slabá: rozpočty zůstávají stabilní, ale dvě třetiny obchodníků čekají horší sezónu, a nejoblíbenějším dárkem jsou poukazy. Prodáš tedy hlavně příběhem a omezenou sérií. 
+ms-aktuell
+ms-aktuell
+Kam jít jako první (moje hodnocení)
+Trh	Proč	Překážka
+Slovensko	stejná řeč a dopravce	menší trh
+Německo, Rakousko	největší kupní síla, blízko	konkurence, nutná němčina
+Polsko	velký sousední trh	jiný jazyk, nižší kupní síla
+Británie	silná tradice dekorací	cla a papírování po brexitu
+USA	největší trh na Etsy	viz níže
+USA odlož. Americká výjimka pro levné zásilky skončila a všechny zásilky nyní podléhají clu. U řemeslných výrobků se odhaduje zhruba na 10–15 %. Aktuální sazbu pro zboží z EU si ověř. Při ceně kolem 800 Kč a poštovném dojde k nepříjemnému zdražení. 
+michiganpublic
+Kanály
+Etsy je nejlevnější start. Poplatek je 6,5 % z objednávky včetně poštovného, plus 0,20 USD za nabídku, pro české prodejce navíc 4 % + 0,30 € za platbu. Dohromady kolem 11 % a při reklamě na Etsy výrazně víc. 
+checkoutpage
+etsy
+Vlastní e-shop pro opakované zákazníky a firmy.
+Svatební koordinátoři v Bavorsku, Sasku a Rakousku. Příběh i design fungují vizuálně, proto Pinterest a Instagram.
+Dvě věci, které ti pomůžou
+Plochá stavebnice (kit). Dodáváš vyřezané díly, kupec lampion slepí sám. Ušetříš práci (vyřešíš úzké hrdlo) i poštovné, plochá zásilka je lehká a netřese se. Je to i dárek pro workshopy, školy a týmové akce. Navrhuji kit za 390–490 Kč a sestavený lampion za 790 Kč.
+Kniha v 5 jazycích. Tvůj web nabízí 8 edic v češtině, angličtině, španělštině, francouzštině a portugalštině. Tohle zahraniční konkurence nemá. Lampion plus kniha v kupcově jazyce je silný argument. 
+zionterranova
+Pravidla, která musíš splnit
+GPSR platí od 13. prosince 2024 a vyžaduje označení výrobce, bezpečnostní informace a varování i v online nabídce. V ČR hrozí pokuty až 50 mil. Kč. Informace uváděj v jazyce země, kam prodáváš. 
+pravniprostor
+podnikatel
+LED svíčky jsou elektro. Pro prodej do Německa můžou platit povinnosti kolem registrace elektrozařízení a baterií. Nejjednodušší je prodávat lampion bez LED a jen doporučit svíčku, případně to nechat prověřit.
+DPH: při prodeji spotřebitelům do EU nad limit se platí daň země kupce přes OSS. Konzultuj s účetní.
+EU na tvé straně: od 1. 7. 2026 platí clo 3 € na levné zásilky ze zemí mimo EU, což zdražuje levné asijské lampiony. 
+easysellapp
+Postup
+Nyní do Vánoc: Etsy s 3 nabídkami v češtině, angličtině a němčině, hlavně pro data a první recenze.
+Leden: německé a slovenské verze webu, GPSR a kit.
+Jaro 2027: oslovit svatební koordinátory v DE/AT a firemní zákazníky.
+K přípravě e-mailu a katalogu (česky, anglicky a německy) potřebuji jednu věc: rozměry lampionu, dodací lhůtu a ceník řad Mini a Lumi. Pošli mi je a připravím oboje.
+
+
+Aloha, Yose. Lampion Království srdce bych začal prodávat jako stolní dekoraci pro svatby, slavnostní večeře a eventy. První nabídku bych postavil na stávajícím Lumi a poslal ji svatebním místům a cateringům, které pořádají víc akcí za sezonu. Rozsvícený vzorek na jejich vlastním stole jim ukáže, jak lampion zapadne do výzdoby. Tobě dá první signál, jestli má smysl vyrábět celé sady.
+Co otestovat	Jak
+Lumi za 490 Kč	Vezmi cenu z podkladů jako výchozí bod. Než ji potvrdíš, změř práci, řezání a balení na skutečném kusu.
+Sada pro jednu akci	Začni poptávkou na 6–12 kusů. Nacenění odvoď od počtu stolů, motivu a místa doručení.
+Opakovaný odběr	Po první akci zjisti, jestli partner chce vlastní sadu k opakovanému použití, nebo další zakázky se jmény či logem.
+Zahraničí	Stejnou nabídku vyzkoušej souběžně u několika partnerů v Sasku. První nabídku naceň v eurech až s konkrétní dopravou a termínem.
+
+
+Připravil jsem Lampion_Kralovstvi_srdce_katalog_CZ_EN_DE.md. Je to textový návrh katalogu ve třech jazycích. Před zveřejněním do něj patří fotka rozsvíceného lampionu na stole, skutečné rozměry a obsah balení. Mini bych přidal po ověření prototypu a výtěžnosti z desky A3. Sériovou cenu bych počítal až po zkušebním řezu. Těch 30 minut na 30W laseru je zatím odhad.
+Dobrý den,
+
+v ZION TerraNova vyrábíme malý dřevěný lampion Lumi z březové překližky. Hodí se na prostřené stoly, k uvítací ceduli nebo k baru. U zakázky můžeme podle motivu nabídnout také úpravu se jmény, datem nebo logem.
+
+Měl by pro vás smysl jeden vzorek, který si vyzkoušíte ve vlastní výzdobě? Pokud už máte v plánu konkrétní akci, stačí mi termín a přibližný počet stolů. Ozvu se s možnostmi a cenou.
+
+Yose
+ZION TerraNova
+
+
+
+Hello,
+
+At ZION TerraNova, we make Lumi, a small birch plywood lantern for wedding tables, private dinners and events. It also works well at a welcome display or bar. Depending on the design, we can personalise an order with names, a date or a logo.
+
+Would you like to try a sample with one of your table settings? If you have an event in mind, send me the date, venue location and approximate number of tables, and I’ll come back with options and a quote.
+
+Best regards,
+Yose
+ZION TerraNova
+
+
+
+Guten Tag,
+
+wir fertigen bei ZION TerraNova die kleine Holzlaterne Lumi aus Birkensperrholz. Sie eignet sich als Tischdekoration bei Hochzeiten und Abendveranstaltungen sowie für den Empfang oder die Bar. Je nach Vorlage können wir die Laternen mit Namen, Datum oder Logo gestalten.
+
+Hätten Sie Interesse an einem Muster für Ihre Tischdekoration? Falls Sie bereits eine Veranstaltung planen, schicken Sie mir gerne den Termin, den Veranstaltungsort und die ungefähre Anzahl der Tische. Dann melde ich mich mit passenden Vorschlägen und einem Angebot.
+
+Freundliche Grüße
+Yose
+ZION TerraNova
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nejake další nápady jak a kde prodávat šampionek Lumi ? analýzu trhu, možnosti a pak prakticky i mimo nás market
+
+
+
+
+
+
+
+
+
+
+
+
+
+Doba práce: 1 m 6 s
+
+
+
+
+
+
+Yose, Lumi bych mimo ZION Market prodával třemi cestami současně: jednotlivé kusy přes Fler, stolní sady přes svatební partnery a personalizované lampionky přes Etsy. Každá cesta testuje jiný důvod ke koupi. Na Fleru je to dárek, na svatbě součást výzdoby a na Etsy památka se jmény a datem.
+Co ukazuje trh
+Srovnání	Zjištěná cena	Co z toho plyne pro Lumi
+České laserované domečky a dřevěné lucerny	99–299 Kč	Za 490 Kč musí být na první fotce vidět motiv, velikost a efekt po rozsvícení. Dáreček
+Hotové dřevěné lampionky na Etsy	22,11 € za březový svícen, personalizovaná lucerna od 18,99 USD	24,90 € bez dopravy bych zkusil jako testovací cenu základního Lumi. Jde o ceny nabídek. Kolik kusů se za ně skutečně prodá, z nich nevyčteme. Etsy Italia
+Pronájem běžné svatební lucerny v ČR	80 Kč za kus v jedné půjčovně	Pronájem Lumi bych zkoušel jako sadu s lokálním předáním. Jednotlivé kusy by přidaly moc práce s výdejem a vracením. svatbybyluu.cz
+
+
+V roce 2025 bylo 42 548 sňatků v Česku a 348 813 v Německu. To ukazuje velikost svatebního trhu, poptávku po Lumi ale teprve změří první objednávky. Pro představu, 5 aktivních partnerů × 3 zakázky ročně × 8 kusů = 120 lampionků ročně. Při modelové ceně 490 Kč za kus je to 58 800 Kč tržeb před náklady. Je to scénář pro placené zakázky, nikoli předpověď prodeje. Statistika
+Kde konkrétně prodávat mimo ZION Market
+Kanál	Co tam nabídnout	První konkrétní krok
+Ústecký advent a Flerjarmark	Rozsvícený Lumi na ukázku, pár hotových kusů a osobní odběr dalších objednávek.	Ústí nad Orlicí nedávno oznámilo poslední volný stánek. Ověř dostupnost u města. Flerjarmark je 20. prosince a stojí za samostatný dotaz pořadateli. Město Ústí nad Orlicí
+Fler a slovenské SAShE	Na Fler dej základní Lumi za 490 Kč jako cenový test. Slovensko můžeš přidat se stejnými fotkami a slovenským popisem.	Začni jednou nabídkou pod názvem „Lumi – dřevěný stolní lampion z březové překližky“. SAShE uvádí provizi 12,3 % z výrobku, poštovné je mimo její základ. Fler.cz
+Svatební místa a půjčovny v okolí	Jeden vzorek a nabídku na sadu 6–12 kusů. Půjčovně nabídni prodej sady do jejího inventáře. Tobě odpadne rozvoz a vracení po každé akci.	Začni u Šípkové stodoly v Džbánově, Třebovského mlýna u Ústí nad Orlicí a svatební půjčovny v Dolním Újezdu u Litomyšle. Jsou to vytipovaní partneři, jejich zájem zatím neznáme. Svatební místo v přírodě
+Kamenný obchod nebo květinářství	Dva až tři kusy na zkoušku a jeden rozsvícený na pultu. Květinář může Lumi nabídnout spolu se svatební výzdobou.	V Litomyšli bych zkusil HANDMADE Gallery. Pro regionální motiv je další kandidát infocentrum v Kostelci nad Orlicí, které prodává regionální výrobky. hmgallery.cz
+Etsy a svatební partneři v Sasku	Na Etsy dvě nabídky, základní Lumi a verzi se jmény a datem. V Sasku nabídni vzorek a cenu za celou sadu.	Pro Etsy použij název „Personalized Wooden Table Lantern – Wedding Centerpiece“. Pro přímý prodej projdi statky a svatební místa kolem Drážďan a Pirny v Bridebooku. Etsy Help
+
+
+Dvě varianty mimo svatby, které dávají smysl právě pro Lumi
+- Lumi Camino. Jeden motiv s mušlí a krátkou kartičkou o pouti. Jako prvního partnera bych zkusil Ultreiu, která už provozuje český obchod s poutnickými předměty. Podobný vzorek pak můžeš ukázat poutnickým obchodům v Portugalsku a Španělsku. Obchod Ultreia
+- Lumi jako suvenýr z místa pobytu. Jeden motiv pro konkrétní penzion, zámek nebo vinařství. Jeden kus svítí na recepci, další host koupí s sebou. Tady vzniká přirozený doobjednávaný sortiment, pokud se první malá série prodá.
+Jak bych to rozjel během 30 dnů
+1. Tento týden vyrob tři stejné kusy a změř čas řezání, sestavení a balení. Nafoť jeden rozsvícený na prostřeném stole a jeden vedle běžné sklenice, aby byla jasná velikost. Ověř stánek v Ústí a vystav nabídku na Fleru.
+2. Příští týden ukaž vzorek pěti místním partnerům. Připrav cenu za jeden kus a za osm kusů. U stávajícího laseru počítej s tím, že při čtyřech hodinách řezu zabere osm kusů 32 strojových hodin. Pokud přijde větší placená zakázka, nech si nacenit externí řez stejného souboru.
+3. Do konce testu připrav Etsy nabídku a spočítej skutečnou cenu doručení. Etsy účtuje 6,5 % z ceny včetně dopravy, pro český účet k tomu 4 % + 0,30 € za zpracování platby a 0,20 USD za vystavení či obnovení nabídky. Před zapnutím dopravy do Německa ověř pravidla pro obaly a LUCID podle konkrétního způsobu prodeje. Etsy Help
+Za první úspěch bych považoval pět zaplacených kusů od běžných kupujících nebo jednu zaplacenou sadu od partnera, u které znáš výdělek po započtení své práce. S tímhle výsledkem už můžeš rozhodnout, jestli má větší smysl zrychlit výrobu, nebo rozšířit prodej.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pomoz me spis taky s marketingem a reklamou, ci kampani
+
+
+
+
+
+
+
+
+
+
+
+
+
+Doba práce: 13 s
+
+
+
+
+
+
+Yose, první kampaň pro Lumi bych postavil na jednom záběru, kdy se lampionek rozsvítí na stole. V listopadu bych placenou reklamou otestoval Lumi jako dárek za 490 Kč. Stejný lampion bych souběžně ukázal svatebním místům a cateringům na prostřeném stole, aby vznikaly poptávky i po Vánocích.
+První kampaň · Rozsviť Lumi
+Natoč 12sekundové video na výšku. Stačí telefon, stůl u okna a skutečný lampionek. Nejdůležitější je první záběr.
+Čas	Co natočit	Text ve videu
+0–3 s	Detail lampionku při rozsvícení	Rozsviť Lumi
+3–7 s	Celek na stole vedle hrnku, aby byla vidět velikost	Dřevěný lampionek z Orlicka
+7–12 s	Detail motivu a návrat na rozsvícený stůl	490 Kč · Napiš „LUMI“
+
+
+Pokud je 490 Kč stále tvoje prodejní cena, použij tenhle text k videu:
+Malý dárek, který se večer rozsvítí. ✨
+
+Lumi je dřevěný stolní lampionek z březové překližky s motivem Království srdce. Hodí se na večerní stůl, na poličku i jako dárek pro někoho, kdo má rád dřevo a jemné světlo.
+
+Lumi · 490 Kč
+
+Napiš nám LUMI do zprávy. Pošleme ti aktuální dostupnost a možnosti doručení nebo osobního odběru.
+
+
+
+Jak bych pustil reklamu
+1. Nejdřív zveřejni video zdarma na Instagramu a Facebooku. Na jeden večer dej skutečný lampionek na stůl do spřátelené kavárny nebo květinářství. Vyfoť ho tam a označ podnik, pokud s tím souhlasí. Získáš záběr z reálného místa a přístup k místnímu publiku.
+2. Pak otestuj jednu placenou reklamu se zprávami. Navrhuji 500 Kč na pět dní, jen pokud máš kapacitu dodat alespoň pět kusů. Začni na Orlicku a v okolí Litomyšle. Objednávku můžeš domluvit ve zprávě, takže zákazník nemusí procházet ZION Market.
+3. Počítej zaplacené objednávky. Při útratě 500 Kč tě pět objednávek stojí 100 Kč za objednávku, dvě už 250 Kč. Únosnou hranici určíš z ceny po odečtení výroby, vlastní práce, balení, poplatků a částky, která ti má zůstat. Rozpočet 500 Kč je návrh prvního testu. Skutečnou marži na Lumi zatím neznáme.
+Celoroční kampaň · Lumi na slavnostním stole
+Tady bych peníze nejdřív vložil do jednoho společného focení s floristkou, cateringem nebo svatebním místem. Postavte jeden hotový stůl, vyfoťte ho za šera a zveřejněte příspěvek společně. Z jedné scény získáš fotku pro nabídku partnerům, krátké video pro Instagram a podklad pro zahraniční verzi kampaně.
+Jak bude váš svatební stůl vypadat po setmění?
+
+Lumi je malý dřevěný lampionek, který můžete vyzkoušet přímo ve své výzdobě. Hodí se na stoly hostů, k uvítací ceduli i na bar.
+
+Plánujete svatbu, večeři nebo firemní akci? Napište nám STŮL, termín a přibližný počet stolů. Domluvíme vzorek a připravíme nabídku na celou sadu.
+
+
+
+První placenou reklamu bych dal na dárkový Lumi. U svateb bych začal společnou fotkou a pěti konkrétními partnery. První placená sada ti o celoročním potenciálu řekne víc než počet zhlédnutí svatebního videa.

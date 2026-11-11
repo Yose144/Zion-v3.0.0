@@ -1,0 +1,627 @@
+'use client';
+
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import {
+  Users, Crown, ShieldCheck, Bot, ArrowRight, Github,
+  Sprout, Flame, Waves, Wind, Sparkles, Layers,
+  GitBranch, Heart, BookOpen, Compass, Globe2, UserPlus,
+  Rocket, Cpu, Network, Brain, Code2, Server, TestTube2, FileText,
+  Mountain, Sailboat, Sunrise, Sun, Pyramid,
+} from 'lucide-react';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
+
+const TeamCopy = {
+  kicker: { cs: `Lidé a agenti za ZION ekosystémem`, en: `The people and agents behind the ZION ecosystem` },
+  title: { cs: `Dev Team`, en: `Dev Team` },
+  intro: {
+    cs: `ZION staví malý kruh správců, otevření přispěvatelé a autonomní agenti. Žádný zakladatelský podíl, žádný VIP vstup — každý ZION vzniká z práce. Toto je pracovní skica týmu; obsazení rolí se průběžně doplňuje.`,
+    en: `ZION is built by a small circle of stewards, open contributors and autonomous agents. No founder allocation, no VIP entrance — every ZION comes from work. This is a working sketch of the team; roles are being filled over time.`,
+  },
+  chipOpenSource: { cs: `Open source · MIT`, en: `Open source · MIT` },
+  chipDao: { cs: `DAO governance`, en: `DAO governed` },
+  chipFair: { cs: `Fair launch — bez founder alokace`, en: `Fair launch — no founder allocation` },
+
+  coreCircle: { cs: `Jádro`, en: `Core Circle` },
+  coreCircleTitle: { cs: `Správcovský kruh`, en: `Stewardship Circle` },
+  coreCircleDesc: {
+    cs: `Tři role drží vizi, klíče a kontinuitu. Správa ≠ vlastnictví — rozhodnutí o fondech prochází DAO a guardian multisig.`,
+    en: `Three roles hold the vision, the keys, and continuity. Stewardship ≠ ownership — fund decisions pass through DAO and guardian multisig.`,
+  },
+
+  founderRole: { cs: `Founder & Architect`, en: `Founder & Architect` },
+  founderName: { cs: `Yeshuae`, en: `Yeshuae` },
+  founderDesc: {
+    cs: `Založil ZION v létě 2025 — spolu s AI. Navrhuje protokol, ekonomiku, filozofii i mapu L1–L6. Píše, kóduje, těží, sází.`,
+    en: `Founded ZION in summer 2025 — together with AI. Designs the protocol, the economics, the philosophy and the L1–L6 map. Writes, codes, mines, plants.`,
+  },
+  founderTags: ['Vision', 'Protocol', 'L1–L6', 'Terra Nova'],
+
+  trusteeRole: { cs: `Trustee`, en: `Trustee` },
+  trusteeName: { cs: `Vyhlašuje se`, en: `To be announced` },
+  trusteeDesc: {
+    cs: `Nezávislý správce svěřenských klíčů a guardian multisig. Drží kontinuitu fondu a eskalační cesty — mimo zakladatele.`,
+    en: `Independent steward of trustee keys and guardian multisig. Holds fund continuity and escalation paths — outside the founder.`,
+  },
+  trusteeTags: ['Guardian Multisig', 'Escrow', 'Continuity'],
+
+  agentRole: { cs: `Autonomous Engineering`, en: `Autonomous Engineering` },
+  agentName: { cs: `Devin — AI agent`, en: `Devin — AI agent` },
+  agentDesc: {
+    cs: `Autonomní vývojový agent. Čte repo, píše a deployuje kód, drží testy zelené — pod dohledem lidských správců. ZION je první blockchain, kde je AI spolutvůrce, ne jen nástroj.`,
+    en: `Autonomous engineering agent. Reads the repo, writes and deploys code, keeps tests green — under human stewardship. ZION is the first chain where AI is a co-builder, not just a tool.`,
+  },
+  agentTags: ['Code', 'Deploy', 'Tests', 'Docs'],
+
+  statusActive: { cs: `Aktivní`, en: `Active` },
+  statusOpen: { cs: `Otevřená role`, en: `Open role` },
+
+  l5Leads: { cs: `L5 Free World`, en: `L5 Free World` },
+  l5LeadsTitle: { cs: `Vedení L5 projektů`, en: `L5 Project Leads` },
+  l5LeadsDesc: {
+    cs: `Šest fyzických komunit Terra Nova plus orbitální Issobella — každý projekt drží svůj element. Vedení se rodí z místních kruhů, ne z centrály.`,
+    en: `Six physical Terra Nova communities plus orbital Issobella — each project holds its own element. Leadership grows from local circles, not from a headquarters.`,
+  },
+  projectLead: { cs: `Project Lead`, en: `Project Lead` },
+  visitProject: { cs: `Projekt`, en: `Project` },
+
+  engKicker: { cs: `Engineering`, en: `Engineering` },
+  engTitle: { cs: `Vývojový tým — otevřené pozice`, en: `Engineering Team — Open Positions` },
+  engDesc: {
+    cs: `Klíčové technické role, které obsazujeme — protokol, bridge, AI, web, infra a bezpečnost. Práce je veřejná a ověřitelná: každý commit, release i audit zůstává v repozitáři.`,
+    en: `The core technical roles we are staffing — protocol, bridge, AI, web, infra and security. The work is public and verifiable: every commit, release and audit lives in the repository.`,
+  },
+  roleCore: { cs: `Core Protocol Engineer`, en: `Core Protocol Engineer` },
+  roleCoreDesc: { cs: `Rust · L1 konsenzus, UTXO, PoW algoritmus, mempool`, en: `Rust · L1 consensus, UTXO, PoW algorithm, mempool` },
+  roleEvm: { cs: `Multichain Engineer`, en: `Multichain Engineer` },
+  roleEvmDesc: { cs: `Solidity · TypeScript · L2 bridge, DAO, pooly`, en: `Solidity · TypeScript · L2 bridge, DAO, pools` },
+  roleAi: { cs: `AI / ML Engineer`, en: `AI / ML Engineer` },
+  roleAiDesc: { cs: `PyTorch · LoRA/QLoRA · L3 inference a orchestrace`, en: `PyTorch · LoRA/QLoRA · L3 inference and orchestration` },
+  roleWeb: { cs: `Full-stack Engineer`, en: `Full-stack Engineer` },
+  roleWebDesc: { cs: `Next.js · React · Node — L4 OASIS a veřejný web`, en: `Next.js · React · Node — L4 OASIS and the public web` },
+  roleDevops: { cs: `DevOps / SRE`, en: `DevOps / SRE` },
+  roleDevopsDesc: { cs: `Linux · systemd · nginx · monitoring · CI/CD`, en: `Linux · systemd · nginx · monitoring · CI/CD` },
+  roleSecurity: { cs: `Security Researcher`, en: `Security Researcher` },
+  roleSecurityDesc: { cs: `Kryptografie · audit konsenzu · fuzzing · pentest`, en: `Cryptography · consensus audit · fuzzing · pentest` },
+  roleQa: { cs: `QA / Test Engineer`, en: `QA / Test Engineer` },
+  roleQaDesc: { cs: `E2E · chaos testy · release gates · regrese`, en: `E2E · chaos tests · release gates · regression` },
+  roleDocs: { cs: `DevRel / Technical Writer`, en: `DevRel / Technical Writer` },
+  roleDocsDesc: { cs: `Dokumentace · SDK guides · API reference`, en: `Documentation · SDK guides · API reference` },
+
+  sketchKicker: { cs: `Celková skica`, en: `The Big Sketch` },
+  sketchTitle: { cs: `Jak je tým poskládaný`, en: `How the team is organized` },
+  sketchDesc: {
+    cs: `Ne korporace, ale prstence: správcovský kruh drží klíče a vizi, layer pody staví jednotlivé vrstvy, komunitní guildy nesou provoz. Všechno teče přes DAO.`,
+    en: `Not a corporation — concentric rings: the stewardship circle holds keys and vision, layer pods build each layer, community guilds carry operations. Everything flows through the DAO.`,
+  },
+
+  ringSteward: { cs: `Správcovský kruh`, en: `Stewardship ring` },
+  ringStewardDesc: { cs: `Founder · Trustee · Guardian multisig`, en: `Founder · Trustee · Guardian multisig` },
+  ringPods: { cs: `Layer pody`, en: `Layer pods` },
+  ringPodsDesc: { cs: `L1–L6 — malé týmy, jasný scope`, en: `L1–L6 — small teams, clear scope` },
+  ringGuilds: { cs: `Komunitní guildy`, en: `Community guilds` },
+  ringGuildsDesc: { cs: `Miners · Stewards · Creators · Pilgrims`, en: `Miners · Stewards · Creators · Pilgrims` },
+
+  podFocus: { cs: `Zaměření`, en: `Focus` },
+
+  joinKicker: { cs: `Přidej se`, en: `Join us` },
+  joinTitle: { cs: `Místo v kruhu je otevřené`, en: `A seat in the circle is open` },
+  joinDesc: {
+    cs: `Hledáme vedení L5/L6 projektů a vývojáře napříč stackem — Rust protokol, Solidity bridge, AI/ML, Next.js, DevOps, security, QA. Začni v repozitáři — kód mluví za vše.`,
+    en: `We are looking for L5/L6 project leads and engineers across the stack — Rust protocol, Solidity bridge, AI/ML, Next.js, DevOps, security, QA. Start in the repository — code speaks for itself.`,
+  },
+  joinGithub: { cs: `Repozitář na GitHubu`, en: `GitHub repository` },
+  joinDocs: { cs: `Dokumentace`, en: `Documentation` },
+};
+
+const CORE = [
+  {
+    key: 'founder',
+    icon: Crown,
+    accent: '252, 209, 22',
+    text: 'text-zion-gold',
+    ring: 'from-zion-gold via-amber-400 to-yellow-200',
+    name: TeamCopy.founderName,
+    role: TeamCopy.founderRole,
+    desc: TeamCopy.founderDesc,
+    tags: TeamCopy.founderTags,
+    monogram: 'Y',
+    status: 'active' as const,
+  },
+  {
+    key: 'trustee',
+    icon: ShieldCheck,
+    accent: '147, 51, 234',
+    text: 'text-zion-purple',
+    ring: 'from-zion-purple via-fuchsia-500 to-violet-300',
+    name: TeamCopy.trusteeName,
+    role: TeamCopy.trusteeRole,
+    desc: TeamCopy.trusteeDesc,
+    tags: TeamCopy.trusteeTags,
+    monogram: 'T',
+    status: 'open' as const,
+  },
+  {
+    key: 'agent',
+    icon: Bot,
+    accent: '6, 182, 212',
+    text: 'text-zion-cyan',
+    ring: 'from-zion-cyan via-sky-400 to-cyan-200',
+    name: TeamCopy.agentName,
+    role: TeamCopy.agentRole,
+    desc: TeamCopy.agentDesc,
+    tags: TeamCopy.agentTags,
+    monogram: 'AI',
+    status: 'active' as const,
+  },
+];
+
+const L5_LEADS = [
+  {
+    key: 'genesis',
+    name: 'Genesis Garden',
+    element: { cs: 'Země · Kořen', en: 'Earth · Root' },
+    location: { cs: 'Sabacheira · Tomar, Portugalsko', en: 'Sabacheira · Tomar, Portugal' },
+    icon: Sprout,
+    accent: '16, 185, 129',
+    text: 'text-emerald-300',
+    href: '/terranova/genesis',
+  },
+  {
+    key: 'dharma',
+    name: 'Dharma Temple',
+    element: { cs: 'Oheň · Kmen', en: 'Fire · Trunk' },
+    location: { cs: 'La Palma, Kanárské ostrovy', en: 'La Palma, Canary Islands' },
+    icon: Flame,
+    accent: '251, 146, 60',
+    text: 'text-amber-300',
+    href: '/terranova/dharma-temple',
+  },
+  {
+    key: 'piko',
+    name: 'Te Pīko Ora',
+    element: { cs: 'Voda · Koruna', en: 'Water · Crown' },
+    location: { cs: 'Raiatea, Francouzská Polynésie', en: 'Raiatea, French Polynesia' },
+    icon: Waves,
+    accent: '56, 189, 248',
+    text: 'text-sky-300',
+    href: '/terranova/te-piko-ora',
+  },
+  {
+    key: 'bohemia',
+    name: 'Golden Republic Bohemia',
+    element: { cs: 'Vzduch · Srdce', en: 'Air · Heart' },
+    location: { cs: 'Čechy, Česká republika', en: 'Bohemia, Czech Republic' },
+    icon: Wind,
+    accent: '167, 139, 250',
+    text: 'text-violet-300',
+    href: '/terranova/golden-republic-bohemia',
+  },
+  {
+    key: 'lanka',
+    name: 'Bodhi Lanka',
+    element: { cs: 'Akáša · Éter', en: 'Akasha · Ether' },
+    location: { cs: 'Srí Lanka', en: 'Sri Lanka' },
+    icon: Sparkles,
+    accent: '232, 121, 249',
+    text: 'text-fuchsia-300',
+    href: '/terranova/bodhi-lanka',
+  },
+  {
+    key: 'ekam',
+    name: 'Ekam',
+    element: { cs: 'Jednota · Dokončení', en: 'Oneness · Completion' },
+    location: { cs: 'Andhra Pradesh, Indie', en: 'Andhra Pradesh, India' },
+    icon: Sun,
+    accent: '245, 222, 130',
+    text: 'text-amber-200',
+    href: '/terranova/ekam',
+  },
+  {
+    key: 'nova-amerika',
+    name: 'LUMI',
+    element: { cs: 'Most · Paměť', en: 'Bridge · Memory' },
+    location: { cs: 'Kostarika · Nová Amerika', en: 'Costa Rica · Nová Amerika' },
+    icon: Globe2,
+    accent: '20, 184, 166',
+    text: 'text-teal-300',
+    href: '/terranova/nova-amerika',
+  },
+  {
+    key: 'uluru',
+    name: 'Uluru',
+    element: { cs: 'Kámen · Píseň', en: 'Stone · Song' },
+    location: { cs: 'Northern Territory, Austrálie', en: 'Northern Territory, Australia' },
+    icon: Mountain,
+    accent: '234, 88, 12',
+    text: 'text-orange-300',
+    href: '/terranova/uluru',
+  },
+  {
+    key: 'maria-del-camino',
+    name: 'María del Camino',
+    element: { cs: 'Moře · Cesta', en: 'Ocean · Way' },
+    location: { cs: 'Světové oceány · Galicie', en: 'World oceans · Galicia' },
+    icon: Sailboat,
+    accent: '14, 165, 233',
+    text: 'text-sky-300',
+    href: '/terranova/maria-del-camino',
+  },
+  {
+    key: 'boa-esperanca',
+    name: 'Boa Esperança',
+    element: { cs: 'Obrat · Naděje', en: 'Turn · Hope' },
+    location: { cs: 'Mys dobré naděje, Jihoafrická republika', en: 'Cape of Good Hope, South Africa' },
+    icon: Sunrise,
+    accent: '245, 158, 11',
+    text: 'text-amber-300',
+    href: '/terranova/boa-esperanca',
+  },
+  {
+    key: 'kailash',
+    name: 'Kailash',
+    element: { cs: 'Oheň · Očištění', en: 'Fire · Purification' },
+    location: { cs: 'Ngari, Tibet', en: 'Ngari, Tibet' },
+    icon: Flame,
+    accent: '165, 180, 252',
+    text: 'text-indigo-300',
+    href: '/terranova/kailash',
+  },
+  {
+    key: 'amenti',
+    name: 'Amenti',
+    element: { cs: 'Záznam · Vzpomínka', en: 'Record · Remembrance' },
+    location: { cs: 'Gíza, Egypt', en: 'Giza, Egypt' },
+    icon: Pyramid,
+    accent: '52, 211, 153',
+    text: 'text-emerald-300',
+    href: '/terranova/amenti',
+  },
+  {
+    key: 'issobella',
+    name: 'ZION Issobella',
+    element: { cs: 'Kosmos · Nirvana', en: 'Cosmos · Nirvana' },
+    location: { cs: 'Orbita + Kostarika (pozemní stanice)', en: 'Orbit + Costa Rica (ground station)' },
+    icon: Rocket,
+    accent: '129, 140, 248',
+    text: 'text-indigo-300',
+    href: '/l6-issobella',
+  },
+];
+
+const ENGINEERING = [
+  { key: 'core', role: TeamCopy.roleCore, desc: TeamCopy.roleCoreDesc, icon: Cpu, accent: '252, 209, 22', text: 'text-zion-gold' },
+  { key: 'evm', role: TeamCopy.roleEvm, desc: TeamCopy.roleEvmDesc, icon: Network, accent: '6, 182, 212', text: 'text-zion-cyan' },
+  { key: 'ai', role: TeamCopy.roleAi, desc: TeamCopy.roleAiDesc, icon: Brain, accent: '147, 51, 234', text: 'text-zion-purple' },
+  { key: 'web', role: TeamCopy.roleWeb, desc: TeamCopy.roleWebDesc, icon: Code2, accent: '16, 185, 129', text: 'text-emerald-300' },
+  { key: 'devops', role: TeamCopy.roleDevops, desc: TeamCopy.roleDevopsDesc, icon: Server, accent: '251, 146, 60', text: 'text-amber-300' },
+  { key: 'security', role: TeamCopy.roleSecurity, desc: TeamCopy.roleSecurityDesc, icon: ShieldCheck, accent: '248, 113, 113', text: 'text-red-300' },
+  { key: 'qa', role: TeamCopy.roleQa, desc: TeamCopy.roleQaDesc, icon: TestTube2, accent: '56, 189, 248', text: 'text-sky-300' },
+  { key: 'docs', role: TeamCopy.roleDocs, desc: TeamCopy.roleDocsDesc, icon: FileText, accent: '167, 139, 250', text: 'text-violet-300' },
+];
+
+const PODS = [
+  { layer: 'L1', name: 'Chain Core', focus: { cs: 'Konsenzus · UTXO · těžba', en: 'Consensus · UTXO · mining' }, status: 'active' as const, accent: '252, 209, 22' },
+  { layer: 'L2', name: 'Multichain', focus: { cs: 'Bridge · DAO · DeFi', en: 'Bridge · DAO · DeFi' }, status: 'active' as const, accent: '6, 182, 212' },
+  { layer: 'L3', name: 'Hiran', focus: { cs: 'AI Native · NCL · WARP', en: 'AI Native · NCL · WARP' }, status: 'active' as const, accent: '147, 51, 234' },
+  { layer: 'L4', name: 'OASIS', focus: { cs: 'Metaverse · Golden Egg', en: 'Metaverse · Golden Egg' }, status: 'active' as const, accent: '16, 185, 129' },
+  { layer: 'L5', name: 'Terra Nova', focus: { cs: 'Komunity · fond · půda', en: 'Communities · fund · land' }, status: 'open' as const, accent: '251, 146, 60' },
+  { layer: 'L6', name: 'Issobella', focus: { cs: 'Vědomí · příběh · knihy', en: 'Consciousness · story · books' }, status: 'open' as const, accent: '232, 121, 249' },
+];
+
+function StatusBadge({ status, cs, lang }: { status: 'active' | 'open'; cs: boolean; lang: Lang }) {
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold border shrink-0 ${
+      status === 'active'
+        ? 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20'
+        : 'bg-zion-gold/10 text-zion-gold border-zion-gold/25'
+    }`}>
+      {status === 'active'
+        ? tx5(TeamCopy.statusActive, lang)
+        : tx5(TeamCopy.statusOpen, lang)}
+    </span>
+  );
+}
+
+export default function TeamPage() {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+
+  return (
+    <div className="zion-page">
+      <div className="zion-container max-w-7xl space-y-16">
+
+        {/* ── HERO ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="zion-rainbow-card p-6 md:p-10"
+          style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
+        >
+          <div className="space-y-5">
+            <div className="space-y-5 max-w-3xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
+                <Users className="h-4 w-4" />
+                ZION · Terra Nova · Team
+              </div>
+              <div>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
+                  {tx5(TeamCopy.kicker, lang)}
+                </p>
+                <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
+                  {tx5(TeamCopy.title, lang)}
+                </h1>
+              </div>
+              <p className="text-lg text-gray-300">
+                {tx5(TeamCopy.intro, lang)}
+              </p>
+              <div className="flex flex-wrap gap-3 text-xs">
+                <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-amber-200">
+                  <GitBranch className="h-3 w-3" /> {tx5(TeamCopy.chipOpenSource, lang)}
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-emerald-200">
+                  <ShieldCheck className="h-3 w-3" /> {tx5(TeamCopy.chipDao, lang)}
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
+                  <Heart className="h-3 w-3" /> {tx5(TeamCopy.chipFair, lang)}
+                </span>
+              </div>
+            </div>
+            <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/team/hero.webp?v=engine-v1"
+                srcSet="/images/team/hero-m.webp?v=engine-v1 960w, /images/team/hero.webp?v=engine-v1 1672w"
+                sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                alt={cs ? 'ZION Team — lidé, agenti a komunita kolem Stromu života' : t5('ZION Team — people, agents and community around the Tree of Life', lang)}
+                width={1672}
+                height={941}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                className="w-full object-cover"
+              />
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ── CORE CIRCLE ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
+        >
+          <div className="flex flex-col gap-2 mb-8">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(TeamCopy.coreCircle, lang)}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Crown className="h-7 w-7 text-zion-gold" />
+              {tx5(TeamCopy.coreCircleTitle, lang)}
+            </h2>
+            <p className="text-sm text-gray-400 max-w-3xl">{tx5(TeamCopy.coreCircleDesc, lang)}</p>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            {CORE.map((person) => (
+              <div
+                key={person.key}
+                className="zion-rainbow-sub p-6 flex flex-col"
+                style={{ '--rc': person.accent } as React.CSSProperties}
+              >
+                <div className="flex items-start justify-between mb-5">
+                  <div className={`relative h-16 w-16 rounded-full bg-gradient-to-br ${person.ring} p-[2px]`}>
+                    <div className="flex h-full w-full items-center justify-center rounded-full bg-[#0d0d0d]">
+                      <span className={`text-lg font-bold ${person.text}`}>{person.monogram}</span>
+                    </div>
+                  </div>
+                  <StatusBadge status={person.status} cs={cs} lang={lang} />
+                </div>
+                <h3 className="text-xl font-bold text-white">{tx5(person.name, lang)}</h3>
+                <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${person.text} mt-1 mb-3`}>
+                  {tx5(person.role, lang)}
+                </p>
+                <p className="text-sm text-gray-400 leading-relaxed flex-1">{tx5(person.desc, lang)}</p>
+                <div className="flex flex-wrap gap-1.5 mt-4">
+                  {person.tags.map((tag) => (
+                    <span key={tag} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-gray-300">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+
+        {/* ── L5 PROJECT LEADS ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+        >
+          <div className="flex flex-col gap-2 mb-8">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(TeamCopy.l5Leads, lang)}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Globe2 className="h-7 w-7 text-emerald-300" />
+              {tx5(TeamCopy.l5LeadsTitle, lang)}
+            </h2>
+            <p className="text-sm text-gray-400 max-w-3xl">{tx5(TeamCopy.l5LeadsDesc, lang)}</p>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {L5_LEADS.map((lead) => (
+              <Link
+                key={lead.key}
+                href={lead.href}
+                className="zion-rainbow-sub p-5 group hover:bg-white/5 transition-colors flex flex-col"
+                style={{ '--rc': lead.accent } as React.CSSProperties}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div
+                    className="flex h-12 w-12 items-center justify-center rounded-full border"
+                    style={{ borderColor: `rgba(${lead.accent},0.4)`, background: `rgba(${lead.accent},0.08)` }}
+                  >
+                    <lead.icon className={`h-5 w-5 ${lead.text}`} />
+                  </div>
+                  <StatusBadge status="open" cs={cs} lang={lang} />
+                </div>
+                <h3 className="font-semibold text-white leading-tight">{lead.name}</h3>
+                <p className={`text-[11px] font-semibold uppercase tracking-[0.15em] ${lead.text} mt-1`}>
+                  {tx5(lead.element, lang)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1.5">{tx5(lead.location, lang)}</p>
+                <div className="mt-auto pt-4 flex items-center justify-between">
+                  <span className="text-xs text-gray-400">{tx5(TeamCopy.projectLead, lang)}</span>
+                  <ArrowRight className="h-4 w-4 text-gray-500 group-hover:translate-x-1 group-hover:text-white transition-all" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </motion.section>
+
+        {/* ── ENGINEERING — OPEN ROLES ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+        >
+          <div className="flex flex-col gap-2 mb-8">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(TeamCopy.engKicker, lang)}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Code2 className="h-7 w-7 text-zion-cyan" />
+              {tx5(TeamCopy.engTitle, lang)}
+            </h2>
+            <p className="text-sm text-gray-400 max-w-3xl">{tx5(TeamCopy.engDesc, lang)}</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {ENGINEERING.map((seat) => (
+              <div
+                key={seat.key}
+                className="zion-rainbow-sub p-5 flex flex-col"
+                style={{ '--rc': seat.accent } as React.CSSProperties}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div
+                    className="flex h-11 w-11 items-center justify-center rounded-xl border"
+                    style={{ borderColor: `rgba(${seat.accent},0.4)`, background: `rgba(${seat.accent},0.08)` }}
+                  >
+                    <seat.icon className={`h-5 w-5 ${seat.text}`} />
+                  </div>
+                  <StatusBadge status="open" cs={cs} lang={lang} />
+                </div>
+                <h3 className="font-semibold text-white leading-tight">{tx5(seat.role, lang)}</h3>
+                <p className="text-xs text-gray-500 mt-2 leading-relaxed">{tx5(seat.desc, lang)}</p>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+
+        {/* ── BIG SKETCH ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+        >
+          <div className="flex flex-col gap-2 mb-8">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tx5(TeamCopy.sketchKicker, lang)}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Layers className="h-7 w-7 text-zion-purple" />
+              {tx5(TeamCopy.sketchTitle, lang)}
+            </h2>
+            <p className="text-sm text-gray-400 max-w-3xl">{tx5(TeamCopy.sketchDesc, lang)}</p>
+          </div>
+
+          {/* Ring 1 — stewardship */}
+          <div className="grid gap-4 md:grid-cols-3 mb-4">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+              <div className="flex items-center gap-2 mb-1">
+                <Crown className="h-4 w-4 text-zion-gold" />
+                <p className="text-sm font-semibold text-zion-gold">{tx5(TeamCopy.ringSteward, lang)}</p>
+              </div>
+              <p className="text-xs text-gray-400">{tx5(TeamCopy.ringStewardDesc, lang)}</p>
+            </div>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+              <div className="flex items-center gap-2 mb-1">
+                <Layers className="h-4 w-4 text-zion-purple" />
+                <p className="text-sm font-semibold text-zion-purple">{tx5(TeamCopy.ringPods, lang)}</p>
+              </div>
+              <p className="text-xs text-gray-400">{tx5(TeamCopy.ringPodsDesc, lang)}</p>
+            </div>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+              <div className="flex items-center gap-2 mb-1">
+                <Users className="h-4 w-4 text-zion-cyan" />
+                <p className="text-sm font-semibold text-zion-cyan">{tx5(TeamCopy.ringGuilds, lang)}</p>
+              </div>
+              <p className="text-xs text-gray-400">{tx5(TeamCopy.ringGuildsDesc, lang)}</p>
+            </div>
+          </div>
+
+          {/* Ring 2 — layer pods */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+            {PODS.map((pod) => (
+              <div
+                key={pod.layer}
+                className="zion-rainbow-sub p-4 text-center"
+                style={{ '--rc': pod.accent } as React.CSSProperties}
+              >
+                <p className="text-2xl font-bold text-white">{pod.layer}</p>
+                <p className="text-xs font-semibold text-gray-300 mt-0.5">{pod.name}</p>
+                <p className="text-[11px] text-gray-500 mt-1.5 leading-snug">{tx5(pod.focus, lang)}</p>
+                <div className="mt-3 flex justify-center">
+                  <StatusBadge status={pod.status} cs={cs} lang={lang} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+
+        {/* ── JOIN CTA ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+        >
+          <div className="flex flex-col md:flex-row md:items-center gap-6 justify-between">
+            <div className="max-w-2xl">
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500 mb-2">{tx5(TeamCopy.joinKicker, lang)}</p>
+              <h2 className="text-2xl sm:text-3xl font-semibold text-white flex items-center gap-3 mb-3">
+                <UserPlus className="h-7 w-7 text-zion-cyan" />
+                {tx5(TeamCopy.joinTitle, lang)}
+              </h2>
+              <p className="text-sm text-gray-400">{tx5(TeamCopy.joinDesc, lang)}</p>
+            </div>
+            <div className="flex flex-wrap gap-3 shrink-0">
+              <a
+                href="https://github.com/Yose144/Zion-v3.0.0"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="zion-button-primary inline-flex items-center gap-2"
+              >
+                <Github className="h-4 w-4" />
+                {tx5(TeamCopy.joinGithub, lang)}
+              </a>
+              <Link href="/docs" className="zion-button-secondary inline-flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                {tx5(TeamCopy.joinDocs, lang)}
+              </Link>
+            </div>
+          </div>
+          <div className="mt-6 flex items-center gap-2 text-xs text-gray-500">
+            <Compass className="h-3.5 w-3.5 text-zion-gold/60" />
+            {cs
+              ? 'Tato stránka je živý návrh — obsazení rolí se aktualizuje, jak tým roste.'
+              : 'This page is a living sketch — roles update as the team grows.'}
+          </div>
+        </motion.section>
+
+      </div>
+    </div>
+  );
+}

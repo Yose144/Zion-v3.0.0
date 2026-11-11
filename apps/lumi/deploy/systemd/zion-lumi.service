@@ -1,0 +1,33 @@
+[Unit]
+Description=Lumi — dřevěné lampiony (Next.js e-shop)
+Documentation=https://lumi.zionterranova.com
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/opt/zion/APP&WEB/Lumi
+EnvironmentFile=/etc/zion/lumi.env
+Environment=NODE_ENV=production
+Environment=PORT=3200
+Environment=HOSTNAME=127.0.0.1
+Environment=NEXT_TELEMETRY_DISABLED=1
+ExecStart=/usr/local/bin/node .next/standalone/server.js
+Restart=always
+RestartSec=3
+TimeoutStopSec=20
+KillSignal=SIGTERM
+# SQLite soubory (db/wal/shm) musí být čitelné jen pro službu.
+UMask=0077
+
+# Sandbox: /usr, /boot a /etc jsou read-only; aplikace i data zůstávají zapisovatelné.
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+ReadWritePaths=/opt/zion/data/lumi
+
+[Install]
+WantedBy=multi-user.target

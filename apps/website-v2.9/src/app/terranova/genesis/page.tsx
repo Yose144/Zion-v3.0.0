@@ -428,8 +428,8 @@ export default function ZahradaGenesisPage() {
             </div>
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/genesis-garden/hero.webp"
-                srcSet="/images/genesis-garden/hero-m.webp 960w, /images/genesis-garden/hero.webp 1280w"
+                src="/images/genesis-garden/hero.webp?v=engine-v1"
+                srcSet="/images/genesis-garden/hero-m.webp?v=engine-v1 960w, /images/genesis-garden/hero.webp?v=engine-v1 1280w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt={cs ? 'Genesis Garden — koncept' : t5('Genesis Garden — concept render', lang)}
                 width={1280}

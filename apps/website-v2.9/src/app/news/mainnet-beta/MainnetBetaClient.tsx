@@ -125,8 +125,8 @@ export default function MainnetBetaClient() {
 
           <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-2xl border border-white/10">
             <img
-              src="/images/news/beta-cosmic-utopia.webp"
-              srcSet="/images/news/beta-cosmic-utopia-m.webp 960w, /images/news/beta-cosmic-utopia.webp 1672w"
+              src="/images/news/beta-cosmic-utopia.webp?v=engine-v1"
+              srcSet="/images/news/beta-cosmic-utopia-m.webp?v=engine-v1 960w, /images/news/beta-cosmic-utopia.webp?v=engine-v1 1672w"
               sizes="(min-width: 768px) 46rem, 100vw"
               alt={t.imageAlt}
               width={1672}

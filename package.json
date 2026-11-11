@@ -9,6 +9,7 @@
     "apps/pool-ui",
     "apps/IntroPage",
     "apps/MarketPlace",
+    "apps/lumi",
     "apps/nirvana",
     "apps/OasisWeb",
     "apps/website-v2.9",
@@ -19,10 +20,11 @@
     "build:pool-ui": "npm run build -w zion-pool-ui",
     "build:intro": "npm run build -w zion-intro",
     "build:market": "npm run build -w zion-marketplace",
+    "build:lumi": "npm run build -w lumi",
     "build:nirvana": "npm run build -w zion-nirvana",
     "build:oasis": "npm run build -w oasis-web",
     "build:web": "npm run build -w zion-web-v3.2.0",
-    "build:all": "npm run build:pool-ui && npm run build:intro && npm run build:nirvana && npm run build:oasis && npm run build:web && npm run build:market",
+    "build:all": "npm run build:pool-ui && npm run build:intro && npm run build:nirvana && npm run build:oasis && npm run build:web && npm run build:market && npm run build:lumi",
     "postinstall": "npm run db:generate -w zion-marketplace"
   },
   "overrides": {

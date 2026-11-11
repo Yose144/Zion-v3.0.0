@@ -518,8 +518,8 @@ export default function MariaDelCaminoPage() {
             </div>
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/maria-del-camino/hero.webp"
-                srcSet="/images/maria-del-camino/hero-m.webp 960w, /images/maria-del-camino/hero.webp 1280w"
+                src="/images/maria-del-camino/hero.webp?v=engine-v1"
+                srcSet="/images/maria-del-camino/hero-m.webp?v=engine-v1 960w, /images/maria-del-camino/hero.webp?v=engine-v1 1280w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt="María del Camino — tři plachetnice Tres Marías na oceánu při západu slunce"
                 width={1600}

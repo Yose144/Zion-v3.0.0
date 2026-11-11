@@ -1,5 +1,7 @@
 'use client';
 
+import { designImage } from '@/lib/design-image';
+
 import { useState, useEffect } from 'react';
 import { X, Minus, Plus, ShoppingCart, Ruler, Box, Coins, FileText, Flame } from 'lucide-react';
 import type { ShopProductData } from '@/types/shop';
@@ -92,7 +94,7 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
               </div>
             ) : (
               <img
-                src={product.image}
+                src={designImage(product.image)}
                 alt={product.name}
                 onError={() => setImgError(true)}
                 className="w-full h-full object-cover"

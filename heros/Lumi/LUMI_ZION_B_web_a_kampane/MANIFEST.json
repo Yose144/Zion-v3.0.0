@@ -1,0 +1,645 @@
+{
+  "version": 1,
+  "style": "ZION Design Engine v1.0 · B · ZION",
+  "slots": [
+    {
+      "route": "/",
+      "slot": "Hero / Rozsvícený dřevěný lampion Lumi na stole",
+      "original": "/images/galerie/03-vecerni-svetlo.webp",
+      "target": "/images/lumi-b/domu-hero-4x3.webp",
+      "note": "Široká verze domu-hero.webp je pro panoramatický slot."
+    },
+    {
+      "route": "/",
+      "slot": "Svatební stoly",
+      "original": "/images/galerie/03-vecerni-svetlo.webp",
+      "target": "/images/lumi-b/svatba-hero-4x3.webp",
+      "note": ""
+    },
+    {
+      "route": "/",
+      "slot": "Firemní dárky",
+      "original": "/images/galerie/02-konstrukce.webp",
+      "target": "/images/lumi-b/firmy-4x3.webp",
+      "note": ""
+    },
+    {
+      "route": "/",
+      "slot": "Večery doma",
+      "original": "/images/produkt-lumi-2.webp",
+      "target": "/images/lumi-b/domu-hero-4x3.webp",
+      "note": ""
+    },
+    {
+      "route": "/",
+      "slot": "Pro hosty a penziony",
+      "original": "/images/pribeh/misto-navic.webp",
+      "target": "/images/lumi-b/penzion-4x3.webp",
+      "note": ""
+    },
+    {
+      "route": "/",
+      "slot": "Dílna a příběh lampionu",
+      "original": "/images/pribeh/svetla-u-brany.webp",
+      "target": "/images/lumi-b/dilna-4x3.webp",
+      "note": ""
+    },
+    {
+      "route": "/",
+      "slot": "Prohlédněte si ho zblízka / 3D fallback",
+      "original": "/images/galerie/03-vecerni-svetlo.webp",
+      "target": "/images/lumi-b/3d-poster.webp",
+      "note": ""
+    },
+    {
+      "route": "/",
+      "slot": "Galerie / Večerní světlo",
+      "original": "/images/galerie/03-vecerni-svetlo.webp",
+      "target": "/images/lumi-b/domu-hero-4x3.webp",
+      "note": ""
+    },
+    {
+      "route": "/",
+      "slot": "Galerie / Konstrukce",
+      "original": "/images/galerie/02-konstrukce.webp",
+      "target": "/images/lumi-b/3d-konstrukce.webp",
+      "note": ""
+    },
+    {
+      "route": "/",
+      "slot": "Galerie / Co přijde v krabici",
+      "original": "/images/rozlozeni-a3.png",
+      "target": "/images/rozlozeni-a3.png",
+      "note": "Alt změň na Rozložení dílů lampionu Lumi 2 na desce A3. Zobraz celý diagram pomocí contain."
+    },
+    {
+      "route": "/",
+      "slot": "Galerie / Světlo u brány",
+      "original": "/images/pribeh/svetla-u-brany.webp",
+      "target": "/images/lumi-b/brana-4x3.webp",
+      "note": ""
+    },
+    {
+      "route": "/",
+      "slot": "B2B CTA / Svatební stůl se lampiony",
+      "original": "/images/galerie/03-vecerni-svetlo.webp",
+      "target": "/images/lumi-b/svatba-hero.webp",
+      "note": "Alt: Lumi 2 na svatebním stole."
+    },
+    {
+      "route": "/kolekce",
+      "slot": "B2B CTA / Svatba, firma nebo hotel?",
+      "original": "/images/galerie/02-konstrukce.webp",
+      "target": "/images/lumi-b/firmy-4x3.webp",
+      "note": "Dekorativní obraz má alt prázdný."
+    },
+    {
+      "route": "/svatby",
+      "slot": "Hero",
+      "original": "/images/galerie/03-vecerni-svetlo.webp",
+      "target": "/images/lumi-b/svatba-hero-4x3.webp",
+      "note": "Alt: Lumi 2 na svatebním stole."
+    },
+    {
+      "route": "/firmy",
+      "slot": "Hero",
+      "original": "/images/galerie/02-konstrukce.webp",
+      "target": "/images/lumi-b/firmy-4x3.webp",
+      "note": "Alt: Lumi 2 a kraftové dárkové krabice."
+    },
+    {
+      "route": "/pribeh",
+      "slot": "Hero / Příběh lampionu a dílny",
+      "original": "/images/pribeh/misto-navic.webp",
+      "target": "/images/lumi-b/dilna-4x3.webp",
+      "note": "Scénu uváděj jako ilustraci, ne fotografii dílny."
+    },
+    {
+      "route": "/pribeh",
+      "slot": "Světlo u brány",
+      "original": "/images/pribeh/svetla-u-brany.webp",
+      "target": "/images/lumi-b/brana.webp",
+      "note": ""
+    },
+    {
+      "route": "/pribeh",
+      "slot": "Konstrukce lampionu",
+      "original": "/images/galerie/02-konstrukce.webp",
+      "target": "/images/lumi-b/3d-konstrukce.webp",
+      "note": ""
+    },
+    {
+      "route": "/pruvodce",
+      "slot": "Rozložení dílů na desce A3",
+      "original": "/images/rozlozeni-a3.png",
+      "target": "/images/rozlozeni-a3.png",
+      "note": "Technický zdroj. Zobraz celý diagram, bez ořezu."
+    },
+    {
+      "route": "/kolekce/lumi-2",
+      "slot": "3D fallback",
+      "original": "/images/galerie/03-vecerni-svetlo.webp",
+      "target": "/images/lumi-b/3d-poster.webp",
+      "note": ""
+    },
+    {
+      "route": "*",
+      "slot": "Výchozí Open Graph a Twitter metadata",
+      "original": "/images/og-lumi.jpg",
+      "target": "/images/lumi-b/og-lumi.jpg",
+      "note": "1200 × 630 px. Uprav metadata rozměrů a alt."
+    },
+    {
+      "route": "/",
+      "slot": "Produktová karta / Lumi 2 — dřevěný lampion",
+      "original": "/images/galerie/03-vecerni-svetlo.webp",
+      "target": "/images/lumi-b/lumi-2-produkt.webp",
+      "note": "Použij sdílený katalog podle slug."
+    },
+    {
+      "route": "/",
+      "slot": "Produktová karta / Lumi Mini — dvě lucerny",
+      "original": "/images/galerie/02-konstrukce.webp",
+      "target": "/images/lumi-b/mini.webp",
+      "note": "Použij sdílený katalog podle slug."
+    },
+    {
+      "route": "/",
+      "slot": "Produktová karta / Lumi Kit — stavebnice",
+      "original": "/images/rozlozeni-a3.png",
+      "target": "/images/rozlozeni-a3.png",
+      "note": "Použij sdílený katalog podle slug."
+    },
+    {
+      "route": "/kolekce",
+      "slot": "Produktová karta / Lumi 2 — dřevěný lampion",
+      "original": "/images/galerie/03-vecerni-svetlo.webp",
+      "target": "/images/lumi-b/lumi-2-produkt.webp",
+      "note": "Použij sdílený katalog podle slug."
+    },
+    {
+      "route": "/kolekce/lumi-2",
+      "slot": "Titulní snímek, sdílená karta, hlavní náhled a produktové OG",
+      "original": "/images/galerie/03-vecerni-svetlo.webp",
+      "target": "/images/lumi-b/lumi-2-produkt.webp",
+      "note": "Platí také pro všechny související karty a košík se zbožím."
+    },
+    {
+      "route": "/kolekce/lumi-2",
+      "slot": "Galerie / celé nové pořadí",
+      "target": [
+        "/images/lumi-b/lumi-2-produkt.webp",
+        "/images/lumi-b/3d-konstrukce.webp",
+        "/images/lumi-b/domu-hero.webp",
+        "/images/sest-sten.png",
+        "/images/rozlozeni-a3.png"
+      ],
+      "note": "První položka je úvodní obraz. Diagramy zobraz celé. Alt podle skutečného obsahu."
+    },
+    {
+      "route": "/kolekce",
+      "slot": "Produktová karta / Lumi Mini — dvě lucerny",
+      "original": "/images/galerie/02-konstrukce.webp",
+      "target": "/images/lumi-b/mini.webp",
+      "note": "Použij sdílený katalog podle slug."
+    },
+    {
+      "route": "/kolekce/lumi-mini",
+      "slot": "Titulní snímek, sdílená karta, hlavní náhled a produktové OG",
+      "original": "/images/galerie/02-konstrukce.webp",
+      "target": "/images/lumi-b/mini.webp",
+      "note": "Platí také pro všechny související karty a košík se zbožím."
+    },
+    {
+      "route": "/kolekce/lumi-mini",
+      "slot": "Galerie / celé nové pořadí",
+      "target": [
+        "/images/lumi-b/mini.webp"
+      ],
+      "note": "První položka je úvodní obraz. Diagramy zobraz celé. Alt podle skutečného obsahu."
+    },
+    {
+      "route": "/kolekce",
+      "slot": "Produktová karta / Lumi Kit — stavebnice",
+      "original": "/images/rozlozeni-a3.png",
+      "target": "/images/rozlozeni-a3.png",
+      "note": "Použij sdílený katalog podle slug."
+    },
+    {
+      "route": "/kolekce/lumi-kit",
+      "slot": "Titulní snímek, sdílená karta, hlavní náhled a produktové OG",
+      "original": "/images/rozlozeni-a3.png",
+      "target": "/images/rozlozeni-a3.png",
+      "note": "Platí také pro všechny související karty a košík se zbožím."
+    },
+    {
+      "route": "/kolekce/lumi-kit",
+      "slot": "Galerie / celé nové pořadí",
+      "target": [
+        "/images/rozlozeni-a3.png",
+        "/images/sest-sten.png",
+        "/images/lumi-b/3d-konstrukce.webp"
+      ],
+      "note": "První položka je úvodní obraz. Diagramy zobraz celé. Alt podle skutečného obsahu."
+    },
+    {
+      "route": "/kolekce",
+      "slot": "Produktová karta / Sada tří lampionů",
+      "original": "/images/produkt-lumi-2.webp",
+      "target": "/images/lumi-b/set-3.webp",
+      "note": "Použij sdílený katalog podle slug."
+    },
+    {
+      "route": "/kolekce/lumi-set-3",
+      "slot": "Titulní snímek, sdílená karta, hlavní náhled a produktové OG",
+      "original": "/images/produkt-lumi-2.webp",
+      "target": "/images/lumi-b/set-3.webp",
+      "note": "Platí také pro všechny související karty a košík se zbožím."
+    },
+    {
+      "route": "/kolekce/lumi-set-3",
+      "slot": "Galerie / celé nové pořadí",
+      "target": [
+        "/images/lumi-b/set-3.webp",
+        "/images/lumi-b/3d-konstrukce.webp",
+        "/images/sest-sten.png"
+      ],
+      "note": "První položka je úvodní obraz. Diagramy zobraz celé. Alt podle skutečného obsahu."
+    },
+    {
+      "route": "/kolekce",
+      "slot": "Produktová karta / Personalizace — jména, datum, logo",
+      "original": "/images/sest-sten.png",
+      "target": "/images/lumi-b/personalizace.webp",
+      "note": "Použij sdílený katalog podle slug."
+    },
+    {
+      "route": "/kolekce/personalizace",
+      "slot": "Titulní snímek, sdílená karta, hlavní náhled a produktové OG",
+      "original": "/images/sest-sten.png",
+      "target": "/images/lumi-b/personalizace.webp",
+      "note": "Platí také pro všechny související karty a košík se zbožím."
+    },
+    {
+      "route": "/kolekce/personalizace",
+      "slot": "Galerie / celé nové pořadí",
+      "target": [
+        "/images/lumi-b/personalizace.webp",
+        "/images/sest-sten.png"
+      ],
+      "note": "První položka je úvodní obraz. Diagramy zobraz celé. Alt podle skutečného obsahu."
+    },
+    {
+      "route": "/kolekce",
+      "slot": "Produktová karta / Dárkové balení",
+      "original": "/images/galerie/03-vecerni-svetlo.webp",
+      "target": "/images/lumi-b/darkove-baleni.webp",
+      "note": "Použij sdílený katalog podle slug."
+    },
+    {
+      "route": "/kolekce/darkove-baleni",
+      "slot": "Titulní snímek, sdílená karta, hlavní náhled a produktové OG",
+      "original": "/images/galerie/03-vecerni-svetlo.webp",
+      "target": "/images/lumi-b/darkove-baleni.webp",
+      "note": "Platí také pro všechny související karty a košík se zbožím."
+    },
+    {
+      "route": "/kolekce/darkove-baleni",
+      "slot": "Galerie / celé nové pořadí",
+      "target": [
+        "/images/lumi-b/darkove-baleni.webp"
+      ],
+      "note": "První položka je úvodní obraz. Diagramy zobraz celé. Alt podle skutečného obsahu."
+    }
+  ],
+  "campaigns": [
+    {
+      "route": "/kvetinarstvi",
+      "asset": "/images/lumi-b/kvetiny-hero.webp",
+      "banner": "kampane/kvetiny-banner.webp",
+      "status": "404 při auditu; kampaň nebo budoucí landing"
+    },
+    {
+      "route": "/vanoce",
+      "asset": "/images/lumi-b/vanoce-hero.webp",
+      "banner": "kampane/vanoce-banner.webp",
+      "status": "404 při auditu; kampaň nebo budoucí landing"
+    },
+    {
+      "route": "/svatby",
+      "asset": "/images/lumi-b/svatba-hero.webp",
+      "banner": "kampane/svatba-banner.webp",
+      "status": "aktivní trasa; banner je určen pro externí reklamu"
+    }
+  ],
+  "files": [
+    {
+      "file": "mastery/svatba-hero.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2844124,
+      "sha256": "8c9427189fcd1525c208ca34023e59d749286a3099166ad5ed03aea6250b3ee7"
+    },
+    {
+      "file": "public/images/lumi-b/svatba-hero.webp",
+      "width": 1672,
+      "height": 941,
+      "bytes": 271810,
+      "sha256": "49d2e4731e3894a34adac99c8765cf9dce04ffa622b8f33ca81e1a8df8fcb90e"
+    },
+    {
+      "file": "mastery/kvetiny-hero.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2922177,
+      "sha256": "7a71880e854f352146e96d6804502d6e9e1d111530c319f9b35a6fdd5efa8d43"
+    },
+    {
+      "file": "public/images/lumi-b/kvetiny-hero.webp",
+      "width": 1672,
+      "height": 941,
+      "bytes": 326502,
+      "sha256": "dff7d8a6d707618ec90ec459c39b945db0b259b419bb928e89823dc60c8a2934"
+    },
+    {
+      "file": "mastery/vanoce-hero.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2898226,
+      "sha256": "31be3b1b111aadfdb55056c57ea111743e6044c8d46008d80ff2bf535c080c2f"
+    },
+    {
+      "file": "public/images/lumi-b/vanoce-hero.webp",
+      "width": 1672,
+      "height": 941,
+      "bytes": 301708,
+      "sha256": "31ab99477a8a7020716dbe4097d48aef1030e4788170bd66852d51c9ab11f30c"
+    },
+    {
+      "file": "mastery/svatba-banner.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 3334306,
+      "sha256": "040f17818419468895a8054335c903e1b66f417e14ca986800c8e68980686867"
+    },
+    {
+      "file": "kampane/svatba-banner.webp",
+      "width": 1080,
+      "height": 1080,
+      "bytes": 329756,
+      "sha256": "4a33a142d98453bacc72fe85b4f09a134a60fce2723394f6e3dd6d0ed4b1d32b"
+    },
+    {
+      "file": "mastery/kvetiny-banner.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 3145614,
+      "sha256": "01695f10a8daacde40f803c363af5de4bffc02f584786e87e7b17e34982b9a34"
+    },
+    {
+      "file": "kampane/kvetiny-banner.webp",
+      "width": 1080,
+      "height": 1080,
+      "bytes": 313648,
+      "sha256": "27b4e060b5348ccaf328b7e93a2cea65f13799c9289119b3e4fdb83cf7b95237"
+    },
+    {
+      "file": "mastery/vanoce-banner.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2698843,
+      "sha256": "ca669630e3ec4ef4fd2f01846f016c72c21b746ced1278fbea3cf076c4cb10d3"
+    },
+    {
+      "file": "kampane/vanoce-banner.webp",
+      "width": 1080,
+      "height": 1080,
+      "bytes": 260016,
+      "sha256": "e44c16947260e6c90b08f6c0e45efd99bcb2fb9c9a8b57f022448bd480878b9e"
+    },
+    {
+      "file": "mastery/domu-hero.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2881911,
+      "sha256": "5d964b1f268898e0e8fa4111fc55d9a76bfc6bcb886c25ba170fee886c1af2e4"
+    },
+    {
+      "file": "public/images/lumi-b/domu-hero.webp",
+      "width": 1672,
+      "height": 941,
+      "bytes": 330404,
+      "sha256": "22e1a5d3ecabb35958457582604778531cde99bcfd1d94a1afc33f8fe4a2af61"
+    },
+    {
+      "file": "mastery/firmy.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 3348377,
+      "sha256": "71b67cac36d845dafbb85dfe0afa42fb6640b3d96bf059f5e6306c37a6d98088"
+    },
+    {
+      "file": "public/images/lumi-b/firmy.webp",
+      "width": 1672,
+      "height": 941,
+      "bytes": 500648,
+      "sha256": "82db8431fdefc75fbedd802e8c27e8cbd7a1b259e6ab1049f1e0d83a5c363db6"
+    },
+    {
+      "file": "mastery/penzion.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 3392323,
+      "sha256": "dc0950fa4c715e0cb82a99671990374a446420c069aae724affecfb693eaadb1"
+    },
+    {
+      "file": "public/images/lumi-b/penzion.webp",
+      "width": 1672,
+      "height": 941,
+      "bytes": 504068,
+      "sha256": "94d17996958246596ef3bcf859406c1703cdec0120deac871783dcc2e26c77c1"
+    },
+    {
+      "file": "mastery/dilna.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 3367691,
+      "sha256": "19e864121821b06a418c8a4353f8b54a5f6738ef416e2eacbf1338745ccdd5e3"
+    },
+    {
+      "file": "public/images/lumi-b/dilna.webp",
+      "width": 1672,
+      "height": 941,
+      "bytes": 475746,
+      "sha256": "3d068a9f3a5afc75c80abecb97b3f3670b775f005e988cf4dbf89b7d0010e7db"
+    },
+    {
+      "file": "mastery/set-3.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 3516229,
+      "sha256": "180458f76652189794fd7c22224c166d564c3ef89556c9bac226e13d819f94ac"
+    },
+    {
+      "file": "public/images/lumi-b/set-3.webp",
+      "width": 1050,
+      "height": 1050,
+      "bytes": 402038,
+      "sha256": "066be7bf1f3a552e9522e22b023a48e32f7407192746f7b40176e0afd60bd6a9"
+    },
+    {
+      "file": "mastery/mini.png",
+      "width": 1448,
+      "height": 1086,
+      "bytes": 3545314,
+      "sha256": "f3e528c23e4c0f9f2525ff60a03920862b66dcaa06d2544135990f3f75197f87"
+    },
+    {
+      "file": "public/images/lumi-b/mini.webp",
+      "width": 1400,
+      "height": 1050,
+      "bytes": 478790,
+      "sha256": "486f0d9f19cbeb9bb3e13798bfbd258067b085c078f912b7746f2ca8cfd1f9e4"
+    },
+    {
+      "file": "mastery/darkove-baleni.png",
+      "width": 1448,
+      "height": 1086,
+      "bytes": 2957225,
+      "sha256": "b2389b6bf20f638178bad9fd292bcec26546ddd123573620400442451bb51777"
+    },
+    {
+      "file": "public/images/lumi-b/darkove-baleni.webp",
+      "width": 1400,
+      "height": 1050,
+      "bytes": 340214,
+      "sha256": "d6b90de3fd1ee02bacf9c47053d48f2b69ebe5c56d4be5264e88bfe4e57e2c6a"
+    },
+    {
+      "file": "mastery/brana.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 3415268,
+      "sha256": "7616b5739edbd084efb0475b4025b863fb60509988b49c08bd3697000d921b7c"
+    },
+    {
+      "file": "public/images/lumi-b/brana.webp",
+      "width": 1672,
+      "height": 941,
+      "bytes": 500544,
+      "sha256": "515254b77fea1e5623eeef2f57e1d2bac5ab824764c7133a4afa07203a59e5a1"
+    },
+    {
+      "file": "mastery/personalizace.png",
+      "width": 1448,
+      "height": 1086,
+      "bytes": 3428862,
+      "sha256": "0f4ba32fe939be4dbcb113061c8f87e336622d7d8987fedd81ca8ab5790fb89f"
+    },
+    {
+      "file": "public/images/lumi-b/personalizace.webp",
+      "width": 1400,
+      "height": 1050,
+      "bytes": 458312,
+      "sha256": "0906372a563cdc5f4e3f7ab469f266d92ffa90a2a4b9683eb08f14feb9afe030"
+    },
+    {
+      "file": "public/images/lumi-b/domu-hero-4x3.webp",
+      "width": 960,
+      "height": 720,
+      "bytes": 191982,
+      "sha256": "78cefc82fdddbb90227a47852b43e3cd157b7c28d7bcb75b817f072e31cb05ac"
+    },
+    {
+      "file": "public/images/lumi-b/svatba-hero-4x3.webp",
+      "width": 960,
+      "height": 720,
+      "bytes": 157918,
+      "sha256": "a68ef24bdb10608a4ce1f456ebbc097508247518c3c0ed285cd5ab571764a724"
+    },
+    {
+      "file": "public/images/lumi-b/kvetiny-hero-4x3.webp",
+      "width": 960,
+      "height": 720,
+      "bytes": 186198,
+      "sha256": "a0c4ea92b43a9e31f792e95edb40df4d74a4f5078781428a96542da65512979d"
+    },
+    {
+      "file": "public/images/lumi-b/vanoce-hero-4x3.webp",
+      "width": 960,
+      "height": 720,
+      "bytes": 167878,
+      "sha256": "9961ec5fb5b78f47f805639e2f4459d65c7c57c8bddcd241562bc1117bea07c4"
+    },
+    {
+      "file": "public/images/lumi-b/firmy-4x3.webp",
+      "width": 960,
+      "height": 720,
+      "bytes": 241468,
+      "sha256": "63ee36a84188e922c22b0ff270789ce5640bea801f7a69c99f122f63184bae35"
+    },
+    {
+      "file": "public/images/lumi-b/penzion-4x3.webp",
+      "width": 960,
+      "height": 720,
+      "bytes": 237048,
+      "sha256": "a876264bc0ca89e3bff33d8e1270b8b1a3e6f29639750264697fe5db60979263"
+    },
+    {
+      "file": "public/images/lumi-b/dilna-4x3.webp",
+      "width": 960,
+      "height": 720,
+      "bytes": 232264,
+      "sha256": "5ed43301a6c1b7370dd0c5a95935942e9c6262aebcddaa3b15f572e6d1538b57"
+    },
+    {
+      "file": "public/images/lumi-b/brana-4x3.webp",
+      "width": 960,
+      "height": 720,
+      "bytes": 243572,
+      "sha256": "46dd3dceac02779af1a7cbab0ee63926f81463b72b9386f933da80a5eab9b5fe"
+    },
+    {
+      "file": "public/images/rozlozeni-a3.png",
+      "width": 1680,
+      "height": 1188,
+      "bytes": 77655,
+      "sha256": "8e7deec6634c6d24dfdedf2c65a2c9954b004c1de2ddba4657e44b6e37cfedee"
+    },
+    {
+      "file": "public/images/sest-sten.png",
+      "width": 1350,
+      "height": 575,
+      "bytes": 56133,
+      "sha256": "213ea89558a5bc38765e8063ebcfb365e00678a9e140ff5efe1aa6259e5264ff"
+    },
+    {
+      "file": "public/images/lumi-b/lumi-2-produkt.webp",
+      "width": 900,
+      "height": 900,
+      "bytes": 103228,
+      "sha256": "f5d6c397954ad08c89a22694beebe31ee102cbdcd5bc5edb1510feecdc1250f1"
+    },
+    {
+      "file": "public/images/lumi-b/3d-poster.webp",
+      "width": 900,
+      "height": 900,
+      "bytes": 103228,
+      "sha256": "f5d6c397954ad08c89a22694beebe31ee102cbdcd5bc5edb1510feecdc1250f1"
+    },
+    {
+      "file": "public/images/lumi-b/3d-konstrukce.webp",
+      "width": 900,
+      "height": 900,
+      "bytes": 75232,
+      "sha256": "7b7fe0976c73e5e09295f7d7540fe01bd73bfc5b70707c03f00b3af440e98599"
+    },
+    {
+      "file": "public/images/lumi-b/og-lumi.jpg",
+      "width": 1200,
+      "height": 630,
+      "bytes": 238328,
+      "sha256": "ed0b02dc8bd70049b9e3a36000fba7d96126f1e322694ac7b3343d8c2f029c60"
+    }
+  ]
+}

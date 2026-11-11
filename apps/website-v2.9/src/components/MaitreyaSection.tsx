@@ -52,8 +52,8 @@ export default function MaitreyaSection() {
               className="group/img relative block w-full max-w-full self-center aspect-[16/9] overflow-hidden rounded-xl border border-white/10"
             >
               <img
-                src="/images/zion-archive/hero.webp"
-                srcSet="/images/zion-archive/hero-m.webp 960w, /images/zion-archive/hero.webp 1536w"
+                src="/images/zion-archive/hero.webp?v=engine-v1"
+                srcSet="/images/zion-archive/hero-m.webp?v=engine-v1 960w, /images/zion-archive/hero.webp?v=engine-v1 1536w"
                 sizes="(max-width: 1024px) calc(100vw - 3rem), 620px"
                 alt={cs ? 'Oasis — jedna rodina pod Stromem života, vizuál Nirvana Hubu' : t5('Oasis — one family under the Tree of Life, Nirvana Hub artwork', lang)}
                 loading="lazy"

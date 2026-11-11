@@ -1,0 +1,45 @@
+{
+  "name": "lumi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lumi — dřevěné lampiony z březové překližky. Samostatný e-shop Omnity.One s.r.o.",
+  "scripts": {
+    "dev": "next dev -p 3200",
+    "build": "prisma generate --schema prisma/schema.prisma && next build",
+    "postbuild": "node scripts/flatten-standalone.mjs && mkdir -p .next/standalone/.next && cp -r .next/static .next/standalone/.next/ && mkdir -p .next/standalone/public && cp -rL public/. .next/standalone/public/ && rm -f .next/standalone/.env .next/standalone/.env.*",
+    "start": "next start -p 3200",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate --schema prisma/schema.prisma",
+    "db:push": "prisma db push --schema prisma/schema.prisma",
+    "db:studio": "prisma studio --schema prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.427.0",
+    "next": "^16.4.3",
+    "nodemailer": "^9.0.3",
+    "prisma": "^5.22.0",
+    "qrcode": "^1.5.4",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "stripe": "22.4.0",
+    "tailwind-merge": "^2.4.0",
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/nodemailer": "8.0.1",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19",
+    "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.170.0",
+    "autoprefixer": "10.5.4",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^16.4.3",
+    "postcss": "8.5.25",
+    "tailwindcss": "^3.4.7",
+    "typescript": "^5.5.4"
+  }
+}

@@ -1,0 +1,708 @@
+'use client';
+
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Circle,
+  Clock,
+  Dot,
+  Droplets,
+  Globe,
+  Landmark,
+  LucideIcon,
+  MapPin,
+  Mountain,
+  Network,
+  Orbit,
+  PlayCircle,
+  Sprout,
+  Trees,
+  Users,
+  Zap,
+} from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
+import dynamic from 'next/dynamic';
+import { useState, useEffect } from 'react';
+
+const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownArticle'), { ssr: false });
+
+const DharmaTemplePreviewLazy = dynamic(
+  () => import('@/components/DharmaTemplePreviewLazy'),
+  { ssr: false, loading: () => (
+    <div className="flex h-[420px] md:h-[520px] items-center justify-center rounded-3xl border border-white/10 bg-black/40">
+      <span className="text-xs uppercase tracking-widest text-white/60">Loading 3D preview…</span>
+    </div>
+  ) }
+);
+
+const TerranovaDharmaTempleCopy = {
+  backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
+  planning: { cs: `V přípravě`, en: `Planning` },
+  dharmaIsNotAPathAwayFromTheWor: { cs: `"Dharma není cesta od světa. Je to způsob, jak být ve světě jinak."`, en: `"Dharma is not a path away from the world. It is a way of being in the world differently."` },
+  laPalmaLaIslaBonita: { cs: `La Palma — La Isla Bonita`, en: `La Palma — La Isla Bonita` },
+  laPalmaIsCalledTheBeautifulIsl: { cs: `La Palma je nazývána "Krásným ostrovem". Nejzelenější z Kanárských ostrovů, s bioreservací UNESCO, národním parkem Caldera de Taburiente a nocemi tak tmavými, že tu stojí jedno z nejlepších observatoří světa.`, en: `La Palma is called the "Beautiful Island". The greenest of the Canary Islands, with a UNESCO biosphere reserve, Caldera de Taburiente national park, and nights so dark it hosts one of the world\'s finest observatories.` },
+  theVolcanicSoilRetainsHeatHold: { cs: `Vulkanická půda uchovává teplo, drží vlhkost a je extrémně úrodná — stromy tu rostou jako zázrakem. Voda teče z hor. Místo má přirozené podmínky pro život, které by v kontinentální Evropě trvalo dekády vybudovat.`, en: `The volcanic soil retains heat, holds moisture and is extremely fertile — trees grow here like magic. Water flows from the mountains. The place has natural conditions for life that would take decades to build in continental Europe.` },
+  biosphere: { cs: `Bioreservace`, en: `Biosphere` },
+  rainfall: { cs: `Srážky`, en: `Rainfall` },
+  soil: { cs: `Půda`, en: `Soil` },
+  volcanic: { cs: `Vulkanická`, en: `Volcanic` },
+  observatory: { cs: `Observatoř`, en: `Observatory` },
+  projectConcept: { cs: `Koncept projektu`, en: `Project Concept` },
+  activitiesVision: { cs: `Aktivity & Vize`, en: `Activities & Vision` },
+  developmentPhases: { cs: `Fáze rozvoje`, en: `Development Phases` },
+  fromVisionToReality: { cs: `Od vize k realitě`, en: `From Vision to Reality` },
+  now: { cs: `Nyní`, en: `Now` },
+  terraNovaNetwork: { cs: `Sít Terra Nova`, en: `Terra Nova Network` },
+  connectionWithZahradaGenesis: { cs: `Propojení se Zahradou Genesis`, en: `Connection with Zahrada Genesis` },
+  dimension: { cs: `Dimenze`, en: `Dimension` },
+  bothProjectsShareSourceCodeTer: { cs: `Oba projekty sdílejí zdrojový kód: Terra Nova etika, ZION blockchain, off-grid technologie, komunitní governance.`, en: `Both projects share source code: Terra Nova ethics, ZION blockchain, off-grid technology, community governance.` },
+  blockchainIntegration: { cs: `Blockchain integrace`, en: `Blockchain Integration` },
+  active: { cs: `Aktivní`, en: `Active` },
+  planned: { cs: `Plánováno`, en: `Planned` },
+  openQuestionsLookingForGuardia: { cs: `Otevřené otázky — hledáme Guardians`, en: `Open Questions — looking for Guardians` },
+  specificLocationOnLaPalmaNorth: { cs: `Konkrétní lokace na La Palmě (sever / jih / nadmořská výška?)`, en: `Specific location on La Palma (north / south / altitude?)` },
+  foundingGuardiansWhoIsTheCoreT: { cs: `Zakládající Guardians — kdo je core team?`, en: `Founding Guardians — who is the core team?` },
+  legalFormSpanishAsociaciNSlCom: { cs: `Právní forma (španělská asociación / SL / komunitní nadace?)`, en: `Legal form (Spanish asociación / SL / community foundation?)` },
+  phase01FinancingZionFundCrowdf: { cs: `Financování fáze 0–1 (ZION fond? crowdfunding? vlastní zdroje?)`, en: `Phase 0–1 financing (ZION fund? crowdfunding? own resources?)` },
+  seedLibraryCoordinationWithZah: { cs: `Koordinace seed library se Zahradou Genesis`, en: `Seed library coordination with Zahrada Genesis` },
+  areYouAGuardianWhoHearsLaPalma: { cs: `Jsi Guardian, který slyší volání La Palmy? Napiš nám.`, en: `Are you a Guardian who hears La Palma\'s call? Reach out.` },
+  joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
+  zahradaGenesis: { cs: `Zahrada Genesis`, en: `Zahrada Genesis` },
+  threeDPreview: { cs: `3D koncept`, en: `3D concept` },
+  threeDPreviewSubtitle: { cs: `Interaktivní náhled posvátné geometrie – 7 kopulí, Strom života a Merkaba.`, en: `Interactive preview of sacred geometry – 7 domes, Tree of Life and Merkaba.` },
+  sitePlan: { cs: `Architektonický návrh`, en: `Architectural plan` },
+  sitePlanSubtitle: { cs: `Půdorys, řezy a materiály prvního návrhu chrámu Dharma Temple.`, en: `Site plan, sections and materials of the first Dharma Temple draft.` },
+  documentation: { cs: `Dokumentace`, en: `Documentation` },
+  documentationSubtitle: { cs: `Kompletní plán, koncept a specifikace Dharma Temple.`, en: `Complete plan, concept and specification of Dharma Temple.` },
+  documentationLoading: { cs: `Načítání dokumentace…`, en: `Loading documentation…` },
+  documentationError: { cs: `Dokumentaci se nepodařilo načíst.`, en: `Failed to load documentation.` },
+};
+
+type FeatureItem = {
+  icon: LucideIcon;
+  titleCs: string;
+  titleEn: string;
+  descCs: string;
+  descEn: string;
+  status: 'planned' | 'place';
+  color: string;
+  rgb: string;
+};
+
+type IntegrationItem = {
+  label: string;
+  status: 'active' | 'planned' | 'tbd' | 'vision';
+  icon: LucideIcon;
+};
+
+const FEATURES: FeatureItem[] = [
+  {
+    icon: Orbit,
+    titleCs: 'Meditace & Ticho',
+    titleEn: 'Meditation & Silence',
+    descCs: 'Denní praxe, silence retreaty, meditační buňky v přírodě. Místo kde se vnitřní práce stává rutinou.',
+    descEn: 'Daily practice, silence retreats, meditation cells in nature. A place where inner work becomes routine.',
+    status: 'planned' as const,
+    color: '#A78BFA',
+    rgb: '167,139,250',
+  },
+  {
+    icon: Sprout,
+    titleCs: 'Syntropic zahrada',
+    titleEn: 'Syntropic Garden',
+    descCs: 'Vícevrstvý agroforestry systém na vulkanické půdě La Palmy — jedné z nejúrodnějších půd Atlantiku.',
+    descEn: 'Multi-layer agroforestry system on La Palma volcanic soil — one of the most fertile soils in the Atlantic.',
+    status: 'planned' as const,
+    color: '#34D399',
+    rgb: '52,211,153',
+  },
+  {
+    icon: Network,
+    titleCs: 'Retreaty & Dharma',
+    titleEn: 'Retreats & Dharma',
+    descCs: 'Spirituální programy, dharma circle, ceremonie. Mezinárodní hosté přicházejí pro hlubší zastavení.',
+    descEn: 'Spiritual programs, dharma circle, ceremonies. International guests come for deeper stillness.',
+    status: 'planned' as const,
+    color: '#C084FC',
+    rgb: '192,132,252',
+  },
+  {
+    icon: Mountain,
+    titleCs: 'Vulkanická energie',
+    titleEn: 'Volcanic Energy',
+    descCs: 'La Palma — ostrov UNESCO bioreservace. Vulkanická krajina jako přirozený partner spirituální praxe.',
+    descEn: 'La Palma — UNESCO biosphere reserve island. Volcanic landscape as a natural partner for spiritual practice.',
+    status: 'place' as const,
+    color: '#F97316',
+    rgb: '252, 209, 22',
+  },
+  {
+    icon: Droplets,
+    titleCs: 'Off-grid voda & Energie',
+    titleEn: 'Off-grid Water & Energy',
+    descCs: 'Solar + mikrohydro ze srážek. La Palma má vydatné deště a výškový profil ideální pro průtočné turbíny.',
+    descEn: 'Solar + micro-hydro from rainfall. La Palma has generous rain and elevation ideal for run-of-river turbines.',
+    status: 'planned' as const,
+    color: '#066928',
+    rgb: '6,105,40',
+  },
+  {
+    icon: Landmark,
+    titleCs: 'Dharma Governance',
+    titleEn: 'Dharma Governance',
+    descCs: 'Sociokracie + dharma council. Kruhové rozhodování bez hierarchie. Přijímání nových členů přes DAO.',
+    descEn: 'Sociocracy + dharma council. Circular decision-making without hierarchy. New member admission via DAO.',
+    status: 'planned' as const,
+    color: '#F472B6',
+    rgb: '244,114,182',
+  },
+];
+
+const PHASES = [
+  { num: 0, cs: 'Zárodek', en: 'Seed', descCs: 'Identifikace pozemku, legal základ, core Guardians', descEn: 'Land identification, legal base, core Guardians', active: true },
+  { num: 1, cs: 'Kořeny', en: 'Roots', descCs: 'Solar, voda, základní ubytování, zahrada', descEn: 'Solar, water, basic accommodation, garden' },
+  { num: 2, cs: 'Komunita', en: 'Community', descCs: 'Stálí obyvatelé, denní praxe, ZION node', descEn: 'Permanent residents, daily practice, ZION node' },
+  { num: 3, cs: 'Síť', en: 'Network', descCs: 'Propojení se Zahradou Genesis, Rhizom síť', descEn: 'Connection with Zahrada Genesis, Rhizome network' },
+  { num: 4, cs: 'Výzařování', en: 'Radiance', descCs: 'Retreaty, výukové programy, mezinárodní hosté', descEn: 'Retreats, educational programs, international guests' },
+];
+
+const ZION_ITEMS: IntegrationItem[] = [
+  { label: 'ZION Node', status: 'planned', icon: Network },
+  { label: 'Guardian Wallet', status: 'tbd', icon: Landmark },
+  { label: 'Medical Table', status: 'planned', icon: Zap },
+  { label: 'LoRa / Meshtastic', status: 'planned', icon: Globe },
+  { label: 'Seed Library Exchange', status: 'planned', icon: Sprout },
+  { label: 'Knowledge Commons', status: 'planned', icon: Trees },
+];
+
+const SIGNALS = [
+  { icon: Mountain, value: 'UNESCO', labelCs: 'Bioreservace', labelEn: 'Biosphere' },
+  { icon: Droplets, value: '700–1500', labelCs: 'mm srážek', labelEn: 'mm rainfall' },
+  { icon: Orbit, value: 'Retreat', labelCs: 'Ticho & praxe', labelEn: 'Silence & practice' },
+];
+
+const COMPARE = [
+  { dim: { cs: 'Energie místa', en: 'Place Energy' }, genesis: { cs: 'Údolí Nabão & prameny', en: 'Nabão valley & springs' }, dharma: { cs: 'Vulkanické ticho & hory', en: 'Volcanic silence & mountains' } },
+  { dim: { cs: 'Primární role', en: 'Primary Role' }, genesis: { cs: 'Base Camp', en: 'Base Camp' }, dharma: { cs: 'Sanctuary', en: 'Sanctuary' } },
+  { dim: { cs: 'Klíčová aktivita', en: 'Key Activity' }, genesis: { cs: 'Farma, poutníci, komunita', en: 'Farm, pilgrims, community' }, dharma: { cs: 'Meditace, dharma, vzdělávání', en: 'Meditation, dharma, education' } },
+];
+
+const STATUS_LABEL = {
+  open: { cs: 'Otevřeno', en: 'Open', color: '#34D399', bg: 'rgba(52,211,153,0.1)', border: 'rgba(52,211,153,0.25)' },
+  active: { cs: 'Aktivní', en: 'Active', color: '#10B981', bg: 'rgba(6, 105, 40,0.1)', border: 'rgba(6, 105, 40,0.25)' },
+  planned: { cs: 'Plánováno', en: 'Planned', color: '#60A5FA', bg: 'rgba(96,165,250,0.1)', border: 'rgba(96,165,250,0.25)' },
+  place: { cs: 'Místo', en: 'Place', color: '#F97316', bg: 'rgba(252, 209, 22,0.1)', border: 'rgba(252, 209, 22,0.25)' },
+  vision: { cs: 'Vize', en: 'Vision', color: '#A78BFA', bg: 'rgba(167,139,250,0.1)', border: 'rgba(167,139,250,0.25)' },
+};
+
+export default function DharmaTemplePage() {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+
+  const [doc, setDoc] = useState<string | null>(null);
+  const [docError, setDocError] = useState(false);
+
+  useEffect(() => {
+    const file = cs ? '/docs/terranova/dharma-temple.cs.md' : t5('/docs/terranova/dharma-temple.en.md', lang);
+    fetch(file)
+      .then((res) => {
+        if (!res.ok) throw new Error('not found');
+        return res.text();
+      })
+      .then((text) => setDoc(text))
+      .catch(() => setDocError(true));
+  }, [cs]);
+
+  return (
+    <div className="zion-page">
+      <div className="relative z-10 zion-container max-w-5xl">
+
+        {/* Back nav */}
+        <motion.div
+          initial={{ opacity: 0, x: -16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4 }}
+          className="mb-10"
+        >
+          <Link
+            href="/terranova"
+            className="inline-flex items-center gap-2 text-sm text-zion-gold/65 hover:text-zion-gold transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {tx5(TerranovaDharmaTempleCopy.backToTerraNova, lang)}
+          </Link>
+        </motion.div>
+
+        {/* ═══ HERO ═══ */}
+        <motion.header
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+          className="mb-20 relative"
+        >
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-8">
+              {/* Icon column */}
+              <div className="shrink-0">
+                <div className="relative flex h-28 w-28 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                  <Landmark className="relative z-10 h-10 w-10 text-zion-gold" />
+                  <Mountain className="absolute bottom-5 right-5 h-4 w-4 text-zion-cyan" />
+                </div>
+              </div>
+
+              {/* Text column */}
+              <div className="space-y-3 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="zion-badge">
+                    L5 · Terra Nova Pioneer
+                  </span>
+                  <span className="zion-badge-gold inline-flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {tx5(TerranovaDharmaTempleCopy.planning, lang)}
+                  </span>
+                </div>
+
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient">
+                  Dharma Temple
+                </h1>
+                <p className="text-lg text-zion-cyan font-medium">Sanctuary · Terra Nova ®</p>
+
+                <div className="flex items-center gap-1.5 text-white/70">
+                  <MapPin className="w-4 h-4 text-zion-gold shrink-0" />
+                  <span className="text-sm">La Palma · Kanárské ostrovy · Španělsko</span>
+                </div>
+
+                <blockquote className="mt-4 pl-4 border-l-2 border-white/10 text-sm text-white/70 italic leading-relaxed max-w-lg">
+                  {tx5(TerranovaDharmaTempleCopy.dharmaIsNotAPathAwayFromTheWor, lang)}
+                </blockquote>
+
+                <div className="grid gap-3 pt-3 sm:grid-cols-3">
+                  {SIGNALS.map((signal) => {
+                    const Icon = signal.icon;
+                    return (
+                      <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+                        <div className="flex items-center gap-2 text-zion-gold">
+                          <Icon className="h-4 w-4" />
+                          <span className="text-sm font-semibold">{signal.value}</span>
+                        </div>
+                        <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-zion-gold/65">
+                          {cs ? signal.labelCs : signal.labelEn}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/dharma-temple/hero.webp?v=engine-v1"
+                srcSet="/images/dharma-temple/hero-m.webp?v=engine-v1 960w, /images/dharma-temple/hero.webp?v=engine-v1 1400w"
+                sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                alt={cs ? 'Dharma Temple — koncept' : t5('Dharma Temple — concept render', lang)}
+                width={1568}
+                height={1003}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                className="w-full object-cover"
+              />
+            </div>
+          </div>
+        </motion.header>
+
+        {/* ═══ 3D PREVIEW ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.05, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+                {tx5(TerranovaDharmaTempleCopy.threeDPreview, lang)}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {tx5(TerranovaDharmaTempleCopy.threeDPreviewSubtitle, lang)}
+              </h2>
+            </div>
+            <DharmaTemplePreviewLazy lang={lang} className="w-full" />
+          </div>
+        </motion.section>
+
+        {/* ═══ SITE PLAN / CONCEPT ART ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.1, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+                {tx5(TerranovaDharmaTempleCopy.sitePlan, lang)}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {tx5(TerranovaDharmaTempleCopy.sitePlanSubtitle, lang)}
+              </h2>
+            </div>
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/dharma-temple/concept-og.webp"
+                alt={cs ? 'Návrh Dharma Temple' : t5('Dharma Temple concept', lang)}
+                width={1536}
+                height={1024}
+                loading="lazy"
+                decoding="async"
+                className="w-full object-contain"
+              />
+            </div>
+            <p className="relative z-10 mt-4 text-center text-xs text-white/50">
+              {cs ? 'První konceptový board: půdorysy, řezy, legenda a energetický systém.' : t5('First concept board: floor plans, sections, legend and energy system.', lang)}
+            </p>
+          </div>
+        </motion.section>
+
+        {/* ═══ LA PALMA INFO ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+            <div className="relative z-10 grid md:grid-cols-3 gap-6">
+              <div className="md:col-span-2 space-y-3">
+                <h3 className="text-lg font-bold text-zion-gold">
+                  {tx5(TerranovaDharmaTempleCopy.laPalmaLaIslaBonita, lang)}
+                </h3>
+                <p className="text-white/70 text-sm leading-relaxed">
+                  {tx5(TerranovaDharmaTempleCopy.laPalmaIsCalledTheBeautifulIsl, lang)}
+                </p>
+                <p className="text-zion-gold/65 text-sm leading-relaxed">
+                  {tx5(TerranovaDharmaTempleCopy.theVolcanicSoilRetainsHeatHold, lang)}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 content-start">
+                {[
+                  { label: 'UNESCO', val: tx5(TerranovaDharmaTempleCopy.biosphere, lang) },
+                  { label: tx5(TerranovaDharmaTempleCopy.rainfall, lang), val: '700–1500mm' },
+                  { label: tx5(TerranovaDharmaTempleCopy.soil, lang), val: tx5(TerranovaDharmaTempleCopy.volcanic, lang) },
+                  { label: tx5(TerranovaDharmaTempleCopy.observatory, lang), val: 'ORM' },
+                ].map((s) => (
+                  <div key={s.label} className="text-center p-3 zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                    <p className="text-white/85 font-bold text-sm">{s.val}</p>
+                    <p className="text-zion-gold/55 text-[11px]">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ FEATURES GRID ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="text-center mb-8">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+              {tx5(TerranovaDharmaTempleCopy.projectConcept, lang)}
+            </p>
+            <h2 className="text-2xl font-bold text-white">
+              {tx5(TerranovaDharmaTempleCopy.activitiesVision, lang)}
+            </h2>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {FEATURES.map((f, i) => {
+              const s = STATUS_LABEL[f.status];
+              const Icon = f.icon;
+              return (
+                <motion.div
+                  key={f.titleCs}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 + i * 0.07, duration: 0.5 }}
+                  className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden group hover:scale-[1.02] transition-transform duration-300"
+                  style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
+                >
+                  <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] bg-white/5 group-hover:bg-white/10 transition-opacity duration-500" />
+
+                  <div className="flex items-start justify-between relative z-10 gap-3">
+                    <span className="inline-flex h-11 w-11 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                      <Icon className="h-5 w-5 text-zion-gold" />
+                    </span>
+                    <span
+                      className="rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.15em]"
+                      style={{ color: s.color, borderColor: s.border, backgroundColor: s.bg }}
+                    >
+                      {cs ? s.cs : s.en}
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-zion-gold relative z-10">
+                    {cs ? f.titleCs : f.titleEn}
+                  </h3>
+                  <p className="text-white/70 text-sm leading-relaxed relative z-10">
+                    {cs ? f.descCs : f.descEn}
+                  </p>
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.section>
+
+        {/* ═══ PHASE TIMELINE ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="text-center mb-8">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+              {tx5(TerranovaDharmaTempleCopy.developmentPhases, lang)}
+            </p>
+            <h2 className="text-2xl font-bold text-white">
+              {tx5(TerranovaDharmaTempleCopy.fromVisionToReality, lang)}
+            </h2>
+          </div>
+
+          <div className="relative">
+            <div className="absolute left-6 top-4 bottom-4 w-px bg-gradient-to-b from-zion-gold/40 via-white/10 to-transparent" />
+            <div className="space-y-4 pl-16">
+              {PHASES.map((p, i) => (
+                <motion.div
+                  key={p.num}
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.15 + i * 0.08, duration: 0.5 }}
+                  className="relative"
+                >
+                  <div
+                    className="absolute -left-10 top-3 w-4 h-4 rounded-full border-2 flex items-center justify-center"
+                    style={{
+                      borderColor: p.active ? 'rgb(252,209,22)' : 'rgba(255,255,255,0.15)',
+                      backgroundColor: p.active ? 'rgba(252,209,22,0.2)' : 'rgba(0,0,0,0.5)',
+                    }}
+                  >
+                    {p.active && <div className="w-1.5 h-1.5 rounded-full bg-zion-cyan animate-pulse" />}
+                  </div>
+
+                  <div
+                    className="zion-rainbow-sub p-4 space-y-1"
+                    style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="text-xs font-bold tracking-wider"
+                        style={{ color: p.active ? 'rgb(6,105,40)' : 'rgba(255,255,255,0.3)' }}
+                      >
+                        {cs ? `Fáze ${p.num}` : t5(`Phase ${p.num}`, lang)}
+                      </span>
+                      <span className="text-sm font-semibold text-white/80">
+                        {cs ? p.cs : p.en}
+                      </span>
+                      {p.active ? (
+                        <span className="inline-flex items-center gap-1 text-zion-cyan text-xs animate-pulse">
+                          <PlayCircle className="w-3.5 h-3.5" />
+                          {tx5(TerranovaDharmaTempleCopy.now, lang)}
+                        </span>
+                      ) : (
+                        <Circle className="w-3.5 h-3.5 text-white/30" />
+                      )}
+                    </div>
+                    <p className="text-zion-gold/65 text-xs">{cs ? p.descCs : p.descEn}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ COMPARE WITH GENESIS ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="text-center mb-8">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+              {tx5(TerranovaDharmaTempleCopy.terraNovaNetwork, lang)}
+            </p>
+            <h2 className="text-2xl font-bold text-white">
+              {tx5(TerranovaDharmaTempleCopy.connectionWithZahradaGenesis, lang)}
+            </h2>
+          </div>
+
+          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+            {/* Header row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[11px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
+              <div className="p-3 text-zion-gold/65">{tx5(TerranovaDharmaTempleCopy.dimension, lang)}</div>
+              <div className="p-3 text-white/85 sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Zahrada Genesis</span></div>
+              <div className="p-3 text-zion-gold sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Dharma Temple</span></div>
+            </div>
+            {COMPARE.map((row, i) => (
+              <div
+                key={i}
+                className="grid grid-cols-1 sm:grid-cols-3 text-sm border-b border-white/5 last:border-0"
+              >
+                <div className="p-3 text-zion-gold/65 text-xs">{cs ? row.dim.cs : row.dim.en}</div>
+                <div className="p-3 text-white/85 text-xs sm:border-l border-white/5">{cs ? row.genesis.cs : row.genesis.en}</div>
+                <div className="p-3 text-white/85 text-xs sm:border-l border-white/5">{cs ? row.dharma.cs : row.dharma.en}</div>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-zion-gold/55 text-xs text-center mt-4">
+            {tx5(TerranovaDharmaTempleCopy.bothProjectsShareSourceCodeTer, lang)}
+          </p>
+        </motion.section>
+
+        {/* ═══ ZION INTEGRATION ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="text-center mb-8">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+              {tx5(TerranovaDharmaTempleCopy.blockchainIntegration, lang)}
+            </p>
+            <h2 className="text-2xl font-bold text-white">ZION Network</h2>
+          </div>
+
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+            <div className="relative z-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {ZION_ITEMS.map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-center gap-3 zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
+                >
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                    <item.icon className="h-4 w-4 text-zion-gold" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-white/80">{item.label}</p>
+                    <p className="text-[11px] text-zion-gold/55 capitalize">
+                      {item.status === 'active'
+                        ? (tx5(TerranovaDharmaTempleCopy.active, lang))
+                        : item.status === 'planned'
+                        ? (tx5(TerranovaDharmaTempleCopy.planned, lang))
+                        : item.status === 'vision'
+                        ? tx5(STATUS_LABEL.vision, lang)
+                        : 'TBD'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ DOCUMENTATION ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.42, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+                {tx5(TerranovaDharmaTempleCopy.documentation, lang)}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {tx5(TerranovaDharmaTempleCopy.documentationSubtitle, lang)}
+              </h2>
+            </div>
+            <div className="relative z-10 rounded-2xl border border-white/10 bg-black/40 p-4 md:p-6">
+              {docError ? (
+                <p className="text-sm text-zion-red">{tx5(TerranovaDharmaTempleCopy.documentationError, lang)}</p>
+              ) : doc ? (
+                <DocMarkdownArticle content={doc} className="zion-docs-prose max-w-4xl mx-auto" />
+              ) : (
+                <p className="text-sm text-white/60">{tx5(TerranovaDharmaTempleCopy.documentationLoading, lang)}</p>
+              )}
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ OPEN QUESTIONS ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+            <h3 className="text-lg font-bold text-zion-gold">
+              {tx5(TerranovaDharmaTempleCopy.openQuestionsLookingForGuardia, lang)}
+            </h3>
+            <ul className="space-y-2">
+              {[
+                tx5(TerranovaDharmaTempleCopy.specificLocationOnLaPalmaNorth, lang),
+                tx5(TerranovaDharmaTempleCopy.foundingGuardiansWhoIsTheCoreT, lang),
+                tx5(TerranovaDharmaTempleCopy.legalFormSpanishAsociaciNSlCom, lang),
+                tx5(TerranovaDharmaTempleCopy.phase01FinancingZionFundCrowdf, lang),
+                tx5(TerranovaDharmaTempleCopy.seedLibraryCoordinationWithZah, lang),
+              ].map((q, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-white/70">
+                  <Dot className="w-4 h-4 text-zion-gold shrink-0 mt-0.5" />
+                  {q}
+                </li>
+              ))}
+            </ul>
+            <p className="text-zion-gold/55 text-xs pt-2">
+              {tx5(TerranovaDharmaTempleCopy.areYouAGuardianWhoHearsLaPalma, lang)}
+            </p>
+            <a
+              href="https://discord.gg/wvxJ7DhZ8"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="zion-button-secondary"
+            >
+              <Users className="w-4 h-4" />
+              {tx5(TerranovaDharmaTempleCopy.joinDiscord, lang)}
+            </a>
+          </div>
+        </motion.section>
+
+        {/* ═══ BOTTOM NAV ═══ */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55, duration: 0.5 }}
+          className="flex items-center justify-between"
+        >
+          <Link
+            href="/terranova/genesis"
+            className="zion-button-secondary"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>{tx5(TerranovaDharmaTempleCopy.zahradaGenesis, lang)}</span>
+          </Link>
+          <Link
+            href="/terranova/te-piko-ora"
+            className="zion-button-secondary"
+          >
+            <span>Te Pīko Ora</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </motion.div>
+
+      </div>
+    </div>
+  );
+}

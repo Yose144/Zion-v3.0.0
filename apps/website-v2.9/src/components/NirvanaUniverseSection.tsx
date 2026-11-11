@@ -14,11 +14,11 @@ function UniverseStaticFallback() {
   return (
     <div className="relative h-[380px] w-full overflow-hidden rounded-[22px] border border-rasta-gold/30 bg-[#02030a] sm:h-[440px] lg:h-[520px]">
       <Image
-        src="/images/nirvana-preview-v2.webp"
-        alt="Nirvana — vesmír prvního světa OASIS"
+        src="/images/design-v1/nirvana-planets.webp?v=engine-v1"
+        alt=""
         fill
-        className="object-cover opacity-90"
-        sizes="100vw"
+        className="object-cover object-[64%_center] opacity-90"
+        sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
       />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40" />
     </div>

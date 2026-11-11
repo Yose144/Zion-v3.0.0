@@ -944,7 +944,7 @@ body.zion-shell {
   margin: clamp(0.5rem, 2vw, 1.5rem) auto 0;
   aspect-ratio: 1672 / 941;
   border-radius: 1rem;
-  background-image: url('/hero-kolekce-2027.webp?v=7');
+  background-image: url('/hero-kolekce-2027.webp?v=engine-v1');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -995,7 +995,7 @@ body.zion-shell {
   margin: clamp(0.5rem, 2vw, 1.5rem) auto 0;
   aspect-ratio: 1916 / 821;
   border-radius: 1rem;
-  background-image: url('/hiran-hero.webp');
+  background-image: url('/hiran-hero.webp?v=engine-v1');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

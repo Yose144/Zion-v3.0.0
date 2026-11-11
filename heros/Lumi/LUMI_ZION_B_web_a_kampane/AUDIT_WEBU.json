@@ -1,0 +1,761 @@
+{
+  "date": "2026-11-11",
+  "domain": "https://lumi.zionterranova.com",
+  "scope": "18 URL ze sitemap + prázdný košík",
+  "routes": {
+    "/": {
+      "images": [
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Rozsvícený dřevěný lampion Lumi na stole",
+          "css": "aspect-[4/3] w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Lumi 2 — dřevěný lampion",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "Lumi Mini — dvě lucerny",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/rozlozeni-a3.png",
+          "alt": "Lumi Kit — stavebnice",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Svatební stoly",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "Firemní dárky",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]",
+          "srcset": null
+        },
+        {
+          "src": "/images/produkt-lumi-2.webp",
+          "alt": "Večery doma",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]",
+          "srcset": null
+        },
+        {
+          "src": "/images/pribeh/misto-navic.webp",
+          "alt": "Pro hosty a penziony",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]",
+          "srcset": null
+        },
+        {
+          "src": "/images/pribeh/svetla-u-brany.webp",
+          "alt": "Dílna a příběh lampionu",
+          "css": "aspect-[4/3] w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Lampion Lumi",
+          "css": "relative h-full w-full object-cover opacity-60",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Večerní světlo",
+          "css": "aspect-[4/3] w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "Konstrukce",
+          "css": "aspect-[4/3] w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/rozlozeni-a3.png",
+          "alt": "Co přijde v krabici",
+          "css": "aspect-[4/3] w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/pribeh/svetla-u-brany.webp",
+          "alt": "Světlo u brány",
+          "css": "aspect-[4/3] w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Svatební stůl se lampiony",
+          "css": "absolute inset-0 h-full w-full object-cover",
+          "srcset": null
+        }
+      ],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": [
+        "/images/galerie/03-vecerni-svetlo.webp"
+      ]
+    },
+    "/kolekce": {
+      "images": [
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Lumi 2 — dřevěný lampion",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "Lumi Mini — dvě lucerny",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/rozlozeni-a3.png",
+          "alt": "Lumi Kit — stavebnice",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/produkt-lumi-2.webp",
+          "alt": "Sada tří lampionů",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/sest-sten.png",
+          "alt": "Personalizace — jména, datum, logo",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Dárkové balení",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "",
+          "css": "absolute inset-0 h-full w-full object-cover",
+          "srcset": null
+        }
+      ],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": [
+        "/images/galerie/03-vecerni-svetlo.webp"
+      ]
+    },
+    "/svatby": {
+      "images": [
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Svatební stůl s rozsvícenými lampiony",
+          "css": "aspect-[4/3] w-full object-cover",
+          "srcset": null
+        }
+      ],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": [
+        "/images/galerie/03-vecerni-svetlo.webp"
+      ]
+    },
+    "/firmy": {
+      "images": [
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "Dárkové balení lampionu",
+          "css": "aspect-[4/3] w-full object-cover",
+          "srcset": null
+        }
+      ],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": [
+        "/images/galerie/02-konstrukce.webp"
+      ]
+    },
+    "/pribeh": {
+      "images": [
+        {
+          "src": "/images/pribeh/misto-navic.webp",
+          "alt": "Příběh lampionu a dílny",
+          "css": "aspect-[4/3] w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/pribeh/svetla-u-brany.webp",
+          "alt": "Světlo u brány",
+          "css": "w-full rounded-2xl border border-line object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "Konstrukce lampionu",
+          "css": "aspect-square w-full rounded-2xl border border-line object-cover",
+          "srcset": null
+        }
+      ],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": [
+        "/images/pribeh/misto-navic.webp"
+      ]
+    },
+    "/pruvodce": {
+      "images": [
+        {
+          "src": "/images/rozlozeni-a3.png",
+          "alt": "Rozložení dílů na desce A3",
+          "css": "w-full rounded-2xl border border-line bg-white object-contain p-3",
+          "srcset": null
+        }
+      ],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": []
+    },
+    "/faq": {
+      "images": [],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": []
+    },
+    "/kontakt": {
+      "images": [],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": []
+    },
+    "/doprava": {
+      "images": [],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": []
+    },
+    "/obchodni-podminky": {
+      "images": [],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": []
+    },
+    "/ochrana-osobnich-udaju": {
+      "images": [],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": []
+    },
+    "/reklamace": {
+      "images": [],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": []
+    },
+    "/kolekce/lumi-2": {
+      "images": [
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Lumi 2 — dřevěný lampion",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/produkt-lumi-2.webp",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/sest-sten.png",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/rozlozeni-a3.png",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Lampion Lumi",
+          "css": "relative h-full w-full object-cover opacity-60",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "Lumi Mini — dvě lucerny",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/rozlozeni-a3.png",
+          "alt": "Lumi Kit — stavebnice",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/produkt-lumi-2.webp",
+          "alt": "Sada tří lampionů",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        }
+      ],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/galerie/03-vecerni-svetlo.webp"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": [
+        "/images/galerie/03-vecerni-svetlo.webp"
+      ]
+    },
+    "/kolekce/lumi-mini": {
+      "images": [
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "Lumi Mini — dvě lucerny",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/sest-sten.png",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/rozlozeni-a3.png",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Lumi 2 — dřevěný lampion",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/rozlozeni-a3.png",
+          "alt": "Lumi Kit — stavebnice",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/produkt-lumi-2.webp",
+          "alt": "Sada tří lampionů",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        }
+      ],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/galerie/02-konstrukce.webp"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": [
+        "/images/galerie/02-konstrukce.webp"
+      ]
+    },
+    "/kolekce/lumi-kit": {
+      "images": [
+        {
+          "src": "/images/rozlozeni-a3.png",
+          "alt": "Lumi Kit — stavebnice",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/rozlozeni-a3.png",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/produkt-lumi-2.webp",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/sest-sten.png",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Lumi 2 — dřevěný lampion",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "Lumi Mini — dvě lucerny",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/produkt-lumi-2.webp",
+          "alt": "Sada tří lampionů",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        }
+      ],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/rozlozeni-a3.png"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": [
+        "/images/rozlozeni-a3.png"
+      ]
+    },
+    "/kolekce/lumi-set-3": {
+      "images": [
+        {
+          "src": "/images/produkt-lumi-2.webp",
+          "alt": "Sada tří lampionů",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/produkt-lumi-2.webp",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/sest-sten.png",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Lumi 2 — dřevěný lampion",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "Lumi Mini — dvě lucerny",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/rozlozeni-a3.png",
+          "alt": "Lumi Kit — stavebnice",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        }
+      ],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/produkt-lumi-2.webp"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": [
+        "/images/produkt-lumi-2.webp"
+      ]
+    },
+    "/kolekce/personalizace": {
+      "images": [
+        {
+          "src": "/images/sest-sten.png",
+          "alt": "Personalizace — jména, datum, logo",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/sest-sten.png",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/produkt-lumi-2.webp",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Lumi 2 — dřevěný lampion",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "Lumi Mini — dvě lucerny",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/rozlozeni-a3.png",
+          "alt": "Lumi Kit — stavebnice",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        }
+      ],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/sest-sten.png"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": [
+        "/images/sest-sten.png"
+      ]
+    },
+    "/kolekce/darkove-baleni": {
+      "images": [
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Dárkové balení",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/rozlozeni-a3.png",
+          "alt": "",
+          "css": "h-full w-full object-cover",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/03-vecerni-svetlo.webp",
+          "alt": "Lumi 2 — dřevěný lampion",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/galerie/02-konstrukce.webp",
+          "alt": "Lumi Mini — dvě lucerny",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        },
+        {
+          "src": "/images/rozlozeni-a3.png",
+          "alt": "Lumi Kit — stavebnice",
+          "css": "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]",
+          "srcset": null
+        }
+      ],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/galerie/03-vecerni-svetlo.webp"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": [
+        "/images/galerie/03-vecerni-svetlo.webp"
+      ]
+    },
+    "/kosik": {
+      "images": [],
+      "social": [
+        {
+          "property": "og:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        },
+        {
+          "name": "twitter:image",
+          "content": "https://lumi.zionterranova.com/images/og-lumi.jpg"
+        }
+      ],
+      "preloads": []
+    }
+  },
+  "optional_routes": {
+    "/vanoce": 404,
+    "/kvetinarstvi": 404
+  }
+}

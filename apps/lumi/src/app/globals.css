@@ -1,0 +1,200 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* ZION Design Engine v1.0 — schválená paleta B */
+  --paper: #f0e1be;          /* pergamen */
+  --paper-deep: #e6d3a8;
+  --card: #f8efd9;
+  --ink: #101c2b;            /* inkoust */
+  --ink-soft: #33424b;
+  --muted: #6e6650;
+  --line: #d8c5a0;
+  --amber: #e7aa4b;          /* jantar — světlo a aktivní cíl */
+  --amber-deep: #c98a2e;
+  --wood: #8a5a33;
+  --forest: #344a36;         /* les */
+  --rust: #9d493d;           /* rez */
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-feature-settings: 'kern', 'liga';
+  text-rendering: optimizeLegibility;
+  /* Jeden teplý akcent (jantar) a tichý lesní stín — bez obrázku. */
+  background-image:
+    radial-gradient(62rem 42rem at 88% -12%, rgba(231, 170, 75, 0.16), transparent 62%),
+    radial-gradient(48rem 34rem at -4% 8%, rgba(52, 74, 54, 0.09), transparent 60%);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: rgba(231, 170, 75, 0.35);
+  color: var(--ink);
+}
+
+a:focus-visible,
+summary:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--amber-deep);
+  outline-offset: 3px;
+}
+
+@layer components {
+  .container-lumi {
+    @apply mx-auto w-full max-w-content px-5 sm:px-6 lg:px-8;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-amber-700;
+  }
+  .h-display {
+    font-family: var(--font-display), Georgia, serif;
+    @apply font-medium leading-[1.06] tracking-[-0.01em];
+  }
+
+  .h1 {
+    font-family: var(--font-display), Georgia, serif;
+    @apply text-[2.6rem] font-medium leading-[1.03] tracking-[-0.015em] sm:text-6xl lg:text-[4.4rem];
+  }
+
+  .h2 {
+    font-family: var(--font-display), Georgia, serif;
+    @apply text-3xl font-medium leading-[1.1] tracking-[-0.01em] sm:text-4xl lg:text-[2.9rem];
+  }
+
+  .h3 {
+    font-family: var(--font-display), Georgia, serif;
+    @apply text-2xl font-medium leading-snug;
+  }
+
+  .lead {
+    @apply text-lg leading-relaxed text-ink-soft sm:text-xl;
+  }
+
+  .card-warm {
+    background: var(--card);
+    border: 1px solid var(--line);
+    @apply rounded-2xl;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600;
+  }
+
+  .btn-primary {
+    @apply btn bg-ink text-parchment shadow-warm hover:bg-forest active:translate-y-[1px];
+  }
+
+  .btn-outline {
+    @apply btn border border-ink/25 bg-transparent text-ink hover:border-forest/60 hover:bg-forest/5;
+  }
+
+  .btn-amber {
+    @apply btn bg-amber-500 text-ink shadow-glow hover:bg-amber-400 active:translate-y-[1px];
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-ink/5 hover:text-ink;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-line bg-white/80 px-4 py-3 text-sm text-ink placeholder:text-muted/60 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20;
+  }
+
+  .label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-muted;
+  }
+
+  .link-underline {
+    @apply underline decoration-amber-500/40 decoration-1 underline-offset-4 transition-colors hover:decoration-amber-600;
+  }
+
+  .hairline {
+    @apply border-t border-line;
+  }
+
+  .tag {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-amber-600/25 bg-amber-500/10 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-amber-800;
+  }
+
+  .prose-lumi {
+    @apply space-y-4 text-[0.98rem] leading-relaxed text-ink-soft;
+  }
+
+  .prose-lumi h2 {
+    @apply h3 mt-10 text-ink;
+  }
+
+  .prose-lumi h3 {
+    @apply mt-8 text-lg font-semibold text-ink;
+  }
+
+  .prose-lumi strong {
+    @apply font-semibold text-ink;
+  }
+
+  .prose-lumi a {
+    @apply link-underline text-ink;
+  }
+
+  .prose-lumi ul {
+    @apply list-disc space-y-2 pl-5;
+  }
+
+  .product-shadow {
+    filter: drop-shadow(0 28px 34px rgba(74, 43, 18, 0.18));
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.16;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

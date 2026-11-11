@@ -1,5 +1,7 @@
 'use client';
 
+import { designImage } from '@/lib/design-image';
+
 import { useState } from 'react';
 import { ShoppingCart, Box, Ruler, Coins } from 'lucide-react';
 import type { ShopProductData } from '@/types/shop';
@@ -53,7 +55,7 @@ export default function ShopProductCard({ product, onOpen }: ShopProductCardProp
           </div>
         ) : (
           <img
-            src={product.image}
+            src={designImage(product.image)}
             alt={product.name}
             onError={() => setImgError(true)}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
