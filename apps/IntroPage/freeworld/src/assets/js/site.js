@@ -12,6 +12,11 @@
       'nav.projects': 'Projekty', 'nav.map': 'Mapa', 'nav.fund': 'Fond', 'nav.qv': 'Hlasování',
       'nav.docs': 'Dokumentace',
       'nav.app': 'Otevřít app',
+      'nav.ecosystem': 'Ekosystém', 'nav.pages': 'Stránky', 'nav.home': 'ZION TerraNova',
+      'nav.amenti': 'Amenti', 'nav.evoluzion': 'EvoluZion', 'nav.camp': 'Camp',
+      'nav.vzestup': 'Vzestup', 'nav.blog': 'Blog', 'nav.seeds': 'Seeds', 'nav.vastrigs': 'Vast Rigs',
+      'nav.market': 'Market', 'nav.nirvana': 'Nirvana', 'nav.lumi': 'Lumi', 'nav.pool': 'Pool',
+      'nav.freeworld': 'Free World', 'nav.onboard': 'Onboard', 'nav.appdocs': 'Docs',
       'hero.kicker': 'L5 · Free World · Terra Nova',
       'hero.title': 'Svět, kde se blockchain <em>setkává s půdou</em>',
       'hero.tagline': 'Sedm financovaných bodů, vize Uluru, Boa Esperança, Kailash a Amenti, plující uzel María del Camino — a Ekam, chrám v Indii, který už stojí jako předloha všem ostatním. 5 % z každého bloku do humanitárního fondu. Reálná místa na reálné planetě — od údolí Nabão po síň záznamu na plateu Gízy.',
@@ -72,6 +77,11 @@
       'nav.projects': 'Projects', 'nav.map': 'Map', 'nav.fund': 'Fund', 'nav.qv': 'Voting',
       'nav.docs': 'Docs',
       'nav.app': 'Open app',
+      'nav.ecosystem': 'Ecosystem', 'nav.pages': 'Pages', 'nav.home': 'ZION TerraNova',
+      'nav.amenti': 'Amenti', 'nav.evoluzion': 'EvoluZion', 'nav.camp': 'Camp',
+      'nav.vzestup': 'Ascension', 'nav.blog': 'Blog', 'nav.seeds': 'Seeds', 'nav.vastrigs': 'Vast Rigs',
+      'nav.market': 'Market', 'nav.nirvana': 'Nirvana', 'nav.lumi': 'Lumi', 'nav.pool': 'Pool',
+      'nav.freeworld': 'Free World', 'nav.onboard': 'Onboard', 'nav.appdocs': 'Docs',
       'hero.kicker': 'L5 · Free World · Terra Nova',
       'hero.title': 'A world where blockchain <em>meets the soil</em>',
       'hero.tagline': 'Seven funded sites, the Uluru, Boa Esperança, Kailash and Amenti visions, the María del Camino sailing node — and Ekam, the temple in India that already stands as the template for all of them. 5% of every block into the humanitarian fund. Real places on a real planet — from the Nabão valley to the hall of records on the Giza plateau.',
@@ -131,6 +141,7 @@
     es: {
       'nav.projects': 'Proyectos', 'nav.map': 'Mapa', 'nav.fund': 'Fondo', 'nav.qv': 'Votación',
       'nav.docs': 'Documentación', 'nav.app': 'Abrir la app',
+      'nav.ecosystem': 'Ecosistema', 'nav.pages': 'Páginas', 'nav.vzestup': 'Ascensión',
       'hero.kicker': 'L5 · Free World · Terra Nova',
       'hero.title': 'Un mundo donde la cadena <em>encuentra la tierra</em>',
       'hero.tagline': 'Siete puntos financiados, la visión de Uluru, Boa Esperança, Kailash y Amenti, el nodo flotante María del Camino — y Ekam, el templo en India que ya es el modelo de los demás. El 5 % de cada bloque va al fondo humanitario.',
@@ -147,6 +158,7 @@
     pt: {
       'nav.projects': 'Projetos', 'nav.map': 'Mapa', 'nav.fund': 'Fundo', 'nav.qv': 'Votação',
       'nav.docs': 'Documentação', 'nav.app': 'Abrir a app',
+      'nav.ecosystem': 'Ecossistema', 'nav.pages': 'Páginas', 'nav.vzestup': 'Ascensão',
       'hero.kicker': 'L5 · Free World · Terra Nova',
       'hero.title': 'Um mundo onde a cadeia <em>encontra a terra</em>',
       'hero.tagline': 'Sete pontos financiados, a visão de Uluru, Boa Esperança, Kailash e Amenti, o nó flutuante María del Camino — e Ekam, o templo na Índia que já é o modelo dos outros. 5 % de cada bloco vai para o fundo humanitário.',
@@ -163,6 +175,7 @@
     fr: {
       'nav.projects': 'Projets', 'nav.map': 'Carte', 'nav.fund': 'Fonds', 'nav.qv': 'Vote',
       'nav.docs': 'Documentation', 'nav.app': 'Ouvrir l’app',
+      'nav.ecosystem': 'Écosystème',
       'hero.kicker': 'L5 · Free World · Terra Nova',
       'hero.title': 'Un monde où la chaîne <em>rencontre la terre</em>',
       'hero.tagline': 'Sept points financés, la vision d’Uluru, Boa Esperança, Kailash et Amenti, le nœud flottant María del Camino — et Ekam, le temple en Inde qui sert déjà de modèle. 5 % de chaque bloc va au fonds humanitaire.',
@@ -496,6 +509,36 @@
     });
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') setOpen(false);
+    });
+
+    // ── Ekosystém dropdown — click-toggle, Escape / outside-click zavírá ──
+    var drops = document.querySelectorAll('.fw-nav-drop');
+    function closeDrops(except) {
+      drops.forEach(function (d) {
+        if (d === except) return;
+        d.classList.remove('open');
+        var b = d.querySelector('.fw-nav-drop-btn');
+        if (b) b.setAttribute('aria-expanded', 'false');
+      });
+    }
+    drops.forEach(function (d) {
+      var btn = d.querySelector('.fw-nav-drop-btn');
+      if (!btn) return;
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var open = !d.classList.contains('open');
+        closeDrops(d);
+        d.classList.toggle('open', open);
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+      d.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeDrops();
+      });
+    });
+    document.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('.fw-nav-dropitem')) { closeDrops(); return; }
+      if (e.target.closest && e.target.closest('.fw-nav-drop')) return;
+      closeDrops();
     });
   }
 

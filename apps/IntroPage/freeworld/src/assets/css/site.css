@@ -229,6 +229,58 @@ a:hover { text-decoration: underline; }
 }
 .fw-nav-mobile .fw-lang { display: none; margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); }
 
+/* ── Nav dropdown — site index (stejný obsah jako IntroPage "Ekosystém") ── */
+.fw-nav-drop { position: relative; }
+.fw-nav-drop-btn::after {
+  content: '▾'; margin-left: 0.45rem; font-size: 0.72em; opacity: 0.65;
+  transition: transform 0.2s ease;
+}
+.fw-nav-drop.open .fw-nav-drop-btn::after { transform: rotate(180deg); }
+.fw-nav-drop.open .fw-nav-drop-btn {
+  color: #fff; border-color: var(--rasta-gold);
+  background: linear-gradient(120deg, rgba(228,30,43,0.45), rgba(252,209,22,0.45), rgba(7,137,48,0.45));
+  box-shadow: 0 0 18px rgba(252,209,22,0.35);
+}
+.fw-nav-dropmenu {
+  display: none; position: absolute; top: calc(100% + 10px); left: 50%;
+  transform: translateX(-50%);
+  min-width: 250px; max-height: 70vh; overflow-y: auto;
+  padding: 0.5rem; border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(180deg, rgba(10, 12, 20, 0.98), rgba(5, 6, 10, 0.98));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 24px rgba(252, 209, 22, 0.12);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  z-index: 60;
+}
+.fw-nav-drop.open .fw-nav-dropmenu { display: block; }
+.fw-nav-dropheader {
+  padding: 0.45rem 0.7rem 0.3rem;
+  font-size: 0.58rem; font-weight: 800; letter-spacing: 0.16em;
+  text-transform: uppercase; color: rgba(252, 209, 22, 0.8);
+}
+.fw-nav-dropitem {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.5rem 0.7rem; border-radius: 12px;
+  text-decoration: none; color: #f7f7f7;
+  font-size: 0.78rem; font-weight: 600;
+  transition: background 0.15s ease;
+}
+.fw-nav-dropitem:hover, .fw-nav-dropitem:focus-visible {
+  background: linear-gradient(110deg, rgba(228,30,43,0.25), rgba(252,209,22,0.2), rgba(7,137,48,0.25));
+}
+.fw-nav-dropitem-main { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.fw-nav-dropitem-sub { font-size: 0.62rem; font-weight: 500; color: rgba(255, 255, 255, 0.45); }
+.fw-nav-dropitem-ext { margin-left: auto; flex-shrink: 0; opacity: 0.4; font-size: 0.75rem; }
+
+/* mobilní drawer — stejné skupiny naplocho */
+.fw-nav-subheader {
+  padding: 0.9rem 1rem 0.2rem;
+  font-size: 0.58rem; font-weight: 800; letter-spacing: 0.16em;
+  text-transform: uppercase; color: rgba(252, 209, 22, 0.75);
+}
+.fw-nav-mobile .fw-nav-dropitem { width: 100%; padding: 0.55rem 0.9rem; font-size: 0.8rem; }
+
 body.fw-menu-open { overflow: hidden; }
 
 @media (max-width: 940px) {
