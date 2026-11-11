@@ -1,0 +1,1630 @@
+diff --git a/apps/MarketPlace/src/app/cart/page.tsx b/apps/MarketPlace/src/app/cart/page.tsx
+index f7d711e..e4160db 100644
+--- a/apps/MarketPlace/src/app/cart/page.tsx
++++ b/apps/MarketPlace/src/app/cart/page.tsx
+@@ -1,5 +1,7 @@
+ 'use client';
+ 
++import { designImage } from '@/lib/design-image';
++
+ import { useState, useEffect, useMemo } from 'react';
+ import Link from 'next/link';
+ import { useRouter } from 'next/navigation';
+@@ -301,7 +303,7 @@ export default function CartPage() {
+             >
+               <div className="w-20 h-20 rounded-lg overflow-hidden bg-black/30 flex-shrink-0">
+                 <img
+-                  src={item.image}
++                  src={designImage(item.image)}
+                   alt={item.name}
+                   onError={(e) => { e.currentTarget.src = '/shop/img/shared/logo.jpg'; }}
+                   className="w-full h-full object-cover"
+diff --git a/apps/MarketPlace/src/app/globals.css b/apps/MarketPlace/src/app/globals.css
+index fb0d21f..a3ee566 100644
+--- a/apps/MarketPlace/src/app/globals.css
++++ b/apps/MarketPlace/src/app/globals.css
+@@ -944,7 +944,7 @@ body.zion-shell {
+   margin: clamp(0.5rem, 2vw, 1.5rem) auto 0;
+   aspect-ratio: 1672 / 941;
+   border-radius: 1rem;
+-  background-image: url('/hero-kolekce-2027.webp?v=7');
++  background-image: url('/hero-kolekce-2027.webp?v=engine-v1');
+   background-size: cover;
+   background-position: center;
+   background-repeat: no-repeat;
+@@ -995,7 +995,7 @@ body.zion-shell {
+   margin: clamp(0.5rem, 2vw, 1.5rem) auto 0;
+   aspect-ratio: 1916 / 821;
+   border-radius: 1rem;
+-  background-image: url('/hiran-hero.webp');
++  background-image: url('/hiran-hero.webp?v=engine-v1');
+   background-size: cover;
+   background-position: center;
+   background-repeat: no-repeat;
+diff --git a/apps/MarketPlace/src/components/sections/ChristmasEdition.tsx b/apps/MarketPlace/src/components/sections/ChristmasEdition.tsx
+index 64e6118..7e2d6e9 100644
+--- a/apps/MarketPlace/src/components/sections/ChristmasEdition.tsx
++++ b/apps/MarketPlace/src/components/sections/ChristmasEdition.tsx
+@@ -165,7 +165,7 @@ export function ZionPassSection() {
+ 
+   return (
+     <ChristmasCard
+-      image={product?.hero ?? '/vanoce-pass.webp'}
++      image={product?.hero ?? '/vanoce-pass.webp?v=engine-v1'}
+       imageAlt={t('xmas.passImageAlt')}
+       badge={t('xmas.badge')}
+       kicker={t('xmas.passKicker')}
+@@ -198,7 +198,7 @@ export function LampionSection() {
+ 
+   return (
+     <ChristmasCard
+-      image={product?.hero ?? '/vanoce-lampion.webp?v=7'}
++      image={product?.hero ?? '/vanoce-lampion.webp?v=engine-v1'}
+       imageAlt={t('xmas.lampionImageAlt')}
+       badge={t('xmas.badge')}
+       kicker={t('xmas.lampionKicker')}
+diff --git a/apps/MarketPlace/src/components/sections/HeroSection.module.css b/apps/MarketPlace/src/components/sections/HeroSection.module.css
+new file mode 100644
+index 0000000..c41f35f
+--- /dev/null
++++ b/apps/MarketPlace/src/components/sections/HeroSection.module.css
+@@ -0,0 +1,63 @@
++.workshop {
++  position: relative;
++  max-width: 70rem;
++  margin-inline: auto;
++  overflow: hidden;
++  border: 2px solid #fcd116;
++  border-top-color: #ce242e;
++  border-bottom-color: #168141;
++  border-radius: 1.25rem;
++  background: #0b100d;
++  color: #f0e1be;
++}
++
++.art {
++  display: block;
++  width: 100%;
++  height: auto;
++}
++
++.actions {
++  padding: clamp(1.25rem, 4vw, 2.5rem);
++  text-align: center;
++  background: linear-gradient(155deg, #34191c, #0b100d 45%, #123423);
++}
++
++.title {
++  margin-block: 0.5rem;
++  font-size: clamp(2rem, 5vw, 4rem);
++  font-weight: 800;
++  line-height: 1.1;
++  letter-spacing: -0.04em;
++}
++
++.description {
++  max-width: 62ch;
++  margin: 0.75rem auto 1.25rem;
++  line-height: 1.6;
++}
++
++.signature {
++  display: flex;
++  flex-wrap: wrap;
++  align-items: center;
++  justify-content: center;
++  gap: 0.75rem;
++  margin: 1.25rem auto 0;
++}
++
++.heritage, .whale {
++  display: block;
++  height: auto;
++  max-width: 100%;
++  border-radius: 0.5rem;
++}
++
++.heritage {
++  width: 12.5rem;
++}
++
++.whale {
++  width: 7rem;
++  background: #f0e1be;
++}
+diff --git a/apps/MarketPlace/src/components/sections/HeroSection.tsx b/apps/MarketPlace/src/components/sections/HeroSection.tsx
+index 4f1ccac..e7149aa 100644
+--- a/apps/MarketPlace/src/components/sections/HeroSection.tsx
++++ b/apps/MarketPlace/src/components/sections/HeroSection.tsx
+@@ -3,25 +3,30 @@
+ import Link from 'next/link';
+ import { ArrowRight } from 'lucide-react';
+ import { useLangT } from '@/lib/useTranslation';
++import styles from './HeroSection.module.css';
+ 
+ export default function HeroSection() {
+   const { t } = useLangT();
+   return (
+-    <section className="kralovstvi-hero" aria-label="Hero">
+-      {/* Art nese vlastní text („Merry Christmas & Happy New Year 2027"),
+-          takže se přes něj nic nepřekládá: tesař u archy, děti s lucernou,
+-          zářící strom a srdcový lampion — vánoční kolekce 2027. */}
+-      <div
+-        className="kralovstvi-hero-art"
+-        role="img"
+-        aria-label="Vánoční kolekce 2027 — tesař u archy, děti s lucernou, zářící strom a srdcový lampion / Merry Christmas and a Happy New Year 2027"
++    <section className={styles.workshop} aria-labelledby="market-home-title">
++      <img
++        className={styles.art}
++        src="/images/design-v1/carpenter-workshop.webp?v=engine-v1"
++        srcSet="/images/design-v1/carpenter-workshop-m.webp 960w, /images/design-v1/carpenter-workshop.webp 1672w"
++        sizes="(max-width: 1152px) calc(100vw - 2rem), 1120px"
++        width={1672}
++        height={941}
++        alt=""
++        fetchPriority="high"
++        decoding="async"
+       />
+-      <div className="kralovstvi-hero-actions">
++      <div className={styles.actions}>
+         <div className="rasta-hero-kicker">
+           <span className="dot" />
+           {t('hero.kicker')}
+         </div>
+-        <p className="rasta-hero-desc">{t('hero.description')}</p>
++        <h1 id="market-home-title" className={styles.title}>ZION Market</h1>
++        <p className={styles.description}>{t('hero.description')}</p>
+         <div className="flex flex-wrap items-center justify-center gap-3">
+           <Link
+             href="/explore"
+@@ -37,6 +42,26 @@ export default function HeroSection() {
+             {t('hero.ctaSecondary')}
+           </Link>
+         </div>
++        <div className={styles.signature}>
++          <img
++            className={styles.heritage}
++            src="/images/design-v1/evoluzion-2008.jpeg"
++            width={719}
++            height={281}
++            alt="evoluZion · 2008"
++            loading="lazy"
++            decoding="async"
++          />
++          <img
++            className={styles.whale}
++            src="/images/design-v1/keporkak-original.png"
++            width={800}
++            height={500}
++            alt="Omnity.One"
++            loading="lazy"
++            decoding="async"
++          />
++        </div>
+       </div>
+     </section>
+   );
+diff --git a/apps/MarketPlace/src/components/shop/ShopProductCard.tsx b/apps/MarketPlace/src/components/shop/ShopProductCard.tsx
+index 9f777f8..122328b 100644
+--- a/apps/MarketPlace/src/components/shop/ShopProductCard.tsx
++++ b/apps/MarketPlace/src/components/shop/ShopProductCard.tsx
+@@ -1,5 +1,7 @@
+ 'use client';
+ 
++import { designImage } from '@/lib/design-image';
++
+ import { useState } from 'react';
+ import { ShoppingCart, Box, Ruler, Coins } from 'lucide-react';
+ import type { ShopProductData } from '@/types/shop';
+@@ -53,7 +55,7 @@ export default function ShopProductCard({ product, onOpen }: ShopProductCardProp
+           </div>
+         ) : (
+           <img
+-            src={product.image}
++            src={designImage(product.image)}
+             alt={product.name}
+             onError={() => setImgError(true)}
+             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+diff --git a/apps/MarketPlace/src/components/shop/ShopProductModal.tsx b/apps/MarketPlace/src/components/shop/ShopProductModal.tsx
+index 348ffb3..3de1370 100644
+--- a/apps/MarketPlace/src/components/shop/ShopProductModal.tsx
++++ b/apps/MarketPlace/src/components/shop/ShopProductModal.tsx
+@@ -1,5 +1,7 @@
+ 'use client';
+ 
++import { designImage } from '@/lib/design-image';
++
+ import { useState, useEffect } from 'react';
+ import { X, Minus, Plus, ShoppingCart, Ruler, Box, Coins, FileText, Flame } from 'lucide-react';
+ import type { ShopProductData } from '@/types/shop';
+@@ -92,7 +94,7 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
+               </div>
+             ) : (
+               <img
+-                src={product.image}
++                src={designImage(product.image)}
+                 alt={product.name}
+                 onError={() => setImgError(true)}
+                 className="w-full h-full object-cover"
+diff --git a/apps/MarketPlace/src/components/xmas/XmasProductPage.tsx b/apps/MarketPlace/src/components/xmas/XmasProductPage.tsx
+index 645f542..296a5e3 100644
+--- a/apps/MarketPlace/src/components/xmas/XmasProductPage.tsx
++++ b/apps/MarketPlace/src/components/xmas/XmasProductPage.tsx
+@@ -60,30 +60,18 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
+ 
+       {/* Hero band */}
+       <div className="zion-section overflow-hidden !p-0">
+-        {/* Poměr se řídí zdrojem: ultraširoký banner je 2,5:1, běžný obrázek 16:9.
+-            Dřív tu byl aspect-[21/9] + max-h-[420px], což banner (2,5:1) ořezávalo
+-            shora i zdola — „uříznutý" hero. */}
+-        <div className={`relative ${product.heroWide ? 'aspect-[5/2]' : 'aspect-[16/9]'}`}>
+-          <img
+-            src={product.heroWide ?? product.image}
+-            alt={pick(product.imageAlt)}
+-            className="absolute inset-0 w-full h-full object-cover"
+-          />
+-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
++        <div className="relative aspect-[16/9]">
++          <img src={product.heroWide ?? product.image} alt={pick(product.imageAlt)} className="h-full w-full object-contain" />
+           <div className="absolute top-4 left-4">
+             <span className="rarity-badge rarity-legendary inline-flex items-center gap-1.5">
+               <Snowflake className="w-3 h-3" /> {t('xmas.badge')}
+             </span>
+           </div>
+-          <div className="absolute bottom-4 left-4 right-4">
+-            <div className="zion-kicker inline-flex items-center gap-2">{pick(product.kicker)}</div>
+-            <h1 className="text-3xl md:text-4xl font-black font-display mt-2">
+-              <span className="text-gradient-gold">{pick(product.title)}</span>
+-            </h1>
+-            <p className="text-sm md:text-base text-gray-300 italic mt-1 max-w-2xl">
+-              {pick(product.subtitle)}
+-            </p>
+-          </div>
++        </div>
++        <div className="p-5 md:p-8">
++          <div className="zion-kicker">{pick(product.kicker)}</div>
++          <h1 className="text-3xl md:text-4xl font-black font-display mt-2"><span className="text-gradient-gold">{pick(product.title)}</span></h1>
++          <p className="text-sm md:text-base text-gray-300 italic mt-2 max-w-2xl">{pick(product.subtitle)}</p>
+         </div>
+       </div>
+ 
+@@ -104,7 +92,7 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
+                 src={shot.src}
+                 alt={pick(shot.alt)}
+                 loading="lazy"
+-                className="h-full w-full object-cover"
++                className="h-full w-full object-contain"
+               />
+             </figure>
+           ))}
+@@ -292,7 +280,7 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
+                         src={sample.image}
+                         alt={pick(sample.title)}
+                         loading="lazy"
+-                        className="h-full w-full object-cover"
++                        className="h-full w-full object-contain"
+                       />
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
+                     </div>
+@@ -346,7 +334,7 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
+                       <img
+                         src={edition.cover}
+                         alt={pick(edition.name)}
+-                        className="h-full w-full object-cover"
++                        className="h-full w-full object-contain"
+                       />
+                       {edition.flagship && (
+                         <span className="absolute left-2 top-2 rounded-full bg-rasta-gold/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-black">
+diff --git a/apps/MarketPlace/src/data/christmasProducts.ts b/apps/MarketPlace/src/data/christmasProducts.ts
+index 8ee0b26..5fd48c8 100644
+--- a/apps/MarketPlace/src/data/christmasProducts.ts
++++ b/apps/MarketPlace/src/data/christmasProducts.ts
+@@ -116,16 +116,16 @@ export const christmasProducts: XmasProduct[] = [
+   {
+     slug: 'zion-pass',
+     externalId: 'zion-pass-001',
+-    image: '/vanoce-pass.webp',
+-    hero: '/vanoce/home/01_zion_pass.webp',
+-    heroWide: '/vanoce/hero/zion-pass-wide.webp',
++    image: '/vanoce-pass.webp?v=engine-v1',
++    hero: '/vanoce/home/01_zion_pass.webp?v=engine-v1',
++    heroWide: '/vanoce/hero/zion-pass-wide.webp?v=engine-v1',
+     gallery: [
+       {
+-        src: '/vanoce/galerie/zion-pass/02_nirvana_a_archiv.webp',
++        src: '/vanoce/galerie/zion-pass/02_nirvana_a_archiv.webp?v=engine-v1',
+         alt: { cs: 'Nirvana a ZION Archiv za jednou branou', en: 'Nirvana and the ZION Archive behind one gate' },
+       },
+       {
+-        src: '/vanoce/galerie/zion-pass/03_digitalni_darek.webp',
++        src: '/vanoce/galerie/zion-pass/03_digitalni_darek.webp?v=engine-v1',
+         alt: { cs: 'ZION Pass jako digitální dárek do e-mailu', en: 'The ZION Pass as a digital gift in your inbox' },
+       },
+     ],
+@@ -292,16 +292,16 @@ export const christmasProducts: XmasProduct[] = [
+   {
+     slug: 'kniha-kralovstvi-srdce',
+     externalId: 'book-001',
+-    image: '/shop/img/books/kralovstvi-srdce-wide.webp',
+-    hero: '/vanoce/home/02_kralovstvi_srdce.webp',
+-    heroWide: '/vanoce/hero/kralovstvi-srdce-wide.webp',
++    image: '/shop/img/books/kralovstvi-srdce-wide.webp?v=engine-v1',
++    hero: '/vanoce/home/02_kralovstvi_srdce.webp?v=engine-v1',
++    heroWide: '/vanoce/hero/kralovstvi-srdce-wide.webp?v=engine-v1',
+     gallery: [
+       {
+-        src: '/vanoce/galerie/kralovstvi-srdce/02_edicni_sada.webp',
++        src: '/vanoce/galerie/kralovstvi-srdce/02_edicni_sada.webp?v=engine-v1',
+         alt: { cs: 'Osmička edic Království srdce v jedné sadě', en: 'The eight editions of Kingdom of Hearts in one set' },
+       },
+       {
+-        src: '/vanoce/galerie/kralovstvi-srdce/03_cteni.webp',
++        src: '/vanoce/galerie/kralovstvi-srdce/03_cteni.webp?v=engine-v1',
+         alt: { cs: 'Čtení Království srdce v PDF i EPUB', en: 'Reading Kingdom of Hearts in PDF and EPUB' },
+       },
+     ],
+@@ -579,7 +579,7 @@ export const christmasProducts: XmasProduct[] = [
+       {
+         label: { cs: 'Ukázka · Prolog', en: 'Sample · Prologue' },
+         title: { cs: 'Světlo před svítáním', en: 'Light Before Dawn' },
+-        image: '/vanoce/pribeh/05_svetla_u_brany.webp?v=7',
++        image: '/vanoce/pribeh/05_svetla_u_brany.webp?v=engine-v1',
+         paragraphs: [
+           {
+             cs: "U brány hořela dvě světla. Jedno v kamenném ohništi, kde Rádha pekla chléb. Druhé za střepem skla v malé cedrové lucerně. Plamen se nehýbal s větrem. Když však z mlhy zazněly kroky, sklonil se ke stezce. Elizabeth jej sledovala. Na rukávu měla záplatu, kterou už nikdo z přicházejících neuměl ušít. Její země ležela tak daleko v budoucnosti, že z měst tohoto pobřeží nezůstala ani jména. Zůstalo v ní cosi jiného: při večeři se pokaždé prostíralo jedno místo navíc. Kdysi se zeptala proč. Odpověděli jí, že to pochází od jisté lodi. A tak se vydala hledat její začátek.",
+@@ -591,7 +591,7 @@ export const christmasProducts: XmasProduct[] = [
+       {
+         label: { cs: 'Ukázka · 7. kapitola', en: 'Sample · Chapter 7' },
+         title: { cs: 'Království je uvnitř vás', en: 'The Kingdom Is Within You' },
+-        image: '/vanoce/pribeh/04_jmeno_lodi.webp',
++        image: '/vanoce/pribeh/04_jmeno_lodi.webp?v=engine-v1',
+         paragraphs: [
+           {
+             cs: "Když v Kafarnaum uvázali loď u břehu, přišli k nim farizeové — muži, kteří měřili příchod Mesiáše podle znamení na obloze a svitků s letopočty. Postavili se nad loď a zeptali se tesaře zpříma: „Kdy přijde království Boží?“",
+@@ -607,7 +607,7 @@ export const christmasProducts: XmasProduct[] = [
+       {
+         label: { cs: 'Ukázka · Epilog', en: 'Sample · Epilogue' },
+         title: { cs: 'První prkno', en: 'The First Plank' },
+-        image: '/vanoce/pribeh/06_misto_navic.webp?v=7',
++        image: '/vanoce/pribeh/06_misto_navic.webp?v=engine-v1',
+         paragraphs: [
+           {
+             cs: "Z mlhy před branou vystoupil člověk, kterého žádný z nich neznal. Měl kabát převázaný provazem, na rameni nesl spící dítě a druhou rukou svíral boty. Zastavil se tak daleko od ohně, aby nemusel být vyzván k odchodu. Poutník se zvedl. Nohy měl ztuhlé a v dlaních jej zabolely staré rány.",
+@@ -625,9 +625,9 @@ export const christmasProducts: XmasProduct[] = [
+   {
+     slug: 'lampion',
+     externalId: 'lamp-001',
+-    image: '/vanoce-lampion.webp?v=7',
+-    hero: '/vanoce/home/03_lampion_tesar_deti_v4.webp?v=7',
+-    heroWide: '/vanoce/hero/lampion-wide.webp?v=7',
++    image: '/vanoce-lampion.webp?v=engine-v1',
++    hero: '/vanoce/home/03_lampion_tesar_deti_v4.webp?v=engine-v1',
++    heroWide: '/vanoce/hero/lampion-wide.webp?v=engine-v1',
+     model3d: '/models/lumi-2.glb',
+     guide: {
+       title: { cs: 'Složení lampionu — šest kroků', en: 'Assembling the lantern — six steps' },
+@@ -682,15 +682,15 @@ export const christmasProducts: XmasProduct[] = [
+     },
+     gallery: [
+       {
+-        src: '/vanoce/galerie/lampion/01_balicek_v4.webp?v=7',
++        src: '/vanoce/galerie/lampion/01_balicek_v4.webp?v=engine-v1',
+         alt: { cs: 'Lampion Království srdce jako vánoční balíček', en: 'The Kingdom of Hearts lantern as a Christmas parcel' },
+       },
+       {
+-        src: '/vanoce/galerie/lampion/02_konstrukce_v4.webp?v=7',
++        src: '/vanoce/galerie/lampion/02_konstrukce_v4.webp?v=engine-v1',
+         alt: { cs: 'Šestihranné tělo lampionu a mandalové výřezy', en: 'Hexagonal lantern body and mandala cut-outs' },
+       },
+       {
+-        src: '/vanoce/galerie/lampion/03_vecerni_svetlo_v4.webp?v=7',
++        src: '/vanoce/galerie/lampion/03_vecerni_svetlo_v4.webp?v=engine-v1',
+         alt: { cs: 'Lampion ve večerním světle', en: 'The lantern in evening light' },
+       },
+     ],
+diff --git a/apps/MarketPlace/src/data/shopNews.ts b/apps/MarketPlace/src/data/shopNews.ts
+index ef51ca5..1798a77 100644
+--- a/apps/MarketPlace/src/data/shopNews.ts
++++ b/apps/MarketPlace/src/data/shopNews.ts
+@@ -46,7 +46,7 @@ export const CHRISTMAS_EDITION_PRODUCTS: ShopNewsProduct[] = [
+     name: { cs: 'ZION Pass', en: 'ZION Pass' },
+     priceCzk: 108,
+     href: '/vanoce/zion-pass',
+-    image: '/shop/img/products/zion-pass-001_zion-pass.webp',
++    image: '/shop/img/products/zion-pass-001_zion-pass.webp?v=engine-v1',
+     imageAlt: { cs: 'ZION Pass — zlatá karta do Nirvany a Archivu', en: 'ZION Pass — the golden card into Nirvana and the Archive' },
+     buyable: true,
+   },
+@@ -55,7 +55,7 @@ export const CHRISTMAS_EDITION_PRODUCTS: ShopNewsProduct[] = [
+     name: { cs: 'Království srdce — kniha', en: 'Kingdom of Hearts — book' },
+     priceCzk: 216,
+     href: '/vanoce/kniha-kralovstvi-srdce',
+-    image: '/shop/img/products/book-001_kralovstvi-srdce.webp',
++    image: '/shop/img/products/book-001_kralovstvi-srdce.webp?v=engine-v1',
+     imageAlt: { cs: 'Kniha Království srdce — obálka s lodí', en: 'Kingdom of Hearts book — cover with the ship' },
+     buyable: true,
+   },
+@@ -64,7 +64,7 @@ export const CHRISTMAS_EDITION_PRODUCTS: ShopNewsProduct[] = [
+     name: { cs: 'Druhá lucerna', en: 'Second lantern' },
+     priceCzk: 490,
+     href: '/vanoce/lampion',
+-    image: '/shop/img/products/lamp-001_lumi-2.webp',
++    image: '/shop/img/products/lamp-001_lumi-2.webp?v=engine-v1',
+     imageAlt: { cs: 'Druhá lucerna — Lumi 2 z 3mm překližky, rozsvícená', en: 'The second lantern — Lumi 2 in 3 mm plywood, lit' },
+     buyable: true,
+   },
+@@ -73,14 +73,14 @@ export const CHRISTMAS_EDITION_PRODUCTS: ShopNewsProduct[] = [
+ /** Obrázky doprovodných karet — skutečné assety z e-shopu, ne ilustrace. */
+ export const SHOP_NEWS_IMAGES = {
+   market: {
+-    src: '/hero-kolekce-2027.webp',
++    src: '/hero-kolekce-2027.webp?v=engine-v1',
+     alt: {
+       cs: 'Zimní trh Království srdce — archa, strom a lucerny',
+       en: 'The Kingdom of Hearts winter market — the ark, the tree and lanterns',
+     },
+   },
+   campaign: {
+-    src: '/vanoce/hero/lampion-wide.webp',
++    src: '/vanoce/hero/lampion-wide.webp?v=engine-v1',
+     alt: {
+       cs: 'Lampion Lumi 2 na tesařském stole s knihou a ZION Passem',
+       en: 'The Lumi 2 lantern on the carpenter’s table with the book and the ZION Pass',
+diff --git a/apps/MarketPlace/src/data/shopProducts.ts b/apps/MarketPlace/src/data/shopProducts.ts
+index 0c830d5..246cfce 100644
+--- a/apps/MarketPlace/src/data/shopProducts.ts
++++ b/apps/MarketPlace/src/data/shopProducts.ts
+@@ -49,7 +49,7 @@ export const shopProducts: ShopProductSeed[] = [
+       'Příběh lodi, kterou postavil tesař. Duchovní legenda o tesaři z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě — a říkal jí Království srdce. 📚 KOMPLETNÍ SADA: osm samostatných edic téhož příběhu, každá v pěti jazycích (čeština, angličtina, španělština, francouzština, portugalština) — celkem 40 knih ve formátu PDF i EPUB, 3 252 stran a 619 498 slov. Každá edice má u kapitol tabulku „Kotva pravdy" (co je Písmo, tradice, historie, legenda a co je literární obraz). Ke knize ZION Archive Pass — vstup do ZION Archivu. 🛡️ BONUS: 31 104 ZION — Genesis vstup pro Guardians ekosystému ZION (akce do 24. 12. 2026).',
+     priceCzk: 216,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/book-001_kralovstvi-srdce.webp',
++    image: '/shop/img/products/book-001_kralovstvi-srdce.webp?v=engine-v1',
+     badge: '🛡️ Genesis Guardian',
+     inStock: true,
+     size: 'PDF + EPUB · 40 knih, 5 jazyků',
+@@ -71,7 +71,7 @@ export const shopProducts: ShopProductSeed[] = [
+       'Digitální průkaz do světa ZION. ZION Pass otevírá vstup do Nirvany (3D portál Království srdce — hry, světy, chat) i do ZION Archivu (kanonické texty, Kroniky, edice). Po zaplacení přijde jedinečný kód ZAP-…, který se uplatní na nirvana.zionterranova.com i v ZION Archivu. 🛡️ BONUS: 15 552 ZION na tvoji ZION peněženku.',
+     priceCzk: 108,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/zion-pass-001_zion-pass.webp',
++    image: '/shop/img/products/zion-pass-001_zion-pass.webp?v=engine-v1',
+     badge: '🛡️ ZION Pass',
+     inStock: true,
+     size: 'ZAP kód · okamžité doručení',
+@@ -88,7 +88,7 @@ export const shopProducts: ShopProductSeed[] = [
+       'Druhá lucerna. Přijde rozložená: osm dílů z 3mm břízy, půl hodiny, dřevěné lepidlo. Svíčku zapálíš sám. 20,9 m řezu, čtyři hodiny laseru, číslovaná edice.',
+     priceCzk: 490,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/lamp-001_lumi-2.webp',
++    image: '/shop/img/products/lamp-001_lumi-2.webp?v=engine-v1',
+     badge: '🎄 Vánoční edice',
+     inStock: true,
+     size: 'Překližka 3 mm · 140 × 126 × 121 mm',
+@@ -112,7 +112,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Profesionální tesařská výroba pergol na míru. Cena za konzultaci.',
+     priceCzk: 390,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/wood-003_pergola.webp',
++    image: '/shop/img/products/wood-003_pergola.webp?v=engine-v1',
+     badge: 'Projekt',
+     inStock: true,
+     size: 'Konzultace 60 min',
+@@ -128,7 +128,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Kompletní realizace dětského domku, konzultace, návrh a stavba na míru.',
+     priceCzk: 69000,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/wood-004_domek-na-strome.webp',
++    image: '/shop/img/products/wood-004_domek-na-strome.webp?v=engine-v1',
+     badge: 'Projekt',
+     inStock: false,
+     size: 'Zakázka na míru',
+@@ -146,7 +146,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Sada vypálených dílů A-Wingu z 3mm překližky. 3D náhled a odkaz na plány u autora.',
+     priceCzk: 790,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/star-001_a-wing.webp',
++    image: '/shop/img/products/star-001_a-wing.webp?v=engine-v1',
+     badge: 'CNC Ready',
+     inStock: false,
+     size: 'rozpětí 300 mm',
+@@ -164,7 +164,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Sada vypálených dílů B-Wingu z 3mm překližky. 3D náhled a odkaz na plány u autora.',
+     priceCzk: 1190,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/star-002_b-wing.webp',
++    image: '/shop/img/products/star-002_b-wing.webp?v=engine-v1',
+     badge: 'Workshop',
+     inStock: false,
+     size: 'rozpětí 35 mm',
+@@ -182,7 +182,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Sada vypálených dílů X-Wingu z 3mm překližky. Nejoblíbenější loď; 3D náhled a plány u autora.',
+     priceCzk: 1090,
+     oldPriceCzk: 1690,
+-    image: '/shop/img/products/star-003_x-wing.webp',
++    image: '/shop/img/products/star-003_x-wing.webp?v=engine-v1',
+     badge: 'Bestseller',
+     inStock: false,
+     size: 'rozpětí 300 mm',
+@@ -200,7 +200,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Sada vypálených dílů Ikarugy z 3mm překližky. 3D náhled ukáže originální detaily.',
+     priceCzk: 890,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/star-004_ikaruga.webp',
++    image: '/shop/img/products/star-004_ikaruga.webp?v=engine-v1',
+     badge: 'Arcade Icon',
+     inStock: false,
+     size: 'rozpětí 300 mm',
+@@ -218,7 +218,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Sada vypálených dílů Snowspeederu z 3mm překližky. 3D náhled a odkaz na plány u autora.',
+     priceCzk: 890,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/star-005_snowspeeder.webp',
++    image: '/shop/img/products/star-005_snowspeeder.webp?v=engine-v1',
+     badge: 'Hoth Spec',
+     inStock: false,
+     size: 'rozpětí 300 mm',
+@@ -236,7 +236,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Sada vypálených dílů TIE Fighteru z 3mm překližky. 3D náhled umožní kontrolu proporcí.',
+     priceCzk: 790,
+     oldPriceCzk: 1490,
+-    image: '/shop/img/products/star-006_tie-fighter.webp',
++    image: '/shop/img/products/star-006_tie-fighter.webp?v=engine-v1',
+     badge: 'Imperial',
+     inStock: false,
+     size: 'rozpětí 300 mm',
+@@ -254,7 +254,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Sada vypálených dílů TIE Interceptoru z 3mm překližky. 3D náhled a odkaz na plány u autora.',
+     priceCzk: 790,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/star-007_tie-interceptor.webp',
++    image: '/shop/img/products/star-007_tie-interceptor.webp?v=engine-v1',
+     badge: 'Limited',
+     inStock: false,
+     size: 'rozpětí 300 mm',
+@@ -272,7 +272,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Ikonický Millennium Falcon ve dřevěném provedení. Kompletní stavebnice s 3D náhledem a PDF instrukcemi pro přesnou montáž.',
+     priceCzk: 1490,
+     oldPriceCzk: 2490,
+-    image: '/shop/img/products/star-008_millennium-falcon.webp',
++    image: '/shop/img/products/star-008_millennium-falcon.webp?v=engine-v1',
+     badge: 'Legendary',
+     inStock: false,
+     size: 'rozpětí 400 mm',
+@@ -293,7 +293,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Laserové gravírování vašeho loga nebo textu. Cena za plochu max 40x40 cm.',
+     priceCzk: 490,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/engr-001_gravirovani-loga.webp',
++    image: '/shop/img/products/engr-001_gravirovani-loga.webp?v=engine-v1',
+     badge: 'Služba',
+     inStock: false,
+     size: 'max 40×40 cm',
+@@ -309,7 +309,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Vaše fotografie přenesená laserem na dřevěnou destičku max 40x40 cm.',
+     priceCzk: 490,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/engr-002_gravirovana-fotografie.webp',
++    image: '/shop/img/products/engr-002_gravirovana-fotografie.webp?v=engine-v1',
+     badge: 'Personalizace',
+     inStock: false,
+     size: 'max 40×40, A3 cm',
+@@ -325,7 +325,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Originální dřevěná vizitka s gravírovaným QR kódem na vaše kontakty.',
+     priceCzk: 190,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/engr-003_qr-vizitka.webp',
++    image: '/shop/img/products/engr-003_qr-vizitka.webp?v=engine-v1',
+     badge: 'Business',
+     inStock: false,
+     size: '10x5 cm, množství dle objednávky, sleva na počet',
+@@ -343,7 +343,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Hodinová konzultace k vývoji webových stránek. React, Vue, WordPress.',
+     priceCzk: 390,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/digi-001_web-konzultace.webp',
++    image: '/shop/img/products/digi-001_web-konzultace.webp?v=engine-v1',
+     badge: 'Online',
+     inStock: true,
+     size: '60 min session',
+@@ -359,7 +359,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Kompletní tvorba firemního/Osobního webu včetně designu a nasazení.',
+     priceCzk: 4900,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/digi-002_onepage-web.webp',
++    image: '/shop/img/products/digi-002_onepage-web.webp?v=engine-v1',
+     badge: 'Projekt',
+     inStock: true,
+     size: 'OnePage delivery',
+@@ -375,7 +375,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Implementace e-shopu s platební bránou a Zásilkovnou. Bez měsíčních poplatků.',
+     priceCzk: 29900,
+     oldPriceCzk: 35000,
+-    image: '/shop/img/products/digi-003_eshop-reseni.webp',
++    image: '/shop/img/products/digi-003_eshop-reseni.webp?v=engine-v1',
+     badge: 'Sleva',
+     inStock: true,
+     size: 'Full install',
+@@ -391,7 +391,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'Kompletní vývoj webové aplikace na míru. Frontend, backend, databáze, nasazení.',
+     priceCzk: 79000,
+     oldPriceCzk: 99000,
+-    image: '/shop/img/products/digi-004_fullstack-aplikace.webp',
++    image: '/shop/img/products/digi-004_fullstack-aplikace.webp?v=engine-v1',
+     badge: 'Sleva',
+     inStock: true,
+     size: 'End-to-end build',
+@@ -409,7 +409,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'GUI desktop mining aplikace pro Win/Mac/Linux. Auto-tune optimalizace, multi-pool support, real-time dashboard, consciousness XP tracking.',
+     priceCzk: 990,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/soft-001_miner-pro-desktop.webp',
++    image: '/shop/img/products/soft-001_miner-pro-desktop.webp?v=engine-v1',
+     badge: 'Bestseller',
+     inStock: true,
+     size: 'Digital download',
+@@ -425,7 +425,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'ZION Pool server (Docker). Whitelabel dashboard, multi-algo support, consciousness mining game, 30 dní email support.',
+     priceCzk: 9990,
+     oldPriceCzk: undefined,
+-    image: '/shop/img/products/soft-002_dao-pool-license.webp',
++    image: '/shop/img/products/soft-002_dao-pool-license.webp?v=engine-v1',
+     badge: 'Enterprise',
+     inStock: true,
+     size: 'Docker + Support',
+@@ -441,7 +441,7 @@ export const shopProducts: ShopProductSeed[] = [
+     description: 'First Zion mining rig with optimized hardware and software integration.',
+     priceCzk: 26900,
+     oldPriceCzk: 49900,
+-    image: '/shop/img/products/soft-003_rtx-5060-miner-oasis.webp',
++    image: '/shop/img/products/soft-003_rtx-5060-miner-oasis.webp?v=engine-v1',
+     badge: 'Bundle',
+     inStock: true,
+     size: 'Complete Cpu/Gpu Rig',
+diff --git a/apps/MarketPlace/src/lib/design-image.ts b/apps/MarketPlace/src/lib/design-image.ts
+new file mode 100644
+index 0000000..09148d5
+--- /dev/null
++++ b/apps/MarketPlace/src/lib/design-image.ts
+@@ -0,0 +1,30 @@
++const paths = new Set([
++  "/shop/img/products/book-001_kralovstvi-srdce.webp",
++  "/shop/img/products/zion-pass-001_zion-pass.webp",
++  "/shop/img/products/lamp-001_lumi-2.webp",
++  "/shop/img/products/wood-003_pergola.webp",
++  "/shop/img/products/wood-004_domek-na-strome.webp",
++  "/shop/img/products/star-001_a-wing.webp",
++  "/shop/img/products/star-002_b-wing.webp",
++  "/shop/img/products/star-003_x-wing.webp",
++  "/shop/img/products/star-004_ikaruga.webp",
++  "/shop/img/products/star-005_snowspeeder.webp",
++  "/shop/img/products/star-006_tie-fighter.webp",
++  "/shop/img/products/star-007_tie-interceptor.webp",
++  "/shop/img/products/star-008_millennium-falcon.webp",
++  "/shop/img/products/engr-001_gravirovani-loga.webp",
++  "/shop/img/products/engr-002_gravirovana-fotografie.webp",
++  "/shop/img/products/engr-003_qr-vizitka.webp",
++  "/shop/img/products/digi-001_web-konzultace.webp",
++  "/shop/img/products/digi-002_onepage-web.webp",
++  "/shop/img/products/digi-003_eshop-reseni.webp",
++  "/shop/img/products/digi-004_fullstack-aplikace.webp",
++  "/shop/img/products/soft-002_dao-pool-license.webp",
++  "/shop/img/products/soft-003_rtx-5060-miner-oasis.webp",
++  "/shop/img/products/soft-001_miner-pro-desktop.webp"
++]);
++export function designImage(src: string | undefined): string | undefined {
++  if (!src) return src;
++  const path = src.split('?')[0].replace(/^https:\/\/market\.zionterranova\.com/, '');
++  return paths.has(path) ? `${path}?v=engine-v1` : src;
++}
+diff --git a/apps/website-v2.9/next.config.ts b/apps/website-v2.9/next.config.ts
+index 06514b3..459b8db 100644
+--- a/apps/website-v2.9/next.config.ts
++++ b/apps/website-v2.9/next.config.ts
+@@ -18,6 +18,12 @@ const nextConfig: NextConfig = {
+     unoptimized: false,
+     formats: ['image/avif', 'image/webp'],
+     minimumCacheTTL: 86400,
++    localPatterns: [
++      { pathname: '/**', search: '' },
++      { pathname: '/images/**', search: '?v=engine-v1' },
++      { pathname: '/hero.webp', search: '?v=engine-v1' },
++      { pathname: '/hero-m.webp', search: '?v=engine-v1' },
++    ],
+     remotePatterns: [
+       { protocol: 'https', hostname: 'newearth.cz' },
+       { protocol: 'https', hostname: '*.newearth.cz' },
+diff --git a/apps/website-v2.9/src/app/l3-hiran/page.tsx b/apps/website-v2.9/src/app/l3-hiran/page.tsx
+index 2a95759..413e396 100644
+--- a/apps/website-v2.9/src/app/l3-hiran/page.tsx
++++ b/apps/website-v2.9/src/app/l3-hiran/page.tsx
+@@ -582,8 +582,8 @@ export default function L3HiranPage() {
+             </div>
+             <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/l3-hiran/hero.webp"
+-                srcSet="/images/l3-hiran/hero-m.webp 960w, /images/l3-hiran/hero.webp 1672w"
++                src="/images/l3-hiran/hero.webp?v=engine-v1"
++                srcSet="/images/l3-hiran/hero-m.webp?v=engine-v1 960w, /images/l3-hiran/hero.webp?v=engine-v1 1672w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt={cs ? 'ZION Hiranyagarbha — L3 AI vrstva' : t5('ZION Hiranyagarbha — L3 AI layer', lang)}
+                 width={1672}
+diff --git a/apps/website-v2.9/src/app/l4-oasis/page.tsx b/apps/website-v2.9/src/app/l4-oasis/page.tsx
+index 5124173..5d6e0bf 100644
+--- a/apps/website-v2.9/src/app/l4-oasis/page.tsx
++++ b/apps/website-v2.9/src/app/l4-oasis/page.tsx
+@@ -367,8 +367,8 @@ export default function L4OasisPage() {
+             </div>
+             <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/l4-oasis/hero.webp"
+-                srcSet="/images/l4-oasis/hero-m.webp 960w, /images/l4-oasis/hero.webp 1280w"
++                src="/images/l4-oasis/hero.webp?v=engine-v1"
++                srcSet="/images/l4-oasis/hero-m.webp?v=engine-v1 960w, /images/l4-oasis/hero.webp?v=engine-v1 1280w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt={cs ? 'ZION Oasis — Strom života a Zlaté vejce ve spirální galaxii' : t5('ZION Oasis — the Tree of Life and the Golden Egg in a spiral galaxy', lang)}
+                 width={1280}
+diff --git a/apps/website-v2.9/src/app/l5-free-world/page.tsx b/apps/website-v2.9/src/app/l5-free-world/page.tsx
+index fc6bd68..f98e8cd 100644
+--- a/apps/website-v2.9/src/app/l5-free-world/page.tsx
++++ b/apps/website-v2.9/src/app/l5-free-world/page.tsx
+@@ -168,7 +168,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
+     desc: tx5(L5FreeWorldCopy.pioneerL5CommunityPermaculture, lang),
+     tags: t5a(['Permaculture', 'Guardian Node', 'DAO Circle'], lang),
+     href: '/terranova/genesis',
+-    cover: '/images/genesis-garden/hero.webp',
++    cover: '/images/genesis-garden/hero.webp?v=engine-v1',
+   },
+   {
+     name: 'Dharma Temple',
+@@ -177,7 +177,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
+     desc: tx5(L5FreeWorldCopy.educationalAndMeditationCenter, lang),
+     tags: t5a(['Education', 'Off-grid', 'Meditation'], lang),
+     href: '/terranova/dharma-temple',
+-    cover: '/images/dharma-temple/hero.webp',
++    cover: '/images/dharma-temple/hero.webp?v=engine-v1',
+   },
+   {
+     name: 'Te Pīko Ora',
+@@ -186,7 +186,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
+     desc: tx5(L5FreeWorldCopy.tePikoOraPolynesianRevival, lang),
+     tags: t5a(['Cultural Revival', 'Heritage', 'L5 Fund'], lang),
+     href: '/terranova/te-piko-ora',
+-    cover: '/images/te-piko-ora/hero.webp',
++    cover: '/images/te-piko-ora/hero.webp?v=engine-v1',
+   },
+   {
+     name: 'Golden Republic Bohemia',
+@@ -195,7 +195,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
+     desc: cs ? 'Governance laboratoř Zlaté republiky — kruh rozhodování, česká moudrost a ZION protokol v srdci Evropy.' : t5('Governance laboratory for the Golden Republic — decision circle, Czech wisdom and ZION protocol in the heart of Europe.', lang),
+     tags: t5a(['Governance', 'DAO Circle', 'Golden Republic'], lang),
+     href: '/terranova/golden-republic-bohemia',
+-    cover: '/images/golden-republic-bohemia/hero.webp',
++    cover: '/images/golden-republic-bohemia/hero.webp?v=engine-v1',
+   },
+   {
+     name: 'Bodhi Lanka',
+@@ -204,7 +204,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
+     desc: cs ? 'Akáša uzel — prostor, který drží všechny elementy. Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi a ZION protokol.' : t5('Akasha node — the space that holds all elements. Infinite love of Rama and Sita, the oldest living tree on Earth, and ZION protocol.', lang),
+     tags: t5a(['Bhakti', 'Ayurveda', 'Bodhi Tree'], lang),
+     href: '/terranova/bodhi-lanka',
+-    cover: '/images/bodhi-lanka/hero.webp',
++    cover: '/images/bodhi-lanka/hero.webp?v=engine-v1',
+   },
+   {
+     name: 'Ekam · Oneness Temple',
+@@ -213,7 +213,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
+     desc: cs ? 'Jediný uzel, který už stojí — chrám Jednoty postavený 2008: bílý mramor, zlatý řez, bezsloupová hala a Zlatá koule. Předloha pro všechny uzly a místo, které pojmenovalo samotný chain (ekam_deeksha).' : t5('The only node already standing — the Temple of Oneness built in 2008: white marble, golden ratio, a column-free hall and the Golden Orb. The template for every node and the place that named the chain itself (ekam_deeksha).', lang),
+     tags: t5a(['Built 2008', 'The Template', 'Golden Orb'], lang),
+     href: '/terranova/ekam',
+-    cover: '/images/ekam/hero.webp',
++    cover: '/images/ekam/hero.webp?v=engine-v1',
+   },
+   {
+     name: 'LUMI',
+@@ -222,7 +222,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
+     desc: cs ? 'Most Amerik — projekt pro nativní kultury (Bribri, Cabécar, Boruca) na zeměpisném středobodu kontinentů, sdílený pozemek s pozemní stanicí Issobella.' : t5('Americas bridge — a project for the native cultures (Bribri, Cabécar, Boruca) at the geographic midpoint of the continents, sharing land with the Issobella ground station.', lang),
+     tags: t5a(['Native Cultures', 'FPIC', 'Americas Bridge'], lang),
+     href: '/terranova/nova-amerika',
+-    cover: '/images/nova-amerika/hero.webp',
++    cover: '/images/nova-amerika/hero.webp?v=engine-v1',
+   },
+   {
+     name: 'Uluru',
+@@ -231,7 +231,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
+     desc: cs ? 'Poselství protinožců — odkaz domorodé Austrálie: Tjukurpa, songlines, škola vnímání a každoroční festival oslavy života. Uzel jako vztah, ne stavba.' : t5('Message from the antipodes — the heritage of Aboriginal Australia: Tjukurpa, songlines, a school of perception and an annual celebration-of-life festival. A node as a relationship, not a construction.', lang),
+     tags: t5a(['Tjukurpa', 'Songlines', 'Indigenous Heritage'], lang),
+     href: '/terranova/uluru',
+-    cover: '/images/uluru/hero.webp',
++    cover: '/images/uluru/hero.webp?v=engine-v1',
+   },
+   {
+     name: 'María del Camino',
+@@ -240,7 +240,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
+     desc: cs ? 'Osmý bod sítě — plující uzel, flotila Tres Marias: atlantická plachetnice Santa María la Mayor, pacifický solární katamarán Nossa Senhora de Fátima a indickooceánská María de las Nieves. ~50 poutníků na trup spojuje všechny uzly sítě po mořském Caminu.' : t5('The eighth point of the network — a sailing node, the Tres Marias fleet: the Atlantic tall ship Santa María la Mayor, the Pacific solar catamaran Nossa Senhora de Fátima and the Indian-ocean María de las Nieves. ~50 pilgrims per hull connecting every node of the network on a sea Camino.', lang),
+     tags: t5a(['Sea Camino', 'Solar Sails', 'Mobile Node'], lang),
+     href: '/terranova/maria-del-camino',
+-    cover: '/images/maria-del-camino/hero.webp',
++    cover: '/images/maria-del-camino/hero.webp?v=engine-v1',
+   },
+   {
+     name: 'Boa Esperança',
+@@ -249,7 +249,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
+     desc: cs ? 'Devátý bod sítě — druhý šev světa, kde se bouře přejmenovává na naději a dvě Marie se setkávají na vodě. Domov nejstarší lidské linie (Khoisan), fynbos zahrada a kelp seaforest, vodní laboratoř Day Zero. Uzel jako vztah, ne stavba.' : t5('The ninth point of the network — the second seam of the world, where the storm is renamed hope and the two Marias meet at sea. Home of humanity’s oldest lineage (Khoisan), a fynbos garden and kelp seaforest, a Day-Zero water lab. A node as a relationship, not a construction.', lang),
+     tags: t5a(['Hope', 'Two Oceans', 'Khoisan'], lang),
+     href: '/terranova/boa-esperanca',
+-    cover: '/images/boa-esperanca/hero.webp',
++    cover: '/images/boa-esperanca/hero.webp?v=engine-v1',
+   },
+   {
+     name: 'Kailash',
+@@ -258,7 +258,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
+     desc: cs ? 'Jedenáctý bod sítě — poušť očištění kolem jediné hory, na kterou se nikdy nevylezlo. Gang Rinpoche drží shodu čtyř tradic (hindu, buddha, bön, džina); poutník ji nechodí na ni, ale kolem — kora. U prastarého ohně sedí mistři všech linií Šambhaly. Uzel jako vztah, ne stavba.' : t5('The eleventh point of the network — the desert of purification around the only mountain never climbed. Gang Rinpoche holds the agreement of four traditions (Hindu, Buddhist, Bön, Jain); the pilgrim walks around it, not up — the kora. At the primordial fire sit the masters of all Shambhala lineages. A node as a relationship, not a construction.', lang),
+     tags: t5a(['Purification', 'Kora', 'Shambhala'], lang),
+     href: '/terranova/kailash',
+-    cover: '/images/kailash/hero.webp',
++    cover: '/images/kailash/hero.webp?v=engine-v1',
+   },
+   {
+     name: 'Amenti',
+@@ -267,7 +267,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
+     desc: cs ? 'Dvanáctý a poslední bod sítě — kolébka záznamu na plateu Gízy: poslední dochovaný div antického světa (~4 500 let) a v mýtické geografii sítě Síně Amenti pod pískem — síně, kde 32 Dětí Světla hlídá Kvetoucí Plamen. Sedm Pánů = sedm ctností implementovaných v L3; Amenti Library už sítí běží. Uzel jako vztah, ne stavba.' : t5('The twelfth and final point of the network — the cradle of the record on the Giza plateau: the last surviving Wonder of the ancient world (~4,500 yrs) and, in the network’s mythic geography, the Halls of Amenti beneath the sand — where the 32 Children of Light keep the Flower of Light. Seven Lords = seven virtues implemented in L3; the Amenti Library already runs on the network. A node as a relationship, not a construction.', lang),
+     tags: t5a(['Remembrance', 'Halls of Records', 'Emerald Tablets'], lang),
+     href: '/terranova/amenti',
+-    cover: '/images/amenti/hero.webp',
++    cover: '/images/amenti/hero.webp?v=engine-v1',
+   },
+   {
+     name: 'Království srdce · Archa',
+@@ -276,7 +276,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
+     desc: cs ? 'Třináctý uzel sítě — a jediný, který je na vodě. Archa Nirvana: plující kolonie do sta lidí, semenný archiv při −18 °C, knihovna civilizace a plný uzel řetězce. Čtvrté plavidlo vedle Tres Marías, které se vrací pro ty, kdo zůstali ve vodě; trasu mu určují keporkaci — sezónně mezi tropy a mírným pásmem, v rytmu cyklónových oken obou hemisfér. Koncept se čtyřmi pracovními studiemi, bez položeného kýlu.' : t5('The thirteenth node of the network — and the only one on the water. The ark Nirvana: a sailing colony of up to one hundred people, a seed vault at −18 °C, a library of civilisation and a full chain node. The fourth vessel beside the Tres Marías, returning for those left in the water; its route is set by the humpbacks — seasonally between the tropics and the temperate band, in the rhythm of both hemispheres’ cyclone windows. A concept with four working studies and no keel laid.', lang),
+     tags: t5a(['The Ark', 'Whale circuit', 'Colony of one hundred'], lang),
+     href: '/terranova/kralovstvi-srdce',
+-    cover: '/images/kralovstvi-srdce/hero.webp',
++    cover: '/images/kralovstvi-srdce/hero.webp?v=engine-v1',
+   },
+ ];
+ 
+@@ -471,8 +471,8 @@ export default function L5FreeWorldPage() {
+             </div>
+             <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/kralovstvi-srdce/hero.webp"
+-                srcSet="/images/kralovstvi-srdce/hero-m.webp 960w, /images/kralovstvi-srdce/hero.webp 1600w"
++                src="/images/kralovstvi-srdce/hero.webp?v=engine-v1"
++                srcSet="/images/kralovstvi-srdce/hero-m.webp?v=engine-v1 960w, /images/kralovstvi-srdce/hero.webp?v=engine-v1 1600w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt={cs ? 'L5 Free World — třináctý uzel: archa Království srdce · Nirvana, keporkaci a břeh Nové země' : t5('L5 Free World — the thirteenth node: the ark Kingdom of the Heart · Nirvana, humpback whales and the shore of the new world', lang)}
+                 width={1600}
+@@ -674,8 +674,8 @@ export default function L5FreeWorldPage() {
+                   {community.cover && (
+                     <div className="-m-1 mb-3 overflow-hidden rounded-t-xl">
+                       <img
+-                        src={community.cover.replace('/hero.webp', '/hero-m.webp')}
+-                        srcSet={`${community.cover.replace('/hero.webp', '/hero-m.webp')} 960w, ${community.cover} 1600w`}
++                        src={community.cover.replace('/hero.webp?v=engine-v1', '/hero-m.webp?v=engine-v1')}
++                        srcSet={`${community.cover.replace('/hero.webp?v=engine-v1', '/hero-m.webp?v=engine-v1')} 960w, ${community.cover} 1600w`}
+                         sizes="(min-width: 768px) 33vw, calc(100vw - 4rem)"
+                         alt={community.name}
+                         width={1400}
+diff --git a/apps/website-v2.9/src/app/news/christmas-2026/Christmas2026Client.tsx b/apps/website-v2.9/src/app/news/christmas-2026/Christmas2026Client.tsx
+index b6cb15d..2d2959e 100644
+--- a/apps/website-v2.9/src/app/news/christmas-2026/Christmas2026Client.tsx
++++ b/apps/website-v2.9/src/app/news/christmas-2026/Christmas2026Client.tsx
+@@ -19,35 +19,35 @@ const Article = {
+       {
+         icon: Ticket,
+         title: 'ZION Pass — jeden kód, dva světy',
+-        image: '/images/news/christmas-2026/pass-wide.webp',
++        image: '/images/news/christmas-2026/pass-wide.webp?v=engine-v1',
+         imageAlt: 'Zlatá brána mezi světy — ZION Pass na podstavci mezi stromem života a knihovnou',
+         text: 'Digitální průkaz za 108 Kč, který po zaplacení dorazí e-mailem jako kód ZAP-…. Tentýž kód otevře Nirvanu — 3D svět s arénou na Marsu, závodem na Venuši, soubojem na Merkuru, poutí u Jupitera a MOBA o Zemi — i ZION Archiv s kanonickými texty a Kronikami. K Passu patří 202 avatarů, společný chat a vánoční bonus 15 552 ZION na peněženku. Kód se váže na průkaz, ne na osobu, takže se dá přeposlat jako dárek.',
+       },
+       {
+         icon: BookOpen,
+         title: 'Království srdce — osm edic v pěti jazycích',
+-        image: '/images/news/christmas-2026/book-wide.webp',
++        image: '/images/news/christmas-2026/book-wide.webp?v=engine-v1',
+         imageAlt: 'Tesař u hoblice s dětmi, na tabletu obálka knihy Království srdce',
+         text: 'Duchovní legenda o tesaři z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě. Za 216 Kč dostanete kompletní korpus: osm samostatných edic téhož příběhu — od klasického midraše po Knihu Kýlu vyprávěnou dřevem — každou v češtině, angličtině, španělštině, francouzštině a portugalštině. Celkem 40 knih, 3 252 stran a 619 498 slov ve formátech PDF i EPUB. Vlajková ilustrovaná edice má 24 kapitol a epilog, každá kapitola nese tabulku „Kotva pravdy", která odděluje Písmo, tradici, historii, legendu a literární obraz. Ke knize patří ZION Archive Pass a vánoční bonus 31 104 ZION.',
+       },
+       {
+         icon: Lamp,
+         title: 'Druhá lucerna — světlo, které si zapálíš sám',
+-        image: '/images/news/christmas-2026/lampion-wide.webp?v=7',
++        image: '/images/news/christmas-2026/lampion-wide.webp?v=engine-v1',
+         imageAlt: 'Tesař s dětmi u hořícího lampionu, na stole kniha Království srdce a ZION Pass',
+         text: 'Druhá lucerna. Lampion Lumi 2 přijde rozložený — osm dílů z 3mm březové překližky, půl hodiny a dřevěné lepidlo. Svíčku zapálíš sám. Jeden kus je 20,9 m řezných drah, 614 obrysů a čtyři hodiny laseru, proto je edice číslovaná. Za 490 Kč je v krabici i digitální kniha a ZION Pass; ty přijdou e-mailem hned, dřevo jde Zásilkovnou jako ploché díly. K ceně patří bonus 70 560 ZION. Fotografie jsou ilustrační.',
+       },
+       {
+         icon: Gamepad2,
+         title: 'Kingdom — nový herní klient (ve vývoji)',
+-        image: '/images/news/christmas-2026/kingdom-1200.webp',
++        image: '/images/news/christmas-2026/kingdom-1200.webp?v=engine-v1',
+         imageAlt: 'Zlatá brána Kingdom s lucernou — portály do světů a služeb ekosystému',
+         text: 'Ekosystém dnes tvoří dvanáct aplikací a čtrnáct hostname — Kingdom je jeden klient, do kterého se postupně vstřebají: Brána (vstup) → Místnost (shell) → Světy a Portály. Cílem je desktopová aplikace, okno bez prohlížeče s peněženkou, těžbou a tray agentem přímo uvnitř. Kingdom přitom nic nevlastní: žádnou databázi, žádné peníze ani klíče — jen čte živá data ze služeb přes portály Řetěz, Kovárna, Tržiště, Snem, Knihovna, Přístav, Věž a Issobella, a nese už třináct světů OASIS. Webová podoba na kingdom.zionterranova.com zatím stojí za závěsou údržby — o spuštění dáme vědět v novinkách.',
+       },
+       {
+         icon: Globe,
+         title: 'Nirvana — první svět OASIS je živý',
+-        image: '/images/news/christmas-2026/nirvana-worlds-1200.webp',
++        image: '/images/news/christmas-2026/nirvana-worlds-1200.webp?v=engine-v1',
+         imageAlt: 'Vesmír Nirvany — planety otevírají hry: Venuše, Měsíc, Saturn, Mars, Země a strom Brány do OASIS',
+         text: 'První svět OASIS se jmenuje Nirvana a běží na nirvana.zionterranova.com. Vesmír, ve kterém planety otevírají hry: Země — MOBA se třemi linkami a uzly L5 (online 2v2), Mars — aréna deathmatch sólo i online, Venuše — závodní okruh na tři kola, Merkur — souboj best of 3 online, Saturn — Kroniky, Pouť s arkádami a kolem a šatník se 202 avatary. Chat a multiplayer běží na vlastní realtime službě a ovládání funguje i na dotykových zařízeních.',
+       },
+@@ -110,35 +110,35 @@ const Article = {
+       {
+         icon: Ticket,
+         title: 'ZION Pass — one code, two worlds',
+-        image: '/images/news/christmas-2026/pass-wide.webp',
++        image: '/images/news/christmas-2026/pass-wide.webp?v=engine-v1',
+         imageAlt: 'The golden gate between worlds — the ZION Pass on a pedestal between the tree of life and the library',
+         text: 'A digital credential for 108 CZK that arrives by e-mail after payment as a ZAP-… code. The same code opens Nirvana — a 3D world with the Mars arena, the Venus race, the Mercury duel, the Jupiter fairground and the Earth MOBA — and the ZION Archive with its canonical texts and Chronicles. The Pass includes 202 avatars, a shared chat and a Christmas bonus of 15,552 ZION to your wallet. The code binds to the credential, not a person, so it can be forwarded as a gift.',
+       },
+       {
+         icon: BookOpen,
+         title: 'Kingdom of the Heart — eight editions in five languages',
+-        image: '/images/news/christmas-2026/book-wide.webp',
++        image: '/images/news/christmas-2026/book-wide.webp?v=engine-v1',
+         imageAlt: 'The carpenter at the bench with children, the cover of Kingdom of the Heart on a tablet',
+         text: 'A spiritual legend about a carpenter of Nazareth who built a ship in his father’s workshop — for a sea that is on no map. For 216 CZK you get the complete corpus: eight distinct editions of the same story — from a classical midrash to the Book of the Keel told by the wood itself — each in Czech, English, Spanish, French and Portuguese. Forty books in total, 3,252 pages and 619,498 words in PDF and EPUB. The illustrated flagship has 24 chapters and an epilogue, and every chapter carries an “Anchor of Truth” table separating Scripture, tradition, history, legend and literary image. The book includes a ZION Archive Pass and a Christmas bonus of 31,104 ZION.',
+       },
+       {
+         icon: Lamp,
+         title: 'The second lantern — the light you strike yourself',
+-        image: '/images/news/christmas-2026/lampion-wide.webp?v=7',
++        image: '/images/news/christmas-2026/lampion-wide.webp?v=engine-v1',
+         imageAlt: 'The carpenter with children around the lit lantern, the Kingdom of the Heart book and ZION Pass on the table',
+         text: 'The second lantern. Lumi 2 arrives flat — eight parts in 3 mm birch plywood, half an hour and wood glue. You light the candle yourself. One piece is 20.9 m of cutting paths, 614 outlines and four hours of laser time, which is why the edition is numbered. At 490 CZK the box also holds the digital book and a ZION Pass; those arrive by e-mail at once, and the wood ships via Zásilkovna as flat parts. The price carries a 70,560 ZION bonus. The photographs are illustrative.',
+       },
+       {
+         icon: Gamepad2,
+         title: 'Kingdom — the new game client (in development)',
+-        image: '/images/news/christmas-2026/kingdom-1200.webp',
++        image: '/images/news/christmas-2026/kingdom-1200.webp?v=engine-v1',
+         imageAlt: 'Kingdom’s golden gate with the lantern — portals into the ecosystem’s worlds and services',
+         text: 'The ecosystem today spans twelve applications and fourteen hostnames — Kingdom is the single client they will gradually be absorbed into: the Gate (entry) → the Room (shell) → Worlds and Portals. The goal is a desktop app: a browserless window with the wallet, mining and tray agent built right in. Kingdom owns nothing: no database, no money or keys — it only reads live data from the services through the Chain, Forge, Market, Senate, Library, Harbor, Tower and Issobella portals, and already carries thirteen OASIS worlds. The web version at kingdom.zionterranova.com currently sits behind a maintenance curtain — we will announce the launch in the news.',
+       },
+       {
+         icon: Globe,
+         title: 'Nirvana — the first OASIS world is live',
+-        image: '/images/news/christmas-2026/nirvana-worlds-1200.webp',
++        image: '/images/news/christmas-2026/nirvana-worlds-1200.webp?v=engine-v1',
+         imageAlt: 'The Nirvana universe — planets open games: Venus, the Moon, Saturn, Mars, Earth and the Gate-to-OASIS tree',
+         text: 'The first OASIS world is called Nirvana and runs at nirvana.zionterranova.com. A universe where planets open games: Earth — a MOBA with three lanes and L5 nodes (online 2v2), Mars — a deathmatch arena solo and online, Venus — a three-lap racing circuit, Mercury — an online best-of-3 duel, Saturn — the Chronicles, the Fair with arcades and a wheel, and a wardrobe of 202 avatars. Chat and multiplayer run on a dedicated realtime service, and the controls work on touch devices too.',
+       },
+@@ -223,8 +223,8 @@ export default function Christmas2026Client() {
+ 
+           <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-2xl border border-white/10">
+             <img
+-              src="/images/news/christmas-2026/hero-1600.webp?v=7"
+-              srcSet="/images/news/christmas-2026/hero-960.webp?v=7 960w, /images/news/christmas-2026/hero-1600.webp?v=7 1600w"
++              src="/images/news/christmas-2026/hero-1600.webp?v=engine-v1"
++              srcSet="/images/news/christmas-2026/hero-960.webp?v=engine-v1 960w, /images/news/christmas-2026/hero-1600.webp?v=engine-v1 1600w"
+               sizes="(min-width: 768px) 46rem, 100vw"
+               alt={t.imageAlt}
+               width={1672}
+diff --git a/apps/website-v2.9/src/app/news/mainnet-beta/MainnetBetaClient.tsx b/apps/website-v2.9/src/app/news/mainnet-beta/MainnetBetaClient.tsx
+index 504a51b..2632285 100644
+--- a/apps/website-v2.9/src/app/news/mainnet-beta/MainnetBetaClient.tsx
++++ b/apps/website-v2.9/src/app/news/mainnet-beta/MainnetBetaClient.tsx
+@@ -125,8 +125,8 @@ export default function MainnetBetaClient() {
+ 
+           <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-2xl border border-white/10">
+             <img
+-              src="/images/news/beta-cosmic-utopia.webp"
+-              srcSet="/images/news/beta-cosmic-utopia-m.webp 960w, /images/news/beta-cosmic-utopia.webp 1672w"
++              src="/images/news/beta-cosmic-utopia.webp?v=engine-v1"
++              srcSet="/images/news/beta-cosmic-utopia-m.webp?v=engine-v1 960w, /images/news/beta-cosmic-utopia.webp?v=engine-v1 1672w"
+               sizes="(min-width: 768px) 46rem, 100vw"
+               alt={t.imageAlt}
+               width={1672}
+diff --git a/apps/website-v2.9/src/app/team/page.tsx b/apps/website-v2.9/src/app/team/page.tsx
+index cdc4454..6ef7665 100644
+--- a/apps/website-v2.9/src/app/team/page.tsx
++++ b/apps/website-v2.9/src/app/team/page.tsx
+@@ -370,8 +370,8 @@ export default function TeamPage() {
+             </div>
+             <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/team/hero.webp"
+-                srcSet="/images/team/hero-m.webp 960w, /images/team/hero.webp 1672w"
++                src="/images/team/hero.webp?v=engine-v1"
++                srcSet="/images/team/hero-m.webp?v=engine-v1 960w, /images/team/hero.webp?v=engine-v1 1672w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt={cs ? 'ZION Team — lidé, agenti a komunita kolem Stromu života' : t5('ZION Team — people, agents and community around the Tree of Life', lang)}
+                 width={1672}
+diff --git a/apps/website-v2.9/src/app/terranova/amenti/page.tsx b/apps/website-v2.9/src/app/terranova/amenti/page.tsx
+index 1acfb07..f89a27d 100644
+--- a/apps/website-v2.9/src/app/terranova/amenti/page.tsx
++++ b/apps/website-v2.9/src/app/terranova/amenti/page.tsx
+@@ -548,8 +548,8 @@ export default function AmentiPage() {
+             </div>
+             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/amenti/hero.webp"
+-                srcSet="/images/amenti/hero-m.webp 960w, /images/amenti/hero.webp 1280w"
++                src="/images/amenti/hero.webp?v=engine-v1"
++                srcSet="/images/amenti/hero-m.webp?v=engine-v1 960w, /images/amenti/hero.webp?v=engine-v1 1280w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt="ZION Amenti — Kvetoucí Plamen nad pyramidami a sfingou, světelný strom a síť vědomí"
+                 width={1280}
+diff --git a/apps/website-v2.9/src/app/terranova/boa-esperanca/page.tsx b/apps/website-v2.9/src/app/terranova/boa-esperanca/page.tsx
+index 2ddf97f..ebf8ec9 100644
+--- a/apps/website-v2.9/src/app/terranova/boa-esperanca/page.tsx
++++ b/apps/website-v2.9/src/app/terranova/boa-esperanca/page.tsx
+@@ -349,8 +349,8 @@ export default function BoaEsperancaPage() {
+             </div>
+             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/boa-esperanca/hero.webp"
+-                srcSet="/images/boa-esperanca/hero-m.webp 960w, /images/boa-esperanca/hero.webp 1600w"
++                src="/images/boa-esperanca/hero.webp?v=engine-v1"
++                srcSet="/images/boa-esperanca/hero-m.webp?v=engine-v1 960w, /images/boa-esperanca/hero.webp?v=engine-v1 1600w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt="Boa Esperança — úsvit nad Mysem dobré naděje, šev dvou oceánů"
+                 width={1672}
+diff --git a/apps/website-v2.9/src/app/terranova/bodhi-lanka/page.tsx b/apps/website-v2.9/src/app/terranova/bodhi-lanka/page.tsx
+index 09c091f..a68dffd 100644
+--- a/apps/website-v2.9/src/app/terranova/bodhi-lanka/page.tsx
++++ b/apps/website-v2.9/src/app/terranova/bodhi-lanka/page.tsx
+@@ -385,8 +385,8 @@ export default function BodhiLankaPage() {
+             </div>
+             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/bodhi-lanka/hero.webp"
+-                srcSet="/images/bodhi-lanka/hero-m.webp 960w, /images/bodhi-lanka/hero.webp 1168w"
++                src="/images/bodhi-lanka/hero.webp?v=engine-v1"
++                srcSet="/images/bodhi-lanka/hero-m.webp?v=engine-v1 960w, /images/bodhi-lanka/hero.webp?v=engine-v1 1168w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt="Bodhi Lanka"
+                 width={1168}
+diff --git a/apps/website-v2.9/src/app/terranova/dharma-temple/page.tsx b/apps/website-v2.9/src/app/terranova/dharma-temple/page.tsx
+index 56a6fc3..8432a7a 100644
+--- a/apps/website-v2.9/src/app/terranova/dharma-temple/page.tsx
++++ b/apps/website-v2.9/src/app/terranova/dharma-temple/page.tsx
+@@ -299,8 +299,8 @@ export default function DharmaTemplePage() {
+             </div>
+             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/dharma-temple/hero.webp"
+-                srcSet="/images/dharma-temple/hero-m.webp 960w, /images/dharma-temple/hero.webp 1400w"
++                src="/images/dharma-temple/hero.webp?v=engine-v1"
++                srcSet="/images/dharma-temple/hero-m.webp?v=engine-v1 960w, /images/dharma-temple/hero.webp?v=engine-v1 1400w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt={cs ? 'Dharma Temple — koncept' : t5('Dharma Temple — concept render', lang)}
+                 width={1568}
+diff --git a/apps/website-v2.9/src/app/terranova/ekam/page.tsx b/apps/website-v2.9/src/app/terranova/ekam/page.tsx
+index 927d4ec..dc4020c 100644
+--- a/apps/website-v2.9/src/app/terranova/ekam/page.tsx
++++ b/apps/website-v2.9/src/app/terranova/ekam/page.tsx
+@@ -361,8 +361,8 @@ export default function EkamPage() {
+             </div>
+             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/ekam/hero.webp"
+-                srcSet="/images/ekam/hero-m.webp 960w, /images/ekam/hero.webp 1600w"
++                src="/images/ekam/hero.webp?v=engine-v1"
++                srcSet="/images/ekam/hero-m.webp?v=engine-v1 960w, /images/ekam/hero.webp?v=engine-v1 1600w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt="Ekam — bílý mramorový chrám Jednoty se Zlatou koulí, Andhra Pradesh"
+                 width={1600}
+diff --git a/apps/website-v2.9/src/app/terranova/genesis/page.tsx b/apps/website-v2.9/src/app/terranova/genesis/page.tsx
+index da5503b..66e3af2 100644
+--- a/apps/website-v2.9/src/app/terranova/genesis/page.tsx
++++ b/apps/website-v2.9/src/app/terranova/genesis/page.tsx
+@@ -428,8 +428,8 @@ export default function ZahradaGenesisPage() {
+             </div>
+             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/genesis-garden/hero.webp"
+-                srcSet="/images/genesis-garden/hero-m.webp 960w, /images/genesis-garden/hero.webp 1280w"
++                src="/images/genesis-garden/hero.webp?v=engine-v1"
++                srcSet="/images/genesis-garden/hero-m.webp?v=engine-v1 960w, /images/genesis-garden/hero.webp?v=engine-v1 1280w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt={cs ? 'Genesis Garden — koncept' : t5('Genesis Garden — concept render', lang)}
+                 width={1280}
+diff --git a/apps/website-v2.9/src/app/terranova/golden-republic-bohemia/page.tsx b/apps/website-v2.9/src/app/terranova/golden-republic-bohemia/page.tsx
+index 7300d32..aafffc3 100644
+--- a/apps/website-v2.9/src/app/terranova/golden-republic-bohemia/page.tsx
++++ b/apps/website-v2.9/src/app/terranova/golden-republic-bohemia/page.tsx
+@@ -384,8 +384,8 @@ export default function GoldenRepublicBohemiaPage() {
+             </div>
+             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/golden-republic-bohemia/hero.webp"
+-                srcSet="/images/golden-republic-bohemia/hero-m.webp 960w, /images/golden-republic-bohemia/hero.webp 1168w"
++                src="/images/golden-republic-bohemia/hero.webp?v=engine-v1"
++                srcSet="/images/golden-republic-bohemia/hero-m.webp?v=engine-v1 960w, /images/golden-republic-bohemia/hero.webp?v=engine-v1 1168w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt="Golden Republic Bohemia"
+                 width={1168}
+diff --git a/apps/website-v2.9/src/app/terranova/kailash/page.tsx b/apps/website-v2.9/src/app/terranova/kailash/page.tsx
+index 12d68a8..03485a7 100644
+--- a/apps/website-v2.9/src/app/terranova/kailash/page.tsx
++++ b/apps/website-v2.9/src/app/terranova/kailash/page.tsx
+@@ -422,8 +422,8 @@ export default function KailashPage() {
+             </div>
+             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/kailash/hero.webp"
+-                srcSet="/images/kailash/hero-m.webp 960w, /images/kailash/hero.webp 1600w"
++                src="/images/kailash/hero.webp?v=engine-v1"
++                srcSet="/images/kailash/hero-m.webp?v=engine-v1 960w, /images/kailash/hero.webp?v=engine-v1 1600w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt="Kailash — pyramida Gang Rinpoche za hvězdné noci, prastarý oheň a kora poutníků"
+                 width={1600}
+diff --git a/apps/website-v2.9/src/app/terranova/kralovstvi-srdce/page.tsx b/apps/website-v2.9/src/app/terranova/kralovstvi-srdce/page.tsx
+index 14ca233..1c57095 100644
+--- a/apps/website-v2.9/src/app/terranova/kralovstvi-srdce/page.tsx
++++ b/apps/website-v2.9/src/app/terranova/kralovstvi-srdce/page.tsx
+@@ -538,8 +538,8 @@ export default function KralovstviSrdcePage() {
+ 
+             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/kralovstvi-srdce/hero.webp"
+-                srcSet="/images/kralovstvi-srdce/hero-m.webp 960w, /images/kralovstvi-srdce/hero.webp 1600w"
++                src="/images/kralovstvi-srdce/hero.webp?v=engine-v1"
++                srcSet="/images/kralovstvi-srdce/hero-m.webp?v=engine-v1 960w, /images/kralovstvi-srdce/hero.webp?v=engine-v1 1600w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt={cs
+                   ? 'Království srdce — archa za západu slunce u pobřeží Nové země, na přídi Malý princ a dívka s lucernou, u boku keporkak'
+diff --git a/apps/website-v2.9/src/app/terranova/maria-del-camino/page.tsx b/apps/website-v2.9/src/app/terranova/maria-del-camino/page.tsx
+index 1e6a74d..65ff607 100644
+--- a/apps/website-v2.9/src/app/terranova/maria-del-camino/page.tsx
++++ b/apps/website-v2.9/src/app/terranova/maria-del-camino/page.tsx
+@@ -518,8 +518,8 @@ export default function MariaDelCaminoPage() {
+             </div>
+             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/maria-del-camino/hero.webp"
+-                srcSet="/images/maria-del-camino/hero-m.webp 960w, /images/maria-del-camino/hero.webp 1280w"
++                src="/images/maria-del-camino/hero.webp?v=engine-v1"
++                srcSet="/images/maria-del-camino/hero-m.webp?v=engine-v1 960w, /images/maria-del-camino/hero.webp?v=engine-v1 1280w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt="María del Camino — tři plachetnice Tres Marías na oceánu při západu slunce"
+                 width={1600}
+diff --git a/apps/website-v2.9/src/app/terranova/nabukano/page.tsx b/apps/website-v2.9/src/app/terranova/nabukano/page.tsx
+index ff5324b..732fb45 100644
+--- a/apps/website-v2.9/src/app/terranova/nabukano/page.tsx
++++ b/apps/website-v2.9/src/app/terranova/nabukano/page.tsx
+@@ -46,8 +46,8 @@ const Copy = {
+     en: 'Hero in preparation',
+   },
+   heroHint: {
+-    cs: 'Až bude obraz hotový, nahraje se jako /images/nabukano/hero.webp (1920×1080) a objeví se tady.',
+-    en: 'Once the artwork is ready it goes in as /images/nabukano/hero.webp (1920×1080) and appears here.',
++    cs: 'Až bude obraz hotový, nahraje se jako /images/nabukano/hero.webp?v=engine-v1 (1920×1080) a objeví se tady.',
++    en: 'Once the artwork is ready it goes in as /images/nabukano/hero.webp?v=engine-v1 (1920×1080) and appears here.',
+   },
+   introTitle: { cs: 'Čtrnáctý uzel to není', en: 'It is not a fourteenth node' },
+   introBody: {
+@@ -185,8 +185,8 @@ export default function NabukanoPage() {
+             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               {!heroFailed ? (
+                 <img
+-                  src="/images/nabukano/hero.webp"
+-                  srcSet="/images/nabukano/hero-m.webp 960w, /images/nabukano/hero.webp 1920w"
++                  src="/images/nabukano/hero.webp?v=engine-v1"
++                  srcSet="/images/nabukano/hero-m.webp?v=engine-v1 960w, /images/nabukano/hero.webp?v=engine-v1 1920w"
+                   sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                   alt={cs ? 'Nebeská flotila Nabukano — mateřská loď s dokem a tři nebeské Marie nad Novou Zemí' : t5('The Nabukano sky fleet — mother ship with a docking frame and three sky Marías above New Earth', lang)}
+                   width={1920}
+diff --git a/apps/website-v2.9/src/app/terranova/nova-amerika/page.tsx b/apps/website-v2.9/src/app/terranova/nova-amerika/page.tsx
+index 9ad40a6..1389000 100644
+--- a/apps/website-v2.9/src/app/terranova/nova-amerika/page.tsx
++++ b/apps/website-v2.9/src/app/terranova/nova-amerika/page.tsx
+@@ -324,8 +324,8 @@ export default function NovaAmerikaPage() {
+             </div>
+             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/nova-amerika/hero.webp"
+-                srcSet="/images/nova-amerika/hero-m.webp 960w, /images/nova-amerika/hero.webp 1672w"
++                src="/images/nova-amerika/hero.webp?v=engine-v1"
++                srcSet="/images/nova-amerika/hero-m.webp?v=engine-v1 960w, /images/nova-amerika/hero.webp?v=engine-v1 1672w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt="LUMI — Nová Amerika"
+                 width={1672}
+diff --git a/apps/website-v2.9/src/app/terranova/te-piko-ora/page.tsx b/apps/website-v2.9/src/app/terranova/te-piko-ora/page.tsx
+index d0a9811..79f2645 100644
+--- a/apps/website-v2.9/src/app/terranova/te-piko-ora/page.tsx
++++ b/apps/website-v2.9/src/app/terranova/te-piko-ora/page.tsx
+@@ -367,8 +367,8 @@ export default function TePikoOraPage() {
+           </div>
+             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/te-piko-ora/hero.webp"
+-                srcSet="/images/te-piko-ora/hero-m.webp 960w, /images/te-piko-ora/hero.webp 1400w"
++                src="/images/te-piko-ora/hero.webp?v=engine-v1"
++                srcSet="/images/te-piko-ora/hero-m.webp?v=engine-v1 960w, /images/te-piko-ora/hero.webp?v=engine-v1 1400w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt="Te Pīko Ora"
+                 width={1536}
+diff --git a/apps/website-v2.9/src/app/terranova/uluru/page.tsx b/apps/website-v2.9/src/app/terranova/uluru/page.tsx
+index 3722406..c58469b 100644
+--- a/apps/website-v2.9/src/app/terranova/uluru/page.tsx
++++ b/apps/website-v2.9/src/app/terranova/uluru/page.tsx
+@@ -350,8 +350,8 @@ export default function UluruPage() {
+             </div>
+             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+               <img
+-                src="/images/uluru/hero.webp"
+-                srcSet="/images/uluru/hero-m.webp 960w, /images/uluru/hero.webp 1672w"
++                src="/images/uluru/hero.webp?v=engine-v1"
++                srcSet="/images/uluru/hero-m.webp?v=engine-v1 960w, /images/uluru/hero.webp?v=engine-v1 1672w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                 alt="Uluru — poselství protinožců nad posvátným monolitem"
+                 width={1672}
+diff --git a/apps/website-v2.9/src/app/zion-archive/page.tsx b/apps/website-v2.9/src/app/zion-archive/page.tsx
+index d292e87..721aab0 100644
+--- a/apps/website-v2.9/src/app/zion-archive/page.tsx
++++ b/apps/website-v2.9/src/app/zion-archive/page.tsx
+@@ -287,8 +287,8 @@ export default function ZionArchivePage() {
+ 
+               <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                 <img
+-                  src="/images/zion-archive/hero.webp"
+-                  srcSet="/images/zion-archive/hero-m.webp 960w, /images/zion-archive/hero.webp 1536w"
++                  src="/images/zion-archive/hero.webp?v=engine-v1"
++                  srcSet="/images/zion-archive/hero-m.webp?v=engine-v1 960w, /images/zion-archive/hero.webp?v=engine-v1 1536w"
+                   sizes="(max-width: 1024px) calc(100vw - 4rem), 560px"
+                   alt={tx5(Copy.heroAlt, lang)}
+                   width={1536}
+diff --git a/apps/website-v2.9/src/components/ChristmasShopCards.tsx b/apps/website-v2.9/src/components/ChristmasShopCards.tsx
+index d4aef29..f914a1b 100644
+--- a/apps/website-v2.9/src/components/ChristmasShopCards.tsx
++++ b/apps/website-v2.9/src/components/ChristmasShopCards.tsx
+@@ -27,7 +27,7 @@ interface CardDef {
+ const CARDS: CardDef[] = [
+   {
+     // Původní obrázek produktu (brána se ZION Passem), ne obecná brána Kingdom.
+-    image: '/images/news/christmas-2026/card-pass.webp',
++    image: '/images/news/christmas-2026/card-pass.webp?v=engine-v1',
+     icon: Ticket,
+     kicker: { cs: 'Vánoční edice · ZAP kód', en: 'Christmas edition · ZAP code' },
+     title: { cs: 'ZION Pass', en: 'ZION Pass' },
+@@ -41,7 +41,7 @@ const CARDS: CardDef[] = [
+     href: PASS_URL,
+   },
+   {
+-    image: '/images/news/christmas-2026/card-book.webp',
++    image: '/images/news/christmas-2026/card-book.webp?v=engine-v1',
+     icon: BookOpen,
+     kicker: { cs: 'Vánoční edice · digitální kniha', en: 'Christmas edition · digital book' },
+     title: { cs: 'Království srdce', en: 'Kingdom of the Heart' },
+@@ -56,7 +56,7 @@ const CARDS: CardDef[] = [
+   },
+   {
+     // Původní scéna s lampionem (tesař s dětmi), ne vánoční trh.
+-    image: '/images/news/christmas-2026/card-lampion.webp?v=7',
++    image: '/images/news/christmas-2026/card-lampion.webp?v=engine-v1',
+     icon: Flame,
+     kicker: { cs: 'Vánoční edice · číslovaná', en: 'Christmas edition · numbered' },
+     title: { cs: 'Druhá lucerna', en: 'The second lantern' },
+diff --git a/apps/website-v2.9/src/components/Hero.module.css b/apps/website-v2.9/src/components/Hero.module.css
+new file mode 100644
+index 0000000..10aa43f
+--- /dev/null
++++ b/apps/website-v2.9/src/components/Hero.module.css
+@@ -0,0 +1,62 @@
++.scene {
++  position: relative;
++  overflow: hidden;
++  margin-bottom: 2rem;
++  border: 1px solid #e7aa4b4d;
++  border-radius: 1.25rem;
++  background: #101c2b;
++  color: #f0e1be;
++}
++
++.art {
++  display: block;
++  width: 100%;
++  height: auto;
++}
++
++.copy {
++  position: relative;
++  padding: clamp(1rem, 4vw, 3.5rem);
++}
++
++.tagline, .status {
++  max-width: 33ch;
++  line-height: 1.5;
++  color: #f0e1be;
++}
++
++.title {
++  margin-block: 0.5rem 0.75rem;
++  font-size: clamp(2rem, 5vw, 4.5rem);
++  font-weight: 800;
++  line-height: 1.05;
++  letter-spacing: -0.04em;
++  color: #f0e1be;
++}
++
++.status {
++  color: #e7aa4b;
++  font-weight: 600;
++}
++
++@media (min-width: 900px) {
++  .scene {
++    display: grid;
++    align-items: center;
++  }
++
++  .art, .copy {
++    grid-area: 1 / 1;
++  }
++
++  .scene::before {
++    content: '';
++    position: absolute;
++    inset: 0;
++    background: linear-gradient(90deg, #101c2bf5 0%, #101c2bcc 32%, transparent 65%);
++  }
++
++  .copy {
++    max-width: 55%;
++  }
++}
+diff --git a/apps/website-v2.9/src/components/Hero.tsx b/apps/website-v2.9/src/components/Hero.tsx
+index 8a7048e..29265d3 100644
+--- a/apps/website-v2.9/src/components/Hero.tsx
++++ b/apps/website-v2.9/src/components/Hero.tsx
+@@ -24,6 +24,7 @@ import NirvanaUniverseSection from './NirvanaUniverseSection';
+ import ChristmasShopCards from './ChristmasShopCards';
+ import HeroSlider from './HeroSlider';
+ import MainnetCountdown from './MainnetCountdown';
++import styles from './Hero.module.css';
+ 
+ const HeroCopy = {
+   mainnetBetaGithub: { cs: `Mainnet Beta · GitHub`, en: `Mainnet Beta · GitHub` },
+@@ -76,25 +77,24 @@ export default function Hero() {
+           </a>
+         </motion.div>
+ 
+-        {/* ─── headline — full width ─── */}
+-        <motion.div
+-          initial={false}
+-          animate={{ opacity: 1, y: 0 }}
+-          transition={{ duration: 0.85 }}
+-          className="mb-8"
+-        >
+-          <p className="text-base md:text-lg text-zion-cyan font-semibold mb-3 tracking-wide flex items-center gap-2">
+-            <span className="w-8 h-[2px] bg-gradient-to-r from-zion-purple via-zion-gold to-zion-cyan rounded-full" />
+-            {tr('hero', 'tagline', lang)}
+-          </p>
+-          <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold leading-[1.05] tracking-tight">
+-            <span className="text-gradient">ZION</span>
+-            <span className="block text-white mt-2">Terra Nova</span>
+-            <span className="block text-lg sm:text-xl md:text-2xl xl:text-3xl font-semibold text-zion-gold/90 mt-3 tracking-normal">
+-              {tr('hero', 'title_sub', lang)}
+-            </span>
+-          </h1>
+-        </motion.div>
++        <div className={styles.scene}>
++          <img
++            className={styles.art}
++            src="/images/design-v1/tree-of-life.webp?v=engine-v1"
++            srcSet="/images/design-v1/tree-of-life-m.webp?v=engine-v1 960w, /images/design-v1/tree-of-life.webp?v=engine-v1 1672w"
++            sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
++            width={1672}
++            height={941}
++            alt=""
++            fetchPriority="high"
++            decoding="async"
++          />
++          <div className={styles.copy}>
++            <p className={styles.tagline}>{tr('hero', 'tagline', lang)}</p>
++            <h1 className={styles.title}>ZION Terra Nova</h1>
++            <p className={styles.status}>{tr('hero', 'title_sub', lang)}</p>
++          </div>
++        </div>
+ 
+         {/* ─── Nirvana universe — first OASIS world, full width under the headline ─── */}
+         <motion.div
+diff --git a/apps/website-v2.9/src/components/HeroSlider.tsx b/apps/website-v2.9/src/components/HeroSlider.tsx
+index e31f091..0e812d3 100644
+--- a/apps/website-v2.9/src/components/HeroSlider.tsx
++++ b/apps/website-v2.9/src/components/HeroSlider.tsx
+@@ -16,8 +16,8 @@ interface Slide {
+ 
+ const SLIDES: Slide[] = [
+   {
+-    src: '/images/home/christmas-kingdom.webp?v=7',
+-    srcM: '/images/home/christmas-kingdom-m.webp?v=7',
++    src: '/images/home/christmas-kingdom.webp?v=engine-v1',
++    srcM: '/images/home/christmas-kingdom-m.webp?v=engine-v1',
+     alt: {
+       cs: 'Veselé Vánoce a šťastný nový rok 2027 — Kingdom, archa a Strom života ve sněhu',
+       en: 'Merry Christmas & Happy New Year 2027 — Kingdom, the ark and the Tree of Life in the snow',
+@@ -26,8 +26,8 @@ const SLIDES: Slide[] = [
+     href: '/news/christmas-2026',
+   },
+   {
+-    src: '/images/home/hero.webp',
+-    srcM: '/images/home/hero-m.webp',
++    src: '/images/home/hero.webp?v=engine-v1',
++    srcM: '/images/home/hero-m.webp?v=engine-v1',
+     alt: {
+       cs: 'Strom života, Maitreya a cesta, která pokračuje — One Love · One Human · One World',
+       en: 'Tree of Life, Maitreya and the journey that continues — One Love · One Human · One World',
+@@ -36,8 +36,8 @@ const SLIDES: Slide[] = [
+     href: '/zion-archive#cesta',
+   },
+   {
+-    src: '/images/zion-archive/hero.webp',
+-    srcM: '/images/zion-archive/hero-m.webp',
++    src: '/images/zion-archive/hero.webp?v=engine-v1',
++    srcM: '/images/zion-archive/hero-m.webp?v=engine-v1',
+     alt: {
+       cs: 'Oasis — jedna rodina pod Stromem života: Maitreya, Krišna, tesař a děti nové země',
+       en: 'Oasis — one family under the Tree of Life: Maitreya, Krishna, the carpenter and the children of the new earth',
+@@ -46,8 +46,8 @@ const SLIDES: Slide[] = [
+     href: '/l4-oasis',
+   },
+   {
+-    src: '/images/l5-free-world/hero.webp',
+-    srcM: '/images/l5-free-world/hero-m.webp',
++    src: '/images/l5-free-world/hero.webp?v=engine-v1',
++    srcM: '/images/l5-free-world/hero-m.webp?v=engine-v1',
+     alt: {
+       cs: 'Mapa L5 Free World — dvanáct ohňů rozesetých po planetě',
+       en: 'L5 Free World map — twelve fires spread across the planet',
+@@ -56,8 +56,8 @@ const SLIDES: Slide[] = [
+     href: '/l5-free-world',
+   },
+   {
+-    src: '/images/maria-del-camino/hero.webp',
+-    srcM: '/images/maria-del-camino/hero-m.webp',
++    src: '/images/maria-del-camino/hero.webp?v=engine-v1',
++    srcM: '/images/maria-del-camino/hero-m.webp?v=engine-v1',
+     alt: {
+       cs: 'Flotila Tres Marías — tři lodě pro tři oceány',
+       en: 'Tres Marías fleet — three ships for three oceans',
+@@ -66,8 +66,8 @@ const SLIDES: Slide[] = [
+     href: '/terranova/maria-del-camino',
+   },
+   {
+-    src: '/images/kralovstvi-srdce/hero.webp',
+-    srcM: '/images/kralovstvi-srdce/hero-m.webp',
++    src: '/images/kralovstvi-srdce/hero.webp?v=engine-v1',
++    srcM: '/images/kralovstvi-srdce/hero-m.webp?v=engine-v1',
+     alt: {
+       cs: 'Království srdce · Nirvana — archa a tři lodě flotily, keporkaci u břehu Nové země',
+       en: 'Kingdom of the Heart · Nirvana — the ark and the fleet’s three ships, humpbacks off the shore of the new world',
+@@ -76,8 +76,8 @@ const SLIDES: Slide[] = [
+     href: '/terranova/kralovstvi-srdce',
+   },
+   {
+-    src: '/images/ekam/hero.webp',
+-    srcM: '/images/ekam/hero-m.webp',
++    src: '/images/ekam/hero.webp?v=engine-v1',
++    srcM: '/images/ekam/hero-m.webp?v=engine-v1',
+     alt: {
+       cs: 'Ekam Oneness Temple — uzel, který už stojí',
+       en: 'Ekam Oneness Temple — the node that already stands',
+@@ -86,8 +86,8 @@ const SLIDES: Slide[] = [
+     href: '/terranova/ekam',
+   },
+   {
+-    src: '/images/genesis-garden/hero.webp',
+-    srcM: '/images/genesis-garden/hero-m.webp',
++    src: '/images/genesis-garden/hero.webp?v=engine-v1',
++    srcM: '/images/genesis-garden/hero-m.webp?v=engine-v1',
+     alt: {
+       cs: 'Genesis Garden — první zahrada nového světa',
+       en: 'Genesis Garden — the first garden of the new world',
+@@ -96,8 +96,8 @@ const SLIDES: Slide[] = [
+     href: '/terranova/genesis',
+   },
+   {
+-    src: '/images/amenti/hero.webp',
+-    srcM: '/images/amenti/hero-m.webp',
++    src: '/images/amenti/hero.webp?v=engine-v1',
++    srcM: '/images/amenti/hero-m.webp?v=engine-v1',
+     alt: {
+       cs: 'Amenti · Gíza — zlaté vejce nad pyramidou, síň záznamů, dvanáctý uzel',
+       en: 'Amenti · Giza — the golden egg above the pyramid, hall of records, twelfth node',
+diff --git a/apps/website-v2.9/src/components/MaitreyaSection.tsx b/apps/website-v2.9/src/components/MaitreyaSection.tsx
+index ed104d9..8a46490 100644
+--- a/apps/website-v2.9/src/components/MaitreyaSection.tsx
++++ b/apps/website-v2.9/src/components/MaitreyaSection.tsx
+@@ -52,8 +52,8 @@ export default function MaitreyaSection() {
+               className="group/img relative block w-full max-w-full self-center aspect-[16/9] overflow-hidden rounded-xl border border-white/10"
+             >
+               <img
+-                src="/images/zion-archive/hero.webp"
+-                srcSet="/images/zion-archive/hero-m.webp 960w, /images/zion-archive/hero.webp 1536w"
++                src="/images/zion-archive/hero.webp?v=engine-v1"
++                srcSet="/images/zion-archive/hero-m.webp?v=engine-v1 960w, /images/zion-archive/hero.webp?v=engine-v1 1536w"
+                 sizes="(max-width: 1024px) calc(100vw - 3rem), 620px"
+                 alt={cs ? 'Oasis — jedna rodina pod Stromem života, vizuál Nirvana Hubu' : t5('Oasis — one family under the Tree of Life, Nirvana Hub artwork', lang)}
+                 loading="lazy"
+diff --git a/apps/website-v2.9/src/components/MissionControlDashboard.tsx b/apps/website-v2.9/src/components/MissionControlDashboard.tsx
+index 1752f1e..6e3c73e 100644
+--- a/apps/website-v2.9/src/components/MissionControlDashboard.tsx
++++ b/apps/website-v2.9/src/components/MissionControlDashboard.tsx
+@@ -2360,8 +2360,8 @@ export default function MissionControlDashboard() {
+           </div>
+           <div className="relative z-10 mt-8 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+             <img
+-              src="/images/mission-control/hero.webp"
+-                srcSet="/images/mission-control/hero-m.webp 960w, /images/mission-control/hero.webp 1672w"
++              src="/images/mission-control/hero.webp?v=engine-v1"
++                srcSet="/images/mission-control/hero-m.webp?v=engine-v1 960w, /images/mission-control/hero.webp?v=engine-v1 1672w"
+                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+               alt={cs ? 'ZION Mission Control — Terra Nova dashboard se Stromem života a vrstvami L1–L6' : t5('ZION Mission Control — Terra Nova dashboard with the Tree of Life and layers L1–L6', lang)}
+               width={1672}
+diff --git a/apps/website-v2.9/src/components/NewsFeed.tsx b/apps/website-v2.9/src/components/NewsFeed.tsx
+index 784a6cd..5062aeb 100644
+--- a/apps/website-v2.9/src/components/NewsFeed.tsx
++++ b/apps/website-v2.9/src/components/NewsFeed.tsx
+@@ -49,8 +49,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
+       en: 'The Christmas sale of the Kingdom of the Heart digital book has started: an illustrated edition in five languages (PDF + EPUB, 144 CZK), a ZION Archive Pass included and a 144,000 ZION Genesis bonus until 24 December. The ecosystem also gains a new game client — Kingdom, still in development, with portals into live services and a desktop wallet-and-mining build — and the first OASIS world: Nirvana is already live with seven games (online MOBA, arena, duels, racing), chat and multiplayer. Entry via ZAP code.',
+     },
+     href: '/news/christmas-2026',
+-    image: '/images/news/christmas-2026/hero-960.webp',
+-    imageSrcSet: '/images/news/christmas-2026/hero-960.webp 960w, /images/news/christmas-2026/hero-1600.webp 1600w',
++    image: '/images/news/christmas-2026/hero-960.webp?v=engine-v1',
++    imageSrcSet: '/images/news/christmas-2026/hero-960.webp?v=engine-v1 960w, /images/news/christmas-2026/hero-1600.webp?v=engine-v1 1600w',
+     imageAlt: {
+       cs: 'Vánoce 2026 — tesař s knihou, archa, brána Kingdom a svět Nirvana',
+       en: 'Christmas 2026 — the carpenter with the book, the ark, the Kingdom gate and Nirvana',
+@@ -70,8 +70,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
+       en: 'ZION 3.2.0 "One Love" enters Mainnet Beta — the whole ecosystem in one step: the multichain pool mines ZION, Quantus and Pearl natively with a single miner, the L5 Free World map is complete (twelve points), and the library gained its fifth book, Maitreya. Beta is a development and testing stage, not Stable — that requires a clean 30-day run (in progress, monitored on /g8), an external audit and a restore drill. Mining and transacting at your own risk.',
+     },
+     href: '/news/mainnet-beta',
+-    image: '/images/news/beta-cosmic-utopia.webp',
+-    imageSrcSet: '/images/news/beta-cosmic-utopia-m.webp 960w, /images/news/beta-cosmic-utopia.webp 1672w',
++    image: '/images/news/beta-cosmic-utopia.webp?v=engine-v1',
++    imageSrcSet: '/images/news/beta-cosmic-utopia-m.webp?v=engine-v1 960w, /images/news/beta-cosmic-utopia.webp?v=engine-v1 1672w',
+     imageAlt: {
+       cs: 'ZION Mainnet Beta — ekosystém L1–L6, Maitreya a multichain pool ZION / QTC / PEARL',
+       en: 'ZION Mainnet Beta — L1–L6 ecosystem, Maitreya and the ZION / QTC / PEARL multichain pool',
+@@ -113,8 +113,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
+       en: 'Amenti beneath the Giza pyramids became the twelfth and final point on the map — L5 Free World is complete. Twelve places, twelve worlds: Genesis Garden, Dharma Temple, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka, Ekam, LUMI Nová Amerika, Uluru, Boa Esperança, Kailash, Amenti… and María del Camino, where the story continues as the network’s first living node. Every point has its own page, artwork and place on the holographic planet. Explore the full twelve-point map.',
+     },
+     href: '/l5-free-world',
+-    image: '/images/home/hero-l5-map.webp',
+-    imageSrcSet: '/images/home/hero-l5-map-m.webp 960w, /images/home/hero-l5-map.webp 1672w',
++    image: '/images/home/hero-l5-map.webp?v=engine-v1',
++    imageSrcSet: '/images/home/hero-l5-map-m.webp?v=engine-v1 960w, /images/home/hero-l5-map.webp?v=engine-v1 1672w',
+     imageAlt: {
+       cs: 'Mapa L5 Free World — dvanáct bodů a vrstvy L1–L6',
+       en: 'L5 Free World map — twelve points and layers L1–L6',
+diff --git a/apps/website-v2.9/src/components/NirvanaUniverseSection.tsx b/apps/website-v2.9/src/components/NirvanaUniverseSection.tsx
+index eaac78d..9c47f8b 100644
+--- a/apps/website-v2.9/src/components/NirvanaUniverseSection.tsx
++++ b/apps/website-v2.9/src/components/NirvanaUniverseSection.tsx
+@@ -14,11 +14,11 @@ function UniverseStaticFallback() {
+   return (
+     <div className="relative h-[380px] w-full overflow-hidden rounded-[22px] border border-rasta-gold/30 bg-[#02030a] sm:h-[440px] lg:h-[520px]">
+       <Image
+-        src="/images/nirvana-preview-v2.webp"
+-        alt="Nirvana — vesmír prvního světa OASIS"
++        src="/images/design-v1/nirvana-planets.webp?v=engine-v1"
++        alt=""
+         fill
+-        className="object-cover opacity-90"
+-        sizes="100vw"
++        className="object-cover object-[64%_center] opacity-90"
++        sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+       />
+       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40" />
+     </div>
+diff --git a/apps/website-v2.9/src/lib/site.ts b/apps/website-v2.9/src/lib/site.ts
+index 452c450..3921d78 100644
+--- a/apps/website-v2.9/src/lib/site.ts
++++ b/apps/website-v2.9/src/lib/site.ts
+@@ -33,7 +33,7 @@ export const SITE_POOL_PRIMARY = `${process.env.NEXT_PUBLIC_ZION_POOL_HOST || 's
+ // Network topology descriptor (operational details are injected via environment variables only)
+ export const SITE_NETWORK_TOPOLOGY = 'Mainnet Beta · primary + follower nodes';
+ export const EKAM_GOLDEN_EGG_IMAGE = 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2147915250/settings_images/8802b3-c826-05c7-bcd2-12b608d18d1_ABOUT-ONENESS.webp';
+-export const EKAM_HERO_IMAGE = '/images/ekam/hero.webp';
++export const EKAM_HERO_IMAGE = '/images/ekam/hero.webp?v=engine-v1';
+ export const EKAM_BANNER_IMAGE = '/images/ekam/temple.webp';
+ export const EKAM_FOUNDERS_BANNER_IMAGE = '/images/ekam/founders.webp';
+ export const EKAM_SOURCE_URL = 'https://www.theonenessmovement.org/about-oneness';

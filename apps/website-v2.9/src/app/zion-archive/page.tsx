@@ -287,8 +287,8 @@ export default function ZionArchivePage() {
 
               <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
                 <img
-                  src="/images/zion-archive/hero.webp"
-                  srcSet="/images/zion-archive/hero-m.webp 960w, /images/zion-archive/hero.webp 1536w"
+                  src="/images/zion-archive/hero.webp?v=engine-v1"
+                  srcSet="/images/zion-archive/hero-m.webp?v=engine-v1 960w, /images/zion-archive/hero.webp?v=engine-v1 1536w"
                   sizes="(max-width: 1024px) calc(100vw - 4rem), 560px"
                   alt={tx5(Copy.heroAlt, lang)}
                   width={1536}

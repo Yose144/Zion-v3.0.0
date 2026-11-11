@@ -422,8 +422,8 @@ export default function KailashPage() {
             </div>
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/kailash/hero.webp"
-                srcSet="/images/kailash/hero-m.webp 960w, /images/kailash/hero.webp 1600w"
+                src="/images/kailash/hero.webp?v=engine-v1"
+                srcSet="/images/kailash/hero-m.webp?v=engine-v1 960w, /images/kailash/hero.webp?v=engine-v1 1600w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt="Kailash — pyramida Gang Rinpoche za hvězdné noci, prastarý oheň a kora poutníků"
                 width={1600}

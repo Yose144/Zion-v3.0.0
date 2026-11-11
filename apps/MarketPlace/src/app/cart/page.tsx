@@ -1,5 +1,7 @@
 'use client';
 
+import { designImage } from '@/lib/design-image';
+
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -301,7 +303,7 @@ export default function CartPage() {
             >
               <div className="w-20 h-20 rounded-lg overflow-hidden bg-black/30 flex-shrink-0">
                 <img
-                  src={item.image}
+                  src={designImage(item.image)}
                   alt={item.name}
                   onError={(e) => { e.currentTarget.src = '/shop/img/shared/logo.jpg'; }}
                   className="w-full h-full object-cover"

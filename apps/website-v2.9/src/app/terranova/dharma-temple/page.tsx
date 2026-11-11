@@ -299,8 +299,8 @@ export default function DharmaTemplePage() {
             </div>
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/dharma-temple/hero.webp"
-                srcSet="/images/dharma-temple/hero-m.webp 960w, /images/dharma-temple/hero.webp 1400w"
+                src="/images/dharma-temple/hero.webp?v=engine-v1"
+                srcSet="/images/dharma-temple/hero-m.webp?v=engine-v1 960w, /images/dharma-temple/hero.webp?v=engine-v1 1400w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt={cs ? 'Dharma Temple — koncept' : t5('Dharma Temple — concept render', lang)}
                 width={1568}

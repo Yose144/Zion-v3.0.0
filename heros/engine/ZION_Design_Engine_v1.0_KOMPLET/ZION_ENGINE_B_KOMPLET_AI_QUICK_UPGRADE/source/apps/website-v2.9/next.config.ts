@@ -1,0 +1,311 @@
+import type { NextConfig } from "next";
+import { dirname, resolve } from "path";
+import { fileURLToPath } from "url";
+import withBundleAnalyzer from "@next/bundle-analyzer";
+
+const rootDir = dirname(fileURLToPath(import.meta.url));
+const emptyModule = resolve(rootDir, 'src/lib/empty-module.ts');
+
+const nextConfig: NextConfig = {
+  output: "standalone", // Enabled — Docker build uses standalone (image 2.5GB→~200MB). Local dev unaffected (next dev ignores this).
+  allowedDevOrigins: ['127.0.0.1'],
+  poweredByHeader: false,
+  compress: true,
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  images: {
+    unoptimized: false,
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 86400,
+    localPatterns: [
+      { pathname: '/**', search: '' },
+      { pathname: '/images/**', search: '?v=engine-v1' },
+      { pathname: '/hero.webp', search: '?v=engine-v1' },
+      { pathname: '/hero-m.webp', search: '?v=engine-v1' },
+    ],
+    remotePatterns: [
+      { protocol: 'https', hostname: 'newearth.cz' },
+      { protocol: 'https', hostname: '*.newearth.cz' },
+      { protocol: 'https', hostname: '*.zionterranova.com' },
+      { protocol: 'https', hostname: 'prod.spline.design' },
+      { protocol: 'https', hostname: '*.spline.design' },
+    ],
+  },
+  // React Compiler disabled — codebase has too many manual effects/patterns that trigger its strict rules.
+  reactCompiler: false,
+  experimental: {
+    webpackBuildWorker: true,
+    parallelServerBuildTraces: true,
+    memoryBasedWorkersCount: true,
+    optimizePackageImports: [
+      'lucide-react',
+      'framer-motion',
+      '@lifi/sdk',
+      '@lifi/widget',
+      '@lifi/widget-light',
+      'ethers',
+      'viem',
+      '@splinetool/react-spline',
+      '@react-three/drei',
+      '@react-three/fiber',
+    ],
+  },
+  typescript: {
+    ignoreBuildErrors: true, // TS check v IDE, ne v Docker buildu — ušetří ~70s
+  },
+  transpilePackages: ['zion-wallet-sdk', '@noble/ed25519', '@noble/hashes'],
+  turbopack: {
+    // K1.2: root workspace — lockfile i node_modules jsou v rootu repa.
+    root: resolve(rootDir, '../..'),
+    resolveAlias: {
+      net: {
+        browser: emptyModule,
+      },
+      fs: {
+        browser: emptyModule,
+      },
+      path: {
+        browser: emptyModule,
+      },
+      os: {
+        browser: emptyModule,
+      },
+      '@trezor/connect-web': {
+        browser: emptyModule,
+      },
+      '@trezor/connect': {
+        browser: emptyModule,
+      },
+      '@trezor/connect-mobile': {
+        browser: emptyModule,
+      },
+      '@ledgerhq/hw-transport-webusb': {
+        browser: emptyModule,
+      },
+      '@ledgerhq/hw-transport-webhid': {
+        browser: emptyModule,
+      },
+      '@ledgerhq/hw-app-ada': {
+        browser: emptyModule,
+      },
+    },
+  },
+  webpack: (config) => {
+    const path = require('path');
+    const emptyModule = path.resolve(__dirname, 'src/lib/empty-module.ts');
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@trezor/connect-web': emptyModule,
+      '@trezor/connect': emptyModule,
+      '@trezor/connect-mobile': emptyModule,
+      '@ledgerhq/hw-transport-webusb': emptyModule,
+      '@ledgerhq/hw-transport-webhid': emptyModule,
+      '@ledgerhq/hw-app-ada': emptyModule,
+    };
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      net: false,
+      fs: false,
+      path: false,
+      os: false,
+      tls: false,
+      child_process: false,
+      http: false,
+      https: false,
+      crypto: false,
+      stream: false,
+      zlib: false,
+    };
+    return config;
+  },
+  // Redirect legacy pool subpages to unified /pool tabs
+  async redirects() {
+    return [
+      { source: '/pool/blocks', destination: '/pool', permanent: true },
+      { source: '/pool/miners', destination: '/pool', permanent: true },
+      { source: '/pool/calculator', destination: '/pool', permanent: true },
+      { source: '/pool/benchmarks', destination: '/pool', permanent: true },
+      { source: '/zohar', destination: '/tree-of-life', permanent: true },
+      { source: '/zohar/:path*', destination: '/tree-of-life/:path*', permanent: true },
+      // F3 IA canonization — orphan routes -> canonical sections (docs/F3-IA-MAP.md)
+      { source: '/roadmap-295', destination: '/roadmap', permanent: true },
+      { source: '/wiki', destination: '/docs', permanent: true },
+      { source: '/onboard', destination: '/mining', permanent: true },
+      { source: '/kompas', destination: '/terranova', permanent: true },
+      // Zion Archive — Nirvana Hub: canonical library home is /zion-archive (locked coming-soon)
+      { source: '/maitreya', destination: '/zion-archive', permanent: true },
+      { source: '/maitreya/:path*', destination: '/zion-archive/:path*', permanent: true },
+      { source: '/cesta', destination: '/zion-archive', permanent: true },
+      // In-page redirects promoted to 301 (pages deleted)
+      { source: '/node-setup', destination: '/mining#node-setup', permanent: true },
+      { source: '/mining/node-setup', destination: '/mining#node-setup', permanent: true },
+      { source: '/nirvana', destination: '/zion-archive', permanent: true },
+      // Nirvana Hub — all books under /zion-archive/<book>/cist (docs/F3-IA-MAP.md)
+      { source: '/nirvana/cist', destination: '/zion-archive/nirvana/cist', permanent: true },
+      { source: '/nirvana/cist/:slug', destination: '/zion-archive/nirvana/cist#:slug', permanent: true },
+      { source: '/surta-srdce', destination: '/zion-archive/surta-srdce/cist', permanent: true },
+      { source: '/surta-srdce/cist', destination: '/zion-archive/surta-srdce/cist', permanent: true },
+      { source: '/surta-srdce/cist/:slug', destination: '/zion-archive/surta-srdce/cist#:slug', permanent: true },
+      { source: '/kralovstvi-srdce', destination: '/zion-archive/kralovstvi-srdce/cist', permanent: true },
+      { source: '/kralovstvi-srdce/cist', destination: '/zion-archive/kralovstvi-srdce/cist', permanent: true },
+      { source: '/kralovstvi-srdce/cist/:slug', destination: '/zion-archive/kralovstvi-srdce/cist#:slug', permanent: true },
+      // Corpus + legacy link fixes
+      { source: '/oasis', destination: '/l4-oasis', permanent: true },
+      { source: '/oasis/:path*', destination: '/l4-oasis', permanent: true },
+      { source: '/health', destination: '/api/health', permanent: false },
+      { source: '/pool/stats', destination: '/api/pool/stats', permanent: false },
+      // Explorer canonical slugs -> query-param pages
+      { source: '/explorer/tx/:hash', destination: '/explorer/tx?hash=:hash', permanent: true },
+      { source: '/explorer/address/:addr', destination: '/explorer/address?addr=:addr', permanent: true },
+      { source: '/explorer/block/:id', destination: '/explorer/block?id=:id', permanent: true },
+      // F3: Trh section — canonical market hub at /market (ex /multichain)
+      { source: '/multichain', destination: '/market', permanent: true },
+      { source: '/multichain/:path*', destination: '/market/:path*', permanent: true },
+      // Product pages are sections of the market hub
+      { source: '/defi', destination: '/market', permanent: true },
+      { source: '/defi/:path+', destination: '/market', permanent: true },
+      { source: '/bridge', destination: '/market#bridge', permanent: true },
+      { source: '/warp', destination: '/market#bridge', permanent: true },
+      { source: '/swap', destination: '/market#swap', permanent: true },
+      { source: '/dex', destination: '/market#dex', permanent: true },
+      { source: '/dex/:path*', destination: '/market#dex', permanent: true },
+      { source: '/ziondex', destination: '/market#dex', permanent: true },
+      // Shop je samostatná aplikace na market.zionterranova.com — /shop na app.
+      // vracelo 404. Subcesty (/shop/cart) mapujeme bez prefixu, protože market
+      // má vlastní routy /cart, /explore, /api/items… (ověřeno live 2026-11-02).
+      { source: '/shop', destination: 'https://market.zionterranova.com/shop', permanent: true },
+      {
+        source: '/shop/:path*',
+        destination: 'https://market.zionterranova.com/:path*',
+        permanent: true,
+      },
+      // dao.zionterranova.com (Phase A): once DNS+nginx route the host here,
+      // canonicalize onto the app domain under /dao. Order matters: the
+      // explicit /dao passthrough must precede the catch-all path map.
+      {
+        source: '/dao',
+        has: [{ type: 'host', value: 'dao.zionterranova.com' }],
+        destination: 'https://app.zionterranova.com/dao',
+        permanent: true,
+      },
+      {
+        source: '/dao/:path+',
+        has: [{ type: 'host', value: 'dao.zionterranova.com' }],
+        destination: 'https://app.zionterranova.com/dao/:path+',
+        permanent: true,
+      },
+      {
+        source: '/',
+        has: [{ type: 'host', value: 'dao.zionterranova.com' }],
+        destination: 'https://app.zionterranova.com/dao',
+        permanent: true,
+      },
+      {
+        source: '/:path+',
+        has: [{ type: 'host', value: 'dao.zionterranova.com' }],
+        destination: 'https://app.zionterranova.com/dao/:path+',
+        permanent: true,
+      },
+      // /dao is a real page — no redirect to /multichain#governance
+    ];
+  },
+  // P1-33: Security headers — CSP, X-Frame-Options, HSTS, etc.
+  async headers() {
+    return [
+      {
+        source: "/_next/static/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      // sw.js is served by src/app/sw.js/route.ts with no-store headers.
+      // Read-only API responses can be cached briefly at the edge/CDN
+      {
+        source: "/api/blockchain/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=10, stale-while-revalidate=60",
+          },
+        ],
+      },
+      {
+        source: "/api/metrics",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=5, stale-while-revalidate=30",
+          },
+        ],
+      },
+      {
+        source: "/api/dashboard-metrics",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=5, stale-while-revalidate=30",
+          },
+        ],
+      },
+      {
+        source: "/api/health",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=30, stale-while-revalidate=300",
+          },
+        ],
+      },
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' blob: https://*.zionterranova.com wss://*.zionterranova.com https://prod.spline.design https://*.spline.design https://sepolia.base.org https://mainnet.base.org https://base-rpc.publicnode.com https://open.spotify.com https://api.spotify.com https://*.li.fi https://li.fi",
+              "frame-src 'self' https://widget.li.fi https://li.fi https://*.li.fi https://open.spotify.com",
+              "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join("; "),
+          },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          {
+            key: "X-DNS-Prefetch-Control",
+            value: "on",
+          },
+        ],
+      },
+    ];
+  },
+};
+
+export default withBundleAnalyzer({ enabled: process.env.ANALYZE === "true" })(nextConfig);

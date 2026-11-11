@@ -538,8 +538,8 @@ export default function KralovstviSrdcePage() {
 
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/kralovstvi-srdce/hero.webp"
-                srcSet="/images/kralovstvi-srdce/hero-m.webp 960w, /images/kralovstvi-srdce/hero.webp 1600w"
+                src="/images/kralovstvi-srdce/hero.webp?v=engine-v1"
+                srcSet="/images/kralovstvi-srdce/hero-m.webp?v=engine-v1 960w, /images/kralovstvi-srdce/hero.webp?v=engine-v1 1600w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt={cs
                   ? 'Království srdce — archa za západu slunce u pobřeží Nové země, na přídi Malý princ a dívka s lucernou, u boku keporkak'

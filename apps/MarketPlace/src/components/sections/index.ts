@@ -1,5 +1,4 @@
 export { default as HeroSection } from './HeroSection';
-export { default as TimelineSection } from './TimelineSection';
 export { default as ShopNews } from './ShopNews';
 export { ZionPassSection, LampionSection } from './ChristmasEdition';
 export { default as BookSection } from './BookSection';

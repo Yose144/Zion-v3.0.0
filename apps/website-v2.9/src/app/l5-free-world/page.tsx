@@ -168,7 +168,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
     desc: tx5(L5FreeWorldCopy.pioneerL5CommunityPermaculture, lang),
     tags: t5a(['Permaculture', 'Guardian Node', 'DAO Circle'], lang),
     href: '/terranova/genesis',
-    cover: '/images/genesis-garden/hero.webp',
+    cover: '/images/genesis-garden/hero.webp?v=engine-v1',
   },
   {
     name: 'Dharma Temple',
@@ -177,7 +177,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
     desc: tx5(L5FreeWorldCopy.educationalAndMeditationCenter, lang),
     tags: t5a(['Education', 'Off-grid', 'Meditation'], lang),
     href: '/terranova/dharma-temple',
-    cover: '/images/dharma-temple/hero.webp',
+    cover: '/images/dharma-temple/hero.webp?v=engine-v1',
   },
   {
     name: 'Te Pīko Ora',
@@ -186,7 +186,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
     desc: tx5(L5FreeWorldCopy.tePikoOraPolynesianRevival, lang),
     tags: t5a(['Cultural Revival', 'Heritage', 'L5 Fund'], lang),
     href: '/terranova/te-piko-ora',
-    cover: '/images/te-piko-ora/hero.webp',
+    cover: '/images/te-piko-ora/hero.webp?v=engine-v1',
   },
   {
     name: 'Golden Republic Bohemia',
@@ -195,7 +195,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
     desc: cs ? 'Governance laboratoř Zlaté republiky — kruh rozhodování, česká moudrost a ZION protokol v srdci Evropy.' : t5('Governance laboratory for the Golden Republic — decision circle, Czech wisdom and ZION protocol in the heart of Europe.', lang),
     tags: t5a(['Governance', 'DAO Circle', 'Golden Republic'], lang),
     href: '/terranova/golden-republic-bohemia',
-    cover: '/images/golden-republic-bohemia/hero.webp',
+    cover: '/images/golden-republic-bohemia/hero.webp?v=engine-v1',
   },
   {
     name: 'Bodhi Lanka',
@@ -204,7 +204,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
     desc: cs ? 'Akáša uzel — prostor, který drží všechny elementy. Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi a ZION protokol.' : t5('Akasha node — the space that holds all elements. Infinite love of Rama and Sita, the oldest living tree on Earth, and ZION protocol.', lang),
     tags: t5a(['Bhakti', 'Ayurveda', 'Bodhi Tree'], lang),
     href: '/terranova/bodhi-lanka',
-    cover: '/images/bodhi-lanka/hero.webp',
+    cover: '/images/bodhi-lanka/hero.webp?v=engine-v1',
   },
   {
     name: 'Ekam · Oneness Temple',
@@ -213,7 +213,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
     desc: cs ? 'Jediný uzel, který už stojí — chrám Jednoty postavený 2008: bílý mramor, zlatý řez, bezsloupová hala a Zlatá koule. Předloha pro všechny uzly a místo, které pojmenovalo samotný chain (ekam_deeksha).' : t5('The only node already standing — the Temple of Oneness built in 2008: white marble, golden ratio, a column-free hall and the Golden Orb. The template for every node and the place that named the chain itself (ekam_deeksha).', lang),
     tags: t5a(['Built 2008', 'The Template', 'Golden Orb'], lang),
     href: '/terranova/ekam',
-    cover: '/images/ekam/hero.webp',
+    cover: '/images/ekam/hero.webp?v=engine-v1',
   },
   {
     name: 'LUMI',
@@ -222,7 +222,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
     desc: cs ? 'Most Amerik — projekt pro nativní kultury (Bribri, Cabécar, Boruca) na zeměpisném středobodu kontinentů, sdílený pozemek s pozemní stanicí Issobella.' : t5('Americas bridge — a project for the native cultures (Bribri, Cabécar, Boruca) at the geographic midpoint of the continents, sharing land with the Issobella ground station.', lang),
     tags: t5a(['Native Cultures', 'FPIC', 'Americas Bridge'], lang),
     href: '/terranova/nova-amerika',
-    cover: '/images/nova-amerika/hero.webp',
+    cover: '/images/nova-amerika/hero.webp?v=engine-v1',
   },
   {
     name: 'Uluru',
@@ -231,7 +231,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
     desc: cs ? 'Poselství protinožců — odkaz domorodé Austrálie: Tjukurpa, songlines, škola vnímání a každoroční festival oslavy života. Uzel jako vztah, ne stavba.' : t5('Message from the antipodes — the heritage of Aboriginal Australia: Tjukurpa, songlines, a school of perception and an annual celebration-of-life festival. A node as a relationship, not a construction.', lang),
     tags: t5a(['Tjukurpa', 'Songlines', 'Indigenous Heritage'], lang),
     href: '/terranova/uluru',
-    cover: '/images/uluru/hero.webp',
+    cover: '/images/uluru/hero.webp?v=engine-v1',
   },
   {
     name: 'María del Camino',
@@ -240,7 +240,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
     desc: cs ? 'Osmý bod sítě — plující uzel, flotila Tres Marias: atlantická plachetnice Santa María la Mayor, pacifický solární katamarán Nossa Senhora de Fátima a indickooceánská María de las Nieves. ~50 poutníků na trup spojuje všechny uzly sítě po mořském Caminu.' : t5('The eighth point of the network — a sailing node, the Tres Marias fleet: the Atlantic tall ship Santa María la Mayor, the Pacific solar catamaran Nossa Senhora de Fátima and the Indian-ocean María de las Nieves. ~50 pilgrims per hull connecting every node of the network on a sea Camino.', lang),
     tags: t5a(['Sea Camino', 'Solar Sails', 'Mobile Node'], lang),
     href: '/terranova/maria-del-camino',
-    cover: '/images/maria-del-camino/hero.webp',
+    cover: '/images/maria-del-camino/hero.webp?v=engine-v1',
   },
   {
     name: 'Boa Esperança',
@@ -249,7 +249,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
     desc: cs ? 'Devátý bod sítě — druhý šev světa, kde se bouře přejmenovává na naději a dvě Marie se setkávají na vodě. Domov nejstarší lidské linie (Khoisan), fynbos zahrada a kelp seaforest, vodní laboratoř Day Zero. Uzel jako vztah, ne stavba.' : t5('The ninth point of the network — the second seam of the world, where the storm is renamed hope and the two Marias meet at sea. Home of humanity’s oldest lineage (Khoisan), a fynbos garden and kelp seaforest, a Day-Zero water lab. A node as a relationship, not a construction.', lang),
     tags: t5a(['Hope', 'Two Oceans', 'Khoisan'], lang),
     href: '/terranova/boa-esperanca',
-    cover: '/images/boa-esperanca/hero.webp',
+    cover: '/images/boa-esperanca/hero.webp?v=engine-v1',
   },
   {
     name: 'Kailash',
@@ -258,7 +258,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
     desc: cs ? 'Jedenáctý bod sítě — poušť očištění kolem jediné hory, na kterou se nikdy nevylezlo. Gang Rinpoche drží shodu čtyř tradic (hindu, buddha, bön, džina); poutník ji nechodí na ni, ale kolem — kora. U prastarého ohně sedí mistři všech linií Šambhaly. Uzel jako vztah, ne stavba.' : t5('The eleventh point of the network — the desert of purification around the only mountain never climbed. Gang Rinpoche holds the agreement of four traditions (Hindu, Buddhist, Bön, Jain); the pilgrim walks around it, not up — the kora. At the primordial fire sit the masters of all Shambhala lineages. A node as a relationship, not a construction.', lang),
     tags: t5a(['Purification', 'Kora', 'Shambhala'], lang),
     href: '/terranova/kailash',
-    cover: '/images/kailash/hero.webp',
+    cover: '/images/kailash/hero.webp?v=engine-v1',
   },
   {
     name: 'Amenti',
@@ -267,7 +267,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
     desc: cs ? 'Dvanáctý a poslední bod sítě — kolébka záznamu na plateu Gízy: poslední dochovaný div antického světa (~4 500 let) a v mýtické geografii sítě Síně Amenti pod pískem — síně, kde 32 Dětí Světla hlídá Kvetoucí Plamen. Sedm Pánů = sedm ctností implementovaných v L3; Amenti Library už sítí běží. Uzel jako vztah, ne stavba.' : t5('The twelfth and final point of the network — the cradle of the record on the Giza plateau: the last surviving Wonder of the ancient world (~4,500 yrs) and, in the network’s mythic geography, the Halls of Amenti beneath the sand — where the 32 Children of Light keep the Flower of Light. Seven Lords = seven virtues implemented in L3; the Amenti Library already runs on the network. A node as a relationship, not a construction.', lang),
     tags: t5a(['Remembrance', 'Halls of Records', 'Emerald Tablets'], lang),
     href: '/terranova/amenti',
-    cover: '/images/amenti/hero.webp',
+    cover: '/images/amenti/hero.webp?v=engine-v1',
   },
   {
     name: 'Království srdce · Archa',
@@ -276,7 +276,7 @@ const getCommunities = (cs: boolean, lang: Lang) => [
     desc: cs ? 'Třináctý uzel sítě — a jediný, který je na vodě. Archa Nirvana: plující kolonie do sta lidí, semenný archiv při −18 °C, knihovna civilizace a plný uzel řetězce. Čtvrté plavidlo vedle Tres Marías, které se vrací pro ty, kdo zůstali ve vodě; trasu mu určují keporkaci — sezónně mezi tropy a mírným pásmem, v rytmu cyklónových oken obou hemisfér. Koncept se čtyřmi pracovními studiemi, bez položeného kýlu.' : t5('The thirteenth node of the network — and the only one on the water. The ark Nirvana: a sailing colony of up to one hundred people, a seed vault at −18 °C, a library of civilisation and a full chain node. The fourth vessel beside the Tres Marías, returning for those left in the water; its route is set by the humpbacks — seasonally between the tropics and the temperate band, in the rhythm of both hemispheres’ cyclone windows. A concept with four working studies and no keel laid.', lang),
     tags: t5a(['The Ark', 'Whale circuit', 'Colony of one hundred'], lang),
     href: '/terranova/kralovstvi-srdce',
-    cover: '/images/kralovstvi-srdce/hero.webp',
+    cover: '/images/kralovstvi-srdce/hero.webp?v=engine-v1',
   },
 ];
 
@@ -471,8 +471,8 @@ export default function L5FreeWorldPage() {
             </div>
             <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/kralovstvi-srdce/hero.webp"
-                srcSet="/images/kralovstvi-srdce/hero-m.webp 960w, /images/kralovstvi-srdce/hero.webp 1600w"
+                src="/images/kralovstvi-srdce/hero.webp?v=engine-v1"
+                srcSet="/images/kralovstvi-srdce/hero-m.webp?v=engine-v1 960w, /images/kralovstvi-srdce/hero.webp?v=engine-v1 1600w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt={cs ? 'L5 Free World — třináctý uzel: archa Království srdce · Nirvana, keporkaci a břeh Nové země' : t5('L5 Free World — the thirteenth node: the ark Kingdom of the Heart · Nirvana, humpback whales and the shore of the new world', lang)}
                 width={1600}
@@ -674,8 +674,8 @@ export default function L5FreeWorldPage() {
                   {community.cover && (
                     <div className="-m-1 mb-3 overflow-hidden rounded-t-xl">
                       <img
-                        src={community.cover.replace('/hero.webp', '/hero-m.webp')}
-                        srcSet={`${community.cover.replace('/hero.webp', '/hero-m.webp')} 960w, ${community.cover} 1600w`}
+                        src={community.cover.replace('/hero.webp?v=engine-v1', '/hero-m.webp?v=engine-v1')}
+                        srcSet={`${community.cover.replace('/hero.webp?v=engine-v1', '/hero-m.webp?v=engine-v1')} 960w, ${community.cover} 1600w`}
                         sizes="(min-width: 768px) 33vw, calc(100vw - 4rem)"
                         alt={community.name}
                         width={1400}

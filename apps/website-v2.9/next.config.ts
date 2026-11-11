@@ -18,6 +18,12 @@ const nextConfig: NextConfig = {
     unoptimized: false,
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 86400,
+    localPatterns: [
+      { pathname: '/**', search: '' },
+      { pathname: '/images/**', search: '?v=engine-v1' },
+      { pathname: '/hero.webp', search: '?v=engine-v1' },
+      { pathname: '/hero-m.webp', search: '?v=engine-v1' },
+    ],
     remotePatterns: [
       { protocol: 'https', hostname: 'newearth.cz' },
       { protocol: 'https', hostname: '*.newearth.cz' },

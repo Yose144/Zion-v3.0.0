@@ -385,8 +385,8 @@ export default function BodhiLankaPage() {
             </div>
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/bodhi-lanka/hero.webp"
-                srcSet="/images/bodhi-lanka/hero-m.webp 960w, /images/bodhi-lanka/hero.webp 1168w"
+                src="/images/bodhi-lanka/hero.webp?v=engine-v1"
+                srcSet="/images/bodhi-lanka/hero-m.webp?v=engine-v1 960w, /images/bodhi-lanka/hero.webp?v=engine-v1 1168w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt="Bodhi Lanka"
                 width={1168}

@@ -60,30 +60,18 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
 
       {/* Hero band */}
       <div className="zion-section overflow-hidden !p-0">
-        {/* Poměr se řídí zdrojem: ultraširoký banner je 2,5:1, běžný obrázek 16:9.
-            Dřív tu byl aspect-[21/9] + max-h-[420px], což banner (2,5:1) ořezávalo
-            shora i zdola — „uříznutý" hero. */}
-        <div className={`relative ${product.heroWide ? 'aspect-[5/2]' : 'aspect-[16/9]'}`}>
-          <img
-            src={product.heroWide ?? product.image}
-            alt={pick(product.imageAlt)}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        <div className="relative aspect-[16/9]">
+          <img src={product.heroWide ?? product.image} alt={pick(product.imageAlt)} className="h-full w-full object-contain" />
           <div className="absolute top-4 left-4">
             <span className="rarity-badge rarity-legendary inline-flex items-center gap-1.5">
               <Snowflake className="w-3 h-3" /> {t('xmas.badge')}
             </span>
           </div>
-          <div className="absolute bottom-4 left-4 right-4">
-            <div className="zion-kicker inline-flex items-center gap-2">{pick(product.kicker)}</div>
-            <h1 className="text-3xl md:text-4xl font-black font-display mt-2">
-              <span className="text-gradient-gold">{pick(product.title)}</span>
-            </h1>
-            <p className="text-sm md:text-base text-gray-300 italic mt-1 max-w-2xl">
-              {pick(product.subtitle)}
-            </p>
-          </div>
+        </div>
+        <div className="p-5 md:p-8">
+          <div className="zion-kicker">{pick(product.kicker)}</div>
+          <h1 className="text-3xl md:text-4xl font-black font-display mt-2"><span className="text-gradient-gold">{pick(product.title)}</span></h1>
+          <p className="text-sm md:text-base text-gray-300 italic mt-2 max-w-2xl">{pick(product.subtitle)}</p>
         </div>
       </div>
 
@@ -104,7 +92,7 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
                 src={shot.src}
                 alt={pick(shot.alt)}
                 loading="lazy"
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
               />
             </figure>
           ))}
@@ -292,7 +280,7 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
                         src={sample.image}
                         alt={pick(sample.title)}
                         loading="lazy"
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-contain"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
                     </div>
@@ -346,7 +334,7 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
                       <img
                         src={edition.cover}
                         alt={pick(edition.name)}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-contain"
                       />
                       {edition.flagship && (
                         <span className="absolute left-2 top-2 rounded-full bg-rasta-gold/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-black">

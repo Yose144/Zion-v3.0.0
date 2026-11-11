@@ -361,8 +361,8 @@ export default function EkamPage() {
             </div>
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/ekam/hero.webp"
-                srcSet="/images/ekam/hero-m.webp 960w, /images/ekam/hero.webp 1600w"
+                src="/images/ekam/hero.webp?v=engine-v1"
+                srcSet="/images/ekam/hero-m.webp?v=engine-v1 960w, /images/ekam/hero.webp?v=engine-v1 1600w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt="Ekam — bílý mramorový chrám Jednoty se Zlatou koulí, Andhra Pradesh"
                 width={1600}

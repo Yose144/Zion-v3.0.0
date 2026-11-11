@@ -46,8 +46,8 @@ const Copy = {
     en: 'Hero in preparation',
   },
   heroHint: {
-    cs: 'Až bude obraz hotový, nahraje se jako /images/nabukano/hero.webp (1920×1080) a objeví se tady.',
-    en: 'Once the artwork is ready it goes in as /images/nabukano/hero.webp (1920×1080) and appears here.',
+    cs: 'Až bude obraz hotový, nahraje se jako /images/nabukano/hero.webp?v=engine-v1 (1920×1080) a objeví se tady.',
+    en: 'Once the artwork is ready it goes in as /images/nabukano/hero.webp?v=engine-v1 (1920×1080) and appears here.',
   },
   introTitle: { cs: 'Čtrnáctý uzel to není', en: 'It is not a fourteenth node' },
   introBody: {
@@ -185,8 +185,8 @@ export default function NabukanoPage() {
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               {!heroFailed ? (
                 <img
-                  src="/images/nabukano/hero.webp"
-                  srcSet="/images/nabukano/hero-m.webp 960w, /images/nabukano/hero.webp 1920w"
+                  src="/images/nabukano/hero.webp?v=engine-v1"
+                  srcSet="/images/nabukano/hero-m.webp?v=engine-v1 960w, /images/nabukano/hero.webp?v=engine-v1 1920w"
                   sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                   alt={cs ? 'Nebeská flotila Nabukano — mateřská loď s dokem a tři nebeské Marie nad Novou Zemí' : t5('The Nabukano sky fleet — mother ship with a docking frame and three sky Marías above New Earth', lang)}
                   width={1920}

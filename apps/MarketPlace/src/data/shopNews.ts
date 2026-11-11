@@ -46,7 +46,7 @@ export const CHRISTMAS_EDITION_PRODUCTS: ShopNewsProduct[] = [
     name: { cs: 'ZION Pass', en: 'ZION Pass' },
     priceCzk: 108,
     href: '/vanoce/zion-pass',
-    image: '/shop/img/products/zion-pass-001_zion-pass.webp',
+    image: '/shop/img/products/zion-pass-001_zion-pass.webp?v=engine-v1',
     imageAlt: { cs: 'ZION Pass — zlatá karta do Nirvany a Archivu', en: 'ZION Pass — the golden card into Nirvana and the Archive' },
     buyable: true,
   },
@@ -55,7 +55,7 @@ export const CHRISTMAS_EDITION_PRODUCTS: ShopNewsProduct[] = [
     name: { cs: 'Království srdce — kniha', en: 'Kingdom of Hearts — book' },
     priceCzk: 216,
     href: '/vanoce/kniha-kralovstvi-srdce',
-    image: '/shop/img/products/book-001_kralovstvi-srdce.webp',
+    image: '/shop/img/products/book-001_kralovstvi-srdce.webp?v=engine-v1',
     imageAlt: { cs: 'Kniha Království srdce — obálka s lodí', en: 'Kingdom of Hearts book — cover with the ship' },
     buyable: true,
   },
@@ -64,7 +64,7 @@ export const CHRISTMAS_EDITION_PRODUCTS: ShopNewsProduct[] = [
     name: { cs: 'Druhá lucerna', en: 'Second lantern' },
     priceCzk: 490,
     href: '/vanoce/lampion',
-    image: '/shop/img/products/lamp-001_lumi-2.webp',
+    image: '/shop/img/products/lamp-001_lumi-2.webp?v=engine-v1',
     imageAlt: { cs: 'Druhá lucerna — Lumi 2 z 3mm překližky, rozsvícená', en: 'The second lantern — Lumi 2 in 3 mm plywood, lit' },
     buyable: true,
   },
@@ -73,14 +73,14 @@ export const CHRISTMAS_EDITION_PRODUCTS: ShopNewsProduct[] = [
 /** Obrázky doprovodných karet — skutečné assety z e-shopu, ne ilustrace. */
 export const SHOP_NEWS_IMAGES = {
   market: {
-    src: '/hero-kolekce-2027.webp',
+    src: '/hero-kolekce-2027.webp?v=engine-v1',
     alt: {
       cs: 'Zimní trh Království srdce — archa, strom a lucerny',
       en: 'The Kingdom of Hearts winter market — the ark, the tree and lanterns',
     },
   },
   campaign: {
-    src: '/vanoce/hero/lampion-wide.webp',
+    src: '/vanoce/hero/lampion-wide.webp?v=engine-v1',
     alt: {
       cs: 'Lampion Lumi 2 na tesařském stole s knihou a ZION Passem',
       en: 'The Lumi 2 lantern on the carpenter’s table with the book and the ZION Pass',

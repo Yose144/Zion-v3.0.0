@@ -1,0 +1,142 @@
+'use client';
+
+import type { CSSProperties } from 'react';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { ArrowRight, Egg, Gamepad2, Sparkles, Sun, Wind } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
+import { tx5, t5 } from '@/lib/i18n-tx';
+
+const MaitreyaSectionCopy = {
+  kicker: { cs: 'Zion Archive · Nirvana Hub · CZ + EN', en: 'Zion Archive · Nirvana Hub · CZ + EN' },
+  title: { cs: 'Zion Archive', en: 'Zion Archive' },
+  subtitle: { cs: 'Nirvana Hub · všechny knihy cesty · jeden reader · vstup přes ZION Pass', en: 'Nirvana Hub · all the books of the path · one reader · access with a ZION Pass' },
+  body: {
+    cs: 'Genesis, Kvantová revoluce, Ekam, Terra Nova, Maitreya i Nirvana — celá knihovna v jednom sjednoceném readeru. Začni číst, projdi související příběhy nebo otevři plán v3.3 — ten je vývojovým cílem, ne hotovým vydáním.',
+    en: 'Genesis, Quantum Revolution, Ekam, Terra Nova, Maitreya and Nirvana — the whole library in one unified reader. Start reading, explore the related stories or open the v3.3 plan — a development goal, not a completed release.',
+  },
+  quote: {
+    cs: '„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce."',
+    en: '“I am Maitreya, born of Hiranyagarbha. I was a cowherd boy with a flute, and a prince in exile, and also a carpenter who built a boat he called the kingdom of the heart.”',
+  },
+  nirvanaBadge: { cs: 'Kniha Západu — Nirvana', en: 'Book of the West — Nirvana' },
+  ctaHub: { cs: 'Knihovna & cesta', en: 'Library & the path' },
+  cta: { cs: 'Číst knihu', en: 'Read the book' },
+  ctaPlan: { cs: 'Plán 3.3', en: 'The 3.3 plan' },
+  ctaGame: { cs: 'Hrát OASIS', en: 'Play OASIS' },
+};
+
+export default function MaitreyaSection() {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+
+  return (
+    <section className="px-4 pb-8 pt-1 sm:pb-10">
+      <div className="zion-container">
+        <motion.div
+          initial={{ opacity: 0, y: 28 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="zion-rainbow-card relative overflow-hidden"
+          style={{ '--rc': '168, 85, 247' } as CSSProperties}
+        >
+          {/* ambient glows */}
+          <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-zion-purple/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-zion-gold/10 blur-3xl" />
+
+          <div className="relative grid gap-5 lg:grid-cols-[0.8fr_1.2fr] lg:items-stretch">
+            {/* artwork panel */}
+            <Link
+              href="/zion-archive"
+              className="group/img relative block w-full max-w-full self-center aspect-[16/9] overflow-hidden rounded-xl border border-white/10"
+            >
+              <img
+                src="/images/zion-archive/hero.webp?v=engine-v1"
+                srcSet="/images/zion-archive/hero-m.webp?v=engine-v1 960w, /images/zion-archive/hero.webp?v=engine-v1 1536w"
+                sizes="(max-width: 1024px) calc(100vw - 3rem), 620px"
+                alt={cs ? 'Oasis — jedna rodina pod Stromem života, vizuál Nirvana Hubu' : t5('Oasis — one family under the Tree of Life, Nirvana Hub artwork', lang)}
+                loading="lazy"
+                decoding="async"
+                width={1536} height={1024} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover/img:scale-[1.04]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-100 backdrop-blur-sm">
+                <Sparkles className="h-3 w-3 text-zion-gold" />
+                {cs ? 'Vstup přes ZION Pass' : t5('Access with a ZION Pass', lang)}
+              </div>
+            </Link>
+
+            {/* copy */}
+            <div className="flex flex-col justify-center gap-3 p-4 sm:p-5 lg:py-6 lg:pr-6 lg:pl-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="zion-kicker border-zion-purple/30 bg-zion-purple/10 text-zion-purple">
+                  <Egg className="h-3.5 w-3.5" />
+                  {tx5(MaitreyaSectionCopy.kicker, lang)}
+                </span>
+                <span className="zion-kicker border-zion-cyan/25 bg-zion-cyan/10 text-zion-cyan">
+                  <Wind className="h-3.5 w-3.5" />
+                  {cs ? 'Element vzduchu' : t5('The element of air', lang)}
+                </span>
+                <Link
+                  href="/zion-archive/nirvana/cist"
+                  className="zion-kicker border-amber-400/25 bg-amber-400/10 text-amber-300 transition-colors hover:border-amber-400/50"
+                >
+                  <Sun className="h-3.5 w-3.5" />
+                  {tx5(MaitreyaSectionCopy.nirvanaBadge, lang)}
+                </Link>
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+                  <span className="text-gradient">{tx5(MaitreyaSectionCopy.title, lang)}</span>
+                </h2>
+                <p className="mt-1.5 text-sm font-semibold text-zion-gold/90 sm:text-base">
+                  {tx5(MaitreyaSectionCopy.subtitle, lang)}
+                </p>
+              </div>
+
+              <p className="max-w-xl text-xs leading-relaxed text-gray-300 sm:text-sm">
+                {tx5(MaitreyaSectionCopy.body, lang)}
+              </p>
+
+              <p className="text-xs italic text-zion-purple/90 sm:text-sm">
+                {tx5(MaitreyaSectionCopy.quote, lang)}
+              </p>
+
+              <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
+                <Link href="/zion-archive#cesta" prefetch={false} className="zion-button-primary group">
+                  {tx5(MaitreyaSectionCopy.ctaHub, lang)}
+                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </Link>
+                <Link
+                  href="/zion-archive/cist"
+                  prefetch={false}
+                  className="zion-button-secondary border-white/15 hover:border-zion-purple/40 hover:text-zion-purple"
+                >
+                  {tx5(MaitreyaSectionCopy.cta, lang)}
+                </Link>
+                <Link
+                  href="/zion-archive#plan-v33"
+                  prefetch={false}
+                  className="zion-button-secondary border-white/15 hover:border-zion-gold/40 hover:text-zion-gold"
+                >
+                  {tx5(MaitreyaSectionCopy.ctaPlan, lang)}
+                </Link>
+                <a
+                  href="https://oasis.zionterranova.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="zion-button-secondary border-white/15 hover:border-zion-cyan/50 hover:text-zion-cyan"
+                >
+                  <Gamepad2 className="h-4 w-4" />
+                  {tx5(MaitreyaSectionCopy.ctaGame, lang)}
+                </a>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}

@@ -350,8 +350,8 @@ export default function UluruPage() {
             </div>
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/uluru/hero.webp"
-                srcSet="/images/uluru/hero-m.webp 960w, /images/uluru/hero.webp 1672w"
+                src="/images/uluru/hero.webp?v=engine-v1"
+                srcSet="/images/uluru/hero-m.webp?v=engine-v1 960w, /images/uluru/hero.webp?v=engine-v1 1672w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt="Uluru — poselství protinožců nad posvátným monolitem"
                 width={1672}

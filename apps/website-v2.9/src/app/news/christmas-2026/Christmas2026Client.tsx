@@ -19,35 +19,35 @@ const Article = {
       {
         icon: Ticket,
         title: 'ZION Pass — jeden kód, dva světy',
-        image: '/images/news/christmas-2026/pass-wide.webp',
+        image: '/images/news/christmas-2026/pass-wide.webp?v=engine-v1',
         imageAlt: 'Zlatá brána mezi světy — ZION Pass na podstavci mezi stromem života a knihovnou',
         text: 'Digitální průkaz za 108 Kč, který po zaplacení dorazí e-mailem jako kód ZAP-…. Tentýž kód otevře Nirvanu — 3D svět s arénou na Marsu, závodem na Venuši, soubojem na Merkuru, poutí u Jupitera a MOBA o Zemi — i ZION Archiv s kanonickými texty a Kronikami. K Passu patří 202 avatarů, společný chat a vánoční bonus 15 552 ZION na peněženku. Kód se váže na průkaz, ne na osobu, takže se dá přeposlat jako dárek.',
       },
       {
         icon: BookOpen,
         title: 'Království srdce — osm edic v pěti jazycích',
-        image: '/images/news/christmas-2026/book-wide.webp',
+        image: '/images/news/christmas-2026/book-wide.webp?v=engine-v1',
         imageAlt: 'Tesař u hoblice s dětmi, na tabletu obálka knihy Království srdce',
         text: 'Duchovní legenda o tesaři z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě. Za 216 Kč dostanete kompletní korpus: osm samostatných edic téhož příběhu — od klasického midraše po Knihu Kýlu vyprávěnou dřevem — každou v češtině, angličtině, španělštině, francouzštině a portugalštině. Celkem 40 knih, 3 252 stran a 619 498 slov ve formátech PDF i EPUB. Vlajková ilustrovaná edice má 24 kapitol a epilog, každá kapitola nese tabulku „Kotva pravdy", která odděluje Písmo, tradici, historii, legendu a literární obraz. Ke knize patří ZION Archive Pass a vánoční bonus 31 104 ZION.',
       },
       {
         icon: Lamp,
         title: 'Druhá lucerna — světlo, které si zapálíš sám',
-        image: '/images/news/christmas-2026/lampion-wide.webp?v=7',
+        image: '/images/news/christmas-2026/lampion-wide.webp?v=engine-v1',
         imageAlt: 'Tesař s dětmi u hořícího lampionu, na stole kniha Království srdce a ZION Pass',
         text: 'Druhá lucerna. Lampion Lumi 2 přijde rozložený — osm dílů z 3mm březové překližky, půl hodiny a dřevěné lepidlo. Svíčku zapálíš sám. Jeden kus je 20,9 m řezných drah, 614 obrysů a čtyři hodiny laseru, proto je edice číslovaná. Za 490 Kč je v krabici i digitální kniha a ZION Pass; ty přijdou e-mailem hned, dřevo jde Zásilkovnou jako ploché díly. K ceně patří bonus 70 560 ZION. Fotografie jsou ilustrační.',
       },
       {
         icon: Gamepad2,
         title: 'Kingdom — nový herní klient (ve vývoji)',
-        image: '/images/news/christmas-2026/kingdom-1200.webp',
+        image: '/images/news/christmas-2026/kingdom-1200.webp?v=engine-v1',
         imageAlt: 'Zlatá brána Kingdom s lucernou — portály do světů a služeb ekosystému',
         text: 'Ekosystém dnes tvoří dvanáct aplikací a čtrnáct hostname — Kingdom je jeden klient, do kterého se postupně vstřebají: Brána (vstup) → Místnost (shell) → Světy a Portály. Cílem je desktopová aplikace, okno bez prohlížeče s peněženkou, těžbou a tray agentem přímo uvnitř. Kingdom přitom nic nevlastní: žádnou databázi, žádné peníze ani klíče — jen čte živá data ze služeb přes portály Řetěz, Kovárna, Tržiště, Snem, Knihovna, Přístav, Věž a Issobella, a nese už třináct světů OASIS. Webová podoba na kingdom.zionterranova.com zatím stojí za závěsou údržby — o spuštění dáme vědět v novinkách.',
       },
       {
         icon: Globe,
         title: 'Nirvana — první svět OASIS je živý',
-        image: '/images/news/christmas-2026/nirvana-worlds-1200.webp',
+        image: '/images/news/christmas-2026/nirvana-worlds-1200.webp?v=engine-v1',
         imageAlt: 'Vesmír Nirvany — planety otevírají hry: Venuše, Měsíc, Saturn, Mars, Země a strom Brány do OASIS',
         text: 'První svět OASIS se jmenuje Nirvana a běží na nirvana.zionterranova.com. Vesmír, ve kterém planety otevírají hry: Země — MOBA se třemi linkami a uzly L5 (online 2v2), Mars — aréna deathmatch sólo i online, Venuše — závodní okruh na tři kola, Merkur — souboj best of 3 online, Saturn — Kroniky, Pouť s arkádami a kolem a šatník se 202 avatary. Chat a multiplayer běží na vlastní realtime službě a ovládání funguje i na dotykových zařízeních.',
       },
@@ -110,35 +110,35 @@ const Article = {
       {
         icon: Ticket,
         title: 'ZION Pass — one code, two worlds',
-        image: '/images/news/christmas-2026/pass-wide.webp',
+        image: '/images/news/christmas-2026/pass-wide.webp?v=engine-v1',
         imageAlt: 'The golden gate between worlds — the ZION Pass on a pedestal between the tree of life and the library',
         text: 'A digital credential for 108 CZK that arrives by e-mail after payment as a ZAP-… code. The same code opens Nirvana — a 3D world with the Mars arena, the Venus race, the Mercury duel, the Jupiter fairground and the Earth MOBA — and the ZION Archive with its canonical texts and Chronicles. The Pass includes 202 avatars, a shared chat and a Christmas bonus of 15,552 ZION to your wallet. The code binds to the credential, not a person, so it can be forwarded as a gift.',
       },
       {
         icon: BookOpen,
         title: 'Kingdom of the Heart — eight editions in five languages',
-        image: '/images/news/christmas-2026/book-wide.webp',
+        image: '/images/news/christmas-2026/book-wide.webp?v=engine-v1',
         imageAlt: 'The carpenter at the bench with children, the cover of Kingdom of the Heart on a tablet',
         text: 'A spiritual legend about a carpenter of Nazareth who built a ship in his father’s workshop — for a sea that is on no map. For 216 CZK you get the complete corpus: eight distinct editions of the same story — from a classical midrash to the Book of the Keel told by the wood itself — each in Czech, English, Spanish, French and Portuguese. Forty books in total, 3,252 pages and 619,498 words in PDF and EPUB. The illustrated flagship has 24 chapters and an epilogue, and every chapter carries an “Anchor of Truth” table separating Scripture, tradition, history, legend and literary image. The book includes a ZION Archive Pass and a Christmas bonus of 31,104 ZION.',
       },
       {
         icon: Lamp,
         title: 'The second lantern — the light you strike yourself',
-        image: '/images/news/christmas-2026/lampion-wide.webp?v=7',
+        image: '/images/news/christmas-2026/lampion-wide.webp?v=engine-v1',
         imageAlt: 'The carpenter with children around the lit lantern, the Kingdom of the Heart book and ZION Pass on the table',
         text: 'The second lantern. Lumi 2 arrives flat — eight parts in 3 mm birch plywood, half an hour and wood glue. You light the candle yourself. One piece is 20.9 m of cutting paths, 614 outlines and four hours of laser time, which is why the edition is numbered. At 490 CZK the box also holds the digital book and a ZION Pass; those arrive by e-mail at once, and the wood ships via Zásilkovna as flat parts. The price carries a 70,560 ZION bonus. The photographs are illustrative.',
       },
       {
         icon: Gamepad2,
         title: 'Kingdom — the new game client (in development)',
-        image: '/images/news/christmas-2026/kingdom-1200.webp',
+        image: '/images/news/christmas-2026/kingdom-1200.webp?v=engine-v1',
         imageAlt: 'Kingdom’s golden gate with the lantern — portals into the ecosystem’s worlds and services',
         text: 'The ecosystem today spans twelve applications and fourteen hostnames — Kingdom is the single client they will gradually be absorbed into: the Gate (entry) → the Room (shell) → Worlds and Portals. The goal is a desktop app: a browserless window with the wallet, mining and tray agent built right in. Kingdom owns nothing: no database, no money or keys — it only reads live data from the services through the Chain, Forge, Market, Senate, Library, Harbor, Tower and Issobella portals, and already carries thirteen OASIS worlds. The web version at kingdom.zionterranova.com currently sits behind a maintenance curtain — we will announce the launch in the news.',
       },
       {
         icon: Globe,
         title: 'Nirvana — the first OASIS world is live',
-        image: '/images/news/christmas-2026/nirvana-worlds-1200.webp',
+        image: '/images/news/christmas-2026/nirvana-worlds-1200.webp?v=engine-v1',
         imageAlt: 'The Nirvana universe — planets open games: Venus, the Moon, Saturn, Mars, Earth and the Gate-to-OASIS tree',
         text: 'The first OASIS world is called Nirvana and runs at nirvana.zionterranova.com. A universe where planets open games: Earth — a MOBA with three lanes and L5 nodes (online 2v2), Mars — a deathmatch arena solo and online, Venus — a three-lap racing circuit, Mercury — an online best-of-3 duel, Saturn — the Chronicles, the Fair with arcades and a wheel, and a wardrobe of 202 avatars. Chat and multiplayer run on a dedicated realtime service, and the controls work on touch devices too.',
       },
@@ -223,8 +223,8 @@ export default function Christmas2026Client() {
 
           <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-2xl border border-white/10">
             <img
-              src="/images/news/christmas-2026/hero-1600.webp?v=7"
-              srcSet="/images/news/christmas-2026/hero-960.webp?v=7 960w, /images/news/christmas-2026/hero-1600.webp?v=7 1600w"
+              src="/images/news/christmas-2026/hero-1600.webp?v=engine-v1"
+              srcSet="/images/news/christmas-2026/hero-960.webp?v=engine-v1 960w, /images/news/christmas-2026/hero-1600.webp?v=engine-v1 1600w"
               sizes="(min-width: 768px) 46rem, 100vw"
               alt={t.imageAlt}
               width={1672}

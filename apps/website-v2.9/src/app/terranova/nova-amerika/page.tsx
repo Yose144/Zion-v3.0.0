@@ -324,8 +324,8 @@ export default function NovaAmerikaPage() {
             </div>
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/nova-amerika/hero.webp"
-                srcSet="/images/nova-amerika/hero-m.webp 960w, /images/nova-amerika/hero.webp 1672w"
+                src="/images/nova-amerika/hero.webp?v=engine-v1"
+                srcSet="/images/nova-amerika/hero-m.webp?v=engine-v1 960w, /images/nova-amerika/hero.webp?v=engine-v1 1672w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt="LUMI — Nová Amerika"
                 width={1672}
