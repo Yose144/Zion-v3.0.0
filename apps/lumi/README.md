@@ -24,6 +24,28 @@ Samostatný web pro dřevěné lampiony **Lumi**. Prodávajícím je **Omnity.On
 | Motiv | světlý a tmavý (systém + přepínač v hlavičce, uloženo v localStorage) |
 
 
+## Motivy a varianty
+
+Nový motiv se prodává jako **vlastní produktová varianta** (vlastní `externalId`,
+cena i sklad), ale v UI drží pohromadě:
+
+- Na detailu je přepínač motivů (`VariantSwitcher`) — objeví se, jakmile má skupina
+  aspoň dva členy.
+- Produkt s polem `walls` dostane sekci „Šest stěn, šest obrazů“ (`ProductWalls`).
+- V `/kolekce` má každá skupina vlastní sekci s popiskem z `VARIANT_GROUPS`.
+
+Import podkladů:
+
+```bash
+cd apps/lumi
+node scripts/import-motifs.mjs ../../heros/Lumi/<balíček> --slug <slug> --group <skupina>
+# → public/images/motifs/<slug>/ + TS snippet do src/data/catalog.ts
+```
+
+Skript bere stěny z `Jednotlive_steny/`, upřednostní SVG před PNG a vypíše, co
+doplnit (překlady, `VARIANT_GROUPS`, `variantOrder`). Po přidání produktů spusť
+`POST /api/seed` — doplní jen chybějící řádky, ceny a sklad nemění.
+
 ## Světlý a tmavý motiv
 
 - Motiv se přepíná atributem `data-theme` na `<html>`; volba se ukládá do `localStorage.lumi_theme`.

@@ -1,10 +1,12 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useSyncExternalStore, type ReactNode } from 'react';
 
 export type Theme = 'light' | 'dark';
 
 const STORAGE_KEY = 'lumi_theme';
+/** Událost, kterou si posíláme sami — `storage` event chodí jen do jiných tabů. */
+const CHANGE_EVENT = 'lumi:themechange';
 
 interface ThemeContextValue {
   theme: Theme;
@@ -18,57 +20,61 @@ const ThemeContext = createContext<ThemeContextValue>({
   toggle: () => {},
 });
 
-function currentTheme(): Theme {
+function readTheme(): Theme {
   if (typeof document === 'undefined') return 'light';
   return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  // Inline script v <body> už nastavil data-theme před paintem; tady jen
-  // synchronizujeme React stav, aby ikona odpovídala skutečnosti.
-  const [theme, setThemeState] = useState<Theme>('light');
+function applyTheme(next: Theme) {
+  document.documentElement.dataset.theme = next;
+  document.documentElement.style.colorScheme = next;
+}
 
-  useEffect(() => {
-    setThemeState(currentTheme());
-  }, []);
+function subscribe(onChange: () => void) {
+  window.addEventListener(CHANGE_EVENT, onChange);
+  window.addEventListener('storage', onChange);
 
-  const setTheme = useCallback((next: Theme) => {
-    setThemeState(next);
-    document.documentElement.dataset.theme = next;
-    document.documentElement.style.colorScheme = next;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      /* soukromý režim */
-    }
-  }, []);
-
-  const toggle = useCallback(() => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  }, [theme, setTheme]);
-
-  // Pokud uživatel nemá uloženou volbu, respektuj změnu systému.
-  useEffect(() => {
+  // Bez uložené volby se motiv řídí systémem — když se systém přepne,
+  // musíme atribut přepsat sami, jinak by `readTheme()` vrátil starou hodnotu.
+  const query = window.matchMedia('(prefers-color-scheme: dark)');
+  const onSystemChange = () => {
     try {
       if (window.localStorage.getItem(STORAGE_KEY)) return;
     } catch {
       return;
     }
-    const query = window.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = () => {
-      try {
-        if (window.localStorage.getItem(STORAGE_KEY)) return;
-      } catch {
-        /* ignore */
-      }
-      const next: Theme = query.matches ? 'dark' : 'light';
-      setThemeState(next);
-      document.documentElement.dataset.theme = next;
-      document.documentElement.style.colorScheme = next;
-    };
-    query.addEventListener('change', onChange);
-    return () => query.removeEventListener('change', onChange);
+    applyTheme(query.matches ? 'dark' : 'light');
+    onChange();
+  };
+  query.addEventListener('change', onSystemChange);
+
+  return () => {
+    window.removeEventListener(CHANGE_EVENT, onChange);
+    window.removeEventListener('storage', onChange);
+    query.removeEventListener('change', onSystemChange);
+  };
+}
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  // Zdroj pravdy je atribut na <html> — nastaví ho inline skript v layoutu
+  // před paintem. `useSyncExternalStore` čte rovnou z DOM, takže po hydrataci
+  // sedí ikona i přepínač bez efektu a bez cascading renderu. Na serveru
+  // vrací `light`, protože systémovou volbu zná až prohlížeč.
+  const theme = useSyncExternalStore(subscribe, readTheme, () => 'light' as Theme);
+
+  const setTheme = useCallback((next: Theme) => {
+    applyTheme(next);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, next);
+    } catch {
+      /* soukromý režim */
+    }
+    window.dispatchEvent(new Event(CHANGE_EVENT));
   }, []);
+
+  const toggle = useCallback(() => {
+    setTheme(readTheme() === 'dark' ? 'light' : 'dark');
+  }, [setTheme]);
 
   const value = useMemo(() => ({ theme, setTheme, toggle }), [theme, setTheme, toggle]);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

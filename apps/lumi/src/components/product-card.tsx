@@ -6,12 +6,15 @@ import type { ProductDef } from '@/data/catalog';
 import { pick } from '@/lib/i18n';
 import { useLang } from '@/lib/lang-context';
 import { useProduct } from '@/lib/use-products';
+import { imageFit } from '@/lib/images';
 import { ProductPrice } from '@/components/price';
 
 export default function ProductCard({ product, priority = false }: { product: ProductDef; priority?: boolean }) {
   const { lang } = useLang();
   const live = useProduct(product.externalId);
   const soldOut = live ? live.stock <= 0 || !live.active : false;
+  // Čtvercové rendery necháváme celé, široké fotky vyplní rám.
+  const fit = imageFit(product.imageWidth, product.imageHeight);
 
   return (
     <Link
@@ -22,9 +25,15 @@ export default function ProductCard({ product, priority = false }: { product: Pr
         <img
           src={product.imageSmall ?? product.image}
           alt={pick(product.name, lang)}
+          width={product.imageWidth}
+          height={product.imageHeight}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+          className={
+            fit === 'contain'
+              ? 'h-full w-full object-contain p-3 transition-transform duration-700 group-hover:scale-[1.03]'
+              : 'h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]'
+          }
         />
         {product.badge ? (
           <span className="absolute left-3 top-3 rounded-full bg-paper/90 px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.12em] text-ink backdrop-blur">

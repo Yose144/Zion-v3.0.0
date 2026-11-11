@@ -179,6 +179,19 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
                         key={i}
                         className="space-y-1.5 rounded-xl border border-white/10 bg-white/[0.03] p-4"
                       >
+                        {face.image && (
+                          <div className="mb-2 flex justify-center rounded-lg bg-[#f6f1e4] p-2">
+                            <img
+                              src={face.image}
+                              alt={pick(face.name)}
+                              width={140}
+                              height={266}
+                              loading="lazy"
+                              decoding="async"
+                              className="h-40 w-auto object-contain"
+                            />
+                          </div>
+                        )}
                         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                           <span className="font-mono text-[10px] uppercase tracking-widest text-rasta-gold/80">
                             {pick(face.tag)}

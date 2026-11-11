@@ -233,7 +233,19 @@ export default function HomePage() {
           {SITE.gallery.items.map((item, index) => (
             <Reveal key={item.src} delay={index * 70}>
               <figure className="overflow-hidden rounded-2xl border border-line bg-card">
-                <img src={item.src} alt={pick(item.caption, lang)} loading="lazy" decoding="async" className="aspect-[4/3] w-full object-cover" />
+                <img
+                  src={item.src}
+                  alt={pick(item.caption, lang)}
+                  width={960}
+                  height={720}
+                  loading="lazy"
+                  decoding="async"
+                  className={
+                    item.fit === 'contain'
+                      ? 'aspect-[4/3] w-full bg-parchment-deep object-contain p-3'
+                      : 'aspect-[4/3] w-full object-cover'
+                  }
+                />
                 <figcaption className="px-4 py-3 text-xs uppercase tracking-[0.12em] text-muted">{pick(item.caption, lang)}</figcaption>
               </figure>
             </Reveal>

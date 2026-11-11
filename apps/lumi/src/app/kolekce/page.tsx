@@ -2,15 +2,26 @@
 
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { PRODUCTS } from '@/data/catalog';
+import { PRODUCTS, variantGroupLabel, variantGroupNote, variantMembers } from '@/data/catalog';
 import { pick } from '@/lib/i18n';
 import { useLang } from '@/lib/lang-context';
 import ProductCard from '@/components/product-card';
 
 export default function CollectionPage() {
   const { lang } = useLang();
-  const lampions = PRODUCTS.filter((product) => product.category === 'lampiony');
+  const lampions = PRODUCTS.filter((product) => product.category === 'lampiony' && !product.variantGroup);
   const extras = PRODUCTS.filter((product) => product.category === 'doplnky');
+
+  // Skupiny motivů bereme z dat, ne z ručního seznamu — produkt, který má
+  // `variantGroup`, se v kolekci nikdy neztratí, i když popisek chybí.
+  const groups = Array.from(new Set(PRODUCTS.map((product) => product.variantGroup).filter(Boolean) as string[]))
+    .map((id) => ({
+      id,
+      label: variantGroupLabel(id) ?? PRODUCTS.find((product) => product.variantGroup === id)!.name,
+      note: variantGroupNote(id),
+      members: variantMembers(id),
+    }))
+    .filter((group) => group.members.length > 0);
 
   return (
     <div className="container-lumi py-12 lg:py-16">
@@ -39,6 +50,18 @@ export default function CollectionPage() {
           ))}
         </div>
       </section>
+
+      {groups.map((group) => (
+        <section key={group.id} className="mt-12">
+          <h2 className="h3">{pick(group.label, lang)}</h2>
+          {group.note ? <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-soft">{pick(group.note, lang)}</p> : null}
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {group.members.map((product) => (
+              <ProductCard key={product.externalId} product={product} />
+            ))}
+          </div>
+        </section>
+      ))}
 
       <section className="mt-14">
         <h2 className="h3">{pick({ cs: 'Doplňky', en: 'Extras', de: 'Extras' }, lang)}</h2>

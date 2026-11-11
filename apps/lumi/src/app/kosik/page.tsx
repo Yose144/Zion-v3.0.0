@@ -292,7 +292,14 @@ export default function CartPage() {
               {rows.map(({ line, def, priceCzk }) => (
                 <div key={line.externalId} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center">
                   <Link href={`/kolekce/${def.slug}`} className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-parchment-deep">
-                    <img src={imageVariant(def.image, 200)} alt={pick(def.name, lang)} className="h-full w-full object-cover" loading="lazy" />
+                    <img
+                      src={imageVariant(def.image, 200)}
+                      alt={pick(def.name, lang)}
+                      width={80}
+                      height={80}
+                      className="h-full w-full object-contain p-1"
+                      loading="lazy"
+                    />
                   </Link>
                   <div className="min-w-0 flex-1">
                     <Link href={`/kolekce/${def.slug}`} className="text-sm font-semibold text-ink hover:text-amber-800">

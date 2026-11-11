@@ -21,6 +21,7 @@ export default function ThemeToggle() {
         lang,
       )}
       title={pick({ cs: 'Světlý / tmavý motiv', en: 'Light / dark theme', de: 'Helles / dunkles Design' }, lang)}
+      data-theme-toggle
       className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 bg-card/60 text-ink transition-colors hover:border-ink/40"
       aria-pressed={dark}
     >

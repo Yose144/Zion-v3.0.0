@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ensureSeeded, getProductViews } from '@/lib/catalog-server';
+import { getProductViews, reseed } from '@/lib/catalog-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +17,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Neautorizováno.' }, { status: 401 });
   }
   try {
-    await ensureSeeded();
+    // Explicitní seed vždy doplní chybějící řádky (např. po přidání
+    // nových motivů do katalogu). Existující ceny a sklad nemění.
+    await reseed();
     const products = await getProductViews();
     return NextResponse.json({ success: true, data: products });
   } catch (error) {

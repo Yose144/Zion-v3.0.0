@@ -24,7 +24,7 @@ export default function ProductGallery({
         <img
           src={imageVariant(current, 700)}
           alt={pick(alt, lang)}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain p-2"
           loading="eager"
           decoding="async"
         />
@@ -37,12 +37,21 @@ export default function ProductGallery({
               type="button"
               onClick={() => setActive(index)}
               aria-label={`${pick(alt, lang)} ${index + 1}`}
+              aria-pressed={index === active}
               className={cn(
                 'relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border bg-parchment-deep transition-all',
                 index === active ? 'border-ink ring-1 ring-ink' : 'border-transparent opacity-70 hover:opacity-100',
               )}
             >
-              <img src={imageVariant(image, 200)} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+              <img
+                src={imageVariant(image, 200)}
+                alt=""
+                width={80}
+                height={80}
+                className="h-full w-full object-contain p-1"
+                loading="lazy"
+                decoding="async"
+              />
             </button>
           ))}
         </div>

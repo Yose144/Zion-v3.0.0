@@ -22,6 +22,7 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
           type="button"
           onClick={() => setLang(code)}
           aria-pressed={lang === code}
+          data-lang={code}
           className={cn(
             'rounded-full px-2.5 py-1 font-semibold tracking-wide transition-colors',
             lang === code ? 'bg-forest text-parchment' : 'text-ink-soft hover:bg-ink/5',

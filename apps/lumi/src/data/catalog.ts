@@ -12,6 +12,12 @@ export interface ProductSpec {
   value: Localized;
 }
 
+/** Náhled jedné stěny lampionu (výřez motivu). */
+export interface ProductWall {
+  image: string;
+  label: Localized;
+}
+
 export interface ProductDef {
   externalId: string;
   slug: string;
@@ -42,6 +48,20 @@ export interface ProductDef {
   sortOrder: number;
   active: boolean;
   seo: { title: Localized; description: Localized };
+
+  // ── Varianty motivů ──────────────────────────────────────────────────
+  /**
+   * Skupina variant (motivů) téhož produktu. Stejná hodnota u víc produktů
+   * = na detailu se ukáže přepínač motivů a v kolekci jedna sekce.
+   * Bez hodnoty je produkt samostatný a UI se chová jako dřív.
+   */
+  variantGroup?: string;
+  /** Pořadí motivu ve skupině (1–6). */
+  variantOrder?: number;
+  /** Krátký název motivu do přepínače; když chybí, použije se `name`. */
+  motifName?: Localized;
+  /** Náhledy stěn motivu. Prázdné/chybí = sekce se vůbec nekreslí. */
+  walls?: ProductWall[];
 }
 
 const LEAD_TIME: Localized = {
@@ -491,6 +511,45 @@ export function productBySlug(slug: string): ProductDef | undefined {
 
 export function productById(externalId: string): ProductDef | undefined {
   return PRODUCTS.find((product) => product.externalId === externalId);
+}
+
+/** Popisek skupiny motivů do kolekce a přepínače. */
+export interface VariantGroupDef {
+  id: string;
+  label: Localized;
+  note?: Localized;
+}
+
+/**
+ * Skupiny variant. Prázdné pole = žádné motivy, UI se chová jako dřív.
+ * Až přijdou podklady na šest nových motivů, přidá se sem jeden záznam
+ * a k němu šest produktů ve `PRODUCTS` se stejným `variantGroup`.
+ */
+export const VARIANT_GROUPS: VariantGroupDef[] = [];
+
+/** Všechny motivy jedné skupiny, seřazené podle `variantOrder`. */
+export function variantMembers(group?: string): ProductDef[] {
+  if (!group) return [];
+  return PRODUCTS.filter((product) => product.variantGroup === group).sort(
+    (a, b) => (a.variantOrder ?? 0) - (b.variantOrder ?? 0),
+  );
+}
+
+/**
+ * Motivy k přepnutí na detailu. Vrací prázdné pole, když je produkt
+ * samostatný nebo když je ve skupině jen on sám — přepínač pak nemá smysl.
+ */
+export function variantSiblings(product: ProductDef): ProductDef[] {
+  const members = variantMembers(product.variantGroup);
+  return members.length > 1 ? members : [];
+}
+
+export function variantGroupLabel(group?: string): Localized | undefined {
+  return VARIANT_GROUPS.find((entry) => entry.id === group)?.label;
+}
+
+export function variantGroupNote(group?: string): Localized | undefined {
+  return VARIANT_GROUPS.find((entry) => entry.id === group)?.note;
 }
 
 /** Množstevní slevy pro B2B (svatby, firmy). */

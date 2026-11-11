@@ -68,6 +68,36 @@ npm run build
 - **3D:** `#nahled-3d` (ID nesmí začínat číslicí — CSS selektor by selhal), na homepage je sekce „Naše eso“ hned pod hero/trust stripem; fallback `3d-poster-700.webp`.
 - **Právní minimum:** `/nakupni-rad`, `/cookies`, `/odstoupeni-od-smlouvy`, `/bezpecnost-produktu`, `/pristupnost`, `/reklamace`; odkazy v patičce, checkoutu a sitemapě. Cookie lišta jen technické cookies.
 
+## Motivy a varianty (připraveno 2026-11-11)
+
+Šest nových motivů = **šest nových produktových variant** (vlastní `externalId`,
+cena, sklad). Kód je připravený; chybí jen podklady. Postup:
+
+1. **Assety:** `node scripts/import-motifs.mjs <balíček> --slug <slug> [--group <skupina>]`
+   - Bere `Jednotlive_steny/*` (PNG/SVG/WebP); když je stěna v PNG i SVG, vyhraje **SVG** (vektor → ostrá `-700` varianta).
+   - SVG se vyplní inkoustem (`#101C2B`) podle `fill-rule="evenodd"` = silueta řezu; `--style line` nechá jen tah. PNG se bere tak, jak je.
+   - Píše `public/images/motifs/<slug>/<nn>-<nazev>-{200,400,700}.webp`, `strip-{640,1280}.webp` a `motivy.json`.
+   - Názvy motivů bere z `Motivy.json` v balíčku, jinak z názvů souborů.
+   - Vypíše hotový TS snippet pro katalog a připomene, co doplnit.
+2. **Katalog** `src/data/catalog.ts`: záznam do `VARIANT_GROUPS` (popisek sekce) + šest produktů s `variantGroup`, `variantOrder`, `motifName` a `walls`.
+3. **Překlady:** `label.en` / `label.de` u stěn (skript je nechává v češtině).
+4. **Seed:** `POST /api/seed` s `Authorization: Bearer $LUMI_SEED_TOKEN` — doplní **jen chybějící** řádky, existující ceny a sklad nemění.
+5. **Cena a sklad:** `/admin` → Produkty (ne v katalogu).
+
+Co se v UI zapne samo (bez dalšího kódu):
+
+| Prvek | Podmínka |
+|---|---|
+| `VariantSwitcher` na detailu | skupina má ≥ 2 členy (`variantSiblings`) |
+| `ProductWalls` (šest stěn) | produkt má neprázdné `walls` |
+| Sekce skupiny v `/kolekce` | existuje produkt s `variantGroup` |
+
+Když je varianta jen jedna, nekreslí se nic — dávka se dá přidávat po jednom.
+
+**Pozor na seed:** `ensureSeeded()` dřív naplnil jen prázdnou tabulku, takže produkt
+přidaný později neměl v DB řádek a checkout ho odmítl („Produkt není v nabídce“).
+Teď `seedMissing()` doplňuje chybějící `externalId` a existující řádky nechává být.
+
 ## Světlý / tmavý motiv (2026-11-11)
 
 - `data-theme` na `<html>`, `lumi_theme` v localStorage, systémová preference jako fallback. Přepínač je v hlavičce (`ThemeToggle`), inline skript v `layout.tsx` nastaví motiv před paintem.

@@ -208,10 +208,14 @@ export const SITE = {
       de: 'Platz für ein echtes Foto',
     } satisfies Localized,
     items: [
-      { src: '/images/lumi-b/domu-hero-4x3-640.webp', caption: { cs: 'Večerní světlo', en: 'Evening light', de: 'Abendlicht' } },
-      { src: '/images/lumi-b/3d-konstrukce-700.webp', caption: { cs: 'Konstrukce', en: 'Construction', de: 'Konstruktion' } },
-      { src: '/images/lumi-b/darkove-baleni-700.webp', caption: { cs: 'Dárkové balení', en: 'Gift wrapping', de: 'Geschenkverpackung' } },
-      { src: '/images/lumi-b/brana-4x3-640.webp', caption: { cs: 'Světlo u brány', en: 'Light at the gate', de: 'Licht am Tor' } },
+      { src: '/images/lumi-b/domu-hero-4x3-640.webp', fit: 'cover', caption: { cs: 'Večerní světlo', en: 'Evening light', de: 'Abendlicht' } },
+      {
+        src: '/images/lumi-b/3d-konstrukce-700.webp',
+        fit: 'contain',
+        caption: { cs: 'Konstrukce', en: 'Construction', de: 'Konstruktion' },
+      },
+      { src: '/images/lumi-b/darkove-baleni-700.webp', fit: 'cover', caption: { cs: 'Dárkové balení', en: 'Gift wrapping', de: 'Geschenkverpackung' } },
+      { src: '/images/lumi-b/brana-4x3-640.webp', fit: 'cover', caption: { cs: 'Světlo u brány', en: 'Light at the gate', de: 'Licht am Tor' } },
     ],
   },
   quote: {

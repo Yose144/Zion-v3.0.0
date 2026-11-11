@@ -13,12 +13,40 @@ export interface SaleRow {
 let seedPromise: Promise<void> | null = null;
 
 /**
- * První start (nebo prázdná tabulka) naplní prodejní řádky z katalogu.
- * Dál už se ceny a sklad mění jen v administraci — seed nic nepřepisuje.
+ * Naplní prodejní řádky z katalogu.
+ *
+ * **Nikdy nepřepisuje existující řádek** (`update: {}`) — cena a sklad
+ * patří administraci. Dřív se seedoval jen prázdný katalog, takže produkt
+ * přidaný do `catalog.ts` později neměl v DB řádek a checkout ho odmítl
+ * („Produkt není v nabídce“). Teď se doplní jen chybějící externalId.
  */
+export async function seedMissing(): Promise<void> {
+  for (const product of PRODUCTS) {
+    try {
+      await prisma.product.upsert({
+        where: { externalId: product.externalId },
+        update: {},
+        create: {
+          externalId: product.externalId,
+          priceCzk: product.priceCzk,
+          oldPriceCzk: product.oldPriceCzk ?? null,
+          stock: product.stock,
+          active: product.active,
+          sortOrder: product.sortOrder,
+        },
+      });
+    } catch (error) {
+      // Dva souběžné requesty nad prázdnou tabulkou: druhý upsert narazí
+      // na unikátní externalId. Řádek už existuje, takže je to v pořádku.
+      if ((error as { code?: string }).code !== 'P2002') throw error;
+    }
+  }
+}
+
+/** Memoizovaný seed při prvním requestu (jeden na proces). */
 export async function ensureSeeded(): Promise<void> {
   if (!seedPromise) {
-    seedPromise = seed().catch((error) => {
+    seedPromise = seedMissing().catch((error) => {
       seedPromise = null;
       throw error;
     });
@@ -26,24 +54,15 @@ export async function ensureSeeded(): Promise<void> {
   return seedPromise;
 }
 
-async function seed(): Promise<void> {
-  const count = await prisma.product.count();
-  if (count > 0) return;
-  for (const product of PRODUCTS) {
-    await prisma.product.upsert({
-      where: { externalId: product.externalId },
-      update: {},
-      create: {
-        externalId: product.externalId,
-        priceCzk: product.priceCzk,
-        oldPriceCzk: product.oldPriceCzk ?? null,
-        stock: product.stock,
-        active: product.active,
-        sortOrder: product.sortOrder,
-      },
-    });
-  }
+/**
+ * Vynutí kontrolu katalogu i po startu — používá `POST /api/seed` po
+ * přidání produktu nebo nového motivu. Existující řádky nemění.
+ */
+export async function reseed(): Promise<void> {
+  seedPromise = seedMissing();
+  return seedPromise;
 }
+
 
 export async function getSaleRows(): Promise<Map<string, SaleRow>> {
   await ensureSeeded();

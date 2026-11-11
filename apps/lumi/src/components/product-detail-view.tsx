@@ -14,6 +14,8 @@ import LumiViewer from '@/components/lumi-viewer';
 import FireSafetyBlock from '@/components/fire-safety-block';
 import FaqAccordion from '@/components/faq-accordion';
 import ProductCard from '@/components/product-card';
+import ProductWalls from '@/components/product-walls';
+import VariantSwitcher from '@/components/variant-switcher';
 
 export default function ProductDetailView({ product }: { product: ProductDef }) {
   const { lang } = useLang();
@@ -55,6 +57,7 @@ export default function ProductDetailView({ product }: { product: ProductDef }) 
           ) : null}
 
           <div className="mt-7">
+            <VariantSwitcher product={product} />
             <BuyBox product={product} />
           </div>
 
@@ -109,6 +112,8 @@ export default function ProductDetailView({ product }: { product: ProductDef }) 
           </div>
         </div>
       </div>
+
+      <ProductWalls product={product} />
 
       <div className="mt-16 grid gap-10 lg:grid-cols-[1.25fr_0.75fr]">
         <div className="space-y-6">

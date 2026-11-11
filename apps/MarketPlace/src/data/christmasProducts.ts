@@ -81,7 +81,16 @@ export interface XmasProduct {
     closing?: XmasText;
     /** Šest stěn — krátké kapitoly k mandalám, v pořadí cesty. */
     facesTitle?: XmasText;
-    faces?: { tag: XmasText; name: XmasText; line: XmasText }[];
+    faces?: {
+      tag: XmasText;
+      name: XmasText;
+      line: XmasText;
+      /**
+       * Náhled stěny (`/vanoce/motivy/...`). Když chybí, kapitola se vypíše
+       * jen textem — podklady se doplňují po jednom, nic nespadne.
+       */
+      image?: string;
+    }[];
   };
 }
 
