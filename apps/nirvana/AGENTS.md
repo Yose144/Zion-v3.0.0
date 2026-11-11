@@ -2738,6 +2738,11 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   (`PREV_X`/`PREV_Y`), takže v substepu nealokuje 480 polí/s. FX práh je
   2 HP (škrábnutí za 1 už nezaplavuje obraz). Bot při HP < 35 % kryje
   častěji a déle — zlom krytu je tím v sehrávce vidět (0,06–0,13/zápas).
+- **Přístupnost:** `prefers-reduced-motion` vypne KO slow-mo, kamerový
+  shake i pulz hill zóny. Když jsou v kothu oba v zóně, HUD ukáže
+  „souboj v zóně“ (držení je pozastavené).
+- **Online guard break:** pozná se z poklesu `guard` ve snapshotu a ukáže
+  `GUARD BREAK` stejně jako v sólu.
 - **Pozor na testy:** `damageFighter(..., 100, ...)` už nestačí na KO
   (MAX_HP 160) — používej `MAX_HP`; výkop už není `ball.x > 1`, ale střed
   + `match.kickoff.side`.

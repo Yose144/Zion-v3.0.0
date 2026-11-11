@@ -63,6 +63,7 @@ const EMPTY_SOLO: DuelStats = {
   selfHill: 0,
   foeHill: 0,
   kickoff: null,
+  contested: false,
 };
 
 const EMPTY_MP: DuelMpStats = {
@@ -372,7 +373,9 @@ export default function MercuryPage() {
                         : isPractice
                           ? `${l('bestHit')}: ${Math.round(soloStats.bestHit)} m/s`
                           : isKoth
-                            ? `${selfHill.toFixed(1)} : ${foeHill.toFixed(1)} · ${l('hillHold')}`
+                            ? soloStats.contested
+                              ? l('contested')
+                              : `${selfHill.toFixed(1)} : ${foeHill.toFixed(1)} · ${l('hillHold')}`
                             : l('vsBot')}
                 </div>
               </div>

@@ -162,6 +162,7 @@ export function MercuryDuel({
     const poseTarget = mine ? selfTarget.current : foeTarget.current;
     const beforeHp = target.hp;
     const wasKo = target.ko;
+    const beforeGuard = target.guardMeter;
     target.id = wire.id;
     target.name = wire.name;
     target.avatarId = wire.avatarId;
@@ -183,6 +184,9 @@ export function MercuryDuel({
     if (floaters) {
       const center = bodyCenterOf(target);
       const now = performance.now();
+      if (typeof wire.guard === 'number' && beforeGuard >= 0.02 && wire.guard < 0.02) {
+        pushTextFx(floaters.current, center.x, center.y + 0.8, 'GUARD BREAK', 'guard', now);
+      }
       if (beforeHp - wire.hp >= 1) {
         pushHitFx(floaters.current, center.x, center.y + 0.15, beforeHp - wire.hp, mine ? 'in' : 'out', now);
       }

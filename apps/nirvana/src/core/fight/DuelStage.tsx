@@ -4,6 +4,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useMemo, useRef, type MutableRefObject } from 'react';
 import { dampFactor } from '@/core/design/motion';
+import { useReducedMotion } from '@/core/design/useReducedMotion';
 import {
   ARENA_HALF,
   BALL_HALF,
@@ -125,8 +126,13 @@ export function DuelStage({ goals = false, hill = false }: { goals?: boolean; hi
  */
 function HillZone() {
   const ringMaterial = useRef<THREE.MeshBasicMaterial>(null);
+  const reducedMotion = useReducedMotion();
   useFrame((frame) => {
     if (!ringMaterial.current) return;
+    if (reducedMotion) {
+      ringMaterial.current.opacity = 0.24;
+      return;
+    }
     const pulse = 0.5 + 0.5 * Math.sin(frame.clock.elapsedTime * 2.2);
     ringMaterial.current.opacity = 0.16 + pulse * 0.16;
   });
@@ -185,6 +191,7 @@ export function DuelCamera({
   cameraRef?: MutableRefObject<THREE.Camera | null> | null;
 }) {
   const { camera } = useThree();
+  const reducedMotion = useReducedMotion();
   const target = useMemo(() => new THREE.Vector3(0, 1.2, 0), []);
   const desired = useMemo(() => new THREE.Vector3(0, 2.1, 12), []);
   const previousHp = useRef({ a: a.current.hp, b: b.current.hp });
@@ -224,7 +231,7 @@ export function DuelCamera({
     previousHp.current.a = a.current.hp;
     previousHp.current.b = b.current.hp;
     hitShake.current = Math.max(0, hitShake.current - delta);
-    if (hitShake.current > 0) {
+    if (hitShake.current > 0 && !reducedMotion) {
       const strength = hitShake.current / 0.14;
       camera.position.x += Math.sin(frame.clock.elapsedTime * 82) * 0.055 * strength;
       camera.position.y += Math.cos(frame.clock.elapsedTime * 67) * 0.035 * strength;

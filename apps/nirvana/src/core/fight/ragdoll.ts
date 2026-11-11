@@ -1116,7 +1116,7 @@ function drainGuardEvents(match: RagdollMatch, now: number, events: RagdollEvent
   }
 }
 
-function onHill(f: RagdollFighter): boolean {
+export function onHill(f: RagdollFighter): boolean {
   if (f.ko) return false;
   const center = bodyCenterOf(f);
   return Math.abs(center.x) <= HILL_HALF && center.y <= HILL_MAX_HEIGHT;

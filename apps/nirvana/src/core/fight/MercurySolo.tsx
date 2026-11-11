@@ -9,6 +9,7 @@ import {
   BALL_SECONDS,
   P,
   botInput,
+  onHill,
   createRagdollMatch,
   makeBotMemory,
   resetRagdollMatch,
@@ -26,6 +27,7 @@ import { createDuelSound } from './audio';
 import { useFightKeys } from './useFightKeys';
 import { DuelXr } from './FightXr';
 import { avatarLook } from '../avatars/kit';
+import { useReducedMotion } from '@/core/design/useReducedMotion';
 
 /**
  * MERKUR — sólo ragdoll (duel / ball / survival / practice / koth).
@@ -63,6 +65,8 @@ export interface DuelStats {
   foeHill: number;
   /** Fotbal: kdo právě dělá výkop (střelec je na chvíli zmrazený). */
   kickoff: 'self' | 'foe' | null;
+  /** King of the Hill: oba stojí v zóně — držení je pozastavené. */
+  contested: boolean;
 }
 
 export interface SoloFinish {
@@ -142,6 +146,7 @@ export function MercurySolo({
   cameraRef?: MutableRefObject<THREE.Camera | null>;
 }) {
   const keys = useFightKeys(running);
+  const reducedMotion = useReducedMotion();
 
   // jeden zápas, jednomístní objekty — renderer drží refy na `a`/`b`
   const matchRef = useRef<RagdollMatch | null>(null);
@@ -190,7 +195,7 @@ export function MercurySolo({
       } else if (event.kind === 'ko') {
         const loser = event.loser === 'self' ? match.a : match.b;
         if (fx) pushTextFx(fx, loser.x[P.CHEST]!, loser.y[P.CHEST]! + 0.9, 'K.O.', 'ko', now);
-        slowUntil.current = clock.current + KO_SLOW_SECONDS;
+        if (!reducedMotion) slowUntil.current = clock.current + KO_SLOW_SECONDS;
       } else if (event.kind === 'hill_win') {
         if (fx) pushTextFx(fx, 0, 2.4, 'HILL', 'hill', now);
       } else if (event.kind === 'match_end') {
@@ -290,6 +295,7 @@ export function MercurySolo({
         selfHill: Math.round(match.hill.a * 10) / 10,
         foeHill: Math.round(match.hill.b * 10) / 10,
         kickoff: match.kickoff.side ? (match.kickoff.side === 'a' ? 'self' : 'foe') : null,
+        contested: match.mode === 'koth' && onHill(match.a) && onHill(match.b),
       };
       const key = JSON.stringify(stats);
       if (key !== lastStats.current) {

@@ -207,6 +207,12 @@ góly, vlny a držení kopce.
 - Bot při HP < 35 % kryje častěji a déle; zlom krytu je v sehrávce vidět
   (0,06–0,13 na zápas), aniž by se změnila doba duelů (42,8 s, 24:24).
 
+- **Přístupnost:** `prefers-reduced-motion` vypne KO slow-mo, shake kamery
+  a pulz hill zóny.
+- **KotH clarity:** když jsou oba v zóně, HUD ukáže „souboj v zóně“.
+- **Online guard break:** z poklesu `guard` ve snapshotu se ukáže
+  `GUARD BREAK` (bez nového pole v protokolu).
+
 ## Protokol 35
 
 Tuning mění **význam** HP (MAX_HP 160) a poškození, i když formát zpráv
