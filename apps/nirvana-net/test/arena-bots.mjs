@@ -306,6 +306,36 @@ console.log('\n== server: brokovnice / blesk / plazma / pěst ==');
   check('brokovnice: po výstřelu zbývá zbraň', human.weapon === 'shotgun', human.weapon);
 }
 
+// ── 2c) boti v MP volí zbraně podle vzdálenosti (2026-11-11) ───────────
+{
+  const sim = arena.createArena(Date.now());
+  const human = arena.addPlayer(sim, 'c_d', 'Hráč', null, Date.now());
+  arena.ensureBots(sim);
+  const bot = [...sim.players.values()].find((p) => p.isBot);
+  const place = (distance) => {
+    human.alive = true;
+    human.hp = 100;
+    human.body.x = bot.body.x;
+    human.body.y = 0.2;
+    human.body.z = bot.body.z - distance;
+  };
+  const step = () => arena.stepArena(sim, 1 / 30, Date.now() + 500);
+
+  place(20);
+  step();
+  check('bot na 20 m bere MG', bot.input.weapon === 'mg', String(bot.input.weapon));
+  place(10);
+  step();
+  check(
+    'bot na 10 m bere raketu nebo MG',
+    bot.input.weapon === 'rocket' || bot.input.weapon === 'mg',
+    String(bot.input.weapon),
+  );
+  place(3);
+  step();
+  check('bot na 3 m bere brokovnici', bot.input.weapon === 'shotgun', String(bot.input.weapon));
+}
+
 // ── 3) síťová část: místnost, pohyb, lidský frag ──────────────────────
 function client() {
   const socket = new WebSocket(WS_URL);

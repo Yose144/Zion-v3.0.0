@@ -60,6 +60,8 @@ export interface MpStats extends ArenaStats {
   connected: boolean;
   ping: number | null;
   matchState: 'running' | 'ended' | 'countdown' | null;
+  /** Munice všech zbraní podle čísla na drátě (rail/pěst = −1). */
+  ammoByIndex?: Record<number, number>;
 }
 
 const ROCKET_POOL = 8;
@@ -79,6 +81,7 @@ export function MarsMultiplayer({
   watch = null,
   onStats,
   touch,
+  weaponRequest,
 }: {
   running: boolean;
   /** Id místnosti, na kterou se jen díváme (`?watch=`); `null` = hrajeme. */
@@ -86,6 +89,8 @@ export function MarsMultiplayer({
   onStats: (stats: MpStats) => void;
   /** Dotykové ovládání (mobil) — stejné refy jako klávesnice. */
   touch?: MutableRefObject<ArenaTouchState>;
+  /** Klik na zbraň v HUD (Q3 lišta) — aplikuje se v herní smyčce. */
+  weaponRequest?: MutableRefObject<number | null>;
 }) {
   const { camera, gl } = useThree();
   const { subscribe, sendInput, joinArena, spectateRoom, leaveRoom, youPlayerId, spectator, connected, rtt } = useNet();
@@ -149,6 +154,8 @@ export function MarsMultiplayer({
   const timeLeft = useRef(180);
   /** Munici má vlastní server (snapshot) — klient jen zobrazuje. */
   const ammo = useRef(12);
+  /** Munice všech zbraní ze snapshotu (pro lištu v HUD). */
+  const ammoByIndex = useRef<Record<number, number>>({ 0: -1, 1: 12, 2: 50, 3: 10, 4: 100, 5: 60, 6: -1 });
   /** Místní cooldown zvuku — zvuk hraje klient, rány počítá server. */
   const soundCooldown = useRef(0);
   /** Poslední známé HP — pro zvuk zásahu (server posílá jen stav). */
@@ -192,6 +199,7 @@ export function MarsMultiplayer({
         const mine = next.players.find((player) => player.id === youPlayerId);
         if (mine) {
           ammo.current = mine.ammo ?? ammo.current;
+          if (mine.ammoByWeapon) ammoByIndex.current = mine.ammoByWeapon;
           if (mine.weapon !== weapon.current && mine.alive) weapon.current = mine.weapon;
         }
         const nextSlots = next.players
@@ -345,6 +353,11 @@ export function MarsMultiplayer({
       : (keys.current.has('KeyD') ? 1 : 0) - (keys.current.has('KeyA') ? 1 : 0) + touchInput.strafe;
     const jump = !watching && (keys.current.has('Space') || touchInput.jump);
     const fire = !watching && (firing.current || touchInput.fire);
+    const requested = weaponRequest?.current;
+    if (requested !== null && requested !== undefined) {
+      weaponRequest!.current = null;
+      weapon.current = requested as 0 | 1 | 2 | 3 | 4 | 5 | 6;
+    }
 
     // Vizuální kadence: server má vlastní cooldown, ale zbraň nesmí kmitat
     // při každém snímku držené spouště.
@@ -514,6 +527,7 @@ export function MarsMultiplayer({
         connected,
         ping: rtt,
         matchState: matchState.current,
+        ammoByIndex: ammoByIndex.current,
       };
       const key = JSON.stringify(stats);
       if (key !== lastStats.current) {

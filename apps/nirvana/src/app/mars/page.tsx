@@ -148,6 +148,8 @@ export default function MarsPage() {
   const seenHurt = useRef(0);
   /** Klik na zbraň v liště — request, který sim aplikuje v příštím snímku. */
   const weaponRequest = useRef<WeaponId | null>(null);
+  /** Totéž pro multiplayer (numerická zbraň 0–6). */
+  const mpWeaponRequest = useRef<number | null>(null);
   /** `mp` = online aréna (server-authoritative), jinak sólo proti botům. */
   const [mp, setMp] = useState(false);
   const [mpStats, setMpStats] = useState<MpStats | null>(null);
@@ -245,7 +247,13 @@ export default function MarsPage() {
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
         >
           {mp ? (
-            <MarsMultiplayer running={phase === 'playing'} watch={watch} onStats={setMpStats} touch={touch} />
+            <MarsMultiplayer
+              running={phase === 'playing'}
+              watch={watch}
+              onStats={setMpStats}
+              touch={touch}
+              weaponRequest={mpWeaponRequest}
+            />
           ) : (
             <XR store={xrStore}>
               <MarsArena
@@ -312,15 +320,41 @@ export default function MarsPage() {
             </ol>
           )}
           {!watch && (
+            <>
+            <div className="arena-weaponbar" role="group" aria-label={l('weapons')}>
+              {WEAPON_BAR.map((slot, index) => {
+                const ammo = mpStats?.ammoByIndex?.[index];
+                const infinite = index === 0 || index === 6;
+                const empty = !infinite && (ammo ?? 0) <= 0;
+                return (
+                  <button
+                    key={slot.id}
+                    type="button"
+                    className={`arena-weaponbar-slot${mpStats?.weapon === slot.id ? ' is-active' : ''}${empty ? ' is-empty' : ''}`}
+                    aria-pressed={mpStats?.weapon === slot.id}
+                    disabled={empty}
+                    title={`${slot.key} · ${slot.label}`}
+                    onClick={() => {
+                      mpWeaponRequest.current = index;
+                    }}
+                  >
+                    <kbd>{slot.key}</kbd>
+                    <span>{slot.label}</span>
+                    <b>{infinite ? '∞' : (ammo ?? 0)}</b>
+                  </button>
+                );
+              })}
+            </div>
           <div className="arena-tip">
             {coarse
               ? cs
                 ? 'joystick = pohyb · tažení vpravo = rozhlížení · PALBA / SKOK / ZB'
                 : 'stick = move · drag right = look · FIRE / JUMP / WP'
               : cs
-                ? 'WASD pohyb · mezerník skok · 1/2/3 zbraň · klik střelba · Esc uvolní myš'
-                : 'WASD move · space jump · 1/2/3 weapon · click fire · Esc releases the mouse'}
+                ? 'WASD pohyb · mezerník skok · 1–6 nebo Q zbraň · klik střelba · Esc uvolní myš'
+                : 'WASD move · space jump · 1–6 or Q weapon · click fire · Esc releases the mouse'}
           </div>
+            </>
           )}
           {mpStats?.matchState === 'ended' && (
             <div className="arena-respawn">

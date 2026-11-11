@@ -2939,3 +2939,17 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Deploy pořadí:** `deploy-nirvana-net.sh` **první**, pak appka (36).
   Test `arena-bots.mjs` nově ověřuje brokovnici, blesk, plazmu a pěst
   v čisté simulaci (bez sítě).
+
+### MP aréna — boti volí zbraně a lišta zbraní (2026-11-11)
+
+- **Boti v multiplayeru nejsou „rail na věčnost".** Server volí zbraň podle
+  vzdálenosti stejným pravidlem jako sólo (`botWeaponFor` + `BOT_FIRE`);
+  raketu jen z `rocketChance`, aby souboj nebyl jen o výbuších. Boti mají
+  **nekonečnou munici** — jinak by po pár ranách skončili na railu.
+- **Vlastní raketa bota na blízko neubližuje** (guard v `explode`): bez
+  něj se bot občas vyhodil sám a hráč přišel o souboj.
+- **Lišta zbraní v MP** čte `ammoByWeapon` ze snapshotu (`ammoByIndex`),
+  klik posílá `weaponRequest` (číslo 0–6) a server ho validuje jako
+  každý jiný vstup. Drátěný protokol se nemění (36).
+- **Test:** `arena-bots.mjs` ověřuje volbu zbraně na 20 m (MG), 10 m
+  (raketa/MG) a 3 m (brokovnice).

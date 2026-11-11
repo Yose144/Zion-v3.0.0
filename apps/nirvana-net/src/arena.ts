@@ -21,6 +21,7 @@ import {
 import { buildNavGrid, type NavGrid } from '../../nirvana/src/core/arena/nav.js';
 import {
   createBotMemory,
+  nearestTarget,
   skillOptions,
   stepBot,
   type BotMemory,
@@ -41,8 +42,10 @@ import {
   PLAYER_RESPAWN_MS,
   TARGET_EYE_RATIO,
   TARGET_RADIUS,
+  BOT_FIRE,
   WEAPONS,
   aimVector,
+  botWeaponFor,
   applyDamage,
   pickTarget,
   spreadVector,
@@ -462,6 +465,9 @@ function explode(sim: ArenaSim, rocket: Rocket, x: number, y: number, z: number,
     if (!player.alive) continue;
     const distance = Math.hypot(player.body.x - x, player.body.y + 0.9 - y, player.body.z - z);
     if (distance > radius) continue;
+    // Bot se nesmí vyhodit vlastní raketou na blízko (hraje se pro lidi).
+    const owner = sim.players.get(rocket.owner);
+    if (owner?.isBot && player.id === rocket.owner && distance < 2) continue;
     const base = player.id === directId ? spec.damage : spec.splash;
     const falloff = player.id === directId ? 1 : 1 - distance / radius;
     const amount = Math.round(base * Math.max(0.15, falloff));
@@ -502,7 +508,13 @@ function stepBots(sim: ArenaSim, dt: number, now: number): void {
     bot.input.yaw = intent.yaw;
     bot.input.pitch = intent.pitch;
     bot.input.fire = intent.fire;
-    bot.input.weapon = 'rail';
+    // Zbraň podle vzdálenosti — stejné pravidlo jako v sólu. Raketa jen
+    // občas, aby souboj nebyl jen o výbuších.
+    const nearest = nearestTarget(targets, bot.body);
+    const distance = nearest ? Math.hypot(nearest.x - bot.body.x, nearest.z - bot.body.z) : 99;
+    let botWeapon: WeaponId = botWeaponFor(distance);
+    if (botWeapon === 'rocket' && Math.random() > BOT_FIRE.rocketChance) botWeapon = 'mg';
+    bot.input.weapon = botWeapon;
   }
 }
 
@@ -621,7 +633,8 @@ export function stepArena(sim: ArenaSim, dt: number, now: number): ArenaEvent[] 
     if (player.input.fire && now >= player.cooldownUntil) {
       const weapon = player.weapon;
       const spec = WEAPONS[weapon];
-      const ammo = ammoOf(player, weapon);
+      // Boti mají munici nekonečnou — jinak by po pár ranách skončili na railu.
+      const ammo = player.isBot ? Number.POSITIVE_INFINITY : ammoOf(player, weapon);
       if (Number.isFinite(ammo) && ammo <= 0) {
         player.weapon = 'rail';
       } else {
