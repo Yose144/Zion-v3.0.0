@@ -131,7 +131,10 @@ Bez `--zig` by artefakt nesl glibc hostu (macOS) — nepoužitelný.
 ### 6.3 Koherentní sada
 
 Původně měl každý target vlastní adresář a tím i vlastní commit. Nakonec
-všechno vzniklo z **jednoho commitu `df4dc3296`**:
+macOS a Windows vznikly z **`df4dc3296`**, linux z **`a97071e45`** (o jeden
+commit později — paralelní session mezitím commitla MarketPlace). Rozdíl je
+**jen v `apps/`**: `git diff df4dc3296 a97071e45 -- V31` = prázdné, takže
+V31 kód je u všech šesti artefaktů totožný.
 
 | Adresář | Artefakty |
 |---|---|
