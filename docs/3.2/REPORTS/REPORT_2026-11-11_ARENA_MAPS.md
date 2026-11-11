@@ -2,9 +2,11 @@
 
 **Datum:** 2026-11-11
 **App:** `apps/nirvana` (`/mars`)
-**Commit:** `4fe57fb8c` (mapy) + `a3d182e67` (vyvýšené spawny a detail)
-**Deploy:** app `20261111T072654Z` (net zůstal na proto 37)
-**Protokol:** 37 — beze změny (mapy jsou sólo, server je nezná)
+**Commity:** `4fe57fb8c` (mapy), `a3d182e67` (vyvýšené spawny a detail),
+`80987db20` (multiplayer na mapách)
+**Deploy:** app `20261111T072654Z` (sólo mapy, proto 37) → net
+`20261111T080256Z` + app `20261111T080331Z` (proto 38, multiplayer mapy)
+**Protokol:** 38 — `join` nese `map`, snapshot vrací mapu místnosti
 
 ## Zadání
 
