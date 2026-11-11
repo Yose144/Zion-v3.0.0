@@ -155,8 +155,16 @@ try {
   const first = await a.waitFor((m) => m.t === 'snapshot' && m.players.length === 2);
   check('snapshot: 2 hráči (boti vypnuti)', first.players.length === 2, String(first.players.length));
   check('snapshot: rakety pole', Array.isArray(first.projectiles), JSON.stringify(first.projectiles));
-  check('snapshot: pickupy', Array.isArray(first.pickups) && first.pickups.length === 5,
-    JSON.stringify(first.pickups));
+  // Od powerupů (Quad/Haste/Mega health) je na mapě víc pickupů než původních 5;
+  // test drží původní health/armor/ammo sadu a jen ověří, že nezmizela.
+  const pickupIds = (first.pickups ?? []).map((pickup) => pickup.id);
+  check(
+    'snapshot: pickupy',
+    Array.isArray(first.pickups) &&
+      first.pickups.length >= 5 &&
+      ['h1', 'h2', 'a1', 'm1', 'm2'].every((id) => pickupIds.includes(id)),
+    JSON.stringify(first.pickups),
+  );
   check('snapshot: čas zápasu', typeof first.secondsLeft === 'number', String(first.secondsLeft));
 
   const meA = first.players.find((p) => p.id === roomA.youPlayerId);
