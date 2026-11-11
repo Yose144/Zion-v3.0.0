@@ -1,6 +1,7 @@
 # ZION V3.3 „NIRVANA" — Execution Checklist
 
 > **Datum:** 2026-10-29 (snapshot položek níže je z 26. 10.; posun je v rámečku) · **Doplněk k:** [`NIRVANA-V3.3-PLAN.md`](NIRVANA-V3.3-PLAN.md) · **Vstupní bod plánování:** [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md)
+> **⚠️ 2026-11-11:** G8 **run #7** = **99,9241 %**, evidence 100 %, stále **5× `chain_live` 60 s**, `pending`, cíl **6. 12. 14:51:25Z**. Payout monitoring **M2 uzavřen** (probe + rules + pool rebuild `ece8b6965`; `payouts_api_ok`/`measurement_ok` = 1, alert firing→resolved). **ZIS agent sub-accounts** implementováno (`e76b0fdb6`, 60/60 testů, default OFF) — čeká DB push + deploy (👤). EDGE2 `networkd-wait-online` vyřešen. Charta R9 **factual** ✅ (legal/cultural 👤). Aktuální fronta = [`DOC_VS_CODE_ANALYSIS_2026-11-10.md`](DOC_VS_CODE_ANALYSIS_2026-11-10.md) §4.
 > **⚠️ 2026-11-10 (EDGE1/EDGE2 verifikace + docs truth-sync):** G8 **run #7** `g8-20261106T145125Z` živě — **99,916 %**, evidence 100 %, **5× `chain_live` incident 60 s** (8.–9. 11.; `G8ChainStale` firing→resolved; block-timestamp sampling nevyloučil ani nepotvrdil >900 s gap → trigger pravděpodobně probe-side RPC stall, **RCA otevřená**), cíl **6. 12. 14:51:25Z**. Run #6 archivován `stopped`/`evidence_incomplete` (99,7629 %, 12 incidentů). Nirvana **proto 34** repo=live (net build `20261110T181100Z` + app `proto_match:true`). Release artifacts: `dist/v3.2.0-rc-w1.4/` 5 tarballů z `aa6599cce`; **x86_64-apple-darwin** cross-toolchain na Macu funguje, ale **disk 100 %** blokuje build. Viz [`StatusV3.md`](../3.2/StatusV3.md) update 10. 11. a [`DOC_VS_CODE_ANALYSIS_2026-11-10.md`](DOC_VS_CODE_ANALYSIS_2026-11-10.md).
 > **⚠️ 2026-11-01:** tento checklist neobsahuje položky vlny 1. 11. (NIRVANA multiplayer M0–M2, avatary A1–A4, ops konzole F1–F2.3, 6.B4 DeSci, Kingdom, maintenance 503) — aktuální stav je v plánu **§7 změnovej log v1.6–v1.13** a v [`docs/3.2/REPORTS/REPORT_2026-11-01_NIRVANA_DEN.md`](../3.2/REPORTS/REPORT_2026-11-01_NIRVANA_DEN.md); code-vs-doc kanonizace 1. 11. viz [`AGENTS.md`](../../AGENTS.md) entry TRUTH-SYNC.
 > **⚠️ 2026-11-02 (autonomní session):** HA fencing analýza ✅ (`docs/3.2/ops/POOL-HA-RUNBOOK.md`), DR drill dry-run ✅ (`docs/3.2/REPORTS/REPORT_2026-11-02_DR_DRILL_DRY_RUN.md`), NCL V33-5 ✅ (2 integrační testy, 44/44), DeSci 6.B4 ✅ (23/23 testů, backend+web+proxy), OASIS V33-10 axe scan ✅ (`docs/3.2/REPORTS/REPORT_2026-11-02_OASIS_A11Y_PRIVACY.md`). Root kanonizace: staré plány → `docs/3.3/`, nový master plán `PLAN.md`. Souhrn: [`REPORT_2026-11-02_SESSION_SUMMARY.md`](../3.2/REPORTS/REPORT_2026-11-02_SESSION_SUMMARY.md).
@@ -25,17 +26,17 @@ Checklistové checkboxy pod tímhle rámečkem se hromadně nepřepisovaly. DoD 
 
 ---
 
-## Stav v kostce (2026-10-31; snapshot položek níže je z 26. 10., posun viz rámeček)
+## Stav v kostce (2026-11-11; snapshot položek níže je z 26. 10., posun viz rámečky)
 
 | Oblast | Stav |
 |---|---|
 | Stupeň | **3.2.0 Mainnet Beta** (`V31/Cargo.toml` = `3.2.0`, node hlásí `3.2.0`; wire ID `zion-v3-node/3.1.0-alpha` zůstává záměrně) → další brána RC |
-| G8 | run **#7** `g8-20261106T145125Z` — **99,916 %**, evidence 100 %, **5 incidentů `chain_live` × 60 s** (8.–9. 11., RCA otevřená), `gate_status=pending`, konec **6. 12. 14:51Z**. Run #6 archivován `stopped`/`evidence_incomplete` (99,7629 %, 12 incidentů) |
+| G8 | run **#7** `g8-20261106T145125Z` — **99,9241 %**, evidence 100 %, **5 incidentů `chain_live` × 60 s** (8.–9. 11., RCA otevřená), `gate_status=pending`, konec **6. 12. 14:51Z**. Run #6 archivován `stopped`/`evidence_incomplete` (99,7629 %, 12 incidentů) |
 | G9 | ⏸️ **posunuto rozhodnutím 👤 26. 10.** — audit package + scope připravené k odeslání; Stable bez data |
 | Interní audit | vlny 1–7 nasazené a živě ověřené (warpd = audit build, holdy aktivní, payouty potvrzené on-chain) |
-| Code gates (pin `ad8ab5895`) | `cargo test --workspace` **2 839 / 0 fail**, check OK, Foundry 48/48, ZIS 46/46 · ⚠️ clippy ~110 warnings, fmt drift 25 souborů · 🔄 audit triage 28.10 (`docs/3.2/AUDIT-TRIAGE.md`): cargo 9 vuln = 0 in-range fix (multichain/k256 only, pool/node čisté), npm 9 app kritik `next` majors — upgrade = deliberate, neblokuje Beta |
+| Code gates (pin `ad8ab5895`) | `cargo test --workspace` **2 839 / 0 fail**, check OK, Foundry 48/48, ZIS **60/60** · ⚠️ clippy ~110 warnings, fmt drift 25 souborů · 🔄 audit triage 28.10 (`docs/3.2/AUDIT-TRIAGE.md`): cargo 9 vuln = 0 in-range fix (multichain/k256 only, pool/node čisté); **Next 16.4.3 hotový 10. 11.** → npm 0 critical ve 4 veřejných appkách |
 | P0 defekty | **1 otevřený** — P0-1 ✅ + P0-2 ✅ opraveny 26. 10.; zbývá P0-3 sdílený env (viz N0) |
-| DoD v3.3 | 0/9 splněno · 5 rozpracovaných (tabulka níže) |
+| DoD v3.3 | **0/9 plně splněno** · 6 rozpracovaných (V33-1, V33-4, V33-5, V33-7, V33-8, V33-10) · V33-2 posunuto 👤 |
 
 ---
 
@@ -56,7 +57,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md). Zde
   - [x] 🤖 Alert sink firing test + 40d retence doložit (8.B9) — `REPORT_2026-10-28_G8_ALERT_SINK.md`: firing+resolved přes reálný Alertmanager 28.10., append-only jsonl 29d+ bez rotace, 40d span doběhne ~8.11.
   - [x] 👤 Start run #6 `g8-20261029T234617Z` (29. 10. 23:46Z) — **zastaven 6. 11. před koncem okna** → archivován `stopped`/`evidence_incomplete` (99,7629 %, 12 incidentů), nenahrazuje PASS
   - [x] 👤 Start run #7 `g8-20261106T145125Z` (6. 11. 14:51Z), cíl **6. 12. 14:51Z**, evidence step 60 s, coverage 100 %
-  - [ ] 🤖 Run #7 PASS (1.S1) — nic nesmí zasáhnout required služby bez rollbacku do 15 min. Stav 10. 11.: **99,916 %**, 0 kritických, **5 incidentů `chain_live` × 60 s** (8.–9. 11., RCA otevřená)
+  - [ ] 🤖 Run #7 PASS (1.S1) — nic nesmí zasáhnout required služby bez rollbacku do 15 min. Stav 11. 11.: **99,9241 %**, 0 kritických, **5 incidentů `chain_live` × 60 s** (8.–9. 11., RCA otevřená)
 - [~] **G9 — externí audit** ⏸️ **posunuto rozhodnutím 👤 26. 10.** (v aktuálním okně se neobjednává)
   - [x] 🤖 Audit package (pin `4108a52d0`, reprodukovatelný build) + scope v2.2 — připraveno k odeslání
   - [ ] 🤖 Přepinovat na RC commit (wave 7 + W1 posunuly pool scope) (7.B1)
@@ -196,12 +197,12 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md). Zde
 
 ## DoD v3.3 — stav
 
-| Gate | Měření | Stav 31. 10. |
+| Gate | Měření | Stav 11. 11. |
 |---|---|---|
-| V33-1 Stabilita | G8 ≥99.9 % (`g8_run.json` + Prometheus) | 🔄 run **#7** 99,916 %, do **6. 12. 14:51Z**, 5 incidentů `chain_live` × 60 s (8.–9. 11.) |
+| V33-1 Stabilita | G8 ≥99.9 % (`g8_run.json` + Prometheus) | 🔄 run **#7** 99,9241 %, do **6. 12. 14:51Z**, 5 incidentů `chain_live` × 60 s (8.–9. 11.) |
 | V33-2 Externí audit | report + mitigace | ⏸️ posunuto 👤 26. 10. |
 | V33-3 Value transfer | BTC swap lock→claim + refund on-chain; ZionDex deposit→swap→withdraw | ❌ holdy / settlement nehotový |
-| V33-4 Identita | passkey E2E na ≥3 produkčních webech | 🔄 routes + mocked E2E |
+| V33-4 Identita | passkey E2E na ≥3 produkčních webech | 🔄 **prod E2E ✅ 31. 10.** (app + market + freeworld, cross-origin SSO); gate čeká na release build |
 | V33-5 L3 sandbox | Maestro 3 reálné úlohy s audit logem + approval gate; NCL ≥1 job typ | 🔄 Maestro read-only live; **NCL lifecycle ✅ 2. 11.** (2 integrační testy: LlmInference + CodeAnalysis failure, 44/44 pass) |
 | V33-6 L5 dopad | ≥1 pilot s veřejným rozpočtem a výsledkem | ❌ (P0-1 ✅, scanner na tipu) |
 | V33-7 L6 repro | dokument s L1 anchorem | 🔄 **backend ✅ 2. 11.** (anchor.rs memo+batch, merkle path/verify, 23/23 testů), chybí publikovaný dokument s reálným anchorem |
@@ -225,6 +226,8 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md). Zde
 ---
 
 ## Rychlá autonomní fronta (další kroky)
+
+> **Stav 11. 11.:** body 1–13 níže jsou historické (31. 10.). Aktuální fronta = [`DOC_VS_CODE_ANALYSIS_2026-11-10.md`](DOC_VS_CODE_ANALYSIS_2026-11-10.md) §4 a [`PLAN.md`](../../PLAN.md) §8. Uzavřeno 11. 11.: M2 payout monitoring (probe+rules+pool `ece8b6965`), ZIS agent sub-accounts (kód, 60/60), Charta R9 factual, EDGE2 `networkd-wait-online`.
 
 1. 🔀 P0-3 — rotace PRL RPC credentialu (👤) + per-service env subsety; P0-1/P0-2 ✅ 26. 10. · audit 31.10. v [`docs/3.2/P0-3-SHARED-ENV-AUDIT.md`](../3.2/P0-3-SHARED-ENV-AUDIT.md): 186 vars, 24 secret-ish, 15 služeb sdílí `edge-environment.sh` (mode 0644) — subset plan + rotace runbook připraveny, čeká 👤
 2. ~~🤖 Provenance manifest + build z čistého `git archive` (8.B3)~~ ✅ 28. 10. (collector + baseline; `git archive` build nese `.git-archive-sha`)

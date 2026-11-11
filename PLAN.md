@@ -1,27 +1,29 @@
 # ZION TerraNova — Master Plan (v3.3 "Nirvana")
 
-> **Datum:** 2026-11-10
+> **Datum:** 2026-11-11
 > **Stupeň:** 3.2.0 Mainnet Beta → cíl 3.2.0 RC → 3.2.0 Mainnet Stable → 3.3.0 Nirvana
 > **Vstupní bod:** tento soubor je jediný aktivní plán v rootu. Detaily v `docs/3.2/`, `docs/3.3/`.
 > **Historie:** staré root MD plány přesunuty do `docs/3.3/`. Operativní pravidla v `AGENTS.md`.
 
 ---
 
-## 1. Aktuální stav (snapshot 10. 11. 2026)
+## 1. Aktuální stav (snapshot 11. 11. 2026)
 
 ### Infrastruktura
 - **EDGE2** (207.180.217.100) = primary node (9445) + web ingress + app stack (L2–L6)
 - **EDGE** (62.171.141.136) = pool stratum (8444) + follower nodes (9446/9447) + ops/monitoring
-- **G8 run #7** `g8-20261106T145125Z` = **99,916 %**, 5× `chain_live` incident 60 s (8.–9. 11., RCA otevřená), evidence 100 %, konec **6. 12. 14:51Z**. Run #6 archivován `stopped`/`evidence_incomplete` (99,76 %, 12 incidentů).
+- **G8 run #7** `g8-20261106T145125Z` = **99,9241 %**, evidence 100 %, **5× `chain_live` incident 60 s** (8.–9. 11., RCA otevřená), konec **6. 12. 14:51Z**. Run #6 archivován `stopped`/`evidence_incomplete` (99,76 %, 12 incidentů).
+- **Chain 118 687** (~60 s/blok), pool **`ece8b6965`** (11. 11. rebuild + payout monitoring M2), **74 072 accepted / 0 rejected**, disky 62 % / 58 %
 - **G9 externí audit** = posunut (Stable bez data)
 - **Deploy projekty:** `V31/deploy/` (aktivní, opraveno 2.11.), `infra/edge-deploy/` (deprecated, guard přidán)
 - **Nirvana proto 34** = repo i live ve shodě (net build `20261110T181100Z` + app `proto_match`) — client a net deployovat vždy spolu
+- **EDGE2 `networkd-wait-online`** vyřešen 11. 11. (netplan `accept-ra:false`+`dhcp6:false`); nginx `listen` options sjednoceny repo-only (`548a50235`, deploy ⏸️)
 - **⚠️ Mac disk 100 %** — release buildy lokálně nemožné (volno ~115 MB); x86_64-apple-darwin cross-toolchain ověřen funkční, chybí místo
 
 ### Kód
 - **V31 workspace:** 18 crates, verze 3.2.0, protocol handshake `3.1.0-alpha` (záměrně)
 - **Apps:** nirvana (multiplayer M0–M2), nirvana-net (WS služba), marketplace, oasis-web, website-v2.9, identity (ZIS), pool-ui, mobile-app, desktop-agent
-- **Testy:** cargo test --workspace 2 839/0 fail (pin ad8ab5895), ZIS 46/46, Foundry 48/48
+- **Testy:** cargo test --workspace 2 839/0 fail (pin ad8ab5895), ZIS **60/60** (agent sub-accounts 11. 11.), Foundry 48/48
 - **Clippy:** ~110 warnings (pool 32 test-only), fmt drift 25 souborů
 
 ### Dokumentace
@@ -31,6 +33,9 @@
 - `docs/plans/`: dílčí plány (audit, infra, pool, Hiran, OASIS, avatar 3D, účtovnictví, překlady, QTC)
 
 ### Od snapshotu 2. 11. — dokončené
+- **Payout monitoring M2 (11. 11.):** probe + rules + pool rebuild `ece8b6965` → `payouts_api_ok`/`measurement_ok` = 1, `last_payout_age_seconds` živě; alert firing→resolved (end-to-end důkaz), G8 0 nových incidentů.
+- **ZIS agent sub-accounts (11. 11.):** Prisma `AgentSubAccount`+`AgentBudget`, `zag_` bearer, scope bez `wallet:withdraw`, audit eventy, `ZIS_AGENTS_ENABLED` default OFF; testy 60/60, tsc 0 — **DB push + deploy + step-up/UI = 👤**.
+- **Charta R9 factual (11. 11.):** CoinGecko balíček + veřejné claims ověřeny proti kódu/živým datům; legal + cultural = 👤.
 - **OASIS avatáři:** 202/202 finálních portrétů, import + deploy web/OASIS API/OasisWeb/MarketPlace (11/9).
 - **ZION Archive EN:** 124 kapitol, 18/18 knih `enCoverage: 100` — pushnuto, **nedeployováno**.
 - **Lampion „Druhá lucerna":** flat-pack produkt + příběhová sekce na marketu i webu; cena 490 Kč / 70 560 ZION.
@@ -70,7 +75,7 @@ G9 externí audit (posunut, Stable bez data — neblokuje RC kvalitu)
 
 ### Priorita 3 (kvalita a hygiena)
 8. **P0-3** — rotace PRL RPC credentialu + per-service env subsety
-9. **Charta R9** — factual/legal/cultural review veřejných textů
+9. **Charta R9** — factual ✅ (11. 11., [`REPORT_2026-11-11_CHARTA_R9_FACTUAL_REVIEW.md`](docs/3.2/REPORTS/REPORT_2026-11-11_CHARTA_R9_FACTUAL_REVIEW.md)); legal + cultural = 👤
 10. **CoinGecko re-apply package** — 17 prerekvizit
 
 ---
@@ -100,7 +105,7 @@ Viz `docs/3.2/DEFERRED_3.2.md`:
 - Aktivace node reward distribution (time-lock 144 000)
 - CHv4.2 (fork height u64::MAX)
 - Program nezávislých operátorů nodů (M7)
-- QTU native payouty (treasury_free=0)
+- QTU native payouty (**payout leg OFF od 4. 11.**; re-enable = 👤 funding + flip)
 - Persistentní share-dedup (A4.1, DB persist)
 - HA stratum auto-promote (aktivováno částečně, manuální)
 - Adapter parity — warp_message_hash anchor (non-EVM)
@@ -142,14 +147,16 @@ Viz `docs/3.2/DEFERRED_3.2.md`:
 
 ---
 
-## 8. Rychlá autonomní fronta (další kroky)
+## 8. Rychlá autonomní fronta (stav 11. 11.)
 
-1. 🔀 HA stratum fencing analýza (blokuje aktivaci)
-2. 🤖 DR drill plán → provedení (potřebuje čistý host)
-3. 🤖 Release artefakty dokončení (OpenCL/GPU host + rebuild z RC commitu)
-4. ✅ 🤖 NCL 1 worker + 1 job typ (V33-5 gate) — 2 integrační testy (LlmInference lifecycle + CodeAnalysis failure), 44/44 pass
-5. ✅ 🤖 DeSci papers repo + L1 hash anchor (6.B4) — backend + web + proxy, 23/23 testů pass
-6. ✅ 🤖 OASIS a11y/privacy scan (V33-10) — a11y (8 nálezů, 3 opraveny), privacy+security OK, report vytvořen
+1. ✅ **Truth-sync plánů** (11. 11.) — `3.2.1-3.2.9_PLAN`, `DEFERRED_3.2`, `PLAN`, `CHECKLIST`, `MAP`, `KRALOVSTVI` srovnány na run #7 / proto 34 / QTC OFF / hotové položky.
+2. **Release artefakty dokončení (9.B4)** — 5 tarballů hotových; chybí `x86_64-apple-darwin` (**Mac disk 100 %** — uvolnit místo), `RELEASE-MATRIX.json` a rebuild z RC commitu (👤 9.S1).
+3. 🔀 **ZIS agent sub-accounts** — kód hotový; `prisma db push` + deploy + step-up + UI (👤).
+4. 🤖 **L3 sandbox** — Miner↔NCL spike, Dharma policy manifest, Amitabha draft-only UI, red-team.
+5. 🤖 **G8 `chain_live` RCA** — read-only analýza, bez deploye probe uprostřed runu.
+6. 🔀 **P0-3 env subsety + rotace** — audit hotový, rotace = 👤.
+
+**Dokončeno dříve (neopakovat):** HA fencing G1–G6 ✅ · DR drill dry-run ✅ · NCL V33-5 ✅ · DeSci 6.B4 ✅ · OASIS a11y V33-10 ✅ · PII orderId + atomický sklad + release verifier + proto preflight + archive content root ✅ (9. 11.) · M1 EDGE1 monitoring ✅ · M2 payout monitoring ✅ (11. 11.) · Charta R9 factual ✅.
 
 ---
 
