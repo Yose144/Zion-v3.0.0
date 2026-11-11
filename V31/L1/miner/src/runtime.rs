@@ -1605,6 +1605,11 @@ impl MinerRuntime {
         // Spawn periodic metrics summary task (every 30s)
         let h_metrics = self.spawn_periodic_metrics(shutdown.clone());
 
+        // NCL worker loop — opt-in (`ZION_NCL_ENABLED=1`), default off.
+        // Spike: miner odebere AI job z Neural Compute Layer a nahlásí
+        // dokončení; odměna se jen loguje (žádná wallet/tx). Idempotentní.
+        crate::ncl::maybe_spawn(crate::ncl::NclConfig::from_env());
+
         let h1: MinerHandle = if self.config.stream1_enabled {
             let this = self.clone();
             let mut shutdown = shutdown.clone();
@@ -1828,6 +1833,10 @@ impl MinerRuntime {
     pub async fn run_v3_trinity(&self, shutdown: watch::Receiver<bool>) -> Result<(), MinerError> {
         // Spawn periodic metrics summary task (every 30s)
         let h_metrics = self.spawn_periodic_metrics(shutdown.clone());
+
+        // NCL worker loop — stejné jako v `run()`; `maybe_spawn` je
+        // idempotentní (`Once`), takže se loop nespustí dvakrát.
+        crate::ncl::maybe_spawn(crate::ncl::NclConfig::from_env());
 
         // Stream 4 dedicated upstream session (`ZION_STREAM4_URL` set): runs
         // OUTSIDE the V3 session so a pool outage or reconnect cycle never

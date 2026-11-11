@@ -5,6 +5,9 @@ pub enum NclError {
     #[error("Job not found: {0}")]
     JobNotFound(String),
 
+    #[error("Worker not found: {0}")]
+    WorkerNotFound(String),
+
     #[error("No available worker for backend: {0}")]
     NoWorkerAvailable(String),
 

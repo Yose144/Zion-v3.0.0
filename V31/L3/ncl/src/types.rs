@@ -40,12 +40,16 @@ impl std::fmt::Display for NclTaskType {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ComputeBackend {
     /// ONNX Runtime (CPU/GPU)
+    #[serde(alias = "onnxruntime", alias = "onnx")]
     OnnxRuntime,
     /// WebAssembly (sandboxed)
+    #[serde(alias = "wasm")]
     Wasm,
     /// TensorFlow Lite
+    #[serde(alias = "tflite")]
     TfLite,
     /// Custom native binary
+    #[serde(alias = "custom")]
     Custom,
 }
 

@@ -6866,6 +6866,7 @@ version = "3.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "axum",
  "base64 0.22.1",
  "blake2",
  "blake2b_simd",
@@ -6902,6 +6903,7 @@ dependencies = [
  "zion-cosmic-harmony",
  "zion-l1-types",
  "zion-native-ffi",
+ "zion-ncl",
 ]
 
 [[package]]

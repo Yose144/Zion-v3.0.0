@@ -121,6 +121,70 @@ impl JobScheduler {
         Ok(Some((job_id, worker_id)))
     }
 
+    /// Claim the next queued job **for a specific worker** (pull model).
+    ///
+    /// Same job selection as [`Self::try_assign_next`] (highest priority,
+    /// then oldest), but the worker is the caller instead of being picked by
+    /// reputation — a miner polls for itself, so the queue must not hand the
+    /// job to somebody else.
+    ///
+    /// Returns `Ok(None)` (not an error) when the queue is empty, when no
+    /// queued job matches the worker's backends/consciousness, or when the
+    /// worker is at capacity: a miner polls every few seconds and a 4xx on
+    /// every empty poll would be noise, not a failure.
+    pub fn claim_next_for(&mut self, worker_id: &str) -> NclResult<Option<NclJob>> {
+        let (backends, max_concurrent, active_jobs, consciousness_level, online) = {
+            let worker = self
+                .workers
+                .get(worker_id)
+                .ok_or_else(|| NclError::WorkerNotFound(worker_id.to_string()))?;
+            (
+                worker.backends.clone(),
+                worker.max_concurrent,
+                worker.active_jobs,
+                worker.consciousness_level,
+                worker.online,
+            )
+        };
+        if !online || active_jobs >= max_concurrent {
+            return Ok(None);
+        }
+
+        let candidate = self
+            .jobs
+            .values()
+            .filter(|j| {
+                j.status == NclJobStatus::Queued
+                    && backends.contains(&j.backend)
+                    && j.min_consciousness <= consciousness_level
+            })
+            .max_by(|a, b| {
+                a.priority
+                    .cmp(&b.priority)
+                    .then(b.created_at.cmp(&a.created_at)) // older first on tie
+            })
+            .map(|j| j.id);
+
+        let job_id = match candidate {
+            Some(id) => id,
+            None => return Ok(None),
+        };
+
+        let claimed = if let Some(job) = self.jobs.get_mut(&job_id) {
+            job.status = NclJobStatus::Assigned;
+            job.worker_id = Some(worker_id.to_string());
+            Some(job.clone())
+        } else {
+            None
+        };
+        if claimed.is_some() {
+            if let Some(worker) = self.workers.get_mut(worker_id) {
+                worker.active_jobs += 1;
+            }
+        }
+        Ok(claimed)
+    }
+
     /// Mark a job as completed.
     pub fn complete_job(&mut self, job_id: Uuid, output_hash: String) -> NclResult<()> {
         let job = self
@@ -179,6 +243,11 @@ impl JobScheduler {
         self.jobs.get(id)
     }
 
+    /// Registered worker by id (used by re-registration to keep its counters).
+    pub fn worker(&self, id: &str) -> Option<&NclWorker> {
+        self.workers.get(id)
+    }
+
     pub fn queued_count(&self) -> usize {
         self.jobs
             .values()
@@ -220,6 +289,68 @@ mod tests {
 
     fn test_worker(id: &str, backends: Vec<ComputeBackend>) -> NclWorker {
         NclWorker::new(id.into(), "addr".into(), backends)
+    }
+
+    // ── pull model: worker si bere job sám (Miner↔NCL spike) ──────────
+    #[test]
+    fn test_claim_next_for_gives_caller_the_highest_priority_job() {
+        let mut sched = JobScheduler::new(100);
+        sched.register_worker(test_worker("w1", vec![ComputeBackend::Custom]));
+
+        let low = test_job(ComputeBackend::Custom).with_priority(2);
+        let high = test_job(ComputeBackend::Custom).with_priority(9);
+        let low_id = sched.submit_job(low).unwrap();
+        let high_id = sched.submit_job(high).unwrap();
+
+        let claimed = sched.claim_next_for("w1").unwrap().expect("job claimed");
+        assert_eq!(claimed.id, high_id, "priority 9 musí jít první");
+        assert_eq!(claimed.status, NclJobStatus::Assigned);
+        assert_eq!(claimed.worker_id.as_deref(), Some("w1"));
+
+        let second = sched.claim_next_for("w1").unwrap().expect("second job");
+        assert_eq!(second.id, low_id);
+        assert!(
+            sched.claim_next_for("w1").unwrap().is_none(),
+            "fronta je prázdná"
+        );
+    }
+
+    #[test]
+    fn test_claim_next_for_respects_backend_and_capacity() {
+        let mut sched = JobScheduler::new(100);
+        let mut worker = test_worker("gpu", vec![ComputeBackend::TfLite]);
+        worker.max_concurrent = 1;
+        sched.register_worker(worker);
+
+        // Jiný backend se nevydá.
+        sched.submit_job(test_job(ComputeBackend::Custom)).unwrap();
+        assert!(sched.claim_next_for("gpu").unwrap().is_none());
+
+        let matching = sched.submit_job(test_job(ComputeBackend::TfLite)).unwrap();
+        assert_eq!(sched.claim_next_for("gpu").unwrap().unwrap().id, matching);
+
+        // Na kapacitě (1) už nic dalšího.
+        sched.submit_job(test_job(ComputeBackend::TfLite)).unwrap();
+        assert!(sched.claim_next_for("gpu").unwrap().is_none());
+    }
+
+    #[test]
+    fn test_claim_next_for_honours_min_consciousness() {
+        let mut sched = JobScheduler::new(100);
+        sched.register_worker(test_worker("w1", vec![ComputeBackend::Custom]));
+        sched
+            .submit_job(test_job(ComputeBackend::Custom).with_min_consciousness(5))
+            .unwrap();
+        assert!(sched.claim_next_for("w1").unwrap().is_none());
+    }
+
+    #[test]
+    fn test_claim_next_for_unknown_worker_is_error() {
+        let mut sched = JobScheduler::new(100);
+        assert!(matches!(
+            sched.claim_next_for("neznámý"),
+            Err(NclError::WorkerNotFound(_))
+        ));
     }
 
     #[test]

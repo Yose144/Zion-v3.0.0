@@ -104,6 +104,9 @@ equihash = { version = "0.3.0", features = ["solver"] }
 
 [dev-dependencies]
 tokio-test = "0.4"
+# E2E test NCL spike: reálný axum server + reálný miner loop.
+axum = { workspace = true }
+zion-ncl = { workspace = true }
 
 [[bin]]
 name = "zion-miner"

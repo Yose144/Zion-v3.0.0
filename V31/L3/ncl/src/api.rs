@@ -6,6 +6,7 @@
 //! GET  /health
 //! POST /jobs
 //! GET  /jobs/:id
+//! GET  /jobs/next/:worker_id   (pull: miner claims the next job)
 //! POST /jobs/:id/complete
 //! POST /jobs/:id/fail
 //! POST /workers
@@ -31,7 +32,7 @@
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::Json,
+    response::{IntoResponse, Json, Response},
     routing::{get, post},
     Router,
 };
@@ -152,6 +153,12 @@ pub struct FailJobRequest {
 /// `POST /workers` request — register a new worker.
 #[derive(Debug, Deserialize)]
 pub struct RegisterWorkerRequest {
+    /// Stable worker id. Optional for backwards compatibility: when omitted
+    /// the server generates a UUID (push model). A **pull** worker (miner
+    /// polling `/jobs/next/:id`) must supply its own id, otherwise it can
+    /// never recognise its own jobs after a restart.
+    #[serde(default)]
+    pub id: Option<String>,
     pub address: String,
     pub backends: Vec<ComputeBackend>,
     pub max_concurrent: usize,
@@ -292,6 +299,33 @@ pub async fn get_job(
     }))
 }
 
+/// `GET /jobs/next/:worker_id` — pull the next job for a registered worker.
+///
+/// Answers **200** with the job, or **204 No Content** when there is nothing
+/// to do (empty queue, wrong backend, worker at capacity). 404 only when the
+/// worker was never registered — a miner polls every few seconds, so an
+/// empty poll must not look like an error.
+pub async fn claim_job(
+    State(state): State<NclAppState>,
+    Path(worker_id): Path<String>,
+) -> Result<Response, (StatusCode, Json<serde_json::Value>)> {
+    let mut sched = state.scheduler.lock().map_err(|_| lock_err())?;
+    let claimed = match sched.claim_next_for(&worker_id) {
+        Ok(job) => job,
+        Err(crate::error::NclError::WorkerNotFound(id)) => return Err(not_found(&id)),
+        Err(e) => return Err(bad_request(e.to_string())),
+    };
+    if let Some(job) = &claimed {
+        state.persist_job(job);
+    }
+    drop(sched);
+
+    Ok(match claimed {
+        Some(job) => Json(job).into_response(),
+        None => StatusCode::NO_CONTENT.into_response(),
+    })
+}
+
 /// `POST /jobs/:id/complete`
 pub async fn complete_job(
     State(state): State<NclAppState>,
@@ -352,17 +386,27 @@ pub async fn register_worker(
     State(state): State<NclAppState>,
     Json(req): Json<RegisterWorkerRequest>,
 ) -> ApiResult<OkResponse> {
-    let worker_id = Uuid::new_v4().to_string();
+    let worker_id = req
+        .id
+        .clone()
+        .filter(|id| !id.trim().is_empty())
+        .unwrap_or_else(|| Uuid::new_v4().to_string());
 
     let mut worker = NclWorker::new(worker_id.clone(), req.address.clone(), req.backends);
     worker.max_concurrent = req.max_concurrent;
     worker.consciousness_level = req.consciousness_level;
 
-    state
-        .scheduler
-        .lock()
-        .map_err(|_| lock_err())?
-        .register_worker(worker);
+    {
+        let mut sched = state.scheduler.lock().map_err(|_| lock_err())?;
+        // Re-registration (miner restart) must not wipe the worker's history:
+        // `NclWorker::new` starts at zero, so keep the counters/active jobs.
+        if let Some(previous) = sched.worker(&worker_id).cloned() {
+            worker.total_completed = previous.total_completed;
+            worker.total_earned = previous.total_earned;
+            worker.active_jobs = previous.active_jobs;
+        }
+        sched.register_worker(worker);
+    }
 
     // Pre-create reputation record
     state
@@ -455,6 +499,7 @@ pub fn create_router(state: NclAppState) -> Router {
         .route("/health", get(health))
         .route("/jobs", post(submit_job))
         .route("/jobs/:id", get(get_job))
+        .route("/jobs/next/:worker_id", get(claim_job))
         .route("/jobs/:id/complete", post(complete_job))
         .route("/jobs/:id/fail", post(fail_job))
         .route("/workers", post(register_worker).get(list_workers))
@@ -508,6 +553,7 @@ mod tests {
     async fn test_register_worker_and_list() {
         let state = make_state();
         let req = RegisterWorkerRequest {
+            id: None,
             address: "zion1worker".into(),
             backends: vec![ComputeBackend::OnnxRuntime],
             max_concurrent: 4,
@@ -531,6 +577,7 @@ mod tests {
         let _ = register_worker(
             State(state.clone()),
             Json(RegisterWorkerRequest {
+                id: None,
                 address: "zion1gpu".into(),
                 backends: vec![ComputeBackend::OnnxRuntime],
                 max_concurrent: 2,
@@ -582,6 +629,7 @@ mod tests {
         let reg = register_worker(
             State(state.clone()),
             Json(RegisterWorkerRequest {
+                id: None,
                 address: "zion1nclworker".into(),
                 backends: vec![ComputeBackend::OnnxRuntime],
                 max_concurrent: 2,
@@ -673,6 +721,7 @@ mod tests {
         let _ = register_worker(
             State(state.clone()),
             Json(RegisterWorkerRequest {
+                id: None,
                 address: "zion1failworker".into(),
                 backends: vec![ComputeBackend::Wasm],
                 max_concurrent: 1,
@@ -736,5 +785,93 @@ mod tests {
         let arr = board.0["workers"].as_array().unwrap();
         assert_eq!(arr.len(), 1);
         assert_eq!(arr[0]["jobs_failed"], 1);
+    }
+
+    // ── pull model (Miner↔NCL spike) ──────────────────────────────────
+
+    fn pull_worker(id: &str) -> RegisterWorkerRequest {
+        RegisterWorkerRequest {
+            id: Some(id.into()),
+            address: "zion1miner".into(),
+            backends: vec![ComputeBackend::Custom],
+            max_concurrent: 2,
+            consciousness_level: 0,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_pull_worker_registers_with_its_own_id_and_survives_reregistration() {
+        let state = make_state();
+        register_worker(State(state.clone()), Json(pull_worker("miner-1")))
+            .await
+            .unwrap();
+
+        {
+            let sched = state.scheduler.lock().unwrap();
+            let worker = sched.worker("miner-1").expect("worker pod svým id");
+            assert_eq!(worker.address, "zion1miner");
+            assert_eq!(worker.active_jobs, 0);
+        }
+
+        // Restart mineru = druhá registrace; id i historie musí zůstat.
+        register_worker(State(state.clone()), Json(pull_worker("miner-1")))
+            .await
+            .unwrap();
+        let sched = state.scheduler.lock().unwrap();
+        assert!(sched.worker("miner-1").is_some());
+        assert_eq!(
+            sched.worker_count(),
+            1,
+            "re-registrace nesmí založit druhého workera"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_claim_job_returns_job_then_204_then_404() {
+        let state = make_state();
+        register_worker(State(state.clone()), Json(pull_worker("miner-1")))
+            .await
+            .unwrap();
+
+        let submitted = submit_job(
+            State(state.clone()),
+            Json(SubmitJobRequest {
+                submitter: "zion1user".into(),
+                model_id: "spike".into(),
+                backend: ComputeBackend::Custom,
+                input_hash: "abc123".into(),
+                reward_flowers: 1_000,
+                max_duration_secs: 30,
+                priority: 5,
+                min_consciousness: 0,
+                task_type: NclTaskType::Custom,
+            }),
+        )
+        .await
+        .unwrap()
+        .0
+        .job_id;
+
+        let claimed = claim_job(State(state.clone()), Path("miner-1".into()))
+            .await
+            .unwrap();
+        assert_eq!(claimed.status(), StatusCode::OK);
+        // Job je tím pádem Assigned na tomhle workerovi.
+        let status = get_job(State(state.clone()), Path(submitted))
+            .await
+            .unwrap();
+        assert_eq!(status.0.status, NclJobStatus::Assigned);
+        assert_eq!(status.0.worker_id.as_deref(), Some("miner-1"));
+
+        // Prázdná fronta = 204, ne chyba.
+        let empty = claim_job(State(state.clone()), Path("miner-1".into()))
+            .await
+            .unwrap();
+        assert_eq!(empty.status(), StatusCode::NO_CONTENT);
+
+        // Neznámý worker = 404.
+        assert!(claim_job(State(state), Path("neznámý".into()))
+            .await
+            .is_err());
     }
 }

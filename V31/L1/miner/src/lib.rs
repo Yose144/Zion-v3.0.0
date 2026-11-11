@@ -20,6 +20,7 @@ pub mod ext_log;
 pub mod gpu;
 pub mod gpu_guard;
 pub mod metrics;
+pub mod ncl;
 pub mod pool_message;
 pub mod reconnect;
 pub mod runtime;
