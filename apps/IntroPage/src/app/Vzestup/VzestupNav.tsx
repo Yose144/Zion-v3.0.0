@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import "../../../../shared/ui/rasta-nav.css";
+import { SiteDirectoryDropdown, SiteDirectoryMobile } from "../components/SiteDirectory";
 
 const navItems = [
   { id: "hero", label: "Úvod" },
@@ -64,6 +65,7 @@ export default function VzestupNav() {
               {n.label}
             </a>
           ))}
+          <SiteDirectoryDropdown lang="cs" />
         </div>
 
         <div className="rasta-nav-right rasta-nav-actions">
@@ -136,6 +138,8 @@ export default function VzestupNav() {
             {n.label}
           </a>
         ))}
+
+        <SiteDirectoryMobile lang="cs" onNavigate={() => setOpen(false)} />
 
         <a
           href="/amenti/"

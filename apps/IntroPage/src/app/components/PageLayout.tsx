@@ -8,6 +8,7 @@ import { ReactNode } from "react";
 import "../../../../shared/ui/rasta-nav.css";
 import { LanguageMenu } from "../../../../shared/ui/LanguageMenu";
 import { readPublicLang, writePublicLang, type PublicLang } from "../../../../shared/i18n/persist";
+import { SiteDirectoryDropdown, SiteDirectoryMobile } from "./SiteDirectory";
 
 function normalize(p: string) {
   return p.replace(/\/$/, "") || "/";
@@ -132,6 +133,7 @@ export default function PageLayout({
                 </Link>
               )
             )}
+            <SiteDirectoryDropdown lang={lang} />
           </div>
 
           <div className="rasta-nav-right">
@@ -203,6 +205,8 @@ export default function PageLayout({
               </Link>
             )
           )}
+
+          <SiteDirectoryMobile lang={lang} onNavigate={close} />
 
           <div className="rasta-mobile-actions">
             <LanguageMenu lang={lang} setLang={choose} />

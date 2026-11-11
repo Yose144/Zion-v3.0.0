@@ -14,13 +14,14 @@ export const dynamicParams = false;
 export default async function BlogPostPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const post = posts.find((p) => p.slug === params.slug);
+  const { slug } = await params;
+  const post = posts.find((p) => p.slug === slug);
   if (!post) return notFound();
 
   const extracted = post.file ? extractFullPostContent(post.file) : null;
   const fullContent = extracted ?? undefined;
 
-  return <BlogPostClient slug={params.slug} fullContent={fullContent} />;
+  return <BlogPostClient slug={slug} fullContent={fullContent} />;
 }

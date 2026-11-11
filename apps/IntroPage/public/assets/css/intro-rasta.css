@@ -614,7 +614,9 @@ html body textarea:focus {
   top: calc(100% + 0.45rem);
   left: 50%;
   transform: translateX(-50%);
-  min-width: 11.5rem;
+  min-width: 12.5rem;
+  max-height: 70vh;
+  overflow-y: auto;
   margin: 0;
   padding: 0.4rem;
   list-style: none;
@@ -653,6 +655,21 @@ html body textarea:focus {
 #header nav .nav-dropdown li a:hover {
   background: rgba(255, 255, 255, 0.08);
   color: var(--rasta-gold);
+}
+
+/* Skupinové titulky uvnitř dropdownu (Stránky / Ekosystém) */
+#header nav .nav-dropdown li.nav-group-title {
+  padding: 0.6rem 0.9rem 0.2rem;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(252, 209, 22, 0.75);
+  pointer-events: none;
+}
+
+#header nav .nav-dropdown li.nav-group-title:first-child {
+  padding-top: 0.35rem;
 }
 
 /* ── Mobil (≤480px): dropdown se rozbalí přímo v listu ───────────────────── */
