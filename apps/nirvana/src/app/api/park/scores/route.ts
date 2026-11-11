@@ -28,6 +28,7 @@ const GAMES = new Set([
   'piko',
   'neptune',
   'pluto',
+  'fleet',
 ]);
 const TOP = 10;
 const MAX_SCORE = 100_000;
@@ -67,6 +68,7 @@ function emptyBoard(): Board {
     piko: [],
     neptune: [],
     pluto: [],
+    fleet: [],
   };
 }
 

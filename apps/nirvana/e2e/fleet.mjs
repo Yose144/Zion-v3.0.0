@@ -166,6 +166,27 @@ async function main() {
   await sleep(1200);
   await page.screenshot({ path: `${SHOTS}/flight.png` });
 
+  console.log('\n▸ přistání = dohraný běh');
+  // Přistání je jediná „výhra" flotily, takže se z něj musí zapsat běh
+  // (XP, dharma, tabule). Teleport sám `travelled` nezvyšuje, takže se
+  // nejdřív kousek letí — práh 25 jednotek brání farmení na místě.
+  await page.keyboard.down('w');
+  await sleep(3000);
+  await page.keyboard.up('w');
+  await page.evaluate(() => {
+    const dock = window.__fleetDebug.docks()[0];
+    window.__fleetDebug.teleport(dock.position[0], dock.position[1], dock.position[2]);
+  });
+  await sleep(2500);
+  const afterDock = await page.evaluate(() => ({
+    profile: JSON.parse(localStorage.getItem('nirvana.park.v1') ?? '{}'),
+    docked: window.__fleetDebug.state().docked,
+  }));
+  check('přistání se započítalo do profilu', Number(afterDock.profile.best?.fleet) > 0, JSON.stringify(afterDock.profile.best ?? {}));
+  check('přistání dalo XP', Number(afterDock.profile.xp) > 0, String(afterDock.profile.xp));
+  check('přistání zapsalo svět flotily', (afterDock.profile.plays?.fleet ?? 0) >= 1, JSON.stringify(afterDock.profile.plays ?? {}));
+  check('dharma validace proběhla', (afterDock.profile.dharma?.validations ?? 0) >= 1, JSON.stringify(afterDock.profile.dharma ?? {}));
+
   console.log('\n▸ výkon');
   const renderer = await page.evaluate(() => window.__fleetDebug.renderer());
   const fps = await page.evaluate(

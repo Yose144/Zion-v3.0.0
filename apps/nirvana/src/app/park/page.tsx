@@ -222,7 +222,16 @@ export default function ParkPage() {
   // ── záznam dohrané hry: žetony, rekord, výzva, level, tabule ──────
   const recordRun = useCallback(
     (game: ParkGameId, value: number) => {
-      const outcome = recordGameRun({ game, score: value, nickname: nick });
+      // arkádový automat nemá „dno" ani „výhru" — dohrání je cíl. Čas se měří
+      // od startu hry, aby dharma validátor viděl, jestli šlo o skutečný běh
+      // (a ne o dvě vteřiny pro body).
+      const seconds = startedAt.current ? Math.max(1, Math.round((Date.now() - startedAt.current) / 1000)) : undefined;
+      const outcome = recordGameRun({
+        game,
+        score: value,
+        nickname: nick,
+        metrics: { seconds, completed: value > 0 },
+      });
       setProfile(outcome.profile);
       setNotice(describeRun(outcome, cs));
       void outcome.posted?.then(() => readScores());

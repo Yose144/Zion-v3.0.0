@@ -33,6 +33,7 @@ export const GAME_XP: Record<ParkGameId, number> = {
   piko: 50,
   neptune: 55,
   pluto: 50,
+  fleet: 45,
 };
 
 /** XP na level; `120 × (L−1)²` je stejná křivka jako dřívější `runs`. */

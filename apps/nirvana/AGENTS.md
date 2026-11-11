@@ -3313,3 +3313,26 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   prahy, NCL cíle a skóre, questy, dharma cíl) a `test/progress.mjs`
   (NCL úloha se zapíše jednou, CL sedí na XP). E2E `e2e/path-audit.mjs`
   (26 kontrol, včetně dvanácti NCL úloh a čtyř questů v panelu).
+
+## Progrese: flotila, pouti a tanky (2026-11-12)
+
+- **Flotila byla jediný svět, který se do progrese nezapisoval.** Nemá skóre
+  ani souboj, takže se „dohraný běh" musel definovat: **přistání**.
+  `onDock` v `app/fleet/page.tsx` zapíše `recordRun({ game: 'fleet', … })`
+  jednou za let, s `score = uletěná vzdálenost + 150`.
+- **Práh 25 jednotek** brání farmení: bez něj by šlo odpojit se a hned
+  přistát na místě a mít „výhru" za nula. `travelled` se bere z refu
+  (`telemetry`), protože `onDock` je `useCallback` a stav by v něm byl starý.
+- **`fleet` je nový `ParkGameId`** — tedy pět seznamů + `GAME_XP` +
+  `CHALLENGE_TARGETS` (300) jako každá jiná hra. Kdyby chyběl v `GAMES`
+  v `/api/park/scores`, skóre by se tiše zahodilo.
+- **Pouť posílá `metrics`**: čas od `startedAt` a `completed: value > 0`.
+  Arkáda nemá dno ani výhru, dohrání je cíl — ale bez času by dharma
+  validátor nepoznal „dvě vteřiny pro body".
+- **Tanky posílají `metrics`** (kola, výstřely, prohry). Čas se bere
+  z počtu výstřelů (`40 + shots × 4`) — duel čas ve stavu nemá.
+- **Kdo přidá hru, musí poslat `metrics`**, jinak validátor běží
+  s neutrálními hodnotami (0,6–0,85) a hráč nikdy nedostane pečeť.
+- **E2E:** `e2e/fleet.mjs` má novou sekci „přistání = dohraný běh"
+  (profil, XP, `plays.fleet`, dharma validace); `e2e/park-fair.mjs`
+  prošel beze změny.

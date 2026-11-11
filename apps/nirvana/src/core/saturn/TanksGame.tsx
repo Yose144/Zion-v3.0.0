@@ -322,7 +322,19 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
     if (recordedOver.current) return;
     recordedOver.current = 'done';
     const score = Math.max(0, info.wins.player * 300 - info.wins.bot * 100);
-    const outcome = recordRun({ game: 'tanks', score, nickname: pickNickname() });
+    const outcome = recordRun({
+      game: 'tanks',
+      score,
+      nickname: pickNickname(),
+      metrics: {
+        // tankový duel nemá čas ve stavu — bere se počet výstřelů jako stopa
+        seconds: 40 + info.shots * 4,
+        completed: info.wins.player > info.wins.bot,
+        objectives: info.wins.player,
+        objectivesTotal: Math.max(1, info.wins.player + info.wins.bot),
+        setbacks: info.wins.bot,
+      },
+    });
     setNotice(describeRun(outcome, true));
   }, [info.phase, info.wins.player, info.wins.bot]);
 

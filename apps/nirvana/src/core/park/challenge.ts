@@ -34,6 +34,7 @@ export const CHALLENGE_GAMES: ParkGameId[] = [
   'piko',
   'neptune',
   'pluto',
+  'fleet',
 ];
 
 /** Cíle podle toho, kolik bodů hra reálně dává. */
@@ -54,6 +55,7 @@ export const CHALLENGE_TARGETS: Record<ParkGameId, number> = {
   piko: 600, // laguna: šest bójí nebo tři vlny
   neptune: 600, // hlubina: ~600 m sestupu (nebo 500 m a dvě světla)
   pluto: 600, // srdce: pět lamp a kousek tepla navrch
+  fleet: 300, // flotila: doletět a přistát (vzdálenost + dok)
 };
 
 export const CHALLENGE_REWARD = 5;

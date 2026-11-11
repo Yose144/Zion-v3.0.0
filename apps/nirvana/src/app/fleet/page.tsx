@@ -25,6 +25,7 @@ import { SpectatorBar } from '@/core/net/SpectatorBar';
 import { watchRoom } from '@/core/net/watch';
 import { TouchButton } from '@/core/games/TouchPad';
 import { FLEET_COPY, type FleetCopyKey } from './copy';
+import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
 
 type Phase = 'intro' | 'flying';
 
@@ -72,6 +73,11 @@ export default function FleetPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [run, setRun] = useState(0);
   const lastDock = useRef<string | null>(null);
+  /** Telemetrie v refu — `onDock` je useCallback a stav by v něm byl starý. */
+  const telemetry = useRef<FleetStats>(EMPTY_STATS);
+  /** Kdy let začal (pro dharma validátor) a jestli se už započítal. */
+  const flightStart = useRef(0);
+  const recorded = useRef(false);
 
   // ── společný let ───────────────────────────────────────────────────
   const { subscribe, joinFleet, leaveRoom, sendFlight, spectateRoom, connected, roomId } = useNet();
@@ -158,6 +164,9 @@ export default function FleetPage() {
     unlock();
     play('countdown');
     lastDock.current = null;
+    telemetry.current = EMPTY_STATS;
+    flightStart.current = Date.now();
+    recorded.current = false;
     setStats(EMPTY_STATS);
     setDocked(null);
     setNotice(null);
@@ -166,6 +175,7 @@ export default function FleetPage() {
   }, []);
 
   const onStats = useCallback((next: FleetStats) => {
+    telemetry.current = next;
     setStats(next);
   }, []);
 
@@ -182,11 +192,26 @@ export default function FleetPage() {
               : `Docked at Nabukano — ${dockId.replace('nabukano-', 'berth ')}`
             : l('dockedIssobella'),
         );
+        // Přistání je **dohraný běh**: flotila nemá skóre ani souboj, takže
+        // se počítá to, co je měřitelné — uletěná vzdálenost a dok.
+        // Bez prahu by šlo přistát a odpojit se na místě a farmit XP.
+        const travelled = Math.round(telemetry.current.travelled);
+        if (!recorded.current && travelled > 25 && !watchId) {
+          recorded.current = true;
+          const seconds = Math.max(1, Math.round((Date.now() - flightStart.current) / 1000));
+          const outcome = recordRun({
+            game: 'fleet',
+            score: Math.round(travelled) + 150,
+            nickname: pickNickname(),
+            metrics: { seconds, completed: true, objectives: 1, objectivesTotal: 1 },
+          });
+          setNotice((previous) => `${previous ?? ''} · ${describeRun(outcome, cs)}`.trim());
+        }
         window.setTimeout(() => setNotice(null), 4200);
       }
       if (!dockId) lastDock.current = null;
     },
-    [cs],
+    [cs, watchId],
   );
 
   const leave = useCallback(() => {
