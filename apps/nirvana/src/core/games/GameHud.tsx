@@ -7,10 +7,11 @@ import { useI18n, tx } from '@/core/i18n';
 import { useAuth } from '@/core/session/AuthProvider';
 import { useNet } from '@/core/net/useNet';
 import { loadProfile, type ParkProfile } from '@/core/park/profile';
-import { levelProgress } from '@/core/progress/run';
+import { xpProgress } from '@/core/progress/xp';
 import { loadJournal } from '@/core/lumi/journal';
 import { SoundToggle } from '@/core/shell/SoundToggle';
 import { LeaderboardsPanel } from './LeaderboardsPanel';
+import { DharmaPanel } from '@/core/progress/DharmaPanel';
 import { GameMenu } from './GameMenu';
 import { CONTROLS, SURFACES } from './surfaces';
 import { GAME_LINKS } from './links';
@@ -53,6 +54,8 @@ export function GameHud() {
   /** Lumi: kolik světel z deníku už máš (0..7). */
   const [lumiLights, setLumiLights] = useState(0);
   const [boards, setBoards] = useState(false);
+  /** Panel Cesty (XP + dharma) — otevírá se klikem na ★. */
+  const [path, setPath] = useState(false);
 
   useEffect(() => {
     // profil čte localStorage — až po mountu, ať SSR nesedí na jiném čísle
@@ -69,7 +72,12 @@ export function GameHud() {
       setLumiLights(loadJournal().found.length);
     };
     window.addEventListener('focus', refresh);
-    return () => window.removeEventListener('focus', refresh);
+    // zápis profilu (dohraná hra, nákup, výzva) lištu okamžitě srovná
+    window.addEventListener('nirvana:profile', refresh);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('nirvana:profile', refresh);
+    };
   }, []);
 
   if (!SURFACES.includes(pathname)) return null;
@@ -78,7 +86,7 @@ export function GameHud() {
   const tokens = profile?.tokens ?? null;
   // `null` = profil se ještě nenačetl; ukazovat v tu chvíli „level 1"
   // by každému na půl vteřiny lhalo o pokroku.
-  const level = profile ? levelProgress(profile.runs) : null;
+  const level = profile ? xpProgress(profile.xp) : null;
   const controls = tx(CONTROLS[pathname], lang);
   const name =
     user?.avatar3d?.callsign ??
@@ -150,23 +158,26 @@ export function GameHud() {
         >
           <em aria-hidden>🏮</em> {lumiLights}/7
         </Link>
-        <span
+        <button
+          type="button"
           className="game-hud-chip is-level"
+          aria-expanded={path}
+          onClick={() => setPath(true)}
           title={
             level
               ? hud(
                   lang,
-                  `level ${level.level} · ${profile?.runs ?? 0} dohraných her · do dalšího ${level.remaining}`,
-                  `level ${level.level} · ${profile?.runs ?? 0} games · ${level.remaining} to next`,
-                  `nivel ${level.level} · ${profile?.runs ?? 0} partidas · faltan ${level.remaining}`,
-                  `nível ${level.level} · ${profile?.runs ?? 0} jogos · faltam ${level.remaining}`,
-                  `niveau ${level.level} · ${profile?.runs ?? 0} parties · encore ${level.remaining}`,
+                  `level ${level.level} · ${profile?.xp ?? 0} XP · do dalšího ${level.remaining} XP · ${profile?.dharma.seals ?? 0} dharma pečetí`,
+                  `level ${level.level} · ${profile?.xp ?? 0} XP · ${level.remaining} XP to next · ${profile?.dharma.seals ?? 0} dharma seals`,
+                  `nivel ${level.level} · ${profile?.xp ?? 0} XP · faltan ${level.remaining} XP · ${profile?.dharma.seals ?? 0} sellos de dharma`,
+                  `nível ${level.level} · ${profile?.xp ?? 0} XP · faltam ${level.remaining} XP · ${profile?.dharma.seals ?? 0} selos de dharma`,
+                  `niveau ${level.level} · ${profile?.xp ?? 0} XP · encore ${level.remaining} XP · ${profile?.dharma.seals ?? 0} sceaux de dharma`,
                 )
               : hud(lang, 'profil se načítá', 'loading profile', 'cargando perfil', 'a carregar o perfil', 'chargement du profil')
           }
         >
           <em aria-hidden>★</em> {level ? level.level : '—'}
-        </span>
+        </button>
         <button
           type="button"
           className="game-hud-chip is-boards"
@@ -195,8 +206,12 @@ export function GameHud() {
           </a>
         )}
       </div>
-      {boards && <LeaderboardsPanel onClose={() => setBoards(false)} />}
       </nav>
+      {/* Panely jsou **mimo** `.game-hud`: ta má `backdrop-filter`, který
+          vytváří containing block pro `position: fixed`, takže uvnitř lišty
+          se backdrop smrskl na 38 px a okno vyjelo pod obrazovku. */}
+      {boards && <LeaderboardsPanel onClose={() => setBoards(false)} />}
+      {path && <DharmaPanel profile={profile} onClose={() => setPath(false)} />}
     </>
   );
 }

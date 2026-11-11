@@ -409,7 +409,18 @@ export default function LumiPage() {
       recorded.current = true;
       setGift(kind);
       const score = baseScore + (kind === 'give' ? LUMI_GIFT_BONUS : 0);
-      const outcome = recordRun({ game: 'lumi', score, nickname: pickNickname() });
+      const outcome = recordRun({
+        game: 'lumi',
+        score,
+        nickname: pickNickname(),
+        metrics: {
+          seconds: stats.time,
+          completed: true,
+          objectives: stats.lights,
+          objectivesTotal: stats.total,
+          given: kind === 'give' ? 1 : 0,
+        },
+      });
       // deník: světla i volba zůstávají pro příště
       setJournal(recordJourney(stats.lightIds ?? [], kind, pathId));
       play(kind === 'give' ? 'gift' : 'shrineOpen');

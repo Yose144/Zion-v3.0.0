@@ -10,7 +10,9 @@
  * Teď je to jeden `recordRun()`:
  *   - žetony za odehranou hru (+2 za osobní rekord, + bonus za pódium),
  *   - denní výzva (jednou denně, jen když sedí hra a cíl),
- *   - level z počtu dohraných her (roste i když se žetony utratí za kolo),
+ *   - **XP** z výkonu (`core/progress/xp.ts`) — z XP roste level,
+ *   - **dharma validace** (`core/progress/dharma.ts`) — pět pilířů, pečeť
+ *     a násobek XP,
  *   - skóre na tabuli.
  *
  * Profil (`ParkProfile`) zůstává v `localStorage`, protože je to hra bez
@@ -29,6 +31,8 @@ import {
 import { CHALLENGE_REWARD, claimChallenge } from '@/core/park/challenge';
 import type { ParkGameId } from '@/core/park/games';
 import { invalidateScores } from './boards';
+import { applyVerdict, validateRun, type DharmaVerdict, type RunMetrics } from './dharma';
+import { levelFromXp, xpForRun } from './xp';
 
 export interface RunInput {
   game: ParkGameId;
@@ -39,6 +43,8 @@ export interface RunInput {
   bonus?: number;
   /** `false` = hra se nemá započítat (přerušená, proti botovi…). */
   ranked?: boolean;
+  /** Co hra o sobě řekne dharma validátoru (čas, cíl, objektivy, dary…). */
+  metrics?: RunMetrics;
 }
 
 export interface RunOutcome {
@@ -49,54 +55,20 @@ export interface RunOutcome {
   /** Level po zápisu a jestli se právě změnil. */
   level: number;
   levelUp: boolean;
+  /** XP po zápisu a kolik jich hra dala. */
+  xp: number;
+  xpGained: number;
+  /** Dharma verdikt (null = hra se nepočítala). */
+  dharma: DharmaVerdict | null;
   /** Dokončení odeslání na tabuli (null = neposílalo se). */
   posted: Promise<void> | null;
 }
 
 /**
- * Level z počtu dohraných her — ne z žetonů, protože ty se utrácejí za kolo
- * a hráč by po jízdě „zdegradoval", což nedává smysl.
- *
- * Křivka: 0 her = 1, 2 = 2, 8 = 3, 18 = 4, 32 = 5, 50 = 6 … (2·(L−1)²).
- */
-export function levelFor(runs: number): number {
-  if (!Number.isFinite(runs) || runs <= 0) return 1;
-  return Math.floor(Math.sqrt(runs / 2)) + 1;
-}
-
-/** Kolik her potřebuješ na daný level (spodní hranice). */
-export function runsForLevel(level: number): number {
-  const safe = Math.max(1, Math.floor(level));
-  return 2 * (safe - 1) ** 2;
-}
-
-export interface LevelProgress {
-  level: number;
-  /** 0..1 — jak daleko jsi k dalšímu levelu. */
-  ratio: number;
-  /** Kolik her ještě chybí do dalšího levelu. */
-  remaining: number;
-  next: number;
-}
-
-export function levelProgress(runs: number): LevelProgress {
-  const level = levelFor(runs);
-  const from = runsForLevel(level);
-  const to = runsForLevel(level + 1);
-  const span = Math.max(1, to - from);
-  return {
-    level,
-    ratio: Math.max(0, Math.min(1, (runs - from) / span)),
-    remaining: Math.max(0, to - runs),
-    next: to,
-  };
-}
-
-/**
  * Zapiš dohranou hru. Volá se **jednou** po skončení zápasu, ne průběžně.
  *
- * Vrací i `tokensGained`, aby si stránka mohla složit vlastní hlášku
- * („rekord · +3 žetony · denní výzva +5").
+ * Vrací i `tokensGained` / `xpGained` / `dharma`, aby si stránka mohla
+ * složit vlastní hlášku („rekord · +3 žetony · +48 XP · ☸ 4/5").
  */
 export function recordRun(input: RunInput): RunOutcome {
   const profile = loadProfile();
@@ -108,24 +80,43 @@ export function recordRun(input: RunInput): RunOutcome {
       tokensGained: 0,
       personalBest: false,
       challengeClaimed: false,
-      level: levelFor(profile.runs),
+      level: levelFromXp(profile.xp),
       levelUp: false,
+      xp: profile.xp,
+      xpGained: 0,
+      dharma: null,
       posted: null,
     };
   }
 
   const score = Math.max(0, Math.round(input.score));
-  const before = levelFor(profile.runs);
+  const before = levelFromXp(profile.xp);
   let posted: Promise<void> | null = null;
+
+  // dharma validace běží před zápisem — její násobek patří do XP
+  const verdict = validateRun({ ...input.metrics, score });
 
   const awarded: RunResult = awardRun(profile, input.game, score);
   let next = awarded.profile;
   const challenge = claimChallenge(next, input.game, score);
   next = challenge.profile;
   if (input.bonus && input.bonus > 0) next = grantTokens(next, input.bonus);
+
+  const xpGained = xpForRun({
+    game: input.game,
+    score,
+    completed: input.metrics?.completed === true,
+    best: awarded.personalBest,
+    dharmaBonus: verdict.bonus,
+  });
+  next = {
+    ...next,
+    xp: next.xp + xpGained,
+    dharma: applyVerdict(next.dharma, verdict),
+  };
   saveProfile(next);
 
-  const after = levelFor(next.runs);
+  const after = levelFromXp(next.xp);
 
   if (input.nickname) {
     posted = fetch('/api/park/scores', {
@@ -146,6 +137,9 @@ export function recordRun(input: RunInput): RunOutcome {
     challengeClaimed: challenge.claimed,
     level: after,
     levelUp: after > before,
+    xp: next.xp,
+    xpGained,
+    dharma: verdict,
     posted,
   };
 }
@@ -164,11 +158,22 @@ export function nickname(fallback = 'hrac'): string {
   }
 }
 
+/** Krátká značka verdiktu do hlášky (`☸ pečeť`, `☸ 4/5`). */
+export function dharmaLabel(verdict: DharmaVerdict | null, cs: boolean): string {
+  if (!verdict) return '';
+  if (verdict.grade === 'seal') return cs ? '☸ dharma pečeť' : '☸ dharma seal';
+  if (verdict.grade === 'pass') return cs ? `☸ ${verdict.passed}/5` : `☸ ${verdict.passed}/5`;
+  if (verdict.grade === 'partial') return cs ? `☸ ${verdict.passed}/5` : `☸ ${verdict.passed}/5`;
+  return cs ? '☸ neúplné' : '☸ incomplete';
+}
+
 /** Lidsky čitelná hláška po dohrané hře (jedna pro všechny hry). */
 export function describeRun(outcome: RunOutcome, cs: boolean, extra: string[] = []): string {
   const bits: string[] = [...extra];
   if (outcome.personalBest) bits.push(cs ? 'rekord' : 'record');
   if (outcome.tokensGained > 0) bits.push(`+${outcome.tokensGained} ${cs ? 'žetonů' : 'tokens'}`);
+  if (outcome.xpGained > 0) bits.push(`+${outcome.xpGained} XP`);
+  if (outcome.dharma) bits.push(dharmaLabel(outcome.dharma, cs));
   if (outcome.challengeClaimed) bits.push(cs ? `denní výzva +${CHALLENGE_REWARD}` : `daily +${CHALLENGE_REWARD}`);
   if (outcome.levelUp) bits.push(cs ? `level ${outcome.level}` : `level ${outcome.level}`);
   if (bits.length === 0) bits.push(cs ? 'zapsáno' : 'recorded');

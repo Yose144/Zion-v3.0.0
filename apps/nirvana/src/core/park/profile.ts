@@ -1,4 +1,5 @@
 import type { ParkGameId } from './games';
+import { type DharmaSealState, EMPTY_DHARMA } from '@/core/progress/dharma';
 
 /**
  * Žetony a osobní rekordy. Všechno jen v prohlížeči — park nehraje o peníze
@@ -18,6 +19,10 @@ export interface ParkProfile {
   challengeDay: string | null;
   /** Den poslední dokončené jízdy na kole — bonus za první jízdu dne. */
   rideDay: string | null;
+  /** Zkušenosti (2026-11-11). Level se počítá z nich, ne z počtu her. */
+  xp: number;
+  /** Dharma validace — pečeti a poslední verdikt. */
+  dharma: DharmaSealState;
 }
 
 export const WHEEL_COST = 1;
@@ -31,7 +36,18 @@ const EMPTY: ParkProfile = {
   tickets: 0,
   challengeDay: null,
   rideDay: null,
+  xp: 0,
+  dharma: EMPTY_DHARMA,
 };
+
+/**
+ * Migrace starého profilu: level dřív rostl z počtu her (`2·(L−1)²`) a nová
+ * křivka je `120·(L−1)²` z XP. `runs × 60` dá přesně stejný level, takže
+ * nikdo po aktualizaci „nezdegraduje" (test to hlídá).
+ */
+function migratedXp(runs: number): number {
+  return Math.max(0, Math.floor(runs)) * 60;
+}
 
 export function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -51,6 +67,18 @@ export function loadProfile(): ParkProfile {
       tickets: Math.max(0, Math.floor(Number(parsed.tickets) || 0)),
       challengeDay: typeof parsed.challengeDay === 'string' ? parsed.challengeDay : null,
       rideDay: typeof parsed.rideDay === 'string' ? parsed.rideDay : null,
+      xp:
+        parsed.xp === undefined || parsed.xp === null
+          ? migratedXp(Number(parsed.runs) || 0)
+          : Math.max(0, Math.floor(Number(parsed.xp) || 0)),
+      dharma:
+        parsed.dharma && typeof parsed.dharma === 'object'
+          ? {
+              seals: Math.max(0, Math.floor(Number((parsed.dharma as DharmaSealState).seals) || 0)),
+              validations: Math.max(0, Math.floor(Number((parsed.dharma as DharmaSealState).validations) || 0)),
+              last: (parsed.dharma as DharmaSealState).last ?? null,
+            }
+          : EMPTY_DHARMA,
     };
     // denní vstupenka: první návštěva dne dostane žeton na kolo
     if (profile.day !== today()) {
@@ -69,6 +97,14 @@ export function saveProfile(profile: ParkProfile): void {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
   } catch {
     // soukromý režim — hra jede dál, jen si nic nepamatuje
+  }
+  // Lišta a panel Cesty čtou profil při mountu a při `focus`; hra, která
+  // skončí bez navigace, by jinak ukazovala stará čísla (přesně to se
+  // stalo: po dohraném Neptunu měl panel XP 0 a žádný verdikt).
+  try {
+    window.dispatchEvent(new CustomEvent('nirvana:profile'));
+  } catch {
+    // staré prohlížeče bez CustomEvent — čísla se dohoní při focus
   }
 }
 

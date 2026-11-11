@@ -133,7 +133,17 @@ export default function NeptunePage() {
     (outcome: DiveResult) => {
       setResult(outcome);
       setPhase('over');
-      const run = recordRun({ game: 'neptune', score: outcome.score, nickname: pickNickname() });
+      const run = recordRun({
+        game: 'neptune',
+        score: outcome.score,
+        nickname: pickNickname(),
+        metrics: {
+          seconds: outcome.elapsed,
+          completed: outcome.end === 'bottom',
+          objectives: outcome.lights,
+          objectivesTotal: outcome.totalLights,
+        },
+      });
       setRecord(run.personalBest);
       setNotice(describeRun(run, cs));
     },

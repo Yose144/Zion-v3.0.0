@@ -11308,3 +11308,267 @@ a.game-hud-chip.is-lumi em {
     display: none;
   }
 }
+
+/* ── CESTA (XP + dharma) ────────────────────────────────────────────
+ * Panel se otevírá z ★ v herní liště. Level je velký, protože je to
+ * jediné číslo, které hráč sleduje dlouhodobě; pět pilířů je pod ním
+ * a každý má vlastní řádek — bez vysvětlení by „dharma" byla jen
+ * záhadná ikona.
+ */
+.path-panel {
+  width: min(34rem, 100%);
+  max-height: min(88vh, 44rem);
+  overflow-y: auto;
+}
+
+.path-level {
+  display: flex;
+  gap: 0.9rem;
+  align-items: center;
+  padding: 0.8rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(255, 209, 102, 0.22);
+  background: rgba(255, 209, 102, 0.06);
+}
+
+.path-level-badge {
+  display: grid;
+  place-items: center;
+  gap: 0.1rem;
+  min-width: 5.4rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  background: rgba(255, 209, 102, 0.1);
+}
+
+.path-level-badge em {
+  font-style: normal;
+  font-size: 0.8rem;
+  color: #ffd166;
+}
+
+.path-level-badge strong {
+  font-size: 1.8rem;
+  line-height: 1;
+  color: #ffe9a8;
+  font-variant-numeric: tabular-nums;
+}
+
+.path-level-badge span {
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 233, 168, 0.7);
+}
+
+.path-level-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.path-bar {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 209, 102, 0.16);
+  overflow: hidden;
+}
+
+.path-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ffb347, #ffe9a8);
+  transition: width 0.15s linear;
+}
+
+.path-level-body p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(246, 231, 216, 0.9);
+  font-variant-numeric: tabular-nums;
+}
+
+.path-level-body p span {
+  color: rgba(246, 231, 216, 0.55);
+}
+
+.path-level-note {
+  font-size: 0.64rem !important;
+  line-height: 1.45;
+  color: rgba(246, 231, 216, 0.5) !important;
+}
+
+.path-dharma {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.8rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(159, 240, 226, 0.2);
+  background: rgba(159, 240, 226, 0.05);
+}
+
+.path-dharma > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.path-dharma > header strong {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  color: #9df0e2;
+}
+
+.path-dharma > header span {
+  font-size: 0.64rem;
+  color: rgba(246, 231, 216, 0.55);
+  font-variant-numeric: tabular-nums;
+}
+
+.path-verdict {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.path-verdict span {
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+
+.path-verdict em {
+  font-style: normal;
+  color: rgba(246, 231, 216, 0.6);
+  font-variant-numeric: tabular-nums;
+}
+
+.path-verdict.is-seal span {
+  color: #ffd166;
+}
+
+.path-verdict.is-pass span {
+  color: #9df0e2;
+}
+
+.path-verdict.is-partial span {
+  color: #ffb46a;
+}
+
+.path-verdict.is-thin span {
+  color: #ff9a7a;
+}
+
+.path-verdict.is-none {
+  color: rgba(246, 231, 216, 0.55);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.72rem;
+}
+
+.path-pillars {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.path-pillars li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.55rem;
+  background: rgba(6, 8, 14, 0.45);
+  border: 1px solid transparent;
+}
+
+.path-pillars li.is-pass {
+  border-color: rgba(159, 240, 226, 0.28);
+}
+
+.path-pillars li.is-fail {
+  border-color: rgba(255, 154, 122, 0.22);
+  opacity: 0.75;
+}
+
+.path-pillar-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-top: 0.32rem;
+  border-radius: 50%;
+  background: rgba(246, 231, 216, 0.25);
+  flex: 0 0 auto;
+}
+
+.path-pillars li.is-pass .path-pillar-dot {
+  background: #9df0e2;
+  box-shadow: 0 0 8px rgba(159, 240, 226, 0.6);
+}
+
+.path-pillars li.is-fail .path-pillar-dot {
+  background: #ff9a7a;
+}
+
+.path-pillars li > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.path-pillars strong {
+  font-size: 0.72rem;
+  color: rgba(246, 231, 216, 0.92);
+}
+
+.path-pillars span {
+  font-size: 0.64rem;
+  line-height: 1.4;
+  color: rgba(246, 231, 216, 0.5);
+}
+
+.path-pillars em {
+  font-style: normal;
+  font-size: 0.8rem;
+  color: rgba(159, 240, 226, 0.9);
+  flex: 0 0 auto;
+}
+
+.path-pillars li.is-fail em {
+  color: rgba(255, 154, 122, 0.9);
+}
+
+.path-note {
+  margin: 0;
+  font-size: 0.62rem;
+  line-height: 1.5;
+  color: rgba(246, 231, 216, 0.42);
+}
+
+@media (max-width: 560px) {
+  .path-level {
+    align-items: flex-start;
+  }
+
+  .path-level-badge {
+    min-width: 4.4rem;
+  }
+
+  .path-level-badge strong {
+    font-size: 1.5rem;
+  }
+}

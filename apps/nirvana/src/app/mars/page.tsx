@@ -236,7 +236,19 @@ export default function MarsPage() {
       setPhase('over');
       if (document.pointerLockElement) void document.exitPointerLock();
 
-      const result = recordRun({ game: 'arena', score: outcome.score, nickname: pickNickname() });
+      const result = recordRun({
+        game: 'arena',
+        score: outcome.score,
+        nickname: pickNickname(),
+        metrics: {
+          // čas zápasu není ve výsledku — bere se z konstanty zápasu (180 s)
+          seconds: 180,
+          completed: outcome.reason === 'frags',
+          objectives: outcome.frags,
+          objectivesTotal: 10,
+          setbacks: outcome.deaths,
+        },
+      });
       setNotice(
         describeRun(result, cs, [outcome.reason === 'frags' ? 'frag limit' : l('time')]),
       );

@@ -192,6 +192,14 @@ export default function MercuryPage() {
         score,
         nickname: pickNickname(you?.name || 'hrac'),
         bonus: result.winner === 'self' ? 2 : 0,
+        metrics: {
+          // souboj nemá výsledný čas — bere se počet kol jako „objektivy"
+          seconds: 30 + (result.selfWins + result.foeWins) * 20,
+          completed: result.winner === 'self',
+          objectives: result.selfWins,
+          objectivesTotal: Math.max(1, result.selfWins + result.foeWins),
+          setbacks: result.foeWins,
+        },
       });
       setNotice(describeRun(outcome, cs, result.winner === 'self' ? [l('win')] : []));
     },
@@ -221,6 +229,13 @@ export default function MercuryPage() {
       score,
       nickname: pickNickname(you?.name || 'hrac'),
       bonus: won ? 2 : 0,
+      metrics: {
+        seconds: 30 + (mpStats.selfWins + mpStats.foeWins) * 20,
+        completed: won,
+        objectives: mpStats.selfWins,
+        objectivesTotal: Math.max(1, mpStats.selfWins + mpStats.foeWins),
+        setbacks: mpStats.foeWins,
+      },
     });
     setNotice(describeRun(result, cs, won ? [l('win')] : []));
   }, [source, phase, mpStats, cs, you?.name, watch, l]);

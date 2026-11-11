@@ -37,7 +37,7 @@ const GAMES: ParkGameId[] = [
 ];
 
 /** Cíle podle toho, kolik bodů hra reálně dává. */
-const TARGETS: Record<ParkGameId, number> = {
+export const CHALLENGE_TARGETS: Record<ParkGameId, number> = {
   pong: 500, // 5 bodů ve Pongu
   breakout: 300, // 30 cihel
   snake: 200, // 8 jablek
@@ -78,7 +78,7 @@ export function dailyChallenge(date = new Date()): DailyChallenge {
   const day = dayKey(date);
   const seed = hash(day);
   const game = GAMES[seed % GAMES.length]!;
-  return { day, game, target: TARGETS[game], reward: CHALLENGE_REWARD };
+  return { day, game, target: CHALLENGE_TARGETS[game], reward: CHALLENGE_REWARD };
 }
 
 export interface ChallengeResult {

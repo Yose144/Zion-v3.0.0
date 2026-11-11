@@ -319,6 +319,14 @@ export default function EarthPage() {
       game: 'moba',
       score,
       nickname: pickNickname(),
+      metrics: {
+        // zápas nemá ve snapshotu čas konce — bere se typická délka zápasu
+        seconds: 240,
+        completed: won,
+        objectives: stats.kills,
+        objectivesTotal: Math.max(1, stats.kills + (stats.deaths ?? 0)),
+        setbacks: stats.deaths ?? 0,
+      },
     });
 
     // ── mistrovství hrdiny (kosmetické, bez vlivu na hru) ──────────

@@ -3223,3 +3223,50 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   prošel na 390×844 i 844×390.
 - **Meze:** sólo, VR jen kód (netestováno na headsetu), zvuk je syntéza
   (`shrineOpen`, `gust`, `lightPickup`, `victory`, `over`), mobil emulovaný.
+
+## Cesta — XP a dharma validátor (2026-11-11)
+
+- **Level už neroste z počtu her.** Dřív `2·(L−1)²` her → level; hra za
+  2 body a hra za rekord daly stejně. Teď rozhoduje **XP** z výkonu
+  (`core/progress/xp.ts`): skóre proti cíli světa (strop 1,5×), dokončení
+  ×1,25, rekord ×1,15 a násobek z dharma validace. Křivka je stejná
+  (`120·(L−1)²`), takže starý profil se migruje `xp = runs × 60` a level
+  se **nezmění** — hlídá to test (`test/progress.mjs`).
+- **XP se počítá per svět, ne z raw skóre.** Pong dá 5 bodů a MOBA 4000;
+  `GAME_XP` a `CHALLENGE_TARGETS` (jediná tabulka „co je dobrý výkon",
+  exportovaná z `challenge.ts`) to srovnávají. Kdo přidá hru, přidá
+  řádek do `GAME_XP` a `CHALLENGE_TARGETS`.
+- **Dharma validátor je pět pilířů z `PoC-lab/poc-verifier`** přenesených
+  na herní běh (`core/progress/dharma.ts`): Ahiṃsā (neodešel jsi),
+  Satya (běh je skutečný), Hita (přinesl něco), Smṛti (prošel jsi svět /
+  dal jsi druhým), Kāla (čas dával smysl). Váhy 20 each, verdikt
+  `seal | pass | partial | thin`, násobek XP 0–50 %.
+- **Chybějící údaj NENÍ nula.** Hra, která o sobě nic neřekne (staré
+  kabinety), dostane neutrální 0,6–0,85, takže se z nezměřeného běhu
+  nestane „špatný hráč". Rozlišené je i „nevíme skóre" vs „skóre je 0".
+- **Pilíře nikdy neodečítají.** Žádné minus XP, žádné banování — jen
+  násobek a pečeť. Hráč, který si zahraje špatně, má stejné skóre i žetony.
+- **Validace běží PŘED zápisem**, protože její násobek patří do XP.
+  `recordRun()` vrací `xpGained`, `dharma` a `level` (z XP); `describeRun()`
+  přidává `+N XP` a `☸ 4/5` do hlášky každé hry — proto to vidí všech
+  osm napojených povrchů bez dalšího kódu.
+- **Napojené hry** (posílají `metrics`): Neptun (světla, dno), Pluto
+  (lampy, srdce), Lumi (světla + dar), Piko (bóje/vlny, wipy), Venuše
+  (kola), Mars (fragy, smrti), Merkur (kola, prohry), MOBA (výhra, kills,
+  deaths). Park kabinety, tanky a flotilu jde doplnit stejným vzorem.
+- **🔴 Panely patří MIMO `.game-hud`.** Ta má `backdrop-filter: blur(9px)`,
+  který vytváří **containing block pro `position: fixed`** — backdrop se
+  uvnitř lišty smrskl na 38 px a okno (Cesta i Žebříčky!) vyjelo pod
+  obrazovku. Byla to pre-existing chyba u Žebřičků, odhalil ji až audit
+  Cesty. Kdo přidá další modální okno, vykreslí ho jako **sourozence**
+  `<nav>`, ne jako její dítě.
+- **Profil se mění i bez navigace.** `saveProfile()` posílá
+  `window` událost `nirvana:profile`; HUD ji poslouchá. Dřív se čísla
+  (žetony, level) srovnala až při `focus`, takže po dohrané hře panel
+  Cesty ukazoval XP 0 a „žádná validace".
+- **Audit:** `node e2e/path-audit.mjs` (19 kontrol — panel, prázdný profil,
+  dohraná hra zapíše XP i dharmu, panel po hře, dotyk). Testy:
+  `npx tsx test/dharma.mjs` (52) a `test/progress.mjs` (XP křivka,
+  migrace, dharma v `recordRun`).
+- **Meze:** XP i dharma jsou jen v prohlížeči (`localStorage`) — stejně
+  jako žetony a rekordy. Nic z toho není on-chain a nedá se směnit.

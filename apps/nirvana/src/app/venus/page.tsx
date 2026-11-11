@@ -86,7 +86,18 @@ export default function VenusPage() {
       setPhase('over');
       const score = raceScore(outcome.totalSeconds, outcome.laps);
       const podium = PODIUM_TOKENS[outcome.position - 1] ?? 0;
-      const result = recordRun({ game: 'race', score, nickname: pickNickname(), bonus: podium });
+      const result = recordRun({
+        game: 'race',
+        score,
+        nickname: pickNickname(),
+        bonus: podium,
+        metrics: {
+          seconds: outcome.totalSeconds,
+          completed: true,
+          objectives: outcome.laps,
+          objectivesTotal: outcome.laps,
+        },
+      });
       setNotice(describeRun(result, cs));
     },
     [cs],

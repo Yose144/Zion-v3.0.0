@@ -188,7 +188,18 @@ export default function PikoPage() {
       setResult(outcome);
       setPhase('over');
 
-      const run = recordRun({ game: 'piko', score: outcome.score, nickname: pickNickname() });
+      const run = recordRun({
+        game: 'piko',
+        score: outcome.score,
+        nickname: pickNickname(),
+        metrics: {
+          seconds: outcome.elapsed,
+          completed: outcome.mode === 'canoe' ? outcome.gates >= PIKO_GATES.length : outcome.waves >= SURF.waves,
+          objectives: outcome.mode === 'canoe' ? outcome.gates : outcome.waves,
+          objectivesTotal: outcome.mode === 'canoe' ? PIKO_GATES.length : SURF.waves,
+          setbacks: outcome.wipes,
+        },
+      });
       setNotice(describeRun(run, cs));
 
       // pas: medaile, rekord, odemčené skiny, duch
