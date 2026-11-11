@@ -81,6 +81,7 @@ export const DUEL_COPY = {
   startMode: { cs: 'Spustit zápas', en: 'Start match', es: 'Empezar combate' },
   ballHint: { cs: 'míč do branky', en: 'ball into the goal', es: 'balón a la portería' },
   kickoff: { cs: 'výkop', en: 'kickoff', es: 'saque' },
+  goal: { cs: 'GÓL', en: 'GOAL', es: 'GOL' },
   contested: { cs: 'souboj v zóně', en: 'zone contested', es: 'zona disputada' },
   vsBot: { cs: 'proti botovi', en: 'vs bot', es: 'contra el bot' },
   moveShort: { cs: 'pohyb', en: 'move', es: 'movimiento' },

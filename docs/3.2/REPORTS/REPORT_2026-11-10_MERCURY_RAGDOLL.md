@@ -213,6 +213,9 @@ góly, vlny a držení kopce.
 - **Online guard break:** z poklesu `guard` ve snapshotu se ukáže
   `GUARD BREAK` (bez nového pole v protokolu).
 
+- **Zvuk:** KO (`ko`), zlom krytu (`block`), gól (`bell`), kombo ≥3
+  (stoupající tón). Gól se ukáže jako `GÓL` nad míčem.
+
 ## Protokol 35
 
 Tuning mění **význam** HP (MAX_HP 160) a poškození, i když formát zpráv

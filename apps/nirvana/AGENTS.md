@@ -2743,6 +2743,9 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   „souboj v zóně“ (držení je pozastavené).
 - **Online guard break:** pozná se z poklesu `guard` ve snapshotu a ukáže
   `GUARD BREAK` stejně jako v sólu.
+- **Zvuk a gól:** `MercurySolo` hraje `ko` při KO, `block` při zlomu krytu,
+  `bell` při gólu a krátký stoupající tón při kombu ≥3. Gól se navíc ukáže
+  jako `GÓL` nad míčem (`goalLabel` z `l('goal')`).
 - **Pozor na testy:** `damageFighter(..., 100, ...)` už nestačí na KO
   (MAX_HP 160) — používej `MAX_HP`; výkop už není `ball.x > 1`, ale střed
   + `match.kickoff.side`.

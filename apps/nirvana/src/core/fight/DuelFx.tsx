@@ -12,7 +12,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-export type DuelFxKind = 'out' | 'in' | 'ko' | 'guard' | 'combo' | 'hill';
+export type DuelFxKind = 'out' | 'in' | 'ko' | 'guard' | 'combo' | 'hill' | 'goal';
 
 export interface DuelFloater {
   id: number;
@@ -89,6 +89,8 @@ function colorOf(kind: DuelFxKind): string {
       return '#ffb46a';
     case 'hill':
       return '#c8f56a';
+    case 'goal':
+      return '#ffe066';
     default:
       return '#ffe9a8';
   }

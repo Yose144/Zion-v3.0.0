@@ -24,6 +24,7 @@ import {
 } from './ragdoll';
 import { clearFx, pushHitFx, pushTextFx, type DuelFloater } from './DuelFx';
 import { createDuelSound } from './audio';
+import { play, playTone } from '@/core/audio/engine';
 import { useFightKeys } from './useFightKeys';
 import { DuelXr } from './FightXr';
 import { avatarLook } from '../avatars/kit';
@@ -132,6 +133,7 @@ export function MercurySolo({
   onFinish,
   floaters,
   cameraRef,
+  goalLabel = 'GOAL',
 }: {
   running: boolean;
   xr?: boolean;
@@ -144,6 +146,8 @@ export function MercurySolo({
   /** Plovoucí čísla zásahů (kreslí se v `DuelFxOverlay` nad plátnem). */
   floaters?: MutableRefObject<DuelFloater[]>;
   cameraRef?: MutableRefObject<THREE.Camera | null>;
+  /** Lokalizovaný nápis gólu ("GÓL"/"GOAL"). */
+  goalLabel?: string;
 }) {
   const keys = useFightKeys(running);
   const reducedMotion = useReducedMotion();
@@ -187,7 +191,11 @@ export function MercurySolo({
         if (fx && event.combo >= 3) {
           pushTextFx(fx, event.x, event.y + 0.7, `×${event.combo}`, 'combo', now);
         }
+        if (event.combo >= 3) {
+          playTone({ freq: 440 + event.combo * 30, duration: 0.08, type: 'triangle', gain: 0.04 });
+        }
       } else if (event.kind === 'guard_break') {
+        play('block');
         const fighter = event.id === 'self' ? match.a : match.b;
         if (fx) {
           pushTextFx(fx, fighter.x[P.CHEST]!, fighter.y[P.CHEST]! + 0.8, 'GUARD BREAK', 'guard', now);
@@ -195,7 +203,12 @@ export function MercurySolo({
       } else if (event.kind === 'ko') {
         const loser = event.loser === 'self' ? match.a : match.b;
         if (fx) pushTextFx(fx, loser.x[P.CHEST]!, loser.y[P.CHEST]! + 0.9, 'K.O.', 'ko', now);
+        play('ko');
         if (!reducedMotion) slowUntil.current = clock.current + KO_SLOW_SECONDS;
+      } else if (event.kind === 'goal') {
+        const ball = match.ball;
+        if (fx && ball) pushTextFx(fx, ball.x, ball.y + 1.1, goalLabel, 'goal', now);
+        play('bell');
       } else if (event.kind === 'hill_win') {
         if (fx) pushTextFx(fx, 0, 2.4, 'HILL', 'hill', now);
       } else if (event.kind === 'match_end') {

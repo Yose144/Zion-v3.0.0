@@ -21,6 +21,7 @@ import { useNet } from '@/core/net/useNet';
 import type { FightPlayerState, ServerMessage } from '@/core/net/protocol';
 import { avatarLook, type AvatarLook } from '../avatars/kit';
 import { dampFactor } from '@/core/design/motion';
+import { play } from '@/core/audio/engine';
 
 /**
  * MERKUR — online ragdoll duel. Server je autorita fyziky i zásahů; klient
@@ -186,6 +187,7 @@ export function MercuryDuel({
       const now = performance.now();
       if (typeof wire.guard === 'number' && beforeGuard >= 0.02 && wire.guard < 0.02) {
         pushTextFx(floaters.current, center.x, center.y + 0.8, 'GUARD BREAK', 'guard', now);
+        play('block');
       }
       if (beforeHp - wire.hp >= 1) {
         pushHitFx(floaters.current, center.x, center.y + 0.15, beforeHp - wire.hp, mine ? 'in' : 'out', now);

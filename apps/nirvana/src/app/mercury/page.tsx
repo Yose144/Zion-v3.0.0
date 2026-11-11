@@ -278,6 +278,7 @@ export default function MercuryPage() {
                 onFinish={handleSoloFinish}
                 floaters={fx}
                 cameraRef={cameraRef}
+                goalLabel={l('goal')}
               />
             )}
           </XR>
