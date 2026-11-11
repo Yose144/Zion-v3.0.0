@@ -235,6 +235,7 @@ model ShopOrder {
   customerWalletSeed   String?  @db.Text
   customerWalletPublicKey String?
   customerWalletSecretKey String?  @db.Text
+  giftClaimToken    String?  @unique // veřejný odkaz /gift/<token> — bearer token pro stránku dárku
   trackingNumber       String?
   shippedAt            DateTime?
   paidAt               DateTime?

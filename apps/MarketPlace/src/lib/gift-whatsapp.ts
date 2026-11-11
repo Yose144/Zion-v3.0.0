@@ -1,19 +1,23 @@
 // ── WhatsApp share pro admin dárky ────────────────────────────────────
 // wa.me deep link: admin klikne, WhatsApp Web se otevře s předvyplněnou
 // zprávou a on ji pošle ze svého čísla. Žádná Business API, žádný poplatek.
-// Zpráva nese i seed — uživatel to explicitně schválil (11. 11. 2026).
+// Zpráva nese odkaz na stránku /gift/<token> — seed a detaily jsou jen tam
+// ( bearer token v URL ), ne v WhatsApp/Meta serverech.
 
-import { decryptSecret } from './crypto';
+import { randomBytes } from 'crypto';
+import { prisma } from './db';
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://market.zionterranova.com';
 
 export interface GiftWhatsappInput {
   orderId: string;
   customerName?: string | null;
   amountZion?: number | null;
-  walletAddress?: string | null;
-  walletSeedEnc?: string | null;
   passCode?: string | null;
   bookUrl?: string | null;
   bonusTxHash?: string | null;
+  giftUrl?: string | null;
 }
 
 /** Placeholder, který route ukládá když telefon chybí — pro wa.me je to nesmysl. */
@@ -34,19 +38,37 @@ export function normalizeWhatsappPhone(raw: string | null | undefined): string |
   return d;
 }
 
-function safeDecryptSeed(enc: string | null | undefined): string | null {
-  if (!enc) return null;
-  try {
-    return decryptSecret(enc);
-  } catch {
-    return null;
-  }
+/**
+ * Atomicky zajistí giftClaimToken pro objednávku (bearer token pro /gift/<token>).
+ * Existující token se nemění; při souběhu vyhraje updateMany s NULL podmínkou.
+ */
+export async function ensureGiftClaimToken(
+  orderId: string,
+  existing?: string | null
+): Promise<string | null> {
+  if (existing) return existing;
+  const token = randomBytes(24).toString('base64url');
+  const claim = await prisma.shopOrder
+    .updateMany({
+      where: { orderId, giftClaimToken: null },
+      data: { giftClaimToken: token },
+    })
+    .catch(() => null);
+  if (claim && claim.count === 1) return token;
+  const again = await prisma.shopOrder.findUnique({
+    where: { orderId },
+    select: { giftClaimToken: true },
+  });
+  return again?.giftClaimToken ?? null;
 }
 
-/** Sestaví text zprávy. Vrací null, když není co posílat (žádná wallet ani obsah). */
+export function giftPageUrl(token: string): string {
+  return `${SITE_URL}/gift/${token}`;
+}
+
+/** Sestaví text zprávy. Vrací null, když není co posílat. */
 export function buildGiftWhatsappMessage(input: GiftWhatsappInput): string | null {
-  const seed = safeDecryptSeed(input.walletSeedEnc);
-  const wallet = input.walletAddress?.trim() || null;
+  const giftUrl = input.giftUrl?.trim() || null;
   const pass = input.passCode?.trim() || null;
   const book = input.bookUrl?.trim() || null;
   const tx = input.bonusTxHash?.trim() || null;
@@ -55,33 +77,44 @@ export function buildGiftWhatsappMessage(input: GiftWhatsappInput): string | nul
       ? `${input.amountZion.toLocaleString('cs-CZ')} ZION`
       : null;
 
-  if (!wallet && !pass && !book && !amount) return null;
+  if (!giftUrl && !pass && !book && !amount) return null;
 
   const name = input.customerName?.trim();
   const lines: string[] = [
-    '🎁 ZION Market — váš dárek od týmu ZION TerraNova',
+    '🎁 *ZION Market — váš dárek od týmu ZION TerraNova*',
     '',
-    name ? `Ahoj ${name}!` : 'Dobrý den!',
+    name ? `Ahoj ${name}! 🌿` : 'Dobrý den! 🌿',
     '',
     'Posíláme vám dárek:',
   ];
-  if (amount) lines.push(`💎 ${amount}`);
-  if (wallet) lines.push(`🔐 Adresa peněženky: ${wallet}`);
-  if (seed) lines.push(`🌱 Seed phrase (12 slov): ${seed}`);
-  if (seed || wallet) {
+  if (amount) lines.push(`💎 *${amount}*`);
+  if (pass) lines.push(`🎟️ *ZION Archive Pass:* ${pass}`);
+  if (giftUrl) {
+    lines.push('');
+    lines.push('🔗 *Otevřít svůj dárek:*');
+    lines.push(giftUrl);
     lines.push('');
     lines.push(
-      '⚠️ Seed si uložte na bezpečném místu — je to jediný způsob, jak získat plný přístup k tokenům. Nikomu ho neukazujte.'
+      'Na stránce je vše, co potřebujete: adresa i *seed phrase* peněženky, návod na uplatnění pass, kniha a odkazy do Nirvany, Marketu a ZION Archivu. *Uložte si odkaz — je to klíč ke dárku.*'
     );
   }
-  if (pass) lines.push(`🎟️ ZION Archive Pass: ${pass}`);
-  if (book) lines.push(`📖 Kniha Království srdce (PDF + EPUB, 5 jazyků): ${book}`);
+  if (book) {
+    lines.push('');
+    lines.push(`📖 *Království srdce* — kniha (PDF + EPUB, 5 jazyků):`);
+    lines.push(book);
+  }
+  lines.push('');
+  lines.push('Kam vyrazit:');
+  lines.push('🛒 Market: https://market.zionterranova.com');
+  lines.push('🎮 Nirvana: https://nirvana.zionterranova.com');
+  lines.push('🏛️ ZION Archiv: https://app.zionterranova.com/zion-archive');
+  lines.push('💡 Lumi: https://lumi.zionterranova.com');
   lines.push('');
   lines.push(`Objednávka: ${input.orderId}`);
   if (tx) lines.push(`Bonus tx: ${tx}`);
   lines.push('');
   lines.push('S pozdravem,');
-  lines.push('Tým ZION TerraNova');
+  lines.push('Tým ZION TerraNova 🌍');
   return lines.join('\n');
 }
 

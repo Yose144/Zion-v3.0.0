@@ -6,7 +6,11 @@ import { markShopOrderPaid } from '@/lib/shop-zionpay';
 import { distributeOrderBonus } from '@/lib/bonus-payout';
 import { getTokenDistribution } from '@/lib/tokens';
 import { getArchivePassForOrder } from '@/lib/archive-pass';
-import { giftWhatsappPayload } from '@/lib/gift-whatsapp';
+import {
+  giftWhatsappPayload,
+  ensureGiftClaimToken,
+  giftPageUrl,
+} from '@/lib/gift-whatsapp';
 import { randomBytes } from 'crypto';
 import { shopProducts } from '@/data/shopProducts';
 
@@ -115,6 +119,7 @@ export async function POST(request: NextRequest) {
         shippingCzk: 0,
         items: items as Prisma.InputJsonValue,
         zionTokens: amountZion,
+        giftClaimToken: randomBytes(24).toString('base64url'),
         note: body.note?.trim() || null,
         statusHistory: [
           {
@@ -170,11 +175,10 @@ export async function POST(request: NextRequest) {
       orderId,
       customerName: order?.customerName,
       amountZion,
-      walletAddress: order?.customerWalletAddress,
-      walletSeedEnc: order?.customerWalletSeed,
       passCode: pass?.code ?? null,
       bookUrl: withBook ? BOOK_ZIP : null,
       bonusTxHash: bonus.txHash ?? null,
+      giftUrl: order?.giftClaimToken ? giftPageUrl(order.giftClaimToken) : null,
     });
 
     return NextResponse.json({
@@ -218,7 +222,7 @@ export async function GET(request: NextRequest) {
       status: true,
       paymentStatus: true,
       customerWalletAddress: true,
-      customerWalletSeed: true,
+      giftClaimToken: true,
       note: true,
       items: true,
       createdAt: true,
@@ -238,16 +242,16 @@ export async function GET(request: NextRequest) {
           (item as { externalId?: string }).externalId === BOOK_PRODUCT_ID ||
           (item as { externalId?: string }).externalId === 'gift-book',
       ) as { filesUrl?: string } | undefined;
-      const { items: _items, customerWalletSeed, ...rest } = o;
+      const { items: _items, giftClaimToken: _claimToken, ...rest } = o;
+      const claimToken = await ensureGiftClaimToken(o.orderId, o.giftClaimToken);
       const whatsapp = giftWhatsappPayload(o.customerPhone, {
         orderId: o.orderId,
         customerName: o.customerName,
         amountZion: o.zionTokens,
-        walletAddress: o.customerWalletAddress,
-        walletSeedEnc: customerWalletSeed,
         passCode: pass?.code ?? null,
         bookUrl: bookLine?.filesUrl ?? null,
         bonusTxHash: dist?.txHash ?? null,
+        giftUrl: claimToken ? giftPageUrl(claimToken) : null,
       });
       return {
         ...rest,

@@ -209,7 +209,7 @@ export default function AdminGiftsPage() {
         <p className="text-[11px] text-white/40">
           ⚠️ Payout jde okamžitě z pool walletu on-chain. S emailem jdou seed slovy, bonus
           s txHash a potvrzení s pass kódem + ZIP knihy emailem; bez emailu se vše předá přes
-          WhatsApp tlačítko (zpráva obsahuje i seed).
+          WhatsApp tlačítko — zpráva nese odkaz na stránku dárku (/gift/…) se seedem a detaily.
         </p>
       </form>
 
