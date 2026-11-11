@@ -15,7 +15,7 @@
  */
 
 import { PLAYER, lineOfSight, stepBody, type Body, type Box4 } from './physics';
-import { cellCenter, cellIndex, findPath, nearestWalkable, type NavGrid } from './nav';
+import { NAV_CLIMB, cellCenter, cellIndex, findPath, nearestWalkable, type NavGrid } from './nav';
 import { aimVector, TARGET_EYE_RATIO } from './weapons';
 
 export interface BotTarget {
@@ -74,6 +74,12 @@ export interface BotOptions {
   eyeHeight?: number;
   /** Výška středu zásahové koule cíle — `PLAYER.height * TARGET_EYE_RATIO`. */
   targetHeight?: number;
+  /**
+   * Zdroj náhody (`0..1`). Server i hra používají `Math.random`, ale testy
+   * si předají deterministický generátor — jinak je každý běh jiný a
+   * „občas bot nevyjde schody" se nedá reprodukovat.
+   */
+  rng?: () => number;
 }
 
 export const DEFAULT_BOT_OPTIONS: Required<BotOptions> = {
@@ -87,6 +93,7 @@ export const DEFAULT_BOT_OPTIONS: Required<BotOptions> = {
   // stejné hodnoty jako používá server při testu zásahu
   eyeHeight: PLAYER.eye,
   targetHeight: PLAYER.height * TARGET_EYE_RATIO,
+  rng: Math.random,
 };
 
 /**
@@ -196,7 +203,7 @@ export function stepBot(
 
   // ── cesta po mřížce, přepočítaná ~2×/s ─────────────────────────────
   if (now > memory.nextRepath) {
-    memory.nextRepath = now + 480 + Math.random() * 220;
+    memory.nextRepath = now + 480 + opt.rng() * 220;
     const from = nearestWalkable(nav, cellIndex(self.x, self.z));
     const to = nearestWalkable(nav, cellIndex(target.x, target.z));
     memory.path = findPath(nav, from, to);
@@ -210,14 +217,19 @@ export function stepBot(
   if (memory.path.length > 0) {
     while (memory.pathIndex < memory.path.length) {
       const [cx, cz] = cellCenter(memory.path[memory.pathIndex]!);
-      if (Math.hypot(cx - self.x, cz - self.z) < 1.1) memory.pathIndex += 1;
+      if (Math.hypot(cx - self.x, cz - self.z) < 0.6) memory.pathIndex += 1;
       else break;
     }
     const node = memory.path[Math.min(memory.pathIndex, memory.path.length - 1)]!;
     const [wx, wz] = cellCenter(node);
     goalX = wx;
     goalZ = wz;
-    mustClimb = (nav.floor[node] ?? 0) > self.y + 0.35;
+    // Skok má dosah ~1,14 m (`NAV_CLIMB` = 1 m). Když je další buňka výš,
+    // skákat nemá smysl: bot by poskakoval u zdi a na plošinu nikdy nevyšel
+    // (reálně: `test/arena-maps.mjs` na Marsu občas viděl maxY 1,29 místo 2).
+    // V takovém případě má jít po cestě, která vede na schody.
+    const climbDelta = (nav.floor[node] ?? 0) - self.y;
+    mustClimb = climbDelta > 0.35 && climbDelta <= NAV_CLIMB + 0.15;
   }
 
   // ── natočení k cíli ────────────────────────────────────────────────
@@ -230,8 +242,8 @@ export function stepBot(
 
   // chyba míření se obnovuje občas (aby bot nešel do středu přesně)
   if (now > memory.nextShot - opt.fireDelayMs) {
-    memory.aimErrorX = (Math.random() * 2 - 1) * opt.aimError;
-    memory.aimErrorY = (Math.random() * 2 - 1) * opt.aimError * 0.6;
+    memory.aimErrorX = (opt.rng() * 2 - 1) * opt.aimError;
+    memory.aimErrorY = (opt.rng() * 2 - 1) * opt.aimError * 0.6;
   }
 
   const yaw = targetYaw + memory.aimErrorX;
@@ -254,23 +266,37 @@ export function stepBot(
   );
 
   /**
-   * Při cestě po waypointech se nestrafuje naplno — jinak bot vypadne
-   * z úzkých schodů dřív, než vyjde nahoru (reálně se to dělo).
+   * Strafuje se **až když bot dojde na místo** (nebo nemá cestu). Dřív se
+   * strafovalo i po waypointech a bot jednak sjel z 9 m širokého schodiště
+   * na jeho bok, jednak se zasekl o roh pylony (střídavý strafe ho tam držel
+   * jako kyvadlo). Bojový tanec zůstává, jen ne během přesunu.
    */
-  const strafeScale = pathMode ? 0.25 : sees ? 0.9 : 0.4;
+  const strafeScale = pathMode ? 0 : sees ? 0.9 : 0.4;
 
   // ── držení odstupu ─────────────────────────────────────────────────
   const toGoal = Math.hypot(goalX - self.x, goalZ - self.z);
-  const approach = toGoal > 1.2 ? 1 : targetDist > 11 ? 1 : targetDist < 5 ? -1 : 0;
-  if (Math.random() < 0.01) memory.strafeDir = memory.strafeDir === 1 ? -1 : 1;
+  // `pathMode` má přednost: pravidlo „do 1,2 m od waypointu stoj" jinak
+  // vytvoří mrtvou zónu, kde bot přestane jít a jen strafuje — na schodech
+  // se pak zasekl (a podle toho, kam ho náhoda odnesla, test arény jednou
+  // prošel a jindy ne). Dokud vede cesta, jde se.
+  const approach = pathMode
+    ? 1
+    : toGoal > 1.2
+      ? 1
+      : targetDist > 11
+        ? 1
+        : targetDist < 5
+          ? -1
+          : 0;
+  if (opt.rng() < 0.01) memory.strafeDir = memory.strafeDir === 1 ? -1 : 1;
 
   // Skok tam, kde cesta stoupá (schody/výšková lišta) — bez toho by bot
   // zůstal stát pod plošinou, i když po ní vede cesta. Jinak jen občasný hop.
   const climbJump = mustClimb && now > memory.nextJump;
-  const randomHop = now > memory.nextJump && Math.random() < 0.02;
+  const randomHop = now > memory.nextJump && opt.rng() < 0.02;
   const jump = climbJump || randomHop;
   if (jump) {
-    memory.nextJump = now + (climbJump ? 600 : 1800) + Math.random() * 300;
+    memory.nextJump = now + (climbJump ? 600 : 1800) + opt.rng() * 300;
   }
 
   const fire = sees && targetDist <= opt.engageRange && now > memory.nextShot;

@@ -22,6 +22,7 @@ const check = (name, ok, detail = '') => {
 
 const ARENA_HALF = 19.5;
 
+
 /** Leží tělo (válec) v nějaké krabici? Stejná logika jako `overlaps`. */
 function bodyBlocked(solids, x, z, y, radius, height) {
   for (const box of solids) {
@@ -105,7 +106,10 @@ for (const id of ARENA_MAP_IDS) {
   }
 
   // ── 3b) bot se opravdu dojde (ne jen že existuje cesta) ───────────
-  const options = skillOptions('normal');
+  // Konstantní náhoda = žádný náhodný hop ani strafe flip (ty jen zvyšují
+  // `maxY` skokem na místě a test pak měří šum, ne vyjití schodů). Repath
+  // i míření jsou tím pádem pevné a běh je reprodukovatelný.
+  const options = { ...skillOptions('normal'), rng: () => 0.5 };
   const body = { x: map.botSpawns[0].x, y: 0.2, z: map.botSpawns[0].z, vx: 0, vy: 0, vz: 0, onGround: false };
   const memory = createBotMemory();
   const target = { id: 'player', x: spawn.x, y: 0.2, z: spawn.z, alive: true };
