@@ -78,7 +78,7 @@ Skripty a screenshoty: `/tmp/opencode/mp-engb-check.mjs`, `/tmp/opencode/mp-shot
 
 1. **Engine B = produkční pravda** pro Market a Appku. Deploy z tree bez `HeroSection.module.css`, `lib/design-image.ts` a `public/images/design-v1/` je regrese.
 2. **Paralelní session musí commitovat do `main`.** Commit, který existuje jen na vedlejší linii a přitom je na produkci, je neviditelná past. Při podezření: `git merge-base --is-ancestor <prod-commit> HEAD` a `git log --all -S "<řetězec>"`.
-3. **`heros/` je zdroj pravdy pro vizuály.** Nové dílo se ukládá tam a do `apps/*/public/` jde s `?v=` verzí; nasazení na existující názvy cest drží `heros/shop/Lumi/NASAZENI.md`.
+3. **`heros/` je zdroj pravdy pro vizuály.** Nové dílo se ukládá tam a do `apps/*/public/` jde s `?v=` verzí; nasazení na existující názvy cest drží `heros/shop/Lumi/ZION_Hero_Lumi_2_WebP/NASAZENI.md` (a `ZION_Lumi_2_Vsechny_weby/NASAZENI.md` pro celoekosystémový balíček).
 4. **Při upgradu enginu** aplikuj `code.patch` / slučuj podle `source/apps/…` — nikdy nepřepisuj celé zdrojáky naslepo (`QUICK_UPGRADE.md`).
 
 ## 7. Otevřené body
