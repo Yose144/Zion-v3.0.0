@@ -679,7 +679,9 @@ export default function Lantern3D({ modelUrl, poster, posterAlt }: Props) {
         )}
 
         {phase !== 'ready' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center">
+          // Scrim drží čitelnost popisků i na světlé ilustraci (dřív byl
+          // podklad vždy tmavý render; teď se používá i Engine B obrázek).
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-t from-black/70 via-black/35 to-black/10 p-4 text-center">
             {phase === 'idle' && (
               <>
                 <button

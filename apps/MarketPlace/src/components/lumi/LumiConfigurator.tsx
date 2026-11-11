@@ -51,7 +51,7 @@ export default function LumiConfigurator({
           <Lantern3D
             key={motif.slug}
             modelUrl={motif.model}
-            poster={motif.image}
+            poster={motif.card}
             posterAlt={`${t('lumi.title')} — ${cs ? motif.name.cs : motif.name.en}`}
           />
 
