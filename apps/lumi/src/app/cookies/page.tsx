@@ -15,7 +15,8 @@ export default function CookiesPage() {
       <PageHero kicker={COOKIES.kicker} title={COOKIES.title} lead={COOKIES.lead} compact />
 
       <section className="container-lumi py-14">
-        <div className="overflow-hidden rounded-2xl border border-line bg-card">
+        {/* Desktop tabulka */}
+        <div className="hidden overflow-hidden rounded-2xl border border-line bg-card sm:block">
           <table className="w-full text-sm">
             <thead className="bg-parchment-deep/60 text-left text-[0.65rem] uppercase tracking-[0.12em] text-muted">
               <tr>
@@ -43,6 +44,25 @@ export default function CookiesPage() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobil: karty místo tabulky */}
+        <div className="space-y-3 sm:hidden">
+          {COOKIES.rows.map((row) => (
+            <div key={row.name} className="rounded-2xl border border-line bg-card p-4">
+              <p className="font-mono text-xs font-semibold text-ink">{row.name}</p>
+              <p className="mt-2 text-sm leading-relaxed text-ink-soft">{pick(row.purpose, lang)}</p>
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+                <span>{pick(row.type, lang)}</span>
+                <span>{pick(row.duration, lang)}</span>
+                {!row.necessary && (
+                  <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                    {pick({ cs: 'jen s kartou', en: 'card only', de: 'nur Karte' }, lang)}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
 
         <div className="mt-6 flex items-start gap-3 rounded-2xl border border-line bg-parchment-deep/60 p-6 text-sm leading-relaxed text-ink-soft">
