@@ -24,6 +24,10 @@ const browser = await launch({ headless: true });
 
 async function openPlayer(label) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 820 } });
+  const headers = {};
+  if (process.env.NIRVANA_AUDIT_HEADER === '1') headers['x-render-audit'] = '1';
+  if (process.env.NIRVANA_PASS_COOKIE) headers.cookie = `zion_nirvana_pass=${process.env.NIRVANA_PASS_COOKIE}`;
+  if (Object.keys(headers).length) await page.setExtraHTTPHeaders?.(headers);
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => {
@@ -55,9 +59,9 @@ try {
 
   // Zápas běží. S **mlhou války** ale hráč nevidí celou mapu — vidí svůj
   // tým (a to, co jeho jednotky vidí), takže test nesmí čekat 6 hrdinů.
-  const runningA = await poll(a, (state) => state.phase === 'running' && state.heroes.length >= 1, 45_000);
+  const runningA = await poll(a, (state) => state.phase === 'running' && state.heroes.some((hero) => hero.id === state.you), 45_000);
   check('A: zápas běží', Boolean(runningA), JSON.stringify(await debug(a)));
-  const runningB = await poll(b, (state) => state.phase === 'running' && state.heroes.length >= 1, 45_000);
+  const runningB = await poll(b, (state) => state.phase === 'running' && state.heroes.some((hero) => hero.id === state.you), 45_000);
   check('B: zápas běží', Boolean(runningB));
 
   if (runningA && runningB) {
@@ -104,16 +108,40 @@ try {
     check('mlha: protistrana A nevidí', !bSeesA);
 
     // kouzlo: A sešle Q, B uvidí projektil nebo změnu stavu
+    // Odveď hrdinu z fontány — tam se mana doplňuje ~90/s a dip po kouzle
+    // zmizí dřív, než ho stihneme přečíst. Mimo fontánu je regen 7/s.
+    await a.page.keyboard.down('KeyD');
+    await sleep(2200);
+    await a.page.keyboard.up('KeyD');
+    await sleep(300);
+    // Zamiř do scény (střed = hrdina, kamera ho sleduje), pak sešli Q.
+    await a.page.mouse.click(640, 410);
+    await sleep(200);
     const snapshotBefore = await debug(a);
     await a.page.bringToFront();
     await sleep(200);
     await a.page.keyboard.press('KeyQ');
-    await sleep(900);
-    const snapshotAfter = await debug(a);
     const meBefore = snapshotBefore.heroes.find((hero) => hero.id === snapshotBefore.you);
-    const meAfter = snapshotAfter.heroes.find((hero) => hero.id === snapshotAfter.you);
-    check('kouzlo: A má cooldown', meAfter.cooldowns.Q > 0, JSON.stringify(meAfter.cooldowns));
-    check('kouzlo: A spotřeboval manu', meAfter.mana < meBefore.mana, `${meBefore.mana} → ${meAfter.mana}`);
+    // Mana se ve fontáně doplňuje, takže „hodnota po 900 ms“ může být zase plná.
+    // Sledujeme **dip** napříč snapshoty (a cooldown), ne poslední vzorek.
+    let minMana = meBefore.mana;
+    let cooldownSeen = false;
+    let lastSnap = null;
+    const castStarted = Date.now();
+    while (Date.now() - castStarted < 2200) {
+      const snap = await debug(a);
+      lastSnap = snap;
+      const me = snap?.heroes.find((hero) => hero.id === snap.you);
+      if (me) {
+        minMana = Math.min(minMana, me.mana);
+        if (me.cooldowns.Q > 0) cooldownSeen = true;
+      }
+      if (cooldownSeen && minMana < meBefore.mana) break;
+      await sleep(100);
+    }
+    const meAfter = lastSnap?.heroes.find((hero) => hero.id === lastSnap.you) ?? meBefore;
+    check('kouzlo: A má cooldown', cooldownSeen, `cooldown=${cooldownSeen}`);
+    check('kouzlo: A spotřeboval manu', minMana < meBefore.mana, `${meBefore.mana} → min ${minMana}`);
 
     // minimapa: plátno existuje a má nenulový obsah
     const minimap = await a.page.evaluate(() => {
@@ -129,14 +157,22 @@ try {
 
     // predikce: vlastní hrdina má predikovanou polohu blízko serveru
     const predicted = (await debug(a))?.predicted;
-    // obchod: tři itemy v HUD (startovní zlato 320 < 400 → tlačítka zamčená)
+    // Obchod se od 10. 11. otevírá tlačítkem (panel s doporučením + všemi
+    // itemy), takže test nejdřív panel otevře a počítá reálné položky.
+    await a.page.click('.moba-shop-toggle');
+    await sleep(350);
     const shop = await a.page.evaluate(() => {
       const items = [...document.querySelectorAll('.moba-shop-item')];
-      return { count: items.length, disabled: items.filter((item) => item.disabled).length, gold: document.querySelector('.moba-shop-gold')?.textContent ?? '' };
+      return {
+        count: items.length,
+        disabled: items.filter((item) => item.disabled).length,
+        gold: document.querySelector('.moba-shop-gold')?.textContent ?? '',
+      };
     });
-    check('obchod: tři itemy v HUD', shop.count === 3, JSON.stringify(shop));
-    check('obchod: bez zlata zamčeno', shop.disabled === 3, JSON.stringify(shop));
+    check('obchod: panel má itemy', shop.count >= 3, JSON.stringify(shop));
+    check('obchod: dražší item je bez zlata zamčený', shop.disabled >= 1, JSON.stringify(shop));
     check('obchod: zlato vidět', /\d/.test(shop.gold), shop.gold);
+    await a.page.click('.moba-shop-toggle');
 
     check('predikce: aktivní a u serveru', Boolean(predicted?.active) && Math.hypot(predicted.x - meAfter.x, predicted.z - meAfter.z) < 4, JSON.stringify(predicted));
 

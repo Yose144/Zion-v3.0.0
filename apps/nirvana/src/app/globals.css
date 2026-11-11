@@ -10607,11 +10607,13 @@ a.game-hud-chip.is-lumi em {
   }
 }
 
-/* Na telefonu je panel delší než displej a spodní lišta (z-index 55) sedí
- * nad ním — bez spodního insetu se „Vyplout“ schová pod lištu a nejde
- * kliknout (odhalil to mobilní audit). */
+/* Na telefonu je herní panel často delší než displej a spodní lišta
+ * (`.game-hud`, z-index 55) sedí nad ním. Bez spodního insetu se poslední
+ * akce („Vyplout“, „Spustit zápas“) schovají pod lištu a nejdou kliknout —
+ * odhalil to mobilní audit u Merkura i Pika. Inset je uvnitř scrollovatelné
+ * části, takže se akce dají odscrollovat nad lištu. */
 @media (max-width: 760px) {
-  .piko-panel {
+  .arena-panel {
     padding-bottom: 6.5rem;
   }
 }

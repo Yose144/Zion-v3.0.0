@@ -119,15 +119,67 @@ function gpuArgs() {
   return ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader'];
 }
 
+/**
+ * Sjednotí mediální emulaci mezi Playwrightem a Puppeteerem.
+ *
+ * `page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }])`
+ * je Puppeteer API; Playwright má `page.emulateMedia({ reducedMotion })`.
+ * E2E (flotila) volá první variantu, takže pod Playwrightem tiše nic nedělala
+ * a test „scéna respektuje prefers-reduced-motion“ padal na timeout.
+ */
+function shimPage(page) {
+  if (!page || page.__zionShim) return page;
+  page.__zionShim = true;
+  // Puppeteer: `evaluateOnNewDocument`; Playwright: `addInitScript`
+  if (typeof page.evaluateOnNewDocument !== 'function' && typeof page.addInitScript === 'function') {
+    page.evaluateOnNewDocument = (fn, arg) => page.addInitScript(fn, arg);
+  }
+  if (typeof page.emulateMediaFeatures !== 'function' && typeof page.emulateMedia === 'function') {
+    page.emulateMediaFeatures = async (features = []) => {
+      const media = {};
+      for (const feature of features) {
+        if (feature.name === 'prefers-reduced-motion') media.reducedMotion = feature.value;
+        else if (feature.name === 'prefers-color-scheme') media.colorScheme = feature.value;
+        else if (feature.name === 'prefers-contrast') media.contrast = feature.value;
+        else if (feature.name === 'forced-colors') media.forcedColors = feature.value;
+      }
+      await page.emulateMedia(media);
+    };
+  }
+  return page;
+}
+
+/** Obalí `newPage`/`newContext` tak, aby každá stránka měla `emulateMediaFeatures`. */
+function shimBrowser(browser) {
+  if (typeof browser.newPage === 'function') {
+    const original = browser.newPage.bind(browser);
+    browser.newPage = async (options) => shimPage(await original(options));
+  }
+  if (typeof browser.newContext === 'function') {
+    const originalContext = browser.newContext.bind(browser);
+    browser.newContext = async (options) => {
+      const context = await originalContext(options);
+      if (typeof context.newPage === 'function') {
+        const originalPage = context.newPage.bind(context);
+        context.newPage = async (pageOptions) => shimPage(await originalPage(pageOptions));
+      }
+      return context;
+    };
+  }
+  return browser;
+}
+
 /** Spustí prohlížeč. Playwright, když je; jinak puppeteer (stejné API v rozsahu E2E). */
 export async function launch(options = {}) {
   const chromium = await loadChromium();
   if (chromium) {
-    return chromium.launch({
-      executablePath: resolveExecutable(),
-      args: gpuArgs(),
-      ...options,
-    });
+    return shimBrowser(
+      await chromium.launch({
+        executablePath: resolveExecutable(),
+        args: gpuArgs(),
+        ...options,
+      }),
+    );
   }
   return launchPuppeteer(options);
 }
@@ -171,7 +223,7 @@ async function launchPuppeteer(options) {
     ...options,
   });
 
-  return {
+  return shimBrowser({
     async newPage({ viewport, ...rest } = {}) {
       const page = await browser.newPage();
       // `isMobile`/`hasTouch` patří do `setViewport`, ne do `newPage`
@@ -180,8 +232,8 @@ async function launchPuppeteer(options) {
       const goto = page.goto.bind(page);
       page.goto = (url, opts = {}) =>
         goto(url, { ...opts, waitUntil: opts.waitUntil === 'networkidle' ? 'networkidle0' : opts.waitUntil });
-      return page;
+      return shimPage(page);
     },
     close: () => browser.close(),
-  };
+  });
 }

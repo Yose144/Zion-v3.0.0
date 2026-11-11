@@ -52,8 +52,13 @@ import { loadMobaLoadout, saveMobaLoadout } from '@/core/moba/loadout';
 import { MobaTouch } from '@/core/moba/MobaTouch';
 import { EARTH_COPY, type EarthCopyKey } from './copy';
 
-/** Dvanáct startovních hrdinů — zbytek rosteru jde vybrat na `/avatars`. */
-const STARTERS = [0, 1, 2, 3, 4, 5, 82, 84, 85, 86, 19, 20];
+/**
+ * Dvanáct startovních hrdinů — zbytek rosteru jde vybrat na `/avatars`.
+ * Každé id musí mít reálný 3D model (filtr `PLAYABLE` níž), jinak by se
+ * nabídka zmenšila; 82/84/85/86 modely nemají, proto je nahradily
+ * Vyása, Saint Germain, Lumi a Kanaloa (školy i palety se liší).
+ */
+const STARTERS = [0, 1, 2, 3, 4, 5, 17, 26, 40, 66, 19, 20];
 /** Nabízejí se jen hrdinové s reálným 3D modelem (staré procedurální figury jsou archiv). */
 const PLAYABLE = new Set(Object.keys(AVATAR_MODELS).map(Number));
 const STARTERS_PLAYABLE = STARTERS.filter((id) => PLAYABLE.has(id));
