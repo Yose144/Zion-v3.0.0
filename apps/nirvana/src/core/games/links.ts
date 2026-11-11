@@ -101,8 +101,8 @@ export const GAME_LINKS: GameLink[] = [
   {
     id: 'neptune',
     href: '/neptune',
-    title: { cs: 'Neptun', en: 'Neptune' },
-    note: { cs: 'hlubina · nejrychlejší větry', en: 'the deep · fastest winds' },
+    title: { cs: 'Neptun — Hlubina', en: 'Neptune — The Deep' },
+    note: { cs: 'sestup · 15 světel · vítr', en: 'descent · 15 lights · wind' },
     glyph: '🌊',
     tone: '#6f86ff',
   },

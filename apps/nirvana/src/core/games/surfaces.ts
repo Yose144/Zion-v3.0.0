@@ -97,6 +97,13 @@ export const CONTROLS: Record<string, { cs: string; en: string; es?: string; pt?
     pt: 'W remar · S travar · A/D timão (canoa e surf)',
     fr: 'W ramer · S freiner · A/D gouverner (canoë et surf)',
   },
+  '/neptune': {
+    cs: 'A/D kormidlo proti větru · W rychlejší sestup · S přibrzdit',
+    en: 'A/D steer against the wind · W dive faster · S slow down',
+    es: 'A/D timón contra el viento · W descender más rápido · S frenar',
+    pt: 'A/D timão contra o vento · W descer mais rápido · S travar',
+    fr: 'A/D gouverner contre le vent · W descendre plus vite · S freiner',
+  },
   '/avatars': {
     cs: 'klikni postavu · pak Uložit',
     en: 'click a figure · then Save',

@@ -86,6 +86,13 @@ const PAGES = [
     minControls: 4,
   },
   {
+    path: '/neptune',
+    name: 'Neptun — Hlubina',
+    start: /Sestoupit|Descend/i,
+    control: '.touch-pad',
+    minControls: 4,
+  },
+  {
     path: '/saturn',
     name: 'Saturn tanky',
     start: /Tanky/i,

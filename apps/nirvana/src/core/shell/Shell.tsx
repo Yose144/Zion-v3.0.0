@@ -129,7 +129,7 @@ const PLANET_PANELS: Record<PlanetGameId, {
   },
   neptune: {
     title: 'NEPTUN',
-    note: 'Hlubina — nejrychlejší větry soustavy a temná voda, ve které se zrcadlí hvězdy.',
+    note: 'Hlubina — sestup atmosférou: patnáct světel, víry a stěny proudu. Lucerna je čas, plášť je chyba.',
     href: '/neptune',
     cta: 'Sestoupit',
   },

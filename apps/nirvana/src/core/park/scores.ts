@@ -25,6 +25,7 @@ export function emptyScores(): ParkScores {
     tanks: [],
     lumi: [],
     piko: [],
+    neptune: [],
   };
 }
 

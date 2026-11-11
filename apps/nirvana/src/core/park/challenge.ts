@@ -32,6 +32,7 @@ const GAMES: ParkGameId[] = [
   'tanks',
   'lumi',
   'piko',
+  'neptune',
 ];
 
 /** Cíle podle toho, kolik bodů hra reálně dává. */
@@ -50,6 +51,7 @@ const TARGETS: Record<ParkGameId, number> = {
   tanks: 300, // vyhrát tankový duel 2:0
   lumi: 900, // donést všech sedm světel (700 + časový bonus)
   piko: 600, // laguna: šest bójí nebo tři vlny
+  neptune: 600, // hlubina: ~600 m sestupu (nebo 500 m a dvě světla)
 };
 
 export const CHALLENGE_REWARD = 5;

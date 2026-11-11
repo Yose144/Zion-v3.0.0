@@ -3106,3 +3106,73 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   schodiště na jeho bok (x ≈ hrana + rádius). Strafuje se **až po dojití
   na místo** — bojový tanec zůstává, přesun je přímý.
 
+
+## Neptun — Hlubina `/neptune` (2026-11-11)
+
+- **Vnější planeta dostala hru.** Do téhle chvíle byl `/neptune` jen dosier
+  (`OuterWorldPage`) s komentářem „co tu záměrně není: hra“. Teď je to
+  hratelný sestup a dosier zůstal **uvnitř menu**, takže svět nepřišel
+  o fakta — jen o prázdnou scénu. `/uranus` a `/pluto` dál používají
+  `OuterWorldPage`.
+- **Simulace je čistá a testovaná** (`core/neptun/dive.ts`, 75 kontrol
+  v `test/neptun-dive.mjs`): klesání vždy (i bez vstupu), `W` zrychlí,
+  `S` přibrzdí, vítr odnáší do stran a `A`/`D` kormidluje proti němu,
+  lucerna je palivo, plášť je chyba, dno je bonus. Data (vrstvy, světla,
+  víry, čísla) jsou v `world.ts` — scéna, simulace, HUD i testy je čtou
+  odtamtud.
+- **🔴 Lucerna se spotřebovává za METR, ne za sekundu.** S per-sekundovou
+  spotřebou je `W` vždy nejlepší volba (rychlejší sestup = kratší čas =
+  méně energie) a brzda nemá smysl. Za metr je lucerna rozpočet na
+  **vzdálenost**: 900 m × ~0,13 = ~117 energie, start 100 → bez světel se
+  na dno **nedoletí**. Test na to má vlastní blok („bez světel lucerna na
+  dno nedojde“ / „kdo sbírá světla, doletí“) — kdyby spadl, sestup je
+  zdarma a světla přestala být palivo.
+- **Vrstvy nejsou jen dekorace, jsou to clony každých 70 m.** Na hranicích
+  vrstev (0/170/360/540/720/900) by mezi dvěma clonami bylo 170 m prázdné
+  modré plochy a sestup by vypadal jako statický obrázek. `SHEETS`
+  v `NeptuneScene` je odvozený z `deckAt()`.
+- **Mořský sníh se musí vézt s kamerou.** První verze nechala `Points`
+  ve světovém počátku, takže v hloubce 70 m byl sníh 70 m nad kamerou
+  a sestup neměl **žádný** pohyb (odhalil to screenshot, ne kód).
+  `depthRef` v `NeptuneScene` ho posouvá na `y = −hloubka`.
+- **`PointsMaterial` bez `map` kreslí bílé čtverečky.** Řeší `map`
+  s měkkou radiální texturou (`softSprite()`, jediná textura ve scéně) +
+  `alphaTest`. Stejná past jako u částic v Piku.
+- **Pozadí musí být tmavší než mlha — a v sRGB.** `background.copy(fog.color)
+  .multiplyScalar(0.8)` v lineárním prostoru (three default) je vizuálně
+  skoro bez efektu; `convertLinearToSRGB().multiplyScalar(0.8)
+  .convertSRGBToLinear()` je to, co je vidět. Bez toho je celý záběr jedna
+  plocha a clony se v něm ztratí.
+- **Šmouhy (`Streaks`) jsou druhý pohybový cue.** Sníh sám nestačí: v modré
+  mlze bez horizontu není poznat, jestli se hýbeš ty, nebo částice.
+  44 instanced tenkých krabiček (1 draw call) letí vzhůru; při
+  `prefers-reduced-motion` zpomalí na 2,2 m/s.
+- **HUD má dva stejné bary** (lucerna ✦ cyan, plášť ◆ amber) — čitelné
+  periferně; při nízkém stavu zčervenají. Bar odpovídá stavu, ověřuje to
+  audit (`bar / track ≈ energy / MAX_ENERGY`).
+- **Kompas je SVG s `transform="rotate(…)"`**, ne CSS transform na HTML
+  (stejná past jako u Lumi — v headless prohlížeči se CSS rotace kreslí
+  jinam).
+- **Dotykové tlačítko posílá syntetické klávesy** (`TouchButton`), takže
+  hra má **jednu** vstupní větev pro klávesnici, dotyk i VR.
+- **Debug háček `?neptuneDebug=1`** vystaví `window.__neptuneDebug`
+  (`state()`, `teleport(depth, x)`, `drain(n)`). E2E bez něj nemá jak
+  ověřit sestup (hrát myší by měřilo latenci, ne hru).
+- **Nová hra = pět seznamů + dvě místa v chrome.** `ParkGameId`,
+  `emptyScores`, `GAMES` + `emptyBoard` v `/api/park/scores`,
+  `GAMES` + `TARGETS` v `challenge.ts`, `GAME_TITLES` + `GAME_ORDER`
+  v `progress/boards.ts`. K tomu `CONTROLS` a `SURFACES`
+  v `core/games/surfaces.ts` a položka v `GAME_LINKS` (ta už existovala,
+  jen se změnil popisek). Když jeden chybí, skóre se tiše ztratí nebo se
+  hra neobjeví v žebříčcích.
+- **Audit:** `node e2e/neptune-audit.mjs` (34 kontrol — menu, klesání,
+  kormidlo, světlo, pauza, hluboké vrstvy, dno, zápis do profilu i tabule,
+  dotyk, 0 chyb). `mobile-audit.mjs` má `/neptune` v `PAGES`; prošel na
+  390×844 i 844×390 bez přesahu.
+- **Balance (změřeno, ne odhadnuto):** hráč, který jde po světlech
+  a tlačí `W`, doletí na dno za **~50 s** s ~15 světly (skóre ~2750);
+  bez sbírání světel mu lucerna zhasne kolem **760–800 m**. Kdo nekormidluje,
+  skončí o stěnu proudu (plášť) — vítr v hlubině je 10,5 m/s a ulička 52 m.
+- **Meze:** sólo (žádný multiplayer), VR jen kód (`<XR>` + `VrButton`,
+  netestováno na headsetu), zvuk je syntéza ze sdíleného enginu
+  (`lightPickup`, `gust`, `wall`, `splash`, `shrineOpen`).
