@@ -5,6 +5,7 @@ import { requireAuth } from '../lib/auth.js';
 import { auditBg } from '../lib/audit.js';
 import { withLinkProvenance } from '../lib/provenance.js';
 import { inc, M } from '../lib/metrics.js';
+import { isAgentKey, agentKeyHash } from '../lib/agents.js';
 
 const CreateKeySchema = z.object({
   label: z.string().min(1).max(64),
@@ -25,7 +26,53 @@ export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
     if (!parsed.success) {
       return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
     }
-    const keyHash = createHash('sha256').update(parsed.data.apiKey).digest('hex');
+    const rawKey = parsed.data.apiKey;
+
+    // Agent sub-account bearers (`zag_…`) verify against AgentSubAccount —
+    // scoped, budget-capped, expiring; never full-account (design §3/§5).
+    if (isAgentKey(rawKey)) {
+      const agent = await app.prisma.agentSubAccount.findUnique({
+        where: { keyHash: agentKeyHash(rawKey) },
+        include: { budgets: true },
+      });
+      const usable = agent && !agent.revokedAt && agent.expiresAt > new Date();
+      if (!usable) {
+        inc(M.apikeyVerify, { result: 'fail' });
+        return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Invalid agent key' });
+      }
+      await app.prisma.agentSubAccount.update({
+        where: { id: agent.id },
+        data: { lastUsedAt: new Date(), lastUsedIp: req.ip },
+      });
+      const agentUser = await app.prisma.user.findUnique({
+        where: { id: agent.userId },
+        include: { linkedAddresses: true, oasisPlayer: true },
+      });
+      if (!agentUser) {
+        inc(M.apikeyVerify, { result: 'fail' });
+        return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'User not found' });
+      }
+      inc(M.apikeyVerify, { result: 'ok' });
+      auditBg(app, req, { kind: 'agent_verify', userId: agent.userId, meta: { agentId: agent.id } });
+      return {
+        valid: true,
+        user: { ...agentUser, linkedAddresses: withLinkProvenance(agentUser.linkedAddresses) },
+        agent: {
+          id: agent.id,
+          name: agent.name,
+          scopes: agent.scopes,
+          expiresAt: agent.expiresAt,
+          budgets: agent.budgets.map((b) => ({
+            currency: b.currency,
+            period: b.period,
+            limitUnits: b.limitUnits.toString(),
+            spentUnits: b.spentUnits.toString(),
+          })),
+        },
+      };
+    }
+
+    const keyHash = createHash('sha256').update(rawKey).digest('hex');
     const apiKey = await app.prisma.apiKey.findUnique({
       where: { keyHash },
     });

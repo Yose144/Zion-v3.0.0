@@ -15,6 +15,7 @@ import { authRoutes } from './routes/auth.js';
 import { webauthnRoutes } from './routes/webauthn.js';
 import { sessionRoutes } from './routes/session.js';
 import { apiKeyRoutes } from './routes/apikey.js';
+import { agentRoutes } from './routes/agents.js';
 import { notificationRoutes } from './routes/notifications.js';
 import { walletRoutes } from './routes/wallet.js';
 import { healthRoutes } from './routes/health.js';
@@ -117,6 +118,7 @@ async function start() {
   await app.register(webauthnRoutes, { prefix: '/api/auth/webauthn' });
   await app.register(sessionRoutes, { prefix: '/api/session' });
   await app.register(apiKeyRoutes, { prefix: '/api/keys' });
+  await app.register(agentRoutes, { prefix: '/api/agents' });
   await app.register(notificationRoutes, { prefix: '/api/notifications' });
   await app.register(walletRoutes, { prefix: '/api/wallet' });
   await app.register(adminRoutes, { prefix: '/api/admin' });

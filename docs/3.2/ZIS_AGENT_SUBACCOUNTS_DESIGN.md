@@ -1,6 +1,6 @@
 # ZIS Agent Sub-Accounts — design draft (N1, 3.B-series)
 
-**Status:** design + migration draft (checklist 🤖 item) — not deployed.
+**Status:** ✅ implementace hotová (2026-11-11) — schema + CRUD routes + `zag_` verify + budget charge helper, flag `ZIS_AGENTS_ENABLED` default OFF. **Zbývá:** `prisma db push` na produkční DB + deploy ZIS + step-up pro create/loosen + UI. Viz §7.
 **Date:** 2026-10-31
 **Mitigates:** F-1 (withdraw without step-up), F-6 (API keys without
 scope/expiry) from `ZIS_THREAT_MODEL_PRIVACY.md`.

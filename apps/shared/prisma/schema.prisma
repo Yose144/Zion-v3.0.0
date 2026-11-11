@@ -48,6 +48,7 @@ model User {
   linkedAddresses LinkedAddress[]
   sessions        Session[]
   apiKeys         ApiKey[]
+  agentSubAccounts AgentSubAccount[]
   oasisPlayer     OasisPlayer?
   miningWorkers   MiningWorker[]
   daoVotes        DaoVote[]
@@ -118,6 +119,46 @@ model ApiKey {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// Agent sub-accounts (design: docs/3.2/ZIS_AGENT_SUBACCOUNTS_DESIGN.md).
+// Scoped, budget-capped, expiring bearer credentials for non-human actors.
+// `wallet:withdraw` is never issuable — withdrawals stay session+step-up.
+model AgentSubAccount {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String    // "hiran-trader" | "desktop-agent" | "ops-bot"
+  keyHash     String    @unique // SHA256 of bearer `zag_<48 hex>`
+  keyPrefix   String    // first 10 chars — display/identification only
+  scopes      String[]  // "read" | "trade" | "mining" | "oasis:act" | …
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  lastUsedAt  DateTime?
+  lastUsedIp  String?
+  createdAt   DateTime  @default(now())
+
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  budgets AgentBudget[]
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// Per-currency, per-window caps. `spentUnits` resets lazily when
+// `periodStart` rolls past the window — no cron dependency.
+model AgentBudget {
+  id          String   @id @default(cuid())
+  agentId     String
+  currency    String   // "ZION" | "QTC" | "PRL" | "USD-EQ"
+  period      String   // "daily" | "weekly" | "total"
+  limitUnits  BigInt   // smallest currency unit
+  spentUnits  BigInt   @default(0)
+  periodStart DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  agent AgentSubAccount @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, currency, period])
 }
 
 model WebAuthnCredential {
