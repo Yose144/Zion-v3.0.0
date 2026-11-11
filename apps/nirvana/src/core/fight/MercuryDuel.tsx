@@ -53,7 +53,7 @@ export interface DuelMpStats {
   /** Id vítěze zápasu po `duel_end`, jinak null. */
   matchWinner: string | null;
   /** Poslední kolo: 'ko' | 'time' | null. */
-  lastRoundReason: 'ko' | 'time' | null;
+  lastRoundReason: 'ko' | 'time' | 'ringout' | null;
   /** Výdrž krytu 0..1. */
   selfGuard: number;
   foeGuard: number;
