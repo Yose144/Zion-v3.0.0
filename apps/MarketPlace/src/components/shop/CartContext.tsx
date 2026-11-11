@@ -9,9 +9,18 @@ const CART_KEY = 'zion_shop_cart';
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-function toCartItem(product: ShopProductData, quantity: number): CartItem {
+/**
+ * Řádek košíku je jednoznačný kombinací produktu a motivu — stejný lampion
+ * ve dvou motivech jsou dva řádky, ne přepisování jednoho.
+ */
+function lineKey(product: ShopProductData, motif?: string) {
+  return motif ? `${product.id}::${motif}` : product.id;
+}
+
+function toCartItem(product: ShopProductData, quantity: number, motif?: string): CartItem {
   return {
-    id: product.id,
+    id: lineKey(product, motif),
+    motif,
     externalId: product.externalId,
     name: product.name,
     priceCzk: product.priceCzk,
@@ -52,16 +61,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const count = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
   const total = useMemo(() => items.reduce((sum, item) => sum + item.priceCzk * item.quantity, 0), [items]);
 
-  const add = useCallback((product: ShopProductData, quantity = 1) => {
+  const add = useCallback((product: ShopProductData, quantity = 1, motif?: string) => {
     if (!product.inStock) return false;
+    const key = lineKey(product, motif);
     setItems((prev) => {
-      const existing = prev.find((i) => i.id === product.id);
+      const existing = prev.find((i) => i.id === key);
       if (existing) {
         return prev.map((i) =>
-          i.id === product.id ? { ...i, quantity: Math.min(99, i.quantity + quantity) } : i
+          i.id === key ? { ...i, quantity: Math.min(99, i.quantity + quantity) } : i
         );
       }
-      return [...prev, toCartItem(product, Math.min(99, Math.max(1, quantity)))];
+      return [...prev, toCartItem(product, Math.min(99, Math.max(1, quantity)), motif)];
     });
     return true;
   }, []);

@@ -471,6 +471,16 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
               </span>
             )}
 
+            {product.slug === 'lampion' && (
+              <Link
+                href="/lumi"
+                className="inline-flex items-center gap-1.5 text-sm text-rasta-gold hover:underline"
+              >
+                <Layers className="w-4 h-4" />
+                {lang === 'cs' ? 'Vybrat jiný motiv (6 na výběr)' : 'Choose another motif (6 options)'}
+              </Link>
+            )}
+
             {product.note && (
               <p className="text-[11px] text-gray-500 leading-relaxed">{pick(product.note)}</p>
             )}

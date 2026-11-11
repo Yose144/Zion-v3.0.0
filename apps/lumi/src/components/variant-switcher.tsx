@@ -38,7 +38,9 @@ export default function VariantSwitcher({ product }: { product: ProductDef }) {
 
 function VariantChip({ product, current, lang }: { product: ProductDef; current: boolean; lang: 'cs' | 'en' | 'de' }) {
   const live = useProduct(product.externalId);
-  const soldOut = live ? live.stock <= 0 || !live.active : false;
+  // `active: false` = motiv ještě není v prodeji; nesmí se hlásit jako vyprodaný.
+  const inactive = live ? !live.active : false;
+  const soldOut = live ? live.active && live.stock <= 0 : false;
   const name = product.motifName ? pick(product.motifName, lang) : pick(product.name, lang);
 
   const body = (
@@ -63,7 +65,9 @@ function VariantChip({ product, current, lang }: { product: ProductDef; current:
       <span className="min-w-0">
         <span className="block truncate text-left text-[0.82rem] font-semibold text-ink">{name}</span>
         <span className="mt-0.5 block text-left text-[0.7rem] text-muted">
-          {soldOut ? (
+          {inactive ? (
+            pick({ cs: 'Připravujeme', en: 'Coming soon', de: 'In Vorbereitung' }, lang)
+          ) : soldOut ? (
             pick({ cs: 'Vyprodáno', en: 'Sold out', de: 'Ausverkauft' }, lang)
           ) : (
             <ProductPrice externalId={product.externalId} className="text-[0.7rem] text-muted" />

@@ -11,6 +11,7 @@ import { SHIPPING_PRICES, type ShippingMethod } from '@/types/shop';
 import { isVirtualOnlyCart, createShopOrder, createStripeCheckoutSession, createCommerceCheckout, trackOrder } from '@/lib/shop-api';
 import { useLangT } from '@/lib/useTranslation';
 import { FIRE_CONSENT_VERSION, FIRE_SAFETY, requiresFireConsent } from '@/lib/fire-safety';
+import { LUMI_MOTIFS } from '@/data/lumiMotifs';
 
 /** Zvýraznění **tučného** v bezpečnostních bodech (stejná konvence jako detail produktu). */
 function renderBold(text: string) {
@@ -311,6 +312,11 @@ export default function CartPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-white truncate">{item.name}</div>
+                {item.motif && (
+                  <div className="text-xs text-rasta-gold/90">
+                    {t('cart.motif')}: {LUMI_MOTIFS.find((motif) => motif.slug === item.motif)?.name.cs ?? item.motif}
+                  </div>
+                )}
                 <div className="text-xs text-gray-500 capitalize">{item.category}</div>
                 <div className="text-xs text-rasta-gold">{t('cart.tokens', { amount: item.tokens })}</div>
               </div>

@@ -537,6 +537,7 @@ const t = {
     title: { cs: 'Váš košík', en: 'Your cart' },
     headerCount: { cs: '{count} položek · celkem {total} {symbol}', en: '{count} items · total {total} {symbol}' },
     tokens: { cs: '+{amount} ZION', en: '+{amount} ZION' },
+    motif: { cs: 'Motiv', en: 'Motif' },
     remove: { cs: 'Odebrat', en: 'Remove' },
     sectionShipping: { cs: 'Doprava', en: 'Shipping' },
     shippingZasilkovna: { cs: 'Zásilkovna', en: 'Zásilkovna' },
@@ -1055,6 +1056,32 @@ const t = {
     faq: { cs: 'FAQ', en: 'FAQ' },
   },
 
+  lumi: {
+    kicker: { cs: 'Dřevěný lampion · šest motivů', en: 'Wooden lantern · six motifs' },
+    title: { cs: 'Lumi 2 — šest motivů', en: 'Lumi 2 — six motifs' },
+    lead: {
+      cs: 'Stejná lucerna, jiných šest stěn. Vyberte motiv — uvidíte ho ve 3D přesně tak, jak se vyřízne — a my ho pošleme rozložený v krabici.',
+      en: 'The same lantern with a different set of six walls. Pick a motif — see it in 3D exactly as it is cut — and we ship it flat in a box.',
+    },
+    selectedMotif: { cs: 'Vybraný motiv', en: 'Selected motif' },
+    addToCart: { cs: 'Přidat do košíku', en: 'Add to cart' },
+    buyNow: { cs: 'Koupit hned', en: 'Buy now' },
+    notAvailable: { cs: 'Připravujeme', en: 'Coming soon' },
+    added: { cs: 'Přidáno do košíku', en: 'Added to cart' },
+    inBox1: { cs: '8 vyřezaných dílů z 3mm březové překližky', en: '8 cut parts from 3 mm birch plywood' },
+    inBox2: { cs: 'Tištěný návod a smirkový papír', en: 'Printed guide and sandpaper' },
+    inBox3: { cs: 'K motivu kniha Království srdce a ZION Pass', en: 'The Kingdom of the Heart book and a ZION Pass with the motif' },
+    fireTitle: { cs: 'Svíčka patří do skla', en: 'The candle belongs in glass' },
+    fireNote: {
+      cs: 'Svíčku vždy do sklenice, na nehořlavý podklad a pod dohledem. Pokyny k bezpečnému zacházení potvrzujete při pokladně.',
+      en: 'Always use the candle in a glass, on a non-flammable base and attended. You confirm the safety instructions at checkout.',
+    },
+    note: {
+      cs: 'Motiv je vyřezaný skrz dřevo — večer se rozsvítí jako stíny na stole. Náhled ve 3D vychází z výpalových podkladů; skutečný kus se může v drobných detailech lišit.',
+      en: 'The motif is cut through the wood — in the evening it lights up as shadows on the table. The 3D preview comes from the cutting files; the real piece may differ in small details.',
+    },
+    otherProducts: { cs: 'Další dřevěné produkty', en: 'More wooden products' },
+  },
   common: {
     metadataTitle: { cs: 'ZION Market — OASIS Artifact Marketplace', en: 'ZION Market — OASIS Artifact Marketplace' },
     metadataDescription: {

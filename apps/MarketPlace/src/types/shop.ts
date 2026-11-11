@@ -12,13 +12,15 @@ export interface CartItem {
   tokens: number;
   quantity: number;
   digital: boolean;
+  /** Motiv lampionu (jen `lamp-001`); jde do objednávky v názvu řádku. */
+  motif?: string;
 }
 
 export interface CartContextValue {
   items: CartItem[];
   count: number;
   total: number;
-  add: (product: ShopProductData, quantity?: number) => boolean;
+  add: (product: ShopProductData, quantity?: number, motif?: string) => boolean;
   remove: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clear: () => void;

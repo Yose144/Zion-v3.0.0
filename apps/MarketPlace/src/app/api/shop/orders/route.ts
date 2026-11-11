@@ -12,6 +12,7 @@ import { generateCustomerWallet } from '@/lib/zion-l1';
 import { encryptSecret } from '@/lib/crypto';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 import { FIRE_CONSENT_VERSION, checkFireConsent } from '@/lib/fire-safety';
+import { LUMI_MOTIFS, MOTIF_PRODUCT_ID } from '@/data/lumiMotifs';
 import {
   StockConflictError,
   InvalidQuantityError,
@@ -179,6 +180,18 @@ export async function POST(req: NextRequest) {
 
     // ── Server-side pricing: recompute total + tokens from catalog ──
     const reserved = aggregateOrderQuantities(body.items);
+
+    // Motiv lampionu: klient posílá `motif` u řádku, server ho bere jen
+    // u lampionu a jen ze známého seznamu. Neplatný motiv se zahodí —
+    // objednávka kvůli němu nespadne, jen se vyřízne základní sada.
+    const motifSlug = (body.items as Array<{ externalId?: unknown; motif?: unknown }>).reduce<string | undefined>(
+      (found, line) => {
+        if (found || !line || line.externalId !== MOTIF_PRODUCT_ID || typeof line.motif !== 'string') return found;
+        return LUMI_MOTIFS.some((motif) => motif.slug === line.motif) ? line.motif : found;
+      },
+      undefined,
+    );
+    const motif = LUMI_MOTIFS.find((entry) => entry.slug === motifSlug);
     const externalIds = [...reserved.keys()];
     const [products, tokenCampaigns] = await Promise.all([
       prisma.shopProduct.findMany({
@@ -200,6 +213,8 @@ export async function POST(req: NextRequest) {
       filesUrl?: string;
       instructionsUrl?: string;
       modelUrl?: string;
+      /** Motiv lampionu (jen u `lamp-001`) — dílna podle něj řeže stěny. */
+      motif?: string;
     };
     const lineItems: LineItem[] = [];
     for (const [externalId, qty] of reserved) {
@@ -214,9 +229,10 @@ export async function POST(req: NextRequest) {
       const unitTokens = campaignTokens(tokenCampaigns, product.externalId, baseTokens);
       itemsTotal += product.priceCzk * qty;
       zionTokens += unitTokens * qty;
+      const lineMotif = product.externalId === MOTIF_PRODUCT_ID ? motif : undefined;
       lineItems.push({
         externalId: product.externalId,
-        name: product.name,
+        name: lineMotif ? `${product.name} — motiv ${lineMotif.name.cs}` : product.name,
         quantity: qty,
         priceCzk: product.priceCzk,
         tokens: unitTokens,
@@ -224,6 +240,7 @@ export async function POST(req: NextRequest) {
         filesUrl: product.filesUrl ?? undefined,
         instructionsUrl: product.instructionsUrl ?? undefined,
         modelUrl: product.modelUrl ?? undefined,
+        motif: lineMotif?.slug,
       });
     }
 
