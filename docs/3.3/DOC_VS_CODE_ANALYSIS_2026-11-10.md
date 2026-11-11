@@ -37,7 +37,7 @@
 | 8 | Topologie | EDGE2 = primary+web, EDGE = pool+followeři+ops | Oba boxy SSH OK; EDGE1 10/10 `zion-*` active; EDGE2 všechny `zion-*` active; EDGE2 `systemd-networkd-wait-online` failed = kosmetický | ✅ |
 | 9 | Chain tip | ~118k, block ~60 s | `getBlockByHeight` tip **118 163**, timestamp sampling ≈ 60 s/blok | ✅ |
 | 10 | Pool API | `/public/v1/coins` živé | EDGE `:8080` coins list OK; stratum 8444 `mining.subscribe` → `set_difficulty`+`notify` | ✅ |
-| 11 | Release artifacts 9.B4 | `dist/v3.2.0-rc-w1.4/` 5 tarballů z `aa6599cce` | Na disku: aarch64 (default+gpu-metal), linux (default+gpu-opencl), windows-gnu; **chybí** `RELEASE-MATRIX.json` (starší formát) + x86_64-apple-darwin | ⚠️ viz §3 |
+| 11 | Release artifacts 9.B4 | `dist/v3.2.0-rc-w1.4/` 5 tarballů z `aa6599cce` | **11. 11. ověřeno: na disku jen 2 linux tarbally (default + gpu-opencl)**; aarch64/gpu-metal/windows **chybí**; `RELEASE-MATRIX.json` chybí (starší formát) + x86_64-apple-darwin | ⚠️ viz §3 |
 | 12 | Monitoring rules | rule soubory v `V31/deploy/monitoring/` | 7 rule souborů (`g8`, `zion-host`, `zion-pool`, `zion_writepath`, `zis`, `warp_btc_swap`, `zion-hiran-alerts`) + prom/alertmanager configy + testy | ✅ |
 | 13 | `service-snapshot.sh` | existuje pro rollback | `scripts/ops/service-snapshot.sh` ✅ | ✅ |
 | 14 | Deploy projekty | `V31/deploy/` aktivní, `infra/edge-deploy/` deprecated | `infra/edge-deploy/DEPRECATED.md` + guard existuje | ✅ |
@@ -56,7 +56,7 @@
 ## 3. Otevřené body (ne opraveno — vyžadují rozhodnutí/vstup)
 
 1. **G8 `chain_live` incidenty ×5 (8.–9. 11.)** — `G8ChainStale` firing→resolved do ~1–2 min. Block-timestamp sampling kolem výšek ~115 580–115 760 a ~116 580–116 700 **neprokázal** >900 s gap; trigger pravděpodobně probe-side (RPC stall na 4jáDrovém EDGE při ~230 % mining CPU) nebo krátký block gap. **RCA otevřená** — kandidáti: `G8_PROBE_TIMEOUT_SECONDS=3` pod zátěží, timeout na `getStatus`+`getBlockByHeight` ×3 nodů současně. Source: `g8_probe_exporter.py` (`chain_tip_max_age=900`, `confirm_attempts=2`).
-2. **Release artifact x86_64-apple-darwin** — clang cross `x86_64-apple-darwin` na arm64 Macu **ověřen funkční** (Mach-O výstup, rustup target nainstalován), ale **Data volume 100 % plný** (~115–121 MB volno) → `cargo build --release` lokálně nemožný. Řešení: vyčištění disku / build na EDGE/clean hostu / Intel Mac. Postup: `scripts/ops/build-release-artifacts.sh --isolate --from-commit <sha> --target x86_64-apple-darwin`.
+2. **Release artefakty** — na disku jsou jen **2 linux tarbally** (default + `gpu-opencl`, `dist/v3.2.0-rc-w1.4/`); aarch64/gpu-metal/windows chybí. macOS targety vyžadují Mac/Xcode (nebo osxcross), Windows mingw-w64; pracovní PC je Linux bez obou toolchainů. Postup na hostu s daným toolchainem: `scripts/ops/build-release-artifacts.sh --isolate --from-commit <sha> --target <target>`. Mac disk už není blocker (jsme na PC), ale artefakty chybí.
 3. **`dist/` starší drafty nemají `RELEASE-MATRIX.json`** — `verify-release-artifacts.py` na `v3.2.0-rc-w1.4` = FAIL (chybí matrix). Při RC rebuildu (povinný z RC commitu) matrix vznikne automaticky.
 4. **EDGE1 `apt list --upgradable` = 72, EDGE2 = 13** (11. 11.) — `unattended-upgrades` aktivní; majority upgrade = 👤 rozhodnutí (kernel/reboot okno).
 5. **EDGE2 `systemd-networkd-wait-online` failed** od 6. 11. — kosmetický (služby běží), ale `systemctl --failed` není čisté.

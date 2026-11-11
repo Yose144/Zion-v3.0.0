@@ -18,7 +18,7 @@
 - **Deploy projekty:** `V31/deploy/` (aktivní, opraveno 2.11.), `infra/edge-deploy/` (deprecated, guard přidán)
 - **Nirvana proto 34** = repo i live ve shodě (net build `20261110T181100Z` + app `proto_match`) — client a net deployovat vždy spolu
 - **EDGE2 `networkd-wait-online`** vyřešen 11. 11. (netplan `accept-ra:false`+`dhcp6:false`); nginx `listen` options sjednoceny repo-only (`548a50235`, deploy ⏸️)
-- **⚠️ Mac disk 100 %** — release buildy lokálně nemožné (volno ~115 MB); x86_64-apple-darwin cross-toolchain ověřen funkční, chybí místo
+- **⚠️ Release artefakty:** na disku jsou jen **2 linux tarbally** (`dist/v3.2.0-rc-w1.4/`); aarch64/gpu-metal/windows chybí. macOS buildy vyžadují Mac/Xcode (nebo osxcross), Windows mingw — tento PC (Linux) je neumí. Mac disk už není pracovní prostředí.
 
 ### Kód
 - **V31 workspace:** 18 crates, verze 3.2.0, protocol handshake `3.1.0-alpha` (záměrně)
@@ -65,7 +65,7 @@ G9 externí audit (posunut, Stable bez data — neblokuje RC kvalitu)
 ### Priorita 1 (blokuje další práci)
 1. ✅ **HA stratum fencing analýza** — `pool-promote-guard.sh` implementován (G1-G6), runbook vytvořen (`docs/3.2/ops/POOL-HA-RUNBOOK.md`), 7 gaps identifikováno, staged activation pending 👤
 2. ✅ **DR drill dry-run (varianta A)** — 23/23 DBs PASS, config 0 placeholderů, 5 gaps identifikováno, 3 opraveny (binárky optional, GPG encryption optional, offsite timer ověřen). Report: `docs/3.2/REPORTS/REPORT_2026-11-02_DR_DRILL_DRY_RUN.md`
-3. **Release artefakty (9.B4)** — Linux default ✅ + gpu-opencl ✅ + aarch64-apple-darwin ✅ + gpu-metal ✅ + windows-gnu ✅ (`dist/v3.2.0-rc-w1.4/`, commit `aa6599cce`, draft-grade). **Zbývá:** x86_64-apple-darwin (cross-toolchain na Macu funguje, ale **disk 100 %** — blokuje nedostatek místa, ne technika) + rebuild všech z RC commitu (tag `v3.2.0` = 👤 gate 9.S1). Builder `scripts/ops/build-release-artifacts.sh` hotový.
+3. **Release artefakty (9.B4)** — na disku **jen 2 linux tarbally** (default + `gpu-opencl`, `dist/v3.2.0-rc-w1.4/`); aarch64/gpu-metal/windows tarbally **nejsou**. macOS buildy vyžadují Mac/Xcode (nebo osxcross), Windows mingw-w64 — tento PC (Linux, bez obou toolchainů) je neumí. **Zbývá:** doplnit chybějící targety na hostu s toolchainem + `RELEASE-MATRIX.json` + rebuild z RC commitu (tag `v3.2.0` = 👤 9.S1). Builder `scripts/ops/build-release-artifacts.sh` hotový.
 
 ### Priorita 2 (V33 gates)
 4. ✅ **NCL 1 worker + 1 job typ** — V33-5 gate, 2 integrační testy, 44/44 pass
@@ -150,7 +150,7 @@ Viz `docs/3.2/DEFERRED_3.2.md`:
 ## 8. Rychlá autonomní fronta (stav 11. 11.)
 
 1. ✅ **Truth-sync plánů** (11. 11.) — `3.2.1-3.2.9_PLAN`, `DEFERRED_3.2`, `PLAN`, `CHECKLIST`, `MAP`, `KRALOVSTVI` srovnány na run #7 / proto 34 / QTC OFF / hotové položky.
-2. **Release artefakty dokončení (9.B4)** — 5 tarballů hotových; chybí `x86_64-apple-darwin` (**Mac disk 100 %** — uvolnit místo), `RELEASE-MATRIX.json` a rebuild z RC commitu (👤 9.S1).
+2. **Release artefakty dokončení (9.B4)** — na disku 2 linux tarbally; chybí aarch64/gpu-metal/windows (macOS/Xcode a mingw na PC nejsou), `RELEASE-MATRIX.json` a rebuild z RC commitu (👤 9.S1).
 3. 🔀 **ZIS agent sub-accounts** — kód hotový; `prisma db push` + deploy + step-up + UI (👤).
 4. 🤖 **L3 sandbox** — Miner↔NCL spike, Dharma policy manifest, Amitabha draft-only UI, red-team.
 5. 🤖 **G8 `chain_live` RCA** — read-only analýza, bez deploye probe uprostřed runu.
