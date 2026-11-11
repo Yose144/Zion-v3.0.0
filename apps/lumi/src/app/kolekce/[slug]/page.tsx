@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     openGraph: {
       title: pick(product.seo.title, 'cs'),
       description: pick(product.seo.description, 'cs'),
-      images: [{ url: product.image }],
+      images: [{ url: product.image, width: product.imageWidth, height: product.imageHeight, alt: pick(product.name, 'cs') }],
     },
   };
 }

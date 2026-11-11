@@ -10,7 +10,7 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
   return (
     <div
       className={cn(
-        'inline-flex items-center rounded-full border border-ink/15 bg-white/50 p-0.5',
+        'inline-flex items-center rounded-full border border-ink/15 bg-card/50 p-0.5',
         compact ? 'text-[11px]' : 'text-xs',
       )}
       role="group"
@@ -24,7 +24,7 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
           aria-pressed={lang === code}
           className={cn(
             'rounded-full px-2.5 py-1 font-semibold tracking-wide transition-colors',
-            lang === code ? 'bg-ink text-paper' : 'text-ink-soft hover:bg-ink/5',
+            lang === code ? 'bg-forest text-parchment' : 'text-ink-soft hover:bg-ink/5',
           )}
         >
           {LANG_SHORT[code]}

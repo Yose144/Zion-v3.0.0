@@ -31,7 +31,7 @@ export default function ShoppingProcessPage() {
         <ol className="grid gap-5 md:grid-cols-2">
           {SHOPPING_PROCESS.steps.map((step, index) => (
             <li key={step.title.cs} className="card-warm flex gap-4 p-5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-sm font-bold text-parchment">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-forest text-sm font-bold text-parchment">
                 {index + 1}
               </span>
               <div>
@@ -67,7 +67,7 @@ export default function ShoppingProcessPage() {
         </div>
 
         <p className="mt-8 flex items-start gap-2 text-sm leading-relaxed text-muted">
-          <Check className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
+          <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
           {pick(
             {
               cs: 'Ceny jsou konečné, nejsme plátci DPH. U zboží se svíčkou je součástí objednávky bezpečnostní prohlášení.',

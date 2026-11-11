@@ -170,7 +170,7 @@ export default function InquiryForm({
           )}
         </p>
       </div>
-      {state === 'error' && <p className="text-sm text-red-700">{pick(labels.error, lang)}</p>}
+      {state === 'error' && <p className="text-sm text-rust">{pick(labels.error, lang)}</p>}
     </form>
   );
 }

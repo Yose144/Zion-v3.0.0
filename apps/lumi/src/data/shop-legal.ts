@@ -159,7 +159,7 @@ export const COOKIES = {
     {
       name: 'lumi_cookie_notice',
       purpose: { cs: 'Skrytí informační lišty', en: 'Hides the cookie notice', de: 'Blendet den Cookie-Hinweis aus' },
-      type: { cs: 'localStorage', en: 'localStorage', de: 'localStorage' },
+      type: { cs: 'localStorage + cookie', en: 'localStorage + cookie', de: 'localStorage + Cookie' },
       duration: { cs: '1 rok', en: '1 year', de: '1 Jahr' },
       necessary: true,
     },

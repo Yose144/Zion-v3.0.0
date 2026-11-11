@@ -38,7 +38,7 @@ export default function GuidePage() {
               height={900}
               loading="lazy"
               decoding="async"
-              className="w-full rounded-2xl border border-line bg-white object-contain p-3"
+              className="w-full rounded-2xl border border-line bg-card object-contain p-3"
             />
             <p className="text-xs leading-relaxed text-muted">{pick(GUIDE.note, lang)}</p>
             <div className="rounded-2xl border border-line bg-card p-6 text-sm leading-relaxed text-ink-soft">
@@ -56,7 +56,7 @@ export default function GuidePage() {
           <ol className="space-y-6">
             {GUIDE.steps.map((step, index) => (
               <li key={step.title.cs} className="flex gap-4">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-sm font-bold text-paper">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-forest text-sm font-bold text-parchment">
                   {index + 1}
                 </span>
                 <div>

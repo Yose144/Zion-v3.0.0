@@ -241,7 +241,7 @@ export default function LumiViewer({ modelUrl, poster, tone = 'light' }: { model
 
   return (
     <div className="space-y-3">
-      <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-forest/30 bg-ink">
+      <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-forest/30 bg-[#0B141E]">
         {/* teplá záře — čistě CSS, aby pozadí drželo i před načtením modelu */}
         <div
           aria-hidden

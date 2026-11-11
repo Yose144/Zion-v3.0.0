@@ -80,7 +80,7 @@ export default function ContactForm() {
           {pick({ cs: 'Odpovídáme obvykle do jednoho pracovního dne.', en: 'We usually reply within one working day.', de: 'Wir antworten meist innerhalb eines Werktags.' }, lang)}
         </p>
       </div>
-      {state === 'error' && <p className="text-sm text-red-700">{pick(CONTACT.form.error, lang)}</p>}
+      {state === 'error' && <p className="text-sm text-rust">{pick(CONTACT.form.error, lang)}</p>}
     </form>
   );
 }

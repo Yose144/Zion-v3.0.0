@@ -75,7 +75,7 @@ export default function CompaniesPage() {
                 </li>
               ))}
             </ul>
-            <div className="mt-6 rounded-xl border border-line bg-white/60 p-4 text-sm leading-relaxed text-ink-soft">
+            <div className="mt-6 rounded-xl border border-line bg-card/60 p-4 text-sm leading-relaxed text-ink-soft">
               {pick(
                 {
                   cs: 'Před výrobou vždy posíláme náhled k odsouhlasení. Zakázku začínáme po potvrzení zálohy.',

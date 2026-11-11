@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Cormorant_Garamond, Inter } from 'next/font/google';
 import './globals.css';
 import { LanguageProvider } from '@/lib/lang-context';
+import { ThemeProvider } from '@/lib/theme-context';
 import { CartProvider } from '@/components/cart-provider';
 import SiteHeader from '@/components/site-header';
 import SiteFooter from '@/components/site-footer';
@@ -69,29 +70,40 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: '#f7f2e8',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f0e1be' },
+    { media: '(prefers-color-scheme: dark)', color: '#101c2b' },
+  ],
   width: 'device-width',
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="cs" className={`${inter.variable} ${display.variable}`}>
+    <html lang="cs" suppressHydrationWarning className={`${inter.variable} ${display.variable}`}>
       <body className="min-h-screen font-sans antialiased">
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('lumi_theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;}catch(e){}})();",
+          }}
+        />
         <a
           href="#obsah"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-ink focus:px-5 focus:py-3 focus:text-sm focus:font-semibold focus:text-parchment"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-forest focus:px-5 focus:py-3 focus:text-sm focus:font-semibold focus:text-parchment"
         >
           Přeskočit na obsah / Skip to content
         </a>
-        <LanguageProvider>
-          <CartProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <CartProvider>
             <SiteHeader />
             <main id="obsah">{children}</main>
-            <SiteFooter />
-            <CookieNotice />
-          </CartProvider>
-        </LanguageProvider>
+              <SiteFooter />
+              <CookieNotice />
+            </CartProvider>
+          </LanguageProvider>
+        </ThemeProvider>
         <script
           type="application/ld+json"
           // Strukturovaná data pomáhají Googlu pochopit, že jde o malou

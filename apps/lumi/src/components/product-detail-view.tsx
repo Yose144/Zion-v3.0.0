@@ -87,7 +87,7 @@ export default function ProductDetailView({ product }: { product: ProductDef }) 
             </div>
           </div>
 
-          <div className="mt-6 flex items-start gap-2 rounded-xl border border-line bg-white/50 p-4 text-sm text-ink-soft">
+          <div className="mt-6 flex items-start gap-2 rounded-xl border border-line bg-card/50 p-4 text-sm text-ink-soft">
             <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
             <span>{pick(product.leadTime, lang)}</span>
           </div>

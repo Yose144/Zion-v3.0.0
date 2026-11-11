@@ -32,7 +32,7 @@ export default function ProductCard({ product, priority = false }: { product: Pr
           </span>
         ) : null}
         {soldOut ? (
-          <span className="absolute right-3 top-3 rounded-full bg-ink/85 px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.12em] text-paper">
+          <span className="absolute right-3 top-3 rounded-full bg-forest px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.12em] text-parchment">
             {pick({ cs: 'Vyprodáno', en: 'Sold out', de: 'Ausverkauft' }, lang)}
           </span>
         ) : null}
@@ -42,7 +42,7 @@ export default function ProductCard({ product, priority = false }: { product: Pr
         <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-soft">{pick(product.short, lang)}</p>
         <div className="mt-auto flex items-center justify-between gap-3 pt-5">
           <ProductPrice externalId={product.externalId} className="text-[0.95rem]" />
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-ink/15 text-ink transition-colors group-hover:border-ink/50 group-hover:bg-ink group-hover:text-paper">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-ink/15 text-ink transition-colors group-hover:border-ink/50 group-hover:bg-forest group-hover:text-parchment">
             <ArrowUpRight className="h-4 w-4" />
           </span>
         </div>

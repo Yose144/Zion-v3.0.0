@@ -18,7 +18,7 @@ export default function ProductSafetyPage() {
         <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="overflow-hidden rounded-2xl border border-line bg-card">
             <div className="flex items-center gap-2 border-b border-line bg-parchment-deep/60 px-5 py-3 text-xs font-bold uppercase tracking-[0.14em] text-muted">
-              <ShieldCheck className="h-4 w-4 text-forest" />
+              <ShieldCheck className="h-4 w-4 text-success" />
               {pick({ cs: 'Identifikace výrobku', en: 'Product identification', de: 'Produktidentifikation' }, lang)}
             </div>
             <dl className="divide-y divide-line">

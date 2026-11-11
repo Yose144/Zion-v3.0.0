@@ -9,6 +9,7 @@ import { pick } from '@/lib/i18n';
 import { useLang } from '@/lib/lang-context';
 import { useCart } from '@/components/cart-provider';
 import LanguageSwitcher from '@/components/language-switcher';
+import ThemeToggle from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
 
 export default function SiteHeader() {
@@ -21,7 +22,7 @@ export default function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40">
-      <div className="bg-ink text-paper">
+      <div className="bg-forest text-parchment">
         <div className="container-lumi flex items-center justify-center gap-2 py-2 text-center text-[11px] font-medium tracking-wide sm:text-xs">
           <span className="hidden h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 sm:inline-block" />
           <span className="line-clamp-1">{announcement}</span>
@@ -55,19 +56,20 @@ export default function SiteHeader() {
             })}
           </nav>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <div className="hidden sm:block">
               <LanguageSwitcher />
             </div>
+            <ThemeToggle />
             <Link
               href="/kosik"
-              className="relative inline-flex h-10 items-center gap-2 rounded-full border border-ink/15 bg-white/60 px-3 text-sm font-semibold text-ink transition-colors hover:border-ink/40"
+              className="relative inline-flex h-10 items-center gap-2 rounded-full border border-ink/15 bg-card/60 px-3 text-sm font-semibold text-ink transition-colors hover:border-ink/40"
               aria-label={`${pick({ cs: 'Košík', en: 'Cart', de: 'Warenkorb' }, lang)} (${count})`}
             >
               <ShoppingBag className="h-4 w-4" />
               <span className="hidden sm:inline">{pick({ cs: 'Košík', en: 'Cart', de: 'Warenkorb' }, lang)}</span>
               {count > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-600 px-1 text-[10px] font-bold text-white">
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-600 px-1 text-[10px] font-bold text-[#101C2B]">
                   {count}
                 </span>
               )}
@@ -75,7 +77,7 @@ export default function SiteHeader() {
             <button
               type="button"
               onClick={() => setOpen((value) => !value)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 bg-white/60 text-ink lg:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 bg-card/60 text-ink lg:hidden"
               aria-expanded={open}
               aria-label={open ? 'Zavřít menu' : 'Otevřít menu'}
             >

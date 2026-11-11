@@ -25,6 +25,8 @@ export interface ProductDef {
   stock: number;
   maxQty?: number;
   image: string;
+  imageWidth: number;
+  imageHeight: number;
   /** Menší varianta pro karty a košík (šetří data na mobilu). */
   imageSmall?: string;
   gallery: string[];
@@ -77,6 +79,8 @@ export const PRODUCTS: ProductDef[] = [
     priceCzk: 790,
     stock: 12,
     image: '/images/lumi-b/lumi-2-produkt.webp',
+    imageWidth: 900,
+    imageHeight: 900,
     imageSmall: '/images/lumi-b/lumi-2-produkt-700.webp',
     gallery: [
       '/images/lumi-b/3d-konstrukce.webp',
@@ -156,6 +160,8 @@ export const PRODUCTS: ProductDef[] = [
     priceCzk: 350,
     stock: 20,
     image: '/images/lumi-b/mini.webp',
+    imageWidth: 1400,
+    imageHeight: 1050,
     imageSmall: '/images/lumi-b/mini-700.webp',
     gallery: ['/images/lumi-b/domu-hero.webp'],
     disclaimer: {
@@ -226,6 +232,8 @@ export const PRODUCTS: ProductDef[] = [
     priceCzk: 490,
     stock: 25,
     image: '/images/lumi-b/3d-konstrukce.webp',
+    imageWidth: 900,
+    imageHeight: 900,
     imageSmall: '/images/lumi-b/3d-konstrukce-700.webp',
     gallery: ['/images/lumi-b/domu-hero.webp'],
     badge: { cs: 'Na tvoření', en: 'Make it yourself', de: 'Zum Selbermachen' },
@@ -291,6 +299,8 @@ export const PRODUCTS: ProductDef[] = [
     priceCzk: 2100,
     stock: 6,
     image: '/images/lumi-b/set-3.webp',
+    imageWidth: 1050,
+    imageHeight: 1050,
     imageSmall: '/images/lumi-b/set-3-700.webp',
     gallery: ['/images/lumi-b/3d-konstrukce.webp', '/images/lumi-b/domu-hero.webp'],
     badge: { cs: 'Pro stůl', en: 'For the table', de: 'Für den Tisch' },
@@ -353,6 +363,8 @@ export const PRODUCTS: ProductDef[] = [
     stock: 999,
     maxQty: 50,
     image: '/images/lumi-b/personalizace.webp',
+    imageWidth: 1400,
+    imageHeight: 1050,
     imageSmall: '/images/lumi-b/personalizace-700.webp',
     gallery: ['/images/lumi-b/lumi-2-produkt.webp'],
     disclaimer: {
@@ -427,6 +439,8 @@ export const PRODUCTS: ProductDef[] = [
     priceCzk: 90,
     stock: 999,
     image: '/images/lumi-b/darkove-baleni.webp',
+    imageWidth: 1400,
+    imageHeight: 1050,
     imageSmall: '/images/lumi-b/darkove-baleni-700.webp',
     gallery: ['/images/lumi-b/lumi-2-produkt.webp'],
     disclaimer: {

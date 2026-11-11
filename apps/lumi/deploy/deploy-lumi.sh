@@ -112,7 +112,12 @@ REMOTE_SCRIPT="${REMOTE_SCRIPT//@PRISMA@/${PRISMA_CLI}}"
 SSH bash -s <<<"${REMOTE_SCRIPT}"
 
 echo "[deploy-lumi] Restart ${SERVICE}"
-SSH "systemctl daemon-reload && systemctl enable ${SERVICE} >/dev/null 2>&1 || true; systemctl restart ${SERVICE}"
+# Statické assety servíruje nginx přímo; musí být čitelné pro www-data.
+# /opt/zion je 750 zion:zion — nginx (www-data) potřebuje průchod (o+x),
+# ale ne čtení obsahu. Public stromy musí být 644/755.
+SSH "chmod o+x /opt/zion 2>/dev/null || true; \
+  chmod -R a+rX '${REMOTE_DIR}/public' '${REMOTE_DIR}/.next/standalone/public' '${REMOTE_DIR}/.next/standalone/.next/static' 2>/dev/null || true; \
+  systemctl daemon-reload && systemctl enable ${SERVICE} >/dev/null 2>&1 || true; systemctl restart ${SERVICE}"
 
 echo "[deploy-lumi] Seed katalogu"
 SEED_RESULT=$(SSH "if [ -f /etc/zion/lumi.env ]; then set -a; . /etc/zion/lumi.env; set +a; fi; if [ -n \"\${LUMI_SEED_TOKEN:-}\" ]; then curl -s -X POST -H \"Authorization: Bearer \$LUMI_SEED_TOKEN\" http://127.0.0.1:3200/api/seed; fi" || true)

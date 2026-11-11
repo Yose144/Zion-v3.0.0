@@ -277,7 +277,7 @@ export default function CartPage() {
               <ShoppingBag className="h-4 w-4" /> {pick({ cs: 'Položky', en: 'Items', de: 'Artikel' }, lang)} ({count})
             </h2>
             {addonWithoutLantern && (
-              <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+              <p className="mt-3 rounded-lg border border-amber-600/30 bg-amber-500/10 p-3 text-sm text-amber-900">
                 {pick(
                   {
                     cs: 'Personalizace a dárkové balení se objednávají spolu s lampionem. Přidejte prosím Lumi, Mini nebo Kit.',
@@ -300,7 +300,7 @@ export default function CartPage() {
                     </Link>
                     <p className="mt-0.5 text-xs text-muted">{pick(def.leadTime, lang)}</p>
                   </div>
-                  <div className="inline-flex items-center rounded-full border border-line bg-white/70">
+                  <div className="inline-flex items-center rounded-full border border-line bg-card/70">
                     <button
                       type="button"
                       onClick={() => setQuantity(line.externalId, line.quantity - 1)}
@@ -325,7 +325,7 @@ export default function CartPage() {
                   <button
                     type="button"
                     onClick={() => remove(line.externalId)}
-                    className="self-end rounded-full p-2 text-muted transition-colors hover:bg-red-50 hover:text-red-700 sm:self-auto"
+                    className="self-end rounded-full p-2 text-muted transition-colors hover:bg-rust/10 hover:text-rust sm:self-auto"
                     aria-label={pick({ cs: 'Odebrat', en: 'Remove', de: 'Entfernen' }, lang)}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -347,7 +347,7 @@ export default function CartPage() {
                     key={option.value}
                     className={cn(
                       'flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors',
-                      shipping === option.value ? 'border-ink bg-ink/[0.03]' : 'border-line bg-white/40 hover:border-ink/30',
+                      shipping === option.value ? 'border-ink bg-ink/[0.03]' : 'border-line bg-card/40 hover:border-ink/30',
                     )}
                   >
                     <input
@@ -443,7 +443,7 @@ export default function CartPage() {
                 {pick({ cs: 'Nakupuji na firmu', en: 'Buying for a company', de: 'Ich kaufe für eine Firma' }, lang)}
               </label>
               {isCompany && (
-                <div className="space-y-4 rounded-xl border border-line bg-white/50 p-4">
+                <div className="space-y-4 rounded-xl border border-line bg-card/50 p-4">
                   <label className="block">
                     <span className="label">{pick({ cs: 'Název firmy', en: 'Company name', de: 'Firmenname' }, lang)} *</span>
                     <input value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} className="input" autoComplete="organization" />
@@ -533,7 +533,7 @@ export default function CartPage() {
                   key={option.value}
                   className={cn(
                     'flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors',
-                    payment === option.value ? 'border-ink bg-ink/[0.03]' : 'border-line bg-white/40 hover:border-ink/30',
+                    payment === option.value ? 'border-ink bg-ink/[0.03]' : 'border-line bg-card/40 hover:border-ink/30',
                   )}
                 >
                   <input
@@ -610,7 +610,7 @@ export default function CartPage() {
             </label>
 
             {error && (
-              <p className="mt-4 flex items-start gap-2 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+              <p className="mt-4 flex items-start gap-2 rounded-lg border border-rust/30 bg-rust/10 p-3 text-sm text-rust">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {error}
               </p>
             )}

@@ -60,7 +60,7 @@ export default function AccessibilityPage() {
 
       <section className="container-lumi py-14">
         <div className="mb-8 flex items-center gap-3 rounded-2xl border border-line bg-card p-5 text-sm text-ink-soft">
-          <Accessibility className="h-6 w-6 shrink-0 text-forest" />
+          <Accessibility className="h-6 w-6 shrink-0 text-success" />
           <p>
             {pick(
               {

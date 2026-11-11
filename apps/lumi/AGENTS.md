@@ -57,3 +57,21 @@ npm run build
 ## Deploy
 
 `deploy/deploy-lumi.sh` (EDGE2). Env je v `/etc/zion/lumi.env`, data v `/opt/zion/data/lumi/`. Nginx vhost a systemd unit v `deploy/`. Podrobnosti v `README.md`.
+
+## Design engine a obrázky (2026-11-11)
+
+- **Paleta:** ZION Design Engine v1.0 B — inkoust `#101C2B`, les `#344A36`, pergamen `#F0E1BE`, jantar `#E7AA4B`, rez `#9D493D`. Nedávej zpět starou hnědou paletu ani rasta barvy.
+- **Obrázky:** `public/images/lumi-b/`; varianty `-200/-640/-700/-1280` přes `src/lib/images.ts`. Karty používají `imageSmall`, detail plnou variantu, náhledy `-200`.
+- **Žádné technické řezy v UI:** `sest-sten.png` a `rozlozeni-a3.png` se na webu nesmí objevit (rozhodnutí 👤 11. 11.). Jen fotky a produktové rendery; reálné fotky přijdou v dalším kole.
+- **Lokace:** marketing nesmí tvrdit „vyrobeno v Horní Čermné“ ani jinou výrobní lokaci. Adresa v kontaktu, faktuře, OP, GPSR a vratné adrese zůstává (zákon).
+- **Poznámky k obrázkům:** Mini = „Ilustrační zobrazení Lumi Mini“, personalizace = „Ukázka motivu na dřevěném vzorku“, dárkové balení = doplněk, ne sada. Drž je v `ProductDef.disclaimer`.
+- **3D:** `#nahled-3d` (ID nesmí začínat číslicí — CSS selektor by selhal), na homepage je sekce „Naše eso“ hned pod hero/trust stripem; fallback `3d-poster-700.webp`.
+- **Právní minimum:** `/nakupni-rad`, `/cookies`, `/odstoupeni-od-smlouvy`, `/bezpecnost-produktu`, `/pristupnost`, `/reklamace`; odkazy v patičce, checkoutu a sitemapě. Cookie lišta jen technické cookies.
+
+## Světlý / tmavý motiv (2026-11-11)
+
+- `data-theme` na `<html>`, `lumi_theme` v localStorage, systémová preference jako fallback. Přepínač je v hlavičce (`ThemeToggle`), inline skript v `layout.tsx` nastaví motiv před paintem.
+- **Barvy nehardcoduj.** `paper`, `paper-deep`, `card`, `line`, `ink`, `ink-soft`, `muted`, `forest`, `rust`, `success` a amber 600–900 jsou CSS proměnné v `globals.css`; Tailwind je mapuje přes `rgb(var(--color-*) / <alpha-value>)`.
+- Tmavý motiv: `--btn-primary-bg` = jantar, text inkoust; `forest` je tmavší, `rust`/`success` světlejší. `text-parchment` zůstává staticky světlý pro tmavé plochy (`bg-forest`), `text-ink` se přepíná.
+- Nepoužívej `bg-white/*` (kromě QR plochy) — používej `bg-card/*`. `bg-ink` je textová barva, ne plocha; plochy jsou `bg-forest`.
+- Responzivita: testuj 390 a 1440 v **obou** motivech, cookies tabulku jako karty na mobilu, administraci s `overflow-x-auto`.

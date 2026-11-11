@@ -19,7 +19,7 @@ export default function LegalPage({ doc }: { doc: LegalDoc }) {
               {pick({ cs: 'Aktualizováno', en: 'Updated', de: 'Aktualisiert' }, lang)}: {doc.updated}
             </p>
             {doc.note ? <p className="leading-relaxed text-ink-soft">{pick(doc.note, lang)}</p> : null}
-            <div className="rounded-xl border border-line bg-white/60 p-4 text-xs leading-relaxed text-muted">
+            <div className="rounded-xl border border-line bg-card/60 p-4 text-xs leading-relaxed text-muted">
               {COMPANY.name}
               <br />
               {COMPANY.address}, {COMPANY.city}

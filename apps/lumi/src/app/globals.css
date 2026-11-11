@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: light;
   /* ZION Design Engine v1.0 — schválená paleta B */
   --paper: #f0e1be;          /* pergamen */
   --paper-deep: #e6d3a8;
@@ -16,6 +17,58 @@
   --wood: #8a5a33;
   --forest: #344a36;         /* les */
   --rust: #9d493d;           /* rez */
+  --success: #066928;
+  --btn-primary-bg: #344a36;
+  --btn-primary-fg: #f0e1be;
+
+  /* RGB triplety pro Tailwind (bg-ink/70 apod.) */
+  --color-paper: 240 225 190;
+  --color-paper-deep: 230 211 168;
+  --color-card: 248 239 217;
+  --color-line: 216 197 160;
+  --color-ink: 16 28 43;
+  --color-ink-soft: 51 66 75;
+  --color-muted: 110 102 80;
+  --color-forest: 52 74 54;
+  --color-rust: 157 73 61;
+  --color-success: 6 105 40;
+  --color-amber-600: 201 138 46;
+  --color-amber-700: 157 106 31;
+  --color-amber-800: 122 79 23;
+  --color-amber-900: 92 58 15;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #101c2b;
+  --paper-deep: #162432;
+  --card: #1a2a36;
+  --ink: #f0e1be;
+  --ink-soft: #d6c8a8;
+  --muted: #a99b7e;
+  --line: #2e4050;
+  --amber: #e7aa4b;
+  --amber-deep: #e7aa4b;
+  --forest: #22352a;
+  --rust: #d8786b;
+  --success: #7bc49a;
+  --btn-primary-bg: #e7aa4b;
+  --btn-primary-fg: #101c2b;
+
+  --color-paper: 16 28 43;
+  --color-paper-deep: 22 36 50;
+  --color-card: 26 42 54;
+  --color-line: 46 64 80;
+  --color-ink: 240 225 190;
+  --color-ink-soft: 214 200 168;
+  --color-muted: 169 155 126;
+  --color-forest: 34 53 42;
+  --color-rust: 216 120 107;
+  --color-success: 123 196 154;
+  --color-amber-600: 231 170 75;
+  --color-amber-700: 231 190 120;
+  --color-amber-800: 239 211 160;
+  --color-amber-900: 246 230 196;
 }
 
 html {
@@ -35,9 +88,20 @@ body {
   background-attachment: fixed;
 }
 
+[data-theme="dark"] body {
+  background-image:
+    radial-gradient(62rem 42rem at 88% -12%, rgba(231, 170, 75, 0.11), transparent 62%),
+    radial-gradient(48rem 34rem at -4% 8%, rgba(52, 74, 54, 0.24), transparent 60%);
+}
+
 ::selection {
   background: rgba(231, 170, 75, 0.35);
   color: var(--ink);
+}
+
+[data-theme="dark"] ::selection {
+  background: rgba(231, 170, 75, 0.42);
+  color: #101c2b;
 }
 
 a:focus-visible,
@@ -93,15 +157,21 @@ textarea:focus-visible {
   }
 
   .btn-primary {
-    @apply btn bg-ink text-parchment shadow-warm hover:bg-forest active:translate-y-[1px];
+    @apply btn shadow-warm active:translate-y-[1px];
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.07);
   }
 
   .btn-outline {
-    @apply btn border border-ink/25 bg-transparent text-ink hover:border-forest/60 hover:bg-forest/5;
+    @apply btn border border-ink/25 bg-transparent text-ink hover:border-forest/60 hover:bg-ink/5;
   }
 
   .btn-amber {
-    @apply btn bg-amber-500 text-ink shadow-glow hover:bg-amber-400 active:translate-y-[1px];
+    @apply btn bg-amber-500 text-[#101C2B] shadow-glow hover:bg-amber-400 active:translate-y-[1px];
   }
 
   .btn-ghost {
@@ -109,7 +179,7 @@ textarea:focus-visible {
   }
 
   .input {
-    @apply w-full rounded-xl border border-line bg-white/80 px-4 py-3 text-sm text-ink placeholder:text-muted/60 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20;
+    @apply w-full rounded-xl border border-line bg-card/80 px-4 py-3 text-sm text-ink placeholder:text-muted/60 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20;
   }
 
   .label {

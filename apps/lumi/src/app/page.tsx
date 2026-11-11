@@ -116,7 +116,7 @@ export default function HomePage() {
       </section>
 
       {/* ── 3D — naše eso ────────────────────────────────────────────── */}
-      <section id="nahled-3d" className="scroll-mt-24 bg-ink py-16 text-parchment lg:py-24">
+      <section id="nahled-3d" className="scroll-mt-24 bg-forest py-16 text-parchment lg:py-24">
         <div className="container-lumi grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
           <div>
             <p className="eyebrow text-amber-300">{pick(SITE.viewer.kicker, lang)}</p>

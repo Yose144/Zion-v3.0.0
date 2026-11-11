@@ -21,6 +21,41 @@ Samostatný web pro dřevěné lampiony **Lumi**. Prodávajícím je **Omnity.On
 | E-maily | potvrzení objednávky (cs/en/de), notifikace adminovi, odeslání, poptávky, newsletter |
 | Admin | `/admin` — objednávky, poptávky, ceny/sklad, faktura k tisku |
 | SEO | metadata, OG, JSON-LD, sitemap, robots |
+| Motiv | světlý a tmavý (systém + přepínač v hlavičce, uloženo v localStorage) |
+
+
+## Světlý a tmavý motiv
+
+- Motiv se přepíná atributem `data-theme` na `<html>`; volba se ukládá do `localStorage.lumi_theme`.
+- Při první návštěvě se použije systémová preference (`prefers-color-scheme`), dokud si člověk nevybere.
+- Inline skript v `<body>` nastaví motiv před prvním vykreslením, takže nebliká; `ThemeProvider` drží stav a přepínač v hlavičce.
+- Barvy jsou **semantické CSS proměnné** (`--color-paper`, `--color-ink`, `--color-card`, `--color-line`, `--color-ink-soft`…). Nikdy nehardcoduj `#f0e1be`/`#101c2b` do komponent — rozbilo by to přepínání.
+- Ověřuj oba motivy na 390 px i 1440 px. Tmavý motiv používá jantarové primární CTA, aby nebyla na tmavé ploše nevýrazná.
+
+## Design engine a obrázky
+
+Web jede na **ZION Design Engine v1.0, schválený směr B** (inkoust `#101C2B`, les `#344A36`, pergamen `#F0E1BE`, jantar `#E7AA4B`, rez `#9D493D`). Lumi zůstává samostatná značka — přebírá paletu a princip „jeden světelný akcent, čitelná silueta, malované okolí“, ne ZION symboly.
+
+- Vizuály jsou v `public/images/lumi-b/` (nová sada `LUMI_ZION_B_web_a_kampane`).
+- Varianty: `-200` náhledy do galerie/košíku, `-640` 4:3 karty, `-700` produkty a detail, `-1280` široké hero. Cesty skládá `src/lib/images.ts` (`imageVariant`).
+- **Technické řezy (`sest-sten.png`, `rozlozeni-a3.png`) se na webu záměrně nepoužívají** — jen fotografie a produktové rendery. Reálné fotky doplníme v dalším kole; místo je připravené v galerii.
+- U Mini je viditelná poznámka „Ilustrační zobrazení“, u personalizace „Ukázka motivu“, u dárkového balení „doplněk k lampionu“.
+- Marketingové texty **neuvádějí „vyrobeno v Horní Čermné“** ani jinou výrobní lokaci. Adresa `Omnity.One s.r.o.` zůstává jen tam, kde ji vyžaduje zákon (kontakt, faktura, obchodní podmínky, GPSR, vrácení).
+
+## Právní minimum e-shopu
+
+Vedle obchodních podmínek a ochrany údajů web obsahuje:
+
+| Stránka | Co řeší |
+|---|---|
+| `/nakupni-rad` | průběh objednávky, ceny, platby, doprava, personalizace, odstoupení |
+| `/cookies` | tabulka technických cookies, žádné reklamní/měřicí |
+| `/odstoupeni-od-smlouvy` | 14denní právo, postup, vzorový formulář |
+| `/bezpecnost-produktu` | GPSR — výrobce, materiál, určení, bezpečnostní pokyny |
+| `/reklamace` | vady, 30denní lhůta, vratná adresa, ČOI / mimosoudní řešení |
+| `/pristupnost` | prohlášení k EAA/WCAG, známá omezení, kontakt |
+
+Cookie lišta je informační (jen technické cookies), odkazuje na `/cookies`; checkout připomíná právo odstoupit do 14 dnů a odkazy na nákupní řád.
 
 ## Lokální vývoj
 
@@ -110,7 +145,7 @@ SMTP přes `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`. Bez SMTP se e-ma
 
 ```bash
 # 1) Adresář a data
-ssh zion-v6 'mkdir -p "/opt/zion/APP&WEB/Lumi" /opt/zion/data/lumi && chown -R zion:zion /opt/zion/data/lumi'
+ssh zion-v6 'mkdir -p "/opt/zion/APP&WEB/Lumi" /opt/zion/data/lumi && chown -R zion:zion /opt/zion/data/lumi && chmod o+x /opt/zion'
 
 # 2) Env (nikdy v gitu)
 ssh zion-v6 'install -m 600 /dev/null /etc/zion/lumi.env'
@@ -152,6 +187,8 @@ ZION_SKIP_NPM_CI=1 bash apps/lumi/deploy/deploy-lumi.sh
 ```
 
 Skript: build → rsync → `prisma generate` + `db push` na serveru → restart → seed → smoke (`/`, `/api/health`, `/api/products`, `/_next/static/*`).
+
+Nginx servíruje `/_next/static/`, `/images/`, `/models/` a `/downloads/` přímo ze standalone stromu (bez proxy temp souborů). Vyžaduje `chmod o+x /opt/zion` (průchod, ne čtení) a `644` na statických souborech — deploy to nastavuje sám.
 
 ### Kontaktní údaje
 

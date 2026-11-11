@@ -3,29 +3,21 @@ import type { Config } from 'tailwindcss';
 /**
  * Lumi — vizuální základ podle **ZION Design Engine v1.0** (schválený směr B).
  * Kanonické barvy enginu: inkoust #101C2B, les #344A36, pergamen #F0E1BE,
- * jantar #E7AA4B, rez #9D493D. Lumi zůstává samostatná značka — přebírá
- * paletu a princip „jeden světelný akcent, čitelná silueta, malované okolí“,
- * ne ZION symboly.
+ * jantar #E7AA4B, rez #9D493D.
  *
- * Historické názvy (`paper`, `cream`, `wood`) zůstávají jako aliasy, aby
- * se nemusely přepisovat všechny komponenty; hodnoty jsou nové.
+ * Semantické barvy jsou CSS proměnné, takže light/dark motiv mění jediný
+ * atribut `data-theme` na <html>. Nemíchat sem statické hex hodnoty pro
+ * paper/ink/card/line — rozbilo by to přepínání motivu.
  */
 const config: Config = {
   content: ['./src/app/**/*.{ts,tsx}', './src/components/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
+        // Statické značkové barvy
         parchment: '#F0E1BE',
-        'parchment-deep': '#E6D3A8',
-        paper: '#F0E1BE',
-        cream: '#E6D3A8',
-        card: '#F8EFD9',
-        line: '#D8C5A0',
-        muted: '#6E6650',
-        ink: '#101C2B',
-        'ink-soft': '#33424B',
-        forest: '#344A36',
-        rust: '#9D493D',
+        forest: 'rgb(var(--color-forest) / <alpha-value>)',
+        success: 'rgb(var(--color-success) / <alpha-value>)',
         amber: {
           50: '#FBF2DE',
           100: '#F6E6C4',
@@ -33,10 +25,21 @@ const config: Config = {
           300: '#E7BE78',
           400: '#E7AA4B',
           500: '#E7AA4B',
-          600: '#C98A2E',
-          700: '#9D6A1F',
-          800: '#7A4F17',
+          600: 'rgb(var(--color-amber-600) / <alpha-value>)',
+          700: 'rgb(var(--color-amber-700) / <alpha-value>)',
+          800: 'rgb(var(--color-amber-800) / <alpha-value>)',
+          900: 'rgb(var(--color-amber-900) / <alpha-value>)',
         },
+        // Semantické plochy a text (light/dark)
+        'parchment-deep': 'rgb(var(--color-paper-deep) / <alpha-value>)',
+        paper: 'rgb(var(--color-paper) / <alpha-value>)',
+        cream: 'rgb(var(--color-paper-deep) / <alpha-value>)',
+        card: 'rgb(var(--color-card) / <alpha-value>)',
+        line: 'rgb(var(--color-line) / <alpha-value>)',
+        muted: 'rgb(var(--color-muted) / <alpha-value>)',
+        ink: 'rgb(var(--color-ink) / <alpha-value>)',
+        'ink-soft': 'rgb(var(--color-ink-soft) / <alpha-value>)',
+        rust: 'rgb(var(--color-rust) / <alpha-value>)',
         wood: {
           100: '#E9D7B6',
           200: '#D8BE93',

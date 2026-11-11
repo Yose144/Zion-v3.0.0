@@ -246,7 +246,7 @@ export default function AdminApp() {
           <h1 className="h3">Administrace Lumi</h1>
           <p className="mt-2 text-sm text-ink-soft">Přihlaste se heslem.</p>
           {!configured && (
-            <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+            <p className="mt-3 rounded-lg border border-amber-600/30 bg-amber-500/10 p-3 text-xs text-amber-900">
               Admin není nakonfigurován. Nastavte <code>LUMI_ADMIN_PASSWORD</code> a <code>LUMI_SESSION_SECRET</code>.
             </p>
           )}
@@ -268,7 +268,7 @@ export default function AdminApp() {
             autoComplete="current-password"
             disabled={!configured}
           />
-          {loginError && <p className="mt-2 text-sm text-red-700">{loginError}</p>}
+          {loginError && <p className="mt-2 text-sm text-rust">{loginError}</p>}
           <button type="submit" className="btn-primary mt-4 w-full" disabled={!configured}>
             Přihlásit
           </button>
@@ -317,12 +317,12 @@ export default function AdminApp() {
               type="button"
               onClick={() => setTab(entry.id)}
               className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                tab === entry.id ? 'bg-ink text-paper' : 'text-ink-soft hover:bg-ink/5'
+                tab === entry.id ? 'bg-forest text-parchment' : 'text-ink-soft hover:bg-ink/5'
               }`}
             >
               <Icon className="h-4 w-4" /> {entry.label}
               {entry.id === 'inquiries' && entry.count > 0 && (
-                <span className="rounded-full bg-amber-600 px-1.5 text-[10px] font-bold text-white">{entry.count}</span>
+                <span className="rounded-full bg-amber-600 px-1.5 text-[10px] font-bold text-[#101C2B]">{entry.count}</span>
               )}
             </button>
           );
@@ -352,8 +352,8 @@ export default function AdminApp() {
               </select>
             </div>
 
-            <div className="card-warm mt-3 overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="card-warm mt-3 overflow-x-auto">
+              <table className="w-full min-w-[640px] text-sm">
                 <thead className="bg-parchment-deep/60 text-left text-[0.65rem] uppercase tracking-[0.1em] text-muted">
                   <tr>
                     <th className="px-3 py-2">Objednávka</th>
@@ -387,7 +387,7 @@ export default function AdminApp() {
                       </td>
                       <td className="px-3 py-3">
                         <span className="rounded-full bg-ink/5 px-2 py-0.5 text-[11px]">{STATUS_LABEL[order.status] ?? order.status}</span>
-                        {order.paymentStatus === 'paid' && <span className="ml-1 text-[11px] text-emerald-800">●</span>}
+                        {order.paymentStatus === 'paid' && <span className="ml-1 text-[11px] text-success">●</span>}
                       </td>
                       <td className="px-3 py-3 text-right font-medium">{czk(order.totalCzk)}</td>
                       <td className="px-2 py-3 text-right">
@@ -462,7 +462,7 @@ export default function AdminApp() {
                 )}
 
                 {selected.fireConsentName && (
-                  <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+                  <div className="rounded-lg border border-amber-600/30 bg-amber-500/10 p-3 text-xs text-amber-900">
                     Podpis: <strong>{selected.fireConsentName}</strong> ({selected.fireConsentVersion})
                   </div>
                 )}

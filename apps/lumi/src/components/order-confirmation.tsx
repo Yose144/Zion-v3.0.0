@@ -161,7 +161,7 @@ export default function OrderConfirmation({ orderId }: { orderId: string }) {
               {pick({ cs: 'Zobrazit objednávku', en: 'Show order', de: 'Bestellung anzeigen' }, lang)}
             </button>
           </form>
-          {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
+          {error && <p className="mt-3 text-sm text-rust">{error}</p>}
           <p className="mt-4 text-xs text-muted">
             {pick({ cs: 'Číslo objednávky', en: 'Order number', de: 'Bestellnummer' }, lang)}: <strong>{orderId}</strong>
           </p>
@@ -183,7 +183,7 @@ export default function OrderConfirmation({ orderId }: { orderId: string }) {
     <div className="container-lumi py-10 lg:py-14">
       <div className="mx-auto max-w-3xl">
         <div className="text-center">
-          <span className={`inline-flex h-14 w-14 items-center justify-center rounded-full ${paid ? 'bg-emerald-700/10 text-emerald-800' : 'bg-amber-500/15 text-amber-800'}`}>
+          <span className={`inline-flex h-14 w-14 items-center justify-center rounded-full ${paid ? 'bg-success/10 text-success' : 'bg-amber-500/15 text-amber-800'}`}>
             {paid ? <Check className="h-7 w-7" /> : <Clock className="h-7 w-7" />}
           </span>
           <h1 className="h2 mt-4">
@@ -251,7 +251,7 @@ export default function OrderConfirmation({ orderId }: { orderId: string }) {
                 </div>
               </dl>
             </div>
-            {copied && <p className="mt-2 text-xs text-emerald-800">Zkopírováno</p>}
+            {copied && <p className="mt-2 text-xs text-success">Zkopírováno</p>}
             <p className="mt-4 text-xs text-muted">
               {pick({ cs: 'Stav se aktualizuje automaticky.', en: 'The status updates automatically.', de: 'Der Status wird automatisch aktualisiert.' }, lang)}
             </p>

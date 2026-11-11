@@ -37,7 +37,7 @@ export default function BuyBox({ product }: { product: ProductDef }) {
         <span
           className={
             soldOut
-              ? 'rounded-full bg-ink/85 px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-paper'
+              ? 'rounded-full bg-forest px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-parchment'
               : 'rounded-full bg-amber-500/15 px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-amber-800'
           }
         >
@@ -53,7 +53,7 @@ export default function BuyBox({ product }: { product: ProductDef }) {
 
       {!soldOut && (
         <div className="flex flex-wrap items-center gap-3">
-          <div className="inline-flex items-center rounded-full border border-line bg-white/70">
+          <div className="inline-flex items-center rounded-full border border-line bg-card/70">
             <button
               type="button"
               onClick={() => setQuantity((value) => Math.max(1, value - 1))}
@@ -89,7 +89,7 @@ export default function BuyBox({ product }: { product: ProductDef }) {
         </p>
       )}
 
-      <div className="space-y-2.5 rounded-xl border border-line bg-white/50 p-4 text-sm text-ink-soft">
+      <div className="space-y-2.5 rounded-xl border border-line bg-card/50 p-4 text-sm text-ink-soft">
         <p className="flex items-start gap-2">
           <Truck className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
           <span>{pick(product.leadTime, lang)}</span>
