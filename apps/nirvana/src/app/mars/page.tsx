@@ -288,6 +288,11 @@ export default function MarsPage() {
                 </span>
                 {(mpStats?.quadIn ?? 0) > 0 && <span className="arena-quad">QUAD ×3 · {mpStats?.quadIn}s</span>}
                 {(mpStats?.hasteIn ?? 0) > 0 && <span className="arena-haste">HASTE · {mpStats?.hasteIn}s</span>}
+                {(mpStats?.itemTimers ?? []).map((timer) => (
+                  <span key={`mp-${timer.id}`} className="arena-timer">
+                    {timer.label} {timer.seconds}s
+                  </span>
+                ))}
                 <span className="arena-weapon">{weaponLabel(mpStats?.weapon ?? 'rail', mpStats?.ammo ?? 0)}</span>
               </>
             )}
@@ -320,6 +325,16 @@ export default function MarsPage() {
                 </li>
               ))}
             </ol>
+          )}
+          {(mpStats?.feed?.length ?? 0) > 0 && (
+            <div className="arena-killfeed" role="status" aria-live="polite">
+              {mpStats!.feed!.map((entry) => (
+                <span key={entry.id} className={entry.kind === 'frag' ? 'is-frag' : 'is-death'}>
+                  {entry.text}
+                  {entry.weapon && <em>{shortWeapon(entry.weapon)}</em>}
+                </span>
+              ))}
+            </div>
           )}
           {!watch && (
             <>

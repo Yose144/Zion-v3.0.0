@@ -65,6 +65,8 @@ export interface MpStats extends ArenaStats {
 }
 
 const ROCKET_POOL = 8;
+/** Definice pickupů podle id — pro odpočty respawnu powerupů v HUD. */
+const PICKUP_DEFS = new Map(ARENA_PICKUPS.map((pickup) => [pickup.id, pickup]));
 /** Vzdálenost, od které se predikce „srovná" na server (teleport). */
 const SNAP_DISTANCE = 1.6;
 
@@ -165,6 +167,11 @@ export function MarsMultiplayer({
   const lastHp = useRef(100);
   const matchState = useRef<'running' | 'ended' | 'countdown' | null>(null);
   const roster = useRef<Map<string, string>>(new Map());
+  /** Kill feed (Q3): poslední zásahy, 4,5 s viditelné. */
+  const feed = useRef<{ id: number; text: string; kind: 'frag' | 'death'; weapon?: WeaponId; until: number }[]>([]);
+  const nextFeedId = useRef(1);
+  /** Kdy byl pickup vzat — pro odpočet respawnu (jen powerupy/mega). */
+  const pickupTakenAt = useRef(new Map<string, number>());
   /** Kdo je v místnosti a jaký má avatar — mění se jen při změně obsazení. */
   const [slots, setSlots] = useState<{ id: string; avatarId: number | null }[]>([]);
 
@@ -207,6 +214,13 @@ export function MarsMultiplayer({
           hasteIn.current = mine.hasteIn ?? 0;
           if (mine.weapon !== weapon.current && mine.alive) weapon.current = mine.weapon;
         }
+        // Odpočty respawnu: sleduj přechod taken false → true.
+        const nowStamp = Date.now();
+        for (const pickup of next.pickups) {
+          const tracked = pickupTakenAt.current.has(pickup.id);
+          if (pickup.taken && !tracked) pickupTakenAt.current.set(pickup.id, nowStamp);
+          else if (!pickup.taken && tracked) pickupTakenAt.current.delete(pickup.id);
+        }
         const nextSlots = next.players
           .filter((player) => player.id !== youPlayerId)
           .map((player) => ({ id: player.id, avatarId: player.avatarId ?? null }));
@@ -236,6 +250,15 @@ export function MarsMultiplayer({
         if (event.kind === 'kill') {
           if (event.killer === youPlayerId) playFrag();
           if (event.victim === youPlayerId) playDeath();
+          const nameOf = (id: string) => (id === youPlayerId ? 'YOU' : (roster.current.get(id) ?? id.slice(0, 6)));
+          feed.current.push({
+            id: nextFeedId.current++,
+            text: `${nameOf(event.killer)} ✕ ${nameOf(event.victim)}`,
+            kind: event.victim === youPlayerId ? 'death' : 'frag',
+            weapon: event.weapon,
+            until: Date.now() + 4500,
+          });
+          if (feed.current.length > 5) feed.current.shift();
         }
         if (event.kind === 'pickup' && event.id === youPlayerId) playPickup();
         if (event.kind === 'respawn' && event.id === youPlayerId) playPickup();
@@ -535,6 +558,22 @@ export function MarsMultiplayer({
         ping: rtt,
         matchState: matchState.current,
         ammoByIndex: ammoByIndex.current,
+        feed: feed.current
+          .filter((entry) => entry.until > Date.now())
+          .map((entry) => ({ id: entry.id, text: entry.text, kind: entry.kind, weapon: entry.weapon })),
+        itemTimers: [...pickupTakenAt.current.entries()]
+          .map(([id, at]) => {
+            const def = PICKUP_DEFS.get(id);
+            if (!def || (def.kind !== 'powerup' && def.kind !== 'mega')) return null;
+            const seconds = Math.max(0, Math.ceil(def.respawn - (Date.now() - at) / 1000));
+            if (seconds <= 0) return null;
+            return {
+              id,
+              label: def.powerup === 'quad' ? 'QUAD' : def.powerup === 'haste' ? 'HASTE' : 'MEGA',
+              seconds,
+            };
+          })
+          .filter((entry): entry is { id: string; label: string; seconds: number } => entry !== null),
       };
       const key = JSON.stringify(stats);
       if (key !== lastStats.current) {

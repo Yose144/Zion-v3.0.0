@@ -2998,3 +2998,16 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   session; při opakování projde.
 - **Deploy pozastaven:** HEAD je proto 36, live net 34; app+net se musí
   nasadit spolu a net 36 ještě není stabilní.
+
+### MP aréna — kill feed a item timery (2026-11-11)
+
+- **Kill feed i online.** Event `kill` nese id zabijáka/oběti a zbraň;
+  jména se berou z `presence` rosteru (`YOU` pro sebe), text je
+  `KILLER ✕ VICTIM` se zkratkou zbraně. 4,5 s, max 5 řádků — stejná
+  komponenta `.arena-killfeed` jako sólo.
+- **Item timery v MP jsou klientské.** Server posílá jen `taken`, takže
+  klient sleduje přechod `false → true` a dopočítá odpočet z
+  `ARENA_PICKUPS` (respawn) — powerup/mega. Late-join vidí odpočet od
+  chvíle, kdy si pickup všiml; přesnější by bylo posílat `readyIn`
+  ze serveru (možný protokol 38).
+- **Bez změny protokolu** (37) — všechno je čistě klientské.
