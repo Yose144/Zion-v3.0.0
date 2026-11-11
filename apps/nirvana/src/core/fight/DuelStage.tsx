@@ -11,6 +11,7 @@ import {
   GOAL_HEIGHT,
   HILL_HALF,
   P,
+  SUMO_HALF,
   bodyCenterOf,
   type RagdollBall,
   type RagdollFighter,
@@ -22,7 +23,7 @@ import {
  * Scéna je jedna pro sólo i multiplayer (lekce z Venuše: vizuál tratě je
  * jeden soubor). `goals` přidá branky pro ragdoll fotbal.
  */
-export function DuelStage({ goals = false, hill = false }: { goals?: boolean; hill?: boolean }) {
+export function DuelStage({ goals = false, hill = false, sumo = false }: { goals?: boolean; hill?: boolean; sumo?: boolean }) {
   const sunGeo = useMemo(() => new THREE.CircleGeometry(11, 40), []);
   const haloGeo = useMemo(() => new THREE.RingGeometry(11.3, 15.2, 40), []);
   const half = goals ? BALL_HALF : ARENA_HALF;
@@ -43,6 +44,8 @@ export function DuelStage({ goals = false, hill = false }: { goals?: boolean; hi
       </mesh>
       {/* King of the Hill — zóna uprostřed */}
       {hill && <HillZone />}
+      {/* Sumo — vyznačený ring */}
+      {sumo && <SumoRing />}
 
       {/* středová linka */}
       <mesh position={[0, 0.011, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -120,6 +123,55 @@ export function DuelStage({ goals = false, hill = false }: { goals?: boolean; hi
   );
 }
 
+/** Sumo ring — vyznačený pás, ze kterého se soupeř vytlačí. */
+function SumoRing() {
+  const ringMaterial = useRef<THREE.MeshBasicMaterial>(null);
+  const reducedMotion = useReducedMotion();
+  useFrame((frame) => {
+    if (!ringMaterial.current) return;
+    ringMaterial.current.opacity = reducedMotion
+      ? 0.5
+      : 0.4 + 0.18 * Math.sin(frame.clock.elapsedTime * 1.8);
+  });
+  return (
+    <group>
+      <mesh position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[SUMO_HALF * 2, 5]} />
+        <meshBasicMaterial color="#ffcf7a" transparent opacity={0.07} toneMapped={false} depthWrite={false} />
+      </mesh>
+      {[-SUMO_HALF, SUMO_HALF].map((x) => (
+        <mesh key={x} position={[x, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.12, 5]} />
+          <meshBasicMaterial color="#ff9f43" transparent opacity={0.75} toneMapped={false} depthWrite={false} />
+        </mesh>
+      ))}
+      <mesh position={[0, 0.016, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.55, 0.62, 36]} />
+        <meshBasicMaterial
+          ref={ringMaterial}
+          color="#ffd166"
+          transparent
+          opacity={0.5}
+          toneMapped={false}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+      {[
+        [-SUMO_HALF, -2.2],
+        [SUMO_HALF, -2.2],
+        [-SUMO_HALF, 2.2],
+        [SUMO_HALF, 2.2],
+      ].map(([x, z], index) => (
+        <mesh key={index} position={[x, 0.25, z]}>
+          <boxGeometry args={[0.35, 0.5, 0.35]} />
+          <meshStandardMaterial color="#8f6a3d" roughness={0.9} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 /**
  * King of the Hill zóna — světelný pás a prstenec. Drží se jen v rozsahu
  * `HILL_HALF`; kdo tam stojí sám, bere si čas.
@@ -177,6 +229,7 @@ export function DuelCamera({
   b,
   ball = null,
   wide = false,
+  ring = false,
   xr = false,
   cameraRef = null,
 }: {
@@ -185,6 +238,8 @@ export function DuelCamera({
   ball?: MutableRefObject<RagdollBall | null> | null;
   /** Ragdoll fotbal: musí být vidět obě branky (klec je 20 m široká). */
   wide?: boolean;
+  /** Sumo: kamera musí vidět celý ring (8,4 m). */
+  ring?: boolean;
   /** Ve VR kameru řídí headset — nesaháme na ni. */
   xr?: boolean;
   /** Pro plovoucí čísla (2D canvas nad scénou) — kamera z r3f. */
@@ -215,15 +270,19 @@ export function DuelCamera({
     spread = Math.min(spread, 15);
 
     const k = dampFactor(delta);
-    desired.set(
-      midX,
-      wide ? 3.6 : 2.05,
-      wide ? 23 + Math.min(3, spread * 0.14) : 9.0 + Math.min(4.6, spread * 0.28),
-    );
+    const baseZ = ring ? 13 : wide ? 23 : 9;
+    const zoom = ring
+      ? Math.min(2.4, spread * 0.18)
+      : wide
+        ? Math.min(3, spread * 0.14)
+        : Math.min(4.6, spread * 0.28);
+    desired.set(midX, ring ? 2.4 : wide ? 3.6 : 2.05, baseZ + zoom);
     camera.position.lerp(desired, k);
     if (camera instanceof THREE.PerspectiveCamera) {
-      const baseFov = wide ? 62 : 42;
-      const desiredFov = baseFov + Math.min(wide ? 8 : 19, Math.max(0, spread - (wide ? 8 : 4)) * (wide ? 0.8 : 1.25));
+      const baseFov = ring ? 50 : wide ? 62 : 42;
+      const desiredFov =
+        baseFov +
+        Math.min(wide ? 8 : ring ? 6 : 19, Math.max(0, spread - (wide ? 8 : ring ? 7 : 4)) * (wide ? 0.8 : 1.25));
       camera.fov += (desiredFov - camera.fov) * k;
       camera.updateProjectionMatrix();
     }

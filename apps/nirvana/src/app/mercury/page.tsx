@@ -38,6 +38,7 @@ const MODES: { id: FightMode; title: DuelCopyKey; desc: DuelCopyKey }[] = [
   { id: 'survival', title: 'modeSurvival', desc: 'modeSurvivalDesc' },
   { id: 'practice', title: 'modePractice', desc: 'modePracticeDesc' },
   { id: 'koth', title: 'modeKoth', desc: 'modeKothDesc' },
+  { id: 'sumo', title: 'modeSumo', desc: 'modeSumoDesc' },
 ];
 
 const EMPTY_SOLO: DuelStats = {
@@ -64,6 +65,8 @@ const EMPTY_SOLO: DuelStats = {
   foeHill: 0,
   kickoff: null,
   contested: false,
+  selfRing: 0,
+  foeRing: 0,
 };
 
 const EMPTY_MP: DuelMpStats = {
@@ -171,7 +174,15 @@ export default function MercuryPage() {
                 0,
                 Math.round(result.selfHill * 40 + result.hits * 3 + (result.winner === 'self' ? 150 : 0)),
               )
-            : Math.max(0, result.scoreSelf * 120 - result.scoreFoe * 40);
+            : result.mode === 'sumo'
+              ? Math.max(
+                  0,
+                  result.selfWins * 100 -
+                    result.foeWins * 30 +
+                    Math.round(result.selfRing * 4) +
+                    (result.winner === 'self' ? 80 : 0),
+                )
+              : Math.max(0, result.scoreSelf * 120 - result.scoreFoe * 40);
       if (score <= 0) {
         setNotice(l('noPoints'));
         return;
@@ -229,6 +240,7 @@ export default function MercuryPage() {
   const isSurvival = mode === 'survival';
   const isPractice = mode === 'practice';
   const isKoth = mode === 'koth';
+  const isSumo = mode === 'sumo';
   const solo = source !== 'online';
   const state = solo ? soloStats.phase : mpStats.state;
   const countdown = solo ? soloStats.countdown : mpStats.countdown;
@@ -349,7 +361,9 @@ export default function MercuryPage() {
                         ? l('modePractice')
                         : isKoth
                           ? l('hill')
-                          : `${l('round')} ${round}`}
+                          : isSumo
+                            ? l('modeSumo')
+                            : `${l('round')} ${round}`}
                 </div>
                 <strong>
                   {state === 'countdown'
@@ -377,7 +391,9 @@ export default function MercuryPage() {
                             ? soloStats.contested
                               ? l('contested')
                               : `${selfHill.toFixed(1)} : ${foeHill.toFixed(1)} · ${l('hillHold')}`
-                            : l('vsBot')}
+                            : isSumo
+                              ? `${soloStats.selfRing.toFixed(1)} : ${soloStats.foeRing.toFixed(1)} · ${l('ringTime')}`
+                              : l('vsBot')}
                 </div>
               </div>
               <div className="duel-fighter is-foe">
@@ -441,11 +457,13 @@ export default function MercuryPage() {
                     ? `${l('ballOver')} · ${soloStats.scoreSelf}:${soloStats.scoreFoe}`
                     : isKoth
                       ? `${l('hillWin')} · ${soloStats.selfHill.toFixed(1)}:${soloStats.foeHill.toFixed(1)}`
-                      : soloStats.winner === 'self'
-                        ? l('victory')
-                        : l('defeat')}
+                      : isSumo
+                        ? `${l('sumoWin')} · ${soloStats.selfWins}:${soloStats.foeWins}`
+                        : soloStats.winner === 'self'
+                          ? l('victory')
+                          : l('defeat')}
               </strong>
-              <span>{isBall || isSurvival || isKoth ? l('resultSaved') : l('practiceResets')}</span>
+              <span>{isBall || isSurvival || isKoth || isSumo ? l('resultSaved') : l('practiceResets')}</span>
               {notice ? <span>{notice}</span> : null}
             </div>
           )}

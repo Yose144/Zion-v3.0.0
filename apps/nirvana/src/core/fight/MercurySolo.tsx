@@ -31,7 +31,7 @@ import { avatarLook } from '../avatars/kit';
 import { useReducedMotion } from '@/core/design/useReducedMotion';
 
 /**
- * MERKUR — sólo ragdoll (duel / ball / survival / practice / koth).
+ * MERKUR — sólo ragdoll (duel / ball / survival / practice / koth / sumo).
  *
  * Simulace je **týž modul** co server (`ragdoll.ts`); liší se jen zdroj
  * vstupu soupeře (`botInput`). Krokujeme pevně 1/60 s, aby se chování
@@ -68,6 +68,9 @@ export interface DuelStats {
   kickoff: 'self' | 'foe' | null;
   /** King of the Hill: oba stojí v zóně — držení je pozastavené. */
   contested: boolean;
+  /** Sumo: kolik sekund kdo vydržel v ringu. */
+  selfRing: number;
+  foeRing: number;
 }
 
 export interface SoloFinish {
@@ -82,6 +85,8 @@ export interface SoloFinish {
   bestHit: number;
   selfHill: number;
   foeHill: number;
+  selfRing: number;
+  foeRing: number;
   seconds: number;
 }
 
@@ -228,6 +233,8 @@ export function MercurySolo({
             bestHit: match.a.bestHit,
             selfHill: match.hill.a,
             foeHill: match.hill.b,
+            selfRing: match.ringTime.a,
+            foeRing: match.ringTime.b,
             seconds: match.elapsed,
           });
         }
@@ -309,6 +316,8 @@ export function MercurySolo({
         foeHill: Math.round(match.hill.b * 10) / 10,
         kickoff: match.kickoff.side ? (match.kickoff.side === 'a' ? 'self' : 'foe') : null,
         contested: match.mode === 'koth' && onHill(match.a) && onHill(match.b),
+        selfRing: Math.round(match.ringTime.a * 10) / 10,
+        foeRing: Math.round(match.ringTime.b * 10) / 10,
       };
       const key = JSON.stringify(stats);
       if (key !== lastStats.current) {
@@ -320,12 +329,13 @@ export function MercurySolo({
 
   return (
     <>
-      <DuelStage goals={mode === 'ball'} hill={mode === 'koth'} />
+      <DuelStage goals={mode === 'ball'} hill={mode === 'koth'} sumo={mode === 'sumo'} />
       <DuelCamera
         a={aRef}
         b={bRef}
         ball={ballRef}
         wide={mode === 'ball'}
+        ring={mode === 'sumo'}
         xr={xr}
         cameraRef={cameraRef ?? null}
       />

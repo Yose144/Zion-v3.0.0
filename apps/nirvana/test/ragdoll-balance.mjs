@@ -30,6 +30,7 @@ const empty = () => ({
   hits: 0,
   kos: 0,
   guardBreaks: 0,
+  ringouts: 0,
   maxCombo: 0,
   bestHit: 0,
 });
@@ -44,6 +45,7 @@ function count(tally, match, events) {
       tally.maxCombo = Math.max(tally.maxCombo, event.combo ?? 0);
     } else if (event.kind === 'ko') tally.kos += 1;
     else if (event.kind === 'guard_break') tally.guardBreaks += 1;
+    else if (event.kind === 'round_end' && event.reason === 'ringout') tally.ringouts += 1;
   }
   tally.maxCombo = Math.max(tally.maxCombo, match.a.combo, match.b.combo);
 }
@@ -58,6 +60,32 @@ function runDuel(countRuns) {
     let clock = 0;
     let ticks = 0;
     const cap = 30 * 60 * 8;
+    while (match.phase !== 'matchEnd' && ticks < cap) {
+      now += DT * 1000;
+      clock += DT;
+      ticks += 1;
+      count(tally, match, stepRagdoll(match, botInput(match, 'a', memA, DIFFICULTY, clock), botInput(match, 'b', memB, DIFFICULTY, clock), DT, now));
+    }
+    tally.matches += 1;
+    tally.seconds += ticks * DT;
+    if (match.phase !== 'matchEnd') tally.timeouts += 1;
+    else if (match.a.wins > match.b.wins) tally.winsA += 1;
+    else if (match.b.wins > match.a.wins) tally.winsB += 1;
+    else tally.draws += 1;
+  }
+  return tally;
+}
+
+function runSumo(countRuns) {
+  const tally = empty();
+  for (let run = 0; run < countRuns; run++) {
+    const match = createRagdollMatch('sumo', { id: 'a', name: 'A', avatarId: null }, { id: 'b', name: 'B', avatarId: null });
+    const memA = memory(17 + run * 37);
+    const memB = memory(19 + run * 41);
+    let now = 0;
+    let clock = 0;
+    let ticks = 0;
+    const cap = 30 * 60 * 6;
     while (match.phase !== 'matchEnd' && ticks < cap) {
       now += DT * 1000;
       clock += DT;
@@ -175,6 +203,8 @@ function line(name, tally, extra = '') {
 
 console.log(`\nMERKUR — sehrávka ${RUNS} zápasů na mód (bot ${DIFFICULTY})\n`);
 line('duel', runDuel(RUNS));
+const sumo = runSumo(RUNS);
+line('sumo', sumo, `ring-out ${(sumo.ringouts / Math.max(1, sumo.matches)).toFixed(1)}`);
 const survival = runSurvival(RUNS);
 line('survival', survival.tally, `průměrná vlna ${survival.waves.toFixed(1)}`);
 const ball = runBall(RUNS);

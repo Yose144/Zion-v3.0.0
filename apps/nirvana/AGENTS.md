@@ -2652,11 +2652,11 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Test:** `npx tsx test/arena-weapons.mjs` (26 kontrol: čísla Q3, spread
   s deterministickým RNG, armor, DPS blesku, poměr plazmy a rakety).
 
-## Merkur — ragdoll pro: kombo, kryt a pět módů (2026-11-10, proto 34)
+## Merkur — ragdoll pro: kombo, kryt a šest módů (2026-11-10, proto 35)
 
-- **Jeden engine, pět pravidel.** `core/fight/ragdoll.ts` je fyzikální
+- **Jeden engine, šest pravidel.** `core/fight/ragdoll.ts` je fyzikální
   loutka (11 bodů, 10 jointů, PBD) a zároveň pravidla pro `duel`, `ball`,
-  `survival`, `practice` a `koth`. Klient i server
+  `survival`, `practice`, `koth` a `sumo`. Klient i server
   (`apps/nirvana-net/src/fight.ts`) importují **tentýž soubor** — žádná
   druhá fyzika. Starý `duel.ts` a `Fighter3D.tsx` jsou smazané.
 - **Zásah = rychlost končetiny, ne tlačítko.** `hitDamage(speed, power, guard)`
@@ -2692,8 +2692,8 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   `guard` a `combo`. Deploy **net první, pak appka**
   (`deploy-nirvana.sh` to kontroluje sám).
 - **Módy:** duel (best of 3), ball (90 s), survival (vlny, od 5. obtížnost
-  champion), practice (figurína s regenerací), koth (držení kopce). Online
-  je jen duel.
+  champion), practice (figurína s regenerací), koth (držení kopce) a sumo
+  (vytlačení z ringu). Online je jen duel.
 - **HUD:** HP + tenká výdrž krytu (cyan, při zlomu červená), u kothu navíc
   zelený pruh držení; kombo `×N`; hlášky `K.O.` / `GUARD BREAK`.
 - **Testy:** `npx tsx apps/nirvana/test/ragdoll.mjs` (postoj, zásah, kombo,
@@ -2701,8 +2701,8 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   bot) a `apps/nirvana-net/test/fight.mjs` (simulace + síť včetně `guard`
   a `combo` ve snapshotu). PASSED.
 - **Vizuál:** `RagdollBody` kreslí válce mezi body + kontaktní stín;
-  `DuelStage` má `goals`, `hill` zónu a `wide` kameru (fotbal je 26 m široký
-  přes `BALL_HALF`, s úzkou kamerou nebyly vidět branky).
+  `DuelStage` má `goals`, `hill` zónu, `sumo` ring a `wide`/`ring` kameru
+  (fotbal 26 m přes `BALL_HALF`; sumo ring 6 m přes `SUMO_HALF`).
 
 ### Merkur — tuning podle sehrávky (2026-11-11)
 
@@ -2710,7 +2710,8 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   odehraje N zápasů bot vs bot v každém módu (délka, timeouty, zásahy, KO,
   kombo, zlomy krytu, góly, vlny, kopec). Čísla níže jsou z 96 běhů.
 - **Cílové tempo:** duel **43,9 s** (best of 3), 2,7 KO, 50:46; koth
-  **35,6 s**, 47:49, kopec 10,0:10,0 s; survival vlna **3,2**; ball
+  **35,6 s**, 47:49, kopec 10,0:10,0 s; **sumo 65,4 s, 21:27, 1,5 ring-out**;
+  survival vlna **3,2**; ball
   **6,8:5,4** gólů za 110 s (90 s hry + pauzy).
 - **`MAX_HP` 100 → 160**, `HIT_DAMAGE` 3,2 → 2,0, `HIT_MAX` 28 → 20,
   strop nárazové rychlosti 20 m/s. Runda je ~17 s místo 10 s.
@@ -2723,6 +2724,10 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   a teprve pak je započítá. Dřív A zasáhla první a při výměně K.O.-la B
   dřív, než B stihl zasáhnout → systematická výhoda A. Po opravě je koth
   46:50 (bylo 59:37).
+- **Sumo:** `SUMO_HALF = 3,0` (6 m ring), 35 s na kolo, best of 3.
+  Poškození ×0,3 a push ×1,5 — vyhrává se vytlačením, ne ubitím. Ring-out
+  je okamžitý (střed těla za čarou), KO nebo čas (rozhoduje čas v ringu)
+  ukončí kolo. Bot hlídá okraj a tlačí soupeře ven.
 - **Fotbal:** `BALL_HALF = 13` (26 m), branka 2,1 m, pomalejší míč a
   **výkop na středu + střelec zmrazený 1,6 s**. Míč se už nedává na
   polovinu inkasujícího (ten pak musel přes celé hřiště a střelec bránící

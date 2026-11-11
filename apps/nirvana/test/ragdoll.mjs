@@ -21,6 +21,8 @@ import {
   P,
   POINT_COUNT,
   PUNCH_REACH,
+  SUMO_HALF,
+  SUMO_SECONDS,
   applyPose,
   bodyCenterOf,
   botInput,
@@ -312,6 +314,45 @@ console.log('\n== král kopce ==');
   check('KO dá vítězi kus kopce', match.hill.a >= KOTH_KO_BONUS, String(match.hill.a));
   play(match, 30 * 3);
   check('poražený se v kothu vrátí', !match.b.ko && match.b.hp === MAX_HP, `ko=${match.b.ko} hp=${match.b.hp}`);
+}
+
+// ── sumo ──────────────────────────────────────────────────────────────
+console.log('\n== sumo ==');
+{
+  const match = createRagdollMatch('sumo', identity('a'), identity('b'));
+  match.phase = 'playing';
+  match.timer = SUMO_SECONDS;
+  for (let i = 0; i < POINT_COUNT; i++) match.a.x[i] += 6; // A ven z ringu
+  const events = play(match, 3);
+  const round = events.find((e) => e.kind === 'round_end');
+  check('ring-out ukončí kolo', match.b.wins === 1 && round?.reason === 'ringout', JSON.stringify(round));
+}
+{
+  const match = createRagdollMatch('sumo', identity('a'), identity('b'));
+  match.phase = 'playing';
+  match.timer = 0.02;
+  match.ringTime.a = 10;
+  match.ringTime.b = 2;
+  const events = play(match, 3);
+  const round = events.find((e) => e.kind === 'round_end');
+  check('na čas rozhodne čas v ringu', match.a.wins === 1 && round?.reason === 'time', JSON.stringify(round));
+}
+{
+  const match = createRagdollMatch('sumo', identity('a'), identity('b'));
+  match.phase = 'playing';
+  match.timer = SUMO_SECONDS;
+  damageFighter(match, match.b, MAX_HP, match.a, 0, []);
+  play(match, 2);
+  check('KO v sumu ukončí kolo', match.a.wins === 1, String(match.a.wins));
+}
+{
+  const match = createRagdollMatch('sumo', identity('a'), identity('b'));
+  resetRagdollMatch(match);
+  check(
+    'sumo startuje uvnitř ringu',
+    Math.abs(bodyCenterOf(match.a).x) <= SUMO_HALF && Math.abs(bodyCenterOf(match.b).x) <= SUMO_HALF,
+    `${bodyCenterOf(match.a).x} / ${bodyCenterOf(match.b).x}`,
+  );
 }
 
 console.log(`\nragdoll: ${failures === 0 ? 'PASSED' : `${failures} FAILED`}`);

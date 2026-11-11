@@ -25,7 +25,7 @@ loutkou** (Ragdoll Masters) a přidat módy, které z jedné arény udělají v�
 - Nárazová rychlost se počítá **před** posturální opravou (`ivx`/`ivy`) —
   jinak by zvednutí loutky vyrobilo falešný zásah 20 m/s.
 
-### 2. Čtyři módy
+### 2. Šest módů
 
 | Mód | Pravidla | Sólo | Online |
 |---|---|---|---|
@@ -33,13 +33,18 @@ loutkou** (Ragdoll Masters) a přidat módy, které z jedné arény udělají v�
 | `ball` | ragdoll fotbal, 90 s, branky, výkop pro inkasujícího | ✅ | — |
 | `survival` | nekonečné vlny, HP přežívá, soupeř sílí | ✅ | — |
 | `practice` | nemrtvá figurína, HP se regeneruje, měří nejtvrdší zásah | ✅ | — |
+| `koth` | král kopce: držet střed 12 s, KO bere 2,5 s | ✅ | — |
+| `sumo` | vytlačit soupeře z ringu, best of 3, 35 s | ✅ | — |
 
 - **Fotbal:** míč je samostatné těleso s gravitací, odrazem a přenosem
-  hybnosti z končetin. Branky jsou na koncích klece; po gólu se míč vrací
-  na stranu inkasujícího (výkop), aby jeden bot nevyhrával pořád.
+  hybnosti z končetin. Branky jsou na koncích klece; po gólu je výkop
+  na středu a střelec je 1,6 s zmrazený, aby jeden bot nevyhrával pořád.
 - **Přežití:** po každé vlně +22 HP hráče, soupeř má víc HP a od 5. vlny
   obtížnost `champion` (i když hráč zvolil `gentle`).
 - **Trénink:** figurína neútočí, HP se regeneruje, po „KO" se hned postaví.
+- **Sumo:** ring 6 m (`SUMO_HALF = 3,0`), 35 s na kolo, best of 3. Poškození
+  ×0,3 a push ×1,5 — vyhrává se vytlačením, ne ubitím. Ring-out je okamžitý
+  (střed těla za čarou), KO nebo čas (rozhoduje čas v ringu) ukončí kolo.
 
 ### 3. Vykreslení
 
@@ -169,12 +174,14 @@ góly, vlny a držení kopce.
 | Mód | Před | Po |
 |---|---|---|
 | duel | 25,3 s · 41,6 zásahů · 2,5 KO · 8:16 (48 runů) | **43,9 s · 100,2 zásahů · 2,7 KO · 50:46** |
+| sumo | — | **65,4 s · 21:27 · 1,5 ring-out · 1,0 KO** |
 | survival | 15,2 s · vlna 2,2 | **30,7 s · vlna 3,2** |
 | ball | 135 s · 15:15 gólů (30 gólů!) | **110 s · 6,8:5,4 gólů, 62:23/11 remíz** |
 | koth | 24,9 s · 59 zásahů · 4,0 KO · 50:46 | **35,6 s · 94,3 zásahů · 3,2 KO · 47:49** |
 
 ## Co se změnilo a proč
 
+- **Sumo:** nový mód s ringem 6 m, damage ×0,3, push ×1,5; ring-out/KO/čas.
 - **`MAX_HP` 100 → 160.** Runda byla 10 s; teď je ~17 s a zápas best-of-3 ~43 s.
 - **`HIT_DAMAGE` 3,2 → 2,0, `HIT_MAX` 28 → 20, strop nárazové rychlosti 20 m/s.**
   Zásah už nedává 28 z 100; silný kop bere ~10–20 z 160.
@@ -225,7 +232,7 @@ přes 160 — tichý rozpor, který `proto_check` nechytí.
 
 ## Ověření
 
-- `npx tsx apps/nirvana/test/ragdoll.mjs` — **47 kontrol, PASSED**.
+- `npx tsx apps/nirvana/test/ragdoll.mjs` — **51 kontrol, PASSED**.
 - `apps/nirvana-net/test/fight.mjs` — **31 kontrol, PASSED** (cílený build
   `tsconfig.fight.json`, protože plný `tsc` v `nirvana-net` blokuje
   paralelní session v `src/arena.ts` — `shard` pickup typ).
