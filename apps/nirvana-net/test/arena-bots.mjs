@@ -264,14 +264,27 @@ console.log('\n== server: brokovnice / blesk / plazma / pěst ==');
     human.input.fire = false;
   };
 
+  // Každý výstřel začíná na živém terči na stejném místě — bot se po
+  // zásahu může „zesnout" (alive=false) a pak by ho `liveTargets` ignoroval.
+  const resetTarget = (distance = 3) => {
+    bot.alive = true;
+    bot.hp = 100;
+    bot.body.x = human.body.x;
+    bot.body.y = 0.2;
+    bot.body.z = human.body.z - distance;
+    bot.body.vx = 0;
+    bot.body.vz = 0;
+  };
+
+  resetTarget();
   fireOnce('shotgun', 'shotgunAmmo');
   check('brokovnice: výstřel ubere botovi HP', bot.hp < 100, String(bot.hp));
 
-  bot.hp = 100;
+  resetTarget();
   fireOnce('lightning', 'lightningAmmo');
   check('blesk: 8 dmg na zásah', bot.hp === 92, String(bot.hp));
 
-  bot.hp = 100;
+  resetTarget();
   sim.rockets.length = 0;
   fireOnce('plasma', 'plasmaAmmo');
   check(
@@ -281,16 +294,14 @@ console.log('\n== server: brokovnice / blesk / plazma / pěst ==');
   );
 
   sim.rockets.length = 0;
-  bot.hp = 100;
-  bot.body.z = human.body.z - 1.6;
+  resetTarget(1.6);
   fireOnce('gauntlet');
   check('pěst: 50 dmg na blízko', bot.hp === 50, String(bot.hp));
 
   // munice se skutečně odečítá (shotgun 1 náboj na výstřel)
-  bot.hp = 100;
-  bot.body.z = human.body.z - 3;
+  resetTarget(3);
   human.shotgunAmmo = 2;
-  fireOnce('shotgun', 'shotgunAmmo');
+  fireOnce('shotgun');
   check('brokovnice: odečte náboj', human.shotgunAmmo === 1, String(human.shotgunAmmo));
   check('brokovnice: po výstřelu zbývá zbraň', human.weapon === 'shotgun', human.weapon);
 }
