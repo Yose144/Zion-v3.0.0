@@ -5,7 +5,8 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { ARENA_BOXES, ARENA_PICKUPS, PLAYER_SPAWN, type ArenaBox } from './map';
 import { PLAYER, makeSolids, stepBody, type Body } from './physics';
-import { WEAPONS } from './weapons';
+import { WEAPONS, type WeaponId } from './weapons';
+import { WeaponView } from './WeaponView';
 import { readTouch, type ArenaTouchState } from './ArenaTouch';
 import type { MutableRefObject } from 'react';
 import type { ArenaStats } from './MarsArena';
@@ -102,6 +103,30 @@ export function MarsMultiplayer({
   /** 0 = rail, 1 = rakety, 2 = strojní puška (Q3 sestava). */
   const weapon = useRef<0 | 1 | 2>(0);
   const firing = useRef(false);
+  /** Viewmodel: numerická zbraň → id a zpětný ráz (jen vizuál, server ne). */
+  const MP_WEAPON_IDS: WeaponId[] = ['rail', 'rocket', 'mg'];
+  const weaponView = useMemo(
+    () => ({
+      get current(): WeaponId {
+        return MP_WEAPON_IDS[weapon.current] ?? 'rail';
+      },
+    }),
+    // `weapon` je ref — getter se čte živě, závislost se nemění.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+  const deadUntilView = useMemo(
+    () => ({
+      get current(): number {
+        return alive.current ? 0 : Number.MAX_SAFE_INTEGER;
+      },
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+  const kick = useRef(0);
+  const muzzleUntil = useRef(0);
+  const lastLocalShot = useRef(0);
 
   const latest = useRef<Snapshot | null>(null);
   const previous = useRef<Snapshot | null>(null);
@@ -309,6 +334,18 @@ export function MarsMultiplayer({
     const jump = !watching && (keys.current.has('Space') || touchInput.jump);
     const fire = !watching && (firing.current || touchInput.fire);
 
+    // Vizuální kadence: server má vlastní cooldown, ale zbraň nesmí kmitat
+    // při každém snímku držené spouště.
+    if (fire) {
+      const spec = weapon.current === 1 ? WEAPONS.rocket : weapon.current === 2 ? WEAPONS.mg : WEAPONS.rail;
+      const stamp = performance.now();
+      if (stamp - lastLocalShot.current >= spec.cooldownMs) {
+        lastLocalShot.current = stamp;
+        kick.current = stamp;
+        muzzleUntil.current = stamp + 70;
+      }
+    }
+
     // 1) predikce vlastního pohybu stejnou fyzikou jako server.
     // Divák ji nepočítá — jinak by jeho kamera i vstup hrály vlastní zápas.
     if (!watching && alive.current) {
@@ -503,6 +540,17 @@ export function MarsMultiplayer({
           />
         </mesh>
       ))}
+
+      {/* zbraň v ruce — stejný model jako v sólu, jen tři zbraně */}
+      <WeaponView
+        weapon={weaponView}
+        player={local}
+        view={view}
+        kick={kick}
+        muzzleUntil={muzzleUntil}
+        deadUntil={deadUntilView}
+        hidden={Boolean(watch) || spectator}
+      />
 
       {/* ostatní hráči — každý svým avatarem z OASIS rosteru */}
       {slots.map((slot, index) => (

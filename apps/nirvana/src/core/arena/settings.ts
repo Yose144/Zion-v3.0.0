@@ -25,9 +25,24 @@ function clamp(value: number): number {
 
 /** Mezipaměť — `pointermove` ji čte 60×/s, localStorage by byl zbytečný I/O. */
 let cached: number | null = null;
+/**
+ * Menu a ArenaTouch mohou být v jiných chunkech (dvě modulové instance).
+ * Událost na `window` proto aktualizuje cache i v té druhé — jinak by
+ * posuvník v menu změnil jen svoji kopii a hra by jela starou citlivostí.
+ */
+let listening = false;
+function ensureListener(): void {
+  if (listening || typeof window === 'undefined') return;
+  listening = true;
+  window.addEventListener('nirvana:arena-look', (event) => {
+    const value = Number((event as CustomEvent<number>).detail);
+    cached = clamp(value);
+  });
+}
 
 /** Násobek základní citlivosti (1 = výchozí). */
 export function getLookSensitivity(): number {
+  ensureListener();
   if (cached !== null) return cached;
   if (typeof window === 'undefined') return LOOK_DEFAULT;
   try {
@@ -43,23 +58,26 @@ export function getLookSensitivity(): number {
 /** Obtížnost botů v sólu — volba zařízení, ne účtu. */
 export const BOT_SKILL_ORDER: BotSkill[] = ['easy', 'normal', 'hard', 'nightmare'];
 
-let skillCache: BotSkill | null = null;
-
+/**
+ * Obtížnost se čte **vždy z localStorage**, ne z modulové mezipaměti.
+ *
+ * Menu a stránka hry jsou v jiných chunkách a Next je umí vyhodnotit jako
+ * dva modulové instance; cache v jedné pak druhá nevidí (reálně: menu
+ * nastavilo nightmare, hra nastoupila s normal). Čtení je vzácné, takže
+ * pár zápisů navíc nic nestojí.
+ */
 export function getBotSkill(): BotSkill {
-  if (skillCache) return skillCache;
   if (typeof window === 'undefined') return 'normal';
   try {
     const raw = window.localStorage.getItem(SKILL_KEY);
-    skillCache = BOT_SKILL_ORDER.includes(raw as BotSkill) ? (raw as BotSkill) : 'normal';
+    return BOT_SKILL_ORDER.includes(raw as BotSkill) ? (raw as BotSkill) : 'normal';
   } catch {
-    skillCache = 'normal';
+    return 'normal';
   }
-  return skillCache ?? 'normal';
 }
 
 export function setBotSkill(value: BotSkill): BotSkill {
   const next = BOT_SKILL_ORDER.includes(value) ? value : 'normal';
-  skillCache = next;
   if (typeof window !== 'undefined') {
     try {
       window.localStorage.setItem(SKILL_KEY, next);
@@ -71,6 +89,7 @@ export function setBotSkill(value: BotSkill): BotSkill {
 }
 
 export function setLookSensitivity(value: number): number {
+  ensureListener();
   const next = clamp(value);
   cached = next;
   if (typeof window !== 'undefined') {
@@ -79,6 +98,8 @@ export function setLookSensitivity(value: number): number {
     } catch {
       /* volba se neuloží, ale platí pro tuhle hru */
     }
+    // Propagace do druhé modulové instance (menu ↔ hra).
+    window.dispatchEvent(new CustomEvent('nirvana:arena-look', { detail: next }));
   }
   return next;
 }

@@ -8828,6 +8828,21 @@ body:has(main.is-photo) .game-menu-open {
   color: rgba(232, 244, 255, 0.45);
 }
 
+/* Obtížnost botů v menu (jen Mars) — stejné tlačítko jako jazyky. */
+.game-menu-skill {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+  font-size: 0.7rem;
+  color: rgba(232, 244, 255, 0.65);
+}
+
+.game-menu-skill > span {
+  min-width: 5.5rem;
+}
+
 .game-menu-langs {
   display: flex;
   flex-wrap: wrap;

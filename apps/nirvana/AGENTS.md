@@ -2866,3 +2866,26 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Bez změny protokolu** (34): všechno je sólo UI. MP má vlastní tabuli.
 - **Test:** headless — Tab otevře/zavře tabulku se 4 řádky, hitmarker
   i viněta se objeví (poll 40–50 ms, ne pevné čekání).
+
+### Aréna — viewmodel v MP, obtížnost v menu, settings napříč chunky (2026-11-11)
+
+- **Multiplayer má zbraň v ruce.** `MarsMultiplayer` předává `WeaponView`
+  getter (`0|1|2` → `WeaponId`), takže se model nemusí remountovat při
+  přepnutí; zpětný ráz a záblesk jdou z **lokálního** cooldownu (server
+  má vlastní), divák zbraň nevidí. Protokol se nemění.
+- **Obtížnost botů je i v hamburger menu** (jen `/mars`). Sólo start
+  (`startSolo`) ji **znovu přečte z úložiště** — menu a stránka jsou jiné
+  komponenty a mohly by zůstat na staré hodnotě.
+- **🔴 Modulová cache napříč chunky:** Next umí GameMenu (layout) a hru
+  (page) vyhodnotit jako dvě instance `settings.ts`. Cache `skillCache`
+  pak způsobila, že menu nastavilo `nightmare`, ale hra nastoupila
+  s `normal`. Obtížnost se proto **čte vždy z localStorage**; citlivost
+  pohledu zůstává v cache kvůli 60×/s čtení, ale `setLookSensitivity`
+  posílá `window` událost `nirvana:arena-look`, kterou si druhá instance
+  přepíše cache. Kdo přidá další nastavení, musí počítat se dvěma
+  instancemi.
+- **Debug `botSkill`** je v refu — efekt registrující `__arenaDebug` běží
+  jednou a se starým propem by hlásil jinou obtížnost, než jaká se hraje
+  (přesně to se stalo při prvním testu).
+- **Test:** `test/arena-settings.mjs` se falešným `window` ověřuje
+  „žádná cache obtížnosti", clamp citlivosti a propagaci událostí.

@@ -202,6 +202,12 @@ export default function MarsPage() {
     setPhase('playing');
   }, []);
 
+  /** Sólo start vždy znovu přečte obtížnost — menu ji může změnit mezi zápasy. */
+  const startSolo = useCallback(() => {
+    setBotSkillState(getBotSkill());
+    setPhase('playing');
+  }, []);
+
   const endMatch = useCallback(
     (outcome: ArenaResult) => {
       setResult(outcome);
@@ -516,7 +522,7 @@ export default function MarsPage() {
                 </div>
               </div>
               <div className="arena-actions">
-                <button type="button" className="park-btn" onClick={() => setPhase('playing')}>
+                <button type="button" className="park-btn" onClick={startSolo}>
                   {l('enter')}
                 </button>
                 <button
@@ -565,7 +571,7 @@ export default function MarsPage() {
               </div>
               {notice && <p className="arena-notice">{notice}</p>}
               <div className="arena-actions">
-                <button type="button" className="park-btn" onClick={() => setPhase('playing')}>
+                <button type="button" className="park-btn" onClick={startSolo}>
                   {l('rematch')}
                 </button>
                 <Link href="/park" className="arena-link">

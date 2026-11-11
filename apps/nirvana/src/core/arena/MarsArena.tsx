@@ -306,6 +306,9 @@ export function MarsArena({
   const hits = useRef(0);
   /** Poslední botí výstřel — pro debug/test, že boti střídají zbraně. */
   const lastBotAttack = useRef<{ name: string; weapon: WeaponId } | null>(null);
+  /** Debug hook se registruje jednou; ref drží aktuální obtížnost. */
+  const botSkillRef = useRef<BotSkill>(botSkill);
+  botSkillRef.current = botSkill;
   /** Kdy hráč naposledy trefil / dostal zásah (pro hitmarker a vinětu). */
   const lastHitAt = useRef(0);
   const lastHurtAt = useRef(0);
@@ -336,6 +339,7 @@ export function MarsArena({
         frags: frags.current,
         health: health.current,
         armor: armor.current,
+        botSkill: botSkillRef.current,
         pickups: pickups.current.map((pickup) => ({ id: pickup.id, kind: pickup.kind, x: pickup.x, y: pickup.y, z: pickup.z, until: pickup.until })),
         weapon: weapon.current,
         quadUntil: quadUntil.current,

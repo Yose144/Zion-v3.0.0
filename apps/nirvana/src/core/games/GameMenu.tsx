@@ -21,7 +21,16 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LANG_NAMES, LANGS, langLabel, useI18n, type Lang } from '@/core/i18n';
-import { LOOK_MAX, LOOK_MIN, getLookSensitivity, setLookSensitivity } from '@/core/arena/settings';
+import {
+  BOT_SKILL_ORDER,
+  LOOK_MAX,
+  LOOK_MIN,
+  getBotSkill,
+  getLookSensitivity,
+  setBotSkill,
+  setLookSensitivity,
+} from '@/core/arena/settings';
+import type { BotSkill } from '@/core/arena/bot';
 import {
   getVolume,
   isMuted,
@@ -60,6 +69,13 @@ const T = {
     fr: 'S’applique à tous les jeux et survit au rechargement.',
   },
   language: { cs: 'Jazyk', en: 'Language', es: 'Idioma', pt: 'Idioma', fr: 'Langue' },
+  difficulty: {
+    cs: 'Obtížnost botů',
+    en: 'Bot difficulty',
+    es: 'Dificultad de bots',
+    pt: 'Dificuldade dos bots',
+    fr: 'Difficulté des bots',
+  },
   look: {
     cs: 'Citlivost pohledu',
     en: 'Look sensitivity',
@@ -103,6 +119,8 @@ export function GameMenu() {
   const [muted, setMutedState] = useState<boolean | null>(null);
   const [volume, setVolumeState] = useState(1);
   const [look, setLookState] = useState(1);
+  /** Obtížnost botů (jen Mars) — menu ji umí přepnout i během hry. */
+  const [skill, setSkillState] = useState<BotSkill>('normal');
   const button = useRef<HTMLButtonElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
 
@@ -111,6 +129,7 @@ export function GameMenu() {
     setMutedState(isMuted());
     setVolumeState(getVolume());
     setLookState(getLookSensitivity());
+    setSkillState(getBotSkill());
     const unMute = subscribeMuted(setMutedState);
     const unVolume = subscribeVolume(setVolumeState);
     return () => {
@@ -294,6 +313,21 @@ export function GameMenu() {
                   />
                 </label>
                 <p className="game-menu-note">{pick(T.lookNote, lang)}</p>
+                <div className="game-menu-skill" role="radiogroup" aria-label={pick(T.difficulty, lang)}>
+                  <span>{pick(T.difficulty, lang)}</span>
+                  {BOT_SKILL_ORDER.map((code) => (
+                    <button
+                      key={code}
+                      type="button"
+                      role="radio"
+                      aria-checked={skill === code}
+                      className={`game-menu-lang${skill === code ? ' is-active' : ''}`}
+                      onClick={() => setSkillState(setBotSkill(code))}
+                    >
+                      {code}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 

@@ -26,14 +26,17 @@ import { PLAYER, type Body } from './physics';
 import type { WeaponId } from './weapons';
 
 interface WeaponViewProps {
-  weapon: React.MutableRefObject<WeaponId>;
-  player: React.MutableRefObject<Body>;
-  view: React.MutableRefObject<{ yaw: number; pitch: number }>;
+  /** Jen čtení — multiplayer dodává getter (numerická zbraň → id). */
+  weapon: { current: WeaponId };
+  player: { current: Body };
+  view: { current: { yaw: number; pitch: number } };
   /** Kdy naposledy hráč vystřelil (ms) — od toho se počítá zpětný ráz. */
   kick: React.MutableRefObject<number>;
   /** Do kdy je vidět záblesk (ms). */
   muzzleUntil: React.MutableRefObject<number>;
-  deadUntil: React.MutableRefObject<number>;
+  deadUntil: { current: number };
+  /** Divák / hlediště: zbraň v ruce nepatří do záběru. */
+  hidden?: boolean;
   xr?: boolean;
 }
 
@@ -59,6 +62,7 @@ export function WeaponView({
   kick,
   muzzleUntil,
   deadUntil,
+  hidden = false,
   xr = false,
 }: WeaponViewProps) {
   const root = useRef<THREE.Group>(null);
@@ -72,7 +76,7 @@ export function WeaponView({
     const node = root.current;
     if (!node) return;
     const now = performance.now();
-    const visible = !xr && now >= deadUntil.current;
+    const visible = !xr && !hidden && now >= deadUntil.current;
     node.visible = visible;
     if (!visible) return;
 
