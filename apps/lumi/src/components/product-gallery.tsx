@@ -59,9 +59,9 @@ export default function ProductGallery({
       <p className="text-[11px] leading-relaxed text-muted">
         {pick(
           {
-            cs: 'Fotografie jsou zatím ilustrační. Reálné snímky doplníme v dalším kole.',
-            en: 'Photos are placeholders for now. Real shots will follow in the next round.',
-            de: 'Die Fotos sind vorerst Platzhalter. Echte Aufnahmen folgen im nächsten Schritt.',
+            cs: 'Ilustrace, ne fotografie. Reálné snímky z dílny doplníme v dalším kole.',
+            en: 'An illustration, not a photograph. Real shots from the workshop will follow.',
+            de: 'Eine Illustration, kein Foto. Echte Aufnahmen aus der Werkstatt folgen.',
           },
           lang,
         )}

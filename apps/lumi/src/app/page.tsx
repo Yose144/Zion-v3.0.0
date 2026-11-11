@@ -12,6 +12,7 @@ import ProductCard from '@/components/product-card';
 import SectionHeading from '@/components/section-heading';
 import Reveal from '@/components/reveal';
 import LumiViewer from '@/components/lumi-viewer';
+import CollectionGrid from '@/components/collection-grid';
 import FaqAccordion from '@/components/faq-accordion';
 import NewsletterForm from '@/components/newsletter-form';
 import { Price } from '@/components/price';
@@ -157,6 +158,9 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* ── Šest motivových kolekcí (Engine B v2) ────────────────────── */}
+      <CollectionGrid />
 
       {/* ── Příležitosti ─────────────────────────────────────────────── */}
       <section className="border-y border-line bg-parchment-deep/60 py-16 lg:py-24">

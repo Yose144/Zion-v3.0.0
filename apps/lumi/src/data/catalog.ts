@@ -35,6 +35,8 @@ export interface ProductDef {
   imageHeight: number;
   /** Menší varianta pro karty a košík (šetří data na mobilu). */
   imageSmall?: string;
+  /** Čtvercový náhled pro přepínač motivů (když se liší od `imageSmall`). */
+  thumb?: string;
   gallery: string[];
   /** Poctivá poznámka, když je obrázek ilustrační nebo ukázkový. */
   disclaimer?: Localized;
@@ -183,7 +185,10 @@ const MOTIF_SPECS: ProductSpec[] = [
 
 /** Produktová varianta motivu — stejná konstrukce, jiných šest stěn. */
 function motifProduct(set: MotifSet): ProductDef {
-  const image = `/images/motifs/${set.slug}/produkt-700.webp`;
+  // Ilustrace Engine B v2 (900×900 produkt, 640×480 do karty). Slug v balíčku
+  // se od produktu liší jen u přírodní kolekce.
+  const packSlug = set.slug === 'priroda' ? 'prirodni' : set.slug;
+  const image = `/images/lumi-b/kolekce-v2/lumi-2-${packSlug}-produkt-900.webp`;
   return {
     externalId: `lumi-2-${set.slug}`,
     slug: `lumi-2-${set.slug}`,
@@ -202,14 +207,15 @@ function motifProduct(set: MotifSet): ProductDef {
     priceCzk: 790,
     stock: 0,
     image,
-    imageWidth: 700,
-    imageHeight: 700,
-    imageSmall: image.replace('-700.webp', '-200.webp'),
+    imageWidth: 900,
+    imageHeight: 900,
+    imageSmall: `/images/lumi-b/kolekce-v2/lumi-2-${packSlug}-4x3-640.webp`,
+    thumb: `/images/lumi-b/kolekce-v2/lumi-2-${packSlug}-produkt-200.webp`,
     gallery: [],
     disclaimer: {
-      cs: 'Náhled je 3D model postavený z výpalových podkladů, ne fotografie. Skutečný kus se může v drobných detailech lišit.',
-      en: 'The preview is a 3D model built from the cutting files, not a photograph. The real piece may differ in small details.',
-      de: 'Die Vorschau ist ein 3D-Modell aus den Schnittdaten, kein Foto. Das echte Stück kann in kleinen Details abweichen.',
+      cs: 'Ilustrace Engine B. Přesný tvar řezu ukazuje 3D náhled u produktu; skutečný kus se může v drobných detailech lišit.',
+      en: 'Engine B illustration. The 3D preview on the product page shows the exact cut; the real piece may differ in small details.',
+      de: 'Engine-B-Illustration. Die 3D-Vorschau beim Produkt zeigt den genauen Schnitt; das echte Stück kann in kleinen Details abweichen.',
     },
     badge: { cs: 'Motiv', en: 'Motif', de: 'Motiv' },
     specs: MOTIF_SPECS,

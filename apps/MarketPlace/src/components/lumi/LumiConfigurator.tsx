@@ -172,10 +172,10 @@ function MotifThumb({
     >
       <span className="block bg-black/40">
         <img
-          src={motif.thumb}
+          src={motif.cardSmall}
           alt=""
-          width={200}
-          height={200}
+          width={320}
+          height={320}
           loading="lazy"
           decoding="async"
           className="aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-105"

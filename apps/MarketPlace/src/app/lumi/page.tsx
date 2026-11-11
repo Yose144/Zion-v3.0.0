@@ -37,6 +37,22 @@ export default async function LumiPage() {
 
   return (
     <main className="container mx-auto max-w-6xl px-4 py-10 md:py-14">
+      {/* Příběhový banner Engine B v2 — společný úvod kolekcí. Na mobilu
+          se zobrazuje celý (16:9), aby nezmizely postavy. */}
+      <section className="mb-8 overflow-hidden rounded-3xl border border-white/10">
+        <img
+          src="/images/design-v1/kolekce-v2/kolekce-pribeh-960.webp"
+          srcSet="/images/design-v1/kolekce-v2/kolekce-pribeh-960.webp 960w, /images/design-v1/kolekce-v2/kolekce-pribeh-1600.webp 1600w"
+          sizes="(min-width: 1152px) 1120px, 100vw"
+          alt="Tesař, Lumi a Malý princ s rozsvícenou lucernou v dílně u moře"
+          width={1600}
+          height={900}
+          fetchPriority="high"
+          decoding="async"
+          className="h-auto w-full"
+        />
+      </section>
+
       <LumiConfigurator product={product} />
 
       <section className="mt-16 grid gap-6 md:grid-cols-3">

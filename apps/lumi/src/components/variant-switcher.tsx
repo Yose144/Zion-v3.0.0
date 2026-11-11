@@ -53,7 +53,7 @@ function VariantChip({ product, current, lang }: { product: ProductDef; current:
         }
       >
         <img
-          src={product.imageSmall ?? product.image}
+          src={product.thumb ?? product.imageSmall ?? product.image}
           alt=""
           width={48}
           height={48}

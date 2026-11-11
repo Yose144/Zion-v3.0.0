@@ -107,6 +107,25 @@ export const SITE = {
     } satisfies Localized,
     cta: { cs: 'Zobrazit celou kolekci', en: 'See the full collection', de: 'Die ganze Kollektion' } satisfies Localized,
   },
+  collections: {
+    kicker: { cs: 'Šest motivů', en: 'Six motifs', de: 'Sechs Motive' } satisfies Localized,
+    title: {
+      cs: 'Jedno světlo. Šest kolekcí.',
+      en: 'One light. Six collections.',
+      de: 'Ein Licht. Sechs Kollektionen.',
+    } satisfies Localized,
+    lead: {
+      cs: 'Stejná lucerna, jiných šest stěn. Vyberte motiv podle toho, k čemu se večer vracíte — přírodu, svatbu, květiny, oceán, vesmír nebo Vánoce.',
+      en: 'The same lantern with a different set of six walls. Pick the motif for the evening you return to — nature, wedding, flowers, ocean, cosmos or Christmas.',
+      de: 'Dieselbe Laterne, andere sechs Wände. Wählen Sie das Motiv für den Abend, zu dem Sie zurückkehren — Natur, Hochzeit, Blumen, Ozean, Weltraum oder Weihnachten.',
+    } satisfies Localized,
+    note: {
+      cs: 'Kolekce jsou motivy, ne nové velikosti. Ilustrace jsou výtvarné — přesný tvar řezu ukáže 3D náhled u každého motivu.',
+      en: 'Collections are motifs, not new sizes. The illustrations are artistic — the 3D preview on each motif shows the exact cut.',
+      de: 'Kollektionen sind Motive, keine neuen Größen. Die Illustrationen sind künstlerisch — die 3D-Vorschau zeigt den genauen Schnitt.',
+    } satisfies Localized,
+    cta: { cs: 'Prohlédnout motiv ve 3D', en: 'See the motif in 3D', de: 'Motiv in 3D ansehen' } satisfies Localized,
+  },
   occasions: {
     kicker: { cs: 'Pro jaké chvíle', en: 'For which moments', de: 'Für welche Momente' } satisfies Localized,
     title: {

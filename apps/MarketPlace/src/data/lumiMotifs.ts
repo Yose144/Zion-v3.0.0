@@ -18,13 +18,33 @@ export interface LumiMotif {
   walls: { cs: string; en: string };
   /** GLB v metrech, Y-up (stejná konvence jako `lumi-2.glb`). */
   model: string;
+  /** Produktový náhled z 3D modelu (světlé pozadí scény). */
   image: string;
   thumb: string;
+  /** Ilustrace Engine B v2 — karta 900 px a zmenšenina pro přepínač. */
+  card: string;
+  cardSmall: string;
+  /** Široký banner pro kampaň (1440 px + 960 px). */
+  banner: string;
+  bannerSmall: string;
+  alt: { cs: string; en: string };
 }
 
-const image = (slug: string) => ({
+/**
+ * Slugy v balíčku Engine B v2 se od produktových liší jen u přírodní
+ * kolekce (`prirodni` vs `priroda`).
+ */
+const PACK_SLUGS: Record<string, string> = { priroda: 'prirodni', vanoce: 'vanocni' };
+const packSlug = (slug: string) => PACK_SLUGS[slug] ?? slug;
+
+const image = (slug: string, altCs: string, altEn: string) => ({
   image: `/images/motifs/${slug}/produkt-700.webp`,
   thumb: `/images/motifs/${slug}/produkt-200.webp`,
+  card: `/images/design-v1/kolekce-v2/lumi-2-${packSlug(slug)}-karta-900.webp`,
+  cardSmall: `/images/design-v1/kolekce-v2/lumi-2-${packSlug(slug)}-karta-320.webp`,
+  banner: `/images/design-v1/kolekce-v2/lumi-2-${packSlug(slug)}-banner-1440.webp`,
+  bannerSmall: `/images/design-v1/kolekce-v2/lumi-2-${packSlug(slug)}-banner-960.webp`,
+  alt: { cs: altCs, en: altEn },
 });
 
 export const LUMI_MOTIFS: LumiMotif[] = [
@@ -36,7 +56,7 @@ export const LUMI_MOTIFS: LumiMotif[] = [
       en: 'Sun, moon, dove, two trees, mountains with a river, butterfly.',
     },
     model: '/models/lumi-2-priroda.glb',
-    ...image('priroda'),
+    ...image('priroda', 'Lucerna Lumi 2, přírodní kolekce, ilustrace Engine B.', 'Lumi 2 lantern, natural collection, Engine B illustration.'),
   },
   {
     slug: 'svatebni',
@@ -46,7 +66,7 @@ export const LUMI_MOTIFS: LumiMotif[] = [
       en: 'Two hearts, rings, dove, tree of love, floral heart and a wedding couple.',
     },
     model: '/models/lumi-2-svatebni.glb',
-    ...image('svatebni'),
+    ...image('svatebni', 'Lucerna Lumi 2, svatební kolekce, ilustrace Engine B.', 'Lumi 2 lantern, wedding collection, Engine B illustration.'),
   },
   {
     slug: 'kvetinove',
@@ -56,7 +76,7 @@ export const LUMI_MOTIFS: LumiMotif[] = [
       en: 'Roses, sunflowers, daisies, poppies, irises and a flowering meadow.',
     },
     model: '/models/lumi-2-kvetinove.glb',
-    ...image('kvetinove'),
+    ...image('kvetinove', 'Lucerna Lumi 2, květinová kolekce, ilustrace Engine B.', 'Lumi 2 lantern, floral collection, Engine B illustration.'),
   },
   {
     slug: 'oceanske',
@@ -66,7 +86,7 @@ export const LUMI_MOTIFS: LumiMotif[] = [
       en: 'Dolphin, sea turtle, seahorse, whale, nautilus and a coral reef.',
     },
     model: '/models/lumi-2-oceanske.glb',
-    ...image('oceanske'),
+    ...image('oceanske', 'Lucerna Lumi 2, oceánská kolekce, ilustrace Engine B.', 'Lumi 2 lantern, ocean collection, Engine B illustration.'),
   },
   {
     slug: 'vesmirne',
@@ -76,7 +96,7 @@ export const LUMI_MOTIFS: LumiMotif[] = [
       en: 'Saturn, galaxy, rocket, Earth, comet and sun with moon.',
     },
     model: '/models/lumi-2-vesmirne.glb',
-    ...image('vesmirne'),
+    ...image('vesmirne', 'Lucerna Lumi 2, vesmírná kolekce, ilustrace Engine B.', 'Lumi 2 lantern, cosmic collection, Engine B illustration.'),
   },
   {
     slug: 'vanoce',
@@ -86,7 +106,7 @@ export const LUMI_MOTIFS: LumiMotif[] = [
       en: 'Christmas tree, nativity, bells, angel, Christmas candle and ornaments.',
     },
     model: '/models/lumi-2-vanoce.glb',
-    ...image('vanoce'),
+    ...image('vanoce', 'Vánoční lucerna Lumi 2 s betlémem na stole u zasněženého okna.', 'Christmas Lumi 2 lantern with a nativity on a table by a snowy window.'),
   },
 ];
 
