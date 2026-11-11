@@ -1,7 +1,7 @@
 # HANDOVER — ZION Archive: co zbývá po překladu (189/189)
 
 > **Datum:** 2026-11-06 · **Vlastník:** 👤 · **Stav:** překlad **DOKONČEN** (189/189, 100 %)
-> **Plán:** [`TRANSLATION-PLAN.md`](../../../TRANSLATION-PLAN.md) (v3.0) · **Report:** [`REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md`](REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md)
+> **Plán:** [`TRANSLATION-PLAN.md`](../../plans/TRANSLATION-PLAN.md) (v3.0) · **Report:** [`REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md`](REPORT_2026-11-05_ARCHIVE_TRANSLATION_SESSION.md)
 > **Kód:** `apps/website-v2.9` · **Tento dokument:** zadání pro novou session, která má práci dotáhnout.
 
 ---

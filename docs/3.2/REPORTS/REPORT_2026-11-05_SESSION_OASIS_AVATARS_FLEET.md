@@ -4,7 +4,7 @@
 > generátoru a markdownu, a11y audit webu, OASIS API, nasazení Nirvany s flotilou, terminologie.
 > **Dílčí reporty:** `REPORT_2026-11-05_OASIS_AVATAR_I18N.md` (detail), `REPORT_2026-11-04_AVATARI_WEB.md`
 > (karty + questy), `REPORT_2026-11-05_FLEET_MARKETPLACE_SHIPS.md` (flotila).
-> **Plán:** [`PLAN_OASIS_AVATAR_I18N.md`](../../../PLAN_OASIS_AVATAR_I18N.md) — uzavřený.
+> **Plán:** [`PLAN_OASIS_AVATAR_I18N.md`](../../plans/PLAN_OASIS_AVATAR_I18N.md) — uzavřený.
 
 ---
 

@@ -106,5 +106,5 @@ Postbuild padal už před nasazením — build se tedy musel obejít ručně.
 
 ---
 
-**Souvisí:** [`UCETNICTVI-PLAN.md`](../../../UCETNICTVI-PLAN.md) ·
+**Souvisí:** [`UCETNICTVI-PLAN.md`](../../plans/UCETNICTVI-PLAN.md) ·
 `apps/MarketPlace/src/lib/accounting.ts` · `apps/MarketPlace/deploy/deploy-marketplace.sh`

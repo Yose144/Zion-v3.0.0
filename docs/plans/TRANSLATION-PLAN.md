@@ -213,7 +213,7 @@ ale do coverage nevstoupí).
 
 - Zachovat **strukturu nadpisů** (`#`, `##`, `###`) a pořadí sekcí.
 - Relativní odkazy mezi kapitolami nechat na **stejné české slugy**:
-  `[Chapter 3](./03-Bardo-Velkeho-Prechodu.md)` — resolver je mapuje na aktuální jazyk.
+  `[Chapter 3](../../canon/books/NirvanaCloud/03-Bardo-Velkeho-Prechodu.md)` — resolver je mapuje na aktuální jazyk.
 - Odkazy na index: u korpusu `./00-README_EN.md`, u dedikovaných readerů `./00-README.md`
   (nebo `00-README_EN.md`, pokud existuje).
 - Tabulky: zachovat sloupce; hlavičky přeložit, čísla a adresy ne.

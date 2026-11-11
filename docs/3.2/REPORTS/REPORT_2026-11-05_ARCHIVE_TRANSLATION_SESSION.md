@@ -1,6 +1,6 @@
 # REPORT — ZION Archive: překladová session T1–T13 (124 kapitol) — ARCHIV 189/189
 
-> **Datum:** 2026-11-05 (aktualizováno 2026-11-06) · **Vlastník:** 👤 · **Plán:** [`TRANSLATION-PLAN.md`](../../../TRANSLATION-PLAN.md)
+> **Datum:** 2026-11-05 (aktualizováno 2026-11-06) · **Vlastník:** 👤 · **Plán:** [`TRANSLATION-PLAN.md`](../../plans/TRANSLATION-PLAN.md)
 > **Kód:** `apps/website-v2.9` · **Stav po session:** **189 / 189 kapitol (100 %)** — archiv je přeložený celý
 
 ---

@@ -6,7 +6,7 @@
 >
 > Sesterské dokumenty: [`apps/nirvana/AGENTS.md`](../../apps/nirvana/AGENTS.md) (pravidla a pasti),
 > [`docs/3.2/REPORTS/REPORT_2026-11-04_NIRVANA_SOUND_VR_PROGRESS.md`](../3.2/REPORTS/REPORT_2026-11-04_NIRVANA_SOUND_VR_PROGRESS.md)
-> (report, §8e–8f), [`NIRVANA-SHELL.md`](../3.2/NIRVANA-SHELL.md) (okna a portály).
+> (report, §8e–8f), [`NIRVANA-SHELL.md`](../3.3/NIRVANA-SHELL.md) (okna a portály).
 
 ---
 
