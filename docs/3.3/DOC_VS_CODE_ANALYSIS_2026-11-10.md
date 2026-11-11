@@ -64,7 +64,7 @@
 
 ## 4. Co zůstává z autonomní fronty (stav 11. 11.)
 
-> **Z auditu 7. 11. uzavřeno (ověřeno 11. 11. v kódu):** M1 EDGE1 node-exporter (7. 11.) · M2 payout monitoring — probe+rules+pool rebuild `ece8b6965` · **celá zbytek §4 fronty commitnutý 9. 11.** — PII orderId + atomický sklad (`baa50157a`, veřejné DTO + replay jen se stejným e-mailem + podmíněná rezervace v tx, e2e 18/18), release provenance/verifier (`8e328eba0`, fail-closed + `--isolate` pin, prázdný SHA256SUMS = FAIL), proto preflight artefaktu (`deploy-nirvana.sh` čte razítko **vedle server.js v artefaktu**, chybí → exit 1), archive content root (`lib/archive-content-root.ts` — standalone kopie v produkci, sdílená docs+audit routa), G8 state fail-loud (`StateReadError` → exit 2 všude), Lumi hlediště (`lumi.ts snapshot(id)` pro neletce — bez sedla/ovládání). **Otevřené z reportu = 0.** Zbývající autonomní práce je v `PLAN.md` §3 (ZIS sub-accounts, NCL spike, R9 review, …) a drobnostech: nginx listen options, `networkd-wait-online` na EDGE2, EN editorial pass.
+> **Z auditu 7. 11. uzavřeno (ověřeno 11. 11. v kódu):** M1 EDGE1 node-exporter (7. 11.) · M2 payout monitoring — probe+rules+pool rebuild `ece8b6965` · **celá zbytek §4 fronty commitnutý 9. 11.** — PII orderId + atomický sklad (`baa50157a`, veřejné DTO + replay jen se stejným e-mailem + podmíněná rezervace v tx, e2e 18/18), release provenance/verifier (`8e328eba0`, fail-closed + `--isolate` pin, prázdný SHA256SUMS = FAIL), proto preflight artefaktu (`deploy-nirvana.sh` čte razítko **vedle server.js v artefaktu**, chybí → exit 1), archive content root (`lib/archive-content-root.ts` — standalone kopie v produkci, sdílená docs+audit routa), G8 state fail-loud (`StateReadError` → exit 2 všude), Lumi hlediště (`lumi.ts snapshot(id)` pro neletce — bez sedla/ovládání). **Otevřené z reportu = 0.** Zbývající autonomní práce je v `PLAN.md` §3 (ZIS sub-accounts, NCL spike, R9 review, …) a drobnostech: nginx listen options, `networkd-wait-online` na EDGE2, EN editorial pass. **Doplnění 11. 11. (odpoledne):** EDGE2 `networkd-wait-online` ✅ fix (`accept-ra:false`+`dhcp6:false` v netplanu → `routable (configured)`, wait-online exit 0, apt clean); nginx listen options ✅ sjednoceny (`548a50235`, 9 vhostů, `nginx -t` OK EDGE1+EDGE2; deploy repo-only, produkční nasazení ⏸️); **ZIS agent sub-accounts ✅ implementováno** (`e76b0fdb6`: `AgentSubAccount`+`AgentBudget` Prisma modely, `zag_` bearer prefix SHA-256, scope whitelist bez `wallet:withdraw`, PATCH jen tighten, lazy budget rollover, `/api/keys/verify` agent path, audit eventy, `ZIS_AGENTS_ENABLED` default OFF; testy 60/60, tsc 0 — **DB migrace + deploy = 👤**); **Charta R9 factual ✅** (report výše); **EN editorial = již hotovo** (kampaň 2026-11-07, 189/189 kapitol; spot-audit Na Cestě 1:1 čistý); pool RSS 24h trend **zdravý** (0,91→2,25 GiB, PSI mem 0.00).
 
 | Položka | Stav | Poznámka |
 |---|---|---|
@@ -72,10 +72,10 @@
 | RC artifacts z RC commitu | ⏸️ | blokováno: žádný RC tag (👤 9.S1) + Mac disk |
 | P0-3 env subsety + rotace | 🔀 | audit hotový (`P0-3-SHARED-ENV-AUDIT.md`), rotace = 👤 |
 | ZionDex funded E2E | 🔀 | QuoterV2/solvency/AMM-gate ✅ 31. 10.; funded E2E = 👤 (§7 rozhodnutí) |
-| ZIS agent sub-accounts | 🤖 design ✅ | implementace = follow-up (schema+API draft existují) |
+| ZIS agent sub-accounts | 🤖 implementováno ✅ `e76b0fdb6` | schema+routes+verify+9 testů (60/60 suite, tsc 0); **prod `db push` + deploy + step-up/UI = 👤** |
 | Miner↔NCL spike, Dharma filter, Amitabha UI | 🤖 | kód-only, mimo G8 deploy freeze |
-| Charta R9 factual/legal review | 🤖 | částečně autonomní (factual), legal = 👤 |
-| CoinGecko re-apply package | 🤖/🔀 | 17 prerekvizit, balíček připraven |
+| Charta R9 factual/legal review | 🤖 factual ✅ / 👤 legal+cultural | [`REPORT_2026-11-11_CHARTA_R9_FACTUAL_REVIEW.md`](../3.2/REPORTS/REPORT_2026-11-11_CHARTA_R9_FACTUAL_REVIEW.md) — CoinGecko balíček fakticky čistý; refresh snapshotů před submitem |
+| CoinGecko re-apply package | 🤖/🔀 | 17 prerekvizit, balíček připraven; factual review ✅, likvidita/maturita/team = 👤+cíl Jan 2027 |
 
 ## 5. Pravidla platná pro další session
 

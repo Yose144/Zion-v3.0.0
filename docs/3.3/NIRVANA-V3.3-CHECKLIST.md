@@ -187,7 +187,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md). Zde
 
 - [x] 🤖 Truth-sync dokumentace + refresh Registru důkazů (9.B5; seznam rozporů = mapa §8) ✅ 28. 10.: REPO-MAP (public/→archive/PUBLIC + nový export model), Registr (Passkeys→STAVBA, Hiran inference→ŽIVÉ, Maestro→ŽIVÉ read-only, +premine řádek), StatusV3 update 2026-10-28
 - [x] 🤖 Public copy `/roadmap`, `nirvana-roadmap.ts`, `/zion-archive#plan-v33` sladit s mapou (9.B6) — 29. 10.: podtitul lodi, šest workstreamů beze změny, žádné slíbené datum
-- [ ] 🤖 Charta R9: factual/legal/cultural review veřejných textů
+- [ ] 🤖 Charta R9: factual/legal/cultural review veřejných textů — **factual ✅ 11. 11.** ([`REPORT_2026-11-11_CHARTA_R9_FACTUAL_REVIEW.md`](../3.2/REPORTS/REPORT_2026-11-11_CHARTA_R9_FACTUAL_REVIEW.md): CoinGecko balíček + canon claims ověřeny proti kódu/životu, premine tabulka aritmeticky sedí, GitHub URL reálný, statusy HORIZONT/MÝTUS označeny; legal+cultural = 👤)
 - [ ] 🤖 CoinGecko re-apply package ([`COINGECKO_REAPPLY_ROADMAP.md`](../3.2/COINGECKO_REAPPLY_ROADMAP.md), 17 prerekvizit)
 - [ ] 👤 Bug bounty + komunitní kanály
 - [ ] 👤 Publikace „v3.3 Nirvana" — jen po DoD
