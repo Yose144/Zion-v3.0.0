@@ -1,0 +1,68 @@
+# Aréna — víc map: Mars, Q3DM3 a Q3DM6
+
+**Datum:** 2026-11-11
+**App:** `apps/nirvana` (`/mars`)
+**Commit:** `4fe57fb8c` (mapy) + `a3d182e67` (vyvýšené spawny a detail)
+**Deploy:** app `20261111T072654Z` (net zůstal na proto 37)
+**Protokol:** 37 — beze změny (mapy jsou sólo, server je nezná)
+
+## Zadání
+
+> „pokracuj a pridej i vic map ! hlavne q3dm3 a 6 z q3 areny !"
+
+## Co je hotové
+
+- `core/arena/map.ts` je teď **katalog `ARENA_MAPS`** (`mars`, `q3dm3`,
+  `q3dm6`): každá mapa má `boxes`, `playerSpawn`, `botSpawns`, `pickups`
+  a **`palette`** (barvy povrchů, oblohy, mlhy i světel). Staré exporty
+  (`ARENA_BOXES`, `PLAYER_SPAWN`, `BOT_SPAWNS`, `ARENA_PICKUPS`) zůstávají
+  jako alias na `mars`, takže server ani starší komponenty se nemění.
+- **Q3DM3 „Toxicity"** — centrální most (top 2) s třemi schody z každé
+  strany, severní komora (mega) a jižní (armor), vyvýšené lišty po stranách,
+  pylony a bedny. Start hráče je **na mostě**.
+- **Q3DM6 „Camping Grounds"** — třípatrová věž, dvě křídla (top 2,5),
+  mostky, schodiště na severu i jihu. Start hráče je **na křídle**.
+- **Sólo výběr mapy** v úvodu (`arena-map` karty s názvem a poznámkou),
+  volba se ukládá (`nirvana.arena.map`) a scéna se remountuje `key={mapId}`,
+  takže se stav hry nikdy nemíchá mezi mapami.
+- **Paleta mapy řídí i světlo:** Mars je pískově oranžový, Q3DM3 studená
+  industriální zeleň, Q3DM6 soumrak s teplou lucernou. Dřív by každá mapa
+  vypadala jako Mars.
+
+## Pravidla, která to odhalilo
+
+- **Navigace (`buildNavGrid`) je 2,5D.** Krabice s `maxY > 1,6` je zeď
+  a `minY < 1,6` v pruhu těla ji blokuje. První návrhy Q3 map měly most
+  /lišt spojené až ke krajnici → mapa se **rozpůlila** a boti se na druhou
+  stranu nedostali. Řešení: most končí dřív (ulička ≥ 2 m) a vyvýšené lišty
+  začínají ve výšce ≥ 2 (nad pruhem těla).
+- **Pickup musí ležet na podlaze.** Původní `ha1`/`h1` u Q3DM6 byly uvnitř
+  krycí krabice (střed `y + 0,7` v pevné hmotě).
+- **Pickup nesmí ležet na spawnu** — hráč na mostě by jinak sebral Quad
+  hned při vstupu (Q3DM3 má Quad posunutý na `x −5`).
+- **Vyvýšený spawn** (`playerSpawn.y`) musí být o kousek výš než horní hrana
+  plošiny (trim), jinak tělo začne uvnitř desky.
+
+## Ověření
+
+- `npx tsx test/arena-maps.mjs` — katalog, spawny mimo zdi, **BFS průchodnost**
+  ze spawnu hráče do všech botích spawnů, **reálný pohyb bota**
+  (`stepBot` + `driveBot`, za 6 s ujde ≥ 4 m), pickupy na podlaze, respawny,
+  rozdílnost půdorysů. **OK.**
+- `test/arena-weapons.mjs`, `test/arena-settings.mjs` — **OK** (parita MP, čísla).
+- `tsc --noEmit` a `next build` v čistém worktree na commitu — čisté.
+- Headless screenshot `.artifacts/probe/arena-maps-shot.mjs`
+  (3 mapy + úvod, GPU Metal): debug stav hlásí správnou mapu, žádné chyby
+  v konzoli. Snímky: `.artifacts/render/arena-maps-20261111/`.
+- **Live:** `/api/health` → `proto 37 = net 37`, `proto_match: true`;
+  v produkčním bundlu je chunk s „Q3DM6" i CSS `.arena-map`.
+
+## Meze
+
+- **Multiplayer jede dál na Marsu.** Server mapu nezná; přidat ji znamená
+  bump protokolu i novou mapu v `arena.ts` (mapa by šla v `join` a snapshotu).
+- Q3DM3/Q3DM6 jsou **stylizované půdorysy**, ne kopie `.bsp` — originální
+  mapy nejsou v GPL zdroji a repo nemá mapové assety.
+- Boti dál chodí po zemi (2,5D navigace) — na plošiny skáčou jen náhodou
+  z pronásledování; víceúrovňová navigace je samostatný krok.
+- VR netestováno, mobil emulovaný.
