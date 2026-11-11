@@ -56,7 +56,7 @@ export default function BookSection() {
                 src={xmas?.hero ?? '/shop/img/books/kralovstvi-srdce-cover.webp'}
                 alt="Království srdce — obálka knihy"
                 loading="lazy"
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
             </div>

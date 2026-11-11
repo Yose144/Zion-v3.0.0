@@ -993,7 +993,7 @@ body.zion-shell {
 .hiran-hero-art {
   width: min(100%, 88rem);
   margin: clamp(0.5rem, 2vw, 1.5rem) auto 0;
-  aspect-ratio: 1916 / 821;
+  aspect-ratio: 1672 / 941;
   border-radius: 1rem;
   background-image: url('/hiran-hero.webp?v=engine-v1');
   background-size: cover;

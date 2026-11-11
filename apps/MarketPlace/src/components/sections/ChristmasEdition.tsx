@@ -74,7 +74,7 @@ function ChristmasCard({
                 src={image}
                 alt={imageAlt}
                 loading="lazy"
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
               <div className="absolute left-3 top-3">

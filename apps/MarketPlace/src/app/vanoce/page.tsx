@@ -52,7 +52,7 @@ export default function VanoceIndexPage() {
               <img
                 src={product.image}
                 alt={pick(product.imageAlt)}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
               />
               {!product.buyable && (
                 <span className="absolute top-3 left-3 rounded-full bg-black/70 px-3 py-1 text-[11px] uppercase tracking-wider text-rasta-gold">
