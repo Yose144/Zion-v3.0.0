@@ -577,11 +577,8 @@ mod tests {
     #[test]
     fn script_build_parse_roundtrip() {
         let (htlc, _) = sample_htlc();
-        let parsed = BtcHtlc::from_witness_script(
-            htlc.witness_script.as_bytes(),
-            Network::Bitcoin,
-        )
-        .unwrap();
+        let parsed =
+            BtcHtlc::from_witness_script(htlc.witness_script.as_bytes(), Network::Bitcoin).unwrap();
         assert_eq!(parsed.hashlock, htlc.hashlock);
         assert_eq!(parsed.claimant, htlc.claimant);
         assert_eq!(parsed.refund, htlc.refund);
