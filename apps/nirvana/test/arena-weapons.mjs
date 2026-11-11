@@ -100,20 +100,21 @@ check('plazma: má TTL', WEAPONS.plasma.ttlMs > 0, String(WEAPONS.plasma.ttlMs))
   check('sólo má Quad pickup', Boolean(quad), JSON.stringify(ARENA_SOLO_PICKUPS.map((p) => p.id)));
   check('Quad má respawn 60 s', quad?.respawn === 60, String(quad?.respawn));
   check(
-    'multiplayer mapu Quad neobsahuje',
-    !ARENA_PICKUPS.some((pickup) => pickup.kind === 'powerup'),
+    'multiplayer má Quad (od proto 37)',
+    ARENA_PICKUPS.some((pickup) => pickup.powerup === 'quad'),
   );
   check(
-    'sólová mapa je nadmnožinou MP',
-    ARENA_PICKUPS.every((pickup) => ARENA_SOLO_PICKUPS.some((entry) => entry.id === pickup.id)),
+    'sólová mapa = multiplayer (jedna pravda o světě)',
+    ARENA_SOLO_PICKUPS === ARENA_PICKUPS,
   );
   const haste = ARENA_SOLO_PICKUPS.find((pickup) => pickup.powerup === 'haste');
   const mega = ARENA_SOLO_PICKUPS.find((pickup) => pickup.kind === 'mega');
   check('sólo má Haste pickup', Boolean(haste), JSON.stringify(haste));
   check('sólo má Mega Health', Boolean(mega) && mega.respawn === 35, JSON.stringify(mega));
   check(
-    'multiplayer nemá Haste ani Mega',
-    !ARENA_PICKUPS.some((pickup) => pickup.powerup === 'haste' || pickup.kind === 'mega'),
+    'multiplayer má Haste i Mega',
+    ARENA_PICKUPS.some((pickup) => pickup.powerup === 'haste') &&
+      ARENA_PICKUPS.some((pickup) => pickup.kind === 'mega'),
   );
   check('powerupy mají respawn delší než běžné itemy', (haste?.respawn ?? 0) >= 45 && (quad?.respawn ?? 0) >= 60);
   check(
@@ -171,8 +172,8 @@ check('plazma: má TTL', WEAPONS.plasma.ttlMs > 0, String(WEAPONS.plasma.ttlMs))
   check('sólo má čtyři armor shardy', shards.length === 4, String(shards.length));
   check('shardy mají krátký respawn', shards.every((pickup) => pickup.respawn <= 15));
   check(
-    'multiplayer shardy nemá',
-    !ARENA_PICKUPS.some((pickup) => pickup.kind === 'shard'),
+    'multiplayer má shardy',
+    ARENA_PICKUPS.some((pickup) => pickup.kind === 'shard'),
   );
 }
 

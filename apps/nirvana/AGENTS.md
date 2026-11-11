@@ -2953,3 +2953,19 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   každý jiný vstup. Drátěný protokol se nemění (36).
 - **Test:** `arena-bots.mjs` ověřuje volbu zbraně na 20 m (MG), 10 m
   (raketa/MG) a 3 m (brokovnice).
+
+### MP aréna — Quad, Haste a Mega health (protokol 37, 2026-11-11)
+
+- **Jedna mapa pro sólo i MP.** Powerupy a shardy se přesunuly z
+  `ARENA_SOLO_PICKUPS` do `ARENA_PICKUPS`; sólový seznam je teď **alias**
+  (žádná druhá pravda o světě). Server umí `powerup` i `mega` pickupy.
+- **Buffy drží server** (`quadUntil`, `hasteUntil`): Quad ×3 se aplikuje
+  v `hurt` podle útočníka v době zásahu; Haste jde do `stepBody` jako
+  `speed` 1,3; Mega doplní do 200 a nad 100 se 1 HP/s vytrácí.
+- **Smrt buffy ruší** (Q3) — respawn/restart je nuluje, stejně jako
+  `killPlayer`.
+- **Snapshot** nese `quadIn`/`hasteIn` (sekundy); klient je zobrazuje
+  v HUD stejnými chipy jako sólo a pickupy mají barvy podle druhu.
+- **Deploy pořadí:** net první, pak appka (37). Testy: `arena-bots`
+  ověřuje Quad (rail 3× zabije), Haste (>15 % rychlosti) a Mega
+  (HP nad 100 + úbytek).

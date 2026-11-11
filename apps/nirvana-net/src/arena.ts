@@ -81,6 +81,9 @@ export interface ArenaPlayer {
   shotgunAmmo: number;
   lightningAmmo: number;
   plasmaAmmo: number;
+  /** Powerupy (Q3): do kdy platí ×3 dmg / +30 % rychlosti (ms). */
+  quadUntil: number;
+  hasteUntil: number;
   alive: boolean;
   respawnAt: number;
   cooldownUntil: number;
@@ -241,6 +244,8 @@ export function addPlayer(
     shotgunAmmo: WEAPONS.shotgun.ammo,
     lightningAmmo: WEAPONS.lightning.ammo,
     plasmaAmmo: WEAPONS.plasma.ammo,
+    quadUntil: 0,
+    hasteUntil: 0,
     alive: true,
     respawnAt: 0,
     cooldownUntil: 0,
@@ -284,6 +289,8 @@ export function ensureBots(sim: ArenaSim): void {
       shotgunAmmo: WEAPONS.shotgun.ammo,
       lightningAmmo: WEAPONS.lightning.ammo,
       plasmaAmmo: WEAPONS.plasma.ammo,
+      quadUntil: 0,
+      hasteUntil: 0,
       alive: true,
       respawnAt: 0,
       cooldownUntil: 0,
@@ -343,6 +350,8 @@ function killPlayer(
 ): void {
   victim.alive = false;
   victim.hp = 0;
+  victim.quadUntil = 0;
+  victim.hasteUntil = 0;
   victim.deaths += 1;
   victim.respawnAt = now + PLAYER_RESPAWN_MS;
   const killer = killerId ? sim.players.get(killerId) : null;
@@ -365,7 +374,10 @@ function hurt(
   now: number,
 ): void {
   if (!victim.alive) return;
-  const result = applyDamage(victim.hp, victim.armor, amount);
+  // Quad ×3 platí pro útočníka v době zásahu (Q3).
+  const attackerPlayer = sim.players.get(attacker);
+  const damage = attackerPlayer && now < attackerPlayer.quadUntil ? amount * 3 : amount;
+  const result = applyDamage(victim.hp, victim.armor, damage);
   victim.hp = result.hp;
   victim.armor = result.armor;
   victim.lastHitBy = attacker;
@@ -607,6 +619,8 @@ export function stepArena(sim: ArenaSim, dt: number, now: number): ArenaEvent[] 
       player.shotgunAmmo = WEAPONS.shotgun.ammo;
       player.lightningAmmo = WEAPONS.lightning.ammo;
       player.plasmaAmmo = WEAPONS.plasma.ammo;
+      player.quadUntil = 0;
+      player.hasteUntil = 0;
       player.alive = true;
       player.respawnAt = 0;
       player.lastHitBy = null;
@@ -622,7 +636,11 @@ export function stepArena(sim: ArenaSim, dt: number, now: number): ArenaEvent[] 
       forward: player.input.forward,
       strafe: player.input.strafe,
       jump: player.input.jump,
+      speed: now < player.hasteUntil ? 1.3 : 1,
     }, dt, sim.solids);
+
+    // Mega health: nad 100 se zdraví pomalu vytrácí (Q3 ~1 HP/s).
+    if (player.hp > 100) player.hp = Math.max(100, player.hp - dt);
 
     // zbraň a střelba — každá zbraň má vlastní zásobník
     if (player.input.weapon !== player.weapon) {
@@ -661,7 +679,20 @@ export function stepArena(sim: ArenaSim, dt: number, now: number): ArenaEvent[] 
       if (pickup.kind === 'armor' && player.armor >= 100) continue;
       if (pickup.kind === 'shard' && player.armor >= 100) continue;
 
-      if (pickup.kind === 'health') player.hp = Math.min(100, player.hp + 25);
+      if (pickup.kind === 'powerup') {
+        if (pickup.powerup === 'quad') {
+          if (now < player.quadUntil) continue;
+          player.quadUntil = now + 30_000;
+        } else if (pickup.powerup === 'haste') {
+          if (now < player.hasteUntil) continue;
+          player.hasteUntil = now + 30_000;
+        } else {
+          continue;
+        }
+      } else if (pickup.kind === 'mega') {
+        if (player.hp >= 200) continue;
+        player.hp = Math.min(200, Math.max(player.hp, 100) + 100);
+      } else if (pickup.kind === 'health') player.hp = Math.min(100, player.hp + 25);
       else if (pickup.kind === 'ammo') {
         const before =
           player.ammo + player.mgAmmo + player.shotgunAmmo + player.lightningAmmo + player.plasmaAmmo;
@@ -731,6 +762,8 @@ function restartMatch(sim: ArenaSim, now: number): void {
     player.shotgunAmmo = WEAPONS.shotgun.ammo;
     player.lightningAmmo = WEAPONS.lightning.ammo;
     player.plasmaAmmo = WEAPONS.plasma.ammo;
+    player.quadUntil = 0;
+    player.hasteUntil = 0;
     player.cooldownUntil = 0;
     placeBody(player, spawnPoint(sim, false));
   }
@@ -756,6 +789,9 @@ export interface ArenaSnapshotPlayer {
   mgAmmo: number;
   /** Munice všech zbraní pro HUD. */
   ammoByWeapon: Record<number, number>;
+  /** Zbývající sekundy powerupů (0 = neaktivní). */
+  quadIn: number;
+  hasteIn: number;
   alive: boolean;
   /** Serverový bot (Q3 sestava) — tabule ho odliší. */
   isBot?: boolean;
@@ -788,6 +824,8 @@ export function arenaSnapshot(sim: ArenaSim, now: number) {
     deaths: player.deaths,
     weapon: WEAPON_NUM[player.weapon] ?? 0,
     ammo: Number.isFinite(ammoOf(player, player.weapon)) ? ammoOf(player, player.weapon) : -1,
+    quadIn: Math.max(0, Math.ceil((player.quadUntil - now) / 1000)),
+    hasteIn: Math.max(0, Math.ceil((player.hasteUntil - now) / 1000)),
     mgAmmo: player.mgAmmo,
     ammoByWeapon: {
       0: -1,

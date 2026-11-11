@@ -94,29 +94,30 @@ export const ARENA_PICKUPS: ArenaPickup[] = [
   { id: 'h1', kind: 'health', x: -16, y: 0, z: 12, respawn: 18 },
   { id: 'h2', kind: 'health', x: 16, y: 0, z: -12, respawn: 18 },
   { id: 'a1', kind: 'armor', x: 0, y: 2, z: 0, respawn: 30 },
-  // náboje na MG (Q3 má ammo boxy; tady jsou dvě, aby obě strany měly šanci)
+  // náboje (Q3 ammo box; tady dvě, aby obě strany měly šanci)
   { id: 'm1', kind: 'ammo', x: -16, y: 0, z: -12, respawn: 22 },
   { id: 'm2', kind: 'ammo', x: 16, y: 0, z: 12, respawn: 22 },
-];
-
-/**
- * Sólová aréna má navíc **Quad Damage** (Q3 ikona): na 30 s ×3 poškození,
- * respawn 60 s. V multiplayeru zatím není — server by musel znát buff
- * a posílat ho ve snapshotu, což je samostatný krok (protokol).
- */
-export const ARENA_SOLO_PICKUPS: ArenaPickup[] = [
-  ...ARENA_PICKUPS,
+  /*
+   * Powerupy a mega (2026-11-11): stejné Q3 rytmy jako v sólu a od protokolu
+   * 37 je má i multiplayer — server drží buffy a posílá je ve snapshotu.
+   */
   { id: 'q1', kind: 'powerup', powerup: 'quad', x: 14, y: 3.2, z: 0, respawn: 60 },
   { id: 'ha1', kind: 'powerup', powerup: 'haste', x: -14, y: 3.2, z: 0, respawn: 45 },
-  // Mega Health (Q3): doplní do 200 a nad 100 se pomalu vytrácí.
   { id: 'mh1', kind: 'mega', x: 0, y: 2, z: 4, respawn: 35 },
-  // Armor shardy (Q3 +5): čtyři místa, aby se dalo „doarmorovat" cestou.
-  // Na plošině a na bočních lištách — ne uvnitř sloupů (tam by byly nedosažitelné).
+  // armor shardy (Q3 +5): čtyři místa, aby se dalo „doarmorovat" cestou
   { id: 's1', kind: 'shard', x: -4, y: 2, z: -4, respawn: 12 },
   { id: 's2', kind: 'shard', x: 4, y: 2, z: -4, respawn: 12 },
   { id: 's3', kind: 'shard', x: -14, y: 3.2, z: -4, respawn: 12 },
   { id: 's4', kind: 'shard', x: 14, y: 3.2, z: 4, respawn: 12 },
 ];
+
+/**
+ * Sólová mapa = stejná jako multiplayer.
+ *
+ * Dřív mělo sólo navíc Quad/Haste/Mega a MP ne; od protokolu 37 je server
+ * umí taky, takže se seznamy sjednotily (žádná druhá pravda o světě).
+ */
+export const ARENA_SOLO_PICKUPS: ArenaPickup[] = ARENA_PICKUPS;
 
 /** Stěny jako data pro raycast (jen to, co blokuje střelu). */
 export const ARENA_SOLIDS = ARENA_BOXES;

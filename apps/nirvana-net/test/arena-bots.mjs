@@ -336,6 +336,82 @@ console.log('\n== server: brokovnice / blesk / plazma / pěst ==');
   check('bot na 3 m bere brokovnici', bot.input.weapon === 'shotgun', String(bot.input.weapon));
 }
 
+// ── 2d) powerupy v MP (Quad / Haste / Mega, od proto 37) ─────────────
+console.log('\n== server: Quad, Haste a Mega health ==');
+{
+  // Quad: rail 100 ×3 = 300 → bot na 10 m musí padnout
+  const sim = arena.createArena(Date.now());
+  const human = arena.addPlayer(sim, 'c_q', 'Hráč', null, Date.now());
+  arena.ensureBots(sim);
+  const bot = [...sim.players.values()].find((p) => p.isBot);
+  for (const p of [...sim.players.values()]) {
+    if (p.isBot && p.id !== bot.id) sim.players.delete(p.id);
+  }
+  bot.isBot = false;
+  bot.input.fire = false;
+  // x=-10 je mimo centrální plošinu i kryty — přímka na 10 m je volná.
+  human.body.x = -10; human.body.y = 0.2; human.body.z = 16;
+  bot.body.x = -10; bot.body.y = 0.2; bot.body.z = 6;
+  bot.hp = 100; bot.alive = true;
+  human.weapon = 'rail';
+  human.input.weapon = 'rail';
+  const dx = bot.body.x - human.body.x;
+  const dy = bot.body.y + 1.05 - (human.body.y + PLAYER.eye);
+  const dz = bot.body.z - human.body.z;
+  const len = Math.hypot(dx, dy, dz) || 1;
+  human.input.yaw = Math.atan2(-dx / len, -dz / len);
+  human.input.pitch = Math.asin(dy / len);
+  human.input.fire = true;
+  const nowQ = Date.now() + 5000;
+  human.quadUntil = nowQ + 5000;
+  const quadEvents = arena.stepArena(sim, 1 / 30, nowQ);
+  check(
+    'Quad: rail 3× zabije bota',
+    quadEvents.some((event) => event.kind === 'kill' && event.victim === bot.id && event.weapon === 'rail'),
+    JSON.stringify(quadEvents),
+  );
+
+  // Haste: stejný vstup, ale s buffem musí ujet víc
+  const run = (haste) => {
+    const s2 = arena.createArena(Date.now());
+    const h2 = arena.addPlayer(s2, 'c_h2', 'Hráč', null, Date.now());
+    for (const p of [...s2.players.values()]) if (p.isBot) s2.players.delete(p.id);
+    h2.body.x = 0; h2.body.y = 0.2; h2.body.z = 0;
+    h2.input.forward = 1;
+    h2.input.yaw = 0;
+    h2.hasteUntil = haste ? Date.now() + 10_000 : 0;
+    let t = Date.now();
+    const startX = h2.body.x;
+    const startZ = h2.body.z;
+    for (let i = 0; i < 30; i++) {
+      t += 1000 / 30;
+      arena.stepArena(s2, 1 / 30, t);
+    }
+    return Math.hypot(h2.body.x - startX, h2.body.z - startZ);
+  };
+  const plain = run(false);
+  const hasted = run(true);
+  check('Haste zrychlí pohyb (>15 %)', hasted > plain * 1.15, `${plain.toFixed(2)} → ${hasted.toFixed(2)} m`);
+
+  // Mega health: doplní nad 100 a pak se vytrácí
+  const sim3 = arena.createArena(Date.now());
+  const human3 = arena.addPlayer(sim3, 'c_m', 'Hráč', null, Date.now());
+  for (const p of [...sim3.players.values()]) if (p.isBot) sim3.players.delete(p.id);
+  const mega = sim3.pickups.find((pickup) => pickup.kind === 'mega');
+  human3.body.x = mega.x;
+  human3.body.y = mega.y;
+  human3.body.z = mega.z;
+  let t3 = Date.now() + 100;
+  arena.stepArena(sim3, 1 / 30, t3);
+  check('Mega health: HP nad 100', human3.hp > 100, String(human3.hp));
+  const before = human3.hp;
+  for (let i = 0; i < 60; i++) {
+    t3 += 1000 / 30;
+    arena.stepArena(sim3, 1 / 30, t3);
+  }
+  check('Mega health se nad 100 vytrácí', human3.hp < before && human3.hp >= 100, `${before} → ${human3.hp}`);
+}
+
 // ── 3) síťová část: místnost, pohyb, lidský frag ──────────────────────
 function client() {
   const socket = new WebSocket(WS_URL);
