@@ -8,6 +8,7 @@ import { tx, useI18n } from '@/core/i18n';
 import { ARENA_COPY, type ArenaCopyKey } from './copy';
 import { MarsArena, type ArenaResult, type ArenaStats } from '@/core/arena/MarsArena';
 import { MarsMultiplayer, type MpStats } from '@/core/arena/MarsMultiplayer';
+import type { MpResult } from '@/core/arena/mp-result';
 import { ArenaTouchControls, createTouchState } from '@/core/arena/ArenaTouch';
 import {
   BOT_SKILL_ORDER,
@@ -255,6 +256,27 @@ export default function MarsPage() {
     [cs],
   );
 
+  /** Dohraný online zápas — stejná pravidla jako sólo (XP, dharma, tabule). */
+  const endOnlineMatch = useCallback(
+    (outcome: MpResult) => {
+      const result = recordRun({
+        game: 'arena',
+        score: outcome.score,
+        nickname: pickNickname(),
+        bonus: outcome.won ? 2 : 0,
+        metrics: {
+          seconds: outcome.elapsedSeconds,
+          completed: outcome.won,
+          objectives: outcome.frags,
+          objectivesTotal: FRAG_LIMIT,
+          setbacks: outcome.deaths,
+        },
+      });
+      setNotice(describeRun(result, cs, outcome.won ? [cs ? 'výhra' : 'win'] : []));
+    },
+    [cs],
+  );
+
   const healthColor = stats.health > 60 ? '#7fe3d4' : stats.health > 25 ? '#ffd166' : '#ff7a6b';
 
   return (
@@ -273,6 +295,7 @@ export default function MarsPage() {
               touch={touch}
               weaponRequest={mpWeaponRequest}
               map={mapId}
+              onFinish={endOnlineMatch}
             />
           ) : (
             <XR store={xrStore}>
@@ -348,6 +371,7 @@ export default function MarsPage() {
               ))}
             </ol>
           )}
+          {!watch && notice && <p className="arena-notice arena-notice-mp">{notice}</p>}
           {(mpStats?.feed?.length ?? 0) > 0 && (
             <div className="arena-killfeed" role="status" aria-live="polite">
               {mpStats!.feed!.map((entry) => (

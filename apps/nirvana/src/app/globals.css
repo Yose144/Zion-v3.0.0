@@ -11773,3 +11773,20 @@ a.game-hud-chip.is-lumi em {
 .park-challenge-dharma strong {
   color: #9df0e2;
 }
+
+/* Hláška po dohraném online zápase — plave nad HUDem, protože v multiplayeru
+ * není výsledková karta (svět běží dál). */
+.arena-notice-mp {
+  position: absolute;
+  z-index: 14;
+  left: 50%;
+  bottom: calc(6.4rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  max-width: calc(100vw - 2rem);
+  padding: 0.35rem 0.8rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(127, 227, 212, 0.35);
+  background: rgba(12, 6, 4, 0.86);
+  text-align: center;
+  pointer-events: none;
+}

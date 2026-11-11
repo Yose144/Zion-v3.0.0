@@ -3357,3 +3357,32 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Pravidlo:** nová hra posílá `seconds` ze **simulačních** hodin, ne
   z `Date.now()`. Skutečné hodiny nafouknou běh na 15 fps a tabule by
   nebyla srovnatelná (stejná past jako u Venuše).
+
+## Aréna — online zápas se zapisuje do progrese (2026-11-12)
+
+- **Multiplayer byl jediná aréna bez XP, dharma a tabule.** `MarsMultiplayer`
+  dostal `onFinish` a po `match_end` zapíše běh stejně jako sólo:
+  `score = fragy×100 − smrti×25`, `metrics = { seconds, completed: won,
+  objectives: frags, objectivesTotal: FRAG_LIMIT, setbacks: deaths }`.
+- **Výpočet je čistá funkce** (`core/arena/mp-result.ts`, `mpResultOf`):
+  ze `secondsLeft` + tabulky udělá skóre, čas a výhru. Testuje se bez
+  tříminutového zápasu (`test/arena-mp-result.mjs`, 16 kontrol) — v E2E by
+  se `match_end` ověřoval jen obchvatem, protože zápas končí až po
+  `MATCH_SECONDS` (180 s) nebo frag limitu **lidského** hráče.
+- **`secondsLeft` ze serveru** je jediný zdroj času — `MATCH_SECONDS −
+  secondsLeft`. Když čas vyprší, je to 180 s; při frag limitu zbytek.
+- **Výhra = první v tabulce.** Server `match_end` řadí sestavu podle fragů
+  a (při shodě) podle smrtí, takže `scoreboard[0].id === youPlayerId`
+  znamená výhru. Bonus +2 žetony jako v sólu.
+- **Divák se nezapisuje** (`watching` ref — `subscribe` efekt má prázdné
+  deps, takže `watch` v něm musí jít z refu).
+- **Zápis je jednou za zápas** (`recordedMatch`), `match_start` ho zase
+  odemkne pro další zápas.
+- **Hláška je plovoucí** (`.arena-notice-mp` nad HUDem) — multiplayer nemá
+  výsledkovou kartu, svět běží dál.
+- **Lokální MP E2E potřebuje net službu:** `apps/nirvana-net` → `npm run
+  build` → `NIRVANA_NET_REQUIRE_PASS=0 NIRVANA_ARENA_BOTS=3
+  NIRVANA_NET_ALLOWED_ORIGINS=http://127.0.0.1:3010 node
+  dist/nirvana-net/src/index.js` a **appku buildnutou s
+  `NEXT_PUBLIC_NIRVANA_NET_URL=ws://127.0.0.1:3011/net`**. Bez toho
+  `e2e/mars-arena.mjs` v MP části selže (a není to regrese kódu).

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { ARENA_MAPS, ARENA_MAP_DEFAULT, type ArenaBox, type ArenaMapId } from './map';
+import { mpResultOf, type MpResult } from './mp-result';
 import { PLAYER, makeSolids, stepBody, type Body } from './physics';
 import { WEAPONS, type WeaponId } from './weapons';
 import { WeaponView } from './WeaponView';
@@ -83,6 +84,7 @@ export function MarsMultiplayer({
   touch,
   weaponRequest,
   map = ARENA_MAP_DEFAULT.id,
+  onFinish,
 }: {
   running: boolean;
   /** Id místnosti, na kterou se jen díváme (`?watch=`); `null` = hrajeme. */
@@ -94,9 +96,14 @@ export function MarsMultiplayer({
   weaponRequest?: MutableRefObject<number | null>;
   /** Kterou mapu chceš hrát — server podle ní vybírá místnost. */
   map?: ArenaMapId;
+  /** Dohraný online zápas — jednou za zápas, jen pro hráče (ne diváka). */
+  onFinish?: (result: MpResult) => void;
 }) {
   const { camera, gl } = useThree();
   const { subscribe, sendInput, joinArena, spectateRoom, leaveRoom, youPlayerId, spectator, connected, rtt } = useNet();
+  /** `subscribe` efekt má prázdné deps, takže `watch` v něm musí jít z refu. */
+  const watching = useRef(false);
+  watching.current = watch !== null;
 
   /**
    * Mapa místnosti. Klient posílá svoji volbu v `join`, ale **rozhoduje
@@ -197,6 +204,8 @@ export function MarsMultiplayer({
   /** Poslední známé HP — pro zvuk zásahu (server posílá jen stav). */
   const lastHp = useRef(100);
   const matchState = useRef<'running' | 'ended' | 'countdown' | null>(null);
+  /** Zápas se zapisuje jednou; `match_start` ho zase odemkne pro další. */
+  const recordedMatch = useRef(false);
   const roster = useRef<Map<string, string>>(new Map());
   /** Kill feed (Q3): poslední zásahy, 4,5 s viditelné. */
   const feed = useRef<{ id: number; text: string; kind: 'frag' | 'death'; weapon?: WeaponId; until: number }[]>([]);
@@ -277,8 +286,25 @@ export function MarsMultiplayer({
         if (event.kind === 'match_end') {
           matchState.current = 'ended';
           playMatchEnd();
+          // Online zápas se do progrese zapisuje stejně jako sólo — jinak by
+          // multiplayer byl jediná aréna bez XP, dharma a tabule.
+          if (!recordedMatch.current && !watching.current && onFinish) {
+            recordedMatch.current = true;
+            onFinish(
+              mpResultOf({
+                frags: frags.current,
+                deaths: deaths.current,
+                timeLeft: timeLeft.current,
+                leaderId: event.scoreboard?.[0]?.id ?? null,
+                youId: youPlayerId,
+              }),
+            );
+          }
         }
-        if (event.kind === 'match_start') matchState.current = 'running';
+        if (event.kind === 'match_start') {
+          matchState.current = 'running';
+          recordedMatch.current = false;
+        }
         if (event.kind === 'presence') {
           for (const member of event.members) roster.current.set(member.id, member.name);
         }
