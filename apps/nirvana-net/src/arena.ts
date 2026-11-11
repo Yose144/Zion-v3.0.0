@@ -102,7 +102,7 @@ export interface Rocket {
 export type ArenaEvent =
   | { kind: 'kill'; killer: string; victim: string; weapon: WeaponId; at: number }
   | { kind: 'respawn'; id: string }
-  | { kind: 'pickup'; id: string; item: 'health' | 'armor' | 'ammo' | 'powerup' | 'mega' }
+  | { kind: 'pickup'; id: string; item: 'health' | 'armor' | 'ammo' | 'powerup' | 'mega' | 'shard' }
   | { kind: 'match_start'; at: number }
   | { kind: 'match_end'; scoreboard: { id: string; name: string; frags: number; deaths: number }[] };
 
@@ -567,11 +567,13 @@ export function stepArena(sim: ArenaSim, dt: number, now: number): ArenaEvent[] 
       if (distance > PICKUP_RANGE) continue;
       if (pickup.kind === 'health' && player.hp >= 100) continue;
       if (pickup.kind === 'armor' && player.armor >= 100) continue;
+      if (pickup.kind === 'shard' && player.armor >= 100) continue;
       if (pickup.kind === 'ammo' && player.mgAmmo >= WEAPONS.mg.ammo) continue;
       if (pickup.kind === 'health') player.hp = Math.min(100, player.hp + 25);
       else if (pickup.kind === 'ammo') {
         player.mgAmmo = Math.min(WEAPONS.mg.ammo, player.mgAmmo + MG_AMMO_PICKUP);
-      } else player.armor = Math.min(100, player.armor + 50);
+      } else if (pickup.kind === 'shard') player.armor = Math.min(100, player.armor + 5);
+      else player.armor = Math.min(100, player.armor + 50);
       sim.pickupReadyAt.set(pickup.id, now + pickup.respawn * 1000);
       sim.events.push({ kind: 'pickup', id: player.id, item: pickup.kind });
     }
