@@ -224,6 +224,10 @@ góly, vlny a držení kopce.
 - **Zvuk:** KO (`ko`), zlom krytu (`block`), gól (`bell`), kombo ≥3
   (stoupající tón). Gól se ukáže jako `GÓL` nad míčem.
 
+- **Headless sumo probe (lokální build):** 6 módů, výběr Sumo, HUD
+  `Sumo 35s · 0,9:0,9 · v ringu`, 0 JS chyb; screenshot
+  `.artifacts/render/mercury-ragdoll/sumo.png` (vyvýšený ring + propast).
+
 ## Protokol 35
 
 Tuning mění **význam** HP (MAX_HP 160) a poškození, i když formát zpráv
