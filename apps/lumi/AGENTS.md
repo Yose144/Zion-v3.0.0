@@ -72,7 +72,6 @@ npm run build
 
 Šest nových motivů = **šest nových produktových variant** (vlastní `externalId`,
 cena, sklad). Kód je připravený; chybí jen podklady. Postup:
-
 1. **Assety:** `node scripts/import-motifs.mjs <balíček> --slug <slug> [--group <skupina>]`
    - Bere `Jednotlive_steny/*` (PNG/SVG/WebP); když je stěna v PNG i SVG, vyhraje **SVG** (vektor → ostrá `-700` varianta).
    - SVG se vyplní inkoustem (`#101C2B`) podle `fill-rule="evenodd"` = silueta řezu; `--style line` nechá jen tah. PNG se bere tak, jak je.
@@ -97,6 +96,39 @@ Když je varianta jen jedna, nekreslí se nic — dávka se dá přidávat po je
 **Pozor na seed:** `ensureSeeded()` dřív naplnil jen prázdnou tabulku, takže produkt
 přidaný později neměl v DB řádek a checkout ho odmítl („Produkt není v nabídce“).
 Teď `seedMissing()` doplňuje chybějící `externalId` a existující řádky nechává být.
+
+## 3D model z výpalových podkladů (2026-11-11)
+
+Šest motivových sad má vlastní GLB postavené **z vektorů, které jdou do laseru** —
+ne z ilustrace. Model tedy sedí na skutečný díl: stěny stojí na šestihranu
+o poloměru 65 mm (apotéma `65√3/2`), desky mají průměr 140 mm, tloušťka 3 mm.
+
+```bash
+cd apps/lumi
+node scripts/build-lantern-models.mjs --all          # všech šest sad → public/models/lumi-2-<slug>.glb
+node scripts/build-lantern-models.mjs ../../heros/Lumi/<balíček> --slug <slug>
+```
+
+- Vstup je `Lumi_2_A3_1ku1.svg` (devět cest: šest stěn, vršek, dno, proužek).
+  Cesty jsou uzavřené polylinie `M/L/Z`, takže se čtou bez SVG parseru.
+- **Obrysy se třídí podle vnoření** (sudá hloubka = kus, lichá = díra); tím
+  vzniknou díry i případné dřevěné ostrůvky. Douglas–Peucker s tolerancí
+  0,15 mm (stěny) / 0,3 mm (zdobený vršek) drží tvar a zmenší soubor ~10×.
+- **Materiály:** `Překližka` (plochy) a `Řez` (hrany) — dvě skupiny
+  z `ExtrudeGeometry`. Nemalovat je na jednu barvu.
+- **Sestava:** stěny se otáčejí kolem Y podle úhlů drážek (30° + 60°·k) a stojí
+  na apotémě; desky se překlopí o −90° kolem X. Model se staví v souřadnicích
+  archu (Y dolů) a nakonec se otočí o 180° kolem X — otočení, ne zrcadlení,
+  takže normály zůstanou správně.
+- **Výsledek:** 22–40 tis. trojúhelníků, 1,1–2,0 MB, Y-up, metry, objekty
+  `stena-01…06`, `vrsek`, `dno`.
+- **Produktové náhledy:** `node scripts/ops/lumi-render/render.mjs --model
+  public/models/lumi-2-<slug>.glb --out <dir> --mode hero` (čtverec 1200 px,
+  teplé tmavé pozadí) → `node scripts/make-model-images.mjs <dir> <slug>` zapíše
+  `public/images/motifs/<slug>/produkt-{200,700}.webp`.
+- **Stav prodeje:** varianty jsou v katalogu `active: false` („Připravujeme“),
+  dokud se v `/admin` nenastaví cena a sklad. Checkout je do té doby odmítne.
+
 
 ## Světlý / tmavý motiv (2026-11-11)
 

@@ -76,6 +76,168 @@ const FIRE_NOTE: Localized = {
   de: 'Kerze immer im Glas, auf nicht brennbarer Unterlage und beaufsichtigt verwenden.',
 };
 
+/**
+ * Šest motivových sad Lumi 2 — stejný lampion, jiných šest stěn.
+ *
+ * Podklady jsou výpalové vektory z `heros/Lumi/`; 3D model se z nich staví
+ * skriptem `scripts/build-lantern-models.mjs`. Cena a sklad patří do
+ * administrace, proto jsou varianty nastavené jako `active: false` —
+ * v e-shopu je vidět jako „Připravujeme“, ale nejde je koupit.
+ */
+interface MotifSet {
+  slug: string;
+  order: number;
+  motif: Localized;
+  walls: Localized;
+}
+
+const MOTIF_SETS: MotifSet[] = [
+  {
+    slug: 'priroda',
+    order: 1,
+    motif: { cs: 'Příroda', en: 'Nature', de: 'Natur' },
+    walls: {
+      cs: 'Slunce, měsíc, holubice, dva stromy, hory s řekou a motýl.',
+      en: 'Sun, moon, dove, two trees, mountains with a river, butterfly.',
+      de: 'Sonne, Mond, Taube, zwei Bäume, Berge mit Fluss, Schmetterling.',
+    },
+  },
+  {
+    slug: 'svatebni',
+    order: 2,
+    motif: { cs: 'Svatební', en: 'Wedding', de: 'Hochzeit' },
+    walls: {
+      cs: 'Dvě srdce, prsteny, holubice, strom lásky, květinové srdce a svatební pár.',
+      en: 'Two hearts, rings, dove, tree of love, floral heart and a wedding couple.',
+      de: 'Zwei Herzen, Ringe, Taube, Baum der Liebe, Blumenherz und Hochzeitspaar.',
+    },
+  },
+  {
+    slug: 'kvetinove',
+    order: 3,
+    motif: { cs: 'Květinové', en: 'Floral', de: 'Blumen' },
+    walls: {
+      cs: 'Růže, slunečnice, kopretiny, vlčí máky, kosatce a rozkvetlá louka.',
+      en: 'Roses, sunflowers, daisies, poppies, irises and a flowering meadow.',
+      de: 'Rosen, Sonnenblumen, Gänseblümchen, Mohnblumen, Iris und eine blühende Wiese.',
+    },
+  },
+  {
+    slug: 'oceanske',
+    order: 4,
+    motif: { cs: 'Oceánské', en: 'Ocean', de: 'Ozean' },
+    walls: {
+      cs: 'Delfín, mořská želva, mořský koník, velryba, nautilus a korálový útes.',
+      en: 'Dolphin, sea turtle, seahorse, whale, nautilus and a coral reef.',
+      de: 'Delfin, Meeresschildkröte, Seepferdchen, Wal, Nautilus und ein Korallenriff.',
+    },
+  },
+  {
+    slug: 'vesmirne',
+    order: 5,
+    motif: { cs: 'Vesmírné', en: 'Cosmic', de: 'Weltraum' },
+    walls: {
+      cs: 'Saturn, galaxie, raketa, Země, kometa a slunce s měsícem.',
+      en: 'Saturn, galaxy, rocket, Earth, comet and sun with moon.',
+      de: 'Saturn, Galaxie, Rakete, Erde, Komet und Sonne mit Mond.',
+    },
+  },
+  {
+    slug: 'vanoce',
+    order: 6,
+    motif: { cs: 'Vánoce', en: 'Christmas', de: 'Weihnachten' },
+    walls: {
+      cs: 'Stromeček, betlém, zvonky, anděl, vánoční svíčka a ozdoby.',
+      en: 'Christmas tree, nativity, bells, angel, Christmas candle and ornaments.',
+      de: 'Weihnachtsbaum, Krippe, Glocken, Engel, Weihnachtskerze und Christbaumschmuck.',
+    },
+  },
+];
+
+const MOTIF_SPECS: ProductSpec[] = [
+  {
+    label: { cs: 'Rozměry', en: 'Dimensions', de: 'Maße' },
+    value: { cs: '140 × 126 × 121 mm', en: '140 × 126 × 121 mm', de: '140 × 126 × 121 mm' },
+  },
+  {
+    label: { cs: 'Materiál', en: 'Material', de: 'Material' },
+    value: {
+      cs: '3mm březová překližka, dřevěné lepidlo D3',
+      en: '3 mm birch plywood, D3 wood glue',
+      de: '3 mm Birkensperrholz, D3-Holzleim',
+    },
+  },
+  {
+    label: { cs: 'Sestavení', en: 'Assembly', de: 'Aufbau' },
+    value: { cs: '30 minut, bez nářadí', en: '30 minutes, no tools', de: '30 Minuten, ohne Werkzeug' },
+  },
+  {
+    label: { cs: 'Světlo', en: 'Light', de: 'Licht' },
+    value: {
+      cs: 'Čajová svíčka ve sklenici (není součástí)',
+      en: 'Tea light in a glass (not included)',
+      de: 'Teelicht im Glas (nicht enthalten)',
+    },
+  },
+];
+
+/** Produktová varianta motivu — stejná konstrukce, jiných šest stěn. */
+function motifProduct(set: MotifSet): ProductDef {
+  const image = `/images/motifs/${set.slug}/produkt-700.webp`;
+  return {
+    externalId: `lumi-2-${set.slug}`,
+    slug: `lumi-2-${set.slug}`,
+    category: 'lampiony',
+    name: {
+      cs: `Lumi 2 — ${set.motif.cs}`,
+      en: `Lumi 2 — ${set.motif.en}`,
+      de: `Lumi 2 — ${set.motif.de}`,
+    },
+    short: set.walls,
+    description: {
+      cs: `Stejná lucerna, jiných šest stěn. ${set.walls.cs} Motiv je vyřezaný skrz dřevo, takže se večer rozsvítí jako stíny na stole a zůstane vidět i po setmění.`,
+      en: `The same lantern with a different set of six walls. ${set.walls.en} The motif is cut through the wood, so it lights up as shadows on the table and stays visible after dark.`,
+      de: `Dieselbe Laterne, andere sechs Wände. ${set.walls.de} Das Motiv ist durch das Holz geschnitten — abends leuchtet es als Schatten auf dem Tisch und bleibt auch nach Einbruch der Dunkelheit sichtbar.`,
+    },
+    priceCzk: 790,
+    stock: 0,
+    image,
+    imageWidth: 700,
+    imageHeight: 700,
+    imageSmall: image.replace('-700.webp', '-200.webp'),
+    gallery: [],
+    disclaimer: {
+      cs: 'Náhled je 3D model postavený z výpalových podkladů, ne fotografie. Skutečný kus se může v drobných detailech lišit.',
+      en: 'The preview is a 3D model built from the cutting files, not a photograph. The real piece may differ in small details.',
+      de: 'Die Vorschau ist ein 3D-Modell aus den Schnittdaten, kein Foto. Das echte Stück kann in kleinen Details abweichen.',
+    },
+    badge: { cs: 'Motiv', en: 'Motif', de: 'Motiv' },
+    specs: MOTIF_SPECS,
+    includes: [
+      { cs: '8 vyřezaných dílů z březové překližky', en: '8 cut birch plywood parts', de: '8 geschnittene Birkensperrholzteile' },
+      { cs: 'Tištěný návod na složení', en: 'Printed assembly guide', de: 'Gedruckte Aufbauanleitung' },
+      { cs: 'Brutý papír na začistění hran', en: 'Sandpaper for the edges', de: 'Schleifpapier für die Kanten' },
+    ],
+    fireRisk: true,
+    leadTime: LEAD_TIME,
+    model3d: `/models/lumi-2-${set.slug}.glb`,
+    sortOrder: 10 + set.order,
+    active: false,
+    seo: {
+      title: {
+        cs: `Lumi 2 — ${set.motif.cs} · dřevěný lampion`,
+        en: `Lumi 2 — ${set.motif.en} · wooden lantern`,
+        de: `Lumi 2 — ${set.motif.de} · Holzlaterne`,
+      },
+      description: set.walls,
+    },
+    variantGroup: 'lumi-2-motivy',
+    variantOrder: set.order,
+    motifName: set.motif,
+  };
+}
+
+
 export const PRODUCTS: ProductDef[] = [
   {
     externalId: 'lumi-2',
@@ -503,6 +665,7 @@ export const PRODUCTS: ProductDef[] = [
       },
     },
   },
+  ...MOTIF_SETS.map(motifProduct),
 ];
 
 export function productBySlug(slug: string): ProductDef | undefined {
@@ -522,10 +685,20 @@ export interface VariantGroupDef {
 
 /**
  * Skupiny variant. Prázdné pole = žádné motivy, UI se chová jako dřív.
- * Až přijdou podklady na šest nových motivů, přidá se sem jeden záznam
- * a k němu šest produktů ve `PRODUCTS` se stejným `variantGroup`.
+ * Šest motivových sad Lumi 2 (Příroda … Vánoce) drží pohromadě pod jedním
+ * popiskem; produkty jsou v `PRODUCTS` s `variantGroup: 'lumi-2-motivy'`.
  */
-export const VARIANT_GROUPS: VariantGroupDef[] = [];
+export const VARIANT_GROUPS: VariantGroupDef[] = [
+  {
+    id: 'lumi-2-motivy',
+    label: { cs: 'Motivy Lumi 2', en: 'Lumi 2 motifs', de: 'Lumi 2 Motive' },
+    note: {
+      cs: 'Šest motivových sad — stejná lucerna, jiných šest stěn. Vyberte motiv, který se hodí k vašemu stolu.',
+      en: 'Six motif sets — the same lantern with a different six walls. Pick the one that suits your table.',
+      de: 'Sechs Motivsätze — dieselbe Laterne mit anderen sechs Wänden. Wählen Sie das Motiv, das zu Ihrem Tisch passt.',
+    },
+  },
+];
 
 /** Všechny motivy jedné skupiny, seřazené podle `variantOrder`. */
 export function variantMembers(group?: string): ProductDef[] {

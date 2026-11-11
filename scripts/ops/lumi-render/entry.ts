@@ -19,8 +19,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
-const WIDTH = 1600;
-const HEIGHT = 900;
+let WIDTH = 1600;
+let HEIGHT = 900;
 /** Horní pruh je pro titulek, zbytek plátna se dělí do mřížky pohledů. */
 const HEAD = 132;
 
@@ -141,6 +141,15 @@ declare global {
 window.__ready = false;
 
 window.__render = async (url: string, meta: Record<string, string>) => {
+  // Čtvercový produktový render se posílá jako `meta.width/height`.
+  WIDTH = Number(meta.width ?? 1600);
+  HEIGHT = Number(meta.height ?? 900);
+  renderer.setSize(WIDTH, HEIGHT, false);
+  canvas.style.width = `${WIDTH}px`;
+  canvas.style.height = `${HEIGHT}px`;
+
+  if (meta.background) scene.background = new THREE.Color(meta.background);
+
   document.getElementById('title')!.textContent = meta.name ?? '—';
   document.getElementById('subtitle')!.textContent = meta.subtitle ?? '';
   document.getElementById('meta')!.innerHTML = [meta.dims, meta.materials, meta.flags]

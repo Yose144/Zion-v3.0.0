@@ -46,6 +46,21 @@ Skript bere stěny z `Jednotlive_steny/`, upřednostní SVG před PNG a vypíše
 doplnit (překlady, `VARIANT_GROUPS`, `variantOrder`). Po přidání produktů spusť
 `POST /api/seed` — doplní jen chybějící řádky, ceny a sklad nemění.
 
+### 3D model z výpalových podkladů
+
+Každá motivová sada má vlastní GLB postavené přímo z vektorů pro laser
+(ne z ilustrace): stěny na šestihranu o poloměru 65 mm, desky 140 mm,
+tloušťka 3 mm, materiály `Překližka` a `Řez`.
+
+```bash
+node scripts/build-lantern-models.mjs --all
+# → public/models/lumi-2-{priroda,svatebni,kvetinove,oceanske,vesmirne,vanoce}.glb
+```
+
+Produktové náhledy se renderují z modelu (`scripts/ops/lumi-render/render.mjs
+--mode hero`) a do WebP je převede `scripts/make-model-images.mjs`.
+
+
 ## Světlý a tmavý motiv
 
 - Motiv se přepíná atributem `data-theme` na `<html>`; volba se ukládá do `localStorage.lumi_theme`.

@@ -12,7 +12,8 @@ import { ProductPrice } from '@/components/price';
 export default function ProductCard({ product, priority = false }: { product: ProductDef; priority?: boolean }) {
   const { lang } = useLang();
   const live = useProduct(product.externalId);
-  const soldOut = live ? live.stock <= 0 || !live.active : false;
+  const inactive = live ? !live.active : false;
+  const soldOut = live ? live.active && live.stock <= 0 : false;
   // Čtvercové rendery necháváme celé, široké fotky vyplní rám.
   const fit = imageFit(product.imageWidth, product.imageHeight);
 
@@ -40,7 +41,11 @@ export default function ProductCard({ product, priority = false }: { product: Pr
             {pick(product.badge, lang)}
           </span>
         ) : null}
-        {soldOut ? (
+        {inactive ? (
+          <span className="absolute right-3 top-3 rounded-full bg-forest px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.12em] text-parchment">
+            {pick({ cs: 'Připravujeme', en: 'Coming soon', de: 'In Vorbereitung' }, lang)}
+          </span>
+        ) : soldOut ? (
           <span className="absolute right-3 top-3 rounded-full bg-forest px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.12em] text-parchment">
             {pick({ cs: 'Vyprodáno', en: 'Sold out', de: 'Ausverkauft' }, lang)}
           </span>

@@ -20,7 +20,10 @@ export default function BuyBox({ product }: { product: ProductDef }) {
   const [added, setAdded] = useState(false);
 
   const max = Math.min(product.maxQty ?? 20, Math.max(1, live?.stock ?? 1));
-  const soldOut = !live || live.stock <= 0 || !live.active;
+  // `active: false` = varianta, která ještě není v prodeji (čeká na cenu
+  // a sklad v administraci). Nekreslí se jako „Vyprodáno“, ale „Připravujeme“.
+  const inactive = !live || !live.active;
+  const soldOut = !inactive && (live?.stock ?? 0) <= 0;
 
   function handleAdd(goToCart = false) {
     if (soldOut) return;
@@ -36,22 +39,45 @@ export default function BuyBox({ product }: { product: ProductDef }) {
         <ProductPrice externalId={product.externalId} className="text-3xl" />
         <span
           className={
-            soldOut
+            inactive || soldOut
               ? 'rounded-full bg-forest px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-parchment'
               : 'rounded-full bg-amber-500/15 px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-amber-800'
           }
         >
-          {soldOut
-            ? pick({ cs: 'Vyprodáno', en: 'Sold out', de: 'Ausverkauft' }, lang)
-            : live && live.stock <= 5
-              ? `${pick({ cs: 'Poslední kusy', en: 'Last pieces', de: 'Letzte Stücke' }, lang)} (${live.stock})`
-              : pick({ cs: 'Skladem', en: 'In stock', de: 'Auf Lager' }, lang)}
+          {inactive
+            ? pick({ cs: 'Připravujeme', en: 'Coming soon', de: 'In Vorbereitung' }, lang)
+            : soldOut
+              ? pick({ cs: 'Vyprodáno', en: 'Sold out', de: 'Ausverkauft' }, lang)
+              : live && live.stock <= 5
+                ? `${pick({ cs: 'Poslední kusy', en: 'Last pieces', de: 'Letzte Stücke' }, lang)} (${live.stock})`
+                : pick({ cs: 'Skladem', en: 'In stock', de: 'Auf Lager' }, lang)}
         </span>
       </div>
 
       <p className="text-sm leading-relaxed text-ink-soft">{pick(product.description, lang)}</p>
 
-      {!soldOut && (
+      {inactive ? (
+        <div className="rounded-xl border border-line bg-card/60 p-4 text-sm leading-relaxed text-ink-soft">
+          <p className="font-semibold text-ink">
+            {pick({ cs: 'Tento motiv ještě není v prodeji', en: 'This motif is not on sale yet', de: 'Dieses Motiv ist noch nicht erhältlich' }, lang)}
+          </p>
+          <p className="mt-1.5">
+            {pick(
+              {
+                cs: 'Máme ho vyřezaný a vyzkoušený, ale ještě k němu ladíme cenu a sklad. Napište nám a dáme vám vědět, až půjde objednat — nebo ho objednejte jako personalizaci.',
+                en: 'It is cut and tested, but we are still setting the price and stock. Write to us and we will let you know when it can be ordered — or order it as a personalisation.',
+                de: 'Es ist geschnitten und getestet, aber Preis und Lager werden noch abgestimmt. Schreiben Sie uns — wir melden uns, sobald es bestellbar ist.',
+              },
+              lang,
+            )}
+          </p>
+          <Link href="/kontakt" className="btn-outline mt-3">
+            {pick({ cs: 'Napsat nám', en: 'Write to us', de: 'Schreiben Sie uns' }, lang)}
+          </Link>
+        </div>
+      ) : null}
+
+      {!inactive && !soldOut && (
         <div className="flex flex-wrap items-center gap-3">
           <div className="inline-flex items-center rounded-full border border-line bg-card/70">
             <button
@@ -82,6 +108,27 @@ export default function BuyBox({ product }: { product: ProductDef }) {
           </button>
         </div>
       )}
+
+      {soldOut ? (
+        <div className="rounded-xl border border-line bg-card/60 p-4 text-sm leading-relaxed text-ink-soft">
+          <p className="font-semibold text-ink">
+            {pick({ cs: 'Teď vyprodáno', en: 'Sold out right now', de: 'Derzeit ausverkauft' }, lang)}
+          </p>
+          <p className="mt-1.5">
+            {pick(
+              {
+                cs: 'Další kusy řežeme na zakázku. Napište nám a ozveme se s termínem.',
+                en: 'We cut the next pieces to order. Write to us and we will come back with a date.',
+                de: 'Die nächsten Stücke fertigen wir auf Bestellung. Schreiben Sie uns — wir nennen Ihnen einen Termin.',
+              },
+              lang,
+            )}
+          </p>
+          <Link href="/kontakt" className="btn-outline mt-3">
+            {pick({ cs: 'Napsat nám', en: 'Write to us', de: 'Schreiben Sie uns' }, lang)}
+          </Link>
+        </div>
+      ) : null}
 
       {added && (
         <p className="inline-flex items-center gap-2 text-sm font-medium text-amber-800">

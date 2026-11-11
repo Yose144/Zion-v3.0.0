@@ -44,6 +44,8 @@ const MODEL = resolve(repo, value('model', 'heros/shop/Lumi/Lumi_2.glb'));
 const OUT = resolve(repo, value('out', '.artifacts/render/lumi-2'));
 const LABEL = value('label', 'Lumi 2 — Království srdce');
 const MODE = value('mode', 'sheet');
+const WIDTH = Number(value('width', 0)) || (MODE === 'hero' ? 1200 : 1600);
+const HEIGHT = Number(value('height', 0)) || (MODE === 'hero' ? 1200 : 900);
 
 const MIME = {
   '.js': 'text/javascript',
@@ -104,7 +106,7 @@ async function main() {
 
   const bytes = (await stat(MODEL)).size;
   const browser = await launch();
-  const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
+  const page = await browser.newPage({ viewport: { width: WIDTH, height: HEIGHT } });
   page.on('pageerror', (error) => console.error('pageerror:', error.message));
   page.on('console', (message) => {
     if (message.type() === 'error') console.error('console:', message.text());
@@ -114,19 +116,24 @@ async function main() {
   await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle' });
 
   await page.evaluate(
-    (url, meta) => {
+    ([url, meta]) => {
       window.__ready = false;
       return window.__render(url, meta);
     },
-    ROUTE,
-    {
-      name: LABEL,
-      subtitle: MODEL.replace(`${repo}/`, ''),
-      dims: `140 × 126 × 121 mm · ${(bytes / 1048576).toFixed(2)} MB`,
-      materials: 'Překližka · Řez · Gravír (bez textur)',
-      flags: 'Y-up · metry · DoubleSide',
-      mode: MODE,
-    },
+    [
+      ROUTE,
+      {
+        name: LABEL,
+        subtitle: MODEL.replace(`${repo}/`, ''),
+        dims: `140 × 126 × 121 mm · ${(bytes / 1048576).toFixed(2)} MB`,
+        materials: 'Překližka · Řez · Gravír (bez textur)',
+        flags: 'Y-up · metry · DoubleSide',
+        mode: MODE,
+        background: value('background', MODE === 'hero' ? '#171009' : '#0a0c12'),
+        width: WIDTH,
+        height: HEIGHT,
+      },
+    ],
   );
   // render je synchronní uvnitř jednoho tasku, ale WebGL textura se může
   // dokreslovat ještě jeden frame
@@ -143,7 +150,7 @@ async function main() {
       }
     });
   }
-  await page.screenshot({ path: file, clip: { x: 0, y: 0, width: 1600, height: 900 } });
+  await page.screenshot({ path: file, clip: { x: 0, y: 0, width: WIDTH, height: HEIGHT } });
   console.log(`✓ ${MODEL.replace(`${repo}/`, '')} → ${file.replace(`${repo}/`, '')}`);
 
   await browser.close();

@@ -369,9 +369,9 @@ export default function LumiViewer({ modelUrl, poster, tone = 'light' }: { model
         <Rotate3d className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         {pick(
           {
-            cs: 'Vizualizační model, ne výrobní podklad. Fyzické lícování a bezpečnost svíčky ověřuje dílna.',
-            en: 'A visualisation model, not production data. Physical fit and candle safety are verified by the workshop.',
-            de: 'Ein Visualisierungsmodell, keine Fertigungsdaten. Passung und Kerzensicherheit prüft die Werkstatt.',
+            cs: 'Vizualizace postavená z výrobních podkladů. Rozhodující je fyzický kus — lícování a bezpečnost svíčky ověřuje dílna.',
+            en: 'A visualisation built from the production files. The physical piece decides — fit and candle safety are verified by the workshop.',
+            de: 'Eine Visualisierung aus den Fertigungsdaten. Entscheidend ist das physische Stück — Passung und Kerzensicherheit prüft die Werkstatt.',
           },
           lang,
         )}
