@@ -148,6 +148,9 @@ export function MarsMultiplayer({
 
   const health = useRef(100);
   const armor = useRef(0);
+  /** Powerupy ze snapshotu (server je autorita). */
+  const quadIn = useRef(0);
+  const hasteIn = useRef(0);
   const frags = useRef(0);
   const deaths = useRef(0);
   const alive = useRef(true);
@@ -200,6 +203,8 @@ export function MarsMultiplayer({
         if (mine) {
           ammo.current = mine.ammo ?? ammo.current;
           if (mine.ammoByWeapon) ammoByIndex.current = mine.ammoByWeapon;
+          quadIn.current = mine.quadIn ?? 0;
+          hasteIn.current = mine.hasteIn ?? 0;
           if (mine.weapon !== weapon.current && mine.alive) weapon.current = mine.weapon;
         }
         const nextSlots = next.players
@@ -516,6 +521,8 @@ export function MarsMultiplayer({
       const stats: MpStats = {
         health: Math.round(health.current),
         armor: Math.round(armor.current),
+        quadIn: quadIn.current,
+        hasteIn: hasteIn.current,
         frags: frags.current,
         deaths: deaths.current,
         weapon: MP_WEAPON_IDS[weapon.current] ?? 'rail',
@@ -620,7 +627,19 @@ export function MarsMultiplayer({
         >
           <boxGeometry args={[0.5, 0.5, 0.5]} />
           <meshBasicMaterial
-            color={pickup.kind === 'health' ? '#7fe3d4' : pickup.kind === 'ammo' ? '#ffb46a' : '#ffd166'}
+            color={
+              pickup.kind === 'health' || pickup.kind === 'mega'
+                ? '#9cff8a'
+                : pickup.kind === 'shard'
+                  ? '#bfe6ea'
+                  : pickup.kind === 'ammo'
+                    ? '#ffb46a'
+                    : pickup.kind === 'powerup'
+                      ? pickup.powerup === 'haste'
+                        ? '#7fe3d4'
+                        : '#ff5c5c'
+                      : '#c8a2ff'
+            }
             toneMapped={false}
           />
         </mesh>

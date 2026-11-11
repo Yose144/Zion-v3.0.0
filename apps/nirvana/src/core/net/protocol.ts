@@ -86,7 +86,7 @@ const asItemId = (value: unknown): ItemId | null =>
  *      zpráv se nemění, ale starý server by posílal HP ze 100 a klient by
  *      kreslil jiné bary — verze se musí potkat.
  */
-export const PROTO_VERSION = 36;
+export const PROTO_VERSION = 37;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -212,6 +212,9 @@ export interface ArenaPlayerState {
   mgAmmo?: number;
   /** Munice všech zbraní pro HUD (rail/pěst = −1 = nekonečno). */
   ammoByWeapon?: Record<number, number>;
+  /** Zbývající sekundy Quad Damage / Haste (0 = neaktivní). */
+  quadIn?: number;
+  hasteIn?: number;
 }
 
 /** Stav vozidla na Venuši. */
