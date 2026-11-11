@@ -62,6 +62,18 @@ const WEAPON_BAR: { id: WeaponId; key: string; label: string }[] = [
   { id: 'gauntlet', key: 'Q', label: 'PĚST' },
 ];
 
+/** Krátká zkratka zbraně do kill feedu. */
+function shortWeapon(weapon: string): string {
+  if (weapon === 'rail') return 'RAIL';
+  if (weapon === 'rocket') return 'RKT';
+  if (weapon === 'mg') return 'MG';
+  if (weapon === 'shotgun') return 'SHOT';
+  if (weapon === 'lightning') return 'LTN';
+  if (weapon === 'plasma') return 'PLASMA';
+  if (weapon === 'gauntlet') return 'FIST';
+  return '';
+}
+
 /** Název zbraně do HUD — jedno místo pro sólo (MP má vlastní 3 zbraně). */
 function weaponLabel(weapon: string, ammo: number): string {
   if (weapon === 'rail') return 'RAIL';
@@ -345,6 +357,11 @@ export default function MarsPage() {
                 HASTE · {stats.hasteIn}s
               </span>
             )}
+            {(stats.itemTimers ?? []).map((timer) => (
+              <span key={timer.id} className="arena-timer" title={cs ? 'kdy se item vrátí' : 'item respawn'}>
+                {timer.label} {timer.seconds}s
+              </span>
+            ))}
             <span className="arena-weapon">
               {weaponLabel(stats.weapon, stats.ammo)}
             </span>
@@ -434,15 +451,7 @@ export default function MarsPage() {
               {stats.feed!.map((entry) => (
                 <span key={entry.id} className={entry.kind === 'frag' ? 'is-frag' : 'is-death'}>
                   {entry.text}
-                </span>
-              ))}
-            </div>
-          )}
-          {(stats.feed?.length ?? 0) > 0 && (
-            <div className="arena-killfeed" role="status" aria-live="polite">
-              {stats.feed!.map((entry) => (
-                <span key={entry.id} className={entry.kind === 'frag' ? 'is-frag' : 'is-death'}>
-                  {entry.text}
+                  {entry.weapon && <em>{shortWeapon(entry.weapon)}</em>}
                 </span>
               ))}
             </div>

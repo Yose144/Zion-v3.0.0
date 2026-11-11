@@ -2892,3 +2892,20 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   (přesně to se stalo při prvním testu).
 - **Test:** `test/arena-settings.mjs` se falešným `window` ověřuje
   „žádná cache obtížnosti", clamp citlivosti a propagaci událostí.
+
+### Aréna — kill feed se zbraní, item timery a přepnutí zbraně (2026-11-11)
+
+- **Kill feed nese zbraň.** `pushFeed(..., weapon)` a `killBot(..., weapon)`
+  předávají, čím zásah vznikl (rail/MG/brokovnice/…); stránka kreslí malou
+  zkratku (`RAIL`, `RKT`, `FIST`). Botí smrt ukazuje zbraň, kterou tě
+  zasáhl (`damagePlayer(..., weapon)`).
+- **Q3 item timery:** vzatý Quad/Haste/Mega posílá `itemTimers`
+  (label + sekundy do respawnu) a HUD je vypisuje. Počítá se z
+  `pickup.until`, ne z vlastního časovače — jinak by se čísla rozešla.
+- **Přepnutí zbraně** ve viewmodelu udělá 200ms ponoření a vyjetí
+  (`switchAt` ref); bez toho model skočil mezi zbraněmi bez animace.
+- **Pozor na duplicitní blok v JSX:** kill feed se po dvou editacích
+  vykresloval **dvakrát** (dvě stejné `<div className="arena-killfeed">`).
+  Odhalil to až headless test (dva stejné řádky). Po každé větší editaci
+  stránky zkontroluj `grep -c "arena-killfeed"` = 1.
+- **Bez změny protokolu.**

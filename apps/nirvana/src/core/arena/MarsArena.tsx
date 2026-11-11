@@ -77,8 +77,10 @@ export interface ArenaStats {
   ammoByWeapon?: Partial<Record<WeaponId, number>>;
   /** Přesnost v procentech (zásahy / výstřely, jen hitscan). */
   accuracy?: number;
-  /** Kill feed — poslední zásahy a smrti. */
-  feed?: { id: number; text: string; kind: 'frag' | 'death' }[];
+  /** Kill feed — poslední zásahy a smrti (s zbraní, když je známá). */
+  feed?: { id: number; text: string; kind: 'frag' | 'death'; weapon?: WeaponId }[];
+  /** Odpočty vzatých powerupů / mega health (Q3 timery). */
+  itemTimers?: { id: string; label: string; seconds: number }[];
   /** Kdy naposledy hráč trefil cíl / dostal zásah (ms) — hitmarker a viněta. */
   hitAt?: number;
   hurtAt?: number;
@@ -300,7 +302,7 @@ export function MarsArena({
   const pickups = useRef(ARENA_SOLO_PICKUPS.map((pickup) => ({ ...pickup, until: 0 })));
   const nextId = useRef(1);
   /** Kill feed (Q3): poslední zásahy, 4,5 s viditelné. */
-  const feed = useRef<{ id: number; text: string; kind: 'frag' | 'death'; until: number }[]>([]);
+  const feed = useRef<{ id: number; text: string; kind: 'frag' | 'death'; weapon?: WeaponId; until: number }[]>([]);
   /** Přesnost: zásahy / výstřely (počítá se jen hitscan, ne projektily). */
   const shots = useRef(0);
   const hits = useRef(0);
@@ -605,7 +607,7 @@ export function MarsArena({
         if (bestBot) {
           hitAny = true;
           bestBot.health -= spec.damage * quad;
-          if (bestBot.health <= 0) killBot(bestBot, now);
+          if (bestBot.health <= 0) killBot(bestBot, now, id);
         }
       }
 
@@ -653,24 +655,24 @@ export function MarsArena({
     });
   }
 
-  function pushFeed(kind: 'frag' | 'death', text: string, now: number) {
-    feed.current.push({ id: nextId.current++, text, kind, until: now + 4500 });
+  function pushFeed(kind: 'frag' | 'death', text: string, now: number, weapon?: WeaponId) {
+    feed.current.push({ id: nextId.current++, text, kind, weapon, until: now + 4500 });
     // Strop 5 řádků — delší feed by zakryl obraz a nikdo ho nečte.
     if (feed.current.length > 5) feed.current.shift();
   }
 
-  function killBot(bot: BotState, now: number) {
+  function killBot(bot: BotState, now: number, weapon?: WeaponId) {
     bot.deaths += 1;
     bot.alive = false;
     bot.health = 0;
     bot.respawnAt = now + BOT_RESPAWN * 1000;
     frags.current += 1;
-    pushFeed('frag', `You fragged ${bot.name}`, now);
+    pushFeed('frag', `You fragged ${bot.name}`, now, weapon);
     playFrag();
     if (frags.current >= FRAG_LIMIT && !finished.current) endMatch('frags');
   }
 
-  function damagePlayer(amount: number, now: number, source?: string) {
+  function damagePlayer(amount: number, now: number, source?: string, weapon?: WeaponId) {
     if (now < deadUntil.current) return;
     const absorbed = Math.min(armor.current, Math.round(amount * ARMOR_ABSORB));
     armor.current -= absorbed;
@@ -681,7 +683,7 @@ export function MarsArena({
       health.current = 0;
       deaths.current += 1;
       deadUntil.current = now + RESPAWN_TIME * 1000;
-      pushFeed('death', source ? `${source} fragged you` : 'You died', now);
+      pushFeed('death', source ? `${source} fragged you` : 'You died', now, weapon);
       // Q3: powerupy se smrtí padají; jinak by Quad přežil respawn.
       if (source) {
         const killer = bots.current.find((bot) => bot.name === source);
@@ -900,7 +902,7 @@ export function MarsArena({
               ttl: now + 90,
               kind: weaponId,
             });
-            if (shot?.id === 'player') damagePlayer(damage, now, bot.name);
+            if (shot?.id === 'player') damagePlayer(damage, now, bot.name, weaponId);
           }
           if (weaponId === 'shotgun') playShotgun();
           else if (weaponId === 'mg') playMg();
@@ -937,7 +939,7 @@ export function MarsArena({
             );
             if (d < 1.1) {
               bot.health -= rocket.damage;
-              if (bot.health <= 0) killBot(bot, now);
+              if (bot.health <= 0) killBot(bot, now, 'rocket');
               exploded = true;
               break;
             }
@@ -949,7 +951,7 @@ export function MarsArena({
             rocket.z - player.current.z,
           );
           if (d < 1.1) {
-            damagePlayer(rocket.damage, now, rocket.ownerName);
+            damagePlayer(rocket.damage, now, rocket.ownerName, 'rocket');
             exploded = true;
           }
         }
@@ -983,7 +985,7 @@ export function MarsArena({
               );
               if (d < spec.radius) {
                 bot.health -= Math.round(rocket.splash * (1 - d / spec.radius));
-                if (bot.health <= 0) killBot(bot, now);
+                if (bot.health <= 0) killBot(bot, now, 'rocket');
               }
             }
             // Vlastní raketa bolí i tebe (Q3) — nutí to nestřílet na blízko.
@@ -1002,7 +1004,7 @@ export function MarsArena({
               rocket.z - player.current.z,
             );
             if (d < spec.radius) {
-              damagePlayer(Math.round(rocket.splash * (1 - d / spec.radius)), now, rocket.ownerName);
+              damagePlayer(Math.round(rocket.splash * (1 - d / spec.radius)), now, rocket.ownerName, 'rocket');
             }
           }
           continue;
@@ -1153,7 +1155,19 @@ export function MarsArena({
         ].sort((a, b) => b.frags - a.frags || a.deaths - b.deaths),
         feed: feed.current
           .filter((entry) => entry.until > now)
-          .map((entry) => ({ id: entry.id, text: entry.text, kind: entry.kind })),
+          .map((entry) => ({ id: entry.id, text: entry.text, kind: entry.kind, weapon: entry.weapon })),
+        itemTimers: pickups.current
+          .filter((pickup) => (pickup.kind === 'powerup' || pickup.kind === 'mega') && pickup.until > now)
+          .map((pickup) => ({
+            id: pickup.id,
+            label:
+              pickup.powerup === 'quad'
+                ? 'QUAD'
+                : pickup.powerup === 'haste'
+                  ? 'HASTE'
+                  : 'MEGA',
+            seconds: Math.max(1, Math.ceil((pickup.until - now) / 1000)),
+          })),
         ammoByWeapon: {
           rail: -1,
           rocket: ammo.current,

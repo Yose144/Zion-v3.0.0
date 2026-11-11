@@ -69,6 +69,9 @@ export function WeaponView({
   const flash = useRef<THREE.Group>(null);
   const flashLight = useRef<THREE.PointLight>(null);
   const models = useRef<Partial<Record<WeaponId, THREE.Group | null>>>({});
+  /** Přepnutí zbraně = krátké „spuštění" modelu, ne skok. */
+  const lastWeapon = useRef<WeaponId | null>(null);
+  const switchAt = useRef(0);
   const euler = useMemo(() => new THREE.Euler(0, 0, 0, 'YXZ'), []);
   const quat = useMemo(() => new THREE.Quaternion(), []);
 
@@ -91,10 +94,17 @@ export function WeaponView({
     const t = clock.elapsedTime;
     const kickAmt = Math.max(0, 1 - (now - kick.current) / 140);
 
+    // Přepnutí zbraně: model se na 200 ms ponoří a zase vyjede.
+    if (lastWeapon.current !== weapon.current) {
+      lastWeapon.current = weapon.current;
+      switchAt.current = now;
+    }
+    const switchDip = Math.max(0, 1 - (now - switchAt.current) / 200);
+
     node.translateX(0.34 + Math.sin(t * 9) * 0.012 * bob);
-    node.translateY(-0.26 + Math.abs(Math.cos(t * 9)) * 0.009 * bob - kickAmt * 0.012);
+    node.translateY(-0.26 + Math.abs(Math.cos(t * 9)) * 0.009 * bob - kickAmt * 0.012 - switchDip * 0.16);
     node.translateZ(-0.7 + kickAmt * 0.08);
-    node.rotateX(kickAmt * 0.16);
+    node.rotateX(kickAmt * 0.16 - switchDip * 0.22);
 
     for (const [id, group] of Object.entries(models.current)) {
       if (group) group.visible = id === weapon.current;
