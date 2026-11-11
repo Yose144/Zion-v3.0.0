@@ -634,7 +634,10 @@ mod tests {
                 .and_then(|j| j.worker_id.clone())
                 .unwrap_or_default()
         };
-        assert!(!worker_id.is_empty(), "worker_id should be set after scheduling");
+        assert!(
+            !worker_id.is_empty(),
+            "worker_id should be set after scheduling"
+        );
 
         let complete = complete_job(
             State(state.clone()),

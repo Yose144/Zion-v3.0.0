@@ -4311,7 +4311,14 @@ mod tests {
         let path = dir.join("store.db");
         let store = Arc::new(ShareStore::open(&path).unwrap());
         let conn = rusqlite::Connection::open(&path).unwrap();
-        for (coin, ts) in [("zion", 100), ("prl", 200), ("prl", 201), ("prl", 202), ("prl", 203), ("prl", 204)] {
+        for (coin, ts) in [
+            ("zion", 100),
+            ("prl", 200),
+            ("prl", 201),
+            ("prl", 202),
+            ("prl", 203),
+            ("prl", 204),
+        ] {
             conn.execute(
                 "INSERT INTO payouts (ts, miner_id, address, amount_flowers, tx_id, height, block_hash, coin)
                  VALUES (?1, 'fixture', 'fixture', 1, ?2, 1, '', ?3)",
@@ -4319,19 +4326,35 @@ mod tests {
             ).unwrap();
         }
         let api = PoolApi::new(test_pool(), Some(store), None);
-        let resp = request(&api, "GET", "/public/v1/payouts?source=recorded&coin=zion&limit=1", "");
+        let resp = request(
+            &api,
+            "GET",
+            "/public/v1/payouts?source=recorded&coin=zion&limit=1",
+            "",
+        );
         assert!(resp.starts_with("HTTP/1.1 200 OK"), "{resp}");
-        let body: serde_json::Value = serde_json::from_str(resp.split("\r\n\r\n").nth(1).unwrap()).unwrap();
+        let body: serde_json::Value =
+            serde_json::from_str(resp.split("\r\n\r\n").nth(1).unwrap()).unwrap();
         assert_eq!(body["latest_recorded_ts"], 100);
         assert_eq!(body["payouts"][0]["coin"], "zion");
         conn.execute_batch("DROP TABLE payouts").unwrap();
-        for path in ["/public/v1/payouts?source=recorded&coin=zion", "/public/v1/payouts"] {
+        for path in [
+            "/public/v1/payouts?source=recorded&coin=zion",
+            "/public/v1/payouts",
+        ] {
             let resp = request(&api, "GET", path, "");
-            assert!(resp.starts_with("HTTP/1.1 503 Service Unavailable"), "{resp}");
-            let body: serde_json::Value = serde_json::from_str(resp.split("\r\n\r\n").nth(1).unwrap()).unwrap();
+            assert!(
+                resp.starts_with("HTTP/1.1 503 Service Unavailable"),
+                "{resp}"
+            );
+            let body: serde_json::Value =
+                serde_json::from_str(resp.split("\r\n\r\n").nth(1).unwrap()).unwrap();
             assert_eq!(body["ok"], false);
             assert!(body.get("latest_recorded_ts").is_none());
-            assert!(!resp.contains("no such table"), "internal DB errors stay private");
+            assert!(
+                !resp.contains("no such table"),
+                "internal DB errors stay private"
+            );
         }
         drop(api);
         drop(conn);

@@ -128,9 +128,7 @@ impl L1Scanner {
                 balance.total_accumulated = balance
                     .total_accumulated
                     .checked_add(block_tithe)
-                    .ok_or_else(|| {
-                        FreeWorldError::Other("fund balance overflow".to_string())
-                    })?;
+                    .ok_or_else(|| FreeWorldError::Other("fund balance overflow".to_string()))?;
                 balance.last_block_height = height;
                 balance.updated_at = chrono::Utc::now().to_rfc3339();
                 db.update_fund_balance(&balance)?;
@@ -152,9 +150,7 @@ impl L1Scanner {
                 }
             }
 
-            self.metrics
-                .blocks_scanned
-                .fetch_add(1, Ordering::Relaxed);
+            self.metrics.blocks_scanned.fetch_add(1, Ordering::Relaxed);
         }
 
         Ok(tithes_found)

@@ -231,8 +231,7 @@ pub struct StratumServer {
     worker_addresses:
         Arc<std::sync::RwLock<std::collections::HashMap<String, zion_l1_types::Address>>>,
     /// Worker → (chain, address) external payout overrides.
-    worker_ext_payouts:
-        Arc<std::sync::RwLock<std::collections::HashMap<String, (String, String)>>>,
+    worker_ext_payouts: Arc<std::sync::RwLock<std::collections::HashMap<String, (String, String)>>>,
     /// Global share counters (same atomics `/stats` exposes).
     accepted: Arc<AtomicU64>,
     rejected: Arc<AtomicU64>,
@@ -1108,7 +1107,13 @@ impl StratumServer {
 
     /// PPLNS credit for an external share whose dedup slot was already
     /// claimed — worker-map read + engine credit under shard locks.
-    fn credit_reserved_external_share(&self, worker_name: &str, height: u64, weight: u64, coin: &str) {
+    fn credit_reserved_external_share(
+        &self,
+        worker_name: &str,
+        height: u64,
+        weight: u64,
+        coin: &str,
+    ) {
         let (chain, address) = crate::pool::resolve_payout_target(
             worker_name,
             &self.worker_ext_payouts,
@@ -1117,13 +1122,7 @@ impl StratumServer {
         );
         let mut pl = self.pplns.lock().expect("pplns lock poisoned");
         pl.register_address_with_chain(worker_name, &address, &chain);
-        pl.record_share_with_diff_for_coin(
-            worker_name,
-            worker_name,
-            height,
-            weight.max(1),
-            coin,
-        );
+        pl.record_share_with_diff_for_coin(worker_name, worker_name, height, weight.max(1), coin);
     }
 
     /// Dedup claim + PPLNS credit for an external (AuxPoW) share —
@@ -1873,8 +1872,7 @@ impl StratumServer {
         // the same window (dual-GPU workers) shared one EN1 → overlapping
         // nonce space → local_dedup rejects (~25–30%).
         let extranonce = {
-            static EN1_SEQ: std::sync::atomic::AtomicU64 =
-                std::sync::atomic::AtomicU64::new(1);
+            static EN1_SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
             let nanos = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map(|d| d.as_nanos() as u64)
@@ -2303,14 +2301,8 @@ impl StratumServer {
             } else {
                 auxpow_share_weight("PRL")
             };
-            let credited = self.record_external_share(
-                worker_name,
-                h,
-                w,
-                "prl",
-                external_job_id,
-                proof_b64,
-            );
+            let credited =
+                self.record_external_share(worker_name, h, w, "prl", external_job_id, proof_b64);
             if !credited {
                 // Fall through to telemetry as a duplicate reject — early
                 // return used to hide these from /miners reject_reasons.
@@ -6483,7 +6475,17 @@ mod tests {
                     .unwrap();
                 assert!(resp.accepted, "resp={:?}", resp.raw);
                 assert_eq!(resp.id, 2);
-                assert_eq!(pool2.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
+                assert_eq!(
+                    pool2
+                        .lock()
+                        .unwrap()
+                        .pplns
+                        .lock()
+                        .unwrap()
+                        .stats()
+                        .window_used,
+                    1
+                );
 
                 let mut client2 = PearlPoolClient::connect(
                     &addr.to_string(),
@@ -6499,7 +6501,17 @@ mod tests {
                     .unwrap();
                 assert!(!resp2.accepted, "resp={:?}", resp2.raw);
                 assert_eq!(resp2.raw["error"]["message"], "duplicate");
-                assert_eq!(pool2.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
+                assert_eq!(
+                    pool2
+                        .lock()
+                        .unwrap()
+                        .pplns
+                        .lock()
+                        .unwrap()
+                        .stats()
+                        .window_used,
+                    1
+                );
 
                 let resp3 = client2
                     .submit_proof("stale-job", &proof_b64, None)
@@ -6524,7 +6536,17 @@ mod tests {
                     .as_str()
                     .unwrap()
                     .starts_with("rejected:"));
-                assert_eq!(pool2.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
+                assert_eq!(
+                    pool2
+                        .lock()
+                        .unwrap()
+                        .pplns
+                        .lock()
+                        .unwrap()
+                        .stats()
+                        .window_used,
+                    1
+                );
 
                 let server3 = StratumServer::new(pool2.clone());
                 let (ok3, status3) = server3
@@ -6538,7 +6560,17 @@ mod tests {
                     .await;
                 assert!(!ok3);
                 assert_eq!(status3, "duplicate");
-                assert_eq!(pool2.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
+                assert_eq!(
+                    pool2
+                        .lock()
+                        .unwrap()
+                        .pplns
+                        .lock()
+                        .unwrap()
+                        .stats()
+                        .window_used,
+                    1
+                );
 
                 tokio::time::sleep(Duration::from_millis(200)).await;
                 let calls = gw_calls.lock().unwrap();
@@ -6582,7 +6614,16 @@ mod tests {
                     .await;
                 assert!(ok, "status={status}");
                 assert_eq!(status, "accepted");
-                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
+                assert_eq!(
+                    pool.lock()
+                        .unwrap()
+                        .pplns
+                        .lock()
+                        .unwrap()
+                        .stats()
+                        .window_used,
+                    1
+                );
 
                 let forwarded = tokio::time::timeout(Duration::from_secs(10), async {
                     loop {
@@ -6622,7 +6663,16 @@ mod tests {
                         .count(),
                     1
                 );
-                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
+                assert_eq!(
+                    pool.lock()
+                        .unwrap()
+                        .pplns
+                        .lock()
+                        .unwrap()
+                        .stats()
+                        .window_used,
+                    1
+                );
             });
         });
         handle.join().unwrap();
@@ -6986,14 +7036,32 @@ mod tests {
                     .await;
                 assert!(!ok0);
                 assert_eq!(status0, "stale");
-                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 0);
+                assert_eq!(
+                    pool.lock()
+                        .unwrap()
+                        .pplns
+                        .lock()
+                        .unwrap()
+                        .stats()
+                        .window_used,
+                    0
+                );
 
                 let (ok, status) = server
                     .process_pearl_submission("miner", "miner.w", "prlu:u-1", &proof_b64, None)
                     .await;
                 assert!(ok, "status={status}");
                 assert_eq!(status, "accepted");
-                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
+                assert_eq!(
+                    pool.lock()
+                        .unwrap()
+                        .pplns
+                        .lock()
+                        .unwrap()
+                        .stats()
+                        .window_used,
+                    1
+                );
 
                 let submits: Vec<String> = calls
                     .lock()
@@ -7011,7 +7079,16 @@ mod tests {
                     .await;
                 assert!(!ok2);
                 assert_eq!(status2, "duplicate");
-                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
+                assert_eq!(
+                    pool.lock()
+                        .unwrap()
+                        .pplns
+                        .lock()
+                        .unwrap()
+                        .stats()
+                        .window_used,
+                    1
+                );
             });
         });
         handle.join().unwrap();
@@ -7037,7 +7114,16 @@ mod tests {
                     .await;
                 assert!(!ok);
                 assert_eq!(status, "rejected:low difficulty");
-                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 0);
+                assert_eq!(
+                    pool.lock()
+                        .unwrap()
+                        .pplns
+                        .lock()
+                        .unwrap()
+                        .stats()
+                        .window_used,
+                    0
+                );
             });
         });
         handle.join().unwrap();
@@ -7061,7 +7147,16 @@ mod tests {
                     .await;
                 assert!(ok, "status={status}");
                 assert_eq!(status, "accepted_unknown");
-                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
+                assert_eq!(
+                    pool.lock()
+                        .unwrap()
+                        .pplns
+                        .lock()
+                        .unwrap()
+                        .stats()
+                        .window_used,
+                    1
+                );
             });
         });
         handle.join().unwrap();

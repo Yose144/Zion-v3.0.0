@@ -5,9 +5,9 @@ use std::path::{Component, Path, PathBuf};
 
 /// Shell commands (first argv token) permitted without operator override.
 pub const SHELL_ALLOWLIST: &[&str] = &[
-    "cargo", "npm", "npx", "git", "rg", "ls", "cat", "head", "tail", "wc", "pwd", "echo",
-    "find", "which", "file", "stat", "diff", "sed", "awk", "sort", "uniq", "grep", "tree",
-    "rustc", "python3", "python", "node", "make", "true", "false", "test", "printf",
+    "cargo", "npm", "npx", "git", "rg", "ls", "cat", "head", "tail", "wc", "pwd", "echo", "find",
+    "which", "file", "stat", "diff", "sed", "awk", "sort", "uniq", "grep", "tree", "rustc",
+    "python3", "python", "node", "make", "true", "false", "test", "printf",
 ];
 
 #[derive(Debug, Clone)]
@@ -49,7 +49,10 @@ impl Policy {
         }
 
         if is_denied_secret_path(&normalized) {
-            bail!("access denied to secret-like path: {}", normalized.display());
+            bail!(
+                "access denied to secret-like path: {}",
+                normalized.display()
+            );
         }
 
         Ok(normalized)
@@ -124,7 +127,10 @@ impl Policy {
                     ConfirmKind::Shell => format!("Allow shell? {summary}"),
                     ConfirmKind::None => summary.to_string(),
                 };
-                Ok(Confirm::new().with_prompt(prompt).default(false).interact()?)
+                Ok(Confirm::new()
+                    .with_prompt(prompt)
+                    .default(false)
+                    .interact()?)
             }
         }
     }

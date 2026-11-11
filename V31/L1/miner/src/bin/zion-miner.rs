@@ -336,48 +336,36 @@ async fn main() -> Result<()> {
             config.stream1_enabled = false;
         }
         if let Some(algo) = &args.algorithm {
-            let coin = resolve_algo_coin(algo).with_context(|| {
-                format!("unknown --algorithm '{algo}' (see --list-algorithms)")
-            })?;
+            let coin = resolve_algo_coin(algo)
+                .with_context(|| format!("unknown --algorithm '{algo}' (see --list-algorithms)"))?;
             if coin.is_gpu() {
                 config.stream2_enabled = true;
                 config.stream2_force_coin = Some(coin);
                 config.stream2_url = args.pool.clone().or(config.stream2_url);
-                config.stream2_wallet =
-                    args.wallet.clone().or(config.stream2_wallet);
+                config.stream2_wallet = args.wallet.clone().or(config.stream2_wallet);
             } else {
                 config.stream3_enabled = true;
                 config.stream3_force_coin = Some(coin);
                 config.stream3_url = args.pool.clone().or(config.stream3_url);
-                config.stream3_wallet =
-                    args.wallet.clone().or(config.stream3_wallet);
+                config.stream3_wallet = args.wallet.clone().or(config.stream3_wallet);
             }
         }
         if let Some(algo) = &args.dual_algorithm {
             let coin = resolve_algo_coin(algo).with_context(|| {
                 format!("unknown --dual-algorithm '{algo}' (see --list-algorithms)")
             })?;
-            let dual_pass = args
-                .dual_password
-                .clone()
-                .or_else(|| args.password.clone());
+            let dual_pass = args.dual_password.clone().or_else(|| args.password.clone());
             if coin.is_gpu() {
                 config.stream4_enabled = true;
                 config.stream4_force_coin = Some(coin);
                 config.stream4_url = args.dual_pool.clone().or(config.stream4_url);
-                config.stream4_wallet = args
-                    .dual_wallet
-                    .clone()
-                    .or(config.stream4_wallet);
+                config.stream4_wallet = args.dual_wallet.clone().or(config.stream4_wallet);
                 config.stream4_password = dual_pass.or(config.stream4_password);
             } else {
                 config.stream3_enabled = true;
                 config.stream3_force_coin = Some(coin);
                 config.stream3_url = args.dual_pool.clone().or(config.stream3_url);
-                config.stream3_wallet = args
-                    .dual_wallet
-                    .clone()
-                    .or(config.stream3_wallet);
+                config.stream3_wallet = args.dual_wallet.clone().or(config.stream3_wallet);
                 config.stream3_password = dual_pass.or(config.stream3_password);
             }
         }
@@ -527,8 +515,7 @@ async fn main() -> Result<()> {
         .ok()
         .and_then(|v| v.parse::<SocketAddr>().ok());
     if args.api_enable || api_http_addr.is_some() {
-        let bind = api_http_addr
-            .unwrap_or_else(|| SocketAddr::from(([0, 0, 0, 0], args.api_port)));
+        let bind = api_http_addr.unwrap_or_else(|| SocketAddr::from(([0, 0, 0, 0], args.api_port)));
         let rig = args
             .api_rig_name
             .clone()
@@ -1151,7 +1138,8 @@ async fn srbminer_api_serve(
                 || first_line.starts_with("get / ");
             let (status, body, ctype) = if is_get_root {
                 let stats = rt.stats().await;
-                let json = srbminer_json(&rt, &stats, &rig, &wallet, start.elapsed().as_secs()).await;
+                let json =
+                    srbminer_json(&rt, &stats, &rig, &wallet, start.elapsed().as_secs()).await;
                 (
                     "200 OK",
                     serde_json::to_string_pretty(&json).unwrap_or_default(),
@@ -1246,8 +1234,7 @@ async fn srbminer_json(
         let hashrate = zion_miner::stream::display_hps(&coin, s.map(|s| s.hashrate).unwrap_or(0.0));
         let accepted = s.map(|s| s.accepted).unwrap_or(0);
         let rejected = s.map(|s| s.rejected).unwrap_or(0);
-        let is_gpu = stream.is_gpu_external()
-            || matches!(stream, StreamId::Zion if zion_on_gpu);
+        let is_gpu = stream.is_gpu_external() || matches!(stream, StreamId::Zion if zion_on_gpu);
         if is_gpu {
             gpu_workers += 1;
         } else {
@@ -1329,7 +1316,9 @@ fn srb_vendor(name: &str) -> &'static str {
         "apple"
     } else if n.contains("radeon") || n.contains("amd") || n.contains("gfx") {
         "amd"
-    } else if n.contains("nvidia") || n.contains("geforce") || n.contains("rtx")
+    } else if n.contains("nvidia")
+        || n.contains("geforce")
+        || n.contains("rtx")
         || n.contains("gtx")
     {
         "nvidia"
@@ -1398,8 +1387,7 @@ mod tests {
         assert!(j["gpu_devices"].is_array());
         assert_eq!(
             j["total_workers"].as_u64().unwrap(),
-            j["total_cpu_workers"].as_u64().unwrap()
-                + j["total_gpu_workers"].as_u64().unwrap()
+            j["total_cpu_workers"].as_u64().unwrap() + j["total_gpu_workers"].as_u64().unwrap()
         );
         // stream1+3 = CPU workers (gpu_backend=cpu), stream2 = GPU worker
         assert_eq!(j["total_gpu_workers"], 1);

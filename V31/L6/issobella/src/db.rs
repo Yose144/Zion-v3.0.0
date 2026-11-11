@@ -737,12 +737,7 @@ pub struct PaperRecord {
 }
 
 impl PaperRecord {
-    pub fn new(
-        title: &str,
-        authors: &[String],
-        content_sha256: &str,
-        submitted_by: &str,
-    ) -> Self {
+    pub fn new(title: &str, authors: &[String], content_sha256: &str, submitted_by: &str) -> Self {
         Self {
             id: format!("pap-{}", Uuid::new_v4()),
             mission_id: None,

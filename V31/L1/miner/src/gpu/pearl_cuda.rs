@@ -128,14 +128,14 @@ const IV_BYTES: [u8; 32] = [
 /// `i` and `i+1` can overlap on the GPU (attempt i's mine kernel runs
 /// while attempt i+1 generates/hashes/noises its own matrices).
 struct PearlPipeBufs {
-    matrix_a: CudaSlice<i8>,    // num_chunks_a * 1024, zero-padded
-    matrix_bt: CudaSlice<i8>,   // num_chunks_b * 1024, zero-padded
+    matrix_a: CudaSlice<i8>,     // num_chunks_a * 1024, zero-padded
+    matrix_bt: CudaSlice<i8>,    // num_chunks_b * 1024, zero-padded
     chunk_hashes: CudaSlice<u8>, // max_chunks * 32
     subtree_a: CudaSlice<u8>,    // ceil(max_chunks/1024) * 32 — block subtree roots
     subtree_b: CudaSlice<u8>,
-    merkle: CudaSlice<u8>,       // max_chunks * 32 — merge ping-pong scratch (A)
-    merkle2: CudaSlice<u8>,      // max_chunks * 32 — B leaf layer (no aliasing)
-    merkle_b: CudaSlice<u8>,     // max_chunks * 32 — B tree scratch (dual launch)
+    merkle: CudaSlice<u8>,   // max_chunks * 32 — merge ping-pong scratch (A)
+    merkle2: CudaSlice<u8>,  // max_chunks * 32 — B leaf layer (no aliasing)
+    merkle_b: CudaSlice<u8>, // max_chunks * 32 — B tree scratch (dual launch)
     root_a: CudaSlice<u8>,
     root_b: CudaSlice<u8>,
     a_noise_seed: CudaSlice<u8>,
@@ -144,7 +144,7 @@ struct PearlPipeBufs {
     e_br: CudaSlice<i8>,
     e_ar_perm: CudaSlice<u32>,
     e_bl_perm: CudaSlice<u32>,
-    noised_a: CudaSlice<i8>,    // m*k i8 — noised values fit [-127,127]
+    noised_a: CudaSlice<i8>, // m*k i8 — noised values fit [-127,127]
     noised_b: CudaSlice<i8>,
 }
 
@@ -155,7 +155,7 @@ struct PearlCudaBufs {
     rank: usize,
     num_row_offsets: usize,
     num_col_offsets: usize,
-    pipes: Vec<PearlPipeBufs>,   // one per stream in `streams`
+    pipes: Vec<PearlPipeBufs>, // one per stream in `streams`
     iv: CudaSlice<u8>,
     seed_label_a: CudaSlice<u8>,
     seed_label_b: CudaSlice<u8>,
@@ -169,10 +169,10 @@ struct PearlCudaBufs {
     /// [num_row_offsets, num_col_offsets, k_dim, rank] for the mine kernel —
     /// packed into a buffer to keep the launch tuple under the cudarc limit.
     mine_params: CudaSlice<u32>,
-    output_tile: CudaSlice<u32>,    // MAX_BATCH slots — batch readback
-    output_jackpot: CudaSlice<u8>,  // 32 * MAX_BATCH
-    found: CudaSlice<u32>,          // MAX_BATCH flags — one per queued attempt
-    salt_a: CudaSlice<u8>,          // PEARL_SEED_SALT_A — uploaded once (constant)
+    output_tile: CudaSlice<u32>,   // MAX_BATCH slots — batch readback
+    output_jackpot: CudaSlice<u8>, // 32 * MAX_BATCH
+    found: CudaSlice<u32>,         // MAX_BATCH flags — one per queued attempt
+    salt_a: CudaSlice<u8>,         // PEARL_SEED_SALT_A — uploaded once (constant)
     salt_b: CudaSlice<u8>,
     /// Merkle→derive epilogue counter — one per queued attempt, zeroed in
     /// prep_job; the last-finishing merkle block derives the noise seeds.
@@ -216,10 +216,7 @@ fn select_mine_version<'a>(
         // v6/v7/v12/v13 mma: native on sm_80+, m8n8k16 emulation on sm_75 —
         // either way the canonical rank==128, k%128==0 window is required.
         Some(v @ ("v6" | "v7" | "v12" | "v13")) => {
-            if (cc_major >= 8 || (cc_major == 7 && cc_minor >= 5))
-                && rank == 128
-                && k % 128 == 0
-            {
+            if (cc_major >= 8 || (cc_major == 7 && cc_minor >= 5)) && rank == 128 && k % 128 == 0 {
                 v
             } else {
                 "v4"
@@ -767,9 +764,7 @@ impl PearlCudaMiner {
             ($f:expr, $cfg:expr, $argv:expr) => {{
                 let mut argv = $argv;
                 match pipe_stream {
-                    Some(s) => unsafe {
-                        (*$f).clone().launch_on_stream(s, $cfg, &mut argv)
-                    },
+                    Some(s) => unsafe { (*$f).clone().launch_on_stream(s, $cfg, &mut argv) },
                     None => unsafe { (*$f).clone().launch($cfg, &mut argv) },
                 }
             }};
@@ -882,8 +877,7 @@ impl PearlCudaMiner {
         // roots (nsb entries each) — the same dual merge kernel folds them
         // into the real roots bit-identically (canonical BLAKE3 subtree
         // merge) and still runs the derive epilogue.
-        let fused_derive =
-            gen_chunk_fused || (num_chunks_a > 1 && num_chunks_b > 1);
+        let fused_derive = gen_chunk_fused || (num_chunks_a > 1 && num_chunks_b > 1);
         {
             let cfg_tree1 = LaunchConfig {
                 grid_dim: (1, 1, 1),
@@ -1216,9 +1210,7 @@ impl PearlCudaMiner {
         }
         self.stage_n += 1;
         if self.stage_n % 64 == 0 {
-            const NAMES: [&str; 7] = [
-                "gen", "chunk", "merkle", "derive", "noise", "apply", "mine",
-            ];
+            const NAMES: [&str; 7] = ["gen", "chunk", "merkle", "derive", "noise", "apply", "mine"];
             let n = self.stage_n as f64;
             let parts: Vec<String> = NAMES
                 .iter()
@@ -1556,8 +1548,7 @@ mod pearl_cuda_kat {
             let row_off = row_offsets[tile / nco];
             let col_off = col_offsets[tile % nco];
             let expected = tile_jackpot_ref(
-                nonce, m, n, k, rank, &job_key, row_off, col_off, &rows_base, &cols_base,
-                salted,
+                nonce, m, n, k, rank, &job_key, row_off, col_off, &rows_base, &cols_base, salted,
             );
             assert_eq!(
                 res.jackpot_hash, expected,

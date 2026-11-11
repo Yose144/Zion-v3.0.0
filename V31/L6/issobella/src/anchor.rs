@@ -203,7 +203,10 @@ pub fn merkle_path(leaves: &[[u8; 32]], index: usize) -> Option<Vec<PathStep>> {
 pub fn verify_merkle_path(leaf: &[u8; 32], path: &[PathStep], root: &[u8; 32]) -> bool {
     let mut cur = *leaf;
     for step in path {
-        let sib: [u8; 32] = match hex::decode(&step.sibling).ok().and_then(|b| b.try_into().ok()) {
+        let sib: [u8; 32] = match hex::decode(&step.sibling)
+            .ok()
+            .and_then(|b| b.try_into().ok())
+        {
             Some(s) => s,
             None => return false,
         };
@@ -339,8 +342,16 @@ async fn find_tx_height(
             let id = match &tx.tx_id {
                 Some(Value::String(s)) => Some(s.clone()),
                 Some(Value::Array(bytes)) => {
-                    let raw: Vec<u8> = bytes.iter().filter_map(Value::as_u64).map(|b| b as u8).collect();
-                    if raw.len() == 32 { Some(hex::encode(raw)) } else { None }
+                    let raw: Vec<u8> = bytes
+                        .iter()
+                        .filter_map(Value::as_u64)
+                        .map(|b| b as u8)
+                        .collect();
+                    if raw.len() == 32 {
+                        Some(hex::encode(raw))
+                    } else {
+                        None
+                    }
                 }
                 _ => None,
             };
@@ -553,12 +564,7 @@ pub async fn run_anchor_sweep(
                 match submit_anchor_tx(cfg, &memo).await {
                     Ok(txid) => {
                         let db = db.lock().unwrap();
-                        db.set_paper_anchor_submitted(
-                            &paper.id,
-                            &txid,
-                            "memo-direct",
-                            None,
-                        )?;
+                        db.set_paper_anchor_submitted(&paper.id, &txid, "memo-direct", None)?;
                         report.broadcast += 1;
                         info!("[ISS-ANCHOR] paper {} → tx {}", paper.id, txid);
                     }
@@ -684,7 +690,10 @@ mod tests {
     #[test]
     fn memo_formats() {
         assert_eq!(memo_for_paper("ab12"), b"ISSPAPER:v1:ab12");
-        assert_eq!(memo_for_batch(&h(7)), format!("ISSANCHOR:v1:{}", hex::encode(h(7))).into_bytes());
+        assert_eq!(
+            memo_for_batch(&h(7)),
+            format!("ISSANCHOR:v1:{}", hex::encode(h(7))).into_bytes()
+        );
     }
 
     #[test]

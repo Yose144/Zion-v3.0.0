@@ -219,67 +219,196 @@ pub fn services() -> Vec<ServiceProbe> {
     use ProbeMethod::*;
     vec![
         // ── L1: Consensus ────────────────────────────────────────────────────
-        ServiceProbe { name: "node1-rpc", layer: Layer::L1,
-            endpoint: e("node1-rpc", "http://127.0.0.1:9445"), health_path: "/health", method: HttpGet },
-        ServiceProbe { name: "node1-p2p", layer: Layer::L1,
-            endpoint: e("node1-p2p", "127.0.0.1:8335"), health_path: "", method: TcpConnect },
-        ServiceProbe { name: "node1-metrics", layer: Layer::L1,
-            endpoint: e("node1-metrics", "http://127.0.0.1:9100"), health_path: "/metrics", method: HttpGet },
-        ServiceProbe { name: "node2-rpc", layer: Layer::L1,
-            endpoint: e("node2-rpc", "http://127.0.0.1:9446"), health_path: "/health", method: HttpGet },
-        ServiceProbe { name: "node2-p2p", layer: Layer::L1,
-            endpoint: e("node2-p2p", "127.0.0.1:8336"), health_path: "", method: TcpConnect },
-        ServiceProbe { name: "node3-rpc", layer: Layer::L1,
-            endpoint: e("node3-rpc", "http://127.0.0.1:9447"), health_path: "/health", method: HttpGet },
-        ServiceProbe { name: "pool-stratum", layer: Layer::L1,
-            endpoint: e("pool-stratum", "127.0.0.1:8444"), health_path: "", method: TcpConnect },
-        ServiceProbe { name: "pool-stats", layer: Layer::L1,
-            endpoint: e("pool-stats", "http://127.0.0.1:8080"), health_path: "/stats", method: HttpGet },
+        ServiceProbe {
+            name: "node1-rpc",
+            layer: Layer::L1,
+            endpoint: e("node1-rpc", "http://127.0.0.1:9445"),
+            health_path: "/health",
+            method: HttpGet,
+        },
+        ServiceProbe {
+            name: "node1-p2p",
+            layer: Layer::L1,
+            endpoint: e("node1-p2p", "127.0.0.1:8335"),
+            health_path: "",
+            method: TcpConnect,
+        },
+        ServiceProbe {
+            name: "node1-metrics",
+            layer: Layer::L1,
+            endpoint: e("node1-metrics", "http://127.0.0.1:9100"),
+            health_path: "/metrics",
+            method: HttpGet,
+        },
+        ServiceProbe {
+            name: "node2-rpc",
+            layer: Layer::L1,
+            endpoint: e("node2-rpc", "http://127.0.0.1:9446"),
+            health_path: "/health",
+            method: HttpGet,
+        },
+        ServiceProbe {
+            name: "node2-p2p",
+            layer: Layer::L1,
+            endpoint: e("node2-p2p", "127.0.0.1:8336"),
+            health_path: "",
+            method: TcpConnect,
+        },
+        ServiceProbe {
+            name: "node3-rpc",
+            layer: Layer::L1,
+            endpoint: e("node3-rpc", "http://127.0.0.1:9447"),
+            health_path: "/health",
+            method: HttpGet,
+        },
+        ServiceProbe {
+            name: "pool-stratum",
+            layer: Layer::L1,
+            endpoint: e("pool-stratum", "127.0.0.1:8444"),
+            health_path: "",
+            method: TcpConnect,
+        },
+        ServiceProbe {
+            name: "pool-stats",
+            layer: Layer::L1,
+            endpoint: e("pool-stats", "http://127.0.0.1:8080"),
+            health_path: "/stats",
+            method: HttpGet,
+        },
         // ── L2: DAO / Swap / DEX (bridge folded into warpd) ─────────────────
-        ServiceProbe { name: "zis-identity", layer: Layer::L2,
-            endpoint: e("zis-identity", "http://127.0.0.1:8096"), health_path: "/health", method: HttpGet },
-        ServiceProbe { name: "dao", layer: Layer::L2,
-            endpoint: e("dao", "http://127.0.0.1:8456"), health_path: "/api/dao/health", method: HttpGet },
-        ServiceProbe { name: "atomic-swap", layer: Layer::L2,
-            endpoint: e("atomic-swap", "http://127.0.0.1:8454"), health_path: "/status", method: HttpGet },
-        ServiceProbe { name: "dex", layer: Layer::L2,
-            endpoint: e("dex", "http://127.0.0.1:8454"), health_path: "/health", method: HttpGet },
+        ServiceProbe {
+            name: "zis-identity",
+            layer: Layer::L2,
+            endpoint: e("zis-identity", "http://127.0.0.1:8096"),
+            health_path: "/health",
+            method: HttpGet,
+        },
+        ServiceProbe {
+            name: "dao",
+            layer: Layer::L2,
+            endpoint: e("dao", "http://127.0.0.1:8456"),
+            health_path: "/api/dao/health",
+            method: HttpGet,
+        },
+        ServiceProbe {
+            name: "atomic-swap",
+            layer: Layer::L2,
+            endpoint: e("atomic-swap", "http://127.0.0.1:8454"),
+            health_path: "/status",
+            method: HttpGet,
+        },
+        ServiceProbe {
+            name: "dex",
+            layer: Layer::L2,
+            endpoint: e("dex", "http://127.0.0.1:8454"),
+            health_path: "/health",
+            method: HttpGet,
+        },
         // ── L3: WARP / NCL / AI ─────────────────────────────────────────────
-        ServiceProbe { name: "warp", layer: Layer::L3,
-            endpoint: e("warp", "http://127.0.0.1:8453"), health_path: "/health", method: HttpGet },
-        ServiceProbe { name: "ai-native", layer: Layer::L3,
-            endpoint: e("ai-native", "http://127.0.0.1:8001"), health_path: "/health", method: HttpGet },
-        ServiceProbe { name: "hiran-orchestrator", layer: Layer::L3,
-            endpoint: e("hiran-orchestrator", "http://127.0.0.1:8004"), health_path: "/health", method: HttpGet },
-        ServiceProbe { name: "hiran-inference", layer: Layer::L3,
-            endpoint: e("hiran-inference", "http://127.0.0.1:8002"), health_path: "/v1/models", method: HttpGet },
+        ServiceProbe {
+            name: "warp",
+            layer: Layer::L3,
+            endpoint: e("warp", "http://127.0.0.1:8453"),
+            health_path: "/health",
+            method: HttpGet,
+        },
+        ServiceProbe {
+            name: "ai-native",
+            layer: Layer::L3,
+            endpoint: e("ai-native", "http://127.0.0.1:8001"),
+            health_path: "/health",
+            method: HttpGet,
+        },
+        ServiceProbe {
+            name: "hiran-orchestrator",
+            layer: Layer::L3,
+            endpoint: e("hiran-orchestrator", "http://127.0.0.1:8004"),
+            health_path: "/health",
+            method: HttpGet,
+        },
+        ServiceProbe {
+            name: "hiran-inference",
+            layer: Layer::L3,
+            endpoint: e("hiran-inference", "http://127.0.0.1:8002"),
+            health_path: "/v1/models",
+            method: HttpGet,
+        },
         // ── L4: OASIS ───────────────────────────────────────────────────────
-        ServiceProbe { name: "oasis", layer: Layer::L4,
-            endpoint: e("oasis", "http://127.0.0.1:8094"), health_path: "/health", method: HttpGet },
-        ServiceProbe { name: "oasis-metrics", layer: Layer::L4,
-            endpoint: e("oasis-metrics", "http://127.0.0.1:9102"), health_path: "/metrics", method: HttpGet },
+        ServiceProbe {
+            name: "oasis",
+            layer: Layer::L4,
+            endpoint: e("oasis", "http://127.0.0.1:8094"),
+            health_path: "/health",
+            method: HttpGet,
+        },
+        ServiceProbe {
+            name: "oasis-metrics",
+            layer: Layer::L4,
+            endpoint: e("oasis-metrics", "http://127.0.0.1:9102"),
+            health_path: "/metrics",
+            method: HttpGet,
+        },
         // ── L5: Free World ──────────────────────────────────────────────────
-        ServiceProbe { name: "free-world", layer: Layer::L5,
-            endpoint: e("free-world", "http://127.0.0.1:8095"), health_path: "/health", method: HttpGet },
+        ServiceProbe {
+            name: "free-world",
+            layer: Layer::L5,
+            endpoint: e("free-world", "http://127.0.0.1:8095"),
+            health_path: "/health",
+            method: HttpGet,
+        },
         // ── L6: Issobella ───────────────────────────────────────────────────
-        ServiceProbe { name: "issobella", layer: Layer::L6,
-            endpoint: e("issobella", "http://127.0.0.1:8097"), health_path: "/health", method: HttpGet },
+        ServiceProbe {
+            name: "issobella",
+            layer: Layer::L6,
+            endpoint: e("issobella", "http://127.0.0.1:8097"),
+            health_path: "/health",
+            method: HttpGet,
+        },
         // ── System / Infra ──────────────────────────────────────────────────
-        ServiceProbe { name: "dashboard", layer: Layer::System,
-            endpoint: e("dashboard", "http://127.0.0.1:8766"), health_path: "/api/health", method: HttpGet },
-        ServiceProbe { name: "web-next", layer: Layer::System,
-            endpoint: e("web-next", "http://127.0.0.1:3000"), health_path: "/", method: HttpGet },
-        ServiceProbe { name: "nginx-http", layer: Layer::System,
-            endpoint: e("nginx-http", "http://127.0.0.1:80"), health_path: "/", method: HttpGet },
-        ServiceProbe { name: "nginx-https", layer: Layer::System,
-            endpoint: e("nginx-https", "https://127.0.0.1:443"), health_path: "/", method: HttpGet },
-        ServiceProbe { name: "prometheus", layer: Layer::System,
-            endpoint: e("prometheus", "http://127.0.0.1:9090"), health_path: "/-/healthy", method: HttpGet },
-        ServiceProbe { name: "postgres", layer: Layer::System,
-            endpoint: e("postgres", "127.0.0.1:5432"), health_path: "", method: TcpConnect },
+        ServiceProbe {
+            name: "dashboard",
+            layer: Layer::System,
+            endpoint: e("dashboard", "http://127.0.0.1:8766"),
+            health_path: "/api/health",
+            method: HttpGet,
+        },
+        ServiceProbe {
+            name: "web-next",
+            layer: Layer::System,
+            endpoint: e("web-next", "http://127.0.0.1:3000"),
+            health_path: "/",
+            method: HttpGet,
+        },
+        ServiceProbe {
+            name: "nginx-http",
+            layer: Layer::System,
+            endpoint: e("nginx-http", "http://127.0.0.1:80"),
+            health_path: "/",
+            method: HttpGet,
+        },
+        ServiceProbe {
+            name: "nginx-https",
+            layer: Layer::System,
+            endpoint: e("nginx-https", "https://127.0.0.1:443"),
+            health_path: "/",
+            method: HttpGet,
+        },
+        ServiceProbe {
+            name: "prometheus",
+            layer: Layer::System,
+            endpoint: e("prometheus", "http://127.0.0.1:9090"),
+            health_path: "/-/healthy",
+            method: HttpGet,
+        },
+        ServiceProbe {
+            name: "postgres",
+            layer: Layer::System,
+            endpoint: e("postgres", "127.0.0.1:5432"),
+            health_path: "",
+            method: TcpConnect,
+        },
     ]
 }
-
 
 // ============================================================================
 // Health Poller
@@ -543,7 +672,10 @@ mod tests {
         let l4 = services().iter().filter(|s| s.layer == Layer::L4).count();
         let l5 = services().iter().filter(|s| s.layer == Layer::L5).count();
         let l6 = services().iter().filter(|s| s.layer == Layer::L6).count();
-        let sys = services().iter().filter(|s| s.layer == Layer::System).count();
+        let sys = services()
+            .iter()
+            .filter(|s| s.layer == Layer::System)
+            .count();
         assert_eq!(
             l1, 8,
             "L1 should have 8 services (node1×3, node2×3, pool×2)"

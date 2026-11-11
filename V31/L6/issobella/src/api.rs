@@ -637,7 +637,10 @@ async fn submit_paper(
             Json(ApiResponse::err("submitted_by is required (zis:<user.id>)")),
         );
     };
-    if hex::decode(&req.content_sha256).map(|b| b.len() != 32).unwrap_or(true) {
+    if hex::decode(&req.content_sha256)
+        .map(|b| b.len() != 32)
+        .unwrap_or(true)
+    {
         return (
             StatusCode::BAD_REQUEST,
             Json(ApiResponse::err(
@@ -662,15 +665,10 @@ async fn submit_paper(
     }
 }
 
-async fn get_paper(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-) -> impl IntoResponse {
+async fn get_paper(State(state): State<AppState>, Path(id): Path<String>) -> impl IntoResponse {
     let db = state.db.lock().unwrap();
     match db.get_paper(&id) {
-        Ok(paper) if paper.status == "published" => {
-            (StatusCode::OK, Json(ApiResponse::ok(paper)))
-        }
+        Ok(paper) if paper.status == "published" => (StatusCode::OK, Json(ApiResponse::ok(paper))),
         // Non-published papers exist but stay off the public surface.
         Ok(_) => (
             StatusCode::NOT_FOUND,
@@ -683,10 +681,7 @@ async fn get_paper(
     }
 }
 
-async fn paper_proof(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-) -> impl IntoResponse {
+async fn paper_proof(State(state): State<AppState>, Path(id): Path<String>) -> impl IntoResponse {
     let paper = {
         let db = state.db.lock().unwrap();
         db.get_paper(&id)

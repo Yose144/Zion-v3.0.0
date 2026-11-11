@@ -1634,14 +1634,10 @@ impl PplnsEngine {
     /// over the window, no state clones (snapshot() would copy every
     /// entry). Returns (miners_in_window, top_miner_share_pct,
     /// coin->weight_pct of window difficulty).
-    pub fn public_window_summary(
-        &self,
-    ) -> (usize, f64, std::collections::HashMap<String, f64>) {
+    pub fn public_window_summary(&self) -> (usize, f64, std::collections::HashMap<String, f64>) {
         let total = self.window_total_difficulty.max(1);
-        let mut by_miner: std::collections::HashMap<u32, u128> =
-            std::collections::HashMap::new();
-        let mut by_coin: std::collections::HashMap<u16, u128> =
-            std::collections::HashMap::new();
+        let mut by_miner: std::collections::HashMap<u32, u128> = std::collections::HashMap::new();
+        let mut by_coin: std::collections::HashMap<u16, u128> = std::collections::HashMap::new();
         for e in &self.window {
             let w = u128::from(e.difficulty.max(1));
             *by_miner.entry(e.miner_index).or_default() += w;

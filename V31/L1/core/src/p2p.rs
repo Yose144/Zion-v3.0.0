@@ -217,9 +217,12 @@ pub async fn get_status(addr: SocketAddr) -> Result<(u64, String), crate::node::
         .await
         .map_err(|_| crate::node::NodeError::Task(format!("connect timeout to {addr}")))??;
     let (reader, mut writer) = stream.split();
-    timeout(OUT_WRITE_TIMEOUT, write_message(&mut writer, &Message::GetStatus))
-        .await
-        .map_err(|_| crate::node::NodeError::Task(format!("status write timeout to {addr}")))??;
+    timeout(
+        OUT_WRITE_TIMEOUT,
+        write_message(&mut writer, &Message::GetStatus),
+    )
+    .await
+    .map_err(|_| crate::node::NodeError::Task(format!("status write timeout to {addr}")))??;
 
     let mut lines = BufReader::new(reader).lines();
     let line = timeout(OUT_READ_TIMEOUT, lines.next_line())

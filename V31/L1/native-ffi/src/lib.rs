@@ -2202,8 +2202,7 @@ mod tests {
         fn expected(hexstr: &str) -> [u8; 32] {
             let mut out = [0u8; 32];
             for i in 0..32 {
-                out[i] =
-                    u8::from_str_radix(&hexstr[i * 2..i * 2 + 2], 16).expect("hex");
+                out[i] = u8::from_str_radix(&hexstr[i * 2..i * 2 + 2], 16).expect("hex");
             }
             out
         }
@@ -2238,9 +2237,7 @@ mod tests {
         const HEX_BLOB: &str = "0b0b98bea7e805e0010a2126d287a2a0cc833d312cb786385a7c2f9de69d25537f584a9bc9977b00000000666fd8753bf61a8631f12984e3fd44f4014eca629276817b56f32e9b68bd82f416";
         let blob: Vec<u8> = (0..HEX_BLOB.len())
             .step_by(2)
-            .map(|i| {
-                u8::from_str_radix(&HEX_BLOB[i..i + 2], 16).unwrap()
-            })
+            .map(|i| u8::from_str_radix(&HEX_BLOB[i..i + 2], 16).unwrap())
             .collect();
         let h4 = randomx::hash(&blob, 0);
         assert_eq!(

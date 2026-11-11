@@ -96,8 +96,7 @@ impl QpowMetalMiner {
         // shuffle overhead outweighs the ILP gain, so `auto` keeps the scalar
         // kernel and lane stays an explicit opt-in experiment (it may still
         // win on silicon with faster simdgroup exchange).
-        let impl_sel =
-            std::env::var("ZION_QPOW_METAL_IMPL").unwrap_or_else(|_| "auto".to_string());
+        let impl_sel = std::env::var("ZION_QPOW_METAL_IMPL").unwrap_or_else(|_| "auto".to_string());
         let lane_pipeline = if impl_sel == "lane" {
             let f = library
                 .get_function(QPOW_KERNEL_LANE, None)

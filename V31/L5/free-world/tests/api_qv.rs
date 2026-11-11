@@ -13,9 +13,7 @@ use zion_free_world::FreeWorldConfig;
 
 const KEY: &str = "test-write-key";
 
-fn test_app_full(
-    api_key: &str,
-) -> (axum::Router, Arc<Mutex<FreeWorldDb>>, Arc<FreeWorldMetrics>) {
+fn test_app_full(api_key: &str) -> (axum::Router, Arc<Mutex<FreeWorldDb>>, Arc<FreeWorldMetrics>) {
     let cfg = FreeWorldConfig::default();
     let db = Arc::new(Mutex::new(FreeWorldDb::open(":memory:").unwrap()));
     let metrics = Arc::new(FreeWorldMetrics::new());
@@ -426,11 +424,7 @@ async fn unknown_round_is_404_everywhere() {
 
 // ── grant lifecycle guards ──
 
-async fn post_grant_review(
-    app: &axum::Router,
-    id: &str,
-    action: &str,
-) -> (StatusCode, Value) {
+async fn post_grant_review(app: &axum::Router, id: &str, action: &str) -> (StatusCode, Value) {
     let resp = app
         .clone()
         .oneshot(request(
@@ -520,7 +514,11 @@ async fn grants_list_redacts_applicant_address() {
     // …but the address is still in the DB for the DAO submit path.
     let db = db.lock().unwrap();
     assert_eq!(
-        db.get_grant(&id).unwrap().unwrap().applicant_address.as_deref(),
+        db.get_grant(&id)
+            .unwrap()
+            .unwrap()
+            .applicant_address
+            .as_deref(),
         Some("zion1secret")
     );
 }

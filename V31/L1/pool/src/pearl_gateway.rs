@@ -1378,11 +1378,19 @@ mod tests {
         let j = job([0xaau8; 76], BigUint::from(10u8), 3);
         // Native-only runtime: the pearl-stratum path starves rather than
         // serving a job its clients can never verify.
-        let rt = PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j.clone()), None, 0);
+        let rt =
+            PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j.clone()), None, 0);
         assert!(rt.pick_served_upstream_job().is_none());
         // Native flagged 100% + fresh upstream: still upstream-only.
         let up = upstream_seeded([0xaau8; 76], "u1", [0x11u8; 32], Duration::ZERO);
-        let rt = PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j.clone()), Some(up), 100);
+        let rt = PearlRuntime::for_test_hybrid(
+            "127.0.0.1:1",
+            256,
+            30_000,
+            Some(j.clone()),
+            Some(up),
+            100,
+        );
         let ext = rt.pick_served_upstream_job().unwrap();
         assert_eq!(ext.job_id, "prlu:u1");
         let (_, _, _, _, _, _, _, _, _, sn, su) = rt.status();
@@ -1394,7 +1402,8 @@ mod tests {
             [0x11u8; 32],
             Duration::from_millis(91_000),
         );
-        let rt = PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j), Some(stale_up), 0);
+        let rt =
+            PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j), Some(stale_up), 0);
         assert!(rt.pick_served_upstream_job().is_none());
         let (_, _, _, _, _, _, _, _, _, sn, su) = rt.status();
         assert_eq!((sn, su), (0, 0));

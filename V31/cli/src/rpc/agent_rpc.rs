@@ -30,12 +30,7 @@ pub async fn post(base_url: &str, path: &str, body: Value) -> Result<Value> {
 }
 
 /// POST JSON with the WARP operator approval key (`X-Warp-Key` header).
-pub async fn post_warp_auth(
-    base_url: &str,
-    path: &str,
-    body: Value,
-    key: &str,
-) -> Result<Value> {
+pub async fn post_warp_auth(base_url: &str, path: &str, body: Value, key: &str) -> Result<Value> {
     let url = format!("{}/{}", base_url.trim_end_matches('/'), path);
     Ok(Client::new()
         .post(&url)
@@ -51,9 +46,17 @@ pub async fn post_warp_auth(
 /// POST JSON with an optional auth header (`Bearer <key>` or raw cookie).
 /// Retained for other callers; currently unused by the warp offer command.
 #[allow(dead_code)]
-pub async fn post_auth(base_url: &str, path: &str, body: Value, auth: Option<&str>) -> Result<Value> {
+pub async fn post_auth(
+    base_url: &str,
+    path: &str,
+    body: Value,
+    auth: Option<&str>,
+) -> Result<Value> {
     let url = format!("{}/{}", base_url.trim_end_matches('/'), path);
-    let mut req = Client::new().post(&url).json(&body).timeout(std::time::Duration::from_secs(30));
+    let mut req = Client::new()
+        .post(&url)
+        .json(&body)
+        .timeout(std::time::Duration::from_secs(30));
     if let Some(a) = auth {
         req = if a.contains('=') {
             req.header("cookie", a)

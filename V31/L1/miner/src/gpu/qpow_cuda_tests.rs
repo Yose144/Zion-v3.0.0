@@ -425,9 +425,8 @@ fn cuda_dual_squeeze_matches_cpu_corpus() {
                     n[56..64].copy_from_slice(&(base + index).to_be_bytes());
                     let hash = qpow::get_nonce_hash(header, &n);
                     for word in 0..8 {
-                        let expected = u32::from_le_bytes(
-                            hash[word * 4..word * 4 + 4].try_into().unwrap(),
-                        );
+                        let expected =
+                            u32::from_le_bytes(hash[word * 4..word * 4 + 4].try_into().unwrap());
                         // st0 nonces occupy half-slots at index/2, st1 at +8
                         let id = index / 2;
                         let half = (index % 2) as usize;

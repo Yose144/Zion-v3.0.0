@@ -151,11 +151,7 @@ impl HiranClient {
         serde_json::from_str(&body).with_context(|| format!("parse usage: {body}"))
     }
 
-    pub async fn chat(
-        &self,
-        messages: &[ChatMessage],
-        with_tools: bool,
-    ) -> Result<ChatMessage> {
+    pub async fn chat(&self, messages: &[ChatMessage], with_tools: bool) -> Result<ChatMessage> {
         let url = format!("{}/chat/completions", self.base_url);
         let mut body = json!({
             "model": self.model,

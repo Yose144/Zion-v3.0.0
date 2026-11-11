@@ -49,10 +49,16 @@ pub struct BuildResult {
 /// Wallet errors.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WalletError {
-    InsufficientFunds { available: u64, needed: u64 },
+    InsufficientFunds {
+        available: u64,
+        needed: u64,
+    },
     NoUtxos,
     InvalidAddress(String),
-    FeeTooLow { fee: u64, minimum: u64 },
+    FeeTooLow {
+        fee: u64,
+        minimum: u64,
+    },
     TooManyRecipients(usize),
     SigningFailed,
     /// The funding amount is spread over more UTXOs than fit under the
@@ -64,7 +70,10 @@ pub enum WalletError {
         needed: u64,
     },
     /// The built transaction exceeds the network serialized-size limit.
-    TxTooLarge { size: usize, max: usize },
+    TxTooLarge {
+        size: usize,
+        max: usize,
+    },
 }
 
 impl std::fmt::Display for WalletError {
@@ -131,8 +140,7 @@ pub fn max_tx_inputs_for(num_outputs: usize, memo_len: usize) -> usize {
     let reserved = JSON_BASE_BYTES
         + num_outputs * JSON_BYTES_PER_OUTPUT_UPPER
         + memo_len * JSON_BYTES_PER_MEMO_BYTE;
-    (fee::MAX_TX_SIZE.saturating_sub(reserved) / JSON_BYTES_PER_INPUT_UPPER)
-        .min(fee::MAX_TX_INPUTS)
+    (fee::MAX_TX_SIZE.saturating_sub(reserved) / JSON_BYTES_PER_INPUT_UPPER).min(fee::MAX_TX_INPUTS)
 }
 
 /// Select UTXOs using largest-first strategy, bounded by `max_inputs`.
@@ -220,11 +228,7 @@ pub fn plan_consolidation(
 ) -> Option<(Vec<SpendableUtxo>, u64)> {
     let mut sorted: Vec<&SpendableUtxo> = available.iter().collect();
     sorted.sort_by(|a, b| b.amount.cmp(&a.amount).then(a.tx_hash.cmp(&b.tx_hash)));
-    let batch: Vec<SpendableUtxo> = sorted
-        .into_iter()
-        .take(max_inputs)
-        .cloned()
-        .collect();
+    let batch: Vec<SpendableUtxo> = sorted.into_iter().take(max_inputs).cloned().collect();
     if batch.len() < min_batch {
         return None;
     }
@@ -873,8 +877,7 @@ mod tests {
         // the cap but large enough that the serde check actually matters.
         let utxos = dust_utxos(200, 1_000_000, &addr);
         let fee = 100_000;
-        let build =
-            build_send_with_memo(&sk, &addr, &to, 170_000_000, fee, &utxos, b"ok").unwrap();
+        let build = build_send_with_memo(&sk, &addr, &to, 170_000_000, fee, &utxos, b"ok").unwrap();
         assert!(build.transaction.inputs.len() >= 170);
         let size = serde_json::to_vec(&build.transaction).unwrap().len();
         assert!(size <= fee::MAX_TX_SIZE, "built tx {size} exceeds cap");

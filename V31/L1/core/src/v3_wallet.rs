@@ -74,11 +74,17 @@ pub struct BuildResult {
 /// Wallet errors.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WalletError {
-    InsufficientFunds { available: u64, needed: u64 },
+    InsufficientFunds {
+        available: u64,
+        needed: u64,
+    },
     NoUtxos,
     InvalidAddress(String),
     InvalidMemo(String),
-    FeeTooLow { fee: u64, minimum: u64 },
+    FeeTooLow {
+        fee: u64,
+        minimum: u64,
+    },
     AmountTooSmall(u64),
     TooManyRecipients(usize),
     SigningFailed,
@@ -134,8 +140,7 @@ const JSON_BASE_BYTES: usize = 300;
 /// Maximum inputs that fit under [`fee::MAX_TX_SIZE`] for a v3 transaction
 /// with `num_outputs` outputs.
 fn max_tx_inputs_for(num_outputs: usize) -> usize {
-    (fee::MAX_TX_SIZE
-        .saturating_sub(JSON_BASE_BYTES + num_outputs * JSON_BYTES_PER_OUTPUT_UPPER)
+    (fee::MAX_TX_SIZE.saturating_sub(JSON_BASE_BYTES + num_outputs * JSON_BYTES_PER_OUTPUT_UPPER)
         / JSON_BYTES_PER_INPUT_UPPER)
         .min(fee::MAX_TX_INPUTS)
 }
@@ -323,8 +328,11 @@ pub fn build_batch_payout(
             needed: u64::MAX,
         })?;
 
-    let (selected, total) =
-        select_utxos(available_utxos, target, max_tx_inputs_for(recipients.len() + 1))?;
+    let (selected, total) = select_utxos(
+        available_utxos,
+        target,
+        max_tx_inputs_for(recipients.len() + 1),
+    )?;
     let change = total - target;
 
     // Build outputs

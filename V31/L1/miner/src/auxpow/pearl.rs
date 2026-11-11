@@ -27,7 +27,11 @@ pub struct PeriodicPattern {
 
 impl PeriodicPattern {
     pub fn period(&self) -> u32 {
-        self.shape.iter().map(|&(s, l)| s * l).next_back().unwrap_or(1)
+        self.shape
+            .iter()
+            .map(|&(s, l)| s * l)
+            .next_back()
+            .unwrap_or(1)
     }
 
     pub fn size(&self) -> usize {
@@ -201,7 +205,9 @@ impl PearlMineConfig {
             "matrix dims must be in 1..=2^24"
         );
         ensure!(
-            (128..=1024).contains(&self.rank) && self.rank.is_power_of_two() && self.rank.is_multiple_of(32),
+            (128..=1024).contains(&self.rank)
+                && self.rank.is_power_of_two()
+                && self.rank.is_multiple_of(32),
             "rank must be a power of two in 128..=1024"
         );
         ensure!(
@@ -459,7 +465,11 @@ impl PearlMerkleTree {
     }
 
     pub fn root(&self) -> [u8; 32] {
-        self.layers.last().and_then(|l| l.first()).copied().unwrap_or([0; 32])
+        self.layers
+            .last()
+            .and_then(|l| l.first())
+            .copied()
+            .unwrap_or([0; 32])
     }
 
     pub fn num_leaves(&self) -> usize {
@@ -482,7 +492,11 @@ impl PearlMerkleTree {
         let sorted_indices: Vec<usize> = unique.iter().copied().collect();
         let leaf_data: Vec<[u8; CHUNK_LEN]> = sorted_indices
             .iter()
-            .map(|&i| self.data[i * CHUNK_LEN..(i + 1) * CHUNK_LEN].try_into().unwrap())
+            .map(|&i| {
+                self.data[i * CHUNK_LEN..(i + 1) * CHUNK_LEN]
+                    .try_into()
+                    .unwrap()
+            })
             .collect();
 
         let mut siblings = Vec::new();
@@ -652,7 +666,9 @@ pub fn build_plain_proof(
         proof: tree_b.multileaf_proof(&leaf_indices_from_rows(&b_cols, cfg.k))?,
         row_indices: b_cols,
     };
-    Ok(encode_plain_proof(cfg.m, cfg.n, cfg.k, cfg.rank, &a_proof, &bt_proof))
+    Ok(encode_plain_proof(
+        cfg.m, cfg.n, cfg.k, cfg.rank, &a_proof, &bt_proof,
+    ))
 }
 
 // ============================================================================
@@ -1016,14 +1032,8 @@ pub(crate) mod pearl_kat {
         let hash_b = merkle_root_ref(&bt_bytes, job_key);
 
         // 4. Seed chain (+V3 salted bind)
-        let (b_seed, a_seed) = commitment_hash_ref(
-            job_key,
-            &hash_a,
-            &hash_b,
-            m as u32,
-            n as u32,
-            salted,
-        );
+        let (b_seed, a_seed) =
+            commitment_hash_ref(job_key, &hash_a, &hash_b, m as u32, n as u32, salted);
 
         // 5-6. Noise for the needed rows/cols → noised matrices (i32 accum)
         let mut a2 = vec![0i32; m * k];
@@ -1138,22 +1148,21 @@ pub(crate) mod pearl_kat {
         let hash_b = [0xBBu8; 32];
         let (m, n) = (192u32, 320u32);
 
-        let (b_legacy, a_legacy) =
-            commitment_hash_ref(&job_key, &hash_a, &hash_b, m, n, false);
+        let (b_legacy, a_legacy) = commitment_hash_ref(&job_key, &hash_a, &hash_b, m, n, false);
         assert_eq!(
             b_legacy,
             [
-                0xad, 0xd6, 0xf7, 0xea, 0x5f, 0xee, 0xbf, 0x89, 0xc8, 0xa7, 0x7e, 0x2e, 0xbf,
-                0xa0, 0xd8, 0x24, 0x42, 0xe7, 0xdb, 0xb0, 0x04, 0x6d, 0xbd, 0x48, 0x97, 0x18,
-                0x61, 0xd1, 0x2f, 0xcb, 0x01, 0x77
+                0xad, 0xd6, 0xf7, 0xea, 0x5f, 0xee, 0xbf, 0x89, 0xc8, 0xa7, 0x7e, 0x2e, 0xbf, 0xa0,
+                0xd8, 0x24, 0x42, 0xe7, 0xdb, 0xb0, 0x04, 0x6d, 0xbd, 0x48, 0x97, 0x18, 0x61, 0xd1,
+                0x2f, 0xcb, 0x01, 0x77
             ]
         );
         assert_eq!(
             a_legacy,
             [
-                0x48, 0x3b, 0x07, 0xb6, 0xf7, 0x31, 0x05, 0x03, 0x0b, 0x94, 0x82, 0x25, 0x5f,
-                0x37, 0x72, 0x3f, 0x3f, 0xed, 0x69, 0xae, 0x91, 0x67, 0x24, 0xee, 0x82, 0x91,
-                0x84, 0x8b, 0x8c, 0x28, 0x79, 0x4b
+                0x48, 0x3b, 0x07, 0xb6, 0xf7, 0x31, 0x05, 0x03, 0x0b, 0x94, 0x82, 0x25, 0x5f, 0x37,
+                0x72, 0x3f, 0x3f, 0xed, 0x69, 0xae, 0x91, 0x67, 0x24, 0xee, 0x82, 0x91, 0x84, 0x8b,
+                0x8c, 0x28, 0x79, 0x4b
             ]
         );
 
@@ -1161,17 +1170,17 @@ pub(crate) mod pearl_kat {
         assert_eq!(
             b_salted,
             [
-                0x60, 0xed, 0x9b, 0x73, 0xc5, 0xa9, 0x59, 0x9b, 0x20, 0x0b, 0x6c, 0xd5, 0x63,
-                0xe7, 0xf0, 0xd5, 0xd9, 0xa6, 0x7d, 0x24, 0x02, 0xd8, 0x5f, 0xd4, 0xef, 0x96,
-                0x6c, 0x58, 0x00, 0x80, 0xd0, 0xe5
+                0x60, 0xed, 0x9b, 0x73, 0xc5, 0xa9, 0x59, 0x9b, 0x20, 0x0b, 0x6c, 0xd5, 0x63, 0xe7,
+                0xf0, 0xd5, 0xd9, 0xa6, 0x7d, 0x24, 0x02, 0xd8, 0x5f, 0xd4, 0xef, 0x96, 0x6c, 0x58,
+                0x00, 0x80, 0xd0, 0xe5
             ]
         );
         assert_eq!(
             a_salted,
             [
-                0x30, 0x17, 0x84, 0x16, 0x80, 0x05, 0xec, 0x83, 0x3a, 0xb0, 0xaa, 0x60, 0x00,
-                0x6f, 0x7f, 0xe7, 0xfa, 0xaa, 0x95, 0x30, 0x7d, 0x8c, 0x1f, 0xc6, 0x81, 0x9b,
-                0x2f, 0xfd, 0xd7, 0x17, 0xec, 0xcf
+                0x30, 0x17, 0x84, 0x16, 0x80, 0x05, 0xec, 0x83, 0x3a, 0xb0, 0xaa, 0x60, 0x00, 0x6f,
+                0x7f, 0xe7, 0xfa, 0xaa, 0x95, 0x30, 0x7d, 0x8c, 0x1f, 0xc6, 0x81, 0x9b, 0x2f, 0xfd,
+                0xd7, 0x17, 0xec, 0xcf
             ]
         );
     }

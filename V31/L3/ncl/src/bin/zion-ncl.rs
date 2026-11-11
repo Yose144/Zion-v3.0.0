@@ -31,7 +31,10 @@ async fn main() {
         .with(EnvFilter::from_default_env().add_directive("zion_ncl=info".parse().unwrap()))
         .init();
 
-    info!("🧠 ZION NCL Daemon v{} starting...", env!("CARGO_PKG_VERSION"));
+    info!(
+        "🧠 ZION NCL Daemon v{} starting...",
+        env!("CARGO_PKG_VERSION")
+    );
 
     let bind: SocketAddr = env_or("NCL_BIND", "127.0.0.1:8098")
         .parse()
@@ -96,7 +99,11 @@ async fn main() {
         }
     };
 
-    info!("NCL API listening on http://{} (db={})", bind, db_path.as_deref().unwrap_or("<memory>"));
+    info!(
+        "NCL API listening on http://{} (db={})",
+        bind,
+        db_path.as_deref().unwrap_or("<memory>")
+    );
     if let Err(e) = axum::serve(listener, app).await {
         error!("server error: {}", e);
         std::process::exit(1);

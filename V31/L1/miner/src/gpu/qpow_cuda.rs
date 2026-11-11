@@ -59,11 +59,7 @@ fn ilp2_enabled(value: Option<&str>) -> bool {
 /// flag is on AND the actual runtime nonces_per_thread is 1, the dual
 /// entry ONLY when ilp2 is on AND npt is 2 — any other NPT falls back to
 /// the legacy kernel.
-fn select_qpow_kernel(
-    single: bool,
-    ilp2: bool,
-    nonces_per_thread: u32,
-) -> &'static str {
+fn select_qpow_kernel(single: bool, ilp2: bool, nonces_per_thread: u32) -> &'static str {
     if ilp2 && nonces_per_thread == 2 {
         QPOW_DUAL_KERNEL
     } else if single && nonces_per_thread == 1 {
@@ -128,7 +124,7 @@ impl QpowCudaMiner {
             QPOW_MODULE,
             &[QPOW_KERNEL, QPOW_SINGLE_NONCE_KERNEL, QPOW_DUAL_KERNEL],
         )
-            .map_err(|e| anyhow::anyhow!("PTX load failed for qpow: {e}"))?;
+        .map_err(|e| anyhow::anyhow!("PTX load failed for qpow: {e}"))?;
 
         // Occupancy probe for kernel tuning: ZION_QPOW_OCC_DEBUG=1 prints
         // max active blocks/SM for each kernel entry at TPB=256.

@@ -423,7 +423,11 @@ mod tests {
         let scores = feed.all_scores();
         assert_eq!(scores.len(), 2);
         // Primary should score better (lower latency, higher uptime)
-        let hel = scores.iter().find(|(k, _)| k.contains("127.0.0.1")).unwrap().1;
+        let hel = scores
+            .iter()
+            .find(|(k, _)| k.contains("127.0.0.1"))
+            .unwrap()
+            .1;
         let bak = scores.iter().find(|(k, _)| k.contains("backup")).unwrap().1;
         assert!(hel > bak, "primary node should score higher than backup");
     }

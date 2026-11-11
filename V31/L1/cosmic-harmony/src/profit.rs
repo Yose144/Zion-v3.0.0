@@ -393,9 +393,7 @@ impl ExternalCoin {
             "phx" | "phoenixcoin" | "neoscrypt" => Some(Self::PhoenixCoin),
             "krx" | "keryx" | "keryxhash" => Some(Self::Keryx),
             // "qtc" is intentionally NOT an alias — it resolves to Qubitcoin.
-            "quantus" | "qtu" | "qpow" | "qpow-poseidon2" | "qpowposeidon2" => {
-                Some(Self::Quantus)
-            }
+            "quantus" | "qtu" | "qpow" | "qpow-poseidon2" | "qpowposeidon2" => Some(Self::Quantus),
             "neox" | "neoxa" => Some(Self::Neoxa),
             "btc" | "bitcoin" | "sha256d" => Some(Self::Bitcoin),
             _ => None,

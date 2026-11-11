@@ -5553,11 +5553,8 @@ typedef unsigned long ulong;
         const SOLS_BUF_SIZE: usize = 8192;
 
         // dbg_buf = NR_ROWS*2 u32; rc0/rc1 = ROW_COUNTERS_SIZE u32 each.
-        let vram_needed = 2 * HT_SIZE
-            + ROW_COUNTERS_SIZE * 2 * 4
-            + NR_ROWS * 2 * 4
-            + SOLS_BUF_SIZE
-            + 1024;
+        let vram_needed =
+            2 * HT_SIZE + ROW_COUNTERS_SIZE * 2 * 4 + NR_ROWS * 2 * 4 + SOLS_BUF_SIZE + 1024;
         crate::ext_info!(
             "auxpow_gpu_zelhash_prod ht_size={:.1} GB per table, total VRAM needed={:.1} GB",
             HT_SIZE as f64 / 1e9,
@@ -6237,9 +6234,7 @@ typedef unsigned long ulong;
                 eprintln!(
                     "eq192dbg kat input0 reads: h0={ms0_0:#018x} h1={ms1_0:#018x} \
                      tail0={t0_0:#018x} (host h0={:#018x} h1={:#018x} tail0={:#018x})",
-                    blake_state[0],
-                    blake_state[1],
-                    eq_tail0
+                    blake_state[0], blake_state[1], eq_tail0
                 );
                 let mut gpu_d = [0u8; 96];
                 for (i, w) in dbg[..24].iter().enumerate() {

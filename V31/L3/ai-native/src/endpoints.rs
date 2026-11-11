@@ -27,7 +27,10 @@
 use std::env;
 
 fn env_or(key: &str, default: &str) -> String {
-    env::var(key).ok().filter(|v| !v.is_empty()).unwrap_or_else(|| default.to_string())
+    env::var(key)
+        .ok()
+        .filter(|v| !v.is_empty())
+        .unwrap_or_else(|| default.to_string())
 }
 
 /// Like [`env_or`] but returns `'static` — for probe tables built once.
@@ -40,7 +43,9 @@ pub(crate) fn env_or_leaked(key: &'static str, default: &'static str) -> &'stati
 
 macro_rules! ep {
     ($name:ident, $key:literal, $default:literal) => {
-        pub fn $name() -> String { env_or($key, $default) }
+        pub fn $name() -> String {
+            env_or($key, $default)
+        }
     };
 }
 
@@ -53,16 +58,32 @@ ep!(warp_api, "ZION_WARP_API", "http://127.0.0.1:8453");
 ep!(dex_api, "ZION_DEX_API", "http://127.0.0.1:8454");
 ep!(ncl_api, "ZION_NCL_API", "http://127.0.0.1:8001/ncl");
 ep!(oasis_api, "ZION_OASIS_API", "http://127.0.0.1:8094");
-ep!(free_world_api, "ZION_FREE_WORLD_API", "http://127.0.0.1:8095");
+ep!(
+    free_world_api,
+    "ZION_FREE_WORLD_API",
+    "http://127.0.0.1:8095"
+);
 ep!(issobella_api, "ZION_ISOBELLA_API", "http://127.0.0.1:8097");
 ep!(zis_api, "ZION_ZIS_API", "http://127.0.0.1:8096");
 ep!(quantus_rpc, "ZION_QUANTUS_RPC", "http://127.0.0.1:9944");
 ep!(dashboard_api, "ZION_DASHBOARD_API", "http://127.0.0.1:8766");
-ep!(prometheus_api, "ZION_PROMETHEUS_API", "http://127.0.0.1:9090");
+ep!(
+    prometheus_api,
+    "ZION_PROMETHEUS_API",
+    "http://127.0.0.1:9090"
+);
 ep!(node_exporter, "ZION_NODE_EXPORTER", "http://127.0.0.1:9100");
 ep!(hiran_api, "HIRAN_API", "http://127.0.0.1:8001");
-ep!(hiran_inference, "HIRAN_INFERENCE_URL", "http://127.0.0.1:8002");
-ep!(hiran_orchestrator, "HIRAN_ORCHESTRATOR", "http://127.0.0.1:8004");
+ep!(
+    hiran_inference,
+    "HIRAN_INFERENCE_URL",
+    "http://127.0.0.1:8002"
+);
+ep!(
+    hiran_orchestrator,
+    "HIRAN_ORCHESTRATOR",
+    "http://127.0.0.1:8004"
+);
 
 /// Whether Maestro may execute mutating (approval-flagged) tools.
 /// Default 0 = read-only. `HIRAN_MAESTRO_MUTATIONS=1` enables the gate.
@@ -72,7 +93,9 @@ pub fn mutations_enabled() -> bool {
 
 /// Approval token expected in `X-Maestro-Approve` header (if configured).
 pub fn approval_token() -> Option<String> {
-    env::var("MAESTRO_APPROVAL_TOKEN").ok().filter(|v| !v.is_empty())
+    env::var("MAESTRO_APPROVAL_TOKEN")
+        .ok()
+        .filter(|v| !v.is_empty())
 }
 
 /// Directory for append-only Maestro audit JSONL.
@@ -86,7 +109,10 @@ pub fn token_matches(given: &str, expected: &str) -> bool {
     if a.len() != b.len() {
         return false;
     }
-    a.iter().zip(b.iter()).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
+    a.iter()
+        .zip(b.iter())
+        .fold(0u8, |acc, (x, y)| acc | (x ^ y))
+        == 0
 }
 
 #[cfg(test)]

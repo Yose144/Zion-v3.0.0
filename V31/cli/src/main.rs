@@ -618,8 +618,8 @@ fn load_wallet_signing_key(
     let sender_address = wallet_data["address"]
         .as_str()
         .ok_or_else(|| anyhow!("wallet file missing 'address' field"))?;
-    let sk_bytes = zion_core::crypto::from_hex(sk_hex)
-        .ok_or_else(|| anyhow!("invalid secret key hex"))?;
+    let sk_bytes =
+        zion_core::crypto::from_hex(sk_hex).ok_or_else(|| anyhow!("invalid secret key hex"))?;
     let signing_key = from_bytes(sk_bytes)?;
     Ok((signing_key, sender_address.to_string()))
 }
@@ -645,7 +645,9 @@ fn filter_mature_utxos(
     });
     let dropped = before - utxos.len();
     if dropped > 0 {
-        println!("Filtered {dropped} immature or scripted UTXOs (coinbase age < {maturity} blocks)");
+        println!(
+            "Filtered {dropped} immature or scripted UTXOs (coinbase age < {maturity} blocks)"
+        );
     }
     utxos
 }
@@ -768,7 +770,8 @@ async fn main() -> anyhow::Result<()> {
                 rpc,
                 dry_run,
             } => {
-                let (signing_key, sender_address) = load_wallet_signing_key(wallet, secret_key_hex)?;
+                let (signing_key, sender_address) =
+                    load_wallet_signing_key(wallet, secret_key_hex)?;
 
                 // Convert ZION to flowers (6 decimals)
                 let amount_flowers = (amount * 1_000_000.0) as u64;
@@ -776,10 +779,9 @@ async fn main() -> anyhow::Result<()> {
                 let mut fee_flowers = if auto_fee {
                     0
                 } else {
-                    let fee_zion: f64 = fee
-                        .trim()
-                        .parse()
-                        .map_err(|_| anyhow!("invalid --fee '{}': expected ZION amount or 'auto'", fee))?;
+                    let fee_zion: f64 = fee.trim().parse().map_err(|_| {
+                        anyhow!("invalid --fee '{}': expected ZION amount or 'auto'", fee)
+                    })?;
                     (fee_zion * 1_000_000.0) as u64
                 };
 
@@ -821,7 +823,11 @@ async fn main() -> anyhow::Result<()> {
                 if auto_fee {
                     fee_flowers = zion_core::estimate_send_fee(amount_flowers, &utxos)
                         .map_err(|e| anyhow!("fee estimation failed: {}", e))?;
-                    println!("Auto fee: {} flowers ({} ZION)", fee_flowers, fee_flowers as f64 / 1_000_000.0);
+                    println!(
+                        "Auto fee: {} flowers ({} ZION)",
+                        fee_flowers,
+                        fee_flowers as f64 / 1_000_000.0
+                    );
                 }
 
                 if dry_run {
@@ -874,7 +880,8 @@ async fn main() -> anyhow::Result<()> {
                 dry_run,
             } => {
                 const MEMO: &[u8] = b"CONSOLIDATE";
-                let (signing_key, sender_address) = load_wallet_signing_key(wallet, secret_key_hex)?;
+                let (signing_key, sender_address) =
+                    load_wallet_signing_key(wallet, secret_key_hex)?;
                 println!("Consolidating UTXOs for {}", sender_address);
 
                 let mut utxos = crate::rpc::node_rpc::fetch_utxos(&rpc, &sender_address).await?;
@@ -912,8 +919,7 @@ async fn main() -> anyhow::Result<()> {
                     if avail.len() <= target_utxos {
                         break;
                     }
-                    let Some((batch, total)) = zion_core::plan_consolidation(&avail, cap, 2)
-                    else {
+                    let Some((batch, total)) = zion_core::plan_consolidation(&avail, cap, 2) else {
                         break;
                     };
                     // The builder prices the fee for a possible change

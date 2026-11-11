@@ -1352,7 +1352,11 @@ fn v2_audit(event: &str, payload: Value) {
     let dir = zion_ai_native::endpoints::audit_dir();
     let _ = std::fs::create_dir_all(&dir);
     let path = format!("{}/maestro-{}.jsonl", dir, Utc::now().format("%Y%m%d"));
-    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&path) {
+    if let Ok(mut f) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&path)
+    {
         let _ = writeln!(
             f,
             "{}",
@@ -1415,7 +1419,12 @@ async fn v2_orchestrate(
     };
     let plan = match m.plan_for_input(input) {
         Ok(p) => p,
-        Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({"error": e.to_string()}))),
+        Err(e) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({"error": e.to_string()})),
+            )
+        }
     };
     if let Some(resp) = v2_gate(&plan, &headers) {
         v2_audit("orchestrate_blocked", json!({"input": input}));
@@ -1454,9 +1463,9 @@ async fn v2_plan(
     let plan_result = if let Some(intent_str) = req.intent.as_deref() {
         match serde_json::from_value::<zion_ai_native::tool_registry::Intent>(json!(intent_str)) {
             Ok(intent) => m.plan_for_intent(intent, input),
-            Err(_) => Err(zion_ai_native::error::AiError::ToolExecutionFailed(format!(
-                "unknown intent '{intent_str}'"
-            ))),
+            Err(_) => Err(zion_ai_native::error::AiError::ToolExecutionFailed(
+                format!("unknown intent '{intent_str}'"),
+            )),
         }
     } else {
         m.plan_for_input(input)
@@ -1469,7 +1478,10 @@ async fn v2_plan(
                 Json(json!({"plan": plan, "requires_approval": needs})),
             )
         }
-        Err(e) => (StatusCode::BAD_REQUEST, Json(json!({"error": e.to_string()}))),
+        Err(e) => (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": e.to_string()})),
+        ),
     }
 }
 
@@ -1487,7 +1499,10 @@ async fn v2_classify(
         );
     };
     let intent = m.classify(input);
-    (StatusCode::OK, Json(json!({"input": input, "intent": intent})))
+    (
+        StatusCode::OK,
+        Json(json!({"input": input, "intent": intent})),
+    )
 }
 
 async fn v2_health_matrix(State(state): State<Arc<AppState>>) -> (StatusCode, Json<Value>) {

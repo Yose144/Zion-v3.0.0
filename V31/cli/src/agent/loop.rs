@@ -57,10 +57,18 @@ pub async fn run_agent_loop(cfg: &AgentConfig, user_prompt: &str) -> Result<Stri
         messages.push(reply.clone());
 
         // If model used JSON fence (no native tool_calls), also mirror as tool role msgs.
-        let native = reply.tool_calls.as_ref().map(|c| !c.is_empty()).unwrap_or(false);
+        let native = reply
+            .tool_calls
+            .as_ref()
+            .map(|c| !c.is_empty())
+            .unwrap_or(false);
 
         for call in &calls {
-            ui::print_info(&format!("tool {} {}", call.name.cyan(), summarize_args(&call.args)));
+            ui::print_info(&format!(
+                "tool {} {}",
+                call.name.cyan(),
+                summarize_args(&call.args)
+            ));
             let result = match tools::execute_tool(&policy, call).await {
                 Ok(r) => r,
                 Err(e) => format!("ERROR: {e}"),
@@ -96,11 +104,7 @@ pub async fn run_agent_loop(cfg: &AgentConfig, user_prompt: &str) -> Result<Stri
 
 pub async fn run_repl(cfg: &AgentConfig) -> Result<()> {
     ui::print_header("ZION Hiran Agent");
-    ui::print_info(&format!(
-        "model={}  cwd={}",
-        cfg.model,
-        cfg.cwd.display()
-    ));
+    ui::print_info(&format!("model={}  cwd={}", cfg.model, cfg.cwd.display()));
     ui::print_info("Type a task, or /quit to exit. Empty line ignored.");
     println!();
 

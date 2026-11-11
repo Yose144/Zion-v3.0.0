@@ -216,9 +216,12 @@ pub async fn execute_tool(policy: &Policy, call: &ToolCall) -> Result<String> {
             if let Some(parent) = full.parent() {
                 std::fs::create_dir_all(parent)?;
             }
-            std::fs::write(&full, content)
-                .with_context(|| format!("write {}", full.display()))?;
-            Ok(format!("wrote {} bytes to {}", content.len(), full.display()))
+            std::fs::write(&full, content).with_context(|| format!("write {}", full.display()))?;
+            Ok(format!(
+                "wrote {} bytes to {}",
+                content.len(),
+                full.display()
+            ))
         }
         "str_replace" => {
             let path = arg_str(&call.args, "path")?;
@@ -289,10 +292,7 @@ fn run_shell_allowlisted(cwd: &Path, command: &str) -> Result<String> {
         text.push_str(&String::from_utf8_lossy(&output.stderr));
     }
     if !output.status.success() {
-        text.push_str(&format!(
-            "\n[exit {}]",
-            output.status.code().unwrap_or(-1)
-        ));
+        text.push_str(&format!("\n[exit {}]", output.status.code().unwrap_or(-1)));
     }
     Ok(truncate(&text, 40_000))
 }
@@ -307,8 +307,8 @@ fn truncate(s: &str, max: usize) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::policy::ConfirmKind;
+    use super::*;
 
     #[test]
     fn parse_fence_tool() {

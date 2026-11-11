@@ -68,7 +68,9 @@ impl AgentConfig {
             .max(1);
 
         let cwd = match cwd {
-            Some(p) => p.canonicalize().with_context(|| format!("cwd {}", p.display()))?,
+            Some(p) => p
+                .canonicalize()
+                .with_context(|| format!("cwd {}", p.display()))?,
             None => std::env::current_dir().context("current_dir")?,
         };
 
@@ -93,7 +95,11 @@ impl AgentConfig {
     }
 
     /// Persist api_key (+ optional base_url/model) atomically to `~/.zion/agent.toml`.
-    pub fn save_api_key(api_key: &str, base_url: Option<&str>, model: Option<&str>) -> Result<PathBuf> {
+    pub fn save_api_key(
+        api_key: &str,
+        base_url: Option<&str>,
+        model: Option<&str>,
+    ) -> Result<PathBuf> {
         let path = agent_toml_path();
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)
@@ -156,8 +162,7 @@ fn load_toml(path: &Path) -> Result<TomlConfig> {
     if !path.exists() {
         return Ok(TomlConfig::default());
     }
-    let raw = std::fs::read_to_string(path)
-        .with_context(|| format!("read {}", path.display()))?;
+    let raw = std::fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
     toml::from_str(&raw).with_context(|| format!("parse {}", path.display()))
 }
 

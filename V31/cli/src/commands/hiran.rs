@@ -326,18 +326,16 @@ async fn remote_vast_agent(
         "force": true,
     });
     if let Some(tok) = &lease_token {
-        args.as_object_mut().unwrap().insert(
-            "lease_token".into(),
-            serde_json::Value::String(tok.clone()),
-        );
+        args.as_object_mut()
+            .unwrap()
+            .insert("lease_token".into(), serde_json::Value::String(tok.clone()));
         args.as_object_mut().unwrap().insert(
             "llm_base".into(),
             serde_json::Value::String(hiran_base.clone()),
         );
-        args.as_object_mut().unwrap().insert(
-            "model".into(),
-            serde_json::Value::String(llm_model.clone()),
-        );
+        args.as_object_mut()
+            .unwrap()
+            .insert("model".into(), serde_json::Value::String(llm_model.clone()));
         ui::print_row("llm", &format!("{hiran_base} model={llm_model}"));
     }
     let body = serde_json::json!({
@@ -392,10 +390,7 @@ async fn remote_vast_agent(
             if lease_token.is_some() {
                 if let Ok(usage) = http
                     .get(format!("{hiran_base}/usage"))
-                    .header(
-                        "X-API-Key",
-                        cfg.api_key.as_deref().unwrap_or(""),
-                    )
+                    .header("X-API-Key", cfg.api_key.as_deref().unwrap_or(""))
                     .send()
                     .await
                 {
@@ -446,8 +441,8 @@ async fn login(market_url: Option<String>, no_browser: bool) -> Result<()> {
     if !start_status.is_success() {
         bail!("device start failed ({start_status}): {start_body}");
     }
-    let start: StartResp = serde_json::from_str(&start_body)
-        .with_context(|| format!("parse start: {start_body}"))?;
+    let start: StartResp =
+        serde_json::from_str(&start_body).with_context(|| format!("parse start: {start_body}"))?;
     if !start.success {
         bail!(
             "device start error: {}",
@@ -507,7 +502,11 @@ async fn login(market_url: Option<String>, no_browser: bool) -> Result<()> {
             "redeemed" => bail!("code already redeemed — try login again"),
             "approved" => {
                 let key = pd.api_key.context("approved without apiKey")?;
-                let path = AgentConfig::save_api_key(&key, Some(crate::agent::config::DEFAULT_BASE_URL), None)?;
+                let path = AgentConfig::save_api_key(
+                    &key,
+                    Some(crate::agent::config::DEFAULT_BASE_URL),
+                    None,
+                )?;
                 ui::print_ok(&format!("logged in — key saved to {}", path.display()));
                 ui::print_info("try: zion hiran whoami · zion hiran models · zion agent -p \"…\"");
                 return Ok(());
@@ -525,9 +524,16 @@ async fn whoami(base_url: Option<String>) -> Result<()> {
     ui::print_row("base", client.base_url());
     ui::print_row(
         "key",
-        &format!("{}…{}", &key[..key.len().min(8)], &key[key.len().saturating_sub(4)..]),
+        &format!(
+            "{}…{}",
+            &key[..key.len().min(8)],
+            &key[key.len().saturating_sub(4)..]
+        ),
     );
-    ui::print_row("toml", &AgentConfig::agent_toml_path_public().display().to_string());
+    ui::print_row(
+        "toml",
+        &AgentConfig::agent_toml_path_public().display().to_string(),
+    );
     let usage = client.usage().await?;
     if let Some(plan) = usage.get("plan").and_then(|p| p.as_str()) {
         ui::print_row("plan", plan);

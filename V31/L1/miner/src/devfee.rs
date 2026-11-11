@@ -156,8 +156,14 @@ mod tests {
 
     #[test]
     fn applies_only_to_quantus() {
-        assert!(DevFee::applies_to(zion_cosmic_harmony::ExternalCoin::Quantus));
-        assert!(!DevFee::applies_to(zion_cosmic_harmony::ExternalCoin::Verus));
-        assert!(!DevFee::applies_to(zion_cosmic_harmony::ExternalCoin::Kaspa));
+        assert!(DevFee::applies_to(
+            zion_cosmic_harmony::ExternalCoin::Quantus
+        ));
+        assert!(!DevFee::applies_to(
+            zion_cosmic_harmony::ExternalCoin::Verus
+        ));
+        assert!(!DevFee::applies_to(
+            zion_cosmic_harmony::ExternalCoin::Kaspa
+        ));
     }
 }

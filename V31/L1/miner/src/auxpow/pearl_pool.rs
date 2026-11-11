@@ -540,7 +540,10 @@ mod tests {
                 .await
                 .unwrap();
         });
-        let resp = client.submit_proof("job-7f3a", "QUJD", Some(1_000_000)).await.unwrap();
+        let resp = client
+            .submit_proof("job-7f3a", "QUJD", Some(1_000_000))
+            .await
+            .unwrap();
         handle.await.unwrap();
         assert_eq!(resp.id, 2);
         assert!(!resp.accepted);

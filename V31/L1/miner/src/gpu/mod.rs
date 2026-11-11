@@ -2593,9 +2593,8 @@ pub fn create_gpu_backend(
             // flag which sets it) restricts which global indices ANY stream
             // may use — reservation and targeting below intersect with it.
             let global_filter = gpu_device_filter();
-            let allowed = |d: &GpuDeviceInfo| {
-                device_matches_filter(&d.name, d.global_idx, &global_filter)
-            };
+            let allowed =
+                |d: &GpuDeviceInfo| device_matches_filter(&d.name, d.global_idx, &global_filter);
 
             // Determine which device to reserve for ZANO ProgPoWZ.
             // Strategy (like reference miners):
@@ -2712,9 +2711,7 @@ pub fn create_gpu_backend(
                 (0..gpu_count)
                     .filter(|i| {
                         Some(*i) != zano_idx
-                            && gpu_devices
-                                .iter()
-                                .any(|d| d.global_idx == *i && allowed(d))
+                            && gpu_devices.iter().any(|d| d.global_idx == *i && allowed(d))
                     })
                     .collect()
             };
@@ -3223,7 +3220,10 @@ fn create_gpu_backend_inner(
                         match miner_result {
                             Ok(miner) => return Ok(Box::new(miner)),
                             Err(e) => {
-                                eprintln!("[gpu_backend] CUDA pearl miner failed: {} — falling back", e);
+                                eprintln!(
+                                    "[gpu_backend] CUDA pearl miner failed: {} — falling back",
+                                    e
+                                );
                             }
                         }
                     }
@@ -6224,8 +6224,16 @@ mod tests {
     fn gpu_device_filter_matches_index_and_name() {
         let filter: Vec<String> = vec!["1".into(), "vega".into()];
         // index match
-        assert!(device_matches_filter("NVIDIA GeForce GTX 1070 Ti", 1, &filter));
-        assert!(!device_matches_filter("NVIDIA GeForce GTX 1070 Ti", 0, &filter));
+        assert!(device_matches_filter(
+            "NVIDIA GeForce GTX 1070 Ti",
+            1,
+            &filter
+        ));
+        assert!(!device_matches_filter(
+            "NVIDIA GeForce GTX 1070 Ti",
+            0,
+            &filter
+        ));
         // name/class match (gfx900 = Vega)
         assert!(device_matches_filter("gfx900:xnack-", 5, &filter));
         assert!(device_matches_filter("Radeon RX Vega 64", 3, &filter));

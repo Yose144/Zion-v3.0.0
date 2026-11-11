@@ -61,8 +61,7 @@ fn env_base(name: &str, default: &str) -> String {
 /// Built-in catalog when no models.json exists — F1 fabric (mini + coder + trinity).
 fn default_catalog() -> Vec<ModelDef> {
     let coder_primary = env_base("HIRAN_CODER_PRIMARY", "http://127.0.0.1:8005/v1");
-    let coder_upstream_model =
-        env_base("HIRAN_CODER_UPSTREAM_MODEL", "qwen2.5-coder-7b-instruct");
+    let coder_upstream_model = env_base("HIRAN_CODER_UPSTREAM_MODEL", "qwen2.5-coder-7b-instruct");
     let mut coder_ups = vec![Upstream {
         base: coder_primary,
         degraded: false,
@@ -129,7 +128,12 @@ fn default_catalog() -> Vec<ModelDef> {
             price_1m_usd: 4.0,
             mockup: true,
             role: "agentic".into(),
-            tags: vec!["trinity".into(), "hiran".into(), "code".into(), "agentic".into()],
+            tags: vec![
+                "trinity".into(),
+                "hiran".into(),
+                "code".into(),
+                "agentic".into(),
+            ],
         },
         ModelDef {
             alias: "hiran-maitreya".into(),
@@ -139,7 +143,12 @@ fn default_catalog() -> Vec<ModelDef> {
             price_1m_usd: 3.5,
             mockup: true,
             role: "lore".into(),
-            tags: vec!["trinity".into(), "hiran".into(), "rag".into(), "lore".into()],
+            tags: vec![
+                "trinity".into(),
+                "hiran".into(),
+                "rag".into(),
+                "lore".into(),
+            ],
         },
     ]
 }
@@ -162,8 +171,8 @@ impl Catalog {
     pub fn load(path: &str, probe_ttl_secs: u64) -> Result<Self> {
         let models = match std::fs::read_to_string(path) {
             Ok(raw) => {
-                let mut file: Vec<ModelDef> = serde_json::from_str(&raw)
-                    .with_context(|| format!("parse {path}"))?;
+                let mut file: Vec<ModelDef> =
+                    serde_json::from_str(&raw).with_context(|| format!("parse {path}"))?;
                 // Ensure F1 built-ins exist even on older models.json.
                 merge_missing_builtins(&mut file);
                 file

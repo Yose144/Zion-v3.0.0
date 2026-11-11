@@ -49,9 +49,7 @@ impl LeaseStore {
         max_turns: Option<u32>,
     ) -> (String, u64, u32) {
         self.gc();
-        let ttl = ttl_secs
-            .unwrap_or(DEFAULT_TTL_SECS)
-            .clamp(60, MAX_TTL_SECS);
+        let ttl = ttl_secs.unwrap_or(DEFAULT_TTL_SECS).clamp(60, MAX_TTL_SECS);
         let turns = max_turns
             .unwrap_or(DEFAULT_MAX_TURNS)
             .clamp(1, HARD_MAX_TURNS);
