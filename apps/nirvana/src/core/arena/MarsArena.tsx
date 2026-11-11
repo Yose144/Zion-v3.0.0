@@ -246,7 +246,7 @@ export function MarsArena({
 
   const player = useRef<Body>({
     x: map.playerSpawn.x,
-    y: 0.1,
+    y: map.playerSpawn.y ?? 0.1,
     z: map.playerSpawn.z,
     vx: 0,
     vy: 0,
@@ -497,7 +497,7 @@ export function MarsArena({
     deadUntil.current = 0;
     player.current = {
       x: map.playerSpawn.x,
-      y: 0.1,
+      y: map.playerSpawn.y ?? 0.1,
       z: map.playerSpawn.z,
       vx: 0,
       vy: 0,
@@ -703,7 +703,7 @@ export function MarsArena({
         armor.current = 0;
         player.current = {
           x: map.playerSpawn.x,
-          y: 0.2,
+          y: map.playerSpawn.y ?? 0.2,
           z: map.playerSpawn.z,
           vx: 0,
           vy: 0,

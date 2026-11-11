@@ -79,7 +79,7 @@ for (const id of ARENA_MAP_IDS) {
     Math.abs(spawn.x) <= ARENA_HALF && Math.abs(spawn.z) <= ARENA_HALF,
     `(${spawn.x}, ${spawn.z})`,
   );
-  const blocked = bodyBlocked(solids, spawn.x, spawn.z, 0.2, PLAYER.radius, PLAYER.height);
+  const blocked = bodyBlocked(solids, spawn.x, spawn.z, spawn.y ?? 0.2, PLAYER.radius, PLAYER.height);
   check('spawn hráče není ve zdi', blocked === null, blocked ? JSON.stringify(blocked) : '');
 
   check('mapa má aspoň tři spawny botů', map.botSpawns.length >= 3, String(map.botSpawns.length));

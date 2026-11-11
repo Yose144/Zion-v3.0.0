@@ -32,6 +32,8 @@ export interface ArenaBox {
 export interface ArenaSpawn {
   x: number;
   z: number;
+  /** Výška spawnu — na vyvýšené plošině (most, věž) není nula. */
+  y?: number;
   /** Kam se hráč dívá (yaw v radiánech). */
   yaw: number;
 }
@@ -198,10 +200,27 @@ const Q3DM3_BOXES: ArenaBox[] = [
   { x: 10, y: 0, z: -10, w: 1.5, h: 2.6, d: 1.5, kind: 'rock' },
   { x: -10, y: 0, z: 10, w: 1.5, h: 2.6, d: 1.5, kind: 'rock' },
   { x: 10, y: 0, z: 10, w: 1.5, h: 2.6, d: 1.5, kind: 'rock' },
+  // vysoké pylony (mimo uličku |x| ≥ 13) — dávají mapě výšku a orientaci
+  { x: -12, y: 0, z: -8, w: 1.5, h: 4.2, d: 1.5, kind: 'metal' },
+  { x: 12, y: 0, z: -8, w: 1.5, h: 4.2, d: 1.5, kind: 'metal' },
+  { x: -12, y: 0, z: 8, w: 1.5, h: 4.2, d: 1.5, kind: 'metal' },
+  { x: 12, y: 0, z: 8, w: 1.5, h: 4.2, d: 1.5, kind: 'metal' },
+  // bedny u vstupu do komor (nízké krytí, ne v uličce)
+  { x: -8.5, y: 0, z: 10.5, w: 1.4, h: 1.1, d: 1.4, kind: 'rock' },
+  { x: 8.5, y: 0, z: 10.5, w: 1.4, h: 1.1, d: 1.4, kind: 'rock' },
+  { x: -8.5, y: 0, z: -10.5, w: 1.4, h: 1.1, d: 1.4, kind: 'rock' },
+  { x: 8.5, y: 0, z: -10.5, w: 1.4, h: 1.1, d: 1.4, kind: 'rock' },
+  // koruny komor (trim nad pruhem těla — navigaci neblokují)
+  { x: -6, y: 3.2, z: 13.5, w: 1.4, h: 0.15, d: 7.2, kind: 'trim' },
+  { x: 6, y: 3.2, z: 13.5, w: 1.4, h: 0.15, d: 7.2, kind: 'trim' },
+  { x: 0, y: 3.2, z: 17, w: 13.2, h: 0.15, d: 1.4, kind: 'trim' },
+  { x: -6, y: 3.2, z: -13.5, w: 1.4, h: 0.15, d: 7.2, kind: 'trim' },
+  { x: 6, y: 3.2, z: -13.5, w: 1.4, h: 0.15, d: 7.2, kind: 'trim' },
+  { x: 0, y: 3.2, z: -17, w: 13.2, h: 0.15, d: 1.4, kind: 'trim' },
 ];
 
 const Q3DM3_PICKUPS: ArenaPickup[] = [
-  { id: 'q1', kind: 'powerup', powerup: 'quad', x: 0, y: 2, z: 0, respawn: 60 },
+  { id: 'q1', kind: 'powerup', powerup: 'quad', x: -5, y: 2, z: 0, respawn: 60 },
   { id: 'mh1', kind: 'mega', x: 0, y: 0, z: 14, respawn: 35 },
   { id: 'a1', kind: 'armor', x: 0, y: 0, z: -14, respawn: 30 },
   { id: 'ha1', kind: 'powerup', powerup: 'haste', x: -16, y: 2.6, z: 0, respawn: 45 },
@@ -248,8 +267,6 @@ const Q3DM6_BOXES: ArenaBox[] = [
   // křídla (top 2,5) + schody uvnitř křídla
   { x: -15.5, y: 0, z: 0, w: 7, h: 2.5, d: 14, kind: 'metal' },
   { x: 15.5, y: 0, z: 0, w: 7, h: 2.5, d: 14, kind: 'metal' },
-  { x: -15.5, y: 2.5, z: 0, w: 7.2, h: 0.1, d: 14.2, kind: 'trim' },
-  { x: 15.5, y: 2.5, z: 0, w: 7.2, h: 0.1, d: 14.2, kind: 'trim' },
   { x: -13, y: 0, z: 0, w: 2, h: 1.25, d: 6, kind: 'metal' },
   { x: 13, y: 0, z: 0, w: 2, h: 1.25, d: 6, kind: 'metal' },
   // mostky z křídel k věži (top 2,5) — končí na ±10, aby zůstala ulička
@@ -267,7 +284,7 @@ const Q3DM6_BOXES: ArenaBox[] = [
 
 const Q3DM6_PICKUPS: ArenaPickup[] = [
   { id: 'q1', kind: 'powerup', powerup: 'quad', x: 0, y: 5, z: 0, respawn: 60 },
-  { id: 'mh1', kind: 'mega', x: -15.5, y: 2.5, z: 0, respawn: 35 },
+  { id: 'mh1', kind: 'mega', x: -15.5, y: 2.5, z: -5, respawn: 35 },
   { id: 'a1', kind: 'armor', x: 15.5, y: 2.5, z: 0, respawn: 30 },
   { id: 'ha1', kind: 'powerup', powerup: 'haste', x: 0, y: 0, z: 13.5, respawn: 45 },
   { id: 'h1', kind: 'health', x: 0, y: 0, z: -13.5, respawn: 18 },
@@ -321,7 +338,7 @@ const Q3DM6_PALETTE: ArenaPalette = {
   ground: '#4b3a2b',
   rock: '#6b5140',
   metal: '#5a4b3f',
-  trim: '#ffcf80',
+  trim: '#d9b273',
   sky: '#1c1410',
   fog: '#2a1d15',
   fogNear: 34,
@@ -358,7 +375,7 @@ export const ARENA_MAPS: Record<ArenaMapId, ArenaMap> = {
       en: 'stylised · central bridge, two chambers, high ledges',
     },
     boxes: Q3DM3_BOXES,
-    playerSpawn: { x: 0, z: 9, yaw: 0 },
+    playerSpawn: { x: 0, z: 0, y: 2.2, yaw: 0 },
     botSpawns: [
       { x: -14, z: -14, yaw: 0.8 },
       { x: 14, z: -14, yaw: -0.8 },
@@ -375,7 +392,7 @@ export const ARENA_MAPS: Record<ArenaMapId, ArenaMap> = {
       en: 'stylised · three floors, central tower, wings',
     },
     boxes: Q3DM6_BOXES,
-    playerSpawn: { x: 0, z: 18, yaw: 0 },
+    playerSpawn: { x: -15.5, z: 6, y: 2.7, yaw: -1.2 },
     botSpawns: [
       { x: -16, z: -16, yaw: 0.8 },
       { x: 16, z: -16, yaw: -0.8 },

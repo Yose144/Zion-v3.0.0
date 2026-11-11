@@ -3040,6 +3040,12 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Komponenta se remountuje `key={mapId}`.** Stav hry (pozice, pickupy,
   respawny) se tím nikdy nemíchá mezi mapami; bez `key` by hráč přistál
   na souřadnicích z předchozí mapy.
+- **Spawn může být vyvýšený** (`playerSpawn.y`). Q3DM3 startuje na mostě
+  (y 2,2) a Q3DM6 na křídle (y 2,7), takže úvodní záběr ukáže mapu, ne
+  prázdnou podlahu. Kdo přidá spawn na plošinu, musí dát `y` o kousek výš
+  než horní hrana (trim) — jinak tělo začne uvnitř desky a fyzika ho vyhodí.
+- **Pickup nesmí ležet na spawnu.** Hráč na mostě by jinak sebral Quad
+  hned při vstupu (Q3DM3 má proto Quad posunutý na `x −5`).
 - **Paleta je data, ne renderer.** Kdo přidá mapu, přidá i `palette`
   (ground/rock/metal/trim + sky/fog + světla), jinak by všechny mapy
   vypadaly jako Mars. `emissive` trimu jde z `palette.trim`.
