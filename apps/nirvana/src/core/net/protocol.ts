@@ -359,7 +359,7 @@ export type EventPayload =
     }
   // ── Merkur (duel) ────────────────────────────────────────────────────
   | { kind: 'round_start'; round: number; at: number }
-  | { kind: 'round_end'; round: number; winner: string | null; reason: 'ko' | 'time'; at: number }
+  | { kind: 'round_end'; round: number; winner: string | null; reason: 'ko' | 'time' | 'ringout'; at: number }
   | { kind: 'duel_ko'; winner: string; loser: string; round: number; at: number }
   | { kind: 'duel_end'; winner: string; aWins: number; bWins: number; at: number };
 
