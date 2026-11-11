@@ -147,7 +147,7 @@ export interface ArenaInputFrame {
   pitch: number;
   jump: boolean;
   fire: boolean;
-  weapon: 0 | 1 | 2;
+  weapon: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   /** Jen duel (Merkur): držený blok. Ostatní hry ignorují. */
   block?: boolean;
   /** Jen závod (Venuše): ruční brzda a nitro. Ostatní hry ignorují. */

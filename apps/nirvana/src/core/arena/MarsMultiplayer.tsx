@@ -22,8 +22,12 @@ import { avatarLook } from '@/core/avatars/kit';
 import {
   playDeath,
   playFrag,
+  playGauntlet,
   playHurt,
+  playLightning,
   playMg,
+  playPlasma,
+  playShotgun,
   playPickup,
   playRail,
   playRocket,
@@ -101,10 +105,10 @@ export function MarsMultiplayer({
   const view = useRef({ yaw: PLAYER_SPAWN.yaw, pitch: -0.05 });
   const keys = useRef(new Set<string>());
   /** 0 = rail, 1 = rakety, 2 = strojní puška (Q3 sestava). */
-  const weapon = useRef<0 | 1 | 2>(0);
+  const weapon = useRef<0 | 1 | 2 | 3 | 4 | 5 | 6>(0);
   const firing = useRef(false);
   /** Viewmodel: numerická zbraň → id a zpětný ráz (jen vizuál, server ne). */
-  const MP_WEAPON_IDS: WeaponId[] = ['rail', 'rocket', 'mg'];
+  const MP_WEAPON_IDS: WeaponId[] = ['rail', 'rocket', 'mg', 'shotgun', 'lightning', 'plasma', 'gauntlet'];
   const weaponView = useMemo(
     () => ({
       get current(): WeaponId {
@@ -260,7 +264,15 @@ export function MarsMultiplayer({
       if (event.code === 'Digit1') weapon.current = 0;
       if (event.code === 'Digit2') weapon.current = 1;
       if (event.code === 'Digit3') weapon.current = 2;
-      if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'Digit1', 'Digit2', 'Digit3'].includes(event.code)) {
+      if (event.code === 'Digit4') weapon.current = 3;
+      if (event.code === 'Digit5') weapon.current = 4;
+      if (event.code === 'Digit6') weapon.current = 5;
+      if (event.code === 'KeyQ') weapon.current = 6;
+      if (
+        ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6'].includes(
+          event.code,
+        )
+      ) {
         event.preventDefault();
       }
     };
@@ -323,7 +335,7 @@ export function MarsMultiplayer({
       ? { forward: 0, strafe: 0, fire: false, jump: false }
       : readTouch(touch, view, (next) => {
           // MP zná tři zbraně; dotykové kolečko jich cyklí šest.
-          weapon.current = (next % 3) as 0 | 1 | 2;
+          weapon.current = (next % 7) as 0 | 1 | 2 | 3 | 4 | 5 | 6;
         });
     const forward = watching
       ? 0
@@ -337,7 +349,7 @@ export function MarsMultiplayer({
     // Vizuální kadence: server má vlastní cooldown, ale zbraň nesmí kmitat
     // při každém snímku držené spouště.
     if (fire) {
-      const spec = weapon.current === 1 ? WEAPONS.rocket : weapon.current === 2 ? WEAPONS.mg : WEAPONS.rail;
+      const spec = WEAPONS[MP_WEAPON_IDS[weapon.current] ?? 'rail'];
       const stamp = performance.now();
       if (stamp - lastLocalShot.current >= spec.cooldownMs) {
         lastLocalShot.current = stamp;
@@ -460,11 +472,16 @@ export function MarsMultiplayer({
       // zvuk výstřelu hraje klient lokálně (server je autorita zásahů, ne zvuku);
       // cooldown zrcadlí `WEAPONS`, aby se dávka nesekala do sebe
       if (fire && now > soundCooldown.current) {
-        const spec = weapon.current === 0 ? WEAPONS.rail : weapon.current === 1 ? WEAPONS.rocket : WEAPONS.mg;
+        const weaponId = MP_WEAPON_IDS[weapon.current] ?? 'rail';
+        const spec = WEAPONS[weaponId];
         soundCooldown.current = now + spec.cooldownMs;
-        if (weapon.current === 0) playRail();
-        else if (weapon.current === 1) playRocket();
-        else playMg();
+        if (weaponId === 'rail') playRail();
+        else if (weaponId === 'rocket') playRocket();
+        else if (weaponId === 'mg') playMg();
+        else if (weaponId === 'shotgun') playShotgun();
+        else if (weaponId === 'lightning') playLightning();
+        else if (weaponId === 'plasma') playPlasma();
+        else playGauntlet();
       }
       sendInput(frame);
     }
@@ -488,8 +505,8 @@ export function MarsMultiplayer({
         armor: Math.round(armor.current),
         frags: frags.current,
         deaths: deaths.current,
-        weapon: weapon.current === 1 ? 'rocket' : weapon.current === 2 ? 'mg' : 'rail',
-        ammo: weapon.current === 1 || weapon.current === 2 ? ammo.current : 0,
+        weapon: MP_WEAPON_IDS[weapon.current] ?? 'rail',
+        ammo: ammo.current,
         botsAlive: rows.filter((row) => row.alive && row.id !== youPlayerId).length,
         timeLeft: Math.round(timeLeft.current),
         respawnIn: alive.current ? 0 : 1,

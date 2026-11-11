@@ -228,6 +228,73 @@ console.log('\n== serverová simulace (bot zasáhne člověka) ==');
   }
 }
 
+// ── 2b) nová Q3 sada zbraní na serveru (simulace, bez sítě) ───────────
+console.log('\n== server: brokovnice / blesk / plazma / pěst ==');
+{
+  const sim = arena.createArena(Date.now());
+  const human = arena.addPlayer(sim, 'c_w', 'Hráč', null, Date.now());
+  arena.ensureBots(sim);
+  const bot = [...sim.players.values()].find((p) => p.isBot);
+  // jen jeden terč a bez AI: dummy nesmí utéct ani střílet
+  for (const p of [...sim.players.values()]) {
+    if (p.isBot && p.id !== bot.id) sim.players.delete(p.id);
+  }
+  bot.isBot = false;
+  bot.input.fire = false;
+  human.body.x = 0; human.body.z = 16; human.body.y = 0.2;
+  bot.body.x = 0; bot.body.z = 13; bot.body.y = 0.2;
+  bot.hp = 100; bot.alive = true;
+  const aim = () => {
+    const dx = bot.body.x - human.body.x;
+    const dy = bot.body.y + 1.05 - (human.body.y + PLAYER.eye);
+    const dz = bot.body.z - human.body.z;
+    const len = Math.hypot(dx, dy, dz) || 1;
+    human.input.yaw = Math.atan2(-dx / len, -dz / len);
+    human.input.pitch = Math.asin(dy / len);
+  };
+  let now = Date.now();
+  const fireOnce = (weapon, ammoField) => {
+    human.weapon = weapon;
+    human.input.weapon = weapon;
+    if (ammoField) human[ammoField] = 99;
+    aim();
+    human.input.fire = true;
+    now += 2000;
+    arena.stepArena(sim, 1 / 30, now);
+    human.input.fire = false;
+  };
+
+  fireOnce('shotgun', 'shotgunAmmo');
+  check('brokovnice: výstřel ubere botovi HP', bot.hp < 100, String(bot.hp));
+
+  bot.hp = 100;
+  fireOnce('lightning', 'lightningAmmo');
+  check('blesk: 8 dmg na zásah', bot.hp === 92, String(bot.hp));
+
+  bot.hp = 100;
+  sim.rockets.length = 0;
+  fireOnce('plasma', 'plasmaAmmo');
+  check(
+    'plazma: vytvoří projektil kind=plasma',
+    sim.rockets.some((rocket) => rocket.kind === 'plasma'),
+    JSON.stringify(sim.rockets.map((rocket) => rocket.kind)),
+  );
+
+  sim.rockets.length = 0;
+  bot.hp = 100;
+  bot.body.z = human.body.z - 1.6;
+  fireOnce('gauntlet');
+  check('pěst: 50 dmg na blízko', bot.hp === 50, String(bot.hp));
+
+  // munice se skutečně odečítá (shotgun 1 náboj na výstřel)
+  bot.hp = 100;
+  bot.body.z = human.body.z - 3;
+  human.shotgunAmmo = 2;
+  fireOnce('shotgun', 'shotgunAmmo');
+  check('brokovnice: odečte náboj', human.shotgunAmmo === 1, String(human.shotgunAmmo));
+  check('brokovnice: po výstřelu zbývá zbraň', human.weapon === 'shotgun', human.weapon);
+}
+
 // ── 3) síťová část: místnost, pohyb, lidský frag ──────────────────────
 function client() {
   const socket = new WebSocket(WS_URL);

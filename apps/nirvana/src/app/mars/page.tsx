@@ -278,7 +278,7 @@ export default function MarsPage() {
                 <span className="arena-frags">
                   {l('frags')} {mpStats?.frags ?? 0}/{FRAG_LIMIT}
                 </span>
-                <span className="arena-weapon">{mpStats?.weapon === 'rocket' ? `ROCKET ×${mpStats?.ammo ?? 0}` : mpStats?.weapon === 'mg' ? `MG ×${mpStats?.ammo ?? 0}` : 'RAIL'}</span>
+                <span className="arena-weapon">{weaponLabel(mpStats?.weapon ?? 'rail', mpStats?.ammo ?? 0)}</span>
               </>
             )}
             <span className="arena-time">{mpStats?.timeLeft ?? MATCH_SECONDS}s</span>

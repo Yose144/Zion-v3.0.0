@@ -2909,3 +2909,27 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   Odhalil to až headless test (dva stejné řádky). Po každé větší editaci
   stránky zkontroluj `grep -c "arena-killfeed"` = 1.
 - **Bez změny protokolu.**
+
+### Multiplayer aréna — celá Q3 sada zbraní (protokol 36, 2026-11-11)
+
+- **Drátěné `WeaponId` je 0–6** (rail, rakety, MG, brokovnice, blesk,
+  plazma, pěst) — stejné pořadí jako `WEAPONS` a `MP_WEAPON_IDS`.
+  `WeaponName` (eventy) je rozšířený o všechny názvy; parser v protokolu
+  ořezává `weapon` na 0–6.
+- **Server má vlastní zásobníky** (`ammo`, `mgAmmo`, `shotgunAmmo`,
+  `lightningAmmo`, `plasmaAmmo`) a `ammoOf`/`spendAmmo`; rail a pěst jsou
+  nekonečné. Přepnutí zbraně bez munice se odmítne, po vystřílení padá
+  na rail.
+- **Střelba je stejná jako v sólu:** brokovnice 11 broků se spreadem,
+  blesk jeden paprsek (8 dmg / 50 ms), plazma projektil s `kind='plasma'`
+  (20+15 splash), pěst 50 na 2,2 m. Raketa nese `kind`, `explode` bere
+  spec podle něj — jedna fyzika pro oba projektily.
+- **Ammo pickup dobíjí všechny typy** (jako v sólu) a zůstane ležet, když
+  je plno všude.
+- **Snapshot** nese číslo zbraně, munici aktivní zbraně a `ammoByWeapon`
+  (rail/pěst = −1). Klient čte jen snapshot, sám munici nemění.
+- **Klient:** klávesy 1–6 + Q, dotykové ZB cyklí 7, viewmodel mapuje všech
+  7 zbraní, HUD používá `weaponLabel`.
+- **Deploy pořadí:** `deploy-nirvana-net.sh` **první**, pak appka (36).
+  Test `arena-bots.mjs` nově ověřuje brokovnici, blesk, plazmu a pěst
+  v čisté simulaci (bez sítě).

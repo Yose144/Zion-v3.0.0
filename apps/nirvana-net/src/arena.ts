@@ -74,6 +74,10 @@ export interface ArenaPlayer {
   ammo: number;
   /** Munice strojní pušky — vlastní zásobník, jinak by MG vystřílela rakety. */
   mgAmmo: number;
+  /** Munice nové Q3 sady (sólo i MP ji teď sdílí). */
+  shotgunAmmo: number;
+  lightningAmmo: number;
+  plasmaAmmo: number;
   alive: boolean;
   respawnAt: number;
   cooldownUntil: number;
@@ -90,6 +94,8 @@ export interface ArenaPlayer {
 export interface Rocket {
   id: number;
   owner: string;
+  /** `plasma` letí stejnou fyzikou jako raketa, jen slabší a rychlejší. */
+  kind: 'rocket' | 'plasma';
   x: number;
   y: number;
   z: number;
@@ -170,10 +176,22 @@ function humanCount(sim: ArenaSim): number {
   return count;
 }
 
-/** Munice dané zbraně (`rail` je nekonečný). */
+/** Munice dané zbraně (`rail` a pěst jsou nekonečné). */
 function ammoOf(player: ArenaPlayer, weapon: WeaponId): number {
-  if (weapon === 'rail') return Number.POSITIVE_INFINITY;
-  return weapon === 'mg' ? player.mgAmmo : player.ammo;
+  if (weapon === 'rail' || weapon === 'gauntlet') return Number.POSITIVE_INFINITY;
+  if (weapon === 'mg') return player.mgAmmo;
+  if (weapon === 'shotgun') return player.shotgunAmmo;
+  if (weapon === 'lightning') return player.lightningAmmo;
+  if (weapon === 'plasma') return player.plasmaAmmo;
+  return player.ammo;
+}
+
+function spendAmmo(player: ArenaPlayer, weapon: WeaponId): void {
+  if (weapon === 'mg') player.mgAmmo -= 1;
+  else if (weapon === 'shotgun') player.shotgunAmmo -= 1;
+  else if (weapon === 'lightning') player.lightningAmmo -= 1;
+  else if (weapon === 'plasma') player.plasmaAmmo -= 1;
+  else if (weapon === 'rocket') player.ammo -= 1;
 }
 
 function spawnPoint(sim: ArenaSim, usePlayerSpawn: boolean) {
@@ -217,6 +235,9 @@ export function addPlayer(
     weapon: 'rail',
     ammo: WEAPONS.rocket.ammo,
     mgAmmo: WEAPONS.mg.ammo,
+    shotgunAmmo: WEAPONS.shotgun.ammo,
+    lightningAmmo: WEAPONS.lightning.ammo,
+    plasmaAmmo: WEAPONS.plasma.ammo,
     alive: true,
     respawnAt: 0,
     cooldownUntil: 0,
@@ -257,6 +278,9 @@ export function ensureBots(sim: ArenaSim): void {
       weapon: 'rail',
       ammo: WEAPONS.rocket.ammo,
       mgAmmo: WEAPONS.mg.ammo,
+      shotgunAmmo: WEAPONS.shotgun.ammo,
+      lightningAmmo: WEAPONS.lightning.ammo,
+      plasmaAmmo: WEAPONS.plasma.ammo,
       alive: true,
       respawnAt: 0,
       cooldownUntil: 0,
@@ -371,6 +395,7 @@ function fireRocket(sim: ArenaSim, player: ArenaPlayer, now: number): void {
   sim.rockets.push({
     id: sim.nextRocketId++,
     owner: player.id,
+    kind: 'rocket',
     x: player.body.x + dir.x * 0.6,
     y: player.body.y + PLAYER.eye + dir.y * 0.6,
     z: player.body.z + dir.z * 0.6,
@@ -381,16 +406,66 @@ function fireRocket(sim: ArenaSim, player: ArenaPlayer, now: number): void {
   });
 }
 
+function fireShotgun(sim: ArenaSim, player: ArenaPlayer, now: number): void {
+  const base = aimVector(player.input.yaw, player.input.pitch);
+  const origin = { x: player.body.x, y: player.body.y + PLAYER.eye, z: player.body.z };
+  for (let pellet = 0; pellet < WEAPONS.shotgun.pellets; pellet += 1) {
+    const dir = spreadVector(base, WEAPONS.shotgun.spread);
+    const hit = pickTarget(origin, dir, sim.solids, liveTargets(sim, player.id), WEAPONS.shotgun.range);
+    if (hit && hit.id) {
+      const victim = sim.players.get(hit.id);
+      if (victim) hurt(sim, victim, WEAPONS.shotgun.damage, player.id, 'shotgun', now);
+    }
+  }
+}
+
+function fireLightning(sim: ArenaSim, player: ArenaPlayer, now: number): void {
+  const dir = aimVector(player.input.yaw, player.input.pitch);
+  const origin = { x: player.body.x, y: player.body.y + PLAYER.eye, z: player.body.z };
+  const hit = pickTarget(origin, dir, sim.solids, liveTargets(sim, player.id), WEAPONS.lightning.range);
+  if (hit && hit.id) {
+    const victim = sim.players.get(hit.id);
+    if (victim) hurt(sim, victim, WEAPONS.lightning.damage, player.id, 'lightning', now);
+  }
+}
+
+function fireGauntlet(sim: ArenaSim, player: ArenaPlayer, now: number): void {
+  const dir = aimVector(player.input.yaw, player.input.pitch);
+  const origin = { x: player.body.x, y: player.body.y + PLAYER.eye, z: player.body.z };
+  const hit = pickTarget(origin, dir, sim.solids, liveTargets(sim, player.id), WEAPONS.gauntlet.range);
+  if (hit && hit.id) {
+    const victim = sim.players.get(hit.id);
+    if (victim) hurt(sim, victim, WEAPONS.gauntlet.damage, player.id, 'gauntlet', now);
+  }
+}
+
+function firePlasma(sim: ArenaSim, player: ArenaPlayer, now: number): void {
+  const dir = aimVector(player.input.yaw, player.input.pitch);
+  sim.rockets.push({
+    id: sim.nextRocketId++,
+    owner: player.id,
+    kind: 'plasma',
+    x: player.body.x + dir.x * 0.6,
+    y: player.body.y + PLAYER.eye + dir.y * 0.6,
+    z: player.body.z + dir.z * 0.6,
+    vx: dir.x * WEAPONS.plasma.speed,
+    vy: dir.y * WEAPONS.plasma.speed,
+    vz: dir.z * WEAPONS.plasma.speed,
+    ttl: now + WEAPONS.plasma.ttlMs,
+  });
+}
+
 function explode(sim: ArenaSim, rocket: Rocket, x: number, y: number, z: number, directId: string | null, now: number): void {
-  const radius = WEAPONS.rocket.radius;
+  const spec = rocket.kind === 'plasma' ? WEAPONS.plasma : WEAPONS.rocket;
+  const radius = spec.radius;
   for (const player of sim.players.values()) {
     if (!player.alive) continue;
     const distance = Math.hypot(player.body.x - x, player.body.y + 0.9 - y, player.body.z - z);
     if (distance > radius) continue;
-    const base = player.id === directId ? WEAPONS.rocket.damage : WEAPONS.rocket.splash;
+    const base = player.id === directId ? spec.damage : spec.splash;
     const falloff = player.id === directId ? 1 : 1 - distance / radius;
     const amount = Math.round(base * Math.max(0.15, falloff));
-    hurt(sim, player, amount, rocket.owner, 'rocket', now);
+    hurt(sim, player, amount, rocket.owner, rocket.kind, now);
   }
 }
 
@@ -517,6 +592,9 @@ export function stepArena(sim: ArenaSim, dt: number, now: number): ArenaEvent[] 
       player.weapon = 'rail';
       player.ammo = WEAPONS.rocket.ammo;
       player.mgAmmo = WEAPONS.mg.ammo;
+      player.shotgunAmmo = WEAPONS.shotgun.ammo;
+      player.lightningAmmo = WEAPONS.lightning.ammo;
+      player.plasmaAmmo = WEAPONS.plasma.ammo;
       player.alive = true;
       player.respawnAt = 0;
       player.lastHitBy = null;
@@ -541,21 +619,22 @@ export function stepArena(sim: ArenaSim, dt: number, now: number): ArenaEvent[] 
       }
     }
     if (player.input.fire && now >= player.cooldownUntil) {
-      if (player.weapon === 'rail') {
-        player.cooldownUntil = now + WEAPONS.rail.cooldownMs;
-        fireRail(sim, player, now);
-      } else if (player.weapon === 'mg') {
-        player.mgAmmo -= 1;
-        player.cooldownUntil = now + WEAPONS.mg.cooldownMs;
-        fireMg(sim, player, now);
-        if (player.mgAmmo <= 0) player.weapon = 'rail';
-      } else if (player.ammo > 0) {
-        player.ammo -= 1;
-        player.cooldownUntil = now + WEAPONS.rocket.cooldownMs;
-        fireRocket(sim, player, now);
-        if (player.ammo <= 0) player.weapon = 'rail';
-      } else {
+      const weapon = player.weapon;
+      const spec = WEAPONS[weapon];
+      const ammo = ammoOf(player, weapon);
+      if (Number.isFinite(ammo) && ammo <= 0) {
         player.weapon = 'rail';
+      } else {
+        player.cooldownUntil = now + spec.cooldownMs;
+        if (Number.isFinite(ammo)) spendAmmo(player, weapon);
+        if (weapon === 'rail') fireRail(sim, player, now);
+        else if (weapon === 'mg') fireMg(sim, player, now);
+        else if (weapon === 'shotgun') fireShotgun(sim, player, now);
+        else if (weapon === 'lightning') fireLightning(sim, player, now);
+        else if (weapon === 'plasma') firePlasma(sim, player, now);
+        else if (weapon === 'gauntlet') fireGauntlet(sim, player, now);
+        else fireRocket(sim, player, now);
+        if (Number.isFinite(ammo) && ammoOf(player, weapon) <= 0) player.weapon = 'rail';
       }
     }
 
@@ -568,10 +647,19 @@ export function stepArena(sim: ArenaSim, dt: number, now: number): ArenaEvent[] 
       if (pickup.kind === 'health' && player.hp >= 100) continue;
       if (pickup.kind === 'armor' && player.armor >= 100) continue;
       if (pickup.kind === 'shard' && player.armor >= 100) continue;
-      if (pickup.kind === 'ammo' && player.mgAmmo >= WEAPONS.mg.ammo) continue;
+
       if (pickup.kind === 'health') player.hp = Math.min(100, player.hp + 25);
       else if (pickup.kind === 'ammo') {
+        const before =
+          player.ammo + player.mgAmmo + player.shotgunAmmo + player.lightningAmmo + player.plasmaAmmo;
+        player.ammo = Math.min(WEAPONS.rocket.ammo, player.ammo + 5);
         player.mgAmmo = Math.min(WEAPONS.mg.ammo, player.mgAmmo + MG_AMMO_PICKUP);
+        player.shotgunAmmo = Math.min(WEAPONS.shotgun.ammo, player.shotgunAmmo + WEAPONS.shotgun.pickup);
+        player.lightningAmmo = Math.min(WEAPONS.lightning.ammo, player.lightningAmmo + WEAPONS.lightning.pickup);
+        player.plasmaAmmo = Math.min(WEAPONS.plasma.ammo, player.plasmaAmmo + WEAPONS.plasma.pickup);
+        const after =
+          player.ammo + player.mgAmmo + player.shotgunAmmo + player.lightningAmmo + player.plasmaAmmo;
+        if (after === before) continue;
       } else if (pickup.kind === 'shard') player.armor = Math.min(100, player.armor + 5);
       else player.armor = Math.min(100, player.armor + 50);
       sim.pickupReadyAt.set(pickup.id, now + pickup.respawn * 1000);
@@ -627,6 +715,9 @@ function restartMatch(sim: ArenaSim, now: number): void {
     player.weapon = 'rail';
     player.ammo = WEAPONS.rocket.ammo;
     player.mgAmmo = WEAPONS.mg.ammo;
+    player.shotgunAmmo = WEAPONS.shotgun.ammo;
+    player.lightningAmmo = WEAPONS.lightning.ammo;
+    player.plasmaAmmo = WEAPONS.plasma.ammo;
     player.cooldownUntil = 0;
     placeBody(player, spawnPoint(sim, false));
   }
@@ -646,14 +737,27 @@ export interface ArenaSnapshotPlayer {
   armor: number;
   frags: number;
   deaths: number;
-  weapon: 0 | 1 | 2;
-  /** Munice raketometu a strojní pušky (rail je nekonečný). */
+  weapon: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  /** Munice aktivní zbraně (rail/pěst = −1 = nekonečno). */
   ammo: number;
   mgAmmo: number;
+  /** Munice všech zbraní pro HUD. */
+  ammoByWeapon: Record<number, number>;
   alive: boolean;
   /** Serverový bot (Q3 sestava) — tabule ho odliší. */
   isBot?: boolean;
 }
+
+/** Pořadí zbraní na drátě — stejné jako `WeaponId` v protokolu. */
+const WEAPON_NUM: Record<WeaponId, 0 | 1 | 2 | 3 | 4 | 5 | 6> = {
+  rail: 0,
+  rocket: 1,
+  mg: 2,
+  shotgun: 3,
+  lightning: 4,
+  plasma: 5,
+  gauntlet: 6,
+};
 
 export function arenaSnapshot(sim: ArenaSim, now: number) {
   const players: ArenaSnapshotPlayer[] = [...sim.players.values()].map((player) => ({
@@ -669,9 +773,18 @@ export function arenaSnapshot(sim: ArenaSim, now: number) {
     armor: player.armor,
     frags: player.frags,
     deaths: player.deaths,
-    weapon: player.weapon === 'rocket' ? 1 : player.weapon === 'mg' ? 2 : 0,
-    ammo: player.weapon === 'mg' ? player.mgAmmo : player.ammo,
+    weapon: WEAPON_NUM[player.weapon] ?? 0,
+    ammo: Number.isFinite(ammoOf(player, player.weapon)) ? ammoOf(player, player.weapon) : -1,
     mgAmmo: player.mgAmmo,
+    ammoByWeapon: {
+      0: -1,
+      1: player.ammo,
+      2: player.mgAmmo,
+      3: player.shotgunAmmo,
+      4: player.lightningAmmo,
+      5: player.plasmaAmmo,
+      6: -1,
+    },
     alive: player.alive,
     isBot: player.isBot === true,
   }));

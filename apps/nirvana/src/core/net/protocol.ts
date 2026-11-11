@@ -86,7 +86,7 @@ const asItemId = (value: unknown): ItemId | null =>
  *      zpráv se nemění, ale starý server by posílal HP ze 100 a klient by
  *      kreslil jiné bary — verze se musí potkat.
  */
-export const PROTO_VERSION = 35;
+export const PROTO_VERSION = 36;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -130,10 +130,13 @@ export type RoomState = 'waiting' | 'running' | 'ended';
  * `humans` = čeká se na lidi (turnaj, hraní s pozvaným).
  */
 export type RoomMode = 'bots' | 'humans';
-/** 0 = rail, 1 = rakety, 2 = strojní puška (Q3 sestava). */
-export type WeaponId = 0 | 1 | 2;
+/**
+ * 0 = rail, 1 = rakety, 2 = MG, 3 = brokovnice, 4 = blesk, 5 = plazma,
+ * 6 = pěst (Q3 sada). Stejné pořadí jako `WEAPONS` v `core/arena`.
+ */
+export type WeaponId = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 /** Jméno zbraně do eventů (čitelnost > bajty). */
-export type WeaponName = 'rail' | 'rocket' | 'mg';
+export type WeaponName = 'rail' | 'rocket' | 'mg' | 'shotgun' | 'lightning' | 'plasma' | 'gauntlet';
 
 /** Veřejná identita hráče — jen tohle smí do hry. Nikdy e-mail, role, adresy. */
 export interface NetIdentity {
@@ -207,6 +210,8 @@ export interface ArenaPlayerState {
   ammo?: number;
   /** Munice strojní pušky (vlastní zásobník vedle raket). */
   mgAmmo?: number;
+  /** Munice všech zbraní pro HUD (rail/pěst = −1 = nekonečno). */
+  ammoByWeapon?: Record<number, number>;
 }
 
 /** Stav vozidla na Venuši. */
@@ -777,7 +782,7 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         pitch: num(message.pitch, -Math.PI / 2, Math.PI / 2),
         jump: message.jump === true,
         fire: message.fire === true,
-        weapon: message.weapon === 1 ? 1 : message.weapon === 2 ? 2 : 0,
+        weapon: Math.round(num(message.weapon, 0, 6)) as WeaponId,
         block: message.block === true,
         attack: message.attack === true,
         castSlot:
