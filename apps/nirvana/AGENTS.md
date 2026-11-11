@@ -3089,3 +3089,20 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Test** `test/arena-maps.mjs` teď navíc ověřuje: každý pickup je
   dosažitelný po mřížce a **bot se na vyvýšené místo opravdu vyškrábe**
   (mars platforma, q3dm3 most, q3dm6 věž) — ne jen že cesta existuje.
+
+### Navigace bota — tři pravidla, která se nesmí vrátit (2026-11-11)
+
+- **Náhoda jen přes `BotOptions.rng`.** `Math.random()` v `bot.ts` dělal
+  z každého běhu testu jiný výsledek (padalo ~1/10). Hra i server dál
+  používají `Math.random` (default), test si předá konstantní generátor.
+  Když přidáš do mozku další náhodu, ber ji z `opt.rng()`.
+- **Skáče se jen v dosahu skoku.** `mustClimb` musí být
+  `climbDelta > 0,35 && climbDelta <= NAV_CLIMB + 0,15` (dosah skoku
+  ~1,14 m). „Je to výš?" bez horní meze = bot poskakuje u 2m zdi
+  (apex 1,29 m) a na plošinu nikdy nevyjde.
+- **Waypoint se posouvá při 0,6 m a `pathMode` má přednost před
+  `approach` i strafe.** Při 1,1/1,2 m vznikala mrtvá zóna (bot stál a
+  strafoval) a strafe 0,25 během přesunu svezl bota z 9 m širokého
+  schodiště na jeho bok (x ≈ hrana + rádius). Strafuje se **až po dojití
+  na místo** — bojový tanec zůstává, přesun je přímý.
+
