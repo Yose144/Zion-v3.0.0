@@ -47,6 +47,8 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
   const price = t('common.price', { price: product.priceCzk, symbol: t('common.kcSymbol') });
   /** Svíčkové zboží = detail ukazuje i bezpečnostní blok (stejný text jako pokladna). */
   const needsFireSafety = requiresFireConsent([{ externalId: product.externalId }]);
+  const posterSrc = product.poster ?? product.gallery?.[1]?.src ?? product.image;
+  const posterShot = product.gallery?.find((g) => g.src === posterSrc);
 
   return (
     <div className="space-y-8">
@@ -248,8 +250,8 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
             <div className="pt-6">
               <Lantern3D
                 modelUrl={product.model3d}
-                poster={product.gallery?.[1]?.src ?? product.image}
-                posterAlt={product.gallery?.[1] ? pick(product.gallery[1].alt) : pick(product.title)}
+                poster={posterSrc}
+                posterAlt={posterShot ? pick(posterShot.alt) : pick(product.title)}
               />
             </div>
           )}

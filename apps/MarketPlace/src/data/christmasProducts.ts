@@ -51,6 +51,8 @@ export interface XmasProduct {
   heroWide?: string;
   /** Cesta k 3D modelu (glb) — slot na detailu; když soubor chybí, ukáže se „připravujeme" */
   model3d?: string;
+  /** Obrázek na pozadí 3D slotu (obvykle gallery[1]); když chybí, vezme se gallery[1] ?? image */
+  poster?: string;
   /**
    * Jak výrobek složit (jen u fyzických kusů). Bezpečnostní blok se
    * nepíše sem — ten drží `lib/fire-safety.ts`, aby pokladna, detail
@@ -629,6 +631,7 @@ export const christmasProducts: XmasProduct[] = [
     hero: '/vanoce/home/03_lampion_tesar_deti_v4.webp?v=engine-v1',
     heroWide: '/vanoce/hero/lampion-wide.webp?v=engine-v1',
     model3d: '/models/lumi-2.glb',
+    poster: '/vanoce/galerie/lampion/03_vecerni_svetlo_v4.webp?v=engine-v1',
     guide: {
       title: { cs: 'Složení lampionu — šest kroků', en: 'Assembling the lantern — six steps' },
       intro: {
