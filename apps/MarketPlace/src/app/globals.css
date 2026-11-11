@@ -982,6 +982,44 @@ body.zion-shell {
   }
 }
 
+/* ── Časová osa ZION TerraNova (2008 → 2040) ────────────────────────────
+   Ilustrace je široká 3 : 1 a devět popisků je vypálených v ní. Na telefonu
+   by při zmenšení na šířku displeje přestaly být čitelné, proto se posouvá
+   vodorovně **uvnitř této sekce**; stránka jako celek zůstává bez
+   vodorovného posunu. Oblast je fokusovatelná → šipky/PageDown posouvají
+   i z klávesnice. */
+.zion-timeline-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  border-radius: 1rem;
+  box-shadow:
+    0 0 0 1px rgba(252, 209, 22, 0.25),
+    0 20px 60px -24px rgba(0, 0, 0, 0.8);
+}
+
+.zion-timeline-scroll:focus-visible {
+  outline: 2px solid #fcd116;
+  outline-offset: 3px;
+}
+
+.zion-timeline-scroll img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+@media (max-width: 767px) {
+  /* Pevná šířka (ne 100 %) — jinak by se devět milníků zmenšilo pod
+     čitelnou mez; zbytek šířky se odscrolluje prstem/šipkami. */
+  .zion-timeline-scroll img {
+    width: 70rem;
+    max-width: none;
+  }
+}
+
 /* HIRAN AI banner hero — same clean full-bleed pattern as kralovstvi;
    the art carries its own title band ("HIRAN AI · AI pro vývojáře"),
    actions live in a strip below. */

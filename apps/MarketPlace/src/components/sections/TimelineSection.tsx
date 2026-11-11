@@ -23,7 +23,7 @@ export default function TimelineSection() {
   const milestones = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9'];
 
   return (
-    <section aria-labelledby="zion-timeline-heading" className="space-y-3">
+    <section aria-labelledby="zion-timeline-heading" className="mx-auto w-full max-w-[70rem] space-y-3">
       <h2 id="zion-timeline-heading" className="zion-kicker">
         {t('timeline.heading')}
       </h2>
@@ -35,7 +35,7 @@ export default function TimelineSection() {
         tabIndex={0}
       >
         <img
-          src="/zion-timeline-2008-2040.webp"
+          src="/images/design-v1/zion-timeline-2008-2040.webp"
           alt={t('timeline.alt')}
           width={2172}
           height={724}
