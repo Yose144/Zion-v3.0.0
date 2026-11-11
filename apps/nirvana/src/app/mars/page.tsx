@@ -241,8 +241,7 @@ export default function MarsPage() {
         score: outcome.score,
         nickname: pickNickname(),
         metrics: {
-          // čas zápasu není ve výsledku — bere se z konstanty zápasu (180 s)
-          seconds: 180,
+          seconds: outcome.elapsedSeconds,
           completed: outcome.reason === 'frags',
           objectives: outcome.frags,
           objectivesTotal: 10,

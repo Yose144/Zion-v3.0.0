@@ -320,8 +320,7 @@ export default function EarthPage() {
       score,
       nickname: pickNickname(),
       metrics: {
-        // zápas nemá ve snapshotu čas konce — bere se typická délka zápasu
-        seconds: 240,
+        seconds: Math.max(1, stats.time),
         completed: won,
         objectives: stats.kills,
         objectivesTotal: Math.max(1, stats.kills + (stats.deaths ?? 0)),

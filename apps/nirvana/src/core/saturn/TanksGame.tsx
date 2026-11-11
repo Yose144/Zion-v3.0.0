@@ -327,8 +327,9 @@ export function TanksGame({ onExit }: { onExit: () => void }) {
       score,
       nickname: pickNickname(),
       metrics: {
-        // tankový duel nemá čas ve stavu — bere se počet výstřelů jako stopa
-        seconds: 40 + info.shots * 4,
+        // v online režimu klient sim neposouvá, takže `elapsed` zůstane 0 —
+        // pak se čas odhadne z výstřelů (lepší než jedenáct vteřin)
+        seconds: info.elapsed >= 5 ? Math.round(info.elapsed) : 40 + info.shots * 4,
         completed: info.wins.player > info.wins.bot,
         objectives: info.wins.player,
         objectivesTotal: Math.max(1, info.wins.player + info.wins.bot),

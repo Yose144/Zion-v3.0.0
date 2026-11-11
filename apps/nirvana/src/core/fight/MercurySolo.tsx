@@ -77,6 +77,8 @@ export interface DuelStats {
 export interface SoloFinish {
   mode: FightMode;
   winner: 'self' | 'foe' | null;
+  /** Odehraný čas zápasu v sekundách (simulační hodiny, ne Date.now). */
+  elapsed: number;
   selfWins: number;
   foeWins: number;
   scoreSelf: number;
@@ -225,6 +227,7 @@ export function MercurySolo({
           onFinish({
             mode: match.mode,
             winner,
+            elapsed: match.elapsed,
             selfWins: match.a.wins,
             foeWins: match.b.wins,
             scoreSelf: match.a.score,

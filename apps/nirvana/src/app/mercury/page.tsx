@@ -148,6 +148,13 @@ export default function MercuryPage() {
   const [mpStats, setMpStats] = useState<DuelMpStats>(EMPTY_MP);
   const [notice, setNotice] = useState<string | null>(null);
   const recorded = useRef(false);
+  /**
+   * Online duel nemá v protokolu hodiny (33/34 nese jen fázi a kola), takže
+   * se čas měří **na klientovi** od chvíle, kdy se objevil první stav.
+   * Není to simulační čas serveru, ale je to reálné trvání zápasu — lepší
+   * než dřívější odhad `30 + kola × 20`.
+   */
+  const onlineStart = useRef(0);
   /** Plovoucí čísla a kamera pro 2D overlay nad plátnem. */
   const fx = useRef<DuelFloater[]>([]);
   const cameraRef = useRef<THREE.Camera | null>(null);
@@ -193,8 +200,7 @@ export default function MercuryPage() {
         nickname: pickNickname(you?.name || 'hrac'),
         bonus: result.winner === 'self' ? 2 : 0,
         metrics: {
-          // souboj nemá výsledný čas — bere se počet kol jako „objektivy"
-          seconds: 30 + (result.selfWins + result.foeWins) * 20,
+          seconds: Math.max(1, Math.round(result.elapsed)),
           completed: result.winner === 'self',
           objectives: result.selfWins,
           objectivesTotal: Math.max(1, result.selfWins + result.foeWins),
@@ -206,12 +212,19 @@ export default function MercuryPage() {
     [cs, l, you?.name],
   );
 
+  // hodiny online duelu: start při prvním stavu, reset při novém zápase
+  useEffect(() => {
+    if (source !== 'online' || watch) return;
+    if (mpStats.state && !onlineStart.current) onlineStart.current = Date.now();
+  }, [source, watch, mpStats.state]);
+
   // výsledek online duelu — zapíše se NA JEDNOU po `duel_end`
   useEffect(() => {
     if (watch) return;
     if (source !== 'online' || phase !== 'playing') return;
     if (mpStats.matchWinner === null) {
       recorded.current = false;
+      onlineStart.current = 0;
       return;
     }
     if (recorded.current) return;
@@ -230,7 +243,9 @@ export default function MercuryPage() {
       nickname: pickNickname(you?.name || 'hrac'),
       bonus: won ? 2 : 0,
       metrics: {
-        seconds: 30 + (mpStats.selfWins + mpStats.foeWins) * 20,
+        seconds: onlineStart.current
+          ? Math.max(1, Math.round((Date.now() - onlineStart.current) / 1000))
+          : 30 + (mpStats.selfWins + mpStats.foeWins) * 20,
         completed: won,
         objectives: mpStats.selfWins,
         objectivesTotal: Math.max(1, mpStats.selfWins + mpStats.foeWins),

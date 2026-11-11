@@ -51,6 +51,8 @@ export interface MobaStats {
   playerMana: number;
   playerMaxMana: number;
   playerLevel: number;
+  /** Odehraný čas zápasu v sekundách (ze snapshotu, simulační hodiny). */
+  time: number;
   /** Id avataru hráče — HUD podle něj kreslí portrét. */
   playerHeroId: number;
   xp: number;
@@ -143,6 +145,7 @@ export function statsFromSnapshot(
     recallIn: you?.recallIn ?? 0,
     battleSpell: you?.battleSpell ?? 'flicker',
     playerLevel: you?.level ?? 1,
+    time: Math.max(0, Math.round(snapshot.time ?? 0)),
     playerHeroId: you?.heroId ?? 0,
     xp: you?.xp ?? 0,
     xpNeed: you?.xpNeed ?? 1,

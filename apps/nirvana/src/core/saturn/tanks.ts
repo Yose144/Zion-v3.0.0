@@ -100,6 +100,8 @@ export interface TanksState {
   explosions: Explosion[];
   /** Sim čas v ms — buffery a animace se počítají z něj, ne z `Date.now()`. */
   now: number;
+  /** Odehraný čas zápasu v sekundách (součet kroků, ne hodiny prohlížeče). */
+  elapsed: number;
   /** Odpočet do akce, kterou řídí sim (bot, předání tahu). */
   waitMs: number;
   over: TankSide | null;
@@ -220,6 +222,7 @@ export function createTanks(
     shot: null,
     explosions: [],
     now: 0,
+    elapsed: 0,
     waitMs: 0,
     over: null,
     wins: { player: 0, bot: 0 },
@@ -391,6 +394,7 @@ function beginTurn(state: TanksState) {
 export function stepTanks(state: TanksState, dt: number): void {
   const step = Math.min(Math.max(dt, 0), 0.05);
   state.now += step * 1000;
+  state.elapsed += step;
 
   for (const ex of state.explosions) ex.age += step;
   for (let i = state.explosions.length - 1; i >= 0; i -= 1) {
@@ -513,6 +517,8 @@ export interface TanksInfo {
   lastDamage: number | null;
   wins: { player: number; bot: number };
   shots: number;
+  /** Odehraný čas zápasu v sekundách. */
+  elapsed: number;
 }
 
 export function tanksInfo(state: TanksState): TanksInfo {
@@ -528,5 +534,6 @@ export function tanksInfo(state: TanksState): TanksInfo {
     lastDamage: state.lastHit ? state.lastHit.damage : null,
     wins: { ...state.wins },
     shots: state.shotsFired,
+    elapsed: Math.round(state.elapsed * 10) / 10,
   };
 }

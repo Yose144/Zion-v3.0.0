@@ -3336,3 +3336,24 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **E2E:** `e2e/fleet.mjs` má novou sekci „přistání = dohraný běh"
   (profil, XP, `plays.fleet`, dharma validace); `e2e/park-fair.mjs`
   prošel beze změny.
+
+## Reálný čas ve všech hrách (2026-11-12)
+
+- **Dharma pilíře Satya a Kāla potřebují skutečný čas.** Do 12. 11. ho
+  aréna, tanky, Merkur a MOBA jen **odhadovaly** („180 s", „40 + výstřely",
+  „240 s"). Odhady nejsou hra, ale konstanta — a validátor podle nich
+  chválil i běh, který se nestal.
+- **Aréna:** `ArenaResult.elapsedSeconds = MATCH_SECONDS − timeLeft`
+  (timeLeft se počítá každý snímek, takže i konec frag limitem má reálný čas).
+- **Tanky:** `TanksState.elapsed` se sčítá v `stepTanks` (simulační hodiny,
+  ne `Date.now`), `TanksInfo.elapsed` ho nese do HUD i do metrik. V online
+  režimu klient sim neposouvá (`elapsed` zůstane 0) → fallback na odhad
+  z výstřelů, jinak by online duel hlásil 1 s.
+- **Merkur:** `RagdollMatch.elapsed` existoval, ale `SoloFinish` ho nenesl;
+  teď ano. Online duel hodiny v protokolu nemá, takže se měří **na klientovi**
+  od prvního stavu (`onlineStart` ref) — je to reálné trvání, ne odhad.
+- **MOBA:** snapshot nese `time` (simulační sekundy) → `MobaStats.time`.
+  Platí pro sólo i online, protože obojí čte stejný snapshot.
+- **Pravidlo:** nová hra posílá `seconds` ze **simulačních** hodin, ne
+  z `Date.now()`. Skutečné hodiny nafouknou běh na 15 fps a tabule by
+  nebyla srovnatelná (stejná past jako u Venuše).

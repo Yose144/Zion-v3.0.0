@@ -100,6 +100,8 @@ export interface ArenaResult {
   deaths: number;
   score: number;
   reason: 'frags' | 'time';
+  /** Odehraný čas zápasu v sekundách (pro dharma validátor, ne pro HUD). */
+  elapsedSeconds: number;
 }
 
 /** Zbraně bereme ze **sdíleného modulu** (`weapons.ts`) — solo a server musí
@@ -725,6 +727,8 @@ export function MarsArena({
       deaths: deaths.current,
       score: Math.max(0, frags.current * 100 - deaths.current * 25),
       reason,
+      // `timeLeft` se počítá každý snímek; při frag limitu je to zbytek času
+      elapsedSeconds: Math.max(1, Math.round(MATCH_SECONDS - timeLeft.current)),
     });
   }
 
