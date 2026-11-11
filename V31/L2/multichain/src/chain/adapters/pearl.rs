@@ -221,7 +221,7 @@ pub fn pearl_address_from_key(output_key: &[u8; 32]) -> MultichainResult<Address
 /// the 32-byte witness program (the tweaked output key) from the script.
 pub fn pearl_taproot_output_key(internal: &XOnlyPublicKey) -> [u8; 32] {
     let secp = Secp256k1::new();
-    let internal = bitcoin::key::XOnlyPublicKey::from(*internal);
+    let internal = *internal;
     let addr = bitcoin::Address::p2tr(&secp, internal, None, bitcoin::Network::Bitcoin);
     let script = addr.script_pubkey();
     // P2TR scriptPubKey = OP_1 (0x51) <0x20> <32-byte output key>.

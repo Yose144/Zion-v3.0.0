@@ -545,7 +545,7 @@ impl MultichainService {
         let mut dex = self.dex.write().await;
         let pool = dex
             .pools_mut()
-            .into_iter()
+            .iter_mut()
             .find(|p| p.id == pool_id)
             .ok_or_else(|| MultichainError::Validation(format!("pool id {} not found", pool_id)))?;
 

@@ -181,6 +181,7 @@ impl Default for SolvencyConfig {
 
 /// DEX execution configuration.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct DexConfig {
     /// Allow swaps to execute against the in-memory `DexRouter` AMM (virtual
     /// reserves, custodial ledger settlement only). Default `false`: the
@@ -191,13 +192,6 @@ pub struct DexConfig {
     pub inmemory_amm: bool,
 }
 
-impl Default for DexConfig {
-    fn default() -> Self {
-        Self {
-            inmemory_amm: false,
-        }
-    }
-}
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct ServerConfig {

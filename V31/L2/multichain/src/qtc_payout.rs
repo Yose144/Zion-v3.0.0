@@ -202,9 +202,7 @@ fn plan_entry(p: &DrainEntry, config: &QtcPayoutConfig) -> Option<(String, u128)
     let gross_planks = if native {
         p.amount_flowers as u128
     } else {
-        (p.amount_flowers as u128)
-            .checked_mul(config.planks_per_flower_num)
-            .unwrap_or(u128::MAX)
+        (p.amount_flowers as u128).saturating_mul(config.planks_per_flower_num)
             / config.planks_per_flower_den
     };
     Some((id, gross_planks))

@@ -236,6 +236,9 @@ fn derive_bundle(mnemonic: &str) -> Result<String, String> {
         .map_err(|e| e.to_string())?;
 
     // solana — SLIP-0010 m/44'/501'/0'/0' → ed25519 → base58 pubkey.
+    // `0 | HARD` je záměrně explicitní: v auditu cesty je vidět index 0,
+    // i když je číselně totéž jako `HARD`.
+    #[allow(clippy::identity_op)]
     let sol_seed = slip10_ed25519(&seed, &[44 | HARD, 501 | HARD, 0 | HARD, 0 | HARD]);
     let sol_sk = EdSigningKey::from_bytes(&sol_seed);
     let sol_pk = sol_sk.verifying_key().to_bytes();
@@ -333,6 +336,8 @@ fn sign_message(
                 .to_vec())
         }
         "solana" => {
+            // Index 0 záměrně explicitně (viz výše) — audit cesty.
+            #[allow(clippy::identity_op)]
             let s = slip10_ed25519(&seed, &[44 | HARD, 501 | HARD, 0 | HARD, index | HARD]);
             Ok(EdSigner::sign(&EdSigningKey::from_bytes(&s), msg)
                 .to_bytes()

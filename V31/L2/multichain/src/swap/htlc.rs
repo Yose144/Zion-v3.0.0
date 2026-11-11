@@ -1172,13 +1172,13 @@ pub(crate) fn decrypt_preimage_at_rest(stored: &str) -> String {
         let mut parts = rest.splitn(2, ':');
         match (parts.next(), parts.next()) {
             (Some(n), Some(c)) => aead_decrypt(&env_key, n, c)
-                .map(|pt| hex::encode(pt))
+                .map(hex::encode)
                 .unwrap_or_else(|| stored.to_string()),
             _ => stored.to_string(),
         }
     } else if let Some(enc_hex) = stored.strip_prefix(ENC_XOR_PREFIX) {
         xor_decrypt(&env_key, enc_hex)
-            .map(|pt| hex::encode(pt))
+            .map(hex::encode)
             .unwrap_or_else(|| stored.to_string())
     } else {
         stored.to_string()
@@ -1251,7 +1251,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(record.state, SwapState::Claimed);
-        assert_eq!(record.preimage_hex, Some(hex::encode(&secret)));
+        assert_eq!(record.preimage_hex, Some(hex::encode(secret)));
     }
 
     #[tokio::test]

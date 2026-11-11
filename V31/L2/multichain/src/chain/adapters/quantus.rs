@@ -185,7 +185,7 @@ fn mortal_era(period: u64, current: u64) -> [u8; 2] {
     let quantize = (period >> 12).max(1);
     let phase = (current % period) / quantize * quantize;
     let encoded =
-        ((period.trailing_zeros() as u16 - 1) | ((phase / quantize) as u16) << 4).min(0xffff);
+        (period.trailing_zeros() as u16 - 1) | ((phase / quantize) as u16) << 4;
     encoded.to_le_bytes()
 }
 

@@ -82,7 +82,7 @@ impl Policy {
             .and_then(|s| s.to_str())
             .unwrap_or(first);
 
-        if !SHELL_ALLOWLIST.iter().any(|a| *a == base) {
+        if !SHELL_ALLOWLIST.contains(&base) {
             bail!(
                 "shell command `{base}` not in allowlist (allowed: {})",
                 SHELL_ALLOWLIST.join(", ")

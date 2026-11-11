@@ -220,7 +220,7 @@ mod tests {
         "#;
         let config = WarpConfig::load_from_str(toml_str).unwrap();
         assert_eq!(config.chains.len(), 1);
-        assert_eq!(config.chains[0].enabled, false);
+        assert!(!config.chains[0].enabled);
         assert_eq!(
             config.chains[0].disabled_reason,
             Some("BCS not implemented".to_string())

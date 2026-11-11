@@ -226,7 +226,7 @@ fn test_disbursement_lifecycle() -> IssobellaResult<()> {
 
 #[test]
 fn test_paper_anchor_lifecycle() -> IssobellaResult<()> {
-    use zion_issobella::db::{AnchorBatchRecord, PaperRecord};
+    use zion_issobella::db::PaperRecord;
 
     let db = in_memory_db()?;
     let hash = "aa".repeat(32);

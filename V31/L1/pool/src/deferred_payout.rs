@@ -59,7 +59,7 @@ pub fn persist_deferred_queue(
         f.flush()?;
         f.sync_all()?;
     }
-    std::fs::rename(&tmp, &path)?;
+    std::fs::rename(&tmp, path)?;
     #[cfg(unix)]
     {
         let parent = path

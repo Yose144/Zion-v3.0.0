@@ -802,9 +802,9 @@ mod tests {
     #[tokio::test]
     async fn test_pull_worker_registers_with_its_own_id_and_survives_reregistration() {
         let state = make_state();
-        register_worker(State(state.clone()), Json(pull_worker("miner-1")))
+        let _ = register_worker(State(state.clone()), Json(pull_worker("miner-1")))
             .await
-            .unwrap();
+            .expect("registrace");
 
         {
             let sched = state.scheduler.lock().unwrap();
@@ -814,9 +814,9 @@ mod tests {
         }
 
         // Restart mineru = druhá registrace; id i historie musí zůstat.
-        register_worker(State(state.clone()), Json(pull_worker("miner-1")))
+        let _ = register_worker(State(state.clone()), Json(pull_worker("miner-1")))
             .await
-            .unwrap();
+            .expect("re-registrace");
         let sched = state.scheduler.lock().unwrap();
         assert!(sched.worker("miner-1").is_some());
         assert_eq!(
@@ -829,9 +829,9 @@ mod tests {
     #[tokio::test]
     async fn test_claim_job_returns_job_then_204_then_404() {
         let state = make_state();
-        register_worker(State(state.clone()), Json(pull_worker("miner-1")))
+        let _ = register_worker(State(state.clone()), Json(pull_worker("miner-1")))
             .await
-            .unwrap();
+            .expect("registrace");
 
         let submitted = submit_job(
             State(state.clone()),

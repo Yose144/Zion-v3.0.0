@@ -156,7 +156,7 @@ impl Bridge {
                     if processed.contains(&event.tx_hash) {
                         continue;
                     }
-                    processed.insert(event.tx_hash.clone());
+                    processed.insert(event.tx_hash);
                     return Some(event.clone());
                 }
             }

@@ -135,13 +135,10 @@ impl SwapExecutor {
     pub async fn quote(&self, from: &Asset, to: &Asset, amount: Amount) -> MultichainResult<Quote> {
         {
             let router = self.router.read().await;
-            match router.quote_multi(from, to, amount, 1, 4) {
-                Ok(mut quotes) => {
-                    if let Some(q) = quotes.pop() {
-                        return Ok(q);
-                    }
+            if let Ok(mut quotes) = router.quote_multi(from, to, amount, 1, 4) {
+                if let Some(q) = quotes.pop() {
+                    return Ok(q);
                 }
-                Err(_) => {}
             }
         }
 
@@ -1355,7 +1352,7 @@ mod tests {
 
         // HTLC secret + hash.
         let secret = [0xABu8; 32];
-        let hashlock = Hash::new(Sha256::digest(&secret).into());
+        let hashlock = Hash::new(Sha256::digest(secret).into());
         let far_future = chrono::Utc::now().timestamp() as u64 + 3_600;
 
         let req = HtlcSwapRequest {

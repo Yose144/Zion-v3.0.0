@@ -130,6 +130,10 @@ async fn intent_lifecycle_creates_bids_settles_and_executes() {
         l1_rpc_url: String::new(),
         ..Default::default()
     };
+    // In-memory AMM je dev/test engine; default `false` je produkční hardening
+    // (swapy musí jít přes on-chain settlement). Testy intent lifecycle
+    // jedou celý řetěz v paměti, takže si ho zapínají.
+    config.dex.inmemory_amm = true;
     config.database.path = db_path.to_string_lossy().into();
 
     let service = MultichainService::new_with_adapters(config, ChainAdapterRegistry::new())
@@ -212,6 +216,10 @@ async fn intent_engine_loads_from_db_on_restart() {
         l1_rpc_url: String::new(),
         ..Default::default()
     };
+    // In-memory AMM je dev/test engine; default `false` je produkční hardening
+    // (swapy musí jít přes on-chain settlement). Testy intent lifecycle
+    // jedou celý řetěz v paměti, takže si ho zapínají.
+    config.dex.inmemory_amm = true;
     config.database.path = db_path.to_string_lossy().into();
 
     let zion = Asset::native(ChainId::ZionL1, "ZION", 6, "ZION");
@@ -302,6 +310,10 @@ async fn cross_chain_intent_executes_bridge_hop() {
         l1_rpc_url: String::new(),
         ..Default::default()
     };
+    // In-memory AMM je dev/test engine; default `false` je produkční hardening
+    // (swapy musí jít přes on-chain settlement). Testy intent lifecycle
+    // jedou celý řetěz v paměti, takže si ho zapínají.
+    config.dex.inmemory_amm = true;
     config.database.path = db_path.to_string_lossy().into();
 
     let zion_events = Arc::new(Mutex::new(vec![]));
@@ -404,6 +416,10 @@ async fn intent_broadcast_collects_and_submits_solver_bids() {
         l1_rpc_url: String::new(),
         ..Default::default()
     };
+    // In-memory AMM je dev/test engine; default `false` je produkční hardening
+    // (swapy musí jít přes on-chain settlement). Testy intent lifecycle
+    // jedou celý řetěz v paměti, takže si ho zapínají.
+    config.dex.inmemory_amm = true;
     config.database.path = db_path.to_string_lossy().into();
 
     let service = MultichainService::new_with_adapters(config, ChainAdapterRegistry::new())
@@ -499,6 +515,10 @@ async fn e2e_deposit_swap_withdraw() {
         l1_rpc_url: String::new(),
         ..Default::default()
     };
+    // In-memory AMM je dev/test engine; default `false` je produkční hardening
+    // (swapy musí jít přes on-chain settlement). Testy intent lifecycle
+    // jedou celý řetěz v paměti, takže si ho zapínají.
+    config.dex.inmemory_amm = true;
     config.database.path = db_path.to_string_lossy().into();
 
     // One shared event queue for the ZionL1 mock adapter.

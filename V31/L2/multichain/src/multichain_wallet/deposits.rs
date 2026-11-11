@@ -224,6 +224,28 @@ fn group_by_chain(addresses: Vec<WalletAddress>) -> HashMap<ChainId, Vec<Address
     map
 }
 
+fn native_asset_for_chain(chain: ChainId, address: &WalletAddress) -> Asset {
+    let ticker: String = match chain {
+        ChainId::Bitcoin => "BTC".to_string(),
+        ChainId::ZionL1 => "ZION".to_string(),
+        ChainId::Ethereum => "ETH".to_string(),
+        ChainId::Base => "ETH".to_string(),
+        ChainId::Arbitrum => "ETH".to_string(),
+        ChainId::Optimism => "ETH".to_string(),
+        ChainId::Bsc => "BNB".to_string(),
+        ChainId::Polygon => "MATIC".to_string(),
+        ChainId::Avalanche => "AVAX".to_string(),
+        ChainId::Zksync => "ETH".to_string(),
+        ChainId::Linea => "ETH".to_string(),
+        ChainId::Robinhood => "ETH".to_string(),
+        ChainId::Solana => "SOL".to_string(),
+        ChainId::Quantus => "QTC".to_string(),
+        _ => address.chain.as_str().to_ascii_uppercase(),
+    };
+    let name = ticker.clone();
+    Asset::native(chain, ticker, chain.decimals(), name)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -468,26 +490,4 @@ mod tests {
         let entries = db.load_ledger_entries(user_id, 10).unwrap();
         assert_eq!(entries.len(), 1);
     }
-}
-
-fn native_asset_for_chain(chain: ChainId, address: &WalletAddress) -> Asset {
-    let ticker: String = match chain {
-        ChainId::Bitcoin => "BTC".to_string(),
-        ChainId::ZionL1 => "ZION".to_string(),
-        ChainId::Ethereum => "ETH".to_string(),
-        ChainId::Base => "ETH".to_string(),
-        ChainId::Arbitrum => "ETH".to_string(),
-        ChainId::Optimism => "ETH".to_string(),
-        ChainId::Bsc => "BNB".to_string(),
-        ChainId::Polygon => "MATIC".to_string(),
-        ChainId::Avalanche => "AVAX".to_string(),
-        ChainId::Zksync => "ETH".to_string(),
-        ChainId::Linea => "ETH".to_string(),
-        ChainId::Robinhood => "ETH".to_string(),
-        ChainId::Solana => "SOL".to_string(),
-        ChainId::Quantus => "QTC".to_string(),
-        _ => address.chain.as_str().to_ascii_uppercase(),
-    };
-    let name = ticker.clone();
-    Asset::native(chain, ticker, chain.decimals(), name)
 }

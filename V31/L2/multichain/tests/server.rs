@@ -19,6 +19,11 @@ fn test_service() -> Arc<MultichainService> {
         ..Default::default()
     };
     config.database.path = ":memory:".to_string();
+    // In-memory AMM je dev/test engine a default je `false` (produkce routuje
+    // přes on-chain settlement). Tenhle test jede celý intent lifecycle
+    // v paměti, takže si ho musí zapnout — jinak `execute_intent` vrátí 400
+    // s hláškou „set dex.inmemory_amm=true for dev/test".
+    config.dex.inmemory_amm = true;
 
     Arc::new(
         MultichainService::new_with_adapters(config, ChainAdapterRegistry::new())

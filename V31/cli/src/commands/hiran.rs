@@ -253,7 +253,7 @@ async fn remote_vast_agent(
     let cfg = AgentConfig::load(None, None, None, true, None)?;
     let hiran_base = cfg.base_url.trim_end_matches('/').to_string();
     let mut lease_token: Option<String> = None;
-    let mut llm_model = cfg.model.clone();
+    let llm_model = cfg.model.clone();
     if let Some(api_key) = cfg.api_key.as_ref().filter(|k| !k.trim().is_empty()) {
         let lease_url = format!("{hiran_base}/agent/lease");
         let lease_resp = http

@@ -912,8 +912,7 @@ impl ChainAdapter for EvmAdapter {
             &reserves_result,
         )
         .map_err(|e| MultichainError::Internal(format!("getReserves() decode failed: {e}")))?;
-        let reserve0: U256 = reserves_tokens
-            .get(0)
+        let reserve0: U256 = reserves_tokens.first()
             .and_then(|t| t.clone().into_uint())
             .unwrap_or_default();
         let reserve1: U256 = reserves_tokens
@@ -956,8 +955,7 @@ impl ChainAdapter for EvmAdapter {
             let tokens = decode(&[ParamType::Uint(256)], &result).map_err(|e| {
                 MultichainError::Internal(format!("getAmountOut() decode failed: {e}"))
             })?;
-            let out: U256 = tokens
-                .get(0)
+            let out: U256 = tokens.first()
                 .and_then(|t| t.clone().into_uint())
                 .unwrap_or_default();
             Amount(out.as_u128())

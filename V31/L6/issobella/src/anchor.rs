@@ -168,7 +168,7 @@ pub fn merkle_path(leaves: &[[u8; 32]], index: usize) -> Option<Vec<PathStep>> {
     let mut level: Vec<[u8; 32]> = leaves.to_vec();
     let mut idx = index;
     while level.len() > 1 {
-        if idx % 2 == 0 {
+        if idx.is_multiple_of(2) {
             if idx + 1 < level.len() {
                 path.push(PathStep {
                     sibling: hex::encode(level[idx + 1]),

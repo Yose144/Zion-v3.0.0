@@ -30,6 +30,8 @@ fn build_service_with_solvers(
         solvers,
         ..Default::default()
     };
+    // In-memory AMM = dev/test engine (produkční default je `false`).
+    config.dex.inmemory_amm = true;
     config.database.path = ":memory:".to_string();
 
     Arc::new(
@@ -247,6 +249,7 @@ fn build_service_with_solver(
         solver: config,
         ..Default::default()
     };
+    mc_config.dex.inmemory_amm = true; // dev/test engine, viz výše
     mc_config.database.path = ":memory:".to_string();
     Arc::new(
         MultichainService::new_with_adapters(mc_config, ChainAdapterRegistry::new())

@@ -3009,7 +3009,7 @@ mod tests {
         // Fresh temp DB each run.
         let dir = std::env::temp_dir().join(format!("warp-qtest-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
-        let db = crate::db::Db::open(&dir.join("t.db")).unwrap();
+        let db = crate::db::Db::open(dir.join("t.db")).unwrap();
         let s = signer();
         let c = cfg();
         let flow = quote_flow();
