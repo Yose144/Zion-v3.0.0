@@ -10898,14 +10898,16 @@ a.game-hud-chip.is-lumi em {
   box-shadow: 0 0 8px var(--deck, #2f6bd8);
 }
 
-.neptune-facts {
+.neptune-facts,
+.planet-facts {
   padding: 0.6rem 0.7rem;
   border-radius: 0.7rem;
   border: 1px solid rgba(143, 240, 255, 0.16);
   background: rgba(6, 14, 32, 0.6);
 }
 
-.neptune-facts-title {
+.neptune-facts-title,
+.planet-facts-title {
   margin: 0;
   font-size: 0.62rem;
   letter-spacing: 0.16em;
@@ -10913,34 +10915,39 @@ a.game-hud-chip.is-lumi em {
   color: rgba(159, 244, 255, 0.72);
 }
 
-.neptune-facts dl {
+.neptune-facts dl,
+.planet-facts dl {
   margin: 0.45rem 0 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.4rem 0.8rem;
 }
 
-.neptune-facts dl div {
+.neptune-facts dl div,
+.planet-facts dl div {
   display: flex;
   flex-direction: column;
   gap: 0.05rem;
 }
 
-.neptune-facts dt {
+.neptune-facts dt,
+.planet-facts dt {
   font-size: 0.58rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: rgba(159, 244, 255, 0.66);
 }
 
-.neptune-facts dd {
+.neptune-facts dd,
+.planet-facts dd {
   margin: 0;
   font-size: 0.76rem;
   color: rgba(240, 246, 255, 0.92);
   font-variant-numeric: tabular-nums;
 }
 
-.neptune-facts-note {
+.neptune-facts-note,
+.planet-facts-note {
   margin: 0.5rem 0 0;
   font-size: 0.62rem;
   line-height: 1.5;
@@ -10972,7 +10979,8 @@ a.game-hud-chip.is-lumi em {
 }
 
 @media (max-width: 760px) {
-  .neptune-facts dl {
+  .neptune-facts dl,
+.planet-facts dl {
     grid-template-columns: 1fr;
   }
 }
@@ -10989,5 +10997,314 @@ a.game-hud-chip.is-lumi em {
 @media (hover: none) and (pointer: coarse) {
   .neptune-toast {
     top: 58%;
+  }
+}
+
+/* ── PLUTO — SRDCE NA OKRAJI (`/pluto`, 2026-11-11) ──────────────────
+ * Klidová hra: jediné číslo, které hráč hlídá, je teplo. Proto je bar
+ * nahoře uprostřed a velký — ne v liště mezi ostatními údaji. Viněta
+ * ztmavuje okraje, protože kamera visí vysoko a bez ní by pláň byla
+ * „podložka" bez hloubky.
+ */
+.pluto {
+  background: #05080f;
+  cursor: default;
+}
+
+.pluto-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 46%, transparent 42%, rgba(2, 4, 10, 0.72) 100%);
+}
+
+.pluto-warmth {
+  position: absolute;
+  z-index: 12;
+  top: calc(1.1rem + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: min(20rem, 76vw);
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(255, 196, 119, 0.32);
+  background: rgba(6, 10, 20, 0.78);
+  backdrop-filter: blur(6px);
+  color: #ffe9c8;
+  pointer-events: none;
+}
+
+.pluto-warmth-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 209, 140, 0.8);
+}
+
+.pluto-warmth-track {
+  flex: 1 1 auto;
+  display: block;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 196, 119, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(255, 196, 119, 0.25);
+  overflow: hidden;
+}
+
+.pluto-warmth-track i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff9a4d, #ffe1a0);
+  transition: width 0.12s linear;
+}
+
+.pluto-warmth-value {
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pluto-warmth.is-low {
+  border-color: rgba(255, 110, 100, 0.55);
+  animation: pluto-cold 0.9s ease-in-out infinite alternate;
+}
+
+.pluto-warmth.is-low .pluto-warmth-track i {
+  background: linear-gradient(90deg, #ff5c5c, #ffa07a);
+}
+
+.pluto-warmth em {
+  flex: 1 0 100%;
+  font-style: normal;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ff8a7a;
+  text-align: center;
+}
+
+@keyframes pluto-cold {
+  from {
+    box-shadow: none;
+  }
+  to {
+    box-shadow: 0 0 18px rgba(255, 92, 92, 0.35);
+  }
+}
+
+.pluto-hud {
+  border-color: rgba(255, 196, 119, 0.32);
+  background: rgba(6, 10, 20, 0.84);
+}
+
+.pluto-hud .race-best {
+  color: #ffe1a0;
+}
+
+.pluto-lamps {
+  color: #ffe9c8;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pluto-lamps em {
+  font-style: normal;
+}
+
+.pluto-reach,
+.pluto-clock {
+  color: rgba(223, 236, 255, 0.72);
+  font-variant-numeric: tabular-nums;
+}
+
+.pluto-compass {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #ffd28a;
+  font-variant-numeric: tabular-nums;
+}
+
+.pluto-compass svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: #ffd28a;
+  transition: transform 0.15s linear;
+}
+
+.pluto-channel {
+  position: absolute;
+  z-index: 13;
+  left: 50%;
+  bottom: calc(5.2rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 0.7rem;
+  background: rgba(6, 10, 20, 0.8);
+  border: 1px solid rgba(255, 196, 119, 0.3);
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 226, 168, 0.9);
+  pointer-events: none;
+}
+
+.pluto-channel i {
+  display: block;
+  width: 7rem;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff9a4d, #ffe1a0);
+}
+
+.pluto-toast {
+  top: 62%;
+  border-color: rgba(255, 196, 119, 0.45);
+  background: rgba(6, 10, 20, 0.84);
+  color: #ffe9c8;
+}
+
+.pluto-panel {
+  border-color: rgba(255, 196, 119, 0.22);
+}
+
+.pluto-lead {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 209, 140, 0.78);
+}
+
+.pluto-lamps-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.pluto-lamps-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 196, 119, 0.16);
+  background: rgba(10, 14, 26, 0.6);
+  font-size: 0.64rem;
+  color: rgba(255, 232, 200, 0.82);
+}
+
+.pluto-lamps-list em {
+  font-style: normal;
+  font-size: 0.58rem;
+  color: rgba(255, 176, 90, 0.9);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  /* HUD jde nahoru, teplo pod něj — stejná past jako u Venuše a Neptunu */
+  .pluto-warmth {
+    top: calc(4.9rem + env(safe-area-inset-top, 0px));
+    width: min(18rem, 88vw);
+  }
+
+  .pluto-channel {
+    bottom: calc(9.4rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .pluto-toast {
+    top: 56%;
+  }
+}
+
+/* Minimapa Srdce — celý tvar pláně je vidět jen tady (kamera visí 42 m
+ * nad hráčem). Stejná křivka jako textura, takže se mapa nerozejde s tím,
+ * po čem hráč chodí. */
+.pluto-map {
+  position: absolute;
+  z-index: 12;
+  left: calc(1rem + env(safe-area-inset-left, 0px));
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  width: 8.4rem;
+  height: 8.4rem;
+  padding: 0.2rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(255, 196, 119, 0.22);
+  background: rgba(6, 10, 20, 0.72);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+
+.pluto-map svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pluto-map-heart {
+  fill: rgba(176, 202, 228, 0.24);
+  stroke: rgba(206, 226, 246, 0.45);
+  stroke-width: 1.1;
+}
+
+.pluto-map-shuttle {
+  fill: #7fe3d4;
+}
+
+.pluto-map-lamp {
+  fill: rgba(120, 140, 170, 0.55);
+  stroke: rgba(10, 16, 28, 0.7);
+  stroke-width: 0.8;
+}
+
+.pluto-map-lamp.is-lit {
+  fill: #ffcf7a;
+}
+
+.pluto-map-lamp.is-next {
+  fill: #ffe9b8;
+  stroke: #ffe9b8;
+  stroke-width: 1.2;
+}
+
+.pluto-map-you {
+  fill: #ffffff;
+  stroke: rgba(10, 16, 28, 0.65);
+  stroke-width: 0.7;
+}
+
+.pluto-map-count {
+  fill: rgba(255, 232, 200, 0.8);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .pluto-map {
+    width: 6.4rem;
+    height: 6.4rem;
+    bottom: calc(9.6rem + env(safe-area-inset-bottom, 0px));
+    left: calc(0.6rem + env(safe-area-inset-left, 0px));
+  }
+
+  .pluto-map-count {
+    font-size: 12px;
+  }
+}
+
+@media (max-height: 480px) and (hover: none) and (pointer: coarse) {
+  .pluto-map {
+    display: none;
   }
 }

@@ -3176,3 +3176,50 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Meze:** sólo (žádný multiplayer), VR jen kód (`<XR>` + `VrButton`,
   netestováno na headsetu), zvuk je syntéza ze sdíleného enginu
   (`lightPickup`, `gust`, `wall`, `splash`, `shrineOpen`).
+
+## Pluto — Srdce na okraji `/pluto` (2026-11-11)
+
+- **Poslední dosier bez hry.** Pluto byl (vedle Uranu) jediný svět, který
+  používal `OuterWorldPage` — jen scéna a text. Teď je to klidová pochůzka
+  a dosier zůstal **v menu**, takže planeta nepřišla o fakta.
+- **Jedna mechanika: teplo.** `core/pluto/light.ts` (56 kontrol
+  v `test/pluto-light.mjs`). Teplo ubývá podle vzdálenosti od **nejbližšího
+  světla** (modul nebo zapálená lampa), u světla se dobíjí, stojíš-li
+  1,5 s u lampy, zapálíš ji — a tím vznikne nové ohniště. Hra je
+  o posouvání hranice, ne o běhu na konec mapy.
+- **🔴 Soumrak je pojistka proti nekonečné hře.** Bez něj se dalo stát
+  u modulu navěky (změřeno: 300 s a 100 tepla) — hra neměla konec.
+  `duskAt(time)` roste a platí i u modulu, takže i tam se jednou zamrzne
+  (~223 s). Je to fyzikální (Slunce nad Plutem klesá) a nepotřebuje
+  časový limit v HUD.
+- **Balance (změřeno, ne odhadnuto):** hráč, který jde po nejbližší lampě
+  a nezastavuje, doletí všech devět za **53 s s 20 tepla** (skóre 1260);
+  trpělivý (dobíjí u každé lampy) za 62 s s 67 tepla (1381); kdo jen stojí,
+  zamrzne ve 223 s. Vzdálenosti lamp jsou 22–48 m, nejdelší skok je
+  rozhodnutí.
+- **Kamera je 42 m nad hráčem — srdce z ní nepřečteš.** Proto má hra
+  **minimapu** (`PlutoMinimap.tsx`) a ta kreslí **stejnou parametrickou
+  křivku** jako textura pláně (`PlutoScene.heartPlain`). Dvě kopie tvaru by
+  se rozešly (hráč by chodil mimo nakreslené srdce).
+- **Lampy musí být vysoké.** Z výšky 42 m jsou 3,75 m sloupky tečky; glass
+  je proto v 4,6 m s poloměrem 0,72 a halo 13 j. Totéž postava (`scale 1.25`)
+  a lucerna — jinak hráč nevidí, kde je.
+- **Kov bez env mapy je černý** (stejná past jako u flotily a zbraně
+  v aréně): přistávací modul s `metalness 0.55` vypadal jako balvan.
+  Řeší nižší metalness + `emissive` + světelný pás.
+- **Měkký okraj srdce šesti soustřednými průchody**, ne `ctx.filter =
+  'blur()'` — filtr se v headless Chromiu chová podle verze a testovací
+  screenshot by vypadal jinak než produkce.
+- **Debug háček `?plutoDebug=1`** vystaví `state()`, `teleport(x, z)`,
+  `freeze(n)` a **`lamps`** (pozice). Audit si mapu neučí nazpaměť — když
+  se lampa přesune, test jde s ní.
+- **Nová hra = pět seznamů + chrome.** `ParkGameId`, `emptyScores`,
+  `GAMES` + `emptyBoard` v `/api/park/scores`, `GAMES` + `TARGETS`
+  v `challenge.ts`, `GAME_TITLES` + `GAME_ORDER`; k tomu `CONTROLS`
+  a `SURFACES` a položka v `GAME_LINKS` (ta už existovala).
+- **Audit:** `node e2e/pluto-audit.mjs` (30 kontrol — menu, chůze, úbytek
+  tepla, zapálení lampy, dobíjení, pauza, celé srdce, zápis do profilu
+  i tabule, dotyk, 0 chyb). `mobile-audit.mjs` má `/pluto` v `PAGES`;
+  prošel na 390×844 i 844×390.
+- **Meze:** sólo, VR jen kód (netestováno na headsetu), zvuk je syntéza
+  (`shrineOpen`, `gust`, `lightPickup`, `victory`, `over`), mobil emulovaný.

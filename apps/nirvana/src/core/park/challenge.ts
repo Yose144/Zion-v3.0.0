@@ -33,6 +33,7 @@ const GAMES: ParkGameId[] = [
   'lumi',
   'piko',
   'neptune',
+  'pluto',
 ];
 
 /** Cíle podle toho, kolik bodů hra reálně dává. */
@@ -52,6 +53,7 @@ const TARGETS: Record<ParkGameId, number> = {
   lumi: 900, // donést všech sedm světel (700 + časový bonus)
   piko: 600, // laguna: šest bójí nebo tři vlny
   neptune: 600, // hlubina: ~600 m sestupu (nebo 500 m a dvě světla)
+  pluto: 600, // srdce: pět lamp a kousek tepla navrch
 };
 
 export const CHALLENGE_REWARD = 5;

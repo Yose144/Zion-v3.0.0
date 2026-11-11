@@ -135,7 +135,7 @@ const PLANET_PANELS: Record<PlanetGameId, {
   },
   pluto: {
     title: 'PLUTO',
-    note: 'Srdce na okraji — světlá pláň ve tvaru srdce, poslední světlo před mezihvězdím.',
+    note: 'Srdce na okraji — devět lamp na zmrzlé pláni. Teplo drží jen lucerna; každá zapálená lampa je nové ohniště.',
     href: '/pluto',
     cta: 'Ke srdci',
   },

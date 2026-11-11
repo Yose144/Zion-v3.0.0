@@ -104,6 +104,13 @@ export const CONTROLS: Record<string, { cs: string; en: string; es?: string; pt?
     pt: 'A/D timão contra o vento · W descer mais rápido · S travar',
     fr: 'A/D gouverner contre le vent · W descendre plus vite · S freiner',
   },
+  '/pluto': {
+    cs: 'WASD chůze · u lampy stačí stát a lucerna ji zapálí',
+    en: 'WASD walk · just stand at a lamp to light it',
+    es: 'WASD caminar · basta estar junto a una lámpara',
+    pt: 'WASD andar · basta ficar junto a uma lâmpada',
+    fr: "WASD marcher · reste près d'une lampe pour l'allumer",
+  },
   '/avatars': {
     cs: 'klikni postavu · pak Uložit',
     en: 'click a figure · then Save',

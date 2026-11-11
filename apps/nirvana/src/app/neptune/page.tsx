@@ -256,8 +256,8 @@ export default function NeptunePage() {
                 ))}
               </div>
 
-              <div className="neptune-facts">
-                <p className="neptune-facts-title">{l('factsTitle')}</p>
+              <div className="planet-facts">
+                <p className="planet-facts-title">{l('factsTitle')}</p>
                 <dl>
                   {world.facts.map((fact) => (
                     <div key={fact.label.en}>
@@ -266,7 +266,7 @@ export default function NeptunePage() {
                     </div>
                   ))}
                 </dl>
-                <p className="neptune-facts-note">{l('factsNote')}</p>
+                <p className="planet-facts-note">{l('factsNote')}</p>
               </div>
 
               <ul className="arena-keys">

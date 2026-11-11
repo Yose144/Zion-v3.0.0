@@ -109,8 +109,8 @@ export const GAME_LINKS: GameLink[] = [
   {
     id: 'pluto',
     href: '/pluto',
-    title: { cs: 'Pluto', en: 'Pluto' },
-    note: { cs: 'srdce na okraji', en: 'the heart at the edge' },
+    title: { cs: 'Pluto — Srdce', en: 'Pluto — Heart' },
+    note: { cs: 'devět lamp · teplo a lucerna', en: 'nine lamps · warmth & lantern' },
     glyph: '💠',
     tone: '#d8c7b4',
   },

@@ -101,6 +101,7 @@ export const GAME_TITLES: Record<ParkGameId, { cs: string; en: string; glyph: st
   lumi: { cs: 'Lumi', en: 'Lumi', glyph: '🏮' },
   piko: { cs: 'Te Pīko Ora', en: 'Te Pīko Ora', glyph: '🛶' },
   neptune: { cs: 'Neptun — Hlubina', en: 'Neptune — The Deep', glyph: '🌊' },
+  pluto: { cs: 'Pluto — Srdce na okraji', en: 'Pluto — The Heart at the Edge', glyph: '💠' },
 };
 
 /** Pořadí, v jakém se hry ukazují v žebříčcích (od nejhranějších). */
@@ -113,6 +114,7 @@ export const GAME_ORDER: ParkGameId[] = [
   'lumi',
   'piko',
   'neptune',
+  'pluto',
   'gallery',
   'pong',
   'breakout',

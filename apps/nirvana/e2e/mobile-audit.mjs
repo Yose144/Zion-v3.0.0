@@ -93,6 +93,13 @@ const PAGES = [
     minControls: 4,
   },
   {
+    path: '/pluto',
+    name: 'Pluto — Srdce',
+    start: /Vyjít|Set out/i,
+    control: '.touch-pad',
+    minControls: 4,
+  },
+  {
     path: '/saturn',
     name: 'Saturn tanky',
     start: /Tanky/i,
