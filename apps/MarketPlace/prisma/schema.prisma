@@ -218,7 +218,7 @@ model ShopOrder {
   status         String   @default("pending") // pending | paid | processing | shipped | completed | cancelled
   paymentStatus  String   @default("pending") // pending | paid | failed
   customerName   String
-  customerEmail  String
+  customerEmail  String?
   customerPhone  String
   shipping       String   // zasilkovna | zasilkovna-home | virtualni-nakup | virtualni-odber
   payment        String   // transfer | card | crypto

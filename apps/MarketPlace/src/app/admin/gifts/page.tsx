@@ -73,8 +73,11 @@ export default function AdminGiftsPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const amountZion = Math.round(Number(amount));
-    if (!email.trim() || !Number.isInteger(amountZion) || amountZion <= 0) {
-      setResult({ success: false, error: 'Zadejte platný email a kladné celé množství ZION' });
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+    const phoneDigits = phone.replace(/\D/g, '');
+    const phoneOk = phoneDigits.length >= 9;
+    if ((!emailOk && !phoneOk) || !Number.isInteger(amountZion) || amountZion <= 0) {
+      setResult({ success: false, error: 'Zadejte email NEBO telefon (pro WhatsApp) a kladné celé množství ZION' });
       return;
     }
     const extras = [
@@ -82,11 +85,12 @@ export default function AdminGiftsPage() {
       withBook ? 'kniha Království srdce (ZIP)' : null,
     ].filter(Boolean).join(' + ');
     const extraText = extras ? ` včetně ${extras}` : '';
-    if (!window.confirm(`Odeslat dárek ${amountZion.toLocaleString('cs-CZ')} ZION${extraText} na ${email.trim()}?`)) return;
+    const target = emailOk ? email.trim() : `📱 ${phone.trim()}`;
+    if (!window.confirm(`Odeslat dárek ${amountZion.toLocaleString('cs-CZ')} ZION${extraText} na ${target}?`)) return;
     setSending(true);
     setResult(null);
     const res = await sendAdminGift({
-      email: email.trim(),
+      email: emailOk ? email.trim() : undefined,
       name: name.trim() || undefined,
       phone: phone.trim() || undefined,
       amountZion,
@@ -110,8 +114,9 @@ export default function AdminGiftsPage() {
       <div>
         <h1 className="text-2xl font-black text-white">🎁 ZION Dárky</h1>
         <p className="text-sm text-white/50 mt-1">
-          Jeden klik = objednávka → paid → custodial peněženka + seed emailem → nativní L1
-          payout → Archive Pass → ZIP knihy Království srdce → potvrzovací email. Vše přes standardní paid pipeline.
+          Jeden klik = objednávka → paid → custodial peněženka → nativní L1
+          payout → Archive Pass → ZIP knihy Království srdce. Doručení emailem a/nebo přes WhatsApp (wa.me).
+          Stačí email NEBO telefon.
         </p>
       </div>
 
@@ -121,10 +126,9 @@ export default function AdminGiftsPage() {
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="block">
-            <span className="text-xs text-white/60">Email příjemce *</span>
+            <span className="text-xs text-white/60">Email příjemce (nebo vyplň telefon)</span>
             <input
               type="email"
-              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="nekdo@domena.cz"
@@ -203,9 +207,9 @@ export default function AdminGiftsPage() {
           {sending ? '⏳ Odesílám… (payout ~10–40 s)' : '🎁 Odeslat dárek'}
         </button>
         <p className="text-[11px] text-white/40">
-          ⚠️ Payout jde okamžitě z pool walletu on-chain — příjemce dostane email se seed
-          slovy peněženky, bonus emailem s txHash a potvrzení s pass kódem a odkazem na ZIP knihy.
-          S telefonem se navíc objeví tlačítko WhatsApp s kompletní zprávou (včetně seede).
+          ⚠️ Payout jde okamžitě z pool walletu on-chain. S emailem jdou seed slovy, bonus
+          s txHash a potvrzení s pass kódem + ZIP knihy emailem; bez emailu se vše předá přes
+          WhatsApp tlačítko (zpráva obsahuje i seed).
         </p>
       </form>
 
@@ -290,7 +294,7 @@ export default function AdminGiftsPage() {
                 <tr key={g.orderId} className="border-b border-white/5 hover:bg-white/5">
                   <td className="px-4 py-2.5 font-mono text-[11px] text-white/70">{g.orderId}</td>
                   <td className="px-4 py-2.5">
-                    <div className="text-white/90">{g.customerEmail}</div>
+                    <div className="text-white/90">{g.customerEmail ?? g.customerPhone ?? '—'}</div>
                     <div className="text-[11px] text-white/40">{g.customerName}</div>
                     {g.whatsapp?.url && (
                       <a

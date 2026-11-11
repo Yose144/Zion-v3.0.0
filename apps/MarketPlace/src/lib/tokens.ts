@@ -5,7 +5,7 @@ export interface TokenDistribution {
   tokens: number;
   txHash?: string;
   distributedAt?: string;
-  customerEmail?: string;
+  customerEmail?: string | null;
 }
 
 export function tokenSettingKey(orderId: string): string {
@@ -27,7 +27,7 @@ export async function getTokenDistribution(orderId: string): Promise<TokenDistri
 export async function recordTokenDistribution(
   orderId: string,
   tokens: number,
-  customerEmail: string,
+  customerEmail: string | null,
   txHash?: string
 ): Promise<TokenDistribution> {
   const distribution: TokenDistribution = {

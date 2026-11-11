@@ -50,10 +50,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = (await request.json()) as GiftBody;
-    const email = body.email?.trim().toLowerCase();
-    if (!email || !EMAIL_RE.test(email)) {
+    const emailRaw = body.email?.trim().toLowerCase();
+    const email = emailRaw && EMAIL_RE.test(emailRaw) ? emailRaw : null;
+    const phone = body.phone?.trim() || '';
+    // Dárek jde buď na email, nebo jen na telefon (WhatsApp wa.me carry).
+    if (!email && !phone) {
       return NextResponse.json(
-        { success: false, error: 'Valid email is required' },
+        { success: false, error: 'Email or phone is required' },
         { status: 400 }
       );
     }
@@ -68,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     const withPass = body.withPass !== false;
     const withBook = body.withBook !== false && Boolean(BOOK_ZIP);
-    const name = body.name?.trim() || email.split('@')[0];
+    const name = body.name?.trim() || email?.split('@')[0] || 'Příjemce';
     const orderId = `GIFT-${Date.now().toString(36).toUpperCase()}-${randomBytes(3).toString('hex').toUpperCase()}`;
 
     const items: Array<Record<string, unknown>> = [
@@ -105,7 +108,7 @@ export async function POST(request: NextRequest) {
         paymentStatus: 'pending',
         customerName: name,
         customerEmail: email,
-        customerPhone: body.phone?.trim() || '+420000000000',
+        customerPhone: phone || '+420000000000',
         shipping: 'virtualni-nakup',
         payment: 'admin-gift',
         totalCzk: 0,

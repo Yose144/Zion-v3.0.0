@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
         body.successUrl ??
         `${SITE_URL}/order-success?order=${order.orderId}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: body.cancelUrl ?? `${SITE_URL}/cart?cancelled=1`,
-      customer_email: body.customerEmail ?? order.customerEmail,
+      customer_email: body.customerEmail ?? order.customerEmail ?? undefined,
       metadata: {
         order_id: order.orderId,
       },

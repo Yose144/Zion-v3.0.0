@@ -66,7 +66,7 @@ async function ensureCustomerWallet(order: {
   id: string;
   orderId: string;
   customerName: string;
-  customerEmail: string;
+  customerEmail: string | null;
 }): Promise<string | null> {
   const wallet = generateCustomerWallet();
   const claim = await prisma.shopOrder.updateMany({

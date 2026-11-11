@@ -30,7 +30,7 @@ import { prisma } from '@/lib/db';
 export interface ArchiveMarketCode {
   code: string;
   orderId: string;
-  email: string;
+  email: string | null;
   productId: string;
   issuedAt: string;
   expiresAt?: string | null;
@@ -144,7 +144,7 @@ export const ARCHIVE_REDEEM_URL =
  */
 export async function issueArchivePassForOrder(order: {
   orderId: string;
-  customerEmail: string;
+  customerEmail: string | null;
   items: unknown;
 }): Promise<ArchiveMarketCode | null> {
   const grants = await archivePassGrants();

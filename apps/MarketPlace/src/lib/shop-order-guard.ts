@@ -24,7 +24,7 @@ export interface PublicOrderFields {
   status: string;
   totalCzk: number;
   createdAt: Date;
-  customerEmail: string;
+  customerEmail: string | null;
 }
 
 export interface PublicBank {
@@ -119,7 +119,7 @@ export function duplicateOrderDecision(
   requestEmail: string,
   bank: PublicBank,
 ): { status: 200 | 409; body: Record<string, unknown> } {
-  if (!emailsMatch(order.customerEmail, requestEmail)) {
+  if (!emailsMatch(order.customerEmail ?? '', requestEmail)) {
     return {
       status: 409,
       body: { success: false, duplicate: true, error: 'Order already exists' },

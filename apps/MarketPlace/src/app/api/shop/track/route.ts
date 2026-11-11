@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     // Identical response for unknown order and email mismatch — don't leak
     // which part failed (order-id enumeration must reveal nothing).
-    if (!order || order.customerEmail.trim().toLowerCase() !== email) {
+    if (!order || (order.customerEmail ?? '').trim().toLowerCase() !== email) {
       return NextResponse.json(
         { success: false, error: 'Order not found' },
         { status: 404 }

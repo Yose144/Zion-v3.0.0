@@ -194,7 +194,7 @@ function shippingMethodLabelLang(method: string, lang: EmailLang): string {
 export interface OrderEmailData {
   orderId: string;
   customerName: string;
-  customerEmail: string;
+  customerEmail: string | null;
   customerPhone: string;
   shipping: string;
   payment: string;
@@ -264,7 +264,7 @@ export async function sendAdminOrderNotification(order: OrderEmailData): Promise
       }) +
       rastaCard({
         heading: '👤 Zákazník',
-        body: `<table width="100%" cellpadding="0" cellspacing="0">${rastaRow('Jméno:', escapeHtml(order.customerName))}${rastaRow('Email:', escapeHtml(order.customerEmail))}${rastaRow('Telefon:', escapeHtml(order.customerPhone))}</table>`,
+        body: `<table width="100%" cellpadding="0" cellspacing="0">${rastaRow('Jméno:', escapeHtml(order.customerName))}${rastaRow('Email:', escapeHtml(order.customerEmail ?? '—'))}${rastaRow('Telefon:', escapeHtml(order.customerPhone))}</table>`,
         tone: 'gold',
       }) +
       rastaCard({
@@ -290,7 +290,7 @@ Stav platby: ${order.paymentStatus}
 ZÁKAZNÍK
 ----------------------------------------
 Jméno: ${order.customerName}
-Email: ${order.customerEmail}
+Email: ${order.customerEmail ?? '—'}
 Telefon: ${order.customerPhone}
 
 ----------------------------------------
@@ -321,7 +321,7 @@ Poznámka: ${order.note || '—'}
     await sendMail({
       from: defaultFrom(),
       to: cfg.adminEmail,
-      replyTo: order.customerEmail,
+      replyTo: order.customerEmail ?? undefined,
       subject,
       text: body,
       html,
@@ -336,8 +336,8 @@ export async function sendCustomerOrderConfirmation(
   order: OrderEmailData,
   invoiceHtml?: string | null
 ): Promise<void> {
-  if (!isEnabled()) {
-    console.log('Email notifications disabled: SMTP not configured');
+  if (!isEnabled() || !order.customerEmail?.trim()) {
+    if (!isEnabled()) console.log('Email notifications disabled: SMTP not configured');
     return;
   }
 
@@ -387,8 +387,8 @@ export async function sendCustomerOrderConfirmation(
 }
 
 export async function sendPaymentConfirmation(order: OrderEmailData): Promise<void> {
-  if (!isEnabled()) {
-    console.log('Email notifications disabled: SMTP not configured');
+  if (!isEnabled() || !order.customerEmail?.trim()) {
+    if (!isEnabled()) console.log('Email notifications disabled: SMTP not configured');
     return;
   }
 
@@ -491,8 +491,8 @@ The ZION Terra Nova team
 }
 
 export async function sendInvoiceEmail(order: OrderEmailData, invoiceHtml: string): Promise<void> {
-  if (!isEnabled()) {
-    console.log('Email notifications disabled: SMTP not configured');
+  if (!isEnabled() || !order.customerEmail?.trim()) {
+    if (!isEnabled()) console.log('Email notifications disabled: SMTP not configured');
     return;
   }
 
@@ -576,15 +576,15 @@ function escapeHtml(input: string): string {
 interface TokenBonusInput {
   orderId: string;
   customerName: string;
-  customerEmail: string;
+  customerEmail: string | null;
   tokens: number;
   txHash?: string;
   lang?: EmailLang;
 }
 
 export async function sendTokenBonusEmail(input: TokenBonusInput): Promise<void> {
-  if (!isEnabled()) {
-    console.log('Email notifications disabled: SMTP not configured');
+  if (!isEnabled() || !input.customerEmail?.trim()) {
+    if (!isEnabled()) console.log('Email notifications disabled: SMTP not configured');
     return;
   }
 
@@ -663,8 +663,8 @@ The ZION Terra Nova team
 }
 
 export async function sendShippingNotification(order: OrderEmailData): Promise<void> {
-  if (!isEnabled()) {
-    console.log('Email notifications disabled: SMTP not configured');
+  if (!isEnabled() || !order.customerEmail?.trim()) {
+    if (!isEnabled()) console.log('Email notifications disabled: SMTP not configured');
     return;
   }
 
@@ -738,15 +738,15 @@ The ZION Terra Nova team
 interface CustomerWalletInput {
   orderId: string;
   customerName: string;
-  customerEmail: string;
+  customerEmail: string | null;
   address: string;
   seed: string;
   lang?: EmailLang;
 }
 
 export async function sendCustomerWalletEmail(input: CustomerWalletInput): Promise<void> {
-  if (!isEnabled()) {
-    console.log('Email notifications disabled: SMTP not configured');
+  if (!isEnabled() || !input.customerEmail?.trim()) {
+    if (!isEnabled()) console.log('Email notifications disabled: SMTP not configured');
     return;
   }
 

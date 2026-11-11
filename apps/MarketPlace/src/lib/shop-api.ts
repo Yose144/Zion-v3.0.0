@@ -564,7 +564,7 @@ export interface AdminGiftResult {
   success: boolean;
   data?: {
     orderId: string;
-    email: string;
+    email: string | null;
     phone?: string | null;
     amountZion: number;
     paymentStatus: string;
@@ -578,7 +578,7 @@ export interface AdminGiftResult {
 }
 
 export async function sendAdminGift(input: {
-  email: string;
+  email?: string;
   name?: string;
   phone?: string;
   amountZion: number;
@@ -602,7 +602,7 @@ export async function sendAdminGift(input: {
 
 export interface AdminGiftListItem {
   orderId: string;
-  customerEmail: string;
+  customerEmail: string | null;
   customerName: string;
   customerPhone?: string | null;
   zionTokens: number;

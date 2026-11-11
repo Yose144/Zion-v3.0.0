@@ -185,7 +185,7 @@ export function buildInvoiceHtml(
     customerName: string;
     customerAddress?: { street?: string; city?: string; zip?: string } | null;
     customerCompany?: { name: string; ico: string; dic?: string } | null;
-    customerEmail: string;
+    customerEmail: string | null;
     customerPhone: string;
     paymentMethod: string;
     totalCzk: number;
@@ -321,7 +321,7 @@ export function buildInvoiceHtml(
               : ''
           }
           ${escapeHtml(addressText)}${addressText ? '<br>' : ''}
-          Email: ${escapeHtml(opts.customerEmail)}<br>
+          Email: ${escapeHtml(opts.customerEmail ?? '—')}<br>
           Tel: ${escapeHtml(opts.customerPhone)}
         </p>
       </div>
@@ -432,7 +432,7 @@ interface CreateInvoiceInput {
   orderId: string;
   orderDatabaseId: string;
   customerName: string;
-  customerEmail: string;
+  customerEmail: string | null;
   customerPhone: string;
   customerAddress?: { street?: string; city?: string; zip?: string } | null;
   customerCompany?: { name: string; ico: string; dic?: string } | null;
