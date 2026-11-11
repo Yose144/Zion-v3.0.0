@@ -1783,6 +1783,30 @@ function detectGPU() {
 let gpuDeviceListCache = null;
 let gpuDeviceListAt = 0;
 let gpuEnumInFlight = null;
+// Per-device backend first-token collected from the miner's HARDWARE
+// DETECTION box (same order as the gpu[N] banner rows). "CUDA"/"Metal"
+// mark the supplemental API pass that re-reports cards OpenCL already
+// listed (e.g. GTX 1070 Ti via NVIDIA CUDA OpenCL platform AND the CUDA
+// driver API); OpenCL platform names never collide with those tokens.
+let _gpuBoxBackends = null;
+let _gpuBoxCollect = false;
+// Drop gpu[N] banner rows that are supplemental-API re-reports of a card
+// the OpenCL pass already listed. `backends` = per-device backend token in
+// banner order; returns `list` unchanged when counts don't line up.
+function filterSupplementalGpuRows(list, backends) {
+  if (!Array.isArray(backends) || !backends.length || backends.length !== list.length) return list;
+  const SUPP = new Set(['cuda', 'metal']);
+  const seenPrimary = new Set();
+  const out = [];
+  list.forEach((d, i) => {
+    const supp = SUPP.has(String(backends[i] || '').toLowerCase());
+    const n = String(d.name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    if (supp && seenPrimary.has(n)) return;
+    out.push(d);
+    if (!supp) seenPrimary.add(n);
+  });
+  return out;
+}
 function enumerateGpuDevices(opts) {
   const force = !!(opts && opts.force);
   const now = Date.now();
@@ -1791,7 +1815,12 @@ function enumerateGpuDevices(opts) {
   }
   if (gpuEnumInFlight) return gpuEnumInFlight;
   gpuEnumInFlight = new Promise((resolve) => {
+    // Backend tokens scraped from this probe's own HARDWARE DETECTION box —
+    // consumed by filterSupplementalGpuRows inside finish().
+    const boxBackends = [];
+    let inHwBox = false;
     const finish = (list) => {
+      list = filterSupplementalGpuRows(list, boxBackends);
       // A transient empty probe (spawned while the real miner restarts or
       // OpenCL is busy) must not evict a known-good list — keep last-good
       // and re-probe in ~5 s instead of serving "CPU only" for a minute.
@@ -1841,6 +1870,12 @@ function enumerateGpuDevices(opts) {
       while ((nl = buf.indexOf('\n')) >= 0) {
         const line = buf.slice(0, nl).replace(ansiRe, '');
         buf = buf.slice(nl + 1);
+        if (/HARDWARE DETECTION/.test(line)) { inHwBox = true; continue; }
+        if (inHwBox && /AUTO MINE CONFIGURATION/.test(line)) { inHwBox = false; continue; }
+        if (inHwBox) {
+          const bm = line.match(/backend=(\S+)/i);
+          if (bm) boxBackends.push(bm[1]);
+        }
         const m = line.match(gpuRe);
         if (m) {
           const idx = Number(m[1]);
@@ -1900,12 +1935,15 @@ const GPU_HEALTH_TICK_MS = 20000;
 const GPU_STRIKE_LIMIT = 2;          // crashes attributed to a new card
 
 // Selection-token ↔ device matching, same semantics as the miner's
-// ZION_GPU_DEVICES filter: numeric = global index, otherwise a
-// case-insensitive substring of the banner name.
+// ZION_GPU_DEVICES filter (gpu::device_matches_filter): numeric = global
+// index ONLY, otherwise a case-insensitive substring of the banner name.
+// A bare numeric token must NOT fall through to name matching — "1" would
+// substring-match "GTX 1070 Ti" (the "1" in "1070") and keep a card the
+// user just disabled.
 function gpuDeviceMatchesToken(token, dev) {
   const t = String(token || '').trim().toLowerCase();
   if (!t) return false;
-  if (t === String(dev.index)) return true;
+  if (/^\d+$/.test(t)) return t === String(dev.index);
   const name = String(dev.name || '').toLowerCase();
   const short = name.split(':')[0].trim();
   return name.includes(t) || (!!short && (short.includes(t) || t.includes(short)));
@@ -2008,6 +2046,18 @@ function resetGpuHealth(config) {
 // parseMinerOutput on both stdout and stderr).
 function trackGpuHealthOutput(output) {
   const now = Date.now();
+  // Collect per-device backend= tokens from the startup HARDWARE DETECTION
+  // box (printed once per miner process, same order as the gpu[N] banner
+  // rows) so the banner-row refresh below can drop supplemental CUDA/Metal
+  // duplicates of OpenCL-listed cards.
+  if (output.includes('HARDWARE DETECTION')) {
+    _gpuBoxBackends = [];
+    _gpuBoxCollect = true;
+  }
+  if (_gpuBoxCollect && _gpuBoxBackends) {
+    for (const bm of output.matchAll(/backend=(\S+)/gi)) _gpuBoxBackends.push(bm[1]);
+    if (output.includes('AUTO MINE CONFIGURATION')) _gpuBoxCollect = false;
+  }
   // The live miner's own startup banner is ground truth for the device
   // list — refresh the enum cache from it (a probe can transiently fail
   // during restarts, the running miner's banner cannot).
@@ -2019,7 +2069,7 @@ function trackGpuHealthOutput(output) {
     });
   }
   if (bannerRows.length) {
-    gpuDeviceListCache = bannerRows;
+    gpuDeviceListCache = filterSupplementalGpuRows(bannerRows, _gpuBoxBackends);
     gpuDeviceListAt = Date.now();
     if (!gpuHealth.active.length) {
       gpuHealth.active = resolveSelectedGpuDevices(loadConfig());
@@ -2938,6 +2988,30 @@ function parseSrbGpuIds(config, key = 'srbminerGpuId') {
   const ids = raw.split(/[,\s]+/).map((s) => s.trim()).filter((s) => /^\d+$/.test(s));
   return ids.length ? ids : null;
 }
+// SRBMiner --gpu-id numbering follows the same OpenCL platform order as the
+// miner banner's gpu[N] rows, so the enabled-card set (config.gpuDevices /
+// gpuDevice / quarantine, resolved against gpuDeviceListCache) doubles as
+// the sidecar's allowed ids — a card the user disabled in the hardware
+// panel must not keep mining QTU/PRL through SRBMiner. Returns the enabled
+// ids as strings, or null when there is nothing to restrict (no device
+// list yet, GPU fully off is gated elsewhere, or every card is enabled).
+function resolveEnabledSrbGpuIds(config) {
+  const all = Array.isArray(gpuDeviceListCache) ? gpuDeviceListCache : [];
+  if (!all.length || config?.gpu === false) return null;
+  const sel = resolveSelectedGpuDevices(config);
+  const ids = sel.map(d => String(d.index)).filter(s => /^\d+$/.test(s));
+  // Empty selection (explicit gpuDevices=[] or every card quarantined)
+  // restricts SRB to nothing — the plans filter drops them downstream.
+  return ids.length === all.length ? null : ids;
+}
+// Intersect the configured/auto SRB id list with the enabled-card set.
+// Empty array = every requested card is disabled → the plan must not launch.
+function intersectSrbGpuIds(requested, enabledIds) {
+  if (!enabledIds) return requested;
+  if (requested == null) return enabledIds.slice();
+  const en = new Set(enabledIds);
+  return requested.filter(id => en.has(String(id)));
+}
 const SRB_DEFAULT_POOL = 'eu.lproute.com:5660';
 const SRB_DEFAULT_WALLET = 'qzjoHwaJ2GfiRSHyYkYcpoJFbHct9pb9EAbs7sE51Uhj8r2zb';
 const SRB_DEFAULT_PRL_POOL = 'pearl-eu2.luckypool.io:3360';
@@ -3261,6 +3335,7 @@ function verifySrbBinaryIntegrity(srbPath, isCustom) {
 // expands to one process per pinned GPU id on its own API port base.
 function srbCoinPlans(config) {
   const plans = [];
+  const enabledSrbIds = resolveEnabledSrbGpuIds(config);
   const canon = (c) => {
     c = String(c || '').trim().toUpperCase();
     if (!c || c === 'AUTO') return null;
@@ -3304,12 +3379,14 @@ function srbCoinPlans(config) {
     plans.push({
       coin, algo: isPearl ? 'pearlhash' : 'quantus', streamIndex,
       pool, wallet, tag,
-      gpuIds: parseSrbGpuIds(config, idKey), portBase,
+      gpuIds: intersectSrbGpuIds(parseSrbGpuIds(config, idKey), enabledSrbIds), portBase,
     });
   };
   if (c1) push(c1, 2, 'srbminerGpuId', SRB_API_PORT_BASE, '');
   if (c2) push(c2, 4, 'srbminerGpuId2', SRB_API_PORT_BASE_S4, 's4');
-  return plans.filter((p) => !srbInstances.some((x) => x.proc && x.streamIndex === p.streamIndex));
+  return plans.filter((p) =>
+    !(Array.isArray(p.gpuIds) && p.gpuIds.length === 0)
+    && !srbInstances.some((x) => x.proc && x.streamIndex === p.streamIndex));
 }
 
 function startSrbMiner(config, worker) {
