@@ -65,7 +65,7 @@ G9 externí audit (posunut, Stable bez data — neblokuje RC kvalitu)
 ### Priorita 1 (blokuje další práci)
 1. ✅ **HA stratum fencing analýza** — `pool-promote-guard.sh` implementován (G1-G6), runbook vytvořen (`docs/3.2/ops/POOL-HA-RUNBOOK.md`), 7 gaps identifikováno, staged activation pending 👤
 2. ✅ **DR drill dry-run (varianta A)** — 23/23 DBs PASS, config 0 placeholderů, 5 gaps identifikováno, 3 opraveny (binárky optional, GPG encryption optional, offsite timer ověřen). Report: `docs/3.2/REPORTS/REPORT_2026-11-02_DR_DRILL_DRY_RUN.md`
-3. **Release artefakty (9.B4)** — na disku **jen 2 linux tarbally** (default + `gpu-opencl`, `dist/v3.2.0-rc-w1.4/`); aarch64/gpu-metal/windows tarbally **nejsou**. macOS buildy vyžadují Mac/Xcode (nebo osxcross), Windows mingw-w64 — tento PC (Linux, bez obou toolchainů) je neumí. **Zbývá:** doplnit chybějící targety na hostu s toolchainem + `RELEASE-MATRIX.json` + rebuild z RC commitu (tag `v3.2.0` = 👤 9.S1). Builder `scripts/ops/build-release-artifacts.sh` hotový.
+3. **Release artefakty (9.B4)** — **macOS sada hotová (11. 11. večer, tento Mac):** `dist/v3.2.0-rc-w1.5/` = **x86_64-apple-darwin** (4 binárky, `Mach-O x86_64`, verifier **PASS**) a `dist/v3.2.0-rc-w1.5-macos/` = **aarch64-apple-darwin** default **+ gpu-metal** (verifier **PASS**, `features: gpu-metal` reálně v binárce). Vše `--isolate` z čistého stromu, `BUILD-INFO.txt` nese commit + `tree_state: clean`. Starší `dist/v3.2.0-rc-w1.4/` má 5 tarballů z `aa6599cce` (bez matrixu → `--verify` FAIL). **Zbývá:** linux targety (kontejner `--container rust:1.97-bullseye`, glibc baseline) + windows-gnu (mingw-w64) + finální rebuild všech z RC commitu (tag `v3.2.0` = 👤 9.S1). Builder `scripts/ops/build-release-artifacts.sh` (11. 11. opraven — varianta se shodným jménem tiše ztrácela features).
 
 ### Priorita 2 (V33 gates)
 4. ✅ **NCL 1 worker + 1 job typ** — V33-5 gate, 2 integrační testy, 44/44 pass
@@ -150,7 +150,7 @@ Viz `docs/3.2/DEFERRED_3.2.md`:
 ## 8. Rychlá autonomní fronta (stav 11. 11.)
 
 1. ✅ **Truth-sync plánů** (11. 11.) — `3.2.1-3.2.9_PLAN`, `DEFERRED_3.2`, `PLAN`, `CHECKLIST`, `MAP`, `KRALOVSTVI` srovnány na run #7 / proto 34 / QTC OFF / hotové položky.
-2. **Release artefakty dokončení (9.B4)** — na disku 2 linux tarbally; chybí aarch64/gpu-metal/windows (macOS/Xcode a mingw na PC nejsou), `RELEASE-MATRIX.json` a rebuild z RC commitu (👤 9.S1).
+2. **Release artefakty dokončení (9.B4)** — macOS hotové (Intel `v3.2.0-rc-w1.5`, arm64 default+gpu-metal `v3.2.0-rc-w1.5-macos`, oba `--verify` PASS); chybí linux (kontejner) + windows-gnu (mingw) a finální rebuild z RC commitu (👤 9.S1).
 3. 🔀 **ZIS agent sub-accounts** — kód hotový; `prisma db push` + deploy + step-up + UI (👤).
 4. 🤖 **L3 sandbox** — Miner↔NCL spike, Dharma policy manifest, Amitabha draft-only UI, red-team.
 5. 🤖 **G8 `chain_live` RCA** — read-only analýza, bez deploye probe uprostřed runu.
