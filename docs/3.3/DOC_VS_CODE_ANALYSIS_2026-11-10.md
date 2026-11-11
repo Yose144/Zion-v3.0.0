@@ -64,7 +64,7 @@
 
 ## 4. Co zůstává z autonomní fronty (stav 11. 11.)
 
-> **Z auditu 7. 11. uzavřeno 11. 11.:** M1 EDGE1 node-exporter (již 7. 11.) a **M2 payout monitoring** — probe+rules+pool rebuild `ece8b6965`, viz §0 a `REPORT_2026-11-11_PAYOUT_MONITORING.md`. Otevřené z reportu zůstávají: PII orderId, atomický sklad, release verifier, proto preflight, archive content root, G8 state fail-loud, Lumi hlediště.
+> **Z auditu 7. 11. uzavřeno (ověřeno 11. 11. v kódu):** M1 EDGE1 node-exporter (7. 11.) · M2 payout monitoring — probe+rules+pool rebuild `ece8b6965` · **celá zbytek §4 fronty commitnutý 9. 11.** — PII orderId + atomický sklad (`baa50157a`, veřejné DTO + replay jen se stejným e-mailem + podmíněná rezervace v tx, e2e 18/18), release provenance/verifier (`8e328eba0`, fail-closed + `--isolate` pin, prázdný SHA256SUMS = FAIL), proto preflight artefaktu (`deploy-nirvana.sh` čte razítko **vedle server.js v artefaktu**, chybí → exit 1), archive content root (`lib/archive-content-root.ts` — standalone kopie v produkci, sdílená docs+audit routa), G8 state fail-loud (`StateReadError` → exit 2 všude), Lumi hlediště (`lumi.ts snapshot(id)` pro neletce — bez sedla/ovládání). **Otevřené z reportu = 0.** Zbývající autonomní práce je v `PLAN.md` §3 (ZIS sub-accounts, NCL spike, R9 review, …) a drobnostech: nginx listen options, `networkd-wait-online` na EDGE2, EN editorial pass.
 
 | Položka | Stav | Poznámka |
 |---|---|---|
