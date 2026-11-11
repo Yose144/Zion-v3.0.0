@@ -2,19 +2,32 @@ import type { ArenaBox } from './map';
 import { toBox } from './physics';
 
 /**
- * Navigace botů — mřížka nad mapou, ne mesa.
+ * Navigace botů — **víceúrovňová** mřížka nad mapou.
  *
- * Mapa je z krabic, takže mřížka 1×1 m se dá odvodit: buňka je průchozí, když
- * v úrovni těla nic nestojí a pod ní je podlaha. BFS (ne A*) stačí — 40×40 buněk
- * je 1 600 kroků a boti přepočítávají cestu jen čtyřikrát za sekundu.
+ * Mapa je z krabic, takže buňka 1×1 m má jednu „podlahu": nejvyšší plochu,
+ * na které se dá stát a nad kterou je volno do výšky těla. Most (top 2) je
+ * proto podlaha ve výšce 2, ne zeď — bot se po schodech vyškrábe nahoru.
+ *
+ * Co platí:
+ *  - **tenké desky (trim, ≤ 0,25 m) se ignorují** — jsou dekorace, fyzika je
+ *    přeskočí stejně jako `stepHeight` 0,55.
+ *  - střechy vysokých zdí (> 6 m) nejsou podlaha; buňka uvnitř zdi zůstane
+ *    neprůchozí, protože nad nižší plochou stojí hmota.
+ *  - BFS povolí krok **nahoru do `NAV_CLIMB`** (1 m = dosah skoku) a **dolů
+ *    libovolně** (bot seskočí). Skok dělá `bot.ts` podle výšky další buňky.
  */
 
 export const NAV_SIZE = 40;
 export const NAV_CELL = 1;
 export const NAV_ORIGIN = -20;
-
-const BODY_LOW = 0.45;
+/** Maximální stoupnutí mezi buňkami — nad to bot skáče (skok zvládne ~1,14 m). */
+export const NAV_CLIMB = 1.0;
+/** Výška těla — nad podlahou musí být tolik volna. */
 const BODY_HIGH = 1.6;
+/** Hranice „podlaha vs. střecha zdi": výš se za podlahu nepovažuje. */
+const MAX_FLOOR = 6;
+/** Tenčí krabice je deska (trim) — ani podlaha, ani překážka. */
+const THIN = 0.25;
 
 export interface NavGrid {
   /** 1 = průchozí, 0 = zeď. */
@@ -27,7 +40,14 @@ export function buildNavGrid(boxes: ArenaBox[]): NavGrid {
   const cells = new Uint8Array(NAV_SIZE * NAV_SIZE);
   const floor = new Float32Array(NAV_SIZE * NAV_SIZE);
 
-  const solids = boxes.map(toBox);
+  // Desky (trim) vyhodíme hned — jen by rozbily výšky o 0,12 m.
+  const solids = boxes
+    .filter((box) => box.h > THIN)
+    .map(toBox)
+    .filter((box) => box.maxY - box.minY > THIN);
+
+  const overlaps = (box: { minX: number; maxX: number; minZ: number; maxZ: number }, x: number, z: number) =>
+    x >= box.minX && x <= box.maxX && z >= box.minZ && z <= box.maxZ;
 
   for (let gz = 0; gz < NAV_SIZE; gz++) {
     for (let gx = 0; gx < NAV_SIZE; gx++) {
@@ -35,19 +55,26 @@ export function buildNavGrid(boxes: ArenaBox[]): NavGrid {
       const z = NAV_ORIGIN + gz * NAV_CELL + NAV_CELL / 2;
       const index = gz * NAV_SIZE + gx;
 
-      let ground = -Infinity;
-      let blocked = false;
+      let surface = -Infinity;
 
       for (const box of solids) {
-        if (x < box.minX || x > box.maxX || z < box.minZ || z > box.maxZ) continue;
-        // podlaha: nejvyšší strop, který je pod hlavou
-        if (box.maxY <= BODY_HIGH && box.maxY > ground) ground = box.maxY;
-        // překážka v úrovni těla
-        if (box.maxY > BODY_LOW && box.minY < BODY_HIGH) blocked = true;
+        if (!overlaps(box, x, z)) continue;
+        const top = box.maxY;
+        if (top > MAX_FLOOR) continue; // střecha zdi není podlaha
+        // nad plochou musí být volno do výšky těla (jinak je to strop)
+        let clear = true;
+        for (const other of solids) {
+          if (other === box || !overlaps(other, x, z)) continue;
+          if (other.minY < top + BODY_HIGH - 0.05 && other.maxY > top + 0.05) {
+            clear = false;
+            break;
+          }
+        }
+        if (clear && top > surface) surface = top;
       }
 
-      floor[index] = ground;
-      cells[index] = blocked || ground === -Infinity ? 0 : 1;
+      floor[index] = surface;
+      cells[index] = surface === -Infinity ? 0 : 1;
     }
   }
   return { cells, floor };
@@ -115,6 +142,8 @@ export function findPath(grid: NavGrid, from: number, to: number, maxNodes = 700
       if (step === 1 && next % NAV_SIZE === 0) continue;
       if (step === -1 && current % NAV_SIZE === 0) continue;
       if (seen[next] || !grid.cells[next]) continue;
+      // Nahoru jen do dosahu skoku, dolů libovolně (bot seskočí po schodech).
+      if (grid.floor[next]! - grid.floor[current]! > NAV_CLIMB) continue;
       seen[next] = 1;
       prev[next] = current;
       queue[tail++] = next;

@@ -46,9 +46,14 @@ export interface BotIntent {
   forward: number;
   strafe: number;
   jump: boolean;
-  /** Míří sem bot. */
+  /** Míří sem bot (střelba). */
   yaw: number;
   pitch: number;
+  /**
+   * Směr pohybu, když se liší od míření — bot jde po waypointu cesty
+   * a přitom míří na cíl. Když chybí, platí `yaw`.
+   */
+  moveYaw?: number;
   /** Chce střílet (server/marsarena rozhodne o cooldownu a munici). */
   fire: boolean;
   /** Vidí cíle (LOS) — používá se i pro strafování. */
@@ -200,16 +205,19 @@ export function stepBot(
 
   let goalX = target.x;
   let goalZ = target.z;
+  /** Další buňka cesty je výš, než kam bot vyjde krokem → musí skočit. */
+  let mustClimb = false;
   if (memory.path.length > 0) {
     while (memory.pathIndex < memory.path.length) {
       const [cx, cz] = cellCenter(memory.path[memory.pathIndex]!);
-      if (Math.hypot(cx - self.x, cz - self.z) < 0.7) memory.pathIndex += 1;
+      if (Math.hypot(cx - self.x, cz - self.z) < 1.1) memory.pathIndex += 1;
       else break;
     }
     const node = memory.path[Math.min(memory.pathIndex, memory.path.length - 1)]!;
     const [wx, wz] = cellCenter(node);
     goalX = wx;
     goalZ = wz;
+    mustClimb = (nav.floor[node] ?? 0) > self.y + 0.35;
   }
 
   // ── natočení k cíli ────────────────────────────────────────────────
@@ -229,6 +237,11 @@ export function stepBot(
   const yaw = targetYaw + memory.aimErrorX;
   const pitch = Math.max(-0.9, Math.min(0.9, targetPitch + memory.aimErrorY));
 
+  // Pohyb vede po waypointu, míření zůstává na cíli. Bez toho boti šli
+  // „rovnou na hráče" a zasekli se o zeď/plošinu (navigace byla jen dekorace).
+  const wayDist = Math.hypot(goalX - self.x, goalZ - self.z);
+  const pathMode = memory.path.length > 0 && wayDist > 0.6;
+  const moveYaw = pathMode ? Math.atan2(-(goalX - self.x), -(goalZ - self.z)) : yaw;
   // ── viditelnost (z téže výšky, ze které bot míří) ───────────────────
   const sees = lineOfSight(
     self.x,
@@ -240,13 +253,25 @@ export function stepBot(
     solids,
   );
 
+  /**
+   * Při cestě po waypointech se nestrafuje naplno — jinak bot vypadne
+   * z úzkých schodů dřív, než vyjde nahoru (reálně se to dělo).
+   */
+  const strafeScale = pathMode ? 0.25 : sees ? 0.9 : 0.4;
+
   // ── držení odstupu ─────────────────────────────────────────────────
   const toGoal = Math.hypot(goalX - self.x, goalZ - self.z);
   const approach = toGoal > 1.2 ? 1 : targetDist > 11 ? 1 : targetDist < 5 ? -1 : 0;
   if (Math.random() < 0.01) memory.strafeDir = memory.strafeDir === 1 ? -1 : 1;
 
-  const jump = now > memory.nextJump && Math.random() < 0.02;
-  if (now > memory.nextJump) memory.nextJump = now + 1800 + Math.random() * 2200;
+  // Skok tam, kde cesta stoupá (schody/výšková lišta) — bez toho by bot
+  // zůstal stát pod plošinou, i když po ní vede cesta. Jinak jen občasný hop.
+  const climbJump = mustClimb && now > memory.nextJump;
+  const randomHop = now > memory.nextJump && Math.random() < 0.02;
+  const jump = climbJump || randomHop;
+  if (jump) {
+    memory.nextJump = now + (climbJump ? 600 : 1800) + Math.random() * 300;
+  }
 
   const fire = sees && targetDist <= opt.engageRange && now > memory.nextShot;
   // cooldown patří do mozku — jinak by bot „držel spoušť" každý snímek
@@ -255,10 +280,11 @@ export function stepBot(
 
   return {
     forward: approach,
-    strafe: memory.strafeDir * (sees ? 0.9 : 0.4),
+    strafe: memory.strafeDir * strafeScale,
     jump,
     yaw,
     pitch,
+    moveYaw,
     fire,
     sees,
   };
@@ -280,7 +306,7 @@ export function driveBot(
 ): void {
   stepBody(
     body,
-    intent.yaw,
+    intent.moveYaw ?? intent.yaw,
     {
       forward: intent.forward,
       strafe: intent.strafe,

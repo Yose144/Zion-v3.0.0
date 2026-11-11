@@ -120,6 +120,48 @@ for (const id of ARENA_MAP_IDS) {
   const after = distanceTo();
   check('bot se za 6 s přiblíží aspoň o 4 m', after < before - 4, `${before.toFixed(1)} → ${after.toFixed(1)} m`);
 
+  // ── 3b2) bot opravdu vyjde na vyvýšené místo (ne jen cesta existuje) ─
+  {
+    const climbStart = { mars: { x: 0, z: 12 }, q3dm3: { x: 0, z: 6 }, q3dm6: { x: 0, z: 12 } }[id];
+    const climbGoal = { mars: { x: 0, z: 0, y: 2 }, q3dm3: { x: 0, z: 0, y: 2 }, q3dm6: { x: 0, z: 0, y: 3 } }[id];
+    const climber = {
+      x: climbStart.x,
+      y: 0.2,
+      z: climbStart.z,
+      vx: 0,
+      vy: 0,
+      vz: 0,
+      onGround: false,
+    };
+    const memory = createBotMemory();
+    const aimAt = { id: 'up', x: climbGoal.x, y: climbGoal.y, z: climbGoal.z, alive: true };
+    let clock = 0;
+    let maxY = 0;
+    for (let step = 0; step < 30 * 10; step++) {
+      clock += 1000 / 30;
+      const intent = stepBot(memory, climber, [aimAt], grid, solids, clock, 1 / 30, options);
+      driveBot(memory, climber, intent, 1 / 30, solids, BOT_BODY.radius, BOT_BODY.height, options.speed);
+      maxY = Math.max(maxY, climber.y);
+    }
+    check(
+      'bot vyjde na vyvýšené místo (skok/ schody)',
+      maxY >= climbGoal.y - 0.3,
+      `maxY=${maxY.toFixed(2)} cíl=${climbGoal.y}`,
+    );
+  }
+
+  // ── 3c) každý pickup musí být po mřížce dosažitelný ───────────────
+  // (boti chodí po navigaci, ne magicky — nedosažitelný pickup = mrtvý bod)
+  const unreachable = map.pickups.filter((pickup) => {
+    const cell = nearestWalkable(grid, cellIndex(pickup.x, pickup.z));
+    return cell < 0 || findPath(grid, from, cell, 40 * 40).length === 0;
+  });
+  check(
+    'všechny pickupy jsou dosažitelné po zemi/výškách',
+    unreachable.length === 0,
+    unreachable.map((pickup) => `${pickup.id}@${pickup.y}`).join(' '),
+  );
+
   // ── 4) pickupy ────────────────────────────────────────────────────
   check('mapa má aspoň osm pickupů', map.pickups.length >= 8, String(map.pickups.length));
   const ids = new Set(map.pickups.map((pickup) => pickup.id));

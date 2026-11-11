@@ -74,6 +74,24 @@
   `.artifacts/probe/arena-map-online.mjs` (klient vybere Q3DM3, připojí se,
   `__mpDebug().map === 'q3dm3'`, start na vyvýšeném spawnu).
 
+## Víceúrovňová navigace (2026-11-11, po mapách)
+
+- **`buildNavGrid` je 2,5D**: buňka má podlahu = nejvyšší plocha s volnem
+  do výšky těla. Most/věž jsou podlaha, ne zeď. Tenké `trim` desky se
+  ignorují (fyzika je přeskakuje), střechy zdí (> 6 m) podlaha nejsou.
+- **BFS je směrová**: nahoru do `NAV_CLIMB` 1,0 m (dosah skoku), dolů
+  libovolně. Bot skáče, když další buňka cesty stoupá (`mustClimb`).
+- **Boti jdou po waypointech a míří na cíl** (`BotIntent.moveYaw`), takže
+  obcházejí plošiny místo aby se do nich opřeli. Při cestě strafují jen
+  0,25× — plný strafe je shazoval z úzkých schodů.
+- **Mapy se srovnaly s fyzikou:** Mars měl obrácené schody a 0,6 m mezeru
+  k plošině (nešlo vyjít), lišty 3,2 m (víc než skok) → 3,0 m + lávky;
+  Q3DM3 dostala schody na lišty a širší stupně; Q3DM6 šest 0,5 m stupňů
+  na věž, pětistupňové schody na křídla a sloupy přesunuté ze spawnu.
+- **Testy:** `arena-maps` ověřuje dosažitelnost **všech pickupů** a že se
+  bot na vyvýšené místo opravdu vyškrábe (mars/q3dm3/q3dm6); `arena`,
+  `arena-bots`, `arena-maps` (net) a E2E `arena-map-online` prošly.
+
 ## Meze
 
 - Q3DM3/Q3DM6 jsou **stylizované půdorysy**, ne kopie `.bsp` — originální

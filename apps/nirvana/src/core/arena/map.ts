@@ -105,20 +105,25 @@ const MARS_BOXES: ArenaBox[] = [
   { x: 0, y: 0, z: 0, w: 12, h: 2, d: 12, kind: 'metal' },
   { x: 0, y: 2, z: 0, w: 12.6, h: 0.12, d: 12.6, kind: 'trim' },
 
-  // schodiště na plošinu (z +)
-  { x: 0, y: 0, z: 7.2, w: 6, h: 0.5, d: 1.2, kind: 'metal' },
-  { x: 0, y: 0, z: 8.4, w: 6, h: 1.0, d: 1.2, kind: 'metal' },
-  { x: 0, y: 0, z: 9.6, w: 6, h: 1.5, d: 1.2, kind: 'metal' },
+  // schodiště na plošinu (z +): stupně stoupají k plošině a poslední
+  // navazuje přímo na její hranu (dřív mezi nimi byla 0,6 m mezera)
+  { x: 0, y: 0, z: 6.5, w: 6, h: 1.5, d: 1, kind: 'metal' },
+  { x: 0, y: 0, z: 7.5, w: 6, h: 1.0, d: 1, kind: 'metal' },
+  { x: 0, y: 0, z: 8.5, w: 6, h: 0.5, d: 1, kind: 'metal' },
   // schodiště na plošinu (z −)
-  { x: 0, y: 0, z: -7.2, w: 6, h: 0.5, d: 1.2, kind: 'metal' },
-  { x: 0, y: 0, z: -8.4, w: 6, h: 1.0, d: 1.2, kind: 'metal' },
-  { x: 0, y: 0, z: -9.6, w: 6, h: 1.5, d: 1.2, kind: 'metal' },
+  { x: 0, y: 0, z: -6.5, w: 6, h: 1.5, d: 1, kind: 'metal' },
+  { x: 0, y: 0, z: -7.5, w: 6, h: 1.0, d: 1, kind: 'metal' },
+  { x: 0, y: 0, z: -8.5, w: 6, h: 0.5, d: 1, kind: 'metal' },
 
-  // boční lišty (dostupné skokem z plošiny)
-  { x: -14, y: 2.6, z: 0, w: 6, h: 0.6, d: 10, kind: 'metal' },
-  { x: 14, y: 2.6, z: 0, w: 6, h: 0.6, d: 10, kind: 'metal' },
-  { x: -14, y: 3.2, z: 0, w: 6.2, h: 0.1, d: 10.2, kind: 'trim' },
-  { x: 14, y: 3.2, z: 0, w: 6.2, h: 0.1, d: 10.2, kind: 'trim' },
+  // boční lišty (dostupné skokem z plošiny: 2,0 → 3,0 = 1 m)
+  { x: -14, y: 2.4, z: 0, w: 6, h: 0.6, d: 10, kind: 'metal' },
+  { x: 14, y: 2.4, z: 0, w: 6, h: 0.6, d: 10, kind: 'metal' },
+  { x: -14, y: 3.0, z: 0, w: 6.2, h: 0.1, d: 10.2, kind: 'trim' },
+  { x: 14, y: 3.0, z: 0, w: 6.2, h: 0.1, d: 10.2, kind: 'trim' },
+  // lávky z plošiny na lišty — bez nich se na lišty dá jen skokem přes
+  // prázdno (5 m), což boti po mřížce nikdy neudělají
+  { x: -8.5, y: 2, z: 0, w: 5, h: 0.6, d: 2, kind: 'metal' },
+  { x: 8.5, y: 2, z: 0, w: 5, h: 0.6, d: 2, kind: 'metal' },
 
   // čtyři sloupy
   { x: -8, y: 0, z: -8, w: 1.6, h: 5.5, d: 1.6, kind: 'rock' },
@@ -142,14 +147,14 @@ const MARS_PICKUPS: ArenaPickup[] = [
    * Powerupy a mega (2026-11-11): stejné Q3 rytmy jako v sólu a od protokolu
    * 37 je má i multiplayer — server drží buffy a posílá je ve snapshotu.
    */
-  { id: 'q1', kind: 'powerup', powerup: 'quad', x: 14, y: 3.2, z: 0, respawn: 60 },
-  { id: 'ha1', kind: 'powerup', powerup: 'haste', x: -14, y: 3.2, z: 0, respawn: 45 },
+  { id: 'q1', kind: 'powerup', powerup: 'quad', x: 14, y: 3.1, z: 0, respawn: 60 },
+  { id: 'ha1', kind: 'powerup', powerup: 'haste', x: -14, y: 3.1, z: 0, respawn: 45 },
   { id: 'mh1', kind: 'mega', x: 0, y: 2, z: 4, respawn: 35 },
   // armor shardy (Q3 +5): čtyři místa, aby se dalo „doarmorovat" cestou
   { id: 's1', kind: 'shard', x: -4, y: 2, z: -4, respawn: 12 },
   { id: 's2', kind: 'shard', x: 4, y: 2, z: -4, respawn: 12 },
-  { id: 's3', kind: 'shard', x: -14, y: 3.2, z: -4, respawn: 12 },
-  { id: 's4', kind: 'shard', x: 14, y: 3.2, z: 4, respawn: 12 },
+  { id: 's3', kind: 'shard', x: -14, y: 3.1, z: -4, respawn: 12 },
+  { id: 's4', kind: 'shard', x: 14, y: 3.1, z: 4, respawn: 12 },
 ];
 
 // ── Q3DM3 · Toxicity (stylizovaná) ─────────────────────────────────────
@@ -179,21 +184,31 @@ const Q3DM3_BOXES: ArenaBox[] = [
   // centrální most (top 2) + tři schody z každé strany
   { x: 0, y: 0, z: 0, w: 20, h: 2, d: 4, kind: 'metal' },
   { x: 0, y: 2, z: 0, w: 20.4, h: 0.12, d: 4.4, kind: 'trim' },
-  { x: -10.5, y: 0, z: 0, w: 1, h: 1.5, d: 4, kind: 'metal' },
-  { x: -11.5, y: 0, z: 0, w: 1, h: 1.0, d: 4, kind: 'metal' },
-  { x: -12.5, y: 0, z: 0, w: 1, h: 0.5, d: 4, kind: 'metal' },
-  { x: 10.5, y: 0, z: 0, w: 1, h: 1.5, d: 4, kind: 'metal' },
-  { x: 11.5, y: 0, z: 0, w: 1, h: 1.0, d: 4, kind: 'metal' },
-  { x: 12.5, y: 0, z: 0, w: 1, h: 0.5, d: 4, kind: 'metal' },
+  { x: -10.5, y: 0, z: 0, w: 1, h: 1.5, d: 6, kind: 'metal' },
+  { x: -11.5, y: 0, z: 0, w: 1, h: 1.0, d: 6, kind: 'metal' },
+  { x: -12.5, y: 0, z: 0, w: 1, h: 0.5, d: 6, kind: 'metal' },
+  { x: 10.5, y: 0, z: 0, w: 1, h: 1.5, d: 6, kind: 'metal' },
+  { x: 11.5, y: 0, z: 0, w: 1, h: 1.0, d: 6, kind: 'metal' },
+  { x: 12.5, y: 0, z: 0, w: 1, h: 0.5, d: 6, kind: 'metal' },
 
   // výškové lišty po stranách (top 2,6) — nad zemí, takže nechávají uličku
-  { x: -16, y: 2, z: 0, w: 3, h: 0.6, d: 10, kind: 'metal' },
-  { x: 16, y: 2, z: 0, w: 3, h: 0.6, d: 10, kind: 'metal' },
-  { x: -16, y: 2.6, z: 0, w: 3.2, h: 0.1, d: 10.2, kind: 'trim' },
-  { x: 16, y: 2.6, z: 0, w: 3.2, h: 0.1, d: 10.2, kind: 'trim' },
-  // spojka most → lišta (taky nad zemí)
-  { x: -13.5, y: 1.9, z: 0, w: 2, h: 0.7, d: 4, kind: 'metal' },
-  { x: 13.5, y: 1.9, z: 0, w: 2, h: 0.7, d: 4, kind: 'metal' },
+  // u schodů na most (x 12,5) volnou
+  { x: -15.5, y: 2, z: 0, w: 5, h: 0.6, d: 10, kind: 'metal' },
+  { x: 15.5, y: 2, z: 0, w: 5, h: 0.6, d: 10, kind: 'metal' },
+  { x: -15.5, y: 2.6, z: 0, w: 5.2, h: 0.1, d: 10.2, kind: 'trim' },
+  { x: 15.5, y: 2.6, z: 0, w: 5.2, h: 0.1, d: 10.2, kind: 'trim' },
+  // schody na lišty (pět 0,5 m stupňů na severním/jižním konci lišty —
+  // mimo pás mostu, takže neucpou boční uličku k mostu)
+  { x: 15.5, y: 0, z: 5.5, w: 3, h: 2.5, d: 1, kind: 'metal' },
+  { x: 15.5, y: 0, z: 6.5, w: 3, h: 2.0, d: 1, kind: 'metal' },
+  { x: 15.5, y: 0, z: 7.5, w: 3, h: 1.5, d: 1, kind: 'metal' },
+  { x: 15.5, y: 0, z: 8.5, w: 3, h: 1.0, d: 1, kind: 'metal' },
+  { x: 15.5, y: 0, z: 9.5, w: 3, h: 0.5, d: 1, kind: 'metal' },
+  { x: -15.5, y: 0, z: -5.5, w: 3, h: 2.5, d: 1, kind: 'metal' },
+  { x: -15.5, y: 0, z: -6.5, w: 3, h: 2.0, d: 1, kind: 'metal' },
+  { x: -15.5, y: 0, z: -7.5, w: 3, h: 1.5, d: 1, kind: 'metal' },
+  { x: -15.5, y: 0, z: -8.5, w: 3, h: 1.0, d: 1, kind: 'metal' },
+  { x: -15.5, y: 0, z: -9.5, w: 3, h: 0.5, d: 1, kind: 'metal' },
 
   // sloupy a kryt
   { x: -10, y: 0, z: -10, w: 1.5, h: 2.6, d: 1.5, kind: 'rock' },
@@ -224,8 +239,8 @@ const Q3DM3_PICKUPS: ArenaPickup[] = [
   { id: 'mh1', kind: 'mega', x: 0, y: 0, z: 14, respawn: 35 },
   { id: 'a1', kind: 'armor', x: 0, y: 0, z: -14, respawn: 30 },
   { id: 'ha1', kind: 'powerup', powerup: 'haste', x: -16, y: 2.6, z: 0, respawn: 45 },
-  { id: 'h1', kind: 'health', x: -16, y: 0, z: 8, respawn: 18 },
-  { id: 'h2', kind: 'health', x: 16, y: 0, z: -8, respawn: 18 },
+  { id: 'h1', kind: 'health', x: -16, y: 0, z: 12, respawn: 18 },
+  { id: 'h2', kind: 'health', x: 16, y: 0, z: -12, respawn: 18 },
   { id: 'm1', kind: 'ammo', x: -14, y: 0, z: 12, respawn: 22 },
   { id: 'm2', kind: 'ammo', x: 14, y: 0, z: -12, respawn: 22 },
   { id: 's1', kind: 'shard', x: -6, y: 2, z: 0, respawn: 12 },
@@ -253,31 +268,47 @@ const Q3DM6_BOXES: ArenaBox[] = [
   { x: 0, y: 3, z: 0, w: 6, h: 2, d: 6, kind: 'metal' },
   { x: 0, y: 3, z: 0, w: 10.4, h: 0.1, d: 10.4, kind: 'trim' },
   { x: 0, y: 5, z: 0, w: 6.4, h: 0.1, d: 6.4, kind: 'trim' },
-  // schody na spodek věže (jih) — tři stupně
-  { x: 0, y: 0, z: 11, w: 7, h: 1, d: 1.6, kind: 'metal' },
-  { x: 0, y: 0, z: 9.5, w: 7, h: 2, d: 1.6, kind: 'metal' },
-  { x: 0, y: 0, z: 8, w: 7, h: 3, d: 1.6, kind: 'metal' },
+  // schody na spodek věže (jih) — šest stupňů po 0,5 m (stepHeight 0,55)
+  { x: 0, y: 0, z: 5.5, w: 9, h: 3.0, d: 1, kind: 'metal' },
+  { x: 0, y: 0, z: 6.5, w: 9, h: 2.5, d: 1, kind: 'metal' },
+  { x: 0, y: 0, z: 7.5, w: 9, h: 2.0, d: 1, kind: 'metal' },
+  { x: 0, y: 0, z: 8.5, w: 9, h: 1.5, d: 1, kind: 'metal' },
+  { x: 0, y: 0, z: 9.5, w: 9, h: 1.0, d: 1, kind: 'metal' },
+  { x: 0, y: 0, z: 10.5, w: 9, h: 0.5, d: 1, kind: 'metal' },
   // schody na spodek věže (sever)
-  { x: 0, y: 0, z: -11, w: 7, h: 1, d: 1.6, kind: 'metal' },
-  { x: 0, y: 0, z: -9.5, w: 7, h: 2, d: 1.6, kind: 'metal' },
-  { x: 0, y: 0, z: -8, w: 7, h: 3, d: 1.6, kind: 'metal' },
-  // mezistupeň na horní kubus (nad zemí — navigaci neblokuje)
-  { x: 4.8, y: 3, z: 0, w: 1.6, h: 1, d: 4, kind: 'metal' },
+  { x: 0, y: 0, z: -5.5, w: 9, h: 3.0, d: 1, kind: 'metal' },
+  { x: 0, y: 0, z: -6.5, w: 9, h: 2.5, d: 1, kind: 'metal' },
+  { x: 0, y: 0, z: -7.5, w: 9, h: 2.0, d: 1, kind: 'metal' },
+  { x: 0, y: 0, z: -8.5, w: 9, h: 1.5, d: 1, kind: 'metal' },
+  { x: 0, y: 0, z: -9.5, w: 9, h: 1.0, d: 1, kind: 'metal' },
+  { x: 0, y: 0, z: -10.5, w: 9, h: 0.5, d: 1, kind: 'metal' },
+  // stupně na horní kubus (na střeše věže, 3,5 → 4,0 → 5,0 skokem)
+  { x: 4.5, y: 3, z: 0, w: 1, h: 0.5, d: 4, kind: 'metal' },
+  { x: 3.5, y: 3, z: 0, w: 1, h: 1.0, d: 4, kind: 'metal' },
 
   // křídla (top 2,5) + schody uvnitř křídla
   { x: -15.5, y: 0, z: 0, w: 7, h: 2.5, d: 14, kind: 'metal' },
   { x: 15.5, y: 0, z: 0, w: 7, h: 2.5, d: 14, kind: 'metal' },
-  { x: -13, y: 0, z: 0, w: 2, h: 1.25, d: 6, kind: 'metal' },
-  { x: 13, y: 0, z: 0, w: 2, h: 1.25, d: 6, kind: 'metal' },
+  // schody na křídla: pět stupňů po 0,5 m na severním konci každého křídla
+  { x: -15.5, y: 0, z: 7.5, w: 5, h: 2.5, d: 1, kind: 'metal' },
+  { x: -15.5, y: 0, z: 8.5, w: 5, h: 2.0, d: 1, kind: 'metal' },
+  { x: -15.5, y: 0, z: 9.5, w: 5, h: 1.5, d: 1, kind: 'metal' },
+  { x: -15.5, y: 0, z: 10.5, w: 5, h: 1.0, d: 1, kind: 'metal' },
+  { x: -15.5, y: 0, z: 11.5, w: 5, h: 0.5, d: 1, kind: 'metal' },
+  { x: 15.5, y: 0, z: -7.5, w: 5, h: 2.5, d: 1, kind: 'metal' },
+  { x: 15.5, y: 0, z: -8.5, w: 5, h: 2.0, d: 1, kind: 'metal' },
+  { x: 15.5, y: 0, z: -9.5, w: 5, h: 1.5, d: 1, kind: 'metal' },
+  { x: 15.5, y: 0, z: -10.5, w: 5, h: 1.0, d: 1, kind: 'metal' },
+  { x: 15.5, y: 0, z: -11.5, w: 5, h: 0.5, d: 1, kind: 'metal' },
   // mostky z křídel k věži (top 2,5) — končí na ±10, aby zůstala ulička
   { x: -7.5, y: 0, z: 0, w: 5, h: 2.5, d: 4, kind: 'metal' },
   { x: 7.5, y: 0, z: 0, w: 5, h: 2.5, d: 4, kind: 'metal' },
 
   // kryty a sloupy (mimo uličku |x| 10–12)
-  { x: -14, y: 0, z: 12, w: 2, h: 3, d: 2, kind: 'rock' },
-  { x: 14, y: 0, z: 12, w: 2, h: 3, d: 2, kind: 'rock' },
-  { x: -14, y: 0, z: -12, w: 2, h: 3, d: 2, kind: 'rock' },
-  { x: 14, y: 0, z: -12, w: 2, h: 3, d: 2, kind: 'rock' },
+  { x: -8.5, y: 0, z: 14.5, w: 2, h: 3, d: 2, kind: 'rock' },
+  { x: 8.5, y: 0, z: 14.5, w: 2, h: 3, d: 2, kind: 'rock' },
+  { x: -8.5, y: 0, z: -14.5, w: 2, h: 3, d: 2, kind: 'rock' },
+  { x: 8.5, y: 0, z: -14.5, w: 2, h: 3, d: 2, kind: 'rock' },
   { x: 0, y: 0, z: 16, w: 6, h: 1.4, d: 1.6, kind: 'rock' },
   { x: 0, y: 0, z: -16, w: 6, h: 1.4, d: 1.6, kind: 'rock' },
 ];

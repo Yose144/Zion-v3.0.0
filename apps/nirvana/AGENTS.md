@@ -3056,3 +3056,36 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   **reálný pohyb bota** (`stepBot` + `driveBot` za 6 s ujde ≥ 4 m),
   pickupy na podlaze, respawny a rozdílnost půdorysů. Headless screenshot
   dělá `.artifacts/probe/arena-maps-shot.mjs`.
+
+## Aréna — víceúrovňová navigace a výšky map (2026-11-11)
+
+- **`buildNavGrid` je 2,5D, ne 2D.** Buňka má jednu „podlahu" = nejvyšší
+  plochu, na které se dá stát a nad kterou je volno do výšky těla. Most
+  (top 2) je proto podlaha ve výšce 2, ne zeď — dřív se mapa za mostem
+  rozpůlila a boti se na druhou stranu nedostali.
+- **Tenké desky (≤ 0,25 m) se v navigaci ignorují.** `trim` je dekorace
+  a fyzika ho stejně přeskočí (`stepHeight` 0,55); kdyby vstupoval do
+  výšek, každá plošina by byla o 0,12 m výš a schody by přestaly sedět.
+- **Střechy zdí nejsou podlaha** (`MAX_FLOOR = 6`): buňka uvnitř zdi zůstane
+  neprůchozí, protože nad nižší plochou stojí hmota (kontrola volnosti).
+- **BFS je směrová:** nahoru jen do `NAV_CLIMB = 1,0 m` (dosah skoku),
+  dolů libovolně (bot seskočí). Tím se schody dají vyjít krokem a plošiny
+  skokem, ale z mostu se bot dostane i dolů.
+- **Boti jdou po waypointech, míří na cíl.** `BotIntent.moveYaw` je směr
+  pohybu (waypoint), `yaw` zůstává míření. `driveBot` používá `moveYaw`.
+  Bez toho boti šli „rovnou na hráče", zasekli se o plošinu a navigace
+  byla jen dekorace.
+- **Při cestě se nestrafuje naplno** (`strafeScale` 0,25) — plný strafe
+  shodil bota z úzkých schodů dřív, než je vyšel. Toleranci waypointu
+  jsme zvedli na 1,1 m (0,7 m při strafování občas přeskočilo).
+- **Skok na schod:** `mustClimb` (další buňka je výš než bot) spustí hop
+  s kratším cooldownem; skok zvládne ~1,14 m, takže 0,5 m stupně i 1 m
+  hrany.
+- **Výšky map se musely srovnat s fyzikou.** Mars měl schody obráceně
+  (1,5 m hned u země) a 0,6 m mezeru k plošině → hráč ani bot nahoru
+  nevyšel; lišty byly 3,2 m (1,2 nad plošinou, víc než skok) → 3,0 m.
+  Q3DM6 měl schody 1/2/3 m → šest po 0,5 m, křídla dostala vlastní
+  pětistupňové schody a krycí sloupy se přesunuly ze spawnu.
+- **Test** `test/arena-maps.mjs` teď navíc ověřuje: každý pickup je
+  dosažitelný po mřížce a **bot se na vyvýšené místo opravdu vyškrábe**
+  (mars platforma, q3dm3 most, q3dm6 věž) — ne jen že cesta existuje.
