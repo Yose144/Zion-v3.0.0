@@ -16,16 +16,6 @@ interface Slide {
 
 const SLIDES: Slide[] = [
   {
-    src: '/images/home/christmas-kingdom.webp?v=engine-v1',
-    srcM: '/images/home/christmas-kingdom-m.webp?v=engine-v1',
-    alt: {
-      cs: 'Veselé Vánoce a šťastný nový rok 2027 — Kingdom, archa a Strom života ve sněhu',
-      en: 'Merry Christmas & Happy New Year 2027 — Kingdom, the ark and the Tree of Life in the snow',
-    },
-    label: { cs: 'Vánoce 2026 · Kingdom', en: 'Christmas 2026 · Kingdom' },
-    href: '/news/christmas-2026',
-  },
-  {
     src: '/images/home/hero.webp?v=engine-v1',
     srcM: '/images/home/hero-m.webp?v=engine-v1',
     alt: {
