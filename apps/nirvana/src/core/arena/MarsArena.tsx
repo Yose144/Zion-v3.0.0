@@ -79,6 +79,11 @@ export interface ArenaStats {
   accuracy?: number;
   /** Kill feed — poslední zásahy a smrti. */
   feed?: { id: number; text: string; kind: 'frag' | 'death' }[];
+  /** Kdy naposledy hráč trefil cíl / dostal zásah (ms) — hitmarker a viněta. */
+  hitAt?: number;
+  hurtAt?: number;
+  /** Q3 tabulka (Tab): hráč + boti, seřazená podle fragů. */
+  scoreboard?: { name: string; frags: number; deaths: number; you: boolean }[];
 }
 
 interface XrHandle {
@@ -111,6 +116,9 @@ interface BotState {
   alive: boolean;
   respawnAt: number;
   name: string;
+  /** Skóre bota (Q3 tabulka): zabití hráče a vlastní smrti. */
+  frags: number;
+  deaths: number;
   /** Sdílený botí mozek — stejný jako v MP. */
   memory: BotMemory;
   skill: BotSkill;
@@ -165,6 +173,8 @@ function makeBot(spawn: { x: number; z: number; yaw: number }, index: number): B
     alive: true,
     respawnAt: 0,
     name: BOT_NAMES[index % BOT_NAMES.length]!,
+    frags: 0,
+    deaths: 0,
     memory: createBotMemory(),
     skill: BOT_SKILL_BY_INDEX[index % BOT_SKILL_BY_INDEX.length]!,
   };
@@ -296,6 +306,9 @@ export function MarsArena({
   const hits = useRef(0);
   /** Poslední botí výstřel — pro debug/test, že boti střídají zbraně. */
   const lastBotAttack = useRef<{ name: string; weapon: WeaponId } | null>(null);
+  /** Kdy hráč naposledy trefil / dostal zásah (pro hitmarker a vinětu). */
+  const lastHitAt = useRef(0);
+  const lastHurtAt = useRef(0);
   /** Zpětný ráz a záblesk pro model zbraně (ms). */
   const kick = useRef(0);
   const muzzleUntil = useRef(0);
@@ -336,6 +349,12 @@ export function MarsArena({
         shots: shots.current,
         hits: hits.current,
         feed: feed.current.map((entry) => entry.text),
+        hitAt: lastHitAt.current,
+        hurtAt: lastHurtAt.current,
+        scoreboard: [
+          { name: 'YOU', frags: frags.current, deaths: deaths.current, you: true },
+          ...bots.current.map((bot) => ({ name: bot.name, frags: bot.frags, deaths: bot.deaths, you: false })),
+        ],
         lastBotAttack: lastBotAttack.current,
         bots: bots.current.map((bot) => ({
           x: bot.body.x,
@@ -588,6 +607,7 @@ export function MarsArena({
 
       if (hitAny) {
         hits.current += 1;
+        lastHitAt.current = now;
         playHit();
       }
       if (id === 'rail') playRail();
@@ -636,6 +656,7 @@ export function MarsArena({
   }
 
   function killBot(bot: BotState, now: number) {
+    bot.deaths += 1;
     bot.alive = false;
     bot.health = 0;
     bot.respawnAt = now + BOT_RESPAWN * 1000;
@@ -650,12 +671,20 @@ export function MarsArena({
     const absorbed = Math.min(armor.current, Math.round(amount * ARMOR_ABSORB));
     armor.current -= absorbed;
     health.current -= amount - absorbed;
+    lastHurtAt.current = now;
     if (health.current > 0) playHurt();
     if (health.current <= 0) {
       health.current = 0;
       deaths.current += 1;
       deadUntil.current = now + RESPAWN_TIME * 1000;
       pushFeed('death', source ? `${source} fragged you` : 'You died', now);
+      // Q3: powerupy se smrtí padají; jinak by Quad přežil respawn.
+      if (source) {
+        const killer = bots.current.find((bot) => bot.name === source);
+        if (killer) killer.frags += 1;
+      }
+      quadUntil.current = 0;
+      hasteUntil.current = 0;
       playDeath();
       window.setTimeout(() => {
         health.current = 100;
@@ -1112,6 +1141,12 @@ export function MarsArena({
         quadIn: Math.max(0, Math.ceil((quadUntil.current - now) / 1000)),
         hasteIn: Math.max(0, Math.ceil((hasteUntil.current - now) / 1000)),
         accuracy: shots.current > 0 ? Math.round((hits.current / shots.current) * 100) : 0,
+        hitAt: lastHitAt.current,
+        hurtAt: lastHurtAt.current,
+        scoreboard: [
+          { name: 'YOU', frags: frags.current, deaths: deaths.current, you: true },
+          ...bots.current.map((bot) => ({ name: bot.name, frags: bot.frags, deaths: bot.deaths, you: false })),
+        ].sort((a, b) => b.frags - a.frags || a.deaths - b.deaths),
         feed: feed.current
           .filter((entry) => entry.until > now)
           .map((entry) => ({ id: entry.id, text: entry.text, kind: entry.kind })),

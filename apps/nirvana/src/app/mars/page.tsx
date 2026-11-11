@@ -86,11 +86,80 @@ export default function MarsPage() {
   /** Obtížnost botů — čte se až po mountu (localStorage). */
   const [botSkill, setBotSkillState] = useState<BotSkill>('normal');
   useEffect(() => setBotSkillState(getBotSkill()), []);
+
+  // Hitmarker a červená viněta: hodnoty chodí v telemetrii, ale jen jednou
+  // za událost (`hitAt`/`hurtAt` jsou časová razítka, ne boolean).
+  useEffect(() => {
+    const at = stats.hitAt ?? 0;
+    if (!at || at === seenHit.current) return;
+    seenHit.current = at;
+    setHitMarker(true);
+    if (hitTimer.current) window.clearTimeout(hitTimer.current);
+    hitTimer.current = window.setTimeout(() => {
+      hitTimer.current = null;
+      setHitMarker(false);
+    }, 180);
+  }, [stats.hitAt]);
+
+  useEffect(() => {
+    const at = stats.hurtAt ?? 0;
+    if (!at || at === seenHurt.current) return;
+    seenHurt.current = at;
+    setHurtFlash(true);
+    if (hurtTimer.current) window.clearTimeout(hurtTimer.current);
+    hurtTimer.current = window.setTimeout(() => {
+      hurtTimer.current = null;
+      setHurtFlash(false);
+    }, 220);
+  }, [stats.hurtAt]);
+
+  useEffect(
+    () => () => {
+      if (hitTimer.current) window.clearTimeout(hitTimer.current);
+      if (hurtTimer.current) window.clearTimeout(hurtTimer.current);
+    },
+    [],
+  );
+
+
+
+  useEffect(() => {
+    if (phase !== 'playing') setBoardOpen(false);
+  }, [phase]);
+  /** Q3 tabulka (Tab) a krátké odezvy na zásah. */
+  const [boardOpen, setBoardOpen] = useState(false);
+  const [hitMarker, setHitMarker] = useState(false);
+  const [hurtFlash, setHurtFlash] = useState(false);
+  const hitTimer = useRef<number | null>(null);
+  const hurtTimer = useRef<number | null>(null);
+  const seenHit = useRef(0);
+  const seenHurt = useRef(0);
   /** Klik na zbraň v liště — request, který sim aplikuje v příštím snímku. */
   const weaponRequest = useRef<WeaponId | null>(null);
   /** `mp` = online aréna (server-authoritative), jinak sólo proti botům. */
   const [mp, setMp] = useState(false);
   const [mpStats, setMpStats] = useState<MpStats | null>(null);
+
+  // Tab drží tabulku (Q3); na dotyku je stejné tlačítko v HUD.
+  useEffect(() => {
+    if (phase !== 'playing' || mp) return;
+    const down = (event: KeyboardEvent) => {
+      if (event.code !== 'Tab') return;
+      event.preventDefault();
+      setBoardOpen(true);
+    };
+    const up = (event: KeyboardEvent) => {
+      if (event.code !== 'Tab') return;
+      event.preventDefault();
+      setBoardOpen(false);
+    };
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    return () => {
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
+    };
+  }, [phase, mp]);
   const [result, setResult] = useState<ArenaResult | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   /** Dotykové ovládání — na mobilu joystick + tažení místo WASD a myši. */
@@ -245,6 +314,8 @@ export default function MarsPage() {
 
       {phase === 'playing' && !mp && (
         <>
+          {hurtFlash && <div className="arena-hurt" aria-hidden />}
+          {hitMarker && <div className="arena-hitmarker" aria-hidden>✕</div>}
           <div className="arena-crosshair" aria-hidden />
           <div className="arena-hud">
             <span className="arena-health" style={{ color: healthColor }}>
@@ -271,6 +342,15 @@ export default function MarsPage() {
             <span className="arena-weapon">
               {weaponLabel(stats.weapon, stats.ammo)}
             </span>
+            <button
+              type="button"
+              className="arena-tab"
+              aria-pressed={boardOpen}
+              title={cs ? 'tabulka (Tab)' : 'scoreboard (Tab)'}
+              onClick={() => setBoardOpen((value) => !value)}
+            >
+              TAB
+            </button>
             {!presenting && (
               <button
                 type="button"
@@ -293,6 +373,32 @@ export default function MarsPage() {
               {l('menu')}
             </button>
           </div>
+          {boardOpen && (
+            <section className="arena-scoreboard" role="dialog" aria-label={cs ? 'Tabulka zápasu' : 'Match scoreboard'}>
+              <header>
+                <strong>MARS ARENA</strong>
+                <span>
+                  {stats.timeLeft}s · {cs ? 'přesnost' : 'accuracy'} {stats.accuracy ?? 0}%
+                </span>
+              </header>
+              <div className="arena-scoreboard-row is-head" aria-hidden>
+                <span />
+                <span>{cs ? 'hráč' : 'player'}</span>
+                <b>{cs ? 'fragy' : 'frags'}</b>
+                <b>{cs ? 'smrti' : 'deaths'}</b>
+              </div>
+              <ol>
+                {(stats.scoreboard ?? []).map((row, index) => (
+                  <li key={row.name} className={row.you ? 'is-you' : undefined}>
+                    <span>{index + 1}</span>
+                    <span>{row.name}</span>
+                    <b>{row.frags}</b>
+                    <b>{row.deaths}</b>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
           <div className="arena-weaponbar" role="group" aria-label={l('weapons')}>
             {WEAPON_BAR.map((slot) => {
               const ammo = stats.ammoByWeapon?.[slot.id];

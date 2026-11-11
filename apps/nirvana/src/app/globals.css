@@ -1853,6 +1853,156 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   }
 }
 
+/* ── Q3 odezva: hitmarker, viněta a tabulka (2026-11-11) ──────────── */
+.arena-hitmarker {
+  position: fixed;
+  z-index: 14;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #fff6d8;
+  text-shadow: 0 0 10px rgba(255, 214, 120, 0.9);
+  pointer-events: none;
+  animation: arena-hit 0.18s ease-out both;
+}
+
+@keyframes arena-hit {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.35);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+}
+
+/* Červená viněta: směr zásahu neznáme, ale „něco mě trefilo" musí být vidět. */
+.arena-hurt {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  box-shadow: inset 0 0 9rem rgba(255, 60, 40, 0.45);
+  animation: arena-hurt-fade 0.22s ease-out both;
+}
+
+@keyframes arena-hurt-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.arena-hud .arena-tab {
+  padding: 0.16rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 180, 106, 0.45);
+  background: transparent;
+  color: #ffd9a8;
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.arena-hud .arena-tab[aria-pressed='true'] {
+  border-color: rgba(255, 209, 102, 0.8);
+  background: rgba(255, 209, 102, 0.16);
+}
+
+/* Tabulka (Tab): drží se jen při držení klávesy, takže nesmí chytat klik. */
+.arena-scoreboard {
+  position: absolute;
+  z-index: 22;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(30rem, calc(100vw - 2rem));
+  padding: 0.8rem 1rem 0.9rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(255, 180, 106, 0.4);
+  background: rgba(10, 5, 4, 0.9);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.arena-scoreboard header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.arena-scoreboard header strong {
+  font-size: 0.92rem;
+  letter-spacing: 0.16em;
+  color: #ffe9a8;
+}
+
+.arena-scoreboard header span {
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  color: rgba(246, 231, 216, 0.6);
+}
+
+.arena-scoreboard-row,
+.arena-scoreboard li {
+  display: grid;
+  grid-template-columns: 1.2rem 1fr 3rem 3rem;
+  gap: 0.4rem;
+  align-items: center;
+  font-size: 0.74rem;
+  padding: 0.26rem 0.4rem;
+  border-radius: 0.4rem;
+}
+
+.arena-scoreboard ol {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+
+.arena-scoreboard li {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.arena-scoreboard li.is-you {
+  background: rgba(255, 209, 102, 0.16);
+  color: #ffe9a8;
+}
+
+.arena-scoreboard-row.is-head {
+  margin-top: 0.5rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(246, 231, 216, 0.5);
+}
+
+.arena-scoreboard b {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 560px) {
+  .arena-scoreboard {
+    width: calc(100vw - 1rem);
+  }
+
+  .arena-scoreboard-row,
+  .arena-scoreboard li {
+    grid-template-columns: 1rem 1fr 2.2rem 2.2rem;
+    font-size: 0.68rem;
+  }
+}
+
 .arena-tip {
   position: absolute;
   z-index: 12;

@@ -2839,3 +2839,21 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Test:** `test/arena-weapons.mjs` ověřuje čtyři obtížnosti (nightmare
   přesnější/rychlejší než hard, damage beze změny), čtyři shardy v sólu,
   žádný v MP a krátký respawn.
+
+### Aréna — hitmarker, viněta a Q3 tabulka (2026-11-11)
+
+- **Odezva na zásah je časová razítka, ne boolean.** `ArenaStats.hitAt` /
+  `hurtAt` nesou `performance.now()` poslední události; stránka na změnu
+  reaguje vlastním časovačem (hitmarker 180 ms, viněta 220 ms). Kdyby se
+  posílal boolean, 10Hz telemetrie by ho minula nebo nechala viset.
+  Časovače jsou v **refech** (stejná past jako u Lumi hlášek).
+- **Hitmarker** je `✕` ve středu, **viněta** červený inset přes obraz.
+  Směr zásahu se neposílá (chtělo by to pozici střelce) — přiznaná mez.
+- **Tabulka (Tab)** se drží při držení klávesy (`keydown`/`keyup`) a má
+  i tlačítko `TAB` v HUD pro dotyk. Řádky: hráč + boti, seřazené podle
+  fragů (a méně smrtí). Boti dostanou frag, když tě zabijí.
+- **Powerupy padají smrtí** (Quad/Haste se vynulují) — Q3 chování; dřív
+  přežily respawn.
+- **Bez změny protokolu** (34): všechno je sólo UI. MP má vlastní tabuli.
+- **Test:** headless — Tab otevře/zavře tabulku se 4 řádky, hitmarker
+  i viněta se objeví (poll 40–50 ms, ne pevné čekání).
