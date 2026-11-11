@@ -8,13 +8,20 @@ export default function HeroSection() {
   const { t } = useLangT();
   return (
     <section className="kralovstvi-hero" aria-label="Hero">
-      {/* Art nese vlastní text („Merry Christmas & Happy New Year 2027"),
-          takže se přes něj nic nepřekládá: tesař u archy, děti s lucernou,
-          zářící strom a srdcový lampion — vánoční kolekce 2027. */}
-      <div
+      {/* Art nese vlastní text („Lumi · Království Srdce“), takže se přes něj
+          nic nepřekládá: tesař, Lumi a Malý princ u rozsvícené lucerny
+          v pobřežní dílně. Je to `<img>` (ne CSS pozadí), aby měl skutečné
+          `width`/`height` — místo se rezervuje před načtením, obsah neskáče —
+          a aby šel načíst prioritně. */}
+      <img
+        src="/hero-lumi-kralovstvi-srdce.webp"
+        alt={t('hero.artAlt')}
+        width={1672}
+        height={941}
+        fetchPriority="high"
+        loading="eager"
+        decoding="async"
         className="kralovstvi-hero-art"
-        role="img"
-        aria-label="Vánoční kolekce 2027 — tesař u archy, děti s lucernou, zářící strom a srdcový lampion / Merry Christmas and a Happy New Year 2027"
       />
       <div className="kralovstvi-hero-actions">
         <div className="rasta-hero-kicker">

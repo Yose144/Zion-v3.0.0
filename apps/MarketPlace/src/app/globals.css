@@ -931,30 +931,27 @@ body.zion-shell {
 }
 
 /* Vánoční banner hero — the art is a full illustrated scene
-   ("Merry Christmas & Happy New Year" — tesař u archy, děti s lucernou,
-   světelný strom a lucerna se srdcem) with its own decorative frame;
-   actions live in a strip below instead of an overlay. */
+   ("Lumi · Království Srdce" — tesař, Lumi a Malý princ u lucerny
+   v pobřežní dílně) with its own decorative frame; actions live in a strip
+   below instead of an overlay. Je to `<img>` s `width`/`height`, takže se
+   poměr stran drží sám a místo je rezervované ještě před načtením. */
 .kralovstvi-hero {
   position: relative;
   z-index: 2;
 }
 
 .kralovstvi-hero-art {
+  display: block;
   width: min(60%, 52.8rem);
+  height: auto;
   margin: clamp(0.5rem, 2vw, 1.5rem) auto 0;
   aspect-ratio: 1672 / 941;
   border-radius: 1rem;
-  background-image: url('/hero-kolekce-2027.webp?v=7');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
   border: 2px solid transparent;
-  background-clip: padding-box;
   box-shadow:
     0 0 0 1px rgba(252, 209, 22, 0.25),
     0 20px 60px -20px rgba(0, 0, 0, 0.8),
     0 0 80px -30px rgba(252, 209, 22, 0.15);
-  overflow: hidden;
 }
 
 .kralovstvi-hero-actions {
@@ -970,15 +967,50 @@ body.zion-shell {
   margin: 0.75rem auto 1.25rem;
 }
 
-/* Mobile: full aspect ratio would render the banner tiny — switch to a
-   fixed-height center crop that keeps the scene legible. */
+/* Mobile: the art keeps its original 16 : 9 ratio (no crop), so it simply
+   spans the full content width. */
 @media (max-width: 767px) {
   .kralovstvi-hero-art {
     width: 100%;
-    aspect-ratio: auto;
-    height: clamp(280px, 62vw, 360px);
-    max-height: none;
     border-radius: 0.75rem;
+  }
+}
+
+/* ── Časová osa ZION TerraNova (2008 → 2040) ────────────────────────────
+   Ilustrace je široká 3 : 1 a devět popisků je vypálených v ní. Na telefonu
+   by při zmenšení na šířku displeje přestaly být čitelné, proto se posouvá
+   vodorovně **uvnitř této sekce**; stránka jako celek zůstává bez
+   vodorovného posunu. Oblast je fokusovatelná → šipky/PageDown posouvají
+   i z klávesnice. */
+.zion-timeline-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  border-radius: 1rem;
+  box-shadow:
+    0 0 0 1px rgba(252, 209, 22, 0.25),
+    0 20px 60px -24px rgba(0, 0, 0, 0.8);
+}
+
+.zion-timeline-scroll:focus-visible {
+  outline: 2px solid #fcd116;
+  outline-offset: 3px;
+}
+
+.zion-timeline-scroll img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+@media (max-width: 767px) {
+  /* Pevná šířka (ne 100 %) — jinak by se devět milníků zmenšilo pod
+     čitelnou mez; zbytek šířky se odscrolluje prstem/šipkami. */
+  .zion-timeline-scroll img {
+    width: 70rem;
+    max-width: none;
   }
 }
 
