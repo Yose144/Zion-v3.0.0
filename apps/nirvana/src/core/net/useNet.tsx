@@ -58,7 +58,8 @@ export interface NetApi {
   /** Id hráče v serverové simulaci (po `join`); hra podle něj pozná sebe. */
   youPlayerId: string | null;
   roomId: string | null;
-  joinArena: () => void;
+  /** `map` = kterou mapu arény chceš hrát (server podle ní vybírá místnost). */
+  joinArena: (map?: string) => void;
   /** Připojení do hry (`arena` = Mars, `race` = Venuše, `fight` = Merkur). */
   joinGame: (
     game: GameId,
@@ -66,6 +67,7 @@ export interface NetApi {
     battleSpell?: BattleSpellId,
     mode?: RoomMode,
     aspect?: 'a' | 'b',
+    map?: string,
   ) => void;
   /** Připojení do konkrétní místnosti z lobby (když je otevřených víc). */
   joinRoom: (
@@ -401,9 +403,10 @@ export function NetProvider({ children }: { children: ReactNode }) {
       battleSpell?: BattleSpellId,
       mode?: RoomMode,
       aspect?: 'a' | 'b',
+      map?: string,
     ) => {
       setSpectator(false);
-      send({ t: 'join', game, heroId, battleSpell, mode, aspect });
+      send({ t: 'join', game, heroId, battleSpell, mode, aspect, map });
     },
     [send],
   );
@@ -428,7 +431,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
     [send],
   );
 
-  const joinArena = useCallback(() => joinGame('arena'), [joinGame]);
+  const joinArena = useCallback((map?: string) => joinGame('arena', undefined, undefined, undefined, undefined, map), [joinGame]);
 
   const leaveRoom = useCallback(() => {
     send({ t: 'leave' });

@@ -16,6 +16,7 @@ import {
   type ItemId,
   type MobaSnapshot,
 } from '../moba/sim';
+import { ARENA_MAP_IDS, type ArenaMapId } from '../arena/map';
 import type { AspectId } from '../moba/spells';
 
 const ITEM_IDS = new Set<string>(ITEMS.map((item) => item.id));
@@ -85,8 +86,12 @@ const asItemId = (value: unknown): ItemId | null =>
  *  35 — **ragdoll tuning**: MAX_HP 160, nové poškození/kryt/kombo. Formát
  *      zpráv se nemění, ale starý server by posílal HP ze 100 a klient by
  *      kreslil jiné bary — verze se musí potkat.
+ *  36/37 — Q3 sada zbraní a powerupy v multiplayeru.
+ *  38 — **mapy arény**: `join` nese `map` (`mars` | `q3dm3` | `q3dm6`) a
+ *      snapshot vrací, kterou mapu místnost hraje. Starý server by mapu
+ *      ignoroval a klient by kreslil Mars proti jiné simulaci.
  */
-export const PROTO_VERSION = 37;
+export const PROTO_VERSION = 38;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -405,6 +410,12 @@ export type ClientMessage =
        * klient posílal id každý snímek, byl by to zbytečný provoz.
        */
       shipId?: string;
+      /**
+       * Aréna: kterou mapu chce hrát (`mars` | `q3dm3` | `q3dm6`).
+       * Server podle ní vybírá místnost — do místnosti s jinou mapou
+       * hráče nepustí, aby klient nepredikoval v cizím světě.
+       */
+      map?: ArenaMapId;
       /** Režim nové místnosti (u existující se ignoruje). */
       mode?: RoomMode;
       /**
@@ -586,6 +597,8 @@ export type ServerMessage =
          */
         you?: { collected: number };
       };
+      /** Jen aréna: kterou mapu místnost hraje (klient podle ní kreslí svět). */
+      map?: ArenaMapId;
       /** Jen aréna: rakety ve vzduchu. */
       projectiles?: RocketView[];
       pickups?: PickupView[];
@@ -711,6 +724,10 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         t: 'join',
         game,
         room: typeof message.room === 'string' ? message.room.slice(0, 32) : undefined,
+        map:
+          typeof message.map === 'string' && ARENA_MAP_IDS.includes(message.map as ArenaMapId)
+            ? (message.map as ArenaMapId)
+            : undefined,
         mode: message.mode === 'humans' ? 'humans' : message.mode === 'bots' ? 'bots' : undefined,
         heroId: typeof message.heroId === 'number' ? num(message.heroId, 0, 202) : undefined,
         battleSpell:

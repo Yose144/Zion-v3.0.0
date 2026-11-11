@@ -60,11 +60,12 @@ import type {
   RoomState,
   ServerMessage,
 } from '../../nirvana/src/core/net/protocol.js';
+import type { ArenaMapId } from '../../nirvana/src/core/arena/map.js';
 
 // ── aréna ──────────────────────────────────────────────────────────────
 
-function arenaMatch(now: number, mode: RoomMode = 'bots'): Match {
-  const sim = createArena(now, { bots: mode === 'bots' });
+function arenaMatch(now: number, mode: RoomMode = 'bots', map?: ArenaMapId): Match {
+  const sim = createArena(now, { bots: mode === 'bots', map });
   const humans = () => [...sim.players.values()].filter((player) => !player.isBot).length;
   return {
     game: 'arena',
@@ -281,10 +282,15 @@ function mobaMatch(now: number): Match {
 
 // ── registr ────────────────────────────────────────────────────────────
 
-export function createMatch(game: GameId, now: number, mode: RoomMode = 'bots'): Match {
+export function createMatch(
+  game: GameId,
+  now: number,
+  mode: RoomMode = 'bots',
+  map?: ArenaMapId,
+): Match {
   switch (game) {
     case 'arena':
-      return arenaMatch(now, mode);
+      return arenaMatch(now, mode, map);
     case 'race':
       return raceMatch(now);
     case 'fight':

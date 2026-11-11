@@ -10,12 +10,12 @@
  */
 
 import {
-  ARENA_BOXES,
-  ARENA_PICKUPS,
-  BOT_SPAWNS,
+  ARENA_MAP_DEFAULT,
+  ARENA_MAPS,
+  ARENA_MAP_IDS,
   FRAG_LIMIT,
   MATCH_SECONDS,
-  PLAYER_SPAWN,
+  type ArenaMapId,
   type ArenaPickup,
 } from '../../nirvana/src/core/arena/map.js';
 import { buildNavGrid, type NavGrid } from '../../nirvana/src/core/arena/nav.js';
@@ -120,6 +120,8 @@ export type ArenaEvent =
 
 export interface ArenaSim {
   players: Map<string, ArenaPlayer>;
+  /** Která mapa se hraje — každá místnost má vlastní (sólo volba). */
+  map: ArenaMapId;
   rockets: Rocket[];
   solids: Box4[];
   pickups: ArenaPickup[];
@@ -138,7 +140,6 @@ export interface ArenaSim {
   events: ArenaEvent[];
 }
 
-const SPAWNS = BOT_SPAWNS;
 const PICKUP_RANGE = 1.6;
 /** Po konci zápasu se aréna po téhle době uklidí a začne nový. */
 const MATCH_RESTART_MS = 5000;
@@ -155,13 +156,21 @@ const BOT_NAMES = ['VALLIS', 'NOCTIS', 'ARES'];
 /** Každý bot jiná úroveň — jako v sólo aréně (stejná sestava). */
 const BOT_SKILLS: BotSkill[] = ['easy', 'normal', 'hard'];
 
-export function createArena(now: number, options: { bots?: boolean } = {}): ArenaSim {
+export function createArena(
+  now: number,
+  options: { bots?: boolean; map?: ArenaMapId } = {},
+): ArenaSim {
+  // Neznámá mapa (starý klient, přepsaný klíč) padá na výchozí — server nikdy
+  // nesimuluje mapu, kterou nemá v katalogu.
+  const map = options.map && ARENA_MAP_IDS.includes(options.map) ? options.map : ARENA_MAP_DEFAULT.id;
+  const world = ARENA_MAPS[map];
   return {
     players: new Map(),
+    map,
     rockets: [],
-    solids: makeSolids(ARENA_BOXES),
-    pickups: ARENA_PICKUPS,
-    nav: buildNavGrid(ARENA_BOXES),
+    solids: makeSolids(world.boxes),
+    pickups: world.pickups,
+    nav: buildNavGrid(world.boxes),
     botsEnabled: options.bots ?? true,
     pickupReadyAt: new Map(),
     startedAt: now,
@@ -201,16 +210,24 @@ function spendAmmo(player: ArenaPlayer, weapon: WeaponId): void {
 }
 
 function spawnPoint(sim: ArenaSim, usePlayerSpawn: boolean) {
-  if (usePlayerSpawn) return { x: PLAYER_SPAWN.x, z: PLAYER_SPAWN.z, yaw: PLAYER_SPAWN.yaw };
-  const point = SPAWNS[sim.spawnCursor % SPAWNS.length] ?? SPAWNS[0]!;
+  const world = ARENA_MAPS[sim.map];
+  if (usePlayerSpawn) {
+    const spawn = world.playerSpawn;
+    return { x: spawn.x, z: spawn.z, y: spawn.y ?? 0.2, yaw: spawn.yaw };
+  }
+  const spawns = world.botSpawns;
+  const point = spawns[sim.spawnCursor % spawns.length] ?? spawns[0]!;
   sim.spawnCursor += 1;
-  return { x: point.x, z: point.z, yaw: point.yaw };
+  return { x: point.x, z: point.z, y: point.y ?? 0.2, yaw: point.yaw };
 }
 
-function placeBody(player: ArenaPlayer, spawn: { x: number; z: number; yaw: number }): void {
+function placeBody(
+  player: ArenaPlayer,
+  spawn: { x: number; z: number; y?: number; yaw: number },
+): void {
   player.body = {
     x: spawn.x,
-    y: 0.2,
+    y: spawn.y ?? 0.2,
     z: spawn.z,
     vx: 0,
     vy: 0,
@@ -233,7 +250,7 @@ export function addPlayer(
     id,
     name,
     avatarId,
-    body: { x: spawn.x, y: 0.2, z: spawn.z, vx: 0, vy: 0, vz: 0, onGround: false },
+    body: { x: spawn.x, y: spawn.y ?? 0.2, z: spawn.z, vx: 0, vy: 0, vz: 0, onGround: false },
     hp: 100,
     armor: 0,
     frags: 0,
@@ -273,12 +290,13 @@ export function ensureBots(sim: ArenaSim): void {
   if (!sim.botsEnabled) return;
   const existing = [...sim.players.values()].filter((player) => player.isBot);
   for (let index = existing.length; index < BOT_COUNT; index++) {
-    const spawn = BOT_SPAWNS[index % BOT_SPAWNS.length]!;
+    const botSpawns = ARENA_MAPS[sim.map].botSpawns;
+    const spawn = botSpawns[index % botSpawns.length]!;
     const bot: ArenaPlayer = {
       id: `bot-${index + 1}`,
       name: BOT_NAMES[index % BOT_NAMES.length]!,
       avatarId: null,
-      body: { x: spawn.x, y: 0.2, z: spawn.z, vx: 0, vy: 0, vz: 0, onGround: false },
+      body: { x: spawn.x, y: spawn.y ?? 0.2, z: spawn.z, vx: 0, vy: 0, vz: 0, onGround: false },
       hp: 100,
       armor: 0,
       frags: 0,
@@ -841,6 +859,7 @@ export function arenaSnapshot(sim: ArenaSim, now: number) {
   }));
 
   return {
+    map: sim.map,
     players,
     projectiles: sim.rockets.map((rocket) => ({
       id: rocket.id,

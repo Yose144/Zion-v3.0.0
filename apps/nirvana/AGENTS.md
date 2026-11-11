@@ -3033,10 +3033,12 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Pickup musí ležet na podlaze.** Test kontroluje, že pod každým pickupem
   je krabice s horní hranou do 0,4 m a že střed (y + 0,7) není uvnitř
   žádné kolizní krabice — jinak skončí ve sloupu (reálná chyba z dřívějška).
-- **Volba mapy je jen sólo** (`arena-map` karty v úvodu). Multiplayer jede
-  na Marsu: server Mapu nezná a přidat ji znamená bump protokolu i novou
-  mapu v `arena.ts`. Kdyby se to někdy dodělalo, `map` jde do `join` a do
-  snapshotu (jinak klient kreslí jinou arénu, než server simuluje).
+- **Mapu hraje i multiplayer** (protokol 38). `join` nese `map`, server
+  podle ní **vybírá místnost** (do místnosti s jinou mapou hráče nepustí —
+  jinak by klient predikoval v cizím světě) a snapshot `map` je autorita:
+  když se volba rozejde, klient přepne svět a postaví predikci na spawn té
+  mapy. Paleta (světlo, obloha, materiály) platí i v MP — dřív měl
+  `MarsMultiplayer` vlastní oranžové barvy a Q3 mapy hrály „jako Mars".
 - **Komponenta se remountuje `key={mapId}`.** Stav hry (pozice, pickupy,
   respawny) se tím nikdy nemíchá mezi mapami; bez `key` by hráč přistál
   na souřadnicích z předchozí mapy.

@@ -261,6 +261,7 @@ export default function MarsPage() {
               onStats={setMpStats}
               touch={touch}
               weaponRequest={mpWeaponRequest}
+              map={mapId}
             />
           ) : (
             <XR store={xrStore}>

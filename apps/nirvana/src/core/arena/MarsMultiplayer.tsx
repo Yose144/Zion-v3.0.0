@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { ARENA_BOXES, ARENA_PICKUPS, PLAYER_SPAWN, type ArenaBox } from './map';
+import { ARENA_MAPS, ARENA_MAP_DEFAULT, type ArenaBox, type ArenaMapId } from './map';
 import { PLAYER, makeSolids, stepBody, type Body } from './physics';
 import { WEAPONS, type WeaponId } from './weapons';
 import { WeaponView } from './WeaponView';
@@ -65,8 +65,6 @@ export interface MpStats extends ArenaStats {
 }
 
 const ROCKET_POOL = 8;
-/** Definice pickupů podle id — pro odpočty respawnu powerupů v HUD. */
-const PICKUP_DEFS = new Map(ARENA_PICKUPS.map((pickup) => [pickup.id, pickup]));
 /** Vzdálenost, od které se predikce „srovná" na server (teleport). */
 const SNAP_DISTANCE = 1.6;
 
@@ -84,6 +82,7 @@ export function MarsMultiplayer({
   onStats,
   touch,
   weaponRequest,
+  map = ARENA_MAP_DEFAULT.id,
 }: {
   running: boolean;
   /** Id místnosti, na kterou se jen díváme (`?watch=`); `null` = hrajeme. */
@@ -93,23 +92,55 @@ export function MarsMultiplayer({
   touch?: MutableRefObject<ArenaTouchState>;
   /** Klik na zbraň v HUD (Q3 lišta) — aplikuje se v herní smyčce. */
   weaponRequest?: MutableRefObject<number | null>;
+  /** Kterou mapu chceš hrát — server podle ní vybírá místnost. */
+  map?: ArenaMapId;
 }) {
   const { camera, gl } = useThree();
   const { subscribe, sendInput, joinArena, spectateRoom, leaveRoom, youPlayerId, spectator, connected, rtt } = useNet();
 
-  const solids = useMemo(() => makeSolids(ARENA_BOXES), []);
+  /**
+   * Mapa místnosti. Klient posílá svoji volbu v `join`, ale **rozhoduje
+   * server** — když se rozejdou (připojení do cizí místnosti), snapshot
+   * `map` přepne svět a predikce se srovná na spawn té mapy.
+   */
+  const [worldId, setWorldId] = useState<ArenaMapId>(map);
+  const world = ARENA_MAPS[worldId] ?? ARENA_MAP_DEFAULT;
+  const solids = useMemo(() => makeSolids(world.boxes), [world]);
+  /** Definice pickupů podle id — pro odpočty respawnu powerupů v HUD. */
+  const pickupDefs = useMemo(() => new Map(world.pickups.map((pickup) => [pickup.id, pickup])), [world]);
   const boxGeometry = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
+  /** Ref na aktuální mapu — snapshot callback je mimo React a nesmí číst stale state. */
+  const worldIdRef = useRef<ArenaMapId>(worldId);
+  worldIdRef.current = worldId;
 
+  const spawn = world.playerSpawn;
   const local = useRef<Body>({
-    x: PLAYER_SPAWN.x,
-    y: 0.2,
-    z: PLAYER_SPAWN.z,
+    x: spawn.x,
+    y: spawn.y ?? 0.2,
+    z: spawn.z,
     vx: 0,
     vy: 0,
     vz: 0,
     onGround: false,
   });
-  const view = useRef({ yaw: PLAYER_SPAWN.yaw, pitch: -0.05 });
+  const view = useRef({ yaw: spawn.yaw, pitch: -0.05 });
+
+  // Přepnutí mapy (server hraje jinou, než jsme si vybrali) = nový svět:
+  // predikce se postaví na spawn té mapy, jinak by hráč stál ve zdi.
+  useEffect(() => {
+    const point = ARENA_MAPS[worldId].playerSpawn;
+    local.current = {
+      x: point.x,
+      y: point.y ?? 0.2,
+      z: point.z,
+      vx: 0,
+      vy: 0,
+      vz: 0,
+      onGround: false,
+    };
+    view.current = { yaw: point.yaw, pitch: -0.05 };
+  }, [worldId]);
+
   const keys = useRef(new Set<string>());
   /** 0 = rail, 1 = rakety, 2 = strojní puška (Q3 sestava). */
   const weapon = useRef<0 | 1 | 2 | 3 | 4 | 5 | 6>(0);
@@ -182,14 +213,19 @@ export function MarsMultiplayer({
     unlockAudio(); // prohlížeč chce gesto — tlačítko „Multiplayer" jím je
     // `watch` = dívat se na konkrétní rozehranou místnost (server nedá sedlo)
     if (watch) spectateRoom('arena', watch);
-    else joinArena();
+    else joinArena(map);
     return () => leaveRoom();
-  }, [running, connected, joinArena, spectateRoom, leaveRoom, watch]);
+  }, [running, connected, joinArena, spectateRoom, leaveRoom, watch, map]);
 
   // ── data ze serveru (mimo React state, 15×/s) ───────────────────────
   useEffect(() => {
     return subscribe((message: ServerMessage) => {
       if (message.t === 'snapshot' && message.game === 'arena') {
+        // Server je autorita i v mapě — snapshot řekne, co se doopravdy hraje.
+        if (message.map && message.map !== worldIdRef.current) {
+          worldIdRef.current = message.map;
+          setWorldId(message.map);
+        }
         previous.current = latest.current;
         const next: Snapshot = {
           at: Date.now(),
@@ -273,6 +309,8 @@ export function MarsMultiplayer({
     (window as unknown as Record<string, unknown>).__mpDebug = () => ({
       you: youPlayerId,
       connected,
+      // Kterou mapu klient opravdu kreslí (snapshot je autorita) — pro E2E.
+      map: worldIdRef.current,
       players: (latest.current?.players ?? []).map((player) => ({
         id: player.id,
         name: player.name,
@@ -563,7 +601,7 @@ export function MarsMultiplayer({
           .map((entry) => ({ id: entry.id, text: entry.text, kind: entry.kind, weapon: entry.weapon })),
         itemTimers: [...pickupTakenAt.current.entries()]
           .map(([id, at]) => {
-            const def = PICKUP_DEFS.get(id);
+            const def = pickupDefs.get(id);
             if (!def || (def.kind !== 'powerup' && def.kind !== 'mega')) return null;
             const seconds = Math.max(0, Math.ceil(def.respawn - (Date.now() - at) / 1000));
             if (seconds <= 0) return null;
@@ -585,15 +623,16 @@ export function MarsMultiplayer({
 
   return (
     <>
-      <color attach="background" args={['#421d0e']} />
-      <fog attach="fog" args={['#5a2611', 34, 130]} />
-      <ambientLight intensity={0.95} color="#ffcaa0" />
-      <hemisphereLight args={['#ffb27a', '#3a1408', 0.85]} />
-      <directionalLight position={[18, 32, 12]} intensity={2.6} color="#ffd9b0" />
-      <pointLight position={[0, 6, 0]} intensity={18} color="#ff8f5c" distance={28} decay={2} />
+      {/* Světlo i obloha jdou z palety mapy — jinak by Q3 mapy hrály oranžově. */}
+      <color attach="background" args={[world.palette.sky]} />
+      <fog attach="fog" args={[world.palette.fog, world.palette.fogNear, world.palette.fogFar]} />
+      <ambientLight intensity={0.95} color={world.palette.ambient} />
+      <hemisphereLight args={[world.palette.hemiSky, world.palette.hemiGround, 0.85]} />
+      <directionalLight position={[18, 32, 12]} intensity={2.6} color={world.palette.sun} />
+      <pointLight position={[0, 6, 0]} intensity={18} color={world.palette.point} distance={28} decay={2} />
 
       {/* mapa */}
-      {ARENA_BOXES.map((box: ArenaBox, index) => (
+      {world.boxes.map((box: ArenaBox, index) => (
         <mesh
           key={index}
           geometry={boxGeometry}
@@ -601,16 +640,8 @@ export function MarsMultiplayer({
           scale={[box.w, box.h, box.d]}
         >
           <meshStandardMaterial
-            color={
-              box.kind === 'ground'
-                ? '#8a3d22'
-                : box.kind === 'rock'
-                  ? '#a44a26'
-                  : box.kind === 'metal'
-                    ? '#6d5560'
-                    : '#ffc077'
-            }
-            emissive={box.kind === 'trim' ? '#5a2a0d' : '#160704'}
+            color={world.palette[box.kind]}
+            emissive={box.kind === 'trim' ? world.palette.trim : world.palette.hemiGround}
             emissiveIntensity={box.kind === 'trim' ? 0.8 : 0.25}
             roughness={box.kind === 'metal' ? 0.62 : 0.92}
             metalness={box.kind === 'metal' ? 0.18 : 0.04}
@@ -656,7 +687,7 @@ export function MarsMultiplayer({
       ))}
 
       {/* pickupy */}
-      {ARENA_PICKUPS.map((pickup, index) => (
+      {world.pickups.map((pickup, index) => (
         <mesh
           key={pickup.id}
           position={[pickup.x, pickup.y + 0.7, pickup.z]}

@@ -57,10 +57,23 @@
 - **Live:** `/api/health` → `proto 37 = net 37`, `proto_match: true`;
   v produkčním bundlu je chunk s „Q3DM6" i CSS `.arena-map`.
 
+## Multiplayer na mapách (protokol 38, nasazeno)
+
+- **Mapa je vlastnost místnosti.** `join` nese `map`; server vybírá místnost
+  podle ní (do místnosti s jinou mapou hráče nepustí) a `Room.map` drží
+  volbu. Snapshot nese `map` jako autoritu — když se klient rozejde se
+  serverem, přepne svět a predikce se postaví na spawn té mapy.
+- **Simulace jede ze stejných dat jako sólo** (`ARENA_MAPS`), takže pickupy,
+  spawny i kolize sedí; neznámá mapa padá na Mars.
+- **Paleta platí i v multiplayeru** — `MarsMultiplayer` dřív kreslil vlastní
+  oranžové barvy a světla, takže Q3 mapy vypadaly jako Mars.
+- **Ověřeno:** `apps/nirvana-net/test/arena-maps.mjs` (simulace + místnosti
+  podle mapy: dvě mapy = dvě místnosti, stejná mapa = stejná místnost) a
+  `.artifacts/probe/arena-map-online.mjs` (klient vybere Q3DM3, připojí se,
+  `__mpDebug().map === 'q3dm3'`, start na vyvýšeném spawnu).
+
 ## Meze
 
-- **Multiplayer jede dál na Marsu.** Server mapu nezná; přidat ji znamená
-  bump protokolu i novou mapu v `arena.ts` (mapa by šla v `join` a snapshotu).
 - Q3DM3/Q3DM6 jsou **stylizované půdorysy**, ne kopie `.bsp` — originální
   mapy nejsou v GPL zdroji a repo nemá mapové assety.
 - Boti dál chodí po zemi (2,5D navigace) — na plošiny skáčou jen náhodou

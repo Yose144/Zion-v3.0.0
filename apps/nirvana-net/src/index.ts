@@ -56,6 +56,7 @@ import {
 import type { BattleSpellId } from '../../nirvana/src/core/moba/sim.js';
 import { verifyPassCode } from '../../nirvana/src/lib/pass.js';
 import { createMatch } from './matches.js';
+import type { ArenaMapId } from '../../nirvana/src/core/arena/map.js';
 import type { Match } from './match.js';
 import { MOBA_ROOM_SIZE } from './moba.js';
 import { identityCacheSize, resolveIdentity } from './zis.js';
@@ -115,6 +116,8 @@ interface Room {
   mode: RoomMode;
   state: RoomState;
   createdAt: number;
+  /** Aréna: mapa místnosti (`mars` | `q3dm3` | `q3dm6`); jinde `undefined`. */
+  map?: ArenaMapId;
   players: Map<string, Conn>;
   /**
    * Diváci. Nesedí v sedle (nedostanou `match.join`), nepočítají se do
@@ -422,18 +425,19 @@ function postChat(conn: Conn, raw: string): void {
 
 // ── místnosti ─────────────────────────────────────────────────────────
 
-function createRoom(game: GameId, mode: RoomMode = 'bots'): Room {
+function createRoom(game: GameId, mode: RoomMode = 'bots', map?: ArenaMapId): Room {
   const counter = (roomCounters.get(game) ?? 0) + 1;
   roomCounters.set(game, counter);
   const room: Room = {
     id: `${game}-${counter}`,
     game,
     mode,
+    map,
     state: 'waiting',
     createdAt: Date.now(),
     players: new Map(),
     spectators: new Map(),
-    match: createMatch(game, Date.now(), mode),
+    match: createMatch(game, Date.now(), mode, map),
   };
   rooms.set(room.id, room);
   log(`room created id=${room.id} total=${rooms.size}`);
@@ -491,6 +495,7 @@ async function joinRoom(
   aspect?: 'a' | 'b',
   lumiPath?: 'calm' | 'wind' | 'light',
   shipId?: string,
+  map?: ArenaMapId,
 ): Promise<void> {
   if (!conn.helloSent) {
     sendError(conn, 'bad_frame', 'nejdřív hello');
@@ -544,6 +549,9 @@ async function joinRoom(
     room = candidate;
   } else {
     for (const candidate of rooms.values()) {
+      // Aréna: mapa je vlastnost místnosti, takže se hráč připojí jen tam,
+      // kde se hraje stejná mapa — jinak by predikoval v cizím světě.
+      if (game === 'arena' && map && candidate.map !== map) continue;
       if (candidate.game === game && candidate.players.size < capOf(game)) {
         room = candidate;
         break;
@@ -556,7 +564,7 @@ async function joinRoom(
       sendError(conn, 'busy', 'všechny místnosti jsou plné');
       return;
     }
-    room = createRoom(game, requestedMode);
+    room = createRoom(game, requestedMode, game === 'arena' ? map : undefined);
   }
 
   room.players.set(conn.id, conn);
@@ -687,6 +695,7 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
         message.aspect,
         message.path,
         message.shipId,
+        message.map,
       );
       return;
 
