@@ -330,7 +330,15 @@ for t in "${TARGETS[@]}"; do
   for v in "${VARIANTS[@]}"; do
     variant="${v%%:*}"
     features="${v#*:}"
-    [ "$variant" = "$features" ] && features=""   # "--variant default" form
+    # `--variant default` (bez dvojtečky) = varianta bez features. Dřív se
+    # features mazaly i při shodě `variant == features`, což tiše rozbilo
+    # `--variant gpu-metal:gpu-metal` — artefakt se pak zkompiloval bez
+    # feature flagu a jen se přejmenoval (verifier to chytil jako
+    # „BUILD-INFO features mismatch").
+    case "$v" in
+      *:*) ;;
+      *) features="" ;;
+    esac
     tag="$t"
     [ "$variant" = "default" ] || tag="$t+$variant"
 
