@@ -564,7 +564,7 @@ html body textarea:focus {
   box-shadow: 0 0 14px rgba(252, 209, 22, 0.15);
 }
 
-/* ── Tablet: split the nav pill bar into two rows of four ────────────────── */
+/* ── Tablet: nav pill wraps — 5 položek → 3+2 ────────────────────────────── */
 @media screen and (min-width: 481px) and (max-width: 980px) {
   #header nav ul {
     flex-wrap: wrap;
@@ -572,7 +572,7 @@ html body textarea:focus {
   }
 
   #header nav ul li {
-    flex: 1 1 calc(25% - 0.25rem);
+    flex: 1 1 calc(33.333% - 0.25rem);
     min-width: 0;
   }
 
@@ -581,6 +581,92 @@ html body textarea:focus {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
     white-space: nowrap;
+  }
+}
+
+/* ── Top nav: Ekosystém dropdown ─────────────────────────────────────────── */
+/* Celý nav nad .hero-christmas bannerem (oba jsou #header > *). */
+#header nav {
+  position: relative;
+  z-index: 5;
+}
+
+#header nav ul li.has-dropdown {
+  position: relative;
+}
+
+#header nav .dropdown-parent::after {
+  content: '▾';
+  margin-left: 0.45rem;
+  font-size: 0.72em;
+  opacity: 0.65;
+  transition: transform 0.2s ease;
+}
+
+#header nav ul li.has-dropdown.open .dropdown-parent::after,
+#header nav ul li.has-dropdown:hover .dropdown-parent::after {
+  transform: rotate(180deg);
+}
+
+#header nav .nav-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 11.5rem;
+  margin: 0;
+  padding: 0.4rem;
+  list-style: none;
+  background: rgba(13, 13, 13, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--zion-radius-lg);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 42px rgba(252, 209, 22, 0.15);
+  z-index: 80;
+}
+
+#header nav ul li.has-dropdown:hover .nav-dropdown,
+#header nav ul li.has-dropdown:focus-within .nav-dropdown,
+#header nav ul li.has-dropdown.open .nav-dropdown {
+  display: block;
+}
+
+#header nav .nav-dropdown li {
+  border: 0;
+}
+
+#header nav .nav-dropdown li a {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  padding: 0.55rem 0.9rem;
+  border-radius: var(--zion-radius-md);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: left;
+}
+
+#header nav .nav-dropdown li a:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--rasta-gold);
+}
+
+/* ── Mobil (≤480px): dropdown se rozbalí přímo v listu ───────────────────── */
+@media screen and (max-width: 480px) {
+  #header nav ul li.has-dropdown {
+    position: static;
+  }
+
+  #header nav .nav-dropdown {
+    position: static;
+    transform: none;
+    width: calc(100% - 2.5rem);
+    margin: 0.3rem 0 0.3rem 1.25rem;
+    box-shadow: none;
   }
 }
 

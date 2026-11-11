@@ -8,6 +8,7 @@
   const i18n = {
     cs: {
       'menu.sections': `Menu`,
+      'menu.page': `Stránka`,
       'menu.language': `Jazyk`,
       'menu.background': `Pozadí`,
       'menu.intro': `Intro`,
@@ -48,7 +49,7 @@
       'support.account.title': `Náš transparentní účet :`,
       'support.bitcoin.title': `Bitcoin účet`,
       'support.namaste': `Namaste`,
-      'contact.title': `Kontakt & Formulář`,
+      'contact.title': `Kontakt`,
       'contact.form.title': `Formulář`,
       'form.name.label': `Jméno`,
       'form.name.placeholder': `Vaše jméno`,
@@ -87,6 +88,8 @@
       'nav.mine': `Těžba`,
       'nav.pool': `Pool`,
       'nav.freeworld': `Free World`,
+      'nav.ecosystem': `Ekosystém`,
+      'nav.lumi': `Lumi`,
 
       'freeworld.title': `Free World`,
       'freeworld.subtitle': `L5 · Humanitární fond & fyzické komunity`,
@@ -135,6 +138,7 @@
     },
     en: {
       'menu.sections': `Menu`,
+      'menu.page': `Page`,
       'menu.language': `Language`,
       'menu.background': `Background`,
       'menu.intro': `Intro`,
@@ -175,7 +179,7 @@
       'support.account.title': `Our Transparent Account :`,
       'support.bitcoin.title': `Bitcoin Account`,
       'support.namaste': `Namaste`,
-      'contact.title': `Contact & Form`,
+      'contact.title': `Contact`,
       'contact.form.title': `Form`,
       'form.name.label': `Name`,
       'form.name.placeholder': `Your name`,
@@ -214,6 +218,8 @@
       'nav.mine': `Mine`,
       'nav.pool': `Pool`,
       'nav.freeworld': `Free World`,
+      'nav.ecosystem': `Ecosystem`,
+      'nav.lumi': `Lumi`,
 
       'freeworld.title': `Free World`,
       'freeworld.subtitle': `L5 · Humanitarian fund & physical communities`,
@@ -273,52 +279,52 @@
   const LANG_OK = { cs: 1, en: 1, es: 1, pt: 1, fr: 1 };
   const extra = {
     es: {
-      'menu.sections': 'Menú', 'menu.language': 'Idioma', 'menu.background': 'Fondo',
+      'menu.sections': 'Menú', 'menu.page': 'Página', 'menu.language': 'Idioma', 'menu.background': 'Fondo',
       'menu.intro': 'Intro', 'menu.support': 'Apoyo', 'menu.contact': 'Contacto', 'menu.paths': 'Caminos',
       'menu.toggle.open': 'Abrir menú', 'menu.toggle.close': 'Cerrar menú',
       'hero.subtitle': 'Ecosistema Multichain Dharma',
-      'nav.about': 'Nosotros', 'nav.mine': 'Minería', 'nav.docs': 'Docs',
+      'nav.about': 'Nosotros', 'nav.mine': 'Minería', 'nav.docs': 'Docs', 'nav.ecosystem': 'Ecosistema',
       'intro.title': 'Intro', 'about.title': 'Sobre ZION', 'mine.title': 'Minería',
       'mine.button': 'Descargar el minero', 'amenti.title': 'Amenti',
       'amenti.subtitle': 'Salas de Amenti · archivo de conciencia on-chain',
       'amenti.allBooksCta': 'Todos los libros', 'amenti.enterCta': 'Entrar en Amenti',
       'freeworld.title': 'Free World', 'freeworld.subtitle': 'L5 · Fondo humanitario y comunidades físicas',
       'freeworld.cta': 'Abrir Free World', 'support.title': 'Apoya el proyecto',
-      'contact.title': 'Contacto y formulario', 'paths.title': 'Tres caminos a bordo',
+      'contact.title': 'Contacto', 'paths.title': 'Tres caminos a bordo',
       'zion.launch.button': 'Abrir la dApp',
       'form.name.label': 'Nombre', 'form.email.label': 'Correo', 'form.message.label': 'Mensaje',
       'form.send': 'Enviar', 'form.reset': 'Restablecer',
     },
     pt: {
-      'menu.sections': 'Menu', 'menu.language': 'Idioma', 'menu.background': 'Fundo',
+      'menu.sections': 'Menu', 'menu.page': 'Página', 'menu.language': 'Idioma', 'menu.background': 'Fundo',
       'menu.intro': 'Intro', 'menu.support': 'Apoio', 'menu.contact': 'Contacto', 'menu.paths': 'Caminhos',
       'menu.toggle.open': 'Abrir menu', 'menu.toggle.close': 'Fechar menu',
       'hero.subtitle': 'Ecossistema Multichain Dharma',
-      'nav.about': 'Sobre nós', 'nav.mine': 'Mineração', 'nav.docs': 'Docs',
+      'nav.about': 'Sobre nós', 'nav.mine': 'Mineração', 'nav.docs': 'Docs', 'nav.ecosystem': 'Ecossistema',
       'intro.title': 'Intro', 'about.title': 'Sobre o ZION', 'mine.title': 'Mineração',
       'mine.button': 'Descarregar o miner', 'amenti.title': 'Amenti',
       'amenti.subtitle': 'Salas de Amenti · arquivo de consciência on-chain',
       'amenti.allBooksCta': 'Todos os livros', 'amenti.enterCta': 'Entrar em Amenti',
       'freeworld.title': 'Free World', 'freeworld.subtitle': 'L5 · Fundo humanitário e comunidades físicas',
       'freeworld.cta': 'Abrir o Free World', 'support.title': 'Apoia o projeto',
-      'contact.title': 'Contacto e formulário', 'paths.title': 'Três caminhos a bordo',
+      'contact.title': 'Contacto', 'paths.title': 'Três caminhos a bordo',
       'zion.launch.button': 'Abrir a dApp',
       'form.name.label': 'Nome', 'form.email.label': 'E-mail', 'form.message.label': 'Mensagem',
       'form.send': 'Enviar', 'form.reset': 'Repor',
     },
     fr: {
-      'menu.sections': 'Menu', 'menu.language': 'Langue', 'menu.background': 'Fond',
+      'menu.sections': 'Menu', 'menu.page': 'Page', 'menu.language': 'Langue', 'menu.background': 'Fond',
       'menu.intro': 'Intro', 'menu.support': 'Soutien', 'menu.contact': 'Contact', 'menu.paths': 'Chemins',
       'menu.toggle.open': 'Ouvrir le menu', 'menu.toggle.close': 'Fermer le menu',
       'hero.subtitle': 'Écosystème Multichain Dharma',
-      'nav.about': 'À propos', 'nav.mine': 'Minage', 'nav.docs': 'Docs',
+      'nav.about': 'À propos', 'nav.mine': 'Minage', 'nav.docs': 'Docs', 'nav.ecosystem': 'Écosystème',
       'intro.title': 'Intro', 'about.title': 'À propos de ZION', 'mine.title': 'Minage',
       'mine.button': 'Télécharger le mineur', 'amenti.title': 'Amenti',
       'amenti.subtitle': 'Salles d’Amenti · archive de conscience on-chain',
       'amenti.allBooksCta': 'Tous les livres', 'amenti.enterCta': 'Entrer dans Amenti',
       'freeworld.title': 'Free World', 'freeworld.subtitle': 'L5 · Fonds humanitaire et communautés physiques',
       'freeworld.cta': 'Ouvrir Free World', 'support.title': 'Soutenir le projet',
-      'contact.title': 'Contact et formulaire', 'paths.title': 'Trois chemins à bord',
+      'contact.title': 'Contact', 'paths.title': 'Trois chemins à bord',
       'zion.launch.button': 'Ouvrir la dApp',
       'form.name.label': 'Nom', 'form.email.label': 'E-mail', 'form.message.label': 'Message',
       'form.send': 'Envoyer', 'form.reset': 'Réinitialiser',
@@ -474,6 +480,37 @@
       const mode = btn.getAttribute('data-bg');
       if (mode) applyBg(mode);
     });
+  });
+
+  // --- Top-nav Ekosystém dropdown (hover/focus-within je v CSS; .open = touch/klávesnice) ---
+  const dropItems = $$('.has-dropdown');
+  function closeDropdowns(except) {
+    dropItems.forEach(function (li) {
+      if (li === except) return;
+      li.classList.remove('open');
+      const p = li.querySelector('.dropdown-parent');
+      if (p) p.setAttribute('aria-expanded', 'false');
+    });
+  }
+  dropItems.forEach(function (li) {
+    const parent = li.querySelector('.dropdown-parent');
+    if (!parent) return;
+    parent.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const open = !li.classList.contains('open');
+      closeDropdowns(li);
+      li.classList.toggle('open', open);
+      parent.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    li.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeDropdowns();
+    });
+  });
+  document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('.nav-dropdown a')) { closeDropdowns(); return; }
+    if (e.target.closest && e.target.closest('.has-dropdown')) return;
+    closeDropdowns();
   });
 
   // --- Init from localStorage or defaults ---
