@@ -57,6 +57,32 @@ const t = {
     },
     ctaPrimary: { cs: 'Prozkoumat artefakty', en: 'Browse Artifacts', es: 'Ver artefactos', pt: 'Ver artefactos', fr: 'Voir les artefacts' },
     ctaSecondary: { cs: 'Koupit knihu', en: 'Buy the Book', es: 'Comprar el libro', pt: 'Comprar o livro', fr: 'Acheter le livre' },
+    artAlt: {
+      cs: 'Lumi – Království Srdce. Tesař, Lumi a Malý princ u rozsvícené lucerny v pobřežní dílně.',
+      en: 'Lumi – Kingdom of the Heart. The carpenter, Lumi and the Little Prince beside a lit lantern in a workshop by the sea.',
+    },
+  },
+
+  timeline: {
+    heading: { cs: 'Časová osa ZION TerraNova', en: 'ZION TerraNova timeline' },
+    region: { cs: 'Časová osa ZION TerraNova', en: 'ZION TerraNova timeline' },
+    alt: {
+      cs: 'Časová osa ZION TerraNova 2008–2040: devět milníků od evoluZion přes Heart of Amenti, Ethereum Mining, Omnity.One s.r.o., Genesis Garden, Zion a Lumi – Království Srdce až po vize Oasis a Issobela.',
+      en: 'ZION TerraNova timeline 2008–2040: nine milestones from evoluZion through Heart of Amenti, Ethereum Mining, Omnity.One s.r.o., Genesis Garden, Zion and Lumi – Kingdom of the Heart to the Oasis and Issobela visions.',
+    },
+    m1: { cs: '2008 · evoluZion', en: '2008 · evoluZion' },
+    m2: { cs: '2012 · Heart of Amenti', en: '2012 · Heart of Amenti' },
+    m3: { cs: '2017 · Ethereum Mining', en: '2017 · Ethereum Mining' },
+    m4: { cs: '2020 · Omnity.One s.r.o.', en: '2020 · Omnity.One s.r.o.' },
+    m5: { cs: '2023 · Genesis Garden', en: '2023 · Genesis Garden' },
+    m6: { cs: '2026 · Zion', en: '2026 · Zion' },
+    m7: { cs: '2027 · Lumi · Kingdom of Heart', en: '2027 · Lumi · Kingdom of Heart' },
+    m8: { cs: '2029 · Oasis · vize', en: '2029 · Oasis · vision' },
+    m9: { cs: '2040 · Issobela · vize', en: '2040 · Issobela · vision' },
+    scrollHint: {
+      cs: 'Přejeďte prstem nebo šipkami do stran — devět milníků, 2008 → 2040.',
+      en: 'Swipe or use the arrow keys to see all nine milestones, 2008 → 2040.',
+    },
   },
 
   stats: {

@@ -1,6 +1,8 @@
-# DEFERRED_3.2.md — feature freeze seznam (DRAFT 2026-10-26)
+# DEFERRED_3.2.md — feature freeze seznam (DRAFT 2026-10-26 · revize 2026-11-11)
 
 > **Stav:** NÁVRH — vstupuje v platnost při RC freeze (9.B1). Dokud je draft, položky se mohou přesouvat mezi kategoriemi jen rozhodnutím operátora.
+>
+> **Revize 11. 11.:** G8 kotva = run #7 (6. 12.), cert `auth.` obnoven (platí do 24./25. 1. 2027), QTC payout leg **OFF** od 4. 11., Next 16.4.3 hotový (npm 0 critical) a DR dodávky 8.S1–8.S3 uzavřené.
 >
 > **Účel:** jediný seznam všeho, co je ve 3.2 vědomě odložené — aby „Stable" neznamenal „všechno hotovo", ale „všechno označené". Freeze = nic nového do 3.2.x nepřidáváme mimo tento dokument a opravy defektů.
 
@@ -11,7 +13,7 @@
 | Aktivace node reward distribution | premine sloty 6–8 time-lock až height 144 000 (~27.–28. 11.); rozhodnutí operátora | N1/N2 |
 | CHv4.2 (fork height `u64::MAX`) | jen governance-triggered; bez potřeby před stable | N1 |
 | Program nezávislých operátorů nodů (charta M7) | vyžaduje stabilní release + incentivizaci | N7 |
-| QTU native payouty | `treasury_free=0`, ~918 deferred — politika ✅ 29.10. (`QTC_PAYOUT_POLICY.md` honest hold); zbývá 👤 funding | N2 |
+| QTU native payouty | payout leg **OFF** od 4. 11. (`QTC_PAYOUT_ENABLED=0`, fronta vyčištěna — 36 278 `ext_payout_records` dismissed, DB záloha) — politika ✅ (`QTC_PAYOUT_POLICY.md`); re-enable = 👤 treasury funding + explicitní flip | N2 |
 | Persistentní share-dedup okno (A4.1) | in-memory dedup funkční; DB persist přidá latenci — po soak | N2 / pool beta.2 |
 | HA stratum auto-promote (A4.2 částečně dodáno 27.10 — warm standby na EDGE2 live, alert-only watchdog, failover manuální) | auto-promote = split-brain riziko; držet manuální do dalšího soak | N2 / W-vlny |
 | Adapter parity — `warp_message_hash` anchor | jen EVM adapter binduje msg hash on-chain; ostatní chainy (TON/SUI/Solana/Stellar/Tron/Cardano/Cosmos/Aptos/NEAR) nemají contract-level dedup — vyžaduje dest-program upgrade | N1 |
@@ -39,7 +41,7 @@ Podle `NIRVANA-V3.3-PLAN.md` §Explicitní NON-DoD:
 | `PRL_PAYOUT_DRY_RUN=1` | dry-run | rozhodnutí operátora + attestation fix (A) |
 | `WARP_API_KEY` unset → mutating routes disabled | vypnuto | po G9 |
 | `WARP_L1_RELEASE_KEYS` absent → inbound `AwaitingFinality` hold | aktivní | po G9 |
-| QTC payouts | deferred, treasury 0 | politika ✅ (`QTC_PAYOUT_POLICY.md`); funding — operátor |
+| QTC payouts | **OFF** od 4. 11. (`QTC_PAYOUT_ENABLED=0`; `ext_payout_records` pro quantus dismissed) | re-enable jen po 👤 funding + rozhodnutí; fronta startuje čistá |
 
 ## D) Otevřené technické položky (carried into RC — nesmí blokovat Stable, ale musí být vypsané)
 
@@ -53,19 +55,19 @@ Podle `NIRVANA-V3.3-PLAN.md` §Explicitní NON-DoD:
 | D-6 | Provenance — ✅ 28.10: build id embedded v pool crate (`66d15bef4`, do prvního rebuildu nasazené binary se nedotkne), collector `scripts/ops/deploy-provenance.sh` + baseline `DEPLOY-PROVENANCE-2026-10-28.jsonl`. Zbývá: rollout patternu na ostatní binárky + rozhodnutí o EDGE dirty checkout (7 258 souborů) | `DEPLOY-PROVENANCE.md` |
 | ~~D-7~~ | ~~Pool sticky-confirmed fix~~ — ✅ nasazeno (CASE logika v running binary, ověřeno 28.10.) | `REPORTS/REPORT_2026-10-26_POOL_ORPHAN_RCA.md` |
 | ~~D-16~~ | ~~ZION payout backlog 1 180 dead-tx rows~~ — ✅ 28.10: `defdcd84a` deployed — under-fee guard (requeue místo broadcastu pod network min), schema v11 `superseded_tx_id`, `void_payout_rows` (evidence+rollback), resurrect sweep (`ZION_PAYOUT_STUCK_AGE_SECS`); canonical treasury `zion1d2k` (~187k). Active backlog klesá live; QTC deferred = samostatné 👤 funding | `RELEASE_NOTES_3.2.0.md`, `Zionb2b.md` §5 |
-| D-17 | npm `next` critical advisories (7/9 apps) + cargo audit 9 vuln (multichain/k256) | vše major-only fix — naplánovat upgrade před Stable; MarketPlace `unoptimized:true` mitigace aplikována 28.10 | `AUDIT-TRIAGE.md` |
+| D-17 | npm `next` critical advisories (7/9 apps) + cargo audit 9 vuln (multichain/k256) | **Next 16.4.3 hotovo 10. 11.** (6 manifestů; živý web/market/Nirvana 16.4.3) → `npm audit` **0 critical** ve 4 veřejných appkách (5.S2). Zbývá 9 cargo vuln = major-only (ethers/k256) + `high` mimo gate; `unoptimized:true` mitigace MarketPlace | `AUDIT-TRIAGE.md` |
 | D-8 | Stale-block rate 15–21 % `previous hash mismatch` — interní same-height racy (0 externích ztrát), residuální tuning | tentýž report |
 | D-9 | Public repo sync předefinovat — tracked `public/` přesunut do `archive/PUBLIC/` (workflow G4/E7 neplatný) | plan 8.B7 |
 | D-10 | DR restore drill neproveden; `HARD_RESET_PLAYBOOK.md` neaktualizován na dvouboxovou topologii | plan 8.B11 |
 | D-11 | CI workflows vše `.disabled` — chybí `release-gate` skript | plan 8.B8 |
-| D-12 | `auth.` certifikát renewal owner — expirace 25. 11. | plan 8.B6 |
+| ~~D-12~~ | ~~`auth.` certifikát renewal owner~~ — ✅ renewal proběhl ~26. 10., cert platí do 24./25. 1. 2027, `certbot.timer` 2×/den | `REPORT_2026-10-31_8B6_CERT_RENEWAL_AUDIT.md` |
 | D-13 | EDGE load ~12/4 jádra — CPU mining vs stabilita followerů (rozhodnutí) | plan 8.B5 |
 | D-14 | SMOS rig 518837 offline | fleet status |
 | ~~D-15~~ | ~~Alert sink firing test + 40d retence~~ — ✅ 28.10 (firing+resolved přes reálný Alertmanager; 40d span doběhne ~8.11.) | `REPORTS/REPORT_2026-10-28_G8_ALERT_SINK.md` |
 
 ## E) Gates držící Stable (mimo tento freeze — registry G*)
 
-- **G8** — 30d continuous run ≥99.9 % (run #5 `g8-20261025T215746Z`, konec ~24. 11.)
+- **G8** — 30d continuous run ≥99.9 % (**run #7** `g8-20261106T145125Z`, cíl **6. 12. 14:51:25Z**; stav 11. 11.: 99,9241 %, 5× `chain_live` 60 s, `pending`)
 - **G9** — externí audit — **posunut rozhodnutím operátora 2026-10-26** (Stable bez data; package pinned na RC commit připraven)
 - **B-EXIT-3** provenance = release commit (8.S2)
 - **9.S1–S3** tag/release/announcement

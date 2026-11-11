@@ -107,6 +107,37 @@ tests:
               summary: "G8 primary node RPC down"
               description: "The primary V31 node JSON-RPC probe (node_primary) has been failing for over 2 minutes."
 
+  # ── G8PrimaryTipStale: primary RPC answers but its tip is stale ─────────
+  - interval: 1m
+    input_series:
+      - series: 'zion_g8_node_tip_age_seconds{service="node_primary"}'
+        values: '100 1000 1000 1000 1000 1000 1000'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: G8PrimaryTipStale
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: G8PrimaryTipStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              service: node_primary
+            exp_annotations:
+              summary: "G8 primary node tip is stale"
+              description: "The primary V31 node reports a tip older than 15 minutes even though its RPC may still answer. chain_live can remain 1 via a follower, but the primary is not syncing — check P2P from EDGE :8336 and node restarts."
+
+  # ── G8PrimaryTipStale: a stale follower must not page for the primary ──
+  - interval: 1m
+    input_series:
+      - series: 'zion_g8_node_tip_age_seconds{service="node_primary"}'
+        values: '100 100 100 100 100 100 100'
+      - series: 'zion_g8_node_tip_age_seconds{service="node_follower_2"}'
+        values: '100 1000 1000 1000 1000 1000 1000'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: G8PrimaryTipStale
+        exp_alerts: []
+
   # ── G8NodeQuorumLow: fewer than 2 of 3 node RPCs for 5m ────────────────
   - interval: 1m
     input_series:

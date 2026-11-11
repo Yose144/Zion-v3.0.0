@@ -10,6 +10,8 @@ Group=zion
 WorkingDirectory=/opt/zion
 EnvironmentFile=/etc/zion/edge-environment.sh
 Environment="RUST_LOG=info,zion_core=debug"
+# NOTE: EDGE2 production overrides ExecStart via service.d/zz-primary.conf
+# (RPC 0.0.0.0:9445 + --peer EDGE node2). See service.d/README.md.
 ExecStart=/opt/zion/V31/target/release/zion-node \
     --db-path /opt/zion/data/v31/node.db \
     --rpc 127.0.0.1:9445 \

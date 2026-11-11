@@ -35,6 +35,7 @@ Environment overrides:
   G8_PROBE_CONFIRM_ATTEMPTS    (2)  attempts per probe before reporting failure
   G8_PROBE_CONFIRM_DELAY_MS    (400) delay between the attempts
   G8_CHAIN_TIP_MAX_AGE_SECONDS (900)
+  G8_CHAIN_TIP_FUTURE_TOLERANCE_SECONDS (120)  future-dated tip tolerance
   G8_NODE_RPC_PORTS            (9445,9446,9447)
   G8_POOL_HEALTH_URL           (http://127.0.0.1:8080/health)
   G8_MULTICHAIN_HEALTH_URL     (http://127.0.0.1:8453/health)
@@ -94,6 +95,9 @@ def load_config() -> dict:
         "confirm_attempts": max(1, _env_int("G8_PROBE_CONFIRM_ATTEMPTS", 2)),
         "confirm_delay_ms": max(0, _env_int("G8_PROBE_CONFIRM_DELAY_MS", 400)),
         "chain_tip_max_age": _env_float("G8_CHAIN_TIP_MAX_AGE_SECONDS", 900),
+        # Block timestamps are miner-supplied and may be slightly ahead of the
+        # probe host clock; a small future skew is not a liveness failure.
+        "tip_future_tolerance": _env_float("G8_CHAIN_TIP_FUTURE_TOLERANCE_SECONDS", 120),
         "node_rpc_host": "127.0.0.1",
         "node_rpc_ports": ports,
         "http_services": [
@@ -149,7 +153,11 @@ def probe_node(host: str, port: int, timeout: float, want_tip: bool) -> dict:
             if isinstance(ts, (int, float)):
                 outcome["tip_timestamp"] = int(ts)
     except Exception:
+        # Never let a partially successful probe leak a stale height/tip into
+        # tip selection: a failed probe must look failed (see run_probes).
         outcome["success"] = False
+        outcome["chain_height"] = None
+        outcome["tip_timestamp"] = None
     outcome["duration"] = time.perf_counter() - t0
     return outcome
 
@@ -255,7 +263,11 @@ def run_probes(config: dict) -> dict:
         label = NODE_LABELS[idx] if idx < len(NODE_LABELS) else f"node_{idx + 1}"
         res = services.get(label, {})
         ts = res.get("tip_timestamp")
-        if ts is not None and ts > best_tip_ts:
+        # Only a probe that fully succeeded (getStatus + getBlockByHeight) may
+        # contribute a tip. A failed probe is retried by the confirmation round;
+        # if it still fails, its (possibly stale) fields were cleared in
+        # probe_node and must not win tip selection.
+        if res.get("success") and ts is not None and ts > best_tip_ts:
             best_tip_ts = ts
             tip_res = res
     return {
@@ -292,12 +304,16 @@ def render_metrics(report: dict, config: dict, now: float = None) -> str:
     tip_ts = report.get("tip_timestamp")
     chain_height = report.get("chain_height")
     if tip_ts is not None:
-        tip_age = now - tip_ts
+        tip_age = float(now - tip_ts)
     else:
         tip_age = -1.0
+    # Small positive skew is normal (miner-supplied block timestamps can be a
+    # few seconds ahead of this host); only a tip older than max_age or farther
+    # in the future than the tolerance is a liveness failure.
+    future_tol = float(config.get("tip_future_tolerance", 120))
     chain_live = 1 if (
         tip_ts is not None
-        and 0 <= tip_age <= config["chain_tip_max_age"]
+        and -future_tol <= tip_age <= config["chain_tip_max_age"]
     ) else 0
 
     lines: list = []
@@ -329,16 +345,25 @@ def render_metrics(report: dict, config: dict, now: float = None) -> str:
     _metric(lines, "zion_g8_chain_live", "1 if any node probe reported a fresh chain tip",
             [("", chain_live)])
     fresh_entries = []
+    age_entries = []
+    height_entries = []
     for label in sorted(services):
         if not label.startswith("node_"):
             continue
         res = services[label]
+        suffix = f'{{service="{_escape_label(label)}"}}'
         ts = res.get("tip_timestamp")
+        age = float(now - ts) if ts is not None else -1.0
         fresh = 1 if (
-            ts is not None and 0 <= now - ts <= config["chain_tip_max_age"]
+            ts is not None and -future_tol <= age <= config["chain_tip_max_age"]
         ) else 0
-        fresh_entries.append((f'{{service="{_escape_label(label)}"}}', fresh))
+        h = res.get("chain_height")
+        fresh_entries.append((suffix, fresh))
+        age_entries.append((suffix, age))
+        height_entries.append((suffix, h if h is not None else 0))
     _metric(lines, "zion_g8_node_tip_fresh", "1 if this node's reported chain tip is fresh", fresh_entries)
+    _metric(lines, "zion_g8_node_tip_age_seconds", "Seconds since this node's tip (-1 = unknown)", age_entries)
+    _metric(lines, "zion_g8_node_chain_height", "Chain height reported by this node (0 = unknown)", height_entries)
     _metric(lines, "zion_g8_node_quorum", "Number of node RPC ports answering",
             [("", report.get("node_quorum", 0))])
     _metric(lines, "zion_g8_probe_timestamp_seconds", "Unix timestamp of this probe round",

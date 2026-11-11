@@ -440,9 +440,18 @@ export const ARENA_MAP_DEFAULT = ARENA_MAPS.mars;
 /** Zpětná kompatibilita: výchozí mapa pro server a starší importy. */
 export const ARENA_BOXES = ARENA_MAP_DEFAULT.boxes;
 export const ARENA_PICKUPS = ARENA_MAP_DEFAULT.pickups;
-export const ARENA_SOLO_PICKUPS = ARENA_PICKUPS;
+
+/**
+ * Sólová mapa = stejná jako multiplayer.
+ *
+ * Dřív mělo sólo navíc Quad/Haste/Mega a MP ne; od protokolu 37 je server
+ * umí taky, takže se seznamy sjednotily (žádná druhá pravda o světě).
+ */
+export const ARENA_SOLO_PICKUPS: ArenaPickup[] = ARENA_PICKUPS;
 export const PLAYER_SPAWN = ARENA_MAP_DEFAULT.playerSpawn;
 export const BOT_SPAWNS = ARENA_MAP_DEFAULT.botSpawns;
+
+/** Stěny jako data pro raycast (jen to, co blokuje střelu). */
 export const ARENA_SOLIDS = ARENA_BOXES;
 
 export const FRAG_LIMIT = 10;

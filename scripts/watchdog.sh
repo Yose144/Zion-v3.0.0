@@ -129,6 +129,26 @@ check_node_http() {
   [[ -n "$version" ]]
 }
 
+# Per-node tip freshness from the G8 probe metric (added 2026-11-11).
+# A missing metric means an older probe -> no-op, never a false alarm.
+# Log-only by default: a restart costs a 60 s G8 sample, so opt in explicitly
+# with ZION_WATCHDOG_STALE_RESTART=1 (RCA 2026-11-11: RPC reachable but tip
+# 1-4 h old and the old watchdog did not notice).
+TIP_AGE_HELPER="${ZION_TIP_AGE_HELPER:-/opt/zion/scripts/ops/node-tip-age.sh}"
+check_primary_tip_fresh() {
+  [[ -x "$TIP_AGE_HELPER" ]] || return 0
+  local age
+  if age=$("$TIP_AGE_HELPER" --service node_primary \
+      --max-age "${ZION_WATCHDOG_TIP_MAX_AGE:-900}" 2>/dev/null); then
+    return 0
+  fi
+  log "WARN: node_primary tip stale (age=${age:-unknown}s) — RPC answers but the node is not syncing"
+  if [[ "${ZION_WATCHDOG_STALE_RESTART:-0}" == "1" ]]; then
+    restart_service "$NODE_SERVICE" "primary tip stale (age=${age:-unknown}s)"
+  fi
+  return 0
+}
+
 check_pool_tcp() {
   [[ -n "$POOL_SERVICE" ]] || return 0
   timeout 3 bash -c "exec 3<>/dev/tcp/${POOL_HOST}/${POOL_PORT}" >/dev/null 2>&1
@@ -226,6 +246,8 @@ check_health() {
     return
   fi
 
+  check_primary_tip_fresh
+
   if [[ -n "$POOL_SERVICE" ]] && ! check_pool_tcp; then
     restart_service "$POOL_SERVICE" "pool TCP ${POOL_HOST}:${POOL_PORT} not reachable"
   fi
@@ -247,7 +269,30 @@ check_sync() {
       gap=$(( -gap ))
     fi
     if [[ $gap -gt 20 ]]; then
-      restart_service "$BACKUP_NODE_SERVICE" "sync gap ${gap} > 20 (edge=${edge_height} local=${local_height})"
+      # A node that is actively catching up gains height between two checks.
+      # Restarting it throws away in-memory progress, and bulk P2P sync runs at
+      # roughly 0.5 blocks/s — closing a ~1.5k gap needs ~45 uninterrupted
+      # minutes. A blind restart therefore turns a slow catch-up into a
+      # permanent restart loop (measured 2026-11-04: local stuck at ~107.8k
+      # while the tip was ~109.4k, killed every 5 min for 6+ restarts).
+      # Only restart when the height did NOT move since the previous check.
+      local state_dir state_file prev_height=""
+      state_dir="${XDG_STATE_HOME:-${HOME}/.local/state}/zion"
+      state_file="${state_dir}/backup-node-height"
+      if [[ -r "$state_file" ]]; then
+        prev_height=$(tr -cd '0-9' <"$state_file" 2>/dev/null || true)
+      fi
+      mkdir -p "$state_dir" 2>/dev/null || true
+      printf '%s\n' "$local_height" >"$state_file" 2>/dev/null || true
+
+      if [[ -n "$prev_height" && "$local_height" -gt "$prev_height" ]]; then
+        log "INFO: catching up +$((local_height - prev_height)) blocks since last check (edge=${edge_height} local=${local_height} gap=${gap}) — not restarting"
+      elif [[ -z "$prev_height" ]]; then
+        log "INFO: sync gap ${gap} (edge=${edge_height} local=${local_height}) — baseline recorded, progress is measured on the next run"
+      else
+        restart_service "$BACKUP_NODE_SERVICE" "sync gap ${gap} > 20 with no progress (edge=${edge_height} local=${local_height})"
+        printf '%s\n' "$local_height" >"$state_file" 2>/dev/null || true
+      fi
     elif [[ $gap -gt 5 ]]; then
       log "INFO: sync gap ${gap} (edge=${edge_height} local=${local_height}) — monitoring"
     fi

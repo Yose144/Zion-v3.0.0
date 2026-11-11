@@ -25,7 +25,10 @@ EDGE_HOST="62.171.141.136"
 EDGE_PORT="2222"
 EDGE_USER="root"
 SSH_KEY="${HOME}/.ssh/zion-edge-post-wipe-2026-07-29"
-SSH_OPTS="-p ${EDGE_PORT} -i ${SSH_KEY} -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o ServerAliveInterval=60"
+# ControlMaster: reuse ONE ssh connection for the pre-flight check + both rsync
+# runs. EDGE has `ufw LIMIT` on 2222 (and our operator IP is usually not in the
+# allow list), so several fresh connections in a row get rate-limited/reset.
+SSH_OPTS="-p ${EDGE_PORT} -i ${SSH_KEY} -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o ControlMaster=auto -o ControlPath=${HOME}/.ssh/cm-%r@%h:%p -o ControlPersist=10m"
 EDGE_RSYNC_HOST="${EDGE_HOST}"
 
 # Local destination
@@ -57,13 +60,30 @@ if ! ssh ${SSH_OPTS} "${EDGE_USER}@${EDGE_HOST}" 'echo ok' >/dev/null 2>&1; then
     exit 1
 fi
 
+# rsync with retries — a multi-GB pull can lose the TCP stream mid-file (EDGE's
+# ufw LIMIT on 2222 + fail2ban). One reset must not abort the whole off-site
+# sync: on 2026-11-04 a broken pipe after 2.4 GB left the local archive 7 files
+# behind and the script exited 255.
+rsync_retry() {
+    local src="$1" dst="$2" attempt rc
+    for attempt in 1 2 3 4; do
+        if rsync -avz --partial --timeout=300 \
+            -e "ssh ${SSH_OPTS}" \
+            "${src}" "${dst}" \
+            --include='zion-edge-*.tar.gz' --exclude='*'; then
+            return 0
+        fi
+        rc=$?
+        log "${YELLOW}  ⚠ rsync attempt ${attempt}/4 failed (exit ${rc}) — retrying in $((attempt * 20))s${NC}"
+        sleep $((attempt * 20))
+    done
+    log "${RED}  ✗ rsync failed after 4 attempts: ${src}${NC}"
+    return 1
+}
+
 # ── 1. Sync daily backups ───────────────────────────────────────────────────
 log "Syncing daily backups..."
-rsync -avz --partial --timeout=300 \
-    -e "ssh ${SSH_OPTS}" \
-    "${EDGE_USER}@${EDGE_RSYNC_HOST}:/opt/zion/backups/daily/" \
-    "${LOCAL_DAILY}/" \
-    --include='zion-edge-*.tar.gz' --exclude='*'
+rsync_retry "${EDGE_USER}@${EDGE_RSYNC_HOST}:/opt/zion/backups/daily/" "${LOCAL_DAILY}/"
 
 DAILY_COUNT=$(find "${LOCAL_DAILY}" -name 'zion-edge-*.tar.gz' -type f | wc -l)
 DAILY_SIZE=$(du -sh "${LOCAL_DAILY}" 2>/dev/null | cut -f1 || echo "?")
@@ -71,11 +91,7 @@ log "${GREEN}  ✓ Daily: ${DAILY_COUNT} backups, ${DAILY_SIZE}${NC}"
 
 # ── 2. Sync weekly backups ──────────────────────────────────────────────────
 log "Syncing weekly backups..."
-rsync -avz --partial --timeout=300 \
-    -e "ssh ${SSH_OPTS}" \
-    "${EDGE_USER}@${EDGE_RSYNC_HOST}:/opt/zion/backups/weekly/" \
-    "${LOCAL_WEEKLY}/" \
-    --include='zion-edge-*.tar.gz' --exclude='*'
+rsync_retry "${EDGE_USER}@${EDGE_RSYNC_HOST}:/opt/zion/backups/weekly/" "${LOCAL_WEEKLY}/"
 
 WEEKLY_COUNT=$(find "${LOCAL_WEEKLY}" -name 'zion-edge-*.tar.gz' -type f | wc -l)
 WEEKLY_SIZE=$(du -sh "${LOCAL_WEEKLY}" 2>/dev/null | cut -f1 || echo "?")

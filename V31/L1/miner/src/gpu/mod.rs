@@ -5941,13 +5941,36 @@ pub fn query_gpu_details() -> Vec<GpuInfo> {
     }
     #[cfg(feature = "gpu-cuda")]
     {
-        out.extend(query_cuda_details());
+        extend_gpu_details_unique(&mut out, query_cuda_details());
     }
     #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
     {
-        out.extend(query_metal_details());
+        extend_gpu_details_unique(&mut out, query_metal_details());
     }
     out
+}
+
+/// Append `extra` GPU infos to `out`, skipping entries whose normalized name
+/// is already present. CUDA/Metal enumeration is a fallback supplement for
+/// devices OpenCL cannot see — the same physical card is otherwise reported
+/// twice (e.g. NVIDIA GTX 1070 Ti once via the "NVIDIA CUDA" OpenCL platform
+/// and again via the CUDA driver API), which shows up as duplicate gpu[N]
+/// banner rows and phantom devices in the desktop agent.
+fn extend_gpu_details_unique(out: &mut Vec<GpuInfo>, extra: Vec<GpuInfo>) {
+    for g in extra {
+        let n = normalize_gpu_name(&g.name);
+        if out.iter().any(|e| normalize_gpu_name(&e.name) == n) {
+            continue;
+        }
+        out.push(g);
+    }
+}
+
+fn normalize_gpu_name(name: &str) -> String {
+    name.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_ascii_lowercase()
 }
 
 #[cfg(not(feature = "gpu-opencl"))]

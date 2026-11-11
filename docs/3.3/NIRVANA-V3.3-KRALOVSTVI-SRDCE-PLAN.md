@@ -6,6 +6,8 @@
 > **Hierarchie pravdy:** živý kód/sonda → [`canon/books/MiseAmenti/07-Registr-Dukazu.md`](../../canon/books/MiseAmenti/07-Registr-Dukazu.md) → [`docs/3.2/StatusV3.md`](../3.2/StatusV3.md) → tento plán → [`NIRVANA-V3.3-MAP.md`](NIRVANA-V3.3-MAP.md) / [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) / [`NIRVANA-V3.3-UNIFICATION.md`](NIRVANA-V3.3-UNIFICATION.md) → [`docs/3.2/V33_NIRVANA_MASTER_PLAN.md`](../3.2/V33_NIRVANA_MASTER_PLAN.md) (vision).
 > **Značky vlastníka:** 🤖 autonomní (kód/testy/dokumenty end-to-end) · 🔀 autonomní příprava + operátorské schválení · 👤 operátor (rozhodnutí, peníze, klíče, fyzický svět)
 
+> **Aktuální korekce 2026-11-11 — přednost před staršími snapshoty níže:** G8 **run #7** = **99,9241 %**, evidence 100 %, 5× `chain_live` 60 s, `pending`, cíl **6. 12. 14:51:25Z**; chain **118 687**; pool **`ece8b6965`** a **payout monitoring M2 uzavřen** (probe + rules + rebuild; `payouts_api_ok`/`measurement_ok` = 1, alert firing→resolved). **QTC payout leg OFF od 4. 11.** (36 278 ledger záznamů dismissed), PRL dry-run, BTC swap OFF. Nirvana **proto 34** repo = live. **ZIS agent sub-accounts** implementováno (60/60 testů, `ZIS_AGENTS_ENABLED` default OFF — DB push + deploy = 👤). Charta R9 **factual** ✅ / legal + cultural 👤. EDGE2 `networkd-wait-online` vyřešen; nginx listen options repo-only. Fronta a důkazy: [`DOC_VS_CODE_ANALYSIS_2026-11-10.md`](DOC_VS_CODE_ANALYSIS_2026-11-10.md) §4, [`REPORT_2026-11-11_PAYOUT_MONITORING.md`](../3.2/REPORTS/REPORT_2026-11-11_PAYOUT_MONITORING.md).
+>
 > **Aktuální korekce 2026-11-07 — přednost před staršími snapshoty níže:** G8 **run #7** `g8-20261106T145125Z`, cíl **2026-12-06T14:51:25Z**, živě 531/531 good/covered, 100 %, 0 incidentů, **pending**. Run #6 byl 6. 11. zastaven a archivován jako `evidence_incomplete`, ne PASS; [důvod a nasazená oprava](../3.2/REPORTS/REPORT_2026-11-06_G8_POOLFIX_RUN7.md). Kalendář 28. 11. už není cílem G8; premine zůstává samostatnou výškovou podmínkou. Next major upgrade je hotový (šest app manifestů 16.4.3, živý web/market/Nirvana 16.4.3), repo/app/net Nirvany mají proto 32. QTC payout je v běžícím warpd **OFF**, PRL dry-run, BTC swap OFF. Před novými funkcemi řešit **PII při duplicitním orderId, monitoring EDGE1 (node-exporter down), payout freshness (`ts:null`), atomický sklad a release verifier/provenance**. Přesné důkazy, testovací podmínky a hranice 🤖/👤: [audit + autonomní fronta 7. 11.](../3.2/REPORTS/REPORT_2026-11-07_EDGE_AUDIT_AUTONOMOUS.md). Aktivní run ani produkce se tímto auditem neměnily; G9/sign-off dál blokují Stable.
 
 ---
@@ -187,7 +189,7 @@ Zadání 👤 (31. 10.): stack existuje, tak ať je podporovaný a zdokumentovan
 | W3.2 | secret scanner jako povinný gate (public export scan už má 0 FP) | 🤖 |
 | W3.3 | SMTP / Resend — emaily nechodí (wallet-seed zachránitelný z DB) | 👤 |
 | W3.4 | dofinancovat pool wallet — loyalty výplaty, balance 0 | 👤 |
-| W3.5 | QTC deferred — treasury. **Stav 31. 10. (živě z `zion-v31-multichain` journalu): `qtc_sweeper stalled orphaned queued payouts stalled=1751`, `treasury_free=0`** — roste (dříve ~918). Každý blok přidává další deferraly, dokud treasury nedofinancuješ. | 👤 |
+| W3.5 | QTC deferred — treasury. **Stav 31. 10. (živě z `zion-v31-multichain` journalu): `qtc_sweeper stalled orphaned queued payouts stalled=1751`, `treasury_free=0`** — roste (dříve ~918). Každý blok přidává další deferraly, dokud treasury nedofinancuješ. **Aktualizace 11. 11.:** payout leg je od **4. 11. zcela OFF** (`QTC_PAYOUT_ENABLED=0`, 36 278 `ext_payout_records` dismissed) — čísla 1751/918 jsou před vypnutím; re-enable = 👤 funding + explicitní flip. | 👤 |
 | W3.6 | gas pro non-Base rotaci klíčů (Polygon 0,15 POL; BSC/Arb/OP/AVAX 0,003–0,05) | 👤 |
 | W3.7 | `WARP_BTC_SWAP_ENABLED=0` držet do uzavření G9 | 👤 |
 
@@ -223,7 +225,7 @@ Zadání 👤 (31. 10.): stack existuje, tak ať je podporovaný a zdokumentovan
 | # | Rozhodnutí | Blokuje | Stav |
 |---|---|---|---|
 | 1 | **G9 externí audit** (firma, budget, NDA, kickoff) | Stable, BTC swap, CoinGecko | ⏸️ posunuto |
-| 2 | **QTC deferred ~918** | V33-9 | ⬜ |
+| 2 | **QTC payout re-enable** (leg OFF od 4. 11.; dřívější ~918 deferred) + treasury funding | V33-9 | ⬜ |
 | 3 | **Pool wallet funding** | loyalty výplaty | ⬜ |
 | 4 | **SMTP / Resend** | emaily, seed recovery | ⬜ |
 | 5 | **P0-3 rotace** | bezpečnostní dluh | ⬜ |
@@ -304,6 +306,7 @@ Zadání 👤 (31. 10.): stack existuje, tak ať je podporovaný a zdokumentovan
 
 | Datum | Změna |
 |---|---|
+| 2026-11-11 | v1.15 — **truth-sync (autonomní session):** payout monitoring M2 uzavřen (probe+rules+pool `ece8b6965`), QTC payout leg OFF od 4. 11., ZIS agent sub-accounts implementováno (60/60, default OFF), R9 factual ✅, EDGE2 `networkd-wait-online` fix. Srovnány `PLAN.md`, `NIRVANA-V3.3-CHECKLIST.md`, `NIRVANA-V3.3-MAP.md` (§4–§6), `3.2.1-3.2.9_PLAN.md` (run #7, 5.B2/7.B4/8.B7/8.B9/9.B5, kotvy) a `DEFERRED_3.2.md` (G8 #7, cert, QTC OFF, Next 16.4.3). |
 | 2026-11-07 | v1.14 — read-only EDGE audit: G8 #7 do 6. 12. (run #6 stopped/evidence_incomplete), Next major upgrade hotový, proto 32 v repo/app/net ve shodě. Doplněna přednost aktuálního snapshotu a fronta bezpečnost/observability/release: orderId PII, EDGE1 exporter down, payout queued ts:null, sklad, verifier/provenance. Žádné produkční akce, aktivní run nezměněn. Detailní důkazy a hranice v REPORT_2026-11-07_EDGE_AUDIT_AUTONOMOUS.md. |
 | 2026-10-31 | v1.0 — vytvořeno po hloubkové revizi (plánové docs v3.3 + živé sondy EDGE i EDGE2). Zamčena 3 rozhodnutí 👤: RC kvalita first; HA dokumentovat + aktivovat. W0 truth-sync proveden. |
 | 2026-10-31 | v1.1 — **revize rozhodnutí o mrtvých površích po živých sondách**: `api.` a `dex.` nejsou mrtvé — obě služby běží na EDGE2 (`zion-hiran-gateway` :8007, warpd :8454) a DNS míří chybně na EDGE. 👤 rozhodl: `api.` **publikovat**, `dex.` **doplnit `/prices/:token/history`** + publikovat, `updates.` DNS smazat. Opraveno §1.4, §1.5, §2 #5, §3 T0.8, §4 řádek 6. |

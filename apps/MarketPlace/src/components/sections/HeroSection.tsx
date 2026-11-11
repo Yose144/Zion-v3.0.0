@@ -11,12 +11,12 @@ export default function HeroSection() {
     <section className={styles.workshop} aria-labelledby="market-home-title">
       <img
         className={styles.art}
-        src="/images/design-v1/carpenter-workshop.webp?v=engine-v1"
-        srcSet="/images/design-v1/carpenter-workshop-m.webp 960w, /images/design-v1/carpenter-workshop.webp 1672w"
+        src="/images/design-v1/lumi-kralovstvi-srdce.webp"
+        srcSet="/images/design-v1/lumi-kralovstvi-srdce-m.webp 960w, /images/design-v1/lumi-kralovstvi-srdce.webp 1672w"
         sizes="(max-width: 1152px) calc(100vw - 2rem), 1120px"
         width={1672}
         height={941}
-        alt=""
+        alt={t('hero.artAlt')}
         fetchPriority="high"
         decoding="async"
       />

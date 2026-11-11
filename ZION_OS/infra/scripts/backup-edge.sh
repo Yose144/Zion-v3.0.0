@@ -26,6 +26,8 @@
 #     - /etc/zion/config/*.toml
 #     - V31 Systemd service files (zion-v31-*.service) + drop-ins + timers
 #     - nginx site configs, fail2ban, Let's Encrypt certs
+#     - EDGE2 (primary) config + app state mirror: nginx vhosts, /etc/zion,
+#       65 systemd units, app SQLite/JSON state + Next app .env files
 #
 # Usage (manual):
 #   sudo /opt/zion/ZION_OS/infra/scripts/backup-edge.sh
@@ -291,7 +293,38 @@ fi
 _ZERO=$(find "${BACKUP_DIR}/daily" -maxdepth 4 -name '*.db' -size 0 -print -delete 2>/dev/null | wc -l | tr -d ' ')
 [[ "${_ZERO}" != "0" ]] && log "${YELLOW}  ⚠  dropped ${_ZERO} empty .db stub(s) from the archive${NC}"
 
-# ── 7d. Optional binaries (G-DR-1) ─────────────────────────────────────────
+# ── 7d. EDGE2 config + app state (nginx, /etc/zion, systemd, SQLite/JSON) ───
+# Step 7b carries only the PostgreSQL databases, yet EDGE2 is the primary node
+# AND the web ingress: everything else that makes it boot — nginx vhosts,
+# /etc/zion (env, keys, *.toml), 65 systemd units, app SQLite/JSON state and
+# the Next apps' .env files — lived on that box alone. Losing that disk used to
+# mean rebuilding the primary by hand from memory.
+# The chain itself is deliberately excluded (v31/node*.db ~1.7 GB, standby
+# copies ~0.5 GB): the edge followers already hold the chain and re-syncing
+# from peers is cheaper than carrying ~2 GB in every 4-hour archive.
+log "Mirroring EDGE2 config + app state (nginx, /etc/zion, systemd, data)..."
+E2_ARCHIVE="${BACKUP_DIR}/daily/edge2_${TIMESTAMP}.tar.gz"
+if ssh -i "${EDGE2_SSH_KEY}" -o BatchMode=yes -o ConnectTimeout=10 \
+       -o StrictHostKeyChecking=accept-new "root@${EDGE2_HOST}" \
+       "cd / && tar -czf - \
+          --exclude='opt/zion/data/v31/node*.db*' \
+          --exclude='opt/zion/data/v31/pool-store.db' \
+          --exclude='opt/zion/data/v31-pool-standby' \
+          --exclude='opt/zion/data/v31-standby' \
+          etc/zion etc/nginx etc/systemd/system opt/zion/data \
+          'opt/zion/APP&WEB/MarketPlace/.env' \
+          opt/zion/identity/.env \
+          opt/zion/shared/.env \
+          2>/dev/null" > "${E2_ARCHIVE}" \
+   && gzip -t "${E2_ARCHIVE}" 2>/dev/null \
+   && [[ $(stat -c %s "${E2_ARCHIVE}") -gt 102400 ]]; then
+    log "${GREEN}  ✓ EDGE2 config + app state ($(du -h "${E2_ARCHIVE}" | cut -f1))${NC}"
+else
+    log "${YELLOW}  ⚠  EDGE2 config mirror failed — archive continues WITHOUT EDGE2 config${NC}"
+    rm -f "${E2_ARCHIVE}"
+fi
+
+# ── 7e. Optional binaries (G-DR-1) ─────────────────────────────────────────
 # Includes V31 release binaries in the backup so that a DR restore on a clean
 # host doesn't require a Rust toolchain + 30 min rebuild. Increases backup
 # size by ~2 GB. Enable: ZION_BACKUP_INCLUDE_BINARIES=1
@@ -318,16 +351,21 @@ fi
 
 # ── 8. Compress daily backup ────────────────────────────────────────────────
 DAILY_TAR="${BACKUP_DIR}/daily/zion-edge-${TIMESTAMP}.tar.gz"
-if tar -czf "${DAILY_TAR}" -C "${BACKUP_DIR}/daily" \
-       "node_state_${TIMESTAMP}" "v31_data_${TIMESTAMP}" \
-       "app_state_${TIMESTAMP}" "config_${TIMESTAMP}" \
-       "systemd_${TIMESTAMP}" "nginx_${TIMESTAMP}" \
-       "fail2ban_${TIMESTAMP}" "letsencrypt_${TIMESTAMP}" \
-       "pg_${TIMESTAMP}"; then
+# EDGE2 mirror is best-effort — never fail the whole archive when the remote
+# pull was skipped (unreachable EDGE2, missing key, …).
+DAILY_MEMBERS=(
+    "node_state_${TIMESTAMP}" "v31_data_${TIMESTAMP}"
+    "app_state_${TIMESTAMP}" "config_${TIMESTAMP}"
+    "systemd_${TIMESTAMP}" "nginx_${TIMESTAMP}"
+    "fail2ban_${TIMESTAMP}" "letsencrypt_${TIMESTAMP}"
+    "pg_${TIMESTAMP}"
+)
+[[ -f "${E2_ARCHIVE}" ]] && DAILY_MEMBERS+=("edge2_${TIMESTAMP}.tar.gz")
+if tar -czf "${DAILY_TAR}" -C "${BACKUP_DIR}/daily" "${DAILY_MEMBERS[@]}"; then
     rm -rf "${NODE_BACKUP}" "${V31_BACKUP}" "${APP_BACKUP}" \
            "${CONFIG_BACKUP}" "${SYSTEMD_BACKUP}" \
            "${NGINX_BACKUP}" "${F2B_BACKUP}" "${CERT_BACKUP}" \
-           "${PG_BACKUP}"
+           "${PG_BACKUP}" "${E2_ARCHIVE}"
     SIZE=$(du -sh "${DAILY_TAR}" | cut -f1)
     chown zion:zion "${DAILY_TAR}" 2>/dev/null || true
     log "${GREEN}  ✓ Daily backup: ${DAILY_TAR} (${SIZE})${NC}"

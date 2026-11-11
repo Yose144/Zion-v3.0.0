@@ -136,7 +136,7 @@ Detail bran: [`3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md) §2 (Beta exit 
                                      ▼
     provenance · alerting · stale-block RCA · DR drill · feature freeze · artefakty  ──►  RC
                                      │
-   G8 run #5 (do 24. 11., rozpočet 43 min) ─────────┐
+   G8 run #7 (do 6. 12., 99,92 %, rozpočet 43 min) ──┐
    G9 externí audit ⏸️ posunut 👤 26. 10. ───────────┼──►  3.2.0 MAINNET STABLE  (= N0 ✅)
                                      ▲              │
    výška 144 000 (~27.–28. 11.): time-lock slotů 6–8 vyprší; spend dál jen 3-of-3 + DAO
@@ -163,21 +163,21 @@ Detail bran: [`3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md) §2 (Beta exit 
 
 ---
 
-## 5. Ekosystémová matice (stav 2026-10-26)
+## 5. Ekosystémová matice (stav 2026-11-11; řádky bez poznámky = snapshot 26. 10.)
 
 | Komponenta | Vrstva | Host | Stav | Stable blocker | v3.3 | Plán |
 |---|---|---|---|---|---|---|
-| zion-node primary | L1 | EDGE2 | ŽIVÉ — 97 006, parita | ano (G8 `chain_live`) | N0 | 3.2.1 |
+| zion-node primary | L1 | EDGE2 | ŽIVÉ — **118 687**, parita | ano (G8 `chain_live`) | N0 | 3.2.1 |
 | node2 / node3 (followeři) | L1 | EDGE | ŽIVÉ — parita, pool failover | ano (redundance) | N0 | 3.2.1 |
 | lokální backup node | L1 | operátorská stanice | ŽIVÉ — parita | — | M7 | 3.2.8 |
 | premine admin unlock | L1 | všechny nody | ŽIVÉ RPC, `unlocked=[]` | 1.S3 | N1 | 3.2.1 |
 | node reward 1 % | L1 | konsensus | STAVBA (`u64::MAX`) | rozhodnutí 1.B4 | N0 | 3.2.1 |
-| zion-pool (stratum + API) | L1 | EDGE | ŽIVÉ — build A1.2/A1.4 (26. 10. 11:39), stale 15–21 % | ano (G8 `pool_*`) | N2 | 3.2.2 |
+| zion-pool (stratum + API) | L1 | EDGE | ŽIVÉ — **`ece8b6965`** (11. 11.), 74 072 accepted / 0 rejected | ano (G8 `pool_*`) | N2 | 3.2.2 |
 | fallback-miner + v31-miner | L1 | EDGE | ŽIVÉ — liveness | nepřímo (G8) | N0 | 3.2.2 / 3.2.8 |
 | zion-miner (veřejný) | L1 | klienti | ŽIVÉ — `v3.2.0-miner` (alfa éra) | release 2.S3 | N2 | 3.2.2 |
 | desktop-agent | L1/klient | klienti | ŽIVÉ — 3.2.0 (multi-stream, NVIDIA+dual GPU fixy) | release 3.B7 | N2 | 3.2.2 / 3.2.3 |
 | pool-ui (`pool.`) | web | EDGE2 (static) | ŽIVÉ | — | N2 | 3.2.2 |
-| aux legy QTU / PRL / EVR / KRX / MEWC / ZANO / VRSC | L1 ext | EDGE2 (quantus, pearl) + upstream | ŽIVÉ — PRL dry-run, QTC deficit | — | N2 | 3.2.2 |
+| aux legy QTU / PRL / EVR / KRX / MEWC / ZANO / VRSC | L1 ext | EDGE2 (quantus, pearl) + upstream | ŽIVÉ — PRL dry-run, **QTC payout OFF** | — | N2 | 3.2.2 |
 | vast fleet + vastctl + `/vast-rigs/` | ops | stanice → EDGE2 | ŽIVÉ — 1 rig | — | N2 (W3+) | POOL-FLEET |
 | warpd (WARP) | L2 | EDGE2 | ŽIVÉ s holdy, sha = audit | ano (G8 `multichain`) | N1 | 3.2.4 |
 | bitcoind mainnet / regtest | L2 ext | EDGE2 / EDGE | ŽIVÉ — synced | — | N1 | 3.2.4 |
@@ -195,7 +195,7 @@ Detail bran: [`3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md) §2 (Beta exit 
 | free-world (L5) | L5 | EDGE2 | ✅ **P0-1 opraven 26. 10.** — scanner na tipu | B-EXIT-1 | N5 | 3.2.6 |
 | issobella (L6) | L6 | EDGE2 | ŽIVÉ — aktuální | — | N6 | 3.2.6 |
 | ops dashboard | ops | EDGE | ŽIVÉ — 33/33 | — | N0 | 3.2.8 |
-| G8 probes / evidence / alert sink | ops | EDGE + EDGE2 | ŽIVÉ — run #5 99.73 % | G8 | N0 | 3.2.8 |
+| G8 probes / evidence / alert sink | ops | EDGE + EDGE2 | ŽIVÉ — **run #7 99,9241 %**, pending | G8 | N0 | 3.2.8 |
 | Prometheus / Grafana | ops | EDGE | ŽIVÉ | DoD 9 | N0 | 3.2.8 |
 | nginx ingress | infra | EDGE2 (veřejné) + EDGE (ops) | ŽIVÉ — `nginx -t` OK | — | N0 | 3.2.8 |
 | zálohy (edge backup + offsite pull) | infra | EDGE → stanice | ŽIVÉ — 26. 10. OK | DR 7.S2 | N0 | 3.2.7 |
@@ -218,6 +218,7 @@ Detail bran: [`3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md) §2 (Beta exit 
 | 6. 11. 14:51Z | run #6 **zastaven před koncem okna** → archivován `stopped`/`evidence_incomplete` (99,7629 %, 12 incidentů); start G8 **run #7** `g8-20261106T145125Z` | nová 30denní brána |
 | 8.–9. 11. | 5 incidentů `chain_live` × 60 s v run #7 (`G8ChainStale` firing→resolved) | 99,916 % k 10. 11.; trigger pravděpodobně probe-side RPC stall, RCA otevřená |
 | 10. 11. | Nirvana **proto 34** nasazena (net build `20261110T181100Z` + app `proto_match`) | repo = live = 34 |
+| 11. 11. | payout monitoring **M2** (probe + rules + pool `ece8b6965`), EDGE2 `networkd-wait-online` fix, ZIS agent sub-accounts (kód), Charta R9 factual ✅ | G8 99,9241 %, 0 nových incidentů |
 | 25. 11. | expirace certu `auth.` | renew musí proběhnout dřív (8.B6) — ⚠️ renewal už proběhl ~26. 10., cert do 24./25. 1. 2027 (ověřeno 31. 10.) |
 | **6. 12. 14:51Z** | **konec G8 run #7** | **V33-1 / KS-1** — hlavní kotva RC |
 | ~27.–28. 11. | výška 144 000 — time-lock premine slotů 6–8 vyprší | utratitelnost dál jen 3-of-3 admin unlock + DAO (1.S3) |

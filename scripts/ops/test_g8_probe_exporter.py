@@ -117,10 +117,12 @@ def closed_port() -> int:
     return port
 
 
-def config_for(node_ports, http_services=None, stratum_port=None, max_age=900):
+def config_for(node_ports, http_services=None, stratum_port=None, max_age=900,
+               future_tolerance=120):
     return {
         "timeout": 2.0,
         "chain_tip_max_age": max_age,
+        "tip_future_tolerance": future_tolerance,
         "node_rpc_host": "127.0.0.1",
         "node_rpc_ports": node_ports,
         "http_services": http_services or [],
@@ -210,6 +212,63 @@ class ProbeTests(unittest.TestCase):
         text = g8x.render_metrics(rep, config_for([], max_age=900), now=now)
         self.assertIn("zion_g8_chain_live 0", text)
         self.assertIn("zion_g8_chain_tip_age_seconds -300.0", text)
+
+    def test_small_future_skew_is_live(self):
+        # Miner-supplied block timestamps may be a few seconds ahead of the
+        # probe host; that is not a liveness failure.
+        now = time.time()
+        rep = {"services": {"node_primary": {"success": True, "duration": 0.01}},
+               "chain_height": 10, "tip_timestamp": now + 60,
+               "node_quorum": 1, "primary_ok": True}
+        text = g8x.render_metrics(rep, config_for([], max_age=900), now=now)
+        self.assertIn("zion_g8_chain_live 1", text)
+        self.assertIn("zion_g8_chain_tip_age_seconds -60.0", text)
+
+    def test_failed_probe_clears_stale_tip_fields(self):
+        # A probe that got getStatus but failed getBlockByHeight must not leak
+        # the height/tip into selection (that is how a stale tip produced a
+        # chain_live=0 incident on 2026-11-08).
+        with mock.patch.object(
+            g8x, "rpc_call",
+            side_effect=[{"native_chain_height": 115406}, RuntimeError("boom")],
+        ):
+            out = g8x.probe_node("127.0.0.1", 1, 1.0, want_tip=True)
+        self.assertFalse(out["success"])
+        self.assertIsNone(out["chain_height"])
+        self.assertIsNone(out["tip_timestamp"])
+
+    def test_failed_primary_does_not_win_tip_selection(self):
+        now = time.time()
+
+        def fake_probe(host, port, timeout, want_tip):
+            if port == 1111:
+                return {"success": False, "duration": 0.0,
+                        "chain_height": 100, "tip_timestamp": now - 10000}
+            return {"success": True, "duration": 0.0,
+                    "chain_height": 200, "tip_timestamp": now - 30}
+
+        cfg = config_for([1111, 2222], stratum_port=closed_port())
+        with mock.patch.object(g8x, "probe_node", side_effect=fake_probe):
+            report = g8x.run_probes(cfg)
+        self.assertEqual(report["chain_height"], 200)
+        self.assertAlmostEqual(report["tip_timestamp"], now - 30, places=3)
+        text = g8x.render_metrics(report, cfg, now=now)
+        self.assertIn("zion_g8_chain_live 1", text)
+        self.assertIn("zion_g8_chain_height 200", text)
+
+    def test_per_node_tip_age_and_height_metrics(self):
+        rep = {"services": {
+                   "node_primary": {"success": True, "duration": 0.01,
+                                    "chain_height": 500, "tip_timestamp": 970},
+                   "node_follower_2": {"success": True, "duration": 0.01,
+                                       "chain_height": 499, "tip_timestamp": 969}},
+               "chain_height": 500, "tip_timestamp": 970,
+               "node_quorum": 2, "primary_ok": True}
+        text = g8x.render_metrics(rep, config_for([], max_age=900), now=1000)
+        self.assertIn('zion_g8_node_tip_age_seconds{service="node_primary"} 30.0', text)
+        self.assertIn('zion_g8_node_tip_age_seconds{service="node_follower_2"} 31.0', text)
+        self.assertIn('zion_g8_node_chain_height{service="node_primary"} 500', text)
+        self.assertIn('zion_g8_node_chain_height{service="node_follower_2"} 499', text)
 
     def test_unknown_tip_sentinel(self):
         now = time.time()

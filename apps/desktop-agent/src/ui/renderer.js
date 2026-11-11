@@ -1584,7 +1584,10 @@ function setupControls() {
   const hwTokenMatches = (token, dev) => {
     const t = String(token).trim().toLowerCase();
     if (!t) return false;
-    if (t === String(dev.index)) return true;
+    // Numeric tokens are device indices only — a bare "1" must not
+    // substring-match "GTX 1070 Ti" (the "1" in "1070"), same rule as the
+    // miner's ZION_GPU_DEVICES filter and main.js gpuDeviceMatchesToken.
+    if (/^\d+$/.test(t)) return t === String(dev.index);
     return dev.name.toLowerCase().includes(t);
   };
   // Tokens of currently enabled GPUs — null means "all detected".
