@@ -42,7 +42,8 @@ export function pushHitFx(
   kind: 'out' | 'in',
   now: number,
 ): void {
-  if (amount < 1) return;
+  // 1 HP jsou škrábnutí; číslo by jen zaplnilo obrazovku
+  if (amount < 2) return;
   list.push({
     id: nextId++,
     x,

@@ -2734,6 +2734,10 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   zpráv stejný). Deploy **net první, pak appka** — i když `proto_check`
   vidí stejnou verzi, musí se nasadit obojí, jinak klient kreslí bary
   jinak než server počítá.
+- **Pozdější polish:** `stepFighter` používá sdílené scratch buffery
+  (`PREV_X`/`PREV_Y`), takže v substepu nealokuje 480 polí/s. FX práh je
+  2 HP (škrábnutí za 1 už nezaplavuje obraz). Bot při HP < 35 % kryje
+  častěji a déle — zlom krytu je tím v sehrávce vidět (0,06–0,13/zápas).
 - **Pozor na testy:** `damageFighter(..., 100, ...)` už nestačí na KO
   (MAX_HP 160) — používej `MAX_HP`; výkop už není `ball.x > 1`, ale střed
   + `match.kickoff.side`.

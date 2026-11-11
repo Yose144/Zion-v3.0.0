@@ -199,6 +199,14 @@ góly, vlny a držení kopce.
 - **Survival:** base 55 HP, +20 HP za vlnu, heal +26. Bot se dostane na
   vlnu 3,2 (bylo 2,2); člověk míří výš.
 
+## Pozdější polish
+
+- `stepFighter` používá sdílené `PREV_X`/`PREV_Y` buffery místo alokace
+  dvou polí na každý substep (60 fps × 4 × 2 loutky = 480 polí/s).
+- `DuelFx` nekreslí čísla za 1 HP — škrábnutí by jen zaplnilo obraz.
+- Bot při HP < 35 % kryje častěji a déle; zlom krytu je v sehrávce vidět
+  (0,06–0,13 na zápas), aniž by se změnila doba duelů (42,8 s, 24:24).
+
 ## Protokol 35
 
 Tuning mění **význam** HP (MAX_HP 160) a poškození, i když formát zpráv

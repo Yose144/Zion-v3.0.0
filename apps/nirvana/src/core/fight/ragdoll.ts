@@ -598,6 +598,12 @@ function strikeLeg(f: RagdollFighter): void {
   f.vx[P.CHEST] = f.vx[P.CHEST]! - dir * 0.9;
 }
 
+// Scratch buffery pro `stepFighter` — jinak by se v každém substepu (60×/s ×
+// 4 substepy × 2 loutky) alokovalo 480 polí za sekundu. Loutky se stepují
+// sekvenčně, takže sdílení je bezpečné.
+const PREV_X = new Array<number>(POINT_COUNT).fill(0);
+const PREV_Y = new Array<number>(POINT_COUNT).fill(0);
+
 function stepFighter(
   f: RagdollFighter,
   input: FightInput,
@@ -605,8 +611,8 @@ function stepFighter(
   firstSubstep: boolean,
   mode: FightMode,
 ): void {
-  const prevX = new Array<number>(POINT_COUNT);
-  const prevY = new Array<number>(POINT_COUNT);
+  const prevX = PREV_X;
+  const prevY = PREV_Y;
 
   f.stun = Math.max(0, f.stun - sub);
   f.knock = Math.max(0, f.knock - sub);
@@ -1375,8 +1381,12 @@ export function botInput(
   if (clock >= memory.nextThink) {
     memory.nextThink = clock + tuning.think + rand(memory) * tuning.jitter;
     memory.pick = rand(memory) < tuning.kickChance ? 'kick' : 'punch';
-    if (self.guardMeter > 0.28 && !self.guardBroken && limbSpeed(foe) > 4.2 && rand(memory) < tuning.guardChance) {
-      memory.guardUntil = clock + (difficulty === 'champion' ? 0.5 : 0.34);
+    // při nízkém HP bot kryje víc a déle — jinak by zlomení krytu nebylo
+    // v sehrávce nikdy vidět (držený blok je pro člověka, ne pro bota)
+    const lowHp = self.hp < MAX_HP * 0.35;
+    const guardChance = Math.min(0.95, tuning.guardChance + (lowHp ? 0.25 : 0));
+    if (self.guardMeter > 0.28 && !self.guardBroken && limbSpeed(foe) > 4.2 && rand(memory) < guardChance) {
+      memory.guardUntil = clock + (difficulty === 'champion' ? 0.5 : 0.34) + (lowHp ? 0.35 : 0);
     }
   }
 
