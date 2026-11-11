@@ -5,6 +5,24 @@
 > Metoda: cílené grep/JSON sondy do repa + read-only SSH sondy na EDGE1 (`62.171.141.136`) a EDGE2 (`207.180.217.100`) jako root. Žádné restarty, deploye ani financial akce.
 > **Kanony pravdy:** `docs/3.2/StatusV3.md` → `PLAN.md` / `ROADMAP.md` / `V31/README.md` → `V31/docs/**` → `docs/3.3/*-PLAN.md` (detail) → starší docs.
 
+## 0. Update 2026-11-11 — edge sonda + payout monitoring M2 nasazeno
+
+Živé sondy obou boxů + deploy trojvrstvé opravy (👤 schváleno). **Stav měření níže = po deployi.**
+
+| Oblast | 10. 11. | 11. 11. (ověřeno) |
+|---|---|---|
+| Chain tip | 118 163 | **118 687** (~60 s/blok; 6/6 RPC portů shodná výška) |
+| G8 run #7 | 99,916 %, 5 incidentů | **99,9241 %**, evidence 100 %, `pending`, **stále 5× `chain_live` 60 s** (poslední 9. 11. 16:38Z — ~35 h čistě), cíl 6. 12. 14:51Z |
+| Disky | 62 % / 58 % | **62 %** (89/145 G) / **58 %** (112/193 G) |
+| apt upgradable | 70 / 13 | **72 / 13** |
+| EDGE1 node-exporter | M1 slepé (dead 31. 10.) | **active od 7. 11. 20:49**; `up{job="node",instance="edge1"}=1` — M1 ✅ |
+| Pool binárka | `d786449b0-g8fix` | **`ece8b6965`** (HEAD; rebuild přes docker `rust:1.97-bullseye`, `ZION_GIT_SHA` embed OK; restart ~10 s, **G8 0 incidentů**; RSS 3,6→0,91 GiB) |
+| Payout monitoring M2 | slepé (`payouts_api_ok=0`, age chybí) | **✅ LIVE:** probe+rules+pool API — `payouts_api_ok=1`, `measurement_ok=1`, `last_payout_age_seconds` reálná; `ZionPoolPayoutMeasurementMissing`+`ZionWritepathProbeStale` nahrány a jednou **firing→resolved** (end-to-end důkaz) |
+| Failed units | EDGE2 `networkd-wait-online` | beze změny (kosmetický) |
+| Public HTTPS | — | 10/10 endpointů 200; `/api/g8` = state file; nirvana proto 34 `proto_match:true` |
+
+**Nové pravdy pro kanon:** ExecStart writepath probe = `/usr/local/sbin/zion-writepath-probe.py` (ne `/opt/zion/V31/deploy/monitoring/` — ta je jen repo kopie, synchronizována). G8 state file `/opt/zion/data/g8_run.json` žije na **EDGE1** (ne EDGE2). `latest_recorded_ts` vyžaduje pool ≥ `1ce5b5eb2` — starší pool = `measurement_ok 0` a alert **poctivě** hlásí. Docker build na EDGE1: cache mount na `/cargo`+`CARGO_HOME` (NE `/usr/local/cargo` — shadowne image cargo). Report: [`docs/3.2/REPORTS/REPORT_2026-11-11_PAYOUT_MONITORING.md`](../3.2/REPORTS/REPORT_2026-11-11_PAYOUT_MONITORING.md).
+
 ## 1. Verify matrix — doc claim vs. realita (ověřeno 10. 11.)
 
 | # | Oblast | Doc claim (kanon) | Ověřeno v kódu / live | Stav |
@@ -40,15 +58,17 @@
 1. **G8 `chain_live` incidenty ×5 (8.–9. 11.)** — `G8ChainStale` firing→resolved do ~1–2 min. Block-timestamp sampling kolem výšek ~115 580–115 760 a ~116 580–116 700 **neprokázal** >900 s gap; trigger pravděpodobně probe-side (RPC stall na 4jáDrovém EDGE při ~230 % mining CPU) nebo krátký block gap. **RCA otevřená** — kandidáti: `G8_PROBE_TIMEOUT_SECONDS=3` pod zátěží, timeout na `getStatus`+`getBlockByHeight` ×3 nodů současně. Source: `g8_probe_exporter.py` (`chain_tip_max_age=900`, `confirm_attempts=2`).
 2. **Release artifact x86_64-apple-darwin** — clang cross `x86_64-apple-darwin` na arm64 Macu **ověřen funkční** (Mach-O výstup, rustup target nainstalován), ale **Data volume 100 % plný** (~115–121 MB volno) → `cargo build --release` lokálně nemožný. Řešení: vyčištění disku / build na EDGE/clean hostu / Intel Mac. Postup: `scripts/ops/build-release-artifacts.sh --isolate --from-commit <sha> --target x86_64-apple-darwin`.
 3. **`dist/` starší drafty nemají `RELEASE-MATRIX.json`** — `verify-release-artifacts.py` na `v3.2.0-rc-w1.4` = FAIL (chybí matrix). Při RC rebuildu (povinný z RC commitu) matrix vznikne automaticky.
-4. **EDGE1 `apt list --upgradable` = 70, EDGE2 = 13** — `unattended-upgrades` aktivní; majority upgrade = 👤 rozhodnutí (kernel/reboot okno).
+4. **EDGE1 `apt list --upgradable` = 72, EDGE2 = 13** (11. 11.) — `unattended-upgrades` aktivní; majority upgrade = 👤 rozhodnutí (kernel/reboot okno).
 5. **EDGE2 `systemd-networkd-wait-online` failed** od 6. 11. — kosmetický (služby běží), ale `systemctl --failed` není čisté.
 6. **Nirvana deploy párování** — `PROTO_VERSION` je sdílený soubor; client (`zion-nirvana`) a services (`zion-nirvana-net`) musí deployovat **spolu**, jinak `proto_mismatch` odmítne handshake. Dnes nasazeno obojí (net `20261110T181100Z`, app `proto_match:true`).
 
-## 4. Co zůstává z autonomní fronty (stav 10. 11.)
+## 4. Co zůstává z autonomní fronty (stav 11. 11.)
+
+> **Z auditu 7. 11. uzavřeno 11. 11.:** M1 EDGE1 node-exporter (již 7. 11.) a **M2 payout monitoring** — probe+rules+pool rebuild `ece8b6965`, viz §0 a `REPORT_2026-11-11_PAYOUT_MONITORING.md`. Otevřené z reportu zůstávají: PII orderId, atomický sklad, release verifier, proto preflight, archive content root, G8 state fail-loud, Lumi hlediště.
 
 | Položka | Stav | Poznámka |
 |---|---|---|
-| G8 run #7 PASS | 🔄 běží | 99,916 %, 5×60 s incidentů, do 6. 12. |
+| G8 run #7 PASS | 🔄 běží | 99,9241 % (11. 11.), 5×60 s incidentů, do 6. 12. |
 | RC artifacts z RC commitu | ⏸️ | blokováno: žádný RC tag (👤 9.S1) + Mac disk |
 | P0-3 env subsety + rotace | 🔀 | audit hotový (`P0-3-SHARED-ENV-AUDIT.md`), rotace = 👤 |
 | ZionDex funded E2E | 🔀 | QuoterV2/solvency/AMM-gate ✅ 31. 10.; funded E2E = 👤 (§7 rozhodnutí) |

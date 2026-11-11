@@ -3,6 +3,15 @@
 > **Vytvořeno:** 2026-11-02
 > **Rozsah:** `infra/edge-deploy/` (legacy V3, EDGE1) vs `V31/deploy/` (V31 Mainnet Alpha, EDGE2)
 > **Zdroj pravdy:** `AGENTS.md` topologie, `docs/3.2/StatusV3.md`, `docs/plans/INFRA-SPLIT-PLAN.md`
+>
+> **Update (2026-11-11, živé sondy + payout monitoring deploy — opravy tabulek §5):** Ověřeno naživo, tabulky níže jsou částečně historické:
+> - **Pool neběží na EDGE2** — `zion-v31-pool.service` i `-standby` jsou `inactive`; produkční pool (stratum 8444 + API 8080) žije **jen na EDGE1**. EDGE2 `:8080` = tunnel na EDGE1. §5.1 řádek „Primary pool" číst jako *inactive/unit existuje*.
+> - **`zion-g8-evidence.timer` + state `/opt/zion/data/g8_run.json` jsou na EDGE1**, ne EDGE2 (§5.1). Na EDGE2 běží `zion-g8-probe` (:9105) + `zion-writepath-probe.timer` (textfile pro node-exporter).
+> - **Writepath probe ExecStart = `/usr/local/sbin/zion-writepath-probe.py`** — `/opt/zion/V31/deploy/monitoring/` je jen repo kopie (drží se synchronizovaná). Verze 31. 10. → **HEAD 11. 11.** (`latest_recorded_ts` contract).
+> - **Pool binárka:** `d786449b0-g8fix` → **`ece8b6965`** (rebuild 11. 11., viz `REPORTS/REPORT_2026-11-11_PAYOUT_MONITORING.md`); tatáž na EDGE2 `/opt/zion/V31/target/release/zion-pool` (parita, unit inactive).
+> - **Prometheus rules:** `zion_writepath.rules.yml` na EDGE1 `/etc/prometheus/rules/` nově obsahuje `ZionPoolPayoutMeasurementMissing` + `ZionWritepathProbeStale` (do 11. 11. záměrně nenasazené).
+> - **EDGE1 services navíc:** `prometheus-node-exporter` :9100 (active od 7. 11.), `zion-g8-probe` :9105, `zion-g8-evidence.timer`, `zion-writepath-probe` **není** tu (jen EDGE2).
+> - Disky 11. 11.: EDGE1 **62 %** (89/145 G), EDGE2 **58 %** (112/193 G); chain tip **118 687**.
 
 ---
 
