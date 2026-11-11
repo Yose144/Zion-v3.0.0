@@ -140,16 +140,25 @@ export default function GiftReveal({ data }: { data: GiftRevealData }) {
       <div className="pointer-events-none absolute -right-40 bottom-0 h-80 w-80 rounded-full bg-red-600/10 blur-3xl" />
 
       <div className="relative mx-auto max-w-2xl px-4 pb-16 pt-12">
-        {/* Header */}
-        <header className="text-center">
-          <div className="text-5xl">🎁</div>
-          <h1 className="rasta-text-gradient mt-3 text-3xl font-black tracking-tight sm:text-4xl">
-            Váš dárek
-          </h1>
-          <p className="mt-2 text-sm text-white/60">
-            od týmu ZION TerraNova{data.customerName ? ` — pro ${data.customerName}` : ''}
-          </p>
-        </header>
+        {/* Hero banner */}
+        <div className="relative overflow-hidden rounded-3xl border border-white/10">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/vanoce/hero/kralovstvi-srdce-wide.webp"
+            alt="Království srdce"
+            className="h-44 w-full object-cover sm:h-56"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0d] via-[#0d0d0d]/55 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 p-5 text-center">
+            <div className="text-4xl">🎁</div>
+            <h1 className="rasta-text-gradient mt-1 text-3xl font-black tracking-tight sm:text-4xl">
+              Váš dárek
+            </h1>
+            <p className="mt-1 text-sm text-white/75">
+              od týmu ZION TerraNova{data.customerName ? ` — pro ${data.customerName}` : ''}
+            </p>
+          </div>
+        </div>
 
         {/* Amount hero */}
         <div className="mt-8 rounded-3xl border border-rasta-gold/30 bg-gradient-to-br from-rasta-gold/15 via-transparent to-emerald-500/10 p-8 text-center">
@@ -194,43 +203,70 @@ export default function GiftReveal({ data }: { data: GiftRevealData }) {
           {/* Pass */}
           {data.passCode && (
             <Card icon={<Ticket size={16} />} title="ZION Archive Pass" accent="green">
-              <p className="font-mono text-lg font-black text-rasta-gold">{data.passCode}</p>
-              <a
-                href="https://app.zionterranova.com/zion-archive"
-                target="_blank"
-                rel="noreferrer"
-                referrerPolicy="no-referrer"
-                className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-emerald-200"
-              >
-                Uplatnit v ZION Archivu <ExternalLink size={12} />
-              </a>
-              <span className="mx-2 text-white/30">·</span>
-              <a
-                href="https://nirvana.zionterranova.com"
-                target="_blank"
-                rel="noreferrer"
-                referrerPolicy="no-referrer"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-emerald-200"
-              >
-                Uplatnit v Nirvaně <ExternalLink size={12} />
-              </a>
+              <div className="flex items-start gap-4">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/vanoce/galerie/zion-pass/03_digitalni_darek.webp"
+                  alt="ZION Archive Pass"
+                  className="hidden h-20 w-32 shrink-0 rounded-lg border border-white/10 object-cover sm:block"
+                  loading="lazy"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="font-mono text-lg font-black text-rasta-gold">{data.passCode}</p>
+                  <p className="mt-1 text-[11px] text-white/55">
+                    Digitální průkaz do světa ZION — uplatníte ho v Nirvaně i v Archivu.
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <a
+                      href="https://app.zionterranova.com/zion-archive"
+                      target="_blank"
+                      rel="noreferrer"
+                      referrerPolicy="no-referrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-emerald-200"
+                    >
+                      Uplatnit v ZION Archivu <ExternalLink size={12} />
+                    </a>
+                    <span className="text-white/30">·</span>
+                    <a
+                      href="https://nirvana.zionterranova.com"
+                      target="_blank"
+                      rel="noreferrer"
+                      referrerPolicy="no-referrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-emerald-200"
+                    >
+                      Uplatnit v Nirvaně <ExternalLink size={12} />
+                    </a>
+                  </div>
+                </div>
+              </div>
             </Card>
           )}
 
           {/* Book */}
           {data.bookUrl && (
             <Card icon={<BookOpen size={16} />} title="Kniha Království srdce" accent="gold">
-              <p className="text-xs text-white/60">
-                Kompletní edice — PDF + EPUB, 5 jazyků.
-              </p>
-              <a
-                href={data.bookUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-rasta-gold to-yellow-400 px-4 py-2 text-xs font-black text-rasta-black hover:opacity-90"
-              >
-                Stáhnout ZIP <ArrowRight size={13} />
-              </a>
+              <div className="flex items-center gap-4">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/shop/img/books/kralovstvi-srdce-cover.webp"
+                  alt="Obálka knihy Království srdce"
+                  className="h-24 w-24 shrink-0 rounded-lg border border-rasta-gold/30 object-cover shadow-lg shadow-black/40"
+                  loading="lazy"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-white/60">
+                    Kompletní edice — PDF + EPUB, 5 jazyků.
+                  </p>
+                  <a
+                    href={data.bookUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-rasta-gold to-yellow-400 px-4 py-2 text-xs font-black text-rasta-black hover:opacity-90"
+                  >
+                    Stáhnout ZIP <ArrowRight size={13} />
+                  </a>
+                </div>
+              </div>
             </Card>
           )}
         </div>
