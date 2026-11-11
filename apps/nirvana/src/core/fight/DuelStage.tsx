@@ -37,32 +37,55 @@ export function DuelStage({ goals = false, hill = false, sumo = false }: { goals
       <directionalLight position={[14, 20, 8]} intensity={2.1} color="#ffe0b3" />
       <pointLight position={[0, 5, 4]} intensity={34} color="#ffb877" distance={34} decay={2} />
 
-      {/* strž pod klecí — delší, aby v záběru nebyl vidět okraj */}
-      <mesh position={[0, -0.25, -8]}>
-        <boxGeometry args={[half * 2 + 6, 0.5, 40]} />
-        <meshStandardMaterial color="#89765f" roughness={0.92} />
-      </mesh>
+      {sumo ? (
+        <group>
+          {/* vyvýšený ring — mimo něj je propast */}
+          <mesh position={[0, -0.25, 0]}>
+            <boxGeometry args={[SUMO_HALF * 2 + 0.4, 0.5, 5.2]} />
+            <meshStandardMaterial color="#9b7b4f" roughness={0.9} />
+          </mesh>
+          {[-1, 1].map((side) => (
+            <mesh key={side} position={[side * (SUMO_HALF + 0.2), -0.05, 0]}>
+              <boxGeometry args={[0.3, 0.4, 5.2]} />
+              <meshStandardMaterial color="#5c4426" roughness={0.9} />
+            </mesh>
+          ))}
+          <mesh position={[0, -4.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[60, 60]} />
+            <meshBasicMaterial color="#0b0605" />
+          </mesh>
+        </group>
+      ) : (
+        /* strž pod klecí — delší, aby v záběru nebyl vidět okraj */
+        <mesh position={[0, -0.25, -8]}>
+          <boxGeometry args={[half * 2 + 6, 0.5, 40]} />
+          <meshStandardMaterial color="#89765f" roughness={0.92} />
+        </mesh>
+      )}
       {/* King of the Hill — zóna uprostřed */}
       {hill && <HillZone />}
       {/* Sumo — vyznačený ring */}
       {sumo && <SumoRing />}
 
-      {/* středová linka */}
-      <mesh position={[0, 0.011, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.12, 8]} />
-        <meshBasicMaterial color="#ffb46a" transparent opacity={0.5} toneMapped={false} />
-      </mesh>
-      {/* sloupky a břevno — "klec" */}
-      {[-half - 1.2, half + 1.2].map((x) => (
-        <mesh key={x} position={[x, 1.5, -3.4]}>
-          <boxGeometry args={[0.24, 3, 0.24]} />
-          <meshStandardMaterial color="#4c4438" metalness={0.4} roughness={0.6} />
-        </mesh>
-      ))}
-      <mesh position={[0, 3, -3.4]}>
-        <boxGeometry args={[half * 2 + 2.8, 0.14, 0.14]} />
-        <meshStandardMaterial color="#4c4438" metalness={0.4} roughness={0.6} />
-      </mesh>
+      {/* středová linka a klec (v sumu je rámem sám ring) */}
+      {!sumo && (
+        <>
+          <mesh position={[0, 0.011, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[0.12, 8]} />
+            <meshBasicMaterial color="#ffb46a" transparent opacity={0.5} toneMapped={false} />
+          </mesh>
+          {[-half - 1.2, half + 1.2].map((x) => (
+            <mesh key={x} position={[x, 1.5, -3.4]}>
+              <boxGeometry args={[0.24, 3, 0.24]} />
+              <meshStandardMaterial color="#4c4438" metalness={0.4} roughness={0.6} />
+            </mesh>
+          ))}
+          <mesh position={[0, 3, -3.4]}>
+            <boxGeometry args={[half * 2 + 2.8, 0.14, 0.14]} />
+            <meshStandardMaterial color="#4c4438" metalness={0.4} roughness={0.6} />
+          </mesh>
+        </>
+      )}
 
       {/* branky pro ragdoll fotbal */}
       {goals && (

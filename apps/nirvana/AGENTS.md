@@ -2710,7 +2710,7 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   odehraje N zápasů bot vs bot v každém módu (délka, timeouty, zásahy, KO,
   kombo, zlomy krytu, góly, vlny, kopec). Čísla níže jsou z 96 běhů.
 - **Cílové tempo:** duel **43,9 s** (best of 3), 2,7 KO, 50:46; koth
-  **35,6 s**, 47:49, kopec 10,0:10,0 s; **sumo 65,4 s, 21:27, 1,5 ring-out**;
+  **35,6 s**, 47:49, kopec 10,0:10,0 s; **sumo 65,2 s, 23:25, 1,6 ring-out**;
   survival vlna **3,2**; ball
   **6,8:5,4** gólů za 110 s (90 s hry + pauzy).
 - **`MAX_HP` 100 → 160**, `HIT_DAMAGE` 3,2 → 2,0, `HIT_MAX` 28 → 20,
@@ -2725,8 +2725,9 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   dřív, než B stihl zasáhnout → systematická výhoda A. Po opravě je koth
   46:50 (bylo 59:37).
 - **Sumo:** `SUMO_HALF = 3,0` (6 m ring), 35 s na kolo, best of 3.
-  Poškození ×0,3 a push ×1,5 — vyhrává se vytlačením, ne ubitím. Ring-out
-  je okamžitý (střed těla za čarou), KO nebo čas (rozhoduje čas v ringu)
+  Poškození ×0,3 a push ×1,5 — vyhrává se vytlačením, ne ubitím. **Mimo
+  ring není podlaha** — kdo přepadne, spadne do propasti; ring-out je
+  okamžitý (střed těla za čarou), KO nebo čas (rozhoduje čas v ringu)
   ukončí kolo. Bot hlídá okraj a tlačí soupeře ven.
 - **Fotbal:** `BALL_HALF = 13` (26 m), branka 2,1 m, pomalejší míč a
   **výkop na středu + střelec zmrazený 1,6 s**. Míč se už nedává na

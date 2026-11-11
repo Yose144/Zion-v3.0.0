@@ -43,8 +43,9 @@ loutkou** (Ragdoll Masters) a přidat módy, které z jedné arény udělají v�
   obtížnost `champion` (i když hráč zvolil `gentle`).
 - **Trénink:** figurína neútočí, HP se regeneruje, po „KO" se hned postaví.
 - **Sumo:** ring 6 m (`SUMO_HALF = 3,0`), 35 s na kolo, best of 3. Poškození
-  ×0,3 a push ×1,5 — vyhrává se vytlačením, ne ubitím. Ring-out je okamžitý
-  (střed těla za čarou), KO nebo čas (rozhoduje čas v ringu) ukončí kolo.
+  ×0,3 a push ×1,5 — vyhrává se vytlačením, ne ubitím. Mimo ring **není
+  podlaha**, takže poražený spadne do propasti. Ring-out je okamžitý (střed
+  těla za čarou), KO nebo čas (rozhoduje čas v ringu) ukončí kolo.
 
 ### 3. Vykreslení
 
@@ -174,7 +175,7 @@ góly, vlny a držení kopce.
 | Mód | Před | Po |
 |---|---|---|
 | duel | 25,3 s · 41,6 zásahů · 2,5 KO · 8:16 (48 runů) | **43,9 s · 100,2 zásahů · 2,7 KO · 50:46** |
-| sumo | — | **65,4 s · 21:27 · 1,5 ring-out · 1,0 KO** |
+| sumo | — | **65,2 s · 23:25 · 1,6 ring-out · 1,0 KO** |
 | survival | 15,2 s · vlna 2,2 | **30,7 s · vlna 3,2** |
 | ball | 135 s · 15:15 gólů (30 gólů!) | **110 s · 6,8:5,4 gólů, 62:23/11 remíz** |
 | koth | 24,9 s · 59 zásahů · 4,0 KO · 50:46 | **35,6 s · 94,3 zásahů · 3,2 KO · 47:49** |

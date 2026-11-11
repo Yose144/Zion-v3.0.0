@@ -557,7 +557,9 @@ function clampWorld(f: RagdollFighter, mode: FightMode): void {
   const half = mode === 'ball' ? BALL_HALF : ARENA_HALF;
   for (let i = 0; i < POINT_COUNT; i++) {
     const radius = POINT_RADIUS[i]!;
-    if (f.y[i]! < radius) {
+    // Sumo: mimo ring není podlaha — kdo přepadne, opravdu spadne.
+    const outsideRing = mode === 'sumo' && Math.abs(f.x[i]!) > SUMO_HALF;
+    if (!outsideRing && f.y[i]! < radius) {
       f.y[i] = radius;
       if (f.vy[i]! < 0) f.vy[i] = 0;
     }
