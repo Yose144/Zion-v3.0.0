@@ -36,6 +36,20 @@ groups:
           summary: "G8 primary node RPC down"
           description: "The primary V31 node JSON-RPC probe (node_primary) has been failing for over 2 minutes."
 
+      # Requires the per-node metric added 2026-11-11; ship this rule together
+      # with the probe that exports zion_g8_node_tip_age_seconds. On an older
+      # probe the series is absent, so the rule stays inactive — safe, but the
+      # diagnostic is blind. Do NOT deploy the rule alone if you expect it to
+      # catch the stale-but-reachable primary from the 2026-11-11 RCA.
+      - alert: G8PrimaryTipStale
+        expr: zion_g8_node_tip_age_seconds{service="node_primary"} > 900
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "G8 primary node tip is stale"
+          description: "The primary V31 node reports a tip older than 15 minutes even though its RPC may still answer. chain_live can remain 1 via a follower, but the primary is not syncing — check P2P from EDGE :8336 and node restarts."
+
       - alert: G8NodeQuorumLow
         expr: zion_g8_node_quorum < 2
         for: 5m
