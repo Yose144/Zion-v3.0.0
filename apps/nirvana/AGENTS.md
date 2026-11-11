@@ -3011,3 +3011,40 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   chvíle, kdy si pickup všiml; přesnější by bylo posílat `readyIn`
   ze serveru (možný protokol 38).
 - **Bez změny protokolu** (37) — všechno je čistě klientské.
+
+## Aréna — víc map: Mars, Q3DM3 a Q3DM6 (2026-11-11)
+
+- **Mapa je záznam v `ARENA_MAPS`** (`core/arena/map.ts`): `boxes`,
+  `playerSpawn`, `botSpawns`, `pickups` a **`palette`** (barvy povrchů
+  i světel). Renderer i fyzika berou všechno z props `map`; žádná druhá
+  pravda o světě. Staré exporty (`ARENA_BOXES`, `PLAYER_SPAWN`, …) zůstávají
+  jako alias na `mars` pro server a starší importy.
+- **Q3DM3 a Q3DM6 jsou stylizované půdorysy, ne kopie `.bsp`.** Originální
+  mapy nejsou v GPL zdroji a repo nemá mapové assety; jde o stejný tvar
+  v hrubých obrysech (most + komory, věž + křídla) z AABB krabic, aby seděl
+  na fyziku, navigaci i boty beze změny enginu.
+- **Pravidlo navigace: krabice, která sahá na zem, nesmí překážet napříč.**
+  `buildNavGrid` je 2,5D — krabice s `maxY > 1,6` je zeď a `minY < 1,6`
+  v pruhu těla ji blokuje. Když most/lišta/zeď spojí obě strany, mapa se
+  **rozpůlí** a boti se na druhou stranu nedostanou (přesně to odhalil
+  `test/arena-maps.mjs` u prvních návrhů). Řešení: most končí dřív než
+  krajnice (ulička ≥ 2 m) a vyvýšené lišty začínají ve výšce ≥ 2
+  (nad pruhem těla), takže ground nav neblokují.
+- **Pickup musí ležet na podlaze.** Test kontroluje, že pod každým pickupem
+  je krabice s horní hranou do 0,4 m a že střed (y + 0,7) není uvnitř
+  žádné kolizní krabice — jinak skončí ve sloupu (reálná chyba z dřívějška).
+- **Volba mapy je jen sólo** (`arena-map` karty v úvodu). Multiplayer jede
+  na Marsu: server Mapu nezná a přidat ji znamená bump protokolu i novou
+  mapu v `arena.ts`. Kdyby se to někdy dodělalo, `map` jde do `join` a do
+  snapshotu (jinak klient kreslí jinou arénu, než server simuluje).
+- **Komponenta se remountuje `key={mapId}`.** Stav hry (pozice, pickupy,
+  respawny) se tím nikdy nemíchá mezi mapami; bez `key` by hráč přistál
+  na souřadnicích z předchozí mapy.
+- **Paleta je data, ne renderer.** Kdo přidá mapu, přidá i `palette`
+  (ground/rock/metal/trim + sky/fog + světla), jinak by všechny mapy
+  vypadaly jako Mars. `emissive` trimu jde z `palette.trim`.
+- **Test:** `npx tsx test/arena-maps.mjs` — katalog, spawny mimo zdi,
+  průchodnost navigace (BFS) ze spawnu hráče do všech botích spawnů,
+  **reálný pohyb bota** (`stepBot` + `driveBot` za 6 s ujde ≥ 4 m),
+  pickupy na podlaze, respawny a rozdílnost půdorysů. Headless screenshot
+  dělá `.artifacts/probe/arena-maps-shot.mjs`.

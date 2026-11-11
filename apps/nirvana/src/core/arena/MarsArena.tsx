@@ -23,13 +23,11 @@ import {
 } from '@/core/arena/audio';
 import * as THREE from 'three';
 import {
-  ARENA_BOXES,
-  ARENA_SOLO_PICKUPS,
-  BOT_SPAWNS,
+  ARENA_MAP_DEFAULT,
   FRAG_LIMIT,
   MATCH_SECONDS,
-  PLAYER_SPAWN,
   type ArenaBox,
+  type ArenaMap,
 } from '@/core/arena/map';
 import { buildNavGrid } from '@/core/arena/nav';
 import {
@@ -223,6 +221,7 @@ export function MarsArena({
   touch,
   weaponRequest,
   botSkill = 'normal',
+  map = ARENA_MAP_DEFAULT,
 }: {
   running: boolean;
   xr?: boolean;
@@ -234,21 +233,27 @@ export function MarsArena({
   weaponRequest?: MutableRefObject<WeaponId | null>;
   /** Obtížnost botů (sólo) — jeden profil pro všechny, jako v Q3. */
   botSkill?: BotSkill;
+  /**
+   * Mapa (sólo). Výchozí `mars`; `q3dm3` a `q3dm6` jsou stylizované půdorysy
+   * podle Q3. Komponenta se při změně mapy remountuje (key), takže se stav
+   * hry nikdy nemíchá mezi mapami.
+   */
+  map?: ArenaMap;
 }) {
   const { camera, gl } = useThree();
-  const solids = useMemo<Box4[]>(() => makeSolids(ARENA_BOXES), []);
-  const nav = useMemo(() => buildNavGrid(ARENA_BOXES), []);
+  const solids = useMemo<Box4[]>(() => makeSolids(map.boxes), [map]);
+  const nav = useMemo(() => buildNavGrid(map.boxes), [map]);
 
   const player = useRef<Body>({
-    x: PLAYER_SPAWN.x,
+    x: map.playerSpawn.x,
     y: 0.1,
-    z: PLAYER_SPAWN.z,
+    z: map.playerSpawn.z,
     vx: 0,
     vy: 0,
     vz: 0,
     onGround: false,
   });
-  const view = useRef({ yaw: PLAYER_SPAWN.yaw, pitch: -0.05 });
+  const view = useRef({ yaw: map.playerSpawn.yaw, pitch: -0.05 });
   const health = useRef(100);
   const armor = useRef(0);
   const frags = useRef(0);
@@ -295,11 +300,11 @@ export function MarsArena({
   const locked = useRef(false);
 
   const bots = useRef<BotState[]>(
-    BOT_SPAWNS.map((spawn, index) => makeBot(spawn, index)),
+    map.botSpawns.map((spawn, index) => makeBot(spawn, index)),
   );
   const rockets = useRef<Rocket[]>([]);
   const tracers = useRef<Tracer[]>([]);
-  const pickups = useRef(ARENA_SOLO_PICKUPS.map((pickup) => ({ ...pickup, until: 0 })));
+  const pickups = useRef(map.pickups.map((pickup) => ({ ...pickup, until: 0 })));
   const nextId = useRef(1);
   /** Kill feed (Q3): poslední zásahy, 4,5 s viditelné. */
   const feed = useRef<{ id: number; text: string; kind: 'frag' | 'death'; weapon?: WeaponId; until: number }[]>([]);
@@ -337,6 +342,7 @@ export function MarsArena({
     if (new URLSearchParams(window.location.search).get('arenaDebug') !== '1') return;
     const api = {
       state: () => ({
+        map: map.id,
         player: { ...player.current },
         frags: frags.current,
         health: health.current,
@@ -490,25 +496,25 @@ export function MarsArena({
     weapon.current = 'rail';
     deadUntil.current = 0;
     player.current = {
-      x: PLAYER_SPAWN.x,
+      x: map.playerSpawn.x,
       y: 0.1,
-      z: PLAYER_SPAWN.z,
+      z: map.playerSpawn.z,
       vx: 0,
       vy: 0,
       vz: 0,
       onGround: false,
     };
-    view.current = { yaw: PLAYER_SPAWN.yaw, pitch: -0.05 };
+    view.current = { yaw: map.playerSpawn.yaw, pitch: -0.05 };
     rockets.current = [];
     tracers.current = [];
-    pickups.current = ARENA_SOLO_PICKUPS.map((pickup) => ({ ...pickup, until: 0 }));
+    pickups.current = map.pickups.map((pickup) => ({ ...pickup, until: 0 }));
     feed.current = [];
     shots.current = 0;
     hits.current = 0;
     lastBotAttack.current = null;
     quadUntil.current = 0;
     hasteUntil.current = 0;
-    bots.current = BOT_SPAWNS.map((spawn, index) => makeBot(spawn, index));
+    bots.current = map.botSpawns.map((spawn, index) => makeBot(spawn, index));
   }, [running]);
 
   // ── střelba ──────────────────────────────────────────────────────
@@ -696,15 +702,15 @@ export function MarsArena({
         health.current = 100;
         armor.current = 0;
         player.current = {
-          x: PLAYER_SPAWN.x,
+          x: map.playerSpawn.x,
           y: 0.2,
-          z: PLAYER_SPAWN.z,
+          z: map.playerSpawn.z,
           vx: 0,
           vy: 0,
           vz: 0,
           onGround: false,
         };
-        view.current = { yaw: PLAYER_SPAWN.yaw, pitch: -0.05 };
+        view.current = { yaw: map.playerSpawn.yaw, pitch: -0.05 };
       }, RESPAWN_TIME * 1000);
     }
   }
@@ -821,7 +827,7 @@ export function MarsArena({
       const bot = bots.current[index]!;
       if (!bot.alive) {
         if (now >= bot.respawnAt) {
-          const spawn = BOT_SPAWNS[index % BOT_SPAWNS.length]!;
+          const spawn = map.botSpawns[index % map.botSpawns.length]!;
           bot.alive = true;
           bot.health = 100;
           bot.body = { x: spawn.x, y: 0.2, z: spawn.z, vx: 0, vy: 0, vz: 0, onGround: false };
@@ -1190,18 +1196,18 @@ export function MarsArena({
 
   return (
     <>
-      <color attach="background" args={['#421d0e']} />
-      <fog attach="fog" args={['#5a2611', 34, 130]} />
-      <ambientLight intensity={0.95} color="#ffcaa0" />
-      <hemisphereLight args={['#ffb27a', '#3a1408', 0.85]} />
-      <directionalLight position={[18, 32, 12]} intensity={2.6} color="#ffd9b0" />
-      <pointLight position={[0, 6, 0]} intensity={18} color="#ff8f5c" distance={28} decay={2} />
+      <color attach="background" args={[map.palette.sky]} />
+      <fog attach="fog" args={[map.palette.fog, map.palette.fogNear, map.palette.fogFar]} />
+      <ambientLight intensity={0.95} color={map.palette.ambient} />
+      <hemisphereLight args={[map.palette.hemiSky, map.palette.hemiGround, 0.85]} />
+      <directionalLight position={[18, 32, 12]} intensity={2.6} color={map.palette.sun} />
+      <pointLight position={[0, 6, 0]} intensity={18} color={map.palette.point} distance={28} decay={2} />
 
       {xr && <ArenaXrInput handle={xrHandle} />}
       {xr && <XROrigin ref={xrOrigin} />}
 
       {/* mapa */}
-      {ARENA_BOXES.map((box: ArenaBox, index) => (
+      {map.boxes.map((box: ArenaBox, index) => (
         <mesh
           key={index}
           geometry={boxGeometry}
@@ -1210,16 +1216,8 @@ export function MarsArena({
           receiveShadow
         >
           <meshStandardMaterial
-            color={
-              box.kind === 'ground'
-                ? '#8a3d22'
-                : box.kind === 'rock'
-                  ? '#a44a26'
-                  : box.kind === 'metal'
-                    ? '#6d5560'
-                    : '#ffc077'
-            }
-            emissive={box.kind === 'trim' ? '#5a2a0d' : '#160704'}
+            color={map.palette[box.kind]}
+            emissive={box.kind === 'trim' ? map.palette.trim : map.palette.hemiGround}
             emissiveIntensity={box.kind === 'trim' ? 0.8 : 0.25}
             roughness={box.kind === 'metal' ? 0.62 : 0.92}
             metalness={box.kind === 'metal' ? 0.18 : 0.04}
@@ -1280,7 +1278,7 @@ export function MarsArena({
 
       {/* pickupy */}
       <group ref={pickupGroup}>
-        {ARENA_SOLO_PICKUPS.map((pickup) => (
+        {map.pickups.map((pickup) => (
           <mesh key={pickup.id} visible={false}>
             <octahedronGeometry args={[0.42, 0]} />
             <meshBasicMaterial

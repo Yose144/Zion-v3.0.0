@@ -5542,6 +5542,82 @@ body[data-playing='1'] .chat-dock-btn {
   }
 }
 
+/* Volba mapy (sólo): karty s názvem a poznámkou, ne radio tlačítka.
+ * Dvě nové mapy (q3dm3/q3dm6) se musí dát rozlišit bez hraní — poznámka
+ * říká, čím se liší půdorys. */
+.arena-map {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.6rem 0 0.2rem;
+  font-size: 0.72rem;
+  color: rgba(246, 231, 216, 0.75);
+}
+
+.arena-map > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.arena-map-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 180, 106, 0.22);
+  background: rgba(20, 8, 4, 0.45);
+  color: rgba(255, 233, 168, 0.65);
+  text-align: left;
+  cursor: pointer;
+}
+
+.arena-map-btn b {
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.arena-map-btn em {
+  font-style: normal;
+  font-size: 0.6rem;
+  line-height: 1.35;
+  color: rgba(246, 231, 216, 0.5);
+}
+
+.arena-map-btn.is-active {
+  border-color: rgba(255, 209, 102, 0.7);
+  background: rgba(255, 209, 102, 0.14);
+  color: #ffe9a8;
+}
+
+.arena-map-btn.is-active em {
+  color: rgba(255, 233, 168, 0.75);
+}
+
+@media (max-width: 560px) {
+  .arena-map > div {
+    grid-template-columns: 1fr;
+  }
+
+  .arena-map-btn {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.4rem;
+  }
+
+  .arena-map-btn b {
+    flex: 0 0 auto;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .arena-map-btn {
+    min-height: 2.6rem;
+  }
+}
+
 .arena-slider input[type='range'] {
   flex: 1;
   min-width: 6rem;

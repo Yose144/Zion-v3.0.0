@@ -15,11 +15,13 @@ import {
   LOOK_MIN,
   getBotSkill,
   getLookSensitivity,
+  getArenaMap,
+  setArenaMap,
   setBotSkill,
   setLookSensitivity,
 } from '@/core/arena/settings';
 import type { BotSkill } from '@/core/arena/bot';
-import { FRAG_LIMIT, MATCH_SECONDS } from '@/core/arena/map';
+import { ARENA_MAPS, ARENA_MAP_IDS, FRAG_LIMIT, MATCH_SECONDS, type ArenaMapId } from '@/core/arena/map';
 import type { WeaponId } from '@/core/arena/weapons';
 import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
 import { watchRoom } from '@/core/net/watch';
@@ -97,7 +99,12 @@ export default function MarsPage() {
   const [stats, setStats] = useState<ArenaStats>(EMPTY_STATS);
   /** Obtížnost botů — čte se až po mountu (localStorage). */
   const [botSkill, setBotSkillState] = useState<BotSkill>('normal');
-  useEffect(() => setBotSkillState(getBotSkill()), []);
+  /** Mapa (sólo) — `mars` je výchozí, dokud se nenačte volba zařízení. */
+  const [mapId, setMapIdState] = useState<ArenaMapId>('mars');
+  useEffect(() => {
+    setBotSkillState(getBotSkill());
+    setMapIdState(getArenaMap());
+  }, []);
 
   // Hitmarker a červená viněta: hodnoty chodí v telemetrii, ale jen jednou
   // za událost (`hitAt`/`hurtAt` jsou časová razítka, ne boolean).
@@ -219,6 +226,7 @@ export default function MarsPage() {
   /** Sólo start vždy znovu přečte obtížnost — menu ji může změnit mezi zápasy. */
   const startSolo = useCallback(() => {
     setBotSkillState(getBotSkill());
+    setMapIdState(getArenaMap());
     setPhase('playing');
   }, []);
 
@@ -257,6 +265,7 @@ export default function MarsPage() {
           ) : (
             <XR store={xrStore}>
               <MarsArena
+                key={mapId}
                 running={phase === 'playing'}
                 xr={presenting}
                 onStats={setStats}
@@ -264,6 +273,7 @@ export default function MarsPage() {
                 touch={touch}
                 weaponRequest={weaponRequest}
                 botSkill={botSkill}
+                map={ARENA_MAPS[mapId]}
               />
             </XR>
           )}
@@ -581,6 +591,27 @@ export default function MarsPage() {
                   ))}
                 </div>
               </div>
+              <div className="arena-map" role="radiogroup" aria-label={l('map')}>
+                <span>{l('map')}</span>
+                <div>
+                  {ARENA_MAP_IDS.map((id) => {
+                    const map = ARENA_MAPS[id];
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        role="radio"
+                        aria-checked={mapId === id}
+                        className={`arena-map-btn${mapId === id ? ' is-active' : ''}`}
+                        onClick={() => setMapIdState(setArenaMap(id))}
+                      >
+                        <b>{cs ? map.name.cs : map.name.en}</b>
+                        <em>{cs ? map.note.cs : map.note.en}</em>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <div className="arena-actions">
                 <button type="button" className="park-btn" onClick={startSolo}>
                   {l('enter')}
@@ -599,6 +630,9 @@ export default function MarsPage() {
                   {l('backToFair')}
                 </Link>
               </div>
+              <p className="arena-small">
+                {l('mapNote')}
+              </p>
               <p className="arena-small">
                 {l('mpNote')}
               </p>

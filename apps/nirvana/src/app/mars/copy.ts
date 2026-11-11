@@ -25,6 +25,12 @@ export const ARENA_COPY = {
   weapons: { cs: 'rail / rakety / MG', en: 'rail / rockets / MG', es: 'rail / cohetes / MG' },
   fire: { cs: 'střelba', en: 'fire', es: 'disparar' },
   lookSensitivity: { cs: 'citlivost pohledu', en: 'look sensitivity', es: 'sensibilidad de vista' },
+  map: { cs: 'Mapa (sólo)', en: 'Map (solo)', es: 'Mapa (solo)' },
+  mapNote: {
+    cs: 'Q3DM3 a Q3DM6 jsou stylizované půdorysy podle Quake 3 — most a komory, věž a křídla. Multiplayer jede na Marsu.',
+    en: 'Q3DM3 and Q3DM6 are stylised layouts after Quake 3 — bridge and chambers, tower and wings. Multiplayer stays on Mars.',
+    es: 'Q3DM3 y Q3DM6 son diseños estilizados de Quake 3: puente y cámaras, torre y alas. El multijugador sigue en Marte.',
+  },
   enter: { cs: 'Vstoupit do arény', en: 'Enter the arena', es: 'Entrar en la arena' },
   multiplayer: { cs: 'Multiplayer — proti lidem', en: 'Multiplayer — against people', es: 'Multijugador — contra personas' },
   backToFair: { cs: '← zpět na pouť', en: '← back to the fair', es: '← volver a la feria' },

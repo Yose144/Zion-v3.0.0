@@ -10,9 +10,11 @@
  */
 
 import type { BotSkill } from './bot';
+import { ARENA_MAP_IDS, type ArenaMapId } from './map';
 
 const LOOK_KEY = 'nirvana.arena.look';
 const SKILL_KEY = 'nirvana.arena.skill';
+const MAP_KEY = 'nirvana.arena.map';
 /** Rozsah, který dává smysl: 0,4× (přesné míření) až 2,5× (rychlé otáčení). */
 export const LOOK_MIN = 0.4;
 export const LOOK_MAX = 2.5;
@@ -100,6 +102,33 @@ export function setLookSensitivity(value: number): number {
     }
     // Propagace do druhé modulové instance (menu ↔ hra).
     window.dispatchEvent(new CustomEvent('nirvana:arena-look', { detail: next }));
+  }
+  return next;
+}
+
+/**
+ * Mapa arény (sólo). Čte se **vždy z localStorage** ze stejného důvodu jako
+ * obtížnost: menu/stránka jsou jiné modulové instance a cache by se rozešla.
+ * Neznámá hodnota (stará verze, přepsaný klíč) padá na `mars`.
+ */
+export function getArenaMap(): ArenaMapId {
+  if (typeof window === 'undefined') return 'mars';
+  try {
+    const raw = window.localStorage.getItem(MAP_KEY);
+    return ARENA_MAP_IDS.includes(raw as ArenaMapId) ? (raw as ArenaMapId) : 'mars';
+  } catch {
+    return 'mars';
+  }
+}
+
+export function setArenaMap(value: ArenaMapId): ArenaMapId {
+  const next = ARENA_MAP_IDS.includes(value) ? value : 'mars';
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.setItem(MAP_KEY, next);
+    } catch {
+      /* volba se neuloží, ale platí pro tuhle hru */
+    }
   }
   return next;
 }
