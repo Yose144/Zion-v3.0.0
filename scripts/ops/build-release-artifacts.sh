@@ -53,6 +53,9 @@ LOCKED=1
 ISOLATE=0
 ISOLATE_DIR=""
 STOP_BEFORE_BUILD=0
+# --zig <glibc>: cross-link linux-gnu přes cargo zigbuild (baseline glibc
+# bez Dockeru). Prázdné = běžný `cargo build`.
+ZIG_GLIBC=""
 
 # package → binaries it produces (hyphens make `BINS_FOR_<pkg>` invalid shell
 # variable names, so this is a case function, not a variable table)
@@ -89,6 +92,7 @@ while [ $# -gt 0 ]; do
     --stop-before-build) STOP_BEFORE_BUILD=1; shift ;;
     --unlocked)     LOCKED=0; shift ;;
     --keep-stage)   KEEP_STAGE=1; shift ;;
+    --zig)          ZIG_GLIBC="$2"; shift 2 ;;
     --verify)       VERIFY_DIR="$2"; shift 2 ;;
     -h|--help)      usage 0 ;;
     *) echo "unknown arg: $1" >&2; usage 2 ;;
@@ -264,9 +268,20 @@ build_one() { # build_one <target> <features> <bindir-out> <logfile> <variant>
         chown -R \$HOST_UID:\$HOST_GID /stage /target 2>/dev/null || true
       " > "$logf" 2>&1 || return $?
   else
+    # --zig: cross-link přes cargo zigbuild, aby artefakt nesl pevnou glibc
+    # baseline (např. 2.31) místo glibc hostu. Target v matrix zůstává bez
+    # suffixu; cargo ukládá binárky do target/<triple>/release i tak.
+    local cargo_sub="build"
+    local build_target="$target"
+    if [ -n "$ZIG_GLIBC" ]; then
+      case "$target" in
+        *-unknown-linux-gnu) cargo_sub="zigbuild"; build_target="$target.$ZIG_GLIBC" ;;
+        *) echo "ERROR: --zig podporuje jen *-unknown-linux-gnu (target: $target)" >&2; return 4 ;;
+      esac
+    fi
     # macOS bash 3.2 + `set -u`: expanding an EMPTY array with "${a[@]}" is
     # "unbound variable". The +"${a[@]}" idiom keeps it safe.
-    ( cd "$V31" && ZION_GIT_SHA="$SHORT_SHA" cargo build --release --target "$target" \
+    ( cd "$V31" && ZION_GIT_SHA="$SHORT_SHA" cargo "$cargo_sub" --release --target "$build_target" \
         ${lockflag[@]+"${lockflag[@]}"} ${jobs_flag[@]+"${jobs_flag[@]}"} \
         ${pkg_flags[@]+"${pkg_flags[@]}"} ${feat_flags[@]+"${feat_flags[@]}"} ) > "$logf" 2>&1 || return $?
     mkdir -p "$bindir"
@@ -304,6 +319,7 @@ write_build_info() { # write_build_info <stage> <target> <variant> <features>
     echo "describe: $DESCRIBE"
     echo "tree_state: $tree"
     echo "target: $target"
+    [ -n "$ZIG_GLIBC" ] && echo "glibc_baseline: $ZIG_GLIBC (cargo zigbuild)"
     echo "variant: $variant"
     echo "features: ${features:-none}"
     echo "built: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
