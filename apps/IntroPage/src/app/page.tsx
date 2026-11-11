@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-import Script from "next/script";
 import NirvanaUniverseEmbed from "./components/NirvanaUniverseEmbed";
 
 export default function Home() {
@@ -19,8 +18,9 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: body }}
         suppressHydrationWarning
       />
-      {/* portals into #nirvana-embed inside maintenance.html (under the header links) */}
-      <Script src="/assets/js/intro-tabs.js" strategy="afterInteractive" />
+      {/* portals into #nirvana-embed inside maintenance.html (under the header links).
+          intro-tabs.js se loaduje raw <script defer> v body HTML — sem nedávat
+          next/script, jinak by se IIFE provedl dvakrát (double event bind). */}
       <NirvanaUniverseEmbed />
     </>
   );
