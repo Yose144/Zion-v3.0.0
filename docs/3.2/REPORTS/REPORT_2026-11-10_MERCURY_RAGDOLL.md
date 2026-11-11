@@ -199,6 +199,13 @@ góly, vlny a držení kopce.
 - **Survival:** base 55 HP, +20 HP za vlnu, heal +26. Bot se dostane na
   vlnu 3,2 (bylo 2,2); člověk míří výš.
 
+## Protokol 35
+
+Tuning mění **význam** HP (MAX_HP 160) a poškození, i když formát zpráv
+zůstává. `PROTO_VERSION` proto 34 → **35**; deploy **net první, pak appka**.
+Bez bumpu by starý server posílal HP ze 100 a klient by kreslil bary
+přes 160 — tichý rozpor, který `proto_check` nechytí.
+
 ## Ověření
 
 - `npx tsx apps/nirvana/test/ragdoll.mjs` — **47 kontrol, PASSED**.

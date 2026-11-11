@@ -2730,6 +2730,10 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
 - **Impuls míče bere nejsilnější kontakt v kroku**, ne poslední v cyklu —
   pořadí stran tím přestalo rozhodovat. Malý seed jitter v ball AI rozbije
   zrcadlově totožné boty (ball už není 9:4 attractor).
+- **Protokol 34 → 35** (`MAX_HP` a poškození změnily význam HP; formát
+  zpráv stejný). Deploy **net první, pak appka** — i když `proto_check`
+  vidí stejnou verzi, musí se nasadit obojí, jinak klient kreslí bary
+  jinak než server počítá.
 - **Pozor na testy:** `damageFighter(..., 100, ...)` už nestačí na KO
   (MAX_HP 160) — používej `MAX_HP`; výkop už není `ball.x > 1`, ale střed
   + `match.kickoff.side`.

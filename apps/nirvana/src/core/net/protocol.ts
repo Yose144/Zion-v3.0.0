@@ -82,8 +82,11 @@ const asItemId = (value: unknown): ItemId | null =>
  *      loutky). Starý klient by kreslil loutku bez pózy. Verze se musí potkat.
  *  34 — **ragdoll pro**: snapshot nese `guard` (výdrž krytu) a `combo`
  *      (série zásahů). Starý klient by neviděl výdrž krytu ani kombo.
+ *  35 — **ragdoll tuning**: MAX_HP 160, nové poškození/kryt/kombo. Formát
+ *      zpráv se nemění, ale starý server by posílal HP ze 100 a klient by
+ *      kreslil jiné bary — verze se musí potkat.
  */
-export const PROTO_VERSION = 34;
+export const PROTO_VERSION = 35;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
