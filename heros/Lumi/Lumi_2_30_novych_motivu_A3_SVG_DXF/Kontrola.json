@@ -1,0 +1,242 @@
+[
+  {
+    "kolekce": "01_Priroda",
+    "motivy": [
+      {
+        "motif": "Slunce",
+        "otvory": 50,
+        "pridane_vyztuhy": 0,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4336.82
+      },
+      {
+        "motif": "Mesic",
+        "otvory": 40,
+        "pridane_vyztuhy": 0,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4244.0
+      },
+      {
+        "motif": "Holubice",
+        "otvory": 30,
+        "pridane_vyztuhy": 3,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 3959.83
+      },
+      {
+        "motif": "Dva_stromy",
+        "otvory": 52,
+        "pridane_vyztuhy": 0,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4603.85
+      },
+      {
+        "motif": "Hory_a_reka",
+        "otvory": 30,
+        "pridane_vyztuhy": 0,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4182.84
+      },
+      {
+        "motif": "Motyl",
+        "otvory": 49,
+        "pridane_vyztuhy": 0,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4385.56
+      }
+    ],
+    "mezera_mezi_dily_mm": 5.732100000000003
+  },
+  {
+    "kolekce": "02_Svatebni",
+    "motivy": [
+      {
+        "motif": "Dve_srdce",
+        "otvory": 27,
+        "pridane_vyztuhy": 0,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4299.77
+      },
+      {
+        "motif": "Prsteny",
+        "otvory": 38,
+        "pridane_vyztuhy": 4,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4425.68
+      },
+      {
+        "motif": "Holubice",
+        "otvory": 31,
+        "pridane_vyztuhy": 3,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4171.51
+      },
+      {
+        "motif": "Strom_lasky",
+        "otvory": 43,
+        "pridane_vyztuhy": 0,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4449.85
+      },
+      {
+        "motif": "Kvetinove_srdce",
+        "otvory": 46,
+        "pridane_vyztuhy": 9,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4517.73
+      },
+      {
+        "motif": "Svatebni_par",
+        "otvory": 33,
+        "pridane_vyztuhy": 11,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4390.74
+      }
+    ],
+    "mezera_mezi_dily_mm": 5.732100000000003
+  },
+  {
+    "kolekce": "03_Kvetinove",
+    "motivy": [
+      {
+        "motif": "Ruze",
+        "otvory": 52,
+        "pridane_vyztuhy": 8,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4412.0
+      },
+      {
+        "motif": "Slunecnice",
+        "otvory": 41,
+        "pridane_vyztuhy": 13,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4494.16
+      },
+      {
+        "motif": "Kopretiny",
+        "otvory": 45,
+        "pridane_vyztuhy": 7,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4154.75
+      },
+      {
+        "motif": "Vlci_maky",
+        "otvory": 39,
+        "pridane_vyztuhy": 43,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 3883.1
+      },
+      {
+        "motif": "Kosatce",
+        "otvory": 40,
+        "pridane_vyztuhy": 52,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4155.27
+      },
+      {
+        "motif": "Rozkvetla_louka",
+        "otvory": 28,
+        "pridane_vyztuhy": 64,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4069.09
+      }
+    ],
+    "mezera_mezi_dily_mm": 5.732100000000003
+  },
+  {
+    "kolekce": "04_Oceanske",
+    "motivy": [
+      {
+        "motif": "Delfin",
+        "otvory": 25,
+        "pridane_vyztuhy": 1,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4257.65
+      },
+      {
+        "motif": "Morska_zelva",
+        "otvory": 28,
+        "pridane_vyztuhy": 30,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4444.68
+      },
+      {
+        "motif": "Morsky_konik",
+        "otvory": 27,
+        "pridane_vyztuhy": 7,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4328.82
+      },
+      {
+        "motif": "Velryba",
+        "otvory": 29,
+        "pridane_vyztuhy": 10,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4277.13
+      },
+      {
+        "motif": "Nautilus",
+        "otvory": 38,
+        "pridane_vyztuhy": 3,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4322.07
+      },
+      {
+        "motif": "Koralovy_utes",
+        "otvory": 28,
+        "pridane_vyztuhy": 4,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4336.6
+      }
+    ],
+    "mezera_mezi_dily_mm": 5.732100000000003
+  },
+  {
+    "kolekce": "05_Vesmirne",
+    "motivy": [
+      {
+        "motif": "Saturn",
+        "otvory": 26,
+        "pridane_vyztuhy": 4,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4476.81
+      },
+      {
+        "motif": "Galaxie",
+        "otvory": 20,
+        "pridane_vyztuhy": 4,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4563.8
+      },
+      {
+        "motif": "Raketa",
+        "otvory": 31,
+        "pridane_vyztuhy": 3,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4252.1
+      },
+      {
+        "motif": "Zeme",
+        "otvory": 28,
+        "pridane_vyztuhy": 8,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4545.49
+      },
+      {
+        "motif": "Kometa",
+        "otvory": 20,
+        "pridane_vyztuhy": 2,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4577.39
+      },
+      {
+        "motif": "Slunce_a_Mesic",
+        "otvory": 29,
+        "pridane_vyztuhy": 0,
+        "souvisly_po_simulovanem_rezu_03mm": true,
+        "plocha_dreva_mm2": 4421.77
+      }
+    ],
+    "mezera_mezi_dily_mm": 5.732100000000003
+  }
+]

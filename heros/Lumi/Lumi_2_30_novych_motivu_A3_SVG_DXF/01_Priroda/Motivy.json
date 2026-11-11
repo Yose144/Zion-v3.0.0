@@ -1,0 +1,44 @@
+[
+  {
+    "motif": "Slunce",
+    "otvory": 50,
+    "pridane_vyztuhy": 0,
+    "souvisly_po_simulovanem_rezu_03mm": true,
+    "plocha_dreva_mm2": 4336.82
+  },
+  {
+    "motif": "Mesic",
+    "otvory": 40,
+    "pridane_vyztuhy": 0,
+    "souvisly_po_simulovanem_rezu_03mm": true,
+    "plocha_dreva_mm2": 4244.0
+  },
+  {
+    "motif": "Holubice",
+    "otvory": 30,
+    "pridane_vyztuhy": 3,
+    "souvisly_po_simulovanem_rezu_03mm": true,
+    "plocha_dreva_mm2": 3959.83
+  },
+  {
+    "motif": "Dva_stromy",
+    "otvory": 52,
+    "pridane_vyztuhy": 0,
+    "souvisly_po_simulovanem_rezu_03mm": true,
+    "plocha_dreva_mm2": 4603.85
+  },
+  {
+    "motif": "Hory_a_reka",
+    "otvory": 30,
+    "pridane_vyztuhy": 0,
+    "souvisly_po_simulovanem_rezu_03mm": true,
+    "plocha_dreva_mm2": 4182.84
+  },
+  {
+    "motif": "Motyl",
+    "otvory": 49,
+    "pridane_vyztuhy": 0,
+    "souvisly_po_simulovanem_rezu_03mm": true,
+    "plocha_dreva_mm2": 4385.56
+  }
+]

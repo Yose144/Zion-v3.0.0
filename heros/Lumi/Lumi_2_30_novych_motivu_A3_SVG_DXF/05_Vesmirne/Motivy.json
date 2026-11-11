@@ -1,0 +1,44 @@
+[
+  {
+    "motif": "Saturn",
+    "otvory": 26,
+    "pridane_vyztuhy": 4,
+    "souvisly_po_simulovanem_rezu_03mm": true,
+    "plocha_dreva_mm2": 4476.81
+  },
+  {
+    "motif": "Galaxie",
+    "otvory": 20,
+    "pridane_vyztuhy": 4,
+    "souvisly_po_simulovanem_rezu_03mm": true,
+    "plocha_dreva_mm2": 4563.8
+  },
+  {
+    "motif": "Raketa",
+    "otvory": 31,
+    "pridane_vyztuhy": 3,
+    "souvisly_po_simulovanem_rezu_03mm": true,
+    "plocha_dreva_mm2": 4252.1
+  },
+  {
+    "motif": "Zeme",
+    "otvory": 28,
+    "pridane_vyztuhy": 8,
+    "souvisly_po_simulovanem_rezu_03mm": true,
+    "plocha_dreva_mm2": 4545.49
+  },
+  {
+    "motif": "Kometa",
+    "otvory": 20,
+    "pridane_vyztuhy": 2,
+    "souvisly_po_simulovanem_rezu_03mm": true,
+    "plocha_dreva_mm2": 4577.39
+  },
+  {
+    "motif": "Slunce_a_Mesic",
+    "otvory": 29,
+    "pridane_vyztuhy": 0,
+    "souvisly_po_simulovanem_rezu_03mm": true,
+    "plocha_dreva_mm2": 4421.77
+  }
+]
