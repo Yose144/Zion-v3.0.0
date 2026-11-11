@@ -11,6 +11,7 @@
 
 import {
   ARENA_HALF,
+  BALL_HALF,
   BALL_SECONDS,
   HILL_TARGET,
   KOTH_KO_BONUS,
@@ -116,7 +117,7 @@ console.log('\n== zásah a kryt ==');
   match.phase = 'playing';
   match.timer = 60;
   const events = [];
-  damageFighter(match, match.b, 100, match.a, 0, events);
+  damageFighter(match, match.b, MAX_HP, match.a, 0, events);
   play(match, 2);
   check('KO nastaví ko', match.b.ko === true);
   check('KO ukončí kolo', match.phase === 'roundEnd', match.phase);
@@ -157,7 +158,7 @@ console.log('\n== ragdoll fotbal ==');
   const match = createRagdollMatch('ball', identity('a'), identity('b'));
   match.phase = 'playing';
   const ball = match.ball;
-  ball.x = ARENA_HALF - 0.8;
+  ball.x = BALL_HALF - 0.8;
   ball.y = 0.6;
   ball.vx = 12;
   const events = play(match, 4);
@@ -166,7 +167,8 @@ console.log('\n== ragdoll fotbal ==');
   check('po gólu pauza', match.phase === 'roundEnd', match.phase);
   match.timer = 0.01;
   play(match, 2);
-  check('výkop dostane inkasující strana', match.ball.x > 1, String(match.ball.x));
+  check('výkop je na středu', Math.abs(match.ball.x) < 0.01, String(match.ball.x));
+  check('střelec je na výkop zmrazený', match.kickoff.side === 'a', JSON.stringify(match.kickoff));
   check('hra pokračuje', match.phase === 'playing', match.phase);
 }
 
@@ -237,7 +239,7 @@ console.log('\n== kombo a kryt ==');
 {
   check('kombo začíná na 1,0', comboMultiplier(0) === 1, String(comboMultiplier(0)));
   check('kombo roste', comboMultiplier(3) > comboMultiplier(1), `${comboMultiplier(1)} < ${comboMultiplier(3)}`);
-  check('kombo má strop', comboMultiplier(99) === 1.5, String(comboMultiplier(99)));
+  check('kombo má strop', comboMultiplier(99) === 1.4, String(comboMultiplier(99)));
 
   const match = createRagdollMatch('duel', identity('a'), identity('b'));
   match.phase = 'playing';
@@ -247,7 +249,15 @@ console.log('\n== kombo a kryt ==');
   let now = 0;
   for (let tick = 0; tick < 30 * 10; tick++) {
     now += DT * 1000;
-    stepRagdoll(match, { ...NO_INPUT, move: 1, punch: true }, NO_INPUT, DT, now);
+    // následuj soupeře — jinak ho první zásah odhodí a druhý už nepřijde
+    const dx = bodyCenterOf(match.b).x - bodyCenterOf(match.a).x;
+    stepRagdoll(
+      match,
+      { ...NO_INPUT, move: Math.abs(dx) > 1.0 ? Math.sign(dx) : 0, punch: true },
+      NO_INPUT,
+      DT,
+      now,
+    );
     maxCombo = Math.max(maxCombo, match.a.combo);
   }
   check('série zásahů zvedne kombo', maxCombo >= 2, `maxCombo=${maxCombo} hits=${match.a.hits}`);

@@ -2701,8 +2701,38 @@ z artefaktu — při deployi z worktree porovnej verzi artefaktu a bypass zdůvo
   bot) a `apps/nirvana-net/test/fight.mjs` (simulace + síť včetně `guard`
   a `combo` ve snapshotu). PASSED.
 - **Vizuál:** `RagdollBody` kreslí válce mezi body + kontaktní stín;
-  `DuelStage` má `goals`, `hill` zónu a `wide` kameru (fotbal je 20 m široký,
-  s úzkou kamerou nebyly vidět branky).
+  `DuelStage` má `goals`, `hill` zónu a `wide` kameru (fotbal je 26 m široký
+  přes `BALL_HALF`, s úzkou kamerou nebyly vidět branky).
+
+### Merkur — tuning podle sehrávky (2026-11-11)
+
+- **Měř, nehádej.** `npx tsx apps/nirvana/test/ragdoll-balance.mjs [N]`
+  odehraje N zápasů bot vs bot v každém módu (délka, timeouty, zásahy, KO,
+  kombo, zlomy krytu, góly, vlny, kopec). Čísla níže jsou z 96 běhů.
+- **Cílové tempo:** duel **43,9 s** (best of 3), 2,7 KO, 50:46; koth
+  **35,6 s**, 47:49, kopec 10,0:10,0 s; survival vlna **3,2**; ball
+  **6,8:5,4** gólů za 110 s (90 s hry + pauzy).
+- **`MAX_HP` 100 → 160**, `HIT_DAMAGE` 3,2 → 2,0, `HIT_MAX` 28 → 20,
+  strop nárazové rychlosti 20 m/s. Runda je ~17 s místo 10 s.
+- **Kombo** strop +40 % (krok 0,08, okno 2,6 s). **Tempa:** pěst 0,36 s,
+  kop 0,54 s, hit cooldown 0,26 s.
+- **Kryt** drain 0,34/s, regen 0,24/s, zásah bere 0,1 — držený blok se zlomí za ~2,9 s.
+  Boti kryjí krátce, takže zlomů v botí sehrávce moc není; lidský hráč
+  s drženým S ho uvidí. Test zlom pokrývá deterministicky.
+- **Současná výměna:** `resolveCombat` najde oba zásahy před aplikací
+  a teprve pak je započítá. Dřív A zasáhla první a při výměně K.O.-la B
+  dřív, než B stihl zasáhnout → systematická výhoda A. Po opravě je koth
+  46:50 (bylo 59:37).
+- **Fotbal:** `BALL_HALF = 13` (26 m), branka 2,1 m, pomalejší míč a
+  **výkop na středu + střelec zmrazený 1,6 s**. Míč se už nedává na
+  polovinu inkasujícího (ten pak musel přes celé hřiště a střelec bránící
+  vlastní branku vyhrával souboj 9:4 pořád dokola).
+- **Impuls míče bere nejsilnější kontakt v kroku**, ne poslední v cyklu —
+  pořadí stran tím přestalo rozhodovat. Malý seed jitter v ball AI rozbije
+  zrcadlově totožné boty (ball už není 9:4 attractor).
+- **Pozor na testy:** `damageFighter(..., 100, ...)` už nestačí na KO
+  (MAX_HP 160) — používej `MAX_HP`; výkop už není `ball.x > 1`, ale střed
+  + `match.kickoff.side`.
 
 ### Aréna — Quad Damage, lišta zbraní a dotykové cyklení (2026-11-10)
 

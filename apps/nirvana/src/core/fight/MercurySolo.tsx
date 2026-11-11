@@ -61,6 +61,8 @@ export interface DuelStats {
   /** King of the Hill — o kolik sekund kdo držel kopec. */
   selfHill: number;
   foeHill: number;
+  /** Fotbal: kdo právě dělá výkop (střelec je na chvíli zmrazený). */
+  kickoff: 'self' | 'foe' | null;
 }
 
 export interface SoloFinish {
@@ -287,6 +289,7 @@ export function MercurySolo({
         foeCombo: match.b.combo,
         selfHill: Math.round(match.hill.a * 10) / 10,
         foeHill: Math.round(match.hill.b * 10) / 10,
+        kickoff: match.kickoff.side ? (match.kickoff.side === 'a' ? 'self' : 'foe') : null,
       };
       const key = JSON.stringify(stats);
       if (key !== lastStats.current) {

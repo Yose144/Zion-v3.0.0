@@ -62,6 +62,7 @@ const EMPTY_SOLO: DuelStats = {
   foeCombo: 0,
   selfHill: 0,
   foeHill: 0,
+  kickoff: null,
 };
 
 const EMPTY_MP: DuelMpStats = {
@@ -363,7 +364,9 @@ export default function MercuryPage() {
                         ? `${mpStats.ping ?? 0} ms`
                         : l('offline')
                     : isBall
-                      ? l('ballHint')
+                      ? soloStats.kickoff
+                        ? l('kickoff')
+                        : l('ballHint')
                       : isSurvival
                         ? `${l('hits')}: ${soloStats.hits}`
                         : isPractice

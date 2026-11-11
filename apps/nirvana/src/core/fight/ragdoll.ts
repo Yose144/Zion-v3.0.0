@@ -24,29 +24,31 @@ import type { NetIdentity } from '../net/protocol';
 // ── konstanty (jedna sada čísel pro klienta i server) ──────────────────────
 
 export const ARENA_HALF = 10;
-export const MAX_HP = 100;
+export const MAX_HP = 160;
 export const ROUND_SECONDS = 60;
 export const BALL_SECONDS = 90;
 export const ROUNDS_TO_WIN = 2;
 export const COUNTDOWN_SECONDS = 3;
 export const ROUND_END_SECONDS = 2.5;
 export const BALL_RADIUS = 0.42;
-export const GOAL_HEIGHT = 2.8;
+export const GOAL_HEIGHT = 2.1;
+/** Ragdoll fotbal má delší hřiště než duelová klec — na 20 m padalo 30 gólů. */
+export const BALL_HALF = 13;
 export const GRAVITY = 22;
 
 /** Kombo: okno, do kterého se další zásah počítá do série. */
 export const COMBO_WINDOW = 2.6;
 /** Strop násobitele komba (+50 % při 5+ zásazích). */
-export const COMBO_MAX_BONUS = 0.5;
-export const COMBO_STEP = 0.1;
+export const COMBO_MAX_BONUS = 0.4;
+export const COMBO_STEP = 0.08;
 
 /** Výdrž krytu: souvislé držení bloku ji vyčerpá a kryt se zlomí. */
-export const GUARD_DRAIN = 0.3;
-export const GUARD_REGEN = 0.28;
+export const GUARD_DRAIN = 0.34;
+export const GUARD_REGEN = 0.24;
 /** Po zlomu se kryt odemkne, až se výdrž dobije na tuhle hodnotu. */
 export const GUARD_BREAK_RECOVER = 0.4;
 /** Kolik výdrže se odečte za jeden pohlcený zásah. */
-export const GUARD_HIT_COST = 0.12;
+export const GUARD_HIT_COST = 0.1;
 
 /** King of the Hill — zóna, cíl a respawn. */
 export const HILL_HALF = 2.6;
@@ -137,9 +139,11 @@ export const KICK_REACH = 1.62;
 /** Minimální rychlost končetiny, od které se počítá poškození (m/s). */
 const HIT_MIN_SPEED = 3.0;
 /** Násobek (rychlost − práh) na poškození. */
-const HIT_DAMAGE = 3.2;
+const HIT_DAMAGE = 2.0;
 /** Maximální poškození jednoho zásahu. */
-const HIT_MAX = 28;
+const HIT_MAX = 20;
+/** Strop nárazové rychlosti, který se počítá do poškození (m/s). */
+const HIT_SPEED_CAP = 20;
 /**
  * „Dosah pěsti“: švihající končetina má větší efektivní poloměr, protože
  * se do zásahu počítá i moment hybnosti. Bez toho by pěst musela být
@@ -260,6 +264,11 @@ export interface RagdollMatch {
   ballSeq: number;
   /** King of the Hill: kolik sekund kdo držel kopec. */
   hill: { a: number; b: number };
+  /**
+   * Fotbal: kdo má po gólu výkop. Zmrazená strana na chvíli nedostává vstup
+   * (v sólu je to vždy bot, aby hráč dostal po inkasovaném gólu férový start).
+   */
+  kickoff: { side: 'a' | 'b' | null; until: number };
 }
 
 export interface RagdollIdentity {
@@ -359,8 +368,9 @@ export function createRagdollMatch(
   left: RagdollIdentity | IdentityLike,
   right: RagdollIdentity | IdentityLike,
 ): RagdollMatch {
-  const a = makeRagdollFighter(left, -3.4, 1);
-  const b = makeRagdollFighter(right, 3.4, -1);
+  const base = mode === 'ball' ? 4.4 : 3.4;
+  const a = makeRagdollFighter(left, -base, 1);
+  const b = makeRagdollFighter(right, base, -1);
   const match: RagdollMatch = {
     mode,
     a,
@@ -374,9 +384,10 @@ export function createRagdollMatch(
     lastScorer: null,
     ballSeq: 0,
     hill: { a: 0, b: 0 },
+    kickoff: { side: null, until: 0 },
   };
   if (mode === 'survival') {
-    b.hp = 60;
+    b.hp = 55;
     match.timer = 2;
   }
   return match;
@@ -384,10 +395,11 @@ export function createRagdollMatch(
 
 /** Reset pozic pro nové kolo / novou vlnu (wins a skóre zůstávají). */
 function resetPositions(match: RagdollMatch): void {
-  placeFighter(match.a, -3.4, 1);
-  placeFighter(match.b, 3.4, -1);
+  const base = match.mode === 'ball' ? 4.4 : 3.4;
+  placeFighter(match.a, -base, 1);
+  placeFighter(match.b, base, -1);
   if (match.mode === 'survival') {
-    match.b.hp = Math.min(180, 60 + (match.wave - 1) * 24);
+    match.b.hp = Math.min(170, 55 + (match.wave - 1) * 20);
   } else {
     match.a.hp = MAX_HP;
     match.b.hp = MAX_HP;
@@ -421,16 +433,18 @@ export function resetRagdollMatch(match: RagdollMatch): void {
   match.a.bestHit = 0;
   match.b.bestHit = 0;
   match.a.hp = MAX_HP;
-  match.b.hp = match.mode === 'survival' ? 60 : MAX_HP;
+  match.b.hp = match.mode === 'survival' ? 55 : MAX_HP;
   match.round = 1;
   match.wave = 1;
   match.elapsed = 0;
   match.lastScorer = null;
   match.hill = { a: 0, b: 0 };
+  match.kickoff = { side: null, until: 0 };
   match.phase = 'countdown';
   match.timer = match.mode === 'survival' ? 2 : COUNTDOWN_SECONDS;
-  placeFighter(match.a, -3.4, 1);
-  placeFighter(match.b, 3.4, -1);
+  const base = match.mode === 'ball' ? 4.4 : 3.4;
+  placeFighter(match.a, -base, 1);
+  placeFighter(match.b, base, -1);
   if (match.ball) {
     match.ball.x = 0;
     match.ball.y = 0.6;
@@ -529,6 +543,7 @@ function solveJoints(f: RagdollFighter): void {
 }
 
 function clampWorld(f: RagdollFighter, mode: FightMode): void {
+  const half = mode === 'ball' ? BALL_HALF : ARENA_HALF;
   for (let i = 0; i < POINT_COUNT; i++) {
     const radius = POINT_RADIUS[i]!;
     if (f.y[i]! < radius) {
@@ -540,13 +555,8 @@ function clampWorld(f: RagdollFighter, mode: FightMode): void {
       f.y[i] = 16;
       if (f.vy[i]! > 0) f.vy[i] = 0;
     }
-    const limit = ARENA_HALF - radius;
-    if (mode === 'ball') {
-      // v ragdoll fotbale stojí bojovníci před brankou, ne v ní
-      f.x[i] = clamp(f.x[i]!, -limit, limit);
-    } else {
-      f.x[i] = clamp(f.x[i]!, -limit, limit);
-    }
+    const limit = half - radius;
+    f.x[i] = clamp(f.x[i]!, -limit, limit);
   }
 }
 
@@ -593,6 +603,7 @@ function stepFighter(
   input: FightInput,
   sub: number,
   firstSubstep: boolean,
+  mode: FightMode,
 ): void {
   const prevX = new Array<number>(POINT_COUNT);
   const prevY = new Array<number>(POINT_COUNT);
@@ -625,11 +636,11 @@ function stepFighter(
   if (alive && !guarding && f.stun <= 0) {
     if (input.punch && f.strikeCooldown <= 0) {
       strikeHand(f);
-      f.strikeCooldown = 0.3;
+      f.strikeCooldown = 0.36;
     }
     if (input.kick && f.strikeCooldown <= 0) {
       strikeLeg(f);
-      f.strikeCooldown = 0.44;
+      f.strikeCooldown = 0.54;
     }
   }
 
@@ -662,7 +673,7 @@ function stepFighter(
   }
 
   solveJoints(f);
-  clampWorld(f, 'duel');
+  clampWorld(f, mode);
   keepLimbsOut(f);
 
   // nárazová rychlost = pohyb PŘED posturální stabilizací
@@ -770,8 +781,8 @@ function simulate(match: RagdollMatch, inputA: FightInput, inputB: FightInput, d
   const substeps = Math.max(1, Math.min(4, Math.ceil(dt / (1 / 120))));
   const sub = dt / substeps;
   for (let step = 0; step < substeps; step++) {
-    stepFighter(match.a, inputA, sub, step === 0);
-    stepFighter(match.b, inputB, sub, step === 0);
+    stepFighter(match.a, inputA, sub, step === 0, match.mode);
+    stepFighter(match.b, inputB, sub, step === 0, match.mode);
     collideFighters(match.a, match.b);
     clampWorld(match.a, match.mode);
     clampWorld(match.b, match.mode);
@@ -848,83 +859,107 @@ export function damageFighter(
   events.push({ kind: 'ko', at: now, winner: attacker.id, loser: target.id });
 }
 
+interface PendingHit {
+  attacker: RagdollFighter;
+  defender: RagdollFighter;
+  strikerIndex: number;
+  defenderIndex: number;
+  sx: number;
+  sy: number;
+  nx: number;
+  ny: number;
+  impact: number;
+  damage: number;
+}
+
+/** Najde první platný kontakt útočníka se soupeřem (ještě nic neaplikuje). */
+function findHit(attacker: RagdollFighter, defender: RagdollFighter): PendingHit | null {
+  if (attacker.hitCooldown > 0 || attacker.ko) return null;
+  for (const striker of STRIKERS) {
+    const si = striker.index;
+    const sx = attacker.x[si]!;
+    const sy = attacker.y[si]!;
+    const svx = attacker.ivx[si]!;
+    const svy = attacker.ivy[si]!;
+    for (const di of BODY) {
+      const dx = defender.x[di]! - sx;
+      const dy = defender.y[di]! - sy;
+      const distance = Math.hypot(dx, dy);
+      const minimum = POINT_RADIUS[si]! + POINT_RADIUS[di]! + STRIKE_RADIUS_BONUS;
+      if (distance >= minimum || distance < 1e-6) continue;
+      const nx = dx / distance;
+      const ny = dy / distance;
+      const closing = (svx - defender.ivx[di]!) * nx + (svy - defender.ivy[di]!) * ny;
+      const impact = Math.min(closing, HIT_SPEED_CAP);
+      const base = hitDamage(impact, striker.power, defender.guard);
+      if (base <= 0) continue;
+      const damage = Math.max(1, Math.round(base * comboMultiplier(attacker.combo)));
+      return { attacker, defender, strikerIndex: si, defenderIndex: di, sx, sy, nx, ny, impact, damage };
+    }
+  }
+  return null;
+}
+
 function resolveCombat(match: RagdollMatch, now: number, events: RagdollEvent[]): void {
   if (match.mode === 'ball') return;
-  const fighters: [RagdollFighter, RagdollFighter][] = [
+  const pairs: [RagdollFighter, RagdollFighter][] = [
     [match.a, match.b],
     [match.b, match.a],
   ];
-  for (const [attacker, defender] of fighters) {
-    if (attacker.hitCooldown > 0 || attacker.ko) continue;
-    let landed = false;
-    for (const striker of STRIKERS) {
-      const si = striker.index;
-      const sx = attacker.x[si]!;
-      const sy = attacker.y[si]!;
-      const svx = attacker.ivx[si]!;
-      const svy = attacker.ivy[si]!;
-      for (const di of BODY) {
-        const dx = defender.x[di]! - sx;
-        const dy = defender.y[di]! - sy;
-        const distance = Math.hypot(dx, dy);
-        const minimum = POINT_RADIUS[si]! + POINT_RADIUS[di]! + STRIKE_RADIUS_BONUS;
-        if (distance >= minimum || distance < 1e-6) continue;
-        const nx = dx / distance;
-        const ny = dy / distance;
-        const closing = (svx - defender.ivx[di]!) * nx + (svy - defender.ivy[di]!) * ny;
-        const base = hitDamage(closing, striker.power, defender.guard);
-        if (base <= 0) continue;
-        const damage = Math.max(1, Math.round(base * comboMultiplier(attacker.combo)));
+  // Fáze 1: oba zásahy se najdou proti stavu před aplikací. Kdyby se
+  // aplikovaly hned, první strana v cyklu by při současné výměně K.O.-la
+  // druhou dřív, než by stihla zasáhnout ( systematická výhoda A).
+  const pending: PendingHit[] = [];
+  for (const [attacker, defender] of pairs) {
+    const hit = findHit(attacker, defender);
+    if (hit) pending.push(hit);
+  }
 
-        attacker.hitCooldown = 0.22;
-        attacker.hits += 1;
-        attacker.bestHit = Math.max(attacker.bestHit, closing);
-        // série se počítá až po zásahu; soupeřův úder jeho sérii přeruší
-        attacker.combo += 1;
-        attacker.comboTimer = COMBO_WINDOW;
-        defender.combo = 0;
-        defender.comboTimer = 0;
+  // Fáze 2: aplikace. Při současné výměně se oba zásahy započítají.
+  for (const hit of pending) {
+    const { attacker, defender, strikerIndex: si, defenderIndex: di, sx, sy, nx, ny, impact, damage } = hit;
+    attacker.hitCooldown = 0.26;
+    attacker.hits += 1;
+    attacker.bestHit = Math.max(attacker.bestHit, impact);
+    attacker.combo += 1;
+    attacker.comboTimer = COMBO_WINDOW;
+    defender.combo = 0;
+    defender.comboTimer = 0;
 
-        defender.stun = Math.max(defender.stun, Math.min(0.42, 0.1 + damage * 0.012));
-        defender.knock = Math.max(defender.knock, 0.2 + damage * 0.008);
-        const push = closing * (defender.guard ? 0.45 : 0.8);
-        defender.vx[di] = defender.vx[di]! + nx * push;
-        defender.vy[di] = defender.vy[di]! + ny * push;
-        attacker.vx[si] = attacker.vx[si]! - nx * closing * 0.12;
-        attacker.vy[si] = attacker.vy[si]! - ny * closing * 0.12;
+    defender.stun = Math.max(defender.stun, Math.min(0.42, 0.1 + damage * 0.012));
+    defender.knock = Math.max(defender.knock, 0.2 + damage * 0.008);
+    const push = impact * (defender.guard ? 0.45 : 0.8);
+    defender.vx[di] = defender.vx[di]! + nx * push;
+    defender.vy[di] = defender.vy[di]! + ny * push;
+    attacker.vx[si] = attacker.vx[si]! - nx * impact * 0.12;
+    attacker.vy[si] = attacker.vy[si]! - ny * impact * 0.12;
 
-        if (defender.guard) {
-          defender.guardMeter = Math.max(0, defender.guardMeter - GUARD_HIT_COST);
-          if (defender.guardMeter <= 0) breakGuard(defender);
-        }
-
-        events.push({
-          kind: 'hit',
-          at: now,
-          by: attacker.id,
-          on: defender.id,
-          damage,
-          speed: closing,
-          x: sx,
-          y: sy,
-          combo: attacker.combo,
-        });
-        if (attacker.combo >= 2) {
-          events.push({
-            kind: 'combo',
-            at: now,
-            id: attacker.id,
-            combo: attacker.combo,
-            x: sx,
-            y: sy,
-          });
-        }
-        damageFighter(match, defender, damage, attacker, now, events);
-        landed = true;
-        break;
-      }
-      if (landed) break;
+    if (defender.guard) {
+      defender.guardMeter = Math.max(0, defender.guardMeter - GUARD_HIT_COST);
+      if (defender.guardMeter <= 0) breakGuard(defender);
     }
+
+    events.push({
+      kind: 'hit',
+      at: now,
+      by: attacker.id,
+      on: defender.id,
+      damage,
+      speed: impact,
+      x: sx,
+      y: sy,
+      combo: attacker.combo,
+    });
+    if (attacker.combo >= 2) {
+      events.push({ kind: 'combo', at: now, id: attacker.id, combo: attacker.combo, x: sx, y: sy });
+    }
+    damageFighter(match, defender, damage, attacker, now, events);
+  }
+
+  // Vzájemná výměna ruší kombo na obou stranách — nikdo nemá sérii.
+  if (pending.length === 2) {
+    match.a.combo = 0;
+    match.b.combo = 0;
   }
 }
 
@@ -935,7 +970,7 @@ function stepBall(match: RagdollMatch, dt: number, now: number, events: RagdollE
   if (!ball) return;
 
   ball.vy -= GRAVITY * dt;
-  const drag = Math.max(0, 1 - 0.12 * dt);
+  const drag = Math.max(0, 1 - 0.25 * dt);
   ball.vx *= drag;
   ball.vy *= drag;
   ball.x += ball.vx * dt;
@@ -944,10 +979,10 @@ function stepBall(match: RagdollMatch, dt: number, now: number, events: RagdollE
   if (ball.y < BALL_RADIUS) {
     ball.y = BALL_RADIUS;
     if (ball.vy < 0) ball.vy = -ball.vy * 0.62;
-    ball.vx *= Math.max(0, 1 - 0.55 * dt);
+    ball.vx *= Math.max(0, 1 - 1.6 * dt);
   }
 
-  const limit = ARENA_HALF - BALL_RADIUS;
+  const limit = BALL_HALF - BALL_RADIUS;
   if (ball.x > limit && ball.y >= GOAL_HEIGHT - BALL_RADIUS) {
     ball.x = limit;
     ball.vx = -Math.abs(ball.vx) * 0.55;
@@ -958,11 +993,19 @@ function stepBall(match: RagdollMatch, dt: number, now: number, events: RagdollE
   }
 
   // srážka s loutkami — jediný způsob, jak míč rozhýbat.
-  // Pořadí stran se střídá: kdyby vždy začínala A, poslední rána B by vždy
-  // vyhrála souboj o míč a jeden bot by vyhrával 14:0 (naměřeno).
+  // Pořadí stran se střídá kvůli vytlačení z překryvu; **impuls se ale bere
+  // jen z nejsilnějšího kontaktu v daném kroku**. Dřív se impulsy sčítaly
+  // v pořadí cyklu, takže poslední strana vždy „vyhrála“ souboj o míč
+  // (naměřeno 14:0 pro jeden stranu). Nejsilnější kontakt je fyzikální
+  // a na pořadí nezávisí.
   match.ballSeq = (match.ballSeq + 1) % 2;
   const order: RagdollFighter[] =
     match.ballSeq === 0 ? [match.a, match.b] : [match.b, match.a];
+  let bestNormal = 0;
+  let bestNx = 0;
+  let bestNy = 0;
+  let bestVx = 0;
+  let bestVy = 0;
   for (const fighter of order) {
     for (let i = 0; i < POINT_COUNT; i++) {
       const dx = ball.x - fighter.x[i]!;
@@ -977,32 +1020,41 @@ function stepBall(match: RagdollMatch, dt: number, now: number, events: RagdollE
       const rvx = ball.vx - fighter.vx[i]!;
       const rvy = ball.vy - fighter.vy[i]!;
       const normal = rvx * nx + rvy * ny;
-      if (normal < 0) {
-        ball.vx -= 1.55 * normal * nx;
-        ball.vy -= 1.55 * normal * ny;
-        ball.vx += fighter.vx[i]! * 0.28;
-        ball.vy += fighter.vy[i]! * 0.28;
+      if (normal < bestNormal) {
+        bestNormal = normal;
+        bestNx = nx;
+        bestNy = ny;
+        bestVx = fighter.vx[i]!;
+        bestVy = fighter.vy[i]!;
       }
     }
   }
+  if (bestNormal < 0) {
+    ball.vx -= 1.15 * bestNormal * bestNx;
+    ball.vy -= 1.15 * bestNormal * bestNy;
+    ball.vx += bestVx * 0.15;
+    ball.vy += bestVy * 0.15;
+  }
 
   const speed = Math.hypot(ball.vx, ball.vy);
-  const maxSpeed = 24;
+  const maxSpeed = 18;
   if (speed > maxSpeed) {
     ball.vx = (ball.vx / speed) * maxSpeed;
     ball.vy = (ball.vy / speed) * maxSpeed;
   }
 
   // branky: A útočí doprava, B doleva
-  if (ball.x > ARENA_HALF - BALL_RADIUS && ball.y < GOAL_HEIGHT) {
+  if (ball.x > BALL_HALF - BALL_RADIUS && ball.y < GOAL_HEIGHT) {
     match.a.score += 1;
     match.lastScorer = 'a';
+    match.kickoff = { side: 'a', until: match.elapsed + 1.6 };
     events.push({ kind: 'goal', at: now, side: 'a', scoreA: match.a.score, scoreB: match.b.score });
     match.phase = 'roundEnd';
     match.timer = 1.4;
-  } else if (ball.x < -ARENA_HALF + BALL_RADIUS && ball.y < GOAL_HEIGHT) {
+  } else if (ball.x < -BALL_HALF + BALL_RADIUS && ball.y < GOAL_HEIGHT) {
     match.b.score += 1;
     match.lastScorer = 'b';
+    match.kickoff = { side: 'b', until: match.elapsed + 1.6 };
     events.push({ kind: 'goal', at: now, side: 'b', scoreA: match.a.score, scoreB: match.b.score });
     match.phase = 'roundEnd';
     match.timer = 1.4;
@@ -1037,12 +1089,12 @@ function endDuelRound(match: RagdollMatch, now: number, events: RagdollEvent[], 
 
 function startSurvivalWave(match: RagdollMatch, now: number, events: RagdollEvent[]): void {
   match.wave += 1;
-  match.a.hp = Math.min(MAX_HP, match.a.hp + 22);
+  match.a.hp = Math.min(MAX_HP, match.a.hp + 26);
   match.a.ko = false;
   placeFighter(match.a, -3.4, 1);
   match.a.hp = Math.min(MAX_HP, match.a.hp);
   placeFighter(match.b, 3.4, -1);
-  match.b.hp = Math.min(200, 60 + (match.wave - 1) * 26);
+  match.b.hp = Math.min(170, 55 + (match.wave - 1) * 20);
   match.b.ko = false;
   match.phase = 'countdown';
   match.timer = 2;
@@ -1174,14 +1226,13 @@ export function stepRagdoll(
       match.b.stun = 0;
       match.a.knock = 0;
       match.b.knock = 0;
-      placeFighter(match.a, -3.4, 1);
-      placeFighter(match.b, 3.4, -1);
+      placeFighter(match.a, -4.4, 1);
+      placeFighter(match.b, 4.4, -1);
       ballReset(match);
-      // výkop dostane inkasující strana — jinak jeden bot vyhrává pořád
-      if (match.ball) {
-        if (match.lastScorer === 'a') match.ball.x = 2.2;
-        else if (match.lastScorer === 'b') match.ball.x = -2.2;
-      }
+      // Výkop je na středu a **střelec je chvíli zmrazený** (`kickoff`).
+      // Dřív se míč dával na polovinu inkasujícího — jenže ten pak musel
+      // přes celé hřiště a střelec, stojící mezi míčem a vlastní brankou,
+      // vyhrával souboj (naměřeno 9:4 pro jednu stranu).
       match.phase = 'playing';
     } else {
       match.phase = 'playing';
@@ -1195,7 +1246,18 @@ export function stepRagdoll(
   }
 
   // ── playing ──────────────────────────────────────────────────────────────
-  simulate(match, inputA, inputB, step);
+  let aInput = inputA;
+  let bInput = inputB;
+  if (match.mode === 'ball' && match.kickoff.side) {
+    if (match.elapsed >= match.kickoff.until) {
+      match.kickoff.side = null;
+    } else if (match.kickoff.side === 'a') {
+      aInput = NO_INPUT;
+    } else {
+      bInput = NO_INPUT;
+    }
+  }
+  simulate(match, aInput, bInput, step);
   resolveCombat(match, now, events);
   drainGuardEvents(match, now, events);
 
@@ -1324,8 +1386,11 @@ export function botInput(
   if (match.mode === 'ball' && match.ball) {
     const ball = match.ball;
     const attackDir = side === 'a' ? 1 : -1;
+    // drobný deterministický rozptyl podle seedu — dva zrcadlově totožní
+    // boti se jinak nikdy nerozejdou a jeden vyhrává 9:4 pořád dokola
+    const jitter = ((memory.seed >>> 0) % 1000) / 1000 - 0.5;
     // stůj na opačné straně míče, než je branka, kterou útočíš
-    const standX = ball.x - attackDir * (0.9 + tuning.aggression * 0.12);
+    const standX = ball.x - attackDir * (0.9 + tuning.aggression * 0.12 + jitter * 0.35);
     const dx = standX - selfCenter.x;
     let move = 0;
     if (Math.abs(dx) > 0.45) move = Math.sign(dx);

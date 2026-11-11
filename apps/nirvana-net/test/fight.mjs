@@ -69,7 +69,7 @@ console.log('\n== simulace (bez sítě) ==');
     now += DT * 1000;
     fight.setFightInput(sim, 'p_a', { move: 1, jump: false, punch: true, kick: false, block: false });
     events.push(...fight.stepFight(sim, DT, now));
-    if (sim.match.b.hp < 100) reachDamage = true;
+    if (sim.match.b.hp < ragdoll.MAX_HP) reachDamage = true;
   }
   check('švih ubírá soupeři HP', reachDamage, `hpB=${sim.match.b.hp}`);
   check('zásah se počítá (hits > 0)', sim.match.a.hits > 0, `hits=${sim.match.a.hits}`);
@@ -80,7 +80,7 @@ console.log('\n== simulace (bez sítě) ==');
   sim.match.phase = 'playing';
   sim.match.timer = 60;
   const events = [];
-  ragdoll.damageFighter(sim.match, sim.match.b, 100, sim.match.a, 0, events);
+  ragdoll.damageFighter(sim.match, sim.match.b, ragdoll.MAX_HP, sim.match.a, 0, events);
   let now = 0;
   for (let tick = 0; tick < 30 * 1; tick++) {
     now += DT * 1000;
@@ -125,7 +125,7 @@ console.log('\n== simulace (bez sítě) ==');
     now += DT * 1000;
     fight.stepFight(sim, DT, now);
   }
-  check('bot v prázdném sedle útočí', sim.match.b.hits > 0 || sim.match.a.hp < 100,
+  check('bot v prázdném sedle útočí', sim.match.b.hits > 0 || sim.match.a.hp < ragdoll.MAX_HP,
     `hits=${sim.match.b.hits} hpA=${sim.match.a.hp}`);
 }
 {
@@ -282,7 +282,7 @@ try {
   check('pohyb hýbe loutkou', Math.abs(afterX - beforeX) > 1.2, `${beforeX}→${afterX}`);
 
   // úder: přibliž se a mláti
-  const foeHpBefore = foe()?.hp ?? 100;
+  const foeHpBefore = foe()?.hp ?? ragdoll.MAX_HP;
   let hurt = false;
   for (let index = 0; index < 180 && !hurt; index++) {
     const selfNow = me();
@@ -298,7 +298,7 @@ try {
       jump: false, fire: true, weapon: 0, block: false,
     });
     await sleep(35);
-    hurt = (foe()?.hp ?? 100) < foeHpBefore;
+    hurt = (foe()?.hp ?? ragdoll.MAX_HP) < foeHpBefore;
   }
   const foeHpAfter = foe()?.hp ?? 100;
   check('úder ubírá soupeři HP', hurt, `${foeHpBefore}→${foeHpAfter}`);

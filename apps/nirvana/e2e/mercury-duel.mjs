@@ -137,7 +137,7 @@ try {
         await a.keyboard.up('a');
         await a.keyboard.down('j');
       }
-      if (s.hud.foeIsBot === false && s.hud.foeHp < 100) hurtOnA = s;
+      if (s.hud.foeIsBot === false && s.hud.foeHp < 150) hurtOnA = s;
     }
     await sleep(120);
   }

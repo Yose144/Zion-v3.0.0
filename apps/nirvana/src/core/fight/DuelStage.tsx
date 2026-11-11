@@ -6,6 +6,7 @@ import { useMemo, useRef, type MutableRefObject } from 'react';
 import { dampFactor } from '@/core/design/motion';
 import {
   ARENA_HALF,
+  BALL_HALF,
   GOAL_HEIGHT,
   HILL_HALF,
   P,
@@ -23,6 +24,7 @@ import {
 export function DuelStage({ goals = false, hill = false }: { goals?: boolean; hill?: boolean }) {
   const sunGeo = useMemo(() => new THREE.CircleGeometry(11, 40), []);
   const haloGeo = useMemo(() => new THREE.RingGeometry(11.3, 15.2, 40), []);
+  const half = goals ? BALL_HALF : ARENA_HALF;
   return (
     <>
       <color attach="background" args={['#2b1a1a']} />
@@ -35,7 +37,7 @@ export function DuelStage({ goals = false, hill = false }: { goals?: boolean; hi
 
       {/* strž pod klecí — delší, aby v záběru nebyl vidět okraj */}
       <mesh position={[0, -0.25, -8]}>
-        <boxGeometry args={[ARENA_HALF * 2 + 6, 0.5, 40]} />
+        <boxGeometry args={[half * 2 + 6, 0.5, 40]} />
         <meshStandardMaterial color="#89765f" roughness={0.92} />
       </mesh>
       {/* King of the Hill — zóna uprostřed */}
@@ -47,14 +49,14 @@ export function DuelStage({ goals = false, hill = false }: { goals?: boolean; hi
         <meshBasicMaterial color="#ffb46a" transparent opacity={0.5} toneMapped={false} />
       </mesh>
       {/* sloupky a břevno — "klec" */}
-      {[-ARENA_HALF - 1.2, ARENA_HALF + 1.2].map((x) => (
+      {[-half - 1.2, half + 1.2].map((x) => (
         <mesh key={x} position={[x, 1.5, -3.4]}>
           <boxGeometry args={[0.24, 3, 0.24]} />
           <meshStandardMaterial color="#4c4438" metalness={0.4} roughness={0.6} />
         </mesh>
       ))}
       <mesh position={[0, 3, -3.4]}>
-        <boxGeometry args={[ARENA_HALF * 2 + 2.8, 0.14, 0.14]} />
+        <boxGeometry args={[half * 2 + 2.8, 0.14, 0.14]} />
         <meshStandardMaterial color="#4c4438" metalness={0.4} roughness={0.6} />
       </mesh>
 
@@ -62,7 +64,7 @@ export function DuelStage({ goals = false, hill = false }: { goals?: boolean; hi
       {goals && (
         <group>
           {[-1, 1].map((side) => {
-            const x = side * ARENA_HALF;
+            const x = side * BALL_HALF;
             const tint = side < 0 ? '#7fd1e3' : '#ffb46a';
             return (
               <group key={side}>
@@ -209,11 +211,11 @@ export function DuelCamera({
     desired.set(
       midX,
       wide ? 3.6 : 2.05,
-      wide ? 19 + Math.min(3, spread * 0.18) : 9.0 + Math.min(4.6, spread * 0.28),
+      wide ? 23 + Math.min(3, spread * 0.14) : 9.0 + Math.min(4.6, spread * 0.28),
     );
     camera.position.lerp(desired, k);
     if (camera instanceof THREE.PerspectiveCamera) {
-      const baseFov = wide ? 56 : 42;
+      const baseFov = wide ? 62 : 42;
       const desiredFov = baseFov + Math.min(wide ? 8 : 19, Math.max(0, spread - (wide ? 8 : 4)) * (wide ? 0.8 : 1.25));
       camera.fov += (desiredFov - camera.fov) * k;
       camera.updateProjectionMatrix();

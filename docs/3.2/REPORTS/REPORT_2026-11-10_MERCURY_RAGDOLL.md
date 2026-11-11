@@ -154,3 +154,56 @@ neviděl výdrž ani sérii. Deploy **net první, pak appka**.
 - **Plný `next build` je blokovaný prací paralelní session** (`piko/page.tsx`
   je rozpracovaný a typecheck tam padá); kompilace samotná proběhla
   (`Compiled successfully`), chyby jsou výhradně v piku, ne v Merkuru.
+
+---
+
+# Tuning (2026-11-11)
+
+Ladění proběhlo podle měření, ne podle pocitu. Nový harness
+`apps/nirvana/test/ragdoll-balance.mjs` odehraje N zápasů bot vs bot
+v každém módu a vypíše délku, timeouty, zásahy, KO, komba, zlomy krytu,
+góly, vlny a držení kopce.
+
+## Před / po (96 zápasů na mód, bot `standard`)
+
+| Mód | Před | Po |
+|---|---|---|
+| duel | 25,3 s · 41,6 zásahů · 2,5 KO · 8:16 (48 runů) | **43,9 s · 100,2 zásahů · 2,7 KO · 50:46** |
+| survival | 15,2 s · vlna 2,2 | **30,7 s · vlna 3,2** |
+| ball | 135 s · 15:15 gólů (30 gólů!) | **110 s · 6,8:5,4 gólů, 62:23/11 remíz** |
+| koth | 24,9 s · 59 zásahů · 4,0 KO · 50:46 | **35,6 s · 94,3 zásahů · 3,2 KO · 47:49** |
+
+## Co se změnilo a proč
+
+- **`MAX_HP` 100 → 160.** Runda byla 10 s; teď je ~17 s a zápas best-of-3 ~43 s.
+- **`HIT_DAMAGE` 3,2 → 2,0, `HIT_MAX` 28 → 20, strop nárazové rychlosti 20 m/s.**
+  Zásah už nedává 28 z 100; silný kop bere ~10–20 z 160.
+- **Kombo:** strop +40 % (bylo +50 %), krok 0,08, okno 2,6 s.
+- **Tempa úderů:** pěst 0,36 s, kop 0,54 s, hit cooldown 0,26 s. Snížilo
+  počet zásahů na ~2,3/s, ale udrželo flurry pocit.
+- **Kryt:** drain 0,34/s, regen 0,24/s, zásah bere 0,1. Držený blok se zlomí za ~2,9 s;
+  boti kryjí krátce, proto je zlomů v botí sehrávce málo (0,01–0,02) —
+  lidský hráč, který drží S, ho uvidí. Test zlom pokrývá deterministicky.
+- **Současné zásahy:** `resolveCombat` nejdřív najde oba kandidáty a teprve
+  pak je aplikuje. Dřív A vždy zasáhla první a při výměně K.O.-la B dřív,
+  než B stihl zasáhnout — systematická výhoda A. Po opravě je koth 46:50
+  (bylo 59:37) a duel 50:46.
+- **Fotbal:** hřiště `BALL_HALF = 13` (26 m), branka 2,1 m, pomalejší míč,
+  **výkop na středu + střelec zmrazený 1,6 s**. Dřív se míč dával na
+  polovinu inkasujícího, který pak musel přes celé hřiště a střelec
+  bránící vlastní branku vyhrával souboj (9:4 pořád dokola).
+- **Nejsilnější kontakt místo pořadí:** impuls míče se bere z nejsilnější
+  srážky v kroku, ne z poslední v cyklu. Pořadí už nerozhoduje.
+- **Jitter ball bota:** malý deterministický rozptyl podle seedu rozbije
+  zrcadlově totožné boty; ball přestal být 9:4 attractor a je 6,8:5,4.
+- **Survival:** base 55 HP, +20 HP za vlnu, heal +26. Bot se dostane na
+  vlnu 3,2 (bylo 2,2); člověk míří výš.
+
+## Ověření
+
+- `npx tsx apps/nirvana/test/ragdoll.mjs` — **47 kontrol, PASSED**.
+- `apps/nirvana-net/test/fight.mjs` — **31 kontrol, PASSED** (cílený build
+  `tsconfig.fight.json`, protože plný `tsc` v `nirvana-net` blokuje
+  paralelní session v `src/arena.ts` — `shard` pickup typ).
+- `apps/nirvana` → `npx tsc --noEmit` **0 chyb**, `next build` **EXIT 0**.
+- Harness: `npx tsx apps/nirvana/test/ragdoll-balance.mjs 96`.

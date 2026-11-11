@@ -80,6 +80,7 @@ export const DUEL_COPY = {
   hillWin: { cs: 'Král kopce', en: 'King of the Hill', es: 'Rey de la colina' },
   startMode: { cs: 'Spustit zápas', en: 'Start match', es: 'Empezar combate' },
   ballHint: { cs: 'míč do branky', en: 'ball into the goal', es: 'balón a la portería' },
+  kickoff: { cs: 'výkop', en: 'kickoff', es: 'saque' },
   vsBot: { cs: 'proti botovi', en: 'vs bot', es: 'contra el bot' },
   moveShort: { cs: 'pohyb', en: 'move', es: 'movimiento' },
   punchShort: { cs: 'pěst', en: 'punch', es: 'puñetazo' },
