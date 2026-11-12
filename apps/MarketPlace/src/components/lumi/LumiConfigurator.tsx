@@ -51,8 +51,8 @@ export default function LumiConfigurator({
           <Lantern3D
             key={motif.slug}
             modelUrl={motif.model}
-            poster={motif.card}
-            posterAlt={`${t('lumi.title')} — ${cs ? motif.name.cs : motif.name.en}`}
+            poster={motif.bannerSmall}
+            posterAlt={cs ? motif.name.cs : motif.name.en}
           />
 
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">

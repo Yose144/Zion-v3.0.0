@@ -1058,7 +1058,7 @@ const t = {
 
   lumi: {
     kicker: { cs: 'Dřevěný lampion · šest motivů', en: 'Wooden lantern · six motifs' },
-    title: { cs: 'Lumi 2 — šest motivů', en: 'Lumi 2 — six motifs' },
+    title: { cs: 'Lumi — Království srdce', en: 'Lumi — Kingdom of the Heart' },
     lead: {
       cs: 'Stejná lucerna, jiných šest stěn. Vyberte motiv — uvidíte ho ve 3D přesně tak, jak se vyřízne — a my ho pošleme rozložený v krabici.',
       en: 'The same lantern with a different set of six walls. Pick a motif — see it in 3D exactly as it is cut — and we ship it flat in a box.',

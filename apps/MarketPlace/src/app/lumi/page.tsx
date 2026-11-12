@@ -7,12 +7,12 @@ import LumiConfigurator from '@/components/lumi/LumiConfigurator';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Lumi 2 — dřevěný lampion v šesti motivech | ZION Market',
+  title: 'Lumi — Království srdce | ZION Market',
   description:
     'Dřevěný lampion Lumi 2 z 3mm březové překližky. Šest motivových sad — příroda, svatba, květiny, oceán, vesmír a Vánoce — každou si prohlédnete ve 3D přesně podle výpalu.',
   alternates: { canonical: '/lumi' },
   openGraph: {
-    title: 'Lumi 2 — dřevěný lampion v šesti motivech',
+    title: 'Lumi — Království srdce',
     description:
       'Šest motivů, jeden lampion. Prohlédněte si každý ve 3D — model vychází z výpalových podkladů.',
     url: '/lumi',
