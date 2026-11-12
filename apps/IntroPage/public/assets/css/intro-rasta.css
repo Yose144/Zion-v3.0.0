@@ -21,37 +21,8 @@
 }
 
 /* ── Rasta energy keyframes ─────────────────────────────────────────────── */
-@keyframes rasta-shimmer {
-  0%,
-  100% {
-    background-position: 0% 0%, 0% 0%;
-  }
-  50% {
-    background-position: 0% 0%, 100% 0%;
-  }
-}
-
-@keyframes one-love-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 22px rgba(228, 30, 43, 0.18), 0 0 42px rgba(252, 209, 22, 0.1);
-  }
-  40% {
-    box-shadow: 0 0 28px rgba(7, 137, 48, 0.22), 0 0 52px rgba(252, 209, 22, 0.16);
-  }
-  70% {
-    box-shadow: 0 0 32px rgba(228, 30, 43, 0.2), 0 0 48px rgba(7, 137, 48, 0.14);
-  }
-}
-
-@keyframes rasta-line-shimmer {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 100% 50%;
-  }
-}
+/* (rasta-shimmer / one-love-glow / rasta-line-shimmer were removed together
+    with the infinite card animations — see the SCROLL FLOW section.) */
 
 /* ── Base typography: Inter, no system font fallbacks as default ─────────── */
 html {
@@ -95,9 +66,11 @@ body {
     radial-gradient(ellipse at bottom, #0f0f0f 0%, #000 100%);
 }
 
-/* Subtle diagonal rasta stripes over the background */
-body::before {
-  content: '';
+/* Subtle diagonal rasta stripes over the background (desktop only — a fixed,
+   masked, repeating gradient layer costs paint on every mobile scroll). */
+@media screen and (min-width: 737px) {
+  body::before {
+    content: '';
   position: fixed;
   inset: 0;
   z-index: 2;
@@ -117,6 +90,7 @@ body::before {
   background-size: 160px 160px;
   mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+  }
 }
 
 /* #bg is kept transparent so the body background stays visible through it */
@@ -245,13 +219,210 @@ h3.major {
 }
 
 #nirvana-embed .nirvana-poster {
-  height: 480px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── Nirvana preview window ──────────────────────────────────────────────
+   Poster-first: three.js is only pulled in on desktop (auto) or by an
+   explicit tap, so the box must look finished before any WebGL exists. */
+.nirvana-embed-shell {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  aspect-ratio: 1100 / 480;
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(252, 209, 22, 0.3);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.45);
+  background: #02030a;
 }
 
 @media screen and (max-width: 736px) {
-  #nirvana-embed .nirvana-poster {
-    height: 320px;
+  /* a 2.3:1 box is 170 px tall on a phone — use 4:3 there */
+  .nirvana-embed-shell {
+    aspect-ratio: 4 / 3;
+    border-radius: 0.85rem;
   }
+
+  .nirvana-embed-bottom {
+    padding: 1.25rem 0.75rem 0.6rem;
+  }
+
+  .nirvana-embed-top p {
+    letter-spacing: 0.2em;
+  }
+}
+
+.nirvana-embed-frame {
+  position: absolute;
+  inset: 0;
+}
+
+.nirvana-poster-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, transparent 45%, rgba(0, 0, 0, 0.35) 100%);
+}
+
+.nirvana-embed-play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1.35rem;
+  border-radius: 999px;
+  border: 1px solid rgba(252, 209, 22, 0.6);
+  background: rgba(13, 13, 13, 0.72);
+  color: var(--rasta-gold);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nirvana-embed-play:hover {
+  transform: translate(-50%, -50%) scale(1.04);
+  background: rgba(252, 209, 22, 0.18);
+  box-shadow: 0 0 28px rgba(252, 209, 22, 0.35);
+  color: #fff;
+}
+
+.nirvana-embed-play-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--rasta-gold);
+  color: #0d0d0d;
+  font-size: 0.65rem;
+}
+
+.nirvana-embed-canvas {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.nirvana-embed-canvas.is-ready {
+  opacity: 1;
+}
+
+.nirvana-canvas {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.nirvana-embed-fallback {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: rgba(252, 209, 22, 0.5);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.nirvana-embed-caption {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  pointer-events: none;
+}
+
+.nirvana-embed-caption a {
+  pointer-events: auto;
+  color: var(--rasta-gold);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* Overlays of the live scene */
+.nirvana-embed-top {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 2;
+  padding: 0.65rem 1rem 1.6rem;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
+  pointer-events: none;
+  text-align: center;
+}
+
+.nirvana-embed-top p {
+  margin: 0 !important;
+  font-size: 0.62rem !important;
+  font-weight: 600;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: rgba(252, 209, 22, 0.72);
+}
+
+.nirvana-embed-bottom {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 1.6rem 0.85rem 0.7rem;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.4) 55%, transparent);
+  pointer-events: none;
+}
+
+.nirvana-embed-bottom p {
+  margin: 0 !important;
+  font-size: 0.65rem !important;
+  line-height: 1.4 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.nirvana-embed-lock {
+  margin-top: 0.1rem !important;
+  font-size: 0.6rem !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.nirvana-embed-cta {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(252, 209, 22, 0.4);
+  background: rgba(252, 209, 22, 0.15);
+  color: var(--rasta-gold) !important;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nirvana-embed-cta:hover {
+  background: rgba(252, 209, 22, 0.25);
 }
 
 #header .content .inner h1 {
@@ -307,9 +478,20 @@ html body #main article {
   padding-bottom: clamp(4.5rem, 8vw, 6rem);
   width: 46rem;
   max-width: calc(100% - 1.25rem);
-  backdrop-filter: blur(20px) saturate(135%);
-  -webkit-backdrop-filter: blur(20px) saturate(135%);
-  animation: rasta-shimmer 7s ease-in-out infinite, one-love-glow 6s ease-in-out infinite;
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  /* Static glow. The old infinite `one-love-glow` + `rasta-shimmer` animated
+     box-shadow and background-position on every card, forcing a repaint of
+     the whole (blurred) layer each frame. Hover keeps the "alive" feel. */
+  transition: box-shadow 0.35s ease, border-color 0.35s ease, transform 0.35s ease;
+}
+
+html body #main article:hover {
+  border-color: rgba(252, 209, 22, 0.32);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.35),
+    0 0 42px rgba(252, 209, 22, 0.18),
+    0 0 70px rgba(228, 30, 43, 0.1);
 }
 
 html body #main article::before,
@@ -325,15 +507,13 @@ html body #main article::after {
 html body #main article::before {
   top: 0;
   background-image: linear-gradient(90deg, rgba(228, 30, 43, 0.85), rgba(252, 209, 22, 0.95), rgba(7, 137, 48, 0.85), rgba(228, 30, 43, 0.85), rgba(252, 209, 22, 0.95), rgba(7, 137, 48, 0.85));
-  background-size: 200% 100%;
-  animation: rasta-line-shimmer 6s linear infinite;
+  background-size: 100% 100%;
 }
 
 html body #main article::after {
   bottom: 0;
   background-image: linear-gradient(90deg, rgba(228, 30, 43, 0.35), rgba(252, 209, 22, 0.45), rgba(7, 137, 48, 0.35), rgba(228, 30, 43, 0.35), rgba(252, 209, 22, 0.45), rgba(7, 137, 48, 0.35));
-  background-size: 200% 100%;
-  animation: rasta-line-shimmer 7s linear infinite reverse;
+  background-size: 100% 100%;
 }
 
 html body #main article p,
@@ -1100,6 +1280,654 @@ footer .footer-copyright {
 /* ── Footer / logo chip ──────────────────────────────────────────────────── */
 footer .footer-bottom img {
   border-radius: var(--zion-radius-md);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SCROLL FLOW — the landing page is a normal scrolling document.
+
+   The HTML5UP "Dimension" template (main.css) renders #main as a single
+   centred panel that JS reveals one article at a time. That hid ~90 % of the
+   copy behind tabs, broke the back button and could not be read without
+   JavaScript. Here every <article> is a section in the flow and the nav is a
+   plain anchor list. Hash links, deep links and browser scrolling all work
+   with no script at all.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 1.5rem;
+}
+
+html body #main.landing {
+  display: block;
+  width: 100%;
+  max-width: 74rem;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3rem) clamp(0.75rem, 3vw, 2rem) 0;
+  flex: none;
+}
+
+html body #main.landing article {
+  /* was: opacity 0 until JS added .active */
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 clamp(1rem, 2.5vw, 1.75rem);
+  padding: clamp(1.5rem, 4vw, 2.75rem) clamp(1.25rem, 3.5vw, 2.5rem);
+  /* the template reserved 4.5rem at the top for the injected close button */
+  padding-top: clamp(1.5rem, 4vw, 2.75rem);
+  scroll-margin-top: 1.5rem;
+}
+
+html body #main.landing article:last-of-type {
+  margin-bottom: 0;
+}
+
+/* No close buttons in flow mode — sections are always open. */
+html body #main.landing article .close {
+  display: none !important;
+}
+
+/* Article headers -------------------------------------------------------- */
+.section-eyebrow {
+  display: block;
+  margin: 0 0 0.35rem;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(252, 209, 22, 0.7);
+}
+
+html body #main article h3 {
+  color: rgba(255, 255, 255, 0.92);
+  margin: 1.75rem 0 0.6rem;
+}
+
+html body #main article h3.major {
+  color: transparent; /* rasta gradient from the base rule */
+}
+
+html body #main article h4 {
+  margin: 1.5rem 0 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 700;
+}
+
+/* Long-form copy reads badly centred: keep the section header centred, but set
+   paragraphs, lists and sub-headings flush left inside a measure. */
+html body #main.landing article > p:not(.section-eyebrow):not(.section-cta):not(.mantra):not(.chant):not(.mantra-tibetan),
+html body #main.landing article > ul,
+html body #main.landing article > ol,
+html body #main.landing article > blockquote {
+  text-align: left;
+  /* one measure for prose and sub-headings — `ch` would give every font size a
+     different width and the left edges would not line up */
+  max-width: 46rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+html body #main.landing article > h3:not(.major),
+html body #main.landing article > h4 {
+  text-align: left;
+  max-width: 46rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.path-card p,
+.path-card h3,
+.support-card p {
+  text-align: left;
+}
+
+/* Hero ------------------------------------------------------------------- */
+/* The stargate is one circle. Three stylesheets disagreed about its size —
+   .gate was absolutely positioned, sized with 100vmin in one medquery and
+   pushed down with a hand-tuned margin-top in another, which is why the ring
+   overlapped the title on phones. One owner now: the .logo box. */
+#header .logo {
+  position: relative;
+  width: 15rem !important;
+  height: 15rem !important;
+  margin: 0 auto;
+}
+
+@media screen and (min-width: 737px) {
+  #header .logo {
+    width: clamp(17rem, 27vw, 26rem) !important;
+    height: clamp(17rem, 27vw, 26rem) !important;
+  }
+}
+
+#header .logo .gate {
+  position: relative;
+  inset: auto;
+  left: auto;
+  top: auto;
+  transform: none;
+  width: 100% !important;
+  height: 100%;
+  margin: 0 auto;
+}
+
+/* The template's mobile "push the text below the gate" margins */
+@media screen and (max-width: 768px) {
+  #header .content {
+    margin-top: 0 !important;
+  }
+
+  .container .center-logo {
+    width: 22% !important;
+    height: 22% !important;
+  }
+}
+
+.hero-kicker {
+  margin: 0 0 0.75rem !important;
+  font-size: 0.7rem !important;
+  font-weight: 700;
+  letter-spacing: 0.24em !important;
+  text-transform: uppercase;
+  color: rgba(252, 209, 22, 0.75);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+  margin: 1.25rem 0 0.25rem;
+}
+
+/* main.css makes every .button a full-width block; inside these rows they
+   should hug their label instead of splitting the row in half. */
+.hero-actions .button,
+.button-row .button,
+.section-cta .button {
+  width: auto !important;
+  min-width: 9.5rem;
+  flex: 0 1 auto;
+}
+
+/* The template stacks header children with 3.5rem gaps and a 1px rule
+   between them (the rule is 0px wide, so only the gap was visible). */
+#header > * {
+  margin-top: clamp(1rem, 2.5vw, 1.75rem) !important;
+}
+
+#header > :first-child {
+  margin-top: 0 !important;
+}
+
+#header > *:before {
+  display: none;
+}
+
+/* Nav pill --------------------------------------------------------------- */
+#header nav ul {
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: 0.25rem;
+  width: auto;
+  max-width: 100%;
+}
+
+#header nav ul li a {
+  min-width: 0 !important;
+  height: auto !important;
+  line-height: 1.3 !important;
+  padding: 0.6rem 1rem !important;
+}
+
+/* The template hard-codes min-width: 7.5rem per link (120 px), so on a phone
+   the pill wrapped into a tall single-column stack. Make it a 2-up grid and
+   let long labels shrink instead of forcing the column wider. */
+@media screen and (max-width: 736px) {
+  #header nav {
+    width: min(100%, 26rem);
+  }
+
+  #header nav ul {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.25rem;
+    width: min(100%, 26rem);
+    padding: 0.35rem;
+  }
+
+  #header nav ul li {
+    display: block;
+    border-left: 0 !important;
+  }
+
+  #header nav ul li a {
+    width: 100%;
+    padding: 0.65rem 0.5rem !important;
+    font-size: 0.74rem !important;
+    text-align: center;
+    letter-spacing: 0.01em !important;
+    text-transform: none !important;
+    min-height: 44px;
+  }
+
+  #header nav ul li.has-dropdown {
+    grid-column: 1 / -1;
+  }
+
+  #header nav .nav-dropdown {
+    position: static;
+    transform: none;
+    width: 100%;
+    margin: 0.3rem 0 0;
+    box-shadow: none;
+  }
+
+  #header nav .nav-dropdown li {
+    display: block;
+  }
+}
+
+/* Active section (set by main.js from the scroll position) */
+#header nav ul li a.is-current,
+#header nav ul li a[aria-current='true'] {
+  color: var(--rasta-gold);
+  background: rgba(252, 209, 22, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(252, 209, 22, 0.35);
+}
+
+/* In-page components ------------------------------------------------------ */
+/* Grid children ---------------------------------------------------------- */
+/* main.css (the HTML5UP reset) puts `margin: 0 auto` on every element, which
+   shrinks grid items to their content width and centres them inside the
+   column. Pin them to the column instead. */
+.stat-grid > *,
+.card-grid > *,
+.path-grid > *,
+.support-grid > * {
+  width: 100%;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Same auto-margin leak inside flex rows: it pushed sibling buttons to opposite
+   ends of the row instead of keeping them together in the centre. */
+.hero-actions > *,
+.button-row > *,
+.section-cta > *,
+.icons > li,
+.lite-footer > *,
+.footer-layers > * {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin: 1.75rem 0 0;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--zion-radius-md);
+  border: 1px solid rgba(252, 209, 22, 0.16);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015));
+  text-align: left;
+}
+
+.stat-value {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.stat-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  margin: 1.5rem 0 0;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--zion-radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.045);
+  text-decoration: none !important;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tile:hover {
+  transform: translateY(-2px);
+  border-color: rgba(252, 209, 22, 0.5);
+  background: rgba(252, 209, 22, 0.1);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.35);
+}
+
+.tile-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--rasta-gold);
+}
+
+.tile-desc {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.path-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.85rem;
+  margin: 1.5rem 0 0;
+}
+
+.path-card {
+  position: relative;
+  margin: 0 !important;
+  padding: 1.35rem 1.25rem 1rem;
+  border-radius: var(--zion-radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.path-card h3 {
+  margin: 0.35rem 0 0.5rem !important;
+  font-size: 1.05rem !important;
+}
+
+.path-card p {
+  margin: 0;
+  font-size: 0.88rem !important;
+  line-height: 1.7 !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+.path-index {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+  background-image: linear-gradient(120deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+  margin: 1.5rem 0 0;
+}
+
+.section-cta {
+  margin: 1.5rem 0 0;
+  text-align: center;
+}
+
+.status-card {
+  margin: 1.25rem 0 0;
+  padding: 1.25rem 1.35rem;
+  border-radius: var(--zion-radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+}
+
+.status-line {
+  margin: 0 0 0.4rem !important;
+  font-size: 0.92rem !important;
+}
+
+.status-muted {
+  font-size: 0.82rem !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.status-beta {
+  margin: 0.65rem 0 0 !important;
+  font-size: 0.82rem !important;
+  color: #fbbf24 !important;
+}
+
+.chant {
+  margin: 1.5rem 0 0 !important;
+  text-align: center;
+  font-size: 0.78rem !important;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+html body #main.landing article .mantra {
+  margin: 1.25rem 0 0 !important;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--rasta-gold) !important;
+}
+
+.mantra-tibetan {
+  margin: 1rem 0 1.25rem !important;
+  text-align: center;
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  color: rgba(252, 209, 22, 0.85);
+}
+
+.support-portrait {
+  display: block;
+  width: min(100%, 34rem);
+  height: auto;
+  margin: 0 auto 1.5rem !important;
+  border-radius: var(--zion-radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.support-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.85rem;
+  margin: 1rem 0 0;
+}
+
+.support-card {
+  padding: 1.15rem 1.2rem;
+  border-radius: var(--zion-radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  text-align: center;
+}
+
+.support-card h4 {
+  margin-top: 0 !important;
+}
+
+.support-card p {
+  margin: 0.25rem 0 !important;
+  font-size: 0.85rem !important;
+}
+
+.support-card img {
+  width: min(100%, 12rem) !important;
+  height: auto;
+  margin: 0.75rem auto 0;
+  border-radius: 0.75rem;
+}
+
+.mono-break {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 0.75rem !important;
+  word-break: break-all;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.guardian-list li {
+  margin: 0.4rem 0 !important;
+}
+
+/* Social icons (inline SVG — no icon font) ------------------------------- */
+.icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+  list-style: none;
+  padding: 0;
+  margin: 1.25rem 0 0;
+}
+
+.icons li {
+  margin: 0;
+}
+
+/* `ul.icons li a` in main.css wins on specificity, so raise ours to match. */
+ul.icons li a.icon-social {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: auto;
+  height: auto;
+  min-height: 44px;
+  line-height: 1.2;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  background-image: none;
+  transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+ul.icons li a.icon-social:hover {
+  transform: translateY(-2px);
+  border-color: rgba(252, 209, 22, 0.55);
+  color: var(--rasta-gold) !important;
+  box-shadow: 0 0 20px rgba(252, 209, 22, 0.22);
+}
+
+.icon-svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+  display: block;
+}
+
+footer .lite-footer .quick-link .icon-svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Skip link -------------------------------------------------------------- */
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: -4rem;
+  z-index: 2000;
+  padding: 0.7rem 1.1rem;
+  border-radius: 0 var(--zion-radius-md) var(--zion-radius-md) 0;
+  background: var(--rasta-gold);
+  color: #0d0d0d;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 0.75rem;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Focus visibility for keyboard users ------------------------------------ */
+html body a:focus-visible,
+html body button:focus-visible {
+  outline: 2px solid var(--rasta-gold);
+  outline-offset: 3px;
+  border-radius: 0.4rem;
+}
+
+/* ── Tablet / mobile ------------------------------------------------------ */
+@media screen and (max-width: 736px) {
+  html body #main.landing article {
+    border-radius: var(--zion-radius-md);
+  }
+
+  /* backdrop-filter is the single most expensive property on mobile GPUs */
+  html body #main article,
+  #header nav ul,
+  .floating-menu-panel {
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    backdrop-filter: blur(10px) saturate(120%);
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .hero-actions,
+  .button-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-actions .button,
+  .button-row .button {
+    flex: 1 1 100%;
+  }
+
+  .stat {
+    padding: 0.75rem 0.85rem;
+  }
+}
+
+/* ── Reduced motion: no decorative loops, no smooth scroll ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  html body #main article,
+  html body #main article::before,
+  html body #main article::after,
+  .gate img,
+  .glyph,
+  .chevron,
+  .chevronInner {
+    animation: none !important;
+  }
+
+  *,
+  *:before,
+  *:after {
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ── /vast-rigs ops dashboard ──────────────────────────────────────────────

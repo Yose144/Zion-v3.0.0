@@ -94,6 +94,19 @@
     pickColor: null
   };
 
+  /* ── Runtime budget ──────────────────────────────────────────────────────
+     The field is a full-viewport canvas repainted ~24×/s. Three guards keep it
+     from eating a phone battery: a capped device pixel ratio, no animation at
+     all under prefers-reduced-motion (one static frame instead) and a pause
+     while the tab is hidden. */
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var lowPower =
+    (navigator.hardwareConcurrency || 8) <= 4 ||
+    (navigator.deviceMemory || 8) <= 4 ||
+    (navigator.connection && navigator.connection.saveData === true);
+  var dpr = Math.min(window.devicePixelRatio || 1, lowPower ? 1 : 1.5);
+  var paused = false;
+
   function toColorList(starColor) {
     if (!Array.isArray(starColor)) return [[255, 255, 255]];
     if (Array.isArray(starColor[0])) return starColor;
@@ -115,8 +128,12 @@
 
   function resize() {
     if (!canvas) return;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
     rebuildGradient();
   }
 
@@ -132,7 +149,7 @@
     var area = canvas.width * canvas.height;
     var refArea = 1920 * 1080;
     var density = Math.max(80, Math.round(state.config.density * Math.min(1.25, area / refArea)));
-    if (canvas.width < 768) density = Math.round(density * 0.55);
+    if (window.innerWidth < 768) density = Math.round(density * 0.55);
     for (var i = 0; i < density; i++) {
       state.stars.push({
         x: Math.random() * canvas.width - hw,
@@ -163,6 +180,8 @@
   function animate(timestamp) {
     if (!canvas || !ctx || !state.config) return;
     state.animationId = requestAnimationFrame(animate);
+
+    if (paused) return;
 
     var frameInterval = state.config.fpsLimit > 0 ? 1000 / state.config.fpsLimit : 0;
     if (frameInterval > 0) {
@@ -255,9 +274,11 @@
 
   function setMode(mode) {
     if (!PRESETS[mode]) mode = 'maintenance';
+    state.currentMode = mode;
     state.config = PRESETS[mode];
 
     if (state.animationId) cancelAnimationFrame(state.animationId);
+    state.animationId = null;
 
     applyCanvasBackground();
     resize();
@@ -265,13 +286,45 @@
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     state.lastFrameTime = 0;
+
+    if (reduceMotion.matches) {
+      // one static frame — decorative motion is not worth a repaint loop
+      paused = true;
+      animate(0);
+      if (state.animationId) {
+        cancelAnimationFrame(state.animationId);
+        state.animationId = null;
+      }
+      return;
+    }
+
+    paused = false;
     state.animationId = requestAnimationFrame(animate);
   }
 
   window.addEventListener('resize', onResize);
   window.setStarfieldMode = setMode;
 
+  document.addEventListener('visibilitychange', function () {
+    paused = document.hidden || reduceMotion.matches;
+    if (!paused && !state.animationId) {
+      state.lastFrameTime = 0;
+      state.animationId = requestAnimationFrame(animate);
+    }
+  });
+
+  reduceMotion.addEventListener('change', function (e) {
+    setMode(state.currentMode || 'maintenance');
+    if (!e.matches) paused = false;
+  });
+
+  // Reflect the mode that intro-tabs.js may already have applied to <body>,
+  // so script order (both are afterInteractive) does not matter.
   var savedMode = null;
   try { savedMode = window.localStorage.getItem('zion_bg'); } catch (e) {}
+  if (!savedMode) {
+    var cls = document.body.className.match(/bg-([a-z-]+)/);
+    if (cls) savedMode = cls[1];
+  }
   setMode(savedMode || 'maintenance');
 })();

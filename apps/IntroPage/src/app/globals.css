@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* JetBrains Mono used to be downloaded (48 KB) for a handful of mono labels.
+   The system mono stack is indistinguishable at these sizes. */
+:root {
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
+}
+
 .article {
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.08);

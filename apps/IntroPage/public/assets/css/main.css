@@ -1,6 +1,8 @@
-@import url(fontawesome-all.min.css);
-@import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro:300italic,600italic,300,600");
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap");
+/* Font Awesome is loaded from src/app/layout.tsx as a <link> so the browser can
+   fetch it in parallel instead of discovering a nested @import.
+   The Google Fonts @imports were removed: every element is set to the local
+   Inter / JetBrains Mono (next/font), so Montserrat and Source Sans Pro were
+   downloaded and never used — two render-blocking third-party requests. */
 
 * {
 	box-sizing: border-box;
@@ -434,10 +436,6 @@ input, select, textarea {
 		}
 
 	select {
-		background-image: url("www.newearth.cz/V2/images/nebula.jpg");
-		background-size: 1.25rem;
-		background-repeat: no-repeat;
-		background-position: calc(100% - 1rem) center;
 		height: 2.75rem;
 		padding-right: 2.75rem;
 		text-overflow: ellipsis;
@@ -1270,7 +1268,7 @@ input, select, textarea {
 		@media screen and (max-width: 1680px) {
 
 			#wrapper {
-				padding: 0 auto;
+				padding: 3rem 1.5rem;
 			}
 
 		}
@@ -1278,7 +1276,7 @@ input, select, textarea {
 		@media screen and (max-width: 736px) {
 
 			#wrapper {
-				padding: 0 auro;
+				padding: 1.75rem 0.75rem;
 			}
 
 		}
@@ -1286,7 +1284,7 @@ input, select, textarea {
 		@media screen and (max-width: 480px) {
 
 			#wrapper {
-				padding: 0 auto;
+				padding: 1.25rem 0.5rem;
 			}
 
 		}

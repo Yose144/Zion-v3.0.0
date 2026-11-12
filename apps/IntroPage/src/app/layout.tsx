@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "../../../shared/ui/tokens.css";
 import "./globals.css";
 
@@ -9,18 +9,15 @@ const inter = Inter({
   display: "swap",
 });
 
-const jetbrains = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-  weight: ["400", "500"],
-  display: "swap",
-});
-
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  themeColor: "#0d0d0d",
 };
+
+/** Bump when the hand-authored CSS/JS in public/ changes so caches invalidate. */
+const ASSET_V = "20261112";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://zionterranova.com"),
@@ -57,15 +54,20 @@ export default function RootLayout({
   return (
     <html lang="cs">
       <head>
-        <link rel="stylesheet" href="/assets/css/main.css" precedence="default" />
-        <link rel="stylesheet" href="/stargate/stargate-theme.css" precedence="default" />
-        <link rel="stylesheet" href="/assets/css/intro-rasta.css" precedence="default" />
+        {/* Legacy HTML5UP stack (public/) — loaded here, not in the page body, so
+            every route gets the same cascade and the browser can fetch them in
+            parallel. Order matters: base template → stargate → rasta overrides.
+            Font Awesome is gone: its 60 KB CSS + 77 KB webfont existed for four
+            social icons, which are now inline SVG in the markup. */}
+        <link rel="stylesheet" href={`/assets/css/main.css?v=${ASSET_V}`} precedence="default" />
+        <link rel="stylesheet" href={`/stargate/stargate-theme.css?v=${ASSET_V}`} precedence="default" />
+        <link rel="stylesheet" href={`/assets/css/intro-rasta.css?v=${ASSET_V}`} precedence="default" />
         <noscript>
           <link rel="stylesheet" href="/assets/css/noscript.css" />
         </noscript>
       </head>
       <body
-        className={`${inter.variable} ${jetbrains.variable} is-preload`}
+        className={inter.variable}
         suppressHydrationWarning
       >
         {children}
