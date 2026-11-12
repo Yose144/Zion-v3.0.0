@@ -8,17 +8,33 @@ import { useLang } from '@/lib/lang-context';
 type Phase = 'idle' | 'checking' | 'loading' | 'ready' | 'missing' | 'error';
 
 /**
- * 3D náhled lampionu. Model je skutečný výpal (`/models/lumi-2.glb`, meshopt),
+ * 3D náhled lampionu. Model je skutečný výpal (`/models/lumi-2-*.glb`, meshopt),
  * materiály se **nepřepisují** — nesou opálenou hranu a tmavý gravír.
- * Načítá se až po kliknutí: three je ~700 kB a většina lidí si přišla
- * přečíst cenu, ne točit modelem.
+ *
+ * Dvě cesty načtení:
+ *  - `autoLoad` (homepage): model se dotáhne sám, jakmile je sekce na
+ *    obrazovce, po `requestIdleCallback` — poster je vidět hned, takže LCP
+ *    nečeká na three.js.
+ *  - bez `autoLoad` (detaily): až po kliknutí, protože tam jde člověk
+ *    nejčastěji pro cenu.
  */
-export default function LumiViewer({ modelUrl, poster, tone = 'light' }: { modelUrl: string; poster: string; tone?: 'light' | 'dark' }) {
+export default function LumiViewer({
+  modelUrl,
+  poster,
+  tone = 'light',
+  autoLoad = false,
+}: {
+  modelUrl: string;
+  poster: string;
+  tone?: 'light' | 'dark';
+  autoLoad?: boolean;
+}) {
   const { lang } = useLang();
   const [phase, setPhase] = useState<Phase>('idle');
   const [progress, setProgress] = useState(0);
   const mountRef = useRef<HTMLDivElement | null>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
+  const startedRef = useRef(false);
 
   useEffect(() => () => cleanupRef.current?.(), []);
 
@@ -30,6 +46,8 @@ export default function LumiViewer({ modelUrl, poster, tone = 'light' }: { model
   }, []);
 
   const start = useCallback(async () => {
+    if (startedRef.current) return;
+    startedRef.current = true;
     setPhase('checking');
     let exists = false;
     try {
@@ -237,6 +255,43 @@ export default function LumiViewer({ modelUrl, poster, tone = 'light' }: { model
     }
   }, [modelUrl]);
 
+  // Homepage: začni načítat, až je sekce na obrazovce, a to až když má
+  // prohlížeč volno. `rootMargin` 300 px znamená, že se model stahuje
+  // kousek před tím, než na něj člověk dojede.
+  useEffect(() => {
+    if (!autoLoad) return;
+    const host = mountRef.current;
+    if (!host) return;
+
+    let idleHandle: number | undefined;
+    const idle = window as unknown as {
+      requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        observer.disconnect();
+        const run = () => void start();
+        if (typeof idle.requestIdleCallback === 'function') {
+          idleHandle = idle.requestIdleCallback(run, { timeout: 2500 });
+        } else {
+          idleHandle = window.setTimeout(run, 250);
+        }
+      },
+      { rootMargin: '300px' },
+    );
+    observer.observe(host);
+
+    return () => {
+      observer.disconnect();
+      if (idleHandle === undefined) return;
+      if (typeof idle.cancelIdleCallback === 'function') idle.cancelIdleCallback(idleHandle);
+      else window.clearTimeout(idleHandle);
+    };
+  }, [autoLoad, start]);
+
   const showPoster = phase !== 'ready';
 
   return (
@@ -276,14 +331,19 @@ export default function LumiViewer({ modelUrl, poster, tone = 'light' }: { model
         )}
 
         {phase === 'ready' && (
-          <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-black/45 px-3 py-1.5 text-[11px] text-white/70 backdrop-blur-sm">
-            {pick({ cs: 'Táhni pro otočení · kolečko přiblíží', en: 'Drag to rotate · scroll to zoom', de: 'Ziehen zum Drehen · Scrollen zum Zoomen' }, lang)}
+          <div className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/10 bg-black/45 px-2.5 py-1 text-[10px] text-white/70 backdrop-blur-sm sm:bottom-3 sm:px-3 sm:py-1.5 sm:text-[11px]">
+            <span className="sm:hidden">
+              {pick({ cs: 'Táhni pro otočení', en: 'Drag to rotate', de: 'Ziehen zum Drehen' }, lang)}
+            </span>
+            <span className="hidden sm:inline">
+              {pick({ cs: 'Táhni pro otočení · kolečko přiblíží', en: 'Drag to rotate · scroll to zoom', de: 'Ziehen zum Drehen · Scrollen zum Zoomen' }, lang)}
+            </span>
           </div>
         )}
 
         {phase !== 'ready' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center">
-            {phase === 'idle' && (
+            {phase === 'idle' && !autoLoad && (
               <>
                 <button
                   type="button"
@@ -304,6 +364,13 @@ export default function LumiViewer({ modelUrl, poster, tone = 'light' }: { model
                   )}
                 </p>
               </>
+            )}
+
+            {phase === 'idle' && autoLoad && (
+              <span className="inline-flex items-center gap-2 text-sm text-white/70">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {pick({ cs: 'Připravuji 3D náhled…', en: 'Preparing the 3D preview…', de: '3D-Vorschau wird vorbereitet…' }, lang)}
+              </span>
             )}
 
             {phase === 'checking' && (

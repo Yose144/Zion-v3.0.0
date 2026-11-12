@@ -11,8 +11,8 @@ import { imageVariant } from '@/lib/images';
 import ProductCard from '@/components/product-card';
 import SectionHeading from '@/components/section-heading';
 import Reveal from '@/components/reveal';
-import LumiViewer from '@/components/lumi-viewer';
 import CollectionGrid from '@/components/collection-grid';
+import HomeShowcase from '@/components/home-showcase';
 import FaqAccordion from '@/components/faq-accordion';
 import NewsletterForm from '@/components/newsletter-form';
 import { Price } from '@/components/price';
@@ -24,7 +24,6 @@ export default function HomePage() {
   const featured = FEATURED_PRODUCTS.map((id) => PRODUCTS.find((product) => product.externalId === id)).filter(
     (product): product is (typeof PRODUCTS)[number] => Boolean(product),
   );
-  const lumi = PRODUCTS.find((product) => product.externalId === 'lumi-2')!;
 
   return (
     <>
@@ -116,30 +115,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── 3D — naše eso ────────────────────────────────────────────── */}
-      <section id="nahled-3d" className="scroll-mt-24 bg-forest py-16 text-parchment lg:py-24">
-        <div className="container-lumi grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
-          <div>
-            <p className="eyebrow text-amber-300">{pick(SITE.viewer.kicker, lang)}</p>
-            <h2 className="h2 mt-3 text-balance text-parchment">{pick(SITE.viewer.title, lang)}</h2>
-            <p className="mt-4 text-base leading-relaxed text-parchment/75">{pick(SITE.viewer.text, lang)}</p>
-            <p className="mt-4 text-xs leading-relaxed text-parchment/50">{pick(SITE.viewer.note, lang)}</p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Link href="/kolekce/lumi-2" className="btn-amber">
-                {pick(SITE.hero.ctaPrimary, lang)}
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/pruvodce"
-                className="btn-outline border-parchment/30 text-parchment hover:border-parchment/60 hover:bg-parchment/10"
-              >
-                {pick({ cs: 'Jak se skládá', en: 'How to assemble', de: 'Aufbau' }, lang)}
-              </Link>
-            </div>
-          </div>
-          <LumiViewer modelUrl={lumi.model3d ?? '/models/lumi-2.glb'} poster="/images/lumi-b/3d-poster-700.webp" tone="dark" />
-        </div>
-      </section>
+      {/* ── 3D — naše eso (model se načítá sám, s přepínačem motivů) ──── */}
+      <HomeShowcase />
 
       {/* ── Produkty ─────────────────────────────────────────────────── */}
       <section className="container-lumi py-16 lg:py-24">

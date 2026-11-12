@@ -25,6 +25,7 @@ const image = (slug: string) => ({
   image: `/images/lumi-b/kolekce-v2/lumi-2-${slug}-4x3-960.webp`,
   imageSmall: `/images/lumi-b/kolekce-v2/lumi-2-${slug}-4x3-640.webp`,
   productImage: `/images/lumi-b/kolekce-v2/lumi-2-${slug}-produkt-900.webp`,
+  productThumb: `/images/lumi-b/kolekce-v2/lumi-2-${slug}-produkt-200.webp`,
 });
 
 export const COLLECTIONS: CollectionCard[] = [

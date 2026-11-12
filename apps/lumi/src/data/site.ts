@@ -201,16 +201,22 @@ export const SITE = {
   },
   viewer: {
     kicker: { cs: 'Naše eso', en: 'Our ace', de: 'Unser Ass' } satisfies Localized,
-    title: { cs: 'Otočte si lampion ve 3D', en: 'Turn the lantern in 3D', de: 'Drehen Sie die Laterne in 3D' },
+    title: { cs: 'Prohlédněte si lampion ve 3D', en: 'See the lantern in 3D', de: 'Die Laterne in 3D ansehen' },
     text: {
-      cs: 'Skutečný model z výrobní dokumentace. Táhněte pro otočení, kolečkem přiblížíte. Uvidíte, kudy prochází světlo, kde sedí dno a jak vypadá řez zblízka.',
-      en: 'The real model from the production drawings. Drag to rotate, scroll to zoom. See where the light comes through, how the base fits and what the cut looks like up close.',
-      de: 'Das echte Modell aus den Fertigungszeichnungen. Ziehen zum Drehen, scrollen zum Zoomen. Sie sehen, wo das Licht durchfällt, wie der Boden sitzt und wie der Schnitt aus der Nähe aussieht.',
+      cs: 'Model se načte sám, nemusíte na nic klikat. Táhněte pro otočení, kolečkem přiblížíte — a přepněte motiv, uvidíte všech šest sad na stejném kusu.',
+      en: 'The model loads on its own, no click needed. Drag to rotate, scroll to zoom — and switch the motif to see all six sets on the same lantern.',
+      de: 'Das Modell lädt von selbst, kein Klick nötig. Ziehen zum Drehen, scrollen zum Zoomen — und wechseln Sie das Motiv, um alle sechs Sätze auf derselben Laterne zu sehen.',
     } as Localized,
     note: {
-      cs: 'Vizualizační model, ne výrobní podklad. Fyzické lícování a bezpečnost svíčky ověřuje dílna.',
-      en: 'A visualisation model, not production data. Physical fit and candle safety are verified by the workshop.',
-      de: 'Ein Visualisierungsmodell, keine Fertigungsdaten. Passung und Kerzensicherheit prüft die Werkstatt.',
+      cs: 'Vizualizace postavená z výrobních podkladů. Rozhodující je fyzický kus — lícování a bezpečnost svíčky ověřuje dílna.',
+      en: 'A visualisation built from the production files. The physical piece decides — fit and candle safety are verified by the workshop.',
+      de: 'Eine Visualisierung aus den Fertigungsdaten. Entscheidend ist das physische Stück — Passung und Kerzensicherheit prüft die Werkstatt.',
+    } satisfies Localized,
+    motifsLabel: { cs: 'Motiv', en: 'Motif', de: 'Motiv' } satisfies Localized,
+    selectedNote: {
+      cs: 'Vybráno: {name}. Stejná lucerna, jiných šest stěn.',
+      en: 'Selected: {name}. The same lantern with a different six walls.',
+      de: 'Ausgewählt: {name}. Dieselbe Laterne mit anderen sechs Wänden.',
     } satisfies Localized,
   },
   gallery: {
