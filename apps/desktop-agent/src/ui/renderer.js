@@ -5131,12 +5131,8 @@ function setupWalletControls() {
         if (consolidateStatusEl) consolidateStatusEl.textContent = 'Enter the wallet password above first (same field as Send).';
         return;
       }
-      if (!window.confirm('Consolidate UTXOs? This broadcasts self-transactions merging the largest UTXOs (~0.024 ZION fee each, up to ~30 rounds). The wallet stays yours — outputs return to the same address. Continue?')) {
-        return;
-      }
-
       if (consolidateBtn) consolidateBtn.disabled = true;
-      if (consolidateStatusEl) consolidateStatusEl.textContent = 'Fetching UTXOs and broadcasting consolidation rounds…';
+      if (consolidateStatusEl) consolidateStatusEl.textContent = 'Fetching UTXOs — confirm the consolidation dialog when it appears…';
 
       const progressHandler = (p) => {
         if (consolidateStatusEl && p?.round) {

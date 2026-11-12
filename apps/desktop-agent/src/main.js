@@ -8418,6 +8418,49 @@ ipcMain.handle('wallet-consolidate-utxos', async (event, { rpcUrl, address, pass
     }
 
     const inputCap = Math.max(2, UtxoBuilder.maxTxInputs(1, Buffer.byteLength(consMemo, 'utf8')));
+
+    // Estimate the plan up-front (each round removes one disjoint batch of
+    // originals, so the round count is pure arithmetic) — lets the confirm
+    // dialog show real numbers before anything is broadcast.
+    let plannedRounds = 0;
+    let plannedFeeFlowers = 0n;
+    {
+      let availCount = mature.length;
+      while (availCount > targetCount) {
+        const batchLen = Math.min(inputCap, availCount);
+        if (batchLen < 2) break;
+        plannedRounds++;
+        plannedFeeFlowers += UtxoBuilder.minimumFeeForSize(UtxoBuilder.estimateTxSize(batchLen, 2));
+        availCount -= batchLen;
+      }
+    }
+    if (plannedRounds === 0) {
+      return { success: true, broadcast: 0, txIds: [], message: 'Nothing to consolidate — remaining UTXOs are below the batch minimum', skippedImmature: immatureSkipped };
+    }
+
+    // Security: require user confirmation before broadcasting (same native
+    // dialog pattern as wallet-send-transaction — window.confirm is a no-op
+    // in Electron renderers).
+    try {
+      const confirmation = await dialog.showMessageBox(mainWindow || undefined, {
+        type: 'warning',
+        title: 'Consolidate UTXOs',
+        message: `Consolidate ${mature.length} UTXOs?`,
+        detail: `This broadcasts ${plannedRounds} self-transactions that merge the largest UTXOs into single outputs on the same address.\n\nEstimated total fee: ~${(Number(plannedFeeFlowers) / 1e6).toFixed(4)} ZION\nEstimated time to confirm: ~${plannedRounds} blocks (~${plannedRounds} min)\n\nAll funds stay in this wallet — only network fees are spent.`,
+        buttons: ['Consolidate', 'Cancel'],
+        defaultId: 1,
+        cancelId: 1
+      });
+      if (confirmation.response !== 0) {
+        console.log('[MAIN wallet-consolidate-utxos] User cancelled');
+        return { success: false, error: 'Consolidation cancelled by user' };
+      }
+      console.log('[MAIN wallet-consolidate-utxos] User confirmed');
+    } catch (dialogErr) {
+      // If dialog fails (e.g. window not available), proceed anyway
+      console.warn('[MAIN wallet-consolidate-utxos] Dialog failed, proceeding:', dialogErr?.message);
+    }
+
     const spent = new Set(); // "tx_hash:output_index" of batches already broadcast
     const txIds = [];
     let broadcast = 0;
