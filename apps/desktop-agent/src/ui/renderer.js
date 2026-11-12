@@ -5093,7 +5093,7 @@ function setupWalletControls() {
       if (!result?.success) {
         const err = result?.error || 'send failed';
         console.error('[WALLET-SEND] Failed:', err);
-        const hint = err.includes('Insufficient') ? ' (check your balance)' : err.includes('RPC') ? ' (node unreachable — try again)' : '';
+        const hint = err.includes('Insufficient') ? ' (check your balance)' : err.includes('fragmented') ? ' — use "Consolidate UTXOs" below, then retry' : err.includes('RPC') ? ' (node unreachable — try again)' : '';
         if (sendStatusEl) setStatusIcon(sendStatusEl, 'error', `${err}${hint}`);
         return;
       }
@@ -5110,6 +5110,68 @@ function setupWalletControls() {
     } catch (err) {
       console.error('[WALLET-SEND] Unexpected error:', err);
       if (sendStatusEl) setStatusIcon(sendStatusEl, 'error', `Unexpected error: ${err?.message || String(err)}`);
+    }
+  });
+
+  // ── UTXO consolidation (fragmented wallets) ─────────────────────────
+  const consolidateBtn = document.getElementById('consolidate-utxos-btn');
+  const consolidateStatusEl = document.getElementById('consolidate-status');
+
+  consolidateBtn?.addEventListener('click', async () => {
+    if (consolidateStatusEl) consolidateStatusEl.textContent = '';
+    try {
+      const from = getActiveAddress();
+      const password = (document.getElementById('send-wallet-password')?.value || '').toString();
+
+      if (!from || !from.startsWith('zion1')) {
+        if (consolidateStatusEl) consolidateStatusEl.textContent = 'No active wallet — set one in Overview first.';
+        return;
+      }
+      if (!password) {
+        if (consolidateStatusEl) consolidateStatusEl.textContent = 'Enter the wallet password above first (same field as Send).';
+        return;
+      }
+      if (!window.confirm('Consolidate UTXOs? This broadcasts self-transactions merging the largest UTXOs (~0.024 ZION fee each, up to ~30 rounds). The wallet stays yours — outputs return to the same address. Continue?')) {
+        return;
+      }
+
+      if (consolidateBtn) consolidateBtn.disabled = true;
+      if (consolidateStatusEl) consolidateStatusEl.textContent = 'Fetching UTXOs and broadcasting consolidation rounds…';
+
+      const progressHandler = (p) => {
+        if (consolidateStatusEl && p?.round) {
+          consolidateStatusEl.textContent = `Round ${p.round}: tx ${String(p.txId || '').slice(0, 12)}… (${p.inputs} inputs → ${Number(p.outputZion || 0).toFixed(2)} ZION)`;
+        }
+      };
+      window.electronAPI?.removeAllListeners?.('wallet-consolidate-progress');
+      window.electronAPI?.onWalletConsolidateProgress?.(progressHandler);
+
+      const result = await window.electronAPI.walletConsolidateUtxos({
+        rpcUrl: getRpcUrl(),
+        address: from,
+        password,
+        rounds: 30,
+        targetUtxos: 200
+      });
+
+      if (!result?.success) {
+        const err = result?.error || 'consolidation failed';
+        const partial = result?.broadcast ? ` (${result.broadcast} round(s) already broadcast)` : '';
+        if (consolidateStatusEl) consolidateStatusEl.textContent = `Failed: ${err}${partial}`;
+        return;
+      }
+
+      if (consolidateStatusEl) {
+        consolidateStatusEl.textContent = result.broadcast > 0
+          ? `${result.message || 'Done'} — ~${result.remainingEstimate} UTXOs after confirmations. Retry your send once blocks confirm (~1 min each).`
+          : (result.message || 'Nothing to consolidate.');
+      }
+      setTimeout(refreshSendFrom, 3000);
+    } catch (err) {
+      console.error('[WALLET-CONSOLIDATE] Unexpected error:', err);
+      if (consolidateStatusEl) consolidateStatusEl.textContent = `Unexpected error: ${err?.message || String(err)}`;
+    } finally {
+      if (consolidateBtn) consolidateBtn.disabled = false;
     }
   });
 
