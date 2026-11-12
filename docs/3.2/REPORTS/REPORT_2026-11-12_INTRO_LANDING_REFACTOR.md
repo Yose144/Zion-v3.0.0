@@ -1,7 +1,8 @@
 # IntroPage — sjednocení, responsivita a výkon (2026-11-12)
 
 **Rozsah:** `apps/IntroPage` (apex `zionterranova.com`), landing page + sdílený
-layout. **Nenasazeno** — deploy na EDGE2 je samostatný krok operátora.
+layout. **NASAZENO na EDGE2 12. 11. 2026 02:00 UTC** (`deploy/deploy-intro.sh`,
+nginx reload; záloha `/opt/zion/archive/zion-maintenance-pre-intro-20261112T005641Z.tar.gz`, 343 MB).
 
 ## 1. Výchozí stav (měřeno na produkci 11. 11. 2026)
 
@@ -118,6 +119,26 @@ Strukturální problémy:
 - Tailwind je v projektu dostupný, landing používá plain classy (injektované
   HTML + React komponenty sdílí jednu slovní zásobu).
 - Deployment (`deploy/deploy-intro.sh`) neproveden.
+
+## 3b. Nasazení a živé ověření
+
+- `deploy-intro.sh` → rsync do `/var/www/zion-maintenance` + `nginx -t` +
+  reload; smazalo 32 souborů (staré Next chunky a nahrazené assety), nic
+  neočekávaného. `vast-rigs/status.json` (live z vastctl daemonu) zůstal
+  netknutý, exkluze v deploy skriptu funguje.
+- **Živě naměřeno (gzip, `scripts/audit-layout.mjs`):** mobil/tablet **659 KB /
+  23 requestů**, desktop se 3D scénou **940 KB / 27 requestů**, HTML 23,6 KB,
+  0 horizontálního přesahu, 0 chyb v konzoli. Před: 5,75 MB raw / 48 requestů
+  (z toho 1,8 MB JS/CSS/HTML, které se gzipem smrsknou na ~0,5 MB → reálný
+  rozdíl je cca 4,4 MB → 0,66 MB).
+- **`verify-landing.mjs` proti produkci: 24/24** (kotvy, sekce, i18n EN → reload
+  → CZ, dropdown, reduced-motion, tap → scéna, obsah bez JS, 0 chyb).
+- Assety: `stargate/z-mark.webp` 3,2 KB, `symbol-200x200.webp` 21 KB,
+  `glyph-transparent.webp` 16 KB, `i18n/en.json` 4,3 KB gz, `market-open.webp`
+  112 KB — vše 200; `Z.gif`, `jquery.min.js`, původní textury → 404.
+- CSS gz: main 6,7 + stargate 24,4 + rasta 11,4 = **42,5 KB**; vlastní JS gz:
+  main 1,3 + intro-tabs 2,9 + starfield 3,3 = **7,5 KB**.
+- Routy `/amenti/ /blog/ /camp/ /seeds/ /Vzestup/ /evoluzion/ /vast-rigs/` 200.
 
 ## 4. Poznámka ke commitu
 
