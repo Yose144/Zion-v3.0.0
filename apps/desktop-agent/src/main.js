@@ -8446,7 +8446,7 @@ ipcMain.handle('wallet-consolidate-utxos', async (event, { rpcUrl, address, pass
         type: 'warning',
         title: 'Consolidate UTXOs',
         message: `Consolidate ${mature.length} UTXOs?`,
-        detail: `This broadcasts ${plannedRounds} self-transactions that merge the largest UTXOs into single outputs on the same address.\n\nEstimated total fee: ~${(Number(plannedFeeFlowers) / 1e6).toFixed(4)} ZION\nEstimated time to confirm: ~${plannedRounds} blocks (~${plannedRounds} min)\n\nAll funds stay in this wallet — only network fees are spent.`,
+        detail: `This broadcasts ${plannedRounds} self-transactions that merge the largest UTXOs into single outputs on the same address.\n\nEstimated total fee: ~${(Number(plannedFeeFlowers) / 1e6).toFixed(4)} ZION\nEstimated time to confirm: ~${Math.max(1, Math.ceil(plannedRounds / 10))} blocks (~${Math.max(1, Math.ceil(plannedRounds / 10)) * 2} min)\n\nAll funds stay in this wallet — only network fees are spent.`,
         buttons: ['Consolidate', 'Cancel'],
         defaultId: 1,
         cancelId: 1
