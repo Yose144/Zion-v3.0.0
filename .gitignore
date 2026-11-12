@@ -499,3 +499,6 @@ canon/Kralovstvi_srdce_Zion_CZ_EN_FR_ES_PT/
 # Next.js si při `next dev` generuje vlastní AGENTS.md do appky
 # (node_modules/next/dist/server/lib/generate-agent-files.js) — necommitovat.
 apps/MarketPlace/AGENTS.md
+
+# Nový workspace 3.3 — samostatný git repo (Zion-3.3Nirvana), necommitovat sem
+/3.3.0/
