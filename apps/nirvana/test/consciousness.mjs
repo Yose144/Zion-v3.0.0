@@ -181,7 +181,13 @@ function profile(patch = {}) {
   const same = dailyDharmaGoal(date);
   check('cíl je deterministický', JSON.stringify(same) === JSON.stringify(dailyDharmaGoal(date)));
   check('cíl má hru a odměnu', Boolean(same.game) && same.reward > 0);
-  check('cíl se liší od denní výzvy', dailyChallenge(date).game !== undefined);
+  // přes rok se hra dharma cíle nikdy nesmí shodovat s denní výzvou
+  let collisions = 0;
+  for (let i = 0; i < 365; i += 1) {
+    const day = new Date(date.getTime() + i * 86_400_000);
+    if (dailyChallenge(day).game === dailyDharmaGoal(day).game) collisions += 1;
+  }
+  check('dharma cíl nikdy nepadne na hru výzvy', collisions === 0, `${collisions} kolizí/365`);
   check('den v klíči', same.day === '2026-11-11', same.day);
 
   const empty = profile();

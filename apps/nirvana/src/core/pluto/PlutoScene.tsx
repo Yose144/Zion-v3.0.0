@@ -17,7 +17,7 @@ import * as THREE from 'three';
 import { dampFactor } from '@/core/design/motion';
 import { isGamePaused } from '@/core/games/pause';
 import { play } from '@/core/audio/engine';
-import { LAMP_COUNT, LAMPS, SHUTTLE, WARMTH_MAX } from './world';
+import { LAMP_COUNT, LAMPS, SHUTTLE } from './world';
 import {
   createLight,
   nearestWarm,

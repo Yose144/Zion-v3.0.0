@@ -177,6 +177,12 @@ try {
   const boardCols = await page.locator('.park-board-col em').allTextContents();
   check('tabule má sloupec Merkur souboj', boardCols.some((t) => /Merkur/i.test(t)), boardCols.join(', '));
   check('tabule má sloupec Asteroidy', boardCols.some((t) => /Asteroid/i.test(t)), boardCols.join(', '));
+  // Regrese 12. 11.: pouť měla vlastní seznam názvů a chyběly v něm Neptun,
+  // Pluto a Flotila — jejich skóre se na tabuli vůbec neukázalo.
+  check('tabule má sloupec Neptun', boardCols.some((t) => /Neptun/i.test(t)), boardCols.join(', '));
+  check('tabule má sloupec Pluto', boardCols.some((t) => /Pluto/i.test(t)), boardCols.join(', '));
+  check('tabule má sloupec Flotila', boardCols.some((t) => /Flotil|Fleet/i.test(t)), boardCols.join(', '));
+  check('tabule má všechny hry (17)', boardCols.length === 17, String(boardCols.length));
   const asteroidCard = await page.locator('.park-games button', { hasText: /Asteroid/i }).first().textContent();
   check('skříň ukazuje rekord ze profilu', /rekord 123/i.test(asteroidCard ?? ''), (asteroidCard ?? '').trim());
 

@@ -84,25 +84,32 @@ export function useScores(): ScoresState {
   return { scores, loading, refresh };
 }
 
-/** Názvy her — jedno místo pro celou appku (HUD, tabule, hlášky). */
-export const GAME_TITLES: Record<ParkGameId, { cs: string; en: string; glyph: string }> = {
+/**
+ * Názvy her — jedno místo pro celou appku (HUD, tabule, pouť, hlášky).
+ *
+ * ⚠️ `app/park/page.tsx` měl do 12. 11. **vlastní kopii** tohoto seznamu
+ * a chyběly v ní Neptun, Pluto a Flotila — na pouti se pak jejich skóre
+ * vůbec neukázalo a denní dharma cíl u nich vypsal syrové id. Kdo přidá
+ * hru, přidá ji sem; nikde jinde se seznam neopisuje.
+ */
+export const GAME_TITLES: Record<ParkGameId, { cs: string; en: string; glyph: string; es?: string }> = {
   pong: { cs: 'Pong', en: 'Pong', glyph: '🏓' },
   breakout: { cs: 'Breakout', en: 'Breakout', glyph: '🧱' },
-  snake: { cs: 'Had', en: 'Snake', glyph: '🐍' },
+  snake: { cs: 'Had', en: 'Snake', es: 'Serpiente', glyph: '🐍' },
   tetris: { cs: 'Tetris', en: 'Tetris', glyph: '🧩' },
-  asteroids: { cs: 'Asteroidy', en: 'Asteroids', glyph: '☄️' },
-  tower: { cs: 'Věž', en: 'Tower', glyph: '🧱' },
-  gallery: { cs: 'Střelnice', en: 'Gallery', glyph: '🎯' },
-  arena: { cs: 'Mars aréna', en: 'Mars arena', glyph: '🔫' },
-  race: { cs: 'Venuše okruh', en: 'Venus circuit', glyph: '🏁' },
-  fight: { cs: 'Merkur souboj', en: 'Mercury duel', glyph: '⚔' },
-  moba: { cs: 'První svět', en: 'First world', glyph: '🌍' },
-  tanks: { cs: 'Saturn tanky', en: 'Saturn tanks', glyph: '🛡' },
+  asteroids: { cs: 'Asteroidy', en: 'Asteroids', es: 'Asteroides', glyph: '☄️' },
+  tower: { cs: 'Věž', en: 'Tower', es: 'Torre', glyph: '🧱' },
+  gallery: { cs: 'Střelnice', en: 'Gallery', es: 'Galería', glyph: '🎯' },
+  arena: { cs: 'Mars aréna', en: 'Mars arena', es: 'Arena de Marte', glyph: '🔫' },
+  race: { cs: 'Venuše okruh', en: 'Venus circuit', es: 'Circuito de Venus', glyph: '🏁' },
+  fight: { cs: 'Merkur souboj', en: 'Mercury duel', es: 'Duelo de Mercurio', glyph: '⚔' },
+  moba: { cs: 'První svět', en: 'First world', es: 'Primer Mundo', glyph: '🌍' },
+  tanks: { cs: 'Saturn tanky', en: 'Saturn tanks', es: 'Tanques de Saturno', glyph: '🛡' },
   lumi: { cs: 'Lumi', en: 'Lumi', glyph: '🏮' },
-  piko: { cs: 'Te Pīko Ora', en: 'Te Pīko Ora', glyph: '🛶' },
-  neptune: { cs: 'Neptun — Hlubina', en: 'Neptune — The Deep', glyph: '🌊' },
-  pluto: { cs: 'Pluto — Srdce na okraji', en: 'Pluto — The Heart at the Edge', glyph: '💠' },
-  fleet: { cs: 'Flotila', en: 'Fleet', glyph: '🚀' },
+  piko: { cs: 'Te Pīko Ora', en: 'Te Pīko Ora', es: 'Te Pīko Ora', glyph: '🛶' },
+  neptune: { cs: 'Neptun — Hlubina', en: 'Neptune — The Deep', es: 'Neptuno — La Profundidad', glyph: '🌊' },
+  pluto: { cs: 'Pluto — Srdce na okraji', en: 'Pluto — The Heart at the Edge', es: 'Plutón — El Corazón', glyph: '💠' },
+  fleet: { cs: 'Flotila', en: 'Fleet', es: 'Flota', glyph: '🚀' },
 };
 
 /** Pořadí, v jakém se hry ukazují v žebříčcích (od nejhranějších). */

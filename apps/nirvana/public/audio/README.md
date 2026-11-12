@@ -6,6 +6,15 @@ Drop a track here and the matching scene player picks it up automatically.
 | --- | --- | --- |
 | `matrix.mp3` | MATRIX (lunar base + glass hall) | `SceneSoundToggle` in `apps/nirvana/src/core/shell/SceneSoundToggle.tsx` |
 
-The button stays in the "zvuk se připravuje" state while the file is missing, so the
-player can ship before the audio does. Playback always starts from a user gesture
-(browser autoplay policy) and loops with a short fade in/out.
+## Jak to funguje (od 12. 11. 2026)
+
+Přehrávač **neposílá při načtení stránky žádný request** — zkusí track
+přehrát až při prvním kliknutí na „♪ zvuk". Když soubor chybí
+(404) nebo formát nehraje, přepne se na syntetizovanou ambienci
+(`core/shell/ambience.ts`) a tlačítko zůstane funkční.
+
+Dřív se posílal `HEAD /audio/<slug>.mp3` na každé scéně; soubory
+neexistují, takže všech 13 prezentací vyrobilo 404 v konzoli.
+
+Přehrávání vždy začíná gestem (autoplay policy prohlížeče) a smyčkuje
+s krátkým fade in/out.

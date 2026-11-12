@@ -17,7 +17,7 @@ import { tx, useI18n } from '@/core/i18n';
 import { PLUTO_COPY, type PlutoCopyKey } from '@/core/pluto/copy';
 import { PlutoScene, type PlutoStats } from '@/core/pluto/PlutoScene';
 import { PlutoMinimap } from '@/core/pluto/PlutoMinimap';
-import { COMPLETE_BONUS, LAMP_SCORE, LAMPS, WARMTH_MAX, WARMTH_SCORE } from '@/core/pluto/world';
+import { COMPLETE_BONUS, LAMP_SCORE, LAMPS, LIGHT_TIME, WARMTH_MAX, WARMTH_SCORE } from '@/core/pluto/world';
 import type { LightResult } from '@/core/pluto/light';
 import { OUTER_WORLDS } from '@/core/outer/worlds';
 import { describeRun, nickname as pickNickname, recordRun } from '@/core/progress/run';
@@ -144,7 +144,8 @@ export default function PlutoPage() {
   // kompas: 0° = nahoru (sever), 90° = vpravo
   const compass = (Math.atan2(stats.nextDx ?? 0, -(stats.nextDz ?? -1)) * 180) / Math.PI;
   const warmRatio = Math.max(0, Math.min(100, (stats.warmth / WARMTH_MAX) * 100));
-  const channelRatio = stats.channelId ? Math.min(1, stats.channel / 1.5) : 0;
+  // `LIGHT_TIME` je jediný zdroj délky zapalování — zkopírované 1,5 by se rozešlo
+  const channelRatio = stats.channelId ? Math.min(1, stats.channel / LIGHT_TIME) : 0;
 
   return (
     <main className="arena pluto">
@@ -286,8 +287,8 @@ export default function PlutoPage() {
                 <button type="button" className="park-btn" onClick={start}>
                   {l('start')}
                 </button>
-                <Link href="/uranus" className="arena-link">
-                  {l('backArchive')}
+                <Link href="/neptune" className="arena-link">
+                  ← {l('backArchive')}
                 </Link>
                 <Link href="/" className="arena-link">
                   {l('backUniverse')}

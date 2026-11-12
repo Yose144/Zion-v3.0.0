@@ -10898,7 +10898,6 @@ a.game-hud-chip.is-lumi em {
   box-shadow: 0 0 8px var(--deck, #2f6bd8);
 }
 
-.neptune-facts,
 .planet-facts {
   padding: 0.6rem 0.7rem;
   border-radius: 0.7rem;
@@ -10906,7 +10905,6 @@ a.game-hud-chip.is-lumi em {
   background: rgba(6, 14, 32, 0.6);
 }
 
-.neptune-facts-title,
 .planet-facts-title {
   margin: 0;
   font-size: 0.62rem;
@@ -10915,7 +10913,6 @@ a.game-hud-chip.is-lumi em {
   color: rgba(159, 244, 255, 0.72);
 }
 
-.neptune-facts dl,
 .planet-facts dl {
   margin: 0.45rem 0 0;
   display: grid;
@@ -10923,14 +10920,12 @@ a.game-hud-chip.is-lumi em {
   gap: 0.4rem 0.8rem;
 }
 
-.neptune-facts dl div,
 .planet-facts dl div {
   display: flex;
   flex-direction: column;
   gap: 0.05rem;
 }
 
-.neptune-facts dt,
 .planet-facts dt {
   font-size: 0.58rem;
   letter-spacing: 0.1em;
@@ -10938,7 +10933,6 @@ a.game-hud-chip.is-lumi em {
   color: rgba(159, 244, 255, 0.66);
 }
 
-.neptune-facts dd,
 .planet-facts dd {
   margin: 0;
   font-size: 0.76rem;
@@ -10946,7 +10940,6 @@ a.game-hud-chip.is-lumi em {
   font-variant-numeric: tabular-nums;
 }
 
-.neptune-facts-note,
 .planet-facts-note {
   margin: 0.5rem 0 0;
   font-size: 0.62rem;
@@ -10979,8 +10972,7 @@ a.game-hud-chip.is-lumi em {
 }
 
 @media (max-width: 760px) {
-  .neptune-facts dl,
-.planet-facts dl {
+  .planet-facts dl {
     grid-template-columns: 1fr;
   }
 }

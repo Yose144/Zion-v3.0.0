@@ -118,9 +118,10 @@ export function claimChallenge(
 }
 
 /* ── denní dharma cíl ─────────────────────────────────────────────────
- * Druhá polovinа dne: výzva chce **skóre**, dharma cíl chce **pečeť**
- * (tedy čistý běh — čas, cíl, světla, žádné pády). Stejná hra jako výzva
- * by oba cíle slila do jednoho, proto se losuje s jiným solí.
+ * Druhá polovina dne: výzva chce **skóre**, dharma cíl chce **pečeť**
+ * (čistý běh — čas, cíl, světla, žádné pády). Hra se losuje z **jiné
+ * soli** a **vynechává se hra denní výzvy**, aby jeden běh nesplnil oba
+ * cíle naráz (před 12. 11. se to dělo v ~7 % dní).
  */
 
 export const DHARMA_GOAL_REWARD = 3;
@@ -134,7 +135,9 @@ export interface DharmaGoal {
 export function dailyDharmaGoal(date = new Date()): DharmaGoal {
   const day = dayKey(date);
   const seed = hash(`dharma:${day}`);
-  const game = CHALLENGE_GAMES[seed % CHALLENGE_GAMES.length]!;
+  const challenge = dailyChallenge(date);
+  const pool = CHALLENGE_GAMES.filter((game) => game !== challenge.game);
+  const game = pool[seed % pool.length]!;
   return { day, game, reward: DHARMA_GOAL_REWARD };
 }
 

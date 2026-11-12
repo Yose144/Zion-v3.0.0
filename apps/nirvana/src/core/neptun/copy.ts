@@ -22,7 +22,7 @@ export const NEPTUN_COPY = {
   again: { cs: 'Znovu', en: 'Again', es: 'Otra vez' },
   menu: { cs: 'Menu', en: 'Menu', es: 'Menú' },
   backUniverse: { cs: 'Nirvana', en: 'Nirvana', es: 'Nirvana' },
-  backArchive: { cs: 'Dosier planety', en: 'Planet dossier', es: 'Dosier del planeta' },
+  backArchive: { cs: 'Uran — archiv', en: 'Uranus — the archive', es: 'Urano — el archivo' },
 
   // ── ovládání ────────────────────────────────────────────────────────
   keysTitle: { cs: 'Ovládání', en: 'Controls', es: 'Controles' },

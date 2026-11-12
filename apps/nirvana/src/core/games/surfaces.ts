@@ -118,4 +118,19 @@ export const CONTROLS: Record<string, { cs: string; en: string; es?: string; pt?
     pt: 'clica numa figura · depois Guardar',
     fr: 'clique une figure · puis Enregistrer',
   },
+  // Chyběly do 12. 11. — na Lumi a Uranu se pak v liště neukázala nápověda.
+  '/lumi': {
+    cs: 'W/↑ stoupat · A/D/S letět · myš nebo pohled = směr · lucerna je energie',
+    en: 'W/↑ rise · A/D/S fly · mouse or gaze steers · the lantern is energy',
+    es: 'W/↑ subir · A/D/S volar · ratón o mirada guían · el farol es energía',
+    pt: 'W/↑ subir · A/D/S voar · rato ou olhar guiam · a lanterna é energia',
+    fr: 'W/↑ monter · A/D/S voler · souris ou regard guident · la lanterne est l’énergie',
+  },
+  '/uranus': {
+    cs: 'tažení myší = orbita · Lumi je hra, archiv je klid',
+    en: 'drag = orbit · Lumi is the game, the archive is calm',
+    es: 'arrastrar = órbita · Lumi es el juego, el archivo es calma',
+    pt: 'arrastar = órbita · Lumi é o jogo, o arquivo é calma',
+    fr: 'glisser = orbite · Lumi est le jeu, l’archive est le calme',
+  },
 };

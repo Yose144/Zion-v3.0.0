@@ -21,7 +21,7 @@ export const PLUTO_COPY = {
   again: { cs: 'Znovu', en: 'Again', es: 'Otra vez' },
   menu: { cs: 'Menu', en: 'Menu', es: 'Menú' },
   backUniverse: { cs: 'Nirvana', en: 'Nirvana', es: 'Nirvana' },
-  backArchive: { cs: 'Dosier planety', en: 'Planet dossier', es: 'Dosier del planeta' },
+  backArchive: { cs: 'Neptun — Hlubina', en: 'Neptune — The Deep', es: 'Neptuno — La Profundidad' },
 
   // ── ovládání ────────────────────────────────────────────────────────
   keysTitle: { cs: 'Ovládání', en: 'Controls', es: 'Controles' },

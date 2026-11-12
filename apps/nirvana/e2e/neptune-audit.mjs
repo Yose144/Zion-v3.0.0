@@ -75,7 +75,7 @@ async function main() {
   const menu = await page.evaluate(() => ({
     title: document.querySelector('.neptune-panel header strong')?.textContent ?? '',
     decks: document.querySelectorAll('.neptune-deck').length,
-    facts: document.querySelectorAll('.neptune-facts dd').length,
+    facts: document.querySelectorAll('.planet-facts dd').length,
     keys: document.querySelectorAll('.arena-keys li').length,
     start: document.querySelector('.arena-actions .park-btn')?.textContent ?? '',
     docked: Array.from(document.querySelectorAll('a')).some((a) => a.getAttribute('href') === '/neptune'),

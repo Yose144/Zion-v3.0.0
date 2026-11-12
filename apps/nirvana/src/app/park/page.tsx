@@ -23,6 +23,7 @@ import {
 import { dailyChallenge, dailyDharmaGoal, type DailyChallenge } from '@/core/park/challenge';
 import { describeRun, recordRun as recordGameRun } from '@/core/progress/run';
 import { emptyScores, type ParkScores } from '@/core/park/scores';
+import { GAME_ORDER, GAME_TITLES } from '@/core/progress/boards';
 import { GALLERY_SECONDS } from '@/core/scene/park/ShootingGallery';
 import { TouchButton } from '@/core/games/TouchPad';
 import { canvasDpr } from '@/core/design/dpr';
@@ -41,23 +42,14 @@ import { isGamePaused } from '@/core/games/pause';
  */
 
 /** Názvy všech her, které mají skóre — canvas, 3D i hry mimo park. */
-const TITLES: { id: ParkGameId; title: { cs: string; en: string; es?: string } }[] = [
-  ...PARK_GAMES.map((game) => ({ id: game.id as ParkGameId, title: game.title })),
-  { id: 'gallery', title: { cs: 'Střelnice', en: 'Gallery', es: 'Galería' } },
-  { id: 'arena', title: { cs: 'Mars aréna', en: 'Mars arena', es: 'Arena de Marte' } },
-  { id: 'race', title: { cs: 'Venuše okruh', en: 'Venus circuit', es: 'Circuito de Venus' } },
-  { id: 'fight', title: { cs: 'Merkur souboj', en: 'Mercury duel', es: 'Duelo de Mercurio' } },
-  { id: 'moba', title: { cs: 'První svět', en: 'First World', es: 'Primer Mundo' } },
-  { id: 'tanks', title: { cs: 'Saturn tanky', en: 'Saturn tanks', es: 'Tanques de Saturno' } },
-  { id: 'lumi', title: { cs: 'Lumi', en: 'Lumi' } },
-  { id: 'piko', title: { cs: 'Te Pīko Ora', en: 'Te Pīko Ora', es: 'Te Pīko Ora' } },
-];
-
-const BOARD = TITLES;
+/**
+ * Názvy her bereme z `progress/boards.ts` — dřív tu byla vlastní kopie
+ * a chyběly v ní Neptun, Pluto a Flotila (skóre se na pouti neukázalo).
+ */
+const BOARD = GAME_ORDER.map((id) => ({ id, title: GAME_TITLES[id] }));
 
 function titleOf(id: ParkGameId, lang: 'cs' | 'en' | 'es' | 'pt' | 'fr'): string {
-  const entry = TITLES.find((row) => row.id === id);
-  return entry ? tx(entry.title, lang) : id;
+  return tx(GAME_TITLES[id], lang);
 }
 
 const RIDE_SECONDS = 25; // jedna otočka kola při jízdě
@@ -337,9 +329,13 @@ export default function ParkPage() {
     setGalleryScore(0);
     setGalleryTime(GALLERY_SECONDS);
     setGallery(true);
+    // Střelnice je 3D hra, ne canvas — `startGame` ji neprochází, takže čas
+    // startu se musí nastavit tady. Bez toho se do dharma validátoru poslal
+    // čas z předchozí hry (nebo žádný) a pilíř Kāla lhal.
+    startedAt.current = Date.now();
     play('open');
     setNotice(l('galleryStart'));
-  }, [cs, stopGame]);
+  }, [cs, l, stopGame]);
 
   const endGallery = useCallback(
     (value: number) => {

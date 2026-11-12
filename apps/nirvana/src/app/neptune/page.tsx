@@ -297,7 +297,7 @@ export default function NeptunePage() {
                   {l('start')}
                 </button>
                 <Link href="/uranus" className="arena-link">
-                  {l('backArchive')}
+                  ← {l('backArchive')}
                 </Link>
                 <Link href="/" className="arena-link">
                   {l('backUniverse')}
