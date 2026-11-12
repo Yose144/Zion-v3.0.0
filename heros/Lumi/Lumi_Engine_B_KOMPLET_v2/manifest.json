@@ -1,0 +1,80 @@
+[
+  {
+    "slug": "prirodni",
+    "nazev": "Přírodní",
+    "alt": "Lucerna Lumi 2, přírodní kolekce, ilustrace Engine B.",
+    "soubory": {
+      "lumi_4x3-960": "lumi/lumi-2-prirodni-4x3-960.webp",
+      "lumi_4x3-640": "lumi/lumi-2-prirodni-4x3-640.webp",
+      "lumi_produkt-900": "lumi/lumi-2-prirodni-produkt-900.webp",
+      "market_karta-900": "market/lumi-2-prirodni-karta-900.webp",
+      "market_banner-1440": "market/lumi-2-prirodni-banner-1440.webp",
+      "market_banner-960": "market/lumi-2-prirodni-banner-960.webp"
+    }
+  },
+  {
+    "slug": "svatebni",
+    "nazev": "Svatební",
+    "alt": "Lucerna Lumi 2, svatební kolekce, ilustrace Engine B.",
+    "soubory": {
+      "lumi_4x3-960": "lumi/lumi-2-svatebni-4x3-960.webp",
+      "lumi_4x3-640": "lumi/lumi-2-svatebni-4x3-640.webp",
+      "lumi_produkt-900": "lumi/lumi-2-svatebni-produkt-900.webp",
+      "market_karta-900": "market/lumi-2-svatebni-karta-900.webp",
+      "market_banner-1440": "market/lumi-2-svatebni-banner-1440.webp",
+      "market_banner-960": "market/lumi-2-svatebni-banner-960.webp"
+    }
+  },
+  {
+    "slug": "kvetinove",
+    "nazev": "Květinová",
+    "alt": "Lucerna Lumi 2, květinová kolekce, ilustrace Engine B.",
+    "soubory": {
+      "lumi_4x3-960": "lumi/lumi-2-kvetinove-4x3-960.webp",
+      "lumi_4x3-640": "lumi/lumi-2-kvetinove-4x3-640.webp",
+      "lumi_produkt-900": "lumi/lumi-2-kvetinove-produkt-900.webp",
+      "market_karta-900": "market/lumi-2-kvetinove-karta-900.webp",
+      "market_banner-1440": "market/lumi-2-kvetinove-banner-1440.webp",
+      "market_banner-960": "market/lumi-2-kvetinove-banner-960.webp"
+    }
+  },
+  {
+    "slug": "oceanske",
+    "nazev": "Oceánská",
+    "alt": "Lucerna Lumi 2, oceánská kolekce, ilustrace Engine B.",
+    "soubory": {
+      "lumi_4x3-960": "lumi/lumi-2-oceanske-4x3-960.webp",
+      "lumi_4x3-640": "lumi/lumi-2-oceanske-4x3-640.webp",
+      "lumi_produkt-900": "lumi/lumi-2-oceanske-produkt-900.webp",
+      "market_karta-900": "market/lumi-2-oceanske-karta-900.webp",
+      "market_banner-1440": "market/lumi-2-oceanske-banner-1440.webp",
+      "market_banner-960": "market/lumi-2-oceanske-banner-960.webp"
+    }
+  },
+  {
+    "slug": "vesmirne",
+    "nazev": "Vesmírná",
+    "alt": "Lucerna Lumi 2, vesmírná kolekce, ilustrace Engine B.",
+    "soubory": {
+      "lumi_4x3-960": "lumi/lumi-2-vesmirne-4x3-960.webp",
+      "lumi_4x3-640": "lumi/lumi-2-vesmirne-4x3-640.webp",
+      "lumi_produkt-900": "lumi/lumi-2-vesmirne-produkt-900.webp",
+      "market_karta-900": "market/lumi-2-vesmirne-karta-900.webp",
+      "market_banner-1440": "market/lumi-2-vesmirne-banner-1440.webp",
+      "market_banner-960": "market/lumi-2-vesmirne-banner-960.webp"
+    }
+  },
+  {
+    "slug": "vanocni",
+    "nazev": "Vánoční",
+    "alt": "Lucerna Lumi 2, vánoční kolekce, ilustrace Engine B.",
+    "soubory": {
+      "lumi_4x3-960": "lumi/lumi-2-vanocni-4x3-960.webp",
+      "lumi_4x3-640": "lumi/lumi-2-vanocni-4x3-640.webp",
+      "lumi_produkt-900": "lumi/lumi-2-vanocni-produkt-900.webp",
+      "market_karta-900": "market/lumi-2-vanocni-karta-900.webp",
+      "market_banner-1440": "market/lumi-2-vanocni-banner-1440.webp",
+      "market_banner-960": "market/lumi-2-vanocni-banner-960.webp"
+    }
+  }
+]

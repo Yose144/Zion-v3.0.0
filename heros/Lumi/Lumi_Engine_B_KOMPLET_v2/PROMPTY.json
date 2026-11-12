@@ -1,0 +1,43 @@
+[
+  {
+    "slug": "prirodni",
+    "motifs": "mountains with river on left/front and butterfly on right",
+    "path": "/workspace/scratch/5043f34ec24c/generated_images/exec-c09abe56-0192-4fd5-8813-9ddc8362ab67.png",
+    "prompt": "Precise product variant edit. FIRST image is the LOCKED master scene. Keep its exact 4:3 framing, camera angle, product scale and position, mug, linen cloth, table, window, valley, foliage, colors, brushwork and warm lighting IDENTICAL. Only replace the laser-cut silhouettes in the two visible lantern walls with the corresponding motifs in image2. Preserve hexagonal lantern geometry and decorated top ring with large circular open hole, thin plywood, equal narrow panel borders. Render the pattern as actual cut-through holes with amber light inside, not printed drawing. Keep old background season unchanged even for Christmas. No additional decorations, no people, no text, no borders. Same painterly Engine B style as first reference. Requested visible panel motifs: mountains with river on left/front and butterfly on right"
+  },
+  {
+    "slug": "svatebni",
+    "motifs": "intertwined rings on left/front and two doves on right",
+    "path": "/workspace/scratch/5043f34ec24c/generated_images/exec-954cb0ab-536e-4352-9121-e49040ba68db.png",
+    "prompt": "Precise product variant edit. FIRST image is the LOCKED master scene. Keep its exact 4:3 framing, camera angle, product scale and position, mug, linen cloth, table, window, valley, foliage, colors, brushwork and warm lighting IDENTICAL. Only replace the laser-cut silhouettes in the two visible lantern walls with the corresponding motifs in image2. Preserve hexagonal lantern geometry and decorated top ring with large circular open hole, thin plywood, equal narrow panel borders. Render the pattern as actual cut-through holes with amber light inside, not printed drawing. Keep old background season unchanged even for Christmas. No additional decorations, no people, no text, no borders. Same painterly Engine B style as first reference. Requested visible panel motifs: intertwined rings on left/front and two doves on right"
+  },
+  {
+    "slug": "kvetinove",
+    "motifs": "sunflower on left/front and roses on right",
+    "path": "/workspace/scratch/5043f34ec24c/generated_images/exec-4561a274-cfc9-42a5-92d2-0f3e703bd515.png",
+    "prompt": "Precise product variant edit. FIRST image is the LOCKED master scene. Keep its exact 4:3 framing, camera angle, product scale and position, mug, linen cloth, table, window, valley, foliage, colors, brushwork and warm lighting IDENTICAL. Only replace the laser-cut silhouettes in the two visible lantern walls with the corresponding motifs in image2. Preserve hexagonal lantern geometry and decorated top ring with large circular open hole, thin plywood, equal narrow panel borders. Render the pattern as actual cut-through holes with amber light inside, not printed drawing. Keep old background season unchanged even for Christmas. No additional decorations, no people, no text, no borders. Same painterly Engine B style as first reference. Requested visible panel motifs: sunflower on left/front and roses on right"
+  },
+  {
+    "slug": "oceanske",
+    "motifs": "sea turtle on left/front and dolphin on right",
+    "path": "/workspace/scratch/5043f34ec24c/generated_images/exec-f1465ecc-577e-46c5-bfab-da86430fb0af.png",
+    "prompt": "Precise product variant edit. FIRST image is the LOCKED master scene. Keep its exact 4:3 framing, camera angle, product scale and position, mug, linen cloth, table, window, valley, foliage, colors, brushwork and warm lighting IDENTICAL. Only replace the laser-cut silhouettes in the two visible lantern walls with the corresponding motifs in image2. Preserve hexagonal lantern geometry and decorated top ring with large circular open hole, thin plywood, equal narrow panel borders. Render the pattern as actual cut-through holes with amber light inside, not printed drawing. Keep old background season unchanged even for Christmas. No additional decorations, no people, no text, no borders. Same painterly Engine B style as first reference. Requested visible panel motifs: sea turtle on left/front and dolphin on right"
+  },
+  {
+    "slug": "vesmirne",
+    "motifs": "Saturn on left/front and spiral galaxy on right",
+    "path": "/workspace/scratch/5043f34ec24c/generated_images/exec-9fb6e61c-5e4a-4ef4-8c29-992392a6f61e.png",
+    "prompt": "Precise product variant edit. FIRST image is the LOCKED master scene. Keep its exact 4:3 framing, camera angle, product scale and position, mug, linen cloth, table, window, valley, foliage, colors, brushwork and warm lighting IDENTICAL. Only replace the laser-cut silhouettes in the two visible lantern walls with the corresponding motifs in image2. Preserve hexagonal lantern geometry and decorated top ring with large circular open hole, thin plywood, equal narrow panel borders. Render the pattern as actual cut-through holes with amber light inside, not printed drawing. Keep old background season unchanged even for Christmas. No additional decorations, no people, no text, no borders. Same painterly Engine B style as first reference. Requested visible panel motifs: Saturn on left/front and spiral galaxy on right"
+  },
+  {
+    "slug": "vanocni",
+    "motifs": "Nativity Mary Joseph baby under star on left/front and decorated Christmas tree on right",
+    "path": "/workspace/scratch/5043f34ec24c/generated_images/exec-b57abb86-5184-4af7-b7d3-3ff452366555.png",
+    "prompt": "Precise product variant edit. FIRST image is the LOCKED master scene. Keep its exact 4:3 framing, camera angle, product scale and position, mug, linen cloth, table, window, valley, foliage, colors, brushwork and warm lighting IDENTICAL. Only replace the laser-cut silhouettes in the two visible lantern walls with the corresponding motifs in image2. Preserve hexagonal lantern geometry and decorated top ring with large circular open hole, thin plywood, equal narrow panel borders. Render the pattern as actual cut-through holes with amber light inside, not printed drawing. Keep old background season unchanged even for Christmas. No additional decorations, no people, no text, no borders. Same painterly Engine B style as first reference. Requested visible panel motifs: Nativity Mary Joseph baby under star on left/front and decorated Christmas tree on right"
+  },
+  {
+    "slug": "pribeh",
+    "path": "/workspace/scratch/5043f34ec24c/generated_images/exec-1a63c91f-5306-46d4-9506-acdf829a0192.png",
+    "prompt": "Edit first reference as a timeless NEW COLLECTIONS introduction hero for ZION Market, in exact established Engine B painterly comic style. Preserve exact Carpenter, young blonde Lumi and blonde crowned Little Prince, same faces clothes setting coastal workshop, shipbuilding far background, warm amber lighting, subtle rasta trim. Remove ALL lettering top left leaving quiet sky. Replace the one lantern with TWO small matching hexagonal Lumi2 plywood lanterns side by side on workbench, still each about126mm tall. Left lantern uses sunflower and rose cutout panels from second reference; right lantern uses Saturn and spiral galaxy from third reference. Each has large circular open top hole with decorated botanical rim, six vertical walls, thin3mm wood, no text bands. No seasonal snow or Xmas garland, this is shared year-round introduction to all new collections, not a Christmas campaign. Preserve characters naturally looking at lanterns. Wide16:9 keep all three whole faces in frame."
+  }
+]

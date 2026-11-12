@@ -1,0 +1,42 @@
+[
+  {
+    "kolekce": "Přírodní",
+    "slug": "prirodni",
+    "alt": "Dřevěná lucerna Lumi 2 – přírodní kolekce, ilustrace Engine B.",
+    "hero": "prirodni/hero-1600.webp",
+    "karta": "prirodni/karta-960.webp",
+    "mobil": "prirodni/mobil-720.webp"
+  },
+  {
+    "kolekce": "Svatební",
+    "slug": "svatebni",
+    "alt": "Dřevěná lucerna Lumi 2 – svatební kolekce, ilustrace Engine B.",
+    "hero": "svatebni/hero-1600.webp",
+    "karta": "svatebni/karta-960.webp",
+    "mobil": "svatebni/mobil-720.webp"
+  },
+  {
+    "kolekce": "Květinová",
+    "slug": "kvetinove",
+    "alt": "Dřevěná lucerna Lumi 2 – květinová kolekce, ilustrace Engine B.",
+    "hero": "kvetinove/hero-1600.webp",
+    "karta": "kvetinove/karta-960.webp",
+    "mobil": "kvetinove/mobil-720.webp"
+  },
+  {
+    "kolekce": "Oceánská",
+    "slug": "oceanske",
+    "alt": "Dřevěná lucerna Lumi 2 – oceánská kolekce, ilustrace Engine B.",
+    "hero": "oceanske/hero-1600.webp",
+    "karta": "oceanske/karta-960.webp",
+    "mobil": "oceanske/mobil-720.webp"
+  },
+  {
+    "kolekce": "Vesmírná",
+    "slug": "vesmirne",
+    "alt": "Dřevěná lucerna Lumi 2 – vesmírná kolekce, ilustrace Engine B.",
+    "hero": "vesmirne/hero-1600.webp",
+    "karta": "vesmirne/karta-960.webp",
+    "mobil": "vesmirne/mobil-720.webp"
+  }
+]
