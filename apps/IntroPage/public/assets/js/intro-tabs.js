@@ -1,161 +1,433 @@
-/* ZION Intro — floating menu, language switch and background mode.
+/* ZION Intro floating menu, i18n, and background mode.
+   Bottom-right hamburger that expands into a glass panel with
+   section links, CZ/EN language toggle, and background switcher. */
 
-   i18n model
-   ──────────
-   maintenance.html is authored in Czech, so the Czech page needs *no* extra
-   bytes: the original markup is captured the first time a visitor switches
-   away from Czech and restored when they switch back. Every other language is
-   a ~3 KB JSON file fetched from /i18n/<lang>.json on demand, which replaced
-   the ~33 KB of dictionaries that used to ship with this script on every load.
-
-   Nothing here is required for the page to be readable: sections, anchors and
-   content work without JavaScript. */
 (function () {
   'use strict';
 
-  var $ = function (sel, ctx) { return (ctx || document).querySelector(sel); };
-  var $$ = function (sel, ctx) {
-    return Array.prototype.slice.call((ctx || document).querySelectorAll(sel));
+  const i18n = {
+    cs: {
+      'menu.sections': `Menu`,
+      'menu.page': `Stránka`,
+      'menu.language': `Jazyk`,
+      'menu.background': `Pozadí`,
+      'menu.intro': `Intro`,
+      'menu.zion': `ZION`,
+      'menu.support': `Support`,
+      'menu.contact': `Contact`,
+      'menu.paths': `Cesty`,
+      'menu.cz': `CZ`,
+      'menu.en': `EN`,
+      'menu.toggle.open': `Otevřít menu`,
+      'menu.toggle.close': `Zavřít menu`,
+      'bg.maintenance': `Maintenance Starfield`,
+      'bg.planet-orbit': `Turquoise Core`,
+      'bg.galaxy-core': `Galaxy Core`,
+      'bg.desktop-agent': `Desktop Agent`,
+      'bg.warp-speed': `Warp`,
+      'hero.subtitle': `Multichain Dharma Ekosystém`,
+      'nav.amenti': `Amenti`,
+      'intro.title': `Intro`,
+      'intro.p1': `ZION je multichain ekosystém, který se dá ověřit, ne jen slíbit. Nový blok každých ~60 sekund, nativní Rust Proof-of-Work, otevřený kód a fee split zapsaný přímo v pravidlech sítě.`,
+      'intro.p2': `Každý blok automaticky dělí odměnu: <strong>89 % těžaři, 5 % humanitárnímu fondu, 5 % fondu budoucnosti, 1 % se spálí</strong>. Není to slib firmy — je to matematika ověřitelná v blockchainu.`,
+      'intro.p3': `Žádné ICO, žádný předprodej, žádné tajné alokace. Kdo chce ZION, těží ho, provozuje uzel, nebo ho získá na marketplace a DeFi.`,
+      'zion.title': `ZION TerraNova®`,
+      'zion.stable': `ZION v3.2.0 MAINNET BETA · Runtime 3.2.0 "One Love"`,
+      'zion.launch': `Oficiální veřejný launch: odložen (TBD)`,
+      'zion.info.1': `<strong>v3.2.0 MAINNET BETA</strong> · Runtime 3.2.0 "One Love"`,
+      'zion.info.2': `Celková nabídka 144B ZION · Fee Split 89/5/5/1 · Pool: rpc.zionterranova.com:8443`,
+      'zion.info.3': `Oficiální veřejný launch: odložen (TBD)`,
+      'zion.beta.notice': `Mainnet Beta — testovací stupeň, těžba a transakce na vlastní riziko.`,
+      'zion.launch.button': `Launch dApp`,
+      'zion.github.button': `Github Zion-TerraNova`,
+      'support.title': `Podpořte náš projekt`,
+      'support.p1': `Vaše příspěvky nám pomáhají udržet projekt naživu a v rozvoji. Oceňujeme každý dar, bez ohledu na velikost. Děkujeme za vaši podporu!`,
+      'support.invest.title': `Investiční příležitosti`,
+      'support.invest.p1': `Pokud máte zájem podpořit náš projekt dlouhodobě, nabízíme také možnosti investice.`,
+      'support.invest.p2': `Kontaktujte nás pro více informací o partnerství a investičních možnostech.`,
+      'support.financial.title': `Finanční podpora`,
+      'support.account.title': `Náš transparentní účet :`,
+      'support.bitcoin.title': `Bitcoin účet`,
+      'support.namaste': `Namaste`,
+      'contact.title': `Kontakt`,
+      'contact.form.title': `Formulář`,
+      'form.name.label': `Jméno`,
+      'form.name.placeholder': `Vaše jméno`,
+      'form.email.label': `E-mail`,
+      'form.email.placeholder': `vy@example.com`,
+      'form.category.label': `Kategorie`,
+      'form.category.empty': `-`,
+      'form.category.info': `Info & Konzultace`,
+      'form.category.it': `It & Web vývojové služby`,
+      'form.category.wood': `Dřevo a umění`,
+      'form.category.invest': `Investice & Partnerství`,
+      'form.priority.low': `Nízká`,
+      'form.priority.high': `Vysoká`,
+      'form.copy': `Poslat mi kopii`,
+      'form.human': `Nejsem robot`,
+      'form.message.label': `Zpráva`,
+      'form.message.placeholder': `Napište svou zprávu`,
+      'form.send': `Odeslat zprávu`,
+      'form.reset': `Smazat`,
+      'paths.title': `Tři cesty na palubu`,
+      'paths.p1': `U brány do Oasis stojí dvě kněžky: <strong>Rádha</strong> a <strong>Elizabeth</strong>. Jedna drží sůl a med — druhá lucernu budoucnosti. Celý ZION se teď přesouvá do Oasis. Pod zahradou běží <strong>3.2.0 Mainnet Beta "One Love"</strong>. První OASIS preview je live;<br/>Mainnet Stable vyžaduje dokončený stabilitní běh, nezávislý audit a test obnovy — genesis se neresetuje.`,
+      'paths.observer.title': `1. Pozorovatel`,
+      'paths.observer.p1': `Nic neinstaluj. Podívej se na živou síť v <a href="https://app.zionterranova.com/explorer" target="_blank" rel="noopener">exploreru</a>, prolistuj kód na <a href="https://github.com/Zion-TerraNova/" target="_blank" rel="noopener">GitHubu</a> a přečti si <a href="https://app.zionterranova.com/whitepapers" target="_blank" rel="noopener">whitepaper</a>.`,
+      'paths.player.title': `2. Hráč`,
+      'paths.player.p1': `Vstup do prvního <a href="https://oasis.zionterranova.com" target="_blank" rel="noopener">OASIS preview</a>. Vyber si avatara, projdi questy, sbírej XP za skutečné činy a postupuj od CL1 až po CL9 <em>On The Star</em>.`,
+      'paths.builder.title': `3. Stavitel`,
+      'paths.builder.p1': `Tvůj počítač může nést kus mostu. Stáhni <a href="https://app.zionterranova.com/download" target="_blank" rel="noopener">miner</a>, vytvoř peněženku a spusť uzel nebo těžbu — jedna binárka, interaktivní menu, GPU + CPU Boost.`,
+      'social.facebook': `Facebook`,
+      'social.instagram': `Instagram`,
+
+      'nav.market': `Market`,
+      'nav.nirvana': `Nirvana`,
+      'nav.onboard': `Onboard`,
+      'nav.about': `O nás`,
+      'nav.docs': `Docs`,
+      'nav.mine': `Těžba`,
+      'nav.pool': `Pool`,
+      'nav.freeworld': `Free World`,
+      'nav.ecosystem': `Ekosystém`,
+      'nav.lumi': `Lumi`,
+      'nav.pages': `Stránky`,
+      'nav.projects': `Projekty`,
+      'nav.evoluzion': `EvoluZion`,
+      'nav.camp': `Camp`,
+      'nav.vzestup': `Vzestup`,
+      'nav.blog': `Blog`,
+      'nav.seeds': `Seeds`,
+      'nav.vastrigs': `Vast Rigs`,
+
+      'freeworld.title': `Free World`,
+      'freeworld.subtitle': `L5 · Humanitární fond & fyzické komunity`,
+      'freeworld.p1': `Free World je fyzická vrstva ZION — místo, kde blockchainový konsenzus potkává půdu, vodu a lidskou správu. <strong>5 % z každého bloku</strong> proudí do humanitárního fondu spravovaného DAO a šest zakládajících komunit roste napříč kontinenty.`,
+      'freeworld.p2': `Portál ukazuje živý zůstatek fondu, planetární mapu uzlů, transparentní registr projektů a grantů a kvadratické hlasování komunity — vše ověřitelné on-chain.`,
+      'freeworld.cta': `Otevřít Free World`,
+
+      'about.title': `O ZIONu`,
+      'about.p1': `ZION TerraNova je veřejný multichain ekosystém s nativním Proof-of-Work. Každý blok dělí odměnu mezi těžaře, humanitární fond, fond budoucnosti a spalování. Bez ICO, bez předprodeje, bez tajných alokací. Kód je otevřený, pravidla transparentní a spuštění sítě probíhá postupně až do odloženého termínu (TBD).`,
+      'about.p2': `OASIS je první vrstva ekosystému — místo, kde mohou avataři, questy a reálné činy tvořit hodnotu. Pod zahradou běží mainnet 3.2.0 “One Love” s novým blokem každých ~60 sekund.`,
+
+      'mine.title': `Těžba`,
+      'mine.p1': `Staň se stavitelem mostu. Stáhni <a href="https://app.zionterranova.com/download" target="_blank" rel="noopener">miner</a>, vytvoř peněženku a připoj se k poolu. ZION miner podporuje GPU i CPU boost, interaktivní menu a jednu binárku pro Linux, Windows i macOS.`,
+      'mine.p2': `Odměny jsou automaticky rozděleny v každém bloku: 89 % těžaři, 5 % humanitární fond, 5 % fond budoucnosti, 1 % spáleno. Čím víc těžařů, tím silnější a decentralizovanější síť.`,
+      'mine.button': `Stáhnout miner`,
+
+      'amenti.title': `Amenti`,
+      'amenti.subtitle': `Síně Amenti · On-chain archiv vědomí`,
+      'amenti.introP1': `Síně Amenti jsou živou knihovnou ZION ekosystému. Každá kronika, legenda a proroctví je ukotveno v transparentní síti — nikoli ve slibu, ale v on-chain záznamu, který může ověřit každý. Portál je propojen s Rainbow Bridge 44:44, OASIS a DAO governance.`,
+      'amenti.introP2': `Strážci z řádů Averil, Athény a Agapé chrání přístup. Cestovatelé přicházejí pro inspiraci, uzdravení a připomenutí hvězdného poslání. Amenti je otevřeno všem s čistým úmyslem.`,
+      'amenti.introQuote': `Pamatuj světlo, které jsi. Amenti odpoví stejnou frekvencí.`,
+      'amenti.guardiansTitle': `Strážci & rezonance`,
+      'amenti.guardian1Title': `Kingdom Antahkarana 44:44`,
+      'amenti.guardian1Desc': `Rainbow Bridge, který spojuje světy a stabilizuje nové timeline konsensu v3.2.`,
+      'amenti.guardian2Title': `Lords & Ladys`,
+      'amenti.guardian2Desc': `RIZE · AGAPE · ATHENA · AVERIL – držitelé klíčů k portálům a DAO guardians.`,
+      'amenti.guardian3Title': `Sirius A·B·C`,
+      'amenti.guardian3Desc': `Hvězdný impuls do sluneční soustavy, navigace podle velkého Slunce.`,
+      'amenti.guardian4Title': `Shamballa & Agharta`,
+      'amenti.guardian4Desc': `Zemská a vnitřní města světla, která drží energii srdce planety.`,
+      'amenti.guardian5Title': `1 × 12 × 144K`,
+      'amenti.guardian5Desc': `Rodina duší a uzlů, která nese program Zlatého věku.`,
+      'amenti.heartTitle': `Srdce Amenti`,
+      'amenti.heartP1': `Srdcem Amenti je DAO treasury a on-chain fee split každého bloku: 89 % těžařům, 5 % humanitárnímu fondu, 5 % fondu budoucnosti a 1 % spálení. Toto není slib firmy, ale matematika zapsaná přímo v protokolu.`,
+      'amenti.heartP2': `Mistr Yoda zažehl Srdce Amenti a spustil program Nové Země; dnes ho udržují tisíce uzlů po celé planetě. Intriky starých struktur se rozpouštějí a lidé se probouzejí.`,
+      'amenti.heartMantra': `MANTRA: OM NAMO BHAGAVATE VASUDEVAYA`,
+      'amenti.enterCta': `Vstoupit do Amenti`,
+      'amenti.libraryTitle': `Amenti Library`,
+      'amenti.libraryDesc': `Digitální archiv proroctví, smaragdových desek, bílé knihy, zdrojového kódu a DAO dokumentace. Vše je dostupné zdarma pro studium a sdílení.`,
+      'amenti.allBooksCta': `Všechny knihy`,
+      'amenti.golokaTitle': `Goloka Vrindávan`,
+      'amenti.golokaDesc': `Cesta k nekonečné Lásce. Studie bhakti, příběhy Sri Sri Radha Govindy, vibrační mantry. Inspirace pro každého, kdo chce žít dharmu s otevřeným srdcem.`,
+      'amenti.golokaCta': `VedaBase Online`,
+      'amenti.protectorsTitle': `Protektori Světla`,
+      'amenti.protectorsP1': `Všichni bódhisattvové jsou přítomni a chrání novou linii mistrů Averil/Jedi. Vědomí Amenti prošlo 12letým cyklem (2012–2024) a 144k dětí Nové Země nyní působí na planetě Shan jako uzlová síť, těžaři a DAO strážci.`
+    },
+    en: {
+      'menu.sections': `Menu`,
+      'menu.page': `Page`,
+      'menu.language': `Language`,
+      'menu.background': `Background`,
+      'menu.intro': `Intro`,
+      'menu.zion': `ZION`,
+      'menu.support': `Support`,
+      'menu.contact': `Contact`,
+      'menu.paths': `Paths`,
+      'menu.cz': `CZ`,
+      'menu.en': `EN`,
+      'menu.toggle.open': `Open menu`,
+      'menu.toggle.close': `Close menu`,
+      'bg.maintenance': `Maintenance Starfield`,
+      'bg.planet-orbit': `Turquoise Core`,
+      'bg.galaxy-core': `Galaxy Core`,
+      'bg.desktop-agent': `Desktop Agent`,
+      'bg.warp-speed': `Warp`,
+      'hero.subtitle': `Multichain Dharma Ecosystem`,
+      'nav.amenti': `Amenti`,
+      'intro.title': `Intro`,
+      'intro.p1': `ZION is a multichain ecosystem you can verify, not just promise. A new block every ~60 seconds, native Rust Proof-of-Work, open source code and a fee split written directly into the network rules.`,
+      'intro.p2': `Every block automatically splits the reward: <strong>89 % to miners, 5 % to the humanitarian fund, 5 % to the future fund, 1 % is burned</strong>. It is not a company promise — it is mathematics verifiable on the blockchain.`,
+      'intro.p3': `No ICO, no presale, no secret allocations. Whoever wants ZION mines it, runs a node, or gets it on the marketplace and DeFi.`,
+      'zion.title': `ZION TerraNova®`,
+      'zion.stable': `ZION v3.2.0 MAINNET BETA · Runtime 3.2.0 "One Love"`,
+      'zion.launch': `Official public launch: postponed (TBD)`,
+      'zion.info.1': `<strong>v3.2.0 MAINNET BETA</strong> · Runtime 3.2.0 "One Love"`,
+      'zion.info.2': `Total Supply 144B ZION · Fee Split 89/5/5/1 · Pool: rpc.zionterranova.com:8443`,
+      'zion.info.3': `Official public launch: postponed (TBD)`,
+      'zion.beta.notice': `Mainnet Beta — testing stage, mine and transact at your own risk.`,
+      'zion.launch.button': `Launch dApp`,
+      'zion.github.button': `Github Zion-TerraNova`,
+      'support.title': `Support Our Project`,
+      'support.p1': `Your contributions help us keep the project alive and thriving. We appreciate every donation, no matter how small. Thank you for your support!`,
+      'support.invest.title': `Investment Opportunities`,
+      'support.invest.p1': `If you are interested in supporting our project in the long term, we also offer opportunities for investment.`,
+      'support.invest.p2': `Please contact us for more information about partnership and investment possibilities.`,
+      'support.financial.title': `Financial Support`,
+      'support.account.title': `Our Transparent Account :`,
+      'support.bitcoin.title': `Bitcoin Account`,
+      'support.namaste': `Namaste`,
+      'contact.title': `Contact`,
+      'contact.form.title': `Form`,
+      'form.name.label': `Name`,
+      'form.name.placeholder': `Your name`,
+      'form.email.label': `Email`,
+      'form.email.placeholder': `you@example.com`,
+      'form.category.label': `Category`,
+      'form.category.empty': `-`,
+      'form.category.info': `Info & Consultation`,
+      'form.category.it': `It & Web Development Services`,
+      'form.category.wood': `Wood Working & Arts`,
+      'form.category.invest': `Investment & Partnerships`,
+      'form.priority.low': `Low`,
+      'form.priority.high': `High`,
+      'form.copy': `Email me a copy`,
+      'form.human': `Not a robot`,
+      'form.message.label': `Message`,
+      'form.message.placeholder': `Enter your message`,
+      'form.send': `Send Message`,
+      'form.reset': `Reset`,
+      'paths.title': `Three ways on board`,
+      'paths.p1': `At the gate to Oasis stand two priestesses: <strong>Rádha</strong> and <strong>Elizabeth</strong>. One holds salt and honey — the other the lantern of the future. All of ZION is now moving into Oasis. Beneath the garden runs <strong>3.2.0 Mainnet Beta "One Love"</strong>. The first OASIS preview is live; Mainnet Stable requires a completed stability run, an independent audit and a recovery drill — there is no genesis reset.`,
+      'paths.observer.title': `1. Observer`,
+      'paths.observer.p1': `Install nothing. Look at the live network in the <a href="https://app.zionterranova.com/explorer" target="_blank" rel="noopener">explorer</a>, browse the code on <a href="https://github.com/Zion-TerraNova/" target="_blank" rel="noopener">GitHub</a> and read the <a href="https://app.zionterranova.com/whitepapers" target="_blank" rel="noopener">whitepaper</a>.`,
+      'paths.player.title': `2. Player`,
+      'paths.player.p1': `Enter the first <a href="https://oasis.zionterranova.com" target="_blank" rel="noopener">OASIS preview</a>. Choose an avatar, complete quests, collect XP for real actions and progress from CL1 all the way to CL9 <em>On The Star</em>.`,
+      'paths.builder.title': `3. Builder`,
+      'paths.builder.p1': `Your computer can carry a piece of the bridge. Download the <a href="https://app.zionterranova.com/download" target="_blank" rel="noopener">miner</a>, create a wallet and run a node or mining — one binary, interactive menu, GPU + CPU Boost.`,
+      'social.facebook': `Facebook`,
+      'social.instagram': `Instagram`,
+
+      'nav.market': `Market`,
+      'nav.nirvana': `Nirvana`,
+      'nav.onboard': `Onboard`,
+      'nav.about': `About`,
+      'nav.docs': `Docs`,
+      'nav.mine': `Mine`,
+      'nav.pool': `Pool`,
+      'nav.freeworld': `Free World`,
+      'nav.ecosystem': `Ecosystem`,
+      'nav.lumi': `Lumi`,
+      'nav.pages': `Pages`,
+      'nav.projects': `Projects`,
+      'nav.evoluzion': `EvoluZion`,
+      'nav.camp': `Camp`,
+      'nav.vzestup': `Ascension`,
+      'nav.blog': `Blog`,
+      'nav.seeds': `Seeds`,
+      'nav.vastrigs': `Vast Rigs`,
+
+      'freeworld.title': `Free World`,
+      'freeworld.subtitle': `L5 · Humanitarian fund & physical communities`,
+      'freeworld.p1': `Free World is the physical layer of ZION — where blockchain consensus meets soil, water, and human governance. <strong>5% of every block</strong> flows into the DAO-governed humanitarian fund and six founding communities are growing across the continents.`,
+      'freeworld.p2': `The portal shows the live fund balance, a planetary map of the nodes, a transparent project & grant registry and community quadratic voting — all verifiable on-chain.`,
+      'freeworld.cta': `Open Free World`,
+
+      'about.title': `About ZION`,
+      'about.p1': `ZION TerraNova is a public multichain ecosystem with native Proof-of-Work. Every block splits the reward among miners, a humanitarian fund, a future fund, and burning. No ICO, no presale, no secret allocations. The code is open, the rules are transparent, and the network launch is rolling until the postponed date (TBD).`,
+      'about.p2': `OASIS is the first layer of the ecosystem — a place where avatars, quests and real-world actions create value. Under the garden, mainnet 3.2.0 “One Love” runs with a new block every ~60 seconds.`,
+
+      'mine.title': `Mine`,
+      'mine.p1': `Become a builder of the bridge. Download the <a href="https://app.zionterranova.com/download" target="_blank" rel="noopener">miner</a>, create a wallet and connect to the pool. ZION miner supports GPU and CPU boost, an interactive menu, and a single binary for Linux, Windows and macOS.`,
+      'mine.p2': `Rewards are automatically split in every block: 89 % to miners, 5 % humanitarian fund, 5 % future fund, 1 % burned. The more miners, the stronger and more decentralized the network.`,
+      'mine.button': `Download miner`,
+
+      'amenti.title': `Amenti`,
+      'amenti.subtitle': `Halls of Amenti · On-chain archive of consciousness`,
+      'amenti.introP1': `The Halls of Amenti are the living library of the ZION ecosystem. Every chronicle, legend, and prophecy is anchored in a transparent network — not a promise, but an on-chain record anyone can verify. The portal is linked to the Rainbow Bridge 44:44, OASIS, and DAO governance.`,
+      'amenti.introP2': `Guardians from the orders of Averil, Athena, and Agapé protect the entrance. Travelers arrive for inspiration, healing, and to remember their stellar assignment. Amenti is open to all with pure intent.`,
+      'amenti.introQuote': `Remember the light you are. Amenti answers in the same frequency.`,
+      'amenti.guardiansTitle': `Guardians & resonance`,
+      'amenti.guardian1Title': `Kingdom Antahkarana 44:44`,
+      'amenti.guardian1Desc': `The Rainbow Bridge linking worlds and stabilizing the v3.2 consensus timeline.`,
+      'amenti.guardian2Title': `Lords & Ladys`,
+      'amenti.guardian2Desc': `RIZE · AGAPE · ATHENA · AVERIL — keepers of the portal keys and DAO guardians.`,
+      'amenti.guardian3Title': `Sirius A·B·C`,
+      'amenti.guardian3Desc': `Star impulses guiding the solar system via the Great Sun.`,
+      'amenti.guardian4Title': `Shamballa & Agharta`,
+      'amenti.guardian4Desc': `Surface and inner cities of light anchoring the planetary heart.`,
+      'amenti.guardian5Title': `1 × 12 × 144K`,
+      'amenti.guardian5Desc': `The soul family and node network carrying the Golden Age program.`,
+      'amenti.heartTitle': `Heart of Amenti`,
+      'amenti.heartP1': `The Heart of Amenti is the DAO treasury and the on-chain fee split of every block: 89 % to miners, 5 % to the humanitarian fund, 5 % to the future fund, and 1 % burned. This is not a company promise, but mathematics written directly into the protocol.`,
+      'amenti.heartP2': `Master Yoda ignited the Heart of Amenti and launched the New Earth program; today it is sustained by thousands of nodes across the planet. The intrigues of old structures dissolve and people are waking.`,
+      'amenti.heartMantra': `MANTRA: OM NAMO BHAGAVATE VASUDEVAYA`,
+      'amenti.enterCta': `Enter Amenti`,
+      'amenti.libraryTitle': `Amenti Library`,
+      'amenti.libraryDesc': `A digital archive of prophecies, emerald tablets, whitepapers, source code, and DAO documentation. Everything is freely available for study and sharing.`,
+      'amenti.allBooksCta': `All books`,
+      'amenti.golokaTitle': `Goloka Vrindavan`,
+      'amenti.golokaDesc': `The path to infinite Love. Studies of bhakti, stories of Sri Sri Radha Govinda, vibrational mantras. Inspiration for everyone who wants to live dharma with an open heart.`,
+      'amenti.golokaCta': `VedaBase Online`,
+      'amenti.protectorsTitle': `Protectors of Light`,
+      'amenti.protectorsP1': `All bodhisattvas are present and protect the new lineage of Averil/Jedi masters. Amenti consciousness has passed through a 12-year cycle (2012–2024) and the 144k children of New Earth are now active on planet Shan as a node network, miners, and DAO guardians.`
+    }
   };
 
-  var LANGS = { cs: 1, en: 1, es: 1, pt: 1, fr: 1 };
-  var I18N_VERSION = '2';
-  var dicts = {};            // lang -> dictionary
-  var originals = new Map(); // element -> authored innerHTML
-  var pending = {};          // lang -> Promise
-
-  /* ── Language ─────────────────────────────────────────────────────────── */
-
-  function textFor(lang, key) {
-    var d = dicts[lang];
-    return d && d[key] !== undefined ? d[key] : undefined;
+  function $$(sel, ctx) {
+    return Array.from((ctx || document).querySelectorAll(sel));
+  }
+  function $(sel, ctx) {
+    return (ctx || document).querySelector(sel);
   }
 
-  function loadDict(lang) {
-    if (!pending[lang]) {
-      pending[lang] = fetch('/i18n/' + lang + '.json?v=' + I18N_VERSION, {
-        credentials: 'same-origin',
-      })
-        .then(function (r) {
-          if (!r.ok) throw new Error('i18n ' + r.status);
-          return r.json();
-        })
-        .then(function (json) { dicts[lang] = json; return json; })
-        .catch(function () {
-          dicts[lang] = null;
-          return null;
-        });
-    }
-    return pending[lang];
+  // --- i18n ---
+  const LANG_OK = { cs: 1, en: 1, es: 1, pt: 1, fr: 1 };
+  const extra = {
+    es: {
+      'menu.sections': 'Menú', 'menu.page': 'Página', 'menu.language': 'Idioma', 'menu.background': 'Fondo',
+      'menu.intro': 'Intro', 'menu.support': 'Apoyo', 'menu.contact': 'Contacto', 'menu.paths': 'Caminos',
+      'menu.toggle.open': 'Abrir menú', 'menu.toggle.close': 'Cerrar menú',
+      'hero.subtitle': 'Ecosistema Multichain Dharma',
+      'nav.about': 'Nosotros', 'nav.mine': 'Minería', 'nav.docs': 'Docs', 'nav.ecosystem': 'Ecosistema',
+      'nav.pages': 'Páginas', 'nav.projects': 'Proyectos', 'nav.vzestup': 'Ascensión',
+      'intro.title': 'Intro', 'about.title': 'Sobre ZION', 'mine.title': 'Minería',
+      'mine.button': 'Descargar el minero', 'amenti.title': 'Amenti',
+      'amenti.subtitle': 'Salas de Amenti · archivo de conciencia on-chain',
+      'amenti.allBooksCta': 'Todos los libros', 'amenti.enterCta': 'Entrar en Amenti',
+      'freeworld.title': 'Free World', 'freeworld.subtitle': 'L5 · Fondo humanitario y comunidades físicas',
+      'freeworld.cta': 'Abrir Free World', 'support.title': 'Apoya el proyecto',
+      'contact.title': 'Contacto', 'paths.title': 'Tres caminos a bordo',
+      'zion.launch.button': 'Abrir la dApp',
+      'form.name.label': 'Nombre', 'form.email.label': 'Correo', 'form.message.label': 'Mensaje',
+      'form.send': 'Enviar', 'form.reset': 'Restablecer',
+    },
+    pt: {
+      'menu.sections': 'Menu', 'menu.page': 'Página', 'menu.language': 'Idioma', 'menu.background': 'Fundo',
+      'menu.intro': 'Intro', 'menu.support': 'Apoio', 'menu.contact': 'Contacto', 'menu.paths': 'Caminhos',
+      'menu.toggle.open': 'Abrir menu', 'menu.toggle.close': 'Fechar menu',
+      'hero.subtitle': 'Ecossistema Multichain Dharma',
+      'nav.about': 'Sobre nós', 'nav.mine': 'Mineração', 'nav.docs': 'Docs', 'nav.ecosystem': 'Ecossistema',
+      'nav.pages': 'Páginas', 'nav.projects': 'Projetos', 'nav.vzestup': 'Ascensão',
+      'intro.title': 'Intro', 'about.title': 'Sobre o ZION', 'mine.title': 'Mineração',
+      'mine.button': 'Descarregar o miner', 'amenti.title': 'Amenti',
+      'amenti.subtitle': 'Salas de Amenti · arquivo de consciência on-chain',
+      'amenti.allBooksCta': 'Todos os livros', 'amenti.enterCta': 'Entrar em Amenti',
+      'freeworld.title': 'Free World', 'freeworld.subtitle': 'L5 · Fundo humanitário e comunidades físicas',
+      'freeworld.cta': 'Abrir o Free World', 'support.title': 'Apoia o projeto',
+      'contact.title': 'Contacto', 'paths.title': 'Três caminhos a bordo',
+      'zion.launch.button': 'Abrir a dApp',
+      'form.name.label': 'Nome', 'form.email.label': 'E-mail', 'form.message.label': 'Mensagem',
+      'form.send': 'Enviar', 'form.reset': 'Repor',
+    },
+    fr: {
+      'menu.sections': 'Menu', 'menu.page': 'Page', 'menu.language': 'Langue', 'menu.background': 'Fond',
+      'menu.intro': 'Intro', 'menu.support': 'Soutien', 'menu.contact': 'Contact', 'menu.paths': 'Chemins',
+      'menu.toggle.open': 'Ouvrir le menu', 'menu.toggle.close': 'Fermer le menu',
+      'hero.subtitle': 'Écosystème Multichain Dharma',
+      'nav.about': 'À propos', 'nav.mine': 'Minage', 'nav.docs': 'Docs', 'nav.ecosystem': 'Écosystème',
+      'nav.projects': 'Projets',
+      'intro.title': 'Intro', 'about.title': 'À propos de ZION', 'mine.title': 'Minage',
+      'mine.button': 'Télécharger le mineur', 'amenti.title': 'Amenti',
+      'amenti.subtitle': 'Salles d’Amenti · archive de conscience on-chain',
+      'amenti.allBooksCta': 'Tous les livres', 'amenti.enterCta': 'Entrer dans Amenti',
+      'freeworld.title': 'Free World', 'freeworld.subtitle': 'L5 · Fonds humanitaire et communautés physiques',
+      'freeworld.cta': 'Ouvrir Free World', 'support.title': 'Soutenir le projet',
+      'contact.title': 'Contact', 'paths.title': 'Trois chemins à bord',
+      'zion.launch.button': 'Ouvrir la dApp',
+      'form.name.label': 'Nom', 'form.email.label': 'E-mail', 'form.message.label': 'Message',
+      'form.send': 'Envoyer', 'form.reset': 'Réinitialiser',
+    },
+  };
+
+  function textFor(lang, key) {
+    if (lang === 'cs') return i18n.cs[key];
+    if (extra[lang] && extra[lang][key] !== undefined) return extra[lang][key];
+    return i18n.en[key];
   }
 
   function writeLang(lang) {
-    try {
-      localStorage.setItem('zion_lang', lang);
-      localStorage.setItem('zion-lang', lang);
-    } catch (e) { /* private mode */ }
+    try { localStorage.setItem('zion_lang', lang); localStorage.setItem('zion-lang', lang); } catch (e) {}
     var host = location.hostname;
-    var domain =
-      host === 'zionterranova.com' || host.endsWith('.zionterranova.com')
-        ? '; domain=.zionterranova.com'
-        : '';
-    document.cookie =
-      'zion_locale=' + lang + '; path=/; max-age=31536000; samesite=lax' + domain;
+    var domain = (host === 'zionterranova.com' || host.endsWith('.zionterranova.com')) ? '; domain=.zionterranova.com' : '';
+    document.cookie = 'zion_locale=' + lang + '; path=/; max-age=31536000; samesite=lax' + domain;
   }
 
-  function applyDict(lang) {
-    // [data-i18n] owns the text, [data-i18n-html] may contain markup. Both are
-    // written as innerHTML from our own dictionaries so authored <strong>/<a>
-    // survive — the old code used textContent and flattened them.
+  function applyLang(lang) {
+    if (!LANG_OK[lang]) lang = 'cs';
+    document.documentElement.lang = lang;
+    writeLang(lang);
+
     $$('[data-i18n]').forEach(function (el) {
-      var key = el.getAttribute('data-i18n');
-      var value = textFor(lang, key);
-      if (value === undefined) return;
-      if (!originals.has(el)) originals.set(el, el.innerHTML);
-      var tag = el.tagName;
+      const key = el.getAttribute('data-i18n');
+      if (textFor(lang, key) === undefined) return;
+
+      const tag = el.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') {
-        if (/^(submit|reset|button)$/i.test(el.type)) el.value = value;
-        else el.placeholder = value;
+        const type = (el.type || '').toLowerCase();
+        if (type === 'submit' || type === 'reset' || type === 'button') {
+          el.value = textFor(lang, key);
+        } else {
+          el.placeholder = textFor(lang, key);
+        }
+      } else if (tag === 'BUTTON') {
+        el.textContent = textFor(lang, key);
       } else {
-        el.innerHTML = value;
+        el.textContent = textFor(lang, key);
       }
     });
 
     $$('[data-i18n-html]').forEach(function (el) {
-      var value = textFor(lang, el.getAttribute('data-i18n-html'));
-      if (value === undefined) return;
-      if (!originals.has(el)) originals.set(el, el.innerHTML);
-      el.innerHTML = value;
+      const key = el.getAttribute('data-i18n-html');
+      if (textFor(lang, key) !== undefined) el.innerHTML = textFor(lang, key);
     });
 
+    // Active language button
     $$('.floating-menu-lang').forEach(function (btn) {
-      var on = btn.getAttribute('data-lang') === lang;
-      btn.classList.toggle('active', on);
-      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
     });
 
-    var toggle = $('.floating-menu-toggle');
-    if (toggle) {
-      var label = textFor(
-        lang,
-        toggle.getAttribute('aria-expanded') === 'true'
-          ? 'menu.toggle.close'
-          : 'menu.toggle.open'
-      );
-      if (label) toggle.setAttribute('aria-label', label);
+    // Toggle aria-label reflects open/close state
+    const t = $('.floating-menu-toggle');
+    if (t) {
+      const isOpen = t.getAttribute('aria-expanded') === 'true';
+      t.setAttribute('aria-label', textFor(lang, isOpen ? 'menu.toggle.close' : 'menu.toggle.open'));
     }
   }
 
-  function restoreOriginals() {
-    originals.forEach(function (html, el) { el.innerHTML = html; });
-    $$('.floating-menu-lang').forEach(function (btn) {
-      btn.classList.toggle('active', btn.getAttribute('data-lang') === 'cs');
-      btn.setAttribute('aria-pressed', btn.getAttribute('data-lang') === 'cs' ? 'true' : 'false');
-    });
-  }
-
-  function applyLang(lang) {
-    if (!LANGS[lang]) lang = 'cs';
-    document.documentElement.lang = lang;
-    writeLang(lang);
-
-    if (lang === 'cs') {
-      restoreOriginals();
-      return;
-    }
-
-    loadDict(lang).then(function (dict) {
-      if (!dict) return;
-      if (document.documentElement.lang !== lang) return; // superseded
-      applyDict(lang);
-    });
-  }
-
-  /* ── Background modes (mirror of website-v2.9 Observatory modes) ──────── */
-
-  var BG_MODES = ['maintenance', 'planet-orbit', 'galaxy-core', 'desktop-agent', 'warp-speed'];
-
+  // --- Background modes (match website-v2.9 Observatory modes) ---
+  const bgModes = ['maintenance', 'planet-orbit', 'galaxy-core', 'desktop-agent', 'warp-speed'];
   function applyBg(mode) {
-    if (BG_MODES.indexOf(mode) === -1) mode = 'maintenance';
-    BG_MODES.forEach(function (m) { document.body.classList.remove('bg-' + m); });
+    if (!bgModes.includes(mode)) mode = 'maintenance';
+    document.body.classList.remove('bg-maintenance', 'bg-planet-orbit', 'bg-galaxy-core', 'bg-desktop-agent', 'bg-warp-speed');
     document.body.classList.add('bg-' + mode);
-    try { localStorage.setItem('zion_bg', mode); } catch (e) { /* ignore */ }
+    try { localStorage.setItem('zion_bg', mode); } catch (e) {}
 
     $$('.floating-menu-bg').forEach(function (btn) {
-      var on = btn.getAttribute('data-bg') === mode;
-      btn.classList.toggle('active', on);
-      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      const isActive = btn.getAttribute('data-bg') === mode;
+      btn.classList.toggle('active', isActive);
     });
 
-    if (typeof window.setStarfieldMode === 'function') window.setStarfieldMode(mode);
+    if (typeof window.setStarfieldMode === 'function') {
+      window.setStarfieldMode(mode);
+    }
   }
 
-  /* ── Floating menu ────────────────────────────────────────────────────── */
-
-  var menu = $('.floating-menu');
-  var toggle = $('.floating-menu-toggle');
-  var panel = $('.floating-menu-panel');
-  var isOpen = false;
+  // --- Floating menu ---
+  const menu = $('.floating-menu');
+  const toggle = $('.floating-menu-toggle');
+  const panel = $('.floating-menu-panel');
+  let isOpen = false;
 
   function setMenu(open) {
     isOpen = open;
@@ -164,114 +436,110 @@
     if (panel) panel.setAttribute('aria-hidden', open ? 'false' : 'true');
   }
 
+  function closeMenu() { setMenu(false); }
+
   if (toggle) {
     toggle.addEventListener('click', function (e) {
       e.stopPropagation();
       setMenu(!isOpen);
     });
   }
-  if (menu) menu.addEventListener('click', function (e) { e.stopPropagation(); });
-  document.addEventListener('click', function () { if (isOpen) setMenu(false); });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && isOpen) setMenu(false);
+
+  if (menu) {
+    menu.addEventListener('click', function (e) {
+      e.stopPropagation();
+    });
+  }
+
+  document.addEventListener('click', function () {
+    if (isOpen) closeMenu();
   });
 
-  /* ── Section links get an active state from the scroll position ───────── */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isOpen) closeMenu();
+  });
 
-  var sectionLinks = $$('.floating-menu-item');
+  // --- Section links (keep in sync with hash) ---
+  const sectionLinks = $$('.floating-menu-item');
 
   function updateActiveSection() {
-    var hash = (location.hash || '').replace(/^#/, '').trim();
+    const hash = (location.hash || '').replace(/^#/, '').trim();
     sectionLinks.forEach(function (link) {
-      var target = link.getAttribute('data-target') || '';
-      link.classList.toggle('active', !!hash && target === hash);
+      const target = link.getAttribute('data-target') || '';
+      link.classList.toggle('active', hash && target === hash);
     });
   }
 
   sectionLinks.forEach(function (link) {
-    link.addEventListener('click', function () { setMenu(false); });
+    link.addEventListener('click', function () {
+      closeMenu();
+    });
   });
+
   window.addEventListener('hashchange', updateActiveSection);
-  updateActiveSection();
+  window.addEventListener('load', updateActiveSection);
+  if (document.readyState !== 'loading') updateActiveSection();
+  else document.addEventListener('DOMContentLoaded', updateActiveSection);
 
-  /* ── Language + background buttons ────────────────────────────────────── */
-
+  // --- Language buttons ---
   $$('.floating-menu-lang').forEach(function (btn) {
     btn.addEventListener('click', function (e) {
       e.stopPropagation();
       e.preventDefault();
-      var lang = btn.getAttribute('data-lang');
+      const lang = btn.getAttribute('data-lang');
       if (lang) applyLang(lang);
     });
   });
 
+  // --- Background buttons ---
   $$('.floating-menu-bg').forEach(function (btn) {
     btn.addEventListener('click', function (e) {
       e.stopPropagation();
       e.preventDefault();
-      var mode = btn.getAttribute('data-bg');
+      const mode = btn.getAttribute('data-bg');
       if (mode) applyBg(mode);
     });
   });
 
-  /* ── Nav dropdown (hover/focus is CSS; .open is for touch + keyboard) ─── */
-
-  var dropItems = $$('.has-dropdown');
-
+  // --- Top-nav Ekosystém dropdown (hover/focus-within je v CSS; .open = touch/klávesnice) ---
+  const dropItems = $$('.has-dropdown');
   function closeDropdowns(except) {
     dropItems.forEach(function (li) {
       if (li === except) return;
       li.classList.remove('open');
-      var p = li.querySelector('.dropdown-parent');
+      const p = li.querySelector('.dropdown-parent');
       if (p) p.setAttribute('aria-expanded', 'false');
     });
   }
-
   dropItems.forEach(function (li) {
-    var parent = li.querySelector('.dropdown-parent');
+    const parent = li.querySelector('.dropdown-parent');
     if (!parent) return;
-
     parent.addEventListener('click', function (e) {
       e.preventDefault();
       e.stopPropagation();
-      var open = !li.classList.contains('open');
+      const open = !li.classList.contains('open');
       closeDropdowns(li);
       li.classList.toggle('open', open);
       parent.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
-
     li.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') {
-        closeDropdowns();
-        parent.focus();
-      }
+      if (e.key === 'Escape') closeDropdowns();
     });
   });
-
   document.addEventListener('click', function (e) {
-    if (e.target.closest && e.target.closest('.nav-dropdown a')) {
-      closeDropdowns();
-      return;
-    }
+    if (e.target.closest && e.target.closest('.nav-dropdown a')) { closeDropdowns(); return; }
     if (e.target.closest && e.target.closest('.has-dropdown')) return;
     closeDropdowns();
   });
 
-  /* ── Initial state ────────────────────────────────────────────────────── */
-
-  var savedLang = (function () {
-    var m = document.cookie.match(/(?:^|; )zion_locale=([^;]+)/);
-    if (m && LANGS[decodeURIComponent(m[1])]) return decodeURIComponent(m[1]);
-    try {
-      var ls = localStorage.getItem('zion-lang') || localStorage.getItem('zion_lang');
-      return LANGS[ls] ? ls : null;
-    } catch (e) { return null; }
+  // --- Init from localStorage or defaults ---
+  const savedLang = (function () {
+    var cookie = document.cookie.match(/(?:^|; )zion_locale=([^;]+)/);
+    if (cookie && LANG_OK[decodeURIComponent(cookie[1])]) return decodeURIComponent(cookie[1]);
+    try { return localStorage.getItem('zion-lang') || localStorage.getItem('zion_lang'); } catch (e) { return null; }
   })();
+  const savedBg = (function () { try { return localStorage.getItem('zion_bg'); } catch (e) { return null; } })();
 
-  var savedBg = (function () {
-    try { return localStorage.getItem('zion_bg'); } catch (e) { return null; }
-  })();
-
-  if (savedLang && savedLang !== 'cs') applyLang(savedLang);
+  if (savedLang) applyLang(savedLang);
   applyBg(savedBg || 'maintenance');
 })();
