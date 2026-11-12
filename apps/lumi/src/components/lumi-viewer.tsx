@@ -85,6 +85,11 @@ export default function LumiViewer({
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.05;
+      // Stíny: model je malý (14 cm), takže klíčové světlo potřebuje vlastní
+      // těsnou ortografickou kameru — jinak je stín mimo rozsah nebo rozplizlý.
+      const shadows = window.innerWidth >= 640;
+      renderer.shadowMap.enabled = shadows;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.domElement.style.touchAction = 'none';
       renderer.domElement.style.cursor = 'grab';
       host.appendChild(renderer.domElement);
@@ -94,17 +99,21 @@ export default function LumiViewer({
       scene.environment = envRT.texture;
       scene.environmentIntensity = 0.5;
 
-      scene.add(new THREE.HemisphereLight(0xfff0d8, 0x2a1a10, 0.6));
+      scene.add(new THREE.HemisphereLight(0xfff0d8, 0x2a1a10, 0.5));
 
       const key = new THREE.DirectionalLight(0xffe0b0, 2.2);
       key.position.set(2.4, 3.2, 2.6);
+      key.castShadow = shadows;
+      key.shadow.mapSize.set(512, 512);
+      key.shadow.radius = 5;
+      key.shadow.bias = -0.0006;
       scene.add(key);
 
-      const fill = new THREE.DirectionalLight(0xd9c3a3, 0.7);
+      const fill = new THREE.DirectionalLight(0xd9c3a3, 0.4);
       fill.position.set(-2.6, 1.4, 1.4);
       scene.add(fill);
 
-      const rim = new THREE.DirectionalLight(0xffb46a, 1.4);
+      const rim = new THREE.DirectionalLight(0xffb46a, 1.05);
       rim.position.set(-1.2, 1.2, -2.6);
       scene.add(rim);
 
@@ -168,6 +177,25 @@ export default function LumiViewer({
           controls.maxDistance = distance * 2.2;
           controls.update();
 
+          // Stínová kamera přesně na model (radius = půlka úhlopříčky).
+          // Světlo musí být blízko modelu: scénické jednotky jsou metry
+          // (14cm lampion), takže pozice 2,4/3,2/2,6 znamenala 4,7 m —
+          // dál, než kam stínová kamera vidí.
+          if (shadows) {
+            key.position.set(radius * 3.6, radius * 3.1, radius * 3.2);
+            key.target.position.set(0, 0, 0);
+            key.target.updateMatrixWorld();
+            const span = radius * 2.4;
+            key.shadow.camera.left = -span;
+            key.shadow.camera.right = span;
+            key.shadow.camera.top = span;
+            key.shadow.camera.bottom = -span;
+            key.shadow.camera.near = 0.01;
+            key.shadow.camera.far = radius * 24;
+            key.shadow.normalBias = radius * 0.03;
+            key.shadow.camera.updateProjectionMatrix();
+          }
+
           // Svíčka uvnitř: teplé světlo, které prosvítí výřezy.
           candle.position.set(0, -size.y * 0.08, 0);
           candle.distance = radius * 4;
@@ -184,17 +212,54 @@ export default function LumiViewer({
             } else if (material && 'envMapIntensity' in material) {
               (material as import('three').MeshStandardMaterial).envMapIntensity = 0.55;
             }
+            // Stěny vrhají stín na sebe (koruna na stěny) i na podstavec.
+            if (shadows) {
+              mesh.castShadow = true;
+              mesh.receiveShadow = true;
+            }
           });
 
           scene.add(model);
 
           // Domácí podstavec — jen jemný kruh, ne podlaha.
           const pedestal = new THREE.Mesh(
-            new THREE.CylinderGeometry(radius * 1.15, radius * 1.24, radius * 0.035, 48),
+            new THREE.CylinderGeometry(radius * 1.32, radius * 1.42, radius * 0.035, 64),
             new THREE.MeshStandardMaterial({ color: 0x3a2718, roughness: 0.9, metalness: 0.05 }),
           );
           pedestal.position.y = -size.y / 2 - radius * 0.02;
+          pedestal.receiveShadow = shadows;
           scene.add(pedestal);
+
+          // Kontaktní stín: měkký kruh pod základnou. Reálný stín na desce
+          // drží směr světla, tenhle drží „přilepení" modelu k podložce —
+          // bez něj lampion vypadá, jako by se vznášel.
+          const contactCanvas = document.createElement('canvas');
+          contactCanvas.width = contactCanvas.height = 256;
+          const contactCtx = contactCanvas.getContext('2d');
+          if (contactCtx) {
+            const gradient = contactCtx.createRadialGradient(128, 128, 24, 128, 128, 128);
+            gradient.addColorStop(0, 'rgba(0,0,0,0.62)');
+            gradient.addColorStop(0.35, 'rgba(0,0,0,0.42)');
+            gradient.addColorStop(0.7, 'rgba(0,0,0,0.16)');
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');
+            contactCtx.fillStyle = gradient;
+            contactCtx.fillRect(0, 0, 256, 256);
+          }
+          const contactTexture = new THREE.CanvasTexture(contactCanvas);
+          const contact = new THREE.Mesh(
+            new THREE.PlaneGeometry(radius * 2.3, radius * 2.3),
+            new THREE.MeshBasicMaterial({
+              map: contactTexture,
+              color: 0x241608,
+              transparent: true,
+              depthWrite: false,
+            }),
+          );
+          contact.rotation.x = -Math.PI / 2;
+          contact.position.y = pedestal.position.y + radius * 0.019;
+          contact.renderOrder = 1;
+          scene.add(contact);
+
 
           const animate = (time: number) => {
             if (disposed) return;
@@ -227,6 +292,15 @@ export default function LumiViewer({
             scene.traverse((object) => {
               const mesh = object as import('three').Mesh;
               if (mesh.geometry) mesh.geometry.dispose();
+              const material = mesh.material as
+                | import('three').Material
+                | import('three').Material[]
+                | undefined;
+              for (const entry of Array.isArray(material) ? material : material ? [material] : []) {
+                const map = (entry as import('three').MeshStandardMaterial).map;
+                if (map) map.dispose();
+                entry.dispose();
+              }
             });
             scene.clear();
           };
