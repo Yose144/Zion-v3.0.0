@@ -1,0 +1,105 @@
+{
+  "collection": "04_Oceanske",
+  "parts": [
+    {
+      "part": 1,
+      "valid": true,
+      "components_after_kerf_0_2_0_3_0_4": [
+        1,
+        1,
+        1
+      ],
+      "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.3234394239150726
+    },
+    {
+      "part": 2,
+      "valid": true,
+      "components_after_kerf_0_2_0_3_0_4": [
+        1,
+        1,
+        1
+      ],
+      "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.277802817339204
+    },
+    {
+      "part": 3,
+      "valid": true,
+      "components_after_kerf_0_2_0_3_0_4": [
+        1,
+        1,
+        1
+      ],
+      "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.6255999999999913
+    },
+    {
+      "part": 4,
+      "valid": true,
+      "components_after_kerf_0_2_0_3_0_4": [
+        1,
+        1,
+        1
+      ],
+      "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.2759577422469737
+    },
+    {
+      "part": 5,
+      "valid": true,
+      "components_after_kerf_0_2_0_3_0_4": [
+        1,
+        1,
+        1
+      ],
+      "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.3164366812799906
+    },
+    {
+      "part": 6,
+      "valid": true,
+      "components_after_kerf_0_2_0_3_0_4": [
+        1,
+        1,
+        1
+      ],
+      "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.274627353386081
+    },
+    {
+      "part": 7,
+      "valid": true,
+      "components_after_kerf_0_2_0_3_0_4": [
+        1,
+        1,
+        1
+      ],
+      "minimum_distinct_aperture_gap_mm_or_lowerbound3": 2.2019152874821453
+    },
+    {
+      "part": 8,
+      "valid": true,
+      "components_after_kerf_0_2_0_3_0_4": [
+        1,
+        1,
+        1
+      ],
+      "minimum_distinct_aperture_gap_mm_or_lowerbound3": 3.0
+    },
+    {
+      "part": 9,
+      "valid": true,
+      "components_after_kerf_0_2_0_3_0_4": [
+        1,
+        1,
+        1
+      ],
+      "minimum_distinct_aperture_gap_mm_or_lowerbound3": 3.0
+    }
+  ],
+  "A3_mm": [
+    420,
+    297
+  ],
+  "mechanical_interface_preserved": true,
+  "CUT_closed_unique": true,
+  "SVG_DXF_max_delta_mm": 2.842170943040401e-14,
+  "individual_parts_match": true,
+  "physical_cut_test": false,
+  "kerf_compensated": false
+}

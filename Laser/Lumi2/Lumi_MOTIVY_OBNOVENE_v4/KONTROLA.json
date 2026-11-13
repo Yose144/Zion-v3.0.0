@@ -1,0 +1,737 @@
+[
+  {
+    "collection": "00_Puvodni_Lumi_2",
+    "parts": [
+      {
+        "part": 1,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.6783809107116392
+      },
+      {
+        "part": 2,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.6786355679539262
+      },
+      {
+        "part": 3,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.2671923497018105
+      },
+      {
+        "part": 4,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.3330259749907394
+      },
+      {
+        "part": 5,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.3692347861966563
+      },
+      {
+        "part": 6,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.490121136015481
+      },
+      {
+        "part": 7,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 2.2019152874821453
+      },
+      {
+        "part": 8,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 3.0
+      },
+      {
+        "part": 9,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 3.0
+      }
+    ],
+    "A3_mm": [
+      420,
+      297
+    ],
+    "mechanical_interface_preserved": true,
+    "CUT_closed_unique": true,
+    "SVG_DXF_max_delta_mm": 2.842170943040401e-14,
+    "individual_parts_match": true,
+    "physical_cut_test": false,
+    "kerf_compensated": false
+  },
+  {
+    "collection": "01_Priroda",
+    "parts": [
+      {
+        "part": 1,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.5662999999999985
+      },
+      {
+        "part": 2,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.3873999999999993
+      },
+      {
+        "part": 3,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.3933000000000106
+      },
+      {
+        "part": 4,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.361762460930709
+      },
+      {
+        "part": 5,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.4870011197036788
+      },
+      {
+        "part": 6,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.2136949464012579
+      },
+      {
+        "part": 7,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 2.2019152874821453
+      },
+      {
+        "part": 8,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 3.0
+      },
+      {
+        "part": 9,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 3.0
+      }
+    ],
+    "A3_mm": [
+      420,
+      297
+    ],
+    "mechanical_interface_preserved": true,
+    "CUT_closed_unique": true,
+    "SVG_DXF_max_delta_mm": 2.842170943040401e-14,
+    "individual_parts_match": true,
+    "physical_cut_test": false,
+    "kerf_compensated": false
+  },
+  {
+    "collection": "02_Svatebni",
+    "parts": [
+      {
+        "part": 1,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.2747823735838206
+      },
+      {
+        "part": 2,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.267542665948559
+      },
+      {
+        "part": 3,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.4234748919818658
+      },
+      {
+        "part": 4,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.2542448644503223
+      },
+      {
+        "part": 5,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.3194332629020762
+      },
+      {
+        "part": 6,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.2699246276846565
+      },
+      {
+        "part": 7,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 2.2019152874821453
+      },
+      {
+        "part": 8,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 3.0
+      },
+      {
+        "part": 9,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 3.0
+      }
+    ],
+    "A3_mm": [
+      420,
+      297
+    ],
+    "mechanical_interface_preserved": true,
+    "CUT_closed_unique": true,
+    "SVG_DXF_max_delta_mm": 2.842170943040401e-14,
+    "individual_parts_match": true,
+    "physical_cut_test": false,
+    "kerf_compensated": false
+  },
+  {
+    "collection": "03_Kvetinove",
+    "parts": [
+      {
+        "part": 1,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.247098921497404
+      },
+      {
+        "part": 2,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.381600000000006
+      },
+      {
+        "part": 3,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.143286336634441
+      },
+      {
+        "part": 4,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.2146865686258286
+      },
+      {
+        "part": 5,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.2219077747522522
+      },
+      {
+        "part": 6,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.0302778702854907
+      },
+      {
+        "part": 7,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 2.2019152874821453
+      },
+      {
+        "part": 8,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 3.0
+      },
+      {
+        "part": 9,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 3.0
+      }
+    ],
+    "A3_mm": [
+      420,
+      297
+    ],
+    "mechanical_interface_preserved": true,
+    "CUT_closed_unique": true,
+    "SVG_DXF_max_delta_mm": 2.842170943040401e-14,
+    "individual_parts_match": true,
+    "physical_cut_test": false,
+    "kerf_compensated": false
+  },
+  {
+    "collection": "04_Oceanske",
+    "parts": [
+      {
+        "part": 1,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.3234394239150726
+      },
+      {
+        "part": 2,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.277802817339204
+      },
+      {
+        "part": 3,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.6255999999999913
+      },
+      {
+        "part": 4,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.2759577422469737
+      },
+      {
+        "part": 5,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.3164366812799906
+      },
+      {
+        "part": 6,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.274627353386081
+      },
+      {
+        "part": 7,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 2.2019152874821453
+      },
+      {
+        "part": 8,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 3.0
+      },
+      {
+        "part": 9,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 3.0
+      }
+    ],
+    "A3_mm": [
+      420,
+      297
+    ],
+    "mechanical_interface_preserved": true,
+    "CUT_closed_unique": true,
+    "SVG_DXF_max_delta_mm": 2.842170943040401e-14,
+    "individual_parts_match": true,
+    "physical_cut_test": false,
+    "kerf_compensated": false
+  },
+  {
+    "collection": "05_Vesmirne",
+    "parts": [
+      {
+        "part": 1,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.419368426448887
+      },
+      {
+        "part": 2,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.3193324383465443
+      },
+      {
+        "part": 3,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.346379831251195
+      },
+      {
+        "part": 4,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.047673613297584
+      },
+      {
+        "part": 5,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.2370289608574114
+      },
+      {
+        "part": 6,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.250843315527584
+      },
+      {
+        "part": 7,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 2.2019152874821453
+      },
+      {
+        "part": 8,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 3.0
+      },
+      {
+        "part": 9,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 3.0
+      }
+    ],
+    "A3_mm": [
+      420,
+      297
+    ],
+    "mechanical_interface_preserved": true,
+    "CUT_closed_unique": true,
+    "SVG_DXF_max_delta_mm": 2.842170943040401e-14,
+    "individual_parts_match": true,
+    "physical_cut_test": false,
+    "kerf_compensated": false
+  },
+  {
+    "collection": "06_Vanocni",
+    "parts": [
+      {
+        "part": 1,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.2022126109336988
+      },
+      {
+        "part": 2,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.2052690516934352
+      },
+      {
+        "part": 3,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.0500173378378175
+      },
+      {
+        "part": 4,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.2022126109336952
+      },
+      {
+        "part": 5,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.2022126109337194
+      },
+      {
+        "part": 6,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 1.2022126109337024
+      },
+      {
+        "part": 7,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 2.2019152874821453
+      },
+      {
+        "part": 8,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 3.0
+      },
+      {
+        "part": 9,
+        "valid": true,
+        "components_after_kerf_0_2_0_3_0_4": [
+          1,
+          1,
+          1
+        ],
+        "minimum_distinct_aperture_gap_mm_or_lowerbound3": 3.0
+      }
+    ],
+    "A3_mm": [
+      420,
+      297
+    ],
+    "mechanical_interface_preserved": true,
+    "CUT_closed_unique": true,
+    "SVG_DXF_max_delta_mm": 2.842170943040401e-14,
+    "individual_parts_match": true,
+    "physical_cut_test": false,
+    "kerf_compensated": false
+  }
+]

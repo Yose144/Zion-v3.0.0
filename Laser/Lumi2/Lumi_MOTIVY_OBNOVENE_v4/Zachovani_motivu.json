@@ -1,0 +1,135 @@
+[
+  {
+    "collection": "00_Puvodni_Lumi_2",
+    "motifs": [
+      "Cisty_lotos",
+      "Mandala",
+      "Lod",
+      "Strom_zivota",
+      "Srdce",
+      "Hiranjagarbha"
+    ],
+    "void_ratios": [
+      1.0,
+      1.0,
+      1.0012144662750615,
+      1.0000000000000004,
+      1.003640332116605,
+      1.0006408163300637
+    ]
+  },
+  {
+    "collection": "01_Priroda",
+    "motifs": [
+      "Slunce",
+      "Mesic",
+      "Holubice",
+      "Dva_stromy",
+      "Hory_a_reka",
+      "Motyl"
+    ],
+    "void_ratios": [
+      1.0,
+      1.0,
+      0.9999519579529937,
+      1.000479177281732,
+      1.0,
+      1.0007803601450682
+    ]
+  },
+  {
+    "collection": "02_Svatebni",
+    "motifs": [
+      "Dve_srdce",
+      "Prsteny",
+      "Holubice",
+      "Strom_lasky",
+      "Kvetinove_srdce",
+      "Svatebni_par"
+    ],
+    "void_ratios": [
+      1.000360846609283,
+      1.00344952585614,
+      1.0016340832509973,
+      1.005350801985676,
+      1.003610462262926,
+      1.0024177330492157
+    ]
+  },
+  {
+    "collection": "03_Kvetinove",
+    "motifs": [
+      "Ruze",
+      "Slunecnice",
+      "Kopretiny",
+      "Vlci_maky",
+      "Kosatce",
+      "Rozkvetla_louka"
+    ],
+    "void_ratios": [
+      1.0102666457137255,
+      1.0059323495147312,
+      1.0046011495321383,
+      1.0045126389015626,
+      1.0053078502494806,
+      1.0033393032788234
+    ]
+  },
+  {
+    "collection": "04_Oceanske",
+    "motifs": [
+      "Delfin",
+      "Morska_zelva",
+      "Morsky_konik",
+      "Velryba",
+      "Nautilus",
+      "Koralovy_utes"
+    ],
+    "void_ratios": [
+      1.0,
+      1.0002388156050808,
+      1.001596946994364,
+      1.0011722446747149,
+      1.001231984734082,
+      1.0012501461317886
+    ]
+  },
+  {
+    "collection": "05_Vesmirne",
+    "motifs": [
+      "Saturn",
+      "Galaxie",
+      "Raketa",
+      "Zeme",
+      "Kometa",
+      "Slunce_a_Mesic"
+    ],
+    "void_ratios": [
+      1.0031123309501535,
+      1.0028358566667632,
+      1.0004184029678387,
+      1.0018544169673125,
+      1.002305743960413,
+      1.002514971777697
+    ]
+  },
+  {
+    "collection": "06_Vanocni",
+    "motifs": [
+      "Stromek",
+      "Betlem",
+      "Zvony",
+      "Andel",
+      "Svicka",
+      "Ozdoby"
+    ],
+    "void_ratios": [
+      1.0051101815068153,
+      1.0031300283998128,
+      0.9919488047336418,
+      1.0073298954442422,
+      1.0066397543872387,
+      1.0129989305536502
+    ]
+  }
+]

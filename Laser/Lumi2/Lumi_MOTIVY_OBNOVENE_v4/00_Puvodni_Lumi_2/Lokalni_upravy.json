@@ -1,0 +1,271 @@
+[
+  {
+    "local_edits": [],
+    "core_bridges": {
+      "bridges": [],
+      "original_void_area": 3090.03838053,
+      "final_void_area": 3090.03838053,
+      "original_holes": 75,
+      "final_holes": 75
+    },
+    "void_ratio": 1.0,
+    "intermediate_gap_estimate_mm": 1.2,
+    "final_export_void_ratio": 1.0,
+    "final_verified_aperture_gap_mm": 1.6783809107116392
+  },
+  {
+    "local_edits": [],
+    "core_bridges": {
+      "bridges": [],
+      "original_void_area": 3163.6522299499984,
+      "final_void_area": 3163.6522299499984,
+      "original_holes": 80,
+      "final_holes": 80
+    },
+    "void_ratio": 1.0,
+    "intermediate_gap_estimate_mm": 1.2,
+    "final_export_void_ratio": 1.0,
+    "final_verified_aperture_gap_mm": 1.6786355679539262
+  },
+  {
+    "local_edits": [
+      {
+        "mode": "remove_redundant_web",
+        "xy": [
+          [
+            188.69658030329748,
+            56.940786346344616
+          ],
+          [
+            189.0772,
+            56.8352
+          ]
+        ]
+      },
+      {
+        "mode": "remove_redundant_web",
+        "xy": [
+          [
+            172.8417,
+            64.3324
+          ],
+          [
+            172.8263,
+            63.8374
+          ]
+        ]
+      },
+      {
+        "mode": "remove_redundant_web",
+        "xy": [
+          [
+            178.9902,
+            103.9467
+          ],
+          [
+            179.6667,
+            103.8338
+          ]
+        ]
+      },
+      {
+        "mode": "remove_redundant_web",
+        "xy": [
+          [
+            179.1678,
+            23.7665
+          ],
+          [
+            180.32163811917596,
+            23.780612054427237
+          ]
+        ]
+      }
+    ],
+    "core_bridges": {
+      "bridges": [],
+      "original_void_area": 3550.7031588389627,
+      "final_void_area": 3550.7031588389627,
+      "original_holes": 61,
+      "final_holes": 61
+    },
+    "void_ratio": 1.0012144662750615,
+    "intermediate_gap_estimate_mm": 1.2,
+    "final_export_void_ratio": 1.0012144662750615,
+    "final_verified_aperture_gap_mm": 1.2671923497018105
+  },
+  {
+    "local_edits": [],
+    "core_bridges": {
+      "bridges": [],
+      "original_void_area": 2576.189736419996,
+      "final_void_area": 2576.1897364199967,
+      "original_holes": 105,
+      "final_holes": 105
+    },
+    "void_ratio": 1.0000000000000004,
+    "intermediate_gap_estimate_mm": 1.2,
+    "final_export_void_ratio": 1.0000000000000004,
+    "final_verified_aperture_gap_mm": 1.3330259749907394
+  },
+  {
+    "local_edits": [
+      {
+        "mode": "remove_redundant_web",
+        "xy": [
+          [
+            138.24882993284112,
+            216.10333754092514
+          ],
+          [
+            138.2415,
+            215.3477
+          ]
+        ]
+      },
+      {
+        "mode": "remove_redundant_web",
+        "xy": [
+          [
+            83.4000131777027,
+            216.28318835840417
+          ],
+          [
+            83.2331,
+            215.3618
+          ]
+        ]
+      },
+      {
+        "mode": "remove_redundant_web",
+        "xy": [
+          [
+            138.2376,
+            201.7196
+          ],
+          [
+            138.25617014440618,
+            200.7818409873156
+          ]
+        ]
+      },
+      {
+        "mode": "remove_redundant_web",
+        "xy": [
+          [
+            83.1301,
+            201.7431
+          ],
+          [
+            83.2065,
+            200.7821
+          ]
+        ]
+      },
+      {
+        "mode": "remove_redundant_web",
+        "xy": [
+          [
+            93.6237,
+            227.4449
+          ],
+          [
+            92.81203576643288,
+            226.90709681358902
+          ]
+        ]
+      },
+      {
+        "mode": "remove_redundant_web",
+        "xy": [
+          [
+            127.963,
+            227.4526
+          ],
+          [
+            128.73991242354495,
+            226.82898580932795
+          ]
+        ]
+      },
+      {
+        "mode": "remove_redundant_web",
+        "xy": [
+          [
+            128.60724629762748,
+            190.00350343236042
+          ],
+          [
+            127.6919,
+            189.3049
+          ]
+        ]
+      },
+      {
+        "mode": "remove_redundant_web",
+        "xy": [
+          [
+            92.85039142462637,
+            190.088206480207
+          ],
+          [
+            93.71,
+            189.3217
+          ]
+        ]
+      }
+    ],
+    "core_bridges": {
+      "bridges": [],
+      "original_void_area": 2954.261014840031,
+      "final_void_area": 2954.261014840031,
+      "original_holes": 81,
+      "final_holes": 81
+    },
+    "void_ratio": 1.003640332116605,
+    "intermediate_gap_estimate_mm": 1.2,
+    "final_export_void_ratio": 1.003640332116605,
+    "final_verified_aperture_gap_mm": 1.3692347861966563
+  },
+  {
+    "local_edits": [
+      {
+        "mode": "remove_redundant_web",
+        "xy": [
+          [
+            207.217,
+            209.2656
+          ],
+          [
+            207.2136,
+            208.7479
+          ]
+        ]
+      },
+      {
+        "mode": "remove_redundant_web",
+        "xy": [
+          [
+            152.103,
+            209.3402
+          ],
+          [
+            152.1039,
+            208.6972
+          ]
+        ]
+      }
+    ],
+    "core_bridges": {
+      "bridges": [],
+      "original_void_area": 3223.990892176962,
+      "final_void_area": 3223.990892176962,
+      "original_holes": 75,
+      "final_holes": 75
+    },
+    "void_ratio": 1.0006408163300637,
+    "intermediate_gap_estimate_mm": 1.2,
+    "final_export_void_ratio": 1.0006408163300637,
+    "final_verified_aperture_gap_mm": 1.490121136015481
+  }
+]
