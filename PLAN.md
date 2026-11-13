@@ -1,8 +1,10 @@
 # ZION TerraNova — Master Plan (v3.3 "Nirvana")
 
+> **Historický snapshot k 11. 11. 2026.** Živý kanon je [`3.3.0/CODE_VS_DOCS.md`](3.3.0/CODE_VS_DOCS.md) a master plán [`3.3.0/v3.3Nirvana.md`](3.3.0/v3.3Nirvana.md). Čísla níže se nepřepisují — jsou to záznam měření z toho dne.
+>
 > **Datum:** 2026-11-11
 > **Stupeň:** 3.2.0 Mainnet Beta → cíl 3.2.0 RC → 3.2.0 Mainnet Stable → 3.3.0 Nirvana
-> **Vstupní bod:** tento soubor je jediný aktivní plán v rootu. Detaily v `docs/3.2/`, `docs/3.3/`.
+> **Vstupní bod:** k 11. 11. to byl tento soubor. Od 13. 11. je živý stav v `3.3.0/CODE_VS_DOCS.md`. Detaily té doby zůstávají v `docs/3.2/`, `docs/3.3/`.
 > **Historie:** staré root MD plány přesunuty do `docs/3.3/`. Operativní pravidla v `AGENTS.md`.
 
 ---

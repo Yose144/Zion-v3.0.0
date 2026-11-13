@@ -1,9 +1,11 @@
 # DOC vs CODE CHECKLIST — 2026-11-10
 
-> Kanonický checklist „co dokumentace tvrdí vs. co kód/live skutečně obsahuje".
+> **Historický snapshot.** Živý kanon k 13. 11. 2026 je [`../../3.3.0/CODE_VS_DOCS.md`](../../3.3.0/CODE_VS_DOCS.md). Tento soubor se nepřepisuje.
+>
+> Kanonický checklist své doby („co dokumentace tvrdí vs. co kód/live skutečně obsahuje").
 > Nahrazuje [`DOC_VS_CODE_ANALYSIS_2026-11-02.md`](DOC_VS_CODE_ANALYSIS_2026-11-02.md) (historický snapshot).
 > Metoda: cílené grep/JSON sondy do repa + read-only SSH sondy na EDGE1 (`62.171.141.136`) a EDGE2 (`207.180.217.100`) jako root. Žádné restarty, deploye ani financial akce.
-> **Kanony pravdy:** `docs/3.2/StatusV3.md` → `PLAN.md` / `ROADMAP.md` / `V31/README.md` → `V31/docs/**` → `docs/3.3/*-PLAN.md` (detail) → starší docs.
+> **Kanony pravdy v den měření:** `docs/3.2/StatusV3.md` → `PLAN.md` / `ROADMAP.md` / `V31/README.md` → `V31/docs/**` → `docs/3.3/*-PLAN.md` (detail) → starší docs. Od 13. 11. tuto řadu nahrazuje `3.3.0/CODE_VS_DOCS.md`.
 
 ## 0. Update 2026-11-11 — edge sonda + payout monitoring M2 nasazeno
 

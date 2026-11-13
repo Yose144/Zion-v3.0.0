@@ -1,12 +1,14 @@
 # docs/3.3 — plánovací dokumenty NIRVANY
 
-> **Co tu je:** všechny plánovací dokumenty v3.3 „NIRVANA". Do **2. 11. 2026** ležely v rootu repa; při úklidu root dokumentace se sem přesunuly (commit `ee1503423`), aby v rootu zůstal jediný aktivní plán — [`PLAN.md`](../../PLAN.md).
+> **Od 13. 11. 2026** je živý stav v [`../../3.3.0/CODE_VS_DOCS.md`](../../3.3.0/CODE_VS_DOCS.md) a master v [`../../3.3.0/v3.3Nirvana.md`](../../3.3.0/v3.3Nirvana.md). Soubory v tomto adresáři jsou plány a snapshoty z října a začátku listopadu. [`PLAN.md`](../../PLAN.md) v rootu je historický snapshot k 11. 11.
 >
-> **Kam co patří:**
-> - **root** → jen [`PLAN.md`](../../PLAN.md) (vstupní bod) a provozní pravidla [`AGENTS.md`](../../AGENTS.md)
-> - **`docs/3.3/`** → plány, mapy, checklisty (tenhle adresář)
-> - **`docs/3.2/`** → kanonický stav ([`StatusV3.md`](../3.2/StatusV3.md)), roadmapy
-> - **`docs/3.2/REPORTS/`** → reporty po každé vlně/incidentu (neparkovat v rootu)
+> **Co tu je:** všechny plánovací dokumenty v3.3 „NIRVANA" z doby, kdy se plánovalo ve starém rootu. Do **2. 11. 2026** ležely v rootu repa; při úklidu root dokumentace se sem přesunuly (commit `ee1503423`).
+>
+> **Kam co patřilo do 12. 11.:**
+> - **root** → [`PLAN.md`](../../PLAN.md) byl vstupní bod starého rootu; od 13. 11. je to historický snapshot. Provozní pravidla starého stromu zůstávají v [`AGENTS.md`](../../AGENTS.md). Ukazatel na živý stav je [`../../CODE_VS_DOCS.md`](../../CODE_VS_DOCS.md).
+> - **`docs/3.3/`** → plány, mapy, checklisty té doby (tenhle adresář)
+> - **`docs/3.2/`** → stav 3.2 ([`StatusV3.md`](../3.2/StatusV3.md)), roadmapy
+> - **`docs/3.2/REPORTS/`** → reporty po každé vlně/incidentu 3.2
 > - **`docs/plans/`** → dílčí infra plány (OPS-CONSOLE, INFRA-SPLIT, VASTAI-MINING…)
 >
 > **Údržba:** při přesunu dokumentu sem nezapomeň přepsat odkazy — cesty psané od rootu (`docs/3.2/…`, `canon/…`, `V31/…`) z `docs/3.3/` nefungují, potřebují prefix `../../`.

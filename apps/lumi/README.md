@@ -196,7 +196,7 @@ ssh zion-v6 'systemctl daemon-reload && systemctl enable zion-lumi'
 ssh zion-v6 'cat > /etc/nginx/sites-available/lumi.zionterranova.com.conf <<EOF
 server {
   listen 80;
-  server_name lumi.zionterranova.com;
+  server_name lumi.zionterranova.com www.lumi.zionterranova.com;
   location /.well-known/acme-challenge/ { root /var/www/html; }
 }
 EOF
@@ -204,7 +204,8 @@ ln -sf /etc/nginx/sites-available/lumi.zionterranova.com.conf /etc/nginx/sites-e
 nginx -t && systemctl reload nginx'
 
 # 5) certifikát (webroot; účet Let's Encrypt už na serveru je)
-ssh zion-v6 'certbot certonly --webroot -w /var/www/html -d lumi.zionterranova.com --non-interactive --agree-tos'
+#    Oba names hned — wildcard DNS řeší i www.lumi, cert musí pokrývat oba.
+ssh zion-v6 'certbot certonly --webroot -w /var/www/html -d lumi.zionterranova.com -d www.lumi.zionterranova.com --non-interactive --agree-tos'
 
 # 6) plný vhost z repa
 scp apps/lumi/deploy/nginx/lumi.zionterranova.com.conf zion-v6:/etc/nginx/sites-available/
