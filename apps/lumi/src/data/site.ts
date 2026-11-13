@@ -23,9 +23,9 @@ export const NAV: NavItem[] = [
 export const SITE = {
   brand: 'Lumi',
   tagline: {
-    cs: 'Dřevěné lampiony z březové překližky',
-    en: 'Wooden lanterns in birch plywood',
-    de: 'Holzlaternen aus Birkensperrholz',
+    cs: 'Království srdce',
+    en: 'Kingdom of the Heart',
+    de: 'Königreich des Herzens',
   } satisfies Localized,
   announcement: {
     cs: 'Vánoční edice 2026 · objednávky do 10. 12. stíháme doručit před Vánoci · doprava zdarma od 1 500 Kč',

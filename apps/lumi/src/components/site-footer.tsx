@@ -18,6 +18,9 @@ export default function SiteFooter() {
             <Link href="/" className="h-display text-2xl font-semibold tracking-[0.14em] text-parchment">
               LUMI
             </Link>
+            <p className="mt-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-amber-300/80">
+              {pick(SITE.tagline, lang)}
+            </p>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-parchment/75">{pick(SITE.footer.about, lang)}</p>
             <div className="mt-5 space-y-2 text-sm text-parchment/80">
               <a href={`mailto:${COMPANY.email}`} className="flex items-center gap-2 hover:text-amber-300">
