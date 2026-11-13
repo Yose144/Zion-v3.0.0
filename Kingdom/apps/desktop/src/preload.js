@@ -75,6 +75,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   walletSendTransaction: (data) => ipcRenderer.invoke('wallet-send-transaction', data),
   walletGetTransaction: (data) => ipcRenderer.invoke('wallet-get-transaction', data),
   walletGenerateQr: (data) => ipcRenderer.invoke('wallet-generate-qr', data),
+  walletConsolidateUtxos: (data) => ipcRenderer.invoke('wallet-consolidate-utxos', data),
+  onWalletConsolidateProgress: (callback) => {
+    ipcRenderer.on('wallet-consolidate-progress', (event, data) => callback(data));
+  },
 
   // CH3 Architecture / Network Monitoring
   getGpuInfo: () => ipcRenderer.invoke('get-gpu-info'),

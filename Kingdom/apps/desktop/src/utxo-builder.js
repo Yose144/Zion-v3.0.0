@@ -39,6 +39,30 @@ try {
 const FLOWERS_PER_ZION = 1_000_000n; // 1e6 (3.0.3 decimal fork)
 const MIN_TX_FEE_FLOWERS = 1n;       // L1 fee.rs MIN_TX_FEE
 
+// ── Consensus tx-size budget (mirrors V31/L1/core fee.rs + v31_wallet.rs) ──
+// The node rejects transactions whose JSON serialization exceeds 100 KB
+// (`Node::validate_tx_size`, `fee::MAX_TX_SIZE`). A signed input costs
+// ~560 JSON bytes (32B prev-hash array + 96B sig‖pk script array), so the
+// binding cap is ~177 inputs — far below the structural MAX_TX_INPUTS=1000.
+const MAX_TX_JSON_BYTES = 100_000;
+const MAX_TX_INPUTS_CONSENSUS = 1_000;
+const JSON_BYTES_PER_INPUT = 560;
+const JSON_BYTES_PER_OUTPUT = 220;
+const JSON_BYTES_PER_MEMO_BYTE = 4;
+const JSON_BASE_BYTES = 300;
+
+/**
+ * Maximum inputs whose signed JSON encoding fits under the node's 100 KB
+ * transaction budget. Mirrors `v31_wallet::max_tx_inputs_for`.
+ */
+function maxTxInputs(numOutputs, memoLen) {
+  const reserved = JSON_BASE_BYTES + numOutputs * JSON_BYTES_PER_OUTPUT + memoLen * JSON_BYTES_PER_MEMO_BYTE;
+  return Math.min(
+    Math.floor((MAX_TX_JSON_BYTES - reserved) / JSON_BYTES_PER_INPUT),
+    MAX_TX_INPUTS_CONSENSUS
+  );
+}
+
 /**
  * Keccak-256 hash (32 bytes). Matches V31/L1/core transaction hashing.
  * @param {Buffer|Uint8Array} data
@@ -250,15 +274,26 @@ function buildUtxoTransaction({
     throw new Error('No spendable UTXOs for the sender address');
   }
 
-  // Greedy selection with dynamic fee based on selected input/output count.
-  // fee = estimateTxSize(n_inputs, n_outputs) * MIN_FEE_RATE (capped at MIN_TX_FEE).
+  // Greedy largest-first selection with dynamic fee, capped by the node's
+  // 100 KB JSON tx budget (~177 signed inputs). Mirrors
+  // `v31_wallet::select_utxos` — hitting the cap before target yields a
+  // fragmentation error, not an oversized transaction the node would reject.
+  const memoBuf = memo ? Buffer.from(memo, 'utf8') : Buffer.alloc(0);
+  const numOutputs = 2; // assume change output initially
+  const inputCap = Math.max(1, maxTxInputs(numOutputs, memoBuf.length));
+
   const selected = [];
   let inputSum = 0n;
   let feeFlowers = 0n;
   let changeFlowers = 0n;
-  let numOutputs = 2; // assume change output initially
 
   for (const utxo of sortedUtxos) {
+    if (selected.length >= inputCap) {
+      const coveredZion = (Number(inputSum) / 1e6).toFixed(6);
+      throw new Error(
+        `UTXO set too fragmented: the largest ${inputCap} inputs cover only ${coveredZion} of ${amountZion} + fee ZION — consolidate the wallet UTXOs first`
+      );
+    }
     selected.push(utxo);
     inputSum += BigInt(utxo.amount);
 
@@ -305,12 +340,11 @@ function buildUtxoTransaction({
   }));
 
   // Native V31 transaction structure
-  const memoBytes = memo ? Array.from(Buffer.from(memo, 'utf8')) : [];
   const tx = {
     version: 1,
     inputs,
     outputs,
-    memo: memoBytes
+    memo: Array.from(memoBuf)
   };
 
   // Compute signing hash (scripts excluded), sign it, then fill scripts
@@ -331,8 +365,94 @@ function buildUtxoTransaction({
   };
 }
 
+/**
+ * Build a signed consolidation transaction: spend the `inputCap` largest
+ * UTXOs into ONE output back to the sender (amount = sum - fee).
+ *
+ * Mirrors the Rust `zion wallet consolidate` round
+ * (`v31_wallet::plan_consolidation` + `build_send_with_memo` to self):
+ * merging the top of the set produces the biggest possible merged output
+ * per round, which unblocks large sends in the fewest transactions.
+ *
+ * @param {Object} opts
+ * @param {string} opts.fromAddress - Sender zion1 address (also recipient)
+ * @param {Array} opts.utxos - Spendable UTXOs [{tx_hash, output_index, amount, address}]
+ * @param {Buffer} opts.privateKeyDer - DER-encoded PKCS8 Ed25519 private key
+ * @param {string} [opts.memo] - Optional memo (UTF-8); CLI uses "CONSOLIDATE"
+ * @returns {{tx_id: string, transaction: Object, fee_flowers: string, input_count: number, output_amount: string}}
+ */
+function buildUtxoSelfSpend({ fromAddress, utxos, privateKeyDer, memo }) {
+  if (!fromAddress) throw new Error('fromAddress is required');
+  if (!Array.isArray(utxos) || utxos.length === 0) throw new Error('No UTXOs provided');
+
+  const memoBuf = memo ? Buffer.from(memo, 'utf8') : Buffer.alloc(0);
+  const inputCap = Math.max(2, maxTxInputs(1, memoBuf.length));
+
+  const sortedUtxos = [...utxos]
+    .filter((u) => String(u.address || '') === fromAddress && BigInt(u.amount) > 0n)
+    .sort((a, b) => Number(BigInt(b.amount) - BigInt(a.amount)));
+
+  const selected = sortedUtxos.slice(0, inputCap);
+  if (selected.length < 2) {
+    throw new Error('Need at least 2 UTXOs to consolidate');
+  }
+
+  let inputSum = 0n;
+  for (const utxo of selected) inputSum += BigInt(utxo.amount);
+
+  // Price the fee against the 2-output bound (a change output is possible in
+  // the generic builder) — same conservative bound the Rust consolidate CLI
+  // uses, so the fee always clears the node's 1-output minimum.
+  const feeFlowers = minimumFeeForSize(estimateTxSize(selected.length, 2));
+  const outputAmount = inputSum - feeFlowers;
+  if (outputAmount <= 0n) {
+    throw new Error(
+      `Consolidation batch of ${selected.length} UTXOs totals ${(Number(inputSum) / 1e6).toFixed(6)} ZION — below the ${feeFlowers} flower fee`
+    );
+  }
+
+  const pubKeyRaw = extractPublicKey(privateKeyDer);
+  const inputs = selected.map((utxo) => ({
+    previous_output: hexToBytes(utxo.tx_hash),
+    index: utxo.output_index,
+    script: []
+  }));
+
+  const tx = {
+    version: 1,
+    inputs,
+    outputs: [
+      {
+        amount: outputAmount.toString(),
+        address: makeAddressObject(fromAddress),
+        script: []
+      }
+    ],
+    memo: Array.from(memoBuf)
+  };
+
+  const signingHash = calculateSigningHash(tx);
+  const signature = ed25519Sign(privateKeyDer, signingHash);
+  const script = Array.from(Buffer.concat([signature, pubKeyRaw]));
+
+  for (const input of tx.inputs) {
+    input.script = script;
+  }
+
+  const txHash = calculateTxHash(tx);
+
+  return {
+    tx_id: bytesToHex(txHash),
+    transaction: tx,
+    fee_flowers: feeFlowers.toString(),
+    input_count: selected.length,
+    output_amount: outputAmount.toString()
+  };
+}
+
 module.exports = {
   buildUtxoTransaction,
+  buildUtxoSelfSpend,
   calculateTxHash,
   calculateSigningHash,
   blake3Hash,
@@ -342,6 +462,7 @@ module.exports = {
   extractPublicKey,
   estimateTxSize,
   minimumFeeForSize,
+  maxTxInputs,
   FLOWERS_PER_ZION,
   MIN_TX_FEE_FLOWERS
 };

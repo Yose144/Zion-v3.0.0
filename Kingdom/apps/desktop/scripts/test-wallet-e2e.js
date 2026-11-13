@@ -22,8 +22,49 @@ const WalletGenerator = require(path.join(__dirname, '..', 'src', 'wallet-genera
 const UtxoBuilder = require(path.join(__dirname, '..', 'src', 'utxo-builder'));
 const AccountBuilder = require(path.join(__dirname, '..', 'src', 'account-builder'));
 
-const RPC_HOST = process.env.ZION_RPC_HOST || '62.171.141.136';
+const RPC_HOST = process.env.ZION_RPC_HOST || '';
 const RPC_PORT = parseInt(process.env.ZION_RPC_PORT || '8443', 10);
+// Výchozí transport = veřejné HTTPS JSON-RPC (rpc.zionterranova.com) — surové
+// TCP :8443 je za operátorským allowlistem (nginx) a pro desktop uživatele
+// uzavřené. ZION_RPC_URL tedy má přednost; TCP ber jen ZION_RPC_HOST.
+const DEFAULT_HTTPS_RPC = 'https://rpc.zionterranova.com/jsonrpc';
+
+function httpsRpcCall(method, params) {
+  const https = require('https');
+  const url = process.env.ZION_RPC_URL || DEFAULT_HTTPS_RPC;
+  const body = JSON.stringify({ jsonrpc: '2.0', id: 1, method, params });
+  const { hostname, port, path } = new URL(url);
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      { hostname, port: port || 443, path: path || '/', method: 'POST', timeout: 10000,
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } },
+      (res) => {
+        let data = '';
+        res.on('data', (c) => (data += c.toString()));
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(data);
+            if (json.error) resolve({ error: json.error.message || JSON.stringify(json.error) });
+            else resolve(json);
+          } catch {
+            resolve({ raw: data.slice(0, 400) });
+          }
+        });
+      },
+    );
+    req.on('timeout', () => { req.destroy(); reject(new Error('HTTPS RPC timeout')); });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
+// Tcp RPC jen tehdy, když operátor explicitně nastaví ZION_RPC_HOST.
+const useTcp = Boolean(RPC_HOST);
+
+function rpcCall(method, params) {
+  return useTcp ? tcpRpcCall(method, params) : httpsRpcCall(method, params);
+}
 
 function tcpRpcCall(method, params) {
   return new Promise((resolve, reject) => {
@@ -98,7 +139,7 @@ async function main() {
 
   // 4. Balance lookup via Edge RPC
   console.log('\n[4/9] Querying balance via Edge RPC...');
-  const balanceRes = await tcpRpcCall('getBalance', { address: wallet.address });
+  const balanceRes = await rpcCall('getBalance', { address: wallet.address });
   if (balanceRes.result) {
     const r = balanceRes.result;
     console.log('  rpc_ok: true');
@@ -112,7 +153,7 @@ async function main() {
 
   // 5. UTXO lookup via Edge RPC
   console.log('\n[5/9] Querying UTXOs via Edge RPC...');
-  const utxoRes = await tcpRpcCall('getUtxos', { address: wallet.address });
+  const utxoRes = await rpcCall('getUtxos', { address: wallet.address });
   if (utxoRes.result) {
     console.log('  utxo_count:', utxoRes.result.count);
   } else {
@@ -191,7 +232,7 @@ async function main() {
   console.log('  local signature verify: OK');
 
   // Submit to Edge RPC
-  const submitRes = await tcpRpcCall('submitAccountTransaction', acctTx);
+  const submitRes = await rpcCall('submitAccountTransaction', acctTx);
   if (submitRes.result?.accepted) {
     console.log('  ✅ EDGE NODE ACCEPTED account transaction!');
     console.log('  tx_id:', submitRes.result.tx_id);

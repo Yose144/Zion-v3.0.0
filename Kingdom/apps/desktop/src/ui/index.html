@@ -6678,6 +6678,15 @@
               <span>Send Transaction</span>
             </button>
             <div id="send-status" class="status-note"></div>
+
+            <!-- UTXO consolidation (fragmented wallets) -->
+            <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.07);">
+              <button class="btn btn-ghost btn-sm" id="consolidate-utxos-btn" style="width:100%;font-size:11px;">
+                <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                <span>Consolidate UTXOs (merge fragmented outputs to self)</span>
+              </button>
+              <div id="consolidate-status" class="status-note" style="margin-top:8px;"></div>
+            </div>
           </div>
         </div>
 

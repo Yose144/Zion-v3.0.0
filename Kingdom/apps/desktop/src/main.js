@@ -1802,6 +1802,30 @@ function detectGPU() {
 let gpuDeviceListCache = null;
 let gpuDeviceListAt = 0;
 let gpuEnumInFlight = null;
+// Per-device backend first-token collected from the miner's HARDWARE
+// DETECTION box (same order as the gpu[N] banner rows). "CUDA"/"Metal"
+// mark the supplemental API pass that re-reports cards OpenCL already
+// listed (e.g. GTX 1070 Ti via NVIDIA CUDA OpenCL platform AND the CUDA
+// driver API); OpenCL platform names never collide with those tokens.
+let _gpuBoxBackends = null;
+let _gpuBoxCollect = false;
+// Drop gpu[N] banner rows that are supplemental-API re-reports of a card
+// the OpenCL pass already listed. `backends` = per-device backend token in
+// banner order; returns `list` unchanged when counts don't line up.
+function filterSupplementalGpuRows(list, backends) {
+  if (!Array.isArray(backends) || !backends.length || backends.length !== list.length) return list;
+  const SUPP = new Set(['cuda', 'metal']);
+  const seenPrimary = new Set();
+  const out = [];
+  list.forEach((d, i) => {
+    const supp = SUPP.has(String(backends[i] || '').toLowerCase());
+    const n = String(d.name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    if (supp && seenPrimary.has(n)) return;
+    out.push(d);
+    if (!supp) seenPrimary.add(n);
+  });
+  return out;
+}
 function enumerateGpuDevices(opts) {
   const force = !!(opts && opts.force);
   const now = Date.now();
@@ -1810,7 +1834,12 @@ function enumerateGpuDevices(opts) {
   }
   if (gpuEnumInFlight) return gpuEnumInFlight;
   gpuEnumInFlight = new Promise((resolve) => {
+    // Backend tokens scraped from this probe's own HARDWARE DETECTION box —
+    // consumed by filterSupplementalGpuRows inside finish().
+    const boxBackends = [];
+    let inHwBox = false;
     const finish = (list) => {
+      list = filterSupplementalGpuRows(list, boxBackends);
       // A transient empty probe (spawned while the real miner restarts or
       // OpenCL is busy) must not evict a known-good list — keep last-good
       // and re-probe in ~5 s instead of serving "CPU only" for a minute.
@@ -1860,6 +1889,12 @@ function enumerateGpuDevices(opts) {
       while ((nl = buf.indexOf('\n')) >= 0) {
         const line = buf.slice(0, nl).replace(ansiRe, '');
         buf = buf.slice(nl + 1);
+        if (/HARDWARE DETECTION/.test(line)) { inHwBox = true; continue; }
+        if (inHwBox && /AUTO MINE CONFIGURATION/.test(line)) { inHwBox = false; continue; }
+        if (inHwBox) {
+          const bm = line.match(/backend=(\S+)/i);
+          if (bm) boxBackends.push(bm[1]);
+        }
         const m = line.match(gpuRe);
         if (m) {
           const idx = Number(m[1]);
@@ -1919,12 +1954,15 @@ const GPU_HEALTH_TICK_MS = 20000;
 const GPU_STRIKE_LIMIT = 2;          // crashes attributed to a new card
 
 // Selection-token ↔ device matching, same semantics as the miner's
-// ZION_GPU_DEVICES filter: numeric = global index, otherwise a
-// case-insensitive substring of the banner name.
+// ZION_GPU_DEVICES filter (gpu::device_matches_filter): numeric = global
+// index ONLY, otherwise a case-insensitive substring of the banner name.
+// A bare numeric token must NOT fall through to name matching — "1" would
+// substring-match "GTX 1070 Ti" (the "1" in "1070") and keep a card the
+// user just disabled.
 function gpuDeviceMatchesToken(token, dev) {
   const t = String(token || '').trim().toLowerCase();
   if (!t) return false;
-  if (t === String(dev.index)) return true;
+  if (/^\d+$/.test(t)) return t === String(dev.index);
   const name = String(dev.name || '').toLowerCase();
   const short = name.split(':')[0].trim();
   return name.includes(t) || (!!short && (short.includes(t) || t.includes(short)));
@@ -2027,6 +2065,18 @@ function resetGpuHealth(config) {
 // parseMinerOutput on both stdout and stderr).
 function trackGpuHealthOutput(output) {
   const now = Date.now();
+  // Collect per-device backend= tokens from the startup HARDWARE DETECTION
+  // box (printed once per miner process, same order as the gpu[N] banner
+  // rows) so the banner-row refresh below can drop supplemental CUDA/Metal
+  // duplicates of OpenCL-listed cards.
+  if (output.includes('HARDWARE DETECTION')) {
+    _gpuBoxBackends = [];
+    _gpuBoxCollect = true;
+  }
+  if (_gpuBoxCollect && _gpuBoxBackends) {
+    for (const bm of output.matchAll(/backend=(\S+)/gi)) _gpuBoxBackends.push(bm[1]);
+    if (output.includes('AUTO MINE CONFIGURATION')) _gpuBoxCollect = false;
+  }
   // The live miner's own startup banner is ground truth for the device
   // list — refresh the enum cache from it (a probe can transiently fail
   // during restarts, the running miner's banner cannot).
@@ -2038,7 +2088,7 @@ function trackGpuHealthOutput(output) {
     });
   }
   if (bannerRows.length) {
-    gpuDeviceListCache = bannerRows;
+    gpuDeviceListCache = filterSupplementalGpuRows(bannerRows, _gpuBoxBackends);
     gpuDeviceListAt = Date.now();
     if (!gpuHealth.active.length) {
       gpuHealth.active = resolveSelectedGpuDevices(loadConfig());
@@ -2977,6 +3027,30 @@ function parseSrbGpuIds(config, key = 'srbminerGpuId') {
   const ids = raw.split(/[,\s]+/).map((s) => s.trim()).filter((s) => /^\d+$/.test(s));
   return ids.length ? ids : null;
 }
+// SRBMiner --gpu-id numbering follows the same OpenCL platform order as the
+// miner banner's gpu[N] rows, so the enabled-card set (config.gpuDevices /
+// gpuDevice / quarantine, resolved against gpuDeviceListCache) doubles as
+// the sidecar's allowed ids — a card the user disabled in the hardware
+// panel must not keep mining QTU/PRL through SRBMiner. Returns the enabled
+// ids as strings, or null when there is nothing to restrict (no device
+// list yet, GPU fully off is gated elsewhere, or every card is enabled).
+function resolveEnabledSrbGpuIds(config) {
+  const all = Array.isArray(gpuDeviceListCache) ? gpuDeviceListCache : [];
+  if (!all.length || config?.gpu === false) return null;
+  const sel = resolveSelectedGpuDevices(config);
+  const ids = sel.map(d => String(d.index)).filter(s => /^\d+$/.test(s));
+  // Empty selection (explicit gpuDevices=[] or every card quarantined)
+  // restricts SRB to nothing — the plans filter drops them downstream.
+  return ids.length === all.length ? null : ids;
+}
+// Intersect the configured/auto SRB id list with the enabled-card set.
+// Empty array = every requested card is disabled → the plan must not launch.
+function intersectSrbGpuIds(requested, enabledIds) {
+  if (!enabledIds) return requested;
+  if (requested == null) return enabledIds.slice();
+  const en = new Set(enabledIds);
+  return requested.filter(id => en.has(String(id)));
+}
 const SRB_DEFAULT_POOL = 'eu.lproute.com:5660';
 const SRB_DEFAULT_WALLET = 'qzjoHwaJ2GfiRSHyYkYcpoJFbHct9pb9EAbs7sE51Uhj8r2zb';
 const SRB_DEFAULT_PRL_POOL = 'pearl-eu2.luckypool.io:3360';
@@ -3303,6 +3377,7 @@ function verifySrbBinaryIntegrity(srbPath, isCustom) {
 // expands to one process per pinned GPU id on its own API port base.
 function srbCoinPlans(config) {
   const plans = [];
+  const enabledSrbIds = resolveEnabledSrbGpuIds(config);
   const canon = (c) => {
     c = String(c || '').trim().toUpperCase();
     if (!c || c === 'AUTO') return null;
@@ -3346,12 +3421,14 @@ function srbCoinPlans(config) {
     plans.push({
       coin, algo: isPearl ? 'pearlhash' : 'quantus', streamIndex,
       pool, wallet, tag,
-      gpuIds: parseSrbGpuIds(config, idKey), portBase,
+      gpuIds: intersectSrbGpuIds(parseSrbGpuIds(config, idKey), enabledSrbIds), portBase,
     });
   };
   if (c1) push(c1, 2, 'srbminerGpuId', SRB_API_PORT_BASE, '');
   if (c2) push(c2, 4, 'srbminerGpuId2', SRB_API_PORT_BASE_S4, 's4');
-  return plans.filter((p) => !srbInstances.some((x) => x.proc && x.streamIndex === p.streamIndex));
+  return plans.filter((p) =>
+    !(Array.isArray(p.gpuIds) && p.gpuIds.length === 0)
+    && !srbInstances.some((x) => x.proc && x.streamIndex === p.streamIndex));
 }
 
 function startSrbMiner(config, worker) {
@@ -7520,6 +7597,170 @@ async function fetchWalletSnapshotPublic(address) {
   }
 }
 
+const UTXO_SEND_PAGE_SIZE = 2000;
+// Safety cap for pathological wallets (pool payout wallet ~130k UTXOs);
+// normal user wallets finish in a few pages or hit the covered/exhausted
+// early-stop long before this.
+const UTXO_SEND_MAX_PAGES = 150;
+
+/**
+ * Page `getUtxos` (limit/offset) over the RPC candidates until the largest
+ * `inputCap` fetched UTXOs can cover `amountFlowers` (+fee bound), or the
+ * wallet's whole UTXO set is fetched.
+ *
+ * Why this exists: the public address snapshot only carries the first ~100
+ * UTXOs in tx-hash order (not amount order), so a fragmented wallet looks
+ * far poorer than it is. The node's `getUtxos` returns UTXOs sorted by
+ * (tx_hash, index) — the same order the snapshot page uses — so paging
+ * from offset 0 reconstructs the full spendable set.
+ *
+ * Returns the deduped UTXO array, or null when no endpoint answered.
+ */
+async function fetchUtxosUntilCovered(rpcUrl, address, amountFlowers, inputCap) {
+  for (const candidate of rpcFallbackCandidates(rpcUrl)) {
+    if (!candidate) continue;
+    const collected = new Map(); // "tx_hash:output_index" -> utxo
+    const topAmounts = [];       // sorted desc, length <= inputCap
+    let topKSum = 0n;
+    let offset = 0;
+    let totalCount = 0;
+    let failed = false;
+
+    const addTop = (value) => {
+      if (value <= 0n) return;
+      if (topAmounts.length === inputCap && value <= topAmounts[topAmounts.length - 1]) return;
+      let lo = 0, hi = topAmounts.length;
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (topAmounts[mid] >= value) lo = mid + 1; else hi = mid;
+      }
+      const evicted = topAmounts.length === inputCap ? topAmounts[inputCap - 1] : 0n;
+      topAmounts.splice(lo, 0, value);
+      if (topAmounts.length > inputCap) topAmounts.pop();
+      topKSum += value - evicted;
+    };
+
+    try {
+      for (let page = 0; page < UTXO_SEND_MAX_PAGES; page++) {
+        const res = await zionRpcCall(candidate, 'getUtxos', {
+          address,
+          limit: UTXO_SEND_PAGE_SIZE,
+          offset,
+        });
+        const items = Array.isArray(res?.utxos) ? res.utxos : null;
+        if (!items) { failed = true; break; }
+        totalCount = Number(res?.total_count ?? 0) || totalCount;
+        for (const u of items) {
+          const key = `${u.tx_hash}:${u.output_index}`;
+          if (collected.has(key)) continue;
+          // Raw getUtxos rows carry no `address` field (the query is already
+          // address-scoped); the snapshot API adds it — inject for parity so
+          // the tx builder's sender filter accepts these rows.
+          collected.set(key, { ...u, address: u.address ?? address });
+          addTop(BigInt(Math.trunc(Number(u.amount) || 0)));
+        }
+        offset += items.length;
+        const feeBound = UtxoBuilder.minimumFeeForSize(
+          UtxoBuilder.estimateTxSize(Math.min(inputCap, collected.size), 2)
+        );
+        const covered = topKSum >= amountFlowers + BigInt(feeBound);
+        const exhausted = items.length < UTXO_SEND_PAGE_SIZE || (totalCount > 0 && offset >= totalCount);
+        if (covered || exhausted) break;
+      }
+    } catch (err) {
+      dbg('[MAIN wallet-send-transaction] UTXO paging failed on', candidate, '-', err?.message || err);
+      failed = true;
+    }
+    if (!failed && collected.size > 0) {
+      return [...collected.values()];
+    }
+  }
+  return null;
+}
+
+/**
+ * Fetch the wallet's COMPLETE UTXO set via paged `getUtxos` (limit/offset).
+ * Used by UTXO consolidation, which needs every spendable outpoint — unlike
+ * sends, which can stop once the largest inputs cover the amount.
+ * Returns the deduped UTXO array (address injected), or null when no
+ * endpoint answered.
+ */
+async function fetchAllUtxosPaged(rpcUrl, address) {
+  for (const candidate of rpcFallbackCandidates(rpcUrl)) {
+    if (!candidate) continue;
+    const collected = new Map(); // "tx_hash:output_index" -> utxo
+    let offset = 0;
+    let totalCount = 0;
+    let failed = false;
+
+    try {
+      for (let page = 0; page < UTXO_SEND_MAX_PAGES; page++) {
+        const res = await zionRpcCall(candidate, 'getUtxos', {
+          address,
+          limit: UTXO_SEND_PAGE_SIZE,
+          offset,
+        });
+        const items = Array.isArray(res?.utxos) ? res.utxos : null;
+        if (!items) { failed = true; break; }
+        totalCount = Number(res?.total_count ?? 0) || totalCount;
+        for (const u of items) {
+          const key = `${u.tx_hash}:${u.output_index}`;
+          if (collected.has(key)) continue;
+          collected.set(key, { ...u, address: u.address ?? address });
+        }
+        offset += items.length;
+        const exhausted = items.length < UTXO_SEND_PAGE_SIZE || (totalCount > 0 && offset >= totalCount);
+        if (exhausted) break;
+      }
+    } catch (err) {
+      dbg('[MAIN wallet-consolidate] UTXO paging failed on', candidate, '-', err?.message || err);
+      failed = true;
+    }
+    if (!failed && collected.size > 0) {
+      return [...collected.values()];
+    }
+  }
+  return null;
+}
+
+/**
+ * Submit a signed UTXO transaction: public broadcast API first, then the
+ * RPC `submitUtxoTransaction` fallback chain. Returns the RPC/API result
+ * object, or throws the last error.
+ */
+async function submitUtxoTxAny(rpcUrl, txPayload) {
+  let lastError = '';
+  try {
+    const broadcastRes = await broadcastTransactionPublic(txPayload, 'utxo');
+    if (broadcastRes?.accepted || broadcastRes?.tx_id) {
+      return { tx_id: broadcastRes.tx_id, accepted: true };
+    }
+    if (broadcastRes?.error) lastError = String(broadcastRes.error);
+  } catch (pubErr) {
+    lastError = pubErr?.message || String(pubErr);
+    // 4xx validation errors are not recoverable via fallback RPC
+    if (pubErr?.status >= 400 && pubErr?.status < 500) {
+      throw new Error(lastError);
+    }
+  }
+
+  if (rpcUrl) {
+    for (const candidate of rpcFallbackCandidates(rpcUrl)) {
+      if (!candidate) continue;
+      try {
+        const rpcRes = await zionRpcCall(candidate, 'submitUtxoTransaction', txPayload);
+        if (rpcRes && !rpcRes.error) return rpcRes;
+        if (rpcRes?.error) {
+          lastError = typeof rpcRes.error === 'string' ? rpcRes.error : JSON.stringify(rpcRes.error);
+        }
+      } catch (err) {
+        lastError = err?.message || String(err);
+      }
+    }
+  }
+  throw new Error(lastError || 'no reachable broadcast endpoint');
+}
+
 /**
  * Broadcast a signed transaction via the public HTTPS API.
  * POST /api/blockchain/broadcast with { transaction, model }
@@ -7914,6 +8155,8 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     // Fallback: direct TCP RPC (operator-only)
     console.log('[MAIN wallet-send-transaction] Fetching UTXOs...');
     let utxos = null;
+    let utxoTotalCount = 0;
+    let utxosTruncated = false;
     let lastRpcError = '';
 
     // Try public API first — returns UTXOs in the snapshot
@@ -7921,10 +8164,14 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
       const snap = await fetchWalletSnapshotPublic(fromAddr);
       if (Array.isArray(snap.utxos) && snap.utxos.length > 0) {
         utxos = snap.utxos;
-        console.log('[MAIN wallet-send-transaction] UTXOs fetched from public API - count:', utxos.length);
+        utxoTotalCount = Number(snap.balance?.utxo_count ?? 0) || utxos.length;
+        utxosTruncated = snap.utxos_truncated === true;
+        console.log('[MAIN wallet-send-transaction] UTXOs fetched from public API - count:', utxos.length, '/', utxoTotalCount);
       } else if (Array.isArray(snap.utxos)) {
         // Public API returned empty UTXO list — use it (account model)
         utxos = snap.utxos;
+        utxoTotalCount = Number(snap.balance?.utxo_count ?? 0);
+        utxosTruncated = snap.utxos_truncated === true;
         console.log('[MAIN wallet-send-transaction] Public API returned 0 UTXOs (account model)');
       }
     } catch (pubErr) {
@@ -7941,7 +8188,8 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
           const utxoRes = await zionRpcCall(candidateUrl, 'getUtxos', { address: fromAddr });
           if (utxoRes && !utxoRes.error && Array.isArray(utxoRes.utxos)) {
             utxos = utxoRes.utxos;
-            console.log('[MAIN wallet-send-transaction] UTXOs fetched from', candidateUrl, '- count:', utxos.length);
+            utxoTotalCount = Number(utxoRes.total_count ?? 0) || utxos.length;
+            console.log('[MAIN wallet-send-transaction] UTXOs fetched from', candidateUrl, '- count:', utxos.length, '/', utxoTotalCount);
             break;
           }
           if (utxoRes?.error) {
@@ -7954,8 +8202,51 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     }
 
     if (!utxos) {
+      // Last resort: the un-limited getUtxos above returns the whole UTXO set
+      // in one response — on fragmented wallets that can exceed the RPC
+      // timeout. Page it in small chunks instead; stop once the largest
+      // inputCap UTXOs cover the send or the set is exhausted.
+      console.warn('[MAIN wallet-send-transaction] Trying paged getUtxos fallback...');
+      const amountFlowers = BigInt(Math.floor(amt * 1e6));
+      const memoLen = memo ? Buffer.byteLength(String(memo), 'utf8') : 0;
+      const inputCap = Math.max(1, UtxoBuilder.maxTxInputs(2, memoLen));
+      const paged = await fetchUtxosUntilCovered(rpcUrl, fromAddr, amountFlowers, inputCap);
+      if (paged && paged.length > 0) {
+        utxos = paged;
+        utxoTotalCount = paged.length;
+        console.log('[MAIN wallet-send-transaction] UTXOs paged via RPC fallback - count:', utxos.length);
+      }
+    }
+
+    if (!utxos) {
       console.warn('[MAIN wallet-send-transaction] No UTXOs available');
       return { success: false, error: `Cannot retrieve UTXOs: ${lastRpcError || 'no reachable endpoint'}` };
+    }
+
+    // The public snapshot only carries the first ~100 UTXOs (tx-hash order,
+    // not amount). When that page cannot cover amount+fee and the wallet's
+    // UTXO set is larger (or of unknown size), page getUtxos over the public
+    // JSON-RPC until the largest inputCap UTXOs cover the send or the set is
+    // exhausted. Without this a fragmented wallet reports a tiny "spendable"
+    // balance even though the chain balance is sufficient.
+    if (utxos.length > 0) {
+      const amountFlowers = BigInt(Math.floor(amt * 1e6));
+      const memoLen = memo ? Buffer.byteLength(String(memo), 'utf8') : 0;
+      const inputCap = Math.max(1, UtxoBuilder.maxTxInputs(2, memoLen));
+      const feeBound = BigInt(UtxoBuilder.minimumFeeForSize(UtxoBuilder.estimateTxSize(utxos.length, 2)));
+      const haveFlowers = utxos.reduce((sum, u) => sum + BigInt(Math.trunc(Number(u.amount) || 0)), 0n);
+      const pageCovers = haveFlowers >= amountFlowers + feeBound;
+      const setComplete = !utxosTruncated && utxoTotalCount > 0 && utxoTotalCount <= utxos.length;
+      if (!pageCovers && !setComplete) {
+        console.log('[MAIN wallet-send-transaction] UTXO page cannot cover send (', utxos.length, '/', utxoTotalCount, ') — paging getUtxos...');
+        const paged = await fetchUtxosUntilCovered(rpcUrl, fromAddr, amountFlowers, inputCap);
+        if (paged && paged.length > 0) {
+          utxos = paged;
+          console.log('[MAIN wallet-send-transaction] UTXOs paged via RPC - count:', utxos.length);
+        } else {
+          console.warn('[MAIN wallet-send-transaction] UTXO paging unavailable — using snapshot page only');
+        }
+      }
     }
 
     // ── Step 3: Decide transaction model (UTXO vs Account) ───────────
@@ -8100,6 +8391,201 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     };
   } catch (error) {
     console.error('[MAIN wallet-send-transaction] UNEXPECTED ERROR:', error);
+    return { success: false, error: error?.message || String(error) };
+  }
+});
+
+/**
+ * Consolidate a fragmented UTXO wallet: repeatedly merge the largest
+ * `inputCap` unspent UTXOs into a single self-output, mirroring the Rust
+ * `zion wallet consolidate` CLI (`plan_consolidation` + self-send).
+ *
+ * Batches are DISJOINT — every round spends only original UTXOs not used by
+ * earlier rounds — so all transactions can be broadcast back-to-back without
+ * waiting for confirmations (same as the CLI). The merged outputs appear on
+ * chain as the transactions confirm.
+ *
+ * Params: { rpcUrl, address, password, rounds?, targetUtxos?, memo? }
+ */
+ipcMain.handle('wallet-consolidate-utxos', async (event, { rpcUrl, address, password, rounds, targetUtxos, memo }) => {
+  console.log('[MAIN wallet-consolidate-utxos] Starting...');
+  try {
+    const addr = (address || '').toString().trim();
+    if (WalletGenerator.getAddressType(addr) !== 'zion1') {
+      return { success: false, error: 'Address must be a zion1... address' };
+    }
+    if (!password) {
+      return { success: false, error: 'Wallet password is required to sign consolidation transactions' };
+    }
+    const maxRounds = Math.min(Math.max(parseInt(rounds, 10) || 30, 1), 100);
+    const targetCount = Math.max(parseInt(targetUtxos, 10) || 0, 0);
+    const consMemo = (memo || 'CONSOLIDATE').toString();
+
+    // ── Decrypt signing key (same wallet-file lookup as send) ─────────
+    const files = fs.readdirSync(WALLETS_PATH).filter(f => f.endsWith('.json'));
+    let walletData = null;
+    for (const f of files) {
+      try {
+        const d = JSON.parse(fs.readFileSync(path.join(WALLETS_PATH, f), 'utf8'));
+        if (d.address === addr) { walletData = d; break; }
+      } catch { /* skip invalid */ }
+    }
+    if (!walletData) {
+      return { success: false, error: 'Wallet file not found for this address' };
+    }
+    let privateKeyHex;
+    try {
+      privateKeyHex = WalletGenerator.decryptPrivateKey(walletData.encryptedPrivateKey, password);
+    } catch {
+      return { success: false, error: 'Wrong wallet password' };
+    }
+    const privateKeyDer = Buffer.from(privateKeyHex, 'hex');
+
+    // ── Chain height for coinbase-maturity filtering ──────────────────
+    let chainHeight = 0;
+    for (const candidate of rpcFallbackCandidates(rpcUrl)) {
+      if (!candidate) continue;
+      try {
+        const info = await zionRpcCall(candidate, 'getChainInfo', {});
+        const h = Number(info?.result?.chain_height ?? info?.chain_height ?? 0);
+        if (h > 0) { chainHeight = h; break; }
+      } catch { /* try next */ }
+    }
+
+    // ── Fetch the complete UTXO set (paged — snapshot API truncates) ───
+    const allUtxos = await fetchAllUtxosPaged(rpcUrl, addr);
+    if (!allUtxos || allUtxos.length === 0) {
+      return { success: false, error: 'Could not fetch UTXOs — no reachable RPC endpoint' };
+    }
+
+    // Coinbase outputs need 100 confirmations (emission::COINBASE_MATURITY).
+    const mature = chainHeight > 0
+      ? allUtxos.filter(u => !(u.is_coinbase && Number(u.block_height || 0) + 100 > chainHeight))
+      : allUtxos;
+    const immatureSkipped = allUtxos.length - mature.length;
+    if (immatureSkipped > 0) {
+      console.log('[MAIN wallet-consolidate-utxos] Skipping', immatureSkipped, 'immature coinbase UTXOs');
+    }
+    if (mature.length <= targetCount) {
+      return { success: true, broadcast: 0, txIds: [], message: `Wallet already at ${mature.length} UTXOs (target ${targetCount}) — nothing to consolidate`, skippedImmature: immatureSkipped };
+    }
+
+    const inputCap = Math.max(2, UtxoBuilder.maxTxInputs(1, Buffer.byteLength(consMemo, 'utf8')));
+
+    // Estimate the plan up-front (each round removes one disjoint batch of
+    // originals, so the round count is pure arithmetic) — lets the confirm
+    // dialog show real numbers before anything is broadcast.
+    let plannedRounds = 0;
+    let plannedFeeFlowers = 0n;
+    {
+      let availCount = mature.length;
+      while (availCount > targetCount) {
+        const batchLen = Math.min(inputCap, availCount);
+        if (batchLen < 2) break;
+        plannedRounds++;
+        plannedFeeFlowers += UtxoBuilder.minimumFeeForSize(UtxoBuilder.estimateTxSize(batchLen, 2));
+        availCount -= batchLen;
+      }
+    }
+    if (plannedRounds === 0) {
+      return { success: true, broadcast: 0, txIds: [], message: 'Nothing to consolidate — remaining UTXOs are below the batch minimum', skippedImmature: immatureSkipped };
+    }
+
+    // Security: require user confirmation before broadcasting (same native
+    // dialog pattern as wallet-send-transaction — window.confirm is a no-op
+    // in Electron renderers).
+    try {
+      const confirmation = await dialog.showMessageBox(mainWindow || undefined, {
+        type: 'warning',
+        title: 'Consolidate UTXOs',
+        message: `Consolidate ${mature.length} UTXOs?`,
+        detail: `This broadcasts ${plannedRounds} self-transactions that merge the largest UTXOs into single outputs on the same address.\n\nEstimated total fee: ~${(Number(plannedFeeFlowers) / 1e6).toFixed(4)} ZION\nEstimated time to confirm: ~${Math.max(1, Math.ceil(plannedRounds / 10))} blocks (~${Math.max(1, Math.ceil(plannedRounds / 10)) * 2} min)\n\nAll funds stay in this wallet — only network fees are spent.`,
+        buttons: ['Consolidate', 'Cancel'],
+        defaultId: 1,
+        cancelId: 1
+      });
+      if (confirmation.response !== 0) {
+        console.log('[MAIN wallet-consolidate-utxos] User cancelled');
+        return { success: false, error: 'Consolidation cancelled by user' };
+      }
+      console.log('[MAIN wallet-consolidate-utxos] User confirmed');
+    } catch (dialogErr) {
+      // If dialog fails (e.g. window not available), proceed anyway
+      console.warn('[MAIN wallet-consolidate-utxos] Dialog failed, proceeding:', dialogErr?.message);
+    }
+
+    const spent = new Set(); // "tx_hash:output_index" of batches already broadcast
+    const txIds = [];
+    let broadcast = 0;
+    let dustStop = false;
+
+    for (let round = 1; round <= maxRounds; round++) {
+      const avail = mature.filter(u => !spent.has(`${u.tx_hash}:${u.output_index}`));
+      if (avail.length <= targetCount) break;
+
+      const batch = [...avail]
+        .sort((a, b) => Number(BigInt(b.amount) - BigInt(a.amount)))
+        .slice(0, inputCap);
+      if (batch.length < 2) break;
+
+      let built;
+      try {
+        built = UtxoBuilder.buildUtxoSelfSpend({
+          fromAddress: addr,
+          utxos: batch,
+          privateKeyDer,
+          memo: consMemo
+        });
+      } catch (buildErr) {
+        // Top batch totals below the fee — the remaining UTXOs are dust.
+        if (/below the .* flower fee/.test(buildErr?.message || '')) {
+          dustStop = true;
+          console.log('[MAIN wallet-consolidate-utxos] Round', round, '- remaining UTXOs below fee, stopping:', buildErr.message);
+          break;
+        }
+        return { success: false, error: `Round ${round} build failed: ${buildErr?.message || buildErr}`, txIds, broadcast };
+      }
+
+      try {
+        const res = await submitUtxoTxAny(rpcUrl, built.transaction);
+        const txId = res?.tx_id || res?.txid || built.tx_id;
+        txIds.push(txId);
+        broadcast++;
+        for (const u of batch) spent.add(`${u.tx_hash}:${u.output_index}`);
+        console.log('[MAIN wallet-consolidate-utxos] Round', round, 'broadcast tx', txId, '-', built.input_count, 'inputs ->', (Number(built.output_amount) / 1e6).toFixed(2), 'ZION');
+        try {
+          event.sender.send('wallet-consolidate-progress', {
+            round, txId, broadcast,
+            inputs: built.input_count,
+            outputZion: Number(built.output_amount) / 1e6,
+            remainingEstimate: avail.length - batch.length + broadcast
+          });
+        } catch { /* renderer gone */ }
+      } catch (bcastErr) {
+        return {
+          success: false,
+          error: `Round ${round} broadcast failed: ${bcastErr?.message || bcastErr}`,
+          txIds, broadcast,
+          note: 'Earlier rounds were already broadcast — re-run after they confirm.'
+        };
+      }
+    }
+
+    const remainingOriginals = mature.filter(u => !spent.has(`${u.tx_hash}:${u.output_index}`)).length;
+    console.log('[MAIN wallet-consolidate-utxos] Done:', broadcast, 'txs broadcast,', remainingOriginals, 'unspent originals +', broadcast, 'merged pending');
+    return {
+      success: true,
+      broadcast,
+      txIds,
+      remainingEstimate: remainingOriginals + broadcast,
+      skippedImmature: immatureSkipped,
+      dustStop,
+      message: broadcast === 0
+        ? 'Nothing to consolidate'
+        : `${broadcast} consolidation transaction(s) broadcast — merged outputs appear as they confirm (~1 block each)`
+    };
+  } catch (error) {
+    console.error('[MAIN wallet-consolidate-utxos] UNEXPECTED ERROR:', error);
     return { success: false, error: error?.message || String(error) };
   }
 });
