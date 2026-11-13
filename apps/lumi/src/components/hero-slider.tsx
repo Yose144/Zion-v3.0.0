@@ -48,7 +48,7 @@ export default function HeroSlider() {
 
   return (
     <section
-      className="relative h-[56vh] min-h-[420px] max-h-[600px] overflow-hidden"
+      className="relative aspect-[16/9] min-h-[360px] max-h-[72rem] overflow-hidden bg-ink"
       role="region"
       aria-roledescription="carousel"
       aria-label={pick(
@@ -101,7 +101,7 @@ export default function HeroSlider() {
               fetchPriority={i === 0 ? 'high' : undefined}
               decoding="async"
               draggable={false}
-              className="h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-contain 2xl:object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/30 to-ink/5" />
             <div className="container-lumi absolute inset-x-0 bottom-0 flex h-full items-end pb-12 sm:pb-16">
