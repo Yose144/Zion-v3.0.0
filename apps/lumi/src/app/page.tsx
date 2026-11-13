@@ -13,6 +13,7 @@ import SectionHeading from '@/components/section-heading';
 import Reveal from '@/components/reveal';
 import CollectionGrid from '@/components/collection-grid';
 import HomeShowcase from '@/components/home-showcase';
+import HeroSlider from '@/components/hero-slider';
 import FaqAccordion from '@/components/faq-accordion';
 import NewsletterForm from '@/components/newsletter-form';
 import { Price } from '@/components/price';
@@ -114,6 +115,9 @@ export default function HomePage() {
           })}
         </div>
       </section>
+
+      {/* ── Promo slider ────────────────────────────────────────────── */}
+      <HeroSlider />
 
       {/* ── 3D — naše eso (model se načítá sám, s přepínačem motivů) ──── */}
       <HomeShowcase />
