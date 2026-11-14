@@ -33,7 +33,7 @@ export default function SiteHeader() {
         <div className="container-lumi flex h-16 items-center justify-between gap-4">
           <Link href="/" className="group flex items-baseline gap-2" aria-label="Lumi — domů">
             <span className="h-display text-[1.7rem] font-semibold tracking-[0.14em] text-ink">LUMI</span>
-            <span className="hidden whitespace-nowrap text-[0.58rem] font-semibold uppercase tracking-[0.2em] text-muted xl:inline">
+            <span className="hidden whitespace-nowrap text-[0.58rem] font-semibold uppercase tracking-[0.2em] text-muted sm:inline lg:hidden xl:inline">
               {pick(SITE.tagline, lang)}
             </span>
           </Link>
@@ -99,6 +99,9 @@ export default function SiteHeader() {
                   {pick(item.label, lang)}
                 </Link>
               ))}
+              <p className="mt-3 border-t border-line px-3 pt-3 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-muted">
+                {pick(SITE.tagline, lang)}
+              </p>
               <div className="mt-3 flex items-center justify-between border-t border-line pt-4">
                 <span className="text-xs uppercase tracking-[0.14em] text-muted">Jazyk</span>
                 <LanguageSwitcher compact />
