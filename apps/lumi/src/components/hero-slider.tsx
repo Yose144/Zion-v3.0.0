@@ -92,11 +92,11 @@ export default function HeroSlider() {
           >
             <img
               src={src}
-              srcSet={`${imageVariant(src, 640)} 640w, ${imageVariant(src, 1280)} 1280w, ${src} 1672w`}
+              srcSet={`${imageVariant(src, 640)} 640w, ${imageVariant(src, 1280)} 1280w, ${src} ${slide.width}w`}
               sizes="100vw"
               alt={pick(slide.alt, lang)}
-              width={1672}
-              height={941}
+              width={slide.width}
+              height={slide.height}
               loading={i === 0 ? 'eager' : 'lazy'}
               fetchPriority={i === 0 ? 'high' : undefined}
               decoding="async"
