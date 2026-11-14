@@ -64,6 +64,13 @@
 | [`Nedele.md`](Nedele.md) | Neděle — plán pokračování z lokálního backup PC. |
 | [`nedele1.md`](nedele1.md) | Neděle 1 — herní Nirvana, handoff pro přesun na lokální PC. |
 
+## 6. Kontinuita a nástupnictví
+
+| Dokument | Co obsahuje |
+|---|---|
+| [`TRUSTEE-CONTINUITY.md`](TRUSTEE-CONTINUITY.md) | **Provozní a kontinuitní manuál pro správkyni** (Erika Imlaufová, zástupkyně Petra Tkácová). Psáno pro ne-technika: první 72 hodin, co nikdy nedělat, mapa světa, přístupy, pravidelné kontroly, rozhodovací stromy, skutečné příkazy, peněžní pravidla, blokátory. **INTERNAL — nikdy do `public/` mirroru.** |
+| [`ARCHA-ZACHRANNA-MISE.md`](ARCHA-ZACHRANNA-MISE.md) | Záchranná (SAR) mise lodi Království srdce — interní analýza, minimální kritérium = záchrana dětí. Veřejná vize zůstává `vision` v [`ARCHA-NOEMOVA.md`](ARCHA-NOEMOVA.md). |
+
 ---
 
 ## Historie přesunu (2026-11-02)
