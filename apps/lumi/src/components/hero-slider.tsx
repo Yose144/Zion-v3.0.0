@@ -48,7 +48,7 @@ export default function HeroSlider() {
 
   return (
     <section
-      className="relative aspect-[16/9] min-h-[360px] max-h-[72rem] overflow-hidden bg-ink"
+      className="relative aspect-[16/9] min-h-[360px] max-h-[72rem] w-full overflow-hidden bg-ink"
       role="region"
       aria-roledescription="carousel"
       aria-label={pick(

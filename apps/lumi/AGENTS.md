@@ -137,3 +137,13 @@ node scripts/build-lantern-models.mjs ../../heros/Lumi/<balíček> --slug <slug>
 - Tmavý motiv: `--btn-primary-bg` = jantar, text inkoust; `forest` je tmavší, `rust`/`success` světlejší. `text-parchment` zůstává staticky světlý pro tmavé plochy (`bg-forest`), `text-ink` se přepíná.
 - Nepoužívej `bg-white/*` (kromě QR plochy) — používej `bg-card/*`. `bg-ink` je textová barva, ne plocha; plochy jsou `bg-forest`.
 - Responzivita: testuj 390 a 1440 v **obou** motivech, cookies tabulku jako karty na mobilu, administraci s `overflow-x-auto`.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
