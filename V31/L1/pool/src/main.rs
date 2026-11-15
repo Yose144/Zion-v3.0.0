@@ -639,9 +639,19 @@ async fn main() -> anyhow::Result<()> {
     });
 
     // ── PPLNS state persistence ───────────────────────────────────────────
+    // Interval is env-tunable: the snapshot is a full-window JSON (~100+ MB
+    // at current PPLNS window sizes) rewritten every cycle while shares keep
+    // arriving, so ops may need a longer cadence on small boxes. Default 30 s
+    // preserves previous behaviour.
+    let pplns_persist_interval_s = std::env::var("ZION_POOL_PPLNS_PERSIST_INTERVAL_S")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .filter(|v| *v >= 5)
+        .unwrap_or(30);
     let persist_pool = Arc::clone(&pool);
     let persist_handle = tokio::spawn(async move {
-        let mut interval = tokio::time::interval(Duration::from_secs(30));
+        let mut interval =
+            tokio::time::interval(Duration::from_secs(pplns_persist_interval_s));
         interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         loop {
             interval.tick().await;

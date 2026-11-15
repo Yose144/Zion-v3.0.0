@@ -28,6 +28,15 @@ DEST="${ZION_EDGE_BACKUP_DEST:-$HOME/backups/edge}"
 KEEP_DAILY="${ZION_EDGE_BACKUP_KEEP_DAILY:-21}"   # ~7 days at 3 snapshots/day
 KEEP_WEEKLY="${ZION_EDGE_BACKUP_KEEP_WEEKLY:-8}" # ~8 weeks
 
+# Single-instance lock (mkdir is atomic on macOS+Linux) — launchd and manual
+# runs must never overlap two rsyncs into the same DEST.
+LOCKDIR="${DEST}.lock"
+if ! mkdir "$LOCKDIR" 2>/dev/null; then
+  echo "$(date -Is) another pull-edge-backups instance is running — skipping"
+  exit 0
+fi
+trap 'rmdir "$LOCKDIR" 2>/dev/null' EXIT
+
 mkdir -p "$DEST"
 
 for sub in daily weekly node-db-bak; do
@@ -40,15 +49,12 @@ done
 # ── Local retention ────────────────────────────────────────────────────────
 prune_newest() {
   # $1 = dir, $2 = glob, $3 = keep count
+  # Portable across GNU/BSD find: `ls -t` sorts by mtime desc (filenames here
+  # never contain spaces).
   local dir="$1" glob="$2" keep="$3"
   [ -d "$dir" ] || return 0
-  local total
-  total=$(find "$dir" -maxdepth 1 -name "$glob" -type f | wc -l)
-  if [ "$total" -gt "$keep" ]; then
-    find "$dir" -maxdepth 1 -name "$glob" -type f -printf '%T@ %p\n' \
-      | sort -rn | tail -n "+$((keep + 1))" | cut -d' ' -f2- \
-      | while IFS= read -r old; do rm -f "$old"; done
-  fi
+  ls -1t "$dir"/$glob 2>/dev/null | tail -n "+$((keep + 1))" \
+    | while IFS= read -r old; do rm -f "$old"; done
 }
 prune_newest "$DEST/daily" 'zion-edge-*.tar.gz' "$KEEP_DAILY"
 prune_newest "$DEST/weekly" 'zion-edge-weekly-*.tar.gz' "$KEEP_WEEKLY"
