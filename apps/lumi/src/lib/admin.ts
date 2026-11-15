@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export const ADMIN_COOKIE = 'lumi_admin';
@@ -19,8 +19,37 @@ export function adminUser(): string {
   return process.env.LUMI_ADMIN_USER?.trim() || 'admin';
 }
 
+/**
+ * Více admin účtů — stejný formát jako MarketPlace `ADMIN_USERS`:
+ * `user:heslo,user2:heslo2`, heslo plaintext nebo `sha256:<hex>`.
+ * Když je `LUMI_ADMIN_USERS` nastavené, nahrazuje legacy jeden účet.
+ */
+function parseUsers(env: string): Map<string, string> {
+  const users = new Map<string, string>();
+  for (const entry of env.split(',')) {
+    const idx = entry.indexOf(':');
+    if (idx > 0) {
+      users.set(entry.slice(0, idx).trim(), entry.slice(idx + 1).trim());
+    }
+  }
+  return users;
+}
+
+function adminUsers(): Map<string, string> {
+  const env = process.env.LUMI_ADMIN_USERS?.trim();
+  return env ? parseUsers(env) : new Map();
+}
+
+function passwordMatches(expected: string, provided: string): boolean {
+  if (expected.startsWith('sha256:')) {
+    const given = createHash('sha256').update(provided).digest('hex');
+    return safeEqual(given, expected.slice(7).toLowerCase());
+  }
+  return safeEqual(provided, expected);
+}
+
 export function adminConfigured(): boolean {
-  return Boolean(secret() && password());
+  return Boolean(secret() && (adminUsers().size > 0 || password()));
 }
 
 function sign(payload: string, key: string): string {
@@ -36,6 +65,11 @@ function safeEqual(input: string, expected: string): boolean {
 
 /** Ověří uživatelské jméno i heslo. */
 export function verifyCredentials(username: string, inputPassword: string): boolean {
+  const users = adminUsers();
+  if (users.size > 0) {
+    const expected = users.get(username.trim());
+    return expected ? passwordMatches(expected, inputPassword) : false;
+  }
   const expectedPassword = password();
   if (!expectedPassword) return false;
   if (!safeEqual(username, adminUser())) return false;
