@@ -73,10 +73,10 @@ export const CHRISTMAS_EDITION_PRODUCTS: ShopNewsProduct[] = [
 /** Obrázky doprovodných karet — skutečné assety z e-shopu, ne ilustrace. */
 export const SHOP_NEWS_IMAGES = {
   market: {
-    src: '/hero-kolekce-2027.webp?v=engine-v1',
+    src: '/market-je-otevreny.webp?v=engine-v1',
     alt: {
-      cs: 'Zimní trh Království srdce — archa, strom a lucerny',
-      en: 'The Kingdom of Hearts winter market — the ark, the tree and lanterns',
+      cs: 'Tesař otevírá ZION Market — lucerna, dřevěná loď a kniha na pultu',
+      en: 'The carpenter opens the ZION Market — lantern, wooden boat and book on the counter',
     },
   },
   campaign: {
