@@ -23,8 +23,12 @@ const paths = new Set([
   "/shop/img/products/soft-003_rtx-5060-miner-oasis.webp",
   "/shop/img/products/soft-001_miner-pro-desktop.webp"
 ]);
+/** Product cards in Semínka were replaced by the Engine B seed set (2026-11-16). */
+const SEED_IMAGE_VERSION = 'seeds-2026-11-16';
+
 export function designImage(src: string | undefined): string | undefined {
   if (!src) return src;
   const path = src.split('?')[0].replace(/^https:\/\/market\.zionterranova\.com/, '');
+  if (path.startsWith('/shop/img/products/seed-')) return `${path}?v=${SEED_IMAGE_VERSION}`;
   return paths.has(path) ? `${path}?v=engine-v1` : src;
 }
