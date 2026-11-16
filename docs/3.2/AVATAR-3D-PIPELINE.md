@@ -284,8 +284,13 @@ kompresi textury.
 
 1. Asset do `apps/nirvana/public/models/avatars/<id>.glb` (prefix `/models` je veřejný
    v `middleware.ts`; jinde loader dostane 307 a načte HTML).
-2. Manifest `apps/nirvana/src/core/avatars/models.generated.ts`:
-   `export const AVATAR_MODELS: Record<number, string> = { 0: '/models/avatars/0.glb' }`.
+2. Manifest `apps/nirvana/src/core/avatars/models.ts`
+   (`AVATAR_MODELS`, generovaný z obsahu adresáře — 149 ID k 2026-11-16).
+   Pro **web** (app.zionterranova.com) existuje druhý, odvozený seznam
+   `apps/website-v2.9/src/lib/oasis/avatar-models.json`; tvoří ho
+   `scripts/ops/gen-avatar-models.mjs` (běží v `prebuild`), takže se nedá
+   zapomenout — jinak web 3D náhled u nových ID **tiše** nekreslí (§9e).
+   GLB do webového buildu kopíruje `deploy-web2.9.sh` z Nirvany.
 3. `AvatarModel.tsx` dostane větev: pokud `AVATAR_MODELS[look.id]` existuje, načte GLB,
    jinak použije `buildAvatarMesh(look)`. **Fallback musí být výchozí chování** — chybějící
    soubor nesmí rozbít výběr ani multiplayer.

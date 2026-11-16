@@ -275,9 +275,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   deterministická funkce: id → semínko → tělo, výška, ornamenty, aura; paprsek
   a vzácnost berou z katalogu. Proto jde cizí hráč vykreslit jen z `avatarId`,
   bez stahování rosteru.
-- **Model je z primitiv** (`AvatarModel.tsx`, ~18 meshů) — v repu nejsou žádné
-  glb/gltf, takže „namodelovat 200 postav" nejde. Kit je navržený tak, aby šel
-  později vyměnit za skutečné modely bez změny zbytku.
+- **Model je z primitiv** (`AvatarModel.tsx`, ~18 meshů) — to je **výchozí a
+  záložní** cesta. Od 2026-11-16 ale existují skutečné GLB modely: **149 z 202**
+  avatárů (`public/models/avatars/<id>.glb`, dávky 01–06, ID 000–152) a vybírá
+  je `core/avatars/models.ts` (`avatarModelUrl(id)`); chybějící soubor nebo ID
+  mimo mapu bezpečně padá na procedurální model. Seznam se **generuje z disku**
+  (`scripts/ops/gen-avatar-models.mjs` → i pro web), takže se nedá ručně rozejít
+  s obsahem `public/models/avatars`. Kvalita je „proxy“ (single-view TripoSR) —
+  viz `docs/3.2/AVATAR-3D-PIPELINE.md` §5 a §9e.
 
 ### Avatary — bohatší model a portréty (2026-11-01)
 

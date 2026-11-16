@@ -111,12 +111,55 @@ náhrada procedurálních postav a základ pro pozdější ruční dočištění
 - **Chůze/útok, prsty, oddělené atributy** — bez změny, stále chybí (§7–8 pipeline).
 - **Zbývá 50 postav rosteru** (ID 153–204) — balíčky 07–08 nedodány.
 
-## 9. Změněné soubory
+## 9. Zapojení do webu (app.zionterranova.com)
+
+Web `/l4-oasis/avatars` kreslí 3D náhled v detailu avatara
+(`components/AvatarModel3D.tsx`, GLB z Nirvany), ale jen pro ID, která jsou
+v `src/lib/oasis/avatar-models.json`. Ten seznam měl **74 ID (000–077)** a nové
+modely by **tiše ignoroval** — přesně ten typ chyby, který se neprojeví chybou,
+jen absencí.
+
+Oprava je systémová, ne ruční: nový `scripts/ops/gen-avatar-models.mjs` bere
+**jediný zdroj pravdy** (`apps/nirvana/public/models/avatars/<id>.glb`) a píše
+seznam; běží v `prebuild` webu, takže build bez něj nejde a seznam se nemůže
+rozejít s repem. GLB do buildu kopíruje `deploy-web2.9.sh` (v `apps/website-v2.9/public/`
+**nejsou** — žádná druhá kopie v gitu).
+
+Seznam: **74 → 149** ID (000–152).
+
+## 10. Nasazení a ověření
+
+| Co | Release | Ověření |
+|---|---|---|
+| Nirvana (EDGE, `nirvana.zionterranova.com`) | `20261116T123939Z` | smoke 7/7 OK, rollback `.before-20261116T123939Z`, na serveru 149 GLB |
+| Web2.9 (EDGE2, `app.zionterranova.com`) | `20261116T125551Z` | smoke 6/6 OK, rollback `.next/standalone.before-20261116T125551Z`, „avatar GLB: 149" |
+
+Kontrola živých souborů (`Content-Length` proti lokálnímu souboru):
+`78.glb` 3 965 324 B, `120.glb` 3 282 392 B, `152.glb` 3 392 356 B, `0.glb`
+3 523 852 B — **vše 200 a na bajt shodné**.
+
+Headless kontrola stránky (Chrome, 1440×900):
+- **Atlas (152, nový):** detail má `canvas`, v síti `200 152.glb`, 0 chyb → PASS
+- **Mestor (160, bez modelu):** žádný `canvas`, žádný request na GLB → PASS
+  (tj. chybějící model pořád padá na 2D portrét, nic se nerozbíjí)
+
+**Pozn. k deployi:** první `rsync` do Nirvany spadl na `Connection reset by peer`
+u ~500 MB přenosu. Řešení bez opakování buildu: artefakt se postaví ručně
+(standalone + `node_modules` + `public` + `.next/static` + `PROTO_VERSION`),
+stage se předplní rsyncem s `--partial` a `ServerAliveInterval`, a teprve pak
+se pustí `deploy-nirvana.sh --artifact-dir` (swap + restart + smoke).
+Pro příště: u velkých deployů předplnit stage, ne spoléhat na jeden rsync.
+
+## 11. Změněné soubory
 
 ```
 heros/Avatars/ZION_OASIS_3D_PODKLADY_25_DAVKA_0{4,5,6}.zip   (LFS, 222 MB)
 apps/nirvana/public/models/avatars/{78..152}.glb             (75 nových, ~250 MB)
 apps/nirvana/src/core/avatars/models.ts                      (74 → 149 modelů)
+apps/website-v2.9/src/lib/oasis/avatar-models.json           (74 → 149 ID)
+apps/website-v2.9/package.json                               (prebuild generátor)
+scripts/ops/gen-avatar-models.mjs                            (nový generátor)
 docs/3.2/AVATAR-3D-PIPELINE.md                               (§1, §9e, historie)
+AGENTS.md · apps/nirvana/AGENTS.md · apps/website-v2.9/AGENTS.md
 docs/3.2/REPORTS/REPORT_2026-11-16_AVATARI_DAVKY_04_06.md    (tento report)
 ```
