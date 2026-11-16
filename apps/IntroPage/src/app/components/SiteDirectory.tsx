@@ -26,7 +26,6 @@ const PAGES: { href: string; label: Label; sub: string }[] = [
   { href: "/camp/", label: { cs: "Camp", en: "Camp" }, sub: "/camp/" },
   { href: "/Vzestup/", label: { cs: "Vzestup", en: "Ascension", es: "Ascensión", pt: "Ascensão", fr: "Ascension" }, sub: "/Vzestup/" },
   { href: "/blog/", label: { cs: "Blog", en: "Blog" }, sub: "/blog/" },
-  { href: "/seeds/", label: { cs: "Seeds", en: "Seeds" }, sub: "/seeds/" },
 ];
 
 const ECOSYSTEM: { href: string; label: Label; sub: string }[] = [

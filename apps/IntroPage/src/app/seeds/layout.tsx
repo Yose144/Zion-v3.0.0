@@ -21,6 +21,7 @@ export const metadata: Metadata = {
   description:
     "Pět strainů ZION Seeds: E = MC², Genesis, Jaganath Krishna, Paramajoti Hiranyagarbha a Ramayana. Příběh, genetika, účinky a průvodce pěstováním.",
   alternates: { canonical: "/seeds/" },
+  robots: { index: false, follow: false },
   openGraph: {
     title: "ZION Seeds — One Love, One Seed",
     description: "Pět strainů ZION Seeds — příběh, genetika, účinky a průvodce pěstováním.",
