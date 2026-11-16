@@ -8,7 +8,7 @@
  * Soubory leží v `public/models/avatars/<id>.glb` — prefix `/models` je
  * v `proxy.ts` veřejný (jinak loader dostane redirect na bránu a načte HTML).
  *
- * Generováno z dávek 01–06 (149 modelů, TripoSR MC 320 + textura 2048, rig)
+ * Generováno z dávek 01–08 (201 modelů, TripoSR MC 320 + textura 2048, rig)
  */
 export const AVATAR_MODELS: Record<number, string> = {
   0: '/models/avatars/0.glb',
@@ -160,7 +160,61 @@ export const AVATAR_MODELS: Record<number, string> = {
   150: '/models/avatars/150.glb',
   151: '/models/avatars/151.glb',
   152: '/models/avatars/152.glb',
+  153: '/models/avatars/153.glb',
+  154: '/models/avatars/154.glb',
+  155: '/models/avatars/155.glb',
+  156: '/models/avatars/156.glb',
+  157: '/models/avatars/157.glb',
+  158: '/models/avatars/158.glb',
+  159: '/models/avatars/159.glb',
+  160: '/models/avatars/160.glb',
+  161: '/models/avatars/161.glb',
+  162: '/models/avatars/162.glb',
+  163: '/models/avatars/163.glb',
+  164: '/models/avatars/164.glb',
+  165: '/models/avatars/165.glb',
+  166: '/models/avatars/166.glb',
+  167: '/models/avatars/167.glb',
+  168: '/models/avatars/168.glb',
+  169: '/models/avatars/169.glb',
+  170: '/models/avatars/170.glb',
+  171: '/models/avatars/171.glb',
+  172: '/models/avatars/172.glb',
+  173: '/models/avatars/173.glb',
+  174: '/models/avatars/174.glb',
+  175: '/models/avatars/175.glb',
+  176: '/models/avatars/176.glb',
+  177: '/models/avatars/177.glb',
+  178: '/models/avatars/178.glb',
+  179: '/models/avatars/179.glb',
+  180: '/models/avatars/180.glb',
+  181: '/models/avatars/181.glb',
+  182: '/models/avatars/182.glb',
+  183: '/models/avatars/183.glb',
+  184: '/models/avatars/184.glb',
+  185: '/models/avatars/185.glb',
+  186: '/models/avatars/186.glb',
+  187: '/models/avatars/187.glb',
+  188: '/models/avatars/188.glb',
+  189: '/models/avatars/189.glb',
+  190: '/models/avatars/190.glb',
+  191: '/models/avatars/191.glb',
+  192: '/models/avatars/192.glb',
+  193: '/models/avatars/193.glb',
+  194: '/models/avatars/194.glb',
+  195: '/models/avatars/195.glb',
+  196: '/models/avatars/196.glb',
+  197: '/models/avatars/197.glb',
+  198: '/models/avatars/198.glb',
+  199: '/models/avatars/199.glb',
+  200: '/models/avatars/200.glb',
+  201: '/models/avatars/201.glb',
+  202: '/models/avatars/202.glb',
+  203: '/models/avatars/203.glb',
+  204: '/models/avatars/204.glb',
 };
+
+
 
 
 

@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 /**
- * Generuje seznam avatarů, které mají herní 3D model (GLB), pro web2.9.
+ * Generuje seznamy avatarů, které mají herní 3D model (GLB).
  *
  * Zdroj pravdy jsou soubory v gitu: `apps/nirvana/public/models/avatars/<id>.glb`.
- * Výstup: `apps/website-v2.9/src/lib/oasis/avatar-models.json` = `{ "ids": [...] }`.
+ * Výstupy (dva, oba odvozené z disku — nikdy ručně):
+ *   - `apps/nirvana/src/core/avatars/models.ts`          (mapa id → cesta, hra)
+ *   - `apps/website-v2.9/src/lib/oasis/avatar-models.json` (id[], 3D náhled na webu)
  *
- * Proč: web (/l4-oasis/avatars) kreslí 3D náhled jen pro ID, která jsou v tomhle
- * seznamu (`MODEL_IDS` ve stránce). Když se doplní dávka modelů a seznam zůstane
- * starý, nové avatary 3D náhled tiše nemají — přesně to se stalo u dávek 04–06.
- * GLB soubory do buildu kopíruje `apps/website-v2.9/deploy/deploy-web2.9.sh`.
+ * Proč: web kreslí 3D náhled jen pro ID v JSON seznamu (`MODEL_IDS`) a hra
+ * vybírá GLB podle `AVATAR_MODELS`. Když se doplní dávka modelů a seznam
+ * zůstane starý, nové avatary náhled tiše nemají — přesně to se stalo u dávek
+ * 04–06. GLB soubory do buildů kopírují deploy skripty.
  *
  * Použití: node scripts/ops/gen-avatar-models.mjs
  */
@@ -44,3 +46,49 @@ const previous = existsSync(target)
 
 writeFileSync(target, `${JSON.stringify({ ids }, null, 1)}\n`);
 console.log(`[avatar-models] ${ids.length} modelů (dřív ${previous.length}) → ${target.replace(root + '/', '')}`);
+
+// --- mapa pro hru (Nirvana): hlavičku souboru zachováme, tělo generujeme ---
+const mapFile = join(root, 'apps', 'nirvana', 'src', 'core', 'avatars', 'models.ts');
+if (existsSync(mapFile)) {
+  const current = readFileSync(mapFile, 'utf8');
+  const marker = 'export const AVATAR_MODELS';
+  const headerEnd = current.indexOf(marker);
+  if (headerEnd < 0) throw new Error('models.ts nemá AVATAR_MODELS');
+
+  // Hlavička: vezmi řádky před markerem, vyhoď starý "Generováno" řádek
+  // a přebytečné prázdné komentářové řádky na konci, pak doplň nový.
+  const headerLines = current
+    .slice(0, headerEnd)
+    .split('\n')
+    .filter((line) => !line.includes('Generováno z dávek'));
+  // Vyhoď uzavření starého komentáře a prázdné komentářové řádky na konci.
+  while (
+    headerLines.length &&
+    /^\s*(\*|\/\*\*|\*\/)?\s*$/.test(headerLines[headerLines.length - 1])
+  ) {
+    headerLines.pop();
+  }
+  const header = `${headerLines.join('\n')}\n *\n * Generováno z dávek 01–08 (${ids.length} modelů, TripoSR MC 320 + textura 2048, rig)\n */\n`;
+
+  const runs = [];
+  let start = ids[0];
+  let prev = ids[0];
+  for (const id of ids.slice(1)) {
+    if (id === prev + 1) {
+      prev = id;
+      continue;
+    }
+    runs.push([start, prev]);
+    start = prev = id;
+  }
+  runs.push([start, prev]);
+  const pad = (n) => String(n).padStart(2, '0');
+  const desc = runs.map(([a, b]) => (a === b ? pad(a) : `${pad(a)}–${pad(b)}`)).join(', ');
+
+  const body = `${header}export const AVATAR_MODELS: Record<number, string> = {\n${ids
+    .map((id) => `  ${id}: '/models/avatars/${id}.glb',`)
+    .join('\n')}\n};\n`;
+  const tail = current.slice(current.indexOf('};') + 2);
+  writeFileSync(mapFile, body + tail);
+  console.log(`[avatar-models] models.ts: ${ids.length} modelů (${desc})`);
+}

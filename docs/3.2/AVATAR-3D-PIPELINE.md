@@ -661,8 +661,28 @@ na `mkdir`. Dávky proto běžely do `~/.local/share/zion-avatar3d/batches/<dáv
 (obličej a atributy měkké, viz §5). Nové modely nejsou regresí, ale ani
 hrdinskou kvalitou — pro hru stačí jako náhrada procedurálních postav.
 
-**Otevřené:** `44.glb` a `55.glb` (dávky 01–03) nemají skin ani `idle` — jediné
-dva modely z 149, které nejsou rignuté; stojí za opravu při další dávce.
+**Otevřené:** `44.glb` a `55.glb` (dávky 01–03) nemají skin ani `idle` — **to je
+správně**: 044 Hiranyagarbha je kosmické vejce a 055 jsou mayská dvojčata
+(dvě postavy), takže humanoidní rig na ně nepatří. Hra je kreslí staticky
+(chybějící `idle` zvládá).
+
+**Dávky 07–08 (2026-11-16, posledních 52 postav):** ID 153–177 a 178–204,
+stejné parametry, ~3,3 min/postava, **52/52 hotových**. Dva panely si vyžádaly
+ruční `--box`: **162** (stojící lemur — široký a krátký) a **203** (sedící
+bohyně — póza nesplňuje poměr výška/šířka). Tím je roster hotový: **201 z 202**
+modelů; chybí jen **037 Gándhí**, ke kterému dodavatel modelovací list vůbec
+nevytvořil („generátor požadavek odmítl", viz report 07–08) — z portrétu by
+vznikla busta, což §4 nedoporučuje.
+
+**Nástroje jsou v repu:** `pick-front.py`, `render-views.py` a `qa-sheet.py`
+(§9 tabulka). Dřív žily mimo git a po restartu stroje zmizely.
+
+**Pozor na thrashing:** u dlouhé dávky kontroluj `sysctl vm.swapusage` a `df`.
+Při 19,4/20,5 GB swapu a disku na 98 % se generace zpomalila z 3,3 min na
+**89 min na postavu** a session se restartovala. `generate.py` je opakovatelný,
+takže se po uvolnění místa dojely jen chybějící postavy — ale je lepší mít
+rezervu předem (smazat `.next` buildy jiných appek, `git lfs prune`, staging
+starých dávek na externí disk).
 
 ## 11. Stav a historie
 

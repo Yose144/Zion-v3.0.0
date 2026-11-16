@@ -276,8 +276,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   a vzácnost berou z katalogu. Proto jde cizí hráč vykreslit jen z `avatarId`,
   bez stahování rosteru.
 - **Model je z primitiv** (`AvatarModel.tsx`, ~18 meshů) — to je **výchozí a
-  záložní** cesta. Od 2026-11-16 ale existují skutečné GLB modely: **149 z 202**
-  avatárů (`public/models/avatars/<id>.glb`, dávky 01–06, ID 000–152) a vybírá
+  záložní** cesta. Od 2026-11-16 ale existují skutečné GLB modely: **201 z 202**
+  avatárů (`public/models/avatars/<id>.glb`, dávky 01–08, ID 000–204) a vybírá
   je `core/avatars/models.ts` (`avatarModelUrl(id)`); chybějící soubor nebo ID
   mimo mapu bezpečně padá na procedurální model. Seznam se **generuje z disku**
   (`scripts/ops/gen-avatar-models.mjs` → i pro web), takže se nedá ručně rozejít
