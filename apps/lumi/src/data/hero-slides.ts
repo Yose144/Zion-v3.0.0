@@ -3,15 +3,17 @@ import { COLLECTIONS } from '@/data/kolekce';
 import { SITE } from '@/data/site';
 
 /**
- * Snímky promo slideru nad 3D sekcí na homepage.
+ * Snímky promo slideru na homepage.
  *
- * Kolekční snímky jsou tematické hero ilustrace Engine B z
- * `Lumi_Engine_B_KOMPLET_v2` (1600×900) — každý sedí ke své kolekci.
- * Pro každý snímek existují `-640` a `-1280` webp varianty,
- * ze kterých komponenta skládá `srcset` přes `imageVariant`.
- * Pozor na jméno: base obrázek nesmí končit `-<číslo>.webp` —
- * `imageVariant` by ho považoval za hotovou variantu a srcset
- * by ukazoval všude na plnou verzi.
+ * Všech sedm snímků pochází z **jednoho záběru** (stůl, hrnek, okno, lampion
+ * na stejné pozici) — sada `Engine B v2` v `heros/Lumi`. Drží se to proto,
+ * že slider rotuje: kdyby každý snímek měl jinou kompozici (makro detail,
+ * detail, celek), skákala by při každém přechodu velikost i pozice lampionu.
+ *
+ * Snímky se 16:9 seříznou skriptem `scripts/make-slide-images.mjs`
+ * (vstup = 4:3 originály z balíčku, výstup = `slide-<key>.webp` + `-1280`
+ * a `-640` varianty pro `srcset`). Nikdy je nepřepisuj ručně jinou
+ * kompozicí — rozbilo by to jednotnost slideru.
  */
 export interface HeroSlide {
   image: string;
@@ -26,23 +28,26 @@ export interface HeroSlide {
   cta: Localized;
 }
 
-/** Kolekce se snímkem — `image` je `kolekce-<slug>-hero.webp` v lumi-b. */
-const COLLECTION_SLIDES: ReadonlyArray<{ slug: string; image: string }> = [
-  { slug: 'vanocni', image: '/images/lumi-b/kolekce-vanocni-hero.webp' },
-  { slug: 'svatebni', image: '/images/lumi-b/kolekce-svatebni-hero.webp' },
-  { slug: 'kvetinove', image: '/images/lumi-b/kolekce-kvetinove-hero.webp' },
-  { slug: 'prirodni', image: '/images/lumi-b/kolekce-prirodni-hero.webp' },
-  { slug: 'oceanske', image: '/images/lumi-b/kolekce-oceanske-hero.webp' },
-  { slug: 'vesmirne', image: '/images/lumi-b/kolekce-vesmirne-hero.webp' },
+const SLIDE_WIDTH = 1440;
+const SLIDE_HEIGHT = 810;
+
+/** Kolekce se snímkem — `image` je `slide-<slug>.webp` v lumi-b. */
+const COLLECTION_SLIDES: ReadonlyArray<string> = [
+  'vanocni',
+  'svatebni',
+  'kvetinove',
+  'prirodni',
+  'oceanske',
+  'vesmirne',
 ];
 
-const collectionSlides: HeroSlide[] = COLLECTION_SLIDES.map(({ slug, image }) => {
+const collectionSlides: HeroSlide[] = COLLECTION_SLIDES.map((slug) => {
   const collection = COLLECTIONS.find((entry) => entry.slug === slug);
   if (!collection) throw new Error(`hero-slides: neznámá kolekce „${slug}“`);
   return {
-    image,
-    width: 1600,
-    height: 900,
+    image: `/images/lumi-b/slide-${slug}.webp`,
+    width: SLIDE_WIDTH,
+    height: SLIDE_HEIGHT,
     alt: collection.alt,
     kicker: { cs: 'Kolekce', en: 'Collection', de: 'Kollektion' },
     title: collection.name,
@@ -54,9 +59,9 @@ const collectionSlides: HeroSlide[] = COLLECTION_SLIDES.map(({ slug, image }) =>
 
 export const HERO_SLIDES: HeroSlide[] = [
   {
-    image: '/images/lumi-b/hero-lumi.webp',
-    width: 1672,
-    height: 941,
+    image: '/images/lumi-b/slide-lumi-2.webp',
+    width: SLIDE_WIDTH,
+    height: SLIDE_HEIGHT,
     alt: {
       cs: 'Lucerna Lumi 2 na stole',
       en: 'The Lumi 2 lantern on a table',

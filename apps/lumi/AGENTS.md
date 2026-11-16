@@ -31,6 +31,7 @@ Samostatný e-shop **Omnity.One s.r.o.** pro dřevěné lampiony. **Není to ZIO
 | Přidat jazyk | `Lang` v `src/lib/i18n.ts` + `Localized` pole ve všech datech |
 | Přidat platební metodu | `PaymentMethod` v `src/types/shop.ts`, validace v `/api/orders`, UI v `/kosik` |
 | Upravit e-mail | `src/lib/email.ts` (šablony drží `shell()` a `itemsTable()`) |
+| Homepage slider | snímky `public/images/lumi-b/slide-*.webp`, generuje `node scripts/make-slide-images.mjs` |
 
 ## Build a kontrola
 
@@ -59,6 +60,12 @@ npm run build
 `deploy/deploy-lumi.sh` (EDGE2). Env je v `/etc/zion/lumi.env`, data v `/opt/zion/data/lumi/`. Nginx vhost a systemd unit v `deploy/`. Podrobnosti v `README.md`.
 
 ## Design engine a obrázky (2026-11-11)
+
+- **Homepage slider drží jednotný záběr.** Všech sedm snímků vychází ze stejné
+  4:3 scény (stůl, hrnek, okno, lampion na stejné pozici) — `scripts/make-slide-images.mjs`
+  z ní udělá 16:9 `slide-<key>.webp` (+ `-1280`, `-640`) a `src/data/hero-slides.ts`
+  je bere. Nikdy tam nedávej makro detail ani jinou kompozici: při rotaci by
+  skákala velikost i pozice lampionu („cikcak“).
 
 - **Paleta:** ZION Design Engine v1.0 B — inkoust `#101C2B`, les `#344A36`, pergamen `#F0E1BE`, jantar `#E7AA4B`, rez `#9D493D`. Nedávej zpět starou hnědou paletu ani rasta barvy.
 - **Obrázky:** `public/images/lumi-b/`; varianty `-200/-640/-700/-1280` přes `src/lib/images.ts`. Karty používají `imageSmall`, detail plnou variantu, náhledy `-200`.

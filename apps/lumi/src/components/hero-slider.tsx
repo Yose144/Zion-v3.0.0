@@ -48,7 +48,7 @@ export default function HeroSlider() {
 
   return (
     <section
-      className="relative aspect-[16/9] min-h-[360px] max-h-[72rem] w-full overflow-hidden bg-ink"
+      className="relative aspect-[16/9] min-h-[300px] max-h-[46rem] w-full overflow-hidden bg-forest"
       role="region"
       aria-roledescription="carousel"
       aria-label={pick(
@@ -101,15 +101,21 @@ export default function HeroSlider() {
               fetchPriority={i === 0 ? 'high' : undefined}
               decoding="async"
               draggable={false}
-              className="absolute inset-0 h-full w-full object-contain 2xl:object-cover"
+              className="absolute inset-0 h-full w-full object-cover object-center"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/30 to-ink/5" />
+            {/*
+              Scrim je záměrně z pevného inkoustu (ne z `ink` proměnné):
+              v tmavém motivu se `ink` přepíná na pergamen a text by na
+              světlém gradientu zmizel.
+            */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(16,28,43,0.96)_0%,rgba(16,28,43,0.74)_40%,rgba(16,28,43,0.22)_68%,rgba(16,28,43,0)_88%)]" />
+            <div className="absolute inset-0 hidden bg-[linear-gradient(to_right,rgba(16,28,43,0.72)_0%,rgba(16,28,43,0.34)_38%,rgba(16,28,43,0)_62%)] sm:block" />
             <div className="container-lumi absolute inset-x-0 bottom-0 flex h-full items-end pb-12 sm:pb-16">
               <div className="max-w-xl text-parchment">
                 <p className="eyebrow text-amber-300">{pick(slide.kicker, lang)}</p>
                 <h2 className="h2 mt-3 text-balance text-parchment">{pick(slide.title, lang)}</h2>
                 {slide.lead ? (
-                  <p className="mt-3 max-w-lg text-sm leading-relaxed text-parchment/75 sm:text-base">
+                  <p className="mt-3 hidden max-w-lg text-sm leading-relaxed text-parchment/80 sm:block sm:text-base">
                     {pick(slide.lead, lang)}
                   </p>
                 ) : null}
