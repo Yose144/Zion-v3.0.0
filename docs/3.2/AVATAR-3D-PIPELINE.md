@@ -16,7 +16,7 @@ Výtvarný list z GPT není 3D model; vygenerovaný mesh není rigovaná postava
 |---|---|---|
 | Roster | `V31/L4/oasis/data/avatars.json` | 202 záznamů, ID 0–204 s mezerami |
 | Oficiální portrét | `apps/website-v2.9/public/oasis-assets/final_portraits/<id>-<slug>.webp` | 202/202 |
-| Výtvarný list (front / side / back) | `heros/Avatars/ZION_OASIS_3D_PODKLADY_25_DAVKA_01.zip` | 25 postav hotových |
+| Výtvarný list (front / side / back) | `heros/Avatars/ZION_OASIS_3D_PODKLADY_25_DAVKA_01.zip` … `_06.zip` | 150 listů, ID 000–152 (§9e) |
 | Kánon (atributy, paleta) | `apps/nirvana/src/core/avatars/canon.ts` (generovaný) | hotový |
 
 Mapuje se **výhradně podle ID z rosteru**, nikdy podle pořadí v archivu ani podle názvu
@@ -602,6 +602,57 @@ M1 model je „rozteklý plášť“. Cena: Space zdarma (kvóta), inference 54 
   Není to chyba modelu; po dobití kreditu opakovat s `hunyuan-setup2.sh`
   a stahovat **průběžně** (ne až na konci).
 
+### 9e. Dávky 04–06 — 75 postav (2026-11-16)
+
+Předchozí dávky 01–03 daly 74 modelů pro ID 000–077. Balíčky **04–06**
+(`ZION_OASIS_3D_PODKLADY_25_DAVKA_04…06.zip`, 222 MB) doplnily ID **078–152**;
+portréty v nich jsou **1:1 shodné s rosterem** (SHA-256 všech 75), takže se
+nemuselo nic redakčně dohledávat.
+
+**Naměřeno (M1, 8 GB, MC 320 + textura 2048 + `--max-tris 15000`):**
+
+| Fáze | Čas |
+|---|---|
+| Generování 1 postavy | **171–232 s** (medián ~195 s) |
+| Rig 1 postavy (Blender headless) | ~12 s |
+| QA render 4 pohledů | ~3 s |
+| Celá dávka 25 postav | **~80–90 min** |
+
+Výsledek: **75/75 modelů, 0 chyb**, 14 992–15 000 tris, 2,4–4,3 MB, 17 kloubů
+a klip `idle` u všech nových. Nasazeno do `public/models/avatars/<id>.glb`
+a `models.ts` (149 modelů celkem).
+
+**Čtyři pasti, které stály za to (a jejich řešení):**
+
+1. **Pás rekvizit pod postavou.** Listy mají dole řadu předmětů (lotos, miska,
+   kniha). Když se do vstupu dostanou, TripoSR zmenší postavu (bbox je celý
+   list) a vznikne nafouklý blob. Řešení: ořez na **nejvyšší vodorovný pás**
+   (`trim-bands.py`); postava je vždy nejvyšší souvislý pás.
+2. **Tenká rekvizita spojí pásy.** Trojzubec Šivy vede od poprsí dolů k pásu
+   rekvizit, takže rozdělení na pásy nefungovalo a vznikl „bust + předměty“.
+   Řešení: řádek patří postavě jen když má **≥ 15 % šířky panelu**; tenký
+   předmět tím vypadne.
+3. **Poprsí je někdy první panel.** U části listů (118, 143, 149, 150…) je
+   vlevo portrét a celá postava až druhý panel — proporcionální ořez tedy vrátil
+   bustu. Řešení: panely se hledají v horních 62 % listu a vybírá se **nejlevější
+   panel s poměrem výška/šířka > 2,0** (u hada/orla/pavouka nejvyšší poměr).
+4. **Pruh sousedního panelu.** Když detekce gutteru selže, zůstane u okraje pruh
+   vedlejší postavy a rozšíří bbox. Řešení: sloupcové pásy s tolerancí mezery
+   a ruční `--box` pro pět případů, kde si heuristika neporadila (118, 137, 143,
+   148, 149).
+
+**Další nález:** `.artifacts` je v pracovním stromu **symlink na externí volume**
+(`/Volumes/ZION-Storage/…`). Když volume není připojený, `run-batch.sh` spadne
+na `mkdir`. Dávky proto běžely do `~/.local/share/zion-avatar3d/batches/<dávka>/`
+(inputs + stage) a do repa se kopírovaly až hotové GLB.
+
+**Kvalitativní verdikt:** je to stejná „proxy“ úroveň jako modely 01–03
+(obličej a atributy měkké, viz §5). Nové modely nejsou regresí, ale ani
+hrdinskou kvalitou — pro hru stačí jako náhrada procedurálních postav.
+
+**Otevřené:** `44.glb` a `55.glb` (dávky 01–03) nemají skin ani `idle` — jediné
+dva modely z 149, které nejsou rignuté; stojí za opravu při další dávce.
+
 ## 11. Stav a historie
 
 - 2026-11-07: první pokus (portrét) → busta, rozbitá orientace a povrch.
@@ -615,5 +666,9 @@ M1 model je „rozteklý plášť“. Cena: Space zdarma (kvóta), inference 54 
   a nasazeno v Nirvaně (`0.glb`). Přibyly `compare_variants.py` a balíček pro
   PC — generace na GTX 1070 Ti má vlastní plán `PLAN_3D_AVATARI_1070TI.md`
   (InstantMesh trasa A, TripoSR-CUDA trasa B, brány G0–G2).
+- 2026-11-16: dávky **04–06** → ID 078–152, 75 modelů (MC 320, textura 2048, rig),
+  nasazeno do Nirvany (`models.ts` 149 modelů). Podrobnosti, měření a čtyři pasti
+  s ořezem listů: §9e.
 - Artefakty: `.artifacts/avatar-3d/stage/` (modely), `.artifacts/avatar-3d/qa/`
   (kontrolní listy), `.artifacts/krishna-triposr-pilot/` (první pokusy).
+  Dávky 04–06 leží mimo repo v `~/.local/share/zion-avatar3d/batches/` (viz §9e).
