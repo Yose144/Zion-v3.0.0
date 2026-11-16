@@ -89,6 +89,7 @@
       'nav.pool': `Pool`,
       'nav.freeworld': `Free World`,
       'nav.ecosystem': `Ekosystém`,
+      'nav.explorer': `Explorer`,
       'nav.lumi': `Lumi`,
       'nav.pages': `Stránky`,
       'nav.projects': `Projekty`,
@@ -97,7 +98,6 @@
       'nav.vzestup': `Vzestup`,
       'nav.blog': `Blog`,
       'nav.seeds': `Seeds`,
-      'nav.vastrigs': `Vast Rigs`,
 
       'freeworld.title': `Free World`,
       'freeworld.subtitle': `L5 · Humanitární fond & fyzické komunity`,
@@ -227,6 +227,7 @@
       'nav.pool': `Pool`,
       'nav.freeworld': `Free World`,
       'nav.ecosystem': `Ecosystem`,
+      'nav.explorer': `Explorer`,
       'nav.lumi': `Lumi`,
       'nav.pages': `Pages`,
       'nav.projects': `Projects`,
@@ -235,7 +236,6 @@
       'nav.vzestup': `Ascension`,
       'nav.blog': `Blog`,
       'nav.seeds': `Seeds`,
-      'nav.vastrigs': `Vast Rigs`,
 
       'freeworld.title': `Free World`,
       'freeworld.subtitle': `L5 · Humanitarian fund & physical communities`,

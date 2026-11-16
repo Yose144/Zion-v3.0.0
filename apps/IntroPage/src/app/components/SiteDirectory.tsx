@@ -30,9 +30,7 @@ const PAGES: { href: string; label: Label; sub: string }[] = [
 ];
 
 const ECOSYSTEM: { href: string; label: Label; sub: string }[] = [
-  { href: "https://market.zionterranova.com", label: { cs: "Market", en: "Market" }, sub: "market.zionterranova.com" },
   { href: "https://nirvana.zionterranova.com", label: { cs: "Nirvana", en: "Nirvana" }, sub: "nirvana.zionterranova.com" },
-  { href: "https://lumi.zionterranova.com", label: { cs: "Lumi", en: "Lumi" }, sub: "lumi.zionterranova.com" },
   { href: "https://pool.zionterranova.com", label: { cs: "Pool", en: "Pool" }, sub: "pool.zionterranova.com" },
   { href: "https://freeworld.zionterranova.com", label: { cs: "Free World", en: "Free World" }, sub: "freeworld.zionterranova.com" },
   { href: "https://app.zionterranova.com/onboard", label: { cs: "Onboard", en: "Onboard" }, sub: "app.zionterranova.com/onboard" },

@@ -30,7 +30,7 @@
 
   var articles = Array.prototype.slice.call(main.querySelectorAll(':scope > article'));
   var navLinks = Array.prototype.slice.call(
-    document.querySelectorAll('#header nav a[href^="#"]')
+    document.querySelectorAll('#header nav > ul > li > a')
   );
 
   function articleFor(id) {
@@ -125,12 +125,12 @@
   });
 
   // ── Top navigation ───────────────────────────────────────────────────────
-  if (navLinks.length % 2 === 0) {
-    var nav = header && header.querySelector('nav');
+  var topItems = header ? header.querySelectorAll('#header nav > ul > li') : [];
+  if (topItems.length && topItems.length % 2 === 0) {
+    var nav = header.querySelector('nav');
     if (nav) {
       nav.classList.add('use-middle');
-      var middle = nav.querySelectorAll('li')[navLinks.length / 2];
-      if (middle) middle.classList.add('is-middle');
+      topItems[topItems.length / 2].classList.add('is-middle');
     }
   }
 

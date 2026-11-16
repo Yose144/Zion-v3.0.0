@@ -46,6 +46,12 @@ npx serve dist -l 3001
 
 ## Landing behaviour
 
+- **Top nav order** is fixed: `Lumi · Market · Explorer · About`, then two
+  expandable dropdowns: **Stránky** (Amenti, EvoluZion, Camp, Vzestup, Blog, Seeds)
+  and **Ekosystém** (Těžba, Free World, Nirvana, Pool, Onboard, Docs).
+  `SiteDirectory.tsx` mirrors the same split on the subpage rasta nav.
+- **Vast Rigs is intentionally absent from every public menu** (internal ops page).
+  The unlisted `/vast-rigs/` route is kept only for ops/deploy health checks.
 - `#wrapper #main` is hidden by CSS until `body.is-article-visible` is set; only the
   article matching `location.hash` (`#about`, `#mine`, `#amenti`, `#freeworld`,
   `#elements`, `#v3zion`, `#support`, `#contact`, `#in`) is displayed.

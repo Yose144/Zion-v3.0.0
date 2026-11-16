@@ -65,7 +65,8 @@ export default function VzestupNav() {
               {n.label}
             </a>
           ))}
-          <SiteDirectoryDropdown lang="cs" />
+          <SiteDirectoryDropdown lang="cs" group="pages" />
+          <SiteDirectoryDropdown lang="cs" group="ecosystem" />
         </div>
 
         <div className="rasta-nav-right rasta-nav-actions">
@@ -139,7 +140,8 @@ export default function VzestupNav() {
           </a>
         ))}
 
-        <SiteDirectoryMobile lang="cs" onNavigate={() => setOpen(false)} />
+        <SiteDirectoryMobile lang="cs" groups={["pages"]} onNavigate={() => setOpen(false)} />
+        <SiteDirectoryMobile lang="cs" groups={["ecosystem"]} onNavigate={() => setOpen(false)} />
 
         <a
           href="/amenti/"

@@ -660,6 +660,15 @@ html body textarea:focus {
   position: relative;
 }
 
+/* Poslední dropdown zarovnat k pravému okraji, aby nepřetekl header. */
+@media screen and (min-width: 481px) {
+  #header nav ul > li.has-dropdown:last-child .nav-dropdown {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
+}
+
 #header nav .dropdown-parent::after {
   content: '▾';
   margin-left: 0.45rem;

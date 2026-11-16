@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import Script from "next/script";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
