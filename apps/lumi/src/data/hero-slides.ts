@@ -5,15 +5,15 @@ import { SITE } from '@/data/site';
 /**
  * Snímky promo slideru na homepage.
  *
- * Všech sedm snímků pochází z **jednoho záběru** (stůl, hrnek, okno, lampion
- * na stejné pozici) — sada `Engine B v2` v `heros/Lumi`. Drží se to proto,
- * že slider rotuje: kdyby každý snímek měl jinou kompozici (makro detail,
- * detail, celek), skákala by při každém přechodu velikost i pozice lampionu.
+ * První snímek je **původní široký příběhový obrázek** (`hero-lumi.webp`) —
+ * dílna, tesař a malý lampion. Zbytek slideru jsou kolekce: všech šest
+ * vychází z jednoho 4:3 záběru (`Engine B v2`), takže lampion je na nich
+ * stejně velký, stejně umístěný a text vlevo dole leží na tmavé stěně.
  *
- * Snímky se 16:9 seříznou skriptem `scripts/make-slide-images.mjs`
- * (vstup = 4:3 originály z balíčku, výstup = `slide-<key>.webp` + `-1280`
- * a `-640` varianty pro `srcset`). Nikdy je nepřepisuj ručně jinou
- * kompozicí — rozbilo by to jednotnost slideru.
+ * Snímky kolekcí generuje `scripts/make-slide-images.mjs` (celý záběr se
+ * nechá být a plátno se rozšíří vlevo — kdyby se jen ořízl na 16:9, lampion
+ * vyroste na dvě třetiny plátna, což je na slider moc). Nikdy je nepřepisuj
+ * ručně jinou kompozicí.
  */
 export interface HeroSlide {
   image: string;
@@ -30,6 +30,9 @@ export interface HeroSlide {
 
 const SLIDE_WIDTH = 1440;
 const SLIDE_HEIGHT = 810;
+/** Původní příběhový snímek má vlastní, o něco širší zdroj. */
+const HERO_WIDTH = 1672;
+const HERO_HEIGHT = 941;
 
 /** Kolekce se snímkem — `image` je `slide-<slug>.webp` v lumi-b. */
 const COLLECTION_SLIDES: ReadonlyArray<string> = [
@@ -59,9 +62,9 @@ const collectionSlides: HeroSlide[] = COLLECTION_SLIDES.map((slug) => {
 
 export const HERO_SLIDES: HeroSlide[] = [
   {
-    image: '/images/lumi-b/slide-lumi-2.webp',
-    width: SLIDE_WIDTH,
-    height: SLIDE_HEIGHT,
+    image: '/images/lumi-b/hero-lumi.webp',
+    width: HERO_WIDTH,
+    height: HERO_HEIGHT,
     alt: {
       cs: 'Lucerna Lumi 2 na stole',
       en: 'The Lumi 2 lantern on a table',

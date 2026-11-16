@@ -101,7 +101,7 @@ export default function HeroSlider() {
               fetchPriority={i === 0 ? 'high' : undefined}
               decoding="async"
               draggable={false}
-              className="absolute inset-0 h-full w-full object-cover object-center"
+              className="absolute inset-0 h-full w-full object-cover object-[65%_center] sm:object-center"
             />
             {/*
               Scrim je záměrně z pevného inkoustu (ne z `ink` proměnné):

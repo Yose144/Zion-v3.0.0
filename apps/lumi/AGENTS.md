@@ -61,11 +61,13 @@ npm run build
 
 ## Design engine a obrázky (2026-11-11)
 
-- **Homepage slider drží jednotný záběr.** Všech sedm snímků vychází ze stejné
-  4:3 scény (stůl, hrnek, okno, lampion na stejné pozici) — `scripts/make-slide-images.mjs`
-  z ní udělá 16:9 `slide-<key>.webp` (+ `-1280`, `-640`) a `src/data/hero-slides.ts`
-  je bere. Nikdy tam nedávej makro detail ani jinou kompozici: při rotaci by
-  skákala velikost i pozice lampionu („cikcak“).
+- **Homepage slider drží jednotný záběr.** První snímek je původní široký
+  `hero-lumi.webp` (dílna + tesař). Šest kolekcí vychází ze stejné 4:3 scény
+  (stůl, hrnek, okno, lampion na stejné pozici) — `scripts/make-slide-images.mjs`
+  z ní udělá 16:9 `slide-<key>.webp` (+ `-1280`, `-640`) tak, že **celý záběr
+  nechá a plátno rozšíří vlevo**; kdyby se jen ořízl na 16:9, lampion vyroste
+  na dvě třetiny plátna („moc velké“). Nikdy tam nedávej makro detail ani jinou
+  kompozici: při rotaci by skákala velikost i pozice lampionu („cikcak“).
 
 - **Paleta:** ZION Design Engine v1.0 B — inkoust `#101C2B`, les `#344A36`, pergamen `#F0E1BE`, jantar `#E7AA4B`, rez `#9D493D`. Nedávej zpět starou hnědou paletu ani rasta barvy.
 - **Obrázky:** `public/images/lumi-b/`; varianty `-200/-640/-700/-1280` přes `src/lib/images.ts`. Karty používají `imageSmall`, detail plnou variantu, náhledy `-200`.
