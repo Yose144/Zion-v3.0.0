@@ -354,6 +354,7 @@ Autonomní dávku řeší tři skripty v `scripts/ops/avatar-3d/`:
 | Skript | Co dělá |
 |---|---|
 | `crop-sheet.py` | Rozdělí dodaný výtvarný list na `front / side / back / detail`; hranice hledá jako svislé pruhy pozadí, jinak použije proporcionální fallback |
+| `pick-front.py` | **Vybírá a ořezává jen přední pohled** a zvládá čtyři pasti, na kterých `crop-sheet.py` selhává (pás rekvizit, tenká rekvizita spojující pásy, poprsí jako první panel, pruh sousedního panelu) — pro dávky 04+ je to výchozí cesta. `--box x0,x1[,y0,y1]` pro ruční doříznutí |
 | `generate.py` | Načte TripoSR **jednou** a v cyklu generuje všechny postavy; je opakovatelný (hotové přeskočí), chybu jedné postavy zapíše a pokračuje |
 | `rig.py` | Blender headless: kostra, skin váhy, idle animace, export GLB (§8b) |
 | `qa.mjs` | Vykreslí kontrolní list: portrét + čtyři pohledy pro každé ID, do jednoho PNG |
@@ -631,8 +632,8 @@ a `models.ts` (149 modelů celkem).
 
 1. **Pás rekvizit pod postavou.** Listy mají dole řadu předmětů (lotos, miska,
    kniha). Když se do vstupu dostanou, TripoSR zmenší postavu (bbox je celý
-   list) a vznikne nafouklý blob. Řešení: ořez na **nejvyšší vodorovný pás**
-   (`trim-bands.py`); postava je vždy nejvyšší souvislý pás.
+   list) a vznikne nafouklý blob. Řešení: ořez na **nejvyšší vodorovný pás**;
+   postava je vždy nejvyšší souvislý pás.
 2. **Tenká rekvizita spojí pásy.** Trojzubec Šivy vede od poprsí dolů k pásu
    rekvizit, takže rozdělení na pásy nefungovalo a vznikl „bust + předměty“.
    Řešení: řádek patří postavě jen když má **≥ 15 % šířky panelu**; tenký
@@ -643,8 +644,13 @@ a `models.ts` (149 modelů celkem).
    panel s poměrem výška/šířka > 2,0** (u hada/orla/pavouka nejvyšší poměr).
 4. **Pruh sousedního panelu.** Když detekce gutteru selže, zůstane u okraje pruh
    vedlejší postavy a rozšíří bbox. Řešení: sloupcové pásy s tolerancí mezery
-   a ruční `--box` pro pět případů, kde si heuristika neporadila (118, 137, 143,
-   148, 149).
+   a ruční `--box` tam, kde si heuristika neporadí.
+
+Všechny čtyři kroky dělá **`scripts/ops/avatar-3d/pick-front.py`** (v repu od
+dávek 07–08; dřív to byl jednorázový skript mimo git). Ruční `--box` dostaly
+listy 118, 137, 143, 148, 149 (dávky 04–06) a **162** (stojící lemur s pásem
+rekvizit) a **203** (sedící bohyně — póza nesplňuje poměr výška/šířka, takže se
+panel vybírá špatně).
 
 **Další nález:** `.artifacts` je v pracovním stromu **symlink na externí volume**
 (`/Volumes/ZION-Storage/…`). Když volume není připojený, `run-batch.sh` spadne
