@@ -420,6 +420,143 @@ html body #main article h4 {
   font-size: 0.95rem;
 }
 
+/* About panel — rozšířený obsah (stats / vrstvy / principy / CTA) */
+html body #main article#about .about-lead {
+  font-size: 1.06rem;
+  line-height: 1.8;
+}
+
+html body #main article#about .about-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 1.4rem 0 1.8rem;
+}
+
+html body #main article#about .about-stat {
+  padding: 0.8rem 0.55rem;
+  border: 1px solid rgba(252, 209, 22, 0.18);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.03);
+  text-align: center;
+}
+
+html body #main article#about .about-stat strong {
+  display: block;
+  font-size: 1.02rem;
+  color: var(--rasta-gold);
+  letter-spacing: 0.01em;
+}
+
+html body #main article#about .about-stat span {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.66rem;
+  line-height: 1.35;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+html body #main article#about .about-layers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  margin: 0.8rem 0 1.6rem;
+}
+
+html body #main article#about .about-layer {
+  display: flex;
+  gap: 0.7rem;
+  padding: 0.8rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.9rem;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+}
+
+html body #main article#about .about-layer__id {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  padding: 0.12rem 0.42rem;
+  border-radius: 9999px;
+  background: rgba(252, 209, 22, 0.14);
+  border: 1px solid rgba(252, 209, 22, 0.35);
+  color: var(--rasta-gold);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+html body #main article#about .about-layer strong {
+  display: block;
+  margin-bottom: 0.18rem;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+html body #main article#about .about-layer p {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+html body #main article#about .about-principles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+html body #main article#about .about-principles li {
+  padding: 0.7rem 0.85rem;
+  border-left: 2px solid var(--rasta-gold);
+  border-radius: 0 0.7rem 0.7rem 0;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+html body #main article#about .about-principles strong {
+  display: block;
+  margin-bottom: 0.15rem;
+  color: var(--rasta-gold);
+  font-size: 0.86rem;
+}
+
+html body #main article#about .about-principles span {
+  display: block;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+html body #main article#about .about-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1.5rem;
+}
+
+html body #main article#about .about-beta {
+  margin-top: 1rem;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+@media screen and (max-width: 736px) {
+  html body #main article#about .about-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  html body #main article#about .about-layers,
+  html body #main article#about .about-principles {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Support panel: spacing without a wall of <br> tags */
 html body #main article#support .support-mantra {
   margin: 0.25rem 0 1.5rem;
