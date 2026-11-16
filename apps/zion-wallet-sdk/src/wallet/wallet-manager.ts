@@ -13,7 +13,7 @@ import { encrypt, decrypt } from '../core/crypto.js';
 import type { StorageInterface } from '../storage/storage-interface.js';
 import type { Wallet, WalletPublicView } from './wallet.js';
 import { toPublicView } from './wallet.js';
-import { buildUtxoTransaction, buildAccountTransaction, transactionToRpcPayload, ACCOUNT_DEFAULT_FEE_FLOWERS } from '../core/transaction.js';
+import { buildUtxoTransaction, buildAccountTransaction, transactionToRpcPayload, ACCOUNT_DEFAULT_FEE_FLOWERS, maxTxInputs } from '../core/transaction.js';
 import { ZionRPC } from '../rpc/zion-rpc.js';
 import type { RpcConfig } from '../rpc/zion-rpc.js';
 import { TrezorWallet } from '../hardware/trezor-wallet.js';
@@ -362,6 +362,10 @@ export class WalletManager {
     return this.rpc.getBalance(address);
   }
 
+  async getBalanceBreakdown(address: string) {
+    return this.rpc.getBalanceBreakdown(address);
+  }
+
   async getUtxos(address: string): Promise<Array<Record<string, unknown>>> {
     return this.rpc.getUtxos(address);
   }
@@ -391,34 +395,34 @@ export class WalletManager {
     const privateKeyHex = await this.exportPrivateKey(options.walletId, options.password);
     const privateKey = Buffer.from(privateKeyHex, 'hex');
 
-    // ── Try UTXO model first ──
-    const utxos = await this.rpc.getUtxos(wallet.address);
+    // UTXO model. Page the set and stop once the largest inputs cover the
+    // amount. A build error (fragmented set, insufficient UTXO balance) is
+    // the answer — do not hide it behind the account-model "have 0" path.
+    const memoLen = options.memo ? Buffer.byteLength(options.memo, 'utf8') : 0;
+    const inputCap = Math.max(1, maxTxInputs(2, memoLen));
+    const amountFlowers = BigInt(Math.floor(options.amountZion * 1e6));
+    const utxos = await this.rpc.fetchUtxosForAmount(wallet.address, amountFlowers, inputCap);
     if (utxos.length > 0) {
-      try {
-        const result = await buildUtxoTransaction({
-          fromAddress: wallet.address,
-          toAddress: options.toAddress,
-          amountZion: options.amountZion,
-          utxos: utxos.map((u) => ({
-            tx_hash: String(u.tx_hash ?? u.txid ?? ''),
-            output_index: Number(u.output_index ?? u.vout ?? 0),
-            amount: String(u.amount ?? 0),
-            address: String(u.address ?? wallet.address),
-          })),
-          privateKey,
-          memo: options.memo,
-        });
-        const payload = transactionToRpcPayload(result.transaction);
-        return this.rpc.broadcastTransaction(payload);
-      } catch (err) {
-        // UTXO build failed (e.g. insufficient UTXO balance) — fall through to account model
-      }
+      const result = await buildUtxoTransaction({
+        fromAddress: wallet.address,
+        toAddress: options.toAddress,
+        amountZion: options.amountZion,
+        utxos: utxos.map((u) => ({
+          tx_hash: String(u.tx_hash ?? u.txid ?? ''),
+          output_index: Number(u.output_index ?? u.vout ?? 0),
+          amount: String(u.amount ?? 0),
+          address: String(u.address ?? wallet.address),
+        })),
+        privateKey,
+        memo: options.memo,
+      });
+      const payload = transactionToRpcPayload(result.transaction);
+      return this.rpc.broadcastTransaction(payload);
     }
 
-    // ── Account model fallback (for premine/hybrid wallets) ──
+    // Account model fallback only when the address has no UTXOs (premine).
     const breakdown = await this.rpc.getBalanceBreakdown(wallet.address).catch(() => null);
     const accountFlowers = breakdown ? BigInt(breakdown.account_flowers) : 0n;
-    const amountFlowers = BigInt(Math.floor(options.amountZion * 1e6));
     const feeFlowers = ACCOUNT_DEFAULT_FEE_FLOWERS;
     const totalNeeded = amountFlowers + feeFlowers;
 

@@ -23,6 +23,23 @@ export const FLOWERS_PER_ZION = 1_000_000n;
 export const MIN_FEE_FLOWERS = 1n; // 1 flower minimum fee (L1 fee::MIN_TX_FEE=1, 3.0.3)
 export const ACCOUNT_DEFAULT_FEE_FLOWERS = 1n; // 1 flower for account-model (L1 fee::MIN_TX_FEE=1, 3.0.3)
 
+// Node rejects a tx whose JSON exceeds 100 KB (`fee::MAX_TX_SIZE`). A signed
+// input is ~560 JSON bytes, so the binding cap is ~177 inputs — the same
+// budget as `v31_wallet::max_tx_inputs_for` and the desktop builder.
+const MAX_TX_JSON_BYTES = 100_000;
+const MAX_TX_INPUTS_CONSENSUS = 1_000;
+const JSON_BYTES_PER_INPUT = 560;
+const JSON_BYTES_PER_OUTPUT = 220;
+const JSON_BYTES_PER_MEMO_BYTE = 4;
+const JSON_BASE_BYTES = 300;
+
+/** Maximum inputs whose signed JSON fits under the 100 KB transaction budget. */
+export function maxTxInputs(numOutputs: number, memoLen: number): number {
+  const reserved = JSON_BASE_BYTES + numOutputs * JSON_BYTES_PER_OUTPUT + memoLen * JSON_BYTES_PER_MEMO_BYTE;
+  const room = Math.floor((MAX_TX_JSON_BYTES - reserved) / JSON_BYTES_PER_INPUT);
+  return Math.min(Math.max(room, 0), MAX_TX_INPUTS_CONSENSUS);
+}
+
 export interface UTXO {
   tx_hash: string;
   output_index: number;
@@ -221,14 +238,19 @@ export async function buildUtxoTransaction({
     throw new Error('No spendable UTXOs for the sender address');
   }
 
-  // Greedy selection with dynamic fee based on selected input/output count.
+  // Greedy largest-first selection, capped by the node's 100 KB JSON budget.
+  // Hitting the cap before the amount is covered is fragmentation, not a tx
+  // the node would accept.
   const selected: UTXO[] = [];
   let inputSum = 0n;
   let feeFlowers = 0n;
   let changeFlowers = 0n;
-  let numOutputs = 2; // assume change output initially
+  const numOutputs = 2; // assume change output initially
+  const memoLen = memo ? Buffer.byteLength(memo, 'utf8') : 0;
+  const inputCap = Math.max(1, maxTxInputs(numOutputs, memoLen));
 
   for (const utxo of sortedUtxos) {
+    if (selected.length >= inputCap) break;
     selected.push(utxo);
     inputSum += BigInt(utxo.amount);
 
@@ -241,6 +263,12 @@ export async function buildUtxoTransaction({
   }
 
   if (inputSum < amountFlowers + feeFlowers) {
+    if (selected.length >= inputCap) {
+      const coveredZion = (Number(inputSum) / 1e6).toFixed(6);
+      throw new Error(
+        `UTXO set too fragmented: the largest ${inputCap} inputs cover only ${coveredZion} of ${amountZion} + fee ZION — consolidate the wallet UTXOs first`
+      );
+    }
     const balanceZion = Number(inputSum) / 1e6;
     throw new Error(
       `Insufficient balance: need ${amountZion} + fee ZION, have ${balanceZion.toFixed(6)} ZION spendable`

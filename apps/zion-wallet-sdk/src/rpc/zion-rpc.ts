@@ -3,6 +3,8 @@
  * Direct communication with ZION V3 blockchain nodes.
  */
 
+import { UtxoCollector, UTXO_MAX_PAGES, UTXO_PAGE_SIZE } from '../core/utxo-paging.js';
+
 export interface RpcConfig {
   nodes?: string[];
   timeout?: number;
@@ -157,9 +159,54 @@ export class ZionRPC {
     };
   }
 
-  async getUtxos(address: string): Promise<Array<Record<string, unknown>>> {
-    const result = await this.call<Record<string, unknown>>('getUtxos', { address });
-    return (result?.utxos ?? result ?? []) as Array<Record<string, unknown>>;
+  /**
+   * One page of UTXOs. Omit `limit` only when the caller truly wants the
+   * whole set — whale wallets return tens of megabytes.
+   */
+  async getUtxos(
+    address: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Array<Record<string, unknown>>> {
+    const page = await this.getUtxoPage(address, limit, offset);
+    return page.utxos;
+  }
+
+  async getUtxoPage(
+    address: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<{ utxos: Array<Record<string, unknown>>; total_count: number; total_amount: string }> {
+    const params: Record<string, unknown> = { address };
+    if (limit !== undefined) params.limit = limit;
+    if (offset !== undefined) params.offset = offset;
+    const result = await this.call<Record<string, unknown>>('getUtxos', params);
+    const utxos = (Array.isArray(result?.utxos) ? result.utxos : []) as Array<Record<string, unknown>>;
+    return {
+      utxos,
+      total_count: Number(result?.total_count ?? utxos.length) || 0,
+      total_amount: String(result?.total_amount ?? '0'),
+    };
+  }
+
+  /**
+   * Pages `getUtxos` until the largest `inputCap` outputs cover
+   * `amountFlowers` plus fee, or the set is exhausted.
+   */
+  async fetchUtxosForAmount(
+    address: string,
+    amountFlowers: bigint,
+    inputCap: number,
+  ): Promise<Array<Record<string, unknown>>> {
+    const collector = new UtxoCollector(address, amountFlowers, inputCap, UTXO_PAGE_SIZE);
+    let offset = 0;
+    for (let page = 0; page < UTXO_MAX_PAGES; page++) {
+      const slice = await this.getUtxoPage(address, UTXO_PAGE_SIZE, offset);
+      const { covered, exhausted } = collector.addPage(slice.utxos, slice.total_count);
+      offset += slice.utxos.length;
+      if (covered || exhausted) break;
+    }
+    return collector.list();
   }
 
   async getTransactionHistory(address: string, limit = 50): Promise<Array<Record<string, unknown>>> {
