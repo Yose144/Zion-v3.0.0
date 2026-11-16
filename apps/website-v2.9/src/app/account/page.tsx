@@ -72,6 +72,7 @@ const TABS: { id: Tab; labelCs: string; labelEn: string; icon: typeof Wallet; rc
 
 interface DashboardStats {
   balance: number | null;
+  utxoCount: number | null;
   balanceLoading: boolean;
   miningRewards: number | null;
   miningLoading: boolean;
@@ -129,6 +130,7 @@ export default function AccountPage() {
   const [copied, setCopied] = useState(false);
   const [stats, setStats] = useState<DashboardStats>({
     balance: null,
+    utxoCount: null,
     balanceLoading: true,
     miningRewards: null,
     miningLoading: true,
@@ -153,6 +155,8 @@ export default function AccountPage() {
     if (!zionAddress) {
       setStats((s) => ({
         ...s,
+        balance: null,
+        utxoCount: null,
         balanceLoading: false,
         miningLoading: false,
         txLoading: false,
@@ -171,14 +175,18 @@ export default function AccountPage() {
       aiLoading: true,
     }));
 
-    // Balance
+    // Balance — query param, not a path segment (the route only reads ?address=).
     try {
-      const res = await fetch(`/api/blockchain/address/${address}`);
+      const res = await fetch(`/api/blockchain/address?address=${encodeURIComponent(address)}`);
       if (res.ok) {
         const data = await res.json();
+        const bal = data.balance && typeof data.balance === 'object' ? data.balance : null;
+        const total = bal ? Number(bal.total ?? 0) : Number(data.balance_zion ?? 0);
+        const utxoCount = bal ? Number(bal.utxo_count ?? 0) : null;
         setStats((s) => ({
           ...s,
-          balance: data.balance_zion ?? data.balance ?? 0,
+          balance: Number.isFinite(total) ? total : 0,
+          utxoCount: utxoCount !== null && Number.isFinite(utxoCount) ? utxoCount : null,
           balanceLoading: false,
         }));
       } else {
@@ -421,7 +429,7 @@ export default function AccountPage() {
                 rc="6, 105, 40"
                 label={tx5(AccountCopy.balance, lang)}
                 value={stats.balance !== null ? `${stats.balance.toFixed(8)} ZION` : '—'}
-                sub={tx5(AccountCopy.onChain_2, lang)}
+                sub={stats.utxoCount !== null ? `${stats.utxoCount} UTXO` : tx5(AccountCopy.onChain_2, lang)}
                 loading={stats.balanceLoading}
               />
               <StatCard

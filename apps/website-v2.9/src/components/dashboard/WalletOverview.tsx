@@ -93,7 +93,7 @@ export default function WalletOverview({ address }: WalletOverviewProps) {
       {/* Quick actions */}
       <div className="grid grid-cols-2 gap-4">
         <a
-          href="/wallet"
+          href="/wallet#send"
           className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4 transition-all hover:border-zion-cyan/30 hover:bg-zion-cyan/5"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zion-cyan/10 border border-zion-cyan/20">
@@ -105,7 +105,7 @@ export default function WalletOverview({ address }: WalletOverviewProps) {
           </div>
         </a>
         <a
-          href="/wallet"
+          href="/wallet#receive"
           className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4 transition-all hover:border-zion-gold/30 hover:bg-zion-gold/5"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zion-gold/10 border border-zion-gold/20">

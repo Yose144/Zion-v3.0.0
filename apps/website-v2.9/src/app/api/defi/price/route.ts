@@ -13,15 +13,16 @@
  * empty (burned) pools being used for valuation.
  *
  * Seed-price fallback ($0.0002 / ZION):
- *   When the USDT pool sqrtPriceX96 is 0, has zero liquidity, or the pool
- *   call fails entirely, the API returns the official seed price so that
- *   the UI always has a sensible starting number to display.
+ *   Used only when both the Uniswap V3 USDT pool and the PancakeSwap V3
+ *   USDT pool have zero liquidity or cannot be read. The source field stays
+ *   `seed-fallback` in that case and is never reported as a live price.
  */
 
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { CONTRACTS, SEED_PRICE_USD, SEED_ETH_USD, SEED_SQRT_PRICE_X96, SEED_TICK } from '@/lib/defi-contracts';
+import { wzionPriceSource } from '@/lib/defi-price-source';
 
 const RPC_URL = process.env.BASE_RPC_URL || 'https://base.publicnode.com';
 
@@ -211,14 +212,21 @@ export async function GET() {
   // Fetch live ETH/USD from Uniswap V3 WETH/USDC pool (replaces broken Chainlink oracle)
   const wethUsd = await fetchEthUsd();
 
-  // 1. Try primary USDT pool (USDT ≈ $1, most reliable)
-  //    This is the ONLY wZION pool with active liquidity on Base.
-  //    Empty pools (WETH, USDC, SOL) are skipped by tryPoolSnapshot due to liquidity check.
+  // 1. Uniswap V3 wZION/USDT. Empty pools are skipped by the liquidity check.
   const usdtSnapshot = await tryPoolSnapshot(CONTRACTS.UniV3PoolUSDT, CONTRACTS.wZION, CONTRACTS.USDT, DECIMALS.wzion, DECIMALS.usdt);
-  if (usdtSnapshot) {
-    return buildPriceResponse(CONTRACTS.UniV3PoolUSDT, usdtSnapshot.sqrtPriceX96, usdtSnapshot.tick, usdtSnapshot.liquidity, 1, 'live-usdt', wethUsd, DECIMALS.wzion, DECIMALS.usdt, usdtSnapshot.balance0, usdtSnapshot.balance1);
+  // 2. PancakeSwap V3 wZION/USDT — same token order (token0 is wZION).
+  const pancakeSnapshot = usdtSnapshot
+    ? null
+    : await tryPoolSnapshot(CONTRACTS.PancakeV3PoolUSDT, CONTRACTS.wZION, CONTRACTS.USDT, DECIMALS.wzion, DECIMALS.usdt);
+  const source = wzionPriceSource(usdtSnapshot !== null, pancakeSnapshot !== null);
+
+  if (source === 'live-usdt' && usdtSnapshot) {
+    return buildPriceResponse(CONTRACTS.UniV3PoolUSDT, usdtSnapshot.sqrtPriceX96, usdtSnapshot.tick, usdtSnapshot.liquidity, 1, source, wethUsd, DECIMALS.wzion, DECIMALS.usdt, usdtSnapshot.balance0, usdtSnapshot.balance1);
+  }
+  if (source === 'live-pancake' && pancakeSnapshot) {
+    return buildPriceResponse(CONTRACTS.PancakeV3PoolUSDT, pancakeSnapshot.sqrtPriceX96, pancakeSnapshot.tick, pancakeSnapshot.liquidity, 1, source, wethUsd, DECIMALS.wzion, DECIMALS.usdt, pancakeSnapshot.balance0, pancakeSnapshot.balance1);
   }
 
-  // 2. Seed fallback — no pool with active liquidity found
+  // 3. Seed fallback — neither pool has active liquidity. Never labeled live.
   return seedPriceResponse(wethUsd, 'seed-fallback', 0n);
 }

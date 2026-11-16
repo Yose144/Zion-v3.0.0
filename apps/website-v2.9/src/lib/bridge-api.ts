@@ -171,10 +171,10 @@ export function formatUptime(seconds: number): string {
   return `${m}m`;
 }
 
-/** Calculate bridge efficiency as percentage */
-export function bridgeEfficiency(status: BridgeStatus): number {
+/** Calculate bridge efficiency as percentage. No locks is not 100%. */
+export function bridgeEfficiency(status: BridgeStatus): number | null {
   const { l1_locks_finalized, l1_locks_detected } = status;
-  if (l1_locks_detected === 0) return 100;
+  if (l1_locks_detected === 0) return null;
   return Math.round((l1_locks_finalized / l1_locks_detected) * 100);
 }
 

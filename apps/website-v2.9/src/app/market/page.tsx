@@ -404,7 +404,7 @@ export default function DefiPage() {
   }, [activeTab]);
 
   const [wZIONSupply, setWZIONSupply] = useState<string | null>(null);
-  const [wZIONPrice, setWZIONPrice] = useState<{ wzion_per_weth: number; usd_per_wzion: number } | null>(null);
+  const [wZIONPrice, setWZIONPrice] = useState<{ wzion_per_weth: number; usd_per_wzion: number; source: string } | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
   // Chart data from GeckoTerminal OHLCV (loaded immediately, refreshed every 60s)
   const [chartPrices, setChartPrices] = useState<number[]>([]);
@@ -505,6 +505,7 @@ export default function DefiPage() {
           setWZIONPrice({
             wzion_per_weth: data.price.wzion_per_weth,
             usd_per_wzion: data.price.usd_per_wzion,
+            source: typeof data.source === 'string' ? data.source : 'seed-fallback',
           });
         }
       } catch { /* ignore */ }
@@ -546,7 +547,9 @@ export default function DefiPage() {
         if (!res.ok) return;
         const data = await res.json();
         if (!cancelled && data.ok) {
-          const primary = data.pools?.wzion_usdt?.active ? data.pools.wzion_usdt : null;
+          const priced = [data.pools?.wzion_usdt, data.pools?.ps_wzion_usdt, data.pools?.wzion_weth, data.pools?.wzion_sol]
+            .filter((pool: PoolEntry | undefined) => Boolean(pool?.active) && Number(pool?.price_usd) > 0)
+            .sort((a: PoolEntry, b: PoolEntry) => (b.tvl_usd ?? 0) - (a.tvl_usd ?? 0))[0] ?? null;
           setPoolStats({
             tvl_usd: data.summary?.total_tvl_usd ?? 0,
             total_wzion_liquidity: data.summary?.total_wzion_liquidity ?? 0,
@@ -554,8 +557,8 @@ export default function DefiPage() {
             total_pools: data.summary?.total_pools ?? 0,
             wzion_supply: data.summary?.wzion_supply ?? 0,
             deployer_wzion: data.summary?.deployer_wzion ?? 0,
-            primary_price_usd: primary?.price_usd ?? data.pools?.wzion_usdt?.price_usd ?? 0,
-            primary_dex: data.primary_dex ?? 'Uniswap V3',
+            primary_price_usd: priced?.price_usd ?? 0,
+            primary_dex: priced?.dex || data.primary_dex || '',
             pools: {
               wzion_usdt: data.pools?.wzion_usdt ?? defaultPoolEntry('wZION/USDT', '0.3%'),
               wzion_weth: data.pools?.wzion_weth ?? defaultPoolEntry('ETH/wZION', '1.0%'),
@@ -633,6 +636,12 @@ export default function DefiPage() {
     };
   }, [fetchSupply]);
 
+  const poolQuote = poolStats && poolStats.primary_price_usd > 0 ? poolStats.primary_price_usd : null;
+  const quoteUsd = poolQuote ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD;
+  const quoteSource = poolQuote
+    ? (poolStats?.primary_dex || 'pool')
+    : (wZIONPrice?.source ?? 'seed-fallback');
+
   return (
     <div className="zion-page text-white">
       {/* Background glows */}
@@ -706,7 +715,8 @@ export default function DefiPage() {
                     </div>
                     {dataLoaded ? (
                       <span className="font-mono text-white">
-                        ${(poolStats?.primary_price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(5)}
+                        ${quoteUsd.toFixed(5)}
+                        <span className="ml-2 text-[10px] uppercase tracking-wider text-gray-500">{quoteSource}</span>
                       </span>
                     ) : (
                       <SkeletonValue />
@@ -874,8 +884,8 @@ export default function DefiPage() {
                 bgClass="bg-zion-gold/10"
 
                 label={tx5(DefiCopy.price, lang)}
-                value={`$${(poolStats?.primary_price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(6)}`}
-                sub="USDT / wZION"
+                value={`$${quoteUsd.toFixed(6)}`}
+                sub={quoteSource}
                 tip={tx5(DefiCopy.currentPriceFromThePrimaryWzio, lang)}
                 loading={!dataLoaded}
               />
@@ -976,7 +986,7 @@ export default function DefiPage() {
               <div className="flex items-center gap-3">
                 <div className="text-right">
                   <p className="text-lg font-bold font-mono text-white">
-                    ${(poolStats?.primary_price_usd ?? wZIONPrice?.usd_per_wzion ?? SEED_PRICE_USD).toFixed(6)}
+                    ${quoteUsd.toFixed(6)}
                   </p>
                   {chartPrices.length >= 2 && (() => {
                     const chg = ((chartPrices[chartPrices.length - 1] - chartPrices[0]) / chartPrices[0]) * 100;

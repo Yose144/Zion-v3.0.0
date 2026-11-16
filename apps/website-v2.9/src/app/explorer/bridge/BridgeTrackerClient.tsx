@@ -115,8 +115,8 @@ interface BridgeLockTx {
   memo: string;
   confirmations: number;
   finalized: boolean;
-  status: 'finalized' | 'pending';
-  direction: 'lock';
+  status: 'finalized' | 'pending' | 'failed';
+  direction: 'lock' | 'outbound' | 'inbound';
 }
 
 interface BridgeTxsResponse {
@@ -140,8 +140,15 @@ function truncateAddr(addr: string, prefix = 12, suffix = 6): string {
 }
 
 /** Status badge color + label */
-function statusBadge(finalized: boolean, confirmations: number, threshold: number, cs: boolean, lang: Lang) {
-  if (finalized) {
+function statusBadge(status: BridgeLockTx['status'], confirmations: number, threshold: number, cs: boolean, lang: Lang) {
+  if (status === 'failed') {
+    return {
+      label: cs ? 'Selhalo' : t5('Failed', lang),
+      className: 'text-red-300 bg-red-500/10 border-red-500/20',
+      icon: AlertCircle,
+    };
+  }
+  if (status === 'finalized') {
     return {
       label: tx5(ExplorerBridgeBridgeTrackerClientCopy.finalized, lang),
       className: "text-zion-cyan bg-zion-cyan/10 border-zion-cyan/20",
@@ -287,8 +294,8 @@ export default function BridgeTrackerClient() {
 
   // Filtered transactions
   const filteredTxs = txs.filter((tx) => {
-    if (txFilter === 'pending') return !tx.finalized;
-    if (txFilter === 'finalized') return tx.finalized;
+    if (txFilter === 'pending') return tx.status === 'pending';
+    if (txFilter === 'finalized') return tx.status === 'finalized';
     return true;
   });
 
@@ -296,8 +303,8 @@ export default function BridgeTrackerClient() {
   const uptime = fmtUptime(data?.uptime_seconds ?? 0);
   const efficiency =
     data && data.l1_locks_detected > 0
-      ? Math.round((data.l1_locks_finalized / data.l1_locks_detected) * 100)
-      : 100;
+      ? `${Math.round((data.l1_locks_finalized / data.l1_locks_detected) * 100)}%`
+      : '—';
 
   return (
     <div className="relative min-h-screen pb-24 overflow-x-hidden">
@@ -346,7 +353,7 @@ export default function BridgeTrackerClient() {
                   <Clock className="h-3 w-3 text-zion-gold" /> {tx5(ExplorerBridgeBridgeTrackerClientCopy.uptime, lang)}: {uptime}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <TrendingUp className="h-3 w-3 text-zion-cyan" /> {tx5(ExplorerBridgeBridgeTrackerClientCopy.efficiency, lang)}: {efficiency}%
+                  <TrendingUp className="h-3 w-3 text-zion-cyan" /> {tx5(ExplorerBridgeBridgeTrackerClientCopy.efficiency, lang)}: {efficiency}
                 </span>
               </div>
             </div>
@@ -613,30 +620,39 @@ export default function BridgeTrackerClient() {
                   </thead>
                   <tbody>
                     {filteredTxs.map((tx) => {
-                      const badge = statusBadge(tx.finalized, tx.confirmations, finalityThreshold, cs, lang);
+                      const badge = statusBadge(tx.status, tx.confirmations, finalityThreshold, cs, lang);
                       const StatusIcon = badge.icon;
+                      const l1Hash = /^[a-fA-F0-9]{64}$/.test(tx.txid);
                       return (
                         <tr
-                          key={tx.txid}
+                          key={`${tx.direction}:${tx.txid}`}
                           className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
                         >
                           {/* TX Hash */}
                           <td className="px-4 py-3">
-                            <Link
-                              href={`/explorer/tx?hash=${encodeURIComponent(tx.txid)}`}
-                              className="font-mono text-xs text-zion-cyan hover:text-cyan-200 transition-colors"
-                            >
-                              {truncateHash(tx.txid)}
-                            </Link>
+                            {l1Hash ? (
+                              <Link
+                                href={`/explorer/tx?hash=${encodeURIComponent(tx.txid)}`}
+                                className="font-mono text-xs text-zion-cyan hover:text-cyan-200 transition-colors"
+                              >
+                                {truncateHash(tx.txid)}
+                              </Link>
+                            ) : (
+                              <span className="font-mono text-xs text-gray-300">{truncateHash(tx.txid)}</span>
+                            )}
                           </td>
                           {/* Block */}
                           <td className="px-4 py-3">
-                            <Link
-                              href={`/explorer/block?id=${tx.block_height}`}
-                              className="font-mono text-xs text-gray-300 hover:text-white transition-colors tabular-nums"
-                            >
-                              {tx.block_height.toLocaleString('en-US')}
-                            </Link>
+                            {tx.block_height > 0 ? (
+                              <Link
+                                href={`/explorer/block?id=${tx.block_height}`}
+                                className="font-mono text-xs text-gray-300 hover:text-white transition-colors tabular-nums"
+                              >
+                                {tx.block_height.toLocaleString('en-US')}
+                              </Link>
+                            ) : (
+                              <span className="font-mono text-xs text-gray-500">—</span>
+                            )}
                           </td>
                           {/* Sender */}
                           <td className="px-4 py-3">

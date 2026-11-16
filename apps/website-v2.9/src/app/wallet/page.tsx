@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useZionWallet } from '@/contexts/ZionWalletContext';
+import QRCode from '@/components/explorer/QRCode';
 import {
-  Wallet, Plus, Import, Send, RefreshCw, Trash2, Copy, Eye, EyeOff,
+  Wallet, Plus, Import, Send, RefreshCw, Trash2, Copy, Eye, EyeOff, QrCode,
   Shield, KeyRound, Download, BookOpen, Lock, Fingerprint,
   Zap, Globe2, Usb, AlertTriangle, Activity, ArrowRight, ArrowLeftRight,
   Check, ExternalLink,
@@ -81,6 +82,9 @@ const WalletCopy = {
   connecting: { cs: `Připojování...`, en: `Connecting...` },
   warningTrezorLedgerFirmwareDoe: { cs: `Varování: Trezor/Ledger firmware zatím neumožňuje podepisování transakcí pro ZION. Peněženka bude pouze pro sledování.`, en: `Warning: Trezor/Ledger firmware does not yet support transaction signing for ZION. Wallet will be watch-only.` },
   sendZion: { cs: `Odeslat ZION`, en: `Send ZION` },
+  receiveZion: { cs: `Přijmout ZION`, en: `Receive ZION` },
+  shareThisAddress: { cs: `Sdílej tuto adresu. Příchozí ZION se objeví na zůstatku po potvrzení bloku.`, en: `Share this address. Incoming ZION shows on the balance after the block confirms.` },
+  utxosLabel: { cs: `UTXO`, en: `UTXOs` },
   selectOrCreateAWalletFirst: { cs: `Nejprve vyberte nebo vytvořte peněženku.`, en: `Select or create a wallet first.` },
   recipientAddressZion1: { cs: `Adresa příjemce (zion1...)`, en: `Recipient Address (zion1...)` },
   amountZion: { cs: `Částka (ZION)`, en: `Amount (ZION)` },
@@ -176,11 +180,14 @@ const getFeatures = (cs: boolean, lang: Lang) => [
   },
 ];
 
-type Tab = 'create' | 'import' | 'send' | 'export';
+type Tab = 'create' | 'import' | 'receive' | 'send' | 'export';
+
+const WALLET_TABS: Tab[] = ['create', 'import', 'receive', 'send', 'export'];
 
 const TABS: { key: Tab; labelCs: string; labelEn: string; icon: typeof Plus }[] = [
   { key: 'create', labelCs: 'Vytvořit', labelEn: 'Create', icon: Plus },
   { key: 'import', labelCs: 'Import', labelEn: 'Import', icon: Import },
+  { key: 'receive', labelCs: 'Přijmout', labelEn: 'Receive', icon: QrCode },
   { key: 'send', labelCs: 'Odeslat', labelEn: 'Send', icon: Send },
   { key: 'export', labelCs: 'Export', labelEn: 'Export', icon: Download },
 ];
@@ -224,6 +231,7 @@ export default function WalletPage() {
     wallets,
     activeWallet,
     balance,
+    utxoCount,
     loading,
     error,
     createWallet,
@@ -241,6 +249,22 @@ export default function WalletPage() {
   } = useZionWallet();
 
   const [tab, setTab] = useState<Tab>('create');
+
+  useEffect(() => {
+    const applyHash = () => {
+      const hash = window.location.hash.replace('#', '') as Tab;
+      if (WALLET_TABS.includes(hash)) setTab(hash);
+    };
+    applyHash();
+    window.addEventListener('hashchange', applyHash);
+    return () => window.removeEventListener('hashchange', applyHash);
+  }, []);
+
+  const selectTab = (key: Tab) => {
+    setTab(key);
+    const url = `${window.location.pathname}${window.location.search}#${key}`;
+    window.history.replaceState(null, '', url);
+  };
   const [password, setPassword] = useState('');
   const [mnemonic, setMnemonic] = useState('');
   const [privateKey, setPrivateKey] = useState('');
@@ -769,6 +793,11 @@ export default function WalletPage() {
                 <p className="text-2xl font-bold text-zion-cyan mt-3">
                   {balance !== null ? `${balance.toFixed(6)} ZION` : '---'}
                 </p>
+                {utxoCount !== null && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    {utxoCount} {tx5(WalletCopy.utxosLabel, lang)}
+                  </p>
+                )}
                 {isHardwareWallet && (
                   <div className="mt-4 zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                     <div className="flex items-start gap-2">
@@ -852,7 +881,7 @@ export default function WalletPage() {
                   return (
                     <button
                       key={t.key}
-                      onClick={() => setTab(t.key)}
+                      onClick={() => selectTab(t.key)}
                       className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
                         active
                           ? 'zion-rainbow-sub'
@@ -1013,6 +1042,39 @@ export default function WalletPage() {
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* Receive tab */}
+              {tab === 'receive' && (
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <QrCode className="w-5 h-5 text-zion-gold" /> {tx5(WalletCopy.receiveZion, lang)}
+                  </h3>
+                  {!activeWallet ? (
+                    <p className="text-gray-500">{tx5(WalletCopy.selectOrCreateAWalletFirst, lang)}</p>
+                  ) : (
+                    <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                      <QRCode value={activeWallet.address} size={168} />
+                      <div className="min-w-0 flex-1 space-y-3">
+                        <p className="text-sm text-gray-300">{tx5(WalletCopy.shareThisAddress, lang)}</p>
+                        <div className="flex items-center gap-2">
+                          <code className="bg-black/60 px-3 py-2 rounded-xl text-sm font-mono text-zion-gold flex-1 break-all">
+                            {activeWallet.address}
+                          </code>
+                          <button
+                            onClick={() => copyToClipboard(activeWallet.address, 'receive')}
+                            className="p-2 hover:bg-white/10 rounded-2xl transition"
+                            title={tx5(WalletCopy.copiedToClipboard, lang)}
+                          >
+                            {copiedField === 'receive'
+                              ? <Check className="w-4 h-4 text-emerald-400" />
+                              : <Copy className="w-4 h-4 text-gray-400" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

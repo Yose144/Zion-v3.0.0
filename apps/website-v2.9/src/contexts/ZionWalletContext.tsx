@@ -23,6 +23,7 @@ interface ZionWalletState {
   wallets: Array<{ id: string; name: string; address: string; keyType: string }>;
   activeWallet: { id: string; name: string; address: string; keyType: string } | null;
   balance: number | null;
+  utxoCount: number | null;
   loading: boolean;
   error: string | null;
   createWallet: (name: string, password: string) => Promise<void>;
@@ -46,6 +47,7 @@ const defaultState: ZionWalletState = {
   wallets: [],
   activeWallet: null,
   balance: null,
+  utxoCount: null,
   loading: false,
   error: null,
   createWallet: async () => {},
@@ -78,6 +80,7 @@ export function ZionWalletProvider({ children }: { children: ReactNode }) {
   const [wallets, setWallets] = useState<ZionWalletState['wallets']>([]);
   const [activeWallet, setActiveWallet] = useState<ZionWalletState['activeWallet']>(null);
   const [balance, setBalance] = useState<number | null>(null);
+  const [utxoCount, setUtxoCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
@@ -88,7 +91,18 @@ export function ZionWalletProvider({ children }: { children: ReactNode }) {
     const active = m.getActiveWallet();
     setActiveWallet(active);
     if (active) {
-      m.getBalance(active.address).then((b: number) => setBalance(b)).catch(() => setBalance(null));
+      m.getBalanceBreakdown(active.address)
+        .then((b: { total_zion: number; utxo_count: number }) => {
+          setBalance(b.total_zion);
+          setUtxoCount(b.utxo_count);
+        })
+        .catch(() => {
+          setBalance(null);
+          setUtxoCount(null);
+        });
+    } else {
+      setBalance(null);
+      setUtxoCount(null);
     }
   }, []);
 
@@ -215,10 +229,12 @@ export function ZionWalletProvider({ children }: { children: ReactNode }) {
     if (!manager || !activeWallet) return;
     setLoading(true);
     try {
-      const b = await manager.getBalance(activeWallet.address);
-      setBalance(b);
+      const b = await manager.getBalanceBreakdown(activeWallet.address);
+      setBalance(b.total_zion);
+      setUtxoCount(b.utxo_count);
     } catch {
       setBalance(null);
+      setUtxoCount(null);
     } finally {
       setLoading(false);
     }
@@ -259,6 +275,7 @@ export function ZionWalletProvider({ children }: { children: ReactNode }) {
   const disconnect = useCallback(() => {
     setActiveWallet(null);
     setBalance(null);
+    setUtxoCount(null);
   }, []);
 
   return (
@@ -268,6 +285,7 @@ export function ZionWalletProvider({ children }: { children: ReactNode }) {
         wallets,
         activeWallet,
         balance,
+        utxoCount,
         loading,
         error,
         createWallet,
