@@ -88,7 +88,9 @@ if (existsSync(mapFile)) {
   const body = `${header}export const AVATAR_MODELS: Record<number, string> = {\n${ids
     .map((id) => `  ${id}: '/models/avatars/${id}.glb',`)
     .join('\n')}\n};\n`;
-  const tail = current.slice(current.indexOf('};') + 2);
-  writeFileSync(mapFile, body + tail);
+  // Ocas souboru (helper `avatarModelUrl`) bez úvodních prázdných řádků, ať je
+  // generátor idempotentní — jinak při každém běhu přibude jeden prázdný řádek.
+  const tail = current.slice(current.indexOf('};') + 2).replace(/^\n+/, '');
+  writeFileSync(mapFile, `${body}\n${tail}`);
   console.log(`[avatar-models] models.ts: ${ids.length} modelů (${desc})`);
 }

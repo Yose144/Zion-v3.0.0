@@ -214,11 +214,6 @@ export const AVATAR_MODELS: Record<number, string> = {
   204: '/models/avatars/204.glb',
 };
 
-
-
-
-
-
 /** URL modelu pro dané ID, nebo `null` (→ proceduralní model). */
 export function avatarModelUrl(id: number): string | null {
   return AVATAR_MODELS[id] ?? null;
