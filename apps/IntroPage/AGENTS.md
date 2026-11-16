@@ -46,9 +46,12 @@ npx serve dist -l 3001
 
 ## Landing behaviour
 
-- **Top nav order** is fixed: `Lumi · Market · Explorer · About`, then two
-  expandable dropdowns: **Stránky** (Amenti, EvoluZion, Camp, Vzestup, Blog, Seeds)
-  and **Ekosystém** (Těžba, Free World, Nirvana, Pool, Onboard, Docs).
+- **Top nav order** is fixed: `Lumi · Market · Explorer · About · Stránky ▾ ·
+  Ekosystém ▾ · 3.3 New Web`. Both dropdowns stay in the DOM and fade in on
+  hover/click (invisible bridge over the gap keeps `:hover` alive); the last
+  item links to `https://3.3.zionterranova.com` (gold highlight).
+- **Stránky** = Amenti, EvoluZion, Camp, Vzestup, Blog, Seeds.
+  **Ekosystém** = Těžba, Free World, Nirvana, Pool, Onboard, Docs.
   `SiteDirectory.tsx` mirrors the same split on the subpage rasta nav.
 - **Vast Rigs is intentionally absent from every public menu** (internal ops page).
   The unlisted `/vast-rigs/` route is kept only for ops/deploy health checks.

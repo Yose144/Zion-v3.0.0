@@ -506,7 +506,7 @@
   function closeDropdowns(except) {
     dropItems.forEach(function (li) {
       if (li === except) return;
-      li.classList.remove('open');
+      li.classList.remove('open', 'force-closed');
       const p = li.querySelector('.dropdown-parent');
       if (p) p.setAttribute('aria-expanded', 'false');
     });
@@ -520,7 +520,16 @@
       const open = !li.classList.contains('open');
       closeDropdowns(li);
       li.classList.toggle('open', open);
+      // Pokud klik zavírá a myš zůstává nad tlačítkem, CSS :hover by panel
+      // držel otevřený — force-closed to potlačí do mouseleave.
+      li.classList.toggle('force-closed', !open);
       parent.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    li.addEventListener('mouseenter', function () {
+      li.classList.remove('force-closed');
+    });
+    li.addEventListener('mouseleave', function () {
+      li.classList.remove('force-closed');
     });
     li.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') closeDropdowns();

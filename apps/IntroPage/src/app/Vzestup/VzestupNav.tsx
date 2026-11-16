@@ -67,6 +67,15 @@ export default function VzestupNav() {
           ))}
           <SiteDirectoryDropdown lang="cs" group="pages" />
           <SiteDirectoryDropdown lang="cs" group="ecosystem" />
+          <a
+            href="https://3.3.zionterranova.com"
+            target="_blank"
+            rel="noopener"
+            onClick={() => setOpen(false)}
+            className="rasta-nav-link rasta-nav-33"
+          >
+            3.3 New Web
+          </a>
         </div>
 
         <div className="rasta-nav-right rasta-nav-actions">
@@ -142,6 +151,15 @@ export default function VzestupNav() {
 
         <SiteDirectoryMobile lang="cs" groups={["pages"]} onNavigate={() => setOpen(false)} />
         <SiteDirectoryMobile lang="cs" groups={["ecosystem"]} onNavigate={() => setOpen(false)} />
+        <a
+          href="https://3.3.zionterranova.com"
+          target="_blank"
+          rel="noopener"
+          onClick={() => setOpen(false)}
+          className="rasta-nav-link rasta-nav-33"
+        >
+          3.3 New Web
+        </a>
 
         <a
           href="/amenti/"

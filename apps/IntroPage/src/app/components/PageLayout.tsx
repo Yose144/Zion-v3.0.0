@@ -121,6 +121,15 @@ export default function PageLayout({
             )}
             <SiteDirectoryDropdown lang={lang} group="pages" />
             <SiteDirectoryDropdown lang={lang} group="ecosystem" />
+            <a
+              href="https://3.3.zionterranova.com"
+              target="_blank"
+              rel="noopener"
+              onClick={close}
+              className="rasta-nav-link rasta-nav-33"
+            >
+              3.3 New Web
+            </a>
           </div>
 
           <div className="rasta-nav-right">
@@ -184,6 +193,15 @@ export default function PageLayout({
 
           <SiteDirectoryMobile lang={lang} groups={["pages"]} onNavigate={close} />
           <SiteDirectoryMobile lang={lang} groups={["ecosystem"]} onNavigate={close} />
+          <a
+            href="https://3.3.zionterranova.com"
+            target="_blank"
+            rel="noopener"
+            onClick={close}
+            className="rasta-nav-link rasta-nav-33"
+          >
+            3.3 New Web
+          </a>
 
           <div className="rasta-mobile-actions">
             <LanguageMenu lang={lang} setLang={choose} />

@@ -683,14 +683,15 @@ html body textarea:focus {
 }
 
 #header nav .nav-dropdown {
-  display: none;
+  /* Desktop: keep it in the DOM and fade it in/out — display:none kills both
+     hover continuity and transitions (the old menu "disappeared" while the
+     pointer crossed the 0.45rem gap). */
+  display: block;
   position: absolute;
   top: calc(100% + 0.45rem);
   left: 50%;
   transform: translateX(-50%);
   min-width: 12.5rem;
-  max-height: 70vh;
-  overflow-y: auto;
   margin: 0;
   padding: 0.4rem;
   list-style: none;
@@ -701,12 +702,37 @@ html body textarea:focus {
   -webkit-backdrop-filter: blur(28px);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 42px rgba(252, 209, 22, 0.15);
   z-index: 80;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.16s ease, visibility 0.16s ease;
 }
 
-#header nav ul li.has-dropdown:hover .nav-dropdown,
-#header nav ul li.has-dropdown:focus-within .nav-dropdown,
-#header nav ul li.has-dropdown.open .nav-dropdown {
-  display: block;
+/* Invisible bridge across the gap: moving the pointer from the button to the
+   panel stays inside the dropdown subtree, so `li:hover` never drops. */
+#header nav .nav-dropdown::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -0.6rem;
+  height: 0.6rem;
+}
+
+#header nav ul li.has-dropdown:hover > .nav-dropdown,
+#header nav ul li.has-dropdown:focus-within > .nav-dropdown,
+#header nav ul li.has-dropdown.open > .nav-dropdown {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Click-to-close must win over `:hover` while the pointer is still on the
+   button; releasing the pointer (mouseleave) clears this state. */
+#header nav ul li.has-dropdown.force-closed > .nav-dropdown {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 #header nav .nav-dropdown li {
@@ -806,6 +832,46 @@ html body textarea:focus {
   }
 }
 
+/* ── 3.3 New Web — poslední položka menu, zlatě zvýrazněná ────────────────── */
+#header nav ul li a.nav-33 {
+  color: var(--rasta-gold);
+  font-weight: 800;
+  text-shadow: 0 0 14px rgba(252, 209, 22, 0.35);
+}
+
+#header nav ul li a.nav-33::after {
+  content: '✦';
+  margin-left: 0.4rem;
+  font-size: 0.72em;
+  opacity: 0.85;
+}
+
+@media screen and (max-width: 980px) {
+  #header nav ul li.nav-33-item {
+    flex: 1 1 100%;
+  }
+}
+
+@media screen and (max-width: 736px) {
+  #header nav ul li.nav-33-item {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    width: 100%;
+    border-right: 0;
+  }
+}
+
+/* Stejná položka na rasta navu podstránek + v plovoucím menu. */
+.rasta-nav .rasta-nav-link.rasta-nav-33 {
+  color: var(--rasta-gold);
+  font-weight: 800;
+}
+
+.floating-menu-item.fm-new {
+  color: var(--rasta-gold);
+  font-weight: 800;
+}
+
 /* ── Mobil (≤480px): dropdown se rozbalí přímo v listu ───────────────────── */
 @media screen and (max-width: 480px) {
   #header nav ul li.has-dropdown {
@@ -814,10 +880,28 @@ html body textarea:focus {
 
   #header nav .nav-dropdown {
     position: static;
+    display: none;
     transform: none;
     width: calc(100% - 2.5rem);
     margin: 0.3rem 0 0.3rem 1.25rem;
     box-shadow: none;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  #header nav .nav-dropdown::before {
+    display: none;
+  }
+
+  #header nav ul li.has-dropdown:hover > .nav-dropdown,
+  #header nav ul li.has-dropdown:focus-within > .nav-dropdown,
+  #header nav ul li.has-dropdown.open > .nav-dropdown {
+    display: block;
+  }
+
+  #header nav ul li.has-dropdown.force-closed > .nav-dropdown {
+    display: none;
   }
 }
 
