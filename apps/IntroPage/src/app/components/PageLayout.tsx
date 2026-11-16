@@ -43,16 +43,14 @@ export default function PageLayout({
   };
 
   const nav: { href: string; label: { cs: string; en: string; es?: string; pt?: string; fr?: string }; external?: boolean }[] = [
-    { href: "/", label: { cs: "Domů", en: "Home", es: "Inicio", pt: "Início", fr: "Accueil" } },
-    { href: "/amenti", label: { cs: "Amenti", en: "Amenti" } },
-    { href: "/evoluzion", label: { cs: "EvoluZion", en: "EvoluZion" } },
-    { href: "/camp", label: { cs: "Camp", en: "Camp" } },
-    { href: "/Vzestup", label: { cs: "Vzestup", en: "Ascension", es: "Ascensión", pt: "Ascensão", fr: "Ascension" } },
+    { href: "https://lumi.zionterranova.com", label: { cs: "Lumi", en: "Lumi" }, external: true },
+    { href: "https://market.zionterranova.com", label: { cs: "Market", en: "Market" }, external: true },
     {
-      href: "https://freeworld.zionterranova.com",
-      label: { cs: "Free World", en: "Free World" },
+      href: "https://app.zionterranova.com/explorer",
+      label: { cs: "Explorer", en: "Explorer" },
       external: true,
     },
+    { href: "/#about", label: { cs: "O nás", en: "About", es: "Sobre nosotros", pt: "Sobre nós", fr: "À propos" } },
   ];
 
   const close = () => setOpen(false);
@@ -109,10 +107,10 @@ export default function PageLayout({
                 >
                   {text(n.label)}
                 </a>
-              ) : n.href === "/" ? (
+              ) : (
                 <a
                   key={n.href}
-                  href="/"
+                  href={n.href}
                   onClick={close}
                   className={`rasta-nav-link ${
                     path === n.href ? "active" : ""
@@ -120,20 +118,10 @@ export default function PageLayout({
                 >
                   {text(n.label)}
                 </a>
-              ) : (
-                <Link
-                  key={n.href}
-                  href={n.href + "/"}
-                  onClick={close}
-                  className={`rasta-nav-link ${
-                    path === n.href ? "active" : ""
-                  }`}
-                >
-                  {text(n.label)}
-                </Link>
               )
             )}
-            <SiteDirectoryDropdown lang={lang} />
+            <SiteDirectoryDropdown lang={lang} group="pages" />
+            <SiteDirectoryDropdown lang={lang} group="ecosystem" />
           </div>
 
           <div className="rasta-nav-right">
@@ -181,10 +169,10 @@ export default function PageLayout({
               >
                 {text(n.label)}
               </a>
-            ) : n.href === "/" ? (
+            ) : (
               <a
                 key={n.href}
-                href="/"
+                href={n.href}
                 onClick={close}
                 className={`rasta-nav-link ${
                   path === n.href ? "active" : ""
@@ -192,21 +180,11 @@ export default function PageLayout({
               >
                 {text(n.label)}
               </a>
-            ) : (
-              <Link
-                key={n.href}
-                href={n.href + "/"}
-                onClick={close}
-                className={`rasta-nav-link ${
-                  path === n.href ? "active" : ""
-                }`}
-              >
-                {text(n.label)}
-              </Link>
             )
           )}
 
-          <SiteDirectoryMobile lang={lang} onNavigate={close} />
+          <SiteDirectoryMobile lang={lang} groups={["pages"]} onNavigate={close} />
+          <SiteDirectoryMobile lang={lang} groups={["ecosystem"]} onNavigate={close} />
 
           <div className="rasta-mobile-actions">
             <LanguageMenu lang={lang} setLang={choose} />

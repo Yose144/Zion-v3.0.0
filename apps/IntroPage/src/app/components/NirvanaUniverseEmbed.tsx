@@ -83,6 +83,17 @@ const PLANETS: PlanetDef[] = [
   { id: 'neptune', name: 'Neptun', tex: 'neptune', au: 30.07, size: 1.45, speed: 0.00012, spin: 0.04, tint: '#4d6fd1', tiltZ: 0.49 },
 ];
 
+/** Optimized WebP textures shipped with the IntroPage (≈260 KB total). */
+const PLANET_TEXTURES: Record<string, string> = {
+  mercury: '/textures/mercury-768.webp',
+  venus_atmosphere: '/textures/venus-768.webp',
+  mars: '/textures/mars-768.webp',
+  jupiter: '/textures/jupiter-768.webp',
+  saturn: '/textures/saturn-768.webp',
+  uranus: '/textures/uranus-768.webp',
+  neptune: '/textures/neptune-768.webp',
+};
+
 const EARTH_ORBIT_R = 30;
 const EARTH_ORBIT_SPEED = 0.02;
 const EARTH_SIZE = 2.1;
@@ -134,7 +145,7 @@ void main() {
 `;
 
 function SpaceBackdrop() {
-  const tex = useLazyTexture('/textures/milkyway-eso-4k.jpg');
+  const tex = useLazyTexture('/textures/milkyway-1k.webp');
   return (
     <mesh key={tex ? 'tex' : 'flat'} scale={[-1, 1, 1]}>
       <sphereGeometry args={[880, 48, 32]} />
@@ -146,7 +157,7 @@ function SpaceBackdrop() {
 function Sun() {
   const corona = useRef<THREE.MeshBasicMaterial>(null);
   const glow = useRef<THREE.Mesh>(null);
-  const tex = useLazyTexture('/textures/sun-2k.jpg');
+  const tex = useLazyTexture('/textures/sun-1k.webp');
   useFrame(({ clock, camera }) => {
     const t = clock.getElapsedTime();
     if (corona.current) corona.current.opacity = 0.19 + Math.sin(t * 1.3) * 0.06;
@@ -226,8 +237,8 @@ function Planet({ def, index }: { def: PlanetDef; index: number }) {
   const carrier = useRef<THREE.Group>(null);
   const body = useRef<THREE.Mesh>(null);
   const [hover, setHover] = useState(false);
-  const tex = useLazyTexture(`/textures/2k_${def.tex}.jpg`);
-  const ringTex = useLazyTexture(def.ring ? '/textures/2k_saturn_ring_alpha.png' : null);
+  const tex = useLazyTexture(PLANET_TEXTURES[def.tex] ?? null);
+  const ringTex = useLazyTexture(def.ring ? '/textures/saturn-ring-512.webp' : null);
 
   const ringGeo = useMemo(() => {
     if (!def.ring) return null;
@@ -292,8 +303,8 @@ function NewEarth({ onReady }: { onReady?: () => void }) {
   const body = useRef<THREE.Mesh>(null);
   const moon = useRef<THREE.Group>(null);
   const [hover, setHover] = useState(false);
-  const tex = useLazyTexture('/textures/earth-blue-marble.webp', onReady);
-  const moonTex = useLazyTexture('/textures/2k_moon.jpg');
+  const tex = useLazyTexture('/textures/earth-512.webp', onReady);
+  const moonTex = useLazyTexture('/textures/moon-512.webp');
 
   useFrame(({ clock }, delta) => {
     if (!carrier.current) return;

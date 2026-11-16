@@ -27,7 +27,6 @@ const PAGES: { href: string; label: Label; sub: string }[] = [
   { href: "/Vzestup/", label: { cs: "Vzestup", en: "Ascension", es: "Ascensión", pt: "Ascensão", fr: "Ascension" }, sub: "/Vzestup/" },
   { href: "/blog/", label: { cs: "Blog", en: "Blog" }, sub: "/blog/" },
   { href: "/seeds/", label: { cs: "Seeds", en: "Seeds" }, sub: "/seeds/" },
-  { href: "/vast-rigs/", label: { cs: "Vast Rigs", en: "Vast Rigs" }, sub: "/vast-rigs/" },
 ];
 
 const ECOSYSTEM: { href: string; label: Label; sub: string }[] = [
@@ -78,9 +77,16 @@ function DropItem({
   );
 }
 
-/** Desktop pill dropdown — site index (Stránky + Ekosystém). Click-toggle,
- *  Escape / outside-click zavírá. Stejný pattern jako pool-ui NavDropdown. */
-export function SiteDirectoryDropdown({ lang = "cs" }: { lang?: PublicLang }) {
+/** Desktop pill dropdown — site index. Pass `group` to render a single
+ *  "Stránky" / "Ekosystém" dropdown; omit it for the legacy combined menu.
+ *  Click-toggle, Escape / outside-click closes. */
+export function SiteDirectoryDropdown({
+  lang = "cs",
+  group,
+}: {
+  lang?: PublicLang;
+  group?: "pages" | "ecosystem";
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -100,6 +106,10 @@ export function SiteDirectoryDropdown({ lang = "cs" }: { lang?: PublicLang }) {
     };
   }, [open]);
 
+  const label = group === "pages" ? GROUP_PAGES : group === "ecosystem" ? GROUP_ECOSYSTEM : BUTTON_LABEL;
+  const showPages = !group || group === "pages";
+  const showEcosystem = !group || group === "ecosystem";
+
   return (
     <div ref={ref} className={`rasta-nav-dropdown ${open ? "open" : ""}`}>
       <button
@@ -109,19 +119,27 @@ export function SiteDirectoryDropdown({ lang = "cs" }: { lang?: PublicLang }) {
         aria-haspopup="true"
         onClick={() => setOpen((v) => !v)}
       >
-        {lab(BUTTON_LABEL, lang)}
+        {lab(label, lang)}
         <ChevronDown size={12} className="rasta-nav-drop-chevron" aria-hidden />
       </button>
       {open && (
         <div className="rasta-nav-dropmenu" role="menu" onClick={() => setOpen(false)}>
-          <div className="rasta-nav-dropheader">{lab(GROUP_PAGES, lang)}</div>
-          {PAGES.map((p) => (
-            <DropItem key={p.href} href={p.href} label={p.label} sub={p.sub} lang={lang} />
-          ))}
-          <div className="rasta-nav-dropheader">{lab(GROUP_ECOSYSTEM, lang)}</div>
-          {ECOSYSTEM.map((e) => (
-            <DropItem key={e.href} href={e.href} label={e.label} sub={e.sub} external lang={lang} />
-          ))}
+          {showPages && (
+            <>
+              {!group && <div className="rasta-nav-dropheader">{lab(GROUP_PAGES, lang)}</div>}
+              {PAGES.map((p) => (
+                <DropItem key={p.href} href={p.href} label={p.label} sub={p.sub} lang={lang} />
+              ))}
+            </>
+          )}
+          {showEcosystem && (
+            <>
+              {!group && <div className="rasta-nav-dropheader">{lab(GROUP_ECOSYSTEM, lang)}</div>}
+              {ECOSYSTEM.map((e) => (
+                <DropItem key={e.href} href={e.href} label={e.label} sub={e.sub} external lang={lang} />
+              ))}
+            </>
+          )}
         </div>
       )}
     </div>
@@ -132,20 +150,30 @@ export function SiteDirectoryDropdown({ lang = "cs" }: { lang?: PublicLang }) {
 export function SiteDirectoryMobile({
   lang = "cs",
   onNavigate,
+  groups = ["pages", "ecosystem"],
 }: {
   lang?: PublicLang;
   onNavigate?: () => void;
+  groups?: ("pages" | "ecosystem")[];
 }) {
   return (
     <>
-      <div className="rasta-mobile-subheader">{lab(GROUP_PAGES, lang)}</div>
-      {PAGES.map((p) => (
-        <DropItem key={p.href} href={p.href} label={p.label} sub={p.sub} lang={lang} onNavigate={onNavigate} />
-      ))}
-      <div className="rasta-mobile-subheader">{lab(GROUP_ECOSYSTEM, lang)}</div>
-      {ECOSYSTEM.map((e) => (
-        <DropItem key={e.href} href={e.href} label={e.label} sub={e.sub} external lang={lang} onNavigate={onNavigate} />
-      ))}
+      {groups.includes("pages") && (
+        <>
+          <div className="rasta-mobile-subheader">{lab(GROUP_PAGES, lang)}</div>
+          {PAGES.map((p) => (
+            <DropItem key={p.href} href={p.href} label={p.label} sub={p.sub} lang={lang} onNavigate={onNavigate} />
+          ))}
+        </>
+      )}
+      {groups.includes("ecosystem") && (
+        <>
+          <div className="rasta-mobile-subheader">{lab(GROUP_ECOSYSTEM, lang)}</div>
+          {ECOSYSTEM.map((e) => (
+            <DropItem key={e.href} href={e.href} label={e.label} sub={e.sub} external lang={lang} onNavigate={onNavigate} />
+          ))}
+        </>
+      )}
     </>
   );
 }

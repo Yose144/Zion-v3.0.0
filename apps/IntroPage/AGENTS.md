@@ -7,6 +7,7 @@ This Next.js 16 project produces the `zionterranova.com` landing / maintenance p
 ```bash
 npm install    # if needed
 npm run build  # static export into dist/
+node scripts/e2e-check.js   # internal link/asset check against dist/
 ```
 
 Local preview:
@@ -28,14 +29,32 @@ npx serve dist -l 3001
 
 ## Important files
 
-- `src/app/amenti/page.tsx` — Amenti page
-- `src/app/blog/page.tsx` — Blog archive
-- `src/app/blog/[slug]/page.tsx` + `BlogPostClient.tsx` — Blog detail
-- `src/app/components/PageLayout.tsx` — shared top nav + footer
-- `src/app/data/amenti-data.json` — Amenti copy
-- `src/app/data/blog-posts.json` — Blog archive data (converted from `public_html/V2/blog-posts.js`)
+- `src/app/page.tsx` — injects the landing body from `src/app/maintenance.html` and mounts `NirvanaUniverseEmbed`
+- `src/app/maintenance.html` — landing markup (Dimension tab panels + header/footer)
+- `public/assets/js/main.js` — **vanilla** tab controller (hash routing, close, Escape, preload removal). There is no jQuery / util.js / breakpoints.js stack any more.
+- `public/assets/js/intro-tabs.js` — i18n (CS/EN/ES/PT/FR), floating menu, background modes, top-nav dropdown
+- `public/assets/js/starfield-bg.js` — background starfield canvas
+- `public/assets/css/main.css` + `public/assets/css/intro-rasta.css` — template + rasta theme (tab visibility is scoped to `#wrapper #main`)
+- `src/app/components/NirvanaUniverseEmbed.tsx` — lazy 3D Nirvana preview; textures live in `public/textures/*.webp`
+- `src/app/amenti/page.tsx` + `layout.tsx` — Amenti page + metadata
+- `src/app/blog/page.tsx`, `src/app/blog/[slug]/page.tsx` + `layout.tsx` — Blog archive/detail (+ dynamic metadata)
+- `src/app/camp/page.tsx`, `src/app/evoluzion/page.tsx`, `src/app/seeds/**` — other sections (+ per-route metadata layouts)
+- `src/app/components/PageLayout.tsx` — shared top nav + footer for non-landing routes
+- `src/app/data/*.json` — page copy (amenti, blog, camp, evoluzion, seeds)
 - `public/legacy/` — full V2 static archive
 - `src/app/Vzestup/page.tsx` + `VzestupNav.tsx` — Vzestup portal page and navigation
+
+## Landing behaviour
+
+- `#wrapper #main` is hidden by CSS until `body.is-article-visible` is set; only the
+  article matching `location.hash` (`#about`, `#mine`, `#amenti`, `#freeworld`,
+  `#elements`, `#v3zion`, `#support`, `#contact`, `#in`) is displayed.
+- `main.js` handles nav clicks, `hashchange` / back / forward, the close button,
+  `Escape` and click-outside. It also removes the legacy `is-preload` state.
+- `intro-tabs.js` applies the saved language on load and defaults to **CS**; it also
+  translates the Support/Contact panels through `data-i18n` keys.
+- All 3D textures are local WebP files (`public/textures/*.webp`, ~260 KB total);
+  do not reintroduce `/textures/2k_*.jpg` references.
 
 ## Styling
 

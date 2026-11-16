@@ -288,6 +288,31 @@ h3.major {
   line-height: 1.6;
 }
 
+/* ── Tab panels: only the panel opened from the hash is rendered ─────────── */
+#wrapper #main {
+  display: none;
+}
+
+body.is-article-visible #wrapper #main {
+  display: flex;
+}
+
+/* The panel takes over the viewport — the landing header/footer are hidden
+   (same behaviour as HTML5UP's Dimension template). */
+body.is-article-visible #header,
+body.is-article-visible #footer,
+body.is-article-visible #wrapper > footer {
+  display: none;
+}
+
+#wrapper #main article {
+  display: none;
+}
+
+#wrapper #main article.active {
+  display: block;
+}
+
 /* ── Main article: glass rasta card with top & bottom rasta lines ────────── */
 html body #main article {
   position: relative;
@@ -393,6 +418,46 @@ html body #main article h3 {
 
 html body #main article h4 {
   font-size: 0.95rem;
+}
+
+/* Support panel: spacing without a wall of <br> tags */
+html body #main article#support .support-mantra {
+  margin: 0.25rem 0 1.5rem;
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  letter-spacing: 0.08em;
+}
+
+html body #main article#support .support-photo {
+  margin: 1.5rem 0;
+}
+
+html body #main article#support .support-sep {
+  margin: 1.75rem 0;
+  text-align: center;
+  letter-spacing: 0.3em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+html body #main article#support .support-block {
+  margin: 1.75rem 0;
+}
+
+html body #main article#support .support-qr {
+  max-width: 13rem;
+  margin: 1.25rem auto;
+}
+
+html body #main article#support .support-qr img {
+  width: 100%;
+  height: auto;
+  opacity: 0.88;
+}
+
+html body #main article#support .support-namaste {
+  margin-top: 2rem;
+  text-align: center;
+  font-weight: 700;
+  color: var(--rasta-gold);
 }
 
 /* Close button */
@@ -672,6 +737,66 @@ html body textarea:focus {
   padding-top: 0.35rem;
 }
 
+/* ── Mobil (≤736px): nav jako 2×2 grid + Ekosystém přes celou šířku ──────── */
+@media screen and (max-width: 736px) {
+  #header nav {
+    width: min(92vw, 22rem);
+  }
+
+  #header nav ul {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #header nav ul > li {
+    border-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+  }
+
+  #header nav ul > li:nth-child(odd) {
+    border-right: 1px solid rgba(255, 255, 255, 0.25);
+  }
+
+  #header nav ul > li:nth-child(-n + 2) {
+    border-top: 0;
+  }
+
+  #header nav ul > li > a {
+    min-width: 0;
+    width: 100%;
+    height: 2.75rem;
+    line-height: 2.75rem;
+    padding: 0 0.6rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.12rem;
+  }
+
+  #header nav ul li.has-dropdown {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    width: 100%;
+    border-right: 0;
+  }
+
+  #header nav.use-middle:after {
+    display: none;
+  }
+
+  #header nav .nav-dropdown {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media screen and (max-width: 736px) {
+  #wrapper > footer {
+    padding-bottom: 4rem;
+  }
+}
+
 /* ── Mobil (≤480px): dropdown se rozbalí přímo v listu ───────────────────── */
 @media screen and (max-width: 480px) {
   #header nav ul li.has-dropdown {
@@ -758,14 +883,16 @@ html body textarea:focus {
   width: 17.5rem;
   max-width: calc(100vw - 2rem);
   max-height: calc(100vh - 6rem);
+  max-height: calc(100dvh - 6rem);
+  overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
   background: rgba(13, 13, 13, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--zion-radius-lg);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 42px rgba(252, 209, 22, 0.15);
-  overflow: hidden;
   opacity: 0;
   transform: translateY(12px) scale(0.96);
   transform-origin: bottom right;

@@ -25,6 +25,22 @@
 	
 	<body class="is-preload">
 
+		<noscript>
+			<style>
+				/* Progressive fallback: without JS show every panel in normal flow. */
+				#wrapper #main { display: flex !important; }
+				#wrapper #main article {
+					display: block !important;
+					opacity: 1 !important;
+					transform: none !important;
+					animation: none !important;
+					margin: 1.5rem auto;
+				}
+				#wrapper #main article .close { display: none !important; }
+				.floating-menu { display: none !important; }
+			</style>
+		</noscript>
+
 		<!-- Wrapper -->
 			<div id="wrapper">
 
@@ -81,7 +97,7 @@
 										<img src="stargate/1.png" alt="28" class="rotate28" width="700" height="700" decoding="async">
 										<!-- centered small circular logo link -->
 											<a class="center-logo" href="https://oasis.zionterranova.com" aria-label="ZION TerraNova®" target="_blank" rel="noopener">
-												<img src="stargate/Z.gif" alt="ZION"
+												<img src="stargate/Z.webp" alt="ZION"
      												style="filter: grayscale(100%) contrast(180%);
             											box-shadow: 0 0 1px #000; opacity: 0.6;" width="64" height="64" decoding="async">
 
@@ -291,7 +307,7 @@
 								<br>
 							
 								<br>
-								<h1>ZION</h1>
+								<h2 class="zion-wordmark">ZION</h2>
 								<h3>OASIS</h3>
 								<h3>v3.2.0 MAINNET BETA</h3>
 								<br>
@@ -314,72 +330,50 @@
 								<br>
 								<p>JAY RAM SITA HANUMAN !</p>
 								<p>ON THE STAR !</p>
-								<br>
-															<h3 data-i18n="zion.stable">ZION v3.2.0 MAINNET BETA · Runtime 3.2.0 "One Love"</h3>
-							<br>
-							<p data-i18n="zion.launch">Official public launch: postponed (TBD)</p>
 							</article>
 
 						<!-- About -->
 							<article id="support">
-								<h2 class="major" data-i18n="support.title">Support Our Project</h2>
-								<h2>ཨོཾ་མ་ཎི་པདྨེ་ཧཱུྃ</h2>
-								<br>
-								<br>
-								<br>
-								<br>
-								<br>
-								<span class="image main"><img src="images/kundun.jpg" alt="" loading="lazy" decoding="async" width="688" height="387"></span>
-								<br>
-								<br>
-								<br>
-								<br>
-								<br>
-								<br>
-								<br>
-								<p data-i18n="support.p1">Your contributions help us keep the project alive and thriving. We appreciate every donation, no matter how small. Thank you for your support!</p>
-								<p>~ ® ~</p>
-								<h3 data-i18n="support.invest.title">Investment Opportunities</h3>
-								<br>
-								<p data-i18n="support.invest.p1">If you are interested in supporting our project in the long term, we also offer opportunities for investment.</p>
-								<p data-i18n="support.invest.p2">Please contact us for more information about partnership and investment possibilities.</p>
-								<p>~ ® ~</p>
-								<h3 data-i18n="support.financial.title">Financial Support</h3>
-								<br>
-								<h4 data-i18n="support.account.title">Our Transparent Account :</h4>
-								<p>CZ</p>
-								<p>259251079/0600</p>
-								<p>Iban : CZ68 0600 0000 0002 5925 1079</p>
-								<p>Bic : AGBACZPP</p>
-								<br>
-								<br>
-								<span class="image main"><img src="images/TransAcc.jpeg" alt="TRANS" style="width: 40%; opacity: 0.8;" loading="lazy" decoding="async" width="1235" height="1235"></span>
-								<br>
-								<br>
-								<br>
-								<br>
-								<br>
-								<h4 data-i18n="support.bitcoin.title">Bitcoin Account</h4>
-								<p>bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw</p>
-								<br>
-								<br>
-								<span class="image main"><img src="images/bitcoin.png" alt="BTC" style="width: 40%; opacity: 0.8;" loading="lazy" decoding="async" width="325" height="325"></span>
-								<br>
-								<br>
-								<br>
-								<br>
-								<br>
-								<br>
-								<p data-i18n="support.namaste">Namaste</p>
-								
+								<h2 class="major" data-i18n="support.title">Podpořte náš projekt</h2>
+								<h2 class="support-mantra">ཨོཾ་མ་ཎི་པདྨེ་ཧཱུྃ</h2>
+								<figure class="image main support-photo">
+									<img src="images/kundun.jpg" alt="Kundun — požehnání projektu" loading="lazy" decoding="async" width="688" height="387">
+								</figure>
+								<p data-i18n="support.p1">Vaše příspěvky nám pomáhají udržet projekt naživu a v rozvoji. Oceňujeme každý dar, bez ohledu na velikost. Děkujeme za vaši podporu!</p>
+								<p class="support-sep" aria-hidden="true">~ ® ~</p>
+								<h3 data-i18n="support.invest.title">Investiční příležitosti</h3>
+								<p data-i18n="support.invest.p1">Pokud máte zájem podpořit náš projekt dlouhodobě, nabízíme také možnosti investice.</p>
+								<p data-i18n="support.invest.p2">Kontaktujte nás pro více informací o partnerství a investičních možnostech.</p>
+								<p class="support-sep" aria-hidden="true">~ ® ~</p>
+								<h3 data-i18n="support.financial.title">Finanční podpora</h3>
+								<div class="support-block">
+									<h4 data-i18n="support.account.title">Náš transparentní účet:</h4>
+									<p>CZ</p>
+									<p>259251079/0600</p>
+									<p>IBAN: CZ68 0600 0000 0002 5925 1079</p>
+									<p>BIC: AGBACZPP</p>
+									<figure class="image main support-qr">
+										<img src="images/TransAcc.jpeg" alt="QR platba — transparentní účet ZION TerraNova" loading="lazy" decoding="async" width="1235" height="1235">
+									</figure>
+								</div>
+								<div class="support-block">
+									<h4 data-i18n="support.bitcoin.title">Bitcoin účet</h4>
+									<p><code>bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw</code></p>
+									<figure class="image main support-qr">
+										<img src="images/bitcoin.png" alt="QR platba — Bitcoin adresa ZION TerraNova" loading="lazy" decoding="async" width="325" height="325">
+									</figure>
+								</div>
+								<p class="support-namaste" data-i18n="support.namaste">Namaste</p>
 							</article>
 
 						<!-- Contact -->
 							<article id="contact">
-								<h2 class="major" data-i18n="contact.title">Contact</h2>
+								<h2 class="major" data-i18n="contact.title">Kontakt</h2>
 								<ul class="icons">
-									<li><a href="https://www.facebook.com/ZionTerraNova/" class="icon brands fa-facebook-f"><span class="label" data-i18n="social.facebook">Facebook</span></a></li>
-									<li><a href="https://www.instagram.com/terranova_project/" class="icon brands fa-instagram"><span class="label" data-i18n="social.instagram">Instagram</span></a></li>
+									<li><a href="https://www.facebook.com/ZionTerraNova/" class="icon brands fa-facebook-f" target="_blank" rel="noopener"><span class="label" data-i18n="social.facebook">Facebook</span></a></li>
+									<li><a href="https://www.instagram.com/terranova_project/" class="icon brands fa-instagram" target="_blank" rel="noopener"><span class="label" data-i18n="social.instagram">Instagram</span></a></li>
+									<li><a href="https://github.com/Zion-TerraNova/" class="icon brands fa-github" target="_blank" rel="noopener"><span class="label">GitHub</span></a></li>
+									<li><a href="https://discord.gg/wvxJ7DhZ8" class="icon brands fa-discord" target="_blank" rel="noopener"><span class="label">Discord</span></a></li>
 								</ul>
 							</article>
 
@@ -481,10 +475,15 @@
 						<div class="floating-menu-group">
 							<h3 class="floating-menu-group-title" data-i18n="menu.page">Stránka</h3>
 							<div class="floating-menu-grid">
+								<a href="#in" class="floating-menu-item" data-target="in" data-i18n="intro.title">Intro</a>
 								<a href="#about" class="floating-menu-item" data-target="about" data-i18n="nav.about">O nás</a>
 								<a href="#mine" class="floating-menu-item" data-target="mine" data-i18n="nav.mine">Těžba</a>
 								<a href="#amenti" class="floating-menu-item" data-target="amenti" data-i18n="nav.amenti">Amenti</a>
 								<a href="#freeworld" class="floating-menu-item" data-target="freeworld" data-i18n="nav.freeworld">Free World</a>
+								<a href="#elements" class="floating-menu-item" data-target="elements" data-i18n="paths.title">Tři cesty na palubu</a>
+								<a href="#v3zion" class="floating-menu-item" data-target="v3zion" data-i18n="zion.title">ZION TerraNova®</a>
+								<a href="#support" class="floating-menu-item" data-target="support" data-i18n="support.title">Podpořte náš projekt</a>
+								<a href="#contact" class="floating-menu-item" data-target="contact" data-i18n="contact.title">Kontakt</a>
 							</div>
 						</div>
 						<div class="floating-menu-group">
@@ -539,10 +538,6 @@
 			</nav>
 
 		<!-- Scripts -->
-			<script src="assets/js/jquery.min.js" defer></script>
-			<script src="assets/js/browser.min.js" defer></script>
-			<script src="assets/js/breakpoints.min.js" defer></script>
-			<script src="assets/js/util.js" defer></script>
 			<script src="assets/js/main.js" defer></script>
 			<script src="assets/js/starfield-bg.js" defer></script>
 			<script src="assets/js/intro-tabs.js" defer></script>

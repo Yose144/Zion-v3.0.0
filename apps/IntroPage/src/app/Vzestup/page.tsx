@@ -1,7 +1,21 @@
 import { readFile } from "fs/promises";
 import path from "path";
+import type { Metadata } from "next";
 import Script from "next/script";
 import VzestupNav from "./VzestupNav";
+
+export const metadata: Metadata = {
+  title: "Vzestup — duchovní portál ZION TerraNova",
+  description:
+    "Vzestup & Duchovní růst: brány portálu, poselství Lyary a Sheldana Nidla, Vůle Boží a další texty pro vědomý život na Nové Zemi.",
+  alternates: { canonical: "/Vzestup/" },
+  openGraph: {
+    title: "Vzestup — duchovní portál ZION TerraNova",
+    description: "Brány portálu, poselství a texty pro vědomý život na Nové Zemi.",
+    url: "/Vzestup/",
+    type: "website",
+  },
+};
 
 function transformRelative(url: string) {
   if (!url) return url;

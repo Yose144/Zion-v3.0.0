@@ -540,6 +540,6 @@
   })();
   const savedBg = (function () { try { return localStorage.getItem('zion_bg'); } catch (e) { return null; } })();
 
-  if (savedLang) applyLang(savedLang);
+  applyLang(savedLang || 'cs');
   applyBg(savedBg || 'maintenance');
 })();
