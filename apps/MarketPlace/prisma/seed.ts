@@ -7,7 +7,15 @@ async function main() {
   for (const product of shopProducts) {
     // filesUrl drží operátor v produkci; katalog ho nemusí mít. `undefined`
     // znamená "pole nechat být", `null` by odkaz smazalo.
-    const update = { ...product, filesUrl: product.filesUrl ?? undefined };
+    // Sklad, dostupnost a viditelnost po vytvoření vlastní admin — seed je
+    // nesmí přepsat (jinak by každý deploy znovu odemkl ručně zamčené zboží).
+    const update = {
+      ...product,
+      filesUrl: product.filesUrl ?? undefined,
+      stock: undefined,
+      inStock: undefined,
+      active: undefined,
+    };
     await prisma.shopProduct.upsert({
       where: { externalId: product.externalId },
       update,

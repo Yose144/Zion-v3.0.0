@@ -42,9 +42,16 @@ export async function POST(req: NextRequest) {
         digital: product.digital,
         active: product.active,
       };
+      // Sklad / dostupnost / viditelnost spravuje admin po vytvoření.
+      // Seed je nesmí přepsat, jinak by každý deploy odemkl ručně zamčené zboží.
       await prisma.shopProduct.upsert({
         where: { externalId: product.externalId },
-        update: data,
+        update: {
+          ...data,
+          stock: undefined,
+          inStock: undefined,
+          active: undefined,
+        },
         create: { externalId: product.externalId, ...data },
       });
       count++;

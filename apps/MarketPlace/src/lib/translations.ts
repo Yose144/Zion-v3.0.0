@@ -716,6 +716,7 @@ const t = {
     connectionError: { cs: 'Chyba připojení.', en: 'Connection error.' },
     layoutTitle: { cs: 'Market Admin', en: 'Market Admin' },
     navOrders: { cs: 'Objednávky', en: 'Orders' },
+    navProducts: { cs: 'Sklad', en: 'Stock' },
     navInvoices: { cs: 'Faktury', en: 'Invoices' },
     navShipping: { cs: 'Doprava', en: 'Shipping' },
     navStripe: { cs: 'Stripe', en: 'Stripe' },

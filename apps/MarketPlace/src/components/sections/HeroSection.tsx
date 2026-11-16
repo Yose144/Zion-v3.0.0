@@ -42,26 +42,6 @@ export default function HeroSection() {
             {t('hero.ctaSecondary')}
           </Link>
         </div>
-        <div className={styles.signature}>
-          <img
-            className={styles.heritage}
-            src="/images/design-v1/evoluzion-2008.jpeg"
-            width={719}
-            height={281}
-            alt="evoluZion · 2008"
-            loading="lazy"
-            decoding="async"
-          />
-          <img
-            className={styles.whale}
-            src="/images/design-v1/keporkak-original.png"
-            width={800}
-            height={500}
-            alt="Omnity.One"
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
       </div>
     </section>
   );
