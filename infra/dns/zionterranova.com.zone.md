@@ -57,6 +57,7 @@ $ORIGIN zionterranova.com.
 *                  	3600	IN A    	62.171.141.136       ; grafana/dashboard/testnet/… přes wildcard
 
 ; ─── EDGE2 (207.180.217.100) — veřejný web tier ─────────────────────────
+3.3                	3600	IN A    	207.180.217.100      ; NEW: 3.3 New Web (onboard :3030)
 app                	3600	IN A    	207.180.217.100      ; ← FLIP: Next.js app
 auth               	3600	IN A    	207.180.217.100      ; ← NEW explicit: ZIS
 freeworld          	3600	IN A    	207.180.217.100      ; ← NEW explicit

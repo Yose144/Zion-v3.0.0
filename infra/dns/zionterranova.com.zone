@@ -24,6 +24,7 @@ $ORIGIN zionterranova.com.
                    	3600	IN CAA  	0 iodef mailto:security@zionterranova.com
 *                  	3600	IN A    	62.171.141.136
 api                	3600	IN A    	62.171.141.136
+3.3                	3600	IN A    	207.180.217.100
 app                	3600	IN A    	207.180.217.100
 kingdom            	3600	IN A    	207.180.217.100
 auth               	3600	IN A    	207.180.217.100
