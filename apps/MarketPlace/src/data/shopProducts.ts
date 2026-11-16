@@ -4,7 +4,7 @@
 export interface ShopProductSeed {
   externalId: string;
   name: string;
-  category: 'books' | 'woodart' | 'starfighters' | 'engraving' | 'digital' | 'software';
+  category: 'books' | 'seeds' | 'woodart' | 'starfighters' | 'engraving' | 'digital' | 'software';
   description: string;
   priceCzk: number;
   oldPriceCzk?: number;
@@ -23,6 +23,7 @@ export interface ShopProductSeed {
 
 export const SHOP_CATEGORIES: Record<ShopProductSeed['category'], string> = {
   books: 'Knihy',
+  seeds: 'Semínka',
   woodart: 'WoodArt',
   starfighters: 'Starfighters',
   engraving: 'Gravírování',
@@ -32,6 +33,7 @@ export const SHOP_CATEGORIES: Record<ShopProductSeed['category'], string> = {
 
 export const SHOP_CATEGORY_ORDER: ShopProductSeed['category'][] = [
   'books',
+  'seeds',
   'woodart',
   'starfighters',
   'engraving',
@@ -40,6 +42,73 @@ export const SHOP_CATEGORY_ORDER: ShopProductSeed['category'][] = [
 ];
 
 export const shopProducts: ShopProductSeed[] = [
+
+  // Seeds — 10 regular (nefeminizovaných) semínek. Genesis / Father Strain
+  // se záměrně neprodává.
+  {
+    externalId: 'seed-emc2',
+    name: 'E = MC² — 10 regular semínek',
+    category: 'seeds',
+    description:
+      'Deset regular (nefeminizovaných) semínek sativa-dominantního hybridu. Elephant (Ganesh Spirit × Genesis) a Gaia (Sweet Purple × Genesis) dávají čistou mentální energii, fokus a kreativitu. THC 18–22 %, CBD 3–5 %, květ 8–9 týdnů, indoor 550–650 g/m². Pro zkušené pěstitele, kteří chtějí rychlý a jasný efekt. Regular semínka — počítejte s mužskými rostlinami. Pěstování pouze v souladu s legislativou.',
+    priceCzk: 490,
+    image: '/shop/img/products/seed-emc2.webp',
+    badge: '🌱 Regular · 10 ks',
+    inStock: true,
+    size: '10 regular semínek',
+    stock: 20,
+    tokens: 4900,
+    digital: false,
+    active: true,
+  },
+  {
+    externalId: 'seed-jaganath',
+    name: 'Jaganath Krishna — 10 regular semínek',
+    category: 'seeds',
+    description:
+      'Deset regular semínek dokonale vyváženého hybridu 50/50. Hari (Jack Herer × Genesis) a Gaia (Sweet Purple × Genesis) vytvářejí harmonickou rovnováhu těla a mysli. THC 15–19 %, CBD 5–8 %, květ 8–9 týdnů, indoor 500–600 g/m², výška 100–160 cm. Celodenní strain — ráno jemně probudí, večer pomůže s relaxací. Vhodný i pro začátečníky. Regular semínka — počítejte s mužskými rostlinami.',
+    priceCzk: 490,
+    image: '/shop/img/products/seed-jaganath.webp',
+    badge: '🌱 Regular · 10 ks',
+    inStock: true,
+    size: '10 regular semínek',
+    stock: 20,
+    tokens: 4900,
+    digital: false,
+    active: true,
+  },
+  {
+    externalId: 'seed-paramajoti',
+    name: 'Paramajoti Hiranyagarbha — 10 regular semínek',
+    category: 'seeds',
+    description:
+      'Deset regular semínek indica-dominantního strainu (65/35) s vysokým obsahem CBD. Orion (Nebula × Genesis) a Gaia (Sweet Purple × Genesis) nesou meditační hloubku i robustní výnos. THC 12–16 %, CBD 8–12 %, květ 9–10 týdnů, indoor 450–550 g/m². Hluboká relaxace při jasné mysli — vhodný pro meditaci, kreativní práci i zvládání chronických obtíží. Regular semínka — počítejte s mužskými rostlinami.',
+    priceCzk: 490,
+    image: '/shop/img/products/seed-paramajoti.webp',
+    badge: '🌱 Regular · 10 ks',
+    inStock: true,
+    size: '10 regular semínek',
+    stock: 20,
+    tokens: 4900,
+    digital: false,
+    active: true,
+  },
+  {
+    externalId: 'seed-ramayana',
+    name: 'Ramayana — 10 regular semínek',
+    category: 'seeds',
+    description:
+      'Deset regular semínek indica-dominantního léčebného strainu (75/25). Višnu (Blue Mystic × Genesis) a Gaia (Sweet Purple × Genesis) vytvářejí hluboce relaxační profil s vysokým CBD. THC 10–14 %, CBD 10–15 %, květ 9–11 týdnů, indoor 400–500 g/m², výška 80–120 cm. Večerní meditace, spánek, úzkost a chronická bolest. Snadná obtížnost. Regular semínka — počítejte s mužskými rostlinami.',
+    priceCzk: 490,
+    image: '/shop/img/products/seed-ramayana.webp',
+    badge: '🌱 Regular · 10 ks',
+    inStock: true,
+    size: '10 regular semínek',
+    stock: 20,
+    tokens: 4900,
+    digital: false,
+    active: true,
+  },
   // Books
   {
     externalId: 'book-001',

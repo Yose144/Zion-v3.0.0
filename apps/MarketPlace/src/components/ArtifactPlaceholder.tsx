@@ -1,7 +1,7 @@
 'use client';
 
 import { createElement } from 'react';
-import { User, ScrollText, Map, Egg, Rocket, Box, type LucideIcon } from 'lucide-react';
+import { User, ScrollText, Map, Egg, Rocket, Box, Sprout, type LucideIcon } from 'lucide-react';
 
 const RASTA_GOLD = '252, 209, 22';
 
@@ -34,6 +34,8 @@ const categoryIconMap: Record<string, LucideIcon> = {
   ship: Rocket,
   ships: Rocket,
   starfighters: Rocket,
+  seeds: Sprout,
+  seed: Sprout,
   cosmetic: Box,
   cosmetics: Box,
   product: Box,
