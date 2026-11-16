@@ -17,15 +17,16 @@ const body = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-  title: "Seeds — semínka ZION TerraNova",
+  title: "ZION Seeds — One Love, One Seed | ZION TerraNova",
   description:
-    "Seeds: katalog semínek a kultivarů, které ZION TerraNova pěstuje v rámci komunitních projektů. Genetika, účinky a průvodce pěstováním.",
+    "Pět strainů ZION Seeds: E = MC², Genesis, Jaganath Krishna, Paramajoti Hiranyagarbha a Ramayana. Příběh, genetika, účinky a průvodce pěstováním.",
   alternates: { canonical: "/seeds/" },
   openGraph: {
-    title: "Seeds — semínka ZION TerraNova",
-    description: "Katalog semínek a kultivarů ZION TerraNova — genetika, účinky a pěstování.",
+    title: "ZION Seeds — One Love, One Seed",
+    description: "Pět strainů ZION Seeds — příběh, genetika, účinky a průvodce pěstováním.",
     url: "/seeds/",
     type: "website",
+    images: [{ url: "/images/seeds/seeds-hero.webp", width: 1672, height: 941, alt: "ZION Seeds" }],
   },
 };
 
