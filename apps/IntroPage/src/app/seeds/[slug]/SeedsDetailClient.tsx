@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import PageLayout from "../../components/PageLayout";
-import HeroImage from "../../components/HeroImage";
 import LucideIcon from "../../components/LucideIcon";
 import data from "../../data/seeds-data.json";
+
+function captionFor(strain: any, lang: string) {
+  const c = strain.caption;
+  if (!c) return strain.subtitle;
+  if (lang === "cs") return c.cs;
+  return c[lang] || c.en;
+}
 
 export default function SeedsDetailClient({ slug }: { slug: string }) {
   const [lang, setLang] = useState<"cs" | "en" | "es" | "pt" | "fr">("cs");
@@ -22,32 +28,28 @@ export default function SeedsDetailClient({ slug }: { slug: string }) {
 
   return (
     <PageLayout lang={lang} setLang={setLang}>
-      <HeroImage
-        src={strain.heroBg}
-        alt={strain.name}
-        className="pb-16 pt-36 md:pb-20 md:pt-44"
-      >
-        <span
-          className="rounded-full border border-white/10 bg-black/40 px-4 py-1 text-sm font-semibold text-[#fcd116] backdrop-blur-sm"
-          style={strain.badgeStyle}
+      <div className="seeds-detail-page">
+        <section
+          className="seeds-detail-hero"
+          aria-labelledby="strain-title"
+          style={{ "--accent": strain.accent } as CSSProperties}
         >
-          {strain.badge}
-        </span>
-        <h1 className="text-5xl font-extrabold tracking-tight text-white md:text-7xl">
-          {strain.name}
-        </h1>
-        <p className="max-w-2xl text-[#aaa] italic">{strain.subtitle}</p>
-        <Image
-          src={strain.image}
-          alt={strain.name}
-          width={180}
-          height={180}
-          priority
-          sizes="180px"
-          decoding="async"
-          className="rounded-full border-4 border-white/10 object-cover shadow-2xl"
-        />
-      </HeroImage>
+          <Image
+            src={strain.heroBg}
+            alt=""
+            width={1672}
+            height={941}
+            priority
+            sizes="100vw"
+            className="seeds-detail-hero__img"
+          />
+          <div className="seeds-frame seeds-detail-hero__copy">
+            <span className="seeds-kicker">{strain.badge}</span>
+            <h1 id="strain-title">{strain.name}</h1>
+            <p className="seeds-detail-hero__subtitle">{strain.subtitle}</p>
+            <p className="seeds-detail-hero__caption">{captionFor(strain, lang)}</p>
+          </div>
+        </section>
 
       <div className="mx-auto grid w-full max-w-4xl grid-cols-2 gap-3 px-4 py-6 md:grid-cols-4">
         {strain.stats.map((stat: any, i: number) => (
@@ -285,6 +287,7 @@ export default function SeedsDetailClient({ slug }: { slug: string }) {
           </Link>
         </div>
       </article>
+      </div>
     </PageLayout>
   );
 }

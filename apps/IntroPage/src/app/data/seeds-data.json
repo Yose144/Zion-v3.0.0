@@ -2,38 +2,38 @@
   "index": {
     "cs": {
       "heroBadge": "🌿 ZION Seeds",
-      "heroTitle": "Naše semínka",
-      "heroSubtitle": "Vyberte si z nabídky prémiových strainů ZION TerraNova.",
+      "heroTitle": "ZION Seeds",
+      "heroSubtitle": "One Love, One Seed.",
       "cta": "Prozkoumat strainy",
-      "title": "Seeds"
+      "title": "Naše strainy"
     },
     "en": {
       "heroBadge": "🌿 ZION Seeds",
-      "heroTitle": "Our Seeds",
-      "heroSubtitle": "Choose from the premium ZION TerraNova strain collection.",
+      "heroTitle": "ZION Seeds",
+      "heroSubtitle": "One Love, One Seed.",
       "cta": "Explore strains",
-      "title": "Seeds"
+      "title": "Our strains"
     },
     "es": {
       "heroBadge": "🌿 ZION Seeds",
-      "heroTitle": "Nuestras semillas",
-      "heroSubtitle": "Elige entre la colección premium de variedades ZION TerraNova.",
+      "heroTitle": "ZION Seeds",
+      "heroSubtitle": "One Love, One Seed.",
       "cta": "Explorar variedades",
-      "title": "Semillas"
+      "title": "Nuestras variedades"
     },
     "pt": {
       "heroBadge": "🌿 ZION Seeds",
-      "heroTitle": "As nossas sementes",
-      "heroSubtitle": "Escolhe na coleção premium de variedades ZION TerraNova.",
+      "heroTitle": "ZION Seeds",
+      "heroSubtitle": "One Love, One Seed.",
       "cta": "Explorar variedades",
-      "title": "Sementes"
+      "title": "As nossas variedades"
     },
     "fr": {
       "heroBadge": "🌿 ZION Seeds",
-      "heroTitle": "Nos graines",
-      "heroSubtitle": "Choisis dans la collection premium de variétés ZION TerraNova.",
+      "heroTitle": "ZION Seeds",
+      "heroSubtitle": "One Love, One Seed.",
       "cta": "Explorer les variétés",
-      "title": "Graines"
+      "title": "Nos variétés"
     }
   },
   "strains": [
@@ -42,8 +42,8 @@
       "name": "E = MC²",
       "badge": "Nové 2025",
       "badgeStyle": {},
-      "image": "/legacy/img/seeds/emc2.jpg",
-      "heroBg": "/legacy/img/seeds/emc2.jpg",
+      "image": "/images/seeds/emc2-hero.webp",
+      "heroBg": "/images/seeds/emc2-hero.webp",
       "subtitle": "„Energie rovná se hmotnost krát rychlost světla na druhou\"",
       "stats": [
         {
@@ -216,6 +216,11 @@
           "slug": "genesis",
           "label": "Genesis (Father Strain)"
         }
+      },
+      "accent": "#E9B86C",
+      "caption": {
+        "cs": "Jantarová stopa energie kolem semínka v horském údolí.",
+        "en": "An amber trail of energy around a seed in a mountain valley."
       }
     },
     {
@@ -225,8 +230,8 @@
       "badgeStyle": {
         "background": "linear-gradient(90deg, #ffd700, #ff8c00)"
       },
-      "image": "/legacy/img/kalacakra1.png",
-      "heroBg": "/legacy/img/kalacakra1.png",
+      "image": "/images/seeds/genesis-hero.webp",
+      "heroBg": "/images/seeds/genesis-hero.webp",
       "subtitle": "„The Father Strain – Počátek všeho\"",
       "stats": [
         {
@@ -400,6 +405,11 @@
           "slug": "jaganath",
           "label": "Jaganath Krishna"
         }
+      },
+      "accent": "#A9C58A",
+      "caption": {
+        "cs": "První výhonek pod kořeny starého stromu.",
+        "en": "The first sprout beneath the roots of an old tree."
       }
     },
     {
@@ -407,8 +417,8 @@
       "name": "JAGANATH KRISHNA",
       "badge": "Nové 2025",
       "badgeStyle": {},
-      "image": "/legacy/img/seeds/jaganath.jpg",
-      "heroBg": "/legacy/img/seeds/jaganath.jpg",
+      "image": "/images/seeds/jaganath-hero.webp",
+      "heroBg": "/images/seeds/jaganath-hero.webp",
       "subtitle": "„Pán světa, modrý avatar\"",
       "stats": [
         {
@@ -577,6 +587,11 @@
           "slug": "ramayana",
           "label": "Ramayana"
         }
+      },
+      "accent": "#A0BCE9",
+      "caption": {
+        "cs": "Krišna s flétnou na břehu řeky za soumraku.",
+        "en": "Krishna with a flute on a riverbank at dusk."
       }
     },
     {
@@ -584,8 +599,8 @@
       "name": "PARAMAJOTI HIRANYAGARBHA",
       "badge": "Nové 2025",
       "badgeStyle": {},
-      "image": "/legacy/img/seeds/paramjoti.jpg",
-      "heroBg": "/legacy/img/seeds/paramjoti.jpg",
+      "image": "/images/seeds/paramajoti-hero.webp",
+      "heroBg": "/images/seeds/paramajoti-hero.webp",
       "subtitle": "„Zlaté kosmické vejce světla\"",
       "stats": [
         {
@@ -754,6 +769,11 @@
           "slug": "jaganath",
           "label": "Jaganath Krishna"
         }
+      },
+      "accent": "#EAD298",
+      "caption": {
+        "cs": "Zlaté kosmické vejce nad lotosem.",
+        "en": "A golden cosmic egg above a lotus."
       }
     },
     {
@@ -761,8 +781,8 @@
       "name": "RAMAYANA",
       "badge": "Nové 2025",
       "badgeStyle": {},
-      "image": "/legacy/img/seeds/ramayana.jpg",
-      "heroBg": "/legacy/img/seeds/ramayana.jpg",
+      "image": "/images/seeds/ramayana-hero.webp",
+      "heroBg": "/images/seeds/ramayana-hero.webp",
       "subtitle": "„Cesta Rámy – epos o dharma\"",
       "stats": [
         {
@@ -931,6 +951,11 @@
           "slug": "emc2",
           "label": "E = MC²"
         }
+      },
+      "accent": "#E6A38A",
+      "caption": {
+        "cs": "Ráma na kamenném mostě míří k úsvitu.",
+        "en": "Rama on a stone bridge heading toward dawn."
       }
     }
   ],
@@ -963,5 +988,8 @@
     "es": "La naturaleza es la maestra más grande. One Love, One Seed.",
     "pt": "A natureza é a maior mestra. One Love, One Seed.",
     "fr": "La nature est la plus grande enseignante. One Love, One Seed."
-  }
+  },
+  "heroImage": "/images/seeds/seeds-hero.webp",
+  "background": "/images/seeds/seeds-page-background.webp",
+  "accent": "#E7AA4B"
 }

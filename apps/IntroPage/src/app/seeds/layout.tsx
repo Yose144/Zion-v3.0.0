@@ -1,4 +1,20 @@
 import type { Metadata } from "next";
+import { Cormorant_Garamond, Source_Sans_3 } from "next/font/google";
+import "./seeds.css";
+
+const display = Cormorant_Garamond({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-seeds-display",
+  display: "swap",
+});
+
+const body = Source_Sans_3({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-seeds-body",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Seeds — semínka ZION TerraNova",
@@ -14,5 +30,5 @@ export const metadata: Metadata = {
 };
 
 export default function SeedsLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <div className={`${display.variable} ${body.variable}`}>{children}</div>;
 }
