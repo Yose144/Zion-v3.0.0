@@ -87,11 +87,12 @@ if ! SSH "test -f '${REMOTE_DIR}/package.json'"; then
 fi
 
 # Digital downloads: kanonické místo je MIMO strom aplikace —
-# /opt/zion/data/downloads/ — a servíruje ho nginx (location /shop/downloads/).
-# Kopie v public/shop/downloads/ je jen záloha pro případ, že by někdo nginx
-# location odebral; rsync --delete ji smí smazat, aniž by zákazník přišel
-# o odkaz. Proto se tu jen varuje, neblokuje (deploy z jiného klonu nesmí
-# spadnout kvůli 65 MB binárce, kterou v gitu záměrně nemáme).
+# /opt/zion/data/downloads/ — nginx ho vydává jen interně (X-Accel-Redirect
+# z /internal-downloads/ po ověření podpisu v aplikaci).
+# Kopie v public/shop/downloads/ by Next mohl servírovat bez brány, takže
+# na serveru v `public/` ZIP nepatří. rsync --delete ji smí smazat.
+# Varování stačí — deploy z jiného klonu nesmí spadnout kvůli 65 MB binárce,
+# kterou v gitu záměrně nemáme.
 DOWNLOADS_DIR="${ROOT_DIR}/public/shop/downloads"
 if [[ ! -d "${DOWNLOADS_DIR}" ]]; then
   echo "[deploy-marketplace] WARN: ${DOWNLOADS_DIR} chybí — záloha v app stromu se nenasadí."
@@ -215,15 +216,24 @@ SSH "chown -R zion:zion '${REMOTE_DIR}' && \
 echo "[deploy-marketplace] Smoke check download endpoint..."
 # Pozor: REMOTE_DIR obsahuje `&`, takže skládání remote příkazu s uvozovkami
 # tady dřív rozbilo quoting (`unexpected EOF while looking for matching '`).
-# URL se bere z env override / defaultu — čtení z remote .env je jen šum.
-DL_URL="${MARKET_DOWNLOAD_URL:-https://market.zionterranova.com/shop/downloads/Kralovstvi_srdce_kompletni_edice_5_jazyku.zip}"
+# Veřejný odkaz bez podpisu už NESMÍ vrátit ZIP. Soubor musí zůstat na disku.
+DL_FILE="Kralovstvi_srdce_kompletni_edice_5_jazyku.zip"
+DL_URL="${MARKET_DOWNLOAD_URL:-https://market.zionterranova.com/shop/downloads/${DL_FILE}}"
 dl_code=$(curl -s -o /dev/null -w '%{http_code}' -r 0-1023 --max-time 20 "$DL_URL" || echo 000)
-if [[ "$dl_code" != "206" && "$dl_code" != "200" ]]; then
-  echo "[deploy-marketplace] ERROR: stažení produktu nefunguje ($DL_URL → $dl_code)." >&2
-  echo "[deploy-marketplace] ZIP musí ležet v /opt/zion/data/downloads/ (servíruje nginx location /shop/downloads/)." >&2
+if [[ "$dl_code" == "200" || "$dl_code" == "206" ]]; then
+  echo "[deploy-marketplace] ERROR: $DL_URL je pořád veřejně stažitelný ($dl_code)." >&2
+  echo "[deploy-marketplace] Nejdřív nahraj a reloadni nginx (internal /internal-downloads/ + proxy /shop/downloads/)." >&2
   exit 1
 fi
-echo "[deploy-marketplace] Download endpoint OK ($dl_code)"
+if [[ "$dl_code" != "401" && "$dl_code" != "403" ]]; then
+  echo "[deploy-marketplace] WARN: neočekávaný status $dl_code u nepodepsaného odkazu (čeká se 401/403)." >&2
+fi
+if ! SSH "test -s '/opt/zion/data/downloads/${DL_FILE}'"; then
+  echo "[deploy-marketplace] ERROR: ZIP chybí v /opt/zion/data/downloads/${DL_FILE}." >&2
+  echo "[deploy-marketplace] Přestavba: python3 scripts/ops/build-kralovstvi-bundle.py --upload" >&2
+  exit 1
+fi
+echo "[deploy-marketplace] Download gate OK (public $dl_code, file on disk)"
 
 echo "[deploy-marketplace] Smoke check..."
 sleep 3
