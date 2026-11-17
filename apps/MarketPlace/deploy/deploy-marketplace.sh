@@ -126,6 +126,7 @@ rsync -avz --delete \
   --exclude='.next/cache' \
   --exclude='.next/trace' \
   --exclude='.next/dev' \
+  --exclude='/public/shop/downloads' \
   -e "ssh ${SSH_OPTS}" \
   "${ROOT_DIR}/" \
   "${EDGE_USER}@${EDGE_HOST}:${REMOTE_DIR}/"
