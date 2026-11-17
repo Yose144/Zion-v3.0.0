@@ -296,8 +296,9 @@ export default function TermsPage() {
       <ul>
         <li><T cs="Tokeny jsou přidělovány k dokončeným objednávkám a jejich výše je evidována v okamžiku nákupu" en="Tokens are allocated to completed orders and their amount is recorded at the time of purchase" /></li>
         <li><T cs="Počet tokenů závisí na zakoupených produktech" en="The number of tokens depends on the products purchased" /></li>
-        <li><T cs="Zápis tokenů do peněženky kupujícího proběhne až po spuštění mainnetu sítě ZION; konkrétní termín není zaručen. Do té doby je bonus evidován jako závazek z dané objednávky" en="Tokens are credited to the buyer’s wallet only after the ZION mainnet launches; no specific date is guaranteed. Until then the bonus is recorded as an obligation arising from the given order" /></li>
-        <li><T cs="Program je experimentální a podléhá § 9 — tokeny nemají garantovanou hodnotu ani záruku doručení v konkrétním termínu" en="The programme is experimental and subject to § 9 — tokens carry no guaranteed value or delivery-date commitment" /></li>
+        <li><T cs="Tokeny se odesílají na ZION peněženku zákazníka (její přístupové údaje obdrží e-mailem) po potvrzení platby; přesný čas závisí na potvrzení transakce v síti" en="Tokens are sent to the buyer’s ZION wallet (whose credentials arrive by e-mail) once payment is confirmed; the exact timing depends on transaction confirmation in the network" /></li>
+        <li><T cs="Do doby potvrzení platby je bonus evidován jako závazek z dané objednávky" en="Until payment is confirmed, the bonus is recorded as an obligation arising from the given order" /></li>
+        <li><T cs="Program je experimentální a podléhá § 9 — tokeny nemají garantovanou hodnotu" en="The programme is experimental and subject to § 9 — tokens carry no guaranteed value" /></li>
       </ul>
 
       <h3>
