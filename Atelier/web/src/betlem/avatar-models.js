@@ -1,12 +1,11 @@
-// The keys describe places in the older Atelier scene. Values are IDs in
-// V31/L4/oasis/data/avatars.json, which match the filenames used by Nirvana.
+// IDs follow V31/L4/oasis/data/avatars.json. These models ship with the scene.
 export const MODEL_IDS = Object.freeze({
-  "OASIS-049": 40, // Lumi
-  "OASIS-046": 43, // Malý princ
-  "OASIS-002": 1,  // Rama
-  "OASIS-003": 2,  // Sita
-  "scene:Marie Magdaléna": 18,
-  "OASIS-019": 19, // Ježíš z Nazareta
+  "OASIS-040": 40,
+  "OASIS-043": 43,
+  "OASIS-001": 1,
+  "OASIS-002": 2,
+  "OASIS-018": 18,
+  "OASIS-019": 19,
 });
 
 export function parseAvatar(bytes) {

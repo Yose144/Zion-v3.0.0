@@ -17,6 +17,8 @@
     <button data-view="overview" aria-pressed="true">Celá scéna</button>
     <button data-view="entrance" aria-pressed="false">Vstupní cesta</button>
     <button data-view="center" aria-pressed="false">U jeslí</button>
+    <button data-view="manger" aria-pressed="false">Detail jeslí</button>
+    <button data-view="tree" aria-pressed="false">Strom života</button>
     <button data-view="east" aria-pressed="false">Oblouk Rodiny světla</button>
   </div>
   <div class="scene">
@@ -27,6 +29,10 @@
     </div>
   </div>
   <div class="actions"><label for="avatar">Najít avatara</label><select id="avatar"><option value="">Vyber postavu</option></select></div>
+  <div class="avatar-details">
+    <a id="avatar-portrait-link" class="avatar-portrait" hidden><img id="avatar-portrait" width="96" height="96" alt=""></a>
+    <a id="avatar-source-model" hidden>Originální model GLB</a>
+  </div>
   <p class="meta" id="instructions">Pohled otočíš tažením. V pěším režimu se pohybuj pomocí WASD, šipek nebo tlačítek v obraze.</p>
   <p class="meta" id="model-status" role="status"></p>
   <p class="meta" id="status" role="status">Načítám scénu…</p>

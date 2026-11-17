@@ -10,3 +10,7 @@
     .pad{position:absolute;bottom:12px;right:12px;display:grid;grid-template-columns:repeat(3,auto);gap:4px}
     .pad button{background:#101c2be8;touch-action:none}.pad button:first-child{grid-column:2}.pad button:nth-child(2){grid-column:1}
     .meta{font-size:.9rem} [hidden]{display:none!important}
+
+.avatar-portrait{display:inline-flex;margin-top:12px}.avatar-portrait img{object-fit:cover;border:1px solid #697267;border-radius:8px}
+
+.avatar-details{display:flex;align-items:center;gap:16px}

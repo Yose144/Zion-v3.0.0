@@ -170,7 +170,7 @@ export default {
           "Content-Type": asset.type,
           "Cache-Control": "no-cache",
           "X-Content-Type-Options": "nosniff",
-          "Content-Security-Policy": "default-src 'self'; style-src 'self'; img-src 'self'; frame-ancestors 'self' https://chatgpt.com https://*.chatgpt.com",
+          "Content-Security-Policy": "default-src 'self'; style-src 'self'; img-src 'self'"+(url.pathname==="/betlem"?" https://app.zionterranova.com":"")+"; frame-ancestors 'self' https://chatgpt.com https://*.chatgpt.com",
         } });
       }
       return new Response("Stránka nebyla nalezena.", { status: 404 });

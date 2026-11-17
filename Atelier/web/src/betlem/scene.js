@@ -1,3 +1,4 @@
+import { buildSet } from "./set-design.js";
 import { MODEL_IDS, createAvatarRenderer } from "./avatar-models.js";
 
 const canvas = document.querySelector("canvas");
@@ -85,18 +86,19 @@ function person(id,name,x,z,garment,height=1.65,hair=[.22,.14,.11],form="charact
 }
 
 const fixed = {
-  "OASIS-001":[-6,7,[.27,.40,.60]], "OASIS-002":[-2.8,6,[.21,.35,.61]], "OASIS-003":[-2.0,5.9,[.72,.44,.43],1.68,true],
-  "OASIS-004":[7.8,7,[.65,.34,.23]], "OASIS-005":[-5,3,[.61,.50,.34],1.55,true], "OASIS-016":[-6.9,6.45,[.56,.24,.40]],
-  "OASIS-019":[3.05,6,[.63,.52,.38],1.79],
-  "OASIS-045":[8.7,2.6,[.70,.54,.39]], "OASIS-046":[1,8,[.35,.47,.28],1.18,true],
-  "OASIS-047":[0,2.25,colors.gold,.8], "OASIS-048":[-12,-3.4,[.73,.68,.55]], "OASIS-049":[-1.2,8,[.67,.39,.44],1.12,true]
+  "OASIS-000":[-6,7,[.27,.40,.60]], "OASIS-001":[-2.8,6,[.21,.35,.61]],
+  "OASIS-002":[-2,5.9,[.72,.44,.43],1.68,true], "OASIS-003":[7.8,7,[.65,.34,.23]],
+  "OASIS-004":[-5,3,[.61,.50,.34],1.55,true], "OASIS-016":[-6.9,6.45,[.56,.24,.40]],
+  "OASIS-018":[2.2,6,[.57,.28,.25]], "OASIS-019":[3.05,6,[.63,.52,.38],1.79],
+  "OASIS-038":[1.73,1.58,[.25,.39,.56],1.60], "OASIS-040":[-1.2,8,[.67,.39,.44],1.12,true],
+  "OASIS-042":[8.7,2.6,[.70,.54,.39]], "OASIS-043":[1,8,[.35,.47,.28],1.18,true],
+  "OASIS-045":[-12,-3.4,[.73,.68,.55]], "OASIS-204":[-7.9,6.3,[.88,.54,.23]],
 };
 const sceneOnly = [
-  ["Sarah Issobela",-4.3,3.4,[.47,.30,.45],1.48,true],
-  ["Marie Magdaléna",2.2,6,[.57,.28,.25]],
-  ["Josef",-1.87,1.55,[.49,.36,.25],1.71], ["Marie",1.87,1.55,[.25,.39,.56],1.60],
-  ["Kovář",-8.7,5.95,[.40,.33,.27]], ["Čaitanja",-7.9,6.3,[.88,.54,.23]],
-  ["Noe",7.25,5.7,[.50,.42,.33]], ["Sedlák",8.5,4.8,[.37,.45,.34]], ["Poutník z Genesis",-9.5,3.5,[.39,.43,.37]]
+  ["Sarah Issobela",-4.15,3.45,[.47,.30,.45],1.48,true],
+  ["Josef",-1.73,1.58,[.49,.36,.25],1.71],
+  ["Kovář",-8.7,5.95,[.40,.33,.27]], ["Noe",7.25,5.7,[.50,.42,.33]],
+  ["Sedlák",8.5,4.8,[.37,.45,.34]], ["Poutník z Genesis",-9.5,3.5,[.39,.43,.37]]
 ];
 
 function circle(r, angle, y=.04){return [r*Math.sin(angle),y,r*Math.cos(angle)];}
@@ -115,27 +117,16 @@ function buildEnvironment(){
   }
   solid([0,.055,12],[3.7,.1,17],colors.stone);
   pathVertexEnd = verts.length;
-  tube([0,0,-3],[0,9,-3],2, .85,colors.wood,12);
-  for(let i=0;i<12;i++){
-    const a=TAU*i/12;
-    const crown=add(circle(10.6,a,8.4+(i%3)*1.1),[0,0,-3]);
-    tube([0,4.9,-3],crown,.59,.13,colors.wood,7);
-    globe(crown,[5.9,2.75,5.6],mix(colors.leaf,[.35,.42,.24],(i%4)/6),5,9);
-    const root=add(circle(5.5,a,.12),[0,0,-3]);
-    tube([0,1.25,-3],root,.82,.12,colors.wood,5);
-  }
-  globe([0,10.4,-3],[7,3.7,7],colors.leaf);
-  blockers.push([0,-3,2.1]);
-  for(const x of [-2.55,2.55]) for(const z of [0,3.3]){
-    solid([x,1.31,z],[.23,2.62,.23],colors.wood);blockers.push([x,z,.28]);
-  }
-  quad([-2.85,2.56,-.27],[0,3.93,-.27],[0,3.93,3.57],[-2.85,2.56,3.57],colors.wood);
-  quad([0,3.93,-.27],[2.85,2.56,-.27],[2.85,2.56,3.57],[0,3.93,3.57],colors.wood);
-  solid([0,.36,2.25],[1.42,.31,.75],colors.wood);
-  globe([0,.63,2.25],[.48,.19,.25],colors.gold,5,10,true);
-  blockers.push([0,2.25,.65]);
+  buildSet({add,mix,quad,solid,tube,globe,blockers});
   solid([0,.07,8.8],[.52,.14,.52],colors.wood);
-  globe([0,.48,8.8],[.20,.37,.20],colors.gold,5,8,true);
+  globe([0,.48,8.8],[.16,.30,.16],colors.gold,6,10,true);
+  for(const x of [-.18,.18]) for(const z of [8.62,8.98]){
+    tube([x,.15,z],[x,.85,z],.032,.026,[.32,.23,.13],5);
+  }
+  for(let i=0;i<10;i++){
+    const a=i*TAU/10,b=(i+1)*TAU/10;
+    triangle([0,1.0,8.8],[.31*Math.cos(a),.86,8.8+.31*Math.sin(a)],[.31*Math.cos(b),.86,8.8+.31*Math.sin(b)],[.38,.25,.11]);
+  }
   solid([0,.88,8.8],[.50,.12,.50],colors.wood);
   blockers.push([0,8.8,.31]);
   tube([.47,.22,8.55],[1.62,.22,8.55],.19,.08,colors.wood,6);
@@ -176,12 +167,13 @@ function placeRoster(roster){
     }
   }
   let index=0;
-  for(const [id,name,,form] of roster){
+  for(const [id,name,,form,portrait] of roster){
     let [x,z,color,height,blond]=fixed[id]??[];
     if(x===undefined){[x,z]=free[index];color=palette[index%palette.length];height=1.49+.09*(index%4);index++;}
-    if(id==="OASIS-047"){placements.set(id,{name:"Hiran · záře v jeslích",x,z,height:.85});continue;}
-    person(id,id==="OASIS-049"?"Lumi / Elizabet":id==="OASIS-046"?"Malý princ":id==="OASIS-019"?"Ježíš z Nazareta":name,x,z,color,height,blond?[.82,.67,.40]:undefined,form);
+    person(id,name,x,z,color,height,blond?[.82,.67,.40]:undefined,form);
+    placements.get(id).portrait=portrait;
   }
+  placements.set("scene:Hiran",{name:"Hiran · záře v jeslích",x:0,z:2.35,height:1.1});
   for(const [name,x,z,color,height,blond] of sceneOnly) person("scene:"+name,name,x,z,color,height,blond?[.82,.67,.40]:undefined);
 }
 
@@ -279,7 +271,7 @@ function canvasRenderer(){
 }
 
 function renderScene(roster){
-  if(roster.length!==200 || new Set(roster.map(([id])=>id)).size!==200) throw new Error("Roster OASIS nesouhlasí.");
+  if(!roster.length || new Set(roster.map(([id])=>id)).size!==roster.length) throw new Error("Roster OASIS nesouhlasí.");
   buildEnvironment();placeRoster(roster);
   let avatarRenderer;
   try {
@@ -295,8 +287,8 @@ function renderScene(roster){
   const modelStatus=document.querySelector("#model-status");
   function updateModelStatus(){
     if(!avatarRenderer) modelStatus.textContent="V tomto prohlížeči se zobrazují pracovní figury.";
-    else if(pending.size) modelStatus.textContent="Načítám modely OASIS · "+models.size+" ze 6 připraveno.";
-    else if(models.size===6) modelStatus.textContent="Všech šest modelů OASIS je načteno.";
+    else if(pending.size) modelStatus.textContent="Načítám modely OASIS · "+models.size+" ze 6 detailních modelů připraveno.";
+    else if(models.size===6) modelStatus.textContent="Šest detailních modelů v popředí je načteno.";
     else if(failed.size) modelStatus.textContent=models.size+" ze 6 modelů OASIS načteno. "+failed.size+" se nepodařilo načíst. Opakuj výběr pohledu U jeslí.";
     else if(models.size) modelStatus.textContent=models.size+" ze 6 modelů OASIS načteno. Ostatní lze načíst z pohledu U jeslí.";
     else modelStatus.textContent="Modely OASIS načte pohled U jeslí nebo výběr některé ze šesti hlavních postav.";
@@ -323,19 +315,31 @@ function renderScene(roster){
   }
   updateModelStatus();
   const draw=gl?gpuRenderer(avatarRenderer,models):canvasRenderer();
+  const portraitImage=document.querySelector("#avatar-portrait");
+  const portraitLink=document.querySelector("#avatar-portrait-link");
+  const sourceModel=document.querySelector("#avatar-source-model");
   const pad=document.querySelector(".pad");
-  const presets={overview:[-.20,.50,56,[0,2.4,0]],entrance:[0,-.012,0,[0,1.65,32]],center:[0,.025,0,[0,1.65,12.2]],east:[1.33,0,0,[23,1.65,0]]};
+  const presets={overview:[-.27,.32,55,[0,5.7,0]],entrance:[0,-.04,0,[0,1.65,32]],center:[0,.04,0,[0,1.82,11.7]],manger:[.24,.14,7,[0,1.38,2.35]],tree:[-.28,.08,29,[0,8.4,-3]],east:[1.33,0,0,[23,1.65,0]]};
   let yaw,pitch,distance,anchor,walking,pointer;
   const keys=new Set();
   function setView(name){
     [yaw,pitch,distance,anchor]=presets[name];
-    if(name==="center") requestModels(Object.keys(MODEL_IDS));
+    if(name==="center"||name==="manger") requestModels(Object.keys(MODEL_IDS));
     anchor=anchor.slice();walking=distance===0;keys.clear();pad.hidden=!walking;
     document.querySelectorAll("[data-view]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.view===name)));
     canvas.focus({preventScroll:true});
   }
   function locate(id){
     const p=placements.get(id);
+    portraitLink.hidden=!p?.portrait;
+    const catalogId=id.startsWith("OASIS-")?Number(id.slice(6)):null;
+    sourceModel.hidden=catalogId===null||catalogId===37;
+    if(!sourceModel.hidden) sourceModel.href="https://app.zionterranova.com/models/avatars/"+catalogId+".glb";
+    if(p?.portrait){
+      portraitImage.src=p.portrait;
+      portraitImage.alt="Portrét · "+p.name;
+      portraitLink.href=p.portrait;
+    }
     if (!p){status.textContent=roster.length+" avatarů OASIS · prostorová studie";return;}
     requestModels([id]);
     setView("overview");anchor=[p.x,p.height*.6,p.z];distance=7;pitch=.29;
@@ -366,6 +370,7 @@ function renderScene(roster){
   });
   const clear=(x,z)=>x*x+z*z<37*37 && blockers.every(([a,b,r])=>(x-a)**2+(z-b)**2>(r+.28)**2);
   setView("overview");locate("");
+  requestModels(Object.keys(MODEL_IDS));
   let previous=0, lastFrame="";
   function frame(now){
     requestAnimationFrame(frame);

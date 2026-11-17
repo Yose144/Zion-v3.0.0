@@ -17,6 +17,7 @@ const files = {
   "/lumi.webp": ["src/lumi.webp", "image/webp"],
   "/betlem": ["src/betlem/index.html", "text/html; charset=utf-8"],
   "/betlem/avatar-models.js": ["src/betlem/avatar-models.js", "text/javascript; charset=utf-8"],
+  "/betlem/set-design.js": ["src/betlem/set-design.js", "text/javascript; charset=utf-8"],
   "/betlem/scene.js": ["src/betlem/scene.js", "text/javascript; charset=utf-8"],
   "/betlem/scene.css": ["src/betlem/scene.css", "text/css; charset=utf-8"],
   "/betlem/roster.json": ["src/betlem/roster.json", "application/json; charset=utf-8"],
