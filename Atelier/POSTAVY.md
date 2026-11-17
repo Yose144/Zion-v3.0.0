@@ -7,3 +7,9 @@ Maitreyovi je 13 let. Je světlovlasý blonďatý dospívající chlapec. Výšk
 Rozhodující postavou v referenci je chlapec sedící uprostřed pod Stromem života v krémově zlatém oděvu, se světelnou sférou v dlaních. Autor označil tuto podobu za nejrealističtější. Obrazová reference je dostupná v původním tvůrčím rozhovoru. Tento soubor obsahuje pouze textovou opravu identity.
 
 Tato výslovná autorská oprava má při tvorbě přednost před chybným textem curly-haired v heros/oasis/OASIS_Avatar_Collection_v1/avatar_roster.csv a před staršími návrhy betléma. Při tvorbě v Atelier/ načíst tento soubor. Pro přesnou vizuální shodu je nutná autorem dodaná obrazová reference. Použít pro betlém, hero, portréty i další adaptace této postavy. Maitreya OASIS-005 a Krishna-Maitreya OASIS-001 mají samostatné identity.
+
+## Sarah Issabella a Maitreya v Betlému
+
+Sarah Issabella je Maitreyova sestra a v Betlému Království srdce má být po jeho boku. Oba patří do rodinného výjevu u Stromu života. Maitreyovi je 13 let a je světlovlasý. Věk a přesná obrazová podoba Sarah Issabelly čekají na ověřenou výtvarnou referenci. Pro kompoziční studii lze použít pracovní stylizaci.
+
+Kniha Pátá uvádí sourozence jako rovnocenné a používá také zápisy Sarah Issobela a Sarah Issobel. Pro Betlém používáme autorem zadaný zápis Sarah Issabella. [Maitreya — Kniha Pátá](../canon/books/Maitreya/00-README.md)
