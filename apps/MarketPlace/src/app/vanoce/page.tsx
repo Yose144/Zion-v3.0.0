@@ -22,7 +22,7 @@ export default function VanoceIndexPage() {
         href="/"
         className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-rasta-gold transition-colors"
       >
-        <ArrowLeft className="w-4 h-4" /> {t('xmasPage.back')}
+        <ArrowLeft className="w-4 h-4" /> {t('common.back')}
       </Link>
 
       <div className="zion-section text-center">

@@ -54,9 +54,10 @@ export default function XmasProductPage({ product }: { product: XmasProduct }) {
 
   return (
     <div className="space-y-8">
-      {/* Back */}
+      {/* Back — text slibuje „vánoční nabídku", takže odkaz vede na /vanoce,
+          ne na homepage */}
       <Link
-        href="/"
+        href="/vanoce"
         className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-rasta-gold transition-colors"
       >
         <ArrowLeft className="w-4 h-4" /> {t('xmasPage.back')}

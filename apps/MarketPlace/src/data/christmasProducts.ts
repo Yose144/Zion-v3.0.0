@@ -975,14 +975,14 @@ export const christmasJourney: { cs: string[]; en: string[] } = {
   cs: [
     '**Vybereš dar.** Pass otevírá světy, kniha nese příběh, lampion k tomu přidává světlo na stůl. Každý z nich má vlastní ZION bonus.',
     '**Zaplatíš** převodem, kartou nebo v ZIONu. Cena je konečná — doprava u digitálních darů není, u lampionu ji spočítá pokladna.',
-    '**Do minuty po zaplacení** přijde e-mail: kód **ZAP-…**, odkaz na knihy a **ZION peněženka** s bonusem (adresa + seed phrase).',
+    '**Jakmile platba projde** přijde e-mail: kód **ZAP-…**, odkaz na knihy a **ZION peněženka** s bonusem (adresa + seed phrase).',
     '**Uplatníš kód** na nirvana.zionterranova.com i v ZION Archivu. Peněženku naimportuješ do ZIS a bonus máš na adrese.',
     '**U lampionu** navíc: digitální část přijde hned. Dřevo odchází ze dílny rozložené — osm dílů, složíš ho ty. Zásilkovna.',
   ],
   en: [
     '**You pick a gift.** The Pass opens worlds, the book carries the story, the lantern adds light for your table. Each carries its own ZION bonus.',
     '**You pay** by transfer, card or in ZION. The price is final — no shipping on digital gifts, the lantern’s shipping is calculated at checkout.',
-    '**Within a minute of payment** an e-mail arrives: a **ZAP-…** code, a link to the books, and a **ZION wallet** with the bonus (address + seed phrase).',
+    '**As soon as the payment goes through** an e-mail arrives: a **ZAP-…** code, a link to the books, and a **ZION wallet** with the bonus (address + seed phrase).',
     '**You redeem the code** on nirvana.zionterranova.com and in the ZION Archive. Import the wallet into ZIS and the bonus is yours.',
     '**With the lantern**, the digital part arrives immediately. The wood leaves the workshop flat — eight parts, and you assemble it. Zásilkovna.',
   ],
