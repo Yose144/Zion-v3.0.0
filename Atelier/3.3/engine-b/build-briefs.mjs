@@ -137,6 +137,122 @@ for (const batch of data.batches) {
   outputs.set(`BATCH-${batch.id}-${batch.slug}.md`, lines.join("\n"));
 }
 
+/* ---------- GPT zprávy (samostatné, copy-paste) ---------- */
+//
+// Proč zvlášť: `BATCH-N.md` je interní zadání (odkazy, tabulky cílů).
+// GPT potřebuje **jednu zprávu, která obstojí sama** — roli, kánon, negativy,
+// výstupní pravidla a zadání. Proto se generují i soubory v `gpt/`.
+
+const GPT_HEAD = `Jsi art director a ilustrátor ZION TerraNova. Tvoříš originální malovanou
+fantasy-manga key art v approved stylu **Engine B (B · ZION / Manga)**. Nekopíruj
+existující filmy, umělce, postavy ani záběry.
+
+# STYL (platí pro každý obrázek)
+${canon.style_block}
+
+# PALETA
+inkoust #101C2B · les #344A36 · pergamen #F0E1BE · jantar #E7AA4B · rez #9D493D
+
+# KÁNON (neměň)
+${canon.canon_block}
+
+# NEGATIVY (nikdy)
+${canon.negative_block}
+
+# VÝSTUP
+- Jeden obrázek = jeden soubor, nejvyšší dostupné rozlišení, přesný poměr stran.
+- PNG, neprůhledné, sRGB, název přesně \`<id>__master.png\`.
+- Žádný text, žádné logo, žádné UI, žádný watermark, žádný rámeček.
+- Mobilní ořezy se nedělají — odvodí se v pipeline.
+- Ke každé dávce vrať tabulku: id → skutečné rozměry → krátká poznámka k odchylkám.
+`;
+
+const checklist = (assets) =>
+  assets
+    .map(
+      (a, i) =>
+        `${i + 1}. \`${a.id}__master.png\` — ${a.aspect} (${a.master.width}×${a.master.height}) · text-safe: ${a.text_safe}`,
+    )
+    .join('\n');
+
+function gptBatch(batch, assets) {
+  const parts = [];
+  parts.push(GPT_HEAD);
+  parts.push(`# ZADÁNÍ — dávka ${batch.id}: ${batch.name}`);
+  parts.push(batch.brief);
+  parts.push(`Vygeneruj **${assets.length} obrázků** v tomto pořadí:`);
+  parts.push('');
+  assets.forEach((asset, index) => {
+    parts.push(`## ${index + 1}. \`${asset.id}\``);
+    parts.push(`- Poměr ${asset.aspect}, master ${asset.master.width}×${asset.master.height} px.`);
+    parts.push(`- Text-safe zóna: ${asset.text_safe}. Nech ji tmavou a bez detailů.`);
+    parts.push('');
+    parts.push(asset.prompt);
+    parts.push('');
+  });
+  parts.push('# CO POTŘEBUJU ZPĚT');
+  parts.push('Pro každý obrázek PNG pojmenovaný podle id, plus tabulku s odchylkami:');
+  parts.push('');
+  parts.push(checklist(assets));
+  parts.push('');
+  parts.push('Pokud něco nejde splnit (ruce, text-safe zóna, poměr), napiš to do poznámek — nezakrývej to.');
+  parts.push('');
+  return parts.join('\n');
+}
+
+for (const batch of data.batches) {
+  const assets = data.assets.filter((a) => a.batch === batch.id);
+  if (!assets.length) continue;
+  outputs.set(`../gpt/BATCH-${batch.id}-${batch.slug}-GPT.md`, gptBatch(batch, assets));
+}
+
+const all = [];
+all.push(GPT_HEAD);
+all.push('# ZADÁNÍ — celý paket (15 obrázků)');
+all.push('Dělej to **po dávkách** (6, 7, 8), ne najednou — kvalita u 15 obrázků v jednom běhu klesá.');
+all.push('Pokud ti to nástroj nedovolí, řekni to a uděláme to po dávkách zvlášť.');
+for (const batch of data.batches) {
+  const assets = data.assets.filter((a) => a.batch === batch.id);
+  if (!assets.length) continue;
+  all.push(`\n## Dávka ${batch.id} — ${batch.name} (${assets.length} obrázků)`);
+  all.push(batch.brief);
+  assets.forEach((asset, index) => {
+    all.push(`\n### ${batch.id}.${index + 1} \`${asset.id}\` — ${asset.aspect}, master ${asset.master.width}×${asset.master.height}, text-safe: ${asset.text_safe}`);
+    all.push(asset.prompt);
+  });
+}
+all.push('\n# CO POTŘEBUJU ZPĚT');
+all.push('PNG pojmenované podle id + tabulku s odchylkami. Nic nezakrývej.');
+outputs.set('../gpt/00-CELY-PAKET-GPT.md', all.join('\n') + '\n');
+
+outputs.set(
+  '../gpt/README.md',
+  `# GPT zprávy — copy-paste
+
+Tohle je to, co se vkládá do GPT. Každý soubor obstojí **sám** (role + kánon +
+negativy + zadání + co vrátit), takže se nepřepíná mezi soubory.
+
+| Soubor | Co to je | Kolik obrázků |
+|---|---|---|
+| \`BATCH-6-ONBOARD-GPT.md\` | hero pro /roadmap, /team, /ai-native, /status, /contact | 5 |
+| \`BATCH-7-NEWS-GPT.md\` | hero pro 4 články novinek | 4 |
+| \`BATCH-8-MINE-GPT.md\` | pásy 3:1 do /mine/* | 6 |
+| \`00-CELY-PAKET-GPT.md\` | všechno v jednom (jen když nástroj dávky neumí) | 15 |
+
+**Postup:** zkopíruj celý soubor → vlož do GPT jako jednu zprávu → nech vygenerovat
+→ stáhni PNG a pojmenuj přesně podle id (\`<id>__master.png\`).
+
+**Proč po dávkách:** 15 obrázků v jednom běhu = klesá konzistence i kvalita.
+Dávka 6 je první; ideálně začni jedním obrazem (\`onboard-roadmap-hero\`) na
+schválení barvy a zrna, pak zbytek.
+
+**Co pak:** PNG hoď do složky/ZIPu a předej — převezme to
+\`3.3.0/scripts/ingest-engine-b.mjs\` (viz \`Atelier/3.3/README.md\`).
+
+Generováno z \`new-assets.json\`; needituj tady.
+`,
+);
+
 /* ---------- csv ---------- */
 
 const csv = [
@@ -187,6 +303,7 @@ for (const [name, content] of outputs) {
     ok = false;
     continue;
   }
+  fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, content);
   console.log(`→ ${name}`);
 }

@@ -91,3 +91,9 @@ Všechny cesty v tabulce vedou pod `apps/onboard/public/`.
 | 8 | `mine-faq-strip` | `images/mine/faq.webp` | `images/mine/faq-m.webp` |
 
 Ověřeno vůči zdrojům obou repozitářů a referenčním archivům Engine B. Původní generátor `build-briefs.mjs --check` potvrdil shodu všech 15 zadání. Specifikace v `spec/` jsou odvozené beze změny jednotlivých záznamů. Tento balíček obsahuje produkční zadání, mapu souborů a postup předání. Generování ilustrací, import s reálnými obrazy a kontrola živého webu jsou další fáze.
+
+## GPT zprávy (copy-paste)
+
+Složka `gpt/` obsahuje **hotové zprávy pro GPT** — každá obstojí sama (role, styl, kánon, negativy, zadání i co vrátit), takže se nepřepíná mezi soubory. Doporučené pořadí: `BATCH-6-ONBOARD-GPT.md` → `BATCH-7-NEWS-GPT.md` → `BATCH-8-MINE-GPT.md`. `00-CELY-PAKET-GPT.md` je všech 15 najednou, jen když nástroj dávky neumí (kvalita klesá).
+
+Kanální zdroj je `Atelier/3.3/gpt/`; tahle kopie je pro pohodlí při předání.

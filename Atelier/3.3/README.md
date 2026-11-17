@@ -10,7 +10,14 @@ se do `3.3.0`.
 ## Co tu je
 
 ```
-Atelier/3.3/engine-b/
+Atelier/3.3/gpt/             ← TOHLE SE VKLÁDÁ DO GPT (každý soubor obstojí sám)
+  BATCH-6-ONBOARD-GPT.md     5 hero (roadmap, team, ai-native, status, contact)
+  BATCH-7-NEWS-GPT.md        4 hero pro články
+  BATCH-8-MINE-GPT.md        6 pásů 3:1
+  00-CELY-PAKET-GPT.md       všech 15 (jen když nástroj dávky neumí)
+  README.md                  jak to použít
+
+Atelier/3.3/engine-b/        ← interní zadání + generátor
   new-assets.json            ← jediný zdroj zadání (id, cíl, poměr, alt, prompt)
   build-briefs.mjs           ← generátor podkladů (níž)
   00-GPT-MASTER-PROMPT.md    ← role + styl + kánon + negativy (první zpráva do GPT)
@@ -45,7 +52,15 @@ Hotové plochy (nedělat znovu): Brána, Amenti, Vzestup, Příběh, Svět, Tě�
 Podpora, nové hero Novinek, Kingdom (room/avatars/games/rings), Portal
 (explorer/wallet/docs). Přehled: `3.3.0/design/manifest.json`.
 
-## Jak to použít
+## Jak to použít (rychlá cesta)
+
+1. Otevři `Atelier/3.3/gpt/BATCH-6-ONBOARD-GPT.md` a **zkopíruj celý soubor** do GPT.
+   Je to jedna zpráva, která obsahuje roli, styl, kánon, negativy, všech 5 zadání
+   i to, co má GPT vrátit. Nepřepínáš mezi soubory.
+2. Nech vygenerovat → stáhni PNG → pojmenuj přesně `<id>__master.png`.
+3. Pak `BATCH-7-NEWS-GPT.md`, `BATCH-8-MINE-GPT.md`. **Ne všech 15 najednou.**
+
+## Jak to použít (detailní)
 
 1. Otevři `00-GPT-MASTER-PROMPT.md`, zkopíruj celý jako první zprávu.
 2. Pošli jednu dávku (`BATCH-6…`, `BATCH-7…`, `BATCH-8…`) — **ne všechny najednou**.
