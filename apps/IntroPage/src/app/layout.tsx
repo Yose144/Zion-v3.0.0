@@ -34,8 +34,12 @@ export const metadata: Metadata = {
     google: "UwFu4TK29yFmUS28A2W-rDVZeu6YNHXaF-zqGIdAgAE",
   },
   icons: {
-    icon: "/favicon.png",
-    shortcut: "/favicon.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
+    ],
+    shortcut: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
   openGraph: {

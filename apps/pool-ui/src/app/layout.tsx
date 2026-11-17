@@ -55,8 +55,13 @@ export const metadata: Metadata = {
     images: ['/brand/hero-multichain.webp'],
   },
   icons: {
-    icon: [{ url: '/brand/zion-symbol.png', type: 'image/png', sizes: '200x200' }],
-    apple: [{ url: '/brand/zion-symbol.png', type: 'image/png' }],
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+      { url: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
+      { url: '/coingecko-200.png', type: 'image/png', sizes: '200x200' },
+    ],
+    apple: '/apple-touch-icon.png',
   },
   robots: { index: true, follow: true },
 };
