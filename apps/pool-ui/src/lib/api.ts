@@ -131,7 +131,12 @@ function toCoinInfo(c: ApiCoin): CoinInfo | null {
     id,
     ...meta,
     payout_mode: c.payout_mode === 'native' ? 'node-wallet-batch' : 'onchain',
-    min_payout: Number(c.min_payout),
+    // Unified coins settle in ZION flowers; native coins report raw base
+    // units — scale to coin units so cards never show "10000000000 QTC".
+    min_payout:
+      c.payout_mode === 'native'
+        ? Number(c.min_payout) / 10 ** (PAYOUT_DECIMALS[c.coin] ?? 0)
+        : Number(c.min_payout) / FLOWERS,
     fee_bps: c.fee_bps,
     legs,
   };
@@ -216,10 +221,12 @@ interface ApiMiner {
   min_payout?: string; payout_eta_s?: number | null;
 }
 
-// ZION base unit: 1 ZION = 1e6 flowers. Other coins' `native` amounts are
-// rendered as-is with the coin ticker — their base-unit scale is coin-specific
-// and the public API doesn't publish decimals.
+// ZION base unit: 1 ZION = 1e6 flowers. Native-payout coins report raw
+// base units — the public API doesn't publish decimals, so the per-coin
+// scale lives in PAYOUT_DECIMALS below.
 const FLOWERS = 1e6;
+// QTC = 12 planks/QTC, PRL = 8 decimals (btcd-derived).
+const PAYOUT_DECIMALS: Record<string, number> = { qtc: 12, prl: 8 };
 const UNIT_LABEL: Record<CoinId, string> = {
   zion: 'ZION', qtc: 'QTC', prl: 'PRL',
   zano: 'ZANO', vrsc: 'VRSC', evr: 'EVR', mewc: 'MEWC',
@@ -229,7 +236,11 @@ const UNIT_LABEL: Record<CoinId, string> = {
 
 function normalizeAmount(coin: CoinId, raw: number, unit: string): { amount: number; unit: string } {
   if (unit === 'flowers' || coin === 'zion') return { amount: raw / FLOWERS, unit: 'ZION' };
-  return { amount: raw, unit: unit === 'native' ? UNIT_LABEL[coin] || unit : unit };
+  if (unit === 'native') {
+    const dec = PAYOUT_DECIMALS[coin] ?? 0;
+    return { amount: raw / 10 ** dec, unit: UNIT_LABEL[coin] || unit };
+  }
+  return { amount: raw, unit };
 }
 
 function toPayoutRow(coin: CoinId, p: ApiPayout): PayoutRow {
