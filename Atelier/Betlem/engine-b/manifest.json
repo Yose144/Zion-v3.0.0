@@ -1,0 +1,63 @@
+{
+  "version": "engine-b-mango-v1",
+  "state": "review",
+  "preferred": "nirvana-v-indigu",
+  "variants": [
+    {
+      "id": "mekka-malovana-manga",
+      "title": "Měkká malovaná manga",
+      "desktop": "mekka-malovana-manga.webp",
+      "mobile": "mekka-malovana-manga-m.webp"
+    },
+    {
+      "id": "nirvana-v-indigu",
+      "title": "Nirvana v indigu",
+      "desktop": "nirvana-v-indigu.webp",
+      "mobile": "nirvana-v-indigu-m.webp"
+    },
+    {
+      "id": "dobrodruzna-manga",
+      "title": "Dobrodružná manga",
+      "desktop": "dobrodruzna-manga.webp",
+      "mobile": "dobrodruzna-manga-m.webp"
+    }
+  ],
+  "files": {
+    "dobrodruzna-manga-m.webp": {
+      "width": 960,
+      "height": 540,
+      "bytes": 237134,
+      "sha256": "9d2f16965431deb3e192bee2e8d8c08ed58f98d981afebc3ff5d3a813c15c718"
+    },
+    "dobrodruzna-manga.webp": {
+      "width": 1440,
+      "height": 810,
+      "bytes": 476810,
+      "sha256": "b931dfa386d9ed3ca597a65112a49ef35d958504f0ac2f1270704a3d13407b3a"
+    },
+    "mekka-malovana-manga-m.webp": {
+      "width": 960,
+      "height": 540,
+      "bytes": 197312,
+      "sha256": "0a7a732c6044cd21b18a84fa651d159f3ec3db09cd377393809e32764246b526"
+    },
+    "mekka-malovana-manga.webp": {
+      "width": 1440,
+      "height": 810,
+      "bytes": 382482,
+      "sha256": "2d9f8105ccb9c7f0f00a2bdba8059bd7f1d64c54ad97047285a7306cf3b327b7"
+    },
+    "nirvana-v-indigu-m.webp": {
+      "width": 960,
+      "height": 540,
+      "bytes": 209058,
+      "sha256": "a132b8e8ae48bf57261bc5de67ebb258b6a6a1c04740faab33c3945a7202dc80"
+    },
+    "nirvana-v-indigu.webp": {
+      "width": 1440,
+      "height": 810,
+      "bytes": 405418,
+      "sha256": "c329089b471b74ea098a90e53c32d6930e87f3c85ef6101f38bbf44cf923844e"
+    }
+  }
+}

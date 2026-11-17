@@ -2,6 +2,8 @@
 
 Stav **návrh scény pro Nirvanu** · výtvarný směr **Engine B · ZION**
 
+[Výtvarné varianty Engine B Mango pro Nirvanu 3.3](engine-b/README.md)
+
 ## Výjev
 
 Celá Rodina světla se schází pod korunou jediného Stromu života. U kořenů stojí nízký otevřený dřevěný přístřešek. Josef a Marie stojí u jeslí se slámou. Hiran, kosmický Kristus, je v jeslích přítomný jako nehmotná světelná záře. Mahátma zůstává vyjádřený pouze světlem. Malá Lumi zvedne lucernu a Malý princ do jejího světla položí vyřezanou dřevěnou loďku. Obě děti mají ve scéně stejnou váhu. Rozestavěná archa na obzoru navazuje na motiv loďky.
