@@ -58,7 +58,7 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
   if (product.modelUrl) capabilities.push({ icon: Box, label: t('shop.capability3d') });
   // Laser-cut je vlastnost **fyzického** kitu, ne digitální dodávky —
   // `filesUrl` je pryč (nic se nedodává elektronicky), ale plaketa zůstává.
-  if (product.filesUrl || product.category === 'starfighters') {
+  if (product.hasFiles || product.filesUrl || product.category === 'starfighters') {
     capabilities.push({ icon: Flame, label: t('shop.capabilityLaser') });
   }
   if (product.instructionsUrl) capabilities.push({ icon: FileText, label: t('shop.capabilityPdf') });

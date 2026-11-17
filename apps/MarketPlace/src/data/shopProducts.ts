@@ -126,8 +126,10 @@ export const shopProducts: ShopProductSeed[] = [
     tokens: 31104,
     digital: true,
     // Kompletní ediční sada: 8 edic × 5 jazyků, PDF i EPUB (65 MB).
-    // ZIP se staví skriptem scripts/ops/build-kralovstvi-bundle.py a leží
-    // v public/shop/downloads/ (mimo git, rsync ho při deployi přenese).
+    // ZIP staví scripts/ops/build-kralovstvi-bundle.py a leží v
+    // /opt/zion/data/downloads/ (mimo git). filesUrl je interní identifikátor
+    // souboru pro e-mail a dárky — veřejné API ho nevrací, stahování jde
+    // jen přes podepsaný odkaz.
     filesUrl:
       'https://market.zionterranova.com/shop/downloads/Kralovstvi_srdce_kompletni_edice_5_jazyku.zip',
     active: true,

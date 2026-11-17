@@ -1,6 +1,10 @@
 import type { ShopProduct } from '@prisma/client';
 
-export type ShopProductData = ShopProduct;
+/** Public catalog product. `filesUrl` is stripped from GET /api/shop/products. */
+export type ShopProductData = Omit<ShopProduct, 'filesUrl'> & {
+  filesUrl?: string | null;
+  hasFiles?: boolean;
+};
 
 export interface CartItem {
   id: string;
