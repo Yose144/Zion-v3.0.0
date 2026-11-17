@@ -710,8 +710,8 @@ export const christmasProducts: XmasProduct[] = [
       cs: 'Lampion Království srdce — gravírovaný výrobek z dílny tesaře',
       en: 'Kingdom of Hearts lantern — engraved craft from the carpenter\u2019s workshop',
     },
-    priceCzk: 790,
-    bonus: 113760,
+    priceCzk: 590,
+    bonus: 84960,
     buyable: true,
     kicker: { cs: 'Vánoční edice 2026 · číslovaná', en: 'Christmas edition 2026 · numbered' },
     title: { cs: 'Druhá lucerna', en: 'The second lantern' },
@@ -844,13 +844,13 @@ export const christmasProducts: XmasProduct[] = [
         'Lampion Lumi 2 — ploché díly z 3mm překližky, složíš ho ty',
         'Digitální kniha Království srdce (40 knih, 5 jazyků)',
         'ZION Pass — Nirvana + Archiv',
-        'Bonus 113 760 ZION na peněženku',
+        'Bonus 84 960 ZION na peněženku',
       ],
       en: [
         'Lumi 2 lantern — flat 3 mm plywood parts, you assemble it',
         'Digital Kingdom of Hearts book (40 books, 5 languages)',
         'ZION Pass — Nirvana + Archive',
-        '113,760 ZION bonus to your wallet',
+        '84,960 ZION bonus to your wallet',
       ],
     },
     features: [
@@ -862,7 +862,7 @@ export const christmasProducts: XmasProduct[] = [
       cs: [
         '**Teď:** edice je v prodeji — kusy jsou vyřezané, očíslované a připravené k odeslání jako ploché díly.',
         'Digitální část přijde **e-mailem hned po objednávce**: kniha (40 knih, 5 jazyků) + ZION Pass kód.',
-        'Zároveň ti dorazí **ZION peněženka** (adresa + seed phrase) s bonusem **113 760 ZION**.',
+        'Zároveň ti dorazí **ZION peněženka** (adresa + seed phrase) s bonusem **84 960 ZION**.',
         'Dřevo odchází ze dílny **rozložené**. Čtyři hodiny laseru už jsou v překližce — složíš ho ty: osm dílů, půl hodiny, dřevěné lepidlo.',
         'Pošleme ho **Zásilkovnou**, zabalený jako dárek. Až bude stát, najdeš vzkaz pod dnem.',
         'Peněženku **naimportuješ do ZIS** a dalších ZION aplikací — bonus použiješ v ekosystému.',
@@ -870,7 +870,7 @@ export const christmasProducts: XmasProduct[] = [
       en: [
         '**Now:** the edition is on sale — the pieces are cut, numbered and ready to ship as flat parts.',
         'The digital part arrives **by e-mail right after ordering**: the book (40 books, 5 languages) + ZION Pass code.',
-        'Your **ZION wallet** (address + seed phrase) also arrives carrying the **113,760 ZION** bonus.',
+        'Your **ZION wallet** (address + seed phrase) also arrives carrying the **84,960 ZION** bonus.',
         'The wood leaves the workshop **flat**. The four hours of laser time are already in the plywood — you assemble it: eight parts, half an hour, wood glue.',
         'We ship it by **Zásilkovna**, wrapped as a gift. Once it stands, the message is under the base.',
         '**Import the wallet into ZIS** and other ZION apps — and use the bonus across the ecosystem.',
@@ -887,15 +887,15 @@ export const christmasProducts: XmasProduct[] = [
       {
         q: { cs: 'Co přesně je v ceně 790 Kč?', en: 'What exactly does the 790 CZK include?' },
         a: {
-          cs: 'Tři věci: lampion Lumi 2 (fyzický výrobek), digitální knihu Království srdce v plné sadě a ZION Pass do Nirvany i Archivu. Plus bonus 113 760 ZION na peněženku.',
-          en: 'Three things: the Lumi 2 lantern (a physical craft), the full digital Kingdom of Hearts book set, and a ZION Pass for Nirvana and the Archive. Plus a 113,760 ZION bonus to your wallet.',
+          cs: 'Tři věci: lampion Lumi 2 (fyzický výrobek), digitální knihu Království srdce v plné sadě a ZION Pass do Nirvany i Archivu. Plus bonus 84 960 ZION na peněženku.',
+          en: 'Three things: the Lumi 2 lantern (a physical craft), the full digital Kingdom of Hearts book set, and a ZION Pass for Nirvana and the Archive. Plus an 84,960 ZION bonus to your wallet.',
         },
       },
       {
         q: { cs: 'Jak dostanu peněženku s bonusem?', en: 'How do I get the bonus wallet?' },
         a: {
-          cs: 'E-mailem po dokončení objednávky — adresa, seed phrase a privátní klíč, s připsaných 113 760 ZION. Seed ulož offline. Pak ji jedním importem přeneseš do ZIS a ZION aplikací.',
-          en: 'By e-mail once the order completes — address, seed phrase and private key, carrying 113,760 ZION. Store the seed offline. Then import it into ZIS and the ZION apps in one step.',
+          cs: 'E-mailem po dokončení objednávky — adresa, seed phrase a privátní klíč, s připsaných 84 960 ZION. Seed ulož offline. Pak ji jedním importem přeneseš do ZIS a ZION aplikací.',
+          en: 'By e-mail once the order completes — address, seed phrase and private key, carrying 84,960 ZION. Store the seed offline. Then import it into ZIS and the ZION apps in one step.',
         },
       },
       {
@@ -959,7 +959,7 @@ export const christmasProducts: XmasProduct[] = [
       },
       {
         label: { cs: 'Bonus', en: 'Bonus' },
-        value: { cs: '113 760 ZION', en: '113,760 ZION' },
+        value: { cs: '84 960 ZION', en: '84,960 ZION' },
         hint: { cs: 'sto čtyřicet čtyři ZION za každou korunu', en: 'a hundred and forty-four ZION for every crown' },
       },
     ],

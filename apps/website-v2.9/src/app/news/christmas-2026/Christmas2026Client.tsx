@@ -35,7 +35,7 @@ const Article = {
         title: 'Druhá lucerna — světlo, které si zapálíš sám',
         image: '/images/news/christmas-2026/lampion-wide.webp?v=engine-v1',
         imageAlt: 'Tesař s dětmi u hořícího lampionu, na stole kniha Království srdce a ZION Pass',
-        text: 'Druhá lucerna. Lampion Lumi 2 přijde rozložený — osm dílů z 3mm březové překližky, půl hodiny a dřevěné lepidlo. Svíčku zapálíš sám. Jeden kus je 20,9 m řezných drah, 614 obrysů a čtyři hodiny laseru, proto je edice číslovaná. Za 790 Kč je v krabici i digitální kniha a ZION Pass; ty přijdou e-mailem hned, dřevo jde Zásilkovnou jako ploché díly. K ceně patří bonus 113 760 ZION. Fotografie jsou ilustrační.',
+        text: 'Druhá lucerna. Lampion Lumi 2 přijde rozložený — osm dílů z 3mm březové překližky, půl hodiny a dřevěné lepidlo. Svíčku zapálíš sám. Jeden kus je 20,9 m řezných drah, 614 obrysů a čtyři hodiny laseru, proto je edice číslovaná. Za 590 Kč je v krabici i digitální kniha a ZION Pass; ty přijdou e-mailem hned, dřevo jde Zásilkovnou jako ploché díly. K ceně patří bonus 84 960 ZION. Fotografie jsou ilustrační.',
       },
       {
         icon: Gamepad2,
@@ -126,7 +126,7 @@ const Article = {
         title: 'The second lantern — the light you strike yourself',
         image: '/images/news/christmas-2026/lampion-wide.webp?v=engine-v1',
         imageAlt: 'The carpenter with children around the lit lantern, the Kingdom of the Heart book and ZION Pass on the table',
-        text: 'The second lantern. Lumi 2 arrives flat — eight parts in 3 mm birch plywood, half an hour and wood glue. You light the candle yourself. One piece is 20.9 m of cutting paths, 614 outlines and four hours of laser time, which is why the edition is numbered. At 790 CZK the box also holds the digital book and a ZION Pass; those arrive by e-mail at once, and the wood ships via Zásilkovna as flat parts. The price carries a 113,760 ZION bonus. The photographs are illustrative.',
+        text: 'The second lantern. Lumi 2 arrives flat — eight parts in 3 mm birch plywood, half an hour and wood glue. You light the candle yourself. One piece is 20.9 m of cutting paths, 614 outlines and four hours of laser time, which is why the edition is numbered. At 590 CZK the box also holds the digital book and a ZION Pass; those arrive by e-mail at once, and the wood ships via Zásilkovna as flat parts. The price carries an 84,960 ZION bonus. The photographs are illustrative.',
       },
       {
         icon: Gamepad2,
