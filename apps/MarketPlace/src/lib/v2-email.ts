@@ -3,6 +3,7 @@ import type { ShopTheme } from './settings';
 import { emailLocale, resolveEmailLang, tl, type EmailLang } from './email-lang';
 import { COMPANY as COMPANY_BASE, companySupportEmail } from './company';
 import { FIRE_SAFETY, requiresFireConsent } from './fire-safety';
+import { signedUrlForFilesUrl } from './download-token';
 
 const COMPANY = {
   ...COMPANY_BASE,
@@ -255,6 +256,12 @@ ${t('Platbu prosím uhraďte do 7 dnů.', 'Please pay within 7 days.')}`;
   return '';
 }
 
+
+function deliveryFileUrl(it: Record<string, unknown>, orderId: string): string | undefined {
+  if (typeof it.filesUrl !== 'string' || !it.filesUrl) return undefined;
+  return signedUrlForFilesUrl(it.filesUrl, orderId);
+}
+
 export function formatDigitalDownloadsText(order: OrderEmailData, lang: EmailLang = 'cs'): string {
   const t = (cs: string, en: string) => tl(lang, cs, en);
   const items = Array.isArray(order.items) ? (order.items as Record<string, unknown>[]) : [];
@@ -280,7 +287,8 @@ export function formatDigitalDownloadsText(order: OrderEmailData, lang: EmailLan
   const rows = digi.map((it) => {
     const name = String(it.name ?? t('Digitální produkt', 'Digital product'));
     const links: string[] = [];
-    if (typeof it.filesUrl === 'string' && it.filesUrl) links.push(it.filesUrl);
+    const fileUrl = deliveryFileUrl(it, order.orderId);
+    if (fileUrl) links.push(fileUrl);
     if (typeof it.instructionsUrl === 'string' && it.instructionsUrl) links.push(it.instructionsUrl);
     if (typeof it.modelUrl === 'string' && it.modelUrl) links.push(it.modelUrl);
     if (links.length === 0) {
@@ -312,9 +320,10 @@ export function formatDigitalDownloadsHtml(order: OrderEmailData, lang: EmailLan
     .map((it) => {
       const name = escapeHtml(String(it.name ?? t('Digitální produkt', 'Digital product')));
       const links: string[] = [];
-      if (typeof it.filesUrl === 'string' && it.filesUrl) {
+      const fileUrl = deliveryFileUrl(it, order.orderId);
+      if (fileUrl) {
         links.push(
-          `<a href="${escapeHtml(it.filesUrl)}" style="color:#FFD700;font-weight:700;">${t('Soubory / download', 'Files / download')}</a>`,
+          `<a href="${escapeHtml(fileUrl)}" style="color:#FFD700;font-weight:700;">${t('Soubory / download', 'Files / download')}</a>`,
         );
       }
       if (typeof it.instructionsUrl === 'string' && it.instructionsUrl) {

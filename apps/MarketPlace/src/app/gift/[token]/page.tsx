@@ -5,6 +5,7 @@ import { decryptSecret } from '@/lib/crypto';
 import { getArchivePassForOrder } from '@/lib/archive-pass';
 import { getTokenDistribution } from '@/lib/tokens';
 import GiftReveal from '@/components/gift/GiftReveal';
+import { signedUrlForFilesUrl } from '@/lib/download-token';
 
 type Params = Promise<{ token: string }>;
 
@@ -69,7 +70,10 @@ export default async function GiftPage({ params }: { params: Params }) {
         walletAddress: order.customerWalletAddress,
         seed,
         passCode: pass?.code ?? null,
-        bookUrl: bookUrlFromItems(order.items),
+        bookUrl: (() => {
+          const raw = bookUrlFromItems(order.items);
+          return raw ? signedUrlForFilesUrl(raw, order.orderId) : null;
+        })(),
         bonusTxHash: dist?.txHash ?? null,
       }}
     />

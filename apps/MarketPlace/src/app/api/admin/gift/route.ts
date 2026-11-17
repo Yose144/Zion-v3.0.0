@@ -13,6 +13,7 @@ import {
 } from '@/lib/gift-whatsapp';
 import { randomBytes } from 'crypto';
 import { shopProducts } from '@/data/shopProducts';
+import { signedUrlForFilesUrl } from '@/lib/download-token';
 
 export const dynamic = 'force-dynamic';
 
@@ -171,12 +172,14 @@ export async function POST(request: NextRequest) {
 
     const order = await prisma.shopOrder.findUnique({ where: { orderId } });
     const pass = withPass ? getArchivePassForOrder(orderId) : null;
+    const signedBookUrl =
+      withBook && BOOK_ZIP ? signedUrlForFilesUrl(BOOK_ZIP, orderId) : null;
     const whatsapp = giftWhatsappPayload(order?.customerPhone, {
       orderId,
       customerName: order?.customerName,
       amountZion,
       passCode: pass?.code ?? null,
-      bookUrl: withBook ? BOOK_ZIP : null,
+      bookUrl: signedBookUrl,
       bonusTxHash: bonus.txHash ?? null,
       giftUrl: order?.giftClaimToken ? giftPageUrl(order.giftClaimToken) : null,
     });
@@ -191,7 +194,7 @@ export async function POST(request: NextRequest) {
         paymentStatus: order?.paymentStatus ?? 'paid',
         wallet: order?.customerWalletAddress ?? null,
         pass: pass ? { code: pass.code } : null,
-        book: withBook ? { filesUrl: BOOK_ZIP } : null,
+        book: signedBookUrl ? { filesUrl: signedBookUrl } : null,
         bonus,
         whatsapp,
       },
@@ -244,12 +247,15 @@ export async function GET(request: NextRequest) {
       ) as { filesUrl?: string } | undefined;
       const { items: _items, giftClaimToken: _claimToken, ...rest } = o;
       const claimToken = await ensureGiftClaimToken(o.orderId, o.giftClaimToken);
+      const signedBookUrl = bookLine?.filesUrl
+        ? signedUrlForFilesUrl(bookLine.filesUrl, o.orderId)
+        : null;
       const whatsapp = giftWhatsappPayload(o.customerPhone, {
         orderId: o.orderId,
         customerName: o.customerName,
         amountZion: o.zionTokens,
         passCode: pass?.code ?? null,
-        bookUrl: bookLine?.filesUrl ?? null,
+        bookUrl: signedBookUrl,
         bonusTxHash: dist?.txHash ?? null,
         giftUrl: claimToken ? giftPageUrl(claimToken) : null,
       });
@@ -257,7 +263,7 @@ export async function GET(request: NextRequest) {
         ...rest,
         whatsapp: whatsapp ? { url: whatsapp.url } : null,
         pass: pass ? { code: pass.code } : null,
-        book: bookLine?.filesUrl ? { filesUrl: bookLine.filesUrl } : null,
+        book: signedBookUrl ? { filesUrl: signedBookUrl } : null,
         bonus: dist
           ? { status: dist.status, txHash: dist.txHash, distributedAt: dist.distributedAt }
           : null,
