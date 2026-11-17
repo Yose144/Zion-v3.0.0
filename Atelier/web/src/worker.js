@@ -156,40 +156,10 @@ async function api(request, env, url) {
   return json({ ...plan, id, updated });
 }
 
-// These public Nirvana assets are streamed rather than included in the Worker.
-const BETLEM_MODELS = new Set(["1","2","18","19","40","43"]);
-
-async function betlemModel(request, path) {
-  const id = /^\/betlem\/model\/(\d+)\.glb$/.exec(path)?.[1];
-  if (!BETLEM_MODELS.has(id)) return new Response(null,{status:404});
-  if (request.method!=="GET" && request.method!=="HEAD") {
-    return new Response(null,{status:405,headers:{Allow:"GET, HEAD"}});
-  }
-  try {
-    const upstream = await fetch("https://app.zionterranova.com/models/avatars/"+id+".glb",{
-      method:request.method,
-      redirect:"error",
-    });
-    const contentType = upstream.headers.get("Content-Type")?.split(";")[0];
-    if (!upstream.ok || contentType!=="model/gltf-binary") {
-      await upstream.body?.cancel();
-      return new Response(null,{status:502});
-    }
-    return new Response(upstream.body,{headers:{
-      "Content-Type":"model/gltf-binary",
-      "X-Content-Type-Options":"nosniff",
-      "Cache-Control":"public, max-age=3600",
-    }});
-  } catch {
-    return new Response(null,{status:502});
-  }
-}
-
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     try {
-      if (url.pathname.startsWith("/betlem/model/")) return await betlemModel(request,url.pathname);
       if (url.pathname === "/mcp") return await atelierMcp(request, env);
       if (url.pathname.startsWith("/api/agent-jobs/")) return await agentHttp(request, env, url);
       if (url.pathname.startsWith("/api/")) return await api(request, env, url);

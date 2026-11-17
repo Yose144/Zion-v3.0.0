@@ -21,9 +21,13 @@ const files = {
   "/betlem/scene.css": ["src/betlem/scene.css", "text/css; charset=utf-8"],
   "/betlem/roster.json": ["src/betlem/roster.json", "application/json; charset=utf-8"],
 };
+// Local copies of the six central avatars, with texture size tuned for the web.
+for (const id of [1, 2, 18, 19, 40, 43]) {
+  files[`/betlem/model/${id}.glb`] = [`src/betlem/models/${id}.glb`, "model/gltf-binary"];
+}
 const assets = Object.fromEntries(await Promise.all(Object.entries(files).map(async ([url, [file, type]]) => {
   const content = await readFile(file);
-  const binary = type === "image/webp";
+  const binary = type === "image/webp" || type === "model/gltf-binary";
   return [url, { type, content: content.toString(binary ? "base64" : "utf8"), binary }];
 })));
 await mkdir("dist/server", { recursive: true });
