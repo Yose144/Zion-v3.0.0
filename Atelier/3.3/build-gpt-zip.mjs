@@ -3,11 +3,10 @@
  * build-gpt-zip.mjs — ZIP pro ChatGPT: PROMPT.txt + pozadavky.txt + logo/.
  *
  * Zdroj:
- *   - PROMPT: `Atelier/3.3/gpt/00-CELY-PAKET-GPT.md` (generuje engine-b/build-briefs.mjs)
- *   - logo:   `3.3.0/design/brand/{logo,current}` + originál `docs/LogoNew.jpg`
- *
- * Proč logo v ZIPu: GPT musí vidět **přesný tvar značky**. Bez předlohy si
- * vymyslí vlastní erb nebo iniciály, a to je nejčastější vada ilustrací.
+ *   - PROMPT:  `Atelier/3.3/gpt/00-CELY-PAKET-GPT.md` (generuje engine-b/build-briefs.mjs)
+ *   - logo:    **jen oficiální balíček** `canon/brand/org/` (ZionLogo → symbol, cosmic,
+ *              wordmark, banner). Žádné jiné verze se do zadání nedávají — 👤
+ *              neschválil nic jiného (medailon z docs/ ani Engine B glyph ne).
  *
  * Použití: node Atelier/3.3/build-gpt-zip.mjs
  */
@@ -19,24 +18,14 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(HERE, "../.."); // workspace root (Zion-v3.0.0)
-const THREE = path.join(ROOT, "3.3.0");
+const ROOT = path.resolve(HERE, "../..");
 const sharp = require(path.join(ROOT, "node_modules/sharp"));
 
 const NAME = "ZION-33-Engine-B-GPT";
 const PKG = path.join(HERE, NAME);
 const ZIP = path.join(HERE, `${NAME}.zip`);
 
-const BRAND = path.join(HERE, "brand-mark.md");
-
-/* ---------- zdroje značky ---------- */
-
-const ORIGINAL = path.join(ROOT, "docs/LogoNew.jpg"); // zlatý medailon Z-stromu (originál)
-const RASTA = path.join(ROOT, "canon/brand/ZionLogo.png"); // rasta varianta (má "AI" odznak v rohu)
-const ENGINE_B = path.join(THREE, "design/brand/logo"); // Engine B značka (flat/seal/lockup)
-const Z_TREE = path.join(THREE, "design/brand/current"); // koncept v1 (zlatý glyph + wordmark)
-
-/* ---------- příprava ---------- */
+const ORG = path.join(ROOT, "canon/brand/org");
 
 const source = fs.readFileSync(path.join(HERE, "gpt/00-CELY-PAKET-GPT.md"), "utf8");
 const spec = JSON.parse(fs.readFileSync(path.join(HERE, "engine-b/assets.json"), "utf8"));
@@ -44,20 +33,21 @@ const spec = JSON.parse(fs.readFileSync(path.join(HERE, "engine-b/assets.json"),
 const BRAND_SECTION = `
 # ZNAČKA (brand mark) — povinné pravidlo
 
-Oficiální znak ZIONu je **Z vyrostlé ze stromu**: písmeno Z, jehož horní břevno
-se rozpadá do koruny listů a spodní břevno do kořenů. Uvnitř zlatého kruhu
-(medailon) je to hlavní podoba značky; jednobarevný tvar je její zjednodušení.
+Oficiální znak ZIONu je **Z vyrostlé ze stromu**: písmeno Z z prken v rasta
+barvách (zelená / zlatá / červená), jehož horní břevno se rozpadá do koruny
+listů a spodní břevno do kořenů, celé v **zlatém kruhu**. To je jediná schválená
+značka. Žádná jiná verze neexistuje a nevymýšlí se.
 
-- **Předlohy máš přiložené** ve složce \`logo/\`. Drž se jich. Nekresli vlastní
-  verzi, nepiš iniciály, nevytvářej erby, pečeti ani vlajky s písmeny.
-- Když má být v obraze symbol (vyražená pečeť, prapor, desky knihy, dno lucerny,
-  štítek), použij **přesně tento tvar** — Z s korunou a kořeny. Pro malé plochy
-  použij jednobarevnou variantu (\`logo/engine-b-glyph.svg\`).
+- **Přesné předlohy máš přiložené** ve složce \`logo/\` (PNG, transparentní).
+  Drž se jich: stejný tvar, stejné barvy, stejný kruh.
+- Když má být v obraze symbol (vyřezaná pečeť, vypálená značka na dřevě, vyšitý
+  prapor, ražba na minci, desky knihy), použij **tento znak** — čitelně, ale
+  přirozeně v materiálu (dřevo, vosk, kov, látka).
 - Značku **nepřidávej tam, kde o ni zadání nemluví**. Ilustrace není plakát
-  s logem; značka patří jen na předměty, které ji v příběhu nesou.
-- Nikdy ji nedávej doprostřed text-safe zóny (levá třetina) a nikdy přes tvář.
-- Barvy značky: zlato (${"`#D9B44A`"} / ${"`#E7AA4B`"}) na tmavém, inkoust
-  (${"`#101C2B`"}) na světlém. Nikdy neon, nikdy duha přes celý znak.
+  s logem; znak patří jen na předměty, které ho v příběhu nesou.
+- Nikdy ji nedávej do levé třetiny (text-safe zóna) a nikdy přes tvář.
+- Nikdy nepřekresluj znak „podle sebe“, nepiš iniciály, nevytvářej erby ani
+  vlajky s písmeny.
 `;
 
 const prompt = [
@@ -73,41 +63,41 @@ const checklist = spec.assets
   .map((a) => `${a.id} | ${a.aspect} | ${a.master.width}x${a.master.height} | ${a.id}__master.png`)
   .join("\n");
 
-const BRAND_RULES = `# Značka ZION — pravidla pro ilustrátora
+const BRAND_RULES = `# Značka ZION — oficiální podklady
 
-## Co je oficiální znak
+Jediná schválená značka je **Z-strom v rasta barvách, v zlatém kruhu**
+(\`symbol-transparent-1024.png\`). Všechno ostatní v této složce je tatáž značka
+v jiné velikosti nebo na jiném podkladu — nic nového.
 
-**Z vyrostlé ze stromu.** Písmeno Z, jehož horní břevno se rozpadá do koruny
-listů, spodní břevno do kořenů. Dvě podoby:
-
-| Soubor | Co to je | Kdy použít |
+| Soubor | Co to je | Kde se používá |
 |---|---|---|
-| \`logo/original-medallion-1024.jpg\` | zlatý medailon: Z-strom v kruhu, reliéf | hlavní značka v obraze — pečeť, mince, desky knihy, prapor |
-| \`logo/original-medallion-512.jpg\` | totéž menší | drobné předměty |
-| \`logo/original-rasta-1024.jpg\` | rasta varianta (zelená/žlutá/červená) | jen když má být znak barevně „rasta“; nepoužívat jako dekoraci všude |
-| \`logo/engine-b-glyph.svg\` | jednobarevný tvar Z-stromu (pergamen/inkoust) | malé plochy, gravírování, řez do dřeva, razítko |
-| \`logo/engine-b-seal.svg\` | stejný tvar v prstenci | pečetidlo, štítek |
-| \`logo/engine-b-lockup.png\` | znak + „ZION TERRA NOVA“ | nepoužívej v ilustracích (je to pro web/tisk) |
+| \`logo/symbol-transparent-512.png\` | totéž 512 px | běžné použití |
+| \`logo/symbol-transparent-256.png\` | totéž 256 px | malé plochy, ikony |
+| \`logo/symbol-transparent-200.png\` | totéž 200 px | burzovní listing (CMC/CoinGecko) |
+| \`logo/cosmic-1024.jpg\` | značka na tmavém kosmickém podkladu | app ikona, tmavé plochy |
+| \`logo/wordmark-light.png\` | znak + „ZION TERRA NOVA“ na světlém | web, tisk — **ne do ilustrací** |
+| \`logo/social-banner.png\` | hotový banner 1200×630 | sociální sítě — **ne do ilustrací** |
+| \`logo/prehled.png\` | náhled všech podob v mřížce | jen pro tvůj přehled |
 
-Náhled všech podob: \`logo/prehled.png\`.
+## Pravidla pro ilustrace
 
-## Pravidla
-
-1. **Nekresli vlastní verzi.** Vždy vyjdi z přiloženého tvaru (Z + koruna + kořeny).
-2. **Žádná písmena navíc.** Není „ZION“ v obraze, nejsou iniciály, nejsou nápisy
+1. **Nekresli vlastní verzi.** Vždy z přiloženého tvaru: Z z prken, koruna
+   listů nahoře, kořeny dole, zlatý kruh kolem.
+2. **Žádná písmena navíc.** Žádné „ZION“ v obraze, žádné iniciály, žádné nápisy
    na praporech, deskách ani pečetích.
 3. **Žádné nové erby.** Když má být symbol, je to tenhle znak — ne vymyšlený.
 4. **Umístění:** jen na předměty, které ho v příběhu nesou (pečeť, mince, kniha,
-   prapor, lucerna). Nikdy doprostřed levé třetiny, nikdy přes tvář.
-5. **Barva:** zlato #D9B44A nebo #E7AA4B na tmavém, inkoust #101C2B na světlém.
-   Žádný neon, žádné duhové přelivy přes celý znak.
-6. **Kresba:** může být vyražená, vyřezaná, vyšitá nebo malovaná — ale silueta
-   musí zůstat čitelná. Když se znak v obraze ztrácí, zvětši ho, neupravuj tvar.
+   prapor, vypálená značka na dřevě). Nikdy do levé třetiny, nikdy přes tvář.
+5. **Materiál může být jiný** (vyřezané do dřeva, ražené do kovu, šité zlatou
+   nití), ale **silueta a barvy musí zůstat čitelné**. Když se znak ztrácí,
+   zvětši ho, neupravuj tvar.
+6. **Wordmark a banner** jsou pro web a sociální sítě — do malovaných scén
+   nepatří.
 
-## Co dělat, když si nejsi jistý
+## Když si nejsi jistý
 
-Když zadání symbol nezmiňuje, **žádný tam nedávej**. Prázdná plachta nebo hladká
-deska je správně; vymyšlený erb je vada.
+Když zadání symbol nezmiňuje, **žádný tam nedávej**. Hladká deska nebo prázdný
+prapor je správně; vymyšlený erb je vada.
 `;
 
 /* ---------- zápis ---------- */
@@ -123,46 +113,50 @@ fs.writeFileSync(
 );
 fs.writeFileSync(path.join(PKG, "PRAVIDLA-ZNACKY.md"), BRAND_RULES);
 
-/* originál: zlatý medailon */
-for (const size of [1024, 512]) {
-  // JPEG q92 — pro referenci stačí a ZIP zůstane malý (PNG měl 2 MB/ks).
-  await sharp(ORIGINAL)
-    .resize(size, size, { fit: "cover" })
-    .jpeg({ quality: 92, chromaSubsampling: "4:4:4" })
-    .toFile(path.join(PKG, "logo", `original-medallion-${size}.jpg`));
+/* oficiální značka — jen soubory z canon/brand/org, zmenšené, ať ZIP není 8 MB */
+// 512 je pro referenci dost (master 1024 měl 2 MB a nic nového nepřinese).
+const LOGO_FILES = [
+  ["symbol-512x512.png", "symbol-transparent-512.png", 512],
+  ["symbol-256x256.png", "symbol-transparent-256.png", 256],
+  ["symbol-200x200.png", "symbol-transparent-200.png", 200],
+];
+for (const [src, out, size] of LOGO_FILES) {
+  await sharp(path.join(ORG, src))
+    .resize(size, size, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png({ compressionLevel: 9, palette: false })
+    .toFile(path.join(PKG, "logo", out));
 }
+// Kosmická varianta má plné pozadí → JPEG (1,1 MB PNG vs ~180 kB).
+await sharp(path.join(ORG, "zion-primary-cosmic.png"))
+  .resize(1024, 1024)
+  .jpeg({ quality: 92, chromaSubsampling: "4:4:4" })
+  .toFile(path.join(PKG, "logo", "cosmic-1024.jpg"));
+fs.copyFileSync(path.join(ORG, "zion-wordmark-light.png"), path.join(PKG, "logo", "wordmark-light.png"));
+fs.copyFileSync(path.join(ORG, "zion-social-banner.png"), path.join(PKG, "logo", "social-banner.png"));
 
-/* rasta varianta — odříznout „AI" odznak v levém horním rohu */
+/* náhled 2×2: průhledný symbol, cosmic, wordmark, banner */
 {
-  const meta = await sharp(RASTA).metadata();
-  const cut = Math.round((meta.width ?? 1024) * 0.11);
-  await sharp(RASTA)
-    .extract({ left: cut, top: cut, width: (meta.width ?? 1024) - cut, height: (meta.height ?? 1024) - cut })
-    .resize(1024, 1024, { fit: "cover" })
-    .jpeg({ quality: 92, chromaSubsampling: "4:4:4" })
-    .toFile(path.join(PKG, "logo", "original-rasta-1024.jpg"));
-}
-
-/* Engine B značka */
-fs.copyFileSync(path.join(ENGINE_B, "glyph-on-dark.svg"), path.join(PKG, "logo", "engine-b-glyph.svg"));
-fs.copyFileSync(path.join(ENGINE_B, "seal.svg"), path.join(PKG, "logo", "engine-b-seal.svg"));
-fs.copyFileSync(path.join(ENGINE_B, "lockup-on-dark.png"), path.join(PKG, "logo", "engine-b-lockup.png"));
-fs.copyFileSync(path.join(Z_TREE, "icon-on-dark-256.png"), path.join(PKG, "logo", "z-tree-icon-256.png"));
-
-/* náhledová mřížka 3×2 pro rychlou kontrolu tvaru */
-{
+  const size = 360;
   const tiles = [
-    path.join(PKG, "logo", "original-medallion-512.jpg"),
-    path.join(PKG, "logo", "original-rasta-1024.jpg"),
-    path.join(PKG, "logo", "z-tree-icon-256.png"),
+    await sharp(path.join(PKG, "logo", "symbol-transparent-512.png"))
+      .resize(size, size, { fit: "contain", background: "#F0E1BE" })
+      .png()
+      .toBuffer(),
+    await sharp(path.join(PKG, "logo", "cosmic-1024.jpg"))
+      .resize(size, size, { fit: "contain", background: "#101C2B" })
+      .png()
+      .toBuffer(),
+    await sharp(path.join(PKG, "logo", "wordmark-light.png"))
+      .resize(size, size, { fit: "contain", background: "#F0E1BE" })
+      .png()
+      .toBuffer(),
+    await sharp(path.join(PKG, "logo", "social-banner.png"))
+      .resize(size, size, { fit: "contain", background: "#101C2B" })
+      .png()
+      .toBuffer(),
   ];
-  const size = 340;
-  const buffers = [];
-  for (const tile of tiles) buffers.push(await sharp(tile).resize(size, size, { fit: "contain", background: "#101C2B" }).png().toBuffer());
-  const glyphSvg = fs.readFileSync(path.join(PKG, "logo", "engine-b-glyph.svg"));
-  buffers.push(await sharp(glyphSvg, { density: 300 }).resize(size, size, { fit: "contain", background: "#101C2B" }).png().toBuffer());
   await sharp({ create: { width: size * 2, height: size * 2, channels: 3, background: { r: 16, g: 28, b: 43 } } })
-    .composite(buffers.map((input, index) => ({ input, left: (index % 2) * size, top: Math.floor(index / 2) * size })))
+    .composite(tiles.map((input, index) => ({ input, left: (index % 2) * size, top: Math.floor(index / 2) * size })))
     .png()
     .toFile(path.join(PKG, "logo", "prehled.png"));
 }
