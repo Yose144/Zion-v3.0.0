@@ -35,7 +35,7 @@ const Article = {
         title: 'Druhá lucerna — světlo, které si zapálíš sám',
         image: '/images/news/christmas-2026/lampion-wide.webp?v=engine-v1',
         imageAlt: 'Tesař s dětmi u hořícího lampionu, na stole kniha Království srdce a ZION Pass',
-        text: 'Druhá lucerna. Lampion Lumi 2 přijde rozložený — osm dílů z 3mm březové překližky, půl hodiny a dřevěné lepidlo. Svíčku zapálíš sám. Jeden kus je 20,9 m řezných drah, 614 obrysů a čtyři hodiny laseru, proto je edice číslovaná. Za 490 Kč je v krabici i digitální kniha a ZION Pass; ty přijdou e-mailem hned, dřevo jde Zásilkovnou jako ploché díly. K ceně patří bonus 70 560 ZION. Fotografie jsou ilustrační.',
+        text: 'Druhá lucerna. Lampion Lumi 2 přijde rozložený — osm dílů z 3mm březové překližky, půl hodiny a dřevěné lepidlo. Svíčku zapálíš sám. Jeden kus je 20,9 m řezných drah, 614 obrysů a čtyři hodiny laseru, proto je edice číslovaná. Za 790 Kč je v krabici i digitální kniha a ZION Pass; ty přijdou e-mailem hned, dřevo jde Zásilkovnou jako ploché díly. K ceně patří bonus 113 760 ZION. Fotografie jsou ilustrační.',
       },
       {
         icon: Gamepad2,
@@ -56,7 +56,7 @@ const Article = {
     steps: [
       'Vyberete dar — Pass, knihu, nebo lampion. Každý nese vlastní ZION bonus.',
       'Zaplatíte převodem, kartou nebo v ZIONu. U digitálních darů není doprava, u lampionu ji spočítá pokladna.',
-      'Do minuty po zaplacení dorazí e-mail: kód ZAP-…, odkaz na knihy (40 souborů) a ZION peněženka s bonusem.',
+      'Jakmile platba projde, dorazí e-mail: kód ZAP-…, odkaz na knihy (40 souborů) a ZION peněženka s bonusem.',
       'Kód uplatníte na nirvana.zionterranova.com i v ZION Archivu. Peněženku naimportujete do ZIS a bonus máte na adrese.',
       'U lampionu navíc: digitální část přichází hned. Dřevo odchází ze dílny rozložené — osm dílů, složíte ho vy.',
     ],
@@ -126,7 +126,7 @@ const Article = {
         title: 'The second lantern — the light you strike yourself',
         image: '/images/news/christmas-2026/lampion-wide.webp?v=engine-v1',
         imageAlt: 'The carpenter with children around the lit lantern, the Kingdom of the Heart book and ZION Pass on the table',
-        text: 'The second lantern. Lumi 2 arrives flat — eight parts in 3 mm birch plywood, half an hour and wood glue. You light the candle yourself. One piece is 20.9 m of cutting paths, 614 outlines and four hours of laser time, which is why the edition is numbered. At 490 CZK the box also holds the digital book and a ZION Pass; those arrive by e-mail at once, and the wood ships via Zásilkovna as flat parts. The price carries a 70,560 ZION bonus. The photographs are illustrative.',
+        text: 'The second lantern. Lumi 2 arrives flat — eight parts in 3 mm birch plywood, half an hour and wood glue. You light the candle yourself. One piece is 20.9 m of cutting paths, 614 outlines and four hours of laser time, which is why the edition is numbered. At 790 CZK the box also holds the digital book and a ZION Pass; those arrive by e-mail at once, and the wood ships via Zásilkovna as flat parts. The price carries a 113,760 ZION bonus. The photographs are illustrative.',
       },
       {
         icon: Gamepad2,
@@ -147,7 +147,7 @@ const Article = {
     steps: [
       'You pick a gift — the Pass, the book, or the lantern. Each carries its own ZION bonus.',
       'You pay by transfer, card or in ZION. Digital gifts ship nothing; the lantern’s shipping is calculated at checkout.',
-      'Within a minute of payment an e-mail arrives: a ZAP-… code, a link to the books (40 files) and a ZION wallet with the bonus.',
+      'As soon as the payment goes through an e-mail arrives: a ZAP-… code, a link to the books (40 files) and a ZION wallet with the bonus.',
       'You redeem the code on nirvana.zionterranova.com and in the ZION Archive. Import the wallet into ZIS and the bonus is yours.',
       'With the lantern: the digital part arrives immediately. The wood leaves the workshop flat — eight parts, and you assemble it.',
     ],
