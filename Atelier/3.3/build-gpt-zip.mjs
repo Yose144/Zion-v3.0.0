@@ -26,6 +26,7 @@ const PKG = path.join(HERE, NAME);
 const ZIP = path.join(HERE, `${NAME}.zip`);
 
 const ORG = path.join(ROOT, "canon/brand/org");
+const THREE = path.join(ROOT, "3.3.0");
 
 const source = fs.readFileSync(path.join(HERE, "gpt/00-CELY-PAKET-GPT.md"), "utf8");
 const spec = JSON.parse(fs.readFileSync(path.join(HERE, "engine-b/assets.json"), "utf8"));
@@ -110,9 +111,13 @@ fs.mkdirSync(path.join(PKG, "logo"), { recursive: true });
 fs.writeFileSync(path.join(PKG, "PROMPT.txt"), prompt);
 fs.writeFileSync(
   path.join(PKG, "pozadavky.txt"),
-  `Co má přijít zpět — 15 PNG, název souboru = id\n\n${checklist}\n\nStačí holé PNG ve složce; jména souborů jsou hlavní.\n`,
+  `Co má přijít zpět\n\n## Ilustrace (15 PNG, název = id)\n\n${checklist}\n\n## Mini ikona (3 PNG)\n\nzion-mini-dark__master.png  1024x1024  inkoustova plocha, zlaty znak\nzion-mini-light__master.png 1024x1024  pergamenova plocha, inkoustovy znak\nzion-mini-mono__master.png  1024x1024  jednobarevna silueta\n\nStačí holé PNG ve složce; jména souborů jsou hlavní.\n`,
 );
 fs.writeFileSync(path.join(PKG, "PRAVIDLA-ZNACKY.md"), BRAND_RULES);
+
+/* Mini ikona (favicon) — samostatné zadání, protože plný emblém se v 16 px ztrácí. */
+const MINI_BRIEF = path.join(HERE, "brand/MINI-IKONA-GPT.md");
+if (fs.existsSync(MINI_BRIEF)) fs.copyFileSync(MINI_BRIEF, path.join(PKG, "MINI-IKONA.txt"));
 
 /* oficiální značka — jen soubory z canon/brand/org, zmenšené, ať ZIP není 8 MB */
 // 512 je pro referenci dost (master 1024 měl 2 MB a nic nového nepřinese).
@@ -133,6 +138,16 @@ await sharp(path.join(ORG, "zion-primary-cosmic.png"))
   .jpeg({ quality: 92, chromaSubsampling: "4:4:4" })
   .toFile(path.join(PKG, "logo", "cosmic-1024.jpg"));
 fs.copyFileSync(path.join(ORG, "zion-wordmark-light.png"), path.join(PKG, "logo", "wordmark-light.png"));
+
+/* Schválený kanon (17. 11.) jako reference pro mini ikonu — z design/brand/logo-kanon. */
+const KANON = path.join(THREE, "design/brand/logo-kanon/ZION_3_3_LOGO_KANON_MASTER.png");
+const ONBOARD_LOGO = path.join(THREE, "apps/onboard/public/logo");
+if (fs.existsSync(KANON)) {
+  await sharp(KANON).resize({ width: 1400 }).png({ compressionLevel: 9 }).toFile(path.join(PKG, "logo", "canon-master-1400.png"));
+  fs.copyFileSync(path.join(ONBOARD_LOGO, "emblem-1024.png"), path.join(PKG, "logo", "canon-emblem-1024.png"));
+  fs.copyFileSync(path.join(ONBOARD_LOGO, "emblem-512.png"), path.join(PKG, "logo", "canon-emblem-512.png"));
+  fs.copyFileSync(path.join(ONBOARD_LOGO, "glyph-1600.png"), path.join(PKG, "logo", "canon-glyph-1600.png"));
+}
 fs.copyFileSync(path.join(ORG, "zion-social-banner.png"), path.join(PKG, "logo", "social-banner.png"));
 
 /* náhled 2×2: průhledný symbol, cosmic, wordmark, banner */
