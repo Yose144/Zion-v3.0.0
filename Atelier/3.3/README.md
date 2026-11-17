@@ -10,7 +10,7 @@ se do `3.3.0`.
 ## Co tu je
 
 ```
-atelier/3.3/engine-b/
+Atelier/3.3/engine-b/
   new-assets.json            ← jediný zdroj zadání (id, cíl, poměr, alt, prompt)
   build-briefs.mjs           ← generátor podkladů (níž)
   00-GPT-MASTER-PROMPT.md    ← role + styl + kánon + negativy (první zpráva do GPT)
@@ -26,8 +26,8 @@ bere z kanonického `3.3.0/design/engine-b/prompts/prompts.json`. Když se změn
 kánon, změní se tam a podklady se vygenerují znovu:
 
 ```bash
-node atelier/3.3/engine-b/build-briefs.mjs          # přepíše markdown + csv + assets.json
-node atelier/3.3/engine-b/build-briefs.mjs --check  # jen ověří, že sedí
+node Atelier/3.3/engine-b/build-briefs.mjs          # přepíše markdown + csv + assets.json
+node Atelier/3.3/engine-b/build-briefs.mjs --check  # jen ověří, že sedí
 ```
 
 Zadání se needituje v markdownu — editoval bys ho při každém generování znovu.

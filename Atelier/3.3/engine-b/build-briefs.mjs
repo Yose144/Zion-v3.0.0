@@ -12,8 +12,8 @@
  * `3.3.0/design/engine-b/prompts/prompts.json`, aby se texty nerozešly.
  *
  * Použití:
- *   node atelier/3.3/engine-b/build-briefs.mjs
- *   node atelier/3.3/engine-b/build-briefs.mjs --check   # jen ověří, že sedí
+ *   node Atelier/3.3/engine-b/build-briefs.mjs
+ *   node Atelier/3.3/engine-b/build-briefs.mjs --check   # jen ověří, že sedí
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -166,7 +166,7 @@ outputs.set(
     {
       engine: canon.engine.id,
       version: canon.engine.version,
-      generatedFrom: "atelier/3.3/engine-b/new-assets.json",
+      generatedFrom: "Atelier/3.3/engine-b/new-assets.json",
       batches: data.batches,
       assets: data.assets,
     },
