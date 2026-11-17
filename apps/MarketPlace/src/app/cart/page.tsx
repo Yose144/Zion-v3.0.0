@@ -11,6 +11,7 @@ import { SHIPPING_PRICES, type ShippingMethod } from '@/types/shop';
 import { isVirtualOnlyCart, createShopOrder, createStripeCheckoutSession, createCommerceCheckout, trackOrder } from '@/lib/shop-api';
 import { useLangT } from '@/lib/useTranslation';
 import { FIRE_CONSENT_VERSION, FIRE_SAFETY, requiresFireConsent } from '@/lib/fire-safety';
+import { DIGITAL_CONSENT_VERSION, DIGITAL_CONSENT, requiresDigitalConsent } from '@/lib/digital-consent';
 import { LUMI_MOTIFS } from '@/data/lumiMotifs';
 
 /** Zvýraznění **tučného** v bezpečnostních bodech (stejná konvence jako detail produktu). */
@@ -77,6 +78,8 @@ export default function CartPage() {
   // Svíčkové zboží (lampion ze dřeva) — odsouhlasení + digitální podpis
   const [fireAck, setFireAck] = useState(false);
   const [fireSignature, setFireSignature] = useState('');
+  // Digitální obsah — souhlas s okamžitým dodáním (§ 1837 l OZ)
+  const [digitalAck, setDigitalAck] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showQr, setShowQr] = useState(false);
   const [orderResult, setOrderResult] = useState<{
@@ -96,6 +99,11 @@ export default function CartPage() {
    */
   const needsFireConsent = useMemo(() => requiresFireConsent(items), [items]);
   const fireSigned = fireAck && fireSignature.trim().length >= 3;
+  /**
+   * Digitální obsah se vydává hned po zaplacení — bez souhlasu zákazníka
+   * by nešlo doložit zánik práva na odstoupení (§ 1837 l OZ).
+   */
+  const needsDigitalConsent = useMemo(() => requiresDigitalConsent(items), [items]);
   const cardEnabled = caps?.modes.card ?? false;
   const zionEnabled = caps?.modes.zion ?? true;
   const commerceEnabled = caps?.modes.commerce ?? false;
@@ -141,6 +149,7 @@ export default function CartPage() {
     (!needsAddress || (form.street && form.city && form.zip)) &&
     (!needsPickup || form.pickupPoint.trim().length >= 3) &&
     (!needsFireConsent || fireSigned) &&
+    (!needsDigitalConsent || digitalAck) &&
     (!isCompany || (form.companyName.trim() && /^\d{8}$/.test(form.ico.replace(/\s/g, ''))));
 
   const formatPrice = (price: number) => t('common.price', { price, symbol: t('common.kcSymbol') });
@@ -190,6 +199,10 @@ export default function CartPage() {
             version: FIRE_CONSENT_VERSION,
             signedAt: new Date().toISOString(),
           }
+        : undefined,
+      // Souhlas s okamžitým dodáním digitálního obsahu — ukládá se čas serveru
+      digitalConsent: needsDigitalConsent
+        ? { accepted: digitalAck, version: DIGITAL_CONSENT_VERSION }
         : undefined,
     });
 
@@ -656,6 +669,27 @@ export default function CartPage() {
             </div>
           )}
 
+          {/* Digitální obsah — souhlas s okamžitým dodáním (§ 1837 l OZ) */}
+          {needsDigitalConsent && (
+            <div className="zion-section p-5 border-2 border-rasta-gold/30 bg-rasta-gold/5">
+              <h2 className="text-lg font-black font-display mb-2 flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-rasta-gold" />
+                <span className="text-gradient-gold">{pick(DIGITAL_CONSENT.title)}</span>
+              </h2>
+              <p className="text-sm text-gray-300 leading-relaxed mb-4">{pick(DIGITAL_CONSENT.lead)}</p>
+              <label className="flex items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={digitalAck}
+                  onChange={(e) => setDigitalAck(e.target.checked)}
+                  className="mt-1 accent-rasta-green"
+                  required
+                />
+                <span className="text-gray-300">{pick(DIGITAL_CONSENT.ackLabel)}</span>
+              </label>
+            </div>
+          )}
+
           {/* Summary */}
           <div className="zion-section p-5 border-2 border-rasta-gold/30 bg-rasta-gold/5">
             <h2 className="text-lg font-black font-display mb-4 flex items-center gap-2 text-gradient-gold">
@@ -711,7 +745,7 @@ export default function CartPage() {
               {submitting ? (
                 t('cart.submitting')
               ) : !canSubmit ? (
-                <span className="inline-flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> {needsFireConsent && !fireSigned ? pick(FIRE_SAFETY.requiredError) : t('cart.fillRequired')}</span>
+                <span className="inline-flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> {needsFireConsent && !fireSigned ? pick(FIRE_SAFETY.requiredError) : needsDigitalConsent && !digitalAck ? pick(DIGITAL_CONSENT.requiredError) : t('cart.fillRequired')}</span>
               ) : (
                 <span className="inline-flex items-center gap-2"><Check className="w-4 h-4" /> {t('cart.completeOrder')}</span>
               )}

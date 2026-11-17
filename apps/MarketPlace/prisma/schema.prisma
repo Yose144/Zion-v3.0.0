@@ -252,6 +252,10 @@ model ShopOrder {
   fireConsentName      String?
   fireConsentAt        DateTime?
   fireConsentVersion   String?
+  // Souhlas s okamžitým dodáním digitálního obsahu (§ 1837 l OZ).
+  // Bez něj se digitální obsah nesmí vydat; čas = server, verze = text souhlasu.
+  digitalConsentAt      DateTime?
+  digitalConsentVersion String?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
   invoices             Invoice[]

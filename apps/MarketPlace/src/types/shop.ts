@@ -75,4 +75,9 @@ export interface ShopOrderInput {
     version: string;
     signedAt: string;
   };
+  /** U digitálního obsahu — souhlas s okamžitým dodáním (§ 1837 l OZ) */
+  digitalConsent?: {
+    accepted: boolean;
+    version: string;
+  };
 }

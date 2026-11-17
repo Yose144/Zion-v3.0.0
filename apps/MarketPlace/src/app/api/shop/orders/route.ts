@@ -12,6 +12,7 @@ import { generateCustomerWallet } from '@/lib/zion-l1';
 import { encryptSecret } from '@/lib/crypto';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 import { FIRE_CONSENT_VERSION, checkFireConsent } from '@/lib/fire-safety';
+import { DIGITAL_CONSENT_VERSION, checkDigitalConsent } from '@/lib/digital-consent';
 import { LUMI_MOTIFS, MOTIF_PRODUCT_ID } from '@/data/lumiMotifs';
 import {
   StockConflictError,
@@ -276,6 +277,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ── Souhlas s digitálním obsahem (§ 1837 l OZ) ─────────────────
+    // Digitální obsah se vydává okamžitě po zaplacení; bez výslovného
+    // souhlasu zákazníka zaniknutí práva na odstoupení nelze doložit,
+    // takže se souhlas vyžaduje a ukládá (čas serveru + verze textu).
+    const digitalCheck = checkDigitalConsent(lineItems, body.digitalConsent);
+    if (digitalCheck && !digitalCheck.ok) {
+      return NextResponse.json({ success: false, error: digitalCheck.error, code: digitalCheck.code }, { status: 400 });
+    }
+    if (digitalCheck?.ok && digitalCheck.version !== DIGITAL_CONSENT_VERSION) {
+      console.warn(
+        `order ${body.orderId}: digital consent version ${digitalCheck.version} != ${DIGITAL_CONSENT_VERSION}`,
+      );
+    }
+
     // ── Wallet + order create + stock decrement (transaction) ───────
     let customerWallet: ReturnType<typeof generateCustomerWallet> | null = null;
     if (zionTokens > 0) {
@@ -320,6 +335,9 @@ export async function POST(req: NextRequest) {
           fireConsentName: fireCheck?.ok ? fireCheck.name : null,
           fireConsentAt: fireCheck?.ok ? new Date() : null,
           fireConsentVersion: fireCheck?.ok ? fireCheck.version : null,
+          // Důkaz souhlasu s okamžitým dodáním digitálního obsahu
+          digitalConsentAt: digitalCheck?.ok ? new Date() : null,
+          digitalConsentVersion: digitalCheck?.ok ? digitalCheck.version : null,
         },
       });
       await reserveProductStock(tx, reserved);
