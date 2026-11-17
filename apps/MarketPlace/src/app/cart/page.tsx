@@ -27,6 +27,9 @@ function renderBold(text: string) {
   );
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DIC_RE = /^[A-Z]{2}?\d{7,12}$/i;
+
 const shippingOptions: { value: ShippingMethod; labelKey: string; descKey: string; price: number }[] = [
   { value: 'zasilkovna', labelKey: 'cart.shippingZasilkovna', descKey: 'cart.shippingZasilkovnaDesc', price: SHIPPING_PRICES.zasilkovna },
   { value: 'zasilkovna-home', labelKey: 'cart.shippingZasilkovnaHome', descKey: 'cart.shippingZasilkovnaHomeDesc', price: SHIPPING_PRICES['zasilkovna-home'] },
@@ -55,6 +58,10 @@ export default function CartPage() {
   const router = useRouter();
   const { t, lang } = useLangT();
   const pick = (text: { cs: string; en: string }) => (lang === 'cs' ? text.cs : text.en);
+  const motifLabel = (slug?: string) => {
+    const motif = LUMI_MOTIFS.find((m) => m.slug === slug);
+    return motif ? pick(motif.name) : (slug ?? '');
+  };
 
   const [shipping, setShipping] = useState<ShippingMethod>('zasilkovna');
   const [payment, setPayment] = useState<'transfer' | 'card' | 'crypto' | 'zion' | 'commerce'>('transfer');
@@ -81,6 +88,13 @@ export default function CartPage() {
   // Digitální obsah — souhlas s okamžitým dodáním (§ 1837 l OZ)
   const [digitalAck, setDigitalAck] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  // orderId se generuje JEDNOU na návštěvu košíku — retry po ztracené
+  // odpovědi tak nejde na server jako nová objednávka, ale replayOrder
+  // pozná duplicitní orderId a vrátí stávající (idempotence money-path).
+  const [orderId] = useState(
+    () => `ORD-${Math.floor(Date.now() / 1000)}-${Math.random().toString(36).substring(2, 8)}`
+  );
   const [showQr, setShowQr] = useState(false);
   const [orderResult, setOrderResult] = useState<{
     orderId: string;
@@ -139,26 +153,30 @@ export default function CartPage() {
 
   const needsAddress = shipping === 'zasilkovna-home';
   const needsPickup = shipping === 'zasilkovna';
+  // E-mail validujeme rovnou na klientovi — stejný regex jako na serveru,
+  // ať uživatel nedostane 400 po odeslání formuláře.
+  const emailValid = EMAIL_RE.test(form.email.trim());
+  const dicValid = !form.dic.trim() || DIC_RE.test(form.dic.trim());
 
   const canSubmit =
     items.length > 0 &&
     form.name.trim() &&
     form.email.trim() &&
+    emailValid &&
     form.phone.trim() &&
     terms &&
     (!needsAddress || (form.street && form.city && form.zip)) &&
     (!needsPickup || form.pickupPoint.trim().length >= 3) &&
     (!needsFireConsent || fireSigned) &&
     (!needsDigitalConsent || digitalAck) &&
-    (!isCompany || (form.companyName.trim() && /^\d{8}$/.test(form.ico.replace(/\s/g, ''))));
+    (!isCompany || (form.companyName.trim() && /^\d{8}$/.test(form.ico.replace(/\s/g, '')) && dicValid));
 
   const formatPrice = (price: number) => t('common.price', { price, symbol: t('common.kcSymbol') });
 
   async function handleSubmit() {
     if (!canSubmit || submitting) return;
     setSubmitting(true);
-
-    const orderId = `ORD-${Math.floor(Date.now() / 1000)}-${Math.random().toString(36).substring(2, 8)}`;
+    setSubmitError(null);
 
     const result = await createShopOrder({
       orderId,
@@ -222,7 +240,7 @@ export default function CartPage() {
           window.location.href = stripeResult.data.url;
           return;
         }
-        alert(stripeResult?.error || t('cart.alertStripeError'));
+        setSubmitError(stripeResult?.error || t('cart.alertStripeError'));
       } else if (payment === 'commerce') {
         const co = await createCommerceCheckout(orderId);
         if (co?.success && co.data?.hostedUrl) {
@@ -230,7 +248,7 @@ export default function CartPage() {
           window.location.href = co.data.hostedUrl;
           return;
         }
-        alert(co?.error || t('cart.alertCommerceError'));
+        setSubmitError(co?.error || t('cart.alertCommerceError'));
       } else if (payment === 'zion' || payment === 'crypto') {
         if (result.data.zion) {
           setZionPaid(false);
@@ -244,7 +262,7 @@ export default function CartPage() {
         router.push(`/order-success?order=${encodeURIComponent(orderId)}`);
       }
     } else {
-      alert(result?.error || t('cart.alertOrderError'));
+      setSubmitError(result?.error || t('cart.alertOrderError'));
     }
 
     setSubmitting(false);
@@ -285,7 +303,7 @@ export default function CartPage() {
     ? termsText.split('%%LINK%%')
     : [termsText, ''];
 
-  if (items.length === 0 && !showQr) {
+  if (items.length === 0 && !showQr && !showZionQr) {
     return (
       <div className="zion-section p-16 text-center max-w-2xl mx-auto">
         <ShoppingCart className="w-16 h-16 mx-auto mb-4 text-rasta-gold opacity-60" />
@@ -327,10 +345,10 @@ export default function CartPage() {
                 <div className="font-bold text-white truncate">{item.name}</div>
                 {item.motif && (
                   <div className="text-xs text-rasta-gold/90">
-                    {t('cart.motif')}: {LUMI_MOTIFS.find((motif) => motif.slug === item.motif)?.name.cs ?? item.motif}
+                    {t('cart.motif')}: {motifLabel(item.motif)}
                   </div>
                 )}
-                <div className="text-xs text-gray-500 capitalize">{item.category}</div>
+                <div className="text-xs text-gray-500 capitalize">{t(`shop.${item.category}`)}</div>
                 <div className="text-xs text-rasta-gold">{t('cart.tokens', { amount: item.tokens })}</div>
               </div>
               <div className="flex items-center gap-2">
@@ -410,6 +428,7 @@ export default function CartPage() {
                   value={form.pickupPoint}
                   onChange={(e) => setForm({ ...form, pickupPoint: e.target.value })}
                   placeholder={t('cart.placeholderPickup')}
+                  aria-label={t('cart.placeholderPickup')}
                   className="input-zion w-full"
                   required
                 />
@@ -427,23 +446,31 @@ export default function CartPage() {
                 <input
                   type="text"
                   placeholder={t('cart.placeholderName')}
+                  aria-label={t('cart.placeholderName')}
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="input-zion w-full"
                   required
                 />
-                <input
-                  type="email"
-                  placeholder={t('cart.placeholderEmail')}
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="input-zion w-full"
-                  required
-                />
+                <div>
+                  <input
+                    type="email"
+                    placeholder={t('cart.placeholderEmail')}
+                    aria-label={t('cart.placeholderEmail')}
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    className="input-zion w-full"
+                    required
+                  />
+                  {form.email.trim() && !emailValid && (
+                    <p className="text-[11px] text-rasta-red mt-1">{t('cart.emailInvalid')}</p>
+                  )}
+                </div>
               </div>
               <input
                 type="tel"
                 placeholder={t('cart.placeholderPhone')}
+                aria-label={t('cart.placeholderPhone')}
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 className="input-zion w-full"
@@ -464,6 +491,7 @@ export default function CartPage() {
                   <input
                     type="text"
                     placeholder={t('cart.placeholderCompany')}
+                    aria-label={t('cart.placeholderCompany')}
                     value={form.companyName}
                     onChange={(e) => setForm({ ...form, companyName: e.target.value })}
                     className="input-zion w-full"
@@ -474,6 +502,7 @@ export default function CartPage() {
                       type="text"
                       inputMode="numeric"
                       placeholder={t('cart.placeholderIco')}
+                      aria-label={t('cart.placeholderIco')}
                       value={form.ico}
                       onChange={(e) => setForm({ ...form, ico: e.target.value })}
                       className="input-zion w-full"
@@ -482,6 +511,7 @@ export default function CartPage() {
                     <input
                       type="text"
                       placeholder={t('cart.placeholderDic')}
+                      aria-label={t('cart.placeholderDic')}
                       value={form.dic}
                       onChange={(e) => setForm({ ...form, dic: e.target.value })}
                       className="input-zion w-full"
@@ -496,6 +526,7 @@ export default function CartPage() {
                   <input
                     type="text"
                     placeholder={t('cart.placeholderStreet')}
+                    aria-label={t('cart.placeholderStreet')}
                     value={form.street}
                     onChange={(e) => setForm({ ...form, street: e.target.value })}
                     className="input-zion w-full"
@@ -505,6 +536,7 @@ export default function CartPage() {
                     <input
                       type="text"
                       placeholder={t('cart.placeholderCity')}
+                      aria-label={t('cart.placeholderCity')}
                       value={form.city}
                       onChange={(e) => setForm({ ...form, city: e.target.value })}
                       className="input-zion w-full"
@@ -513,6 +545,7 @@ export default function CartPage() {
                     <input
                       type="text"
                       placeholder={t('cart.placeholderZip')}
+                      aria-label={t('cart.placeholderZip')}
                       value={form.zip}
                       onChange={(e) => setForm({ ...form, zip: e.target.value })}
                       className="input-zion w-full"
@@ -524,6 +557,7 @@ export default function CartPage() {
 
               <textarea
                 placeholder={t('cart.placeholderNote')}
+                aria-label={t('cart.placeholderNote')}
                 value={form.note}
                 onChange={(e) => setForm({ ...form, note: e.target.value })}
                 className="input-zion w-full min-h-[80px]"
@@ -736,6 +770,15 @@ export default function CartPage() {
               />
               <span className="text-gray-400">{t('cart.newsletter')}</span>
             </label>
+
+            {submitError && (
+              <div
+                role="alert"
+                className="mb-4 rounded-xl border border-rasta-red/40 bg-rasta-red/10 px-3 py-2 text-xs text-rasta-red"
+              >
+                {submitError}
+              </div>
+            )}
 
             <button
               onClick={handleSubmit}

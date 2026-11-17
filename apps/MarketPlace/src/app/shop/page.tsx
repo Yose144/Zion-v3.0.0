@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ShoppingBag, SearchX, Filter, Zap } from 'lucide-react';
 import { getShopProducts, type ShopProductsFilters } from '@/lib/shop-api';
@@ -16,26 +17,45 @@ const sortOptions = [
   { value: 'price_high', key: 'shop.sortPriceHigh' },
 ];
 
+function ShopSkeleton() {
+  return (
+    <div className="zion-section p-16 text-center">
+      <div className="w-10 h-10 border-2 border-rasta-gold/30 border-t-rasta-gold rounded-full animate-spin mx-auto mb-4" />
+    </div>
+  );
+}
+
 export default function ShopPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ShopSkeleton />}>
       <ShopPageInner />
     </Suspense>
   );
 }
 
+function isKnownCategory(c: string | null): c is string {
+  return !!c && (SHOP_CATEGORY_ORDER as readonly string[]).includes(c);
+}
+
 function ShopPageInner() {
   const searchParams = useSearchParams();
-  const [category, setCategory] = useState<string>(() => {
-    const c = searchParams.get('category');
-    return c && (SHOP_CATEGORY_ORDER as readonly string[]).includes(c) ? c : 'all';
-  });
+  const urlCategory = searchParams.get('category');
+  const [category, setCategory] = useState<string>(() =>
+    isKnownCategory(urlCategory) ? urlCategory : 'all'
+  );
   const [sort, setSort] = useState('recent');
   const [products, setProducts] = useState<ShopProductData[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ShopProductData | null>(null);
   const { t } = useLangT();
+
+  // Hluboký odkaz /shop?category=… je i živý — zpět/dopředu v prohlížeči
+  // nebo příchod znovu na stránku s jiným kategoriovým parametrem Kategorie
+  // musí kopírovat URL, jinak by zůstala stará.
+  useEffect(() => {
+    setCategory(isKnownCategory(urlCategory) ? urlCategory : 'all');
+  }, [urlCategory]);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,9 +92,9 @@ function ShopPageInner() {
           </h1>
           <p className="text-sm text-gray-500">{t('shop.subtitle')}</p>
         </div>
-        <a href="/cart" className="zion-button-secondary self-start">
+        <Link href="/cart" className="zion-button-secondary self-start">
           <Zap className="w-4 h-4" /> {t('shop.completePurchase')}
-        </a>
+        </Link>
       </div>
 
       {/* Mobile filters — horizontal chips + sort (lg+ hides this) */}

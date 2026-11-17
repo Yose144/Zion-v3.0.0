@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Check, ShoppingBag, Mail, HelpCircle, Loader2, XCircle, PackageSearch } from 'lucide-react';
 import { getOrderStatus, verifyStripeSession, type OrderStatusResult } from '@/lib/shop-api';
 import { useLangT } from '@/lib/useTranslation';
-import { COMPANY } from '@/lib/invoice';
+import { companySupportEmail } from '@/lib/company';
 
 function LoadingFallback() {
   const { t } = useLangT();
@@ -25,6 +25,11 @@ function OrderSuccessContent() {
 
   useEffect(() => {
     let cancelled = false;
+    let paid = false;
+    // ~2 minuty po 3 s — pak polling ustane (příliš dlouhé čekání na
+    // webhook nemá smysl; detail uživatel dohledá na /order-tracking).
+    let attempts = 0;
+    const MAX_ATTEMPTS = 40;
 
     async function load() {
       if (!orderId) {
@@ -41,8 +46,11 @@ function OrderSuccessContent() {
 
       if (result?.data) {
         setOrder(result.data);
-        if (sessionId) {
-          setStripeVerified(result.data.paymentStatus === 'paid');
+        if (result.data.paymentStatus === 'paid') {
+          paid = true;
+          if (sessionId) setStripeVerified(true);
+        } else if (sessionId) {
+          setStripeVerified(false);
         }
       }
       setLoading(false);
@@ -50,18 +58,24 @@ function OrderSuccessContent() {
 
     load();
 
-    // Poll for payment status updates when returning from Stripe
+    // Poll for payment status updates when returning from Stripe —
+    // do zaplacení, s limitem pokusů (starý interval běžel donekonečna
+    // a `order` v closure zůstal navždy null, takže nepolloval vůbec).
     const interval = setInterval(() => {
-      if (sessionId && order && order.paymentStatus !== 'paid') {
-        getOrderStatus(orderId).then((res) => {
-          if (res?.data) {
-            setOrder(res.data);
-            if (res.data.paymentStatus === 'paid') {
-              setStripeVerified(true);
-            }
-          }
-        });
+      if (cancelled || paid || !sessionId || attempts >= MAX_ATTEMPTS) {
+        if (attempts >= MAX_ATTEMPTS || paid) clearInterval(interval);
+        return;
       }
+      attempts += 1;
+      getOrderStatus(orderId).then((res) => {
+        if (cancelled || !res?.data) return;
+        setOrder(res.data);
+        if (res.data.paymentStatus === 'paid') {
+          paid = true;
+          setStripeVerified(true);
+          clearInterval(interval);
+        }
+      });
     }, 3000);
 
     return () => {
@@ -89,7 +103,7 @@ function OrderSuccessContent() {
 
   const formatPrice = (price: number) => t('common.price', { price, symbol: t('common.kcSymbol') });
 
-  const supportEmail = COMPANY.email;
+  const supportEmail = companySupportEmail();
   const footerQuestionText = t('orderSuccess.footerQuestion', { email: '%%EMAIL%%' });
   const [footerBefore, footerAfter] = footerQuestionText.includes('%%EMAIL%%')
     ? footerQuestionText.split('%%EMAIL%%')
@@ -163,7 +177,7 @@ function OrderSuccessContent() {
         >
           <PackageSearch className="w-4 h-4" /> {t('orderSuccess.trackOrderLink')}
         </Link>
-        <a href={`mailto:${COMPANY.email}`} className="zion-button-secondary">
+        <a href={`mailto:${supportEmail}`} className="zion-button-secondary">
           <Mail className="w-4 h-4" /> {t('orderSuccess.contactSupport')}
         </a>
       </div>

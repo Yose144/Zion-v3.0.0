@@ -22,6 +22,13 @@ type OrderData = NonNullable<TrackOrderResult['data']>;
 
 const STATUS_ORDER = ['pending', 'paid', 'processing', 'shipped', 'completed'];
 
+const SHIPPING_METHOD_LABEL: Record<string, string> = {
+  zasilkovna: 'cart.shippingZasilkovna',
+  'zasilkovna-home': 'cart.shippingZasilkovnaHome',
+  'virtualni-nakup': 'cart.shippingVirtualBuy',
+  'virtualni-odber': 'cart.shippingVirtualPickup',
+};
+
 function statusStepIndex(order: OrderData): number {
   if (order.status === 'cancelled') return -1;
   const idx = STATUS_ORDER.indexOf(order.status);
@@ -79,7 +86,12 @@ function OrderTrackingContent() {
 
   const fmtDate = (iso: string | null) =>
     iso ? new Date(iso).toLocaleString() : null;
-  const fmtPrice = (czk: number) => `${czk.toLocaleString()} Kč`;
+  const fmtPrice = (czk: number) =>
+    t('common.price', { price: czk, symbol: t('common.kcSymbol') });
+
+  const shippingLabel = order?.shipping
+    ? t(SHIPPING_METHOD_LABEL[order.shipping] ?? 'cart.shippingZasilkovna')
+    : null;
 
   const stepIdx = order ? statusStepIndex(order) : 0;
   const cancelled = order?.status === 'cancelled';
@@ -192,10 +204,22 @@ function OrderTrackingContent() {
                 <span className="font-mono">{order.trackingNumber}</span>
               </div>
             )}
+            {shippingLabel && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">{t('orderTracking.labelShipping')}</span>
+                <span>
+                  {shippingLabel}
+                  <span className="text-gray-500"> · </span>
+                  {order.shippingCzk === 0
+                    ? t('cart.shippingFree')
+                    : fmtPrice(order.shippingCzk)}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-gray-500">{t('orderTracking.labelTotal')}</span>
               <span className="font-mono font-bold text-rasta-gold">
-                {fmtPrice(order.totalCzk + order.shippingCzk)}
+                {fmtPrice(order.totalCzk)}
               </span>
             </div>
           </div>
