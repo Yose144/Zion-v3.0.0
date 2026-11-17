@@ -885,7 +885,7 @@ export const christmasProducts: XmasProduct[] = [
         },
       },
       {
-        q: { cs: 'Co přesně je v ceně 790 Kč?', en: 'What exactly does the 790 CZK include?' },
+        q: { cs: 'Co přesně je v ceně 590 Kč?', en: 'What exactly does the 590 CZK include?' },
         a: {
           cs: 'Tři věci: lampion Lumi 2 (fyzický výrobek), digitální knihu Království srdce v plné sadě a ZION Pass do Nirvany i Archivu. Plus bonus 84 960 ZION na peněženku.',
           en: 'Three things: the Lumi 2 lantern (a physical craft), the full digital Kingdom of Hearts book set, and a ZION Pass for Nirvana and the Archive. Plus an 84,960 ZION bonus to your wallet.',
