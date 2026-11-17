@@ -16,6 +16,7 @@ import { useLangT } from '@/lib/useTranslation';
 import { getXmasProduct, type XmasFact, type XmasText } from '@/data/christmasProducts';
 import RichText from '@/components/xmas/RichText';
 import FactsStrip from '@/components/xmas/FactsStrip';
+import BuyNowButton from '@/components/shop/BuyNowButton';
 
 type Chip = { icon: LucideIcon; label: string; gold?: boolean };
 
@@ -36,6 +37,8 @@ interface ChristmasCardProps {
   chips: Chip[];
   ctaLabel: string;
   ctaDisabled?: boolean;
+  /** externalId produktu — CTA pak jde rovnou do pokladny, ne na obecný /shop */
+  buyExternalId?: string;
   detailHref: string;
   detailLabel: string;
   reverse?: boolean;
@@ -55,6 +58,7 @@ function ChristmasCard({
   chips,
   ctaLabel,
   ctaDisabled,
+  buyExternalId,
   detailHref,
   detailLabel,
   reverse,
@@ -135,6 +139,13 @@ function ChristmasCard({
                 <span className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-gray-400">
                   <ShoppingCart className="w-4 h-4" /> {ctaLabel}
                 </span>
+              ) : buyExternalId ? (
+                <BuyNowButton
+                  externalId={buyExternalId}
+                  className="zion-button-primary inline-flex items-center gap-2"
+                >
+                  <ShoppingCart className="w-4 h-4" /> {ctaLabel}
+                </BuyNowButton>
               ) : (
                 <Link href="/shop" className="zion-button-primary inline-flex items-center gap-2">
                   <ShoppingCart className="w-4 h-4" /> {ctaLabel}
@@ -181,6 +192,8 @@ export function ZionPassSection() {
         { icon: Gift, label: t('xmas.passChipGift') },
       ]}
       ctaLabel={`${t('xmas.passCta')} · ${price}`}
+      ctaDisabled={product ? !product.buyable : true}
+      buyExternalId={product?.externalId}
       detailHref="/vanoce/zion-pass"
       detailLabel={t('xmasPage.moreInfo')}
     />
@@ -214,6 +227,8 @@ export function LampionSection() {
         { icon: BookOpen, label: t('xmas.lampionChipBook') },
       ]}
       ctaLabel={`${t('xmas.lampionCta')} · ${price}`}
+      ctaDisabled={product ? !product.buyable : true}
+      buyExternalId={product?.externalId}
       detailHref="/vanoce/lampion"
       detailLabel={t('xmasPage.moreInfo')}
       reverse

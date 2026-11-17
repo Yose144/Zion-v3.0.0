@@ -4,11 +4,13 @@ import { designImage } from '@/lib/design-image';
 
 import { useState, useEffect } from 'react';
 import { X, Minus, Plus, ShoppingCart, Ruler, Box, Coins, FileText, Flame } from 'lucide-react';
+import Link from 'next/link';
 import type { ShopProductData } from '@/types/shop';
 import { getTokens } from '@/lib/shop-api';
 import { useCart } from './CartContext';
 import { useLangT } from '@/lib/useTranslation';
 import StarfighterViewer, { isLocalModel } from './StarfighterViewer';
+import { COMPANY } from '@/lib/company';
 
 interface ShopProductModalProps {
   product: ShopProductData | null;
@@ -20,7 +22,7 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
   const [imgError, setImgError] = useState(false);
   const [added, setAdded] = useState(false);
   const { add } = useCart();
-  const { t } = useLangT();
+  const { t, lang } = useLangT();
 
   useEffect(() => {
     setQty(1);
@@ -210,6 +212,14 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
                   </span>
                 )}
               </button>
+
+              {/* Prodávající — identita na produktovém povrchu, ne jen v patičce */}
+              <p className="mt-3 text-[11px] text-gray-500">
+                {COMPANY.name} · IČO {COMPANY.ico} ·{' '}
+                <Link href="/terms" className="text-rasta-gold hover:underline">
+                  {lang === 'cs' ? 'obchodní podmínky' : 'terms'}
+                </Link>
+              </p>
             </div>
           </div>
         </div>
