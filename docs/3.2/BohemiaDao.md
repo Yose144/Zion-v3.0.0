@@ -10,7 +10,7 @@
 **Doména:** Governance lab → sídlo DAO parlamentu Zlaté republiky
 **Stav:** 🔵 Plán / Fáze 0 (žádná půda, žádný kruh, žádný zvolený parlament — protokol a návrh existují)
 **Verze:** 2026-09-21 · Autor: Yosef + Devin
-**Kanonické zdroje:** [`docs/TerraNova/06-L5-SVOBODA.md`](../TerraNova/06-L5-SVOBODA.md) §6.6 · [`canon/books/BodhiGaia/10-Golden-Republic-Bohemia.md`](../../canon/books/BodhiGaia/10-Golden-Republic-Bohemia.md) · [`docs/ZION_CODEX_BODHISATTVA.md`](../ZION_CODEX_BODHISATTVA.md) · [`docs/3.0.4/AI_NATIVE_VOW.md`](../3.0.4/AI_NATIVE_VOW.md) · [`docs/3.2/L5_L6_ACTIVATION_PLAN.md`](L5_L6_ACTIVATION_PLAN.md)
+**Kanonické zdroje:** [`docs/TerraNova/06-L5-SVOBODA.md`](../TerraNova/06-L5-SVOBODA.md) §6.6 · [`canon/books/BodhiGaia/10-Golden-Republic-Bohemia.md`](../../canon/books/BodhiGaia/10-Golden-Republic-Bohemia.md) · [`docs/ZION_CODEX_BODHISATTVA.md`](../whitepaper/ZION_CODEX_BODHISATTVA.md) · [`docs/3.0.4/AI_NATIVE_VOW.md`](../3.0.4/AI_NATIVE_VOW.md) · [`docs/3.2/L5_L6_ACTIVATION_PLAN.md`](L5_L6_ACTIVATION_PLAN.md)
 
 ---
 

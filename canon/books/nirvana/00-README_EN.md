@@ -69,7 +69,7 @@ Readers who want to follow the whole path as one story — from the child at the
 - **NirvanaCloud — the deep expansion (six worlds, bardo, Shambhala, Halls of Amenti, Generation Z, hundred-year plan):** [`../NirvanaCloud/00-README_EN.md`](../NirvanaCloud/00-README_EN.md)
 - **Lumi — The Way Home (unifying book, DRAFT, Czech):** [`../Lumi/00-README.md`](../Lumi/00-README.md)
 - **Live Network Status:** [`../../../StatusV3.md`](../../../docs/3.2/StatusV3.md)
-- **Master Project Roadmap:** [`../../../ROADMAP.md`](../../../ROADMAP.md)
+- **Master Project Roadmap:** [`../../../docs/plans/ROADMAP.md`](../../../docs/plans/ROADMAP.md)
 - **Narrative Foundations:** [`../SulZeme/00-README_EN.md`](../SulZeme/00-README_EN.md)
 - **Master Whitepaper 3.2:** [`../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_EN.md`](../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_EN.md)
 

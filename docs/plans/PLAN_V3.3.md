@@ -1,6 +1,6 @@
 # ZION TerraNova — Master Plan (v3.3 "Nirvana")
 
-> **Historický snapshot k 11. 11. 2026.** Živý kanon je [`3.3.0/CODE_VS_DOCS.md`](3.3.0/CODE_VS_DOCS.md) a master plán [`3.3.0/v3.3Nirvana.md`](3.3.0/v3.3Nirvana.md). Čísla níže se nepřepisují — jsou to záznam měření z toho dne.
+> **Historický snapshot k 11. 11. 2026.** Živý kanon je [`3.3.0/CODE_VS_DOCS.md`](../../3.3.0/CODE_VS_DOCS.md) a master plán [`3.3.0/v3.3Nirvana.md`](../../3.3.0/v3.3Nirvana.md). Čísla níže se nepřepisují — jsou to záznam měření z toho dne.
 >
 > **Datum:** 2026-11-11
 > **Stupeň:** 3.2.0 Mainnet Beta → cíl 3.2.0 RC → 3.2.0 Mainnet Stable → 3.3.0 Nirvana
@@ -77,7 +77,7 @@ G9 externí audit (posunut, Stable bez data — neblokuje RC kvalitu)
 
 ### Priorita 3 (kvalita a hygiena)
 8. **P0-3** — rotace PRL RPC credentialu + per-service env subsety
-9. **Charta R9** — factual ✅ (11. 11., [`REPORT_2026-11-11_CHARTA_R9_FACTUAL_REVIEW.md`](docs/3.2/REPORTS/REPORT_2026-11-11_CHARTA_R9_FACTUAL_REVIEW.md)); legal + cultural = 👤
+9. **Charta R9** — factual ✅ (11. 11., [`REPORT_2026-11-11_CHARTA_R9_FACTUAL_REVIEW.md`](../3.2/REPORTS/REPORT_2026-11-11_CHARTA_R9_FACTUAL_REVIEW.md)); legal + cultural = 👤
 10. **CoinGecko re-apply package** — 17 prerekvizit
 
 ---

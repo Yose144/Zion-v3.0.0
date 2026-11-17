@@ -66,7 +66,7 @@ ZION v3.2.0 One Love is **live and running** as Mainnet Stable. The network is o
 - ✅ All disclosed vulnerabilities (F1–F5, C1–C8) have been remediated
 - ✅ All 7 DeFi contracts verified on Basescan
 - ⚠️ The network may still contain bugs — mine and transact at your own risk
-- ⚠️ No warranty is provided — see [Legal Disclaimer](../LEGAL_DISCLAIMER.md)
+- ⚠️ No warranty is provided — see [Legal Disclaimer](../LEGAL/LEGAL_DISCLAIMER.md)
 
 **Official Public Launch: postponed (TBD)**
 
@@ -420,22 +420,22 @@ cargo run --release -p zion-core --bin zion-node
 ## Documentation
 
 ### Technical
-- [Whitepaper](../whitepaper.md) — Technical whitepaper (consensus, economics, architecture)
-- [Ethics & Philosophy](../ETHICS_PHILOSOPHY.md) — Four books of ZION: Genesis, Quantum Revolution, Ekam Deeksha, Terra Nova
-- [ZION Codex — Bodhisattva Vow](../ZION_CODEX_BODHISATTVA.md) — Foundational vow: 4 Great Vows, 8 Bodhisattvas, 8 Guardian pledges, 11 Sefirot validator vows
+- [Whitepaper](../whitepaper/whitepaper-v3.0.4.md) — Technical whitepaper (consensus, economics, architecture)
+- [Ethics & Philosophy](../LEGAL/ETHICS_PHILOSOPHY.md) — Four books of ZION: Genesis, Quantum Revolution, Ekam Deeksha, Terra Nova
+- [ZION Codex — Bodhisattva Vow](../whitepaper/ZION_CODEX_BODHISATTVA.md) — Foundational vow: 4 Great Vows, 8 Bodhisattvas, 8 Guardian pledges, 11 Sefirot validator vows
 - [evoluZion V2](./evoluZionV2.md) — PoW → Proof-of-Care evolution (10-year hybrid roadmap)
-- [Genesis Block](../genesis.md) — Genesis block, premine allocations, creator signature
+- [Genesis Block](../mainnet/Genesis.md) — Genesis block, premine allocations, creator signature
 - [Architecture](../../archive/V3/docs) — L1/L2 architecture docs
 - [Mainnet Constants](../../archive/V3/docs/MAINNET_CONSTANTS.md) — Canonical chain parameters
 - [CLI Reference](../../archive/V3/docs/CLI_REFERENCE.md) — Full CLI command reference
 - [ZION Oasis](../../archive/V3/L4/oasis/README.md) — L4 consciousness mining game (architecture, quests, Golden Egg)
 
 ### Legal
-- [Legal Disclaimer](../LEGAL_DISCLAIMER.md) — No investment advice, no warranty, risks
-- [Terms of Use](../TERMS_OF_USE.md) — Conditions for node operators, miners, users
-- [Privacy Policy](../PRIVACY_POLICY.md) — No personal data collected, pseudonymous network
-- [Jurisdiction & Compliance](../JURISDICTION.md) — Decentralized network, regulatory status
-- [Token Disclosure](../TOKEN_DISCLOSURE.md) — Transparent tokenomics, no ICO, premine details
+- [Legal Disclaimer](../LEGAL/LEGAL_DISCLAIMER.md) — No investment advice, no warranty, risks
+- [Terms of Use](../LEGAL/TERMS_OF_USE.md) — Conditions for node operators, miners, users
+- [Privacy Policy](../LEGAL/PRIVACY_POLICY.md) — No personal data collected, pseudonymous network
+- [Jurisdiction & Compliance](../LEGAL/JURISDICTION.md) — Decentralized network, regulatory status
+- [Token Disclosure](../LEGAL/TOKEN_DISCLOSURE.md) — Transparent tokenomics, no ICO, premine details
 
 ### Security
 - [Security Disclosures](../security) — Public vulnerability disclosures (F1-F5, C1-C8)

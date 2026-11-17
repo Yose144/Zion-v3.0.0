@@ -62,7 +62,7 @@ Scan: `docs/`, `canon/`, root, `Hiran/`, `V31/`, `apps/website-v2.9/src` (hledá
 |---|---|---|
 | [`docs/3.2/V33_NIRVANA_MASTER_PLAN.md`](../3.2/V33_NIRVANA_MASTER_PLAN.md) | vision blueprint L1–L6, původní N1–N6 + DoD §9 | reference; termíny neplatné; UE5.7/agenti/ZK = HORIZONT |
 | [`docs/3.2/V33_GAP_ANALYSIS.md`](../3.2/V33_GAP_ANALYSIS.md) | gap scan 28. 9. | superseded execution plánem |
-| [`ROADMAP.md`](../../ROADMAP.md) (root) | navigační rozcestník | ⚠️ „Where we are now" k 31. 8. |
+| [`ROADMAP.md`](../plans/ROADMAP.md) (root) | navigační rozcestník | ⚠️ „Where we are now" k 31. 8. |
 
 ### 1.4 Sub-plány podle workstreamu
 
@@ -78,7 +78,7 @@ Scan: `docs/`, `canon/`, root, `Hiran/`, `V31/`, `apps/website-v2.9/src` (hledá
 | **N5 Free World** | [`L5_L6_ACTIVATION_PLAN.md`](../3.2/L5_L6_ACTIVATION_PLAN.md) (G10), `canon/books/BodhiGaia/` (+ `pilots/GENESIS-ROSE-001.md`), kandidáti `docs/3.2/L5*.md`, `TreeMarias.md`, `UluruFestival.md`, `BohemiaDao.md` | portál živý; scanner ✅ na tipu (P0-1 opraven 26. 10.) |
 | **N6 Issobella** | `L5_L6_ACTIVATION_PLAN.md`, `canon/books/Issobella/` (Kotva pravdy), `V31/L6/issobella/docs/` | tracker živý |
 | **N7 launch** | [`COINGECKO_REAPPLY_ROADMAP.md`](../3.2/COINGECKO_REAPPLY_ROADMAP.md) (17 prerekvizit), `OneLoveV3.2.md`, `docs/F3-IA-MAP.md` | nezahájeno |
-| **N0 infra** | [`INFRA-SPLIT-PLAN.md`](../plans/INFRA-SPLIT-PLAN.md), [`docs/ECOSYSTEM-REBUILD-PLAN.md`](../ECOSYSTEM-REBUILD-PLAN.md) (F0–F6 ✅), `docs/ECOSYSTEM-INVENTORY.md`, [`DASHBOARD-AUDIT-2026-10-26.md`](../plans/DASHBOARD-AUDIT-2026-10-26.md), `infra/RUNBOOK.md` | hotovo; provozní dluh v 3.2.8 |
+| **N0 infra** | [`INFRA-SPLIT-PLAN.md`](../plans/INFRA-SPLIT-PLAN.md), [`docs/ECOSYSTEM-REBUILD-PLAN.md`](../plans/ECOSYSTEM-REBUILD-PLAN.md) (F0–F6 ✅), `docs/ECOSYSTEM-INVENTORY.md`, [`DASHBOARD-AUDIT-2026-10-26.md`](../plans/DASHBOARD-AUDIT-2026-10-26.md), `infra/RUNBOOK.md` | hotovo; provozní dluh v 3.2.8 |
 
 ### 1.5 Narativní korpus (není execution, ale musí sedět s registrem)
 

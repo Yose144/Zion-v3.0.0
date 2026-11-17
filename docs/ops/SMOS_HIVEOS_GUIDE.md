@@ -3,7 +3,7 @@
 **Version:** v3.0.6-beta
 **Pool:** `62.171.141.136:8444`
 **Website:** [zionterranova.com](https://zionterranova.com)
-**FAQ:** [docs/FAQ.md](./FAQ.md) — common questions for beginners and rig operators
+**FAQ:** [docs/FAQ.md](../FAQ.md) — common questions for beginners and rig operators
 
 ---
 

@@ -201,5 +201,5 @@ prošel, `package.json` validní. `website-v2.9` má `ignoreBuildErrors: true`
 ---
 
 **Souvisí:** [`REPORT_2026-11-02_DOCS_CLEANUP_LINKS.md`](REPORT_2026-11-02_DOCS_CLEANUP_LINKS.md) ·
-[`StatusV3.md`](../StatusV3.md) · [`REPO-MAP.md`](../../../REPO-MAP.md) ·
+[`StatusV3.md`](../StatusV3.md) · [`REPO-MAP.md`](../../REPO-MAP.md) ·
 [`NIRVANA-V3.3-CHECKLIST.md`](../../3.3/NIRVANA-V3.3-CHECKLIST.md) (rozpor `api.`/`dex.`)

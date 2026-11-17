@@ -243,10 +243,10 @@ du -sh /var/lib/docker/volumes/zion*
 
 ## 📚 More Documentation
 
-- [Mainnet Roadmap](../MAINNET_ROADMAP_2026.md) — Full roadmap to launch
-- [Constitution](docs/MAINNET_CONSTITUTION.md) — Immutable protocol parameters
+- [Mainnet Roadmap](../mainnet/MAINNET_ROADMAP_2026.md) — Full roadmap to launch
+- [Constitution](../mainnet/MAINNET_CONSTITUTION.md) — Immutable protocol parameters
 - [Economic Model](../ECONOMIC_CALCULATIONS_CORRECT.md) — Token economics
-- [Whitepaper](docs/whitepaper/) — Technical whitepaper
+- [Whitepaper](../whitepaper/) — Technical whitepaper
 
 ---
 

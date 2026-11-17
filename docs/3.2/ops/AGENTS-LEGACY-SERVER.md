@@ -299,7 +299,7 @@ const zion = flowers / FLOWERS_PER_ZION; // = 590_000_000 ZION = 590 million
 The L1 wire format currently uses **three coexisting suffix conventions**.
 Until the next non-breaking contract bump lands, agents and clients MUST
 be aware of all three. Full per-method JSON samples are documented in
-[`docs/CANONICAL_UNITS_AUDIT.md`](../../../docs/CANONICAL_UNITS_AUDIT.md) §3b.
+[`docs/CANONICAL_UNITS_AUDIT.md`](../../../docs/reports/CANONICAL_UNITS_AUDIT.md) §3b.
 
 | Convention | Where it appears | How to consume |
 |------------|------------------|----------------|
@@ -313,10 +313,10 @@ be aware of all three. Full per-method JSON samples are documented in
 for EVM-side amounts (18 decimals; `flowers × 10¹² = wei`).
 
 **Authoritative docs for unit work:**
-- [`docs/CANONICAL_UNITS_AUDIT.md`](../../../docs/CANONICAL_UNITS_AUDIT.md) —
+- [`docs/CANONICAL_UNITS_AUDIT.md`](../../../docs/reports/CANONICAL_UNITS_AUDIT.md) —
   full audit, live JSON samples, recommended L1 contract bump (§3b.5),
   backend endpoint matrix, explorer endpoint canon.
-- [`docs/WARP_ARCHITECTURE.md`](../../../docs/WARP_ARCHITECTURE.md) —
+- [`docs/WARP_ARCHITECTURE.md`](../../../docs/plans/WARP_ARCHITECTURE.md) —
   cross-chain decimal table (corrected 2026-06-25: L1 = 6 decimals,
   updated 3.0.3 fork).
 

@@ -377,8 +377,8 @@ C) ORDER BOOK DEX (off-chain matching, L1 settlement)
 | [L2/bridge/README.md](../L2/bridge/README.md) | Bridge architektura, moduly, testy |
 | [L2/dao/README.md](../L2/dao/README.md) | DAO governance specifikace |
 | [L2/contracts/README.md](../L2/contracts/README.md) | Solidity kontrakty (wZION, ZIONBridge) |
-| [MAINNET_CHECKLIST.md](MAINNET_CHECKLIST.md) | MainNet launch requirements |
-| [ROADMAP.md](../ROADMAP.md) | Hlavní roadmapa |
+| [MAINNET_CHECKLIST.md](../mainnet/MAINNET_CHECKLIST.md) | MainNet launch requirements |
+| [ROADMAP.md](ROADMAP.md) | Hlavní roadmapa |
 
 ---
 

@@ -2,7 +2,7 @@
 
 > **Genesis hash**: `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 > **Timestamp**: `1767225600` (2026-01-01 00:00:00 UTC)
-> **Zdroj**: [`V3/L1/core/src/genesis.rs`](../V3/L1/core/src/genesis.rs)
+> **Zdroj**: [`V3/L1/core/src/genesis.rs`](../../V31/L1/core/src/genesis.rs)
 
 ---
 
@@ -65,7 +65,7 @@ The Golden Age begins. Peace & One Love 4ever.
 Plná genesis zpráva obsahuje ASCII art Stromu života a logo ZION.
 Je vložena při kompilaci přes `include_str!("GENESIS_MESSAGE.txt")`.
 
-Zdroj: [`V3/L1/core/src/GENESIS_MESSAGE.txt`](../V3/L1/core/src/GENESIS_MESSAGE.txt)
+Zdroj: [`V3/L1/core/src/GENESIS_MESSAGE.txt`](../../V31/L1/core/src/GENESIS_MESSAGE.txt)
 
 ```
 
@@ -493,7 +493,7 @@ Hard reset regeneroval všechny premine adresy, kanonické peněženky a
 genesis hash. Předchozí genesis hash (`d28dc404...`) je **neplatný** a
 patří kompromitovanému řetězci.
 
-Viz: [`docs/security/SECURITY_DISCLOSURE_2026-07.md`](./security/SECURITY_DISCLOSURE_2026-07.md)
+Viz: [`docs/security/SECURITY_DISCLOSURE_2026-07.md`](../security/SECURITY_DISCLOSURE_2026-07.md)
 
 ---
 

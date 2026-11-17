@@ -36,8 +36,11 @@ LIVE_DIRS = ["infra", "canon", "V31", "ZION_OS", "scripts", "Kingdom",
              "docs/WP-Mainet", "docs/marketing", "docs/security",
              "docs/mainnet", "docs/oasis"]
 LIVE_ROOT_FILES = [
-    "AGENTS.md", "README.md", "ROADMAP.md", "REPO-MAP.md", "PLAN.md",
-    "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md",
+    "AGENTS.md", "README.md", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    # kanonické docs/ soubory po reorganizaci 2026-11-17 (root .md → docs/)
+    "docs/README.md", "docs/OPS-LOG.md", "docs/REPO-MAP.md",
+    "docs/CODE_VS_DOCS.md", "docs/FAQ.md",
 ]
 LIVE_EXCLUDE = {
     "V31/docs", "ZION_OS/docs", "canon/l6/proEricku",

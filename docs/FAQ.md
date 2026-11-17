@@ -126,7 +126,7 @@ Miner zobrazí interaktivní TUI (tabulku) s hashrate, accepted/rejected shares 
 ## SMOS / HiveOS / SimpleMining
 
 ### Jak nainstalovat miner na SMOS?
-Podrobný návod je v [SMOS_HIVEOS_GUIDE.md](./SMOS_HIVEOS_GUIDE.md). Stručně:
+Podrobný návod je v [SMOS_HIVEOS_GUIDE.md](./ops/SMOS_HIVEOS_GUIDE.md). Stručně:
 1. Stáhni `zion-miner-linux-x86_64.tar.gz`.
 2. Vytvoř wrapper script `miner` s wallet, worker a `ZION_INTERACTIVE=0`.
 3. Zabal do `zion-miner-smos.zip` a nahraj do SMOS jako Custom miner.
@@ -231,5 +231,5 @@ Při normálním použití ne. GPU se zahřeje, proto ujisti se o dobré ventila
 
 ## Ještě něco?
 
-- **Podrobný SMOS/HiveOS návod:** [SMOS_HIVEOS_GUIDE.md](./SMOS_HIVEOS_GUIDE.md)
+- **Podrobný SMOS/HiveOS návod:** [SMOS_HIVEOS_GUIDE.md](./ops/SMOS_HIVEOS_GUIDE.md)
 - **Podpora:** [GitHub Issues](https://github.com/Zion-TerraNova/v3-Mainnet/issues)

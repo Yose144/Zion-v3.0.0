@@ -355,10 +355,10 @@ Na konci každé fáze se kontrolují tyto metriky:
 
 | Dokument | Účel |
 |----------|------|
-| [ROADMAP.md](../ROADMAP.md) | Hlavní roadmapa (L1-L6, ekonomický model) |
+| [ROADMAP.md](../plans/ROADMAP.md) | Hlavní roadmapa (L1-L6, ekonomický model) |
 | [MAINNET_READINESS-ROADMAP.md](MAINNET_READINESS-ROADMAP.md) | Kompletní MainNet readiness + sprinty |
 | [config/mainnet.toml](../config/mainnet.toml) | MainNet konfigurace (autoritativní) |
-| [docs/v2.9.6/layer-architecture.md](v2.9.6/layer-architecture.md) | 6-vrstvá architektura |
+| [docs/v2.9.6/layer-architecture.md](../v2.9.6/layer-architecture.md) | 6-vrstvá architektura |
 
 ---
 

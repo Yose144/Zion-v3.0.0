@@ -39,7 +39,7 @@ DoD v3.3 zůstává **0/9**. G8 run #5 běží do ~24. 11. G9 je od 26. 10. poza
 | EDGE | `62.171.141.136` | Pool (reálné IP minerů — záměrně ne za nginx), node2 :9446, node3 :9447, Grafana, Prometheus, fallback-miner |
 | Tunel | edge ↔ EDGE2 ~1 ms | Cross-box RPC je prakticky lokální |
 
-`V31/`, `scripts/` a `ZION_OS/` zůstávají v rootu. Jejich jméno je součást produkčního kontraktu ([`REPO-MAP.md`](../../REPO-MAP.md)).
+`V31/`, `scripts/` a `ZION_OS/` zůstávají v rootu. Jejich jméno je součást produkčního kontraktu ([`REPO-MAP.md`](../REPO-MAP.md)).
 
 ---
 

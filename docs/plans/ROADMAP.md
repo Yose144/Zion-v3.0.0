@@ -1,6 +1,6 @@
 # ZION Roadmap
 
-> **Účel tohoto dokumentu:** Vysokoúrovňová časová osa a navigační rozcestník. Detailní pravomoci, důkazy a statusové štítky jsou v [`MiseAmenti/`](canon/books/MiseAmenti/README.md).
+> **Účel tohoto dokumentu:** Vysokoúrovňová časová osa a navigační rozcestník. Detailní pravomoci, důkazy a statusové štítky jsou v [`MiseAmenti/`](../../canon/books/MiseAmenti/README.md).
 >
 > **Aktuální vývojová baseline:** 3.2.0 "One Love" Mainnet Beta (pro ověření live statusu viz `StatusV3.md` / operace).
 >
@@ -8,29 +8,29 @@
 
 > **Aktuální live baseline:** 3.2.0 "One Love" (V31 Mainnet Beta, protokol `zion-v3-node/3.1.0-alpha`) — ověřitelné na EDGE2/Edge a v `StatusV3.md`.
 >
-> **Vývojový horizont:** 3.3.0 "Nirvana" (Global Assimilation / Attention) — cíl, nikoli dosažený release; status a evidence v [`MiseAmenti/07-Registr-Dukazu.md`](canon/books/MiseAmenti/07-Registr-Dukazu.md).
+> **Vývojový horizont:** 3.3.0 "Nirvana" (Global Assimilation / Attention) — cíl, nikoli dosažený release; status a evidence v [`MiseAmenti/07-Registr-Dukazu.md`](../../canon/books/MiseAmenti/07-Registr-Dukazu.md).
 >
 > **Aspirativní veřejný horizont:** odložen (TBD) — není závazný datum launchi.
 >
 > **Naposledy upraveno:** 2026-10-26
 >
-> **Kanonický integrační corpus:** [`MiseAmenti/`](canon/books/MiseAmenti/README.md)
+> **Kanonický integrační corpus:** [`MiseAmenti/`](../../canon/books/MiseAmenti/README.md)
 >
-> **Technický execution companion 3.3:** [`V33_NIRVANA_MASTER_PLAN.md`](docs/3.2/V33_NIRVANA_MASTER_PLAN.md)
+> **Technický execution companion 3.3:** [`V33_NIRVANA_MASTER_PLAN.md`](../3.2/V33_NIRVANA_MASTER_PLAN.md)
 >
-> **Aktuální plánování (2026-10-26):** mapa 3.3 [`NIRVANA-V3.3-MAP.md`](docs/3.3/NIRVANA-V3.3-MAP.md) · checklist 3.3 [`NIRVANA-V3.3-CHECKLIST.md`](docs/3.3/NIRVANA-V3.3-CHECKLIST.md) · cesta 3.2 ALPHA → BETA → Mainnet Stable [`docs/3.2/3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md) — sekce „Where we are now" níže je historický snapshot k 2026-08-31.
+> **Aktuální plánování (2026-10-26):** mapa 3.3 [`NIRVANA-V3.3-MAP.md`](../3.3/NIRVANA-V3.3-MAP.md) · checklist 3.3 [`NIRVANA-V3.3-CHECKLIST.md`](../3.3/NIRVANA-V3.3-CHECKLIST.md) · cesta 3.2 ALPHA → BETA → Mainnet Stable [`docs/3.2/3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md) — sekce „Where we are now" níže je historický snapshot k 2026-08-31.
 >
-> **Canonical 3.2 forward plan:** [`docs/3.2/ROADMAP.md`](./docs/3.2/ROADMAP.md)
+> **Canonical 3.2 forward plan:** [`docs/3.2/ROADMAP.md`](../3.2/ROADMAP.md)
 >
-> **Detailní plán 3.2.1–3.2.9:** [`docs/3.2/3.2.1-3.2.9_PLAN.md`](./docs/3.2/3.2.1-3.2.9_PLAN.md)
+> **Detailní plán 3.2.1–3.2.9:** [`docs/3.2/3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md)
 >
-> **Marketing / launch plan:** [`OneLoveV3.2.md`](./docs/3.2/OneLoveV3.2.md)
+> **Marketing / launch plan:** [`OneLoveV3.2.md`](../3.2/OneLoveV3.2.md)
 >
-> **Technical execution plan:** [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md)
+> **Technical execution plan:** [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md)
 >
-> **ZIS Multichain Wallet plan:** [`ZIS_WALLET_PLAN.md`](docs/3.2/ZIS_WALLET_PLAN.md) (canonical; předchozí [`ZionDexZis.md`](./docs/3.2/ZionDexZis.md) je superseded — historický)
+> **ZIS Multichain Wallet plan:** [`ZIS_WALLET_PLAN.md`](../3.2/ZIS_WALLET_PLAN.md) (canonical; předchozí [`ZionDexZis.md`](../3.2/ZionDexZis.md) je superseded — historický)
 >
-> **Live status:** [`StatusV3.md`](docs/3.2/StatusV3.md) · [`V31/STATUS.md`](./V31/STATUS.md)
+> **Live status:** [`StatusV3.md`](../3.2/StatusV3.md) · [`V31/STATUS.md`](../../V31/STATUS.md)
 
 ---
 
@@ -38,15 +38,15 @@
 
 ZION v3 is **3.2.0 Mainnet Beta** — live on two hosts (EDGE2 = primary + web ingress + app stack, EDGE = pool + followers + ops), producing blocks continuously.
 
-- **Chain height, difficulty, mempool, service inventory:** do not duplicate numbers here — canonical live state is [`docs/3.2/StatusV3.md`](docs/3.2/StatusV3.md) §1–§2. Numbers in a roadmap go stale within days; a roadmap is not a status page.
-- Network maturity gate **G8** (30-day ≥99.9 % uptime, no incident ≥900 s) is running as run **#6** `g8-20261029T234617Z`, target end **2026-11-28T23:46:17Z** — canonical record in [`docs/3.2/StatusV3.md`](docs/3.2/StatusV3.md) and `NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md` §1.3.
+- **Chain height, difficulty, mempool, service inventory:** do not duplicate numbers here — canonical live state is [`docs/3.2/StatusV3.md`](../3.2/StatusV3.md) §1–§2. Numbers in a roadmap go stale within days; a roadmap is not a status page.
+- Network maturity gate **G8** (30-day ≥99.9 % uptime, no incident ≥900 s) is running as run **#6** `g8-20261029T234617Z`, target end **2026-11-28T23:46:17Z** — canonical record in [`docs/3.2/StatusV3.md`](../3.2/StatusV3.md) and `NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md` §1.3.
 - Both V31 nodes, pool, multichain, DAO, OASIS, ZIS, website, marketplace, dashboard and the L5/L6 fund trackers are active.
 - Trinity / multi-stream mining validated on the Edge pool (ZION + external GPU/CPU streams).
 - Native SQLite TX/address index active; explorer reads net-of-change amounts.
 - ZIS Identity Service live on `auth.zionterranova.com` (EdDSA/JWKS).
-- **Next stage is RC quality, not new features:** see [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](docs/3.3/NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) — it is the single entry point for all v3.3 planning (waves W0–W6, acceptance gates KS-1…KS-9, critical path).
+- **Next stage is RC quality, not new features:** see [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](../3.3/NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) — it is the single entry point for all v3.3 planning (waves W0–W6, acceptance gates KS-1…KS-9, critical path).
 
-Historical 3.1 reports are archived in [`docs/3.1/REPORTS/`](./docs/3.1/REPORTS/).
+Historical 3.1 reports are archived in [`docs/3.1/REPORTS/`](../3.1/REPORTS/).
 
 ---
 
@@ -65,7 +65,7 @@ Historical 3.1 reports are archived in [`docs/3.1/REPORTS/`](./docs/3.1/REPORTS/
 4. **L5 Free World** — Dedicated web portal, live 5% L1 coinbase treasury tracker, global water & permaculture projects.
 5. **L6 Issobella** — Quantum warp engine theoretical research (Alcubierre-Ekam metric), DeSci repository, NCL-powered physics simulations.
 
-See the complete technical blueprint in [`V33_NIRVANA_MASTER_PLAN.md`](docs/3.2/V33_NIRVANA_MASTER_PLAN.md), and its deep mythological/philosophical companion — the six worlds, the bardo of transition, Shambhala, the Halls of Amenti, and the 100-year plan for Generation Z — in [`canon/books/NirvanaCloud/`](./canon/books/NirvanaCloud/00-README.md).
+See the complete technical blueprint in [`V33_NIRVANA_MASTER_PLAN.md`](../3.2/V33_NIRVANA_MASTER_PLAN.md), and its deep mythological/philosophical companion — the six worlds, the bardo of transition, Shambhala, the Halls of Amenti, and the 100-year plan for Generation Z — in [`canon/books/NirvanaCloud/`](../../canon/books/NirvanaCloud/00-README.md).
 
 ---
 
@@ -73,15 +73,15 @@ See the complete technical blueprint in [`V33_NIRVANA_MASTER_PLAN.md`](docs/3.2/
 
 | Version | Canonical doc |
 |---------|---------------|
-| 3.1 (V31 Mainnet Alpha) | [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PLAN_TO_3.1_RECONCILED.md) |
-| 3.0.9 | [`docs/3.0.9/SECURITY_AUDIT_REPORT.md`](./docs/3.0.9/SECURITY_AUDIT_REPORT.md) |
-| 3.0.8 | [`docs/3.0.8/MAINNET_ALPHA_L2_UNIFICATION.md`](./docs/3.0.8/MAINNET_ALPHA_L2_UNIFICATION.md) |
-| 3.0.7 | [`docs/3.0.7/TRINITY_ALL_GREEN_PLAN.md`](./docs/3.0.7/TRINITY_ALL_GREEN_PLAN.md) |
-| 3.0.6 | [`docs/3.0.6/AuxPowTriplePlan.md`](./docs/3.0.6/AuxPowTriplePlan.md) |
-| 3.0.5 | [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](./docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) |
-| 3.0.4 | [`docs/3.0.4/3.0.4.md`](./docs/3.0.4/3.0.4.md) |
-| 3.0.3 | [`docs/3.0.3/README.md`](./docs/3.0.3/README.md) |
+| 3.1 (V31 Mainnet Alpha) | [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](../3.1/PLAN_TO_3.1_RECONCILED.md) |
+| 3.0.9 | [`docs/3.0.9/SECURITY_AUDIT_REPORT.md`](../3.0.9/SECURITY_AUDIT_REPORT.md) |
+| 3.0.8 | [`docs/3.0.8/MAINNET_ALPHA_L2_UNIFICATION.md`](../3.0.8/MAINNET_ALPHA_L2_UNIFICATION.md) |
+| 3.0.7 | [`docs/3.0.7/TRINITY_ALL_GREEN_PLAN.md`](../3.0.7/TRINITY_ALL_GREEN_PLAN.md) |
+| 3.0.6 | [`docs/3.0.6/AuxPowTriplePlan.md`](../3.0.6/AuxPowTriplePlan.md) |
+| 3.0.5 | [`docs/3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md`](../3.0.5/ZION_3.0.5_ALL_GREEN_RUNBOOK.md) |
+| 3.0.4 | [`docs/3.0.4/3.0.4.md`](../3.0.4/3.0.4.md) |
+| 3.0.3 | [`docs/3.0.3/README.md`](../3.0.3/README.md) |
 
 ---
 
-*Generated from [`docs/3.2/ROADMAP.md`](./docs/3.2/ROADMAP.md) · V31 is the active mainnet track in [`V31/`](./V31/).*
+*Generated from [`docs/3.2/ROADMAP.md`](../3.2/ROADMAP.md) · V31 is the active mainnet track in [`V31/`](../../V31/).*

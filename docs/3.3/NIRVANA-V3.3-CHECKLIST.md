@@ -228,7 +228,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md). Zde
 
 ## Rychlá autonomní fronta (další kroky)
 
-> **Stav 11. 11.:** body 1–13 níže jsou historické (31. 10.). Aktuální fronta = [`DOC_VS_CODE_ANALYSIS_2026-11-10.md`](DOC_VS_CODE_ANALYSIS_2026-11-10.md) §4 a [`PLAN.md`](../../PLAN.md) §8. Uzavřeno 11. 11.: M2 payout monitoring (probe+rules+pool `ece8b6965`), ZIS agent sub-accounts (kód, 60/60), Charta R9 factual, EDGE2 `networkd-wait-online`.
+> **Stav 11. 11.:** body 1–13 níže jsou historické (31. 10.). Aktuální fronta = [`DOC_VS_CODE_ANALYSIS_2026-11-10.md`](DOC_VS_CODE_ANALYSIS_2026-11-10.md) §4 a [`PLAN.md`](../plans/PLAN_V3.3.md) §8. Uzavřeno 11. 11.: M2 payout monitoring (probe+rules+pool `ece8b6965`), ZIS agent sub-accounts (kód, 60/60), Charta R9 factual, EDGE2 `networkd-wait-online`.
 
 1. 🔀 P0-3 — rotace PRL RPC credentialu (👤) + per-service env subsety; P0-1/P0-2 ✅ 26. 10. · audit 31.10. v [`docs/3.2/P0-3-SHARED-ENV-AUDIT.md`](../3.2/P0-3-SHARED-ENV-AUDIT.md): 186 vars, 24 secret-ish, 15 služeb sdílí `edge-environment.sh` (mode 0644) — subset plan + rotace runbook připraveny, čeká 👤
 2. ~~🤖 Provenance manifest + build z čistého `git archive` (8.B3)~~ ✅ 28. 10. (collector + baseline; `git archive` build nese `.git-archive-sha`)

@@ -73,7 +73,7 @@ Kdo chce celou cestu — od dítěte na přídi (ep. 1) přes zahrady Země a st
 - **NirvanaCloud — hluboké rozšíření (šest světů, bardo, Šambhala, Síně Amenti, Generace Z, stoletý plán):** [`../NirvanaCloud/00-README.md`](../NirvanaCloud/00-README.md)
 - **Lumi — Cesta domů (sjednocující kniha, DRAFT):** [`../Lumi/00-README.md`](../Lumi/00-README.md)
 - **Aktuální stav sítě v reálném čase:** [`../../../StatusV3.md`](../../../docs/3.2/StatusV3.md)
-- **Hlavní roadmapa projektu:** [`../../../ROADMAP.md`](../../../ROADMAP.md)
+- **Hlavní roadmapa projektu:** [`../../../docs/plans/ROADMAP.md`](../../../docs/plans/ROADMAP.md)
 - **Narativní kořeny:** [`../SulZeme/00-README.md`](../SulZeme/00-README.md)
 - **Veřejný Master Whitepaper 3.2:** [`../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md`](../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md)
 

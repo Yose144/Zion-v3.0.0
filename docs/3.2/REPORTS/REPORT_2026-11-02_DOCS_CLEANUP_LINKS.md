@@ -138,4 +138,4 @@ rozhodnutí, ne technické.
 ---
 
 **Souvisí:** [`NIRVANA-V3.3-MAP.md`](../../3.3/NIRVANA-V3.3-MAP.md) ·
-[`docs/3.3/README.md`](../../3.3/README.md) · [`REPO-MAP.md`](../../../REPO-MAP.md)
+[`docs/3.3/README.md`](../../3.3/README.md) · [`REPO-MAP.md`](../../REPO-MAP.md)

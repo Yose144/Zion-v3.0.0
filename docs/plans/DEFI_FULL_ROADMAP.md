@@ -370,9 +370,9 @@ Q4 2026:  BitcoinTalk ANN, CoinGecko, public launch
 ---
 
 *Viz také:*
-- [`LIQUIDITY_PLAN.md`](../LIQUIDITY_PLAN.md) — přesné ETH čísla pro pool seeding
-- [`BRIDGE_MAINNET_READINESS.md`](../BRIDGE_MAINNET_READINESS.md) — bridge stav
-- [`V3/ROADMAP.md`](../V3/ROADMAP.md) — technická L1 roadmapa
-- [`StatusV3.md`](3.2/StatusV3.md) — aktuální live stav
+- [`LIQUIDITY_PLAN.md`](../3.0.3/LIQUIDITY_PLAN.md) — přesné ETH čísla pro pool seeding
+- [`BRIDGE_MAINNET_READINESS.md`](../3.0.3/BRIDGE_MAINNET_READINESS.md) — bridge stav
+- [`V3/ROADMAP.md`](../../archive/V3/ROADMAP.md) — technická L1 roadmapa
+- [`StatusV3.md`](../3.2/StatusV3.md) — aktuální live stav
 
 *Generated with [Devin](https://devin.ai)*
