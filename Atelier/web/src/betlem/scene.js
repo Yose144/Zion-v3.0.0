@@ -1,3 +1,5 @@
+import { MODEL_IDS, createAvatarRenderer } from "./avatar-models.js";
+
 const canvas = document.querySelector("canvas");
 const status = document.querySelector("#status");
 const selector = document.querySelector("#avatar");
@@ -70,6 +72,7 @@ function person(id,name,x,z,garment,height=1.65,hair=[.22,.14,.11],form="charact
     globe([x,.6,z],[.30,.45,.30],garment,4,8);
     return;
   }
+  const first=verts.length/6;
   const skin=[[.74,.53,.36],[.52,.34,.23],[.84,.66,.48]][(name.codePointAt(0)||0)%3];
   for(const sign of [-1,1]){
     tube([x+sign*.13,.08,z],[x+sign*.12,height*.36,z],.085,.09,colors.wood,5);
@@ -78,17 +81,19 @@ function person(id,name,x,z,garment,height=1.65,hair=[.22,.14,.11],form="charact
   tube([x,height*.22,z],[x,height*.71,z],.23,.21,garment,7);
   globe([x,height*.83,z],[height*.091,height*.11,height*.085],skin,4,7);
   globe([x,height*.905,z-.016],[height*.094,height*.05,height*.087],hair,4,7);
+  Object.assign(placements.get(id),{first,end:verts.length/6});
 }
 
 const fixed = {
   "OASIS-001":[-6,7,[.27,.40,.60]], "OASIS-002":[-2.8,6,[.21,.35,.61]], "OASIS-003":[-2.0,5.9,[.72,.44,.43],1.68,true],
   "OASIS-004":[7.8,7,[.65,.34,.23]], "OASIS-005":[-5,3,[.61,.50,.34],1.55,true], "OASIS-016":[-6.9,6.45,[.56,.24,.40]],
+  "OASIS-019":[3.05,6,[.63,.52,.38],1.79],
   "OASIS-045":[8.7,2.6,[.70,.54,.39]], "OASIS-046":[1,8,[.35,.47,.28],1.18,true],
   "OASIS-047":[0,2.25,colors.gold,.8], "OASIS-048":[-12,-3.4,[.73,.68,.55]], "OASIS-049":[-1.2,8,[.67,.39,.44],1.12,true]
 };
 const sceneOnly = [
   ["Sarah Issobela",-4.3,3.4,[.47,.30,.45],1.48,true],
-  ["Marie Magdaléna",2.2,6,[.57,.28,.25]], ["Ježíš z Nazareta",3.05,6,[.63,.52,.38],1.79],
+  ["Marie Magdaléna",2.2,6,[.57,.28,.25]],
   ["Josef",-1.87,1.55,[.49,.36,.25],1.71], ["Marie",1.87,1.55,[.25,.39,.56],1.60],
   ["Kovář",-8.7,5.95,[.40,.33,.27]], ["Čaitanja",-7.9,6.3,[.88,.54,.23]],
   ["Noe",7.25,5.7,[.50,.42,.33]], ["Sedlák",8.5,4.8,[.37,.45,.34]], ["Poutník z Genesis",-9.5,3.5,[.39,.43,.37]]
@@ -175,7 +180,7 @@ function placeRoster(roster){
     let [x,z,color,height,blond]=fixed[id]??[];
     if(x===undefined){[x,z]=free[index];color=palette[index%palette.length];height=1.49+.09*(index%4);index++;}
     if(id==="OASIS-047"){placements.set(id,{name:"Hiran · záře v jeslích",x,z,height:.85});continue;}
-    person(id,id==="OASIS-049"?"Lumi / Elizabet":id==="OASIS-046"?"Malý princ":name,x,z,color,height,blond?[.82,.67,.40]:undefined,form);
+    person(id,id==="OASIS-049"?"Lumi / Elizabet":id==="OASIS-046"?"Malý princ":id==="OASIS-019"?"Ježíš z Nazareta":name,x,z,color,height,blond?[.82,.67,.40]:undefined,form);
   }
   for(const [name,x,z,color,height,blond] of sceneOnly) person("scene:"+name,name,x,z,color,height,blond?[.82,.67,.40]:undefined);
 }
@@ -186,7 +191,7 @@ function shader(type,code){
   return s;
 }
 
-function gpuRenderer(){
+function gpuRenderer(avatarRenderer, models){
   const program=gl.createProgram();
   gl.attachShader(program,shader(gl.VERTEX_SHADER,`
     attribute vec3 point, color; uniform vec3 eye, right, up, forward;
@@ -202,19 +207,32 @@ function gpuRenderer(){
   gl.linkProgram(program);
   if(!gl.getProgramParameter(program,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
   gl.useProgram(program);
-  gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());
+  const environmentBuffer=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,environmentBuffer);
   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(verts),gl.STATIC_DRAW);
-  for(const [name,offset] of [["point",0],["color",12]]){
-    const location=gl.getAttribLocation(program,name);gl.enableVertexAttribArray(location);
-    gl.vertexAttribPointer(location,3,gl.FLOAT,false,24,offset);
-  }
+  const attributes=[["point",0],["color",12]].map(([name,offset])=>[gl.getAttribLocation(program,name),offset]);
   gl.enable(gl.DEPTH_TEST);gl.clearColor(.067,.109,.167,1);
   const u=Object.fromEntries(["eye","right","up","forward","scale"].map(k=>[k,gl.getUniformLocation(program,k)]));
   return (w,h,eye,right,up,forward,focal)=>{
+    gl.useProgram(program);
+    gl.bindBuffer(gl.ARRAY_BUFFER,environmentBuffer);
+    for(const [location,offset] of attributes){
+      gl.enableVertexAttribArray(location);
+      gl.vertexAttribPointer(location,3,gl.FLOAT,false,24,offset);
+    }
     gl.viewport(0,0,w,h);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     gl.uniform3fv(u.eye,eye);gl.uniform3fv(u.right,right);gl.uniform3fv(u.up,up);gl.uniform3fv(u.forward,forward);
     gl.uniform2f(u.scale,focal*h/w,focal);
-    gl.drawArrays(gl.TRIANGLES,0,verts.length/6);
+    let start=0;
+    const replacements=[...models.keys()].map(id=>placements.get(id)).sort((a,b)=>a.first-b.first);
+    for(const {first,end} of replacements){
+      gl.drawArrays(gl.TRIANGLES,start,first-start);
+      start=end;
+    }
+    gl.drawArrays(gl.TRIANGLES,start,verts.length/6-start);
+    for(const [location] of attributes) gl.disableVertexAttribArray(location);
+    if(models.size) avatarRenderer.draw(models,eye,right,up,forward,[focal*h/w,focal]);
+
   };
 }
 
@@ -263,13 +281,55 @@ function canvasRenderer(){
 function renderScene(roster){
   if(roster.length!==200 || new Set(roster.map(([id])=>id)).size!==200) throw new Error("Roster OASIS nesouhlasí.");
   buildEnvironment();placeRoster(roster);
-  const draw=gl?gpuRenderer():canvasRenderer();
+  let avatarRenderer;
+  try {
+    if(gl && typeof createImageBitmap==="function") avatarRenderer=createAvatarRenderer(gl,shader);
+  } catch(error) {
+    console.warn("GLB vykreslení není dostupné.",error);
+  }
+  const models=new Map();
+  const pending=new Set();
+  const failed=new Set();
+  const requests=[];
+  let active=0;
+  const modelStatus=document.querySelector("#model-status");
+  function updateModelStatus(){
+    if(!avatarRenderer) modelStatus.textContent="V tomto prohlížeči se zobrazují pracovní figury.";
+    else if(pending.size) modelStatus.textContent="Načítám modely OASIS · "+models.size+" ze 6 připraveno.";
+    else if(models.size===6) modelStatus.textContent="Všech šest modelů OASIS je načteno.";
+    else if(failed.size) modelStatus.textContent=models.size+" ze 6 modelů OASIS načteno. "+failed.size+" se nepodařilo načíst. Opakuj výběr pohledu U jeslí.";
+    else if(models.size) modelStatus.textContent=models.size+" ze 6 modelů OASIS načteno. Ostatní lze načíst z pohledu U jeslí.";
+    else modelStatus.textContent="Modely OASIS načte pohled U jeslí nebo výběr některé ze šesti hlavních postav.";
+  }
+  function startRequests(){
+    while(active<2 && requests.length){
+      const id=requests.shift();
+      active++;
+      avatarRenderer.load(MODEL_IDS[id],placements.get(id)).then(model=>models.set(id,model))
+        .catch(error=>{failed.add(id);console.warn("Model "+id+" zůstává jako pracovní figura.",error);})
+        .finally(()=>{active--;pending.delete(id);updateModelStatus();startRequests();});
+    }
+  }
+  function requestModels(ids){
+    if(!avatarRenderer) return;
+    for(const id of ids){
+      if(!Object.hasOwn(MODEL_IDS,id)||!placements.has(id)||models.has(id)||pending.has(id)) continue;
+      failed.delete(id);
+      pending.add(id);
+      requests.push(id);
+    }
+    updateModelStatus();
+    startRequests();
+  }
+  updateModelStatus();
+  const draw=gl?gpuRenderer(avatarRenderer,models):canvasRenderer();
   const pad=document.querySelector(".pad");
   const presets={overview:[-.20,.50,56,[0,2.4,0]],entrance:[0,-.012,0,[0,1.65,32]],center:[0,.025,0,[0,1.65,12.2]],east:[1.33,0,0,[23,1.65,0]]};
   let yaw,pitch,distance,anchor,walking,pointer;
   const keys=new Set();
   function setView(name){
     [yaw,pitch,distance,anchor]=presets[name];
+    if(name==="center") requestModels(Object.keys(MODEL_IDS));
     anchor=anchor.slice();walking=distance===0;keys.clear();pad.hidden=!walking;
     document.querySelectorAll("[data-view]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.view===name)));
     canvas.focus({preventScroll:true});
@@ -277,6 +337,7 @@ function renderScene(roster){
   function locate(id){
     const p=placements.get(id);
     if (!p){status.textContent=roster.length+" avatarů OASIS · prostorová studie";return;}
+    requestModels([id]);
     setView("overview");anchor=[p.x,p.height*.6,p.z];distance=7;pitch=.29;
     status.textContent=p.name+" · "+(id.startsWith("scene:")?"postava betléma":id);
   }
@@ -323,7 +384,7 @@ function renderScene(roster){
     if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
     const eye=walking?anchor:sub(anchor,mul(forward,distance));
     const focal=Math.min(1.65,1.25*w/h);
-    const key=[w,h,...eye,yaw,pitch].join(",");
+    const key=[w,h,...eye,yaw,pitch,models.size].join(",");
     if(key!==lastFrame){draw(w,h,eye,right,up,forward,focal);lastFrame=key;}
   }
   requestAnimationFrame(frame);
