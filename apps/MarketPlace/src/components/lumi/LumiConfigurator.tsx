@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Check, Flame, Package, ShoppingCart, Sparkles } from 'lucide-react';
 import type { ShopProductData } from '@/types/shop';
 import { LUMI_MOTIFS, DEFAULT_MOTIF, type LumiMotif } from '@/data/lumiMotifs';
@@ -27,19 +28,22 @@ export default function LumiConfigurator({
   const { lang, t } = useLangT();
   const cs = lang === 'cs';
   const { add } = useCart();
+  const router = useRouter();
   const [slug, setSlug] = useState(initialMotif && LUMI_MOTIFS.some((m) => m.slug === initialMotif) ? initialMotif : DEFAULT_MOTIF);
   const [added, setAdded] = useState(false);
 
   const motif = LUMI_MOTIFS.find((entry) => entry.slug === slug) ?? LUMI_MOTIFS[0];
   const price = product?.priceCzk ?? 0;
-  const sellable = Boolean(product?.inStock);
+  // `/lumi` čte produkt přímo z DB, takže `active` filtrované API obchodu
+  // tu neplatí — deaktivovaný produkt se nesmí tvářit jako prodejný.
+  const sellable = Boolean(product?.inStock && product?.active);
 
   function handleAdd(goToCart = false) {
     if (!product) return;
     if (add(product, 1, motif.slug)) {
       setAdded(true);
       window.setTimeout(() => setAdded(false), 2400);
-      if (goToCart) window.location.href = '/cart';
+      if (goToCart) router.push('/cart');
     }
   }
 

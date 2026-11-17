@@ -27,7 +27,12 @@ export const metadata: Metadata = {
  * pravda. Motivy jsou prezentační data (`src/data/lumiMotifs.ts`) a vybraný
  * motiv se ukládá k řádku objednávky.
  */
-export default async function LumiPage() {
+export default async function LumiPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ motif?: string }>;
+}) {
+  const { motif } = await searchParams;
   let product: ShopProductData | null = null;
   try {
     product = await prisma.shopProduct.findUnique({ where: { externalId: MOTIF_PRODUCT_ID } });
@@ -53,7 +58,7 @@ export default async function LumiPage() {
         />
       </section>
 
-      <LumiConfigurator product={product} />
+      <LumiConfigurator product={product} initialMotif={motif} />
 
       <section className="mt-16 grid gap-6 md:grid-cols-3">
         <InfoCard

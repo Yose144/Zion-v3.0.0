@@ -24,12 +24,8 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
   const { add } = useCart();
   const { t, lang } = useLangT();
 
-  useEffect(() => {
-    setQty(1);
-    setImgError(false);
-    setAdded(false);
-  }, [product]);
-
+  // Reset stavu (množství, chyba obrázku, "přidáno") řeší `key={product.id}`
+  // na místě použití — změna produktu = remount, žádný sync-effect.
   useEffect(() => {
     if (!product) return;
     const onKey = (e: KeyboardEvent) => {

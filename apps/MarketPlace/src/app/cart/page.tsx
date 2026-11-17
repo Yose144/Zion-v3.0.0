@@ -135,17 +135,15 @@ export default function CartPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (caps && !caps.modes.card && payment === 'card') {
-      setPayment('transfer');
-    }
-  }, [caps, payment]);
-
-  useEffect(() => {
-    if (virtualOnly && shipping !== 'virtualni-nakup' && shipping !== 'virtualni-odber') {
-      setShipping('virtualni-nakup');
-    }
-  }, [virtualOnly, shipping]);
+  // Schopnosti plateb a virtuální košík doladíme ještě před commitem —
+  // stejný "adjust state during render" vzorec jako React docs, jen dřív,
+  // než se cokoli vykreslí se zastaralou platební metodou.
+  if (caps && !caps.modes.card && payment === 'card') {
+    setPayment('transfer');
+  }
+  if (virtualOnly && shipping !== 'virtualni-nakup' && shipping !== 'virtualni-odber') {
+    setShipping('virtualni-nakup');
+  }
 
   const shippingPrice = SHIPPING_PRICES[shipping];
   const finalTotal = total + shippingPrice;

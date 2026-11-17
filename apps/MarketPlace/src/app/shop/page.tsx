@@ -52,14 +52,31 @@ function ShopPageInner() {
 
   // Hluboký odkaz /shop?category=… je i živý — zpět/dopředu v prohlížeči
   // nebo příchod znovu na stránku s jiným kategoriovým parametrem Kategorie
-  // musí kopírovat URL, jinak by zůstala stará.
-  useEffect(() => {
-    setCategory(isKnownCategory(urlCategory) ? urlCategory : 'all');
-  }, [urlCategory]);
+  // musí kopírovat URL, jinak by zůstala stará. Render-adjust (React docs)
+  // místo effectu, ať se Kategorie propsyncne ještě před fetchí.
+  const [prevUrlCategory, setPrevUrlCategory] = useState(urlCategory);
+  if (urlCategory !== prevUrlCategory) {
+    setPrevUrlCategory(urlCategory);
+    const next = isKnownCategory(urlCategory) ? urlCategory : 'all';
+    if (next !== category) {
+      setLoading(true);
+      setCategory(next);
+    }
+  }
+
+  const pickCategory = (next: string) => {
+    if (next === category) return;
+    setLoading(true);
+    setCategory(next);
+  };
+  const pickSort = (next: string) => {
+    if (next === sort) return;
+    setLoading(true);
+    setSort(next);
+  };
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
 
     const filters: ShopProductsFilters = {
       sort: sort as ShopProductsFilters['sort'],
@@ -68,12 +85,19 @@ function ShopPageInner() {
     };
     if (category !== 'all') filters.category = category;
 
-    getShopProducts(filters).then((res) => {
-      if (cancelled) return;
-      setProducts(res?.data ?? []);
-      setTotal(res?.total ?? 0);
-      setLoading(false);
-    });
+    getShopProducts(filters)
+      .then((res) => {
+        if (cancelled) return;
+        setProducts(res?.data ?? []);
+        setTotal(res?.total ?? 0);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setProducts([]);
+        setTotal(0);
+        setLoading(false);
+      });
 
     return () => { cancelled = true; };
   }, [category, sort]);
@@ -101,7 +125,7 @@ function ShopPageInner() {
       <div className="lg:hidden space-y-3">
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
           <button
-            onClick={() => setCategory('all')}
+            onClick={() => pickCategory('all')}
             className={`shrink-0 px-3.5 py-2 rounded-full text-xs font-bold border transition-all ${
               category === 'all'
                 ? 'bg-rasta-gold/20 text-white border-rasta-gold/40'
@@ -113,7 +137,7 @@ function ShopPageInner() {
           {SHOP_CATEGORY_ORDER.map((c) => (
             <button
               key={c}
-              onClick={() => setCategory(c)}
+              onClick={() => pickCategory(c)}
               className={`shrink-0 px-3.5 py-2 rounded-full text-xs font-bold border transition-all ${
                 category === c
                   ? 'bg-rasta-gold/20 text-white border-rasta-gold/40'
@@ -126,7 +150,7 @@ function ShopPageInner() {
         </div>
         <select
           value={sort}
-          onChange={(e) => setSort(e.target.value)}
+          onChange={(e) => pickSort(e.target.value)}
           className="input-zion w-full"
           aria-label={t('shop.sortTitle')}
         >
@@ -146,7 +170,7 @@ function ShopPageInner() {
             </h3>
             <div className="space-y-1">
               <button
-                onClick={() => setCategory('all')}
+                onClick={() => pickCategory('all')}
                 className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
                   category === 'all'
                     ? 'bg-rasta-gold/20 text-white border border-rasta-gold/30'
@@ -158,7 +182,7 @@ function ShopPageInner() {
               {SHOP_CATEGORY_ORDER.map((c) => (
                 <button
                   key={c}
-                  onClick={() => setCategory(c)}
+                  onClick={() => pickCategory(c)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
                     category === c
                       ? 'bg-rasta-gold/20 text-white border border-rasta-gold/30'
@@ -177,7 +201,7 @@ function ShopPageInner() {
             </h3>
             <select
               value={sort}
-              onChange={(e) => setSort(e.target.value)}
+              onChange={(e) => pickSort(e.target.value)}
               className="input-zion w-full"
             >
               {sortOptions.map((o) => (
@@ -217,7 +241,7 @@ function ShopPageInner() {
         </div>
       </div>
 
-      <ShopProductModal product={selected} onClose={() => setSelected(null)} />
+      <ShopProductModal key={selected?.id ?? 'closed'} product={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }
