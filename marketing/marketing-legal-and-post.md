@@ -97,6 +97,9 @@ Do 24. 12. 2026 je k Passu 15 552 ZION a ke knize 31 104 ZION.
 
 Před prvním postem: ručně koupit Pass a ověřit, že dorazil e-mail s kódem `ZAP-…`.
 
+
+Poznámka k textu: věta „obě přijdou hned e-mailem“ (a u stránky/IG „Obojí přijde e-mailem“) se týká Passu (kód `ZAP-…`) a knihy (ZIP), ne bonusu ZION. Věta o bonusu („Kdo koupí do 24. 12., dostane…“ / „Do 24. 12. 2026 je k Passu…“) úmyslně neříká, že tokeny přijdou hned e-mailem. Obchodní podmínky marketu (§ 7) ale stanoví, že tokeny se připíší až po spuštění mainnetu — viz kontrola webu níže.
+
 ---
 
 ## 3. Zdroje
@@ -123,3 +126,18 @@ Před prvním postem: ručně koupit Pass a ověřit, že dorazil e-mail s kóde
 - Meta, zakázané obchodní praktiky: https://transparency.meta.com/policies/community-standards/prohibited-commercial-practices/
 - Meta, limity zpráv: https://www.facebook.com/help/132736263468691
 - Meta, krypto reklamy: https://transparency.meta.com/policies/ad-standards/restricted-goods-services/cryptocurrency-products-and-services
+
+---
+
+## 4. Kontrola webu 17. 11. 2026
+
+Kontrola live stránek `https://market.zionterranova.com` a `https://lumi.zionterranova.com` (Europe/Prague, kolem 18:28). Kampanové odkazy v tomto souboru jsou bez `www`, vedou na správný Pass (108 Kč, 15 552 ZION) a knihu (216 Kč, 31 104 ZION) a po ověření `curl` vrací HTTP 200. Ostatní nálezy zůstávají otevřené — tento soubor je jen eviduje, opravy e-shopu sem nepatří.
+
+- [ ] **Certifikát `www.market`:** `https://www.market.zionterranova.com` nejde otevřít (TLS: certifikát pokrývá jen `market.zionterranova.com`, ne `www`). Certifikát apexu vyprší 29. 12. 2026. V postech zůstává adresa bez `www`.
+- [ ] **CTA „Koupit“:** tlačítka na stránkách Passu i knihy vedou na obecný `/shop` s dalšími položkami, ne rovnou na pokladnu daného produktu.
+- [ ] **Lumi na marketu mimo plán:** homepage i `/vanoce` ukazují Lumi 2 („Druhá lucerna“) za 490 Kč + 70 560 ZION, `inStock: false`. Plán drží fyzickou lucernu mimo kampaň. Na `https://lumi.zionterranova.com` se Lumi 2 prodává za 790 Kč (nesoulad cen 490 vs 790).
+- [ ] **Údaje prodávajícího na produktových stránkách:** IČO a kontakt jsou jen na `/legal` a `/terms`, ne na stránkách produktů.
+- [ ] **Souhlas s digitálním obsahem v pokladně:** chybí samostatný souhlas s okamžitým dodáním digitálního obsahu (pro zánik 14denního odstoupení podle OZ § 1837 písm. l).
+- [ ] **Nesoulad DPH:** podmínky marketu uvádějí DPH, Lumi web píše, že prodávající není plátce DPH.
+- [ ] **Čas dodání tokenů vs. podmínky § 7:** kampaň slibuje bonus k nákupu do 24. 12. 2026; podmínky marketu v § 7 říkají, že tokeny přijdou až po spuštění mainnetu. Text postu proto neříká, že bonus přijde hned e-mailem. Tuto kolizi je potřeba sladit (podmínky, text kampaně, nebo obojí), než se začne postovat.
+- [ ] **Veřejný ZIP knihy bez nákupu:** `https://market.zionterranova.com/shop/downloads/Kralovstvi_srdce_kompletni_edice_5_jazyku.zip` vrací HTTP 200 a odkaz je ve veřejném API `GET /api/shop/products` u `book-001` i `lamp-001`. Oprava kódu patří do samostatného PR, ne na `main` (nasazení z `main` by mohlo jít rovnou na živý obchod).
