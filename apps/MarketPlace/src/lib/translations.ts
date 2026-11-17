@@ -58,8 +58,11 @@ const t = {
     ctaPrimary: { cs: 'Prozkoumat artefakty', en: 'Browse Artifacts', es: 'Ver artefactos', pt: 'Ver artefactos', fr: 'Voir les artefacts' },
     ctaSecondary: { cs: 'Koupit knihu', en: 'Buy the Book', es: 'Comprar el libro', pt: 'Comprar o livro', fr: 'Acheter le livre' },
     artAlt: {
-      cs: 'Lumi – Království Srdce. Tesař, Lumi a Malý princ u rozsvícené lucerny v pobřežní dílně.',
-      en: 'Lumi – Kingdom of the Heart. The carpenter, Lumi and the Little Prince beside a lit lantern in a workshop by the sea.',
+      cs: 'Tesař, Lumi a Malý princ s vánoční lucernou v pobřežní dílně.',
+      en: 'The carpenter, Lumi and the Little Prince with a Christmas lantern in a workshop by the sea.',
+      es: 'El carpintero, Lumi y el Principito con una linterna navideña en un taller junto al mar.',
+      pt: 'O carpinteiro, Lumi e o Principezinho com um lanternim de Natal numa oficina à beira-mar.',
+      fr: 'Le menuisier, Lumi et le Petit Prince avec une lanterne de Noël dans un atelier au bord de la mer.',
     },
   },
 

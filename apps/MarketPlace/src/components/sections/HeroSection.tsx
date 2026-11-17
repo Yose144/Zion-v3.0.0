@@ -11,11 +11,11 @@ export default function HeroSection() {
     <section className={styles.workshop} aria-labelledby="market-home-title">
       <img
         className={styles.art}
-        src="/images/design-v1/lumi-kralovstvi-srdce.webp"
-        srcSet="/images/design-v1/lumi-kralovstvi-srdce-m.webp 960w, /images/design-v1/lumi-kralovstvi-srdce.webp 1672w"
+        src="/images/design-v1/lumi-vanocni-kralovstvi-srdce.webp"
+        srcSet="/images/design-v1/lumi-vanocni-kralovstvi-srdce-m.webp 960w, /images/design-v1/lumi-vanocni-kralovstvi-srdce.webp 1600w"
         sizes="(max-width: 1152px) calc(100vw - 2rem), 1120px"
-        width={1672}
-        height={941}
+        width={1600}
+        height={900}
         alt={t('hero.artAlt')}
         fetchPriority="high"
         decoding="async"
