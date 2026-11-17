@@ -13,7 +13,12 @@ export const COMPANY = {
   },
 };
 
-const VAT_RATE = 0.21;
+/**
+ * Omnity.One s.r.o. **není plátcem DPH** — ceny v obchodě i na faktuře jsou
+ * konečné a daň se neuvádí. Pole `*WithoutVat`/`vat*` v InvoiceItem zůstávají
+ * kvůli schématu, ale nesou hodnoty „cena = základ, DPH = 0" — dřív se tu
+ * uměle dělilo 1,21 a faktura tvrdila DPH 21 %, kterou firma neodvádí.
+ */
 
 function formatPrice(amount: number, decimals = 2): string {
   return amount.toLocaleString('cs-CZ', {
@@ -61,35 +66,31 @@ function buildItems(items: CartItemLike[], shippingCzk: number): InvoiceItem[] {
     const quantity = Math.max(1, Math.round(item.quantity || 1));
     const unitPrice = Number(item.priceCzk || 0);
     const totalPrice = quantity * unitPrice;
-    const priceWithoutVat = totalPrice / 1.21;
-    const vatAmount = totalPrice - priceWithoutVat;
 
     result.push({
       name: item.name || 'Produkt',
       quantity,
       unit: 'ks',
       unitPrice,
-      unitPriceWithoutVat: unitPrice / 1.21,
-      vatRate: 21,
-      vatAmount,
+      unitPriceWithoutVat: unitPrice,
+      vatRate: 0,
+      vatAmount: 0,
       totalPrice,
-      priceWithoutVat,
+      priceWithoutVat: totalPrice,
     });
   }
 
   if (shippingCzk > 0) {
-    const priceWithoutVat = shippingCzk / 1.21;
-    const vatAmount = shippingCzk - priceWithoutVat;
     result.push({
       name: 'Doprava',
       quantity: 1,
       unit: 'ks',
       unitPrice: shippingCzk,
-      unitPriceWithoutVat: shippingCzk / 1.21,
-      vatRate: 21,
-      vatAmount,
+      unitPriceWithoutVat: shippingCzk,
+      vatRate: 0,
+      vatAmount: 0,
       totalPrice: shippingCzk,
-      priceWithoutVat,
+      priceWithoutVat: shippingCzk,
     });
   }
 
@@ -213,9 +214,7 @@ export function buildInvoiceHtml(
           <td style="padding:12px 10px;border-bottom:1px solid #333;color:#e5e7eb;">${index + 1}</td>
           <td style="padding:12px 10px;border-bottom:1px solid #333;color:#e5e7eb;">${escapeHtml(item.name)}</td>
           <td style="padding:12px 10px;border-bottom:1px solid #333;color:#9af59a;text-align:center;">${item.quantity}</td>
-          <td style="padding:12px 10px;border-bottom:1px solid #333;color:#e5e7eb;text-align:right;">${formatPrice(item.unitPriceWithoutVat)}</td>
-          <td style="padding:12px 10px;border-bottom:1px solid #333;color:#e5e7eb;text-align:center;">${item.vatRate}%</td>
-          <td style="padding:12px 10px;border-bottom:1px solid #333;color:#e5e7eb;text-align:right;">${formatPrice(item.vatAmount)}</td>
+          <td style="padding:12px 10px;border-bottom:1px solid #333;color:#e5e7eb;text-align:right;">${formatPrice(item.unitPrice)}</td>
           <td style="padding:12px 10px;border-bottom:1px solid #333;color:#FFD700;text-align:right;font-weight:700;">${formatPrice(item.totalPrice)}</td>
         </tr>
       `;
@@ -258,10 +257,10 @@ export function buildInvoiceHtml(
     .items { padding: 8px 16px; }
     .items table { width: 100%; border-collapse: collapse; }
     .items th { background: #1c7b1c; color: #fff; padding: 5px 6px; text-align: left; font-size: 0.7rem; text-transform: uppercase; }
-    .items th:nth-child(3), .items th:nth-child(5) { text-align: center; }
-    .items th:nth-child(4), .items th:nth-child(6), .items th:nth-child(7) { text-align: right; }
+    .items th:nth-child(3) { text-align: center; }
+    .items th:nth-child(4), .items th:nth-child(5) { text-align: right; }
     .items td { padding: 4px 5px; border-bottom: 1px solid #333; }
-    .totals { padding: 6px 16px 10px; display: flex; justify-content: flex-end; }
+    .totals { padding: 6px 16px 10px; display: flex; flex-direction: column; align-items: flex-end; }
     .totals-table { width: 240px; }
     .totals-table tr td { padding: 3px 0; border-bottom: 1px solid #333; font-size: 0.85rem; }
     .totals-table tr td:last-child { text-align: right; color: #FFD700; }
@@ -354,8 +353,6 @@ export function buildInvoiceHtml(
             <th>Položka</th>
             <th>Množství</th>
             <th>Cena/ks</th>
-            <th>DPH</th>
-            <th>DPH Kč</th>
             <th>Celkem</th>
           </tr>
         </thead>
@@ -367,19 +364,14 @@ export function buildInvoiceHtml(
 
     <div class="totals">
       <table class="totals-table">
-        <tr>
-          <td>Základ DPH</td>
-          <td>${formatPrice(totals.withoutVat)} Kč</td>
-        </tr>
-        <tr>
-          <td>DPH 21%</td>
-          <td>${formatPrice(totals.vat)} Kč</td>
-        </tr>
         <tr class="total">
           <td>Celkem k úhradě</td>
           <td>${formatPrice(totals.withVat)} Kč</td>
         </tr>
       </table>
+      <p style="width:240px;text-align:right;font-size:0.75rem;color:#888;margin-top:6px;">
+        Prodávající není plátcem DPH — ceny jsou konečné.
+      </p>
     </div>
 
     <div class="payment">
@@ -420,6 +412,7 @@ export function buildInvoiceHtml(
       <p>Děkujeme za Váš nákup! • ${escapeHtml(COMPANY.web)} • ${escapeHtml(COMPANY.email)}</p>
       <p style="margin-top: 10px; color: #FFD700;">🦁 One Love, One Heart, One ZION 🦁</p>
       <p style="margin-top: 10px; color: #666;">Faktura byla vystavena elektronicky a je platná bez podpisu.</p>
+      <p style="margin-top: 4px; color: #666;">${escapeHtml(COMPANY.name)} není plátcem DPH.</p>
     </div>
 
     <div class="rasta-footer"></div>

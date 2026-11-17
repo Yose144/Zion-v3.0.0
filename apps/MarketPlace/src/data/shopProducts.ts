@@ -157,14 +157,14 @@ export const shopProducts: ShopProductSeed[] = [
     category: 'woodart',
     description:
       'Druhá lucerna. Přijde rozložená: osm dílů z 3mm břízy, půl hodiny, dřevěné lepidlo. Svíčku zapálíš sám. 20,9 m řezu, čtyři hodiny laseru, číslovaná edice.',
-    priceCzk: 490,
+    priceCzk: 790,
     oldPriceCzk: undefined,
     image: '/shop/img/products/lamp-001_lumi-2.webp?v=engine-v1',
     badge: '🎄 Vánoční edice',
     inStock: true,
     size: 'Překližka 3 mm · 140 × 126 × 121 mm',
     stock: 5,
-    tokens: 70560,
+    tokens: 113760,
     modelUrl: '/models/lumi-2.glb',
     // K lampionu patří digitální kniha (stejný ZIP jako book-001) a návod
     // na složení — e-mail je vypíše jako „digitální dodávku“ hned po zaplacení,

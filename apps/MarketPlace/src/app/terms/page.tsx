@@ -16,8 +16,8 @@ export default function TermsPage() {
     >
       <p className="update-date">
         <T
-          cs="Poslední aktualizace: 28. července 2026"
-          en="Last updated: 28 July 2026 · The Czech version of these Commercial Terms is legally binding; this English translation is provided for convenience only."
+          cs="Poslední aktualizace: 17. listopadu 2026"
+          en="Last updated: 17 November 2026 · The Czech version of these Commercial Terms is legally binding; this English translation is provided for convenience only."
         />
       </p>
 
@@ -139,8 +139,8 @@ export default function TermsPage() {
       </h3>
       <p>
         <T
-          cs="Všechny ceny jsou uvedeny v českých korunách (CZK) včetně DPH. Cena je platná v okamžiku odeslání objednávky."
-          en="All prices are stated in Czech korunas (CZK) including VAT. The price is valid at the moment the order is submitted."
+          cs="Všechny ceny jsou uvedeny v českých korunách (CZK) a jsou konečné. Prodávající není plátcem daně z přidané hodnoty, proto se DPH nevyměřuje ani neuvádí samostatně. Cena je platná v okamžiku odeslání objednávky."
+          en="All prices are stated in Czech korunas (CZK) and are final. The seller is not a VAT payer, so VAT is neither charged nor shown separately. The price is valid at the moment the order is submitted."
         />
       </p>
 
@@ -164,8 +164,8 @@ export default function TermsPage() {
             <td><T cs="Platba na účet před odesláním zboží" en="Payment to the account before dispatch" /></td>
           </tr>
           <tr>
-            <td><T cs="Dobírka" en="Cash on delivery" /></td>
-            <td><T cs="Platba v hotovosti při převzetí zásilky" en="Cash payment on collection of the parcel" /></td>
+            <td><T cs="Kryptoměna / ZION" en="Cryptocurrency / ZION" /></td>
+            <td><T cs="On-chain platba s potvrzením transakce" en="On-chain payment confirmed by the transaction" /></td>
           </tr>
         </tbody>
       </table></div>
@@ -188,18 +188,23 @@ export default function TermsPage() {
         <tbody>
           <tr>
             <td><T cs="Zásilkovna – výdejní místo" en="Zásilkovna – pickup point" /></td>
-            <td>79 Kč</td>
+            <td>69 Kč</td>
             <td><T cs="1-3 pracovní dny" en="1-3 business days" /></td>
           </tr>
           <tr>
             <td><T cs="Zásilkovna – na adresu" en="Zásilkovna – home delivery" /></td>
-            <td>119 Kč</td>
+            <td>99 Kč</td>
             <td><T cs="1-3 pracovní dny" en="1-3 business days" /></td>
           </tr>
           <tr>
             <td><T cs="Virtuální nákup (digitální doručení)" en="Virtual purchase (digital delivery)" /></td>
             <td><T cs="Zdarma" en="Free" /></td>
             <td><T cs="Okamžitě po potvrzení platby" en="Immediately after payment confirmation" /></td>
+          </tr>
+          <tr>
+            <td><T cs="Virtuální odběr (osobní vyzvednutí)" en="Virtual pickup (personal collection)" /></td>
+            <td><T cs="Zdarma" en="Free" /></td>
+            <td><T cs="Po domluvě s prodávajícím" en="By arrangement with the seller" /></td>
           </tr>
         </tbody>
       </table></div>
@@ -247,6 +252,7 @@ export default function TermsPage() {
         <li><T cs="Zboží vyrobené na zakázku podle specifikací kupujícího" en="goods made to order according to the buyer’s specifications" /></li>
         <li><T cs="Zboží podléhající rychlé zkáze" en="goods subject to rapid deterioration" /></li>
         <li><T cs="Hygienické potřeby po porušení obalu" en="hygiene products once the packaging has been opened" /></li>
+        <li><T cs="Digitální obsah dodaný okamžitě po zaplacení se souhlasem kupujícího (§ 1837 písm. l) — viz § 9.3" en="digital content delivered immediately after payment with the buyer’s consent (§ 1837(l)) — see § 9.3" /></li>
       </ul>
 
       <h2 id="section6">
@@ -288,10 +294,10 @@ export default function TermsPage() {
         <T cs="7.1 Podmínky programu" en="7.1 Programme terms" />
       </h3>
       <ul>
-        <li><T cs="Tokeny jsou přidělovány automaticky k dokončeným objednávkám" en="Tokens are allocated automatically to completed orders" /></li>
+        <li><T cs="Tokeny jsou přidělovány k dokončeným objednávkám a jejich výše je evidována v okamžiku nákupu" en="Tokens are allocated to completed orders and their amount is recorded at the time of purchase" /></li>
         <li><T cs="Počet tokenů závisí na zakoupených produktech" en="The number of tokens depends on the products purchased" /></li>
-        <li><T cs="Tokeny budou odeslány na wallet adresu uvedenou v objednávce" en="Tokens are sent to the wallet address provided in the order" /></li>
-        <li><T cs="Program je aktivní v testovací fázi – tokeny budou odeslány po spuštění mainnetu" en="The programme runs in a test phase – tokens are sent once the mainnet is live" /></li>
+        <li><T cs="Zápis tokenů do peněženky kupujícího proběhne až po spuštění mainnetu sítě ZION; konkrétní termín není zaručen. Do té doby je bonus evidován jako závazek z dané objednávky" en="Tokens are credited to the buyer’s wallet only after the ZION mainnet launches; no specific date is guaranteed. Until then the bonus is recorded as an obligation arising from the given order" /></li>
+        <li><T cs="Program je experimentální a podléhá § 9 — tokeny nemají garantovanou hodnotu ani záruku doručení v konkrétním termínu" en="The programme is experimental and subject to § 9 — tokens carry no guaranteed value or delivery-date commitment" /></li>
       </ul>
 
       <h3>
@@ -386,8 +392,8 @@ export default function TermsPage() {
       </h3>
       <p>
         <T
-          cs="U digitálního obsahu (ZION Pass, e-knihy, digitální licence, soubory ke stažení) dodaného ihned po zaplacení souhlasí kupující s okamžitým plněním a bere na vědomí, že jeho dodáním zaniká právo na odstoupení od smlouvy ve smyslu § 1837 písm. l) občanského zákoníku."
-          en="For digital content (ZION Pass, e-books, digital licences, downloadable files) delivered immediately after payment, the buyer consents to immediate performance and acknowledges that delivery extinguishes the right of withdrawal pursuant to Section 1837(l) of the Czech Civil Code."
+          cs="U digitálního obsahu (ZION Pass, e-knihy, digitální licence, soubory ke stažení) dodaného ihned po zaplacení souhlasí kupující s okamžitým plněním a bere na vědomí, že jeho dodáním zaniká právo na odstoupení od smlouvy ve smyslu § 1837 písm. l) občanského zákoníku. Souhlas s okamžitým dodáním je u pokladny vyžadován u každé objednávky obsahující digitální obsah a je evidován spolu s objednávkou."
+          en="For digital content (ZION Pass, e-books, digital licences, downloadable files) delivered immediately after payment, the buyer consents to immediate performance and acknowledges that delivery extinguishes the right of withdrawal pursuant to Section 1837(l) of the Czech Civil Code. Consent to immediate delivery is required at checkout for every order containing digital content and is recorded with the order."
         />
       </p>
 

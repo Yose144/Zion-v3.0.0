@@ -62,7 +62,7 @@ export const CHRISTMAS_EDITION_PRODUCTS: ShopNewsProduct[] = [
   {
     externalId: 'lamp-001',
     name: { cs: 'Druhá lucerna', en: 'Second lantern' },
-    priceCzk: 490,
+    priceCzk: 790,
     href: '/vanoce/lampion',
     image: '/shop/img/products/lamp-001_lumi-2.webp?v=engine-v1',
     imageAlt: { cs: 'Druhá lucerna — Lumi 2 z 3mm překližky, rozsvícená', en: 'The second lantern — Lumi 2 in 3 mm plywood, lit' },
