@@ -505,3 +505,6 @@ apps/MarketPlace/AGENTS.md
 
 # Engine B — vygenerované PNG (velké; přebírá je ingest, do gitu nepatří)
 /Atelier/3.3/_generated/
+
+# Rozbalená kopie GPT balíčku (generuje build-gpt-zip.mjs; v gitu je ZIP)
+/Atelier/3.3/ZION-33-Engine-B-GPT/
