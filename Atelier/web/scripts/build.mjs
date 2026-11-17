@@ -1,6 +1,10 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 
 const files = {
+  "/betlem/laser-v2/galerie/lumi-a-maly-princ.webp": ["src/betlem/laser-v2/galerie/lumi-a-maly-princ.webp", "image/webp"],
+  "/betlem/laser-v2/galerie/vanocni-zion.webp": ["src/betlem/laser-v2/galerie/vanocni-zion.webp", "image/webp"],
+  "/betlem/laser-v2/galerie/zimni-betlem.webp": ["src/betlem/laser-v2/galerie/zimni-betlem.webp", "image/webp"],
+  "/betlem/laser-v2/galerie/betlem-pod-stromem.webp": ["src/betlem/laser-v2/galerie/betlem-pod-stromem.webp", "image/webp"],
   "/betlem/laser-v2": ["src/betlem/laser-v2/index.html", "text/html; charset=utf-8"],
   "/betlem/laser-v2/Vizualizace.webp": ["src/betlem/laser-v2/Vizualizace.webp", "image/webp"],
   "/betlem/laser-v2/Navrh.md": ["src/betlem/laser-v2/Navrh.md", "text/plain; charset=utf-8"],
