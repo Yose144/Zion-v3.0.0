@@ -58,11 +58,17 @@ Podpora, nové hero Novinek, Kingdom (room/avatars/games/rings), Portal
      manifest.json                ← id, soubor, width, height, model, poznámky
      README.md                    ← co je hotové, co chybí, odchylky od zadání
    ```
-4. Já to převezmu: `node 3.3.0/scripts/ingest-engine-b.mjs heros/3.3/<balíček>.zip`
-   ověří balíček proti `assets.json`, zkopíruje soubory do
+4. Já to převezmu: `node 3.3.0/scripts/ingest-engine-b.mjs <balíček.zip | složka>`
+   ověří balíček proti `assets.json` (nebo proti `--spec`), zkopíruje soubory do
    `3.3.0/apps/<app>/public/…` a zapíše je do `3.3.0/design/manifest.json`
    (sha256, bytes). Pak už jen napojím `Hero`/pás v komponentách a nasadím —
    skript vypíše seznam stránek, kde obrázek ještě chybí.
+
+   - **jeden vzorový obraz** (např. `onboard-roadmap-hero` na schválení stylu):
+     `--allow-partial`, aby chybějící zbytek dávky nebyl chybový stav
+   - **dílčí dávka:** `--spec Atelier/3.3/ZION-33-Engine-B-Podklady/spec/batch-6-onboard.json`
+   - vstup může být ZIP i už rozbalená složka
+   - `--dry-run` nic nezapisuje, jen reportuje (adresáře ale založí)
 
 ## Co musí obrázek splnit (jinak se vrací)
 

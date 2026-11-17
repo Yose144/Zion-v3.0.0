@@ -1,0 +1,195 @@
+{
+  "engine": "engine-b",
+  "version": "1.1",
+  "generatedFrom": "Atelier/3.3/engine-b/new-assets.json",
+  "batches": [
+    {
+      "id": 8,
+      "slug": "MINE",
+      "name": "Těžba — pásy do utilitních stránek",
+      "brief": "Tabulkové stránky /mine/* nepotřebují velký hero, ale úzký pás nad obsahem (3:1). Drží vizuální kontinuitu, aniž by vytlačil data pod fold."
+    }
+  ],
+  "assets": [
+    {
+      "id": "mine-blocks-strip",
+      "batch": 8,
+      "surface": "onboard",
+      "mode": "portal",
+      "deliverable": "section-strip",
+      "aspect": "3:1",
+      "master": {
+        "width": 2048,
+        "height": 683
+      },
+      "targets": [
+        {
+          "path": "images/mine/blocks.webp",
+          "app": "onboard",
+          "width": 1600,
+          "height": 533
+        },
+        {
+          "path": "images/mine/blocks-m.webp",
+          "app": "onboard",
+          "width": 960,
+          "height": 320
+        }
+      ],
+      "text_safe": "left third",
+      "alt_cs": "Řada vyřezaných dřevěných bloků u vchodu do dolu, jeden označený hvězdou, jantarové světlo lucerny.",
+      "alt_en": "A row of carved wooden blocks at a mine entrance, one marked with a star, amber lantern light.",
+      "prompt": "A low wide band: the mouth of a timber mine, a row of carved wooden blocks stacked on a cart, one block marked with a five-pointed star cut into the wood, an amber lantern hanging from a beam, dust in the light, dark gallery behind. Painterly manga, warm amber against deep ink. Horizontal composition, subject on the right, left third dark and clear for text. No numbers, no lettering."
+    },
+    {
+      "id": "mine-payouts-strip",
+      "batch": 8,
+      "surface": "onboard",
+      "mode": "portal",
+      "deliverable": "section-strip",
+      "aspect": "3:1",
+      "master": {
+        "width": 2048,
+        "height": 683
+      },
+      "targets": [
+        {
+          "path": "images/mine/payouts.webp",
+          "app": "onboard",
+          "width": 1600,
+          "height": 533
+        },
+        {
+          "path": "images/mine/payouts-m.webp",
+          "app": "onboard",
+          "width": 960,
+          "height": 320
+        }
+      ],
+      "text_safe": "left third",
+      "alt_cs": "Dlaň předává malý plátěný váček přes dřevěnou lavici, vedle stojí mosazné váhy a lucerna.",
+      "alt_en": "A hand passes a small cloth pouch across a wooden bench, brass scales and a lantern beside it.",
+      "prompt": "A low wide band: a craftswoman's hand passing a small tied cloth pouch across a worn wooden bench to a miner's open palm, brass scales and a stack of payment tokens beside them, an amber lantern at the edge, ink shadows behind. Painterly manga, warm focused light. Subject on the right, left third dark and clear for text. No numbers, no coins with logos, no lettering."
+    },
+    {
+      "id": "mine-miners-strip",
+      "batch": 8,
+      "surface": "onboard",
+      "mode": "portal",
+      "deliverable": "section-strip",
+      "aspect": "3:1",
+      "master": {
+        "width": 2048,
+        "height": 683
+      },
+      "targets": [
+        {
+          "path": "images/mine/miners.webp",
+          "app": "onboard",
+          "width": 1600,
+          "height": 533
+        },
+        {
+          "path": "images/mine/miners-m.webp",
+          "app": "onboard",
+          "width": 960,
+          "height": 320
+        }
+      ],
+      "text_safe": "left third",
+      "alt_cs": "Tři siluety horníků u pracovního stolu v galerii, za nimi větráky a jantarové světlo.",
+      "alt_en": "Three silhouetted miners at a workbench in a gallery, fans behind them and amber light.",
+      "prompt": "A low wide band: three miners in silhouette at a long workbench inside a timbered gallery, hand tools and baskets of ore on the bench, two large ventilation fans turning behind them, amber lantern light scattering dust. Painterly manga, deep ink shadows, one warm light source. Figures on the right, left third dark and clear for text. No lettering, no brand marks on tools."
+    },
+    {
+      "id": "mine-calculator-strip",
+      "batch": 8,
+      "surface": "onboard",
+      "mode": "portal",
+      "deliverable": "section-strip",
+      "aspect": "3:1",
+      "master": {
+        "width": 2048,
+        "height": 683
+      },
+      "targets": [
+        {
+          "path": "images/mine/calculator.webp",
+          "app": "onboard",
+          "width": 1600,
+          "height": 533
+        },
+        {
+          "path": "images/mine/calculator-m.webp",
+          "app": "onboard",
+          "width": 960,
+          "height": 320
+        }
+      ],
+      "text_safe": "left third",
+      "alt_cs": "Mosazné počítadlo a křídová břidlicová tabulka s abstraktními črtami vedle lucerny.",
+      "alt_en": "A brass abacus and a chalk slate with abstract figures beside a lantern.",
+      "prompt": "A low wide band: a brass abacus with worn beads and a dark slate with abstract chalk diagrams (lines and shapes, no readable numbers) leaning against a wall, an amber lantern beside them, a folded note and a stub of chalk on the bench. Painterly manga, warm light, ink shadows. Objects on the right, left third dark and clear for text. No readable numbers or words."
+    },
+    {
+      "id": "mine-status-strip",
+      "batch": 8,
+      "surface": "onboard",
+      "mode": "portal",
+      "deliverable": "section-strip",
+      "aspect": "3:1",
+      "master": {
+        "width": 2048,
+        "height": 683
+      },
+      "targets": [
+        {
+          "path": "images/mine/status.webp",
+          "app": "onboard",
+          "width": 1600,
+          "height": 533
+        },
+        {
+          "path": "images/mine/status-m.webp",
+          "app": "onboard",
+          "width": 960,
+          "height": 320
+        }
+      ],
+      "text_safe": "left third",
+      "alt_cs": "Kontrolní galerie s řadou lamp: tři hoří jantarově, jedna je zhasnutá; ruka dohlížitele na páce.",
+      "alt_en": "A control gallery with a row of lamps: three burn amber, one is dark; an overseer's hand on a lever.",
+      "prompt": "A low wide band: an overseer's control gallery above a mine shaft, a rack of five iron signal lamps — three burning amber, one dark, one half-lit — with an overseer's hand resting on a brass lever, ropes and pulleys behind, warm light and dust. Painterly manga, deep ink shadows, one warm source. Lamps on the right, left third dark and clear for text. No dials with numbers, no lettering."
+    },
+    {
+      "id": "mine-faq-strip",
+      "batch": 8,
+      "surface": "onboard",
+      "mode": "portal",
+      "deliverable": "section-strip",
+      "aspect": "3:1",
+      "master": {
+        "width": 2048,
+        "height": 683
+      },
+      "targets": [
+        {
+          "path": "images/mine/faq.webp",
+          "app": "onboard",
+          "width": 1600,
+          "height": 533
+        },
+        {
+          "path": "images/mine/faq-m.webp",
+          "app": "onboard",
+          "width": 960,
+          "height": 320
+        }
+      ],
+      "text_safe": "left third",
+      "alt_cs": "Rozcestí v důlní chodbě: tři dřevěné ukazatele bez nápisů, lucerna na trámu a stopy v prachu.",
+      "alt_en": "A fork in a mine corridor: three wooden signposts without lettering, a lantern on a beam and footprints in the dust.",
+      "prompt": "A low wide band: a fork in a timbered mine corridor with three carved wooden signposts pointing different ways, their boards left blank (no lettering), an amber lantern hanging from a beam, footprints and a dropped glove in the dust. Painterly manga, warm amber against ink darkness, depth into the gallery. Posts on the right, left third dark and clear for text. No letters or symbols that read as words."
+    }
+  ]
+}

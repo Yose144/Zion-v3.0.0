@@ -1,0 +1,165 @@
+{
+  "engine": "engine-b",
+  "version": "1.1",
+  "generatedFrom": "Atelier/3.3/engine-b/new-assets.json",
+  "batches": [
+    {
+      "id": 6,
+      "slug": "ONBOARD",
+      "name": "Onboard — chybějící hero plochy",
+      "brief": "Pět stránek 3.3 onboardu dnes nemá žádný hero (jen text): /roadmap, /team, /ai-native, /status, /contact. Všechny jsou 16:9, text vlevo (tmavá levá třetina), stejná malba jako ostatní hero plochy."
+    }
+  ],
+  "assets": [
+    {
+      "id": "onboard-roadmap-hero",
+      "batch": 6,
+      "surface": "onboard",
+      "mode": "portal",
+      "deliverable": "hero",
+      "aspect": "16:9",
+      "master": {
+        "width": 2048,
+        "height": 1152
+      },
+      "targets": [
+        {
+          "path": "images/roadmap/hero.webp",
+          "app": "onboard",
+          "width": 1672,
+          "height": 941
+        },
+        {
+          "path": "images/roadmap/hero-m.webp",
+          "app": "onboard",
+          "width": 960,
+          "height": 540
+        }
+      ],
+      "text_safe": "left third, vertically centered",
+      "alt_cs": "Navigátorská komora za soumraku: na dřevěném stole rozložený plán letu, mosazná kružítka, dřevěné modely lodí jako milníky a jedna jantarová lucerna.",
+      "alt_en": "A navigator's chart room at dusk: a flight plan unrolled on a wooden table, brass dividers, carved ship models as milestones and one amber lantern.",
+      "prompt": "A navigator's chart room at dusk: a large parchment flight plan unrolled across a worn wooden table, brass dividers, a compass and small carved wooden ship models marking stages along the route; a steward's hand rests on the plan. One amber lantern lights the chart, deep ink shadows around, a calm window on the right showing a grey-blue sea and a distant coastline. Painterly manga brushwork, parchment and amber accents, rust-red cloth detail. The left third stays dark and uncluttered for text. No lettering on the plan, no labels, no numbers."
+    },
+    {
+      "id": "onboard-team-hero",
+      "batch": 6,
+      "surface": "onboard",
+      "mode": "portal",
+      "deliverable": "hero",
+      "aspect": "16:9",
+      "master": {
+        "width": 2048,
+        "height": 1152
+      },
+      "targets": [
+        {
+          "path": "images/team/hero.webp",
+          "app": "onboard",
+          "width": 1672,
+          "height": 941
+        },
+        {
+          "path": "images/team/hero-m.webp",
+          "app": "onboard",
+          "width": 960,
+          "height": 540
+        }
+      ],
+      "text_safe": "left third, vertically centered",
+      "alt_cs": "Kulatý stůl v lucernami osvětlené síni: správce s klíči, řemeslnice s dláty a archivářka s knihou; nad stolem se vznáší malá zlatá koule světla.",
+      "alt_en": "A round table in a lantern-lit hall: a steward with keys, a craftswoman with chisels and an archivist with a book; a small golden sphere of light hovers above the table.",
+      "prompt": "A round oak table in a lantern-lit timber hall: three travellers seated — an older steward with a ring of iron keys, a craftswoman with chisels and a leather apron, a young archivist holding a closed book — and above the table a small calm golden sphere of light with fine luminous filaments (an AI presence, not a human, no face, no body). Warm amber lanterns hang from beams, the left side of the hall falls into deep ink shadow, one window shows a night sky. Respectful, human-scaled, painterly manga. Left third dark and clear for text. No text, no banners, no crests with lettering."
+    },
+    {
+      "id": "onboard-ai-native-hero",
+      "batch": 6,
+      "surface": "onboard",
+      "mode": "portal",
+      "deliverable": "hero",
+      "aspect": "16:9",
+      "master": {
+        "width": 2048,
+        "height": 1152
+      },
+      "targets": [
+        {
+          "path": "images/ai-native/hero.webp",
+          "app": "onboard",
+          "width": 1672,
+          "height": 941
+        },
+        {
+          "path": "images/ai-native/hero-m.webp",
+          "app": "onboard",
+          "width": 960,
+          "height": 540
+        }
+      ],
+      "text_safe": "left third, vertically centered",
+      "alt_cs": "Noční observatoř-knihovna: regály knih, mosazné orrery a nad stolem klidná zlatá koule světla s jemnými vlákny; u stolu píše sedící postava.",
+      "alt_en": "A night observatory library: bookshelves, a brass orrery and above the table a calm golden sphere of light with fine filaments; a seated figure is writing.",
+      "prompt": "An observatory library at night: tall shelves of worn books, a brass orrery on a side table, arched windows with stars, and above the central desk a calm golden sphere of light with delicate luminous filaments radiating like a geometric mandala (Hiran — a sphere of light, never a human figure, no face). A seated traveller writes by hand in a ledger, an amber lantern on the desk answers the sphere's glow. Painterly manga, ink depth, one warm focal light, cool night blues. Left third dark and clear for text. No text on the spines or the ledger, no UI, no screens."
+    },
+    {
+      "id": "onboard-status-hero",
+      "batch": 6,
+      "surface": "onboard",
+      "mode": "portal",
+      "deliverable": "hero",
+      "aspect": "16:9",
+      "master": {
+        "width": 2048,
+        "height": 1152
+      },
+      "targets": [
+        {
+          "path": "images/status/hero.webp",
+          "app": "onboard",
+          "width": 1672,
+          "height": 941
+        },
+        {
+          "path": "images/status/hero-m.webp",
+          "app": "onboard",
+          "width": 960,
+          "height": 540
+        }
+      ],
+      "text_safe": "left third, vertically centered",
+      "alt_cs": "Kamenná hlásná věž na útesu za modré hodiny, lucerna na vrcholu svítí; pod ní řada signálních lamp — tři svítí, jedna zhaslá.",
+      "alt_en": "A stone beacon tower on a cliff at blue hour, its lantern lit; below it a row of signal lamps — three burning, one dark.",
+      "prompt": "A stone beacon tower on a sea cliff at blue hour: the tower's lantern room brightly lit, a soft amber beam across calm water, gulls, weathered ropes and a small wooden stair. On the terrace below, a row of four iron signal lamps — three burning amber, one dark and cold. A single keeper's silhouette checks the lamps. Painterly manga, cold marine blues against warm lantern light, rust-red banner cloth without lettering. Left third dark and clear for text. No gauges with numbers, no screens, no lettering."
+    },
+    {
+      "id": "onboard-contact-hero",
+      "batch": 6,
+      "surface": "onboard",
+      "mode": "portal",
+      "deliverable": "hero",
+      "aspect": "16:9",
+      "master": {
+        "width": 2048,
+        "height": 1152
+      },
+      "targets": [
+        {
+          "path": "images/contact/hero.webp",
+          "app": "onboard",
+          "width": 1672,
+          "height": 941
+        },
+        {
+          "path": "images/contact/hero-m.webp",
+          "app": "onboard",
+          "width": 960,
+          "height": 540
+        }
+      ],
+      "text_safe": "left third, vertically centered",
+      "alt_cs": "Psací stůl u otevřeného okna za soumraku: rozepsaný dopis, pečetní vosk a brk, hrnek, jantarová lucerna a výhled na moře s uvázanou lodí.",
+      "alt_en": "A writing desk by an open window at dusk: a half-written letter, sealing wax and a quill, a cup, an amber lantern and a view of the sea with a moored boat.",
+      "prompt": "A writing desk by an open window at dusk: a half-written letter on parchment (abstract pen strokes, no readable words), a stick of sealing wax, a brass seal and a quill in an inkwell, a ceramic cup with steam, an amber lantern. Beyond the window a quiet bay with one moored wooden boat and the last warm light on the water. Painterly manga, warm interior against cool evening sea, rust cloth over the chair back. Left third dark and clear for text. No readable writing, no addresses, no logos."
+    }
+  ]
+}
