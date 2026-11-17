@@ -39,8 +39,8 @@ const SLIDES: Slide[] = [
     src: '/images/l5-free-world/hero.webp?v=engine-v1',
     srcM: '/images/l5-free-world/hero-m.webp?v=engine-v1',
     alt: {
-      cs: 'Mapa L5 Free World — dvanáct ohňů rozesetých po planetě',
-      en: 'L5 Free World map — twelve fires spread across the planet',
+      cs: 'L5 Free World — malovaný svět s osadami a dvanácti ohni po planetě',
+      en: 'L5 Free World — a painted world of settlements and twelve fires across the planet',
     },
     label: { cs: 'L5 Free World · dvanáct ohňů', en: 'L5 Free World · twelve fires' },
     href: '/l5-free-world',

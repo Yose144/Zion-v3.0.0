@@ -471,12 +471,12 @@ export default function L5FreeWorldPage() {
             </div>
             <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/kralovstvi-srdce/hero.webp?v=engine-v1"
-                srcSet="/images/kralovstvi-srdce/hero-m.webp?v=engine-v1 960w, /images/kralovstvi-srdce/hero.webp?v=engine-v1 1600w"
+                src="/images/l5-free-world/hero.webp?v=engine-v1"
+                srcSet="/images/l5-free-world/hero-m.webp?v=engine-v1 960w, /images/l5-free-world/hero.webp?v=engine-v1 1672w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
-                alt={cs ? 'L5 Free World — třináctý uzel: archa Království srdce · Nirvana, keporkaci a břeh Nové země' : t5('L5 Free World — the thirteenth node: the ark Kingdom of the Heart · Nirvana, humpback whales and the shore of the new world', lang)}
-                width={1600}
-                height={640}
+                alt={cs ? 'L5 Free World — malovaný svět s osadami: dvanáct uzlů a jejich komunity na planetě' : t5('L5 Free World — a painted world of settlements: twelve nodes and their communities on the planet', lang)}
+                width={1672}
+                height={941}
                 loading="eager"
                 decoding="async"
                 fetchPriority="high"
