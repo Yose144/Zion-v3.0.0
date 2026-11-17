@@ -33,11 +33,15 @@ export async function GET(req: NextRequest) {
     ]);
 
     return NextResponse.json({
-      data: products.map((p) =>
-        campaigns[p.externalId] !== undefined
-          ? { ...p, tokens: campaignTokens(campaigns, p.externalId, p.tokens) }
-          : p,
-      ),
+      // filesUrl is a paid delivery path — never expose it on the public catalog.
+      data: products.map((p) => {
+        const { filesUrl, ...rest } = p;
+        const tokens =
+          campaigns[p.externalId] !== undefined
+            ? campaignTokens(campaigns, p.externalId, p.tokens)
+            : p.tokens;
+        return { ...rest, tokens, hasFiles: Boolean(filesUrl) };
+      }),
       total,
       page,
       pageSize,
