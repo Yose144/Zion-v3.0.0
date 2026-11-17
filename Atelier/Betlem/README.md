@@ -52,3 +52,7 @@ Pro práci v Nirvaně použít sdílenou scénu a pravidla existujícího `Scene
 - [Roster OASIS, 200 záznamů](../../heros/oasis/OASIS_Avatar_Collection_v1/avatar_roster.csv)
 - [Sdílené scény a prezentační pravidla Nirvany](../../apps/shared/scenes/README.md)
 - [Výtvarný standard Engine B](../../heros/engine/ZION_Design_Engine_v1.0_KOMPLET/ZION_DESIGN_ENGINE_v1.0.md)
+
+## Dřevěná adaptace pro laser
+
+[Rodina světla — návrh V2, výřezy a gravírování](laser-v2/README.md). Výrobní podklady budou dopracovány v dalších kolech.
