@@ -2,7 +2,7 @@
 
 ## Maitreya — oprava autora 17. listopadu 2026
 
-Maitreya je malý světlovlasý blonďatý chlapec. Účes, tvář, dětské proporce a klidný výraz přebírat z obrazové reference dodané autorem 17. listopadu 2026. Vlasy mají přirozené jemné prameny podle reference. Dřívější popis „kudrnatý“ byl autorem výslovně odmítnut a je chybný.
+Maitreyovi je 13 let. Je světlovlasý blonďatý dospívající chlapec. Výška, stavba těla a proporce obličeje musí odpovídat třináctiletému. Dřívější zobrazení jako malého dítěte bylo chybné. Účes, tvář a klidný výraz přebírat z obrazové reference dodané autorem 17. listopadu 2026, při zachování výslovně určeného věku 13 let. Vlasy mají přirozené jemné prameny podle reference. Dřívější popis „kudrnatý“ byl autorem výslovně odmítnut a je chybný.
 
 Rozhodující postavou v referenci je chlapec sedící uprostřed pod Stromem života v krémově zlatém oděvu, se světelnou sférou v dlaních. Autor označil tuto podobu za nejrealističtější. Obrazová reference je dostupná v původním tvůrčím rozhovoru. Tento soubor obsahuje pouze textovou opravu identity.
 
