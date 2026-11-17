@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Betlém · Rodina světla</title>
+  <link rel="stylesheet" href="/betlem/scene.css">
+</head>
+<body>
+<main>
+  <a href="/">← Tvůrčí ateliér</a>
+  <h1>Betlém · Rodina světla</h1>
+  <p>Prostorová studie pro úpatí hory Kasiash v Nirvaně.</p>
+  <div class="views" aria-label="Pohledy scény">
+    <button data-view="overview" aria-pressed="true">Celá scéna</button>
+    <button data-view="entrance" aria-pressed="false">Vstupní cesta</button>
+    <button data-view="center" aria-pressed="false">U jeslí</button>
+    <button data-view="east" aria-pressed="false">Oblouk Rodiny světla</button>
+  </div>
+  <div class="scene">
+    <canvas tabindex="0" aria-label="Interaktivní 3D model betléma" aria-describedby="instructions"></canvas>
+    <div class="pad" aria-label="Chůze" hidden>
+      <button data-move="forward" aria-label="Vpřed">↑</button><button data-move="left" aria-label="Vlevo">←</button>
+      <button data-move="back" aria-label="Vzad">↓</button><button data-move="right" aria-label="Vpravo">→</button>
+    </div>
+  </div>
+  <div class="actions"><label for="avatar">Najít avatara</label><select id="avatar"><option value="">Vyber postavu</option></select></div>
+  <p class="meta" id="instructions">Pohled otočíš tažením. V pěším režimu se pohybuj pomocí WASD, šipek nebo tlačítek v obraze.</p>
+  <p class="meta" id="status" role="status">Načítám scénu…</p>
+</main>
+<script type="module" src="/betlem/scene.js"></script>
+</body>
+</html>

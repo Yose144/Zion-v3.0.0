@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Soukromý přehled týdenní tvůrčí práce a kanonických zdrojů ZION TerraNova.">
+  <meta name="theme-color" content="#141e29">
+  <title>Ateliér ZION TerraNova</title>
+  <link rel="stylesheet" href="/atelier.css">
+  <script src="/catalog.js" defer></script>
+  <script src="/atelier.js" defer></script>
+  <script src="/agent-ui.js" defer></script>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <a class="brand" href="#prehled"><span class="brand-mark" aria-hidden="true">✧</span><span><strong>ZION TerraNova</strong><small>TVŮRČÍ ATELIÉR</small></span></a>
+    <nav aria-label="Hlavní navigace">
+      <p class="nav-label">PRACOVNÍ PROSTOR</p>
+      <a href="#prehled" data-page="prehled"><span aria-hidden="true">▦</span> Přehled</a>
+      <a href="#archiv" data-page="archiv"><span aria-hidden="true">▤</span> Všechny plány</a>
+      <a href="#katalog" data-page="katalog"><span aria-hidden="true">▧</span> Katalog podkladů</a>
+      <a href="#projekty" data-page="projekty"><span aria-hidden="true">⌘</span> Projekty a GitHub</a>
+      <a href="#kanon" data-page="kanon"><span aria-hidden="true">◇</span> Kanonický kompas</a>
+      <a href="/betlem"><span aria-hidden="true">✧</span> Betlém ve 3D</a>
+    </nav>
+    <div class="sidebar-footer"><span class="live-dot"></span> Osobní plány</div>
+  </aside>
+  <main>
+    <header class="topbar"><div><span class="crumb-root">Ateliér</span><span class="slash" aria-hidden="true">/</span><span id="crumb">Přehled</span></div><div class="header-actions"><a id="signin" class="secondary hidden" href="/signin-with-chatgpt?return_to=%2F" target="_top">Přihlásit se</a><button type="button" class="primary new-plan"><span aria-hidden="true">＋</span> Nový plán</button></div></header>
+    <div class="content">
+      <p id="notice" class="notice hidden" role="status"></p>
+      <section id="overview" aria-labelledby="welcome">
+        <div class="hero">
+          <img class="hero-art" src="/lumi.webp" alt="" fetchpriority="high">
+          <div class="hero-copy"><div class="eyebrow"><span aria-hidden="true">✧</span> <span id="hero-week">TÝDENNÍ PLÁNOVÁNÍ</span></div><h1 id="welcome">Tvůrčí ateliér</h1><p>Dej každý týden konkrétní podobu jedné myšlence ze světa ZION TerraNova.</p><button type="button" class="primary new-plan"><span aria-hidden="true">＋</span> Naplánovat výstup</button> <a class="hero-link" href="#katalog">Prohlédnout katalog →</a></div>
+        </div>
+        <div class="stats" aria-label="Souhrn plánů">
+          <div class="stat"><span class="stat-icon neutral" aria-hidden="true">▤</span><span><small>Všechny plány</small><strong id="count-total">0</strong></span></div>
+          <div class="stat"><span class="stat-icon warm" aria-hidden="true">◔</span><span><small>Rozpracované</small><strong id="count-working">0</strong></span></div>
+          <div class="stat"><span class="stat-icon green" aria-hidden="true">✓</span><span><small>Hotové</small><strong id="count-complete">0</strong></span></div>
+        </div>
+      </section>
+
+      <section id="plans" aria-labelledby="plans-title">
+        <div class="section-head"><div><p class="eyebrow" id="plans-kicker">TVŮRČÍ PRÁCE</p><h2 id="plans-title">Týdenní plány</h2></div><a class="text-link" href="#archiv" id="archive-link">Všechny plány <span aria-hidden="true">→</span></a></div>
+        <div class="toolbar"><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" aria-label="Hledat v plánech" placeholder="Hledat v plánech"></label><select id="project-filter" aria-label="Filtrovat podle projektu"><option value="">Všechny projekty</option></select><select id="status-filter" aria-label="Filtrovat podle stavu"><option value="">Všechny stavy</option><option value="planned">Naplánováno</option><option value="working">Rozpracováno</option><option value="complete">Hotovo</option></select><select id="week-filter" aria-label="Filtrovat podle týdne"><option value="">Všechny týdny</option></select></div>
+        <p id="week-summary" class="week-summary hidden" role="status"></p>
+        <div id="plan-list" class="plan-list" aria-live="polite"><p class="empty">Načítám plány…</p></div>
+        <template id="plan-card">
+          <article class="plan-card">
+            <div class="card-tags"><span class="tag project"></span><span class="tag state"></span></div>
+            <button type="button" class="card-title"></button>
+            <p class="card-week"></p>
+            <div class="card-progress"><span>Kroky</span><strong class="step-count"></strong></div>
+            <progress max="3" value="0" aria-label="Dokončené kroky"></progress>
+            <p class="card-criterion hidden"></p><p class="plan-lineage hidden"></p>
+            <div class="plan-sources hidden">
+              <a class="work-link repo-link" target="_blank" rel="noopener" hidden>GitHub ↗</a>
+              <a class="work-link result-link" target="_blank" rel="noopener" hidden>Výsledek ↗</a>
+              <span class="tag evidence-label hidden"></span>
+            </div>
+            <div class="card-actions"><button type="button" class="quiet edit">Upravit</button><button type="button" class="quiet duplicate">Duplikovat</button><button type="button" class="quiet carry">Pokračovat</button><button type="button" class="quiet plan-agent">✦ Agent</button></div>
+          </article>
+        </template>
+      </section>
+
+      <section id="catalog-page" class="hidden" aria-labelledby="catalog-title">
+        <div class="section-head repo-heading">
+          <div><p class="eyebrow">ZION TERRANOVA</p><h1 id="catalog-title">Katalog podkladů</h1></div>
+          <button class="primary" type="button" id="new-source">＋ Přidat podklad</button>
+        </div>
+        <p class="intro">Vyber podklad z repozitáře nebo ze svého zásobníku a založ z něj týdenní plán.</p>
+        <div class="catalog-tabs" aria-label="Výběr katalogu">
+          <button type="button" class="quiet" id="repo-tab" aria-pressed="true">Zdroje z repozitáře</button>
+          <button type="button" class="quiet" id="own-tab" aria-pressed="false">Můj zásobník</button>
+        </div>
+        <div class="catalog-filters">
+          <label class="field">Hledat<input type="search" id="source-query" placeholder="Název nebo poznámka"></label>
+          <label class="field">Projekt<select id="source-project"></select></label>
+          <label class="field">Typ výstupu<select id="source-kind"></select></label>
+          <label class="field">Postava<input type="search" id="source-people" placeholder="Např. Lumi"></label>
+          <label class="field">Svět<input type="search" id="source-world" placeholder="Např. Oasis"></label>
+          <label class="field">Stav<select id="source-state"></select></label>
+        </div>
+        <div id="catalog-cards" class="catalog-grid" aria-live="polite"></div>
+        <template id="source-card">
+          <article class="plan-card source-card">
+            <div class="card-tags"><span class="tag project"></span><span class="tag source-state"></span></div>
+            <h2 class="source-title"></h2><p class="source-note"></p><p class="source-context"></p>
+            <div class="card-actions">
+              <button type="button" class="primary use-source">Založit plán</button>
+              <a class="quiet source-link" target="_blank" rel="noopener" hidden>Otevřít zdroj ↗</a>
+              <button type="button" class="quiet edit-source" hidden>Upravit</button>
+            </div>
+          </article>
+        </template>
+      </section>
+      <section id="repo-page" class="hidden" aria-labelledby="repo-title">
+        <div class="section-head repo-heading"><div><p class="eyebrow">ZION 3.3 NIRVANA</p><h1 id="repo-title">Projekty a GitHub</h1></div><a class="secondary" href="https://github.com/Yose144/Zion-3.3Nirvana" target="_blank" rel="noopener">Otevřít repozitář ↗</a></div>
+        <p class="intro">Založ plán z pracovní šablony a uprav výstup, tři kroky i námět podle toho, co chceš tento týden skutečně dokončit.</p>
+        <div id="repo-projects" class="canon-grid"></div>
+        <article class="canon-card repo-docs">
+          <h2>Podklady v repozitáři</h2>
+          <ul class="repo-doc-list">
+            <li><a href="https://github.com/Yose144/Zion-3.3Nirvana/blob/main/v3.3Nirvana.md" target="_blank" rel="noopener">Master plán 3.3 ↗</a><span>Pořadí fází a rozsah práce</span></li>
+            <li><a href="https://github.com/Yose144/Zion-3.3Nirvana/blob/main/docs/canon/TRUTH-HIERARCHY.md" target="_blank" rel="noopener">Hierarchie pravdy ↗</a><span>Jak rozhodovat při rozporu dokumentace s ověřením</span></li>
+            <li><a href="https://github.com/Yose144/Zion-3.3Nirvana/blob/main/CODE_VS_DOCS.md" target="_blank" rel="noopener">Kód a dokumentace ↗</a><span>Měřený stav k datu uvedenému v dokumentu</span></li>
+            <li><a href="https://github.com/Yose144/Zion-3.3Nirvana/blob/main/design/manifest.json" target="_blank" rel="noopener">Manifest Engine B ↗</a><span>Paleta a katalog vizuálních assetů</span></li>
+          </ul>
+        </article>
+      </section>
+      <section id="canon" class="hidden" aria-labelledby="canon-title">
+        <p class="eyebrow">ZDROJE A POSTAVY</p><h1 id="canon-title">Kanonický kompas</h1>
+        <p class="intro">Ke každému plánu můžeš připojit epizodu nebo kapitolu, o kterou se scéna opírá.</p>
+        <div class="canon-grid">
+          <article class="canon-card"><span class="stat-icon warm" aria-hidden="true">◇</span><h2>One Love</h2><p>Whitepaper 3.2. Strom života a Zlaté vejce (Hiranyagarbha) patří do obrazového jazyka ZIONu. Pro technické podklady použij oddíl Kronika a ověř dostupnost u aktuálního zdroje.</p><a href="https://github.com/Yose144/Zion-v3.0.0/blob/main/canon/books/ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md" target="_blank" rel="noopener">Otevřít archiv textů ↗</a></article>
+          <article class="canon-card"><span class="stat-icon green" aria-hidden="true">▤</span><h2>Sůl této země</h2><p>Kanonická řada dvanácti zastavení. Epizoda 5 sleduje Noeho a archu, epizoda 9 Rádhu a avatary. Každá epizoda vede příběh a ověřitelné skutečnosti ve vlastních částech.</p><a href="https://github.com/Yose144/Zion-v3.0.0/blob/main/canon/books/SulZeme/00-README.md" target="_blank" rel="noopener">Otevřít archiv textů ↗</a></article>
+          <article class="canon-card"><h2>Postavy a motivy</h2><ul><li><b>Lumi / Elizabeth</b> je malé děvčátko s lucernou, která ukazuje cestu.</li><li><b>Tesař z Nazareta</b> staví loď Království srdce. <b>Noeho archa</b> otevírá palubu příchozím.</li><li><b>Mladý Maitreya</b> se učí odpovědnosti budoucího správce.</li><li><b>Rádha</b> provází vstup do Oasis. <b>Ráma, Sítá a Hanuman</b> nesou motiv nevyšlapané cesty.</li></ul></article>
+          <article class="canon-card"><h2>Technologie a vize</h2><ul><li><b>MÝTUS</b> označuje literární nebo symbolickou scénu.</li><li><b>HORIZONT</b> označuje budoucí záměr, například obydlenou stanici Issobella.</li><li><b>HYPOTÉZA</b> označuje výzkumný předpoklad k ověření.</li><li><b>STAVBA</b> označuje rozpracovanou funkci nebo prototyp.</li><li><b>ŽIVÉ</b> označuje ověřenou funkci s důkazem. Uveď konkrétní službu, zdroj a datum kontroly. Vodítkem je Registr důkazů v Misi Amenti.</li></ul></article>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<dialog id="editor" aria-labelledby="editor-title">
+  <form id="plan-form">
+    <div class="dialog-head"><div><p class="eyebrow">TÝDENNÍ PLÁN</p><h2 id="editor-title">Nový plán</h2></div><button type="button" id="close-editor" class="icon-button" aria-label="Zavřít editor">×</button></div>
+    <div class="dialog-body">
+      <label class="field">Konkrétní výstup<input id="output" required maxlength="160" placeholder="Např. hotová skica hero ilustrace pro Market"></label>
+      <div class="form-row">
+        <label class="field">Projekt<select id="project" required></select></label>
+        <label class="field">Pondělí daného týdne<input id="week" type="date" required><small id="week-help"></small></label>
+        <label class="field">Stav plánu<select id="status"><option value="planned">Naplánováno</option><option value="working">Rozpracováno</option><option value="complete">Hotovo</option></select></label>
+      </div>
+      <div class="form-row delivery-fields">
+        <label class="field">Kritérium dokončení<input id="criterion" maxlength="320" placeholder="Podle čeho poznáš, že je výstup hotový?"></label>
+        <label class="field">Odkaz na GitHub<input id="github-url" type="url" maxlength="700" placeholder="https://github.com/…"></label>
+      </div>
+      <div class="workflow-fields">
+        <p id="linked-plan" class="plan-lineage hidden"></p>
+        <label class="field">Typ výstupu<select id="plan-kind"><option value="">Obecný plán</option></select></label>
+        <div id="plan-outline" class="outline-grid hidden"></div>
+      </div>
+      <fieldset><legend>Tři proveditelné kroky</legend>
+        <div class="step-row"><input type="checkbox" id="done-0" aria-label="První krok hotov"><input id="step-0" required maxlength="240" aria-label="První krok" placeholder="1. První konkrétní úkol"></div>
+        <div class="step-row"><input type="checkbox" id="done-1" aria-label="Druhý krok hotov"><input id="step-1" required maxlength="240" aria-label="Druhý krok" placeholder="2. Druhý konkrétní úkol"></div>
+        <div class="step-row"><input type="checkbox" id="done-2" aria-label="Třetí krok hotov"><input id="step-2" required maxlength="240" aria-label="Třetí krok" placeholder="3. Třetí konkrétní úkol"></div>
+      </fieldset>
+      <div class="story-field">
+        <div class="field-head"><label for="scene">Námět scény nebo ilustrace</label><button type="button" id="inspire" class="quiet">✧ Nabídnout námět</button></div>
+        <textarea id="scene" required maxlength="1800" rows="3" placeholder="Kdo je v obraze, co se děje a co divák uvidí jako první?"></textarea>
+        <div id="inspiration" class="inspiration hidden"><p id="inspiration-text"></p><button type="button" id="apply-inspiration" class="quiet">Použít námět</button></div>
+        <label class="field">Odkaz na kanonický zdroj <small>volitelné</small><input id="reference" maxlength="300" placeholder="Např. Sůl této země, epizoda 5 — Archa"></label>
+      </div>
+      <label class="field fact-field">Technologie a ověření <small>volitelné</small><textarea id="technology" maxlength="1800" rows="3" placeholder="Např. ŽIVÉ — konkrétní funkce, zdroj a datum ověření. STAVBA — co je ve vývoji. HORIZONT — budoucí záměr."></textarea></label>
+      <details id="claims" class="review">
+        <summary>Tvrzení a důkazy <span id="claim-count"></span></summary>
+        <div class="claim-body">
+          <p class="claim-help">Každé tvrzení má vlastní štítek. Pro ŽIVÉ uveď odkaz na důkaz a datum.</p>
+          <div id="claim-list"></div>
+          <button type="button" id="add-claim" class="quiet">＋ Přidat tvrzení</button>
+        </div>
+      </details>
+      <details id="review" class="review">
+        <summary>Výsledek a ověření</summary>
+        <div class="review-fields">
+          <label class="field">Odkaz na výsledek nebo důkaz<input id="result-url" type="url" maxlength="700" placeholder="https://…"></label>
+          <label class="field">Kde se ověřovalo<select id="environment"><option value="">Nevybráno</option><option value="draft">Návrh</option><option value="staging">Náhled / staging</option><option value="production">Produkce</option></select></label>
+          <label class="field">Datum ověření<input id="checked-on" type="date"></label>
+          <label class="field review-note">Co prošlo a co zbývá<textarea id="review-note" maxlength="800" rows="2" placeholder="Např. náhled zkontrolovaný na telefonu. Zbývá finální export."></textarea></label>
+        </div>
+      </details>
+      <p id="form-error" class="form-error hidden" role="alert"></p>
+    </div>
+    <div class="dialog-footer"><button type="button" id="cancel-editor" class="secondary">Zrušit</button><button type="submit" id="save-plan" class="primary">Uložit plán</button></div>
+  </form>
+</dialog>
+<dialog id="source-editor" aria-labelledby="source-editor-title">
+  <form id="source-form">
+    <div class="dialog-head"><h2 id="source-editor-title">Nový podklad</h2><button type="button" id="close-source" class="icon-button" aria-label="Zavřít podklad">×</button></div>
+    <div class="dialog-body">
+      <label class="field">Název<input id="item-title" maxlength="160" required></label>
+      <div class="form-row">
+        <label class="field">Projekt<select id="item-project"></select></label>
+        <label class="field">Typ<select id="item-kind"></select></label>
+        <label class="field">Stav<select id="item-state"></select></label>
+      </div>
+      <label class="field">Odkaz<input id="item-url" type="url" maxlength="700" placeholder="https://…"></label>
+      <div class="form-row delivery-fields">
+        <label class="field">Postavy<input id="item-people" maxlength="200"></label>
+        <label class="field">Svět nebo prostředí<input id="item-world" maxlength="120"></label>
+      </div>
+      <label class="field">Poznámka nebo námět<textarea id="item-note" rows="3" maxlength="1500"></textarea></label>
+      <p id="source-error" class="form-error hidden" role="alert"></p>
+    </div>
+    <div class="dialog-footer"><button type="submit" id="save-source" class="primary">Uložit podklad</button></div>
+  </form>
+</dialog>
+<template id="claim-template">
+  <fieldset class="claim-row">
+    <label class="field">Tvrzení<input class="claim-text" maxlength="350" required></label>
+    <label class="field">Štítek<select class="claim-status"></select></label>
+    <label class="field">Odkaz na důkaz<input class="claim-evidence" type="url" maxlength="700" placeholder="https://…"></label>
+    <label class="field">Datum ověření<input class="claim-date" type="date"></label>
+    <button type="button" class="quiet remove-claim">Odebrat tvrzení</button>
+  </fieldset>
+</template>
+<dialog id="agent-panel" aria-labelledby="agent-title">
+  <form id="agent-form">
+    <div class="dialog-head"><div><p class="eyebrow">PRÁCE AGENTA</p><h2 id="agent-title">Zadat agentovi</h2></div><button class="icon-button" id="close-agent" type="button" aria-label="Zavřít práci agenta">×</button></div>
+    <div class="dialog-body">
+      <p id="agent-output" class="agent-plan"></p>
+      <p class="claim-help">Agent dostane uložený plán a připraví návrh ke kontrole. Stav plánu potvrdíš ty.</p>
+      <label class="field" id="agent-note-field">Co má agent rozpracovat <textarea id="agent-note" rows="2" maxlength="1200" placeholder="Např. varianty kompozice a kontrolu mobilního ořezu"></textarea></label>
+      <p id="agent-feedback" class="hidden" role="status"></p>
+      <div id="agent-runs" aria-live="polite"></div>
+    </div>
+    <div class="dialog-footer"><button type="button" id="refresh-agent" class="secondary">Obnovit stav</button><button type="submit" class="primary" id="queue-agent">Předat agentovi</button></div>
+  </form>
+</dialog>
+</body>
+</html>
