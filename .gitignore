@@ -502,3 +502,6 @@ apps/MarketPlace/AGENTS.md
 
 # Nový workspace 3.3 — samostatný git repo (Zion-3.3Nirvana), necommitovat sem
 /3.3.0/
+
+# Engine B — vygenerované PNG (velké; přebírá je ingest, do gitu nepatří)
+/Atelier/3.3/_generated/

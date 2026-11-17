@@ -85,6 +85,31 @@ Podpora, nové hero Novinek, Kingdom (room/avatars/games/rings), Portal
    - vstup může být ZIP i už rozbalená složka
    - `--dry-run` nic nezapisuje, jen reportuje (adresáře ale založí)
 
+## Generování přímo z repa (bez copy-paste do GPT)
+
+`3.3.0/scripts/gen-engine-b.mjs` umí poslat stejná zadání rovnou poskytovateli
+a uložit výsledek ve formátu, který převezme ingest.
+
+```bash
+# co by se poslalo (bez klíče)
+node 3.3.0/scripts/gen-engine-b.mjs --provider openai --batch 6 --dry-run
+
+# vygenerovat dávku 6 a hned převzít do 3.3
+node 3.3.0/scripts/gen-engine-b.mjs --provider openai --batch 6 --ingest
+
+# jen jeden obraz na schválení stylu
+node 3.3.0/scripts/gen-engine-b.mjs --provider replicate --only onboard-roadmap-hero
+```
+
+| Provider | Env | Model | Poměry |
+|---|---|---|---|
+| `openai` | `OPENAI_API_KEY` | `gpt-image-1` (`OPENAI_IMAGE_MODEL`) | jen 1:1, 3:2, 2:3 → 16:9 a 3:1 se dopočítají ořezem |
+| `replicate` | `REPLICATE_API_TOKEN` | `black-forest-labs/flux-1.1-pro` (`REPLICATE_IMAGE_MODEL`) | volný poměr → 16:9 i 3:1 nativně |
+
+Výstup jde do `Atelier/3.3/_generated/<stamp>/` (mimo git) a `--ingest` ho
+rovnou zkopíruje do `3.3.0/apps/onboard/public/…` + zapíše do
+`design/manifest.json`. Klíč nikdy necommituj — patří do `~/.config/…` (600).
+
 ## Co musí obrázek splnit (jinak se vrací)
 
 - **Přesný poměr a minimální rozlišení** podle `assets.json` (hero 16:9 master
