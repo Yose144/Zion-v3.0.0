@@ -35,8 +35,9 @@ const BRAND_SECTION = `
 
 Oficiální znak ZIONu je **Z vyrostlé ze stromu**: písmeno Z z prken v rasta
 barvách (zelená / zlatá / červená), jehož horní břevno se rozpadá do koruny
-listů a spodní břevno do kořenů, celé v **zlatém kruhu**. To je jediná schválená
-značka. Žádná jiná verze neexistuje a nevymýšlí se.
+listů a spodní břevno do kořenů, celé v **zlatém kruhu**. To je dnes jediná značka
+v repu (canon/brand/org) — finální výběr loga je ale stále na 👤, takže se drž
+tohoto tvaru a nic jiného si nevymýšlej.
 
 - **Přesné předlohy máš přiložené** ve složce \`logo/\` (PNG, transparentní).
   Drž se jich: stejný tvar, stejné barvy, stejný kruh.
