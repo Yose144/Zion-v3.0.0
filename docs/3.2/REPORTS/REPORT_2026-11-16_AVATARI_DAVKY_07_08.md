@@ -152,3 +152,17 @@ scripts/ops/gen-avatar-models.mjs                             (generuje i models
 docs/3.2/AVATAR-3D-PIPELINE.md · AGENTS.md · */AGENTS.md      (stav 201/202)
 docs/3.2/REPORTS/REPORT_2026-11-16_AVATARI_DAVKY_07_08.md     (tento report)
 ```
+
+## 10. Stav po dokončení (2026-11-17)
+
+| | |
+|---|---|
+| Git | `main` = poslední commit této dávky, **pracovní strom čistý**, 0 ahead/behind |
+| Nirvana | 201 GLB v `/opt/zion/APP&WEB/nirvana/public/models/avatars` (750 MB celá app), `200` na `/models/avatars/204.glb` (3 183 768 B) |
+| Web | 201 GLB v `/opt/zion/APP&WEB/website-v2.9/.next/standalone/public/models/avatars` (664 MB), `200` na `/models/avatars/153.glb` (3 070 200 B) |
+| Disk (Mac) | **50 GiB volných (73 %)** — po úklidu (buildy ostatních appek, macOS/npm cache, LFS prune, stagingy) |
+| Prostředí pipeline | `~/.local/share/zion-avatar3d` (3,5 GB) zůstalo lokálně — SD disk byl mezitím odpojený; při 50 GiB volných to nevadí a další běh je hned možný |
+
+Ověření živě (headless Chrome, `app.zionterranova.com`): **204** → 3D + `200
+204.glb`; **0** → 3D + `200 0.glb` (bez regrese); **037** → žádný 3D ani
+request. 3/3 PASS.
