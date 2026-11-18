@@ -2289,7 +2289,7 @@ def _compute_derived_status(svc: dict, health_map: dict) -> dict:
     return h
 
 
-@_ttl_cache_fn(3.0)
+@_ttl_cache_fn(10.0)
 def all_services_health() -> list:
     # First pass: raw health (parallel to avoid serial TCP timeouts)
     raw = {}
@@ -7887,7 +7887,7 @@ def get_pool_blocks(limit: int = 100) -> dict:
                     pass
                 def _fetch_coin_blocks(_cid):
                     _pj = _pool_public_cached(host, port, f"/public/v1/coins/{_cid}/blocks?limit={min(limit,50)}",
-                                              ttl=10.0, timeout=5)
+                                              ttl=60.0, timeout=5)
                     out = []
                     for _bb in (_pj.get("blocks") or []):
                         _bb.setdefault("coin", _cid)
@@ -7897,7 +7897,7 @@ def get_pool_blocks(limit: int = 100) -> dict:
                 # Parallel — 12 coins sequentially cost ~12 s and blew the
                 # browser timeout (2026-11-18).
                 if coins:
-                    with ThreadPoolExecutor(max_workers=len(coins)) as _ex:
+                    with ThreadPoolExecutor(max_workers=min(6, len(coins))) as _ex:
                         for _res in _ex.map(_fetch_coin_blocks, coins):
                             blocks.extend(_res)
                 def _blk_ts(b):
@@ -7949,6 +7949,11 @@ def _pool_public_cached(host: str, port: int, path: str, ttl: float = 6.0, timeo
     The pool's own public endpoints are the slow part (per-coin stats ~1.9 s,
     payouts ~3.6 s), so caching them keeps repeated dashboard polls cheap
     without touching the pool.
+
+    The public tier is rate limited (120 req / 60 s per IP, see
+    `PUBLIC_RATE_LIMIT` in the pool's api.rs). A throttled reply is a *valid*
+    JSON body `{"ok":false,"error":"rate limited"}`, so it must never be
+    cached — otherwise one burst blanks the Pool tab for the whole TTL.
     """
     import urllib.request as _ur
     key = (host, port, path)
@@ -7957,13 +7962,29 @@ def _pool_public_cached(host: str, port: int, path: str, ttl: float = 6.0, timeo
         hit = _POOL_PUBLIC_CACHE.get(key)
         if hit and now - hit[1] < ttl:
             return hit[0]
-    try:
+
+    def _fetch_once() -> dict:
         with _ur.urlopen(f"http://{host}:{port}{path}", timeout=timeout) as r:
-            data = json.loads(r.read().decode("utf-8", errors="ignore"))
-    except Exception as e:
-        # Never cache a failure — a transient pool hiccup used to poison the
-        # cache for the whole TTL and the Pool tab rendered empty (2026-11-18).
-        return {"_error": str(e)[:120]}
+            return json.loads(r.read().decode("utf-8", errors="ignore"))
+
+    data = None
+    for attempt in range(2):
+        try:
+            data = _fetch_once()
+        except Exception as e:
+            if attempt == 0:
+                time.sleep(0.2)
+                continue
+            return {"_error": str(e)[:120]}
+        if isinstance(data, dict) and data.get("ok") is False:
+            # rate limited / transient pool-side refusal → retry once, never cache
+            if attempt == 0:
+                time.sleep(0.35)
+                continue
+            return {"_error": str(data.get("error") or "pool refused request")[:120]}
+        break
+    if not isinstance(data, dict):
+        return {"_error": "unexpected pool payload"}
     with _POOL_PUBLIC_LOCK:
         if len(_POOL_PUBLIC_CACHE) > 256:
             _POOL_PUBLIC_CACHE.clear()
@@ -7995,14 +8016,16 @@ def get_pool_overview() -> dict:
 
     def _fetch_both(cid):
         return (
-            _get(f"/public/v1/coins/{cid}/stats", timeout=6, ttl=20.0),
-            _get(f"/public/v1/coins/{cid}/blocks?limit=10", timeout=6, ttl=20.0),
+            _get(f"/public/v1/coins/{cid}/stats", timeout=6, ttl=60.0),
+            _get(f"/public/v1/coins/{cid}/blocks?limit=10", timeout=6, ttl=60.0),
         )
 
     per_coin = {}
     payouts_resp = {}
     if cids:
-        with ThreadPoolExecutor(max_workers=len(cids) + 1) as _ex:
+        # Keep the fan-out modest: the pool's public tier allows 120 req/min
+        # per IP and all dashboard traffic comes from 127.0.0.1.
+        with ThreadPoolExecutor(max_workers=min(6, len(cids) + 1)) as _ex:
             _payout_future = _ex.submit(_get, "/public/v1/payouts?limit=15", 6, 30.0)
             for cid, (stats, blocks_resp) in zip(cids, _ex.map(_fetch_both, cids)):
                 per_coin[cid] = (stats, blocks_resp)
@@ -10731,6 +10754,12 @@ def get_pool_wallet_status() -> dict:
 # ── Payout System Status Builder ─────────────────────────────────────────
 
 def fetch_pool_stats() -> dict:
+    """Cached pool /stats snapshot (copy — callers mutate what they get)."""
+    return dict(_fetch_pool_stats_cached())
+
+
+@_ttl_cache_fn(5.0)
+def _fetch_pool_stats_cached() -> dict:
     """Fetch live pool stats from routing metrics endpoint (port V31_POOL_API_PORT)."""
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
     try:
@@ -10741,6 +10770,12 @@ def fetch_pool_stats() -> dict:
         return {}
 
 def fetch_pool_miners() -> list:
+    """Cached active-miner list (copy — callers enrich/mutate entries)."""
+    return [dict(m) for m in _fetch_pool_miners_cached()]
+
+
+@_ttl_cache_fn(5.0)
+def _fetch_pool_miners_cached() -> list:
     """Fetch active miners from Edge pool, enriched with paid_total.
 
     The pool's /miners endpoint now includes paid_total_atomic, so we only fall

@@ -13588,7 +13588,10 @@ function _rigsRender(d, health, audit){
     const el = document.getElementById(id); if(el) el.textContent = v;
     if(sub !== undefined){ const s = document.getElementById(id + '-sub'); if(s) s.textContent = sub; }
   };
-  set('rig-kpi-rigs', fleet.rigs ?? '—', (fleet.running ?? 0) + ' running · ' + (fleet.miners ?? 0) + ' miners');
+  const smosRigCount = Array.isArray(d.smos) ? d.smos.length : 0;
+  set('rig-kpi-rigs', fleet.rigs ?? '—',
+      (fleet.running ?? 0) + ' running · ' + (fleet.miners ?? 0) + ' miners' +
+      (smosRigCount ? ' · SMOS ' + smosRigCount : ''));
   set('rig-kpi-cost', (fleet.dph_h != null ? '$' + Number(fleet.dph_h).toFixed(4) + '/h' : '—'),
       (fleet.dph_day != null ? '$' + Number(fleet.dph_day).toFixed(2) + '/day' : '—'));
   const coins = fleet.coins || [];
