@@ -433,38 +433,38 @@ async fn fetch_pool_utxos(
     use zion_core::v31_wallet::SpendableUtxo;
     let eps = crate::rpc_client::L1Endpoints::from_urls(rpc_addr)
         .ok_or_else(|| anyhow::anyhow!("invalid L1 RPC URL: {}", rpc_addr))?;
+    // Typed path — same ~27 MB `getUtxos` payload as `payout::fetch_utxos`;
+    // skipping the `serde_json::Value` tree is what keeps glibc arenas
+    // from bloating (2026-11-13).
     let resp = eps
-        .call(&rpc_request("getUtxos", json!({ "address": address })))
+        .call_typed::<crate::rpc_client::UtxoSetResponse>(&rpc_request(
+            "getUtxos",
+            json!({ "address": address }),
+        ))
         .await?;
 
-    let result = resp.get("result").cloned().unwrap_or(Value::Null);
+    let result = resp.result.unwrap_or_default();
     let utxos = result
-        .get("utxos")
-        .and_then(|v| v.as_array())
-        .map(|arr| {
-            arr.iter()
-                .filter_map(|u| {
-                    let tx_hash_hex = u.get("tx_hash")?.as_str()?;
-                    let tx_hash = hex::decode(tx_hash_hex).ok()?;
-                    if tx_hash.len() != 32 {
-                        return None;
-                    }
-                    let mut arr = [0u8; 32];
-                    arr.copy_from_slice(&tx_hash);
-                    Some(SpendableUtxo {
-                        tx_hash: arr,
-                        output_index: u.get("output_index")?.as_u64()? as u32,
-                        amount: u.get("amount")?.as_u64()?,
-                        address: address.to_string(),
-                        script: hex::decode(u.get("script_hex")?.as_str().unwrap_or(""))
-                            .unwrap_or_default(),
-                        block_height: u.get("block_height")?.as_u64().unwrap_or(0),
-                        is_coinbase: u.get("is_coinbase")?.as_bool().unwrap_or(false),
-                    })
-                })
-                .collect::<Vec<_>>()
+        .entries()
+        .filter_map(|u| {
+            let tx_hash_hex = u.tx_hash.as_deref()?;
+            let tx_hash = hex::decode(tx_hash_hex).ok()?;
+            if tx_hash.len() != 32 {
+                return None;
+            }
+            let mut arr = [0u8; 32];
+            arr.copy_from_slice(&tx_hash);
+            Some(SpendableUtxo {
+                tx_hash: arr,
+                output_index: u.output_index? as u32,
+                amount: u.amount?,
+                address: address.to_string(),
+                script: u.script?,
+                block_height: u.block_height?,
+                is_coinbase: u.is_coinbase.unwrap_or(false),
+            })
         })
-        .unwrap_or_default();
+        .collect::<Vec<_>>();
 
     Ok(utxos)
 }
@@ -680,6 +680,10 @@ pub fn spawn_deferred_payout_processor(
 /// must match exactly and `block_height` must be a positive integer.
 /// Entries with a missing, null, malformed or zero height are ignored —
 /// they prove nothing about where the tx was included.
+///
+/// Test-only since the production path moved to the typed
+/// `UtxoSetResponse` DTO (2026-11-13 memory work).
+#[cfg(test)]
 fn utxo_inclusion_height(utxo: &Value, tx_id: &str) -> Option<u64> {
     if utxo.get("tx_hash").and_then(|v| v.as_str())? != tx_id {
         return None;
@@ -715,16 +719,16 @@ async fn check_tx_on_chain_via_utxos(
     let eps = crate::rpc_client::L1Endpoints::from_urls(rpc_addr)
         .ok_or_else(|| anyhow::anyhow!("invalid L1 RPC URL: {}", rpc_addr))?;
     let request = rpc_request("getUtxos", json!({ "address": address }));
-    let resp = eps.call(&request).await?;
+    let resp = eps
+        .call_typed::<crate::rpc_client::UtxoSetResponse>(&request)
+        .await?;
 
-    if let Some(utxos) = resp
-        .get("result")
-        .and_then(|r| r.get("utxos"))
-        .and_then(|v| v.as_array())
-    {
-        for utxo in utxos {
-            if let Some(height) = utxo_inclusion_height(utxo, tx_id) {
-                return Ok(Some(height));
+    if let Some(result) = resp.result {
+        for utxo in result.entries() {
+            if utxo.tx_hash.as_deref() == Some(tx_id) {
+                if let Some(height) = utxo.block_height.filter(|h| *h > 0) {
+                    return Ok(Some(height));
+                }
             }
         }
     }

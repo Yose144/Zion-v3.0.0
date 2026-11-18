@@ -118,6 +118,12 @@ struct Args {
     /// Per-coin minimum native-unit payout, `coin:amount` comma list.
     #[arg(long, env = "ZION_POOL_MIN_PAYOUT_NATIVE", default_value = "")]
     min_payout_native: String,
+
+    /// Payout chains whose payout leg is switched off (comma list, e.g.
+    /// "quantus"). Nothing is queued for them and restored queue entries are
+    /// dropped — a queue that can never be drained is not a debt.
+    #[arg(long, env = "ZION_POOL_DISABLED_PAYOUT_CHAINS", default_value = "")]
+    disabled_payout_chains: String,
 }
 
 fn parse_address(encoded: &str) -> anyhow::Result<Address> {
@@ -183,6 +189,9 @@ async fn main() -> anyhow::Result<()> {
             &args.native_payout_coins,
         ),
         min_payout_native: zion_pool::config::parse_min_payout_native(&args.min_payout_native),
+        disabled_payout_chains: zion_pool::config::parse_disabled_payout_chains(
+            &args.disabled_payout_chains,
+        ),
     };
 
     let telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::new()));
@@ -639,10 +648,12 @@ async fn main() -> anyhow::Result<()> {
     });
 
     // ── PPLNS state persistence ───────────────────────────────────────────
-    // Interval is env-tunable: the snapshot is a full-window JSON (~100+ MB
-    // at current PPLNS window sizes) rewritten every cycle while shares keep
+    // Interval is env-tunable: the snapshot is a full-window JSON (~120 MB at
+    // current PPLNS window sizes) rewritten every cycle while shares keep
     // arriving, so ops may need a longer cadence on small boxes. Default 30 s
-    // preserves previous behaviour.
+    // preserves previous behaviour. Ported from the frozen 3.2 tree
+    // (`edd312fec`, 2026-11-15) so a single binary carries every fix
+    // (doporuceni §4.5).
     let pplns_persist_interval_s = std::env::var("ZION_POOL_PPLNS_PERSIST_INTERVAL_S")
         .ok()
         .and_then(|v| v.parse::<u64>().ok())

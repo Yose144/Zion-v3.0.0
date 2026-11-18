@@ -660,6 +660,41 @@ impl Storage {
         Ok(row.and_then(|(addr, amt)| amt.parse::<u128>().ok().map(|a| (addr, a))))
     }
 
+    /// Batch varianta `get_output_owner` — **jedno** uzamčení connection a
+    /// jeden dotaz místo N.
+    ///
+    /// Proč: `get_native_block` (RPC) obohacuje každý input každé transakce
+    /// voláním `get_output_owner` → každé volání bere `self.conn.lock()`.
+    /// Storage má jeden globální `Mutex<Connection>`, takže čtení jednoho bloku
+    /// znamenalo 1 + N čekání na stejný zámek. Když drží zápis (aplikace
+    /// bloku), čekání se sčítalo — naměřeno 4–60 s na `getBlockByHeight`
+    /// (až 3 z 12 po sobě jdoucích volání timeoutovalo).
+    ///
+    /// Výsledky jsou ve stejném pořadí jako vstup; chybějící řádek = `None`.
+    /// Prázdný vstup = prázdný výstup (bez dotazu).
+    pub async fn get_output_owners(
+        &self,
+        refs: &[(Hash, u32)],
+    ) -> Result<Vec<Option<(String, u128)>>, StorageError> {
+        if refs.is_empty() {
+            return Ok(Vec::new());
+        }
+        let conn = self.conn.lock().await;
+        let mut out = Vec::with_capacity(refs.len());
+        for (tx_hash, output_index) in refs {
+            let row: Option<(String, String)> = conn
+                .query_row(
+                    "SELECT address, amount FROM output_index
+                     WHERE tx_hash = ?1 AND output_index = ?2",
+                    params![tx_hash.0.as_slice(), *output_index as i64],
+                    |row| Ok((row.get(0)?, row.get(1)?)),
+                )
+                .optional()?;
+            out.push(row.and_then(|(addr, amt)| amt.parse::<u128>().ok().map(|a| (addr, a))));
+        }
+        Ok(out)
+    }
+
     /// Paginated transaction history for a native V31 UTXO address, newest
     /// first. Returns `(tx_hash, height, direction)` tuples plus the total
     /// number of matching rows (for pagination).
@@ -1507,6 +1542,28 @@ mod tests {
             .expect("genesis output 0 must be indexed");
         assert_eq!(owner, "zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5");
         assert_eq!(amount, 1650000000_u128 * 1_000_000);
+
+        // Batch varianta musí dát stejný výsledek jako jednotlivé dotazy,
+        // ve stejném pořadí, a chybějící řádek jako None.
+        let batch = storage
+            .get_output_owners(&[
+                (genesis_tx_hash, 0),
+                (spend_tx_hash, 0),
+                (genesis_tx_hash, 99),
+            ])
+            .await
+            .unwrap();
+        assert_eq!(batch.len(), 3);
+        assert_eq!(
+            batch[0].as_ref().map(|(a, _)| a.clone()),
+            Some("zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5".to_string())
+        );
+        assert_eq!(batch[0].as_ref().map(|(_, amt)| *amt), Some(1650000000_u128 * 1_000_000));
+        assert!(batch[1].is_some(), "spend tx output 0 must be indexed");
+        assert!(batch[2].is_none(), "neexistující output index musí být None");
+
+        // Prázdný vstup = prázdný výstup (bez dotazu, bez chyby).
+        assert!(storage.get_output_owners(&[]).await.unwrap().is_empty());
 
         // Sender-side history: the spent genesis address should show an 'out'
         // entry for the spend transaction alongside its original 'in' entry.

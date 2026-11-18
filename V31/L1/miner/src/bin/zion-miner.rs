@@ -166,6 +166,12 @@ struct Args {
     #[arg(long)]
     list_algorithms: bool,
 
+    /// Print the detected hardware profile and derived mining plan as JSON
+    /// and exit. Used by the desktop client for GPU enumeration and VRAM
+    /// budgeting instead of scraping the human banner.
+    #[arg(long)]
+    print_hardware_json: bool,
+
     // ── SRBMiner-compatible single/dual-mining CLI ──
     /// Primary algorithm to mine (SRBMiner semantics). Accepts our algo
     /// names (`--list-algorithms`), coin tickers, and common SRBMiner
@@ -277,6 +283,67 @@ async fn main() -> Result<()> {
         for a in algos {
             println!("  {a}");
         }
+        return Ok(());
+    }
+
+    // `--print-hardware-json`: machine-readable hardware profile + plan.
+    // The desktop client uses this for GPU cards, VRAM budget and support
+    // diagnostics — parsing the human banner is brittle and, in release
+    // builds (no `tui` feature), the banner is not printed at all.
+    if args.print_hardware_json {
+        let hw = zion_miner::auto_detect::detect_hardware();
+        let tune = zion_miner::gpu::auto_tune_work_sizes();
+        let plan = zion_miner::auto_detect::derive_auto_config(&hw, &tune);
+        // `d.backend` je platforma (u Metal „Apple“), ale těží se přes
+        // rozřešný backend (`metal`/`opencl`/`cuda`). Klient potřebuje ten.
+        let resolved_backend = format!("{:?}", hw.gpu_backend).to_lowercase();
+        let gpus: Vec<serde_json::Value> = hw
+            .gpu_devices
+            .iter()
+            .enumerate()
+            .map(|(i, d)| {
+                serde_json::json!({
+                    "index": i,
+                    "name": d.name,
+                    "backend": resolved_backend,
+                    "platform": d.backend,
+                    "compute_units": d.compute_units,
+                    "vram_mb": d.vram_mb,
+                })
+            })
+            .collect();
+        let out = serde_json::json!({
+            "miner": "zion-miner",
+            "version": env!("CARGO_PKG_VERSION"),
+            "build_id": env!("ZION_BUILD_ID"),
+            "cpu": {
+                "vendor": hw.cpu_vendor,
+                "model": hw.cpu_model,
+                "physical_cores": hw.cpu_physical_cores,
+                "logical_cores": hw.cpu_logical_cores,
+                "arch": format!("{:?}", hw.cpu_arch),
+                "simd": hw.cpu_simd,
+            },
+            "ram_bytes": hw.sys_ram_bytes,
+            "gpu_backend": format!("{:?}", hw.gpu_backend).to_lowercase(),
+            "has_gpu": hw.has_gpu,
+            "gpu": gpus,
+            "plan": {
+                "mode_name": plan.mode_name,
+                "gpu_work_size": plan.gpu_work_size,
+                "secondary_gpu_work_size": plan.secondary_gpu_work_size,
+                "miner_threads": plan.miner_threads,
+                "ext_cpu_threads": plan.ext_cpu_threads,
+                "verushash_nonce_count": plan.verushash_nonce_count,
+                "zion_nonce_batch": plan.zion_nonce_batch,
+                "stream2_batch": plan.stream2_batch,
+                "gpu_count": plan.gpu_count,
+                "stream1_enabled": plan.stream1_enabled,
+                "stream2_enabled": plan.stream2_enabled,
+                "stream3_enabled": plan.stream3_enabled,
+            },
+        });
+        println!("{}", serde_json::to_string_pretty(&out)?);
         return Ok(());
     }
 

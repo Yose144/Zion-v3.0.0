@@ -7,7 +7,7 @@ Wants=network-online.target
 Type=oneshot
 User=zion
 Group=zion
-ExecStart=/opt/zion/ZION_OS/infra/scripts/backup-edge.sh
+ExecStart=/opt/zion/scripts/backup-edge.sh
 StandardOutput=journal
 StandardError=journal
 

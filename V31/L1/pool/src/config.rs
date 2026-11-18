@@ -62,6 +62,42 @@ pub struct PoolConfig {
     /// Per-coin minimum payout in the coin's native base units,
     /// `ZION_POOL_MIN_PAYOUT_NATIVE=qtu:1000000,prl:50000000`.
     pub min_payout_native: std::collections::HashMap<String, u64>,
+    /// Payout chains whose payout leg is switched off
+    /// (`ZION_POOL_DISABLED_PAYOUT_CHAINS=quantus`). Nothing is queued for a
+    /// disabled chain and any entries restored from the ledger are dropped:
+    /// a queue that can never be drained is not a debt, it is disk churn and
+    /// a misleading `/stats` number. Chain names match the worker
+    /// registration (`quantus`, `pearl`); tickers are normalized.
+    pub disabled_payout_chains: Vec<String>,
+}
+
+impl PoolConfig {
+    /// `true` when `chain` belongs to a payout leg that is switched off.
+    /// `None` means the native ZION ledger, which is never disabled here.
+    pub fn payout_chain_disabled(&self, chain: Option<&str>) -> bool {
+        match chain {
+            Some(chain) => {
+                let chain = chain.trim().to_ascii_lowercase();
+                self.disabled_payout_chains.iter().any(|d| d == &chain)
+            }
+            None => false,
+        }
+    }
+}
+
+/// Parse `ZION_POOL_DISABLED_PAYOUT_CHAINS` (`"quantus"` → `["quantus"]`).
+/// Worker registration names chains `quantus`/`pearl`, while operators type
+/// tickers (`qtc`, `qtu`, `prl`), so both spellings are accepted.
+pub fn parse_disabled_payout_chains(raw: &str) -> Vec<String> {
+    raw.split(',')
+        .map(|c| c.trim().to_ascii_lowercase())
+        .filter(|c| !c.is_empty())
+        .map(|c| match c.as_str() {
+            "qtc" | "qtu" | "quantus" | "quantum" => "quantus".to_string(),
+            "prl" | "pearl" => "pearl".to_string(),
+            _ => c,
+        })
+        .collect()
 }
 
 /// Parse `ZION_POOL_NATIVE_PAYOUT_COINS` (`"qtu,prl"` → lowercase tickers).
@@ -121,6 +157,7 @@ impl Default for PoolConfig {
             payout_tx_fee_flowers: zion_core::fee::MIN_TX_FEE.max(1),
             native_payout_coins: Vec::new(),
             min_payout_native: std::collections::HashMap::new(),
+            disabled_payout_chains: Vec::new(),
         }
     }
 }

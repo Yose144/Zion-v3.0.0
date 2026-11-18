@@ -817,6 +817,16 @@ impl Node {
         Ok(self.storage.get_output_owner(tx_hash, output_index).await?)
     }
 
+    /// Batch varianta `get_output_owner` — jedno uzamčení storage connection
+    /// pro celý blok místo jednoho na každý input. Viz
+    /// `Storage::get_output_owners` pro detaily (důvod: latence `getBlockByHeight`).
+    pub async fn get_output_owners(
+        &self,
+        refs: &[(Hash, u32)],
+    ) -> Result<Vec<Option<(String, u128)>>, NodeError> {
+        Ok(self.storage.get_output_owners(refs).await?)
+    }
+
     /// Paginated native V31 UTXO address transaction history, newest first.
     /// Returns `(tx_hash_hex, height, direction)` plus the total row count.
     pub async fn get_address_tx_history(

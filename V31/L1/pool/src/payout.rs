@@ -271,9 +271,14 @@ impl PayoutSweeper {
 
         {
             let mut pool = self.pool.lock().expect("pool lock poisoned");
-            for (height, payout) in &payouts {
-                pool.mark_payout_sent(*height, &payout.address);
-            }
+            // One ledger persist for the whole batch — per-recipient
+            // mark_payout_sent rewrote+fsynced the full ledger N times
+            // under the pool lock and stalled /stats for minutes.
+            pool.mark_payouts_sent(
+                payouts
+                    .iter()
+                    .map(|(height, payout)| (*height, payout.address.as_str())),
+            );
         }
 
         info!(
@@ -356,9 +361,14 @@ async fn fetch_utxos(
         "method": "getUtxos",
         "params": { "address": address }
     });
-    let resp = endpoints.call(&payload).await?;
+    // Typed path: the wallet's ~90k-UTXO set is ~27 MB of JSON — the
+    // `serde_json::Value` tree it used to build was the pool's biggest
+    // allocator churn (glibc arena bloat, 2026-11-13).
+    let resp = endpoints
+        .call_typed::<crate::rpc_client::UtxoSetResponse>(&payload)
+        .await?;
 
-    if let Some(error) = resp.get("error").filter(|v| !v.is_null()) {
+    if let Some(error) = resp.error.filter(|v| !v.is_null()) {
         let msg = error
             .get("message")
             .and_then(|m| m.as_str())
@@ -368,72 +378,43 @@ async fn fetch_utxos(
 
     let mut out = Vec::new();
     let mut skipped = 0u64;
-    let count = resp
-        .get("result")
-        .and_then(|r| r.get("count"))
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0);
+    let result = resp.result.unwrap_or_default();
+    let count = result.count.unwrap_or(0);
 
-    if let Some(utxos) = resp
-        .get("result")
-        .and_then(|r| r.get("utxos"))
-        .and_then(|v| v.as_array())
-    {
-        for utxo in utxos {
-            let tx_hash_hex = utxo
-                .get("tx_hash")
-                .and_then(|v| v.as_str())
-                .unwrap_or_default();
-            let output_index = utxo
-                .get("output_index")
-                .and_then(|v| v.as_u64())
-                .unwrap_or_default() as u32;
-            let amount = utxo
-                .get("amount")
-                .and_then(|v| v.as_u64())
-                .unwrap_or_default();
-            let block_height = utxo
-                .get("block_height")
-                .and_then(|v| v.as_u64())
-                .unwrap_or_default();
-            let is_coinbase = utxo
-                .get("is_coinbase")
-                .and_then(|v| v.as_bool())
-                .unwrap_or(false);
+    for utxo in result.entries() {
+        let tx_hash_hex = utxo.tx_hash.unwrap_or_default();
+        let output_index = utxo.output_index.unwrap_or_default() as u32;
+        let amount = utxo.amount.unwrap_or_default();
+        let block_height = utxo.block_height.unwrap_or_default();
+        let is_coinbase = utxo.is_coinbase.unwrap_or(false);
 
-            // Skip immature coinbase outputs so the pool never builds an
-            // invalid payout transaction.
-            if is_coinbase && current_height.saturating_sub(block_height) < COINBASE_MATURITY {
+        // Skip immature coinbase outputs so the pool never builds an
+        // invalid payout transaction.
+        if is_coinbase && current_height.saturating_sub(block_height) < COINBASE_MATURITY {
+            skipped += 1;
+            continue;
+        }
+
+        let tx_hash = match hex::decode(tx_hash_hex)
+            .ok()
+            .and_then(|v| <[u8; 32]>::try_from(v).ok())
+        {
+            Some(h) => h,
+            None => {
                 skipped += 1;
                 continue;
             }
+        };
 
-            let tx_hash = match hex::decode(tx_hash_hex)
-                .ok()
-                .and_then(|v| <[u8; 32]>::try_from(v).ok())
-            {
-                Some(h) => h,
-                None => {
-                    skipped += 1;
-                    continue;
-                }
-            };
-
-            out.push(SpendableUtxo {
-                tx_hash,
-                output_index,
-                amount,
-                address: address.to_string(),
-                script: hex::decode(
-                    utxo.get("script_hex")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or(""),
-                )
-                .unwrap_or_default(),
-                block_height,
-                is_coinbase,
-            });
-        }
+        out.push(SpendableUtxo {
+            tx_hash,
+            output_index,
+            amount,
+            address: address.to_string(),
+            script: utxo.script.unwrap_or_default(),
+            block_height,
+            is_coinbase,
+        });
     }
 
     let total: u64 = out.iter().map(|u| u.amount).sum();

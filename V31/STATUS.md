@@ -1,7 +1,10 @@
 # V31 Mainnet Beta — Status
 
-> **Update 2026-11-18 (operativní refresh):** **Chain height 129 332** (native_tip `ec83b42b…2247fb`, accepted_blocks 129333, difficulty 2881), všechny 3 nody (EDGE2 9445 + EDGE 9446/9447) na stejném tipu. Workspace 3.2.0, protokol `3.1.0-alpha`, stupeň 3.2.0 Mainnet Beta. Soft-fork aktivační výška 13 100 je dávno překročena (129 332 ≫ 13 100). G8 run #7 (11. 11.) 99,918 % pending.
->
+> **Zdrojová metadata 2026-11-18:** workspace + 18 balíčků v locku jsou
+> `3.3.0-beta.1` / **Mainnet Beta**. Nasazení se zde netvrdí; build, smíšená
+> 3.2/3.3 kompatibilita a rolling rollout čekají na uzavření bran
+> [migrace](../docs/migration/CLOSEOUT-3.3.md). Konsensus/genesis/wire ID beze změny.
+
 > **Update 2026-10-26 (lifecycle):** Aktuální stupeň = **3.2.0 Mainnet Beta** (≠ Stable). Protokol handshake `zion-v3-node/3.1.0-alpha` zůstává. Všechny updates níže jsou datované snapshoty.
 >
 > **Update 2026-08-23 (L5/L6 fund trackers live on Edge):** `zion-free-world` a `zion-issobella` jsou nasazeny jako systemd jednotky na Edge a aktivně scanují L1 coinbase. L5 běží na `127.0.0.1:8095`, L6 běží na `127.0.0.1:8097` (posunuto z 8096 kvůli portovému konfliktu se ZIS). Nginx proxy, edge-env, health probe a Python dashboard jsou aktualizovány. Veřejný `MissionControlDashboard` a `StatusV3.md` označeny jako active. Detail: [`docs/3.2/REPORTS/REPORT_2026-08-23_L5_L6_G10_DETAIL.md`](../docs/3.2/REPORTS/REPORT_2026-08-23_L5_L6_G10_DETAIL.md).

@@ -83,7 +83,39 @@ fn clean_rpc_url(rpc_url: &str) -> &str {
     s.split_once('/').map(|(h, _)| h).unwrap_or(s)
 }
 
+/// `true` když URL míří na veřejný HTTPS JSON-RPC (nginx), ne na lokální TCP.
+fn is_https(rpc_url: &str) -> bool {
+    rpc_url.trim().starts_with("https://")
+}
+
+/// JSON-RPC přes HTTP(S) — veřejné `rpc.zionterranova.com/jsonrpc`.
+///
+/// Uživatel bez lokálního nodu nemá jak dosáhnout na `127.0.0.1:9445`;
+/// dřív `rpc_call` vždy strhl schéma a zkusil plain TCP, takže `https://`
+/// skončilo na TLS portu jako „expected value at line 1 column 1“.
+async fn rpc_http_call(url: &str, request: &Value) -> Result<Value> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(25))
+        .build()
+        .context("failed to build RPC HTTP client")?;
+    let response = client
+        .post(url)
+        .json(request)
+        .send()
+        .await
+        .with_context(|| format!("failed to reach RPC at {url}"))?;
+    let status = response.status();
+    let body = response.text().await.context("failed to read RPC response")?;
+    if !status.is_success() {
+        bail!("RPC {} at {url}: {}", status.as_u16(), body.trim());
+    }
+    serde_json::from_str(&body).with_context(|| "failed to parse RPC response")
+}
+
 async fn rpc_call(rpc_url: &str, request: &Value) -> Result<Value> {
+    if is_https(rpc_url) {
+        return rpc_http_call(rpc_url.trim(), request).await;
+    }
     let url = clean_rpc_url(rpc_url);
     let mut stream = TcpStream::connect(url)
         .await

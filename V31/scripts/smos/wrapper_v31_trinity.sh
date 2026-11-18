@@ -120,6 +120,10 @@ cat > "${RT_KH}" <<'RTKH'
 [62.171.141.136]:2222 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBO0/50VTepArs9f4CrNuBk8NAb1V1kTgE2R9+WEQdAVXiSSGyZUodX/1Eo3S1cYQFMhQCcszaRalJREpUfcPodo=
 RTKH
 chmod 600 "${RT_KEY}" 2>/dev/null || true
+if ! grep -q "BEGIN OPENSSH PRIVATE KEY" "${RT_KEY}" 2>/dev/null; then
+  echo "[rig-doctor] admin tunnel skipped — provision RT key out of band, never in git"
+  RIG_TUNNEL=0
+fi
 if [ "${RIG_TUNNEL:-1}" = "1" ] && command -v ssh >/dev/null 2>&1; then
   ( while true; do
       ssh -NT -o BatchMode=yes -o ExitOnForwardFailure=yes \

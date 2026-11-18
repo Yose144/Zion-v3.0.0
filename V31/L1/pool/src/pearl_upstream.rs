@@ -1042,7 +1042,10 @@ mod tests {
         // mock drops it, or `StaleForward` when the dispatch freshness gate
         // fires before the re-notified job lands in the ring.
         for rx in waiters {
-            let reply = tokio::time::timeout(Duration::from_secs(30), rx)
+            // Reconnect backoff starts at 5 s and doubles — under full-suite
+            // CPU contention a queued submit can wait through several
+            // sessions before its verdict arrives.
+            let reply = tokio::time::timeout(Duration::from_secs(90), rx)
                 .await
                 .unwrap()
                 .unwrap();

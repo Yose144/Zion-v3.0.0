@@ -1,22 +1,10 @@
 # AGENTS.md — V31 Mainnet Beta
 
-> # ⛔ NEEDITOVAT — tento `V31/` je ZDROJÁK ZMRAZENÝ k 16. 11. 2026
->
-> **Kanonický V31 je [`3.3.0/V31/`](../3.3.0/V31/) (D-001, D-010).** Tady se už nic nemění.
->
-> Proč to není formalita: stromy se reálně rozešly a každý build z tohohle adresáře tiše
-> vrátí opravy, které existují jen v 3.3:
->
-> | Změna | tady | `3.3.0/V31` |
-> |---|---|---|
-> | `ZION_POOL_DISABLED_PAYOUT_CHAINS` (QTC) `ed24cef65` | ❌ | ✅ |
-> | typované RPC / memfix `aecfa6344` | ❌ | ✅ |
-> | `try_lock` `/stats` `00985e44d` | ❌ | ✅ |
-> | batch `getBlockByHeight` `f5db9d232` | ❌ | ✅ |
-> | PPLNS persist knob `edd312fec` | ✅ | ✅ (port 16. 11., `151b37793`) |
->
-> Pool se staví **jen** z commitu v `3.3.0/V31` a `/health.build` musí odpovídat commitu,
-> který se opravdu kompiloval. Detail: [`docs/reports/REPORT_2026-11-16_SERVISNI_OKNO_A.md`](../3.3.0/docs/reports/REPORT_2026-11-16_SERVISNI_OKNO_A.md).
+> **Zdrojový release od 2026-11-18:** `3.3.0-beta.1` (**Mainnet Beta**, nikoli
+> Stable). Změna release metadat není změna konsensu/genesis/emise ani wire ID
+> `zion-v3-node/3.1.0-alpha` a neznamená nasazení. Aktuální migrační brány:
+> [`docs/migration/CLOSEOUT-3.3.md`](../docs/migration/CLOSEOUT-3.3.md).
+> Starší datované bloky níže jsou historické snapshoty.
 
 > **Lifecycle (2026-10-26):** aktuální stupeň = **3.2.0 Mainnet Beta** (≠ Stable). Protokol handshake `zion-v3-node/3.1.0-alpha` zůstává záměrně — wire ID, ne stupeň. Žádná změna konsenzu/genesis/emise.
 

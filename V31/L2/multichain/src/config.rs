@@ -391,6 +391,12 @@ impl PoolConfigFile {
                 issobella_wallet: self.issobella_address.clone(),
                 pool_fee_wallet: self.pool_fee_address.clone(),
             },
+            // Multichain drží payout drain pro ZION vypnutý jen přes env
+            // (`QTC_PAYOUT_ENABLED` apod.); souborový config tento seznam
+            // nenese, takže kopírujeme default z `zion_pool::config::PoolConfig`
+            // (žádný chain navíc se nevypíná). Dřív tu pole chybělo a
+            // `cargo build -p zion-cli` na tom padal (E0063).
+            disabled_payout_chains: Vec::new(),
             api_key: self.api_key.clone(),
             admin_key: self.admin_key.clone(),
             humanitarian_address: self.humanitarian_address.clone(),

@@ -379,6 +379,12 @@ pub struct PplnsEngine {
     /// `(miner_index, coin_index)` (F3).  Kept separate from `unpaid`
     /// (flowers) so ZION and e.g. QTU-plank balances never mix units.
     unpaid_native: HashMap<(u32, u16), u64>,
+    /// Per-coin native payout targets, keyed `(miner_index, coin_index)`
+    /// → `(chain, address)`.  The unified `addresses`/`chains` slot only
+    /// models the ZION-leg (flowers) payout target — a miner active on
+    /// several native coins needs a Quantus address for QTU revenue and
+    /// a Pearl address for PRL revenue at the same time.
+    coin_addresses: HashMap<(u32, u16), (String, String)>,
     /// Per-wallet payout threshold overrides (flowers, A2.3) — ZIS-account
     /// configured, persisted in the share store (`miner_settings`), applied
     /// to the unified (flowers) payout path only. Keyed by wallet; lookup
@@ -402,6 +408,14 @@ pub struct PplnsEngine {
     /// persistence thread after a successful save.  Avoids redundant
     /// JSON serialize + file write when no shares arrived since last save.
     dirty: bool,
+}
+
+/// Serializable per-coin payout target — the payout-chain label plus the
+/// on-chain address, persisted inside [`PplnsSnapshot::coin_payout_addresses`].
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CoinPayoutAddress {
+    pub chain: String,
+    pub address: String,
 }
 
 /// Serializable snapshot of all PPLNS engine mutable state.
@@ -428,6 +442,12 @@ pub struct PplnsSnapshot {
     /// amount (F3).  `#[serde(default)]` keeps pre-F3 snapshots loadable.
     #[serde(default)]
     pub unpaid_native: HashMap<String, u64>,
+    /// Per-coin native payout targets, serialized as `"<miner_id>|<coin>"`
+    /// → `{chain, address}`.  `#[serde(default)]` keeps pre-F4 snapshots
+    /// loadable — absent entries fall back to the unified
+    /// `addresses`/`payout_chains` slot at distribution time.
+    #[serde(default)]
+    pub coin_payout_addresses: HashMap<String, CoinPayoutAddress>,
     /// Total native-unit payouts emitted per coin key (F3 lifetime stat).
     #[serde(default)]
     #[serde(with = "u128_str::map")]
@@ -468,6 +488,7 @@ impl PplnsEngine {
             miner_coin_weights: HashMap::new(),
             coin_share_counts: HashMap::new(),
             unpaid_native: HashMap::new(),
+            coin_addresses: HashMap::new(),
             payout_overrides: HashMap::new(),
             total_paid_native: HashMap::new(),
             applied_revenue_events: HashSet::new(),
@@ -567,6 +588,23 @@ impl PplnsEngine {
                     )
                 })
                 .collect(),
+            coin_payout_addresses: self
+                .coin_addresses
+                .iter()
+                .map(|((m, c), (chain, addr))| {
+                    (
+                        format!(
+                            "{}|{}",
+                            self.registry.id(*m),
+                            self.coin_registry.key_for(*c)
+                        ),
+                        CoinPayoutAddress {
+                            chain: chain.clone(),
+                            address: addr.clone(),
+                        },
+                    )
+                })
+                .collect(),
             total_paid_native: self
                 .total_paid_native
                 .iter()
@@ -608,6 +646,11 @@ impl PplnsEngine {
             self.registry.lookup_or_register(id);
         }
         for key in snap.unpaid_native.keys() {
+            if let Some((miner_id, _)) = key.split_once('|') {
+                self.registry.lookup_or_register(miner_id);
+            }
+        }
+        for key in snap.coin_payout_addresses.keys() {
             if let Some((miner_id, _)) = key.split_once('|') {
                 self.registry.lookup_or_register(miner_id);
             }
@@ -681,6 +724,18 @@ impl PplnsEngine {
             .map(|(key, n)| (self.coin_registry.lookup_or_register(&key), n))
             .collect();
         self.applied_revenue_events = snap.applied_revenue_events;
+
+        // Restore per-coin payout targets (F4). Keys serialize as
+        // "<miner_id>|<coin>"; malformed keys are skipped.
+        self.coin_addresses.clear();
+        for (key, entry) in snap.coin_payout_addresses {
+            if let Some((miner_id, coin)) = key.split_once('|') {
+                let m = self.registry.lookup_or_register(miner_id);
+                let c = self.coin_registry.lookup_or_register(coin);
+                self.coin_addresses
+                    .insert((m, c), (entry.chain, entry.address));
+            }
+        }
 
         // Restore per-miner data.
         for (id, addr) in snap.addresses {
@@ -778,14 +833,20 @@ impl PplnsEngine {
         path: P,
     ) -> std::io::Result<()> {
         let path = path.as_ref();
-        let json = serde_json::to_vec(snap).map_err(std::io::Error::other)?;
         let tmp = path.with_extension("json.tmp");
-        // Write + fsync the temp file so data is durable on disk.
+        // Stream JSON straight into the temp file through a large buffered
+        // writer — avoids materializing the whole snapshot (~130 MB in
+        // production) as a `Vec<u8>` on every persist cycle.  Output bytes
+        // are identical to `serde_json::to_vec`; the temp file is only
+        // renamed after the write completes, so a serialize error leaves a
+        // stale `.json.tmp` that `load_from_path` cleans up, never a
+        // corrupt state file.
         {
-            let mut f = std::fs::File::create(&tmp)?;
-            f.write_all(&json)?;
-            f.flush()?;
-            f.sync_all()?;
+            let f = std::fs::File::create(&tmp)?;
+            let mut w = std::io::BufWriter::with_capacity(4 << 20, f);
+            serde_json::to_writer(&mut w, snap).map_err(std::io::Error::other)?;
+            w.flush()?;
+            w.get_ref().sync_all()?;
         }
         // Atomic rename (POSIX guarantee on same filesystem).
         std::fs::rename(&tmp, path)?;
@@ -848,6 +909,29 @@ impl PplnsEngine {
         self.ensure_capacity(idx);
         self.addresses[idx as usize] = Some(address.to_string());
         self.chains[idx as usize] = (chain != "zion").then(|| chain.to_string());
+        self.dirty = true;
+    }
+
+    /// Register a native-coin payout target for `(miner_id, coin)`.
+    ///
+    /// Independent of the unified `addresses`/`chains` slot: a miner can
+    /// hold a Quantus address for QTU revenue *and* a Pearl address for
+    /// PRL revenue simultaneously.  `chain` is the coin's payout-chain
+    /// label (`"quantus"`, `"pearl"`, …) and is re-checked against the
+    /// revenue event's expected chain at distribution time — a
+    /// mismatched entry simply never pays out.
+    pub fn register_coin_address(
+        &mut self,
+        miner_id: &str,
+        coin: &str,
+        chain: &str,
+        address: &str,
+    ) {
+        let idx = self.registry.lookup_or_register(miner_id);
+        self.ensure_capacity(idx);
+        let coin_idx = self.coin_registry.lookup_or_register(coin);
+        self.coin_addresses
+            .insert((idx, coin_idx), (chain.to_string(), address.to_string()));
         self.dirty = true;
     }
 
@@ -1401,19 +1485,33 @@ impl PplnsEngine {
                     if c != d.coin_idx || bal < min {
                         continue;
                     }
-                    let chain_ok = if d.chain == "zion" {
-                        self.chains[m as usize].is_none()
-                    } else {
-                        self.chains[m as usize].as_deref() == Some(d.chain.as_str())
+                    // Per-coin payout target wins; otherwise fall back to
+                    // the unified (primary) slot when its chain matches —
+                    // preserves pre-F4 single-address registrations.
+                    // A stored entry on a *different* chain fails closed:
+                    // the balance stays accrued rather than paying the
+                    // wrong chain.
+                    let address = match self.coin_addresses.get(&(m, c)) {
+                        Some((chain, addr)) if chain == &d.chain => Some(addr.clone()),
+                        Some(_) => None,
+                        None => {
+                            let chain_ok = if d.chain == "zion" {
+                                self.chains[m as usize].is_none()
+                            } else {
+                                self.chains[m as usize].as_deref() == Some(d.chain.as_str())
+                            };
+                            if chain_ok {
+                                self.addresses[m as usize].clone()
+                            } else {
+                                None
+                            }
+                        }
                     };
-                    if !chain_ok {
-                        continue;
-                    }
-                    if let Some(ref address) = self.addresses[m as usize] {
+                    if let Some(address) = address {
                         payouts.push(PayoutEntry {
                             share_count: share_counts.get(m as usize).copied().unwrap_or(0),
                             miner_id: self.registry.id(m).to_string(),
-                            address: address.clone(),
+                            address,
                             amount: bal,
                             payout_chain: (d.chain != "zion").then(|| d.chain.clone()),
                             native_units: true,
@@ -2394,6 +2492,29 @@ mod tests {
     }
 
     #[test]
+    fn streamed_snapshot_write_is_byte_identical_to_to_vec() {
+        // The streaming writer must produce exactly the same bytes as the
+        // previous `serde_json::to_vec` path — the on-disk snapshot format
+        // is a compatibility contract with existing state files.
+        let mut e = engine_with_fees(100, 500_000);
+        e.register_address("alice", "zion1alice");
+        e.record_share_at("alice", "rig1", 1, 1000);
+        e.compute_payouts(1_000_000);
+        let snap = e.snapshot();
+
+        let dir = std::env::temp_dir();
+        let path = dir.join(format!("zion_pplns_stream_{}.json", std::process::id()));
+        let _ = std::fs::remove_file(&path);
+
+        PplnsEngine::write_snapshot_to_path(&snap, &path).expect("streamed write");
+        let on_disk = std::fs::read(&path).expect("read back");
+        let expected = serde_json::to_vec(&snap).expect("to_vec");
+        assert_eq!(on_disk, expected, "streamed output must match to_vec bytes");
+
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
     fn load_nonexistent_returns_none() {
         let path = std::env::temp_dir().join("zion_pplns_nonexistent_999999.json");
         let _ = std::fs::remove_file(&path);
@@ -2709,5 +2830,93 @@ mod tests {
         e.rollback_payouts(&payouts);
         assert_eq!(e.unpaid_native_balance("alice", "qtu"), 800);
         assert_eq!(e.unpaid_balance("alice"), 0); // flowers untouched
+    }
+
+    // ---- F4: per-coin payout addresses ----
+
+    #[test]
+    fn coin_addresses_pay_each_coin_to_its_own_target() {
+        let mut e = engine_native(1_000_000, 1, &["qtu", "prl"], &[]);
+        // One miner, two native coins, two different payout addresses —
+        // impossible under the single-slot model.
+        e.register_coin_address("dual", "qtu", "quantus", "qzDUAL");
+        e.register_coin_address("dual", "prl", "pearl", "prl1DUAL");
+        e.record_share_at_diff_for_coin("dual", "r", 1, 1000, 100, "qtu");
+        e.record_share_at_diff_for_coin("dual", "r", 1, 1000, 100, "prl");
+
+        let q = e.compute_miner_payouts_for_coin("qtu", 1_000, "quantus");
+        assert_eq!(q.len(), 1);
+        assert_eq!(q[0].address, "qzDUAL");
+        assert_eq!(q[0].payout_chain.as_deref(), Some("quantus"));
+
+        let p = e.compute_miner_payouts_for_coin("prl", 2_000, "pearl");
+        assert_eq!(p.len(), 1);
+        assert_eq!(p[0].address, "prl1DUAL");
+        assert_eq!(p[0].payout_chain.as_deref(), Some("pearl"));
+    }
+
+    #[test]
+    fn coin_addresses_do_not_touch_unified_slot() {
+        let mut e = engine_native(1_000_000, 1, &["qtu"], &[]);
+        // ZIS-linked style: per-coin only — primary stays unset so the
+        // ZION-leg target is unaffected by external registrations.
+        e.register_coin_address("vip", "qtu", "quantus", "qzVIP");
+        assert_eq!(e.payout_chain_for("vip"), "zion");
+        assert!(e.address_for("vip").is_none());
+
+        e.record_share_at_diff_for_coin("vip", "r", 1, 1000, 100, "qtu");
+        let payouts = e.compute_miner_payouts_for_coin("qtu", 500, "quantus");
+        assert_eq!(payouts.len(), 1);
+        assert_eq!(payouts[0].address, "qzVIP");
+    }
+
+    #[test]
+    fn coin_address_wrong_chain_fails_closed() {
+        let mut e = engine_native(1_000_000, 1, &["qtu"], &[]);
+        // Stored chain disagrees with the event's expected chain — the
+        // balance must stay accrued, never pay the wrong chain.
+        e.register_coin_address("m", "qtu", "pearl", "prl1WRONG");
+        e.record_share_at_diff_for_coin("m", "r", 1, 1000, 100, "qtu");
+        let payouts = e.compute_miner_payouts_for_coin("qtu", 500, "quantus");
+        assert!(payouts.is_empty());
+        assert_eq!(e.unpaid_native_balance("m", "qtu"), 500);
+    }
+
+    #[test]
+    fn coin_address_snapshot_roundtrip() {
+        let mut e = engine_native(1_000_000, 1, &["qtu", "prl"], &[]);
+        e.register_coin_address("dual", "qtu", "quantus", "qzDUAL");
+        e.register_coin_address("dual", "prl", "pearl", "prl1DUAL");
+        e.record_share_at_diff_for_coin("dual", "r", 1, 1000, 100, "qtu");
+        e.record_share_at_diff_for_coin("dual", "r", 1, 1000, 100, "prl");
+
+        let snap = e.snapshot();
+        let mut e2 = engine_native(1_000_000, 1, &["qtu", "prl"], &[]);
+        e2.restore(snap);
+
+        let q = e2.compute_miner_payouts_for_coin("qtu", 1_000, "quantus");
+        assert_eq!(q.len(), 1);
+        assert_eq!(q[0].address, "qzDUAL");
+        let p = e2.compute_miner_payouts_for_coin("prl", 1_000, "pearl");
+        assert_eq!(p.len(), 1);
+        assert_eq!(p[0].address, "prl1DUAL");
+    }
+
+    #[test]
+    fn pre_f4_snapshot_loads_without_coin_addresses() {
+        // Snapshots written before F4 have no `coin_payout_addresses`
+        // field — serde default must keep them loadable and the
+        // unified-slot fallback must still pay.
+        let mut e = engine_native(1_000_000, 1, &["qtu"], &[]);
+        e.register_address_with_chain("alice", "qz1alice", "quantus");
+        e.record_share_at_diff_for_coin("alice", "r", 1, 1000, 100, "qtu");
+        let mut snap = e.snapshot();
+        snap.coin_payout_addresses.clear();
+
+        let mut e2 = engine_native(1_000_000, 1, &["qtu"], &[]);
+        e2.restore(snap);
+        let payouts = e2.compute_miner_payouts_for_coin("qtu", 500, "quantus");
+        assert_eq!(payouts.len(), 1);
+        assert_eq!(payouts[0].address, "qz1alice");
     }
 }

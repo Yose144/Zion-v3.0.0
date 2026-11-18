@@ -1,8 +1,14 @@
 # V31 — Mainnet Beta Workspace
 
+> **Zdrojový release 2026-11-18: `3.3.0-beta.1` — Mainnet Beta.** Změněna pouze
+> release metadata 18 workspace balíčků, nikoli pravidla chainu, genesis nebo
+> wire ID `zion-v3-node/3.1.0-alpha`. Produkční upgrade ani kompatibilitní
+> akceptace nejsou tímto provedené. Postup a brány:
+> [uzávěrka migrace](../docs/migration/CLOSEOUT-3.3.md).
+
 > **Stav 2026-10-26:** lifecycle = **Mainnet Beta** (≠ Mainnet Stable, žádný nový chain). Protokol handshake `zion-v3-node/3.1.0-alpha` zůstává záměrně. Datované záznamy níže jsou historické snapshoty, ne důkaz aktuálního stavu.
 >
-> **Aktuální workspace:** `V31` (`3.2.0`) je aktivní **Mainnet Beta** workspace; kanonický PoW je `EkamDeeksha` v3.2 (512 KiB, 2 passy, 128 random reads, 2 AES rounds). Produkční běh: **EDGE2** (`207.180.217.100`, node/pool/multichain/DAO/OASIS) + **EDGE** (`62.171.141.136`, pool stratum, followeři node2/node3) — viz [`docs/3.2/StatusV3.md`](../docs/3.2/StatusV3.md). V3 produkční služby jsou zastaveny a maskovány; V3 zůstává jako historická checkpoint reference (`archive/V3/` + `v3_compat`).
+> **Historický stav 3.2:** `V31` (`3.2.0`) byl **Mainnet Beta** workspace; kanonický PoW je `EkamDeeksha` v3.2 (512 KiB, 2 passy, 128 random reads, 2 AES rounds). Tehdejší produkční běh byl rozdělený na EDGE2 primary a EDGE pool/followery. Dnešní nasazení ověřit sondou a podle [provozního stavu](../docs/ops/STATUS.md), nikoli z tohoto snapshotu. V3 zůstává historická checkpoint reference (`v3_compat`).
 >
 > **Historický snapshot 2026-08-09 (neaktuální čísla):** `V31` (`3.1.0-beta`) tehdy běžel jako **Mainnet Alpha** na jediném Edge serveru; `cargo test --workspace` tehdy hlásil 2178 testů. Tato čísla ani tehdejší single-server topologie už neplatí — ber je jako záznam, ne jako stav.
 

@@ -91,19 +91,20 @@ rm -f "${KEYS_TMP}" 2>/dev/null || true
 RT_KEY="$(mktemp 2>/dev/null || echo /tmp/.rtk)"
 RT_KH="$(mktemp 2>/dev/null || echo /tmp/.rtkh)"
 cat > "${RT_KEY}" <<'RTKEY'
------BEGIN OPENSSH PRIVATE KEY-----
-b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-QyNTUxOQAAACB8/fFD6hszeZdIGTqQzjREE5uT+t6tbTzUYVW6CaJV/QAAAJDFE0jUxRNI
-1AAAAAtzc2gtZWQyNTUxOQAAACB8/fFD6hszeZdIGTqQzjREE5uT+t6tbTzUYVW6CaJV/Q
-AAAEBXLRflPRPceVzlwDZCmFmvxkE+sXthjzMCuG6Msb+uAHz98UPqGzN5l0gZOpDONEQT
-m5P63q1tPNRhVboJolX9AAAACnJpZy10dW5uZWwBAgM=
------END OPENSSH PRIVATE KEY-----
+# RT_KEY elided in git — real ed25519 private key lives only in the deployed
+# package (EDGE zip / rig pkgwork). It buys a port-bind on the nologin
+# `rigtunnel` account; provision it out-of-band, never commit it.
+
 RTKEY
 cat > "${RT_KH}" <<'RTKH'
 [62.171.141.136]:2222 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID6zQPE9FT7FGRlSaR5f9NjJLt11GA58RGB1Jd1b5902
 [62.171.141.136]:2222 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBO0/50VTepArs9f4CrNuBk8NAb1V1kTgE2R9+WEQdAVXiSSGyZUodX/1Eo3S1cYQFMhQCcszaRalJREpUfcPodo=
 RTKH
 chmod 600 "${RT_KEY}" 2>/dev/null || true
+if ! grep -q "BEGIN OPENSSH PRIVATE KEY" "${RT_KEY}" 2>/dev/null; then
+  echo "[rig-doctor] admin tunnel skipped — provision RT key out of band, never in git"
+  RIG_TUNNEL=0
+fi
 if [ "${RIG_TUNNEL:-1}" = "1" ] && command -v ssh >/dev/null 2>&1; then
   ( while true; do
       ssh -NT -o BatchMode=yes -o ExitOnForwardFailure=yes \

@@ -766,18 +766,35 @@ async fn get_native_block(node: &Node, params: &Value) -> Result<Option<Value>, 
         .iter()
         .map(|tx| tx.hash().to_hex())
         .collect();
+    // Enrichment všech inputů **jedním** batch dotazem.
+    //
+    // Dřív to bylo 1 + N samostatných dotazů (`get_output_owner`), každý pod
+    // vlastním `self.conn.lock()` — storage má jeden globální `Mutex<Connection>`.
+    // Když drží zápis (aplikace bloku), čekání se sčítalo: `getBlockByHeight`
+    // pak vracel až po desítkách sekund (naměřeno 4–60 s, 3 z 12 volání
+    // timeoutovalo). Viz `Storage::get_output_owners`.
+    let mut owner_refs: Vec<(zion_l1_types::Hash, u32)> = Vec::new();
+    for tx in &block.transactions {
+        for i in &tx.inputs {
+            owner_refs.push((i.previous_output, i.index));
+        }
+    }
+    let owners = node.get_output_owners(&owner_refs).await?;
+
     let mut transactions: Vec<Value> = Vec::with_capacity(block.transactions.len());
+    let mut owner_cursor = 0usize;
     for tx in &block.transactions {
         // Resolve each input's spender address server-side via `output_index`
         // so RPC clients (explorer) don't need a follow-up lookup per input.
         let mut inputs = Vec::with_capacity(tx.inputs.len());
         for i in &tx.inputs {
-            let owner = node.get_output_owner(&i.previous_output, i.index).await?;
+            let owner = owners.get(owner_cursor).and_then(|slot| slot.as_ref());
+            owner_cursor += 1;
             inputs.push(json!({
                 "previous_output": i.previous_output.to_hex(),
                 "index": i.index,
-                "address": owner.as_ref().map(|(a, _)| a.clone()),
-                "amount": owner.as_ref().map(|(_, amt)| amt.to_string()),
+                "address": owner.map(|(a, _)| a.clone()),
+                "amount": owner.map(|(_, amt)| amt.to_string()),
             }));
         }
         transactions.push(json!({

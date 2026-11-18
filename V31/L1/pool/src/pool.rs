@@ -330,6 +330,28 @@ pub fn resolve_payout_target(
     ("zion".to_string(), pool_fallback_addr.to_string())
 }
 
+/// Register a resolved `(chain, address)` payout target into the engine —
+/// the unified slot plus the matching per-coin slot so native coin
+/// revenue reaches the same address the miner's wallet chose.  Chains
+/// without a coin mapping (`_` arm) only update the unified slot.
+pub(crate) fn register_resolved_target(
+    pl: &mut PplnsEngine,
+    miner_id: &str,
+    chain: &str,
+    address: &str,
+) {
+    pl.register_address_with_chain(miner_id, address, chain);
+    let coin = match chain {
+        "quantus" => Some("qtu"),
+        "pearl" => Some("prl"),
+        "zion" => Some("zion"),
+        _ => None,
+    };
+    if let Some(coin) = coin {
+        pl.register_coin_address(miner_id, coin, chain, address);
+    }
+}
+
 impl Pool {
     pub fn new(config: PoolConfig, telemetry: Arc<Mutex<MinerTelemetryRegistry>>) -> Self {
         Self::try_new(config, telemetry)
@@ -362,7 +384,17 @@ impl Pool {
         });
         let ledger = Self::load_payout_ledger(config.state_path.as_deref())?;
         let session_counters = SessionCounters::default();
-        Ok(Self {
+        // A queue that can never be drained is not a debt: it is disk churn
+        // and a misleading `/stats` number. Drop restored entries for payout
+        // chains whose leg is switched off and persist the smaller ledger.
+        let mut pending_payouts = ledger.pending_payouts;
+        let dropped_disabled = pending_payouts
+            .iter()
+            .filter(|(_, p)| config.payout_chain_disabled(p.payout_chain.as_deref()))
+            .count();
+        pending_payouts.retain(|(_, p)| !config.payout_chain_disabled(p.payout_chain.as_deref()));
+
+        let mut pool = Self {
             config,
             pplns: Arc::new(Mutex::new(pplns)),
             validator: ShareValidator::new(),
@@ -376,13 +408,21 @@ impl Pool {
             worker_ext_payouts: Arc::new(std::sync::RwLock::new(HashMap::new())),
             last_payouts: None,
             signing_key,
-            pending_payouts: ledger.pending_payouts,
+            pending_payouts,
             sent_payouts: ledger.sent_payouts.into_iter().collect(),
             paid_block_heights: ledger.paid_block_heights.into_iter().collect(),
             dedup: Arc::new(Mutex::new(ShareDedup::new(session_counters))),
             telemetry,
             pearl: crate::pearl_gateway::PearlRuntime::from_env(),
-        })
+        };
+        if dropped_disabled > 0 {
+            pool.persist_payout_ledger();
+            tracing::info!(
+                dropped = dropped_disabled,
+                "dropped restored payouts for disabled payout chains"
+            );
+        }
+        Ok(pool)
     }
 
     /// Sidecar path for the payout ledger (`<state_path>.payouts.json`).
@@ -552,7 +592,7 @@ impl Pool {
     ) {
         let (chain, address) = self.worker_payout_target(worker_name);
         let mut pl = self.pplns.lock().expect("pplns lock poisoned");
-        pl.register_address_with_chain(worker_name, &address, &chain);
+        register_resolved_target(&mut pl, worker_name, &chain, &address);
         pl.record_share_with_diff_for_coin(worker_name, worker_name, height, weight.max(1), coin);
     }
 
@@ -586,7 +626,7 @@ impl Pool {
         let (chain, address) = self.worker_payout_target(worker);
         let share_difficulty = submission.difficulty.max(1);
         let mut pl = self.pplns.lock().expect("pplns lock poisoned");
-        pl.register_address_with_chain(worker, &address, &chain);
+        register_resolved_target(&mut pl, worker, &chain, &address);
         pl.record_share_with_diff_for_coin(worker, worker, height, share_difficulty, coin);
     }
 
@@ -620,7 +660,7 @@ impl Pool {
         }
         let (chain, address) = self.worker_payout_target(worker_name);
         let mut pl = self.pplns.lock().expect("pplns lock poisoned");
-        pl.register_address_with_chain(worker_name, &address, &chain);
+        register_resolved_target(&mut pl, worker_name, &chain, &address);
         pl.record_share_with_diff_for_coin(worker_name, worker_name, height, weight.max(1), coin);
         true
     }
@@ -654,10 +694,9 @@ impl Pool {
                 .write()
                 .expect("ext payouts lock poisoned")
                 .insert(worker.to_string(), ("quantus".to_string(), ss58.clone()));
-            self.pplns
-                .lock()
-                .expect("pplns lock poisoned")
-                .register_address_with_chain(worker, &ss58, "quantus");
+            let mut pl = self.pplns.lock().expect("pplns lock poisoned");
+            pl.register_address_with_chain(worker, &ss58, "quantus");
+            pl.register_coin_address(worker, "qtu", "quantus", &ss58);
             return;
         }
         if let Some(prl) = parse_pearl_payout(wallet) {
@@ -665,10 +704,9 @@ impl Pool {
                 .write()
                 .expect("ext payouts lock poisoned")
                 .insert(worker.to_string(), ("pearl".to_string(), prl.clone()));
-            self.pplns
-                .lock()
-                .expect("pplns lock poisoned")
-                .register_address_with_chain(worker, &prl, "pearl");
+            let mut pl = self.pplns.lock().expect("pplns lock poisoned");
+            pl.register_address_with_chain(worker, &prl, "pearl");
+            pl.register_coin_address(worker, "prl", "pearl", &prl);
             return;
         }
         if let Some(addr) = parse_worker_address(worker) {
@@ -676,10 +714,9 @@ impl Pool {
                 .write()
                 .expect("worker addrs lock poisoned")
                 .insert(worker.to_string(), addr.clone());
-            self.pplns
-                .lock()
-                .expect("pplns lock poisoned")
-                .register_address(worker, &addr.encoded);
+            let mut pl = self.pplns.lock().expect("pplns lock poisoned");
+            pl.register_address(worker, &addr.encoded);
+            pl.register_coin_address(worker, "zion", "zion", &addr.encoded);
         }
     }
 
@@ -687,6 +724,10 @@ impl Pool {
     /// `payout_address` field).  Accepts `qtc:<ss58>`/`qtu:<ss58>`/bare
     /// `qz…` for Quantus payouts and `zion1…` for native payouts.
     /// Returns the registered `(chain, address)` on success.
+    ///
+    /// External-chain registrations also pin the matching per-coin
+    /// payout target (`qtu`/`prl`) so native coin revenue reaches the
+    /// same address the miner chose for the unified leg.
     pub fn register_payout_address<'a>(
         &mut self,
         miner_id: &str,
@@ -698,10 +739,9 @@ impl Pool {
                 .write()
                 .expect("ext payouts lock poisoned")
                 .insert(miner_id.to_string(), ("quantus".to_string(), ss58.clone()));
-            self.pplns
-                .lock()
-                .expect("pplns lock poisoned")
-                .register_address_with_chain(miner_id, &ss58, "quantus");
+            let mut pl = self.pplns.lock().expect("pplns lock poisoned");
+            pl.register_address_with_chain(miner_id, &ss58, "quantus");
+            pl.register_coin_address(miner_id, "qtu", "quantus", &ss58);
             return Some(("quantus", addr));
         }
         if let Some(_prl) = parse_pearl_payout(addr) {
@@ -709,10 +749,9 @@ impl Pool {
                 .write()
                 .expect("ext payouts lock poisoned")
                 .insert(miner_id.to_string(), ("pearl".to_string(), _prl.clone()));
-            self.pplns
-                .lock()
-                .expect("pplns lock poisoned")
-                .register_address_with_chain(miner_id, &_prl, "pearl");
+            let mut pl = self.pplns.lock().expect("pplns lock poisoned");
+            pl.register_address_with_chain(miner_id, &_prl, "pearl");
+            pl.register_coin_address(miner_id, "prl", "pearl", &_prl);
             return Some(("pearl", addr));
         }
         if addr.starts_with("zion1") {
@@ -721,14 +760,66 @@ impl Pool {
                     .write()
                     .expect("worker addrs lock poisoned")
                     .insert(miner_id.to_string(), parsed.clone());
-                self.pplns
-                    .lock()
-                    .expect("pplns lock poisoned")
-                    .register_address(miner_id, &parsed.encoded);
+                let mut pl = self.pplns.lock().expect("pplns lock poisoned");
+                pl.register_address(miner_id, &parsed.encoded);
+                pl.register_coin_address(miner_id, "zion", "zion", &parsed.encoded);
                 return Some(("zion", addr));
             }
         }
         None
+    }
+
+    /// Register a ZIS-linked payout address for a single coin leg.
+    ///
+    /// Unlike [`Self::register_payout_address`] this never overwrites the
+    /// unified (ZION-leg) payout target for external chains: a VIP user
+    /// can hold a Quantus address for QTU revenue, a Pearl address for
+    /// PRL revenue and a ZION address for block rewards at the same time.
+    /// `"zion"` still resolves through the unified primary slot — that is
+    /// where ZION-leg flower payouts look.
+    ///
+    /// Returns the registered `(chain, canonical_address)` on success.
+    pub fn register_linked_payout_address(
+        &mut self,
+        miner_id: &str,
+        chain: &str,
+        address: &str,
+    ) -> Option<(&'static str, String)> {
+        let addr = address.trim();
+        match chain {
+            "quantus" => {
+                let ss58 = parse_quantus_payout(addr)?;
+                self.pplns
+                    .lock()
+                    .expect("pplns lock poisoned")
+                    .register_coin_address(miner_id, "qtu", "quantus", &ss58);
+                Some(("quantus", ss58))
+            }
+            "pearl" => {
+                let prl = parse_pearl_payout(addr)?;
+                self.pplns
+                    .lock()
+                    .expect("pplns lock poisoned")
+                    .register_coin_address(miner_id, "prl", "pearl", &prl);
+                Some(("pearl", prl))
+            }
+            "zion" => {
+                if !addr.starts_with("zion1") {
+                    return None;
+                }
+                let parsed = Address::new(ChainId::ZionL1, addr.as_bytes().to_vec(), addr).ok()?;
+                self.worker_addresses
+                    .write()
+                    .expect("worker addrs lock poisoned")
+                    .insert(miner_id.to_string(), parsed.clone());
+                self.pplns
+                    .lock()
+                    .expect("pplns lock poisoned")
+                    .register_address(miner_id, &parsed.encoded);
+                Some(("zion", parsed.encoded))
+            }
+            _ => None,
+        }
     }
 
     pub fn submit_zion(
@@ -862,10 +953,10 @@ impl Pool {
     /// a solo miner registered for a native external chain is paid there.
     fn solo_payout(&mut self, miner_id: &str, block_reward: u64) -> Option<PayoutEntry> {
         let (chain, address) = self.worker_payout_target(miner_id);
-        self.pplns
-            .lock()
-            .expect("pplns lock poisoned")
-            .register_address_with_chain(miner_id, &address, &chain);
+        {
+            let mut pl = self.pplns.lock().expect("pplns lock poisoned");
+            register_resolved_target(&mut pl, miner_id, &chain, &address);
+        }
         let miner_share = zion_core::emission::fee_split(block_reward).0;
         Some(PayoutEntry {
             miner_id: miner_id.to_string(),
@@ -901,6 +992,19 @@ impl Pool {
             None => self.payouts(block_reward),
         };
         for payout in payouts {
+            if self
+                .config
+                .payout_chain_disabled(payout.payout_chain.as_deref())
+            {
+                // The payout leg is off (e.g. QTC before treasury funding).
+                // Queueing it would grow a debt that cannot be paid.
+                tracing::debug!(
+                    chain = payout.payout_chain.as_deref().unwrap_or("zion"),
+                    address = %payout.address,
+                    "skipping payout for disabled payout chain"
+                );
+                continue;
+            }
             let key = (block_height, payout.address.clone());
             if !self.sent_payouts.contains(&key) {
                 self.pending_payouts.push((block_height, payout));
@@ -961,6 +1065,14 @@ impl Pool {
         // credits on the pplns shard.
         pl.mark_revenue_event_applied(event_id);
         drop(pl);
+        let payouts: Vec<_> = payouts
+            .into_iter()
+            .filter(|(_, entry)| {
+                !self
+                    .config
+                    .payout_chain_disabled(entry.payout_chain.as_deref())
+            })
+            .collect();
         self.pending_payouts.extend(payouts.iter().cloned());
         self.persist_payout_ledger();
         let emitted_total = payouts
@@ -1240,8 +1352,19 @@ impl Pool {
 
     /// Mark a payout as successfully submitted so it is not re-sent.
     pub fn mark_payout_sent(&mut self, block_height: u64, address: &str) {
-        self.sent_payouts
-            .insert((block_height, address.to_string()));
+        self.mark_payouts_sent([(block_height, address)]);
+    }
+
+    /// Batch variant of [`Self::mark_payout_sent`]: the payout sweeper marks
+    /// every recipient of one transaction while holding the pool lock.
+    /// Persisting per recipient rewrote and fsynced the whole ledger N
+    /// times — on large payout batches that held the pool mutex for
+    /// minutes and stalled `/stats`. Insert all markers, persist once.
+    pub fn mark_payouts_sent<'a>(&mut self, sent: impl IntoIterator<Item = (u64, &'a str)>) {
+        for (block_height, address) in sent {
+            self.sent_payouts
+                .insert((block_height, address.to_string()));
+        }
         self.persist_payout_ledger();
     }
 
@@ -1927,6 +2050,52 @@ mod tests {
     }
 
     #[test]
+    fn mark_payouts_sent_batch_persists_all_recipients() {
+        let dir = std::env::temp_dir().join(format!(
+            "zion-pool-batch-ledger-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let state_path = dir.join("pplns.json");
+        let cfg = PoolConfig {
+            state_path: Some(state_path.to_string_lossy().into_owned()),
+            min_payout_flowers: 0,
+            ..config()
+        };
+
+        {
+            let mut pool = Pool::new(cfg.clone(), telemetry());
+            pool.mark_payouts_sent([
+                (100, "z1alice"),
+                (100, "z1bob"),
+                (101, "z1carol"),
+                (100, "z1alice"),
+            ]);
+            assert_eq!(pool.sent_payouts.len(), 3);
+            assert!(pool.sent_payouts.contains(&(100, "z1alice".to_string())));
+            assert!(pool.sent_payouts.contains(&(100, "z1bob".to_string())));
+            assert!(pool.sent_payouts.contains(&(101, "z1carol".to_string())));
+            // The sidecar ledger captured the whole batch in one write.
+            let raw =
+                std::fs::read_to_string(dir.join("pplns.json.payouts.json")).unwrap();
+            let ledger: PayoutLedgerState = serde_json::from_str(&raw).unwrap();
+            assert_eq!(ledger.sent_payouts.len(), 3);
+        }
+
+        // Restart: batch markers restored from the sidecar.
+        {
+            let pool = Pool::new(cfg, telemetry());
+            assert_eq!(pool.sent_payouts.len(), 3);
+        }
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
     fn coin_revenue_distributes_native_units() {
         let mut pool = Pool::new(
             PoolConfig {
@@ -2261,6 +2430,90 @@ mod tests {
         pool.persist_payout_ledger();
         let ledger = Pool::load_payout_ledger(config.state_path.as_deref()).unwrap();
         assert_eq!(ledger.paid_block_heights, vec![42]);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    fn quantus_entry(address: &str) -> PayoutEntry {
+        PayoutEntry {
+            miner_id: "miner".into(),
+            address: address.into(),
+            amount: 42,
+            share_count: 1,
+            payout_chain: Some("quantus".into()),
+            native_units: true,
+            coin: Some("qtu".into()),
+            revenue_event: None,
+        }
+    }
+
+    #[test]
+    fn disabled_payout_chains_normalize_tickers() {
+        assert_eq!(
+            crate::config::parse_disabled_payout_chains("QTC, prl ,quantus"),
+            vec!["quantus".to_string(), "pearl".to_string(), "quantus".to_string()]
+        );
+        let cfg = PoolConfig {
+            disabled_payout_chains: vec!["quantus".into()],
+            ..config()
+        };
+        assert!(cfg.payout_chain_disabled(Some("quantus")));
+        assert!(cfg.payout_chain_disabled(Some(" Quantus ")));
+        // The native ZION ledger is never disabled by this knob.
+        assert!(!cfg.payout_chain_disabled(None));
+        assert!(!cfg.payout_chain_disabled(Some("pearl")));
+    }
+
+    /// The QTC payout leg has been off since 2026-11-04 and its queue grew to
+    /// 60 375 entries that could never be paid (18 MB rewritten on every
+    /// persist). A disabled chain must be dropped on restore and persisted.
+    #[test]
+    fn disabled_payout_chain_drops_restored_entries() {
+        let root = std::env::temp_dir().join(format!(
+            "zion_pool_disabled_chain_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let state_path = root.join("pplns.json");
+        let ledger_path = PathBuf::from(format!("{}.payouts.json", state_path.display()));
+        let mixed = PayoutLedgerState {
+            pending_payouts: vec![
+                (1, quantus_entry("qz1alice")),
+                (2, quantus_entry("qz1bob")),
+                (
+                    3,
+                    PayoutEntry {
+                        miner_id: "zion-miner".into(),
+                        address: "zion1carol".into(),
+                        amount: 7,
+                        share_count: 1,
+                        payout_chain: None,
+                        native_units: false,
+                        coin: None,
+                        revenue_event: None,
+                    },
+                ),
+            ],
+            ..Default::default()
+        };
+        std::fs::write(&ledger_path, serde_json::to_vec(&mixed).unwrap()).unwrap();
+
+        let config = PoolConfig {
+            state_path: Some(state_path.to_string_lossy().into_owned()),
+            disabled_payout_chains: crate::config::parse_disabled_payout_chains("quantus"),
+            ..config()
+        };
+        let pool = Pool::new(config, telemetry());
+
+        assert_eq!(pool.pending_payouts.len(), 1, "only the ZION entry survives");
+        assert!(pool.pending_payouts[0].1.payout_chain.is_none());
+
+        let persisted: PayoutLedgerState =
+            serde_json::from_slice(&std::fs::read(&ledger_path).unwrap()).unwrap();
+        assert_eq!(persisted.pending_payouts.len(), 1, "ledger on disk shrank");
         let _ = std::fs::remove_dir_all(&root);
     }
 }

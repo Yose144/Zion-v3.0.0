@@ -1,6 +1,10 @@
 scrape_configs:
+  # Two vantage points, one job: EDGE1 probes EDGE2 services through the SSH
+  # tunnel, EDGE2 probes its own services on loopback (127.0.0.1). Evidence
+  # aggregates across instances (`max by (service)`), so a saturated tunnel
+  # cannot be recorded as a service outage.
   - job_name: zion_g8
     scrape_interval: 15s
     scrape_timeout: 10s
     static_configs:
-      - targets: ["127.0.0.1:9105"]
+      - targets: ["127.0.0.1:9105", "207.180.217.100:9105"]

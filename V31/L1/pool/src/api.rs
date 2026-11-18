@@ -776,16 +776,19 @@ impl PoolApi {
             p if p == "/stats" || p == "/" || p == "/pool" => {
                 let entry =
                     Self::snapshot_entry(&self.snapshots.stats, || self.build_stats_payload());
-                // Stale-snapshot guard: the refresher rebuilds every ~2 s,
-                // so an old entry means the builders are wedged on a lock.
-                // Serving 503 keeps the watchdog's /stats probe an honest
-                // wedge detector now that saturation can no longer 503
-                // this cheap route.
+                // Stale ≠ mrtvý. Když je snapshot starý (refresher nedokáhal
+                // překonat zámek), poslužeme **poslední platný payload** s
+                // přesným označením stáří (`stale`, `snapshot_age_s`) místo
+                // 503 — dashboard zůstane živý a čtenář vidí, že data jsou
+                // stará. Dřív to skončilo 503 a panel měl prázdné stránky
+                // (viz report 2026-11-12). Detekce wedge pro watchdog/monitoring
+                // jede přes `/health` (`snapshot_age_s`), ne přes stav HTTP.
+                let age_s = now_unix_seconds().saturating_sub(entry.refreshed_unix);
                 if Self::snapshot_is_stale(&entry, self.snapshot_stale_limit_s) {
                     (
-                        "503 Service Unavailable",
+                        "200 OK",
                         "application/json",
-                        "{\"ok\":false,\"error\":\"stats snapshot stale\"}".to_string(),
+                        Self::mark_stale_snapshot(&entry.body, age_s),
                     )
                 } else {
                     ("200 OK", "application/json", entry.body.to_string())
@@ -1546,7 +1549,10 @@ impl PoolApi {
     /// `api-snapshot` refresher thread. A panic in any single builder must
     /// not kill the refresher (frozen snapshots would look like a wedge).
     fn refresh_snapshots(&self) {
-        let builds: [(&RwLock<Option<SnapshotEntry>>, &dyn Fn(&Self) -> String); 4] = [
+        let builds: [(
+            &RwLock<Option<SnapshotEntry>>,
+            &dyn Fn(&Self) -> Option<String>,
+        ); 4] = [
             (&self.snapshots.stats, &Self::build_stats_payload),
             (&self.snapshots.metrics, &Self::build_prometheus_payload),
             (
@@ -1563,11 +1569,18 @@ impl PoolApi {
                 // Stamp the build time — a panicking builder keeps the last
                 // good body AND its old timestamp, so `/stats` still ages
                 // out instead of serving silently-frozen data forever.
-                Ok(body) => {
+                Ok(Some(body)) => {
                     *slot.write().expect("snapshot lock poisoned") = Some(SnapshotEntry {
                         body: body.into(),
                         refreshed_unix: now_unix_seconds(),
                     })
+                }
+                // Zámek busy (dlouho držený jiným vláknem) — cyklus přeskočíme
+                // a necháme platit poslední dobrý payload. Dřív tady refresher
+                // čekal na zámek blokujícím způsobem a uvízl i na minuty →
+                // `/stats` pak vracelo 503 a dashboard stál bez dat.
+                Ok(None) => {
+                    warn!("api-snapshot: payload build skipped (lock busy) — keeping last good")
                 }
                 Err(_) => error!("api-snapshot: payload build panicked — keeping last good"),
             }
@@ -1576,16 +1589,26 @@ impl PoolApi {
 
     /// Return the cached entry, building inline only while the refresher
     /// has not produced its first copy yet (first seconds after boot).
+    ///
+    /// `build` vrací `None`, když se nepovedlo získat zámek (refresher pak
+    /// drží poslední dobrý payload). V tomhle režimu tady vrátíme stub —
+    /// po bootu je to pár sekund, ne pravidelný stav.
     fn snapshot_entry(
         slot: &RwLock<Option<SnapshotEntry>>,
-        build: impl Fn() -> String,
+        build: impl Fn() -> Option<String>,
     ) -> SnapshotEntry {
         if let Some(entry) = slot.read().expect("snapshot lock poisoned").as_ref() {
             return entry.clone();
         }
-        SnapshotEntry {
-            body: build().into(),
-            refreshed_unix: now_unix_seconds(),
+        match build() {
+            Some(body) => SnapshotEntry {
+                body: body.into(),
+                refreshed_unix: now_unix_seconds(),
+            },
+            None => SnapshotEntry {
+                body: "{\"ok\":false,\"error\":\"snapshot building in progress\"}".into(),
+                refreshed_unix: now_unix_seconds(),
+            },
         }
     }
 
@@ -1596,19 +1619,44 @@ impl PoolApi {
         now_unix_seconds().saturating_sub(entry.refreshed_unix) > limit_s
     }
 
+    /// Označí snapshot jako stale a doplní jeho stáří (v sekundách).
+    ///
+    /// JSON se parsuje a zase serializuje (payload je jednotky kB) — když
+    /// by parsování selhalo, vrátí se původní tělo bez značky, ať se na
+    /// dashboard nepropadne nic jiného.
+    fn mark_stale_snapshot(body: &str, age_s: u64) -> String {
+        let mut value: serde_json::Value = match serde_json::from_str(body) {
+            Ok(v) => v,
+            Err(_) => return body.to_string(),
+        };
+        if let Some(obj) = value.as_object_mut() {
+            obj.insert("stale".to_string(), serde_json::json!(true));
+            obj.insert("snapshot_age_s".to_string(), serde_json::json!(age_s));
+        }
+        serde_json::to_string(&value).unwrap_or_else(|_| body.to_string())
+    }
+
     /// Serve the cached payload body, building inline only while the
     /// refresher has not produced its first copy yet.
-    fn snapshot_or(slot: &RwLock<Option<SnapshotEntry>>, build: impl Fn() -> String) -> String {
+    fn snapshot_or(
+        slot: &RwLock<Option<SnapshotEntry>>,
+        build: impl Fn() -> Option<String>,
+    ) -> String {
         Self::snapshot_entry(slot, build).body.to_string()
     }
 
-    fn build_stats_payload(&self) -> String {
+    fn build_stats_payload(&self) -> Option<String> {
         let uptime_s = self.started_at.elapsed().as_secs();
         // PPLNS reads go through the shard — only the truly global fields
         // (session counters, config, pending payout queue) stay under the
         // pool mutex, which keeps this build's global hold to ~µs.
         let (stats, fees) = {
-            let pl = self.pplns.lock().expect("pplns lock poisoned");
+            // try_lock, ne lock: refresher se nesmí zablokovat na zámek, který
+            // drží jiný vlákno (share accounting, payout sweep, …).
+            let pl = match self.pplns.try_lock() {
+                Ok(g) => g,
+                Err(_) => return None,
+            };
             (pl.stats(), pl.fee_stats())
         };
         let (
@@ -1621,7 +1669,10 @@ impl PoolApi {
             quantus_pending,
             pearl_pending,
         ) = {
-            let pool = self.pool.lock().expect("pool lock poisoned");
+            let pool = match self.pool.try_lock() {
+                Ok(g) => g,
+                Err(_) => return None,
+            };
             let (accepted, rejected) = pool.stats();
             (
                 accepted,
@@ -1654,57 +1705,59 @@ impl PoolApi {
             serde_json::json!({})
         };
 
-        json!({
-            "ok": true,
-            "uptime_s": uptime_s,
-            "sessions": sessions,
-            "total_connections": total_conn,
-            "shares": {
-                "accepted": accepted,
-                "rejected": rejected,
-                "total": accepted + rejected
-            },
-            "pplns": {
-                "window_size": stats.window_size,
-                "window_used": stats.window_used,
-                "window_total_difficulty": stats.window_total_difficulty.to_string(),
-                "registered_miners": stats.registered_miners,
-                "miners_with_unpaid": stats.miners_with_unpaid,
-                "total_unpaid_flowers": stats.total_unpaid_flowers.to_string(),
-                "total_paid_flowers": stats.total_paid_flowers.to_string(),
-                "payout_rounds": stats.payout_rounds
-            },
-            "pool": {
-                "fee_bps": fees.pool_fee_pct * 100,
-                "miner_pct": fees.miner_pct,
-                "humanitarian_pct": fees.humanitarian_pct,
-                "issobella_pct": fees.issobella_pct,
-                "port": pool_port
-            },
-            "blocks": self.block_tracker_json(),
-            "external_payouts": {
-                "quantus": {
-                    "pending": quantus_pending
+        Some(
+            json!({
+                "ok": true,
+                "uptime_s": uptime_s,
+                "sessions": sessions,
+                "total_connections": total_conn,
+                "shares": {
+                    "accepted": accepted,
+                    "rejected": rejected,
+                    "total": accepted + rejected
                 },
-                "pearl": {
-                    "pending": pearl_pending
+                "pplns": {
+                    "window_size": stats.window_size,
+                    "window_used": stats.window_used,
+                    "window_total_difficulty": stats.window_total_difficulty.to_string(),
+                    "registered_miners": stats.registered_miners,
+                    "miners_with_unpaid": stats.miners_with_unpaid,
+                    "total_unpaid_flowers": stats.total_unpaid_flowers.to_string(),
+                    "total_paid_flowers": stats.total_paid_flowers.to_string(),
+                    "payout_rounds": stats.payout_rounds
+                },
+                "pool": {
+                    "fee_bps": fees.pool_fee_pct * 100,
+                    "miner_pct": fees.miner_pct,
+                    "humanitarian_pct": fees.humanitarian_pct,
+                    "issobella_pct": fees.issobella_pct,
+                    "port": pool_port
+                },
+                "blocks": self.block_tracker_json(),
+                "external_payouts": {
+                    "quantus": {
+                        "pending": quantus_pending
+                    },
+                    "pearl": {
+                        "pending": pearl_pending
+                    }
+                },
+                "auxpow": auxpow_json,
+                "routing": routing_json,
+                "api": {
+                    "stats": "/stats",
+                    "miners": "/miners?limit=200",
+                    "blocks": "/api/v1/blocks?limit=50",
+                    "payouts": "/api/v1/payouts?limit=50",
+                    "all_miners": "/api/v1/miners?limit=100",
+                    "pplns": "/api/v1/pplns",
+                    "auxpow": "/api/v1/auxpow",
+                    "health": "/health",
+                    "metrics": "/metrics"
                 }
-            },
-            "auxpow": auxpow_json,
-            "routing": routing_json,
-            "api": {
-                "stats": "/stats",
-                "miners": "/miners?limit=200",
-                "blocks": "/api/v1/blocks?limit=50",
-                "payouts": "/api/v1/payouts?limit=50",
-                "all_miners": "/api/v1/miners?limit=100",
-                "pplns": "/api/v1/pplns",
-                "auxpow": "/api/v1/auxpow",
-                "health": "/health",
-                "metrics": "/metrics"
-            }
-        })
-        .to_string()
+            })
+            .to_string(),
+        )
     }
 
     fn build_pplns_payload(&self) -> String {
@@ -2453,21 +2506,27 @@ impl PoolApi {
     }
 
     /// `/public/v1/coins` — coin registry + live leg health, public-safe.
-    fn build_public_coins_payload(&self) -> String {
+    fn build_public_coins_payload(&self) -> Option<String> {
         // Leg state is gathered behind per-leg mutexes — take only the two
         // pool-owned inputs under the guard, then release it (see
         // `leg_statuses_detached`): a stuck leg must not wedge the pool.
         let legs = match &self.auxpow_bridge {
             Some(b) => {
                 let (l1_cfg, pearl) = {
-                    let pool = self.pool.lock().expect("pool lock poisoned");
+                    let pool = match self.pool.try_lock() {
+                        Ok(g) => g,
+                        Err(_) => return None,
+                    };
                     pool.leg_inputs()
                 };
                 Pool::leg_statuses_detached(l1_cfg, pearl.as_ref(), b)
             }
             None => Vec::new(),
         };
-        let pl = self.pplns.lock().expect("pplns lock poisoned");
+        let pl = match self.pplns.try_lock() {
+            Ok(g) => g,
+            Err(_) => return None,
+        };
         let fees = pl.fee_stats();
 
         // One row per coin — legs folded in.  Public-safe fields only:
@@ -2503,31 +2562,33 @@ impl PoolApi {
         // (VarDiffConfig::from_env) so public docs never drift from what is
         // actually enforced.
         let vd = crate::vardiff::VarDiffConfig::from_env();
-        json!({
-            "ok": true,
-            // Protocol reward split (emission 89/5/5/1) — global, applies to
-            // every coin's ZION-reward distribution. Pool fee is the pool
-            // operator slice inside it.
-            "fees": {
-                "miner_pct": fees.miner_pct,
-                "humanitarian_pct": fees.humanitarian_pct,
-                "issobella_pct": fees.issobella_pct,
-                "pool_fee_pct": fees.pool_fee_pct
-            },
-            "vardiff": {
-                "start": vd.start_difficulty,
-                "min": vd.min_difficulty,
-                "max": if vd.max_difficulty == 0 {
-                    serde_json::Value::Null
-                } else {
-                    json!(vd.max_difficulty)
+        Some(
+            json!({
+                "ok": true,
+                // Protocol reward split (emission 89/5/5/1) — global, applies to
+                // every coin's ZION-reward distribution. Pool fee is the pool
+                // operator slice inside it.
+                "fees": {
+                    "miner_pct": fees.miner_pct,
+                    "humanitarian_pct": fees.humanitarian_pct,
+                    "issobella_pct": fees.issobella_pct,
+                    "pool_fee_pct": fees.pool_fee_pct
                 },
-                "target_secs": vd.target_secs,
-                "retarget_shares": vd.retarget_shares
-            },
-            "coins": coins.values().collect::<Vec<_>>()
-        })
-        .to_string()
+                "vardiff": {
+                    "start": vd.start_difficulty,
+                    "min": vd.min_difficulty,
+                    "max": if vd.max_difficulty == 0 {
+                        serde_json::Value::Null
+                    } else {
+                        json!(vd.max_difficulty)
+                    },
+                    "target_secs": vd.target_secs,
+                    "retarget_shares": vd.retarget_shares
+                },
+                "coins": coins.values().collect::<Vec<_>>()
+            })
+            .to_string(),
+        )
     }
 
     /// `/api/v1/state/{pplns|payouts|db}` — authenticated raw-byte state
@@ -2657,8 +2718,11 @@ impl PoolApi {
     /// fee split. Public-safe subset of `/api/v1/pplns` — no wallet-level
     /// or accumulated-balance fields. Served via the api-snapshot cache so
     /// the request path never touches `pool.lock()`.
-    fn build_public_pplns_payload(&self) -> String {
-        let pl = self.pplns.lock().expect("pplns lock poisoned");
+    fn build_public_pplns_payload(&self) -> Option<String> {
+        let pl = match self.pplns.try_lock() {
+            Ok(g) => g,
+            Err(_) => return None,
+        };
         let stats = pl.stats();
         let fees = pl.fee_stats();
         let (miners_in_window, top_share_pct, coins) = pl.public_window_summary();
@@ -2668,29 +2732,31 @@ impl PoolApi {
             .map(|(k, v)| (public_ticker(&k), serde_json::json!(v)))
             .collect();
         let window_total = stats.window_total_difficulty;
-        json!({
-            "ok": true,
-            "scheme": "PPLNS",
-            "window_size": stats.window_size,
-            "window_used": stats.window_used,
-            "window_fill_pct": if stats.window_size > 0 {
-                stats.window_used as f64 / stats.window_size as f64 * 100.0
-            } else { 0.0 },
-            "window_total_difficulty": window_total.to_string(),
-            "miners_in_window": miners_in_window,
-            "top_miner_share_pct": (top_share_pct * 100.0).round() / 100.0,
-            "coins": coins,
-            "miners_with_unpaid": stats.miners_with_unpaid,
-            "payout_rounds": stats.payout_rounds,
-            "fee_bps": fees.pool_fee_pct * 100,
-            "fee_split_pct": {
-                "miner": fees.miner_pct,
-                "humanitarian": fees.humanitarian_pct,
-                "issobella": fees.issobella_pct,
-                "pool": fees.pool_fee_pct,
-            },
-        })
-        .to_string()
+        Some(
+            json!({
+                "ok": true,
+                "scheme": "PPLNS",
+                "window_size": stats.window_size,
+                "window_used": stats.window_used,
+                "window_fill_pct": if stats.window_size > 0 {
+                    stats.window_used as f64 / stats.window_size as f64 * 100.0
+                } else { 0.0 },
+                "window_total_difficulty": window_total.to_string(),
+                "miners_in_window": miners_in_window,
+                "top_miner_share_pct": (top_share_pct * 100.0).round() / 100.0,
+                "coins": coins,
+                "miners_with_unpaid": stats.miners_with_unpaid,
+                "payout_rounds": stats.payout_rounds,
+                "fee_bps": fees.pool_fee_pct * 100,
+                "fee_split_pct": {
+                    "miner": fees.miner_pct,
+                    "humanitarian": fees.humanitarian_pct,
+                    "issobella": fees.issobella_pct,
+                    "pool": fees.pool_fee_pct,
+                },
+            })
+            .to_string(),
+        )
     }
 
     /// Cached entry point for `/public/v1/coins/{coin}/stats` — 10 s TTL.
@@ -3080,7 +3146,7 @@ impl PoolApi {
         .to_string()
     }
 
-    fn build_prometheus_payload(&self) -> String {
+    fn build_prometheus_payload(&self) -> Option<String> {
         let (
             accepted,
             rejected,
@@ -3094,10 +3160,16 @@ impl PoolApi {
             persist_failures_total,
         ) = {
             let (pplns_stats, pplns_fees) = {
-                let pl = self.pplns.lock().expect("pplns lock poisoned");
+                let pl = match self.pplns.try_lock() {
+                    Ok(g) => g,
+                    Err(_) => return None,
+                };
                 (pl.stats(), pl.fee_stats())
             };
-            let pool = self.pool.lock().expect("pool lock poisoned");
+            let pool = match self.pool.try_lock() {
+                Ok(g) => g,
+                Err(_) => return None,
+            };
             (
                 pool.stats().0,
                 pool.stats().1,
@@ -3118,7 +3190,10 @@ impl PoolApi {
         let uptime_s = self.started_at.elapsed().as_secs();
         let now_s = now_unix_seconds();
 
-        let reg = telemetry.lock().expect("telemetry lock poisoned");
+        let reg = match telemetry.try_lock() {
+            Ok(g) => g,
+            Err(_) => return None,
+        };
         let hashrate_hps = reg.pool_hashrate_live();
         let hashrate_1h_hps = reg.pool_hashrate_1h();
         let miners_tracked = reg.miner_count();
@@ -3383,7 +3458,7 @@ impl PoolApi {
             if relay_enabled { 1 } else { 0 }
         ));
 
-        body
+        Some(body)
     }
 
     /// `/api/v1/revenue-stats` — per-group and per-source submit tracking.
@@ -4405,7 +4480,8 @@ mod tests {
                 .store(3, Ordering::Relaxed);
         }
         let api = PoolApi::new(pool, None, None);
-        let payload: serde_json::Value = serde_json::from_str(&api.build_stats_payload()).unwrap();
+        let payload: serde_json::Value =
+            serde_json::from_str(&api.build_stats_payload().expect("stats payload")).unwrap();
         assert_eq!(payload["sessions"], 3);
         assert_eq!(payload["total_connections"], 7);
         assert_eq!(payload["pool"]["port"], 8444);
@@ -4414,7 +4490,7 @@ mod tests {
     #[test]
     fn prometheus_payload_exposes_persistence_health() {
         let api = PoolApi::new(test_pool(), None, None);
-        let payload = api.build_prometheus_payload();
+        let payload = api.build_prometheus_payload().expect("metrics payload");
 
         assert!(payload.contains("zion_pool_pplns_persistence_configured 0\n"));
         assert!(payload.contains("zion_pool_pplns_persist_success_timestamp_seconds 0\n"));
@@ -4832,7 +4908,8 @@ mod tests {
 
         let api = PoolApi::new(test_pool(), None, Some(bridge));
         let payload: serde_json::Value =
-            serde_json::from_str(&api.build_public_coins_payload()).unwrap();
+            serde_json::from_str(&api.build_public_coins_payload().expect("coins payload"))
+                .unwrap();
         assert_eq!(payload["ok"], true);
         let coins = payload["coins"].as_array().unwrap();
 
@@ -4889,7 +4966,7 @@ mod tests {
     fn snapshots_serve_last_good_build() {
         let api = PoolApi::new(test_pool(), None, None);
         // Empty cache falls back to the inline build.
-        let fresh = api.build_stats_payload();
+        let fresh = api.build_stats_payload().expect("stats payload");
         assert_eq!(
             PoolApi::snapshot_or(&api.snapshots.stats, || api.build_stats_payload()),
             fresh
@@ -4908,7 +4985,9 @@ mod tests {
             .to_string();
         assert!(!cached.is_empty());
         assert_eq!(
-            PoolApi::snapshot_or(&api.snapshots.stats, || "SHOULD-NOT-BUILD".to_string()),
+            PoolApi::snapshot_or(&api.snapshots.stats, || Some(
+                "SHOULD-NOT-BUILD".to_string()
+            )),
             cached
         );
         // Metrics + public coins snapshots were populated by the same pass.
@@ -4937,6 +5016,43 @@ mod tests {
             .to_string();
         assert_ne!(cached, "STALE-MARKER");
         assert!(cached.contains("\"ok\":true") || cached.contains("ok"));
+    }
+
+    #[test]
+    fn stale_stats_snapshot_is_served_marked_not_503() {
+        // Refresher nedokázal překonat zámek → snapshot je starý. Dřív to
+        // skončilo 503 a dashboard měl prázdné stránky; teď se posluží
+        // poslední platný payload s označením stáří.
+        let api = PoolApi::new(test_pool(), None, None);
+        let body = api.build_stats_payload().expect("stats payload");
+        *api.snapshots.stats.write().unwrap() = Some(SnapshotEntry {
+            body: body.into(),
+            refreshed_unix: now_unix_seconds().saturating_sub(600),
+        });
+
+        let response = request(&api, "GET", "/stats", "");
+        assert!(
+            response.starts_with("HTTP/1.1 200"),
+            "stale snapshot musí být 200, ne 503: {}",
+            response.lines().next().unwrap_or("")
+        );
+        assert!(response.contains("\"stale\":true"), "chybí značka stale");
+        assert!(
+            response.contains("\"snapshot_age_s\""),
+            "chybí stáří snapshotu"
+        );
+    }
+
+    #[test]
+    fn stale_marker_keeps_valid_json() {
+        let marked = PoolApi::mark_stale_snapshot("{\"ok\":true,\"x\":1}", 42);
+        let value: serde_json::Value = serde_json::from_str(&marked).expect("json");
+        assert_eq!(value["ok"], serde_json::json!(true));
+        assert_eq!(value["x"], serde_json::json!(1));
+        assert_eq!(value["stale"], serde_json::json!(true));
+        assert_eq!(value["snapshot_age_s"], serde_json::json!(42));
+        // Rozbité tělo se nemění (dashboard nesmí dostat nesmysl).
+        assert_eq!(PoolApi::mark_stale_snapshot("not json", 7), "not json");
     }
 
     #[test]

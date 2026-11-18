@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, Context, Result};
+use serde::Deserialize;
 use serde_json::Value;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
@@ -30,8 +31,19 @@ pub fn parse_rpc_addr(rpc_url: &str) -> Result<SocketAddr> {
     Err(anyhow!("invalid RPC address: {}", rpc_url))
 }
 
-/// Send a single JSON-RPC request over TCP and return the parsed response.
-pub async fn jsonrpc_call(addr: SocketAddr, request: &Value) -> Result<Value> {
+/// Parse a raw JSON-RPC response line into `T`. Shared by `call`,
+/// `call_raw` and `call_typed` so the failover loop stays single-sourced
+/// and parse failures keep counting as per-endpoint attempt failures.
+type ResponseParser<'a, T> = &'a (dyn Fn(&str) -> Result<T> + Send + Sync);
+
+/// Send a single JSON-RPC request over TCP, read the response line and
+/// hand it to `parse`. Split from `jsonrpc_call` so typed callers can
+/// skip the `serde_json::Value` tree on multi-MB payloads.
+async fn jsonrpc_call_parsed<'a, T>(
+    addr: SocketAddr,
+    request: &Value,
+    parse: ResponseParser<'a, T>,
+) -> Result<T> {
     let mut stream = TcpStream::connect(addr)
         .await
         .with_context(|| format!("failed to connect to {}", addr))?;
@@ -51,7 +63,15 @@ pub async fn jsonrpc_call(addr: SocketAddr, request: &Value) -> Result<Value> {
         .await
         .with_context(|| "failed to read RPC response")?;
 
-    serde_json::from_str(&line).with_context(|| "failed to parse RPC response")
+    parse(&line)
+}
+
+/// Send a single JSON-RPC request over TCP and return the parsed response.
+async fn jsonrpc_call(addr: SocketAddr, request: &Value) -> Result<Value> {
+    jsonrpc_call_parsed(addr, request, &|line| {
+        serde_json::from_str(line).with_context(|| "failed to parse RPC response")
+    })
+    .await
 }
 
 /// Ordered L1 node RPC endpoints with last-good stickiness (F6 HA).
@@ -113,15 +133,13 @@ impl L1Endpoints {
         }
     }
 
-    /// Try the last-answering endpoint first, then walk the rest.
-    /// Each attempt is bounded to `attempt_timeout()` so a wedged endpoint
-    /// can't stall the caller; the first responder becomes the new last_good.
-    ///
-    /// On a CPU-saturated host (Edge: 4 cores, 3 L1 nodes ~80-99 % CPU each)
-    /// the default 4 s bound produced "all 3 endpoints failed" bursts during
-    /// which real PoW block submits were dropped. The bound is now 12 s and
-    /// overridable via `ZION_L1_RPC_TIMEOUT_MS`.
-    pub async fn call(&self, request: &Value) -> Result<Value> {
+    /// Shared failover loop: tries the last-answering endpoint first,
+    /// then walks the rest. Each attempt is bounded to
+    /// `attempt_timeout()` so a wedged endpoint can't stall the caller;
+    /// the first responder becomes the new last_good. `parse` runs inside
+    /// the per-attempt timeout, so a malformed response counts as that
+    /// endpoint failing and the next one is tried.
+    async fn call_failover<T>(&self, request: &Value, parse: ResponseParser<'_, T>) -> Result<T> {
         let n = self.addrs.len();
         if n == 0 {
             return Err(anyhow!("no L1 RPC endpoints configured"));
@@ -132,7 +150,7 @@ impl L1Endpoints {
         for i in 0..n {
             let idx = (start + i) % n;
             let addr = self.addrs[idx];
-            match tokio::time::timeout(timeout, jsonrpc_call(addr, request)).await {
+            match tokio::time::timeout(timeout, jsonrpc_call_parsed(addr, request, parse)).await {
                 Ok(Ok(v)) => {
                     if idx != start {
                         self.last_good.store(idx, Ordering::Relaxed);
@@ -150,6 +168,36 @@ impl L1Endpoints {
             }
         }
         Err(last_err.context(format!("all {} L1 endpoints failed", n)))
+    }
+
+    /// Try the last-answering endpoint first, then walk the rest.
+    /// Each attempt is bounded to `attempt_timeout()` so a wedged endpoint
+    /// can't stall the caller; the first responder becomes the new last_good.
+    ///
+    /// On a CPU-saturated host (Edge: 4 cores, 3 L1 nodes ~80-99 % CPU each)
+    /// the default 4 s bound produced "all 3 endpoints failed" bursts during
+    /// which real PoW block submits were dropped. The bound is now 12 s and
+    /// overridable via `ZION_L1_RPC_TIMEOUT_MS`.
+    pub async fn call(&self, request: &Value) -> Result<Value> {
+        self.call_failover(request, &|line| {
+            serde_json::from_str(line).with_context(|| "failed to parse RPC response")
+        })
+        .await
+    }
+
+    /// Like [`Self::call`] but deserializes straight into `T`, skipping
+    /// the intermediate `serde_json::Value` tree. Use for payloads where
+    /// the tree costs more than the data is worth — `getUtxos` on the
+    /// pool wallet is ~27 MB of JSON and was the main driver of glibc
+    /// arena bloat on EDGE1 (2026-11-13).
+    pub async fn call_typed<T>(&self, request: &Value) -> Result<T>
+    where
+        T: serde::de::DeserializeOwned,
+    {
+        self.call_failover(request, &|line| {
+            serde_json::from_str(line).with_context(|| "failed to parse typed RPC response")
+        })
+        .await
     }
 
     /// Number of configured endpoints.
@@ -244,6 +292,289 @@ impl L1Endpoints {
             Err(_) => Err(anyhow!("l1 rpc {} timed out after {:?}", addr, timeout)),
         }
     }
+}
+
+/// `script_hex` visitor: decodes hex strings straight to bytes without
+/// materializing the string, and tolerates any non-string JSON shape
+/// (null/scalars → `Some(empty)`, matching the old
+/// `as_str().unwrap_or("")` + `hex::decode(..).unwrap_or_default()` chain).
+/// A missing key stays `None` — one call site skips those UTXOs.
+struct ScriptHexVisitor;
+
+impl<'de> serde::de::Visitor<'de> for ScriptHexVisitor {
+    type Value = Option<Vec<u8>>;
+
+    fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.write_str("script_hex string or null")
+    }
+
+    fn visit_str<E>(self, v: &str) -> std::result::Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Some(hex::decode(v).unwrap_or_default()))
+    }
+
+    fn visit_string<E>(self, v: String) -> std::result::Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Some(hex::decode(&v).unwrap_or_default()))
+    }
+
+    fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Some(Vec::new()))
+    }
+
+    fn visit_none<E>(self) -> std::result::Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(None)
+    }
+
+    fn visit_some<D>(self, deserializer: D) -> std::result::Result<Self::Value, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_any(self)
+    }
+
+    fn visit_bool<E>(self, _v: bool) -> std::result::Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Some(Vec::new()))
+    }
+
+    fn visit_i64<E>(self, _v: i64) -> std::result::Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Some(Vec::new()))
+    }
+
+    fn visit_u64<E>(self, _v: u64) -> std::result::Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Some(Vec::new()))
+    }
+
+    fn visit_f64<E>(self, _v: f64) -> std::result::Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(Some(Vec::new()))
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> std::result::Result<Self::Value, A::Error>
+    where
+        A: serde::de::SeqAccess<'de>,
+    {
+        while seq.next_element::<serde::de::IgnoredAny>()?.is_some() {}
+        Ok(Some(Vec::new()))
+    }
+
+    fn visit_map<A>(self, mut map: A) -> std::result::Result<Self::Value, A::Error>
+    where
+        A: serde::de::MapAccess<'de>,
+    {
+        while map
+            .next_entry::<serde::de::IgnoredAny, serde::de::IgnoredAny>()?
+            .is_some()
+        {}
+        Ok(Some(Vec::new()))
+    }
+}
+
+fn de_script_hex<'de, D>(deserializer: D) -> std::result::Result<Option<Vec<u8>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    deserializer.deserialize_any(ScriptHexVisitor)
+}
+
+// ── Lenient scalar field readers ─────────────────────────────────────
+//
+// The pre-typed code read every field through `Value::as_u64()` /
+// `as_bool()` / `as_str()`, which degrade a wrong-typed field to `None`
+// and skip just that entry. Plain `Option<T>` serde fields would instead
+// fail the WHOLE ~27 MB response on a single malformed entry — a payout
+// outage waiting for one weird historical UTXO. These helpers keep the
+// old per-field tolerance while still skipping the Value tree: each
+// field is parsed as a scalar `Value` (cheap) and converted with the
+// same accessor the old code used.
+
+pub(crate) fn de_opt_u64<'de, D>(deserializer: D) -> std::result::Result<Option<u64>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Ok(Option::<Value>::deserialize(deserializer)?.and_then(|v| v.as_u64()))
+}
+
+pub(crate) fn de_opt_bool<'de, D>(deserializer: D) -> std::result::Result<Option<bool>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Ok(Option::<Value>::deserialize(deserializer)?.and_then(|v| v.as_bool()))
+}
+
+pub(crate) fn de_opt_str<'de, D>(deserializer: D) -> std::result::Result<Option<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Ok(match Option::<Value>::deserialize(deserializer)? {
+        Some(Value::String(s)) => Some(s),
+        _ => None,
+    })
+}
+
+/// `utxos` as raw per-entry JSON. Each element is captured verbatim
+/// (`Box<RawValue>`) and parsed into `UtxoSetEntry` lazily by the caller —
+/// a structurally malformed element (string/number/…) fails only its own
+/// `from_str`, never the whole set, matching the old `filter_map` skips.
+/// A non-sequence `utxos` value degrades to `None` like `as_array()` did.
+fn de_opt_utxo_vec<'de, D>(
+    deserializer: D,
+) -> std::result::Result<Option<Vec<Box<serde_json::value::RawValue>>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    struct UtxoVecVisitor;
+
+    impl<'de> serde::de::Visitor<'de> for UtxoVecVisitor {
+        type Value = Option<Vec<Box<serde_json::value::RawValue>>>;
+
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            f.write_str("utxos array or null")
+        }
+
+        fn visit_seq<A>(self, mut seq: A) -> std::result::Result<Self::Value, A::Error>
+        where
+            A: serde::de::SeqAccess<'de>,
+        {
+            let mut out = Vec::new();
+            while let Some(raw) = seq.next_element::<Box<serde_json::value::RawValue>>()? {
+                out.push(raw);
+            }
+            Ok(Some(out))
+        }
+
+        fn visit_unit<E>(self) -> std::result::Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            Ok(None)
+        }
+
+        fn visit_map<A>(self, mut map: A) -> std::result::Result<Self::Value, A::Error>
+        where
+            A: serde::de::MapAccess<'de>,
+        {
+            while map
+                .next_entry::<serde::de::IgnoredAny, serde::de::IgnoredAny>()?
+                .is_some()
+            {}
+            Ok(None)
+        }
+
+        fn visit_bool<E>(self, _v: bool) -> std::result::Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            Ok(None)
+        }
+
+        fn visit_i64<E>(self, _v: i64) -> std::result::Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            Ok(None)
+        }
+
+        fn visit_u64<E>(self, _v: u64) -> std::result::Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            Ok(None)
+        }
+
+        fn visit_f64<E>(self, _v: f64) -> std::result::Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            Ok(None)
+        }
+
+        fn visit_str<E>(self, _v: &str) -> std::result::Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            Ok(None)
+        }
+
+        fn visit_string<E>(self, _v: String) -> std::result::Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            Ok(None)
+        }
+    }
+
+    deserializer.deserialize_any(UtxoVecVisitor)
+}
+
+/// Lean typed view of a `getUtxos` JSON-RPC response. The pool wallet
+/// holds ~90k UTXOs (~27 MB of JSON); going through `serde_json::Value`
+/// built a multi-million-node tree per call — every payout round — and
+/// was the main driver of glibc arena bloat on EDGE1 (2026-11-13).
+/// Entries stay as raw JSON (`Box<RawValue>`) until `entries()` parses
+/// them one by one, so a malformed element costs one skip, not the set.
+#[derive(Debug, Default, Deserialize)]
+pub struct UtxoSetResponse {
+    #[serde(default)]
+    pub result: Option<UtxoSetResult>,
+    #[serde(default)]
+    pub error: Option<Value>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct UtxoSetResult {
+    #[serde(default, deserialize_with = "de_opt_u64")]
+    pub count: Option<u64>,
+    #[serde(default, deserialize_with = "de_opt_utxo_vec")]
+    pub utxos: Option<Vec<Box<serde_json::value::RawValue>>>,
+}
+
+impl UtxoSetResult {
+    /// Parsed UTXO entries; elements that fail to parse are skipped —
+    /// same tolerance as the old `filter_map` chains.
+    pub fn entries(&self) -> impl Iterator<Item = UtxoSetEntry> + '_ {
+        self.utxos
+            .iter()
+            .flatten()
+            .filter_map(|raw| serde_json::from_str(raw.get()).ok())
+    }
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct UtxoSetEntry {
+    #[serde(default, deserialize_with = "de_opt_str")]
+    pub tx_hash: Option<String>,
+    #[serde(default, deserialize_with = "de_opt_u64")]
+    pub output_index: Option<u64>,
+    #[serde(default, deserialize_with = "de_opt_u64")]
+    pub amount: Option<u64>,
+    #[serde(default, deserialize_with = "de_opt_u64")]
+    pub block_height: Option<u64>,
+    #[serde(default, deserialize_with = "de_opt_bool")]
+    pub is_coinbase: Option<bool>,
+    #[serde(default, rename = "script_hex", deserialize_with = "de_script_hex")]
+    pub script: Option<Vec<u8>>,
 }
 
 #[cfg(test)]
@@ -511,5 +842,165 @@ mod tests {
             .call_addr(9, &json!({"id":3}), Duration::from_secs(1))
             .await
             .is_err());
+    }
+
+    // ── Typed path (`call_typed` / `UtxoSetResponse`) ─────────────────
+
+    /// Spawn a TCP JSON-RPC server that answers every request with a
+    /// fixed raw body — for malformed-payload failover tests.
+    async fn spawn_body_server(body: &'static str) -> SocketAddr {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            while let Ok((stream, _)) = listener.accept().await {
+                let (reader, mut writer) = stream.into_split();
+                let mut reader = BufReader::new(reader);
+                let mut line = String::new();
+                if reader.read_line(&mut line).await.is_err() {
+                    continue;
+                }
+                let _ = writer.write_all(body.as_bytes()).await;
+            }
+        });
+        addr
+    }
+
+    #[tokio::test]
+    async fn call_typed_parses_typed_response() {
+        let body = "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"h\":42}}\n";
+        let addr = spawn_body_server(body).await;
+        let eps = L1Endpoints::from_urls(&format!("http://{}", addr)).unwrap();
+
+        #[derive(Debug, Deserialize, PartialEq)]
+        struct Tip {
+            h: u64,
+        }
+        #[derive(Debug, Deserialize)]
+        struct Envelope {
+            result: Tip,
+        }
+        let resp: Envelope = eps.call_typed(&json!({"id":1})).await.unwrap();
+        assert_eq!(resp.result.h, 42);
+    }
+
+    #[tokio::test]
+    async fn call_typed_fails_over_on_malformed_response() {
+        // First endpoint emits syntactically invalid JSON — the parse
+        // failure must count as an endpoint failure so the next one is
+        // tried (same contract as `call`).
+        let bad = spawn_body_server("this is not json\n").await;
+        let good = spawn_body_server(
+            "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"count\":1,\"utxos\":[]}}\n",
+        )
+        .await;
+        let eps = L1Endpoints::from_urls(&format!("http://{},http://{}", bad, good)).unwrap();
+
+        #[derive(Debug, Deserialize)]
+        struct Env {
+            result: Option<serde_json::Map<String, Value>>,
+        }
+        let resp: Env = eps.call_typed(&json!({"id":1})).await.unwrap();
+        assert!(resp.result.is_some());
+        assert_eq!(eps.last_good.load(Ordering::Relaxed), 1);
+    }
+
+    #[tokio::test]
+    async fn call_typed_fails_over_on_type_mismatch() {
+        // Valid JSON but `result` is a string where the DTO wants an
+        // object — deserialize error must also fail over.
+        let bad =
+            spawn_body_server("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"garbage\"}\n").await;
+        let good =
+            spawn_body_server("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"count\":0}}\n").await;
+        let eps = L1Endpoints::from_urls(&format!("http://{},http://{}", bad, good)).unwrap();
+
+        let resp: UtxoSetResponse = eps.call_typed(&json!({"id":1})).await.unwrap();
+        assert!(resp.result.is_some());
+        assert_eq!(eps.last_good.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn utxo_set_response_parses_lenient_entries() {
+        // One well-formed entry plus every malformed shape the old
+        // `as_*()` chains tolerated: wrong-typed fields degrade to
+        // None/empty, wrong-typed elements are skipped entirely.
+        let json = r#"{
+            "jsonrpc": "2.0", "id": 1,
+            "result": {
+                "count": 4,
+                "utxos": [
+                    {"tx_hash":"aabb","output_index":1,"amount":100,
+                     "block_height":50,"is_coinbase":false,"script_hex":"deadbeef"},
+                    {"tx_hash":"ccdd","output_index":"x","amount":1.5,
+                     "block_height":null,"is_coinbase":"yes"},
+                    "not-an-object",
+                    {"tx_hash":123,"output_index":0,"amount":7,
+                     "script_hex":null},
+                    {"tx_hash":"eeff","output_index":2,"amount":9,
+                     "block_height":70,"is_coinbase":true,"script_hex":"00"}
+                ]
+            }
+        }"#;
+        let resp: UtxoSetResponse = serde_json::from_str(json).unwrap();
+        let result = resp.result.unwrap();
+        assert_eq!(result.count, Some(4));
+
+        let entries: Vec<UtxoSetEntry> = result.entries().collect();
+        // "not-an-object" fails its own from_str → skipped; the other
+        // three parse (fields degrade per-field, not per-response).
+        assert_eq!(entries.len(), 4);
+
+        let good = &entries[0];
+        assert_eq!(good.tx_hash.as_deref(), Some("aabb"));
+        assert_eq!(good.output_index, Some(1));
+        assert_eq!(good.amount, Some(100));
+        assert_eq!(good.block_height, Some(50));
+        assert_eq!(good.is_coinbase, Some(false));
+        assert_eq!(good.script.as_deref(), Some(&[0xde, 0xad, 0xbe, 0xef][..]));
+
+        // Wrong-typed scalars → None (old `as_u64`/`as_bool`/`as_str`).
+        let degraded = &entries[1];
+        assert_eq!(degraded.tx_hash.as_deref(), Some("ccdd"));
+        assert_eq!(degraded.output_index, None);
+        assert_eq!(degraded.amount, None);
+        assert_eq!(degraded.block_height, None);
+        assert_eq!(degraded.is_coinbase, None);
+        assert_eq!(degraded.script, None); // key missing → None
+
+        // Numeric tx_hash → None; script_hex null → Some(empty).
+        let odd = &entries[2];
+        assert_eq!(odd.tx_hash, None);
+        assert_eq!(odd.amount, Some(7));
+        assert_eq!(odd.script.as_deref(), Some(&[][..]));
+
+        let coinbase = &entries[3];
+        assert_eq!(coinbase.is_coinbase, Some(true));
+        assert_eq!(coinbase.block_height, Some(70));
+        assert_eq!(coinbase.script.as_deref(), Some(&[0x00][..]));
+    }
+
+    #[test]
+    fn utxo_set_response_tolerates_envelope_shapes() {
+        // result null / missing → None; utxos non-array → empty; error
+        // object captured without failing the parse.
+        let resp: UtxoSetResponse =
+            serde_json::from_str(r#"{"jsonrpc":"2.0","id":1,"result":null}"#).unwrap();
+        assert!(resp.result.is_none());
+
+        let resp: UtxoSetResponse =
+            serde_json::from_str(r#"{"jsonrpc":"2.0","id":1,"error":{"code":-1}}"#).unwrap();
+        assert!(resp.result.is_none());
+        assert!(resp.error.is_some());
+
+        let resp: UtxoSetResponse =
+            serde_json::from_str(r#"{"result":{"count":"many","utxos":{"not":"an array"}}}"#)
+                .unwrap();
+        let result = resp.result.unwrap();
+        assert_eq!(result.count, None); // string count → as_u64 parity
+        assert_eq!(result.entries().count(), 0);
+
+        // Syntactically broken JSON still fails — that is the transport-
+        // level error path, not field tolerance.
+        assert!(serde_json::from_str::<UtxoSetResponse>("{not json").is_err());
     }
 }

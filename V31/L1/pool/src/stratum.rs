@@ -274,6 +274,45 @@ struct JobFingerprint {
     external_job_ids: Vec<String>,
 }
 
+/// Envelope for the 1-second `getTemplate` poll. `result` is captured as
+/// raw JSON (`Box<RawValue>`) so the ~0.7 MB template never becomes a
+/// `serde_json::Value` tree — this feed loop is the pool's hottest RPC
+/// path and the Value churn was a top glibc-arena bloat driver
+/// (2026-11-13). The `transactions` array inside `result` is only needed
+/// when a job is actually broadcast; it is parsed then from the retained
+/// raw JSON, not on every poll.
+#[derive(serde::Deserialize)]
+struct TemplatePollEnvelope {
+    #[serde(default)]
+    result: Option<Box<serde_json::value::RawValue>>,
+    #[serde(default)]
+    error: Option<Value>,
+}
+
+/// Scalar fields the feed loop reads out of `result` on every poll.
+/// `transactions` and everything else is skipped by serde without
+/// allocating — that is the whole point of the typed path. Field reads
+/// reuse the lenient `de_opt_*` helpers so a wrong-typed scalar degrades
+/// to `None` exactly like the old `as_u64()`/`as_str()` chains instead
+/// of failing the whole poll.
+#[derive(serde::Deserialize, Default)]
+struct TemplatePollResult {
+    #[serde(default, deserialize_with = "crate::rpc_client::de_opt_u64")]
+    height: Option<u64>,
+    #[serde(default, deserialize_with = "crate::rpc_client::de_opt_str")]
+    previous_hash: Option<String>,
+    #[serde(default, deserialize_with = "crate::rpc_client::de_opt_str")]
+    header_json: Option<String>,
+    #[serde(default, deserialize_with = "crate::rpc_client::de_opt_str")]
+    header_hex: Option<String>,
+    #[serde(default, deserialize_with = "crate::rpc_client::de_opt_str")]
+    target_hex: Option<String>,
+    #[serde(default, deserialize_with = "crate::rpc_client::de_opt_u64")]
+    block_reward: Option<u64>,
+    #[serde(default, deserialize_with = "crate::rpc_client::de_opt_u64")]
+    difficulty: Option<u64>,
+}
+
 impl StratumServer {
     /// Get a reference to the routing stats for the HTTP API.
     pub fn routing_stats_handle(&self) -> Arc<Mutex<RoutingStats>> {
@@ -575,9 +614,10 @@ impl StratumServer {
     }
 
     /// Register a ZIS-linked payout address for `key` (wallet or miner
-    /// id), mirroring the V3 Hello auto-resolve.  No-op without a
-    /// matching linked address for `chain` (`"quantus"`, `"pearl"`,
-    /// `"zion"`).
+    /// id).  Per-coin registration: `"quantus"`/`"pearl"` pin only that
+    /// coin's native payout target (the unified ZION-leg target is left
+    /// alone), `"zion"` resolves through the unified slot — a VIP user
+    /// keeps a separate address per chain.
     fn zis_register_linked_payout(&self, idn: &crate::zis::ZisIdentity, chain: &str, key: &str) {
         let addr = match chain {
             "quantus" => idn.quantus_address.as_deref(),
@@ -585,7 +625,11 @@ impl StratumServer {
             _ => idn.zion_address.as_deref(),
         };
         if let Some(a) = addr {
-            if let Some((c, registered)) = self.pool.lock().unwrap().register_payout_address(key, a)
+            if let Some((c, registered)) = self
+                .pool
+                .lock()
+                .unwrap()
+                .register_linked_payout_address(key, chain, a)
             {
                 tracing::info!(
                     "pool_payout miner={} chain={} addr={} (zis-linked)",
@@ -1082,7 +1126,7 @@ impl StratumServer {
             );
             let coin_key = aux.map(|c| c.as_str()).unwrap_or("zion");
             let mut pl = self.pplns.lock().expect("pplns lock poisoned");
-            pl.register_address_with_chain(worker, &address, &chain);
+            crate::pool::register_resolved_target(&mut pl, worker, &chain, &address);
             pl.record_share_with_diff_for_coin(
                 worker,
                 worker,
@@ -1121,7 +1165,7 @@ impl StratumServer {
             &self.config.pool_address.encoded,
         );
         let mut pl = self.pplns.lock().expect("pplns lock poisoned");
-        pl.register_address_with_chain(worker_name, &address, &chain);
+        crate::pool::register_resolved_target(&mut pl, worker_name, &chain, &address);
         pl.record_share_with_diff_for_coin(worker_name, worker_name, height, weight.max(1), coin);
     }
 
@@ -1661,18 +1705,15 @@ impl StratumServer {
     }
 
     /// Build a fingerprint from the current template and external streams.
-    fn build_job_fingerprint(&self, template_json: &str) -> Option<JobFingerprint> {
-        let template: Value = serde_json::from_str(template_json).ok()?;
-        let height = template.get("height").and_then(Value::as_u64).unwrap_or(0);
-        let previous_hash = template
-            .get("previous_hash")
-            .and_then(Value::as_str)
-            .unwrap_or("")
-            .to_string();
-
+    fn build_job_fingerprint(
+        &self,
+        zion_height: u64,
+        zion_previous_hash: &str,
+        header_json: Option<&str>,
+    ) -> Option<JobFingerprint> {
         // merkle_root lives inside header_json (a JSON string) on V31 nodes.
         let mut merkle_root = Vec::new();
-        if let Some(header_json_str) = template.get("header_json").and_then(Value::as_str) {
+        if let Some(header_json_str) = header_json {
             if let Ok(header_json) = serde_json::from_str::<Value>(header_json_str) {
                 if let Some(merkle) = header_json.get("merkle_root") {
                     if let Some(arr) = merkle.as_array() {
@@ -1698,8 +1739,8 @@ impl StratumServer {
         let external_job_ids = self.all_external_job_ids();
 
         Some(JobFingerprint {
-            zion_height: height,
-            zion_previous_hash: previous_hash,
+            zion_height,
+            zion_previous_hash: zion_previous_hash.to_string(),
             zion_merkle_root: merkle_root,
             gpu_external_job_id,
             gpu_external_ntime,
@@ -4420,21 +4461,39 @@ impl StratumServer {
 
                     // Bound the RPC call: a wedged node `getTemplate` must not
                     // stall this loop — it also carries external (AuxPoW)
-                    // job broadcasts to miners.
-                    let fetched: Option<Value> = match tokio::time::timeout(
+                    // job broadcasts to miners. Typed path: `result` arrives
+                    // as raw JSON (Box<RawValue>) and only the scalar fields
+                    // are deserialized — the ~0.7 MB `transactions` payload
+                    // never becomes a Value tree on this 1 s hot path.
+                    let fetched: Option<(TemplatePollResult, String)> = match tokio::time::timeout(
                         Duration::from_secs(5),
-                        endpoints.call(&payload),
+                        endpoints.call_typed::<TemplatePollEnvelope>(&payload),
                     )
                     .await
                     {
-                        Ok(Ok(v)) => {
-                            if let Some(err) = v.get("error") {
+                        Ok(Ok(env)) => {
+                            if let Some(err) = env.error {
                                 if !err.is_null() {
                                     tracing::warn!("getTemplate error: {}", err);
                                     continue;
                                 }
                             }
-                            v.get("result").cloned()
+                            match env.result {
+                                Some(raw) => {
+                                    let json: String = Box::<str>::from(raw).into();
+                                    match serde_json::from_str::<TemplatePollResult>(&json) {
+                                        Ok(fields) => Some((fields, json)),
+                                        Err(e) => {
+                                            tracing::warn!(
+                                                "getTemplate result parse failed: {}",
+                                                e
+                                            );
+                                            None
+                                        }
+                                    }
+                                }
+                                None => None,
+                            }
                         }
                         Ok(Err(e)) => {
                             tracing::warn!("getTemplate request failed: {}", e);
@@ -4448,36 +4507,31 @@ impl StratumServer {
 
                     // On RPC failure/timeout reuse the last good template so
                     // external (AuxPoW) job rotations still reach miners while
-                    // the L1 node is stalled.
-                    let (result, template_json) = match fetched {
-                        Some(r) => {
-                            let tj = serde_json::to_string(&r).unwrap_or_default();
-                            last_template_json = Some(tj.clone());
-                            (r, tj)
-                        }
+                    // the L1 node is stalled. `new_json` is Some only on a
+                    // fresh fetch — the cached path borrows the stored string,
+                    // so the 0.7 MB template is never cloned on the hot path.
+                    let (fields, new_json) = match fetched {
+                        Some((f, j)) => (f, Some(j)),
                         None => match &last_template_json {
                             Some(tj) => (
-                                serde_json::from_str::<Value>(tj).unwrap_or(Value::Null),
-                                tj.clone(),
+                                serde_json::from_str::<TemplatePollResult>(tj)
+                                    .unwrap_or_default(),
+                                None,
                             ),
                             None => continue,
                         },
                     };
 
+                    let template_json: &str = new_json
+                        .as_deref()
+                        .or(last_template_json.as_deref())
+                        .unwrap_or("");
+
                     {
-                            let header_hex = result.get("header_hex")
-                                .and_then(Value::as_str)
-                                .unwrap_or("");
-                            let block_target_hex = result.get("target_hex")
-                                .and_then(Value::as_str)
-                                .unwrap_or("");
-                            let reward = result.get("block_reward")
-                                .and_then(Value::as_u64)
-                                .unwrap_or(0);
-                            let network_difficulty = result.get("difficulty")
-                                .and_then(Value::as_u64)
-                                .unwrap_or(1)
-                                .max(1);
+                            let header_hex = fields.header_hex.as_deref().unwrap_or("");
+                            let block_target_hex = fields.target_hex.as_deref().unwrap_or("");
+                            let reward = fields.block_reward.unwrap_or(0);
+                            let network_difficulty = fields.difficulty.unwrap_or(1).max(1);
 
                             // The full block target is too hard for frequent shares.
                             // Broadcast a share target derived from the configured starting
@@ -4489,7 +4543,11 @@ impl StratumServer {
                             let share_target_hex = hex::encode(share_target);
 
                             if !header_hex.is_empty() {
-                                let fingerprint = self.build_job_fingerprint(&template_json);
+                                let fingerprint = self.build_job_fingerprint(
+                                    fields.height.unwrap_or(0),
+                                    fields.previous_hash.as_deref().unwrap_or(""),
+                                    fields.header_json.as_deref(),
+                                );
 
                                 let changed = match (&last_fingerprint, &fingerprint) {
                                     (None, Some(_)) => true,
@@ -4507,7 +4565,7 @@ impl StratumServer {
                                         &share_target_hex,
                                         block_target_hex,
                                         reward,
-                                        &template_json,
+                                        template_json,
                                     );
                                     last_fingerprint = fingerprint;
                                 } else {
@@ -4516,6 +4574,10 @@ impl StratumServer {
                             } else {
                                 last_fingerprint = None;
                             }
+                    }
+
+                    if let Some(j) = new_json {
+                        last_template_json = Some(j);
                     }
                 }
             }
@@ -6396,46 +6458,41 @@ mod tests {
     #[test]
     fn pearl_stratum_end_to_end() {
         let (header, proof_b64) = pearl_fixture_parts();
-        let (job, header_b64) = pearl_job(header, PEARL_BLOCK_TARGET);
-        let job_id = PearlRuntime::job_id(&job);
 
-        let gw_std = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
-        gw_std.set_nonblocking(true).unwrap();
-        let gw_addr = gw_std.local_addr().unwrap().to_string();
-
-        let rt = PearlRuntime::for_test(&gw_addr, PEARL_SHARE_EASE, 30_000, job);
-        let pool = pool_with_pearl(Some(rt));
-        let server1 = StratumServer::new(pool.clone());
-        let server2 = StratumServer::new(pool.clone());
-        assert!(
-            Arc::ptr_eq(
-                server1.pearl.as_ref().unwrap(),
-                server2.pearl.as_ref().unwrap()
-            ),
-            "all StratumServer listeners on one Pool share one PearlRuntime"
-        );
-        let mut server = server1;
-        server.pearl_stratum_enabled = true;
-
-        let pool2 = pool.clone();
         let handle = thread::spawn(move || {
             let rt = tokio::runtime::Builder::new_current_thread()
                 .enable_all()
                 .build()
                 .unwrap();
             rt.block_on(async move {
-                let gw_calls = spawn_pearl_mock_gateway(
-                    gw_std,
-                    header_b64.clone(),
-                    PEARL_BLOCK_TARGET.to_string(),
+                // Pearl-stratum sessions serve the upstream (LuckyPool) leg
+                // only — SRBMiner plain_proof blobs can never verify against
+                // native-leg jobs, so clients idle during upstream gaps
+                // instead of farming decode rejects (dc04efc3a).
+                let (up, up_calls) =
+                    connected_pearl_upstream(header, PearlUpVerdict::Accept).await;
+                let pearl = PearlRuntime::for_test_hybrid("", 256, 30_000, None, Some(up), 100);
+                let pool = pool_with_pearl(Some(pearl));
+                let server1 = StratumServer::new(pool.clone());
+                let server2 = StratumServer::new(pool.clone());
+                assert!(
+                    Arc::ptr_eq(
+                        server1.pearl.as_ref().unwrap(),
+                        server2.pearl.as_ref().unwrap()
+                    ),
+                    "all StratumServer listeners on one Pool share one PearlRuntime"
                 );
+                let mut server = server1;
+                server.pearl_stratum_enabled = true;
 
+                let pool2 = pool.clone();
                 let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
                 let addr = listener.local_addr().unwrap();
                 tokio::spawn(async move {
                     let _ = server.run(listener).await;
                 });
 
+                let job_id = "prlu:u-1".to_string();
                 let mut client = PearlPoolClient::connect(
                     &addr.to_string(),
                     "prl1pzqqqqqqqqqqqqqqqqqqqqqqqq",
@@ -6467,7 +6524,7 @@ mod tests {
                 assert_eq!(hex::encode(job.target_be), PEARL_SHARE_TARGET_HEX);
                 assert_eq!(job.header, header);
                 assert_eq!(job.cert_version, 3);
-                assert_eq!(job.height, 0);
+                assert_eq!(job.height, 7);
 
                 let resp = client
                     .submit_proof(&job_id, &proof_b64, None)
@@ -6486,6 +6543,18 @@ mod tests {
                         .window_used,
                     1
                 );
+                // The verified share is forwarded upstream exactly once,
+                // under the upstream's raw job id (no `prlu:` prefix).
+                {
+                    let calls = up_calls.lock().unwrap();
+                    let submits: Vec<&String> = calls
+                        .iter()
+                        .filter(|l| l.contains("mining.submit"))
+                        .collect();
+                    assert_eq!(submits.len(), 1, "upstream calls: {calls:?}");
+                    assert!(submits[0].contains("\"job_id\":\"u-1\""));
+                    assert!(!submits[0].contains("prlu:"));
+                }
 
                 let mut client2 = PearlPoolClient::connect(
                     &addr.to_string(),
@@ -6572,11 +6641,17 @@ mod tests {
                     1
                 );
 
+                // Duplicate / stale / undecodable submits never reach the
+                // upstream — only the first verified share was forwarded.
                 tokio::time::sleep(Duration::from_millis(200)).await;
-                let calls = gw_calls.lock().unwrap();
-                assert!(
-                    !calls.iter().any(|l| l.contains("submitPlainProof")),
-                    "non-block share must not be forwarded: {calls:?}"
+                let calls = up_calls.lock().unwrap();
+                let submits = calls
+                    .iter()
+                    .filter(|l| l.contains("mining.submit"))
+                    .count();
+                assert_eq!(
+                    submits, 1,
+                    "only the first accepted share may reach upstream: {calls:?}"
                 );
             });
         });

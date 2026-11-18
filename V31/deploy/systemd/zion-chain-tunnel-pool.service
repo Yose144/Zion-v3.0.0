@@ -1,0 +1,18 @@
+[Unit]
+Description=ZION dedicated L1 RPC tunnel (pool) — EDGE1:9455 -> EDGE2:9445
+Documentation=file:/opt/zion/docs/ops/RUNBOOK.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+# Dedicated connection on purpose: the pool pulls ~0.7 MB/s of templates and
+# 27 MB UTXO sets. Multiplexed onto the shared chain tunnel those bulk flows
+# head-of-line-block the small health probes. One purpose, one TCP stream.
+ExecStart=/usr/bin/ssh -N -i /root/.ssh/id_ed25519 -o BatchMode=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=accept-new -L 127.0.0.1:9455:127.0.0.1:9445 chaintunnel@207.180.217.100
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
