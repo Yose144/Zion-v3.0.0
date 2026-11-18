@@ -1,7 +1,8 @@
 # OPS CONSOLE — jednotný interní systém pro rigy, pool a fleet
 
 > Stav: **F1 hotová a nasazená** (2026-11-01). Cílové místo = `dashboard.zionterranova.com/dashboard`,
-> záložka **Rigs**. `/vast-rigs` zůstává jako prototyp (next-generation UI, nebude se rozšiřovat).
+> záložka **Rigs**. Prototyp `/vast-rigs` byl **vyřazen 2026-11-18** — `/vast-rigs/` na apexu dělá
+> **301 na `https://dashboard.zionterranova.com/dashboard#rigs`** (jen `status.json` zůstává, čte ho archiv na `kingdom.`).
 
 ## 1. Proč to vzniklo
 
@@ -9,7 +10,7 @@ Před F1 byly tři oddělené světy a ani jeden nevěděl o ostatních:
 
 | Kde | Co umělo | Co neumělo |
 |---|---|---|
-| `/vast-rigs` (Next, EDGE2) | číst `status.json`, volat `/vast-ops/*` | akce jen přes basic auth + reverzní tunel z operátorského PC (často dole) |
+| `/vast-rigs` (Next, EDGE2) — **vyřazeno 18. 11.** | číst `status.json`, volat `/vast-ops/*` | akce jen přes basic auth + reverzní tunel z operátorského PC (často dole) |
 | Python dashboard (EDGE, `:8766`) | 54 záložek, pool přímo na `127.0.0.1:8080`, `fleet` = rig agenti | žádná vast.ai data, žádné GPU/inference, žádné custy |
 | `vastctl` na PC | daemon + `serve` (offers/rent/launch/stop/exec) | běželo z uživatelského účtu, tunel na EDGE2, po rebootu PC nic |
 
@@ -111,7 +112,12 @@ Cache: snapshot 10 s, pool 15 s. Každé volání má timeout; modul nikdy nesho
 9. **Latence marketu**: dotaz na offers trvá 5–15 s (vast.ai API); UI proto počítá sekundy a
    `/api/ops/market` má 40s timeout. → **hotové (F2.4)**: server-side cache 60 s
    (`OPS_MARKET_TTL`), odpověď nese `cached: true`; opakované hledání je zdarma.
-6. **Retire prototypu** `/vast-rigs` — až bude F2 hotová, smazat (a `/vast-ops` proxy + PC tunely).
+6. ~~**Retire prototypu** `/vast-rigs`~~ → **hotové (2026-11-18, rozhodnutí 👤)**: `/vast-rigs/` a `/vast-rigs`
+   na apexu (EDGE2) i fallbacku (EDGE) = **301 `https://dashboard.zionterranova.com/dashboard#rigs`**,
+   `/vast-ops/` root redirect přepnut tamtéž, statické soubory prototypu smazány (záloha
+   `/opt/zion/backups/vast-rigs-retire-*` na obou boxech). **`status.json` zůstává** — čte ho `ops_console`
+   i archivovaný v3 dashboard na `kingdom.` (`/archive/v3/vast-rigs/status.json` = 200) a `vastctl-daemon`
+   do něj dál scp-pushuje. Dashboard umí **deep link** `#<tab>` (hash se i zapisuje při přepnutí).
 7. **SMOS**: `ZionRig` je offline (samostatný problém, viz AGENTS).
 8. ~~**Latence marketu**: dotaz na offers trvá 5–15 s (vast.ai API); UI proto počítá sekundy a
    `/api/ops/market` má 40s timeout. Zvážit server-side cache 60 s, aby opakované hledání bylo zdarma.~~

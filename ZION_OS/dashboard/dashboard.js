@@ -242,6 +242,10 @@ function queueLoads(tasks, spacing = 120){
 
 function switchTab(name){
   currentTab = name;
+  // Keep the URL in sync so a view can be linked/bookmarked (`#rigs`).
+  try {
+    if(location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
+  } catch(e) { /* file:// or sandboxed context */ }
   TABS.forEach(t => {
     const pane = document.getElementById('pane-' + t);
     const btn = document.getElementById('tab-' + t);
@@ -9172,8 +9176,23 @@ async function submitDaoVote(choice) {
 
 console.log('[ZION Dashboard] Initializing v2 — tabs:', TABS.length);
 applyFriendlyMode();
+
+// Deep links: `#rigs`, `#pool`, … . Needed because the retired /vast-rigs
+// prototype 301s to `https://dashboard.zionterranova.com/dashboard#rigs`
+// (2026-11-18). Tabs also write the hash back so any view is shareable.
+function _tabFromHash(){
+  const h = (location.hash || '').replace(/^#/, '').trim();
+  return TABS.includes(h) ? h : null;
+}
+window.addEventListener('hashchange', () => {
+  const t = _tabFromHash();
+  if(t && t !== currentTab) switchTab(t);
+});
+
 loadSettings().then(s => {
-  if(s && s.default_tab){ switchTab(s.default_tab); }
+  const fromHash = _tabFromHash();
+  if(fromHash){ switchTab(fromHash); }
+  else if(s && s.default_tab){ switchTab(s.default_tab); }
   else { switchTab('overview'); }
 });
 refreshAll();
@@ -14091,8 +14110,13 @@ async function loadFleetAlerts(){
         </div>`;
       }).join('') + '</div>';
     }
+    // Telegram je záměrně mimo provoz (rozhodnutí 👤 18. 11.) — neukazujeme ho
+    // jako „nenakonfigurovaný problém", jen krátkou poznámku.
+    const shown = Object.assign({}, d);
+    delete shown.telegram;
+    html += '<div class="text-[10px] text-gray-600 mb-2">Telegram kanál se nepoužívá (vypnuto záměrně).</div>';
     html += '<pre class="max-h-72 overflow-auto rounded-lg bg-black/50 border border-white/10 p-3 text-[10px] leading-relaxed text-gray-400 whitespace-pre-wrap">' +
-      escapeHtml(JSON.stringify(d, null, 2).slice(0, 6000)) + '</pre>';
+      escapeHtml(JSON.stringify(shown, null, 2).slice(0, 6000)) + '</pre>';
     box.innerHTML = html;
   }catch(e){
     box.innerHTML = '<div class="text-xs text-red-300">Alert routing unreachable — ' + escapeHtml(String(e)) + '</div>';
