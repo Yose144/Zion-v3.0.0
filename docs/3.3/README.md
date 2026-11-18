@@ -2,7 +2,9 @@
 
 > **Od 13. 11. 2026** je živý stav v [`../../3.3.0/CODE_VS_DOCS.md`](../../3.3.0/CODE_VS_DOCS.md) a master v [`../../3.3.0/v3.3Nirvana.md`](../../3.3.0/v3.3Nirvana.md). Soubory v tomto adresáři jsou plány a snapshoty z října a začátku listopadu. [`PLAN.md`](../plans/PLAN_V3.3.md) v rootu je historický snapshot k 11. 11.
 >
-> **Co tu je:** všechny plánovací dokumenty v3.3 „NIRVANA" z doby, kdy se plánovalo ve starém rootu. Do **2. 11. 2026** ležely v rootu repa; při úklidu root dokumentace se sem přesunuly (commit `ee1503423`).
+> **⚠️ 2026-11-18 — tento strom je SNAPSHOT, ne živý seznam práce.** Otevřené závazky, které v něm vznikly (DoD V33-1…11, exekuční charta R1–R9, N0–N7, rozhodovací fronta 👤), jsou **konsolidované v [`../../3.3.0/docs/migration/OPEN-OBLIGATIONS.md`](../../3.3.0/docs/migration/OPEN-OBLIGATIONS.md)**. Uzavírá se tam, ne tady. Důvod: starý root je od D-001 **ARCHIV** (`3.3.0/AGENTS.md` §1) — do archivu se při release review nikdo nepodívá, takže povinnosti v něm by se ztratily. Soubory se zde **nepřepisují**; výjimkou je tento README a jednorázové odkazy na registr.
+>
+> **Co tu je:** všechny plánovací dokumenty v3.3 „NIRVANA" z doby, kdy se plánovalo ve starém rootu. Do **2. 11. 2026** ležely v rootu repa; při úklidu root dokumentace se sem přesunuly (commit `ee1503423`). Dnes je tu **28 dokumentů** (21 přesunutých 2. 11. + 2 původní + 5 přidaných později: `TRUSTEE-CONTINUITY`, `ARCHA-ZACHRANNA-MISE`, `DOC_VS_CODE_ANALYSIS_2026-11-10`, `MOBA-PRVNI-SVET-PLAN`, `NIRVANA-V3.3-KAPITOLA`).
 >
 > **Kam co patřilo do 12. 11.:**
 > - **root** → [`PLAN.md`](../plans/PLAN_V3.3.md) byl vstupní bod starého rootu; od 13. 11. je to historický snapshot. Provozní pravidla starého stromu zůstávají v [`AGENTS.md`](../../AGENTS.md). Ukazatel na živý stav je [`../CODE_VS_DOCS.md`](../CODE_VS_DOCS.md).
@@ -26,6 +28,7 @@
 | [`NIRVANA-V3.3-UNIFICATION.md`](NIRVANA-V3.3-UNIFICATION.md) | Unifikační plán „velkého sjednocení" (2026-10-30). |
 | [`NIRVANA-V3.3-KAPITOLA.md`](NIRVANA-V3.3-KAPITOLA.md) | Kapitola „loď Království srdce" — mapa povrchů (hostname → appka → stack). |
 | [`DOC_VS_CODE_ANALYSIS_2026-11-02.md`](DOC_VS_CODE_ANALYSIS_2026-11-02.md) | Analýza rozporů dokumentace vs. kód (2026-11-02). |
+| [`DOC_VS_CODE_ANALYSIS_2026-11-10.md`](DOC_VS_CODE_ANALYSIS_2026-11-10.md) | Analýza rozporů dokumentace vs. kód (2026-11-10) — **historický snapshot**, nahrazeno `3.3.0/CODE_VS_DOCS.md`. |
 
 ## 2. Nirvana — klient, scény, render
 
@@ -36,6 +39,7 @@
 | [`OASIS-RENDER-CANON.md`](OASIS-RENDER-CANON.md) | Render canon pro OASIS (závazná pravidla scén). |
 | [`Oasis Render.md`](Oasis%20Render.md) | Pracovní poznámky k OASIS renderu. |
 | [`3D-SCENY-PLAN.md`](3D-SCENY-PLAN.md) | Dokončení 3D scén — web i Nirvana. |
+| [`MOBA-PRVNI-SVET-PLAN.md`](MOBA-PRVNI-SVET-PLAN.md) | „První svět" — plán úplné MOBA (co chybí proti Dotě/LoL, pořadí, dopady na protokol). Stav portu: `3.3.0/docs/migration/CONTENT-MIGRATION-PLAN.md` — sólo 2v2 hotové, online místnosti chybí. |
 | [`MATRIX.md`](MATRIX.md) | Matrix — lunární svět (scéna, soundtrack, interiér). |
 | [`ARCHA-NOEMOVA.md`](ARCHA-NOEMOVA.md) | Archa Noemova / „Království srdce" — 13. uzel L5, plavidlo, paluby. |
 | [`ENGINE-SRDCE.md`](ENGINE-SRDCE.md) | Strojovna lodi — `zion-compute` (specifikace, mimo DoD 3.3). |
