@@ -315,7 +315,7 @@ síť se zastavila. To je nejdůležitější číslo, které kdy budeš kontrol
 **Kde ho najdeš:**
 
 - `https://explorer.zionterranova.com` — nahoře velké číslo
-- `https://app.zionterranova.com/api/health` — v textu `"height":123773`
+- `https://app.zionterranova.com/api/health` — v textu `"height":128400` (příklad k 18. 11. 2026; číslo roste, důležité je, že se mění)
 - Nebo se zeptej operátora
 
 ### 3.7 „Loď Království srdce" — vize, ne majetek
@@ -1011,8 +1011,10 @@ $ curl -s -X POST http://127.0.0.1:9445/jsonrpc -H 'Content-Type: application/js
 
 Uvidíš něco jako:
 ```
-{"id":1,"jsonrpc":"2.0","result":{"chain_height":123773,...}}
+{"id":1,"jsonrpc":"2.0","result":{"chain_height":128400,...}}
 ```
+
+(Číslo je příklad k 18. 11. 2026. Podstatné je, že roste — pokud se za hodinu nezmění, síť stojí.)
 
 **Kontrola poolu:**
 
