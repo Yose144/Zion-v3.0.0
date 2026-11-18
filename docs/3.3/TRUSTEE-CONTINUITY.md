@@ -3,11 +3,19 @@
 > **DŮVĚRNÉ / INTERNAL — tento soubor NIKDY nepatří do veřejného repa `public/`
 > ani do žádného exportu. Obsahuje popis, kde jsou klíče (nikdy ne hodnoty klíčů).**
 >
-> **Verze:** 1.0
-> **Datum:** 2026-11-14
+> **Verze:** 1.1
+> **Datum:** 2026-11-18 (v1.0 — 2026-11-14)
 > **Určeno pro:** Erika Imlaufová (hlavní správkyně), Petra Tkácová (zástupkyně)
 > **Sepsal:** Yosef Hubálek
-> **Stav sítě při sepsání:** Mainnet Beta v3.2.0, výška chainu **123 773**, uzel 3.2.0, protokol 3.1.0-alpha
+> **Stav sítě při této revizi:** Mainnet Beta v3.2.0, výška chainu **128 400** (18. 11. 2026), uzel 3.2.0, protokol 3.1.0-alpha
+>
+> **Co je nového proti v1.0 (nic z toho nemění tvoje povinnosti):**
+> - **Hlavní web a e-shop zase normálně běží** (apex `zionterranova.com` už není v údržbě) — dřív vracel 503.
+> - **Cena lampionu je sjednocená na 590 Kč** (bonus 84 960 ZION). Kdyby někde uvidíš jinou cenu, je to chyba — napiš operátorovi.
+> - **Placené soubory** (kniha, lampion) se stahují jen přes **podepsaný odkaz v e-mailu**; přímé odkazy na ZIP nefungují. To je správně, ne porucha.
+> - **Nová 3.3 appka** (onboard, portál, realtime, Kingdom) běží na EDGE2, ale část hostnames ještě **není publikovaná** — viz §3.4.
+> - **QTC/PRL výplaty z poolu jsou zapnuté**, ale treasury je prázdná, takže se reálně nic neposílá. Není to dluh.
+> - **Připrav se na ~29. 11. 2026** — odemknutí premine slotů (výška 144 000). Postup je v `PREMINE_144K_CHECKLIST.md`; v ten den se **nic nedeployuje ani nerestartuje**.
 
 ---
 
@@ -235,6 +243,10 @@ kopie (followery), které se synchronizují z EDGE2. Když se rozbijí, nic se n
 | `zion-v31-free-world` | L5 světy (humanitární tithe) | interní |
 | `zion-v31-dao` | DAO (hlasování, treasury) | interní :8456 |
 | `zion-v31-multichain` | WARP (bridge, swapy) | `dex.zionterranova.com` |
+| `zion-kingdom` (3.3) | Herní klient Kingdom / Nirvana | `kingdom.zionterranova.com` |
+| `zion-realtime` (3.3) | Multiplayer a chat (WebSocket) | `kingdom.zionterranova.com/net` |
+| `zion-onboard` / `zion-portal` (3.3) | Onboarding a nový portál | **zatím nepublikováno** (viz §3.4) |
+| `zion-update-server` | Aktualizace desktop/mobil klienta | `updates.zionterranova.com` |
 | `postgresql` | Databáze (e-shop, identity) | interní :5432 |
 | `nginx` | Rozděluje provoz na správné služby | vše veřejné |
 
@@ -244,6 +256,8 @@ kopie (followery), které se synchronizují z EDGE2. Když se rozbijí, nic se n
 |---|---|---|
 | `zion-v31-pool` | Těžební pool (stratum 8444/8445, API 8080) | `pool.zionterranova.com` |
 | `zion-v31-node` (2×) | Záložní nody (9446, 9447) | interní |
+| `zion-nirvana` | Starý klient Nirvany (3.2) | `nirvana.zionterranova.com` |
+| `zion-ops` | Nový provozní dashboard (3.3) | **zatím jen interně** :3031 (veřejně `dashboard.` = starý dashboard) |
 | `prometheus` | Sběr metrik | interní :9090 |
 | `alertmanager` | Rozesílání alarmů | interní :9093 |
 | `grafana` | Grafy | `grafana.zionterranova.com` |
@@ -257,7 +271,21 @@ která doména patří kterému serveru.
 
 **Seznam domén:** `zionterranova.com` (hlavní), `app.`, `market.`, `oasis.`,
 `auth.`, `pool.`, `rpc.`, `explorer.`, `nirvana.`, `kingdom.`, `dashboard.`,
-`grafana.`, `dex.`, `freeworld.`, `api.`, `seed.`, `stratum.`, `www.`
+`grafana.`, `dex.`, `freeworld.`, `api.`, `www.`, `lumi.` (e-shop Omnity.One),
+`updates.`, `3.3.`.
+
+**Domény, které jsou dnes ZÁMĚRNĚ nedostupné** (když na ně někdo klikne, není to
+výpadek sítě; je to nedokončená migrace na 3.3):
+
+- `onboard.`, `portal.`, `realtime.` — aplikace na ně existují, ale DNS ještě
+  ukazuje na špatný server a nemají veřejnou bránu.
+- `ops.` — rezervované jméno, nepoužívá se (provozní dashboard je `dashboard.`).
+
+**Co tedy funguje veřejně (18. 11. 2026):** `zionterranova.com`, `www.`, `app.`,
+`market.`, `oasis.`, `pool.`, `rpc.`, `auth.`, `nirvana.`, `kingdom.`,
+`freeworld.`, `lumi.`, `3.3.`, `updates.`, `explorer.` (přesměruje na
+`app./explorer`), `api.`, `dex.`, `grafana.` a `dashboard.` (ten se ptá na heslo —
+to je správně).
 
 **Kdo má přístup k DNS dnes:** jen Yosef. **To je blokátor** — viz ČÁST 13.
 
@@ -279,7 +307,7 @@ se jich** — viz ČÁST 9.4.
 ### 3.6 Co je „výška chainu" a proč je důležitá
 
 Každý blok má pořadové číslo. Říká se mu **výška** (height). Když je výška
-123 773, znamená to, že od začátku sítě vzniklo 123 773 bloků.
+128 400, znamená to, že od začátku sítě vzniklo 128 400 bloků.
 
 **Blok vzniká přibližně každých 60 sekund.** Pokud se výška za hodinu nezmění,
 síť se zastavila. To je nejdůležitější číslo, které kdy budeš kontrolovat.
@@ -1496,6 +1524,7 @@ kopie, trezor).
 
 | Datum | Verze | Co se změnilo | Kdo |
 |---|---|---|---|
+| 2026-11-18 | 1.1 | Refresh stavu: apex zpět live (maintenance off), cena lampionu 590 Kč / 84 960 ZION, placené soubory jen přes podepsaný odkaz (přímý ZIP vrací 401), nové 3.3 služby (kingdom/realtime/onboard/portal/ops/updates) včetně seznamu **záměrně nedostupných** hostnames, QTC/PRL payout zapnutý (treasury 0 → nic se neposílá), premine ~29. 11. Měřený stav: chain **128 400**, v3.2.0. | Yosef Hubálek |
 | 2026-11-14 | 1.0 | První verze. Sepsáno na základě `docs/private/ZION_SUCCESSION_AND_IP_TRANSFER_PLAN.md`, `ZION_HANDOVER_CHECKLIST.md`, `ZION_DAROVACI_LISTINA_A_PLNA_MOC.md`, `infra/RUNBOOK.md`, `docs/3.2/ops/DR-BRINGUP-RUNBOOK.md`, `POOL-HA-RUNBOOK.md`, `ALERT-RUNBOOK.md`, `PREMINE_144K_CHECKLIST.md`. Ověřen živý stav: chain 123 773, v3.2.0, Mainnet Beta. | Yosef Hubálek |
 
 ---

@@ -39,13 +39,11 @@
 
 - Uprostřed G8 okna (do 16. 12.). Postup: `docs/ops/PREMINE_144K_CHECKLIST.md` (v 3.3.0).
 
-### 6. Market `/shop/downloads` — route zablokuje celý event loop (2026-11-18, doručení DOČASNĚ ZAVŘENÉ)
+### 6. Market `/shop/downloads` — route zablokuje celý event loop (2026-11-18, VYŘEŠENO — viz „Vyřešené")
 
-- **Příznak:** request na `/shop/downloads/<soubor>` (i neexistující jméno) zablokuje `next-server` — přestane odpovídat **všechno** (32 % CPU, stav `R`, `curl` timeout), pomůže jen `systemctl restart zion-marketplace`. Jakýkoli bot/skener na této cestě = outage marketu.
-- **Příčina:** není došetřená; v logu je `Error: The Server Reference ID did not match the expected format` → podezření na rozbitý turbopack chunk v nasazeném buildu, ne na logiku route (`verifyDownloadRequest` vrací 401 korektně).
-- **Aktuální stav (2026-11-18):** nginx `location /shop/downloads/` vrací **`return 401`** bez proxy, aby cesta nemohla shodit appku → **digitální doručení je zavřené** (zákazník s podepsaným odkazem ZIP nestáhne). Kanonický soubor zůstává `/opt/zion/data/downloads/`.
-- **Co dělat:** opravit route (ideálně bez `@/data/shopProducts` + bez Prisma v cestě), přebuildovat, ověřit **na staging portu** (`curl :3100/shop/downloads/abc` → 404, `/api/health` stále 200), teprve pak v nginx vrátit `proxy_pass http://127.0.0.1:3100`.
-- **Souvislost:** při zavírání leaku se ukázalo, že ZIP byl i v `apps/MarketPlace/public/shop/downloads/` → Next ho servíroval **staticky před** route handlerem. Deploy teď má `--exclude='/public/shop/downloads'`.
+- **Příznak:** request na `/shop/downloads/<soubor>` (i neexistující jméno) zablokuje `next-server` — přestane odpovídat **všechno** (32 % CPU, stav `R`, `curl` timeout), pomůže jen `systemctl restart zion-marketplace`.
+- **Příčina (nalezena):** **nekonečná vzájemná rekurze** v `src/lib/download-token.ts` (`isAllowedDownloadFile` → `allowedDownloadFiles` → `protectedFileFromUrl` → zpět). Stejná rekurze visela i na `/gift/<token>` a `/api/admin/gift`, takže **admin seznam dárků vypadal prázdný**.
+- **Fix:** `basenameFromUrl()` jako acyklický základ; opraveno 2026-11-18 (`525c7b1d2`).
 
 ### 7. Čtyři veřejné hostname bez vhostu (2026-11-18, rozpor s branou KS-8)
 
@@ -89,6 +87,8 @@
 
 ## Vyřešené (historie — nenechávat otevřené)
 
+- **2026-11-18:** Market „zmizelé dárky" — nešlo o smazaná data (25 objednávek / 19 dárků v DB zůstalo), ale o **chybějící sloupce** `ShopOrder.digitalConsentAt` + `digitalConsentVersion` (nový build je čeká → Prisma `P2022`, admin list objednávek spadl) **a** nekonečnou rekurzi v `download-token.ts`, která zasekla `/gift/<token>` i `/shop/downloads/*`. Doplněny `ALTER TABLE` (aditivně) + `525c7b1d2`. Ověřeno: `/gift/<token>` 200, anonymní ZIP 401, podepsaný odkaz 200 (65 250 857 B), `/internal-downloads` zvenku 404.
+- **2026-11-18:** placený ZIP edice byl veřejně stahovatelný — nginx `alias` + kopie v `public/` (statika má přednost před route). Zavřeno: `internal` + `X-Accel-Redirect`, deploy `--exclude` na obou cestách + server-side `rm`.
 - **2026-11-17:** macOS disk 16→55 GiB — smazány Rust `target/`, `.next` cache, `node_modules`, package cache, staré CLI verze, kilo worktree; protrhány TM snapshoty.
 - **2026-11-17:** apex zpět live — `sites-enabled` kopie `sites-available` (maintenance patch byl jen v enabled).
 - **2026-11-12:** `getBlockByHeight` storage-lock → `get_output_owners` batch (12/12 ≤ 26 ms); EDGE1 node2/3 blind UTXO → env fix; realtime proto 3 live; ZIS 3.3 staging JWKS shodné.
