@@ -56,6 +56,7 @@ import json
 import os
 import socket
 import time
+import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -163,14 +164,31 @@ def probe_node(host: str, port: int, timeout: float, want_tip: bool) -> dict:
 
 
 def probe_http(url: str, timeout: float) -> dict:
-    """Probe an HTTP endpoint; success means a 2xx response."""
+    """Probe an HTTP endpoint; success means a 2xx response.
+
+    A 429 means the service is alive but throttled — treating it as downtime
+    produced a false G8 incident on 2026-11-18: ZIS rate-limits 30 req/min per
+    IP, the dashboard polls the same 127.0.0.1 bucket, and /health started
+    answering 429, which the probe counted as "zis down" for 120 s even though
+    ZIS logged 1474 successful requests in the same window. Throttling is
+    reported separately (`throttled`) so it stays visible without failing the
+    gate.
+    """
     t0 = time.perf_counter()
-    outcome = {"success": False, "duration": 0.0}
+    outcome = {"success": False, "throttled": False, "status": None, "duration": 0.0}
     try:
         req = urllib.request.Request(url, headers={"Accept": "application/json"})
         with urllib.request.urlopen(req, timeout=timeout) as resp:
+            outcome["status"] = resp.status
             outcome["success"] = 200 <= resp.status < 300
             resp.read(1024)
+    except urllib.error.HTTPError as exc:
+        outcome["status"] = exc.code
+        if exc.code == 429:
+            outcome["throttled"] = True
+            outcome["success"] = True
+        else:
+            outcome["success"] = False
     except Exception:
         outcome["success"] = False
     outcome["duration"] = time.perf_counter() - t0
@@ -335,6 +353,15 @@ def render_metrics(report: dict, config: dict, now: float = None) -> str:
         suffix = f'{{service="{_escape_label(label)}"}}'
         retried_entries.append((suffix, 1 if services[label].get("retried") else 0))
     _metric(lines, "zion_g8_probe_retried", "1 if the probe needed a confirmation retry this round", retried_entries)
+
+    # 429 = alive but throttled. Kept as its own series so the operator still
+    # sees it, but it must not be counted as downtime (see probe_http).
+    throttled_entries = []
+    for label in sorted(services):
+        if services[label].get("throttled"):
+            throttled_entries.append((f'{{service="{_escape_label(label)}"}}', 1))
+    _metric(lines, "zion_g8_probe_throttled",
+            "1 if the service answered HTTP 429 this round (alive, rate limited)", throttled_entries)
 
     _metric(lines, "zion_g8_chain_height", "Native chain height reported by the tip source node",
             [("", chain_height if chain_height is not None else 0)])

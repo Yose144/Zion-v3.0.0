@@ -1,40 +1,54 @@
 groups:
   - name: zion_g8
     rules:
+      # Two exporters are scraped into job="zion_g8": EDGE1 (reaches the EDGE2
+      # services over the SSH tunnel) and EDGE2 (probes its own services on
+      # loopback). Aggregations below are cross-instance on purpose: a single
+      # vantage point must not page, and a saturated tunnel must not look like
+      # a service outage (2026-11-15, see docs/reports/).
       - alert: G8ExporterDown
-        expr: up{job="zion_g8"} == 0
+        expr: max(up{job="zion_g8"}) == 0
         for: 2m
         labels:
           severity: critical
         annotations:
           summary: "G8 probe exporter is down"
-          description: "Prometheus cannot scrape the zion_g8 probe exporter on 127.0.0.1:9105 for over 2 minutes; G8 evidence collection is blind."
+          description: "Prometheus cannot scrape any zion_g8 probe exporter for over 2 minutes; G8 evidence collection is blind."
+
+      - alert: G8ExporterPartial
+        expr: min(up{job="zion_g8"}) == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "One G8 probe exporter is down"
+          description: "One of the two zion_g8 exporters has not been scraped for 10 minutes. Coverage continues from the other host, but the failed vantage point is blind."
 
       - alert: G8ChainStale
-        expr: zion_g8_chain_tip_age_seconds > 900 or zion_g8_chain_live == 0
+        expr: min(zion_g8_chain_tip_age_seconds) > 900 or max(zion_g8_chain_live) == 0
         labels:
           severity: critical
         annotations:
           summary: "G8 chain tip is stale or unreachable"
-          description: "The V31 chain tip is older than 15 minutes or no node probe reports a reachable tip (zion_g8_chain_live == 0)."
+          description: "The freshest V31 chain tip known to any probe host is older than 15 minutes, or no node probe reports a reachable tip (zion_g8_chain_live == 0)."
 
       - alert: G8RequiredServiceDown
-        expr: zion_g8_probe_success{service=~"pool_http|pool_stratum|multichain|dao|zis"} == 0
+        expr: max by (service) (zion_g8_probe_success{service=~"pool_http|pool_stratum|multichain|dao|zis"}) == 0
         for: 2m
         labels:
           severity: critical
         annotations:
           summary: "G8 required service down: {{ $labels.service }}"
-          description: "Required service {{ $labels.service }} has been failing its G8 probe for over 2 minutes."
+          description: "Required service {{ $labels.service }} failed its G8 probe on every host that can observe it for over 2 minutes."
 
       - alert: G8PrimaryNodeDown
-        expr: zion_g8_probe_success{service="node_primary"} == 0
+        expr: max(zion_g8_probe_success{service="node_primary"}) == 0
         for: 2m
         labels:
           severity: critical
         annotations:
           summary: "G8 primary node RPC down"
-          description: "The primary V31 node JSON-RPC probe (node_primary) has been failing for over 2 minutes."
+          description: "The primary V31 node JSON-RPC probe (node_primary) has been failing from every vantage point for over 2 minutes."
 
       # Requires the per-node metric added 2026-11-11; ship this rule together
       # with the probe that exports zion_g8_node_tip_age_seconds. On an older
@@ -42,7 +56,7 @@ groups:
       # diagnostic is blind. Do NOT deploy the rule alone if you expect it to
       # catch the stale-but-reachable primary from the 2026-11-11 RCA.
       - alert: G8PrimaryTipStale
-        expr: zion_g8_node_tip_age_seconds{service="node_primary"} > 900
+        expr: max(zion_g8_node_tip_age_seconds{service="node_primary"}) > 900
         for: 5m
         labels:
           severity: warning
@@ -51,10 +65,57 @@ groups:
           description: "The primary V31 node reports a tip older than 15 minutes even though its RPC may still answer. chain_live can remain 1 via a follower, but the primary is not syncing — check P2P from EDGE :8336 and node restarts."
 
       - alert: G8NodeQuorumLow
-        expr: zion_g8_node_quorum < 2
+        expr: max(zion_g8_node_quorum) < 2
         for: 5m
         labels:
           severity: warning
         annotations:
           summary: "G8 node quorum degraded"
-          description: "Fewer than 2 of 3 node RPC ports are answering for over 5 minutes (zion_g8_node_quorum < 2)."
+          description: "Fewer than 2 of 3 node RPC ports are answering from every vantage point for over 5 minutes (zion_g8_node_quorum < 2)."
+
+      # The gate verdict used to live only in /opt/zion/data/g8_run.json: run #7
+      # was `failed` from 2026-11-15 while every per-service alert had resolved
+      # and STATUS still said "pending". These two rules close that gap.
+      - alert: G8GateFailed
+        expr: zion_g8_gate_failed == 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "G8 30-day gate can no longer pass"
+          description: "The evidence run reports gate_status failed/evidence_incomplete. Uptime is {{ $value }} of the 99.9 % threshold and a critical incident is disqualifying on its own. Read /opt/zion/data/g8_run.json and docs/reports/."
+
+      - alert: G8EvidenceStale
+        expr: time() - zion_g8_last_update_timestamp_seconds > 1800
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "G8 evidence has not been recomputed"
+          description: "The last g8_evidence update is older than 30 minutes; the gate verdict and coverage numbers are stale."
+
+      # Early warning for the 2026-11-15 failure mode: the EDGE1→EDGE2 tunnel
+      # saturates, health probes slow down, and (before the dual-vantage fix)
+      # the congestion was recorded as a service outage. A slow probe is not an
+      # outage — it is the link telling us to look before the next rsync.
+      - alert: G8ProbePathSlow
+        expr: max by (service) (zion_g8_probe_duration_seconds{service=~"multichain|dao|zis"}) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "G8 probe path is slow: {{ $labels.service }}"
+          description: "The slowest vantage point needs more than 1 s for a /health probe over 10 minutes. That is tunnel congestion (135 871 out-of-order packets were measured on 2026-11-15), not necessarily the service. Check EDGE1↔EDGE2 latency before the next DB replication."
+
+      # 2026-11-18: ZIS answered 429 to its own health check because the G8
+      # probe shared the 127.0.0.1 rate-limit bucket with the dashboard. The
+      # probe now counts 429 as "alive but throttled" instead of downtime; this
+      # rule keeps the throttling visible so it cannot hide behind a green gate.
+      - alert: G8ProbeThrottled
+        expr: zion_g8_probe_throttled > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "G8 probe is being rate limited: {{ $labels.service }}"
+          description: "A health endpoint answered HTTP 429 for 5 minutes. The service is up (429 is counted as alive), but something on the same IP is exhausting its rate limit — check which local client shares the bucket."

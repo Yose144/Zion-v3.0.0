@@ -81,6 +81,19 @@ async function start() {
   await app.register(rateLimit, {
     max: 30,
     timeWindow: '1 minute',
+    // Liveness/discovery surfaces must always answer. On 2026-11-18 the G8
+    // probe's /health check shared the 127.0.0.1 bucket with the dashboard and
+    // got 429s, which the gate recorded as a 120 s ZIS outage even though ZIS
+    // served 1474 requests in the same window. Health, metrics and JWKS are
+    // cheap, idempotent and must never be throttled.
+    allowList: (req) => {
+      const url = req.raw.url || '';
+      return (
+        url.startsWith('/health') ||
+        url.startsWith('/metrics') ||
+        url.startsWith('/.well-known')
+      );
+    },
     // Bucket per authenticated user when the request carries a valid session:
     // server-side callers (warpd) proxy many users through one egress IP, so a
     // per-IP key would share a single bucket across all users. Invalid/forged
