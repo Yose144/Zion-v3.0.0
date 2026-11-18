@@ -1,5 +1,10 @@
 # KNOWN-ISSUES — otevřené problémy a provozní pasti
 
+> **📌 2026-11-18 — tento soubor je KOPIE. Kanonická verze žije v repu 3.3:**
+> [`../../3.3.0/docs/ops/KNOWN-ISSUES.md`](../../3.3.0/docs/ops/KNOWN-ISSUES.md).
+> Starý root je od D-001 archiv — při uzávěrce 3.3 se do něj nikdo nepodívá,
+> proto odtud obsah nemaž, ale **nepřidávej nové položky** (ty patří do 3.3 kopie).
+>
 > **Účel:** jedno místo pro *nevyřešené* chyby a *dlouhodobě platná* poučení, aby se nehledala
 > v OPS-LOGu. Záznam = příznak → pravděpodobná příčina → co dělat. Když se problém vyřeší,
 > položka se **nemaže** — přesune se dolů do „Vyřešené" s datem a commitem.
